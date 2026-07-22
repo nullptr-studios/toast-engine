@@ -24,7 +24,7 @@ PlayWorkspace::PlayWorkspace(UID handle, assets::Prefab& prefab) : Workspace(han
 	// node->propagateCallTick(node->info(), TickFunctionList::pre_init);
 
 	node->m_parent = {};
-	node->m_state = NodeState::root;
+	node->changeNodeState(NodeState::root);
 	node->m_type = NodeType::world_root;
 	node->m_inherited_enabled = true;
 

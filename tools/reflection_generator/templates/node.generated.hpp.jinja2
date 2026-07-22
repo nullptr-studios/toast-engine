@@ -37,10 +37,10 @@ namespace _detail {
 	inline std::any {{ snake_name }}_method_{{ m.name }}_dyn(void* obj, std::span<const std::any> args) {
 		auto* self = static_cast<{{ qualified_name }}*>(obj);
 {% if m.return_type == "void" %}
-		(self->*Accessor<{{ snake_name }}_method_{{ m.name }}_tag>::member)({% for p in m.parameters %}{% if "Box<" in p.type %}std::any_cast<toast::Box<toast::Node>>(args[{{ loop.index0 }}]).as<{{ p.type | replace("toast::Box<", "") | replace("const ", "") | replace("&", "") | replace(">", "") | trim }}>(){% else %}std::any_cast<std::decay_t<{{ p.type }}>>(args[{{ loop.index0 }}]){% endif %}{% if not loop.last %}, {% endif %}{% endfor %});
+		(self->*Accessor<{{ snake_name }}_method_{{ m.name }}_tag>::member)({% for p in m.parameters %}{% if "Box<" in p.type %}std::any_cast<toast::Box<toast::Node>>(args[{{ loop.index0 }}]).as<{{ p.type | replace("toast::Box<", "") | replace("Box<", "") | replace("const ", "") | replace("&", "") | replace(">", "") | trim }}>(){% else %}std::any_cast<std::decay_t<{{ p.type }}>>(args[{{ loop.index0 }}]){% endif %}{% if not loop.last %}, {% endif %}{% endfor %});
 		return std::any{};
 {% else %}
-		return std::any{ (self->*Accessor<{{ snake_name }}_method_{{ m.name }}_tag>::member)({% for p in m.parameters %}{% if "Box<" in p.type %}std::any_cast<toast::Box<toast::Node>>(args[{{ loop.index0 }}]).as<{{ p.type | replace("toast::Box<", "") | replace("const ", "") | replace("&", "") | replace(">", "") | trim }}>(){% else %}std::any_cast<std::decay_t<{{ p.type }}>>(args[{{ loop.index0 }}]){% endif %}{% if not loop.last %}, {% endif %}{% endfor %}) };
+		return std::any{ (self->*Accessor<{{ snake_name }}_method_{{ m.name }}_tag>::member)({% for p in m.parameters %}{% if "Box<" in p.type %}std::any_cast<toast::Box<toast::Node>>(args[{{ loop.index0 }}]).as<{{ p.type | replace("toast::Box<", "") | replace("Box<", "") | replace("const ", "") | replace("&", "") | replace(">", "") | trim }}>(){% else %}std::any_cast<std::decay_t<{{ p.type }}>>(args[{{ loop.index0 }}]){% endif %}{% if not loop.last %}, {% endif %}{% endfor %}) };
 {% endif %}
 	}
 {% endfor %}

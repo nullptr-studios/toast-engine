@@ -25,6 +25,8 @@ class WorldUIPass : public IRenderPass {
 public:
 	WorldUIPass(const renderer::VulkanCore& core, vk::Format color_format, vk::Format depth_format, vk::Extent2D extent);
 
+	auto name() const -> std::string_view override { return "World UI"; }
+
 	void recordPre(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) override;
 	void record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) override;
 

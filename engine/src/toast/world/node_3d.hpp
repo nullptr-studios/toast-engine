@@ -27,9 +27,9 @@ public:
 	[[Reflect, Unit("°")]] alignas(16) mutable glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 	[[Reflect]]            alignas(16) mutable glm::vec3 scale = glm::vec3(1.0f);
 
-	[[Reflect, Unit("m"), Group("World Transform")]] alignas(16) mutable glm::vec3 world_position = glm::vec3(0.0f);
-	[[Reflect, Unit("°"), Group("World Transform")]] alignas(16) mutable glm::quat world_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
-	[[Reflect, Group("World Transform")]]            alignas(16) mutable glm::vec3 world_scale = glm::vec3(1.0f);
+	[[Reflect, NoSerialize, Unit("m"), Group("World Transform")]] alignas(16) mutable glm::vec3 world_position = glm::vec3(0.0f);
+	[[Reflect, NoSerialize, Unit("°"), Group("World Transform")]] alignas(16) mutable glm::quat world_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+	[[Reflect, NoSerialize, Group("World Transform")]]            alignas(16) mutable glm::vec3 world_scale = glm::vec3(1.0f);
 	// clang-format on
 
 	/**

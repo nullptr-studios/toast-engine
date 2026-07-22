@@ -62,7 +62,7 @@ Workspace::Workspace(std::string_view type, UID handle) : m_handle(handle) {
 	// Data structure generation
 	generateUid(node);
 	node->m_parent = {};
-	node->m_state = NodeState::root;
+	node->changeNodeState(NodeState::root);
 	node->m_type = NodeType::world_root;
 	node->m_inherited_enabled = true;
 	node->m_name = stripNamespace(node->info()->type);
@@ -131,7 +131,7 @@ void Workspace::initFromPrefab(const assets::Handle<assets::Prefab>& file) {
 	// Data structure generation
 	generateUid(node);
 	node->m_parent = {};
-	node->m_state = NodeState::root;
+	node->changeNodeState(NodeState::root);
 	node->m_type = NodeType::world_root;
 	node->m_inherited_enabled = true;
 
@@ -149,7 +149,7 @@ void Workspace::applyActiveCamera() {
 		return;
 	}
 	if (m_game_camera) {
-		renderer::setActiveCamera(activeCamera().exists() ? &*activeCamera() : nullptr);
+		renderer::setActiveCamera(activeRenderCamera());
 	} else {
 		renderer::setActiveCamera(m_editor_camera.get());
 	}
@@ -160,6 +160,7 @@ Workspace::~Workspace() {
 		return;
 	}
 
+	beginCameraShutdown();
 	m_root_node->propagateCallTick(m_root_node->info(), TickFunctionList::on_disable);
 	m_root_node->propagateCallTick(m_root_node->info(), TickFunctionList::end);
 	m_root_node->propagateCallTick(m_root_node->info(), TickFunctionList::destroy);
@@ -462,6 +463,13 @@ void Workspace::eventSubscriptions() {
 			std::istringstream ss(e.value);
 			ss >> deg.x >> deg.y >> deg.z;
 			value = std::any {glm::quat(glm::radians(deg))};
+		} else if (field->value_type == FieldType::uid_t && not field->is_array && field->type.starts_with("Box<")) {
+			auto parsed = assets::Prefab::valueFromString(field->value_type, false, e.value);
+			if (not parsed.has_value()) {
+				TOAST_WARN("World", "NodeChangeParam: couldn't parse '{}' for parameter '{}'", e.value, e.parameter);
+				return true;
+			}
+			value = std::any {findFrom(*m_root_node, std::any_cast<UID>(*parsed))};
 		} else {
 			auto parsed = assets::Prefab::valueFromString(field->value_type, field->is_array, e.value);
 			if (not parsed.has_value()) {
@@ -550,6 +558,9 @@ void Workspace::eventSubscriptions() {
 	// });
 
 	m_listener.subscribe<event::NodeEnabled>([this](const auto& e) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			return false;
+		}
 		if (not m_root_node.exists()) {
 			return false;
 		}
@@ -878,6 +889,10 @@ void Workspace::eventSubscriptions() {
 }
 
 void Workspace::tick() {
+	if (!participatesIn(NodeOwnerParticipation::gameplay_tick)) {
+		tickActiveCameraController();
+	}
+
 	if (m_root_node.exists()) {
 		INodeOwner::updateTransforms(*m_root_node);
 	}

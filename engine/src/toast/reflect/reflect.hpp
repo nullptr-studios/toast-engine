@@ -63,6 +63,20 @@ struct TOAST_API FieldInfo {
 	FieldGetterPtr get;
 	FieldSetterPtr set;
 
+	/**
+	 * @brief Returns the generated attribute objectpr
+	 */
+	[[nodiscard]]
+	auto attributeMap() const -> const nlohmann::json* {
+		if (attributes.is_object()) {
+			return &attributes;
+		}
+		if (attributes.is_array() && attributes.size() == 1 && attributes.front().is_object()) {
+			return &attributes.front();
+		}
+		return nullptr;
+	}
+
 	/// Returns the value of the "Group" annotation, or an empty string if not present
 	[[nodiscard]]
 	auto groupName() const -> std::string {
@@ -76,7 +90,8 @@ struct TOAST_API FieldInfo {
 	 */
 	[[nodiscard]]
 	auto hasAttribute(std::string_view attr_name) const -> bool {
-		return attributes.contains(std::string(attr_name));
+		const auto* map = attributeMap();
+		return map != nullptr && map->contains(std::string(attr_name));
 	}
 
 	/**
@@ -86,8 +101,12 @@ struct TOAST_API FieldInfo {
 	 */
 	[[nodiscard]]
 	auto getAttribute(std::string_view attr_name) const -> std::string {
-		auto it = attributes.find(std::string(attr_name));
-		if (it == attributes.end() || it->empty()) {
+		const auto* map = attributeMap();
+		if (map == nullptr) {
+			return "";
+		}
+		auto it = map->find(std::string(attr_name));
+		if (it == map->end() || !it->is_array() || it->empty()) {
 			return "";
 		}
 		return it->at(0).get<std::string>();

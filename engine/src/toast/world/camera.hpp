@@ -14,6 +14,8 @@
 
 namespace toast {
 class [[ToastNode, Icon("Camera")]] TOAST_API Camera : public Node3D {
+	friend class CameraController;
+
 public:
 	Camera() = default;
 

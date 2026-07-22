@@ -23,6 +23,7 @@
 #include <vector>
 
 namespace toast {
+class CameraController;
 class Camera;
 enum class NodeOwnerParticipation : uint8_t {
 	render,
@@ -51,6 +52,8 @@ public:
 
 	void activateCamera(Camera& camera);
 	void deactivateCamera(Camera& camera);
+	void activateCameraController(CameraController& controller);
+	void deactivateCameraController(CameraController& controller);
 
 	auto requestRuntimeCreate(Node& parent, std::string_view type) -> Box<Node>;
 	auto requestRuntimeSpawn(Node& parent, UID uid) -> Box<Node>;
@@ -128,9 +131,13 @@ protected:
 
 	void findCamera();
 	void findCameraController();
+	void tickActiveCameraController();
+	void beginCameraShutdown() noexcept;
 
 	[[nodiscard]]
 	auto activeCamera() noexcept -> Box<Camera>&;
+	[[nodiscard]]
+	auto activeRenderCamera() noexcept -> Camera*;
 	virtual void applyActiveCamera() = 0;
 
 	template<typename Fn>
@@ -144,9 +151,13 @@ protected:
 	size_t tombstones = 0;    ///< short-circuits the reap sweep when there's nothing to clean
 
 private:
+	friend class CameraController;
+
 	std::unordered_set<_detail::ControlBox> nodes;
 	Box<Camera> m_active_camera;
+	Box<CameraController> m_active_camera_controller;
 	bool m_has_camera_controller = false;
+	bool m_is_shutting_down = false;
 };
 
 }

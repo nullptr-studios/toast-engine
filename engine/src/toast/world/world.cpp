@@ -1,5 +1,6 @@
 #include "world.hpp"
 
+#include "camera.hpp"
 #include "workspace_events.hpp"
 #include "world_test_access.hpp"
 
@@ -735,7 +736,7 @@ void World::computeDependencyGraph() {
 }
 
 void World::applyActiveCamera() {
-	renderer::setActiveCamera(activeCamera().exists() ? &*activeCamera() : nullptr);
+	renderer::setActiveCamera(activeRenderCamera());
 }
 
 auto World::swapRoot(Node& node) -> Box<Node> {

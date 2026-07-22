@@ -1,6 +1,7 @@
 mod common;
 
-use reflection_generator::{parse, build_node, generate_json, generate_files, strip_export_macros};
+use minijinja::Environment;
+use reflection_generator::{build_node, build_template_context, generate_files, generate_json, parse, strip_export_macros};
 use serde_json::Value as JsonValue;
 use std::fs;
 use std::path::Path;
@@ -395,4 +396,31 @@ fn test_fixture_reflected_functions() {
     if fixture_path.exists() {
         test_single_fixture(fixture_path, "31_reflected_functions", "target/test_outputs", "tests/expected_outputs");
     }
+}
+
+#[test]
+fn test_unqualified_box_parameter_generates_valid_dynamic_cast() {
+    let source = r#"
+        namespace toast {
+        class [[ToastNode]] BoxParameterNode {
+        public:
+            [[Reflect]] void setCamera(Box<Camera> camera);
+        };
+        }
+    "#;
+
+    let classes = parse(source, "box_parameter_node.hpp");
+    let context = build_template_context(&build_node(&classes[0]));
+    let mut environment = Environment::new();
+    environment
+        .add_template("node", include_str!("../templates/node.generated.hpp.jinja2"))
+        .expect("template should parse");
+    let generated = environment
+        .get_template("node")
+        .expect("template should exist")
+        .render(context)
+        .expect("template should render");
+
+    assert!(generated.contains(".as<Camera>()"));
+    assert!(!generated.contains(".as<Box<Camera>()"));
 }
