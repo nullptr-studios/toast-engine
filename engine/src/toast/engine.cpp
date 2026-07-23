@@ -14,8 +14,10 @@
 #include "project_settings.hpp"
 #include "reflect/reflect.hpp"
 #include "renderer/passes/debug_pass.hpp"
-#include "renderer/passes/mesh_pass.hpp"
+#include "renderer/passes/grid_pass.hpp"
+#include "renderer/render_events.hpp"
 #include "renderer/sdl_output_target.hpp"
+#include "renderer/shader_cache.hpp"
 #include "renderer/shader_compiler.hpp"
 #include "renderer/shader_layout.hpp"
 #include "renderer/shared_texture_output_target.hpp"
@@ -34,11 +36,13 @@
 #include "world/world.hpp"
 
 #include <SDL3/SDL.h>
+#include <algorithm>
 #include <cassert>
 #include <filesystem>
 #include <fstream>
 #include <memory>
 #include <mutex>
+#include <new>
 #include <optional>
 #include <span>
 #include <sstream>
@@ -145,6 +149,11 @@ void Engine::init() {
 	}
 
 	m->asset_manager = std::make_unique<assets::AssetManager>();
+
+	// Compile every stale shader up front
+	renderer::ShaderCache::get().compileAllAtStartup();
+
+	renderer::registerRenderEvents();
 
 	m->input_system = std::make_unique<input::InputSystem>();
 	m->haptics_system = std::make_unique<input::HapticsSystem>();
@@ -300,15 +309,17 @@ void Engine::tick() {
 	}
 
 #ifdef DEBUG
-	// dev builds hot-reload script sources edited on disk
+	// dev builds hot-reload scripts, shaders and materials edited on disk
 	script_reload_timer += Time::delta();
 	if (script_reload_timer > 1.0) {
 		script_reload_timer = 0.0;
 		if (m->asset_manager) {
-			m->asset_manager->pollModifiedScripts();
+			m->asset_manager->pollModifiedAssets();
 		}
 	}
 #endif
+
+	FrameMark;
 }
 
 auto Engine::shouldClose() -> bool {
@@ -342,12 +353,7 @@ void Engine::createSDLWindow(const char* w_name) {
 
 	m->renderer->setActiveCamera(camera);
 
-	// create debug pipeline
-	auto pass = std::make_unique<renderer::MeshPass>(*m->vulkan_core, color_format, depth_format, extent);
-
-	// create renderer
-
-	m->renderer->addRenderPass(std::move(pass));
+	// Mesh rendering runs through per-material passes
 
 	// m->renderer->addRenderPass(std::make_unique<renderer::DebugPass>(*m->vulkan_core, color_format, depth_format, extent));
 
@@ -375,14 +381,10 @@ void Engine::createAvaloniaWindow() {
 
 	m->renderer->setActiveCamera(camera);
 
-	// create debug pipeline
-	auto pass = std::make_unique<renderer::MeshPass>(*m->vulkan_core, color_format, depth_format, extent);
-
-	// create renderer
-
-	m->renderer->addRenderPass(std::move(pass));
+	// Mesh rendering runs through per-material passes
 
 	// Editor viewport gets the ground grid / debug lines / gizmo overlay
+	m->renderer->addRenderPass(std::make_unique<renderer::GridPass>(*m->vulkan_core, color_format, depth_format, extent));
 	m->renderer->addRenderPass(std::make_unique<renderer::DebugPass>(*m->vulkan_core, color_format, depth_format, extent));
 
 	m->renderer->setFrameRateLimit(240.0);
@@ -567,11 +569,65 @@ void Engine::startGame() {
 }
 }
 
-// Tracy memory profiling
-#ifdef DEBUG
+#ifdef TRACY_ENABLE
 // NOLINTBEGIN(cppcoreguidelines-no-malloc)
+
+#ifdef _WIN32
+#include <malloc.h>
+#else
+#include <cstdlib>
+#endif
+
 auto operator new(std::size_t count) -> void* {
 	auto* ptr = malloc(count);
+	tracy::Profiler::MemAllocCallstack(ptr, count, TRACY_CALLSTACK, true);
+	return ptr;
+}
+
+auto operator new[](std::size_t count) -> void* {
+	auto* ptr = malloc(count);
+	tracy::Profiler::MemAllocCallstack(ptr, count, TRACY_CALLSTACK, true);
+	return ptr;
+}
+
+auto operator new(std::size_t count, const std::nothrow_t&) noexcept -> void* {
+	auto* ptr = malloc(count);
+	if (ptr) {
+		tracy::Profiler::MemAllocCallstack(ptr, count, TRACY_CALLSTACK, true);
+	}
+	return ptr;
+}
+
+auto operator new[](std::size_t count, const std::nothrow_t&) noexcept -> void* {
+	auto* ptr = malloc(count);
+	if (ptr) {
+		tracy::Profiler::MemAllocCallstack(ptr, count, TRACY_CALLSTACK, true);
+	}
+	return ptr;
+}
+
+auto operator new(std::size_t count, std::align_val_t align) -> void* {
+	void* ptr = nullptr;
+	std::size_t alignment = static_cast<std::size_t>(align);
+#ifdef _WIN32
+	ptr = _aligned_malloc(count, alignment);
+#else
+	alignment = std::max(alignment, sizeof(void*));
+	posix_memalign(&ptr, alignment, count);
+#endif
+	tracy::Profiler::MemAllocCallstack(ptr, count, TRACY_CALLSTACK, true);
+	return ptr;
+}
+
+auto operator new[](std::size_t count, std::align_val_t align) -> void* {
+	void* ptr = nullptr;
+	std::size_t alignment = static_cast<std::size_t>(align);
+#ifdef _WIN32
+	ptr = _aligned_malloc(count, alignment);
+#else
+	alignment = std::max(alignment, sizeof(void*));
+	posix_memalign(&ptr, alignment, count);
+#endif
 	tracy::Profiler::MemAllocCallstack(ptr, count, TRACY_CALLSTACK, true);
 	return ptr;
 }
@@ -580,6 +636,67 @@ auto operator new(std::size_t count) -> void* {
 void operator delete(void* ptr) noexcept {
 	tracy::Profiler::MemFreeCallstack(ptr, TRACY_CALLSTACK, true);
 	free(ptr);
+}
+
+void operator delete[](void* ptr) noexcept {
+	tracy::Profiler::MemFreeCallstack(ptr, TRACY_CALLSTACK, true);
+	free(ptr);
+}
+
+void operator delete(void* ptr, const std::nothrow_t&) noexcept {
+	tracy::Profiler::MemFreeCallstack(ptr, TRACY_CALLSTACK, true);
+	free(ptr);
+}
+
+void operator delete[](void* ptr, const std::nothrow_t&) noexcept {
+	tracy::Profiler::MemFreeCallstack(ptr, TRACY_CALLSTACK, true);
+	free(ptr);
+}
+
+void operator delete(void* ptr, std::size_t) noexcept {
+	tracy::Profiler::MemFreeCallstack(ptr, TRACY_CALLSTACK, true);
+	free(ptr);
+}
+
+void operator delete[](void* ptr, std::size_t) noexcept {
+	tracy::Profiler::MemFreeCallstack(ptr, TRACY_CALLSTACK, true);
+	free(ptr);
+}
+
+void operator delete(void* ptr, std::align_val_t) noexcept {
+	tracy::Profiler::MemFreeCallstack(ptr, TRACY_CALLSTACK, true);
+#ifdef _WIN32
+	_aligned_free(ptr);
+#else
+	free(ptr);
+#endif
+}
+
+void operator delete[](void* ptr, std::align_val_t) noexcept {
+	tracy::Profiler::MemFreeCallstack(ptr, TRACY_CALLSTACK, true);
+#ifdef _WIN32
+	_aligned_free(ptr);
+#else
+	free(ptr);
+#endif
+}
+
+void operator delete(void* ptr, std::size_t, std::align_val_t) noexcept {
+	tracy::Profiler::MemFreeCallstack(ptr, TRACY_CALLSTACK, true);
+#ifdef _WIN32
+	_aligned_free(ptr);
+#else
+	free(ptr);
+#endif
+}
+
+void operator delete[](void* ptr, std::size_t, std::align_val_t) noexcept {
+	tracy::Profiler::MemFreeCallstack(ptr, TRACY_CALLSTACK, true);
+#ifdef _WIN32
+	_aligned_free(ptr);
+#else
+	free(ptr);
+#endif
 }
 
 // NOLINTEND(cppcoreguidelines-no-malloc)
@@ -609,6 +726,10 @@ void toast_create_avalonia_window() noexcept {
 }
 
 void toast_tick() noexcept {
+#ifdef TRACY_ENABLE
+	static std::once_flag s_thread_named;
+	std::call_once(s_thread_named, [] { tracy::SetThreadName("Main Thread"); });
+#endif
 	toast::Engine::get()->tick();
 }
 

@@ -339,7 +339,30 @@
 				</Button>
 				<Button Background="{StaticResource Bg3}"
 				        CornerRadius="0, 6, 6, 0"
-				        ToolTip.Tip="Toggle render layers visibility">
+				        ToolTip.Tip="Toggle render passes visibility"
+				        Command="{Binding RefreshRenderPassesCommand}">
+					<Button.Flyout>
+						<Flyout Placement="Bottom">
+							<StackPanel MinWidth="180"
+							            Spacing="4">
+								<TextBlock Text="Render Passes"
+								           FontWeight="Bold"
+								           Margin="0,0,0,4" />
+								<ItemsControl ItemsSource="{Binding RenderPasses}">
+									<ItemsControl.ItemTemplate>
+										<DataTemplate x:DataType="vm:RenderPassVM">
+											<CheckBox Content="{Binding Name}"
+											          IsChecked="{Binding Enabled, Mode=TwoWay}" />
+										</DataTemplate>
+									</ItemsControl.ItemTemplate>
+								</ItemsControl>
+								<TextBlock Text="No passes reported"
+								           FontStyle="Italic"
+								           Foreground="{StaticResource TextMuted}"
+								           IsVisible="{Binding !RenderPasses.Count}" />
+							</StackPanel>
+						</Flyout>
+					</Button.Flyout>
 					<LucideIcon Kind="Eye"
 					            Size="18"
 					            StrokeWidth="2.5" />

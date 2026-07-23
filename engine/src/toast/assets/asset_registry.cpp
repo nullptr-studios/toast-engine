@@ -26,6 +26,7 @@ void AssetRegistry::init() {
 	s_raw["audio_bank"] = [](std::vector<uint8_t> d) { return std::make_unique<AudioBank>(std::move(d)); };
 	s_raw["audio_strings"] = [](std::vector<uint8_t> d) { return std::make_unique<AudioStrings>(std::move(d)); };
 	s_raw["script"] = [](std::vector<uint8_t> d) { return std::make_unique<Script>(std::move(d)); };
+	s_raw["shader"] = [](std::vector<uint8_t> d) { return std::make_unique<Shader>(std::move(d)); };
 
 	// Plain TOML loaders
 	s_toml["curve"] = [](const toml::table& t) { return Curve::fromToml(t); };
@@ -33,6 +34,9 @@ void AssetRegistry::init() {
 	// TOML + Schema loaders
 	s_schema_toml["data"] = [](const toml::table& t, Handle<Schema> s) { return std::make_unique<Data>(t, std::move(s)); };
 	s_schema_toml["material"] = [](const toml::table& t, Handle<Schema> s) { return std::make_unique<Material>(t, std::move(s)); };
+	s_schema_toml["material_instance"] = [](const toml::table& t, Handle<Schema> s) {
+		return std::make_unique<MaterialInstance>(t, std::move(s));
+	};
 
 	// Input assets
 	s_schema_toml["haptic"] = [](const toml::table& t, Handle<Schema> s) { return std::make_unique<Haptic>(t, std::move(s)); };
@@ -62,9 +66,11 @@ void AssetRegistry::init() {
 	s_lua_names["texture"] = "Texture";
 	s_lua_names["data"] = "Data";
 	s_lua_names["material"] = "Material";
+	s_lua_names["material_instance"] = "MaterialInstance";
 	s_lua_names["schema"] = "Schema";
 	s_lua_names["node"] = "Prefab";
 	s_lua_names["script"] = "Script";
+	s_lua_names["shader"] = "Shader";
 	s_lua_names["curve"] = "Curve";
 	s_lua_names["audio_strings"] = "AudioStrings";
 	s_lua_names["audio_bank"] = "AudioBank";
