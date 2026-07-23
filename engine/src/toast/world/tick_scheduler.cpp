@@ -144,55 +144,51 @@ void TickScheduler::compute(const std::vector<Box<Node>>& all_nodes) {
 	);
 }
 
+void TickScheduler::runPhase(const std::vector<TickSchedule::Wave>& phase, TickFunctionList func, std::string_view name) const {
+	ZoneScopedN("TickScheduler::runPhase");    // NOLINT
+	ZoneNameF("TickScheduler::runPhase(%s)", name.data());
+
+	for (const auto& wave : phase) {
+		std::vector<std::future<void>> futures;
+		futures.reserve(wave.size());
+
+		int count = 1;
+		for (const auto& n : wave) {
+			ZoneScopedN("TickScheduler::runPhase::wave");    // NOLINT
+			ZoneNameF("Wave #%i", count++);
+
+			futures.emplace_back(ThreadPool::push([n, func] {
+				if (std::holds_alternative<Box<Node>>(n)) {
+					auto node = std::get<Box<Node>>(n);
+					node->callTick(node->info(), func);
+					return;
+				}
+
+				// Clusters tick their nodes synchronously to avoid race conditions
+				auto cluster = std::get<NodeCluster>(n);
+				for (auto& node : cluster.nodes) {
+					node->callTick(node->info(), func);
+				}
+			}));
+		}
+
+		{
+			ZoneScopedN("Thread Pool semaphore");    // NOLINT
+			for (auto& f : futures) {
+				f.get();
+			}
+		}
+	}
+}
+
 void TickScheduler::run() const {
 	ZoneScoped;
 
-	/**
-	 * dispatches one phase: submits each wave to the thread pool and joins before advancing to the next wave;
-	 * clusters tick their nodes synchronously within the thread to preserve SCC ordering
-	 */
-	auto run_phase = [](const std::vector<TickSchedule::Wave>& phase, TickFunctionList func, std::string_view name) {
-		ZoneScopedN("TickScheduler::run()::function");    // NOLINT
-		ZoneNameF("TickScheduler::run()::%s", name.data());
-
-		for (const auto& wave : phase) {
-			std::vector<std::future<void>> futures;
-			futures.reserve(wave.size());
-
-			int count = 1;
-			for (const auto& n : wave) {
-				ZoneScopedN("TickScheduler::run()::function::wave");    // NOLINT
-				ZoneNameF("Wave #%i", count++);
-
-				futures.emplace_back(ThreadPool::push([n, func] {
-					if (std::holds_alternative<Box<Node>>(n)) {
-						auto node = std::get<Box<Node>>(n);
-						node->callTick(node->info(), func);
-						return;
-					}
-
-					// Clusters tick their nodes synchronously to avoid race conditions
-					auto cluster = std::get<NodeCluster>(n);
-					for (auto& node : cluster.nodes) {
-						node->callTick(node->info(), func);
-					}
-				}));
-			}
-
-			{
-				ZoneScopedN("Thread Pool semaphore");    // NOLINT
-				for (auto& f : futures) {
-					f.get();
-				}
-			}
-		}
-	};
-
-	run_phase(schedule.early_tick, TickFunctionList::early_tick, "early_tick");
-	run_phase(schedule.tick, TickFunctionList::tick, "tick");
+	runPhase(schedule.early_tick, TickFunctionList::early_tick, "early_tick");
+	runPhase(schedule.tick, TickFunctionList::tick, "tick");
 	// TODO: physics step goes between tick and post_physics
-	run_phase(schedule.post_physics, TickFunctionList::post_physics, "post_physics");
-	run_phase(schedule.late_tick, TickFunctionList::late_tick, "late_tick");
+	runPhase(schedule.post_physics, TickFunctionList::post_physics, "post_physics");
+	runPhase(schedule.late_tick, TickFunctionList::late_tick, "late_tick");
 }
 
 auto TickScheduler::subgraphSeparation(const std::vector<Box<Node>>& all_nodes) -> std::vector<std::vector<Box<Node>>> {

@@ -936,7 +936,7 @@ void VulkanRenderer::tick(float time) noexcept {
 		  .view = m_camera->getView(),
 		  .projection = m_camera->getProjection(aspect),
 		  .view_projection = m_camera->getProjection(aspect) * m_camera->getView(),
-		  .camera_position = m_camera->worldPos(),
+		  .camera_position = m_camera->world_position,
 		  .time = time
 		};
 	}

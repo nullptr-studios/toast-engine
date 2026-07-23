@@ -130,5 +130,4 @@ their parent's pass with their own descriptor sets. Meshes without a material fa
 editor viewport's eye popup (`render_events.proto`).
 
 ## Known issues
-- Node3D transforms are not being propagated to children
 - Only the first shader module of a material's `shaders` array is used for pipeline creation

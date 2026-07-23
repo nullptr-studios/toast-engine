@@ -3,7 +3,7 @@
 namespace toast {
 
 auto AudioEmitter3D::emitterPosition(const glm::vec3&) -> glm::vec3 {
-	return worldPos();
+	return world_position;
 }
 
 }

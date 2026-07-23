@@ -77,7 +77,7 @@ auto AmbienceVolume::randomEvent() -> assets::Handle<assets::AudioEvent> {
 
 auto AmbienceVolume::randomSpawnPosition() -> glm::vec3 {
 	if (isGlobal()) {
-		return worldPos();
+		return world_position;
 	}
 
 	std::uniform_real_distribution<float> dist(-0.5f, 0.5f);
