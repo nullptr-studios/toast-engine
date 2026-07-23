@@ -256,13 +256,9 @@ void Engine::tick() {
 	m->time.tick();
 
 	// Poll window events
-#ifndef NDEBUG
 	if (m->window) {
 		m->window->pollEvents();
 	}
-#else
-	m->window->pollEvents();
-#endif
 
 	event::pollEvents();
 
