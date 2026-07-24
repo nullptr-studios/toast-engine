@@ -4,6 +4,7 @@
 #include "lua_types.hpp"
 #include "lua_util.hpp"
 #include "node_proxy.hpp"
+#include "ui_binds_proxy.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -23,6 +24,7 @@
 #include <toast/log.hpp>
 #include <toast/reflect/reflect_node.hpp>
 #include <toast/time.hpp>
+#include <toast/ui/ui_system.hpp>
 #include <tracy/Tracy.hpp>
 #include <tracy/TracyLua.hpp>
 
@@ -523,6 +525,12 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    .addNewIndexMetaMethod(nodeProxyNewindex)
 	    .endClass()
 
+	    // UIBindsProxy
+	    .beginClass<UIBindsProxy>("UIBinds")
+	    .addIndexMetaMethod(uiBindsProxyIndex)
+	    .addNewIndexMetaMethod(uiBindsProxyNewindex)
+	    .endClass()
+
 	    // TypeMarker
 	    .beginClass<TypeMarker>("_TypeMarker")
 	    .addFunction("__tostring", &TypeMarker::toString)
@@ -562,6 +570,20 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    )
 	    .addFunction(
 	        "resume", +[]() { Time::resume(); }
+	    )
+	    .endNamespace()
+
+	    .beginNamespace("UI")
+	    .addFunction(
+	        "setLanguage",
+	        +[](const std::string& language) {
+		        if (ui::UISystem::exists()) {
+			        ui::UISystem::get().setLanguage(language);
+		        }
+	        }
+	    )
+	    .addFunction(
+	        "language", +[]() -> std::string { return ui::UISystem::exists() ? ui::UISystem::get().language() : std::string(); }
 	    )
 	    .endNamespace();
 

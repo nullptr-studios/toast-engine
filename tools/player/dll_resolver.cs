@@ -71,6 +71,18 @@ internal static class NativeResolver {
 		foreach (var root in roots)
 			try {
 				var files = Directory.GetFiles(root, pattern + ext, SearchOption.AllDirectories);
+				if (libraryName == "__APPLICATION_LIB__") {
+					var preferred = files.FirstOrDefault(path =>
+						Path.GetFileNameWithoutExtension(path).Equals("my_game", StringComparison.OrdinalIgnoreCase));
+					if (preferred is not null) {
+						files = [preferred];
+					} else {
+						var projectGames = files.Where(path =>
+							!Path.GetFileNameWithoutExtension(path).Equals("dummy_game", StringComparison.OrdinalIgnoreCase)
+						).ToArray();
+						if (projectGames.Length > 0) files = projectGames;
+					}
+				}
 				if (files.Length <= 0) continue;
 				try {
 					// Change CWD to the library's dir so '.' in RUNPATH resolves correctly

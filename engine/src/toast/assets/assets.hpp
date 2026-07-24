@@ -11,10 +11,12 @@
 #include "core_types.hpp"
 
 #include <atomic>
+#include <string>
 #include <string_view>
 #include <toast/events/event.hpp>
 #include <toast/export.hpp>
 #include <toast/uid.hpp>
+#include <utility>
 
 namespace assets {
 
@@ -88,6 +90,16 @@ struct MaterialAssetReloaded : public Event<MaterialAssetReloaded> {
 	toast::UID uid;
 
 	explicit MaterialAssetReloaded(toast::UID uid) : uid(uid) { }
+};
+
+/**
+ * @brief Fired after an RML document or RCSS stylesheet hot-reload
+ */
+struct UIAssetReloaded : public Event<UIAssetReloaded> {
+	toast::UID uid;
+	std::string type;
+
+	UIAssetReloaded(toast::UID uid, std::string type) : uid(uid), type(std::move(type)) { }
 };
 
 /**

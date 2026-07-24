@@ -30,6 +30,7 @@ find_package(protobuf CONFIG REQUIRED)
 find_package(tinysplinecxx CONFIG REQUIRED)
 find_package(lz4 CONFIG REQUIRED)
 find_package(tomlplusplus CONFIG REQUIRED)
+find_package(RmlUi CONFIG REQUIRED)
 find_package(Lua REQUIRED)
 find_path(LUABRIDGE3_INCLUDE_DIRS "luabridge3/LuaBridge/Array.h")
 
@@ -84,9 +85,8 @@ target_include_directories(toast_engine
 # target_compile_definitions(toast_engine PRIVATE VK_NO_PROTOTYPES)
 # target_compile_definitions(toast_engine PRIVATE VULKAN_HPP_DISPATCH_LOADER_DYNAMIC)
 
-
 target_link_libraries(toast_engine
-    PRIVATE
+        PRIVATE
         asio::asio
         SDL3::SDL3
         Vulkan::Vulkan
@@ -94,6 +94,7 @@ target_link_libraries(toast_engine
         unofficial::VulkanMemoryAllocator-Hpp::VulkanMemoryAllocator-Hpp
         slang::gfx slang::slang protobuf::libprotobuf tinysplinecxx::tinysplinecxx
         LZ4::lz4
+        RmlUi::RmlUi
         $<$<CONFIG:Debug>:${EXTERNAL_LIBS_DEBUG}>
         $<$<NOT:$<CONFIG:Debug>>:${EXTERNAL_LIBS_RELEASE}>
         ${LUA_LIBRARIES}

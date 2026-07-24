@@ -124,6 +124,10 @@ public:
 	/// Call a named function on all instances
 	void call(std::string_view fn_name) noexcept;
 
+	/// True if any attached script instance exposes a callable field with this name
+	[[nodiscard]]
+	auto hasFunction(std::string_view fn_name) const noexcept -> bool;
+
 	void callWithLuaStack(std::string_view name, lua_State* l, int args_base, int n_args) noexcept;
 
 	/// Ccall with args provided as std::any values

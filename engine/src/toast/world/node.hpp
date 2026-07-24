@@ -103,6 +103,11 @@ public:
 	[[nodiscard]]
 	auto enabled() const noexcept -> bool;
 
+	[[nodiscard]]
+	auto participatesIn(NodeOwnerParticipation use) const noexcept -> bool {
+		return m_owner != nullptr && m_owner->participatesIn(use);
+	}
+
 	/**
 	 * @brief Sets the local enabled flag and propagates the change to all children
 	 * @param value Passing false disables the entire subtree without unregistering event callbacks
@@ -276,6 +281,10 @@ public:
 	[[nodiscard]]
 	auto hasTickFunction(TickFunctionList mask) const noexcept -> bool;
 
+	/// @returns true when a reflected C++ or Lua function exists
+	[[nodiscard]]
+	auto hasCallable(std::string_view name) const noexcept -> bool;
+
 	/**
 	 * @brief Rebuilds the script runtime after a script asset changed (hot reload or attach)
 	 */
@@ -336,6 +345,7 @@ public:
 		if (m_info) {
 			if (const auto* f = m_info->getField(name)) {
 				f->set(this, std::any(value));
+				onReflectedFieldChanged(f->name);
 			}
 		}
 		_detail::setNodeScriptVar(this, name, std::any(value));
@@ -343,6 +353,8 @@ public:
 
 protected:
 	INodeOwner* m_owner = nullptr;
+
+	virtual void onReflectedFieldChanged(std::string_view /*field_name*/) { }
 
 private:
 	[[Reflect, Hidden]]

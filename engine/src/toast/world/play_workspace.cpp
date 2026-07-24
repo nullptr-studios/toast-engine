@@ -75,7 +75,7 @@ void PlayWorkspace::unregisterDependency(Node& from, Node& to) {
 }
 
 void PlayWorkspace::tick() {
-	if (not m_paused && m_root_node.exists()) {
+	if (participatesIn(NodeOwnerParticipation::gameplay_tick) && !m_paused && m_root_node.exists()) {
 		if (m_schedule_dirty) {
 			computeSchedule();
 			m_schedule_dirty = false;
@@ -89,8 +89,13 @@ void PlayWorkspace::tick() {
 		m_scheduler.runPhase(m_scheduler.schedule.late_tick, TickFunctionList::late_tick, "late_tick");
 	}
 
-	// inspector streaming for the focused node
-	Workspace::tick();
+	if (isActiveWorkspace()) {
+		Workspace::tick();
+	}
+}
+
+auto PlayWorkspace::participatesIn(NodeOwnerParticipation /*use*/) const noexcept -> bool {
+	return isActiveWorkspace();
 }
 
 void PlayWorkspace::computeSchedule() {

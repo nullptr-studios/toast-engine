@@ -14,7 +14,18 @@ void Camera::setActiveCamera(bool force) {
 auto Camera::getView() const -> glm::mat4 {
 	syncTransform();
 
-	return glm::lookAt(world_position, glm::vec3(0), glm::vec3(0, 0, 1));
+	glm::vec3 target(0.0f);
+	glm::vec3 delta = target - world_position;
+	if (glm::length(delta) < 0.0001f) {
+		target = world_position + forward();
+		delta = target - world_position;
+	}
+	const glm::vec3 direction = glm::normalize(delta);
+	glm::vec3 up(0.0f, 0.0f, 1.0f);
+	if (glm::abs(glm::dot(direction, up)) > 0.999f) {
+		up = glm::vec3(0.0f, 1.0f, 0.0f);
+	}
+	return glm::lookAt(world_position, target, up);
 }
 
 auto Camera::getProjection(float aspect) const -> glm::mat4 {

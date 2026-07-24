@@ -294,6 +294,11 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	const vk::CommandBufferBeginInfo begin_info(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 	frame.command_buffer.begin(begin_info);
 
+	// Off-screen work (UI layers, world panels) records before the main rendering scope opens
+	for (auto& pass : m_render_passes) {
+		pass->recordPre(*frame.command_buffer, m_current_frame, image_index);
+	}
+
 	const vk::Image image = m_output_target->getColorImage(image_index);
 	const vk::ImageLayout color_attachment_layout = vk::ImageLayout::eColorAttachmentOptimal;
 	const vk::ImageLayout previous_layout = m_output_image_layouts.at(image_index);
@@ -698,7 +703,10 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 	}
 	submit_info.commandBufferCount = 1;
 	submit_info.pCommandBuffers = &command_buffer;
-	m_core->getGraphicsQueue().submit(submit_info, *frame.in_flight);
+	{
+		std::scoped_lock submit_lock(m_core->graphicsSubmitMutex());
+		m_core->getGraphicsQueue().submit(submit_info, *frame.in_flight);
+	}
 
 	// Present onto target texture
 	const auto present_result = m_output_target->present(image_index, present_sync ? signal_semaphore : vk::Semaphore {});
@@ -870,6 +878,10 @@ void VulkanRenderer::tick(float time) noexcept {
 	frame.mesh_instances.clear();
 	frame.debug_line_vertices.clear();
 	frame.debug_gizmo_instances.clear();
+	frame.ui_command_buffers.clear();
+	frame.ui_output_views.clear();
+	frame.ui_world_panels.clear();
+	frame.ui_slot_guard.reset();
 
 	std::vector<toast::MeshNode*> mesh_nodes_snapshot;
 	{
@@ -939,6 +951,11 @@ void VulkanRenderer::tick(float time) noexcept {
 		  .camera_position = m_camera->world_position,
 		  .time = time
 		};
+	}
+
+	// UI contexts update and record their draw data on the main thread
+	if (m_ui_frame_builder) {
+		m_ui_frame_builder(frame);
 	}
 
 	submitFrame();

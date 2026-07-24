@@ -57,6 +57,9 @@ public:
 	void registerDependency(Node& from, Node& to) override;
 	void unregisterDependency(Node& from, Node& to) override;
 
+	[[nodiscard]]
+	auto participatesIn(NodeOwnerParticipation use) const noexcept -> bool override;
+
 	/// Name lookup over origin's subtree
 	auto findFrom(const Node& origin, std::string_view query) -> Box<Node> override;
 
@@ -98,6 +101,9 @@ protected:
 	SnapSetting m_rotate_snap {true, 30.0f};
 	SnapSetting m_scale_snap {true, 0.10f};
 	bool m_game_camera = false;    ///< false = editor camera
+
+	[[nodiscard]]
+	auto isActiveWorkspace() const noexcept -> bool;
 
 	void eventSubscriptions();
 

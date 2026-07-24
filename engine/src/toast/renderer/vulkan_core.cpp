@@ -431,19 +431,14 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	    formatQueueFlags(m_physical_device.getQueueFamilyProperties()[m_transfer_queue_family_index].queueFlags)
 	);
 
+	const auto queue_family_properties = m_physical_device.getQueueFamilyProperties();
 	std::vector<uint32_t> unique_queue_families;
-	auto push_unique = [&](uint32_t family_index) {
-		if (family_index == k_invalid_queue_family) {
-			return;
-		}
-		if (std::find(unique_queue_families.begin(), unique_queue_families.end(), family_index) == unique_queue_families.end()) {
+	unique_queue_families.reserve(queue_family_properties.size());
+	for (uint32_t family_index = 0; family_index < static_cast<uint32_t>(queue_family_properties.size()); family_index++) {
+		if (queue_family_properties[family_index].queueCount > 0) {
 			unique_queue_families.push_back(family_index);
 		}
-	};
-
-	push_unique(m_graphics_queue_family_index);
-	push_unique(m_compute_queue_family_index);
-	push_unique(m_transfer_queue_family_index);
+	}
 
 	float queue_priority = 1.0f;
 	std::vector<vk::DeviceQueueCreateInfo> queue_create_infos;
@@ -461,6 +456,35 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	vk::PhysicalDeviceFeatures enabled_features {};
 	enabled_features.samplerAnisotropy = m_sampler_anisotropy_supported ? VK_TRUE : VK_FALSE;
 
+	vk::PhysicalDeviceFeatures2 supported_features {};
+	vk::PhysicalDeviceVulkan12Features supported_vulkan12 {};
+	vk::PhysicalDeviceVulkan13Features supported_vulkan13 {};
+	vk::PhysicalDeviceVulkan11Features supported_vulkan11 {};
+	supported_vulkan12.pNext = &supported_vulkan11;
+	supported_vulkan13.pNext = &supported_vulkan12;
+	supported_features.pNext = &supported_vulkan13;
+	(*m_physical_device).getFeatures2(&supported_features);
+	auto require_feature = [](bool supported, std::string_view name) {
+		if (!supported) {
+			TOAST_CRITICAL("Render", "Selected Vulkan device is missing required capability: {}", name);
+		}
+	};
+	require_feature(supported_vulkan13.dynamicRendering == VK_TRUE, "Vulkan 1.3 dynamicRendering");
+	require_feature(supported_vulkan13.synchronization2 == VK_TRUE, "Vulkan 1.3 synchronization2");
+	require_feature(
+	    supported_vulkan13.shaderDemoteToHelperInvocation == VK_TRUE,
+	    "Vulkan 1.3 shaderDemoteToHelperInvocation (required by UI clip())"
+	);
+	require_feature(supported_vulkan12.descriptorIndexing == VK_TRUE, "Vulkan 1.2 descriptorIndexing");
+	require_feature(supported_vulkan12.runtimeDescriptorArray == VK_TRUE, "Vulkan 1.2 runtimeDescriptorArray");
+	require_feature(supported_vulkan12.descriptorBindingPartiallyBound == VK_TRUE, "Vulkan 1.2 descriptorBindingPartiallyBound");
+	require_feature(
+	    supported_vulkan12.descriptorBindingVariableDescriptorCount == VK_TRUE,
+	    "Vulkan 1.2 descriptorBindingVariableDescriptorCount"
+	);
+	require_feature(supported_vulkan12.bufferDeviceAddress == VK_TRUE, "Vulkan 1.2 bufferDeviceAddress");
+	require_feature(supported_vulkan11.shaderDrawParameters == VK_TRUE, "Vulkan 1.1 shaderDrawParameters");
+
 	std::vector<const char*> device_extensions(required_device_extensions.begin(), required_device_extensions.end());
 	vk::DeviceCreateInfo device_ci({}, queue_create_infos, {}, device_extensions, &enabled_features);
 	vk::PhysicalDeviceVulkan12Features vulkan12_features {};
@@ -470,6 +494,7 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	vulkan13_features.pNext = &vulkan12_features;
 	vulkan13_features.dynamicRendering = VK_TRUE;
 	vulkan13_features.synchronization2 = VK_TRUE;
+	vulkan13_features.shaderDemoteToHelperInvocation = VK_TRUE;
 	vulkan12_features.descriptorIndexing = VK_TRUE;
 	vulkan12_features.runtimeDescriptorArray = VK_TRUE;
 	vulkan12_features.descriptorBindingPartiallyBound = VK_TRUE;
@@ -613,6 +638,14 @@ auto VulkanCore::calculateDeviceScore(const vk::PhysicalDevice& device, std::spa
 		extension_score += 75;
 	}
 
+	const bool supports_shader_demote =
+	    props.apiVersion >= VK_API_VERSION_1_3 && vulkan13_features.shaderDemoteToHelperInvocation == VK_TRUE;
+	if (!supports_shader_demote) {
+		required_missing_names.emplace_back("Vulkan 1.3 shaderDemoteToHelperInvocation (required by UI clip())");
+	} else {
+		extension_score += 75;
+	}
+
 	const bool supports_descriptor_indexing =
 	    props.apiVersion >= VK_API_VERSION_1_2 && vulkan12_features.descriptorIndexing == VK_TRUE;
 	if (!supports_descriptor_indexing) {
@@ -651,6 +684,14 @@ auto VulkanCore::calculateDeviceScore(const vk::PhysicalDevice& device, std::spa
 		required_missing_names.emplace_back("Vulkan 1.2 buffer device address");
 	} else {
 		extension_score += 75;
+	}
+
+	const bool supports_shader_draw_parameters =
+	    props.apiVersion >= VK_API_VERSION_1_1 && vulkan11_features.shaderDrawParameters == VK_TRUE;
+	if (!supports_shader_draw_parameters) {
+		required_missing_names.emplace_back("Vulkan 1.1 shaderDrawParameters");
+	} else {
+		extension_score += 25;
 	}
 
 	for (const auto* required : required_device_extensions) {

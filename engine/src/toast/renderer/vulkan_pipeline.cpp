@@ -47,8 +47,14 @@ auto createGraphicsPipelineImpl(
 		rendering_ci.depthAttachmentFormat = *config.depth_format;
 	}
 
+	// No attributes means the shader generates its vertices
+	const uint32_t vertex_binding_count = config.vertex_attributes.empty() ? 0 : 1;
 	const vk::PipelineVertexInputStateCreateInfo vertex_input_ci(
-	    {}, 1, &config.vertex_binding, static_cast<uint32_t>(config.vertex_attributes.size()), config.vertex_attributes.data()
+	    {},
+	    vertex_binding_count,
+	    &config.vertex_binding,
+	    static_cast<uint32_t>(config.vertex_attributes.size()),
+	    config.vertex_attributes.data()
 	);
 	const vk::PipelineInputAssemblyStateCreateInfo input_assembly_ci({}, config.topology);
 
@@ -79,6 +85,10 @@ auto createGraphicsPipelineImpl(
 	switch (blend_preset) {
 		case BlendPreset::alpha:
 			src_factor = vk::BlendFactor::eSrcAlpha;
+			dst_factor = vk::BlendFactor::eOneMinusSrcAlpha;
+			break;
+		case BlendPreset::premultiplied:
+			src_factor = vk::BlendFactor::eOne;
 			dst_factor = vk::BlendFactor::eOneMinusSrcAlpha;
 			break;
 		case BlendPreset::additive:

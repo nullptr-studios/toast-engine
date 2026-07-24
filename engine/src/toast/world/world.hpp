@@ -44,6 +44,11 @@ public:
 
 	void tick() override;
 
+	[[nodiscard]]
+	auto participatesIn(NodeOwnerParticipation /*use*/) const noexcept -> bool override {
+		return true;
+	}
+
 	/**
 	 * @brief Records a tick ordering constraint between two active nodes
 	 * @param from Node that must be ticked before `to`

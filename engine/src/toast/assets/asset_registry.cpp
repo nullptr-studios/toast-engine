@@ -26,6 +26,12 @@ void AssetRegistry::init() {
 	s_raw["audio_bank"] = [](std::vector<uint8_t> d) { return std::make_unique<AudioBank>(std::move(d)); };
 	s_raw["audio_strings"] = [](std::vector<uint8_t> d) { return std::make_unique<AudioStrings>(std::move(d)); };
 	s_raw["script"] = [](std::vector<uint8_t> d) { return std::make_unique<Script>(std::move(d)); };
+	s_raw["ui_element"] = [](std::vector<uint8_t> d) { return std::make_unique<UIElement>(std::move(d)); };
+	s_raw["ui_style"] = [](std::vector<uint8_t> d) { return std::make_unique<UIStyle>(std::move(d)); };
+	s_raw["font"] = [](std::vector<uint8_t> d) { return std::make_unique<Font>(std::move(d)); };
+	s_raw["ui_image"] = [](std::vector<uint8_t> d) { return std::make_unique<UIImage>(std::move(d)); };
+	s_raw["localization"] = [](std::vector<uint8_t> d) { return std::make_unique<Localization>(std::move(d)); };
+	s_raw["image_localization"] = [](std::vector<uint8_t> d) { return std::make_unique<ImageLocalization>(std::move(d)); };
 	s_raw["shader"] = [](std::vector<uint8_t> d) { return std::make_unique<Shader>(std::move(d)); };
 
 	// Plain TOML loaders
@@ -60,6 +66,9 @@ void AssetRegistry::init() {
 		return std::make_unique<AudioSnapshot>(t, std::move(s));
 	};
 	s_schema_toml["audio_vca"] = [](const toml::table& t, Handle<Schema> s) { return std::make_unique<AudioVca>(t, std::move(s)); };
+	s_schema_toml["color_scheme"] = [](const toml::table& t, Handle<Schema> s) {
+		return std::make_unique<ColorScheme>(t, std::move(s));
+	};
 
 	// Lua global names
 	s_lua_names["mesh"] = "Mesh";
@@ -83,6 +92,13 @@ void AssetRegistry::init() {
 	s_lua_names["audio_port"] = "AudioPort";
 	s_lua_names["audio_snapshot"] = "AudioSnapshot";
 	s_lua_names["audio_vca"] = "AudioVca";
+	s_lua_names["ui_element"] = "UIElement";
+	s_lua_names["ui_style"] = "UIStyle";
+	s_lua_names["font"] = "Font";
+	s_lua_names["ui_image"] = "UIImage";
+	s_lua_names["color_scheme"] = "ColorScheme";
+	s_lua_names["localization"] = "Localization";
+	s_lua_names["image_localization"] = "ImageLocalization";
 }
 
 void AssetRegistry::registerLuaName(std::string_view type, std::string_view lua_name) {

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -48,6 +49,8 @@ public partial class ToastEngine : IDisposable {
 	private GameDestroy? m_gameDestroy;
 
 	private IntPtr m_gameHandle = IntPtr.Zero;
+	private string? m_gameTempPath;
+	private readonly List<(IntPtr Handle, string Path)> m_retiredGameLibraries = [];
 
 	// the engine dll lives at ../toast_engine/bin
 	static ToastEngine() {
@@ -69,12 +72,13 @@ public partial class ToastEngine : IDisposable {
 		NativeLibrary.Load(EngineDllPath());
 
 		var gameDll = FindGameDll();
-		var tempPath = GameDllTempPath;
+		var tempPath = CreateGameTempPath();
 		Directory.CreateDirectory(Path.GetDirectoryName(tempPath)!);
 		File.Copy(gameDll, tempPath, true);
 		LoadFrom(tempPath);
 
 		m_engineInstance = toast_create();
+		Log.Info($"Loading game library: {gameDll}");
 		m_currentGameInstance = m_gameCreate?.Invoke() ?? IntPtr.Zero;
 
 		toast_set_working_directory(
@@ -111,7 +115,11 @@ public partial class ToastEngine : IDisposable {
 	private static string NativeLibPrefix => OperatingSystem.IsWindows() ? "" : "lib";
 	private static string NativeLibExt => OperatingSystem.IsWindows() ? ".dll" : ".so";
 
-	private string GameDllTempPath => Path.Combine(ProjectPath, ".toast", $"game_temp{NativeLibExt}");
+	private string CreateGameTempPath() => Path.Combine(
+		ProjectPath,
+		".toast",
+		$"game_temp_{Environment.ProcessId}_{Guid.NewGuid():N}{NativeLibExt}"
+	);
 
 	public void Dispose() {
 		IsEngineReady = false;
@@ -119,6 +127,7 @@ public partial class ToastEngine : IDisposable {
 		m_tickTask.Wait();
 		m_gameDestroy?.Invoke(m_currentGameInstance);
 		toast_destroy(m_engineInstance);
+		ReleaseGameLibraries();
 		m_cancellationSource.Dispose();
 	}
 
@@ -163,16 +172,14 @@ public partial class ToastEngine : IDisposable {
 
 		Events.Send(new SetFocusedNode { Node = "" });
 
+		var newHandle = IntPtr.Zero;
+		var adopted = false;
+		var newTempPath = CreateGameTempPath();
 		try {
-			// Overwrite the temp copy of the game DLL
-			if (File.Exists(GameDllTempPath))
-				File.Delete(GameDllTempPath);
-			File.Copy(FindGameDll(), GameDllTempPath);
-
-			// Load the NEW library while the OLD one is still loaded
-			// the old .dll stays valid until dlclose
-			// this ensures we never have a gap where no game library is available
-			var newHandle = NativeLibrary.Load(GameDllTempPath);
+			var gameDll = FindGameDll();
+			Log.Info($"Reloading game library: {gameDll}");
+			File.Copy(gameDll, newTempPath);
+			newHandle = NativeLibrary.Load(newTempPath);
 			var newCreate =
 				Marshal.GetDelegateForFunctionPointer<GameCreate>(NativeLibrary.GetExport(newHandle, "game_create"));
 			var newDestroy =
@@ -181,16 +188,22 @@ public partial class ToastEngine : IDisposable {
 			toast_pop_application();
 			m_currentGameInstance = IntPtr.Zero;
 
-			if (m_gameHandle != IntPtr.Zero)
-				NativeLibrary.Free(m_gameHandle);
+			if (m_gameHandle != IntPtr.Zero && m_gameTempPath is not null)
+				m_retiredGameLibraries.Add((m_gameHandle, m_gameTempPath));
 
 			m_gameHandle = newHandle;
+			m_gameTempPath = newTempPath;
 			m_gameCreate = newCreate;
 			m_gameDestroy = newDestroy;
+			adopted = true;
 
 			m_currentGameInstance = m_gameCreate?.Invoke() ?? IntPtr.Zero;
 			toast_begin_application();
 		} catch (Exception ex) {
+			if (!adopted) {
+				if (newHandle != IntPtr.Zero) NativeLibrary.Free(newHandle);
+				TryDeleteGameTemp(newTempPath);
+			}
 			Console.Error.WriteLine($"Hot reload failed: {ex.Message}");
 		} finally {
 			m_tickGate.Set();
@@ -234,19 +247,57 @@ public partial class ToastEngine : IDisposable {
 	}
 
 	private string FindGameDll() {
-		var path = Directory.EnumerateFiles(Path.Combine(ProjectPath, "build"), $"*{NativeLibExt}")
-			.FirstOrDefault(f => Path.GetFileName(f).Contains("game", StringComparison.OrdinalIgnoreCase));
-		if (path is null)
-			throw new FileNotFoundException($"Game DLL not found in {Path.Combine(ProjectPath, "build")}");
-		return path;
+		var buildDirectory = Path.Combine(ProjectPath, "build");
+		var libraries = Directory.EnumerateFiles(buildDirectory, $"*{NativeLibExt}").ToArray();
+		var preferred = libraries.FirstOrDefault(path =>
+			Path.GetFileNameWithoutExtension(path).Equals("my_game", StringComparison.OrdinalIgnoreCase));
+		if (preferred is not null) return preferred;
+
+		var candidates = libraries.Where(path => {
+			var name = Path.GetFileNameWithoutExtension(path);
+			return name.Contains("game", StringComparison.OrdinalIgnoreCase) &&
+			       !name.Equals("dummy_game", StringComparison.OrdinalIgnoreCase);
+		}).ToArray();
+
+		return candidates.Length switch {
+			1 => candidates[0],
+			0 => throw new FileNotFoundException($"Game DLL not found in {buildDirectory}"),
+			_ => throw new InvalidOperationException(
+				$"Multiple game DLLs found in {buildDirectory}: {string.Join(", ", candidates.Select(Path.GetFileName))}"
+			)
+		};
 	}
 
 	private void LoadFrom(string dllPath) {
 		m_gameHandle = NativeLibrary.Load(dllPath);
+		m_gameTempPath = dllPath;
 		m_gameCreate =
 			Marshal.GetDelegateForFunctionPointer<GameCreate>(NativeLibrary.GetExport(m_gameHandle, "game_create"));
 		m_gameDestroy =
 			Marshal.GetDelegateForFunctionPointer<GameDestroy>(NativeLibrary.GetExport(m_gameHandle, "game_destroy"));
+	}
+
+	private void ReleaseGameLibraries() {
+		if (m_gameHandle != IntPtr.Zero) {
+			NativeLibrary.Free(m_gameHandle);
+			m_gameHandle = IntPtr.Zero;
+		}
+		if (m_gameTempPath is not null) TryDeleteGameTemp(m_gameTempPath);
+
+		foreach (var (handle, path) in m_retiredGameLibraries) {
+			NativeLibrary.Free(handle);
+			TryDeleteGameTemp(path);
+		}
+		m_retiredGameLibraries.Clear();
+	}
+
+	private static void TryDeleteGameTemp(string path) {
+		try {
+			if (File.Exists(path)) File.Delete(path);
+		} catch (IOException) {
+			// Native loader teardown can briefly retain a mapped shadow copy
+		} catch (UnauthorizedAccessException) {
+		}
 	}
 
 	private void PrepareLogServer() {

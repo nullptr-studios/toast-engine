@@ -11,6 +11,7 @@
 #pragma once
 #include "box.hpp"
 
+#include <cstdint>
 #include <functional>
 #include <mutex>
 #include <string_view>
@@ -22,6 +23,12 @@
 #include <vector>
 
 namespace toast {
+enum class NodeOwnerParticipation : uint8_t {
+	render,
+	runtime_input,
+	gameplay_tick,
+};
+
 class TOAST_API INodeOwner {
 public:
 	INodeOwner() = default;
@@ -29,6 +36,10 @@ public:
 	virtual auto name() -> std::string = 0;
 
 	virtual void tick() = 0;
+
+	/// Determines if this owner is elegible for runtime systems
+	[[nodiscard]]
+	virtual auto participatesIn(NodeOwnerParticipation use) const noexcept -> bool = 0;
 
 	virtual void registerDependency(Node& from, Node& to) = 0;
 	virtual void unregisterDependency(Node& from, Node& to) = 0;

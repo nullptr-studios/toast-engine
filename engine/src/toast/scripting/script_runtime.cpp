@@ -748,6 +748,22 @@ void ScriptRuntime::call(std::string_view fn_name) noexcept {
 	}
 }
 
+auto ScriptRuntime::hasFunction(std::string_view fn_name) const noexcept -> bool {
+	if (m_instances.empty()) {
+		return false;
+	}
+	LuaState::Lock guard = LuaState::get().lock(m_state_index);
+	if (!guard) {
+		return false;
+	}
+	for (const auto& inst : m_instances) {
+		if (inst && inst->isValid() && inst->hasFunction(fn_name)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 void ScriptRuntime::callWithLuaStack(std::string_view name, lua_State* l, int args_base, int n_args) noexcept {
 	if (m_instances.empty()) {
 		return;

@@ -434,6 +434,7 @@ public:
 		if (name.starts_with("::")) {
 			name.remove_prefix(2);
 		}
+		auto types = (*instance).types;
 		auto it = (*instance).types.find(name);
 		return it != (*instance).types.end() ? it->second : nullptr;
 	}

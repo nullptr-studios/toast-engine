@@ -187,6 +187,13 @@ auto Node::hasTickFunction(TickFunctionList mask) const noexcept -> bool {
 	return m_script_runtime && m_script_runtime->hasTick(mask);
 }
 
+auto Node::hasCallable(std::string_view callable_name) const noexcept -> bool {
+	if (m_info && m_info->getMethod(callable_name)) {
+		return true;
+	}
+	return m_script_runtime && m_script_runtime->hasFunction(callable_name);
+}
+
 void Node::loadScripts() noexcept {
 	m_script_runtime.reset();
 	if (m_scripts.empty()) {

@@ -48,6 +48,23 @@ ProjectSettings::ProjectSettings(const std::filesystem::path& path) {
 			}
 		}
 
+		if (auto* ui = table["ui"].as_table()) {
+			if (auto uri = (*ui)["color_scheme"].value<std::string>()) {
+				m_ui_settings.m_color_scheme = {nullptr, toast::UID::make(), *uri};
+			}
+			if (auto* langs = (*ui)["languages"].as_array()) {
+				m_ui_settings.m_languages.clear();
+				for (const auto& lang : *langs) {
+					if (auto str = lang.value<std::string>()) {
+						m_ui_settings.m_languages.push_back(*str);
+					}
+				}
+			}
+			if (m_ui_settings.m_languages.empty()) {
+				m_ui_settings.m_languages.emplace_back("en");
+			}
+		}
+
 		TOAST_INFO("ProjectSettings", "Loaded '{}' {} — {} database(s)", m_name, version(), m_databases.size());
 
 	} catch (const std::exception& e) {
