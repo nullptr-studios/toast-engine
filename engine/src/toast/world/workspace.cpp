@@ -1,5 +1,6 @@
 #include "workspace.hpp"
 
+#include "camera.hpp"
 #include "node.hpp"
 #include "workspace_events.hpp"
 #include "workspace_events.pb.h"
@@ -18,6 +19,7 @@
 #include <toast/assets/prefab.hpp>
 #include <toast/engine.hpp>
 #include <toast/log.hpp>
+#include <toast/renderer/vulkan_renderer.hpp>
 #include <toast/scripting/asset_proxy.hpp>
 #include <toast/scripting/lua_types.hpp>
 #include <toast/scripting/lua_value_codec.hpp>
@@ -41,11 +43,15 @@ using scripting::stringifyLuaValue;
 static std::unique_ptr<assets::Prefab> s_clipboard;
 
 Workspace::Workspace(UID handle, EmptyTag) : m_handle(handle) {
+	m_editor_camera = std::make_unique<Camera>();
+	m_editor_camera->position = {0.0f, -10.0f, 10.0f};
 	eventSubscriptions();
 }
 
 Workspace::Workspace(std::string_view type, UID handle) : m_handle(handle) {
 	ZoneScoped;
+	m_editor_camera = std::make_unique<Camera>();
+	m_editor_camera->position = {0.0f, -10.0f, 10.0f};
 	eventSubscriptions();
 
 	// Allocation
@@ -56,7 +62,7 @@ Workspace::Workspace(std::string_view type, UID handle) : m_handle(handle) {
 	// Data structure generation
 	generateUid(node);
 	node->m_parent = {};
-	node->m_state = NodeState::root;
+	node->changeNodeState(NodeState::root);
 	node->m_type = NodeType::world_root;
 	node->m_inherited_enabled = true;
 	node->m_name = stripNamespace(node->info()->type);
@@ -72,6 +78,8 @@ Workspace::Workspace(std::string_view type, UID handle) : m_handle(handle) {
 }
 
 Workspace::Workspace(UID uid) : m_handle(uid) {
+	m_editor_camera = std::make_unique<Camera>();
+	m_editor_camera->position = {0.0f, -10.0f, 10.0f};
 	eventSubscriptions();
 
 	// open file
@@ -88,6 +96,7 @@ Workspace::Workspace(UID uid) : m_handle(uid) {
 }
 
 Workspace::Workspace(UID uid, std::string_view source_uri) : m_handle(uid) {
+	m_editor_camera = std::make_unique<Camera>();
 	eventSubscriptions();
 
 	auto bytes = assets::AssetManager::get().loadBytes(source_uri);
@@ -122,7 +131,7 @@ void Workspace::initFromPrefab(const assets::Handle<assets::Prefab>& file) {
 	// Data structure generation
 	generateUid(node);
 	node->m_parent = {};
-	node->m_state = NodeState::root;
+	node->changeNodeState(NodeState::root);
 	node->m_type = NodeType::world_root;
 	node->m_inherited_enabled = true;
 
@@ -135,11 +144,23 @@ void Workspace::initFromPrefab(const assets::Handle<assets::Prefab>& file) {
 	m_root_node = node;
 }
 
+void Workspace::applyActiveCamera() {
+	if (!isActiveWorkspace()) {
+		return;
+	}
+	if (m_game_camera) {
+		renderer::setActiveCamera(activeRenderCamera());
+	} else {
+		renderer::setActiveCamera(m_editor_camera.get());
+	}
+}
+
 Workspace::~Workspace() {
 	if (!m_root_node.exists()) {
 		return;
 	}
 
+	beginCameraShutdown();
 	m_root_node->propagateCallTick(m_root_node->info(), TickFunctionList::on_disable);
 	m_root_node->propagateCallTick(m_root_node->info(), TickFunctionList::end);
 	m_root_node->propagateCallTick(m_root_node->info(), TickFunctionList::destroy);
@@ -442,6 +463,13 @@ void Workspace::eventSubscriptions() {
 			std::istringstream ss(e.value);
 			ss >> deg.x >> deg.y >> deg.z;
 			value = std::any {glm::quat(glm::radians(deg))};
+		} else if (field->value_type == FieldType::uid_t && not field->is_array && field->type.starts_with("Box<")) {
+			auto parsed = assets::Prefab::valueFromString(field->value_type, false, e.value);
+			if (not parsed.has_value()) {
+				TOAST_WARN("World", "NodeChangeParam: couldn't parse '{}' for parameter '{}'", e.value, e.parameter);
+				return true;
+			}
+			value = std::any {findFrom(*m_root_node, std::any_cast<UID>(*parsed))};
 		} else {
 			auto parsed = assets::Prefab::valueFromString(field->value_type, field->is_array, e.value);
 			if (not parsed.has_value()) {
@@ -524,12 +552,26 @@ void Workspace::eventSubscriptions() {
 		return true;
 	});
 
-	// TODO: needs function reflection for this
-	// m_listener.subscribe<event::NodeCallFunction>([this](const auto& e) {
-	// 	m_focused_node->info()->call(e.function);
-	// });
+	m_listener.subscribe<event::NodeCallFunction>([this](const auto& e) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data() || not m_focused_node.exists()) {
+			return false;
+		}
+
+		const FunctionInfo* method = m_focused_node->info()->getMethod(e.function);
+		if (method == nullptr || not method->hasAttribute("Button") || method->return_type != "void" ||
+		    not method->parameters.empty()) {
+			TOAST_WARN("World", "NodeCallFunction: '{}' is not an inspector button", e.function);
+			return true;
+		}
+
+		m_focused_node->info()->call(&*m_focused_node, e.function);
+		return true;
+	});
 
 	m_listener.subscribe<event::NodeEnabled>([this](const auto& e) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			return false;
+		}
 		if (not m_root_node.exists()) {
 			return false;
 		}
@@ -786,7 +828,15 @@ void Workspace::eventSubscriptions() {
 			return false;
 		}
 		m_game_camera = e.game;
+		applyActiveCamera();
 		return true;
+	});
+
+	m_listener.subscribe<event::SetActiveWorkspace>([this](const auto& e) {
+		if (e.handle == m_handle.data()) {
+			applyActiveCamera();
+		}
+		return false;
 	});
 
 	m_listener.subscribe<event::WorkspaceCopyNode>([this](const auto& e) {
@@ -850,6 +900,10 @@ void Workspace::eventSubscriptions() {
 }
 
 void Workspace::tick() {
+	if (!participatesIn(NodeOwnerParticipation::gameplay_tick)) {
+		tickActiveCameraController();
+	}
+
 	if (m_root_node.exists()) {
 		INodeOwner::updateTransforms(*m_root_node);
 	}

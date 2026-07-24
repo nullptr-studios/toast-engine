@@ -1,5 +1,7 @@
 #include "node_owner.hpp"
 
+#include "camera.hpp"
+#include "camera_controller.hpp"
 #include "node.hpp"
 #include "node_3d.hpp"
 
@@ -34,6 +36,175 @@ void INodeOwner::updateTransforms(Node& root) {
 	};
 
 	Walker::walk(root);
+}
+
+void INodeOwner::activateCamera(Camera& camera) {
+	if (m_is_shutting_down || (camera.m_state != NodeState::root && camera.m_state != NodeState::global) || !camera.enabled()) {
+		return;
+	}
+
+	if (m_has_camera_controller && m_active_camera_controller.exists()) {
+		m_active_camera_controller->addCamera(camera);
+		return;
+	}
+
+	if (m_active_camera.exists()) {
+		return;
+	}
+
+	m_active_camera = camera.box().as<Camera>();
+	m_active_camera->m_is_active = true;
+	applyActiveCamera();
+}
+
+void INodeOwner::deactivateCamera(Camera& camera) {
+	if (m_is_shutting_down) {
+		if (m_active_camera.exists() && m_active_camera.rid() == camera.box().rid()) {
+			camera.m_is_active = false;
+			m_active_camera = {};
+		}
+		return;
+	}
+
+	if (m_has_camera_controller && m_active_camera_controller.exists()) {
+		m_active_camera_controller->removeCamera(camera);
+		return;
+	}
+
+	if (!m_active_camera.exists() || m_active_camera.rid() != camera.box().rid()) {
+		return;
+	}
+
+	camera.m_is_active = false;
+	m_active_camera = {};
+	findCamera();
+	applyActiveCamera();
+}
+
+void INodeOwner::findCamera() {
+	if (m_has_camera_controller || m_active_camera.exists()) {
+		return;
+	}
+
+	Box<Camera> candidate;
+	{
+		std::scoped_lock lock(nodes_mutex);
+		forEachNode([&candidate](const _detail::ControlBox& control) {
+			if (candidate.exists() || control.node == nullptr || !control.node->enabled()) {
+				return;
+			}
+			if (control.node->state() == NodeState::root || control.node->state() == NodeState::global) {
+				candidate = control.node->box().as<Camera>();
+			}
+		});
+	}
+	if (candidate.exists()) {
+		activateCamera(*candidate);
+	}
+}
+
+void INodeOwner::activateCameraController(CameraController& controller) {
+	if (m_is_shutting_down || m_active_camera_controller.exists() ||
+	    (controller.m_state != NodeState::root && controller.m_state != NodeState::global) || !controller.enabled()) {
+		return;
+	}
+
+	if (m_active_camera.exists()) {
+		m_active_camera->m_is_active = false;
+		m_active_camera = {};
+	}
+
+	m_active_camera_controller = controller.box().as<CameraController>();
+	m_has_camera_controller = true;
+
+	std::vector<Box<Camera>> cameras;
+	{
+		std::scoped_lock lock(nodes_mutex);
+		forEachNode([&cameras](const _detail::ControlBox& control) {
+			if (control.node == nullptr || !control.node->enabled() ||
+			    (control.node->state() != NodeState::root && control.node->state() != NodeState::global)) {
+				return;
+			}
+			if (Box<Camera> camera = control.node->box().as<Camera>(); camera.exists()) {
+				cameras.emplace_back(std::move(camera));
+			}
+		});
+	}
+
+	for (Box<Camera>& camera : cameras) {
+		m_active_camera_controller->addCamera(*camera);
+	}
+	applyActiveCamera();
+}
+
+void INodeOwner::deactivateCameraController(CameraController& controller) {
+	if (!m_active_camera_controller.exists() || m_active_camera_controller.rid() != controller.box().rid()) {
+		return;
+	}
+
+	m_active_camera_controller = {};
+	m_has_camera_controller = false;
+	if (m_is_shutting_down) {
+		return;
+	}
+	findCameraController();
+	if (!m_has_camera_controller) {
+		findCamera();
+	}
+	applyActiveCamera();
+}
+
+void INodeOwner::findCameraController() {
+	if (m_active_camera_controller.exists()) {
+		return;
+	}
+
+	Box<CameraController> candidate;
+	{
+		std::scoped_lock lock(nodes_mutex);
+		forEachNode([&candidate](const _detail::ControlBox& control) {
+			if (candidate.exists() || control.node == nullptr || !control.node->enabled() ||
+			    (control.node->state() != NodeState::root && control.node->state() != NodeState::global)) {
+				return;
+			}
+			candidate = control.node->box().as<CameraController>();
+		});
+	}
+	if (candidate.exists()) {
+		activateCameraController(*candidate);
+	}
+}
+
+void INodeOwner::tickActiveCameraController() {
+	if (!m_has_camera_controller || !m_active_camera_controller.exists()) {
+		return;
+	}
+	m_active_camera_controller->callTick(m_active_camera_controller->info(), TickFunctionList::tick);
+}
+
+void INodeOwner::beginCameraShutdown() noexcept {
+	m_is_shutting_down = true;
+	if (m_active_camera.exists()) {
+		m_active_camera->m_is_active = false;
+		m_active_camera = {};
+	}
+	m_active_camera_controller = {};
+	m_has_camera_controller = false;
+}
+
+auto INodeOwner::activeCamera() noexcept -> Box<Camera>& {
+	return m_active_camera;
+}
+
+auto INodeOwner::activeRenderCamera() noexcept -> Camera* {
+	if (m_has_camera_controller) {
+		if (!m_active_camera_controller.exists()) {
+			return nullptr;
+		}
+		Box<Camera> camera = m_active_camera_controller->getActiveCamera();
+		return camera.exists() ? &*camera : nullptr;
+	}
+	return m_active_camera.exists() ? &*m_active_camera : nullptr;
 }
 
 namespace {
@@ -242,8 +413,9 @@ void INodeOwner::applyFields(Node& node, const assets::Prefab::BasicNode& data) 
 				continue;
 			}
 
-			// Read only attributes shouldn't be serialized
-			if (f.hasAttribute("ReadOnly")) {
+			// Read-only and transient fields are never restored from persisted data. Checking
+			// NoSerialize here also keeps older files containing those fields safe to load.
+			if (f.hasAttribute("ReadOnly") || f.hasAttribute("NoSerialize")) {
 				continue;
 			}
 

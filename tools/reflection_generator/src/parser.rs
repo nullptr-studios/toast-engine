@@ -235,6 +235,16 @@ fn get_return_type(decl: tree_sitter::Node, func_decl: tree_sitter::Node, source
         .map(|t| source[t.byte_range()].trim().to_string())
         .unwrap_or_default();
 
+    if base == "auto" {
+        for child in func_decl.children(&mut func_decl.walk()) {
+            if child.kind() == "trailing_return_type" {
+                if let Some(return_type) = child.named_child(0) {
+                    return source[return_type.byte_range()].trim().to_string();
+                }
+            }
+        }
+    }
+
     let mut suffix = String::new();
     let mut current = decl.child_by_field_name("declarator");
     while let Some(node) = current {

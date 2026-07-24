@@ -32,6 +32,11 @@ public:
 
 	UIPass(const renderer::VulkanCore& core, vk::Format output_color_format, vk::Format output_depth_format, vk::Extent2D extent);
 
+	[[nodiscard]]
+	auto name() const -> std::string_view override {
+		return "UI";
+	}
+
 	void recordPre(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) override;
 	void record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) override;
 

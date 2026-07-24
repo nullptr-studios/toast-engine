@@ -241,6 +241,10 @@
 						                     Unit="{Binding Unit}"
 						                     IsEnabled="{Binding Editable}"
 						                     IsVisible="{Binding IsInt}" />
+						<elements:EnumBox Value="{Binding EnumValue, Mode=TwoWay}"
+						                  Options="{Binding EnumOptions}"
+						                  IsEnabled="{Binding Editable}"
+						                  IsVisible="{Binding IsEnum}" />
 						<elements:BoolBox Value="{Binding Bool, Mode=TwoWay}"
 						                  IsEnabled="{Binding Editable}"
 						                  IsVisible="{Binding IsBool}" />
@@ -466,7 +470,10 @@
 		<DataTemplate DataType="vm:ButtonVM">
 			<Button Content="{Binding Label}"
 			        Command="{Binding ClickCommand}"
-			        HorizontalAlignment="Stretch" />
+			        HorizontalAlignment="Stretch"
+			        Background="{StaticResource Bg4}"
+			        CornerRadius="6"
+			        HorizontalContentAlignment="Center" />
 		</DataTemplate>
 
 		<!-- Class card -->

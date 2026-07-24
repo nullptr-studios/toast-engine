@@ -4,11 +4,31 @@
 
 #include "camera.hpp"
 
-#include <toast/renderer/vulkan_renderer.hpp>
-
 namespace toast {
-void Camera::setActiveCamera(bool force) {
-	renderer::VulkanRenderer::instance->setActiveCamera(this);
+void Camera::setActiveCamera() {
+	if (m_owner) {
+		m_owner->activateCamera(*this);
+	}
+}
+
+void Camera::begin() {
+	setActiveCamera();
+}
+
+void Camera::end() {
+	if (m_owner) {
+		m_owner->deactivateCamera(*this);
+	}
+}
+
+void Camera::onEnable() {
+	setActiveCamera();
+}
+
+void Camera::onDisable() {
+	if (m_owner) {
+		m_owner->deactivateCamera(*this);
+	}
 }
 
 auto Camera::getView() const -> glm::mat4 {

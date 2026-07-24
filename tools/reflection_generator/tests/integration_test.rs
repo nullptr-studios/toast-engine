@@ -1,6 +1,7 @@
 mod common;
 
-use reflection_generator::{parse, build_node, generate_json, generate_files, strip_export_macros};
+use minijinja::Environment;
+use reflection_generator::{build_node, build_template_context, generate_files, generate_json, parse, strip_export_macros};
 use serde_json::Value as JsonValue;
 use std::fs;
 use std::path::Path;
@@ -395,4 +396,69 @@ fn test_fixture_reflected_functions() {
     if fixture_path.exists() {
         test_single_fixture(fixture_path, "31_reflected_functions", "target/test_outputs", "tests/expected_outputs");
     }
+}
+
+#[test]
+fn test_unqualified_box_parameter_generates_valid_dynamic_cast() {
+    let source = r#"
+        namespace toast {
+        class [[ToastNode]] BoxParameterNode {
+        public:
+            [[Reflect]] void setCamera(Box<Camera> camera);
+        };
+        }
+    "#;
+
+    let classes = parse(source, "box_parameter_node.hpp");
+    let context = build_template_context(&build_node(&classes[0]));
+    let mut environment = Environment::new();
+    environment
+        .add_template("node", include_str!("../templates/node.generated.hpp.jinja2"))
+        .expect("template should parse");
+    let generated = environment
+        .get_template("node")
+        .expect("template should exist")
+        .render(context)
+        .expect("template should render");
+
+    assert!(generated.contains(".as<Camera>()"));
+    assert!(!generated.contains(".as<Box<Camera>()"));
+}
+
+#[test]
+fn test_inspector_attributes_generate_runtime_metadata_and_enum_access() {
+    let source = r#"
+        namespace toast {
+        enum class InspectorMode : int { automatic = 0, manual = 10 };
+
+        class [[ToastNode]] InspectorNode {
+        public:
+            [[Reflect, Enum("Automatic=0", "Manual=10")]] InspectorMode mode = InspectorMode::automatic;
+            [[Reflect, Button]] void resetCamera();
+            [[Reflect, Button("Run Now")]] void run();
+            [[Reflect, Button]] bool invalidButton() const;
+        };
+        }
+    "#;
+
+    let classes = parse(source, "inspector_node.hpp");
+    let node = build_node(&classes[0]);
+    let json = generate_json(std::slice::from_ref(&node));
+    assert_eq!(json[0]["fields"][0]["attributes"]["Enum"][0], "Automatic=0");
+    assert_eq!(json[0]["methods"][0]["attributes"]["Button"], serde_json::json!([]));
+    assert_eq!(json[0]["methods"][1]["attributes"]["Button"][0], "Run Now");
+
+    let context = build_template_context(&node);
+    let mut environment = Environment::new();
+    environment
+        .add_template("node", include_str!("../templates/node.generated.hpp.jinja2"))
+        .expect("template should parse");
+    let generated = environment
+        .get_template("node")
+        .expect("template should exist")
+        .render(context)
+        .expect("template should render");
+
+    assert!(generated.contains("EnumFieldAccess<toast::InspectorNode, InspectorMode"));
+    assert!(generated.contains("{\"Button\", {\"Run Now\"}}"));
 }

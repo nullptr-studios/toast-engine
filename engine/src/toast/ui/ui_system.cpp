@@ -473,9 +473,7 @@ auto UISystem::translate(std::string_view input) const -> std::optional<std::str
 	}
 
 	// Formatted ids are resolved before span markup is injected
-	const bool has_format = id.find("${") != std::string_view::npos || id.find("$b") != std::string_view::npos ||
-	                        id.find("$i") != std::string_view::npos || id.find("$c") != std::string_view::npos ||
-	                        id.find("$$") != std::string_view::npos;
+	const bool has_format = id.contains("${") || id.contains("$b") || id.contains("$i") || id.contains("$c") || id.contains("$$");
 	if (!has_format) {
 		return std::nullopt;
 	}
