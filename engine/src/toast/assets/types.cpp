@@ -13,32 +13,32 @@ auto Asset::refCount() const noexcept -> uint32_t {
 	return m_ref_count.load(std::memory_order_relaxed);
 }
 
-AssetHandleBase::AssetHandleBase(Asset* asset) : m_asset(asset) {
+HandleBase::HandleBase(Asset* asset) : m_asset(asset) {
 	if (m_asset) {
 		m_asset->addRef();
 	}
 }
 
-AssetHandleBase::AssetHandleBase(Asset* asset, toast::UID uid, std::string_view uri) : m_asset(asset), m_uid(uid), m_uri(uri) {
+HandleBase::HandleBase(Asset* asset, toast::UID uid, std::string_view uri) : m_asset(asset), m_uid(uid), m_uri(uri) {
 	if (m_asset) {
 		m_asset->addRef();
 	}
 }
 
-AssetHandleBase::~AssetHandleBase() {
+HandleBase::~HandleBase() {
 	if (m_asset) {
 		m_asset->release();
 	}
 }
 
-AssetHandleBase::AssetHandleBase(const AssetHandleBase& other) : m_asset(other.m_asset), m_uid(other.m_uid) {
+HandleBase::HandleBase(const HandleBase& other) : m_asset(other.m_asset), m_uid(other.m_uid) {
 	if (m_asset) {
 		m_asset->addRef();
 		dispatchOnChange();
 	}
 }
 
-auto AssetHandleBase::operator=(const AssetHandleBase& other) -> AssetHandleBase& {
+auto HandleBase::operator=(const HandleBase& other) -> HandleBase& {
 	if (this != &other) {
 		if (m_asset) {
 			m_asset->release();
@@ -48,21 +48,18 @@ auto AssetHandleBase::operator=(const AssetHandleBase& other) -> AssetHandleBase
 		m_uri = other.m_uri;
 		if (m_asset) {
 			m_asset->addRef();
-			dispatchOnChange();
 		}
+		dispatchOnChange();
 	}
 	return *this;
 }
 
-AssetHandleBase::AssetHandleBase(AssetHandleBase&& other) noexcept
-    : m_asset(other.m_asset),
-      m_uid(other.m_uid),
-      m_uri(other.m_uri) {
+HandleBase::HandleBase(HandleBase&& other) noexcept : m_asset(other.m_asset), m_uid(other.m_uid), m_uri(other.m_uri) {
 	dispatchOnChange();
 	other.m_asset = nullptr;
 }
 
-auto AssetHandleBase::operator=(AssetHandleBase&& other) noexcept -> AssetHandleBase& {
+auto HandleBase::operator=(HandleBase&& other) noexcept -> HandleBase& {
 	if (this != &other) {
 		if (m_asset) {
 			m_asset->release();
@@ -76,31 +73,31 @@ auto AssetHandleBase::operator=(AssetHandleBase&& other) noexcept -> AssetHandle
 	return *this;
 }
 
-void AssetHandleBase::onChangeCallback(std::function<void()>&& callback) {
+void HandleBase::onChangeCallback(std::function<void()>&& callback) {
 	m_callbacks.emplace_back(callback);
 }
 
-auto AssetHandleBase::hasValue() const noexcept -> bool {
+auto HandleBase::hasValue() const noexcept -> bool {
 	return m_asset != nullptr;
 }
 
-auto AssetHandleBase::get() noexcept -> Asset& {
+auto HandleBase::get() noexcept -> Asset& {
 	return *m_asset;
 }
 
-auto AssetHandleBase::get() const noexcept -> const Asset& {
+auto HandleBase::get() const noexcept -> const Asset& {
 	return *m_asset;
 }
 
-auto AssetHandleBase::operator->() noexcept -> Asset* {
+auto HandleBase::operator->() noexcept -> Asset* {
 	return m_asset;
 }
 
-auto AssetHandleBase::operator->() const noexcept -> const Asset* {
+auto HandleBase::operator->() const noexcept -> const Asset* {
 	return m_asset;
 }
 
-void AssetHandleBase::dispatchOnChange() {
+void HandleBase::dispatchOnChange() {
 	// HACK: This can lead to a racist condition
 	for (auto& callback : m_callbacks) {
 		callback();

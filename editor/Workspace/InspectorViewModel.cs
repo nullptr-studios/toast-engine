@@ -198,7 +198,7 @@ public partial class InspectorViewModel : Tool {
         ""field_type"": ""uid_t"",
         ""is_array"": false,
         ""name"": ""m_source_prefab"",
-        ""typename"": ""assets::AssetHandle<assets::Prefab>""
+        ""typename"": ""assets::Handle<assets::Prefab>""
       }
     ],
     ""groups"": [],
@@ -384,7 +384,16 @@ public partial class InspectorViewModel : Tool {
 			card.Groups.Add(group);
 		}
 
-		// TODO: function reflection needed to expose [[Button]] void fn(void) methods -> card.Buttons
+		foreach (var method in info.Methods) {
+			if (!ReflectionDatabase.HasAttr(method.Attributes, "Button") ||
+			    method.ReturnType.Trim() != "void" || method.Parameters.Length != 0)
+				continue;
+			var customLabel = ReflectionDatabase.GetAttr(method.Attributes, "Button");
+			var label = string.IsNullOrWhiteSpace(customLabel)
+				? InspectorFormat.MethodDisplayName(method.Name)
+				: customLabel;
+			card.Buttons.Add(new ButtonVM(label, method.Name, OnButtonInvoked));
+		}
 		return card;
 	}
 
@@ -399,6 +408,11 @@ public partial class InspectorViewModel : Tool {
 	private void OnFieldEdited(FieldVM field, string value) {
 		if (field.IsLua) Events.Send(new NodeChangeLuaParam { Path = field.ParameterName, Value = value });
 		else Events.Send(new NodeChangeParam { Parameter = field.ParameterName, Value = value });
+		WorkspaceState.MarkModified();
+	}
+
+	private static void OnButtonInvoked(string function) {
+		Events.Send(new NodeCallFunction { Function = function });
 		WorkspaceState.MarkModified();
 	}
 
@@ -472,11 +486,17 @@ public partial class InspectorViewModel : Tool {
 		IsEditingName = true;
 	}
 
-	public void CommitRename() {
+	private static readonly HashSet<string> s_reservedNames = ["root", "world", "global"];
+
+	public async void CommitRename() {
 		if (!IsEditingName) return;
 		IsEditingName = false;
 		var n = NameDraft.Trim();
 		if (n.Length == 0 || n == Name || m_uid is null) return;
+		if (s_reservedNames.Contains(n)) {
+			await App.Modals.ShowWarning("Reserved Name", $"'{n}' is a reserved keyword and cannot be used as a node name.");
+			return;
+		}
 
 		Events.Send(new NodeChangeName { Node = m_uid, Name = n });
 		WorkspaceState.MarkModified();

@@ -94,7 +94,7 @@ pub fn build_template_context(node: &NodeInfo) -> json_t {
     // This inline closure updates the flat list, checks for assets, and returns the index
     let mut process_field = |f: &Field| -> usize {
         let idx = all_fields_flat.len();
-        if f.typename.contains("AssetHandle<") {
+        if f.typename.contains("Handle<") {
             has_asset_handle = true;
         }
 
@@ -113,7 +113,8 @@ pub fn build_template_context(node: &NodeInfo) -> json_t {
             "typename":        f.typename,
             "field_type":      serde_json::to_value(&f.field_type).unwrap(),
             "is_array":        f.is_array,
-            "is_asset_handle": f.typename.contains("AssetHandle<"),
+            "is_asset_handle": f.typename.contains("Handle<"),
+            "is_enum":         f.attributes.iter().any(|a| a.name == "Enum") && !f.is_array,
             "attributes":      f.attrib_json,
             "attrs_list":      attrs_list,
             "default":         f.default,
@@ -167,10 +168,18 @@ pub fn build_template_context(node: &NodeInfo) -> json_t {
         .methods
         .iter()
         .map(|m| {
+            let attrs_list: Vec<json_t> = match &m.attrib_json {
+                json_t::Object(map) => map
+                    .iter()
+                    .map(|(k, v)| json!({ "name": k, "args": v }))
+                    .collect(),
+                _ => vec![],
+            };
             json!({
                 "name":        m.name,
                 "return_type": m.return_type,
                 "is_const":    m.is_const,
+                "attrs_list":  attrs_list,
                 "parameters":  m.parameters.iter().enumerate().map(|(i, p)| {
                     json!({
                         "index":           i,

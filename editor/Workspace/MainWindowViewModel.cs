@@ -27,6 +27,7 @@ public partial class MainWindowViewModel : ViewModelBase {
 	private readonly Dictionary<ulong, WorkspaceViewModel> m_workspaces = [];
 	private ulong m_activeWorkspaceHandle;
 	[ObservableProperty] private bool m_curveEditorVisible = true;
+	[ObservableProperty] private bool m_tableEditorVisible = true;
 	[ObservableProperty] private bool m_genericEditorVisible;
 	[ObservableProperty] private bool m_hapticsEditorVisible = true;
 
@@ -75,10 +76,12 @@ public partial class MainWindowViewModel : ViewModelBase {
 			if (e.Dockable == m_toastZoneFactory.LogsVm) m_logsVisible = false;
 			if (e.Dockable == m_toastZoneFactory.HapticsEditorVm) m_hapticsEditorVisible = false;
 			if (e.Dockable == m_toastZoneFactory.CurveEditorVm) m_curveEditorVisible = false;
+			if (e.Dockable == m_toastZoneFactory.TableEditorVm) m_tableEditorVisible = false;
 
 			OnPropertyChanged(nameof(LogsVisible));
 			OnPropertyChanged(nameof(HapticsEditorVisible));
 			OnPropertyChanged(nameof(CurveEditorVisible));
+			OnPropertyChanged(nameof(TableEditorVisible));
 		};
 
 		m_dockFactory.ActiveDockableChanged += (_, _) => {
@@ -116,6 +119,7 @@ public partial class MainWindowViewModel : ViewModelBase {
 		if (m_dockFactory.SchemaEditorVm is { } schema) yield return schema;
 		if (m_toastZoneFactory.CurveEditorVm is { } curve) yield return curve;
 		if (m_toastZoneFactory.HapticsEditorVm is { } haptics) yield return haptics;
+		if (m_toastZoneFactory.TableEditorVm is { } table) yield return table;
 	}
 
 	[RelayCommand]
@@ -174,6 +178,11 @@ public partial class MainWindowViewModel : ViewModelBase {
 			m_toastZoneFactory.ToggleTool("Curve");
 	}
 
+	partial void OnTableEditorVisibleChanged(bool value) {
+		if (value != m_toastZoneFactory.IsToolVisible("Table"))
+			m_toastZoneFactory.ToggleTool("Table");
+	}
+
 	private async void OnEditorOpenRequested(AssetFile file) {
 		if (file.Definition is not { CanBeEdited: true } def) return;
 		if (file.Uid is not { } uid) return;
@@ -204,6 +213,13 @@ public partial class MainWindowViewModel : ViewModelBase {
 				if (m_toastZoneFactory.HapticsEditorVm is { } hapticsVm) {
 					_ = OpenToastEditorAsync(hapticsVm, uid, virtualPath, def, recoverPath);
 					HapticsEditorVisible = true;
+				}
+
+				break;
+			case "TableEditor":
+				if (m_toastZoneFactory.TableEditorVm is { } tableVm) {
+					_ = OpenToastEditorAsync(tableVm, uid, virtualPath, def, recoverPath);
+					TableEditorVisible = true;
 				}
 
 				break;

@@ -30,7 +30,7 @@ public:
 	 * @param handle Handle to the loaded asset::Action; kept alive for the action's lifetime
 	 * @return A new action, or nullptr when the handle does not resolve
 	 */
-	static auto fromAsset(assets::AssetHandle<assets::Action> handle) -> std::unique_ptr<Action>;
+	static auto fromAsset(assets::Handle<assets::Action> handle) -> std::unique_ptr<Action>;
 
 	/**
 	 * @brief Evaluates every bind, accumulates the value and updates timing state
@@ -78,7 +78,7 @@ public:
 private:
 	void updateTiming(const SignalList& fired, bool active, float delta);
 
-	assets::AssetHandle<assets::Action> m_handle;
+	assets::Handle<assets::Action> m_handle;
 	toast::UID m_uid;
 	std::string m_name;
 	std::string m_function_name;

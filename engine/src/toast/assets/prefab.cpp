@@ -1094,8 +1094,8 @@ void Prefab::serializeNode(const toast::Node& node, bool is_root) {
 	};
 
 	auto make_field = [&](const FieldInfo* f_info) -> std::optional<Field> {
-		// Ignore fields with ReadOnly attribute
-		if (f_info->hasAttribute("ReadOnly")) {
+		// Ignore fields with ReadOnly or NoSerialize attribute
+		if (f_info->hasAttribute("ReadOnly") || f_info->hasAttribute("NoSerialize")) {
 			return {};
 		}
 
@@ -1294,7 +1294,7 @@ auto Prefab::fieldEquals(FieldType type, bool is_array, const std::any& a, const
 	} catch (const std::bad_any_cast&) { return false; }
 }
 
-auto Prefab::flattenedRootFields(const AssetHandle<Prefab>& source) const -> std::optional<BasicNode> {
+auto Prefab::flattenedRootFields(const Handle<Prefab>& source) const -> std::optional<BasicNode> {
 	if (not source.hasValue()) {
 		return std::nullopt;
 	}

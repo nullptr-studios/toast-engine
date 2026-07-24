@@ -62,7 +62,7 @@ private:
 	void applyProperties() const;
 
 	[[Reflect, Name("Audio Event")]]
-	assets::AssetHandle<assets::AudioEvent> m_event;
+	assets::Handle<assets::AudioEvent> m_event;
 
 	[[Reflect]]
 	bool m_play_on_enable = false;

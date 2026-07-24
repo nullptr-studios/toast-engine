@@ -11,7 +11,7 @@ void AudioCapsuleEmitter::halfHeight(float value) {
 }
 
 auto AudioCapsuleEmitter::emitterPosition(const glm::vec3& listener) -> glm::vec3 {
-	glm::vec3 center = worldPos();
+	glm::vec3 center = world_position;
 	glm::vec3 axis = forward();
 	glm::vec3 a = center - axis * m_half_height;
 	glm::vec3 b = center + axis * m_half_height;

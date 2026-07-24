@@ -33,7 +33,7 @@ enum class AccumulationType : uint8_t { highest, average };
  */
 class TOAST_API Action : public Data {
 public:
-	explicit Action(const toml::table& table, AssetHandle<Schema> schema = {});
+	explicit Action(const toml::table& table, Handle<Schema> schema = {});
 
 	[[nodiscard]]
 	auto type() const -> std::string_view override {

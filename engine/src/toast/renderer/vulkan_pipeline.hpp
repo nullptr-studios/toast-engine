@@ -26,6 +26,14 @@ public:
 		compute
 	};
 
+	enum class BlendPreset : uint8_t {
+		none,             ///< blending disabled
+		alpha,            ///< srcAlpha, 1-srcAlpha
+		premultiplied,    ///< one, 1-srcAlpha (premultiplied-alpha source)
+		additive,         ///< one, one
+		multiply,         ///< dstColor, zero
+	};
+
 	struct Config {
 		PipelineType pipeline_type = PipelineType::graphics;
 		std::string debug_name;
@@ -57,7 +65,8 @@ public:
 		// Depth/blend state
 		bool depth_test = true;
 		bool depth_write = true;
-		bool blend_enable = false;    // standard alpha blending (srcAlpha, 1-srcAlpha) when true
+		bool blend_enable = false;    // legacy
+		BlendPreset blend_preset = BlendPreset::none;
 	};
 
 	VulkanPipeline() = default;

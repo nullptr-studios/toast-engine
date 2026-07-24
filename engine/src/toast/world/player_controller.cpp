@@ -18,6 +18,9 @@ void PlayerController::init() {
 	m_parent = parent();
 
 	listener().subscribe<event::InputEvent>([this](const event::InputEvent& e) {
+		if (!participatesIn(toast::NodeOwnerParticipation::runtime_input)) {
+			return false;
+		}
 		if (m_enabled_actions.contains(e.action_id.data())) {
 			dispatchToParent(e);
 		}
@@ -25,6 +28,9 @@ void PlayerController::init() {
 	});
 
 	listener().subscribe<event::SetInputLayout>([this](const event::SetInputLayout& e) {
+		if (!participatesIn(toast::NodeOwnerParticipation::runtime_input)) {
+			return false;
+		}
 		if (matchesTarget(e.target)) {
 			setLayout(e.layout);
 		}
@@ -32,6 +38,9 @@ void PlayerController::init() {
 	});
 
 	listener().subscribe<event::SetInputLayer>([this](const event::SetInputLayer& e) {
+		if (!participatesIn(toast::NodeOwnerParticipation::runtime_input)) {
+			return false;
+		}
 		if (matchesTarget(e.target)) {
 			setLayer(e.layer);
 		}
@@ -39,6 +48,9 @@ void PlayerController::init() {
 	});
 
 	listener().subscribe<event::PlayHaptic>([this](const event::PlayHaptic& e) {
+		if (!participatesIn(toast::NodeOwnerParticipation::runtime_input)) {
+			return false;
+		}
 		if (matchesTarget(e.target)) {
 			playHaptic(e.haptic);
 		}
@@ -58,7 +70,7 @@ void PlayerController::setLayer(std::string_view layer) {
 	rebuildEnabledActions();
 }
 
-void PlayerController::playHaptic(assets::AssetHandle<assets::Haptic> haptic) const {
+void PlayerController::playHaptic(assets::Handle<assets::Haptic> haptic) const {
 	HapticsSystem::get().play(controller_id, std::move(haptic));
 }
 

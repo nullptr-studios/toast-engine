@@ -98,6 +98,9 @@
         <Protobuf Include="..\protos\workspace_events.proto">
             <Link>Protos\workspace_events.proto</Link>
         </Protobuf>
+        <Protobuf Include="..\protos\render_events.proto">
+            <Link>Protos\render_events.proto</Link>
+        </Protobuf>
     </ItemGroup>
 
     <Target Name="MakeToktxExecutable" AfterTargets="Build" Condition="!$([MSBuild]::IsOSPlatform('Windows'))">

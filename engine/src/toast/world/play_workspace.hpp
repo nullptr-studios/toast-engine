@@ -33,6 +33,9 @@ public:
 
 	void tick() override;
 
+	[[nodiscard]]
+	auto participatesIn(NodeOwnerParticipation use) const noexcept -> bool override;
+
 private:
 	TickScheduler m_scheduler;
 	bool m_paused = false;

@@ -33,7 +33,7 @@ namespace scripting {
 // One per script
 class ScriptInstance {
 public:
-	ScriptInstance(lua_State* l, const assets::AssetHandle<assets::Script>& script, NodeProxy proxy);
+	ScriptInstance(lua_State* l, const assets::Handle<assets::Script>& script, NodeProxy proxy);
 	~ScriptInstance() = default;
 
 	ScriptInstance(ScriptInstance&&) = default;
@@ -112,7 +112,7 @@ private:
 // One per node
 class TOAST_API ScriptRuntime {
 public:
-	ScriptRuntime(toast::Box<toast::Node> node, const std::vector<assets::AssetHandle<assets::Script>>& scripts);
+	ScriptRuntime(toast::Box<toast::Node> node, const std::vector<assets::Handle<assets::Script>>& scripts);
 	~ScriptRuntime() = default;
 
 	ScriptRuntime(const ScriptRuntime&) = delete;
@@ -123,6 +123,10 @@ public:
 
 	/// Call a named function on all instances
 	void call(std::string_view fn_name) noexcept;
+
+	/// True if any attached script instance exposes a callable field with this name
+	[[nodiscard]]
+	auto hasFunction(std::string_view fn_name) const noexcept -> bool;
 
 	void callWithLuaStack(std::string_view name, lua_State* l, int args_base, int n_args) noexcept;
 

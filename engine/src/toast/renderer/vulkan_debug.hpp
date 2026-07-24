@@ -24,7 +24,7 @@ void setDebugName(const VulkanCore& core, const VkHandle& handle, std::string_vi
 
 	try {
 		core.getDevice().setDebugUtilsObjectNameEXT(handle, std::string(name));
-	} catch (const std::exception& e) { TOAST_WARN("VulkanDebug", "Failed to set debug name '{}': {}", name, e.what()); }
+	} catch (const std::exception& e) { TOAST_WARN("Render", "Failed to set debug name '{}': {}", name, e.what()); }
 }
 
 }

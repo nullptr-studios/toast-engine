@@ -13,7 +13,7 @@ auto SDLOutputTarget::getRequiredInstanceExtensions() -> std::vector<const char*
 	Uint32 count = 0;
 	const char* const* raw_extensions = SDL_Vulkan_GetInstanceExtensions(&count);
 
-	TOAST_TRACE("SDLOutputTarget", "SDL required Vulkan instance extensions: {}", count);
+	TOAST_TRACE("Render", "SDL required Vulkan instance extensions: {}", count);
 	return {raw_extensions, raw_extensions + count};
 }
 
@@ -29,7 +29,7 @@ auto SDLOutputTarget::getRequiredDeviceExtensions() -> std::vector<const char*> 
 
 auto SDLOutputTarget::queryExtent(SDL_Window* window) -> vk::Extent2D {
 	if (!window) {
-		TOAST_CRITICAL("SDLOutputTarget", "Toast Engine Error: SDL output target requires a valid window!");
+		TOAST_CRITICAL("Render", "Toast Engine Error: SDL output target requires a valid window!");
 	}
 
 	int width = 0;
@@ -46,11 +46,11 @@ auto SDLOutputTarget::queryExtent(SDL_Window* window) -> vk::Extent2D {
 auto SDLOutputTarget::createSurface(const VulkanCore& core, SDL_Window* window) -> vk::raii::SurfaceKHR {
 	VkSurfaceKHR raw_surface = VK_NULL_HANDLE;
 	if (!SDL_Vulkan_CreateSurface(window, static_cast<VkInstance>(*core.getInstance()), nullptr, &raw_surface)) {
-		TOAST_ERROR("SDLOutputTarget", "SDL_Vulkan_CreateSurface failed: {}", SDL_GetError());
-		TOAST_CRITICAL("SDLOutputTarget", "Toast Engine Error: Failed to create SDL Vulkan surface!");
+		TOAST_ERROR("Render", "SDL_Vulkan_CreateSurface failed: {}", SDL_GetError());
+		TOAST_CRITICAL("Render", "Toast Engine Error: Failed to create SDL Vulkan surface!");
 	}
 
-	TOAST_TRACE("SDLOutputTarget", "SDL Vulkan surface created successfully");
+	TOAST_TRACE("Render", "SDL Vulkan surface created successfully");
 	return {core.getInstance(), raw_surface};
 }
 

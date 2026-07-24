@@ -353,6 +353,22 @@ struct ProtoTraits<NodeChangeName> {
 TOAST_PROTO_EVENT(NodeChangeName);
 
 template<>
+struct ProtoTraits<NodeCallFunction> {
+	using Proto = proto::events::NodeCallFunction;
+	using Event = NodeCallFunction;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_function(e.function);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return Event {std::string_view {p.function()}}; }
+};
+
+TOAST_PROTO_EVENT(NodeCallFunction);
+
+template<>
 struct ProtoTraits<NodeEnabled> {
 	using Proto = proto::events::NodeEnabled;
 	using Event = NodeEnabled;

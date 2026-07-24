@@ -30,8 +30,27 @@ public:
 
 private:
 	friend class ProjectSettings;
-	assets::AssetHandle<assets::Prefab> m_init_scene;
-	assets::AssetHandle<assets::Prefab> m_player;
+	assets::Handle<assets::Prefab> m_init_scene;
+	assets::Handle<assets::Prefab> m_player;
+};
+
+class TOAST_API UISettings {
+public:
+	[[nodiscard]]
+	auto colorScheme() const {
+		return m_color_scheme;
+	}
+
+	/// the first entry is the default
+	[[nodiscard]]
+	auto languages() const -> const std::vector<std::string>& {
+		return m_languages;
+	}
+
+private:
+	friend class ProjectSettings;
+	assets::Handle<assets::ColorScheme> m_color_scheme;
+	std::vector<std::string> m_languages {"en"};
 };
 
 class TOAST_API ProjectSettings {
@@ -51,12 +70,15 @@ public:
 
 	static auto gameplaySettings() -> const GameplaySettings& { return instance->m_gameplay_settings; }
 
+	static auto uiSettings() -> const UISettings& { return instance->m_ui_settings; }
+
 private:
 	static inline ProjectSettings* instance = nullptr;
 	std::string m_name;
 	std::array<unsigned, 3> m_version {1, 0, 0};
 	std::vector<std::string> m_databases;
 	GameplaySettings m_gameplay_settings;
+	UISettings m_ui_settings;
 };
 
 }

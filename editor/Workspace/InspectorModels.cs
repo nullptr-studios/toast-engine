@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
@@ -15,6 +16,7 @@ namespace editor.Workspace;
 public enum WidgetKind {
 	Float,
 	Int,
+	Enum,
 	Bool,
 	String,
 	Vec2,
@@ -45,7 +47,7 @@ public static class InspectorFormat {
 			"vec3_t" => WidgetKind.Vec3,
 			"vec4_t" => WidgetKind.Vec4,
 			"quaternion_t" => WidgetKind.Vec3, // shown as euler degrees; engine converts on the inspector path
-			"uid_t" => typeName.Contains("AssetHandle<") ? WidgetKind.AssetRef : WidgetKind.NodeRef,
+			"uid_t" => typeName.Contains("Handle<") ? WidgetKind.AssetRef : WidgetKind.NodeRef,
 			_ => WidgetKind.ReadOnly
 		};
 	}
@@ -84,6 +86,38 @@ public static class InspectorFormat {
 		return string.Join(' ', words);
 	}
 
+	public static string MethodDisplayName(string rawName) {
+		var separated = Regex.Replace(rawName, @"(?<=[a-z0-9])(?=[A-Z])", "_");
+		return DisplayName(separated);
+	}
+
+	public static EnumOption[]? ParseEnumOptions(string[] args) {
+		if (args.Length == 0) return null;
+
+		var explicitValues = args.All(a => a.Contains('='));
+		if (!explicitValues && args.Any(a => a.Contains('='))) return null;
+
+		var labels = new HashSet<string>(StringComparer.Ordinal);
+		var values = new HashSet<int>();
+		var result = new EnumOption[args.Length];
+		for (var i = 0; i < args.Length; ++i) {
+			var label = args[i].Trim();
+			var value = i;
+			if (explicitValues) {
+				var separator = args[i].LastIndexOf('=');
+				label = args[i][..separator].Trim();
+				if (!int.TryParse(args[i][(separator + 1)..].Trim(), NumberStyles.Integer,
+					    CultureInfo.InvariantCulture, out value))
+					return null;
+			}
+
+			if (label.Length == 0 || !labels.Add(label) || !values.Add(value)) return null;
+			result[i] = new EnumOption(label, value.ToString(CultureInfo.InvariantCulture));
+		}
+
+		return result;
+	}
+
 	public static string Float(float v) {
 		return v.ToString("R", CultureInfo.InvariantCulture);
 	}
@@ -103,7 +137,7 @@ public static class InspectorFormat {
 			.ToArray();
 	}
 
-	// the inner T of AssetHandle<T> or Box<T>, bare-named, used for picker/drag filtering
+	// the inner T of Handle<T> or Box<T>, bare-named, used for picker/drag filtering
 	public static string? InnerType(string typeName) {
 		var open = typeName.IndexOf('<');
 		if (open < 0) return null;
@@ -130,7 +164,8 @@ public static class InspectorFormat {
 
 		switch (kind) {
 			case WidgetKind.Float:
-			case WidgetKind.Int: {
+			case WidgetKind.Int:
+			case WidgetKind.Enum: {
 				var m = NumberToken.Match(raw);
 				return m.Success ? m.Value : null;
 			}
@@ -239,11 +274,14 @@ public static class InspectorFormat {
 	}
 }
 
+public sealed record EnumOption(string Label, string Value);
+
 public partial class FieldVM : ObservableObject {
 	private readonly string? m_default; // engine-encoded, null if unknown
 	[ObservableProperty] private bool m_bool;
 
 	[ObservableProperty] private float m_float;
+	[ObservableProperty] private string? m_enumValue;
 	[ObservableProperty] private int m_int;
 
 	[ObservableProperty] private bool m_isDefault = true;
@@ -251,6 +289,8 @@ public partial class FieldVM : ObservableObject {
 	[ObservableProperty] private string? m_ref;
 	[ObservableProperty] private string? m_string = "";
 	private bool m_suppress; // true while applying an engine value
+	private readonly Dictionary<string, string> m_enumLabelToValue = new(StringComparer.Ordinal);
+	private readonly Dictionary<string, string> m_enumValueToLabel = new(StringComparer.Ordinal);
 	[ObservableProperty] private bool m_visible = true;
 	[ObservableProperty] private float m_w;
 	[ObservableProperty] private float m_x;
@@ -260,6 +300,15 @@ public partial class FieldVM : ObservableObject {
 	public FieldVM(FieldInfo info) {
 		ParameterName = info.Name;
 		Kind = InspectorFormat.KindOf(info.FieldType, info.IsArray, info.TypeName);
+		if (!info.IsArray && ReflectionDatabase.HasAttr(info.Attributes, "Enum") &&
+		    InspectorFormat.ParseEnumOptions(ReflectionDatabase.GetAttrArgs(info.Attributes, "Enum")) is { } enumOptions) {
+			Kind = WidgetKind.Enum;
+			foreach (var option in enumOptions) {
+				EnumOptions.Add(option.Label);
+				m_enumLabelToValue[option.Label] = option.Value;
+				m_enumValueToLabel[option.Value] = option.Label;
+			}
+		}
 
 		var isColor = ReflectionDatabase.HasAttr(info.Attributes, "Color");
 		if (isColor && !info.IsArray) {
@@ -280,8 +329,9 @@ public partial class FieldVM : ObservableObject {
 		Min = range.Length > 0 && InspectorFormat.TryFloat(range[0], out var lo) ? lo : double.NegativeInfinity;
 		Max = range.Length > 1 && InspectorFormat.TryFloat(range[1], out var hi) ? hi : double.PositiveInfinity;
 
-		m_default = InspectorFormat.NormalizeDefault(Kind, info.Default, info.FieldType) ??
-			InspectorFormat.TypeZero(Kind);
+		m_default = Kind == WidgetKind.Enum
+			? EnumDefault(info.Default)
+			: InspectorFormat.NormalizeDefault(Kind, info.Default, info.FieldType) ?? InspectorFormat.TypeZero(Kind);
 
 		Segments.Add(new TextSegment(DisplayName, false));
 
@@ -355,6 +405,7 @@ public partial class FieldVM : ObservableObject {
 
 	public bool IsFloat => Kind == WidgetKind.Float;
 	public bool IsInt => Kind == WidgetKind.Int;
+	public bool IsEnum => Kind == WidgetKind.Enum;
 	public bool IsBool => Kind == WidgetKind.Bool;
 	public bool IsString => Kind == WidgetKind.String;
 	public bool IsVec2 => Kind == WidgetKind.Vec2;
@@ -369,6 +420,7 @@ public partial class FieldVM : ObservableObject {
 
 	public bool IsColor3 => Kind == WidgetKind.Color3;
 	public bool IsColor4 => Kind == WidgetKind.Color4;
+	public ObservableCollection<string> EnumOptions { get; } = [];
 
 	public event Action<FieldVM, string>? Edited;
 
@@ -381,6 +433,10 @@ public partial class FieldVM : ObservableObject {
 	}
 
 	partial void OnIntChanged(int value) {
+		OnUserEdited();
+	}
+
+	partial void OnEnumValueChanged(string? value) {
 		OnUserEdited();
 	}
 
@@ -440,6 +496,9 @@ public partial class FieldVM : ObservableObject {
 		return Kind switch {
 			WidgetKind.Float => InspectorFormat.Float(Float),
 			WidgetKind.Int => Int.ToString(CultureInfo.InvariantCulture),
+			WidgetKind.Enum => EnumValue is not null && m_enumLabelToValue.TryGetValue(EnumValue, out var enumValue)
+				? enumValue
+				: EnumValue ?? "",
 			WidgetKind.Bool => Bool ? "true" : "false",
 			WidgetKind.String => String ?? "",
 			WidgetKind.Vec2 => $"{InspectorFormat.Float(X)} {InspectorFormat.Float(Y)}",
@@ -465,6 +524,11 @@ public partial class FieldVM : ObservableObject {
 				case WidgetKind.Int:
 					if (InspectorFormat.TryInt(s, out var i)) Int = i;
 					break;
+				case WidgetKind.Enum: {
+					var value = s.Trim();
+					EnumValue = m_enumValueToLabel.GetValueOrDefault(value, value);
+					break;
+				}
 				case WidgetKind.Bool:
 					Bool = s.Trim().Equals("true", StringComparison.OrdinalIgnoreCase);
 					break;
@@ -551,6 +615,25 @@ public partial class FieldVM : ObservableObject {
 		}
 
 		UpdateIsDefault(s);
+	}
+
+	private string? EnumDefault(string? raw) {
+		if (string.IsNullOrWhiteSpace(raw)) return null;
+		if (InspectorFormat.NormalizeDefault(WidgetKind.Int, raw) is { } numeric &&
+		    m_enumValueToLabel.ContainsKey(numeric))
+			return numeric;
+
+		var separator = raw.LastIndexOf(':');
+		var identifier = (separator >= 0 ? raw[(separator + 1)..] : raw).Trim().Trim('{', '}');
+		var normalized = NormalizeEnumName(identifier);
+		foreach (var option in m_enumLabelToValue)
+			if (NormalizeEnumName(option.Key) == normalized)
+				return option.Value;
+		return null;
+	}
+
+	private static string NormalizeEnumName(string value) {
+		return value.Replace(" ", "").Replace("_", "").ToUpperInvariant();
 	}
 
 	private void UpdateIsDefault(string current) {

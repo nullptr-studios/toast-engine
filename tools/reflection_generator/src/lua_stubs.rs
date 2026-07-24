@@ -35,7 +35,7 @@ fn field_lua_type(field: &Field) -> String {
     }
 }
 
-/// Lua type of a Box<T> and AssetHandle<T> field
+/// Lua type of a Box<T> and Handle<T> field
 fn uid_lua_type(typename: &str) -> String {
     let inner = typename
         .trim_start_matches("std::vector<")
@@ -43,7 +43,7 @@ fn uid_lua_type(typename: &str) -> String {
     if let Some(node_type) = inner.strip_prefix("Box<") {
         return bare(node_type.trim_end_matches('>')).to_string();
     }
-    if inner.contains("AssetHandle<") {
+    if inner.contains("Handle<") {
         return "Asset".to_string();
     }
     "any".to_string()
@@ -56,7 +56,7 @@ fn cpp_lua_type(cpp: &str) -> String {
         let inner = t.split("Box<").nth(1).unwrap_or("Node");
         return bare(inner.trim_end_matches(['>', '&', ' '])).to_string();
     }
-    if t.contains("AssetHandle<") {
+    if t.contains("Handle<") {
         return "Asset".to_string();
     }
     if t.contains("bool") {

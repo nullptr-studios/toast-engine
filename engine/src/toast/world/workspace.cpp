@@ -1,5 +1,6 @@
 #include "workspace.hpp"
 
+#include "camera.hpp"
 #include "node.hpp"
 #include "workspace_events.hpp"
 #include "workspace_events.pb.h"
@@ -18,6 +19,7 @@
 #include <toast/assets/prefab.hpp>
 #include <toast/engine.hpp>
 #include <toast/log.hpp>
+#include <toast/renderer/vulkan_renderer.hpp>
 #include <toast/scripting/asset_proxy.hpp>
 #include <toast/scripting/lua_types.hpp>
 #include <toast/scripting/lua_value_codec.hpp>
@@ -41,11 +43,15 @@ using scripting::stringifyLuaValue;
 static std::unique_ptr<assets::Prefab> s_clipboard;
 
 Workspace::Workspace(UID handle, EmptyTag) : m_handle(handle) {
+	m_editor_camera = std::make_unique<Camera>();
+	m_editor_camera->position = {0.0f, -10.0f, 10.0f};
 	eventSubscriptions();
 }
 
 Workspace::Workspace(std::string_view type, UID handle) : m_handle(handle) {
 	ZoneScoped;
+	m_editor_camera = std::make_unique<Camera>();
+	m_editor_camera->position = {0.0f, -10.0f, 10.0f};
 	eventSubscriptions();
 
 	// Allocation
@@ -56,7 +62,7 @@ Workspace::Workspace(std::string_view type, UID handle) : m_handle(handle) {
 	// Data structure generation
 	generateUid(node);
 	node->m_parent = {};
-	node->m_state = NodeState::root;
+	node->changeNodeState(NodeState::root);
 	node->m_type = NodeType::world_root;
 	node->m_inherited_enabled = true;
 	node->m_name = stripNamespace(node->info()->type);
@@ -72,6 +78,8 @@ Workspace::Workspace(std::string_view type, UID handle) : m_handle(handle) {
 }
 
 Workspace::Workspace(UID uid) : m_handle(uid) {
+	m_editor_camera = std::make_unique<Camera>();
+	m_editor_camera->position = {0.0f, -10.0f, 10.0f};
 	eventSubscriptions();
 
 	// open file
@@ -88,6 +96,7 @@ Workspace::Workspace(UID uid) : m_handle(uid) {
 }
 
 Workspace::Workspace(UID uid, std::string_view source_uri) : m_handle(uid) {
+	m_editor_camera = std::make_unique<Camera>();
 	eventSubscriptions();
 
 	auto bytes = assets::AssetManager::get().loadBytes(source_uri);
@@ -101,14 +110,14 @@ Workspace::Workspace(UID uid, std::string_view source_uri) : m_handle(uid) {
 	VectorStreamBuf buffer(*bytes);
 	std::istream autosave(&buffer);
 	assets::Prefab prefab(autosave);
-	assets::AssetHandle<assets::Prefab> file(&prefab, uid, "");
+	assets::Handle<assets::Prefab> file(&prefab, uid, "");
 	initFromPrefab(file);
 	if (m_root_node.exists()) {
 		TOAST_INFO("World", "Opened workspace {} from {}", uid, source_uri);
 	}
 }
 
-void Workspace::initFromPrefab(const assets::AssetHandle<assets::Prefab>& file) {
+void Workspace::initFromPrefab(const assets::Handle<assets::Prefab>& file) {
 	INodeOwner::InstantiateContext ctx;
 	ctx.resolver = [](toast::UID id) { return assets::load<assets::Prefab>(id); };
 	Box<Node> node = instantiate(file, ctx);
@@ -122,7 +131,7 @@ void Workspace::initFromPrefab(const assets::AssetHandle<assets::Prefab>& file) 
 	// Data structure generation
 	generateUid(node);
 	node->m_parent = {};
-	node->m_state = NodeState::root;
+	node->changeNodeState(NodeState::root);
 	node->m_type = NodeType::world_root;
 	node->m_inherited_enabled = true;
 
@@ -135,11 +144,23 @@ void Workspace::initFromPrefab(const assets::AssetHandle<assets::Prefab>& file) 
 	m_root_node = node;
 }
 
+void Workspace::applyActiveCamera() {
+	if (!isActiveWorkspace()) {
+		return;
+	}
+	if (m_game_camera) {
+		renderer::setActiveCamera(activeRenderCamera());
+	} else {
+		renderer::setActiveCamera(m_editor_camera.get());
+	}
+}
+
 Workspace::~Workspace() {
 	if (!m_root_node.exists()) {
 		return;
 	}
 
+	beginCameraShutdown();
 	m_root_node->propagateCallTick(m_root_node->info(), TickFunctionList::on_disable);
 	m_root_node->propagateCallTick(m_root_node->info(), TickFunctionList::end);
 	m_root_node->propagateCallTick(m_root_node->info(), TickFunctionList::destroy);
@@ -185,10 +206,35 @@ void Workspace::registerDependency(Node& from, Node& to) {
 
 void Workspace::unregisterDependency(Node& from, Node& to) { }
 
-auto Workspace::findFrom(const Node& origin, std::string_view query) -> Box<Node> {
-	uint64_t target = UID::fromString(query);
+auto Workspace::isActiveWorkspace() const noexcept -> bool {
+	Engine* engine = Engine::get();
+	return engine != nullptr && m_handle.data() == engine->activeWorkspace().data();
+}
 
+auto Workspace::participatesIn(NodeOwnerParticipation use) const noexcept -> bool {
+	return use == NodeOwnerParticipation::render && isActiveWorkspace();
+}
+
+auto Workspace::findFrom(const Node& origin, std::string_view query) -> Box<Node> {
+	const bool search_workspace_root = query.starts_with("root/");
+	const std::string_view target = search_workspace_root ? query.substr(5) : query;
 	auto search = [target](this auto&& self, const Node& node) -> Box<Node> {
+		if (node.name() == target) {
+			return node.box();
+		}
+		for (const auto& c : node.m_children) {
+			if (auto found = self(*c); found.exists()) {
+				return found;
+			}
+		}
+		return {};
+	};
+
+	return search(search_workspace_root ? *m_root_node : origin);
+}
+
+auto Workspace::findFrom(const Node& origin, const UID& uid) -> Box<Node> {
+	auto search = [target = uid.data()](this auto&& self, const Node& node) -> Box<Node> {
 		if (node.m_uid.data() == target) {
 			return node.box();
 		}
@@ -229,7 +275,7 @@ void Workspace::eventSubscriptions() {
 		}
 		TOAST_ASSERT(m_root_node.exists(), "World", "Trying to add a node to an invalid Workspace");
 
-		auto parent = findFrom(m_root_node, e.parent.get());
+		auto parent = findFrom(m_root_node, e.parent);
 		if (not parent.exists()) {
 			TOAST_WARN("World", "Tried to create node on Workspace {} but parent couldn't be found", m_root_node->name());
 			return true;
@@ -247,7 +293,7 @@ void Workspace::eventSubscriptions() {
 		}
 		TOAST_ASSERT(m_root_node.exists(), "World", "Trying to add a node to an invalid Workspace");
 
-		auto node = findFrom(m_root_node, e.target.get());
+		auto node = findFrom(m_root_node, e.target);
 		if (not node.exists() || not node->parentInternal().exists()) {
 			TOAST_WARN("World", "Tried to remove node on Workspace {} but the node couldn't be found", m_root_node->name());
 			return true;
@@ -297,7 +343,7 @@ void Workspace::eventSubscriptions() {
 		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
 			return false;
 		}
-		auto node = findFrom(m_root_node, e.target.get());
+		auto node = findFrom(m_root_node, e.target);
 		if (not node.exists()) {
 			TOAST_WARN("World", "Tried to save workspace but the target node couldn't be found");
 			return true;
@@ -338,21 +384,21 @@ void Workspace::eventSubscriptions() {
 		}
 		TOAST_ASSERT(m_root_node.exists(), "World", "Trying to add a node to an invalid Workspace");
 
-		auto node = findFrom(m_root_node, e.target.get());
+		auto node = findFrom(m_root_node, e.target);
 		if (not node.exists() || node == m_root_node) {
 			TOAST_WARN("World", "Tried to move node on Workspace {} but the node couldn't be found", m_root_node->name());
 			return true;
 		}
 
 		// An empty new parent means "keep the current parent"
-		auto dest_parent = e.new_parent.data() == 0 ? node->parentInternal() : findFrom(m_root_node, e.new_parent.get());
+		auto dest_parent = e.new_parent.data() == 0 ? node->parentInternal() : findFrom(m_root_node, e.new_parent);
 		if (not dest_parent.exists()) {
 			TOAST_WARN("World", "Couldn't find new parent on Workspace {}", m_root_node->name());
 			return true;
 		}
 
 		// Reject reparenting a node into itself or one of its descendants
-		if (findFrom(node, dest_parent->uid().get()).exists()) {
+		if (findFrom(node, dest_parent->uid()).exists()) {
 			TOAST_WARN("World", "Tried to move node {} into its own descendant", node->name());
 			return true;
 		}
@@ -392,12 +438,14 @@ void Workspace::eventSubscriptions() {
 		if (!m_root_node.exists()) {
 			return false;
 		}
-		m_focused_node = findFrom(m_root_node, e.node.get());
+		m_focused_node = findFrom(m_root_node, e.node);
 		return false;
 	});
 
 	m_listener.subscribe<event::NodeChangeParam>([this](const auto& e) {
-		// Only the workspace that actually owns the focused node applies the change
+		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			return false;
+		}
 		if (not m_focused_node.exists()) {
 			return false;
 		}
@@ -415,6 +463,13 @@ void Workspace::eventSubscriptions() {
 			std::istringstream ss(e.value);
 			ss >> deg.x >> deg.y >> deg.z;
 			value = std::any {glm::quat(glm::radians(deg))};
+		} else if (field->value_type == FieldType::uid_t && not field->is_array && field->type.starts_with("Box<")) {
+			auto parsed = assets::Prefab::valueFromString(field->value_type, false, e.value);
+			if (not parsed.has_value()) {
+				TOAST_WARN("World", "NodeChangeParam: couldn't parse '{}' for parameter '{}'", e.value, e.parameter);
+				return true;
+			}
+			value = std::any {findFrom(*m_root_node, std::any_cast<UID>(*parsed))};
 		} else {
 			auto parsed = assets::Prefab::valueFromString(field->value_type, field->is_array, e.value);
 			if (not parsed.has_value()) {
@@ -425,6 +480,7 @@ void Workspace::eventSubscriptions() {
 		}
 
 		field->set(&*m_focused_node, value);
+		m_focused_node->onReflectedFieldChanged(field->name);
 
 		if (field->name == "m_scripts") {
 			m_focused_node->reloadScripts();
@@ -435,6 +491,9 @@ void Workspace::eventSubscriptions() {
 
 	// Lua variable edits address "<instance>:group/subgroup/name" through the script schema
 	m_listener.subscribe<event::NodeChangeLuaParam>([this](const auto& e) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			return false;
+		}
 		if (not m_focused_node.exists()) {
 			return false;
 		}
@@ -459,10 +518,14 @@ void Workspace::eventSubscriptions() {
 		}
 
 		auto find_node = [this](std::string_view uid_text) -> Box<Node> {
-			if (uid_text.empty() || toast::UID::fromString(std::string(uid_text)) == 0) {
+			if (uid_text.empty()) {
 				return {};
 			}
-			return findFrom(m_root_node, uid_text);
+			UID uid(toast::UID::fromString(std::string(uid_text)));
+			if (uid.data() == 0) {
+				return {};
+			}
+			return findFrom(m_root_node, uid);
 		};
 
 		std::any value = parseLuaValue(*desc, e.value, find_node);
@@ -480,7 +543,7 @@ void Workspace::eventSubscriptions() {
 		if (not m_root_node.exists()) {
 			return false;
 		}
-		auto node = findFrom(m_root_node, e.node.get());
+		auto node = findFrom(m_root_node, e.node);
 		if (not node.exists()) {
 			return false;
 		}
@@ -489,16 +552,30 @@ void Workspace::eventSubscriptions() {
 		return true;
 	});
 
-	// TODO: needs function reflection for this
-	// m_listener.subscribe<event::NodeCallFunction>([this](const auto& e) {
-	// 	m_focused_node->info()->call(e.function);
-	// });
+	m_listener.subscribe<event::NodeCallFunction>([this](const auto& e) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data() || not m_focused_node.exists()) {
+			return false;
+		}
+
+		const FunctionInfo* method = m_focused_node->info()->getMethod(e.function);
+		if (method == nullptr || not method->hasAttribute("Button") || method->return_type != "void" ||
+		    not method->parameters.empty()) {
+			TOAST_WARN("World", "NodeCallFunction: '{}' is not an inspector button", e.function);
+			return true;
+		}
+
+		m_focused_node->info()->call(&*m_focused_node, e.function);
+		return true;
+	});
 
 	m_listener.subscribe<event::NodeEnabled>([this](const auto& e) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			return false;
+		}
 		if (not m_root_node.exists()) {
 			return false;
 		}
-		auto node = findFrom(m_root_node, e.node.get());
+		auto node = findFrom(m_root_node, e.node);
 		if (not node.exists()) {
 			return false;
 		}
@@ -513,7 +590,7 @@ void Workspace::eventSubscriptions() {
 		}
 		TOAST_ASSERT(m_root_node.exists(), "World", "Trying to spawn a node in an invalid Workspace");
 
-		auto parent = findFrom(m_root_node, e.parent.get());
+		auto parent = findFrom(m_root_node, e.parent);
 		if (not parent.exists()) {
 			TOAST_WARN("World", "WorkspaceSpawn: parent {} not found", e.parent);
 			return true;
@@ -533,15 +610,15 @@ void Workspace::eventSubscriptions() {
 			return false;
 		}
 
-		auto src = findFrom(m_root_node, e.source.get());
-		auto par = findFrom(m_root_node, e.parent.get());
+		auto src = findFrom(m_root_node, e.source);
+		auto par = findFrom(m_root_node, e.parent);
 		if (not src.exists() || not par.exists()) {
 			TOAST_WARN("World", "WorkspaceDuplicateNode: source or parent not found");
 			return true;
 		}
 
 		assets::Prefab prefab(*src);
-		assets::AssetHandle<assets::Prefab> handle(&prefab, toast::UID(0), "");
+		assets::Handle<assets::Prefab> handle(&prefab, toast::UID(0), "");
 
 		InstantiateContext ctx;
 		ctx.resolver = [](toast::UID id) { return assets::load<assets::Prefab>(id); };
@@ -587,7 +664,7 @@ void Workspace::eventSubscriptions() {
 			return false;
 		}
 
-		auto target = findFrom(m_root_node, e.node.get());
+		auto target = findFrom(m_root_node, e.node);
 		if (not target.exists()) {
 			TOAST_WARN("World", "NodeChangeType: node not found");
 			return true;
@@ -658,7 +735,7 @@ void Workspace::eventSubscriptions() {
 			return false;
 		}
 
-		auto target = findFrom(m_root_node, e.target.get());
+		auto target = findFrom(m_root_node, e.target);
 		if (not target.exists()) {
 			TOAST_WARN("World", "WorkspacePromoteNode: target not found");
 			return true;
@@ -751,14 +828,22 @@ void Workspace::eventSubscriptions() {
 			return false;
 		}
 		m_game_camera = e.game;
+		applyActiveCamera();
 		return true;
+	});
+
+	m_listener.subscribe<event::SetActiveWorkspace>([this](const auto& e) {
+		if (e.handle == m_handle.data()) {
+			applyActiveCamera();
+		}
+		return false;
 	});
 
 	m_listener.subscribe<event::WorkspaceCopyNode>([this](const auto& e) {
 		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
 			return false;
 		}
-		auto src = findFrom(m_root_node, e.source.get());
+		auto src = findFrom(m_root_node, e.source);
 		if (not src.exists()) {
 			TOAST_WARN("World", "WorkspaceCopyNode: source not found");
 			return true;
@@ -774,13 +859,13 @@ void Workspace::eventSubscriptions() {
 		if (not s_clipboard) {
 			return true;
 		}
-		auto par = findFrom(m_root_node, e.parent.get());
+		auto par = findFrom(m_root_node, e.parent);
 		if (not par.exists()) {
 			TOAST_WARN("World", "WorkspacePasteNode: parent not found");
 			return true;
 		}
 
-		assets::AssetHandle<assets::Prefab> handle(s_clipboard.get(), toast::UID(0), "");
+		assets::Handle<assets::Prefab> handle(s_clipboard.get(), toast::UID(0), "");
 		InstantiateContext ctx;
 		ctx.resolver = [](toast::UID id) { return assets::load<assets::Prefab>(id); };
 		Box<Node> copy = instantiate(handle, ctx);
@@ -815,6 +900,14 @@ void Workspace::eventSubscriptions() {
 }
 
 void Workspace::tick() {
+	if (!participatesIn(NodeOwnerParticipation::gameplay_tick)) {
+		tickActiveCameraController();
+	}
+
+	if (m_root_node.exists()) {
+		INodeOwner::updateTransforms(*m_root_node);
+	}
+
 	// Only the active workspace streams inspector data, and only while a node is focused
 	if (m_handle.data() != Engine::get()->activeWorkspace().data() || not m_focused_node.exists()) {
 		m_inspector_accum = 0.0;

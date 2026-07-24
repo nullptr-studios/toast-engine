@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -42,6 +43,7 @@ public partial class ViewportControl : UserControl {
 	private int m_surfaceH;
 
 	private int m_surfaceW;
+	private double m_lastScale;
 	private DispatcherTimer? m_timer;
 	private TopLevel? m_topLevel;
 	private bool m_wasVisible;
@@ -229,6 +231,12 @@ public partial class ViewportControl : UserControl {
 			return;
 
 		var scale = RenderScaling();
+
+		if (Math.Abs(scale - m_lastScale) > 1e-6) {
+			m_lastScale = scale;
+			Events.Send(new WindowDisplayScale { Scale = (float)scale });
+		}
+
 		var width = Math.Max(1, (int)Math.Round(Bounds.Width * scale));
 		var height = Math.Max(1, (int)Math.Round(Bounds.Height * scale));
 
@@ -326,6 +334,13 @@ public partial class ViewportControl : UserControl {
 			return;
 		}
 
+		if (PlayMode && ShouldForward && e.Key == Key.V &&
+		    (e.KeyModifiers.HasFlag(KeyModifiers.Control) || e.KeyModifiers.HasFlag(KeyModifiers.Meta))) {
+			e.Handled = true;
+			_ = PasteClipboardAsync();
+			return;
+		}
+
 		if (IsEditorShortcut(e)) return;
 		if (!ShouldForward || m_engine is null) return;
 
@@ -357,6 +372,23 @@ public partial class ViewportControl : UserControl {
 		if (!ShouldForward || m_engine is null || string.IsNullOrEmpty(e.Text)) return;
 
 		foreach (var rune in e.Text.AsSpan().EnumerateRunes()) Events.Send(new WindowChar { Key = (uint)rune.Value });
+	}
+
+	private async Task PasteClipboardAsync() {
+		if (!ShouldForward || m_engine is null) return;
+		var clipboard = m_topLevel?.Clipboard;
+		if (clipboard is null) return;
+		var data = await clipboard.TryGetDataAsync();
+		if (data is null) return;
+
+		foreach (var item in data.Items) {
+			if (!item.Formats.Contains(DataFormat.Text)) continue;
+			if (await item.TryGetRawAsync(DataFormat.Text) is not string text || string.IsNullOrEmpty(text)) continue;
+
+			foreach (var rune in text.AsSpan().EnumerateRunes())
+				Events.Send(new WindowChar { Key = (uint)rune.Value });
+			return;
+		}
 	}
 
 	private static int ButtonFromUpdateKind(PointerUpdateKind kind) {

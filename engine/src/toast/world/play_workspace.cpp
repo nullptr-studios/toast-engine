@@ -11,7 +11,7 @@ namespace toast {
 PlayWorkspace::PlayWorkspace(UID handle, assets::Prefab& prefab) : Workspace(handle, EmptyTag {}) {
 	ZoneScoped;
 
-	assets::AssetHandle<assets::Prefab> file(&prefab, handle, "");
+	assets::Handle<assets::Prefab> file(&prefab, handle, "");
 
 	INodeOwner::InstantiateContext ctx;
 	ctx.resolver = [](toast::UID id) { return assets::load<assets::Prefab>(id); };
@@ -24,7 +24,7 @@ PlayWorkspace::PlayWorkspace(UID handle, assets::Prefab& prefab) : Workspace(han
 	// node->propagateCallTick(node->info(), TickFunctionList::pre_init);
 
 	node->m_parent = {};
-	node->m_state = NodeState::root;
+	node->changeNodeState(NodeState::root);
 	node->m_type = NodeType::world_root;
 	node->m_inherited_enabled = true;
 
@@ -75,16 +75,27 @@ void PlayWorkspace::unregisterDependency(Node& from, Node& to) {
 }
 
 void PlayWorkspace::tick() {
-	if (not m_paused && m_root_node.exists()) {
+	if (participatesIn(NodeOwnerParticipation::gameplay_tick) && !m_paused && m_root_node.exists()) {
 		if (m_schedule_dirty) {
 			computeSchedule();
 			m_schedule_dirty = false;
 		}
-		m_scheduler.run();
+
+		m_scheduler.runPhase(m_scheduler.schedule.early_tick, TickFunctionList::early_tick, "early_tick");
+		INodeOwner::updateTransforms(*m_root_node);
+		m_scheduler.runPhase(m_scheduler.schedule.tick, TickFunctionList::tick, "tick");
+		// TODO: physics step goes between tick and post_physics
+		m_scheduler.runPhase(m_scheduler.schedule.post_physics, TickFunctionList::post_physics, "post_physics");
+		m_scheduler.runPhase(m_scheduler.schedule.late_tick, TickFunctionList::late_tick, "late_tick");
 	}
 
-	// inspector streaming for the focused node
-	Workspace::tick();
+	if (isActiveWorkspace()) {
+		Workspace::tick();
+	}
+}
+
+auto PlayWorkspace::participatesIn(NodeOwnerParticipation /*use*/) const noexcept -> bool {
+	return isActiveWorkspace();
 }
 
 void PlayWorkspace::computeSchedule() {

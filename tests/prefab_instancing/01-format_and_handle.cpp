@@ -11,17 +11,17 @@ using namespace toast;
 using namespace assets;
 
 // Phase 1: instance identity carried as a reflected field, format-version gating, and the
-// "unresolved" AssetHandle that preserves a UID even with a null pointer.
+// "unresolved" Handle that preserves a UID even with a null pointer.
 TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/01-format_and_handle", test_prefab_instancing_01) {
 	// --- Unresolved handle keeps its UID with a null pointer ---------------------------------
 	{
 		UID id(UID::fromString("ABCDEFGHIJK"));
-		AssetHandle<Prefab> handle(nullptr, id, "");
+		Handle<Prefab> handle(nullptr, id, "");
 		assert(not handle.hasValue());
 		assert(handle.uid().data() == id.data());
 		assert(handle.uid().data() != 0);
 
-		AssetHandle<Prefab> empty;
+		Handle<Prefab> empty;
 		assert(empty.uid().data() == 0);
 	}
 

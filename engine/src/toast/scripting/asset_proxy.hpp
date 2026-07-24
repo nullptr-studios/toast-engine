@@ -16,8 +16,8 @@ namespace scripting {
 class AssetProxy {
 public:
 	AssetProxy() = default;
-	explicit AssetProxy(toast::UID uid);                    ///< Create from UID
-	explicit AssetProxy(assets::AssetHandleBase handle);    ///< Create from another handle
+	explicit AssetProxy(toast::UID uid);               ///< Create from UID
+	explicit AssetProxy(assets::HandleBase handle);    ///< Create from another handle
 
 	[[nodiscard]]
 	auto path() const -> std::string;
@@ -33,12 +33,12 @@ public:
 	auto checkType(std::string_view field_type) const -> std::string;
 
 	[[nodiscard]]
-	auto handle() const noexcept -> const assets::AssetHandleBase& {
+	auto handle() const noexcept -> const assets::HandleBase& {
 		return m_handle;
 	}
 
 private:
-	assets::AssetHandleBase m_handle;
+	assets::HandleBase m_handle;
 };
 
 }

@@ -28,7 +28,7 @@ auto contains(const SignalList& list, ActionEvent event) -> bool {
 
 }
 
-auto Action::fromAsset(assets::AssetHandle<assets::Action> handle) -> std::unique_ptr<Action> {
+auto Action::fromAsset(assets::Handle<assets::Action> handle) -> std::unique_ptr<Action> {
 	if (!handle.hasValue()) {
 		return nullptr;
 	}

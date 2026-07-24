@@ -1,6 +1,8 @@
 include(CTest)
 
 if (BUILD_TESTING)
+	find_package(RmlUi CONFIG REQUIRED)
+
 	file(GLOB_RECURSE TEST_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 	list(REMOVE_ITEM TEST_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/test_runner.cpp")
 
@@ -10,7 +12,7 @@ if (BUILD_TESTING)
 	# HACK: DARIO SHOULD FUCKING HAVE SOME INCLUDES ON THE SOURCE FILES RATHER THAN THE HEADERS
 	target_include_directories(toast_tests PRIVATE ${CMAKE_SOURCE_DIR}/engine)
 	target_include_directories(toast_tests PRIVATE ${CMAKE_SOURCE_DIR}/engine/external/inc)
-	target_link_libraries(toast_tests PRIVATE toast_engine)
+	target_link_libraries(toast_tests PRIVATE toast_engine RmlUi::RmlUi)
 	target_compile_definitions(toast_tests PRIVATE UNIT_TESTING TRACY_NO_INVARIANT_CHECK=1)
 
 	foreach(config IN ITEMS Debug Release RelWithDebInfo MinSizeRel)
