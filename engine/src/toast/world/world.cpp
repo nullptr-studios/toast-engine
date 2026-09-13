@@ -100,15 +100,10 @@ void World::unregisterDependency(Node& from, Node& to) {
 	instance->m_scheduler.unregisterDependency(from, to);
 }
 
-void World::loadNode(UID uid, bool activate_as_root) {
+void World::loadNode(UID uid) {
 	ZoneScoped;
 	ZoneNameF("World::loadNode(%s)", uid.get().c_str());
 	TOAST_INFO("World", "Loading node {} from file", uid);
-
-	if (activate_as_root) {
-		std::scoped_lock lock(instance->m.load_mutex);
-		instance->m.pending_root_uid = uid;
-	}
 
 	// Load stages:
 	//		1: get the node_file
@@ -157,7 +152,7 @@ void World::loadNode(UID uid, bool activate_as_root) {
 	instance->m.load_futures.emplace_back(std::move(future));
 }
 
-void World::loadNode(std::string_view uri, bool activate_as_root) {
+void World::loadNode(std::string_view uri) {
 	// just reroute to the actual loadNode() implementation
 	auto id = assets::resolveURI(uri);
 
@@ -167,37 +162,29 @@ void World::loadNode(std::string_view uri, bool activate_as_root) {
 		return;
 	}
 
-	loadNode(*id, activate_as_root);
+	loadNode(*id);
 }
 
 void World::drainLoadQueue() {
 	std::vector<Box<Node>> loaded;
-	UID pending_uid {0};
 	{
 		std::scoped_lock lock(m.load_mutex);
 		if (trees.load_queue.empty()) {
 			return;
 		}
 		std::swap(loaded, trees.load_queue);
-		pending_uid = m.pending_root_uid;
 	}
 
 	ZoneScoped;
 
 	// Freshly loaded trees go to the cached list and are ready to be activated
 	for (auto& root : loaded) {
-		const UID node_uid = root->uid();
 		root->changeNodeState(NodeState::cached);
-		TOAST_TRACE("World", "Node {} ({}) moved to cache", root->name(), node_uid);
+		TOAST_TRACE("World", "Node {} ({}) moved to cache", root->name(), root->uid());
 		trees.cached.emplace_back(std::move(root));
 
-		// Auto-activate if this is the pending start scene
-		if (pending_uid.data() != 0 && node_uid.data() == pending_uid.data()) {
-			TOAST_INFO("World", "Auto-activating start scene {}", node_uid);
-			{
-				std::scoped_lock lock(m.load_mutex);
-				m.pending_root_uid = UID {0};
-			}
+		if (not trees.root.exists()) {
+			TOAST_INFO("World", "Auto-activating first loaded scene {}", trees.cached.back()->uid());
 			setRoot(*trees.cached.back());
 		}
 	}

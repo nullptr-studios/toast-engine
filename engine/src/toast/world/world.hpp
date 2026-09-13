@@ -61,11 +61,8 @@ public:
 	/**
 	 * @brief Begins asynchronous loading of a prefab into the cache
 	 * @param uid UID of the prefab asset to load
-	 * @param activate_as_root If true, automatically calls setRoot() once the node finishes loading
-	 * @note The node appears in trees.cached at the start of the next tick() after loading finishes;
-	 *       if activate_as_root is false, call setRoot() afterwards to make it the active scene
 	 */
-	static void loadNode(UID uid, bool activate_as_root = false);
+	static void loadNode(UID uid);
 
 	/**
 	 * @brief Begins asynchronous loading of a prefab into the cache
@@ -73,7 +70,7 @@ public:
 	 * @param activate_as_root If true, automatically calls setRoot() once the node finishes loading
 	 * @note Resolves the URI to a UID via the manifest, then delegates to loadNode(UID)
 	 */
-	static void loadNode(std::string_view uri, bool activate_as_root = false);
+	static void loadNode(std::string_view uri);
 
 	auto findFrom(const Node& origin, std::string_view query) -> Box<Node> override;
 	auto findFrom(const Node& origin, const UID& uid) -> Box<Node> override;
@@ -192,7 +189,6 @@ private:
 		std::mutex load_mutex;
 		std::vector<std::future<void>> load_futures;
 		std::vector<std::pair<Box<Node>, Box<Node>>> spawn_queue;
-		UID pending_root_uid {0};
 	} m;
 
 	struct Trees {

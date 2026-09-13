@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../export.hpp"
 #include "workspace_events.hpp"
 
 #include <functional>
@@ -9,8 +10,6 @@
 
 namespace toast {
 
-// Exported: tests/workspace_history links this against the shared engine, and every member came back
-// unresolved without it
 class TOAST_API WorkspaceHistory {
 public:
 	using Snapshot = assets::Prefab;

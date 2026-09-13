@@ -733,10 +733,10 @@ void Engine::startGame() {
 	if (path.size() == 11) {
 		const toast::UID uid(toast::UID::fromString(path));
 		TOAST_INFO("Engine", "startGame: loading init scene by UID {}", uid);
-		World::loadNode(uid, true);
+		World::loadNode(uid);
 	} else {
 		TOAST_INFO("Engine", "startGame: loading init scene by URI '{}'", path);
-		World::loadNode(path, true);
+		World::loadNode(path);
 	}
 }
 }

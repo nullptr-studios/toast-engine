@@ -149,10 +149,10 @@ target_compile_definitions(toast_engine PUBLIC
 )
 
 if (MSVC)
-    # UNITY_BUILD merges 8 sources per TU, and the resulting objects already sit near COFF's 65k section
-    # ceiling - adding a single source file is enough to push one over it
-    target_compile_options(toast_engine PRIVATE /bigobj)
-    target_compile_options(toast_engine PRIVATE $<$<CONFIG:Release>:/O2;/Ob2;/Oi;/Ot;/GL;/Gy;/Gw;/fp:fast>)
+    target_compile_options(toast_engine PRIVATE
+            /bigobj
+            $<$<CONFIG:Release>:/O2;/Ob2;/Oi;/Ot;/GL;/Gy;/Gw;/fp:fast>
+    )
     target_link_options(toast_engine PRIVATE $<$<CONFIG:Release>:/LTCG>)
 endif ()
 

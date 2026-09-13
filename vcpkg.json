@@ -59,7 +59,7 @@
     "version>=" : "0.6.0"
   }, {
     "name" : "tinygltf",
-    "version>=" : "3.0.0"
+    "version>=" : "3.0.0#1"
   }, {
     "name" : "json-schema-validator",
     "version>=" : "2.4.0"
