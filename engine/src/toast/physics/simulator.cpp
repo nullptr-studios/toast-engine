@@ -17,7 +17,6 @@ Simulator::Simulator() {
 	// TODO: only singlethreaded right now
 	m_manifold_queues.emplace_back();
 }
-
 Simulator::~Simulator() {
 	TOAST_INFO("Physics", "Simulator destroyed");
 	instance = nullptr;
@@ -36,14 +35,16 @@ void Simulator::registerRigidbody(Rigidbody& node) {
 		material.dynamic_friction = node.material->dynamicFriction();
 	}
 
-	const std::vector<SphereShape> spheres = node.sphereShapes();
+	std::vector<SphereShape> spheres = node.sphereShapes();
+	std::vector<BoxShape> boxes = node.boxShapes();
+	std::vector<CapsuleShape> capsules = node.capsuleShapes();
 	const BodyID body = instance->createBody(node.descriptor());
 	node.assignBody(body);
 	if (instance->valid(body)) {
 		instance->m_node_bindings.push_back({.body = body, .node = node.box().as<Rigidbody>()});
 
 		size_t registered_shape_count = 0;
-		for (const SphereShape& sphere : spheres) {
+		for (const auto& sphere : spheres) {
 			const ShapeID shape = instance->createSphere(body, sphere, material);
 			if (not instance->valid(shape)) {
 				TOAST_WARN("Physics", "Sphere collider on rigidbody '{}' was not registered", node.name());
@@ -52,12 +53,30 @@ void Simulator::registerRigidbody(Rigidbody& node) {
 			++registered_shape_count;
 		}
 
+		for (const auto& box : boxes) {
+			const ShapeID shape = instance->createBox(body, box, material);
+			if (not instance->valid(shape)) {
+				TOAST_WARN("Physics", "Box collider on rigidbody '{}' was not registered", node.name());
+				continue;
+			}
+			++registered_shape_count;
+		}
+
+		for (const auto& capsule : capsules) {
+			const ShapeID shape = instance->createCapsule(body, capsule, material);
+			if (not instance->valid(shape)) {
+				TOAST_WARN("Physics", "Capsule collider on rigidbody '{}' was not registered", node.name());
+				continue;
+			}
+			++registered_shape_count;
+		}
+
 		if (registered_shape_count == 0) {
-			TOAST_WARN("Physics", "Rigidbody '{}' registered without an enabled sphere collider", node.name());
+			TOAST_WARN("Physics", "Rigidbody '{}' registered without an enabled valid collider", node.name());
 		} else {
 			// All shapes exist now so we can calculate their inertia
 			instance->rebuildMassProperties(body);
-			TOAST_TRACE("Physics", "Registered rigidbody '{}' with {} sphere shapes", node.name(), registered_shape_count);
+			TOAST_TRACE("Physics", "Registered rigidbody '{}' with {} shapes", node.name(), registered_shape_count);
 		}
 	}
 }
@@ -94,7 +113,7 @@ void Simulator::tick() {
 	// resolve
 	auto constraints = prepareConstraints(m_manifolds);
 	solveConstraints(constraints);
-	correctPositions(constraints);
+	correctPositions(m_manifolds);
 
 	// push poses after simulation settles
 	publishTransforms();
@@ -203,17 +222,26 @@ auto Simulator::solveFriction(Constraint& constraint, Body& body_a, Body& body_b
 	return true;
 }
 
-void Simulator::correctPositions(const std::vector<Constraint>& constraints) {
+void Simulator::correctPositions(const std::vector<Manifold>& manifolds) {
 	constexpr float penetration_slop = 0.005f;
 	constexpr float correction_beta = 0.2f;
 	constexpr float max_correction = 0.05f;
 	
-	for (const auto& c : constraints) {
-		auto* body_a = tryGetBody(c.body_a);
-		auto* body_b = tryGetBody(c.body_b);
+	for (const Manifold& manifold : manifolds) {
+		auto* body_a = tryGetBody(manifold.pair.a.body);
+		auto* body_b = tryGetBody(manifold.pair.b.body);
 		
 		if (not body_a or not body_b) {
 			continue;
+		}
+
+		float deepest_penetration = 0.0f;
+		const size_t contact_count = std::min<size_t>(manifold.contact_count, manifold.contacts.size());
+		for (size_t contact_index = 0; contact_index < contact_count; ++contact_index) {
+			float penetration = manifold.contacts[contact_index].penetration;
+			if (std::isfinite(penetration) && penetration >= 0.0f) {
+				deepest_penetration = std::max(deepest_penetration, penetration);
+			}
 		}
 		
 		float inv_mass = body_a->inverse_mass + body_b->inverse_mass;
@@ -223,16 +251,23 @@ void Simulator::correctPositions(const std::vector<Constraint>& constraints) {
 		}
 		
 		// ignore tiny overlaps to prevent jitter
-		float excess_penetration = std::max(c.penetration - penetration_slop, 0.0f);
+		float excess_penetration = std::max(deepest_penetration - penetration_slop, 0.0f);
 		if (excess_penetration == 0.0f) {
 			continue;
 		}
 		
 		float correction_distance = std::min(correction_beta * excess_penetration, max_correction);
-		glm::vec3 correction = c.normal * (correction_distance / inv_mass);
+		glm::vec3 correction = manifold.normal * (correction_distance / inv_mass);
 		
 		body_a->position -= correction * body_a->inverse_mass;
 		body_b->position += correction * body_b->inverse_mass;
+	}
+}
+
+void Simulator::flipManifold(Manifold& manifold) {
+	manifold.normal = -manifold.normal;
+	for (size_t i = 0; i < manifold.contact_count; ++i) {
+		std::swap(manifold.contacts[i].feature_a, manifold.contacts[i].feature_b);
 	}
 }
 
@@ -383,7 +418,92 @@ auto Simulator::createSphere(BodyID owner, const SphereShape& sphere, PhysicsMat
 	Shape shape {
 	  .owner = owner,
 	  .type = ShapeType::sphere,
+	  .material = material,
 	  .sphere = sphere,
+	};
+
+	if (not m_free_shape_slots.empty()) {
+		const uint32_t index = m_free_shape_slots.back();
+		m_free_shape_slots.pop_back();
+
+		ShapeSlot& slot = m_shapes[index];
+		slot.shape = shape;
+		slot.occupied = true;
+		return {.slot = index, .generation = slot.generation};
+	}
+
+	const uint32_t index = static_cast<uint32_t>(m_shapes.size());
+	m_shapes.emplace_back(ShapeSlot {.shape = shape, .generation = 1, .occupied = true});
+	return {.slot = index, .generation = 1};
+}
+
+auto Simulator::createBox(BodyID owner, const BoxShape& box, PhysicsMaterial material) -> ShapeID {
+	if (not valid(owner)) {
+		TOAST_WARN("Physics", "Rejected box registration for an invalid body");
+		return {};
+	}
+
+	const bool center_is_finite = std::isfinite(box.local_center.x) && std::isfinite(box.local_center.y) &&
+	                              std::isfinite(box.local_center.z);
+	const bool size_is_valid = std::isfinite(box.size.x) && box.size.x > 0.0f && std::isfinite(box.size.y) &&
+	                           box.size.y > 0.0f && std::isfinite(box.size.z) && box.size.z > 0.0f;
+	const float rotation_length_squared = glm::dot(box.local_rotation, box.local_rotation);
+	if (not center_is_finite || not size_is_valid || not std::isfinite(rotation_length_squared) ||
+	    rotation_length_squared <= 1.0e-10f) {
+		TOAST_WARN("Physics", "Rejected box with invalid size, local center, or local rotation");
+		return {};
+	}
+
+	BoxShape normalized_box = box;
+	normalized_box.local_rotation = glm::normalize(box.local_rotation);
+
+	Shape shape {
+	  .owner = owner,
+	  .type = ShapeType::box,
+	  .material = material,
+	  .box = normalized_box,
+	};
+
+	if (not m_free_shape_slots.empty()) {
+		const uint32_t index = m_free_shape_slots.back();
+		m_free_shape_slots.pop_back();
+
+		ShapeSlot& slot = m_shapes[index];
+		slot.shape = shape;
+		slot.occupied = true;
+		return {.slot = index, .generation = slot.generation};
+	}
+
+	const uint32_t index = static_cast<uint32_t>(m_shapes.size());
+	m_shapes.emplace_back(ShapeSlot {.shape = shape, .generation = 1, .occupied = true});
+	return {.slot = index, .generation = 1};
+}
+
+auto Simulator::createCapsule(BodyID owner, const CapsuleShape& capsule, PhysicsMaterial material) -> ShapeID {
+	if (not valid(owner)) {
+		TOAST_WARN("Physics", "Rejected capsule registration for an invalid body");
+		return {};
+	}
+
+	const bool center_is_finite = std::isfinite(capsule.local_center.x) && std::isfinite(capsule.local_center.y) &&
+	                              std::isfinite(capsule.local_center.z);
+	const bool dimensions_are_valid = std::isfinite(capsule.radius) && capsule.radius > 0.0f &&
+	                                  std::isfinite(capsule.height) && capsule.height >= 2.0f * capsule.radius;
+	const float rotation_length_squared = glm::dot(capsule.local_rotation, capsule.local_rotation);
+	if (not center_is_finite || not dimensions_are_valid || not std::isfinite(rotation_length_squared) ||
+	    rotation_length_squared <= 1.0e-10f) {
+		TOAST_WARN("Physics", "Rejected capsule with invalid dimensions, local center, or local rotation");
+		return {};
+	}
+
+	CapsuleShape normalized_capsule = capsule;
+	normalized_capsule.local_rotation = glm::normalize(capsule.local_rotation);
+
+	Shape shape {
+	  .owner = owner,
+	  .type = ShapeType::capsule,
+	  .material = material,
+	  .capsule = normalized_capsule,
 	};
 
 	if (not m_free_shape_slots.empty()) {
@@ -465,15 +585,84 @@ void Simulator::rebuildMassProperties(BodyID id) {
 		return;
 	}
 
-	// TODO: More shapes
 	switch (shape->type) {
 		case ShapeType::sphere: {
 			float radius_sq = shape->sphere.radius * shape->sphere.radius;
-	
+			if (not std::isfinite(radius_sq) || radius_sq <= 0.0f) {
+				TOAST_WARN("Physics", "rebuildMassProperties() was aborted: invalid sphere inertia denominator");
+				return;
+			}
+
 			// I = 2/5 m r2
 			// inv(I) = 5/(2 m r2)
 			float inverse_inertia = 2.5f * body->inverse_mass / radius_sq;
 			body->inverse_inertia_local = {inverse_inertia};
+			glm::mat3 rotation = glm::mat3_cast(body->rotation);
+			body->inverse_inertia_world = rotation * body->inverse_inertia_local * glm::transpose(rotation);
+			break;
+		}
+		case ShapeType::box: {
+			float width_sq = shape->box.size.x * shape->box.size.x;
+			float height_sq = shape->box.size.y * shape->box.size.y;
+			float depth_sq = shape->box.size.z * shape->box.size.z;
+			float denominator_x = height_sq + depth_sq;
+			float denominator_y = width_sq + depth_sq;
+			float denominator_z = width_sq + height_sq;
+			if (not std::isfinite(denominator_x) || denominator_x <= 0.0f || not std::isfinite(denominator_y) ||
+			    denominator_y <= 0.0f || not std::isfinite(denominator_z) || denominator_z <= 0.0f) {
+				TOAST_WARN("Physics", "rebuildMassProperties() was aborted: invalid box inertia denominator");
+				return;
+			}
+
+			// Ix = 1/12 m (h2 + d2)
+			// inv(Ix) = 12/(m (h2 + d2))
+			float inverse_inertia_x = 12.0f * body->inverse_mass / denominator_x;
+			// Iy = 1/12 m (w2 + d2)
+			// inv(Iy) = 12/(m (w2 + d2))
+			float inverse_inertia_y = 12.0f * body->inverse_mass / denominator_y;
+			// Iz = 1/12 m (w2 + h2)
+			// inv(Iz) = 12/(m (w2 + h2))
+			float inverse_inertia_z = 12.0f * body->inverse_mass / denominator_z;
+
+			glm::mat3 inverse_inertia = {0.0f};
+			inverse_inertia[0][0] = inverse_inertia_x;
+			inverse_inertia[1][1] = inverse_inertia_y;
+			inverse_inertia[2][2] = inverse_inertia_z;
+			glm::mat3 local_rotation = glm::mat3_cast(shape->box.local_rotation);
+			body->inverse_inertia_local = local_rotation * inverse_inertia * glm::transpose(local_rotation);
+			glm::mat3 rotation = glm::mat3_cast(body->rotation);
+			body->inverse_inertia_world = rotation * body->inverse_inertia_local * glm::transpose(rotation);
+			break;
+		}
+		case ShapeType::capsule: {
+			// Conservative approximation: use a box with dimensions (2r, 2r, height)
+			float diameter = 2.0f * shape->capsule.radius;
+			float diameter_sq = diameter * diameter;
+			float height_sq = shape->capsule.height * shape->capsule.height;
+			float denominator_xy = diameter_sq + height_sq;
+			float denominator_z = diameter_sq + diameter_sq;
+			if (not std::isfinite(denominator_xy) || denominator_xy <= 0.0f || not std::isfinite(denominator_z) ||
+			    denominator_z <= 0.0f) {
+				TOAST_WARN("Physics", "rebuildMassProperties() was aborted: invalid capsule inertia denominator");
+				return;
+			}
+
+			// Ix = 1/12 m (d2 + h2)
+			// inv(Ix) = 12/(m (d2 + h2))
+			float inverse_inertia_x = 12.0f * body->inverse_mass / denominator_xy;
+			// Iy = 1/12 m (d2 + h2)
+			// inv(Iy) = 12/(m (d2 + h2))
+			float inverse_inertia_y = 12.0f * body->inverse_mass / denominator_xy;
+			// Iz = 1/12 m (d2 + d2)
+			// inv(Iz) = 12/(m (d2 + d2))
+			float inverse_inertia_z = 12.0f * body->inverse_mass / denominator_z;
+
+			glm::mat3 inverse_inertia = {0.0f};
+			inverse_inertia[0][0] = inverse_inertia_x;
+			inverse_inertia[1][1] = inverse_inertia_y;
+			inverse_inertia[2][2] = inverse_inertia_z;
+			glm::mat3 local_rotation = glm::mat3_cast(shape->capsule.local_rotation);
+			body->inverse_inertia_local = local_rotation * inverse_inertia * glm::transpose(local_rotation);
 			glm::mat3 rotation = glm::mat3_cast(body->rotation);
 			body->inverse_inertia_world = rotation * body->inverse_inertia_local * glm::transpose(rotation);
 			break;
@@ -654,6 +843,44 @@ void Simulator::sortManifolds() {
 	});
 }
 
+auto Simulator::validateManifold(Manifold& manifold) const -> bool {
+	const Body* body_a = tryGetBody(manifold.pair.a.body);
+	const Body* body_b = tryGetBody(manifold.pair.b.body);
+	const Shape* shape_a = tryGetShape(manifold.pair.a.shape);
+	const Shape* shape_b = tryGetShape(manifold.pair.b.shape);
+	if (!body_a || !body_b || !shape_a || !shape_b ||
+	    shape_a->owner != manifold.pair.a.body || shape_b->owner != manifold.pair.b.body) {
+		return false;
+	}
+
+	if (manifold.contact_count == 0 || manifold.contact_count > manifold.contacts.size()) {
+		return false;
+	}
+
+	const bool normal_is_finite = std::isfinite(manifold.normal.x) &&
+	                              std::isfinite(manifold.normal.y) &&
+	                              std::isfinite(manifold.normal.z);
+	const float normal_length_squared = glm::dot(manifold.normal, manifold.normal);
+	if (!normal_is_finite || !std::isfinite(normal_length_squared) ||
+	    std::abs(normal_length_squared - 1.0f) > _detail::unit_normal_tolerance) {
+		return false;
+	}
+
+	for (size_t index = 0; index < manifold.contact_count; ++index) {
+		ContactPoint& contact = manifold.contacts[index];
+		const bool position_is_finite = std::isfinite(contact.position.x) &&
+		                                std::isfinite(contact.position.y) &&
+		                                std::isfinite(contact.position.z);
+		if (!position_is_finite || !std::isfinite(contact.penetration) ||
+		    contact.penetration < -_detail::contact_tolerance) {
+			return false;
+		}
+		contact.penetration = std::max(contact.penetration, 0.0f);
+	}
+
+	return true;
+}
+
 auto Simulator::prepareConstraints(const std::vector<Manifold>& manifolds) const -> std::vector<Constraint> {
 	ZoneScoped;
 	std::vector<Constraint> constraints;
@@ -797,6 +1024,10 @@ void Simulator::collide(BroadPhasePair pair) {
 	const Shape* shape_b = tryGetShape(pair.b.shape);
 	const Body* body_a = tryGetBody(pair.a.body);
 	const Body* body_b = tryGetBody(pair.b.body);
+	if (!shape_a || !shape_b || !body_a || !body_b ||
+	    shape_a->owner != pair.a.body || shape_b->owner != pair.b.body) {
+		return;
+	}
 
 #ifdef DEBUG
 	// this is checked on broad phase so we don't need to check it back here
@@ -815,53 +1046,65 @@ void Simulator::collide(BroadPhasePair pair) {
 		case ShapeType::sphere:
 			switch (shape_b->type) {
 				case ShapeType::sphere:
+					// sphere-sphere
 					manifold = collideSpheres(pair, *shape_a, *body_a, *shape_b, *body_b);
+					break;
+				case ShapeType::box:
+					// sphere-box
+					manifold = collideSphereBox(pair, *shape_a, *body_a, *shape_b, *body_b);
+					break;
+				case ShapeType::capsule:
+					// sphere-capsule
+					manifold = collideSphereCapsule(pair, *shape_a, *body_a, *shape_b, *body_b);
+					break;
 			}
+			break;
+		case ShapeType::box:
+			switch (shape_b->type) {
+				case ShapeType::sphere:
+					// sphere-box (inverted)
+					manifold = collideSphereBox(pair, *shape_b, *body_b, *shape_a, *body_a);
+					if (manifold.has_value()) {
+						flipManifold(*manifold);
+					}
+					break;
+				case ShapeType::box:
+					// box-box
+					manifold = collideBoxes(pair, *shape_a, *body_a, *shape_b, *body_b);
+					break;
+				case ShapeType::capsule:
+					// capsule-box (inverted)
+					manifold = collideCapsuleBox(pair, *shape_b, *body_b, *shape_a, *body_a);
+					if (manifold.has_value()) {
+						flipManifold(*manifold);
+					}
+					break;
+			}
+			break;
+		case ShapeType::capsule:
+			switch (shape_b->type) {
+				case ShapeType::sphere:
+					// sphere-capsule (inverted)
+					manifold = collideSphereCapsule(pair, *shape_b, *body_b, *shape_a, *body_a);
+					if (manifold.has_value()) {
+						flipManifold(*manifold);
+					}
+					break;
+				case ShapeType::box:
+					// capsule-box
+					manifold = collideCapsuleBox(pair, *shape_a, *body_a, *shape_b, *body_b);
+					break;
+				case ShapeType::capsule:
+					// capsule-capsule
+					manifold = collideCapsules(pair, *shape_a, *body_a, *shape_b, *body_b);
+					break;
+			}
+			break;
 	}
 
-	if (manifold.has_value()) {
+	if (manifold.has_value() && validateManifold(*manifold)) {
 		m_manifold_queues[0].emplace_back(*manifold);
 	}
-}
-
-auto Simulator::collideSpheres(
-	BroadPhasePair pair,
-	const Shape& shape_a,
-	const Body& body_a,
-	const Shape& shape_b,
-	const Body& body_b
-) -> std::optional<Manifold> {
-	ZoneScoped;
-	ZoneValue((static_cast<uint64_t>(pair.a.shape.slot) << 32) | static_cast<uint64_t>(pair.b.shape.slot));
-
-	const glm::vec3 center_a = body_a.position + body_a.rotation * shape_a.sphere.local_center;
-	const glm::vec3 center_b = body_b.position + body_b.rotation * shape_b.sphere.local_center;
-	const glm::vec3 delta = center_b - center_a;
-	const float radius_sum = shape_a.sphere.radius + shape_b.sphere.radius;
-	const float distance_squared = glm::dot(delta, delta);
-
-	if (not std::isfinite(distance_squared) || distance_squared > radius_sum * radius_sum) {
-		return std::nullopt;
-	}
-
-	const float distance = std::sqrt(distance_squared);
-	const glm::vec3 normal = distance_squared > 1.0e-9f ? delta / distance : glm::vec3 {1.0f, 0.0f, 0.0f};
-	const glm::vec3 point_a = center_a + normal * shape_a.sphere.radius;
-	const glm::vec3 point_b = center_b - normal * shape_b.sphere.radius;
-
-	return Manifold {
-	  .pair = pair,
-	  .normal = normal,
-	  .contacts = {
-	    ContactPoint {
-	      .position = (point_a + point_b) * 0.5f,
-	      .penetration = radius_sum - distance,
-	      .feature_a = sphere_surface_feature,
-	      .feature_b = sphere_surface_feature,
-	    }
-	  },
-	  .contact_count = 1
-	};
 }
 
 }

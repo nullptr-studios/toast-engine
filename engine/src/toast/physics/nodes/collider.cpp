@@ -19,12 +19,6 @@ void Collider::updateInspectorMessages() {
 		.id = 3,
 		.text = "Collider dimensions must be greater than zero",
 	};
-	static const toast::NodeMessage unsupported_shape_message {
-		.severity = toast::NodeMessage::warning,
-		.id = 4,
-		.text = "Only SphereCollider shapes are currently used by the physics simulation",
-	};
-
 	if (parent().as<Rigidbody>().exists()) {
 		removeInspectorMessage(parent_message);
 	} else {
@@ -32,28 +26,24 @@ void Collider::updateInspectorMessages() {
 	}
 
 	bool valid_geometry = true;
-	bool supported_shape = true;
 	if (const auto sphere = box().as<SphereCollider>(); sphere.exists()) {
 		valid_geometry = std::isfinite(sphere->radius) && sphere->radius > 0.0f;
 	} else if (const auto capsule = box().as<CapsuleCollider>(); capsule.exists()) {
+		const float rotation_length_squared = glm::dot(capsule->rotation, capsule->rotation);
 		valid_geometry = std::isfinite(capsule->radius) && capsule->radius > 0.0f &&
-		                 std::isfinite(capsule->height) && capsule->height > 0.0f;
-		supported_shape = false;
+		                 std::isfinite(capsule->height) && capsule->height >= 2.0f * capsule->radius &&
+		                 std::isfinite(rotation_length_squared) && rotation_length_squared > 1.0e-10f;
 	} else if (const auto cube = box().as<BoxCollider>(); cube.exists()) {
+		const float rotation_length_squared = glm::dot(cube->rotation, cube->rotation);
 		valid_geometry = std::isfinite(cube->size.x) && cube->size.x > 0.0f && std::isfinite(cube->size.y) &&
-		                 cube->size.y > 0.0f && std::isfinite(cube->size.z) && cube->size.z > 0.0f;
-		supported_shape = false;
+		                 cube->size.y > 0.0f && std::isfinite(cube->size.z) && cube->size.z > 0.0f &&
+		                 std::isfinite(rotation_length_squared) && rotation_length_squared > 1.0e-10f;
 	}
 
 	if (valid_geometry) {
 		removeInspectorMessage(invalid_geometry_message);
 	} else {
 		addInspectorMessage(invalid_geometry_message);
-	}
-	if (supported_shape) {
-		removeInspectorMessage(unsupported_shape_message);
-	} else {
-		addInspectorMessage(unsupported_shape_message);
 	}
 }
 

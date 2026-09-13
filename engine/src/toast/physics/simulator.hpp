@@ -60,6 +60,11 @@ private:
 
 	[[nodiscard]]
 	auto createSphere(BodyID owner, const SphereShape& sphere, PhysicsMaterial material) -> ShapeID;
+	[[nodiscard]]
+	auto createBox(BodyID owner, const BoxShape& box, PhysicsMaterial material) -> ShapeID;
+	[[nodiscard]]
+	auto createCapsule(BodyID owner, const CapsuleShape& capsule, PhysicsMaterial material) -> ShapeID;
+
 	void destroyShape(ShapeID shape);
 	[[nodiscard]]
 	auto valid(ShapeID shape) const -> bool;
@@ -86,6 +91,8 @@ private:
 	void mergeManifoldQueues();
 	void mergeManifold(const Manifold& manifold);
 	void sortManifolds();
+	[[nodiscard]]
+	auto validateManifold(Manifold& manifold) const -> bool;
 
 	[[nodiscard]]
 	auto prepareConstraints(const std::vector<Manifold>& manifolds) const -> std::vector<Constraint>;
@@ -103,12 +110,10 @@ private:
 	static void applyImpulse(Body& body_a, Body& body_b, const glm::vec3& r_a, const glm::vec3& r_b, const glm::vec3& impulse);
 	static auto solveNormal(Constraint& constraint, Body& body_a, Body& body_b) -> bool;
 	static auto solveFriction(Constraint& constraint, Body& body_a, Body& body_b) -> bool;
-	void correctPositions(const std::vector<Constraint>& constraints);
+	void correctPositions(const std::vector<Manifold>& manifolds);
+	static void flipManifold(Manifold& manifold);
 	
 	void collide(BroadPhasePair pair);
-
-	[[nodiscard]]
-	static auto collideSpheres(BroadPhasePair pair, const Shape& shape_a, const Body& body_a, const Shape& shape_b, const Body& body_b) -> std::optional<Manifold>;
 
 	inline static Simulator* instance = nullptr;
 

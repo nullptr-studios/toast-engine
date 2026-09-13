@@ -28,13 +28,79 @@ struct ShapeID {
 	auto operator<=>(const ShapeID&) const = default;
 };
 
+enum class FeatureType : uint8_t {
+	sphere_surface = 1,
+	capsule_cap_a,
+	capsule_side,
+	capsule_cap_b,
+	box_face,
+	box_edge,
+	box_vertex,
+	box_clip
+};
+
 struct ContactFeatureID {
 	uint64_t value = 0;
 	auto operator<=>(const ContactFeatureID&) const = default;
 };
 
+inline constexpr uint64_t contact_feature_payload_mask = 0x00ff'ffff'ffff'ffffULL;
+
+[[nodiscard]]
+constexpr auto makeContactFeature(FeatureType type, uint64_t payload = 0) -> ContactFeatureID {
+	return ContactFeatureID {
+	  (static_cast<uint64_t>(type) << 56) | (payload & contact_feature_payload_mask)
+	};
+}
+
+[[nodiscard]]
+constexpr auto capsuleFeature(float parameter) -> ContactFeatureID {
+	if (parameter <= 0.0f) {
+		return makeContactFeature(FeatureType::capsule_cap_a);
+	}
+	if (parameter >= 1.0f) {
+		return makeContactFeature(FeatureType::capsule_cap_b);
+	}
+	return makeContactFeature(FeatureType::capsule_side);
+}
+
+[[nodiscard]]
+constexpr auto boxFaceFeature(int axis, bool positive) -> ContactFeatureID {
+	return makeContactFeature(
+	  FeatureType::box_face,
+	  static_cast<uint64_t>(axis) | (static_cast<uint64_t>(positive) << 2)
+	);
+}
+
+[[nodiscard]]
+constexpr auto boxEdgeFeature(int direction_axis, uint8_t positive_mask) -> ContactFeatureID {
+	return makeContactFeature(
+	  FeatureType::box_edge,
+	  static_cast<uint64_t>(direction_axis) | (static_cast<uint64_t>(positive_mask & 0x7u) << 2)
+	);
+}
+
+[[nodiscard]]
+constexpr auto boxVertexFeature(uint8_t positive_mask) -> ContactFeatureID {
+	return makeContactFeature(FeatureType::box_vertex, positive_mask & 0x7u);
+}
+
+[[nodiscard]]
+constexpr auto boxClipFeature(
+	int reference_axis,
+	bool reference_positive,
+	int side_axis,
+	bool side_positive
+) -> ContactFeatureID {
+	uint64_t payload = static_cast<uint64_t>(reference_axis);
+	payload |= static_cast<uint64_t>(reference_positive) << 2;
+	payload |= static_cast<uint64_t>(side_axis) << 3;
+	payload |= static_cast<uint64_t>(side_positive) << 5;
+	return makeContactFeature(FeatureType::box_clip, payload);
+}
+
 enum class ShapeType : uint8_t {
-	sphere
+	sphere, box, capsule
 };
 
 struct SphereShape {
@@ -44,11 +110,13 @@ struct SphereShape {
 
 struct BoxShape {
 	glm::vec3 local_center = {};
+	glm::quat local_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 	glm::vec3 size = {1.0f, 1.0f, 1.0f};
 };
 
 struct CapsuleShape {
 	glm::vec3 local_center = {};
+	glm::quat local_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 	float radius = 0.5f;
 	float height = 1.0f;
 };
@@ -71,6 +139,6 @@ struct ShapeSlot {
 	bool occupied = false;
 };
 
-inline constexpr ContactFeatureID sphere_surface_feature {0};
+inline constexpr ContactFeatureID sphere_surface_feature = makeContactFeature(FeatureType::sphere_surface);
 
 }

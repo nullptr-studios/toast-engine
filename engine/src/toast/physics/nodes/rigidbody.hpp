@@ -50,6 +50,10 @@ private:
 	auto descriptor() const -> BodyDescriptor;
 	[[nodiscard]]
 	auto sphereShapes() const -> std::vector<SphereShape>;
+	[[nodiscard]]
+	auto boxShapes() const -> std::vector<BoxShape>;
+	[[nodiscard]]
+	auto capsuleShapes() const -> std::vector<CapsuleShape>;
 
 	void assignBody(BodyID body) noexcept { m_body = body; }
 
