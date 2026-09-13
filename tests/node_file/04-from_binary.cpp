@@ -5,28 +5,22 @@
 #include <cassert>
 #include <sstream>
 #include <vector>
-#include <fstream>
 #include <iostream>
 
 using namespace toast;
 using namespace assets;
 
 TOAST_TEST_NAMED("node_file", "node_file/04-from_binary", test_node_file_04_from_binary) {
-	std::ifstream in("sample.tbnode", std::ios::binary | std::ios::ate);
-	assert(in.is_open());
-	std::streamsize size = in.tellg();
-	in.seekg(0, std::ios::beg);
-	
-	std::vector<uint8_t> binary(size);
-	if (in.read(reinterpret_cast<char*>(binary.data()), size)) {
-		Prefab nf(binary);
-		std::string output = nf.toFile();
-		
-		if (output != sample_text) {
-			std::cerr << "Binary read output mismatch!\nExpected:\n" << sample_text << "\nActual:\n" << output << std::endl;
-		}
-		assert(output == sample_text);
-	} else {
-		assert(false && "Failed to read binary file");
+	// Bake the sample in memory so this test doesn't depend on a file left behind by another test
+	std::stringstream ss(sample_text);
+	const std::vector<uint8_t> binary = Prefab(ss).toBinary();
+	assert(!binary.empty());
+
+	Prefab nf(binary);
+	std::string output = nf.toFile();
+
+	if (output != sample_text) {
+		std::cerr << "Binary read output mismatch!\nExpected:\n" << sample_text << "\nActual:\n" << output << std::endl;
 	}
+	assert(output == sample_text);
 }

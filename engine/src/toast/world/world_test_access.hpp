@@ -55,6 +55,9 @@ struct TOAST_API WorldTestAccess {
 
 	static void setWorldRoot(World& world, Node& node);
 
+	// Moves a freshly instantiated tree to the cache, then World::swapRoot() it so begin/onEnable run
+	static auto activateLoadedRoot(World& world, Node& node) -> Box<Node>;
+
 	static auto
 	    spawnSync(World& world, const assets::Handle<assets::Prefab>& file, Node& parent, INodeOwner::InstantiateContext& ctx)
 	        -> Box<Node>;

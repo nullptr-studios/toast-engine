@@ -31,6 +31,7 @@
       "name": "ParentNode",
       "namespace": "game"
     },
+    "signals": [],
     "source_file": "10_inheritance_chain.hpp",
     "tick_functions": {
       "begin": false,

@@ -24,6 +24,7 @@
     "name": "AllTicksNode",
     "namespace": null,
     "parent": null,
+    "signals": [],
     "source_file": "16_all_tick_functions.hpp",
     "tick_functions": {
       "begin": true,

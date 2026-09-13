@@ -5,7 +5,7 @@
  *
  * @brief an indirection grid over pooled bricks
  *
- * A volume is the collision shape *and* the render primitive
+ * A volume is the collision shape and the render primitive
  */
 
 #pragma once

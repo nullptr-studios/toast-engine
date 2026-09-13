@@ -13,7 +13,7 @@
       {
         "attributes": {},
         "default": null,
-        "field_type": "int_t",
+        "field_type": "float_t",
         "is_array": true,
         "name": "m_floats",
         "typename": "std::vector<float>"
@@ -21,7 +21,7 @@
       {
         "attributes": {},
         "default": null,
-        "field_type": "int_t",
+        "field_type": "string_t",
         "is_array": true,
         "name": "m_strings",
         "typename": "std::vector<std::string>"
@@ -29,7 +29,7 @@
       {
         "attributes": {},
         "default": null,
-        "field_type": "int_t",
+        "field_type": "vec3_t",
         "is_array": true,
         "name": "m_vectors",
         "typename": "std::vector<glm::vec3>"
@@ -48,7 +48,7 @@
       {
         "attributes": {},
         "default": null,
-        "field_type": "int_t",
+        "field_type": "float_t",
         "is_array": true,
         "name": "m_floats",
         "typename": "std::vector<float>"
@@ -56,7 +56,7 @@
       {
         "attributes": {},
         "default": null,
-        "field_type": "int_t",
+        "field_type": "string_t",
         "is_array": true,
         "name": "m_strings",
         "typename": "std::vector<std::string>"
@@ -64,7 +64,7 @@
       {
         "attributes": {},
         "default": null,
-        "field_type": "int_t",
+        "field_type": "vec3_t",
         "is_array": true,
         "name": "m_vectors",
         "typename": "std::vector<glm::vec3>"
@@ -76,6 +76,7 @@
     "name": "VectorTypesNode",
     "namespace": null,
     "parent": null,
+    "signals": [],
     "source_file": "20_vector_of_different_types.hpp",
     "tick_functions": {
       "begin": false,

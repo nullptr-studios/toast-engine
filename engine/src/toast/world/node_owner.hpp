@@ -56,6 +56,8 @@ public:
 	virtual auto searchFrom(const Node& origin, std::string_view query) -> std::vector<Box<Node>> = 0;
 
 	void activateCamera(Camera& camera);
+	/// Like activateCamera(), but replaces whatever camera is currently active
+	void setMainCamera(Camera& camera);
 	void deactivateCamera(Camera& camera);
 	void activateCameraController(CameraController& controller);
 	void deactivateCameraController(CameraController& controller);

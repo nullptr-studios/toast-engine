@@ -28,6 +28,7 @@
     "name": "PointerNode",
     "namespace": null,
     "parent": null,
+    "signals": [],
     "source_file": "22_pointer_types.hpp",
     "tick_functions": {
       "begin": false,

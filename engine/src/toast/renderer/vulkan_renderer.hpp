@@ -1399,7 +1399,9 @@ inline void setActiveCamera(toast::Camera& camera) {
 }
 
 inline void setActiveCamera(toast::Camera* camera) {
-	VulkanRenderer::instance->setActiveCamera(camera);
+	if (VulkanRenderer::instance != nullptr) {
+		VulkanRenderer::instance->setActiveCamera(camera);
+	}
 }
 
 inline void forgetCamera(const toast::Camera* camera) {
@@ -1425,7 +1427,9 @@ inline void unregisterLightNodeProxy(toast::Light* node) {
 }
 
 inline void registerCameraNodeProxy(toast::Camera* node) {
-	VulkanRenderer::instance->registerCameraNodeProxy(node);
+	if (VulkanRenderer::instance != nullptr) {
+		VulkanRenderer::instance->registerCameraNodeProxy(node);
+	}
 }
 
 /// @brief Null-safe: a camera can outlive the renderer on the way down

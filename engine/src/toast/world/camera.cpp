@@ -23,7 +23,7 @@ void Camera::setActiveCamera() {
 }
 
 void Camera::begin() {
-	setActiveCamera();
+	onEnable();
 
 	renderer::registerCameraNodeProxy(this);
 	m_registered_proxy = true;
@@ -40,7 +40,14 @@ void Camera::end() {
 }
 
 void Camera::onEnable() {
-	setActiveCamera();
+	if (!m_owner) {
+		return;
+	}
+	if (m_is_main_camera) {
+		m_owner->setMainCamera(*this);
+	} else {
+		m_owner->activateCamera(*this);
+	}
 }
 
 void Camera::onDisable() {

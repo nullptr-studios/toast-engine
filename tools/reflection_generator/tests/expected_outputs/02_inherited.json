@@ -84,6 +84,7 @@
       "name": "Node",
       "namespace": "toast"
     },
+    "signals": [],
     "source_file": "02_inherited.hpp",
     "tick_functions": {
       "begin": false,

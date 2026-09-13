@@ -92,6 +92,7 @@
     "name": "SignedNode",
     "namespace": null,
     "parent": null,
+    "signals": [],
     "source_file": "27_signed_integer_types.hpp",
     "tick_functions": {
       "begin": false,

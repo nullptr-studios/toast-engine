@@ -54,6 +54,31 @@ void INodeOwner::activateCamera(Camera& camera) {
 
 	m_active_camera = camera.box().as<Camera>();
 	m_active_camera->m_is_active = true;
+	TOAST_INFO("World", "Active camera is now {} ({})", camera.name(), camera.uid());
+	applyActiveCamera();
+}
+
+void INodeOwner::setMainCamera(Camera& camera) {
+	if (m_is_shutting_down || (camera.m_state != NodeState::root && camera.m_state != NodeState::global) || !camera.enabled()) {
+		return;
+	}
+
+	if (m_has_camera_controller && m_active_camera_controller.exists()) {
+		m_active_camera_controller->addCamera(camera);
+		m_active_camera_controller->setActiveCamera(camera.box().as<Camera>());
+		return;
+	}
+
+	if (m_active_camera.exists()) {
+		if (m_active_camera.rid() == camera.box().rid()) {
+			return;
+		}
+		m_active_camera->m_is_active = false;
+	}
+
+	m_active_camera = camera.box().as<Camera>();
+	m_active_camera->m_is_active = true;
+	TOAST_INFO("World", "Main camera {} ({}) is now the active camera", camera.name(), camera.uid());
 	applyActiveCamera();
 }
 
@@ -86,19 +111,32 @@ void INodeOwner::findCamera() {
 		return;
 	}
 
+	// Prefer a camera flagged as main; otherwise the first live camera found
 	Box<Camera> candidate;
+	Box<Camera> main_candidate;
 	{
 		std::scoped_lock lock(nodes_mutex);
-		forEachNode([&candidate](const _detail::ControlBox& control) {
-			if (candidate.exists() || control.node == nullptr || !control.node->enabled()) {
+		forEachNode([&candidate, &main_candidate](const _detail::ControlBox& control) {
+			if (main_candidate.exists() || control.node == nullptr || !control.node->enabled()) {
 				return;
 			}
-			if (control.node->state() == NodeState::root || control.node->state() == NodeState::global) {
-				candidate = control.node->box().as<Camera>();
+			if (control.node->state() != NodeState::root && control.node->state() != NodeState::global) {
+				return;
+			}
+			Box<Camera> camera = control.node->box().as<Camera>();
+			if (!camera.exists()) {
+				return;
+			}
+			if (camera->isMainCamera()) {
+				main_candidate = camera;
+			} else if (!candidate.exists()) {
+				candidate = camera;
 			}
 		});
 	}
-	if (candidate.exists()) {
+	if (main_candidate.exists()) {
+		activateCamera(*main_candidate);
+	} else if (candidate.exists()) {
 		activateCamera(*candidate);
 	}
 }

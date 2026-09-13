@@ -42,6 +42,11 @@ public:
 	void setActiveCamera();
 
 	[[nodiscard]]
+	auto isMainCamera() const noexcept -> bool {
+		return m_is_main_camera;
+	}
+
+	[[nodiscard]]
 	auto getView() const -> glm::mat4;
 	[[nodiscard]]
 	auto getProjection(float aspect) const -> glm::mat4;
@@ -59,6 +64,10 @@ private:
 	void end();
 	void onEnable();
 	void onDisable();
+
+	/// When set, this camera takes over as the owner's active camera on load/enable, even if another camera is already active
+	[[Reflect, Name("Is Main Camera?")]]
+	bool m_is_main_camera = false;
 
 	[[Reflect, ReadOnly]]
 	bool m_is_active = false;

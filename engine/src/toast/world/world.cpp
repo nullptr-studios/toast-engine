@@ -1159,6 +1159,12 @@ void WorldTestAccess::setWorldRoot(World& world, Node& node) {
 	world.trees.root = node.box();
 }
 
+auto WorldTestAccess::activateLoadedRoot(World& world, Node& node) -> Box<Node> {
+	node.changeNodeState(NodeState::cached);
+	world.trees.cached.emplace_back(node.box());
+	return world.swapRoot(node);
+}
+
 void WorldTestAccess::initAssetManager(std::string_view assets_dir, std::string_view cache_dir) {
 	static std::unique_ptr<assets::AssetManager> manager;
 

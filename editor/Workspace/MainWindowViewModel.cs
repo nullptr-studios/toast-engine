@@ -721,10 +721,36 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		await new SimpleLoaderWindow(vm).ShowDialog(owner);
 	}
 
+	// The release build packs the files on disk, so unsaved edits (e.g. init_scene in the project settings) would silently be
+	// left out of player.exe; returns false when the user cancels
+	private async Task<bool> SaveBeforeBuild(Avalonia.Controls.Window owner) {
+		var dirtyWorkspaces = m_workspaces.Values.Where(ws => ws.IsModified).ToList();
+		if (dirtyWorkspaces.Count == 0 && CollectDirtyTools().Count == 0) return true;
+
+		var result = await new MessageModal(new ModalConfig(
+			"Unsaved Changes",
+			"The build packs the files on disk, so unsaved changes won't be included. Save everything before building?",
+			ModalButtons.OkNoCancel,
+			OkLabel: "Save All"
+		)).ShowDialog<bool?>(owner);
+		if (result is null) return false;
+		if (result is false) return true;
+
+		foreach (var ws in dirtyWorkspaces)
+			if (!await ws.Save()) return false;
+		if (m_dockFactory.GenericEditorVm is { IsDirty: true } generic) await generic.SaveCommand.ExecuteAsync(null);
+		if (m_dockFactory.SchemaEditorVm is { IsDirty: true } schema) await schema.SaveCommand.ExecuteAsync(null);
+		if (m_toastZoneFactory.CurveEditorVm is { IsDirty: true } curve) await curve.SaveCommand.ExecuteAsync(null);
+		if (m_toastZoneFactory.HapticsEditorVm is { IsDirty: true } haptics) await haptics.SaveCommand.ExecuteAsync(null);
+		if (m_toastZoneFactory.TableEditorVm is { IsDirty: true } table) await table.SaveCommand.ExecuteAsync(null);
+		return true;
+	}
+
 	[RelayCommand(CanExecute = nameof(CanCompileGameRelease))]
 	private async Task CompileGameRelease() {
 		if (App.MainWindow is not { } owner) return;
 		if (!ProjectContext.IsInitialized) return;
+		if (!await SaveBeforeBuild(owner)) return;
 
 		var playerPath =
 			Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "tools", "player"));
@@ -771,6 +797,22 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			var dest = Path.Combine(outputDir, Path.GetFileName(toastFile));
 			log($"  copy {Path.GetFileName(toastFile)}");
 			await Task.Run(() => File.Copy(toastFile, dest, true));
+		}
+
+		// Baked lighting (irradiance volume SH, reflection probe captures) lives in cache://, which belongs to no content
+		// database and so never reaches a pak; the player resolves cache:// to <build>/cache
+		async Task CopyBakedLighting(Action<string> log) {
+			foreach (var dir in new[] { "irradiance", "probes" }) {
+				var src = Path.Combine(ProjectContext.CachePath, dir);
+				if (!Directory.Exists(src)) continue;
+
+				var dest = Path.Combine(outputDir, "cache", dir);
+				Directory.CreateDirectory(dest);
+				foreach (var file in Directory.EnumerateFiles(src)) {
+					log($"  copy cache/{dir}/{Path.GetFileName(file)}");
+					await Task.Run(() => File.Copy(file, Path.Combine(dest, Path.GetFileName(file)), true));
+				}
+			}
 		}
 
 		async Task BakeAndPack(Action<string> log, string dbName, string dbSourceDir, string manifestJsonPath) {
@@ -868,7 +910,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			),
 			// Copy Engine libs
 			LoaderTask.Do("copy libraries", CopyDlls),
-			LoaderTask.Do("copy project.toast", CopyProjectToast)
+			LoaderTask.Do("copy project.toast", CopyProjectToast),
+			LoaderTask.Do("copy baked lighting", CopyBakedLighting)
 		};
 
 		// Bake assets

@@ -332,6 +332,7 @@
     "name": "ManyGlobalsNode",
     "namespace": null,
     "parent": null,
+    "signals": [],
     "source_file": "24_many_global_fields.hpp",
     "tick_functions": {
       "begin": false,

@@ -3,6 +3,7 @@
 #include "sample.hpp"
 
 #include <cassert>
+#include <format>
 #include <sstream>
 
 using namespace toast;
@@ -71,11 +72,14 @@ TOAST_TEST_NAMED("node_file", "node_file/01-from_file", test_node_file_01_from_f
 	    std::any_cast<const std::vector<std::string>&>(reparsed_wrapped.nodes[0].fields[0].value);
 	assert((reparsed_values == std::vector<std::string> {"first value", "second value", "third value", "fourth value", "fifth value"}));
 
-	std::stringstream signal_text {
+	// Signal targets are written as UIDs (base64url), same as @uid fields
+	std::stringstream signal_text {std::format(
 	    "[root type=toast::Node]\n"
-	    "activated @signal = 10 \"on_activated\" \\\n"
-	    "    11 \"on_other_activated\"\n"
-	};
+	    "activated @signal = {} \"on_activated\" \\\n"
+	    "    {} \"on_other_activated\"\n",
+	    UID(10),
+	    UID(11)
+	)};
 	Prefab signal_prefab(signal_text);
 	assert(signal_prefab.nodes[0].signals.size() == 1);
 	const auto& signal = signal_prefab.nodes[0].signals[0];
@@ -92,7 +96,7 @@ TOAST_TEST_NAMED("node_file", "node_file/01-from_file", test_node_file_01_from_f
 	wrapped_signals.nodes.push_back({.name = "root", .type = "toast::Node", .signals = {std::move(long_signal)}});
 	const std::string signal_output = wrapped_signals.toFile();
 	assert(signal_output.contains("activated @signal = \\\n"));
-	assert(signal_output.contains("    1 \"on_a_very_long_signal_function\" \\\n"));
+	assert(signal_output.contains(std::format("    {} \"on_a_very_long_signal_function\" \\\n", UID(1))));
 	const std::vector<uint8_t> signal_binary = wrapped_signals.toBinary();
 	Prefab binary_signals{std::span<const uint8_t>(signal_binary)};
 	assert(binary_signals.nodes.size() == 1);
