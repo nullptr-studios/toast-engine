@@ -2,6 +2,7 @@
 
 #include "box_collider.hpp"
 #include "capsule_collider.hpp"
+#include "dynamic_rigidbody.hpp"
 #include "rigidbody.hpp"
 #include "sphere_collider.hpp"
 
@@ -56,6 +57,11 @@ void Collider::init() {
 			static_cast<Collider&>(node).drawDebug();
 		});
 	}
+
+	// make the collider have a dependency to the rigidbody from the start
+	if (auto rb = parentInternal().as<Rigidbody>(); rb.exists()) {
+		addDependsOn(rb);
+	}
 }
 
 void Collider::destroy() {
@@ -79,7 +85,9 @@ void Collider::drawDebug() {
 	if (!m_debug_visible) {
 		return;
 	}
-	const glm::vec4 color = disabled ? glm::vec4(0.5f, 0.5f, 0.5f, debug_color.a) : debug_color;
+	const auto dynamic_body = parent().as<DynamicRigidbody>();
+	const bool sleeping = dynamic_body.exists() && not dynamic_body->awake;
+	const glm::vec4 color = disabled || sleeping ? glm::vec4(0.5f, 0.5f, 0.5f, debug_color.a) : debug_color;
 	syncTransform();
 	auto transform = glm::translate(glm::mat4(1.0f), world_position) * glm::mat4_cast(world_rotation);
 	if (const auto sphere = box().as<SphereCollider>(); sphere.exists()) {

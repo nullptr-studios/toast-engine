@@ -78,31 +78,38 @@ auto NodeCluster::hasLateTick() -> bool {
 
 #pragma endregion NODE_CLUSTER
 
-void TickScheduler::registerDependency(Node& from, Node& to) {
+auto TickScheduler::registerDependency(Node& from, Node& to) -> bool {
 	if (&from == &to) {
 		TOAST_WARN("World", "{} ({}) tried to register a dependency to itself", from.name(), from.uid());
-		return;
+		return false;
 	}
 
 	// don't store duplicates
 	auto& edges = graph.connections[from];
 	if (std::ranges::contains(edges, Box<Node>(to))) {
-		return;
+		return false;
 	}
 
 	edges.emplace_back(to);
 	graph.inverse_connections[to].emplace_back(from);
 	TOAST_TRACE("World", "Added dependency from {} to {}", from.name(), from.uid());
+	return true;
 }
 
-void TickScheduler::unregisterDependency(Node& from, Node& to) {
-	// Remove the dependency from the forward graph
-	auto& edges = graph.connections[from];
-	std::erase(edges, Box<Node>(to));
+auto TickScheduler::unregisterDependency(Node& from, Node& to) -> bool {
+	const Box<Node> from_box(from);
+	const Box<Node> to_box(to);
+	const auto connections = graph.connections.find(from_box);
+	if (connections == graph.connections.end() || std::erase(connections->second, to_box) == 0) {
+		return false;
+	}
 
 	// Remove the dependency from the inverse graph
-	auto& inverse_edges = graph.inverse_connections[to];
-	std::erase(inverse_edges, Box<Node>(from));
+	if (const auto inverse_connections = graph.inverse_connections.find(to_box);
+	    inverse_connections != graph.inverse_connections.end()) {
+		std::erase(inverse_connections->second, from_box);
+	}
+	return true;
 }
 
 void TickScheduler::compute(const std::vector<Box<Node>>& all_nodes) {

@@ -29,6 +29,7 @@ enum class BodyType : uint8_t {
 
 struct BodyDescriptor {
 	BodyType type = BodyType::dynamic_body;
+	bool allow_sleep = true;
 	glm::vec3 position = {};
 	glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 	glm::vec3 linear_velocity = {};
@@ -39,6 +40,7 @@ struct BodyDescriptor {
 
 struct BodyState {
 	BodyType type = BodyType::dynamic_body;
+	bool awake = true;
 	glm::vec3 position = {};
 	glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 	glm::vec3 previous_position = {};
@@ -50,6 +52,9 @@ struct BodyState {
 struct Body {
 	BodyType type = BodyType::dynamic_body;
 	bool enabled = true;
+	bool awake = true;
+	bool allow_sleep = true;
+	float sleep_timer = 0.0f;
 	glm::vec3 position = {};
 	glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 	glm::vec3 previous_position = {};

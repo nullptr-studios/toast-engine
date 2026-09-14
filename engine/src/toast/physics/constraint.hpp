@@ -7,13 +7,16 @@
 
 #pragma once
 
-#include "body.hpp"
+#include "collision.hpp"
 
 #include <glm/vec3.hpp>
 
 namespace physics {
 
 struct Constraint {
+	BroadPhasePair pair;
+	ContactFeatureID feature_a = {};
+	ContactFeatureID feature_b = {};
 	BodyID body_a;
 	BodyID body_b;
 	glm::vec3 contact_point = {};

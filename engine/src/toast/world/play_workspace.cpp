@@ -66,13 +66,15 @@ auto PlayWorkspace::name() -> std::string {
 }
 
 void PlayWorkspace::registerDependency(Node& from, Node& to) {
-	m_scheduler.registerDependency(from, to);
-	m_schedule_dirty = true;
+	if (m_scheduler.registerDependency(from, to)) {
+		m_schedule_dirty = true;
+	}
 }
 
 void PlayWorkspace::unregisterDependency(Node& from, Node& to) {
-	m_scheduler.unregisterDependency(from, to);
-	m_schedule_dirty = true;
+	if (m_scheduler.unregisterDependency(from, to)) {
+		m_schedule_dirty = true;
+	}
 }
 
 void PlayWorkspace::tick() {

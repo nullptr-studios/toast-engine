@@ -12,13 +12,27 @@
 namespace physics {
 
 class [[ToastNode, Icon("RigidBody")]] TOAST_API DynamicRigidbody : public physics::Rigidbody {
+	friend class Simulator;
+
 public:
 	DynamicRigidbody() : Rigidbody(BodyType::dynamic_body) { }
+
+	signals::Signal<> went_to_sleep;
+	signals::Signal<> woke_up;
+
+	[[Reflect]]
+	void sleep();
+	[[Reflect]]
+	void wake();
 
 	[[Reflect, Unit("kg")]]
 	float mass = 1.0f;
 	[[Reflect]]
 	float gravity_scale = 1.0f;
+	[[Reflect]]
+	bool allow_sleep = true;
+	[[Reflect, ReadOnly]]
+	bool awake = true;
 
 	// TODO:
 
@@ -38,9 +52,12 @@ public:
 	glm::vec3 constant_torque = {};
 
 private:
+	void publishPhysicsState(bool is_awake, const glm::vec3& current_linear_velocity, const glm::vec3& current_angular_velocity);
+
 	void configureBodyDescriptor(BodyDescriptor& descriptor) const override {
 		descriptor.mass = mass;
 		descriptor.gravity_scale = gravity_scale;
+		descriptor.allow_sleep = allow_sleep;
 	}
 };
 

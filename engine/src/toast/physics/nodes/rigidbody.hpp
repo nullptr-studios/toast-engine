@@ -8,6 +8,7 @@
 
 #pragma once
 #include "../body.hpp"
+#include "../collision.hpp"
 #include "../physics_material.hpp"
 #include "../shape.hpp"
 
@@ -21,10 +22,19 @@ class Simulator;
 class [[ToastNode, Hidden, Interface, Icon("PhysicsBody"), Color("Green")]] TOAST_API Rigidbody : public toast::Node3D {
 	friend class Simulator;
 
+public:
+	signals::Signal<toast::Box<toast::Node>> contact_begin;
+	signals::Signal<toast::Box<toast::Node>> contact_end;
+
 protected:
 	explicit Rigidbody(BodyType type) : m_body_type(type) { }
 
 	virtual void configureBodyDescriptor(BodyDescriptor& descriptor) const { }
+
+	[[nodiscard]]
+	auto bodyID() const noexcept -> BodyID {
+		return m_body;
+	}
 
 	[[Reflect]]
 	assets::Handle<assets::PhysicsMaterial> material;
@@ -43,11 +53,19 @@ protected:
 	bool lock_rot_z = false;
 
 private:
+	struct ActiveContact {
+		BodyID other_body;
+		toast::Box<toast::Node> other_node;
+		uint32_t shape_pair_count = 0;
+	};
+
 	void updateInspectorMessages() override;
 	void begin();
 	void end();
 	void onEnable();
 	void onDisable();
+	void handleContactBegin(const BroadPhasePair& pair);
+	void handleContactEnd(const BroadPhasePair& pair);
 
 	[[nodiscard]]
 	auto descriptor() const -> BodyDescriptor;
@@ -58,6 +76,7 @@ private:
 
 	BodyType m_body_type;
 	BodyID m_body;
+	std::vector<ActiveContact> m_active_contacts;
 	bool m_registration_requested = false;
 };
 

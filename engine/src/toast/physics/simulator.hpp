@@ -17,6 +17,7 @@
 
 #include <deque>
 #include <optional>
+#include <span>
 #include <toast/export.hpp>
 #include <toast/log.hpp>
 #include <toast/world/box.hpp>
@@ -26,11 +27,13 @@
 namespace physics {
 
 class Rigidbody;
+class DynamicRigidbody;
 class Collider;
 
 class TOAST_API Simulator {
 	friend class Collider;
 	friend class Rigidbody;
+	friend class DynamicRigidbody;
 
 public:
 	Simulator();
@@ -68,6 +71,9 @@ private:
 	};
 
 	[[nodiscard]]
+	static auto rigidbodyFor(BodyID body) -> toast::Box<Rigidbody>;
+
+	[[nodiscard]]
 	auto createSphere(BodyID owner, const SphereShape& sphere, PhysicsMaterial material) -> ShapeID;
 	[[nodiscard]]
 	auto createBox(BodyID owner, const BoxShape& box, PhysicsMaterial material) -> ShapeID;
@@ -93,11 +99,29 @@ private:
 	static void setBodyEnabled(BodyID body, bool enabled);
 	static void setShapeEnabled(ShapeID shape, bool enabled);
 	void syncEnabledState();
+	static void wakeBody(BodyID id);
+	static void sleepBody(BodyID id);
+	void wakeBodiesTouching(BodyID id);
+	void wakeContactGroups();
+	void updateSleeping(float dt);
+	[[nodiscard]]
+	auto shouldSolve(const Manifold& manifold) const -> bool;
 
 	[[nodiscard]]
 	auto prepareConstraints(const std::vector<Manifold>& manifolds) const -> std::vector<Constraint>;
 	[[nodiscard]]
 	auto prepareConstraint(const Manifold& manifold, const ContactPoint& contact) const -> std::optional<Constraint>;
+	void updateCache(std::span<const Manifold> manifolds);
+	[[nodiscard]]
+	auto findCachedContact(const BroadPhasePair& pair, ContactFeatureID feature_a, ContactFeatureID feature_b) -> CachedContact*;
+	[[nodiscard]]
+	auto findCachedContact(const BroadPhasePair& pair, ContactFeatureID feature_a, ContactFeatureID feature_b) const
+	    -> const CachedContact*;
+	void warmStartConstraints(std::span<Constraint> constraints);
+	void storeConstraintImpulses(std::span<const Constraint> constraints);
+	[[nodiscard]]
+	auto shapeRevision(ShapeID shape) const -> uint32_t;
+	void incrementShapeRevision(ShapeID shape);
 	void solveConstraints(std::vector<Constraint>& constraints);
 	[[nodiscard]]
 	auto solveConstraint(Constraint& constraint) -> bool;
@@ -128,6 +152,7 @@ private:
 	BroadPhase m_broad_phase;
 	NarrowPhase m_narrow_phase;
 	std::vector<Manifold> m_manifolds;
+	std::vector<CachedManifold> m_cached_manifolds;
 };
 
 }

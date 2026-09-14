@@ -129,6 +129,7 @@ struct Shape {
 struct ShapeSlot {
 	Shape shape;
 	uint32_t generation = 1;
+	uint32_t revision = 1;
 	bool occupied = false;
 };
 

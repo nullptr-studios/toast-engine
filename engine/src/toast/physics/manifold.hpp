@@ -17,17 +17,32 @@
 namespace physics {
 
 struct ContactPoint {
-	glm::vec3 position;
-	float penetration;
-	ContactFeatureID feature_a;
-	ContactFeatureID feature_b;
+	glm::vec3 position = {};
+	float penetration = 0.0f;
+	ContactFeatureID feature_a = {};
+	ContactFeatureID feature_b = {};
 };
 
 struct Manifold {
 	BroadPhasePair pair;
-	glm::vec3 normal;
-	std::array<ContactPoint, 4> contacts;
-	uint8_t contact_count;
+	glm::vec3 normal = {};
+	std::array<ContactPoint, 4> contacts = {};
+	uint8_t contact_count = 0;
+};
+
+struct CachedContact {
+	ContactFeatureID feature_a = {};
+	ContactFeatureID feature_b = {};
+	float normal_impulse = 0.0f;
+	glm::vec3 tangent_impulse = {};
+};
+
+struct CachedManifold {
+	BroadPhasePair pair;
+	uint32_t shape_a_revision = 0;
+	uint32_t shape_b_revision = 0;
+	std::array<CachedContact, 4> contacts = {};
+	uint8_t contact_count = 0;
 };
 
 namespace _detail {

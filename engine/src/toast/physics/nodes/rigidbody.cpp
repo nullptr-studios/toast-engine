@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <toast/physics/contact_events.hpp>
 #include <toast/physics/simulator.hpp>
 
 namespace physics {
@@ -47,14 +48,69 @@ void Rigidbody::begin() {
 	if (not m_registration_requested && participatesIn(toast::NodeOwnerParticipation::gameplay_tick)) {
 		m_registration_requested = true;
 		Simulator::registerRigidbody(*this);
+		listener().subscribe<event::ContactBegin>("rigidbody_contact_begin", [this](const event::ContactBegin& contact) {
+			handleContactBegin(contact.contact.pair);
+		});
+		listener().subscribe<event::ContactEnd>("rigidbody_contact_end", [this](const event::ContactEnd& contact) {
+			handleContactEnd(contact.pair);
+		});
 	}
 }
 
 void Rigidbody::end() {
 	if (m_registration_requested) {
 		m_registration_requested = false;
+		listener().unsubscribe<event::ContactBegin>("rigidbody_contact_begin");
+		listener().unsubscribe<event::ContactEnd>("rigidbody_contact_end");
+		m_active_contacts.clear();
 		Simulator::unregisterRigidbody(*this);
 	}
+}
+
+void Rigidbody::handleContactBegin(const BroadPhasePair& pair) {
+	BodyID other_body;
+	if (pair.a.body == m_body) {
+		other_body = pair.b.body;
+	} else if (pair.b.body == m_body) {
+		other_body = pair.a.body;
+	} else {
+		return;
+	}
+
+	const auto active = std::ranges::find(m_active_contacts, other_body, &ActiveContact::other_body);
+	if (active != m_active_contacts.end()) {
+		++active->shape_pair_count;
+		return;
+	}
+
+	const toast::Box<toast::Node> other_node = Simulator::rigidbodyFor(other_body);
+	m_active_contacts.emplace_back(ActiveContact {.other_body = other_body, .other_node = other_node, .shape_pair_count = 1});
+	contact_begin.fire(other_node);
+}
+
+void Rigidbody::handleContactEnd(const BroadPhasePair& pair) {
+	BodyID other_body;
+	if (pair.a.body == m_body) {
+		other_body = pair.b.body;
+	} else if (pair.b.body == m_body) {
+		other_body = pair.a.body;
+	} else {
+		return;
+	}
+
+	const auto active = std::ranges::find(m_active_contacts, other_body, &ActiveContact::other_body);
+	if (active == m_active_contacts.end()) {
+		return;
+	}
+
+	if (active->shape_pair_count > 1) {
+		--active->shape_pair_count;
+		return;
+	}
+
+	const toast::Box<toast::Node> other_node = active->other_node;
+	m_active_contacts.erase(active);
+	contact_end.fire(other_node);
 }
 
 void Rigidbody::onEnable() {

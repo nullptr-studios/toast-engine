@@ -30,6 +30,10 @@
 #include <toast/uid.hpp>
 #include <toast/world/node_owner.hpp>
 
+namespace physics {
+class Collider;
+}
+
 namespace assets {
 class Script;
 }
@@ -84,6 +88,7 @@ class [[ToastNode, Icon("Circle")]] TOAST_API Node {
 	friend struct _detail::ControlBox;
 	friend struct _detail::NodeCluster;
 	friend struct toast::_detail::WorldTestAccess;
+	friend class physics::Collider;
 
 public:
 	Node();
