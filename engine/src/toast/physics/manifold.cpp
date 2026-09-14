@@ -61,7 +61,6 @@ auto contactFeature(const BoxFeature& feature) -> ContactFeatureID {
 	return {};
 }
 
-
 auto worldSphere(const Body& body, const SphereShape& sphere) -> WorldSphere {
 	return {
 	  .center = body.position + body.rotation * sphere.local_center,
@@ -74,8 +73,8 @@ auto worldCapsule(const Body& body, const CapsuleShape& capsule) -> WorldCapsule
 	glm::quat rotation = body.rotation * capsule.local_rotation;
 	const float rotation_length_squared = glm::dot(rotation, rotation);
 	rotation = std::isfinite(rotation_length_squared) && rotation_length_squared > direction_epsilon_sq
-	  ? rotation / std::sqrt(rotation_length_squared)
-	  : glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+	               ? rotation / std::sqrt(rotation_length_squared)
+	               : glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 	const glm::vec3 axis = rotation * glm::vec3 {0.0f, 0.0f, 1.0f};
 	const float shaft_half_length = 0.5f * capsule.height - capsule.radius;
 
@@ -90,8 +89,8 @@ auto worldBox(const Body& body, const BoxShape& box) -> WorldBox {
 	glm::quat rotation = body.rotation * box.local_rotation;
 	const float rotation_length_squared = glm::dot(rotation, rotation);
 	rotation = std::isfinite(rotation_length_squared) && rotation_length_squared > direction_epsilon_sq
-	  ? rotation / std::sqrt(rotation_length_squared)
-	  : glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+	               ? rotation / std::sqrt(rotation_length_squared)
+	               : glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 	return {
 	  .center = body.position + body.rotation * box.local_center,
 	  .rotation = glm::mat3_cast(rotation),
@@ -100,7 +99,7 @@ auto worldBox(const Body& body, const BoxShape& box) -> WorldBox {
 }
 
 auto closestPointOnSegment(const glm::vec3& point, const glm::vec3& segment_a, const glm::vec3& segment_b)
-  -> SegmentClosestPoint {
+    -> SegmentClosestPoint {
 	const glm::vec3 segment = segment_b - segment_a;
 	const float length_squared = glm::dot(segment, segment);
 	if (length_squared <= direction_epsilon_sq) {
@@ -111,12 +110,8 @@ auto closestPointOnSegment(const glm::vec3& point, const glm::vec3& segment_a, c
 	return {.point = segment_a + segment * parameter, .parameter = parameter};
 }
 
-auto closestPointsBetweenSegments(
-  const glm::vec3& a0,
-  const glm::vec3& a1,
-  const glm::vec3& b0,
-  const glm::vec3& b1
-) -> SegmentClosestPoints {
+auto closestPointsBetweenSegments(const glm::vec3& a0, const glm::vec3& a1, const glm::vec3& b0, const glm::vec3& b1)
+    -> SegmentClosestPoints {
 	const glm::vec3 direction_a = a1 - a0;
 	const glm::vec3 direction_b = b1 - b0;
 	const glm::vec3 start_delta = a0 - b0;
@@ -158,9 +153,8 @@ auto closestPointsBetweenSegments(
 	const float c = glm::dot(direction_a, start_delta);
 	const float f = glm::dot(direction_b, start_delta);
 	const float denominator = a * e - b * b;
-	float parameter_a = denominator > parallel_axis_epsilon_sq * a * e
-	                      ? std::clamp((b * f - c * e) / denominator, 0.0f, 1.0f)
-	                      : 0.0f;
+	float parameter_a =
+	    denominator > parallel_axis_epsilon_sq * a * e ? std::clamp((b * f - c * e) / denominator, 0.0f, 1.0f) : 0.0f;
 	float parameter_b = (b * parameter_a + f) / e;
 
 	if (parameter_b < 0.0f) {
@@ -186,7 +180,7 @@ auto closestPointOnBox(const glm::vec3& point, const WorldBox& box) -> glm::vec3
 }
 
 auto closestPointsSegmentBox(const glm::vec3& segment_a, const glm::vec3& segment_b, const WorldBox& box)
-  -> SegmentBoxClosestPoints {
+    -> SegmentBoxClosestPoints {
 	const glm::mat3 inverse_rotation = glm::transpose(box.rotation);
 	const glm::vec3 local_a = inverse_rotation * (segment_a - box.center);
 	const glm::vec3 local_b = inverse_rotation * (segment_b - box.center);
@@ -207,8 +201,8 @@ auto closestPointsSegmentBox(const glm::vec3& segment_a, const glm::vec3& segmen
 	}
 	std::ranges::sort(interval_ends);
 	const auto unique_end = std::ranges::unique(interval_ends, [](float lhs, float rhs) {
-		return std::abs(lhs - rhs) <= std::numeric_limits<float>::epsilon();
-	}).begin();
+		                        return std::abs(lhs - rhs) <= std::numeric_limits<float>::epsilon();
+	                        }).begin();
 	interval_ends.erase(unique_end, interval_ends.end());
 
 	float best_parameter = 0.0f;
@@ -221,8 +215,7 @@ auto closestPointsSegmentBox(const glm::vec3& segment_a, const glm::vec3& segmen
 		const glm::vec3 box_point = glm::clamp(segment_point, -box.half_extents, box.half_extents);
 		const glm::vec3 delta = box_point - segment_point;
 		const float distance_squared = glm::dot(delta, delta);
-		if (distance_squared < best_distance_squared ||
-		    (distance_squared == best_distance_squared && parameter < best_parameter)) {
+		if (distance_squared < best_distance_squared || (distance_squared == best_distance_squared && parameter < best_parameter)) {
 			best_parameter = parameter;
 			best_distance_squared = distance_squared;
 			best_segment_point = segment_point;
@@ -292,8 +285,8 @@ auto perpendicularTo(const glm::vec3& segment) -> glm::vec3 {
 }
 
 auto canonicalPairAxis(const BroadPhasePair& pair) -> glm::vec3 {
-	uint64_t selector = static_cast<uint64_t>(pair.a.body.slot) + pair.a.shape.slot +
-	                    static_cast<uint64_t>(pair.b.body.slot) + pair.b.shape.slot;
+	uint64_t selector =
+	    static_cast<uint64_t>(pair.a.body.slot) + pair.a.shape.slot + static_cast<uint64_t>(pair.b.body.slot) + pair.b.shape.slot;
 	glm::vec3 axis {};
 	axis[selector % 3] = pair.b < pair.a ? -1.0f : 1.0f;
 	return axis;
@@ -392,18 +385,12 @@ auto clippedIncidentFeature(const BoxClipVertex& first, const BoxClipVertex& sec
 		}
 	}
 
-	return first.incident_feature.value <= second.incident_feature.value
-	  ? first.incident_feature
-	  : second.incident_feature;
+	return first.incident_feature.value <= second.incident_feature.value ? first.incident_feature : second.incident_feature;
 }
 
 auto clipPolygonAgainstPlane(
-	std::vector<BoxClipVertex> polygon,
-	const glm::vec3& plane_center,
-	const glm::vec3& plane_normal,
-	float plane_extent,
-	int plane_axis,
-	bool plane_positive
+    std::vector<BoxClipVertex> polygon, const glm::vec3& plane_center, const glm::vec3& plane_normal, float plane_extent,
+    int plane_axis, bool plane_positive
 ) -> std::vector<BoxClipVertex> {
 	std::vector<BoxClipVertex> result;
 	if (polygon.empty()) {
@@ -422,13 +409,15 @@ auto clipPolygonAgainstPlane(
 			float denominator = previous_distance - current_distance;
 			if (std::abs(denominator) > 1.0e-8f) {
 				float amount = previous_distance / denominator;
-				result.emplace_back(BoxClipVertex {
-				  .position = previous.position + (current.position - previous.position) * amount,
-				  .incident_feature = clippedIncidentFeature(previous, current),
-				  .clipped = true,
-				  .clip_axis = plane_axis,
-				  .clip_positive = plane_positive,
-				});
+				result.emplace_back(
+				    BoxClipVertex {
+				      .position = previous.position + (current.position - previous.position) * amount,
+				      .incident_feature = clippedIncidentFeature(previous, current),
+				      .clipped = true,
+				      .clip_axis = plane_axis,
+				      .clip_positive = plane_positive,
+				    }
+				);
 			}
 		}
 
@@ -458,8 +447,7 @@ auto incidentFaceVertices(const WorldBox& box, const glm::vec3& reference_normal
 	float face_sign = glm::dot(box.rotation[face_axis], reference_normal) > 0.0f ? -1.0f : 1.0f;
 	int tangent_a = (face_axis + 1) % 3;
 	int tangent_b = (face_axis + 2) % 3;
-	glm::vec3 face_center =
-	  box.center + box.rotation[face_axis] * box.half_extents[face_axis] * face_sign;
+	glm::vec3 face_center = box.center + box.rotation[face_axis] * box.half_extents[face_axis] * face_sign;
 	glm::vec3 offset_a = box.rotation[tangent_a] * box.half_extents[tangent_a];
 	glm::vec3 offset_b = box.rotation[tangent_b] * box.half_extents[tangent_b];
 
@@ -486,16 +474,11 @@ auto incidentFaceVertices(const WorldBox& box, const glm::vec3& reference_normal
 	return {vertex(-1.0f, -1.0f), vertex(1.0f, -1.0f), vertex(1.0f, 1.0f), vertex(-1.0f, 1.0f)};
 }
 
-auto reduceBoxContacts(
-	std::vector<BoxContactCandidate> candidates,
-	const glm::vec3& normal
-) -> std::vector<BoxContactCandidate> {
+auto reduceBoxContacts(std::vector<BoxContactCandidate> candidates, const glm::vec3& normal) -> std::vector<BoxContactCandidate> {
 	std::erase_if(candidates, [](const BoxContactCandidate& candidate) {
-		const bool position_is_finite = std::isfinite(candidate.position.x) &&
-		                                std::isfinite(candidate.position.y) &&
-		                                std::isfinite(candidate.position.z);
-		return !position_is_finite || !std::isfinite(candidate.penetration) ||
-		       candidate.penetration < -contact_tolerance;
+		const bool position_is_finite =
+		    std::isfinite(candidate.position.x) && std::isfinite(candidate.position.y) && std::isfinite(candidate.position.z);
+		return !position_is_finite || !std::isfinite(candidate.penetration) || candidate.penetration < -contact_tolerance;
 	});
 	for (BoxContactCandidate& candidate : candidates) {
 		candidate.penetration = std::max(candidate.penetration, 0.0f);
@@ -575,8 +558,7 @@ auto reduceBoxContacts(
 			glm::vec3 side_b = candidates[third].position - candidates[first].position;
 			return std::sqrt(glm::dot(glm::cross(side_a, side_b), glm::cross(side_a, side_b)));
 		};
-		return triangleArea(selected[0], selected[1], index) +
-		       triangleArea(selected[1], selected[2], index) +
+		return triangleArea(selected[0], selected[1], index) + triangleArea(selected[1], selected[2], index) +
 		       triangleArea(selected[2], selected[0], index);
 	});
 
@@ -591,13 +573,8 @@ auto reduceBoxContacts(
 
 }
 
-auto collideSpheres(
-	BroadPhasePair pair,
-	const Shape& shape_a,
-	const Body& body_a,
-	const Shape& shape_b,
-	const Body& body_b
-) -> std::optional<Manifold> {
+auto collideSpheres(BroadPhasePair pair, const Shape& shape_a, const Body& body_a, const Shape& shape_b, const Body& body_b)
+    -> std::optional<Manifold> {
 	ZoneScoped;
 	ZoneValue((static_cast<uint64_t>(pair.a.shape.slot) << 32) | static_cast<uint64_t>(pair.b.shape.slot));
 
@@ -620,8 +597,8 @@ auto collideSpheres(
 		glm::vec3 body_delta = body_b.position - body_a.position;
 		float body_distance_squared = glm::dot(body_delta, body_delta);
 		normal = std::isfinite(body_distance_squared) && body_distance_squared > _detail::direction_epsilon_sq
-		  ? body_delta / std::sqrt(body_distance_squared)
-		  : _detail::canonicalPairAxis(pair);
+		             ? body_delta / std::sqrt(body_distance_squared)
+		             : _detail::canonicalPairAxis(pair);
 	}
 	const glm::vec3 point_a = center_a + normal * shape_a.sphere.radius;
 	const glm::vec3 point_b = center_b - normal * shape_b.sphere.radius;
@@ -629,14 +606,12 @@ auto collideSpheres(
 	return Manifold {
 	  .pair = pair,
 	  .normal = normal,
-	  .contacts = {
-	    ContactPoint {
-	      .position = (point_a + point_b) * 0.5f,
-	      .penetration = std::max(radius_sum - distance, 0.0f),
-	      .feature_a = sphere_surface_feature,
-	      .feature_b = sphere_surface_feature,
-	    }
-	  },
+	  .contacts = {ContactPoint {
+	    .position = (point_a + point_b) * 0.5f,
+	    .penetration = std::max(radius_sum - distance, 0.0f),
+	    .feature_a = sphere_surface_feature,
+	    .feature_b = sphere_surface_feature,
+	  }},
 	  .contact_count = 1
 	};
 }
@@ -652,10 +627,9 @@ auto collideSphereBox(
 	glm::vec3 local_box_point = glm::clamp(local_sph_center, -box.half_extents, box.half_extents);
 	glm::vec3 box_point = box.center + box.rotation * local_box_point;
 
-	const bool center_inside = 
-		local_sph_center.x >= -box.half_extents.x && local_sph_center.x <= box.half_extents.x &&
-		local_sph_center.y >= -box.half_extents.y && local_sph_center.y <= box.half_extents.y &&
-		local_sph_center.z >= -box.half_extents.z && local_sph_center.z <= box.half_extents.z;
+	const bool center_inside = local_sph_center.x >= -box.half_extents.x && local_sph_center.x <= box.half_extents.x &&
+	                           local_sph_center.y >= -box.half_extents.y && local_sph_center.y <= box.half_extents.y &&
+	                           local_sph_center.z >= -box.half_extents.z && local_sph_center.z <= box.half_extents.z;
 
 	glm::vec3 normal;
 	glm::vec3 sph_point;
@@ -667,24 +641,24 @@ auto collideSphereBox(
 		glm::vec3 delta = box_point - sphere.center;
 		float distance_sq = glm::dot(delta, delta);
 		float contact_radius = sphere.radius + _detail::contact_tolerance;
-		
+
 		if (not std::isfinite(distance_sq) || distance_sq > contact_radius * contact_radius) {
 			return std::nullopt;
 		}
-		
+
 		float distance = std::sqrt(distance_sq);
-		
+
 		if (distance_sq > _detail::direction_epsilon_sq) {
 			normal = delta / distance;
 		} else {
 			int selected_axis = 0;
 			float greatest_excess = -1.0f;
 			glm::vec3 local_normal {};
-			
+
 			for (int i = 0; i < 3; ++i) {
 				float excess = 0.0f;
 				float direction = 0.0f;
-				
+
 				if (local_sph_center[i] < -box.half_extents[i]) {
 					excess = -box.half_extents[i] - local_sph_center[i];
 					direction = 1.0f;
@@ -692,7 +666,7 @@ auto collideSphereBox(
 					excess = local_sph_center[i] - box.half_extents[i];
 					direction = -1.0f;
 				}
-				
+
 				if (excess > greatest_excess) {
 					greatest_excess = excess;
 					selected_axis = i;
@@ -700,10 +674,10 @@ auto collideSphereBox(
 					local_normal[i] = direction;
 				}
 			}
-			
+
 			normal = box.rotation * local_normal;
 		}
-		
+
 		penetration = std::max(sphere.radius - distance, 0.0f);
 		sph_point = sphere.center + normal * sphere.radius;
 		contact_box_point = box_point;
@@ -719,7 +693,7 @@ auto collideSphereBox(
 				nearest_face_distance = face_distance;
 			}
 		}
-		
+
 		float face_sign = local_sph_center[selected_axis] >= 0.0f ? 1.0f : -1.0f;
 		glm::vec3 local_outward {};
 		local_outward[selected_axis] = face_sign;
@@ -732,19 +706,17 @@ auto collideSphereBox(
 		penetration = sphere.radius + nearest_face_distance;
 		box_contact_feature = boxFaceFeature(selected_axis, face_sign > 0.0f);
 	}
-	
+
 	return Manifold {
-		.pair = pair,
-		.normal = normal,
-		.contacts = {
-			ContactPoint {
-				.position = (sph_point + contact_box_point) * 0.5f,
-				.penetration = penetration,
-				.feature_a = sphere_surface_feature,
-				.feature_b = box_contact_feature,
-			}
-		},
-		.contact_count = 1,
+	  .pair = pair,
+	  .normal = normal,
+	  .contacts = {ContactPoint {
+	    .position = (sph_point + contact_box_point) * 0.5f,
+	    .penetration = penetration,
+	    .feature_a = sphere_surface_feature,
+	    .feature_b = box_contact_feature,
+	  }},
+	  .contact_count = 1,
 	};
 }
 
@@ -778,7 +750,7 @@ auto collideSphereCapsule(
 			glm::vec3 segment_axis = segment / std::sqrt(segment_length_squared);
 			glm::vec3 absolute_axis = glm::abs(segment_axis);
 			glm::vec3 reference_axis;
-			
+
 			if (absolute_axis.x <= absolute_axis.y && absolute_axis.x <= absolute_axis.z) {
 				reference_axis = {1.0f, 0.0f, 0.0f};
 			} else if (absolute_axis.y <= absolute_axis.z) {
@@ -808,21 +780,18 @@ auto collideSphereCapsule(
 	return Manifold {
 	  .pair = pair,
 	  .normal = normal,
-	  .contacts = {
-	    ContactPoint {
-	      .position = contact_position,
-	      .penetration = penetration,
-	      .feature_a = sphere_surface_feature,
-	      .feature_b = capsuleFeature(closest.parameter),
-	    }
-	  },
+	  .contacts = {ContactPoint {
+	    .position = contact_position,
+	    .penetration = penetration,
+	    .feature_a = sphere_surface_feature,
+	    .feature_b = capsuleFeature(closest.parameter),
+	  }},
 	  .contact_count = 1,
 	};
 }
 
-auto collideBoxes(
-    BroadPhasePair pair, const Shape& shape_a, const Body& body_a, const Shape& shape_b, const Body& body_b
-) -> std::optional<Manifold> {
+auto collideBoxes(BroadPhasePair pair, const Shape& shape_a, const Body& body_a, const Shape& shape_b, const Body& body_b)
+    -> std::optional<Manifold> {
 	ZoneScoped;
 
 	_detail::WorldBox box_a = _detail::worldBox(body_a, shape_a.box);
@@ -851,8 +820,7 @@ auto collideBoxes(
 		bool new_is_face = type != _detail::BoxAxisType::edge;
 		bool old_is_face = best_axis.type != _detail::BoxAxisType::edge;
 		bool better = penetration < best_axis.penetration - _detail::contact_tolerance;
-		bool nearly_equal =
-		  std::abs(penetration - best_axis.penetration) <= _detail::contact_tolerance;
+		bool nearly_equal = std::abs(penetration - best_axis.penetration) <= _detail::contact_tolerance;
 		if (better || (nearly_equal && new_is_face && !old_is_face)) {
 			best_axis.axis = axis;
 			best_axis.penetration = penetration;
@@ -906,60 +874,59 @@ auto collideBoxes(
 	if (best_axis.type == _detail::BoxAxisType::edge) {
 		auto edge_a = _detail::boxSupportEdge(box_a, best_axis.axis_a, normal);
 		auto edge_b = _detail::boxSupportEdge(box_b, best_axis.axis_b, -normal);
-		auto closest = _detail::closestPointsBetweenSegments(
-		  edge_a.points[0], edge_a.points[1], edge_b.points[0], edge_b.points[1]
+		auto closest = _detail::closestPointsBetweenSegments(edge_a.points[0], edge_a.points[1], edge_b.points[0], edge_b.points[1]);
+		candidates.emplace_back(
+		    _detail::BoxContactCandidate {
+		      .position = (closest.point_a + closest.point_b) * 0.5f,
+		      .penetration = best_axis.penetration,
+		      .feature_a = edge_a.feature,
+		      .feature_b = edge_b.feature,
+		    }
 		);
-		candidates.emplace_back(_detail::BoxContactCandidate {
-		  .position = (closest.point_a + closest.point_b) * 0.5f,
-		  .penetration = best_axis.penetration,
-		  .feature_a = edge_a.feature,
-		  .feature_b = edge_b.feature,
-		});
 	} else {
 		bool reference_is_a = best_axis.type == _detail::BoxAxisType::face_a;
 		_detail::WorldBox reference = reference_is_a ? box_a : box_b;
 		_detail::WorldBox incident = reference_is_a ? box_b : box_a;
 		int reference_axis = reference_is_a ? best_axis.axis_a : best_axis.axis_b;
 		glm::vec3 reference_normal = reference_is_a ? normal : -normal;
-		float reference_sign =
-		  glm::dot(reference.rotation[reference_axis], reference_normal) >= 0.0f ? 1.0f : -1.0f;
-		glm::vec3 reference_face_center = reference.center +
-		  reference.rotation[reference_axis] * reference.half_extents[reference_axis] * reference_sign;
+		float reference_sign = glm::dot(reference.rotation[reference_axis], reference_normal) >= 0.0f ? 1.0f : -1.0f;
+		glm::vec3 reference_face_center =
+		    reference.center + reference.rotation[reference_axis] * reference.half_extents[reference_axis] * reference_sign;
 		int tangent_a = (reference_axis + 1) % 3;
 		int tangent_b = (reference_axis + 2) % 3;
 		std::vector<_detail::BoxClipVertex> polygon = _detail::incidentFaceVertices(incident, reference_normal);
 
 		polygon = _detail::clipPolygonAgainstPlane(
-		  std::move(polygon),
-		  reference_face_center,
-		  reference.rotation[tangent_a],
-		  reference.half_extents[tangent_a],
-		  tangent_a,
-		  true
+		    std::move(polygon),
+		    reference_face_center,
+		    reference.rotation[tangent_a],
+		    reference.half_extents[tangent_a],
+		    tangent_a,
+		    true
 		);
 		polygon = _detail::clipPolygonAgainstPlane(
-		  std::move(polygon),
-		  reference_face_center,
-		  -reference.rotation[tangent_a],
-		  reference.half_extents[tangent_a],
-		  tangent_a,
-		  false
+		    std::move(polygon),
+		    reference_face_center,
+		    -reference.rotation[tangent_a],
+		    reference.half_extents[tangent_a],
+		    tangent_a,
+		    false
 		);
 		polygon = _detail::clipPolygonAgainstPlane(
-		  std::move(polygon),
-		  reference_face_center,
-		  reference.rotation[tangent_b],
-		  reference.half_extents[tangent_b],
-		  tangent_b,
-		  true
+		    std::move(polygon),
+		    reference_face_center,
+		    reference.rotation[tangent_b],
+		    reference.half_extents[tangent_b],
+		    tangent_b,
+		    true
 		);
 		polygon = _detail::clipPolygonAgainstPlane(
-		  std::move(polygon),
-		  reference_face_center,
-		  -reference.rotation[tangent_b],
-		  reference.half_extents[tangent_b],
-		  tangent_b,
-		  false
+		    std::move(polygon),
+		    reference_face_center,
+		    -reference.rotation[tangent_b],
+		    reference.half_extents[tangent_b],
+		    tangent_b,
+		    false
 		);
 
 		for (const _detail::BoxClipVertex& incident_vertex : polygon) {
@@ -971,14 +938,10 @@ auto collideBoxes(
 			glm::vec3 reference_point = incident_vertex.position - reference_normal * separation;
 			glm::vec3 contact_position = (incident_vertex.position + reference_point) * 0.5f;
 			float penetration = std::max(-separation, 0.0f);
-			ContactFeatureID reference_feature = incident_vertex.clipped
-			  ? boxClipFeature(
-			      reference_axis,
-			      reference_sign > 0.0f,
-			      incident_vertex.clip_axis,
-			      incident_vertex.clip_positive
-			    )
-			  : boxFaceFeature(reference_axis, reference_sign > 0.0f);
+			ContactFeatureID reference_feature =
+			    incident_vertex.clipped
+			        ? boxClipFeature(reference_axis, reference_sign > 0.0f, incident_vertex.clip_axis, incident_vertex.clip_positive)
+			        : boxFaceFeature(reference_axis, reference_sign > 0.0f);
 			_detail::BoxContactCandidate new_candidate {
 			  .position = contact_position,
 			  .penetration = penetration,
@@ -991,8 +954,7 @@ auto collideBoxes(
 				if (glm::dot(difference, difference) <= _detail::duplicate_point_epsilon_sq) {
 					candidate.penetration = std::max(candidate.penetration, penetration);
 					if (new_candidate.feature_a.value < candidate.feature_a.value ||
-					    (new_candidate.feature_a == candidate.feature_a &&
-					     new_candidate.feature_b.value < candidate.feature_b.value)) {
+					    (new_candidate.feature_a == candidate.feature_a && new_candidate.feature_b.value < candidate.feature_b.value)) {
 						candidate.feature_a = new_candidate.feature_a;
 						candidate.feature_b = new_candidate.feature_b;
 					}
@@ -1009,12 +971,14 @@ auto collideBoxes(
 	if (candidates.empty()) {
 		auto point_a = _detail::boxSupportPoint(box_a, normal);
 		auto point_b = _detail::boxSupportPoint(box_b, -normal);
-		candidates.emplace_back(_detail::BoxContactCandidate {
-		  .position = (point_a.position + point_b.position) * 0.5f,
-		  .penetration = best_axis.penetration,
-		  .feature_a = point_a.feature,
-		  .feature_b = point_b.feature,
-		});
+		candidates.emplace_back(
+		    _detail::BoxContactCandidate {
+		      .position = (point_a.position + point_b.position) * 0.5f,
+		      .penetration = best_axis.penetration,
+		      .feature_a = point_a.feature,
+		      .feature_b = point_b.feature,
+		    }
+		);
 	}
 
 	candidates = _detail::reduceBoxContacts(std::move(candidates), normal);
@@ -1047,7 +1011,7 @@ auto collideCapsuleBox(
 	float distance_squared = glm::dot(delta, delta);
 	float contact_radius = capsule.radius + _detail::contact_tolerance;
 
-	if ( not std::isfinite(distance_squared) || distance_squared > contact_radius * contact_radius) {
+	if (not std::isfinite(distance_squared) || distance_squared > contact_radius * contact_radius) {
 		return std::nullopt;
 	}
 
@@ -1117,29 +1081,25 @@ auto collideCapsuleBox(
 	return Manifold {
 	  .pair = pair,
 	  .normal = normal,
-	  .contacts = {
-	    ContactPoint {
-	      .position = contact_position,
-	      .penetration = penetration,
-	      .feature_a = capsule_contact_feature,
-	      .feature_b = box_contact_feature,
-	    }
-	  },
+	  .contacts = {ContactPoint {
+	    .position = contact_position,
+	    .penetration = penetration,
+	    .feature_a = capsule_contact_feature,
+	    .feature_b = box_contact_feature,
+	  }},
 	  .contact_count = 1,
 	};
 }
 
-auto collideCapsules(
-    BroadPhasePair pair, const Shape& shape_a, const Body& body_a, const Shape& shape_b, const Body& body_b
-) -> std::optional<Manifold> {
+auto collideCapsules(BroadPhasePair pair, const Shape& shape_a, const Body& body_a, const Shape& shape_b, const Body& body_b)
+    -> std::optional<Manifold> {
 	ZoneScoped;
 
 	auto caps_a = _detail::worldCapsule(body_a, shape_a.capsule);
 	auto caps_b = _detail::worldCapsule(body_b, shape_b.capsule);
 
 	// Find the closest points on both capsule axes
-	auto closest =
-	  _detail::closestPointsBetweenSegments(caps_a.point_a, caps_a.point_b, caps_b.point_a, caps_b.point_b);
+	auto closest = _detail::closestPointsBetweenSegments(caps_a.point_a, caps_a.point_b, caps_b.point_a, caps_b.point_b);
 	auto delta = closest.point_b - closest.point_a;
 	float distance_squared = glm::dot(delta, delta);
 	float radius_sum = caps_a.radius + caps_b.radius;
@@ -1198,14 +1158,12 @@ auto collideCapsules(
 	return Manifold {
 	  .pair = pair,
 	  .normal = normal,
-	  .contacts = {
-	    ContactPoint {
-	      .position = contact_position,
-	      .penetration = penetration,
-	      .feature_a = capsuleFeature(closest.parameter_a),
-	      .feature_b = capsuleFeature(closest.parameter_b),
-	    }
-	  },
+	  .contacts = {ContactPoint {
+	    .position = contact_position,
+	    .penetration = penetration,
+	    .feature_a = capsuleFeature(closest.parameter_a),
+	    .feature_b = capsuleFeature(closest.parameter_b),
+	  }},
 	  .contact_count = 1,
 	};
 }

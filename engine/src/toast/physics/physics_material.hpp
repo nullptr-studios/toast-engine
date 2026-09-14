@@ -19,7 +19,7 @@ public:
 	auto type() const -> std::string_view override {
 		return "physics_material";
 	}
-	
+
 	[[nodiscard]]
 	auto get() const -> toml::table;
 	[[nodiscard]]
@@ -28,7 +28,7 @@ public:
 	auto staticFriction() const noexcept -> float;
 	[[nodiscard]]
 	auto dynamicFriction() const noexcept -> float;
-	
+
 private:
 	float m_restitution = 0.0f;
 	float m_static_friction = 0.6f;

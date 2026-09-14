@@ -1,7 +1,11 @@
 #include "simulator.hpp"
 
 #include "accumulator.hpp"
+#include "nodes/box_collider.hpp"
+#include "nodes/capsule_collider.hpp"
+#include "nodes/collider.hpp"
 #include "nodes/rigidbody.hpp"
+#include "nodes/sphere_collider.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -13,10 +17,8 @@ Simulator::Simulator() {
 	TOAST_ASSERT(not instance, "Physics", "Simulator can only be created once");
 	TOAST_INFO("Physics", "Simulator created");
 	instance = this;
-
-	// TODO: only singlethreaded right now
-	m_manifold_queues.emplace_back();
 }
+
 Simulator::~Simulator() {
 	TOAST_INFO("Physics", "Simulator destroyed");
 	instance = nullptr;
@@ -27,7 +29,7 @@ void Simulator::registerRigidbody(Rigidbody& node) {
 	if (instance->valid(node.m_body)) {
 		return;
 	}
-	
+
 	PhysicsMaterial material;
 	if (node.material.hasValue()) {
 		material.restitution = node.material->restitution();
@@ -35,41 +37,53 @@ void Simulator::registerRigidbody(Rigidbody& node) {
 		material.dynamic_friction = node.material->dynamicFriction();
 	}
 
-	std::vector<SphereShape> spheres = node.sphereShapes();
-	std::vector<BoxShape> boxes = node.boxShapes();
-	std::vector<CapsuleShape> capsules = node.capsuleShapes();
 	const BodyID body = instance->createBody(node.descriptor());
 	node.assignBody(body);
 	if (instance->valid(body)) {
-		instance->m_node_bindings.push_back({.body = body, .node = node.box().as<Rigidbody>()});
+		setBodyEnabled(body, node.enabled());
+		NodeBinding binding {.body = body, .node = node.box().as<Rigidbody>()};
 
 		size_t registered_shape_count = 0;
-		for (const auto& sphere : spheres) {
-			const ShapeID shape = instance->createSphere(body, sphere, material);
-			if (not instance->valid(shape)) {
-				TOAST_WARN("Physics", "Sphere collider on rigidbody '{}' was not registered", node.name());
+		for (const auto& child : node.children()) {
+			ShapeID shape;
+			toast::Box<Collider> collider;
+
+			if (const auto sphere = child.as<SphereCollider>(); sphere.exists()) {
+				shape = instance->createSphere(body, SphereShape {.local_center = sphere->position, .radius = sphere->radius}, material);
+				collider = sphere;
+			} else if (const auto box = child.as<BoxCollider>(); box.exists()) {
+				shape = instance->createBox(
+				    body, BoxShape {.local_center = box->position, .local_rotation = box->rotation, .size = box->size}, material
+				);
+				collider = box;
+			} else if (const auto capsule = child.as<CapsuleCollider>(); capsule.exists()) {
+				shape = instance->createCapsule(
+				    body,
+				    CapsuleShape {
+				      .local_center = capsule->position,
+				      .local_rotation = capsule->rotation,
+				      .radius = capsule->radius,
+				      .height = capsule->height,
+				    },
+				    material
+				);
+				collider = capsule;
+			} else {
 				continue;
 			}
+
+			if (not instance->valid(shape)) {
+				TOAST_WARN("Physics", "Invalid collider on rigidbody '{}' was not registered", node.name());
+				continue;
+			}
+
+			collider->assignShape(shape);
+			setShapeEnabled(shape, node.enabled() && collider->enabled() && not collider->disabled);
+			binding.colliders.push_back({.shape = shape, .node = std::move(collider)});
 			++registered_shape_count;
 		}
 
-		for (const auto& box : boxes) {
-			const ShapeID shape = instance->createBox(body, box, material);
-			if (not instance->valid(shape)) {
-				TOAST_WARN("Physics", "Box collider on rigidbody '{}' was not registered", node.name());
-				continue;
-			}
-			++registered_shape_count;
-		}
-
-		for (const auto& capsule : capsules) {
-			const ShapeID shape = instance->createCapsule(body, capsule, material);
-			if (not instance->valid(shape)) {
-				TOAST_WARN("Physics", "Capsule collider on rigidbody '{}' was not registered", node.name());
-				continue;
-			}
-			++registered_shape_count;
-		}
+		instance->m_node_bindings.emplace_back(std::move(binding));
 
 		if (registered_shape_count == 0) {
 			TOAST_WARN("Physics", "Rigidbody '{}' registered without an enabled valid collider", node.name());
@@ -89,6 +103,16 @@ void Simulator::unregisterRigidbody(Rigidbody& node) {
 	if (instance->valid(body)) {
 		TOAST_TRACE("Physics", "Unregistering rigidbody '{}'", node.name());
 	}
+	for (NodeBinding& binding : instance->m_node_bindings) {
+		if (binding.body != body) {
+			continue;
+		}
+		for (ColliderBinding& collider : binding.colliders) {
+			if (collider.node.exists()) {
+				collider.node->assignShape({});
+			}
+		}
+	}
 	instance->destroyBody(body);
 	std::erase_if(instance->m_node_bindings, [body](const NodeBinding& binding) { return binding.body == body; });
 	node.assignBody({});
@@ -97,18 +121,12 @@ void Simulator::unregisterRigidbody(Rigidbody& node) {
 void Simulator::tick() {
 	ZoneScoped;
 
+	syncEnabledState();
 	integrate(static_cast<float>(Accumulator::fixed_delta));
 
-	// clear every manifold queue before starting the record step
-	clearManifoldQueues();
-
-	// record manifolds into the queue
-	const auto candidates = broadPhase();
-	narrowPhase(candidates);
-
-	// now sort the manifolds
-	mergeManifoldQueues();
-	sortManifolds();
+	const CollisionWorldView world {.bodies = m_bodies, .shapes = m_shapes};
+	const auto candidates = m_broad_phase.findPairs(world);
+	m_manifolds = m_narrow_phase.generateManifolds(world, candidates);
 
 	// resolve
 	auto constraints = prepareConstraints(m_manifolds);
@@ -117,6 +135,46 @@ void Simulator::tick() {
 
 	// push poses after simulation settles
 	publishTransforms();
+}
+
+void Simulator::syncEnabledState() {
+	ZoneScoped;
+
+	for (NodeBinding& binding : m_node_bindings) {
+		Body* body = tryGetBody(binding.body);
+		if (not body) {
+			continue;
+		}
+
+		body->enabled = binding.node.exists() && binding.node->enabled();
+		for (ColliderBinding& collider_binding : binding.colliders) {
+			Shape* shape = tryGetShape(collider_binding.shape);
+			if (not shape) {
+				continue;
+			}
+
+			shape->enabled = body->enabled && collider_binding.node.exists() && collider_binding.node->enabled() &&
+			                 not collider_binding.node->disabled;
+		}
+	}
+}
+
+void Simulator::setBodyEnabled(BodyID body, bool enabled) {
+	if (not instance) {
+		return;
+	}
+	if (Body* value = instance->tryGetBody(body)) {
+		value->enabled = enabled;
+	}
+}
+
+void Simulator::setShapeEnabled(ShapeID shape, bool enabled) {
+	if (not instance) {
+		return;
+	}
+	if (Shape* value = instance->tryGetShape(shape)) {
+		value->enabled = enabled;
+	}
 }
 
 void Simulator::publishTransforms() {
@@ -141,7 +199,7 @@ auto Simulator::publishTransform(NodeBinding& binding) -> bool {
 		return false;
 	}
 
-	if (body->type == BodyType::dynamic_body) {
+	if (body->enabled && body->type == BodyType::dynamic_body) {
 		binding.node->applyPhysicsTransform(body->position, body->rotation);
 	}
 	return true;
@@ -156,12 +214,13 @@ auto Simulator::effectiveMassAlong(
 ) -> std::optional<float> {
 	glm::vec3 angular_a = body_a.inverse_inertia_world * glm::cross(r_a, direction);
 	glm::vec3 angular_b = body_b.inverse_inertia_world * glm::cross(r_b, direction);
-	float denominator = body_a.inverse_mass + body_b.inverse_mass + glm::dot(direction, glm::cross(angular_a, r_a) + glm::cross(angular_b, r_b));
+	float denominator =
+	    body_a.inverse_mass + body_b.inverse_mass + glm::dot(direction, glm::cross(angular_a, r_a) + glm::cross(angular_b, r_b));
 
 	if (not std::isfinite(denominator) || denominator <= 1.0e-8f) {
 		return std::nullopt;
 	}
-	
+
 	return 1.0f / denominator;
 }
 
@@ -174,17 +233,17 @@ void Simulator::applyImpulse(Body& body_a, Body& body_b, const glm::vec3& r_a, c
 
 auto Simulator::solveNormal(Constraint& constraint, Body& body_a, Body& body_b) -> bool {
 	glm::vec3 relative_velocity = velocityAtPoint(body_b, constraint.r_b) - velocityAtPoint(body_a, constraint.r_a);
-	float normal_speed = glm::dot(relative_velocity,  constraint.normal);
+	float normal_speed = glm::dot(relative_velocity, constraint.normal);
 	if (not std::isfinite(normal_speed)) {
 		return false;
 	}
-	
+
 	float impulse_delta = (constraint.restitution_bias - normal_speed) * constraint.normal_mass;
 	float old_impulse = constraint.accumulated_normal_impulse;
 	constraint.accumulated_normal_impulse = std::max(0.0f, old_impulse + impulse_delta);
 	float applied_impulse = constraint.accumulated_normal_impulse - old_impulse;
 	applyImpulse(body_a, body_b, constraint.r_a, constraint.r_b, constraint.normal * applied_impulse);
-	
+
 	return true;
 }
 
@@ -192,20 +251,20 @@ auto Simulator::solveFriction(Constraint& constraint, Body& body_a, Body& body_b
 	if (constraint.tangent_mass <= 0.0f) {
 		return true;
 	}
-	
+
 	// recalcualte because the normal impulse changed velocity
 	glm::vec3 relative_velocity = velocityAtPoint(body_b, constraint.r_b) - velocityAtPoint(body_a, constraint.r_a);
 	float tangent_speed = glm::dot(relative_velocity, constraint.tangent);
 	if (not std::isfinite(tangent_speed)) {
 		return false;
 	}
-	
+
 	float impulse_delta = -tangent_speed * constraint.tangent_mass;
 	float old_impulse = constraint.accumulated_tangent_impulse;
 	float propsed_impulse = old_impulse + impulse_delta;
 	float static_limit = constraint.static_friction * constraint.accumulated_normal_impulse;
 	float new_impulse = 0.0f;
-	
+
 	if (std::abs(propsed_impulse) <= static_limit) {
 		// no slipping
 		new_impulse = propsed_impulse;
@@ -214,11 +273,11 @@ auto Simulator::solveFriction(Constraint& constraint, Body& body_a, Body& body_b
 		float dynamic_limit = constraint.dynamic_friction * constraint.accumulated_normal_impulse;
 		new_impulse = std::clamp(propsed_impulse, -dynamic_limit, dynamic_limit);
 	}
-	
+
 	constraint.accumulated_tangent_impulse = new_impulse;
 	float applied_impulse = new_impulse - old_impulse;
 	applyImpulse(body_a, body_b, constraint.r_a, constraint.r_b, constraint.tangent * applied_impulse);
-	
+
 	return true;
 }
 
@@ -226,11 +285,11 @@ void Simulator::correctPositions(const std::vector<Manifold>& manifolds) {
 	constexpr float penetration_slop = 0.005f;
 	constexpr float correction_beta = 0.2f;
 	constexpr float max_correction = 0.05f;
-	
+
 	for (const Manifold& manifold : manifolds) {
 		auto* body_a = tryGetBody(manifold.pair.a.body);
 		auto* body_b = tryGetBody(manifold.pair.b.body);
-		
+
 		if (not body_a or not body_b) {
 			continue;
 		}
@@ -243,31 +302,24 @@ void Simulator::correctPositions(const std::vector<Manifold>& manifolds) {
 				deepest_penetration = std::max(deepest_penetration, penetration);
 			}
 		}
-		
+
 		float inv_mass = body_a->inverse_mass + body_b->inverse_mass;
 		if (not std::isfinite(inv_mass) || inv_mass <= 1.0e-8f) {
 			// both bodies are static
 			continue;
 		}
-		
+
 		// ignore tiny overlaps to prevent jitter
 		float excess_penetration = std::max(deepest_penetration - penetration_slop, 0.0f);
 		if (excess_penetration == 0.0f) {
 			continue;
 		}
-		
+
 		float correction_distance = std::min(correction_beta * excess_penetration, max_correction);
 		glm::vec3 correction = manifold.normal * (correction_distance / inv_mass);
-		
+
 		body_a->position -= correction * body_a->inverse_mass;
 		body_b->position += correction * body_b->inverse_mass;
-	}
-}
-
-void Simulator::flipManifold(Manifold& manifold) {
-	manifold.normal = -manifold.normal;
-	for (size_t i = 0; i < manifold.contact_count; ++i) {
-		std::swap(manifold.contacts[i].feature_a, manifold.contacts[i].feature_b);
 	}
 }
 
@@ -285,18 +337,16 @@ void Simulator::integrate(float dt) {
 			continue;
 		}
 
-		integrateBody(
-		    BodyID {.slot = static_cast<uint32_t>(index), .generation = slot.generation},
-		    slot.body,
-		    gravity,
-		    dt
-		);
+		integrateBody(BodyID {.slot = static_cast<uint32_t>(index), .generation = slot.generation}, slot.body, gravity, dt);
 	}
 }
 
 void Simulator::integrateBody(BodyID id, Body& body, const glm::vec3& gravity, float dt) {
 	ZoneScoped;
 	ZoneValue(static_cast<uint64_t>(id.slot));
+	if (not body.enabled) {
+		return;
+	}
 
 	// preserve the previous pose for interpolation
 	body.previous_position = body.position;
@@ -311,7 +361,7 @@ void Simulator::integrateBody(BodyID id, Body& body, const glm::vec3& gravity, f
 	body.position += body.linear_velocity * dt;
 
 	// angular integration
-	glm::quat omega_q = { 0.0f, body.angular_velocity.x, body.angular_velocity.y, body.angular_velocity.z };
+	glm::quat omega_q = {0.0f, body.angular_velocity.x, body.angular_velocity.y, body.angular_velocity.z};
 	glm::quat rotation_derivative = 0.5f * omega_q * body.rotation;
 	glm::quat next_rotation = body.rotation + rotation_derivative * dt;
 	float length_sq = glm::dot(next_rotation, next_rotation);
@@ -326,7 +376,7 @@ void Simulator::integrateBody(BodyID id, Body& body, const glm::vec3& gravity, f
 	body.inverse_inertia_world = rot_matrix * body.inverse_inertia_local * glm::transpose(rot_matrix);
 }
 
-void Simulator::callTick() { 
+void Simulator::callTick() {
 	TOAST_ASSERT(instance, "Physics", "Simulator instance is null; cannot tick");
 	instance->tick();
 }
@@ -443,10 +493,10 @@ auto Simulator::createBox(BodyID owner, const BoxShape& box, PhysicsMaterial mat
 		return {};
 	}
 
-	const bool center_is_finite = std::isfinite(box.local_center.x) && std::isfinite(box.local_center.y) &&
-	                              std::isfinite(box.local_center.z);
-	const bool size_is_valid = std::isfinite(box.size.x) && box.size.x > 0.0f && std::isfinite(box.size.y) &&
-	                           box.size.y > 0.0f && std::isfinite(box.size.z) && box.size.z > 0.0f;
+	const bool center_is_finite =
+	    std::isfinite(box.local_center.x) && std::isfinite(box.local_center.y) && std::isfinite(box.local_center.z);
+	const bool size_is_valid = std::isfinite(box.size.x) && box.size.x > 0.0f && std::isfinite(box.size.y) && box.size.y > 0.0f &&
+	                           std::isfinite(box.size.z) && box.size.z > 0.0f;
 	const float rotation_length_squared = glm::dot(box.local_rotation, box.local_rotation);
 	if (not center_is_finite || not size_is_valid || not std::isfinite(rotation_length_squared) ||
 	    rotation_length_squared <= 1.0e-10f) {
@@ -485,10 +535,10 @@ auto Simulator::createCapsule(BodyID owner, const CapsuleShape& capsule, Physics
 		return {};
 	}
 
-	const bool center_is_finite = std::isfinite(capsule.local_center.x) && std::isfinite(capsule.local_center.y) &&
-	                              std::isfinite(capsule.local_center.z);
-	const bool dimensions_are_valid = std::isfinite(capsule.radius) && capsule.radius > 0.0f &&
-	                                  std::isfinite(capsule.height) && capsule.height >= 2.0f * capsule.radius;
+	const bool center_is_finite =
+	    std::isfinite(capsule.local_center.x) && std::isfinite(capsule.local_center.y) && std::isfinite(capsule.local_center.z);
+	const bool dimensions_are_valid = std::isfinite(capsule.radius) && capsule.radius > 0.0f && std::isfinite(capsule.height) &&
+	                                  capsule.height >= 2.0f * capsule.radius;
 	const float rotation_length_squared = glm::dot(capsule.local_rotation, capsule.local_rotation);
 	if (not center_is_finite || not dimensions_are_valid || not std::isfinite(rotation_length_squared) ||
 	    rotation_length_squared <= 1.0e-10f) {
@@ -564,12 +614,18 @@ void Simulator::rebuildMassProperties(BodyID id) {
 
 	std::vector<ShapeID> shapes;
 	for (const auto& [index, slot] : m_shapes | std::views::enumerate) {
-		if (not slot.occupied) { continue; }
-		if (slot.shape.owner != id) { continue; }
-		shapes.emplace_back(ShapeID{
-			.slot = static_cast<uint32_t>(index),
-			.generation = slot.generation,
-		});
+		if (not slot.occupied) {
+			continue;
+		}
+		if (slot.shape.owner != id) {
+			continue;
+		}
+		shapes.emplace_back(
+		    ShapeID {
+		      .slot = static_cast<uint32_t>(index),
+		      .generation = slot.generation,
+		    }
+		);
 	}
 
 	if (shapes.empty()) {
@@ -727,160 +783,6 @@ auto Simulator::tryGetBody(BodyID body) const -> const Body* {
 	return valid(body) ? &m_bodies[body.slot].body : nullptr;
 }
 
-auto Simulator::broadPhase() const -> std::vector<BroadPhasePair> {
-	ZoneScoped;
-
-	std::vector<BroadPhasePair> pairs;
-
-	for (size_t i = 0; i < m_shapes.size(); ++i) {
-		if (not m_shapes[i].occupied) {
-			continue;
-		}
-
-		for (size_t j = i + 1; j < m_shapes.size(); ++j) {
-			if (auto pair = broadPhasePair(i, j)) {
-				pairs.emplace_back(*pair);
-			}
-		}
-	}
-
-	ZoneValue(static_cast<uint64_t>(pairs.size()));
-	return pairs;
-}
-
-auto Simulator::broadPhasePair(size_t shape_a_index, size_t shape_b_index) const -> std::optional<BroadPhasePair> {
-	ZoneScoped;
-	ZoneValue((static_cast<uint64_t>(shape_a_index) << 32) | static_cast<uint64_t>(shape_b_index));
-
-	const ShapeSlot& shape_a = m_shapes[shape_a_index];
-	const ShapeSlot& shape_b = m_shapes[shape_b_index];
-	if (not shape_b.occupied) {
-		return std::nullopt;
-	}
-
-	// skip if they have the same owner
-	if (shape_b.shape.owner == shape_a.shape.owner) {
-		return std::nullopt;
-	}
-
-	const Body* body_a = tryGetBody(shape_a.shape.owner);
-	const Body* body_b = tryGetBody(shape_b.shape.owner);
-
-	// skip if body is invalid
-	if (not body_a || not body_b) {
-		return std::nullopt;
-	}
-
-	// skip if they are both static/kinematic
-	if (body_a->inverse_mass == 0.0f && body_b->inverse_mass == 0.0f) {
-		return std::nullopt;
-	}
-
-	// clang-format off
-	return canonicalPair(
-		BodyShapeKey {
-			.body = shape_a.shape.owner,
-			.shape = {
-				.slot = static_cast<uint32_t>(shape_a_index),
-				.generation = shape_a.generation
-			}
-		},
-		BodyShapeKey {
-			.body = shape_b.shape.owner,
-			.shape = {
-				.slot = static_cast<uint32_t>(shape_b_index),
-				.generation = shape_b.generation
-			}
-		}
-	);
-	// clang-format on
-}
-
-void Simulator::clearManifoldQueues() {
-	ZoneScoped;
-	ZoneValue(static_cast<uint64_t>(m_manifold_queues.size()));
-
-	std::ranges::for_each(m_manifold_queues, [](ManifoldQueue& queue) { queue.clear(); });
-}
-
-void Simulator::narrowPhase(const std::vector<BroadPhasePair>& candidates) {
-	ZoneScoped;
-	ZoneValue(static_cast<uint64_t>(candidates.size()));
-
-	std::ranges::for_each(candidates, [&](auto pair) { collide(pair); });
-}
-
-void Simulator::mergeManifoldQueues() {
-	ZoneScoped;
-
-	m_manifolds.clear();
-
-	for (const ManifoldQueue& queue : m_manifold_queues) {
-		for (const Manifold& manifold : queue) {
-			mergeManifold(manifold);
-		}
-	}
-
-	ZoneValue(static_cast<uint64_t>(m_manifolds.size()));
-}
-
-void Simulator::mergeManifold(const Manifold& manifold) {
-	ZoneScoped;
-	ZoneValue(
-	    (static_cast<uint64_t>(manifold.pair.a.shape.slot) << 32) |
-	    static_cast<uint64_t>(manifold.pair.b.shape.slot)
-	);
-
-	m_manifolds.emplace_back(manifold);
-}
-
-void Simulator::sortManifolds() {
-	ZoneScoped;
-	ZoneValue(static_cast<uint64_t>(m_manifolds.size()));
-
-	std::ranges::sort(m_manifolds, [](const Manifold& lhs, const Manifold& rhs) {
-		return lhs.pair < rhs.pair;
-	});
-}
-
-auto Simulator::validateManifold(Manifold& manifold) const -> bool {
-	const Body* body_a = tryGetBody(manifold.pair.a.body);
-	const Body* body_b = tryGetBody(manifold.pair.b.body);
-	const Shape* shape_a = tryGetShape(manifold.pair.a.shape);
-	const Shape* shape_b = tryGetShape(manifold.pair.b.shape);
-	if (!body_a || !body_b || !shape_a || !shape_b ||
-	    shape_a->owner != manifold.pair.a.body || shape_b->owner != manifold.pair.b.body) {
-		return false;
-	}
-
-	if (manifold.contact_count == 0 || manifold.contact_count > manifold.contacts.size()) {
-		return false;
-	}
-
-	const bool normal_is_finite = std::isfinite(manifold.normal.x) &&
-	                              std::isfinite(manifold.normal.y) &&
-	                              std::isfinite(manifold.normal.z);
-	const float normal_length_squared = glm::dot(manifold.normal, manifold.normal);
-	if (!normal_is_finite || !std::isfinite(normal_length_squared) ||
-	    std::abs(normal_length_squared - 1.0f) > _detail::unit_normal_tolerance) {
-		return false;
-	}
-
-	for (size_t index = 0; index < manifold.contact_count; ++index) {
-		ContactPoint& contact = manifold.contacts[index];
-		const bool position_is_finite = std::isfinite(contact.position.x) &&
-		                                std::isfinite(contact.position.y) &&
-		                                std::isfinite(contact.position.z);
-		if (!position_is_finite || !std::isfinite(contact.penetration) ||
-		    contact.penetration < -_detail::contact_tolerance) {
-			return false;
-		}
-		contact.penetration = std::max(contact.penetration, 0.0f);
-	}
-
-	return true;
-}
-
 auto Simulator::prepareConstraints(const std::vector<Manifold>& manifolds) const -> std::vector<Constraint> {
 	ZoneScoped;
 	std::vector<Constraint> constraints;
@@ -913,10 +815,7 @@ auto Simulator::prepareConstraints(const std::vector<Manifold>& manifolds) const
 
 auto Simulator::prepareConstraint(const Manifold& manifold, const ContactPoint& contact) const -> std::optional<Constraint> {
 	ZoneScoped;
-	ZoneValue(
-	    (static_cast<uint64_t>(manifold.pair.a.body.slot) << 32) |
-	    static_cast<uint64_t>(manifold.pair.b.body.slot)
-	);
+	ZoneValue((static_cast<uint64_t>(manifold.pair.a.body.slot) << 32) | static_cast<uint64_t>(manifold.pair.b.body.slot));
 
 	const Body* body_a = tryGetBody(manifold.pair.a.body);
 	const Body* body_b = tryGetBody(manifold.pair.b.body);
@@ -924,12 +823,11 @@ auto Simulator::prepareConstraint(const Manifold& manifold, const ContactPoint& 
 		return std::nullopt;
 	}
 
-	const bool normal_is_finite = std::isfinite(manifold.normal.x) && std::isfinite(manifold.normal.y) &&
-	                              std::isfinite(manifold.normal.z);
-	const bool contact_is_finite = std::isfinite(contact.position.x) && std::isfinite(contact.position.y) &&
-	                               std::isfinite(contact.position.z);
-	if (not normal_is_finite || not contact_is_finite || not std::isfinite(contact.penetration) ||
-	    contact.penetration < 0.0f) {
+	const bool normal_is_finite =
+	    std::isfinite(manifold.normal.x) && std::isfinite(manifold.normal.y) && std::isfinite(manifold.normal.z);
+	const bool contact_is_finite =
+	    std::isfinite(contact.position.x) && std::isfinite(contact.position.y) && std::isfinite(contact.position.z);
+	if (not normal_is_finite || not contact_is_finite || not std::isfinite(contact.penetration) || contact.penetration < 0.0f) {
 		return std::nullopt;
 	}
 
@@ -947,14 +845,14 @@ auto Simulator::prepareConstraint(const Manifold& manifold, const ContactPoint& 
 	if (initial_normal_speed < -bounce_threshold) {
 		restitution_bias = -restitution * initial_normal_speed;
 	}
-	
+
 	const glm::vec3 tangent_velocity = relative_velocity - manifold.normal * initial_normal_speed;
 	const float tangent_length_sq = glm::dot(tangent_velocity, tangent_velocity);
 	glm::vec3 tangent = {};
 	float tangent_mass = 0.0f;
-	
+
 	if (tangent_length_sq > 1.0e-10f) {
-		tangent = tangent_velocity/sqrt(tangent_length_sq);
+		tangent = tangent_velocity / sqrt(tangent_length_sq);
 		const auto calculated_tangent_mass = effectiveMassAlong(*body_a, *body_b, r_a, r_b, tangent);
 		if (calculated_tangent_mass.has_value()) {
 			tangent_mass = calculated_tangent_mass.value();
@@ -966,26 +864,26 @@ auto Simulator::prepareConstraint(const Manifold& manifold, const ContactPoint& 
 	  .body_b = manifold.pair.b.body,
 	  .contact_point = contact.position,
 	  .normal = manifold.normal,
-		.tangent = tangent,
+	  .tangent = tangent,
 	  .r_a = r_a,
 	  .r_b = r_b,
 	  .penetration = contact.penetration,
-		.normal_mass = normal_mass.value_or(0.0f),
+	  .normal_mass = normal_mass.value_or(0.0f),
 	  .tangent_mass = tangent_mass,
-		.restitution_bias = restitution_bias,
-		.static_friction = 0.6f,
-		.dynamic_friction = 0.4f,
+	  .restitution_bias = restitution_bias,
+	  .static_friction = 0.6f,
+	  .dynamic_friction = 0.4f,
 	};
 }
 
 void Simulator::solveConstraints(std::vector<Constraint>& constraints) {
 	ZoneScoped;
 	ZoneValue(static_cast<uint64_t>(constraints.size()));
-	constexpr uint32_t solver_iterations = 8; // try 4 or 16
+	constexpr uint32_t solver_iterations = 16;    // try 4 or 16
 	size_t invalid_constraint_count = 0;
 
 	for (uint32_t iteration = 0; iteration < solver_iterations; ++iteration) {
-		ZoneScopedN("Simulator::solveConstraints()::iteration#%i");
+		ZoneScopedN("iteration");
 		ZoneValue(static_cast<uint64_t>(iteration));
 		for (Constraint& constraint : constraints) {
 			if (not solveConstraint(constraint)) {
@@ -1009,102 +907,11 @@ auto Simulator::solveConstraint(Constraint& constraint) -> bool {
 		return false;
 	}
 
-	if (!solveNormal(constraint,*body_a,*body_b)) {
+	if (!solveNormal(constraint, *body_a, *body_b)) {
 		return false;
 	}
 
 	return solveFriction(constraint, *body_a, *body_b);
-}
-
-void Simulator::collide(BroadPhasePair pair) {
-	ZoneScoped;
-	ZoneValue((static_cast<uint64_t>(pair.a.shape.slot) << 32) | static_cast<uint64_t>(pair.b.shape.slot));
-
-	const Shape* shape_a = tryGetShape(pair.a.shape);
-	const Shape* shape_b = tryGetShape(pair.b.shape);
-	const Body* body_a = tryGetBody(pair.a.body);
-	const Body* body_b = tryGetBody(pair.b.body);
-	if (!shape_a || !shape_b || !body_a || !body_b ||
-	    shape_a->owner != pair.a.body || shape_b->owner != pair.b.body) {
-		return;
-	}
-
-#ifdef DEBUG
-	// this is checked on broad phase so we don't need to check it back here
-	TOAST_ASSERT(shape_a && shape_b && body_a && body_b, "Physics", "Broad-phase pair became invalid");
-	TOAST_ASSERT(
-			shape_a->owner == pair.a.body && shape_b->owner == pair.b.body,
-			"Physics",
-			"Broad-phase shape ownership mismatch"
-	);
-#endif
-
-	// manifolds will be generated by the collideX functions
-	// just call the correct one here
-	std::optional<Manifold> manifold;
-	switch (shape_a->type) {
-		case ShapeType::sphere:
-			switch (shape_b->type) {
-				case ShapeType::sphere:
-					// sphere-sphere
-					manifold = collideSpheres(pair, *shape_a, *body_a, *shape_b, *body_b);
-					break;
-				case ShapeType::box:
-					// sphere-box
-					manifold = collideSphereBox(pair, *shape_a, *body_a, *shape_b, *body_b);
-					break;
-				case ShapeType::capsule:
-					// sphere-capsule
-					manifold = collideSphereCapsule(pair, *shape_a, *body_a, *shape_b, *body_b);
-					break;
-			}
-			break;
-		case ShapeType::box:
-			switch (shape_b->type) {
-				case ShapeType::sphere:
-					// sphere-box (inverted)
-					manifold = collideSphereBox(pair, *shape_b, *body_b, *shape_a, *body_a);
-					if (manifold.has_value()) {
-						flipManifold(*manifold);
-					}
-					break;
-				case ShapeType::box:
-					// box-box
-					manifold = collideBoxes(pair, *shape_a, *body_a, *shape_b, *body_b);
-					break;
-				case ShapeType::capsule:
-					// capsule-box (inverted)
-					manifold = collideCapsuleBox(pair, *shape_b, *body_b, *shape_a, *body_a);
-					if (manifold.has_value()) {
-						flipManifold(*manifold);
-					}
-					break;
-			}
-			break;
-		case ShapeType::capsule:
-			switch (shape_b->type) {
-				case ShapeType::sphere:
-					// sphere-capsule (inverted)
-					manifold = collideSphereCapsule(pair, *shape_b, *body_b, *shape_a, *body_a);
-					if (manifold.has_value()) {
-						flipManifold(*manifold);
-					}
-					break;
-				case ShapeType::box:
-					// capsule-box
-					manifold = collideCapsuleBox(pair, *shape_a, *body_a, *shape_b, *body_b);
-					break;
-				case ShapeType::capsule:
-					// capsule-capsule
-					manifold = collideCapsules(pair, *shape_a, *body_a, *shape_b, *body_b);
-					break;
-			}
-			break;
-	}
-
-	if (manifold.has_value() && validateManifold(*manifold)) {
-		m_manifold_queues[0].emplace_back(*manifold);
-	}
 }
 
 }

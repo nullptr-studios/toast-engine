@@ -6,9 +6,9 @@ namespace toast {
 
 void MeshNode::updateInspectorMessages() {
 	static const NodeMessage message {
-		.severity = NodeMessage::warning,
-		.id = 5,
-		.text = "MeshNode requires a Mesh to render",
+	  .severity = NodeMessage::warning,
+	  .id = 5,
+	  .text = "MeshNode requires a Mesh to render",
 	};
 
 	if (m_mesh.hasValue()) {

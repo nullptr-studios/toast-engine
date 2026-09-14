@@ -550,11 +550,13 @@ struct ProtoTraits<InspectorContent> {
 		std::vector<toast::NodeMessage> messages;
 		messages.reserve(p.messages().size());
 		for (const auto& m : p.messages()) {
-			messages.emplace_back(toast::NodeMessage{
-				.severity = m.error() ? toast::NodeMessage::error : toast::NodeMessage::warning,
-				.id = 0,
-				.text = m.message(),
-			});
+			messages.emplace_back(
+			    toast::NodeMessage {
+			      .severity = m.error() ? toast::NodeMessage::error : toast::NodeMessage::warning,
+			      .id = 0,
+			      .text = m.message(),
+			    }
+			);
 		}
 		return {p.uid(), p.name(), p.enabled(), parameters, messages};
 	}

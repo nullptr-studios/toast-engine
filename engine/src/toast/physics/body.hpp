@@ -49,6 +49,7 @@ struct BodyState {
 
 struct Body {
 	BodyType type = BodyType::dynamic_body;
+	bool enabled = true;
 	glm::vec3 position = {};
 	glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 	glm::vec3 previous_position = {};

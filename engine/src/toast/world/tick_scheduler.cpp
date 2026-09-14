@@ -145,8 +145,8 @@ void TickScheduler::compute(const std::vector<Box<Node>>& all_nodes) {
 }
 
 void TickScheduler::runPhase(const std::vector<TickSchedule::Wave>& phase, TickFunctionList func, std::string_view name) const {
-	ZoneScopedN("TickScheduler::runPhase");    // NOLINT
-	ZoneNameF("TickScheduler::runPhase(%s)", name.data());
+	ZoneScoped;    // NOLINT
+	ZoneNameF("%s", name.data());
 
 	for (const auto& wave : phase) {
 		std::vector<std::future<void>> futures;

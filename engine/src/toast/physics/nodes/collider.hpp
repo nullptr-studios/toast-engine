@@ -7,11 +7,17 @@
  */
 
 #pragma once
+#include "../shape.hpp"
+
 #include <toast/world/node_3d.hpp>
 
 namespace physics {
 
+class Simulator;
+
 class [[ToastNode, Hidden, Interface, Color("Green")]] TOAST_API Collider : public toast::Node3D {
+	friend class Simulator;
+
 public:
 	[[Reflect]]
 	bool disabled = false;
@@ -29,6 +35,10 @@ private:
 	void onEnable();
 	void onDisable();
 	void drawDebug();
+
+	void assignShape(ShapeID shape) noexcept { m_shape = shape; }
+
+	ShapeID m_shape;
 	bool m_debug_visible = false;
 };
 

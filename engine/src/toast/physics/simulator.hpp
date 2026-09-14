@@ -8,11 +8,12 @@
 #pragma once
 
 #include "body.hpp"
-#include "collision.hpp"
+#include "broad_phase.hpp"
 #include "constraint.hpp"
 #include "manifold.hpp"
-#include "shape.hpp"
+#include "narrow_phase.hpp"
 #include "physics_material.hpp"
+#include "shape.hpp"
 
 #include <deque>
 #include <optional>
@@ -25,8 +26,12 @@
 namespace physics {
 
 class Rigidbody;
+class Collider;
 
 class TOAST_API Simulator {
+	friend class Collider;
+	friend class Rigidbody;
+
 public:
 	Simulator();
 	~Simulator();
@@ -51,11 +56,15 @@ public:
 	static void unregisterRigidbody(Rigidbody& node);
 
 private:
-	using ManifoldQueue = std::deque<Manifold>;
+	struct ColliderBinding {
+		ShapeID shape;
+		toast::Box<Collider> node;
+	};
 
 	struct NodeBinding {
 		BodyID body;
 		toast::Box<Rigidbody> node;
+		std::vector<ColliderBinding> colliders;
 	};
 
 	[[nodiscard]]
@@ -81,18 +90,9 @@ private:
 	auto tryGetBody(BodyID body) const -> const Body*;
 
 	static void integrateBody(BodyID id, Body& body, const glm::vec3& gravity, float dt);
-
-	[[nodiscard]]
-	auto broadPhase() const -> std::vector<BroadPhasePair>;
-	[[nodiscard]]
-	auto broadPhasePair(size_t shape_a, size_t shape_b) const -> std::optional<BroadPhasePair>;
-	void clearManifoldQueues();
-	void narrowPhase(const std::vector<BroadPhasePair>& candidates);
-	void mergeManifoldQueues();
-	void mergeManifold(const Manifold& manifold);
-	void sortManifolds();
-	[[nodiscard]]
-	auto validateManifold(Manifold& manifold) const -> bool;
+	static void setBodyEnabled(BodyID body, bool enabled);
+	static void setShapeEnabled(ShapeID shape, bool enabled);
+	void syncEnabledState();
 
 	[[nodiscard]]
 	auto prepareConstraints(const std::vector<Manifold>& manifolds) const -> std::vector<Constraint>;
@@ -104,16 +104,15 @@ private:
 	void publishTransforms();
 	[[nodiscard]]
 	auto publishTransform(NodeBinding& binding) -> bool;
-	
+
 	static auto velocityAtPoint(const Body& body, const glm::vec3& r) -> glm::vec3;
-	static auto effectiveMassAlong(const Body& body_a, const Body& body_b, const glm::vec3& r_a, const glm::vec3& r_b, const glm::vec3& direction) -> std::optional<float>;
+	static auto effectiveMassAlong(
+	    const Body& body_a, const Body& body_b, const glm::vec3& r_a, const glm::vec3& r_b, const glm::vec3& direction
+	) -> std::optional<float>;
 	static void applyImpulse(Body& body_a, Body& body_b, const glm::vec3& r_a, const glm::vec3& r_b, const glm::vec3& impulse);
 	static auto solveNormal(Constraint& constraint, Body& body_a, Body& body_b) -> bool;
 	static auto solveFriction(Constraint& constraint, Body& body_a, Body& body_b) -> bool;
 	void correctPositions(const std::vector<Manifold>& manifolds);
-	static void flipManifold(Manifold& manifold);
-	
-	void collide(BroadPhasePair pair);
 
 	inline static Simulator* instance = nullptr;
 
@@ -126,7 +125,8 @@ private:
 
 	glm::vec3 gravity = {0.0f, 0.0f, -9.8f};
 
-	std::vector<ManifoldQueue> m_manifold_queues;
+	BroadPhase m_broad_phase;
+	NarrowPhase m_narrow_phase;
 	std::vector<Manifold> m_manifolds;
 };
 

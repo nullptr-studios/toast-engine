@@ -236,7 +236,10 @@ struct InspectorContent : Event<InspectorContent> {
 	std::vector<InspectorField> parameters;
 	std::vector<toast::NodeMessage> messages;
 
-	InspectorContent(std::string_view uid, std::string_view name, bool enabled, std::vector<InspectorField> fields, std::vector<toast::NodeMessage> messages)
+	InspectorContent(
+	    std::string_view uid, std::string_view name, bool enabled, std::vector<InspectorField> fields,
+	    std::vector<toast::NodeMessage> messages
+	)
 	    : uid(uid),
 	      name(name),
 	      enabled(enabled),

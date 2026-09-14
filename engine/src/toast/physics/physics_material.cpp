@@ -1,12 +1,9 @@
 #include "physics_material.hpp"
 
-namespace physics {
+namespace physics { }
 
-
-
-}
-
-assets::PhysicsMaterial::PhysicsMaterial(const toml::table& table, Handle<Schema> schema) : Data(table, std::move(schema), Data::keep_all_keys) {
+assets::PhysicsMaterial::PhysicsMaterial(const toml::table& table, Handle<Schema> schema)
+    : Data(table, std::move(schema), Data::keep_all_keys) {
 	const auto& d = static_cast<const DataValue&>(m_root);
 	if (d.contains("restitution")) {
 		m_restitution = d["restitution"].as<float>();

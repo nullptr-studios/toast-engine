@@ -76,6 +76,8 @@ void PlayWorkspace::unregisterDependency(Node& from, Node& to) {
 }
 
 void PlayWorkspace::tick() {
+	ZoneScoped;
+
 	if (participatesIn(NodeOwnerParticipation::gameplay_tick) && m_root_node.exists()) {
 		if (!m_started) {
 			m_root_node->propagateCallTick(m_root_node->info(), TickFunctionList::begin);

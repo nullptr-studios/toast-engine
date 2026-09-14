@@ -7,9 +7,9 @@
 namespace toast {
 void AudioContext::updateInspectorMessages() {
 	static const NodeMessage message {
-		.severity = NodeMessage::warning,
-		.id = 20,
-		.text = "AudioContext requires at least one AudioBank",
+	  .severity = NodeMessage::warning,
+	  .id = 20,
+	  .text = "AudioContext requires at least one AudioBank",
 	};
 
 	std::scoped_lock lock(m_load_lock);

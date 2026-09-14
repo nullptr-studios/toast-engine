@@ -16,19 +16,19 @@ namespace toast {
 
 void AudioEmitterBase::updateInspectorMessages() {
 	static const NodeMessage event_message {
-		.severity = NodeMessage::warning,
-		.id = 10,
-		.text = "3D audio emitters require an AudioEvent",
+	  .severity = NodeMessage::warning,
+	  .id = 10,
+	  .text = "3D audio emitters require an AudioEvent",
 	};
 	static const NodeMessage attenuation_message {
-		.severity = NodeMessage::error,
-		.id = 11,
-		.text = "Attenuation distances must be non-negative",
+	  .severity = NodeMessage::error,
+	  .id = 11,
+	  .text = "Attenuation distances must be non-negative",
 	};
 	static const NodeMessage shape_message {
-		.severity = NodeMessage::error,
-		.id = 12,
-		.text = "Audio emitter shape must be non-negative",
+	  .severity = NodeMessage::error,
+	  .id = 12,
+	  .text = "Audio emitter shape must be non-negative",
 	};
 
 	if (m_event.hasValue()) {
@@ -37,9 +37,8 @@ void AudioEmitterBase::updateInspectorMessages() {
 		addInspectorMessage(event_message);
 	}
 
-	const bool valid_attenuation = !m_override_attenuation ||
-	                               (std::isfinite(m_min_distance) && std::isfinite(m_max_distance) &&
-	                                m_min_distance >= 0.0f && m_max_distance >= m_min_distance);
+	const bool valid_attenuation = !m_override_attenuation || (std::isfinite(m_min_distance) && std::isfinite(m_max_distance) &&
+	                                                           m_min_distance >= 0.0f && m_max_distance >= m_min_distance);
 	if (valid_attenuation) {
 		removeInspectorMessage(attenuation_message);
 	} else {
@@ -50,12 +49,11 @@ void AudioEmitterBase::updateInspectorMessages() {
 	if (const auto sphere = box().as<AudioSphereEmitter>(); sphere.exists()) {
 		valid_shape = std::isfinite(sphere->m_radius) && sphere->m_radius >= 0.0f;
 	} else if (const auto capsule = box().as<AudioCapsuleEmitter>(); capsule.exists()) {
-		valid_shape = std::isfinite(capsule->m_radius) && capsule->m_radius >= 0.0f &&
-		              std::isfinite(capsule->m_half_height) && capsule->m_half_height >= 0.0f;
+		valid_shape = std::isfinite(capsule->m_radius) && capsule->m_radius >= 0.0f && std::isfinite(capsule->m_half_height) &&
+		              capsule->m_half_height >= 0.0f;
 	} else if (const auto cube = box().as<AudioBoxEmitter>(); cube.exists()) {
-		valid_shape = std::isfinite(cube->m_extents.x) && cube->m_extents.x >= 0.0f &&
-		              std::isfinite(cube->m_extents.y) && cube->m_extents.y >= 0.0f &&
-		              std::isfinite(cube->m_extents.z) && cube->m_extents.z >= 0.0f;
+		valid_shape = std::isfinite(cube->m_extents.x) && cube->m_extents.x >= 0.0f && std::isfinite(cube->m_extents.y) &&
+		              cube->m_extents.y >= 0.0f && std::isfinite(cube->m_extents.z) && cube->m_extents.z >= 0.0f;
 	}
 	if (valid_shape) {
 		removeInspectorMessage(shape_message);

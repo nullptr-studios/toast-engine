@@ -1294,6 +1294,8 @@ void Workspace::eventSubscriptions() {
 }
 
 void Workspace::tick() {
+	ZoneScoped;
+
 	if (!participatesIn(NodeOwnerParticipation::gameplay_tick)) {
 		tickActiveCameraController();
 	}

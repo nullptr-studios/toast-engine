@@ -48,9 +48,7 @@ inline constexpr uint64_t contact_feature_payload_mask = 0x00ff'ffff'ffff'ffffUL
 
 [[nodiscard]]
 constexpr auto makeContactFeature(FeatureType type, uint64_t payload = 0) -> ContactFeatureID {
-	return ContactFeatureID {
-	  (static_cast<uint64_t>(type) << 56) | (payload & contact_feature_payload_mask)
-	};
+	return ContactFeatureID {(static_cast<uint64_t>(type) << 56) | (payload & contact_feature_payload_mask)};
 }
 
 [[nodiscard]]
@@ -66,17 +64,13 @@ constexpr auto capsuleFeature(float parameter) -> ContactFeatureID {
 
 [[nodiscard]]
 constexpr auto boxFaceFeature(int axis, bool positive) -> ContactFeatureID {
-	return makeContactFeature(
-	  FeatureType::box_face,
-	  static_cast<uint64_t>(axis) | (static_cast<uint64_t>(positive) << 2)
-	);
+	return makeContactFeature(FeatureType::box_face, static_cast<uint64_t>(axis) | (static_cast<uint64_t>(positive) << 2));
 }
 
 [[nodiscard]]
 constexpr auto boxEdgeFeature(int direction_axis, uint8_t positive_mask) -> ContactFeatureID {
 	return makeContactFeature(
-	  FeatureType::box_edge,
-	  static_cast<uint64_t>(direction_axis) | (static_cast<uint64_t>(positive_mask & 0x7u) << 2)
+	    FeatureType::box_edge, static_cast<uint64_t>(direction_axis) | (static_cast<uint64_t>(positive_mask & 0x7u) << 2)
 	);
 }
 
@@ -86,12 +80,8 @@ constexpr auto boxVertexFeature(uint8_t positive_mask) -> ContactFeatureID {
 }
 
 [[nodiscard]]
-constexpr auto boxClipFeature(
-	int reference_axis,
-	bool reference_positive,
-	int side_axis,
-	bool side_positive
-) -> ContactFeatureID {
+constexpr auto boxClipFeature(int reference_axis, bool reference_positive, int side_axis, bool side_positive)
+    -> ContactFeatureID {
 	uint64_t payload = static_cast<uint64_t>(reference_axis);
 	payload |= static_cast<uint64_t>(reference_positive) << 2;
 	payload |= static_cast<uint64_t>(side_axis) << 3;
@@ -100,7 +90,9 @@ constexpr auto boxClipFeature(
 }
 
 enum class ShapeType : uint8_t {
-	sphere, box, capsule
+	sphere,
+	box,
+	capsule
 };
 
 struct SphereShape {
@@ -124,6 +116,7 @@ struct CapsuleShape {
 struct Shape {
 	BodyID owner;
 	ShapeType type = ShapeType::sphere;
+	bool enabled = true;
 	PhysicsMaterial material;
 
 	union {

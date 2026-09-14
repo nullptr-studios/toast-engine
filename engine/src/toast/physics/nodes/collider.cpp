@@ -2,22 +2,24 @@
 
 #include "box_collider.hpp"
 #include "capsule_collider.hpp"
-#include "sphere_collider.hpp"
 #include "rigidbody.hpp"
+#include "sphere_collider.hpp"
+
 #include <cmath>
+#include <toast/physics/simulator.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
 
 namespace physics {
 void Collider::updateInspectorMessages() {
 	static const toast::NodeMessage parent_message {
-		.severity = toast::NodeMessage::error,
-		.id = 1,
-		.text = "Colliders need to be children of a Rigidbody",
+	  .severity = toast::NodeMessage::error,
+	  .id = 1,
+	  .text = "Colliders need to be children of a Rigidbody",
 	};
 	static const toast::NodeMessage invalid_geometry_message {
-		.severity = toast::NodeMessage::error,
-		.id = 3,
-		.text = "Collider dimensions must be greater than zero",
+	  .severity = toast::NodeMessage::error,
+	  .id = 3,
+	  .text = "Collider dimensions must be greater than zero",
 	};
 	if (parent().as<Rigidbody>().exists()) {
 		removeInspectorMessage(parent_message);
@@ -30,14 +32,14 @@ void Collider::updateInspectorMessages() {
 		valid_geometry = std::isfinite(sphere->radius) && sphere->radius > 0.0f;
 	} else if (const auto capsule = box().as<CapsuleCollider>(); capsule.exists()) {
 		const float rotation_length_squared = glm::dot(capsule->rotation, capsule->rotation);
-		valid_geometry = std::isfinite(capsule->radius) && capsule->radius > 0.0f &&
-		                 std::isfinite(capsule->height) && capsule->height >= 2.0f * capsule->radius &&
-		                 std::isfinite(rotation_length_squared) && rotation_length_squared > 1.0e-10f;
+		valid_geometry = std::isfinite(capsule->radius) && capsule->radius > 0.0f && std::isfinite(capsule->height) &&
+		                 capsule->height >= 2.0f * capsule->radius && std::isfinite(rotation_length_squared) &&
+		                 rotation_length_squared > 1.0e-10f;
 	} else if (const auto cube = box().as<BoxCollider>(); cube.exists()) {
 		const float rotation_length_squared = glm::dot(cube->rotation, cube->rotation);
-		valid_geometry = std::isfinite(cube->size.x) && cube->size.x > 0.0f && std::isfinite(cube->size.y) &&
-		                 cube->size.y > 0.0f && std::isfinite(cube->size.z) && cube->size.z > 0.0f &&
-		                 std::isfinite(rotation_length_squared) && rotation_length_squared > 1.0e-10f;
+		valid_geometry = std::isfinite(cube->size.x) && cube->size.x > 0.0f && std::isfinite(cube->size.y) && cube->size.y > 0.0f &&
+		                 std::isfinite(cube->size.z) && cube->size.z > 0.0f && std::isfinite(rotation_length_squared) &&
+		                 rotation_length_squared > 1.0e-10f;
 	}
 
 	if (valid_geometry) {
@@ -55,18 +57,28 @@ void Collider::init() {
 		});
 	}
 }
+
 void Collider::destroy() {
-	if (renderer::VulkanRenderer::instance) renderer::VulkanRenderer::instance->unregisterDebugDraw(this);
+	if (renderer::VulkanRenderer::instance) {
+		renderer::VulkanRenderer::instance->unregisterDebugDraw(this);
+	}
 }
+
 void Collider::onEnable() {
 	m_debug_visible = true;
+	Simulator::setShapeEnabled(m_shape, not disabled);
 }
+
 void Collider::onDisable() {
 	m_debug_visible = false;
+	Simulator::setShapeEnabled(m_shape, false);
 }
+
 void Collider::drawDebug() {
 	ZoneScoped;
-	if (!m_debug_visible) return;
+	if (!m_debug_visible) {
+		return;
+	}
 	const glm::vec4 color = disabled ? glm::vec4(0.5f, 0.5f, 0.5f, debug_color.a) : debug_color;
 	syncTransform();
 	auto transform = glm::translate(glm::mat4(1.0f), world_position) * glm::mat4_cast(world_rotation);
@@ -76,7 +88,9 @@ void Collider::drawDebug() {
 			body->syncTransform();
 			center = body->world_position + body->world_rotation * position;
 		}
-		if (!std::isfinite(sphere->radius) || sphere->radius <= 0.0f) return;
+		if (!std::isfinite(sphere->radius) || sphere->radius <= 0.0f) {
+			return;
+		}
 		renderer::debugDrawSphere(center, sphere->radius, color);
 		if (debug_fill) {
 			auto fill_color = color;

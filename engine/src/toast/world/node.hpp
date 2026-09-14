@@ -66,12 +66,11 @@ struct NodeMessage {
 		warning,
 		error
 	} severity;
+
 	uint8_t id;
 	std::string text;
 
-	auto operator==(const NodeMessage& rhs) const noexcept -> bool {
-		return id == rhs.id;
-	}
+	auto operator==(const NodeMessage& rhs) const noexcept -> bool { return id == rhs.id; }
 };
 
 class [[ToastNode, Icon("Circle")]] TOAST_API Node {
@@ -371,6 +370,7 @@ protected:
 	INodeOwner* m_owner = nullptr;
 
 	virtual void onReflectedFieldChanged(std::string_view /*field_name*/) { }
+
 	virtual void updateInspectorMessages() { }
 
 	void addInspectorMessage(const NodeMessage& message) {
@@ -383,9 +383,7 @@ protected:
 		m_messages.emplace_back(message);
 	}
 
-	void removeInspectorMessage(const NodeMessage& message) {
-		m_messages.remove(message);
-	}
+	void removeInspectorMessage(const NodeMessage& message) { m_messages.remove(message); }
 
 private:
 	[[Reflect, Hidden]]

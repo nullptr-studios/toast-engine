@@ -1,24 +1,24 @@
 #include "player_controller.hpp"
 
+#include <algorithm>
 #include <toast/input/action.hpp>
 #include <toast/input/haptics_system.hpp>
 #include <toast/input/input_events.hpp>
 #include <toast/log.hpp>
-#include <algorithm>
 #include <typeinfo>
 
 namespace input {
 
 void PlayerController::updateInspectorMessages() {
 	static const toast::NodeMessage parent_message {
-		.severity = toast::NodeMessage::error,
-		.id = 21,
-		.text = "PlayerController must be a child of a Node3D",
+	  .severity = toast::NodeMessage::error,
+	  .id = 21,
+	  .text = "PlayerController must be a child of a Node3D",
 	};
 	static const toast::NodeMessage layout_message {
-		.severity = toast::NodeMessage::warning,
-		.id = 22,
-		.text = "PlayerController requires one valid layout",
+	  .severity = toast::NodeMessage::warning,
+	  .id = 22,
+	  .text = "PlayerController requires one valid layout",
 	};
 
 	if (parent().exists()) {

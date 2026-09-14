@@ -70,9 +70,9 @@ auto F_CALL musicPlayerCallback(FMOD_STUDIO_EVENT_CALLBACK_TYPE type, FMOD_STUDI
 
 void MusicPlayer::updateInspectorMessages() {
 	static const NodeMessage message {
-		.severity = NodeMessage::warning,
-		.id = 19,
-		.text = "MusicPlayer requires one valid track",
+	  .severity = NodeMessage::warning,
+	  .id = 19,
+	  .text = "MusicPlayer requires one valid track",
 	};
 
 	const bool has_track = std::ranges::any_of(m_tracks, [](const auto& track) { return track.hasValue(); });

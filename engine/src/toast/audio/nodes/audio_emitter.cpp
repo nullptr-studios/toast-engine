@@ -8,9 +8,9 @@ namespace toast {
 
 void AudioEmitter::updateInspectorMessages() {
 	static const NodeMessage message {
-		.severity = NodeMessage::warning,
-		.id = 10,
-		.text = "AudioEmitter requires an AudioEvent",
+	  .severity = NodeMessage::warning,
+	  .id = 10,
+	  .text = "AudioEmitter requires an AudioEvent",
 	};
 
 	if (m_event.hasValue()) {

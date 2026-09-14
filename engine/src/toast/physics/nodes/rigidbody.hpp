@@ -7,8 +7,8 @@
  */
 
 #pragma once
-#include "../physics_material.hpp"
 #include "../body.hpp"
+#include "../physics_material.hpp"
 #include "../shape.hpp"
 
 #include <toast/world/node_3d.hpp>
@@ -23,8 +23,9 @@ class [[ToastNode, Hidden, Interface, Icon("PhysicsBody"), Color("Green")]] TOAS
 
 protected:
 	explicit Rigidbody(BodyType type) : m_body_type(type) { }
+
 	virtual void configureBodyDescriptor(BodyDescriptor& descriptor) const { }
-	
+
 	[[Reflect]]
 	assets::Handle<assets::PhysicsMaterial> material;
 
@@ -45,15 +46,11 @@ private:
 	void updateInspectorMessages() override;
 	void begin();
 	void end();
+	void onEnable();
+	void onDisable();
 
 	[[nodiscard]]
 	auto descriptor() const -> BodyDescriptor;
-	[[nodiscard]]
-	auto sphereShapes() const -> std::vector<SphereShape>;
-	[[nodiscard]]
-	auto boxShapes() const -> std::vector<BoxShape>;
-	[[nodiscard]]
-	auto capsuleShapes() const -> std::vector<CapsuleShape>;
 
 	void assignBody(BodyID body) noexcept { m_body = body; }
 

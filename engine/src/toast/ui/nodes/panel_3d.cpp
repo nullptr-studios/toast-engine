@@ -23,14 +23,14 @@ Panel3D::~Panel3D() = default;
 
 void Panel3D::updateInspectorMessages() {
 	static const NodeMessage document_message {
-		.severity = NodeMessage::warning,
-		.id = 8,
-		.text = "Panel3D requires a UIElement",
+	  .severity = NodeMessage::warning,
+	  .id = 8,
+	  .text = "Panel3D requires a UIElement",
 	};
 	static const NodeMessage resolution_message {
-		.severity = NodeMessage::error,
-		.id = 9,
-		.text = "Pixels per meter must be greater than zero",
+	  .severity = NodeMessage::error,
+	  .id = 9,
+	  .text = "Pixels per meter must be greater than zero",
 	};
 
 	if (m_element.hasValue()) {

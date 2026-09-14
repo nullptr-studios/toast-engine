@@ -99,50 +99,45 @@ auto worldCapsule(const Body& body, const CapsuleShape& capsule) -> WorldCapsule
 [[nodiscard]]
 auto worldBox(const Body& body, const BoxShape& box) -> WorldBox;
 [[nodiscard]]
-auto closestPointOnSegment(const glm::vec3& point, const glm::vec3& segment_a, const glm::vec3& segment_b)
-  -> SegmentClosestPoint;
+auto closestPointOnSegment(const glm::vec3& point, const glm::vec3& segment_a, const glm::vec3& segment_b) -> SegmentClosestPoint;
 [[nodiscard]]
-auto closestPointsBetweenSegments(
-	const glm::vec3& a0, const glm::vec3& a1, const glm::vec3& b0, const glm::vec3& b1
-) -> SegmentClosestPoints;
+auto closestPointsBetweenSegments(const glm::vec3& a0, const glm::vec3& a1, const glm::vec3& b0, const glm::vec3& b1)
+    -> SegmentClosestPoints;
 [[nodiscard]]
 auto closestPointOnBox(const glm::vec3& point, const WorldBox& box) -> glm::vec3;
 [[nodiscard]]
 auto closestPointsSegmentBox(const glm::vec3& segment_a, const glm::vec3& segment_b, const WorldBox& box)
-  -> SegmentBoxClosestPoints;
+    -> SegmentBoxClosestPoints;
 [[nodiscard]]
 auto perpendicularTo(const glm::vec3& segment) -> glm::vec3;
 
 }
 
 [[nodiscard]]
-auto collideSpheres(
-	BroadPhasePair pair, const Shape& shape_a, const Body& body_a, const Shape& shape_b, const Body& body_b
-) -> std::optional<Manifold>;
+auto collideSpheres(BroadPhasePair pair, const Shape& shape_a, const Body& body_a, const Shape& shape_b, const Body& body_b)
+    -> std::optional<Manifold>;
 
 [[nodiscard]]
 auto collideSphereBox(
-	BroadPhasePair pair, const Shape& sph_shape, const Body& sph_body, const Shape& box_shape, const Body& box_body
+    BroadPhasePair pair, const Shape& sph_shape, const Body& sph_body, const Shape& box_shape, const Body& box_body
 ) -> std::optional<Manifold>;
 
 [[nodiscard]]
 auto collideSphereCapsule(
-	BroadPhasePair pair, const Shape& sph_shape, const Body& sph_body, const Shape& caps_shape, const Body& caps_body
+    BroadPhasePair pair, const Shape& sph_shape, const Body& sph_body, const Shape& caps_shape, const Body& caps_body
 ) -> std::optional<Manifold>;
 
 [[nodiscard]]
-auto collideBoxes(
-	BroadPhasePair pair, const Shape& shape_a, const Body& body_a, const Shape& shape_b, const Body& body_b
-) -> std::optional<Manifold>;
+auto collideBoxes(BroadPhasePair pair, const Shape& shape_a, const Body& body_a, const Shape& shape_b, const Body& body_b)
+    -> std::optional<Manifold>;
 
 [[nodiscard]]
 auto collideCapsuleBox(
-	BroadPhasePair pair, const Shape& caps_shape, const Body& caps_body, const Shape& box_shape, const Body& box_body
+    BroadPhasePair pair, const Shape& caps_shape, const Body& caps_body, const Shape& box_shape, const Body& box_body
 ) -> std::optional<Manifold>;
 
 [[nodiscard]]
-auto collideCapsules(
-	BroadPhasePair pair, const Shape& shape_a, const Body& body_a, const Shape& shape_b, const Body& body_b
-) -> std::optional<Manifold>;
+auto collideCapsules(BroadPhasePair pair, const Shape& shape_a, const Body& body_a, const Shape& shape_b, const Body& body_b)
+    -> std::optional<Manifold>;
 
 }

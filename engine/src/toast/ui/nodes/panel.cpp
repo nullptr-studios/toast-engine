@@ -22,9 +22,9 @@ Panel::~Panel() = default;
 
 void Panel::updateInspectorMessages() {
 	static const NodeMessage message {
-		.severity = NodeMessage::warning,
-		.id = 8,
-		.text = "Panel requires a UIElement",
+	  .severity = NodeMessage::warning,
+	  .id = 8,
+	  .text = "Panel requires a UIElement",
 	};
 
 	if (m_element.hasValue()) {

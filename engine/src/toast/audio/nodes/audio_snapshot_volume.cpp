@@ -11,14 +11,14 @@ namespace toast {
 void SnapshotVolume::updateInspectorMessages() {
 	Volume::updateInspectorMessages();
 	static const NodeMessage snapshot_message {
-		.severity = NodeMessage::warning,
-		.id = 15,
-		.text = "SnapshotVolume requires an AudioSnapshot",
+	  .severity = NodeMessage::warning,
+	  .id = 15,
+	  .text = "SnapshotVolume requires an AudioSnapshot",
 	};
 	static const NodeMessage fade_message {
-		.severity = NodeMessage::error,
-		.id = 16,
-		.text = "Snapshot fade times must be non-negative",
+	  .severity = NodeMessage::error,
+	  .id = 16,
+	  .text = "Snapshot fade times must be non-negative",
 	};
 
 	if (m_snapshot.hasValue()) {

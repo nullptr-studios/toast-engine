@@ -11,14 +11,14 @@ namespace toast {
 void AmbienceVolume::updateInspectorMessages() {
 	Volume::updateInspectorMessages();
 	static const NodeMessage events_message {
-		.severity = NodeMessage::warning,
-		.id = 17,
-		.text = "AmbienceVolume requires one AudioEvent",
+	  .severity = NodeMessage::warning,
+	  .id = 17,
+	  .text = "AmbienceVolume requires one AudioEvent",
 	};
 	static const NodeMessage interval_message {
-		.severity = NodeMessage::error,
-		.id = 18,
-		.text = "Max must be at least Min",
+	  .severity = NodeMessage::error,
+	  .id = 18,
+	  .text = "Max must be at least Min",
 	};
 
 	const bool has_event = std::ranges::any_of(m_events, [](const auto& event) { return event.hasValue(); });

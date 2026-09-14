@@ -9,14 +9,14 @@
 namespace toast {
 void Camera::updateInspectorMessages() {
 	static const NodeMessage fov_message {
-		.severity = NodeMessage::error,
-		.id = 6,
-		.text = "FOV must be between 0 and 180 degrees",
+	  .severity = NodeMessage::error,
+	  .id = 6,
+	  .text = "FOV must be between 0 and 180 degrees",
 	};
 	static const NodeMessage clipping_message {
-		.severity = NodeMessage::error,
-		.id = 7,
-		.text = "Far must be greater than Near",
+	  .severity = NodeMessage::error,
+	  .id = 7,
+	  .text = "Far must be greater than Near",
 	};
 
 	if (std::isfinite(fov) && fov > 0.0f && fov < 180.0f) {

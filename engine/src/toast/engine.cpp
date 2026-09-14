@@ -274,7 +274,6 @@ void Engine::tick() {
 
 	{
 		std::scoped_lock lock(m->owners_mutex);
-		ZoneScopedN("NodeOwners::tick()");
 		for (const auto& [_, node_owner] : m->owners) {
 			node_owner->tick();
 		}
