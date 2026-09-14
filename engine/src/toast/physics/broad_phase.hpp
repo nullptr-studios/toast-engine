@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "aabb_tree.hpp"
 #include "collision.hpp"
 #include "collision_world.hpp"
 
@@ -16,11 +17,22 @@ namespace physics {
 class BroadPhase {
 public:
 	[[nodiscard]]
-	auto findPairs(CollisionWorldView world) const -> std::vector<BroadPhasePair>;
+	auto findPairs(CollisionWorldView world) -> std::vector<BroadPhasePair>;
+
+	[[nodiscard]]
+	auto debugNodes() const -> std::vector<AABBTreeDebugNode>;
 
 private:
+	struct ShapeLeaf {
+		TreeNodeID node = null_node;
+		uint32_t generation = 0;
+	};
+
 	[[nodiscard]]
-	auto testPair(CollisionWorldView world, size_t shape_a, size_t shape_b) const -> std::optional<BroadPhasePair>;
+	auto testPair(CollisionWorldView world, ShapeID shape_a, ShapeID shape_b) const -> std::optional<BroadPhasePair>;
+
+	AABBTree m_tree;
+	std::vector<ShapeLeaf> m_shape_leaves;
 };
 
 }
