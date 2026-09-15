@@ -30,6 +30,7 @@
     "name": "FirstNode",
     "namespace": "test",
     "parent": null,
+    "signals": [],
     "source_file": "08_multi_class.hpp",
     "tick_functions": {
       "begin": false,
@@ -76,6 +77,7 @@
     "name": "SecondNode",
     "namespace": "test",
     "parent": null,
+    "signals": [],
     "source_file": "08_multi_class.hpp",
     "tick_functions": {
       "begin": false,

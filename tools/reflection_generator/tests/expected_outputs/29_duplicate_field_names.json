@@ -72,6 +72,7 @@
     "name": "DuplicateFieldNode",
     "namespace": null,
     "parent": null,
+    "signals": [],
     "source_file": "29_duplicate_field_names.hpp",
     "tick_functions": {
       "begin": false,

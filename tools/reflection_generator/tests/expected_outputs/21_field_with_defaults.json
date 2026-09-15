@@ -92,6 +92,7 @@
     "name": "DefaultsNode",
     "namespace": null,
     "parent": null,
+    "signals": [],
     "source_file": "21_field_with_defaults.hpp",
     "tick_functions": {
       "begin": false,
