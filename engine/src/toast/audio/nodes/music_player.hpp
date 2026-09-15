@@ -7,7 +7,7 @@
  */
 #pragma once
 #include "../assets.hpp"
-#include "toast/events/signals.hpp"
+#include <toast/events/signals.hpp>
 
 #include <mutex>
 #include <string>
