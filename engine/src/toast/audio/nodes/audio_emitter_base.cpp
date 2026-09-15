@@ -24,6 +24,7 @@ void AudioEmitterBase::play() {
 		sys.setPitch(m_instance_id, m_pitch);
 		update3DState();
 		applyProperties();
+		audio_started.fire(m_event->name());
 	}
 }
 
@@ -31,12 +32,14 @@ void AudioEmitterBase::stop() {
 	if (m_instance_id != 0) {
 		audio::AudioSystem::get().stopEvent3D(m_instance_id, m_allow_fadeout);
 		m_instance_id = 0;
+		audio_stopped.fire(m_event->name());
 	}
 }
 
-void AudioEmitterBase::pause(bool value) const {
+void AudioEmitterBase::pause(bool value) {
 	if (m_instance_id != 0) {
 		audio::AudioSystem::get().pauseEvent(m_instance_id, value);
+		audio_paused.fire(value);
 	}
 }
 

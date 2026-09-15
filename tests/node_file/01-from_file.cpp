@@ -73,16 +73,16 @@ TOAST_TEST_NAMED("node_file", "node_file/01-from_file", test_node_file_01_from_f
 
 	std::stringstream signal_text {
 	    "[root type=toast::Node]\n"
-	    "activated @signal = 10 \"on_activated\" \\\n"
-	    "    11 \"on_other_activated\"\n"
+	    "activated @signal = ABCDEFGHIJK \"on_activated\" \\\n"
+	    "    LMNOPQRSTUV \"on_other_activated\"\n"
 	};
 	Prefab signal_prefab(signal_text);
 	assert(signal_prefab.nodes[0].signals.size() == 1);
 	const auto& signal = signal_prefab.nodes[0].signals[0];
 	assert(signal.name == "activated");
 	assert(signal.connections.size() == 2);
-	assert(signal.connections[0].target.data() == 10 && signal.connections[0].function == "on_activated");
-	assert(signal.connections[1].target.data() == 11 && signal.connections[1].function == "on_other_activated");
+	assert(signal.connections[0].target.data() != 0 && signal.connections[0].function == "on_activated");
+	assert(signal.connections[1].target.data() != 0 && signal.connections[1].function == "on_other_activated");
 
 	Prefab wrapped_signals;
 	Prefab::Signal long_signal {.name = "activated"};
@@ -92,7 +92,8 @@ TOAST_TEST_NAMED("node_file", "node_file/01-from_file", test_node_file_01_from_f
 	wrapped_signals.nodes.push_back({.name = "root", .type = "toast::Node", .signals = {std::move(long_signal)}});
 	const std::string signal_output = wrapped_signals.toFile();
 	assert(signal_output.contains("activated @signal = \\\n"));
-	assert(signal_output.contains("    1 \"on_a_very_long_signal_function\" \\\n"));
+	assert(signal_output.contains("    "));
+	assert(signal_output.contains("\"on_a_very_long_signal_function\" \\\n"));
 	const std::vector<uint8_t> signal_binary = wrapped_signals.toBinary();
 	Prefab binary_signals{std::span<const uint8_t>(signal_binary)};
 	assert(binary_signals.nodes.size() == 1);

@@ -148,6 +148,7 @@
     "name": "SubgroupOnlyNode",
     "namespace": null,
     "parent": null,
+    "signals": [],
     "source_file": "13_subgroup_only.hpp",
     "tick_functions": {
       "begin": false,

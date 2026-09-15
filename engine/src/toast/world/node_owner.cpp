@@ -557,7 +557,7 @@ auto INodeOwner::buildTree(std::vector<Box<Node>>&& nodes, const assets::Handle<
 					);
 					continue;
 				}
-				signal->connect(&*node, *target->second, connection.function, true);
+				signal->connect(&*node, *target->second, connection.function, signals::ConnectionSource::editor, true);
 			}
 		}
 	}

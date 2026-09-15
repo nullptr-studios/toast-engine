@@ -3,7 +3,7 @@
 
 namespace {
 inline const std::string sample_text =
-	"~format @int = 3\n"
+	"~format @int = 4\n"
 	"\n"
 	"[station_master type=SpaceStationManager]\n"
 	"id @string = \"4e3d2c1b0a9\"\n"
@@ -39,7 +39,10 @@ inline const std::string sample_text =
 	"    ..targeting_matrix\n"
 	"        scan_radius @float = 250\n"
 	"        tracking_speed_deg @float = 90\n"
-	"        priority_targets @array_string = \"raider_interceptor\" \"rogue_mining_drone\" \"debris_hazard\"\n"
+	"        priority_targets @array_string = \\\n"
+	"            \"raider_interceptor\" \\\n"
+	"            \"rogue_mining_drone\" \\\n"
+	"            \"debris_hazard\"\n"
 	"        blind_angle_bounds @array_float = 180 245\n"
 	"\n"
 	"[player_avatar type=PlayerEntity]\n"
@@ -55,7 +58,11 @@ inline const std::string sample_text =
 	"    lod_distances @array_float = 5 15 45\n"
 	".wardrobe_manager\n"
 	"    equipped_outfit_id @string = \"deep_space_vanguard_set\"\n"
-	"    apparel_layers @array_string = \"base_thermal_mesh\" \"ballistic_breastplate\" \"reflective_visor\" \"heavy_trench_cloak\"\n"
+	"    apparel_layers @array_string = \\\n"
+	"        \"base_thermal_mesh\" \\\n"
+	"        \"ballistic_breastplate\" \\\n"
+	"        \"reflective_visor\" \\\n"
+	"        \"heavy_trench_cloak\"\n"
 	"    color_palette_hex @array_string = \"#1a1a1a\" \"#d4af37\" \"#e5e5e5\"\n"
 	".custom_blendshapes\n"
 	"    mesh_morph_weights @array_float = 0 1 0.25 0 0.85 0.4\n"

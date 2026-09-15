@@ -28,6 +28,7 @@
     "name": "ExportedNode",
     "namespace": "toast",
     "parent": null,
+    "signals": [],
     "source_file": "09_export_macros.hpp",
     "tick_functions": {
       "begin": false,

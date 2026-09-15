@@ -91,6 +91,7 @@
     "name": "AttributeNode",
     "namespace": null,
     "parent": null,
+    "signals": [],
     "source_file": "07_attributes.hpp",
     "tick_functions": {
       "begin": false,

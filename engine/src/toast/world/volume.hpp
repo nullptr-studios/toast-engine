@@ -7,6 +7,8 @@
  */
 
 #pragma once
+#include "toast/events/signals.hpp"
+
 #include <toast/export.hpp>
 #include <toast/world/node_3d.hpp>
 
@@ -43,6 +45,9 @@ public:
 	[[nodiscard]]
 	auto blendDistance() const -> float;
 	void blendDistance(float value);
+
+	signals::Signal<Box<Node>> node_exited;     // TODO:
+	signals::Signal<Box<Node>> node_entered;    // TODO:
 
 protected:
 	[[nodiscard]]

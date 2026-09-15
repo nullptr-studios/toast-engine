@@ -28,6 +28,7 @@
     "name": "DeepNode",
     "namespace": "foo::bar::baz",
     "parent": null,
+    "signals": [],
     "source_file": "18_nested_namespace.hpp",
     "tick_functions": {
       "begin": false,

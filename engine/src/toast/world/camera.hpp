@@ -9,6 +9,7 @@
 #pragma once
 
 #include "node_3d.hpp"
+#include "toast/events/signals.hpp"
 
 #include <toast/export.hpp>
 
@@ -37,6 +38,8 @@ public:
 	auto getView() const -> glm::mat4;
 	[[nodiscard]]
 	auto getProjection(float aspect) const -> glm::mat4;
+
+	signals::Signal<Box<Node>> set_as_main;
 
 private:
 	void begin();

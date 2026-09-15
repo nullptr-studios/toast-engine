@@ -1,9 +1,11 @@
 #include "lua_state.hpp"
 
 #include "asset_proxy.hpp"
+#include "lua_signal.hpp"
 #include "lua_types.hpp"
 #include "lua_util.hpp"
 #include "node_proxy.hpp"
+#include "signal_proxy.hpp"
 #include "ui_binds_proxy.hpp"
 
 #include <algorithm>
@@ -524,6 +526,73 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    .addIndexMetaMethod(nodeProxyIndex)
 	    .addNewIndexMetaMethod(nodeProxyNewindex)
 	    .endClass()
+
+	    // SignalProxy
+	    .beginClass<SignalProxy>("Signal")
+	    .addFunction(
+	        "connect",
+	        overload<SignalProxy&, const NodeProxy&, const std::string&>(
+	            +[](SignalProxy& signal, const NodeProxy& target, const std::string& function) {
+		            return signal.connect(target, function, signals::ConnectionSource::lua, true);
+	            }
+	        ),
+	        overload<SignalProxy&, const NodeProxy&, const std::string&, bool>(
+	            +[](SignalProxy& signal, const NodeProxy& target, const std::string& function, bool forwards_args) {
+		            return signal.connect(target, function, signals::ConnectionSource::lua, forwards_args);
+	            }
+	        ),
+	        overload<SignalProxy&, const luabridge::LuaRef&, const std::string&>(
+	            +[](SignalProxy& signal, const luabridge::LuaRef& target, const std::string& function) {
+		            return target.isTable() && signal.connectSelf(function, signals::ConnectionSource::lua);
+	            }
+	        ),
+	        overload<SignalProxy&, const luabridge::LuaRef&, const std::string&, bool>(
+	            +[](SignalProxy& signal, const luabridge::LuaRef& target, const std::string& function, bool forwards_args) {
+		            return target.isTable() && signal.connectSelf(function, signals::ConnectionSource::lua, forwards_args);
+	            }
+	        )
+	    )
+	    .addFunction(
+	        "disconnect",
+	        [](SignalProxy& signal, const NodeProxy& target, const std::string& function) {
+		        return signal.disconnect(target, signals::ConnectionSource::lua, function);
+	        },
+	        [](SignalProxy& signal, const luabridge::LuaRef& target, const std::string& function) {
+		        return target.isTable() && signal.disconnectSelf(signals::ConnectionSource::lua, function);
+	        }
+	    )
+	    .addFunction("clear", [](SignalProxy& signal) { signal.clear(signals::ConnectionSource::lua); })
+	    .addFunction("fire", &SignalProxy::fire)
+	    .endClass()
+
+	    .beginClass<LuaSignal>("LuaSignal")
+	    .addFunction(
+	        "connect",
+	        [](LuaSignal& signal, const NodeProxy& target, const std::string& function) {
+		        return signal.connect(target, function, signals::ConnectionSource::lua);
+	        },
+	        [](LuaSignal& signal, const luabridge::LuaRef& target, const std::string& function) {
+		        return target.isTable() && signal.connectSelf(function, signals::ConnectionSource::lua);
+	        }
+	    )
+	    .addFunction(
+	        "disconnect",
+	        [](LuaSignal& signal, const NodeProxy& target, const std::string& function) {
+		        return signal.disconnect(target, function, signals::ConnectionSource::lua);
+	        },
+	        [](LuaSignal& signal, const luabridge::LuaRef& target, const std::string& function) {
+		        return target.isTable() && signal.disconnectSelf(function, signals::ConnectionSource::lua);
+	        }
+	    )
+	    .addFunction("clear", [](LuaSignal& signal) { signal.clear(signals::ConnectionSource::lua); })
+	    .addFunction("fire", &LuaSignal::fire)
+	    .endClass()
+
+	    .beginNamespace("Signal")
+	    .addFunction(
+	        "create", +[](const luabridge::LuaRef&) { return LuaSignal {}; }
+	    )
+	    .endNamespace()
 
 	    // UIBindsProxy
 	    .beginClass<UIBindsProxy>("UIBinds")

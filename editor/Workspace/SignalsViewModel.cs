@@ -140,6 +140,15 @@ public partial class SignalsViewModel : Tool, IDisposable {
 
 	private void ApplyState(SignalState state) {
 		if (state.Node != m_nodeUid) return;
+		foreach (var entry in state.Signals.Where(entry => entry.DeclaringType == "Lua")) {
+			var card = Cards.FirstOrDefault(item => item.TypeName == "Lua");
+			if (card is null) {
+				card = new SignalCardViewModel { TypeName = "Lua", Color = ResourceBrush("Magenta"), Icon = LoadIcon("Circle") };
+				Cards.Insert(0, card);
+			}
+			if (!card.Signals.Any(item => item.Name == entry.Signal))
+				card.Signals.Add(new SignalItemViewModel(this, state.Node, "Lua", new Engine.SignalInfo(entry.Signal, "Signal0", [], default)));
+		}
 		foreach (var signal in Cards.SelectMany(card => card.Signals)) signal.Connections.Clear();
 		foreach (var entry in state.Signals) {
 			var signal = Cards.SelectMany(card => card.Signals)

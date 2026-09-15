@@ -1,4 +1,4 @@
-use serde_json::{json, Value as JsonValue};
+use serde_json::{Value as JsonValue, json};
 use std::fmt;
 
 /// Deep JSON comparison with path tracking for better error messages
@@ -22,26 +22,20 @@ impl JsonComparator {
         match (actual, expected) {
             (JsonValue::Null, JsonValue::Null) => Ok(()),
             (JsonValue::Bool(a), JsonValue::Bool(e)) if a == e => Ok(()),
-            (JsonValue::Bool(a), JsonValue::Bool(e)) => {
-                Err(JsonDiff {
-                    path: path.to_string(),
-                    reason: format!("bool mismatch: {} != {}", a, e),
-                })
-            }
+            (JsonValue::Bool(a), JsonValue::Bool(e)) => Err(JsonDiff {
+                path: path.to_string(),
+                reason: format!("bool mismatch: {} != {}", a, e),
+            }),
             (JsonValue::Number(a), JsonValue::Number(e)) if a == e => Ok(()),
-            (JsonValue::Number(a), JsonValue::Number(e)) => {
-                Err(JsonDiff {
-                    path: path.to_string(),
-                    reason: format!("number mismatch: {} != {}", a, e),
-                })
-            }
+            (JsonValue::Number(a), JsonValue::Number(e)) => Err(JsonDiff {
+                path: path.to_string(),
+                reason: format!("number mismatch: {} != {}", a, e),
+            }),
             (JsonValue::String(a), JsonValue::String(e)) if a == e => Ok(()),
-            (JsonValue::String(a), JsonValue::String(e)) => {
-                Err(JsonDiff {
-                    path: path.to_string(),
-                    reason: format!("string mismatch: '{}' != '{}'", a, e),
-                })
-            }
+            (JsonValue::String(a), JsonValue::String(e)) => Err(JsonDiff {
+                path: path.to_string(),
+                reason: format!("string mismatch: '{}' != '{}'", a, e),
+            }),
             (JsonValue::Array(a), JsonValue::Array(e)) => {
                 if a.len() != e.len() {
                     return Err(JsonDiff {
@@ -77,7 +71,11 @@ impl JsonComparator {
             }
             _ => Err(JsonDiff {
                 path: path.to_string(),
-                reason: format!("type mismatch: {} vs {}", json_type_str(actual), json_type_str(expected)),
+                reason: format!(
+                    "type mismatch: {} vs {}",
+                    json_type_str(actual),
+                    json_type_str(expected)
+                ),
             }),
         }
     }

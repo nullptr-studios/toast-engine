@@ -15,16 +15,26 @@ pub use serde_json::{Value as json_t, json};
 
 #[derive(Serialize, Clone)]
 pub enum FieldType {
-    #[serde(rename = "bool_t")] Bool,
-    #[serde(rename = "int_t")] Int,
-    #[serde(rename = "float_t")] Float,
-    #[serde(rename = "string_t")] String,
-    #[serde(rename = "double_t")] Double,
-    #[serde(rename = "uid_t")] Uid,
-    #[serde(rename = "vec2_t")] Vec2,
-    #[serde(rename = "vec3_t")] Vec3,
-    #[serde(rename = "vec4_t")] Vec4,
-    #[serde(rename = "quaternion_t")] Quaternion,
+    #[serde(rename = "bool_t")]
+    Bool,
+    #[serde(rename = "int_t")]
+    Int,
+    #[serde(rename = "float_t")]
+    Float,
+    #[serde(rename = "string_t")]
+    String,
+    #[serde(rename = "double_t")]
+    Double,
+    #[serde(rename = "uid_t")]
+    Uid,
+    #[serde(rename = "vec2_t")]
+    Vec2,
+    #[serde(rename = "vec3_t")]
+    Vec3,
+    #[serde(rename = "vec4_t")]
+    Vec4,
+    #[serde(rename = "quaternion_t")]
+    Quaternion,
 }
 
 #[derive(Serialize, Clone)]

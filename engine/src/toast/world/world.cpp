@@ -1095,6 +1095,7 @@ auto WorldTestAccess::createNode(World& world, std::string_view name, NodeState 
 
 	NodeInfo& info = testNodeInfos()[&*node];
 	info.type = "test::Node";
+	info.signals = Reflect<toast::Node>::type_info.signals;
 	info.functions.list = TickFunctionList::none;
 	node->m_info = &info;
 
