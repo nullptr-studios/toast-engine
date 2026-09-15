@@ -7,10 +7,10 @@
  */
 #pragma once
 #include "../assets.hpp"
-#include <toast/events/signals.hpp>
 
 #include <mutex>
 #include <string>
+#include <toast/events/signals.hpp>
 #include <toast/export.hpp>
 #include <toast/world/node.hpp>
 #include <unordered_map>
