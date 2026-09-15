@@ -196,12 +196,134 @@ auto removeSpaces(const std::string& text) -> std::string {
 	return result;
 }
 
+/**
+ * Escapes a string for the .tnode text format.
+ * Wraps the result in double quotes, escaping any internal " as \" and \ as \\.
+ */
+auto escapeString(const std::string& str) -> std::string {
+	std::string out;
+	out.reserve(str.size() + 2);
+	out += '"';
+	for (char c : str) {
+		if (c == '\\') {
+			out += "\\\\";
+		} else if (c == '"') {
+			out += "\\\"";
+		} else {
+			out += c;
+		}
+	}
+	out += '"';
+	return out;
+}
+
+/**
+ * Unescapes a quoted string from the .tnode text format.
+ * Strips surrounding double quotes and resolves \" -> " and \\\\ -> \\.
+ * If the string is not quoted, returns it as-is for backward compatibility.
+ */
+auto unescapeString(std::string_view str) -> std::string {
+	// Backward compatibility: if not quoted, return raw
+	if (str.size() < 2 || str.front() != '"' || str.back() != '"') {
+		return std::string(str);
+	}
+
+	// Strip surrounding quotes
+	str.remove_prefix(1);
+	str.remove_suffix(1);
+
+	std::string out;
+	out.reserve(str.size());
+	for (size_t i = 0; i < str.size(); ++i) {
+		if (str[i] == '\\' && i + 1 < str.size()) {
+			char next = str[i + 1];
+			if (next == '"' || next == '\\') {
+				out += next;
+				++i;
+				continue;
+			}
+		}
+		out += str[i];
+	}
+	return out;
+}
+
+/**
+ * Gets the next whitespace-delimited string token, preserving quoted strings
+ * (and their escapes) as a single token.
+ */
+auto nextStringValue(std::string_view& view) -> std::optional<std::string_view> {
+	while (!view.empty() && std::isspace(static_cast<unsigned char>(view.front()))) {
+		view.remove_prefix(1);
+	}
+	if (view.empty()) {
+		return std::nullopt;
+	}
+
+	if (view.front() != '"') {
+		return nextValue(view);
+	}
+
+	for (size_t i = 1; i < view.size(); ++i) {
+		if (view[i] == '\\' && i + 1 < view.size()) {
+			++i;
+			continue;
+		}
+		if (view[i] == '"') {
+			std::string_view token = view.substr(0, i + 1);
+			view.remove_prefix(i + 1);
+			if (!view.empty() && !std::isspace(static_cast<unsigned char>(view.front()))) {
+				return std::nullopt;
+			}
+			return token;
+		}
+	}
+
+	return std::nullopt;
+}
+
 }
 
 namespace assets {
+Prefab::Prefab(const Prefab& other)
+    : global_fields(other.global_fields),
+      nodes(other.nodes),
+      m_self_uid(other.m_self_uid),
+      m_allowed_uids(other.m_allowed_uids) { }
+
+Prefab::Prefab(Prefab&& other) noexcept
+    : global_fields(std::move(other.global_fields)),
+      nodes(std::move(other.nodes)),
+      m_self_uid(other.m_self_uid),
+      m_allowed_uids(std::move(other.m_allowed_uids)) { }
+
+auto Prefab::operator=(const Prefab& other) -> Prefab& {
+	if (this == &other) {
+		return *this;
+	}
+	global_fields = other.global_fields;
+	nodes = other.nodes;
+	m_self_uid = other.m_self_uid;
+	m_allowed_uids = other.m_allowed_uids;
+	return *this;
+}
+
+auto Prefab::operator=(Prefab&& other) noexcept -> Prefab& {
+	if (this == &other) {
+		return *this;
+	}
+	global_fields = std::move(other.global_fields);
+	nodes = std::move(other.nodes);
+	m_self_uid = other.m_self_uid;
+	m_allowed_uids = std::move(other.m_allowed_uids);
+	return *this;
+}
+
 Prefab::Prefab(std::istream& file) {
 	std::vector<std::string> lines;
 	std::string line;
+	std::string continued_line;
+	bool continuing = false;
 	while (std::getline(file, line)) {
 		// Strip leading/trailing whitespaces and tabs
 		size_t start = line.find_first_not_of(" \t\r\n\v\f");
@@ -215,7 +337,29 @@ Prefab::Prefab(std::istream& file) {
 			continue;
 		}
 
-		lines.push_back(std::move(cleaned));
+		const bool continues = cleaned.ends_with('\\');
+		if (continues) {
+			cleaned.pop_back();
+		}
+
+		if (continuing) {
+			continued_line += cleaned;
+		} else {
+			continued_line = std::move(cleaned);
+		}
+
+		if (continues) {
+			continuing = true;
+			continue;
+		}
+
+		lines.push_back(continued_line);
+		continuing = false;
+	}
+
+	if (continuing) {
+		TOAST_WARN("ResourceManager", "Prefab line continuation at end of file");
+		lines.push_back(std::move(continued_line));
 	}
 
 	for (size_t i = 0; i < lines.size();) {
@@ -339,6 +483,18 @@ auto Prefab::parseNodeChunk(std::span<const std::string> lines) -> std::optional
 			auto lua_var = parseLuaVarOverride(current);
 			if (lua_var) {
 				node.lua_vars.push_back(std::move(*lua_var));
+			}
+			i++;
+		} else if (const size_t name_end = current.find(' ');
+		           name_end != std::string::npos && std::string_view(current).substr(name_end + 1).starts_with("@signal ")) {
+			auto signal = parseSignal(current);
+			if (signal) {
+				auto existing = std::ranges::find(node.signals, signal->name, &Signal::name);
+				if (existing == node.signals.end()) {
+					node.signals.push_back(std::move(*signal));
+				} else {
+					existing->connections.insert(existing->connections.end(), signal->connections.begin(), signal->connections.end());
+				}
 			}
 			i++;
 		} else {
@@ -516,6 +672,50 @@ auto Prefab::parseLuaVarOverride(std::string_view line) -> std::optional<LuaVarO
 	return LuaVarOverride {.path = std::move(path), .value = std::string(value_str)};
 }
 
+auto Prefab::parseSignal(std::string_view line) -> std::optional<Signal> {
+	const size_t name_end = line.find(' ');
+	if (name_end == std::string_view::npos || name_end == 0) {
+		TOAST_ERROR("ResourceManager", "Malformed signal line: missing signal name");
+		return std::nullopt;
+	}
+	Signal signal {.name = std::string(line.substr(0, name_end))};
+	line.remove_prefix(name_end + 1);
+	if (!line.starts_with("@signal")) {
+		TOAST_ERROR("ResourceManager", "Malformed signal line for {}: missing '@signal'", signal.name);
+		return std::nullopt;
+	}
+	line.remove_prefix(7);
+
+	const size_t value_start = line.find('=');
+	if (value_start == std::string_view::npos) {
+		TOAST_ERROR("ResourceManager", "Malformed signal line for {}: missing '='", signal.name);
+		return std::nullopt;
+	}
+	line.remove_prefix(value_start + 1);
+
+	while (!line.empty()) {
+		auto target_token = nextStringValue(line);
+		if (!target_token) {
+			break;
+		}
+		auto function_token = nextStringValue(line);
+		if (!function_token) {
+			TOAST_ERROR("ResourceManager", "Malformed signal line for {}: missing function", signal.name);
+			return std::nullopt;
+		}
+
+		UID target;
+		target.assign(*target_token);
+		if (target.data() == 0) {
+			TOAST_WARN("ResourceManager", "Ignoring invalid signal target '{}' for {}", *target_token, signal.name);
+			continue;
+		}
+		signal.connections.push_back({.target = target, .function = unescapeString(*function_token)});
+	}
+
+	return signal;
+}
+
 auto Prefab::parseType(std::string_view type, bool& is_array) -> std::optional<FieldType> {
 	if (type.starts_with(_detail::array_str)) {
 		is_array = true;
@@ -565,7 +765,7 @@ auto Prefab::valueFromString(FieldType type, bool is_array, std::string_view val
 	auto parse_single = [](FieldType type, std::string_view token) -> std::optional<std::any> {
 		switch (type) {
 			// holy boilerplate lil bro
-			case FieldType::string_t: return std::any {std::string(token)};
+			case FieldType::string_t: return std::any {unescapeString(token)};
 			case FieldType::bool_t:
 				if (auto b = getValue<bool>(token)) {
 					return std::any {b.value()};
@@ -651,7 +851,11 @@ auto Prefab::valueFromString(FieldType type, bool is_array, std::string_view val
 		if (type == FieldType::string_t) {
 			std::vector<std::string> result;
 			while (!remaining.empty()) {
-				result.emplace_back(nextValue(remaining, _detail::string_array_separator));
+				auto token = nextStringValue(remaining);
+				if (!token) {
+					return std::nullopt;
+				}
+				result.emplace_back(unescapeString(*token));
 			}
 			return std::any {std::move(result)};
 		}
@@ -726,6 +930,10 @@ void Prefab::writeNode(const BasicNode& node, std::stringstream& ss) const {
 		ss << std::format("~lua {} = {}\n", lua_var.path, lua_var.value);
 	}
 
+	for (const auto& signal : node.signals) {
+		writeSignal(signal, ss);
+	}
+
 	for (const auto& group : node.groups) {
 		writeGroup(group, ss);
 	}
@@ -748,6 +956,42 @@ void Prefab::writeSubgroup(const Subgroup& subgroup, std::stringstream& ss) cons
 
 	for (const auto& field : subgroup.fields) {
 		writeField(field, ss, "        ");
+	}
+}
+
+void Prefab::writeSignal(const Signal& signal, std::stringstream& ss) const {
+	if (signal.connections.empty()) {
+		return;
+	}
+
+	const std::string prefix = std::format("{} @signal = ", signal.name);
+	std::vector<std::string> entries;
+	entries.reserve(signal.connections.size());
+	for (const auto& connection : signal.connections) {
+		entries.push_back(std::format("{} {}", connection.target, escapeString(connection.function)));
+	}
+
+	constexpr size_t wrap_column = 90;
+	size_t inline_size = prefix.size();
+	for (const auto& entry : entries) {
+		inline_size += entry.size() + (inline_size == prefix.size() ? 0 : 1);
+	}
+	if (inline_size < wrap_column) {
+		ss << prefix;
+		for (size_t i = 0; i < entries.size(); ++i) {
+			if (i != 0) {
+				ss << ' ';
+			}
+			ss << entries[i];
+		}
+		ss << '\n';
+		return;
+	}
+
+	ss << prefix << "\\\n";
+	for (size_t i = 0; i < entries.size(); ++i) {
+		ss << "    " << entries[i];
+		ss << (i + 1 < entries.size() ? " \\\n" : "\n");
 	}
 }
 
@@ -788,9 +1032,13 @@ auto Prefab::stringifyValue(FieldType type, bool is_array, const std::any& value
 		const auto& vec = std::any_cast<const std::vector<T>&>(value);
 		std::string result;
 		for (size_t i = 0; i < vec.size(); ++i) {
-			result += stringify_single(type, vec[i]);
+			if (type == FieldType::string_t) {
+				result += escapeString(stringify_single(type, vec[i]));
+			} else {
+				result += stringify_single(type, vec[i]);
+			}
 			if (i < vec.size() - 1) {
-				result += (type == FieldType::string_t) ? std::string(1, _detail::string_array_separator) : " ";
+				result += ' ';
 			}
 		}
 		return result;
@@ -813,7 +1061,45 @@ auto Prefab::stringifyValue(FieldType type, bool is_array, const std::any& value
 
 void Prefab::writeField(const Field& field, std::stringstream& ss, std::string offset) const {
 	std::string value_str = stringifyValue(field.type, field.is_array, field.value);
-	ss << std::format("{0}{1} @{2} = {3}\n", offset, field.name, writeType(field.type, field.is_array), value_str);
+
+	if (field.type == FieldType::string_t && !field.is_array) {
+		value_str = escapeString(value_str);
+	}
+
+	std::string prefix = std::format("{0}{1} @{2} = ", offset, field.name, writeType(field.type, field.is_array));
+	if (!field.is_array || value_str.empty()) {
+		ss << prefix << value_str << '\n';
+		return;
+	}
+
+	constexpr size_t wrap_column = 90;
+	if (prefix.size() + value_str.size() < wrap_column) {
+		ss << prefix << value_str << '\n';
+		return;
+	}
+
+	std::vector<std::string_view> tokens;
+	std::string_view remaining = value_str;
+	while (!remaining.empty()) {
+		auto token = nextStringValue(remaining);
+		if (!token) {
+			// stringifyValue always produces valid tokens; keep the value intact if that ever changes.
+			ss << prefix << value_str << '\n';
+			return;
+		}
+		tokens.push_back(*token);
+	}
+
+	const std::string continuation_offset = offset + "    ";
+	ss << prefix << "\\\n";
+	for (size_t i = 0; i < tokens.size(); ++i) {
+		ss << continuation_offset << tokens[i];
+		if (i + 1 < tokens.size()) {
+			ss << " \\\n";
+		} else {
+			ss << '\n';
+		}
+	}
 }
 
 auto Prefab::toBinary() const -> std::vector<uint8_t> {
@@ -889,6 +1175,16 @@ auto Prefab::toBinary() const -> std::vector<uint8_t> {
 		for (const auto& lua_var : node.lua_vars) {
 			writeString(buffer, lua_var.path);
 			writeString(buffer, lua_var.value);
+		}
+
+		writeValue(buffer, static_cast<uint32_t>(node.signals.size()));
+		for (const auto& signal : node.signals) {
+			writeString(buffer, signal.name);
+			writeValue(buffer, static_cast<uint32_t>(signal.connections.size()));
+			for (const auto& connection : signal.connections) {
+				writeValue(buffer, connection.target.data());
+				writeString(buffer, connection.function);
+			}
 		}
 
 		writeValue(buffer, static_cast<uint32_t>(node.groups.size()));
@@ -1017,6 +1313,22 @@ Prefab::Prefab(std::span<const uint8_t> bytes) {
 			}
 		}
 
+		if (header.version >= 4) {
+			uint32_t signal_count = reader.readValue<uint32_t>();
+			for (uint32_t j = 0; j < signal_count; ++j) {
+				Signal signal;
+				signal.name = reader.readString();
+				uint32_t connection_count = reader.readValue<uint32_t>();
+				signal.connections.reserve(connection_count);
+				for (uint32_t k = 0; k < connection_count; ++k) {
+					UID target;
+					target.value = reader.readValue<uint64_t>();
+					signal.connections.push_back({.target = target, .function = reader.readString()});
+				}
+				node.signals.push_back(std::move(signal));
+			}
+		}
+
 		uint32_t group_count = reader.readValue<uint32_t>();
 		for (uint32_t j = 0; j < group_count; ++j) {
 			Group group;
@@ -1094,8 +1406,8 @@ void Prefab::serializeNode(const toast::Node& node, bool is_root) {
 	};
 
 	auto make_field = [&](const FieldInfo* f_info) -> std::optional<Field> {
-		// Ignore fields with ReadOnly attribute
-		if (f_info->hasAttribute("ReadOnly")) {
+		// Ignore fields with ReadOnly or NoSerialize attribute
+		if (f_info->hasAttribute("ReadOnly") || f_info->hasAttribute("NoSerialize")) {
 			return {};
 		}
 
@@ -1224,6 +1536,30 @@ void Prefab::serializeNode(const toast::Node& node, bool is_root) {
 		}
 	}
 
+	node_info->forEachSignal([&](const NodeInfo&, const SignalInfo& signal_info) {
+		if (!signal_info.get) {
+			return;
+		}
+
+		Signal signal {.name = std::string(signal_info.name)};
+		for (const signals::ConnectionInfo& connection : signal_info.get(const_cast<toast::Node*>(&node))) {
+			if (connection.target.data() == 0 || !m_allowed_uids.contains(connection.target.data())) {
+				TOAST_WARN(
+				    "ResourceManager",
+				    "Signal '{}' of '{}' references UID {} outside this prefab; omitting",
+				    signal_info.name,
+				    node.name(),
+				    connection.target
+				);
+				continue;
+			}
+			signal.connections.push_back({.target = connection.target, .function = connection.function});
+		}
+		if (!signal.connections.empty()) {
+			out.signals.push_back(std::move(signal));
+		}
+	});
+
 	nodes.push_back(std::move(out));
 
 	// we do not go inside prefabs, no need to serialize its children
@@ -1294,7 +1630,7 @@ auto Prefab::fieldEquals(FieldType type, bool is_array, const std::any& a, const
 	} catch (const std::bad_any_cast&) { return false; }
 }
 
-auto Prefab::flattenedRootFields(const AssetHandle<Prefab>& source) const -> std::optional<BasicNode> {
+auto Prefab::flattenedRootFields(const Handle<Prefab>& source) const -> std::optional<BasicNode> {
 	if (not source.hasValue()) {
 		return std::nullopt;
 	}

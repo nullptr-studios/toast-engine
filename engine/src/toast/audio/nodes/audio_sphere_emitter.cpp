@@ -7,7 +7,7 @@ void AudioSphereEmitter::radius(float value) {
 }
 
 auto AudioSphereEmitter::emitterPosition(const glm::vec3& listener) -> glm::vec3 {
-	glm::vec3 center = worldPos();
+	glm::vec3 center = world_position;
 	glm::vec3 diff = listener - center;
 	float dist = glm::length(diff);
 	if (dist <= m_radius) {

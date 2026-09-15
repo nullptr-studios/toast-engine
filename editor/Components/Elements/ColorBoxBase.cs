@@ -6,6 +6,7 @@
 using System;
 using System.Globalization;
 using System.Text;
+using System.Windows.Input;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -58,6 +59,12 @@ public abstract class ColorBoxBase : TemplatedControl {
 
 	public static readonly StyledProperty<double> MaximumProperty =
 		AvaloniaProperty.Register<ColorBoxBase, double>(nameof(Maximum), double.PositiveInfinity);
+
+	public static readonly StyledProperty<ICommand?> CopyCommandProperty =
+		AvaloniaProperty.Register<ColorBoxBase, ICommand?>(nameof(CopyCommand));
+
+	public static readonly StyledProperty<ICommand?> PasteCommandProperty =
+		AvaloniaProperty.Register<ColorBoxBase, ICommand?>(nameof(PasteCommand));
 
 	public static readonly DirectProperty<ColorBoxBase, bool> NumbersVisibleProperty =
 		AvaloniaProperty.RegisterDirect<ColorBoxBase, bool>(nameof(NumbersVisible), o => o.m_numbersVisible);
@@ -153,6 +160,16 @@ public abstract class ColorBoxBase : TemplatedControl {
 		set => SetValue(MaximumProperty, value);
 	}
 
+	public ICommand? CopyCommand {
+		get => GetValue(CopyCommandProperty);
+		set => SetValue(CopyCommandProperty, value);
+	}
+
+	public ICommand? PasteCommand {
+		get => GetValue(PasteCommandProperty);
+		set => SetValue(PasteCommandProperty, value);
+	}
+
 	public bool NumbersVisible => m_numbersVisible;
 	public IBrush? SwatchBrush => m_swatchBrush;
 	public bool ShowChecker => m_showChecker;
@@ -179,6 +196,13 @@ public abstract class ColorBoxBase : TemplatedControl {
 		if (change.Property == RProperty || change.Property == GProperty || change.Property == BProperty ||
 		    change.Property == DecimalsProperty)
 			RefreshDisplay();
+		else if (change.Property == CopyCommandProperty || change.Property == PasteCommandProperty) {
+			ContextMenu = CopyCommand is not null || PasteCommand is not null
+				? BuildClipboardMenu(null)
+				: null;
+			m_builtDecimals = -1;
+			InvalidateMeasure();
+		}
 	}
 
 	protected override Size MeasureOverride(Size availableSize) {
@@ -347,7 +371,32 @@ public abstract class ColorBoxBase : TemplatedControl {
 		zone.PointerMoved += OnDragMoved;
 		zone.PointerReleased += OnDragReleased;
 		zone.PointerWheelChanged += (_, e) => ScrollChannel(e, channel, fine);
+		if (CopyCommand is not null || PasteCommand is not null) zone.ContextMenu = BuildClipboardMenu(channel);
 		return zone;
+	}
+
+	private ContextMenu BuildClipboardMenu(int? channel) {
+		var menu = new ContextMenu();
+		if (channel is { } index) {
+			var label = index switch { 0 => "R", 1 => "G", 2 => "B", _ => "A" };
+			menu.Items.Add(CommandItem($"Copy {label}", CopyCommandProperty, index));
+			menu.Items.Add(CommandItem("Copy Color", CopyCommandProperty, null));
+			menu.Items.Add(new Separator());
+			menu.Items.Add(CommandItem("Paste", PasteCommandProperty, index));
+		} else {
+			menu.Items.Add(CommandItem("Copy Color", CopyCommandProperty, null));
+			menu.Items.Add(CommandItem("Paste", PasteCommandProperty, null));
+		}
+		AsyncCommandMenu.Attach(menu);
+		return menu;
+	}
+
+	private MenuItem CommandItem(string header, StyledProperty<ICommand?> property, object? parameter) {
+		return new MenuItem {
+			Header = header,
+			Command = GetValue(property),
+			CommandParameter = parameter
+		};
 	}
 
 	private void UpdateChannelTexts(int decimals) {

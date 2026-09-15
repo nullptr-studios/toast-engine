@@ -39,11 +39,11 @@ void VulkanMesh::create(
     std::string_view debug_name
 ) {
 	if (data.vertices.empty()) {
-		TOAST_CRITICAL("VulkanMesh", "Mesh has no vertices");
+		TOAST_CRITICAL("Render", "Mesh has no vertices");
 	}
 
 	if (data.indices.empty()) {
-		TOAST_CRITICAL("VulkanMesh", "Mesh has no indices");
+		TOAST_CRITICAL("Render", "Mesh has no indices");
 	}
 
 	if (isReady()) {
@@ -117,7 +117,7 @@ void VulkanMesh::recordUpload(
     vk::CommandBuffer cmd, vk::Buffer staging_buffer, vk::DeviceSize vertex_offset, vk::DeviceSize index_offset
 ) const {
 	if (!m_vertex_buffer || !m_index_buffer) {
-		TOAST_CRITICAL("VulkanMesh", "Mesh buffers were not created before upload");
+		TOAST_CRITICAL("Render", "Mesh buffers were not created before upload");
 	}
 
 	// Copy using the explicit offsets out of the single staging buffer
@@ -174,7 +174,7 @@ void MeshUpload::build(const VulkanCore& core) {
 	const auto& allocation = vertex_staging.getAllocation();
 	uint8_t* mapped = static_cast<uint8_t*>(allocation.getInfo().pMappedData);
 	if (!mapped) {
-		TOAST_CRITICAL("MeshUpload", "Unified staging buffer is not mapped");
+		TOAST_CRITICAL("Render", "Unified staging buffer is not mapped");
 	}
 
 	// Sequential writes to contiguous memory blocks

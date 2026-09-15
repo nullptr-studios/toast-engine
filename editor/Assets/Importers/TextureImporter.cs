@@ -24,11 +24,11 @@ public partial class TextureImporter : IAssetImporter {
 		m_settings = settings;
 	}
 
-	public IReadOnlyList<string> SupportedExtensions => [".png", ".jpg", ".jpeg", ".tga"];
+	public IReadOnlyList<string> SupportedExtensions => [".png", ".jpg", ".jpeg"];
 
 	public bool CanHandle(string filePath) {
 		var ext = Path.GetExtension(filePath);
-		return ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".tga";
+		return ext == ".png" || ext == ".jpg" || ext == ".jpeg";
 	}
 
 	public string DisplayName => "Texture";

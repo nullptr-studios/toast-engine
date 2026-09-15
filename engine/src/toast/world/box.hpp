@@ -43,6 +43,9 @@ public:
 	Box() noexcept = default;
 	~Box() noexcept;
 
+	/// Constructs an empty (null) box; equivalent to the default constructor
+	Box(std::nullptr_t) noexcept { }
+
 	/// Low-level constructor used internally by the node allocation path; prefer constructing from a Node& or Node*
 	Box(_detail::ControlBox* control_box) noexcept;
 

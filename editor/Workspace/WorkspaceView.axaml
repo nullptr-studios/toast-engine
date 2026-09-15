@@ -66,31 +66,38 @@
 			<Setter Property="BorderThickness"
 			        Value="0" />
 		</Style>
-		<Style Selector="Button.chev.active">
+
+		<Style Selector="ToggleButton.snapTool">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg3}" />
 			<Setter Property="Foreground"
-			        Value="{StaticResource Bg1}" />
+			        Value="{StaticResource Text}" />
+			<Setter Property="BorderThickness"
+			        Value="0" />
 		</Style>
-		<Style Selector="Button.chev.active /template/ ContentPresenter#PART_ContentPresenter">
-			<Setter Property="Foreground"
-			        Value="{StaticResource Bg1}" />
-		</Style>
-		<Style Selector="Button.chev.red.active /template/ ContentPresenter#PART_ContentPresenter">
+		<Style Selector="ToggleButton.snapTool /template/ ContentPresenter#PART_ContentPresenter">
 			<Setter Property="Background"
-			        Value="{StaticResource Red}" />
+			        Value="{StaticResource Bg3}" />
 		</Style>
-		<Style Selector="Button.chev.green.active /template/ ContentPresenter#PART_ContentPresenter">
+		<Style Selector="ToggleButton.snapTool:pointerover /template/ ContentPresenter#PART_ContentPresenter">
 			<Setter Property="Background"
-			        Value="{StaticResource Green}" />
+			        Value="{StaticResource Bg4}" />
 		</Style>
-		<Style Selector="Button.chev.blue.active /template/ ContentPresenter#PART_ContentPresenter">
-			<Setter Property="Background"
-			        Value="{StaticResource Blue}" />
+
+		<!-- Snap value text: fixed-width monospace so the toggle doesn't resize between "OFF" and a value -->
+		<Style Selector="TextBlock.snapValue">
+			<Setter Property="FontFamily"
+			        Value="FiraCode Nerd Font,Consolas,monospace" />
+			<Setter Property="Width"
+			        Value="27" />
+			<Setter Property="TextAlignment"
+			        Value="Center" />
 		</Style>
 	</UserControl.Styles>
 
 	<DockPanel VerticalSpacing="8">
 		<Grid DockPanel.Dock="Top"
-		      ColumnDefinitions="Auto,8,Auto,Auto,Auto,Auto,8,Auto,*,Auto,Auto"
+		      ColumnDefinitions="Auto,0,Auto,Auto,0,Auto,*,Auto,Auto"
 		      ColumnSpacing="4">
 			<StackPanel Grid.Column="0"
 			            Orientation="Horizontal">
@@ -172,7 +179,7 @@
 
 			<StackPanel Grid.Column="3"
 			            Orientation="Horizontal">
-				<ToggleButton Classes="tool red"
+				<ToggleButton Classes="snapTool red"
 				              CornerRadius="6, 0, 0, 6"
 				              ToolTip.Tip="Grid snapping (G)"
 				              IsChecked="{Binding TranslateSnapEnabled}">
@@ -181,52 +188,17 @@
 						<LucideIcon Kind="Grid2x2"
 						            Size="18"
 						            StrokeWidth="2.5" />
-						<TextBlock Text="{Binding TranslateSnap, Converter={StaticResource SnapValueConverter}}" />
+						<TextBlock Classes="snapValue"
+						           Text="Off"
+						           IsVisible="{Binding !TranslateSnapEnabled}" />
+						<TextBlock Classes="snapValue"
+						           Text="{Binding TranslateSnap, Converter={StaticResource SnapValueConverter}}"
+						           IsVisible="{Binding TranslateSnapEnabled}"
+						           HorizontalAlignment="Right" />
 					</StackPanel>
 				</ToggleButton>
-				<Button Classes="chev red"
-				        Classes.active="{Binding TranslateSnapEnabled}"
-				        CornerRadius="0, 6, 6, 0">
-					<Button.Flyout>
-						<MenuFlyout>
-							<MenuItem Header=".01"
-							          Command="{Binding SetTranslateSnapCommand}"
-							          CommandParameter="0.01" />
-							<MenuItem Header=".05"
-							          Command="{Binding SetTranslateSnapCommand}"
-							          CommandParameter="0.05" />
-							<MenuItem Header=".10"
-							          Command="{Binding SetTranslateSnapCommand}"
-							          CommandParameter="0.10" />
-							<MenuItem Header=".25"
-							          Command="{Binding SetTranslateSnapCommand}"
-							          CommandParameter="0.25" />
-							<MenuItem Header=".50"
-							          Command="{Binding SetTranslateSnapCommand}"
-							          CommandParameter="0.50" />
-							<MenuItem Header="1.0"
-							          Command="{Binding SetTranslateSnapCommand}"
-							          CommandParameter="1.0" />
-							<MenuItem Header="2.0"
-							          Command="{Binding SetTranslateSnapCommand}"
-							          CommandParameter="2.0" />
-							<MenuItem Header="5.0"
-							          Command="{Binding SetTranslateSnapCommand}"
-							          CommandParameter="5.0" />
-							<MenuItem Header="10.0"
-							          Command="{Binding SetTranslateSnapCommand}"
-							          CommandParameter="10.0" />
-						</MenuFlyout>
-					</Button.Flyout>
-					<LucideIcon Kind="ChevronDown"
-					            Size="18"
-					            StrokeWidth="2.5" />
-				</Button>
-			</StackPanel>
-			<StackPanel Grid.Column="4"
-			            Orientation="Horizontal">
-				<ToggleButton Classes="tool green"
-				              CornerRadius="6, 0, 0, 6"
+				<ToggleButton Classes="snapTool green"
+				              CornerRadius="0"
 				              ToolTip.Tip="Rotate snapping (Shift+G)"
 				              IsChecked="{Binding RotateSnapEnabled}">
 					<StackPanel Orientation="Horizontal"
@@ -234,46 +206,17 @@
 						<LucideIcon Kind="RotateCw"
 						            Size="18"
 						            StrokeWidth="2.5" />
-						<TextBlock Text="{Binding RotateSnap, Converter={StaticResource SnapValueConverter}, ConverterParameter=int}" />
+						<TextBlock Classes="snapValue"
+						           Text="Off"
+						           IsVisible="{Binding !RotateSnapEnabled}" />
+						<TextBlock Classes="snapValue"
+						           Text="{Binding RotateSnap, Converter={StaticResource SnapValueConverter}, ConverterParameter=int}"
+						           IsVisible="{Binding RotateSnapEnabled}"
+						           HorizontalAlignment="Right" />
 					</StackPanel>
 				</ToggleButton>
-				<Button Classes="chev green"
-				        Classes.active="{Binding RotateSnapEnabled}"
-				        CornerRadius="0, 6, 6, 0">
-					<Button.Flyout>
-						<MenuFlyout>
-							<MenuItem Header="1"
-							          Command="{Binding SetRotateSnapCommand}"
-							          CommandParameter="1" />
-							<MenuItem Header="2"
-							          Command="{Binding SetRotateSnapCommand}"
-							          CommandParameter="2" />
-							<MenuItem Header="5"
-							          Command="{Binding SetRotateSnapCommand}"
-							          CommandParameter="5" />
-							<MenuItem Header="15"
-							          Command="{Binding SetRotateSnapCommand}"
-							          CommandParameter="15" />
-							<MenuItem Header="30"
-							          Command="{Binding SetRotateSnapCommand}"
-							          CommandParameter="30" />
-							<MenuItem Header="45"
-							          Command="{Binding SetRotateSnapCommand}"
-							          CommandParameter="45" />
-							<MenuItem Header="90"
-							          Command="{Binding SetRotateSnapCommand}"
-							          CommandParameter="90" />
-						</MenuFlyout>
-					</Button.Flyout>
-					<LucideIcon Kind="ChevronDown"
-					            Size="18"
-					            StrokeWidth="2.5" />
-				</Button>
-			</StackPanel>
-			<StackPanel Grid.Column="5"
-			            Orientation="Horizontal">
-				<ToggleButton Classes="tool blue"
-				              CornerRadius="6, 0, 0, 6"
+				<ToggleButton Classes="snapTool blue"
+				              CornerRadius="0"
 				              ToolTip.Tip="Scale snapping (Alt+G)"
 				              IsChecked="{Binding ScaleSnapEnabled}">
 					<StackPanel Orientation="Horizontal"
@@ -281,42 +224,129 @@
 						<LucideIcon Kind="Maximize2"
 						            Size="18"
 						            StrokeWidth="2.5" />
-						<TextBlock Text="{Binding ScaleSnap, Converter={StaticResource SnapValueConverter}}" />
+						<TextBlock Classes="snapValue"
+						           Text="Off"
+						           IsVisible="{Binding !ScaleSnapEnabled}" />
+						<TextBlock Classes="snapValue"
+						           Text="{Binding ScaleSnap, Converter={StaticResource SnapValueConverter}}"
+						           IsVisible="{Binding ScaleSnapEnabled}"
+						           HorizontalAlignment="Right" />
 					</StackPanel>
 				</ToggleButton>
-				<Button Classes="chev blue"
-				        Classes.active="{Binding ScaleSnapEnabled}"
-				        CornerRadius="0, 6, 6, 0">
+				<Button Classes="chev"
+				        CornerRadius="0, 6, 6, 0"
+				        ToolTip.Tip="Snap values">
 					<Button.Flyout>
-						<MenuFlyout>
-							<MenuItem Header=".01"
-							          Command="{Binding SetScaleSnapCommand}"
-							          CommandParameter="0.01" />
-							<MenuItem Header=".05"
-							          Command="{Binding SetScaleSnapCommand}"
-							          CommandParameter="0.05" />
-							<MenuItem Header=".10"
-							          Command="{Binding SetScaleSnapCommand}"
-							          CommandParameter="0.10" />
-							<MenuItem Header=".25"
-							          Command="{Binding SetScaleSnapCommand}"
-							          CommandParameter="0.25" />
-							<MenuItem Header=".50"
-							          Command="{Binding SetScaleSnapCommand}"
-							          CommandParameter="0.50" />
-							<MenuItem Header="1.0"
-							          Command="{Binding SetScaleSnapCommand}"
-							          CommandParameter="1.0" />
-							<MenuItem Header="2.0"
-							          Command="{Binding SetScaleSnapCommand}"
-							          CommandParameter="2.0" />
-							<MenuItem Header="5.0"
-							          Command="{Binding SetScaleSnapCommand}"
-							          CommandParameter="5.0" />
-							<MenuItem Header="10.0"
-							          Command="{Binding SetScaleSnapCommand}"
-							          CommandParameter="10.0" />
-						</MenuFlyout>
+						<Flyout Placement="Bottom">
+							<StackPanel Spacing="8"
+							            MinWidth="120">
+								<Grid ColumnDefinitions="Auto,*,Auto,Auto"
+								      ColumnSpacing="8">
+									<LucideIcon Grid.Column="0"
+									            Kind="Grid2x2"
+									            Size="16"
+									            StrokeWidth="2.5"
+									            VerticalAlignment="Center" />
+									<TextBlock Grid.Column="1"
+									           Classes="snapValue"
+									           Text="{Binding TranslateSnap, Converter={StaticResource SnapValueConverter}}"
+									           VerticalAlignment="Center"
+									           HorizontalAlignment="Right" />
+									<Button Grid.Column="2"
+									        Classes="chev"
+									        Width="24"
+									        Height="24"
+									        Padding="0"
+									        Command="{Binding StepTranslateSnapCommand}"
+									        CommandParameter="-1">
+										<LucideIcon Kind="Minus"
+										            Size="14"
+										            StrokeWidth="2.5" />
+									</Button>
+									<Button Grid.Column="3"
+									        Classes="chev"
+									        Width="24"
+									        Height="24"
+									        Padding="0"
+									        Command="{Binding StepTranslateSnapCommand}"
+									        CommandParameter="1">
+										<LucideIcon Kind="Plus"
+										            Size="14"
+										            StrokeWidth="2.5" />
+									</Button>
+								</Grid>
+								<Grid ColumnDefinitions="Auto,*,Auto,Auto"
+								      ColumnSpacing="8">
+									<LucideIcon Grid.Column="0"
+									            Kind="RotateCw"
+									            Size="16"
+									            StrokeWidth="2.5"
+									            VerticalAlignment="Center" />
+									<TextBlock Grid.Column="1"
+									           Classes="snapValue"
+									           Text="{Binding RotateSnap, Converter={StaticResource SnapValueConverter}, ConverterParameter=int}"
+									           VerticalAlignment="Center"
+									           HorizontalAlignment="Right" />
+									<Button Grid.Column="2"
+									        Classes="chev"
+									        Width="24"
+									        Height="24"
+									        Padding="0"
+									        Command="{Binding StepRotateSnapCommand}"
+									        CommandParameter="-1">
+										<LucideIcon Kind="Minus"
+										            Size="14"
+										            StrokeWidth="2.5" />
+									</Button>
+									<Button Grid.Column="3"
+									        Classes="chev"
+									        Width="24"
+									        Height="24"
+									        Padding="0"
+									        Command="{Binding StepRotateSnapCommand}"
+									        CommandParameter="1">
+										<LucideIcon Kind="Plus"
+										            Size="14"
+										            StrokeWidth="2.5" />
+									</Button>
+								</Grid>
+								<Grid ColumnDefinitions="Auto,*,Auto,Auto"
+								      ColumnSpacing="8">
+									<LucideIcon Grid.Column="0"
+									            Kind="Maximize2"
+									            Size="16"
+									            StrokeWidth="2.5"
+									            VerticalAlignment="Center" />
+									<TextBlock Grid.Column="1"
+									           Classes="snapValue"
+									           Text="{Binding ScaleSnap, Converter={StaticResource SnapValueConverter}}"
+									           VerticalAlignment="Center"
+									           HorizontalAlignment="Right" />
+									<Button Grid.Column="2"
+									        Classes="chev"
+									        Width="24"
+									        Height="24"
+									        Padding="0"
+									        Command="{Binding StepScaleSnapCommand}"
+									        CommandParameter="-1">
+										<LucideIcon Kind="Minus"
+										            Size="14"
+										            StrokeWidth="2.5" />
+									</Button>
+									<Button Grid.Column="3"
+									        Classes="chev"
+									        Width="24"
+									        Height="24"
+									        Padding="0"
+									        Command="{Binding StepScaleSnapCommand}"
+									        CommandParameter="1">
+										<LucideIcon Kind="Plus"
+										            Size="14"
+										            StrokeWidth="2.5" />
+									</Button>
+								</Grid>
+							</StackPanel>
+						</Flyout>
 					</Button.Flyout>
 					<LucideIcon Kind="ChevronDown"
 					            Size="18"
@@ -324,7 +354,7 @@
 				</Button>
 			</StackPanel>
 
-			<StackPanel Grid.Column="7"
+			<StackPanel Grid.Column="5"
 			            Orientation="Horizontal">
 				<Button Background="{StaticResource Bg3}"
 				        CornerRadius="6, 0, 0, 6"
@@ -339,30 +369,63 @@
 				</Button>
 				<Button Background="{StaticResource Bg3}"
 				        CornerRadius="0, 6, 6, 0"
-				        ToolTip.Tip="Toggle render layers visibility">
+				        ToolTip.Tip="Toggle render passes visibility"
+				        Command="{Binding RefreshRenderPassesCommand}">
+					<Button.Flyout>
+						<Flyout Placement="Bottom">
+							<StackPanel MinWidth="180"
+							            Spacing="4">
+								<TextBlock Text="Render Passes"
+								           FontWeight="Bold"
+								           Margin="0,0,0,4" />
+								<ItemsControl ItemsSource="{Binding RenderPasses}">
+									<ItemsControl.ItemTemplate>
+										<DataTemplate x:DataType="vm:RenderPassVM">
+											<CheckBox Content="{Binding Name}"
+											          IsChecked="{Binding Enabled, Mode=TwoWay}" />
+										</DataTemplate>
+									</ItemsControl.ItemTemplate>
+								</ItemsControl>
+								<TextBlock Text="No passes reported"
+								           FontStyle="Italic"
+								           Foreground="{StaticResource TextMuted}"
+								           IsVisible="{Binding !RenderPasses.Count}" />
+							</StackPanel>
+						</Flyout>
+					</Button.Flyout>
 					<LucideIcon Kind="Eye"
 					            Size="18"
 					            StrokeWidth="2.5" />
 				</Button>
 			</StackPanel>
 
-			<ToggleButton Grid.Column="10"
-			              Classes="tool red"
-			              CornerRadius="6"
-			              ToolTip.Tip="Switch between editor and game camera"
-			              IsChecked="{Binding GameCamera}">
-				<StackPanel Orientation="Horizontal"
-				            Spacing="8">
-					<LucideIcon Kind="Video"
+			<StackPanel Grid.Column="8"
+			            Orientation="Horizontal">
+				<ToggleButton Classes="tool red"
+				              CornerRadius="6, 0, 0, 6"
+				              ToolTip.Tip="Switch between editor and game camera"
+				              IsChecked="{Binding GameCamera}">
+					<StackPanel Orientation="Horizontal"
+					            Spacing="8">
+						<LucideIcon Kind="Video"
+						            Size="18"
+						            StrokeWidth="2.5" />
+						<TextBlock Text="Editor"
+						           IsVisible="{Binding !GameCamera}" />
+						<TextBlock Text="Game"
+						           IsVisible="{Binding GameCamera}" />
+					</StackPanel>
+				</ToggleButton>
+				<Button CornerRadius="0, 6, 6, 0"
+				        Background="{StaticResource Bg3}"
+				        ToolTip.Tip="Camera settings">
+					<LucideIcon Kind="ChevronDown"
 					            Size="18"
 					            StrokeWidth="2.5" />
-					<TextBlock Text="Editor"
-					           IsVisible="{Binding !GameCamera}" />
-					<TextBlock Text="Game"
-					           IsVisible="{Binding GameCamera}" />
-				</StackPanel>
-			</ToggleButton>
-			<StackPanel Grid.Column="9"
+				</Button>
+			</StackPanel>
+
+			<StackPanel Grid.Column="7"
 			            Orientation="Horizontal">
 				<ToggleButton Classes="tool red"
 				              CornerRadius="6, 0, 0, 6"

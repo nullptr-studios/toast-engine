@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
-using Dock.Avalonia.Controls;
 using Dock.Model.Controls;
 using Dock.Model.Core;
 using Dock.Model.Mvvm;
@@ -12,16 +12,19 @@ using editor.Editors;
 namespace editor.Workspace;
 
 public class DockFactory : Factory {
+	private const double SidePanelProportion = 0.2;
 	private IDocumentDock? m_documentDock;
 
 	private bool m_genericClosePending;
-	private ToolDock? m_leftToolDock;
-	private ToolDock? m_rightToolDock;
+	private IToolDock? m_leftToolDock;
+	private IToolDock? m_rightToolDock;
 	private IRootDock? m_rootDock;
 	private bool m_schemaClosePending;
 
 	public HierarchyViewModel? Hierarchy { get; private set; }
+	public HistoryViewModel? History { get; private set; }
 	public InspectorViewModel? Inspector { get; private set; }
+	public SignalsViewModel? Signals { get; private set; }
 	public GenericViewModel? GenericEditorVm { get; private set; }
 	public SchemaViewModel? SchemaEditorVm { get; private set; }
 
@@ -29,18 +32,22 @@ public class DockFactory : Factory {
 
 	public override IRootDock CreateLayout() {
 		var hierarchy = new HierarchyViewModel { Id = "Hierarchy", Title = "Hierarchy" };
+		var history = new HistoryViewModel { Id = "History", Title = "History" };
 		var inspector = new InspectorViewModel { Id = "Inspector", Title = "Inspector" };
+		var signals = new SignalsViewModel { Id = "Signals", Title = "Signals" };
 		var generic = new GenericViewModel { Id = "GenericEditor", Title = "Data Editor" };
 		var schema = new SchemaViewModel { Id = "SchemaEditor", Title = "Schema Editor" };
 
 		Hierarchy = hierarchy;
+		History = history;
 		Inspector = inspector;
+		Signals = signals;
 		GenericEditorVm = generic;
 		SchemaEditorVm = schema;
 
 		var documentDock = new DocumentDock {
 			IsCollapsable = false,
-			AllowedDropOperations = DockOperationMask.Left | DockOperationMask.Right,
+			AllowedDropOperations = DockOperationMask.Fill,
 			VisibleDockables = CreateList<IDockable>()
 		};
 
@@ -50,7 +57,7 @@ public class DockFactory : Factory {
 			AllowedDropOperations = DockOperationMask.Fill | DockOperationMask.Top | DockOperationMask.Bottom,
 			VisibleDockables = CreateList<IDockable>(hierarchy),
 			Alignment = Alignment.Left,
-			GripMode = GripMode.Visible
+			GripMode = GripMode.Hidden
 		};
 		m_leftToolDock = leftToolDock;
 
@@ -64,9 +71,9 @@ public class DockFactory : Factory {
 		// right panel (inspector)
 		var rightToolDock = new ToolDock {
 			ActiveDockable = inspector,
-			VisibleDockables = CreateList<IDockable>(inspector),
+			VisibleDockables = CreateList<IDockable>(inspector, signals),
 			Alignment = Alignment.Right,
-			GripMode = GripMode.Visible
+			GripMode = GripMode.Hidden
 		};
 		m_rightToolDock = rightToolDock;
 
@@ -109,18 +116,21 @@ public class DockFactory : Factory {
 		ContextLocator = new Dictionary<string, Func<object?>> {
 			["Workspace"] = () => layout,
 			["Hierarchy"] = () => layout,
+			["History"] = () => layout,
 			["Inspector"] = () => layout,
+			["Signals"] = () => layout,
 			["GenericEditor"] = () => layout,
 			["SchemaEditor"] = () => layout
 		};
 		DockableLocator = new Dictionary<string, Func<IDockable?>> {
 			["Root"] = () => m_rootDock,
 			["Documents"] = () => m_documentDock,
+			["History"] = () => History,
 			["GenericEditor"] = () => GenericEditorVm,
 			["SchemaEditor"] = () => SchemaEditorVm
 		};
 		HostWindowLocator = new Dictionary<string, Func<IHostWindow?>> {
-			[nameof(IDockWindow)] = () => new HostWindow()
+			[nameof(IDockWindow)] = () => new EditorHostWindow()
 		};
 		HideToolsOnClose = true;
 		base.InitLayout(layout);
@@ -170,11 +180,29 @@ public class DockFactory : Factory {
 		}
 	}
 
+	/**
+	 * Re-applies the side-panel share after a dock completes
+	 */
+	public override void OnDockableDocked(IDockable dockable, DockOperation operation) {
+		base.OnDockableDocked(dockable, operation);
+		if (operation is not (DockOperation.Left or DockOperation.Right)) return;
+		if (dockable is IDocument or IDocumentDock) return;
+
+		// walk out to the node sitting directly inside a horizontal dock
+		for (var current = dockable; current is not null; current = current.Owner) {
+			if (current.Owner is not IProportionalDock { Orientation: Orientation.Horizontal } parent) continue;
+			if (parent.VisibleDockables?.Contains(current) != true) continue;
+			current.Proportion = SidePanelProportion;
+			return;
+		}
+	}
+
 	public override IDock CreateSplitLayout(IDock dock, IDockable dockable, DockOperation operation) {
 		var layout = base.CreateSplitLayout(dock, dockable, operation);
-		var isTool = dockable is ITool or IToolDock;
-		if (!isTool || layout.VisibleDockables == null) return layout;
-		var proportion = operation is DockOperation.Left or DockOperation.Right ? 0.2 : 0.5;
+
+		var isDocument = dockable is IDocument or IDocumentDock;
+		if (isDocument || layout.VisibleDockables == null) return layout;
+		var proportion = operation is DockOperation.Left or DockOperation.Right ? SidePanelProportion : 0.5;
 		foreach (var child in layout.VisibleDockables) {
 			if (child is not IDock childDock || childDock == dock) continue;
 			childDock.Proportion = proportion;
@@ -191,90 +219,144 @@ public class DockFactory : Factory {
 		return workspace;
 	}
 
+	public LayoutNode? CaptureLayout() {
+		return LayoutSerializer.Capture(m_rootDock, m_documentDock);
+	}
+
+	public IRootDock? RebuildLayout(LayoutNode? node) {
+		if (node is null || m_documentDock is null) return null;
+
+		var root = LayoutSerializer.BuildRoot(node, this, id => ToolById(id), m_documentDock, ConfigureToolDock);
+		// nothing is mutated until the build succeeds
+		if (root is null) return null;
+
+		// tools left out of the new tree must not keep pointing into the one being discarded
+		foreach (var tool in AllTools())
+			if (tool is not null)
+				tool.Owner = null;
+
+		EnsureDocumentDock(root);
+		m_rootDock = root;
+		m_leftToolDock = FindToolDock(root, Alignment.Left) ?? FindOwnerToolDock(root, Hierarchy);
+		m_rightToolDock = FindToolDock(root, Alignment.Right) ?? FindOwnerToolDock(root, Inspector);
+		return root;
+	}
+
+	private static void ConfigureToolDock(IToolDock dock) {
+		if (dock is IDockableDockingRestrictions restrictions && dock.Alignment == Alignment.Left)
+			restrictions.AllowedDropOperations =
+				DockOperationMask.Fill | DockOperationMask.Top | DockOperationMask.Bottom;
+	}
+
+	private void EnsureDocumentDock(IRootDock root) {
+		if (m_documentDock is null || LayoutSerializer.ContainsVisible(root, m_documentDock)) return;
+
+		var host = LayoutSerializer.EnumerateDocks(root, false)
+			.OfType<IProportionalDock>()
+			.FirstOrDefault(d => d.Orientation == Orientation.Horizontal);
+
+		if (host is null) {
+			host = CreateProportionalDock();
+			host.Orientation = Orientation.Horizontal;
+			host.IsCollapsable = false;
+			host.VisibleDockables = CreateList<IDockable>(m_documentDock);
+			root.VisibleDockables = CreateList<IDockable>(host);
+			root.DefaultDockable = host;
+			root.ActiveDockable = host;
+			return;
+		}
+
+		host.VisibleDockables ??= CreateList<IDockable>();
+		if (host.VisibleDockables.Count > 0) host.VisibleDockables.Add(new ProportionalDockSplitter());
+		host.VisibleDockables.Add(m_documentDock);
+	}
+
+	private static IToolDock? FindToolDock(IRootDock root, Alignment alignment) {
+		return LayoutSerializer.EnumerateDocks(root, false)
+			.OfType<IToolDock>()
+			.FirstOrDefault(d => d.Alignment == alignment);
+	}
+
+	private static IToolDock? FindOwnerToolDock(IRootDock root, Tool? tool) {
+		if (tool is null) return null;
+		return LayoutSerializer.EnumerateDocks(root, false)
+			.OfType<IToolDock>()
+			.FirstOrDefault(d => d.VisibleDockables?.Contains(tool) == true);
+	}
+
+	public Tool? ToolById(string id) {
+		return id switch {
+			"Hierarchy" => Hierarchy,
+			"History" => History,
+			"Inspector" => Inspector,
+			"Signals" => Signals,
+			"GenericEditor" => GenericEditorVm,
+			"SchemaEditor" => SchemaEditorVm,
+			_ => null
+		};
+	}
+
+	private IEnumerable<Tool?> AllTools() {
+		yield return Hierarchy;
+		yield return History;
+		yield return Inspector;
+		yield return Signals;
+		yield return GenericEditorVm;
+		yield return SchemaEditorVm;
+	}
+
+	private IToolDock? PreferredDockFor(Tool tool) {
+		return ReferenceEquals(tool, Hierarchy) || ReferenceEquals(tool, History) ? m_leftToolDock : m_rightToolDock;
+	}
+
+	private void ShowTool(Tool tool, IToolDock? preferred) {
+		if (m_rootDock is null) return;
+		if (LayoutSerializer.ContainsVisible(m_rootDock, tool)) {
+			SetActiveDockable(tool);
+			return;
+		}
+
+		var target = PickToolDock(tool, preferred);
+		if (target is null) return;
+
+		m_rootDock.HiddenDockables?.Remove(tool);
+		AddDockable(target, tool);
+		SetActiveDockable(tool);
+	}
+
+	// re-open where the user last had it
+	private IToolDock? PickToolDock(Tool tool, IToolDock? preferred) {
+		if (tool.OriginalOwner is IToolDock original && IsInTree(original)) return original;
+		if (preferred is not null && IsInTree(preferred)) return preferred;
+		return LayoutSerializer.EnumerateDocks(m_rootDock, false).OfType<IToolDock>().FirstOrDefault();
+	}
+
 	private void ShowRightTool(Tool tool) {
-		if (m_rightToolDock is null) return;
-		var visible = m_rightToolDock.VisibleDockables;
-		if (visible is null || !visible.Contains(tool))
-			AddDockable(m_rightToolDock, tool);
-		SetActiveDockable(tool);
+		ShowTool(tool, m_rightToolDock);
 	}
 
-	private void HideRightTool(Tool tool) {
-		if (m_rightToolDock?.VisibleDockables?.Contains(tool) == true)
-			CloseDockable(tool);
+	private void HideTool(Tool tool) {
+		if (LayoutSerializer.ContainsVisible(m_rootDock, tool)) CloseDockable(tool);
 	}
 
-	public bool IsRightToolVisible(Tool? tool) {
-		return tool is not null && m_rightToolDock?.VisibleDockables?.Contains(tool) == true;
-	}
-
-	private void ShowLeftTool(Tool tool) {
-		if (m_leftToolDock is null) return;
-		var visible = m_leftToolDock.VisibleDockables;
-		if (visible is null || !visible.Contains(tool))
-			AddDockable(m_leftToolDock, tool);
-		SetActiveDockable(tool);
-	}
-
-	private void HideLeftTool(Tool tool) {
-		if (m_leftToolDock?.VisibleDockables?.Contains(tool) == true)
-			CloseDockable(tool);
-	}
-
-	public bool IsLeftToolVisible(Tool? tool) {
-		return tool is not null && m_leftToolDock?.VisibleDockables?.Contains(tool) == true;
+	private bool IsInTree(IDock dock) {
+		return ReferenceEquals(dock, m_rootDock) || LayoutSerializer.ContainsVisible(m_rootDock, dock);
 	}
 
 	public bool ToggleTool(string id) {
-		switch (id) {
-			case "Hierarchy" when Hierarchy is not null:
-				if (IsLeftToolVisible(Hierarchy)) {
-					HideLeftTool(Hierarchy);
-					return false;
-				}
-
-				ShowLeftTool(Hierarchy);
-				return true;
-
-			case "Inspector" when Inspector is not null:
-				if (IsRightToolVisible(Inspector)) {
-					HideRightTool(Inspector);
-					return false;
-				}
-
-				ShowRightTool(Inspector);
-				return true;
-
-			case "GenericEditor" when GenericEditorVm is not null:
-				if (IsRightToolVisible(GenericEditorVm)) {
-					HideRightTool(GenericEditorVm);
-					return false;
-				}
-
-				ShowRightTool(GenericEditorVm);
-				return true;
-
-			case "SchemaEditor" when SchemaEditorVm is not null:
-				if (IsRightToolVisible(SchemaEditorVm)) {
-					HideRightTool(SchemaEditorVm);
-					return false;
-				}
-
-				ShowRightTool(SchemaEditorVm);
-				return true;
+		if (ToolById(id) is not { } tool) return false;
+		if (IsToolVisible(id)) {
+			HideTool(tool);
+			return false;
 		}
 
-		return false;
+		ShowTool(tool, PreferredDockFor(tool));
+		return true;
 	}
 
+
 	public bool IsToolVisible(string id) {
-		return id switch {
-			"Hierarchy" => IsLeftToolVisible(Hierarchy),
-			"Inspector" => IsRightToolVisible(Inspector),
-			"GenericEditor" => IsRightToolVisible(GenericEditorVm),
-			"SchemaEditor" => IsRightToolVisible(SchemaEditorVm),
-			_ => false
-		};
+		return ToolById(id) is { } tool && LayoutSerializer.ContainsVisible(m_rootDock, tool);
 	}
 
 	public void OpenGenericEditor(

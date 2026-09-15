@@ -20,11 +20,11 @@ public:
 
 	static constexpr KeepAllKeysTag keep_all_keys {};
 
-	explicit Data(const toml::table& table, AssetHandle<Schema> schema = {});
+	explicit Data(const toml::table& table, Handle<Schema> schema = {});
 
 	/// @brief Stores the schema handle for round-trip serialization but runs free-form buildRoot,
 	///        keeping every TOML key
-	Data(const toml::table& table, AssetHandle<Schema> schema, KeepAllKeysTag);
+	Data(const toml::table& table, Handle<Schema> schema, KeepAllKeysTag);
 
 	[[nodiscard]]
 	auto type() const -> std::string_view override {
@@ -52,16 +52,20 @@ public:
 	}
 
 	[[nodiscard]]
-	auto schema() const -> const AssetHandle<Schema>& {
+	auto schema() const -> const Handle<Schema>& {
 		return m_schema;
 	}
 
 	[[nodiscard]]
 	auto serialize(SaveMode mode) const -> std::vector<uint8_t> override;
 
+	/// @brief Re-parses the asset contents in place
+	virtual void reload(const toml::table& table);
+
 protected:
-	DataValue m_root;                ///< Object DataValue holding all fields
-	AssetHandle<Schema> m_schema;    ///< optional
+	DataValue m_root;           ///< Object DataValue holding all fields
+	Handle<Schema> m_schema;    ///< optional
+	bool m_keep_all_keys = false;
 
 private:
 	static auto buildRoot(const toml::table& table, const Schema* schema) -> DataValue;

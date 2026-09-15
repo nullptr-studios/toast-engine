@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include "toast/uid.hpp"
+
 #include <any>
 #include <cassert>
 #include <cstdint>
@@ -16,12 +18,17 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <toast/events/signal_types.hpp>
 #include <toast/export.hpp>
 #include <toast/log.hpp>
 #include <toast/world/box.hpp>
+#include <type_traits>
 #include <typeinfo>
+#include <utility>
 
 namespace toast {
+
+class Node;
 
 /**
  * @brief Serialization kind for a reflected field
@@ -40,6 +47,25 @@ enum class FieldType : uint8_t {
 	vec3_t,
 	vec4_t,
 	quaternion_t,
+};
+
+struct TOAST_API SignalInfo {
+	using SignalGetterPtr = std::vector<signals::ConnectionInfo> (*)(void*);
+	using SignalConnectPtr = void (*)(void*, Node&, std::string_view, signals::ConnectionSource, bool);
+	using SignalDisconnectPtr = void (*)(void*, Node&, std::string_view, signals::ConnectionSource);
+	using SignalClearPtr = void (*)(void*, signals::ConnectionSource);
+	using SignalFirePtr = bool (*)(void*, std::span<const std::any>);
+
+	std::string_view name;
+	std::string_view type;
+	std::vector<const std::type_info*> args;
+	nlohmann::json attributes;
+
+	SignalGetterPtr get;
+	SignalConnectPtr connect;
+	SignalDisconnectPtr disconnect;
+	SignalClearPtr clear;
+	SignalFirePtr fire;
 };
 
 /**
@@ -63,6 +89,20 @@ struct TOAST_API FieldInfo {
 	FieldGetterPtr get;
 	FieldSetterPtr set;
 
+	/**
+	 * @brief Returns the generated attribute objectpr
+	 */
+	[[nodiscard]]
+	auto attributeMap() const -> const nlohmann::json* {
+		if (attributes.is_object()) {
+			return &attributes;
+		}
+		if (attributes.is_array() && attributes.size() == 1 && attributes.front().is_object()) {
+			return &attributes.front();
+		}
+		return nullptr;
+	}
+
 	/// Returns the value of the "Group" annotation, or an empty string if not present
 	[[nodiscard]]
 	auto groupName() const -> std::string {
@@ -76,7 +116,8 @@ struct TOAST_API FieldInfo {
 	 */
 	[[nodiscard]]
 	auto hasAttribute(std::string_view attr_name) const -> bool {
-		return attributes.contains(std::string(attr_name));
+		const auto* map = attributeMap();
+		return map != nullptr && map->contains(std::string(attr_name));
 	}
 
 	/**
@@ -86,8 +127,12 @@ struct TOAST_API FieldInfo {
 	 */
 	[[nodiscard]]
 	auto getAttribute(std::string_view attr_name) const -> std::string {
-		auto it = attributes.find(std::string(attr_name));
-		if (it == attributes.end() || it->empty()) {
+		const auto* map = attributeMap();
+		if (map == nullptr) {
+			return "";
+		}
+		auto it = map->find(std::string(attr_name));
+		if (it == map->end() || !it->is_array() || it->empty()) {
 			return "";
 		}
 		return it->at(0).get<std::string>();
@@ -120,8 +165,39 @@ struct TOAST_API FunctionInfo {
 	std::string_view return_type;            // C++ return type name, as spelled in the header
 	const std::type_info* return_type_id;    // typeid(std::decay_t<return>), for call-time validation
 	std::span<const ParameterInfo> parameters;
+	nlohmann::json attributes;
 	Invoker invoke = nullptr;
 	DynamicInvoker invoke_dynamic = nullptr;
+
+	[[nodiscard]]
+	auto attributeMap() const -> const nlohmann::json* {
+		if (attributes.is_object()) {
+			return &attributes;
+		}
+		if (attributes.is_array() && attributes.size() == 1 && attributes.front().is_object()) {
+			return &attributes.front();
+		}
+		return nullptr;
+	}
+
+	[[nodiscard]]
+	auto hasAttribute(std::string_view attr_name) const -> bool {
+		const auto* map = attributeMap();
+		return map != nullptr && map->contains(std::string(attr_name));
+	}
+
+	[[nodiscard]]
+	auto getAttribute(std::string_view attr_name) const -> std::string {
+		const auto* map = attributeMap();
+		if (map == nullptr) {
+			return "";
+		}
+		auto it = map->find(std::string(attr_name));
+		if (it == map->end() || !it->is_array() || it->empty()) {
+			return "";
+		}
+		return it->at(0).get<std::string>();
+	}
 
 	template<typename R = void, typename... Args>
 	auto call(void* obj, Args&&... args) const -> R {
@@ -238,6 +314,60 @@ struct FieldAccess {
 				static_cast<Class*>(obj)->*_detail::template Accessor<Tag>::member =
 				    static_cast<FieldType>(std::any_cast<unsigned char>(value));
 			}
+		}
+	}
+};
+
+/**
+ * @brief Field accessor that exchanges enum values through their int representation
+ */
+template<class Class, typename FieldType, typename Tag>
+struct EnumFieldAccess {
+	static auto get(void* obj) -> std::any {
+		if constexpr (std::is_enum_v<FieldType>) {
+			using Underlying = std::underlying_type_t<FieldType>;
+			const Underlying value = static_cast<Underlying>(static_cast<Class*>(obj)->*_detail::template Accessor<Tag>::member);
+			if constexpr (std::is_signed_v<Underlying>) {
+				return std::any {static_cast<int64_t>(value)};
+			} else {
+				return std::any {static_cast<uint64_t>(value)};
+			}
+		} else {
+			return FieldAccess<Class, FieldType, Tag>::get(obj);
+		}
+	}
+
+	static void set(void* obj, std::any value) {
+		if constexpr (std::is_enum_v<FieldType>) {
+			auto assign = [obj](auto numeric) {
+				using Underlying = std::underlying_type_t<FieldType>;
+				static_cast<Class*>(obj)->*_detail::template Accessor<Tag>::member =
+				    static_cast<FieldType>(static_cast<Underlying>(numeric));
+			};
+
+			if (const auto* v = std::any_cast<int>(&value)) {
+				assign(*v);
+			} else if (const auto* v = std::any_cast<unsigned int>(&value)) {
+				assign(*v);
+			} else if (const auto* v = std::any_cast<int64_t>(&value)) {
+				assign(*v);
+			} else if (const auto* v = std::any_cast<uint64_t>(&value)) {
+				assign(*v);
+			} else if (const auto* v = std::any_cast<long>(&value)) {
+				assign(*v);
+			} else if (const auto* v = std::any_cast<unsigned long>(&value)) {
+				assign(*v);
+			} else if (const auto* v = std::any_cast<short>(&value)) {
+				assign(*v);
+			} else if (const auto* v = std::any_cast<unsigned short>(&value)) {
+				assign(*v);
+			} else if (const auto* v = std::any_cast<char>(&value)) {
+				assign(*v);
+			} else if (const auto* v = std::any_cast<unsigned char>(&value)) {
+				assign(*v);
+			}
+		} else {
+			FieldAccess<Class, FieldType, Tag>::set(obj, std::move(value));
 		}
 	}
 };

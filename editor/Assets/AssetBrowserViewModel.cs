@@ -36,13 +36,15 @@ public sealed class BreadcrumbItem {
 	public ICommand Navigate { get; }
 }
 
-public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
+public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 	// Extension sets derived dynamically from importers + asset registry
 	// TODO: Do this with reflection at some point
 	private static readonly IReadOnlyList<IAssetImporter> s_defaultImporters = [
 		new TextureImporter(new TextureImporter.Settings()),
 		new PsdImporter(new TextureImporter.Settings(), new PsdImporter.Settings()),
-		new GltfImporter(new GltfImporter.Settings(), new TextureImporter.Settings())
+		new GltfImporter(new GltfImporter.Settings(), new TextureImporter.Settings()),
+		new FontImporter(),
+		new UIImageImporter()
 	];
 
 	private static readonly HashSet<string> s_artworkExts = new(
@@ -53,13 +55,16 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 		AssetTypeRegistry.All.Select(a => a.Extension),
 		StringComparer.OrdinalIgnoreCase);
 
+	private static readonly HashSet<string> s_reservedNames = ["root", "world", "global"];
+	private readonly List<IRelayCommand> m_actionCommands = [];
+
 	// selection
 	private readonly HashSet<object> m_selectedItems = [];
 
 	private readonly AssetTypeFilter m_unknownFilter;
 	private ClipMode m_clipMode;
 	private List<string> m_clipPaths = []; // real paths
-	private AssetFolder? m_preSearchFolder;
+	private string? m_preSearchFolderPath;
 	private string? m_refreshTargetPath;
 	private string m_searchText = "";
 	private int m_selectedCount;
@@ -69,26 +74,45 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 		Current = this;
 
 		m_unknownFilter = new AssetTypeFilter(null);
-		Filters = new ObservableCollection<AssetTypeFilter>(
-			AssetTypeRegistry.All.Select(a => new AssetTypeFilter(a)).Append(m_unknownFilter));
+		var filters = AssetTypeRegistry.All
+			.Where(a => a is not ProjectSettingsAsset)
+			.Select(a => new AssetTypeFilter(a))
+			.Append(m_unknownFilter)
+			.OrderBy(f => f.Label, StringComparer.OrdinalIgnoreCase)
+			.ThenBy(f => f.Label, StringComparer.Ordinal)
+			.ToList();
+		Filters = new ObservableCollection<AssetTypeFilter>(filters);
+		RootFilters = new ObservableCollection<AssetTypeFilter>(filters.Where(f =>
+			string.IsNullOrWhiteSpace(f.Definition?.Category)));
+		FilterGroups = new ObservableCollection<AssetTypeFilterGroup>(filters
+			.Where(f => !string.IsNullOrWhiteSpace(f.Definition?.Category))
+			.GroupBy(f => f.Definition!.Category)
+			.OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
+			.ThenBy(g => g.Key, StringComparer.Ordinal)
+			.Select(g => new AssetTypeFilterGroup(g.Key, g)));
+		FilterTreeItems = new ObservableCollection<object>(
+			FilterGroups.Cast<object>().Concat(RootFilters));
 		foreach (var f in Filters)
 			f.PropertyChanged += OnFilterChanged;
 
 		RefreshCommand = new RelayCommand(Refresh);
 		ExpandAllCommand = new RelayCommand(() => SetAllExpanded(true));
 		CollapseAllCommand = new RelayCommand(() => SetAllExpanded(false));
-		CreateFolderCommand = new AsyncRelayCommand(CreateFolder);
-		RenameCommand = new AsyncRelayCommand<object>(RenameAsync);
-		DeleteCommand = new AsyncRelayCommand<object>(DeleteAsync);
-		CopyCommand = new RelayCommand<object>(Copy);
-		CutCommand = new RelayCommand<object>(Cut);
-		PasteCommand = new RelayCommand(Paste);
-		DuplicateCommand = new AsyncRelayCommand<object>(DuplicateAsync);
-		NewNodeCommand = new AsyncRelayCommand(() => CreatePrefab("Node", "toast::Node"));
-		NewNode3DCommand = new AsyncRelayCommand(() => CreatePrefab("Node3D", "toast::Node3D"));
-		NewNodeGenericCommand = new AsyncRelayCommand(CreateGenericPrefab);
-		NewAssetCommand = new AsyncRelayCommand<object>(o => CreateNewAsset(o as BaseAsset));
-		ReimportCommand = new AsyncRelayCommand<object>(ReimportAsync);
+		CreateFolderCommand = Track(new AsyncRelayCommand<object>(CreateFolder, CanCreateFolder));
+		RenameCommand = Track(new AsyncRelayCommand<object>(RenameAsync, CanRename));
+		DeleteCommand = Track(new AsyncRelayCommand<object>(DeleteAsync, CanDelete));
+		CopyCommand = Track(new RelayCommand<object>(Copy, CanCopy));
+		CutCommand = Track(new RelayCommand<object>(Cut, CanCut));
+		PasteCommand = Track(new RelayCommand(Paste, CanPaste));
+		DuplicateCommand = Track(new AsyncRelayCommand<object>(DuplicateAsync, CanDuplicate));
+		NewNodeCommand =
+			Track(new AsyncRelayCommand(() => CreatePrefab("Node", "toast::Node"), () => CanWriteToSelectedFolder));
+		NewNode3DCommand =
+			Track(new AsyncRelayCommand(() => CreatePrefab("Node3D", "toast::Node3D"), () => CanWriteToSelectedFolder));
+		NewNodeGenericCommand = Track(new AsyncRelayCommand(CreateGenericPrefab, () => CanWriteToSelectedFolder));
+		NewAssetCommand = Track(new AsyncRelayCommand<object>(o => CreateNewAsset(o as BaseAsset),
+			o => o is BaseAsset && CanWriteToSelectedFolder));
+		ReimportCommand = Track(new AsyncRelayCommand<object>(ReimportAsync, CanReimport));
 		LoadFolders();
 
 		// auto-reload whenever the asset database changes
@@ -102,40 +126,55 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 	public AssetFolder? SelectedFolder {
 		get => m_selectedFolder;
 		set {
+			if (value is null) {
+				value = FindFallbackFolder();
+				if (value is null) return;
+				if (ReferenceEquals(m_selectedFolder, value)) {
+					Notify();
+					return;
+				}
+			}
+
+			if (ReferenceEquals(m_selectedFolder, value)) return;
 			ClearSelection();
 			m_selectedFolder = value;
 			if (value is not null) ExpandToFolder(value);
 			Notify();
 			RefreshCurrentItems();
 			Notify(nameof(BreadcrumbItems));
+			Notify(nameof(CanWriteToSelectedFolder));
+			NotifyActionStateChanged();
 		}
 	}
 
 	public ObservableCollection<AssetFolder> Folders { get; } = [];
 
 	public ObservableCollection<AssetTypeFilter> Filters { get; }
+	public ObservableCollection<AssetTypeFilter> RootFilters { get; }
+	public ObservableCollection<AssetTypeFilterGroup> FilterGroups { get; }
+	public ObservableCollection<object> FilterTreeItems { get; }
+	public bool CanWriteToSelectedFolder => CanWriteToFolder(m_selectedFolder);
 
 	public string SearchText {
 		get => m_searchText;
 		set {
 			if (!string.IsNullOrWhiteSpace(value) && string.IsNullOrWhiteSpace(m_searchText))
-				m_preSearchFolder = m_selectedFolder;
+				m_preSearchFolderPath = m_selectedFolder?.Filepath;
 
 			m_searchText = value;
 
-			if (string.IsNullOrWhiteSpace(value) && m_preSearchFolder is not null) {
-				m_selectedFolder = m_preSearchFolder;
-				m_preSearchFolder = null;
-				Notify(nameof(SelectedFolder));
-				Notify(nameof(BreadcrumbItems));
-			} else if (!string.IsNullOrWhiteSpace(value)) {
-				m_selectedFolder = null;
+			if (string.IsNullOrWhiteSpace(value) && m_preSearchFolderPath is not null) {
+				m_selectedFolder = FindByPath(Folders, m_preSearchFolderPath) ?? FindFallbackFolder();
+				m_preSearchFolderPath = null;
+				if (m_selectedFolder is not null) ExpandToFolder(m_selectedFolder);
 				Notify(nameof(SelectedFolder));
 				Notify(nameof(BreadcrumbItems));
 			}
 
 			Notify();
 			RefreshCurrentItems();
+			Notify(nameof(CanWriteToSelectedFolder));
+			NotifyActionStateChanged();
 		}
 	}
 
@@ -147,7 +186,7 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 			return all ? true : none ? false : null;
 		}
 		set {
-			var v = value ?? true;
+			var v = value ?? FilterAll != true;
 			foreach (var f in Filters)
 				f.IsEnabled = v;
 		}
@@ -187,6 +226,13 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 	public ICommand NewAssetCommand { get; }
 	public ICommand ReimportCommand { get; }
 
+	public void Dispose() {
+		AssetDatabase.ReloadedDatabase -= OnDatabaseReloaded;
+		foreach (var filter in Filters) filter.PropertyChanged -= OnFilterChanged;
+		if (ReferenceEquals(Current, this)) Current = null;
+		GC.SuppressFinalize(this);
+	}
+
 	public new event PropertyChangedEventHandler? PropertyChanged;
 
 	public void RevealAsset(string uid) {
@@ -217,6 +263,7 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 
 		m_selectedCount = m_selectedItems.Count;
 		Notify(nameof(ItemCount));
+		NotifyActionStateChanged();
 	}
 
 	public void ClearSelection() {
@@ -225,6 +272,7 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 		m_selectedItems.Clear();
 		m_selectedCount = 0;
 		Notify(nameof(ItemCount));
+		NotifyActionStateChanged();
 	}
 
 	private static void SetIsSelected(object item, bool selected) {
@@ -234,19 +282,22 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 		}
 	}
 
-	private async Task CreateFolder() {
+	private async Task CreateFolder(object? param) {
+		var parent = param as AssetFolder ?? m_selectedFolder;
+		if (!CanWriteToFolder(parent)) return;
 		var window = ActiveWindow();
 		if (window is null) return;
 		var name = await new NewFolderModal().ShowDialog<string?>(window);
 		if (string.IsNullOrEmpty(name)) return;
-		var parentPath = m_selectedFolder?.Filepath ?? ProjectContext.AssetsPath;
+		var parentPath = parent!.Filepath;
 		Directory.CreateDirectory(Path.Combine(parentPath, name));
+		m_refreshTargetPath = parentPath;
 		Refresh();
 	}
 
 	private async Task ReimportAsync(object? param) {
 		var file = param as AssetFile ?? m_selectedItems.OfType<AssetFile>().FirstOrDefault();
-		if (file is null) return;
+		if (file is null || !IsEditable(file)) return;
 
 		var header = MetaFile.ReadHeader(file.Filepath);
 		if (header?.Source is not { } sourceVirtual) {
@@ -273,7 +324,7 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 	}
 
 	public async Task HandleDroppedFilesAsync(IReadOnlyList<string> paths) {
-		if (!ProjectContext.IsInitialized) return;
+		if (!ProjectContext.IsInitialized || !CanWriteToSelectedFolder) return;
 
 		var artworkFiles = new List<string>();
 		var assetFiles = new List<string>();
@@ -289,7 +340,7 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 
 		// Copy pre-built assets directly (no importer, just copy + meta)
 		if (assetFiles.Count > 0) {
-			var destDir = m_selectedFolder?.Filepath ?? ProjectContext.AssetsPath;
+			var destDir = m_selectedFolder!.Filepath;
 			foreach (var src in assetFiles) {
 				var ext = Path.GetExtension(src).ToLowerInvariant();
 				var definition = AssetTypeRegistry.ByExtension(ext);
@@ -312,7 +363,7 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 			var owner = ActiveWindow();
 			if (owner is null) return;
 
-			var destDir = m_selectedFolder?.Filepath ?? ProjectContext.AssetsPath;
+			var destDir = m_selectedFolder!.Filepath;
 			var destVirtual = ProjectContext.ToVirtual(destDir) ?? "assets://";
 			var vm = new CompactImportWindowViewModel(artworkFiles, destVirtual);
 			await new CompactImportWindow(vm).ShowDialog(owner);
@@ -321,6 +372,7 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 	}
 
 	private async Task RenameAsync(object? param) {
+		if (!CanRename(param)) return;
 		var target = param ?? m_selectedItems.FirstOrDefault();
 		switch (target) {
 			case AssetFile file:
@@ -338,6 +390,12 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 		if (window is null) return;
 		var newName = await new RenameModal(file.Name).ShowDialog<string?>(window);
 		if (string.IsNullOrEmpty(newName) || newName == file.Name) return;
+		var stem = Path.GetFileNameWithoutExtension(newName);
+		if (s_reservedNames.Contains(stem)) {
+			await App.Modals.ShowWarning("Reserved Name",
+				$"'{stem}' is a reserved keyword and cannot be used as an asset name.");
+			return;
+		}
 
 		var metaPath = file.Filepath;
 		var oldAssetPath = metaPath[..^5];
@@ -363,6 +421,11 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 		if (window is null) return;
 		var newName = await new RenameModal(folder.Name).ShowDialog<string?>(window);
 		if (string.IsNullOrEmpty(newName) || newName == folder.Name) return;
+		if (s_reservedNames.Contains(newName)) {
+			await App.Modals.ShowWarning("Reserved Name",
+				$"'{newName}' is a reserved keyword and cannot be used as a folder name.");
+			return;
+		}
 
 		var dir = Path.GetDirectoryName(folder.Filepath)!;
 		var newPath = Path.Combine(dir, newName);
@@ -379,6 +442,7 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 	}
 
 	private async Task DeleteAsync(object? param) {
+		if (!CanDelete(param)) return;
 		var targets = param is { } p
 			? new List<object> { p }
 			: m_selectedItems.ToList();
@@ -428,20 +492,24 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 	}
 
 	private void Copy(object? param) {
+		if (!CanCopy(param)) return;
 		var items = GetTargets(param);
 		m_clipPaths = items.OfType<AssetFile>().Select(f => f.Filepath[..^5]).ToList();
 		m_clipMode = ClipMode.Copy;
+		NotifyActionStateChanged();
 	}
 
 	private void Cut(object? param) {
+		if (!CanCut(param)) return;
 		var items = GetTargets(param);
 		m_clipPaths = items.OfType<AssetFile>().Select(f => f.Filepath[..^5]).ToList();
 		m_clipMode = ClipMode.Cut;
+		NotifyActionStateChanged();
 	}
 
 	private void Paste() {
-		if (m_clipMode == ClipMode.None || m_clipPaths.Count == 0) return;
-		var dest = m_selectedFolder?.Filepath ?? ProjectContext.AssetsPath;
+		if (!CanPaste()) return;
+		var dest = m_selectedFolder!.Filepath;
 
 		foreach (var src in m_clipPaths) {
 			if (!File.Exists(src)) continue;
@@ -473,9 +541,11 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 		}
 
 		AssetDatabase.RebuildAssetDatabase();
+		NotifyActionStateChanged();
 	}
 
 	private async Task DuplicateAsync(object? param) {
+		if (!CanDuplicate(param)) return;
 		var files = GetTargets(param).OfType<AssetFile>().ToList();
 		if (files.Count == 0) return;
 		foreach (var file in files) {
@@ -498,6 +568,7 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 	}
 
 	private async Task CreateGenericPrefab() {
+		if (!CanWriteToSelectedFolder) return;
 		var window = ActiveWindow();
 		if (window is null) return;
 		var popup = new NodeTypeTree();
@@ -509,12 +580,13 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 	}
 
 	private async Task CreatePrefab(string defaultName, string nodeType) {
+		if (!CanWriteToSelectedFolder) return;
 		var window = ActiveWindow();
 		if (window is null) return;
 		var name = await new RenameModal(defaultName).ShowDialog<string?>(window);
 		if (string.IsNullOrEmpty(name)) return;
 
-		var dest = m_selectedFolder?.Filepath ?? ProjectContext.AssetsPath;
+		var dest = m_selectedFolder!.Filepath;
 		var path = UniqueDestPath(Path.Combine(dest, name + ".tnode"));
 		try {
 			ToastEngine.CreateTNode(path, nodeType);
@@ -529,13 +601,13 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 	}
 
 	private async Task CreateNewAsset(BaseAsset? def) {
-		if (def is null) return;
+		if (def is null || !CanWriteToSelectedFolder) return;
 		var window = ActiveWindow();
 		if (window is null) return;
 		var name = await new RenameModal("New" + def.DisplayName).ShowDialog<string?>(window);
 		if (string.IsNullOrEmpty(name)) return;
 
-		var dest = m_selectedFolder?.Filepath ?? ProjectContext.AssetsPath;
+		var dest = m_selectedFolder!.Filepath;
 		var path = UniqueDestPath(Path.Combine(dest, name + def.Extension));
 		try {
 			await def.CreateAsync(path);
@@ -549,10 +621,10 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 	}
 
 	public void MoveAsset(string uid, AssetFolder target) {
+		if (!CanMoveAsset(uid, target)) return;
 		if (!AssetDatabase.TryResolve(uid, out var virtualPath, out _)) return;
 		var realPath = ProjectContext.Resolve(virtualPath);
 		if (!File.Exists(realPath)) return;
-		if (!IsEditable(target)) return;
 
 		var fileName = Path.GetFileName(realPath);
 		var dstAsset = Path.Combine(target.Filepath, fileName);
@@ -601,14 +673,90 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 		return param is { } p ? new List<object> { p } : m_selectedItems.ToList();
 	}
 
+	public bool CanWriteToFolder(AssetFolder? folder) {
+		if (folder is null || !ProjectContext.IsInitialized || ProjectContext.IsUnderCore(folder.Filepath)) return false;
+		return ProjectContext.IsDatabaseRoot(folder.Filepath) ||
+			ProjectContext.IsUnderContentDatabase(folder.Filepath);
+	}
+
+	public bool CanOpenForEditing(AssetFile file) {
+		return file.Definition?.CanBeEdited == true && !ProjectContext.IsUnderCore(file.Filepath);
+	}
+
+	public bool CanMoveAsset(string uid, AssetFolder target) {
+		if (!CanWriteToFolder(target) || !AssetDatabase.TryResolve(uid, out var virtualPath, out _)) return false;
+		var source = ProjectContext.Resolve(virtualPath);
+		return File.Exists(source) && IsEditablePath(source);
+	}
+
+	private bool CanCreateFolder(object? param) {
+		return CanWriteToFolder(param as AssetFolder ?? m_selectedFolder);
+	}
+
+	private bool CanRename(object? param) {
+		var targets = GetTargets(param);
+		return targets.Count == 1 && targets[0] switch {
+			AssetFile file => IsEditable(file),
+			AssetFolder folder => IsEditable(folder),
+			_ => false
+		};
+	}
+
+	private bool CanDelete(object? param) {
+		var targets = GetTargets(param);
+		return targets.Count > 0 && targets.All(target => target switch {
+			AssetFile file => IsEditable(file),
+			AssetFolder folder => IsEditable(folder),
+			_ => false
+		});
+	}
+
+	private bool CanCopy(object? param) {
+		var targets = GetTargets(param);
+		return targets.Count > 0 && targets.All(target => target is AssetFile);
+	}
+
+	private bool CanCut(object? param) {
+		var targets = GetTargets(param);
+		return targets.Count > 0 && targets.All(target => target is AssetFile file && IsEditable(file));
+	}
+
+	private bool CanPaste() {
+		return m_clipMode != ClipMode.None && m_clipPaths.Count > 0 && CanWriteToSelectedFolder;
+	}
+
+	private bool CanDuplicate(object? param) {
+		var targets = GetTargets(param);
+		return targets.Count > 0 && targets.All(target => target is AssetFile file && IsEditable(file));
+	}
+
+	private bool CanReimport(object? param) {
+		var targets = GetTargets(param);
+		return targets.Count == 1 && targets[0] is AssetFile file && IsEditable(file);
+	}
+
+	private static bool IsEditablePath(string path) {
+		return ProjectContext.IsInitialized &&
+			!ProjectContext.IsUnderCore(path) &&
+			ProjectContext.IsUnderContentDatabase(path);
+	}
+
 	private static bool IsEditable(AssetFile file) {
-		return ProjectContext.IsInitialized && ProjectContext.IsUnderContentDatabase(file.Filepath);
+		return IsEditablePath(file.Filepath);
 	}
 
 	private static bool IsEditable(AssetFolder folder) {
-		return ProjectContext.IsInitialized
-			&& ProjectContext.IsUnderContentDatabase(folder.Filepath)
-			&& !ProjectContext.IsDatabaseRoot(folder.Filepath);
+		return IsEditablePath(folder.Filepath) && !ProjectContext.IsDatabaseRoot(folder.Filepath);
+	}
+
+	private T Track<T>(T command) where T : IRelayCommand {
+		m_actionCommands.Add(command);
+		return command;
+	}
+
+	private void NotifyActionStateChanged() {
+		foreach (var command in m_actionCommands)
+			command.NotifyCanExecuteChanged();
 	}
 
 	private static Window? ActiveWindow() {
@@ -644,11 +792,18 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 				.Where(f => IsTypeVisible(f.Definition))
 				.Where(f => typeFilter is null || f.Definition == typeFilter)
 				.Where(f => string.IsNullOrEmpty(textFilter) ||
-					f.Name.Contains(textFilter, StringComparison.OrdinalIgnoreCase));
+					f.Name.Contains(textFilter, StringComparison.OrdinalIgnoreCase))
+				.OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
+				.ThenBy(f => f.Name, StringComparer.Ordinal);
 		} else if (m_selectedFolder is not null) {
-			var folders = m_selectedFolder.SubFolders.Cast<object>();
+			var folders = m_selectedFolder.SubFolders
+				.OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
+				.ThenBy(f => f.Name, StringComparer.Ordinal)
+				.Cast<object>();
 			var files = m_selectedFolder.Files
 				.Where(f => IsTypeVisible(f.Definition))
+				.OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
+				.ThenBy(f => f.Name, StringComparer.Ordinal)
 				.Cast<object>();
 			items = folders.Concat(files);
 		} else {
@@ -685,36 +840,32 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 
 	private void LoadFolders() {
 		m_selectedItems.Clear();
+		m_selectedCount = 0;
 		Folders.Clear();
-
-		AssetFolder? firstContentFolder = null;
+		var roots = new List<AssetFolder>();
 
 		if (ProjectContext.IsInitialized) {
 			// One folder per content database
-			var isFirst = true;
 			foreach (var db in ProjectContext.Databases) {
 				var dbPath = Path.Combine(ProjectContext.ProjectPath, db);
-				var folder = new AssetFolder(dbPath) { Name = db + "://", IsExpanded = isFirst };
-				Folders.Add(folder);
-				SetOwnerRecursive(folder);
-				if (isFirst) {
-					firstContentFolder = folder;
-					isFirst = false;
-				}
+				roots.Add(new AssetFolder(dbPath) { Name = db + "://" });
 			}
 
 			// core:// is always appended
-			var coreFolder = new AssetFolder(ProjectContext.CorePath) { Name = "core://" };
-			Folders.Add(coreFolder);
-			SetOwnerRecursive(coreFolder);
+			roots.Add(new AssetFolder(ProjectContext.CorePath) { Name = "core://" });
 		} else {
 			// show a minimal placeholder
 			var fallbackFolder = new AssetFolder(@"C:\Users\Xein\Desktop\unnamed_project\assets") {
 				Name = "assets://", IsExpanded = true
 			};
-			Folders.Add(fallbackFolder);
-			SetOwnerRecursive(fallbackFolder);
-			firstContentFolder = fallbackFolder;
+			roots.Add(fallbackFolder);
+		}
+
+		foreach (var root in roots
+			         .OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
+			         .ThenBy(f => f.Name, StringComparer.Ordinal)) {
+			Folders.Add(root);
+			SetOwnerRecursive(root);
 		}
 
 		AssetFolder? restored = null;
@@ -722,16 +873,18 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 			restored = FindByPath(Folders, m_refreshTargetPath);
 		m_refreshTargetPath = null;
 
-		m_selectedFolder = restored ?? firstContentFolder ?? Folders.FirstOrDefault();
+		m_selectedFolder = restored ?? FindFallbackFolder();
 		if (m_selectedFolder is not null) ExpandToFolder(m_selectedFolder);
 
 		Notify(nameof(SelectedFolder));
 		RefreshCurrentItems();
 		Notify(nameof(BreadcrumbItems));
+		Notify(nameof(CanWriteToSelectedFolder));
+		NotifyActionStateChanged();
 	}
 
 	private void Refresh() {
-		m_refreshTargetPath = m_selectedFolder?.Filepath;
+		m_refreshTargetPath ??= m_selectedFolder?.Filepath;
 		LoadFolders();
 	}
 
@@ -749,6 +902,15 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 		}
 
 		return null;
+	}
+
+	private AssetFolder? FindFallbackFolder() {
+		if (ProjectContext.IsInitialized) {
+			var assets = FindByPath(Folders, ProjectContext.AssetsPath);
+			if (assets is not null) return assets;
+		}
+
+		return Folders.FirstOrDefault(CanWriteToFolder) ?? Folders.FirstOrDefault();
 	}
 
 	private static IEnumerable<AssetFile> GetAllFiles(AssetFolder folder) {
@@ -773,8 +935,8 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged {
 	}
 
 	private bool IsTypeVisible(BaseAsset? def) {
-		return Filters.FirstOrDefault(f => f.Definition == def)?.IsEnabled
-			?? m_unknownFilter.IsEnabled;
+		if (def is null) return m_unknownFilter.IsEnabled;
+		return Filters.FirstOrDefault(f => f.Definition == def)?.IsEnabled ?? true;
 	}
 
 	// clipboard

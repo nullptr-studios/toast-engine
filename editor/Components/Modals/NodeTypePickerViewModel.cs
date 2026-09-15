@@ -25,7 +25,8 @@ public class NodeDisplayItem : SearchableTreeItem<NodeDisplayItem> {
 			Icon = new Bitmap(AssetLoader.Open(new Uri("avares://editor/Resources/node_icons/2x/Circle.png")));
 		}
 
-		AllChildren = item.Children.Select(c => new NodeDisplayItem(c)).ToList();
+		var children = item.Children.Select(c => new NodeDisplayItem(c));
+		AllChildren = PickerOrdering.ByName(children, child => child.Name).ToList();
 		foreach (var c in AllChildren) FilteredChildren.Add(c);
 		InitSegments();
 	}

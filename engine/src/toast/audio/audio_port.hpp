@@ -14,7 +14,7 @@ namespace assets {
 
 class TOAST_API AudioPort : public Data {
 public:
-	explicit AudioPort(const toml::table& table, AssetHandle<Schema> schema = {}) : Data(table, std::move(schema)) { }
+	explicit AudioPort(const toml::table& table, Handle<Schema> schema = {}) : Data(table, std::move(schema)) { }
 
 	[[nodiscard]]
 	auto type() const -> std::string_view override {

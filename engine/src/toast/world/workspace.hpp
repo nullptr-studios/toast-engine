@@ -11,8 +11,11 @@
 #pragma once
 
 #include "node_owner.hpp"
+#include "workspace_history.hpp"
 
+#include <memory>
 #include <toast/events/listener.hpp>
+#include <utility>
 
 namespace toast {
 /**
@@ -57,8 +60,14 @@ public:
 	void registerDependency(Node& from, Node& to) override;
 	void unregisterDependency(Node& from, Node& to) override;
 
-	/// Same query grammar as World::findFrom(); searches only within m_root_node
+	[[nodiscard]]
+	auto participatesIn(NodeOwnerParticipation use) const noexcept -> bool override;
+
+	/// Name lookup over origin's subtree
 	auto findFrom(const Node& origin, std::string_view query) -> Box<Node> override;
+
+	/// UID lookup over origin's subtree
+	auto findFrom(const Node& origin, const UID& uid) -> Box<Node> override;
 
 	/// Same query grammar as World::searchFrom(); searches only within m_root_node
 	auto searchFrom(const Node& origin, std::string_view query) -> std::vector<Box<Node>> override;
@@ -95,11 +104,29 @@ protected:
 	SnapSetting m_rotate_snap {true, 30.0f};
 	SnapSetting m_scale_snap {true, 0.10f};
 	bool m_game_camera = false;    ///< false = editor camera
+	std::unique_ptr<Camera> m_editor_camera;
+	std::unique_ptr<WorkspaceHistory> m_history;
+
+	[[nodiscard]]
+	auto isActiveWorkspace() const noexcept -> bool;
 
 	void eventSubscriptions();
+	void initializeHistory(bool available, bool initially_saved);
+	auto restoreHistorySnapshot(const assets::Prefab& snapshot) -> bool;
+	void destroyOwnedTree(Box<Node>& root);
+
+	template<typename F>
+	void recordHistory(WorkspaceHistory::Context context, F&& mutation) {
+		const bool owned = m_history && m_history->beginAtomic(std::move(context));
+		std::forward<F>(mutation)();
+		if (m_history) {
+			m_history->finishAtomic(owned);
+		}
+	}
 
 	/// instantiates the prefab and sets up the root node
-	void initFromPrefab(const assets::AssetHandle<assets::Prefab>& file);
+	void initFromPrefab(const assets::Handle<assets::Prefab>& file);
+	void applyActiveCamera() override;
 
 private:
 	double m_inspector_accum = 0.0;

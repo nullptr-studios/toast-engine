@@ -101,6 +101,7 @@
     "name": "FunctionNode",
     "namespace": "toast",
     "parent": null,
+    "signals": [],
     "source_file": "31_reflected_functions.hpp",
     "tick_functions": {
       "begin": false,

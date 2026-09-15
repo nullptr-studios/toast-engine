@@ -6,62 +6,30 @@
 
 namespace toast {
 
-void Node3D::pos(glm::vec3 pos) {
-	m_position = pos;
-	m_dirty_local = true;
-	m_dirty_world = true;
-	World::markNode3DDependantsDirty(box());
+namespace {
+
+void composeTransform(glm::mat4& transform, glm::vec3 position, glm::quat rotation, glm::vec3 scale) {
+	transform = glm::mat4_cast(glm::normalize(rotation));
+	transform[0] *= scale.x;
+	transform[1] *= scale.y;
+	transform[2] *= scale.z;
+	transform[3] = glm::vec4(position, 1.0f);
 }
 
-auto Node3D::pos() const -> const glm::vec3& {
-	return m_position;
+void decomposeTransform(const glm::mat4& transform, glm::vec3& position, glm::quat& rotation, glm::vec3& scale) {
+	glm::vec3 skew;
+	glm::vec4 perspective;
+	glm::decompose(transform, scale, rotation, position, skew, perspective);
+	rotation = glm::normalize(rotation);
 }
 
-void Node3D::rotQuat(glm::quat rot) {
-	m_rotation = glm::normalize(rot);
-	m_dirty_local = true;
-	m_dirty_world = true;
-	World::markNode3DDependantsDirty(box());
-}
-
-auto Node3D::rotQuat() const -> const glm::quat& {
-	return m_rotation;
-}
-
-void Node3D::rot(glm::vec3 rad) {
-	auto quat = glm::quat(rad);
-	rotQuat(quat);
-}
-
-auto Node3D::rot() const -> glm::vec3 {
-	return glm::eulerAngles(m_rotation);
-}
-
-void Node3D::rotDeg(glm::vec3 deg) {
-	auto quat = glm::quat(glm::radians(deg));
-	rotQuat(quat);
-}
-
-auto Node3D::rotDeg() const -> glm::vec3 {
-	return glm::degrees(glm::eulerAngles(m_rotation));
-}
-
-void Node3D::scale(glm::vec3 scl) {
-	m_scale = scl;
-	m_dirty_local = true;
-	m_dirty_world = true;
-	World::markNode3DDependantsDirty(box());
-}
-
-auto Node3D::scale() const -> const glm::vec3& {
-	return m_scale;
 }
 
 void Node3D::lookAt(glm::vec3 target, glm::vec3 up) {
 	ZoneScoped;
 	ZoneNameF("%s::lookAt()", name().data());
 
-	glm::vec3 forward = target - pos();
+	glm::vec3 forward = target - position;
 
 	// target is at the exact same position
 	if (glm::length(forward) < 0.0001f) {
@@ -83,7 +51,7 @@ void Node3D::lookAt(glm::vec3 target, glm::vec3 up) {
 	rot_mat[0] = forward;
 	rot_mat[1] = right;
 	rot_mat[2] = true_up;
-	rotQuat(glm::quat_cast(rot_mat));
+	rotation = glm::quat_cast(rot_mat);
 }
 
 void Node3D::lookAtZ(glm::vec3 target) {
@@ -91,7 +59,7 @@ void Node3D::lookAtZ(glm::vec3 target) {
 	ZoneNameF("%s::lookAtZ()", name().data());
 
 	// Calculate direction vector on the XY plane only
-	glm::vec3 forward = target - pos();
+	glm::vec3 forward = target - position;
 	forward.z = 0.0f;    // Flatten the Z axis
 
 	// target is directly above or below
@@ -110,146 +78,95 @@ void Node3D::lookAtZ(glm::vec3 target) {
 	rot_mat[0] = forward;
 	rot_mat[1] = right;
 	rot_mat[2] = world_up;
-	rotQuat(glm::quat_cast(rot_mat));
+	rotation = glm::quat_cast(rot_mat);
 }
 
 auto Node3D::up() const -> glm::vec3 {
-	return worldRotQuat() * world_up;
+	return world_rotation * world_up;
 }
 
 auto Node3D::forward() const -> glm::vec3 {
-	return worldRotQuat() * world_forward;
+	return world_rotation * world_forward;
 }
 
-void Node3D::recalculateTransforms() const {
+void Node3D::syncTransform() const {
 	ZoneScoped;
-	ZoneNameF("%s::recalculateTransforms()", name().data());
 
-	// The editor inspector (and anything else going through the reflection system) writes
-	// m_position/m_rotation/m_scale directly via FieldAccess::set(), bypassing pos()/rot()/scale() and the
-	// dirty-flag bookkeeping they do. Detect that divergence here so such an edit doesn't get stuck behind
-	// a cached matrix forever.
-	if (!m_dirty_local && (m_position != m_cached_position || m_rotation != m_cached_rotation || m_scale != m_cached_scale)) {
-		m_dirty_local = true;
+	const bool local_changed = position != m_previous_position || rotation != m_previous_rotation || scale != m_previous_scale;
+	const bool world_changed_by_user = world_position != m_previous_world_position || world_rotation != m_previous_world_rotation ||
+	                                   world_scale != m_previous_world_scale;
+	const glm::mat4 parent_mat = m_transform_parent.exists() ? m_transform_parent->m_world_transform : glm::mat4(1.0f);
+
+	if (local_changed) {
+		composeTransform(m_transform, position, rotation, scale);
+
+		m_previous_position = position;
+		m_previous_rotation = rotation;
+		m_previous_scale = scale;
 		m_dirty_world = true;
 	}
 
-	const bool recomputing_world = m_dirty_world;
+	if (world_changed_by_user) {
+		glm::vec3 base_world_position;
+		glm::quat base_world_rotation;
+		glm::vec3 base_world_scale;
+		decomposeTransform(parent_mat * m_transform, base_world_position, base_world_rotation, base_world_scale);
 
-	if (m_dirty_local) {
-		m_transform = glm::mat4_cast(m_rotation);
+		const glm::vec3 world_position_delta = world_position - m_previous_world_position;
+		const glm::quat world_rotation_delta = glm::normalize(world_rotation * glm::inverse(m_previous_world_rotation));
+		const glm::vec3 world_scale_delta = world_scale - m_previous_world_scale;
 
-		m_transform[0] *= m_scale.x;
-		m_transform[1] *= m_scale.y;
-		m_transform[2] *= m_scale.z;
+		const glm::vec3 desired_world_position = base_world_position + world_position_delta;
+		const glm::quat desired_world_rotation = glm::normalize(world_rotation_delta * base_world_rotation);
+		const glm::vec3 desired_world_scale = base_world_scale + world_scale_delta;
 
-		m_transform[3] = glm::vec4(m_position, 1.0f);
+		glm::mat4 desired_world;
+		composeTransform(desired_world, desired_world_position, desired_world_rotation, desired_world_scale);
 
-		m_cached_position = m_position;
-		m_cached_rotation = m_rotation;
-		m_cached_scale = m_scale;
-		m_dirty_local = false;
+		// Convert the combined world edit back to local TRS so the next sync starts from the result we just applied.
+		const glm::mat4 desired_local = glm::inverse(parent_mat) * desired_world;
+		decomposeTransform(desired_local, position, rotation, scale);
+		composeTransform(m_transform, position, rotation, scale);
+
+		m_previous_position = position;
+		m_previous_rotation = rotation;
+		m_previous_scale = scale;
+		m_dirty_world = true;
 	}
 
+	const bool world_changed = m_dirty_world;
 	if (m_dirty_world) {
-		const glm::mat4 parent_mat = m_transform_parent.exists() ? m_transform_parent->getWorldTransform() : glm::mat4(1.0f);
 		m_world_transform = parent_mat * m_transform;
-		glm::vec3 skew;
-		glm::vec4 perspective;
-		glm::decompose(m_world_transform, m_world_scale, m_world_rotation, m_world_position, skew, perspective);
-		m_world_rotation = glm::normalize(m_world_rotation);
+
+		decomposeTransform(m_world_transform, world_position, world_rotation, world_scale);
+		m_previous_world_position = world_position;
+		m_previous_world_rotation = world_rotation;
+		m_previous_world_scale = world_scale;
 		m_dirty_world = false;
 	}
 
-	// markNode3DDependantsDirty() only reaches nodes whose *closest* Node3D ancestor is this node - i.e. one
-	// level of the reduced Node3D tree. Re-issuing it here, every time this node's world transform actually
-	// gets recomputed (regardless of whether that was triggered by our own setters, an ancestor's cascade,
-	// or the direct-field-write case above), lets each level notify the next one in turn, so grandchildren
-	// (a MeshNode nested under an intermediate Node3D group, for example) stay in sync too.
-	if (recomputing_world) {
-		World::markNode3DDependantsDirty(box());
+	if (world_changed) {
+		auto mark_dependants = [this](const Node& node, auto&& self) -> void {
+			for (const auto& child : node.children()) {
+				if (auto child3d = child.as<Node3D>()) {
+					if (child3d->m_transform_parent.exists() && &*child3d->m_transform_parent == this) {
+						child3d->m_dirty_world = true;
+					}
+				} else {
+					self(*child, self);
+				}
+			}
+		};
+		mark_dependants(*this, mark_dependants);
 	}
 }
 
 auto Node3D::getTransform() const noexcept -> const glm::mat4& {
-	ZoneScoped;
-	ZoneNameF("%s::getTransform()", name().data());
-
-	recalculateTransforms();
 	return m_transform;
 }
 
 auto Node3D::getWorldTransform() const noexcept -> const glm::mat4& {
-	ZoneScoped;
-	ZoneNameF("%s::getWorldTransform()", name().data());
-
-	recalculateTransforms();
 	return m_world_transform;
-}
-
-void Node3D::worldPos(glm::vec3 wpos) {
-	const glm::mat4 parent_world = m_transform_parent.exists() ? m_transform_parent->getWorldTransform() : glm::mat4(1.0f);
-	const glm::vec4 local = glm::inverse(parent_world) * glm::vec4(wpos, 1.0f);
-	m_position = glm::vec3(local);
-	m_dirty_local = true;
-	m_dirty_world = true;
-	World::markNode3DDependantsDirty(box());
-}
-
-auto Node3D::worldPos() const -> const glm::vec3& {
-	recalculateTransforms();
-	return m_world_position;
-}
-
-void Node3D::worldRotQuat(glm::quat wrot) {
-	const glm::quat parent_world_rot =
-	    m_transform_parent.exists() ? m_transform_parent->worldRotQuat() : glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
-	m_rotation = glm::normalize(glm::inverse(parent_world_rot) * wrot);
-	m_dirty_local = true;
-	m_dirty_world = true;
-	World::markNode3DDependantsDirty(box());
-}
-
-auto Node3D::worldRotQuat() const -> const glm::quat& {
-	recalculateTransforms();
-	return m_world_rotation;
-}
-
-void Node3D::worldRot(glm::vec3 rad) {
-	auto quat = glm::quat(rad);
-	worldRotQuat(quat);
-}
-
-auto Node3D::worldRot() const -> glm::vec3 {
-	recalculateTransforms();
-	return glm::eulerAngles(m_world_rotation);
-}
-
-void Node3D::worldRotDeg(glm::vec3 deg) {
-	auto quat = glm::quat(glm::radians(deg));
-	worldRotQuat(quat);
-}
-
-auto Node3D::worldRotDeg() const -> glm::vec3 {
-	recalculateTransforms();
-	return glm::degrees(glm::eulerAngles(m_world_rotation));
-}
-
-void Node3D::worldScale(glm::vec3 wscl) {
-	const glm::vec3 parent_scale = m_transform_parent.exists() ? m_transform_parent->worldScale() : glm::vec3(1.0f);
-	m_scale = glm::vec3(
-	    parent_scale.x != 0.0f ? wscl.x / parent_scale.x : wscl.x,
-	    parent_scale.y != 0.0f ? wscl.y / parent_scale.y : wscl.y,
-	    parent_scale.z != 0.0f ? wscl.z / parent_scale.z : wscl.z
-	);
-	m_dirty_local = true;
-	m_dirty_world = true;
-	World::markNode3DDependantsDirty(box());
-}
-
-auto Node3D::worldScale() const -> const glm::vec3& {
-	recalculateTransforms();
-	return m_world_scale;
 }
 
 void Node3D::init() {

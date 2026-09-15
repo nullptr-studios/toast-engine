@@ -1,7 +1,57 @@
 #include "sdl_window.hpp"
 
 #include <SDL3/SDL_vulkan.h>
+#include <string_view>
 #include <tracy/Tracy.hpp>
+
+namespace {
+
+void forwardUtf8(std::string_view text) {
+	for (size_t i = 0; i < text.size();) {
+		const auto lead = static_cast<unsigned char>(text[i]);
+		uint32_t codepoint = 0;
+		size_t length = 0;
+		if (lead <= 0x7f) {
+			codepoint = lead;
+			length = 1;
+		} else if (lead >= 0xc2 && lead <= 0xdf) {
+			codepoint = lead & 0x1fu;
+			length = 2;
+		} else if (lead >= 0xe0 && lead <= 0xef) {
+			codepoint = lead & 0x0fu;
+			length = 3;
+		} else if (lead >= 0xf0 && lead <= 0xf4) {
+			codepoint = lead & 0x07u;
+			length = 4;
+		}
+
+		bool valid = length > 0 && i + length <= text.size();
+		for (size_t j = 1; valid && j < length; j++) {
+			const auto byte = static_cast<unsigned char>(text[i + j]);
+			valid = (byte & 0xc0u) == 0x80u;
+			codepoint = (codepoint << 6) | (byte & 0x3fu);
+		}
+		if (valid && length == 3) {
+			const auto second = static_cast<unsigned char>(text[i + 1]);
+			valid = !((lead == 0xe0 && second < 0xa0) || (lead == 0xed && second >= 0xa0));
+		}
+		if (valid && length == 4) {
+			const auto second = static_cast<unsigned char>(text[i + 1]);
+			valid = !((lead == 0xf0 && second < 0x90) || (lead == 0xf4 && second >= 0x90));
+		}
+		valid = valid && codepoint <= 0x10ffff && !(codepoint >= 0xd800 && codepoint <= 0xdfff);
+
+		if (valid) {
+			event::send<event::WindowChar>(codepoint);
+			i += length;
+		} else {
+			TOAST_WARN("UI", "Discarding invalid UTF-8 byte in SDL text input");
+			i++;
+		}
+	}
+}
+
+}
 
 namespace toast {
 
@@ -29,13 +79,16 @@ SDLWindow::SDLWindow(const char* title, unsigned width, unsigned height, uint64_
 	});
 
 	m.sdl_window = std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)>(
-	    SDL_CreateWindow(title, width, height, SDL_WINDOW_RESIZABLE | flags), SDL_DestroyWindow
+	    SDL_CreateWindow(title, width, height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY | flags), SDL_DestroyWindow
 	);
 
 	if (!m.sdl_window) {
 		TOAST_ERROR("SDLWindow", "SDL_CreateWindow failed: {}", SDL_GetError());
 	}
 	TOAST_ASSERT(m.sdl_window, "Window", "SDL Window couldn't be created: {}", SDL_GetError());
+
+	// Let the UI know the starting dpi ratio
+	event::send<event::WindowDisplayScale>(SDL_GetWindowDisplayScale(m.sdl_window.get()));
 }
 
 auto SDLWindow::shouldClose() const -> bool {
@@ -82,14 +135,17 @@ void SDLWindow::pollEvents() {
 			}
 
 			case SDL_EVENT_TEXT_INPUT: {
-				if (event.text.text && event.text.text[0]) {
-					event::send<event::WindowChar>(event.text.text[0]);
+				if (event.text.text) {
+					forwardUtf8(event.text.text);
 				}
 				break;
 			}
 
 			case SDL_EVENT_MOUSE_MOTION: {
-				event::send<event::WindowMousePosition>(event.motion.x, event.motion.y);
+				// Mouse comes in window coordinates
+				// the renderer and UI work in pixels
+				const float density = SDL_GetWindowPixelDensity(m.sdl_window.get());
+				event::send<event::WindowMousePosition>(event.motion.x * density, event.motion.y * density);
 				break;
 			}
 
@@ -120,13 +176,19 @@ void SDLWindow::pollEvents() {
 			}
 
 			case SDL_EVENT_WINDOW_RESIZED: {
-				int w = event.window.data1;
-				int h = event.window.data2;
+				// data1/data2 are window coordinates
+				// the swapchain wants pixels
+				int w = 0;
+				int h = 0;
+				SDL_GetWindowSizeInPixels(m.sdl_window.get(), &w, &h);
 				event::send<event::WindowResize>(w, h);
 				break;
 			}
 
-				// TODO: GAMEPAD EVENTS
+			case SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED: {
+				event::send<event::WindowDisplayScale>(SDL_GetWindowDisplayScale(m.sdl_window.get()));
+				break;
+			}
 
 			default: break;
 		}

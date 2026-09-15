@@ -46,6 +46,16 @@ message SetActiveWorkspace {
 message WorkspaceSave {
   string target = 1;
   string path = 2;
+  uint64 workspace_handle = 3;
+  uint64 request = 4;
+}
+
+message WorkspaceSaveCompleted {
+  uint64 workspace_handle = 1;
+  uint64 request = 2;
+  bool success = 3;
+  bytes snapshot = 4;
+  string error = 5;
 }
 
 message WorkspaceAutosave {
@@ -75,6 +85,7 @@ message SetFocusedNode {
 message NodeChangeParam {
   string parameter = 1;
   string value = 2;
+  string node = 3;
 }
 
 message NodeChangeName {
@@ -84,6 +95,7 @@ message NodeChangeName {
 
 message NodeCallFunction {
   string function = 1;
+  string node = 2;
 }
 
 message NodeEnabled {
@@ -187,4 +199,184 @@ message InspectorLuaContent {
 message NodeChangeLuaParam {
   string path = 1;
   string value = 2;
+  string node = 3;
+}
+
+enum HistoryOperation {
+  HISTORY_INITIAL = 0;
+  HISTORY_CREATE = 1;
+  HISTORY_DELETE = 2;
+  HISTORY_RENAME = 3;
+  HISTORY_ENABLE = 4;
+  HISTORY_CHANGE_VALUE = 5;
+  HISTORY_MOVE = 6;
+  HISTORY_REPARENT = 7;
+  HISTORY_RETYPE = 8;
+  HISTORY_DUPLICATE = 9;
+  HISTORY_SPAWN_PREFAB = 10;
+  HISTORY_PASTE = 11;
+  HISTORY_PROMOTE = 12;
+  HISTORY_CALL_FUNCTION = 13;
+  HISTORY_CHERRY_PICK = 14;
+  HISTORY_MERGE = 15;
+}
+
+message HistoryRevision {
+  uint64 id = 1;
+  uint64 sequence = 2;
+  repeated uint64 parents = 3;
+  string node_uid = 4;
+  string node_name = 5;
+  HistoryOperation operation = 6;
+  string subject = 7;
+  string previous_value = 8;
+  string current_value = 9;
+}
+
+message WorkspaceHistoryInitialSnapshot {
+  uint64 workspace_handle = 1;
+  bytes snapshot = 2;
+  bool available = 3;
+  bool initially_saved = 4;
+  string unavailable_reason = 5;
+}
+
+message WorkspaceHistoryCommitted {
+  uint64 workspace_handle = 1;
+  bytes before_snapshot = 2;
+  bytes after_snapshot = 3;
+  string node_uid = 4;
+  string node_name = 5;
+  HistoryOperation operation = 6;
+  string subject = 7;
+  string previous_value = 8;
+  string current_value = 9;
+}
+
+message WorkspaceApplyHistorySnapshot {
+  uint64 workspace_handle = 1;
+  uint64 request = 2;
+  bytes snapshot = 3;
+}
+
+message WorkspaceHistorySnapshotApplied {
+  uint64 workspace_handle = 1;
+  uint64 request = 2;
+  bool success = 3;
+  string error = 4;
+}
+
+message WorkspacePrepareHistoryMerge {
+  uint64 workspace_handle = 1;
+  uint64 request = 2;
+  bool is_merge = 3;
+  bytes base_snapshot = 4;
+  bytes current_snapshot = 5;
+  bytes incoming_snapshot = 6;
+}
+
+message WorkspaceHistoryMergePrepared {
+  uint64 workspace_handle = 1;
+  uint64 request = 2;
+  bool success = 3;
+  bytes snapshot = 4;
+  string error = 5;
+}
+
+message UpdateWorkspaceHistory {
+  uint64 workspace_handle = 1;
+  bool available = 2;
+  string unavailable_reason = 3;
+  uint64 current_revision = 4;
+  bool is_dirty = 5;
+  bool transaction_open = 6;
+  repeated HistoryRevision revisions = 7;
+}
+
+message RequestWorkspaceHistory {
+  uint64 workspace_handle = 1;
+}
+
+message WorkspaceUndo { uint64 workspace_handle = 1; }
+message WorkspaceRedo { uint64 workspace_handle = 1; }
+
+message WorkspaceCheckoutHistory {
+  uint64 workspace_handle = 1;
+  uint64 revision = 2;
+}
+
+message WorkspaceCherryPickHistory {
+  uint64 workspace_handle = 1;
+  uint64 revision = 2;
+}
+
+message WorkspaceMergeHistory {
+  uint64 workspace_handle = 1;
+  uint64 revision = 2;
+}
+
+message WorkspaceHistoryTransaction {
+  uint64 workspace_handle = 1;
+  uint64 transaction = 2;
+  enum Phase {
+    BEGIN = 0;
+    COMMIT = 1;
+    CANCEL = 2;
+  }
+  Phase phase = 3;
+  HistoryOperation operation = 4;
+  string node = 5;
+  string subject = 6;
+}
+
+enum HistoryConflictKind {
+  HISTORY_CONFLICT_VALUE = 0;
+  HISTORY_CONFLICT_NAME = 1;
+  HISTORY_CONFLICT_TYPE = 2;
+  HISTORY_CONFLICT_ENABLED = 3;
+  HISTORY_CONFLICT_PARENT = 4;
+  HISTORY_CONFLICT_ORDER = 5;
+  HISTORY_CONFLICT_EXISTENCE = 6;
+  HISTORY_CONFLICT_LUA_VALUE = 7;
+}
+
+message HistoryConflict {
+  uint64 id = 1;
+  string node_uid = 2;
+  string node_name = 3;
+  HistoryConflictKind kind = 4;
+  string field = 5;
+  uint32 value_type = 6;
+  bool is_array = 7;
+  string ref_type = 8;
+  string base_value = 9;
+  string current_value = 10;
+  string incoming_value = 11;
+}
+
+message WorkspaceHistoryConflicts {
+  uint64 workspace_handle = 1;
+  uint64 request = 2;
+  bool is_merge = 3;
+  uint64 source_revision = 4;
+  repeated HistoryConflict conflicts = 5;
+}
+
+message HistoryConflictResolution {
+  uint64 conflict = 1;
+  enum Choice {
+    BASE = 0;
+    CURRENT = 1;
+    INCOMING = 2;
+    CUSTOM = 3;
+  }
+  Choice choice = 2;
+  string custom_value = 3;
+}
+
+message WorkspaceResolveHistoryConflicts {
+  uint64 workspace_handle = 1;
+  uint64 request = 2;
+  bool cancel = 3;
+  repeated HistoryConflictResolution resolutions = 4;
 }

@@ -87,4 +87,11 @@ struct WindowResize : Event<WindowResize> {
 	WindowResize(int width, int height) : width(width), height(height) { }
 };
 
+/// @brief Event sent when the window's dpi ratio changes
+struct WindowDisplayScale : Event<WindowDisplayScale> {
+	float scale;
+
+	explicit WindowDisplayScale(float scale) : scale(scale) { }
+};
+
 }

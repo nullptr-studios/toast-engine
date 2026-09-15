@@ -22,9 +22,9 @@ namespace toast {
  */
 class TOAST_API [[ToastNode, Color("Beige")]] AudioContext : public Node {
 public:
-	void addBank(const assets::AssetHandle<assets::AudioBank>& bank);
+	void addBank(const assets::Handle<assets::AudioBank>& bank);
 
-	void removeBank(assets::AssetHandle<assets::AudioBank> bank);
+	void removeBank(assets::Handle<assets::AudioBank> bank);
 
 	[[Button("Reload Banks")]]
 	void reload();
@@ -35,13 +35,13 @@ private:
 	void destroy();
 
 	[[Reflect]]
-	std::vector<assets::AssetHandle<assets::AudioBank>> m_banks;
+	std::vector<assets::Handle<assets::AudioBank>> m_banks;
 	std::mutex m_load_lock;
 
 	[[Reflect, ReadOnly]]
 	std::vector<std::string> m_events;
 
-	std::vector<std::pair<assets::AssetHandle<assets::AudioBank>, FMOD_STUDIO_BANK*>> m_loaded_banks;
+	std::vector<std::pair<assets::Handle<assets::AudioBank>, FMOD_STUDIO_BANK*>> m_loaded_banks;
 };
 
 }

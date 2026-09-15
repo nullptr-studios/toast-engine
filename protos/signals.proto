@@ -1,0 +1,88 @@
+syntax = "proto3";
+package proto.events;
+
+enum SignalConnectionSource {
+  SIGNAL_CONNECTION_SOURCE_UNKNOWN = 0;
+  SIGNAL_CONNECTION_SOURCE_CPP = 1;
+  SIGNAL_CONNECTION_SOURCE_LUA = 2;
+  SIGNAL_CONNECTION_SOURCE_EDITOR = 3;
+}
+
+message SignalConnection {
+  string target_uid = 1;
+  string target_name = 2;
+  string target_type = 3;
+  string function = 4;
+  SignalConnectionSource source = 5;
+  bool forwards_args = 6;
+}
+
+message SignalStateEntry {
+  string declaring_type = 1;
+  string signal = 2;
+  repeated SignalConnection connections = 3;
+}
+
+message RequestSignalState {
+  string node = 1;
+}
+
+message SignalState {
+  string node = 1;
+  repeated SignalStateEntry signals = 2;
+  string error = 3;
+}
+
+message RequestSignalCallables {
+  uint64 request = 1;
+  string source_node = 2;
+  string declaring_type = 3;
+  string signal = 4;
+  string target_node = 5;
+}
+
+message SignalParameter {
+  string name = 1;
+  string type = 2;
+}
+
+message SignalCallable {
+  string name = 1;
+  repeated SignalParameter parameters = 2;
+  bool has_cpp = 3;
+  bool has_lua = 4;
+  bool compatible = 5;
+  bool already_connected = 6;
+  bool forwards_args = 7;
+  string disabled_reason = 8;
+}
+
+message SignalCallables {
+  uint64 request = 1;
+  string target_node = 2;
+  repeated SignalCallable callables = 3;
+  string error = 4;
+}
+
+message AddSignalConnection {
+  string source_node = 1;
+  string declaring_type = 2;
+  string signal = 3;
+  string target_node = 4;
+  string function = 5;
+  bool forwards_args = 6;
+}
+
+message RemoveSignalConnection {
+  string source_node = 1;
+  string declaring_type = 2;
+  string signal = 3;
+  string target_node = 4;
+  string function = 5;
+}
+
+message ClearEditorSignalConnections {
+  string source_node = 1;
+  string declaring_type = 2;
+  string signal = 3;
+}

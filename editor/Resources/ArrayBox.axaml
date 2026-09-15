@@ -37,6 +37,15 @@
 					<StackPanel Spacing="6">
 						<ItemsControl x:Name="PART_Items" />
 
+						<TextBlock x:Name="PART_Empty"
+						           Text="Empty"
+						           FontFamily="FiraCode Nerd Font,Consolas,monospace"
+						           FontStyle="Italic"
+						           Foreground="{StaticResource TextMuted}"
+						           HorizontalAlignment="Center"
+						           Padding="0,0,4,0"
+						           IsVisible="False" />
+
 						<Button x:Name="PART_Add"
 						        HorizontalAlignment="Stretch"
 						        HorizontalContentAlignment="Center"

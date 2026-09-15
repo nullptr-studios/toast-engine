@@ -11,6 +11,7 @@
 #pragma once
 #include "box.hpp"
 
+#include <cstdint>
 #include <functional>
 #include <mutex>
 #include <string_view>
@@ -22,6 +23,14 @@
 #include <vector>
 
 namespace toast {
+class CameraController;
+class Camera;
+enum class NodeOwnerParticipation : uint8_t {
+	render,
+	runtime_input,
+	gameplay_tick,
+};
+
 class TOAST_API INodeOwner {
 public:
 	INodeOwner() = default;
@@ -30,11 +39,21 @@ public:
 
 	virtual void tick() = 0;
 
+	/// Determines if this owner is elegible for runtime systems
+	[[nodiscard]]
+	virtual auto participatesIn(NodeOwnerParticipation use) const noexcept -> bool = 0;
+
 	virtual void registerDependency(Node& from, Node& to) = 0;
 	virtual void unregisterDependency(Node& from, Node& to) = 0;
 
 	virtual auto findFrom(const Node& origin, std::string_view query) -> Box<Node> = 0;
+	virtual auto findFrom(const Node& origin, const UID& uid) -> Box<Node> = 0;
 	virtual auto searchFrom(const Node& origin, std::string_view query) -> std::vector<Box<Node>> = 0;
+
+	void activateCamera(Camera& camera);
+	void deactivateCamera(Camera& camera);
+	void activateCameraController(CameraController& controller);
+	void deactivateCameraController(CameraController& controller);
 
 	auto requestRuntimeCreate(Node& parent, std::string_view type) -> Box<Node>;
 	auto requestRuntimeSpawn(Node& parent, UID uid) -> Box<Node>;
@@ -45,10 +64,12 @@ public:
 
 	struct InstantiateContext {
 		std::vector<uint64_t> asset_chain;    ///< UIDs of prefabs currently being instantiated; prevents infinite recursion
-		std::function<assets::AssetHandle<assets::Prefab>(toast::UID)> resolver;    ///< injected loader so tests can swap in a fake
+		std::function<assets::Handle<assets::Prefab>(toast::UID)> resolver;    ///< injected loader so tests can swap in a fake
 	};
 
 protected:
+	static void updateTransforms(Node& root);
+
 	/// Assigns a fresh UID to the node; called on every spawned instance to avoid UID collisions
 	static void generateUid(Node& node);
 
@@ -76,10 +97,10 @@ protected:
 	/**
 	 * @brief Assembles a flat list of allocated nodes into a parent/child tree
 	 * @param nodes Flat list in prefab file order; index 0 becomes the tree root
-	 * @param file The source prefab, kept alive until all AssetHandle fields are resolved
+	 * @param file The source prefab, kept alive until all Handle fields are resolved
 	 * @return The root Box<Node>
 	 */
-	auto buildTree(std::vector<Box<Node>>&& nodes, const assets::AssetHandle<assets::Prefab>& file) -> Box<Node>;
+	auto buildTree(std::vector<Box<Node>>&& nodes, const assets::Handle<assets::Prefab>& file) -> Box<Node>;
 
 	/**
 	 * @brief Allocates and initializes a full node tree from a prefab asset
@@ -92,7 +113,7 @@ protected:
 	 *            asset_chain is mutated during the call and restored on return
 	 * @return The root of the new tree, or an empty box if instantiation fails
 	 */
-	auto instantiate(const assets::AssetHandle<assets::Prefab>& file, InstantiateContext& ctx) -> Box<Node>;
+	auto instantiate(const assets::Handle<assets::Prefab>& file, InstantiateContext& ctx) -> Box<Node>;
 
 	/// Copies reflected field values from the serialized BasicNode onto the live node; skips fields absent from NodeInfo
 	void applyFields(Node& node, const assets::Prefab::BasicNode& data);
@@ -108,6 +129,17 @@ protected:
 	/// Sweeps the nodes set and erases any ControlBox whose ref count is zero; short-circuits if tombstones == 0
 	void reapTombstones() noexcept;
 
+	void findCamera();
+	void findCameraController();
+	void tickActiveCameraController();
+	void beginCameraShutdown() noexcept;
+
+	[[nodiscard]]
+	auto activeCamera() noexcept -> Box<Camera>&;
+	[[nodiscard]]
+	auto activeRenderCamera() noexcept -> Camera*;
+	virtual void applyActiveCamera() = 0;
+
 	template<typename Fn>
 	void forEachNode(Fn&& fn) const {
 		for (const auto& cb : nodes) {
@@ -119,7 +151,13 @@ protected:
 	size_t tombstones = 0;    ///< short-circuits the reap sweep when there's nothing to clean
 
 private:
+	friend class CameraController;
+
 	std::unordered_set<_detail::ControlBox> nodes;
+	Box<Camera> m_active_camera;
+	Box<CameraController> m_active_camera_controller;
+	bool m_has_camera_controller = false;
+	bool m_is_shutting_down = false;
 };
 
 }

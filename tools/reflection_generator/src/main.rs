@@ -121,12 +121,17 @@ fn main() {
 
     if let Some(stub_path) = &cli.lua_stubs {
         if let Some(parent) = stub_path.parent()
-            && !parent.as_os_str().is_empty() {
-                fs::create_dir_all(parent)
-                    .unwrap_or_else(|e| eprintln!("warning: cannot create lua stub directory: {e}"));
-            }
-        fs::write(stub_path, generate_lua_stubs(&all_nodes))
-            .unwrap_or_else(|e| eprintln!("warning: cannot write lua stubs '{}': {e}", stub_path.display()));
+            && !parent.as_os_str().is_empty()
+        {
+            fs::create_dir_all(parent)
+                .unwrap_or_else(|e| eprintln!("warning: cannot create lua stub directory: {e}"));
+        }
+        fs::write(stub_path, generate_lua_stubs(&all_nodes)).unwrap_or_else(|e| {
+            eprintln!(
+                "warning: cannot write lua stubs '{}': {e}",
+                stub_path.display()
+            )
+        });
     }
 
     println!(
@@ -146,7 +151,8 @@ fn inject_attributes(node: &mut NodeInfo, attributes: &[std::string::String]) {
         node.class.attrib_json = serde_json::Value::Object(serde_json::Map::new());
     }
     let map = node
-        .class.attrib_json
+        .class
+        .attrib_json
         .as_object_mut()
         .expect("attributes is an object");
     for name in attributes {
@@ -196,7 +202,8 @@ fn topological_sort(nodes: Vec<NodeInfo>) -> Vec<NodeInfo> {
 
         for node in remaining {
             let parent_ready = node
-                .class.parent
+                .class
+                .parent
                 .as_ref()
                 .map(|p| {
                     let pname = match &p.namespace {
@@ -206,7 +213,8 @@ fn topological_sort(nodes: Vec<NodeInfo>) -> Vec<NodeInfo> {
                     // If the parent has no namespace qualifier, also try the child's namespace
                     // since unqualified parent names in C++ implicitly resolve to the enclosing namespace
                     let pname_in_child_ns = if p.namespace.is_none() {
-                        node.class.namespace
+                        node.class
+                            .namespace
                             .as_ref()
                             .map(|ns| format!("{}::{}", ns, p.name))
                     } else {

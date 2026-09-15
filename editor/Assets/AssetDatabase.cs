@@ -63,7 +63,7 @@ public static class AssetDatabase {
 	}
 
 	// full re-scan of all .meta files; writes one <db>.json per content database + core.json
-	public static void RebuildAssetDatabase() {
+	public static void RebuildAssetDatabase(bool notifyListeners = true) {
 		var now = DateTime.UtcNow.ToString("o");
 
 		// One manifest file per content database
@@ -88,10 +88,17 @@ public static class AssetDatabase {
 
 		s_uidLookup = null; // the on-disk database changed, drop the cached lookup
 
+		// Refresh UI bind stubs so Lua completion tracks .rml edits
+		UIBindStubGenerator.Generate();
+
 		if (ToastEngine.IsEngineReady)
 			ToastEngine.ReloadManifest();
 
-		ReloadedDatabase?.Invoke();
+		if (notifyListeners) ReloadedDatabase?.Invoke();
+	}
+
+	public static void Reset() {
+		s_uidLookup = null;
 	}
 
 	public static bool TryResolve(string uid, out string virtualPath, out string type) {
@@ -301,6 +308,8 @@ public static class AssetDatabase {
 		IAssetImporter importer = ext switch {
 			".psd" => new PsdImporter(textureSettings, SettingsFromMeta(psdSection)),
 			".glb" or ".gltf" => new GltfImporter(SettingsFromMeta(gltfSection), textureSettings),
+			".ttf" => new FontImporter(),
+			".tga" => new UIImageImporter(),
 			_ => new TextureImporter(textureSettings)
 		};
 

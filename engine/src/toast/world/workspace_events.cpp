@@ -215,13 +215,45 @@ struct ProtoTraits<WorkspaceSave> {
 		Proto p;
 		p.set_target(e.target);
 		p.set_path(e.uri);
+		p.set_workspace_handle(e.workspace_handle);
+		p.set_request(e.request);
 		return p;
 	}
 
-	static auto fromProto(const Proto& p) -> Event { return {toast::UID::fromString(p.target()), p.path()}; }
+	static auto fromProto(const Proto& p) -> Event {
+		return {toast::UID::fromString(p.target()), p.path(), p.workspace_handle(), p.request()};
+	}
 };
 
 TOAST_PROTO_EVENT(WorkspaceSave);
+
+template<>
+struct ProtoTraits<WorkspaceSaveCompleted> {
+	using Proto = proto::events::WorkspaceSaveCompleted;
+	using Event = WorkspaceSaveCompleted;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_workspace_handle(e.workspace_handle);
+		p.set_request(e.request);
+		p.set_success(e.success);
+		p.set_snapshot(e.snapshot.data(), e.snapshot.size());
+		p.set_error(e.error);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.workspace_handle = p.workspace_handle();
+		e.request = p.request();
+		e.success = p.success();
+		e.snapshot.assign(p.snapshot().begin(), p.snapshot().end());
+		e.error = p.error();
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(WorkspaceSaveCompleted);
 
 template<>
 struct ProtoTraits<WorkspaceAutosave> {
@@ -325,12 +357,13 @@ struct ProtoTraits<NodeChangeParam> {
 
 	static auto toProto(const Event& e) -> Proto {
 		Proto p;
+		p.set_node(e.node);
 		p.set_parameter(e.parameter);
 		p.set_value(e.value);
 		return p;
 	}
 
-	static auto fromProto(const Proto& p) -> Event { return {p.parameter(), p.value()}; }
+	static auto fromProto(const Proto& p) -> Event { return {toast::UID::fromString(p.node()), p.parameter(), p.value()}; }
 };
 
 TOAST_PROTO_EVENT(NodeChangeParam);
@@ -351,6 +384,25 @@ struct ProtoTraits<NodeChangeName> {
 };
 
 TOAST_PROTO_EVENT(NodeChangeName);
+
+template<>
+struct ProtoTraits<NodeCallFunction> {
+	using Proto = proto::events::NodeCallFunction;
+	using Event = NodeCallFunction;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_node(e.node);
+		p.set_function(e.function);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		return Event {toast::UID::fromString(p.node()), std::string_view {p.function()}};
+	}
+};
+
+TOAST_PROTO_EVENT(NodeCallFunction);
 
 template<>
 struct ProtoTraits<NodeEnabled> {
@@ -641,12 +693,13 @@ struct ProtoTraits<NodeChangeLuaParam> {
 
 	static auto toProto(const Event& e) -> Proto {
 		Proto p;
+		p.set_node(e.node);
 		p.set_path(e.path);
 		p.set_value(e.value);
 		return p;
 	}
 
-	static auto fromProto(const Proto& p) -> Event { return {p.path(), p.value()}; }
+	static auto fromProto(const Proto& p) -> Event { return {toast::UID::fromString(p.node()), p.path(), p.value()}; }
 };
 
 TOAST_PROTO_EVENT(NodeChangeLuaParam);
@@ -756,5 +809,450 @@ struct ProtoTraits<WorkspacePromoteNode> {
 };
 
 TOAST_PROTO_EVENT(WorkspacePromoteNode);
+
+template<>
+struct ProtoTraits<HistoryRevision> {
+	using Proto = proto::events::HistoryRevision;
+	using Event = HistoryRevision;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_id(e.id);
+		p.set_sequence(e.sequence);
+		for (auto parent : e.parents) {
+			p.add_parents(parent);
+		}
+		p.set_node_uid(e.node_uid);
+		p.set_node_name(e.node_name);
+		p.set_operation(static_cast<proto::events::HistoryOperation>(e.operation));
+		p.set_subject(e.subject);
+		p.set_previous_value(e.previous_value);
+		p.set_current_value(e.current_value);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.id = p.id();
+		e.sequence = p.sequence();
+		e.parents.assign(p.parents().begin(), p.parents().end());
+		e.node_uid = toast::UID::fromString(p.node_uid());
+		e.node_name = p.node_name();
+		e.operation = static_cast<HistoryOperation>(p.operation());
+		e.subject = p.subject();
+		e.previous_value = p.previous_value();
+		e.current_value = p.current_value();
+		return e;
+	}
+};
+
+template<>
+struct ProtoTraits<WorkspaceHistoryInitialSnapshot> {
+	using Proto = proto::events::WorkspaceHistoryInitialSnapshot;
+	using Event = WorkspaceHistoryInitialSnapshot;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_workspace_handle(e.workspace_handle);
+		p.set_snapshot(e.snapshot.data(), e.snapshot.size());
+		p.set_available(e.available);
+		p.set_initially_saved(e.initially_saved);
+		p.set_unavailable_reason(e.unavailable_reason);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.workspace_handle = p.workspace_handle();
+		e.snapshot.assign(p.snapshot().begin(), p.snapshot().end());
+		e.available = p.available();
+		e.initially_saved = p.initially_saved();
+		e.unavailable_reason = p.unavailable_reason();
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(WorkspaceHistoryInitialSnapshot);
+
+template<>
+struct ProtoTraits<WorkspaceHistoryCommitted> {
+	using Proto = proto::events::WorkspaceHistoryCommitted;
+	using Event = WorkspaceHistoryCommitted;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_workspace_handle(e.workspace_handle);
+		p.set_before_snapshot(e.before_snapshot.data(), e.before_snapshot.size());
+		p.set_after_snapshot(e.after_snapshot.data(), e.after_snapshot.size());
+		p.set_node_uid(e.node_uid);
+		p.set_node_name(e.node_name);
+		p.set_operation(static_cast<proto::events::HistoryOperation>(e.operation));
+		p.set_subject(e.subject);
+		p.set_previous_value(e.previous_value);
+		p.set_current_value(e.current_value);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.workspace_handle = p.workspace_handle();
+		e.before_snapshot.assign(p.before_snapshot().begin(), p.before_snapshot().end());
+		e.after_snapshot.assign(p.after_snapshot().begin(), p.after_snapshot().end());
+		e.node_uid = toast::UID::fromString(p.node_uid());
+		e.node_name = p.node_name();
+		e.operation = static_cast<HistoryOperation>(p.operation());
+		e.subject = p.subject();
+		e.previous_value = p.previous_value();
+		e.current_value = p.current_value();
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(WorkspaceHistoryCommitted);
+
+template<>
+struct ProtoTraits<WorkspaceApplyHistorySnapshot> {
+	using Proto = proto::events::WorkspaceApplyHistorySnapshot;
+	using Event = WorkspaceApplyHistorySnapshot;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_workspace_handle(e.workspace_handle);
+		p.set_request(e.request);
+		p.set_snapshot(e.snapshot.data(), e.snapshot.size());
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.workspace_handle = p.workspace_handle();
+		e.request = p.request();
+		e.snapshot.assign(p.snapshot().begin(), p.snapshot().end());
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(WorkspaceApplyHistorySnapshot);
+
+template<>
+struct ProtoTraits<WorkspaceHistorySnapshotApplied> {
+	using Proto = proto::events::WorkspaceHistorySnapshotApplied;
+	using Event = WorkspaceHistorySnapshotApplied;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_workspace_handle(e.workspace_handle);
+		p.set_request(e.request);
+		p.set_success(e.success);
+		p.set_error(e.error);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.workspace_handle = p.workspace_handle();
+		e.request = p.request();
+		e.success = p.success();
+		e.error = p.error();
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(WorkspaceHistorySnapshotApplied);
+
+template<>
+struct ProtoTraits<WorkspacePrepareHistoryMerge> {
+	using Proto = proto::events::WorkspacePrepareHistoryMerge;
+	using Event = WorkspacePrepareHistoryMerge;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_workspace_handle(e.workspace_handle);
+		p.set_request(e.request);
+		p.set_is_merge(e.is_merge);
+		p.set_base_snapshot(e.base_snapshot.data(), e.base_snapshot.size());
+		p.set_current_snapshot(e.current_snapshot.data(), e.current_snapshot.size());
+		p.set_incoming_snapshot(e.incoming_snapshot.data(), e.incoming_snapshot.size());
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.workspace_handle = p.workspace_handle();
+		e.request = p.request();
+		e.is_merge = p.is_merge();
+		e.base_snapshot.assign(p.base_snapshot().begin(), p.base_snapshot().end());
+		e.current_snapshot.assign(p.current_snapshot().begin(), p.current_snapshot().end());
+		e.incoming_snapshot.assign(p.incoming_snapshot().begin(), p.incoming_snapshot().end());
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(WorkspacePrepareHistoryMerge);
+
+template<>
+struct ProtoTraits<WorkspaceHistoryMergePrepared> {
+	using Proto = proto::events::WorkspaceHistoryMergePrepared;
+	using Event = WorkspaceHistoryMergePrepared;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_workspace_handle(e.workspace_handle);
+		p.set_request(e.request);
+		p.set_success(e.success);
+		p.set_snapshot(e.snapshot.data(), e.snapshot.size());
+		p.set_error(e.error);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.workspace_handle = p.workspace_handle();
+		e.request = p.request();
+		e.success = p.success();
+		e.snapshot.assign(p.snapshot().begin(), p.snapshot().end());
+		e.error = p.error();
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(WorkspaceHistoryMergePrepared);
+
+template<>
+struct ProtoTraits<UpdateWorkspaceHistory> {
+	using Proto = proto::events::UpdateWorkspaceHistory;
+	using Event = UpdateWorkspaceHistory;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_workspace_handle(e.workspace_handle);
+		p.set_available(e.available);
+		p.set_unavailable_reason(e.unavailable_reason);
+		p.set_current_revision(e.current_revision);
+		p.set_is_dirty(e.is_dirty);
+		p.set_transaction_open(e.transaction_open);
+		for (const auto& revision : e.revisions) {
+			*p.add_revisions() = ProtoTraits<HistoryRevision>::toProto(revision);
+		}
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.workspace_handle = p.workspace_handle();
+		e.available = p.available();
+		e.unavailable_reason = p.unavailable_reason();
+		e.current_revision = p.current_revision();
+		e.is_dirty = p.is_dirty();
+		e.transaction_open = p.transaction_open();
+		for (const auto& revision : p.revisions()) {
+			e.revisions.push_back(ProtoTraits<HistoryRevision>::fromProto(revision));
+		}
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(UpdateWorkspaceHistory);
+
+#define TOAST_HISTORY_HANDLE_EVENT(Type)             \
+	template<>                                         \
+	struct ProtoTraits<Type> {                         \
+		using Proto = proto::events::Type;               \
+		using Event = Type;                              \
+		static auto toProto(const Event& e) -> Proto {   \
+			Proto p;                                       \
+			p.set_workspace_handle(e.workspace_handle);    \
+			return p;                                      \
+		}                                                \
+		static auto fromProto(const Proto& p) -> Event { \
+			Event e;                                       \
+			e.workspace_handle = p.workspace_handle();     \
+			return e;                                      \
+		}                                                \
+	};                                                 \
+	TOAST_PROTO_EVENT(Type)
+
+TOAST_HISTORY_HANDLE_EVENT(RequestWorkspaceHistory);
+TOAST_HISTORY_HANDLE_EVENT(WorkspaceUndo);
+TOAST_HISTORY_HANDLE_EVENT(WorkspaceRedo);
+
+#define TOAST_HISTORY_REVISION_EVENT(Type)           \
+	template<>                                         \
+	struct ProtoTraits<Type> {                         \
+		using Proto = proto::events::Type;               \
+		using Event = Type;                              \
+		static auto toProto(const Event& e) -> Proto {   \
+			Proto p;                                       \
+			p.set_workspace_handle(e.workspace_handle);    \
+			p.set_revision(e.revision);                    \
+			return p;                                      \
+		}                                                \
+		static auto fromProto(const Proto& p) -> Event { \
+			Event e;                                       \
+			e.workspace_handle = p.workspace_handle();     \
+			e.revision = p.revision();                     \
+			return e;                                      \
+		}                                                \
+	};                                                 \
+	TOAST_PROTO_EVENT(Type)
+
+TOAST_HISTORY_REVISION_EVENT(WorkspaceCheckoutHistory);
+TOAST_HISTORY_REVISION_EVENT(WorkspaceCherryPickHistory);
+TOAST_HISTORY_REVISION_EVENT(WorkspaceMergeHistory);
+
+template<>
+struct ProtoTraits<WorkspaceHistoryTransaction> {
+	using Proto = proto::events::WorkspaceHistoryTransaction;
+	using Event = WorkspaceHistoryTransaction;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_workspace_handle(e.workspace_handle);
+		p.set_transaction(e.transaction);
+		p.set_phase(static_cast<Proto::Phase>(e.phase));
+		p.set_operation(static_cast<proto::events::HistoryOperation>(e.operation));
+		p.set_node(e.node);
+		p.set_subject(e.subject);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.workspace_handle = p.workspace_handle();
+		e.transaction = p.transaction();
+		e.phase = static_cast<Event::Phase>(p.phase());
+		e.operation = static_cast<HistoryOperation>(p.operation());
+		e.node = toast::UID::fromString(p.node());
+		e.subject = p.subject();
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(WorkspaceHistoryTransaction);
+
+template<>
+struct ProtoTraits<HistoryConflict> {
+	using Proto = proto::events::HistoryConflict;
+	using Event = HistoryConflict;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_id(e.id);
+		p.set_node_uid(e.node_uid);
+		p.set_node_name(e.node_name);
+		p.set_kind(static_cast<proto::events::HistoryConflictKind>(e.kind));
+		p.set_field(e.field);
+		p.set_value_type(e.value_type);
+		p.set_is_array(e.is_array);
+		p.set_ref_type(e.ref_type);
+		p.set_base_value(e.base_value);
+		p.set_current_value(e.current_value);
+		p.set_incoming_value(e.incoming_value);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.id = p.id();
+		e.node_uid = toast::UID::fromString(p.node_uid());
+		e.node_name = p.node_name();
+		e.kind = static_cast<HistoryConflictKind>(p.kind());
+		e.field = p.field();
+		e.value_type = p.value_type();
+		e.is_array = p.is_array();
+		e.ref_type = p.ref_type();
+		e.base_value = p.base_value();
+		e.current_value = p.current_value();
+		e.incoming_value = p.incoming_value();
+		return e;
+	}
+};
+
+template<>
+struct ProtoTraits<WorkspaceHistoryConflicts> {
+	using Proto = proto::events::WorkspaceHistoryConflicts;
+	using Event = WorkspaceHistoryConflicts;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_workspace_handle(e.workspace_handle);
+		p.set_request(e.request);
+		p.set_is_merge(e.is_merge);
+		p.set_source_revision(e.source_revision);
+		for (const auto& conflict : e.conflicts) {
+			*p.add_conflicts() = ProtoTraits<HistoryConflict>::toProto(conflict);
+		}
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.workspace_handle = p.workspace_handle();
+		e.request = p.request();
+		e.is_merge = p.is_merge();
+		e.source_revision = p.source_revision();
+		for (const auto& conflict : p.conflicts()) {
+			e.conflicts.push_back(ProtoTraits<HistoryConflict>::fromProto(conflict));
+		}
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(WorkspaceHistoryConflicts);
+
+template<>
+struct ProtoTraits<HistoryConflictResolution> {
+	using Proto = proto::events::HistoryConflictResolution;
+	using Event = HistoryConflictResolution;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_conflict(e.conflict);
+		p.set_choice(static_cast<Proto::Choice>(e.choice));
+		p.set_custom_value(e.custom_value);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.conflict = p.conflict();
+		e.choice = static_cast<Event::Choice>(p.choice());
+		e.custom_value = p.custom_value();
+		return e;
+	}
+};
+
+template<>
+struct ProtoTraits<WorkspaceResolveHistoryConflicts> {
+	using Proto = proto::events::WorkspaceResolveHistoryConflicts;
+	using Event = WorkspaceResolveHistoryConflicts;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_workspace_handle(e.workspace_handle);
+		p.set_request(e.request);
+		p.set_cancel(e.cancel);
+		for (const auto& resolution : e.resolutions) {
+			*p.add_resolutions() = ProtoTraits<HistoryConflictResolution>::toProto(resolution);
+		}
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.workspace_handle = p.workspace_handle();
+		e.request = p.request();
+		e.cancel = p.cancel();
+		for (const auto& resolution : p.resolutions()) {
+			e.resolutions.push_back(ProtoTraits<HistoryConflictResolution>::fromProto(resolution));
+		}
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(WorkspaceResolveHistoryConflicts);
+
+#undef TOAST_HISTORY_HANDLE_EVENT
+#undef TOAST_HISTORY_REVISION_EVENT
 
 }

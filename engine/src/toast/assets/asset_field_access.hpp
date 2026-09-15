@@ -2,7 +2,7 @@
  * @file asset_field_access.hpp
  * @author Xein
  *
- * @brief Reflection accessor for assets::AssetHandle<T> members
+ * @brief Reflection accessor for assets::Handle<T> members
  *
  * @c get() returns the handle's UID and @c set() resolves a handle from the UID
  * via @c assets::load(), if it fails the handle will have a nnullptr but it will
@@ -35,7 +35,7 @@ struct AssetFieldAccess {
 };
 
 /**
- * @brief Reflection accessor for a std::vector of assets::AssetHandle<T> members
+ * @brief Reflection accessor for a std::vector of assets::Handle<T> members
  *
  * The reflection boundary exchanges a std::vector<UID>, matching how uid_t array fields are
  * serialized. @c get() collects each handle's UID; @c set() resolves a fresh handle per UID

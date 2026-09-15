@@ -18,11 +18,14 @@
 #include "data.hpp"
 #include "data_value.hpp"
 #include "material.hpp"
+#include "material_instance.hpp"
 #include "mesh.hpp"
 #include "prefab.hpp"
 #include "schema.hpp"
 #include "script.hpp"
+#include "shader.hpp"
 #include "texture.hpp"
 
 #include <toast/audio/assets.hpp>
 #include <toast/input/assets.hpp>
+#include <toast/ui/assets.hpp>

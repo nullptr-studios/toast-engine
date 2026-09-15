@@ -24,6 +24,7 @@ void AudioEmitterBase::play() {
 		sys.setPitch(m_instance_id, m_pitch);
 		update3DState();
 		applyProperties();
+		audio_started.fire(m_event->name());
 	}
 }
 
@@ -31,12 +32,14 @@ void AudioEmitterBase::stop() {
 	if (m_instance_id != 0) {
 		audio::AudioSystem::get().stopEvent3D(m_instance_id, m_allow_fadeout);
 		m_instance_id = 0;
+		audio_stopped.fire(m_event->name());
 	}
 }
 
-void AudioEmitterBase::pause(bool value) const {
+void AudioEmitterBase::pause(bool value) {
 	if (m_instance_id != 0) {
 		audio::AudioSystem::get().pauseEvent(m_instance_id, value);
+		audio_paused.fire(value);
 	}
 }
 
@@ -123,7 +126,7 @@ void AudioEmitterBase::applyProperties() const {
 }
 
 void AudioEmitterBase::begin() {
-	m_last_position = worldPos();
+	m_last_position = world_position;
 }
 
 void AudioEmitterBase::lateTick() {
@@ -136,7 +139,7 @@ void AudioEmitterBase::lateTick() {
 void AudioEmitterBase::update3DState() {
 	const auto& listeners = audio::AudioSystem::get().listenerPositions();
 
-	glm::vec3 transform_pos = worldPos();
+	glm::vec3 transform_pos = world_position;
 	glm::vec3 render_pos = transform_pos;
 	float best_dist = std::numeric_limits<float>::max();
 
@@ -163,7 +166,7 @@ void AudioEmitterBase::update3DState() {
 }
 
 auto AudioEmitterBase::emitterPosition(const glm::vec3&) -> glm::vec3 {
-	return worldPos();
+	return world_position;
 }
 
 auto AudioEmitterBase::emitterForward() -> glm::vec3 {

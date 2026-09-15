@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
+using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Dock.Model.Controls;
@@ -14,28 +15,40 @@ using editor.Assets.Types;
 using editor.Components.Modals;
 using editor.Editors;
 using editor.Engine;
+using Lucide.Avalonia;
 using Proto.Events;
 
 namespace editor.Workspace;
 
-public partial class MainWindowViewModel : ViewModelBase {
+public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 	private readonly AutosaveService m_autosave;
+
+	private readonly LayoutFile m_defaultLayout;
 	private readonly DockFactory m_dockFactory;
 	private readonly ToastEngine m_toast;
 	private readonly ToastZoneFactory m_toastZoneFactory;
 
 	private readonly Dictionary<ulong, WorkspaceViewModel> m_workspaces = [];
+	[ObservableProperty] private string m_activeLayoutName = LayoutStore.DefaultName;
 	private ulong m_activeWorkspaceHandle;
-	[ObservableProperty] private bool m_curveEditorVisible = true;
+	private bool m_applyingLayout;
+	[ObservableProperty] private bool m_curveEditorVisible;
 	[ObservableProperty] private bool m_genericEditorVisible;
-	[ObservableProperty] private bool m_hapticsEditorVisible = true;
+	[ObservableProperty] private bool m_hapticsEditorVisible;
 
 	[ObservableProperty] private bool m_hierarchyVisible = true;
+	[ObservableProperty] private bool m_historyVisible;
 	[ObservableProperty] private bool m_inspectorVisible = true;
+	[ObservableProperty] private bool m_signalsVisible = true;
 	[ObservableProperty] private bool m_logsVisible = true;
+
+	[ObservableProperty] private IRootDock m_mainLayout;
 	[ObservableProperty] private bool m_schemaEditorVisible;
+	[ObservableProperty] private bool m_tableEditorVisible;
 
 	[ObservableProperty] private bool m_toastZoneActive;
+	[ObservableProperty] private double m_toastZoneHeight = 400;
+	[ObservableProperty] private IRootDock m_toastZoneLayout;
 	private bool m_toastZonePinned;
 
 	public MainWindowViewModel(ToastEngine toast) {
@@ -49,21 +62,33 @@ public partial class MainWindowViewModel : ViewModelBase {
 		ToastZoneLayout = m_toastZoneFactory.CreateLayout();
 		m_toastZoneFactory.InitLayout(ToastZoneLayout);
 
+		m_defaultLayout = new LayoutFile {
+			Name = LayoutStore.DefaultName,
+			Main = m_dockFactory.CaptureLayout(),
+			Toast = m_toastZoneFactory.CaptureLayout(),
+			ToastZoneHeight = 400
+		};
+
 		m_dockFactory.DockableClosed += (_, e) => {
 			if (e.Dockable is WorkspaceViewModel ws) m_workspaces.Remove(ws.Handle);
 			if (e.Dockable == m_dockFactory.Hierarchy) m_hierarchyVisible = false;
+			if (e.Dockable == m_dockFactory.History) m_historyVisible = false;
 			if (e.Dockable == m_dockFactory.Inspector) m_inspectorVisible = false;
+			if (e.Dockable == m_dockFactory.Signals) m_signalsVisible = false;
 			if (e.Dockable == m_dockFactory.GenericEditorVm) m_genericEditorVisible = false;
 			if (e.Dockable == m_dockFactory.SchemaEditorVm) m_schemaEditorVisible = false;
 
 			OnPropertyChanged(nameof(HierarchyVisible));
+			OnPropertyChanged(nameof(HistoryVisible));
 			OnPropertyChanged(nameof(InspectorVisible));
+			OnPropertyChanged(nameof(SignalsVisible));
 			OnPropertyChanged(nameof(GenericEditorVisible));
 			OnPropertyChanged(nameof(SchemaEditorVisible));
 
 			if (m_workspaces.Count == 0) {
 				m_activeWorkspaceHandle = 0;
 				m_dockFactory.Hierarchy?.Clear();
+				m_dockFactory.History?.Clear();
 				Events.Send(new SetActiveWorkspace { Handle = 0 });
 			} else {
 				m_activeWorkspaceHandle = 0;
@@ -75,40 +100,63 @@ public partial class MainWindowViewModel : ViewModelBase {
 			if (e.Dockable == m_toastZoneFactory.LogsVm) m_logsVisible = false;
 			if (e.Dockable == m_toastZoneFactory.HapticsEditorVm) m_hapticsEditorVisible = false;
 			if (e.Dockable == m_toastZoneFactory.CurveEditorVm) m_curveEditorVisible = false;
+			if (e.Dockable == m_toastZoneFactory.TableEditorVm) m_tableEditorVisible = false;
 
 			OnPropertyChanged(nameof(LogsVisible));
 			OnPropertyChanged(nameof(HapticsEditorVisible));
 			OnPropertyChanged(nameof(CurveEditorVisible));
+			OnPropertyChanged(nameof(TableEditorVisible));
 		};
 
 		m_dockFactory.ActiveDockableChanged += (_, _) => {
 			SyncActiveWorkspace();
+			if (m_dockFactory.Signals?.IsActive == true) m_dockFactory.Signals.Refresh();
 			PlayCommand.NotifyCanExecuteChanged();
 			PlayInWindowCommand.NotifyCanExecuteChanged();
 		};
 
-		WorkspaceState.Modified += () => {
-			if (m_dockFactory.ActiveWorkspace is { } ws) ws.IsModified = true;
-		};
-
-		m_dockFactory.SchemaEditorVm!.SchemaSaved +=
-			path => m_dockFactory.GenericEditorVm?.RefreshFromSchema(path);
+		m_dockFactory.SchemaEditorVm!.SchemaSaved += OnSchemaSaved;
 
 		EditorManager.OpenRequested += OnEditorOpenRequested;
 
-		WorkspaceViewModel.PlayModeChanged += () => {
-			SaveCurrentNodeCommand.NotifyCanExecuteChanged();
-			SaveCurrentNodeAsCommand.NotifyCanExecuteChanged();
-			SaveAllNodesCommand.NotifyCanExecuteChanged();
-			PlayCommand.NotifyCanExecuteChanged();
-			PlayInWindowCommand.NotifyCanExecuteChanged();
-		};
+		WorkspaceViewModel.PlayModeChanged += OnPlayModeChanged;
 
 		m_autosave = new AutosaveService(EnumerateAutosavables);
 	}
 
-	public IRootDock MainLayout { get; set; }
-	public IRootDock ToastZoneLayout { get; set; }
+	public HierarchyViewModel? Hierarchy => m_dockFactory.Hierarchy;
+	public HistoryViewModel? History => m_dockFactory.History;
+
+	public IReadOnlyList<string> LayoutNames => LayoutStore.EnumerateNames();
+
+	public bool CanModifyActiveLayout => !LayoutStore.IsBuiltin(ActiveLayoutName);
+
+	public void Dispose() {
+		m_autosave.Stop();
+		EditorManager.OpenRequested -= OnEditorOpenRequested;
+		WorkspaceViewModel.PlayModeChanged -= OnPlayModeChanged;
+		if (m_dockFactory.SchemaEditorVm is { } schema) schema.SchemaSaved -= OnSchemaSaved;
+		foreach (var workspace in m_workspaces.Values) workspace.Dispose();
+		m_dockFactory.Hierarchy?.Dispose();
+		m_dockFactory.Inspector?.Dispose();
+		m_dockFactory.Signals?.Dispose();
+		m_dockFactory.History?.Dispose();
+		m_toastZoneFactory.AssetBrowserVm?.Dispose();
+		m_toastZoneFactory.TableEditorVm?.Dispose();
+		GC.SuppressFinalize(this);
+	}
+
+	private void OnSchemaSaved(string path) {
+		m_dockFactory.GenericEditorVm?.RefreshFromSchema(path);
+	}
+
+	private void OnPlayModeChanged() {
+		SaveCurrentNodeCommand.NotifyCanExecuteChanged();
+		SaveCurrentNodeAsCommand.NotifyCanExecuteChanged();
+		SaveAllNodesCommand.NotifyCanExecuteChanged();
+		PlayCommand.NotifyCanExecuteChanged();
+		PlayInWindowCommand.NotifyCanExecuteChanged();
+	}
 
 	private IEnumerable<IAutosavable> EnumerateAutosavables() {
 		foreach (var ws in m_workspaces.Values) yield return ws;
@@ -116,11 +164,17 @@ public partial class MainWindowViewModel : ViewModelBase {
 		if (m_dockFactory.SchemaEditorVm is { } schema) yield return schema;
 		if (m_toastZoneFactory.CurveEditorVm is { } curve) yield return curve;
 		if (m_toastZoneFactory.HapticsEditorVm is { } haptics) yield return haptics;
+		if (m_toastZoneFactory.TableEditorVm is { } table) yield return table;
 	}
 
 	[RelayCommand]
 	private Task AutosaveNow() {
 		return m_autosave.RequestAutosave();
+	}
+
+	[RelayCommand]
+	private static void OpenDocumentation() {
+		Process.Start(new ProcessStartInfo { FileName = "https://docs.nullptr.es", UseShellExecute = true });
 	}
 
 	[RelayCommand]
@@ -140,38 +194,53 @@ public partial class MainWindowViewModel : ViewModelBase {
 	}
 
 	partial void OnHierarchyVisibleChanged(bool value) {
-		if (value != m_dockFactory.IsToolVisible("Hierarchy"))
-			m_dockFactory.ToggleTool("Hierarchy");
+		ToggleMainTool("Hierarchy", value);
+	}
+
+	partial void OnHistoryVisibleChanged(bool value) {
+		ToggleMainTool("History", value);
 	}
 
 	partial void OnInspectorVisibleChanged(bool value) {
-		if (value != m_dockFactory.IsToolVisible("Inspector"))
-			m_dockFactory.ToggleTool("Inspector");
+		ToggleMainTool("Inspector", value);
+	}
+
+	partial void OnSignalsVisibleChanged(bool value) {
+		ToggleMainTool("Signals", value);
 	}
 
 	partial void OnGenericEditorVisibleChanged(bool value) {
-		if (value != m_dockFactory.IsToolVisible("GenericEditor"))
-			m_dockFactory.ToggleTool("GenericEditor");
+		ToggleMainTool("GenericEditor", value);
 	}
 
 	partial void OnSchemaEditorVisibleChanged(bool value) {
-		if (value != m_dockFactory.IsToolVisible("SchemaEditor"))
-			m_dockFactory.ToggleTool("SchemaEditor");
+		ToggleMainTool("SchemaEditor", value);
 	}
 
 	partial void OnLogsVisibleChanged(bool value) {
-		if (value != m_toastZoneFactory.IsToolVisible("Logs"))
-			m_toastZoneFactory.ToggleTool("Logs");
+		ToggleToastTool("Logs", value);
 	}
 
 	partial void OnHapticsEditorVisibleChanged(bool value) {
-		if (value != m_toastZoneFactory.IsToolVisible("Haptics"))
-			m_toastZoneFactory.ToggleTool("Haptics");
+		ToggleToastTool("Haptics", value);
 	}
 
 	partial void OnCurveEditorVisibleChanged(bool value) {
-		if (value != m_toastZoneFactory.IsToolVisible("Curve"))
-			m_toastZoneFactory.ToggleTool("Curve");
+		ToggleToastTool("Curve", value);
+	}
+
+	partial void OnTableEditorVisibleChanged(bool value) {
+		ToggleToastTool("Table", value);
+	}
+
+	private void ToggleMainTool(string id, bool value) {
+		if (m_applyingLayout) return;
+		if (value != m_dockFactory.IsToolVisible(id)) m_dockFactory.ToggleTool(id);
+	}
+
+	private void ToggleToastTool(string id, bool value) {
+		if (m_applyingLayout) return;
+		if (value != m_toastZoneFactory.IsToolVisible(id)) m_toastZoneFactory.ToggleTool(id);
 	}
 
 	private async void OnEditorOpenRequested(AssetFile file) {
@@ -207,6 +276,13 @@ public partial class MainWindowViewModel : ViewModelBase {
 				}
 
 				break;
+			case "TableEditor":
+				if (m_toastZoneFactory.TableEditorVm is { } tableVm) {
+					_ = OpenToastEditorAsync(tableVm, uid, virtualPath, def, recoverPath);
+					TableEditorVisible = true;
+				}
+
+				break;
 		}
 	}
 
@@ -231,10 +307,14 @@ public partial class MainWindowViewModel : ViewModelBase {
 	}
 
 	private void SyncActiveWorkspace() {
+		if (m_applyingLayout) return;
+
 		// a playing tab routes to its temporary play clone, not the frozen editing workspace
-		var handle = m_dockFactory.ActiveWorkspace?.EffectiveHandle ?? 0;
+		var workspace = m_dockFactory.ActiveWorkspace;
+		var handle = workspace?.EffectiveHandle ?? 0;
 		if (handle == m_activeWorkspaceHandle) return;
 		m_activeWorkspaceHandle = handle;
+		m_dockFactory.History?.SetWorkspace(workspace is { PlayHandle: 0 } ? workspace.History : null);
 		Events.Send(new SetActiveWorkspace { Handle = handle });
 	}
 
@@ -246,6 +326,184 @@ public partial class MainWindowViewModel : ViewModelBase {
 	public void PinToastZone() {
 		m_toastZonePinned = !m_toastZonePinned;
 		ToastZoneActive = m_toastZonePinned;
+	}
+
+	private LayoutFile CaptureCurrent(string name) {
+		return new LayoutFile {
+			Name = name,
+			Main = m_dockFactory.CaptureLayout(),
+			Toast = m_toastZoneFactory.CaptureLayout(),
+			ToastZoneHeight = ToastZoneHeight,
+			ToastZonePinned = m_toastZonePinned
+		};
+	}
+
+	private void ApplyLayout(LayoutFile file) {
+		if (WorkspaceViewModel.AnyPlayActive) return;
+
+		var dirty = CollectDirtyTools();
+
+		m_applyingLayout = true;
+		try {
+			var mainRoot = m_dockFactory.RebuildLayout(file.Main)
+				?? m_dockFactory.RebuildLayout(m_defaultLayout.Main);
+			var toastRoot = m_toastZoneFactory.RebuildLayout(file.Toast)
+				?? m_toastZoneFactory.RebuildLayout(m_defaultLayout.Toast);
+			if (mainRoot is null || toastRoot is null) {
+				Log.Warn($"Layout '{file.Name}' describes no usable dock tree");
+				return;
+			}
+
+			if (MainLayout.ExitWindows.CanExecute(null)) MainLayout.ExitWindows.Execute(null);
+			if (ToastZoneLayout.ExitWindows.CanExecute(null)) ToastZoneLayout.ExitWindows.Execute(null);
+			MainLayout.HiddenDockables?.Clear();
+			ToastZoneLayout.HiddenDockables?.Clear();
+
+			m_dockFactory.InitLayout(mainRoot);
+			m_toastZoneFactory.InitLayout(toastRoot);
+
+			MainLayout = mainRoot;
+			ToastZoneLayout = toastRoot;
+
+			SyncVisibilityFromDocks();
+			ToastZoneHeight = Math.Clamp(file.ToastZoneHeight, 100, 4000);
+			m_toastZonePinned = file.ToastZonePinned;
+		} catch (Exception e) {
+			Log.Warn($"Failed to apply layout '{file.Name}': {e.Message}");
+		} finally {
+			m_applyingLayout = false;
+		}
+
+		foreach (var id in dirty) RestoreTool(id);
+
+		SyncActiveWorkspace();
+	}
+
+	private List<string> CollectDirtyTools() {
+		var dirty = new List<string>();
+		if (m_dockFactory.GenericEditorVm is { IsDirty: true }) dirty.Add("GenericEditor");
+		if (m_dockFactory.SchemaEditorVm is { IsDirty: true }) dirty.Add("SchemaEditor");
+		if (m_toastZoneFactory.CurveEditorVm is { IsDirty: true }) dirty.Add("Curve");
+		if (m_toastZoneFactory.HapticsEditorVm is { IsDirty: true }) dirty.Add("Haptics");
+		if (m_toastZoneFactory.TableEditorVm is { IsDirty: true }) dirty.Add("Table");
+		return dirty;
+	}
+
+	private void RestoreTool(string id) {
+		switch (id) {
+			case "GenericEditor": GenericEditorVisible = true; break;
+			case "SchemaEditor": SchemaEditorVisible = true; break;
+			case "Curve": CurveEditorVisible = true; break;
+			case "Haptics": HapticsEditorVisible = true; break;
+			case "Table": TableEditorVisible = true; break;
+		}
+	}
+
+#pragma warning disable MVVMTK0034
+	private void SyncVisibilityFromDocks() {
+		m_hierarchyVisible = m_dockFactory.IsToolVisible("Hierarchy");
+		m_historyVisible = m_dockFactory.IsToolVisible("History");
+		m_inspectorVisible = m_dockFactory.IsToolVisible("Inspector");
+		m_signalsVisible = m_dockFactory.IsToolVisible("Signals");
+		m_genericEditorVisible = m_dockFactory.IsToolVisible("GenericEditor");
+		m_schemaEditorVisible = m_dockFactory.IsToolVisible("SchemaEditor");
+		m_logsVisible = m_toastZoneFactory.IsToolVisible("Logs");
+		m_hapticsEditorVisible = m_toastZoneFactory.IsToolVisible("Haptics");
+		m_curveEditorVisible = m_toastZoneFactory.IsToolVisible("Curve");
+		m_tableEditorVisible = m_toastZoneFactory.IsToolVisible("Table");
+
+		OnPropertyChanged(nameof(HierarchyVisible));
+		OnPropertyChanged(nameof(HistoryVisible));
+		OnPropertyChanged(nameof(InspectorVisible));
+		OnPropertyChanged(nameof(SignalsVisible));
+		OnPropertyChanged(nameof(GenericEditorVisible));
+		OnPropertyChanged(nameof(SchemaEditorVisible));
+		OnPropertyChanged(nameof(LogsVisible));
+		OnPropertyChanged(nameof(HapticsEditorVisible));
+		OnPropertyChanged(nameof(CurveEditorVisible));
+		OnPropertyChanged(nameof(TableEditorVisible));
+	}
+#pragma warning restore MVVMTK0034
+
+	public void RestoreSession() {
+		if (!ProjectContext.IsInitialized) return;
+		if (LayoutStore.LoadSession() is not { } session) return;
+		ApplyLayout(session);
+		ActiveLayoutName = LayoutStore.IsBuiltin(session.Name) ? LayoutStore.DefaultName : session.Name;
+	}
+
+	public void SaveSessionLayout() {
+		try {
+			LayoutStore.SaveSession(CaptureCurrent(ActiveLayoutName));
+		} catch (Exception e) {
+			Log.Warn($"Failed to save the session layout: {e.Message}");
+		}
+	}
+
+	[RelayCommand]
+	private void ApplyNamedLayout(string? name) {
+		if (string.IsNullOrEmpty(name)) return;
+		var file = LayoutStore.IsBuiltin(name) ? m_defaultLayout : LayoutStore.Load(name);
+		if (file is null) return;
+		ApplyLayout(file);
+		ActiveLayoutName = LayoutStore.IsBuiltin(name) ? LayoutStore.DefaultName : name;
+	}
+
+	[RelayCommand]
+	private void ResetLayout() {
+		ApplyLayout(m_defaultLayout);
+		ActiveLayoutName = LayoutStore.DefaultName;
+	}
+
+	[RelayCommand]
+	private void SaveLayout() {
+		if (!CanModifyActiveLayout) return;
+		LayoutStore.Save(ActiveLayoutName, CaptureCurrent(ActiveLayoutName));
+	}
+
+	[RelayCommand]
+	private async Task SaveLayoutAs() {
+		if (App.MainWindow is not { } owner) return;
+
+		var name = await new RenameModal("", "Save Layout", "Save", LucideIconKind.Save, "Layout name...")
+			.ShowDialog<string?>(owner);
+		if (string.IsNullOrWhiteSpace(name)) return;
+
+		if (LayoutStore.IsBuiltin(name)) {
+			await App.Modals.ShowWarning("Save Layout", $"\"{LayoutStore.DefaultName}\" is reserved.");
+			return;
+		}
+
+		if (!LayoutStore.IsValidName(name)) {
+			await App.Modals.ShowWarning("Save Layout", "That name contains invalid characters.");
+			return;
+		}
+
+		if (LayoutStore.Exists(name) && !await App.Modals.ShowConfirm("Save Layout", $"Overwrite \"{name}\"?"))
+			return;
+
+		LayoutStore.Save(name, CaptureCurrent(name));
+		ActiveLayoutName = name;
+	}
+
+	[RelayCommand]
+	private async Task DeleteLayout(string? name) {
+		if (string.IsNullOrEmpty(name) || LayoutStore.IsBuiltin(name)) return;
+		if (App.MainWindow is not { } owner) return;
+
+		var confirmed = await new MessageModal(new ModalConfig(
+			"Delete Layout",
+			$"Delete the layout \"{name}\"? This cannot be undone.",
+			ModalButtons.OkCancel,
+			LucideIconKind.Shredder,
+			new SolidColorBrush(Color.Parse("#d04040")),
+			"Delete",
+			OkIcon: LucideIconKind.Shredder
+		)).ShowDialog<bool?>(owner) == true;
+		if (!confirmed) return;
+
+		LayoutStore.Delete(name);
+		if (string.Equals(ActiveLayoutName, name, StringComparison.Ordinal)) ResetLayout();
 	}
 
 	[RelayCommand]

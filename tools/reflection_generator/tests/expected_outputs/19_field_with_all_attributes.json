@@ -44,6 +44,7 @@
     "name": "AttributeRichNode",
     "namespace": null,
     "parent": null,
+    "signals": [],
     "source_file": "19_field_with_all_attributes.hpp",
     "tick_functions": {
       "begin": false,

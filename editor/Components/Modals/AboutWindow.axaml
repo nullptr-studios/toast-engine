@@ -1,0 +1,65 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="editor.Components.Modals.AboutWindow"
+        Width="1200"
+        Height="500"
+        CanMaximize="False"
+        CanMinimize="False"
+        CanResize="False"
+        WindowDecorations="None"
+        WindowStartupLocation="CenterOwner"
+        TransparencyLevelHint="Transparent"
+        Background="Transparent"
+        Title="About - Toast Engine">
+
+	<Border CornerRadius="16"
+	        ClipToBounds="True"
+	        Background="Transparent">
+		<Grid ColumnDefinitions="*,*">
+			<!-- Splash image -->
+			<Border Grid.Column="0"
+			        Background="Transparent">
+				<Image x:Name="SplashImage"
+				       Stretch="UniformToFill" />
+			</Border>
+
+			<!-- About content -->
+			<Border Grid.Column="1"
+			        Background="{StaticResource Bg2}"
+			        Padding="8">
+				<Grid RowDefinitions="Auto,*"
+				      Background="{StaticResource Bg2}"
+				      RowSpacing="8">
+					<StackPanel Grid.Row="0"
+					            Orientation="Horizontal"
+					            Margin="10, 0"
+					            Spacing="10">
+						<TextBlock FontSize="50"
+						           Text="Toast Engine" />
+						<TextBlock FontSize="16"
+						           VerticalAlignment="Bottom"
+						           Foreground="{StaticResource TextMuted}"
+						           Padding="0,0,0,4">
+							<Run Text="by" />
+							<Run Text="nullptr"
+							     Foreground="{StaticResource Red}" />
+							<Run Text="* studios" />
+						</TextBlock>
+					</StackPanel>
+
+					<Border Grid.Row="1"
+					        CornerRadius="8"
+					        Background="{StaticResource Bg1}"
+					        Padding="16">
+						<SelectableTextBlock x:Name="AboutText"
+						                     FontFamily="FiraCode Nerd Font,Consolas,monospace"
+						                     FontSize="13"
+						                     Foreground="{StaticResource TextMuted}"
+						                     TextWrapping="Wrap"
+						                     Margin="12,2" />
+					</Border>
+				</Grid>
+			</Border>
+		</Grid>
+	</Border>
+</Window>

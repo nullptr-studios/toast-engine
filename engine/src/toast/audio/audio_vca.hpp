@@ -14,7 +14,7 @@ namespace assets {
 
 class TOAST_API AudioVca : public Data {
 public:
-	explicit AudioVca(const toml::table& table, AssetHandle<Schema> schema = {}) : Data(table, std::move(schema)) { }
+	explicit AudioVca(const toml::table& table, Handle<Schema> schema = {}) : Data(table, std::move(schema)) { }
 
 	[[nodiscard]]
 	auto type() const -> std::string_view override {

@@ -1,3 +1,29 @@
 * text=auto eol=lf
 
+# Suppress all language detection, then enable only the 6 we want
+* linguist-detectable=false
+
+# C++
+*.cpp linguist-detectable=true linguist-language=C++
+*.cc  linguist-detectable=true linguist-language=C++
+*.hpp linguist-detectable=true linguist-language=C++
+*.h   linguist-detectable=true linguist-language=C++
+
+# C#
+*.cs    linguist-detectable=true linguist-language=C#
+*.axaml linguist-detectable=true linguist-language=C#
+
+# Rust
+*.rs linguist-detectable=true linguist-language=Rust
+
+# Lua
+*.lua linguist-detectable=true linguist-language=Lua
+
+# Slang
+*.slang linguist-detectable=true linguist-language=Slang
+
+# CMake
+*.cmake        linguist-detectable=true linguist-language=CMake
+CMakeLists.txt linguist-detectable=true linguist-language=CMake
+
 engine/external/** linguist-detectable=false

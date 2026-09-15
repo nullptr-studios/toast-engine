@@ -190,6 +190,7 @@ struct TOAST_API NodeInfo {
 
 	std::string_view type;
 	const NodeInfo* base_type;
+	std::span<const SignalInfo> signals;
 	std::span<const FieldInfo> all_fields;
 	std::span<const FieldInfo* const> fields;
 	std::span<const GroupInfo> groups;
@@ -199,6 +200,49 @@ struct TOAST_API NodeInfo {
 
 	Factory construct = nullptr;
 	Deleter destroy = nullptr;
+
+	/**
+	 * @brief Finds a signal by name in this type's signals, then walks base_type if not found
+	 * @param signal_name The reflected signal name to look up
+	 * @return Pointer to the matching SignalInfo, or nullptr if the signal is not reflected anywhere in the hierarchy
+	 */
+	[[nodiscard]]
+	auto getSignal(std::string_view field_name) const -> const SignalInfo* {
+		for (const auto& f : signals) {
+			if (field_name == f.name) {
+				return &f;
+			}
+		}
+		if (base_type) {
+			return base_type->getSignal(field_name);
+		}
+		return nullptr;
+	}
+
+	[[nodiscard]]
+	auto getSignal(std::string_view declaring_type, std::string_view signal_name) const -> const SignalInfo* {
+		for (const auto* info = this; info != nullptr; info = info->base_type) {
+			if (info->type != declaring_type) {
+				continue;
+			}
+			for (const auto& signal : info->signals) {
+				if (signal.name == signal_name) {
+					return &signal;
+				}
+			}
+			return nullptr;
+		}
+		return nullptr;
+	}
+
+	template<typename F>
+	void forEachSignal(F&& callback) const {
+		for (const auto* info = this; info != nullptr; info = info->base_type) {
+			for (const auto& signal : info->signals) {
+				callback(*info, signal);
+			}
+		}
+	}
 
 	/**
 	 * @brief Finds a field by name in this type's all_fields, then walks base_type if not found
@@ -434,6 +478,7 @@ public:
 		if (name.starts_with("::")) {
 			name.remove_prefix(2);
 		}
+		auto types = (*instance).types;
 		auto it = (*instance).types.find(name);
 		return it != (*instance).types.end() ? it->second : nullptr;
 	}

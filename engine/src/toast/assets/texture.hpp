@@ -21,8 +21,6 @@ namespace assets {
  */
 class TOAST_API Texture : public Asset {
 public:
-	static constexpr std::string_view collection = "textures";
-
 	explicit Texture(std::vector<uint8_t> data);
 	~Texture() override;
 

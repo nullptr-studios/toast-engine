@@ -239,6 +239,7 @@
     "name": "ComplexNode",
     "namespace": null,
     "parent": null,
+    "signals": [],
     "source_file": "05_complex_groups.hpp",
     "tick_functions": {
       "begin": false,

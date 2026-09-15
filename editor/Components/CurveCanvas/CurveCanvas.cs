@@ -231,7 +231,7 @@ public sealed class CurveCanvas : Control {
 		var red = Resolve("Red", "#ff1659");
 
 		var bounds = new Rect(Bounds.Size);
-		ctx.DrawRectangle(bg1, new Pen(bg5), new RoundedRect(bounds.Deflate(0.5), 6));
+		ctx.DrawRectangle(bg1, new Pen(bg1), new RoundedRect(bounds.Deflate(0.5), 6));
 
 		using var clip = ctx.PushClip(new RoundedRect(bounds, 6));
 

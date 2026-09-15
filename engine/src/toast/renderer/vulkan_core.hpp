@@ -8,6 +8,7 @@
 
 #include <external/inc/renderdoc/renderdoc_app.h>
 #include <limits>
+#include <mutex>
 #include <optional>
 #include <span>
 #include <vector>
@@ -126,6 +127,13 @@ public:
 		return m_max_sampler_anisotropy;
 	}
 
+	// TODO: UI system should submit on the render thread
+	/// @brief Guards graphics queue submission; the render thread and the UI system submit on the same queue
+	[[nodiscard]]
+	auto graphicsSubmitMutex() const noexcept -> std::mutex& {
+		return m_graphics_submit_mutex;
+	}
+
 private:
 	/**
 	 * Evaluates available Vulkan physical devices and selects the most suitable one
@@ -181,6 +189,8 @@ private:
 
 	bool m_sampler_anisotropy_supported = false;
 	float m_max_sampler_anisotropy = 1.0f;
+
+	mutable std::mutex m_graphics_submit_mutex;
 
 	// renderdoc api
 	RENDERDOC_API_1_6_0* rdoc_api = nullptr;

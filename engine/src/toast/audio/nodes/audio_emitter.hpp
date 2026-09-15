@@ -33,13 +33,17 @@ public:
 	void volume(float value);                                 ///< @param value 0.0 - 1.0
 	void pitch(float value);                                  ///< @param value 0.5 - 2.0
 	void allowFadeout(bool value);                            ///< False forces the event to bypass envelope settings
+	                                                          ///
+	signals::Signal<std::string_view> audio_started;
+	signals::Signal<std::string_view> audio_stopped;
+	signals::Signal<bool> audio_paused;
 
 private:
 	void onEnable();
 	void onDisable();
 
 	[[Reflect, Name("Audio Event")]]
-	assets::AssetHandle<assets::AudioEvent> m_event;
+	assets::Handle<assets::AudioEvent> m_event;
 
 	[[Reflect]]
 	bool m_play_on_enable = false;

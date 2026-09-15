@@ -7,6 +7,9 @@ namespace input {
 
 void IController::init() {
 	listener().subscribe<event::LastInputType>([this](const event::LastInputType& e) {
+		if (!participatesIn(toast::NodeOwnerParticipation::runtime_input)) {
+			return false;
+		}
 		m_last_input_name = e.name;
 		switch (e.device) {
 			case Device::keyboard: m_last_input_type = "keyboard"; break;

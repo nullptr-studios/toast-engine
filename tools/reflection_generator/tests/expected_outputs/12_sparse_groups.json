@@ -193,6 +193,7 @@
     "name": "SparseGroupNode",
     "namespace": null,
     "parent": null,
+    "signals": [],
     "source_file": "12_sparse_groups.hpp",
     "tick_functions": {
       "begin": false,

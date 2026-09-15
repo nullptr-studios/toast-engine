@@ -19,9 +19,11 @@
 #include <toast/assets/script.hpp>
 #include <toast/export.hpp>
 #include <toast/reflect/reflect_node.hpp>
+#include <toast/scripting/lua_signal.hpp>
 #include <toast/scripting/node_proxy.hpp>
 #include <toast/scripting/script_schema.hpp>
 #include <toast/world/box.hpp>
+#include <unordered_map>
 #include <vector>
 
 namespace toast {
@@ -33,7 +35,7 @@ namespace scripting {
 // One per script
 class ScriptInstance {
 public:
-	ScriptInstance(lua_State* l, const assets::AssetHandle<assets::Script>& script, NodeProxy proxy);
+	ScriptInstance(lua_State* l, const assets::Handle<assets::Script>& script, NodeProxy proxy);
 	~ScriptInstance() = default;
 
 	ScriptInstance(ScriptInstance&&) = default;
@@ -71,6 +73,16 @@ public:
 	auto hasFunction(std::string_view fn_name) const noexcept -> bool;
 
 	[[nodiscard]]
+	auto luaSignals() const noexcept -> const std::unordered_map<std::string, LuaSignal>& {
+		return m_lua_signals;
+	}
+
+	[[nodiscard]]
+	auto luaSignals() noexcept -> std::unordered_map<std::string, LuaSignal>& {
+		return m_lua_signals;
+	}
+
+	[[nodiscard]]
 	auto schema() const noexcept -> const ScriptSchema& {
 		return m_schema;
 	}
@@ -98,6 +110,7 @@ private:
 	NodeProxy m_proxy;
 	std::string m_name;
 	ScriptSchema m_schema;
+	std::unordered_map<std::string, LuaSignal> m_lua_signals;
 	toast::TickFunctionList m_tick_mask = toast::TickFunctionList::none;
 
 	void installMetatable() noexcept;
@@ -112,7 +125,7 @@ private:
 // One per node
 class TOAST_API ScriptRuntime {
 public:
-	ScriptRuntime(toast::Box<toast::Node> node, const std::vector<assets::AssetHandle<assets::Script>>& scripts);
+	ScriptRuntime(toast::Box<toast::Node> node, const std::vector<assets::Handle<assets::Script>>& scripts);
 	~ScriptRuntime() = default;
 
 	ScriptRuntime(const ScriptRuntime&) = delete;
@@ -123,6 +136,13 @@ public:
 
 	/// Call a named function on all instances
 	void call(std::string_view fn_name) noexcept;
+
+	/// True if any attached script instance exposes a callable field with this name
+	[[nodiscard]]
+	auto hasFunction(std::string_view fn_name) const noexcept -> bool;
+
+	[[nodiscard]]
+	auto functions() const noexcept -> std::vector<LuaFunctionDesc>;
 
 	void callWithLuaStack(std::string_view name, lua_State* l, int args_base, int n_args) noexcept;
 
@@ -135,6 +155,14 @@ public:
 	/// Reads the variable named `name`
 	[[nodiscard]]
 	auto getVar(std::string_view name) const noexcept -> std::any;
+
+	[[nodiscard]]
+	auto luaSignals() const -> std::vector<std::string>;
+	[[nodiscard]]
+	auto luaSignalConnections(std::string_view name) const -> std::vector<signals::ConnectionInfo>;
+	auto connectLuaSignal(std::string_view name, toast::Node& target, std::string_view function, bool forwards_args) -> bool;
+	auto disconnectLuaSignal(std::string_view name, toast::Node& target, std::string_view function) -> bool;
+	void clearLuaSignal(std::string_view name);
 
 	/// Number of attached script instances
 	[[nodiscard]]

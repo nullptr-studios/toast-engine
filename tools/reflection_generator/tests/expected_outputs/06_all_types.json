@@ -188,6 +188,7 @@
     "name": "AllTypesNode",
     "namespace": null,
     "parent": null,
+    "signals": [],
     "source_file": "06_all_types.hpp",
     "tick_functions": {
       "begin": false,

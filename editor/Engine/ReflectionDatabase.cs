@@ -51,7 +51,16 @@ public record FunctionInfo(
 	[property: JsonPropertyName("return_type")]
 	string ReturnType,
 	[property: JsonPropertyName("parameters")]
-	ParameterInfo[] Parameters
+	ParameterInfo[] Parameters,
+	[property: JsonPropertyName("attributes")]
+	JsonElement Attributes
+);
+
+public record SignalInfo(
+	[property: JsonPropertyName("name")] string Name,
+	[property: JsonPropertyName("typename")] string TypeName,
+	[property: JsonPropertyName("arguments")] string[] Arguments,
+	[property: JsonPropertyName("attributes")] JsonElement Attributes
 );
 
 public record NodeInfo(
@@ -68,6 +77,8 @@ public record NodeInfo(
 	FieldInfo[] GlobalFields,
 	[property: JsonPropertyName("methods")]
 	FunctionInfo[] Methods,
+	[property: JsonPropertyName("signals")]
+	SignalInfo[] Signals,
 	[property: JsonPropertyName("source_file")]
 	string SourceFile
 );
@@ -121,6 +132,10 @@ public static class ReflectionDatabase {
 			if (!Nodes.TryGetValue(current, out var info) || info.Parent is null) return false;
 			current = Bare(info.Parent.Name);
 		}
+	}
+
+	public static string QualifiedName(NodeInfo info) {
+		return string.IsNullOrEmpty(info.Namespace) ? info.Name : $"{info.Namespace}::{info.Name}";
 	}
 
 	// attributes serialize as { "Name": ["x"], "ReadOnly": [], ... }

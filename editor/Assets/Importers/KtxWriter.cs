@@ -56,7 +56,7 @@ internal static class KtxWriter {
 	}
 
 	private static string BuildArgs(TextureImporter.Settings s, string destPath, string inputPath) {
-		var sb = new StringBuilder("--t2 ");
+		var sb = new StringBuilder("--t2 --assign_oetf srgb ");
 
 		if (s.GenerateMipmaps)
 			sb.Append("--genmipmap ");

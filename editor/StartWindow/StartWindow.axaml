@@ -1,13 +1,14 @@
 ﻿<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:editor.StartWindow"
+        xmlns:b="using:editor.Components.Behaviors"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        d:DesignWidth="800"
-        d:DesignHeight="450"
-        Width="800"
-        Height="450"
+        d:DesignWidth="785"
+        d:DesignHeight="485"
+        Width="785"
+        Height="485"
         CanResize="False"
         CanMaximize="False"
         WindowStartupLocation="CenterScreen"
@@ -37,14 +38,19 @@
 				           Foreground="{StaticResource Text}"
 				           VerticalAlignment="Center" />
 				<TextBox Grid.Column="1"
+				         x:Name="SearchBox"
+				         Text="{Binding SearchText}"
 				         PlaceholderText="Search project..."
 				         CornerRadius="6"
 				         BorderThickness="0"
-				         Background="{StaticResource Bg1}" />
+				         Background="{StaticResource Bg1}"
+				         VerticalContentAlignment="Center"
+				         KeyDown="OnSearchKeyDown" />
 				<Button Grid.Column="2"
 				        CornerRadius="6"
 				        Command="{Binding NewProject}"
-				        CommandParameter="{Binding $parent[Window]}">
+				        CommandParameter="{Binding $parent[Window]}"
+				        Background="{StaticResource Bg4}">
 					<StackPanel Orientation="Horizontal"
 					            Spacing="4">
 						<LucideIcon Kind="Plus"
@@ -56,7 +62,8 @@
 				<Button Grid.Column="3"
 				        Command="{Binding OpenProject}"
 				        CommandParameter="{Binding $parent[Window]}"
-				        CornerRadius="6">
+				        CornerRadius="6"
+				        Background="{StaticResource Bg4}">
 					<StackPanel Orientation="Horizontal"
 					            Spacing="4">
 						<LucideIcon Kind="Folders"
@@ -70,9 +77,36 @@
 
 		<!-- Project list -->
 		<ListBox x:Name="ProjectListBox"
-		         ItemsSource="{Binding Projects}"
+		         ItemsSource="{Binding FilteredProjects}"
 		         Background="{StaticResource Bg1}"
-		         CornerRadius="8">
+		         CornerRadius="8"
+		         KeyDown="OnProjectListKeyDown">
+			<ListBox.Styles>
+				<Style Selector="ListBoxItem:pointerover">
+					<Setter Property="Background"
+					        Value="{StaticResource Bg3}" />
+				</Style>
+				<Style Selector="ListBoxItem:selected">
+					<Setter Property="Background"
+					        Value="{StaticResource Bg3}" />
+				</Style>
+				<Style Selector="ListBoxItem:selected:pointerover">
+					<Setter Property="Background"
+					        Value="{StaticResource Bg4}" />
+				</Style>
+				<Style Selector="ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+					<Setter Property="Background"
+					        Value="{StaticResource Bg3}" />
+				</Style>
+				<Style Selector="ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+					<Setter Property="Background"
+					        Value="{StaticResource Bg3}" />
+				</Style>
+				<Style Selector="ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+					<Setter Property="Background"
+					        Value="{StaticResource Bg4}" />
+				</Style>
+			</ListBox.Styles>
 			<ListBox.ItemTemplate>
 				<DataTemplate>
 					<Border Padding="8, 4">
@@ -90,7 +124,8 @@
 							<StackPanel Grid.Column="1"
 							            VerticalAlignment="Center"
 							            Margin="12,4">
-								<TextBlock Text="{Binding Title}"
+								<TextBlock b:TextHighlight.Text="{Binding Title}"
+								           b:TextHighlight.Query="{Binding $parent[ListBox].((vm:StartWindowViewModel)DataContext).SearchText}"
 								           FontWeight="SemiBold"
 								           FontSize="14" />
 								<TextBlock Text="{Binding Path}"
@@ -103,12 +138,17 @@
 							            VerticalAlignment="Center"
 							            Spacing="20"
 							            Margin="0, 0, 10, 0">
-								<TextBlock Text="{Binding Version}"
-								           Opacity="0.40"
-								           VerticalAlignment="Center" />
-								<TextBlock Text="{Binding Date}"
-								           Opacity="0.40"
-								           VerticalAlignment="Center" />
+								<StackPanel Spacing="2">
+									<TextBlock Text="{Binding Version}"
+									           Opacity="0.40"
+									           VerticalAlignment="Center"
+									           HorizontalAlignment="Right" />
+									<TextBlock Text="{Binding Date}"
+									           Opacity="0.40"
+									           VerticalAlignment="Center"
+									           HorizontalAlignment="Right" />
+								</StackPanel>
+
 								<Button CornerRadius="6"
 								        Background="{StaticResource Bg2}"
 								        Command="{Binding $parent[ListBox].((vm:StartWindowViewModel)DataContext).RemoveProjectCommand}"

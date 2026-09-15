@@ -23,6 +23,16 @@ namespace {
 constexpr std::size_t k_gigabyte_bytes = 1024ull * 1024ull * 1024ull;
 constexpr uint32_t k_invalid_queue_family = std::numeric_limits<uint32_t>::max();
 
+#ifdef TRACY_ENABLE
+void tracyVmaAllocate(VmaAllocator, uint32_t, VkDeviceMemory memory, VkDeviceSize size, void*) {
+	TracyAllocN(reinterpret_cast<void*>(memory), size, "VRAM");
+}
+
+void tracyVmaFree(VmaAllocator, uint32_t, VkDeviceMemory memory, VkDeviceSize, void*) {
+	TracyFreeN(reinterpret_cast<void*>(memory), "VRAM");
+}
+#endif
+
 struct QueueFamilySelection {
 	uint32_t graphics = k_invalid_queue_family;
 	uint32_t compute = k_invalid_queue_family;
@@ -72,16 +82,16 @@ auto debugCallback(
 	const char* message = (p_callback_data != nullptr && p_callback_data->pMessage != nullptr) ? p_callback_data->pMessage : "";
 	switch (message_severity) {
 		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-			TOAST_TRACE("VulkanValidationLayers", "[Vulkan Validation] [{}]: {}", message_type_string, message);
+			TOAST_TRACE("ValidationLayers", "[Vulkan Validation] [{}]: {}", message_type_string, message);
 			break;
 		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-			TOAST_INFO("VulkanValidationLayers", "[Vulkan Validation] [{}]: {}", message_type_string, message);
+			TOAST_INFO("ValidationLayers", "[Vulkan Validation] [{}]: {}", message_type_string, message);
 			break;
 		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-			TOAST_WARN("VulkanValidationLayers", "[Vulkan Validation] [{}]: {}", message_type_string, message);
+			TOAST_WARN("ValidationLayers", "[Vulkan Validation] [{}]: {}", message_type_string, message);
 			break;
 		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-			TOAST_ERROR("VulkanValidationLayers", "[Vulkan Validation] [{}]: {}", message_type_string, message);
+			TOAST_ERROR("ValidationLayers", "[Vulkan Validation] [{}]: {}", message_type_string, message);
 			break;
 		default: break;
 	}
@@ -232,9 +242,9 @@ VulkanCore::VulkanCore(
 	m_validation_enabled = false;
 #endif
 
-	TOAST_INFO("VulkanCore", "Validation layers: {}", m_validation_enabled ? "enabled" : "disabled");
-	TOAST_TRACE("VulkanCore", "Required instance extensions: {}", joinRequiredExtensions(required_instance_extensions));
-	TOAST_TRACE("VulkanCore", "Required device extensions: {}", joinRequiredExtensions(required_device_extensions));
+	TOAST_INFO("Render", "Validation layers: {}", m_validation_enabled ? "enabled" : "disabled");
+	TOAST_TRACE("Render", "Required instance extensions: {}", joinRequiredExtensions(required_instance_extensions));
+	TOAST_TRACE("Render", "Required device extensions: {}", joinRequiredExtensions(required_device_extensions));
 
 	vk::ApplicationInfo app_info("SUPER DUPER TOASTY GAME", 1, "TOAST ENGINE", 1, VK_API_VERSION_1_4);
 
@@ -271,14 +281,14 @@ VulkanCore::VulkanCore(
 	if (HMODULE mod = GetModuleHandleA("renderdoc.dll")) {
 		pRENDERDOC_GetAPI renderdoc_get_api = reinterpret_cast<pRENDERDOC_GetAPI>(GetProcAddress(mod, "RENDERDOC_GetAPI"));
 		renderdoc_get_api(eRENDERDOC_API_Version_1_6_0, reinterpret_cast<void**>(&rdoc_api));
-		TOAST_INFO("VulkanCore", "RenderDoc API detected");
+		TOAST_INFO("Render", "RenderDoc API detected");
 	}
 #elif defined(__linux__)
 	if (auto* mod = dlopen("librenderdoc.so", RTLD_NOLOAD | RTLD_LAZY)) {
 		auto* renderdoc_get_api = reinterpret_cast<pRENDERDOC_GetAPI>(dlsym(mod, "RENDERDOC_GetAPI"));
 		if (renderdoc_get_api) {
 			renderdoc_get_api(eRENDERDOC_API_Version_1_6_0, reinterpret_cast<void**>(&rdoc_api));
-			TOAST_INFO("VulkanCore", "RenderDoc API detected");
+			TOAST_INFO("Render", "RenderDoc API detected");
 		}
 		dlclose(mod);
 	}
@@ -288,10 +298,10 @@ VulkanCore::VulkanCore(
 void VulkanCore::pickPhysicalDevice(std::span<const char* const> required_device_extensions) {
 	vk::raii::PhysicalDevices devices(m_instance);
 	if (devices.empty()) {
-		TOAST_CRITICAL("VulkanCore", "Toast Engine Error: Failed to find GPUs with Vulkan support!");
+		TOAST_CRITICAL("Render", "Toast Engine Error: Failed to find GPUs with Vulkan support!");
 	}
 
-	TOAST_TRACE("VulkanCore", "Found {} Vulkan device(s)", devices.size());
+	TOAST_TRACE("Render", "Found {} Vulkan device(s)", devices.size());
 
 	int best_score = -1;
 	vk::raii::PhysicalDevice best_device = nullptr;
@@ -311,7 +321,7 @@ void VulkanCore::pickPhysicalDevice(std::span<const char* const> required_device
 
 		// Log device info
 		TOAST_TRACE(
-		    "VulkanCore",
+		    "Render",
 		    "Device: {} (type: {}, API: {}, driver: {}, vendor: {}, device: {})",
 		    deviceNameString(props),
 		    deviceTypeToString(props.deviceType),
@@ -320,14 +330,14 @@ void VulkanCore::pickPhysicalDevice(std::span<const char* const> required_device
 		    props.vendorID,
 		    props.deviceID
 		);
-		TOAST_TRACE("VulkanCore", "  Queue families: {}", queues.size());
+		TOAST_TRACE("Render", "  Queue families: {}", queues.size());
 		for (std::size_t i = 0; i < queues.size(); ++i) {
-			TOAST_TRACE("VulkanCore", "    Queue family {} | flags:{}", i, formatQueueFlags(queues[i].queueFlags));
+			TOAST_TRACE("Render", "    Queue family {} | flags:{}", i, formatQueueFlags(queues[i].queueFlags));
 		}
-		TOAST_TRACE("VulkanCore", "  Extensions: {}", joinExtensions(extensions));
+		TOAST_TRACE("Render", "  Extensions: {}", joinExtensions(extensions));
 
 		// Log score breakdown
-		TOAST_TRACE("VulkanCore", "  {}", device_score.toString());
+		TOAST_TRACE("Render", "  {}", device_score.toString());
 
 		if (!device_score.missing_extensions.empty()) {
 			std::string missing;
@@ -337,32 +347,32 @@ void VulkanCore::pickPhysicalDevice(std::span<const char* const> required_device
 				}
 				missing.append(device_score.missing_extensions[i]);
 			}
-			TOAST_WARN("VulkanCore", "  Missing required extensions: {}", missing);
+			TOAST_WARN("Render", "  Missing required extensions: {}", missing);
 		}
 
 		// Reject device if missing required extensions
 		if (!device_score.missing_extensions.empty()) {
-			TOAST_WARN("VulkanCore", "  Device rejected: missing required extensions");
+			TOAST_WARN("Render", "  Device rejected: missing required extensions");
 			continue;
 		}
 
 		if (device_score.total <= 0) {
-			TOAST_WARN("VulkanCore", "  Device rejected: total score {} is not valid", device_score.total);
+			TOAST_WARN("Render", "  Device rejected: total score {} is not valid", device_score.total);
 			continue;
 		}
 
 		if (!queue_families.isComplete()) {
-			TOAST_WARN("VulkanCore", "  Device rejected: required queue type not present");
+			TOAST_WARN("Render", "  Device rejected: required queue type not present");
 			continue;
 		}
 
 		if (!queue_families.isDistinct()) {
 			TOAST_WARN(
-			    "VulkanCore", "  Device Waring: graphics, compute and transfer are not using distinct family queues, PERFORMANCE LOSS"
+			    "Render", "  Device Waring: graphics, compute and transfer are not using distinct family queues, PERFORMANCE LOSS"
 			);
 		}
 
-		TOAST_TRACE("VulkanCore", "  Device score: {}", device_score.total);
+		TOAST_TRACE("Render", "  Device score: {}", device_score.total);
 
 		if (device_score.total > best_score) {
 			best_score = device_score.total;
@@ -372,7 +382,7 @@ void VulkanCore::pickPhysicalDevice(std::span<const char* const> required_device
 	}
 
 	if (best_device == nullptr) {
-		TOAST_CRITICAL("VulkanCore", "Toast Engine Error: No suitable Vulkan device found!");
+		TOAST_CRITICAL("Render", "Toast Engine Error: No suitable Vulkan device found!");
 	}
 
 	m_physical_device = best_device;
@@ -382,7 +392,7 @@ void VulkanCore::pickPhysicalDevice(std::span<const char* const> required_device
 
 	const auto selected_props = m_physical_device.getProperties();
 	TOAST_INFO(
-	    "VulkanCore",
+	    "Render",
 	    "Selected device: {} (type: {}, API: {}) with score {}",
 	    deviceNameString(selected_props),
 	    deviceTypeToString(selected_props.deviceType),
@@ -393,47 +403,42 @@ void VulkanCore::pickPhysicalDevice(std::span<const char* const> required_device
 
 void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> required_device_extensions) {
 	if (m_graphics_queue_family_index == k_invalid_queue_family) {
-		TOAST_CRITICAL("VulkanCore", "Failed to find a graphics queue family for the selected device!");
+		TOAST_CRITICAL("Render", "Failed to find a graphics queue family for the selected device!");
 	}
 	if (m_compute_queue_family_index == k_invalid_queue_family) {
-		TOAST_CRITICAL("VulkanCore", "Failed to find a compute queue family for the selected device!");
+		TOAST_CRITICAL("Render", "Failed to find a compute queue family for the selected device!");
 	}
 	if (m_transfer_queue_family_index == k_invalid_queue_family) {
-		TOAST_CRITICAL("VulkanCore", "Failed to find a transfer queue family for the selected device!");
+		TOAST_CRITICAL("Render", "Failed to find a transfer queue family for the selected device!");
 	}
 
 	TOAST_TRACE(
-	    "VulkanCore",
+	    "Render",
 	    "Selected graphics queue family index: {} (flags: {})",
 	    m_graphics_queue_family_index,
 	    formatQueueFlags(m_physical_device.getQueueFamilyProperties()[m_graphics_queue_family_index].queueFlags)
 	);
 	TOAST_TRACE(
-	    "VulkanCore",
+	    "Render",
 	    "Selected compute queue family index: {} (flags: {})",
 	    m_compute_queue_family_index,
 	    formatQueueFlags(m_physical_device.getQueueFamilyProperties()[m_compute_queue_family_index].queueFlags)
 	);
 	TOAST_TRACE(
-	    "VulkanCore",
+	    "Render",
 	    "Selected transfer queue family index: {} (flags: {})",
 	    m_transfer_queue_family_index,
 	    formatQueueFlags(m_physical_device.getQueueFamilyProperties()[m_transfer_queue_family_index].queueFlags)
 	);
 
+	const auto queue_family_properties = m_physical_device.getQueueFamilyProperties();
 	std::vector<uint32_t> unique_queue_families;
-	auto push_unique = [&](uint32_t family_index) {
-		if (family_index == k_invalid_queue_family) {
-			return;
-		}
-		if (std::find(unique_queue_families.begin(), unique_queue_families.end(), family_index) == unique_queue_families.end()) {
+	unique_queue_families.reserve(queue_family_properties.size());
+	for (uint32_t family_index = 0; family_index < static_cast<uint32_t>(queue_family_properties.size()); family_index++) {
+		if (queue_family_properties[family_index].queueCount > 0) {
 			unique_queue_families.push_back(family_index);
 		}
-	};
-
-	push_unique(m_graphics_queue_family_index);
-	push_unique(m_compute_queue_family_index);
-	push_unique(m_transfer_queue_family_index);
+	}
 
 	float queue_priority = 1.0f;
 	std::vector<vk::DeviceQueueCreateInfo> queue_create_infos;
@@ -451,6 +456,35 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	vk::PhysicalDeviceFeatures enabled_features {};
 	enabled_features.samplerAnisotropy = m_sampler_anisotropy_supported ? VK_TRUE : VK_FALSE;
 
+	vk::PhysicalDeviceFeatures2 supported_features {};
+	vk::PhysicalDeviceVulkan12Features supported_vulkan12 {};
+	vk::PhysicalDeviceVulkan13Features supported_vulkan13 {};
+	vk::PhysicalDeviceVulkan11Features supported_vulkan11 {};
+	supported_vulkan12.pNext = &supported_vulkan11;
+	supported_vulkan13.pNext = &supported_vulkan12;
+	supported_features.pNext = &supported_vulkan13;
+	(*m_physical_device).getFeatures2(&supported_features);
+	auto require_feature = [](bool supported, std::string_view name) {
+		if (!supported) {
+			TOAST_CRITICAL("Render", "Selected Vulkan device is missing required capability: {}", name);
+		}
+	};
+	require_feature(supported_vulkan13.dynamicRendering == VK_TRUE, "Vulkan 1.3 dynamicRendering");
+	require_feature(supported_vulkan13.synchronization2 == VK_TRUE, "Vulkan 1.3 synchronization2");
+	require_feature(
+	    supported_vulkan13.shaderDemoteToHelperInvocation == VK_TRUE,
+	    "Vulkan 1.3 shaderDemoteToHelperInvocation (required by UI clip())"
+	);
+	require_feature(supported_vulkan12.descriptorIndexing == VK_TRUE, "Vulkan 1.2 descriptorIndexing");
+	require_feature(supported_vulkan12.runtimeDescriptorArray == VK_TRUE, "Vulkan 1.2 runtimeDescriptorArray");
+	require_feature(supported_vulkan12.descriptorBindingPartiallyBound == VK_TRUE, "Vulkan 1.2 descriptorBindingPartiallyBound");
+	require_feature(
+	    supported_vulkan12.descriptorBindingVariableDescriptorCount == VK_TRUE,
+	    "Vulkan 1.2 descriptorBindingVariableDescriptorCount"
+	);
+	require_feature(supported_vulkan12.bufferDeviceAddress == VK_TRUE, "Vulkan 1.2 bufferDeviceAddress");
+	require_feature(supported_vulkan11.shaderDrawParameters == VK_TRUE, "Vulkan 1.1 shaderDrawParameters");
+
 	std::vector<const char*> device_extensions(required_device_extensions.begin(), required_device_extensions.end());
 	vk::DeviceCreateInfo device_ci({}, queue_create_infos, {}, device_extensions, &enabled_features);
 	vk::PhysicalDeviceVulkan12Features vulkan12_features {};
@@ -460,6 +494,7 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	vulkan13_features.pNext = &vulkan12_features;
 	vulkan13_features.dynamicRendering = VK_TRUE;
 	vulkan13_features.synchronization2 = VK_TRUE;
+	vulkan13_features.shaderDemoteToHelperInvocation = VK_TRUE;
 	vulkan12_features.descriptorIndexing = VK_TRUE;
 	vulkan12_features.runtimeDescriptorArray = VK_TRUE;
 	vulkan12_features.descriptorBindingPartiallyBound = VK_TRUE;
@@ -477,6 +512,11 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	vma::AllocatorCreateInfo allocator_ci {};
 	allocator_ci.vulkanApiVersion = VK_API_VERSION_1_4;
 	allocator_ci.physicalDevice = *m_physical_device;
+
+#ifdef TRACY_ENABLE
+	static constexpr vma::DeviceMemoryCallbacks tracy_memory_callbacks {&tracyVmaAllocate, &tracyVmaFree, nullptr};
+	allocator_ci.pDeviceMemoryCallbacks = &tracy_memory_callbacks;
+#endif
 
 	m_allocator.emplace(m_instance, m_device, allocator_ci);
 }
@@ -598,6 +638,14 @@ auto VulkanCore::calculateDeviceScore(const vk::PhysicalDevice& device, std::spa
 		extension_score += 75;
 	}
 
+	const bool supports_shader_demote =
+	    props.apiVersion >= VK_API_VERSION_1_3 && vulkan13_features.shaderDemoteToHelperInvocation == VK_TRUE;
+	if (!supports_shader_demote) {
+		required_missing_names.emplace_back("Vulkan 1.3 shaderDemoteToHelperInvocation (required by UI clip())");
+	} else {
+		extension_score += 75;
+	}
+
 	const bool supports_descriptor_indexing =
 	    props.apiVersion >= VK_API_VERSION_1_2 && vulkan12_features.descriptorIndexing == VK_TRUE;
 	if (!supports_descriptor_indexing) {
@@ -636,6 +684,14 @@ auto VulkanCore::calculateDeviceScore(const vk::PhysicalDevice& device, std::spa
 		required_missing_names.emplace_back("Vulkan 1.2 buffer device address");
 	} else {
 		extension_score += 75;
+	}
+
+	const bool supports_shader_draw_parameters =
+	    props.apiVersion >= VK_API_VERSION_1_1 && vulkan11_features.shaderDrawParameters == VK_TRUE;
+	if (!supports_shader_draw_parameters) {
+		required_missing_names.emplace_back("Vulkan 1.1 shaderDrawParameters");
+	} else {
+		extension_score += 25;
 	}
 
 	for (const auto* required : required_device_extensions) {

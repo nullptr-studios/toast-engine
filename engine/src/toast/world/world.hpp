@@ -44,6 +44,11 @@ public:
 
 	void tick() override;
 
+	[[nodiscard]]
+	auto participatesIn(NodeOwnerParticipation /*use*/) const noexcept -> bool override {
+		return true;
+	}
+
 	/**
 	 * @brief Records a tick ordering constraint between two active nodes
 	 * @param from Node that must be ticked before `to`
@@ -71,6 +76,7 @@ public:
 	static void loadNode(std::string_view uri, bool activate_as_root = false);
 
 	auto findFrom(const Node& origin, std::string_view query) -> Box<Node> override;
+	auto findFrom(const Node& origin, const UID& uid) -> Box<Node> override;
 	auto searchFrom(const Node& origin, std::string_view query) -> std::vector<Box<Node>> override;
 
 	/**
@@ -128,13 +134,6 @@ public:
 	 */
 	static void hotReloadScripts(toast::UID script_uid);
 
-	/**
-	 * @brief Invalidates the world transforms of all Node3D nodes that depend on the given node
-	 * @param node The node whose transform changed
-	 * @note Called by Node3D setters; only nodes listed in inverse_connections are dirtied
-	 */
-	static void markNode3DDependantsDirty(const Box<Node>& node) noexcept;
-
 	[[nodiscard]]
 	auto dependencyGraphGraphviz() const -> std::string;
 
@@ -143,6 +142,7 @@ private:
 
 	/// Rebuilds the dependency graph from the current node set and recomputes the tick schedule
 	void computeDependencyGraph();
+	void applyActiveCamera() override;
 
 	/// Atomically replaces the world root; the old root is returned as a cached node
 	auto swapRoot(Node& node) -> Box<Node>;
@@ -182,10 +182,10 @@ private:
 
 	/// Single-segment DFS within one prefab instance scope; does not cross instance boundaries
 	[[nodiscard]]
-	static auto findScoped(Node& scope, std::string_view seg, bool by_uid) -> Box<Node>;
+	static auto findScoped(Node& scope, std::string_view seg) -> Box<Node>;
 
 	/// All-matching DFS that crosses prefab-instance boundaries; appends results to out
-	static void searchScoped(Node& scope, std::string_view seg, bool by_uid, std::vector<Box<Node>>& out);
+	static void searchScoped(Node& scope, std::string_view seg, std::vector<Box<Node>>& out);
 
 	struct {
 		event::Listener listener;

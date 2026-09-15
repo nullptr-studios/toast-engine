@@ -81,20 +81,20 @@ void TextureUpload::build(const VulkanCore& core) {
 	auto result =
 	    ktxTexture2_CreateFromMemory(m_data.data(), m_data.size(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &m_ktx_texture);
 	if (result != KTX_SUCCESS) {
-		TOAST_CRITICAL("TextureUpload", "Failed to open KTX image data?!");
+		TOAST_CRITICAL("Render", "Failed to open KTX image data?!");
 	}
 
 	if (ktxTexture2_NeedsTranscoding(m_ktx_texture)) {
 		result = ktxTexture2_TranscodeBasis(m_ktx_texture, KTX_TTF_BC7_RGBA, 0);
 		if (result != KTX_SUCCESS) {
-			TOAST_CRITICAL("TextureUpload", "Failed to transcode BasisUniversal texture");
+			TOAST_CRITICAL("Render", "Failed to transcode BasisUniversal texture");
 		}
 	}
 
 	m_tex_params.format = static_cast<vk::Format>(m_ktx_texture->vkFormat);
 
 	if (m_tex_params.format == vk::Format::eR8G8B8Unorm || m_tex_params.format == vk::Format::eR8G8B8Srgb) {
-		TOAST_CRITICAL("TextureUpload", "24bit format is not supported by ToastEngine, Please use RGBA format!!");
+		TOAST_CRITICAL("Render", "24bit format is not supported by ToastEngine, Please use RGBA format!!");
 	}
 
 	m_tex_params.extent = vk::Extent3D(m_ktx_texture->baseWidth, m_ktx_texture->baseHeight, m_ktx_texture->baseDepth);
@@ -197,7 +197,7 @@ void TextureUpload::record(vk::CommandBuffer cmd) {
 
 void RawTextureUpload::build(const VulkanCore& core) {
 	if (m_width == 0 || m_height == 0 || m_data.empty()) {
-		TOAST_CRITICAL("RawTextureUpload", "Cannot upload raw texture with empty dimensions/data");
+		TOAST_CRITICAL("Render", "Cannot upload raw texture with empty dimensions/data");
 	}
 
 	VulkanTexture::Params params {};
@@ -223,7 +223,7 @@ void RawTextureUpload::build(const VulkanCore& core) {
 
 	void* mapped = m_staging_buffer.getAllocation().getInfo().pMappedData;
 	if (mapped == nullptr) {
-		TOAST_CRITICAL("RawTextureUpload", "Raw texture staging buffer is not mapped");
+		TOAST_CRITICAL("Render", "Raw texture staging buffer is not mapped");
 	}
 	std::memcpy(mapped, m_data.data(), m_data.size());
 }

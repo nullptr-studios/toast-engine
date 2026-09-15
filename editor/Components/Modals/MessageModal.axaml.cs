@@ -1,5 +1,7 @@
+using System;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -82,6 +84,21 @@ public partial class MessageModal : Window {
 	public MessageModal(ModalConfig cfg) {
 		InitializeComponent();
 		DataContext = MessageModalViewModel.From(cfg);
+	}
+
+	protected override void OnOpened(EventArgs e) {
+		base.OnOpened(e);
+		OkButton.Focus();
+	}
+
+	protected override void OnKeyDown(KeyEventArgs e) {
+		if (e.Key == Key.Escape && DataContext is MessageModalViewModel { ShowCancel: false }) {
+			Close(null);
+			e.Handled = true;
+			return;
+		}
+
+		base.OnKeyDown(e);
 	}
 
 	private void OnOk(object? sender, RoutedEventArgs e) {

@@ -1,48 +1,42 @@
-﻿using System;
+using System;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Xml.Serialization;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using Tomlyn;
+using Tomlyn.Model;
 
 namespace editor.StartWindow;
 
-[XmlRoot("Project")]
 public record struct ProjectListItem {
-	[XmlAttribute("Name")] public string Title { get; set; }
-
-	[XmlAttribute("Path")] public string Path { get; set; }
-
-	[XmlAttribute("Date")] public string Date { get; set; }
-
-	[XmlAttribute("Version")] public string Version { get; set; }
-
-	[XmlAttribute("Thumbnail")] public string ThumbnailPath { get; set; }
+	public string Title { get; set; }
+	public string Path { get; set; }
+	public string Date { get; set; }
+	public string Version { get; set; }
+	public string ThumbnailPath { get; set; }
 }
 
-[XmlRoot("ProjectList")]
 public class ProjectList {
-	private static string m_path = Path.Combine(
+	private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
+
+	private static readonly string m_dir = Path.Combine(
 		Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-		"ToastEngine",
-		"project_list.xml"
+		"ToastEngine"
 	);
 
+	private static readonly string m_path = Path.Combine(m_dir, "project_list.json");
+
+	[JsonConstructor]
 	private ProjectList() { }
 
-	[XmlArray("Projects")]
-	[XmlArrayItem("Project")]
 	public ObservableCollection<ProjectListItem> Projects { get; set; } = [];
 
 	public static ProjectList LoadList() {
-		var dir = Path.GetDirectoryName(m_path);
-		if (dir != null && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
+		if (!Directory.Exists(m_dir)) Directory.CreateDirectory(m_dir);
 
-		if (!File.Exists(m_path)) return new ProjectList();
-
-		var serializer = new XmlSerializer(typeof(ProjectList));
-		using var stream = File.OpenRead(m_path);
-		var loaded = serializer.Deserialize(stream) as ProjectList ?? new ProjectList();
+		var loaded = File.Exists(m_path) ? LoadFromJson() : new ProjectList();
 
 		// Sort by date (newest first)
 		var sorted = loaded.Projects.OrderByDescending(p => {
@@ -56,8 +50,58 @@ public class ProjectList {
 	}
 
 	public void SaveList() {
-		var serializer = new XmlSerializer(typeof(ProjectList));
 		using var stream = File.Create(m_path);
-		serializer.Serialize(stream, this);
+		JsonSerializer.Serialize(stream, this, JsonOptions);
+	}
+
+	public ProjectListItem Upsert(string toastPath) {
+		var item = ReadFromToastFile(toastPath);
+
+		for (var i = 0; i < Projects.Count; i++)
+			if (Projects[i].Path == toastPath) {
+				Projects.RemoveAt(i);
+				break;
+			}
+
+		Projects.Insert(0, item);
+		return item;
+	}
+
+	private static ProjectList LoadFromJson() {
+		using var stream = File.OpenRead(m_path);
+		return JsonSerializer.Deserialize<ProjectList>(stream, JsonOptions) ?? new ProjectList();
+	}
+
+	private static ProjectListItem ReadFromToastFile(string toastPath) {
+		var dir = Path.GetDirectoryName(toastPath) ?? "";
+		var thumbnailPath = Path.Combine(dir, ".toast", "thumbnails", "project.png");
+		var thumbnail = File.Exists(thumbnailPath) ? thumbnailPath : "";
+		var date = DateTime.Now.ToString("dd MMM yyyy HH:mm");
+
+		try {
+			var projectContent = File.ReadAllText(toastPath);
+			var projectData = TomlSerializer.Deserialize<TomlTable>(projectContent);
+
+			return new ProjectListItem {
+				Title = projectData?["name"].ToString() ?? "Untitled Project",
+				Path = toastPath,
+				Date = date,
+				Version = ReadVersion(projectData),
+				ThumbnailPath = thumbnail
+			};
+		} catch {
+			return new ProjectListItem {
+				Title = Path.GetFileNameWithoutExtension(toastPath),
+				Path = toastPath,
+				Date = date,
+				Version = "",
+				ThumbnailPath = thumbnail
+			};
+		}
+	}
+
+	private static string ReadVersion(TomlTable? data) {
+		if (data?["version"] is TomlArray table) return $"v{string.Join(".", table)}";
+		return data?["version"]?.ToString() ?? "v0.0.?";
 	}
 }

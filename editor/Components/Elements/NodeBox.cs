@@ -4,6 +4,7 @@
 //
 
 using System;
+using System.Windows.Input;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -27,6 +28,12 @@ public sealed class NodeBox : TemplatedControl {
 	public static readonly StyledProperty<string?> NodeTypeProperty =
 		AvaloniaProperty.Register<NodeBox, string?>(nameof(NodeType));
 
+	public static readonly StyledProperty<ICommand?> FieldCopyCommandProperty =
+		AvaloniaProperty.Register<NodeBox, ICommand?>(nameof(FieldCopyCommand));
+
+	public static readonly StyledProperty<ICommand?> FieldPasteCommandProperty =
+		AvaloniaProperty.Register<NodeBox, ICommand?>(nameof(FieldPasteCommand));
+
 	public static readonly DirectProperty<NodeBox, string?> DisplayNameProperty =
 		AvaloniaProperty.RegisterDirect<NodeBox, string?>(nameof(DisplayName), o => o.m_displayName);
 
@@ -43,6 +50,9 @@ public sealed class NodeBox : TemplatedControl {
 		AvaloniaProperty.RegisterDirect<NodeBox, IBrush?>(nameof(NodeIcon), o => o.m_nodeIcon);
 
 	private readonly MenuItem m_clearItem;
+	private readonly MenuItem m_copyItem;
+	private readonly Separator m_clipboardSeparator;
+	private readonly MenuItem m_pasteItem;
 	private readonly MenuItem m_seeItem;
 
 	private readonly MenuItem m_selectItem;
@@ -71,11 +81,18 @@ public sealed class NodeBox : TemplatedControl {
 		m_seeItem.Click += (_, _) => SeeInHierarchy();
 		m_clearItem = new MenuItem { Header = "Clear", InputGesture = new KeyGesture(Key.Delete) };
 		m_clearItem.Click += (_, _) => Clear();
+		m_clipboardSeparator = new Separator { IsVisible = false };
+		m_copyItem = new MenuItem { Header = "Copy", IsVisible = false };
+		m_pasteItem = new MenuItem { Header = "Paste", IsVisible = false };
 
 		var menu = new ContextMenu();
 		menu.Items.Add(m_selectItem);
 		menu.Items.Add(m_seeItem);
 		menu.Items.Add(m_clearItem);
+		menu.Items.Add(m_clipboardSeparator);
+		menu.Items.Add(m_copyItem);
+		menu.Items.Add(m_pasteItem);
+		AsyncCommandMenu.Attach(menu);
 		ContextMenu = menu;
 	}
 
@@ -87,6 +104,16 @@ public sealed class NodeBox : TemplatedControl {
 	public string? NodeType {
 		get => GetValue(NodeTypeProperty);
 		set => SetValue(NodeTypeProperty, value);
+	}
+
+	public ICommand? FieldCopyCommand {
+		get => GetValue(FieldCopyCommandProperty);
+		set => SetValue(FieldCopyCommandProperty, value);
+	}
+
+	public ICommand? FieldPasteCommand {
+		get => GetValue(FieldPasteCommandProperty);
+		set => SetValue(FieldPasteCommandProperty, value);
 	}
 
 	public string? DisplayName {
@@ -137,6 +164,8 @@ public sealed class NodeBox : TemplatedControl {
 			Refresh();
 		} else if (change.Property == IsEnabledProperty) {
 			UpdateMenu();
+		} else if (change.Property == FieldCopyCommandProperty || change.Property == FieldPasteCommandProperty) {
+			UpdateClipboardMenu();
 		}
 	}
 
@@ -209,6 +238,17 @@ public sealed class NodeBox : TemplatedControl {
 		m_selectItem.IsEnabled = IsEnabled;
 		m_seeItem.IsEnabled = IsEnabled && HasNode;
 		m_clearItem.IsEnabled = IsEnabled && (HasNode || IsMissing);
+		UpdateClipboardMenu();
+	}
+
+	private void UpdateClipboardMenu() {
+		var visible = FieldCopyCommand is not null || FieldPasteCommand is not null;
+		m_clipboardSeparator.IsVisible = visible;
+		m_copyItem.IsVisible = FieldCopyCommand is not null;
+		m_copyItem.Command = FieldCopyCommand;
+		m_pasteItem.IsVisible = FieldPasteCommand is not null;
+		m_pasteItem.IsEnabled = IsEnabled;
+		m_pasteItem.Command = FieldPasteCommand;
 	}
 
 	private async void OpenPicker() {

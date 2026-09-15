@@ -26,10 +26,10 @@ internal sealed class Program {
 			// renderdoc crashes when trying to attach to the internal avalonia
 			// hardware accelerated renderer
 			.With(new Win32PlatformOptions {
-				RenderingMode = [ Win32RenderingMode.Software ]
+				RenderingMode = [Win32RenderingMode.Software]
 			})
 			.With(new X11PlatformOptions {
-				RenderingMode = [ X11RenderingMode.Software ]
+				RenderingMode = [X11RenderingMode.Software]
 			})
 			.LogToTrace();
 	}

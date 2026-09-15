@@ -229,6 +229,14 @@
 						</Button>
 					</Grid>
 					<Panel Grid.Column="1">
+						<Panel.ContextMenu>
+							<ContextMenu Opening="OnClipboardContextMenuOpening">
+								<MenuItem Header="Copy"
+								          Command="{Binding CopyCommand}" />
+								<MenuItem Header="Paste"
+								          Command="{Binding PasteCommand}" />
+							</ContextMenu>
+						</Panel.ContextMenu>
 						<elements:DragFloatBox Value="{Binding Float, Mode=TwoWay}"
 						                       Minimum="{Binding Min}"
 						                       Maximum="{Binding Max}"
@@ -241,6 +249,10 @@
 						                     Unit="{Binding Unit}"
 						                     IsEnabled="{Binding Editable}"
 						                     IsVisible="{Binding IsInt}" />
+						<elements:EnumBox Value="{Binding EnumValue, Mode=TwoWay}"
+						                  Options="{Binding EnumOptions}"
+						                  IsEnabled="{Binding Editable}"
+						                  IsVisible="{Binding IsEnum}" />
 						<elements:BoolBox Value="{Binding Bool, Mode=TwoWay}"
 						                  IsEnabled="{Binding Editable}"
 						                  IsVisible="{Binding IsBool}" />
@@ -249,26 +261,39 @@
 						                    IsVisible="{Binding IsString}" />
 						<elements:AssetBox Value="{Binding Ref, Mode=TwoWay}"
 						                   AssetType="{Binding RefType}"
+						                   FieldCopyCommand="{Binding CopyCommand}"
+						                   FieldPasteCommand="{Binding PasteCommand}"
 						                   IsEnabled="{Binding Editable}"
 						                   IsVisible="{Binding IsAssetRef}" />
 						<elements:NodeBox Value="{Binding Ref, Mode=TwoWay}"
 						                  NodeType="{Binding RefType}"
+						                  FieldCopyCommand="{Binding CopyCommand}"
+						                  FieldPasteCommand="{Binding PasteCommand}"
 						                  IsEnabled="{Binding Editable}"
 						                  IsVisible="{Binding IsNodeRef}" />
 						<elements:Color3Box R="{Binding X, Mode=TwoWay}"
 						                    G="{Binding Y, Mode=TwoWay}"
 						                    B="{Binding Z, Mode=TwoWay}"
+						                    CopyCommand="{Binding CopyCommand}"
+						                    PasteCommand="{Binding PasteCommand}"
 						                    IsEnabled="{Binding Editable}"
 						                    IsVisible="{Binding IsColor3}" />
 						<elements:Color4Box R="{Binding X, Mode=TwoWay}"
 						                    G="{Binding Y, Mode=TwoWay}"
 						                    B="{Binding Z, Mode=TwoWay}"
 						                    A="{Binding W, Mode=TwoWay}"
+						                    CopyCommand="{Binding CopyCommand}"
+						                    PasteCommand="{Binding PasteCommand}"
 						                    IsEnabled="{Binding Editable}"
 						                    IsVisible="{Binding IsColor4}" />
 						<elements:ArrayBox IsVisible="{Binding IsArray}"
 						                   Items="{Binding ArrayItems}"
 						                   AddCommand="{Binding AddArrayItemCommand}"
+						                   CopyCommand="{Binding CopyCommand}"
+						                   PasteCommand="{Binding PasteCommand}"
+						                   CopyItemCommand="{Binding CopyArrayItemCommand}"
+						                   PasteItemCommand="{Binding PasteArrayItemCommand}"
+						                   AppendPasteCommand="{Binding AppendArrayPasteCommand}"
 						                   CanReorder="{Binding Editable}"
 						                   CanAddRemove="{Binding Editable}"
 						                   IsEnabled="{Binding Editable}"
@@ -279,6 +304,14 @@
 							<elements:ArrayBox.ItemTemplate>
 								<DataTemplate DataType="vm:FieldVM">
 									<Panel>
+										<Panel.ContextMenu>
+											<ContextMenu Opening="OnClipboardContextMenuOpening">
+												<MenuItem Header="Copy Element"
+												          Command="{Binding CopyCommand}" />
+												<MenuItem Header="Paste Element"
+												          Command="{Binding PasteCommand}" />
+											</ContextMenu>
+										</Panel.ContextMenu>
 										<elements:DragFloatBox Value="{Binding Float, Mode=TwoWay}"
 										                       Minimum="{Binding Min}"
 										                       Maximum="{Binding Max}"
@@ -299,21 +332,29 @@
 										                    IsVisible="{Binding IsString}" />
 										<elements:AssetBox Value="{Binding Ref, Mode=TwoWay}"
 										                   AssetType="{Binding RefType}"
+										                   FieldCopyCommand="{Binding CopyCommand}"
+										                   FieldPasteCommand="{Binding PasteCommand}"
 										                   IsEnabled="{Binding Editable}"
 										                   IsVisible="{Binding IsAssetRef}" />
 										<elements:NodeBox Value="{Binding Ref, Mode=TwoWay}"
 										                  NodeType="{Binding RefType}"
+										                  FieldCopyCommand="{Binding CopyCommand}"
+										                  FieldPasteCommand="{Binding PasteCommand}"
 										                  IsEnabled="{Binding Editable}"
 										                  IsVisible="{Binding IsNodeRef}" />
 										<elements:Color3Box R="{Binding X, Mode=TwoWay}"
 										                    G="{Binding Y, Mode=TwoWay}"
 										                    B="{Binding Z, Mode=TwoWay}"
+										                    CopyCommand="{Binding CopyCommand}"
+										                    PasteCommand="{Binding PasteCommand}"
 										                    IsEnabled="{Binding Editable}"
 										                    IsVisible="{Binding IsColor3}" />
 										<elements:Color4Box R="{Binding X, Mode=TwoWay}"
 										                    G="{Binding Y, Mode=TwoWay}"
 										                    B="{Binding Z, Mode=TwoWay}"
 										                    A="{Binding W, Mode=TwoWay}"
+										                    CopyCommand="{Binding CopyCommand}"
+										                    PasteCommand="{Binding PasteCommand}"
 										                    IsEnabled="{Binding Editable}"
 										                    IsVisible="{Binding IsColor4}" />
 										<elements:DragVec2Box X="{Binding X, Mode=TwoWay}"
@@ -321,6 +362,8 @@
 										                      Minimum="{Binding Min}"
 										                      Maximum="{Binding Max}"
 										                      Unit="{Binding Unit}"
+										                      CopyCommand="{Binding CopyCommand}"
+										                      PasteCommand="{Binding PasteCommand}"
 										                      IsEnabled="{Binding Editable}"
 										                      IsVisible="{Binding IsVec2}" />
 										<elements:DragVec3Box X="{Binding X, Mode=TwoWay}"
@@ -329,6 +372,8 @@
 										                      Minimum="{Binding Min}"
 										                      Maximum="{Binding Max}"
 										                      Unit="{Binding Unit}"
+										                      CopyCommand="{Binding CopyCommand}"
+										                      PasteCommand="{Binding PasteCommand}"
 										                      IsEnabled="{Binding Editable}"
 										                      IsVisible="{Binding IsVec3}" />
 										<elements:DragVec4Box X="{Binding X, Mode=TwoWay}"
@@ -338,6 +383,8 @@
 										                      Minimum="{Binding Min}"
 										                      Maximum="{Binding Max}"
 										                      Unit="{Binding Unit}"
+										                      CopyCommand="{Binding CopyCommand}"
+										                      PasteCommand="{Binding PasteCommand}"
 										                      IsEnabled="{Binding Editable}"
 										                      IsVisible="{Binding IsVec4}" />
 									</Panel>
@@ -387,6 +434,8 @@
 						                      Minimum="{Binding Min}"
 						                      Maximum="{Binding Max}"
 						                      Unit="{Binding Unit}"
+						                      CopyCommand="{Binding CopyCommand}"
+						                      PasteCommand="{Binding PasteCommand}"
 						                      IsEnabled="{Binding Editable}"
 						                      IsVisible="{Binding IsVec2}" />
 						<elements:DragVec3Box X="{Binding X, Mode=TwoWay}"
@@ -395,6 +444,8 @@
 						                      Minimum="{Binding Min}"
 						                      Maximum="{Binding Max}"
 						                      Unit="{Binding Unit}"
+						                      CopyCommand="{Binding CopyCommand}"
+						                      PasteCommand="{Binding PasteCommand}"
 						                      IsEnabled="{Binding Editable}"
 						                      IsVisible="{Binding IsVec3}" />
 						<elements:DragVec4Box X="{Binding X, Mode=TwoWay}"
@@ -404,6 +455,8 @@
 						                      Minimum="{Binding Min}"
 						                      Maximum="{Binding Max}"
 						                      Unit="{Binding Unit}"
+						                      CopyCommand="{Binding CopyCommand}"
+						                      PasteCommand="{Binding PasteCommand}"
 						                      IsEnabled="{Binding Editable}"
 						                      IsVisible="{Binding IsVec4}" />
 					</Panel>
@@ -416,6 +469,14 @@
 			<StackPanel IsVisible="{Binding Visible}">
 				<ToggleButton Classes="hdr"
 				              IsChecked="{Binding Expanded, Mode=TwoWay}">
+					<ToggleButton.ContextMenu>
+						<ContextMenu Opening="OnClipboardContextMenuOpening">
+							<MenuItem Header="Copy Subgroup"
+							          Command="{Binding CopyScopeCommand}" />
+							<MenuItem Header="Paste Subgroup"
+							          Command="{Binding PasteScopeCommand}" />
+						</ContextMenu>
+					</ToggleButton.ContextMenu>
 					<StackPanel Orientation="Horizontal"
 					            Spacing="6"
 					            Margin="6,0,0,0">
@@ -440,6 +501,14 @@
 			<StackPanel IsVisible="{Binding Visible}">
 				<ToggleButton Classes="hdr"
 				              IsChecked="{Binding Expanded, Mode=TwoWay}">
+					<ToggleButton.ContextMenu>
+						<ContextMenu Opening="OnClipboardContextMenuOpening">
+							<MenuItem Header="Copy Group"
+							          Command="{Binding CopyScopeCommand}" />
+							<MenuItem Header="Paste Group"
+							          Command="{Binding PasteScopeCommand}" />
+						</ContextMenu>
+					</ToggleButton.ContextMenu>
 					<StackPanel Orientation="Horizontal"
 					            Spacing="6">
 						<Border Width="3"
@@ -466,7 +535,10 @@
 		<DataTemplate DataType="vm:ButtonVM">
 			<Button Content="{Binding Label}"
 			        Command="{Binding ClickCommand}"
-			        HorizontalAlignment="Stretch" />
+			        HorizontalAlignment="Stretch"
+			        Background="{StaticResource Bg4}"
+			        CornerRadius="6"
+			        HorizontalContentAlignment="Center" />
 		</DataTemplate>
 
 		<!-- Class card -->
@@ -478,6 +550,14 @@
 				<StackPanel>
 					<ToggleButton Classes="hdr"
 					              IsChecked="{Binding Expanded, Mode=TwoWay}">
+						<ToggleButton.ContextMenu>
+							<ContextMenu Opening="OnClipboardContextMenuOpening">
+								<MenuItem Header="Copy Class"
+								          Command="{Binding CopyScopeCommand}" />
+								<MenuItem Header="Paste Class"
+								          Command="{Binding PasteScopeCommand}" />
+							</ContextMenu>
+						</ToggleButton.ContextMenu>
 						<StackPanel Orientation="Horizontal"
 						            HorizontalAlignment="Center"
 						            Spacing="8">

@@ -42,10 +42,7 @@ constexpr std::string_view vec3_str = "vec3";
 constexpr std::string_view vec4_str = "vec4";
 constexpr std::string_view quaternion_str = "quat";
 
-constexpr char string_array_separator =
-    31;    ///< ASCII 31 (unit separator), can't appear in normal text content so it's safe as an in-field delimiter
-
-constexpr uint16_t format_version = 3;    ///< current binary layout version
+constexpr uint16_t format_version = 4;    ///< current binary layout version
 
 struct TOAST_API NodeFileBinaryHeader {
 	const std::array<uint8_t, 6> magic = {'T', 'N', 'O', 'D', 'E', '\0'};
@@ -79,6 +76,10 @@ public:
 	explicit Prefab(const toast::Node& node, toast::UID self_uid = toast::UID(0));
 
 	Prefab() = default;
+	Prefab(const Prefab& other);
+	Prefab(Prefab&& other) noexcept;
+	auto operator=(const Prefab& other) -> Prefab&;
+	auto operator=(Prefab&& other) noexcept -> Prefab&;
 
 	[[nodiscard]]
 	auto type() const -> std::string_view override {
@@ -204,6 +205,18 @@ public:
 		std::string value;
 	};
 
+	/** One serialized connection from a reflected node signal. */
+	struct SignalConnection {
+		toast::UID target;
+		std::string function;
+	};
+
+	/** One reflected signal and the connections authored for it. */
+	struct Signal {
+		std::string name;
+		std::vector<SignalConnection> connections;
+	};
+
 	/**
 	 * @brief One node entry in a prefab file
 	 *
@@ -218,6 +231,7 @@ public:
 		std::vector<Field> fields;
 		std::vector<Group> groups;
 		std::vector<LuaVarOverride> lua_vars;    ///< empty for old files or nodes with no edited Lua vars
+		std::vector<Signal> signals;             ///< empty for old files or nodes with no signal connections
 
 		[[nodiscard]]
 		auto find(std::string_view name) const -> std::optional<Field> {
@@ -248,6 +262,7 @@ public:
 private:
 	auto parseField(std::string_view line) -> std::optional<Field>;
 	auto parseLuaVarOverride(std::string_view line) -> std::optional<LuaVarOverride>;
+	auto parseSignal(std::string_view line) -> std::optional<Signal>;
 	auto parseType(std::string_view type, bool& is_array) -> std::optional<toast::FieldType>;
 	auto parseValue(toast::FieldType type, std::string_view value, bool& is_array) -> std::optional<std::any>;
 
@@ -261,10 +276,11 @@ private:
 	void writeGroup(const Group& group, std::stringstream& ss) const;
 	void writeSubgroup(const Subgroup& subgroup, std::stringstream& ss) const;
 	void writeField(const Field& field, std::stringstream& ss, std::string offset = "") const;
+	void writeSignal(const Signal& signal, std::stringstream& ss) const;
 	auto writeType(toast::FieldType type, bool is_array = false) const -> std::string;
 
 	auto fieldEquals(toast::FieldType type, bool is_array, const std::any& a, const std::any& b) const -> bool;
-	auto flattenedRootFields(const AssetHandle<Prefab>& source) const -> std::optional<BasicNode>;
+	auto flattenedRootFields(const Handle<Prefab>& source) const -> std::optional<BasicNode>;
 
 	toast::UID m_self_uid;    ///< if this prefab embeds itself, this UID breaks the recursion during instantiation
 	std::unordered_set<uint64_t>

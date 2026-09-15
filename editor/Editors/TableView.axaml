@@ -1,0 +1,300 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:editor.Editors"
+             xmlns:elements="using:editor.Components.Elements"
+             xmlns:lucide="using:Lucide.Avalonia"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignWidth="1400"
+             d:DesignHeight="400"
+             x:Class="editor.Editors.TableView"
+             x:DataType="vm:TableViewModel"
+             Background="{StaticResource Bg2}"
+             Padding="8">
+
+	<UserControl.KeyBindings>
+		<KeyBinding Gesture="Ctrl+S"
+		            Command="{Binding SaveCommand}" />
+	</UserControl.KeyBindings>
+
+	<UserControl.Styles>
+		<Style Selector="Button.icon-btn">
+			<Setter Property="BorderThickness"
+			        Value="0" />
+			<Setter Property="Padding"
+			        Value="5" />
+			<Setter Property="CornerRadius"
+			        Value="6" />
+			<Setter Property="Cursor"
+			        Value="Hand" />
+			<Setter Property="Background"
+			        Value="Transparent" />
+			<Setter Property="VerticalAlignment"
+			        Value="Center" />
+		</Style>
+		<Style Selector="Button.add-btn">
+			<Setter Property="HorizontalContentAlignment"
+			        Value="Center" />
+			<Setter Property="BorderThickness"
+			        Value="0" />
+			<Setter Property="Padding"
+			        Value="8,6" />
+			<Setter Property="CornerRadius"
+			        Value="6" />
+			<Setter Property="Cursor"
+			        Value="Hand" />
+		</Style>
+		<Style Selector="Button.add-btn /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg4}" />
+		</Style>
+		<Style Selector="Button.add-btn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg5}" />
+		</Style>
+		<Style Selector="Border.gutter">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg3}" />
+			<Setter Property="CornerRadius"
+			        Value="8" />
+		</Style>
+		<Style Selector="StackPanel.table-body">
+			<Setter Property="Spacing"
+			        Value="4" />
+			<Setter Property="Margin"
+			        Value="0,8" />
+		</Style>
+		<Style Selector="Grid.gutter-row">
+			<Setter Property="Height"
+			        Value="34" />
+			<Setter Property="ColumnSpacing"
+			        Value="4" />
+			<Setter Property="Margin"
+			        Value="8,0" />
+		</Style>
+		<Style Selector="Border.head-cell">
+			<Setter Property="Height"
+			        Value="34" />
+			<Setter Property="MinWidth"
+			        Value="160" />
+			<Setter Property="Margin"
+			        Value="2,0" />
+			<Setter Property="Padding"
+			        Value="8,6" />
+			<Setter Property="Background"
+			        Value="{StaticResource Bg3}" />
+			<Setter Property="CornerRadius"
+			        Value="6" />
+		</Style>
+		<Style Selector="Panel.cell">
+			<Setter Property="Height"
+			        Value="34" />
+			<Setter Property="MinWidth"
+			        Value="160" />
+			<Setter Property="Margin"
+			        Value="2,0" />
+		</Style>
+	</UserControl.Styles>
+
+	<Design.DataContext>
+		<vm:TableViewModel />
+	</Design.DataContext>
+
+	<Panel>
+		<DockPanel IsVisible="{Binding HasContent}"
+		           VerticalSpacing="8">
+
+			<!-- Toolbar -->
+			<Border DockPanel.Dock="Top"
+			        Background="{StaticResource Bg3}"
+			        Padding="8"
+			        CornerRadius="8">
+				<DockPanel>
+					<Button DockPanel.Dock="Right"
+					        Classes="icon-btn"
+					        Command="{Binding SaveCommand}"
+					        Background="{StaticResource Red}"
+					        ToolTip.Tip="Save (Ctrl+S)">
+
+						<StackPanel Orientation="Horizontal"
+						            Spacing="4"
+						            VerticalAlignment="Center">
+							<lucide:LucideIcon Kind="Save"
+							                   Size="16"
+							                   StrokeWidth="2.5" />
+							<TextBlock Text="Save"
+							           FontWeight="Bold" />
+						</StackPanel>
+					</Button>
+
+					<StackPanel Orientation="Horizontal"
+					            Spacing="8">
+						<StackPanel Orientation="Horizontal"
+						            Spacing="8"
+						            VerticalAlignment="Center">
+							<lucide:LucideIcon Kind="Globe"
+							                   Size="16"
+							                   StrokeWidth="2.5"
+							                   Foreground="{StaticResource TextMuted}" />
+							<TextBlock Text="{Binding DisplayTitle}"
+							           FontWeight="Bold"
+							           VerticalAlignment="Center"
+							           TextTrimming="CharacterEllipsis" />
+						</StackPanel>
+
+						<Button Classes="add-btn"
+						        Command="{Binding AddRowCommand}">
+							<StackPanel Orientation="Horizontal"
+							            Spacing="4">
+								<lucide:LucideIcon Kind="Plus"
+								                   Size="16"
+								                   StrokeWidth="3" />
+								<TextBlock Text="Add Row"
+								           FontWeight="Bold" />
+							</StackPanel>
+						</Button>
+					</StackPanel>
+				</DockPanel>
+			</Border>
+
+
+			<!-- Table -->
+			<ScrollViewer HorizontalScrollBarVisibility="Disabled"
+			              VerticalScrollBarVisibility="Auto">
+				<Grid>
+					<Grid.ColumnDefinitions>
+						<ColumnDefinition Width="260"
+						                  MinWidth="140" />
+						<ColumnDefinition Width="8" />
+						<ColumnDefinition Width="*"
+						                  MinWidth="160" />
+					</Grid.ColumnDefinitions>
+
+					<Panel>
+						<Border Classes="gutter" />
+						<StackPanel Classes="table-body">
+							<Grid Classes="gutter-row"
+							      ColumnDefinitions="30,*">
+								<TextBlock Grid.Column="1"
+								           Text="Id"
+								           FontWeight="Bold"
+								           Margin="8,0,0,0"
+								           VerticalAlignment="Center" />
+							</Grid>
+							<ItemsControl ItemsSource="{Binding Rows}">
+								<ItemsControl.ItemsPanel>
+									<ItemsPanelTemplate>
+										<StackPanel Spacing="4" />
+									</ItemsPanelTemplate>
+								</ItemsControl.ItemsPanel>
+								<ItemsControl.ItemTemplate>
+									<DataTemplate x:DataType="vm:TableRowVM">
+										<Grid Classes="gutter-row"
+										      ColumnDefinitions="30,*">
+											<Button Classes="icon-btn"
+											        Command="{Binding $parent[ItemsControl].((vm:TableViewModel)DataContext).DeleteRowCommand}"
+											        CommandParameter="{Binding}"
+											        ToolTip.Tip="Delete row">
+												<lucide:LucideIcon Kind="X"
+												                   Size="14"
+												                   StrokeWidth="3"
+												                   Foreground="{StaticResource TextMuted}" />
+											</Button>
+											<elements:StringBox Grid.Column="1"
+											                    Wrap="False"
+											                    Value="{Binding IdCell.Value, Mode=TwoWay}" />
+										</Grid>
+									</DataTemplate>
+								</ItemsControl.ItemTemplate>
+							</ItemsControl>
+						</StackPanel>
+					</Panel>
+
+					<GridSplitter Grid.Column="1"
+					              ResizeDirection="Columns"
+					              Background="Transparent"
+					              Width="4" />
+
+					<!-- Scrollable language columns -->
+					<ScrollViewer Grid.Column="2"
+					              HorizontalScrollBarVisibility="Auto"
+					              VerticalScrollBarVisibility="Disabled">
+						<StackPanel Classes="table-body"
+						            MinWidth="{Binding $parent[ScrollViewer].Viewport.Width}">
+							<ItemsControl ItemsSource="{Binding ValueColumns}">
+								<ItemsControl.ItemsPanel>
+									<ItemsPanelTemplate>
+										<UniformGrid Rows="1" />
+									</ItemsPanelTemplate>
+								</ItemsControl.ItemsPanel>
+								<ItemsControl.ItemTemplate>
+									<DataTemplate x:DataType="vm:TableColumnVM">
+										<Border Classes="head-cell">
+											<TextBlock Text="{Binding Name}"
+											           FontWeight="Bold"
+											           VerticalAlignment="Center"
+											           TextTrimming="CharacterEllipsis" />
+										</Border>
+									</DataTemplate>
+								</ItemsControl.ItemTemplate>
+							</ItemsControl>
+
+							<ItemsControl ItemsSource="{Binding Rows}">
+								<ItemsControl.ItemsPanel>
+									<ItemsPanelTemplate>
+										<StackPanel Spacing="4" />
+									</ItemsPanelTemplate>
+								</ItemsControl.ItemsPanel>
+								<ItemsControl.ItemTemplate>
+									<DataTemplate x:DataType="vm:TableRowVM">
+										<ItemsControl ItemsSource="{Binding ValueCells}">
+											<ItemsControl.ItemsPanel>
+												<ItemsPanelTemplate>
+													<UniformGrid Rows="1" />
+												</ItemsPanelTemplate>
+											</ItemsControl.ItemsPanel>
+											<ItemsControl.ItemTemplate>
+												<DataTemplate x:DataType="vm:TableCellVM">
+													<Panel Classes="cell">
+														<elements:StringBox IsVisible="{Binding !IsAssetReference}"
+														                    Wrap="False"
+														                    Value="{Binding Value, Mode=TwoWay}" />
+														<elements:AssetBox IsVisible="{Binding IsAssetReference}"
+														                   AssetType="ui_image"
+														                   Value="{Binding Value, Mode=TwoWay}" />
+													</Panel>
+												</DataTemplate>
+											</ItemsControl.ItemTemplate>
+										</ItemsControl>
+									</DataTemplate>
+								</ItemsControl.ItemTemplate>
+							</ItemsControl>
+						</StackPanel>
+					</ScrollViewer>
+				</Grid>
+			</ScrollViewer>
+		</DockPanel>
+
+		<!-- Empty state -->
+		<StackPanel Spacing="8"
+		            HorizontalAlignment="Center"
+		            VerticalAlignment="Center"
+		            IsVisible="{Binding !HasContent}">
+			<lucide:LucideIcon Kind="Languages"
+			                   Size="40"
+			                   StrokeWidth="1.5"
+			                   Foreground="{StaticResource TextMuted}"
+			                   HorizontalAlignment="Center" />
+			<TextBlock Text="No table open"
+			           FontWeight="SemiBold"
+			           FontSize="16"
+			           Foreground="{StaticResource TextMuted}"
+			           HorizontalAlignment="Center" />
+			<TextBlock Text="Double-click a .tloc or .tiloc asset in the Asset Browser"
+			           FontStyle="Italic"
+			           Foreground="{StaticResource TextMuted}"
+			           HorizontalAlignment="Center" />
+		</StackPanel>
+	</Panel>
+</UserControl>

@@ -219,12 +219,13 @@ void Logger::log(std::string_view file, unsigned line, char severity, std::strin
 
 #ifdef DEBUG
 	// If in debug we are going to print warnings and errors on console
-	if (severity >= 3) {
-		// FIXME: I GET A CRASH HERE WITH VK VALIDATION LAYERS!?!?!
-		//  std::println("\033[31m[ERROR] {}: {}\033[0m", trimmed_sink, message);
-	} else if (severity == 2) {
-		std::println("\033[33m[WARNING] {}: {}\033[0m", trimmed_sink, message);
-	}
+	// if (severity >= 3) {
+	// 	// FIXME: I GET A CRASH HERE WITH VK VALIDATION LAYERS!?!?!
+	// 	//  std::println("\033[31m[ERROR] {}: {}\033[0m", trimmed_sink, message);
+	// } else if (severity == 2) {
+	// 	// std::println("\033[33m[WARNING] {}: {}\033[0m", trimmed_sink, message);
+	// yeah this crashes with validation layers idk why
+	// }
 #endif
 }
 

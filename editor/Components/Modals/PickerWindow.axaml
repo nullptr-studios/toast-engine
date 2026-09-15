@@ -9,6 +9,7 @@
         CanMaximize="False"
         CanMinimize="False"
         WindowStartupLocation="CenterOwner"
+        KeyboardNavigation.TabNavigation="Cycle"
         Background="{StaticResource Bg2}"
         Padding="8">
 
@@ -28,8 +29,10 @@
 	<DockPanel VerticalSpacing="8">
 		<!-- Search -->
 		<TextBox x:Name="SearchBox"
+		         TabIndex="0"
 		         DockPanel.Dock="Top"
 		         TextChanged="OnSearchChanged"
+		         KeyDown="OnSearchKeyDown"
 		         BorderThickness="0"
 		         Background="{StaticResource Bg1}"
 		         CornerRadius="6"
@@ -47,6 +50,7 @@
 		<!-- Button bar -->
 		<Grid DockPanel.Dock="Bottom">
 			<Button x:Name="ExtraButton"
+			        TabIndex="2"
 			        HorizontalAlignment="Left"
 			        IsVisible="False"
 			        CornerRadius="6"
@@ -66,6 +70,8 @@
 			            Orientation="Horizontal"
 			            Spacing="8">
 				<Button x:Name="AcceptButton"
+				        TabIndex="4"
+				        IsDefault="True"
 				        Click="OnAccept"
 				        CornerRadius="6"
 				        Background="{StaticResource Red}"
@@ -82,7 +88,9 @@
 						           Text="Select" />
 					</StackPanel>
 				</Button>
-				<Button Click="OnCancel"
+				<Button TabIndex="3"
+				        IsCancel="True"
+				        Click="OnCancel"
 				        CornerRadius="6">
 					<StackPanel Orientation="Horizontal"
 					            Spacing="4"
@@ -102,6 +110,8 @@
 		        Padding="8">
 			<ScrollViewer>
 				<TreeView x:Name="ItemsTree"
+				          TabIndex="1"
+				          Focusable="True"
 				          x:DataType="local:PickerViewModel"
 				          ItemsSource="{Binding Items}"
 				          SelectionChanged="OnSelectionChanged">
@@ -119,8 +129,7 @@
 						                  ItemsSource="{Binding FilteredChildren}">
 							<StackPanel Orientation="Horizontal"
 							            Spacing="8"
-							            VerticalAlignment="Center"
-							            DoubleTapped="OnItemDoubleTapped">
+							            VerticalAlignment="Center">
 								<Border Width="16"
 								        Height="16"
 								        Background="{Binding Color, Converter={StaticResource BrushFromKey}}">
@@ -153,8 +162,7 @@
 						                  ItemsSource="{Binding FilteredChildren}">
 							<StackPanel Orientation="Horizontal"
 							            Spacing="8"
-							            VerticalAlignment="Center"
-							            DoubleTapped="OnItemDoubleTapped">
+							            VerticalAlignment="Center">
 								<Border Width="16"
 								        Height="16"
 								        Opacity="{Binding Opacity}"
@@ -184,7 +192,6 @@
 						<TreeDataTemplate DataType="local:AssetPickerItem"
 						                  x:CompileBindings="False">
 							<StackPanel Orientation="Horizontal"
-							            DoubleTapped="OnItemDoubleTapped"
 							            VerticalAlignment="Center"
 							            Spacing="8">
 								<Border Background="{Binding TypeColor}"
@@ -225,8 +232,7 @@
 						                  ItemsSource="{Binding FilteredChildren}">
 							<StackPanel Orientation="Horizontal"
 							            Spacing="6"
-							            VerticalAlignment="Center"
-							            DoubleTapped="OnItemDoubleTapped">
+							            VerticalAlignment="Center">
 								<Panel Width="16"
 								       Height="16">
 									<LucideIcon Kind="FolderOpen"
@@ -248,8 +254,7 @@
 						                  ItemsSource="{Binding FilteredChildren}">
 							<StackPanel Orientation="Horizontal"
 							            Spacing="6"
-							            VerticalAlignment="Center"
-							            DoubleTapped="OnItemDoubleTapped">
+							            VerticalAlignment="Center">
 								<Panel Width="16"
 								       Height="16"
 								       IsVisible="{Binding IsFolder}">

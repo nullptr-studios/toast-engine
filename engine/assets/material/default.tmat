@@ -1,0 +1,19 @@
+# Toast Material
+name = "Default"
+shaders = ["MdYTGGc3iHc"]
+tint = [1.0, 1.0, 1.0, 1.0]
+
+[gAlbedo]
+texture = ""
+repeat_u = "repeat"
+repeat_v = "repeat"
+min_filter = "linear"
+mag_filter = "linear"
+mipmap_mode = "linear"
+anisotropy = true
+
+[settings]
+blend_mode = "opaque"
+depth_test = true
+depth_write = true
+cull_mode = "back"
