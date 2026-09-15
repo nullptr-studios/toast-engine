@@ -4,14 +4,10 @@
 
 namespace toast {
 
-ThreadPool::ThreadPool(size_t size) {
-	// safety check, we don't want more threads than available
-	const size_t max_thread_num = std::thread::hardware_concurrency();
-	if (size == 0) {
-		size = max_thread_num;
-	}
-
-	size_t target_thread_num = std::min(size, max_thread_num);
+ThreadPool::ThreadPool() {
+	// Leave 4 threads for the OS
+	size_t hardware_thread_count = std::max<size_t>(std::thread::hardware_concurrency(), 1);
+	size_t target_thread_num = hardware_thread_count > 4 ? hardware_thread_count - 4 : 1;
 	for (size_t i = 0; i < target_thread_num; ++i) {
 		m.workers.emplace_back(&ThreadPool::threadLoop, this);
 	}
@@ -56,6 +52,10 @@ void ThreadPool::waitIdle() {
 	m.all_done.wait(lock, [this] { return m.jobs.empty() && m.active_jobs == 0; });
 }
 
+auto ThreadPool::workerCount() -> size_t {
+	return instance ? instance->m.workers.size() : 0;
+}
+
 void ThreadPool::threadLoop() {
 	static std::atomic<int> worker_id = 0;
 	thread_local static std::string name = std::format("ThreadPool::worker-{}", worker_id++);
@@ -95,7 +95,7 @@ void ThreadPool::threadLoop() {
 
 auto ThreadPool::create() noexcept -> std::unique_ptr<ThreadPool> {
 	assert(not instance && "ThreadPool already exists");
-	instance = new ThreadPool(thread_count);
+	instance = new ThreadPool;
 	return std::unique_ptr<ThreadPool>(instance);
 }
 

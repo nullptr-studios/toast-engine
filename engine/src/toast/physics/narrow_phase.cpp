@@ -6,26 +6,69 @@
 
 namespace physics {
 
-auto NarrowPhase::generateManifolds(CollisionWorldView world, std::span<const BroadPhasePair> candidates) const
-    -> std::vector<Manifold> {
-	ZoneScoped;
+namespace {
+
+auto pairType(ShapeType a, ShapeType b) -> NarrowPhasePairType {
+	if (b < a) {
+		std::swap(a, b);
+	}
+
+	if (a == ShapeType::sphere && b == ShapeType::sphere) {
+		return NarrowPhasePairType::sphere_sphere;
+	}
+	if (a == ShapeType::sphere && b == ShapeType::box) {
+		return NarrowPhasePairType::sphere_box;
+	}
+	if (a == ShapeType::sphere && b == ShapeType::capsule) {
+		return NarrowPhasePairType::sphere_capsule;
+	}
+	if (a == ShapeType::box && b == ShapeType::box) {
+		return NarrowPhasePairType::box_box;
+	}
+	if (a == ShapeType::box && b == ShapeType::capsule) {
+		return NarrowPhasePairType::box_capsule;
+	}
+	return NarrowPhasePairType::capsule_capsule;
+}
+
+}
+
+auto NarrowPhase::generateManifolds(CollisionWorldView world, std::span<const BroadPhasePair> candidates) const -> ManifoldQueue {
+	ZoneScopedN("physics::RecordManifoldQueue");
 	ZoneValue(static_cast<uint64_t>(candidates.size()));
 
-	std::vector<Manifold> manifolds;
-	manifolds.reserve(candidates.size());
+	ManifoldQueue queue {.candidate_count = candidates.size()};
+	queue.manifolds.reserve(candidates.size());
 
 	for (BroadPhasePair pair : candidates) {
+		const Shape* shape_a = world.shape(pair.a.shape);
+		const Shape* shape_b = world.shape(pair.b.shape);
+		if (shape_a && shape_b) {
+			++queue.pair_candidates[static_cast<size_t>(pairType(shape_a->type, shape_b->type))];
+		}
+
 		auto manifold = collide(world, pair);
-		if (manifold.has_value() && validate(world, *manifold)) {
-			manifolds.emplace_back(*manifold);
+		if (not manifold.has_value()) {
+			continue;
+		}
+
+		++queue.collision_count;
+		if (validate(world, *manifold)) {
+			queue.contact_count += manifold->contact_count;
+			queue.manifolds.emplace_back(*manifold);
+		} else {
+			++queue.rejected_manifold_count;
 		}
 	}
 
-	std::ranges::sort(manifolds, [](const Manifold& lhs, const Manifold& rhs) { return lhs.pair < rhs.pair; });
-	return manifolds;
+	std::ranges::sort(queue.manifolds, [](const Manifold& lhs, const Manifold& rhs) { return lhs < rhs; });
+	return queue;
 }
 
 auto NarrowPhase::validate(CollisionWorldView world, Manifold& manifold) const -> bool {
+	ZoneScopedN("physics::ValidateManifold");
+	ZoneValue((static_cast<uint64_t>(manifold.pair.a.shape.slot) << 32) | static_cast<uint64_t>(manifold.pair.b.shape.slot));
+
 	const Body* body_a = world.body(manifold.pair.a.body);
 	const Body* body_b = world.body(manifold.pair.b.body);
 	const Shape* shape_a = world.shape(manifold.pair.a.shape);
@@ -68,7 +111,7 @@ void NarrowPhase::flip(Manifold& manifold) {
 }
 
 auto NarrowPhase::collide(CollisionWorldView world, BroadPhasePair pair) const -> std::optional<Manifold> {
-	ZoneScoped;
+	ZoneScopedN("physics::DispatchCollisionPair");
 	ZoneValue((static_cast<uint64_t>(pair.a.shape.slot) << 32) | static_cast<uint64_t>(pair.b.shape.slot));
 
 	const Shape* shape_a = world.shape(pair.a.shape);

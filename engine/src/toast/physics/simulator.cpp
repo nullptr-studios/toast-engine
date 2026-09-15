@@ -8,6 +8,7 @@
 #include "nodes/dynamic_rigidbody.hpp"
 #include "nodes/rigidbody.hpp"
 #include "nodes/sphere_collider.hpp"
+#include "toast/thread_pool.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -33,6 +34,8 @@ Simulator::~Simulator() {
 }
 
 void Simulator::registerRigidbody(Rigidbody& node) {
+	ZoneScopedN("physics::RegisterRigidbody");
+
 	TOAST_ASSERT(instance, "Physics", "Simulator instance is null; cannot register rigidbody");
 	if (instance->valid(node.m_body)) {
 		return;
@@ -105,6 +108,8 @@ void Simulator::registerRigidbody(Rigidbody& node) {
 }
 
 void Simulator::unregisterRigidbody(Rigidbody& node) {
+	ZoneScopedN("physics::UnregisterRigidbody");
+
 	if (!instance) {
 		return;
 	}
@@ -138,7 +143,8 @@ auto Simulator::rigidbodyFor(BodyID body) -> toast::Box<Rigidbody> {
 }
 
 void Simulator::tick() {
-	ZoneScoped;
+	ZoneScopedN("physics::Step");
+	m_profile = {};
 
 	const float dt = static_cast<float>(Accumulator::fixed_delta);
 	syncEnabledState();
@@ -146,22 +152,234 @@ void Simulator::tick() {
 
 	const CollisionWorldView world {.bodies = m_bodies, .shapes = m_shapes};
 	const auto candidates = m_broad_phase.findPairs(world);
-	m_manifolds = m_narrow_phase.generateManifolds(world, candidates);
+	m_manifolds = generateManifoldsAsync(world, candidates);
 	updateCache(m_manifolds);
 	wakeContactGroups();
 
 	// resolve
 	auto constraints = prepareConstraints(m_manifolds);
-	solveConstraints(constraints);
-	correctPositions(m_manifolds);
+	auto islands = buildIslands(m_manifolds, std::move(constraints));
+	solveIslands(islands);
 	updateSleeping(dt);
+	publishProfile(islands);
 
 	// push poses after simulation settles
 	publishTransforms();
+	FrameMarkNamed("PhysicsStep");
+}
+
+void Simulator::publishProfile(std::span<const SimulationIsland> islands) const {
+	ZoneScopedN("physics::PublishProfile");
+
+#ifdef TRACY_ENABLE
+	if (not TracyIsConnected) {
+		return;
+	}
+
+	const auto plot = [](const char* name, size_t value) { TracyPlot(name, static_cast<int64_t>(value)); };
+
+	size_t occupied_bodies = 0;
+	size_t enabled_bodies = 0;
+	size_t static_bodies = 0;
+	size_t dynamic_bodies = 0;
+	size_t kinematic_bodies = 0;
+	size_t awake_dynamic_bodies = 0;
+	size_t sleeping_dynamic_bodies = 0;
+	for (const BodySlot& slot : m_bodies) {
+		if (not slot.occupied) {
+			continue;
+		}
+
+		++occupied_bodies;
+		enabled_bodies += slot.body.enabled;
+		switch (slot.body.type) {
+			case BodyType::static_body: ++static_bodies; break;
+			case BodyType::dynamic_body:
+				++dynamic_bodies;
+				if (slot.body.awake) {
+					++awake_dynamic_bodies;
+				} else {
+					++sleeping_dynamic_bodies;
+				}
+				break;
+			case BodyType::kinematic_body: ++kinematic_bodies; break;
+		}
+	}
+
+	size_t occupied_shapes = 0;
+	size_t enabled_shapes = 0;
+	size_t sphere_shapes = 0;
+	size_t box_shapes = 0;
+	size_t capsule_shapes = 0;
+	for (const ShapeSlot& slot : m_shapes) {
+		if (not slot.occupied) {
+			continue;
+		}
+
+		++occupied_shapes;
+		enabled_shapes += slot.shape.enabled;
+		switch (slot.shape.type) {
+			case ShapeType::sphere: ++sphere_shapes; break;
+			case ShapeType::box: ++box_shapes; break;
+			case ShapeType::capsule: ++capsule_shapes; break;
+		}
+	}
+
+	size_t cached_contacts = 0;
+	for (const CachedManifold& manifold : m_cached_manifolds) {
+		cached_contacts += std::min<size_t>(manifold.contact_count, manifold.contacts.size());
+	}
+
+	size_t island_bodies = 0;
+	size_t island_constraints = 0;
+	size_t island_manifolds = 0;
+	size_t largest_island_bodies = 0;
+	size_t largest_island_constraints = 0;
+	size_t largest_island_manifolds = 0;
+	size_t single_body_islands = 0;
+	for (const SimulationIsland& island : islands) {
+		island_bodies += island.dynamic_bodies.size();
+		island_constraints += island.constraints.size();
+		island_manifolds += island.manifold_indices.size();
+		largest_island_bodies = std::max(largest_island_bodies, island.dynamic_bodies.size());
+		largest_island_constraints = std::max(largest_island_constraints, island.constraints.size());
+		largest_island_manifolds = std::max(largest_island_manifolds, island.manifold_indices.size());
+		single_body_islands += island.dynamic_bodies.size() == 1;
+	}
+
+	const BroadPhaseStats& broad_phase = m_broad_phase.stats();
+
+	plot("Physics/Bodies/Slots", m_bodies.size());
+	plot("Physics/Bodies/Occupied", occupied_bodies);
+	plot("Physics/Bodies/Free slots", m_free_body_slots.size());
+	plot("Physics/Bodies/Enabled", enabled_bodies);
+	plot("Physics/Bodies/Static", static_bodies);
+	plot("Physics/Bodies/Dynamic", dynamic_bodies);
+	plot("Physics/Bodies/Kinematic", kinematic_bodies);
+	plot("Physics/Bodies/Awake dynamic", awake_dynamic_bodies);
+	plot("Physics/Bodies/Sleeping dynamic", sleeping_dynamic_bodies);
+	plot("Physics/Bodies/Woken this step", m_profile.bodies_woken);
+	plot("Physics/Bodies/Slept this step", m_profile.bodies_slept);
+	plot("Physics/Bodies/Node bindings", m_node_bindings.size());
+	TracyPlot(
+	    "Physics/Bodies/Sleeping ratio",
+	    dynamic_bodies == 0 ? 0.0 : static_cast<double>(sleeping_dynamic_bodies) / static_cast<double>(dynamic_bodies)
+	);
+
+	plot("Physics/Shapes/Slots", m_shapes.size());
+	plot("Physics/Shapes/Occupied", occupied_shapes);
+	plot("Physics/Shapes/Free slots", m_free_shape_slots.size());
+	plot("Physics/Shapes/Enabled", enabled_shapes);
+	plot("Physics/Shapes/Spheres", sphere_shapes);
+	plot("Physics/Shapes/Boxes", box_shapes);
+	plot("Physics/Shapes/Capsules", capsule_shapes);
+
+	plot("Physics/Broad phase/Input shapes", broad_phase.input_shapes);
+	plot("Physics/Broad phase/Active shapes", broad_phase.active_shapes);
+	plot("Physics/Broad phase/Bounds jobs", broad_phase.bounds_jobs);
+	plot("Physics/Broad phase/Tree nodes", broad_phase.tree_nodes);
+	plot("Physics/Broad phase/Leaf insertions", broad_phase.inserted_leaves);
+	plot("Physics/Broad phase/Leaf reinsertions", broad_phase.reinserted_leaves);
+	plot("Physics/Broad phase/Leaf removals", broad_phase.removed_leaves);
+	plot("Physics/Broad phase/Queries", broad_phase.queries);
+	plot("Physics/Broad phase/Raw query hits", broad_phase.query_hits);
+	plot("Physics/Broad phase/Pair records", broad_phase.pair_records);
+	plot("Physics/Broad phase/Candidate pairs", broad_phase.candidate_pairs);
+	plot("Physics/Broad phase/Duplicate pairs", broad_phase.duplicate_pairs);
+	plot("Physics/Broad phase/Rejected invalid shapes", broad_phase.rejected_invalid_shapes);
+	plot("Physics/Broad phase/Rejected disabled shapes", broad_phase.rejected_disabled_shapes);
+	plot("Physics/Broad phase/Rejected same body", broad_phase.rejected_same_body);
+	plot("Physics/Broad phase/Rejected invalid bodies", broad_phase.rejected_invalid_bodies);
+	plot("Physics/Broad phase/Rejected immovable bodies", broad_phase.rejected_immovable_bodies);
+	TracyPlot(
+	    "Physics/Broad phase/Mean hits per query",
+	    broad_phase.queries == 0 ? 0.0 : static_cast<double>(broad_phase.query_hits) / static_cast<double>(broad_phase.queries)
+	);
+
+	plot("Physics/Narrow phase/Jobs", m_profile.narrow_jobs);
+	plot("Physics/Narrow phase/Candidates", m_profile.narrow_candidates);
+	plot("Physics/Narrow phase/Collisions", m_profile.narrow_collisions);
+	plot("Physics/Narrow phase/Rejected manifolds", m_profile.rejected_manifolds);
+	plot("Physics/Narrow phase/Manifolds", m_manifolds.size());
+	plot("Physics/Narrow phase/Contact points", m_profile.contact_points);
+	TracyPlot(
+	    "Physics/Narrow phase/Collision ratio",
+	    m_profile.narrow_candidates == 0
+	        ? 0.0
+	        : static_cast<double>(m_profile.narrow_collisions) / static_cast<double>(m_profile.narrow_candidates)
+	);
+	plot(
+	    "Physics/Narrow phase/Sphere-sphere candidates",
+	    m_profile.narrow_pair_candidates[static_cast<size_t>(NarrowPhasePairType::sphere_sphere)]
+	);
+	plot(
+	    "Physics/Narrow phase/Sphere-box candidates",
+	    m_profile.narrow_pair_candidates[static_cast<size_t>(NarrowPhasePairType::sphere_box)]
+	);
+	plot(
+	    "Physics/Narrow phase/Sphere-capsule candidates",
+	    m_profile.narrow_pair_candidates[static_cast<size_t>(NarrowPhasePairType::sphere_capsule)]
+	);
+	plot(
+	    "Physics/Narrow phase/Box-box candidates",
+	    m_profile.narrow_pair_candidates[static_cast<size_t>(NarrowPhasePairType::box_box)]
+	);
+	plot(
+	    "Physics/Narrow phase/Box-capsule candidates",
+	    m_profile.narrow_pair_candidates[static_cast<size_t>(NarrowPhasePairType::box_capsule)]
+	);
+	plot(
+	    "Physics/Narrow phase/Capsule-capsule candidates",
+	    m_profile.narrow_pair_candidates[static_cast<size_t>(NarrowPhasePairType::capsule_capsule)]
+	);
+
+	plot("Physics/Contact cache/Manifolds", m_cached_manifolds.size());
+	plot("Physics/Contact cache/Contacts", cached_contacts);
+	plot("Physics/Contact events/Begin", m_profile.contact_begins);
+	plot("Physics/Contact events/Persist", m_profile.contact_persists);
+	plot("Physics/Contact events/End", m_profile.contact_ends);
+	plot("Physics/Contact cache/Reused contacts", m_profile.reused_cached_contacts);
+	plot("Physics/Contact cache/Cold contacts", m_profile.cold_cached_contacts);
+	const size_t classified_cached_contacts = m_profile.reused_cached_contacts + m_profile.cold_cached_contacts;
+	TracyPlot(
+	    "Physics/Contact cache/Reuse ratio",
+	    classified_cached_contacts == 0
+	        ? 0.0
+	        : static_cast<double>(m_profile.reused_cached_contacts) / static_cast<double>(classified_cached_contacts)
+	);
+
+	plot("Physics/Solver/Constraints", m_profile.constraints);
+	plot("Physics/Solver/Rejected constraints", m_profile.rejected_constraints);
+	plot("Physics/Solver/Warm-started constraints", m_profile.warm_started_constraints);
+	plot("Physics/Solver/Invalid constraints", m_profile.invalid_constraints);
+	plot("Physics/Solver/Position corrections", m_profile.position_corrections);
+	plot("Physics/Solver/Islands", islands.size());
+	plot("Physics/Solver/Island jobs", m_profile.island_jobs);
+	plot("Physics/Solver/Island bodies", island_bodies);
+	plot("Physics/Solver/Island manifolds", island_manifolds);
+	plot("Physics/Solver/Island constraints", island_constraints);
+	plot("Physics/Solver/Single-body islands", single_body_islands);
+	plot("Physics/Solver/Largest island bodies", largest_island_bodies);
+	plot("Physics/Solver/Largest island manifolds", largest_island_manifolds);
+	plot("Physics/Solver/Largest island constraints", largest_island_constraints);
+	TracyPlot(
+	    "Physics/Solver/Mean constraints per island",
+	    islands.empty() ? 0.0 : static_cast<double>(island_constraints) / static_cast<double>(islands.size())
+	);
+	TracyPlot(
+	    "Physics/Solver/Warm-start ratio",
+	    m_profile.constraints == 0
+	        ? 0.0
+	        : static_cast<double>(m_profile.warm_started_constraints) / static_cast<double>(m_profile.constraints)
+	);
+	plot("Physics/Thread pool/Workers", toast::ThreadPool::workerCount());
+#else
+	(void)islands;
+#endif
 }
 
 void Simulator::syncEnabledState() {
-	ZoneScoped;
+	ZoneScopedN("physics::SyncEnabledState");
 
 	for (NodeBinding& binding : m_node_bindings) {
 		Body* body = tryGetBody(binding.body);
@@ -197,6 +415,7 @@ void Simulator::wakeBody(BodyID id) {
 		return;
 	}
 	if (Body* body = instance->tryGetBody(id); body && body->type == BodyType::dynamic_body) {
+		instance->m_profile.bodies_woken += not body->awake;
 		body->awake = true;
 		body->sleep_timer = 0.0f;
 	}
@@ -207,6 +426,7 @@ void Simulator::sleepBody(BodyID id) {
 		return;
 	}
 	if (Body* body = instance->tryGetBody(id); body && body->type == BodyType::dynamic_body) {
+		instance->m_profile.bodies_slept += body->awake;
 		body->awake = false;
 		body->sleep_timer = sleep_delay;
 		body->linear_velocity = {};
@@ -227,6 +447,8 @@ void Simulator::wakeBodiesTouching(BodyID id) {
 }
 
 void Simulator::wakeContactGroups() {
+	ZoneScopedN("physics::WakeContactGroups");
+
 	bool woke_body = true;
 	while (woke_body) {
 		woke_body = false;
@@ -252,6 +474,9 @@ void Simulator::wakeContactGroups() {
 }
 
 void Simulator::setBodyEnabled(BodyID body, bool enabled) {
+	ZoneScopedN("physics::SetBodyEnabled");
+	ZoneValue(static_cast<uint64_t>(body.slot));
+
 	if (not instance) {
 		return;
 	}
@@ -264,6 +489,9 @@ void Simulator::setBodyEnabled(BodyID body, bool enabled) {
 }
 
 void Simulator::setShapeEnabled(ShapeID shape, bool enabled) {
+	ZoneScopedN("physics::SetShapeEnabled");
+	ZoneValue(static_cast<uint64_t>(shape.slot));
+
 	if (not instance) {
 		return;
 	}
@@ -279,7 +507,7 @@ void Simulator::setShapeEnabled(ShapeID shape, bool enabled) {
 }
 
 void Simulator::publishTransforms() {
-	ZoneScoped;
+	ZoneScopedN("physics::PublishTransforms");
 	ZoneValue(static_cast<uint64_t>(m_node_bindings.size()));
 
 	for (auto binding = m_node_bindings.begin(); binding != m_node_bindings.end();) {
@@ -316,6 +544,8 @@ auto Simulator::velocityAtPoint(const Body& body, const glm::vec3& r) -> glm::ve
 auto Simulator::effectiveMassAlong(
     const Body& body_a, const Body& body_b, const glm::vec3& r_a, const glm::vec3& r_b, const glm::vec3& direction
 ) -> std::optional<float> {
+	ZoneScopedN("physics::EffectiveMass");
+
 	glm::vec3 angular_a = body_a.inverse_inertia_world * glm::cross(r_a, direction);
 	glm::vec3 angular_b = body_b.inverse_inertia_world * glm::cross(r_b, direction);
 	float denominator =
@@ -329,13 +559,21 @@ auto Simulator::effectiveMassAlong(
 }
 
 void Simulator::applyImpulse(Body& body_a, Body& body_b, const glm::vec3& r_a, const glm::vec3& r_b, const glm::vec3& impulse) {
-	body_a.linear_velocity -= impulse * body_a.inverse_mass;
-	body_a.angular_velocity -= body_a.inverse_inertia_world * glm::cross(r_a, impulse);
-	body_b.linear_velocity += impulse * body_b.inverse_mass;
-	body_b.angular_velocity += body_b.inverse_inertia_world * glm::cross(r_b, impulse);
+	ZoneScopedN("physics::ApplyImpulse");
+
+	if (body_a.inverse_mass > 0.0f) {
+		body_a.linear_velocity -= impulse * body_a.inverse_mass;
+		body_a.angular_velocity -= body_a.inverse_inertia_world * glm::cross(r_a, impulse);
+	}
+	if (body_b.inverse_mass > 0.0f) {
+		body_b.linear_velocity += impulse * body_b.inverse_mass;
+		body_b.angular_velocity += body_b.inverse_inertia_world * glm::cross(r_b, impulse);
+	}
 }
 
 auto Simulator::solveNormal(Constraint& constraint, Body& body_a, Body& body_b) -> bool {
+	ZoneScopedN("physics::SolveNormal");
+
 	glm::vec3 relative_velocity = velocityAtPoint(body_b, constraint.r_b) - velocityAtPoint(body_a, constraint.r_a);
 	float normal_speed = glm::dot(relative_velocity, constraint.normal);
 	if (not std::isfinite(normal_speed)) {
@@ -352,6 +590,8 @@ auto Simulator::solveNormal(Constraint& constraint, Body& body_a, Body& body_b) 
 }
 
 auto Simulator::solveFriction(Constraint& constraint, Body& body_a, Body& body_b) -> bool {
+	ZoneScopedN("physics::SolveFriction");
+
 	if (constraint.tangent_mass <= 0.0f) {
 		return true;
 	}
@@ -385,12 +625,17 @@ auto Simulator::solveFriction(Constraint& constraint, Body& body_a, Body& body_b
 	return true;
 }
 
-void Simulator::correctPositions(const std::vector<Manifold>& manifolds) {
+auto Simulator::correctPositions(std::span<const size_t> manifold_indices) -> size_t {
+	ZoneScopedN("physics::CorrectPositions");
+	ZoneValue(static_cast<uint64_t>(manifold_indices.size()));
+	size_t correction_count = 0;
+
 	constexpr float penetration_slop = 0.005f;
 	constexpr float correction_beta = 0.2f;
 	constexpr float max_correction = 0.05f;
 
-	for (const Manifold& manifold : manifolds) {
+	for (const size_t manifold_index : manifold_indices) {
+		const Manifold& manifold = m_manifolds[manifold_index];
 		if (not shouldSolve(manifold)) {
 			continue;
 		}
@@ -426,9 +671,16 @@ void Simulator::correctPositions(const std::vector<Manifold>& manifolds) {
 		float correction_distance = std::min(correction_beta * excess_penetration, max_correction);
 		glm::vec3 correction = manifold.normal * (correction_distance / inv_mass);
 
-		body_a->position -= correction * body_a->inverse_mass;
-		body_b->position += correction * body_b->inverse_mass;
+		if (body_a->inverse_mass > 0.0f) {
+			body_a->position -= correction * body_a->inverse_mass;
+		}
+		if (body_b->inverse_mass > 0.0f) {
+			body_b->position += correction * body_b->inverse_mass;
+		}
+		++correction_count;
 	}
+
+	return correction_count;
 }
 
 auto Simulator::shouldSolve(const Manifold& manifold) const -> bool {
@@ -443,8 +695,61 @@ auto Simulator::shouldSolve(const Manifold& manifold) const -> bool {
 	return a_is_active || b_is_active;
 }
 
+auto Simulator::generateManifoldsAsync(CollisionWorldView world, std::span<const BroadPhasePair> candidates)
+    -> std::vector<Manifold> {
+	ZoneScopedN("physics::NarrowPhase");
+
+	constexpr size_t minimum_candidates_per_job = 4;
+	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), 1ull);
+	const size_t maximum_job_count = worker_count * 3;
+	const size_t job_count =
+	    candidates.empty() ? 0 : std::min(maximum_job_count, std::max(candidates.size() / minimum_candidates_per_job, size_t {1}));
+
+	std::vector<std::future<ManifoldQueue>> futures;
+	futures.reserve(job_count);
+
+	for (size_t job_index = 0; job_index < job_count; ++job_index) {
+		const size_t begin = job_index * candidates.size() / job_count;
+		const size_t end = (job_index + 1) * candidates.size() / job_count;
+		auto batch = candidates.subspan(begin, end - begin);
+
+		futures.emplace_back(toast::ThreadPool::push([this, world, batch] {
+			ZoneScopedN("physics::NarrowPhaseBatch");
+			ZoneValue(static_cast<uint64_t>(batch.size()));
+			return m_narrow_phase.generateManifolds(world, batch);
+		}));
+	}
+	m_profile.narrow_jobs = futures.size();
+	m_profile.narrow_candidates = candidates.size();
+
+	std::vector<Manifold> merged;
+	merged.reserve(candidates.size());
+
+	{
+		ZoneScopedNC("physics::NarrowPhaseAwait", 0x202020);
+		for (auto& future : futures) {
+			ManifoldQueue queue = future.get();
+			m_profile.narrow_collisions += queue.collision_count;
+			m_profile.rejected_manifolds += queue.rejected_manifold_count;
+			m_profile.contact_points += queue.contact_count;
+			for (size_t type = 0; type < queue.pair_candidates.size(); ++type) {
+				m_profile.narrow_pair_candidates[type] += queue.pair_candidates[type];
+			}
+			merged.insert_range(merged.end(), std::move(queue.manifolds));
+		}
+	}
+
+	{
+		ZoneScopedN("physics::SortManifolds");
+		ZoneValue(static_cast<uint64_t>(merged.size()));
+		std::ranges::sort(merged, [](const Manifold& lhs, const Manifold& rhs) { return lhs < rhs; });
+	}
+
+	return merged;
+}
+
 void Simulator::updateSleeping(float dt) {
-	ZoneScoped;
+	ZoneScopedN("physics::UpdateSleeping");
 	if (not std::isfinite(dt) || dt <= 0.0f) {
 		return;
 	}
@@ -529,7 +834,8 @@ void Simulator::updateSleeping(float dt) {
 }
 
 void Simulator::updateCache(std::span<const Manifold> manifolds) {
-	ZoneScoped;
+	ZoneScopedN("physics::UpdateContactCache");
+	ZoneValue(static_cast<uint64_t>(manifolds.size()));
 
 	std::vector<CachedManifold> next_cache;
 	next_cache.reserve(manifolds.size());
@@ -544,13 +850,16 @@ void Simulator::updateCache(std::span<const Manifold> manifolds) {
 		                             old_manifold->shape_b_revision == revision_b;
 
 		if (revisions_match) {
+			++m_profile.contact_persists;
 			event::send<event::ContactPersist>(manifold);
 		} else {
 			wakeBody(manifold.pair.a.body);
 			wakeBody(manifold.pair.b.body);
 			if (old_manifold != m_cached_manifolds.end()) {
+				++m_profile.contact_ends;
 				event::send<event::ContactEnd>(old_manifold->pair);
 			}
+			++m_profile.contact_begins;
 			event::send<event::ContactBegin>(manifold);
 		}
 
@@ -568,6 +877,7 @@ void Simulator::updateCache(std::span<const Manifold> manifolds) {
 			next_contact.feature_b = current_contact.feature_b;
 
 			if (not revisions_match) {
+				++m_profile.cold_cached_contacts;
 				continue;
 			}
 
@@ -577,8 +887,11 @@ void Simulator::updateCache(std::span<const Manifold> manifolds) {
 				    return cached.feature_a == current_contact.feature_a && cached.feature_b == current_contact.feature_b;
 			    });
 			if (old_contact != old_contact_end) {
+				++m_profile.reused_cached_contacts;
 				next_contact.normal_impulse = old_contact->normal_impulse;
 				next_contact.tangent_impulse = old_contact->tangent_impulse;
+			} else {
+				++m_profile.cold_cached_contacts;
 			}
 		}
 
@@ -591,6 +904,7 @@ void Simulator::updateCache(std::span<const Manifold> manifolds) {
 		if (not still_colliding) {
 			wakeBody(cached.pair.a.body);
 			wakeBody(cached.pair.b.body);
+			++m_profile.contact_ends;
 			event::send<event::ContactEnd>(cached.pair);
 		}
 	}
@@ -600,7 +914,7 @@ void Simulator::updateCache(std::span<const Manifold> manifolds) {
 }
 
 void Simulator::integrate(float dt) {
-	ZoneScoped;
+	ZoneScopedN("physics::IntegrateBodies");
 	ZoneValue(static_cast<uint64_t>(m_bodies.size()));
 
 	if (not std::isfinite(dt) or dt <= 0.0f) {
@@ -618,7 +932,7 @@ void Simulator::integrate(float dt) {
 }
 
 void Simulator::integrateBody(BodyID id, Body& body, const glm::vec3& gravity, float dt) {
-	ZoneScoped;
+	ZoneScopedN("physics::IntegrateBody");
 	ZoneValue(static_cast<uint64_t>(id.slot));
 	if (not body.enabled) {
 		return;
@@ -664,6 +978,8 @@ void Simulator::callTick() {
 }
 
 auto Simulator::createBody(const BodyDescriptor& descriptor) -> BodyID {
+	ZoneScopedN("physics::CreateBody");
+
 	if (descriptor.type == BodyType::dynamic_body && (not std::isfinite(descriptor.mass) or descriptor.mass <= 0.0f)) {
 		TOAST_WARN("Physics", "Rejected dynamic body with non-finite or non-positive mass");
 		return {};
@@ -715,6 +1031,9 @@ auto Simulator::createBody(const BodyDescriptor& descriptor) -> BodyID {
 }
 
 void Simulator::destroyBody(BodyID body) {
+	ZoneScopedN("physics::DestroyBody");
+	ZoneValue(static_cast<uint64_t>(body.slot));
+
 	if (not valid(body)) {
 		return;
 	}
@@ -737,6 +1056,9 @@ void Simulator::destroyBody(BodyID body) {
 }
 
 auto Simulator::createSphere(BodyID owner, const SphereShape& sphere, PhysicsMaterial material) -> ShapeID {
+	ZoneScopedN("physics::CreateSphere");
+	ZoneValue(static_cast<uint64_t>(owner.slot));
+
 	if (not valid(owner)) {
 		TOAST_WARN("Physics", "Rejected sphere registration for an invalid body");
 		return {};
@@ -771,6 +1093,9 @@ auto Simulator::createSphere(BodyID owner, const SphereShape& sphere, PhysicsMat
 }
 
 auto Simulator::createBox(BodyID owner, const BoxShape& box, PhysicsMaterial material) -> ShapeID {
+	ZoneScopedN("physics::CreateBox");
+	ZoneValue(static_cast<uint64_t>(owner.slot));
+
 	if (not valid(owner)) {
 		TOAST_WARN("Physics", "Rejected box registration for an invalid body");
 		return {};
@@ -813,6 +1138,9 @@ auto Simulator::createBox(BodyID owner, const BoxShape& box, PhysicsMaterial mat
 }
 
 auto Simulator::createCapsule(BodyID owner, const CapsuleShape& capsule, PhysicsMaterial material) -> ShapeID {
+	ZoneScopedN("physics::CreateCapsule");
+	ZoneValue(static_cast<uint64_t>(owner.slot));
+
 	if (not valid(owner)) {
 		TOAST_WARN("Physics", "Rejected capsule registration for an invalid body");
 		return {};
@@ -855,6 +1183,9 @@ auto Simulator::createCapsule(BodyID owner, const CapsuleShape& capsule, Physics
 }
 
 void Simulator::destroyShape(ShapeID shape) {
+	ZoneScopedN("physics::DestroyShape");
+	ZoneValue(static_cast<uint64_t>(shape.slot));
+
 	if (not valid(shape)) {
 		return;
 	}
@@ -901,6 +1232,9 @@ auto Simulator::tryGetShape(ShapeID shape) const -> const Shape* {
 }
 
 void Simulator::rebuildMassProperties(BodyID id) {
+	ZoneScopedN("physics::RebuildMassProperties");
+	ZoneValue(static_cast<uint64_t>(id.slot));
+
 	auto* body = tryGetBody(id);
 	if (not body) {
 		TOAST_WARN("Physics", "rebuildMassProperties() was aborted: invalid body");
@@ -1055,6 +1389,9 @@ auto Simulator::state(BodyID body) const -> std::optional<BodyState> {
 }
 
 auto Simulator::setTransform(BodyID body, const glm::vec3& position, const glm::quat& rotation) -> bool {
+	ZoneScopedN("physics::SetTransform");
+	ZoneValue(static_cast<uint64_t>(body.slot));
+
 	Body* value = tryGetBody(body);
 	const float rotation_length_squared = glm::dot(rotation, rotation);
 	if (not value or not std::isfinite(rotation_length_squared) or rotation_length_squared <= 0.0f) {
@@ -1072,6 +1409,9 @@ auto Simulator::setTransform(BodyID body, const glm::vec3& position, const glm::
 }
 
 auto Simulator::setLinearVelocity(BodyID body, const glm::vec3& velocity) -> bool {
+	ZoneScopedN("physics::SetLinearVelocity");
+	ZoneValue(static_cast<uint64_t>(body.slot));
+
 	Body* value = tryGetBody(body);
 	if (not value) {
 		return false;
@@ -1093,6 +1433,8 @@ auto Simulator::tryGetBody(BodyID body) const -> const Body* {
 
 auto Simulator::findCachedContact(const BroadPhasePair& pair, ContactFeatureID feature_a, ContactFeatureID feature_b)
     -> CachedContact* {
+	ZoneScopedN("physics::FindCachedContact");
+
 	const auto manifold =
 	    std::ranges::find_if(m_cached_manifolds, [&pair](const CachedManifold& cached) { return cached.pair == pair; });
 	if (manifold == m_cached_manifolds.end()) {
@@ -1112,6 +1454,8 @@ auto Simulator::findCachedContact(const BroadPhasePair& pair, ContactFeatureID f
 
 auto Simulator::findCachedContact(const BroadPhasePair& pair, ContactFeatureID feature_a, ContactFeatureID feature_b) const
     -> const CachedContact* {
+	ZoneScopedN("physics::FindCachedContact");
+
 	const auto manifold =
 	    std::ranges::find_if(m_cached_manifolds, [&pair](const CachedManifold& cached) { return cached.pair == pair; });
 	if (manifold == m_cached_manifolds.end()) {
@@ -1129,8 +1473,8 @@ auto Simulator::findCachedContact(const BroadPhasePair& pair, ContactFeatureID f
 	return contact != manifold->contacts.begin() + contact_count ? &*contact : nullptr;
 }
 
-auto Simulator::prepareConstraints(const std::vector<Manifold>& manifolds) const -> std::vector<Constraint> {
-	ZoneScoped;
+auto Simulator::prepareConstraints(const std::vector<Manifold>& manifolds) -> std::vector<Constraint> {
+	ZoneScopedN("physics::PrepareConstraints");
 	std::vector<Constraint> constraints;
 	size_t contact_count = 0;
 	for (const Manifold& manifold : manifolds) {
@@ -1158,13 +1502,146 @@ auto Simulator::prepareConstraints(const std::vector<Manifold>& manifolds) const
 	if (rejected_contact_count > 0) {
 		TOAST_WARN("Physics", "Rejected {} invalid contact(s) while preparing constraints", rejected_contact_count);
 	}
+	m_profile.constraints = constraints.size();
+	m_profile.rejected_constraints = rejected_contact_count;
+	m_profile.warm_started_constraints = std::ranges::count_if(constraints, [](const Constraint& constraint) {
+		return constraint.accumulated_normal_impulse > 0.0f || constraint.accumulated_tangent_impulse != 0.0f;
+	});
 
 	ZoneValue(static_cast<uint64_t>(constraints.size()));
 	return constraints;
 }
 
+auto Simulator::buildIslands(std::span<const Manifold> manifolds, std::vector<Constraint> constraints) const
+    -> std::vector<SimulationIsland> {
+	ZoneScopedN("physics::BuildIslands");
+
+	std::vector<size_t> parents(m_bodies.size());
+	std::vector<bool> participates(m_bodies.size(), false);
+	for (size_t index = 0; index < parents.size(); ++index) {
+		parents[index] = index;
+	}
+
+	auto findRoot = [&parents](size_t index) {
+		while (parents[index] != index) {
+			parents[index] = parents[parents[index]];
+			index = parents[index];
+		}
+		return index;
+	};
+
+	const auto is_active_dynamic = [](const Body* body) {
+		return body && body->type == BodyType::dynamic_body && body->enabled && body->awake;
+	};
+
+	for (const Manifold& manifold : manifolds) {
+		if (not shouldSolve(manifold)) {
+			continue;
+		}
+
+		const Body* body_a = tryGetBody(manifold.pair.a.body);
+		const Body* body_b = tryGetBody(manifold.pair.b.body);
+		const bool a_is_dynamic = is_active_dynamic(body_a);
+		const bool b_is_dynamic = is_active_dynamic(body_b);
+
+		if (a_is_dynamic) {
+			participates[manifold.pair.a.body.slot] = true;
+		}
+		if (b_is_dynamic) {
+			participates[manifold.pair.b.body.slot] = true;
+		}
+
+		if (a_is_dynamic && b_is_dynamic) {
+			const size_t root_a = findRoot(manifold.pair.a.body.slot);
+			const size_t root_b = findRoot(manifold.pair.b.body.slot);
+			if (root_a < root_b) {
+				parents[root_b] = root_a;
+			} else if (root_b < root_a) {
+				parents[root_a] = root_b;
+			}
+		}
+	}
+
+	const size_t no_island = m_bodies.size();
+	std::vector<size_t> island_by_root(m_bodies.size(), no_island);
+	std::vector<SimulationIsland> islands;
+
+	for (size_t body_index = 0; body_index < m_bodies.size(); ++body_index) {
+		if (not participates[body_index]) {
+			continue;
+		}
+
+		const size_t root = findRoot(body_index);
+		if (island_by_root[root] == no_island) {
+			const BodySlot& root_slot = m_bodies[root];
+			island_by_root[root] = islands.size();
+			islands.emplace_back(
+			    SimulationIsland {
+			      .sort_key = BodyID {.slot = static_cast<uint32_t>(root), .generation = root_slot.generation},
+      }
+			);
+		}
+
+		const BodySlot& slot = m_bodies[body_index];
+		islands[island_by_root[root]].dynamic_bodies.emplace_back(
+		    BodyID {.slot = static_cast<uint32_t>(body_index), .generation = slot.generation}
+		);
+	}
+
+	const auto islandForPair = [&](const BroadPhasePair& pair) -> size_t {
+		const Body* body_a = tryGetBody(pair.a.body);
+		if (is_active_dynamic(body_a)) {
+			return island_by_root[findRoot(pair.a.body.slot)];
+		}
+
+		const Body* body_b = tryGetBody(pair.b.body);
+		if (is_active_dynamic(body_b)) {
+			return island_by_root[findRoot(pair.b.body.slot)];
+		}
+
+		return no_island;
+	};
+
+	for (size_t manifold_index = 0; manifold_index < manifolds.size(); ++manifold_index) {
+		if (not shouldSolve(manifolds[manifold_index])) {
+			continue;
+		}
+
+		const size_t island_index = islandForPair(manifolds[manifold_index].pair);
+		if (island_index != no_island) {
+			islands[island_index].manifold_indices.emplace_back(manifold_index);
+		}
+	}
+
+	for (Constraint& constraint : constraints) {
+		const size_t island_index = islandForPair(constraint.pair);
+		if (island_index != no_island) {
+			islands[island_index].constraints.emplace_back(std::move(constraint));
+		}
+	}
+
+	for (SimulationIsland& island : islands) {
+		std::ranges::sort(island.constraints, [](const Constraint& lhs, const Constraint& rhs) {
+			if (lhs.pair != rhs.pair) {
+				return lhs.pair < rhs.pair;
+			}
+			if (lhs.feature_a != rhs.feature_a) {
+				return lhs.feature_a < rhs.feature_a;
+			}
+			return lhs.feature_b < rhs.feature_b;
+		});
+	}
+
+	std::ranges::sort(islands, [](const SimulationIsland& lhs, const SimulationIsland& rhs) {
+		return lhs.sort_key < rhs.sort_key;
+	});
+
+	ZoneValue(static_cast<uint64_t>(islands.size()));
+	return islands;
+}
+
 auto Simulator::prepareConstraint(const Manifold& manifold, const ContactPoint& contact) const -> std::optional<Constraint> {
-	ZoneScoped;
+	ZoneScopedN("physics::PrepareConstraint");
 	ZoneValue((static_cast<uint64_t>(manifold.pair.a.body.slot) << 32) | static_cast<uint64_t>(manifold.pair.b.body.slot));
 
 	const Body* body_a = tryGetBody(manifold.pair.a.body);
@@ -1257,7 +1734,7 @@ auto Simulator::prepareConstraint(const Manifold& manifold, const ContactPoint& 
 }
 
 void Simulator::warmStartConstraints(std::span<Constraint> constraints) {
-	ZoneScoped;
+	ZoneScopedN("physics::WarmStartConstraints");
 
 	for (Constraint& constraint : constraints) {
 		Body* body_a = tryGetBody(constraint.body_a);
@@ -1276,7 +1753,7 @@ void Simulator::warmStartConstraints(std::span<Constraint> constraints) {
 }
 
 void Simulator::storeConstraintImpulses(std::span<const Constraint> constraints) {
-	ZoneScoped;
+	ZoneScopedN("physics::StoreConstraintImpulses");
 
 	for (const Constraint& constraint : constraints) {
 		CachedContact* cached = findCachedContact(constraint.pair, constraint.feature_a, constraint.feature_b);
@@ -1289,32 +1766,94 @@ void Simulator::storeConstraintImpulses(std::span<const Constraint> constraints)
 	}
 }
 
-void Simulator::solveConstraints(std::vector<Constraint>& constraints) {
-	ZoneScoped;
-	ZoneValue(static_cast<uint64_t>(constraints.size()));
-	constexpr uint32_t solver_iterations = 16;    // try 4 or 16
+auto Simulator::solveIsland(SimulationIsland& island) -> IslandSolveStats {
+	ZoneScopedN("physics::SolveIsland");
+	ZoneValue(static_cast<uint64_t>(island.constraints.size()));
+
+	constexpr uint32_t solver_iterations = 8;    // try 4 or 16
 	size_t invalid_constraint_count = 0;
-	warmStartConstraints(constraints);
+	warmStartConstraints(island.constraints);
 
 	for (uint32_t iteration = 0; iteration < solver_iterations; ++iteration) {
 		ZoneScopedN("iteration");
 		ZoneValue(static_cast<uint64_t>(iteration));
-		for (Constraint& constraint : constraints) {
+		for (Constraint& constraint : island.constraints) {
 			if (not solveConstraint(constraint)) {
 				++invalid_constraint_count;
 			}
 		}
 	}
 
+	return {
+	  .invalid_constraints = invalid_constraint_count,
+	  .position_corrections = correctPositions(island.manifold_indices),
+	};
+}
+
+void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
+	ZoneScopedN("physics::SolveIslands");
+	ZoneValue(static_cast<uint64_t>(islands.size()));
+
+	if (islands.empty()) {
+		return;
+	}
+
+	constexpr size_t minimum_islands_per_job = 1;
+	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), 1ull);
+	const size_t maximum_job_count = worker_count * 3;
+	const size_t job_count = std::min(maximum_job_count, std::max(islands.size() / minimum_islands_per_job, size_t {1}));
+
+	std::vector<std::future<IslandSolveStats>> futures;
+	futures.reserve(job_count);
+
+	for (size_t job_index = 0; job_index < job_count; ++job_index) {
+		const size_t begin = job_index * islands.size() / job_count;
+		const size_t end = (job_index + 1) * islands.size() / job_count;
+		auto batch = std::span<SimulationIsland> {islands}.subspan(begin, end - begin);
+		size_t constraint_count = 0;
+		for (const SimulationIsland& island : batch) {
+			constraint_count += island.constraints.size();
+		}
+
+		futures.emplace_back(toast::ThreadPool::push([this, batch, constraint_count] {
+			ZoneScopedN("physics::IslandBatch");
+			ZoneValue(static_cast<uint64_t>(constraint_count));
+
+			IslandSolveStats stats;
+			for (SimulationIsland& island : batch) {
+				const IslandSolveStats island_stats = solveIsland(island);
+				stats.invalid_constraints += island_stats.invalid_constraints;
+				stats.position_corrections += island_stats.position_corrections;
+			}
+			return stats;
+		}));
+	}
+	m_profile.island_jobs = futures.size();
+
+	size_t invalid_constraint_count = 0;
+	size_t position_correction_count = 0;
+	{
+		ZoneScopedNC("physics::IslandSolveAwait", 0x202020);
+		for (auto& future : futures) {
+			const IslandSolveStats stats = future.get();
+			invalid_constraint_count += stats.invalid_constraints;
+			position_correction_count += stats.position_corrections;
+		}
+	}
+
 	if (invalid_constraint_count > 0) {
 		TOAST_WARN("Physics", "Skipped {} invalid solver constraint(s)", invalid_constraint_count);
 	}
+	m_profile.invalid_constraints = invalid_constraint_count;
+	m_profile.position_corrections = position_correction_count;
 
-	storeConstraintImpulses(constraints);
+	for (const SimulationIsland& island : islands) {
+		storeConstraintImpulses(island.constraints);
+	}
 }
 
 auto Simulator::solveConstraint(Constraint& constraint) -> bool {
-	ZoneScoped;
+	ZoneScopedN("physics::SolveConstraint");
 
 	Body* body_a = tryGetBody(constraint.body_a);
 	Body* body_b = tryGetBody(constraint.body_b);

@@ -70,6 +70,40 @@ private:
 		std::vector<ColliderBinding> colliders;
 	};
 
+	struct SimulationIsland {
+		BodyID sort_key;
+		std::vector<BodyID> dynamic_bodies;
+		std::vector<Constraint> constraints;
+		std::vector<size_t> manifold_indices;
+	};
+
+	struct PhysicsStepProfile {
+		std::array<size_t, static_cast<size_t>(NarrowPhasePairType::count)> narrow_pair_candidates = {};
+		size_t narrow_jobs = 0;
+		size_t narrow_candidates = 0;
+		size_t narrow_collisions = 0;
+		size_t rejected_manifolds = 0;
+		size_t contact_points = 0;
+		size_t bodies_woken = 0;
+		size_t bodies_slept = 0;
+		size_t contact_begins = 0;
+		size_t contact_persists = 0;
+		size_t contact_ends = 0;
+		size_t reused_cached_contacts = 0;
+		size_t cold_cached_contacts = 0;
+		size_t constraints = 0;
+		size_t rejected_constraints = 0;
+		size_t warm_started_constraints = 0;
+		size_t island_jobs = 0;
+		size_t invalid_constraints = 0;
+		size_t position_corrections = 0;
+	};
+
+	struct IslandSolveStats {
+		size_t invalid_constraints = 0;
+		size_t position_corrections = 0;
+	};
+
 	[[nodiscard]]
 	static auto rigidbodyFor(BodyID body) -> toast::Box<Rigidbody>;
 
@@ -108,9 +142,15 @@ private:
 	auto shouldSolve(const Manifold& manifold) const -> bool;
 
 	[[nodiscard]]
-	auto prepareConstraints(const std::vector<Manifold>& manifolds) const -> std::vector<Constraint>;
+	auto generateManifoldsAsync(CollisionWorldView world, std::span<const BroadPhasePair> candidates) -> std::vector<Manifold>;
+
+	[[nodiscard]]
+	auto prepareConstraints(const std::vector<Manifold>& manifolds) -> std::vector<Constraint>;
 	[[nodiscard]]
 	auto prepareConstraint(const Manifold& manifold, const ContactPoint& contact) const -> std::optional<Constraint>;
+	[[nodiscard]]
+	auto buildIslands(std::span<const Manifold> manifolds, std::vector<Constraint> constraints) const
+	    -> std::vector<SimulationIsland>;
 	void updateCache(std::span<const Manifold> manifolds);
 	[[nodiscard]]
 	auto findCachedContact(const BroadPhasePair& pair, ContactFeatureID feature_a, ContactFeatureID feature_b) -> CachedContact*;
@@ -122,7 +162,9 @@ private:
 	[[nodiscard]]
 	auto shapeRevision(ShapeID shape) const -> uint32_t;
 	void incrementShapeRevision(ShapeID shape);
-	void solveConstraints(std::vector<Constraint>& constraints);
+	void solveIslands(std::vector<SimulationIsland>& islands);
+	[[nodiscard]]
+	auto solveIsland(SimulationIsland& island) -> IslandSolveStats;
 	[[nodiscard]]
 	auto solveConstraint(Constraint& constraint) -> bool;
 	void publishTransforms();
@@ -136,7 +178,9 @@ private:
 	static void applyImpulse(Body& body_a, Body& body_b, const glm::vec3& r_a, const glm::vec3& r_b, const glm::vec3& impulse);
 	static auto solveNormal(Constraint& constraint, Body& body_a, Body& body_b) -> bool;
 	static auto solveFriction(Constraint& constraint, Body& body_a, Body& body_b) -> bool;
-	void correctPositions(const std::vector<Manifold>& manifolds);
+	[[nodiscard]]
+	auto correctPositions(std::span<const size_t> manifold_indices) -> size_t;
+	void publishProfile(std::span<const SimulationIsland> islands) const;
 
 	inline static Simulator* instance = nullptr;
 
@@ -153,6 +197,7 @@ private:
 	NarrowPhase m_narrow_phase;
 	std::vector<Manifold> m_manifolds;
 	std::vector<CachedManifold> m_cached_manifolds;
+	PhysicsStepProfile m_profile;
 };
 
 }

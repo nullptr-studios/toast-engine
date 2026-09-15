@@ -56,7 +56,6 @@ namespace {
 IApplication* active_application = nullptr;
 float total_time = 0.0;
 double clear_assets_timer = 0.0;
-double lua_memory_plot_timer = 0.0;
 double script_reload_timer = 0.0;
 
 }
@@ -303,14 +302,6 @@ void Engine::tick() {
 
 	if (m->renderer) {
 		m->renderer->tick(total_time);
-	}
-
-	lua_memory_plot_timer += Time::delta();
-	if (lua_memory_plot_timer > 1.0) {
-		lua_memory_plot_timer = 0.0;
-		if (m->lua_state) {
-			m->lua_state->plotMemory();
-		}
 	}
 
 #ifdef DEBUG

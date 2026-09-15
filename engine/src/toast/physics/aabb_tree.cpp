@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cassert>
 #include <stdexcept>
+#include <tracy/Tracy.hpp>
 
 namespace physics {
 
@@ -24,6 +25,7 @@ AABBTree::AABBTree(size_t expected_shapes) {
 }
 
 auto AABBTree::allocateNode() -> TreeNodeID {
+	ZoneScopedN("physics::AABBTree::AllocateNode");
 	TreeNodeID result = null_node;
 	if (m_free_list != null_node) {
 		result = m_free_list;
@@ -45,6 +47,8 @@ auto AABBTree::allocateNode() -> TreeNodeID {
 }
 
 void AABBTree::freeNode(TreeNodeID node_id) {
+	ZoneScopedN("physics::AABBTree::FreeNode");
+	ZoneValue(static_cast<uint64_t>(node_id));
 	const bool is_valid = node_id != null_node && node_id < m_nodes.size();
 	assert(is_valid && "Cannot free an invalid AABB tree node");
 	if (not is_valid) {
@@ -65,6 +69,8 @@ void AABBTree::freeNode(TreeNodeID node_id) {
 }
 
 auto AABBTree::insert(ShapeID shape, const AABB& bounds) -> TreeNodeID {
+	ZoneScopedN("physics::AABBTree::Insert");
+	ZoneValue(static_cast<uint64_t>(shape.slot));
 	const TreeNodeID leaf_id = allocateNode();
 	m_nodes[leaf_id].bounds = bounds.expanded(fat_margin);
 	m_nodes[leaf_id].shape = shape;
@@ -74,6 +80,8 @@ auto AABBTree::insert(ShapeID shape, const AABB& bounds) -> TreeNodeID {
 }
 
 void AABBTree::insertLeaf(TreeNodeID leaf_id) {
+	ZoneScopedN("physics::AABBTree::InsertLeaf");
+	ZoneValue(static_cast<uint64_t>(leaf_id));
 	auto& leaf = m_nodes[leaf_id];
 	assert(leaf.isLeaf());
 	assert(leaf.parent == null_node);
@@ -120,6 +128,8 @@ void AABBTree::insertLeaf(TreeNodeID leaf_id) {
 }
 
 void AABBTree::remove(TreeNodeID leaf_id) {
+	ZoneScopedN("physics::AABBTree::Remove");
+	ZoneValue(static_cast<uint64_t>(leaf_id));
 	const bool is_valid_leaf = leaf_id != null_node && leaf_id < m_nodes.size() && m_nodes[leaf_id].isLeaf();
 	assert(is_valid_leaf && "AABBTree::remove requires an allocated leaf");
 	if (not is_valid_leaf) {
@@ -132,6 +142,8 @@ void AABBTree::remove(TreeNodeID leaf_id) {
 }
 
 void AABBTree::detachLeaf(TreeNodeID leaf_id) {
+	ZoneScopedN("physics::AABBTree::DetachLeaf");
+	ZoneValue(static_cast<uint64_t>(leaf_id));
 	auto& leaf = m_nodes[leaf_id];
 	assert(leaf.isLeaf());
 	if (leaf_id == m_root) {
@@ -172,6 +184,8 @@ void AABBTree::detachLeaf(TreeNodeID leaf_id) {
 }
 
 auto AABBTree::updateLeaf(TreeNodeID leaf_id, const AABB& tight_bounds) -> bool {
+	ZoneScopedN("physics::AABBTree::UpdateLeaf");
+	ZoneValue(static_cast<uint64_t>(leaf_id));
 	const bool is_valid_leaf = leaf_id != null_node && leaf_id < m_nodes.size() && m_nodes[leaf_id].isLeaf();
 	assert(is_valid_leaf && "AABBTree::updateLeaf requires an allocated leaf");
 	if (not is_valid_leaf || m_nodes[leaf_id].bounds.contains(tight_bounds)) {
@@ -186,6 +200,8 @@ auto AABBTree::updateLeaf(TreeNodeID leaf_id, const AABB& tight_bounds) -> bool 
 }
 
 auto AABBTree::query(const AABB& bounds, ShapeID ignored_shape) const -> std::vector<ShapeID> {
+	ZoneScopedN("physics::AABBTree::Query");
+	ZoneValue(static_cast<uint64_t>(ignored_shape.slot));
 	std::vector<ShapeID> result;
 	if (m_root == null_node) {
 		return result;
@@ -211,6 +227,7 @@ auto AABBTree::query(const AABB& bounds, ShapeID ignored_shape) const -> std::ve
 
 	std::ranges::sort(result);
 	result.erase(std::unique(result.begin(), result.end()), result.end());
+	ZoneValue(static_cast<uint64_t>(result.size()));
 	return result;
 }
 
@@ -220,12 +237,14 @@ auto AABBTree::debugNodes() const -> std::vector<AABBTreeDebugNode> {
 	for (TreeNodeID node_id = 0; node_id < m_nodes.size(); ++node_id) {
 		const auto& node = m_nodes[node_id];
 		if (node.isAllocated()) {
-			result.emplace_back(AABBTreeDebugNode {
-			  .bounds = node.bounds,
-			  .id = node_id,
-			  .height = node.height,
-			  .leaf = node.isLeaf(),
-			});
+			result.emplace_back(
+			    AABBTreeDebugNode {
+			      .bounds = node.bounds,
+			      .id = node_id,
+			      .height = node.height,
+			      .leaf = node.isLeaf(),
+			    }
+			);
 		}
 	}
 	return result;
@@ -241,6 +260,7 @@ void AABBTree::recalculate(TreeNodeID node_id) {
 }
 
 void AABBTree::refitAncestors(TreeNodeID node_id) {
+	ZoneScopedN("physics::AABBTree::RefitAncestors");
 	while (node_id != null_node) {
 		node_id = balance(node_id);
 		recalculate(node_id);
@@ -249,6 +269,7 @@ void AABBTree::refitAncestors(TreeNodeID node_id) {
 }
 
 auto AABBTree::balance(TreeNodeID node_id) -> TreeNodeID {
+	ZoneScopedN("physics::AABBTree::Balance");
 	auto& node = m_nodes[node_id];
 	if (node.isLeaf() || node.height < 2) {
 		return node_id;
@@ -333,6 +354,8 @@ auto AABBTree::size() const -> size_t {
 }
 
 auto AABBTree::validate() const -> bool {
+	ZoneScopedN("physics::AABBTree::Validate");
+	ZoneValue(static_cast<uint64_t>(m_active_node_count));
 	if (m_root != null_node && (m_root >= m_nodes.size() || not m_nodes[m_root].isAllocated())) {
 		return false;
 	}
@@ -346,8 +369,8 @@ auto AABBTree::validate() const -> bool {
 			const auto valid_allocated_index = [this](TreeNodeID node_id) {
 				return node_id == null_node || (node_id < m_nodes.size() && m_nodes[node_id].isAllocated());
 			};
-			if (not valid_allocated_index(node.parent) || not valid_allocated_index(node.left)
-			    || not valid_allocated_index(node.right) || node.next_free != null_node) {
+			if (not valid_allocated_index(node.parent) || not valid_allocated_index(node.left) ||
+			    not valid_allocated_index(node.right) || node.next_free != null_node) {
 				return false;
 			}
 
@@ -366,8 +389,8 @@ auto AABBTree::validate() const -> bool {
 				const auto& right = m_nodes[node.right];
 				const auto combined_bounds = combine(left.bounds, right.bounds);
 				const bool bounds_match = node.bounds.min == combined_bounds.min && node.bounds.max == combined_bounds.max;
-				if (left.parent != node_index || right.parent != node_index || not bounds_match
-				    || node.height != 1 + std::max(left.height, right.height) || std::abs(right.height - left.height) > 1) {
+				if (left.parent != node_index || right.parent != node_index || not bounds_match ||
+				    node.height != 1 + std::max(left.height, right.height) || std::abs(right.height - left.height) > 1) {
 					return false;
 				}
 			}

@@ -575,7 +575,7 @@ auto reduceBoxContacts(std::vector<BoxContactCandidate> candidates, const glm::v
 
 auto collideSpheres(BroadPhasePair pair, const Shape& shape_a, const Body& body_a, const Shape& shape_b, const Body& body_b)
     -> std::optional<Manifold> {
-	ZoneScoped;
+	ZoneScopedN("physics::SphereSphere");
 	ZoneValue((static_cast<uint64_t>(pair.a.shape.slot) << 32) | static_cast<uint64_t>(pair.b.shape.slot));
 
 	const glm::vec3 center_a = body_a.position + body_a.rotation * shape_a.sphere.local_center;
@@ -619,7 +619,8 @@ auto collideSpheres(BroadPhasePair pair, const Shape& shape_a, const Body& body_
 auto collideSphereBox(
     BroadPhasePair pair, const Shape& sph_shape, const Body& sph_body, const Shape& box_shape, const Body& box_body
 ) -> std::optional<Manifold> {
-	ZoneScoped;
+	ZoneScopedN("physics::SphereBox");
+	ZoneValue((static_cast<uint64_t>(pair.a.shape.slot) << 32) | static_cast<uint64_t>(pair.b.shape.slot));
 
 	_detail::WorldSphere sphere = _detail::worldSphere(sph_body, sph_shape.sphere);
 	_detail::WorldBox box = _detail::worldBox(box_body, box_shape.box);
@@ -723,7 +724,8 @@ auto collideSphereBox(
 auto collideSphereCapsule(
     BroadPhasePair pair, const Shape& sph_shape, const Body& sph_body, const Shape& caps_shape, const Body& caps_body
 ) -> std::optional<Manifold> {
-	ZoneScoped;
+	ZoneScopedN("physics::SphereCapsule");
+	ZoneValue((static_cast<uint64_t>(pair.a.shape.slot) << 32) | static_cast<uint64_t>(pair.b.shape.slot));
 
 	_detail::WorldSphere sphere = _detail::worldSphere(sph_body, sph_shape.sphere);
 	_detail::WorldCapsule capsule = _detail::worldCapsule(caps_body, caps_shape.capsule);
@@ -792,7 +794,8 @@ auto collideSphereCapsule(
 
 auto collideBoxes(BroadPhasePair pair, const Shape& shape_a, const Body& body_a, const Shape& shape_b, const Body& body_b)
     -> std::optional<Manifold> {
-	ZoneScoped;
+	ZoneScopedN("physics::BoxBox");
+	ZoneValue((static_cast<uint64_t>(pair.a.shape.slot) << 32) | static_cast<uint64_t>(pair.b.shape.slot));
 
 	_detail::WorldBox box_a = _detail::worldBox(body_a, shape_a.box);
 	_detail::WorldBox box_b = _detail::worldBox(body_b, shape_b.box);
@@ -1001,7 +1004,8 @@ auto collideBoxes(BroadPhasePair pair, const Shape& shape_a, const Body& body_a,
 auto collideCapsuleBox(
     BroadPhasePair pair, const Shape& capsule_shape, const Body& capsule_body, const Shape& box_shape, const Body& box_body
 ) -> std::optional<Manifold> {
-	ZoneScoped;
+	ZoneScopedN("physics::CapsuleBox");
+	ZoneValue((static_cast<uint64_t>(pair.a.shape.slot) << 32) | static_cast<uint64_t>(pair.b.shape.slot));
 
 	auto capsule = _detail::worldCapsule(capsule_body, capsule_shape.capsule);
 	auto box = _detail::worldBox(box_body, box_shape.box);
@@ -1093,7 +1097,8 @@ auto collideCapsuleBox(
 
 auto collideCapsules(BroadPhasePair pair, const Shape& shape_a, const Body& body_a, const Shape& shape_b, const Body& body_b)
     -> std::optional<Manifold> {
-	ZoneScoped;
+	ZoneScopedN("physics::CapsuleCapsule");
+	ZoneValue((static_cast<uint64_t>(pair.a.shape.slot) << 32) | static_cast<uint64_t>(pair.b.shape.slot));
 
 	auto caps_a = _detail::worldCapsule(body_a, shape_a.capsule);
 	auto caps_b = _detail::worldCapsule(body_b, shape_b.capsule);

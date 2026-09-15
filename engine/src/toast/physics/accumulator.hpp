@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <toast/log.hpp>
 #include <toast/time.hpp>
+#include <tracy/Tracy.hpp>
 
 namespace physics {
 
@@ -28,7 +29,7 @@ public:
 
 	template<typename Fn>
 	auto tick(double dt, Fn&& fn) -> StepResult {
-		ZoneScoped;
+		ZoneScopedN("physics::Accumulator");
 
 		m_accumulator += dt;
 
@@ -48,6 +49,11 @@ public:
 		}
 
 		result.alpha = m_accumulator / fixed_delta;
+		TracyPlot("Physics/Accumulator/Frame delta ms", dt * 1000.0);
+		TracyPlot("Physics/Accumulator/Fixed steps", static_cast<int64_t>(result.steps));
+		TracyPlot("Physics/Accumulator/Interpolation alpha", result.alpha);
+		TracyPlot("Physics/Accumulator/Backlog ms", m_accumulator * 1000.0);
+		TracyPlot("Physics/Accumulator/Dropped time", static_cast<int64_t>(result.dropped_time));
 		return result;
 	}
 

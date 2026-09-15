@@ -10,6 +10,7 @@
 #include "collision.hpp"
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <glm/glm.hpp>
 #include <optional>
@@ -29,6 +30,31 @@ struct Manifold {
 	std::array<ContactPoint, 4> contacts = {};
 	uint8_t contact_count = 0;
 };
+
+[[nodiscard]]
+inline bool operator<(const Manifold& lhs, const Manifold& rhs) {
+	if (lhs.pair != rhs.pair) {
+		return lhs.pair < rhs.pair;
+	}
+
+	if (lhs.contact_count != rhs.contact_count) {
+		return lhs.contact_count < rhs.contact_count;
+	}
+
+	for (std::size_t index = 0; index < lhs.contact_count && index < lhs.contacts.size(); ++index) {
+		const ContactPoint& lhs_contact = lhs.contacts[index];
+		const ContactPoint& rhs_contact = rhs.contacts[index];
+
+		if (lhs_contact.feature_a != rhs_contact.feature_a) {
+			return lhs_contact.feature_a < rhs_contact.feature_a;
+		}
+		if (lhs_contact.feature_b != rhs_contact.feature_b) {
+			return lhs_contact.feature_b < rhs_contact.feature_b;
+		}
+	}
+
+	return false;
+}
 
 struct CachedContact {
 	ContactFeatureID feature_a = {};

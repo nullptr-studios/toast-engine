@@ -33,7 +33,7 @@ struct TOAST_API AABB {
 };
 
 auto combine(const AABB& lhs, const AABB& rhs) -> AABB;
-auto operator+ (const AABB& lhs, const AABB& rhs) -> AABB;
+auto operator+(const AABB& lhs, const AABB& rhs) -> AABB;
 
 using TreeNodeID = uint32_t;
 inline constexpr TreeNodeID null_node = std::numeric_limits<TreeNodeID>::max();
@@ -66,13 +66,19 @@ class TOAST_API AABBTree {
 public:
 	explicit AABBTree(size_t expected_shapes = 0);
 
-	[[nodiscard]] auto insert(ShapeID shape, const AABB& bounds) -> TreeNodeID;
+	[[nodiscard]]
+	auto insert(ShapeID shape, const AABB& bounds) -> TreeNodeID;
 	void remove(TreeNodeID leaf_id);
-	[[nodiscard]] auto updateLeaf(TreeNodeID leaf_id, const AABB& tight_bounds) -> bool;
-	[[nodiscard]] auto query(const AABB& bounds, ShapeID ignored_shape = {}) const -> std::vector<ShapeID>;
-	[[nodiscard]] auto debugNodes() const -> std::vector<AABBTreeDebugNode>;
-	[[nodiscard]] auto size() const -> size_t;
-	[[nodiscard]] auto validate() const -> bool;
+	[[nodiscard]]
+	auto updateLeaf(TreeNodeID leaf_id, const AABB& tight_bounds) -> bool;
+	[[nodiscard]]
+	auto query(const AABB& bounds, ShapeID ignored_shape = {}) const -> std::vector<ShapeID>;
+	[[nodiscard]]
+	auto debugNodes() const -> std::vector<AABBTreeDebugNode>;
+	[[nodiscard]]
+	auto size() const -> size_t;
+	[[nodiscard]]
+	auto validate() const -> bool;
 
 private:
 	static constexpr float fat_margin = 0.1f;
