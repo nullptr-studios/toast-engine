@@ -76,6 +76,7 @@ public:
 	uint32_t controller_id = 0;
 
 private:
+	void updateInspectorMessages() override;
 	void init();
 
 	void rebuildEnabledActions();

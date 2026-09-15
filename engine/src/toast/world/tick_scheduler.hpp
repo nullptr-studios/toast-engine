@@ -65,8 +65,8 @@ public:
    * @brief Records a tick ordering constraint between two nodes
    * @note The schedule is NOT rebuilt automatically; the owner calls compute() when appropriate
    */
-	void registerDependency(Node& from, Node& to);
-	void unregisterDependency(Node& from, Node& to);
+	auto registerDependency(Node& from, Node& to) -> bool;
+	auto unregisterDependency(Node& from, Node& to) -> bool;
 	// clang-format on
 
 	/**

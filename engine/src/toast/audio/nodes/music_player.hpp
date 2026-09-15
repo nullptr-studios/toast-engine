@@ -44,6 +44,7 @@ public:
 	void masterPitch(float value);
 
 private:
+	void updateInspectorMessages() override;
 	void onEnable();
 	void onDisable();
 	void tick();

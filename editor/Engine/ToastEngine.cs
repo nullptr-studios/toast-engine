@@ -349,7 +349,7 @@ public partial class ToastEngine : IDisposable {
 	private static partial IntPtr toast_create();
 
 	[LibraryImport(EngineLib)]
-	private static partial IntPtr toast_init();
+	private static partial void toast_init();
 
 	[LibraryImport(EngineLib)]
 	private static partial void toast_tick();

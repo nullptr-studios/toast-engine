@@ -68,6 +68,21 @@ auto F_CALL musicPlayerCallback(FMOD_STUDIO_EVENT_CALLBACK_TYPE type, FMOD_STUDI
 
 }
 
+void MusicPlayer::updateInspectorMessages() {
+	static const NodeMessage message {
+	  .severity = NodeMessage::warning,
+	  .id = 19,
+	  .text = "MusicPlayer requires one valid track",
+	};
+
+	const bool has_track = std::ranges::any_of(m_tracks, [](const auto& track) { return track.hasValue(); });
+	if (has_track) {
+		removeInspectorMessage(message);
+	} else {
+		addInspectorMessage(message);
+	}
+}
+
 void MusicPlayer::startTrack(int track_index, float fade_in) {
 	if (track_index < 0 || static_cast<size_t>(track_index) >= m_tracks.size()) {
 		TOAST_WARN("MusicPlayer", "Track index {} out of range", track_index);

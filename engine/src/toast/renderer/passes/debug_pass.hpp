@@ -54,6 +54,7 @@ private:
 	void ensureLineCapacity(const renderer::VulkanCore& core, DynamicVertexBuffer& buffer, size_t required_vertex_count);
 
 	VulkanPipeline m_line_pipeline;
+	VulkanPipeline m_fill_pipeline;
 	VulkanPipeline m_gizmo_pipeline;
 
 	ShaderLayout m_shader_layout;
@@ -62,6 +63,8 @@ private:
 	// Debug lines
 	std::vector<DynamicVertexBuffer> m_line_vertex_buffers;
 	std::vector<uint32_t> m_line_vertex_counts;
+	std::vector<DynamicVertexBuffer> m_fill_vertex_buffers;
+	std::vector<uint32_t> m_fill_vertex_counts;
 
 	// Gizmo axis triad
 	vma::raii::Buffer m_gizmo_vertex_buffer = nullptr;

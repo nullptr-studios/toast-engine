@@ -92,7 +92,7 @@ inline void Signal<Args...>::fire(Args... args) {
 		return not listener.node;    //
 	});
 	for (auto& listener : m.listeners) {
-		if (listener.node.enabled()) {
+		if (listener.node->enabled()) {
 			listener.cb(args...);
 		}
 	}

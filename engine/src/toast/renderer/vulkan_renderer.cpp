@@ -877,6 +877,7 @@ void VulkanRenderer::tick(float time) noexcept {
 
 	frame.mesh_instances.clear();
 	frame.debug_line_vertices.clear();
+	frame.debug_triangle_vertices.clear();
 	frame.debug_gizmo_instances.clear();
 	frame.ui_command_buffers.clear();
 	frame.ui_output_views.clear();
@@ -901,7 +902,7 @@ void VulkanRenderer::tick(float time) noexcept {
 	frame.mesh_instances.reserve(mesh_nodes_snapshot.size());
 
 	for (auto* node : mesh_nodes_snapshot) {
-		if (node == nullptr || !node->enabled()) {
+		if (node == nullptr || !node->enabled() || !node->participatesIn(toast::NodeOwnerParticipation::render)) {
 			continue;
 		}
 
@@ -950,6 +951,14 @@ void VulkanRenderer::tick(float time) noexcept {
 	}
 
 	const auto extent = m_output_target->getExtent();
+	{
+		std::scoped_lock lock(m_mesh_proxy_mutex);
+		for (const auto& [node, draw] : m_debug_nodes) {
+			if (node->enabled() && node->participatesIn(toast::NodeOwnerParticipation::render)) {
+				draw(*node);
+			}
+		}
+	}
 	const float aspect =
 	    extent.height > 0 ? static_cast<float>(extent.width) / static_cast<float>(extent.height) : (1080.0f / 720.0f);
 

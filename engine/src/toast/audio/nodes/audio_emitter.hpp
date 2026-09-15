@@ -35,6 +35,7 @@ public:
 	void allowFadeout(bool value);                            ///< False forces the event to bypass envelope settings
 
 private:
+	void updateInspectorMessages() override;
 	void onEnable();
 	void onDisable();
 

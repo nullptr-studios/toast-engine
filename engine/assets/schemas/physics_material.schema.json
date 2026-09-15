@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id" : "core://schemas/physics_material.schema.json",
+  "title": "Physics Material (.tpm)",
+  "type": "object",
+  "required" : ["name", "dynamic_friction", "static_friction"],
+  "properties": {
+    "restitution": {
+      "type": "number",
+      "x-toast-type" : "float",
+      "default" : 0.5,
+      "minimum" : 0,
+      "maximum" : 1
+    },
+    "static_friction": {
+      "type": "number",
+      "x-toast-type" : "float",
+      "default" : 0.6
+    },
+    "dynamic_friction": {
+      "type": "number",
+      "x-toast-type" : "float",
+      "default" : 0.4
+    }
+  }
+}

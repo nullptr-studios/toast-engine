@@ -39,6 +39,7 @@ public:
 private:
 	TickScheduler m_scheduler;
 	bool m_paused = false;
+	bool m_started = false;
 	bool m_schedule_dirty = true;
 	void computeSchedule();
 };

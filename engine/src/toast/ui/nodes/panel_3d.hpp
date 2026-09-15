@@ -56,6 +56,7 @@ public:
 
 private:
 	void onReflectedFieldChanged(std::string_view field_name) override;
+	void updateInspectorMessages() override;
 	void init();
 	void destroy();
 	void onEnable();

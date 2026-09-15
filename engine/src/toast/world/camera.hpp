@@ -39,6 +39,7 @@ public:
 	auto getProjection(float aspect) const -> glm::mat4;
 
 private:
+	void updateInspectorMessages() override;
 	void begin();
 	void end();
 	void onEnable();
