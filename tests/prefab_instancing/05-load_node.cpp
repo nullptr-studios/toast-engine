@@ -72,8 +72,11 @@ TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/05-load_node", test_pre
 	WorldTestAccess::waitForLoads(*world);
 	WorldTestAccess::drainLoadQueue(*world);
 
-	Box<Node> root = WorldTestAccess::findCached("scene root");
+	Box<Node> root = WorldTestAccess::findNode(UID(uidOf("scROOTnode0")));
 	assert(root.exists());
+	assert(root->state() == NodeState::root);
+	assert(root->enabled());
+	assert(!WorldTestAccess::findCached("scene root").exists());
 
 	// The scene root is stamped with its own asset (scenes are prefabs).
 	assert(root->uid().data() == uidOf("scROOTnode0"));
@@ -93,6 +96,16 @@ TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/05-load_node", test_pre
 	assert(grandkids.size() == 1);
 	assert(grandkids[0]->uid().data() == uidOf("chLEAFnode0"));
 	assert(WorldTestAccess::isPrefabInterior(*grandkids[0]));
+
+	WorldTestAccess::loadNode(UID(uidOf("Child000000")));
+	WorldTestAccess::waitForLoads(*world);
+	WorldTestAccess::drainLoadQueue(*world);
+
+	Box<Node> cached = WorldTestAccess::findCached("child root");
+	assert(cached.exists());
+	assert(cached->state() == NodeState::cached);
+	assert(!cached->enabled());
+	assert(WorldTestAccess::findNode(UID(uidOf("scROOTnode0"))).exists());
 
 	fs::remove_all(tmp, ec);
 }
