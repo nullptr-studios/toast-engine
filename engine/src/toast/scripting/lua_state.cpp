@@ -531,33 +531,33 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    .beginClass<SignalProxy>("Signal")
 	    .addFunction(
 	        "connect",
-	        overload<SignalProxy&, const NodeProxy&, std::string>(
-	            +[](SignalProxy& signal, const NodeProxy& target, std::string function) {
+	        overload<SignalProxy&, const NodeProxy&, const std::string&>(
+	            +[](SignalProxy& signal, const NodeProxy& target, const std::string& function) {
 		            return signal.connect(target, function, signals::ConnectionSource::lua, true);
 	            }
 	        ),
-	        overload<SignalProxy&, const NodeProxy&, std::string, bool>(
-	            +[](SignalProxy& signal, const NodeProxy& target, std::string function, bool forwards_args) {
+	        overload<SignalProxy&, const NodeProxy&, const std::string&, bool>(
+	            +[](SignalProxy& signal, const NodeProxy& target, const std::string& function, bool forwards_args) {
 		            return signal.connect(target, function, signals::ConnectionSource::lua, forwards_args);
 	            }
 	        ),
-	        overload<SignalProxy&, const luabridge::LuaRef&, std::string>(
-	            +[](SignalProxy& signal, const luabridge::LuaRef& target, std::string function) {
+	        overload<SignalProxy&, const luabridge::LuaRef&, const std::string&>(
+	            +[](SignalProxy& signal, const luabridge::LuaRef& target, const std::string& function) {
 		            return target.isTable() && signal.connectSelf(function, signals::ConnectionSource::lua);
 	            }
 	        ),
-	        overload<SignalProxy&, const luabridge::LuaRef&, std::string, bool>(
-	            +[](SignalProxy& signal, const luabridge::LuaRef& target, std::string function, bool forwards_args) {
+	        overload<SignalProxy&, const luabridge::LuaRef&, const std::string&, bool>(
+	            +[](SignalProxy& signal, const luabridge::LuaRef& target, const std::string& function, bool forwards_args) {
 		            return target.isTable() && signal.connectSelf(function, signals::ConnectionSource::lua, forwards_args);
 	            }
 	        )
 	    )
 	    .addFunction(
 	        "disconnect",
-	        [](SignalProxy& signal, const NodeProxy& target, std::string function) {
+	        [](SignalProxy& signal, const NodeProxy& target, const std::string& function) {
 		        return signal.disconnect(target, signals::ConnectionSource::lua, function);
 	        },
-	        [](SignalProxy& signal, const luabridge::LuaRef& target, std::string function) {
+	        [](SignalProxy& signal, const luabridge::LuaRef& target, const std::string& function) {
 		        return target.isTable() && signal.disconnectSelf(signals::ConnectionSource::lua, function);
 	        }
 	    )
@@ -568,19 +568,19 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    .beginClass<LuaSignal>("LuaSignal")
 	    .addFunction(
 	        "connect",
-	        [](LuaSignal& signal, const NodeProxy& target, std::string function) {
+	        [](LuaSignal& signal, const NodeProxy& target, const std::string& function) {
 		        return signal.connect(target, function, signals::ConnectionSource::lua);
 	        },
-	        [](LuaSignal& signal, const luabridge::LuaRef& target, std::string function) {
+	        [](LuaSignal& signal, const luabridge::LuaRef& target, const std::string& function) {
 		        return target.isTable() && signal.connectSelf(function, signals::ConnectionSource::lua);
 	        }
 	    )
 	    .addFunction(
 	        "disconnect",
-	        [](LuaSignal& signal, const NodeProxy& target, std::string function) {
+	        [](LuaSignal& signal, const NodeProxy& target, const std::string& function) {
 		        return signal.disconnect(target, function, signals::ConnectionSource::lua);
 	        },
-	        [](LuaSignal& signal, const luabridge::LuaRef& target, std::string function) {
+	        [](LuaSignal& signal, const luabridge::LuaRef& target, const std::string& function) {
 		        return target.isTable() && signal.disconnectSelf(function, signals::ConnectionSource::lua);
 	        }
 	    )

@@ -796,7 +796,7 @@ auto ScriptRuntime::functions() const noexcept -> std::vector<LuaFunctionDesc> {
 	if (!guard) {
 		return result;
 	}
-	for (auto& instance : m_instances) {
+	for (const auto& instance : m_instances) {
 		if (!instance || !instance->isValid()) {
 			continue;
 		}
@@ -895,7 +895,7 @@ auto ScriptRuntime::luaSignals() const -> std::vector<std::string> {
 	if (!guard) {
 		return result;
 	}
-	for (auto& instance : m_instances) {
+	for (const auto& instance : m_instances) {
 		if (!instance) {
 			continue;
 		}
@@ -913,7 +913,7 @@ auto ScriptRuntime::luaSignalConnections(std::string_view name) const -> std::ve
 	if (!guard) {
 		return {};
 	}
-	for (auto& instance : m_instances) {
+	for (const auto& instance : m_instances) {
 		if (auto it = instance->luaSignals().find(std::string(name)); it != instance->luaSignals().end()) {
 			return it->second.connections();
 		}

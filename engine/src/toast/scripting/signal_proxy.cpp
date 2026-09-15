@@ -159,8 +159,8 @@ auto SignalProxy::fire(lua_State* state) -> bool {
 	if (!m_source.exists() || !m_info || !m_info->fire) {
 		return false;
 	}
-	const int argument_count = lua_gettop(state) - 1;
-	if (argument_count != static_cast<int>(m_info->args.size())) {
+	const std::size_t argument_count = lua_gettop(state) - 1;
+	if (argument_count != m_info->args.size()) {
 		return false;
 	}
 

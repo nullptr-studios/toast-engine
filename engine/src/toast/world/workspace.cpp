@@ -3,7 +3,6 @@
 #include "camera.hpp"
 #include "node.hpp"
 #include "workspace_events.hpp"
-#include "workspace_events.pb.h"
 
 #include <charconv>
 #include <format>
@@ -495,8 +494,13 @@ void Workspace::eventSubscriptions() {
 			}
 		}
 
-		const auto connections = is_lua_signal ? source_runtime->luaSignalConnections(e.signal)
-		                                       : (signal->get ? signal->get(&*source) : std::vector<signals::ConnectionInfo> {});
+		std::vector<signals::ConnectionInfo> connections;
+		if (is_lua_signal) {
+			connections = source_runtime->luaSignalConnections(e.signal);
+		} else if (signal->get) {
+			connections = signal->get(&*source);
+		}
+
 		for (auto& callable : response.callables) {
 			callable.already_connected = std::ranges::any_of(connections, [&](const auto& connection) {
 				return connection.target == e.target_node && connection.function == callable.name;

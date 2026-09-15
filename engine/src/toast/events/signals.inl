@@ -29,11 +29,11 @@ inline void
     Signal<Args...>::connect(toast::Node& node, std::string_view identifier, ConnectionSource source, bool forwards_args) {
 	callback_t wrapper;
 	if (forwards_args) {
-		wrapper = [iden = std::string(identifier), box = toast::Box<toast::Node>(node)](Args... args) mutable {
+		wrapper = [iden = std::string(identifier), box = toast::Box<toast::Node>(node)](const Args&... args) mutable {
 			box->call(iden, args...);
 		};
 	} else {
-		wrapper = [iden = std::string(identifier), box = toast::Box<toast::Node>(node)](Args...) mutable { box->call(iden); };
+		wrapper = [iden = std::string(identifier), box = toast::Box<toast::Node>(node)](const Args&...) mutable { box->call(iden); };
 	}
 	m_connections.push_back(
 	    {.uid = node.uid(),
@@ -68,7 +68,7 @@ inline auto Signal<Args...>::connections() const -> std::vector<ConnectionInfo> 
 }
 
 template<typename... Args>
-inline void Signal<Args...>::fire(Args... args) {
+inline void Signal<Args...>::fire(const Args&... args) {
 	std::erase_if(m_connections, [](const Connection& listener) { return !listener.node; });
 	for (auto& listener : m_connections) {
 		listener.cb(args...);

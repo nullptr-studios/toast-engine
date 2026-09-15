@@ -62,7 +62,7 @@ public:
 	[[nodiscard]]
 	auto connections() const -> std::vector<ConnectionInfo>;
 
-	void fire(Args... args);
+	void fire(const Args&... args);
 
 	template<typename NodeType, auto MemberPtr>
 	static auto get(void* signal) -> std::vector<ConnectionInfo>;
