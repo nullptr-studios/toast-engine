@@ -1,4 +1,5 @@
 ---@class Signal
+Signal = {}
 ---@param target Node
 ---@param function_name string
 ---@param forwards_args? boolean
@@ -14,9 +15,11 @@ function Signal:clear() end
 
 function Signal:fire() end
 
+---@return Signal
 function Signal:create() end
 
 ---@class Signal0
+local Signal0 = {}
 ---@param target Node
 ---@param function_name string
 ---@param forwards_args? boolean
@@ -33,6 +36,7 @@ function Signal0:clear() end
 function Signal0:fire() end
 
 ---@class Signal1<T1>
+local Signal1 = {}
 ---@param target Node
 ---@param function_name string
 ---@param forwards_args? boolean
@@ -50,6 +54,7 @@ function Signal1:clear() end
 function Signal1:fire(value) end
 
 ---@class Signal2<T1, T2>
+local Signal2 = {}
 ---@param target Node
 ---@param function_name string
 ---@param forwards_args? boolean
@@ -68,6 +73,7 @@ function Signal2:clear() end
 function Signal2:fire(value1, value2) end
 
 ---@class Signal3<T1, T2, T3>
+local Signal3 = {}
 ---@param target Node
 ---@param function_name string
 ---@param forwards_args? boolean
@@ -87,6 +93,7 @@ function Signal3:clear() end
 function Signal3:fire(value1, value2, value3) end
 
 ---@class Signal4<T1, T2, T3, T4>
+local Signal4 = {}
 ---@param target Node
 ---@param function_name string
 ---@param forwards_args? boolean
