@@ -12,7 +12,6 @@
  */
 
 #pragma once
-#include <locale>
 #define NODEFILE
 #include "box.hpp"
 #include "control_box.hpp"

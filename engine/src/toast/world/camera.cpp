@@ -8,8 +8,8 @@ namespace toast {
 void Camera::setActiveCamera() {
 	if (m_owner) {
 		m_owner->activateCamera(*this);
+		set_as_main.fire(this->box());
 	}
-	set_as_main.fire(this->box());
 }
 
 void Camera::begin() {

@@ -117,8 +117,6 @@ fn method_signature(class_name: &str, method: &Function) -> String {
     }
 }
 
-/// Lua type of a reflected Signal<Args...> member. Signals are capped at four
-/// arguments by the C++ implementation, so each arity has a concrete Lua type.
 fn signal_lua_type(signal: &Signal) -> String {
     let args: Vec<String> = signal
         .arguments
@@ -128,7 +126,7 @@ fn signal_lua_type(signal: &Signal) -> String {
     match args.len() {
         0 => "Signal0".to_string(),
         1..=4 => format!("Signal{}<{}>", args.len(), args.join(", ")),
-        _ => "Signal0".to_string(), // C++ rejects this arity; keep malformed input inspectable.
+        _ => "Signal0".to_string(),
     }
 }
 
