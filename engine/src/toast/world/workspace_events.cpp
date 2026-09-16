@@ -533,6 +533,11 @@ struct ProtoTraits<InspectorContent> {
 			auto* element = p.add_parameters();
 			*element = ProtoTraits<InspectorContent::InspectorField>::toProto(f);
 		}
+		for (const auto& m : e.messages) {
+			auto* element = p.add_messages();
+			element->set_error(m.severity == toast::NodeMessage::error);
+			element->set_message(m.text);
+		}
 		return p;
 	}
 
@@ -542,7 +547,18 @@ struct ProtoTraits<InspectorContent> {
 		for (const auto& f : p.parameters()) {
 			parameters.emplace_back(ProtoTraits<InspectorContent::InspectorField>::fromProto(f));
 		}
-		return {p.uid(), p.name(), p.enabled(), parameters};
+		std::vector<toast::NodeMessage> messages;
+		messages.reserve(p.messages().size());
+		for (const auto& m : p.messages()) {
+			messages.emplace_back(
+			    toast::NodeMessage {
+			      .severity = m.error() ? toast::NodeMessage::error : toast::NodeMessage::warning,
+			      .id = 0,
+			      .text = m.message(),
+			    }
+			);
+		}
+		return {p.uid(), p.name(), p.enabled(), parameters, messages};
 	}
 };
 

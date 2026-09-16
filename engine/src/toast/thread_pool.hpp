@@ -46,8 +46,6 @@ namespace toast {
  */
 class ThreadPool {
 public:
-	static constexpr size_t thread_count = 6;    ///< Number of workers on the pool
-
 	/**
 	 * @brief Initializes the pool and returns a pointer with ownership
 	 *
@@ -106,6 +104,8 @@ public:
 	 */
 	void waitIdle();
 
+	static auto workerCount() -> size_t;
+
 	// No copy and move constructors
 	ThreadPool(ThreadPool&) = delete;
 	ThreadPool(ThreadPool&&) = delete;
@@ -118,7 +118,7 @@ public:
 	}
 
 private:
-	ThreadPool(size_t size);
+	ThreadPool();
 	inline static ThreadPool* instance = nullptr;
 	static auto get() noexcept -> ThreadPool&;
 
@@ -126,10 +126,9 @@ private:
 	static void enqueue(std::move_only_function<void()>&& job);
 
 	struct {
-		bool should_stop = false;    ///< Flag to signal workers to stop
-		std::atomic<int> active_jobs =
-		    0;                       ///< Number of jobs currently executing; waitIdle() sleeps on all_done rather than polling this
-		std::mutex queue_mutex;      ///< Mutex protecting the job queue
+		bool should_stop = false;                            ///< Flag to signal workers to stop
+		std::atomic<int> active_jobs = 0;                    ///< Number of jobs currently executing
+		std::mutex queue_mutex;                              ///< Mutex protecting the job queue
 		std::condition_variable job_available;               ///< Notified when a job is enqueued or stop is requested
 		std::condition_variable all_done;                    ///< Notified when activeJobs hits 0 and queue is empty
 		std::vector<std::jthread> workers;                   ///< Worker threads (auto-join on destruction)

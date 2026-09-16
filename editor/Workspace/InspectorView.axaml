@@ -26,6 +26,15 @@
 	</UserControl.Resources>
 
 	<UserControl.Styles>
+		<Style Selector="Border.inspector-message.warning">
+			<Setter Property="Background"
+			        Value="{StaticResource Orange}" />
+		</Style>
+		<Style Selector="Border.inspector-message.error">
+			<Setter Property="Background"
+			        Value="{StaticResource Red}" />
+		</Style>
+
 		<!-- Parameter label -->
 		<Style Selector="TextBlock.lbl">
 			<Setter Property="Foreground"
@@ -594,8 +603,7 @@
 		</DataTemplate>
 	</UserControl.DataTemplates>
 
-	<Grid RowDefinitions="Auto,*"
-	      RowSpacing="8">
+	<Grid RowDefinitions="Auto,Auto,*">
 		<!-- Node header -->
 		<Border Grid.Row="0"
 		        Background="{StaticResource Bg3}"
@@ -650,8 +658,46 @@
 			</StackPanel>
 		</Border>
 
+		<!-- Messages -->
+		<ItemsControl Grid.Row="1"
+		              Margin="0,8,0,0"
+		              ItemsSource="{Binding Messages}"
+		              ItemsPanel="{StaticResource Spaced8}"
+		              IsVisible="{Binding HasMessages}">
+			<ItemsControl.ItemTemplate>
+				<DataTemplate x:CompileBindings="False">
+					<Border Classes="inspector-message"
+					        Classes.warning="{Binding !Error}"
+					        Classes.error="{Binding Error}"
+					        CornerRadius="8"
+					        Padding="8">
+						<StackPanel Orientation="Horizontal"
+						            Spacing="4"
+						            VerticalAlignment="Center">
+							<lucide:LucideIcon Kind="TriangleAlert"
+							                   Size="18"
+							                   Foreground="{StaticResource Bg1}"
+							                   StrokeWidth="2.5"
+							                   IsVisible="{Binding !Error}" />
+							<lucide:LucideIcon Kind="OctagonX"
+							                   Size="18"
+							                   Foreground="{StaticResource Bg1}"
+							                   StrokeWidth="2.5"
+							                   IsVisible="{Binding Error}" />
+							<TextBlock Text="{Binding Message}"
+							           Foreground="{StaticResource Bg1}"
+							           FontWeight="Bold"
+							           TextWrapping="Wrap"
+							           VerticalAlignment="Center" />
+						</StackPanel>
+					</Border>
+				</DataTemplate>
+			</ItemsControl.ItemTemplate>
+		</ItemsControl>
+
 		<!-- Node parameters -->
-		<Panel Grid.Row="1">
+		<Panel Grid.Row="2"
+		       Margin="0,8,0,0">
 			<ScrollViewer CornerRadius="8"
 			              AllowAutoHide="True"
 			              VerticalScrollBarVisibility="Auto"

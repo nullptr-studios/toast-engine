@@ -130,6 +130,7 @@ Workspace::Workspace(UID uid) : m_handle(uid) {
 
 Workspace::Workspace(UID uid, std::string_view source_uri) : m_handle(uid) {
 	m_editor_camera = std::make_unique<Camera>();
+	m_editor_camera->position = {0.0f, -10.0f, 10.0f};
 	eventSubscriptions();
 
 	auto bytes = assets::AssetManager::get().loadBytes(source_uri);
@@ -142,8 +143,8 @@ Workspace::Workspace(UID uid, std::string_view source_uri) : m_handle(uid) {
 	// to load the node as a .tbnode rather than as a .tnode, we need to be careful with that
 	VectorStreamBuf buffer(*bytes);
 	std::istream autosave(&buffer);
-	assets::Prefab prefab(autosave);
-	assets::Handle<assets::Prefab> file(&prefab, uid, "");
+	m_owned_source_prefab = std::make_unique<assets::Prefab>(autosave);
+	assets::Handle<assets::Prefab> file(m_owned_source_prefab.get(), uid, "");
 	initFromPrefab(file);
 	if (m_root_node.exists()) {
 		initializeHistory(true, false);
@@ -224,7 +225,8 @@ void Workspace::destroyOwnedTree(Box<Node>& root) {
 }
 
 auto Workspace::restoreHistorySnapshot(const assets::Prefab& snapshot) -> bool {
-	assets::Handle<assets::Prefab> handle(const_cast<assets::Prefab*>(&snapshot), toast::UID(0), "");
+	auto owned_snapshot = std::make_unique<assets::Prefab>(snapshot);
+	assets::Handle<assets::Prefab> handle(owned_snapshot.get(), toast::UID(0), "");
 	INodeOwner::InstantiateContext context;
 	context.resolver = [](toast::UID id) { return assets::load<assets::Prefab>(id); };
 	Box<Node> replacement = instantiate(handle, context);
@@ -244,6 +246,7 @@ auto Workspace::restoreHistorySnapshot(const assets::Prefab& snapshot) -> bool {
 
 	m_focused_node = {};
 	destroyOwnedTree(m_root_node);
+	m_owned_source_prefab = std::move(owned_snapshot);
 	m_root_node = replacement;
 	if (focused_uid.data() != 0) {
 		m_focused_node = findFrom(m_root_node, focused_uid);
@@ -269,6 +272,9 @@ Workspace::~Workspace() {
 		return;
 	}
 
+	if (isActiveWorkspace() && renderer::VulkanRenderer::instance) {
+		renderer::setActiveCamera(nullptr);
+	}
 	beginCameraShutdown();
 	m_root_node->propagateCallTick(m_root_node->info(), TickFunctionList::on_disable);
 	m_root_node->propagateCallTick(m_root_node->info(), TickFunctionList::end);
@@ -670,35 +676,7 @@ void Workspace::eventSubscriptions() {
 		recordHistory(std::move(context), [&] {
 			// Detach from the parent so the editor no longer reaches the subtree
 			std::erase(parent->m_children, node);
-
-			// Collect the whole subtree into raw pointers
-			std::vector<Node*> victims;
-			auto collect = [&victims](this auto&& self, Node& n) -> void {
-				victims.push_back(&n);
-				for (auto& c : n.m_children) {
-					self(*c);
-				}
-			};
-			collect(*node);
-			node = {};
-
-			// Free every node in place
-			for (Node* victim : victims) {
-				_detail::ControlBox* control = _detail::ControlBox::get(victim);
-				const NodeInfo* info = victim->info();
-
-				victim->m_parent = {};
-				victim->m_children.clear();
-				victim->m_listener.reset();
-
-				if (info && info->destroy) {
-					info->destroy(victim);
-				} else {
-					delete victim;
-				}
-				releaseNode(*control);
-			}
-			reapTombstones();
+			destroyOwnedTree(node);
 		});
 
 		event::send<event::RequestHierarchyUpdate>();
@@ -1352,6 +1330,8 @@ void Workspace::eventSubscriptions() {
 }
 
 void Workspace::tick() {
+	ZoneScoped;
+
 	if (!participatesIn(NodeOwnerParticipation::gameplay_tick)) {
 		tickActiveCameraController();
 	}
@@ -1375,6 +1355,7 @@ void Workspace::tick() {
 
 	std::vector<event::InspectorContent::InspectorField> fields;
 	Node* node = &*m_focused_node;
+	node->updateInspectorMessages();
 
 	for (const NodeInfo* type = node->info(); type != nullptr; type = type->base_type) {
 		for (const auto& field : type->all_fields) {
@@ -1401,8 +1382,13 @@ void Workspace::tick() {
 		}
 	}
 
+	std::vector<NodeMessage> messages;
+	for (const auto& m : m_focused_node->m_messages) {
+		messages.push_back(m);
+	}
+
 	event::send<event::InspectorContent>(
-	    m_focused_node->uid().get(), m_focused_node->name(), m_focused_node->enabled(), std::move(fields)
+	    m_focused_node->uid().get(), m_focused_node->name(), m_focused_node->enabled(), std::move(fields), std::move(messages)
 	);
 
 	// The exported script variables travel in their own message so the editor can rebuild

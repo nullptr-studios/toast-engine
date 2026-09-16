@@ -129,6 +129,7 @@ target_compile_definitions(toast_engine PUBLIC
 )
 
 if (MSVC)
+    target_compile_options(toast_engine PRIVATE /bigobj)
     target_compile_options(toast_engine PRIVATE $<$<CONFIG:Release>:/O2;/Ob2;/Oi;/Ot;/GL;/Gy;/Gw;/fp:fast>)
     target_link_options(toast_engine PRIVATE $<$<CONFIG:Release>:/LTCG>)
 endif ()

@@ -7,7 +7,7 @@
 #pragma once
 #include <toast/events/event.hpp>
 #include <toast/uid.hpp>
-#include <toast/world/box.hpp>
+#include <toast/world/node.hpp>
 #include <utility>
 
 namespace event {
@@ -234,12 +234,17 @@ struct InspectorContent : Event<InspectorContent> {
 	std::string name;
 	bool enabled;
 	std::vector<InspectorField> parameters;
+	std::vector<toast::NodeMessage> messages;
 
-	InspectorContent(std::string_view uid, std::string_view name, bool enabled, std::vector<InspectorField> fields)
+	InspectorContent(
+	    std::string_view uid, std::string_view name, bool enabled, std::vector<InspectorField> fields,
+	    std::vector<toast::NodeMessage> messages
+	)
 	    : uid(uid),
 	      name(name),
 	      enabled(enabled),
-	      parameters(std::move(fields)) { }
+	      parameters(std::move(fields)),
+	      messages(std::move(messages)) { }
 };
 
 struct InspectorLuaContent : Event<InspectorLuaContent> {

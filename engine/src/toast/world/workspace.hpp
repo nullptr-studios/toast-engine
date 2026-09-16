@@ -80,6 +80,8 @@ protected:
 	Workspace(UID handle, EmptyTag);
 
 	UID m_handle;
+	// In-memory source assets must outlive the handles held by the node tree.
+	std::unique_ptr<assets::Prefab> m_owned_source_prefab;
 	Box<Node> m_root_node;
 	Box<Node> m_focused_node;
 	event::Listener m_listener;

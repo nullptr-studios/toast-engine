@@ -11,6 +11,7 @@
 #include "input/input_events.hpp"
 #include "input/input_system.hpp"
 #include "logger.hpp"
+#include "physics/simulator.hpp"
 #include "project_settings.hpp"
 #include "reflect/reflect.hpp"
 #include "renderer/passes/debug_pass.hpp"
@@ -55,7 +56,6 @@ namespace {
 IApplication* active_application = nullptr;
 float total_time = 0.0;
 double clear_assets_timer = 0.0;
-double lua_memory_plot_timer = 0.0;
 double script_reload_timer = 0.0;
 
 }
@@ -76,6 +76,7 @@ struct EnginePimpl {
 	std::unique_ptr<ui::UISystem> ui_system = nullptr;
 	std::unique_ptr<ProjectSettings> settings = nullptr;
 	std::unique_ptr<scripting::LuaState> lua_state = nullptr;
+	std::unique_ptr<physics::Simulator> physics_simulator = nullptr;
 	Time time;
 	event::Listener listener;
 	toast::NodeRegistry reflection_registry;
@@ -201,6 +202,7 @@ void Engine::init() {
 
 	m->audio_system = std::make_unique<audio::AudioSystem>();
 	m->ui_system = std::make_unique<ui::UISystem>();
+	m->physics_simulator = std::make_unique<physics::Simulator>();
 }
 
 Engine::~Engine() noexcept {
@@ -271,7 +273,6 @@ void Engine::tick() {
 
 	{
 		std::scoped_lock lock(m->owners_mutex);
-		ZoneScopedN("NodeOwners::tick()");
 		for (const auto& [_, node_owner] : m->owners) {
 			node_owner->tick();
 		}
@@ -301,14 +302,6 @@ void Engine::tick() {
 
 	if (m->renderer) {
 		m->renderer->tick(total_time);
-	}
-
-	lua_memory_plot_timer += Time::delta();
-	if (lua_memory_plot_timer > 1.0) {
-		lua_memory_plot_timer = 0.0;
-		if (m->lua_state) {
-			m->lua_state->plotMemory();
-		}
 	}
 
 #ifdef DEBUG
@@ -584,7 +577,7 @@ void Engine::startGame() {
 }
 
 #ifdef TRACY_ENABLE
-// NOLINTBEGIN(cppcoreguidelines-no-malloc)
+// NOLINTBEGIN(cppcoreguidelines-no-malloc, readability-inconsistent-declaration-parameter-name)
 
 #ifdef _WIN32
 #include <malloc.h>
@@ -646,7 +639,6 @@ auto operator new[](std::size_t count, std::align_val_t align) -> void* {
 	return ptr;
 }
 
-// NOLINTNEXTLINE(readability-inconsistent-declaration-parameter-name)
 void operator delete(void* ptr) noexcept {
 	tracy::Profiler::MemFreeCallstack(ptr, TRACY_CALLSTACK, true);
 	free(ptr);
@@ -713,7 +705,7 @@ void operator delete[](void* ptr, std::size_t, std::align_val_t) noexcept {
 #endif
 }
 
-// NOLINTEND(cppcoreguidelines-no-malloc)
+// NOLINTEND(cppcoreguidelines-no-malloc, readability-inconsistent-declaration-parameter-name)
 #endif
 
 // ffi stuff

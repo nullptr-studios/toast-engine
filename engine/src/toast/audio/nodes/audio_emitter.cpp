@@ -6,6 +6,20 @@
 
 namespace toast {
 
+void AudioEmitter::updateInspectorMessages() {
+	static const NodeMessage message {
+	  .severity = NodeMessage::warning,
+	  .id = 10,
+	  .text = "AudioEmitter requires an AudioEvent",
+	};
+
+	if (m_event.hasValue()) {
+		removeInspectorMessage(message);
+	} else {
+		addInspectorMessage(message);
+	}
+}
+
 void AudioEmitter::play() {
 	if (!m_event.hasValue()) {
 		return;

@@ -1,6 +1,7 @@
 #include "world.hpp"
 
 #include "camera.hpp"
+#include "toast/physics/simulator.hpp"
 #include "workspace_events.hpp"
 #include "world_test_access.hpp"
 
@@ -73,20 +74,37 @@ World::~World() {
 void World::tick() {
 	ZoneScoped;
 
+	/* The tick is more or less split into 6 stages
+	 *   1: queue draining
+	 *   2: earlyTick [dispatch]
+	 *   3: transform update
+	 *   4: tick [dispatch]
+	 *   5: accumulation update
+	 *   6: lateTick [dispatch]
+	 *
+	 * The only real discrepancy is that the accumulation update will not be handled
+	 * by the world but from the physics::Simulator class
+	 */
+
 	drainDestroyQueue();
 	drainLoadQueue();
 	drainSpawnQueue();
 
 	m_scheduler.runPhase(m_scheduler.schedule.early_tick, TickFunctionList::early_tick, "early_tick");
+
 	if (trees.root.exists()) {
 		INodeOwner::updateTransforms(*trees.root);
 	}
 	for (auto& g : trees.global) {
 		INodeOwner::updateTransforms(*g);
 	}
+
 	m_scheduler.runPhase(m_scheduler.schedule.tick, TickFunctionList::tick, "tick");
-	// TODO: physics step goes between tick and post_physics
+
+	m_accumulator.tick(Time::delta(), [&]() { physics::Simulator::callTick(); });
+	// TODO: Is this class really needed?
 	m_scheduler.runPhase(m_scheduler.schedule.post_physics, TickFunctionList::post_physics, "post_physics");
+
 	m_scheduler.runPhase(m_scheduler.schedule.late_tick, TickFunctionList::late_tick, "late_tick");
 }
 

@@ -42,6 +42,7 @@ public:
 	signals::Signal<Box<Node>> set_as_main;
 
 private:
+	void updateInspectorMessages() override;
 	void begin();
 	void end();
 	void onEnable();

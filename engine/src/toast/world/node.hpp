@@ -16,6 +16,7 @@
 #include "box.hpp"
 #include "control_box.hpp"
 
+#include <list>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -28,6 +29,10 @@
 #include <toast/reflect/reflect_node.hpp>
 #include <toast/uid.hpp>
 #include <toast/world/node_owner.hpp>
+
+namespace physics {
+class Collider;
+}
 
 namespace assets {
 class Script;
@@ -60,6 +65,18 @@ enum class NodeType : uint8_t {
 	world_root,    ///< This node is the root that resides in the world
 };
 
+struct NodeMessage {
+	enum Severity : uint8_t {
+		warning,
+		error
+	} severity;
+
+	uint8_t id;
+	std::string text;
+
+	auto operator==(const NodeMessage& rhs) const noexcept -> bool { return id == rhs.id; }
+};
+
 class [[ToastNode, Icon("Circle")]] TOAST_API Node {
 	friend class INodeOwner;
 	friend class World;
@@ -71,6 +88,7 @@ class [[ToastNode, Icon("Circle")]] TOAST_API Node {
 	friend struct _detail::ControlBox;
 	friend struct _detail::NodeCluster;
 	friend struct toast::_detail::WorldTestAccess;
+	friend class physics::Collider;
 
 public:
 	Node();
@@ -363,6 +381,20 @@ protected:
 
 	virtual void onReflectedFieldChanged(std::string_view /*field_name*/) { }
 
+	virtual void updateInspectorMessages() { }
+
+	void addInspectorMessage(const NodeMessage& message) {
+		for (auto& existing : m_messages) {
+			if (existing == message) {
+				existing = message;
+				return;
+			}
+		}
+		m_messages.emplace_back(message);
+	}
+
+	void removeInspectorMessage(const NodeMessage& message) { m_messages.remove(message); }
+
 private:
 	[[Reflect, Hidden]]
 	UID m_uid;    // serialized unique id
@@ -423,6 +455,8 @@ private:
 
 	/// Builds m_script_runtime from m_scripts
 	void loadScripts() noexcept;
+
+	std::list<NodeMessage> m_messages;
 };
 
 }

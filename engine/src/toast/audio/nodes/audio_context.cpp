@@ -2,7 +2,25 @@
 
 #include "../audio_system.hpp"
 
+#include <algorithm>
+
 namespace toast {
+void AudioContext::updateInspectorMessages() {
+	static const NodeMessage message {
+	  .severity = NodeMessage::warning,
+	  .id = 20,
+	  .text = "AudioContext requires at least one AudioBank",
+	};
+
+	std::scoped_lock lock(m_load_lock);
+	const bool has_bank = std::ranges::any_of(m_banks, [](const auto& bank) { return bank.hasValue(); });
+	if (has_bank) {
+		removeInspectorMessage(message);
+	} else {
+		addInspectorMessage(message);
+	}
+}
+
 void AudioContext::addBank(const assets::Handle<assets::AudioBank>& bank) {
 	ZoneScoped;
 	TOAST_INFO("Audio", "Added bank to AudioContext {}", box());

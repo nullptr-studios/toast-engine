@@ -41,6 +41,7 @@ class Material;
 namespace toast {
 class Camera;
 class MeshNode;
+class Node3D;
 }
 
 namespace renderer {
@@ -111,6 +112,7 @@ public:
 		// Immediate-mode debug draw data queued via debugDrawLine()/debugDrawBox()/debugDrawSphere()/
 		// debugDrawAxes() dnd consumed by DebugPass
 		std::vector<DebugVertex> debug_line_vertices;    // consecutive pairs; each pair is one line segment
+		std::vector<DebugVertex> debug_triangle_vertices;
 		std::vector<glm::mat4> debug_gizmo_instances;    // one axis-triad gizmo draw per entry
 
 		// Secondary command buffers recorded by ui::UISystem on the main thread
@@ -159,6 +161,8 @@ public:
 
 	/// @brief Registers @p node so its mesh is drawn each frame; no-op if already registered
 	void registerMeshNodeProxy(toast::MeshNode* node);
+	void registerDebugDraw(toast::Node3D* node, void (*draw)(toast::Node3D&));
+	void unregisterDebugDraw(toast::Node3D* node);
 
 	/// @brief Unregisters @p node so it stops being drawn
 	void unregisterMeshNodeProxy(toast::MeshNode* node);
@@ -353,6 +357,7 @@ private:
 
 	std::mutex m_mesh_proxy_mutex;
 	std::vector<toast::MeshNode*> m_mesh_proxy_nodes;
+	std::vector<std::pair<toast::Node3D*, void (*)(toast::Node3D&)>> m_debug_nodes;
 
 	// FrameUBO and related resources
 	std::vector<FrameUBO> m_frame_ubos;
@@ -431,6 +436,10 @@ inline auto renderingFrame() -> const VulkanRenderer::RenderFrame* {
 }
 
 /// DEBUG LINES
+
+void debugDrawSolidSphere(glm::vec3 center, float radius, glm::vec4 color);
+void debugDrawShapeBox(const glm::mat4& transform, glm::vec4 color, bool fill);
+void debugDrawCapsule(const glm::mat4& transform, float radius, float height, glm::vec4 color, bool fill);
 
 /**
  * @brief Queues a debug line segmentfor the frame currently being built

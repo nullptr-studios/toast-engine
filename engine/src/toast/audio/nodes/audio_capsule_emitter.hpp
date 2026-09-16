@@ -17,6 +17,8 @@ namespace toast {
  * tunnels, and tall vertical spaces
  */
 class TOAST_API [[ToastNode]] AudioCapsuleEmitter : public AudioEmitterBase {
+	friend class AudioEmitterBase;
+
 public:
 	void radius(float value);
 	void halfHeight(float value);
