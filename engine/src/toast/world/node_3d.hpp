@@ -58,6 +58,7 @@ public:
 	auto forward() const -> glm::vec3;
 
 	void syncTransform() const;
+	void refreshTransformParent();
 
 	[[nodiscard]]
 	auto getTransform() const noexcept -> const glm::mat4&;

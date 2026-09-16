@@ -396,6 +396,15 @@ protected:
 	void removeInspectorMessage(const NodeMessage& message) { m_messages.remove(message); }
 
 private:
+	bool m_recursive_prefab = false;
+
+public:
+	[[nodiscard]]
+	auto isRecursivePrefab() const noexcept -> bool {
+		return m_recursive_prefab;
+	}
+
+private:
 	[[Reflect, Hidden]]
 	UID m_uid;    // serialized unique id
 	std::string m_name;

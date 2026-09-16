@@ -315,6 +315,7 @@ public partial class MainWindowView : Window {
 		else if (ctrl && e.Key == Key.X) command = vm.Hierarchy?.CutCommand;
 		else if (ctrl && e.Key == Key.C) command = vm.Hierarchy?.CopyCommand;
 		else if (ctrl && e.Key == Key.V) command = vm.Hierarchy?.PasteCommand;
+		else if (ctrlShift && e.Key == Key.V) command = vm.Hierarchy?.PasteAsChildCommand;
 		else if (ctrl && e.Key == Key.D) command = vm.Hierarchy?.DuplicateCommand;
 		else if (ctrl && e.Key == Key.Up) command = vm.Hierarchy?.MoveUpCommand;
 		else if (ctrl && e.Key == Key.Down) command = vm.Hierarchy?.MoveDownCommand;

@@ -289,12 +289,14 @@ Prefab::Prefab(const Prefab& other)
     : global_fields(other.global_fields),
       nodes(other.nodes),
       m_self_uid(other.m_self_uid),
+      m_purpose(other.m_purpose),
       m_allowed_uids(other.m_allowed_uids) { }
 
 Prefab::Prefab(Prefab&& other) noexcept
     : global_fields(std::move(other.global_fields)),
       nodes(std::move(other.nodes)),
       m_self_uid(other.m_self_uid),
+      m_purpose(other.m_purpose),
       m_allowed_uids(std::move(other.m_allowed_uids)) { }
 
 auto Prefab::operator=(const Prefab& other) -> Prefab& {
@@ -304,6 +306,7 @@ auto Prefab::operator=(const Prefab& other) -> Prefab& {
 	global_fields = other.global_fields;
 	nodes = other.nodes;
 	m_self_uid = other.m_self_uid;
+	m_purpose = other.m_purpose;
 	m_allowed_uids = other.m_allowed_uids;
 	return *this;
 }
@@ -315,6 +318,7 @@ auto Prefab::operator=(Prefab&& other) noexcept -> Prefab& {
 	global_fields = std::move(other.global_fields);
 	nodes = std::move(other.nodes);
 	m_self_uid = other.m_self_uid;
+	m_purpose = other.m_purpose;
 	m_allowed_uids = std::move(other.m_allowed_uids);
 	return *this;
 }
@@ -485,8 +489,10 @@ auto Prefab::parseNodeChunk(std::span<const std::string> lines) -> std::optional
 				node.lua_vars.push_back(std::move(*lua_var));
 			}
 			i++;
-		} else if (const size_t name_end = current.find(' ');
-		           name_end != std::string::npos && std::string_view(current).substr(name_end + 1).starts_with("@signal ")) {
+		} else if (
+		    const size_t name_end = current.find(' ');
+		    name_end != std::string::npos && std::string_view(current).substr(name_end + 1).starts_with("@signal ")
+		) {
 			auto signal = parseSignal(current);
 			if (signal) {
 				auto existing = std::ranges::find(node.signals, signal->name, &Signal::name);
@@ -1357,12 +1363,19 @@ Prefab::Prefab(std::span<const uint8_t> bytes) {
 #endif
 }
 
-Prefab::Prefab(const toast::Node& node, toast::UID self_uid) : m_self_uid(self_uid) {
-	auto collect = [](this auto&& self, const toast::Node& n, std::unordered_set<uint64_t>& allowed) -> void {
+Prefab::Prefab(const toast::Node& node, toast::UID self_uid, Purpose purpose) : m_self_uid(self_uid), m_purpose(purpose) {
+	auto collect = [&](this auto&& self, const toast::Node& n, std::unordered_set<uint64_t>& allowed) -> void {
+		if (purpose == Purpose::asset_definition &&
+		    (n.m_recursive_prefab || (&n != &node && self_uid.data() != 0 && n.sourcePrefab().uid() == self_uid))) {
+			return;
+		}
 		allowed.insert(n.uid().data());
 		for (const auto& child : n.m_children) {
 			if (child->isInstanceRoot()) {
-				allowed.insert(child->uid().data());
+				if (purpose != Purpose::asset_definition ||
+				    (!child->m_recursive_prefab && (self_uid.data() == 0 || child->sourcePrefab().uid() != self_uid))) {
+					allowed.insert(child->uid().data());
+				}
 			} else {
 				self(*child, allowed);
 			}
@@ -1376,6 +1389,10 @@ Prefab::Prefab(const toast::Node& node, toast::UID self_uid) : m_self_uid(self_u
 }
 
 void Prefab::serializeNode(const toast::Node& node, bool is_root) {
+	if (m_purpose == Purpose::asset_definition &&
+	    (node.m_recursive_prefab || (!is_root && m_self_uid.data() != 0 && node.sourcePrefab().uid() == m_self_uid))) {
+		return;
+	}
 	const auto* node_info = node.info();
 	if (!node_info) {
 		TOAST_ERROR("ResourceManager", "Cannot serialize node '{}': no reflection info attached", node.name());
@@ -1384,15 +1401,33 @@ void Prefab::serializeNode(const toast::Node& node, bool is_root) {
 
 	// Unresolved reference
 	if (node.m_unresolved_chunk) {
-		nodes.push_back(*node.m_unresolved_chunk);
+		BasicNode chunk = *node.m_unresolved_chunk;
+		chunk.name = std::string(node.name());
+		auto replace = [&](std::string_view name, std::optional<UID> value) {
+			std::erase_if(chunk.fields, [&](const Field& f) { return f.name == name; });
+			for (auto& g : chunk.groups) {
+				std::erase_if(g.fields, [&](const Field& f) { return f.name == name; });
+				for (auto& s : g.subgroups) {
+					std::erase_if(s.fields, [&](const Field& f) { return f.name == name; });
+				}
+			}
+			if (value) {
+				chunk.fields.push_back({std::string(name), FieldType::uid_t, false, *value});
+			}
+		};
+		replace("m_uid", node.uid());
+		replace("m_parent", !is_root && node.m_parent.exists() ? std::optional(node.m_parent->uid()) : std::nullopt);
+		nodes.push_back(std::move(chunk));
 		return;
 	}
 
 	const uint64_t source = node.m_source_prefab.uid().data();
 
 	// We need to handle other prefabs properly
-	const bool is_reference = (not is_root && node.isInstanceRoot()) ||
-	                          (is_root && node.isInstanceRoot() && m_self_uid.data() != 0 && source != m_self_uid.data());
+	const bool is_reference =
+	    (not is_root && node.isInstanceRoot()) ||
+	    (is_root && m_purpose == Purpose::instance_copy && node.isInstanceRoot() && node.type() != NodeType::world_root) ||
+	    (is_root && node.isInstanceRoot() && m_self_uid.data() != 0 && source != m_self_uid.data());
 
 	// For a reference chunk, only fields that differ from the prefab's root are written
 	std::optional<BasicNode> base;
@@ -1663,6 +1698,20 @@ auto Prefab::flattenedRootFields(const Handle<Prefab>& source) const -> std::opt
 		for (const Field& pf : parent_root.fields) {
 			if (not flat.find(pf.name).has_value()) {
 				flat.fields.push_back(pf);
+			}
+		}
+		for (const auto& group : parent_root.groups) {
+			for (const auto& field : group.fields) {
+				if (!flat.find(field.name)) {
+					flat.fields.push_back(field);
+				}
+			}
+			for (const auto& subgroup : group.subgroups) {
+				for (const auto& field : subgroup.fields) {
+					if (!flat.find(field.name)) {
+						flat.fields.push_back(field);
+					}
+				}
 			}
 		}
 		for (const LuaVarOverride& plv : parent_root.lua_vars) {

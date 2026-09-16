@@ -69,6 +69,9 @@ public:
 	};
 
 protected:
+	virtual auto owningPrefabUid() const -> UID { return UID(0); }
+
+	void seedPrefabContext(InstantiateContext& context, const Node* parent = nullptr) const;
 	static void updateTransforms(Node& root);
 
 	/// Assigns a fresh UID to the node; called on every spawned instance to avoid UID collisions

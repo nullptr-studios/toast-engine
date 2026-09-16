@@ -5,6 +5,10 @@
 #include <cstdint>
 #include <toast/uid.hpp>
 
+namespace assets {
+class Prefab;
+}
+
 namespace renderer {
 class VulkanCore;
 class VulkanRenderer;
@@ -48,6 +52,7 @@ public:
 	void destroyWorkspace(UID handle);
 
 	auto activeWorkspace() -> UID;
+	void publishPrefab(UID uid, const assets::Prefab& prefab);
 
 	/// @brief Re-resolves NodeInfo after a project reload
 	void refreshNodeInfos();

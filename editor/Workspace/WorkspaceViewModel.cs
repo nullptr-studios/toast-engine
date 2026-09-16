@@ -33,7 +33,6 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 	[ObservableProperty] private bool m_gameCamera;
 	[ObservableProperty] private bool m_isPaused;
 	private ulong m_nextSaveRequest = 1;
-	private string? m_pendingRootName;
 	private TaskCompletionSource<WorkspaceSaveCompleted>? m_pendingSave;
 	private ulong m_pendingSaveRequest;
 
@@ -137,10 +136,6 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 	// called by HierarchyViewModel whenever the hierarchy tree updates
 	public void SetRootNode(string uid) {
 		RootUid = uid;
-		if (m_pendingRootName is { } name) {
-			m_pendingRootName = null;
-			Events.Send(new NodeChangeName { Node = uid, Name = name });
-		}
 	}
 
 	public void BindBackingFile(string virtualUri, string assetUid) {
@@ -167,10 +162,12 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 
 	private void OnSaveCompleted(WorkspaceSaveCompleted completed) {
 		if (completed.WorkspaceHandle != Handle || completed.Request != m_pendingSaveRequest) return;
+		if (completed.Success) History.MarkSaved(completed.Snapshot);
 		m_pendingSave?.TrySetResult(completed);
 	}
 
 	private async Task<bool> SaveNativeAsync(string target, string path) {
+		if (m_pendingSave is not null) return false;
 		var request = m_nextSaveRequest++;
 		m_pendingSaveRequest = request;
 		m_pendingSave =
@@ -185,7 +182,6 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 		m_pendingSave = null;
 		m_pendingSaveRequest = 0;
 		if (!completed.Success) return false;
-		History.MarkSaved(completed.Snapshot);
 		return true;
 	}
 
@@ -382,7 +378,6 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 
 		if (BackingUri is null) return await SaveAs(); // no path yet -> prompt the user
 
-		Events.Send(new NodeChangeName { Node = RootUid, Name = Path.GetFileNameWithoutExtension(BackingUri) });
 		if (!await SaveNativeAsync(RootUid, BackingUri)) return false;
 		MetaFile.Touch(BackingUri);
 		DeleteAutosaves();
@@ -407,7 +402,6 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 		AssetDatabase.RebuildAssetDatabase();
 
 		Events.Send(new ReloadAssetsManifest());
-		Events.Send(new NodeChangeName { Node = RootUid, Name = Path.GetFileNameWithoutExtension(virtualPath) });
 		if (!await SaveNativeAsync(RootUid, virtualPath)) return false;
 
 		BackingUri = virtualPath;
@@ -433,6 +427,7 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 			Id = $"Workspace_{res.Uid}"
 		};
 		ws.InitializeHistory();
+		ws.History.MarkUnsaved();
 		return ws;
 	}
 
@@ -450,8 +445,8 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 			Id = $"Workspace_{res.Uid}"
 		};
 		ws.BindBackingFile(virtualPath, assetUid);
-		ws.m_pendingRootName = Path.GetFileNameWithoutExtension(virtualPath);
 		ws.InitializeHistory();
+		if (recoverVirtualPath is not null) ws.History.MarkUnsaved();
 		return ws;
 	}
 }

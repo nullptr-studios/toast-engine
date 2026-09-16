@@ -154,6 +154,11 @@
 					          IsEnabled="{Binding History.HasWorkspace}"
 					          Command="{Binding Hierarchy.PasteCommand}"
 					          CommandParameter="{Binding Hierarchy.SelectedNode}" />
+					<MenuItem Header="Paste as Child"
+					          InputGesture="Ctrl+Shift+V"
+					          IsEnabled="{Binding History.HasWorkspace}"
+					          Command="{Binding Hierarchy.PasteAsChildCommand}"
+					          CommandParameter="{Binding Hierarchy.SelectedNode}" />
 					<MenuItem Header="_Duplicate"
 					          InputGesture="Ctrl+D"
 					          IsEnabled="{Binding History.HasWorkspace}"

@@ -107,6 +107,7 @@ public:
 	 * @note Useful for newly created assets that are not yet in the manifest; does not update the manifest
 	 */
 	auto saveBytes(std::string_view uri, const std::vector<uint8_t>& data) -> bool;
+	void replacePrefab(toast::UID uid, const Prefab& prefab);
 
 	/**
 	 * @brief Reads raw bytes from the URI, bypassing the manifest

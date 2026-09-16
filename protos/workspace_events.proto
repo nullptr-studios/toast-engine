@@ -13,6 +13,7 @@ message HierarchyElement {
 message UpdateHierarchyData {
   HierarchyElement root = 1;
   bool is_empty = 2;
+  uint64 workspace_handle = 3;
 }
 
 message RequestHierarchyUpdate {}

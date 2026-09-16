@@ -28,7 +28,7 @@ namespace toast {
  *
  * @see World, INodeOwner
  */
-class Workspace : public INodeOwner {
+class TOAST_API Workspace : public INodeOwner {
 public:
 	/**
 	 * @brief Creates a new workspace rooted at a single fresh node of the given type
@@ -72,7 +72,12 @@ public:
 	/// Same query grammar as World::searchFrom(); searches only within m_root_node
 	auto searchFrom(const Node& origin, std::string_view query) -> std::vector<Box<Node>> override;
 
+	void preparePrefabReload(UID uid);
+	void finishPrefabReload();
+
 protected:
+	auto owningPrefabUid() const -> UID override { return m_handle; }
+
 	/// disambiguates the protected ctor from Workspace(UID)
 	struct EmptyTag { };
 
@@ -131,6 +136,12 @@ protected:
 	void applyActiveCamera() override;
 
 private:
+	struct PendingPrefabReload {
+		Box<Node> node;
+		assets::Prefab reference;
+	};
+
+	std::vector<PendingPrefabReload> m_prefab_reloads;
 	double m_inspector_accum = 0.0;
 
 public:

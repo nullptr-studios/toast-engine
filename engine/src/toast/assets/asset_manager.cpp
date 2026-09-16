@@ -12,6 +12,18 @@
 
 namespace assets {
 
+void AssetManager::replacePrefab(toast::UID uid, const Prefab& prefab) {
+	std::lock_guard lock(mutex);
+	auto it = cache.find(uid.data());
+	if (it != cache.end()) {
+		if (auto* existing = dynamic_cast<Prefab*>(it->second.get())) {
+			*existing = prefab;
+		}
+	} else {
+		cache.emplace(uid.data(), std::make_unique<Prefab>(prefab));
+	}
+}
+
 void AssetManager::setLoadMode(SaveMode mode) {
 	load_mode = mode;
 	TOAST_INFO("AssetManager", "Load mode set to {}", mode == SaveMode::game ? "game" : "editor");
@@ -642,8 +654,10 @@ void AssetManager::pollModifiedAssets() {
 			event::send<event::ScriptAssetReloaded>(uid);
 		} else if (type == "shader") {
 			event::send<event::ShaderAssetReloaded>(uid);
-		} else if (type == "ui_element" || type == "ui_style" || type == "color_scheme" || type == "localization" ||
-		           type == "image_localization") {
+		} else if (
+		    type == "ui_element" || type == "ui_style" || type == "color_scheme" || type == "localization" ||
+		    type == "image_localization"
+		) {
 			event::send<event::UIAssetReloaded>(uid, type);
 		} else {
 			event::send<event::MaterialAssetReloaded>(uid);

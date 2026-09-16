@@ -13,7 +13,7 @@ UpdateHierarchyData::HierarchyElement::HierarchyElement(const toast::Box<toast::
 	name = node->name();
 	type = node->info()->type;
 	enabled = node->enabled();
-	is_prefab = node->type() == toast::NodeType::root;
+	is_prefab = node->isInstanceRoot() && node->type() != toast::NodeType::world_root;
 	children.reserve(node->children().size());
 	for (const auto& c : node->children()) {
 		// TODO: not go down if its a prefab
@@ -30,7 +30,7 @@ UpdateHierarchyData::HierarchyElement::HierarchyElement(const HierarchyElement& 
 	is_prefab = other.is_prefab;
 }
 
-UpdateHierarchyData::UpdateHierarchyData(const toast::Box<toast::Node>& node) {
+UpdateHierarchyData::UpdateHierarchyData(const toast::Box<toast::Node>& node, uint64_t handle) : workspace_handle(handle) {
 	if (node.exists()) {
 		root = HierarchyElement(node);
 	} else {
@@ -80,12 +80,13 @@ struct ProtoTraits<UpdateHierarchyData> {
 	static auto toProto(const Event& e) -> Proto {
 		Proto p;
 		p.set_is_empty(e.is_empty);
+		p.set_workspace_handle(e.workspace_handle);
 		*p.mutable_root() = ProtoTraits<UpdateHierarchyData::HierarchyElement>::toProto(e.root);
 		return p;
 	}
 
 	static auto fromProto(const Proto& p) -> Event {
-		return {ProtoTraits<UpdateHierarchyData::HierarchyElement>::fromProto(p.root()), p.is_empty()};
+		return {ProtoTraits<UpdateHierarchyData::HierarchyElement>::fromProto(p.root()), p.is_empty(), p.workspace_handle()};
 	}
 };
 

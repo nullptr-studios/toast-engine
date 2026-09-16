@@ -30,10 +30,14 @@ struct UpdateHierarchyData : Event<UpdateHierarchyData> {
 
 	HierarchyElement root;
 	bool is_empty = false;
+	uint64_t workspace_handle = 0;
 
-	UpdateHierarchyData(const toast::Box<toast::Node>& node);
+	UpdateHierarchyData(const toast::Box<toast::Node>& node, uint64_t handle);
 
-	UpdateHierarchyData(const HierarchyElement& h, bool is_empty) : root(h), is_empty(is_empty) { }
+	UpdateHierarchyData(const HierarchyElement& h, bool is_empty, uint64_t handle)
+	    : root(h),
+	      is_empty(is_empty),
+	      workspace_handle(handle) { }
 };
 
 struct RequestHierarchyUpdate : Event<RequestHierarchyUpdate> { };
