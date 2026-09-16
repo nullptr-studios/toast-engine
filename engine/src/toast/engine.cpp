@@ -75,8 +75,8 @@ namespace toast {
 namespace {
 IApplication* active_application = nullptr;
 double clear_assets_timer = 0.0;
-double script_reload_timer = 0.0;
 
+double script_reload_timer = 0.0;
 }
 
 Engine* Engine::instance = nullptr;
@@ -381,15 +381,7 @@ void Engine::tick() {
 		m->renderer->tick(Time::uptime());
 	}
 
-	lua_memory_plot_timer += Time::delta();
-	if (lua_memory_plot_timer > 1.0) {
-		lua_memory_plot_timer = 0.0;
-		if (m->lua_state) {
-			m->lua_state->plotMemory();
-		}
-	}
-
-	// SHOULDNT THIS ALSO HAPPEN IN RELEASE EDITOR BUILDS?
+	// FIXME: SHOULDNT THIS ALSO HAPPEN IN RELEASE EDITOR BUILDS?
 #ifdef DEBUG
 	// dev builds hot-reload scripts, shaders and materials edited on disk
 	script_reload_timer += Time::delta();

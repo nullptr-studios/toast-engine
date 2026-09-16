@@ -4,9 +4,8 @@
 
 #include "camera.hpp"
 
-#include <toast/renderer/vulkan_renderer.hpp>
-
 #include <cmath>
+#include <toast/renderer/vulkan_renderer.hpp>
 
 namespace toast {
 
