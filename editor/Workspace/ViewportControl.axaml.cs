@@ -11,6 +11,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using editor.Engine;
 using Proto.Events;
 
@@ -22,6 +23,12 @@ public partial class ViewportControl : UserControl {
 
 	private const int ScancodeMask = 1 << 30; // SDLK_SCANCODE_MASK
 
+	private const double TrackpadNotchEpsilon = 1e-3;
+
+	private const double PanScale = 40.0;
+	private const float PinchZoomScale = 100f;
+	private const float WheelZoomScale = 20f;
+
 	public static readonly StyledProperty<bool> PlayModeProperty =
 		AvaloniaProperty.Register<ViewportControl, bool>(nameof(PlayMode));
 
@@ -31,6 +38,9 @@ public partial class ViewportControl : UserControl {
 	private static readonly MethodInfo? s_setCursor =
 		typeof(ITopLevelImpl).GetMethod(
 			"SetCursor", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+
+	private ulong m_trackpadHandle;
+	private int m_trackpadX = int.MinValue, m_trackpadY, m_trackpadW, m_trackpadH;
 
 	private WriteableBitmap? m_bitmap;
 	private bool m_captured;
@@ -71,6 +81,7 @@ public partial class ViewportControl : UserControl {
 		AttachedToVisualTree += OnAttached;
 		DetachedFromVisualTree += OnDetached;
 		LostFocus += OnLostFocus;
+		PointerTouchPadGestureMagnify += OnTouchpadMagnify;
 	}
 
 	public bool PlayMode {
@@ -156,6 +167,10 @@ public partial class ViewportControl : UserControl {
 		// capture auto-clears on every mouse-up and events outside our bounds never reach us
 		m_topLevel = TopLevel.GetTopLevel(this);
 		m_topLevel?.AddHandler(PointerMovedEvent, OnTopLevelPointerMoved, RoutingStrategies.Tunnel, true);
+		if (OperatingSystem.IsWindows() && TrackpadBridge.Supported &&
+		    m_topLevel?.TryGetPlatformHandle() is { } platformHandle &&
+		    platformHandle.HandleDescriptor == "HWND")
+			m_trackpadHandle = TrackpadBridge.Create(platformHandle.Handle);
 
 		m_frameLoopActive = true;
 		ScheduleFrame();
@@ -182,6 +197,10 @@ public partial class ViewportControl : UserControl {
 		if (m_editorFlyActive) EndEditorFly();
 
 		m_topLevel?.RemoveHandler(PointerMovedEvent, OnTopLevelPointerMoved);
+		if (m_trackpadHandle != 0) {
+			TrackpadBridge.Destroy(m_trackpadHandle);
+			m_trackpadHandle = 0;
+		}
 		m_topLevel = null;
 
 		// Stops the callback re-arming; any already-queued one returns immediately
@@ -201,9 +220,13 @@ public partial class ViewportControl : UserControl {
 		}
 
 		if (!IsEffectivelyVisible) {
+			HideTrackpadViewport();
 			m_wasVisible = false;
 			return;
 		}
+
+		UpdateTrackpadViewport();
+		PollTrackpadGestures();
 
 		if (!m_wasVisible) {
 			m_wasVisible = true;
@@ -243,6 +266,56 @@ public partial class ViewportControl : UserControl {
 
 		if (result == 1 && changed)
 			Surface.InvalidateVisual();
+	}
+
+	private bool CanControlEditorCamera =>
+		!PlayMode && DataContext is WorkspaceViewModel { GameCamera: false };
+
+	private void SendEditorCameraGesture(float dx, float dy, float zoom) {
+		if (!CanControlEditorCamera || m_engine is null) return;
+		Events.Send(new EditorCameraGesture { Dx = dx, Dy = dy, Zoom = zoom });
+	}
+
+	private void PollTrackpadGestures() {
+		if (m_trackpadHandle == 0) return;
+		TrackpadBridge.Update(m_trackpadHandle);
+
+		if (!CanControlEditorCamera) return;
+		if (!TrackpadBridge.Drain(m_trackpadHandle, out var gesture)) return;
+
+		var sign = gesture.Inverted != 0 ? 1f : -1f;
+		SendEditorCameraGesture(gesture.PanX * sign, gesture.PanY * sign, gesture.Zoom);
+	}
+
+	private void UpdateTrackpadViewport() {
+		if (m_trackpadHandle == 0 || m_topLevel is null) return;
+		var origin = this.TranslatePoint(default, m_topLevel);
+		if (origin is null) return;
+
+		var scale = RenderScaling();
+		var x = (int)Math.Round(origin.Value.X * scale);
+		var y = (int)Math.Round(origin.Value.Y * scale);
+		var width = Math.Max(1, (int)Math.Round(Bounds.Width * scale));
+		var height = Math.Max(1, (int)Math.Round(Bounds.Height * scale));
+		if (x == m_trackpadX && y == m_trackpadY && width == m_trackpadW && height == m_trackpadH) return;
+
+		m_trackpadX = x;
+		m_trackpadY = y;
+		m_trackpadW = width;
+		m_trackpadH = height;
+		TrackpadBridge.SetRect(m_trackpadHandle, x, y, width, height);
+	}
+
+	private void HideTrackpadViewport() {
+		if (m_trackpadHandle == 0 || m_trackpadX == int.MinValue) return;
+		m_trackpadX = int.MinValue;
+		TrackpadBridge.SetRect(m_trackpadHandle, -32000, -32000, 1, 1);
+	}
+
+	private void OnTouchpadMagnify(object? sender, PointerDeltaEventArgs e) {
+		if (!CanControlEditorCamera) return;
+		SendEditorCameraGesture(0f, 0f, (float)(e.Delta.X != 0 ? e.Delta.X : e.Delta.Y) * PinchZoomScale);
+		e.Handled = true;
 	}
 
 	private void AllocateBitmap(int width, int height) {
@@ -366,7 +439,7 @@ public partial class ViewportControl : UserControl {
 		var button = ButtonFromUpdateKind(e.GetCurrentPoint(this).Properties.PointerUpdateKind);
 
 		// RMB in edit mode starts the fly camera
-		if (!PlayMode && button == 3) {
+		if (CanControlEditorCamera && button == 3) {
 			m_editorFlyActive = true;
 			m_lastFlyPoint = e.GetPosition(this);
 			BeginCapture(showHint: false);
@@ -414,9 +487,31 @@ public partial class ViewportControl : UserControl {
 	protected override void OnPointerWheelChanged(PointerWheelEventArgs e) {
 		base.OnPointerWheelChanged(e);
 
+		if (m_trackpadHandle != 0) {
+			if (TrackpadBridge.Active(m_trackpadHandle)) {
+				e.Handled = true;
+				return;
+			}
+		} else if (CanControlEditorCamera && e.KeyModifiers.HasFlag(KeyModifiers.Control)) {
+			SendEditorCameraGesture(0f, 0f, (float)e.Delta.Y * PinchZoomScale);
+			e.Handled = true;
+			return;
+		} else if (CanControlEditorCamera && (e.Delta.X != 0 || Math.Abs(e.Delta.Y % 1.0) > TrackpadNotchEpsilon)) {
+			SendEditorCameraGesture((float)(e.Delta.X * PanScale), (float)(e.Delta.Y * PanScale), 0f);
+			e.Handled = true;
+			return;
+		}
+
+		if (CanControlEditorCamera && DataContext is WorkspaceViewModel { CameraMode: CameraMode.Orbit }) {
+			SendEditorCameraGesture(0f, 0f, (float)e.Delta.Y * WheelZoomScale);
+			e.Handled = true;
+			return;
+		}
+
 		// scrolling while flying adjusts fly speed
 		if (m_editorFlyActive) {
-			if (m_engine is not null) Events.Send(new EditorCameraSpeedScroll { Delta = (float)e.Delta.Y });
+			if (DataContext is WorkspaceViewModel vm) vm.StepCameraSpeedFromWheel(e.Delta.Y);
+			e.Handled = true;
 			return;
 		}
 

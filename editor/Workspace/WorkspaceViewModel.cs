@@ -2,6 +2,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -16,6 +17,7 @@ using Proto.Events;
 namespace editor.Workspace;
 
 public enum GizmoTool { Select, Translate, Rotate, Scale, Ruler }
+public enum CameraMode { Free, Orbit }
 
 // Must stay in sync with mesh.slang's renderModePad.x branches (0 Lit, 1 ClusterHeatmap, then the debug views)
 // Ordinal, and the shaders compare against raw numbers - renderer::TracedShadowPass pins 17 and 18 in
@@ -30,6 +32,7 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 
 	private static readonly double[] s_linearSnapSteps = [0.01, 0.05, 0.10, 0.25, 0.50, 1.0, 2.0, 5.0, 10.0];
 	private static readonly double[] s_rotateSnapSteps = [1, 2, 5, 15, 30, 45, 90];
+	private static readonly double[] s_cameraSpeedSteps = [0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0];
 	private readonly Listener m_historyListener = new();
 
 	private readonly Listener m_renderListener = new();
@@ -37,11 +40,14 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 	private bool m_countedPlaying;
 	private bool m_disposed;
 	[ObservableProperty] private bool m_gameCamera;
+	[ObservableProperty] private CameraMode m_cameraMode;
+	[ObservableProperty] private double m_cameraSpeed = 5.0;
 	[ObservableProperty] private bool m_isPaused;
 	private ulong m_nextSaveRequest = 1;
 	private string? m_pendingRootName;
 	private TaskCompletionSource<WorkspaceSaveCompleted>? m_pendingSave;
 	private ulong m_pendingSaveRequest;
+	private bool m_loadingViewportSettings;
 
 	[ObservableProperty] private PlayState m_playState;
 
@@ -91,6 +97,7 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 	public string? BackingAssetUid { get; private set; }
 
 	public string? RootUid { get; private set; }
+	public string? RootType { get; private set; }
 	public GizmoTool ActiveTool { get; private set; } = GizmoTool.Select;
 	public RenderMode ActiveRenderMode { get; private set; } = RenderMode.Lit;
 
@@ -106,6 +113,7 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 	public bool IsPlayingExternal => PlayState == PlayState.PlayingExternal;
 	public bool IsPlayModeActive => PlayState != PlayState.Stopped;
 	public bool CanPause => PlayState != PlayState.Stopped;
+	public bool IsOrbitCamera => CameraMode == CameraMode.Orbit;
 
 	public bool IsAutosaveDirty => IsModified;
 
@@ -142,8 +150,18 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 	}
 
 	// called by HierarchyViewModel whenever the hierarchy tree updates
-	public void SetRootNode(string uid) {
+	public void SetRootNode(string uid, string type) {
+		if (RootUid == uid && RootType == type) return;
 		RootUid = uid;
+		RootType = type;
+		var defaultsToOrbit = ReflectionDatabase.IsTypeOrSubtypeOf(type, "Node3D") ||
+		                      type.EndsWith("::Node3D", StringComparison.Ordinal);
+		var settings = ViewportSettingsStore.Load(uid, defaultsToOrbit);
+		m_loadingViewportSettings = true;
+		CameraMode = settings.Mode;
+		CameraSpeed = Nearest(s_cameraSpeedSteps, settings.Speed);
+		m_loadingViewportSettings = false;
+		SendCameraSettings();
 		if (m_pendingRootName is { } name) {
 			m_pendingRootName = null;
 			Events.Send(new NodeChangeName { Node = uid, Name = name });
@@ -238,6 +256,52 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 		if (index < 0) index = 0;
 		index = Math.Clamp(index + direction, 0, steps.Length - 1);
 		return steps[index];
+	}
+
+	private static double Nearest(double[] steps, double value) {
+		return steps.MinBy(v => Math.Abs(v - value));
+	}
+
+	[RelayCommand]
+	private void SetEditorCameraMode(string mode) {
+		CameraMode = Enum.Parse<CameraMode>(mode);
+		OnPropertyChanged(nameof(CameraMode));
+		OnPropertyChanged(nameof(IsOrbitCamera));
+	}
+
+	[RelayCommand]
+	private void StepCameraSpeed(string direction) {
+		CameraSpeed = Step(s_cameraSpeedSteps, CameraSpeed, int.Parse(direction, CultureInfo.InvariantCulture));
+	}
+
+	public void StepCameraSpeedFromWheel(double delta) {
+		if (Math.Abs(delta) < double.Epsilon) return;
+		CameraSpeed = Step(s_cameraSpeedSteps, CameraSpeed, delta > 0 ? 1 : -1);
+	}
+
+	partial void OnCameraModeChanged(CameraMode value) {
+		OnPropertyChanged(nameof(IsOrbitCamera));
+		SaveAndSendCameraSettings();
+	}
+
+	partial void OnCameraSpeedChanged(double value) {
+		SaveAndSendCameraSettings();
+	}
+
+	private void SaveAndSendCameraSettings() {
+		if (m_loadingViewportSettings) return;
+		if (RootUid is { } uid) ViewportSettingsStore.Save(uid, CameraMode, CameraSpeed);
+		SendCameraSettings();
+	}
+
+	private void SendCameraSettings() {
+		Events.Send(new SetEditorCameraSettings {
+			Mode = CameraMode == CameraMode.Orbit
+				? SetEditorCameraSettings.Types.Mode.Orbit
+				: SetEditorCameraSettings.Types.Mode.Free,
+			WorkspaceHandle = Handle,
+			Speed = (float)CameraSpeed
+		});
 	}
 
 	partial void OnTranslateSnapEnabledChanged(bool value) {

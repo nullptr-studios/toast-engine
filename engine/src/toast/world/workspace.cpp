@@ -1765,6 +1765,17 @@ void Workspace::eventSubscriptions() {
 		return true;
 	});
 
+	m_listener.subscribe<event::SetEditorCameraSettings>([this](const auto& e) {
+		if (e.workspace_handle != 0 && e.workspace_handle != m_handle.data()) {
+			return false;
+		}
+		if (e.workspace_handle == 0 && m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			return false;
+		}
+		m_editor_camera_controller.configure(e.mode, e.speed);
+		return true;
+	});
+
 	// Translate-gizmo interaction, driven straight off the raw window mouse events already forwarded by the editor in edit mode
 	m_listener.subscribe<event::WindowMousePosition>([this](const auto& e) {
 		if (m_handle.data() != Engine::get()->activeWorkspace().data() || m_game_camera || isPlaying()) {

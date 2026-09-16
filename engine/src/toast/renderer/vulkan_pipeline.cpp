@@ -46,7 +46,7 @@ auto createGraphicsPipelineImpl(
 	    spirv::resolveEntryPoint(config.shader_spirv, spirv::ExecutionModel::vertex, config.vertex_entry, config.debug_name);
 	const std::string fragment_entry =
 	    config.depth_only ? config.fragment_entry
-	                      : spirv::resolveEntryPoint(
+			                  : spirv::resolveEntryPoint(
 	                            config.shader_spirv, spirv::ExecutionModel::fragment, config.fragment_entry, config.debug_name
 	                        );
 
