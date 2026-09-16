@@ -31,7 +31,8 @@ public class HierarchyElement : INotifyPropertyChanged {
 
 	private bool m_isSelected;
 
-	public HierarchyElement(Proto.Events.HierarchyElement e, HierarchyViewModel owner, HierarchyElement? parent = null) {
+	public HierarchyElement(
+		Proto.Events.HierarchyElement e, HierarchyViewModel owner, HierarchyElement? parent = null, bool isRoot = false) {
 		Owner = owner;
 		Parent = parent;
 		Name = e.Name;
@@ -39,7 +40,8 @@ public class HierarchyElement : INotifyPropertyChanged {
 		Type = e.Type;
 		IsPrefab = e.IsPrefab;
 		Enabled = e.Enabled;
-		m_isExpanded = !owner.IsCollapsed(e.Uid); // restore persisted fold state
+		IsRoot = isRoot;
+		m_isExpanded = !owner.IsCollapsed(StateKey); // restore persisted fold state
 		Color = ReflectionDatabase.ResolveColor(e.Type);
 		foreach (var c in e.Children) {
 			if (c is null) continue;
@@ -66,8 +68,10 @@ public class HierarchyElement : INotifyPropertyChanged {
 	public Bitmap? SmallIcon { get; set; } // On avares://editor/Resources/node_icons/1x/<Icon Attribute>.png
 	public Bitmap? LargeIcon { get; set; } // On avares://editor/Resources/node_icons/2x/<Icon Attribute>.png
 	public string? Color { get; set; }
-	public bool IsRoot { get; set; }
+	public bool IsRoot { get; private set; }
 	public bool IsPrefab { get; set; }
+
+	public string StateKey => IsRoot ? HierarchyState.RootKey : Uid;
 	public ObservableCollection<HierarchyElement> Children { get; set; } = [];
 	public ObservableCollection<HierarchyElement> FilteredChildren { get; } = [];
 
@@ -190,8 +194,8 @@ public partial class HierarchyViewModel : Tool, IDisposable {
 				var prevUid = SelectedNode?.Uid;
 				Root.Clear();
 				if (!e.IsEmpty) {
-					m_hierState = HierarchyState.Load(e.Root.Uid);
-					Root.Add(new HierarchyElement(e.Root, this) { IsRoot = true });
+					m_hierState = HierarchyState.Load(workspace.BackingAssetUid ?? e.Root.Uid);
+					Root.Add(new HierarchyElement(e.Root, this, isRoot: true));
 				}
 
 				// restore selection after the tree rebuilds so editing a node doesnt lose focus
@@ -261,8 +265,8 @@ public partial class HierarchyViewModel : Tool, IDisposable {
 		HierarchyChanged?.Invoke();
 	}
 
-	internal bool IsCollapsed(string uid) {
-		return m_hierState?.Get(uid, false) ?? false;
+	internal bool IsCollapsed(string key) {
+		return m_hierState?.Get(key, false) ?? false;
 	}
 
 	public void RebuildRows() {
@@ -283,7 +287,7 @@ public partial class HierarchyViewModel : Tool, IDisposable {
 
 	public void ToggleExpand(HierarchyElement node) {
 		node.IsExpanded = !node.IsExpanded;
-		m_hierState?.Set(node.Uid, !node.IsExpanded); // store collapsed=true, expanded=false
+		m_hierState?.Set(node.StateKey, !node.IsExpanded); // store collapsed=true, expanded=false
 		RebuildRows();
 		HierarchyChanged?.Invoke();
 	}
@@ -314,7 +318,7 @@ public partial class HierarchyViewModel : Tool, IDisposable {
 
 	private void SetExpanded(HierarchyElement node, bool expanded) {
 		node.IsExpanded = expanded;
-		m_hierState?.Set(node.Uid, !expanded);
+		m_hierState?.Set(node.StateKey, !expanded);
 	}
 
 	public static bool IsSelfOrDescendant(HierarchyElement node, HierarchyElement candidate) {
