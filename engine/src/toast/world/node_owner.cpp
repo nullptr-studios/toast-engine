@@ -4,6 +4,7 @@
 #include "camera_controller.hpp"
 #include "node.hpp"
 #include "node_3d.hpp"
+#include "workspace.hpp"
 
 #include <algorithm>
 #include <charconv>
@@ -36,6 +37,11 @@ void INodeOwner::updateTransforms(Node& root) {
 	};
 
 	Walker::walk(root);
+}
+
+auto INodeOwner::isEditing() noexcept -> bool {
+	const Workspace* workspace = asWorkspace();
+	return workspace != nullptr && !workspace->isPlaying();
 }
 
 void INodeOwner::activateCamera(Camera& camera) {

@@ -333,13 +333,19 @@ void Node::propagateCallTick(const NodeInfo* info, TickFunctionList func_type) n
 }
 
 void Node::propagateEnable() noexcept {
-	if (!m_local_enabled) {
+	if (!enabled()) {
 		return;
 	}
 
+	// Instantiation already set every inherited flag, so inheritedEnabled(true) would skip the children entirely.
+	// Snapshot first: a child spawned inside onEnable runs its own propagateEnable and must not get a second call
+	std::vector<Box<Node>> children = m_children;
 	callTick(info(), TickFunctionList::on_enable);
-	for (auto& child : m_children) {
-		child->inheritedEnabled(true);
+	for (auto& child : children) {
+		if (child.exists()) {
+			child->m_inherited_enabled = true;
+			child->propagateEnable();
+		}
 	}
 }
 

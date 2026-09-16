@@ -1,14 +1,8 @@
-# Copies one or more cargo-built binaries out of the shared target directory into their install location.
-#
-# BINARY_NAMES is a list, because spawning a cmake process per binary costs more than the copy does - the
-# asset packer crate alone produces three.
-
 if(NOT BINARY_NAMES)
     message(FATAL_ERROR "install_cargo_output: BINARY_NAMES is empty")
 endif()
 
-# cargo drops output in <target>/<profile> normally, but <target>/<triple>/<profile> when a target triple is
-# configured (a .cargo/config.toml or CARGO_BUILD_TARGET). Resolve the directory once from the first binary
+# cargo uses <target>/<triple>/<profile> when a target triple is configured
 list(GET BINARY_NAMES 0 _first)
 set(_probe "${_first}${EXE_SUFFIX}")
 
@@ -34,7 +28,7 @@ foreach(_name IN LISTS BINARY_NAMES)
     if(NOT EXISTS "${_src_dir}/${_binary}")
         message(FATAL_ERROR "cargo output not found: ${_src_dir}/${_binary}")
     endif()
-    # file(COPY) compares timestamps, so an unchanged binary is not rewritten
+    # file(COPY) compares timestamps so unchanged binaries are not rewritten
     file(COPY "${_src_dir}/${_binary}" DESTINATION "${DEST_DIR}")
 endforeach()
 

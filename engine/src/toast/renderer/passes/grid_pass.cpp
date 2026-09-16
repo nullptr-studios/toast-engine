@@ -85,7 +85,6 @@ void GridPass::createResources(const renderer::VulkanCore& core) {
 		device.updateDescriptorSets(write, {});
 	}
 
-	// Fullscreen-ish quad in the XY plane, scaled/positioned per frame via push constants
 	const std::array<glm::vec3, 6> vertices {
 	  glm::vec3 {-1.0f, -1.0f, 0.0f},
 	  glm::vec3 { 1.0f, -1.0f, 0.0f},
@@ -133,19 +132,13 @@ void GridPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t imag
 	    {}
 	);
 
-	constexpr float k_grid_half_extent = 1000.0f;    // matches grid.slang's fade-to-zero distance
+	constexpr float k_grid_half_extent = 1000.0f;    // Matches grid.slang fade distance
 	const glm::vec3 cam_pos = frame->frame_data.camera_position;
 
 	DrawPushConstants pc {};
 	pc.model = glm::translate(glm::mat4(1.0f), glm::vec3(cam_pos.x, cam_pos.y, 0.0f)) *
 	           glm::scale(glm::mat4(1.0f), glm::vec3(k_grid_half_extent));
-	cmd.pushConstants(
-	    *m_shader_layout.getPipelineLayout(),
-	    vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
-	    0,
-	    sizeof(DrawPushConstants),
-	    &pc
-	);
+	cmd.pushConstants(*m_shader_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eAll, 0, sizeof(DrawPushConstants), &pc);
 
 	cmd.bindVertexBuffers(0, std::array<vk::Buffer, 1> {*m_vertex_buffer}, std::array<vk::DeviceSize, 1> {0});
 	cmd.draw(6, 1, 0, 0);

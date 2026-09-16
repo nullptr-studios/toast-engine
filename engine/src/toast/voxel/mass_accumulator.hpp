@@ -2,8 +2,6 @@
  * @file mass_accumulator.hpp
  * @author dario
  * @date 08/09/2026
- *
- * @brief incremental mass properties for a body made of voxels
  */
 
 #pragma once
@@ -15,14 +13,8 @@
 
 namespace toast::voxel {
 
-/**
- * @brief Headroom check for the second moments
- */
 inline constexpr int64_t k_moment_safe_limit = int64_t {1} << 62;
 
-/**
- * @brief The ten integer moments of a voxel body
- */
 struct MassMoments {
 	/// Sum of densities
 	int64_t mass = 0;
@@ -50,14 +42,10 @@ struct MassMoments {
 		return mass == 0;
 	}
 
-	/// @brief Accumulates one voxel at lattice coordinate @p x, @p y, @p z with the given @p density
 	constexpr void add(int32_t x, int32_t y, int32_t z, uint32_t density) noexcept {
 		accumulate(x, y, z, static_cast<int64_t>(density));
 	}
 
-	/**
-	 * @brief Removes one voxel
-	 */
 	constexpr void remove(int32_t x, int32_t y, int32_t z, uint32_t density) noexcept {
 		accumulate(x, y, z, -static_cast<int64_t>(density));
 		assert(mass >= 0);
@@ -85,9 +73,6 @@ struct MassMoments {
 		return out;
 	}
 
-	/**
-	 * @brief The same moments expressed in a coordinate frame translated by @p ox, @p oy, @p oz
-	 */
 	[[nodiscard]]
 	constexpr auto shifted(int32_t ox, int32_t oy, int32_t oz) const noexcept -> MassMoments {
 		const int64_t dx = ox;
@@ -133,21 +118,17 @@ private:
 	}
 };
 
-/// @brief Mass properties in physical units
 struct MassProperties {
-	/// Total mass, kilograms
+	/// kg
 	float mass = 0.0f;
 
-	/// Centre of mass in volume-local metres
+	/// Volume local metres
 	glm::vec3 center_of_mass {0.0f};
 
-	/// Inertia tensor about the centre of mass, kg·m²
+	/// kg·m² about the centre of mass
 	glm::mat3 inertia {0.0f};
 };
 
-/**
- * @brief Converts integer moments into kilograms, metres and kg·m²
- */
 [[nodiscard]]
 inline auto resolve(const MassMoments& moments, float voxel_size = k_voxel_size) -> MassProperties {
 	MassProperties out;
@@ -162,8 +143,7 @@ inline auto resolve(const MassMoments& moments, float voxel_size = k_voxel_size)
 	const double density_sum = static_cast<double>(moments.mass);
 	const double total_mass = density_sum * s3;
 
-	// Second moments about the lattice origin, in lattice units, with the half-voxel offset folded in:
-	//   sum(d * (l_a + 1/2) * (l_b + 1/2)) = m_ab + (m_a + m_b)/2 + density_sum/4
+	// sum(d * (l_a + 1/2) * (l_b + 1/2)) = m_ab + (m_a + m_b)/2 + density_sum/4
 	const auto product = [&](int64_t m_ab, int64_t m_a, int64_t m_b) {
 		return static_cast<double>(m_ab) + 0.5 * (static_cast<double>(m_a) + static_cast<double>(m_b)) + 0.25 * density_sum;
 	};
@@ -179,10 +159,9 @@ inline auto resolve(const MassMoments& moments, float voxel_size = k_voxel_size)
 	const double com_y = (static_cast<double>(moments.m_y) / density_sum + 0.5) * s;
 	const double com_z = (static_cast<double>(moments.m_z) / density_sum + 0.5) * s;
 
-	// Each voxel inertia about its own centre, a cube of edge s contributes m * s² / 6 to every diagonal
+	// A cube of edge s adds m * s² / 6 to every diagonal
 	const double self_term = total_mass * s * s / 6.0;
 
-	// About the lattice origin
 	double i_xx = s5 * (p_yy + p_zz) + self_term;
 	double i_yy = s5 * (p_xx + p_zz) + self_term;
 	double i_zz = s5 * (p_xx + p_yy) + self_term;
@@ -190,7 +169,6 @@ inline auto resolve(const MassMoments& moments, float voxel_size = k_voxel_size)
 	double i_xz = -s5 * p_xz;
 	double i_yz = -s5 * p_yz;
 
-	// Shifted to the centre of mass, The self term is position-independent and correctly rides along
 	i_xx -= total_mass * (com_y * com_y + com_z * com_z);
 	i_yy -= total_mass * (com_x * com_x + com_z * com_z);
 	i_zz -= total_mass * (com_x * com_x + com_y * com_y);

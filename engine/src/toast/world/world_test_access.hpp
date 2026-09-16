@@ -31,6 +31,9 @@ struct TOAST_API WorldTestAccess {
 	// NodeInfo (the per-instance NodeFunctionTable no longer exists).
 	static void addTickStage(Node& node, TickFunctionList stage);
 
+	// Test-only: like addTickStage(), but the fabricated NodeInfo also calls `callback` for onEnable
+	static void setEnableCallback(Node& node, void (*callback)(void*));
+
 	// Test-only: appends a script asset to the node and (re)builds its ScriptRuntime;
 	// requires a LuaState to exist
 	static void attachScript(Node& node, const assets::Handle<assets::Script>& script);

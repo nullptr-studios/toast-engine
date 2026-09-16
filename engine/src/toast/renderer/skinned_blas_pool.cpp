@@ -38,7 +38,6 @@ auto SkinnedBlasPool::ensureEntry(uint64_t node_uid, const VulkanMesh& mesh) -> 
 		return nullptr;
 	}
 
-	// Already sized for this geometry - keep the structure so the caller can refit it
 	if (entry.mesh == &mesh && entry.vertex_count == vertex_count && entry.primitive_count == primitive_count &&
 	    *entry.blas != VK_NULL_HANDLE) {
 		return &entry;
@@ -46,8 +45,6 @@ auto SkinnedBlasPool::ensureEntry(uint64_t node_uid, const VulkanMesh& mesh) -> 
 
 	const auto& device = m_core->getDevice();
 
-	// Sized against the *posed* buffer's layout, not the mesh's own. The geometry addresses are patched in
-	// per frame by recordFor(); only the sizes matter here, and they depend on counts and strides alone
 	vk::AccelerationStructureGeometryTrianglesDataKHR triangles {};
 	triangles.vertexFormat = vk::Format::eR32G32B32Sfloat;
 	triangles.vertexStride = sizeof(Vertex);
@@ -62,8 +59,7 @@ auto SkinnedBlasPool::ensureEntry(uint64_t node_uid, const VulkanMesh& mesh) -> 
 
 	vk::AccelerationStructureBuildGeometryInfoKHR build {};
 	build.type = vk::AccelerationStructureTypeKHR::eBottomLevel;
-	// eAllowUpdate is what makes the per-frame refit legal at all - without it a build in eUpdate mode is
-	// invalid usage rather than a slower path
+	// eAllowUpdate makes the refit legal
 	build.flags =
 	    vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace | vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate;
 	build.mode = vk::BuildAccelerationStructureModeKHR::eBuild;
@@ -81,7 +77,6 @@ auto SkinnedBlasPool::ensureEntry(uint64_t node_uid, const VulkanMesh& mesh) -> 
 	vma::AllocationCreateInfo blas_alloc {};
 	blas_alloc.usage = vma::MemoryUsage::eAutoPreferDevice;
 
-	// Released before the buffer it is a view onto, same ordering VulkanMesh::destroy() keeps
 	entry.blas = nullptr;
 	entry.blas_buffer.emplace(m_core->getAllocator().createBuffer(blas_ci, blas_alloc));
 	setDebugName(*m_core, **entry.blas_buffer, std::format("SkinnedBlas[{:016x}]", node_uid));
@@ -96,9 +91,6 @@ auto SkinnedBlasPool::ensureEntry(uint64_t node_uid, const VulkanMesh& mesh) -> 
 	address_info.accelerationStructure = *entry.blas;
 	entry.address = device.getAccelerationStructureAddressKHR(address_info);
 
-	// One scratch buffer kept for the entry's lifetime rather than handed back per build, because unlike a
-	// static mesh this is rebuilt or refit every single frame. Sized for the larger of the two: a refit needs
-	// updateScratchSize, and the first frame - plus any frame the geometry changed - needs buildScratchSize
 	const vk::DeviceSize needed_scratch =
 	    m_core->getScratchAllocationSize(std::max(sizes.buildScratchSize, sizes.updateScratchSize));
 
@@ -111,9 +103,7 @@ auto SkinnedBlasPool::ensureEntry(uint64_t node_uid, const VulkanMesh& mesh) -> 
 	scratch_alloc.usage = vma::MemoryUsage::eAutoPreferDevice;
 	entry.scratch.emplace(m_core->getAllocator().createBuffer(scratch_ci, scratch_alloc));
 
-	// Aligned up from an over-allocated buffer. minAccelerationStructureScratchOffsetAlignment is stricter
-	// than a storage buffer's own alignment, and a misaligned scratch address does not fail at the call - it
-	// corrupts the build and takes the device out later
+	// Aligned since a misaligned scratch address corrupts the build
 	entry.scratch_address = m_core->getAlignedScratchAddress(**entry.scratch);
 
 	entry.mesh = &mesh;
@@ -143,9 +133,7 @@ auto SkinnedBlasPool::recordFor(
 
 	vk::AccelerationStructureGeometryTrianglesDataKHR triangles {};
 	triangles.vertexFormat = vk::Format::eR32G32B32Sfloat;
-	// The slice this instance owns. Offsetting the address rather than using firstVertex keeps the mesh's
-	// shared index buffer valid unchanged - its indices are relative to vertex 0 of whatever stream is bound,
-	// which is exactly what bindPosed() does for the raster path
+	// Offset the address rather than firstVertex so the shared index buffer stays valid
 	triangles.vertexData.deviceAddress = posed_address + (static_cast<vk::DeviceSize>(posed_vertex_offset) * sizeof(Vertex));
 	triangles.vertexStride = sizeof(Vertex);
 	triangles.maxVertex = entry->vertex_count - 1;
@@ -162,8 +150,6 @@ auto SkinnedBlasPool::recordFor(
 	build.type = vk::AccelerationStructureTypeKHR::eBottomLevel;
 	build.flags =
 	    vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace | vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate;
-	// In-place: source and destination are the same structure, which is what an update is permitted to do and
-	// what avoids carrying a second copy of every character's BVH
 	build.mode = entry->built ? vk::BuildAccelerationStructureModeKHR::eUpdate : vk::BuildAccelerationStructureModeKHR::eBuild;
 	build.srcAccelerationStructure = entry->built ? *entry->blas : vk::AccelerationStructureKHR {};
 	build.dstAccelerationStructure = *entry->blas;
@@ -189,8 +175,7 @@ auto SkinnedBlasPool::recordFor(
 
 auto SkinnedBlasPool::addressFor(uint64_t node_uid) const -> vk::DeviceAddress {
 	const auto it = m_entries.find(node_uid);
-	// built matters as well as existence: an entry allocated this frame but whose build was not recorded has
-	// a valid address pointing at an uninitialised structure, and tracing that is undefined
+	// Unbuilt entries point at an uninitialised structure
 	if (it == m_entries.end() || !it->second.built || it->second.last_used_frame != m_frame) {
 		return 0;
 	}

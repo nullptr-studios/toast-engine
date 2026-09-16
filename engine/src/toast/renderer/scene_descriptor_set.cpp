@@ -52,8 +52,6 @@ void SceneDescriptorSets::create(
 				continue;
 			}
 
-			// EnvironmentPass's cubemaps. Created once at startup and never resized, so like the shadow maps
-			// they are bound once here rather than per frame
 			const bool is_irradiance = binding.name == "gIrradianceMap";
 			if (is_irradiance || binding.name == "gPrefilteredEnv") {
 				const auto* environment = VulkanRenderer::instance->getEnvironmentPass();
@@ -62,16 +60,12 @@ void SceneDescriptorSets::create(
 					view = is_irradiance ? environment->getIrradianceView() : environment->getPrefilteredView();
 				}
 
-				// Falling back here while environment_params says "ready" is the one combination that renders a
-				// scene black with nothing else to show for it: the shader samples, and gets the 1x1 black cube
 				if (!view && i == 0) {
 					TOAST_WARN(
 					    "Render", "'{}' bound the black fallback cubemap to {} - no environment lighting here", m_owner, binding.name
 					);
 				}
 
-				// A cube-typed descriptor has to be fed a cube view even when there is no environment; the
-				// flag in FrameUBO::environment_params is what actually keeps the shader off it
 				writer.image(
 				    *m_sets[i],
 				    binding.binding,
@@ -83,7 +77,6 @@ void SceneDescriptorSets::create(
 				continue;
 			}
 
-			// ReflectionProbePass's per-probe captures, as a descriptor array
 			const bool is_probe_irradiance = binding.name == "gProbeIrradiance";
 			if (binding.name == "gProbeMaps" || is_probe_irradiance) {
 				const auto* probes = VulkanRenderer::instance->getReflectionProbePass();
@@ -97,8 +90,6 @@ void SceneDescriptorSets::create(
 						view = is_probe_irradiance ? probes->getProbeIrradianceView(probe) : probes->getProbeView(probe);
 					}
 
-					// Every slot must be written even when nothing has been baked into it; an unbaked probe is
-					// flagged in the frame UBO rather than left dangling here
 					probe_infos.emplace_back(
 					    probes != nullptr ? probes->getSampler() : VulkanRenderer::instance->getDefaultSampler(),
 					    view ? view : VulkanRenderer::instance->getDefaultCubeView(),
@@ -110,7 +101,6 @@ void SceneDescriptorSets::create(
 				continue;
 			}
 
-			// ShadowPass's per-frame layered depth maps
 			const bool is_cascade_map = binding.name == "gShadowMap";
 			if (is_cascade_map || binding.name == "gPunctualShadowMaps") {
 				const auto* shadow_pass = VulkanRenderer::instance->getShadowPass();
@@ -119,9 +109,6 @@ void SceneDescriptorSets::create(
 					view = is_cascade_map ? shadow_pass->getCascadeMapView(i) : shadow_pass->getPunctualMapView(i);
 				}
 
-				// No shadow pass (standalone runtime): a 1x1 depth image cleared to 1.0 reads as unshadowed.
-				// View and sampler must come from the same fallback - a shadow descriptor may only pair a
-				// comparison sampler with a depth image
 				const bool has_map = static_cast<bool>(view);
 				writer.image(
 				    *m_sets[i],
@@ -135,9 +122,7 @@ void SceneDescriptorSets::create(
 				continue;
 			}
 
-			// Written per frame by updateTlas() rather than here, since the handle changes. On a device without
-			// ray query it is never written at all, which is legal only because the layout marks it partially
-			// bound and FrameUBO::traced_shadow_params keeps the shader off it
+			// Never written without ray query which is legal because the layout marks it partially bound
 			if (binding.name == "gScene") {
 				m_scene_binding = binding.binding;
 				continue;
@@ -170,8 +155,6 @@ void SceneDescriptorSets::create(
 				size = sizeof(VulkanRenderer::InstanceData) * VulkanRenderer::k_max_instances;
 				descriptor_type = vk::DescriptorType::eStorageBuffer;
 			} else if (binding.name == "gIrradianceSH") {
-				// One buffer for every frame in flight, unlike the cluster resources above: it is written only
-				// by a bake, never per frame, so there is nothing for a second copy to protect against
 				if (auto* probes = VulkanRenderer::instance->getReflectionProbePassMutable(); probes != nullptr) {
 					buffer = probes->getShBuffer();
 				}
@@ -181,7 +164,6 @@ void SceneDescriptorSets::create(
 				continue;
 			}
 
-			// A null buffer is skipped inside the writer, which is what an unavailable pass resource means here
 			writer.buffer(*m_sets[i], binding.binding, descriptor_type, buffer, size);
 		}
 
@@ -198,9 +180,7 @@ void SceneDescriptorSets::updateTlas(uint32_t frame_index) {
 	const auto* scene = VulkanRenderer::instance->getRayTracingScene();
 	const vk::AccelerationStructureKHR tlas = scene != nullptr ? scene->getAccelerationStructure(frame_index) : nullptr;
 
-	// A null handle means this frame has nothing traceable. Leave the last write in place rather than clearing
-	// the descriptor - a descriptor cannot be written with a null structure, and the shader is already off it
-	// via traced_shadow_params
+	// A descriptor cannot be written with a null structure
 	if (!tlas || tlas == m_bound_tlas[frame_index]) {
 		return;
 	}

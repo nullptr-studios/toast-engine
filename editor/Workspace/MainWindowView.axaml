@@ -280,6 +280,10 @@
 					          ToggleType="CheckBox"
 					          IsChecked="{Binding TableEditorVisible, Mode=TwoWay}"
 					          InputGesture="Alt+D6" />
+					<MenuItem Header="Pa_lette Editor"
+					          ToggleType="CheckBox"
+					          IsChecked="{Binding PaletteEditorVisible, Mode=TwoWay}"
+					          InputGesture="Alt+D7" />
 				</MenuItem>
 				<MenuItem x:Name="WindowMenu"
 				          Header="_Window">

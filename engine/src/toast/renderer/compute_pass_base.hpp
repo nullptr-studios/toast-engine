@@ -6,10 +6,6 @@
 
 #include "vulkan_common.hpp"
 
-/// @brief Interface for custom compute passes
-///
-/// Symmetric to IRenderPass, minus the swapchain image compute has no notion of. Implementors read the
-/// current frame through VulkanRenderer::instance->renderingFrame()
 class IComputePass {
 public:
 	virtual ~IComputePass() = default;

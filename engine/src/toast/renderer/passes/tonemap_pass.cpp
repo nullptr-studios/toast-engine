@@ -11,6 +11,7 @@
 #include "../vulkan_debug.hpp"
 #include "../vulkan_renderer.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cstring>
 #include <format>
@@ -40,11 +41,9 @@ TonemapPass::TonemapPass(const VulkanCore& core, vk::Format ldr_format, vk::Exte
 	config.extent = extent;
 	config.shader_spirv = shader->spirv;
 	config.pipeline_layout = *m_shader_layout.getPipelineLayout();
-	// No vertex input at all: the shader builds a full-screen triangle from SV_VertexID
 	config.vertex_bindings = {};
 	config.vertex_attributes = {};
 	config.cull_mode = vk::CullModeFlagBits::eNone;
-	// Renders into its own target, outside the renderer's output scope, so there is no depth attachment
 	config.depth_test = false;
 	config.depth_write = false;
 	m_pipeline.rebuild(core, config);
@@ -99,6 +98,8 @@ void TonemapPass::createResources(const VulkanCore& core) {
 
 void TonemapPass::createTarget(const VulkanCore& core, vk::Extent2D extent) {
 	m_target.create(core, extent, m_ldr_format, "TonemapPass");
+	// A new view can reuse the handle value of a destroyed view
+	std::ranges::fill(m_bound_views, vk::ImageView {});
 }
 
 void TonemapPass::onResize(vk::Extent2D extent) {
@@ -113,8 +114,6 @@ auto TonemapPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageV
 		return source_view;
 	}
 
-	// Parameters ride in the frame snapshot rather than on this object: the editor sets them on the main
-	// thread, and writing to a render-thread pass mid-record is exactly the race the snapshot exists to avoid
 	const auto* frame = VulkanRenderer::instance->renderingFrame();
 	const auto settings = frame != nullptr ? frame->post_process.tonemap : VulkanRenderer::PostProcessSettings::Tonemap {};
 
@@ -137,7 +136,6 @@ auto TonemapPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageV
 		}
 	}
 
-	// The scene view only changes on resize, so this rewrites once rather than every frame
 	if (m_bound_views[frame_index] != source_view) {
 		vk::DescriptorImageInfo image_info {};
 		image_info.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
@@ -151,7 +149,6 @@ auto TonemapPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageV
 		m_bound_views[frame_index] = source_view;
 	}
 
-	// Into the pass's own target, in its own rendering scope
 	m_target.beginScope(cmd);
 
 	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline.getPipeline());

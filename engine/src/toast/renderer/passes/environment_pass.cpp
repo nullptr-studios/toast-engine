@@ -30,10 +30,6 @@ constexpr uint32_t k_sky_size = 256;
 constexpr uint32_t k_irradiance_size = 32;
 constexpr uint32_t k_prefiltered_size = 128;
 
-/// @brief Roughness levels in the prefiltered chain
-///
-/// Five gives mirror, slightly-rough, half-rough, rough and fully-rough. More levels buy little: the
-/// coarsest ones are already so blurred that the difference between them is not visible
 constexpr uint32_t k_prefiltered_mips = 5;
 
 }
@@ -53,8 +49,6 @@ EnvironmentPass::EnvironmentPass(const VulkanCore& core, vk::Format hdr_format, 
 
 	m_shader_layout.rebuild(core, shader->reflection, "EnvironmentPass");
 
-	// Linear between mips: the prefiltered chain stores discrete roughness levels and a surface's roughness
-	// lands between them, so without it roughness steps visibly
 	const auto sampler_ci = linearClampMippedSamplerInfo(VK_LOD_CLAMP_NONE);
 	m_sampler = vk::raii::Sampler(core.getDevice(), sampler_ci);
 	setDebugName(core, *m_sampler, "EnvironmentPass Sampler");
@@ -66,7 +60,6 @@ EnvironmentPass::EnvironmentPass(const VulkanCore& core, vk::Format hdr_format, 
 	m_prefiltered.create(core, m_format, k_prefiltered_size, k_prefiltered_mips, "EnvironmentPass Prefiltered");
 
 	createPipelines(core);
-	// Before createDescriptors: the placeholder is what binding 1 points at until something is imported
 	createEquirectPlaceholder(core);
 	createDescriptors(core);
 }
@@ -82,7 +75,6 @@ void EnvironmentPass::createPipelines(const VulkanCore& core) {
 	VulkanPipeline::Config config;
 	config.pipeline_type = VulkanPipeline::PipelineType::graphics;
 	config.color_format = m_format;
-	// Viewport and scissor are dynamic, so one pipeline covers every face and mip size
 	config.extent = vk::Extent2D {1, 1};
 	config.shader_spirv = shader->spirv;
 	config.pipeline_layout = *m_shader_layout.getPipelineLayout();
@@ -108,9 +100,6 @@ void EnvironmentPass::createPipelines(const VulkanCore& core) {
 	config.fragment_entry = "fragmentPrefilter";
 	m_prefilter_pipeline.rebuild(core, config);
 
-	// The skybox is the odd one out: it draws into the scene target alongside the geometry rather than into a
-	// cubemap face, so it needs the depth attachment's format to be pipeline-compatible with the scene pass.
-	// It runs before any geometry and neither tests nor writes depth - the meshes simply draw over it
 	config.debug_name = "EnvironmentPass Skybox";
 	config.vertex_entry = "vertexSkybox";
 	config.fragment_entry = "fragmentSkybox";
@@ -118,17 +107,12 @@ void EnvironmentPass::createPipelines(const VulkanCore& core) {
 	config.depth_test = true;
 	config.depth_write = false;
 	config.depth_compare = vk::CompareOp::eLessOrEqual;
-	// Declared, not written (write_extra_color stays false): the sky is not a surface, and the cleared
-	// zero-length normal already says so. The three pipelines above render into cubemap faces instead and must
-	// not carry it - their scope has one attachment
 	config.extra_color_formats = worldStageExtraColorFormats();
 	m_skybox_pipeline.rebuild(core, config);
 }
 
 namespace {
 
-/// @brief Format imported environments are uploaded in
-///
 constexpr vk::Format k_equirect_format = vk::Format::eR32G32B32A32Sfloat;
 
 }
@@ -137,8 +121,6 @@ void EnvironmentPass::createEquirectPlaceholder(const VulkanCore& core) {
 	vk::SamplerCreateInfo sampler_ci {};
 	sampler_ci.magFilter = vk::Filter::eLinear;
 	sampler_ci.minFilter = vk::Filter::eLinear;
-	// Repeat on U: longitude wraps, and the seam behind the camera falls exactly on the edge. Clamping there
-	// smears the last column of texels across it
 	sampler_ci.addressModeU = vk::SamplerAddressMode::eRepeat;
 	sampler_ci.addressModeV = vk::SamplerAddressMode::eClampToEdge;
 	sampler_ci.addressModeW = vk::SamplerAddressMode::eClampToEdge;
@@ -158,7 +140,6 @@ auto EnvironmentPass::uploadEquirect(const assets::HdrImage& image) -> bool {
 		return false;
 	}
 
-	// Anything in flight may still be sampling the previous image through the descriptor set
 	m_core->getDevice().waitIdle();
 
 	m_equirect_view.reset();
@@ -266,7 +247,6 @@ auto EnvironmentPass::setEnvironmentMap(std::string_view uri) -> bool {
 
 	m_environment_uri = std::string(uri);
 	m_has_equirect = true;
-	// Rebuilds all three cubemaps, so the skybox and both convolutions move to the new sky together
 	m_precompute_pending = true;
 
 	TOAST_INFO("Render", "Environment map loaded from {} ({}x{})", uri, image.width, image.height);
@@ -290,8 +270,7 @@ void EnvironmentPass::createDescriptors(const VulkanCore& core) {
 	image_info.imageView = m_sky.cubeView();
 	image_info.sampler = *m_sampler;
 
-	// Binding 1 is the equirectangular source. Written even when nothing has been imported - the shader's
-	// layout declares it either way, and a descriptor left unwritten is undefined on any draw using the layout
+	// Written even without an import since an unwritten binding is undefined
 	vk::DescriptorImageInfo equirect_info {};
 	equirect_info.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 	equirect_info.imageView = m_equirect_view.has_value() ? **m_equirect_view : vk::ImageView {};
@@ -315,7 +294,6 @@ void EnvironmentPass::writeEquirectSet(const VulkanCore& core) {
 		return;
 	}
 
-	// Binding 0 is deliberately the renderer's black cube rather than m_sky - see m_equirect_set
 	vk::DescriptorImageInfo cube_info {};
 	cube_info.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 	cube_info.imageView = VulkanRenderer::instance->getDefaultCubeView();
@@ -364,13 +342,7 @@ void EnvironmentPass::renderFace(
 		    vk::PipelineBindPoint::eGraphics, *m_shader_layout.getPipelineLayout(), 0, std::array<vk::DescriptorSet, 1> {set}, {}
 		);
 	}
-	cmd.pushConstants(
-	    *m_shader_layout.getPipelineLayout(),
-	    vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
-	    0,
-	    sizeof(Params),
-	    &params
-	);
+	cmd.pushConstants(*m_shader_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eAll, 0, sizeof(Params), &params);
 	cmd.draw(3, 1, 0, 0);
 
 	cmd.endRendering();
@@ -381,11 +353,7 @@ void EnvironmentPass::recordPre(vk::CommandBuffer cmd, uint32_t frame_index, uin
 	(void)frame_index;
 	(void)image_index;
 
-	// Once. The environment is static, so re-running this every frame would burn a few milliseconds
-	// producing identical results. Regenerating on a sky change is a matter of clearing this flag
-	// Every pipeline, not just the sky one: the pending flag clears on the first run, so a convolution whose
-	// pipeline was not ready yet would be skipped permanently and leave its cubemap at whatever the allocation
-	// happened to contain - which reads as black, and only for the surfaces that sample that map
+	// Waits for every pipeline since the pending flag clears on the first run
 	if (!m_precompute_pending || !isEnabled() || !m_sky.isReady() || !m_sky_pipeline.isReady() ||
 	    !m_irradiance_pipeline.isReady() || !m_prefilter_pipeline.isReady()) {
 		return;
@@ -404,16 +372,12 @@ void EnvironmentPass::recordPre(vk::CommandBuffer cmd, uint32_t frame_index, uin
 		return params;
 	};
 
-	// --- Sky ---
 	m_sky.transition(
 	    cmd,
 	    vk::ImageLayout::eColorAttachmentOptimal,
 	    vk::AccessFlagBits::eColorAttachmentWrite,
 	    vk::PipelineStageFlagBits::eColorAttachmentOutput
 	);
-	// An imported HDR is projected onto the faces in place of the generated sky. Everything after this point
-	// reads the cubemap and is identical either way, which is the whole reason the import is done here rather
-	// than by giving the skybox and the convolutions each their own notion of what the sky is
 	const bool use_equirect = m_has_equirect && m_equirect_pipeline.isReady() && *m_equirect_set != VK_NULL_HANDLE;
 	for (uint32_t face = 0; face < 6; ++face) {
 		if (use_equirect) {
@@ -426,7 +390,6 @@ void EnvironmentPass::recordPre(vk::CommandBuffer cmd, uint32_t frame_index, uin
 	    cmd, vk::ImageLayout::eShaderReadOnlyOptimal, vk::AccessFlagBits::eShaderRead, vk::PipelineStageFlagBits::eFragmentShader
 	);
 
-	// --- Irradiance: cosine convolution of the sky ---
 	m_irradiance.transition(
 	    cmd,
 	    vk::ImageLayout::eColorAttachmentOptimal,
@@ -440,7 +403,6 @@ void EnvironmentPass::recordPre(vk::CommandBuffer cmd, uint32_t frame_index, uin
 	    cmd, vk::ImageLayout::eShaderReadOnlyOptimal, vk::AccessFlagBits::eShaderRead, vk::PipelineStageFlagBits::eFragmentShader
 	);
 
-	// --- Prefiltered radiance: one mip per roughness level ---
 	m_prefiltered.transition(
 	    cmd,
 	    vk::ImageLayout::eColorAttachmentOptimal,
@@ -448,7 +410,6 @@ void EnvironmentPass::recordPre(vk::CommandBuffer cmd, uint32_t frame_index, uin
 	    vk::PipelineStageFlagBits::eColorAttachmentOutput
 	);
 	for (uint32_t mip = 0; mip < m_prefiltered.mipLevels(); ++mip) {
-		// Mip 0 is a mirror, the last is fully rough; the shader maps a material's roughness back onto this
 		const float roughness =
 		    m_prefiltered.mipLevels() > 1 ? static_cast<float>(mip) / static_cast<float>(m_prefiltered.mipLevels() - 1) : 0.0f;
 		for (uint32_t face = 0; face < 6; ++face) {
@@ -483,17 +444,13 @@ void EnvironmentPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32
 		return;
 	}
 
-	// Camera basis in world space. The view matrix maps world to view, so its inverse's columns are the axes
-	// the camera looks along - and Vulkan's view space looks down -Z, hence the negated third column
+	// Vulkan view space looks down -Z hence the negated third column
 	const glm::mat4 inverse_view = glm::inverse(frame->frame_data.view);
 	const glm::vec3 right(inverse_view[0]);
 	const glm::vec3 up(inverse_view[1]);
 	const glm::vec3 forward(-glm::vec3(inverse_view[2]));
 
-	// Recovered from the projection rather than passed alongside it, so a camera whose FOV or aspect changes
-	// needs nothing plumbed through: [1][1] is 1/tan(fovY/2) and [0][0] folds in the aspect ratio.
-	// Magnitudes only - Camera negates [1][1] for Vulkan's downward clip-space y, and that flip is applied
-	// deliberately below rather than being inherited here (inheriting it renders the sky upside down)
+	// Magnitude only since the Vulkan y flip is applied below
 	const float proj_yy = std::abs(frame->frame_data.projection[1][1]);
 	const float proj_xx = std::abs(frame->frame_data.projection[0][0]);
 	const float tan_half_fov_y = proj_yy != 0.0f ? 1.0f / proj_yy : 1.0f;
@@ -501,8 +458,7 @@ void EnvironmentPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32
 
 	Params params {};
 	params.face_right = glm::vec4(right * tan_half_fov_x, 0.0f);
-	// Negated: the triangle's y follows clip space, which points down in Vulkan, so the top of the screen is
-	// y = -1 and has to resolve to world up
+	// Negated since Vulkan clip space y points down
 	params.face_up = glm::vec4(up * -tan_half_fov_y, 0.0f);
 	params.face_forward = glm::vec4(forward, 0.0f);
 	params.roughness = 0.0f;
@@ -516,8 +472,6 @@ void EnvironmentPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32
 		return;
 	}
 
-	// Already inside the scene's rendering scope - the pass list records between one beginRendering and its
-	// endRendering, so this only sets its own state and draws
 	const vk::Viewport viewport(0.0f, 0.0f, static_cast<float>(extent.width), static_cast<float>(extent.height), 0.0f, 1.0f);
 	cmd.setViewport(0, std::array {viewport});
 	cmd.setScissor(0, std::array {vk::Rect2D({0, 0}, extent)});
@@ -530,13 +484,7 @@ void EnvironmentPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32
 	    std::array<vk::DescriptorSet, 1> {*m_sky_source_set},
 	    {}
 	);
-	cmd.pushConstants(
-	    *m_shader_layout.getPipelineLayout(),
-	    vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
-	    0,
-	    sizeof(Params),
-	    &params
-	);
+	cmd.pushConstants(*m_shader_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eAll, 0, sizeof(Params), &params);
 	cmd.draw(3, 1, 0, 0);
 }
 

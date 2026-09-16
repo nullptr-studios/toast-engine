@@ -322,15 +322,20 @@ public static class AssetDatabase {
 			.ToList() ?? [];
 
 		// find where the existing outputs live + the settings they were imported with
-		var (destDir, textureSection, psdSection, gltfSection) = LocateOutputs(uids);
+		var (destDir, textureSection, psdSection, gltfSection, voxSection) = LocateOutputs(uids);
 
 		var textureSettings = SettingsFromMeta(textureSection);
 		var ext = Path.GetExtension(realSource).ToLowerInvariant();
+		// "Master.strings.bank" only has ".bank" as its extension, so the name has to tell the two FMOD importers apart
+		var isStringsBank = Path.GetFileName(realSource).EndsWith(".strings.bank", StringComparison.OrdinalIgnoreCase);
 		IAssetImporter importer = ext switch {
 			".psd" => new PsdImporter(textureSettings, SettingsFromMeta(psdSection)),
 			".glb" or ".gltf" => new GltfImporter(SettingsFromMeta(gltfSection), textureSettings),
+			".vox" => new VoxImporter(SettingsFromMeta(voxSection)),
 			".ttf" => new FontImporter(),
 			".tga" => new UIImageImporter(),
+			".bank" when isStringsBank => new AudioStringImporter(new AudioStringImporter.Settings()),
+			".bank" => new AudioBankImporter(),
 			_ => new TextureImporter(textureSettings)
 		};
 
@@ -400,10 +405,11 @@ public static class AssetDatabase {
 	}
 
 	// finds the directory + import settings for a set of output UIDs by scanning their .meta sidecars
-	private static (string? destDir, TextureMetaSection? texture, PsdMetaSection? psd, GltfMetaSection? gltf)
+	private static (string? destDir, TextureMetaSection? texture, PsdMetaSection? psd, GltfMetaSection? gltf,
+		VoxMetaSection? vox)
 		LocateOutputs(IReadOnlyCollection<string> uids) {
 		if (uids.Count == 0 || !Directory.Exists(ProjectContext.AssetsPath))
-			return (null, null, null, null);
+			return (null, null, null, null, null);
 
 		var wanted = new HashSet<string>(uids);
 		foreach (var metaPath in MetaFile.FindAll(ProjectContext.AssetsPath)) {
@@ -414,10 +420,11 @@ public static class AssetDatabase {
 			return (Path.GetDirectoryName(assetReal),
 				MetaFile.ReadTextureSection(metaPath),
 				MetaFile.ReadPsdSection(metaPath),
-				MetaFile.ReadGltfSection(metaPath));
+				MetaFile.ReadGltfSection(metaPath),
+				MetaFile.ReadVoxSection(metaPath));
 		}
 
-		return (null, null, null, null);
+		return (null, null, null, null, null);
 	}
 
 	private static TextureImporter.Settings SettingsFromMeta(TextureMetaSection? s) {
@@ -442,6 +449,16 @@ public static class AssetDatabase {
 
 		settings.CreateFolder = s.CreateFolder;
 		if (Enum.TryParse<PsdImportMode>(s.ImportMode, true, out var m)) settings.ImportMode = m;
+		return settings;
+	}
+
+	private static VoxImporter.Settings SettingsFromMeta(VoxMetaSection? s) {
+		var settings = new VoxImporter.Settings();
+		if (s is null) return settings;
+
+		settings.CreateSubfolder = s.CreateFolder;
+		settings.ImportPalette = s.ImportPalette;
+		settings.GeneratePrefab = s.GeneratePrefab;
 		return settings;
 	}
 

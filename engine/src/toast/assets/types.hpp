@@ -26,6 +26,9 @@
 #include "script.hpp"
 #include "shader.hpp"
 #include "texture.hpp"
+#include "voxel_material_library.hpp"
+#include "voxel_model.hpp"
+#include "voxel_palette.hpp"
 
 #include <toast/audio/assets.hpp>
 #include <toast/input/assets.hpp>

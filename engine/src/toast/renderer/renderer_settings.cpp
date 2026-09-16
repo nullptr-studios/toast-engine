@@ -26,10 +26,6 @@ void registerDisplay(VulkanRenderer& renderer) {
 	    .onChange([&renderer](double v) { renderer.setFrameRateLimit(v); });
 }
 
-/// @brief The on/off half of scalability: which post passes run at all
-///
-/// A disabled pass hands its input straight to the next one, so these are free to toggle and are the first
-/// thing to drop on a weak device
 void registerQuality(VulkanRenderer& renderer) {
 	const auto pass_toggle = [&renderer](std::string_view key, std::string_view pass, bool default_value, std::string description) {
 		toast::settings::declareBool(
@@ -57,8 +53,6 @@ void registerQuality(VulkanRenderer& renderer) {
 void registerShadows() {
 	const auto resolutions = std::vector<std::string> {"256", "512", "1024", "2048", "4096"};
 
-	// Index into `resolutions` rather than the raw number: a shadow map that is not a power of two wastes the
-	// tail of its allocation, and a free-form field invites one
 	toast::settings::declareInt(
 	    "renderer.shadows.cascade_resolution",
 	    2,

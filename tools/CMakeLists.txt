@@ -4,6 +4,7 @@ add_subdirectory(kenzo)
 add_subdirectory(log_server)
 add_subdirectory(reflection_generator)
 add_subdirectory(asset_packer)
+add_subdirectory(crash_reporter)
 
 
 add_dependencies(kenzo log_server)

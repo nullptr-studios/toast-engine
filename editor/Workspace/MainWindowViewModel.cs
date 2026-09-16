@@ -35,6 +35,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 	[ObservableProperty] private bool m_curveEditorVisible;
 	[ObservableProperty] private bool m_genericEditorVisible;
 	[ObservableProperty] private bool m_hapticsEditorVisible;
+	[ObservableProperty] private bool m_paletteEditorVisible;
 
 	[ObservableProperty] private bool m_hierarchyVisible = true;
 	[ObservableProperty] private bool m_historyVisible;
@@ -102,11 +103,13 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			if (e.Dockable == m_toastZoneFactory.HapticsEditorVm) m_hapticsEditorVisible = false;
 			if (e.Dockable == m_toastZoneFactory.CurveEditorVm) m_curveEditorVisible = false;
 			if (e.Dockable == m_toastZoneFactory.TableEditorVm) m_tableEditorVisible = false;
+			if (e.Dockable == m_toastZoneFactory.PaletteEditorVm) m_paletteEditorVisible = false;
 
 			OnPropertyChanged(nameof(LogsVisible));
 			OnPropertyChanged(nameof(HapticsEditorVisible));
 			OnPropertyChanged(nameof(CurveEditorVisible));
 			OnPropertyChanged(nameof(TableEditorVisible));
+			OnPropertyChanged(nameof(PaletteEditorVisible));
 		};
 
 		m_dockFactory.ActiveDockableChanged += (_, _) => {
@@ -166,6 +169,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		if (m_toastZoneFactory.CurveEditorVm is { } curve) yield return curve;
 		if (m_toastZoneFactory.HapticsEditorVm is { } haptics) yield return haptics;
 		if (m_toastZoneFactory.TableEditorVm is { } table) yield return table;
+		if (m_toastZoneFactory.PaletteEditorVm is { } palette) yield return palette;
 	}
 
 	[RelayCommand]
@@ -238,6 +242,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		ToggleToastTool("Table", value);
 	}
 
+	partial void OnPaletteEditorVisibleChanged(bool value) {
+		ToggleToastTool("Palette", value);
+	}
+
 	private void ToggleMainTool(string id, bool value) {
 		if (m_applyingLayout) return;
 		if (value != m_dockFactory.IsToolVisible(id)) m_dockFactory.ToggleTool(id);
@@ -285,6 +293,13 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 				if (m_toastZoneFactory.TableEditorVm is { } tableVm) {
 					_ = OpenToastEditorAsync(tableVm, uid, virtualPath, def, recoverPath);
 					TableEditorVisible = true;
+				}
+
+				break;
+			case "PaletteEditor":
+				if (m_toastZoneFactory.PaletteEditorVm is { } paletteVm) {
+					_ = OpenToastEditorAsync(paletteVm, uid, virtualPath, def, recoverPath);
+					PaletteEditorVisible = true;
 				}
 
 				break;
@@ -391,6 +406,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		if (m_toastZoneFactory.CurveEditorVm is { IsDirty: true }) dirty.Add("Curve");
 		if (m_toastZoneFactory.HapticsEditorVm is { IsDirty: true }) dirty.Add("Haptics");
 		if (m_toastZoneFactory.TableEditorVm is { IsDirty: true }) dirty.Add("Table");
+		if (m_toastZoneFactory.PaletteEditorVm is { IsDirty: true }) dirty.Add("Palette");
 		return dirty;
 	}
 
@@ -401,6 +417,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			case "Curve": CurveEditorVisible = true; break;
 			case "Haptics": HapticsEditorVisible = true; break;
 			case "Table": TableEditorVisible = true; break;
+			case "Palette": PaletteEditorVisible = true; break;
 		}
 	}
 
@@ -416,6 +433,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		m_hapticsEditorVisible = m_toastZoneFactory.IsToolVisible("Haptics");
 		m_curveEditorVisible = m_toastZoneFactory.IsToolVisible("Curve");
 		m_tableEditorVisible = m_toastZoneFactory.IsToolVisible("Table");
+		m_paletteEditorVisible = m_toastZoneFactory.IsToolVisible("Palette");
 
 		OnPropertyChanged(nameof(HierarchyVisible));
 		OnPropertyChanged(nameof(HistoryVisible));
@@ -427,6 +445,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		OnPropertyChanged(nameof(HapticsEditorVisible));
 		OnPropertyChanged(nameof(CurveEditorVisible));
 		OnPropertyChanged(nameof(TableEditorVisible));
+		OnPropertyChanged(nameof(PaletteEditorVisible));
 	}
 #pragma warning restore MVVMTK0034
 

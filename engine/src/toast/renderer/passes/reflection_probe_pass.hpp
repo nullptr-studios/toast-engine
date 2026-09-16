@@ -23,12 +23,6 @@
 namespace renderer {
 class VulkanCore;
 
-/**
- * @brief Owns the cubemap each reflection probe reflects, and the bake that fills them
- *
- * One face per frame, because there is one frame UBO per frame in flight - so six frames per probe, on
- * explicit request. Convolved by EnvironmentPass's shader, so probe and environment blur identically
- */
 class ReflectionProbePass : public IRenderPass {
 public:
 	/// Matches VulkanRenderer::k_max_reflection_probes
@@ -36,8 +30,6 @@ public:
 
 	static constexpr uint32_t k_default_face_size = 128;
 
-	/// The staging cube is allocated at this size once and reused, so raising it costs memory even for
-	/// projects that never ask for it
 	static constexpr uint32_t k_max_face_size = 512;
 
 	static constexpr uint32_t k_irradiance_size = 32;
@@ -49,16 +41,12 @@ public:
 		return "Reflection Probes";
 	}
 
-	/// @brief Draws a mirror ball per probe, in the Probe Cubemap view only. The bake is driven by the
-	///        renderer's capture state, not from here
 	void record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) override;
 
-	/// @brief Flushes any queued capture. A readback waits for the bake to have *executed*, not recorded
 	void recordPre(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) override;
 
 	void queueSave(uint32_t probe, std::string_view uri);
 
-	/// @returns false when nothing is stored there, or the file is from an older layout
 	auto loadProbe(uint32_t probe, std::string_view uri) -> bool;
 
 	[[nodiscard]]
@@ -66,37 +54,26 @@ public:
 		return RenderStage::world;
 	}
 
-	/// @brief Copies a finished scene render into one staging face; on the last face, prefilters into @p probe
-	/// @param scene_color Must already be in eTransferSrcOptimal
+	/// @param scene_color Must be eTransferSrcOptimal
 	void captureFace(vk::CommandBuffer cmd, vk::Image scene_color, vk::Extent2D scene_extent, uint32_t probe, uint32_t face);
 
-	/// @brief captureFace() without the convolutions - an irradiance probe keeps only four SH coefficients
 	void captureIrradianceFace(vk::CommandBuffer cmd, vk::Image scene_color, vk::Extent2D scene_extent, uint32_t face);
 
-	/// @brief Projects the staging cube into @p probe's SH slot, once the sixth face lands
-	///
-	/// Reads the raw cube - the projection *is* the convolution
 	void projectStagingToSh(vk::CommandBuffer cmd, uint32_t probe);
 
-	/// @returns the buffer holding every irradiance probe's SH coefficients, bound by MaterialPass
 	[[nodiscard]]
 	auto getShBuffer() const -> vk::Buffer;
 
 	void queueShSave(uint32_t base, uint32_t count, std::string_view uri, const ShGridKey& key);
 
-	/// @returns false when nothing is stored there, the layout is older, or @p key does not match the file's
 	auto loadShRange(uint32_t base, uint32_t count, std::string_view uri, const ShGridKey& key) -> bool;
 
-	/// @brief Rebuilds @p probe's cubemaps at @p face_size if it is not already that size
-	///
-	/// @warning Blocks on device idle - frames in flight and material descriptors still point at the old
-	///          views. Explicit bakes only
+	/// @warning Blocks on device idle
 	void setProbeResolution(uint32_t probe, uint32_t face_size);
 
 	[[nodiscard]]
 	auto getProbeResolution(uint32_t probe) const -> uint32_t;
 
-	/// @brief View of @p probe's cubemap, or the first probe's when out of range
 	[[nodiscard]]
 	auto getProbeView(uint32_t probe) const -> vk::ImageView;
 
@@ -118,14 +95,11 @@ public:
 
 	void setBakedTransform(uint32_t probe, const glm::vec3& position, const glm::vec3& extents);
 
-	/// @returns true when @p probe has never been baked, or moved since it was
-	///
-	/// Tracked rather than noticed - a stale reflection does not look wrong on its own
 	[[nodiscard]]
 	auto isStale(uint32_t probe, const glm::vec3& position, const glm::vec3& extents) const -> bool;
 
 private:
-	/// @brief Mirrors environment.slang's EnvironmentParams
+	/// Mirrors environment.slang EnvironmentParams
 	struct Params {
 		glm::vec4 face_right {0.0f};
 		glm::vec4 face_up {0.0f};
@@ -152,10 +126,8 @@ private:
 
 	auto readbackCube(ProbeCube& cube, std::vector<uint8_t>& out) -> bool;
 
-	/// @brief Uploads @p bytes at @p offset into @p cube, which must already be the matching size
 	auto uploadCube(ProbeCube& cube, const std::vector<uint8_t>& bytes, size_t offset) -> bool;
 
-	/// Probe index -> where its capture goes, once the bake has executed
 	std::vector<std::pair<uint32_t, std::string>> m_pending_saves;
 
 	struct PendingShSave {
@@ -183,16 +155,13 @@ private:
 	vk::raii::Sampler m_sampler = nullptr;
 	std::vector<ProbeCube> m_probes;
 
-	/// Diffuse half. Without it a probe corrects only what a surface reflects, so a red room's contents stay
-	/// bounce-lit by the sky
 	std::vector<ProbeCube> m_probe_irradiance;
 
-	/// The six captured faces, pre-convolution. Shared: the bake walks one probe at a time
 	ProbeCube m_staging;
 
 	void createShResources(const VulkanCore& core);
 
-	/// SH coefficients for every irradiance probe: 4 float4s each (L0, L1y, L1z, L1x)
+	/// 4 float4 each L0 L1y L1z L1x
 	std::optional<vma::raii::Buffer> m_sh_buffer;
 	ShaderLayout m_sh_layout;
 	VulkanPipeline m_sh_pipeline;
@@ -203,7 +172,7 @@ private:
 	VulkanPipeline m_irradiance_pipeline;
 	vk::raii::DescriptorSet m_staging_source_set = nullptr;
 
-	/// @brief Mirrors probe_preview.slang's ProbePreviewParams
+	/// Mirrors probe_preview.slang ProbePreviewParams
 	struct PreviewParams {
 		glm::mat4 view_projection {1.0f};
 		glm::vec4 center_radius {0.0f};

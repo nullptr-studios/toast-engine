@@ -44,9 +44,7 @@ public:
 		return refs;
 	}
 
-	// SLANG_MCALL before the name, not after the return type: in a trailing-return declaration the latter
-	// applies to the pointer rather than the function, so the calling convention was silently dropped while
-	// the interface it overrides still declares one
+	// SLANG_MCALL before the name since after the return type it binds to the pointer
 	SLANG_NO_THROW auto SLANG_MCALL getBufferPointer() -> const void* override { return m_data.data(); }
 
 	SLANG_NO_THROW auto SLANG_MCALL getBufferSize() -> size_t override { return m_data.size(); }
@@ -87,12 +85,10 @@ auto SlangVfs::castAs(const SlangUUID& uuid) -> void* {
 auto SlangVfs::normalizeUri(std::string_view path) -> std::string {
 	std::string_view in = path;
 
-	// Strip any ./ or .\ prefixes
 	while (in.starts_with("./") || in.starts_with(".\\")) {
 		in.remove_prefix(2);
 	}
 
-	// Locate the scheme separator
 	auto sep = in.find("://");
 	size_t rel_start = 0;
 	if (sep != std::string_view::npos) {
@@ -111,7 +107,6 @@ auto SlangVfs::normalizeUri(std::string_view path) -> std::string {
 		rel.remove_prefix(1);
 	}
 
-	// Collapse duplicate slashes and backslashes in the relative part
 	std::string clean_rel;
 	clean_rel.reserve(rel.size());
 	char prev = '\0';
@@ -143,7 +138,6 @@ auto SlangVfs::loadFile(const char* path, ISlangBlob** out_blob) -> SlangResult 
 
 	const std::string uri = normalizeUri(path);
 	if (uri.empty()) {
-		// Not a virtual URI
 		return SLANG_E_NOT_FOUND;
 	}
 
@@ -162,8 +156,6 @@ auto SlangVfs::loadFile(const char* path, ISlangBlob** out_blob) -> SlangResult 
 }
 
 SlangVfs::Recorder::Recorder() {
-	// Nesting one inside another would make the outer miss everything the inner recorded, so it is a bug
-	// rather than a case to handle
 	TOAST_ASSERT(s_recorder == nullptr, "Render", "A SlangVfs::Recorder is already active; shader compiles must not overlap");
 	s_recorder = this;
 }

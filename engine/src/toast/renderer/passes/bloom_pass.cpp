@@ -22,11 +22,6 @@ namespace renderer {
 
 namespace {
 
-/// @brief Levels in the bloom chain
-///
-/// Each halves the resolution, so this is also how wide the glow can reach: six levels means the
-/// mip covers 1/64th of the screen per texel, which is a soft falloff. Clamped at runtime so
-/// a small viewport does not produce degenerate 0-pixel mips
 constexpr uint32_t k_max_mips = 6;
 
 constexpr uint32_t k_min_mip_size = 8;
@@ -45,7 +40,6 @@ BloomPass::BloomPass(const VulkanCore& core, vk::Format hdr_format, vk::Extent2D
 
 	m_shader_layout.rebuild(core, shader->reflection, "BloomPass");
 
-	// Clamping
 	const auto sampler_ci = linearClampSamplerInfo();
 	m_sampler = vk::raii::Sampler(core.getDevice(), sampler_ci);
 	setDebugName(core, *m_sampler, "BloomPass Sampler");
@@ -82,7 +76,6 @@ void BloomPass::createPipelines(const VulkanCore& core) {
 	config.fragment_entry = "fragmentDownsampleNext";
 	m_downsample_pipeline.rebuild(core, config);
 
-	// each upsample step accumulates onto the mip ontop
 	config.debug_name = "BloomPass Upsample";
 	config.fragment_entry = "fragmentUpsample";
 	config.blend_preset = VulkanPipeline::BlendPreset::additive;
@@ -122,7 +115,6 @@ void BloomPass::createTargets(const VulkanCore& core, vk::Extent2D extent) {
 		setDebugName(core, **mip.view, std::format("{} View", debug_name));
 	};
 
-	// Separate images rather than one image's mip chain
 	vk::Extent2D size = extent;
 	for (uint32_t level = 0; level < k_max_mips; ++level) {
 		size = vk::Extent2D {std::max(size.width / 2, 1u), std::max(size.height / 2, 1u)};
@@ -136,8 +128,6 @@ void BloomPass::createTargets(const VulkanCore& core, vk::Extent2D extent) {
 
 	make_target(m_composite, extent, "BloomPass Composite");
 
-	// Descriptor sets, one per downsample step, one per upsample step, one composite. Written in
-	// record() the first time a source view is seen, since the scene view is not known until then
 	const auto& layouts = m_shader_layout.getDescriptorSetLayouts();
 	if (layouts.empty() || m_mips.empty()) {
 		return;
@@ -157,7 +147,6 @@ void BloomPass::createTargets(const VulkanCore& core, vk::Extent2D extent) {
 	for (size_t i = 0; i < m_mips.size(); ++i) {
 		m_downsample_sets.push_back(allocate());
 	}
-	// One per step from the smallest mip up to the largest
 	for (size_t i = 0; i + 1 < m_mips.size(); ++i) {
 		m_upsample_sets.push_back(allocate());
 	}
@@ -221,7 +210,6 @@ void BloomPass::drawInto(
 	vk::RenderingAttachmentInfo attachment {};
 	attachment.imageView = **target.view;
 	attachment.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
-	// Additive steps accumulate onto what the previous level left, so they load rather than clear
 	attachment.loadOp = additive ? vk::AttachmentLoadOp::eLoad : vk::AttachmentLoadOp::eDontCare;
 	attachment.storeOp = vk::AttachmentStoreOp::eStore;
 
@@ -243,13 +231,7 @@ void BloomPass::drawInto(
 	cmd.bindDescriptorSets(
 	    vk::PipelineBindPoint::eGraphics, *m_shader_layout.getPipelineLayout(), 0, std::array<vk::DescriptorSet, 1> {set}, {}
 	);
-	cmd.pushConstants(
-	    *m_shader_layout.getPipelineLayout(),
-	    vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
-	    0,
-	    sizeof(Params),
-	    &params
-	);
+	cmd.pushConstants(*m_shader_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eAll, 0, sizeof(Params), &params);
 	cmd.draw(3, 1, 0, 0);
 
 	cmd.endRendering();
@@ -263,13 +245,11 @@ auto BloomPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageVie
 		return source_view;
 	}
 
-	// The scene view only changes on resize, so the sets are written once rather than every frame
 	if (m_bound_source != source_view) {
 		writeDescriptor(*m_downsample_sets[0], source_view, source_view);
 		for (size_t i = 1; i < m_mips.size(); ++i) {
 			writeDescriptor(*m_downsample_sets[i], **m_mips[i - 1].view, source_view);
 		}
-		// Upsample step i reads the mip below it and blends onto the one above
 		for (size_t i = 0; i + 1 < m_mips.size(); ++i) {
 			const size_t from = m_mips.size() - 1 - i;
 			writeDescriptor(*m_upsample_sets[i], **m_mips[from].view, source_view);
@@ -278,7 +258,6 @@ auto BloomPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageVie
 		m_bound_source = source_view;
 	}
 
-	// From the frame snapshot, not from members - see the note in TonemapPass::record()
 	const auto* frame = VulkanRenderer::instance->renderingFrame();
 	const auto settings = frame != nullptr ? frame->post_process.bloom : VulkanRenderer::PostProcessSettings::Bloom {};
 
@@ -288,7 +267,6 @@ auto BloomPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageVie
 	params.filter_radius = settings.filter_radius;
 	params.strength = settings.strength;
 
-	// Downsample: scene -> mip0, then each mip into the next
 	for (size_t i = 0; i < m_mips.size(); ++i) {
 		const vk::Extent2D source_size =
 		    i == 0 ? vk::Extent2D {m_mips[0].extent.width * 2, m_mips[0].extent.height * 2} : m_mips[i - 1].extent;
@@ -305,7 +283,6 @@ auto BloomPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageVie
 
 		drawInto(cmd, i == 0 ? m_downsample_first_pipeline : m_downsample_pipeline, *m_downsample_sets[i], m_mips[i], params, false);
 
-		// Immediately readable by the next step down, and by the upsample pass later
 		transition(
 		    cmd,
 		    m_mips[i],
@@ -315,7 +292,6 @@ auto BloomPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageVie
 		);
 	}
 
-	// Upsample: accumulate each mip additively onto the one ontop
 	for (size_t i = 0; i + 1 < m_mips.size(); ++i) {
 		const size_t from = m_mips.size() - 1 - i;
 		const size_t to = from - 1;
@@ -342,7 +318,6 @@ auto BloomPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageVie
 		);
 	}
 
-	// Composite: scene + bloom  STILL HDR
 	transition(
 	    cmd,
 	    m_composite,

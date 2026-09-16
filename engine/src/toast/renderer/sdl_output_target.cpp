@@ -1,6 +1,6 @@
 /// @file SDLOutputTarget.cpp
 /// @author dario
-/// @date 16/05/2026.
+/// @date 16/05/2026
 
 #include "sdl_output_target.hpp"
 
@@ -19,7 +19,6 @@ auto SDLOutputTarget::getRequiredInstanceExtensions() -> std::vector<const char*
 }
 
 auto SDLOutputTarget::getRequiredInstanceExtensions(SDL_Window* window) -> std::vector<const char*> {
-	// SDL3 does not require a window
 	(void)window;
 	return getRequiredInstanceExtensions();
 }
@@ -101,7 +100,6 @@ auto SDLOutputTarget::present(uint32_t image_index, vk::Semaphore render_finishe
 
 auto SDLOutputTarget::recordFinalize(vk::CommandBuffer command_buffer, uint32_t image_index) -> void {
 	ZoneScoped;
-	// Transition the rendered image from color-attachment to present-source for the swapchain
 	const vk::ImageMemoryBarrier barrier(
 	    vk::AccessFlagBits::eColorAttachmentWrite,
 	    vk::AccessFlags {},
@@ -119,6 +117,14 @@ auto SDLOutputTarget::recordFinalize(vk::CommandBuffer command_buffer, uint32_t 
 
 auto SDLOutputTarget::recreate(vk::Extent2D extent) -> void {
 	m_swapchain->recreate(extent);
+}
+
+auto SDLOutputTarget::isPresentable() const -> bool {
+	try {
+		const auto capabilities = m_core->getPhysicalDevice().getSurfaceCapabilitiesKHR(*m_surface);
+		return capabilities.maxImageExtent.width > 0 && capabilities.maxImageExtent.height > 0 &&
+		       capabilities.currentExtent.width > 0 && capabilities.currentExtent.height > 0;
+	} catch (const vk::SystemError&) { return false; }
 }
 
 }

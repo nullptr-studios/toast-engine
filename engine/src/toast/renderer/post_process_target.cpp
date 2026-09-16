@@ -17,7 +17,7 @@ namespace renderer {
 
 void PostProcessTarget::create(const VulkanCore& core, vk::Extent2D extent, vk::Format format, std::string_view debug_name) {
 	ZoneScoped;
-	// View before image: it is a view *onto* that memory, and releasing the image first leaves it dangling
+	// View before the image it views
 	m_view.reset();
 	m_image.reset();
 	m_extent = extent;
@@ -58,8 +58,6 @@ void PostProcessTarget::beginScope(vk::CommandBuffer cmd) const {
 	    colorSubresourceRange()
 	);
 	cmd.pipelineBarrier(
-	    // Nothing to wait on the first time through; after that, the previous frame's sampling of this same
-	    // image has to finish before it can be written again
 	    was_sampled ? vk::PipelineStageFlagBits::eFragmentShader : vk::PipelineStageFlagBits::eTopOfPipe,
 	    vk::PipelineStageFlagBits::eColorAttachmentOutput,
 	    {},
@@ -72,8 +70,6 @@ void PostProcessTarget::beginScope(vk::CommandBuffer cmd) const {
 	vk::RenderingAttachmentInfo attachment {};
 	attachment.imageView = **m_view;
 	attachment.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
-	// eDontCare, not eClear: a full-screen triangle covers every pixel, so clearing first is a write the very
-	// next draw overwrites
 	attachment.loadOp = vk::AttachmentLoadOp::eDontCare;
 	attachment.storeOp = vk::AttachmentStoreOp::eStore;
 

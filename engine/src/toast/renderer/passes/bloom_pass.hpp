@@ -18,13 +18,6 @@
 namespace renderer {
 class VulkanCore;
 
-/**
- * @brief Bloom Effect
- *
- * Progressive downsample into a mip chain, then progressive upsample accumulating back up, then a composite
- * of scene + bloom, all in HDR, before the tonemap
- *
- */
 class BloomPass : public IPostProcessPass {
 public:
 	BloomPass(const VulkanCore& core, vk::Format hdr_format, vk::Extent2D extent);
@@ -39,7 +32,7 @@ public:
 	void onResize(vk::Extent2D extent) override;
 
 private:
-	/// @brief BloomParams push constant block
+	/// Mirrors bloom.slang BloomParams
 	struct Params {
 		glm::vec2 inverse_source_size {0.0f};
 		float threshold = 1.0f;
@@ -49,7 +42,6 @@ private:
 		glm::vec2 _pad0 {0.0f};
 	};
 
-	/// @brief One level of the bloom chain half the size of the level above it
 	struct Mip {
 		std::optional<vma::raii::Image> image;
 		std::optional<vk::raii::ImageView> view;
@@ -60,14 +52,12 @@ private:
 	void createTargets(const VulkanCore& core, vk::Extent2D extent);
 	void createPipelines(const VulkanCore& core);
 
-	/// @brief Allocates and writes one descriptor set binding @p source (and optionally the scene) for a draw
 	void writeDescriptor(vk::DescriptorSet set, vk::ImageView source, vk::ImageView scene);
 
 	void transition(
 	    vk::CommandBuffer cmd, Mip& mip, vk::ImageLayout new_layout, vk::AccessFlags dst_access, vk::PipelineStageFlags dst_stage
 	);
 
-	/// @brief Full-screen draw of @p pipeline into @p target, reading through @p set
 	void drawInto(
 	    vk::CommandBuffer cmd, const VulkanPipeline& pipeline, vk::DescriptorSet set, const Mip& target, const Params& params,
 	    bool additive
@@ -88,7 +78,6 @@ private:
 
 	Mip m_composite;
 
-	/// Descriptor sets, allocated once, one per downsample step, one per upsample step, one composite
 	std::vector<vk::raii::DescriptorSet> m_downsample_sets;
 	std::vector<vk::raii::DescriptorSet> m_upsample_sets;
 	vk::raii::DescriptorSet m_composite_set = nullptr;

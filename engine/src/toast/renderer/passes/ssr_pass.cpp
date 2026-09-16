@@ -25,9 +25,7 @@ SsrPass::SsrPass(const VulkanCore& core, vk::Format scene_format, vk::Extent2D e
     : m_core(&core),
       m_scene_format(scene_format) {
 	ZoneScoped;
-	// Checked rather than assumed: 128 bytes is all Vulkan guarantees, and this block is 176. Desktop parts
-	// report 256 and are fine, but a device that cannot take it would otherwise fail inside pipeline creation
-	// with an error about a limit rather than about reflections
+	// Vulkan guarantees 128 bytes and this block is 176
 	const uint32_t push_constant_limit = core.getPhysicalDevice().getProperties().limits.maxPushConstantsSize;
 	if (push_constant_limit < sizeof(Params)) {
 		TOAST_ERROR(
@@ -50,24 +48,29 @@ SsrPass::SsrPass(const VulkanCore& core, vk::Format scene_format, vk::Extent2D e
 
 	m_shader_layout.rebuild(core, shader->reflection, "SsrPass");
 
-	VulkanPipeline::Config config;
-	config.pipeline_type = VulkanPipeline::PipelineType::graphics;
-	config.debug_name = "SsrPass";
-	// The scene's HDR format, not the display format: this composites radiance and runs before the tonemap
-	config.color_format = scene_format;
-	config.extent = extent;
-	config.shader_spirv = shader->spirv;
-	config.pipeline_layout = *m_shader_layout.getPipelineLayout();
-	config.vertex_bindings = {};
-	config.vertex_attributes = {};
-	config.cull_mode = vk::CullModeFlagBits::eNone;
-	config.depth_test = false;
-	config.depth_write = false;
-	m_pipeline.rebuild(core, config);
+	const auto build_pipeline =
+	    [&](VulkanPipeline& pipeline, vk::Format format, vk::Extent2D target_extent, const char* entry, const char* debug_name) {
+		    VulkanPipeline::Config config;
+		    config.pipeline_type = VulkanPipeline::PipelineType::graphics;
+		    config.debug_name = debug_name;
+		    config.color_format = format;
+		    config.extent = target_extent;
+		    config.shader_spirv = shader->spirv;
+		    config.fragment_entry = entry;
+		    config.pipeline_layout = *m_shader_layout.getPipelineLayout();
+		    config.vertex_bindings = {};
+		    config.vertex_attributes = {};
+		    config.cull_mode = vk::CullModeFlagBits::eNone;
+		    config.depth_test = false;
+		    config.depth_write = false;
+		    pipeline.rebuild(core, config);
+	    };
+	build_pipeline(m_trace_pipeline, k_reflection_format, PostProcessTarget::halfExtent(extent), "traceMain", "SsrPass Trace");
+	build_pipeline(m_composite_pipeline, scene_format, extent, "compositeMain", "SsrPass Composite");
 
 	createResources(core);
-	createTarget(core, extent);
-	TOAST_INFO("Render", "SsrPass ready ({})", vk::to_string(scene_format));
+	createTargets(core, extent);
+	TOAST_INFO("Render", "SsrPass ready ({}, marched at half resolution)", vk::to_string(scene_format));
 }
 
 void SsrPass::createResources(const VulkanCore& core) {
@@ -83,10 +86,7 @@ void SsrPass::createResources(const VulkanCore& core) {
 	m_sampler = vk::raii::Sampler(device, sampler_ci);
 	setDebugName(core, *m_sampler, "SsrPass Sampler");
 
-	// Depth and the geometry buffer are sampled with nearest filtering deliberately. Interpolating between
-	// two depths produces a value describing neither surface - across a silhouette it is a halfway depth
-	// where there is no geometry at all - and a filtered normal between two facings points somewhere the
-	// surface never faced. Both would put reflection hits on geometry that does not exist
+	// Nearest since interpolated depth or normals invent surfaces
 	const auto point_ci = nearestClampSamplerInfo();
 	m_point_sampler = vk::raii::Sampler(device, point_ci);
 	setDebugName(core, *m_point_sampler, "SsrPass PointSampler");
@@ -104,20 +104,22 @@ void SsrPass::createResources(const VulkanCore& core) {
 	}
 }
 
-void SsrPass::createTarget(const VulkanCore& core, vk::Extent2D extent) {
+void SsrPass::createTargets(const VulkanCore& core, vk::Extent2D extent) {
 	m_target.create(core, extent, m_scene_format, "SsrPass");
+	m_reflection_target.create(core, PostProcessTarget::halfExtent(extent), k_reflection_format, "SsrPass Reflection");
 	std::ranges::fill(m_bound_views, vk::ImageView {});
 }
 
 void SsrPass::onResize(vk::Extent2D extent) {
 	if (m_core != nullptr) {
-		createTarget(*m_core, extent);
+		createTargets(*m_core, extent);
 	}
 }
 
 auto SsrPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView source_view) -> vk::ImageView {
 	ZoneScoped;
-	if (!m_pipeline.isReady() || frame_index >= m_descriptor_sets.size() || !source_view || !m_target.isReady()) {
+	if (!m_trace_pipeline.isReady() || !m_composite_pipeline.isReady() || frame_index >= m_descriptor_sets.size() || !source_view ||
+	    !m_target.isReady() || !m_reflection_target.isReady()) {
 		return source_view;
 	}
 
@@ -127,34 +129,26 @@ auto SsrPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView 
 		return source_view;
 	}
 
-	// Rebound when the chain's source changes. The depth and geometry views are stable for the life of the
-	// target, but they are written in the same call so a resize cannot leave one set stale against the other
 	if (m_bound_views[frame_index] != source_view) {
 		const std::array image_infos {
 		  vk::DescriptorImageInfo(*m_sampler, source_view, vk::ImageLayout::eShaderReadOnlyOptimal),
-		  // Depth sits in eDepthReadOnlyOptimal, not eShaderReadOnlyOptimal - recordFrame() leaves it there so
-		  // the overlay stage can still depth-test against it after this pass has sampled it
+		  // Depth stays eDepthReadOnlyOptimal for the overlay stage
 		  vk::DescriptorImageInfo(*m_point_sampler, depth_view, vk::ImageLayout::eDepthReadOnlyOptimal),
-		  vk::DescriptorImageInfo(*m_point_sampler, normal_view, vk::ImageLayout::eShaderReadOnlyOptimal)
+		  vk::DescriptorImageInfo(*m_point_sampler, normal_view, vk::ImageLayout::eShaderReadOnlyOptimal),
+		  // Point sampled since the upsample picks its own texels
+		  vk::DescriptorImageInfo(*m_point_sampler, m_reflection_target.view(), vk::ImageLayout::eShaderReadOnlyOptimal)
 		};
 
-		const std::array writes {
-		  vk::WriteDescriptorSet(
-		      *m_descriptor_sets[frame_index], 0, 0, 1, vk::DescriptorType::eCombinedImageSampler, image_infos.data()
-		  ),
-		  vk::WriteDescriptorSet(
-		      *m_descriptor_sets[frame_index], 1, 0, 1, vk::DescriptorType::eCombinedImageSampler, &image_infos[1]
-		  ),
-		  vk::WriteDescriptorSet(*m_descriptor_sets[frame_index], 2, 0, 1, vk::DescriptorType::eCombinedImageSampler, &image_infos[2])
-		};
+		std::array<vk::WriteDescriptorSet, 4> writes {};
+		for (uint32_t binding = 0; binding < writes.size(); ++binding) {
+			writes[binding] = vk::WriteDescriptorSet(
+			    *m_descriptor_sets[frame_index], binding, 0, 1, vk::DescriptorType::eCombinedImageSampler, &image_infos[binding]
+			);
+		}
 		m_core->getDevice().updateDescriptorSets(writes, {});
 		m_bound_views[frame_index] = source_view;
 	}
 
-	m_target.beginScope(cmd);
-
-	// From the frame snapshot, not from renderer members - the render thread must see the same camera the
-	// geometry buffer was written with, and members move on the main thread
 	const auto* frame = VulkanRenderer::instance->renderingFrame();
 	const auto settings = frame != nullptr ? frame->post_process.ssr : VulkanRenderer::PostProcessSettings::Ssr {};
 
@@ -168,24 +162,23 @@ auto SsrPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView 
 	    glm::vec4(settings.intensity, settings.max_roughness, settings.thickness, static_cast<float>(settings.max_steps));
 	params.marching = glm::vec4(settings.stride, static_cast<float>(frame != nullptr ? frame->render_mode : 0u), 0.0f, 0.0f);
 
-	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline.getPipeline());
-	cmd.bindDescriptorSets(
-	    vk::PipelineBindPoint::eGraphics,
-	    *m_shader_layout.getPipelineLayout(),
-	    0,
-	    std::array<vk::DescriptorSet, 1> {*m_descriptor_sets[frame_index]},
-	    {}
-	);
-	cmd.pushConstants(
-	    *m_shader_layout.getPipelineLayout(),
-	    vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
-	    0,
-	    sizeof(Params),
-	    &params
-	);
-	cmd.draw(3, 1, 0, 0);
+	const auto draw = [&](const PostProcessTarget& target, const VulkanPipeline& pipeline) {
+		target.beginScope(cmd);
+		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.getPipeline());
+		cmd.bindDescriptorSets(
+		    vk::PipelineBindPoint::eGraphics,
+		    *m_shader_layout.getPipelineLayout(),
+		    0,
+		    std::array<vk::DescriptorSet, 1> {*m_descriptor_sets[frame_index]},
+		    {}
+		);
+		cmd.pushConstants(*m_shader_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eAll, 0, sizeof(Params), &params);
+		cmd.draw(3, 1, 0, 0);
+		target.endScope(cmd);
+	};
 
-	m_target.endScope(cmd);
+	draw(m_reflection_target, m_trace_pipeline);
+	draw(m_target, m_composite_pipeline);
 
 	return m_target.view();
 }

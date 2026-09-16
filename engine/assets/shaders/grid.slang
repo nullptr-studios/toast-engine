@@ -70,14 +70,8 @@ float GridLine(float2 coord, float scale)
 [shader("fragment")]
 float4 fragmentMain(VSOutput input) : SV_Target0
 {
-    //
-    // Z-UP
-    //
     float2 coord = input.worldPos.xy;
 
-    //
-    // Distance fade
-    //
     float dist =
         distance(
             gCamera.cameraPosition,
@@ -93,18 +87,12 @@ float4 fragmentMain(VSOutput input) : SV_Target0
             1.0 -
             dist / 500.0);
 
-    //
-    // Grid
-    //
     float minorGrid =
         GridLine(coord, 1.0);
 
     float majorGrid =
         GridLine(coord, 10.0);
 
-    //
-    // Base colors
-    //
     float3 color =
         float3(
             0.08,
@@ -127,9 +115,6 @@ float4 fragmentMain(VSOutput input) : SV_Target0
             0.35,
             0.35);
 
-    //
-    // Axis highlighting
-    //
     float axisWidth = 0.05;
 
     float xAxis =
@@ -146,12 +131,6 @@ float4 fragmentMain(VSOutput input) : SV_Target0
             axisWidth + fwidth(coord.x),
             abs(coord.x));
 
-    //
-    // Blender / Unreal style:
-    // X = red
-    // Y = green
-    // Z = up
-    //
     color =
         lerp(
             color,
@@ -164,16 +143,11 @@ float4 fragmentMain(VSOutput input) : SV_Target0
             float3(0.1, 1.0, 0.1),
             yAxis);
 
-    // Alpha follows how much line is actually at this pixel, not just distance. Without it the empty space
-    // between lines inherits the same fade and stays opaque up close, hiding whatever is behind the plane
     float lineCoverage =
         max(
             max(minorGrid * minorFade, majorGrid * majorFade),
             max(xAxis, yAxis));
 
-    //
-    // Still fade the whole grid out at extreme distance so far-away lines don't pop in/out abruptly
-    //
     float distanceFade =
         saturate(
             1.0 -

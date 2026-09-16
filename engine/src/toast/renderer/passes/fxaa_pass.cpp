@@ -60,8 +60,6 @@ void FxaaPass::createResources(const VulkanCore& core) {
 		return;
 	}
 
-	// Linear matters here specifically: the technique works by sampling *between* texels along an edge, which
-	// is what turns a stair-step into a gradient
 	const auto sampler_ci = linearClampSamplerInfo();
 	m_sampler = vk::raii::Sampler(device, sampler_ci);
 	setDebugName(core, *m_sampler, "FxaaPass Sampler");
@@ -111,7 +109,6 @@ auto FxaaPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView
 
 	m_target.beginScope(cmd);
 
-	// From the frame snapshot, not from members - see the note in TonemapPass::record()
 	const auto* frame = VulkanRenderer::instance->renderingFrame();
 	const auto settings = frame != nullptr ? frame->post_process.fxaa : VulkanRenderer::PostProcessSettings::Fxaa {};
 
@@ -131,13 +128,7 @@ auto FxaaPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView
 	    std::array<vk::DescriptorSet, 1> {*m_descriptor_sets[frame_index]},
 	    {}
 	);
-	cmd.pushConstants(
-	    *m_shader_layout.getPipelineLayout(),
-	    vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
-	    0,
-	    sizeof(Params),
-	    &params
-	);
+	cmd.pushConstants(*m_shader_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eAll, 0, sizeof(Params), &params);
 	cmd.draw(3, 1, 0, 0);
 
 	m_target.endScope(cmd);

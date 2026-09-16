@@ -38,13 +38,11 @@ void SharedTextureOutputTarget::allocateResources(vk::Extent2D extent) {
 
 	for (uint32_t index = 0; index < m_images.size(); ++index) {
 		auto& shared = m_images[index];
-		// Reset any previous resources first
 		shared.mapped = nullptr;
 		shared.view.reset();
 		shared.staging.reset();
 		shared.image.reset();
 
-		// Device-local image we render into and copy out of
 		vk::ImageCreateInfo image_ci {};
 		image_ci.imageType = vk::ImageType::e2D;
 		image_ci.format = m_color_format;
@@ -71,7 +69,6 @@ void SharedTextureOutputTarget::allocateResources(vk::Extent2D extent) {
 		shared.view.emplace(m_core->getDevice(), view_ci);
 		setDebugName(*m_core, **shared.view, std::format("SharedTextureOutput ImageView[{}]", index));
 
-		// stagingg buffer for CPU readback
 		vk::BufferCreateInfo buffer_ci {};
 		buffer_ci.size = staging_size;
 		buffer_ci.usage = vk::BufferUsageFlagBits::eTransferDst;
@@ -99,13 +96,7 @@ auto SharedTextureOutputTarget::getColorAttachment(uint32_t index) const -> cons
 
 auto SharedTextureOutputTarget::acquireNextImage(uint64_t, vk::Semaphore, vk::Fence) -> vk::ResultValue<uint32_t> {
 	ZoneScoped;
-	// Never hand back the image copyLatestFrame() publishes to the consumer. There are as many images as
-	// frames in flight, so a plain round-robin lands every frame slot on the index it just published one
-	// step earlier - and the consumer reads that staging buffer straight out of mapped memory, on its own
-	// thread, with only the fence for the *previous* use of that image to order against. The GPU's
-	// copyImageToBuffer then overwrites the buffer mid-read, and because it lands in tiles the result is
-	// rectangular blocks of the new frame over whatever was there before. Skipping the published index
-	// leaves the consumer a stable buffer for a full rotation
+	// Skip the published index since the consumer reads that staging buffer from its own thread
 	const std::scoped_lock lock(m_frame_mutex);
 
 	const uint32_t count = getImageCount();
@@ -130,7 +121,6 @@ void SharedTextureOutputTarget::recordFinalize(vk::CommandBuffer command_buffer,
 	const vk::Image image = **shared.image;
 	const vk::Buffer staging = **shared.staging;
 
-	// Transition the rendered image from color-attachment to transfer-source
 	const vk::ImageMemoryBarrier to_transfer(
 	    vk::AccessFlagBits::eColorAttachmentWrite,
 	    vk::AccessFlagBits::eTransferRead,
@@ -145,7 +135,6 @@ void SharedTextureOutputTarget::recordFinalize(vk::CommandBuffer command_buffer,
 	    vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::PipelineStageFlagBits::eTransfer, {}, {}, {}, to_transfer
 	);
 
-	// Copy the image into its host-visible staging buffer
 	const vk::BufferImageCopy region(
 	    0,
 	    0,
@@ -156,7 +145,6 @@ void SharedTextureOutputTarget::recordFinalize(vk::CommandBuffer command_buffer,
 	);
 	command_buffer.copyImageToBuffer(image, vk::ImageLayout::eTransferSrcOptimal, staging, region);
 
-	// Make the transfer write visible to host reads
 	const vk::BufferMemoryBarrier to_host(
 	    vk::AccessFlagBits::eTransferWrite,
 	    vk::AccessFlagBits::eHostRead,
@@ -174,11 +162,7 @@ void SharedTextureOutputTarget::onImageRenderComplete(uint32_t image_index) {
 	if (image_index >= m_images.size()) {
 		return;
 	}
-	// The GPU copy into this staging buffer is complete
-	// invalidate caches and publish it
-	//
-	// Under the same lock copyLatestFrame() holds, so the index and the counter it reads always describe the
-	// same frame, and so a publish can never land in the middle of a consumer's copy
+	// Same lock as copyLatestFrame() so the index and counter agree
 	const std::scoped_lock lock(m_frame_mutex);
 
 	auto& shared = m_images[image_index];

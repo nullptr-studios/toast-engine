@@ -271,7 +271,8 @@ void MusicPlayer::masterPitch(float value) {
 }
 
 void MusicPlayer::onEnable() {
-	if (m_play_on_enable && !m_tracks.empty()) {
+	// Opening a scene in the editor runs onEnable too; only a running game should start music
+	if (m_play_on_enable && !m_tracks.empty() && !(owner() && owner()->isEditing())) {
 		play(0);
 	}
 }

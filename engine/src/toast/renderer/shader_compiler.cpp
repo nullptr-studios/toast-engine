@@ -29,8 +29,6 @@ static void ensureSlangGlobalSession() {
 	slang_global_session = session;
 }
 
-/// Whether shaders may declare ray-query constructs. Read on the render thread during compilation and written
-/// once from VulkanCore before any of that starts, so a plain bool is enough
 static bool ray_query_available = false;
 
 void ShaderCompiler::setRayQueryAvailable(bool available) {
@@ -42,9 +40,6 @@ auto ShaderCompiler::isRayQueryAvailable() -> bool {
 }
 
 auto ShaderCompiler::featureHash() -> uint64_t {
-	// Zero for the baseline feature set, so a cache key with no optional features enabled is the plain source
-	// hash. A large odd constant rather than 1 for the ray-query set: the key mixes this by multiply-xor, and a
-	// small value moves too few bits to reliably separate the two variants
 	return ray_query_available ? 0x9e3779b97f4a7c15ull : 0x0ull;
 }
 
@@ -85,8 +80,7 @@ static auto createSession() -> Slang::ComPtr<slang::ISession> {
 
 #endif
 
-	// Feature defines. Always defined to 0 or 1 rather than conditionally defined, so a shader can write
-	// "#if TOAST_RAY_QUERY" without also having to check whether the macro exists
+	// Always defined to 0 or 1 so shaders can #if TOAST_RAY_QUERY
 	slang::CompilerOptionEntry ray_query_entry {};
 	ray_query_entry.name = slang::CompilerOptionName::MacroDefine;
 	ray_query_entry.value.kind = slang::CompilerOptionValueKind::String;
@@ -99,7 +93,6 @@ static auto createSession() -> Slang::ComPtr<slang::ISession> {
 	session_desc.targetCount = SlangInt(slang_targets.size());
 	session_desc.defaultMatrixLayoutMode = SLANG_MATRIX_LAYOUT_COLUMN_MAJOR;    // glm
 
-	// Imports resolve through the engine VFS
 	session_desc.fileSystem = &SlangVfs::get();
 	std::array<const char*, 1> search_paths {"core://shaders/"};
 	session_desc.searchPaths = search_paths.data();
@@ -150,8 +143,6 @@ auto compileModule(std::string_view module_name, std::string_view source_path, s
 	const std::string module_name_str(module_name);
 	const std::string source_path_str(source_path);
 
-	// Every `import` resolves through the VFS during this call, and the recorder is the only place that sees
-	// them - see SlangVfs::Recorder for why Slang's own dependency list is not usable here
 	SlangVfs::Recorder import_recorder;
 	slang_module = slang_session->loadModuleFromSource(
 	    module_name_str.c_str(), source_path_str.c_str(), source_blob, slang_diagnostics.writeRef()
@@ -172,14 +163,7 @@ auto compileModule(std::string_view module_name, std::string_view source_path, s
 		return {};
 	}
 
-	// Reflection has to come off the *linked* program, not the composite
-	//
-	// An unlinked composite enumerates only the parameters the primary module declares in its own source.
-	// Anything an imported module owns is compiled into the SPIR-V but absent from getParameterCount(), so
-	// ShaderLayout builds a pipeline layout with those descriptors missing. Since lighting.slang owns the whole
-	// of descriptor set 0, that meant every scene binding - camera, lights, shadows, environment - vanished
-	// from the layout of every shader importing it while still being read by the shader, and the scene
-	// rendered black
+	// Reflection must come from the linked program since the composite misses parameters owned by imports
 	Slang::ComPtr<slang::IComponentType> linked_program;
 	Slang::ComPtr<slang::IBlob> link_diagnostics;
 	program->link(linked_program.writeRef(), link_diagnostics.writeRef());
@@ -203,11 +187,8 @@ auto compileModule(std::string_view module_name, std::string_view source_path, s
 	CompiledShaderCode result;
 	result.spirv.assign(bytes, bytes + spirv_blob->getBufferSize());
 	result.reflection = extractReflection(linked_program->getLayout());
-	// Must come from the module, not the program layout - see extractModuleEntryPoints()
 	extractModuleEntryPoints(slang_module, result.reflection);
 
-	// Collect dependencies as virtual URIs. These drive recompilation: an import that never lands here means
-	// editing the imported module leaves every shader that reads it running last build's SPIR-V
 	auto add_dependency = [&](std::string uri) {
 		if (uri.empty() || uri == source_path || std::ranges::contains(result.dependencies, uri)) {
 			return;
@@ -215,13 +196,10 @@ auto compileModule(std::string_view module_name, std::string_view source_path, s
 		result.dependencies.push_back(std::move(uri));
 	};
 
-	// What the VFS actually served. This is the list that works today
 	for (const auto& uri : import_recorder.resolved()) {
 		add_dependency(uri);
 	}
 
-	// What Slang reports. Empty for a module loaded from source, which is why the recorder exists - kept so a
-	// future Slang that does populate it contributes rather than being ignored
 	const SlangInt32 dependency_count = slang_module->getDependencyFileCount();
 	for (SlangInt32 i = 0; i < dependency_count; ++i) {
 		if (const char* dep_path = slang_module->getDependencyFilePath(i); dep_path != nullptr) {
@@ -229,8 +207,6 @@ auto compileModule(std::string_view module_name, std::string_view source_path, s
 		}
 	}
 
-	// we dont want to log this two times
-	// TOAST_TRACE("Render", "Compiled shader '{}' -> {} bytes of SPIR-V", source_path, spirv_blob->getBufferSize());
 	return result;
 }
 

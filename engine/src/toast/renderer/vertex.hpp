@@ -10,23 +10,18 @@
 
 namespace renderer {
 
-/// @brief Vertex with position, normals, UVs, tangents, and colors for mesh rendering
 struct Vertex {
-	glm::vec<3, float, glm::packed_highp> position;
-	glm::vec<3, float, glm::packed_highp> normal;
-	glm::vec<2, float, glm::packed_highp> uv;
-	glm::vec<4, float, glm::packed_highp> tangent;
+	glm::vec<3, float> position;
+	glm::vec<3, float> normal;
+	glm::vec<2, float> uv;
+	glm::vec<4, float> tangent;
 
-	glm::vec<3, float, glm::packed_highp> color {1.0f, 1.0f, 1.0f};
+	glm::vec<3, float> color {1.0f, 1.0f, 1.0f};
 };
 
-/**
- * @brief Per-vertex skinning influences, kept in a second vertex buffer binding
- *
- */
 struct SkinVertex {
-	glm::vec<4, uint16_t, glm::packed_highp> joints {0, 0, 0, 0};
-	glm::vec<4, float, glm::packed_highp> weights {0.0f, 0.0f, 0.0f, 0.0f};
+	glm::vec<4, uint16_t> joints {0, 0, 0, 0};
+	glm::vec<4, float> weights {0.0f, 0.0f, 0.0f, 0.0f};
 };
 
 static_assert(sizeof(Vertex) == 60, "skinning.slang's kVertexStride");

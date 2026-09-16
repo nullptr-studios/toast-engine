@@ -44,7 +44,12 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 		new PsdImporter(new TextureImporter.Settings(), new PsdImporter.Settings()),
 		new GltfImporter(new GltfImporter.Settings(), new TextureImporter.Settings()),
 		new FontImporter(),
-		new UIImageImporter()
+		new UIImageImporter(),
+		new VoxImporter(new VoxImporter.Settings()),
+		// Without these a dropped .bank matched the audio_bank asset extension instead and was copied raw: Master.strings.bank
+		// became a plain bank, and its events were never generated
+		new AudioBankImporter(),
+		new AudioStringImporter(new AudioStringImporter.Settings())
 	];
 
 	private static readonly HashSet<string> s_artworkExts = new(
@@ -342,7 +347,8 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 		if (assetFiles.Count > 0) {
 			var destDir = m_selectedFolder!.Filepath;
 			foreach (var src in assetFiles) {
-				var ext = Path.GetExtension(src).ToLowerInvariant();
+				// Compound extensions (".strings.bank") name a different type than their last segment
+				var ext = AssetTypeRegistry.GetExtension(Path.GetFileName(src)).ToLowerInvariant();
 				var definition = AssetTypeRegistry.ByExtension(ext);
 				if (definition is null) continue;
 				var dest = UniqueDestPath(Path.Combine(destDir, Path.GetFileName(src)));

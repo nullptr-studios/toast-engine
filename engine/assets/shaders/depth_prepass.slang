@@ -1,14 +1,3 @@
-// Depth-only prepass
-//
-// Lays down opaque depth so the main pass rejects occluded fragments at the depth test. Worth more here than
-// in most renderers: a material fragment costs six texture fetches, a 12-tap shadow lookup, clustered
-// lights, parallax-corrected IBL and an 8-probe SH interpolation, all wasted behind a wall
-//
-// Only pays because non-cutout materials compile without a discard - a reachable one forces late-Z, and then
-// the main pass shades everything anyway and this is pure added cost
-//
-// Vertex-only, so there is no colour attachment and nothing to write but depth
-
 struct CameraUBO
 {
     float4x4 view;
@@ -19,8 +8,7 @@ struct CameraUBO
 [[vk::binding(0,0)]]
 ConstantBuffer<CameraUBO> gCamera;
 
-// Mirrors mesh.slang's InstanceData and VulkanRenderer::InstanceData. Three scalar pads rather than a uint3,
-// which under std430 would take 16-byte alignment and change the stride - see the note in mesh.slang
+// Mirrors mesh.slang InstanceData and VulkanRenderer::InstanceData
 struct InstanceData
 {
     float4x4 model;
@@ -60,7 +48,3 @@ VSOutput vertexMain(VSInput input, uint instanceID : SV_InstanceID)
     output.position = mul(gCamera.viewProjection, mul(model, float4(input.position, 1.0)));
     return output;
 }
-
-// No skinned variant: skinning.slang poses the vertices before any pass records, so an instance arrives
-// already deformed with an identity model matrix. It used to duplicate the material shader's path and had
-// to deform identically, or the prepass rejected the character against its own bind pose

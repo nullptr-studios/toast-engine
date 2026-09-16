@@ -16,13 +16,6 @@
 namespace renderer {
 class VulkanCore;
 
-/**
- * @brief Builds a view-space cluster grid and culls PointLight/Spotlight sources into it every frame
- *
- * Two back-to-back dispatches sharing one layout: clusterBuildMain writes per-cluster AABBs, lightCullMain
- * sphere-tests each against every light. One buffer set per frame in flight, because frame N+1's dispatch
- * can start before frame N's fragment shader has finished reading, thats BAD
- */
 class ClusterLightingPass : public IComputePass {
 public:
 	explicit ClusterLightingPass(const renderer::VulkanCore& core);
@@ -43,30 +36,25 @@ public:
 	[[nodiscard]]
 	auto getLightIndexListBuffer(uint32_t frame_index) const -> vk::Buffer;
 
-	/// @brief CPU-readable copy of ClusterLightGrid (one uint32_t light count per cluster, k_cluster_count
-	/// entries), for debug visualization only. A few frames stale (copied on the render thread after each
-	/// dispatch(), read back here on the same thread the next time this frame_index cycles around) - fine
-	/// for a debug overlay, not something the real shading path uses
 	[[nodiscard]]
 	auto getClusterLightGridCounts(uint32_t frame_index) const -> std::span<const uint32_t>;
 
 private:
-	/// @brief Mirrors cluster_lighting.slang's ClusterParams UBO layout exactly
+	/// Mirrors cluster_lighting.slang ClusterParams
 	struct ClusterParamsGpu {
 		glm::mat4 inverse_projection;
-		glm::uvec4 cluster_dims;           // x,y,z dims, w = max_lights_per_cluster
-		glm::vec4 screen_size_near_far;    // x,y screen dims, z near, w far
+		glm::uvec4 cluster_dims;           // xyz dims w max lights per cluster
+		glm::vec4 screen_size_near_far;    // xy screen size z near w far
 		uint32_t light_count = 0;
 		glm::vec3 _pad0 {0.0f};
 	};
 
-	/// @brief Compute-internal only, never exposed to MeshPass - mirrors cluster_lighting.slang's ClusterAABB
+	/// Mirrors cluster_lighting.slang ClusterAABB
 	struct ClusterAabbGpu {
 		glm::vec4 min_point;
 		glm::vec4 max_point;
 	};
 
-	/// @brief One frame-in-flight's worth of every buffer this pass owns
 	struct FrameBuffers {
 		FrameResources cluster_params;
 		FrameResources lights;
@@ -74,8 +62,6 @@ private:
 		FrameResources cluster_light_grid;
 		FrameResources light_index_list;
 
-		/// @brief Host-visible copy of cluster_light_grid, filled by a device->host vkCmdCopyBuffer at the
-		/// end of dispatch() - debug-visualization-only, see getClusterLightGridCounts()
 		FrameResources cluster_light_grid_readback;
 	};
 

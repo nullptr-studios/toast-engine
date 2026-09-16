@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <utility>
 
 namespace toast::voxel {
 
@@ -9,13 +10,11 @@ namespace {
 
 static_assert(k_brick_dim == 8, "brickOf and localOf shift and mask by 3 and 7");
 
-/// @brief Floor-divides a voxel coordinate to its brick
 [[nodiscard]]
 auto brickOf(glm::ivec3 voxel) noexcept -> glm::ivec3 {
 	return {voxel.x >> 3, voxel.y >> 3, voxel.z >> 3};
 }
 
-/// @brief The voxel's position inside its brick
 [[nodiscard]]
 auto localOf(glm::ivec3 voxel) noexcept -> BrickCoord {
 	return BrickCoord {static_cast<uint32_t>(voxel.x & 7), static_cast<uint32_t>(voxel.y & 7), static_cast<uint32_t>(voxel.z & 7)};
@@ -80,8 +79,8 @@ void Volume::releaseOwned() {
 }
 
 auto Volume::containsBrick(glm::ivec3 brick) const noexcept -> bool {
-	return brick.x >= 0 && brick.y >= 0 && brick.z >= 0 && static_cast<uint32_t>(brick.x) < m_brick_dims.x &&
-	       static_cast<uint32_t>(brick.y) < m_brick_dims.y && static_cast<uint32_t>(brick.z) < m_brick_dims.z;
+	return brick.x >= 0 && brick.y >= 0 && brick.z >= 0 && std::cmp_less(brick.x, m_brick_dims.x) &&
+	       std::cmp_less(brick.y, m_brick_dims.y) && std::cmp_less(brick.z, m_brick_dims.z);
 }
 
 auto Volume::containsVoxel(glm::ivec3 voxel) const noexcept -> bool {
@@ -90,8 +89,8 @@ auto Volume::containsVoxel(glm::ivec3 voxel) const noexcept -> bool {
 
 auto Volume::entryIndex(glm::ivec3 brick) const noexcept -> uint32_t {
 	assert(containsBrick(brick));
-	return static_cast<uint32_t>(brick.x) + static_cast<uint32_t>(brick.y) * m_brick_dims.x +
-	       static_cast<uint32_t>(brick.z) * m_brick_dims.x * m_brick_dims.y;
+	return static_cast<uint32_t>(brick.x) + (static_cast<uint32_t>(brick.y) * m_brick_dims.x) +
+	       (static_cast<uint32_t>(brick.z) * m_brick_dims.x * m_brick_dims.y);
 }
 
 auto Volume::entryAt(glm::ivec3 brick) const noexcept -> BrickEntry {
@@ -154,7 +153,6 @@ auto Volume::makeWritable(uint32_t entry_index) -> uint32_t {
 
 	switch (entry.tag()) {
 		case BrickTag::uniform: {
-			// Materialising a uniform brick is the one place a carve allocates
 			const auto fill = static_cast<uint8_t>(entry.payload());
 			std::span<uint8_t, k_brick_material_bytes> bytes = m_pool->material(id);
 			std::fill(bytes.begin(), bytes.end(), fill);
@@ -162,7 +160,6 @@ auto Volume::makeWritable(uint32_t entry_index) -> uint32_t {
 			break;
 		}
 		case BrickTag::shared: {
-			// Copy-on-write, the instance takes its own copy of this brick and leaves the source alone
 			const uint32_t source_id = entry.payload();
 			std::span<const uint8_t, k_brick_material_bytes> source_bytes = m_pool->material(source_id);
 			std::span<uint8_t, k_brick_material_bytes> bytes = m_pool->material(id);
@@ -170,9 +167,7 @@ auto Volume::makeWritable(uint32_t entry_index) -> uint32_t {
 			m_pool->occupancy(id) = m_pool->occupancy(source_id);
 			break;
 		}
-		default:
-			// Empty, the pool already hands back a cleared brick
-			break;
+		default: break;
 	}
 
 	m_entries[entry_index] = BrickEntry::make(BrickTag::owned, id);
@@ -188,7 +183,7 @@ auto Volume::setVoxel(glm::ivec3 voxel, uint8_t material) -> VoxelWrite {
 	const uint8_t previous = materialAt(voxel);
 	result.previous_material = previous;
 	if (previous == material) {
-		return result;    // no copy of a shared brick
+		return result;
 	}
 
 	const uint32_t index = entryIndex(brickOf(voxel));
@@ -196,7 +191,7 @@ auto Volume::setVoxel(glm::ivec3 voxel, uint8_t material) -> VoxelWrite {
 
 	const uint32_t id = makeWritable(index);
 	if (id == k_invalid_brick) {
-		return result;    // pool exhausted
+		return result;
 	}
 
 	const BrickCoord local = localOf(voxel);
@@ -208,7 +203,6 @@ auto Volume::setVoxel(glm::ivec3 voxel, uint8_t material) -> VoxelWrite {
 	if (material != k_empty_palette_index) {
 		result.brick_became_occupied = !was_occupied;
 	} else if (isEmpty(m_pool->occupancy(id))) {
-		// A brick emptied by a carve gives its storage straight back
 		m_pool->free(id);
 		m_entries[index] = BrickEntry {};
 		result.brick_became_empty = true;
@@ -238,7 +232,7 @@ auto Volume::tryCollapseUniform(glm::ivec3 brick) -> bool {
 	const uint32_t index = entryIndex(brick);
 	const BrickEntry entry = m_entries[index];
 	if (entry.tag() != BrickTag::owned) {
-		return false;    // shared bricks are not ours to release
+		return false;
 	}
 
 	const uint32_t id = entry.payload();
@@ -257,6 +251,38 @@ auto Volume::tryCollapseUniform(glm::ivec3 brick) -> bool {
 
 	m_pool->free(id);
 	m_entries[index] = BrickEntry::make(BrickTag::uniform, first);
+	return true;
+}
+
+auto Volume::setBrickMaterial(glm::ivec3 brick, std::span<const uint8_t, k_brick_material_bytes> material) -> bool {
+	if (!containsBrick(brick)) {
+		return false;
+	}
+
+	const uint8_t first = material[0];
+	if (std::all_of(material.begin(), material.end(), [first](uint8_t value) { return value == first; })) {
+		setBrickUniform(brick, first);
+		return true;
+	}
+
+	const uint32_t id = makeWritable(entryIndex(brick));
+	if (id == k_invalid_brick) {
+		return false;
+	}
+
+	std::copy(material.begin(), material.end(), m_pool->material(id).begin());
+
+	BrickOccupancy occupancy {};
+	for (uint32_t z = 0; z < k_brick_dim; ++z) {
+		uint64_t word = 0;
+		for (uint32_t bit = 0; bit < 64; ++bit) {
+			if (material[z * 64 + bit] != k_empty_palette_index) {
+				word |= 1ull << bit;
+			}
+		}
+		occupancy[z] = word;
+	}
+	m_pool->occupancy(id) = occupancy;
 	return true;
 }
 

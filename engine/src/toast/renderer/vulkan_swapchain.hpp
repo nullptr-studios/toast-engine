@@ -1,6 +1,6 @@
 /// @file VulkanSwapchain.hpp
 /// @author dario
-/// @date 16/05/2026.
+/// @date 16/05/2026
 
 #pragma once
 
@@ -11,18 +11,11 @@
 
 namespace renderer {
 
-/**
- * @class VulkanSwapchain
- * @brief Manages image acquisition and presentation for Vulkan swapchains
- *
- * Handles image format selection, extent management, and present mode selection
- */
 class VulkanSwapchain {
 public:
 	VulkanSwapchain(const VulkanCore& core, vk::raii::SurfaceKHR& surface, vk::Extent2D preferred_extent);
 	~VulkanSwapchain() = default;
 
-	// Not Copyable nor movable
 	VulkanSwapchain(const VulkanSwapchain&) = delete;
 	auto operator=(const VulkanSwapchain&) -> VulkanSwapchain& = delete;
 	VulkanSwapchain(VulkanSwapchain&&) = delete;

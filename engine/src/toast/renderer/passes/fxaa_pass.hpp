@@ -19,14 +19,6 @@
 namespace renderer {
 class VulkanCore;
 
-/**
- * @brief Edge anti-aliasing, applied to the tonemapped image
- *
- * After the tonemap deliberately
- *
- * a spatial filter with no history, so it cannot recover sub-pixel detail and thin
- * geometry still crawls under motion
- */
 class FxaaPass : public IPostProcessPass {
 public:
 	FxaaPass(const VulkanCore& core, vk::Format ldr_format, vk::Extent2D extent);
@@ -41,13 +33,12 @@ public:
 	void onResize(vk::Extent2D extent) override;
 
 private:
-	/// @brief Mirrors fxaa.slang's FxaaParams push constant block
+	/// Mirrors fxaa.slang FxaaParams
 	struct Params {
 		glm::vec2 inverse_source_size {0.0f};
 		float contrast_threshold = 0.0312f;
 		float relative_threshold = 0.125f;
 		float subpixel_blending = 0.75f;
-		/// Keeps this struct byte-identical to fxaa.slang's block - see the note there
 		glm::vec2 _pad0 {0.0f};
 	};
 

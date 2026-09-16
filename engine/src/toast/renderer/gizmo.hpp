@@ -1,6 +1,6 @@
 /// @file gizmo.hpp
 /// @author dario
-/// @date 10/06/2026.
+/// @date 10/06/2026
 
 #pragma once
 #include "vulkan_mesh.hpp"

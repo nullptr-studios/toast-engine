@@ -41,7 +41,7 @@ auto createGraphicsPipelineImpl(
 	ZoneScoped;
 	const auto& device = core.getDevice();
 
-	// Held in locals: the create infos below store raw pointers into these strings
+	// The create infos point into these strings
 	const std::string vertex_entry =
 	    spirv::resolveEntryPoint(config.shader_spirv, spirv::ExecutionModel::vertex, config.vertex_entry, config.debug_name);
 	const std::string fragment_entry =
@@ -54,7 +54,6 @@ auto createGraphicsPipelineImpl(
 	  vk::PipelineShaderStageCreateInfo({}, vk::ShaderStageFlagBits::eVertex, *shader_module, vertex_entry.c_str()),
 	  vk::PipelineShaderStageCreateInfo({}, vk::ShaderStageFlagBits::eFragment, *shader_module, fragment_entry.c_str())
 	};
-	// A depth-only pipeline takes just the first (vertex) stage - see Config::depth_only
 	const uint32_t stage_count = config.depth_only ? 1u : static_cast<uint32_t>(shader_stages.size());
 
 	std::vector<vk::Format> color_attachment_formats {config.color_format};
@@ -69,7 +68,6 @@ auto createGraphicsPipelineImpl(
 	}
 	rendering_ci.viewMask = config.view_mask;
 
-	// No attributes means the shader generates its vertices
 	const uint32_t vertex_binding_count =
 	    config.vertex_attributes.empty() ? 0 : static_cast<uint32_t>(config.vertex_bindings.size());
 	const vk::PipelineVertexInputStateCreateInfo vertex_input_ci(
@@ -81,7 +79,6 @@ auto createGraphicsPipelineImpl(
 	);
 	const vk::PipelineInputAssemblyStateCreateInfo input_assembly_ci({}, config.topology);
 
-	// Use dynamic viewport and scissor so the pipeline doesn't need to be rebuilt on window resize
 	const vk::PipelineViewportStateCreateInfo viewport_state_ci({}, 1, nullptr, 1, nullptr);
 
 	const std::array<vk::DynamicState, 2> dynamic_states {vk::DynamicState::eViewport, vk::DynamicState::eScissor};
@@ -89,7 +86,6 @@ auto createGraphicsPipelineImpl(
 	    {}, static_cast<uint32_t>(dynamic_states.size()), dynamic_states.data()
 	);
 
-	// Uses generic customizable flags passed from config definitions
 	const bool depth_bias_enable = config.depth_bias_constant != 0.0f || config.depth_bias_slope != 0.0f;
 	const vk::PipelineRasterizationStateCreateInfo rasterization_state_ci(
 	    {},
@@ -107,7 +103,6 @@ auto createGraphicsPipelineImpl(
 
 	const vk::PipelineMultisampleStateCreateInfo multisample_state_ci({}, vk::SampleCountFlagBits::e1);
 
-	// The legacy blend_enable toggle behaves like the alpha preset
 	using BlendPreset = VulkanPipeline::BlendPreset;
 	auto blend_preset = config.blend_preset;
 	if (blend_preset == BlendPreset::none && config.blend_enable) {
@@ -151,8 +146,6 @@ auto createGraphicsPipelineImpl(
 	    rgb_write
 	);
 
-	// See Config::extra_color_formats and write_extra_color. Alpha is written along with RGB, because these
-	// attachments pack a scalar into .w rather than a coverage value
 	for ([[maybe_unused]]
 	     const vk::Format extra : config.extra_color_formats) {
 		color_blend_attachments.emplace_back(
@@ -225,7 +218,6 @@ auto createComputePipelineImpl(
 	    {}, vk::ShaderStageFlagBits::eCompute, *shader_module, compute_entry.c_str()
 	);
 
-	// Use the explicitly passed layout
 	const vk::ComputePipelineCreateInfo pipeline_ci({}, shader_stage_ci, pipeline_layout);
 	auto pipelines = device.createComputePipelines(nullptr, pipeline_ci);
 	return std::move(pipelines[0]);

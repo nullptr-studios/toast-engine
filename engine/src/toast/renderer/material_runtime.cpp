@@ -81,7 +81,6 @@ void writeScalar(
 	}
 	std::byte* dst = blob.data() + offset;
 
-	// [Range(min, max)] clamps numeric values engine-side too
 	const auto clamped = [&meta](double value) {
 		if (meta.range_min.has_value()) {
 			value = std::max(value, static_cast<double>(*meta.range_min));
@@ -131,7 +130,7 @@ void writeScalar(
 			std::memcpy(dst, value.data(), sizeof(value));
 			return;
 		}
-		default: return;    // matrices and unknowns are engine-written or unsupported
+		default: return;
 	}
 }
 
@@ -156,7 +155,6 @@ void writeMember(std::vector<std::byte>& blob, const ShaderBlockMember& member, 
 }
 
 auto readTextureUID(const DataValue& v) -> toast::UID {
-	// Texture parameters are objects with a "texture" key
 	const DataValue* uid_value = &v;
 	if (v.isObject() && v.contains("texture")) {
 		uid_value = &v["texture"];
@@ -220,7 +218,6 @@ void MaterialRuntime::rebuild() {
 		return;
 	}
 
-	// The pass always belongs to the root material
 	assets::Material* root = m_material->rootMaterial();
 	for (const auto& shader_handle : root->shaders()) {
 		if (shader_handle.uid().data() == 0) {
@@ -232,7 +229,7 @@ void MaterialRuntime::rebuild() {
 			continue;
 		}
 
-		// Merge reflection, first name wins
+		// First name wins
 		for (const auto& binding : entry->reflection.bindings) {
 			const bool exists = std::ranges::any_of(m_merged.bindings, [&](const auto& b) { return b.name == binding.name; });
 			if (exists) {
@@ -292,7 +289,6 @@ void MaterialRuntime::bakeValues() {
 		return;
 	}
 
-	// Material-editable uniform buffers
 	for (const auto& binding : m_merged.bindings) {
 		if (binding.kind != ShaderBindingKind::uniform_buffer || !binding.engine_semantic.empty() || binding.size == 0) {
 			continue;
@@ -304,8 +300,6 @@ void MaterialRuntime::bakeValues() {
 		blob.bytes.assign(binding.size, std::byte {0});
 
 		for (const auto& member : binding.members) {
-			// Only [Reflect] parameters are material data
-			// Everything else is engine-owned
 			if (!member.engine_semantic.empty() || !member.inspector.reflected) {
 				continue;
 			}
@@ -316,7 +310,6 @@ void MaterialRuntime::bakeValues() {
 		m_ubo_blobs.push_back(std::move(blob));
 	}
 
-	// Push constants
 	uint32_t push_size = 0;
 	for (const auto& push : m_merged.push_constants) {
 		push_size = std::max(push_size, push.size);
@@ -366,7 +359,6 @@ auto MaterialRuntime::resolveMemberValue(const ShaderBlockMember& member) const 
 		return nullptr;
 	}
 
-	// Ungrouped parameters are top-level TOML keys
 	if (member.inspector.group.empty()) {
 		return m_material->value(member.name);
 	}
@@ -445,7 +437,6 @@ auto MaterialRuntime::samplerFor(const DataValue* params, std::string_view debug
 		anisotropy = (*params)["anisotropy"].value<bool>().value_or(true);
 	}
 
-	// hash of the textual state
 	const std::string state =
 	    repeat_u + "|" + repeat_v + "|" + min_filter + "|" + mag_filter + "|" + mipmap_mode + "|" + (anisotropy ? "1" : "0");
 	const uint64_t key = ShaderCache::fnv1a(state.data(), state.size());

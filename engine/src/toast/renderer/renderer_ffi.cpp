@@ -5,9 +5,6 @@
 
 namespace {
 
-/// @returns the renderer, or nullptr before a window exists
-///
-/// The editor's settings window opens with the shell, so it can ask for counts before there is a renderer
 auto rendererOrNull() -> renderer::VulkanRenderer* {
 	return renderer::VulkanRenderer::instance;
 }

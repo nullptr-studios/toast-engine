@@ -21,10 +21,6 @@
 namespace renderer {
 class VulkanCore;
 
-/**
- * @class MaterialRuntime
- * @brief GPU-facing view of one Material, owned by the render thread
- */
 class MaterialRuntime {
 public:
 	MaterialRuntime(const VulkanCore& core, assets::Material* material);
@@ -44,14 +40,8 @@ public:
 		return m_entries;
 	}
 
-	/**
-	 * @brief Re-acquires shaders from the ShaderCache and re-merges reflection
-	 */
 	void rebuild();
 
-	/**
-	 * @brief Marks parameter values dirty; blobs rebake on next access
-	 */
 	void markValuesDirty() { m_values_dirty = true; }
 
 	struct UboBlob {
@@ -62,7 +52,6 @@ public:
 
 	auto uniformBlobs() -> const std::vector<UboBlob>&;
 
-	/// @brief The push-constant blob with material values baked in
 	auto pushBlob() -> const std::vector<std::byte>&;
 
 	[[nodiscard]]
@@ -70,13 +59,11 @@ public:
 		return m_model_offset;
 	}
 
-	/// @returns byte offset of the push-constant jointOffset field
 	[[nodiscard]]
 	auto jointOffsetOffset() const -> std::optional<uint32_t> {
 		return m_joint_offset_offset;
 	}
 
-	/// @returns push-constant offset of instanceBase
 	[[nodiscard]]
 	auto instanceBaseOffset() const -> std::optional<uint32_t> {
 		return m_instance_base_offset;

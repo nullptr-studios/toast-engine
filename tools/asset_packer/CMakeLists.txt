@@ -7,12 +7,7 @@ set(CARGO_PROFILE_FLAG "$<IF:$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>,$<C
 
 find_program(CARGO_EXECUTABLE cargo REQUIRED)
 
-# One cargo invocation for all three binaries. They are three [[bin]] entries of a single crate, so the three
-# targets this used to have each ran the same `cargo build` and then copied a different result out - building
-# the crate three times over, concurrently, on one target directory.
-# One cargo invocation for all three binaries. They are three [[bin]] entries of a single crate, so the three
-# targets this used to have each ran the same `cargo build` and then copied a different result out - building
-# the crate three times over, concurrently, on one target directory.
+# One cargo build for all three [[bin]] entries of the crate
 add_custom_target(packer ALL
         COMMAND ${CARGO_EXECUTABLE} build --profile "${CARGO_PROFILE_FLAG}" --target-dir "${CARGO_TARGET_DIR}"
         COMMAND ${CMAKE_COMMAND}
@@ -27,7 +22,7 @@ add_custom_target(packer ALL
         VERBATIM
 )
 
-# Kept as names so `add_dependencies(editor unpacker)` and friends still resolve; `packer` does the work
+# Name only targets so add_dependencies(editor unpacker) still resolves
 add_custom_target(unpacker ALL)
 add_dependencies(unpacker packer)
 

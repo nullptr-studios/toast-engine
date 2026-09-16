@@ -51,14 +51,10 @@ else ()
     set(EXTERNAL_DLLS_RELEASE ${EXTERNAL_LIBS_RELEASE})
 endif ()
 
-# CONFIGURE_DEPENDS: run_codegen() deletes and regenerates engine/generated on every configure, and the
-# reflection generator writes there too. Without it this list is frozen at the first configure, so a rebuild
-# that re-globs for any other reason can end up with a target that no longer compiles the .pb.cc files - which
-# surfaces as a few hundred unresolved protobuf externals at link time, nowhere near the actual cause
+# CONFIGURE_DEPENDS since run_codegen() regenerates engine/generated and a stale glob drops the .pb.cc files
 file(GLOB_RECURSE SOURCE CONFIGURE_DEPENDS "src/*.cpp" "generated/*.cpp" "generated/*.cc")
 add_library(toast_engine SHARED ${SOURCE})
 
-# Reflection generator
 file(GLOB_RECURSE TOAST_REFLECTED_HEADERS CONFIGURE_DEPENDS "src/toast/*.hpp" "src/toast/*.h")
 add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/reflection.stamp"
@@ -86,9 +82,6 @@ target_include_directories(toast_engine
         PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}" "${EXTERNAL_INC_DIR}" ${LUA_INCLUDE_DIR} ${LUABRIDGE3_INCLUDE_DIRS}
         PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}/ffi" "${CMAKE_CURRENT_SOURCE_DIR}/generated"
 )
-
-# target_compile_definitions(toast_engine PRIVATE VK_NO_PROTOTYPES)
-# target_compile_definitions(toast_engine PRIVATE VULKAN_HPP_DISPATCH_LOADER_DYNAMIC)
 
 target_link_libraries(toast_engine
         PRIVATE
@@ -120,23 +113,22 @@ endforeach ()
 
 target_compile_definitions(toast_engine PRIVATE TOAST_EXPORT)
 
-# windows.h defines min/max as macros, which breaks any std::numeric_limits<T>::max() that lands in the
-# same translation unit. With UNITY_BUILD on, which sources share a TU shifts every time a file is added,
-# so this surfaces as unrelated files suddenly failing to compile - pin it off for good.
+# windows.h min and max macros break std::numeric_limits<T>::max() in whatever unity TU they land in
 if (WIN32)
     target_compile_definitions(toast_engine PRIVATE NOMINMAX)
 endif ()
 target_precompile_headers(toast_engine PRIVATE pch.h)
-# vma.cpp defines VMA_IMPLEMENTATION, it must not consume the PCH
+# Defines VMA_IMPLEMENTATION so it must not use the PCH
 set_source_files_properties(src/toast/renderer/vma.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON SKIP_UNITY_BUILD_INCLUSION ON)
-# hdr_image.cpp defines STB_IMAGE_IMPLEMENTATION, same reasoning as vma.cpp above
+# Defines STB_IMAGE_IMPLEMENTATION
 set_source_files_properties(src/toast/assets/hdr_image.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON SKIP_UNITY_BUILD_INCLUSION ON)
+# Its windows.h pulls in WinSock.h which asio refuses to share a unity TU with
+set_source_files_properties(src/toast/crash_handler.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 
-# protoc-generated .pb.cc files use file-local symbol names, so avoid UNITY inclusion
+# protoc output uses file local symbol names
 file(GLOB _TOAST_PROTO_SOURCES "generated/*.pb.cc")
 set_source_files_properties(${_TOAST_PROTO_SOURCES} PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
-# Off for the clang-tidy build: a unity TU collapses every source into unity_N.cxx, so compile_commands.json
-# has no entry for the file you want to check. Configure that one with -DTOAST_UNITY_BUILD=OFF
+# OFF for clang-tidy since unity TUs leave compile_commands.json without per file entries
 option(TOAST_UNITY_BUILD "Merge engine sources into unity translation units" ON)
 if (TOAST_UNITY_BUILD)
     set_target_properties(toast_engine PROPERTIES UNITY_BUILD ON UNITY_BUILD_BATCH_SIZE 8)

@@ -10,12 +10,10 @@ auto mix(float a, float b, float t) -> float {
 	return a + ((b - a) * t);
 }
 
-/// Switches at halfway; there is no curve in between
 auto pick(uint32_t a, uint32_t b, float t) -> uint32_t {
 	return t >= 0.5f ? b : a;
 }
 
-/// A sample count is a real quantity, so it rounds rather than switching
 auto mixCount(uint32_t a, uint32_t b, float t) -> uint32_t {
 	return static_cast<uint32_t>(std::lround(mix(static_cast<float>(a), static_cast<float>(b), t)));
 }

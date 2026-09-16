@@ -24,24 +24,11 @@ namespace renderer {
 
 namespace {
 
-/// @brief How far a shadow ray travels before it is treated as unoccluded
-///
-/// A hard cap rather than infinity: a ray that leaves the scene entirely still costs traversal, and beyond
-/// this distance a directional light's occluders are no longer what the eye is looking at
 constexpr float k_max_trace_distance = 500.0f;
 
-/// @brief Offset along the surface normal before tracing, in world units
-///
-/// The only bias a traced shadow needs. It exists to escape the surface's own triangle, not to compensate for
-/// depth quantisation - which is why it is one small fixed distance rather than the slope-scaled,
-/// cascade-scaled pair the shadow-map path has to carry
 constexpr float k_normal_bias = 0.02f;
 
-/// @brief Must match `RenderMode` in editor/Workspace/WorkspaceViewModel.cs
-///
-/// The enum is ordinal and the shader compares against raw numbers, so inserting a mode anywhere above these
-/// silently shifts them - which shows up as the wrong view being drawn, or as nothing happening at all,
-/// rather than as any kind of error. Kept here and passed to the shader instead of being written twice
+/// Must match RenderMode in editor/Workspace/WorkspaceViewModel.cs
 constexpr uint32_t k_mode_visibility = 17;
 constexpr uint32_t k_mode_applied = 18;
 
@@ -91,8 +78,6 @@ void TracedShadowPass::createResources(const VulkanCore& core) {
 	const auto sampler_ci = linearClampSamplerInfo();
 	m_sampler = vk::raii::Sampler(device, sampler_ci);
 
-	// Depth and the geometry buffer point-sampled, same as SsrPass: a filtered depth across a silhouette is a
-	// value describing no geometry at all, and tracing from it starts the ray in mid-air
 	const auto point_ci = nearestClampSamplerInfo();
 	m_point_sampler = vk::raii::Sampler(device, point_ci);
 
@@ -132,8 +117,6 @@ auto TracedShadowPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::I
 		return source_view;
 	}
 
-	// Only the two debug modes trace. Everything else skips the pass entirely rather than running a
-	// full-screen read that returns its input unchanged
 	const uint32_t render_mode = frame->render_mode;
 	if (render_mode != k_mode_visibility && render_mode != k_mode_applied) {
 		return source_view;
@@ -144,8 +127,6 @@ auto TracedShadowPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::I
 	const vk::ImageView depth_view = VulkanRenderer::instance->getDepthView();
 	const vk::ImageView normal_view = VulkanRenderer::instance->getSceneNormalView();
 
-	// No TLAS this frame means nothing traceable was submitted - passing the image through leaves the scene
-	// as it was rather than painting it black and looking like a broken trace
 	if (!tlas || !depth_view || !normal_view) {
 		return source_view;
 	}
@@ -154,8 +135,6 @@ auto TracedShadowPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::I
 		constexpr auto k_sampler = vk::DescriptorType::eCombinedImageSampler;
 		const vk::DescriptorSet set = *m_descriptor_sets[frame_index];
 
-		// The acceleration structure goes in through a pNext struct rather than pImageInfo or pBufferInfo -
-		// the descriptor has no other way to name it, which is why DescriptorWriter has a method for it
 		DescriptorWriter writer;
 		writer.image(set, 0, k_sampler, *m_sampler, source_view, vk::ImageLayout::eShaderReadOnlyOptimal)
 		    .image(set, 1, k_sampler, *m_point_sampler, depth_view, vk::ImageLayout::eDepthReadOnlyOptimal)
@@ -168,8 +147,6 @@ auto TracedShadowPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::I
 
 	m_target.beginScope(cmd);
 
-	// The shadow-casting directional light, picked the same way ShadowPass picks it so the traced result can
-	// be compared against the rastered one rather than against a different light
 	glm::vec4 light_direction(0.0f, -1.0f, 0.0f, 0.0f);
 	if (frame->frame_data.directional_light_count_pad.x > 0) {
 		light_direction = frame->frame_data.directional_lights[0].direction;
@@ -178,7 +155,6 @@ auto TracedShadowPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::I
 	Params params {};
 	params.inverse_view_projection = glm::inverse(frame->frame_data.view_projection);
 	params.light_direction = light_direction;
-	// Normalized to 0 = visibility, 1 = applied, so the shader never has to know the editor's enum ordinals
 	const float mode_flag = render_mode == k_mode_applied ? 1.0f : 0.0f;
 	params.tuning = glm::vec4(mode_flag, k_normal_bias, k_max_trace_distance, 0.0f);
 
@@ -190,13 +166,7 @@ auto TracedShadowPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::I
 	    std::array<vk::DescriptorSet, 1> {*m_descriptor_sets[frame_index]},
 	    {}
 	);
-	cmd.pushConstants(
-	    *m_shader_layout.getPipelineLayout(),
-	    vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
-	    0,
-	    sizeof(Params),
-	    &params
-	);
+	cmd.pushConstants(*m_shader_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eAll, 0, sizeof(Params), &params);
 	cmd.draw(3, 1, 0, 0);
 	m_target.endScope(cmd);
 

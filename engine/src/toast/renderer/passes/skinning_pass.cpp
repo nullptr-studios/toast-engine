@@ -24,7 +24,7 @@ namespace renderer {
 
 namespace {
 
-/// Must match skinning.slang's [numthreads(64,1,1)]
+/// Must match skinning.slang numthreads
 constexpr uint32_t k_group_size = 64;
 
 }
@@ -52,9 +52,6 @@ SkinningPass::SkinningPass(const VulkanCore& core) : m_core(&core) {
 	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
 		vk::BufferCreateInfo buffer_ci {};
 		buffer_ci.size = static_cast<vk::DeviceSize>(k_max_posed_vertices) * sizeof(Vertex);
-		// eVertexBuffer because every raster pass binds this as stream 0 for a skinned draw; eStorageBuffer
-		// because this pass writes it. The acceleration-structure flags are here for the BLAS refit that
-		// follows in R2 - adding usage later would mean reallocating a buffer descriptor sets already point at
 		buffer_ci.usage = vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eStorageBuffer |
 		                  vk::BufferUsageFlagBits::eShaderDeviceAddress |
 		                  vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR;
@@ -118,8 +115,7 @@ auto SkinningPass::ensureMeshResources(const VulkanMesh* mesh) -> MeshResources*
 			continue;
 		}
 
-		// Whole-buffer ranges: the per-instance slices are addressed by push constant, not by descriptor
-		// offset, so one set serves every instance of this mesh. Bindings 0..3, matching skinning.slang
+		// Bindings 0..3 match skinning.slang
 		constexpr auto k_storage = vk::DescriptorType::eStorageBuffer;
 		DescriptorWriter writer;
 		writer.buffer(*res.sets[i], 0, k_storage, vertices)
@@ -151,8 +147,6 @@ void SkinningPass::record(vk::CommandBuffer cmd, uint32_t frame_index) {
 		if (proxy.mesh == nullptr || !proxy.mesh->isReady() || !proxy.mesh->isSkinned() || proxy.joint_count == 0) {
 			continue;
 		}
-		// Assigned in tick() alongside the instance slots; k_max_posed_vertices is what caps it, and a proxy
-		// past the cap is marked with this sentinel rather than posed into someone else's slice
 		if (proxy.posed_vertex_offset == VulkanRenderer::MeshInstanceProxy::k_no_posed_vertices) {
 			continue;
 		}
@@ -185,9 +179,7 @@ void SkinningPass::record(vk::CommandBuffer cmd, uint32_t frame_index) {
 		return;
 	}
 
-	// The posed vertices are read as a vertex stream by every raster pass in this command buffer, and by the
-	// acceleration-structure build recorded alongside them. eVertexInput is the one that is easy to miss: the
-	// fetch happens before the vertex shader runs, so waiting at eVertexShader would be too late
+	// eVertexInput since the fetch happens before the vertex shader
 	vk::MemoryBarrier2 barrier {};
 	barrier.srcStageMask = vk::PipelineStageFlagBits2::eComputeShader;
 	barrier.srcAccessMask = vk::AccessFlagBits2::eShaderStorageWrite;

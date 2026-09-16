@@ -1121,6 +1121,12 @@ void Workspace::eventSubscriptions() {
 		auto name = std::string {node->name()};
 		auto context = historyContext(event::HistoryOperation::remove, node, "Deleted");
 		recordHistory(std::move(context), [&] {
+			// Same teardown as destroyOwnedTree(): nodes that registered themselves in begin() (AudioListener, volumes)
+			// unregister in end(), or their systems keep a Box to freed memory and crash on shutdown
+			node->propagateCallTick(node->info(), TickFunctionList::on_disable);
+			node->propagateCallTick(node->info(), TickFunctionList::end);
+			node->propagateCallTick(node->info(), TickFunctionList::destroy);
+
 			// Detach from the parent so the editor no longer reaches the subtree
 			std::erase(parent->m_children, node);
 
@@ -1601,7 +1607,11 @@ void Workspace::eventSubscriptions() {
 				*it = fresh;
 			}
 
-			// Destroy the old node using the same pattern as WorkspaceRemoveNode
+			// Destroy the old node using the same pattern as WorkspaceRemoveNode. Its children now belong to the fresh node,
+			// so only the old node itself runs its teardown callbacks
+			target->callTick(target->info(), TickFunctionList::on_disable);
+			target->callTick(target->info(), TickFunctionList::end);
+			target->callTick(target->info(), TickFunctionList::destroy);
 			Node* old_raw = &*target;
 			_detail::ControlBox* old_ctrl = _detail::ControlBox::get(old_raw);
 			const NodeInfo* old_info = old_raw->info();

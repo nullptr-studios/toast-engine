@@ -94,4 +94,11 @@ struct WindowDisplayScale : Event<WindowDisplayScale> {
 	explicit WindowDisplayScale(float scale) : scale(scale) { }
 };
 
+/// @brief Event sent when the window gains or loses input focus
+struct WindowFocus : Event<WindowFocus> {
+	bool focused;
+
+	explicit WindowFocus(bool focused) : focused(focused) { }
+};
+
 }

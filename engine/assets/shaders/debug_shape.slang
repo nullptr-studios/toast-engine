@@ -63,9 +63,7 @@ float4 fragmentMain(VSOutput input) : SV_Target0
     return input.color;
 }
 
-// Editor furniture drawn from a real mesh rather than generated line geometry - see DebugPass's mesh
-// pipeline. Reads the renderer::Vertex stream, so the locations below are that struct's attribute indices
-// and not a layout of this shader's own choosing
+// Locations are renderer::Vertex attribute indices
 struct MeshVSInput
 {
     [[vk::location(0)]]
@@ -93,8 +91,6 @@ VSOutput vertexMesh(MeshVSInput input)
             gCamera.viewProjection,
             worldPos);
 
-    // Lit off a fixed direction rather than the scene's lights: a gizmo has to stay readable in a dark scene,
-    // and it is furniture, not geometry that belongs to the world
     float3 worldNormal =
         normalize(
             mul(
@@ -102,7 +98,6 @@ VSOutput vertexMesh(MeshVSInput input)
                 input.normal));
 
     float lambert = saturate(dot(worldNormal, normalize(float3(0.35, 0.5, 0.8))));
-    // Floors at 0.45 so a face pointing away is shaded, never black
     float shade = lerp(0.45, 1.0, lambert);
 
     output.color = float4(input.color * gPush.tint.rgb * shade, gPush.tint.a);

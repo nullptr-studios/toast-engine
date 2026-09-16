@@ -1,11 +1,7 @@
 /**
- * @file volume.hpp
+ * @file voxel_volume.hpp
  * @author dario
  * @date 08/09/2026
- *
- * @brief an indirection grid over pooled bricks
- *
- * A volume is the collision shape and the render primitive
  */
 
 #pragma once
@@ -22,23 +18,16 @@ namespace toast::voxel {
 
 class TOAST_API Volume {
 public:
-	/**
-	 * @brief What one voxel write changed
-	 */
 	struct VoxelWrite {
 		uint8_t previous_material = k_empty_palette_index;
 
-		/// False when the write was a no-op
 		bool changed = false;
 
-		/// The brick held nothing and now holds something
 		bool brick_became_occupied = false;
 
-		/// The brick held something and now holds nothing
 		bool brick_became_empty = false;
 	};
 
-	/// @brief An empty volume of @p brick_dims bricks, drawing storage from @p pool
 	Volume(BrickPool& pool, glm::uvec3 brick_dims);
 
 	~Volume();
@@ -48,9 +37,7 @@ public:
 	Volume(Volume&& other) noexcept;
 	auto operator=(Volume&& other) noexcept -> Volume&;
 
-	/**
-	 * @brief A writable instance sharing every brick with @p source until it is written to
-	 */
+	/// @brief Shares every brick with @p source until written
 	[[nodiscard]]
 	static auto instanceOf(const Volume& source) -> Volume;
 
@@ -75,52 +62,37 @@ public:
 	[[nodiscard]]
 	auto containsVoxel(glm::ivec3 voxel) const noexcept -> bool;
 
-	/// @returns the indirection entry
 	[[nodiscard]]
 	auto entryAt(glm::ivec3 brick) const noexcept -> BrickEntry;
 
-	/// @returns the palette index at @p voxel
 	[[nodiscard]]
 	auto materialAt(glm::ivec3 voxel) const noexcept -> uint8_t;
 
 	[[nodiscard]]
 	auto isSolidAt(glm::ivec3 voxel) const noexcept -> bool;
 
-	/**
-	 * @brief Writes one voxel, materialising and releasing bricks as needed
-	 */
 	auto setVoxel(glm::ivec3 voxel, uint8_t material) -> VoxelWrite;
 
-	/**
-	 * @brief Makes a whole brick solid with one material
-	 */
 	void setBrickUniform(glm::ivec3 brick, uint8_t material);
 
-	/**
-	 * @brief Collapses a pooled brick back to a uniform entry when every voxel shares one material
-	 *
-	 * @returns true when the brick was collapsed
-	 */
 	auto tryCollapseUniform(glm::ivec3 brick) -> bool;
 
-	/**
-	 * @brief The occupancy of one brick, or null when it holds nothing
-	 */
+	/// @returns false outside the volume or when the pool is exhausted
+	auto setBrickMaterial(glm::ivec3 brick, std::span<const uint8_t, k_brick_material_bytes> material) -> bool;
+
+	/// @brief Null when the brick holds nothing
 	[[nodiscard]]
 	auto occupancyPointer(glm::ivec3 brick) const noexcept -> const BrickOccupancy*;
 
-	/// @brief The six bricks abutting @p brick
 	[[nodiscard]]
 	auto neighbourhoodOf(glm::ivec3 brick) const noexcept -> BrickNeighbourhood;
 
 	[[nodiscard]]
 	auto solidVoxelCount() const -> uint32_t;
 
-	/// @brief Bricks this volume owns outright
 	[[nodiscard]]
 	auto ownedBrickCount() const -> uint32_t;
 
-	/// @brief Bricks still shared with the source this volume was instantiated from
 	[[nodiscard]]
 	auto sharedBrickCount() const -> uint32_t;
 
@@ -133,7 +105,6 @@ private:
 	[[nodiscard]]
 	auto entryIndex(glm::ivec3 brick) const noexcept -> uint32_t;
 
-	/// @brief Ensures the entry at @p entry_index owns writable storage
 	auto makeWritable(uint32_t entry_index) -> uint32_t;
 
 	void releaseOwned();

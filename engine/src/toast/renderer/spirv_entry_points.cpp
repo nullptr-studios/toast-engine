@@ -15,10 +15,10 @@ namespace renderer::spirv {
 namespace {
 
 constexpr uint32_t k_spirv_magic = 0x07230203;
-/// magic, version, generator, id bound, schema
+/// magic version generator bound schema
 constexpr uint32_t k_header_words = 5;
 constexpr uint32_t k_op_entry_point = 15;
-/// opcode word, execution model, entry point id - the name starts after these
+/// opcode execution model id then the name
 constexpr uint32_t k_entry_point_name_word = 3;
 
 }
@@ -40,15 +40,12 @@ auto entryPointNames(std::span<const std::byte> spirv, ExecutionModel model) -> 
 		const uint32_t instruction_words = words[i] >> 16;
 		const uint32_t opcode = words[i] & 0xFFFFu;
 
-		// A zero-length instruction would leave the cursor where it is; refuse to spin on a malformed module
 		if (instruction_words == 0 || i + instruction_words > word_count) {
 			break;
 		}
 
 		if (opcode == k_op_entry_point && instruction_words > k_entry_point_name_word &&
 		    static_cast<ExecutionModel>(words[i + 1]) == model) {
-			// The name is packed into the words after the id, null-terminated and zero-padded to a word
-			// boundary. Bounded by the instruction's own length rather than trusting the terminator
 			const auto* chars = reinterpret_cast<const char*>(&words[i + k_entry_point_name_word]);
 			const size_t max_bytes = (instruction_words - k_entry_point_name_word) * sizeof(uint32_t);
 			names.emplace_back(chars, ::strnlen(chars, max_bytes));

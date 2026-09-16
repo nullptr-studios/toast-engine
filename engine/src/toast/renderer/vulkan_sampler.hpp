@@ -10,7 +10,6 @@
 namespace renderer {
 class VulkanCore;
 
-/// @brief Owns a vk::raii::Sampler
 class VulkanSampler {
 public:
 	VulkanSampler() = default;

@@ -65,14 +65,11 @@ void VulkanMesh::create(
 
 	const bool use_concurrent_sharing = graphics_queue_family_index != transfer_queue_family_index;
 
-	// AS builds read vertex and index data as plain buffers, not through the vertex input stage. Added
-	// unconditionally: usage is fixed at creation, and a mesh uploaded without these could never be promoted
-	// later without a full reupload
+	// Unconditional since usage cannot be added after creation
 	constexpr vk::BufferUsageFlags k_acceleration_structure_usage =
 	    vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eStorageBuffer |
 	    vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR;
 
-	// Vertex buffer
 	vk::BufferCreateInfo vb_ci {};
 	vb_ci.size = m_vertex_size;
 	vb_ci.usage = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer | k_acceleration_structure_usage;
@@ -95,7 +92,6 @@ void VulkanMesh::create(
 		setDebugName(core, **m_vertex_buffer, std::format("{} VertexBuffer", debug_name));
 	}
 
-	// Index buffer
 	vk::BufferCreateInfo ib_ci {};
 	ib_ci.size = m_index_size;
 	ib_ci.usage = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer | k_acceleration_structure_usage;
@@ -116,13 +112,9 @@ void VulkanMesh::create(
 		setDebugName(core, **m_index_buffer, std::format("{} IndexBuffer", debug_name));
 	}
 
-	// Skin vertex buffer (binding 1), only for a skinned mesh
 	if (m_skin_vertex_size > 0) {
 		vk::BufferCreateInfo sb_ci {};
 		sb_ci.size = m_skin_vertex_size;
-		// eStorageBuffer because SkinningPass reads this stream as a ByteAddressBuffer in compute. It is no
-		// longer bound as vertex binding 1 by anything - the raster passes read posed vertices now - but the
-		// flag is kept so a mesh loaded before that change is still describable as a vertex stream
 		sb_ci.usage =
 		    vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eStorageBuffer;
 
@@ -151,8 +143,6 @@ void VulkanMesh::destroy() {
 	m_index_buffer.reset();
 	m_skin_vertex_buffer.reset();
 
-	// Before the buffer it is a view onto - the acceleration structure references that memory, and releasing
-	// the storage first leaves it dangling for as long as the handle lives
 	m_blas = nullptr;
 	m_blas_buffer.reset();
 	m_blas_address = 0;
@@ -176,7 +166,6 @@ void VulkanMesh::recordUpload(
 		TOAST_CRITICAL("Render", "Mesh buffers were not created before upload");
 	}
 
-	// Copy using the explicit offsets out of the single staging buffer
 	cmd.copyBuffer(staging_buffer, **m_vertex_buffer, vk::BufferCopy(vertex_offset, 0, m_vertex_size));
 	cmd.copyBuffer(staging_buffer, **m_index_buffer, vk::BufferCopy(index_offset, 0, m_index_size));
 
@@ -192,9 +181,7 @@ void VulkanMesh::bind(vk::CommandBuffer cmd) const {
 }
 
 void VulkanMesh::bindPosed(vk::CommandBuffer cmd, vk::Buffer posed_vertices, uint32_t posed_vertex_offset) const {
-	// The offset is applied to the binding rather than passed as drawIndexed's vertexOffset: the index buffer
-	// is shared by every instance of this mesh and holds indices relative to vertex 0, so shifting the stream
-	// is what makes one index buffer address a different instance's slice
+	// Offset on the binding not vertexOffset since indices are relative to vertex 0
 	const vk::DeviceSize byte_offset = static_cast<vk::DeviceSize>(posed_vertex_offset) * sizeof(Vertex);
 	cmd.bindVertexBuffers(0, {posed_vertices}, {byte_offset});
 
@@ -206,12 +193,9 @@ void VulkanMesh::draw(vk::CommandBuffer cmd, uint32_t instance_count) const {
 		return;
 	}
 
-	// firstInstance stays 0 deliberately - the run's start comes from a push constant instead, so the shader
-	// never has to know whether SV_InstanceID includes the base. See vertexMain in mesh.slang
+	// firstInstance stays 0 since the run start comes from a push constant
 	cmd.drawIndexed(m_index_count, instance_count, 0, 0, 0);
 }
-
-// MeshUpload
 
 MeshUpload::MeshUpload(VulkanMesh& mesh, VulkanMesh::UploadData data, assets::HandleBase source, std::string_view debug_name) {
 	this->mesh = &mesh;
@@ -228,8 +212,6 @@ auto VulkanMesh::createAccelerationStructure(const VulkanCore& core) -> std::opt
 
 	const auto& device = core.getDevice();
 
-	// Positions are read straight out of the interleaved vertex buffer - the builder strides over it and
-	// ignores everything else, so no separate position stream is needed
 	vk::AccelerationStructureGeometryTrianglesDataKHR triangles {};
 	triangles.vertexFormat = vk::Format::eR32G32B32Sfloat;
 	triangles.vertexData.deviceAddress = core.getBufferAddress(**m_vertex_buffer);
@@ -241,8 +223,7 @@ auto VulkanMesh::createAccelerationStructure(const VulkanCore& core) -> std::opt
 	m_blas_geometry = vk::AccelerationStructureGeometryKHR {};
 	m_blas_geometry.geometryType = vk::GeometryTypeKHR::eTriangles;
 	m_blas_geometry.geometry.triangles = triangles;
-	// Opaque: no any-hit shader runs, so alpha-cutout geometry traces as solid. Correct for shadows only
-	// until cutouts matter, and flagged in the roadmap rather than silently assumed
+	// Opaque with no any-hit so cutouts trace solid
 	m_blas_geometry.flags = vk::GeometryFlagBitsKHR::eOpaque;
 
 	m_blas_primitive_count = m_index_count / 3;
@@ -279,10 +260,6 @@ auto VulkanMesh::createAccelerationStructure(const VulkanCore& core) -> std::opt
 	address_info.accelerationStructure = *m_blas;
 	m_blas_address = device.getAccelerationStructureAddressKHR(address_info);
 
-	// Scratch is transient, so it is handed back for the caller to drop once the build has run. Over-allocated
-	// by one alignment, with the address rounded up: a misaligned scratch address does not fail at the call,
-	// it corrupts the build and takes the device out later
-
 	vk::BufferCreateInfo scratch_ci {};
 	scratch_ci.size = core.getScratchAllocationSize(sizes.buildScratchSize);
 	scratch_ci.usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress;
@@ -292,9 +269,6 @@ auto VulkanMesh::createAccelerationStructure(const VulkanCore& core) -> std::opt
 	scratch_alloc.usage = vma::MemoryUsage::eAutoPreferDevice;
 	auto scratch = core.getAllocator().createBuffer(scratch_ci, scratch_alloc);
 
-	// Resolved here, where the core is already in hand - the record step below only gets a command buffer,
-	// and reaching back to VulkanRenderer::instance for a device from a mesh would be a dependency this file
-	// has no other reason to carry
 	m_blas_scratch_address = core.getAlignedScratchAddress(*scratch);
 	m_build_acceleration_structures = device.getDispatcher()->vkCmdBuildAccelerationStructuresKHR;
 
@@ -307,8 +281,6 @@ void VulkanMesh::recordBuildAccelerationStructure(vk::CommandBuffer cmd) const {
 		return;
 	}
 
-	// Copied rather than mutated in place: this method is const, and pGeometries has to be re-pointed at the
-	// member since the stored info's pointer refers to it
 	vk::AccelerationStructureBuildGeometryInfoKHR build = m_blas_build_info;
 	build.pGeometries = &m_blas_geometry;
 	build.scratchData.deviceAddress = m_blas_scratch_address;
@@ -357,7 +329,6 @@ void MeshUpload::build(const VulkanCore& core) {
 		TOAST_CRITICAL("Render", "Unified staging buffer is not mapped");
 	}
 
-	// Sequential writes to contiguous memory blocks
 	std::memcpy(mapped, data.vertices.data(), vertex_size);
 	std::memcpy(mapped + vertex_size, data.indices.data(), index_size);
 	if (skin_vertex_size > 0) {
@@ -370,7 +341,6 @@ void MeshUpload::record(vk::CommandBuffer cmd) {
 	const vk::DeviceSize vertex_size = mesh->m_vertex_size;
 	const vk::DeviceSize index_size = mesh->m_index_size;
 
-	// Record using a single buffer with offsets for the indices and (if present) the skin vertices
 	mesh->recordUpload(cmd, *vertex_staging, 0, vertex_size, vertex_size + index_size);
 
 	std::vector<vk::BufferMemoryBarrier> barriers = {
@@ -406,10 +376,7 @@ void MeshUpload::record(vk::CommandBuffer cmd) {
 		);
 	}
 
-	// No BLAS build here. This records into the *transfer* command buffer, and
-	// vkCmdBuildAccelerationStructuresKHR requires a pool whose queue family supports compute - a
-	// transfer-only family is not allowed to build acceleration structures at all. The build happens on the
-	// graphics queue instead, deferred to VulkanRenderer::recordFrame() once the mesh is ready
+	// No BLAS build here since transfer only families cannot build acceleration structures
 	cmd.pipelineBarrier(
 	    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eBottomOfPipe, {}, nullptr, barriers, nullptr
 	);

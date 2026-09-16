@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdint>
 #include <cstring>
 #include <format>
 #include <toast/assets/assets.hpp>
@@ -29,6 +30,27 @@ auto shadowLayerRange(uint32_t base_layer, uint32_t layer_count) -> vk::ImageSub
 	return {vk::ImageAspectFlagBits::eDepth, 0, 1, base_layer, layer_count};
 }
 
+struct ShadowSignature {
+	uint64_t value = 0x243F6A8885A308D3ull;
+
+	void add(uint64_t word) noexcept {
+		value = (value ^ word) * 0x9E3779B97F4A7C15ull;
+		value ^= value >> 29;
+	}
+
+	void add(const glm::mat4& matrix) noexcept {
+		for (int column = 0; column < 4; ++column) {
+			for (int row = 0; row < 4; row += 2) {
+				uint32_t high = 0;
+				uint32_t low = 0;
+				std::memcpy(&high, &matrix[column][row], sizeof(high));
+				std::memcpy(&low, &matrix[column][row + 1], sizeof(low));
+				add((static_cast<uint64_t>(high) << 32) | low);
+			}
+		}
+	}
+};
+
 }
 
 auto createShadowSampler(const VulkanCore& core, vk::Format format) -> vk::raii::Sampler {
@@ -36,7 +58,6 @@ auto createShadowSampler(const VulkanCore& core, vk::Format format) -> vk::raii:
 	const bool linear_filterable =
 	    (props.optimalTilingFeatures & vk::FormatFeatureFlagBits::eSampledImageFilterLinear) != vk::FormatFeatureFlags {};
 
-	// Nearest is correct, just harder-edged, so degrade rather than refuse
 	const vk::Filter filter = linear_filterable ? vk::Filter::eLinear : vk::Filter::eNearest;
 
 	vk::SamplerCreateInfo sampler_ci {};
@@ -45,18 +66,15 @@ auto createShadowSampler(const VulkanCore& core, vk::Format format) -> vk::raii:
 	sampler_ci.addressModeU = vk::SamplerAddressMode::eClampToBorder;
 	sampler_ci.addressModeV = vk::SamplerAddressMode::eClampToBorder;
 	sampler_ci.addressModeW = vk::SamplerAddressMode::eClampToBorder;
-	// Outside the fitted map reads depth 1.0, which passes the comparison and so reads as lit
 	sampler_ci.borderColor = vk::BorderColor::eFloatOpaqueWhite;
 	sampler_ci.mipmapMode = vk::SamplerMipmapMode::eNearest;
 	sampler_ci.compareEnable = VK_TRUE;
-	// The shader passes the surface's own depth; a stored depth at or beyond it means nothing occludes
 	sampler_ci.compareOp = vk::CompareOp::eLessOrEqual;
 
 	return {core.getDevice(), sampler_ci};
 }
 
 auto ShadowPass::selectShadowFormat(const VulkanCore& core) -> vk::Format {
-	// No stencil: a combined format forces an aspect mask the sampler cannot read from
 	const std::array candidates {vk::Format::eD32Sfloat, vk::Format::eD16Unorm};
 
 	constexpr auto required = vk::FormatFeatureFlagBits::eDepthStencilAttachment | vk::FormatFeatureFlagBits::eSampledImage;
@@ -93,25 +111,18 @@ ShadowPass::ShadowPass(const VulkanCore& core) : m_core(&core) {
 	config.debug_name = "ShadowPass";
 	config.depth_only = true;
 	config.depth_format = m_format;
-	// Viewport and scissor are dynamic, so one pipeline covers both the cascade and punctual resolutions
 	config.extent = vk::Extent2D {shadows::cascadeResolution(), shadows::cascadeResolution()};
 	config.shader_spirv = shader->spirv;
 	config.pipeline_layout = *m_shader_layout.getPipelineLayout();
 	config.vertex_bindings = {vertexBindingDescription()};
-	// Position only, though the full renderer::Vertex stream is what gets bound - see shadow_depth.slang
 	config.vertex_attributes = {vertexAttributeDescriptions()[0]};
 	config.depth_test = true;
 	config.depth_write = true;
-	// Acne belongs here, not in a normal offset: slope-scaled bias shifts along the depth gradient only, and
-	// a sideways shift is what detaches a shadow from its caster
 	config.depth_bias_constant = 1.5f;
 	config.depth_bias_slope = 3.0f;
-	// Both sides: culling either leaves a plane or a foliage card casting nothing at all, which is worse than
-	// the self-shadowing the lookup's normal offset already handles
 	config.cull_mode = vk::CullModeFlagBits::eNone;
 
-	// One per mask a LayerGroup uses, built up front because a pipeline's viewMask must equal the scope's.
-	// Single view is 0x1, not 0 - 0 means "not multiview" and leaves SV_ViewID undefined
+	// Single view is 0x1 not 0 since 0 disables multiview and leaves SV_ViewID undefined
 	constexpr std::array view_masks {
 	  1u,
 	  (1u << shadows::k_cascade_count) - 1u,
@@ -123,7 +134,7 @@ ShadowPass::ShadowPass(const VulkanCore& core) : m_core(&core) {
 	for (size_t mask_index = 0; mask_index < view_masks.size(); ++mask_index) {
 		const uint32_t view_mask = view_masks[mask_index];
 
-		// Filled in place - VulkanPipeline is neither copyable nor movable
+		// VulkanPipeline is neither copyable nor movable
 		PipelineSet& set = m_pipeline_sets[mask_index];
 		set.view_mask = view_mask;
 
@@ -195,8 +206,7 @@ void ShadowPass::createShadowMap(
 	map.array_view.emplace(device, array_view_ci);
 	setDebugName(core, **map.array_view, std::format("{} ArrayView", debug_name));
 
-	// One render-target view per group, plus the array view shaders sample. SV_ViewID indexes relative to the
-	// view's base layer, which is why a group's layers must be consecutive
+	// SV_ViewID is relative to the view base layer so group layers must be consecutive
 	map.groups.clear();
 	map.groups.reserve(group_layers.size());
 
@@ -206,12 +216,10 @@ void ShadowPass::createShadowMap(
 		group.base_layer = base_layer;
 		group.layer_count = count;
 		group.view_mask = (1u << count) - 1u;
-		// A fresh image holds undefined depth, which reads as an arbitrary occluder until cleared
 		group.dirty = true;
 
 		vk::ImageViewCreateInfo view_ci {};
 		view_ci.image = **map.image;
-		// Array view even for one layer - every group here is a multiview pass
 		view_ci.viewType = vk::ImageViewType::e2DArray;
 		view_ci.format = m_format;
 		view_ci.subresourceRange = shadowLayerRange(base_layer, count);
@@ -238,7 +246,6 @@ void ShadowPass::createResources(const VulkanCore& core) {
 	const vk::DescriptorSetLayout set_layout = *layouts[0];
 	const vk::DescriptorPool pool = VulkanRenderer::instance->getDescriptorPoolHandle();
 
-	// Once, not per frame index - re-acquiring inside the loop repeats the same cache lookup
 	const auto uid = assets::resolveURI("core://shaders/shadow_depth.slang");
 	const auto shader = uid.has_value() ? ShaderCache::get().acquire(*uid) : nullptr;
 	if (!shader) {
@@ -253,15 +260,11 @@ void ShadowPass::createResources(const VulkanCore& core) {
 	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
 		auto& target = m_targets[i];
 
-		// One multiview group: the views differ only in their matrix, and four passes submitted the same
-		// geometry four times
 		const std::array cascade_groups {shadows::k_cascade_count};
 		createShadowMap(
 		    core, target.cascades, shadows::cascadeResolution(), cascade_groups, std::format("ShadowPass Cascades[{}]", i)
 		);
 
-		// Spots stay single-view: two can want different sub-rect resolutions, and multiview has one viewport
-		// per pass. A cube's six faces share one resolution, so each cube is a group
 		std::vector<uint32_t> punctual_groups(shadows::k_max_spot_shadows, 1u);
 		punctual_groups.insert(punctual_groups.end(), shadows::k_max_point_shadows, shadows::k_cube_faces);
 		createShadowMap(
@@ -286,7 +289,6 @@ void ShadowPass::createResources(const VulkanCore& core) {
 
 		DescriptorWriter writer;
 
-		// Bound by declared name, same convention MaterialPass::createFrameSets() uses for set 0
 		for (const auto& binding : shader->reflection.bindings) {
 			if (binding.set != 0) {
 				continue;
@@ -296,7 +298,6 @@ void ShadowPass::createResources(const VulkanCore& core) {
 				    *m_descriptor_sets[i], binding.binding, vk::DescriptorType::eUniformBuffer, **target.ubo.gpu_buffer, sizeof(ShadowUBO)
 				);
 			} else if (binding.name == "gInstances") {
-				// ShadowPass's own buffer, not the colour pass's - see RenderFrame::shadow_instance_data
 				writer.buffer(
 				    *m_descriptor_sets[i],
 				    binding.binding,
@@ -332,17 +333,13 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, uint32_t frame
 		return;
 	}
 
-	// Nothing samples these while the shaders trace, but MaterialPass still binds them - and a descriptor
-	// naming an eUndefined image is invalid even unread, which is why this is not an early return
+	// MaterialPass still binds these and an eUndefined image is invalid even unread
 	if (frame->frame_data.traced_shadow_params.x >= 0.5f && map.layout == vk::ImageLayout::eShaderReadOnlyOptimal) {
 		return;
 	}
 
-	// Resolved before the barrier, so a map with nothing to record is skipped rather than paying two
-	// full-image transitions to do nothing between them
 	std::vector<const VulkanRenderer::ShadowView*> layer_views(map.layer_count, nullptr);
 	std::vector<uint32_t> layer_view_indices(map.layer_count, 0);
-	bool any_layer_recorded = false;
 	for (uint32_t i = 0; i < frame->shadows.views.size(); ++i) {
 		const auto& candidate = frame->shadows.views[i];
 		if (candidate.directional == directional && candidate.layer < map.layer_count) {
@@ -350,16 +347,92 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, uint32_t frame
 			layer_view_indices[candidate.layer] = i;
 		}
 	}
-	for (const auto& group : map.groups) {
-		if (group.dirty || layer_views[group.base_layer] != nullptr) {
-			any_layer_recorded = true;
-			break;
+
+	const auto& proxies = frame->mesh_instances;
+	const size_t instance_count = frame->shadow_instance_data.size();
+	const vk::Buffer posed_vertices = VulkanRenderer::instance->getPosedVertexBuffer(frame_index);
+
+	const auto posed_offset_of = [&](const VulkanRenderer::MeshInstanceProxy& proxy) {
+		return posed_vertices ? proxy.posed_vertex_offset : VulkanRenderer::MeshInstanceProxy::k_no_posed_vertices;
+	};
+
+	const auto occupied = [&](const LayerGroup& group) {
+		bool result = layer_views[group.base_layer] != nullptr;
+		for (uint32_t i = 1; result && i < group.layer_count; ++i) {
+			const auto* member = layer_views[group.base_layer + i];
+			result = member != nullptr && layer_view_indices[group.base_layer + i] == layer_view_indices[group.base_layer] + i;
 		}
+		return result;
+	};
+
+	const auto eligible = [&](const LayerGroup& group, size_t index) {
+		const auto& proxy = proxies[index];
+		if (proxy.mesh == nullptr || !proxy.mesh->isReady()) {
+			return false;
+		}
+		for (uint32_t i = 0; i < group.layer_count; ++i) {
+			const auto* member = layer_views[group.base_layer + i];
+			if (member == nullptr) {
+				continue;
+			}
+			const glm::vec3 offset = proxy.bounds_center - glm::vec3(member->cull_sphere);
+			const float reach = member->cull_sphere.w + proxy.bounds_radius;
+			if (glm::dot(offset, offset) <= (reach * reach)) {
+				return true;
+			}
+		}
+		return false;
+	};
+
+	const auto signature_of = [&](const LayerGroup& group) -> std::optional<uint64_t> {
+		ShadowSignature signature;
+		for (uint32_t i = 0; i < group.layer_count; ++i) {
+			const auto* member = layer_views[group.base_layer + i];
+			signature.add(member->view_projection);
+			signature.add(member->resolution);
+		}
+		for (size_t index = 0; index < proxies.size() && index < instance_count; ++index) {
+			if (!eligible(group, index)) {
+				continue;
+			}
+			const auto& proxy = proxies[index];
+			if (posed_offset_of(proxy) != VulkanRenderer::MeshInstanceProxy::k_no_posed_vertices) {
+				return std::nullopt;
+			}
+			signature.add(static_cast<uint64_t>(reinterpret_cast<std::uintptr_t>(proxy.mesh)));
+			signature.add(proxy.model);
+		}
+		return signature.value;
+	};
+
+	enum class GroupWork : uint8_t {
+		skip,
+		clear,
+		render
+	};
+
+	std::vector<GroupWork> group_work(map.groups.size(), GroupWork::skip);
+	std::vector<std::optional<uint64_t>> group_signatures(map.groups.size());
+	bool any_layer_recorded = false;
+	for (size_t g = 0; g < map.groups.size(); ++g) {
+		const auto& group = map.groups[g];
+		if (!occupied(group)) {
+			group_work[g] = group.dirty ? GroupWork::clear : GroupWork::skip;
+		} else {
+			group_signatures[g] = signature_of(group);
+			if (group_signatures[g].has_value() && group.signature == group_signatures[g]) {
+				++m_cached_count;
+			} else {
+				group_work[g] = GroupWork::render;
+			}
+		}
+		any_layer_recorded = any_layer_recorded || group_work[g] != GroupWork::skip;
 	}
 	if (!any_layer_recorded) {
 		return;
 	}
 
+	// From the tracked layout so skipped groups keep their depth
 	const vk::ImageMemoryBarrier to_attachment(
 	    map.layout == vk::ImageLayout::eShaderReadOnlyOptimal ? vk::AccessFlagBits::eShaderRead : vk::AccessFlags {},
 	    vk::AccessFlagBits::eDepthStencilAttachmentWrite,
@@ -381,27 +454,21 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, uint32_t frame
 	);
 	map.layout = vk::ImageLayout::eDepthAttachmentOptimal;
 
-	// Whole layer: what gets cleared, regardless of how much of it a view actually draws into
 	const vk::Rect2D layer_area({0, 0}, vk::Extent2D {map.resolution, map.resolution});
 
 	constexpr uint32_t k_push_size = 2 * sizeof(uint32_t);
 
-	for (auto& group : map.groups) {
-		// All-or-nothing: a partial group would leave SV_ViewID indexing another light's matrix
-		bool occupied = layer_views[group.base_layer] != nullptr;
-		for (uint32_t i = 1; occupied && i < group.layer_count; ++i) {
-			const auto* member = layer_views[group.base_layer + i];
-			occupied = member != nullptr && layer_view_indices[group.base_layer + i] == layer_view_indices[group.base_layer] + i;
-		}
-
-		// Cleared once, or last frame's depths keep shadowing after a light stops casting. Clearing every
-		// frame after that is pure cost, and most of the 16 reserved slots are usually empty
-		if (!occupied && !group.dirty) {
+	for (size_t g = 0; g < map.groups.size(); ++g) {
+		if (group_work[g] == GroupWork::skip) {
 			continue;
 		}
-		group.dirty = occupied;
 
-		const VulkanRenderer::ShadowView* view = occupied ? layer_views[group.base_layer] : nullptr;
+		auto& group = map.groups[g];
+		const bool render = group_work[g] == GroupWork::render;
+		group.dirty = render;
+		group.signature = render ? group_signatures[g] : std::nullopt;
+
+		const VulkanRenderer::ShadowView* view = render ? layer_views[group.base_layer] : nullptr;
 		const uint32_t view_index = layer_view_indices[group.base_layer];
 
 		vk::RenderingAttachmentInfo depth_attachment {};
@@ -412,9 +479,8 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, uint32_t frame
 		depth_attachment.clearValue = vk::ClearValue(vk::ClearDepthStencilValue {1.0f, 0});
 
 		vk::RenderingInfo rendering_info {};
-		// Full layer, so what lies outside a shrunken sub-rect is cleared rather than left from a larger frame
 		rendering_info.renderArea = layer_area;
-		// Ignored when viewMask is non-zero; the mask decides how many layers are written there
+		// Ignored when viewMask is non zero
 		rendering_info.layerCount = 1;
 		rendering_info.viewMask = group.view_mask;
 		rendering_info.colorAttachmentCount = 0;
@@ -425,8 +491,6 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, uint32_t frame
 
 		const PipelineSet* pipelines = pipelineSetFor(group.view_mask);
 		if (view != nullptr && pipelines != nullptr && pipelines->pipeline.isReady()) {
-			// A punctual shadow shrinks with distance into a sub-rect at the origin; the shader scales its
-			// lookups by GpuLight::shadow_atlas to match
 			const uint32_t view_resolution = std::clamp(view->resolution, 1u, map.resolution);
 			const vk::Viewport viewport(
 			    0.0f, 0.0f, static_cast<float>(view_resolution), static_cast<float>(view_resolution), 0.0f, 1.0f
@@ -443,44 +507,10 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, uint32_t frame
 			    {}
 			);
 
-			// A multiview group draws the union of what its views see - one pass cannot cull per view. That
-			// costs little for cascades, whose near spheres sit inside the far one anyway
-			const auto visible = [&](const VulkanRenderer::MeshInstanceProxy& proxy) {
-				for (uint32_t i = 0; i < group.layer_count; ++i) {
-					const auto* member = layer_views[group.base_layer + i];
-					if (member == nullptr) {
-						continue;
-					}
-					const glm::vec3 offset = proxy.bounds_center - glm::vec3(member->cull_sphere);
-					const float reach = member->cull_sphere.w + proxy.bounds_radius;
-					if (glm::dot(offset, offset) <= (reach * reach)) {
-						return true;
-					}
-				}
-				return false;
-			};
-
-			// One draw per *run* of adjacent proxies sharing a mesh. The proxy list is pre-sorted and
-			// shadow_instance_data is indexed one-to-one with it, so a run of indices is a run of slots
-			const auto& proxies = frame->mesh_instances;
-			const size_t instance_count = frame->shadow_instance_data.size();
-			const vk::Buffer posed_vertices = VulkanRenderer::instance->getPosedVertexBuffer(frame_index);
-
-			const auto posed_offset_of = [&](const VulkanRenderer::MeshInstanceProxy& proxy) {
-				return posed_vertices ? proxy.posed_vertex_offset : VulkanRenderer::MeshInstanceProxy::k_no_posed_vertices;
-			};
-
-			const auto eligible = [&](size_t index) {
-				const auto& proxy = proxies[index];
-				return proxy.mesh != nullptr && proxy.mesh->isReady() && visible(proxy);
-			};
-
-			// One pipeline for the whole loop - a posed instance is a static draw whose vertices come from
-			// somewhere else
 			cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelines->pipeline.getPipeline());
 
 			for (size_t i = 0; i < proxies.size() && i < instance_count;) {
-				if (!eligible(i)) {
+				if (!eligible(group, i)) {
 					++i;
 					continue;
 				}
@@ -488,11 +518,9 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, uint32_t frame
 				const uint32_t posed_offset = posed_offset_of(proxies[i]);
 				const bool posed = posed_offset != VulkanRenderer::MeshInstanceProxy::k_no_posed_vertices;
 
-				// A culled proxy ends the run rather than being skipped: instances must be contiguous, and
-				// jumping a slot would draw the wrong transform. A posed proxy is always a run of one
 				size_t run = 1;
 				if (!posed) {
-					while (i + run < proxies.size() && i + run < instance_count && eligible(i + run) &&
+					while (i + run < proxies.size() && i + run < instance_count && eligible(group, i + run) &&
 					       proxies[i + run].mesh == proxies[i].mesh &&
 					       posed_offset_of(proxies[i + run]) == VulkanRenderer::MeshInstanceProxy::k_no_posed_vertices) {
 						++run;
@@ -503,13 +531,7 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, uint32_t frame
 				  .instance_base = static_cast<uint32_t>(i),
 				  .view_index = view_index,
 				};
-				cmd.pushConstants(
-				    *m_shader_layout.getPipelineLayout(),
-				    vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
-				    0,
-				    k_push_size,
-				    &push
-				);
+				cmd.pushConstants(*m_shader_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eAll, 0, k_push_size, &push);
 
 				if (posed) {
 					proxies[i].mesh->bindPosed(cmd, posed_vertices, posed_offset);
@@ -546,8 +568,6 @@ void ShadowPass::recordPre(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t
 	ZoneScoped;
 	(void)image_index;
 
-	// Every mask, not just one - a missing cascade pipeline leaves the directional map clearing itself and
-	// nothing else, which reads as "shadows stopped working" with no error anywhere
 	const bool pipelines_ready = !m_pipeline_sets.empty() && std::ranges::all_of(m_pipeline_sets, [](const PipelineSet& set) {
 		return set.pipeline.isReady();
 	});
@@ -564,6 +584,7 @@ void ShadowPass::recordPre(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t
 
 	m_draw_count = 0;
 	m_pass_count = 0;
+	m_cached_count = 0;
 
 	if (target.ubo.gpu_buffer.has_value()) {
 		ShadowUBO ubo {};

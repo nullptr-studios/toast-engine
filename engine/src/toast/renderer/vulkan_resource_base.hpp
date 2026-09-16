@@ -1,6 +1,6 @@
 /// @file vulkan_resource_base.hpp
 /// @author dario
-/// @date 6/27/2026.
+/// @date 6/27/2026
 
 #pragma once
 
@@ -14,8 +14,8 @@ public:
 	enum class UploadState : std::uint8_t {
 		uploading,
 		ready,
-		failed_load,    /// The encoded bytes could not be decoded - truncated file, wrong container, failed transcode
-		failed_gpu      /// Decoded fine, but the Vulkan resource behind it could not be created
+		failed_load,
+		failed_gpu
 	};
 
 	virtual ~IVulkanResource() = default;
@@ -55,14 +55,12 @@ public:
 
 	virtual void record(vk::CommandBuffer cmd) = 0;
 
-	/// Only promotes a job that actually built
 	virtual void finished() {
 		if (!resource()->hasFailed()) {
 			resource()->markReady();
 		}
 	}
 
-	/// @brief Host memory this job holds once built
 	vk::DeviceSize host_bytes = 0;
 };
 

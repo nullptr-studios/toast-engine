@@ -15,9 +15,6 @@
 namespace renderer {
 class VulkanCore;
 
-/**
- * @brief Editor ground grid pass
- */
 class GridPass : public IRenderPass {
 public:
 	GridPass(const renderer::VulkanCore& core, vk::Format color_format, vk::Format depth_format, vk::Extent2D extent);

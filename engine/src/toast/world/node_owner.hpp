@@ -48,6 +48,10 @@ public:
 	[[nodiscard]]
 	virtual auto participatesIn(NodeOwnerParticipation use) const noexcept -> bool = 0;
 
+	/// True for a Workspace open for editing: lifecycle callbacks still run there, but the game is not running
+	[[nodiscard]]
+	auto isEditing() noexcept -> bool;
+
 	virtual void registerDependency(Node& from, Node& to) = 0;
 	virtual void unregisterDependency(Node& from, Node& to) = 0;
 

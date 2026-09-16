@@ -1,29 +1,16 @@
 import fullscreen;
 
-// FXAA 3.11 (quality preset, console-grade tuning) - edge anti-aliasing as a post-process
-//
-// On the tonemapped LDR image, not the HDR scene: FXAA reasons about perceived contrast, and in HDR a
-// 40-unit highlight beside a 0.1 surface reads as an edge everywhere. That is why the tonemap writes to its
-// own target rather than straight to the screen
-//
-// Spatial, with no history, so it cannot recover sub-pixel detail and thin geometry still crawls
-
 struct FxaaParams
 {
-    // 1 / source resolution
     float2 inverseSourceSize;
 
-    // Below this local contrast, a pixel is left alone entirely
     float contrastThreshold;
 
-    // Contrast relative to the brightest neighbour, so dark areas are not over-filtered
     float relativeThreshold;
 
-    // How strongly the final blend is applied, 0..1
     float subpixelBlending;
 
-    // float2, not float3: a 3-component pad aligns to 16 and pushes the block to 48 while the C++ struct
-    // that fills it ends at 32. Only the unused tail differs, but the two should agree on paper
+    // float2 not float3 since a 3 component pad aligns to 16 and grows the block past 32 bytes
     float2 _pad0;
 };
 
@@ -41,8 +28,7 @@ VSOutput vertexMain(uint vertexId : SV_VertexID)
     return fullscreenTriangle(vertexId);
 }
 
-// Green is the largest term in luma and the image is already gamma-encoded here, so this approximation is
-// what FXAA is tuned against - a full luminance dot product actually filters slightly worse
+// Green approximates luma and FXAA is tuned against it
 float sampleLuma(float2 uv)
 {
     return gSource.Sample(uv).g;
@@ -64,8 +50,6 @@ float4 fragmentMain(VSOutput input) : SV_Target0
     float lumaMax = max(lumaCenter, max(max(lumaNorth, lumaSouth), max(lumaWest, lumaEast)));
     float lumaRange = lumaMax - lumaMin;
 
-    // Flat enough to leave alone. Skipping here is most of why FXAA is cheap - the majority of a frame is
-    // interior surface, not edge
     if (lumaRange < max(gParams.contrastThreshold, lumaMax * gParams.relativeThreshold))
     {
         return float4(gSource.Sample(uv).rgb, 1.0);
@@ -89,7 +73,6 @@ float4 fragmentMain(VSOutput input) : SV_Target0
 
     bool horizontal = edgeHorizontal >= edgeVertical;
 
-    // Step one pixel across the edge, towards whichever side has the larger gradient
     float luma1 = horizontal ? lumaNorth : lumaWest;
     float luma2 = horizontal ? lumaSouth : lumaEast;
     float gradient1 = abs(luma1 - lumaCenter);
@@ -101,8 +84,6 @@ float4 fragmentMain(VSOutput input) : SV_Target0
         stepLength = -stepLength;
     }
 
-    // Sub-pixel blend factor from the local average, which is what removes the residual stair-stepping the
-    // edge search alone leaves behind
     float lumaAverage = (2.0 * (lumaNS + lumaWE) + lumaNorthWest + lumaNorthEast + lumaSouthWest + lumaSouthEast) / 12.0;
     float subpixel = saturate(abs(lumaAverage - lumaCenter) / max(lumaRange, 1e-4));
     subpixel = smoothstep(0.0, 1.0, subpixel);

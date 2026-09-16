@@ -43,6 +43,12 @@ public record GltfMetaSection : IMetaSection {
 	public bool GeneratePrefab { get; init; } = true;
 }
 
+public record VoxMetaSection : IMetaSection {
+	public bool CreateFolder { get; init; } = true;
+	public bool ImportPalette { get; init; } = true;
+	public bool GeneratePrefab { get; init; } = true;
+}
+
 public record AudioStringMetaSection : IMetaSection {
 	public bool FollowFolderStructure = true;
 	public bool ImportBuses = true;
@@ -81,6 +87,13 @@ public static class MetaFile {
 					dto.Psd = new PsdSectionDto {
 						ImportMode = psd.ImportMode,
 						CreateFolder = psd.CreateFolder
+					};
+					break;
+				case VoxMetaSection vox:
+					dto.Vox = new VoxSectionDto {
+						CreateFolder = vox.CreateFolder,
+						ImportPalette = vox.ImportPalette,
+						GeneratePrefab = vox.GeneratePrefab
 					};
 					break;
 				case GltfMetaSection gltf:
@@ -154,6 +167,22 @@ public static class MetaFile {
 		}
 	}
 
+	public static VoxMetaSection? ReadVoxSection(string path) {
+		var metaPath = path.EndsWith(".meta") ? path : path + ".meta";
+		if (!File.Exists(metaPath)) return null;
+		try {
+			var dto = TomlSerializer.Deserialize<MetaFileDto>(File.ReadAllText(metaPath))!;
+			if (dto.Vox == null) return null;
+			return new VoxMetaSection {
+				CreateFolder = dto.Vox.CreateFolder,
+				ImportPalette = dto.Vox.ImportPalette,
+				GeneratePrefab = dto.Vox.GeneratePrefab
+			};
+		} catch {
+			return null;
+		}
+	}
+
 	public static GltfMetaSection? ReadGltfSection(string path) {
 		var metaPath = path.EndsWith(".meta") ? path : path + ".meta";
 		if (!File.Exists(metaPath)) return null;
@@ -219,6 +248,13 @@ file sealed class MetaFileDto {
 	[TomlPropertyName("texture")] public TextureSectionDto? Texture { get; set; }
 	[TomlPropertyName("psd")] public PsdSectionDto? Psd { get; set; }
 	[TomlPropertyName("gltf")] public GltfSectionDto? Gltf { get; set; }
+	[TomlPropertyName("vox")] public VoxSectionDto? Vox { get; set; }
+}
+
+file sealed class VoxSectionDto {
+	[TomlPropertyName("create_folder")] public bool CreateFolder { get; set; } = true;
+	[TomlPropertyName("import_palette")] public bool ImportPalette { get; set; } = true;
+	[TomlPropertyName("generate_prefab")] public bool GeneratePrefab { get; set; } = true;
 }
 
 file sealed class TextureSectionDto {

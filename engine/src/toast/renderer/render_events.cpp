@@ -178,8 +178,6 @@ void registerRenderEvents() {
 		bool success = true;
 		std::string error;
 
-		// ensureCompiled writes both the SPIR-V and reflection json before returning,
-		// so the editor can safely read cache://shaders once the reply arrives
 		for (const auto& uid_str : e.shader_uids) {
 			const toast::UID uid(toast::UID::fromString(uid_str));
 			if (uid.data() == 0 || !ShaderCache::get().ensureCompiled(uid)) {

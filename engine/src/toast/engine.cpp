@@ -4,6 +4,7 @@
 #include "assets/asset_manager.hpp"
 #include "assets/prefab.hpp"
 #include "audio/audio_system.hpp"
+#include "crash_handler.hpp"
 #include "events/event.hpp"
 #include "events/listener.hpp"
 #include "ffi/engine.h"    // ffi
@@ -25,6 +26,7 @@
 #include "renderer/passes/ssr_pass.hpp"
 #include "renderer/passes/tonemap_pass.hpp"
 #include "renderer/passes/traced_shadow_pass.hpp"
+#include "renderer/passes/voxel_pass.hpp"
 #include "renderer/render_events.hpp"
 #include "renderer/renderer_settings.hpp"
 #include "renderer/sdl_output_target.hpp"
@@ -199,6 +201,15 @@ void Engine::init() {
 		}
 
 		m->renderer->applyResize(vk::Extent2D {static_cast<uint32_t>(e.width), static_cast<uint32_t>(e.height)});
+		return false;
+	});
+
+	// Unfocused, the renderer drops to its background frame rate so an idle window does not hold the GPU at full load.
+	// The editor has no SDL window and reports focus through toast_set_window_state() instead
+	m->listener.subscribe<event::WindowFocus>([this](const event::WindowFocus& e) {
+		if (m->renderer) {
+			m->renderer->setApplicationFocused(e.focused);
+		}
 		return false;
 	});
 
@@ -449,6 +460,9 @@ void Engine::createSDLWindow(const char* w_name) {
 	// World-stage passes render into the HDR scene target
 	const auto scene_format = m->renderer->getSceneColorFormat();
 
+	// Voxel volumes are opaque so before the blended world-space UI
+	m->renderer->addRenderPass(std::make_unique<renderer::VoxelPass>(*m->vulkan_core, scene_format, depth_format, extent));
+
 	// World-space UI panels are scene content and get exposed with it, the screen-space UI does not
 	m->renderer->addRenderPass(std::make_unique<ui::WorldUIPass>(*m->vulkan_core, scene_format, depth_format, extent));
 
@@ -470,6 +484,12 @@ void Engine::createSDLWindow(const char* w_name) {
 			ui->buildDrawFrame(frame);
 		});
 	}
+
+	// Players get the performance overlay on top of the game's UI, in every build for now
+	auto debug_pass =
+	    std::make_unique<renderer::DebugPass>(*m->vulkan_core, color_format, depth_format, extent, &cluster_lighting_pass_ref);
+	debug_pass->setEditorPanelsEnabled(false);
+	m->renderer->addRenderPass(std::move(debug_pass));
 
 	// FIXME: CAPPED AT 240 for now
 	m->renderer->setFrameRateLimit(240.0);
@@ -521,6 +541,9 @@ void Engine::createAvaloniaWindow() {
 
 	// World-stage passes render into the HDR scene target
 	const auto scene_format = m->renderer->getSceneColorFormat();
+
+	// Voxel volumes are opaque so before the blended world-space UI
+	m->renderer->addRenderPass(std::make_unique<renderer::VoxelPass>(*m->vulkan_core, scene_format, depth_format, extent));
 
 	// World-space UI panels are scene content
 	m->renderer->addRenderPass(std::make_unique<ui::WorldUIPass>(*m->vulkan_core, scene_format, depth_format, extent));
@@ -745,6 +768,8 @@ void Engine::startGame() {
 extern "C" {
 
 auto toast_create() noexcept -> engine_t* {
+	// Before anything else, so a crash while the engine is still coming up is reported too
+	toast::crash::install();
 	return reinterpret_cast<engine_t*>(new toast::Engine());
 }
 
@@ -784,6 +809,9 @@ void toast_set_working_directory(
     const char* project, const char* artworks, const char* cache, const char* saved, const char* core
 ) noexcept {
 	assets::AssetManager::setPaths({.project = project, .artworks = artworks, .cache = cache, .saved = saved, .core = core});
+	if (cache != nullptr && *cache != '\0') {
+		toast::crash::setDumpDirectory(std::filesystem::path(cache) / "crashes");
+	}
 }
 
 auto toast_viewport_get_frame(void* dst, uint32_t dst_capacity, toast_viewport_frame_t* out) noexcept -> int {
@@ -896,6 +924,15 @@ void toast_reload_manifest() noexcept {
 
 void toast_reload_project_settings() noexcept {
 	toast::Engine::get()->reloadSettings();
+}
+
+void toast_set_window_state(int focused, int minimized) noexcept {
+	auto* vk_renderer = renderer::VulkanRenderer::instance;
+	if (vk_renderer == nullptr) {
+		return;
+	}
+	vk_renderer->setApplicationFocused(focused != 0);
+	vk_renderer->setRenderingPaused(minimized != 0);
 }
 
 void toast_set_load_mode(int mode) noexcept {

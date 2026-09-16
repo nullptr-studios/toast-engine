@@ -14,12 +14,7 @@ namespace renderer {
 
 namespace {
 
-/// Bump whenever the *shape* of the cached reflection changes, not just the shader sources: entries are keyed
-/// on the source hash, so an extraction fix alone would keep serving entries written by the older extractor.
-/// v2 populated entry_points; v3 kept array bindings and their descriptor counts; v4 kept
-/// RaytracingAccelerationStructure bindings; v5 fixed their *serialization*, which had been round-tripping
-/// them to "uniform_buffer" - correct on a fresh compile, wrong on every cache hit; v6 reflects the *linked*
-/// program, so parameters an imported module declares are no longer missing from the pipeline layout
+/// Bump when the cached reflection shape changes since entries are keyed on the source hash
 constexpr int k_cache_format = 6;
 
 auto spirvUri(toast::UID uid) -> std::string {
@@ -36,9 +31,7 @@ auto hashToHex(uint64_t hash) -> std::string {
 	return std::format("{:016x}", hash);
 }
 
-/// Cache key for a shader: its source *plus* the optional device features it was compiled against. The same
-/// source produces different SPIR-V depending on TOAST_RAY_QUERY, and serving the wrong one fails pipeline
-/// creation on a device that lacks the capability - a symptom that points at the shader, not at the cache
+/// Source plus optional device features since TOAST_RAY_QUERY changes the SPIR-V
 auto sourceHash(const std::string& source) -> uint64_t {
 	return ShaderCache::fnv1a(source.data(), source.size()) ^ (ShaderCompiler::featureHash() * 0x100000001b3ull);
 }
@@ -121,7 +114,6 @@ auto ShaderCache::isDiskCacheFreshLocked(toast::UID uid, uint64_t source_hash) -
 		return false;
 	}
 
-	// Any changed or missing dependency invalidates the cache
 	for (const auto& [dep_uri, dep_hash] : entry.value("deps", nlohmann::json::object()).items()) {
 		auto dep_bytes = assets::AssetManager::get().tryLoadBytes(dep_uri);
 		if (!dep_bytes || hashToHex(fnv1a(dep_bytes->data(), dep_bytes->size())) != dep_hash.get<std::string>()) {
@@ -189,14 +181,12 @@ auto ShaderCache::compileLocked(toast::UID uid) -> std::shared_ptr<const Entry> 
 
 	auto& manager = assets::AssetManager::get();
 
-	// SPIR-V blob
 	std::vector<uint8_t> spirv_bytes(entry->spirv.size());
 	std::memcpy(spirv_bytes.data(), entry->spirv.data(), entry->spirv.size());
 	if (!manager.saveBytes(spirvUri(uid), spirv_bytes)) {
 		TOAST_ERROR("Render", "Failed to write {}", spirvUri(uid));
 	}
 
-	// Reflection + metadata json
 	nlohmann::json deps_json = nlohmann::json::object();
 	nlohmann::json cache_json {
 	  {	    "format",             k_cache_format},
@@ -211,7 +201,6 @@ auto ShaderCache::compileLocked(toast::UID uid) -> std::shared_ptr<const Entry> 
 		TOAST_ERROR("Render", "Failed to write {}", reflectionUri(uid));
 	}
 
-	// Hash index entry, with current hashes for every dependency
 	loadHashIndexLocked();
 	for (const auto& dep_uri : entry->dependencies) {
 		if (auto dep_bytes = manager.tryLoadBytes(dep_uri)) {
@@ -302,7 +291,6 @@ auto ShaderCache::onShaderSourceReloaded(toast::UID uid) -> bool {
 
 	auto entry = compileLocked(uid);
 	if (!entry) {
-		// Keep the last-good entry so the renderer can keep drawing
 		TOAST_WARN("Render", "Hot reload of shader {} failed, keeping previous SPIR-V", uid.get());
 		return false;
 	}

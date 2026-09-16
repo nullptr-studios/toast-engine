@@ -9,16 +9,13 @@ if (BUILD_TESTING)
 	add_executable(toast_tests ${TEST_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/test_runner.cpp")
 	target_include_directories(toast_tests BEFORE PRIVATE ${CMAKE_SOURCE_DIR}/engine/src)
 	target_include_directories(toast_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-	# HACK: DARIO SHOULD FUCKING HAVE SOME INCLUDES ON THE SOURCE FILES RATHER THAN THE HEADERS
+	# HACK DARIO SHOULD FUCKING HAVE SOME INCLUDES ON THE SOURCE FILES RATHER THAN THE HEADERS
 	target_include_directories(toast_tests PRIVATE ${CMAKE_SOURCE_DIR}/engine)
 	target_include_directories(toast_tests PRIVATE ${CMAKE_SOURCE_DIR}/engine/external/inc)
-	# slang is linked directly, not just through the engine: renderer/04-import-reflection pins a Slang
-	# reflection-API contract the pipeline layout depends on, so it calls the API itself. The engine's
-	# find_package does not carry into this directory, hence the repeat
+	# renderer/04-import-reflection calls the Slang API directly and the engine find_package does not carry here
 	find_package(slang CONFIG REQUIRED)
 	target_link_libraries(toast_tests PRIVATE toast_engine RmlUi::RmlUi slang::slang)
 	target_compile_definitions(toast_tests PRIVATE UNIT_TESTING TRACY_NO_INVARIANT_CHECK=1)
-	# Lets a test read the shipped core assets (meshes, shaders) without guessing at a relative path
 	target_compile_definitions(toast_tests PRIVATE TOAST_CORE_ASSETS_DIR="${CMAKE_SOURCE_DIR}/engine/assets")
 	target_compile_definitions(toast_tests PRIVATE TOAST_TEST_CONTENT_DIR="${CMAKE_SOURCE_DIR}/tools/test_content")
 

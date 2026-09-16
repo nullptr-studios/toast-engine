@@ -1,6 +1,6 @@
 /// @file cluster_lighting_pass.cpp
 /// @author dario
-/// @date 18/07/2026.
+/// @date 18/07/2026
 
 #include "cluster_lighting_pass.hpp"
 
@@ -119,7 +119,6 @@ void ClusterLightingPass::createResources(const renderer::VulkanCore& core) {
 		));
 		setDebugName(core, **fb.cluster_light_grid.gpu_buffer, std::format("ClusterLightingPass ClusterLightGrid[{}]", i));
 
-		// Debug-visualization-only readback copy - see getClusterLightGridCounts()
 		fb.cluster_light_grid_readback.gpu_buffer.emplace(
 		    createBuffer(core, cluster_light_grid_size, vk::BufferUsageFlagBits::eTransferDst, true)
 		);
@@ -216,9 +215,7 @@ void ClusterLightingPass::dispatch(vk::CommandBuffer cmd, uint32_t frame_index) 
 	cmd.bindPipeline(vk::PipelineBindPoint::eCompute, m_build_clusters_pipeline.getPipeline());
 	cmd.dispatch(group_count, 1, 1);
 
-	// clusterBuildMain writes ClusterAABB, lightCullMain reads it right after - both dispatches are in the
-	// same command buffer on the same queue, but that alone doesn't order shader memory accesses; needs
-	// its own explicit barrier
+	// Same command buffer does not order shader memory access so this needs its own barrier
 	auto& fb = m_frame_buffers[frame_index];
 	const vk::BufferMemoryBarrier barrier(
 	    vk::AccessFlagBits::eShaderWrite,
@@ -236,8 +233,6 @@ void ClusterLightingPass::dispatch(vk::CommandBuffer cmd, uint32_t frame_index) 
 	cmd.bindPipeline(vk::PipelineBindPoint::eCompute, m_cull_lights_pipeline.getPipeline());
 	cmd.dispatch(group_count, 1, 1);
 
-	// Debug-visualization-only: copy ClusterLightGrid out to a host-visible buffer so DebugPass's ImGui
-	// overlay can read actual per-cluster counts on the CPU. Not on the real shading path at all
 	if (fb.cluster_light_grid_readback.gpu_buffer.has_value()) {
 		const vk::BufferMemoryBarrier to_transfer(
 		    vk::AccessFlagBits::eShaderWrite,

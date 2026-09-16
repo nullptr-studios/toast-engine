@@ -26,3 +26,6 @@ add_dependencies(editor dummy_game)
 add_dependencies(editor packer)
 add_dependencies(editor unpacker)
 add_dependencies(editor pack_viewer)
+
+# Native editor crashes launch it
+add_dependencies(editor crash_reporter)

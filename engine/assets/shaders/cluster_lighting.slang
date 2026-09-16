@@ -1,22 +1,21 @@
 struct ClusterParams
 {
     float4x4 inverseProjection;
-    uint4 clusterDims;         // x,y,z dims, w = maxLightsPerCluster
-    float4 screenSizeNearFar;  // x,y screen dims, z near, w far
+    uint4 clusterDims;         // xyz dims w max lights per cluster
+    float4 screenSizeNearFar;  // xy screen size z near w far
     uint lightCount;
     float3 _pad0;
 };
 
-// Only the first two members are read here, but this indexes the same buffer mesh.slang does, so the whole
-// layout - stride included - has to match renderer::VulkanRenderer::GpuLight exactly
+// Layout and stride must match VulkanRenderer::GpuLight
 struct GpuLight
 {
-    float4 worldPosRange;   // xyz world-space position, w = attenuation range
-    float4 viewPosType;     // xyz view-space position (culling only), w = type (0=point,1=spot)
-    float4 colorIntensity;  // rgb color, a intensity
-    float4 directionPad;    // xyz world-space direction (spot only), w = shadow layer index, -1 = not casting
-    float4 coneAngles;      // x = cos(outer), y = cos(inner), z = shadow near, w = shadow far
-    float4 shadowAtlas;     // x = fraction of the shadow layer this light rendered into
+    float4 worldPosRange;
+    float4 viewPosType;     // w type 0 point 1 spot
+    float4 colorIntensity;
+    float4 directionPad;    // w shadow layer or -1
+    float4 coneAngles;      // x cos outer y cos inner z shadow near w shadow far
+    float4 shadowAtlas;     // x fraction of the shadow layer rendered
     float4x4 shadowViewProjection;
 };
 
@@ -41,11 +40,6 @@ RWStructuredBuffer<uint> gClusterLightGrid;
 [[vk::binding(4,0)]]
 RWStructuredBuffer<uint> gLightIndexList;
 
-// Unprojects a pixel-space screen coordinate into a view-space point lying on the ray from the eye
-// (view-space origin) through that pixel. Any NDC z value works here - a perspective matrix maps lines
-// through the eye to lines through the origin, so the perspective divide always lands on the same
-// eye-centered ray regardless of which z is picked. 0.0 matches this engine's zero-to-one Vulkan depth
-// convention (near plane), but the choice is otherwise arbitrary
 float3 screenToViewRayPoint(float2 screenPixel)
 {
     float2 texCoord = screenPixel / gParams.screenSizeNearFar.xy;
@@ -55,7 +49,6 @@ float3 screenToViewRayPoint(float2 screenPixel)
     return view.xyz / view.w;
 }
 
-// Intersects the line through the view-space eye (origin) and B with the plane z = zDistance
 float3 lineIntersectionToZPlane(float3 B, float zDistance)
 {
     float t = zDistance / B.z;
@@ -97,8 +90,6 @@ void clusterBuildMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     float near = gParams.screenSizeNearFar.z;
     float far = gParams.screenSizeNearFar.w;
 
-    // Camera looks down -Z in view space (glm::lookAt, right-handed), so both slice bounds are negative;
-    // logarithmic Z-slicing per the standard Doom2016/Olsson-Assarsson formula
     float clusterNearZ = -(near * pow(far / near, float(k) / float(dimZ)));
     float clusterFarZ = -(near * pow(far / near, float(k + 1) / float(dimZ)));
 
@@ -114,9 +105,6 @@ void clusterBuildMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     gClusterAABBs[clusterIndex].maxPoint = float4(maxAABB, 0.0);
 }
 
-// One thread per cluster, looping serially over all lights - not one-thread-per-light scattering into
-// clusters, which would need atomics and reintroduce a "was the counter reset before this frame" bug.
-// Fixed-stride-per-cluster indices avoid that entirely, at the cost of preallocated VRAM
 [numthreads(64, 1, 1)]
 [shader("compute")]
 void lightCullMain(uint3 dispatchThreadID : SV_DispatchThreadID)
@@ -142,7 +130,6 @@ void lightCullMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 
         if (sqDistPointAABB(lightViewPos, aabbMin, aabbMax) <= (radius * radius))
         {
-            // Guard the write so an overflowing cluster can't corrupt its neighbor's index-list slice
             if (count < maxLightsPerCluster)
             {
                 gLightIndexList[indexBase + count] = lightIndex;
@@ -151,6 +138,5 @@ void lightCullMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         }
     }
 
-    // Clamp the stored count too, so the fragment shader can't read past what was actually written
     gClusterLightGrid[clusterIndex] = min(count, maxLightsPerCluster);
 }

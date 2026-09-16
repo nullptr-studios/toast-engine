@@ -6,12 +6,14 @@
 #include <limits>
 #include <toast/assets/assets.hpp>
 #include <toast/audio/audio_event.hpp>
+#include <toast/log.hpp>
 #include <toast/time.hpp>
 
 namespace toast {
 
 void AudioEmitterBase::play() {
 	if (!m_event.hasValue()) {
+		TOAST_WARN("Audio", "{} ({}) has no audio event to play", name(), uid());
 		return;
 	}
 	auto& sys = audio::AudioSystem::get();
@@ -175,7 +177,8 @@ auto AudioEmitterBase::emitterUp() -> glm::vec3 {
 }
 
 void AudioEmitterBase::onEnable() {
-	if (m_play_on_enable) {
+	// Opening a scene in the editor runs onEnable too; only a running game should start sounds
+	if (m_play_on_enable && !(owner() && owner()->isEditing())) {
 		play();
 	}
 }

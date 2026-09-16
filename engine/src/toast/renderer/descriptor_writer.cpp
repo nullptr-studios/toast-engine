@@ -41,8 +41,7 @@ auto DescriptorWriter::imageArray(
 		return *this;
 	}
 
-	// Copied into storage this owns: the caller's span is typically a local built in a loop, and the write
-	// has to outlive it until flush()
+	// Copied since the write outlives the caller span until flush()
 	const auto& stored = m_image_infos.emplace_back(infos.begin(), infos.end());
 	m_writes.emplace_back(set, binding, 0, static_cast<uint32_t>(stored.size()), type, stored.data());
 	return *this;
@@ -54,7 +53,6 @@ auto DescriptorWriter::accelerationStructure(vk::DescriptorSet set, uint32_t bin
 		return *this;
 	}
 
-	// Two levels of stability: the pNext struct has to survive, and so does the handle it points at
 	const auto& stored = m_structures.emplace_back(structure);
 
 	auto& structure_write = m_structure_writes.emplace_back();

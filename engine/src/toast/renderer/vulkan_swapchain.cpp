@@ -1,6 +1,6 @@
 /// @file VulkanSwapchain.cpp
 /// @author dario
-/// @date 16/05/2026.
+/// @date 16/05/2026
 
 #include "vulkan_swapchain.hpp"
 
@@ -84,14 +84,18 @@ auto VulkanSwapchain::create(vk::Extent2D preferred_extent) -> void {
 	const auto capabilities = m_core->getPhysicalDevice().getSurfaceCapabilitiesKHR(*m_surface);
 	if (capabilities.maxImageExtent.width == 0 || capabilities.maxImageExtent.height == 0 ||
 	    capabilities.maxImageArrayLayers == 0) {
-		TOAST_ERROR(
-		    "Render",
-		    "Invalid surface capabilities: maxExtent {}x{}, maxArrayLayers {}",
-		    capabilities.maxImageExtent.width,
-		    capabilities.maxImageExtent.height,
-		    capabilities.maxImageArrayLayers
-		);
-		TOAST_CRITICAL("Render", "Invalid surface capabilities for swapchain creation!");
+		if (m_swapchain == nullptr) {
+			TOAST_ERROR(
+			    "Render",
+			    "Invalid surface capabilities: maxExtent {}x{}, maxArrayLayers {}",
+			    capabilities.maxImageExtent.width,
+			    capabilities.maxImageExtent.height,
+			    capabilities.maxImageArrayLayers
+			);
+			TOAST_CRITICAL("Render", "Invalid surface capabilities for swapchain creation!");
+		}
+		TOAST_WARN("Render", "Surface has no size (window minimized?); keeping the {}x{} swapchain", m_extent.width, m_extent.height);
+		return;
 	}
 
 	const auto formats = m_core->getPhysicalDevice().getSurfaceFormatsKHR(*m_surface);
@@ -214,17 +218,14 @@ auto VulkanSwapchain::selectSurfaceFormat(const std::vector<vk::SurfaceFormatKHR
 }
 
 auto VulkanSwapchain::selectPresentMode(const std::vector<vk::PresentModeKHR>& modes) const -> vk::PresentModeKHR {
-	// Prefer immediate
 	if (std::find(modes.begin(), modes.end(), vk::PresentModeKHR::eImmediate) != modes.end()) {
 		return vk::PresentModeKHR::eImmediate;
 	}
 
-	// Prefer mailbox triple-buffering next
 	if (std::find(modes.begin(), modes.end(), vk::PresentModeKHR::eMailbox) != modes.end()) {
 		return vk::PresentModeKHR::eMailbox;
 	}
 
-	// Fall back to FIFO vsync
 	return vk::PresentModeKHR::eFifo;
 }
 

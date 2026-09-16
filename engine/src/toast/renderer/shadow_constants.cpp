@@ -28,8 +28,7 @@ void setCascadeResolution(uint32_t resolution) {
 }
 
 void setPunctualResolution(uint32_t resolution) {
-	// punctualShadowResolution() walks powers of two up from the minimum, so a ceiling below it would return a
-	// resolution larger than the layer
+	// A ceiling below the minimum would exceed the layer
 	g_punctual_resolution.store(
 	    resolution < k_min_punctual_resolution ? k_min_punctual_resolution : resolution, std::memory_order_relaxed
 	);

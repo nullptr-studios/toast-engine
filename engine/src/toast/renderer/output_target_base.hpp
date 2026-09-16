@@ -29,11 +29,9 @@ public:
 	[[nodiscard]]
 	virtual auto getColorAttachment(uint32_t index) const -> const vk::raii::ImageView& = 0;
 
-	/// @brief Acquires the next image: a real swapchain acquire, or an index rotation for off-screen targets
 	virtual auto acquireNextImage(uint64_t timeout, vk::Semaphore image_available, vk::Fence in_flight_fence)
 	    -> vk::ResultValue<uint32_t> = 0;
 
-	/// @brief Presents @p image_index. Off-screen targets publish via onImageRenderComplete() instead
 	virtual auto present(uint32_t image_index, vk::Semaphore render_finished) -> vk::Result = 0;
 
 	[[nodiscard]]
@@ -41,13 +39,16 @@ public:
 		return true;
 	}
 
-	/// @brief Transitions @p image_index out of `eColorAttachmentOptimal` into whatever the target needs next
 	virtual void recordFinalize(vk::CommandBuffer command_buffer, uint32_t image_index) = 0;
 
-	/// Called once the GPU work for @p image_index has completed; off-screen targets publish the frame here
 	virtual void onImageRenderComplete(uint32_t image_index) { (void)image_index; }
 
 	virtual void recreate(vk::Extent2D extent) = 0;
+
+	[[nodiscard]]
+	virtual auto isPresentable() const -> bool {
+		return true;
+	}
 };
 
 }    // namespace renderer

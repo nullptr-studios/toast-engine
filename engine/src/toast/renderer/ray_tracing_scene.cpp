@@ -9,12 +9,30 @@
 #include "vulkan_core.hpp"
 #include "vulkan_debug.hpp"
 
+#include <algorithm>
 #include <cstring>
 #include <format>
 #include <toast/log.hpp>
 #include <tracy/Tracy.hpp>
 
 namespace renderer {
+
+namespace {
+
+/// A refit is only valid for the same structures in the same order
+auto sameTopology(const std::vector<RayTracingScene::Instance>& a, const std::vector<RayTracingScene::Instance>& b) -> bool {
+	return std::ranges::equal(a, b, [](const RayTracingScene::Instance& x, const RayTracingScene::Instance& y) {
+		return x.blas_address == y.blas_address && x.custom_index == y.custom_index && x.mask == y.mask;
+	});
+}
+
+auto sameTransforms(const std::vector<RayTracingScene::Instance>& a, const std::vector<RayTracingScene::Instance>& b) -> bool {
+	return std::ranges::equal(a, b, [](const RayTracingScene::Instance& x, const RayTracingScene::Instance& y) {
+		return x.transform == y.transform;
+	});
+}
+
+}    // namespace
 
 RayTracingScene::RayTracingScene(const VulkanCore& core, uint32_t frames_in_flight) : m_core(&core) {
 	ZoneScoped;
@@ -29,7 +47,6 @@ RayTracingScene::RayTracingScene(const VulkanCore& core, uint32_t frames_in_flig
 	for (uint32_t i = 0; i < frames_in_flight; ++i) {
 		auto& frame = m_frames[i];
 
-		// Host-visible: rewritten every frame from the CPU, and a staging copy would cost more than the write
 		vk::BufferCreateInfo instance_ci {};
 		instance_ci.size = sizeof(vk::AccelerationStructureInstanceKHR) * k_max_instances;
 		instance_ci.usage =
@@ -52,8 +69,6 @@ void RayTracingScene::beginFrame() {
 }
 
 void RayTracingScene::addInstance(const Instance& instance) {
-	// Dropped rather than grown mid-frame: the instance buffer is sized once, and reallocating it while a
-	// previous frame may still be tracing against it is not something a capacity overrun should trigger
 	if (instance.blas_address == 0 || m_instances.size() >= k_max_instances) {
 		return;
 	}
@@ -67,24 +82,42 @@ auto RayTracingScene::getAccelerationStructure(uint32_t frame_index) const -> vk
 	return *m_frames[frame_index].tlas;
 }
 
-void RayTracingScene::build(vk::CommandBuffer cmd, uint32_t frame_index) {
+void RayTracingScene::build(vk::CommandBuffer cmd, uint32_t frame_index, bool tracing) {
 	ZoneScoped;
 	if (m_core == nullptr || frame_index >= m_frames.size() || m_build_acceleration_structures == nullptr) {
 		return;
 	}
 
 	auto& frame = m_frames[frame_index];
-	frame.built_instances = 0;
 
 	if (m_instances.empty() || !frame.instance_buffer.has_value()) {
+		frame.built_instances = 0;
+		frame.built.clear();
+		return;
+	}
+
+	enum class Work : uint8_t {
+		none,
+		refit,
+		build
+	};
+
+	Work work = Work::build;
+	if (frame.built_instances > 0 && sameTopology(frame.built, m_instances)) {
+		const bool changed = std::ranges::any_of(m_instances, &Instance::deforming) || !sameTransforms(frame.built, m_instances);
+		if (!changed || !tracing) {
+			work = Work::none;
+		} else if (frame.refits_since_build < k_max_refits_before_rebuild) {
+			work = Work::refit;
+		}
+	}
+	if (work == Work::none) {
 		return;
 	}
 
 	const auto& device = m_core->getDevice();
 
-	// Pack into the layout the driver reads. The transform is the top 3x4 of the world matrix in *row-major*
-	// order, which is the transpose of how glm stores it - getting this wrong scatters geometry rather than
-	// failing, so it is written out explicitly rather than memcpy'd
+	// Row major which is the transpose of glm storage
 	auto* mapped = static_cast<vk::AccelerationStructureInstanceKHR*>(frame.instance_buffer->getAllocation().getInfo().pMappedData);
 	if (mapped == nullptr) {
 		return;
@@ -101,7 +134,7 @@ void RayTracingScene::build(vk::CommandBuffer cmd, uint32_t frame_index) {
 		out.instanceCustomIndex = source.custom_index & 0xFFFFFFu;
 		out.mask = source.mask;
 		out.instanceShaderBindingTableRecordOffset = 0;
-		// Ray query has no any-hit stage to run, so every instance is opaque as far as traversal is concerned
+		// No any-hit stage with ray query
 		out.flags = static_cast<uint8_t>(vk::GeometryInstanceFlagBitsKHR::eForceOpaque);
 		out.accelerationStructureReference = source.blas_address;
 		mapped[i] = out;
@@ -120,43 +153,46 @@ void RayTracingScene::build(vk::CommandBuffer cmd, uint32_t frame_index) {
 
 	vk::AccelerationStructureBuildGeometryInfoKHR build {};
 	build.type = vk::AccelerationStructureTypeKHR::eTopLevel;
-	build.flags = vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace;
-	build.mode = vk::BuildAccelerationStructureModeKHR::eBuild;
+	// eAllowUpdate or later refits are invalid
+	build.flags =
+	    vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace | vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate;
+	build.mode =
+	    work == Work::refit ? vk::BuildAccelerationStructureModeKHR::eUpdate : vk::BuildAccelerationStructureModeKHR::eBuild;
 	build.geometryCount = 1;
 	build.pGeometries = &geometry;
 
 	const auto sizes =
 	    device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, build, instance_count);
 
-	// Reallocated only when it has to grow. The instance count changes every frame in a destructible scene,
-	// and rebuilding the backing buffer each time would churn allocations for no benefit
-	const bool needs_storage =
-	    !frame.tlas_buffer.has_value() || frame.tlas_buffer->getAllocation().getInfo().size < sizes.accelerationStructureSize;
-	if (needs_storage) {
-		vk::BufferCreateInfo tlas_ci {};
-		tlas_ci.size = sizes.accelerationStructureSize;
-		tlas_ci.usage = vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress;
-		tlas_ci.sharingMode = vk::SharingMode::eExclusive;
+	if (work == Work::build) {
+		const bool needs_storage =
+		    !frame.tlas_buffer.has_value() || frame.tlas_buffer->getAllocation().getInfo().size < sizes.accelerationStructureSize;
+		if (needs_storage) {
+			vk::BufferCreateInfo tlas_ci {};
+			tlas_ci.size = sizes.accelerationStructureSize;
+			tlas_ci.usage = vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress;
+			tlas_ci.sharingMode = vk::SharingMode::eExclusive;
 
-		vma::AllocationCreateInfo tlas_alloc {};
-		tlas_alloc.usage = vma::MemoryUsage::eAutoPreferDevice;
+			vma::AllocationCreateInfo tlas_alloc {};
+			tlas_alloc.usage = vma::MemoryUsage::eAutoPreferDevice;
 
-		frame.tlas = nullptr;
-		frame.tlas_buffer.emplace(m_core->getAllocator().createBuffer(tlas_ci, tlas_alloc));
-		setDebugName(*m_core, **frame.tlas_buffer, std::format("RayTracingScene TLAS[{}]", frame_index));
+			frame.tlas = nullptr;
+			frame.tlas_buffer.emplace(m_core->getAllocator().createBuffer(tlas_ci, tlas_alloc));
+			setDebugName(*m_core, **frame.tlas_buffer, std::format("RayTracingScene TLAS[{}]", frame_index));
+		}
+
+		if (needs_storage || *frame.tlas == VK_NULL_HANDLE) {
+			vk::AccelerationStructureCreateInfoKHR as_ci {};
+			as_ci.buffer = **frame.tlas_buffer;
+			as_ci.size = sizes.accelerationStructureSize;
+			as_ci.type = vk::AccelerationStructureTypeKHR::eTopLevel;
+			frame.tlas = vk::raii::AccelerationStructureKHR(device, as_ci);
+		}
 	}
 
-	if (needs_storage || *frame.tlas == VK_NULL_HANDLE) {
-		vk::AccelerationStructureCreateInfoKHR as_ci {};
-		as_ci.buffer = **frame.tlas_buffer;
-		as_ci.size = sizes.accelerationStructureSize;
-		as_ci.type = vk::AccelerationStructureTypeKHR::eTopLevel;
-		frame.tlas = vk::raii::AccelerationStructureKHR(device, as_ci);
-	}
-
-	// Same alignment requirement as a BLAS build - a misaligned scratch address is undefined behaviour that
-	// surfaces as a device loss later rather than an error here
-	const vk::DeviceSize needed_scratch = m_core->getScratchAllocationSize(sizes.buildScratchSize);
+	// Scratch must be aligned or the device is lost later
+	const vk::DeviceSize needed_scratch =
+	    m_core->getScratchAllocationSize(work == Work::refit ? sizes.updateScratchSize : sizes.buildScratchSize);
 	if (!frame.scratch.has_value() || frame.scratch->getAllocation().getInfo().size < needed_scratch) {
 		vk::BufferCreateInfo scratch_ci {};
 		scratch_ci.size = needed_scratch;
@@ -169,9 +205,11 @@ void RayTracingScene::build(vk::CommandBuffer cmd, uint32_t frame_index) {
 	}
 
 	build.dstAccelerationStructure = *frame.tlas;
+	if (work == Work::refit) {
+		build.srcAccelerationStructure = *frame.tlas;
+	}
 	build.scratchData.deviceAddress = m_core->getAlignedScratchAddress(**frame.scratch);
 
-	// The build reads the instance buffer this frame just wrote from the host
 	vk::MemoryBarrier2 host_write {};
 	host_write.srcStageMask = vk::PipelineStageFlagBits2::eHost;
 	host_write.srcAccessMask = vk::AccessFlagBits2::eHostWrite;
@@ -194,7 +232,6 @@ void RayTracingScene::build(vk::CommandBuffer cmd, uint32_t frame_index) {
 	    &range_ptr
 	);
 
-	// Anything tracing this frame has to see the finished structure
 	vk::MemoryBarrier2 build_done {};
 	build_done.srcStageMask = vk::PipelineStageFlagBits2::eAccelerationStructureBuildKHR;
 	build_done.srcAccessMask = vk::AccessFlagBits2::eAccelerationStructureWriteKHR;
@@ -207,6 +244,8 @@ void RayTracingScene::build(vk::CommandBuffer cmd, uint32_t frame_index) {
 	cmd.pipelineBarrier2(build_dependency);
 
 	frame.built_instances = instance_count;
+	frame.built = m_instances;
+	frame.refits_since_build = work == Work::refit ? frame.refits_since_build + 1 : 0;
 }
 
 }

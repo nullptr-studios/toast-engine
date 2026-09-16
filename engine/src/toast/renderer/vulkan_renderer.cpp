@@ -35,6 +35,8 @@
 #include <toast/log.hpp>
 #include <toast/thread_pool.hpp>
 #include <toast/time.hpp>
+#include <toast/voxel/runtime_pool.hpp>
+#include <toast/voxel/volume_bounds.hpp>
 #include <toast/window/window_events.hpp>
 #include <toast/world/animation_player.hpp>
 #include <toast/world/camera.hpp>
@@ -45,6 +47,7 @@
 #include <toast/world/post_process_volume.hpp>
 #include <toast/world/reflection_probe.hpp>
 #include <toast/world/spotlight.hpp>
+#include <toast/world/voxel_node.hpp>
 #include <toast/world/workspace_events.hpp>
 #include <tracy/Tracy.hpp>
 #include <tuple>
@@ -54,8 +57,6 @@
 #include <external/inc/nsight/NGFX_GraphicsCapture_Vulkan.h>
 #endif
 
-// winnt.h defines MemoryBarrier as an intrinsic, which then expands inside vk::MemoryBarrier. Must stay
-// below *every* include - whichever header pulls in windows.h wins
 #ifdef MemoryBarrier
 #undef MemoryBarrier
 #endif
@@ -95,27 +96,18 @@ auto transitionImageLayout(
 	command_buffer.pipelineBarrier(src_stage_mask, dst_stage_mask, {}, {}, {}, barrier);
 }
 
-/// @brief One fitted directional cascade, see fitDirectionalCascade()
 struct DirectionalCascadeFit {
 	glm::mat4 view_projection {1.0f};
-	glm::vec4 cull_sphere {0.0f};     ///< xyz centre, w radius; covers the slice plus its caster back-off
-	float depth_bias = 0.0f;          ///< in this cascade's normalized depth units
-	float texel_world_size = 0.0f;    ///< world size of one texel, what the normal offset is scaled by
+	glm::vec4 cull_sphere {0.0f};
+	float depth_bias = 0.0f;
+	float texel_world_size = 0.0f;
 };
 
-/// @brief Extra depth range behind a fitted cascade, so geometry between the light and the visible slice
-/// (the wall casting the shadow you're standing in) still reaches the map
 constexpr float k_caster_back_off = 100.0f;
 
-/// @brief Fits an orthographic light frustum around one slice of the camera's frustum
-///
-/// Sphere-bounded: a sphere is rotation-invariant, so turning the camera cannot resize the fit and make
-/// every shadow edge crawl. The sub-texel remainder is snapped to the texel grid
 auto fitDirectionalCascade(
     const toast::Camera& camera, float aspect, glm::vec3 light_direction, float split_near, float split_far, uint32_t resolution
 ) -> DirectionalCascadeFit {
-	// Small deliberately: bias shifts along the light direction, so a grazing receiver slides its shadow by
-	// bias / tan(elevation). ShadowPass's slope-scaled rasterizer bias is what actually carries acne
 	constexpr float k_world_depth_bias = 0.01f;
 
 	const float tan_half_fov = std::tan(glm::radians(camera.fov) * 0.5f);
@@ -128,7 +120,6 @@ auto fitDirectionalCascade(
 		const float half_width = half_height * aspect;
 		for (const float sx : {-1.0f, 1.0f}) {
 			for (const float sy : {-1.0f, 1.0f}) {
-				// Camera looks down -Z in view space (glm::lookAt, right-handed)
 				corners[corner_index++] = glm::vec3(inverse_view * glm::vec4(sx * half_width, sy * half_height, -split, 1.0f));
 			}
 		}
@@ -144,7 +135,6 @@ auto fitDirectionalCascade(
 	for (const auto& corner : corners) {
 		radius = std::max(radius, glm::distance(center, corner));
 	}
-	// Quantized so floating-point noise in the corner maths can't jitter the fitted size frame to frame
 	radius = std::ceil(radius * 16.0f) / 16.0f;
 	radius = std::max(radius, 0.001f);
 
@@ -156,12 +146,9 @@ auto fitDirectionalCascade(
 
 	const float depth_extent = (2.0f * radius) + k_caster_back_off;
 
-	// Explicitly zero-to-one: GLM_FORCE_DEPTH_ZERO_TO_ONE is not defined, so plain glm::ortho emits [-1,1]
-	// and Vulkan clips every caster in front of the fitted sphere's midpoint
+	// orthoRH_ZO since GLM_FORCE_DEPTH_ZERO_TO_ONE is not defined
 	glm::mat4 light_projection = glm::orthoRH_ZO(-radius, radius, -radius, radius, 0.0f, depth_extent);
 
-	// Texel snap: round the light-space origin onto the shadow map's texel grid and fold the correction back
-	// into the projection's translation
 	const float half_resolution = static_cast<float>(resolution) * 0.5f;
 	glm::vec4 shadow_origin = light_projection * light_view * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	shadow_origin *= half_resolution;
@@ -172,17 +159,12 @@ auto fitDirectionalCascade(
 
 	return DirectionalCascadeFit {
 	  .view_projection = light_projection * light_view,
-	  // The slice grown by the back-off, so casters between it and the light survive. Looser than the
-	  // light-space box on purpose - this runs per instance per view
 	  .cull_sphere = glm::vec4(center, radius + k_caster_back_off),
 	  .depth_bias = k_world_depth_bias / depth_extent,
 	  .texel_world_size = 2.0f * radius / static_cast<float>(resolution),
 	};
 }
 
-/// @brief Splits the shadow range into cascade far-distances
-///
-/// Logarithmic equalizes texel density but puts the first split centimetres out, so it blends with uniform
 auto computeCascadeSplits(float near_plane, float far_plane) -> std::array<float, shadows::k_cascade_count> {
 	std::array<float, shadows::k_cascade_count> splits {};
 	const float range = far_plane - near_plane;
@@ -197,12 +179,10 @@ auto computeCascadeSplits(float near_plane, float far_plane) -> std::array<float
 	return splits;
 }
 
-/// @brief The six clip planes of @p view_projection, inward-facing and normalized
-///
-/// Gribb/Hartmann, [0,1] form - near is row 2 alone, not row3 + row2
+/// @brief Inward normalized frustum planes. With [0,1] clip depth near is row 2 alone
 auto extractFrustumPlanes(const glm::mat4& view_projection) -> std::array<glm::vec4, 6> {
 	const auto& m = view_projection;
-	// glm is column-major, so a "row" of the matrix is one component taken across the four columns
+	// glm is column major
 	const glm::vec4 row0(m[0][0], m[1][0], m[2][0], m[3][0]);
 	const glm::vec4 row1(m[0][1], m[1][1], m[2][1], m[3][1]);
 	const glm::vec4 row2(m[0][2], m[1][2], m[2][2], m[3][2]);
@@ -211,8 +191,6 @@ auto extractFrustumPlanes(const glm::mat4& view_projection) -> std::array<glm::v
 	std::array planes {row3 + row0, row3 - row0, row3 + row1, row3 - row1, row2, row3 - row2};
 
 	for (auto& plane : planes) {
-		// Normalized so the plane test yields a true signed distance, which is what lets it be compared
-		// against a radius rather than only against zero
 		const float length = glm::length(glm::vec3(plane));
 		if (length > 0.0f) {
 			plane /= length;
@@ -221,9 +199,6 @@ auto extractFrustumPlanes(const glm::mat4& view_projection) -> std::array<glm::v
 	return planes;
 }
 
-/// @returns false only when the sphere is wholly outside at least one plane
-///
-/// Deliberately conservative - an extra draw is cheaper than a hole in the image
 auto sphereInFrustum(const std::array<glm::vec4, 6>& planes, const glm::vec3& center, float radius) -> bool {
 	for (const auto& plane : planes) {
 		if (glm::dot(glm::vec3(plane), center) + plane.w < -radius) {
@@ -233,32 +208,21 @@ auto sphereInFrustum(const std::array<glm::vec4, 6>& planes, const glm::vec3& ce
 	return true;
 }
 
-/// @brief Where a probe's capture is cached, keyed by the node's serialized uid
-///
-/// Not the registration index: that depends on creation order, so it would pair a probe with another's
-/// capture the moment the scene changed
 auto probeCacheUri(const toast::ReflectionProbe& probe) -> std::string {
 	return std::format("cache://probes/{}.tprobe", static_cast<std::string>(probe.uid()));
 }
 
-/// @brief Where a volume's baked coefficients live, keyed by the node's uid for the same reason
 auto irradianceCacheUri(const toast::IrradianceVolume& volume) -> std::string {
 	return std::format("cache://irradiance/{}.tsh", static_cast<std::string>(volume.uid()));
 }
 
-/// @brief Whether two grids describe the same probe positions
-///
-/// Tolerant - a corner derived from a world transform drifts in the last bits, and that is not a re-bake
 auto sameGrid(const ShGridKey& a, const ShGridKey& b) -> bool {
 	constexpr float k_tolerance = 1e-3f;
 	return a.counts == b.counts && glm::all(glm::lessThan(glm::abs(a.min_corner - b.min_corner), glm::vec3(k_tolerance))) &&
 	       glm::all(glm::lessThan(glm::abs(a.extents - b.extents), glm::vec3(k_tolerance)));
 }
 
-/// @brief Six cube-face bases, in the layer order lighting.slang's faceFromDirection() assumes
-///
-/// @warning Shadow lookups only, *not* interchangeable with renderer::cubeFaceBasis(). A point shadow only
-///          needs the views to cover the sphere; a sampled cubemap has no such freedom
+/// @warning Not interchangeable with cubeFaceBasis()
 auto shadowCubeFaceBasis(uint32_t face) -> std::pair<glm::vec3, glm::vec3> {
 	switch (face) {
 		case 0:
@@ -281,7 +245,6 @@ auto shadowCubeFaceBasis(uint32_t face) -> std::pair<glm::vec3, glm::vec3> {
 			  {0.0f, -1.0f, 0.0f},
         {0.0f,  0.0f, 1.0f}
 			};
-		// Looking straight along Z needs a different up vector, or lookAt degenerates
 		case 4:
 			return {
 			  {0.0f, 0.0f, 1.0f},
@@ -316,7 +279,6 @@ void clearCachedAssetHandles() {
 	g_light_icons_resolved = {};
 }
 
-/// @brief The camera body drawn in the editor viewport for every scene camera
 auto cameraGizmoMesh() -> const assets::Handle<assets::Mesh>& {
 	static constexpr std::string_view k_uri = "core://meshes/ToastEngineCam.tmesh";
 
@@ -331,9 +293,7 @@ auto cameraGizmoMesh() -> const assets::Handle<assets::Mesh>& {
 	return g_camera_gizmo_mesh;
 }
 
-/// @brief Debug billboard icon for a light, by type
 auto lightIcon(toast::LightType type) -> const assets::Handle<assets::Texture>& {
-	// Indexed by LightType (none/point/directional/spot/ambient)
 	static constexpr std::array<std::string_view, 5> k_uris {
 	  "",
 	  "core://textures/PointLight.ktx2",
@@ -362,8 +322,6 @@ auto lightIcon(toast::LightType type) -> const assets::Handle<assets::Texture>& 
 	return g_light_icons[index];
 }
 
-/// @brief Picks which Skin a skinned MeshNode uses out of its assigned Animation asset
-/// @returns nullptr if the node has no skin assigned, or the requested name doesn't exist in it
 auto pickSkin(const toast::MeshNode& node) -> const assets::Skin* {
 	const auto& skin_animation = node.getSkinAnimation();
 	if (!skin_animation.hasValue()) {
@@ -388,9 +346,6 @@ auto pickSkin(const toast::MeshNode& node) -> const assets::Skin* {
 	return nullptr;
 }
 
-/// @brief Walks up from @p node to the nearest toast::AnimationPlayer
-///
-/// A skinned mesh does not reference its skeleton - the nearest player above it owns the pose
 auto findAncestorAnimationPlayer(toast::Node& node) -> toast::AnimationPlayer* {
 	toast::Box<toast::Node> current = node.parent();
 	while (current.exists()) {
@@ -402,17 +357,10 @@ auto findAncestorAnimationPlayer(toast::Node& node) -> toast::AnimationPlayer* {
 	return nullptr;
 }
 
-/// @brief Identifies one posed skeleton within a frame: the same skin under the same player poses
-/// identically, however many MeshNodes reference it
 using SkinPoseKey = std::pair<const toast::AnimationPlayer*, const assets::Skin*>;
 
-/// @brief Maps a posed skeleton to its slice of RenderFrame::joint_matrices, so the second and later nodes
-/// sharing it reuse the slice instead of appending a duplicate - see resolveSkinning()
 using SkinPoseCache = std::map<SkinPoseKey, std::pair<uint32_t, uint32_t>>;
 
-/// @brief Resolves a skinned MeshNode's joint matrices and appends them to the shared pool
-///
-/// Leaves {0, 0} when any step is missing, so a half-wired mesh draws bind pose rather than garbage
 void resolveSkinning(
     toast::MeshNode& node, renderer::VulkanRenderer::RenderFrame& frame, uint32_t& joint_offset, uint32_t& joint_count,
     bool& pool_exhausted_warned, SkinPoseCache& pose_cache
@@ -427,8 +375,6 @@ void resolveSkinning(
 		return;
 	}
 
-	// A glTF character is one primitive per material, so four or five MeshNodes share a skin. Posing per node
-	// would spend a thousand of the pool's 4096 matrices on identical copies of one skeleton
 	if (const auto cached = pose_cache.find({player, skin}); cached != pose_cache.end()) {
 		joint_offset = cached->second.first;
 		joint_count = cached->second.second;
@@ -459,9 +405,6 @@ void resolveSkinning(
 	pose_cache.emplace(SkinPoseKey {player, skin}, std::pair {joint_offset, joint_count});
 }
 
-/// @brief Uploads one RGBA8 pixel into a fresh 1x1 texture, blocking
-///
-/// The white/black/flat-normal fallbacks an unbound Sampler2D slot resolves to
 void uploadSinglePixelTexture(
     const renderer::VulkanCore& core, renderer::VulkanTexture& texture, std::array<uint8_t, 4> pixel, std::string_view debug_name
 ) {
@@ -486,7 +429,6 @@ void uploadSinglePixelTexture(
 	setDebugName(core, *staging_buffer, std::format("{} StagingBuffer", debug_name));
 	std::memcpy(staging_buffer.getAllocation().getInfo().pMappedData, pixel.data(), pixel.size());
 
-	// Runs once at construction time, before the render thread exists, so a blocking one-time submit is fine
 	vk::raii::CommandPool one_shot_pool(device, vk::CommandPoolCreateInfo({}, core.getGraphicsQueueFamilyIndex()));
 	const vk::CommandBufferAllocateInfo cmd_alloc_info(*one_shot_pool, vk::CommandBufferLevel::ePrimary, 1);
 	auto cmd_buffers = device.allocateCommandBuffers(cmd_alloc_info);
@@ -562,12 +504,8 @@ VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTa
 
 	createPresentResources();
 
-	// After createFrameResources()/createDescriptorPool(): its descriptor set points at the frame UBO, the
-	// joint buffer and the instance buffer, all of which have to exist first
 	m_depth_prepass = std::make_unique<DepthPrepass>(*m_core, m_depth_format, m_output_target->getExtent());
 
-	// Same ordering requirement: its per-mesh descriptor sets point at the joint buffer, and it allocates from
-	// the descriptor pool
 	m_skinning_pass = std::make_unique<SkinningPass>(*m_core);
 
 	if (m_core->isRayTracingSupported()) {
@@ -580,14 +518,11 @@ VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTa
 		return true;
 	});
 
-	// Accumulated on the main thread and resolved into RenderFrame::imgui_input in tick(). Never consumes,
-	// so the gizmo drag system downstream still sees the same raw events
 	m_imgui_input_listener.subscribe<event::WindowMousePosition>([this](const auto& e) {
 		m_imgui_mouse_pos = {e.x, e.y};
 		return false;
 	});
 	m_imgui_input_listener.subscribe<event::WindowMouseButton>([this](const auto& e) {
-		// SDL numbers its buttons left/middle/right as 1/2/3, ImGui as 0/1/2
 		int idx = -1;
 		switch (e.button) {
 			case 1: idx = 0; break;
@@ -621,7 +556,6 @@ VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTa
 
 	createDefaultTexture();
 
-	// Material passes react to asset hot reload through atomic flags
 	m_asset_listener.subscribe<event::ClearUnusedAssets>([this] {
 		m_pending_material_pass_clear.store(true, std::memory_order_release);
 		return false;
@@ -634,7 +568,6 @@ VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTa
 		return false;
 	});
 	m_asset_listener.subscribe<event::MaterialAssetReloaded>([this](const event::MaterialAssetReloaded&) {
-		// A material file change can alter its shader vector or settings
 		std::lock_guard lock(m_pass_mutex);
 		for (auto& [material, pass] : m_material_passes) {
 			pass->markShadersDirty();
@@ -645,8 +578,7 @@ VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTa
 
 VulkanRenderer::~VulkanRenderer() {
 	stop();
-	// Before the AssetManager goes: these hold Handles, and releasing one after the Asset is gone is a
-	// read of freed memory. Engine's teardown order guarantees the assets are still here at this point
+
 	clearCachedAssetHandles();
 	instance = nullptr;
 }
@@ -688,7 +620,6 @@ auto VulkanRenderer::createUploadRing() -> void {
 
 	for (uint32_t i = 0; i < k_upload_slots; ++i) {
 		m_upload_slots[i].command_buffer = std::move(buffers[i]);
-		// Unsignaled: in_flight is what says a slot is busy, and a slot starts free
 		m_upload_slots[i].fence = vk::raii::Fence(m_core->getDevice(), vk::FenceCreateInfo {});
 		setDebugName(*m_core, *m_upload_slots[i].command_buffer, std::format("VulkanRenderer Upload[{}] CommandBuffer", i));
 		setDebugName(*m_core, *m_upload_slots[i].fence, std::format("VulkanRenderer Upload[{}] Fence", i));
@@ -782,8 +713,6 @@ auto VulkanRenderer::createDepthResources() -> void {
 	image_ci.arrayLayers = 1;
 	image_ci.samples = vk::SampleCountFlagBits::e1;
 	image_ci.tiling = vk::ImageTiling::eOptimal;
-	// Sampled too: screen-space passes reconstruct world position from depth rather than carrying a position
-	// buffer, which would be three more channels saying the same thing
 	image_ci.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled;
 	image_ci.sharingMode = vk::SharingMode::eExclusive;
 	image_ci.initialLayout = vk::ImageLayout::eUndefined;
@@ -816,13 +745,10 @@ void VulkanRenderer::createSceneColorResources() {
 		TOAST_CRITICAL("Render", "Toast Engine Error: VulkanRenderer requires a non-zero output extent for the scene target!");
 	}
 
-	// One definition for both - full-resolution, written by the world stage, sampled after. A second one
-	// drifting on extent fails as a rendering-scope mismatch a long way from the cause
 	const auto create = [&](SceneColorResources& target, vk::Format format, std::string_view label) {
 		target.view.reset();
 		target.image.reset();
 
-		// Sampled as well as rendered to: the post chain reads it back
 		const auto image_ci = colorTargetImageInfo(extent, format);
 
 		vma::AllocationCreateInfo allocation_ci {};
@@ -849,8 +775,6 @@ void VulkanRenderer::createSceneColorResources() {
 }
 
 void VulkanRenderer::createDescriptorPool() {
-	// One MaterialPass per unique root material - Bistro alone has 132. Exhausting the pool corrupts rather
-	// than failing cleanly. The sampler budget is the one that moves, since an array costs its whole length
 	std::vector<vk::DescriptorPoolSize> pool_sizes {
 	  vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, 8192),
 
@@ -859,8 +783,6 @@ void VulkanRenderer::createDescriptorPool() {
 	  vk::DescriptorPoolSize(vk::DescriptorType::eStorageBuffer, 8192)
 	};
 
-	// A set naming this type cannot come from a pool that did not budget for it, and the first trace faults.
-	// Conditional because naming the type at all requires the extension
 	if (m_core->isRayTracingSupported()) {
 		pool_sizes.emplace_back(vk::DescriptorType::eAccelerationStructureKHR, 2048);
 	}
@@ -890,16 +812,13 @@ auto VulkanRenderer::materialUsesCutout(assets::Material* material) const -> boo
 		return false;
 	}
 
-	// No lock: called from recordFrame on the render thread, which is the only thread that mutates
-	// m_material_passes' contents, and ensureMaterialPasses() has already run for this frame
+	// No lock since only the render thread mutates m_material_passes
 	const auto it = m_material_passes.find(material);
 	return it != m_material_passes.end() && it->second->usesCutout();
 }
 
 void VulkanRenderer::publishCompletedFrames() {
 	ZoneScoped;
-	// Drained by fence status, not slot reuse - the latter gates publication on three *future* frames, so
-	// intermittent production showed irregular intervals even when rendering was regular
 	while (!m_pending_publish.empty()) {
 		const uint32_t index = m_pending_publish.front();
 		auto& pending = m_frames[index];
@@ -909,13 +828,10 @@ void VulkanRenderer::publishCompletedFrames() {
 			continue;
 		}
 
-		// Non-blocking: anything still in flight stays queued, and the frames behind it keep their order
 		if (pending.in_flight.getStatus() != vk::Result::eSuccess) {
 			break;
 		}
 
-		// Rendered from inside a probe, not the camera. Publishing it is the whole of the flash during a bake;
-		// withholding leaves the consumer on the last camera frame
 		if (!pending.was_probe_capture) {
 			m_output_target->onImageRenderComplete(pending.last_image_index);
 		}
@@ -927,17 +843,11 @@ void VulkanRenderer::publishCompletedFrames() {
 
 namespace {
 
-/// @returns whether this proxy contributes an instance to the TLAS
-///
-/// Shared by the build and the shader's enable flag, or tracing turns on with nothing to trace against
 auto isTraceable(const VulkanRenderer::MeshInstanceProxy& proxy) -> bool {
 	if (proxy.mesh == nullptr) {
 		return false;
 	}
 
-	// A posed instance traces its own structure, or it casts a T-posed shadow. Mirrors
-	// SkinnedBlasPool::ensureEntry(): claiming traceable for something the pool refuses to build leaves the
-	// shader on an unwritten gScene
 	if (proxy.posed_vertex_offset != VulkanRenderer::MeshInstanceProxy::k_no_posed_vertices) {
 		return proxy.mesh->isReady() && proxy.mesh->getVertexCount() > 0 && proxy.mesh->getIndexCount() >= 3;
 	}
@@ -958,8 +868,6 @@ void VulkanRenderer::recordAccelerationStructureBuilds(FrameContext& frame) {
 		return;
 	}
 
-	// Graphics buffer: a build needs a compute-capable queue, and uploads run transfer-only. Capped per
-	// frame, or Sponza's hundreds stall the submit exactly when the level appears
 	constexpr uint32_t k_max_builds_per_frame = 8;
 	uint32_t built = 0;
 
@@ -971,7 +879,6 @@ void VulkanRenderer::recordAccelerationStructureBuilds(FrameContext& frame) {
 		if (proxy.mesh == nullptr || !proxy.mesh->isReady() || proxy.mesh->hasAccelerationStructure()) {
 			continue;
 		}
-		// One BLAS per mesh, not per instance - the same mesh drawn twenty times shares it
 		if (!seen.insert(proxy.mesh).second) {
 			continue;
 		}
@@ -986,10 +893,10 @@ void VulkanRenderer::recordAccelerationStructureBuilds(FrameContext& frame) {
 		++built;
 	}
 
-	// One structure per skinned instance, refit against the slice SkinningPass just wrote. Uncapped, unlike
-	// the static builds: a refit has to happen every frame or the shadow lags a frame behind the body
+	const bool tracing = render_frame->frame_data.traced_shadow_params.x >= 0.5f;
+
 	uint32_t skinned_recorded = 0;
-	if (m_skinned_blas_pool != nullptr) {
+	if (m_skinned_blas_pool != nullptr && tracing) {
 		m_skinned_blas_pool->beginFrame();
 
 		const vk::Buffer posed = getPosedVertexBuffer(m_current_frame);
@@ -1008,8 +915,6 @@ void VulkanRenderer::recordAccelerationStructureBuilds(FrameContext& frame) {
 	}
 
 	if (built > 0 || skinned_recorded > 0) {
-		// One barrier for the batch: nothing reads these until a trace does, and that is a later submit
-		// See the #undef at the top of this file for why the type can be named at all
 		vk::MemoryBarrier barrier {};
 		barrier.srcAccessMask = vk::AccessFlagBits::eAccelerationStructureWriteKHR;
 		barrier.dstAccessMask = vk::AccessFlagBits::eAccelerationStructureReadKHR;
@@ -1024,8 +929,6 @@ void VulkanRenderer::recordAccelerationStructureBuilds(FrameContext& frame) {
 		);
 	}
 
-	// Rebuilt from whatever is traceable this frame. An instance references its geometry by device address,
-	// so a second source needs no change here
 	if (m_ray_tracing_scene != nullptr) {
 		m_ray_tracing_scene->beginFrame();
 		for (const auto& proxy : render_frame->mesh_instances) {
@@ -1033,8 +936,6 @@ void VulkanRenderer::recordAccelerationStructureBuilds(FrameContext& frame) {
 				continue;
 			}
 
-			// A posed instance rides on the identity because its vertices are already in world space - the same
-			// reason tick() gives it an identity model matrix
 			const bool posed = proxy.posed_vertex_offset != MeshInstanceProxy::k_no_posed_vertices;
 			vk::DeviceAddress blas_address = 0;
 			if (!posed) {
@@ -1046,27 +947,27 @@ void VulkanRenderer::recordAccelerationStructureBuilds(FrameContext& frame) {
 				continue;
 			}
 
-			// Not frustum-culled: a ray can hit geometry the camera cannot see, which is the entire reason to
-			// trace rather than sample a shadow map
-			m_ray_tracing_scene->addInstance({.transform = posed ? glm::mat4(1.0f) : proxy.model, .blas_address = blas_address});
+			m_ray_tracing_scene->addInstance(
+			    {.transform = posed ? glm::mat4(1.0f) : proxy.model, .blas_address = blas_address, .deforming = posed}
+			);
 		}
-		m_ray_tracing_scene->build(*frame.command_buffer, m_current_frame);
+		m_ray_tracing_scene->build(*frame.command_buffer, m_current_frame, tracing);
 	}
 }
 
 void VulkanRenderer::recordMeshScene(vk::CommandBuffer cmd, uint32_t image_index) {
-	// Opaque first: m_material_passes is an unordered_map, so map order would composite blended surfaces
-	// before the opaque geometry meant to show through them exists
-	for (auto& [material, pass] : m_material_passes) {
-		if (!pass->isEnabled() || pass->isBlended()) {
-			continue;
+	// Opaque first since m_material_passes is unordered
+	{
+		const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Opaque materials");
+		for (auto& [material, pass] : m_material_passes) {
+			if (!pass->isEnabled() || pass->isBlended()) {
+				continue;
+			}
+			TracyVkZone(m_tracy_vk_ctx, cmd, "MaterialPass");
+			pass->record(cmd, m_current_frame, image_index);
 		}
-		TracyVkZone(m_tracy_vk_ctx, cmd, "MaterialPass");
-		pass->record(cmd, m_current_frame, image_index);
 	}
 
-	// One ordering across every blended instance, not one per pass - ranking whole passes cannot order two
-	// transparent materials that interleave in depth. A concave mesh still needs OIT
 	{
 		const auto* render_frame = renderingFrame();
 		if (render_frame != nullptr) {
@@ -1092,8 +993,6 @@ void VulkanRenderer::recordMeshScene(vk::CommandBuffer cmd, uint32_t image_index
 				}
 			}
 
-			// Farthest first. Ties break on the pass pointer purely so the order is stable frame to frame -
-			// two coincident surfaces flickering between orderings is worse than either ordering
 			std::ranges::sort(draws, [](const BlendedDraw& a, const BlendedDraw& b) {
 				if (a.distance_squared != b.distance_squared) {
 					return a.distance_squared > b.distance_squared;
@@ -1102,6 +1001,7 @@ void VulkanRenderer::recordMeshScene(vk::CommandBuffer cmd, uint32_t image_index
 			});
 
 			TracyVkZone(m_tracy_vk_ctx, cmd, "BlendedDraws");
+			const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Blended materials");
 			for (const auto& draw : draws) {
 				draw.pass->recordInstance(cmd, m_current_frame, *draw.proxy);
 			}
@@ -1114,28 +1014,34 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	frame.command_buffer.reset();
 	const vk::CommandBufferBeginInfo begin_info(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 	frame.command_buffer.begin(begin_info);
+	if (m_gpu_timer != nullptr) {
+		m_gpu_timer->beginGraphics(m_current_frame, *frame.command_buffer);
+	}
 
-	// Before everything, including the AS builds: this writes the vertex stream they all read
+	// Before the AS builds which read its output
 	if (m_skinning_pass != nullptr) {
+		const GpuScope scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, "Skinning");
 		m_skinning_pass->record(*frame.command_buffer, m_current_frame);
 	}
 
-	// This slot's previous submission has signalled by the time we get here, so last time's build scratch is
-	// free to drop
 	frame.blas_scratch.clear();
-	recordAccelerationStructureBuilds(frame);
+	{
+		const GpuScope scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, "Acceleration structures");
+		recordAccelerationStructureBuilds(frame);
+	}
 
-	// Off-screen work (shadow maps, UI layers, world panels) records before either rendering scope opens
-	for (auto& pass : m_render_passes) {
-		pass->recordPre(*frame.command_buffer, m_current_frame, image_index);
+	{
+		const GpuScope offscreen_scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, "Off-screen");
+		for (auto& pass : m_render_passes) {
+			const GpuScope scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, pass->name());
+			pass->recordPre(*frame.command_buffer, m_current_frame, image_index);
+		}
 	}
 
 	const auto extent = m_output_target->getExtent();
 	const vk::Viewport viewport(0.0f, 0.0f, static_cast<float>(extent.width), static_cast<float>(extent.height), 0.0f, 1.0f);
 	const vk::Rect2D scissor({0, 0}, extent);
 
-	// A capture rasterizes into a square corner of the scene target, not the whole viewport. Its projection
-	// is already square, so a full-viewport render was stretching it for the blit to undo
 	const auto* capture_source = renderingFrame();
 	const uint32_t capture_size = capture_source != nullptr ? capture_source->capture_extent : 0u;
 	const vk::Extent2D scene_extent = capture_size > 0 ? vk::Extent2D {capture_size, capture_size} : extent;
@@ -1144,12 +1050,8 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	);
 	const vk::Rect2D scene_scissor({0, 0}, scene_extent);
 
-	// Scene scope: everything that is part of the world, rendered in linear HDR
-
 	const vk::Image scene_image = m_scene_color.image ? **m_scene_color.image : VK_NULL_HANDLE;
 	if (scene_image != VK_NULL_HANDLE) {
-		// eUndefined on the first frame, eShaderReadOnlyOptimal on every one after - the post chain left it
-		// that way when it sampled the previous frame
 		const bool was_sampled = m_scene_color.layout == vk::ImageLayout::eShaderReadOnlyOptimal;
 		transitionImageLayout(
 		    frame.command_buffer,
@@ -1226,8 +1128,6 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	scene_attachment_info.storeOp = vk::AttachmentStoreOp::eStore;
 	scene_attachment_info.clearValue = clear_color;
 
-	// Zero, not a default normal: zero length is unambiguously "nothing wrote here". A plausible default
-	// would let a consumer trace against a surface that does not exist
 	const vk::ClearValue clear_normal(vk::ClearColorValue(std::array {0.0f, 0.0f, 0.0f, 0.0f}));
 
 	vk::RenderingAttachmentInfo normal_attachment_info {};
@@ -1238,8 +1138,6 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	normal_attachment_info.storeOp = vk::AttachmentStoreOp::eStore;
 	normal_attachment_info.clearValue = clear_normal;
 
-	// Its own scope, depth only, before anything shades - so the scene scope rejects occluded fragments at
-	// the depth test rather than running the material shader and discarding it
 	const bool prepass_active = m_depth_prepass != nullptr && m_depth_prepass->isReady() && m_depth_resources.view.has_value();
 
 	if (prepass_active) {
@@ -1261,6 +1159,7 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 		frame.command_buffer.setScissor(0, std::array {scene_scissor});
 		{
 			TracyVkZone(m_tracy_vk_ctx, *frame.command_buffer, "DepthPrepass");
+			const GpuScope scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, "Depth prepass");
 			m_depth_prepass->record(*frame.command_buffer, m_current_frame);
 		}
 		frame.command_buffer.endRendering();
@@ -1270,10 +1169,7 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	if (m_depth_resources.view.has_value()) {
 		depth_attachment_info.imageView = **m_depth_resources.view;
 		depth_attachment_info.imageLayout = vk::ImageLayout::eDepthAttachmentOptimal;
-		// Loaded when the prepass already filled it; clearing here would throw that work away
 		depth_attachment_info.loadOp = prepass_active ? vk::AttachmentLoadOp::eLoad : vk::AttachmentLoadOp::eClear;
-		// Stored, not discarded: overlay passes depth-test against the scene so debug lines and gizmos are
-		// still occluded by the geometry in front of them
 		depth_attachment_info.storeOp = vk::AttachmentStoreOp::eStore;
 		depth_attachment_info.clearValue = clear_depth;
 	}
@@ -1284,7 +1180,6 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	indirect_attachment_info.resolveMode = vk::ResolveModeFlagBits::eNone;
 	indirect_attachment_info.loadOp = vk::AttachmentLoadOp::eClear;
 	indirect_attachment_info.storeOp = vk::AttachmentStoreOp::eStore;
-	// Zero indirect light where nothing wrote, so SsaoPass's subtract-and-reweight is a no-op there
 	indirect_attachment_info.clearValue = vk::ClearValue(vk::ClearColorValue(std::array {0.0f, 0.0f, 0.0f, 0.0f}));
 
 	const std::array scene_color_attachments {scene_attachment_info, normal_attachment_info, indirect_attachment_info};
@@ -1303,6 +1198,7 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 
 	{
 		TracyVkZone(m_tracy_vk_ctx, *frame.command_buffer, "Scene");
+		const GpuScope scene_scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, "Scene");
 		std::lock_guard lock(m_pass_mutex);
 
 		recordMeshScene(*frame.command_buffer, image_index);
@@ -1312,14 +1208,13 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 				continue;
 			}
 			TracyVkZone(m_tracy_vk_ctx, *frame.command_buffer, "WorldPass");
+			const GpuScope scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, pass->name());
 			pass->record(*frame.command_buffer, m_current_frame, image_index);
 		}
 	}
 
 	frame.command_buffer.endRendering();
 
-	// The scene just rendered is one cube face. Taken before the post chain: a probe stores radiance, and
-	// tonemapping baked in here would be applied a second time when the reflection is shown
 	if (const auto* capture_frame = renderingFrame(); capture_frame != nullptr && capture_frame->probe_capture_index >= 0 &&
 	                                                  m_reflection_probe_pass != nullptr && scene_image != VK_NULL_HANDLE) {
 		transitionImageLayout(
@@ -1334,8 +1229,6 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 		    colorSubresourceRange()
 		);
 
-		// The square region the scene was rasterized into, not the whole target - everything outside it holds
-		// the previous frame's pixels and blitting those in would ring the cube face with stale scene
 		m_reflection_probe_pass->captureFace(
 		    *frame.command_buffer,
 		    scene_image,
@@ -1344,7 +1237,6 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 		    capture_frame->probe_capture_face
 		);
 
-		// Back to colour-attachment, so the transition below still describes the layout it is actually in
 		transitionImageLayout(
 		    frame.command_buffer,
 		    scene_image,
@@ -1358,8 +1250,6 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 		);
 	}
 
-	// Irradiance probe capture, the same blit without the roughness chain - four SH coefficients is all this
-	// probe keeps, so prefiltering six mip levels for it would be work thrown away
 	if (const auto* capture_frame = renderingFrame(); capture_frame != nullptr && capture_frame->irradiance_capture_index >= 0 &&
 	                                                  m_reflection_probe_pass != nullptr && scene_image != VK_NULL_HANDLE) {
 		transitionImageLayout(
@@ -1390,8 +1280,6 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 		    colorSubresourceRange()
 		);
 
-		// Projected once the cube is complete. The SH integral spans the whole sphere, so five faces of new
-		// data and one of the previous probe's would tilt the result toward wherever that probe was
 		if (capture_frame->irradiance_capture_face == 5) {
 			m_reflection_probe_pass->projectStagingToSh(
 			    *frame.command_buffer, static_cast<uint32_t>(capture_frame->irradiance_capture_index)
@@ -1399,7 +1287,6 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 		}
 	}
 
-	// Scene finished; hand it to the post-process chain to read
 	if (scene_image != VK_NULL_HANDLE) {
 		transitionImageLayout(
 		    frame.command_buffer,
@@ -1415,8 +1302,6 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 		m_scene_color.layout = vk::ImageLayout::eShaderReadOnlyOptimal;
 	}
 
-	// Unconditional: two barriers on images the frame already touched, and making them depend on the chain's
-	// contents would mean a pass added later silently samples the wrong layout
 	if (normal_image != VK_NULL_HANDLE && m_scene_normal.layout != vk::ImageLayout::eShaderReadOnlyOptimal) {
 		transitionImageLayout(
 		    frame.command_buffer,
@@ -1462,29 +1347,23 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 		m_depth_layout = vk::ImageLayout::eDepthReadOnlyOptimal;
 	}
 
-	// The probe took the scene colour above and the frame is never published, so the post chain is waste -
-	// most of a bake's cost, and a volume is hundreds of probes
 	const auto* capture_check = renderingFrame();
 	const bool capture_frame =
 	    capture_check != nullptr && (capture_check->probe_capture_index >= 0 || capture_check->irradiance_capture_index >= 0);
 
-	// The post-process chain: each pass owns its targets, runs outside any rendering scope, and hands its
-	// result to the next. A disabled pass simply passes its input through
 	vk::ImageView post_source = getSceneColorView();
 	if (!capture_frame) {
 		std::lock_guard lock(m_pass_mutex);
+		const GpuScope post_scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, "Post process");
 		for (auto& pass : m_post_process_passes) {
 			if (!pass->isEnabled() || !post_source) {
 				continue;
 			}
+			const GpuScope scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, pass->name());
 			post_source = pass->record(*frame.command_buffer, m_current_frame, post_source);
 		}
 	}
 
-	// Output scope: tonemap the chain's result into the swapchain image, then display-space overlays
-
-	// Back to an attachment layout for the overlays, which depth-test against the scene. None of them writes
-	// depth, so this is purely to match what the overlay scope declares
 	if (depth_image != VK_NULL_HANDLE && m_depth_layout != vk::ImageLayout::eDepthAttachmentOptimal) {
 		transitionImageLayout(
 		    frame.command_buffer,
@@ -1545,14 +1424,10 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	output_attachment_info.imageView = *m_output_target->getColorAttachment(image_index);
 	output_attachment_info.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
 	output_attachment_info.resolveMode = vk::ResolveModeFlagBits::eNone;
-	// Cleared rather than loaded: the tonemap covers every pixel, so loading would only cost bandwidth -
-	// and a frame where the chain is disabled entirely should read as black, not as last frame's leftovers
 	output_attachment_info.loadOp = vk::AttachmentLoadOp::eClear;
 	output_attachment_info.storeOp = vk::AttachmentStoreOp::eStore;
 	output_attachment_info.clearValue = clear_color;
 
-	// Overlays depth-test against the scene they are drawn over, so the depth buffer comes along - loaded,
-	// never cleared, and never written
 	vk::RenderingAttachmentInfo overlay_depth_info {};
 	if (m_depth_resources.view.has_value()) {
 		overlay_depth_info.imageView = **m_depth_resources.view;
@@ -1575,9 +1450,8 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 
 	{
 		TracyVkZone(m_tracy_vk_ctx, *frame.command_buffer, "Present");
+		const GpuScope scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, "Present blit");
 
-		// Copy whatever the post chain produced onto the screen. The renderer owns this rather than the last
-		// pass owning it, so no pass has to know its position in the chain - see IPostProcessPass
 		if (m_present_pipeline.isReady() && post_source && m_current_frame < m_present_sets.size()) {
 			if (m_present_bound_views[m_current_frame] != post_source) {
 				vk::DescriptorImageInfo image_info {};
@@ -1604,27 +1478,33 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 		}
 	}
 
-	// Skipped on a capture frame for the same reason as the post chain - grid lines, gizmos and the ImGui
-	// panel are drawn over an image nobody will ever see
 	if (!capture_frame) {
 		std::lock_guard lock(m_pass_mutex);
+		const GpuScope overlay_scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, "Overlays");
 		for (auto& pass : m_render_passes) {
 			if (!pass->isEnabled() || pass->stage() != RenderStage::overlay) {
 				continue;
 			}
 			TracyVkZone(m_tracy_vk_ctx, *frame.command_buffer, "OverlayPass");
+			const GpuScope scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, pass->name());
 			pass->record(*frame.command_buffer, m_current_frame, image_index);
 		}
 	}
 
 	frame.command_buffer.endRendering();
 
-	m_output_target->recordFinalize(frame.command_buffer, image_index);
+	{
+		const GpuScope scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, "Output finalize");
+		m_output_target->recordFinalize(frame.command_buffer, image_index);
+	}
 	m_output_image_layouts.at(image_index) =
 	    m_output_target->usesAcquirePresentSemaphores() ? vk::ImageLayout::ePresentSrcKHR : vk::ImageLayout::eTransferSrcOptimal;
 
 	TracyVkCollect(m_tracy_vk_ctx, *frame.command_buffer);
 
+	if (m_gpu_timer != nullptr) {
+		m_gpu_timer->endGraphics(m_current_frame, *frame.command_buffer);
+	}
 	frame.command_buffer.end();
 }
 
@@ -1649,8 +1529,6 @@ void VulkanRenderer::createPresentResources() {
 	config.vertex_bindings = {};
 	config.vertex_attributes = {};
 	config.cull_mode = vk::CullModeFlagBits::eNone;
-	// The output scope binds depth for the overlays that follow, so this pipeline has to declare the same
-	// attachment - it just never tests or writes it
 	config.depth_format = m_depth_format;
 	config.depth_test = false;
 	config.depth_write = false;
@@ -1687,7 +1565,6 @@ void VulkanRenderer::createFrameResources() {
 
 	const vk::DeviceSize buffer_size = sizeof(FrameUBO);
 
-	// Create per-frame UBO buffers only. Descriptor sets are allocated by individual render passes
 	for (uint32_t i = 0; i < m_frame_ubo_res.size(); ++i) {
 		auto& frame = m_frame_ubo_res[i];
 
@@ -1695,7 +1572,6 @@ void VulkanRenderer::createFrameResources() {
 		buffer_ci.size = buffer_size;
 		buffer_ci.usage = vk::BufferUsageFlagBits::eUniformBuffer;
 
-		// allocation
 		vma::AllocationCreateInfo alloc_ci {};
 		alloc_ci.usage = vma::MemoryUsage::eAutoPreferHost;
 
@@ -1703,13 +1579,8 @@ void VulkanRenderer::createFrameResources() {
 
 		frame.gpu_buffer.emplace(m_core->getAllocator().createBuffer(buffer_ci, alloc_ci));
 		setDebugName(*m_core, **frame.gpu_buffer, std::format("VulkanRenderer FrameUBO[{}]", i));
-
-		// no staging buffer
-
-		// Leave descriptor_set empty render passes will allocate and manage their own descriptor sets
 	}
 
-	// Joint matrix storage buffer, fixed capacity same as ClusterLightingPass's light buffers
 	m_joint_matrix_res.resize(k_frames_in_flight);
 	const vk::DeviceSize joint_matrix_buffer_size = sizeof(glm::mat4) * k_max_joint_matrices;
 	for (uint32_t i = 0; i < m_joint_matrix_res.size(); ++i) {
@@ -1727,8 +1598,6 @@ void VulkanRenderer::createFrameResources() {
 		setDebugName(*m_core, **frame.gpu_buffer, std::format("VulkanRenderer JointMatrices[{}]", i));
 	}
 
-	// Per-instance data, same shape as the joint buffer above. Two of them: the colour pass reads the packed
-	// visible-only set, ShadowPass reads every proxy - see RenderFrame::shadow_instance_data
 	const auto create_instance_buffers = [this](std::vector<FrameResources>& target, std::string_view debug_name) {
 		target.resize(k_frames_in_flight);
 		for (uint32_t i = 0; i < target.size(); ++i) {
@@ -1752,7 +1621,6 @@ void VulkanRenderer::createFrameResources() {
 void VulkanRenderer::createDefaultTexture() {
 	const auto& device = m_core->getDevice();
 
-	// Fallbacks for a material unbound Sampler2D slots
 	uploadSinglePixelTexture(*m_core, m_default_texture, {255, 255, 255, 255}, "VulkanRenderer DefaultWhiteTexture");
 	uploadSinglePixelTexture(*m_core, m_default_black_texture, {0, 0, 0, 255}, "VulkanRenderer DefaultBlackTexture");
 	uploadSinglePixelTexture(*m_core, m_default_normal_texture, {128, 128, 255, 255}, "VulkanRenderer DefaultNormalTexture");
@@ -1774,7 +1642,6 @@ void VulkanRenderer::createDefaultTexture() {
 }
 
 void VulkanRenderer::createFailsafeTextures() {
-	// Nearest on every axis
 	vk::SamplerCreateInfo sampler_ci {};
 	sampler_ci.magFilter = vk::Filter::eNearest;
 	sampler_ci.minFilter = vk::Filter::eNearest;
@@ -1786,7 +1653,6 @@ void VulkanRenderer::createFailsafeTextures() {
 	m_failsafe_sampler = vk::raii::Sampler(m_core->getDevice(), sampler_ci);
 	setDebugName(*m_core, *m_failsafe_sampler, "VulkanRenderer FailsafeSampler");
 
-	// Read by virtual path
 	const auto load = [this](VulkanTexture& target, std::string_view virtual_path, std::string_view debug_name) {
 		auto bytes = assets::AssetManager::get().tryLoadBytes(virtual_path);
 		if (!bytes.has_value()) {
@@ -1802,12 +1668,10 @@ void VulkanRenderer::createFailsafeTextures() {
 }
 
 auto VulkanRenderer::getFailsafeTextureView(bool has_reference, const VulkanTexture* texture) const noexcept -> vk::ImageView {
-	// An empty slot is not a failure
 	if (!has_reference) {
 		return nullptr;
 	}
 
-	// Referenced but nothing resolved
 	if (texture == nullptr) {
 		return m_missing_texture.isReady() ? m_missing_texture.getView() : vk::ImageView {};
 	}
@@ -1817,9 +1681,7 @@ auto VulkanRenderer::getFailsafeTextureView(bool has_reference, const VulkanText
 			return m_fail_load_texture.isReady() ? m_fail_load_texture.getView() : vk::ImageView {};
 		case IVulkanResource::UploadState::failed_gpu:
 			return m_fail_gpu_texture.isReady() ? m_fail_gpu_texture.getView() : vk::ImageView {};
-		default:
-			// IF STILL UPLADING THE TEXTURE SHOW MISSING TEXTURE
-			return m_missing_texture.isReady() ? m_missing_texture.getView() : vk::ImageView {};
+		default: return m_missing_texture.isReady() ? m_missing_texture.getView() : vk::ImageView {};
 	}
 }
 
@@ -1827,8 +1689,7 @@ void VulkanRenderer::createDefaultShadowMap() {
 	ZoneScoped;
 	const auto& device = m_core->getDevice();
 
-	// Depth format, not the 1x1 white colour texture the other fallbacks use: the shader declares the shadow
-	// bindings as comparison samplers, and a comparison sampler may only ever read a depth image
+	// Comparison samplers only read depth images
 	vk::ImageCreateInfo image_ci {};
 	image_ci.imageType = vk::ImageType::e2D;
 	image_ci.format = m_depth_format;
@@ -1848,7 +1709,6 @@ void VulkanRenderer::createDefaultShadowMap() {
 
 	const vk::ImageSubresourceRange range(vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1);
 
-	// Runs once at construction, before the render thread exists, so a blocking one-time submit is fine
 	const vk::CommandPoolCreateInfo pool_ci(vk::CommandPoolCreateFlagBits::eTransient, m_core->getGraphicsQueueFamilyIndex());
 	const vk::raii::CommandPool one_shot_pool(device, pool_ci);
 	const vk::CommandBufferAllocateInfo cmd_alloc_info(*one_shot_pool, vk::CommandBufferLevel::ePrimary, 1);
@@ -1859,7 +1719,6 @@ void VulkanRenderer::createDefaultShadowMap() {
 
 	recordUndefinedToTransferDst(cmd, **m_default_shadow_image, range);
 
-	// 1.0 is "nothing occluding": every comparison against it passes, so the fallback reads as fully lit
 	const vk::ClearDepthStencilValue clear_value(1.0f, 0);
 	cmd.clearDepthStencilImage(**m_default_shadow_image, vk::ImageLayout::eTransferDstOptimal, clear_value, range);
 
@@ -1869,7 +1728,7 @@ void VulkanRenderer::createDefaultShadowMap() {
 
 	submitAndWait(device, m_core->getGraphicsQueue(), *cmd);
 
-	// Array view: the bindings are declared as Sampler2DArrayShadow, which a plain 2D view can't satisfy
+	// Sampler2DArrayShadow needs an array view
 	vk::ImageViewCreateInfo view_ci {};
 	view_ci.image = **m_default_shadow_image;
 	view_ci.viewType = vk::ImageViewType::e2DArray;
@@ -1906,7 +1765,6 @@ void VulkanRenderer::createDefaultCubemap() {
 
 	const vk::ImageSubresourceRange range(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 6);
 
-	// Runs once at construction, before the render thread exists, so a blocking one-time submit is fine
 	const vk::CommandPoolCreateInfo pool_ci(vk::CommandPoolCreateFlagBits::eTransient, m_core->getGraphicsQueueFamilyIndex());
 	const vk::raii::CommandPool one_shot_pool(device, pool_ci);
 	const vk::CommandBufferAllocateInfo cmd_alloc_info(*one_shot_pool, vk::CommandBufferLevel::ePrimary, 1);
@@ -1950,12 +1808,7 @@ void VulkanRenderer::ensureMaterialPasses(RenderFrame& frame_data) {
 			continue;
 		}
 		auto pass = std::make_unique<MaterialPass>(
-		    // The scene target's format, not the output's: material passes render before the tonemap
-		    *m_core,
-		    proxy.root_material,
-		    m_scene_color_format,
-		    m_depth_format,
-		    m_output_target->getExtent()
+		    *m_core, proxy.root_material, m_scene_color_format, m_depth_format, m_output_target->getExtent()
 		);
 		TOAST_INFO("Render", "Created material pass '{}'", pass->name());
 		m_material_passes.emplace(proxy.root_material, std::move(pass));
@@ -2002,7 +1855,6 @@ void VulkanRenderer::updateFrameResources(uint32_t frame_index, RenderFrame& fra
 	m_frame_ubos[frame_index] = frame_data.frame_data;
 
 	const auto& allocation = m_frame_ubo_res[frame_index].gpu_buffer->getAllocation();
-	// With VMA_ALLOCATION_CREATE_MAPPED
 	auto* mapped = allocation.getInfo().pMappedData;
 
 	if (mapped) {
@@ -2048,21 +1900,41 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 		return;
 	}
 
-	// process upload fences
+	if (!m_output_target->isPresentable()) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));
+		return;
+	}
+
+	using clock = std::chrono::steady_clock;
+	auto phase_start = clock::now();
+	auto end_phase = [&phase_start](std::atomic<uint64_t>& counter) {
+		const auto now = clock::now();
+		counter.fetch_add(
+		    static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(now - phase_start).count()),
+		    std::memory_order_relaxed
+		);
+		phase_start = now;
+	};
+
 	processPendingUploads();
 
-	// upload next batch of resources
 	flushResourceUploads();
+	end_phase(m_perf_upload_ns);
 
 	auto& frame = m_frames[m_current_frame];
 	std::ignore = m_core->getDevice().waitForFences(*frame.in_flight, true, std::numeric_limits<uint64_t>::max());
-	// The compute submit below is unconditional every frame (even with zero compute passes registered), so
-	// its own fence needs the same wait-before-reuse treatment as the graphics one
 	std::ignore = m_core->getDevice().waitForFences(*frame.compute_in_flight, true, std::numeric_limits<uint64_t>::max());
+	end_phase(m_perf_gpu_wait_ns);
 	publishCompletedFrames();
+
+	if (m_gpu_timer != nullptr && !frame.was_probe_capture) {
+		m_gpu_timer->collect(m_current_frame);
+	}
+	end_phase(m_perf_record_ns);
 
 	const auto acquired =
 	    m_output_target->acquireNextImage(std::numeric_limits<uint64_t>::max(), *frame.image_available, VK_NULL_HANDLE);
+	end_phase(m_perf_acquire_ns);
 
 	if (acquired.result == vk::Result::eErrorOutOfDateKHR) {
 		TOAST_WARN("Render", "Swapchain out of date on acquire; recreating");
@@ -2078,16 +1950,17 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 		std::ignore =
 		    m_core->getDevice().waitForFences(m_images_in_flight.at(image_index), true, std::numeric_limits<uint64_t>::max());
 	}
+	end_phase(m_perf_gpu_wait_ns);
 
 	m_core->getDevice().resetFences(*frame.in_flight);
 	m_images_in_flight[image_index] = *frame.in_flight;
 
-	updateFrameResources(m_current_frame, frame_data);    // FIXME: dt
+	updateFrameResources(m_current_frame, frame_data);    // FIXME dt
 
 	m_rendering_frame = &frame_data;
 	ensureMaterialPasses(frame_data);
 
-	// Update the Render passes TODO: Move outside of renderloop
+	// TODO move outside the render loop
 	{
 		std::lock_guard lock(m_pass_mutex);
 		for (auto& [material, pass] : m_material_passes) {
@@ -2098,10 +1971,7 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 		}
 	}
 
-	// Recorded before the frame is submitted, and read back after its fence signals to decide whether to
-	// publish it - the RenderFrame it came from will have been recycled by then
 	if (const auto* rendering = renderingFrame(); rendering != nullptr) {
-		// Irradiance captures too, or a volume bake publishes every frame and flashes across the viewport
 		frame.was_probe_capture = rendering->probe_capture_index >= 0 || rendering->irradiance_capture_index >= 0;
 	} else {
 		frame.was_probe_capture = false;
@@ -2109,26 +1979,30 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 
 	recordFrame(frame, image_index);
 
-	// Runs even with zero compute passes, so the graphics submit can always wait on compute_to_graphics.
-	// Never make this conditional - a submit that sometimes does not happen never signals its semaphore
+	// Never conditional since the graphics submit waits on its semaphore
 	m_core->getDevice().resetFences(*frame.compute_in_flight);
 
 	const vk::CommandBuffer compute_command_buffer = *frame.compute_command_buffer;
 	compute_command_buffer.reset();
 	constexpr vk::CommandBufferBeginInfo compute_begin_info {};
 	compute_command_buffer.begin(compute_begin_info);
+	if (m_gpu_timer != nullptr) {
+		m_gpu_timer->beginCompute(m_current_frame, compute_command_buffer);
+	}
 	for (auto& pass : m_compute_passes) {
 		pass->update(m_current_frame, Time::renderDelta());
 		pass->dispatch(compute_command_buffer, m_current_frame);
 	}
+	if (m_gpu_timer != nullptr) {
+		m_gpu_timer->endCompute(m_current_frame, compute_command_buffer);
+	}
 	compute_command_buffer.end();
+	end_phase(m_perf_record_ns);
 
 	const vk::Semaphore compute_to_graphics_semaphore = *frame.compute_to_graphics;
 	const vk::SubmitInfo compute_submit_info(0, nullptr, nullptr, 1, &compute_command_buffer, 1, &compute_to_graphics_semaphore);
 	m_core->getComputeQueue().submit(compute_submit_info, *frame.compute_in_flight);
 
-	// Starting graghics submission
-	// Always wait for compute; only wait for image_available when actually presenting to a swapchain
 	const bool present_sync = m_output_target->usesAcquirePresentSemaphores();
 
 	const vk::CommandBuffer command_buffer = *frame.command_buffer;
@@ -2146,16 +2020,12 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 	submit_info.pWaitSemaphores = wait_semaphores.data();
 	submit_info.pWaitDstStageMask = wait_stages.data();
 	if (present_sync) {
-		// Only a real present actually waits on this. Off-screen output targets
-		// ignore the semaphore IOutputTarget::present() is handed
 		submit_info.signalSemaphoreCount = 1;
 		submit_info.pSignalSemaphores = &signal_semaphore;
 	}
 	submit_info.commandBufferCount = 1;
 	submit_info.pCommandBuffers = &command_buffer;
 
-	// The last graphics submit, and with no present in the editor's path the only place a tool can be told a
-	// frame ended. Monotonic across the process, not an index into frames in flight
 	vk::FrameBoundaryEXT frame_boundary {};
 	if (m_core->isFrameBoundarySupported()) {
 		frame_boundary.flags = vk::FrameBoundaryFlagBitsEXT::eFrameEnd;
@@ -2167,10 +2037,9 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 		std::scoped_lock submit_lock(m_core->graphicsSubmitMutex());
 		m_core->getGraphicsQueue().submit(submit_info, *frame.in_flight);
 	}
+	end_phase(m_perf_submit_ns);
 
 #if defined(_WIN32)
-	// The editor hands its image to Avalonia by copy, so there is no present for Nsight to infer frames from
-	// and Attach reports no graphics API. Harmless where there is one, so it is unconditional
 	if (m_core->getNsightMode() == NsightMode::graphics_capture) {
 		NGFX_ResourceDescription_Vulkan output_resource {NGFX_ResourceDescription_Vulkan_VER};
 		output_resource.type = NGFX_ResourceType_Vulkan_VkImage;
@@ -2185,13 +2054,11 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 #endif
 
 	const auto present_result = m_output_target->present(image_index, present_sync ? signal_semaphore : vk::Semaphore {});
+	end_phase(m_perf_present_ns);
 	frame.last_image_index = image_index;
 	frame.has_submitted = true;
-	// Queued in submission order, so publishCompletedFrames() can never hand the consumer a newer frame
-	// before an older one that simply took longer
 	m_pending_publish.push_back(m_current_frame);
 
-	// Advance to next frame
 	m_current_frame = (m_current_frame + 1) % static_cast<uint32_t>(m_frames.size());
 
 	if (present_result == vk::Result::eErrorOutOfDateKHR || present_result == vk::Result::eSuboptimalKHR) {
@@ -2212,7 +2079,6 @@ void VulkanRenderer::mainRenderThread() {
 
 #ifdef TRACY_ENABLE
 	{
-		// Calibration command buffer, only needed while creating the context
 		const vk::CommandBufferAllocateInfo alloc_info(*m_command_pool, vk::CommandBufferLevel::ePrimary, 1);
 		const auto tracy_cmd_buffers = m_core->getDevice().allocateCommandBuffers(alloc_info);
 		m_tracy_vk_ctx =
@@ -2220,11 +2086,18 @@ void VulkanRenderer::mainRenderThread() {
 	}
 #endif
 
+	if (m_core != nullptr) {
+		try {
+			m_gpu_timer = std::make_unique<GpuTimer>(*m_core, static_cast<uint32_t>(m_frames.size()));
+		} catch (const std::exception& e) {
+			TOAST_WARN("Render", "GPU timing unavailable, the performance overlay shows CPU timings only: {}", e.what());
+			m_gpu_timer.reset();
+		}
+	}
+
 	using clock = std::chrono::steady_clock;
 	auto next_frame_deadline = clock::now();
 
-	// Outside the loop so its buffers survive: the swap below hands its allocation back to the slot, so
-	// neither side reallocates once the scene settles. It is also the cache when no new frame arrives
 	RenderFrame frame_to_draw;
 	bool has_frame = false;
 
@@ -2234,6 +2107,14 @@ void VulkanRenderer::mainRenderThread() {
 
 	while (m_running.load(std::memory_order_acquire)) {
 		ZoneScopedN("VulkanRenderer::mainRenderThread");
+
+		if (m_rendering_paused.load(std::memory_order_acquire)) {
+			std::unique_lock lock(m_queue_mutex);
+			m_frame_cv.wait(lock, [this] {
+				return !m_rendering_paused.load(std::memory_order_acquire) || !m_running.load(std::memory_order_acquire);
+			});
+			continue;
+		}
 
 		const uint64_t pending_resize = m_pending_resize_packed.exchange(k_no_pending_resize, std::memory_order_acq_rel);
 		if (pending_resize != k_no_pending_resize) {
@@ -2245,10 +2126,7 @@ void VulkanRenderer::mainRenderThread() {
 
 		bool consumed_queued_frame = false;
 
-		// Pacing off during a bake: a capture is never presented, so the cap only makes it take probes * 6 /
-		// cap seconds - seven seconds of nothing for a 75-probe volume at 60 Hz
-		const double limit_hz =
-		    m_bake_active.load(std::memory_order_relaxed) ? 0.0 : m_frame_rate_limit_hz.load(std::memory_order_relaxed);
+		const double limit_hz = m_bake_active.load(std::memory_order_relaxed) ? 0.0 : effectiveFrameRateLimit();
 
 		{
 			std::unique_lock lock(m_queue_mutex);
@@ -2258,19 +2136,21 @@ void VulkanRenderer::mainRenderThread() {
 				       m_pending_resize_packed.load(std::memory_order_acquire) != k_no_pending_resize;
 			};
 
+			const auto frame_wait_start = clock::now();
 			if (m_ready_frames.empty()) {
 				if (!has_frame) {
-					// Nothing has ever been drawn yet, so block indefinitely for the first frame
 					m_frame_cv.wait(lock, wake_condition);
 				} else if (limit_hz > 0.0) {
-					// Capped, wait till new frame arrives
 					const auto now = clock::now();
 					if (next_frame_deadline > now) {
 						m_frame_cv.wait_for(lock, next_frame_deadline - now, wake_condition);
 					}
 				}
-				// Uncapped, draws even if no new frame data
 			}
+			m_perf_frame_wait_ns.fetch_add(
+			    static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(clock::now() - frame_wait_start).count()),
+			    std::memory_order_relaxed
+			);
 
 			if (!m_running) {
 				return;
@@ -2280,14 +2160,10 @@ void VulkanRenderer::mainRenderThread() {
 				const auto frame_index = m_ready_frames.front();
 				m_ready_frames.pop();
 
-				// Swapped, not copied: copying was megabytes of memcpy per frame on the render thread's critical
-				// path. Safe because the slot is untouched until its permit is released below
 				std::swap(frame_to_draw, m_render_frames[frame_index]);
 				has_frame = true;
 				consumed_queued_frame = true;
 
-				// A lower sequence than the last drawn means the queue really is reordering, and the cause is
-				// here rather than downstream
 				const uint64_t previous = m_last_drawn_sequence.exchange(frame_to_draw.sequence, std::memory_order_relaxed);
 				if (frame_to_draw.sequence < previous) {
 					m_out_of_order_frames.fetch_add(1, std::memory_order_relaxed);
@@ -2298,35 +2174,29 @@ void VulkanRenderer::mainRenderThread() {
 					    previous
 					);
 				} else if (previous != 0 && frame_to_draw.sequence > previous + 1) {
-					// The far likelier reading of "frames look wrong": tick() could not get a free slot and
-					// skipped building one, so the motion between these two frames was never rendered at all
 					m_dropped_frames.fetch_add(static_cast<uint32_t>(frame_to_draw.sequence - previous - 1), std::memory_order_relaxed);
 				}
 			} else if (!has_frame) {
-				// Nothing new and nothing drawn yet. Once a frame has been drawn, frame_to_draw still holds it
-				// and is simply redrawn - which is what m_cached_frame used to exist for
 				continue;
 			}
 		}
 
 		if (limit_hz > 0.0) {
-			// Pace every draw uniformly, so a burst of frames from the main thread can't exceed the cap either
+			const auto pacing_start = clock::now();
 			std::this_thread::sleep_until(next_frame_deadline);
+			m_perf_pacing_ns.fetch_add(
+			    static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(clock::now() - pacing_start).count()),
+			    std::memory_order_relaxed
+			);
 			const auto interval = std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(1.0 / limit_hz));
 			const auto now = clock::now();
-			// If we're already behind the natural next deadline, resync to "now +
-			// interval" instead of stacking missed deadlines
 			next_frame_deadline = (next_frame_deadline + interval > now) ? next_frame_deadline + interval : now + interval;
 		}
 
-		// Drained again here, not only before the fence wait: at a steady rate the previous frame's GPU work
-		// has usually finished by now, so this is what lets it reach the consumer a frame earlier
 		publishCompletedFrames();
 
 		Time::get().renderTick();
 
-		// Rolling frame-interval window. Render-thread only, so plain locals - the atomics are just the
-		// publish. The spread is what diagnoses judder; the average alone hides it entirely
 		{
 			static constexpr size_t k_window = 60;
 			const auto now = clock::now();
@@ -2351,8 +2221,6 @@ void VulkanRenderer::mainRenderThread() {
 			last_frame_time = now;
 		}
 
-		// One-shot: consumed whether or not a capture tool is attached, so a stray F12 press before one attaches
-		// leaves no stale request queued. RenderDoc takes priority if both are somehow present
 		const bool do_capture = m_capture_frame_requested.exchange(false, std::memory_order_acq_rel);
 		const auto* rdoc_api = m_core->getRenderDocAPI();
 		const auto nsight_mode = m_core->getNsightMode();
@@ -2366,15 +2234,11 @@ void VulkanRenderer::mainRenderThread() {
 			const NGFX_Result start_result = NGFX_GraphicsCapture_StartCapture_Vulkan(&params);
 			TOAST_INFO("VulkanRenderer", "NGFX_GraphicsCapture_StartCapture_Vulkan result={}", static_cast<int>(start_result));
 		} else if (do_capture && nsight_mode == NsightMode::gpu_trace) {
-			// Lazy on purpose: blocks until the Nsight Graphics host attaches, so it must only ever run in
-			// response to an explicit F12 press, never at startup - see VulkanCore::activateNsightGpuTraceIfNeeded()
 			m_core->activateNsightGpuTraceIfNeeded();
 			NGFX_GPUTrace_StartTrace_Vulkan_Params params {NGFX_GPUTrace_StartTrace_Vulkan_Params_VER};
 			const NGFX_Result start_result = NGFX_GPUTrace_StartTrace_Vulkan(&params);
 			TOAST_INFO("VulkanRenderer", "NGFX_GPUTrace_StartTrace_Vulkan result={}", static_cast<int>(start_result));
 		} else if (do_capture) {
-			// Said out loud because the alternative is a keypress that does nothing, which is indistinguishable
-			// from a capture that silently failed
 			TOAST_WARN(
 			    "VulkanRenderer",
 			    "Capture requested but no graphics debugger is attached - RenderDoc was not found in this process and "
@@ -2383,7 +2247,16 @@ void VulkanRenderer::mainRenderThread() {
 		}
 #endif
 
+		const auto draw_start = clock::now();
 		drawFrame(frame_to_draw);
+		m_perf_draw_work_ns.fetch_add(
+		    static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(clock::now() - draw_start).count()),
+		    std::memory_order_relaxed
+		);
+		m_perf_draws.fetch_add(1, std::memory_order_relaxed);
+		if (!consumed_queued_frame) {
+			m_perf_repeated_draws.fetch_add(1, std::memory_order_relaxed);
+		}
 
 		if (do_capture && rdoc_api != nullptr) {
 			rdoc_api->EndFrameCapture(nullptr, nullptr);
@@ -2438,6 +2311,15 @@ void VulkanRenderer::start() noexcept {
 	m_render_thread = std::thread([this] { mainRenderThread(); });
 }
 
+void VulkanRenderer::setRenderingPaused(bool paused) noexcept {
+	{
+		// Under the queue lock so the render thread cannot miss the wake up
+		std::lock_guard lock(m_queue_mutex);
+		m_rendering_paused.store(paused, std::memory_order_release);
+	}
+	m_frame_cv.notify_all();
+}
+
 void VulkanRenderer::submitFrame() noexcept {
 	{
 		std::lock_guard lock(m_queue_mutex);
@@ -2455,8 +2337,6 @@ void VulkanRenderer::fitShadowViews(
     std::vector<PunctualShadowCandidate>& spot_candidates, std::vector<PunctualShadowCandidate>& point_candidates
 ) {
 	ZoneScoped;
-	// Shadow fitting, here rather than in ShadowPass so the render thread never touches Camera or Light state.
-	// Everything stays zeroed (no shadows) when the pass was never registered
 	if (m_shadow_pass == nullptr) {
 		return;
 	}
@@ -2485,13 +2365,10 @@ void VulkanRenderer::fitShadowViews(
 			      .cull_sphere = fit.cull_sphere,
 			      .layer = cascade,
 			      .directional = true,
-			      // Cascades always fill their layer; only punctual lights shrink with distance
 			      .resolution = shadows::cascadeResolution(),
 			    }
 			);
 
-			// Cascades overlap by starting where the previous one ended rather than at the near plane;
-			// each slice then only pays for the depth range it actually owns
 			split_near = splits[cascade];
 		}
 
@@ -2513,8 +2390,6 @@ void VulkanRenderer::fitShadowViews(
 		const glm::vec3 direction = glm::normalize(glm::vec3(light.direction_pad));
 		const float range = std::max(light.world_pos_range.w, 0.01f);
 
-		// A fov of twice the outer half-angle at aspect 1 covers exactly the lit cone. Widened slightly so
-		// the PCF kernel at the cone's edge still has real depths to read
 		constexpr float k_cone_fov_padding = 1.1f;
 		const float outer_cos = std::clamp(light.cone_angles.x, -1.0f, 1.0f);
 		const float fov = std::min(2.0f * std::acos(outer_cos) * k_cone_fov_padding, glm::radians(179.0f));
@@ -2525,8 +2400,6 @@ void VulkanRenderer::fitShadowViews(
 		const glm::mat4 projection = glm::perspectiveRH_ZO(fov, 1.0f, shadows::k_punctual_near, range);
 		const glm::mat4 view_projection = projection * view;
 
-		// Resolution falls off with camera distance: a light across the level covers a few pixels on
-		// screen, and its shadow does not need the fill rate the one at the player's feet does
 		const uint32_t resolution = shadows::punctualShadowResolution(
 		    std::sqrt(spot_candidates[slot].distance_squared), spot_candidates[slot].resolution_scale
 		);
@@ -2541,8 +2414,6 @@ void VulkanRenderer::fitShadowViews(
 		frame.shadows.views.push_back(
 		    ShadowView {
 		      .view_projection = view_projection,
-		      // Cull by the light's own reach: nothing beyond the attenuation range can cast into a map
-		      // that only covers that range anyway
 		      .cull_sphere = glm::vec4(position, range),
 		      .layer = layer,
 		      .directional = false,
@@ -2567,22 +2438,14 @@ void VulkanRenderer::fitShadowViews(
 		light.direction_pad.w = static_cast<float>(base_layer);
 		light.cone_angles.z = shadows::k_punctual_near;
 		light.cone_angles.w = range;
-		// All six faces share one resolution - a cube whose faces disagreed would step in sharpness as the
-		// lookup direction crossed a seam
 		light.shadow_atlas.x = static_cast<float>(resolution) / static_cast<float>(shadows::punctualResolution());
 
-		// 90 degrees plus a guard band, so a filter tap past the face edge finds real geometry rather than the
-		// cleared border. The shader derives an exact-90 lookup, so it needs the ratio to scale back into this
 		const float guard_ndc_scale =
 		    static_cast<float>(resolution) / (static_cast<float>(resolution) + (2.0f * shadows::k_cube_face_guard_texels));
 		light.shadow_atlas.y = guard_ndc_scale;
 
-		// tan(half fov) is 1 at 90 degrees, so widening by the inverse of that ratio adds the guard band.
-		// Depth is unaffected - the curve depends only on near/far, so the shader still reconstructs it
 		const float face_fov = 2.0f * std::atan(1.0f / guard_ndc_scale);
 
-		// Six views, one per cube face. No matrix reaches the shader - it picks a face from the
-		// light-to-fragment direction and reconstructs depth from near/far
 		for (uint32_t face = 0; face < shadows::k_cube_faces; ++face) {
 			const auto [face_direction, face_up] = shadowCubeFaceBasis(face);
 			const glm::mat4 view = glm::lookAt(position, position + face_direction, face_up);
@@ -2606,19 +2469,52 @@ void VulkanRenderer::fitShadowViews(
 void VulkanRenderer::tick(float time) noexcept {
 	ZoneScopedN("VulkanRenderer::tick()");
 
-	// Waits briefly
+	if (m_rendering_paused.load(std::memory_order_relaxed)) {
+		beginFrameBuild().debug_line_vertices.clear();
+		return;
+	}
+
 	using namespace std::chrono_literals;
-	if (!m_free_frames.try_acquire_for(50ms)) {
+	const auto slot_wait_start = std::chrono::steady_clock::now();
+	const bool got_slot = m_free_frames.try_acquire_for(50ms);
+
+	m_perf_slot_wait_ns.fetch_add(
+	    static_cast<uint64_t>(
+	        std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - slot_wait_start).count()
+	    ),
+	    std::memory_order_relaxed
+	);
+	m_perf_ticks.fetch_add(1, std::memory_order_relaxed);
+
+	if (!got_slot) {
 		m_skipped_builds.fetch_add(1, std::memory_order_relaxed);
 		return;
 	}
+	m_perf_frames_built.fetch_add(1, std::memory_order_relaxed);
+
+	const auto build_start = std::chrono::steady_clock::now();
+	const auto count_build = [this, build_start] {
+		m_perf_build_ns.fetch_add(
+		    static_cast<uint64_t>(
+		        std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - build_start).count()
+		    ),
+		    std::memory_order_relaxed
+		);
+	};
 
 	auto& frame = beginFrameBuild();
 
 	frame.mesh_instances.clear();
+	frame.material_ranges.clear();
+	frame.voxel_instances.clear();
+	frame.voxel_storage.reset();
+	frame.probe_capture_index = -1;
+	frame.probe_capture_face = 0;
+	frame.irradiance_capture_index = -1;
+	frame.irradiance_capture_face = 0;
+	frame.capture_extent = 0;
 
 	frame.asset_refs.clear();
-	// resolveSkinning() only appends
 	frame.joint_matrices.clear();
 	frame.instance_data.clear();
 	frame.shadow_instance_data.clear();
@@ -2632,12 +2528,9 @@ void VulkanRenderer::tick(float time) noexcept {
 	frame.ui_world_panels.clear();
 	frame.ui_slot_guard.reset();
 	frame.frame_data = {};
-	// Cleared here rather than next to where they're filled: RenderFrame slots are reused, and the no-camera
-	// path below returns before any of the light work runs - leaving ShadowPass to render last time's views
 	frame.shadows.views.clear();
 	frame.shadows.matrices.clear();
 
-	// ImGui input snapshot - mouse position/buttons are "latest state", wheel/key/char are drained queues
 	frame.imgui_input.mouse_pos = m_imgui_mouse_pos;
 	frame.imgui_input.mouse_down = m_imgui_mouse_down;
 	frame.imgui_input.mouse_wheel_x = m_imgui_wheel_x_accum;
@@ -2652,8 +2545,6 @@ void VulkanRenderer::tick(float time) noexcept {
 	frame.sequence = ++m_frame_sequence_counter;
 	frame.render_mode = m_render_mode;
 
-	// Drained here so a change made on the render thread (the ImGui debug panel) lands on main-thread state
-	// exactly once, between snapshots, rather than partway through one being built
 	{
 		const std::lock_guard lock(m_pending_post_settings_mutex);
 		if (m_pending_post_settings.has_value()) {
@@ -2661,8 +2552,6 @@ void VulkanRenderer::tick(float time) noexcept {
 			m_pending_post_settings.reset();
 		}
 	}
-	// The fallback for the no-camera path below: with nothing to place in the world there is no volume to be
-	// inside of, so the grade is whatever the defaults say
 	frame.post_process = m_post_process_settings;
 
 	if (!m_camera) {
@@ -2670,12 +2559,11 @@ void VulkanRenderer::tick(float time) noexcept {
 			m_ui_frame_builder(frame);
 		}
 		frame.ui_world_panels.clear();
+		count_build();
 		submitFrame();
 		return;
 	}
 
-	// Graded from where the camera actually is, before any capture override replaces it below: a probe bake
-	// blits the scene colour before the post chain runs, so a capture has no grade to get wrong
 	m_camera->syncTransform();
 	frame.post_process = blendPostProcessVolumes(m_camera->world_position);
 
@@ -2686,8 +2574,6 @@ void VulkanRenderer::tick(float time) noexcept {
 	}
 	frame.mesh_instances.reserve(mesh_nodes_snapshot.size());
 
-	// Cleared every tick: joint matrices are rebuilt from scratch each frame, so a slice is only valid
-	// within the frame that produced it
 	SkinPoseCache skin_pose_cache;
 
 	auto& light_nodes_snapshot = m_tick_light_nodes;
@@ -2701,7 +2587,6 @@ void VulkanRenderer::tick(float time) noexcept {
 		if (node == nullptr || !node->enabled()) {
 			continue;
 		}
-		// Every open workspace's meshes share this one list; only draw the one being looked through
 		if (m_render_owner_filter != nullptr && node->owner() != m_render_owner_filter) {
 			continue;
 		}
@@ -2718,7 +2603,6 @@ void VulkanRenderer::tick(float time) noexcept {
 
 		auto& material_handle = node->getMaterial();
 
-		// Meshes without a material fall back to the engine default material
 		assets::Material* material = material_handle.hasValue() ? &material_handle.get() : nullptr;
 		if (material == nullptr) {
 			if (!m_default_material.hasValue()) {
@@ -2743,8 +2627,6 @@ void VulkanRenderer::tick(float time) noexcept {
 			resolveSkinning(*node, frame, joint_offset, joint_count, m_joint_matrix_pool_exhausted_warned, skin_pose_cache);
 		}
 
-		// A sphere cannot represent non-uniform scale, so the largest axis wins: too big only costs a draw,
-		// too small culls a caster out of a shadow map it belonged in
 		const glm::vec4 local_sphere = mesh_handle->boundingSphere();
 		glm::vec3 world_center = glm::vec3(world_transform * glm::vec4(glm::vec3(local_sphere), 1.0f));
 		const glm::vec3 scale {
@@ -2754,8 +2636,6 @@ void VulkanRenderer::tick(float time) noexcept {
 		};
 		float world_radius = local_sphere.w * std::max({scale.x, scale.y, scale.z});
 
-		// A skinned mesh is placed by its joints, not this transform - bounding it from the bind pose puts the
-		// sphere at the origin and culls the character out of every shadow map
 		if (joint_count > 0 && joint_offset + joint_count <= frame.joint_matrices.size()) {
 			glm::vec3 minimum(std::numeric_limits<float>::max());
 			glm::vec3 maximum(std::numeric_limits<float>::lowest());
@@ -2766,12 +2646,9 @@ void VulkanRenderer::tick(float time) noexcept {
 			}
 
 			world_center = (minimum + maximum) * 0.5f;
-			// Joint origins alone don't reach the skin around them, so the mesh's own bind radius is added
-			// rather than used to replace the spread - a hand's vertices sit well outside its joint
 			world_radius = (glm::length(maximum - minimum) * 0.5f) + (local_sphere.w * std::max({scale.x, scale.y, scale.z}));
 		}
 
-		// Held for the frame lifetime
 		frame.asset_refs.push_back(mesh_handle);
 		if (material_handle.hasValue()) {
 			frame.asset_refs.push_back(material_handle);
@@ -2792,12 +2669,12 @@ void VulkanRenderer::tick(float time) noexcept {
 		);
 	}
 
+	buildVoxelProxies(frame);
+
 	const auto extent = m_output_target->getExtent();
 	const float aspect =
 	    extent.height > 0 ? static_cast<float>(extent.width) / static_cast<float>(extent.height) : (1080.0f / 720.0f);
 
-	// getView() re-syncs and rebuilds a lookAt, and the loop below wants the same matrix per light. The
-	// camera's, not frame_data's, which a probe capture may have replaced
 	const glm::mat4 camera_view = m_camera->getView();
 	const glm::mat4 camera_projection = m_camera->getProjection(aspect);
 
@@ -2810,13 +2687,6 @@ void VulkanRenderer::tick(float time) noexcept {
 	  .render_mode_pad = glm::uvec4(frame.render_mode, 0, 0, 0),
 	};
 
-	// This frame renders from a probe instead of the camera, one face per frame. Cleared first because
-	// RenderFrame objects are pooled - a slot that carried a capture would keep re-capturing forever
-	frame.probe_capture_index = -1;
-	frame.probe_capture_face = 0;
-	frame.irradiance_capture_index = -1;
-	frame.irradiance_capture_face = 0;
-	frame.capture_extent = 0;
 	{
 		std::scoped_lock lock(m_reflection_probe_mutex);
 		const auto probe_count = static_cast<int32_t>(std::min<size_t>(m_reflection_probe_nodes.size(), k_max_reflection_probes));
@@ -2826,16 +2696,12 @@ void VulkanRenderer::tick(float time) noexcept {
 			TOAST_INFO("Render", "Baking {} reflection probe(s), {} frames", probe_count, probe_count * 6);
 		}
 
-		// Plus a one-off auto-bake: an uncaptured probe contributes nothing, and waiting for someone to find
-		// the Bake button is worse than six frames of flicker
 		uint32_t stale = 0;
 		bool any_unbaked = false;
 		if (m_reflection_probe_pass != nullptr) {
 			for (int32_t i = 0; i < probe_count; ++i) {
 				const auto index = static_cast<uint32_t>(i);
 
-				// A prebaked probe loads its capture instead of producing one. Tried once per probe: a miss
-				// means nothing was ever stored, and retrying every frame would hit the filesystem forever
 				if (!m_reflection_probe_pass->isBaked(index) && m_reflection_probe_nodes[i]->isPrebaked() &&
 				    !m_probe_load_attempted.contains(m_reflection_probe_nodes[i])) {
 					m_probe_load_attempted.insert(m_reflection_probe_nodes[i]);
@@ -2849,8 +2715,6 @@ void VulkanRenderer::tick(float time) noexcept {
 				if (!m_reflection_probe_pass->isBaked(index)) {
 					any_unbaked = true;
 				}
-				// Resolution counts as stale too: the capture is still of the right place, but not at the size
-				// the probe now asks for
 				if (m_reflection_probe_pass->isStale(
 				        index, m_reflection_probe_nodes[i]->world_position, m_reflection_probe_nodes[i]->boxExtents()
 				    ) ||
@@ -2861,8 +2725,6 @@ void VulkanRenderer::tick(float time) noexcept {
 		}
 		m_probe_stale_count.store(stale, std::memory_order_relaxed);
 
-		// Once, not whenever a probe still reads unbaked: if the bake cannot take, retrying on that condition
-		// re-renders the scene six times per probe forever
 		if (any_unbaked && m_probe_bake_cursor < 0 && !m_probe_auto_baked) {
 			m_probe_auto_baked = true;
 			m_probe_bake_cursor = 0;
@@ -2877,13 +2739,10 @@ void VulkanRenderer::tick(float time) noexcept {
 				const auto face = static_cast<uint32_t>(m_probe_bake_cursor % 6);
 				const glm::vec3 probe_position = m_reflection_probe_nodes[probe_index]->world_position;
 
-				// The basis the sampling hardware assumes, shared with the prefilter. A cube face cannot pick its
-				// own up vector - its texel rows run along it
 				const auto basis = cubeFaceBasis(face);
 				const glm::mat4 capture_view = glm::lookAt(probe_position, probe_position + basis.forward, basis.up);
 
-				// Not negated, unlike Camera::getProjection(): that flip is for the screen, and here it mirrors
-				// every face so the seams stop lining up
+				// Not Y flipped unlike Camera::getProjection()
 				const glm::mat4 capture_projection =
 				    glm::perspectiveRH_ZO(glm::radians(90.0f), 1.0f, m_camera->near_plane, m_camera->far_plane);
 
@@ -2893,16 +2752,11 @@ void VulkanRenderer::tick(float time) noexcept {
 				frame.frame_data.camera_position = probe_position;
 				frame.probe_capture_index = probe_index;
 				frame.probe_capture_face = face;
-				// Never larger than the scene target can hold, since the capture rasterizes into a corner of it
 				frame.capture_extent = std::min({m_reflection_probe_nodes[probe_index]->resolution(), extent.width, extent.height});
 
-				// A probe stores radiance, so never through whatever debug view the viewport is showing - a bake
-				// under Normals would light the scene with pastel normals
 				frame.render_mode = 0;
 				frame.frame_data.render_mode_pad.x = 0;
 
-				// Stamped on the first face, since all six come from this position. Resolution too -
-				// reallocating mid-bake would throw away the faces already captured
 				if (face == 0 && m_reflection_probe_pass != nullptr) {
 					m_reflection_probe_pass->setProbeResolution(
 					    static_cast<uint32_t>(probe_index), m_reflection_probe_nodes[probe_index]->resolution()
@@ -2912,8 +2766,6 @@ void VulkanRenderer::tick(float time) noexcept {
 					);
 				}
 
-				// Queued on the last face, written once the convolutions have run. Every bake is stored whether or not
-				// the probe is marked prebaked - the flag only decides whether a later run loads it
 				if (face == 5 && m_reflection_probe_pass != nullptr) {
 					m_reflection_probe_pass->queueSave(
 					    static_cast<uint32_t>(probe_index), probeCacheUri(*m_reflection_probe_nodes[probe_index])
@@ -2924,19 +2776,13 @@ void VulkanRenderer::tick(float time) noexcept {
 			}
 		}
 
-		// Baked through the same cube capture. Probes are contiguous in the SH buffer, so the shader needs
-		// only a base index and the grid dimensions to address any of them
 		{
 			uint32_t base = 0;
 			uint32_t written = 0;
 			uint32_t stale_volumes = 0;
 
-			// The bake maps a frame-data slot back to its node, and those stopped being the same index the
-			// moment a volume could be skipped
 			m_irradiance_published_nodes.clear();
 
-			// The whole list, not the first k_max_irradiance_volumes: with several workspaces open, slicing
-			// the front fills up on volumes nothing is looking at
 			for (auto* volume : m_irradiance_volume_nodes) {
 				if (written >= k_max_irradiance_volumes) {
 					break;
@@ -2944,8 +2790,6 @@ void VulkanRenderer::tick(float time) noexcept {
 				if (volume == nullptr) {
 					continue;
 				}
-				// Without this an inactive workspace's volume lights the one being looked through, and a scene
-				// with no volume of its own publishes nothing to mask it
 				if (m_render_owner_filter != nullptr && volume->owner() != m_render_owner_filter) {
 					continue;
 				}
@@ -2953,8 +2797,6 @@ void VulkanRenderer::tick(float time) noexcept {
 
 				const glm::uvec3 counts = volume->probeCounts();
 				const uint32_t count = counts.x * counts.y * counts.z;
-				// A volume that would run past the buffer is dropped whole rather than truncated: half a grid
-				// interpolates against probes that were never baked, which reads as light leaking out of nowhere
 				if (base + count > k_max_irradiance_probes) {
 					TOAST_WARN("Render", "Irradiance volume '{}' needs {} probes and does not fit; skipped", volume->name(), count);
 					continue;
@@ -2963,15 +2805,12 @@ void VulkanRenderer::tick(float time) noexcept {
 				const glm::vec3 min_corner = volume->world_position - volume->extents();
 				const ShGridKey current_key {.min_corner = min_corner, .extents = volume->extents(), .counts = counts};
 
-				// Never baked, or baked for a grid this volume no longer has
 				const auto baked_it = m_irradiance_baked_keys.find(volume);
 				const bool baked = baked_it != m_irradiance_baked_keys.end() && sameGrid(baked_it->second, current_key);
 				if (!baked) {
 					++stale_volumes;
 				}
 
-				// Published even when unbaked, since the bake reads its base index back out of here - but
-				// flagged, or a fresh volume lights the new scene with the unloaded one's coefficients
 				frame.frame_data.irradiance_volumes[written] = {
 				  .min_corner_spacing = glm::vec4(min_corner, volume->spacing()),
 				  .counts_base = glm::uvec4(counts, base),
@@ -2979,13 +2818,9 @@ void VulkanRenderer::tick(float time) noexcept {
 				  .baked_pad = glm::uvec4(baked ? 1u : 0u, 0u, 0u, 0u)
 				};
 
-				// Once per volume: a bake is hundreds of frames, and the stored grid key already sends a moved
-				// volume through a fresh one
 				if (m_reflection_probe_pass != nullptr && !m_irradiance_load_attempted.contains(volume)) {
 					m_irradiance_load_attempted.insert(volume);
 					if (m_reflection_probe_pass->loadShRange(base, count, irradianceCacheUri(*volume), current_key)) {
-						// The grid key had to match to get here, so it stops counting as stale and contributes
-						// from this frame rather than the next
 						m_irradiance_baked_keys[volume] = current_key;
 						frame.frame_data.irradiance_volumes[written].baked_pad.x = 1;
 						--stale_volumes;
@@ -3001,8 +2836,6 @@ void VulkanRenderer::tick(float time) noexcept {
 			m_irradiance_probe_total = base;
 			m_irradiance_stale_count.store(stale_volumes, std::memory_order_relaxed);
 
-			// Two failure modes look identical in the lit image: a box that misses the geometry, and a spacing
-			// too coarse for how fast light changes. Drawing both separates them
 			for (uint32_t v = 0; v < written; ++v) {
 				const auto& data = frame.frame_data.irradiance_volumes[v];
 				const glm::vec3 min_corner(data.min_corner_spacing);
@@ -3013,8 +2846,6 @@ void VulkanRenderer::tick(float time) noexcept {
 
 				const glm::vec3 step = (extents * 2.0f) / glm::max(glm::vec3(counts) - 1.0f, glm::vec3(1.0f));
 
-				// A cube of dots is unreadable past a few hundred and costs a draw each, so a dense grid is
-				// sampled rather than skipped entirely - the spacing still reads correctly, which is the point
 				const uint32_t total = counts.x * counts.y * counts.z;
 				const uint32_t stride = total > 512 ? (total / 512) + 1 : 1;
 
@@ -3031,21 +2862,15 @@ void VulkanRenderer::tick(float time) noexcept {
 			TOAST_INFO("Render", "Baking {} irradiance probe(s), {} frames", m_irradiance_probe_total, m_irradiance_probe_total * 6);
 		}
 
-		// Irradiance bake, sequenced strictly after the reflection probes. Both drive the same staging cube,
-		// so running them at once would have each overwriting the other's faces mid-capture
 		if (m_probe_bake_cursor < 0 && m_irradiance_bake_cursor >= 0 && m_reflection_probe_pass != nullptr) {
 			const auto total_faces = static_cast<int32_t>(m_irradiance_probe_total) * 6;
 			if (m_irradiance_bake_cursor >= total_faces) {
 				m_irradiance_bake_cursor = -1;
 				TOAST_INFO("Render", "Irradiance volume bake finished ({} probes)", m_irradiance_probe_total);
 
-				// Written once the whole bake is done rather than per volume: the coefficients are one buffer,
-				// and a save mid-bake would store ranges the compute pass has not filled yet
 				for (uint32_t v = 0; v < frame.frame_data.irradiance_volume_count_pad.x; ++v) {
 					const auto& data = frame.frame_data.irradiance_volumes[v];
 					const glm::uvec3 counts(data.counts_base);
-					// The published mapping, not the registration list - a skipped volume shifts every slot
-					// after it and credits one volume's bake to another
 					if (v >= m_irradiance_published_nodes.size() || m_irradiance_published_nodes[v] == nullptr) {
 						continue;
 					}
@@ -3055,8 +2880,6 @@ void VulkanRenderer::tick(float time) noexcept {
 					  .min_corner = glm::vec3(data.min_corner_spacing), .extents = glm::vec3(data.extents_intensity), .counts = counts
 					};
 
-					// From the frame data the bake ran against, not the node as it stands now: a volume moved
-					// mid-bake holds coefficients for where it was
 					m_irradiance_baked_keys[baked_volume] = key;
 
 					m_reflection_probe_pass->queueShSave(
@@ -3067,7 +2890,6 @@ void VulkanRenderer::tick(float time) noexcept {
 				const int32_t probe_index = m_irradiance_bake_cursor / 6;
 				const auto face = static_cast<uint32_t>(m_irradiance_bake_cursor % 6);
 
-				// Walk the volumes to find which one owns this probe and where in its grid it sits
 				glm::vec3 probe_position(0.0f);
 				for (uint32_t v = 0; v < frame.frame_data.irradiance_volume_count_pad.x; ++v) {
 					const auto& data = frame.frame_data.irradiance_volumes[v];
@@ -3086,8 +2908,6 @@ void VulkanRenderer::tick(float time) noexcept {
 					    local / static_cast<int32_t>(counts.x * counts.y)
 					);
 
-					// Probes sit on the box's faces, not inset from them, so a surface at the very edge of the
-					// volume still has eight probes around it rather than extrapolating from the nearest cell
 					const glm::vec3 extents(data.extents_intensity);
 					const glm::vec3 step = (extents * 2.0f) / glm::max(glm::vec3(counts) - 1.0f, glm::vec3(1.0f));
 					probe_position = glm::vec3(data.min_corner_spacing) + glm::vec3(grid) * step;
@@ -3102,16 +2922,11 @@ void VulkanRenderer::tick(float time) noexcept {
 				frame.irradiance_capture_index = probe_index;
 				frame.irradiance_capture_face = face;
 
-				// Far smaller than a reflection capture: the result is four coefficients, and detail beyond
-				// this is averaged away by the projection itself
 				frame.capture_extent = std::min({k_irradiance_capture_size, extent.width, extent.height});
 
-				// Same reasoning as a reflection capture: bake what the game shades, never a debug view
 				frame.render_mode = 0;
 				frame.frame_data.render_mode_pad.x = 0;
 
-				// One bounce, deliberately. A capture that could see the volume's own probes would record the
-				// previous bake inside the new one, and each re-bake would drift
 				frame.frame_data.irradiance_volume_count_pad.x = 0;
 
 				++m_irradiance_bake_cursor;
@@ -3125,7 +2940,6 @@ void VulkanRenderer::tick(float time) noexcept {
 	frame.camera_near = m_camera->near_plane;
 	frame.camera_far = m_camera->far_plane;
 
-	// Camera bodies
 	{
 		auto& camera_nodes_snapshot = m_tick_camera_nodes;
 		{
@@ -3150,14 +2964,10 @@ void VulkanRenderer::tick(float time) noexcept {
 		}
 	}
 
-	// Global (unclustered) lights fold straight into FrameUBO; PointLight/Spotlight resolve to
-	// GpuLight entries in frame.lights instead, consumed by ClusterLightingPass
 	glm::vec3 ambient_sum(0.0f);
 	uint32_t directional_count = 0;
 	frame.lights.reserve(light_nodes_snapshot.size());
 
-	// First shadow-casting DirectionalLight wins: there's one cascade set, and picking by "first registered"
-	// is at least stable frame to frame, unlike anything based on screen coverage or intensity
 	int32_t shadow_caster_index = -1;
 	glm::vec3 shadow_caster_direction {0.0f};
 
@@ -3170,14 +2980,11 @@ void VulkanRenderer::tick(float time) noexcept {
 		if (light == nullptr || !light->enabled()) {
 			continue;
 		}
-		// Same filtering as the mesh loop - an inactive workspace's lights must not light this one
 		if (m_render_owner_filter != nullptr && light->owner() != m_render_owner_filter) {
 			continue;
 		}
 		light->syncTransform();
 
-		// Per-light optimization knobs, see Light's "Optimization" group. Distances are camera-to-light, and
-		// both limits are opt-in (0 = no limit). Ambient has no position for either to mean anything against
 		const float camera_distance = glm::distance(light->world_position, m_camera->world_position);
 		const bool positional =
 		    light->lightType() != toast::LightType::ambient && light->lightType() != toast::LightType::directional;
@@ -3186,12 +2993,9 @@ void VulkanRenderer::tick(float time) noexcept {
 			continue;
 		}
 
-		// A light past its shadow distance still lights the scene; it just hands its scarce shadow slot to a
-		// nearer one
 		const bool casts_shadows =
 		    light->castsShadows() && (!positional || light->shadowDistance() <= 0.0f || camera_distance <= light->shadowDistance());
 
-		// Debug icon, tinted by the light's own colour so it reads at a glance which light is which
 		constexpr float k_light_icon_size = 0.5f;
 		debugDrawBillboard(light->world_position, k_light_icon_size, lightIcon(light->lightType()), glm::vec4(light->color(), 1.0f));
 
@@ -3239,7 +3043,6 @@ void VulkanRenderer::tick(float time) noexcept {
 				      .world_pos_range = glm::vec4(world_pos, point->attenuation()),
 				      .view_pos_type = glm::vec4(view_pos, 0.0f),
 				      .color_intensity = glm::vec4(point->color(), point->intensity()),
-				      // w = -1: no shadow slot until the selection pass below hands one out
 				      .direction_pad = glm::vec4(0.0f, 0.0f, 0.0f, -1.0f),
 				      .cone_angles = glm::vec4(0.0f),
 				    }
@@ -3275,17 +3078,13 @@ void VulkanRenderer::tick(float time) noexcept {
 				);
 				break;
 			}
-			default: break;    // LightType::none - a bare Light node, never emitted by any real subclass
+			default: break;
 		}
 	}
 
 	frame.frame_data.ambient_color_intensity = glm::vec4(ambient_sum, 1.0f);
 	frame.frame_data.directional_light_count_pad.x = directional_count;
 
-	// Nearest-first, so anything past the shader's limit was least likely to be selected
-	//
-	// A capture frame carries none: probes left on during a bake record the previous bake inside the new one,
-	// so highlights walk darker with every press
 	if (frame.probe_capture_index < 0) {
 		auto& probes_snapshot = m_tick_probe_nodes;
 		{
@@ -3294,14 +3093,10 @@ void VulkanRenderer::tick(float time) noexcept {
 		}
 
 		const glm::vec3 camera_position = frame.frame_data.camera_position;
-		// Registration index is the probe's identity - it is what the bake writes cubemaps by - so it is paired
-		// up before sorting and carried through
 		auto& identified = m_tick_probes_by_distance;
 		identified.clear();
 		identified.reserve(probes_snapshot.size());
 		for (uint32_t i = 0; i < probes_snapshot.size(); ++i) {
-			// Same owner filter the mesh, light and irradiance-volume loops apply. The registration index is
-			// still what identifies the probe's cubemap, so filtering here costs nothing downstream
 			if (probes_snapshot[i] == nullptr ||
 			    (m_render_owner_filter != nullptr && probes_snapshot[i]->owner() != m_render_owner_filter)) {
 				continue;
@@ -3317,8 +3112,6 @@ void VulkanRenderer::tick(float time) noexcept {
 			return distance_squared(a.second) < distance_squared(b.second);
 		});
 
-		// A box that does not enclose what it corrects contributes nothing, and "reflections never change"
-		// says nothing about why. Extents default to metres, so a centimetre-authored scene misses by 100x
 		for (const auto& [cube_index, probe] : identified) {
 			const glm::vec4 volume_color(0.35f, 0.8f, 1.0f, 1.0f);
 			if (probe->usesBoxProjection()) {
@@ -3344,8 +3137,6 @@ void VulkanRenderer::tick(float time) noexcept {
 		frame.frame_data.reflection_probe_count_pad.x = probe_count;
 		if (m_reflection_probe_pass != nullptr) {
 			frame.frame_data.reflection_probe_count_pad.y = m_reflection_probe_pass->getMipCount();
-			// One bit per probe: an unbaked slot holds the black fallback, and the shader has to fall back to
-			// the global environment rather than sample it. Keyed by cube index, as the shader looks it up
 			uint32_t baked_mask = 0;
 			for (uint32_t i = 0; i < k_max_reflection_probes; ++i) {
 				if (m_reflection_probe_pass->isBaked(i)) {
@@ -3356,15 +3147,11 @@ void VulkanRenderer::tick(float time) noexcept {
 		}
 	}
 
-	// Environment state for the shader: whether the cubemaps are ready, and how many roughness levels the
-	// prefiltered chain holds. Zero leaves the shader on its uniform-ambient path
 	if (m_environment_pass != nullptr && m_environment_pass->isReady()) {
 		frame.frame_data.environment_params.x = 1.0f;
 		frame.frame_data.environment_params.y = static_cast<float>(m_environment_pass->getPrefilteredMipCount());
 	}
 
-	// Every non-material input to the shading equation, reported when it changes. A black scene has either no
-	// light or no environment, and a screenshot cannot tell them apart
 	{
 		auto state = std::tuple {
 		  ambient_sum.r + ambient_sum.g + ambient_sum.b,
@@ -3399,19 +3186,15 @@ void VulkanRenderer::tick(float time) noexcept {
 		}
 	}
 
-	// Decided once, all three together: skipping the shadow maps and then finding an empty TLAS renders no
-	// shadows and leaves the shader on a gScene nothing wrote. Same isTraceable() the build uses
 	const bool trace_shadows =
 	    m_core->isRayTracingSupported() && tracedShadowsEnabled() && std::ranges::any_of(frame.mesh_instances, isTraceable);
 	frame.frame_data.traced_shadow_params.x = trace_shadows ? 1.0f : 0.0f;
 
-	// Skipped entirely while tracing: with no ShadowView pushed, ShadowPass records nothing, so the cascade
-	// fits, the punctual slot assignment and every shadow-map draw all disappear from the frame
 	if (!trace_shadows) {
 		fitShadowViews(frame, aspect, shadow_caster_index, shadow_caster_direction, spot_candidates, point_candidates);
 	}
 
-	// TODO: compile this out if in non editor build or smth
+	// TODO compile out of non editor builds
 	if (m_gizmo_state.visible) {
 		const float scale = toast::gizmo_layout::k_screen_size * glm::distance(m_camera->world_position, m_gizmo_state.origin);
 
@@ -3424,13 +3207,9 @@ void VulkanRenderer::tick(float time) noexcept {
 		frame.transform_gizmo.drag_scale_factor = m_gizmo_state.drag_scale_factor;
 	}
 
-	// Here because the frame's camera is final only now: a capture has already replaced view_projection, and
-	// culling against the viewport camera would have a bake drop everything behind the player
 	{
 		const bool is_capture = frame.probe_capture_index >= 0 || frame.irradiance_capture_index >= 0;
 
-		// Ignored on capture frames: culling a probe's six faces against a frustum parked elsewhere would bake
-		// holes into the cubemap, and a debugging aid must not corrupt data
 		const bool freeze = m_cull_freeze.load(std::memory_order_relaxed) && !is_capture;
 		if (!freeze) {
 			m_has_frozen_cull = false;
@@ -3444,15 +3223,23 @@ void VulkanRenderer::tick(float time) noexcept {
 
 		uint32_t visible = 0;
 		for (auto& proxy : frame.mesh_instances) {
-			// A zero radius means the mesh never reported bounds; drawing it is the safe reading of "unknown"
 			proxy.visible = proxy.bounds_radius <= 0.0f || sphereInFrustum(planes, proxy.bounds_center, proxy.bounds_radius);
 			visible += proxy.visible ? 1u : 0u;
 		}
 		m_visible_instance_count.store(visible, std::memory_order_relaxed);
 
-		// Groups proxies into consecutive slots so MaterialPass can collapse a run into one instanced draw.
-		// By pointer identity - the grouping only has to be consistent, and pointers are stable for the frame.
-		// Root material first keeps each pass contiguous; instance material and mesh cannot share a draw
+		const glm::vec3 eye = frame.frame_data.camera_position;
+		const float near_plane = m_camera->near_plane;
+		for (auto& proxy : frame.voxel_instances) {
+			proxy.camera_inside = toast::voxel::containsPoint(proxy.inverse_model, proxy.brick_dims, eye, near_plane);
+			proxy.visible = proxy.camera_inside || sphereInFrustum(planes, proxy.bounds_center, proxy.bounds_radius);
+			proxy.view_distance = std::max(glm::distance(eye, proxy.bounds_center) - proxy.bounds_radius, 0.0f);
+		}
+
+		std::ranges::stable_sort(frame.voxel_instances, [](const VoxelVolumeProxy& a, const VoxelVolumeProxy& b) {
+			return a.view_distance < b.view_distance;
+		});
+
 		std::ranges::stable_sort(frame.mesh_instances, [](const MeshInstanceProxy& a, const MeshInstanceProxy& b) {
 			if (a.root_material != b.root_material) {
 				return std::less<> {}(a.root_material, b.root_material);
@@ -3463,7 +3250,6 @@ void VulkanRenderer::tick(float time) noexcept {
 			return std::less<> {}(a.mesh, b.mesh);
 		});
 
-		// Recorded while walking the sorted list, so each pass can jump straight to its own proxies
 		frame.material_ranges.clear();
 
 		frame.instance_data.clear();
@@ -3481,8 +3267,6 @@ void VulkanRenderer::tick(float time) noexcept {
 			frame.material_ranges.back().end = static_cast<uint32_t>(frame.mesh_instances.size());
 		}
 
-		// Before the instance buffers, because they decide a skinned proxy's model matrix: posed vertices are
-		// already world-space, so it takes the identity. One with no slice keeps its transform
 		uint32_t posed_cursor = 0;
 		for (auto& proxy : frame.mesh_instances) {
 			proxy.posed_vertex_offset = MeshInstanceProxy::k_no_posed_vertices;
@@ -3504,8 +3288,6 @@ void VulkanRenderer::tick(float time) noexcept {
 			return proxy.posed_vertex_offset == MeshInstanceProxy::k_no_posed_vertices ? proxy.model : glm::mat4(1.0f);
 		};
 
-		// One slot per proxy, culled or not, in proxy order - ShadowPass indexes it directly by proxy index, so
-		// a run of adjacent same-mesh proxies is a run of adjacent slots and needs no separate index list
 		frame.shadow_instance_data.clear();
 		frame.shadow_instance_data.reserve(std::min<size_t>(frame.mesh_instances.size(), k_max_instances));
 		for (const auto& proxy : frame.mesh_instances) {
@@ -3520,8 +3302,6 @@ void VulkanRenderer::tick(float time) noexcept {
 				continue;
 			}
 			if (frame.instance_data.size() >= k_max_instances) {
-				// Dropped rather than drawn with a wrong index: an out-of-range read in the vertex shader is
-				// undefined, and a missing object is easier to notice than a wrongly-placed one
 				proxy.visible = false;
 				continue;
 			}
@@ -3530,12 +3310,8 @@ void VulkanRenderer::tick(float time) noexcept {
 		}
 
 		if (m_cull_debug_draw.load(std::memory_order_relaxed) && !is_capture) {
-			// The frustum the test actually used, not the camera's - with freeze on they are different, and
-			// showing the live one would explain nothing about why a given sphere is red
 			debugDrawFrustumFromMatrix(cull_view_projection, glm::vec4(1.0f, 1.0f, 0.2f, 1.0f));
 
-			// Coarse spheres: this draws one per instance, and at 24 segments a few thousand of them costs
-			// more than the culling it is meant to explain
 			constexpr int k_debug_sphere_segments = 8;
 			for (const auto& proxy : frame.mesh_instances) {
 				if (proxy.bounds_radius <= 0.0f) {
@@ -3544,14 +3320,19 @@ void VulkanRenderer::tick(float time) noexcept {
 				const glm::vec4 color = proxy.visible ? glm::vec4(0.2f, 1.0f, 0.3f, 1.0f) : glm::vec4(1.0f, 0.25f, 0.2f, 1.0f);
 				debugDrawSphere(proxy.bounds_center, proxy.bounds_radius, color, k_debug_sphere_segments);
 			}
+
+			for (const auto& proxy : frame.voxel_instances) {
+				const glm::vec4 color = proxy.visible ? glm::vec4(0.2f, 0.85f, 1.0f, 1.0f) : glm::vec4(1.0f, 0.25f, 0.2f, 1.0f);
+				debugDrawSphere(proxy.bounds_center, proxy.bounds_radius, color, k_debug_sphere_segments);
+			}
 		}
 	}
 
-	// UI contexts update and record their draw data on the main thread
 	if (m_ui_frame_builder) {
 		m_ui_frame_builder(frame);
 	}
 
+	count_build();
 	submitFrame();
 }
 
@@ -3573,6 +3354,170 @@ void VulkanRenderer::unregisterMeshNodeProxy(toast::MeshNode* node) {
 
 	std::scoped_lock lock(m_mesh_proxy_mutex);
 	std::erase(m_mesh_proxy_nodes, node);
+}
+
+void VulkanRenderer::registerVoxelNodeProxy(toast::VoxelNode* node) {
+	if (node == nullptr) {
+		return;
+	}
+
+	std::scoped_lock lock(m_voxel_proxy_mutex);
+	if (!std::ranges::contains(m_voxel_proxy_nodes, node)) {
+		m_voxel_proxy_nodes.push_back(node);
+	}
+}
+
+void VulkanRenderer::unregisterVoxelNodeProxy(toast::VoxelNode* node) {
+	if (node == nullptr) {
+		return;
+	}
+
+	std::scoped_lock lock(m_voxel_proxy_mutex);
+	std::erase(m_voxel_proxy_nodes, node);
+}
+
+namespace {
+
+[[nodiscard]]
+auto defaultVoxelPalette() -> const toast::voxel::Palette& {
+	static const toast::voxel::Palette palette = [] {
+		toast::voxel::Palette out;
+		for (uint32_t i = 1; i < toast::voxel::k_palette_size; ++i) {
+			out.entries[i].albedo_r = 160;
+			out.entries[i].albedo_g = 160;
+			out.entries[i].albedo_b = 160;
+			out.entries[i].roughness = 200;
+		}
+		return out;
+	}();
+	return palette;
+}
+
+}
+
+void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
+	ZoneScoped;
+
+	auto& nodes = m_tick_voxel_nodes;
+	{
+		std::scoped_lock lock(m_voxel_proxy_mutex);
+		nodes.assign(m_voxel_proxy_nodes.begin(), m_voxel_proxy_nodes.end());
+	}
+
+	if (m_voxel_storage_pending) {
+		if (m_voxel_storage_pending->isReady()) {
+			m_voxel_storage = std::move(m_voxel_storage_pending);
+			m_voxel_storage_pending.reset();
+		} else if (m_voxel_storage_pending->hasFailed()) {
+			if (!m_voxel_upload_failed_warned) {
+				m_voxel_upload_failed_warned = true;
+				TOAST_ERROR("Render", "Voxel scene upload failed; voxel volumes draw from the previous upload, if any");
+			}
+			m_voxel_storage_pending.reset();
+		}
+	}
+
+	struct Gathered {
+		toast::VoxelNode* node;
+		toast::voxel::Volume* volume;
+		const toast::voxel::Palette* palette;
+	};
+
+	std::vector<Gathered> gathered;
+	std::vector<VoxelSceneKey> key;
+	gathered.reserve(nodes.size());
+	key.reserve(nodes.size());
+
+	for (auto* node : nodes) {
+		if (node == nullptr || !node->enabled()) {
+			continue;
+		}
+		if (m_render_owner_filter != nullptr && node->owner() != m_render_owner_filter) {
+			continue;
+		}
+
+		toast::voxel::Volume* volume = node->volume();
+		if (volume == nullptr) {
+			continue;
+		}
+		const toast::voxel::Palette* palette = node->resolvedPalette();
+		if (palette == nullptr) {
+			palette = &defaultVoxelPalette();
+		}
+
+		gathered.push_back({node, volume, palette});
+		key.push_back({.node_uid = node->uid().data(), .revision = node->revision(), .palette = palette});
+	}
+
+	if (key != m_voxel_scene_key) {
+		m_voxel_scene_key = key;
+		m_voxel_upload_failed_warned = false;
+
+		if (gathered.empty()) {
+			m_voxel_storage.reset();
+			m_voxel_storage_pending.reset();
+		} else {
+			std::vector<toast::voxel::gpu::SceneVolume> scene_volumes;
+			std::vector<uint64_t> node_uids;
+			std::vector<glm::uvec3> brick_dims;
+			scene_volumes.reserve(gathered.size());
+			node_uids.reserve(gathered.size());
+			brick_dims.reserve(gathered.size());
+			for (const Gathered& entry : gathered) {
+				scene_volumes.push_back({.volume = entry.volume, .palette = entry.palette});
+				node_uids.push_back(entry.node->uid().data());
+				brick_dims.push_back(entry.volume->brickDims());
+			}
+
+			auto storage = std::make_shared<VoxelGpuStorage>(std::move(node_uids), std::move(brick_dims));
+			queueResourceUpload(
+			    std::make_unique<VoxelSceneUpload>(
+			        storage, toast::voxel::gpu::packPool(toast::voxel::runtimeBrickPool()), toast::voxel::gpu::packScene(scene_volumes)
+			    )
+			);
+			m_voxel_storage_pending = std::move(storage);
+		}
+	}
+
+	frame.voxel_storage = m_voxel_storage;
+	if (!m_voxel_storage) {
+		m_voxel_previous_models.clear();
+		return;
+	}
+
+	std::unordered_map<uint64_t, glm::mat4> drawn_models;
+	drawn_models.reserve(gathered.size());
+	frame.voxel_instances.reserve(gathered.size());
+
+	for (const Gathered& entry : gathered) {
+		const uint64_t node_uid = entry.node->uid().data();
+		const std::optional<uint32_t> record = m_voxel_storage->recordIndexOf(node_uid);
+		if (!record.has_value()) {
+			continue;
+		}
+
+		const glm::uvec3 dims = m_voxel_storage->recordBrickDims(*record);
+		const glm::mat4 model = entry.node->getWorldTransform();
+		const glm::vec4 sphere = toast::voxel::worldBoundingSphere(model, dims);
+		const auto previous = m_voxel_previous_models.find(node_uid);
+
+		frame.voxel_instances.push_back(
+		    VoxelVolumeProxy {
+		      .record_index = *record,
+		      .brick_dims = dims,
+		      .model = model,
+		      .inverse_model = glm::inverse(model),
+		      .previous_model = previous != m_voxel_previous_models.end() ? previous->second : model,
+		      .bounds_center = glm::vec3(sphere),
+		      .bounds_radius = sphere.w,
+		      .mirrored = glm::determinant(model) < 0.0f,
+		      .node_uid = node_uid,
+		    }
+		);
+		drawn_models.insert_or_assign(node_uid, model);
+	}
+
+	m_voxel_previous_models.swap(drawn_models);
 }
 
 void VulkanRenderer::requestMaterialFrameSetRebuild() {
@@ -3600,7 +3545,6 @@ void VulkanRenderer::unregisterReflectionProbeProxy(toast::ReflectionProbe* node
 
 	std::scoped_lock lock(m_reflection_probe_mutex);
 	std::erase(m_reflection_probe_nodes, node);
-	// Otherwise a probe destroyed and recreated at the same address would be assumed already looked up
 	m_probe_load_attempted.erase(node);
 }
 
@@ -3623,8 +3567,6 @@ void VulkanRenderer::unregisterIrradianceVolumeProxy(toast::IrradianceVolume* no
 
 	std::scoped_lock lock(m_reflection_probe_mutex);
 	std::erase(m_irradiance_volume_nodes, node);
-	// Otherwise a volume destroyed and recreated at the same address is assumed already looked up, and would
-	// inherit the previous node's bake key
 	m_irradiance_load_attempted.erase(node);
 	m_irradiance_baked_keys.erase(node);
 	cancelIrradianceBake();
@@ -3652,10 +3594,6 @@ void VulkanRenderer::unregisterPostProcessVolumeProxy(toast::PostProcessVolume* 
 
 namespace {
 
-/// @brief Wireframe box in @p transform's space rather than world-axis-aligned
-///
-/// debugDrawBox() takes a world min/max, which cannot describe a rotated volume - and its AABB would show a
-/// shape the influence test does not use
 void drawOrientedBox(const glm::mat4& transform, const glm::vec3& extents, const glm::vec4& color) {
 	std::array<glm::vec3, 8> corners {};
 	for (size_t i = 0; i < corners.size(); ++i) {
@@ -3683,21 +3621,15 @@ auto VulkanRenderer::blendPostProcessVolumes(const glm::vec3& camera_position) -
 		volumes.assign(m_post_process_volume_nodes.begin(), m_post_process_volume_nodes.end());
 	}
 
-	// Every open workspace's volumes share this one list, same as the mesh, light and irradiance loops. Without
-	// the filter an inactive workspace's grade applies to the one being looked through
 	std::erase_if(volumes, [this](const toast::PostProcessVolume* volume) {
 		return volume == nullptr || (m_render_owner_filter != nullptr && volume->owner() != m_render_owner_filter);
 	});
 
-	// Ascending, so the highest priority is applied last and therefore wins where volumes overlap. Stable, so
-	// equal priorities keep registration order rather than reshuffling between frames and flickering
 	std::ranges::stable_sort(volumes, {}, [](const toast::PostProcessVolume* volume) { return volume->priority(); });
 
 	for (const auto* volume : volumes) {
 		const float influence = volume->influenceAt(camera_position);
 
-		// A box that never reaches the camera and a grade that is merely subtle look identical in the image.
-		// The box brightening as it takes effect is what separates them
 		if (!volume->isGlobal()) {
 			const glm::vec4 color = influence > 0.0f ? glm::vec4(0.4f, 1.0f, 0.6f, 1.0f) : glm::vec4(0.4f, 0.55f, 0.5f, 1.0f);
 			drawOrientedBox(volume->getWorldTransform(), volume->extents(), color);
@@ -3717,8 +3649,6 @@ void VulkanRenderer::cancelIrradianceBake() {
 		return;
 	}
 
-	// Bases are recomputed each tick, so adding a volume renumbers them under a bake in flight and it writes
-	// into slices that now belong to someone else. Cheaper to start over
 	TOAST_INFO("Render", "Irradiance volume set changed mid-bake; cancelling so bases can be reassigned");
 	m_irradiance_bake_cursor = -1;
 }
@@ -3770,13 +3700,16 @@ void VulkanRenderer::stop() {
 		return;
 	}
 
+	{
+		// Locked so the notify cannot slip between the m_running check and the wait
+		std::lock_guard lock(m_queue_mutex);
+	}
 	m_frame_cv.notify_all();
 
 	if (m_render_thread.joinable()) {
 		m_render_thread.join();
 	}
 
-	// queueResourceUpload() dispatches PendingResourceUpload::build() to the thread pool
 	while (m_pending_upload_builds.load(std::memory_order_acquire) > 0) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
@@ -3788,6 +3721,8 @@ void VulkanRenderer::stop() {
 			TOAST_ERROR("Render", "Device wait failed during shutdown, tearing down anyway: {}", e.what());
 		}
 	}
+
+	m_gpu_timer.reset();
 
 #ifdef TRACY_ENABLE
 	if (m_tracy_vk_ctx != nullptr) {
@@ -3808,9 +3743,13 @@ auto VulkanRenderer::applyResize(vk::Extent2D extent) -> void {
 
 auto VulkanRenderer::applyResizeInternal(vk::Extent2D extent) -> void {
 	ZoneScoped;
+	if (!m_output_target->isPresentable()) {
+		uint64_t expected = k_no_pending_resize;
+		m_pending_resize_packed.compare_exchange_strong(expected, packExtent(extent), std::memory_order_acq_rel);
+		return;
+	}
+
 	m_core->getDevice().waitIdle();
-	// Everything is idle, so every queued frame has completed - drain in order rather than iterating the
-	// contexts, which would publish them in slot order instead of submission order
 	publishCompletedFrames();
 	m_pending_publish.clear();
 	for (auto& frame : m_frames) {
@@ -3818,6 +3757,7 @@ auto VulkanRenderer::applyResizeInternal(vk::Extent2D extent) -> void {
 	}
 	try {
 		m_output_target->recreate(extent);
+		const vk::Extent2D actual_extent = m_output_target->getExtent();
 		const auto image_count = m_output_target->getImageCount();
 		m_images_in_flight.assign(image_count, vk::Fence {});
 		m_output_image_layouts.assign(image_count, vk::ImageLayout::eUndefined);
@@ -3825,14 +3765,12 @@ auto VulkanRenderer::applyResizeInternal(vk::Extent2D extent) -> void {
 		createDepthResources();
 		createSceneColorResources();
 
-		// Post passes own extent-sized resources of their own; the device is already idle here
 		{
 			std::lock_guard lock(m_pass_mutex);
 			for (auto& pass : m_post_process_passes) {
-				pass->onResize(extent);
+				pass->onResize(actual_extent);
 			}
 		}
-		// Their targets were just rebuilt, so the cached present binding points at destroyed views
 		std::ranges::fill(m_present_bound_views, vk::ImageView {});
 		m_current_frame = 0;
 	} catch (const std::exception& e) { TOAST_CRITICAL("Render", "Failed to recreate output target on resize: {}", e.what()); }
@@ -3883,9 +3821,6 @@ void VulkanRenderer::queueResourceUpload(std::unique_ptr<PendingResourceUpload> 
 void VulkanRenderer::pumpUploadQueue() {
 	ZoneScoped;
 
-	// A job's real footprint is only known once build() has run, so the budget is checked against work
-	// already staged. Overshoot is bounded by whatever the pool workers are building right now, which is
-	// what makes it safe to gate dispatch rather than the allocation itself
 	while (true) {
 		std::unique_ptr<PendingResourceUpload> job;
 		{
@@ -3893,8 +3828,6 @@ void VulkanRenderer::pumpUploadQueue() {
 			if (m_upload_waiting.empty()) {
 				return;
 			}
-			// Compared against zero rather than the job's own size: a single resource larger than the whole
-			// budget still has to get through, or it waits forever
 			if (m_upload_host_bytes.load(std::memory_order_acquire) >= k_upload_host_budget) {
 				return;
 			}
@@ -3902,7 +3835,6 @@ void VulkanRenderer::pumpUploadQueue() {
 			m_upload_waiting.pop_front();
 		}
 
-		// build() can be expensive so its dispatched to the thread pool to avoid blocking the main thread
 		m_pending_upload_builds.fetch_add(1, std::memory_order_relaxed);
 		toast::ThreadPool::push([this, j = std::move(job)]() mutable {
 			j->build(*m_core);
@@ -3921,8 +3853,6 @@ void VulkanRenderer::processPendingUploads() {
 	ZoneScoped;
 	const auto& device = m_core->getDevice();
 
-	// Submits go to one queue in slot order, so fences signal in that order too - the front batch is always
-	// the one to check, and stopping at the first unsignaled one keeps slot reclamation in step
 	while (!m_pending_uploads.empty()) {
 		auto& oldest_batch = m_pending_uploads.front();
 		auto& slot = m_upload_slots[oldest_batch.slot];
@@ -3942,7 +3872,6 @@ void VulkanRenderer::processPendingUploads() {
 		m_pending_uploads.pop();
 	}
 
-	// Budget just freed up, so whatever was held back can go
 	pumpUploadQueue();
 }
 
@@ -3952,8 +3881,6 @@ void VulkanRenderer::flushResourceUploads() {
 		return;
 	}
 
-	// The slot is claimed before the staging list is touched: with every slot busy the jobs have to stay
-	// queued for a later frame rather than being drained into a command buffer there is nowhere to put
 	UploadSlot& slot = m_upload_slots[m_next_upload_slot];
 	if (slot.in_flight) {
 		return;
@@ -3965,14 +3892,12 @@ void VulkanRenderer::flushResourceUploads() {
 		if (m_upload_staging.empty()) {
 			return;
 		}
-		// Move the contents to local list and clear the shared one
 		jobs_to_flush = std::move(m_upload_staging);
 		m_upload_staging.clear();
 	}
 
 	const auto& device = m_core->getDevice();
 
-	// Reset here rather than at signal time, so a slot that has been idle for a while still starts clean
 	device.resetFences(*slot.fence);
 	slot.command_buffer.reset();
 	slot.command_buffer.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
@@ -3985,7 +3910,7 @@ void VulkanRenderer::flushResourceUploads() {
 
 	BatchedUploadGroup batch;
 	batch.slot = m_next_upload_slot;
-	batch.jobs = std::move(jobs_to_flush);    // Move local list into the batch tracker
+	batch.jobs = std::move(jobs_to_flush);
 
 	const vk::CommandBuffer raw_transfer_cmd = *slot.command_buffer;
 	const vk::SubmitInfo submit_info(0, nullptr, nullptr, 1, &raw_transfer_cmd);
@@ -4048,8 +3973,6 @@ void debugDrawFrustumFromMatrix(const glm::mat4& view_projection, glm::vec4 colo
 	if (!VulkanRenderer::instance->debugDrawEnabled()) {
 		return;
 	}
-	// Unprojects the eight clip-space corners rather than rebuilding from fov/aspect, so it works for a
-	// *stored* matrix. z of 0 and 1 are near and far under the [0,1] clip volume
 	const glm::mat4 inverse = glm::inverse(view_projection);
 
 	static constexpr std::array<glm::vec3, 8> ndc_corners {
@@ -4085,7 +4008,6 @@ void debugDrawMesh(toast::UID mesh, const glm::mat4& transform, glm::vec4 tint) 
 }
 
 void debugDrawBillboard(glm::vec3 world_position, float size, toast::UID texture, glm::vec4 tint) {
-	// Before the asset lookup, not after: resolving a UID is the expensive half of this overload
 	if (texture.data() == 0 || !VulkanRenderer::instance->debugDrawEnabled()) {
 		return;
 	}
@@ -4099,7 +4021,6 @@ void debugDrawCone(glm::vec3 apex, glm::vec3 direction, float length, float half
 	const float dir_len = glm::length(direction);
 	const glm::vec3 axis = dir_len > 0.0001f ? direction / dir_len : glm::vec3(0.0f, 0.0f, -1.0f);
 
-	// Arbitrary perpendicular basis around axis
 	const glm::vec3 up = std::abs(axis.y) < 0.99f ? glm::vec3(0.0f, 1.0f, 0.0f) : glm::vec3(1.0f, 0.0f, 0.0f);
 	const glm::vec3 u = glm::normalize(glm::cross(up, axis));
 	const glm::vec3 w = glm::cross(axis, u);

@@ -1,11 +1,4 @@
-// Shared full-screen triangle, imported by every post-process pass
-//
-// One triangle rather than a quad: no vertex buffer, no index buffer, and no diagonal seam through the
-// middle of the screen
-//
-// No Y flip. Camera::getProjection() negates proj[1][1], so NDC +Y and texture +V both run down the screen
-// and uv maps straight onto clip space. Flipping again turns the image upside down *and* silently mirrors
-// every depth lookup that reconstructs a position from it - which has cost a debugging session before
+// No Y flip because Camera::getProjection() negates proj[1][1]
 
 public struct FullscreenVSOutput
 {

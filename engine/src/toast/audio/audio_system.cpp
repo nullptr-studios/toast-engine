@@ -76,7 +76,11 @@ AudioSystem::AudioSystem() noexcept {
 
 	instance = this;
 	auto result = FMOD_Studio_System_Create(&m_system, FMOD_VERSION);
-	TOAST_ASSERT(result == FMOD_OK, "Audio", "FMOD could not be started: {}", FMOD_ErrorString(result));
+	if (result != FMOD_OK) {
+		TOAST_ERROR("Audio", "FMOD could not be created: {}", FMOD_ErrorString(result));
+		m_system = nullptr;
+		return;
+	}
 
 	FMOD_Studio_System_GetCoreSystem(m_system, &m_core_system);
 
@@ -92,16 +96,46 @@ AudioSystem::AudioSystem() noexcept {
 #endif
 
 	result = FMOD_Studio_System_Initialize(m_system, 512, studio_init_flags, FMOD_INIT_NORMAL, nullptr);
-	TOAST_ASSERT(result == FMOD_OK, "Audio", "FMOD could not be started: {}", FMOD_ErrorString(result));
+	if (result != FMOD_OK) {
+		TOAST_ERROR("Audio", "FMOD could not be initialized: {}", FMOD_ErrorString(result));
+		FMOD_Studio_System_Release(m_system);
+		m_system = nullptr;
+		return;
+	}
 
-	// Load Master.bank and Master.strings.bank from assets://
+	m_listeners.reserve(8);
+	m_listener_positions.reserve(8);
+
+	// The system stays up without banks. Shutting it down here is what broke a project's first FMOD import: everything
+	// after kept using the released handle
+	if (!loadMasterBanks()) {
+		TOAST_WARN("Audio", "Master.bank or Master.strings.bank is not imported yet; audio stays silent until both are");
+	}
+
+	// Retried on the next tick rather than in the callback: the asset manager reloads its manifest from this same event,
+	// and nothing guarantees it runs first
+	m_listener.subscribe<event::ReloadAssetsManifest>([this] {
+		if (!m_master_banks_loaded) {
+			m_retry_master_banks = true;
+		}
+	});
+
+	TOAST_INFO("Audio", "FMOD instance created");
+}
+
+auto AudioSystem::loadMasterBanks() -> bool {
+	ZoneScoped;
+	if (m_master_banks_loaded) {
+		return true;
+	}
+	if (m_system == nullptr) {
+		return false;
+	}
+
 	// Search by exact filename suffix to avoid "Master.bank" matching "Master.strings.bank"
-	auto& asset_mgr = assets::AssetManager::get();
-	auto all_results = asset_mgr.search("Master");
-
 	assets::Handle<assets::AudioStrings> strings_handle;
 	assets::Handle<assets::AudioBank> master_handle;
-	for (auto& handle : all_results) {
+	for (auto& handle : assets::AssetManager::get().search("Master")) {
 		std::string_view p = handle.path();
 		if (p.ends_with("Master.strings.bank")) {
 			strings_handle = handle.as<assets::AudioStrings>();
@@ -111,38 +145,29 @@ AudioSystem::AudioSystem() noexcept {
 	}
 
 	if (!strings_handle.hasValue() || !master_handle.hasValue()) {
-		TOAST_ERROR("Audio", "Master.bank or Master.strings.bank not found in assets://, cannot use Audio");
-		FMOD_Studio_System_Release(m_system);
-		return;
+		return false;
+	}
+
+	auto* strings_asset = dynamic_cast<assets::AudioStrings*>(&strings_handle.get());
+	auto* master_asset = dynamic_cast<assets::AudioBank*>(&master_handle.get());
+	if (strings_asset == nullptr || master_asset == nullptr) {
+		TOAST_ERROR("Audio", "Master.strings.bank or Master.bank is not imported as an FMOD bank");
+		return false;
 	}
 
 	// Strings bank must be loaded before any other bank
-	auto* strings_asset = dynamic_cast<assets::AudioStrings*>(&strings_handle.get());
-	if (!strings_asset) {
-		TOAST_ERROR("Audio", "Master.strings.bank asset is not an AudioStrings");
-		FMOD_Studio_System_Release(m_system);
-		m_system = nullptr;
-		instance = nullptr;
-		return;
-	}
 	TOAST_TRACE("Audio", "Loading strings bank from {}", strings_handle.path());
-	std::ignore = loadBankData(strings_asset->get());
-
-	auto* master_asset = dynamic_cast<assets::AudioBank*>(&master_handle.get());
-	if (!master_asset) {
-		TOAST_ERROR("Audio", "Master.bank asset is not an AudioBank");
-		FMOD_Studio_System_Release(m_system);
-		m_system = nullptr;
-		instance = nullptr;
-		return;
+	if (loadBankData(strings_asset->get()) == nullptr) {
+		return false;
 	}
 	TOAST_TRACE("Audio", "Loading master bank from {}", master_handle.path());
-	std::ignore = loadBankData(master_asset->get());
+	if (loadBankData(master_asset->get()) == nullptr) {
+		return false;
+	}
 
-	m_listeners.reserve(8);
-	m_listener_positions.reserve(8);
-
-	TOAST_INFO("Audio", "FMOD instance created");
+	m_master_banks_loaded = true;
+	TOAST_INFO("Audio", "Master banks loaded");
+	return true;
 }
 
 AudioSystem::~AudioSystem() noexcept {
@@ -161,8 +186,12 @@ auto AudioSystem::get() noexcept -> AudioSystem& {
 
 auto AudioSystem::loadBankData(const std::vector<uint8_t>& data) const -> FMOD_STUDIO_BANK* {
 	ZoneScoped;
+	if (m_system == nullptr) {
+		return nullptr;
+	}
+
 	FMOD_STUDIO_BANK* fmod_bank = nullptr;
-	FMOD_Studio_System_LoadBankMemory(
+	const FMOD_RESULT result = FMOD_Studio_System_LoadBankMemory(
 	    m_system,
 	    reinterpret_cast<const char*>(data.data()),
 	    data.size(),
@@ -170,11 +199,27 @@ auto AudioSystem::loadBankData(const std::vector<uint8_t>& data) const -> FMOD_S
 	    FMOD_STUDIO_LOAD_BANK_NORMAL,
 	    &fmod_bank
 	);
+	if (result != FMOD_OK) {
+		TOAST_ERROR("Audio", "FMOD could not load a bank: {}", FMOD_ErrorString(result));
+		return nullptr;
+	}
 	return fmod_bank;
 }
 
 void AudioSystem::tick() noexcept {
 	ZoneScoped;
+	if (m_system == nullptr) {
+		return;
+	}
+
+	// The editor just imported something; the Master banks may be among it
+	if (m_retry_master_banks) {
+		m_retry_master_banks = false;
+		try {
+			std::ignore = loadMasterBanks();
+		} catch (const std::exception& e) { TOAST_ERROR("Audio", "Loading the master banks failed: {}", e.what()); }
+	}
+
 	FMOD_Studio_System_Update(m_system);
 
 	for (auto it = m_active_instances.begin(); it != m_active_instances.end();) {
@@ -183,6 +228,12 @@ void AudioSystem::tick() noexcept {
 			FMOD_Studio_EventInstance_Release(it->second);
 			it = m_active_instances.erase(it);
 		} else {
+			FMOD_STUDIO_EVENTDESCRIPTION* desc = nullptr;
+			FMOD_BOOL is_3d = 0;
+			if (FMOD_Studio_EventInstance_GetDescription(it->second, &desc) == FMOD_OK && desc != nullptr &&
+			    FMOD_Studio_EventDescription_Is3D(desc, &is_3d) == FMOD_OK && is_3d != 0) {
+				keepOnListener(it->second);
+			}
 			++it;
 		}
 	}
@@ -200,20 +251,34 @@ void AudioSystem::tick() noexcept {
 
 void AudioSystem::generateIntermediates(const std::filesystem::path& path) {
 	ZoneScoped;
+	// A system of its own, with no audio output. The live one may not be running yet (a project's first import happens
+	// before it has any banks), and when it is, it has usually loaded this very strings bank - loading it again there
+	// fails, and the unload at the end would pull it out from under the running game
+	FMOD_STUDIO_SYSTEM* system = nullptr;
+	FMOD_RESULT result = FMOD_Studio_System_Create(&system, FMOD_VERSION);
+	if (result != FMOD_OK) {
+		TOAST_ERROR("Audio", "Could not create an FMOD system to read {}: {}", path.string(), FMOD_ErrorString(result));
+		return;
+	}
+
+	FMOD_SYSTEM* core = nullptr;
+	FMOD_Studio_System_GetCoreSystem(system, &core);
+	FMOD_System_SetOutput(core, FMOD_OUTPUTTYPE_NOSOUND);
+
+	result = FMOD_Studio_System_Initialize(system, 1, FMOD_STUDIO_INIT_NORMAL, FMOD_INIT_NORMAL, nullptr);
+	if (result != FMOD_OK) {
+		TOAST_ERROR("Audio", "Could not initialize an FMOD system to read {}: {}", path.string(), FMOD_ErrorString(result));
+		FMOD_Studio_System_Release(system);
+		return;
+	}
+
+	// Blocks until the bank has loaded or failed: only FMOD_STUDIO_LOAD_BANK_NONBLOCKING makes this asynchronous
 	FMOD_STUDIO_BANK* bank = nullptr;
-
-	FMOD_Studio_System_LoadBankFile(m_system, path.string().c_str(), FMOD_STUDIO_LOAD_BANK_NORMAL, &bank);
-
-	FMOD_STUDIO_LOADING_STATE state = FMOD_STUDIO_LOADING_STATE_UNLOADED;
-
-	while (state != FMOD_STUDIO_LOADING_STATE_LOADED) {
-		FMOD_Studio_Bank_GetLoadingState(bank, &state);
-		FMOD_Studio_System_Update(m_system);
-
-		if (state == FMOD_STUDIO_LOADING_STATE_ERROR) {
-			TOAST_ERROR("Audio", "Failed reading Master.strings.bank");
-			return;
-		}
+	result = FMOD_Studio_System_LoadBankFile(system, path.string().c_str(), FMOD_STUDIO_LOAD_BANK_NORMAL, &bank);
+	if (result != FMOD_OK || bank == nullptr) {
+		TOAST_ERROR("Audio", "Failed reading {}: {}", path.string(), FMOD_ErrorString(result));
+		FMOD_Studio_System_Release(system);
+		return;
 	}
 
 	json_t json;
@@ -259,7 +324,8 @@ void AudioSystem::generateIntermediates(const std::filesystem::path& path) {
 		}
 	}
 
-	FMOD_Studio_Bank_Unload(bank);
+	// Releasing the throwaway system unloads its bank with it
+	FMOD_Studio_System_Release(system);
 
 	std::filesystem::path cache_dir = assets::AssetManager::get().getCachePath() / "fmod";
 	std::filesystem::create_directories(cache_dir);
@@ -280,8 +346,11 @@ auto AudioSystem::loadBank(assets::Handle<assets::AudioBank> bank) const
 	}
 
 	FMOD_STUDIO_BANK* fmod_bank = loadBankData(bank->get());
+	if (fmod_bank == nullptr) {
+		return {nullptr, {}};
+	}
 
-	int event_count;
+	int event_count = 0;
 	FMOD_Studio_Bank_GetEventCount(fmod_bank, &event_count);
 	std::vector<FMOD_STUDIO_EVENTDESCRIPTION*> events(event_count);
 	FMOD_Studio_Bank_GetEventList(fmod_bank, events.data(), event_count, &event_count);
@@ -375,9 +444,38 @@ void AudioSystem::unregisterVolume(toast::AudioVolume& volume) {
 }
 
 void AudioSystem::playEvent(std::string_view guid_str) {
-	if (FMOD_STUDIO_EVENTINSTANCE* inst = getOrCreateInstance(guid_str)) {
-		FMOD_Studio_EventInstance_Start(inst);
+	FMOD_STUDIO_EVENTINSTANCE* inst = getOrCreateInstance(guid_str);
+	if (inst == nullptr) {
+		return;
 	}
+
+	FMOD_STUDIO_EVENTDESCRIPTION* desc = nullptr;
+	FMOD_BOOL is_3d = 0;
+	if (FMOD_Studio_EventInstance_GetDescription(inst, &desc) == FMOD_OK && desc != nullptr) {
+		FMOD_Studio_EventDescription_Is3D(desc, &is_3d);
+	}
+	if (is_3d != 0) {
+		keepOnListener(inst);
+	}
+
+	const FMOD_RESULT result = FMOD_Studio_EventInstance_Start(inst);
+	if (result != FMOD_OK) {
+		TOAST_ERROR("Audio", "FMOD could not start event {}: {}", guid_str, FMOD_ErrorString(result));
+		return;
+	}
+	TOAST_INFO("Audio", "Playing event {}{}", guid_str, is_3d != 0 ? " (3D event, kept on the listener)" : "");
+}
+
+void AudioSystem::keepOnListener(FMOD_STUDIO_EVENTINSTANCE* inst) const {
+	// A plain AudioEmitter has no position. Left at the origin, a 3D event fades out as soon as the listener walks away
+	FMOD_3D_ATTRIBUTES attr = {};
+	if (!m_listener_positions.empty()) {
+		const glm::vec3& pos = m_listener_positions.front();
+		attr.position = {pos.x, pos.y, pos.z};
+	}
+	attr.forward = {0.0f, 0.0f, 1.0f};
+	attr.up = {0.0f, 1.0f, 0.0f};
+	FMOD_Studio_EventInstance_Set3DAttributes(inst, &attr);
 }
 
 void AudioSystem::stopEvent(std::string_view guid_str, bool allow_fadeout) {
@@ -684,7 +782,11 @@ void AudioSystem::setSnapshotEnabled(std::string_view guid_str, bool enabled) {
 extern "C" {
 
 void audio_generate_intermediates(const char* path) NOEXCEPT {
-	std::filesystem::path {path};
-	audio::AudioSystem::get().generateIntermediates(path);
+	if (path == nullptr) {
+		return;
+	}
+	try {
+		audio::AudioSystem::generateIntermediates(path);
+	} catch (const std::exception& e) { TOAST_ERROR("Audio", "Generating FMOD intermediates for {} failed: {}", path, e.what()); }
 }
 }

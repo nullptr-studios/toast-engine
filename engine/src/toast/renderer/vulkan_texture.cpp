@@ -1,6 +1,6 @@
 /// @file vulkan_texture.cpp
 /// @author dario
-/// @date 6/28/2026.
+/// @date 6/28/2026
 
 #include "vulkan_texture.hpp"
 
@@ -56,7 +56,6 @@ void VulkanTexture::create(const VulkanCore& core, Params params, std::string_vi
 	if (m_params.extent.depth > 1) {
 		view_ci.viewType = vk::ImageViewType::e3D;
 	} else if (m_params.is_cubemap) {
-		// A  cubemap has 6 layers
 		view_ci.viewType = m_params.layer_count > 6 ? vk::ImageViewType::eCubeArray : vk::ImageViewType::eCube;
 	} else {
 		view_ci.viewType = m_params.layer_count > 1 ? vk::ImageViewType::e2DArray : vk::ImageViewType::e2D;
@@ -78,11 +77,8 @@ void VulkanTexture::destroy() {
 	m_image.reset();
 }
 
-// Upload Functions
-
 void TextureUpload::build(const VulkanCore& core) {
 	ZoneScoped;
-	// Every failure below marks a reason and returns rather than logging and walking on
 	if (m_data.empty()) {
 		TOAST_ERROR("Render", "Texture '{}' has no data to decode", m_debug_name);
 		m_texture->markFailed(IVulkanResource::UploadState::failed_load);
@@ -110,7 +106,6 @@ void TextureUpload::build(const VulkanCore& core) {
 
 	m_tex_params.format = static_cast<vk::Format>(m_ktx_texture->vkFormat);
 
-	// Decoded fine, so anything from here on is the GPU side
 	if (m_tex_params.format == vk::Format::eR8G8B8Unorm || m_tex_params.format == vk::Format::eR8G8B8Srgb) {
 		TOAST_ERROR("Render", "Texture '{}' is 24bit; ToastEngine needs an RGBA format", m_debug_name);
 		m_texture->markFailed(IVulkanResource::UploadState::failed_gpu);
@@ -121,7 +116,7 @@ void TextureUpload::build(const VulkanCore& core) {
 	m_tex_params.mip_levels = std::max(1u, m_ktx_texture->numLevels);
 	m_tex_params.layer_count = std::max(1u, m_ktx_texture->numLayers);
 
-	// TODO: PROPER CUBEMAP SUPPORT
+	// TODO proper cubemap support
 	m_tex_params.is_cubemap = m_ktx_texture->isCubemap;
 
 	if (m_ktx_texture->isCubemap) {
@@ -173,7 +168,6 @@ void TextureUpload::build(const VulkanCore& core) {
 				region.bufferOffset = offset;
 				region.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
 				region.imageSubresource.mipLevel = mip;
-				// Maps faces directly into contiguous array layers
 				region.imageSubresource.baseArrayLayer = (layer * num_faces) + face;
 				region.imageSubresource.layerCount = 1;
 
@@ -216,11 +210,7 @@ void TextureUpload::record(vk::CommandBuffer cmd) {
 	barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
 	barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 	barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
-	// This barrier is recorded on the transfer queue's command buffer
-	// which doesn't support the FRAGMENT_SHADER stage - only the graphics queue does, and a barrier's stage mask
-	// is scoped to the queue executing it, not the resource's eventual consumer. The layout transition to
-	// eShaderReadOnlyOptimal still happens here; cross-queue visibility for the shader read itself is handled by
-	// the upload's completion fence, since consumers only touch the texture once VulkanTexture::isReady() is true.
+	// Transfer queue barrier since that queue has no fragment shader stage
 	barrier.dstAccessMask = {};
 
 	cmd.pipelineBarrier(
@@ -313,8 +303,6 @@ auto uploadTextureSync(const VulkanCore& core, VulkanTexture& texture, std::vect
 		return false;
 	}
 
-	// Graphics family, not the transfer one the ring uses, this submits and waits on its own, so there is
-	// nothing to gain from the dedicated queue and the image ends up where the first draw needs it anyway
 	const auto& device = core.getDevice();
 	const vk::CommandPoolCreateInfo pool_ci(vk::CommandPoolCreateFlagBits::eTransient, core.getGraphicsQueueFamilyIndex());
 	const vk::raii::CommandPool pool(device, pool_ci);

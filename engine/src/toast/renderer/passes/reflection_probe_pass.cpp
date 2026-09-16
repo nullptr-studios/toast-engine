@@ -26,27 +26,18 @@ namespace renderer {
 
 namespace {
 
-/// Probe cubes move both ways across the transfer queue: the capture blits in, saving a bake copies out.
-/// Missing eTransferSrc is invalid usage that only fires when a probe is actually written to disk
+/// eTransferSrc is needed to save a bake
 constexpr vk::ImageUsageFlags k_probe_transfer_usage =
     vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst;
 
-/// @brief Roughness levels in a probe's chain, matching EnvironmentPass's
-///
-/// They need not agree, but equal means a surface straddling a probe boundary blurs the same on both sides
 constexpr uint32_t k_probe_mips = 5;
 
-/// @brief Fixed header of a .tprobe, written ahead of the raw prefiltered then irradiance texels
-///
-/// Raw rather than KTX2: this is a regenerable cache, writer and reader are the same code, and a version
-/// check is cheaper than a container's metadata for data nobody else reads
 struct ProbeFileHeader {
 	std::array<uint8_t, 6> magic = {'T', 'P', 'R', 'O', 'B', 'E'};
 	uint16_t version = 1;
 	uint32_t face_size = 0;
 	uint32_t mip_levels = 0;
 	uint32_t irradiance_size = 0;
-	/// vk::Format the texels were written in; a mismatch means the scene target changed and the file is unusable
 	uint32_t format = 0;
 };
 
@@ -72,8 +63,6 @@ ReflectionProbePass::ReflectionProbePass(const VulkanCore& core, vk::Format colo
 	m_sampler = vk::raii::Sampler(core.getDevice(), sampler_ci);
 	setDebugName(core, *m_sampler, "ReflectionProbePass Sampler");
 
-	// One mip and no face views - staging is only blitted into and sampled from. Allocated at the ceiling
-	// once, since the bake is sequential and the capture blit rescales into it
 	m_staging.cube.create(core, m_format, k_max_face_size, 1, "ReflectionProbe Staging", k_probe_transfer_usage, false);
 
 	m_probes.resize(k_max_probes);
@@ -113,7 +102,6 @@ void ReflectionProbePass::createPipelines(const VulkanCore& core) {
 	config.pipeline_type = VulkanPipeline::PipelineType::graphics;
 	config.debug_name = "ReflectionProbePass Prefilter";
 	config.color_format = m_format;
-	// Viewport and scissor are dynamic, so one pipeline covers every face and mip size
 	config.extent = vk::Extent2D {1, 1};
 	config.shader_spirv = shader->spirv;
 	config.pipeline_layout = *m_shader_layout.getPipelineLayout();
@@ -129,7 +117,6 @@ void ReflectionProbePass::createPipelines(const VulkanCore& core) {
 	config.fragment_entry = "fragmentIrradiance";
 	m_irradiance_pipeline.rebuild(core, config);
 
-	// Draws geometry into the scene rather than a cube face, so it needs its own layout and depth format
 	const auto preview_uid = assets::resolveURI("core://shaders/probe_preview.slang");
 	const auto preview_shader = preview_uid.has_value() ? ShaderCache::get().acquire(*preview_uid) : nullptr;
 	if (!preview_shader) {
@@ -144,7 +131,6 @@ void ReflectionProbePass::createPipelines(const VulkanCore& core) {
 	preview.debug_name = "ReflectionProbePass Preview";
 	preview.color_format = m_format;
 	preview.depth_format = m_depth_format;
-	// Declared, not written - the ball is a visualizer standing where a probe is, not scene geometry
 	preview.extra_color_formats = worldStageExtraColorFormats();
 	preview.extent = vk::Extent2D {1, 1};
 	preview.shader_spirv = preview_shader->spirv;
@@ -178,7 +164,6 @@ void ReflectionProbePass::createDescriptors(const VulkanCore& core) {
 	const vk::WriteDescriptorSet write(*m_staging_source_set, 0, 0, 1, vk::DescriptorType::eCombinedImageSampler, &image_info);
 	core.getDevice().updateDescriptorSets(write, {});
 
-	// Written once - the cubemaps are created up front and only their contents change
 	const auto& preview_layouts = m_preview_layout.getDescriptorSetLayouts();
 	if (preview_layouts.empty()) {
 		return;
@@ -230,16 +215,12 @@ void ReflectionProbePass::captureFace(
 	    cmd, vk::ImageLayout::eTransferDstOptimal, vk::AccessFlagBits::eTransferWrite, vk::PipelineStageFlagBits::eTransfer
 	);
 
-	// @p scene_extent is the square region the capture rasterized into, not the whole target - the pixels
-	// outside it still hold the previous frame and must not be read
 	vk::ImageBlit blit {};
 	blit.srcSubresource = vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1);
 	blit.srcOffsets[0] = vk::Offset3D {0, 0, 0};
 	blit.srcOffsets[1] = vk::Offset3D {static_cast<int32_t>(scene_extent.width), static_cast<int32_t>(scene_extent.height), 1};
 	blit.dstSubresource = vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, face, 1);
 	blit.dstOffsets[0] = vk::Offset3D {0, 0, 0};
-	// Full staging face: the prefilter writes the probe's own resolution anyway, so capturing at the ceiling
-	// and filtering down beats sizing staging per probe
 	blit.dstOffsets[1] = vk::Offset3D {static_cast<int32_t>(m_staging.cube.size()), static_cast<int32_t>(m_staging.cube.size()), 1};
 
 	cmd.blitImage(
@@ -251,8 +232,7 @@ void ReflectionProbePass::captureFace(
 	    vk::Filter::eLinear
 	);
 
-	// Only once the cube is complete - the GGX lobe reaches across face boundaries, so filtering early pulls
-	// in whatever those faces still held
+	// Only on the last face since GGX reaches across face boundaries
 	if (face == 5) {
 		prefilterInto(cmd, probe);
 		convolveIrradianceInto(cmd, probe);
@@ -270,7 +250,6 @@ void ReflectionProbePass::captureIrradianceFace(
 	    cmd, vk::ImageLayout::eTransferDstOptimal, vk::AccessFlagBits::eTransferWrite, vk::PipelineStageFlagBits::eTransfer
 	);
 
-	// Identical blit to captureFace(); see the note there about @p scene_extent being the rasterized square
 	vk::ImageBlit blit {};
 	blit.srcSubresource = vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1);
 	blit.srcOffsets[0] = vk::Offset3D {0, 0, 0};
@@ -302,19 +281,15 @@ void ReflectionProbePass::projectStagingToSh(vk::CommandBuffer cmd, uint32_t pro
 		glm::uvec4 config {0};
 	};
 
-	// Capture resolution, *not* staging's 512: this bound is only how many directions to integrate, and 512
-	// is 1.5M iterations on one thread per probe for four coefficients - all of it interpolating a 64px
-	// capture, so the same integral at hundreds of times the cost
 	const ShParams params {.config = glm::uvec4(VulkanRenderer::k_irradiance_capture_size, probe, 0, 0)};
 
 	cmd.bindPipeline(vk::PipelineBindPoint::eCompute, m_sh_pipeline.getPipeline());
 	cmd.bindDescriptorSets(
 	    vk::PipelineBindPoint::eCompute, *m_sh_layout.getPipelineLayout(), 0, std::array<vk::DescriptorSet, 1> {*m_sh_set}, {}
 	);
-	cmd.pushConstants(*m_sh_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eCompute, 0, sizeof(ShParams), &params);
+	cmd.pushConstants(*m_sh_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eAll, 0, sizeof(ShParams), &params);
 	cmd.dispatch(1, 1, 1);
 
-	// Read as a fragment resource next frame, so the write must be visible outside compute first
 	const vk::BufferMemoryBarrier barrier(
 	    vk::AccessFlagBits::eShaderWrite,
 	    vk::AccessFlagBits::eShaderRead,
@@ -339,7 +314,6 @@ void ReflectionProbePass::queueShSave(uint32_t base, uint32_t count, std::string
 
 namespace {
 
-/// @brief Fixed header of a .tsh, written ahead of the raw float4 coefficients
 struct ShFileHeader {
 	std::array<uint8_t, 4> magic = {'T', 'S', 'H', '1'};
 	uint16_t version = 1;
@@ -350,10 +324,6 @@ struct ShFileHeader {
 	std::array<uint32_t, 3> counts {0, 0, 0};
 };
 
-/// @brief Whether a stored grid still describes the volume asking for it
-///
-/// Tolerant, because a float round-tripped through a scene file does not reproduce bit for bit. A millimetre
-/// of drift is not a different bake; a moved volume is
 auto gridMatches(const ShFileHeader& header, const ShGridKey& key) -> bool {
 	constexpr float k_tolerance = 1e-3f;
 	for (int i = 0; i < 3; ++i) {
@@ -403,7 +373,6 @@ auto ReflectionProbePass::loadShRange(uint32_t base, uint32_t count, std::string
 		return false;
 	}
 
-	// Staged: the coefficient buffer is device-local and this writes a slice of it
 	vk::BufferCreateInfo staging_ci {};
 	staging_ci.size = coefficient_bytes;
 	staging_ci.usage = vk::BufferUsageFlagBits::eTransferSrc;
@@ -450,7 +419,8 @@ void ReflectionProbePass::createShResources(const VulkanCore& core) {
 
 	vk::BufferCreateInfo buffer_ci {};
 	buffer_ci.size = static_cast<vk::DeviceSize>(VulkanRenderer::k_max_irradiance_probes) * 4 * sizeof(glm::vec4);
-	buffer_ci.usage = vk::BufferUsageFlagBits::eStorageBuffer;
+	buffer_ci.usage =
+	    vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eTransferSrc;
 	buffer_ci.sharingMode = vk::SharingMode::eExclusive;
 
 	vma::AllocationCreateInfo allocation_ci {};
@@ -466,7 +436,7 @@ void ReflectionProbePass::createShResources(const VulkanCore& core) {
 	config.debug_name = "ReflectionProbePass ShProject";
 	config.shader_spirv = shader->spirv;
 	config.pipeline_layout = *m_sh_layout.getPipelineLayout();
-	// Slang renames a single-entry module's entry point to "main"; resolveEntryPoint() reconciles that
+	// Slang renames the entry point of a single entry module to main
 	config.compute_entry = "main";
 	m_sh_pipeline.rebuild(core, config);
 
@@ -528,13 +498,7 @@ void ReflectionProbePass::renderFace(
 	    std::array<vk::DescriptorSet, 1> {*m_staging_source_set},
 	    {}
 	);
-	cmd.pushConstants(
-	    *m_shader_layout.getPipelineLayout(),
-	    vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
-	    0,
-	    sizeof(Params),
-	    &params
-	);
+	cmd.pushConstants(*m_shader_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eAll, 0, sizeof(Params), &params);
 	cmd.draw(3, 1, 0, 0);
 	cmd.endRendering();
 }
@@ -586,7 +550,6 @@ void ReflectionProbePass::convolveIrradianceInto(vk::CommandBuffer cmd, uint32_t
 		return;
 	}
 
-	// Staging is already shader-read from the prefilter that ran just before this
 	cube.cube.transition(
 	    cmd,
 	    vk::ImageLayout::eColorAttachmentOptimal,
@@ -616,7 +579,7 @@ void ReflectionProbePass::record(vk::CommandBuffer cmd, uint32_t frame_index, ui
 	(void)frame_index;
 	(void)image_index;
 
-	// Probe Cubemap view only - must match WorkspaceViewModel's RenderMode
+	// Must match WorkspaceViewModel RenderMode
 	constexpr uint32_t k_probe_cubemap_mode = 11;
 
 	if (!isEnabled() || !m_preview_pipeline.isReady() || m_preview_sets.empty()) {
@@ -641,8 +604,6 @@ void ReflectionProbePass::record(vk::CommandBuffer cmd, uint32_t frame_index, ui
 	cmd.setScissor(0, std::array {vk::Rect2D({0, 0}, extent)});
 	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_preview_pipeline.getPipeline());
 
-	// Sized to a fraction of the volume so it sits inside what it describes. Unbaked probes are skipped: a
-	// black ball says nothing the stale counter does not
 	for (uint32_t i = 0; i < frame->frame_data.reflection_probe_count_pad.x; ++i) {
 		const auto& probe = frame->frame_data.reflection_probes[i];
 		const auto cube = static_cast<uint32_t>(probe.params.x);
@@ -665,21 +626,13 @@ void ReflectionProbePass::record(vk::CommandBuffer cmd, uint32_t frame_index, ui
 		    std::array<vk::DescriptorSet, 1> {*m_preview_sets[cube]},
 		    {}
 		);
-		cmd.pushConstants(
-		    *m_preview_layout.getPipelineLayout(),
-		    vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
-		    0,
-		    sizeof(PreviewParams),
-		    &params
-		);
+		cmd.pushConstants(*m_preview_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eAll, 0, sizeof(PreviewParams), &params);
 
-		// 24 rings x 48 segments, two triangles each
 		cmd.draw(24u * 48u * 6u, 1, 0, 0);
 	}
 }
 
 auto ReflectionProbePass::cubeByteSize(const ProbeCube& cube) -> vk::DeviceSize {
-	// The header records the format, so a change invalidates rather than silently misreads
 	constexpr vk::DeviceSize k_bytes_per_texel = 8;
 
 	vk::DeviceSize total = 0;
@@ -840,15 +793,40 @@ void ReflectionProbePass::queueSave(uint32_t probe, std::string_view uri) {
 
 void ReflectionProbePass::recordPre(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) {
 	ZoneScoped;
-	(void)cmd;
 	(void)frame_index;
 	(void)image_index;
+
+	// Bound cubemaps must not be eUndefined even when unbaked
+	for (auto& probe : m_probes) {
+		if (probe.cube.isReady()) {
+			probe.cube.transition(
+			    cmd,
+			    vk::ImageLayout::eShaderReadOnlyOptimal,
+			    vk::AccessFlagBits::eShaderRead,
+			    vk::PipelineStageFlagBits::eFragmentShader
+			);
+		}
+	}
+	for (auto& irradiance : m_probe_irradiance) {
+		if (irradiance.cube.isReady()) {
+			irradiance.cube.transition(
+			    cmd,
+			    vk::ImageLayout::eShaderReadOnlyOptimal,
+			    vk::AccessFlagBits::eShaderRead,
+			    vk::PipelineStageFlagBits::eFragmentShader
+			);
+		}
+	}
+	if (m_staging.cube.isReady()) {
+		m_staging.cube.transition(
+		    cmd, vk::ImageLayout::eShaderReadOnlyOptimal, vk::AccessFlagBits::eShaderRead, vk::PipelineStageFlagBits::eFragmentShader
+		);
+	}
 
 	if ((m_pending_saves.empty() && m_pending_sh_saves.empty()) || m_core == nullptr) {
 		return;
 	}
 
-	// The bake only *recorded* its convolutions, and the readback submits separately - so wait for them
 	m_core->getDevice().waitIdle();
 
 	for (const auto& [probe, uri] : m_pending_saves) {
@@ -881,7 +859,6 @@ void ReflectionProbePass::recordPre(vk::CommandBuffer cmd, uint32_t frame_index,
 
 	m_pending_saves.clear();
 
-	// Coefficient ranges, read straight out of the storage buffer the compute pass wrote
 	for (const auto& save : m_pending_sh_saves) {
 		if (!m_sh_buffer.has_value() || save.count == 0) {
 			continue;
@@ -968,7 +945,6 @@ auto ReflectionProbePass::loadProbe(uint32_t probe, std::string_view uri) -> boo
 		return false;
 	}
 
-	// What was stored, not what the node now asks for - a resolution change surfaces as a stale probe
 	if (m_probes[probe].cube.size() != header.face_size) {
 		m_core->getDevice().waitIdle();
 		m_probes[probe].cube.create(
@@ -1003,8 +979,6 @@ void ReflectionProbePass::setProbeResolution(uint32_t probe, uint32_t face_size)
 		return;
 	}
 
-	// Frames in flight still reference these images, and MaterialPass wrote their views into sets it does not
-	// rewrite per frame. Heavy-handed, but this only runs when an artist changes a resolution
 	m_core->getDevice().waitIdle();
 
 	m_probes[probe].cube.create(
@@ -1012,7 +986,6 @@ void ReflectionProbePass::setProbeResolution(uint32_t probe, uint32_t face_size)
 	);
 	m_probes[probe].baked = false;
 
-	// The descriptor arrays and the preview set both point at the old view
 	rebindProbeViews(probe);
 
 	TOAST_INFO("Render", "Probe {} resized to {}px; it needs re-baking", probe, clamped);
@@ -1035,7 +1008,6 @@ void ReflectionProbePass::rebindProbeViews(uint32_t probe) {
 	const vk::WriteDescriptorSet write(*m_preview_sets[probe], 0, 0, 1, vk::DescriptorType::eCombinedImageSampler, &info);
 	m_core->getDevice().updateDescriptorSets(write, {});
 
-	// Every material pass holds the old view in its frame set; they rebuild those on demand
 	VulkanRenderer::instance->requestMaterialFrameSetRebuild();
 }
 
@@ -1063,7 +1035,6 @@ auto ReflectionProbePass::isStale(uint32_t probe, const glm::vec3& position, con
 		return true;
 	}
 
-	// Exact, not epsilon: these are copies of what the editor wrote, so they either match or the probe moved
 	return m_probes[probe].baked_position != position || m_probes[probe].baked_extents != extents;
 }
 

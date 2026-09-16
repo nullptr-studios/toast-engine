@@ -35,7 +35,6 @@ void ShaderLayout::rebuild(const VulkanCore& core, const ShaderReflection& refle
 
 	const auto& device = core.getDevice();
 
-	// Group bindings by set index
 	// Sets must stay contiguous for the pipeline layout
 	std::map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>> set_map;
 	for (const auto& binding : reflection.bindings) {
@@ -57,9 +56,7 @@ void ShaderLayout::rebuild(const VulkanCore& core, const ShaderReflection& refle
 			bindings = it->second;
 		}
 
-		// Always partially bound: a tracing shader still has to run on a device with no ray query, where there
-		// is no structure to write. Without the flag an unwritten binding is undefined behaviour even when
-		// nothing reads it, and validation rejects the set at bind time
+		// Always partially bound or an unwritten binding is undefined on devices without ray query
 		std::vector<vk::DescriptorBindingFlags> binding_flags(bindings.size(), vk::DescriptorBindingFlags {});
 		bool any_partially_bound = false;
 		for (size_t i = 0; i < bindings.size(); ++i) {
@@ -87,11 +84,7 @@ void ShaderLayout::rebuild(const VulkanCore& core, const ShaderReflection& refle
 
 	for (const auto& push : reflection.push_constants) {
 		vk::PushConstantRange range {};
-		// eAll, matching the descriptor bindings above. Naming only vertex|fragment silently excluded every
-		// compute shader with a push constant: the layout declared no compute range, so vkCmdPushConstants
-		// with eCompute wrote nothing and the shader read undefined values. That is what
-		// ReflectionProbePass's SH projection was doing - its probe index and face size were never arriving,
-		// which the validation layer reported at pipeline creation and nothing downstream could detect
+		// eAll since every vkCmdPushConstants must use the same stage flags
 		range.stageFlags = vk::ShaderStageFlagBits::eAll;
 		range.offset = 0;
 		range.size = push.size;

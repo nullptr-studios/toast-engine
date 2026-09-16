@@ -78,13 +78,13 @@ public:
 	/// Same query grammar as World::searchFrom(); searches only within m_root_node
 	auto searchFrom(const Node& origin, std::string_view query) -> std::vector<Box<Node>> override;
 
-protected:
 	/// @brief True for PlayWorkspace, gates gizmo interaction off so it can never run against a live game
 	[[nodiscard]]
 	virtual auto isPlaying() const -> bool {
 		return false;
 	}
 
+protected:
 	/// disambiguates the protected ctor from Workspace(UID)
 	struct EmptyTag { };
 

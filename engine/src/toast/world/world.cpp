@@ -775,7 +775,12 @@ auto World::swapRoot(Node& node) -> Box<Node> {
 	computeDependencyGraph();
 
 	node.propagateCallTick(node.info(), TickFunctionList::begin);
-	node.enabled(true);
+	// A freshly loaded tree arrives already flagged enabled, where enabled(true) is a no-op and onEnable never runs
+	if (node.m_local_enabled) {
+		node.propagateEnable();
+	} else {
+		node.enabled(true);
+	}
 	event::send<event::RequestHierarchyUpdate>();    // TODO: should the world send this?
 	TOAST_INFO("World", "Swapped root to {} ({})", node.name(), node.uid());
 
@@ -855,7 +860,11 @@ auto World::moveToGlobal(Node& node) -> Box<Node> {
 	computeDependencyGraph();
 
 	node.propagateCallTick(node.info(), TickFunctionList::begin);
-	node.enabled(true);
+	if (node.m_local_enabled) {
+		node.propagateEnable();
+	} else {
+		node.enabled(true);
+	}
 	trees.global.emplace_back(node.box());
 	TOAST_TRACE("World", "Node {} ({}) moved to global", node.name(), node.uid());
 	return node.box();
@@ -905,7 +914,11 @@ auto World::moveToChild(Node& node, Node& parent) -> Box<Node> {
 
 	if (run_begin) {
 		node.propagateCallTick(node.info(), TickFunctionList::begin);
-		node.enabled(true);
+		if (node.m_local_enabled) {
+			node.propagateEnable();
+		} else {
+			node.enabled(true);
+		}
 	}
 	TOAST_TRACE("World", "Moved node {} ({}) under {} ({})", node.name(), node.uid(), parent.name(), parent.uid());
 
@@ -1111,6 +1124,14 @@ void WorldTestAccess::addTickStage(Node& node, TickFunctionList stage) {
 	NodeInfo& info = testNodeInfos()[&node];
 	info.type = "test::Node";
 	info.functions.list = info.functions.list | stage;
+	node.m_info = &info;
+}
+
+void WorldTestAccess::setEnableCallback(Node& node, void (*callback)(void*)) {
+	NodeInfo& info = testNodeInfos()[&node];
+	info.type = "test::Node";
+	info.functions.list = info.functions.list | TickFunctionList::on_enable;
+	info.functions.on_enable = callback;
 	node.m_info = &info;
 }
 
