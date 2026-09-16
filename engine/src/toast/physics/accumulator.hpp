@@ -49,11 +49,6 @@ public:
 		}
 
 		result.alpha = m_accumulator / fixed_delta;
-		TracyPlot("Physics/Accumulator/Frame delta ms", dt * 1000.0);
-		TracyPlot("Physics/Accumulator/Fixed steps", static_cast<int64_t>(result.steps));
-		TracyPlot("Physics/Accumulator/Interpolation alpha", result.alpha);
-		TracyPlot("Physics/Accumulator/Backlog ms", m_accumulator * 1000.0);
-		TracyPlot("Physics/Accumulator/Dropped time", static_cast<int64_t>(result.dropped_time));
 		return result;
 	}
 
