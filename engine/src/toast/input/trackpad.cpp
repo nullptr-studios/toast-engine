@@ -406,7 +406,6 @@ auto toast_trackpad_active(uint64_t handle) noexcept -> int32_t {
 		return status == DIRECTMANIPULATION_RUNNING || status == DIRECTMANIPULATION_INERTIA ? 1 : 0;
 	} catch (...) { return 0; }
 }
-
 }
 
 #else

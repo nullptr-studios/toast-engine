@@ -1385,7 +1385,7 @@ void DebugPass::createGizmoGeometry(const renderer::VulkanCore& core) {
 	       std::pair {0,   k_red},
           std::pair {1, k_green},
           std::pair {2,  k_blue}
-	}) {
+  }) {
 		appendShaftAlongAxis(vertices, axis, k_shaft_length, k_shaft_half_size, color);
 		appendPyramidAlongAxis(vertices, axis, k_shaft_length, k_shaft_length + k_head_length, k_head_half_size, color);
 	}
