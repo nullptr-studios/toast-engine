@@ -57,6 +57,15 @@
 			        Value="{StaticResource Magenta}" />
 		</Style>
 
+		<Style Selector="ToggleButton.tool.camMode:not(:checked) /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg4}" />
+		</Style>
+		<Style Selector="ToggleButton.tool.camMode:not(:checked):pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg5}" />
+		</Style>
+
 		<!-- Snap value -->
 		<Style Selector="Button.chev">
 			<Setter Property="Background"
@@ -82,6 +91,14 @@
 		<Style Selector="ToggleButton.snapTool:pointerover /template/ ContentPresenter#PART_ContentPresenter">
 			<Setter Property="Background"
 			        Value="{StaticResource Bg4}" />
+		</Style>
+		<Style Selector="ToggleButton.snapTool:not(:checked) LucideIcon">
+			<Setter Property="Foreground"
+			        Value="{StaticResource TextMuted}" />
+		</Style>
+		<Style Selector="ToggleButton.snapTool:not(:checked) TextBlock.snapValue">
+			<Setter Property="Foreground"
+			        Value="{StaticResource TextMuted}" />
 		</Style>
 
 		<!-- Snap value text: fixed-width monospace so the toggle doesn't resize between "OFF" and a value -->
@@ -184,16 +201,19 @@
 				              ToolTip.Tip="Grid snapping (G)"
 				              IsChecked="{Binding TranslateSnapEnabled}">
 					<StackPanel Orientation="Horizontal"
-					            Spacing="8">
+					            Spacing="8"
+					            VerticalAlignment="Center">
 						<LucideIcon Kind="Grid2x2"
 						            Size="18"
 						            StrokeWidth="2.5" />
 						<TextBlock Classes="snapValue"
 						           Text="Off"
+						           VerticalAlignment="Center"
 						           IsVisible="{Binding !TranslateSnapEnabled}" />
 						<TextBlock Classes="snapValue"
 						           Text="{Binding TranslateSnap, Converter={StaticResource SnapValueConverter}}"
 						           IsVisible="{Binding TranslateSnapEnabled}"
+						           VerticalAlignment="Center"
 						           HorizontalAlignment="Right" />
 					</StackPanel>
 				</ToggleButton>
@@ -202,16 +222,19 @@
 				              ToolTip.Tip="Rotate snapping (Shift+G)"
 				              IsChecked="{Binding RotateSnapEnabled}">
 					<StackPanel Orientation="Horizontal"
+					            VerticalAlignment="Center"
 					            Spacing="8">
 						<LucideIcon Kind="RotateCw"
 						            Size="18"
 						            StrokeWidth="2.5" />
 						<TextBlock Classes="snapValue"
 						           Text="Off"
+						           VerticalAlignment="Center"
 						           IsVisible="{Binding !RotateSnapEnabled}" />
 						<TextBlock Classes="snapValue"
 						           Text="{Binding RotateSnap, Converter={StaticResource SnapValueConverter}, ConverterParameter=int}"
 						           IsVisible="{Binding RotateSnapEnabled}"
+						           VerticalAlignment="Center"
 						           HorizontalAlignment="Right" />
 					</StackPanel>
 				</ToggleButton>
@@ -220,16 +243,19 @@
 				              ToolTip.Tip="Scale snapping (Alt+G)"
 				              IsChecked="{Binding ScaleSnapEnabled}">
 					<StackPanel Orientation="Horizontal"
+					            VerticalAlignment="Center"
 					            Spacing="8">
 						<LucideIcon Kind="Maximize2"
 						            Size="18"
 						            StrokeWidth="2.5" />
 						<TextBlock Classes="snapValue"
 						           Text="Off"
+						           VerticalAlignment="Center"
 						           IsVisible="{Binding !ScaleSnapEnabled}" />
 						<TextBlock Classes="snapValue"
 						           Text="{Binding ScaleSnap, Converter={StaticResource SnapValueConverter}}"
 						           IsVisible="{Binding ScaleSnapEnabled}"
+						           VerticalAlignment="Center"
 						           HorizontalAlignment="Right" />
 					</StackPanel>
 				</ToggleButton>
@@ -504,7 +530,86 @@
 				</ToggleButton>
 				<Button CornerRadius="0, 6, 6, 0"
 				        Background="{StaticResource Bg3}"
-				        ToolTip.Tip="Camera settings">
+				        ToolTip.Tip="Camera settings"
+				        IsEnabled="{Binding !GameCamera}">
+					<Button.Flyout>
+						<Flyout Placement="BottomEdgeAlignedRight">
+							<StackPanel Spacing="8"
+							            MinWidth="180">
+								<Grid ColumnDefinitions="*,*">
+									<ToggleButton Grid.Column="0"
+									              Classes="tool red camMode"
+									              CornerRadius="6, 0, 0, 6"
+									              HorizontalAlignment="Stretch"
+									              HorizontalContentAlignment="Left"
+									              ToolTip.Tip="Fly camera: hold RMB to look, WASD to move"
+									              Command="{Binding SetEditorCameraModeCommand}"
+									              CommandParameter="Free"
+									              IsChecked="{Binding CameraMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Free, Mode=OneWay}">
+										<StackPanel Orientation="Horizontal"
+										            Spacing="8">
+											<LucideIcon Kind="Camera"
+											            Size="16"
+											            StrokeWidth="2.5" />
+											<TextBlock Text="Free" />
+										</StackPanel>
+									</ToggleButton>
+									<ToggleButton Grid.Column="1"
+									              Classes="tool red camMode"
+									              CornerRadius="0, 6, 6, 0"
+									              HorizontalAlignment="Stretch"
+									              HorizontalContentAlignment="Left"
+									              ToolTip.Tip="Orbit the world origin: two-finger drag to swing, pinch to zoom"
+									              Command="{Binding SetEditorCameraModeCommand}"
+									              CommandParameter="Orbit"
+									              IsChecked="{Binding CameraMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Orbit, Mode=OneWay}">
+										<StackPanel Orientation="Horizontal"
+										            Spacing="8">
+											<LucideIcon Kind="Rotate3d"
+											            Size="16"
+											            StrokeWidth="2.5" />
+											<TextBlock Text="Orbit" />
+										</StackPanel>
+									</ToggleButton>
+								</Grid>
+								<Grid ColumnDefinitions="Auto,*,Auto,Auto"
+								      ColumnSpacing="8">
+									<LucideIcon Grid.Column="0"
+									            Kind="Gauge"
+									            Size="16"
+									            StrokeWidth="2.5"
+									            VerticalAlignment="Center" />
+									<TextBlock Grid.Column="1"
+									           Classes="snapValue"
+									           Text="{Binding CameraSpeed, Converter={StaticResource SnapValueConverter}}"
+									           VerticalAlignment="Center"
+									           HorizontalAlignment="Right" />
+									<Button Grid.Column="2"
+									        Classes="chev"
+									        Width="24"
+									        Height="24"
+									        Padding="0"
+									        Command="{Binding StepCameraSpeedCommand}"
+									        CommandParameter="-1">
+										<LucideIcon Kind="Minus"
+										            Size="14"
+										            StrokeWidth="2.5" />
+									</Button>
+									<Button Grid.Column="3"
+									        Classes="chev"
+									        Width="24"
+									        Height="24"
+									        Padding="0"
+									        Command="{Binding StepCameraSpeedCommand}"
+									        CommandParameter="1">
+										<LucideIcon Kind="Plus"
+										            Size="14"
+										            StrokeWidth="2.5" />
+									</Button>
+								</Grid>
+							</StackPanel>
+						</Flyout>
+					</Button.Flyout>
 					<LucideIcon Kind="ChevronDown"
 					            Size="18"
 					            StrokeWidth="2.5" />

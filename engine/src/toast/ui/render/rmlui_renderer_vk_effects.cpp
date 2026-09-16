@@ -76,7 +76,7 @@ VkRect2D ClampRect(VkRect2D rect, VkExtent2D extent) {
 	const int64_t x1 = std::clamp<int64_t>(int64_t(rect.offset.x) + rect.extent.width, x0, extent.width);
 	const int64_t y1 = std::clamp<int64_t>(int64_t(rect.offset.y) + rect.extent.height, y0, extent.height);
 	return {
-	  {	    static_cast<int32_t>(x0),       static_cast<int32_t>(y0)},
+	  {      static_cast<int32_t>(x0),       static_cast<int32_t>(y0)},
     {static_cast<uint32_t>(x1 - x0), static_cast<uint32_t>(y1 - y0)}
 	};
 }
@@ -902,7 +902,7 @@ void RenderInterface_VK::RenderToClipMask(
 			VkClearRect rect = {};
 			rect.layerCount = 1;
 			rect.rect = {
-			  {			          0,			            0},
+			  {                0,                  0},
         {uint32_t(m_width), uint32_t(m_height)}
 			};
 			vkCmdClearAttachments(m_p_current_command_buffer, 1, &clear, 1, &rect);
@@ -918,7 +918,7 @@ void RenderInterface_VK::RenderToClipMask(
 			VkClearRect rect = {};
 			rect.layerCount = 1;
 			rect.rect = {
-			  {			          0,			            0},
+			  {                0,                  0},
         {uint32_t(m_width), uint32_t(m_height)}
 			};
 			vkCmdClearAttachments(m_p_current_command_buffer, 1, &clear, 1, &rect);

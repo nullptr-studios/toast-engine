@@ -77,9 +77,9 @@ constexpr std::array<toast::GizmoHandle, 3> k_axis_handles {
 };
 
 constexpr std::array<glm::vec4, 3> k_axis_colors {
-  glm::vec4 { 1.0f, 0.15f, 0.15f, 1.0f},
-   glm::vec4 {0.15f,  1.0f, 0.15f, 1.0f},
-   glm::vec4 {0.15f, 0.15f,  1.0f, 1.0f}
+  glm::vec4 {  1.0f, 0.086f, 0.349f, 1.0f}, // X
+  glm::vec4 {  0.0f,   1.0f, 0.251f, 1.0f}, // Y
+  glm::vec4 {0.161f, 0.678f,   1.0f, 1.0f}  // Z
 };
 
 using DebugVertex = VulkanRenderer::DebugVertex;
@@ -1338,7 +1338,7 @@ void DebugPass::createGizmoGeometry(const renderer::VulkanCore& core) {
 	       std::pair {0,   k_red},
           std::pair {1, k_green},
           std::pair {2,  k_blue}
-  }) {
+	}) {
 		appendShaftAlongAxis(vertices, axis, k_shaft_length, k_shaft_half_size, color);
 		appendPyramidAlongAxis(vertices, axis, k_shaft_length, k_shaft_length + k_head_length, k_head_half_size, color);
 	}
@@ -1386,9 +1386,9 @@ void DebugPass::createTranslateGizmoGeometry(const renderer::VulkanCore& core) {
 	};
 	constexpr std::array<int, 3> plane_normal_axis {2, 0, 1};    // xy Z yz X xz Y
 	constexpr std::array<glm::vec4, 3> plane_colors {
-	  glm::vec4 { 1.0f,  1.0f, 0.15f, 1.0f},
-     glm::vec4 {0.15f,  1.0f,  1.0f, 1.0f},
-     glm::vec4 { 1.0f, 0.15f,  1.0f, 1.0f}
+	  glm::vec4 {0.161f, 0.678f,   1.0f, 1.0f},
+     glm::vec4 {  1.0f, 0.086f, 0.349f, 1.0f},
+     glm::vec4 {  0.0f,   1.0f, 0.251f, 1.0f}
 	};
 	for (int i = 0; i < 3; ++i) {
 		const size_t start = vertices.size();

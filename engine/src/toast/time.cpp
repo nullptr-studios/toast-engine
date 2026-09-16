@@ -39,7 +39,7 @@ void Time::tick() noexcept {
 	// goofy ahh loc
 	const double dt =
 	    is_paused ? 0.0
-	              : std::min(raw * m_delta_scale.load(std::memory_order_relaxed), m_max_delta.load(std::memory_order_relaxed));
+			          : std::min(raw * m_delta_scale.load(std::memory_order_relaxed), m_max_delta.load(std::memory_order_relaxed));
 
 	// sequence lock write -x
 	// odd means write in progress

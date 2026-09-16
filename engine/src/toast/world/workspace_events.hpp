@@ -262,11 +262,32 @@ struct EditorCameraLook : Event<EditorCameraLook> {
 	EditorCameraLook(float dx, float dy) : dx(dx), dy(dy) { }
 };
 
-/// @brief Mouse wheel while flying adjusts fly speed
-struct EditorCameraSpeedScroll : Event<EditorCameraSpeedScroll> {
-	float delta;
+enum class EditorCameraMode : uint32_t {
+	free = 0,
+	orbit = 1
+};
 
-	EditorCameraSpeedScroll(float delta) : delta(delta) { }
+struct SetEditorCameraSettings : Event<SetEditorCameraSettings> {
+	EditorCameraMode mode;
+	float speed;
+
+	uint64_t workspace_handle;
+
+	SetEditorCameraSettings(EditorCameraMode mode, float speed, uint64_t workspace_handle = 0)
+	    : mode(mode),
+	      speed(speed),
+	      workspace_handle(workspace_handle) { }
+
+	SetEditorCameraSettings(uint32_t mode, float speed, uint64_t workspace_handle = 0)
+	    : mode(static_cast<EditorCameraMode>(mode)),
+	      speed(speed),
+	      workspace_handle(workspace_handle) { }
+};
+
+struct EditorCameraGesture : Event<EditorCameraGesture> {
+	float dx, dy, zoom;
+
+	EditorCameraGesture(float dx, float dy, float zoom) : dx(dx), dy(dy), zoom(zoom) { }
 };
 
 struct InspectorContent : Event<InspectorContent> {

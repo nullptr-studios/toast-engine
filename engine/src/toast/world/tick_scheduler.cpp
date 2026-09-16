@@ -268,7 +268,7 @@ auto TickScheduler::tarjanAlgorithm(const std::vector<std::vector<Box<Node>>>& i
 		std::vector<std::vector<Box<Node>>> sccs;    // Components in reverse topological order
 	};
 
-	                                               // clang-format off
+	// clang-format off
 	// We start with a list of nodes per subgraph that survived the initial pruning
 	std::vector<TickSchedule::Wave> processed_subgraphs;
 	processed_subgraphs.reserve(input_subgraphs.size());

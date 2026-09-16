@@ -592,20 +592,40 @@ struct ProtoTraits<EditorCameraLook> {
 TOAST_PROTO_EVENT(EditorCameraLook);
 
 template<>
-struct ProtoTraits<EditorCameraSpeedScroll> {
-	using Proto = proto::events::EditorCameraSpeedScroll;
-	using Event = EditorCameraSpeedScroll;
+struct ProtoTraits<SetEditorCameraSettings> {
+	using Proto = proto::events::SetEditorCameraSettings;
+	using Event = SetEditorCameraSettings;
 
 	static auto toProto(const Event& e) -> Proto {
 		Proto p;
-		p.set_delta(e.delta);
+		p.set_mode(static_cast<Proto::Mode>(e.mode));
+		p.set_speed(e.speed);
+		p.set_workspace_handle(e.workspace_handle);
 		return p;
 	}
 
-	static auto fromProto(const Proto& p) -> Event { return {p.delta()}; }
+	static auto fromProto(const Proto& p) -> Event { return {static_cast<uint32_t>(p.mode()), p.speed(), p.workspace_handle()}; }
 };
 
-TOAST_PROTO_EVENT(EditorCameraSpeedScroll);
+TOAST_PROTO_EVENT(SetEditorCameraSettings);
+
+template<>
+struct ProtoTraits<EditorCameraGesture> {
+	using Proto = proto::events::EditorCameraGesture;
+	using Event = EditorCameraGesture;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_dx(e.dx);
+		p.set_dy(e.dy);
+		p.set_zoom(e.zoom);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return {p.dx(), p.dy(), p.zoom()}; }
+};
+
+TOAST_PROTO_EVENT(EditorCameraGesture);
 
 template<>
 struct ProtoTraits<InspectorContent::InspectorField> {

@@ -178,8 +178,24 @@ message EditorCameraLook {
   float dy = 2;
 }
 
-message EditorCameraSpeedScroll {
-  float delta = 1;
+message SetEditorCameraSettings {
+  enum Mode {
+    FREE = 0;
+    ORBIT = 1;
+  }
+
+  Mode mode = 1;
+  float speed = 2;
+  // Addressed explicitly rather than relying on the active workspace: the editor loads these settings
+  // when the hierarchy first populates, which can land either side of the tab becoming active
+  uint64 workspace_handle = 3;
+}
+
+// Trackpad gesture: dx/dy is a two-finger drag in pixels, zoom a pinch
+message EditorCameraGesture {
+  float dx = 1;
+  float dy = 2;
+  float zoom = 3;
 }
 
 message InspectorField {

@@ -6,6 +6,7 @@
 #pragma once
 
 #include "camera.hpp"
+#include "workspace_events.hpp"
 
 #include <toast/events/listener.hpp>
 
@@ -28,6 +29,32 @@ public:
 	 * looked through should consume input
 	 */
 	void setEnabled(bool enabled) noexcept;
+	void configure(event::EditorCameraMode mode, float speed);
+
+	[[nodiscard]]
+	auto mode() const noexcept -> event::EditorCameraMode {
+		return m_mode;
+	}
+
+	[[nodiscard]]
+	auto speed() const noexcept -> float {
+		return m_speed;
+	}
+
+	[[nodiscard]]
+	auto position() const noexcept -> glm::vec3 {
+		return m_position;
+	}
+
+	[[nodiscard]]
+	auto orbitRadius() const noexcept -> float {
+		return m_orbit_radius;
+	}
+
+	[[nodiscard]]
+	auto orbitElevation() const noexcept -> float {
+		return m_orbit_elevation;
+	}
 
 private:
 	event::Listener m_listener;
@@ -42,17 +69,33 @@ private:
 	bool m_move_down = false;
 	bool m_boost = false;
 
-	glm::vec3 m_position {0.0f, -5.0f, 2.0f};
+	glm::vec3 m_position {0.0f, -10.0f, 10.0f};
 	float m_yaw = 0.0f;
 	float m_pitch = 0.0f;
+	float m_orbit_elevation = 0.0f;
+	float m_orbit_radius = 0.0f;
 
 	float m_speed = 5.0f;
+	event::EditorCameraMode m_mode = event::EditorCameraMode::free;
 
 	static constexpr float k_min_speed = 0.5f;
 	static constexpr float k_max_speed = 50.0f;
+	static constexpr float k_min_radius = 0.1f;
+	static constexpr float k_max_radius = 5000.0f;
 	static constexpr float k_boost_multiplier = 3.0f;
 	static constexpr float k_look_sensitivity = 0.0025f;
+	static constexpr float k_gesture_zoom_sensitivity = 0.01f;
+	static constexpr float k_gesture_pan_sensitivity = 0.01f;
 	static constexpr float k_pitch_limit = 1.5533f;    // ~89 degrees
+
+	void setMode(event::EditorCameraMode mode);
+	void syncOrbitFromPosition();
+	void applyLook(float dx, float dy);
+	void applyPan(float dx, float dy);
+	void applyZoom(float delta);
+
+	[[nodiscard]]
+	auto orientation() const -> glm::quat;
 };
 
 }

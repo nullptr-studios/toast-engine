@@ -15,7 +15,7 @@ public sealed class InspectorState {
 	}
 
 	public static InspectorState Load(string uid) {
-		var path = ProjectContext.Resolve($"cache://inspector/{uid}.json");
+		var path = ProjectContext.Resolve($"cache://tools/inspector/{uid}.json");
 		Dictionary<string, bool>? data = null;
 		try {
 			if (File.Exists(path))
