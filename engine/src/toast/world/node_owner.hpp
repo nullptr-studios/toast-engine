@@ -18,6 +18,7 @@
 #include <string_view>
 #include <toast/assets/prefab.hpp>
 #include <toast/export.hpp>
+#include <toast/physics/accumulator.hpp>
 #include <toast/scripting/lua_value_codec.hpp>
 #include <toast/uid.hpp>
 #include <unordered_set>
@@ -161,6 +162,8 @@ protected:
 
 	std::mutex nodes_mutex;
 	size_t tombstones = 0;    ///< short-circuits the reap sweep when there's nothing to clean
+
+	physics::Accumulator m_accumulator;
 
 private:
 	friend class CameraController;

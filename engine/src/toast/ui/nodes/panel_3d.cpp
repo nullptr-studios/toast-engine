@@ -21,6 +21,30 @@ Panel3D::Panel3D() {
 
 Panel3D::~Panel3D() = default;
 
+void Panel3D::updateInspectorMessages() {
+	static const NodeMessage document_message {
+	  .severity = NodeMessage::warning,
+	  .id = 8,
+	  .text = "Panel3D requires a UIElement",
+	};
+	static const NodeMessage resolution_message {
+	  .severity = NodeMessage::error,
+	  .id = 9,
+	  .text = "Pixels per meter must be greater than zero",
+	};
+
+	if (m_element.hasValue()) {
+		removeInspectorMessage(document_message);
+	} else {
+		addInspectorMessage(document_message);
+	}
+	if (std::isfinite(m_pixels_per_meter) && m_pixels_per_meter > 0.0f) {
+		removeInspectorMessage(resolution_message);
+	} else {
+		addInspectorMessage(resolution_message);
+	}
+}
+
 void Panel3D::onReflectedFieldChanged(std::string_view field_name) {
 	if (field_name == "scale" || field_name == "world_scale" || field_name == "m_pixels_per_meter") {
 		syncContextDimensions();

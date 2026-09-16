@@ -5,7 +5,6 @@
 #include "node.hpp"
 #include "node_3d.hpp"
 #include "workspace_events.hpp"
-#include "workspace_events.pb.h"
 
 #include <array>
 #include <charconv>
@@ -365,6 +364,7 @@ Workspace::Workspace(UID uid) : m_handle(uid) {
 Workspace::Workspace(UID uid, std::string_view source_uri) : m_handle(uid) {
 	ZoneScoped;
 	m_editor_camera = std::make_unique<Camera>();
+	m_editor_camera->position = {0.0f, -10.0f, 10.0f};
 	eventSubscriptions();
 
 	auto bytes = assets::AssetManager::get().loadBytes(source_uri);
@@ -377,8 +377,8 @@ Workspace::Workspace(UID uid, std::string_view source_uri) : m_handle(uid) {
 	// to load the node as a .tbnode rather than as a .tnode, we need to be careful with that
 	VectorStreamBuf buffer(*bytes);
 	std::istream autosave(&buffer);
-	assets::Prefab prefab(autosave);
-	assets::Handle<assets::Prefab> file(&prefab, uid, "");
+	m_owned_source_prefab = std::make_unique<assets::Prefab>(autosave);
+	assets::Handle<assets::Prefab> file(m_owned_source_prefab.get(), uid, "");
 	initFromPrefab(file);
 	if (m_root_node.exists()) {
 		initializeHistory(true, false);
@@ -462,7 +462,9 @@ void Workspace::destroyOwnedTree(Box<Node>& root) {
 
 auto Workspace::restoreHistorySnapshot(const assets::Prefab& snapshot) -> bool {
 	ZoneScoped;
-	assets::Handle<assets::Prefab> handle(const_cast<assets::Prefab*>(&snapshot), toast::UID(0), "");
+
+	auto owned_snapshot = std::make_unique<assets::Prefab>(snapshot);
+	assets::Handle<assets::Prefab> handle(owned_snapshot.get(), toast::UID(0), "");
 	INodeOwner::InstantiateContext context;
 	context.resolver = [](toast::UID id) { return assets::load<assets::Prefab>(id); };
 	Box<Node> replacement = instantiate(handle, context);
@@ -482,6 +484,7 @@ auto Workspace::restoreHistorySnapshot(const assets::Prefab& snapshot) -> bool {
 
 	m_focused_node = {};
 	destroyOwnedTree(m_root_node);
+	m_owned_source_prefab = std::move(owned_snapshot);
 	m_root_node = replacement;
 	if (focused_uid.data() != 0) {
 		m_focused_node = findFrom(m_root_node, focused_uid);
@@ -508,6 +511,9 @@ Workspace::~Workspace() {
 		return;
 	}
 
+	if (isActiveWorkspace() && renderer::VulkanRenderer::instance) {
+		renderer::setActiveCamera(nullptr);
+	}
 	beginCameraShutdown();
 	m_root_node->propagateCallTick(m_root_node->info(), TickFunctionList::on_disable);
 	m_root_node->propagateCallTick(m_root_node->info(), TickFunctionList::end);
@@ -888,6 +894,23 @@ void Workspace::eventSubscriptions() {
 				item.forwards_args = connection.forwards_args;
 			}
 		});
+		if (auto* runtime = node->scriptRuntime()) {
+			for (const auto& signal : runtime->luaSignals()) {
+				auto& entry = state.signals.emplace_back();
+				entry.declaring_type = "Lua";
+				entry.signal = signal;
+				for (const auto& connection : runtime->luaSignalConnections(signal)) {
+					auto target = findFrom(m_root_node, connection.target);
+					auto& item = entry.connections.emplace_back();
+					item.target = connection.target;
+					item.target_name = target.exists() ? target->name() : "Missing node";
+					item.target_type = target.exists() && target->info() ? std::string(target->info()->type) : std::string {};
+					item.function = connection.function;
+					item.source = connection.source;
+					item.forwards_args = connection.forwards_args;
+				}
+			}
+		}
 		event::send<event::SignalState>(state);
 	};
 
@@ -908,7 +931,12 @@ void Workspace::eventSubscriptions() {
 		response.target_node = e.target_node;
 		auto [source, signal] = find_signal(e.source_node, e.declaring_type, e.signal);
 		auto target = findFrom(m_root_node, e.target_node);
-		if (!source.exists() || !signal || !target.exists() || !target->info()) {
+		const bool is_lua_signal = e.declaring_type == "Lua";
+		auto* source_runtime = source.exists() ? source->scriptRuntime() : nullptr;
+		const bool lua_signal_exists =
+		    source_runtime &&
+		    std::ranges::any_of(source_runtime->luaSignals(), [&](const std::string& name) { return name == e.signal; });
+		if (!source.exists() || (!signal && !(is_lua_signal && lua_signal_exists)) || !target.exists() || !target->info()) {
 			response.error = "The source signal or target node no longer exists";
 			event::send<event::SignalCallables>(response);
 			return true;
@@ -924,8 +952,10 @@ void Workspace::eventSubscriptions() {
 				callable.name = method.name;
 				callable.has_cpp = true;
 				callable.compatible = method.return_type_id && *method.return_type_id == typeid(void);
-				callable.forwards_args = !method.parameters.empty();
-				if (callable.compatible && !method.parameters.empty()) {
+				callable.forwards_args = !is_lua_signal && !method.parameters.empty();
+				if (callable.compatible && is_lua_signal) {
+					callable.compatible = method.parameters.empty();
+				} else if (callable.compatible && !method.parameters.empty()) {
 					callable.compatible = method.parameters.size() == signal->args.size();
 					for (size_t i = 0; callable.compatible && i < method.parameters.size(); ++i) {
 						callable.compatible =
@@ -949,9 +979,10 @@ void Workspace::eventSubscriptions() {
 				auto& callable = response.callables.emplace_back();
 				callable.name = function.name;
 				callable.has_lua = true;
-				callable.compatible = function.parameters.empty() || function.parameters.size() == signal->args.size() ||
-				                      (function.is_vararg && function.parameters.size() <= signal->args.size());
-				callable.forwards_args = !function.parameters.empty() || function.is_vararg;
+				callable.compatible = is_lua_signal ? (function.parameters.empty() || function.is_vararg)
+				                                    : (function.parameters.empty() || function.parameters.size() == signal->args.size() ||
+				                                       (function.is_vararg && function.parameters.size() <= signal->args.size()));
+				callable.forwards_args = !is_lua_signal && (!function.parameters.empty() || function.is_vararg);
 				for (const auto& name : function.parameters) {
 					callable.parameters.push_back({name, "any"});
 				}
@@ -959,7 +990,13 @@ void Workspace::eventSubscriptions() {
 			}
 		}
 
-		const auto connections = signal->get ? signal->get(&*source) : std::vector<signals::ConnectionInfo> {};
+		std::vector<signals::ConnectionInfo> connections;
+		if (is_lua_signal) {
+			connections = source_runtime->luaSignalConnections(e.signal);
+		} else if (signal->get) {
+			connections = signal->get(&*source);
+		}
+
 		for (auto& callable : response.callables) {
 			callable.already_connected = std::ranges::any_of(connections, [&](const auto& connection) {
 				return connection.target == e.target_node && connection.function == callable.name;
@@ -981,8 +1018,10 @@ void Workspace::eventSubscriptions() {
 		}
 		auto [source, signal] = find_signal(e.source_node, e.declaring_type, e.signal);
 		auto target = findFrom(m_root_node, e.target_node);
-		if (source.exists() && signal && signal->connect && target.exists()) {
-			signal->connect(&*source, *target, e.function, e.forwards_args);
+		if (e.declaring_type == "Lua" && source.exists() && source->scriptRuntime() && target.exists()) {
+			source->scriptRuntime()->connectLuaSignal(e.signal, *target, e.function, e.forwards_args);
+		} else if (source.exists() && signal && signal->connect && target.exists()) {
+			signal->connect(&*source, *target, e.function, signals::ConnectionSource::editor, e.forwards_args);
 		}
 		send_signal_state(e.source_node);
 		return true;
@@ -994,8 +1033,10 @@ void Workspace::eventSubscriptions() {
 		}
 		auto [source, signal] = find_signal(e.source_node, e.declaring_type, e.signal);
 		auto target = findFrom(m_root_node, e.target_node);
-		if (source.exists() && signal && signal->disconnect && target.exists()) {
-			signal->disconnect(&*source, *target, e.function);
+		if (e.declaring_type == "Lua" && source.exists() && source->scriptRuntime() && target.exists()) {
+			source->scriptRuntime()->disconnectLuaSignal(e.signal, *target, e.function);
+		} else if (source.exists() && signal && signal->disconnect && target.exists()) {
+			signal->disconnect(&*source, *target, e.function, signals::ConnectionSource::editor);
 		}
 		send_signal_state(e.source_node);
 		return true;
@@ -1006,8 +1047,10 @@ void Workspace::eventSubscriptions() {
 			return false;
 		}
 		auto [source, signal] = find_signal(e.source_node, e.declaring_type, e.signal);
-		if (source.exists() && signal && signal->clear_editor) {
-			signal->clear_editor(&*source);
+		if (e.declaring_type == "Lua" && source.exists() && source->scriptRuntime()) {
+			source->scriptRuntime()->clearLuaSignal(e.signal);
+		} else if (source.exists() && signal && signal->clear) {
+			signal->clear(&*source, signals::ConnectionSource::editor);
 		}
 		send_signal_state(e.source_node);
 		return true;
@@ -1129,35 +1172,7 @@ void Workspace::eventSubscriptions() {
 
 			// Detach from the parent so the editor no longer reaches the subtree
 			std::erase(parent->m_children, node);
-
-			// Collect the whole subtree into raw pointers
-			std::vector<Node*> victims;
-			auto collect = [&victims](this auto&& self, Node& n) -> void {
-				victims.push_back(&n);
-				for (auto& c : n.m_children) {
-					self(*c);
-				}
-			};
-			collect(*node);
-			node = {};
-
-			// Free every node in place
-			for (Node* victim : victims) {
-				_detail::ControlBox* control = _detail::ControlBox::get(victim);
-				const NodeInfo* info = victim->info();
-
-				victim->m_parent = {};
-				victim->m_children.clear();
-				victim->m_listener.reset();
-
-				if (info && info->destroy) {
-					info->destroy(victim);
-				} else {
-					delete victim;
-				}
-				releaseNode(*control);
-			}
-			reapTombstones();
+			destroyOwnedTree(node);
 		});
 
 		event::send<event::RequestHierarchyUpdate>();
@@ -1863,6 +1878,7 @@ void Workspace::tickAnimationPreviews(const Node& node) {
 
 void Workspace::tick() {
 	ZoneScoped;
+
 	if (!participatesIn(NodeOwnerParticipation::gameplay_tick)) {
 		tickActiveCameraController();
 		if (m_root_node.exists()) {
@@ -1898,6 +1914,7 @@ void Workspace::tick() {
 
 	std::vector<event::InspectorContent::InspectorField> fields;
 	Node* node = &*m_focused_node;
+	node->updateInspectorMessages();
 
 	for (const NodeInfo* type = node->info(); type != nullptr; type = type->base_type) {
 		for (const auto& field : type->all_fields) {
@@ -1924,8 +1941,13 @@ void Workspace::tick() {
 		}
 	}
 
+	std::vector<NodeMessage> messages;
+	for (const auto& m : m_focused_node->m_messages) {
+		messages.push_back(m);
+	}
+
 	event::send<event::InspectorContent>(
-	    m_focused_node->uid().get(), m_focused_node->name(), m_focused_node->enabled(), std::move(fields)
+	    m_focused_node->uid().get(), m_focused_node->name(), m_focused_node->enabled(), std::move(fields), std::move(messages)
 	);
 
 	// The exported script variables travel in their own message so the editor can rebuild

@@ -3,9 +3,37 @@
 #include "../audio_system.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <toast/time.hpp>
 
 namespace toast {
+
+void AmbienceVolume::updateInspectorMessages() {
+	Volume::updateInspectorMessages();
+	static const NodeMessage events_message {
+	  .severity = NodeMessage::warning,
+	  .id = 17,
+	  .text = "AmbienceVolume requires one AudioEvent",
+	};
+	static const NodeMessage interval_message {
+	  .severity = NodeMessage::error,
+	  .id = 18,
+	  .text = "Max must be at least Min",
+	};
+
+	const bool has_event = std::ranges::any_of(m_events, [](const auto& event) { return event.hasValue(); });
+	if (has_event) {
+		removeInspectorMessage(events_message);
+	} else {
+		addInspectorMessage(events_message);
+	}
+	if (std::isfinite(m_min_interval) && std::isfinite(m_max_interval) && m_min_interval >= 0.0f &&
+	    m_max_interval >= m_min_interval) {
+		removeInspectorMessage(interval_message);
+	} else {
+		addInspectorMessage(interval_message);
+	}
+}
 
 auto AmbienceVolume::evaluateTarget(const VolumeTarget& target, float weight) -> bool {
 	return trackTarget(target, calculateWeight(target) * weight > 0.0f);

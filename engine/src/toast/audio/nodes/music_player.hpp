@@ -11,6 +11,7 @@
 #include <atomic>
 #include <mutex>
 #include <string>
+#include <toast/events/signals.hpp>
 #include <toast/export.hpp>
 #include <toast/world/node.hpp>
 #include <unordered_map>
@@ -45,6 +46,7 @@ public:
 	void masterPitch(float value);
 
 private:
+	void updateInspectorMessages() override;
 	void onEnable();
 	void onDisable();
 	void tick();
@@ -97,6 +99,10 @@ public:
 	};
 
 	void queueCallback(const QueuedCb& cb);
+
+	signals::Signal<std::string_view> audio_started;
+	signals::Signal<std::string_view> audio_stopped;
+	signals::Signal<bool> audio_paused;
 
 private:
 	void startTrack(int track_index, float fade_in);

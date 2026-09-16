@@ -9,6 +9,7 @@
 #pragma once
 
 #include "node_3d.hpp"
+#include "toast/events/signals.hpp"
 
 #include <toast/export.hpp>
 
@@ -59,7 +60,10 @@ public:
 	[[nodiscard]]
 	auto screenPointToRay(glm::vec2 screen_px, glm::vec2 viewport_size) const noexcept -> Ray;
 
+	signals::Signal<Box<Node>> set_as_main;
+
 private:
+	void updateInspectorMessages() override;
 	void begin();
 	void end();
 	void onEnable();

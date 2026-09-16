@@ -73,6 +73,7 @@ public:
 	}
 
 private:
+	void updateInspectorMessages() override;
 	void init();
 	void end();
 	void destroy();

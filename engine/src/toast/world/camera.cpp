@@ -6,6 +6,8 @@
 
 #include <toast/renderer/vulkan_renderer.hpp>
 
+#include <cmath>
+
 namespace toast {
 
 Camera::~Camera() {
@@ -16,9 +18,34 @@ Camera::~Camera() {
 	renderer::forgetCamera(this);
 }
 
+void Camera::updateInspectorMessages() {
+	static const NodeMessage fov_message {
+	  .severity = NodeMessage::error,
+	  .id = 6,
+	  .text = "FOV must be between 0 and 180 degrees",
+	};
+	static const NodeMessage clipping_message {
+	  .severity = NodeMessage::error,
+	  .id = 7,
+	  .text = "Far must be greater than Near",
+	};
+
+	if (std::isfinite(fov) && fov > 0.0f && fov < 180.0f) {
+		removeInspectorMessage(fov_message);
+	} else {
+		addInspectorMessage(fov_message);
+	}
+	if (std::isfinite(near_plane) && std::isfinite(far_plane) && near_plane > 0.0f && far_plane > near_plane) {
+		removeInspectorMessage(clipping_message);
+	} else {
+		addInspectorMessage(clipping_message);
+	}
+}
+
 void Camera::setActiveCamera() {
 	if (m_owner) {
 		m_owner->activateCamera(*this);
+		set_as_main.fire(this->box());
 	}
 }
 

@@ -316,6 +316,14 @@ void Node::callTick(const NodeInfo* info, TickFunctionList func_type) noexcept {
 		invoker(this);
 	}
 
+	switch (func_type) {
+		case TickFunctionList::on_enable: on_enable.fire(this->box()); break;
+		case TickFunctionList::on_disable: on_disable.fire(this->box()); break;
+		case TickFunctionList::begin: on_begin.fire(this->box()); break;
+		case TickFunctionList::end: on_end.fire(this->box()); break;
+		default: break;
+	}
+
 	// After the C++ chain fire Lua scripts at the most-derived level
 	if (info == m_info && m_script_runtime) {
 		m_script_runtime->call(func_type);

@@ -60,6 +60,7 @@ class ReflectionProbe;
 class IrradianceVolume;
 class PostProcessVolume;
 class INodeOwner;
+class Node3D;
 }
 
 namespace renderer {
@@ -390,6 +391,7 @@ public:
 		uint32_t capture_extent = 0;
 
 		std::vector<DebugVertex> debug_line_vertices;    // pairs form line segments
+		std::vector<DebugVertex> debug_triangle_vertices;
 		std::vector<glm::mat4> debug_gizmo_instances;
 		std::vector<DebugBillboard> debug_billboards;
 		std::vector<DebugMesh> debug_meshes;
@@ -427,6 +429,8 @@ public:
 	void tick(float time) noexcept;
 
 	void registerMeshNodeProxy(toast::MeshNode* node);
+	void registerDebugDraw(toast::Node3D* node, void (*draw)(toast::Node3D&));
+	void unregisterDebugDraw(toast::Node3D* node);
 
 	void unregisterMeshNodeProxy(toast::MeshNode* node);
 
@@ -1081,6 +1085,7 @@ private:
 
 	std::mutex m_mesh_proxy_mutex;
 	std::vector<toast::MeshNode*> m_mesh_proxy_nodes;
+	std::vector<std::pair<toast::Node3D*, void (*)(toast::Node3D&)>> m_debug_nodes;
 
 	std::mutex m_voxel_proxy_mutex;
 	std::vector<toast::VoxelNode*> m_voxel_proxy_nodes;
@@ -1338,6 +1343,16 @@ inline auto renderingFrame() -> const VulkanRenderer::RenderFrame* {
 	return VulkanRenderer::instance->renderingFrame();
 }
 
+/// DEBUG LINES
+
+void debugDrawSolidSphere(glm::vec3 center, float radius, glm::vec4 color);
+void debugDrawShapeBox(const glm::mat4& transform, glm::vec4 color, bool fill);
+void debugDrawCapsule(const glm::mat4& transform, float radius, float height, glm::vec4 color, bool fill);
+
+/**
+ * @brief Queues a debug line segmentfor the frame currently being built
+ * @note Call between beginFrameBuild() and submitFrame()
+ */
 inline void debugDrawLine(glm::vec3 a, glm::vec3 b, glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f}) {
 	if (!VulkanRenderer::instance->debugDrawEnabled()) {
 		return;

@@ -7,6 +7,8 @@
  */
 
 #pragma once
+#include "toast/events/signals.hpp"
+
 #include <toast/export.hpp>
 #include <toast/world/node_3d.hpp>
 
@@ -24,6 +26,10 @@ struct VolumeTarget {
 
 class TOAST_API [[ToastNode, Hidden, Interface, Icon("Area")]] Volume : public Node3D {
 public:
+	[[Reflect, Color]]
+	glm::vec4 debug_color = glm::vec4(0.0f, 1.0f, 0.251f, 0.5f);
+	[[Reflect]]
+	bool debug_fill = true;
 	/**
 	 * @brief Evaluates if a target is inside the volume or not
 	 * @returns true if the target is inside the volume
@@ -47,7 +53,12 @@ public:
 	auto blendDistance() const -> float;
 	void blendDistance(float value);
 
+	signals::Signal<Box<Node>> node_exited;     // TODO:
+	signals::Signal<Box<Node>> node_entered;    // TODO:
+
 protected:
+	void updateInspectorMessages() override;
+
 	[[nodiscard]]
 	///< @brief Calculates the effect the volume should have on the object
 	auto calculateWeight(const VolumeTarget& target) const -> float;
@@ -64,6 +75,12 @@ protected:
 	virtual auto closestPointOnBounds(glm::vec3 point) const -> glm::vec3;
 
 private:
+	void init();
+	void destroy();
+	void onEnable();
+	void onDisable();
+	void drawDebug();
+	bool m_debug_visible = false;
 	[[Reflect]]
 	bool m_is_global = false;
 

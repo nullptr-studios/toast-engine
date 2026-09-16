@@ -1,8 +1,73 @@
 #include "volume.hpp"
 
+#include <cmath>
+#include <toast/renderer/vulkan_renderer.hpp>
+
 using namespace glm;
 
 namespace toast {
+void Volume::updateInspectorMessages() {
+	static const NodeMessage blend_message {
+	  .severity = NodeMessage::error,
+	  .id = 13,
+	  .text = "Volume blend distance must be non-negative",
+	};
+	static const NodeMessage scale_message {
+	  .severity = NodeMessage::error,
+	  .id = 14,
+	  .text = "Volumes require non-zero scale",
+	};
+
+	if (std::isfinite(m_blend_distance) && m_blend_distance >= 0.0f) {
+		removeInspectorMessage(blend_message);
+	} else {
+		addInspectorMessage(blend_message);
+	}
+
+	syncTransform();
+	const bool valid_scale =
+	    m_is_global || (std::isfinite(world_scale.x) && world_scale.x != 0.0f && std::isfinite(world_scale.y) &&
+	                    world_scale.y != 0.0f && std::isfinite(world_scale.z) && world_scale.z != 0.0f);
+	if (valid_scale) {
+		removeInspectorMessage(scale_message);
+	} else {
+		addInspectorMessage(scale_message);
+	}
+}
+
+void Volume::init() {
+	m_debug_visible = enabled();
+	if (renderer::VulkanRenderer::instance) {
+		renderer::VulkanRenderer::instance->registerDebugDraw(this, [](Node3D& node) { static_cast<Volume&>(node).drawDebug(); });
+	}
+}
+
+void Volume::destroy() {
+	if (renderer::VulkanRenderer::instance) {
+		renderer::VulkanRenderer::instance->unregisterDebugDraw(this);
+	}
+}
+
+void Volume::onEnable() {
+	m_debug_visible = true;
+}
+
+void Volume::onDisable() {
+	m_debug_visible = false;
+}
+
+void Volume::drawDebug() {
+	ZoneScoped;
+	if (!m_debug_visible) {
+		return;
+	}
+	if (m_is_global) {
+		return;
+	}
+	syncTransform();
+	renderer::debugDrawShapeBox(getWorldTransform(), debug_color, debug_fill);
+}
+
 auto Volume::isGlobal() const -> bool {
 	return m_is_global;
 }

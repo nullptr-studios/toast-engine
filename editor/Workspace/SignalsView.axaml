@@ -132,7 +132,7 @@
 														</ContextMenu>
 													</Border.ContextMenu>
 													<Grid ColumnDefinitions="Auto,*">
-														<LucideIcon Kind="SquareArrowRightExit"
+														<LucideIcon Kind="Rss"
 														            Size="16"
 														            StrokeWidth="2.5"
 														            Foreground="{StaticResource Red}"

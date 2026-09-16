@@ -79,7 +79,8 @@ struct Reflect<{{ qualified_name }}> {
 		.get = {{ s.typename }}::get<{{ qualified_name }},&{{ qualified_name }}::{{ s.name }}>,
 		.connect = {{ s.typename }}::connect<{{ qualified_name }},&{{ qualified_name }}::{{ s.name }}>,
 		.disconnect = {{ s.typename }}::disconnect<{{ qualified_name }},&{{ qualified_name }}::{{ s.name }}>,
-		.clear_editor = {{ s.typename }}::clearEditor<{{ qualified_name }},&{{ qualified_name }}::{{ s.name }}>,
+		.clear = {{ s.typename }}::clear<{{ qualified_name }},&{{ qualified_name }}::{{ s.name }}>,
+		.fire = {{ s.typename }}::fire<{{ qualified_name }},&{{ qualified_name }}::{{ s.name }}>,
 	}{% if not loop.last %},{% endif %}
 
 {% endfor %}

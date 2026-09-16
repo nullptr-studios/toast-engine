@@ -37,6 +37,10 @@
     "name" : "vulkan-memory-allocator",
     "version>=" : "3.3.0"
   }, {
+    "name" : "tracy",
+    "features" : [ "on-demand" ],
+    "version>=" : "0.13.1"
+  }, {
     "name" : "shader-slang",
     "version>=" : "2026.7.1"
   }, {
@@ -59,7 +63,7 @@
     "version>=" : "0.6.0"
   }, {
     "name" : "tinygltf",
-    "version>=" : "3.0.0#1"
+    "version>=" : "3.0.0"
   }, {
     "name" : "json-schema-validator",
     "version>=" : "2.4.0"
@@ -73,18 +77,15 @@
     "name" : "lua",
     "version>=" : "5.5.0#1"
   }, {
+    "name" : "rmlui",
+    "version>=" : "6.2"
+  }, {
     "name" : "imgui",
     "default-features" : false,
     "features" : [ {
       "name" : "vulkan-binding"
     } ],
     "version>=" : "1.92.7"
-  }, {
-    "name" : "rmlui",
-    "version>=" : "6.2"
-  }, {
-    "name" : "tracy",
-    "version>=" : "0.13.1#1"
   } ],
   "overrides" : [ {
     "name" : "tracy",

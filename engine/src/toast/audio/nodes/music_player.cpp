@@ -78,6 +78,21 @@ auto F_CALL musicPlayerCallback(FMOD_STUDIO_EVENT_CALLBACK_TYPE type, FMOD_STUDI
 
 }
 
+void MusicPlayer::updateInspectorMessages() {
+	static const NodeMessage message {
+	  .severity = NodeMessage::warning,
+	  .id = 19,
+	  .text = "MusicPlayer requires one valid track",
+	};
+
+	const bool has_track = std::ranges::any_of(m_tracks, [](const auto& track) { return track.hasValue(); });
+	if (has_track) {
+		removeInspectorMessage(message);
+	} else {
+		addInspectorMessage(message);
+	}
+}
+
 void MusicPlayer::startTrack(int track_index, float fade_in) {
 	ZoneScoped;
 	if (track_index < 0 || static_cast<size_t>(track_index) >= m_tracks.size()) {
@@ -130,6 +145,7 @@ void MusicPlayer::startTrack(int track_index, float fade_in) {
 		        FMOD_STUDIO_EVENT_CALLBACK_NESTED_TIMELINE_BEAT | FMOD_STUDIO_EVENT_CALLBACK_STOPPED
 		);
 	}
+	audio_started.fire(m_tracks.at(at.track_index)->name());
 }
 
 void MusicPlayer::stopTrack(ActiveTrack& at, bool allow_fadeout) {
@@ -155,6 +171,7 @@ void MusicPlayer::stopTrack(ActiveTrack& at, bool allow_fadeout) {
 	});
 	m_param_ids.erase(at.instance_id);
 	at.instance_id = 0;
+	audio_stopped.fire(m_tracks.at(at.track_index)->name());
 }
 
 void MusicPlayer::play(int track_index, float fade_in) {
@@ -184,6 +201,7 @@ void MusicPlayer::pause(bool value) {
 	for (auto& at : m_active_tracks) {
 		sys.pauseEvent(at.instance_id, value);
 	}
+	audio_paused.fire(value);
 }
 
 void MusicPlayer::keyOff(int track_index) {

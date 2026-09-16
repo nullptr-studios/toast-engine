@@ -259,8 +259,11 @@ DebugPass::DebugPass(
 		config.cull_mode = vk::CullModeFlagBits::eNone;
 		config.depth_test = true;
 		config.depth_write = false;
-		config.blend_enable = false;
+		config.blend_enable = true;
 		m_line_pipeline.rebuild(core, config);
+		config.debug_name = "DebugPass Fill";
+		config.topology = vk::PrimitiveTopology::eTriangleList;
+		m_fill_pipeline.rebuild(core, config);
 	}
 
 	if (shape_shader) {
@@ -959,6 +962,28 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 	}
 
 	const auto& core = VulkanRenderer::instance->getCore();
+	auto& fill_buffer = m_fill_vertex_buffers[frame_index];
+	const auto& fill_vertices = frame->debug_triangle_vertices;
+	m_fill_vertex_counts[frame_index] = static_cast<uint32_t>(fill_vertices.size());
+	if (!fill_vertices.empty()) {
+		std::vector<std::array<DebugVertex, 3>> triangles;
+		triangles.reserve(fill_vertices.size() / 3);
+		for (size_t i = 0; i + 2 < fill_vertices.size(); i += 3) {
+			triangles.push_back({fill_vertices[i], fill_vertices[i + 1], fill_vertices[i + 2]});
+		}
+		auto depth = [&](const auto& triangle) {
+			const glm::vec3 center = (triangle[0].position + triangle[1].position + triangle[2].position) / 3.0f;
+			return (frame->frame_data.view * glm::vec4(center, 1.0f)).z;
+		};
+		std::stable_sort(triangles.begin(), triangles.end(), [&](const auto& a, const auto& b) { return depth(a) < depth(b); });
+		ensureLineCapacity(core, fill_buffer, fill_vertices.size());
+		auto* destination = static_cast<DebugVertex*>(fill_buffer.mapped);
+		for (const auto& triangle : triangles) {
+			std::memcpy(destination, triangle.data(), 3 * sizeof(DebugVertex));
+			destination += 3;
+		}
+		fill_buffer.buffer.getAllocation().flush(0, fill_vertices.size() * sizeof(DebugVertex));
+	}
 	auto& buffer = m_line_vertex_buffers[frame_index];
 	const auto& vertices = frame->debug_line_vertices;
 
@@ -999,12 +1024,32 @@ void DebugPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t ima
 	);
 
 	const uint32_t line_vertex_count = frame_index < m_line_vertex_counts.size() ? m_line_vertex_counts[frame_index] : 0;
+	if (m_fill_vertex_counts[frame_index] > 0 && m_fill_pipeline.isReady()) {
+		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_fill_pipeline.getPipeline());
+		const DrawPushConstants pc {glm::mat4(1.0f)};
+		cmd.pushConstants(
+		    *m_shader_layout.getPipelineLayout(),
+		    vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
+		    0,
+		    sizeof(pc),
+		    &pc
+		);
+		cmd.bindVertexBuffers(
+		    0, std::array<vk::Buffer, 1> {*m_fill_vertex_buffers[frame_index].buffer}, std::array<vk::DeviceSize, 1> {0}
+		);
+		cmd.draw(m_fill_vertex_counts[frame_index], 1, 0, 0);
+	}
 	if (line_vertex_count > 0 && m_line_pipeline.isReady()) {
 		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_line_pipeline.getPipeline());
 
-		DrawPushConstants pc {};
-		pc.model = glm::mat4(1.0f);
-		cmd.pushConstants(*m_shader_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eAll, 0, sizeof(DrawPushConstants), &pc);
+		const DrawPushConstants pc {};    // identity - line vertices are already in world space
+		cmd.pushConstants(
+		    *m_shader_layout.getPipelineLayout(),
+		    vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
+		    0,
+		    sizeof(DrawPushConstants),
+		    &pc
+		);
 
 		cmd.bindVertexBuffers(
 		    0, std::array<vk::Buffer, 1> {*m_line_vertex_buffers[frame_index].buffer}, std::array<vk::DeviceSize, 1> {0}
@@ -1184,6 +1229,8 @@ void DebugPass::createResources(const renderer::VulkanCore& core) {
 
 	m_line_vertex_buffers.resize(VulkanRenderer::k_frames_in_flight);
 	m_line_vertex_counts.assign(VulkanRenderer::k_frames_in_flight, 0);
+	m_fill_vertex_buffers.resize(VulkanRenderer::k_frames_in_flight);
+	m_fill_vertex_counts.assign(VulkanRenderer::k_frames_in_flight, 0);
 
 	createGizmoGeometry(core);
 

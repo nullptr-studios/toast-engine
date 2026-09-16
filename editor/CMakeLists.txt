@@ -14,6 +14,7 @@ add_custom_target(editor ALL
         COMMAND ${DOTNET_EXECUTABLE} build
         "${CSHARP_PROJECT}"
         --configuration ${DOTNET_CONFIG}
+        --property:Platform=AnyCPU
         --output "${OUTPUT_ROOT}/$<CONFIG>/editor"
         --nologo
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}

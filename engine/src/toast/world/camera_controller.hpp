@@ -8,6 +8,7 @@
 
 #pragma once
 #include "camera.hpp"
+#include "toast/events/signals.hpp"
 
 #include <glm/glm.hpp>
 #include <limits>
@@ -87,6 +88,8 @@ public:
 	void addCamera(Camera& camera);
 	void removeCamera(Camera& camera);
 	void clearCameras();
+
+	signals::Signal<Box<Node>> main_camera_changed;
 
 private:
 	static constexpr uint8_t no_active_camera = std::numeric_limits<uint8_t>::max();

@@ -90,7 +90,10 @@ bool RenderInterface_VK::IsValidEffectImage(const effect_image_t& image) {
 void RenderInterface_VK::CreateEffectResources() noexcept {
 	const auto uid = assets::resolveURI("core://shaders/ui_effects.slang");
 	const auto entry = uid.has_value() ? renderer::ShaderCache::get().acquire(*uid) : nullptr;
-	RMLUI_VK_ASSERTMSG(entry != nullptr, "failed to acquire ui_effects.slang from shader cache");
+	if (!entry) {
+		Rml::Log::Message(Rml::Log::LT_ERROR, "Failed to acquire ui_effects.slang from shader cache; UI effects disabled.");
+		return;
+	}
 
 	{
 		VkShaderModuleCreateInfo info = {};

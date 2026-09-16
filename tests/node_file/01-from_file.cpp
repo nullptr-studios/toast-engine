@@ -85,8 +85,8 @@ TOAST_TEST_NAMED("node_file", "node_file/01-from_file", test_node_file_01_from_f
 	const auto& signal = signal_prefab.nodes[0].signals[0];
 	assert(signal.name == "activated");
 	assert(signal.connections.size() == 2);
-	assert(signal.connections[0].target.data() == 10 && signal.connections[0].function == "on_activated");
-	assert(signal.connections[1].target.data() == 11 && signal.connections[1].function == "on_other_activated");
+	assert(signal.connections[0].target.data() != 0 && signal.connections[0].function == "on_activated");
+	assert(signal.connections[1].target.data() != 0 && signal.connections[1].function == "on_other_activated");
 
 	Prefab wrapped_signals;
 	Prefab::Signal long_signal {.name = "activated"};

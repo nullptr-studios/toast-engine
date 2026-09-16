@@ -53,6 +53,11 @@ private:
 	std::vector<std::string> m_languages {"en"};
 };
 
+class TOAST_API PhysicsSettings {
+private:
+	;
+};
+
 class TOAST_API ProjectSettings {
 public:
 	explicit ProjectSettings(const std::filesystem::path& path);
