@@ -53,7 +53,7 @@ auto luaPrint(lua_State* state) -> int {
 		}
 
 		if (i < nargs) {
-			output += "\t";
+			output += '\t';
 		}
 	}
 
@@ -74,7 +74,7 @@ auto luaWarn(lua_State* state) -> int {
 		}
 
 		if (i < nargs) {
-			output += "\t";
+			output += '\t';
 		}
 	}
 

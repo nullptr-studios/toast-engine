@@ -577,7 +577,7 @@ void Engine::startGame() {
 }
 
 #ifdef TRACY_ENABLE
-// NOLINTBEGIN(cppcoreguidelines-no-malloc)
+// NOLINTBEGIN(cppcoreguidelines-no-malloc, readability-inconsistent-declaration-parameter-name)
 
 #ifdef _WIN32
 #include <malloc.h>
@@ -639,7 +639,6 @@ auto operator new[](std::size_t count, std::align_val_t align) -> void* {
 	return ptr;
 }
 
-// NOLINTNEXTLINE(readability-inconsistent-declaration-parameter-name)
 void operator delete(void* ptr) noexcept {
 	tracy::Profiler::MemFreeCallstack(ptr, TRACY_CALLSTACK, true);
 	free(ptr);
@@ -706,7 +705,7 @@ void operator delete[](void* ptr, std::size_t, std::align_val_t) noexcept {
 #endif
 }
 
-// NOLINTEND(cppcoreguidelines-no-malloc)
+// NOLINTEND(cppcoreguidelines-no-malloc, readability-inconsistent-declaration-parameter-name)
 #endif
 
 // ffi stuff

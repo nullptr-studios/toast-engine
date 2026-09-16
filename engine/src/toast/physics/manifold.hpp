@@ -174,7 +174,7 @@ auto collideBoxes(BroadPhasePair pair, const Shape& shape_a, const Body& body_a,
 
 [[nodiscard]]
 auto collideCapsuleBox(
-    BroadPhasePair pair, const Shape& caps_shape, const Body& caps_body, const Shape& box_shape, const Body& box_body
+    BroadPhasePair pair, const Shape& capsule_shape, const Body& capsule_body, const Shape& box_shape, const Body& box_body
 ) -> std::optional<Manifold>;
 
 [[nodiscard]]

@@ -36,13 +36,13 @@ void roundedShape(const glm::mat4& transform, float radius, float shaft, glm::ve
 	constexpr int rings = 17;
 	auto point = [&](int ring, int segment) -> glm::vec3 {
 		const float latitude =
-		    ring <= 8 ? -glm::half_pi<float>() + glm::half_pi<float>() * ring / 8 : glm::half_pi<float>() * (ring - 9) / 8;
+		    ring <= 8 ? -glm::half_pi<float>() + ((glm::half_pi<float>() * ring) / 8) : (glm::half_pi<float>() * (ring - 9)) / 8;
 		const float longitude = glm::two_pi<float>() * segment / segments;
 		const float offset = ring <= 8 ? -shaft : shaft;
 		return transform * glm::vec4(
 		                       radius * std::cos(latitude) * std::cos(longitude),
 		                       radius * std::cos(latitude) * std::sin(longitude),
-		                       radius * std::sin(latitude) + offset,
+		                       (radius * std::sin(latitude)) + offset,
 		                       1.0f
 		                   );
 	};
@@ -79,7 +79,7 @@ void debugDrawCapsule(const glm::mat4& transform, float radius, float height, gl
 	if (!std::isfinite(radius) || !std::isfinite(height) || radius <= 0.0f || height < 2.0f * radius) {
 		return;
 	}
-	const float shaft = height * 0.5f - radius;
+	const float shaft = (height * 0.5f) - radius;
 	if (fill) {
 		auto fill_color = color;
 		fill_color.a *= 0.2f;
@@ -97,13 +97,8 @@ void debugDrawShapeBox(const glm::mat4& transform, glm::vec4 color, bool fill) {
 	if (fill) {
 		auto fill_color = color;
 		fill_color.a *= 0.2f;
-		constexpr int faces[6][4] = {
-		  {0, 2, 3, 1},
-      {4, 5, 7, 6},
-      {0, 1, 5, 4},
-      {2, 6, 7, 3},
-      {0, 4, 6, 2},
-      {1, 3, 7, 5}
+		constexpr std::array<std::array<int, 4>, 6> faces = {
+		  {{0, 2, 3, 1}, {4, 5, 7, 6}, {0, 1, 5, 4}, {2, 6, 7, 3}, {0, 4, 6, 2}, {1, 3, 7, 5}}
 		};
 		for (const auto& f : faces) {
 			triangle(corners[f[0]], corners[f[1]], corners[f[2]], fill_color);

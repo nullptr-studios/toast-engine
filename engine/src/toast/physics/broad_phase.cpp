@@ -28,7 +28,7 @@ auto shapeBounds(const Body& body, const Shape& shape) -> AABB {
 			const glm::vec3 center = body.position + body.rotation * shape.capsule.local_center;
 			const glm::quat rotation = normalized(body.rotation * shape.capsule.local_rotation);
 			const glm::vec3 axis = rotation * glm::vec3 {0.0f, 0.0f, 1.0f};
-			const float shaft_half_length = 0.5f * shape.capsule.height - shape.capsule.radius;
+			const float shaft_half_length = (0.5f * shape.capsule.height) - shape.capsule.radius;
 			const glm::vec3 point_a = center - axis * shaft_half_length;
 			const glm::vec3 point_b = center + axis * shaft_half_length;
 			const glm::vec3 extent {shape.capsule.radius};

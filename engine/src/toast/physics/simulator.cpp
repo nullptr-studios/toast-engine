@@ -158,7 +158,7 @@ void Simulator::tick() {
 
 	// resolve
 	auto constraints = prepareConstraints(m_manifolds);
-	auto islands = buildIslands(m_manifolds, std::move(constraints));
+	auto islands = buildIslands(m_manifolds, constraints);
 	solveIslands(islands);
 	updateSleeping(dt);
 	publishProfile(islands);
@@ -554,7 +554,7 @@ void Simulator::updateSleeping(float dt) {
 		parents[index] = index;
 	}
 
-	auto findRoot = [&parents](size_t index) {
+	auto find_root = [&parents](size_t index) {
 		while (parents[index] != index) {
 			parents[index] = parents[parents[index]];
 			index = parents[index];
@@ -569,8 +569,8 @@ void Simulator::updateSleeping(float dt) {
 			continue;
 		}
 
-		const size_t root_a = findRoot(manifold.pair.a.body.slot);
-		const size_t root_b = findRoot(manifold.pair.b.body.slot);
+		const size_t root_a = find_root(manifold.pair.a.body.slot);
+		const size_t root_b = find_root(manifold.pair.b.body.slot);
 		if (root_a != root_b) {
 			parents[root_b] = root_a;
 		}
@@ -609,7 +609,7 @@ void Simulator::updateSleeping(float dt) {
 			continue;
 		}
 
-		const size_t root = findRoot(index);
+		const size_t root = find_root(index);
 		group_exists[root] = true;
 		group_can_sleep[root] = group_can_sleep[root] && body.allow_sleep && body.sleep_timer >= sleep_delay;
 	}
@@ -621,7 +621,7 @@ void Simulator::updateSleeping(float dt) {
 			continue;
 		}
 
-		const size_t root = findRoot(index);
+		const size_t root = find_root(index);
 		if (group_exists[root] && group_can_sleep[root]) {
 			sleepBody(BodyID {.slot = static_cast<uint32_t>(index), .generation = slot.generation});
 		}
@@ -690,7 +690,7 @@ void Simulator::updateCache(std::span<const Manifold> manifolds) {
 			}
 		}
 
-		next_cache.emplace_back(std::move(next_manifold));
+		next_cache.emplace_back(next_manifold);
 	}
 
 	for (const CachedManifold& cached : m_cached_manifolds) {
@@ -1307,7 +1307,7 @@ auto Simulator::prepareConstraints(const std::vector<Manifold>& manifolds) -> st
 	return constraints;
 }
 
-auto Simulator::buildIslands(std::span<const Manifold> manifolds, std::vector<Constraint> constraints) const
+auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vector<Constraint>& constraints) const
     -> std::vector<SimulationIsland> {
 	ZoneScopedN("physics::BuildIslands");
 
@@ -1317,7 +1317,7 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, std::vector<Co
 		parents[index] = index;
 	}
 
-	auto findRoot = [&parents](size_t index) {
+	auto find_root = [&parents](size_t index) {
 		while (parents[index] != index) {
 			parents[index] = parents[parents[index]];
 			index = parents[index];
@@ -1347,8 +1347,8 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, std::vector<Co
 		}
 
 		if (a_is_dynamic && b_is_dynamic) {
-			const size_t root_a = findRoot(manifold.pair.a.body.slot);
-			const size_t root_b = findRoot(manifold.pair.b.body.slot);
+			const size_t root_a = find_root(manifold.pair.a.body.slot);
+			const size_t root_b = find_root(manifold.pair.b.body.slot);
 			if (root_a < root_b) {
 				parents[root_b] = root_a;
 			} else if (root_b < root_a) {
@@ -1366,14 +1366,14 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, std::vector<Co
 			continue;
 		}
 
-		const size_t root = findRoot(body_index);
+		const size_t root = find_root(body_index);
 		if (island_by_root[root] == no_island) {
 			const BodySlot& root_slot = m_bodies[root];
 			island_by_root[root] = islands.size();
 			islands.emplace_back(
 			    SimulationIsland {
 			      .sort_key = BodyID {.slot = static_cast<uint32_t>(root), .generation = root_slot.generation},
-      }
+			}
 			);
 		}
 
@@ -1383,15 +1383,15 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, std::vector<Co
 		);
 	}
 
-	const auto islandForPair = [&](const BroadPhasePair& pair) -> size_t {
+	const auto island_for_pair = [&](const BroadPhasePair& pair) -> size_t {
 		const Body* body_a = tryGetBody(pair.a.body);
 		if (is_active_dynamic(body_a)) {
-			return island_by_root[findRoot(pair.a.body.slot)];
+			return island_by_root[find_root(pair.a.body.slot)];
 		}
 
 		const Body* body_b = tryGetBody(pair.b.body);
 		if (is_active_dynamic(body_b)) {
-			return island_by_root[findRoot(pair.b.body.slot)];
+			return island_by_root[find_root(pair.b.body.slot)];
 		}
 
 		return no_island;
@@ -1402,16 +1402,16 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, std::vector<Co
 			continue;
 		}
 
-		const size_t island_index = islandForPair(manifolds[manifold_index].pair);
+		const size_t island_index = island_for_pair(manifolds[manifold_index].pair);
 		if (island_index != no_island) {
 			islands[island_index].manifold_indices.emplace_back(manifold_index);
 		}
 	}
 
-	for (Constraint& constraint : constraints) {
-		const size_t island_index = islandForPair(constraint.pair);
+	for (const Constraint& constraint : constraints) {
+		const size_t island_index = island_for_pair(constraint.pair);
 		if (island_index != no_island) {
-			islands[island_index].constraints.emplace_back(std::move(constraint));
+			islands[island_index].constraints.emplace_back(constraint);
 		}
 	}
 

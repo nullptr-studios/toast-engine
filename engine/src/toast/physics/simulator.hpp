@@ -149,7 +149,7 @@ private:
 	[[nodiscard]]
 	auto prepareConstraint(const Manifold& manifold, const ContactPoint& contact) const -> std::optional<Constraint>;
 	[[nodiscard]]
-	auto buildIslands(std::span<const Manifold> manifolds, std::vector<Constraint> constraints) const
+	auto buildIslands(std::span<const Manifold> manifolds, const std::vector<Constraint>& constraints) const
 	    -> std::vector<SimulationIsland>;
 	void updateCache(std::span<const Manifold> manifolds);
 	[[nodiscard]]

@@ -76,7 +76,7 @@ auto worldCapsule(const Body& body, const CapsuleShape& capsule) -> WorldCapsule
 	               ? rotation / std::sqrt(rotation_length_squared)
 	               : glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 	const glm::vec3 axis = rotation * glm::vec3 {0.0f, 0.0f, 1.0f};
-	const float shaft_half_length = 0.5f * capsule.height - capsule.radius;
+	const float shaft_half_length = (0.5f * capsule.height) - capsule.radius;
 
 	return {
 	  .point_a = center - axis * shaft_half_length,
@@ -152,10 +152,10 @@ auto closestPointsBetweenSegments(const glm::vec3& a0, const glm::vec3& a1, cons
 	const float b = glm::dot(direction_a, direction_b);
 	const float c = glm::dot(direction_a, start_delta);
 	const float f = glm::dot(direction_b, start_delta);
-	const float denominator = a * e - b * b;
+	const float denominator = (a * e) - (b * b);
 	float parameter_a =
-	    denominator > parallel_axis_epsilon_sq * a * e ? std::clamp((b * f - c * e) / denominator, 0.0f, 1.0f) : 0.0f;
-	float parameter_b = (b * parameter_a + f) / e;
+	    denominator > parallel_axis_epsilon_sq * a * e ? std::clamp(((b * f) - (c * e)) / denominator, 0.0f, 1.0f) : 0.0f;
+	float parameter_b = ((b * parameter_a) + f) / e;
 
 	if (parameter_b < 0.0f) {
 		parameter_b = 0.0f;
@@ -210,7 +210,7 @@ auto closestPointsSegmentBox(const glm::vec3& segment_a, const glm::vec3& segmen
 	glm::vec3 best_segment_point = local_a;
 	glm::vec3 best_box_point = glm::clamp(local_a, -box.half_extents, box.half_extents);
 
-	const auto testParameter = [&](float parameter) {
+	const auto test_parameter = [&](float parameter) {
 		const glm::vec3 segment_point = local_a + direction * parameter;
 		const glm::vec3 box_point = glm::clamp(segment_point, -box.half_extents, box.half_extents);
 		const glm::vec3 delta = box_point - segment_point;
@@ -231,7 +231,7 @@ auto closestPointsSegmentBox(const glm::vec3& segment_a, const glm::vec3& segmen
 		float denominator = 0.0f;
 
 		for (uint8_t axis = 0; axis < 3; ++axis) {
-			const float midpoint_coordinate = local_a[axis] + direction[axis] * midpoint;
+			const float midpoint_coordinate = local_a[axis] + (direction[axis] * midpoint);
 			float offset = 0.0f;
 			if (midpoint_coordinate < -box.half_extents[axis]) {
 				offset = local_a[axis] + box.half_extents[axis];
@@ -244,10 +244,10 @@ auto closestPointsSegmentBox(const glm::vec3& segment_a, const glm::vec3& segmen
 			denominator += direction[axis] * direction[axis];
 		}
 
-		testParameter(interval_start);
-		testParameter(interval_end);
+		test_parameter(interval_start);
+		test_parameter(interval_end);
 		if (denominator > direction_epsilon_sq) {
-			testParameter(std::clamp(-numerator / denominator, interval_start, interval_end));
+			test_parameter(std::clamp(-numerator / denominator, interval_start, interval_end));
 		}
 	}
 
@@ -292,7 +292,7 @@ auto canonicalPairAxis(const BroadPhasePair& pair) -> glm::vec3 {
 	return axis;
 }
 
-enum class BoxAxisType {
+enum class BoxAxisType : std::uint8_t {
 	face_a,
 	face_b,
 	edge
@@ -486,7 +486,7 @@ auto reduceBoxContacts(std::vector<BoxContactCandidate> candidates, const glm::v
 
 	glm::vec3 tangent_u = perpendicularTo(normal);
 	glm::vec3 tangent_v = glm::cross(normal, tangent_u);
-	auto contactLess = [&](const BoxContactCandidate& lhs, const BoxContactCandidate& rhs) {
+	auto contact_less = [&](const BoxContactCandidate& lhs, const BoxContactCandidate& rhs) {
 		if (lhs.feature_a != rhs.feature_a) {
 			return lhs.feature_a < rhs.feature_a;
 		}
@@ -501,7 +501,7 @@ auto reduceBoxContacts(std::vector<BoxContactCandidate> candidates, const glm::v
 		}
 		return glm::dot(lhs.position, tangent_v) < glm::dot(rhs.position, tangent_v);
 	};
-	std::ranges::sort(candidates, contactLess);
+	std::ranges::sort(candidates, contact_less);
 
 	std::vector<BoxContactCandidate> unique_candidates;
 	unique_candidates.reserve(candidates.size());
@@ -553,13 +553,13 @@ auto reduceBoxContacts(std::vector<BoxContactCandidate> candidates, const glm::v
 		return glm::dot(area, area);
 	});
 	choose([&](size_t index) {
-		auto triangleArea = [&](size_t first, size_t second, size_t third) {
+		auto triangle_area = [&](size_t first, size_t second, size_t third) {
 			glm::vec3 side_a = candidates[second].position - candidates[first].position;
 			glm::vec3 side_b = candidates[third].position - candidates[first].position;
 			return std::sqrt(glm::dot(glm::cross(side_a, side_b), glm::cross(side_a, side_b)));
 		};
-		return triangleArea(selected[0], selected[1], index) + triangleArea(selected[1], selected[2], index) +
-		       triangleArea(selected[2], selected[0], index);
+		return triangle_area(selected[0], selected[1], index) + triangle_area(selected[1], selected[2], index) +
+		       triangle_area(selected[2], selected[0], index);
 	});
 
 	std::vector<BoxContactCandidate> result;
@@ -567,7 +567,7 @@ auto reduceBoxContacts(std::vector<BoxContactCandidate> candidates, const glm::v
 	for (size_t index : selected) {
 		result.emplace_back(candidates[index]);
 	}
-	std::ranges::sort(result, contactLess);
+	std::ranges::sort(result, contact_less);
 	return result;
 }
 
@@ -803,7 +803,7 @@ auto collideBoxes(BroadPhasePair pair, const Shape& shape_a, const Body& body_a,
 	_detail::BoxSatResult best_axis;
 	bool separated = false;
 
-	auto testAxis = [&](glm::vec3 axis, _detail::BoxAxisType type, int axis_a, int axis_b) {
+	auto test_axis = [&](glm::vec3 axis, _detail::BoxAxisType type, int axis_a, int axis_b) {
 		float length_squared = glm::dot(axis, axis);
 		if (length_squared <= _detail::parallel_axis_epsilon_sq) {
 			return;
@@ -834,14 +834,14 @@ auto collideBoxes(BroadPhasePair pair, const Shape& shape_a, const Body& body_a,
 	};
 
 	for (int axis = 0; axis < 3; ++axis) {
-		testAxis(box_a.rotation[axis], _detail::BoxAxisType::face_a, axis, 0);
+		test_axis(box_a.rotation[axis], _detail::BoxAxisType::face_a, axis, 0);
 		if (separated) {
 			return std::nullopt;
 		}
 	}
 
 	for (int axis = 0; axis < 3; ++axis) {
-		testAxis(box_b.rotation[axis], _detail::BoxAxisType::face_b, 0, axis);
+		test_axis(box_b.rotation[axis], _detail::BoxAxisType::face_b, 0, axis);
 		if (separated) {
 			return std::nullopt;
 		}
@@ -850,7 +850,7 @@ auto collideBoxes(BroadPhasePair pair, const Shape& shape_a, const Body& body_a,
 	for (int axis_a = 0; axis_a < 3; ++axis_a) {
 		for (int axis_b = 0; axis_b < 3; ++axis_b) {
 			glm::vec3 axis = glm::cross(box_a.rotation[axis_a], box_b.rotation[axis_b]);
-			testAxis(axis, _detail::BoxAxisType::edge, axis_a, axis_b);
+			test_axis(axis, _detail::BoxAxisType::edge, axis_a, axis_b);
 			if (separated) {
 				return std::nullopt;
 			}
