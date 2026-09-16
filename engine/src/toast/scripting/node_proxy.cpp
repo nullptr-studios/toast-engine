@@ -3,6 +3,7 @@
 #include "asset_proxy.hpp"
 #include "lua_types.hpp"
 #include "script_runtime.hpp"
+#include "signal_proxy.hpp"
 #include "ui_binds_proxy.hpp"
 
 #include <algorithm>
@@ -905,6 +906,10 @@ auto nodeProxyIndex(NodeProxy& proxy, const luabridge::LuaRef& key, lua_State* l
 	if (f) {
 		std::any value = f->get(n);
 		return anyToLuaRef(l, value, *f);
+	}
+
+	if (const auto* signal = info->getSignal(key_str)) {
+		return {l, SignalProxy(proxy.box(), *signal)};
 	}
 
 	if (info->getMethod(key_str)) {

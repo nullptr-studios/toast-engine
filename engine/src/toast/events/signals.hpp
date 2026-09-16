@@ -1,8 +1,10 @@
 /**
  * @file signals.hpp
  * @author Dante Harper
- * @date 17 Jul 26
+ * @date 09 Sep 26
  */
+
+#pragma once
 
 #pragma once
 
@@ -11,7 +13,9 @@
 #include "toast/world/box.hpp"
 
 #include <algorithm>
+#include <any>
 #include <functional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -23,17 +27,14 @@ class Node;
 }
 
 namespace signals {
-namespace _detail { }
-
-template<typename F, typename... Args>
-concept SignalCallback = std::is_invocable_r_v<void, F, Args...> ||    //
-                         std::is_invocable_r_v<void, F>;               //
 
 template<typename... Args>
 class Signal {
+	static_assert(sizeof...(Args) <= 4, "signals::Signal supports at most four arguments");
+
 	using callback_t = std::function<void(Args...)>;
 
-	struct SigGroup {
+	struct Connection {
 		toast::UID uid;
 		std::string identifier;
 		ConnectionSource source = ConnectionSource::unknown;
@@ -43,44 +44,41 @@ class Signal {
 		callback_t cb;
 	};
 
-	struct {
-		std::vector<SigGroup> listeners;
-	} m;
+	std::vector<Connection> m_connections;
 
 public:
 	template<typename F>
-	  requires SignalCallback<F, Args...>
-	void subscribe(toast::Node& node, F&& cb);
+	  requires(std::is_invocable_r_v<void, F, Args...> || std::is_invocable_r_v<void, F>)
+	void connect(toast::Node& node, F&& cb);
 
-	void subscribe(toast::Node& node, std::string_view identifier);
-	void subscribe(toast::Node& node, std::string_view identifier, ConnectionSource source, bool forwards_args);
+	void connect(
+	    toast::Node& node, std::string_view identifier, ConnectionSource source = ConnectionSource::cpp, bool forwards_args = true
+	);
 
-	void unsubscribe(toast::Node& node, std::string_view identifier);
-	void unsubscribe(toast::Node& node, std::string_view identifier, ConnectionSource source);
-
-	void clear() { m.listeners.clear(); }
+	void disconnect(toast::Node& node, std::string_view identifier, ConnectionSource source = ConnectionSource::cpp);
 
 	void clear(ConnectionSource source);
 
 	[[nodiscard]]
 	auto connections() const -> std::vector<ConnectionInfo>;
 
-	[[nodiscard]]
-	auto has(toast::UID node, std::string_view identifier) const -> bool;
-
-	void fire(Args... args);
+	void fire(const Args&... args);
 
 	template<typename NodeType, auto MemberPtr>
 	static auto get(void* signal) -> std::vector<ConnectionInfo>;
 
 	template<typename NodeType, auto MemberPtr>
-	static void connect(void* signal, toast::Node& target, std::string_view identifier, bool forwards_args);
+	static void
+	    connect(void* signal, toast::Node& target, std::string_view identifier, ConnectionSource source, bool forwards_args);
 
 	template<typename NodeType, auto MemberPtr>
-	static void disconnect(void* signal, toast::Node& target, std::string_view identifier);
+	static void disconnect(void* signal, toast::Node& target, std::string_view identifier, ConnectionSource source);
 
 	template<typename NodeType, auto MemberPtr>
-	static void clearEditor(void* signal);
+	static void clear(void* signal, ConnectionSource source);
+
+	template<typename NodeType, auto MemberPtr>
+	static auto fire(void* signal, std::span<const std::any> args) -> bool;
 };
 
 }

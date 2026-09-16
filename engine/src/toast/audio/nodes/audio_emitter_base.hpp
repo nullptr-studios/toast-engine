@@ -28,7 +28,7 @@ public:
 	[[Button]]
 	void stop();
 
-	void pause(bool value) const;
+	void pause(bool value);
 	void setParameter(std::string_view name, float value) const;
 	void setParameter(std::string_view name, bool value) const;
 	[[nodiscard]]
@@ -46,6 +46,10 @@ public:
 	void overrideAttenuation(bool value);
 	void minDistance(float value);
 	void maxDistance(float value);
+
+	signals::Signal<std::string_view> audio_started;
+	signals::Signal<std::string_view> audio_stopped;
+	signals::Signal<bool> audio_paused;
 
 protected:
 	virtual auto emitterPosition(const glm::vec3& listener)

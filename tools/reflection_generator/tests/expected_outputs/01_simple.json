@@ -85,6 +85,7 @@
     "name": "SimpleNode",
     "namespace": "toast",
     "parent": null,
+    "signals": [],
     "source_file": "01_simple.hpp",
     "tick_functions": {
       "begin": false,

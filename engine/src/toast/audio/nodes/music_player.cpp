@@ -130,6 +130,7 @@ void MusicPlayer::startTrack(int track_index, float fade_in) {
 		        FMOD_STUDIO_EVENT_CALLBACK_NESTED_TIMELINE_BEAT | FMOD_STUDIO_EVENT_CALLBACK_STOPPED
 		);
 	}
+	audio_started.fire(m_tracks.at(at.track_index)->name());
 }
 
 void MusicPlayer::stopTrack(ActiveTrack& at, bool allow_fadeout) {
@@ -146,6 +147,7 @@ void MusicPlayer::stopTrack(ActiveTrack& at, bool allow_fadeout) {
 	std::erase_if(m_callback_data, [&](const CallbackData& cd) { return cd.instance_id == at.instance_id; });
 	m_param_ids.erase(at.instance_id);
 	at.instance_id = 0;
+	audio_stopped.fire(m_tracks.at(at.track_index)->name());
 }
 
 void MusicPlayer::play(int track_index, float fade_in) {
@@ -175,6 +177,7 @@ void MusicPlayer::pause(bool value) {
 	for (auto& at : m_active_tracks) {
 		sys.pauseEvent(at.instance_id, value);
 	}
+	audio_paused.fire(value);
 }
 
 void MusicPlayer::keyOff(int track_index) {

@@ -3,7 +3,6 @@
 #include "camera.hpp"
 #include "node.hpp"
 #include "workspace_events.hpp"
-#include "workspace_events.pb.h"
 
 #include <charconv>
 #include <format>
@@ -405,6 +404,23 @@ void Workspace::eventSubscriptions() {
 				item.forwards_args = connection.forwards_args;
 			}
 		});
+		if (auto* runtime = node->scriptRuntime()) {
+			for (const auto& signal : runtime->luaSignals()) {
+				auto& entry = state.signals.emplace_back();
+				entry.declaring_type = "Lua";
+				entry.signal = signal;
+				for (const auto& connection : runtime->luaSignalConnections(signal)) {
+					auto target = findFrom(m_root_node, connection.target);
+					auto& item = entry.connections.emplace_back();
+					item.target = connection.target;
+					item.target_name = target.exists() ? target->name() : "Missing node";
+					item.target_type = target.exists() && target->info() ? std::string(target->info()->type) : std::string {};
+					item.function = connection.function;
+					item.source = connection.source;
+					item.forwards_args = connection.forwards_args;
+				}
+			}
+		}
 		event::send<event::SignalState>(state);
 	};
 
@@ -425,7 +441,12 @@ void Workspace::eventSubscriptions() {
 		response.target_node = e.target_node;
 		auto [source, signal] = find_signal(e.source_node, e.declaring_type, e.signal);
 		auto target = findFrom(m_root_node, e.target_node);
-		if (!source.exists() || !signal || !target.exists() || !target->info()) {
+		const bool is_lua_signal = e.declaring_type == "Lua";
+		auto* source_runtime = source.exists() ? source->scriptRuntime() : nullptr;
+		const bool lua_signal_exists =
+		    source_runtime &&
+		    std::ranges::any_of(source_runtime->luaSignals(), [&](const std::string& name) { return name == e.signal; });
+		if (!source.exists() || (!signal && !(is_lua_signal && lua_signal_exists)) || !target.exists() || !target->info()) {
 			response.error = "The source signal or target node no longer exists";
 			event::send<event::SignalCallables>(response);
 			return true;
@@ -441,8 +462,10 @@ void Workspace::eventSubscriptions() {
 				callable.name = method.name;
 				callable.has_cpp = true;
 				callable.compatible = method.return_type_id && *method.return_type_id == typeid(void);
-				callable.forwards_args = !method.parameters.empty();
-				if (callable.compatible && !method.parameters.empty()) {
+				callable.forwards_args = !is_lua_signal && !method.parameters.empty();
+				if (callable.compatible && is_lua_signal) {
+					callable.compatible = method.parameters.empty();
+				} else if (callable.compatible && !method.parameters.empty()) {
 					callable.compatible = method.parameters.size() == signal->args.size();
 					for (size_t i = 0; callable.compatible && i < method.parameters.size(); ++i) {
 						callable.compatible =
@@ -466,9 +489,10 @@ void Workspace::eventSubscriptions() {
 				auto& callable = response.callables.emplace_back();
 				callable.name = function.name;
 				callable.has_lua = true;
-				callable.compatible = function.parameters.empty() || function.parameters.size() == signal->args.size() ||
-				                      (function.is_vararg && function.parameters.size() <= signal->args.size());
-				callable.forwards_args = !function.parameters.empty() || function.is_vararg;
+				callable.compatible = is_lua_signal ? (function.parameters.empty() || function.is_vararg)
+				                                    : (function.parameters.empty() || function.parameters.size() == signal->args.size() ||
+				                                       (function.is_vararg && function.parameters.size() <= signal->args.size()));
+				callable.forwards_args = !is_lua_signal && (!function.parameters.empty() || function.is_vararg);
 				for (const auto& name : function.parameters) {
 					callable.parameters.push_back({name, "any"});
 				}
@@ -476,7 +500,13 @@ void Workspace::eventSubscriptions() {
 			}
 		}
 
-		const auto connections = signal->get ? signal->get(&*source) : std::vector<signals::ConnectionInfo> {};
+		std::vector<signals::ConnectionInfo> connections;
+		if (is_lua_signal) {
+			connections = source_runtime->luaSignalConnections(e.signal);
+		} else if (signal->get) {
+			connections = signal->get(&*source);
+		}
+
 		for (auto& callable : response.callables) {
 			callable.already_connected = std::ranges::any_of(connections, [&](const auto& connection) {
 				return connection.target == e.target_node && connection.function == callable.name;
@@ -498,8 +528,10 @@ void Workspace::eventSubscriptions() {
 		}
 		auto [source, signal] = find_signal(e.source_node, e.declaring_type, e.signal);
 		auto target = findFrom(m_root_node, e.target_node);
-		if (source.exists() && signal && signal->connect && target.exists()) {
-			signal->connect(&*source, *target, e.function, e.forwards_args);
+		if (e.declaring_type == "Lua" && source.exists() && source->scriptRuntime() && target.exists()) {
+			source->scriptRuntime()->connectLuaSignal(e.signal, *target, e.function, e.forwards_args);
+		} else if (source.exists() && signal && signal->connect && target.exists()) {
+			signal->connect(&*source, *target, e.function, signals::ConnectionSource::editor, e.forwards_args);
 		}
 		send_signal_state(e.source_node);
 		return true;
@@ -511,8 +543,10 @@ void Workspace::eventSubscriptions() {
 		}
 		auto [source, signal] = find_signal(e.source_node, e.declaring_type, e.signal);
 		auto target = findFrom(m_root_node, e.target_node);
-		if (source.exists() && signal && signal->disconnect && target.exists()) {
-			signal->disconnect(&*source, *target, e.function);
+		if (e.declaring_type == "Lua" && source.exists() && source->scriptRuntime() && target.exists()) {
+			source->scriptRuntime()->disconnectLuaSignal(e.signal, *target, e.function);
+		} else if (source.exists() && signal && signal->disconnect && target.exists()) {
+			signal->disconnect(&*source, *target, e.function, signals::ConnectionSource::editor);
 		}
 		send_signal_state(e.source_node);
 		return true;
@@ -523,8 +557,10 @@ void Workspace::eventSubscriptions() {
 			return false;
 		}
 		auto [source, signal] = find_signal(e.source_node, e.declaring_type, e.signal);
-		if (source.exists() && signal && signal->clear_editor) {
-			signal->clear_editor(&*source);
+		if (e.declaring_type == "Lua" && source.exists() && source->scriptRuntime()) {
+			source->scriptRuntime()->clearLuaSignal(e.signal);
+		} else if (source.exists() && signal && signal->clear) {
+			signal->clear(&*source, signals::ConnectionSource::editor);
 		}
 		send_signal_state(e.source_node);
 		return true;

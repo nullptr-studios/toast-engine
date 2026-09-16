@@ -76,6 +76,7 @@
     "name": "QualifiedNode",
     "namespace": "game",
     "parent": null,
+    "signals": [],
     "source_file": "23_qualified_type_names.hpp",
     "tick_functions": {
       "begin": false,

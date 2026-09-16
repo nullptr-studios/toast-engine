@@ -31,6 +31,7 @@ void AudioEmitter::play() {
 	sys.playEvent(guid_str);
 	sys.setVolume(guid_str, m_volume);
 	sys.setPitch(guid_str, m_pitch);
+	audio_started.fire(m_event->name());
 }
 
 void AudioEmitter::stop() {
@@ -38,6 +39,7 @@ void AudioEmitter::stop() {
 		return;
 	}
 	audio::AudioSystem::get().stopEvent(m_event->guid(), m_allow_fadeout);
+	audio_stopped.fire(m_event->name());
 }
 
 void AudioEmitter::pause(bool value) {
@@ -45,6 +47,7 @@ void AudioEmitter::pause(bool value) {
 		return;
 	}
 	audio::AudioSystem::get().pauseEvent(m_event->guid(), value);
+	audio_paused.fire(value);
 }
 
 void AudioEmitter::setParameter(std::string_view name, float value) {

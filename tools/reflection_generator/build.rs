@@ -23,10 +23,8 @@ fn main() {
                 if path.is_file() {
                     if let Some(file_name) = path.file_name() {
                         let dest_path = template_dest.join(file_name);
-                        fs::copy(&path, &dest_path).expect(&format!(
-                            "Failed to copy template {:?}",
-                            path
-                        ));
+                        fs::copy(&path, &dest_path)
+                            .expect(&format!("Failed to copy template {:?}", path));
                         println!("Copied template: {:?}", dest_path);
                     }
                 }

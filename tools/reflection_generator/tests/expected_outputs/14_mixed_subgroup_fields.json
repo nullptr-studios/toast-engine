@@ -197,6 +197,7 @@
     "name": "MixedSubgroupNode",
     "namespace": null,
     "parent": null,
+    "signals": [],
     "source_file": "14_mixed_subgroup_fields.hpp",
     "tick_functions": {
       "begin": false,

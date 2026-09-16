@@ -6,8 +6,8 @@ namespace signals {
 
 template<typename... Args>
 template<typename F>
-  requires SignalCallback<F, Args...>
-inline void Signal<Args...>::subscribe(toast::Node& node, F&& cb) {
+  requires(std::is_invocable_r_v<void, F, Args...> || std::is_invocable_r_v<void, F>)
+inline void Signal<Args...>::connect(toast::Node& node, F&& cb) {
 	callback_t wrapper = [f = std::forward<F>(cb)](Args... args) mutable {
 		if constexpr (std::is_invocable_r_v<void, F, Args...>) {
 			f(args...);
@@ -15,7 +15,7 @@ inline void Signal<Args...>::subscribe(toast::Node& node, F&& cb) {
 			f();
 		}
 	};
-	m.listeners.push_back(
+	m_connections.push_back(
 	    {.uid = node.uid(),
 	     .identifier = "Unnamed",
 	     .source = ConnectionSource::cpp,
@@ -25,22 +25,17 @@ inline void Signal<Args...>::subscribe(toast::Node& node, F&& cb) {
 }
 
 template<typename... Args>
-inline void Signal<Args...>::subscribe(toast::Node& node, std::string_view identifier) {
-	subscribe(node, identifier, ConnectionSource::cpp, true);
-}
-
-template<typename... Args>
 inline void
-    Signal<Args...>::subscribe(toast::Node& node, std::string_view identifier, ConnectionSource source, bool forwards_args) {
+    Signal<Args...>::connect(toast::Node& node, std::string_view identifier, ConnectionSource source, bool forwards_args) {
 	callback_t wrapper;
 	if (forwards_args) {
-		wrapper = [iden = std::string(identifier), box = toast::Box<toast::Node>(node)](Args... args) mutable {
+		wrapper = [iden = std::string(identifier), box = toast::Box<toast::Node>(node)](const Args&... args) mutable {
 			box->call(iden, args...);
 		};
 	} else {
-		wrapper = [iden = std::string(identifier), box = toast::Box<toast::Node>(node)](Args...) mutable { box->call(iden); };
+		wrapper = [iden = std::string(identifier), box = toast::Box<toast::Node>(node)](const Args&...) mutable { box->call(iden); };
 	}
-	m.listeners.push_back(
+	m_connections.push_back(
 	    {.uid = node.uid(),
 	     .identifier = std::string(identifier),
 	     .source = source,
@@ -51,50 +46,32 @@ inline void
 }
 
 template<typename... Args>
-inline void Signal<Args...>::unsubscribe(toast::Node& node, std::string_view identifier) {
-	std::erase_if(m.listeners, [&](const SigGroup& listener) {
-		return listener.node == toast::Box<toast::Node>(node) && listener.identifier == identifier;
-	});
-}
-
-template<typename... Args>
-inline void Signal<Args...>::unsubscribe(toast::Node& node, std::string_view identifier, ConnectionSource source) {
-	std::erase_if(m.listeners, [&](const SigGroup& listener) {
+inline void Signal<Args...>::disconnect(toast::Node& node, std::string_view identifier, ConnectionSource source) {
+	std::erase_if(m_connections, [&](const Connection& listener) {
 		return listener.node == toast::Box<toast::Node>(node) && listener.identifier == identifier && listener.source == source;
 	});
 }
 
 template<typename... Args>
 inline void Signal<Args...>::clear(ConnectionSource source) {
-	std::erase_if(m.listeners, [source](const SigGroup& listener) { return listener.source == source; });
+	std::erase_if(m_connections, [source](const Connection& listener) { return listener.source == source; });
 }
 
 template<typename... Args>
 inline auto Signal<Args...>::connections() const -> std::vector<ConnectionInfo> {
 	std::vector<ConnectionInfo> result;
-	result.reserve(m.listeners.size());
-	for (const auto& listener : m.listeners) {
+	result.reserve(m_connections.size());
+	for (const auto& listener : m_connections) {
 		result.push_back({listener.uid, listener.identifier, listener.source, listener.forwards_args});
 	}
 	return result;
 }
 
 template<typename... Args>
-inline auto Signal<Args...>::has(toast::UID node, std::string_view identifier) const -> bool {
-	return std::ranges::any_of(m.listeners, [&](const SigGroup& listener) {
-		return listener.uid == node && listener.identifier == identifier;
-	});
-}
-
-template<typename... Args>
-inline void Signal<Args...>::fire(Args... args) {
-	std::erase_if(m.listeners, [](const SigGroup& listener) {
-		return not listener.node;    //
-	});
-	for (auto& listener : m.listeners) {
-		if (listener.node->enabled()) {
-			listener.cb(args...);
-		}
+inline void Signal<Args...>::fire(const Args&... args) {
+	std::erase_if(m_connections, [](const Connection& listener) { return !listener.node; });
+	for (auto& listener : m_connections) {
+		listener.cb(args...);
 	}
 }
 
@@ -111,34 +88,55 @@ inline auto Signal<Args...>::get(void* signal) -> std::vector<ConnectionInfo> {
 
 template<typename... Args>
 template<typename NodeType, auto MemberPtr>
-inline void Signal<Args...>::connect(void* signal, toast::Node& target, std::string_view identifier, bool forwards_args) {
+inline void Signal<Args...>::connect(
+    void* signal, toast::Node& target, std::string_view identifier, ConnectionSource source, bool forwards_args
+) {
 	if (!signal) {
 		return;
 	}
 	auto& target_signal = static_cast<NodeType*>(signal)->*MemberPtr;
-	if (!target_signal.has(target.uid(), identifier)) {
-		target_signal.subscribe(target, identifier, ConnectionSource::editor, forwards_args);
+	const auto connections = target_signal.connections();
+	const bool exists = std::ranges::any_of(connections, [&](const ConnectionInfo& connection) {
+		return connection.target == target.uid() && connection.function == identifier && connection.source == source;
+	});
+	if (!exists) {
+		target_signal.connect(target, identifier, source, forwards_args);
 	}
 }
 
 template<typename... Args>
 template<typename NodeType, auto MemberPtr>
-inline void Signal<Args...>::disconnect(void* signal, toast::Node& target, std::string_view identifier) {
+inline void Signal<Args...>::disconnect(void* signal, toast::Node& target, std::string_view identifier, ConnectionSource source) {
 	if (!signal) {
 		return;
 	}
 	auto& target_signal = static_cast<NodeType*>(signal)->*MemberPtr;
-	target_signal.unsubscribe(target, identifier, ConnectionSource::editor);
+	target_signal.disconnect(target, identifier, source);
 }
 
 template<typename... Args>
 template<typename NodeType, auto MemberPtr>
-inline void Signal<Args...>::clearEditor(void* signal) {
+inline void Signal<Args...>::clear(void* signal, ConnectionSource source) {
 	if (!signal) {
 		return;
 	}
 	auto& target_signal = static_cast<NodeType*>(signal)->*MemberPtr;
-	target_signal.clear(ConnectionSource::editor);
+	target_signal.clear(source);
+}
+
+template<typename... Args>
+template<typename NodeType, auto MemberPtr>
+inline auto Signal<Args...>::fire(void* signal, std::span<const std::any> args) -> bool {
+	if (!signal || args.size() != sizeof...(Args)) {
+		return false;
+	}
+	return [&]<size_t... I>(std::index_sequence<I...>) {
+		if ((std::any_cast<std::decay_t<Args>>(&args[I]) && ...)) {
+			(static_cast<NodeType*>(signal)->*MemberPtr).fire(*std::any_cast<std::decay_t<Args>>(&args[I])...);
+			return true;
+		}
+		return false;
+	}(std::index_sequence_for<Args...> {});
 }
 
 }

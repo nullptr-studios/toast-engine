@@ -1,6 +1,7 @@
 #include "script_runtime.hpp"
 
 #include "asset_proxy.hpp"
+#include "lua_signal.hpp"
 #include "lua_state.hpp"
 #include "lua_types.hpp"
 #include "lua_util.hpp"
@@ -329,6 +330,12 @@ void ScriptInstance::extractSchema(std::string_view src) noexcept {
 				}
 			}
 			m_schema.functions.push_back(std::move(function));
+			continue;
+		}
+		if (val.isInstance<LuaSignal>()) {
+			auto signal = val.unsafe_cast<LuaSignal>();
+			signal.owner(m_proxy.box());
+			m_lua_signals.emplace(key, std::move(signal));
 			continue;
 		}
 
@@ -880,6 +887,78 @@ auto ScriptRuntime::getVar(std::string_view name) const noexcept -> std::any {
 		}
 	}
 	return {};
+}
+
+auto ScriptRuntime::luaSignals() const -> std::vector<std::string> {
+	LuaState::Lock guard = LuaState::get().lock(m_state_index);
+	std::vector<std::string> result;
+	if (!guard) {
+		return result;
+	}
+	for (const auto& instance : m_instances) {
+		if (!instance) {
+			continue;
+		}
+		for (const auto& [name, signal] : instance->luaSignals()) {
+			if (std::ranges::find(result, name) == result.end()) {
+				result.push_back(name);
+			}
+		}
+	}
+	return result;
+}
+
+auto ScriptRuntime::luaSignalConnections(std::string_view name) const -> std::vector<signals::ConnectionInfo> {
+	LuaState::Lock guard = LuaState::get().lock(m_state_index);
+	if (!guard) {
+		return {};
+	}
+	for (const auto& instance : m_instances) {
+		if (auto it = instance->luaSignals().find(std::string(name)); it != instance->luaSignals().end()) {
+			return it->second.connections();
+		}
+	}
+	return {};
+}
+
+auto ScriptRuntime::connectLuaSignal(std::string_view name, toast::Node& target, std::string_view function, bool forwards_args)
+    -> bool {
+	LuaState::Lock guard = LuaState::get().lock(m_state_index);
+	if (!guard) {
+		return false;
+	}
+	for (const auto& instance : m_instances) {
+		if (auto it = instance->luaSignals().find(std::string(name)); it != instance->luaSignals().end()) {
+			return it->second.connect(NodeProxy(target.box()), function, signals::ConnectionSource::editor, forwards_args);
+		}
+	}
+	return false;
+}
+
+auto ScriptRuntime::disconnectLuaSignal(std::string_view name, toast::Node& target, std::string_view function) -> bool {
+	LuaState::Lock guard = LuaState::get().lock(m_state_index);
+	if (!guard) {
+		return false;
+	}
+	for (const auto& instance : m_instances) {
+		if (auto it = instance->luaSignals().find(std::string(name)); it != instance->luaSignals().end()) {
+			return it->second.disconnect(NodeProxy(target.box()), function, signals::ConnectionSource::editor);
+		}
+	}
+	return false;
+}
+
+void ScriptRuntime::clearLuaSignal(std::string_view name) {
+	LuaState::Lock guard = LuaState::get().lock(m_state_index);
+	if (!guard) {
+		return;
+	}
+	for (const auto& instance : m_instances) {
+		if (auto it = instance->luaSignals().find(std::string(name)); it != instance->luaSignals().end()) {
+			it->second.clear(signals::ConnectionSource::editor);
+			return;
+		}
+	}
 }
 
 }

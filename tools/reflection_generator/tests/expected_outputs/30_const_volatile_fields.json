@@ -60,6 +60,7 @@
     "name": "QualifiersNode",
     "namespace": null,
     "parent": null,
+    "signals": [],
     "source_file": "30_const_volatile_fields.hpp",
     "tick_functions": {
       "begin": false,

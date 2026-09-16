@@ -19,9 +19,11 @@
 #include <toast/assets/script.hpp>
 #include <toast/export.hpp>
 #include <toast/reflect/reflect_node.hpp>
+#include <toast/scripting/lua_signal.hpp>
 #include <toast/scripting/node_proxy.hpp>
 #include <toast/scripting/script_schema.hpp>
 #include <toast/world/box.hpp>
+#include <unordered_map>
 #include <vector>
 
 namespace toast {
@@ -71,6 +73,16 @@ public:
 	auto hasFunction(std::string_view fn_name) const noexcept -> bool;
 
 	[[nodiscard]]
+	auto luaSignals() const noexcept -> const std::unordered_map<std::string, LuaSignal>& {
+		return m_lua_signals;
+	}
+
+	[[nodiscard]]
+	auto luaSignals() noexcept -> std::unordered_map<std::string, LuaSignal>& {
+		return m_lua_signals;
+	}
+
+	[[nodiscard]]
 	auto schema() const noexcept -> const ScriptSchema& {
 		return m_schema;
 	}
@@ -98,6 +110,7 @@ private:
 	NodeProxy m_proxy;
 	std::string m_name;
 	ScriptSchema m_schema;
+	std::unordered_map<std::string, LuaSignal> m_lua_signals;
 	toast::TickFunctionList m_tick_mask = toast::TickFunctionList::none;
 
 	void installMetatable() noexcept;
@@ -142,6 +155,14 @@ public:
 	/// Reads the variable named `name`
 	[[nodiscard]]
 	auto getVar(std::string_view name) const noexcept -> std::any;
+
+	[[nodiscard]]
+	auto luaSignals() const -> std::vector<std::string>;
+	[[nodiscard]]
+	auto luaSignalConnections(std::string_view name) const -> std::vector<signals::ConnectionInfo>;
+	auto connectLuaSignal(std::string_view name, toast::Node& target, std::string_view function, bool forwards_args) -> bool;
+	auto disconnectLuaSignal(std::string_view name, toast::Node& target, std::string_view function) -> bool;
+	void clearLuaSignal(std::string_view name);
 
 	/// Number of attached script instances
 	[[nodiscard]]
