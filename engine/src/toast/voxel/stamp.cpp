@@ -4,6 +4,7 @@
 #include <cassert>
 #include <tracy/Tracy.hpp>
 #include <unordered_set>
+#include <utility>
 
 namespace toast::voxel {
 
@@ -20,16 +21,16 @@ auto stamp(Volume& target, const Volume& piece, const LatticePlacement& placemen
 	std::unordered_set<uint32_t> touched_slots;
 	std::vector<glm::ivec3> touched;
 	const auto touch = [&](glm::ivec3 brick) {
-		const uint32_t slot = static_cast<uint32_t>(brick.x) + static_cast<uint32_t>(brick.y) * target_dims.x +
-		                      static_cast<uint32_t>(brick.z) * target_dims.x * target_dims.y;
+		const uint32_t slot = static_cast<uint32_t>(brick.x) + (static_cast<uint32_t>(brick.y) * target_dims.x) +
+		                      (static_cast<uint32_t>(brick.z) * target_dims.x * target_dims.y);
 		if (touched_slots.insert(slot).second) {
 			touched.push_back(brick);
 		}
 	};
 
-	for (int32_t z = 0; z < static_cast<int32_t>(dims.z); ++z) {
-		for (int32_t y = 0; y < static_cast<int32_t>(dims.y); ++y) {
-			for (int32_t x = 0; x < static_cast<int32_t>(dims.x); ++x) {
+	for (int32_t z = 0; std::cmp_less(z, dims.z); ++z) {
+		for (int32_t y = 0; std::cmp_less(y, dims.y); ++y) {
+			for (int32_t x = 0; std::cmp_less(x, dims.x); ++x) {
 				const glm::ivec3 brick(x, y, z);
 				const BrickEntry entry = piece.entryAt(brick);
 				if (entry.tag() == BrickTag::empty) {

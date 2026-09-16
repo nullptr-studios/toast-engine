@@ -52,7 +52,7 @@ auto voxReadFile(const std::filesystem::path& path) -> std::vector<uint8_t> {
 	if (!file) {
 		throw std::runtime_error("cannot open " + path.string());
 	}
-	return std::vector<uint8_t>(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+	return {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
 }
 
 void voxWriteFile(const std::filesystem::path& path, const std::vector<uint8_t>& bytes) {
@@ -241,7 +241,7 @@ void voxManifestToPrefab(const std::filesystem::path& manifest_path, const std::
 		throw std::runtime_error(manifest_path.string() + " is not a .vox manifest: it has no nodes");
 	}
 
-	const auto uidOf = [&](const nlohmann::json& node, const char* key) -> std::optional<toast::UID> {
+	const auto uid_of = [&](const nlohmann::json& node, const char* key) -> std::optional<toast::UID> {
 		if (!node.contains(key) || !node[key].is_string()) {
 			return std::nullopt;
 		}
@@ -253,7 +253,7 @@ void voxManifestToPrefab(const std::filesystem::path& manifest_path, const std::
 		return toast::UID(toast::UID::fromString(value));
 	};
 
-	const std::optional<toast::UID> palette_uid = uidOf(manifest, "palette");
+	const std::optional<toast::UID> palette_uid = uid_of(manifest, "palette");
 
 	Prefab prefab;
 	const std::function<void(const nlohmann::json&, const std::string&)> walk = [&](const nlohmann::json& node,
@@ -273,7 +273,7 @@ void voxManifestToPrefab(const std::filesystem::path& manifest_path, const std::
 
 		Prefab::Group transform;
 		transform.name = "Transform";
-		const auto vec3Of = [&node](const char* key, glm::vec3 fallback) {
+		const auto vec3_of = [&node](const char* key, glm::vec3 fallback) {
 			if (!node.contains(key) || !node[key].is_array() || node[key].size() != 3) {
 				return fallback;
 			}
@@ -287,13 +287,13 @@ void voxManifestToPrefab(const std::filesystem::path& manifest_path, const std::
 		}
 
 		// Field names must match the reflected Node3D ones since applyFields() silently skips unknown names
-		transform.fields.push_back({"position", toast::FieldType::vec3_t, false, vec3Of("position", glm::vec3(0.0f))});
+		transform.fields.push_back({"position", toast::FieldType::vec3_t, false, vec3_of("position", glm::vec3(0.0f))});
 		transform.fields.push_back({"rotation", toast::FieldType::quaternion_t, false, rotation});
-		transform.fields.push_back({"scale", toast::FieldType::vec3_t, false, vec3Of("scale", glm::vec3(1.0f))});
+		transform.fields.push_back({"scale", toast::FieldType::vec3_t, false, vec3_of("scale", glm::vec3(1.0f))});
 		basic.groups.push_back(std::move(transform));
 
 		if (basic.type == "toast::VoxelNode") {
-			if (const std::optional<toast::UID> model = uidOf(node, "model")) {
+			if (const std::optional<toast::UID> model = uid_of(node, "model")) {
 				basic.fields.push_back({"m_model", toast::FieldType::uid_t, false, *model});
 			}
 			if (palette_uid.has_value()) {

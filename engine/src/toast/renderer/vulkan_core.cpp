@@ -34,14 +34,14 @@ constexpr uint32_t k_invalid_queue_family = std::numeric_limits<uint32_t>::max()
 
 #ifdef TRACY_ENABLE
 // Tracy keys memory pools by name address and MSVC Debug does not pool string literals
-constexpr char k_tracy_vram_pool[] = "VRAM";
+constexpr auto k_tracy_vram_pool = std::to_array("VRAM");
 
 void tracyVmaAllocate(VmaAllocator, uint32_t, VkDeviceMemory memory, VkDeviceSize size, void*) {
-	TracyAllocN(reinterpret_cast<void*>(memory), size, k_tracy_vram_pool);
+	TracyAllocN(reinterpret_cast<void*>(memory), size, k_tracy_vram_pool.data());
 }
 
 void tracyVmaFree(VmaAllocator, uint32_t, VkDeviceMemory memory, VkDeviceSize, void*) {
-	TracyFreeN(reinterpret_cast<void*>(memory), k_tracy_vram_pool);
+	TracyFreeN(reinterpret_cast<void*>(memory), k_tracy_vram_pool.data());
 }
 #endif
 

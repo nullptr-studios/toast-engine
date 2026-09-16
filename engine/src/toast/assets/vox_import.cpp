@@ -8,6 +8,7 @@
 #include <string>
 #include <tracy/Tracy.hpp>
 #include <unordered_map>
+#include <utility>
 
 namespace assets {
 
@@ -61,8 +62,8 @@ auto voxPlacementOf(const VoxTransform& world, glm::uvec3 model_dims) -> Lattice
 	out.orientation = world.orientation;
 	for (uint32_t axis = 0; axis < 3; ++axis) {
 		const auto size = static_cast<int32_t>(model_dims[world.orientation.source[axis]]);
-		out.offset[axis] =
-		    world.orientation.flip[axis] ? world.translation[axis] + (size + 1) / 2 : world.translation[axis] - size / 2;
+		out.offset[axis] = world.orientation.flip[axis] ? world.translation[axis] + ((size + 1) / 2)
+		                                                 : world.translation[axis] - (size / 2);
 	}
 	return out;
 }
@@ -127,7 +128,7 @@ auto buildVoxVolume(const VoxModel& model, BrickPool& pool) -> std::optional<Vol
 			return std::nullopt;
 		}
 	}
-	return std::optional<Volume>(std::move(volume));
+	return {std::move(volume)};
 }
 
 namespace {
@@ -321,7 +322,7 @@ auto importVox(std::span<const uint8_t> data) -> VoxScene {
 	std::unordered_map<int32_t, RawNode> raw_nodes;
 	std::vector<int32_t> node_order;
 
-	const auto rawNodeFor = [&raw_nodes, &node_order](int32_t id) -> RawNode& {
+	const auto raw_node_for = [&raw_nodes, &node_order](int32_t id) -> RawNode& {
 		if (!raw_nodes.contains(id)) {
 			node_order.push_back(id);
 		}
@@ -351,8 +352,8 @@ auto importVox(std::span<const uint8_t> data) -> VoxScene {
 			const int32_t x = reader.i32();
 			const int32_t y = reader.i32();
 			const int32_t z = reader.i32();
-			if (x <= 0 || y <= 0 || z <= 0 || x > static_cast<int32_t>(k_vox_max_dim) || y > static_cast<int32_t>(k_vox_max_dim) ||
-			    z > static_cast<int32_t>(k_vox_max_dim)) {
+			if (x <= 0 || y <= 0 || z <= 0 || std::cmp_greater(x, k_vox_max_dim) || std::cmp_greater(y, k_vox_max_dim) ||
+			    std::cmp_greater(z, k_vox_max_dim)) {
 				throw std::runtime_error(
 				    ".vox: a model is " + std::to_string(x) + "x" + std::to_string(y) + "x" + std::to_string(z) +
 				    ", outside MagicaVoxel's own 1 to 256 per axis"
@@ -410,8 +411,8 @@ auto importVox(std::span<const uint8_t> data) -> VoxScene {
 		} else if (is("MATL")) {
 			const int32_t index = reader.i32();
 			const VoxDict attributes = reader.dict();
-			if (index < 1 || index >= static_cast<int32_t>(k_palette_size)) {
-				scene.warnings.push_back("a MATL chunk names palette index " + std::to_string(index) + ", which cannot exist");
+			if (index < 1 || std::cmp_greater_equal(index, k_palette_size)) {
+				scene.warnings.emplace_back("a MATL chunk names palette index " + std::to_string(index) + ", which cannot exist");
 			} else {
 				const auto type = attributes.find("_type");
 				VoxMaterial material;
@@ -434,7 +435,7 @@ auto importVox(std::span<const uint8_t> data) -> VoxScene {
 				throw std::runtime_error(".vox: an nTRN chunk with no frames");
 			}
 
-			RawNode& raw = rawNodeFor(node_id);
+			RawNode& raw = raw_node_for(node_id);
 			const auto name = attributes.find("_name");
 			if (name != attributes.end()) {
 				raw.node.name = name->second;
@@ -469,7 +470,7 @@ auto importVox(std::span<const uint8_t> data) -> VoxScene {
 			}
 
 			raw.child_ids.push_back(child_id);
-			rawNodeFor(child_id).is_child = true;
+			raw_node_for(child_id).is_child = true;
 		} else if (is("nGRP")) {
 			const int32_t node_id = reader.i32();
 			(void)reader.dict();
@@ -478,11 +479,11 @@ auto importVox(std::span<const uint8_t> data) -> VoxScene {
 				throw std::runtime_error(".vox: an nGRP chunk with a negative child count");
 			}
 
-			RawNode& raw = rawNodeFor(node_id);
+			RawNode& raw = raw_node_for(node_id);
 			for (int32_t i = 0; i < count; ++i) {
 				const int32_t child_id = reader.i32();
 				raw.child_ids.push_back(child_id);
-				rawNodeFor(child_id).is_child = true;
+				raw_node_for(child_id).is_child = true;
 			}
 		} else if (is("nSHP")) {
 			const int32_t node_id = reader.i32();
@@ -492,11 +493,11 @@ auto importVox(std::span<const uint8_t> data) -> VoxScene {
 				throw std::runtime_error(".vox: an nSHP chunk with no models");
 			}
 
-			RawNode& raw = rawNodeFor(node_id);
+			RawNode& raw = raw_node_for(node_id);
 			for (int32_t i = 0; i < count; ++i) {
 				const int32_t model_id = reader.i32();
 				(void)reader.dict();
-				if (model_id < 0 || model_id >= static_cast<int32_t>(scene.models.size())) {
+				if (model_id < 0 || std::cmp_greater_equal(model_id, scene.models.size())) {
 					throw std::runtime_error(
 					    ".vox: a shape references model " + std::to_string(model_id) + ", which the file does not hold"
 					);
@@ -522,7 +523,7 @@ auto importVox(std::span<const uint8_t> data) -> VoxScene {
 
 	for (const VoxModel& model : scene.models) {
 		if (model.voxels.empty()) {
-			scene.warnings.push_back("a model holds no voxels");
+			scene.warnings.emplace_back("a model holds no voxels");
 		}
 	}
 
@@ -532,7 +533,7 @@ auto importVox(std::span<const uint8_t> data) -> VoxScene {
 			scene.palette.entries[i].albedo_g = 200;
 			scene.palette.entries[i].albedo_b = 200;
 		}
-		scene.warnings.push_back("the file carries no RGBA palette chunk; every entry imported as light grey");
+		scene.warnings.emplace_back("the file carries no RGBA palette chunk; every entry imported as light grey");
 	}
 
 	// max_emissive must be known before writing emissive bytes

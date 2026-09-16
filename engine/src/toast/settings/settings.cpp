@@ -211,9 +211,9 @@ auto Settings::declareString(std::string_view key, std::string default_value, Me
 
 void Settings::resolveEntry(Entry& entry) {
 	entry.resolved = entry.default_value;
-	for (size_t layer = 0; layer < k_layer_count; ++layer) {
-		if (entry.overrides[layer].has_value()) {
-			entry.resolved = *entry.overrides[layer];
+	for (const auto& override : entry.overrides) {
+		if (override.has_value()) {
+			entry.resolved = *override;
 		}
 	}
 }

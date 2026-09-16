@@ -69,7 +69,7 @@ auto PostProcessVolume::closestPointOnBounds(glm::vec3 point) const -> glm::vec3
 	const glm::mat4& world = getWorldTransform();
 	const glm::vec3 half = glm::abs(m_extents);
 	const glm::vec3 local = glm::vec3(glm::inverse(world) * glm::vec4(point, 1.0f));
-	return glm::vec3(world * glm::vec4(glm::clamp(local, -half, half), 1.0f));
+	return {world * glm::vec4(glm::clamp(local, -half, half), 1.0f)};
 }
 
 auto PostProcessVolume::influenceAt(const glm::vec3& camera_position) const -> float {

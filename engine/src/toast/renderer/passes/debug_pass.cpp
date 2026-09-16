@@ -38,7 +38,7 @@ namespace renderer {
 struct DebugPass::PerfOverlay {
 	static constexpr size_t k_history = 240;
 
-	std::chrono::steady_clock::time_point last_sample {};
+	std::chrono::steady_clock::time_point last_sample;
 	VulkanRenderer::PerfCounters last {};
 	uint32_t last_skipped = 0;
 	bool has_sample = false;

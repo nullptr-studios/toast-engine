@@ -9,6 +9,7 @@
 #include <toast/log.hpp>
 #include <toast/uid.hpp>
 #include <tracy/Tracy.hpp>
+#include <utility>
 
 namespace assets {
 
@@ -85,7 +86,7 @@ auto VoxelPalette::fromToml(const toml::table& table) -> std::unique_ptr<VoxelPa
 			if (!index) {
 				throw fail("needs an index");
 			}
-			if (*index == toast::voxel::k_empty_palette_index) {
+			if (std::cmp_equal(*index, toast::voxel::k_empty_palette_index)) {
 				throw fail("index 0 is the empty voxel and cannot be authored");
 			}
 			if (seen[static_cast<size_t>(*index)]) {

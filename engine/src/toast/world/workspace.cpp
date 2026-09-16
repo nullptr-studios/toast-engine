@@ -58,8 +58,8 @@ auto closestPointsBetweenLines(const glm::vec3 p1, const glm::vec3 d1, const glm
 		return {0.0f, c > 1e-6f ? e / c : 0.0f};
 	}
 
-	const float t1 = (b * e - c * d) / denom;
-	const float t2 = (a * e - b * d) / denom;
+	const float t1 = ((b * e) - (c * d)) / denom;
+	const float t2 = ((a * e) - (b * d)) / denom;
 	return {t1, t2};
 }
 
@@ -211,7 +211,7 @@ auto pickScaleHandle(const Ray& ray, const glm::vec3 origin, const std::array<gl
 	}
 
 	GizmoHitResult best;
-	const float axis_len = (k_shaft_length + 2.0f * k_scale_head_half_size) * scale;
+	const float axis_len = (k_shaft_length + (2.0f * k_scale_head_half_size)) * scale;
 	const float axis_radius = k_axis_hit_radius * scale;
 
 	for (int i = 0; i < 3; ++i) {

@@ -23,14 +23,14 @@ auto packPool(const BrickPool& pool) -> PackedPool {
 		// Little endian host so byte i is the low byte of word i / 4 >> 8 * (i % 4)
 		const std::span<const uint8_t, k_brick_material_bytes> bytes = pool.material(id);
 		std::memcpy(
-		    out.materials.data() + static_cast<size_t>(id) * k_material_words_per_brick, bytes.data(), k_brick_material_bytes
+		    out.materials.data() + (static_cast<size_t>(id) * k_material_words_per_brick), bytes.data(), k_brick_material_bytes
 		);
 
 		const BrickOccupancy& occupancy = pool.occupancy(id);
 		const size_t base = static_cast<size_t>(id) * k_occupancy_words_per_brick;
 		for (uint32_t slice = 0; slice < k_brick_dim; ++slice) {
-			out.occupancy[base + slice * 2] = static_cast<uint32_t>(occupancy.slices[slice]);
-			out.occupancy[base + slice * 2 + 1] = static_cast<uint32_t>(occupancy.slices[slice] >> 32u);
+			out.occupancy[base + (slice * 2)] = static_cast<uint32_t>(occupancy.slices[slice]);
+			out.occupancy[base + (slice * 2) + 1] = static_cast<uint32_t>(occupancy.slices[slice] >> 32u);
 		}
 	}
 	return out;
@@ -60,8 +60,8 @@ auto packScene(std::span<const SceneVolume> volumes) -> PackedScene {
 		record.coarse_offset = static_cast<uint32_t>(out.coarse.size());
 
 		const uint32_t coarse_cells = coarse.x * coarse.y * coarse.z;
-		out.coarse.resize(out.coarse.size() + (coarse_cells + 31u) / 32u, 0u);
-		out.grids.reserve(out.grids.size() + static_cast<size_t>(dims.x) * dims.y * dims.z);
+		out.coarse.resize(out.coarse.size() + ((coarse_cells + 31u) / 32u), 0u);
+		out.grids.reserve(out.grids.size() + (static_cast<size_t>(dims.x) * dims.y * dims.z));
 
 		for (uint32_t z = 0; z < dims.z; ++z) {
 			for (uint32_t y = 0; y < dims.y; ++y) {
@@ -74,7 +74,7 @@ auto packScene(std::span<const SceneVolume> volumes) -> PackedScene {
 
 					// Volume frees emptied bricks so any non empty tag means something solid
 					const uint32_t cell = gridIndex(coarse, glm::uvec3(x, y, z) / k_coarse_bricks);
-					out.coarse[record.coarse_offset + cell / 32u] |= 1u << (cell % 32u);
+					out.coarse[record.coarse_offset + (cell / 32u)] |= 1u << (cell % 32u);
 				}
 			}
 		}
@@ -117,8 +117,8 @@ auto sampleMaterial(const PackedPool& pool, const PackedScene& scene, uint32_t v
 		return static_cast<uint8_t>(payload);
 	}
 
-	const uint32_t index = local.x + local.y * k_brick_dim + local.z * k_brick_dim * k_brick_dim;
-	const uint32_t word = pool.materials[static_cast<size_t>(payload) * k_material_words_per_brick + index / 4u];
+	const uint32_t index = local.x + (local.y * k_brick_dim) + (local.z * k_brick_dim * k_brick_dim);
+	const uint32_t word = pool.materials[(static_cast<size_t>(payload) * k_material_words_per_brick) + (index / 4u)];
 	return static_cast<uint8_t>((word >> (8u * (index % 4u))) & 0xFFu);
 }
 
@@ -143,9 +143,9 @@ auto sampleSolid(const PackedPool& pool, const PackedScene& scene, uint32_t volu
 	}
 
 	// The low word holds rows y < 4
-	const uint32_t bit = local.y * k_brick_dim + local.x;
+	const uint32_t bit = (local.y * k_brick_dim) + local.x;
 	const size_t word_index =
-	    static_cast<size_t>(value >> k_brick_tag_bits) * k_occupancy_words_per_brick + local.z * 2u + bit / 32u;
+	    (static_cast<size_t>(value >> k_brick_tag_bits) * k_occupancy_words_per_brick) + (local.z * 2u) + (bit / 32u);
 	return ((pool.occupancy[word_index] >> (bit % 32u)) & 1u) != 0;
 }
 
@@ -157,7 +157,7 @@ auto sampleCoarse(const PackedScene& scene, uint32_t volume, glm::ivec3 cell) ->
 	}
 
 	const uint32_t index = gridIndex(glm::uvec3(dims), glm::uvec3(cell));
-	return ((scene.coarse[record.coarse_offset + index / 32u] >> (index % 32u)) & 1u) != 0;
+	return ((scene.coarse[record.coarse_offset + (index / 32u)] >> (index % 32u)) & 1u) != 0;
 }
 
 auto samplePaletteEntry(const PackedScene& scene, uint32_t volume, uint8_t index) -> PaletteEntry {

@@ -23,6 +23,7 @@
 #include <span>
 #include <toast/uid.hpp>
 #include <unordered_map>
+#include <utility>
 #define TINYGLTF3_IMPLEMENTATION
 #define TINYGLTF3_ENABLE_FS
 #include <tiny_gltf_v3.h>
@@ -365,7 +366,13 @@ auto generateIntermediates(const std::filesystem::path& path) {
 			bool col_normalized = false;
 			if (col_data != nullptr) {
 				const auto& col_acc = model.accessors[col_idx];
-				col_components = col_acc.type == TG3_TYPE_VEC4 ? 4u : (col_acc.type == TG3_TYPE_VEC3 ? 3u : 0u);
+				if (col_acc.type == TG3_TYPE_VEC4) {
+					col_components = 4u;
+				} else if (col_acc.type == TG3_TYPE_VEC3) {
+					col_components = 3u;
+				} else {
+					col_components = 0u;
+				}
 				switch (col_acc.component_type) {
 					case TG3_COMPONENT_TYPE_FLOAT: col_component_size = 4; break;
 					case TG3_COMPONENT_TYPE_UNSIGNED_BYTE: col_component_size = 1; break;
@@ -748,7 +755,11 @@ auto generateIntermediates(const std::filesystem::path& path) {
 			++alpha_cutouts;
 		}
 		// glTF's own default when alphaMode is MASK but alphaCutoff is omitted
-		material_table.insert("alphaCutoff", cutout ? (mat.alpha_cutoff > 0.0 ? mat.alpha_cutoff : 0.5) : 0.0);
+		double alpha_cutoff_value = 0.0;
+		if (cutout) {
+			alpha_cutoff_value = mat.alpha_cutoff > 0.0 ? mat.alpha_cutoff : 0.5;
+		}
+		material_table.insert("alphaCutoff", alpha_cutoff_value);
 
 		materials.push_back(std::move(material_table));
 	}
@@ -845,7 +856,7 @@ auto generateIntermediates(const std::filesystem::path& path) {
 	// Converted into engine space here rather than at load time, so what lands on disk matches how mesh
 	// vertices and node transforms were already handled above
 	auto node_name_at = [&](int32_t node_idx) -> std::string {
-		if (node_idx < 0 || static_cast<uint32_t>(node_idx) >= model.nodes_count) {
+		if (node_idx < 0 || std::cmp_greater_equal(node_idx, model.nodes_count)) {
 			return {};
 		}
 		const auto& node = model.nodes[node_idx];
@@ -867,7 +878,7 @@ auto generateIntermediates(const std::filesystem::path& path) {
 	// Reads an accessor as tightly-packed floats. Animation sampler inputs/outputs are always float in
 	// practice (the spec allows normalised integer outputs, which this rejects rather than mis-decoding)
 	auto read_float_accessor = [&](int32_t acc_idx, size_t components) -> std::vector<float> {
-		if (acc_idx < 0 || static_cast<uint32_t>(acc_idx) >= model.accessors_count) {
+		if (acc_idx < 0 || std::cmp_greater_equal(acc_idx, model.accessors_count)) {
 			return {};
 		}
 		const auto& acc = model.accessors[acc_idx];
@@ -905,7 +916,7 @@ auto generateIntermediates(const std::filesystem::path& path) {
 
 		for (uint32_t c = 0; c < anim.channels_count; ++c) {
 			const auto& channel = anim.channels[c];
-			if (channel.sampler < 0 || static_cast<uint32_t>(channel.sampler) >= anim.samplers_count) {
+			if (channel.sampler < 0 || std::cmp_greater_equal(channel.sampler, anim.samplers_count)) {
 				continue;
 			}
 			const auto& sampler = anim.samplers[channel.sampler];
@@ -1159,7 +1170,7 @@ auto generateIntermediates(const std::filesystem::path& path) {
 			// Skin params, shared by both the single- and multi-primitive branches below. glTF attaches the
 			// skin to the node (not the mesh/primitive), so every primitive of a skinned mesh uses the same
 			// skin - node.skin indexes model.skins, which parses 1:1 into `skins` earlier in this function
-			const bool has_skin = node.skin != -1 && node.skin < static_cast<int32_t>(skins.size());
+			const bool has_skin = node.skin != -1 && std::cmp_less(node.skin, skins.size());
 			const auto apply_skin_params = [&](nlohmann::json& target) {
 				if (!has_skin) {
 					return;
@@ -1330,7 +1341,12 @@ auto generateIntermediates(const std::filesystem::path& path) {
 		if (tex.data.empty()) {
 			continue;    // failed to load (already logged) - don't write a bogus empty file
 		}
-		std::string_view ext = tex.format == "image/jpeg" ? ".jpg" : tex.format == "image/ktx2" ? ".ktx2" : ".png";
+		std::string_view ext = ".png";
+		if (tex.format == "image/jpeg") {
+			ext = ".jpg";
+		} else if (tex.format == "image/ktx2") {
+			ext = ".ktx2";
+		}
 		std::filesystem::path out = cache_dir / (tex.name + std::string(ext));
 		std::ofstream f(out, std::ios::binary);
 		f.write(reinterpret_cast<const char*>(tex.data.data()), tex.data.size());

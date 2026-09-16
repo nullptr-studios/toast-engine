@@ -137,8 +137,8 @@ template<typename T>
 auto cubicSpline(const T& v0, const T& out_tangent0, const T& v1, const T& in_tangent1, float t, float delta) -> T {
 	const float t2 = t * t;
 	const float t3 = t2 * t;
-	return (2.0f * t3 - 3.0f * t2 + 1.0f) * v0 + delta * (t3 - 2.0f * t2 + t) * out_tangent0 + (-2.0f * t3 + 3.0f * t2) * v1 +
-	       delta * (t3 - t2) * in_tangent1;
+	return (((2.0f * t3) - (3.0f * t2) + 1.0f) * v0) + (delta * (t3 - (2.0f * t2) + t) * out_tangent0) +
+	       (((-2.0f * t3) + (3.0f * t2)) * v1) + (delta * (t3 - t2) * in_tangent1);
 }
 
 }

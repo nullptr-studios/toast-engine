@@ -37,7 +37,7 @@ auto VoxelNode::localBoundingSphere() const -> glm::vec4 {
 		return glm::vec4(0.0f);
 	}
 	const glm::vec3 extent = glm::vec3(model->brickDims()) * voxel::k_brick_size;
-	return glm::vec4(extent * 0.5f, glm::length(extent) * 0.5f);
+	return {extent * 0.5f, glm::length(extent) * 0.5f};
 }
 
 auto VoxelNode::latticePlacement() const -> std::optional<voxel::LatticePlacement> {

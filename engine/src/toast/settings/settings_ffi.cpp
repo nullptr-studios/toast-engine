@@ -25,11 +25,11 @@ auto entryAt(int32_t index) -> Entry* {
 
 extern "C" {
 
-int32_t toast_settings_count() noexcept {
+auto toast_settings_count() noexcept -> int32_t {
 	return static_cast<int32_t>(Settings::get().entries().size());
 }
 
-int32_t toast_settings_get_desc(int32_t index, toast_setting_desc* out) noexcept {
+auto toast_settings_get_desc(int32_t index, toast_setting_desc* out) noexcept -> int32_t {
 	const Entry* entry = entryAt(index);
 	if (entry == nullptr || out == nullptr) {
 		return 0;
@@ -49,7 +49,7 @@ int32_t toast_settings_get_desc(int32_t index, toast_setting_desc* out) noexcept
 	return 1;
 }
 
-const char* toast_settings_get_option(int32_t index, int32_t option) noexcept {
+auto toast_settings_get_option(int32_t index, int32_t option) noexcept -> const char* {
 	const Entry* entry = entryAt(index);
 	if (entry == nullptr || option < 0 || static_cast<size_t>(option) >= entry->meta.options.size()) {
 		return nullptr;
@@ -57,7 +57,7 @@ const char* toast_settings_get_option(int32_t index, int32_t option) noexcept {
 	return entry->meta.options[static_cast<size_t>(option)].c_str();
 }
 
-int32_t toast_settings_get_bool(const char* key) noexcept {
+auto toast_settings_get_bool(const char* key) noexcept -> int32_t {
 	if (key == nullptr) {
 		return 0;
 	}
@@ -69,7 +69,7 @@ int32_t toast_settings_get_bool(const char* key) noexcept {
 	return typed != nullptr && *typed ? 1 : 0;
 }
 
-int64_t toast_settings_get_int(const char* key) noexcept {
+auto toast_settings_get_int(const char* key) noexcept -> int64_t {
 	if (key == nullptr) {
 		return 0;
 	}
@@ -81,7 +81,7 @@ int64_t toast_settings_get_int(const char* key) noexcept {
 	return typed != nullptr ? *typed : 0;
 }
 
-double toast_settings_get_float(const char* key) noexcept {
+auto toast_settings_get_float(const char* key) noexcept -> double {
 	if (key == nullptr) {
 		return 0.0;
 	}
@@ -93,7 +93,7 @@ double toast_settings_get_float(const char* key) noexcept {
 	return typed != nullptr ? *typed : 0.0;
 }
 
-const char* toast_settings_get_string(const char* key) noexcept {
+auto toast_settings_get_string(const char* key) noexcept -> const char* {
 	g_string_return.clear();
 	if (key != nullptr) {
 		if (const auto value = Settings::get().value(key)) {
@@ -139,15 +139,15 @@ void toast_settings_reset_all() noexcept {
 	Settings::get().resetAll();
 }
 
-int32_t toast_settings_save() noexcept {
+auto toast_settings_save() noexcept -> int32_t {
 	return Settings::get().save() ? 1 : 0;
 }
 
-int32_t toast_settings_is_dirty() noexcept {
+auto toast_settings_is_dirty() noexcept -> int32_t {
 	return Settings::get().dirty() ? 1 : 0;
 }
 
-const char* toast_settings_active_path() noexcept {
+auto toast_settings_active_path() noexcept -> const char* {
 	g_string_return = Settings::get().activeFilePath().string();
 	return g_string_return.c_str();
 }

@@ -17,8 +17,14 @@ auto AnimationPlayer::play(std::string_view clip_name) -> bool {
 	// An empty name means "whatever this asset holds". The glTF importer writes one clip per .tanim, so the
 	// Clip field is normally left blank in the inspector and swapping animations is a matter of assigning a
 	// different asset - naming the clip is only needed for a hand-authored multi-clip file
-	const auto* clip = clip_name.empty() ? (m_animation->clips().empty() ? nullptr : &m_animation->clips().front())
-	                                     : m_animation->findClip(clip_name);
+	const assets::AnimationClip* clip = nullptr;
+	if (clip_name.empty()) {
+		if (!m_animation->clips().empty()) {
+			clip = &m_animation->clips().front();
+		}
+	} else {
+		clip = m_animation->findClip(clip_name);
+	}
 	if (clip == nullptr) {
 		if (clip_name.empty()) {
 			TOAST_WARN("Animation", "AnimationPlayer '{}': assigned animation asset has no clips", name());

@@ -20,7 +20,7 @@ constexpr uint32_t k_vk_format_r8g8b8a8_srgb = 43;
 
 extern "C" {
 
-int toast_ktx2_decode_thumbnail(const char* path, uint8_t* dst, uint32_t thumb_size) noexcept {
+auto toast_ktx2_decode_thumbnail(const char* path, uint8_t* dst, uint32_t thumb_size) noexcept -> int {
 	ZoneScoped;
 	try {
 		std::ifstream file(path, std::ios::binary | std::ios::ate);
@@ -77,7 +77,7 @@ int toast_ktx2_decode_thumbnail(const char* path, uint8_t* dst, uint32_t thumb_s
 			const uint32_t src_y = (y * height) / thumb_size;
 			for (uint32_t x = 0; x < thumb_size; ++x) {
 				const uint32_t src_x = (x * width) / thumb_size;
-				std::memcpy(&dst[(y * thumb_size + x) * 4], &src_pixels[(src_y * width + src_x) * 4], 4);
+				std::memcpy(&dst[((y * thumb_size) + x) * 4], &src_pixels[((src_y * width) + src_x) * 4], 4);
 			}
 		}
 

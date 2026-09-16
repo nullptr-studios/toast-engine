@@ -276,7 +276,7 @@ auto Volume::setBrickMaterial(glm::ivec3 brick, std::span<const uint8_t, k_brick
 	for (uint32_t z = 0; z < k_brick_dim; ++z) {
 		uint64_t word = 0;
 		for (uint32_t bit = 0; bit < 64; ++bit) {
-			if (material[z * 64 + bit] != k_empty_palette_index) {
+			if (material[(z * 64) + bit] != k_empty_palette_index) {
 				word |= 1ull << bit;
 			}
 		}

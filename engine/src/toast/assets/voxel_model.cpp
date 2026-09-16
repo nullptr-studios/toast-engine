@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <string>
 #include <tracy/Tracy.hpp>
+#include <utility>
 
 namespace assets {
 
@@ -105,7 +106,7 @@ VoxelModel::VoxelModel(const std::vector<uint8_t>& data) {
 	}
 
 	for (uint32_t b = 0; b < stored; ++b) {
-		const uint8_t* begin = m_bricks.data() + static_cast<size_t>(b) * k_brick_material_bytes;
+		const uint8_t* begin = m_bricks.data() + (static_cast<size_t>(b) * k_brick_material_bytes);
 		const uint8_t first = begin[0];
 		if (std::all_of(begin, begin + k_brick_material_bytes, [first](uint8_t value) { return value == first; })) {
 			throw fail("brick " + std::to_string(b) + " holds a single material and must be stored as an empty or uniform entry");
@@ -127,9 +128,9 @@ auto VoxelModel::capture(const Volume& volume, uint64_t palette_uid) -> std::uni
 	out->m_grid.reserve(volume.brickCount());
 
 	uint32_t stored = 0;
-	for (int32_t z = 0; z < static_cast<int32_t>(dims.z); ++z) {
-		for (int32_t y = 0; y < static_cast<int32_t>(dims.y); ++y) {
-			for (int32_t x = 0; x < static_cast<int32_t>(dims.x); ++x) {
+	for (int32_t z = 0; std::cmp_less(z, dims.z); ++z) {
+		for (int32_t y = 0; std::cmp_less(y, dims.y); ++y) {
+			for (int32_t x = 0; std::cmp_less(x, dims.x); ++x) {
 				const BrickEntry entry = volume.entryAt(glm::ivec3(x, y, z));
 				if (!entry.isPooled()) {
 					out->m_grid.push_back(entry);
@@ -156,16 +157,16 @@ auto VoxelModel::instantiate(BrickPool& pool) const -> std::optional<Volume> {
 
 	Volume volume(pool, m_brick_dims);
 	size_t slot = 0;
-	for (int32_t z = 0; z < static_cast<int32_t>(m_brick_dims.z); ++z) {
-		for (int32_t y = 0; y < static_cast<int32_t>(m_brick_dims.y); ++y) {
-			for (int32_t x = 0; x < static_cast<int32_t>(m_brick_dims.x); ++x, ++slot) {
+	for (int32_t z = 0; std::cmp_less(z, m_brick_dims.z); ++z) {
+		for (int32_t y = 0; std::cmp_less(y, m_brick_dims.y); ++y) {
+			for (int32_t x = 0; std::cmp_less(x, m_brick_dims.x); ++x, ++slot) {
 				const glm::ivec3 brick(x, y, z);
 				const BrickEntry entry = m_grid[slot];
 				switch (entry.tag()) {
 					case BrickTag::uniform: volume.setBrickUniform(brick, static_cast<uint8_t>(entry.payload())); break;
 					case BrickTag::owned: {
 						const std::span<const uint8_t, k_brick_material_bytes> bytes(
-						    m_bricks.data() + static_cast<size_t>(entry.payload()) * k_brick_material_bytes, k_brick_material_bytes
+						    m_bricks.data() + (static_cast<size_t>(entry.payload()) * k_brick_material_bytes), k_brick_material_bytes
 						);
 						if (!volume.setBrickMaterial(brick, bytes)) {
 							return std::nullopt;
@@ -177,7 +178,7 @@ auto VoxelModel::instantiate(BrickPool& pool) const -> std::optional<Volume> {
 			}
 		}
 	}
-	return std::optional<Volume>(std::move(volume));
+	return {std::move(volume)};
 }
 
 auto VoxelModel::solidVoxelCount() const -> uint32_t {
@@ -203,7 +204,7 @@ auto VoxelModel::serialize(SaveMode /*mode*/) const -> std::vector<uint8_t> {
 	const uint32_t stored = storedBrickCount();
 
 	std::vector<uint8_t> out(
-	    sizeof(header) + sizeof(m_palette_uid) + sizeof(stored) + m_grid.size() * sizeof(BrickEntry) + m_bricks.size()
+	    sizeof(header) + sizeof(m_palette_uid) + sizeof(stored) + (m_grid.size() * sizeof(BrickEntry)) + m_bricks.size()
 	);
 	size_t offset = 0;
 	const auto put = [&](const void* source, size_t bytes) {

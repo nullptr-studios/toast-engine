@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <tracy/Tracy.hpp>
+#include <utility>
 
 namespace toast::voxel {
 
@@ -16,14 +17,14 @@ auto brickContaining(glm::ivec3 voxel) noexcept -> glm::ivec3 {
 }
 
 auto VolumeSurface::contains(glm::ivec3 brick) const noexcept -> bool {
-	return brick.x >= 0 && brick.y >= 0 && brick.z >= 0 && static_cast<uint32_t>(brick.x) < m_brick_dims.x &&
-	       static_cast<uint32_t>(brick.y) < m_brick_dims.y && static_cast<uint32_t>(brick.z) < m_brick_dims.z;
+	return brick.x >= 0 && brick.y >= 0 && brick.z >= 0 && std::cmp_less(brick.x, m_brick_dims.x) &&
+	       std::cmp_less(brick.y, m_brick_dims.y) && std::cmp_less(brick.z, m_brick_dims.z);
 }
 
 auto VolumeSurface::slotOf(glm::ivec3 brick) const noexcept -> uint32_t {
 	assert(contains(brick));
-	return static_cast<uint32_t>(brick.x) + static_cast<uint32_t>(brick.y) * m_brick_dims.x +
-	       static_cast<uint32_t>(brick.z) * m_brick_dims.x * m_brick_dims.y;
+	return static_cast<uint32_t>(brick.x) + (static_cast<uint32_t>(brick.y) * m_brick_dims.x) +
+	       (static_cast<uint32_t>(brick.z) * m_brick_dims.x * m_brick_dims.y);
 }
 
 void VolumeSurface::rebuild(const Volume& volume) {
@@ -31,9 +32,9 @@ void VolumeSurface::rebuild(const Volume& volume) {
 	m_brick_dims = volume.brickDims();
 	m_bricks.clear();
 
-	for (int32_t z = 0; z < static_cast<int32_t>(m_brick_dims.z); ++z) {
-		for (int32_t y = 0; y < static_cast<int32_t>(m_brick_dims.y); ++y) {
-			for (int32_t x = 0; x < static_cast<int32_t>(m_brick_dims.x); ++x) {
+	for (int32_t z = 0; std::cmp_less(z, m_brick_dims.z); ++z) {
+		for (int32_t y = 0; std::cmp_less(y, m_brick_dims.y); ++y) {
+			for (int32_t x = 0; std::cmp_less(x, m_brick_dims.x); ++x) {
 				rebuildBrick(volume, glm::ivec3 {x, y, z});
 			}
 		}
@@ -101,7 +102,7 @@ auto VolumeSurface::brickSurface(glm::ivec3 brick) const -> std::span<const Surf
 	if (it == m_bricks.end()) {
 		return {};
 	}
-	return std::span<const SurfaceVoxel>(it->second);
+	return {it->second};
 }
 
 auto VolumeSurface::surfaceVoxelCount() const -> size_t {

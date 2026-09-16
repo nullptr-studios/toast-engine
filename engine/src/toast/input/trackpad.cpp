@@ -5,12 +5,14 @@
 #ifdef _WIN32
 
 #include <Windows.h>
+#include <array>
 #include <atomic>
 #include <commctrl.h>
 #include <cstdint>
 #include <directmanipulation.h>
 #include <memory>
 #include <mutex>
+#include <toast/log.hpp>
 #include <unordered_map>
 #include <wrl/client.h>
 
@@ -80,8 +82,8 @@ struct ViewportState {
 	}
 
 	void acceptTransform(IDirectManipulationContent* content) {
-		float matrix[6] {};
-		if (FAILED(content->GetContentTransform(matrix, ARRAYSIZE(matrix)))) {
+		std::array<float, 6> matrix {};
+		if (FAILED(content->GetContentTransform(matrix.data(), static_cast<DWORD>(matrix.size())))) {
 			return;
 		}
 
@@ -242,7 +244,7 @@ auto createHost(HWND window) -> std::shared_ptr<WindowHost> {
 extern "C" {
 
 auto toast_trackpad_supported() noexcept -> int32_t {
-	const auto module = LoadLibraryW(L"directmanipulation.dll");
+	auto* const module = LoadLibraryW(L"directmanipulation.dll");
 	if (!module) {
 		return 0;
 	}
@@ -252,7 +254,7 @@ auto toast_trackpad_supported() noexcept -> int32_t {
 
 auto toast_trackpad_create(void* native_window) noexcept -> uint64_t {
 	try {
-		auto window = static_cast<HWND>(native_window);
+		auto* window = static_cast<HWND>(native_window);
 		if (!window || !IsWindow(window)) {
 			return 0;
 		}
@@ -277,11 +279,9 @@ auto toast_trackpad_create(void* native_window) noexcept -> uint64_t {
 			return 0;
 		}
 
-		const auto config = static_cast<DIRECTMANIPULATION_CONFIGURATION>(
-		    DIRECTMANIPULATION_CONFIGURATION_INTERACTION | DIRECTMANIPULATION_CONFIGURATION_TRANSLATION_X |
-		    DIRECTMANIPULATION_CONFIGURATION_TRANSLATION_Y | DIRECTMANIPULATION_CONFIGURATION_TRANSLATION_INERTIA |
-		    DIRECTMANIPULATION_CONFIGURATION_SCALING
-		);
+		const auto config = DIRECTMANIPULATION_CONFIGURATION_INTERACTION | DIRECTMANIPULATION_CONFIGURATION_TRANSLATION_X |
+		                    DIRECTMANIPULATION_CONFIGURATION_TRANSLATION_Y |
+		                    DIRECTMANIPULATION_CONFIGURATION_TRANSLATION_INERTIA | DIRECTMANIPULATION_CONFIGURATION_SCALING;
 
 		state->handler.Attach(new ViewportHandler(state.get()));
 		const RECT rect {0, 0, k_fake_viewport, k_fake_viewport};
@@ -346,7 +346,7 @@ void toast_trackpad_destroy(uint64_t handle) noexcept {
 				CoUninitialize();
 			}
 		}
-	} catch (...) { }
+	} catch (...) { TOAST_WARN("Trackpad", "toast_trackpad_destroy: unexpected exception"); }
 }
 
 void toast_trackpad_set_rect(uint64_t handle, int32_t x, int32_t y, int32_t width, int32_t height) noexcept {
@@ -357,7 +357,7 @@ void toast_trackpad_set_rect(uint64_t handle, int32_t x, int32_t y, int32_t widt
 			return;
 		}
 		it->second.second->hit_rect = RECT {x, y, x + width, y + height};
-	} catch (...) { }
+	} catch (...) { TOAST_WARN("Trackpad", "toast_trackpad_set_rect: unexpected exception"); }
 }
 
 void toast_trackpad_update(uint64_t handle) noexcept {
@@ -370,7 +370,7 @@ void toast_trackpad_update(uint64_t handle) noexcept {
 		if (status == DIRECTMANIPULATION_RUNNING || status == DIRECTMANIPULATION_INERTIA) {
 			state->update_manager->Update(nullptr);
 		}
-	} catch (...) { }
+	} catch (...) { TOAST_WARN("Trackpad", "toast_trackpad_update: unexpected exception"); }
 }
 
 auto toast_trackpad_drain(uint64_t handle, toast_trackpad_state* out_state) noexcept -> int32_t {

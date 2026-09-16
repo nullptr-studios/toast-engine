@@ -13,15 +13,15 @@ auto analyseConnectivity(const Volume& volume) -> Connectivity {
 	const glm::uvec3 dims = volume.brickDims();
 	const uint32_t brick_count = dims.x * dims.y * dims.z;
 	const auto slot_of = [&](glm::ivec3 brick) {
-		return static_cast<uint32_t>(brick.x) + static_cast<uint32_t>(brick.y) * dims.x +
-		       static_cast<uint32_t>(brick.z) * dims.x * dims.y;
+		return static_cast<uint32_t>(brick.x) + (static_cast<uint32_t>(brick.y) * dims.x) +
+		       (static_cast<uint32_t>(brick.z) * dims.x * dims.y);
 	};
 
 	// pieces of brick s are first_piece[s] .. first_piece[s + 1]
 	std::vector<uint32_t> first_piece(brick_count + 1u, 0u);
-	for (int32_t z = 0; z < static_cast<int32_t>(dims.z); ++z) {
-		for (int32_t y = 0; y < static_cast<int32_t>(dims.y); ++y) {
-			for (int32_t x = 0; x < static_cast<int32_t>(dims.x); ++x) {
+	for (int32_t z = 0; std::cmp_less(z, dims.z); ++z) {
+		for (int32_t y = 0; std::cmp_less(y, dims.y); ++y) {
+			for (int32_t x = 0; std::cmp_less(x, dims.x); ++x) {
 				const glm::ivec3 brick(x, y, z);
 				first_piece[slot_of(brick)] = static_cast<uint32_t>(out.pieces.size());
 
@@ -71,24 +71,34 @@ auto analyseConnectivity(const Volume& volume) -> Connectivity {
 		faces[i] = computeFaces(out.pieces[i].voxels);
 	}
 
-	for (int32_t z = 0; z < static_cast<int32_t>(dims.z); ++z) {
-		for (int32_t y = 0; y < static_cast<int32_t>(dims.y); ++y) {
-			for (int32_t x = 0; x < static_cast<int32_t>(dims.x); ++x) {
+	for (int32_t z = 0; std::cmp_less(z, dims.z); ++z) {
+		for (int32_t y = 0; std::cmp_less(y, dims.y); ++y) {
+			for (int32_t x = 0; std::cmp_less(x, dims.x); ++x) {
 				const glm::ivec3 brick(x, y, z);
 				const uint32_t here = slot_of(brick);
 
 				for (int32_t axis = 0; axis < 3; ++axis) {
 					glm::ivec3 next = brick;
 					next[axis] += 1;
-					if (next[axis] >= static_cast<int32_t>(dims[axis])) {
+					if (std::cmp_greater_equal(next[axis], dims[axis])) {
 						continue;
 					}
 					const uint32_t there = slot_of(next);
 
 					for (uint32_t p = first_piece[here]; p < first_piece[here + 1u]; ++p) {
-						const uint64_t outward = axis == 0 ? faces[p].pos_x : axis == 1 ? faces[p].pos_y : faces[p].pos_z;
+						uint64_t outward = faces[p].pos_z;
+						if (axis == 0) {
+							outward = faces[p].pos_x;
+						} else if (axis == 1) {
+							outward = faces[p].pos_y;
+						}
 						for (uint32_t q = first_piece[there]; q < first_piece[there + 1u]; ++q) {
-							const uint64_t inward = axis == 0 ? faces[q].neg_x : axis == 1 ? faces[q].neg_y : faces[q].neg_z;
+							uint64_t inward = faces[q].neg_z;
+							if (axis == 0) {
+								inward = faces[q].neg_x;
+							} else if (axis == 1) {
+								inward = faces[q].neg_y;
+							}
 							if (facesConnect(outward, inward)) {
 								unite(p, q);
 							}
