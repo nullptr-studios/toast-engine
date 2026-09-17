@@ -9,6 +9,9 @@
 #include "toast/world/node.hpp"
 
 #include <functional>
+#include <lua.hpp>
+#include <luabridge3/LuaBridge/detail/LuaRef.h>
+#include <map>
 #include <optional>
 #include <string>
 #include <vector>
@@ -35,8 +38,19 @@ public:
 	[[Reflect, ReadOnly]]
 	std::string current_state;
 
-	void addState(std::string_view name, const State& state) { }
+	void addState(std::string_view name, const State& state);
+
+	[[Reflect]]
+	void addState(const std::string& name, const luabridge::LuaRef& table);
 
 private:
+	std::map<std::string, State> states;
+	State* cached_state;
+
+	void tick() {
+		if (cached_state->tick) {
+			(*cached_state->tick)();
+		}
+	}
 };
 }
