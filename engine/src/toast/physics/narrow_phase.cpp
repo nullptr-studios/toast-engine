@@ -1,5 +1,7 @@
 #include "narrow_phase.hpp"
 
+#include "voxel_query.hpp"
+
 #include <algorithm>
 #include <cmath>
 #include <tracy/Tracy.hpp>
@@ -22,11 +24,23 @@ auto pairType(ShapeType a, ShapeType b) -> NarrowPhasePairType {
 	if (a == ShapeType::sphere && b == ShapeType::capsule) {
 		return NarrowPhasePairType::sphere_capsule;
 	}
+	if (a == ShapeType::sphere && b == ShapeType::voxel) {
+		return NarrowPhasePairType::sphere_voxel;
+	}
 	if (a == ShapeType::box && b == ShapeType::box) {
 		return NarrowPhasePairType::box_box;
 	}
 	if (a == ShapeType::box && b == ShapeType::capsule) {
 		return NarrowPhasePairType::box_capsule;
+	}
+	if (a == ShapeType::box && b == ShapeType::voxel) {
+		return NarrowPhasePairType::box_voxel;
+	}
+	if (a == ShapeType::capsule && b == ShapeType::voxel) {
+		return NarrowPhasePairType::capsule_voxel;
+	}
+	if (a == ShapeType::voxel && b == ShapeType::voxel) {
+		return NarrowPhasePairType::voxel_voxel;
 	}
 	return NarrowPhasePairType::capsule_capsule;
 }
@@ -40,6 +54,7 @@ auto NarrowPhase::generateManifolds(CollisionWorldView world, std::span<const Br
 	ManifoldQueue queue {.candidate_count = candidates.size()};
 	queue.manifolds.reserve(candidates.size());
 
+	std::vector<Manifold> pair_manifolds;
 	for (BroadPhasePair pair : candidates) {
 		const Shape* shape_a = world.shape(pair.a.shape);
 		const Shape* shape_b = world.shape(pair.b.shape);
@@ -47,17 +62,17 @@ auto NarrowPhase::generateManifolds(CollisionWorldView world, std::span<const Br
 			++queue.pair_candidates[static_cast<size_t>(pairType(shape_a->type, shape_b->type))];
 		}
 
-		auto manifold = collide(world, pair);
-		if (not manifold.has_value()) {
-			continue;
-		}
+		pair_manifolds.clear();
+		collide(world, pair, pair_manifolds);
 
-		++queue.collision_count;
-		if (validate(world, *manifold)) {
-			queue.contact_count += manifold->contact_count;
-			queue.manifolds.emplace_back(*manifold);
-		} else {
-			++queue.rejected_manifold_count;
+		for (Manifold& manifold : pair_manifolds) {
+			++queue.collision_count;
+			if (validate(world, manifold)) {
+				queue.contact_count += manifold.contact_count;
+				queue.manifolds.emplace_back(manifold);
+			} else {
+				++queue.rejected_manifold_count;
+			}
 		}
 	}
 
@@ -110,7 +125,7 @@ void NarrowPhase::flip(Manifold& manifold) {
 	}
 }
 
-auto NarrowPhase::collide(CollisionWorldView world, BroadPhasePair pair) const -> std::optional<Manifold> {
+void NarrowPhase::collide(CollisionWorldView world, BroadPhasePair pair, std::vector<Manifold>& output) const {
 	ZoneScopedN("physics::DispatchCollisionPair");
 	ZoneValue((static_cast<uint64_t>(pair.a.shape.slot) << 32) | static_cast<uint64_t>(pair.b.shape.slot));
 
@@ -119,50 +134,89 @@ auto NarrowPhase::collide(CollisionWorldView world, BroadPhasePair pair) const -
 	const Body* body_a = world.body(pair.a.body);
 	const Body* body_b = world.body(pair.b.body);
 	if (!shape_a || !shape_b || !body_a || !body_b || shape_a->owner != pair.a.body || shape_b->owner != pair.b.body) {
-		return std::nullopt;
+		return;
+	}
+
+	const CollisionElement element_a {*shape_a, *body_a};
+	const CollisionElement element_b {*shape_b, *body_b};
+
+	if (shape_a->type == ShapeType::voxel || shape_b->type == ShapeType::voxel) {
+		if (shape_a->type == ShapeType::voxel && shape_b->type == ShapeType::voxel) {
+			return;
+		}
+
+		const bool voxel_is_a = shape_a->type == ShapeType::voxel;
+		const Shape& voxel_shape = voxel_is_a ? *shape_a : *shape_b;
+		const CollisionElement primitive_element = voxel_is_a ? element_b : element_a;
+		const CollisionElement voxel_element = voxel_is_a ? element_a : element_b;
+
+		const VoxelShapeData* voxel_data = world.voxelData(voxel_shape.voxel.data);
+		if (voxel_data == nullptr) {
+			return;
+		}
+
+		switch (primitive_element.shape.type) {
+			case ShapeType::sphere: collideSphereVoxel(pair, primitive_element, voxel_element, *voxel_data, output); break;
+			case ShapeType::box: collideBoxVoxel(pair, primitive_element, voxel_element, *voxel_data, output); break;
+			case ShapeType::capsule: collideCapsuleVoxel(pair, primitive_element, voxel_element, *voxel_data, output); break;
+			case ShapeType::voxel: break;
+		}
+
+		if (voxel_is_a) {
+			for (Manifold& manifold : output) {
+				flip(manifold);
+			}
+		}
+		return;
 	}
 
 	std::optional<Manifold> manifold;
 	switch (shape_a->type) {
 		case ShapeType::sphere:
 			switch (shape_b->type) {
-				case ShapeType::sphere: manifold = collideSpheres(pair, *shape_a, *body_a, *shape_b, *body_b); break;
-				case ShapeType::box: manifold = collideSphereBox(pair, *shape_a, *body_a, *shape_b, *body_b); break;
-				case ShapeType::capsule: manifold = collideSphereCapsule(pair, *shape_a, *body_a, *shape_b, *body_b); break;
+				case ShapeType::sphere: manifold = collideSpheres(pair, element_a, element_b); break;
+				case ShapeType::box: manifold = collideSphereBox(pair, element_a, element_b); break;
+				case ShapeType::capsule: manifold = collideSphereCapsule(pair, element_a, element_b); break;
+				case ShapeType::voxel: break;
 			}
 			break;
 		case ShapeType::box:
 			switch (shape_b->type) {
 				case ShapeType::sphere:
-					manifold = collideSphereBox(pair, *shape_b, *body_b, *shape_a, *body_a);
+					manifold = collideSphereBox(pair, element_b, element_a);
 					if (manifold.has_value()) {
 						flip(*manifold);
 					}
 					break;
-				case ShapeType::box: manifold = collideBoxes(pair, *shape_a, *body_a, *shape_b, *body_b); break;
+				case ShapeType::box: manifold = collideBoxes(pair, element_a, element_b); break;
 				case ShapeType::capsule:
-					manifold = collideCapsuleBox(pair, *shape_b, *body_b, *shape_a, *body_a);
+					manifold = collideCapsuleBox(pair, element_b, element_a);
 					if (manifold.has_value()) {
 						flip(*manifold);
 					}
 					break;
+				case ShapeType::voxel: break;
 			}
 			break;
 		case ShapeType::capsule:
 			switch (shape_b->type) {
 				case ShapeType::sphere:
-					manifold = collideSphereCapsule(pair, *shape_b, *body_b, *shape_a, *body_a);
+					manifold = collideSphereCapsule(pair, element_b, element_a);
 					if (manifold.has_value()) {
 						flip(*manifold);
 					}
 					break;
-				case ShapeType::box: manifold = collideCapsuleBox(pair, *shape_a, *body_a, *shape_b, *body_b); break;
-				case ShapeType::capsule: manifold = collideCapsules(pair, *shape_a, *body_a, *shape_b, *body_b); break;
+				case ShapeType::box: manifold = collideCapsuleBox(pair, element_a, element_b); break;
+				case ShapeType::capsule: manifold = collideCapsules(pair, element_a, element_b); break;
+				case ShapeType::voxel: break;
 			}
 			break;
+		case ShapeType::voxel: break;
 	}
 
-	return manifold;
+	if (manifold.has_value()) {
+		output.push_back(*manifold);
+	}
 }
 
 }

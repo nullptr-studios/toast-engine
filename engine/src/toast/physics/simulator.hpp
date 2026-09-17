@@ -14,6 +14,7 @@
 #include "narrow_phase.hpp"
 #include "physics_material.hpp"
 #include "shape.hpp"
+#include "voxel_render.hpp"
 #include "voxel_shape_data.hpp"
 
 #include <atomic>
@@ -26,6 +27,7 @@
 #include <toast/export.hpp>
 #include <toast/log.hpp>
 #include <toast/world/box.hpp>
+#include <toast/world/voxel_node.hpp>
 #include <toml++/impl/preprocessor.hpp>
 #include <vector>
 
@@ -41,16 +43,13 @@ class Collider;
 
 }
 
-namespace toast {
-class VoxelNode;
-}
-
 namespace physics {
 
 class TOAST_API Simulator {
 	friend class Collider;
 	friend class Rigidbody;
 	friend class DynamicRigidbody;
+	friend class toast::VoxelNode;
 
 public:
 	Simulator();
@@ -81,6 +80,11 @@ public:
 	static void registerVoxelNode(toast::VoxelNode& node);
 	static void unregisterVoxelNode(toast::VoxelNode& node);
 
+	[[nodiscard]]
+	auto voxelRenderRecords() const -> std::span<const VoxelRenderRecord> {
+		return m_voxel_render_records;
+	}
+
 private:
 	enum class SimulationPhase : uint8_t {
 		idle,
@@ -106,24 +110,19 @@ private:
 		toast::Box<Collider> node;
 	};
 
-	struct VoxelBinding {
+	struct NodeBinding {
+		BodyID body;
+		toast::Box<Rigidbody> node;
+		std::vector<ColliderBinding> colliders;
+	};
+
+	struct VoxelNodeBinding {
+		BodyID body;
 		ShapeID shape;
 		toast::Box<toast::VoxelNode> node;
 		uint32_t source_revision = 0;
 		uint64_t source_model = 0;
 		uint64_t source_palette = 0;
-	};
-
-	struct NodeBinding {
-		BodyID body;
-		toast::Box<Rigidbody> node;
-		std::vector<ColliderBinding> colliders;
-		std::vector<VoxelBinding> voxels;
-	};
-
-	struct StandaloneVoxelBinding {
-		BodyID body;
-		VoxelBinding voxel;
 	};
 
 	struct SimulationIsland {
@@ -161,7 +160,7 @@ private:
 	};
 
 	[[nodiscard]]
-	static auto rigidbodyFor(BodyID body) -> toast::Box<Rigidbody>;
+	static auto nodeFor(BodyID body) -> toast::Box<toast::Node>;
 	[[nodiscard]]
 	auto mainThreadMutationAllowed() const -> bool;
 
@@ -225,10 +224,12 @@ private:
 	    -> std::vector<SimulationIsland>;
 	void updateCache(std::span<const Manifold> manifolds);
 	[[nodiscard]]
-	auto findCachedContact(const BroadPhasePair& pair, ContactFeatureID feature_a, ContactFeatureID feature_b) -> CachedContact*;
+	auto findCachedContact(const BroadPhasePair& pair, uint8_t normal_index, ContactFeatureID feature_a, ContactFeatureID feature_b)
+	    -> CachedContact*;
 	[[nodiscard]]
-	auto findCachedContact(const BroadPhasePair& pair, ContactFeatureID feature_a, ContactFeatureID feature_b) const
-	    -> const CachedContact*;
+	auto findCachedContact(
+	    const BroadPhasePair& pair, uint8_t normal_index, ContactFeatureID feature_a, ContactFeatureID feature_b
+	) const -> const CachedContact*;
 	void warmStartConstraints(std::span<Constraint> constraints);
 	void storeConstraintImpulses(std::span<const Constraint> constraints);
 	[[nodiscard]]
@@ -242,6 +243,9 @@ private:
 	void publishTransforms();
 	[[nodiscard]]
 	auto publishTransform(NodeBinding& binding) -> bool;
+	[[nodiscard]]
+	auto publishVoxelTransform(VoxelNodeBinding& binding) -> bool;
+	void publishVoxelRenderRecords();
 
 	static auto velocityAtPoint(const Body& body, const glm::vec3& r) -> glm::vec3;
 	static auto effectiveMassAlong(
@@ -261,7 +265,7 @@ private:
 	std::vector<BodySlot> m_bodies;
 	std::deque<uint32_t> m_free_body_slots;
 	std::vector<NodeBinding> m_node_bindings;
-	std::vector<StandaloneVoxelBinding> m_standalone_voxel_bindings;
+	std::vector<VoxelNodeBinding> m_voxel_bindings;
 
 	std::vector<ShapeSlot> m_shapes;
 	std::deque<uint32_t> m_free_shape_slots;
@@ -277,6 +281,7 @@ private:
 	voxel::BrickPool m_voxel_pool {voxel::k_runtime_brick_capacity};
 	std::vector<VoxelShapeSlot> m_voxel_shapes;
 	std::deque<uint32_t> m_free_voxel_shape_slots;
+	std::vector<VoxelRenderRecord> m_voxel_render_records;
 };
 
 }

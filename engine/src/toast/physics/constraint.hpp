@@ -15,6 +15,7 @@ namespace physics {
 
 struct Constraint {
 	BroadPhasePair pair;
+	uint8_t normal_index = k_primitive_manifold_normal_index;
 	ContactFeatureID feature_a = {};
 	ContactFeatureID feature_b = {};
 	BodyID body_a;

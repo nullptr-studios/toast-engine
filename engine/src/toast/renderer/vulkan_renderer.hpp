@@ -603,21 +603,21 @@ public:
 	auto getInstanceBuffer(uint32_t frame_index) const -> vk::Buffer {
 		return frame_index < m_instance_res.size() && m_instance_res[frame_index].gpu_buffer.has_value()
 		           ? **m_instance_res[frame_index].gpu_buffer
-							 : vk::Buffer {};
+		           : vk::Buffer {};
 	}
 
 	[[nodiscard]]
 	auto getShadowInstanceBuffer(uint32_t frame_index) const -> vk::Buffer {
 		return frame_index < m_shadow_instance_res.size() && m_shadow_instance_res[frame_index].gpu_buffer.has_value()
 		           ? **m_shadow_instance_res[frame_index].gpu_buffer
-							 : vk::Buffer {};
+		           : vk::Buffer {};
 	}
 
 	[[nodiscard]]
 	auto getJointMatrixBuffer(uint32_t frame_index) const -> vk::Buffer {
 		return frame_index < m_joint_matrix_res.size() && m_joint_matrix_res[frame_index].gpu_buffer.has_value()
 		           ? **m_joint_matrix_res[frame_index].gpu_buffer
-							 : vk::Buffer {};
+		           : vk::Buffer {};
 	}
 
 	[[nodiscard]]

@@ -10,28 +10,44 @@
 #include <cstdint>
 #include <optional>
 #include <toast/assets/types.hpp>
+#include <toast/physics/body.hpp>
+#include <toast/physics/collision.hpp>
 #include <toast/voxel/stamp.hpp>
+#include <vector>
 
 namespace assets {
 class VoxelModel;
 class VoxelPalette;
 class VoxelMaterialLibrary;
+class PhysicsMaterial;
+}
+
+namespace physics {
+class Simulator;
 }
 
 namespace toast {
 
 enum class VoxelMobility : uint8_t {
-	/// Must sit on the lattice with a whole voxel offset and one of the 48 orientations
 	static_geometry = 0,
-
 	dynamic = 1,
 };
 
 class [[ToastNode, Icon("BoxMesh")]] TOAST_API VoxelNode : public Node3D {
+	friend class physics::Simulator;
+
 public:
 	VoxelNode() = default;
 
 	VoxelNode(assets::Handle<assets::VoxelModel> model) : m_model(std::move(model)) { }
+
+	signals::Signal<toast::Box<toast::Node>> contact_begin;
+	signals::Signal<toast::Box<toast::Node>> contact_end;
+	signals::Signal<> went_to_sleep;
+	signals::Signal<> woke_up;
+
+	[[Reflect, Name("Indestructible")]]
+	bool indestructible = false;
 
 	[[nodiscard]]
 	auto getModel() const -> const assets::Handle<assets::VoxelModel>& {
@@ -87,13 +103,87 @@ public:
 		return m_revision;
 	}
 
+	[[Reflect]]
+	assets::Handle<assets::PhysicsMaterial> material;
+
+	[[Reflect, Name("Lock X"), Group("Position Locks"), ReadOnly]]
+	bool lock_pos_x = false;
+	[[Reflect, Name("Lock Y"), Group("Position Locks"), ReadOnly]]
+	bool lock_pos_y = false;
+	[[Reflect, Name("Lock Z"), Group("Position Locks"), ReadOnly]]
+	bool lock_pos_z = false;
+	[[Reflect, Name("Lock X"), Group("Rotation Locks"), ReadOnly]]
+	bool lock_rot_x = false;
+	[[Reflect, Name("Lock Y"), Group("Rotation Locks"), ReadOnly]]
+	bool lock_rot_y = false;
+	[[Reflect, Name("Lock Z"), Group("Rotation Locks"), ReadOnly]]
+	bool lock_rot_z = false;
+
+	[[Reflect]]
+	void sleep();
+	[[Reflect]]
+	void wake();
+
+	[[Reflect, Unit("kg")]]
+	float mass = 1.0f;
+	[[Reflect]]
+	float gravity_scale = 1.0f;
+	[[Reflect]]
+	bool allow_sleep = true;
+	[[Reflect, ReadOnly]]
+	bool awake = true;
+
+	[[Reflect, Group("Mass Distribution"), Unit("m"), ReadOnly]]
+	glm::vec3 center_of_mass = {};
+	[[Reflect, Group("Mass Distribution"), Unit("kg•m²"), ReadOnly]]
+	glm::vec3 inertia = {};
+
+	[[Reflect, Group("Velocities"), Unit("m/s"), ReadOnly]]
+	glm::vec3 linear_velocity = {};
+	[[Reflect, Group("Velocities"), Unit("rad/s"), ReadOnly]]
+	glm::vec3 angular_velocity = {};
+
+	[[Reflect, Group("Constant Forces"), Unit("N"), ReadOnly]]
+	glm::vec3 constant_force = {};
+	[[Reflect, Group("Constant Forces"), Unit("N•m"), ReadOnly]]
+	glm::vec3 constant_torque = {};
+
 private:
+	struct ActiveContact {
+		physics::BodyID other_body;
+		toast::Box<toast::Node> other_node;
+		uint32_t shape_pair_count = 0;
+	};
+
+	void updateInspectorMessages() override;
 	void init();
 	void begin();
 	void end();
 	void destroy();
+	void onEnable();
+	void onDisable();
 
 	void releaseVolume();
+
+	void handleContactBegin(const physics::BroadPhasePair& pair);
+	void handleContactEnd(const physics::BroadPhasePair& pair);
+
+	void applyPhysicsTransform(const glm::vec3& position, const glm::quat& rotation);
+	void publishPhysicsState(bool is_awake, const glm::vec3& current_linear_velocity, const glm::vec3& current_angular_velocity);
+
+	void assignBody(physics::BodyID body) noexcept { m_body = body; }
+
+	void assignShape(physics::ShapeID shape) noexcept { m_shape = shape; }
+
+	[[nodiscard]]
+	auto bodyID() const noexcept -> physics::BodyID {
+		return m_body;
+	}
+
+	[[nodiscard]]
+	auto shapeID() const noexcept -> physics::ShapeID {
+		return m_shape;
+	}
 
 	[[Reflect, Name("Model")]]
 	assets::Handle<assets::VoxelModel> m_model;
@@ -105,6 +195,11 @@ private:
 	VoxelMobility m_mobility = VoxelMobility::static_geometry;
 
 	bool m_registered_proxy = false;
+	bool m_registration_requested = false;
+
+	physics::BodyID m_body;
+	physics::ShapeID m_shape;
+	std::vector<ActiveContact> m_active_contacts;
 
 	std::optional<voxel::Volume> m_volume;
 
