@@ -55,6 +55,9 @@ public partial class GltfImporter : IAssetImporter {
 			new ImporterSetting("Import Lights", SettingKind.Bool,
 				() => m_settings.ImportLights,
 				v => m_settings.ImportLights = (bool)v!),
+			new ImporterSetting("Import Animations", SettingKind.Bool,
+				() => m_settings.ImportAnimations,
+				v => m_settings.ImportAnimations = (bool)v!),
 			new ImporterSetting("Generate Prefab", SettingKind.Bool,
 				() => m_settings.GeneratePrefab,
 				v => m_settings.GeneratePrefab = (bool)v!)
@@ -65,8 +68,61 @@ public partial class GltfImporter : IAssetImporter {
 		AssetTypeRegistry.ByExtension(".tmesh")!,
 		AssetTypeRegistry.ByExtension(".tnode")!,
 		AssetTypeRegistry.ByExtension(".ktx2")!,
-		AssetTypeRegistry.ByExtension(".tmat")!
+		AssetTypeRegistry.ByExtension(".tmat")!,
+		AssetTypeRegistry.ByExtension(".tanim")!
 	];
+
+	/// <summary>
+	/// Sampler slots holding measurements, not colour. sRGB-decoding these turns an authored 0.5 into 0.21 -
+	/// a normal map skewed toward -X/-Y, or simply the wrong roughness
+	/// </summary>
+	private static readonly string[] LinearMaterialSlots =
+		["gNormal", "gMetallicMap", "gRoughnessMap", "gOcclusionMap"];
+
+	/// <summary>
+	/// Reads the material intermediates to find which texture names feed a linear slot
+	/// <para>
+	/// Scanning the .tmat files the native importer already wrote is what classifies a texture by the job it
+	/// does rather than by guessing from its filename
+	/// </para>
+	/// </summary>
+	private static HashSet<string> CollectLinearTextureNames(List<FileInfo> materials, Action<string> log) {
+		var linear = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+		foreach (var material in materials) {
+			string text;
+			try {
+				text = File.ReadAllText(material.FullName);
+			} catch (Exception ex) {
+				// Worst case a texture is imported as sRGB, which is the behaviour that existed before this
+				// classification did - not a reason to fail the whole import
+				log($"Could not read {material.Name} to classify its textures ({ex.Message}); assuming sRGB");
+				continue;
+			}
+
+			// toml++ writes each slot as a [gSlot] table with a `texture = '<name>'` entry; the value is
+			// single-quoted for identifier-safe names and double-quoted otherwise
+			foreach (var slot in LinearMaterialSlots) {
+				var header = text.IndexOf($"[{slot}]", StringComparison.Ordinal);
+				if (header < 0) continue;
+
+				var textureKey = text.IndexOf("texture", header, StringComparison.Ordinal);
+				if (textureKey < 0) continue;
+
+				var lineEnd = text.IndexOf('\n', textureKey);
+				var line = lineEnd < 0 ? text[textureKey..] : text[textureKey..lineEnd];
+
+				var open = line.IndexOfAny(['\'', '"']);
+				if (open < 0) continue;
+				var close = line.IndexOf(line[open], open + 1);
+				if (close <= open + 1) continue;    // empty value: the slot has no texture bound
+
+				linear.Add(line[(open + 1)..close]);
+			}
+		}
+
+		return linear;
+	}
 
 	public async Task<IReadOnlyList<string>> Import(
 		string realSourcePath, ImportContext ctx, Action<string> log,
@@ -74,7 +130,9 @@ public partial class GltfImporter : IAssetImporter {
 		var name = Path.GetFileNameWithoutExtension(realSourcePath);
 		var destDir = ctx.DestDir;
 
-		if (m_settings.CreateSubfolder) destDir = Path.Combine(ctx.DestDir, name);
+		// Only create the subfolder when we aren't already standing in it
+		if (m_settings.CreateSubfolder && !ImportContext.AlreadyNamed(destDir, name))
+			destDir = Path.Combine(destDir, name);
 
 		Directory.CreateDirectory(destDir);
 
@@ -82,8 +140,13 @@ public partial class GltfImporter : IAssetImporter {
 		gltf_generate_intermediates(realSourcePath);
 
 		var tempDir = new DirectoryInfo(Path.Combine(Path.GetFullPath(ProjectContext.CachePath), name));
-		var files = tempDir.GetFiles();
-		if (files is null) throw new Exception($"Directory {tempDir.FullName} was empty");
+		// GetFiles() throws rather than returning null, so a null check was guarding the wrong failure: a
+		// native parse error produced an empty array and the import silently "succeeded" with nothing in it
+		var files = tempDir.Exists ? tempDir.GetFiles() : [];
+		if (files.Length == 0) {
+			throw new Exception(
+				$"GLTF import produced no intermediate files in {tempDir.FullName} - check the editor log for the underlying error");
+		}
 
 		var byExtension = files.GroupBy(f => f.Extension).ToDictionary(g => g.Key, g => g.ToList());
 
@@ -92,11 +155,19 @@ public partial class GltfImporter : IAssetImporter {
 		// Count total items for fractional progress
 		var meshes = byExtension.GetValueOrDefault(".tmesh") ?? [];
 		var textures = m_settings.ImportTextures
-			? (byExtension.GetValueOrDefault(".png") ?? []).Concat(byExtension.GetValueOrDefault(".jpg") ?? []).ToList()
+			? (byExtension.GetValueOrDefault(".png") ?? [])
+				.Concat(byExtension.GetValueOrDefault(".jpg") ?? [])
+				// The gltf importer already sniffs the KTX2 file signature and saves pre-compressed
+				// textures with a .ktx2 extension instead of guessing them into a .png/.jpg - picking
+				// those up here is what lets the loop below skip a redundant toktx re-encode
+				.Concat(byExtension.GetValueOrDefault(".ktx2") ?? [])
+				.ToList()
 			: [];
 		var materials = m_settings.ImportMaterials ? byExtension.GetValueOrDefault(".tmat") ?? [] : [];
+		var animations = m_settings.ImportAnimations ? byExtension.GetValueOrDefault(".tanim") ?? [] : [];
 		var scenes = m_settings.GeneratePrefab ? byExtension.GetValueOrDefault(".json") ?? [] : [];
-		var totalItems = meshes.Count + textures.Count * 10 + materials.Count + scenes.Count * 2; // *2: patch + create
+		var totalItems = meshes.Count + textures.Count * 10 + materials.Count + animations.Count +
+		                 scenes.Count * 2; // *2: patch + create
 		var doneItems = 0;
 
 		void ReportProgress() {
@@ -125,6 +196,11 @@ public partial class GltfImporter : IAssetImporter {
 			ReportProgress();
 		}
 
+		// Which textures hold data rather than colour, taken from the material slots the native importer
+		// wrote them into. Everything but albedo and emissive is measurements - surface direction, how rough,
+		// how metallic - and decoding those through sRGB corrupts the value (see TextureColorSpace)
+		var linearTextures = CollectLinearTextureNames(materials, log);
+
 		// Textures
 		var textureUids = new Dictionary<string, string>();
 		if (m_settings.ImportTextures) {
@@ -135,17 +211,36 @@ public partial class GltfImporter : IAssetImporter {
 				var uid = UidGenerator.Generate();
 				textureUids[texName] = uid;
 
-				log($"Texture {texName}");
-				log("Converting to KTX2...");
-				await KtxWriter.ConvertTexture(t.FullName, destPath, m_textureSettings, log);
+				var isLinear = linearTextures.Contains(texName);
+				var textureSettings = isLinear ? m_textureSettings.WithColorSpace(TextureColorSpace.Linear) : m_textureSettings;
+
+				log($"Texture {texName}{(isLinear ? " (linear)" : "")}");
+				if (t.Extension.Equals(".ktx2", StringComparison.OrdinalIgnoreCase)) {
+					log("Already KTX2 - copying directly...");
+					File.Copy(t.FullName, destPath, true);
+				} else {
+					log("Converting to KTX2...");
+					await KtxWriter.ConvertTexture(t.FullName, destPath, textureSettings, log);
+				}
 
 				log("Generating thumbnail...");
-				await Task.Run(() => ThumbnailService.Generate(t.FullName, uid));
+				try {
+					// ImageMagick can't decode a .ktx2 (a compressed GPU texture container, not a raster
+					// format) - decode it natively instead of reading the pre-conversion raster source
+					if (t.Extension.Equals(".ktx2", StringComparison.OrdinalIgnoreCase)) {
+						await Task.Run(() => ThumbnailService.GenerateFromKtx2(t.FullName, uid));
+					} else {
+						await Task.Run(() => ThumbnailService.Generate(t.FullName, uid));
+					}
+				} catch (Exception ex) {
+					// A missing thumbnail is cosmetic; losing the whole import over it is not
+					log($"Thumbnail generation failed, continuing without one: {ex.Message}");
+				}
 
 				log("Writing .meta sidecar...");
 				var header = new MetaHeader
 					{ Uid = uid, Type = AssetTypeRegistry.ByExtension(".ktx2")!.Type, Source = ctx.SourceVirtualPath };
-				MetaFile.Write(destPath, header, m_textureSettings.ToSection(), m_settings.ToSection());
+				MetaFile.Write(destPath, header, textureSettings.ToSection(), m_settings.ToSection());
 				importedUids.Add(uid);
 				doneItems += 10;
 				ReportProgress();
@@ -165,12 +260,40 @@ public partial class GltfImporter : IAssetImporter {
 				log($"Material {matName}");
 				log("Creating .tmat file...");
 				var toml = await File.ReadAllTextAsync(m.FullName);
-				foreach (var (texName, texUid) in textureUids) toml = toml.Replace($"\"{texName}\"", $"\"{texUid}\"");
+				// toml++ writes identifier-safe strings single-quoted, not double-quoted. Matching only the
+				// double-quoted form never fired, so materials kept referencing raw texture names
+				foreach (var (texName, texUid) in textureUids) {
+					toml = toml.Replace($"'{texName}'", $"'{texUid}'").Replace($"\"{texName}\"", $"\"{texUid}\"");
+				}
 				await File.WriteAllTextAsync(destPath, toml);
 
 				log("Writing .meta sidecar...");
 				var header = new MetaHeader
 					{ Uid = uid, Type = AssetTypeRegistry.ByExtension(".tmat")!.Type, Source = ctx.SourceVirtualPath };
+				MetaFile.Write(destPath, header, m_settings.ToSection());
+				importedUids.Add(uid);
+				doneItems++;
+				ReportProgress();
+			}
+		}
+
+		// Straight copies - a .tanim references no texture or material UID. But scene nodes reference *them*,
+		// so the UIDs are still tracked for the scene patch pass below
+		var animationUids = new Dictionary<string, string>();
+		if (animations.Count > 0) {
+			log($"Importing {animations.Count} animation(s)...");
+			foreach (var a in animations) {
+				var animName = Path.GetFileNameWithoutExtension(a.Name);
+				var destPath = Path.Combine(destDir, animName + ".tanim");
+				var uid = UidGenerator.Generate();
+				animationUids[animName] = uid;
+
+				log($"Animation {animName}");
+				File.Copy(a.FullName, destPath, true);
+
+				log("Writing .meta sidecar...");
+				var header = new MetaHeader
+					{ Uid = uid, Type = AssetTypeRegistry.ByExtension(".tanim")!.Type, Source = ctx.SourceVirtualPath };
 				MetaFile.Write(destPath, header, m_settings.ToSection());
 				importedUids.Add(uid);
 				doneItems++;
@@ -189,7 +312,8 @@ public partial class GltfImporter : IAssetImporter {
 			var json = JsonNode.Parse(await File.ReadAllTextAsync(s.FullName))!;
 
 			void PatchNode(JsonNode node) {
-				if (node["type"]?.GetValue<string>() == "toast::MeshNode") {
+				var nodeType = node["type"]?.GetValue<string>();
+				if (nodeType == "toast::MeshNode") {
 					var p = node["params"]?.AsObject();
 					if (p != null) {
 						if (p["mesh"] is { } meshNode && meshUids.TryGetValue(meshNode.GetValue<string>(), out var meshUid))
@@ -197,7 +321,15 @@ public partial class GltfImporter : IAssetImporter {
 						if (p["material"] is { } matNode &&
 						    materialUids.TryGetValue(matNode.GetValue<string>(), out var matUid))
 							p["material"] = matUid;
+						if (p["skin_animation"] is { } skinAnimNode &&
+						    animationUids.TryGetValue(skinAnimNode.GetValue<string>(), out var skinAnimUid))
+							p["skin_animation"] = skinAnimUid;
 					}
+				} else if (nodeType == "toast::AnimationPlayer") {
+					var p = node["params"]?.AsObject();
+					if (p != null && p["animation"] is { } animNode &&
+					    animationUids.TryGetValue(animNode.GetValue<string>(), out var animUid))
+						p["animation"] = animUid;
 				}
 
 				if (node["children"] is not JsonArray children) return;
@@ -252,6 +384,7 @@ public partial class GltfImporter : IAssetImporter {
 	public partial class Settings : ObservableObject {
 		[ObservableProperty] private bool m_createSubfolder = true;
 		[ObservableProperty] private bool m_generatePrefab = true;
+		[ObservableProperty] private bool m_importAnimations = true;
 		[ObservableProperty] private bool m_importCameras;
 		[ObservableProperty] private bool m_importLights = true;
 		[ObservableProperty] private bool m_importMaterials = true;
@@ -264,6 +397,7 @@ public partial class GltfImporter : IAssetImporter {
 				ImportTextures = ImportTextures,
 				ImportCameras = ImportCameras,
 				ImportLights = ImportLights,
+				ImportAnimations = ImportAnimations,
 				GeneratePrefab = GeneratePrefab
 			};
 		}

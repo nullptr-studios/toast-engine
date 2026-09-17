@@ -14,7 +14,7 @@ namespace assets {
 
 class TOAST_API AudioBus : public Data {
 public:
-	explicit AudioBus(const toml::table& table, AssetHandle<Schema> schema = {}) : Data(table, std::move(schema)) { }
+	explicit AudioBus(const toml::table& table, Handle<Schema> schema = {}) : Data(table, std::move(schema)) { }
 
 	[[nodiscard]]
 	auto type() const -> std::string_view override {

@@ -10,7 +10,7 @@ public sealed class AudioBankAsset : BaseAsset {
 	public override string ChipColor => "Beige";
 	public override LucideIconKind Icon => LucideIconKind.AudioWaveform;
 	public override bool CanBeCreated => false;
-	public override string Category => "";
+	public override string Category => "Audio";
 	public override bool HasThumbnail => false;
 	public override bool CanBeEdited => false;
 	public override string EditorTool => "";

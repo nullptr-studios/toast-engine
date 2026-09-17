@@ -1,17 +1,71 @@
 #include "audio_emitter_base.hpp"
 
 #include "../audio_system.hpp"
+#include "audio_box_emitter.hpp"
+#include "audio_capsule_emitter.hpp"
+#include "audio_sphere_emitter.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <limits>
 #include <toast/assets/assets.hpp>
 #include <toast/audio/audio_event.hpp>
+#include <toast/log.hpp>
 #include <toast/time.hpp>
 
 namespace toast {
 
+void AudioEmitterBase::updateInspectorMessages() {
+	static const NodeMessage event_message {
+	  .severity = NodeMessage::warning,
+	  .id = 10,
+	  .text = "3D audio emitters require an AudioEvent",
+	};
+	static const NodeMessage attenuation_message {
+	  .severity = NodeMessage::error,
+	  .id = 11,
+	  .text = "Attenuation distances must be non-negative",
+	};
+	static const NodeMessage shape_message {
+	  .severity = NodeMessage::error,
+	  .id = 12,
+	  .text = "Audio emitter shape must be non-negative",
+	};
+
+	if (m_event.hasValue()) {
+		removeInspectorMessage(event_message);
+	} else {
+		addInspectorMessage(event_message);
+	}
+
+	const bool valid_attenuation = !m_override_attenuation || (std::isfinite(m_min_distance) && std::isfinite(m_max_distance) &&
+	                                                           m_min_distance >= 0.0f && m_max_distance >= m_min_distance);
+	if (valid_attenuation) {
+		removeInspectorMessage(attenuation_message);
+	} else {
+		addInspectorMessage(attenuation_message);
+	}
+
+	bool valid_shape = true;
+	if (const auto sphere = box().as<AudioSphereEmitter>(); sphere.exists()) {
+		valid_shape = std::isfinite(sphere->m_radius) && sphere->m_radius >= 0.0f;
+	} else if (const auto capsule = box().as<AudioCapsuleEmitter>(); capsule.exists()) {
+		valid_shape = std::isfinite(capsule->m_radius) && capsule->m_radius >= 0.0f && std::isfinite(capsule->m_half_height) &&
+		              capsule->m_half_height >= 0.0f;
+	} else if (const auto cube = box().as<AudioBoxEmitter>(); cube.exists()) {
+		valid_shape = std::isfinite(cube->m_extents.x) && cube->m_extents.x >= 0.0f && std::isfinite(cube->m_extents.y) &&
+		              cube->m_extents.y >= 0.0f && std::isfinite(cube->m_extents.z) && cube->m_extents.z >= 0.0f;
+	}
+	if (valid_shape) {
+		removeInspectorMessage(shape_message);
+	} else {
+		addInspectorMessage(shape_message);
+	}
+}
+
 void AudioEmitterBase::play() {
 	if (!m_event.hasValue()) {
+		TOAST_WARN("Audio", "{} ({}) has no audio event to play", name(), uid());
 		return;
 	}
 	auto& sys = audio::AudioSystem::get();
@@ -24,6 +78,7 @@ void AudioEmitterBase::play() {
 		sys.setPitch(m_instance_id, m_pitch);
 		update3DState();
 		applyProperties();
+		audio_started.fire(m_event->name());
 	}
 }
 
@@ -31,12 +86,14 @@ void AudioEmitterBase::stop() {
 	if (m_instance_id != 0) {
 		audio::AudioSystem::get().stopEvent3D(m_instance_id, m_allow_fadeout);
 		m_instance_id = 0;
+		audio_stopped.fire(m_event->name());
 	}
 }
 
-void AudioEmitterBase::pause(bool value) const {
+void AudioEmitterBase::pause(bool value) {
 	if (m_instance_id != 0) {
 		audio::AudioSystem::get().pauseEvent(m_instance_id, value);
+		audio_paused.fire(value);
 	}
 }
 
@@ -123,7 +180,7 @@ void AudioEmitterBase::applyProperties() const {
 }
 
 void AudioEmitterBase::begin() {
-	m_last_position = worldPos();
+	m_last_position = world_position;
 }
 
 void AudioEmitterBase::lateTick() {
@@ -136,7 +193,7 @@ void AudioEmitterBase::lateTick() {
 void AudioEmitterBase::update3DState() {
 	const auto& listeners = audio::AudioSystem::get().listenerPositions();
 
-	glm::vec3 transform_pos = worldPos();
+	glm::vec3 transform_pos = world_position;
 	glm::vec3 render_pos = transform_pos;
 	float best_dist = std::numeric_limits<float>::max();
 
@@ -163,7 +220,7 @@ void AudioEmitterBase::update3DState() {
 }
 
 auto AudioEmitterBase::emitterPosition(const glm::vec3&) -> glm::vec3 {
-	return worldPos();
+	return world_position;
 }
 
 auto AudioEmitterBase::emitterForward() -> glm::vec3 {
@@ -175,7 +232,8 @@ auto AudioEmitterBase::emitterUp() -> glm::vec3 {
 }
 
 void AudioEmitterBase::onEnable() {
-	if (m_play_on_enable) {
+	// Opening a scene in the editor runs onEnable too; only a running game should start sounds
+	if (m_play_on_enable && !(owner() && owner()->isEditing())) {
 		play();
 	}
 }

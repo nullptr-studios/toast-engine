@@ -28,15 +28,15 @@ struct PrefabStore {
 	}
 
 	auto resolver() {
-		return [this](toast::UID id) -> AssetHandle<Prefab> {
+		return [this](toast::UID id) -> Handle<Prefab> {
 			auto it = assets.find(id.data());
-			return it != assets.end() ? AssetHandle<Prefab>(it->second.get(), id, "") : AssetHandle<Prefab>(nullptr, id, "");
+			return it != assets.end() ? Handle<Prefab>(it->second.get(), id, "") : Handle<Prefab>(nullptr, id, "");
 		};
 	}
 
-	auto handle(std::string_view uid_str) -> AssetHandle<Prefab> {
+	auto handle(std::string_view uid_str) -> Handle<Prefab> {
 		UID id(UID::fromString(uid_str));
-		return AssetHandle<Prefab>(assets.at(id.data()).get(), id, "");
+		return Handle<Prefab>(assets.at(id.data()).get(), id, "");
 	}
 };
 

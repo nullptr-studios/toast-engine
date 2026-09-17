@@ -1,33 +1,47 @@
 /// @file IRenderPass.hpp
 /// @author dario
-/// @date 07/06/2026.
+/// @date 07/06/2026
 
 #pragma once
 
 #include "vulkan_common.hpp"
 
-/**
- * @brief Interface for custom rendering passes
- */
+#include <atomic>
+#include <string_view>
+
+enum class RenderStage : uint8_t {
+	world,
+	overlay,
+};
+
 class IRenderPass {
 public:
 	virtual ~IRenderPass() = default;
 
-	/**
-	 * @brief Updates the render pass state for the current frame
-	 * @param frame_index The index of the current frame in flight
-	 * @param dt The delta time since the last frame
-	 */
+	[[nodiscard]]
+	virtual auto stage() const -> RenderStage {
+		return RenderStage::world;
+	}
+
 	virtual void update(uint32_t frame_index, float dt) { }
 
-	/**
-	 * @brief Records the render pass commands for the current frame
-	 * @param cmd The command buffer to record commands into
-	 * @param frameIndex The index of the current frame in flight
-	 * @param imageIndex The index of the image to render to
-	 */
+	/// @brief Records outside any rendering scope before the main scope opens
+	virtual void recordPre(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) { }
+
 	virtual void record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) = 0;
 
-protected:
-	std::vector<FrameResources> m_frame_resources;
+	[[nodiscard]]
+	virtual auto name() const -> std::string_view {
+		return "Pass";
+	}
+
+	void setEnabled(bool enabled) noexcept { m_enabled.store(enabled, std::memory_order_relaxed); }
+
+	[[nodiscard]]
+	auto isEnabled() const noexcept -> bool {
+		return m_enabled.load(std::memory_order_relaxed);
+	}
+
+private:
+	std::atomic_bool m_enabled {true};
 };

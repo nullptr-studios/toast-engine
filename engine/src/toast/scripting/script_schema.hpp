@@ -50,9 +50,16 @@ struct LuaGroup {
 	std::vector<LuaSubgroup> subgroups;
 };
 
+struct LuaFunctionDesc {
+	std::string name;
+	std::vector<std::string> parameters;
+	bool is_vararg = false;
+};
+
 struct ScriptSchema {
 	std::vector<LuaVarDesc> fields;
 	std::vector<LuaGroup> groups;
+	std::vector<LuaFunctionDesc> functions;
 
 	/// Calls fn(const LuaVarDesc&) for every var
 	template<typename F>

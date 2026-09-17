@@ -15,7 +15,7 @@ class TOAST_API AssetRegistry {
 public:
 	using RawLoader = std::function<std::unique_ptr<Asset>(std::vector<uint8_t>)>;
 	using TomlLoader = std::function<std::unique_ptr<Asset>(toml::table)>;
-	using SchemaTomlLoader = std::function<std::unique_ptr<Asset>(toml::table, AssetHandle<Schema>)>;
+	using SchemaTomlLoader = std::function<std::unique_ptr<Asset>(toml::table, Handle<Schema>)>;
 
 	static void init();
 
@@ -34,7 +34,7 @@ public:
 
 	static auto createRaw(std::string_view type, std::vector<uint8_t> data) -> std::unique_ptr<Asset>;
 	static auto createToml(std::string_view type, toml::table table) -> std::unique_ptr<Asset>;
-	static auto createSchemaToml(std::string_view type, toml::table table, AssetHandle<Schema> schema) -> std::unique_ptr<Asset>;
+	static auto createSchemaToml(std::string_view type, toml::table table, Handle<Schema> schema) -> std::unique_ptr<Asset>;
 
 	static void registerLuaName(std::string_view type, std::string_view lua_name);
 

@@ -108,8 +108,26 @@ Planned expansions:
 - compute pass integration
 - stronger resource lifetime tracking for hot-reload and streaming
 
+## Shaders and materials
+
+Shaders are assets loaded through the AssetManager. The `ShaderCache` compiles every
+manifest shader at startup into `cache://shaders/` as `<uid>.spv` (SPIR-V) plus `<uid>.json`
+(reflection), with `hash.json` as the staleness index. All SPIR-V stays in memory for the
+lifetime of the program; a shader used by several materials shares a single cache entry.
+Editing a `.slang`, `.tmat` or `.tmi` file on disk hot-reloads it, recompiles through the
+cache and rebuilds the affected pipelines on the render thread
+
+Materials (`.tmat`) declare a `shaders` array; every other key is a value for a shader
+parameter discovered via reflection, and the trailing `[settings]` table carries
+fixed-function state. Material instances (`.tmi`) reference a parent material and serialize
+only the values that differ from it. Set 0 is engine-reserved frame data and a `model` push
+constant member is engine-written; everything else is material data, edited in the GenericEditor
+through a schema generated from the reflection json.
+
+The renderer creates one `MaterialPass` per root material on the render thread; instances share
+their parent's pass with their own descriptor sets. Meshes without a material fall back to
+`core://material/default.tmat`. Every pass exposes a name and an enabled flag, toggled from the
+editor viewport's eye popup (`render_events.proto`).
+
 ## Known issues
-- When closing the editor the resources are not freed before deleting the engine, so it crashes
-- Node3D transforms are not being propagated to children
-- Material does not hotreload once its referenced
-- Missing shader asset
+- Only the first shader module of a material's `shaders` array is used for pipeline creation

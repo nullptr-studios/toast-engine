@@ -93,7 +93,7 @@ void Node::refreshInfo() {
 	}
 }
 
-auto Node::sourcePrefab() const noexcept -> const assets::AssetHandle<assets::Prefab>& {
+auto Node::sourcePrefab() const noexcept -> const assets::Handle<assets::Prefab>& {
 	if (m_type != NodeType::root and m_type != NodeType::world_root) {
 		TOAST_WARN("Node", "Trying to get a Node file asset of node {} that can't have one", m_name);
 	}
@@ -119,6 +119,13 @@ auto Node::find(std::string_view query) -> Box<Node> {
 		return {};
 	}
 	return m_owner->findFrom(*this, query);
+}
+
+auto Node::find(const UID& uid) -> Box<Node> {
+	if (not m_owner) {
+		return {};
+	}
+	return m_owner->findFrom(*this, uid);
 }
 
 auto Node::search(std::string_view query) -> std::vector<Box<Node>> {
@@ -178,6 +185,13 @@ auto Node::hasTickFunction(TickFunctionList mask) const noexcept -> bool {
 		return true;
 	}
 	return m_script_runtime && m_script_runtime->hasTick(mask);
+}
+
+auto Node::hasCallable(std::string_view callable_name) const noexcept -> bool {
+	if (m_info && m_info->getMethod(callable_name)) {
+		return true;
+	}
+	return m_script_runtime && m_script_runtime->hasFunction(callable_name);
 }
 
 void Node::loadScripts() noexcept {
@@ -302,6 +316,14 @@ void Node::callTick(const NodeInfo* info, TickFunctionList func_type) noexcept {
 		invoker(this);
 	}
 
+	switch (func_type) {
+		case TickFunctionList::on_enable: on_enable.fire(this->box()); break;
+		case TickFunctionList::on_disable: on_disable.fire(this->box()); break;
+		case TickFunctionList::begin: on_begin.fire(this->box()); break;
+		case TickFunctionList::end: on_end.fire(this->box()); break;
+		default: break;
+	}
+
 	// After the C++ chain fire Lua scripts at the most-derived level
 	if (info == m_info && m_script_runtime) {
 		m_script_runtime->call(func_type);
@@ -319,13 +341,19 @@ void Node::propagateCallTick(const NodeInfo* info, TickFunctionList func_type) n
 }
 
 void Node::propagateEnable() noexcept {
-	if (!m_local_enabled) {
+	if (!enabled()) {
 		return;
 	}
 
+	// Instantiation already set every inherited flag, so inheritedEnabled(true) would skip the children entirely.
+	// Snapshot first: a child spawned inside onEnable runs its own propagateEnable and must not get a second call
+	std::vector<Box<Node>> children = m_children;
 	callTick(info(), TickFunctionList::on_enable);
-	for (auto& child : m_children) {
-		child->inheritedEnabled(true);
+	for (auto& child : children) {
+		if (child.exists()) {
+			child->m_inherited_enabled = true;
+			child->propagateEnable();
+		}
 	}
 }
 

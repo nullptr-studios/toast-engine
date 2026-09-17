@@ -68,6 +68,7 @@
     "name": "PrefixNode",
     "namespace": null,
     "parent": null,
+    "signals": [],
     "source_file": "25_m_prefix_stripping.hpp",
     "tick_functions": {
       "begin": false,

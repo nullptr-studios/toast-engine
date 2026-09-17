@@ -33,6 +33,7 @@ M.movement = {
 }
 
 function M:tick() end
+function M:onSignal(value, count, ...) end
 
 return M
 )lua";
@@ -75,4 +76,10 @@ return M
 	// the tick mask cache sees the tick() function and nothing else
 	assert(rt->hasTick(toast::TickFunctionList::tick));
 	assert(!rt->hasTick(toast::TickFunctionList::early_tick));
+
+	const auto functions = rt->functions();
+	const auto on_signal = std::ranges::find(functions, "onSignal", &scripting::LuaFunctionDesc::name);
+	assert(on_signal != functions.end());
+	assert(on_signal->parameters.size() == 2);
+	assert(on_signal->is_vararg);
 }

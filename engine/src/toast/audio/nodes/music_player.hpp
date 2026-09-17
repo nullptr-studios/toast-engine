@@ -8,8 +8,10 @@
 #pragma once
 #include "../assets.hpp"
 
+#include <atomic>
 #include <mutex>
 #include <string>
+#include <toast/events/signals.hpp>
 #include <toast/export.hpp>
 #include <toast/world/node.hpp>
 #include <unordered_map>
@@ -44,6 +46,7 @@ public:
 	void masterPitch(float value);
 
 private:
+	void updateInspectorMessages() override;
 	void onEnable();
 	void onDisable();
 	void tick();
@@ -60,8 +63,15 @@ public:
 	};
 
 	                                // public so the static FMOD callback can read it without needing friend
+	//
+	// FMOD's event callback fires from its own Studio update thread, asynchronously from the game thread
+	// that stops/destroys the player. Unregistering the callback (SetCallback(nullptr)) before destruction
+	// only prevents FUTURE dispatches - it doesn't guarantee a callback already in flight on FMOD's thread
+	// has finished, so `player` must be checked atomically rather than trusted as always valid. Instances
+	// of this struct are deliberately never freed (see startTrack()) so the raw pointer FMOD holds via
+	// SetUserData is always safe to dereference, even after the MusicPlayer it refers to is long gone
 	struct CallbackData {
-		MusicPlayer* player = nullptr;
+		std::atomic<MusicPlayer*> player {nullptr};
 		uint64_t instance_id = 0;
 	};
 
@@ -90,12 +100,16 @@ public:
 
 	void queueCallback(const QueuedCb& cb);
 
+	signals::Signal<std::string_view> audio_started;
+	signals::Signal<std::string_view> audio_stopped;
+	signals::Signal<bool> audio_paused;
+
 private:
 	void startTrack(int track_index, float fade_in);
 	void stopTrack(ActiveTrack& at, bool allow_fadeout);
 
 	[[Reflect, Name("Tracks")]]
-	std::vector<assets::AssetHandle<assets::AudioEvent>> m_tracks;
+	std::vector<assets::Handle<assets::AudioEvent>> m_tracks;
 
 	[[Reflect]]
 	bool m_play_on_enable = true;
@@ -107,7 +121,10 @@ private:
 	float m_pitch = 1.0f;
 
 	std::vector<ActiveTrack> m_active_tracks;
-	std::vector<CallbackData> m_callback_data;
+	// Each CallbackData is individually heap-allocated and deliberately never freed (see CallbackData's own
+	// comment for why) - this vector just tracks the pointers for our own bookkeeping, so reallocating IT is
+	// harmless; the addresses FMOD actually holds via SetUserData never move
+	std::vector<CallbackData*> m_callback_data;
 
 	std::mutex m_cb_mutex;
 	std::vector<QueuedCb> m_pending_cbs;    ///< filled by FMOD callback thread, drained in tick()

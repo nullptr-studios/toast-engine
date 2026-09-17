@@ -24,9 +24,29 @@
     "gameplay": {
       "x-toast-type": "gameplay",
       "description": "Gameplay entry-point settings"
+    },
+    "ui": {
+      "x-toast-type": "ui",
+      "description": "UI settings"
     }
   },
   "definitions": {
+    "ui": {
+      "type": "object",
+      "properties": {
+        "color_scheme": {
+          "x-toast-type": "asset",
+          "x-toast-asset-type": "color_scheme",
+          "description": "Global color scheme used as the fallback for ${color:...} formatting"
+        },
+        "languages": {
+          "type": "array",
+          "x-toast-type": "string[]",
+          "description": "Supported localization languages; the first entry is the default",
+          "default": ["en"]
+        }
+      }
+    },
     "gameplay": {
       "type": "object",
       "properties": {

@@ -79,9 +79,15 @@ TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/04-spawn", test_prefab_
 
 		// The public Node::find mirrors the same opacity: from the scene root the top instance is
 		// visible but the nested interior is not, while scoping to the instance root reveals it.
-		assert(root->find("placeAinS00").rid() == a_inst.rid());
-		assert(not root->find("placeBinA00").exists());
-		assert(a_inst->find("placeBinA00").rid() == b_inst.rid());
+		assert(root->find(UID(uidOf("placeAinS00"))).rid() == a_inst.rid());
+		assert(not root->find(UID(uidOf("placeBinA00"))).exists());
+		assert(a_inst->find(UID(uidOf("placeBinA00"))).rid() == b_inst.rid());
+
+		// find(UID) scopes to the local root, not the caller's subtree
+		// an interior node can find its own instance root even though it is not a descendant
+		Box<Node> b_child = WorldTestAccess::childrenOf(*b_inst)[0];
+		assert(b_child->uid().data() == uidOf("bCHILDnode0"));
+		assert(b_child->find(UID(uidOf("placeBinA00"))).rid() == b_inst.rid());
 
 		// uidPath / findNode(path) are mutual inverses across two boundaries.
 		std::string path = WorldTestAccess::uidPath(*b_inst);

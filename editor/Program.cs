@@ -5,6 +5,7 @@
 
 using System;
 using Avalonia;
+using editor.Engine;
 
 namespace editor;
 
@@ -16,21 +17,24 @@ internal sealed class Program {
 	}
 
 	public static AppBuilder BuildAvaloniaApp() {
-		return AppBuilder.Configure<App>()
+		var builder = AppBuilder.Configure<App>()
 			.UsePlatformDetect()
 #if DEBUG
 			.WithDeveloperTools()
 #endif
-			.WithInterFont()
-			// HACK: Find a proper solution for this
-			// renderdoc crashes when trying to attach to the internal avalonia
-			// hardware accelerated renderer
-			.With(new Win32PlatformOptions {
-				RenderingMode = [ Win32RenderingMode.Software ]
-			})
-			.With(new X11PlatformOptions {
-				RenderingMode = [ X11RenderingMode.Software ]
-			})
-			.LogToTrace();
+			.WithInterFont();
+
+		// Force software when renderdoc
+		if (RenderDocDetector.IsAttached) {
+			builder = builder
+				.With(new Win32PlatformOptions {
+					RenderingMode = [ Win32RenderingMode.Software ]
+				})
+				.With(new X11PlatformOptions {
+					RenderingMode = [ X11RenderingMode.Software ]
+				});
+		}
+
+		return builder.LogToTrace();
 	}
 }

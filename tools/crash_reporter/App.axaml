@@ -1,0 +1,14 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="crash_reporter.App"
+             RequestedThemeVariant="Dark">
+
+	<Application.Resources>
+		<Color x:Key="SystemAccentColor">#ff1659</Color>
+	</Application.Resources>
+
+	<Application.Styles>
+		<FluentTheme />
+	</Application.Styles>
+
+</Application>

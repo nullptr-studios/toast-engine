@@ -7,6 +7,7 @@
 #include <glm/glm.hpp>
 #include <toast/events/event.hpp>
 #include <toast/log.hpp>
+#include <tracy/Tracy.hpp>
 #include <unordered_map>
 
 namespace input {
@@ -47,7 +48,7 @@ auto HapticsSystem::get() noexcept -> HapticsSystem& {
 	return *instance;
 }
 
-void HapticsSystem::play(uint32_t controller, assets::AssetHandle<assets::Haptic> haptic) {
+void HapticsSystem::play(uint32_t controller, assets::Handle<assets::Haptic> haptic) {
 	if (!haptic.hasValue()) {
 		TOAST_WARN("Haptics", "Ignoring play request with an unresolved haptic asset");
 		return;
@@ -69,6 +70,7 @@ void HapticsSystem::setGlobalMultiplier(float multiplier) noexcept {
 }
 
 void HapticsSystem::tick() {
+	ZoneScoped;
 	// Advance every effect and drop the ones whose duration has elapsed
 	for (auto& pb : m_playbacks) {
 		pb.elapsed += Time::delta();

@@ -14,7 +14,7 @@
 namespace toast {
 class [[ToastNode, Icon("DirectionalLight")]] TOAST_API DirectionalLight : public Light {
 public:
-	DirectionalLight() = default;
+	DirectionalLight() { setLightType(LightType::directional); }
 
 	~DirectionalLight() override = default;
 

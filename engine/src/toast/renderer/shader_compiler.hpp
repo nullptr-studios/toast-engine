@@ -1,46 +1,38 @@
 /// @file ShaderCompiler.hpp
 /// @author dario
-/// @date 17/05/2026.
+/// @date 17/05/2026
 
 #pragma once
 
+#include "shader_reflection.hpp"
+
 #include <cstddef>
 #include <cstdint>
-#include <filesystem>
-#include <optional>
-#include <slang-com-ptr.h>
-#include <slang.h>
 #include <string>
+#include <string_view>
+#include <toast/uid.hpp>
 #include <vector>
 
 namespace renderer {
 
-struct ShaderDescriptorBinding {
-	uint32_t set = 0;
-	uint32_t binding = 0;
-};
-
-struct ShaderMaterialBindings {
-	std::optional<ShaderDescriptorBinding> albedo_texture;
-	std::optional<ShaderDescriptorBinding> albedo_sampler;
-
-	[[nodiscard]]
-	auto supportsAlbedoSampling() const -> bool {
-		return albedo_texture.has_value() && albedo_sampler.has_value();
-	}
-};
-
 struct CompiledShaderCode {
 	std::vector<std::byte> spirv;
-	Slang::ComPtr<slang::IComponentType> program;    // Holds the reflection data!
-	ShaderMaterialBindings material_bindings;
+	ShaderReflection reflection;
+	std::vector<std::string> dependencies;
 };
 
 class ShaderCompiler {
 public:
-	/// Compiles a GLSL shader file to SPIR-V
-	static auto compileShaderModuleFromSource(const std::filesystem::path& shader_path) -> CompiledShaderCode;
-	static auto compileShaderModule(std::string_view module_name) -> CompiledShaderCode;
+	static auto compile(toast::UID uid, std::string_view source, std::string_view source_uri) -> CompiledShaderCode;
+
+	/// @note Call before any compilation
+	static void setRayQueryAvailable(bool available);
+
+	[[nodiscard]]
+	static auto isRayQueryAvailable() -> bool;
+
+	[[nodiscard]]
+	static auto featureHash() -> uint64_t;
 };
 
 }

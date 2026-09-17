@@ -6,6 +6,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Windows.Input;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -29,6 +30,12 @@ public sealed class AssetBox : TemplatedControl {
 	public static readonly StyledProperty<string?> AssetTypeProperty =
 		AvaloniaProperty.Register<AssetBox, string?>(nameof(AssetType));
 
+	public static readonly StyledProperty<ICommand?> FieldCopyCommandProperty =
+		AvaloniaProperty.Register<AssetBox, ICommand?>(nameof(FieldCopyCommand));
+
+	public static readonly StyledProperty<ICommand?> FieldPasteCommandProperty =
+		AvaloniaProperty.Register<AssetBox, ICommand?>(nameof(FieldPasteCommand));
+
 	public static readonly DirectProperty<AssetBox, string?> DisplayNameProperty =
 		AvaloniaProperty.RegisterDirect<AssetBox, string?>(nameof(DisplayName), o => o.m_displayName);
 
@@ -45,6 +52,9 @@ public sealed class AssetBox : TemplatedControl {
 		AvaloniaProperty.RegisterDirect<AssetBox, LucideIconKind>(nameof(IconKind), o => o.m_iconKind);
 
 	private readonly MenuItem m_clearItem;
+	private readonly MenuItem m_copyItem;
+	private readonly Separator m_clipboardSeparator;
+	private readonly MenuItem m_pasteItem;
 	private readonly MenuItem m_seeItem;
 
 	private readonly MenuItem m_selectItem;
@@ -74,11 +84,18 @@ public sealed class AssetBox : TemplatedControl {
 		m_seeItem.Click += (_, _) => ShowInBrowser();
 		m_clearItem = new MenuItem { Header = "Clear", InputGesture = new KeyGesture(Key.Delete) };
 		m_clearItem.Click += (_, _) => Clear();
+		m_clipboardSeparator = new Separator { IsVisible = false };
+		m_copyItem = new MenuItem { Header = "Copy", IsVisible = false };
+		m_pasteItem = new MenuItem { Header = "Paste", IsVisible = false };
 
 		var menu = new ContextMenu();
 		menu.Items.Add(m_selectItem);
 		menu.Items.Add(m_seeItem);
 		menu.Items.Add(m_clearItem);
+		menu.Items.Add(m_clipboardSeparator);
+		menu.Items.Add(m_copyItem);
+		menu.Items.Add(m_pasteItem);
+		AsyncCommandMenu.Attach(menu);
 		ContextMenu = menu;
 	}
 
@@ -90,6 +107,16 @@ public sealed class AssetBox : TemplatedControl {
 	public string? AssetType {
 		get => GetValue(AssetTypeProperty);
 		set => SetValue(AssetTypeProperty, value);
+	}
+
+	public ICommand? FieldCopyCommand {
+		get => GetValue(FieldCopyCommandProperty);
+		set => SetValue(FieldCopyCommandProperty, value);
+	}
+
+	public ICommand? FieldPasteCommand {
+		get => GetValue(FieldPasteCommandProperty);
+		set => SetValue(FieldPasteCommandProperty, value);
 	}
 
 	public string? DisplayName {
@@ -140,6 +167,8 @@ public sealed class AssetBox : TemplatedControl {
 			Refresh();
 		} else if (change.Property == IsEnabledProperty) {
 			UpdateMenu();
+		} else if (change.Property == FieldCopyCommandProperty || change.Property == FieldPasteCommandProperty) {
+			UpdateClipboardMenu();
 		}
 	}
 
@@ -211,6 +240,17 @@ public sealed class AssetBox : TemplatedControl {
 		m_selectItem.IsEnabled = IsEnabled;
 		m_seeItem.IsEnabled = IsEnabled && HasAsset;
 		m_clearItem.IsEnabled = IsEnabled && (HasAsset || IsMissing);
+		UpdateClipboardMenu();
+	}
+
+	private void UpdateClipboardMenu() {
+		var visible = FieldCopyCommand is not null || FieldPasteCommand is not null;
+		m_clipboardSeparator.IsVisible = visible;
+		m_copyItem.IsVisible = FieldCopyCommand is not null;
+		m_copyItem.Command = FieldCopyCommand;
+		m_pasteItem.IsVisible = FieldPasteCommand is not null;
+		m_pasteItem.IsEnabled = IsEnabled;
+		m_pasteItem.Command = FieldPasteCommand;
 	}
 
 	private static string? NormalizeAssetType(string? type) {
@@ -230,7 +270,10 @@ public sealed class AssetBox : TemplatedControl {
 
 	private async void OpenPicker() {
 		if (!IsEnabled || App.MainWindow is not { } owner) return;
-		var picked = await new AssetList(NormalizeAssetType(AssetType)).ShowDialog<string?>(owner);
+		var normalized = NormalizeAssetType(AssetType);
+		// A material picker should also show material instances
+		var extra = normalized == "material" ? "material_instance" : null;
+		var picked = await new AssetList(normalized, extra).ShowDialog<string?>(owner);
 		if (picked is not null) Value = picked;
 	}
 
@@ -243,10 +286,16 @@ public sealed class AssetBox : TemplatedControl {
 	}
 
 	private bool IsAcceptable(DragEventArgs e) {
-		return e.DataTransfer.TryGetValue(AssetDragData.Format) is { } a &&
-			(string.IsNullOrEmpty(AssetType) || string.Equals(
-				NormalizeAssetType(AssetType) ?? AssetType,
-				a.Type, StringComparison.OrdinalIgnoreCase));
+		if (e.DataTransfer.TryGetValue(AssetDragData.Format) is not { } a) return false;
+		if (string.IsNullOrEmpty(AssetType)) return true;
+		var normalized = NormalizeAssetType(AssetType) ?? AssetType;
+		return string.Equals(normalized, a.Type, StringComparison.OrdinalIgnoreCase)
+			|| IsCompatibleType(normalized, a.Type);
+	}
+
+	private static bool IsCompatibleType(string boxType, string dragged) {
+		return string.Equals(boxType, "material", StringComparison.OrdinalIgnoreCase)
+			&& string.Equals(dragged, "material_instance", StringComparison.OrdinalIgnoreCase);
 	}
 
 	private void OnDragOver(object? sender, DragEventArgs e) {

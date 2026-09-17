@@ -14,7 +14,7 @@ namespace assets {
 
 class TOAST_API AudioSnapshot : public Data {
 public:
-	explicit AudioSnapshot(const toml::table& table, AssetHandle<Schema> schema = {}) : Data(table, std::move(schema)) { }
+	explicit AudioSnapshot(const toml::table& table, Handle<Schema> schema = {}) : Data(table, std::move(schema)) { }
 
 	[[nodiscard]]
 	auto type() const -> std::string_view override {

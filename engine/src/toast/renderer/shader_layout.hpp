@@ -1,8 +1,7 @@
 #pragma once
 
-#include <cstdint>
-#include <map>
-#include <slang.h>
+#include "shader_reflection.hpp"
+
 #include <string_view>
 #include <vector>
 #include <vulkan/vulkan_raii.hpp>
@@ -10,25 +9,12 @@
 namespace renderer {
 class VulkanCore;
 
-/**
- * @class ShaderLayout
- * @brief Constructs pipeline layouts and descriptor sets from shader reflection data
- */
 class ShaderLayout {
 public:
 	ShaderLayout() = default;
-	ShaderLayout(const VulkanCore& core, slang::ProgramLayout* slang_layout);
 	~ShaderLayout() = default;
 
-	/**
-	 * @brief Rebuilds the shader layout based on the provided Slang program layout (ignored when hardcoding)
-	 */
-	void rebuild(const VulkanCore& core, slang::ProgramLayout* slang_layout);
-
-	/**
-	 * @brief Rebuilds the shader layout from a hardcoded shader key (preferred for hardcoded-only mode)
-	 */
-	void rebuild(const VulkanCore& core, std::string_view shader_key);
+	void rebuild(const VulkanCore& core, const ShaderReflection& reflection, std::string_view debug_name);
 
 	[[nodiscard]]
 	auto getPipelineLayout() const -> const vk::raii::PipelineLayout& {
@@ -41,13 +27,6 @@ public:
 	}
 
 private:
-	void reflectBindings(
-	    slang::VariableLayoutReflection* var_layout, uint32_t current_space, uint32_t current_binding,
-	    std::map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>>& set_layout_map
-	);
-
-	auto mapResourceToDescriptorType(slang::TypeLayoutReflection* type_layout) const -> vk::DescriptorType;
-
 	std::vector<vk::raii::DescriptorSetLayout> m_descriptor_set_layouts;
 	vk::raii::PipelineLayout m_pipeline_layout = nullptr;
 	std::vector<vk::PushConstantRange> m_push_constant_ranges;

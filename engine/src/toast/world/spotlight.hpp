@@ -14,9 +14,24 @@
 namespace toast {
 class [[ToastNode, Icon("SpotLight")]] TOAST_API Spotlight : public Light {
 public:
-	Spotlight() = default;
+	Spotlight() { setLightType(LightType::spot); }
 
 	~Spotlight() override = default;
+
+	[[nodiscard]]
+	auto innerRadius() const -> float {
+		return m_inner_radius;
+	}
+
+	[[nodiscard]]
+	auto outerRadius() const -> float {
+		return m_outer_radius;
+	}
+
+	[[nodiscard]]
+	auto attenuation() const -> float {
+		return m_attenuation;
+	}
 
 private:
 	[[Reflect, Unit("°"), Range(0.0, 90.0)]]

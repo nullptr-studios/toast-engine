@@ -78,31 +78,38 @@ auto NodeCluster::hasLateTick() -> bool {
 
 #pragma endregion NODE_CLUSTER
 
-void TickScheduler::registerDependency(Node& from, Node& to) {
+auto TickScheduler::registerDependency(Node& from, Node& to) -> bool {
 	if (&from == &to) {
 		TOAST_WARN("World", "{} ({}) tried to register a dependency to itself", from.name(), from.uid());
-		return;
+		return false;
 	}
 
 	// don't store duplicates
 	auto& edges = graph.connections[from];
 	if (std::ranges::contains(edges, Box<Node>(to))) {
-		return;
+		return false;
 	}
 
 	edges.emplace_back(to);
 	graph.inverse_connections[to].emplace_back(from);
 	TOAST_TRACE("World", "Added dependency from {} to {}", from.name(), from.uid());
+	return true;
 }
 
-void TickScheduler::unregisterDependency(Node& from, Node& to) {
-	// Remove the dependency from the forward graph
-	auto& edges = graph.connections[from];
-	std::erase(edges, Box<Node>(to));
+auto TickScheduler::unregisterDependency(Node& from, Node& to) -> bool {
+	const Box<Node> from_box(from);
+	const Box<Node> to_box(to);
+	const auto connections = graph.connections.find(from_box);
+	if (connections == graph.connections.end() || std::erase(connections->second, to_box) == 0) {
+		return false;
+	}
 
 	// Remove the dependency from the inverse graph
-	auto& inverse_edges = graph.inverse_connections[to];
-	std::erase(inverse_edges, Box<Node>(from));
+	if (const auto inverse_connections = graph.inverse_connections.find(to_box);
+	    inverse_connections != graph.inverse_connections.end()) {
+		std::erase(inverse_connections->second, from_box);
+	}
+	return true;
 }
 
 void TickScheduler::compute(const std::vector<Box<Node>>& all_nodes) {
@@ -144,55 +151,51 @@ void TickScheduler::compute(const std::vector<Box<Node>>& all_nodes) {
 	);
 }
 
+void TickScheduler::runPhase(const std::vector<TickSchedule::Wave>& phase, TickFunctionList func, std::string_view name) const {
+	ZoneScoped;    // NOLINT
+	ZoneNameF("%s", name.data());
+
+	for (const auto& wave : phase) {
+		std::vector<std::future<void>> futures;
+		futures.reserve(wave.size());
+
+		int count = 1;
+		for (const auto& n : wave) {
+			ZoneScopedN("TickScheduler::runPhase::wave");    // NOLINT
+			ZoneNameF("Wave #%i", count++);
+
+			futures.emplace_back(ThreadPool::push([n, func] {
+				if (std::holds_alternative<Box<Node>>(n)) {
+					auto node = std::get<Box<Node>>(n);
+					node->callTick(node->info(), func);
+					return;
+				}
+
+				// Clusters tick their nodes synchronously to avoid race conditions
+				auto cluster = std::get<NodeCluster>(n);
+				for (auto& node : cluster.nodes) {
+					node->callTick(node->info(), func);
+				}
+			}));
+		}
+
+		{
+			ZoneScopedN("Thread Pool semaphore");    // NOLINT
+			for (auto& f : futures) {
+				f.get();
+			}
+		}
+	}
+}
+
 void TickScheduler::run() const {
 	ZoneScoped;
 
-	/**
-	 * dispatches one phase: submits each wave to the thread pool and joins before advancing to the next wave;
-	 * clusters tick their nodes synchronously within the thread to preserve SCC ordering
-	 */
-	auto run_phase = [](const std::vector<TickSchedule::Wave>& phase, TickFunctionList func, std::string_view name) {
-		ZoneScopedN("TickScheduler::run()::function");    // NOLINT
-		ZoneNameF("TickScheduler::run()::%s", name.data());
-
-		for (const auto& wave : phase) {
-			std::vector<std::future<void>> futures;
-			futures.reserve(wave.size());
-
-			int count = 1;
-			for (const auto& n : wave) {
-				ZoneScopedN("TickScheduler::run()::function::wave");    // NOLINT
-				ZoneNameF("Wave #%i", count++);
-
-				futures.emplace_back(ThreadPool::push([n, func] {
-					if (std::holds_alternative<Box<Node>>(n)) {
-						auto node = std::get<Box<Node>>(n);
-						node->callTick(node->info(), func);
-						return;
-					}
-
-					// Clusters tick their nodes synchronously to avoid race conditions
-					auto cluster = std::get<NodeCluster>(n);
-					for (auto& node : cluster.nodes) {
-						node->callTick(node->info(), func);
-					}
-				}));
-			}
-
-			{
-				ZoneScopedN("Thread Pool semaphore");    // NOLINT
-				for (auto& f : futures) {
-					f.get();
-				}
-			}
-		}
-	};
-
-	run_phase(schedule.early_tick, TickFunctionList::early_tick, "early_tick");
-	run_phase(schedule.tick, TickFunctionList::tick, "tick");
+	runPhase(schedule.early_tick, TickFunctionList::early_tick, "early_tick");
+	runPhase(schedule.tick, TickFunctionList::tick, "tick");
 	// TODO: physics step goes between tick and post_physics
-	run_phase(schedule.post_physics, TickFunctionList::post_physics, "post_physics");
-	run_phase(schedule.late_tick, TickFunctionList::late_tick, "late_tick");
+	runPhase(schedule.post_physics, TickFunctionList::post_physics, "post_physics");
+	runPhase(schedule.late_tick, TickFunctionList::late_tick, "late_tick");
 }
 
 auto TickScheduler::subgraphSeparation(const std::vector<Box<Node>>& all_nodes) -> std::vector<std::vector<Box<Node>>> {

@@ -20,6 +20,11 @@
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
         <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
     </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)' == 'RelWithDebInfo' ">
+        <OutputPath>../out/RelWithDebInfo/editor</OutputPath>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    </PropertyGroup>
 
     <ItemGroup>
         <AvaloniaResource Include="Resources\**\*" Exclude="Resources\native\**" />
@@ -61,6 +66,10 @@
             <DependentUpon>LogsView.axaml</DependentUpon>
             <SubType>Code</SubType>
         </Compile>
+        <Compile Update="Logger\LogDetailWindow.axaml.cs">
+            <DependentUpon>LogDetailWindow.axaml</DependentUpon>
+            <SubType>Code</SubType>
+        </Compile>
         <Compile Update="Workspace\ColorsDemo.axaml.cs">
           <DependentUpon>ColorsDemo.axaml</DependentUpon>
           <SubType>Code</SubType>
@@ -97,6 +106,12 @@
         </Protobuf>
         <Protobuf Include="..\protos\workspace_events.proto">
             <Link>Protos\workspace_events.proto</Link>
+        </Protobuf>
+        <Protobuf Include="..\protos\signals.proto">
+            <Link>Protos\signals.proto</Link>
+        </Protobuf>
+        <Protobuf Include="..\protos\render_events.proto">
+            <Link>Protos\render_events.proto</Link>
         </Protobuf>
     </ItemGroup>
 

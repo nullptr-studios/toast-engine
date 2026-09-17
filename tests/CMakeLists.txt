@@ -1,17 +1,23 @@
 include(CTest)
 
 if (BUILD_TESTING)
+	find_package(RmlUi CONFIG REQUIRED)
+
 	file(GLOB_RECURSE TEST_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 	list(REMOVE_ITEM TEST_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/test_runner.cpp")
 
 	add_executable(toast_tests ${TEST_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/test_runner.cpp")
 	target_include_directories(toast_tests BEFORE PRIVATE ${CMAKE_SOURCE_DIR}/engine/src)
 	target_include_directories(toast_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-	# HACK: DARIO SHOULD FUCKING HAVE SOME INCLUDES ON THE SOURCE FILES RATHER THAN THE HEADERS
+	# HACK DARIO SHOULD FUCKING HAVE SOME INCLUDES ON THE SOURCE FILES RATHER THAN THE HEADERS
 	target_include_directories(toast_tests PRIVATE ${CMAKE_SOURCE_DIR}/engine)
 	target_include_directories(toast_tests PRIVATE ${CMAKE_SOURCE_DIR}/engine/external/inc)
-	target_link_libraries(toast_tests PRIVATE toast_engine)
+	# renderer/04-import-reflection calls the Slang API directly and the engine find_package does not carry here
+	find_package(slang CONFIG REQUIRED)
+	target_link_libraries(toast_tests PRIVATE toast_engine RmlUi::RmlUi slang::slang)
 	target_compile_definitions(toast_tests PRIVATE UNIT_TESTING TRACY_NO_INVARIANT_CHECK=1)
+	target_compile_definitions(toast_tests PRIVATE TOAST_CORE_ASSETS_DIR="${CMAKE_SOURCE_DIR}/engine/assets")
+	target_compile_definitions(toast_tests PRIVATE TOAST_TEST_CONTENT_DIR="${CMAKE_SOURCE_DIR}/tools/test_content")
 
 	foreach(config IN ITEMS Debug Release RelWithDebInfo MinSizeRel)
 		string(TOUPPER "${config}" config_upper)

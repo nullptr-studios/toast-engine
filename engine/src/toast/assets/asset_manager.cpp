@@ -9,6 +9,7 @@
 #include <sstream>
 #include <toast/log.hpp>
 #include <toast/project_settings.hpp>
+#include <tracy/Tracy.hpp>
 
 namespace assets {
 
@@ -80,8 +81,8 @@ auto AssetManager::load(toast::UID uid) -> Asset* {
 
 	std::unique_ptr<Asset> asset = nullptr;
 
-	auto resolve_schema = [&](const toml::table& table) -> AssetHandle<Schema> {
-		AssetHandle<Schema> schema_handle;
+	auto resolve_schema = [&](const toml::table& table) -> Handle<Schema> {
+		Handle<Schema> schema_handle;
 		if (const auto* schema_key = table.get("schema")) {
 			if (auto schema_uid_str = schema_key->value<std::string_view>()) {
 				if (schema_uid_str->size() == 11) {
@@ -90,14 +91,14 @@ auto AssetManager::load(toast::UID uid) -> Asset* {
 						{
 							if (auto schema_raw = readVirtualPath(it->second.path)) {
 								if (auto cit = cache.find(schema_uid.data()); cit != cache.end()) {
-									schema_handle = AssetHandle<Schema>(static_cast<Schema*>(cit->second.get()), schema_uid, getURI(schema_uid));
+									schema_handle = Handle<Schema>(static_cast<Schema*>(cit->second.get()), schema_uid, getURI(schema_uid));
 								} else {
 									std::string_view schema_json(reinterpret_cast<const char*>(schema_raw->data()), schema_raw->size());
 									try {
 										auto schema_asset = std::make_unique<Schema>(schema_json);
 										Schema* raw_ptr = schema_asset.get();
 										cache[schema_uid.data()] = std::move(schema_asset);
-										schema_handle = AssetHandle<Schema>(raw_ptr, schema_uid, getURI(schema_uid));
+										schema_handle = Handle<Schema>(raw_ptr, schema_uid, getURI(schema_uid));
 									} catch (const std::exception& se) {
 										TOAST_WARN("AssetManager", "Could not parse schema for asset {}: {}", info.path, se.what());
 									}
@@ -180,6 +181,7 @@ auto AssetManager::load(toast::UID uid) -> Asset* {
 }
 
 auto AssetManager::load(std::string_view uri) -> Asset* {
+	ZoneScoped;
 	std::optional<toast::UID> uid;
 	{
 		std::lock_guard lock(mutex);
@@ -193,6 +195,7 @@ auto AssetManager::load(std::string_view uri) -> Asset* {
 }
 
 auto AssetManager::save(toast::UID uid) -> bool {
+	ZoneScoped;
 	std::lock_guard lock(mutex);
 
 	auto cache_it = cache.find(uid.data());
@@ -229,6 +232,7 @@ auto AssetManager::save(toast::UID uid) -> bool {
 }
 
 auto AssetManager::save(std::string_view uri) -> bool {
+	ZoneScoped;
 	std::optional<toast::UID> uid;
 	{
 		std::lock_guard lock(mutex);
@@ -259,6 +263,27 @@ auto AssetManager::loadBytes(std::string_view uri) -> std::optional<std::vector<
 		return std::nullopt;
 	}
 	TOAST_WARN("AssetManager", "Loading {} directly from bytes", uri);
+	return openFile(*real_path);
+}
+
+auto AssetManager::tryLoadBytes(std::string_view uri) -> std::optional<std::vector<uint8_t>> {
+	ZoneScoped;
+	std::lock_guard lock(mutex);
+
+	const auto sep = uri.find("://");
+	if (sep == std::string_view::npos) {
+		return std::nullopt;
+	}
+
+	if (mounts.contains(std::string(uri.substr(0, sep)))) {
+		return readVirtualPath(uri);
+	}
+
+	const auto real_path = resolveVirtualPath(uri);
+	std::error_code ec;
+	if (!real_path || !std::filesystem::exists(*real_path, ec)) {
+		return std::nullopt;
+	}
 	return openFile(*real_path);
 }
 
@@ -302,35 +327,21 @@ void AssetManager::reloadManifest() {
 			auto json = nlohmann::json::parse(raw_json->begin(), raw_json->end());
 
 			// an entry is a "uid": "virtual path" pair
-			auto load_collection = [&](std::string_view type) {
-				auto it = json.find(type);
-				if (it == json.end() || !it->is_object()) {
-					return;
+			// Every top-level object is a type collection keyed by uid -> virtual path; `version` and
+			// `generated_at` are scalars and skip themselves. This used to be a hardcoded list of type names,
+			// which meant a new asset type loaded fine, imported fine, wrote a correct manifest entry - and was
+			// then invisible here, surfacing as "not found in manifest" with nothing pointing at the cause
+			for (const auto& [type, collection] : json.items()) {
+				if (!collection.is_object()) {
+					continue;
 				}
-				for (const auto& [key, value] : it->items()) {
-					manifest[toast::UID::fromString(key)] = {value.get<std::string>(), std::string(type)};
+				for (const auto& [key, value] : collection.items()) {
+					if (!value.is_string()) {
+						continue;
+					}
+					manifest[toast::UID::fromString(key)] = {value.get<std::string>(), type};
 				}
-			};
-
-			load_collection("mesh");
-			load_collection("material");
-			load_collection("texture");
-			load_collection("schema");
-			load_collection("data");
-			load_collection("node");
-			load_collection("curve");
-			load_collection("audio_bank");
-			load_collection("audio_bus");
-			load_collection("audio_event");
-			load_collection("audio_port");
-			load_collection("audio_snapshot");
-			load_collection("audio_strings");
-			load_collection("audio_vca");
-			load_collection("haptic");
-			load_collection("input_action");
-			load_collection("input_layout");
-			load_collection("input_settings");
-			load_collection("script");
+			}
 		} catch (const std::exception& e) { TOAST_ERROR("AssetManager", "Failed to parse manifest {}: {}", uri, e.what()); }
 	};
 
@@ -393,6 +404,7 @@ auto AssetManager::resolveVirtualPath(std::string_view virtual_path) -> std::opt
 }
 
 auto AssetManager::readVirtualPath(std::string_view virtual_path) -> std::optional<std::vector<uint8_t>> {
+	ZoneScoped;
 	const auto sep = virtual_path.find("://");
 	if (sep == std::string_view::npos) {
 		TOAST_ERROR("AssetManager", "readVirtualPath: malformed URI '{}'", virtual_path);
@@ -409,7 +421,8 @@ auto AssetManager::readVirtualPath(std::string_view virtual_path) -> std::option
 			return data;
 		}
 		// Not found in pack
-		TOAST_WARN("AssetManager", "Pack mount '{}://' does not contain '{}', falling back to filesystem", scheme, rel);
+		TOAST_ERROR("AssetManager", "Pack mount '{}://' does not contain '{}'", scheme, rel);
+		return std::nullopt;
 	}
 
 	// Filesystem fallback
@@ -422,6 +435,7 @@ auto AssetManager::readVirtualPath(std::string_view virtual_path) -> std::option
 }
 
 auto AssetManager::openFile(const std::filesystem::path& path) -> std::optional<std::vector<uint8_t>> {
+	ZoneScoped;
 	std::ifstream ifs(path, std::ios::binary | std::ios::ate);
 	if (!ifs.is_open()) {
 		TOAST_ERROR("AssetManager", "Could not open file: {}", path.string());
@@ -441,6 +455,7 @@ auto AssetManager::openFile(const std::filesystem::path& path) -> std::optional<
 }
 
 auto AssetManager::saveFile(const std::filesystem::path& path, const std::vector<uint8_t>& data) -> bool {
+	ZoneScoped;
 	std::error_code ec;
 	std::filesystem::create_directories(path.parent_path(), ec);
 
@@ -481,7 +496,8 @@ auto AssetManager::getURI(toast::UID uid) -> std::string {
 	return {};
 }
 
-auto AssetManager::search(std::string_view query) -> std::vector<AssetHandle<Asset>> {
+auto AssetManager::search(std::string_view query) -> std::vector<Handle<Asset>> {
+	ZoneScoped;
 	std::vector<toast::UID> matches;
 	{
 		std::lock_guard lock(mutex);
@@ -492,7 +508,7 @@ auto AssetManager::search(std::string_view query) -> std::vector<AssetHandle<Ass
 		}
 	}
 
-	std::vector<AssetHandle<Asset>> results;
+	std::vector<Handle<Asset>> results;
 	results.reserve(matches.size());
 	for (const auto& uid : matches) {
 		if (auto* asset = load(uid)) {
@@ -510,6 +526,7 @@ auto AssetManager::getCachePath() const -> const std::filesystem::path& {
 }
 
 auto AssetManager::listByType(std::string_view type) -> std::vector<toast::UID> {
+	ZoneScoped;
 	std::vector<toast::UID> result;
 	std::lock_guard lock(mutex);
 	for (const auto& [uid_int, info] : manifest) {
@@ -527,18 +544,29 @@ auto AssetManager::typeOf(toast::UID uid) -> std::string {
 	return it != manager.manifest.end() ? it->second.type : std::string {};
 }
 
-void AssetManager::pollModifiedScripts() {
+void AssetManager::pollModifiedAssets() {
 	ZoneScoped;
 
-	std::vector<toast::UID> changed;
+	struct ChangedAsset {
+		toast::UID uid;
+		std::string type;
+	};
+
+	std::vector<ChangedAsset> changed;
 	{
 		std::lock_guard lock(mutex);
-		for (auto& [id, asset] : cache) {
-			auto manifest_it = manifest.find(id);
-			if (manifest_it == manifest.end() || manifest_it->second.type != "script") {
+		for (const auto& [id, info] : manifest) {
+			const std::string& type = info.type;
+			const bool is_ui = type == "ui_element" || type == "ui_style" || type == "color_scheme" || type == "localization" ||
+			                   type == "image_localization";
+			auto asset_it = cache.find(id);
+			if (!is_ui && asset_it == cache.end()) {
 				continue;
 			}
-			auto real_path = resolveVirtualPath(manifest_it->second.path);
+			if (type != "script" && type != "shader" && type != "material" && type != "material_instance" && !is_ui) {
+				continue;
+			}
+			auto real_path = resolveVirtualPath(info.path);
 			if (!real_path) {
 				continue;
 			}
@@ -548,35 +576,78 @@ void AssetManager::pollModifiedScripts() {
 			if (ec) {
 				continue;
 			}
-			auto [it, first_seen] = script_mtimes.try_emplace(id, mtime);
+			auto [it, first_seen] = asset_mtimes.try_emplace(id, mtime);
 			if (first_seen || it->second == mtime) {
 				continue;    // unchanged
 			}
 			it->second = mtime;
 
-			if (auto raw = readVirtualPath(manifest_it->second.path)) {
-				static_cast<Script*>(asset.get())->setData(std::move(*raw));
-				changed.emplace_back(id);
+			auto raw = readVirtualPath(info.path);
+			if (!raw) {
+				continue;
 			}
+
+			if (is_ui && asset_it == cache.end()) {
+				// .rcss files are reloaded directly through the VFS
+			} else if (type == "script") {
+				static_cast<Script*>(asset_it->second.get())->setData(std::move(*raw));
+			} else if (type == "shader") {
+				static_cast<Shader*>(asset_it->second.get())->setSource(std::move(*raw));
+			} else if (type == "ui_element") {
+				static_cast<UIElement*>(asset_it->second.get())->setSource(std::move(*raw));
+			} else if (type == "ui_style") {
+				static_cast<UIStyle*>(asset_it->second.get())->setSource(std::move(*raw));
+			} else if (type == "color_scheme") {
+				try {
+					const std::string_view toml_str(reinterpret_cast<const char*>(raw->data()), raw->size());
+					static_cast<ColorScheme*>(asset_it->second.get())->reload(toml::parse(toml_str));
+				} catch (const toml::parse_error& err) {
+					TOAST_ERROR("AssetManager", "Hot reload parse error for {}: {}", info.path, err.description());
+					continue;
+				}
+			} else if (type == "localization") {
+				static_cast<Localization*>(asset_it->second.get())->reload(std::move(*raw));
+			} else if (type == "image_localization") {
+				static_cast<ImageLocalization*>(asset_it->second.get())->reload(std::move(*raw));
+			} else {
+				// Materials re-parse their TOML in place so existing handles stay valid
+				try {
+					const std::string_view toml_str(reinterpret_cast<const char*>(raw->data()), raw->size());
+					static_cast<Data*>(asset_it->second.get())->reload(toml::parse(toml_str));
+				} catch (const toml::parse_error& err) {
+					TOAST_ERROR("AssetManager", "Hot reload parse error for {}: {}", info.path, err.description());
+					continue;
+				}
+			}
+			changed.push_back(ChangedAsset {.uid = toast::UID(id), .type = type});
 		}
 	}
 
-	for (toast::UID uid : changed) {
-		TOAST_INFO("AssetManager", "Script changed on disk, reloading: {}", getURI(uid));
-		event::send<event::ScriptAssetReloaded>(uid);
+	for (const auto& [uid, type] : changed) {
+		TOAST_INFO("AssetManager", "Asset changed on disk, reloading: {} ({})", getURI(uid), type);
+		if (type == "script") {
+			event::send<event::ScriptAssetReloaded>(uid);
+		} else if (type == "shader") {
+			event::send<event::ShaderAssetReloaded>(uid);
+		} else if (type == "ui_element" || type == "ui_style" || type == "color_scheme" || type == "localization" ||
+		           type == "image_localization") {
+			event::send<event::UIAssetReloaded>(uid, type);
+		} else {
+			event::send<event::MaterialAssetReloaded>(uid);
+		}
 	}
 }
 
 // Public API Implementations
-auto load(toast::UID uid) -> AssetHandleBase {
+auto load(toast::UID uid) -> HandleBase {
 	return {AssetManager::get().load(uid), uid, AssetManager::getURI(uid)};
 }
 
-auto load(std::string_view uri) -> AssetHandleBase {
+auto load(std::string_view uri) -> HandleBase {
 	auto uid = AssetManager::resolveURI(uri);
 	if (not uid.has_value()) {
 		TOAST_ERROR("AssetManager", "Could not resolve URI to UID: {}", uri);
-		return AssetHandleBase(nullptr);
+		return HandleBase(nullptr);
 	}
 	return load(*uid);
 }

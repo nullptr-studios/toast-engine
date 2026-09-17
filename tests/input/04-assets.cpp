@@ -87,7 +87,7 @@ TOAST_TEST_NAMED("input", "input/04-assets", test_input_assets) {
 			}
 		})";
 		assets::Schema schema(schema_json);
-		assets::AssetHandle<assets::Schema> handle(&schema, toast::UID(1), "");
+		assets::Handle<assets::Schema> handle(&schema, toast::UID(1), "");
 
 		toml::table tbl = toml::parse(
 		    "axis = 5\n"

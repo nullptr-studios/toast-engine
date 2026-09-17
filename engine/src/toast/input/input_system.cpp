@@ -21,6 +21,7 @@
 #include <toast/input/assets/input_action.hpp>
 #include <toast/log.hpp>
 #include <toast/window/window_events.hpp>
+#include <tracy/Tracy.hpp>
 
 namespace input {
 
@@ -141,6 +142,7 @@ void InputSystem::subscribeEvents() {
 }
 
 void InputSystem::reloadActions() {
+	ZoneScoped;
 	m_actions.clear();
 	const auto uids = assets::listByType("input_action");
 	for (toast::UID uid : uids) {
@@ -155,6 +157,7 @@ void InputSystem::reloadActions() {
 }
 
 void InputSystem::refreshGamepads() {
+	ZoneScoped;
 	SDL_UpdateGamepads();
 
 	// Reconcile the set of open gamepads with what SDL currently reports
@@ -229,6 +232,7 @@ auto InputSystem::activeGamepadId() const noexcept -> uint32_t {
 }
 
 auto InputSystem::sample(const KeyCode& key) -> InputSample {
+	ZoneScoped;
 	InputSample out;
 	if (!key.valid) {
 		out.present = false;
@@ -303,6 +307,7 @@ auto InputSystem::sample(const KeyCode& key) -> InputSample {
 }
 
 void InputSystem::tick() {
+	ZoneScoped;
 	const auto now = std::chrono::steady_clock::now();
 	float delta = 0.0f;
 	if (m_has_last_tick) {

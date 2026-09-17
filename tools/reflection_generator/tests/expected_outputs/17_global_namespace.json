@@ -30,6 +30,7 @@
     "name": "GlobalNamespaceNode",
     "namespace": null,
     "parent": null,
+    "signals": [],
     "source_file": "17_global_namespace.hpp",
     "tick_functions": {
       "begin": false,

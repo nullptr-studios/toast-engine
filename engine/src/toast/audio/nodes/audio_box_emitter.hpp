@@ -17,6 +17,8 @@ namespace toast {
  * Useful for large ambient areas like rooms or caverns
  */
 class TOAST_API [[ToastNode]] AudioBoxEmitter : public AudioEmitterBase {
+	friend class AudioEmitterBase;
+
 public:
 	void extents(glm::vec3 value);
 

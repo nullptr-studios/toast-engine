@@ -65,9 +65,23 @@ Box<Node> player = some_node->find("Player");
 std::vector<Box<Node>> enemies = some_node->search("Enemy");
 ```
 
-`find` and `search` accept a `/`-separated path or a bare name. Bare names match the
-first descendant with that name. Traversal stops at nodes that are inside a prefab
-instance (they are opaque).
+`find` and `search` accept a `/`-separated path or a bare name, optionally behind a
+`node://` prefix. Bare names match the first descendant with that name. Traversal stops
+at nodes that are inside a prefab instance (they are opaque); `search` crosses those
+boundaries instead. The first segment may be a scope keyword:
+
+- `root/` — this node's nearest instance-root
+- `world/` — the active world root
+- `global/` — the world's global nodes
+
+String queries match names only. To look up a node by UID use the typed overload:
+
+```cpp
+Box<Node> child = some_node->find(uid);
+```
+
+It resolves within the caller's local root (the nearest instance-root ancestor), so UIDs
+only need to be unique inside one prefab instance. There is no UID form of `search`.
 
 ## Dependency graph
 

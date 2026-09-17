@@ -3,10 +3,13 @@
              x:Class="editor.App"
              xmlns:local="using:editor"
              xmlns:conv="using:editor.Converters"
+             xmlns:dmc="using:Dock.Model.Controls"
+             xmlns:core="using:Dock.Model.Core"
              RequestedThemeVariant="Dark">
 
 	<Application.Resources>
 		<ResourceDictionary>
+			<Color x:Key="SystemAccentColor">#ff1659</Color>
 			<ResourceDictionary.MergedDictionaries>
 				<ResourceInclude Source="avares://editor/Resources/EditorColors.axaml" />
 				<ResourceInclude Source="avares://editor/Resources/DragNumberBox.axaml" />
@@ -19,11 +22,19 @@
 				<ResourceInclude Source="avares://editor/Resources/EnumBox.axaml" />
 			</ResourceDictionary.MergedDictionaries>
 			<conv:SeverityToColorConverter x:Key="SeverityToColorConverter" />
+			<conv:SeverityBarColorConverter x:Key="SeverityBarColorConverter" />
+			<conv:SeverityRowGradientConverter x:Key="SeverityRowGradientConverter" />
+			<conv:SeverityFillConverter x:Key="SeverityFillConverter" />
+			<conv:ToggleForegroundConverter x:Key="ToggleForegroundConverter" />
+			<conv:TraceForegroundConverter x:Key="TraceForegroundConverter" />
+			<conv:BoolFillConverter x:Key="BoolFillConverter" />
 			<conv:BoolToOpacityConverter x:Key="BoolToOpacityConverter" />
 			<conv:EnabledToColorConverter x:Key="EnabledToColorConverter" />
 			<conv:ScaleConverter x:Key="ScaleConverter" />
 			<conv:EnumEqualsConverter x:Key="EnumEqualsConverter" />
 			<conv:SnapValueConverter x:Key="SnapValueConverter" />
+			<conv:DockContentCornerRadiusConverter x:Key="DockContentCornerRadiusConverter" />
+			<conv:DockFocusBrushConverter x:Key="DockFocusBrushConverter" />
 		</ResourceDictionary>
 	</Application.Resources>
 
@@ -34,6 +45,443 @@
 	<Application.Styles>
 		<FluentTheme />
 		<DockFluentTheme />
+		<Style Selector="ToolControl">
+			<Setter Property="HeaderTemplate">
+				<DataTemplate x:DataType="core:IDockable">
+					<TextBlock Text="{Binding Title}" />
+				</DataTemplate>
+			</Setter>
+			<Setter Property="ModifiedTemplate">
+				<DataTemplate x:DataType="core:IDockable">
+					<Ellipse Width="6"
+					         Height="6"
+					         Fill="{StaticResource Text}"
+					         VerticalAlignment="Center" />
+				</DataTemplate>
+			</Setter>
+			<Setter Property="Template">
+				<ControlTemplate x:DataType="dmc:IToolDock">
+					<DockPanel x:Name="PART_DockPanel"
+					           DockProperties.IsDropArea="True"
+					           DockProperties.IsDockTarget="True">
+						<Grid DockPanel.Dock="Top"
+						      ColumnDefinitions="*,Auto,Auto"
+						      Background="{StaticResource Bg1}"
+						      DockProperties.IsDragArea="True">
+							<Border Grid.ColumnSpan="3"
+							        Height="2"
+							        VerticalAlignment="Bottom"
+							        Margin="4,0"
+							        CornerRadius="1"
+							        Background="{Binding IsActive, Converter={StaticResource DockFocusBrushConverter}}"
+							        IsHitTestVisible="False" />
+							<ToolTabStrip x:Name="PART_TabStrip"
+							              Grid.Column="0"
+							              ItemsSource="{Binding VisibleDockables}"
+							              SelectedItem="{Binding ActiveDockable, Mode=TwoWay}"
+							              IconTemplate="{TemplateBinding IconTemplate}"
+							              HeaderTemplate="{TemplateBinding HeaderTemplate}"
+							              DockProperties.IsDragArea="True"
+							              DockProperties.IsDropArea="True"
+							              DockProperties.DockAdornerHost="{Binding #PART_DockPanel}">
+								<ToolTabStrip.ModifiedTemplate>
+									<DataTemplate x:DataType="core:IDockable">
+										<Ellipse Width="6"
+										         Height="6"
+										         Fill="{StaticResource Text}"
+										         VerticalAlignment="Center" />
+									</DataTemplate>
+								</ToolTabStrip.ModifiedTemplate>
+							</ToolTabStrip>
+							<Button Grid.Column="1"
+							        Classes="dock-tab-action"
+							        ToolTip.Tip="Pin tool"
+							        Command="{Binding Owner.Factory.PinDockable}"
+							        CommandParameter="{Binding ActiveDockable}"
+							        IsVisible="{Binding ActiveDockable.CanPin}">
+								<LucideIcon Kind="Pin"
+								            Size="16" />
+							</Button>
+							<Button Grid.Column="2"
+							        Classes="dock-tab-action"
+							        ToolTip.Tip="Close tool"
+							        Command="{Binding Owner.Factory.CloseDockable}"
+							        CommandParameter="{Binding ActiveDockable}"
+							        IsVisible="{Binding ActiveDockable.CanClose}">
+								<LucideIcon Kind="X"
+								            Size="16" />
+							</Button>
+						</Grid>
+						<Border x:Name="PART_Border"
+						        BorderThickness="0"
+						        ClipToBounds="True">
+							<Border.CornerRadius>
+								<MultiBinding Converter="{StaticResource DockContentCornerRadiusConverter}">
+									<Binding Path="ActiveDockable" />
+									<Binding Path="VisibleDockables" />
+								</MultiBinding>
+							</Border.CornerRadius>
+							<DockableControl DataContext="{Binding ActiveDockable}"
+							                 TrackingMode="Visible">
+								<DeferredContentControl x:Name="PART_ContentPresenter"
+								                        Content="{Binding}"
+								                        HorizontalAlignment="Stretch"
+								                        VerticalAlignment="Stretch">
+									<DeferredContentControl.ContentTemplate>
+										<ControlRecyclingDataTemplate Parent="{Binding #PART_ContentPresenter}" />
+									</DeferredContentControl.ContentTemplate>
+								</DeferredContentControl>
+							</DockableControl>
+						</Border>
+					</DockPanel>
+				</ControlTemplate>
+			</Setter>
+		</Style>
+		<Style Selector="Button.dock-tab-action">
+			<Setter Property="Width"
+			        Value="32" />
+			<Setter Property="Padding"
+			        Value="8" />
+			<Setter Property="Background"
+			        Value="Transparent" />
+			<Setter Property="Foreground"
+			        Value="{StaticResource Text}" />
+			<Setter Property="BorderThickness"
+			        Value="0" />
+			<Setter Property="CornerRadius"
+			        Value="0" />
+		</Style>
+		<Style Selector="Button.dock-tab-action:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg2}" />
+		</Style>
+		<Style Selector="HostWindowTitleBar">
+			<Setter Property="IsVisible"
+			        Value="False" />
+			<Setter Property="Height"
+			        Value="0" />
+		</Style>
+		<Style Selector="HostWindow">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg1}" />
+		</Style>
+		<Style Selector="ToolChromeControl /template/ Grid#PART_Grip">
+			<Setter Property="IsVisible"
+			        Value="False" />
+			<Setter Property="Height"
+			        Value="0" />
+		</Style>
+		<Style Selector="ToolChromeControl /template/ Border#PART_Border">
+			<Setter Property="BorderThickness"
+			        Value="0" />
+		</Style>
+		<Style Selector="ToolChromeControl /template/ Panel#PART_Panel">
+			<Setter Property="IsVisible"
+			        Value="False" />
+			<Setter Property="Height"
+			        Value="0" />
+		</Style>
+		<Style Selector="ToolChromeControl:pointerover /template/ Border#PART_Border">
+			<Setter Property="BorderThickness"
+			        Value="0" />
+		</Style>
+		<Style Selector="ToolChromeControl:pointerover /template/ Panel#PART_Panel">
+			<Setter Property="IsVisible"
+			        Value="False" />
+			<Setter Property="Height"
+			        Value="0" />
+		</Style>
+		<Style
+			Selector="ToolTabStrip /template/ Border#PART_BorderLeftFill, ToolTabStrip /template/ Border#PART_BorderRightFill">
+			<Setter Property="BorderThickness"
+			        Value="0" />
+		</Style>
+		<Style Selector="ToolTabStrip:singleitem /template/ ItemsPresenter#PART_ItemsPresenter">
+			<Setter Property="IsVisible"
+			        Value="True" />
+		</Style>
+		<Style Selector="ToolTabStrip, DocumentTabStrip">
+			<Setter Property="Background"
+			        Value="Transparent" />
+		</Style>
+		<Style Selector="ToolTabStripItem, DocumentTabStripItem">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg1}" />
+			<Setter Property="Foreground"
+			        Value="{StaticResource Text}" />
+			<Setter Property="BorderThickness"
+			        Value="0" />
+			<Setter Property="CornerRadius"
+			        Value="8,8,0,0" />
+			<Setter Property="Padding"
+			        Value="8" />
+		</Style>
+		<Style Selector="ToolTabStripItem">
+			<Setter Property="Template">
+				<ControlTemplate x:DataType="core:IDockable">
+					<Panel>
+						<Border Background="Transparent"
+						        CornerRadius="8,8,0,0"
+						        IsHitTestVisible="False" />
+						<Border x:Name="PART_SelectedBackground"
+						        Background="{StaticResource Bg2}"
+						        CornerRadius="8,8,0,0"
+						        ClipToBounds="True"
+						        IsHitTestVisible="False" />
+						<Border x:Name="PART_TabBody"
+						        TextElement.Foreground="{StaticResource Text}"
+						        Padding="8"
+						        CornerRadius="8,8,0,0"
+						        ClipToBounds="True"
+						        ContextMenu="{TemplateBinding TabContextMenu}"
+						        DockProperties.IsDragArea="True"
+						        DockProperties.IsDropArea="True"
+						        DockProperties.IsDockTarget="True"
+						        DockProperties.ShowDockIndicatorOnly="True"
+						        DockProperties.IndicatorDockOperation="Fill">
+							<DockableControl TrackingMode="Tab">
+								<StackPanel Orientation="Horizontal"
+								            Spacing="4">
+									<ContentPresenter ContentTemplate="{Binding $parent[ToolTabStrip].ModifiedTemplate}"
+									                  IsVisible="{Binding IsModified}"
+									                  Content="{Binding}" />
+									<ContentPresenter ContentTemplate="{Binding $parent[ToolTabStrip].IconTemplate}"
+									                  Content="{Binding}" />
+									<ContentPresenter ContentTemplate="{Binding $parent[ToolTabStrip].HeaderTemplate}"
+									                  Content="{Binding}" />
+								</StackPanel>
+							</DockableControl>
+						</Border>
+						<Border x:Name="PART_SelectedIndicator"
+						        BorderBrush="{Binding ((core:IDock)Owner).IsActive, Converter={StaticResource DockFocusBrushConverter}}"
+						        BorderThickness="2,2,2,0"
+						        CornerRadius="8,8,0,0"
+						        IsHitTestVisible="False" />
+					</Panel>
+				</ControlTemplate>
+			</Setter>
+		</Style>
+		<Style Selector="DocumentTabStripItem">
+			<Setter Property="DocumentContextMenu">
+				<Template>
+					<ContextMenu x:CompileBindings="False">
+						<MenuItem Header="_Close"
+						          Command="{Binding Owner.Factory.CloseDockable}"
+						          CommandParameter="{Binding}" />
+						<MenuItem Header="Close _Other Tabs"
+						          Command="{Binding Owner.Factory.CloseOtherDockables}"
+						          CommandParameter="{Binding}" />
+						<MenuItem Header="Close _All Tabs"
+						          Command="{Binding Owner.Factory.CloseAllDockables}"
+						          CommandParameter="{Binding}" />
+						<Separator />
+						<MenuItem Header="Close Tabs to the _Left"
+						          Command="{Binding Owner.Factory.CloseLeftDockables}"
+						          CommandParameter="{Binding}" />
+						<MenuItem Header="Close Tabs to the _Right"
+						          Command="{Binding Owner.Factory.CloseRightDockables}"
+						          CommandParameter="{Binding}" />
+					</ContextMenu>
+				</Template>
+			</Setter>
+			<Setter Property="Template">
+				<ControlTemplate x:DataType="core:IDockable">
+					<Panel>
+						<Border Background="Transparent"
+						        CornerRadius="8,8,0,0"
+						        IsHitTestVisible="False" />
+						<Border x:Name="PART_SelectedBackground"
+						        Background="{StaticResource Bg2}"
+						        CornerRadius="8,8,0,0"
+						        ClipToBounds="True"
+						        IsHitTestVisible="False" />
+						<Border x:Name="PART_TabBody"
+						        TextElement.Foreground="{StaticResource Text}"
+						        Padding="8"
+						        CornerRadius="8,8,0,0"
+						        ClipToBounds="True"
+						        ContextMenu="{TemplateBinding DocumentContextMenu}"
+						        DockProperties.IsDragArea="True"
+						        DockProperties.IsDropArea="True"
+						        DockProperties.IsDockTarget="True"
+						        DockProperties.ShowDockIndicatorOnly="True"
+						        DockProperties.IndicatorDockOperation="Fill">
+							<DockableControl TrackingMode="Tab">
+								<Grid ColumnDefinitions="*,Auto"
+								      ColumnSpacing="4">
+									<StackPanel Grid.Column="0"
+									            Orientation="Horizontal"
+									            Spacing="4">
+										<ContentPresenter ContentTemplate="{Binding $parent[DocumentTabStrip].ModifiedTemplate}"
+										                  IsVisible="{Binding IsModified}"
+										                  Content="{Binding}" />
+										<Grid x:Name="PART_IconCloseHost">
+											<ContentPresenter x:Name="PART_IconPresenter"
+											                  ContentTemplate="{Binding $parent[DocumentTabStrip].IconTemplate}"
+											                  Content="{Binding}" />
+											<ContentPresenter x:Name="PART_CompactClosePresenter"
+											                  IsVisible="False"
+											                  ContentTemplate="{Binding $parent[DocumentTabStrip].CloseTemplate}"
+											                  Content="{Binding}" />
+										</Grid>
+										<ContentPresenter ContentTemplate="{Binding $parent[DocumentTabStrip].HeaderTemplate}"
+										                  Content="{Binding}" />
+									</StackPanel>
+									<ContentPresenter x:Name="PART_ClosePresenter"
+									                  Grid.Column="1"
+									                  ContentTemplate="{Binding $parent[DocumentTabStrip].CloseTemplate}"
+									                  Content="{Binding}" />
+								</Grid>
+							</DockableControl>
+						</Border>
+						<Border x:Name="PART_SelectedIndicator"
+						        BorderBrush="{Binding $parent[DocumentTabStripItem].IsActive, Converter={StaticResource DockFocusBrushConverter}}"
+						        BorderThickness="2,2,2,0"
+						        CornerRadius="8,8,0,0"
+						        IsHitTestVisible="False" />
+					</Panel>
+				</ControlTemplate>
+			</Setter>
+		</Style>
+		<Style
+			Selector="ToolTabStripItem /template/ Border#PART_TabBody, DocumentTabStripItem /template/ Border#PART_TabBody">
+			<Setter Property="Background"
+			        Value="Transparent" />
+		</Style>
+		<Style
+			Selector="ToolTabStripItem /template/ Border#PART_SelectedBackground, DocumentTabStripItem /template/ Border#PART_SelectedBackground">
+			<Setter Property="IsVisible"
+			        Value="False" />
+		</Style>
+		<Style
+			Selector="ToolTabStripItem:selected /template/ Border#PART_SelectedBackground, DocumentTabStripItem:selected /template/ Border#PART_SelectedBackground">
+			<Setter Property="IsVisible"
+			        Value="True" />
+		</Style>
+		<Style
+			Selector="ToolTabStripItem /template/ Border#PART_SelectedIndicator, DocumentTabStripItem /template/ Border#PART_SelectedIndicator">
+			<Setter Property="IsVisible"
+			        Value="False" />
+		</Style>
+		<Style
+			Selector="ToolTabStripItem:selected /template/ Border#PART_SelectedIndicator, DocumentTabStripItem:selected /template/ Border#PART_SelectedIndicator">
+			<Setter Property="IsVisible"
+			        Value="True" />
+		</Style>
+		<Style
+			Selector="ToolTabStripItem:selected, ToolTabStripItem:selected:pointerover, DocumentTabStripItem:selected, DocumentTabStripItem:active:selected, DocumentTabStripItem:not(:active):selected, DocumentTabStripItem:selected:pointerover">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg2}" />
+			<Setter Property="Foreground"
+			        Value="{StaticResource Text}" />
+			<Setter Property="BorderThickness"
+			        Value="0" />
+			<Setter Property="CornerRadius"
+			        Value="8,8,0,0" />
+			<Setter Property="Padding"
+			        Value="8" />
+		</Style>
+		<Style Selector="ToolTabStripItem:pointerover:not(:selected), DocumentTabStripItem:pointerover:not(:selected)">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg1}" />
+			<Setter Property="Foreground"
+			        Value="{StaticResource Text}" />
+		</Style>
+		<Style Selector="DocumentControl">
+			<Setter Property="HeaderTemplate">
+				<DataTemplate x:DataType="core:IDockable">
+					<TextBlock Text="{Binding Title}" />
+				</DataTemplate>
+			</Setter>
+			<Setter Property="ModifiedTemplate">
+				<DataTemplate x:DataType="core:IDockable">
+					<Ellipse Width="6"
+					         Height="6"
+					         Fill="{StaticResource Text}"
+					         VerticalAlignment="Center" />
+				</DataTemplate>
+			</Setter>
+			<Setter Property="Template">
+				<ControlTemplate x:DataType="dmc:IDocumentDock">
+					<DockPanel x:Name="PART_DockPanel"
+					           DockProperties.IsDropArea="True"
+					           DockProperties.IsDockTarget="True">
+						<Grid DockPanel.Dock="Top"
+						      Background="{StaticResource Bg1}"
+						      IsVisible="{Binding $parent[DocumentControl].HasVisibleDockables}">
+							<Border Height="2"
+							        VerticalAlignment="Bottom"
+							        Margin="4,0"
+							        CornerRadius="1"
+							        Background="{Binding IsActive, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource DockFocusBrushConverter}}"
+							        IsHitTestVisible="False" />
+							<DocumentTabStrip x:Name="PART_TabStrip"
+							                  ItemsSource="{Binding VisibleDockables}"
+							                  SelectedItem="{Binding ActiveDockable, Mode=TwoWay}"
+							                  CanCreateItem="{Binding CanCreateDocument}"
+							                  IconTemplate="{TemplateBinding IconTemplate}"
+							                  HeaderTemplate="{TemplateBinding HeaderTemplate}"
+							                  CloseTemplate="{TemplateBinding CloseTemplate}"
+							                  CloseButtonTheme="{TemplateBinding CloseButtonTheme}"
+							                  IsActive="{TemplateBinding IsActive}"
+							                  DockProperties.IsDropArea="True"
+							                  DockProperties.DockAdornerHost="{Binding #PART_DockPanel}">
+								<DocumentTabStrip.ModifiedTemplate>
+									<DataTemplate x:DataType="core:IDockable">
+										<Ellipse Width="6"
+										         Height="6"
+										         Fill="{StaticResource Text}"
+										         VerticalAlignment="Center" />
+									</DataTemplate>
+								</DocumentTabStrip.ModifiedTemplate>
+								<DocumentTabStrip.Styles>
+									<Style Selector="DocumentTabStripItem">
+										<Setter Property="IsActive"
+										        Value="{Binding $parent[DocumentTabStrip].IsActive}" />
+									</Style>
+								</DocumentTabStrip.Styles>
+							</DocumentTabStrip>
+						</Grid>
+						<Border x:Name="PART_Border"
+						        BorderThickness="0"
+						        ClipToBounds="True">
+							<Border.CornerRadius>
+								<MultiBinding Converter="{StaticResource DockContentCornerRadiusConverter}">
+									<Binding Path="ActiveDockable" />
+									<Binding Path="VisibleDockables" />
+								</MultiBinding>
+							</Border.CornerRadius>
+							<Grid>
+								<DockableControl DataContext="{Binding ActiveDockable}"
+								                 TrackingMode="Visible"
+								                 IsVisible="{Binding $parent[DocumentControl].HasVisibleDockables}">
+									<DeferredContentControl x:Name="PART_ContentPresenter"
+									                        Content="{Binding}"
+									                        HorizontalAlignment="Stretch"
+									                        VerticalAlignment="Stretch">
+										<DeferredContentControl.ContentTemplate>
+											<ControlRecyclingDataTemplate Parent="{Binding #PART_ContentPresenter}" />
+										</DeferredContentControl.ContentTemplate>
+									</DeferredContentControl>
+								</DockableControl>
+							</Grid>
+						</Border>
+					</DockPanel>
+				</ControlTemplate>
+			</Setter>
+		</Style>
+		<Style Selector="DocumentControl /template/ Border#PART_Border">
+			<Setter Property="BorderThickness"
+			        Value="0" />
+		</Style>
+		<Style Selector="DocumentControl /template/ Panel#PART_DocumentSeperatorHost">
+			<Setter Property="IsVisible"
+			        Value="False" />
+		</Style>
+		<Style Selector="DocumentTabStripItem /template/ Border#PART_TabSeparatorRight">
+			<Setter Property="IsVisible"
+			        Value="False" />
+		</Style>
 		<StyleInclude Source="avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml" />
 	</Application.Styles>
 </Application>

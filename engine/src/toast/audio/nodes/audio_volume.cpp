@@ -85,7 +85,7 @@ void AudioVolume::lateTick() {
 
 		VolumeTarget target {
 		  .listener = listener,
-		  .position = listener->worldPos(),
+		  .position = listener->world_position,
 		  .forward = listener->forward(),
 		};
 		evaluateTarget(target);

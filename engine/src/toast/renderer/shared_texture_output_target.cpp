@@ -1,6 +1,6 @@
 /// @file SharedTextureOutputTarget.cpp
 /// @author dario
-/// @date 16/05/2026.
+/// @date 16/05/2026
 
 #include "shared_texture_output_target.hpp"
 
@@ -10,44 +10,39 @@
 #include <cstring>
 #include <format>
 #include <toast/log.hpp>
+#include <tracy/Tracy.hpp>
+#include <utility>
 
 namespace renderer {
 
-namespace {
-
-auto colorSubresourceRange() -> vk::ImageSubresourceRange {
-	return {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1};
-}
-
-}
+namespace { }
 
 SharedTextureOutputTarget::SharedTextureOutputTarget(const VulkanCore& core, vk::Extent2D preferred_extent, uint32_t image_count)
     : m_core(&core),
       m_extent(preferred_extent),
       m_images(image_count) {
 	if (image_count == 0) {
-		TOAST_CRITICAL("SharedTextureOutput", "Toast Engine Error: Shared texture output target needs at least one image!");
+		TOAST_CRITICAL("Render", "Toast Engine Error: Shared texture output target needs at least one image!");
 	}
 	allocateResources(m_extent);
 }
 
 void SharedTextureOutputTarget::allocateResources(vk::Extent2D extent) {
+	ZoneScoped;
 	m_extent = extent;
 	if (m_extent.width == 0 || m_extent.height == 0) {
-		TOAST_CRITICAL("SharedTextureOutput", "Toast Engine Error: Shared texture output target needs a non-zero extent!");
+		TOAST_CRITICAL("Render", "Toast Engine Error: Shared texture output target needs a non-zero extent!");
 	}
 
 	const vk::DeviceSize staging_size = imageByteSize();
 
 	for (uint32_t index = 0; index < m_images.size(); ++index) {
 		auto& shared = m_images[index];
-		// Reset any previous resources first
 		shared.mapped = nullptr;
 		shared.view.reset();
 		shared.staging.reset();
 		shared.image.reset();
 
-		// Device-local image we render into and copy out of
 		vk::ImageCreateInfo image_ci {};
 		image_ci.imageType = vk::ImageType::e2D;
 		image_ci.format = m_color_format;
@@ -74,7 +69,6 @@ void SharedTextureOutputTarget::allocateResources(vk::Extent2D extent) {
 		shared.view.emplace(m_core->getDevice(), view_ci);
 		setDebugName(*m_core, **shared.view, std::format("SharedTextureOutput ImageView[{}]", index));
 
-		// stagingg buffer for CPU readback
 		vk::BufferCreateInfo buffer_ci {};
 		buffer_ci.size = staging_size;
 		buffer_ci.usage = vk::BufferUsageFlagBits::eTransferDst;
@@ -89,7 +83,7 @@ void SharedTextureOutputTarget::allocateResources(vk::Extent2D extent) {
 		shared.mapped = shared.staging->getAllocation().getInfo().pMappedData;
 	}
 
-	TOAST_TRACE("SharedTextureOutput", "Allocated {} shared images at {}x{}", m_images.size(), m_extent.width, m_extent.height);
+	TOAST_TRACE("Render", "Allocated {} shared images at {}x{}", m_images.size(), m_extent.width, m_extent.height);
 }
 
 auto SharedTextureOutputTarget::getColorImage(uint32_t index) const -> const vk::Image& {
@@ -101,8 +95,19 @@ auto SharedTextureOutputTarget::getColorAttachment(uint32_t index) const -> cons
 }
 
 auto SharedTextureOutputTarget::acquireNextImage(uint64_t, vk::Semaphore, vk::Fence) -> vk::ResultValue<uint32_t> {
+	ZoneScoped;
+	// Skip the published index since the consumer reads that staging buffer from its own thread
+	const std::scoped_lock lock(m_frame_mutex);
+
+	const uint32_t count = getImageCount();
+	const int32_t published = m_latest_ready.load(std::memory_order_acquire);
+
 	uint32_t image_index = m_next_acquire_index;
-	m_next_acquire_index = (m_next_acquire_index + 1) % getImageCount();
+	if (count > 1 && std::cmp_equal(image_index, published)) {
+		image_index = (image_index + 1) % count;
+	}
+	m_next_acquire_index = (image_index + 1) % count;
+
 	return {vk::Result::eSuccess, image_index};
 }
 
@@ -111,11 +116,11 @@ auto SharedTextureOutputTarget::present(uint32_t, vk::Semaphore) -> vk::Result {
 }
 
 void SharedTextureOutputTarget::recordFinalize(vk::CommandBuffer command_buffer, uint32_t image_index) {
+	ZoneScoped;
 	const auto& shared = m_images.at(image_index);
 	const vk::Image image = **shared.image;
 	const vk::Buffer staging = **shared.staging;
 
-	// Transition the rendered image from color-attachment to transfer-source
 	const vk::ImageMemoryBarrier to_transfer(
 	    vk::AccessFlagBits::eColorAttachmentWrite,
 	    vk::AccessFlagBits::eTransferRead,
@@ -130,7 +135,6 @@ void SharedTextureOutputTarget::recordFinalize(vk::CommandBuffer command_buffer,
 	    vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::PipelineStageFlagBits::eTransfer, {}, {}, {}, to_transfer
 	);
 
-	// Copy the image into its host-visible staging buffer
 	const vk::BufferImageCopy region(
 	    0,
 	    0,
@@ -141,7 +145,6 @@ void SharedTextureOutputTarget::recordFinalize(vk::CommandBuffer command_buffer,
 	);
 	command_buffer.copyImageToBuffer(image, vk::ImageLayout::eTransferSrcOptimal, staging, region);
 
-	// Make the transfer write visible to host reads
 	const vk::BufferMemoryBarrier to_host(
 	    vk::AccessFlagBits::eTransferWrite,
 	    vk::AccessFlagBits::eHostRead,
@@ -155,11 +158,13 @@ void SharedTextureOutputTarget::recordFinalize(vk::CommandBuffer command_buffer,
 }
 
 void SharedTextureOutputTarget::onImageRenderComplete(uint32_t image_index) {
+	ZoneScoped;
 	if (image_index >= m_images.size()) {
 		return;
 	}
-	// The GPU copy into this staging buffer is complete
-	// invalidate caches and publish it
+	// Same lock as copyLatestFrame() so the index and counter agree
+	const std::scoped_lock lock(m_frame_mutex);
+
 	auto& shared = m_images[image_index];
 	if (shared.staging.has_value()) {
 		shared.staging->getAllocation().invalidate(0, imageByteSize());
@@ -169,6 +174,7 @@ void SharedTextureOutputTarget::onImageRenderComplete(uint32_t image_index) {
 }
 
 auto SharedTextureOutputTarget::copyLatestFrame(void* dst, uint32_t dst_capacity, ViewportFrameDesc* out) -> int {
+	ZoneScoped;
 	std::scoped_lock lock(m_frame_mutex);
 
 	const int32_t index = m_latest_ready.load(std::memory_order_acquire);

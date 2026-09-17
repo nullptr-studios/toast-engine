@@ -11,22 +11,6 @@
              x:DataType="vm:AssetBrowserViewModel"
              Focusable="True">
 
-	<!-- Keyboard shortcuts -->
-	<UserControl.KeyBindings>
-		<KeyBinding Gesture="F2"
-		            Command="{Binding RenameCommand}" />
-		<KeyBinding Gesture="Delete"
-		            Command="{Binding DeleteCommand}" />
-		<KeyBinding Gesture="Ctrl+C"
-		            Command="{Binding CopyCommand}" />
-		<KeyBinding Gesture="Ctrl+X"
-		            Command="{Binding CutCommand}" />
-		<KeyBinding Gesture="Ctrl+V"
-		            Command="{Binding PasteCommand}" />
-		<KeyBinding Gesture="Ctrl+D"
-		            Command="{Binding DuplicateCommand}" />
-	</UserControl.KeyBindings>
-
 	<UserControl.Styles>
 		<!-- Breadcrumb buttons -->
 		<Style Selector="Button.breadcrumb">
@@ -66,6 +50,62 @@
 		<Style Selector="TreeViewItem:selected:pointerover /template/ Border#PART_LayoutRoot">
 			<Setter Property="Background"
 			        Value="{StaticResource Bg4}" />
+		</Style>
+
+		<!-- Filters -->
+		<Style Selector="CheckBox.asset-filter">
+			<Setter Property="Padding"
+			        Value="4,0,0,0" />
+			<Setter Property="Margin"
+			        Value="0" />
+			<Setter Property="MinHeight"
+			        Value="0" />
+			<Setter Property="FontSize"
+			        Value="12" />
+		</Style>
+		<Style Selector="CheckBox.asset-filter /template/ Border#NormalRectangle">
+			<Setter Property="Width"
+			        Value="15" />
+			<Setter Property="Height"
+			        Value="15" />
+		</Style>
+		<Style Selector="CheckBox.asset-filter /template/ Path#CheckGlyph">
+			<Setter Property="Width"
+			        Value="8" />
+		</Style>
+		<Style Selector="TreeView.filter-tree TreeViewItem">
+			<Setter Property="Padding"
+			        Value="0" />
+			<Setter Property="Margin"
+			        Value="0" />
+			<Setter Property="MinHeight"
+			        Value="0" />
+		</Style>
+		<Style Selector="TreeView.filter-tree TreeViewItem /template/ Border#PART_LayoutRoot">
+			<Setter Property="Background"
+			        Value="Transparent" />
+		</Style>
+		<Style Selector="TreeView.filter-tree TreeViewItem:selected /template/ Border#PART_LayoutRoot">
+			<Setter Property="Background"
+			        Value="Transparent" />
+		</Style>
+		<Style Selector="TreeView.filter-tree TreeViewItem:pointerover /template/ Border#PART_LayoutRoot">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg3}" />
+		</Style>
+		<Style Selector="TreeView.filter-tree TreeViewItem /template/ Panel#PART_ExpandCollapseChevronContainer">
+			<Setter Property="Width"
+			        Value="15" />
+		</Style>
+		<Style Selector="TreeView.filter-tree TreeViewItem /template/ ToggleButton#PART_ExpandCollapseChevron">
+			<Setter Property="Width"
+			        Value="11" />
+			<Setter Property="Height"
+			        Value="11" />
+			<Setter Property="MinWidth"
+			        Value="0" />
+			<Setter Property="MinHeight"
+			        Value="0" />
 		</Style>
 	</UserControl.Styles>
 
@@ -146,7 +186,8 @@
 													</StackPanel>
 												</MenuItem.Header>
 											</MenuItem>
-											<MenuItem Command="{Binding Owner.CreateFolderCommand}">
+											<MenuItem Command="{Binding Owner.CreateFolderCommand}"
+											          CommandParameter="{Binding}">
 												<MenuItem.Header>
 													<StackPanel Orientation="Horizontal"
 													            Spacing="8">
@@ -203,6 +244,7 @@
 					        HorizontalContentAlignment="Center"
 					        CornerRadius="6"
 					        Background="{StaticResource Red}"
+					        IsEnabled="{Binding CanWriteToSelectedFolder}"
 					        Click="OnNewButtonClick">
 						<StackPanel Orientation="Horizontal"
 						            Spacing="4">
@@ -219,7 +261,8 @@
 					        MinWidth="85"
 					        HorizontalContentAlignment="Center"
 					        CornerRadius="6"
-					        Command="{Binding CreateFolderCommand}">
+					        Command="{Binding CreateFolderCommand}"
+					        Background="{StaticResource Bg4}">
 						<StackPanel Orientation="Horizontal"
 						            Spacing="4">
 							<LucideIcon Kind="FolderPlus"
@@ -234,7 +277,9 @@
 					        Click="Import_OnClick"
 					        MinWidth="85"
 					        HorizontalContentAlignment="Center"
-					        CornerRadius="6">
+					        CornerRadius="6"
+					        Background="{StaticResource Bg4}"
+					        IsEnabled="{Binding CanWriteToSelectedFolder}">
 						<StackPanel Orientation="Horizontal"
 						            Spacing="4">
 							<LucideIcon Kind="Download"
@@ -287,33 +332,73 @@
 					<!-- Filters -->
 					<Button Grid.Column="5"
 					        CornerRadius="6"
-					        Padding="8">
+					        Padding="8"
+					        Background="{StaticResource Bg4}">
 						<StackPanel Orientation="Horizontal"
 						            Spacing="4">
 							<LucideIcon Kind="Funnel"
 							            Size="16"
 							            StrokeWidth="2.5" />
-							<TextBlock Text="Filters" />
+							<TextBlock Text="Filter" />
 						</StackPanel>
 						<Button.Flyout>
 							<Flyout Placement="BottomEdgeAlignedRight">
-								<StackPanel MinWidth="150"
-								            Spacing="6">
-									<TextBlock Text="Filter by type"
+								<StackPanel MinWidth="240"
+								            Spacing="2">
+									<StackPanel.Resources>
+									</StackPanel.Resources>
+									<TextBlock Text="Type"
 									           FontWeight="SemiBold"
-									           Margin="0,0,0,2" />
-									<CheckBox Content="All types"
+									           FontSize="12" />
+									<CheckBox Classes="asset-filter"
+									          Content="All types"
 									          IsChecked="{Binding FilterAll}"
 									          IsThreeState="True" />
-									<Separator Margin="0,2" />
-									<ItemsControl ItemsSource="{Binding Filters}">
-										<ItemsControl.ItemTemplate>
-											<DataTemplate x:DataType="vm:AssetTypeFilter">
-												<CheckBox Content="{Binding Label}"
-												          IsChecked="{Binding IsEnabled}" />
-											</DataTemplate>
-										</ItemsControl.ItemTemplate>
-									</ItemsControl>
+									<ScrollViewer MaxHeight="420"
+									              VerticalScrollBarVisibility="Auto">
+										<TreeView Classes="filter-tree"
+										          ItemsSource="{Binding FilterTreeItems}"
+										          Background="Transparent"
+										          Padding="0"
+										          Margin="0">
+											<TreeView.Styles>
+												<Style Selector="TreeViewItem">
+													<Setter Property="IsExpanded"
+													        Value="{ReflectionBinding IsExpanded, Mode=TwoWay}" />
+												</Style>
+											</TreeView.Styles>
+											<TreeView.DataTemplates>
+												<TreeDataTemplate DataType="vm:AssetTypeFilterGroup"
+												                  ItemsSource="{Binding Filters}">
+													<CheckBox Classes="asset-filter"
+													          Content="{Binding Label}"
+													          IsChecked="{Binding IsEnabled, Mode=TwoWay}"
+													          IsThreeState="True"
+													          FontSize="12"
+													          FontWeight="SemiBold" />
+												</TreeDataTemplate>
+												<DataTemplate DataType="vm:AssetTypeFilter">
+													<CheckBox Classes="asset-filter"
+													          IsChecked="{Binding IsEnabled, Mode=TwoWay}">
+														<StackPanel Orientation="Horizontal"
+														            Spacing="3">
+															<Border Background="{Binding ChipColor}"
+															        CornerRadius="3"
+															        Padding="5,1">
+																<TextBlock Text="{Binding ChipText}"
+																           FontSize="10"
+																           FontWeight="Bold"
+																           Foreground="{StaticResource Bg1}" />
+															</Border>
+															<TextBlock Text="{Binding Label}"
+															           FontSize="12"
+															           VerticalAlignment="Center" />
+														</StackPanel>
+													</CheckBox>
+												</DataTemplate>
+											</TreeView.DataTemplates>
+										</TreeView>
+									</ScrollViewer>
 								</StackPanel>
 							</Flyout>
 						</Button.Flyout>
@@ -333,7 +418,8 @@
 						<MenuItem Header="New Folder"
 						          Command="{Binding CreateFolderCommand}" />
 						<MenuItem Header="Import"
-						          Click="Import_OnClick" />
+						          Click="Import_OnClick"
+						          IsEnabled="{Binding CanWriteToSelectedFolder}" />
 						<!-- rest of items are built in code-behind via RebuildContextMenu -->
 					</ContextMenu>
 				</Border.ContextMenu>
@@ -384,7 +470,8 @@
 																</StackPanel>
 															</MenuItem.Header>
 														</MenuItem>
-														<MenuItem Command="{Binding Owner.CreateFolderCommand}">
+														<MenuItem Command="{Binding Owner.CreateFolderCommand}"
+														          CommandParameter="{Binding}">
 															<MenuItem.Header>
 																<StackPanel Orientation="Horizontal"
 																            Spacing="8">

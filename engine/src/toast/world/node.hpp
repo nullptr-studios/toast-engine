@@ -12,20 +12,27 @@
  */
 
 #pragma once
+#define NODEFILE
 #include "box.hpp"
 #include "control_box.hpp"
 
+#include <list>
 #include <memory>
 #include <string>
 #include <string_view>
 #include <toast/assets/prefab.hpp>
 #include <toast/engine_defs.hpp>
 #include <toast/events/listener.hpp>
+#include <toast/events/signals.hpp>
 #include <toast/export.hpp>
 #include <toast/log.hpp>
 #include <toast/reflect/reflect_node.hpp>
 #include <toast/uid.hpp>
 #include <toast/world/node_owner.hpp>
+
+namespace physics {
+class Collider;
+}
 
 namespace assets {
 class Script;
@@ -58,6 +65,18 @@ enum class NodeType : uint8_t {
 	world_root,    ///< This node is the root that resides in the world
 };
 
+struct NodeMessage {
+	enum Severity : uint8_t {
+		warning,
+		error
+	} severity;
+
+	uint8_t id;
+	std::string text;
+
+	auto operator==(const NodeMessage& rhs) const noexcept -> bool { return id == rhs.id; }
+};
+
 class [[ToastNode, Icon("Circle")]] TOAST_API Node {
 	friend class INodeOwner;
 	friend class World;
@@ -69,23 +88,17 @@ class [[ToastNode, Icon("Circle")]] TOAST_API Node {
 	friend struct _detail::ControlBox;
 	friend struct _detail::NodeCluster;
 	friend struct toast::_detail::WorldTestAccess;
+	friend class physics::Collider;
 
 public:
 	Node();
 	virtual ~Node();
 
-	/**
-	 * @brief Stable unique identifier for this node
-	 * @return The UID assigned at construction or deserialization; never changes
-	 */
+	/// @brief Stable unique identifier, assigned at construction or deserialization. Never changes
 	[[nodiscard]]
 	auto uid() const noexcept -> const UID&;
 
-	/**
-	 * @brief Display name of this node
-	 * @note Siblings may share names; names are not unique identifiers
-	 * @return The current display name
-	 */
+	/// @brief Display name. Siblings may share one - this is not an identifier
 	[[nodiscard]]
 	auto name() const noexcept -> std::string_view;
 
@@ -102,6 +115,22 @@ public:
 	 */
 	[[nodiscard]]
 	auto enabled() const noexcept -> bool;
+
+	[[nodiscard]]
+	auto participatesIn(NodeOwnerParticipation use) const noexcept -> bool {
+		return m_owner != nullptr && m_owner->participatesIn(use);
+	}
+
+	/**
+	 * @brief The World or Workspace this node belongs to
+	 *
+	 * Tells whose tree a node came from without downcasting. Proxies land in one global list regardless of
+	 * owner, so the renderer needs this to keep one workspace out of another's viewport
+	 */
+	[[nodiscard]]
+	auto owner() const noexcept -> INodeOwner* {
+		return m_owner;
+	}
 
 	/**
 	 * @brief Sets the local enabled flag and propagates the change to all children
@@ -127,10 +156,10 @@ public:
 
 	/**
 	 * @brief The prefab this node was instantiated from
-	 * @return An empty AssetHandle for nodes created at runtime
+	 * @return An empty Handle for nodes created at runtime
 	 */
 	[[nodiscard]]
-	auto sourcePrefab() const noexcept -> const assets::AssetHandle<assets::Prefab>&;
+	auto sourcePrefab() const noexcept -> const assets::Handle<assets::Prefab>&;
 
 	/**
 	 * @brief Whether this node is the root of a prefab instance
@@ -159,10 +188,7 @@ public:
 		return m_type;
 	}
 
-	/**
-	 * @brief The event Listener owned by this node
-	 * @return Reference to the Listener; lazy-allocated on the first call; not freed until the node is destroyed
-	 */
+	/// @brief The event Listener owned by this node. Lazy-allocated, freed only with the node
 	[[nodiscard]]
 	auto listener() noexcept -> event::Listener&;
 
@@ -235,13 +261,22 @@ public:
 	/**
 	 * @brief Depth-first search for a single descendant
 	 * @param query A bare name, a slash-separated path, or a node:// URI with namespace
-	 *              keywords: root, world_root, global
+	 *              keywords: root, world, global
 	 * @return The first match, or an empty box if nothing was found
 	 * @note Traversal stops at prefab-instance boundaries; interior nodes are opaque to find()
 	 * @see search()
 	 */
 	[[nodiscard]]
 	auto find(std::string_view query) -> Box<Node>;
+
+	/**
+	 * @brief Looks up a node by UID within this node's local root
+	 * @param uid UID of the node to find
+	 * @return The match, or an empty box if nothing was found
+	 * @note Scoped to the nearest instance-root ancestor
+	 */
+	[[nodiscard]]
+	auto find(const UID& uid) -> Box<Node>;
 
 	/**
 	 * @brief Depth-first search for all matching descendants
@@ -266,6 +301,10 @@ public:
 	 */
 	[[nodiscard]]
 	auto hasTickFunction(TickFunctionList mask) const noexcept -> bool;
+
+	/// @returns true when a reflected C++ or Lua function exists
+	[[nodiscard]]
+	auto hasCallable(std::string_view name) const noexcept -> bool;
 
 	/**
 	 * @brief Rebuilds the script runtime after a script asset changed (hot reload or attach)
@@ -327,13 +366,35 @@ public:
 		if (m_info) {
 			if (const auto* f = m_info->getField(name)) {
 				f->set(this, std::any(value));
+				onReflectedFieldChanged(f->name);
 			}
 		}
 		_detail::setNodeScriptVar(this, name, std::any(value));
 	}
 
+	signals::Signal<Box<Node>> on_enable;
+	signals::Signal<Box<Node>> on_disable;
+	signals::Signal<Box<Node>> on_begin;
+	signals::Signal<Box<Node>> on_end;
+
 protected:
 	INodeOwner* m_owner = nullptr;
+
+	virtual void onReflectedFieldChanged(std::string_view /*field_name*/) { }
+
+	virtual void updateInspectorMessages() { }
+
+	void addInspectorMessage(const NodeMessage& message) {
+		for (auto& existing : m_messages) {
+			if (existing == message) {
+				existing = message;
+				return;
+			}
+		}
+		m_messages.emplace_back(message);
+	}
+
+	void removeInspectorMessage(const NodeMessage& message) { m_messages.remove(message); }
 
 private:
 	[[Reflect, Hidden]]
@@ -348,7 +409,7 @@ private:
 	Box<Node> m_parent;
 
 	[[Reflect, Name("Prefab"), InspectorNoModify]]
-	assets::AssetHandle<assets::Prefab> m_source_prefab;
+	assets::Handle<assets::Prefab> m_source_prefab;
 
 	NodeState m_state = NodeState::null;
 	NodeType m_type = NodeType::null;
@@ -368,7 +429,7 @@ private:
 	std::unique_ptr<event::Listener> m_listener = nullptr;
 
 	[[Reflect]]
-	std::vector<assets::AssetHandle<assets::Script>> m_scripts;
+	std::vector<assets::Handle<assets::Script>> m_scripts;
 
 	/// Per-node Lua script environment
 	std::unique_ptr<scripting::ScriptRuntime> m_script_runtime;
@@ -395,6 +456,8 @@ private:
 
 	/// Builds m_script_runtime from m_scripts
 	void loadScripts() noexcept;
+
+	std::list<NodeMessage> m_messages;
 };
 
 }
@@ -408,4 +471,6 @@ auto reflect_cast(toast::Node* n) -> T* {    // NOLINT
 	return nullptr;
 }
 
+#undef NODEFILE
 #include <node.generated.hpp>
+#include <toast/events/signals.inl>

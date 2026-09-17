@@ -77,6 +77,18 @@ function Time.pause() end
 
 function Time.resume() end
 
+---UI runtime controls available to every script
+UI = {}
+
+---Switches the active UI language and reloads open panel documents so text and
+---localized images refresh. Language must be one of the project's [ui] languages.
+---@param language string
+function UI.setLanguage(language) end
+
+---The active UI language code.
+---@return string
+function UI.language() end
+
 ---Tracy profiler hooks; no-ops when profiling is disabled.
 tracy = {}
 

@@ -13,7 +13,7 @@ namespace assets {
 
 class TOAST_API InputSettings : public Data {
 public:
-	explicit InputSettings(const toml::table& table, const AssetHandle<Schema>& schema = {})
+	explicit InputSettings(const toml::table& table, const Handle<Schema>& schema = {})
 	    : Data(table, schema, Data::keep_all_keys) { }
 
 	[[nodiscard]]

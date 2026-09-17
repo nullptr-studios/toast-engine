@@ -55,14 +55,13 @@ public class LogClient {
 				// Map to avalonia type
 				List<LogEntry> batch = [];
 				foreach (var log_data in proto_batch.Logs) {
-					var entry = new LogEntry {
-						Message = log_data.Message,
-						Severity = (uint)log_data.Severity,
-						File = log_data.Filepath + ":" + log_data.LineNumber,
-						Sink = log_data.Sink,
-						Timestamp = DateTimeOffset.FromUnixTimeMilliseconds((long)(log_data.Timestamp / 1_000_000))
-							.ToLocalTime().ToString("HH:mm:ss.fff")
-					};
+					var entry = new LogEntry(
+						log_data.Timestamp,
+						(uint)log_data.Severity,
+						log_data.Filepath,
+						log_data.LineNumber,
+						log_data.Sink,
+						log_data.Message);
 					batch.Add(entry);
 				}
 

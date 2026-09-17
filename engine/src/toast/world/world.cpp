@@ -1,6 +1,7 @@
 #include "world.hpp"
 
-#include "node_3d.hpp"
+#include "camera.hpp"
+#include "toast/physics/simulator.hpp"
 #include "workspace_events.hpp"
 #include "world_test_access.hpp"
 
@@ -9,8 +10,10 @@
 #include <toast/assets/asset_manager.hpp>
 #include <toast/assets/assets.hpp>
 #include <toast/assets/types.hpp>
+#include <toast/renderer/vulkan_renderer.hpp>
 #include <toast/thread_pool.hpp>
 #include <toast/uri_handler.hpp>
+#include <tracy/Tracy.hpp>
 #include <utility>
 
 namespace toast {
@@ -18,6 +21,7 @@ namespace toast {
 using namespace _detail;
 
 World::World() {
+	ZoneScoped;
 	instance = this;
 
 	m.listener.subscribe<event::LoadNode>("load_node", [](event::LoadNode& e) {
@@ -72,11 +76,38 @@ World::~World() {
 void World::tick() {
 	ZoneScoped;
 
+	/* The tick is more or less split into 6 stages
+	 *   1: queue draining
+	 *   2: earlyTick [dispatch]
+	 *   3: transform update
+	 *   4: tick [dispatch]
+	 *   5: accumulation update
+	 *   6: lateTick [dispatch]
+	 *
+	 * The only real discrepancy is that the accumulation update will not be handled
+	 * by the world but from the physics::Simulator class
+	 */
+
 	drainDestroyQueue();
 	drainLoadQueue();
 	drainSpawnQueue();
 
-	m_scheduler.run();
+	m_scheduler.runPhase(m_scheduler.schedule.early_tick, TickFunctionList::early_tick, "early_tick");
+
+	if (trees.root.exists()) {
+		INodeOwner::updateTransforms(*trees.root);
+	}
+	for (auto& g : trees.global) {
+		INodeOwner::updateTransforms(*g);
+	}
+
+	m_scheduler.runPhase(m_scheduler.schedule.tick, TickFunctionList::tick, "tick");
+
+	m_accumulator.tick(Time::delta(), [&]() { physics::Simulator::callTick(); });
+	// TODO: Is this class really needed?
+	m_scheduler.runPhase(m_scheduler.schedule.post_physics, TickFunctionList::post_physics, "post_physics");
+
+	m_scheduler.runPhase(m_scheduler.schedule.late_tick, TickFunctionList::late_tick, "late_tick");
 }
 
 void World::registerDependency(Node& from, Node& to) {
@@ -87,15 +118,10 @@ void World::unregisterDependency(Node& from, Node& to) {
 	instance->m_scheduler.unregisterDependency(from, to);
 }
 
-void World::loadNode(UID uid, bool activate_as_root) {
+void World::loadNode(UID uid) {
 	ZoneScoped;
 	ZoneNameF("World::loadNode(%s)", uid.get().c_str());
 	TOAST_INFO("World", "Loading node {} from file", uid);
-
-	if (activate_as_root) {
-		std::scoped_lock lock(instance->m.load_mutex);
-		instance->m.pending_root_uid = uid;
-	}
 
 	// Load stages:
 	//		1: get the node_file
@@ -144,48 +170,39 @@ void World::loadNode(UID uid, bool activate_as_root) {
 	instance->m.load_futures.emplace_back(std::move(future));
 }
 
-void World::loadNode(std::string_view uri, bool activate_as_root) {
+void World::loadNode(std::string_view uri) {
 	// just reroute to the actual loadNode() implementation
 	auto id = assets::resolveURI(uri);
 
-#ifndef NDEBUG
+	// an unresolvable URI leaves the engine dereferencing an empty optional
 	if (not id.has_value()) {
 		TOAST_WARN("World", "Couldn't load Node {}", uri);
 		return;
 	}
-#endif
 
-	loadNode(*id, activate_as_root);
+	loadNode(*id);
 }
 
 void World::drainLoadQueue() {
 	std::vector<Box<Node>> loaded;
-	UID pending_uid {0};
 	{
 		std::scoped_lock lock(m.load_mutex);
 		if (trees.load_queue.empty()) {
 			return;
 		}
 		std::swap(loaded, trees.load_queue);
-		pending_uid = m.pending_root_uid;
 	}
 
 	ZoneScoped;
 
 	// Freshly loaded trees go to the cached list and are ready to be activated
 	for (auto& root : loaded) {
-		const UID node_uid = root->uid();
 		root->changeNodeState(NodeState::cached);
-		TOAST_TRACE("World", "Node {} ({}) moved to cache", root->name(), node_uid);
+		TOAST_TRACE("World", "Node {} ({}) moved to cache", root->name(), root->uid());
 		trees.cached.emplace_back(std::move(root));
 
-		// Auto-activate if this is the pending start scene
-		if (pending_uid.data() != 0 && node_uid.data() == pending_uid.data()) {
-			TOAST_INFO("World", "Auto-activating start scene {}", node_uid);
-			{
-				std::scoped_lock lock(m.load_mutex);
-				m.pending_root_uid = UID {0};
-			}
+		if (not trees.root.exists()) {
+			TOAST_INFO("World", "Auto-activating first loaded scene {}", trees.cached.back()->uid());
 			setRoot(*trees.cached.back());
 		}
 	}
@@ -345,19 +362,6 @@ auto World::uidPath(const Node& node) -> std::string {
 
 namespace {
 
-auto looksLikeUid(std::string_view seg) -> bool {
-	if (seg.size() != 11) {
-		return false;
-	}
-	for (char c : seg) {
-		bool ok = (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-' || c == '_';
-		if (not ok) {
-			return false;
-		}
-	}
-	return true;
-}
-
 enum class QueryRoot : uint8_t {
 	self,
 	prefab_root,
@@ -407,7 +411,7 @@ auto parseQuery(std::string_view q) -> ParsedQuery {
 	if (parts[0] == "root") {
 		out.root = QueryRoot::prefab_root;
 		first = 1;
-	} else if (parts[0] == "world_root") {
+	} else if (parts[0] == "world") {
 		out.root = QueryRoot::world_root;
 		first = 1;
 	} else if (parts[0] == "global") {
@@ -421,12 +425,9 @@ auto parseQuery(std::string_view q) -> ParsedQuery {
 
 }
 
-auto World::findScoped(Node& scope, std::string_view seg, bool by_uid) -> Box<Node> {
-	uint64_t target = by_uid ? UID::fromString(seg) : 0;
-
+auto World::findScoped(Node& scope, std::string_view seg) -> Box<Node> {
 	auto dfs = [&](this auto&& self, Node& n, bool is_scope_root) -> Box<Node> {
-		bool match = by_uid ? (n.uid().data() == target) : (n.name() == seg);
-		if (match) {
+		if (n.name() == seg) {
 			return n.box();
 		}
 		// Instances are opaque
@@ -444,11 +445,9 @@ auto World::findScoped(Node& scope, std::string_view seg, bool by_uid) -> Box<No
 	return dfs(scope, true);
 }
 
-void World::searchScoped(Node& scope, std::string_view seg, bool by_uid, std::vector<Box<Node>>& out) {
-	uint64_t target = by_uid ? UID::fromString(seg) : 0;
-
+void World::searchScoped(Node& scope, std::string_view seg, std::vector<Box<Node>>& out) {
 	auto dfs = [&](this auto&& self, Node& n) -> void {
-		if (by_uid ? (n.uid().data() == target) : (n.name() == seg)) {
+		if (n.name() == seg) {
 			out.emplace_back(n.box());
 		}
 		// search() is the general form, it crosses into prefab interiors
@@ -495,14 +494,12 @@ auto World::findFrom(const Node& origin, std::string_view query) -> Box<Node> {
 		return origins.empty() ? Box<Node> {} : origins.front()->box();
 	}
 
-	bool by_uid = looksLikeUid(pq.segments.front());
-
 	for (Node* start : origins) {
 		Node* scope = start;
 		Box<Node> current;
 		bool ok = true;
 		for (std::string_view seg : pq.segments) {
-			current = findScoped(*scope, seg, by_uid);
+			current = findScoped(*scope, seg);
 			if (not current.exists()) {
 				ok = false;
 				break;
@@ -515,6 +512,14 @@ auto World::findFrom(const Node& origin, std::string_view query) -> Box<Node> {
 	}
 
 	return {};
+}
+
+auto World::findFrom(const Node& origin, const UID& uid) -> Box<Node> {
+	ZoneScoped;
+
+	// Scoped to the local root
+	Box<Node> scope = const_cast<Node&>(origin).root();
+	return findNode(uid, scope.exists() ? &*scope : const_cast<Node*>(&origin));
 }
 
 auto World::searchFrom(const Node& origin, std::string_view query) -> std::vector<Box<Node>> {
@@ -560,13 +565,11 @@ auto World::searchFrom(const Node& origin, std::string_view query) -> std::vecto
 		return out;
 	}
 
-	bool by_uid = looksLikeUid(pq.segments.front());
-
 	for (Node* start : origins) {
 		Node* scope = start;
 		bool ok = true;
 		for (size_t i = 0; i + 1 < pq.segments.size(); ++i) {
-			Box<Node> step = findScoped(*scope, pq.segments[i], by_uid);
+			Box<Node> step = findScoped(*scope, pq.segments[i]);
 			if (not step.exists()) {
 				ok = false;
 				break;
@@ -574,7 +577,7 @@ auto World::searchFrom(const Node& origin, std::string_view query) -> std::vecto
 			scope = &*step;
 		}
 		if (ok) {
-			searchScoped(*scope, pq.segments.back(), by_uid, out);
+			searchScoped(*scope, pq.segments.back(), out);
 		}
 	}
 
@@ -603,6 +606,7 @@ auto World::findCached(std::string_view name) -> Box<Node> {
 }
 
 void World::hotReload() {
+	ZoneScoped;
 	if (!instance) {
 		return;
 	}
@@ -720,21 +724,6 @@ void World::drainDestroyQueue() {
 	reapTombstones();
 }
 
-void World::markNode3DDependantsDirty(const Box<Node>& node) noexcept {
-	if (!instance) {
-		return;
-	}
-
-	auto it = instance->m_scheduler.graph.inverse_connections.find(node);
-	if (it != instance->m_scheduler.graph.inverse_connections.end()) {
-		for (auto& dependent : it->second) {
-			if (auto node3d = dependent.as<Node3D>()) {
-				node3d->m_dirty_world = true;
-			}
-		}
-	}
-}
-
 void World::computeDependencyGraph() {
 	ZoneScoped;
 
@@ -751,6 +740,10 @@ void World::computeDependencyGraph() {
 	}
 
 	m_scheduler.compute(all_nodes);
+}
+
+void World::applyActiveCamera() {
+	renderer::setActiveCamera(activeRenderCamera());
 }
 
 auto World::swapRoot(Node& node) -> Box<Node> {
@@ -800,7 +793,12 @@ auto World::swapRoot(Node& node) -> Box<Node> {
 	computeDependencyGraph();
 
 	node.propagateCallTick(node.info(), TickFunctionList::begin);
-	node.enabled(true);
+	// A freshly loaded tree arrives already flagged enabled, where enabled(true) is a no-op and onEnable never runs
+	if (node.m_local_enabled) {
+		node.propagateEnable();
+	} else {
+		node.enabled(true);
+	}
 	event::send<event::RequestHierarchyUpdate>();    // TODO: should the world send this?
 	TOAST_INFO("World", "Swapped root to {} ({})", node.name(), node.uid());
 
@@ -855,6 +853,7 @@ auto World::moveToCached(Node& node) -> Box<Node> {
 }
 
 auto World::moveToGlobal(Node& node) -> Box<Node> {
+	ZoneScoped;
 	switch (node.m_state) {
 		case NodeState::root: TOAST_WARN("World", "Tried to move root to cached, consider using swapRoot() instead"); return {};
 		case NodeState::global: TOAST_WARN("World", "Tried to move to global a Node that is already in global"); return {};
@@ -879,13 +878,18 @@ auto World::moveToGlobal(Node& node) -> Box<Node> {
 	computeDependencyGraph();
 
 	node.propagateCallTick(node.info(), TickFunctionList::begin);
-	node.enabled(true);
+	if (node.m_local_enabled) {
+		node.propagateEnable();
+	} else {
+		node.enabled(true);
+	}
 	trees.global.emplace_back(node.box());
 	TOAST_TRACE("World", "Node {} ({}) moved to global", node.name(), node.uid());
 	return node.box();
 }
 
 auto World::moveToChild(Node& node, Node& parent) -> Box<Node> {
+	ZoneScoped;
 	if (parent.m_state != NodeState::root) {
 		TOAST_WARN("World", "You can only move a node into one that is on the root");
 		return {};
@@ -928,7 +932,11 @@ auto World::moveToChild(Node& node, Node& parent) -> Box<Node> {
 
 	if (run_begin) {
 		node.propagateCallTick(node.info(), TickFunctionList::begin);
-		node.enabled(true);
+		if (node.m_local_enabled) {
+			node.propagateEnable();
+		} else {
+			node.enabled(true);
+		}
 	}
 	TOAST_TRACE("World", "Moved node {} ({}) under {} ({})", node.name(), node.uid(), parent.name(), parent.uid());
 
@@ -1099,6 +1107,14 @@ auto WorldTestAccess::createWorld() -> WorldPtr {
 	return WorldPtr(new World());
 }
 
+auto WorldTestAccess::activeRenderCamera(World& world) -> Camera* {
+	return world.activeRenderCamera();
+}
+
+auto WorldTestAccess::hasActiveCamera(World& world) -> bool {
+	return world.activeCamera().exists();
+}
+
 auto WorldTestAccess::createNode(World& world, std::string_view name, NodeState state) -> Box<Node> {
 	auto node = world.nodeAllocation();
 	node->m_name = name;
@@ -1109,6 +1125,7 @@ auto WorldTestAccess::createNode(World& world, std::string_view name, NodeState 
 
 	NodeInfo& info = testNodeInfos()[&*node];
 	info.type = "test::Node";
+	info.signals = Reflect<toast::Node>::type_info.signals;
 	info.functions.list = TickFunctionList::none;
 	node->m_info = &info;
 
@@ -1129,7 +1146,15 @@ void WorldTestAccess::addTickStage(Node& node, TickFunctionList stage) {
 	node.m_info = &info;
 }
 
-void WorldTestAccess::attachScript(Node& node, const assets::AssetHandle<assets::Script>& script) {
+void WorldTestAccess::setEnableCallback(Node& node, void (*callback)(void*)) {
+	NodeInfo& info = testNodeInfos()[&node];
+	info.type = "test::Node";
+	info.functions.list = info.functions.list | TickFunctionList::on_enable;
+	info.functions.on_enable = callback;
+	node.m_info = &info;
+}
+
+void WorldTestAccess::attachScript(Node& node, const assets::Handle<assets::Script>& script) {
 	node.m_scripts.push_back(script);
 	node.loadScripts();
 }
@@ -1152,9 +1177,8 @@ void WorldTestAccess::computeDependencyGraph(World& world) {
 	world.computeDependencyGraph();
 }
 
-auto WorldTestAccess::instantiate(
-    World& world, const assets::AssetHandle<assets::Prefab>& file, INodeOwner::InstantiateContext& ctx
-) -> Box<Node> {
+auto WorldTestAccess::instantiate(World& world, const assets::Handle<assets::Prefab>& file, INodeOwner::InstantiateContext& ctx)
+    -> Box<Node> {
 	return world.instantiate(file, ctx);
 }
 
@@ -1173,6 +1197,12 @@ void WorldTestAccess::initThreadPool() {
 
 void WorldTestAccess::setWorldRoot(World& world, Node& node) {
 	world.trees.root = node.box();
+}
+
+auto WorldTestAccess::activateLoadedRoot(World& world, Node& node) -> Box<Node> {
+	node.changeNodeState(NodeState::cached);
+	world.trees.cached.emplace_back(node.box());
+	return world.swapRoot(node);
 }
 
 void WorldTestAccess::initAssetManager(std::string_view assets_dir, std::string_view cache_dir) {
@@ -1211,7 +1241,7 @@ void WorldTestAccess::drainLoadQueue(World& world) {
 }
 
 auto WorldTestAccess::spawnSync(
-    World& world, const assets::AssetHandle<assets::Prefab>& file, Node& parent, INodeOwner::InstantiateContext& ctx
+    World& world, const assets::Handle<assets::Prefab>& file, Node& parent, INodeOwner::InstantiateContext& ctx
 ) -> Box<Node> {
 	Box<Node> root = world.instantiate(file, ctx);
 	if (not root.exists()) {

@@ -5,6 +5,7 @@
 #include <limits>
 #include <sstream>
 #include <toast/log.hpp>
+#include <tracy/Tracy.hpp>
 
 namespace assets {
 
@@ -57,7 +58,7 @@ void applyConstraints(DataValue& value, const std::vector<SchemaField>& fields) 
 
 }
 
-Data::Data(const toml::table& table, AssetHandle<Schema> schema) : m_schema(std::move(schema)) {
+Data::Data(const toml::table& table, Handle<Schema> schema) : m_schema(std::move(schema)) {
 	const Schema* schema_ptr = m_schema.hasValue() ? &m_schema.get() : nullptr;
 	m_root = buildRoot(table, schema_ptr);
 	if (schema_ptr != nullptr) {
@@ -65,7 +66,8 @@ Data::Data(const toml::table& table, AssetHandle<Schema> schema) : m_schema(std:
 	}
 }
 
-Data::Data(const toml::table& table, AssetHandle<Schema> schema, KeepAllKeysTag) : m_schema(std::move(schema)) {
+Data::Data(const toml::table& table, Handle<Schema> schema, KeepAllKeysTag) : m_schema(std::move(schema)) {
+	m_keep_all_keys = true;
 	m_root = buildRoot(table, nullptr);
 	// KeepAllKeys skips the schema when building
 	if (m_schema.hasValue()) {
@@ -73,7 +75,16 @@ Data::Data(const toml::table& table, AssetHandle<Schema> schema, KeepAllKeysTag)
 	}
 }
 
+void Data::reload(const toml::table& table) {
+	const Schema* schema_ptr = (m_schema.hasValue() && !m_keep_all_keys) ? &m_schema.get() : nullptr;
+	m_root = buildRoot(table, schema_ptr);
+	if (m_schema.hasValue()) {
+		applyConstraints(m_root, m_schema.get().fields());
+	}
+}
+
 auto Data::buildRoot(const toml::table& table, const Schema* schema) -> DataValue {
+	ZoneScoped;
 	auto root = DataValue::makeObject();
 
 	if (schema == nullptr) {
@@ -103,6 +114,7 @@ auto Data::buildRoot(const toml::table& table, const Schema* schema) -> DataValu
 }
 
 auto Data::serialize(SaveMode mode) const -> std::vector<uint8_t> {
+	ZoneScoped;
 	if (mode == SaveMode::game) {
 		// BSON, write only
 		auto j = m_root.toJson();

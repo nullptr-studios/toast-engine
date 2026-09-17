@@ -28,12 +28,13 @@ public:
 	void onAudioTargetExit(const VolumeTarget& target) override;
 
 private:
+	void updateInspectorMessages() override;
 	void onVolumeTick() override;
 	void onEnable();
 	void onDisable();
 
 	[[Reflect]]
-	assets::AssetHandle<assets::AudioSnapshot> m_snapshot;
+	assets::Handle<assets::AudioSnapshot> m_snapshot;
 
 	[[Reflect, Unit("s")]]
 	float m_fade_in = 0.2f;

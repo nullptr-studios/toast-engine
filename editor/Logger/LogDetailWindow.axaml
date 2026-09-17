@@ -1,0 +1,129 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:editor.Logger"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        d:DesignWidth="700"
+        d:DesignHeight="420"
+        x:Class="editor.Logger.LogDetailWindow"
+        x:DataType="vm:LogEntry"
+        Width="700"
+        MinHeight="260"
+        MaxHeight="640"
+        SizeToContent="Height"
+        CanResize="False"
+        CanMaximize="False"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        Background="{StaticResource Bg3}"
+        Title="Log Entry">
+
+	<Window.Styles>
+		<Style Selector="Button.primary">
+			<Setter Property="Background"
+			        Value="{StaticResource Red}" />
+			<Setter Property="Foreground"
+			        Value="White" />
+			<Setter Property="FontWeight"
+			        Value="Bold" />
+			<Setter Property="MinWidth"
+			        Value="80" />
+		</Style>
+	</Window.Styles>
+
+	<StackPanel Margin="8"
+	            Spacing="8">
+		<StackPanel Orientation="Horizontal"
+		            Spacing="8">
+			<Border Background="{Binding Severity, Converter={StaticResource SeverityBarColorConverter}}"
+			        Width="6"
+			        Height="28"
+			        CornerRadius="3" />
+			<TextBlock Text="{Binding SeverityName}"
+			           FontFamily="FiraCode Nerd Font,Consolas,monospace"
+			           FontWeight="Bold"
+			           FontSize="16"
+			           Foreground="{Binding Severity, Converter={StaticResource SeverityToColorConverter}}"
+			           VerticalAlignment="Center" />
+			<TextBlock Text="{Binding Sink}"
+			           FontFamily="FiraCode Nerd Font,Consolas,monospace"
+			           FontWeight="SemiBold"
+			           FontSize="16"
+			           Foreground="{StaticResource Text}"
+			           VerticalAlignment="Center" />
+		</StackPanel>
+
+		<Grid ColumnDefinitions="Auto,*"
+		      RowDefinitions="Auto,Auto"
+		      ColumnSpacing="8"
+		      RowSpacing="8">
+			<TextBlock Grid.Row="0"
+			           Grid.Column="0"
+			           Text="Timestamp"
+			           Foreground="{StaticResource TextMuted}" />
+			<TextBlock Grid.Row="0"
+			           Grid.Column="1"
+			           Text="{Binding AbsoluteTimestamp}"
+			           FontFamily="FiraCode Nerd Font,Consolas,monospace" />
+			<TextBlock Grid.Row="1"
+			           Grid.Column="0"
+			           Text="File"
+			           Foreground="{StaticResource TextMuted}" />
+			<TextBlock Grid.Row="1"
+			           Grid.Column="1"
+			           Text="{Binding FileLine}"
+			           FontFamily="FiraCode Nerd Font,Consolas,monospace"
+			           TextWrapping="Wrap" />
+		</Grid>
+
+		<Border Background="{StaticResource Bg1}"
+		        CornerRadius="8"
+		        Padding="8"
+		        MaxHeight="300">
+			<ScrollViewer VerticalScrollBarVisibility="Auto">
+				<SelectableTextBlock Text="{Binding Message}"
+				                     TextWrapping="Wrap"
+				                     FontFamily="FiraCode Nerd Font,Consolas,monospace"
+				                     Foreground="{StaticResource Text}" />
+			</ScrollViewer>
+		</Border>
+
+		<Grid ColumnDefinitions="*,Auto,Auto,Auto"
+		      ColumnSpacing="8">
+			<Button Grid.Column="1"
+			        Click="OnCopyMessage"
+			        CornerRadius="6"
+			        Background="{StaticResource Bg4}"
+			        HorizontalContentAlignment="Center">
+				<StackPanel Orientation="Horizontal"
+				            Spacing="4">
+					<LucideIcon Kind="MessageSquareText"
+					            Size="16"
+					            StrokeWidth="2.5" />
+					<TextBlock Text="Copy message" />
+				</StackPanel>
+			</Button>
+			<Button Grid.Column="2"
+			        Click="OnCopy"
+			        CornerRadius="6"
+			        Background="{StaticResource Bg4}"
+			        HorizontalContentAlignment="Center">
+				<StackPanel Orientation="Horizontal"
+				            Spacing="4">
+					<LucideIcon Kind="ClipboardCopy"
+					            Size="16"
+					            StrokeWidth="2.5" />
+					<TextBlock Text="Copy" />
+				</StackPanel>
+			</Button>
+			<Button Grid.Column="3"
+			        Classes="primary"
+			        Click="OnClose"
+			        CornerRadius="6"
+			        HorizontalContentAlignment="Center">
+				<TextBlock Text="Close" />
+			</Button>
+		</Grid>
+	</StackPanel>
+</Window>

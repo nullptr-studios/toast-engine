@@ -1,6 +1,6 @@
 /// @file VulkanPipeline.hpp
 /// @author dario
-/// @date 16/05/2026.
+/// @date 16/05/2026
 
 #pragma once
 
@@ -15,10 +15,6 @@ namespace renderer {
 
 class VulkanCore;
 
-/**
- * @class VulkanPipeline
- * @brief Wraps Vulkan graphics and compute pipelines with shader compilation
- */
 class VulkanPipeline {
 public:
 	enum class PipelineType : uint8_t {
@@ -26,38 +22,56 @@ public:
 		compute
 	};
 
+	enum class BlendPreset : uint8_t {
+		none,
+		alpha,            // srcAlpha 1-srcAlpha
+		premultiplied,    // one 1-srcAlpha
+		additive,         // one one
+		multiply,         // dstColor zero
+	};
+
 	struct Config {
 		PipelineType pipeline_type = PipelineType::graphics;
 		std::string debug_name;
 
-		// Render state
 		vk::Format color_format = vk::Format::eUndefined;
 		std::optional<vk::Format> depth_format;
 		vk::Extent2D extent;
 
-		// Shader data TODO: Move this into own shader class
+		std::vector<vk::Format> extra_color_formats;
+
+		bool write_extra_color = false;
+
+		bool depth_only = false;
+
+		/// Must equal every RenderingInfo viewMask. 0 is not multiview and leaves SV_ViewID undefined
+		uint32_t view_mask = 0;
+
+		// TODO move into its own shader class
 		std::vector<std::byte> shader_spirv;
 		std::string vertex_entry = "vertexMain";
 		std::string fragment_entry = "fragmentMain";
 		std::string compute_entry = "computeMain";
 
-		// Layouts are now provided from the outside
 		vk::PipelineLayout pipeline_layout = nullptr;
 
-		// Vertex input state; every graphics pipeline must set this explicitly
-		vk::VertexInputBindingDescription vertex_binding;
+		std::vector<vk::VertexInputBindingDescription> vertex_bindings;
 		std::vector<vk::VertexInputAttributeDescription> vertex_attributes;
 
 		vk::PrimitiveTopology topology = vk::PrimitiveTopology::eTriangleList;
 
-		// Raster state
 		vk::CullModeFlags cull_mode = vk::CullModeFlagBits::eBack;
-		vk::FrontFace front_face = vk::FrontFace::eCounterClockwise;    // Note: Counter-clockwise due to inverted projection matrix
+		vk::FrontFace front_face = vk::FrontFace::eCounterClockwise;    // Counter clockwise due to the inverted projection matrix
 
-		// Depth/blend state
 		bool depth_test = true;
 		bool depth_write = true;
-		bool blend_enable = false;    // standard alpha blending (srcAlpha, 1-srcAlpha) when true
+		/// Far plane draws like the skybox need eLessOrEqual
+		vk::CompareOp depth_compare = vk::CompareOp::eLess;
+
+		float depth_bias_constant = 0.0f;
+		float depth_bias_slope = 0.0f;
+		bool blend_enable = false;
+		BlendPreset blend_preset = BlendPreset::none;
 	};
 
 	VulkanPipeline() = default;
@@ -82,15 +96,9 @@ public:
 		return m_pipeline;
 	}
 
-	[[nodiscard]]
-	auto getPipelineType() const -> PipelineType {
-		return m_pipeline_type;
-	}
-
 private:
 	std::optional<vk::raii::ShaderModule> m_shader_module;
 	vk::raii::Pipeline m_pipeline = nullptr;
-	PipelineType m_pipeline_type = PipelineType::graphics;
 };
 
 }    // namespace renderer

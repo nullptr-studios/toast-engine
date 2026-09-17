@@ -22,6 +22,36 @@
 			<Setter Property="TextTrimming"
 			        Value="CharacterEllipsis" />
 		</Style>
+		<Style Selector="ToggleButton.hdr">
+			<Setter Property="Background"
+			        Value="Transparent" />
+			<Setter Property="BorderThickness"
+			        Value="0" />
+			<Setter Property="Padding"
+			        Value="4" />
+			<Setter Property="HorizontalAlignment"
+			        Value="Stretch" />
+			<Setter Property="HorizontalContentAlignment"
+			        Value="Stretch" />
+			<Setter Property="Foreground"
+			        Value="{StaticResource Text}" />
+			<Setter Property="Cursor"
+			        Value="Hand" />
+		</Style>
+		<Style Selector="ToggleButton.hdr /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background"
+			        Value="Transparent" />
+			<Setter Property="CornerRadius"
+			        Value="6" />
+		</Style>
+		<Style Selector="ToggleButton.hdr:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg4}" />
+		</Style>
+		<Style Selector="ToggleButton.hdr:pressed /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg4}" />
+		</Style>
 		<Style Selector="Button.add-btn">
 			<Setter Property="HorizontalAlignment"
 			        Value="Stretch" />
@@ -121,11 +151,12 @@
 							      ColumnSpacing="8"
 							      IsVisible="{Binding IsScalar}">
 								<TextBlock Classes="lbl"
-								           Text="{Binding Name}" />
+								           Text="{Binding DisplayLabel}" />
 								<Panel Grid.Column="1">
 									<elements:DragFloatBox Value="{Binding FloatVal,  Mode=TwoWay}"
 									                       Minimum="{Binding Minimum}"
 									                       Maximum="{Binding Maximum}"
+									                       Unit="{Binding Unit}"
 									                       IsVisible="{Binding IsFloat}" />
 									<elements:DragIntBox Value="{Binding IntVal,    Mode=TwoWay}"
 									                     Minimum="{Binding Minimum}"
@@ -164,7 +195,7 @@
 							<StackPanel Spacing="8"
 							            IsVisible="{Binding IsVectorLayout}">
 								<TextBlock Classes="lbl"
-								           Text="{Binding Name}" />
+								           Text="{Binding DisplayLabel}" />
 								<elements:DragVec2Box X="{Binding X, Mode=TwoWay}"
 								                      Y="{Binding Y, Mode=TwoWay}"
 								                      Minimum="{Binding Minimum}"
@@ -178,21 +209,26 @@
 								                      IsVisible="{Binding IsVec3}" />
 							</StackPanel>
 
-							<!-- Object -->
+							<!-- Object (collapsible, class-chip style) -->
 							<Border IsVisible="{Binding IsObject}"
 							        Background="{StaticResource Bg3}"
 							        CornerRadius="8"
 							        Padding="8">
-								<StackPanel Spacing="8">
-									<TextBlock Text="{Binding Name}"
-									           FontWeight="Bold"
-									           HorizontalAlignment="Center"
-									           Margin="0,0,0,4" />
-									<elements:ArrayBox Background="Transparent"
+								<StackPanel>
+									<ToggleButton Classes="hdr"
+									              IsChecked="{Binding Expanded, Mode=TwoWay}">
+										<TextBlock Text="{Binding DisplayLabel}"
+										           FontWeight="Bold"
+										           HorizontalAlignment="Center"
+										           VerticalAlignment="Center" />
+									</ToggleButton>
+									<elements:ArrayBox Margin="0,8,0,0"
+									                   Background="Transparent"
 									                   Padding="0"
 									                   Items="{Binding Children, Mode=TwoWay}"
 									                   CanReorder="False"
-									                   CanAddRemove="False" />
+									                   CanAddRemove="False"
+									                   IsVisible="{Binding Expanded}" />
 								</StackPanel>
 							</Border>
 
@@ -200,7 +236,7 @@
 							<StackPanel Spacing="4"
 							            IsVisible="{Binding IsArray}">
 								<TextBlock Classes="lbl"
-								           Text="{Binding Name}" />
+								           Text="{Binding DisplayLabel}" />
 								<elements:ArrayBox Background="{StaticResource Bg1}"
 								                   Padding="6"
 								                   Items="{Binding Children, Mode=TwoWay}"

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using Tomlyn;
@@ -17,6 +17,7 @@ public record MetaHeader {
 }
 
 public record TextureMetaSection : IMetaSection {
+	public string ColorSpace { get; init; } = "sRGB";
 	public bool GenerateMipmaps { get; init; } = true;
 	public int MaxResolution { get; init; } = 4096;
 	public string Compression { get; init; } = "BC7";
@@ -38,6 +39,13 @@ public record GltfMetaSection : IMetaSection {
 	public bool ImportTextures { get; init; } = true;
 	public bool ImportCameras { get; init; }
 	public bool ImportLights { get; init; } = true;
+	public bool ImportAnimations { get; init; } = true;
+	public bool GeneratePrefab { get; init; } = true;
+}
+
+public record VoxMetaSection : IMetaSection {
+	public bool CreateFolder { get; init; } = true;
+	public bool ImportPalette { get; init; } = true;
 	public bool GeneratePrefab { get; init; } = true;
 }
 
@@ -64,6 +72,7 @@ public static class MetaFile {
 			switch (section) {
 				case TextureMetaSection texture:
 					dto.Texture = new TextureSectionDto {
+						ColorSpace = texture.ColorSpace,
 						GenerateMipmaps = texture.GenerateMipmaps,
 						MaxResolution = texture.MaxResolution,
 						Compression = texture.Compression,
@@ -80,6 +89,13 @@ public static class MetaFile {
 						CreateFolder = psd.CreateFolder
 					};
 					break;
+				case VoxMetaSection vox:
+					dto.Vox = new VoxSectionDto {
+						CreateFolder = vox.CreateFolder,
+						ImportPalette = vox.ImportPalette,
+						GeneratePrefab = vox.GeneratePrefab
+					};
+					break;
 				case GltfMetaSection gltf:
 					dto.Gltf = new GltfSectionDto {
 						CreateFolder = gltf.CreateFolder,
@@ -87,6 +103,7 @@ public static class MetaFile {
 						ImportTextures = gltf.ImportTextures,
 						ImportCameras = gltf.ImportCameras,
 						ImportLights = gltf.ImportLights,
+						ImportAnimations = gltf.ImportAnimations,
 						GeneratePrefab = gltf.GeneratePrefab
 					};
 					break;
@@ -120,6 +137,7 @@ public static class MetaFile {
 			if (dto.Texture == null) return null;
 			var t = dto.Texture;
 			return new TextureMetaSection {
+				ColorSpace = t.ColorSpace,
 				GenerateMipmaps = t.GenerateMipmaps,
 				MaxResolution = t.MaxResolution,
 				Compression = t.Compression,
@@ -149,6 +167,22 @@ public static class MetaFile {
 		}
 	}
 
+	public static VoxMetaSection? ReadVoxSection(string path) {
+		var metaPath = path.EndsWith(".meta") ? path : path + ".meta";
+		if (!File.Exists(metaPath)) return null;
+		try {
+			var dto = TomlSerializer.Deserialize<MetaFileDto>(File.ReadAllText(metaPath))!;
+			if (dto.Vox == null) return null;
+			return new VoxMetaSection {
+				CreateFolder = dto.Vox.CreateFolder,
+				ImportPalette = dto.Vox.ImportPalette,
+				GeneratePrefab = dto.Vox.GeneratePrefab
+			};
+		} catch {
+			return null;
+		}
+	}
+
 	public static GltfMetaSection? ReadGltfSection(string path) {
 		var metaPath = path.EndsWith(".meta") ? path : path + ".meta";
 		if (!File.Exists(metaPath)) return null;
@@ -161,6 +195,7 @@ public static class MetaFile {
 				ImportTextures = dto.Gltf.ImportTextures,
 				ImportCameras = dto.Gltf.ImportCameras,
 				ImportLights = dto.Gltf.ImportLights,
+				ImportAnimations = dto.Gltf.ImportAnimations,
 				GeneratePrefab = dto.Gltf.GeneratePrefab
 			};
 		} catch {
@@ -213,9 +248,17 @@ file sealed class MetaFileDto {
 	[TomlPropertyName("texture")] public TextureSectionDto? Texture { get; set; }
 	[TomlPropertyName("psd")] public PsdSectionDto? Psd { get; set; }
 	[TomlPropertyName("gltf")] public GltfSectionDto? Gltf { get; set; }
+	[TomlPropertyName("vox")] public VoxSectionDto? Vox { get; set; }
+}
+
+file sealed class VoxSectionDto {
+	[TomlPropertyName("create_folder")] public bool CreateFolder { get; set; } = true;
+	[TomlPropertyName("import_palette")] public bool ImportPalette { get; set; } = true;
+	[TomlPropertyName("generate_prefab")] public bool GeneratePrefab { get; set; } = true;
 }
 
 file sealed class TextureSectionDto {
+	[TomlPropertyName("color_space")] public string ColorSpace { get; set; } = "sRGB";
 	[TomlPropertyName("generate_mipmaps")] public bool GenerateMipmaps { get; set; } = true;
 	[TomlPropertyName("max_resolution")] public int MaxResolution { get; set; } = 4096;
 	[TomlPropertyName("compression")] public string Compression { get; set; } = "BC7";
@@ -240,5 +283,8 @@ file sealed class GltfSectionDto {
 	[TomlPropertyName("import_textures")] public bool ImportTextures { get; set; } = true;
 	[TomlPropertyName("import_cameras")] public bool ImportCameras { get; set; }
 	[TomlPropertyName("import_lights")] public bool ImportLights { get; set; } = true;
+
+	[TomlPropertyName("import_animations")]
+	public bool ImportAnimations { get; set; } = true;
 	[TomlPropertyName("generate_prefab")] public bool GeneratePrefab { get; set; } = true;
 }

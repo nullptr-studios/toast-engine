@@ -1,9 +1,12 @@
 #include "lua_state.hpp"
 
 #include "asset_proxy.hpp"
+#include "lua_signal.hpp"
 #include "lua_types.hpp"
 #include "lua_util.hpp"
 #include "node_proxy.hpp"
+#include "signal_proxy.hpp"
+#include "ui_binds_proxy.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -23,6 +26,7 @@
 #include <toast/log.hpp>
 #include <toast/reflect/reflect_node.hpp>
 #include <toast/time.hpp>
+#include <toast/ui/ui_system.hpp>
 #include <tracy/Tracy.hpp>
 #include <tracy/TracyLua.hpp>
 
@@ -49,7 +53,7 @@ auto luaPrint(lua_State* state) -> int {
 		}
 
 		if (i < nargs) {
-			output += "\t";
+			output += '\t';
 		}
 	}
 
@@ -70,7 +74,7 @@ auto luaWarn(lua_State* state) -> int {
 		}
 
 		if (i < nargs) {
-			output += "\t";
+			output += '\t';
 		}
 	}
 
@@ -176,33 +180,12 @@ auto LuaState::tryLock(size_t index) noexcept -> Lock {
 	return {std::move(guard), entry.state, index};
 }
 
-void LuaState::plotMemory() noexcept {
-#ifdef TRACY_ENABLE
-	// Tracy keeps plot names by pointer, so they need stable storage
-	static const auto plot_names = [] {
-		std::array<std::string, pool_size> names;
-		for (size_t i = 0; i < pool_size; ++i) {
-			names[i] = std::format("Lua memory #{} (KB)", i);
-		}
-		return names;
-	}();
-
-	for (size_t i = 0; i < pool_size; ++i) {
-		Lock guard = tryLock(i);
-		if (!guard) {
-			continue;    // busy running a script; sample it next time
-		}
-		const auto kilobytes = static_cast<int64_t>(lua_gc(guard.state(), LUA_GCCOUNT));
-		TracyPlot(plot_names[i].c_str(), kilobytes);
-	}
-#endif
-}
-
 auto LuaState::nextIndex() noexcept -> size_t {
-	return m_next_index.fetch_add(1, std::memory_order_relaxed) % pool_size;
+	return m_next_index.fetch_add(1, std::memory_order_relaxed) % m_pool_size;
 }
 
 auto LuaState::runString(std::string_view lua_code) noexcept -> bool {
+	ZoneScoped;
 	Lock guard = lock(0);
 	if (!guard) {
 		return false;
@@ -226,10 +209,12 @@ auto LuaState::runString(std::string_view lua_code) noexcept -> bool {
 	return true;
 }
 
-LuaState::LuaState() {
+LuaState::LuaState() : m_pool_size(1 + toast::ThreadPool::workerCount()), m_entries(m_pool_size) {
+	ZoneScoped;
 	LuaState::instance = this;
 
-	for (Entry& entry : m_entries) {
+	for (size_t i = 0; i < m_pool_size; ++i) {
+		Entry& entry = m_entries[i];
 		entry.state = luaL_newstate();
 		TOAST_ASSERT(entry.state != nullptr, "Lua", "Failed to create Lua state");
 		luaL_openlibs(entry.state);
@@ -248,7 +233,7 @@ LuaState::LuaState() {
 		registerApi(entry.state);
 	}
 
-	TOAST_INFO("Lua", "Created pool of {} lua states", pool_size);
+	TOAST_INFO("Lua", "Created pool of {} lua states", m_pool_size);
 }
 
 LuaState::~LuaState() noexcept {
@@ -260,6 +245,7 @@ LuaState::~LuaState() noexcept {
 }
 
 void LuaState::registerApi(lua_State* state) noexcept {
+	ZoneScoped;
 	using namespace luabridge;
 
 	getGlobalNamespace(state)
@@ -523,6 +509,79 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    .addNewIndexMetaMethod(nodeProxyNewindex)
 	    .endClass()
 
+	    // SignalProxy
+	    .beginClass<SignalProxy>("Signal")
+	    .addFunction(
+	        "connect",
+	        overload<SignalProxy&, const NodeProxy&, const std::string&>(
+	            +[](SignalProxy& signal, const NodeProxy& target, const std::string& function) {
+		            return signal.connect(target, function, signals::ConnectionSource::lua, true);
+	            }
+	        ),
+	        overload<SignalProxy&, const NodeProxy&, const std::string&, bool>(
+	            +[](SignalProxy& signal, const NodeProxy& target, const std::string& function, bool forwards_args) {
+		            return signal.connect(target, function, signals::ConnectionSource::lua, forwards_args);
+	            }
+	        ),
+	        overload<SignalProxy&, const luabridge::LuaRef&, const std::string&>(
+	            +[](SignalProxy& signal, const luabridge::LuaRef& target, const std::string& function) {
+		            return target.isTable() && signal.connectSelf(function, signals::ConnectionSource::lua);
+	            }
+	        ),
+	        overload<SignalProxy&, const luabridge::LuaRef&, const std::string&, bool>(
+	            +[](SignalProxy& signal, const luabridge::LuaRef& target, const std::string& function, bool forwards_args) {
+		            return target.isTable() && signal.connectSelf(function, signals::ConnectionSource::lua, forwards_args);
+	            }
+	        )
+	    )
+	    .addFunction(
+	        "disconnect",
+	        [](SignalProxy& signal, const NodeProxy& target, const std::string& function) {
+		        return signal.disconnect(target, signals::ConnectionSource::lua, function);
+	        },
+	        [](SignalProxy& signal, const luabridge::LuaRef& target, const std::string& function) {
+		        return target.isTable() && signal.disconnectSelf(signals::ConnectionSource::lua, function);
+	        }
+	    )
+	    .addFunction("clear", [](SignalProxy& signal) { signal.clear(signals::ConnectionSource::lua); })
+	    .addFunction("fire", &SignalProxy::fire)
+	    .endClass()
+
+	    .beginClass<LuaSignal>("LuaSignal")
+	    .addFunction(
+	        "connect",
+	        [](LuaSignal& signal, const NodeProxy& target, const std::string& function) {
+		        return signal.connect(target, function, signals::ConnectionSource::lua);
+	        },
+	        [](LuaSignal& signal, const luabridge::LuaRef& target, const std::string& function) {
+		        return target.isTable() && signal.connectSelf(function, signals::ConnectionSource::lua);
+	        }
+	    )
+	    .addFunction(
+	        "disconnect",
+	        [](LuaSignal& signal, const NodeProxy& target, const std::string& function) {
+		        return signal.disconnect(target, function, signals::ConnectionSource::lua);
+	        },
+	        [](LuaSignal& signal, const luabridge::LuaRef& target, const std::string& function) {
+		        return target.isTable() && signal.disconnectSelf(function, signals::ConnectionSource::lua);
+	        }
+	    )
+	    .addFunction("clear", [](LuaSignal& signal) { signal.clear(signals::ConnectionSource::lua); })
+	    .addFunction("fire", &LuaSignal::fire)
+	    .endClass()
+
+	    .beginNamespace("Signal")
+	    .addFunction(
+	        "create", +[](const luabridge::LuaRef&) { return LuaSignal {}; }
+	    )
+	    .endNamespace()
+
+	    // UIBindsProxy
+	    .beginClass<UIBindsProxy>("UIBinds")
+	    .addIndexMetaMethod(uiBindsProxyIndex)
+	    .addNewIndexMetaMethod(uiBindsProxyNewindex)
+	    .endClass()
+
 	    // TypeMarker
 	    .beginClass<TypeMarker>("_TypeMarker")
 	    .addFunction("__tostring", &TypeMarker::toString)
@@ -563,6 +622,20 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    .addFunction(
 	        "resume", +[]() { Time::resume(); }
 	    )
+	    .endNamespace()
+
+	    .beginNamespace("UI")
+	    .addFunction(
+	        "setLanguage",
+	        +[](const std::string& language) {
+		        if (ui::UISystem::exists()) {
+			        ui::UISystem::get().setLanguage(language);
+		        }
+	        }
+	    )
+	    .addFunction(
+	        "language", +[]() -> std::string { return ui::UISystem::exists() ? ui::UISystem::get().language() : std::string(); }
+	    )
 	    .endNamespace();
 
 	registerTypeMarkers(state);
@@ -593,13 +666,13 @@ void LuaState::registerTypeMarkers(lua_State* state) noexcept {
 }
 
 void LuaState::refreshTypeMarkers() noexcept {
-	for (size_t i = 0; i < pool_size; ++i) {
+	for (size_t i = 0; i < m_pool_size; ++i) {
 		Lock guard = lock(i);
 		if (guard) {
 			registerTypeMarkers(guard.state());
 		}
 	}
-	TOAST_INFO("Lua", "Refreshed type markers on {} states", pool_size);
+	TOAST_INFO("Lua", "Refreshed type markers on {} states", m_pool_size);
 }
 
 }

@@ -338,6 +338,7 @@
     "name": "DeeplyNestedNode",
     "namespace": null,
     "parent": null,
+    "signals": [],
     "source_file": "11_deeply_nested_groups.hpp",
     "tick_functions": {
       "begin": false,

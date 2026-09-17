@@ -22,16 +22,16 @@ struct PrefabStore {
 	}
 
 	auto resolver() {
-		return [this](UID id) -> assets::AssetHandle<assets::Prefab> {
+		return [this](UID id) -> assets::Handle<assets::Prefab> {
 			auto it = assets.find(id.data());
-			return it != assets.end() ? assets::AssetHandle<assets::Prefab>(it->second.get(), id, "")
-			                          : assets::AssetHandle<assets::Prefab>(nullptr, id, "");
+			return it != assets.end() ? assets::Handle<assets::Prefab>(it->second.get(), id, "")
+			                          : assets::Handle<assets::Prefab>(nullptr, id, "");
 		};
 	}
 
-	auto handle(std::string_view uid_str) -> assets::AssetHandle<assets::Prefab> {
+	auto handle(std::string_view uid_str) -> assets::Handle<assets::Prefab> {
 		UID id(UID::fromString(uid_str));
-		return assets::AssetHandle<assets::Prefab>(assets.at(id.data()).get(), id, "");
+		return assets::Handle<assets::Prefab>(assets.at(id.data()).get(), id, "");
 	}
 };
 

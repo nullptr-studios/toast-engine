@@ -15,7 +15,7 @@ public sealed class HierarchyState {
 	}
 
 	public static HierarchyState Load(string rootUid) {
-		var path = ProjectContext.Resolve($"cache://hierarchy/{rootUid}.json");
+		var path = ProjectContext.Resolve($"cache://tools/hierarchy/{rootUid}.json");
 		Dictionary<string, bool>? data = null;
 		try {
 			if (File.Exists(path))

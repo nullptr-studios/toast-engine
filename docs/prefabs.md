@@ -40,7 +40,7 @@ Nodes inside the instance have `m_prefab_interior = true`, which makes `find()` 
 traversal at the instance boundary. This keeps instances opaque; you can't accidentally
 reach into another prefab's internals with a search.
 
-The `sourcePrefab()` accessor on any node returns the `AssetHandle<Prefab>` the node
+The `sourcePrefab()` accessor on any node returns the `Handle<Prefab>` the node
 came from (empty if the node was created at runtime).
 
 ## Overrides
