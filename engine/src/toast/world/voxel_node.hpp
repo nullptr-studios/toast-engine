@@ -15,6 +15,7 @@
 namespace assets {
 class VoxelModel;
 class VoxelPalette;
+class VoxelMaterialLibrary;
 }
 
 namespace toast {
@@ -42,14 +43,14 @@ public:
 		return m_model;
 	}
 
-	void setModel(assets::Handle<assets::VoxelModel> model) { m_model = std::move(model); }
+	void setModel(assets::Handle<assets::VoxelModel> model);
 
 	[[nodiscard]]
 	auto getPalette() const -> const assets::Handle<assets::VoxelPalette>& {
 		return m_palette;
 	}
 
-	void setPalette(assets::Handle<assets::VoxelPalette> palette) { m_palette = std::move(palette); }
+	void setPalette(assets::Handle<assets::VoxelPalette> palette);
 
 	[[nodiscard]]
 	auto mobility() const noexcept -> VoxelMobility {
@@ -76,6 +77,10 @@ public:
 
 	[[nodiscard]]
 	auto resolvedPalette() -> const voxel::Palette*;
+	[[nodiscard]]
+	auto resolvedModel() const -> const assets::VoxelModel*;
+	[[nodiscard]]
+	auto resolvedMaterialLibrary() -> const voxel::MaterialLibrary*;
 
 	[[nodiscard]]
 	auto revision() const noexcept -> uint32_t {
@@ -84,6 +89,7 @@ public:
 
 private:
 	void init();
+	void begin();
 	void end();
 	void destroy();
 
@@ -105,6 +111,7 @@ private:
 	const assets::VoxelModel* m_instanced_from = nullptr;
 
 	assets::Handle<assets::VoxelPalette> m_model_palette;
+	assets::Handle<assets::VoxelMaterialLibrary> m_material_library;
 
 	uint32_t m_revision = 0;
 

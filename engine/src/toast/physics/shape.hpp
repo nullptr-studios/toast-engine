@@ -7,10 +7,8 @@
 
 #pragma once
 
-// #include "aabb_tree.hpp"
+#include "aabb.hpp"
 #include "body.hpp"
-#include "toast/voxel/surface.hpp"
-#include "toast/voxel/voxel_volume.hpp"
 
 #include <compare>
 #include <cstdint>
@@ -117,14 +115,17 @@ struct CapsuleShape {
 	float height = 1.0f;
 };
 
-using VoxelDataID = unsigned;
-constexpr VoxelDataID null_voxel_data = std::numeric_limits<VoxelDataID>::max();
+struct VoxelDataID {
+	uint32_t slot = std::numeric_limits<uint32_t>::max();
+	uint32_t generation = 0;
+	auto operator<=>(const VoxelDataID&) const = default;
+};
 
 struct VoxelShape {
-	VoxelDataID data_slot = null_voxel_data;
+	VoxelDataID data;
 	glm::vec3 local_center = {};
 	glm::quat local_rotation = {1.0f, 0.0f, 0.0f, 0.0f};
-	// AABB local_bounds = {};
+	AABB local_bounds = {};
 };
 
 struct Shape {
@@ -146,22 +147,6 @@ struct ShapeSlot {
 	uint32_t generation = 1;
 	uint32_t revision = 1;
 	bool occupied = false;
-};
-
-struct VoxelShapeData {
-	voxel::Volume volume;
-	voxel::VolumeSurface surface;
-
-	// PhysicsPalleteID pallete;
-	// PhysicsMaterialLibraryID materials;
-
-	uint32_t source_revision = 0;
-	uint32_t surface_revision = 0;
-};
-
-struct VoxelShapeSlot {
-	std::optional<VoxelShapeData> data;
-	uint32_t generation = 1;
 };
 
 inline constexpr ContactFeatureID sphere_surface_feature = makeContactFeature(FeatureType::sphere_surface);

@@ -7,6 +7,7 @@
 
 #include "body.hpp"
 #include "shape.hpp"
+#include "voxel_shape_data.hpp"
 
 #include <span>
 
@@ -15,6 +16,7 @@ namespace physics {
 struct CollisionWorldView {
 	std::span<const BodySlot> bodies;
 	std::span<const ShapeSlot> shapes;
+	std::span<const VoxelShapeSlot> voxel_shapes;
 
 	[[nodiscard]]
 	auto body(BodyID id) const -> const Body* {
@@ -34,6 +36,16 @@ struct CollisionWorldView {
 
 		const ShapeSlot& slot = shapes[id.slot];
 		return slot.occupied && slot.generation == id.generation ? &slot.shape : nullptr;
+	}
+
+	[[nodiscard]]
+	auto voxelData(VoxelDataID id) const -> const VoxelShapeData* {
+		if (id.slot >= voxel_shapes.size()) {
+			return nullptr;
+		}
+
+		const VoxelShapeSlot& slot = voxel_shapes[id.slot];
+		return slot.generation == id.generation && slot.data.has_value() ? &slot.data.value() : nullptr;
 	}
 };
 

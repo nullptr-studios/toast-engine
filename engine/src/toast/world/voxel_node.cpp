@@ -1,5 +1,6 @@
 #include "voxel_node.hpp"
 
+#include <toast/physics/simulator.hpp>
 #include <toast/log.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
 #include <toast/voxel/runtime_pool.hpp>
@@ -29,6 +30,30 @@ auto VoxelNode::paletteUid() const -> uint64_t {
 		return model->paletteUid();
 	}
 	return 0;
+}
+
+void VoxelNode::setModel(assets::Handle<assets::VoxelModel> model) {
+	if (m_model == model) {
+		return;
+	}
+	releaseVolume();
+	m_model = std::move(model);
+	m_model_palette = {};
+	m_material_library = {};
+	++m_revision;
+}
+
+void VoxelNode::setPalette(assets::Handle<assets::VoxelPalette> palette) {
+	if (m_palette == palette) {
+		return;
+	}
+	m_palette = std::move(palette);
+	m_material_library = {};
+	++m_revision;
+}
+
+auto VoxelNode::resolvedModel() const -> const assets::VoxelModel* {
+	return voxelNodeAssetOfType(m_model, "voxel_model");
 }
 
 auto VoxelNode::localBoundingSphere() const -> glm::vec4 {
@@ -111,6 +136,28 @@ auto VoxelNode::resolvedPalette() -> const voxel::Palette* {
 	return palette != nullptr ? &palette->palette() : nullptr;
 }
 
+auto VoxelNode::resolvedMaterialLibrary() -> const voxel::MaterialLibrary* {
+	const assets::VoxelPalette* palette = voxelNodeAssetOfType(m_palette, "voxel_palette");
+	if (palette == nullptr && m_palette.uid().data() == 0) {
+		const assets::VoxelModel* model = resolvedModel();
+		if (model != nullptr && model->paletteUid() != 0) {
+			if (m_model_palette.uid().data() != model->paletteUid()) {
+				m_model_palette = assets::load<assets::VoxelPalette>(UID(model->paletteUid()));
+			}
+			palette = voxelNodeAssetOfType(m_model_palette, "voxel_palette");
+		}
+	}
+	if (palette == nullptr || palette->libraryUid() == 0) {
+		return nullptr;
+	}
+
+	if (m_material_library.uid().data() != palette->libraryUid()) {
+		m_material_library = assets::load<assets::VoxelMaterialLibrary>(UID(palette->libraryUid()));
+	}
+	const auto* library = voxelNodeAssetOfType(m_material_library, "voxel_material_library");
+	return library != nullptr ? &library->library() : nullptr;
+}
+
 void VoxelNode::releaseVolume() {
 	m_volume.reset();
 	m_instanced_from = nullptr;
@@ -120,7 +167,14 @@ void VoxelNode::init() {
 	m_registered_proxy = renderer::registerVoxelNodeProxy(this);
 }
 
+void VoxelNode::begin() {
+	if (participatesIn(NodeOwnerParticipation::gameplay_tick)) {
+		physics::Simulator::registerVoxelNode(*this);
+	}
+}
+
 void VoxelNode::end() {
+	physics::Simulator::unregisterVoxelNode(*this);
 	releaseVolume();
 	if (!m_registered_proxy) {
 		return;

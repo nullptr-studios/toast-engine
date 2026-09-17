@@ -8,10 +8,12 @@
 #include "nodes/dynamic_rigidbody.hpp"
 #include "nodes/rigidbody.hpp"
 #include "nodes/sphere_collider.hpp"
-#include "toast/thread_pool.hpp"
+#include "toast/world/voxel_node.hpp"
 
 #include <algorithm>
 #include <cmath>
+#include <toast/assets/voxel_model.hpp>
+#include <toast/thread_pool.hpp>
 #include <tracy/Tracy.hpp>
 
 namespace physics {
@@ -20,6 +22,22 @@ namespace {
 constexpr float sleep_linear_threshold_squared = 0.05f * 0.05f;
 constexpr float sleep_angular_threshold_squared = 0.05f * 0.05f;
 constexpr float sleep_delay = 0.5f;
+}
+
+Simulator::PhaseScope::PhaseScope(Simulator& simulator, SimulationPhase expected, SimulationPhase next)
+    : m_simulator(simulator), m_previous(expected), m_active(next) {
+	const SimulationPhase current = m_simulator.m_phase.load(std::memory_order_relaxed);
+	TOAST_ASSERT(current == expected, "Physics", "Invalid physics simulation phase transition");
+	m_previous = current;
+	m_simulator.m_phase.store(next, std::memory_order_relaxed);
+}
+
+Simulator::PhaseScope::~PhaseScope() {
+	TOAST_ASSERT(
+	    m_simulator.m_phase.load(std::memory_order_relaxed) == m_active, "Physics",
+	    "Physics simulation phase changed while a phase scope was active"
+	);
+	m_simulator.m_phase.store(m_previous, std::memory_order_relaxed);
 }
 
 Simulator::Simulator() {
@@ -37,6 +55,9 @@ void Simulator::registerRigidbody(Rigidbody& node) {
 	ZoneScopedN("physics::RegisterRigidbody");
 
 	TOAST_ASSERT(instance, "Physics", "Simulator instance is null; cannot register rigidbody");
+	if (not instance->mainThreadMutationAllowed()) {
+		return;
+	}
 	if (instance->valid(node.m_body)) {
 		return;
 	}
@@ -58,6 +79,7 @@ void Simulator::registerRigidbody(Rigidbody& node) {
 		for (const auto& child : node.children()) {
 			ShapeID shape;
 			toast::Box<Collider> collider;
+			toast::Box<toast::VoxelNode> voxel_node;
 
 			if (const auto sphere = child.as<SphereCollider>(); sphere.exists()) {
 				shape = instance->createSphere(body, SphereShape {.local_center = sphere->position, .radius = sphere->radius}, material);
@@ -79,6 +101,9 @@ void Simulator::registerRigidbody(Rigidbody& node) {
 				    material
 				);
 				collider = capsule;
+			} else if (const auto voxel = child.as<toast::VoxelNode>(); voxel.exists()) {
+				shape = instance->createVoxelShape(body, *voxel);
+				voxel_node = voxel;
 			} else {
 				continue;
 			}
@@ -88,10 +113,26 @@ void Simulator::registerRigidbody(Rigidbody& node) {
 				continue;
 			}
 
-			collider->assignShape(shape);
-			setShapeEnabled(shape, node.enabled() && collider->enabled() && not collider->disabled);
+			if (collider.exists()) {
+				collider->assignShape(shape);
+				setShapeEnabled(shape, node.enabled() && collider->enabled() && not collider->disabled);
+				binding.colliders.push_back({.shape = shape, .node = std::move(collider)});
+			} else {
+				setShapeEnabled(shape, node.enabled() && voxel_node->enabled());
+				const uint32_t source_revision = voxel_node->revision();
+				const uint64_t source_model = voxel_node->getModel().uid().data();
+				const uint64_t source_palette = voxel_node->paletteUid();
+				binding.voxels.push_back(
+				    {
+				      .shape = shape,
+				      .node = std::move(voxel_node),
+				      .source_revision = source_revision,
+				      .source_model = source_model,
+				      .source_palette = source_palette,
+				    }
+				);
+			}
 			wakeBody(body);
-			binding.colliders.push_back({.shape = shape, .node = std::move(collider)});
 			++registered_shape_count;
 		}
 
@@ -113,6 +154,9 @@ void Simulator::unregisterRigidbody(Rigidbody& node) {
 	if (!instance) {
 		return;
 	}
+	if (not instance->mainThreadMutationAllowed()) {
+		return;
+	}
 	const BodyID body = node.m_body;
 	if (instance->valid(body)) {
 		TOAST_TRACE("Physics", "Unregistering rigidbody '{}'", node.name());
@@ -132,6 +176,69 @@ void Simulator::unregisterRigidbody(Rigidbody& node) {
 	node.assignBody({});
 }
 
+void Simulator::registerVoxelNode(toast::VoxelNode& node) {
+	ZoneScopedN("physics::RegisterVoxelNode");
+	if (not instance || node.parent().as<Rigidbody>().exists()) {
+		return;
+	}
+	if (not instance->mainThreadMutationAllowed()) {
+		return;
+	}
+	if (std::ranges::any_of(instance->m_standalone_voxel_bindings, [&node](const StandaloneVoxelBinding& binding) {
+		    return binding.voxel.node.exists() && &*binding.voxel.node == &node;
+		})) {
+		return;
+	}
+
+	node.syncTransform();
+	const BodyID body = instance->createBody(
+	    BodyDescriptor {.type = BodyType::static_body, .position = node.world_position, .rotation = node.world_rotation}
+	);
+	if (not instance->valid(body)) {
+		return;
+	}
+
+	const ShapeID shape = instance->createVoxelShape(body, node);
+	if (not instance->valid(shape)) {
+		instance->destroyBody(body);
+		return;
+	}
+
+	setBodyEnabled(body, node.enabled());
+	setShapeEnabled(shape, node.enabled());
+	instance->m_standalone_voxel_bindings.push_back(
+	    {
+	      .body = body,
+	      .voxel = {
+	        .shape = shape,
+	        .node = node.box().as<toast::VoxelNode>(),
+	        .source_revision = node.revision(),
+	        .source_model = node.getModel().uid().data(),
+	        .source_palette = node.paletteUid(),
+	      },
+	    }
+	);
+}
+
+void Simulator::unregisterVoxelNode(toast::VoxelNode& node) {
+	ZoneScopedN("physics::UnregisterVoxelNode");
+	if (not instance) {
+		return;
+	}
+	if (not instance->mainThreadMutationAllowed()) {
+		return;
+	}
+
+	for (const StandaloneVoxelBinding& binding : instance->m_standalone_voxel_bindings) {
+		if (binding.voxel.node.exists() && &*binding.voxel.node == &node) {
+			instance->destroyBody(binding.body);
+		}
+	}
+	std::erase_if(instance->m_standalone_voxel_bindings, [&node](const StandaloneVoxelBinding& binding) {
+		return binding.voxel.node.exists() && &*binding.voxel.node == &node;
+	});
+}
+
 auto Simulator::rigidbodyFor(BodyID body) -> toast::Box<Rigidbody> {
 	if (not instance) {
 		return {};
@@ -142,17 +249,32 @@ auto Simulator::rigidbodyFor(BodyID body) -> toast::Box<Rigidbody> {
 	return binding != instance->m_node_bindings.end() ? binding->node : toast::Box<Rigidbody> {};
 }
 
+auto Simulator::mainThreadMutationAllowed() const -> bool {
+	const bool is_owner_thread = std::this_thread::get_id() == m_owner_thread;
+	const bool workers_are_idle = m_phase.load(std::memory_order_relaxed) != SimulationPhase::worker_execution;
+	TOAST_ASSERT(is_owner_thread, "Physics", "Physics-owned data may only be mutated from the simulator thread");
+	TOAST_ASSERT(workers_are_idle, "Physics", "Physics-owned data may not be mutated while worker jobs are executing");
+	return is_owner_thread && workers_are_idle;
+}
+
 void Simulator::tick() {
 	ZoneScopedN("physics::Step");
+	if (not mainThreadMutationAllowed()) {
+		return;
+	}
+	PhaseScope step_phase {*this, SimulationPhase::idle, SimulationPhase::mutation};
 	m_profile = {};
 
 	const float dt = static_cast<float>(Accumulator::fixed_delta);
 	syncEnabledState();
 	integrate(dt);
 
-	const CollisionWorldView world {.bodies = m_bodies, .shapes = m_shapes};
-	const auto candidates = m_broad_phase.findPairs(world);
-	m_manifolds = generateManifoldsAsync(world, candidates);
+	{
+		PhaseScope worker_phase {*this, SimulationPhase::mutation, SimulationPhase::worker_execution};
+		const CollisionWorldView world {.bodies = m_bodies, .shapes = m_shapes, .voxel_shapes = m_voxel_shapes};
+		const auto candidates = m_broad_phase.findPairs(world);
+		m_manifolds = generateManifoldsAsync(world, candidates);
+	}
 	updateCache(m_manifolds);
 	wakeContactGroups();
 
@@ -175,6 +297,33 @@ void Simulator::publishProfile(std::span<const SimulationIsland> islands) const 
 
 void Simulator::syncEnabledState() {
 	ZoneScopedN("physics::SyncEnabledState");
+	const auto sync_voxel = [this](BodyID body_id, bool body_enabled, VoxelBinding& binding) {
+		if (not binding.node.exists()) {
+			return;
+		}
+
+		const uint64_t model = binding.node->getModel().uid().data();
+		const uint64_t palette = binding.node->paletteUid();
+		if (binding.source_revision != binding.node->revision() || binding.source_model != model ||
+		    binding.source_palette != palette) {
+			destroyShape(binding.shape);
+			binding.shape = createVoxelShape(body_id, *binding.node);
+			binding.source_revision = binding.node->revision();
+			binding.source_model = model;
+			binding.source_palette = palette;
+			rebuildMassProperties(body_id);
+		}
+
+		Shape* shape = tryGetShape(binding.shape);
+		if (shape == nullptr) {
+			return;
+		}
+		const bool enabled = body_enabled && binding.node->enabled();
+		if (shape->enabled != enabled) {
+			shape->enabled = enabled;
+			incrementShapeRevision(binding.shape);
+		}
+	};
 
 	for (NodeBinding& binding : m_node_bindings) {
 		Body* body = tryGetBody(binding.body);
@@ -202,6 +351,30 @@ void Simulator::syncEnabledState() {
 				incrementShapeRevision(collider_binding.shape);
 			}
 		}
+		for (VoxelBinding& voxel_binding : binding.voxels) {
+			sync_voxel(binding.body, body->enabled, voxel_binding);
+		}
+	}
+
+	for (StandaloneVoxelBinding& binding : m_standalone_voxel_bindings) {
+		Body* body = tryGetBody(binding.body);
+		if (body == nullptr || not binding.voxel.node.exists()) {
+			continue;
+		}
+		binding.voxel.node->syncTransform();
+		const bool position_changed = glm::any(
+		    glm::greaterThan(glm::abs(body->position - binding.voxel.node->world_position), glm::vec3(1.0e-5f))
+		);
+		const bool rotation_changed = 1.0f - std::abs(glm::dot(body->rotation, binding.voxel.node->world_rotation)) > 1.0e-5f;
+		if (position_changed || rotation_changed) {
+			setTransform(binding.body, binding.voxel.node->world_position, binding.voxel.node->world_rotation);
+			body = tryGetBody(binding.body);
+			if (body == nullptr) {
+				continue;
+			}
+		}
+		body->enabled = binding.voxel.node->enabled();
+		sync_voxel(binding.body, body->enabled, binding.voxel);
 	}
 }
 
@@ -275,6 +448,9 @@ void Simulator::setBodyEnabled(BodyID body, bool enabled) {
 	if (not instance) {
 		return;
 	}
+	if (not instance->mainThreadMutationAllowed()) {
+		return;
+	}
 	if (Body* value = instance->tryGetBody(body)) {
 		value->enabled = enabled;
 		if (enabled) {
@@ -288,6 +464,9 @@ void Simulator::setShapeEnabled(ShapeID shape, bool enabled) {
 	ZoneValue(static_cast<uint64_t>(shape.slot));
 
 	if (not instance) {
+		return;
+	}
+	if (not instance->mainThreadMutationAllowed()) {
 		return;
 	}
 	if (Shape* value = instance->tryGetShape(shape)) {
@@ -711,6 +890,9 @@ void Simulator::updateCache(std::span<const Manifold> manifolds) {
 void Simulator::integrate(float dt) {
 	ZoneScopedN("physics::IntegrateBodies");
 	ZoneValue(static_cast<uint64_t>(m_bodies.size()));
+	if (not mainThreadMutationAllowed()) {
+		return;
+	}
 
 	if (not std::isfinite(dt) or dt <= 0.0f) {
 		return;
@@ -774,6 +956,9 @@ void Simulator::callTick() {
 
 auto Simulator::createBody(const BodyDescriptor& descriptor) -> BodyID {
 	ZoneScopedN("physics::CreateBody");
+	if (not mainThreadMutationAllowed()) {
+		return {};
+	}
 
 	if (descriptor.type == BodyType::dynamic_body && (not std::isfinite(descriptor.mass) or descriptor.mass <= 0.0f)) {
 		TOAST_WARN("Physics", "Rejected dynamic body with non-finite or non-positive mass");
@@ -828,6 +1013,9 @@ auto Simulator::createBody(const BodyDescriptor& descriptor) -> BodyID {
 void Simulator::destroyBody(BodyID body) {
 	ZoneScopedN("physics::DestroyBody");
 	ZoneValue(static_cast<uint64_t>(body.slot));
+	if (not mainThreadMutationAllowed()) {
+		return;
+	}
 
 	if (not valid(body)) {
 		return;
@@ -853,6 +1041,9 @@ void Simulator::destroyBody(BodyID body) {
 auto Simulator::createSphere(BodyID owner, const SphereShape& sphere, PhysicsMaterial material) -> ShapeID {
 	ZoneScopedN("physics::CreateSphere");
 	ZoneValue(static_cast<uint64_t>(owner.slot));
+	if (not mainThreadMutationAllowed()) {
+		return {};
+	}
 
 	if (not valid(owner)) {
 		TOAST_WARN("Physics", "Rejected sphere registration for an invalid body");
@@ -890,6 +1081,9 @@ auto Simulator::createSphere(BodyID owner, const SphereShape& sphere, PhysicsMat
 auto Simulator::createBox(BodyID owner, const BoxShape& box, PhysicsMaterial material) -> ShapeID {
 	ZoneScopedN("physics::CreateBox");
 	ZoneValue(static_cast<uint64_t>(owner.slot));
+	if (not mainThreadMutationAllowed()) {
+		return {};
+	}
 
 	if (not valid(owner)) {
 		TOAST_WARN("Physics", "Rejected box registration for an invalid body");
@@ -935,6 +1129,9 @@ auto Simulator::createBox(BodyID owner, const BoxShape& box, PhysicsMaterial mat
 auto Simulator::createCapsule(BodyID owner, const CapsuleShape& capsule, PhysicsMaterial material) -> ShapeID {
 	ZoneScopedN("physics::CreateCapsule");
 	ZoneValue(static_cast<uint64_t>(owner.slot));
+	if (not mainThreadMutationAllowed()) {
+		return {};
+	}
 
 	if (not valid(owner)) {
 		TOAST_WARN("Physics", "Rejected capsule registration for an invalid body");
@@ -977,15 +1174,142 @@ auto Simulator::createCapsule(BodyID owner, const CapsuleShape& capsule, Physics
 	return {.slot = index, .generation = 1};
 }
 
+auto Simulator::createVoxelShape(
+    BodyID owner, const VoxelShape& shape, const assets::VoxelModel& model, const voxel::Palette& palette,
+    const voxel::MaterialLibrary& materials
+) -> ShapeID {
+	ZoneScopedN("physics::CreateVoxelShape");
+	ZoneValue(static_cast<uint64_t>(owner.slot));
+	if (not mainThreadMutationAllowed()) {
+		return {};
+	}
+
+	if (not valid(owner)) {
+		TOAST_WARN("Physics", "Rejected voxel shape registration for an invalid body");
+		return {};
+	}
+
+	const bool center_is_finite =
+	    std::isfinite(shape.local_center.x) && std::isfinite(shape.local_center.y) && std::isfinite(shape.local_center.z);
+	const float rotation_length_squared = glm::dot(shape.local_rotation, shape.local_rotation);
+	const glm::uvec3 brick_dims = model.brickDims();
+	if (not center_is_finite || not std::isfinite(rotation_length_squared) || rotation_length_squared <= 1.0e-10f ||
+	    brick_dims.x == 0 || brick_dims.y == 0 || brick_dims.z == 0) {
+		TOAST_WARN("Physics", "Rejected voxel shape with invalid dimensions, local center, or local rotation");
+		return {};
+	}
+
+	if (not voxel::validateLibrary(materials).empty() || not voxel::validatePalette(palette, materials).empty()) {
+		TOAST_WARN("Physics", "Rejected voxel shape with an invalid palette or material library");
+		return {};
+	}
+
+	std::optional<voxel::Volume> volume = model.instantiate(m_voxel_pool);
+	if (not volume.has_value()) {
+		TOAST_WARN("Physics", "Rejected voxel shape because the physics brick pool is out of its {} bricks", m_voxel_pool.capacity());
+		return {};
+	}
+
+	voxel::VolumeSurface surface;
+	surface.rebuild(*volume);
+
+	VoxelShapeData voxel_data {
+	  .volume = std::move(*volume),
+	  .surface = std::move(surface),
+	  .palette = palette,
+	  .materials = materials,
+	};
+
+	VoxelDataID data_id;
+	if (not m_free_voxel_shape_slots.empty()) {
+		data_id.slot = m_free_voxel_shape_slots.back();
+		m_free_voxel_shape_slots.pop_back();
+		VoxelShapeSlot& slot = m_voxel_shapes[data_id.slot];
+		slot.data.emplace(std::move(voxel_data));
+		data_id.generation = slot.generation;
+	} else {
+		data_id.slot = static_cast<uint32_t>(m_voxel_shapes.size());
+		m_voxel_shapes.emplace_back();
+		VoxelShapeSlot& slot = m_voxel_shapes.back();
+		slot.data.emplace(std::move(voxel_data));
+		data_id.generation = slot.generation;
+	}
+
+	VoxelShape stored_shape = shape;
+	stored_shape.data = data_id;
+	stored_shape.local_rotation = glm::normalize(shape.local_rotation);
+	stored_shape.local_bounds = {
+	  .min = glm::vec3(0.0f),
+	  .max = glm::vec3(brick_dims) * voxel::k_brick_size,
+	};
+
+	Shape physics_shape {
+	  .owner = owner,
+	  .type = ShapeType::voxel,
+	  .voxel = stored_shape,
+	};
+
+	if (not m_free_shape_slots.empty()) {
+		const uint32_t index = m_free_shape_slots.back();
+		m_free_shape_slots.pop_back();
+		ShapeSlot& slot = m_shapes[index];
+		slot.shape = physics_shape;
+		slot.occupied = true;
+		return {.slot = index, .generation = slot.generation};
+	}
+
+	const uint32_t index = static_cast<uint32_t>(m_shapes.size());
+	m_shapes.emplace_back(ShapeSlot {.shape = physics_shape, .generation = 1, .occupied = true});
+	return {.slot = index, .generation = 1};
+}
+
+auto Simulator::createVoxelShape(BodyID owner, toast::VoxelNode& node) -> ShapeID {
+	const assets::VoxelModel* model = node.resolvedModel();
+	const voxel::Palette* palette = node.resolvedPalette();
+	const voxel::MaterialLibrary* materials = node.resolvedMaterialLibrary();
+	if (model == nullptr || palette == nullptr || materials == nullptr) {
+		TOAST_WARN("Physics", "Voxel node '{}' is missing a valid model, palette, or physical material library", node.name());
+		return {};
+	}
+
+	node.syncTransform();
+	const bool has_unit_scale = glm::all(glm::lessThanEqual(glm::abs(node.world_scale - glm::vec3(1.0f)), glm::vec3(1.0e-5f)));
+	if (not has_unit_scale) {
+		TOAST_WARN("Physics", "Voxel node '{}' cannot register with non-unit world scale", node.name());
+		return {};
+	}
+
+	VoxelShape voxel_shape;
+	if (node.parent().as<Rigidbody>().exists()) {
+		voxel_shape.local_center = node.position;
+		voxel_shape.local_rotation = node.rotation;
+	}
+
+	const ShapeID shape = createVoxelShape(owner, voxel_shape, *model, *palette, *materials);
+	const Shape* stored_shape = tryGetShape(shape);
+	if (stored_shape != nullptr) {
+		if (VoxelShapeData* data = tryGetVoxelData(stored_shape->voxel.data)) {
+			data->source_revision = node.revision();
+		}
+	}
+	return shape;
+}
+
 void Simulator::destroyShape(ShapeID shape) {
 	ZoneScopedN("physics::DestroyShape");
 	ZoneValue(static_cast<uint64_t>(shape.slot));
+	if (not mainThreadMutationAllowed()) {
+		return;
+	}
 
 	if (not valid(shape)) {
 		return;
 	}
 
 	ShapeSlot& slot = m_shapes[shape.slot];
+	if (slot.shape.type == ShapeType::voxel) {
+		destroyVoxelData(slot.shape.voxel.data);
+	}
 	slot.occupied = false;
 	++slot.revision;
 	if (slot.revision == 0) {
@@ -1024,6 +1348,42 @@ auto Simulator::tryGetShape(ShapeID shape) -> Shape* {
 
 auto Simulator::tryGetShape(ShapeID shape) const -> const Shape* {
 	return valid(shape) ? &m_shapes[shape.slot].shape : nullptr;
+}
+
+auto Simulator::valid(VoxelDataID data) const -> bool {
+	return data.slot < m_voxel_shapes.size() && m_voxel_shapes[data.slot].data.has_value() &&
+	       m_voxel_shapes[data.slot].generation == data.generation;
+}
+
+auto Simulator::tryGetVoxelData(VoxelDataID data) -> VoxelShapeData* {
+	if (not mainThreadMutationAllowed()) {
+		return nullptr;
+	}
+	return valid(data) ? &*m_voxel_shapes[data.slot].data : nullptr;
+}
+
+auto Simulator::tryGetVoxelData(VoxelDataID data) const -> const VoxelShapeData* {
+	if (not mainThreadMutationAllowed()) {
+		return nullptr;
+	}
+	return valid(data) ? &*m_voxel_shapes[data.slot].data : nullptr;
+}
+
+void Simulator::destroyVoxelData(VoxelDataID data) {
+	if (not mainThreadMutationAllowed()) {
+		return;
+	}
+	if (not valid(data)) {
+		return;
+	}
+
+	VoxelShapeSlot& slot = m_voxel_shapes[data.slot];
+	slot.data.reset();
+	++slot.generation;
+	if (slot.generation == 0) {
+		++slot.generation;
+	}
+	m_free_voxel_shape_slots.emplace_back(data.slot);
 }
 
 void Simulator::rebuildMassProperties(BodyID id) {
@@ -1122,6 +1482,30 @@ void Simulator::rebuildMassProperties(BodyID id) {
 			body->inverse_inertia_world = rotation * body->inverse_inertia_local * glm::transpose(rotation);
 			break;
 		}
+		case ShapeType::voxel: {
+			const glm::vec3 size = shape->voxel.local_bounds.max - shape->voxel.local_bounds.min;
+			const glm::vec3 size_squared = size * size;
+			const glm::vec3 denominator {
+			  size_squared.y + size_squared.z,
+			  size_squared.x + size_squared.z,
+			  size_squared.x + size_squared.y,
+			};
+			if (not std::isfinite(denominator.x) || not std::isfinite(denominator.y) || not std::isfinite(denominator.z) ||
+			    glm::any(glm::lessThanEqual(denominator, glm::vec3(0.0f)))) {
+				TOAST_WARN("Physics", "rebuildMassProperties() was aborted: invalid voxel inertia denominator");
+				return;
+			}
+
+			glm::mat3 inverse_inertia {0.0f};
+			inverse_inertia[0][0] = 12.0f * body->inverse_mass / denominator.x;
+			inverse_inertia[1][1] = 12.0f * body->inverse_mass / denominator.y;
+			inverse_inertia[2][2] = 12.0f * body->inverse_mass / denominator.z;
+			const glm::mat3 local_rotation = glm::mat3_cast(shape->voxel.local_rotation);
+			body->inverse_inertia_local = local_rotation * inverse_inertia * glm::transpose(local_rotation);
+			const glm::mat3 rotation = glm::mat3_cast(body->rotation);
+			body->inverse_inertia_world = rotation * body->inverse_inertia_local * glm::transpose(rotation);
+			break;
+		}
 		case ShapeType::capsule: {
 			// Conservative approximation: use a box with dimensions (2r, 2r, height)
 			float diameter = 2.0f * shape->capsule.radius;
@@ -1186,6 +1570,9 @@ auto Simulator::state(BodyID body) const -> std::optional<BodyState> {
 auto Simulator::setTransform(BodyID body, const glm::vec3& position, const glm::quat& rotation) -> bool {
 	ZoneScopedN("physics::SetTransform");
 	ZoneValue(static_cast<uint64_t>(body.slot));
+	if (not mainThreadMutationAllowed()) {
+		return false;
+	}
 
 	Body* value = tryGetBody(body);
 	const float rotation_length_squared = glm::dot(rotation, rotation);
@@ -1206,6 +1593,9 @@ auto Simulator::setTransform(BodyID body, const glm::vec3& position, const glm::
 auto Simulator::setLinearVelocity(BodyID body, const glm::vec3& velocity) -> bool {
 	ZoneScopedN("physics::SetLinearVelocity");
 	ZoneValue(static_cast<uint64_t>(body.slot));
+	if (not mainThreadMutationAllowed()) {
+		return false;
+	}
 
 	Body* value = tryGetBody(body);
 	if (not value) {
@@ -1373,7 +1763,7 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 			islands.emplace_back(
 			    SimulationIsland {
 			      .sort_key = BodyID {.slot = static_cast<uint32_t>(root), .generation = root_slot.generation},
-			}
+			    }
 			);
 		}
 
@@ -1592,6 +1982,7 @@ void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
 	if (islands.empty()) {
 		return;
 	}
+	PhaseScope worker_phase {*this, SimulationPhase::mutation, SimulationPhase::worker_execution};
 
 	constexpr size_t minimum_islands_per_job = 1;
 	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), 1ull);

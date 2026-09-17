@@ -14,21 +14,38 @@
 #include "narrow_phase.hpp"
 #include "physics_material.hpp"
 #include "shape.hpp"
+#include "voxel_shape_data.hpp"
 
+#include <atomic>
+#include <cstdint>
 #include <deque>
+#include <glm/glm.hpp>
 #include <optional>
 #include <span>
+#include <thread>
 #include <toast/export.hpp>
 #include <toast/log.hpp>
 #include <toast/world/box.hpp>
 #include <toml++/impl/preprocessor.hpp>
 #include <vector>
 
+namespace assets {
+class VoxelModel;
+}
+
 namespace physics {
 
 class Rigidbody;
 class DynamicRigidbody;
 class Collider;
+
+}
+
+namespace toast {
+class VoxelNode;
+}
+
+namespace physics {
 
 class TOAST_API Simulator {
 	friend class Collider;
@@ -38,6 +55,10 @@ class TOAST_API Simulator {
 public:
 	Simulator();
 	~Simulator();
+	Simulator(const Simulator&) = delete;
+	auto operator=(const Simulator&) -> Simulator& = delete;
+	Simulator(Simulator&&) = delete;
+	auto operator=(Simulator&&) -> Simulator& = delete;
 
 	void tick();
 	void integrate(float dt);
@@ -57,17 +78,52 @@ public:
 	static void callTick();
 	static void registerRigidbody(Rigidbody& node);
 	static void unregisterRigidbody(Rigidbody& node);
+	static void registerVoxelNode(toast::VoxelNode& node);
+	static void unregisterVoxelNode(toast::VoxelNode& node);
 
 private:
+	enum class SimulationPhase : uint8_t {
+		idle,
+		mutation,
+		worker_execution,
+	};
+
+	class PhaseScope {
+	public:
+		PhaseScope(Simulator& simulator, SimulationPhase expected, SimulationPhase next);
+		~PhaseScope();
+		PhaseScope(const PhaseScope&) = delete;
+		auto operator=(const PhaseScope&) -> PhaseScope& = delete;
+
+	private:
+		Simulator& m_simulator;
+		SimulationPhase m_previous;
+		SimulationPhase m_active;
+	};
+
 	struct ColliderBinding {
 		ShapeID shape;
 		toast::Box<Collider> node;
+	};
+
+	struct VoxelBinding {
+		ShapeID shape;
+		toast::Box<toast::VoxelNode> node;
+		uint32_t source_revision = 0;
+		uint64_t source_model = 0;
+		uint64_t source_palette = 0;
 	};
 
 	struct NodeBinding {
 		BodyID body;
 		toast::Box<Rigidbody> node;
 		std::vector<ColliderBinding> colliders;
+		std::vector<VoxelBinding> voxels;
+	};
+
+	struct StandaloneVoxelBinding {
+		BodyID body;
+		VoxelBinding voxel;
 	};
 
 	struct SimulationIsland {
@@ -106,6 +162,8 @@ private:
 
 	[[nodiscard]]
 	static auto rigidbodyFor(BodyID body) -> toast::Box<Rigidbody>;
+	[[nodiscard]]
+	auto mainThreadMutationAllowed() const -> bool;
 
 	[[nodiscard]]
 	auto createSphere(BodyID owner, const SphereShape& sphere, PhysicsMaterial material) -> ShapeID;
@@ -113,6 +171,13 @@ private:
 	auto createBox(BodyID owner, const BoxShape& box, PhysicsMaterial material) -> ShapeID;
 	[[nodiscard]]
 	auto createCapsule(BodyID owner, const CapsuleShape& capsule, PhysicsMaterial material) -> ShapeID;
+	[[nodiscard]]
+	auto createVoxelShape(
+	    BodyID owner, const VoxelShape& shape, const assets::VoxelModel& model, const voxel::Palette& palette,
+	    const voxel::MaterialLibrary& materials
+	) -> ShapeID;
+	[[nodiscard]]
+	auto createVoxelShape(BodyID owner, toast::VoxelNode& node) -> ShapeID;
 
 	void destroyShape(ShapeID shape);
 	[[nodiscard]]
@@ -121,6 +186,13 @@ private:
 	auto tryGetShape(ShapeID shape) -> Shape*;
 	[[nodiscard]]
 	auto tryGetShape(ShapeID shape) const -> const Shape*;
+	[[nodiscard]]
+	auto valid(VoxelDataID data) const -> bool;
+	[[nodiscard]]
+	auto tryGetVoxelData(VoxelDataID data) -> VoxelShapeData*;
+	[[nodiscard]]
+	auto tryGetVoxelData(VoxelDataID data) const -> const VoxelShapeData*;
+	void destroyVoxelData(VoxelDataID data);
 
 	void rebuildMassProperties(BodyID id);
 
@@ -183,10 +255,13 @@ private:
 	void publishProfile(std::span<const SimulationIsland> islands) const;
 
 	inline static Simulator* instance = nullptr;
+	const std::thread::id m_owner_thread = std::this_thread::get_id();
+	std::atomic<SimulationPhase> m_phase = SimulationPhase::idle;
 
 	std::vector<BodySlot> m_bodies;
 	std::deque<uint32_t> m_free_body_slots;
 	std::vector<NodeBinding> m_node_bindings;
+	std::vector<StandaloneVoxelBinding> m_standalone_voxel_bindings;
 
 	std::vector<ShapeSlot> m_shapes;
 	std::deque<uint32_t> m_free_shape_slots;
@@ -198,6 +273,10 @@ private:
 	std::vector<Manifold> m_manifolds;
 	std::vector<CachedManifold> m_cached_manifolds;
 	PhysicsStepProfile m_profile;
+
+	voxel::BrickPool m_voxel_pool {voxel::k_runtime_brick_capacity};
+	std::vector<VoxelShapeSlot> m_voxel_shapes;
+	std::deque<uint32_t> m_free_voxel_shape_slots;
 };
 
 }
