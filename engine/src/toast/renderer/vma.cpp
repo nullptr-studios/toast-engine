@@ -1,6 +1,6 @@
 /// @file vma.cpp
 /// @author dario
-/// @date 16/05/2026.
+/// @date 16/05/2026
 
 // clang-format off
 #define VMA_IMPLEMENTATION

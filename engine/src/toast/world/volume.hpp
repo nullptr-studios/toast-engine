@@ -15,8 +15,11 @@
 namespace toast {
 class AudioListener;
 
+/// @brief What a volume is being evaluated against: a listener, a camera, anything with a position
 struct VolumeTarget {
+	/// Audio only, and the identity AudioVolume tracks enter/exit by. Empty for every other kind of target
 	Box<AudioListener> listener;
+
 	glm::vec3 position;
 	glm::vec3 forward;
 };
@@ -58,14 +61,18 @@ protected:
 
 	[[nodiscard]]
 	///< @brief Calculates the effect the volume should have on the object
-	auto calculateWeight(const VolumeTarget& target) -> float;
+	auto calculateWeight(const VolumeTarget& target) const -> float;
 
 	/**
 	 * @brief Calculates the point on the bounds of the volume that is closest to the given point
 	 * @returns parameter @c point if the point is inside the volume
+	 *
+	 * The box is the node's transform applied to a unit cube, so scaling the node sizes it. Virtual because a
+	 * volume that carries explicit half-extents instead needs its own box, and calculateWeight() is the only
+	 * caller either way
 	 */
 	[[nodiscard]]
-	auto closestPointOnBounds(glm::vec3 point) -> glm::vec3;
+	virtual auto closestPointOnBounds(glm::vec3 point) const -> glm::vec3;
 
 private:
 	void init();

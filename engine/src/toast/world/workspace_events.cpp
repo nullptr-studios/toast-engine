@@ -455,6 +455,22 @@ struct ProtoTraits<SetGizmoTool> {
 TOAST_PROTO_EVENT(SetGizmoTool);
 
 template<>
+struct ProtoTraits<SetRenderMode> {
+	using Proto = proto::events::SetRenderMode;
+	using Event = SetRenderMode;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_mode(e.mode);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return {p.mode()}; }
+};
+
+TOAST_PROTO_EVENT(SetRenderMode);
+
+template<>
 struct ProtoTraits<SetCoordinateSpace> {
 	using Proto = proto::events::SetCoordinateSpace;
 	using Event = SetCoordinateSpace;
@@ -488,6 +504,8 @@ struct ProtoTraits<SetSnapping> {
 
 TOAST_PROTO_EVENT(SetSnapping);
 
+// Cameras
+
 template<>
 struct ProtoTraits<SetCameraMode> {
 	using Proto = proto::events::SetCameraMode;
@@ -503,6 +521,111 @@ struct ProtoTraits<SetCameraMode> {
 };
 
 TOAST_PROTO_EVENT(SetCameraMode);
+
+template<>
+struct ProtoTraits<EditorCameraFlyMode> {
+	using Proto = proto::events::EditorCameraFlyMode;
+	using Event = EditorCameraFlyMode;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_active(e.active);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return {p.active()}; }
+};
+
+TOAST_PROTO_EVENT(EditorCameraFlyMode);
+
+template<>
+struct ProtoTraits<CaptureFrame> {
+	using Proto = proto::events::CaptureFrame;
+	using Event = CaptureFrame;
+
+	static auto toProto(const Event& e) -> Proto { return {}; }
+
+	static auto fromProto(const Proto& p) -> Event { return {}; }
+};
+
+TOAST_PROTO_EVENT(CaptureFrame);
+
+template<>
+struct ProtoTraits<EditorCameraMoveState> {
+	using Proto = proto::events::EditorCameraMoveState;
+	using Event = EditorCameraMoveState;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_forward(e.forward);
+		p.set_back(e.back);
+		p.set_left(e.left);
+		p.set_right(e.right);
+		p.set_up(e.up);
+		p.set_down(e.down);
+		p.set_boost(e.boost);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		return {p.forward(), p.back(), p.left(), p.right(), p.up(), p.down(), p.boost()};
+	}
+};
+
+TOAST_PROTO_EVENT(EditorCameraMoveState);
+
+template<>
+struct ProtoTraits<EditorCameraLook> {
+	using Proto = proto::events::EditorCameraLook;
+	using Event = EditorCameraLook;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_dx(e.dx);
+		p.set_dy(e.dy);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return {p.dx(), p.dy()}; }
+};
+
+TOAST_PROTO_EVENT(EditorCameraLook);
+
+template<>
+struct ProtoTraits<SetEditorCameraSettings> {
+	using Proto = proto::events::SetEditorCameraSettings;
+	using Event = SetEditorCameraSettings;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_mode(static_cast<Proto::Mode>(e.mode));
+		p.set_speed(e.speed);
+		p.set_workspace_handle(e.workspace_handle);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return {static_cast<uint32_t>(p.mode()), p.speed(), p.workspace_handle()}; }
+};
+
+TOAST_PROTO_EVENT(SetEditorCameraSettings);
+
+template<>
+struct ProtoTraits<EditorCameraGesture> {
+	using Proto = proto::events::EditorCameraGesture;
+	using Event = EditorCameraGesture;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_dx(e.dx);
+		p.set_dy(e.dy);
+		p.set_zoom(e.zoom);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return {p.dx(), p.dy(), p.zoom()}; }
+};
+
+TOAST_PROTO_EVENT(EditorCameraGesture);
 
 template<>
 struct ProtoTraits<InspectorContent::InspectorField> {

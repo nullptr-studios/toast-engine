@@ -105,6 +105,14 @@
       "version>=": "5.5.0#1"
     },
     {
+      "name" : "imgui",
+      "default-features" : false,
+      "features" : [ {
+        "name" : "vulkan-binding"
+      } ],
+      "version>=" : "1.92.7"
+    },
+    {
       "name": "rmlui",
       "version>=": "6.2"
     }

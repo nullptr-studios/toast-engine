@@ -1,8 +1,11 @@
 #include "csv.hpp"
 
+#include <tracy/Tracy.hpp>
+
 namespace ui {
 
 auto parseCsv(std::string_view text) -> CsvTable {
+	ZoneScoped;
 	CsvTable table;
 	CsvRow row;
 	std::string field;
@@ -77,6 +80,7 @@ auto needsQuoting(std::string_view field) -> bool {
 }
 
 auto writeCsv(const CsvTable& table) -> std::string {
+	ZoneScoped;
 	std::string out;
 	for (const auto& row : table) {
 		for (size_t i = 0; i < row.size(); i++) {

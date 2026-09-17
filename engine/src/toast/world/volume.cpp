@@ -100,7 +100,7 @@ void Volume::blendDistance(float value) {
 	m_blend_distance = value;
 }
 
-auto Volume::calculateWeight(const VolumeTarget& target) -> float {
+auto Volume::calculateWeight(const VolumeTarget& target) const -> float {
 	if (m_is_global) {
 		return m_weight;
 	}
@@ -116,7 +116,7 @@ auto Volume::calculateWeight(const VolumeTarget& target) -> float {
 	return m_weight * (1.0f - (dist / m_blend_distance));    // Object is in blend zone
 }
 
-auto Volume::closestPointOnBounds(vec3 point) -> vec3 {
+auto Volume::closestPointOnBounds(vec3 point) const -> vec3 {
 	vec3 position_local = inverse(getWorldTransform()) * vec4(point, 1.0f);
 	vec3 clamped_point = clamp(position_local, vec3(-.5f), vec3(.5f));
 	return getWorldTransform() * vec4(clamped_point, 1.0f);

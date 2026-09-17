@@ -94,18 +94,11 @@ public:
 	Node();
 	virtual ~Node();
 
-	/**
-	 * @brief Stable unique identifier for this node
-	 * @return The UID assigned at construction or deserialization; never changes
-	 */
+	/// @brief Stable unique identifier, assigned at construction or deserialization. Never changes
 	[[nodiscard]]
 	auto uid() const noexcept -> const UID&;
 
-	/**
-	 * @brief Display name of this node
-	 * @note Siblings may share names; names are not unique identifiers
-	 * @return The current display name
-	 */
+	/// @brief Display name. Siblings may share one - this is not an identifier
 	[[nodiscard]]
 	auto name() const noexcept -> std::string_view;
 
@@ -126,6 +119,17 @@ public:
 	[[nodiscard]]
 	auto participatesIn(NodeOwnerParticipation use) const noexcept -> bool {
 		return m_owner != nullptr && m_owner->participatesIn(use);
+	}
+
+	/**
+	 * @brief The World or Workspace this node belongs to
+	 *
+	 * Tells whose tree a node came from without downcasting. Proxies land in one global list regardless of
+	 * owner, so the renderer needs this to keep one workspace out of another's viewport
+	 */
+	[[nodiscard]]
+	auto owner() const noexcept -> INodeOwner* {
+		return m_owner;
 	}
 
 	/**
@@ -184,10 +188,7 @@ public:
 		return m_type;
 	}
 
-	/**
-	 * @brief The event Listener owned by this node
-	 * @return Reference to the Listener; lazy-allocated on the first call; not freed until the node is destroyed
-	 */
+	/// @brief The event Listener owned by this node. Lazy-allocated, freed only with the node
 	[[nodiscard]]
 	auto listener() noexcept -> event::Listener&;
 

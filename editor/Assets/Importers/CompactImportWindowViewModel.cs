@@ -31,6 +31,7 @@ public partial class CompactImportWindowViewModel : ViewModelBase {
 			new TextureImporter(TextureSettings),
 			new PsdImporter(TextureSettings, PsdSettings),
 			new GltfImporter(GltfSettings, TextureSettings),
+			new VoxImporter(VoxSettings),
 			new AudioBankImporter(),
 			new AudioStringImporter(AudioStringSettings)
 		];
@@ -43,6 +44,7 @@ public partial class CompactImportWindowViewModel : ViewModelBase {
 	public TextureImporter.Settings TextureSettings { get; } = new();
 	public PsdImporter.Settings PsdSettings { get; } = new();
 	public GltfImporter.Settings GltfSettings { get; } = new();
+	public VoxImporter.Settings VoxSettings { get; } = new();
 	public AudioStringImporter.Settings AudioStringSettings { get; } = new();
 
 	public string FileListSummary {
@@ -148,7 +150,6 @@ public partial class CompactImportWindowViewModel : ViewModelBase {
 		var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
 		foreach (var importer in m_importers) {
-			// Does this importer handle ANY of the provided file paths?
 			if (!m_filePaths.Any(path => importer.CanHandle(path))) continue;
 
 			// Add settings cards for all settings importers supported by this importer

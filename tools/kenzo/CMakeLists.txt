@@ -15,7 +15,7 @@ add_custom_target(kenzo ALL
         COMMAND ${CMAKE_COMMAND}
             -DCARGO_TARGET_DIR=${CARGO_TARGET_DIR}
             -DPROFILE_NAME=${CARGO_PROFILE_NAME}
-            -DBINARY_NAME=kenzo
+            "-DBINARY_NAMES=kenzo"
             -DEXE_SUFFIX=${CMAKE_EXECUTABLE_SUFFIX}
             -DDEST_DIR=${OUTPUT_ROOT}/$<CONFIG>/kenzo
             -P ${CMAKE_SOURCE_DIR}/cmake/install_cargo_output.cmake

@@ -1,6 +1,6 @@
 /// @file vulkan_texture.cpp
 /// @author dario
-/// @date 6/28/2026.
+/// @date 6/28/2026
 
 #include "vulkan_texture.hpp"
 
@@ -8,11 +8,14 @@
 
 #include <cstring>
 #include <format>
+#include <limits>
 #include <toast/log.hpp>
+#include <tracy/Tracy.hpp>
 
 namespace renderer {
 
 void VulkanTexture::create(const VulkanCore& core, Params params, std::string_view debug_name) {
+	ZoneScoped;
 	m_params = params;
 
 	const std::string name =
@@ -53,7 +56,6 @@ void VulkanTexture::create(const VulkanCore& core, Params params, std::string_vi
 	if (m_params.extent.depth > 1) {
 		view_ci.viewType = vk::ImageViewType::e3D;
 	} else if (m_params.is_cubemap) {
-		// A  cubemap has 6 layers
 		view_ci.viewType = m_params.layer_count > 6 ? vk::ImageViewType::eCubeArray : vk::ImageViewType::eCube;
 	} else {
 		view_ci.viewType = m_params.layer_count > 1 ? vk::ImageViewType::e2DArray : vk::ImageViewType::e2D;
@@ -75,40 +77,59 @@ void VulkanTexture::destroy() {
 	m_image.reset();
 }
 
-// Upload Functions
-
 void TextureUpload::build(const VulkanCore& core) {
+	ZoneScoped;
+	if (m_data.empty()) {
+		TOAST_ERROR("Render", "Texture '{}' has no data to decode", m_debug_name);
+		m_texture->markFailed(IVulkanResource::UploadState::failed_load);
+		return;
+	}
+
 	auto result =
 	    ktxTexture2_CreateFromMemory(m_data.data(), m_data.size(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &m_ktx_texture);
-	if (result != KTX_SUCCESS) {
-		TOAST_CRITICAL("Render", "Failed to open KTX image data?!");
+	if (result != KTX_SUCCESS || m_ktx_texture == nullptr) {
+		TOAST_ERROR("Render", "Texture '{}' is not readable KTX2 data (ktx error {})", m_debug_name, static_cast<int>(result));
+		m_texture->markFailed(IVulkanResource::UploadState::failed_load);
+		return;
 	}
 
 	if (ktxTexture2_NeedsTranscoding(m_ktx_texture)) {
 		result = ktxTexture2_TranscodeBasis(m_ktx_texture, KTX_TTF_BC7_RGBA, 0);
 		if (result != KTX_SUCCESS) {
-			TOAST_CRITICAL("Render", "Failed to transcode BasisUniversal texture");
+			TOAST_ERROR(
+			    "Render", "Texture '{}' failed BasisUniversal transcode (ktx error {})", m_debug_name, static_cast<int>(result)
+			);
+			m_texture->markFailed(IVulkanResource::UploadState::failed_load);
+			return;
 		}
 	}
 
 	m_tex_params.format = static_cast<vk::Format>(m_ktx_texture->vkFormat);
 
 	if (m_tex_params.format == vk::Format::eR8G8B8Unorm || m_tex_params.format == vk::Format::eR8G8B8Srgb) {
-		TOAST_CRITICAL("Render", "24bit format is not supported by ToastEngine, Please use RGBA format!!");
+		TOAST_ERROR("Render", "Texture '{}' is 24bit; ToastEngine needs an RGBA format", m_debug_name);
+		m_texture->markFailed(IVulkanResource::UploadState::failed_gpu);
+		return;
 	}
 
 	m_tex_params.extent = vk::Extent3D(m_ktx_texture->baseWidth, m_ktx_texture->baseHeight, m_ktx_texture->baseDepth);
 	m_tex_params.mip_levels = std::max(1u, m_ktx_texture->numLevels);
 	m_tex_params.layer_count = std::max(1u, m_ktx_texture->numLayers);
 
-	// TODO: PROPER CUBEMAP SUPPORT
+	// TODO proper cubemap support
 	m_tex_params.is_cubemap = m_ktx_texture->isCubemap;
 
 	if (m_ktx_texture->isCubemap) {
 		m_tex_params.layer_count = 6 * std::max(1u, m_ktx_texture->numLayers);
 	}
 
-	m_texture->create(core, m_tex_params, m_debug_name);
+	try {
+		m_texture->create(core, m_tex_params, m_debug_name);
+	} catch (const std::exception& e) {
+		TOAST_ERROR("Render", "Texture '{}' could not be created on the device: {}", m_debug_name, e.what());
+		m_texture->markFailed(IVulkanResource::UploadState::failed_gpu);
+		return;
+	}
 	m_texture->markUploading();
 
 	const vk::DeviceSize total_size = m_ktx_texture->dataSize;
@@ -122,6 +143,8 @@ void TextureUpload::build(const VulkanCore& core) {
 	alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
 
 	m_staging_buffer = core.getAllocator().createBuffer(staging_ci, alloc_ci);
+
+	host_bytes = total_size + m_data.size() + total_size;
 	if (!m_debug_name.empty()) {
 		setDebugName(core, *m_staging_buffer, m_debug_name + " StagingBuffer");
 	}
@@ -145,7 +168,6 @@ void TextureUpload::build(const VulkanCore& core) {
 				region.bufferOffset = offset;
 				region.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
 				region.imageSubresource.mipLevel = mip;
-				// Maps faces directly into contiguous array layers
 				region.imageSubresource.baseArrayLayer = (layer * num_faces) + face;
 				region.imageSubresource.layerCount = 1;
 
@@ -160,6 +182,11 @@ void TextureUpload::build(const VulkanCore& core) {
 }
 
 void TextureUpload::record(vk::CommandBuffer cmd) {
+	ZoneScoped;
+	if (m_texture->hasFailed() || !*m_staging_buffer) {
+		return;
+	}
+
 	vk::Image image_handle = m_texture->getImage();
 
 	vk::ImageMemoryBarrier barrier {};
@@ -183,11 +210,7 @@ void TextureUpload::record(vk::CommandBuffer cmd) {
 	barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
 	barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 	barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
-	// This barrier is recorded on the transfer queue's command buffer
-	// which doesn't support the FRAGMENT_SHADER stage - only the graphics queue does, and a barrier's stage mask
-	// is scoped to the queue executing it, not the resource's eventual consumer. The layout transition to
-	// eShaderReadOnlyOptimal still happens here; cross-queue visibility for the shader read itself is handled by
-	// the upload's completion fence, since consumers only touch the texture once VulkanTexture::isReady() is true.
+	// Transfer queue barrier since that queue has no fragment shader stage
 	barrier.dstAccessMask = {};
 
 	cmd.pipelineBarrier(
@@ -196,6 +219,7 @@ void TextureUpload::record(vk::CommandBuffer cmd) {
 }
 
 void RawTextureUpload::build(const VulkanCore& core) {
+	ZoneScoped;
 	if (m_width == 0 || m_height == 0 || m_data.empty()) {
 		TOAST_CRITICAL("Render", "Cannot upload raw texture with empty dimensions/data");
 	}
@@ -217,6 +241,7 @@ void RawTextureUpload::build(const VulkanCore& core) {
 	alloc_ci.usage = vma::MemoryUsage::eAuto;
 	alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
 	m_staging_buffer = core.getAllocator().createBuffer(staging_ci, alloc_ci);
+	host_bytes = 2 * static_cast<vk::DeviceSize>(m_data.size());
 	if (!m_debug_name.empty()) {
 		setDebugName(core, *m_staging_buffer, m_debug_name + " StagingBuffer");
 	}
@@ -229,6 +254,7 @@ void RawTextureUpload::build(const VulkanCore& core) {
 }
 
 void RawTextureUpload::record(vk::CommandBuffer cmd) {
+	ZoneScoped;
 	const vk::Image image = m_texture->getImage();
 
 	vk::ImageMemoryBarrier barrier {};
@@ -266,6 +292,37 @@ void RawTextureUpload::record(vk::CommandBuffer cmd) {
 	cmd.pipelineBarrier(
 	    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eBottomOfPipe, {}, nullptr, nullptr, barrier
 	);
+}
+
+auto uploadTextureSync(const VulkanCore& core, VulkanTexture& texture, std::vector<uint8_t> data, std::string_view debug_name)
+    -> bool {
+	ZoneScoped;
+	TextureUpload job(texture, std::move(data), debug_name);
+	job.build(core);
+	if (texture.hasFailed()) {
+		return false;
+	}
+
+	const auto& device = core.getDevice();
+	const vk::CommandPoolCreateInfo pool_ci(vk::CommandPoolCreateFlagBits::eTransient, core.getGraphicsQueueFamilyIndex());
+	const vk::raii::CommandPool pool(device, pool_ci);
+	auto buffers = device.allocateCommandBuffers(vk::CommandBufferAllocateInfo(*pool, vk::CommandBufferLevel::ePrimary, 1));
+	const vk::raii::CommandBuffer cmd = std::move(buffers[0]);
+
+	cmd.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
+	job.record(*cmd);
+	cmd.end();
+
+	const vk::raii::Fence fence(device, vk::FenceCreateInfo {});
+	const vk::CommandBuffer raw_cmd = *cmd;
+	core.getGraphicsQueue().submit(vk::SubmitInfo(0, nullptr, nullptr, 1, &raw_cmd), *fence);
+	if (device.waitForFences(*fence, vk::True, std::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess) {
+		texture.markFailed(IVulkanResource::UploadState::failed_gpu);
+		return false;
+	}
+
+	job.finished();
+	return texture.isReady();
 }
 
 }

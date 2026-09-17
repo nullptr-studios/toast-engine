@@ -4,6 +4,7 @@
 
 #include <mutex>
 #include <ranges>
+#include <tracy/Tracy.hpp>
 
 namespace event {
 
@@ -51,6 +52,7 @@ void ThreadListener::clear() {
 }
 
 void ThreadListener::pollEvents() {
+	ZoneScoped;
 	std::vector<_detail::IEvent*> temp_queue;
 	{
 		std::scoped_lock lock(m.queue_mutex);

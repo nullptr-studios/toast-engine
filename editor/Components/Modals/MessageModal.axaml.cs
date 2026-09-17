@@ -22,7 +22,11 @@ public record ModalConfig(
 	string CancelLabel = "Cancel",
 	LucideIconKind? OkIcon = null,
 	LucideIconKind? NoIcon = null,
-	LucideIconKind? CancelIcon = null
+	LucideIconKind? CancelIcon = null,
+	// Optional fourth button that answers No for this prompt and every remaining one in the same batch.
+	// Only shown when a label is given
+	string? NoAllLabel = null,
+	LucideIconKind? NoAllIcon = null
 );
 
 public class MessageModalViewModel : ObservableObject {
@@ -57,6 +61,11 @@ public class MessageModalViewModel : ObservableObject {
 	public bool HasNoIcon => NoIcon.HasValue;
 	public bool HasCancelIcon => CancelIcon.HasValue;
 
+	public bool ShowNoAll { get; init; }
+	public string NoAllLabel { get; init; } = "";
+	public LucideIconKind? NoAllIcon { get; init; }
+	public bool HasNoAllIcon => NoAllIcon.HasValue;
+
 	public static MessageModalViewModel From(ModalConfig cfg) {
 		return new MessageModalViewModel {
 			Title = cfg.Title,
@@ -71,7 +80,11 @@ public class MessageModalViewModel : ObservableObject {
 			CancelLabel = cfg.CancelLabel,
 			OkIcon = cfg.OkIcon,
 			NoIcon = cfg.NoIcon,
-			CancelIcon = cfg.CancelIcon
+			CancelIcon = cfg.CancelIcon,
+			// The all variant only makes sense alongside the No button it repeats
+			ShowNoAll = cfg.Buttons == ModalButtons.OkNoCancel && !string.IsNullOrEmpty(cfg.NoAllLabel),
+			NoAllLabel = cfg.NoAllLabel ?? "",
+			NoAllIcon = cfg.NoAllIcon
 		};
 	}
 }
@@ -105,7 +118,18 @@ public partial class MessageModal : Window {
 		Close(true);
 	}
 
+	/// <summary>
+	/// True when the user answered via the All button, meaning the same answer should be applied to
+	/// every remaining prompt in this batch without showing them
+	/// </summary>
+	public bool AppliedToAll { get; private set; }
+
 	private void OnNo(object? sender, RoutedEventArgs e) {
+		Close(false);
+	}
+
+	private void OnNoAll(object? sender, RoutedEventArgs e) {
+		AppliedToAll = true;
 		Close(false);
 	}
 

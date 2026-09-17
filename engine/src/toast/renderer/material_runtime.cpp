@@ -9,6 +9,7 @@
 #include <glm/glm.hpp>
 #include <toast/assets/assets.hpp>
 #include <toast/log.hpp>
+#include <tracy/Tracy.hpp>
 
 namespace renderer {
 
@@ -80,7 +81,6 @@ void writeScalar(
 	}
 	std::byte* dst = blob.data() + offset;
 
-	// [Range(min, max)] clamps numeric values engine-side too
 	const auto clamped = [&meta](double value) {
 		if (meta.range_min.has_value()) {
 			value = std::max(value, static_cast<double>(*meta.range_min));
@@ -130,7 +130,7 @@ void writeScalar(
 			std::memcpy(dst, value.data(), sizeof(value));
 			return;
 		}
-		default: return;    // matrices and unknowns are engine-written or unsupported
+		default: return;
 	}
 }
 
@@ -155,7 +155,6 @@ void writeMember(std::vector<std::byte>& blob, const ShaderBlockMember& member, 
 }
 
 auto readTextureUID(const DataValue& v) -> toast::UID {
-	// Texture parameters are objects with a "texture" key
 	const DataValue* uid_value = &v;
 	if (v.isObject() && v.contains("texture")) {
 		uid_value = &v["texture"];
@@ -201,11 +200,15 @@ auto stringField(const DataValue& obj, std::string_view key, std::string_view fa
 
 }
 
-MaterialRuntime::MaterialRuntime(const VulkanCore& core, assets::Material* material) : m_core(&core), m_material(material) {
+MaterialRuntime::MaterialRuntime(const VulkanCore& core, assets::Material* material)
+    : m_core(&core),
+      m_material(material),
+      m_material_ref(material) {
 	rebuild();
 }
 
 void MaterialRuntime::rebuild() {
+	ZoneScoped;
 	m_merged = {};
 	m_entries.clear();
 	m_values_dirty = true;
@@ -215,7 +218,6 @@ void MaterialRuntime::rebuild() {
 		return;
 	}
 
-	// The pass always belongs to the root material
 	assets::Material* root = m_material->rootMaterial();
 	for (const auto& shader_handle : root->shaders()) {
 		if (shader_handle.uid().data() == 0) {
@@ -227,7 +229,7 @@ void MaterialRuntime::rebuild() {
 			continue;
 		}
 
-		// Merge reflection, first name wins
+		// First name wins
 		for (const auto& binding : entry->reflection.bindings) {
 			const bool exists = std::ranges::any_of(m_merged.bindings, [&](const auto& b) { return b.name == binding.name; });
 			if (exists) {
@@ -275,16 +277,18 @@ auto MaterialRuntime::pushBlob() -> const std::vector<std::byte>& {
 }
 
 void MaterialRuntime::bakeValues() {
+	ZoneScoped;
 	m_values_dirty = false;
 	m_ubo_blobs.clear();
 	m_push_blob.clear();
 	m_model_offset.reset();
+	m_joint_offset_offset.reset();
+	m_instance_base_offset.reset();
 
 	if (m_material == nullptr) {
 		return;
 	}
 
-	// Material-editable uniform buffers
 	for (const auto& binding : m_merged.bindings) {
 		if (binding.kind != ShaderBindingKind::uniform_buffer || !binding.engine_semantic.empty() || binding.size == 0) {
 			continue;
@@ -296,8 +300,6 @@ void MaterialRuntime::bakeValues() {
 		blob.bytes.assign(binding.size, std::byte {0});
 
 		for (const auto& member : binding.members) {
-			// Only [Reflect] parameters are material data
-			// Everything else is engine-owned
 			if (!member.engine_semantic.empty() || !member.inspector.reflected) {
 				continue;
 			}
@@ -308,7 +310,6 @@ void MaterialRuntime::bakeValues() {
 		m_ubo_blobs.push_back(std::move(blob));
 	}
 
-	// Push constants
 	uint32_t push_size = 0;
 	for (const auto& push : m_merged.push_constants) {
 		push_size = std::max(push_size, push.size);
@@ -319,6 +320,14 @@ void MaterialRuntime::bakeValues() {
 		for (const auto& member : push.members) {
 			if (member.engine_semantic == "model_matrix") {
 				m_model_offset = member.offset;
+				continue;
+			}
+			if (member.engine_semantic == "joint_offset") {
+				m_joint_offset_offset = member.offset;
+				continue;
+			}
+			if (member.engine_semantic == "instance_base") {
+				m_instance_base_offset = member.offset;
 				continue;
 			}
 			if (!member.engine_semantic.empty() || !member.inspector.reflected) {
@@ -350,7 +359,6 @@ auto MaterialRuntime::resolveMemberValue(const ShaderBlockMember& member) const 
 		return nullptr;
 	}
 
-	// Ungrouped parameters are top-level TOML keys
 	if (member.inspector.group.empty()) {
 		return m_material->value(member.name);
 	}
@@ -382,6 +390,7 @@ auto MaterialRuntime::textureSlots() -> const std::vector<TextureSlot>& {
 }
 
 void MaterialRuntime::bakeTextures() {
+	ZoneScoped;
 	m_textures_dirty = false;
 	m_texture_slots.clear();
 
@@ -399,6 +408,8 @@ void MaterialRuntime::bakeTextures() {
 		TextureSlot slot;
 		slot.set = binding.set;
 		slot.binding = binding.binding;
+		slot.default_fallback = binding.inspector.default_fallback;
+		slot.linear_data = binding.inspector.linear_data;
 
 		const DataValue* v = m_material->value(binding.name);
 		if (v != nullptr) {
@@ -426,7 +437,6 @@ auto MaterialRuntime::samplerFor(const DataValue* params, std::string_view debug
 		anisotropy = (*params)["anisotropy"].value<bool>().value_or(true);
 	}
 
-	// hash of the textual state
 	const std::string state =
 	    repeat_u + "|" + repeat_v + "|" + min_filter + "|" + mag_filter + "|" + mipmap_mode + "|" + (anisotropy ? "1" : "0");
 	const uint64_t key = ShaderCache::fnv1a(state.data(), state.size());

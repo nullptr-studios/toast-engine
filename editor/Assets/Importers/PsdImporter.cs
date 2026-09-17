@@ -56,7 +56,8 @@ public partial class PsdImporter : IAssetImporter {
 		var baseName = Path.GetFileNameWithoutExtension(realSourcePath);
 		var destDir = ctx.DestDir;
 
-		if (m_psdSettings.CreateFolder)
+		// Skipped when we're already in this asset's folder, see ImportContext.AlreadyNamed(); reimport passes the previous outputs directory
+		if (m_psdSettings.CreateFolder && !ImportContext.AlreadyNamed(destDir, baseName))
 			destDir = Path.Combine(destDir, baseName);
 
 		Directory.CreateDirectory(destDir);

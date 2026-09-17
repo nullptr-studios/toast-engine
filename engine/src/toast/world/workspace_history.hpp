@@ -1,14 +1,16 @@
 #pragma once
 
+#include "../export.hpp"
 #include "workspace_events.hpp"
 
 #include <functional>
 #include <memory>
 #include <toast/assets/prefab.hpp>
+#include <toast/export.hpp>
 
 namespace toast {
 
-class WorkspaceHistory {
+class TOAST_API WorkspaceHistory {
 public:
 	using Snapshot = assets::Prefab;
 	using Capture = std::function<Snapshot()>;

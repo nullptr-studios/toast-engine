@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <string_view>
 #include <toast/log.hpp>
+#include <tracy/Tracy.hpp>
 
 namespace assets {
 
@@ -48,6 +49,7 @@ Curve::Curve(std::vector<float> points, CurveDimension dim, SplineType type, flo
 }
 
 auto Curve::fromToml(const toml::table& tbl) -> std::unique_ptr<Curve> {
+	ZoneScoped;
 	auto spline_type_str = tbl["spline_type"].value<std::string>().value_or("linear");
 	auto dimension_str = tbl["dimension"].value<std::string>().value_or("2d");
 	auto t_scale = (float)tbl["t_scale"].value<double>().value_or(1.0);
@@ -89,6 +91,7 @@ auto Curve::fromToml(const toml::table& tbl) -> std::unique_ptr<Curve> {
 }
 
 auto Curve::serialize(SaveMode /*mode*/) const -> std::vector<uint8_t> {
+	ZoneScoped;
 	std::ostringstream ss;
 	ss << "spline_type = \"" << splineTypeToString(m_spline_type) << "\"\n";
 	ss << "dimension   = \"" << dimToString(m_dim) << "\"\n";
@@ -138,6 +141,7 @@ void Curve::setPoints(std::vector<float> points) {
 }
 
 void Curve::rebuildSpline() {
+	ZoneScoped;
 	size_t dim = dimCount();
 	size_t n = m_points.size() / dim;
 

@@ -1,19 +1,12 @@
-// Toast inspector attributes
-//
-// Import this module (`import toast;`) to tag material parameters for the editor
-//
-// Only parameters marked [Reflect] show up in the material inspector; everything
-// else is engine-owned data (matrices, light info...)
-//
-//   [Reflect]                  expose this parameter in the material editor
-//   [Range(min, max)]          clamp/slider range for numeric parameters
-//   [Color]                    treat a float3/float4 as a color
-//   [Name("Display Name")]     override the inspector display name
-//   [Group("group name")]      group parameters together; when the group name matches
-//                              a texture's name (or its [Name]) the parameters live in
-//                              that texture's TOML table
-//   [Subgroup("sub name")]     nested grouping inside a [Group]
-//   [Unit("m/s")]              display unit suffix
+// [Reflect]               expose in the material editor
+// [Range(min, max)]       slider range
+// [Color]                 float3 or float4 as a colour
+// [Name("Display Name")]  inspector name
+// [Group("group name")]   group and one named like a texture lives in the texture TOML table
+// [Subgroup("sub name")]  nested group inside a [Group]
+// [Unit("m/s")]           unit suffix
+// [Default("black")]      unbound Sampler2D fallback "white" "black" or "flat_normal"
+// [Linear]                data texture; sRGB input warns
 
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct ReflectAttribute {};
@@ -51,3 +44,12 @@ public struct UnitAttribute
 {
     string unit;
 };
+
+[__AttributeUsage(_AttributeTargets.Var)]
+public struct DefaultAttribute
+{
+    string fallback;
+};
+
+[__AttributeUsage(_AttributeTargets.Var)]
+public struct LinearAttribute {};

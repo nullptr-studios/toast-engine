@@ -1,10 +1,7 @@
-// --------------------------------------------------------------------------
-// DATA STRUCTURES
-// --------------------------------------------------------------------------
 struct FrameUniform
 {
-    float2 iResolution; // Sits at offset 0
-    float  iTime;       // Sits at offset 8
+    float2 iResolution;
+    float  iTime;
 };
 
 [[vk::binding(0, 0)]]
@@ -15,29 +12,20 @@ struct VS_Output
     float4 position : SV_Position;
 };
 
-// --------------------------------------------------------------------------
-// HARDCODED CONSTANTS & GLOBALS (No Uniforms)
-// --------------------------------------------------------------------------
 static const float  REPEAT = 100.0;
 
-// Internal global state used by the procedural generator
 static float gTime = 0.0;
 
-// --------------------------------------------------------------------------
-// SHADER MATHEMATICS
-// --------------------------------------------------------------------------
-// Native Slang float2x2 matrix generation
 float2x2 rot(float a) {
     float c = cos(a), s = sin(a);
     return float2x2(c, s, -s, c);
 }
 
-// GLSL custom mod behavior emulation for repetition
+// GLSL mod where the result takes the sign of the divisor
 float3 glsl_mod(float3 x, float y) { 
     return x - y * floor(x / y); 
 }
 
-// Optimized signed distance bounding box
 float sdBox(float3 p, float3 b)
 {
     float3 q = abs(p) - b;
@@ -90,10 +78,6 @@ float map(float3 pos) {
     return box_set(pos);
 }
 
-// --------------------------------------------------------------------------
-// MAIN ENTRY POINTS
-// --------------------------------------------------------------------------
-
 [shader("vertex")]
 VS_Output vertexMain(uint vertexID : SV_VertexID)
 {
@@ -119,7 +103,7 @@ float4 fragmentMain(VS_Output input) : SV_Target
     float2 res = frameData.iResolution;
 
     float2 fragCoord = input.position.xy;
-    fragCoord.y = res.y - fragCoord.y; // Use dynamic resolution
+    fragCoord.y = res.y - fragCoord.y;
 
     float2 p = (fragCoord.xy * 2. - res.xy) / min(res.x, res.y);
     float3 ro = float3(0., -0.2, floatTime * 4.);
@@ -135,7 +119,7 @@ float4 fragmentMain(VS_Output input) : SV_Target
     for (int i = 0; i < 99; i++) {
         float3 pos = ro + ray * t;
         pos = glsl_mod(pos - 2., 4.) - 2.;
-        gTime = floatTime - float(i) * 0.01; // Global synchronization tracking
+        gTime = floatTime - float(i) * 0.01;
         
         float d = map(pos);
         d = max(abs(d), 0.01);

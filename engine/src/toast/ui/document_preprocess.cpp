@@ -7,6 +7,7 @@
 #include <array>
 #include <cctype>
 #include <format>
+#include <tracy/Tracy.hpp>
 
 namespace ui {
 
@@ -185,6 +186,7 @@ auto resolveColorReferences(std::string_view source, const ColorResolver& resolv
 }
 
 auto preprocessDocument(std::string_view rml, const PreprocessContext& ctx) -> DocumentScan {
+	ZoneScoped;
 	DocumentScan scan;
 
 	// can attributes and {{ }} expressions

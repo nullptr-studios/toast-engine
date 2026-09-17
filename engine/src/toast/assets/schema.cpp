@@ -1,10 +1,12 @@
 #include "schema.hpp"
 
 #include <toast/log.hpp>
+#include <tracy/Tracy.hpp>
 
 namespace assets {
 
 Schema::Schema(std::string_view json_content) {
+	ZoneScoped;
 	try {
 		auto j = json_t::parse(json_content);
 

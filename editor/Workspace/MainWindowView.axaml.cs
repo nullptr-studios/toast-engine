@@ -6,6 +6,7 @@
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -33,6 +34,8 @@ public partial class MainWindowView : Window {
 	private double m_resizeStartY;
 	private bool m_returningToStart;
 	private CancellationTokenSource? m_toastCts;
+	private IDisposable? m_activeWatch;
+	private IDisposable? m_stateWatch;
 
 	public MainWindowView() {
 		InitializeComponent();
@@ -52,6 +55,10 @@ public partial class MainWindowView : Window {
 
 		AddHandler(KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel);
 		AddHandler(KeyUpEvent, OnKeyUp, RoutingStrategies.Tunnel);
+
+		// Every editor window counts as focus: a floating dock or a modal in use is still the editor in use
+		m_activeWatch = IsActiveProperty.Changed.AddClassHandler<Window>((_, _) => QueueWindowStatePush());
+		m_stateWatch = WindowStateProperty.Changed.AddClassHandler<Window>((_, _) => QueueWindowStatePush());
 	}
 
 	private void WireResizeHandle() {
@@ -136,9 +143,25 @@ public partial class MainWindowView : Window {
 
 	protected override void OnClosed(EventArgs e) {
 		base.OnClosed(e);
+		m_activeWatch?.Dispose();
+		m_stateWatch?.Dispose();
 		(DataContext as MainWindowViewModel)?.Dispose();
 		m_toast?.Dispose();
 		if (m_returningToStart) ProjectContext.Reset();
+	}
+
+	// Posted: moving focus between two editor windows deactivates one before activating the other, and pushing in
+	// between would drop the renderer to the background cap for a moment
+	private void QueueWindowStatePush() {
+		Dispatcher.UIThread.Post(PushWindowState, DispatcherPriority.Background);
+	}
+
+	private void PushWindowState() {
+		var focused = Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop
+			? desktop.Windows.Any(w => w.IsActive)
+			: IsActive;
+		// Only the main window hides the viewport; a minimized floating panel leaves the scene on screen
+		ToastEngine.SetWindowState(focused, WindowState == WindowState.Minimized);
 	}
 
 	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change) {
@@ -146,6 +169,12 @@ public partial class MainWindowView : Window {
 		if (change.Property == WindowDecorationMarginProperty && MenuBorder is not null) {
 			var margin = (Thickness)change.NewValue!;
 			MenuBorder.Margin = new Thickness(margin.Left, 0, 0, 0);
+		}
+		
+		// Window state change
+		if (change.Property == WindowStateProperty) {
+			if (DataContext is not MainWindowViewModel vm) return;
+			// vm.WindowState = WindowState;
 		}
 	}
 
@@ -252,7 +281,7 @@ public partial class MainWindowView : Window {
 	}
 
 	private void OnOpenAbout(object? sender, RoutedEventArgs e) {
-		new AboutWindow().ShowDialog(this);
+		new AboutWindow().Show(this);
 	}
 
 	private void OnCloseProject(object? sender, RoutedEventArgs e) {

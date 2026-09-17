@@ -2,8 +2,6 @@
  * @file render_events.hpp
  * @author Xein
  * @date 17 Jul 2026
- *
- * @brief Editor-facing render events
  */
 
 #pragma once

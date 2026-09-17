@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <toast/uid.hpp>
+#include <tracy/Tracy.hpp>
 
 namespace assets {
 
@@ -66,6 +67,7 @@ auto Action::accumulation() const noexcept -> AccumulationType {
 }
 
 InputLayout::InputLayout(const toml::table& table, Handle<Schema> schema) : Data(table, std::move(schema), Data::keep_all_keys) {
+	ZoneScoped;
 	const auto& d = static_cast<const DataValue&>(m_root);
 
 	if (d.contains("name")) {

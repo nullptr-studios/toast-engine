@@ -1,23 +1,28 @@
 /// @file VulkanCore.hpp
 /// @author dario
-/// @date 14/05/2026.
+/// @date 14/05/2026
 
 #pragma once
 
 #include "vulkan_common.hpp"
 
+#include <algorithm>
 #include <external/inc/renderdoc/renderdoc_app.h>
 #include <limits>
 #include <mutex>
 #include <optional>
 #include <span>
+#include <string_view>
 #include <vector>
 
 namespace renderer {
 
-/**
- * @brief Represents the suitability score of a Vulkan physical device based on various criteria
- */
+enum class NsightMode : uint8_t {
+	none,
+	graphics_capture,
+	gpu_trace
+};
+
 struct DeviceScore {
 	int total = 0;
 	int device_type = 0;
@@ -34,15 +39,10 @@ struct DeviceScore {
 
 	std::vector<std::string> missing_extensions;
 
-	/**
-	 * @brief Converts the device score to a string representation.
-	 * @return A string containing the device score details.
-	 */
 	[[nodiscard]]
 	auto toString() const noexcept -> std::string;
 };
 
-/// @brief Manages Vulkan instance, device initialization, and memory allocation
 class VulkanCore {
 public:
 	VulkanCore(
@@ -50,7 +50,6 @@ public:
 	) noexcept;
 	~VulkanCore() = default;
 
-	// Prevent copying
 	VulkanCore(const VulkanCore&) = delete;
 	auto operator=(const VulkanCore&) -> VulkanCore& = delete;
 
@@ -109,57 +108,75 @@ public:
 		return rdoc_api;
 	}
 
-	/// @brief Whether validation layers are enabled
+	[[nodiscard]]
+	auto isRayTracingSupported() const noexcept -> bool {
+		return m_ray_tracing_supported;
+	}
+
+	[[nodiscard]]
+	auto getBufferAddress(vk::Buffer buffer) const -> vk::DeviceAddress {
+		vk::BufferDeviceAddressInfo info {};
+		info.buffer = buffer;
+		return m_device.getBufferAddress(info);
+	}
+
+	[[nodiscard]]
+	auto getScratchAllocationSize(vk::DeviceSize needed) const noexcept -> vk::DeviceSize {
+		return needed + std::max(m_as_scratch_alignment, 1u);
+	}
+
+	/// Pair with getScratchAllocationSize()
+	[[nodiscard]]
+	auto getAlignedScratchAddress(vk::Buffer buffer) const -> vk::DeviceAddress {
+		const auto alignment = static_cast<vk::DeviceAddress>(std::max(m_as_scratch_alignment, 1u));
+		return (getBufferAddress(buffer) + alignment - 1) & ~(alignment - 1);
+	}
+
+	[[nodiscard]]
+	auto isFrameBoundarySupported() const noexcept -> bool {
+		return m_frame_boundary_supported;
+	}
+
+	[[nodiscard]]
+	auto getNsightMode() const noexcept -> NsightMode {
+		return m_nsight_mode;
+	}
+
+#if defined(_WIN32)
+	/// @warning Blocks until the Nsight Graphics host attaches so F12 handler only
+	void activateNsightGpuTraceIfNeeded() const;
+#endif
+
 	[[nodiscard]]
 	auto validationEnabled() const noexcept -> bool {
 		return m_validation_enabled;
 	}
 
-	/// @brief Whether the selected device supports anisotropic filtering
+	[[nodiscard]]
+	auto debugUtilsEnabled() const noexcept -> bool {
+		return m_debug_utils_enabled;
+	}
+
 	[[nodiscard]]
 	auto supportsSamplerAnisotropy() const noexcept -> bool {
 		return m_sampler_anisotropy_supported;
 	}
 
-	/// @brief Device limit to clamp requested sampler anisotropy against
 	[[nodiscard]]
 	auto maxSamplerAnisotropy() const noexcept -> float {
 		return m_max_sampler_anisotropy;
 	}
 
-	// TODO: UI system should submit on the render thread
-	/// @brief Guards graphics queue submission; the render thread and the UI system submit on the same queue
+	// TODO UI system should submit on the render thread
 	[[nodiscard]]
 	auto graphicsSubmitMutex() const noexcept -> std::mutex& {
 		return m_graphics_submit_mutex;
 	}
 
 private:
-	/**
-	 * Evaluates available Vulkan physical devices and selects the most suitable one
-	 * based on required extension support, queue family constraints, and a calculated suitability score.
-	 * Updates internal state with the selected device and corresponding queue family indices
-	 *
-	 * Logs evaluation details, scoring breakdowns, and rejection criteria for each candidate
-	 * @param required_device_extensions A span of C-string pointers specifying the Vulkan device
-	 *        extensions that must be supported by the selected physical device
-	 */
 	void pickPhysicalDevice(std::span<const char* const> required_device_extensions);
-	/**
-	 * Creates a Vulkan logical device and initializes the associated memory allocator.
-	 */
 	void createLogicalDeviceAndAllocator(std::span<const char* const> required_device_extensions);
 
-	/**
-	 * Evaluates a Vulkan physical device suitability by computing a weighted score based on device type,
-	 * available memory, hardware limits, feature support, extension availability, API version, and queue
-	 * family configuration. Required extensions are validated against the device, applying penalties for
-	 * missing capabilities and rewards for supported optional extensions and modern Vulkan features
-	 *
-	 * @param device The Vulkan physical device to evaluate.
-	 * @param required_device_extensions A span of required device extension names that the device must support
-	 * @return A DeviceScore structure containing individual category scores and the aggregated total score
-	 */
 	[[nodiscard]]
 	auto calculateDeviceScore(const vk::PhysicalDevice& device, std::span<const char* const> required_device_extensions)
 	    -> DeviceScore;
@@ -167,7 +184,15 @@ private:
 	[[nodiscard]]
 	auto checkValidationLayerSupport() -> bool;
 
+	[[nodiscard]]
+	static auto checkInstanceExtensionSupport(std::string_view extension) -> bool;
+
+#if defined(_WIN32)
+	void initializeNsightActivity();
+#endif
+
 	bool m_validation_enabled = false;
+	bool m_debug_utils_enabled = false;
 
 	vk::raii::Context m_context;
 	vk::raii::Instance m_instance = nullptr;
@@ -192,7 +217,15 @@ private:
 
 	mutable std::mutex m_graphics_submit_mutex;
 
-	// renderdoc api
 	RENDERDOC_API_1_6_0* rdoc_api = nullptr;
+
+	mutable NsightMode m_nsight_mode = NsightMode::none;
+
+	bool m_frame_boundary_supported = false;
+
+	bool m_ray_tracing_supported = false;
+
+	uint32_t m_as_scratch_alignment = 0;
+	mutable bool m_nsight_gputrace_activated = false;
 };
 }
