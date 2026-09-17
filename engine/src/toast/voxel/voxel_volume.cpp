@@ -4,7 +4,7 @@
 #include <cassert>
 #include <utility>
 
-namespace toast::voxel {
+namespace voxel {
 
 namespace {
 

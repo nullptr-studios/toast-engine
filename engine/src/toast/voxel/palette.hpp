@@ -11,7 +11,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace toast::voxel {
+namespace voxel {
 
 inline constexpr uint32_t k_max_physical_materials = 32;
 

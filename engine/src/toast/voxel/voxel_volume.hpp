@@ -14,7 +14,7 @@
 #include <toast/export.hpp>
 #include <vector>
 
-namespace toast::voxel {
+namespace voxel {
 
 class TOAST_API Volume {
 public:

@@ -178,8 +178,8 @@ void VoxelPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t ima
 		bindStorage(frame_index, frame->voxel_storage);
 	}
 
-	const glm::mat4 voxel_scale = glm::scale(glm::mat4(1.0f), glm::vec3(toast::voxel::k_voxel_size));
-	const glm::mat4 inverse_voxel_scale = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f / toast::voxel::k_voxel_size));
+	const glm::mat4 voxel_scale = glm::scale(glm::mat4(1.0f), glm::vec3(voxel::k_voxel_size));
+	const glm::mat4 inverse_voxel_scale = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f / voxel::k_voxel_size));
 
 	const auto& allocation = m_instance_buffers[frame_index].getAllocation();
 	auto* instances = static_cast<InstanceGpu*>(allocation.getInfo().pMappedData);

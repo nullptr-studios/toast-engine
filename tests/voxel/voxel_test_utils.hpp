@@ -13,7 +13,7 @@
 
 namespace voxeltest {
 
-using namespace toast::voxel;
+using namespace voxel;
 
 inline const std::array<glm::ivec3, 6> k_steps {
   glm::ivec3(-1, 0, 0), glm::ivec3(1, 0, 0), glm::ivec3(0, -1, 0), glm::ivec3(0, 1, 0), glm::ivec3(0, 0, -1), glm::ivec3(0, 0, 1),

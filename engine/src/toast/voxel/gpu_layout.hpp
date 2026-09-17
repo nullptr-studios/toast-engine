@@ -17,7 +17,7 @@
 #include <toast/export.hpp>
 #include <vector>
 
-namespace toast::voxel::gpu {
+namespace voxel::gpu {
 
 inline constexpr uint32_t k_material_words_per_brick = k_brick_voxel_count / 4;
 

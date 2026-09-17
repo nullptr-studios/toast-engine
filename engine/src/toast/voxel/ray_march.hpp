@@ -11,7 +11,7 @@
 #include <glm/glm.hpp>
 #include <toast/export.hpp>
 
-namespace toast::voxel {
+namespace voxel {
 
 inline constexpr uint32_t k_max_march_steps = 1024;
 

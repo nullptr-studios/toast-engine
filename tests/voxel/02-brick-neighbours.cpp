@@ -4,7 +4,7 @@
 #include <array>
 #include <cassert>
 
-using namespace toast::voxel;
+using namespace voxel;
 using namespace voxeltest;
 
 TOAST_TEST_NAMED("voxel", "voxel/02-brick-neighbours", test_voxel_02_brick_neighbours) {

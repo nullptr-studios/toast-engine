@@ -10,11 +10,11 @@
 
 namespace assets {
 
-using toast::voxel::BrickEntry;
-using toast::voxel::BrickPool;
-using toast::voxel::BrickTag;
-using toast::voxel::k_brick_material_bytes;
-using toast::voxel::Volume;
+using voxel::BrickEntry;
+using voxel::BrickPool;
+using voxel::BrickTag;
+using voxel::k_brick_material_bytes;
+using voxel::Volume;
 
 VoxelModel::VoxelModel(const std::vector<uint8_t>& data) {
 	ZoneScoped;
@@ -185,11 +185,11 @@ auto VoxelModel::solidVoxelCount() const -> uint32_t {
 	uint32_t total = 0;
 	for (const BrickEntry& entry : m_grid) {
 		if (entry.tag() == BrickTag::uniform) {
-			total += toast::voxel::k_brick_voxel_count;
+			total += voxel::k_brick_voxel_count;
 		}
 	}
 	for (uint8_t value : m_bricks) {
-		total += value != toast::voxel::k_empty_palette_index ? 1u : 0u;
+		total += value != voxel::k_empty_palette_index ? 1u : 0u;
 	}
 	return total;
 }

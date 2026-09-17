@@ -6,7 +6,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <toast/voxel/volume_bounds.hpp>
 
-using namespace toast::voxel;
+using namespace voxel;
 
 TOAST_TEST_NAMED("voxel", "voxel/20-volume-bounds", test_voxel_20_volume_bounds) {
 	const auto near = [](float lhs, float rhs) { return std::abs(lhs - rhs) < 1e-4f; };

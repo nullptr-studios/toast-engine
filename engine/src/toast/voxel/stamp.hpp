@@ -17,7 +17,7 @@
 #include <toast/export.hpp>
 #include <vector>
 
-namespace toast::voxel {
+namespace voxel {
 
 /// @brief Output axis i reads input axis source[i] negated when flip[i]
 struct LatticeOrientation {

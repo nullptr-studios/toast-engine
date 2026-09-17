@@ -3240,7 +3240,7 @@ void VulkanRenderer::tick(float time) noexcept {
 		const glm::vec3 eye = frame.frame_data.camera_position;
 		const float near_plane = m_camera->near_plane;
 		for (auto& proxy : frame.voxel_instances) {
-			proxy.camera_inside = toast::voxel::containsPoint(proxy.inverse_model, proxy.brick_dims, eye, near_plane);
+			proxy.camera_inside = voxel::containsPoint(proxy.inverse_model, proxy.brick_dims, eye, near_plane);
 			proxy.visible = proxy.camera_inside || sphereInFrustum(planes, proxy.bounds_center, proxy.bounds_radius);
 			proxy.view_distance = std::max(glm::distance(eye, proxy.bounds_center) - proxy.bounds_radius, 0.0f);
 		}
@@ -3388,10 +3388,10 @@ void VulkanRenderer::unregisterVoxelNodeProxy(toast::VoxelNode* node) {
 namespace {
 
 [[nodiscard]]
-auto defaultVoxelPalette() -> const toast::voxel::Palette& {
-	static const toast::voxel::Palette palette = [] {
-		toast::voxel::Palette out;
-		for (uint32_t i = 1; i < toast::voxel::k_palette_size; ++i) {
+auto defaultVoxelPalette() -> const voxel::Palette& {
+	static const voxel::Palette palette = [] {
+		voxel::Palette out;
+		for (uint32_t i = 1; i < voxel::k_palette_size; ++i) {
 			out.entries[i].albedo_r = 160;
 			out.entries[i].albedo_g = 160;
 			out.entries[i].albedo_b = 160;
@@ -3428,8 +3428,8 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 
 	struct Gathered {
 		toast::VoxelNode* node;
-		toast::voxel::Volume* volume;
-		const toast::voxel::Palette* palette;
+		voxel::Volume* volume;
+		const voxel::Palette* palette;
 	};
 
 	std::vector<Gathered> gathered;
@@ -3445,11 +3445,11 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 			continue;
 		}
 
-		toast::voxel::Volume* volume = node->volume();
+		voxel::Volume* volume = node->volume();
 		if (volume == nullptr) {
 			continue;
 		}
-		const toast::voxel::Palette* palette = node->resolvedPalette();
+		const voxel::Palette* palette = node->resolvedPalette();
 		if (palette == nullptr) {
 			palette = &defaultVoxelPalette();
 		}
@@ -3466,7 +3466,7 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 			m_voxel_storage.reset();
 			m_voxel_storage_pending.reset();
 		} else {
-			std::vector<toast::voxel::gpu::SceneVolume> scene_volumes;
+			std::vector<voxel::gpu::SceneVolume> scene_volumes;
 			std::vector<uint64_t> node_uids;
 			std::vector<glm::uvec3> brick_dims;
 			scene_volumes.reserve(gathered.size());
@@ -3481,7 +3481,7 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 			auto storage = std::make_shared<VoxelGpuStorage>(std::move(node_uids), std::move(brick_dims));
 			queueResourceUpload(
 			    std::make_unique<VoxelSceneUpload>(
-			        storage, toast::voxel::gpu::packPool(toast::voxel::runtimeBrickPool()), toast::voxel::gpu::packScene(scene_volumes)
+			        storage, voxel::gpu::packPool(voxel::runtimeBrickPool()), voxel::gpu::packScene(scene_volumes)
 			    )
 			);
 			m_voxel_storage_pending = std::move(storage);
@@ -3507,7 +3507,7 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 
 		const glm::uvec3 dims = m_voxel_storage->recordBrickDims(*record);
 		const glm::mat4 model = entry.node->getWorldTransform();
-		const glm::vec4 sphere = toast::voxel::worldBoundingSphere(model, dims);
+		const glm::vec4 sphere = voxel::worldBoundingSphere(model, dims);
 		const auto previous = m_voxel_previous_models.find(node_uid);
 
 		frame.voxel_instances.push_back(

@@ -20,13 +20,13 @@
 
 namespace assets {
 
-using toast::voxel::BrickPool;
-using toast::voxel::k_brick_dim;
-using toast::voxel::k_palette_size;
-using toast::voxel::k_voxel_size;
-using toast::voxel::LatticePlacement;
-using toast::voxel::PaletteEntry;
-using toast::voxel::Volume;
+using voxel::BrickPool;
+using voxel::k_brick_dim;
+using voxel::k_palette_size;
+using voxel::k_voxel_size;
+using voxel::LatticePlacement;
+using voxel::PaletteEntry;
+using voxel::Volume;
 
 namespace {
 
@@ -76,7 +76,7 @@ struct VoxNodeTransform {
 
 /// @brief Mirrored orientations have no quaternion so one axis gets a negative scale
 [[nodiscard]]
-auto voxTransformOf(const toast::voxel::LatticeOrientation& orientation, glm::ivec3 offset) -> VoxNodeTransform {
+auto voxTransformOf(const voxel::LatticeOrientation& orientation, glm::ivec3 offset) -> VoxNodeTransform {
 	VoxNodeTransform out;
 	out.position = glm::vec3(offset) * k_voxel_size;
 
@@ -179,7 +179,7 @@ auto writeVoxIntermediates(const std::filesystem::path& source, const std::files
 			    nlohmann::json json;
 			    json["name"] = name.empty() ? out.base_name + "_" + std::to_string(index) : name;
 			    json["hidden"] = hidden;
-			    json["type"] = "toast::VoxelNode";
+			    json["type"] = "voxelNode";
 			    json["model"] = file_by_model[*node.model];
 			    json["mobility"] = 0;    // VoxelMobility::static_geometry since world/ cannot be included here
 			    voxWriteTransform(
@@ -210,12 +210,12 @@ auto writeVoxIntermediates(const std::filesystem::path& source, const std::files
 		for (uint32_t i = 0; i < scene.models.size(); ++i) {
 			nlohmann::json json;
 			json["name"] = out.base_name + (scene.models.size() == 1 ? "" : "_" + std::to_string(i));
-			json["type"] = "toast::VoxelNode";
+			json["type"] = "voxelNode";
 			json["hidden"] = false;
 			json["model"] = file_by_model[i];
 			json["mobility"] = 0;
 			voxWriteTransform(
-			    json, voxTransformOf(toast::voxel::LatticeOrientation {}, voxPlacementOf(VoxTransform {}, scene.models[i].dims).offset)
+			    json, voxTransformOf(voxel::LatticeOrientation {}, voxPlacementOf(VoxTransform {}, scene.models[i].dims).offset)
 			);
 			manifest["nodes"].push_back(std::move(json));
 		}
@@ -292,7 +292,7 @@ void voxManifestToPrefab(const std::filesystem::path& manifest_path, const std::
 		transform.fields.push_back({"scale", toast::FieldType::vec3_t, false, vec3_of("scale", glm::vec3(1.0f))});
 		basic.groups.push_back(std::move(transform));
 
-		if (basic.type == "toast::VoxelNode") {
+		if (basic.type == "voxelNode") {
 			if (const std::optional<toast::UID> model = uid_of(node, "model")) {
 				basic.fields.push_back({"m_model", toast::FieldType::uid_t, false, *model});
 			}

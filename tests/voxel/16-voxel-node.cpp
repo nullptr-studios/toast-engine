@@ -26,7 +26,7 @@ TOAST_TEST_NAMED("voxel", "voxel/16-voxel-node", test_voxel_16_voxel_node) {
 	volume.setVoxel(glm::ivec3(9, 17, 0), 2);
 	const std::unique_ptr<assets::VoxelModel> model = assets::VoxelModel::capture(volume, 0xABCD'0000'0042ull);
 
-	std::stringstream ss("[piece type=toast::VoxelNode]\nm_uid @uid = VoxelPIECE0\nposition @vec3 = 0.3, -1.2, 25\nm_mobility @int = 1\n");
+	std::stringstream ss("[piece type=voxelNode]\nm_uid @uid = VoxelPIECE0\nposition @vec3 = 0.3, -1.2, 25\nm_mobility @int = 1\n");
 	assets::Prefab prefab(ss);
 	assets::Handle<assets::Prefab> handle(&prefab, UID::fromString("VoxelSCENE0"), "");
 

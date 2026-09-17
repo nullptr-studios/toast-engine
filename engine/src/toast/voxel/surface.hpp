@@ -17,7 +17,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace toast::voxel {
+namespace voxel {
 
 enum class VoxelClass : uint8_t {
 	empty = 0,

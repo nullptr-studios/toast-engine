@@ -13,8 +13,8 @@
 
 namespace assets {
 
-using toast::voxel::Palette;
-using toast::voxel::PaletteEntry;
+using voxel::Palette;
+using voxel::PaletteEntry;
 
 VoxelPalette::VoxelPalette(Palette palette, uint64_t library_uid, std::vector<uint8_t> defaulted)
     : m_palette(palette),
@@ -46,7 +46,7 @@ auto VoxelPalette::fromToml(const toml::table& table) -> std::unique_ptr<VoxelPa
 	}
 
 	std::vector<uint8_t> defaulted;
-	std::array<bool, toast::voxel::k_palette_size> seen {};
+	std::array<bool, voxel::k_palette_size> seen {};
 
 	if (const toml::array* list = table["entries"].as_array()) {
 		for (size_t i = 0; i < list->size(); ++i) {
@@ -86,7 +86,7 @@ auto VoxelPalette::fromToml(const toml::table& table) -> std::unique_ptr<VoxelPa
 			if (!index) {
 				throw fail("needs an index");
 			}
-			if (std::cmp_equal(*index, toast::voxel::k_empty_palette_index)) {
+			if (std::cmp_equal(*index, voxel::k_empty_palette_index)) {
 				throw fail("index 0 is the empty voxel and cannot be authored");
 			}
 			if (seen[static_cast<size_t>(*index)]) {
@@ -121,7 +121,7 @@ auto VoxelPalette::fromToml(const toml::table& table) -> std::unique_ptr<VoxelPa
 			if (const std::optional<int64_t> material = whole("material", 0, 255)) {
 				out.material = static_cast<uint8_t>(*material);
 			} else {
-				out.material = toast::voxel::k_default_material;
+				out.material = voxel::k_default_material;
 				defaulted.push_back(static_cast<uint8_t>(*index));
 			}
 
@@ -135,7 +135,7 @@ auto VoxelPalette::fromToml(const toml::table& table) -> std::unique_ptr<VoxelPa
 					throw fail("transparent must be true or false");
 				}
 				if (*value) {
-					out.flags |= toast::voxel::k_entry_transparent;
+					out.flags |= voxel::k_entry_transparent;
 				}
 			}
 
@@ -169,7 +169,7 @@ auto VoxelPalette::serialize(SaveMode /*mode*/) const -> std::vector<uint8_t> {
 	const auto as_unit = [](uint8_t byte) { return static_cast<double>(byte) / 255.0; };
 
 	toml::array list;
-	for (uint32_t index = 1; index < toast::voxel::k_palette_size; ++index) {
+	for (uint32_t index = 1; index < voxel::k_palette_size; ++index) {
 		const PaletteEntry& e = m_palette.entries[index];
 		const bool is_defaulted = std::binary_search(m_defaulted.begin(), m_defaulted.end(), static_cast<uint8_t>(index));
 
@@ -192,7 +192,7 @@ auto VoxelPalette::serialize(SaveMode /*mode*/) const -> std::vector<uint8_t> {
 			entry.insert("material", static_cast<int64_t>(e.material));
 		}
 		entry.insert("transforms_to", static_cast<int64_t>(e.transforms_to));
-		entry.insert("transparent", (e.flags & toast::voxel::k_entry_transparent) != 0);
+		entry.insert("transparent", (e.flags & voxel::k_entry_transparent) != 0);
 		list.push_back(std::move(entry));
 	}
 	root.insert("entries", std::move(list));

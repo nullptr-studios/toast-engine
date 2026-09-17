@@ -7,7 +7,10 @@
 
 #pragma once
 
+// #include "aabb_tree.hpp"
 #include "body.hpp"
+#include "toast/voxel/surface.hpp"
+#include "toast/voxel/voxel_volume.hpp"
 
 #include <compare>
 #include <cstdint>
@@ -92,7 +95,8 @@ constexpr auto boxClipFeature(int reference_axis, bool reference_positive, int s
 enum class ShapeType : uint8_t {
 	sphere,
 	box,
-	capsule
+	capsule,
+	voxel
 };
 
 struct SphereShape {
@@ -113,6 +117,16 @@ struct CapsuleShape {
 	float height = 1.0f;
 };
 
+using VoxelDataID = unsigned;
+constexpr VoxelDataID null_voxel_data = std::numeric_limits<VoxelDataID>::max();
+
+struct VoxelShape {
+	VoxelDataID data_slot = null_voxel_data;
+	glm::vec3 local_center = {};
+	glm::quat local_rotation = {1.0f, 0.0f, 0.0f, 0.0f};
+	// AABB local_bounds = {};
+};
+
 struct Shape {
 	BodyID owner;
 	ShapeType type = ShapeType::sphere;
@@ -123,6 +137,7 @@ struct Shape {
 		SphereShape sphere;
 		BoxShape box;
 		CapsuleShape capsule;
+		VoxelShape voxel;
 	};
 };
 
@@ -131,6 +146,22 @@ struct ShapeSlot {
 	uint32_t generation = 1;
 	uint32_t revision = 1;
 	bool occupied = false;
+};
+
+struct VoxelShapeData {
+	voxel::Volume volume;
+	voxel::VolumeSurface surface;
+
+	// PhysicsPalleteID pallete;
+	// PhysicsMaterialLibraryID materials;
+
+	uint32_t source_revision = 0;
+	uint32_t surface_revision = 0;
+};
+
+struct VoxelShapeSlot {
+	std::optional<VoxelShapeData> data;
+	uint32_t generation = 1;
 };
 
 inline constexpr ContactFeatureID sphere_surface_feature = makeContactFeature(FeatureType::sphere_surface);

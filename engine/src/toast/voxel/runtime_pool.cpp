@@ -1,6 +1,6 @@
 #include "runtime_pool.hpp"
 
-namespace toast::voxel {
+namespace voxel {
 
 auto runtimeBrickPool() -> BrickPool& {
 	// Leaked since volumes free bricks in destructors that can run during static teardown

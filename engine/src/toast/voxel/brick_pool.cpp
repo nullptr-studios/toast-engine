@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cassert>
 
-namespace toast::voxel {
+namespace voxel {
 
 BrickPool::BrickPool(uint32_t capacity) : m_capacity(capacity) {
 	assert(capacity < k_invalid_brick);

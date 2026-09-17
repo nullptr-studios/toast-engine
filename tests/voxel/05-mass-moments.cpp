@@ -6,7 +6,7 @@
 #include <toast/voxel/mass_accumulator.hpp>
 #include <vector>
 
-using namespace toast::voxel;
+using namespace voxel;
 using namespace voxeltest;
 
 namespace {

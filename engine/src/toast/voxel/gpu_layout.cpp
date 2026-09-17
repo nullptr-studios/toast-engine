@@ -5,7 +5,7 @@
 #include <cstring>
 #include <tracy/Tracy.hpp>
 
-namespace toast::voxel::gpu {
+namespace voxel::gpu {
 
 auto packPool(const BrickPool& pool) -> PackedPool {
 	ZoneScoped;

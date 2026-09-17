@@ -9,7 +9,7 @@
 #include <toast/voxel/palette.hpp>
 #include <type_traits>
 
-using namespace toast::voxel;
+using namespace voxel;
 
 namespace {
 

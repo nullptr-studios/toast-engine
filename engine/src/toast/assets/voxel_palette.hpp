@@ -17,7 +17,7 @@ namespace assets {
 
 class TOAST_API VoxelPalette : public Asset, public ISaveable {
 public:
-	VoxelPalette(toast::voxel::Palette palette, uint64_t library_uid, std::vector<uint8_t> defaulted);
+	VoxelPalette(voxel::Palette palette, uint64_t library_uid, std::vector<uint8_t> defaulted);
 
 	/// @brief Throws on values an entry cannot hold and leaves material existence to validatePalette
 	[[nodiscard]]
@@ -32,7 +32,7 @@ public:
 	auto serialize(SaveMode mode) const -> std::vector<uint8_t> override;
 
 	[[nodiscard]]
-	auto palette() const noexcept -> const toast::voxel::Palette& {
+	auto palette() const noexcept -> const voxel::Palette& {
 		return m_palette;
 	}
 
@@ -48,7 +48,7 @@ public:
 	}
 
 private:
-	toast::voxel::Palette m_palette;
+	voxel::Palette m_palette;
 	uint64_t m_library_uid = 0;
 	std::vector<uint8_t> m_defaulted;
 };

@@ -3,7 +3,7 @@
 
 #include <cassert>
 
-using namespace toast::voxel;
+using namespace voxel;
 using namespace voxeltest;
 
 TOAST_TEST_NAMED("voxel", "voxel/07-volume-writes", test_voxel_07_volume_writes) {

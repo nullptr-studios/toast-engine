@@ -3,7 +3,7 @@
 
 #include <cassert>
 
-using namespace toast::voxel;
+using namespace voxel;
 using namespace voxeltest;
 
 TOAST_TEST_NAMED("voxel", "voxel/01-brick-indexing", test_voxel_01_brick_indexing) {
