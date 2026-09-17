@@ -8,6 +8,7 @@
 #include <fmod/fmod_studio.h>
 #include <toast/log.hpp>
 #include <toast/time.hpp>
+#include <tracy/Tracy.hpp>
 #include <utility>
 
 namespace toast {
@@ -23,11 +24,20 @@ auto F_CALL musicPlayerCallback(FMOD_STUDIO_EVENT_CALLBACK_TYPE type, FMOD_STUDI
     -> FMOD_RESULT {
 	MusicPlayer::CallbackData* data = nullptr;
 	FMOD_Studio_EventInstance_GetUserData(inst, reinterpret_cast<void**>(&data));
-	if (!data || !data->player) {
+	if (!data) {
 		return FMOD_OK;
 	}
 
-	MusicPlayer* self = data->player;
+	// This callback runs on FMOD's own Studio update thread, asynchronously from whatever game-thread code
+	// stops/destroys the player - unregistering the FMOD callback before destruction only blocks FUTURE
+	// dispatches, it doesn't guarantee one already in flight has finished. The atomic load is what actually
+	// makes this safe: `data` itself is never freed (see CallbackData's declaration), so dereferencing it is
+	// always valid memory even long after the MusicPlayer it once pointed at is gone - `player` just reads
+	// as nullptr once stop()/destroy() has cleared it
+	MusicPlayer* self = data->player.load(std::memory_order_acquire);
+	if (!self) {
+		return FMOD_OK;
+	}
 	uint64_t instance_id = data->instance_id;
 	MusicPlayer::QueuedCb cb;
 	cb.instance_id = instance_id;
@@ -84,6 +94,7 @@ void MusicPlayer::updateInspectorMessages() {
 }
 
 void MusicPlayer::startTrack(int track_index, float fade_in) {
+	ZoneScoped;
 	if (track_index < 0 || static_cast<size_t>(track_index) >= m_tracks.size()) {
 		TOAST_WARN("MusicPlayer", "Track index {} out of range", track_index);
 		return;
@@ -116,9 +127,13 @@ void MusicPlayer::startTrack(int track_index, float fade_in) {
 	at.fade_elapsed = 0.0f;
 	m_active_tracks.push_back(at);
 
-	// Keep CallbackData stable
-	m_callback_data.push_back({this, id});
-	CallbackData* cb_data = &m_callback_data.back();
+	// Deliberately never deleted - FMOD's callback thread can still be mid-dispatch holding this pointer
+	// after the track (or the whole player) is stopped/destroyed, so it must never become dangling. See
+	// CallbackData's declaration for the full reasoning; the leak is intentional and bounded by track count
+	auto* cb_data = new CallbackData();
+	cb_data->player.store(this, std::memory_order_release);
+	cb_data->instance_id = id;
+	m_callback_data.push_back(cb_data);
 
 	FMOD_STUDIO_EVENTINSTANCE* raw = sys.getRawInstance(id);
 	if (raw) {
@@ -144,7 +159,16 @@ void MusicPlayer::stopTrack(ActiveTrack& at, bool allow_fadeout) {
 
 	sys.stopEvent3D(at.instance_id, allow_fadeout);
 
-	std::erase_if(m_callback_data, [&](const CallbackData& cd) { return cd.instance_id == at.instance_id; });
+	// Clear the atomic first so a callback already in flight on FMOD's thread safely no-ops instead of
+	// touching a player that may be mid-destruction by the time it actually runs (see musicPlayerCallback).
+	// Only removed from OUR bookkeeping vector below - the CallbackData itself is never freed
+	std::erase_if(m_callback_data, [&](CallbackData* cd) {
+		if (cd->instance_id != at.instance_id) {
+			return false;
+		}
+		cd->player.store(nullptr, std::memory_order_release);
+		return true;
+	});
 	m_param_ids.erase(at.instance_id);
 	at.instance_id = 0;
 	audio_stopped.fire(m_tracks.at(at.track_index)->name());
@@ -265,7 +289,8 @@ void MusicPlayer::masterPitch(float value) {
 }
 
 void MusicPlayer::onEnable() {
-	if (m_play_on_enable && !m_tracks.empty()) {
+	// Opening a scene in the editor runs onEnable too; only a running game should start music
+	if (m_play_on_enable && !m_tracks.empty() && !(owner() && owner()->isEditing())) {
 		play(0);
 	}
 }
@@ -279,6 +304,7 @@ void MusicPlayer::destroy() {
 }
 
 void MusicPlayer::tick() {
+	ZoneScoped;
 	// Drain FMOD callback queue under lock, process on main thread
 	std::vector<QueuedCb> local_cbs;
 	{
@@ -294,7 +320,13 @@ void MusicPlayer::tick() {
 		} else if (cb.type == CbType::stopped) {
 			for (auto& at : m_active_tracks) {
 				if (at.instance_id == cb.instance_id) {
-					std::erase_if(m_callback_data, [&](const CallbackData& cd) { return cd.instance_id == at.instance_id; });
+					std::erase_if(m_callback_data, [&](CallbackData* cd) {
+						if (cd->instance_id != at.instance_id) {
+							return false;
+						}
+						cd->player.store(nullptr, std::memory_order_release);
+						return true;
+					});
 					m_param_ids.erase(at.instance_id);
 					at.instance_id = 0;
 					break;

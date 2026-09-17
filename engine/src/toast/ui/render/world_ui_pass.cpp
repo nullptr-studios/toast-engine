@@ -13,6 +13,7 @@ namespace ui {
 
 WorldUIPass::WorldUIPass(const renderer::VulkanCore& core, vk::Format color_format, vk::Format depth_format, vk::Extent2D extent)
     : m_core(&core) {
+	ZoneScoped;
 	const auto uid = assets::resolveURI("core://shaders/ui_world.slang");
 	const auto shader = uid.has_value() ? renderer::ShaderCache::get().acquire(*uid) : nullptr;
 	if (!shader) {

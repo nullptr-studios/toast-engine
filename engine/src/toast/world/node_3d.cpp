@@ -48,8 +48,8 @@ void Node3D::lookAt(glm::vec3 target, glm::vec3 up) {
 
 	// Construct a rotation matrix from the orthonormal basis
 	glm::mat3 rot_mat;
-	rot_mat[0] = forward;
-	rot_mat[1] = right;
+	rot_mat[0] = right;
+	rot_mat[1] = forward;
 	rot_mat[2] = true_up;
 	rotation = glm::quat_cast(rot_mat);
 }
@@ -75,8 +75,8 @@ void Node3D::lookAtZ(glm::vec3 target) {
 
 	// Construct the rotation matrix
 	glm::mat3 rot_mat;
-	rot_mat[0] = forward;
-	rot_mat[1] = right;
+	rot_mat[0] = right;
+	rot_mat[1] = forward;
 	rot_mat[2] = world_up;
 	rotation = glm::quat_cast(rot_mat);
 }

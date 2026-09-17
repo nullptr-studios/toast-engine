@@ -190,6 +190,16 @@ void SDLWindow::pollEvents() {
 				break;
 			}
 
+			case SDL_EVENT_WINDOW_FOCUS_GAINED: {
+				event::send<event::WindowFocus>(true);
+				break;
+			}
+
+			case SDL_EVENT_WINDOW_FOCUS_LOST: {
+				event::send<event::WindowFocus>(false);
+				break;
+			}
+
 			default: break;
 		}
 	}

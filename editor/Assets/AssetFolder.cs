@@ -11,18 +11,31 @@ public class AssetFolder : INotifyPropertyChanged {
 	private bool m_isExpanded;
 	private bool m_isSelected;
 
-	public AssetFolder(string path, AssetFolder? parent = null) {
+	/// <param name="listRawFiles">
+	/// List every file rather than only tracked assets
+	/// </param>
+	public AssetFolder(string path, AssetFolder? parent = null, bool listRawFiles = false) {
 		Parent = parent;
+
 		var dirInfo = new DirectoryInfo(Path.GetFullPath(path));
 		Name = dirInfo.Name;
 		Filepath = dirInfo.FullName;
+
 		foreach (var sub in dirInfo.EnumerateDirectories()
 			         .OrderBy(d => d.Name, StringComparer.OrdinalIgnoreCase)
 			         .ThenBy(d => d.Name, StringComparer.Ordinal))
-			SubFolders.Add(new AssetFolder(sub.FullName, this));
+			SubFolders.Add(new AssetFolder(sub.FullName, this, listRawFiles));
+
 		foreach (var file in dirInfo.EnumerateFiles()
 			         .OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
 			         .ThenBy(f => f.Name, StringComparer.Ordinal)) {
+			if (listRawFiles) {
+				if (file.Extension == ".meta")
+				    continue;
+				Files.Add(AssetFile.Raw(file.FullName));
+				continue;
+			}
+
 			if (file.Extension != ".meta") continue; // assets are tracked by their .meta sidecar
 			Files.Add(new AssetFile(file.FullName));
 		}

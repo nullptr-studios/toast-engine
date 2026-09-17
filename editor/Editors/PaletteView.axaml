@@ -1,0 +1,275 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:editor.Editors"
+             xmlns:elements="using:editor.Components.Elements"
+             xmlns:lucide="using:Lucide.Avalonia"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignWidth="1000"
+             d:DesignHeight="480"
+             x:Class="editor.Editors.PaletteView"
+             x:DataType="vm:PaletteViewModel"
+             Background="{StaticResource Bg2}"
+             Padding="8">
+
+	<UserControl.KeyBindings>
+		<KeyBinding Gesture="Ctrl+S"
+		            Command="{Binding SaveCommand}" />
+	</UserControl.KeyBindings>
+
+	<UserControl.Styles>
+		<Style Selector="TextBlock.lbl">
+			<Setter Property="Foreground"
+			        Value="{StaticResource TextMuted}" />
+			<Setter Property="VerticalAlignment"
+			        Value="Center" />
+			<Setter Property="TextTrimming"
+			        Value="CharacterEllipsis" />
+		</Style>
+		<Style Selector="Button.icon-btn">
+			<Setter Property="BorderThickness"
+			        Value="0" />
+			<Setter Property="Padding"
+			        Value="5" />
+			<Setter Property="CornerRadius"
+			        Value="6" />
+			<Setter Property="Cursor"
+			        Value="Hand" />
+			<Setter Property="Background"
+			        Value="Transparent" />
+			<Setter Property="VerticalAlignment"
+			        Value="Center" />
+		</Style>
+		<!-- Fill is the entry albedo and border marks selection -->
+		<Style Selector="Button.swatch">
+			<Setter Property="Padding"
+			        Value="0" />
+			<Setter Property="Margin"
+			        Value="1" />
+			<Setter Property="MinWidth"
+			        Value="18" />
+			<Setter Property="MinHeight"
+			        Value="18" />
+			<Setter Property="CornerRadius"
+			        Value="3" />
+			<Setter Property="Cursor"
+			        Value="Hand" />
+			<Setter Property="BorderThickness"
+			        Value="2" />
+			<Setter Property="BorderBrush"
+			        Value="Transparent" />
+		</Style>
+		<Style Selector="Button.swatch.selected">
+			<Setter Property="BorderBrush"
+			        Value="{StaticResource Text}" />
+		</Style>
+		<!-- Unauthored index draws as a hole not black -->
+		<Style Selector="Button.swatch.unused">
+			<Setter Property="Opacity"
+			        Value="0.35" />
+		</Style>
+	</UserControl.Styles>
+
+	<Design.DataContext>
+		<vm:PaletteViewModel />
+	</Design.DataContext>
+
+	<Panel>
+
+		<Grid ColumnDefinitions="*,8,280"
+		      IsVisible="{Binding HasContent}">
+
+			<!-- The 255 swatches -->
+			<Border Grid.Column="0"
+			        Background="{StaticResource Bg3}"
+			        CornerRadius="8"
+			        Padding="8">
+				<DockPanel VerticalSpacing="8">
+
+					<DockPanel DockPanel.Dock="Top">
+						<Button DockPanel.Dock="Right"
+						        Classes="icon-btn"
+						        Command="{Binding SaveCommand}"
+						        Background="{StaticResource Red}"
+						        ToolTip.Tip="Save (Ctrl+S)">
+							<lucide:LucideIcon Kind="Save"
+							                   Size="16"
+							                   StrokeWidth="2.5" />
+						</Button>
+						<TextBlock Text="{Binding DisplayTitle}"
+						           FontWeight="SemiBold"
+						           VerticalAlignment="Center" />
+					</DockPanel>
+
+					<ScrollViewer HorizontalScrollBarVisibility="Disabled">
+						<ItemsControl ItemsSource="{Binding Swatches}">
+							<ItemsControl.ItemsPanel>
+								<ItemsPanelTemplate>
+									<WrapPanel Orientation="Horizontal" />
+								</ItemsPanelTemplate>
+							</ItemsControl.ItemsPanel>
+							<ItemsControl.ItemTemplate>
+								<DataTemplate x:DataType="vm:PaletteSwatchVM">
+									<Button Classes="swatch"
+									        Classes.selected="{Binding IsSelected}"
+									        Classes.unused="{Binding !IsUsed}"
+									        Background="{Binding Brush}"
+									        Command="{Binding SelectCommand}"
+									        ToolTip.Tip="{Binding Index}" />
+								</DataTemplate>
+							</ItemsControl.ItemTemplate>
+						</ItemsControl>
+					</ScrollViewer>
+
+				</DockPanel>
+			</Border>
+
+			<!-- The selected entry -->
+			<Border Grid.Column="2"
+			        Background="{StaticResource Bg3}"
+			        CornerRadius="8"
+			        Padding="8">
+				<ScrollViewer>
+					<StackPanel Spacing="8">
+
+						<DockPanel>
+							<Button DockPanel.Dock="Right"
+							        Classes="icon-btn"
+							        Command="{Binding ClearEntryCommand}"
+							        IsEnabled="{Binding EntryInUse}"
+							        ToolTip.Tip="Remove this entry from the palette">
+								<lucide:LucideIcon Kind="Trash2"
+								                   Size="16"
+								                   StrokeWidth="2.5" />
+							</Button>
+							<TextBlock Text="{Binding SelectedLabel}"
+							           FontWeight="SemiBold"
+							           VerticalAlignment="Center" />
+						</DockPanel>
+
+						<TextBlock Classes="lbl"
+						           Text="Not yet in this palette - editing anything below adds it"
+						           TextWrapping="Wrap"
+						           IsVisible="{Binding !EntryInUse}" />
+
+						<!-- Shading seeded from MagicaVoxel on import -->
+						<Grid ColumnDefinitions="90,*"
+						      RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+						      RowSpacing="6"
+						      ColumnSpacing="8">
+							<TextBlock Classes="lbl"
+							           Text="Albedo" />
+							<elements:Color3Box Grid.Column="1"
+							                    R="{Binding AlbedoR, Mode=TwoWay}"
+							                    G="{Binding AlbedoG, Mode=TwoWay}"
+							                    B="{Binding AlbedoB, Mode=TwoWay}" />
+
+							<TextBlock Grid.Row="1"
+							           Classes="lbl"
+							           Text="Roughness" />
+							<elements:DragFloatBox Grid.Row="1"
+							                       Grid.Column="1"
+							                       Value="{Binding Roughness, Mode=TwoWay}"
+							                       Minimum="0"
+							                       Maximum="1" />
+
+							<TextBlock Grid.Row="2"
+							           Classes="lbl"
+							           Text="Metallic" />
+							<elements:DragFloatBox Grid.Row="2"
+							                       Grid.Column="1"
+							                       Value="{Binding Metallic, Mode=TwoWay}"
+							                       Minimum="0"
+							                       Maximum="1" />
+
+							<TextBlock Grid.Row="3"
+							           Classes="lbl"
+							           Text="Reflectivity" />
+							<elements:DragFloatBox Grid.Row="3"
+							                       Grid.Column="1"
+							                       Value="{Binding Reflectivity, Mode=TwoWay}"
+							                       Minimum="0"
+							                       Maximum="1" />
+
+							<TextBlock Grid.Row="4"
+							           Classes="lbl"
+							           Text="Emissive" />
+							<elements:DragFloatBox Grid.Row="4"
+							                       Grid.Column="1"
+							                       Value="{Binding Emissive, Mode=TwoWay}"
+							                       Minimum="0"
+							                       Maximum="1" />
+
+							<TextBlock Grid.Row="5"
+							           Grid.Column="1"
+							           Classes="lbl"
+							           Text="{Binding EmissiveHint}"
+							           FontSize="11" />
+
+							<TextBlock Grid.Row="6"
+							           Classes="lbl"
+							           Text="Transparent" />
+							<elements:BoolBox Grid.Row="6"
+							                  Grid.Column="1"
+							                  Value="{Binding Transparent, Mode=TwoWay}" />
+						</Grid>
+
+						<Separator />
+
+						<!-- Physics assigned only here so a reimport keeps the file -->
+						<Grid ColumnDefinitions="90,*"
+						      RowDefinitions="Auto,Auto"
+						      RowSpacing="6"
+						      ColumnSpacing="8">
+							<TextBlock Classes="lbl"
+							           Text="Material" />
+							<elements:EnumBox Grid.Column="1"
+							                  Value="{Binding MaterialName, Mode=TwoWay}"
+							                  Options="{Binding MaterialOptions}" />
+
+							<TextBlock Grid.Row="1"
+							           Classes="lbl"
+							           Text="Burns into" />
+							<elements:DragIntBox Grid.Row="1"
+							                     Grid.Column="1"
+							                     Value="{Binding TransformsTo, Mode=TwoWay}"
+							                     Minimum="0"
+							                     Maximum="255" />
+						</Grid>
+
+						<Separator />
+
+						<!-- Palette-wide -->
+						<Grid ColumnDefinitions="90,*"
+						      RowDefinitions="Auto,Auto"
+						      RowSpacing="6"
+						      ColumnSpacing="8">
+							<TextBlock Classes="lbl"
+							           Text="Library" />
+							<elements:AssetBox Grid.Column="1"
+							                   Value="{Binding LibraryUid, Mode=TwoWay}"
+							                   AssetType="voxel_material_library" />
+
+							<TextBlock Grid.Row="1"
+							           Classes="lbl"
+							           Text="Max emissive" />
+							<elements:DragFloatBox Grid.Row="1"
+							                       Grid.Column="1"
+							                       Value="{Binding MaxEmissive, Mode=TwoWay}"
+							                       Minimum="0" />
+						</Grid>
+
+					</StackPanel>
+				</ScrollViewer>
+			</Border>
+		</Grid>
+
+		<!-- Nothing open -->
+		<TextBlock Text="Open a .tpal from the Asset Browser"
+		           Classes="lbl"
+		           HorizontalAlignment="Center"
+		           VerticalAlignment="Center"
+		           IsVisible="{Binding !HasContent}" />
+	</Panel>
+</UserControl>

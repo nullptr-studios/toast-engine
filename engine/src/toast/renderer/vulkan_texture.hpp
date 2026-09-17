@@ -1,6 +1,6 @@
 /// @file vulkan_texture.hpp
 /// @author dario
-/// @date 6/28/2026.
+/// @date 6/28/2026
 
 #pragma once
 #include "ktx.h"
@@ -37,18 +37,22 @@ public:
 		return *m_image_view;
 	}
 
+	[[nodiscard]]
+	auto getFormat() const -> vk::Format {
+		return m_params.format;
+	}
+
 private:
 	std::optional<vma::raii::Image> m_image;
 	vk::raii::ImageView m_image_view = nullptr;
 	Params m_params;
 };
 
-// Upload Resource
 class TextureUpload : public PendingResourceUpload {
 public:
-	TextureUpload(VulkanTexture& texture, const std::vector<uint8_t>& data, std::string_view debug_name = {})
+	TextureUpload(VulkanTexture& texture, std::vector<uint8_t> data, std::string_view debug_name = {})
 	    : m_texture(&texture),
-	      m_data(data),
+	      m_data(std::move(data)),
 	      m_debug_name(debug_name) { }
 
 	~TextureUpload() override {
@@ -100,5 +104,8 @@ private:
 	std::string m_debug_name;
 	vma::raii::Buffer m_staging_buffer = nullptr;
 };
+
+auto uploadTextureSync(const VulkanCore& core, VulkanTexture& texture, std::vector<uint8_t> data, std::string_view debug_name)
+    -> bool;
 
 }

@@ -24,6 +24,7 @@ public class DockFactory : Factory {
 	public HierarchyViewModel? Hierarchy { get; private set; }
 	public HistoryViewModel? History { get; private set; }
 	public InspectorViewModel? Inspector { get; private set; }
+	public RendererSettingsViewModel? RendererSettingsVm { get; private set; }
 	public SignalsViewModel? Signals { get; private set; }
 	public GenericViewModel? GenericEditorVm { get; private set; }
 	public SchemaViewModel? SchemaEditorVm { get; private set; }
@@ -37,10 +38,14 @@ public class DockFactory : Factory {
 		var signals = new SignalsViewModel { Id = "Signals", Title = "Signals" };
 		var generic = new GenericViewModel { Id = "GenericEditor", Title = "Data Editor" };
 		var schema = new SchemaViewModel { Id = "SchemaEditor", Title = "Schema Editor" };
+		var rendererSettings = new RendererSettingsViewModel {
+			Id = "RendererSettings", Title = "Renderer Settings", CanPin = false
+		};
 
 		Hierarchy = hierarchy;
 		History = history;
 		Inspector = inspector;
+		RendererSettingsVm = rendererSettings;
 		Signals = signals;
 		GenericEditorVm = generic;
 		SchemaEditorVm = schema;
@@ -120,14 +125,16 @@ public class DockFactory : Factory {
 			["Inspector"] = () => layout,
 			["Signals"] = () => layout,
 			["GenericEditor"] = () => layout,
-			["SchemaEditor"] = () => layout
+			["SchemaEditor"] = () => layout,
+			["RendererSettings"] = () => layout
 		};
 		DockableLocator = new Dictionary<string, Func<IDockable?>> {
 			["Root"] = () => m_rootDock,
 			["Documents"] = () => m_documentDock,
 			["History"] = () => History,
 			["GenericEditor"] = () => GenericEditorVm,
-			["SchemaEditor"] = () => SchemaEditorVm
+			["SchemaEditor"] = () => SchemaEditorVm,
+			["RendererSettings"] = () => RendererSettingsVm
 		};
 		HostWindowLocator = new Dictionary<string, Func<IHostWindow?>> {
 			[nameof(IDockWindow)] = () => new EditorHostWindow()
@@ -292,6 +299,7 @@ public class DockFactory : Factory {
 			"Signals" => Signals,
 			"GenericEditor" => GenericEditorVm,
 			"SchemaEditor" => SchemaEditorVm,
+			"RendererSettings" => RendererSettingsVm,
 			_ => null
 		};
 	}
@@ -303,6 +311,7 @@ public class DockFactory : Factory {
 		yield return Signals;
 		yield return GenericEditorVm;
 		yield return SchemaEditorVm;
+		yield return RendererSettingsVm;
 	}
 
 	private IToolDock? PreferredDockFor(Tool tool) {

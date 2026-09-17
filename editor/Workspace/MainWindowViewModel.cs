@@ -35,12 +35,14 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 	[ObservableProperty] private bool m_curveEditorVisible;
 	[ObservableProperty] private bool m_genericEditorVisible;
 	[ObservableProperty] private bool m_hapticsEditorVisible;
+	[ObservableProperty] private bool m_paletteEditorVisible;
 
 	[ObservableProperty] private bool m_hierarchyVisible = true;
 	[ObservableProperty] private bool m_historyVisible;
 	[ObservableProperty] private bool m_inspectorVisible = true;
 	[ObservableProperty] private bool m_signalsVisible = true;
 	[ObservableProperty] private bool m_logsVisible = true;
+	[ObservableProperty] private bool m_rendererSettingsVisible;
 
 	[ObservableProperty] private IRootDock m_mainLayout;
 	[ObservableProperty] private bool m_schemaEditorVisible;
@@ -101,11 +103,13 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			if (e.Dockable == m_toastZoneFactory.HapticsEditorVm) m_hapticsEditorVisible = false;
 			if (e.Dockable == m_toastZoneFactory.CurveEditorVm) m_curveEditorVisible = false;
 			if (e.Dockable == m_toastZoneFactory.TableEditorVm) m_tableEditorVisible = false;
+			if (e.Dockable == m_toastZoneFactory.PaletteEditorVm) m_paletteEditorVisible = false;
 
 			OnPropertyChanged(nameof(LogsVisible));
 			OnPropertyChanged(nameof(HapticsEditorVisible));
 			OnPropertyChanged(nameof(CurveEditorVisible));
 			OnPropertyChanged(nameof(TableEditorVisible));
+			OnPropertyChanged(nameof(PaletteEditorVisible));
 		};
 
 		m_dockFactory.ActiveDockableChanged += (_, _) => {
@@ -165,6 +169,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		if (m_toastZoneFactory.CurveEditorVm is { } curve) yield return curve;
 		if (m_toastZoneFactory.HapticsEditorVm is { } haptics) yield return haptics;
 		if (m_toastZoneFactory.TableEditorVm is { } table) yield return table;
+		if (m_toastZoneFactory.PaletteEditorVm is { } palette) yield return palette;
 	}
 
 	[RelayCommand]
@@ -181,7 +186,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 	private void OpenProjectSettings() {
 		if (!ProjectContext.IsInitialized) return;
 
-		// Find the .toast project file in the project root
 		var toastFile = Directory.EnumerateFiles(ProjectContext.ProjectPath, "*.toast").FirstOrDefault();
 		if (toastFile is null) return;
 
@@ -217,6 +221,11 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		ToggleMainTool("SchemaEditor", value);
 	}
 
+	partial void OnRendererSettingsVisibleChanged(bool value) {
+		if (value != m_dockFactory.IsToolVisible("RendererSettings"))
+			m_dockFactory.ToggleTool("RendererSettings");
+	}
+
 	partial void OnLogsVisibleChanged(bool value) {
 		ToggleToastTool("Logs", value);
 	}
@@ -231,6 +240,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 
 	partial void OnTableEditorVisibleChanged(bool value) {
 		ToggleToastTool("Table", value);
+	}
+
+	partial void OnPaletteEditorVisibleChanged(bool value) {
+		ToggleToastTool("Palette", value);
 	}
 
 	private void ToggleMainTool(string id, bool value) {
@@ -280,6 +293,13 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 				if (m_toastZoneFactory.TableEditorVm is { } tableVm) {
 					_ = OpenToastEditorAsync(tableVm, uid, virtualPath, def, recoverPath);
 					TableEditorVisible = true;
+				}
+
+				break;
+			case "PaletteEditor":
+				if (m_toastZoneFactory.PaletteEditorVm is { } paletteVm) {
+					_ = OpenToastEditorAsync(paletteVm, uid, virtualPath, def, recoverPath);
+					PaletteEditorVisible = true;
 				}
 
 				break;
@@ -386,6 +406,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		if (m_toastZoneFactory.CurveEditorVm is { IsDirty: true }) dirty.Add("Curve");
 		if (m_toastZoneFactory.HapticsEditorVm is { IsDirty: true }) dirty.Add("Haptics");
 		if (m_toastZoneFactory.TableEditorVm is { IsDirty: true }) dirty.Add("Table");
+		if (m_toastZoneFactory.PaletteEditorVm is { IsDirty: true }) dirty.Add("Palette");
 		return dirty;
 	}
 
@@ -396,6 +417,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			case "Curve": CurveEditorVisible = true; break;
 			case "Haptics": HapticsEditorVisible = true; break;
 			case "Table": TableEditorVisible = true; break;
+			case "Palette": PaletteEditorVisible = true; break;
 		}
 	}
 
@@ -411,6 +433,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		m_hapticsEditorVisible = m_toastZoneFactory.IsToolVisible("Haptics");
 		m_curveEditorVisible = m_toastZoneFactory.IsToolVisible("Curve");
 		m_tableEditorVisible = m_toastZoneFactory.IsToolVisible("Table");
+		m_paletteEditorVisible = m_toastZoneFactory.IsToolVisible("Palette");
 
 		OnPropertyChanged(nameof(HierarchyVisible));
 		OnPropertyChanged(nameof(HistoryVisible));
@@ -422,6 +445,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		OnPropertyChanged(nameof(HapticsEditorVisible));
 		OnPropertyChanged(nameof(CurveEditorVisible));
 		OnPropertyChanged(nameof(TableEditorVisible));
+		OnPropertyChanged(nameof(PaletteEditorVisible));
 	}
 #pragma warning restore MVVMTK0034
 
@@ -536,6 +560,69 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		if (m_dockFactory.ActiveWorkspace is { } ws) m_dockFactory.CloseDockable(ws);
 	}
 
+	/// <summary>
+	/// Deletes baked probe and irradiance files whose node no longer exists in the project
+	/// </summary>
+	/// <remarks>
+	/// Manual and confirmed, never automatic: this deletes minutes of baking, and the scan only sees scenes
+	/// under the project's databases - a level stored elsewhere would lose its lighting silently
+	/// </remarks>
+	[RelayCommand]
+	private async Task CleanBakedLightingCache() {
+		if (App.MainWindow is not { } owner) return;
+
+		if (!ProjectContext.IsInitialized) {
+			await new MessageModal(new ModalConfig(
+				"Clean Baked Lighting",
+				"No project is open.",
+				Icon: LucideIconKind.Info
+			)).ShowDialog<bool?>(owner);
+			return;
+		}
+
+		var orphans = await Task.Run(BakedLightingCache.FindOrphans);
+		if (orphans.Count == 0) {
+			await new MessageModal(new ModalConfig(
+				"Clean Baked Lighting",
+				"No orphaned bakes found - every cached probe and volume still belongs to a node in this project.",
+				Icon: LucideIconKind.Check
+			)).ShowDialog<bool?>(owner);
+			return;
+		}
+
+		var total = orphans.Sum(o => o.Bytes);
+		var probes = orphans.Count(o => o.Kind == "Reflection probe");
+		var volumes = orphans.Count - probes;
+
+		var breakdown = string.Join(", ", new[] {
+			probes > 0 ? $"{probes} reflection probe{(probes == 1 ? "" : "s")}" : null,
+			volumes > 0 ? $"{volumes} irradiance volume{(volumes == 1 ? "" : "s")}" : null
+		}.Where(s => s is not null));
+
+		var confirmed = await new MessageModal(new ModalConfig(
+			"Clean Baked Lighting",
+			$"Found {breakdown} with no node in this project, using {BakedLightingCache.FormatSize(total)}.\n\n" +
+			"Delete them? Any node that is restored later will have to be re-baked.",
+			ModalButtons.OkCancel,
+			LucideIconKind.Shredder,
+			new SolidColorBrush(Color.Parse("#d04040")),
+			"Delete",
+			OkIcon: LucideIconKind.Shredder
+		)).ShowDialog<bool?>(owner) == true;
+		if (!confirmed) return;
+
+		var (deleted, bytes, failed) = BakedLightingCache.Delete(orphans);
+
+		var message = $"Deleted {deleted} file{(deleted == 1 ? "" : "s")}, freeing {BakedLightingCache.FormatSize(bytes)}.";
+		if (failed.Count > 0) message += $"\n\n{failed.Count} could not be removed: {string.Join(", ", failed.Take(5))}";
+
+		await new MessageModal(new ModalConfig(
+			"Clean Baked Lighting",
+			message,
+			Icon: failed.Count > 0 ? LucideIconKind.TriangleAlert : LucideIconKind.Check
+		)).ShowDialog<bool?>(owner);
+	}
+
 	// saving is locked while any tab is in play mode
 	private static bool CanSave() {
 		return !WorkspaceViewModel.AnyPlayActive;
@@ -609,7 +696,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			$"--include-root \"{libSrc}\" --register-fn registerGameTypes --attribute Game " +
 			$"--lua-stubs \"{gameLuaStubs}\""));
 
-		// Copy engine reflection database to cache
 		tasks.Add(LoaderTask.Do("Copy engine reflection", async log => {
 			var src = Path.Combine(ProjectContext.CorePath, "engine_reflect.json");
 			var dst = ProjectContext.Resolve("cache://engine_reflect.json");
@@ -654,10 +740,36 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		await new SimpleLoaderWindow(vm).ShowDialog(owner);
 	}
 
+	// The release build packs the files on disk, so unsaved edits (e.g. init_scene in the project settings) would silently be
+	// left out of player.exe; returns false when the user cancels
+	private async Task<bool> SaveBeforeBuild(Avalonia.Controls.Window owner) {
+		var dirtyWorkspaces = m_workspaces.Values.Where(ws => ws.IsModified).ToList();
+		if (dirtyWorkspaces.Count == 0 && CollectDirtyTools().Count == 0) return true;
+
+		var result = await new MessageModal(new ModalConfig(
+			"Unsaved Changes",
+			"The build packs the files on disk, so unsaved changes won't be included. Save everything before building?",
+			ModalButtons.OkNoCancel,
+			OkLabel: "Save All"
+		)).ShowDialog<bool?>(owner);
+		if (result is null) return false;
+		if (result is false) return true;
+
+		foreach (var ws in dirtyWorkspaces)
+			if (!await ws.Save()) return false;
+		if (m_dockFactory.GenericEditorVm is { IsDirty: true } generic) await generic.SaveCommand.ExecuteAsync(null);
+		if (m_dockFactory.SchemaEditorVm is { IsDirty: true } schema) await schema.SaveCommand.ExecuteAsync(null);
+		if (m_toastZoneFactory.CurveEditorVm is { IsDirty: true } curve) await curve.SaveCommand.ExecuteAsync(null);
+		if (m_toastZoneFactory.HapticsEditorVm is { IsDirty: true } haptics) await haptics.SaveCommand.ExecuteAsync(null);
+		if (m_toastZoneFactory.TableEditorVm is { IsDirty: true } table) await table.SaveCommand.ExecuteAsync(null);
+		return true;
+	}
+
 	[RelayCommand(CanExecute = nameof(CanCompileGameRelease))]
 	private async Task CompileGameRelease() {
 		if (App.MainWindow is not { } owner) return;
 		if (!ProjectContext.IsInitialized) return;
+		if (!await SaveBeforeBuild(owner)) return;
 
 		var playerPath =
 			Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "tools", "player"));
@@ -704,6 +816,22 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			var dest = Path.Combine(outputDir, Path.GetFileName(toastFile));
 			log($"  copy {Path.GetFileName(toastFile)}");
 			await Task.Run(() => File.Copy(toastFile, dest, true));
+		}
+
+		// Baked lighting (irradiance volume SH, reflection probe captures) lives in cache://, which belongs to no content
+		// database and so never reaches a pak; the player resolves cache:// to <build>/cache
+		async Task CopyBakedLighting(Action<string> log) {
+			foreach (var dir in new[] { "irradiance", "probes" }) {
+				var src = Path.Combine(ProjectContext.CachePath, dir);
+				if (!Directory.Exists(src)) continue;
+
+				var dest = Path.Combine(outputDir, "cache", dir);
+				Directory.CreateDirectory(dest);
+				foreach (var file in Directory.EnumerateFiles(src)) {
+					log($"  copy cache/{dir}/{Path.GetFileName(file)}");
+					await Task.Run(() => File.Copy(file, Path.Combine(dest, Path.GetFileName(file)), true));
+				}
+			}
 		}
 
 		async Task BakeAndPack(Action<string> log, string dbName, string dbSourceDir, string manifestJsonPath) {
@@ -801,8 +929,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			),
 			// Copy Engine libs
 			LoaderTask.Do("copy libraries", CopyDlls),
-			// Copy project.toast
-			LoaderTask.Do("copy project.toast", CopyProjectToast)
+			LoaderTask.Do("copy project.toast", CopyProjectToast),
+			LoaderTask.Do("copy baked lighting", CopyBakedLighting)
 		};
 
 		// Bake assets

@@ -7,6 +7,7 @@
 #include <glm/glm.hpp>
 #include <toast/events/event.hpp>
 #include <toast/log.hpp>
+#include <tracy/Tracy.hpp>
 #include <unordered_map>
 
 namespace input {
@@ -69,6 +70,7 @@ void HapticsSystem::setGlobalMultiplier(float multiplier) noexcept {
 }
 
 void HapticsSystem::tick() {
+	ZoneScoped;
 	// Advance every effect and drop the ones whose duration has elapsed
 	for (auto& pb : m_playbacks) {
 		pb.elapsed += Time::delta();

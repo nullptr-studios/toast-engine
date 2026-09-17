@@ -2,8 +2,63 @@
 name = "Default"
 shaders = ["MdYTGGc3iHc"]
 tint = [1.0, 1.0, 1.0, 1.0]
+# Dielectric: an untextured default surface is plastic/stone, not bare metal. Metal with nothing to reflect
+# renders black, since a fully metallic surface has no diffuse response at all
+metallic = 0.0
+roughness = 0.5
+# 0 disables the alpha test; raise it to cut out an albedo texture's transparent areas
+alphaCutoff = 0.0
+# How much of gOcclusionMap is applied to the ambient term; 0 ignores the map entirely
+occlusionStrength = 1.0
+emissiveColor = [0.0, 0.0, 0.0]
+emissiveIntensity = 0.0
 
 [gAlbedo]
+texture = ""
+repeat_u = "repeat"
+repeat_v = "repeat"
+min_filter = "linear"
+mag_filter = "linear"
+mipmap_mode = "linear"
+anisotropy = true
+
+[gNormal]
+texture = ""
+repeat_u = "repeat"
+repeat_v = "repeat"
+min_filter = "linear"
+mag_filter = "linear"
+mipmap_mode = "linear"
+anisotropy = true
+
+[gMetallicMap]
+texture = ""
+repeat_u = "repeat"
+repeat_v = "repeat"
+min_filter = "linear"
+mag_filter = "linear"
+mipmap_mode = "linear"
+anisotropy = true
+
+[gRoughnessMap]
+texture = ""
+repeat_u = "repeat"
+repeat_v = "repeat"
+min_filter = "linear"
+mag_filter = "linear"
+mipmap_mode = "linear"
+anisotropy = true
+
+[gOcclusionMap]
+texture = ""
+repeat_u = "repeat"
+repeat_v = "repeat"
+min_filter = "linear"
+mag_filter = "linear"
+mipmap_mode = "linear"
+anisotropy = true
+
+[gEmissiveMap]
 texture = ""
 repeat_u = "repeat"
 repeat_v = "repeat"

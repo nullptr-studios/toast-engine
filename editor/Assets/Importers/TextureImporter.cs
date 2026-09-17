@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -16,6 +16,11 @@ public enum SuperCompression { None, Zstd, BasisLZ }
 public enum AddressMode { Repeat, MirroredRepeat, ClampToEdge, ClampToBorder }
 
 public enum FilterMode { Nearest, Linear, Trilinear }
+
+/// <summary>
+/// How a texture's values are interpreted when sampled
+/// </summary>
+public enum TextureColorSpace { sRGB, Linear }
 
 public partial class TextureImporter : IAssetImporter {
 	private readonly Settings m_settings;
@@ -41,6 +46,10 @@ public partial class TextureImporter : IAssetImporter {
 			new ImporterSetting("Generate Mipmaps", SettingKind.Bool,
 				() => m_settings.GenerateMipmaps,
 				v => m_settings.GenerateMipmaps = (bool)v!),
+			new ImporterSetting("Color Space", SettingKind.Enum,
+				() => m_settings.ColorSpace.ToString(),
+				v => m_settings.ColorSpace = Enum.Parse<TextureColorSpace>((string)v!),
+				Options: Enum.GetNames<TextureColorSpace>()),
 			new ImporterSetting("Compression", SettingKind.Enum,
 				() => m_settings.Compression.ToString(),
 				v => m_settings.Compression = Enum.Parse<TextureCompression>((string)v!),
@@ -97,6 +106,7 @@ public partial class TextureImporter : IAssetImporter {
 		[ObservableProperty] private AddressMode m_addressU = AddressMode.Repeat;
 		[ObservableProperty] private AddressMode m_addressV = AddressMode.Repeat;
 		[ObservableProperty] private float m_anisotropy = 8.0f;
+		[ObservableProperty] private TextureColorSpace m_colorSpace = TextureColorSpace.sRGB;
 		[ObservableProperty] private TextureCompression m_compression = TextureCompression.BC7;
 		[ObservableProperty] private FilterMode m_filter = FilterMode.Trilinear;
 		[ObservableProperty] private bool m_generateMipmaps = true;
@@ -109,8 +119,26 @@ public partial class TextureImporter : IAssetImporter {
 		public static FilterMode[] AllFilterModes => Enum.GetValues<FilterMode>();
 		public static int[] AllMaxResolutions => [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384];
 
+		/// <summary>
+		/// Copy of these settings with a different colour space
+		/// </summary>
+		public Settings WithColorSpace(TextureColorSpace colorSpace) {
+			return new Settings {
+				AddressU = AddressU,
+				AddressV = AddressV,
+				Anisotropy = Anisotropy,
+				ColorSpace = colorSpace,
+				Compression = Compression,
+				Filter = Filter,
+				GenerateMipmaps = GenerateMipmaps,
+				MaxResolution = MaxResolution,
+				SuperCompression = SuperCompression
+			};
+		}
+
 		public TextureMetaSection ToSection() {
 			return new TextureMetaSection {
+				ColorSpace = ColorSpace.ToString(),
 				GenerateMipmaps = GenerateMipmaps,
 				MaxResolution = MaxResolution,
 				Compression = Compression.ToString(),

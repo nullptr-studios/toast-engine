@@ -13,6 +13,7 @@
 #include <toast/renderer/vulkan_renderer.hpp>
 #include <toast/thread_pool.hpp>
 #include <toast/uri_handler.hpp>
+#include <tracy/Tracy.hpp>
 #include <utility>
 
 namespace toast {
@@ -20,6 +21,7 @@ namespace toast {
 using namespace _detail;
 
 World::World() {
+	ZoneScoped;
 	instance = this;
 
 	m.listener.subscribe<event::LoadNode>("load_node", [](event::LoadNode& e) {
@@ -116,15 +118,10 @@ void World::unregisterDependency(Node& from, Node& to) {
 	instance->m_scheduler.unregisterDependency(from, to);
 }
 
-void World::loadNode(UID uid, bool activate_as_root) {
+void World::loadNode(UID uid) {
 	ZoneScoped;
 	ZoneNameF("World::loadNode(%s)", uid.get().c_str());
 	TOAST_INFO("World", "Loading node {} from file", uid);
-
-	if (activate_as_root) {
-		std::scoped_lock lock(instance->m.load_mutex);
-		instance->m.pending_root_uid = uid;
-	}
 
 	// Load stages:
 	//		1: get the node_file
@@ -173,48 +170,39 @@ void World::loadNode(UID uid, bool activate_as_root) {
 	instance->m.load_futures.emplace_back(std::move(future));
 }
 
-void World::loadNode(std::string_view uri, bool activate_as_root) {
+void World::loadNode(std::string_view uri) {
 	// just reroute to the actual loadNode() implementation
 	auto id = assets::resolveURI(uri);
 
-#ifndef NDEBUG
+	// an unresolvable URI leaves the engine dereferencing an empty optional
 	if (not id.has_value()) {
 		TOAST_WARN("World", "Couldn't load Node {}", uri);
 		return;
 	}
-#endif
 
-	loadNode(*id, activate_as_root);
+	loadNode(*id);
 }
 
 void World::drainLoadQueue() {
 	std::vector<Box<Node>> loaded;
-	UID pending_uid {0};
 	{
 		std::scoped_lock lock(m.load_mutex);
 		if (trees.load_queue.empty()) {
 			return;
 		}
 		std::swap(loaded, trees.load_queue);
-		pending_uid = m.pending_root_uid;
 	}
 
 	ZoneScoped;
 
 	// Freshly loaded trees go to the cached list and are ready to be activated
 	for (auto& root : loaded) {
-		const UID node_uid = root->uid();
 		root->changeNodeState(NodeState::cached);
-		TOAST_TRACE("World", "Node {} ({}) moved to cache", root->name(), node_uid);
+		TOAST_TRACE("World", "Node {} ({}) moved to cache", root->name(), root->uid());
 		trees.cached.emplace_back(std::move(root));
 
-		// Auto-activate if this is the pending start scene
-		if (pending_uid.data() != 0 && node_uid.data() == pending_uid.data()) {
-			TOAST_INFO("World", "Auto-activating start scene {}", node_uid);
-			{
-				std::scoped_lock lock(m.load_mutex);
-				m.pending_root_uid = UID {0};
-			}
+		if (not trees.root.exists()) {
+			TOAST_INFO("World", "Auto-activating first loaded scene {}", trees.cached.back()->uid());
 			setRoot(*trees.cached.back());
 		}
 	}
@@ -618,6 +606,7 @@ auto World::findCached(std::string_view name) -> Box<Node> {
 }
 
 void World::hotReload() {
+	ZoneScoped;
 	if (!instance) {
 		return;
 	}
@@ -804,7 +793,12 @@ auto World::swapRoot(Node& node) -> Box<Node> {
 	computeDependencyGraph();
 
 	node.propagateCallTick(node.info(), TickFunctionList::begin);
-	node.enabled(true);
+	// A freshly loaded tree arrives already flagged enabled, where enabled(true) is a no-op and onEnable never runs
+	if (node.m_local_enabled) {
+		node.propagateEnable();
+	} else {
+		node.enabled(true);
+	}
 	event::send<event::RequestHierarchyUpdate>();    // TODO: should the world send this?
 	TOAST_INFO("World", "Swapped root to {} ({})", node.name(), node.uid());
 
@@ -859,6 +853,7 @@ auto World::moveToCached(Node& node) -> Box<Node> {
 }
 
 auto World::moveToGlobal(Node& node) -> Box<Node> {
+	ZoneScoped;
 	switch (node.m_state) {
 		case NodeState::root: TOAST_WARN("World", "Tried to move root to cached, consider using swapRoot() instead"); return {};
 		case NodeState::global: TOAST_WARN("World", "Tried to move to global a Node that is already in global"); return {};
@@ -883,13 +878,18 @@ auto World::moveToGlobal(Node& node) -> Box<Node> {
 	computeDependencyGraph();
 
 	node.propagateCallTick(node.info(), TickFunctionList::begin);
-	node.enabled(true);
+	if (node.m_local_enabled) {
+		node.propagateEnable();
+	} else {
+		node.enabled(true);
+	}
 	trees.global.emplace_back(node.box());
 	TOAST_TRACE("World", "Node {} ({}) moved to global", node.name(), node.uid());
 	return node.box();
 }
 
 auto World::moveToChild(Node& node, Node& parent) -> Box<Node> {
+	ZoneScoped;
 	if (parent.m_state != NodeState::root) {
 		TOAST_WARN("World", "You can only move a node into one that is on the root");
 		return {};
@@ -932,7 +932,11 @@ auto World::moveToChild(Node& node, Node& parent) -> Box<Node> {
 
 	if (run_begin) {
 		node.propagateCallTick(node.info(), TickFunctionList::begin);
-		node.enabled(true);
+		if (node.m_local_enabled) {
+			node.propagateEnable();
+		} else {
+			node.enabled(true);
+		}
 	}
 	TOAST_TRACE("World", "Moved node {} ({}) under {} ({})", node.name(), node.uid(), parent.name(), parent.uid());
 
@@ -1103,6 +1107,14 @@ auto WorldTestAccess::createWorld() -> WorldPtr {
 	return WorldPtr(new World());
 }
 
+auto WorldTestAccess::activeRenderCamera(World& world) -> Camera* {
+	return world.activeRenderCamera();
+}
+
+auto WorldTestAccess::hasActiveCamera(World& world) -> bool {
+	return world.activeCamera().exists();
+}
+
 auto WorldTestAccess::createNode(World& world, std::string_view name, NodeState state) -> Box<Node> {
 	auto node = world.nodeAllocation();
 	node->m_name = name;
@@ -1131,6 +1143,14 @@ void WorldTestAccess::addTickStage(Node& node, TickFunctionList stage) {
 	NodeInfo& info = testNodeInfos()[&node];
 	info.type = "test::Node";
 	info.functions.list = info.functions.list | stage;
+	node.m_info = &info;
+}
+
+void WorldTestAccess::setEnableCallback(Node& node, void (*callback)(void*)) {
+	NodeInfo& info = testNodeInfos()[&node];
+	info.type = "test::Node";
+	info.functions.list = info.functions.list | TickFunctionList::on_enable;
+	info.functions.on_enable = callback;
 	node.m_info = &info;
 }
 
@@ -1177,6 +1197,12 @@ void WorldTestAccess::initThreadPool() {
 
 void WorldTestAccess::setWorldRoot(World& world, Node& node) {
 	world.trees.root = node.box();
+}
+
+auto WorldTestAccess::activateLoadedRoot(World& world, Node& node) -> Box<Node> {
+	node.changeNodeState(NodeState::cached);
+	world.trees.cached.emplace_back(node.box());
+	return world.swapRoot(node);
 }
 
 void WorldTestAccess::initAssetManager(std::string_view assets_dir, std::string_view cache_dir) {

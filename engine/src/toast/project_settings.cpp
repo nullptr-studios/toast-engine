@@ -2,10 +2,12 @@
 
 #include <toast/log.hpp>
 #include <toml++/toml.hpp>
+#include <tracy/Tracy.hpp>
 
 namespace toast {
 
 ProjectSettings::ProjectSettings(const std::filesystem::path& path) {
+	ZoneScoped;
 	instance = this;
 
 	if (path.empty() || !std::filesystem::exists(path)) {

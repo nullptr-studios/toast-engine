@@ -18,9 +18,10 @@ class Node;
 struct NodeInfo;
 
 namespace _detail {
-void callNodeScripts(Node* node, std::string_view name, std::span<const std::any> args) noexcept;
-void setNodeScriptVar(Node* node, std::string_view name, const std::any& value) noexcept;
-auto getNodeScriptVar(const Node* node, std::string_view name) noexcept -> std::any;
+// hi dante
+void TOAST_API callNodeScripts(Node* node, std::string_view name, std::span<const std::any> args) noexcept;
+void TOAST_API setNodeScriptVar(Node* node, std::string_view name, const std::any& value) noexcept;
+auto TOAST_API getNodeScriptVar(const Node* node, std::string_view name) noexcept -> std::any;
 
 template<typename R = void, typename... Args>
 auto callMethodChain(const NodeInfo* info, void* obj, std::string_view method_name, const Args&... args) -> R;

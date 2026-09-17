@@ -8,12 +8,14 @@
 #include <toast/assets/asset_manager.hpp>
 #include <toast/assets/assets.hpp>
 #include <toast/log.hpp>
+#include <tracy/Tracy.hpp>
 
 namespace renderer {
 
 namespace {
 
-constexpr int k_cache_format = 1;
+/// Bump when the cached reflection shape changes since entries are keyed on the source hash
+constexpr int k_cache_format = 6;
 
 auto spirvUri(toast::UID uid) -> std::string {
 	return "cache://shaders/" + uid.get() + ".spv";
@@ -27,6 +29,11 @@ constexpr std::string_view k_hash_index_uri = "cache://shaders/hash.json";
 
 auto hashToHex(uint64_t hash) -> std::string {
 	return std::format("{:016x}", hash);
+}
+
+/// Source plus optional device features since TOAST_RAY_QUERY changes the SPIR-V
+auto sourceHash(const std::string& source) -> uint64_t {
+	return ShaderCache::fnv1a(source.data(), source.size()) ^ (ShaderCompiler::featureHash() * 0x100000001b3ull);
 }
 
 }
@@ -57,6 +64,7 @@ auto ShaderCache::fnv1a(const void* data, size_t size) -> uint64_t {
 }
 
 void ShaderCache::loadHashIndexLocked() {
+	ZoneScoped;
 	if (m_hash_index_loaded) {
 		return;
 	}
@@ -106,7 +114,6 @@ auto ShaderCache::isDiskCacheFreshLocked(toast::UID uid, uint64_t source_hash) -
 		return false;
 	}
 
-	// Any changed or missing dependency invalidates the cache
 	for (const auto& [dep_uri, dep_hash] : entry.value("deps", nlohmann::json::object()).items()) {
 		auto dep_bytes = assets::AssetManager::get().tryLoadBytes(dep_uri);
 		if (!dep_bytes || hashToHex(fnv1a(dep_bytes->data(), dep_bytes->size())) != dep_hash.get<std::string>()) {
@@ -118,6 +125,7 @@ auto ShaderCache::isDiskCacheFreshLocked(toast::UID uid, uint64_t source_hash) -
 }
 
 auto ShaderCache::loadFromDiskLocked(toast::UID uid) -> std::shared_ptr<const Entry> {
+	ZoneScoped;
 	auto& manager = assets::AssetManager::get();
 
 	auto spirv_bytes = manager.tryLoadBytes(spirvUri(uid));
@@ -148,6 +156,7 @@ auto ShaderCache::loadFromDiskLocked(toast::UID uid) -> std::shared_ptr<const En
 }
 
 auto ShaderCache::compileLocked(toast::UID uid) -> std::shared_ptr<const Entry> {
+	ZoneScoped;
 	auto& source_handle = sourceHandleLocked(uid);
 	if (!source_handle.hasValue()) {
 		TOAST_ERROR("Render", "Cannot compile shader {}: asset not found", uid.get());
@@ -166,20 +175,18 @@ auto ShaderCache::compileLocked(toast::UID uid) -> std::shared_ptr<const Entry> 
 	auto entry = std::make_shared<Entry>();
 	entry->spirv = std::move(compiled.spirv);
 	entry->reflection = std::move(compiled.reflection);
-	entry->hash = fnv1a(source.data(), source.size());
+	entry->hash = sourceHash(source);
 	entry->source_uri = source_uri;
 	entry->dependencies = std::move(compiled.dependencies);
 
 	auto& manager = assets::AssetManager::get();
 
-	// SPIR-V blob
 	std::vector<uint8_t> spirv_bytes(entry->spirv.size());
 	std::memcpy(spirv_bytes.data(), entry->spirv.data(), entry->spirv.size());
 	if (!manager.saveBytes(spirvUri(uid), spirv_bytes)) {
 		TOAST_ERROR("Render", "Failed to write {}", spirvUri(uid));
 	}
 
-	// Reflection + metadata json
 	nlohmann::json deps_json = nlohmann::json::object();
 	nlohmann::json cache_json {
 	  {	    "format",             k_cache_format},
@@ -194,7 +201,6 @@ auto ShaderCache::compileLocked(toast::UID uid) -> std::shared_ptr<const Entry> 
 		TOAST_ERROR("Render", "Failed to write {}", reflectionUri(uid));
 	}
 
-	// Hash index entry, with current hashes for every dependency
 	loadHashIndexLocked();
 	for (const auto& dep_uri : entry->dependencies) {
 		if (auto dep_bytes = manager.tryLoadBytes(dep_uri)) {
@@ -219,6 +225,7 @@ auto ShaderCache::compileLocked(toast::UID uid) -> std::shared_ptr<const Entry> 
 }
 
 auto ShaderCache::loadOrCompileLocked(toast::UID uid) -> std::shared_ptr<const Entry> {
+	ZoneScoped;
 	auto& source_handle = sourceHandleLocked(uid);
 	if (!source_handle.hasValue()) {
 		TOAST_ERROR("Render", "Unknown shader asset {}", uid.get());
@@ -226,7 +233,7 @@ auto ShaderCache::loadOrCompileLocked(toast::UID uid) -> std::shared_ptr<const E
 	}
 
 	const std::string& source = source_handle->source();
-	const uint64_t source_hash = fnv1a(source.data(), source.size());
+	const uint64_t source_hash = sourceHash(source);
 
 	if (isDiskCacheFreshLocked(uid, source_hash)) {
 		if (auto entry = loadFromDiskLocked(uid)) {
@@ -239,6 +246,7 @@ auto ShaderCache::loadOrCompileLocked(toast::UID uid) -> std::shared_ptr<const E
 }
 
 void ShaderCache::compileAllAtStartup() {
+	ZoneScoped;
 	const auto shader_uids = assets::listByType("shader");
 
 	std::lock_guard lock(m_mutex);
@@ -259,6 +267,7 @@ void ShaderCache::compileAllAtStartup() {
 }
 
 auto ShaderCache::acquire(toast::UID uid) -> std::shared_ptr<const Entry> {
+	ZoneScoped;
 	std::lock_guard lock(m_mutex);
 
 	if (const auto it = m_entries.find(uid.data()); it != m_entries.end()) {
@@ -277,11 +286,11 @@ auto ShaderCache::ensureCompiled(toast::UID uid) -> bool {
 }
 
 auto ShaderCache::onShaderSourceReloaded(toast::UID uid) -> bool {
+	ZoneScoped;
 	std::lock_guard lock(m_mutex);
 
 	auto entry = compileLocked(uid);
 	if (!entry) {
-		// Keep the last-good entry so the renderer can keep drawing
 		TOAST_WARN("Render", "Hot reload of shader {} failed, keeping previous SPIR-V", uid.get());
 		return false;
 	}

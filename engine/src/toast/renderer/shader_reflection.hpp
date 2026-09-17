@@ -1,6 +1,6 @@
 /// @file shader_reflection.hpp
 /// @author Xein
-/// @date 17/07/2026.
+/// @date 17/07/2026
 
 #pragma once
 
@@ -9,11 +9,11 @@
 #include <optional>
 #include <slang.h>
 #include <string>
+#include <toast/export.hpp>
 #include <vector>
 
 namespace renderer {
 
-/// Scalar/vector/matrix type of a uniform block member
 enum class ShaderMemberType : uint8_t {
 	unknown,
 	bool_t,
@@ -27,7 +27,6 @@ enum class ShaderMemberType : uint8_t {
 	mat4,
 };
 
-/// Vulkan descriptor kind of a shader binding
 enum class ShaderBindingKind : uint8_t {
 	uniform_buffer,
 	storage_buffer,
@@ -35,10 +34,11 @@ enum class ShaderBindingKind : uint8_t {
 	sampled_image,
 	sampler,
 	storage_image,
+	acceleration_structure,
 };
 
 struct ShaderInspectorMeta {
-	bool reflected = false;    ///< only [Reflect] parameters are material-editable
+	bool reflected = false;
 	std::optional<float> range_min;
 	std::optional<float> range_max;
 	bool is_color = false;
@@ -46,6 +46,8 @@ struct ShaderInspectorMeta {
 	std::string group;
 	std::string subgroup;
 	std::string unit;
+	std::string default_fallback;    // "white" "black" or "flat_normal"
+	bool linear_data = false;
 };
 
 struct ShaderBlockMember {
@@ -53,8 +55,8 @@ struct ShaderBlockMember {
 	ShaderMemberType type = ShaderMemberType::unknown;
 	uint32_t offset = 0;
 	uint32_t size = 0;
-	uint32_t element_count = 0;     ///< >0 when the member is an array
-	uint32_t element_stride = 0;    ///< byte stride between array elements
+	uint32_t element_count = 0;
+	uint32_t element_stride = 0;
 	std::string engine_semantic;
 	ShaderInspectorMeta inspector;
 };
@@ -65,9 +67,9 @@ struct ShaderBinding {
 	std::string name;
 	ShaderBindingKind kind = ShaderBindingKind::uniform_buffer;
 	uint32_t count = 1;
-	uint32_t size = 0;                         ///< byte size for uniform buffers
-	std::vector<ShaderBlockMember> members;    ///< uniform buffer contents, in declaration order
-	std::string engine_semantic;               ///< "frame" for engine-reserved set 0 bindings
+	uint32_t size = 0;
+	std::vector<ShaderBlockMember> members;
+	std::string engine_semantic;    // "frame" for engine reserved set 0
 	ShaderInspectorMeta inspector;
 };
 
@@ -79,30 +81,25 @@ struct ShaderPushConstants {
 
 struct ShaderEntryPoint {
 	std::string name;
-	std::string stage;    ///< "vertex" | "fragment" | "compute"
+	std::string stage;    // "vertex" "fragment" or "compute"
 };
 
-/**
- * @struct ShaderReflection
- * @brief Plain-data mirror of a compiled shader's layout, serializable to JSON
- *
- * Holds everything ShaderLayout needs to build pipeline layouts and everything the
- * editor needs to generate material schemas, without keeping any Slang objects alive.
- */
 struct ShaderReflection {
 	std::vector<ShaderEntryPoint> entry_points;
-	std::vector<ShaderBinding> bindings;      ///< declaration order
+	std::vector<ShaderBinding> bindings;
 	std::vector<ShaderPushConstants> push_constants;
-	std::vector<std::string> layout_order;    ///< global parameter names in declaration order
+	std::vector<std::string> layout_order;
 
 	[[nodiscard]]
-	auto toJson() const -> nlohmann::json;
+	auto TOAST_API toJson() const -> nlohmann::json;
 
-	static auto fromJson(const nlohmann::json& json) -> std::optional<ShaderReflection>;
+	static auto TOAST_API fromJson(const nlohmann::json& json) -> std::optional<ShaderReflection>;
 };
 
-/// Walks a Slang program layout into a plain ShaderReflection
 auto extractReflection(slang::ProgramLayout* layout) -> ShaderReflection;
+
+/// Must come from the IModule since ProgramLayout reports 0 entry points for a module only composite
+void extractModuleEntryPoints(slang::IModule* module, ShaderReflection& reflection);
 
 auto toString(ShaderMemberType type) -> std::string_view;
 auto toString(ShaderBindingKind kind) -> std::string_view;

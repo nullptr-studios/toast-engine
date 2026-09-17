@@ -20,6 +20,11 @@
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
         <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
     </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)' == 'RelWithDebInfo' ">
+        <OutputPath>../out/RelWithDebInfo/editor</OutputPath>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    </PropertyGroup>
 
     <ItemGroup>
         <AvaloniaResource Include="Resources\**\*" Exclude="Resources\native\**" />

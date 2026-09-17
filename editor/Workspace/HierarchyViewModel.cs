@@ -187,7 +187,7 @@ public partial class HierarchyViewModel : Tool, IDisposable {
 
 				// restore selection after the tree rebuilds so editing a node doesnt lose focus
 				SelectedNode = prevUid is null ? null : Find(Root, prevUid);
-				if (Root.Count > 0) ActiveWorkspace?.SetRootNode(Root[0].Uid);
+				if (Root.Count > 0) ActiveWorkspace?.SetRootNode(Root[0].Uid, Root[0].Type);
 				ApplyFilterToRoot();
 				RebuildRows();
 				HierarchyChanged?.Invoke();

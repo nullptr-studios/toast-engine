@@ -1,8 +1,10 @@
 /// @file VulkanCore.cpp
 /// @author dario
-/// @date 14/05/2026.
+/// @date 14/05/2026
 
 #include "vulkan_core.hpp"
+
+#include "shader_compiler.hpp"
 
 #include <algorithm>
 #include <format>
@@ -13,9 +15,16 @@
 #if defined(__linux__)
 #include <dlfcn.h>
 #endif
+#include <array>
 #include <stdexcept>
 #include <string>
+#include <tracy/Tracy.hpp>
 #include <vector>
+
+#if defined(_WIN32)
+#include <external/inc/nsight/NGFX_GPUTrace_Vulkan.h>
+#include <external/inc/nsight/NGFX_GraphicsCapture_Vulkan.h>
+#endif
 
 namespace renderer {
 
@@ -24,12 +33,15 @@ constexpr std::size_t k_gigabyte_bytes = 1024ull * 1024ull * 1024ull;
 constexpr uint32_t k_invalid_queue_family = std::numeric_limits<uint32_t>::max();
 
 #ifdef TRACY_ENABLE
+// Tracy keys memory pools by name address and MSVC Debug does not pool string literals
+constexpr auto k_tracy_vram_pool = std::to_array("VRAM");
+
 void tracyVmaAllocate(VmaAllocator, uint32_t, VkDeviceMemory memory, VkDeviceSize size, void*) {
-	TracyAllocN(reinterpret_cast<void*>(memory), size, "VRAM");
+	TracyAllocN(reinterpret_cast<void*>(memory), size, k_tracy_vram_pool.data());
 }
 
 void tracyVmaFree(VmaAllocator, uint32_t, VkDeviceMemory memory, VkDeviceSize, void*) {
-	TracyFreeN(reinterpret_cast<void*>(memory), "VRAM");
+	TracyFreeN(reinterpret_cast<void*>(memory), k_tracy_vram_pool.data());
 }
 #endif
 
@@ -236,6 +248,7 @@ auto DeviceScore::toString() const noexcept -> std::string {
 VulkanCore::VulkanCore(
     std::span<const char* const> required_instance_extensions, std::span<const char* const> required_device_extensions
 ) noexcept {
+	ZoneScoped;
 #ifdef DEBUG
 	m_validation_enabled = checkValidationLayerSupport();
 #else
@@ -246,6 +259,10 @@ VulkanCore::VulkanCore(
 	TOAST_TRACE("Render", "Required instance extensions: {}", joinRequiredExtensions(required_instance_extensions));
 	TOAST_TRACE("Render", "Required device extensions: {}", joinRequiredExtensions(required_device_extensions));
 
+#if defined(_WIN32)
+	initializeNsightActivity();
+#endif
+
 	vk::ApplicationInfo app_info("SUPER DUPER TOASTY GAME", 1, "TOAST ENGINE", 1, VK_API_VERSION_1_4);
 
 	std::vector<const char*> layers;
@@ -254,14 +271,16 @@ VulkanCore::VulkanCore(
 	}
 
 	std::vector extensions(required_instance_extensions.begin(), required_instance_extensions.end());
-	if (m_validation_enabled) {
+	m_debug_utils_enabled = checkInstanceExtensionSupport(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+	if (m_debug_utils_enabled) {
 		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 	}
+	TOAST_INFO("Render", "Debug object names: {}", m_debug_utils_enabled ? "enabled" : "disabled");
 
 	vk::InstanceCreateInfo instance_ci({}, &app_info, layers, extensions);
 	m_instance = vk::raii::Instance(m_context, instance_ci);
 
-	if (m_validation_enabled) {
+	if (m_validation_enabled && m_debug_utils_enabled) {
 		vk::DebugUtilsMessengerCreateInfoEXT debug_ci {};
 		debug_ci.messageSeverity =
 		    vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
@@ -276,7 +295,6 @@ VulkanCore::VulkanCore(
 	pickPhysicalDevice(required_device_extensions);
 	createLogicalDeviceAndAllocator(required_device_extensions);
 
-	// Renderdoc api
 #if defined(_WIN32)
 	if (HMODULE mod = GetModuleHandleA("renderdoc.dll")) {
 		pRENDERDOC_GetAPI renderdoc_get_api = reinterpret_cast<pRENDERDOC_GetAPI>(GetProcAddress(mod, "RENDERDOC_GetAPI"));
@@ -293,9 +311,83 @@ VulkanCore::VulkanCore(
 		dlclose(mod);
 	}
 #endif
+
+	// Not activating Nsight GPU trace here since it blocks until the host attaches
 }
 
+#if defined(_WIN32)
+namespace {
+
+auto nsightResultName(NGFX_Result result) -> std::string_view {
+	switch (result) {
+		case NGFX_Result_Success: return "Success";
+		case NGFX_Result_NotImplemented: return "NotImplemented";
+		case NGFX_Result_LibNotFound: return "LibNotFound";
+		case NGFX_Result_InvalidLib: return "InvalidLib";
+		case NGFX_Result_DifferentActivityInjected: return "DifferentActivityInjected";
+		case NGFX_Result_InvalidParameter: return "InvalidParameter";
+		case NGFX_Result_InvalidState: return "InvalidState";
+		case NGFX_Result_UnspecifiedError: return "UnspecifiedError";
+		case NGFX_Result_Timeout: return "Timeout";
+		default: return "Unknown";
+	}
+}
+
+}
+
+void VulkanCore::initializeNsightActivity() {
+	ZoneScoped;
+	bool capture_injected = false;
+	bool trace_injected = false;
+	(void)NGFX_IsActivityInjected(NGFX_ActivityType_GraphicsCapture, &capture_injected);
+	(void)NGFX_IsActivityInjected(NGFX_ActivityType_GPUTrace, &trace_injected);
+
+	if (capture_injected) {
+		NGFX_GraphicsCapture_InitializeActivity_Vulkan_Params params {NGFX_GraphicsCapture_InitializeActivity_Vulkan_Params_VER};
+		const NGFX_Result result = NGFX_GraphicsCapture_InitializeActivity_Vulkan(&params);
+		if (result == NGFX_Result_Success) {
+			m_nsight_mode = NsightMode::graphics_capture;
+			TOAST_INFO("VulkanCore", "Nsight Graphics launched this process; Graphics Capture initialized (F12 to capture a frame)");
+		} else {
+			TOAST_WARN(
+			    "VulkanCore", "Nsight Graphics injected Graphics Capture, but it failed to initialize: {}", nsightResultName(result)
+			);
+		}
+	} else if (trace_injected) {
+		NGFX_GPUTrace_InitializeActivity_Vulkan_Params params {NGFX_GPUTrace_InitializeActivity_Vulkan_Params_VER};
+		const NGFX_Result result = NGFX_GPUTrace_InitializeActivity_Vulkan(&params);
+		if (result == NGFX_Result_Success) {
+			m_nsight_mode = NsightMode::gpu_trace;
+			TOAST_INFO("VulkanCore", "Nsight Graphics launched this process; GPU Trace initialized (F12 to trace)");
+		} else {
+			TOAST_WARN("VulkanCore", "Nsight Graphics injected GPU Trace, but it failed to initialize: {}", nsightResultName(result));
+		}
+	} else {
+		TOAST_INFO(
+		    "VulkanCore", "Nsight Graphics did not launch this process; Nsight capture is off (launch from Nsight Graphics for F12)"
+		);
+	}
+}
+
+void VulkanCore::activateNsightGpuTraceIfNeeded() const {
+	ZoneScoped;
+	if (m_nsight_mode != NsightMode::gpu_trace || m_nsight_gputrace_activated) {
+		return;
+	}
+	NGFX_GPUTrace_ActivateTrace_Vulkan_Params params {NGFX_GPUTrace_ActivateTrace_Vulkan_Params_VER};
+	params.queue = m_graphics_queue;
+
+	if (NGFX_GPUTrace_ActivateTrace_Vulkan(&params) == NGFX_Result_Success) {
+		m_nsight_gputrace_activated = true;
+	} else {
+		TOAST_WARN("VulkanCore", "Failed to activate Nsight GPU Trace; F12 capture will not work this session");
+		m_nsight_mode = NsightMode::none;
+	}
+}
+#endif
+
 void VulkanCore::pickPhysicalDevice(std::span<const char* const> required_device_extensions) {
+	ZoneScoped;
 	vk::raii::PhysicalDevices devices(m_instance);
 	if (devices.empty()) {
 		TOAST_CRITICAL("Render", "Toast Engine Error: Failed to find GPUs with Vulkan support!");
@@ -319,7 +411,6 @@ void VulkanCore::pickPhysicalDevice(std::span<const char* const> required_device
 		  .transfer = device_score.transfer_idx >= 0 ? static_cast<uint32_t>(device_score.transfer_idx) : k_invalid_queue_family,
 		};
 
-		// Log device info
 		TOAST_TRACE(
 		    "Render",
 		    "Device: {} (type: {}, API: {}, driver: {}, vendor: {}, device: {})",
@@ -336,7 +427,6 @@ void VulkanCore::pickPhysicalDevice(std::span<const char* const> required_device
 		}
 		TOAST_TRACE("Render", "  Extensions: {}", joinExtensions(extensions));
 
-		// Log score breakdown
 		TOAST_TRACE("Render", "  {}", device_score.toString());
 
 		if (!device_score.missing_extensions.empty()) {
@@ -350,7 +440,6 @@ void VulkanCore::pickPhysicalDevice(std::span<const char* const> required_device
 			TOAST_WARN("Render", "  Missing required extensions: {}", missing);
 		}
 
-		// Reject device if missing required extensions
 		if (!device_score.missing_extensions.empty()) {
 			TOAST_WARN("Render", "  Device rejected: missing required extensions");
 			continue;
@@ -402,6 +491,7 @@ void VulkanCore::pickPhysicalDevice(std::span<const char* const> required_device
 }
 
 void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> required_device_extensions) {
+	ZoneScoped;
 	if (m_graphics_queue_family_index == k_invalid_queue_family) {
 		TOAST_CRITICAL("Render", "Failed to find a graphics queue family for the selected device!");
 	}
@@ -447,7 +537,6 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 		queue_create_infos.emplace_back(vk::DeviceQueueCreateInfo({}, family_index, 1, &queue_priority));
 	}
 
-	// Enable antyroscopic filtering
 	const auto device_features = m_physical_device.getFeatures();
 	m_sampler_anisotropy_supported = device_features.samplerAnisotropy == VK_TRUE;
 	m_max_sampler_anisotropy =
@@ -455,6 +544,8 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 
 	vk::PhysicalDeviceFeatures enabled_features {};
 	enabled_features.samplerAnisotropy = m_sampler_anisotropy_supported ? VK_TRUE : VK_FALSE;
+
+	enabled_features.independentBlend = VK_TRUE;
 
 	vk::PhysicalDeviceFeatures2 supported_features {};
 	vk::PhysicalDeviceVulkan12Features supported_vulkan12 {};
@@ -484,9 +575,90 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	);
 	require_feature(supported_vulkan12.bufferDeviceAddress == VK_TRUE, "Vulkan 1.2 bufferDeviceAddress");
 	require_feature(supported_vulkan11.shaderDrawParameters == VK_TRUE, "Vulkan 1.1 shaderDrawParameters");
+	require_feature(supported_vulkan11.multiview == VK_TRUE, "Vulkan 1.1 multiview");
+	require_feature(device_features.independentBlend == VK_TRUE, "independentBlend");
 
 	std::vector<const char*> device_extensions(required_device_extensions.begin(), required_device_extensions.end());
+
+	{
+		const auto available = m_physical_device.enumerateDeviceExtensionProperties();
+		m_frame_boundary_supported = std::ranges::any_of(available, [](const vk::ExtensionProperties& ext) {
+			return std::string_view(ext.extensionName.data()) == VK_EXT_FRAME_BOUNDARY_EXTENSION_NAME;
+		});
+
+		if (m_frame_boundary_supported) {
+			device_extensions.push_back(VK_EXT_FRAME_BOUNDARY_EXTENSION_NAME);
+			TOAST_INFO("Render", "VK_EXT_frame_boundary available; frame delimiters will be emitted for graphics debuggers");
+		} else {
+			TOAST_INFO(
+			    "Render",
+			    "VK_EXT_frame_boundary not supported by this device - a debugger attached to the editor will see no frame "
+			    "boundaries, since the editor never presents"
+			);
+		}
+	}
+
+	{
+		const auto available = m_physical_device.enumerateDeviceExtensionProperties();
+		const auto has_extension = [&available](std::string_view name) {
+			return std::ranges::any_of(available, [name](const vk::ExtensionProperties& ext) {
+				return std::string_view(ext.extensionName.data()) == name;
+			});
+		};
+
+		const bool extensions_present = has_extension(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
+		                                has_extension(VK_KHR_RAY_QUERY_EXTENSION_NAME) &&
+		                                has_extension(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+
+		bool features_present = false;
+		if (extensions_present) {
+			vk::PhysicalDeviceFeatures2 probe {};
+			vk::PhysicalDeviceAccelerationStructureFeaturesKHR as_probe {};
+			vk::PhysicalDeviceRayQueryFeaturesKHR rq_probe {};
+			as_probe.pNext = &rq_probe;
+			probe.pNext = &as_probe;
+			(*m_physical_device).getFeatures2(&probe);
+			features_present = as_probe.accelerationStructure == VK_TRUE && rq_probe.rayQuery == VK_TRUE;
+		}
+
+		m_ray_tracing_supported = extensions_present && features_present;
+
+		// Before the shader cache compiles anything
+		ShaderCompiler::setRayQueryAvailable(m_ray_tracing_supported);
+
+		if (m_ray_tracing_supported) {
+			device_extensions.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+			device_extensions.push_back(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+			device_extensions.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+
+			vk::PhysicalDeviceProperties2 props {};
+			vk::PhysicalDeviceAccelerationStructurePropertiesKHR as_props {};
+			props.pNext = &as_props;
+			(*m_physical_device).getProperties2(&props);
+			m_as_scratch_alignment = as_props.minAccelerationStructureScratchOffsetAlignment;
+
+			TOAST_INFO(
+			    "Render", "Ray query supported; acceleration structures available (scratch alignment {} bytes)", m_as_scratch_alignment
+			);
+		} else {
+			TOAST_INFO(
+			    "Render",
+			    "Ray query unavailable (extensions={}, features={}); every RT-backed feature keeps its raster path",
+			    extensions_present,
+			    features_present
+			);
+		}
+	}
+
 	vk::DeviceCreateInfo device_ci({}, queue_create_infos, {}, device_extensions, &enabled_features);
+
+	vk::PhysicalDeviceAccelerationStructureFeaturesKHR acceleration_structure_features {};
+	acceleration_structure_features.accelerationStructure = VK_TRUE;
+	vk::PhysicalDeviceRayQueryFeaturesKHR ray_query_features {};
+	ray_query_features.rayQuery = VK_TRUE;
+
+	vk::PhysicalDeviceFrameBoundaryFeaturesEXT frame_boundary_features {};
+	frame_boundary_features.frameBoundary = VK_TRUE;
 	vk::PhysicalDeviceVulkan12Features vulkan12_features {};
 	vk::PhysicalDeviceVulkan13Features vulkan13_features {};
 	vk::PhysicalDeviceVulkan11Features vulkan11_features {};
@@ -501,6 +673,19 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	vulkan12_features.descriptorBindingVariableDescriptorCount = VK_TRUE;
 	vulkan12_features.bufferDeviceAddress = VK_TRUE;
 	vulkan11_features.shaderDrawParameters = VK_TRUE;
+	vulkan11_features.multiview = VK_TRUE;
+
+	// Chained only when the extension was requested
+	void** chain_tail = &vulkan11_features.pNext;
+	if (m_frame_boundary_supported) {
+		*chain_tail = &frame_boundary_features;
+		chain_tail = &frame_boundary_features.pNext;
+	}
+	if (m_ray_tracing_supported) {
+		*chain_tail = &acceleration_structure_features;
+		acceleration_structure_features.pNext = &ray_query_features;
+	}
+
 	device_ci.pNext = &vulkan13_features;
 
 	m_device = vk::raii::Device(m_physical_device, device_ci);
@@ -513,6 +698,9 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	allocator_ci.vulkanApiVersion = VK_API_VERSION_1_4;
 	allocator_ci.physicalDevice = *m_physical_device;
 
+	// VMA asserts without eBufferDeviceAddress
+	allocator_ci.flags = vma::AllocatorCreateFlagBits::eBufferDeviceAddress;
+
 #ifdef TRACY_ENABLE
 	static constexpr vma::DeviceMemoryCallbacks tracy_memory_callbacks {&tracyVmaAllocate, &tracyVmaFree, nullptr};
 	allocator_ci.pDeviceMemoryCallbacks = &tracy_memory_callbacks;
@@ -523,6 +711,7 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 
 auto VulkanCore::calculateDeviceScore(const vk::PhysicalDevice& device, std::span<const char* const> required_device_extensions)
     -> DeviceScore {
+	ZoneScoped;
 	DeviceScore score {};
 
 	const auto props = device.getProperties();
@@ -556,7 +745,6 @@ auto VulkanCore::calculateDeviceScore(const vk::PhysicalDevice& device, std::spa
 		}
 	}
 	if (total_memory > 12ull * k_gigabyte_bytes) {
-		// clamp to 12GB
 		score.memory = 1200;
 	} else if (total_memory > 0) {
 		score.memory = static_cast<int>(total_memory / k_gigabyte_bytes) * 100;
@@ -596,7 +784,6 @@ auto VulkanCore::calculateDeviceScore(const vk::PhysicalDevice& device, std::spa
 		feature_score += 400;
 	}
 
-	// Important features
 	if (features.multiDrawIndirect) {
 		feature_score += 500;
 	}
@@ -694,6 +881,13 @@ auto VulkanCore::calculateDeviceScore(const vk::PhysicalDevice& device, std::spa
 		extension_score += 25;
 	}
 
+	const bool supports_multiview = props.apiVersion >= VK_API_VERSION_1_1 && vulkan11_features.multiview == VK_TRUE;
+	if (!supports_multiview) {
+		required_missing_names.emplace_back("Vulkan 1.1 multiview");
+	} else {
+		extension_score += 25;
+	}
+
 	for (const auto* required : required_device_extensions) {
 		bool found = false;
 		for (const auto& available : extensions) {
@@ -773,6 +967,18 @@ auto VulkanCore::calculateDeviceScore(const vk::PhysicalDevice& device, std::spa
 	score.missing_extensions = required_missing_names;
 
 	return score;
+}
+
+auto VulkanCore::checkInstanceExtensionSupport(std::string_view extension) -> bool {
+	uint32_t count = 0;
+	vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr);
+
+	std::vector<VkExtensionProperties> available(count);
+	vkEnumerateInstanceExtensionProperties(nullptr, &count, available.data());
+
+	return std::ranges::any_of(available, [extension](const VkExtensionProperties& e) {
+		return extension == static_cast<const char*>(e.extensionName);
+	});
 }
 
 auto VulkanCore::checkValidationLayerSupport() -> bool {

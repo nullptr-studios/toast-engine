@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <format>
+#include <tracy/Tracy.hpp>
 
 namespace assets {
 
@@ -13,6 +14,7 @@ void ColorScheme::reload(const toml::table& table) {
 }
 
 void ColorScheme::buildLookup() const {
+	ZoneScoped;
 	if (m_built) {
 		return;
 	}

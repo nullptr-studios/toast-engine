@@ -31,7 +31,7 @@ HandleBase::~HandleBase() {
 	}
 }
 
-HandleBase::HandleBase(const HandleBase& other) : m_asset(other.m_asset), m_uid(other.m_uid) {
+HandleBase::HandleBase(const HandleBase& other) : m_asset(other.m_asset), m_uid(other.m_uid), m_uri(other.m_uri) {
 	if (m_asset) {
 		m_asset->addRef();
 		dispatchOnChange();
@@ -102,10 +102,6 @@ void HandleBase::dispatchOnChange() {
 	for (auto& callback : m_callbacks) {
 		callback();
 	}
-}
-
-auto Texture::get() const noexcept -> const std::vector<uint8_t>& {
-	return m_data;
 }
 
 }

@@ -1,10 +1,13 @@
 /// @file shader_reflection.cpp
 /// @author Xein
-/// @date 17/07/2026.
+/// @date 17/07/2026
 
 #include "shader_reflection.hpp"
 
+#include <algorithm>
+#include <slang-com-ptr.h>
 #include <toast/log.hpp>
+#include <tracy/Tracy.hpp>
 
 namespace renderer {
 
@@ -110,6 +113,10 @@ auto extractInspector(slang::VariableReflection* var) -> ShaderInspectorMeta {
 			meta.subgroup = read_string(attribute);
 		} else if (name == "Unit") {
 			meta.unit = read_string(attribute);
+		} else if (name == "Default") {
+			meta.default_fallback = read_string(attribute);
+		} else if (name == "Linear") {
+			meta.linear_data = true;
 		}
 	}
 
@@ -147,11 +154,15 @@ auto extractBlockMembers(slang::TypeLayoutReflection* struct_layout) -> std::vec
 			}
 		}
 
-		// The engine writes the model matrix itself; everything else is material data
 		if (member.name == "model" && member.type == ShaderMemberType::mat4) {
 			member.engine_semantic = "model_matrix";
 		}
-
+		if (member.name == "jointOffset" && member.type == ShaderMemberType::uint_t) {
+			member.engine_semantic = "joint_offset";
+		}
+		if (member.name == "instanceBase" && member.type == ShaderMemberType::uint_t) {
+			member.engine_semantic = "instance_base";
+		}
 		members.push_back(std::move(member));
 	}
 	return members;
@@ -160,6 +171,11 @@ auto extractBlockMembers(slang::TypeLayoutReflection* struct_layout) -> std::vec
 auto mapBindingKind(slang::TypeLayoutReflection* type_layout) -> std::optional<ShaderBindingKind> {
 	if (type_layout == nullptr) {
 		return std::nullopt;
+	}
+
+	// Arrays reflect as Array with the resource one level down
+	if (type_layout->getKind() == slang::TypeReflection::Kind::Array) {
+		return mapBindingKind(type_layout->getElementTypeLayout());
 	}
 
 	switch (type_layout->getKind()) {
@@ -188,6 +204,7 @@ auto mapBindingKind(slang::TypeLayoutReflection* type_layout) -> std::optional<S
 			return ShaderBindingKind::sampled_image;
 		case SLANG_STRUCTURED_BUFFER:
 		case SLANG_BYTE_ADDRESS_BUFFER: return ShaderBindingKind::storage_buffer;
+		case SLANG_ACCELERATION_STRUCTURE: return ShaderBindingKind::acceleration_structure;
 		default: return std::nullopt;
 	}
 }
@@ -204,7 +221,37 @@ auto isPushConstant(slang::VariableLayoutReflection* var_layout) -> bool {
 
 }
 
+void extractModuleEntryPoints(slang::IModule* module, ShaderReflection& reflection) {
+	if (module == nullptr) {
+		return;
+	}
+
+	const SlangInt32 defined_count = module->getDefinedEntryPointCount();
+	for (SlangInt32 i = 0; i < defined_count; ++i) {
+		Slang::ComPtr<slang::IEntryPoint> entry_point;
+		if (SLANG_FAILED(module->getDefinedEntryPoint(i, entry_point.writeRef())) || !entry_point) {
+			continue;
+		}
+
+		auto* entry_layout = entry_point->getLayout();
+		if (entry_layout == nullptr) {
+			continue;
+		}
+		auto* entry = entry_layout->getEntryPointByIndex(0);
+		if (entry == nullptr || entry->getName() == nullptr) {
+			continue;
+		}
+
+		const std::string name = entry->getName();
+		if (std::ranges::any_of(reflection.entry_points, [&](const auto& existing) { return existing.name == name; })) {
+			continue;
+		}
+		reflection.entry_points.push_back(ShaderEntryPoint {.name = name, .stage = std::string(stageToString(entry->getStage()))});
+	}
+}
+
 auto extractReflection(slang::ProgramLayout* layout) -> ShaderReflection {
+	ZoneScoped;
 	ShaderReflection reflection;
 	if (layout == nullptr) {
 		return reflection;
@@ -270,6 +317,12 @@ auto extractReflection(slang::ProgramLayout* layout) -> ShaderReflection {
 		binding.binding = static_cast<uint32_t>(var_layout->getOffset(slang::ParameterCategory::DescriptorTableSlot));
 		binding.set = static_cast<uint32_t>(var_layout->getBindingSpace(slang::ParameterCategory::DescriptorTableSlot));
 
+		// An array binding declares descriptorCount entries
+		if (type_layout != nullptr && type_layout->getKind() == slang::TypeReflection::Kind::Array) {
+			const auto elements = static_cast<uint32_t>(type_layout->getElementCount());
+			binding.count = elements > 0 ? elements : 1;
+		}
+
 		if (binding.kind == ShaderBindingKind::uniform_buffer) {
 			if (auto* element_layout = type_layout->getElementTypeLayout()) {
 				binding.size = static_cast<uint32_t>(element_layout->getSize(SLANG_PARAMETER_CATEGORY_UNIFORM));
@@ -277,7 +330,7 @@ auto extractReflection(slang::ProgramLayout* layout) -> ShaderReflection {
 			}
 		}
 
-		// Set 0 is engine-reserved frame data (camera etc), never material-editable
+		// Set 0 is engine reserved
 		if (binding.set == 0) {
 			binding.engine_semantic = "frame";
 		}
@@ -304,6 +357,7 @@ auto toString(ShaderMemberType type) -> std::string_view {
 	}
 }
 
+/// @warning Every ShaderBindingKind must appear here and in bindingKindFromString()
 auto toString(ShaderBindingKind kind) -> std::string_view {
 	switch (kind) {
 		case ShaderBindingKind::uniform_buffer: return "uniform_buffer";
@@ -312,6 +366,7 @@ auto toString(ShaderBindingKind kind) -> std::string_view {
 		case ShaderBindingKind::sampled_image: return "sampled_image";
 		case ShaderBindingKind::sampler: return "sampler";
 		case ShaderBindingKind::storage_image: return "storage_image";
+		case ShaderBindingKind::acceleration_structure: return "acceleration_structure";
 	}
 	return "uniform_buffer";
 }
@@ -363,6 +418,13 @@ auto bindingKindFromString(std::string_view str) -> ShaderBindingKind {
 	if (str == "storage_image") {
 		return ShaderBindingKind::storage_image;
 	}
+	if (str == "acceleration_structure") {
+		return ShaderBindingKind::acceleration_structure;
+	}
+
+	if (str != "uniform_buffer") {
+		TOAST_WARN("Render", "Unknown shader binding kind '{}' in cached reflection; treating as uniform_buffer", str);
+	}
 	return ShaderBindingKind::uniform_buffer;
 }
 
@@ -392,6 +454,12 @@ auto inspectorToJson(const ShaderInspectorMeta& meta) -> nlohmann::json {
 	if (!meta.unit.empty()) {
 		json["unit"] = meta.unit;
 	}
+	if (!meta.default_fallback.empty()) {
+		json["default_fallback"] = meta.default_fallback;
+	}
+	if (meta.linear_data) {
+		json["linear_data"] = true;
+	}
 	return json;
 }
 
@@ -412,6 +480,8 @@ auto inspectorFromJson(const nlohmann::json& json) -> ShaderInspectorMeta {
 	meta.group = json.value("group", "");
 	meta.subgroup = json.value("subgroup", "");
 	meta.unit = json.value("unit", "");
+	meta.default_fallback = json.value("default_fallback", "");
+	meta.linear_data = json.value("linear_data", false);
 	return meta;
 }
 
@@ -457,6 +527,7 @@ auto membersFromJson(const nlohmann::json& json) -> std::vector<ShaderBlockMembe
 }
 
 auto ShaderReflection::toJson() const -> nlohmann::json {
+	ZoneScoped;
 	nlohmann::json json;
 
 	auto entry_points_json = nlohmann::json::array();
@@ -502,6 +573,7 @@ auto ShaderReflection::toJson() const -> nlohmann::json {
 }
 
 auto ShaderReflection::fromJson(const nlohmann::json& json) -> std::optional<ShaderReflection> {
+	ZoneScoped;
 	if (!json.is_object()) {
 		return std::nullopt;
 	}

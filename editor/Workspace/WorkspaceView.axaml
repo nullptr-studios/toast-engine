@@ -57,6 +57,15 @@
 			        Value="{StaticResource Magenta}" />
 		</Style>
 
+		<Style Selector="ToggleButton.tool.camMode:not(:checked) /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg4}" />
+		</Style>
+		<Style Selector="ToggleButton.tool.camMode:not(:checked):pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg5}" />
+		</Style>
+
 		<!-- Snap value -->
 		<Style Selector="Button.chev">
 			<Setter Property="Background"
@@ -82,6 +91,14 @@
 		<Style Selector="ToggleButton.snapTool:pointerover /template/ ContentPresenter#PART_ContentPresenter">
 			<Setter Property="Background"
 			        Value="{StaticResource Bg4}" />
+		</Style>
+		<Style Selector="ToggleButton.snapTool:not(:checked) LucideIcon">
+			<Setter Property="Foreground"
+			        Value="{StaticResource TextMuted}" />
+		</Style>
+		<Style Selector="ToggleButton.snapTool:not(:checked) TextBlock.snapValue">
+			<Setter Property="Foreground"
+			        Value="{StaticResource TextMuted}" />
 		</Style>
 
 		<!-- Snap value text: fixed-width monospace so the toggle doesn't resize between "OFF" and a value -->
@@ -184,16 +201,19 @@
 				              ToolTip.Tip="Grid snapping (G)"
 				              IsChecked="{Binding TranslateSnapEnabled}">
 					<StackPanel Orientation="Horizontal"
-					            Spacing="8">
+					            Spacing="8"
+					            VerticalAlignment="Center">
 						<LucideIcon Kind="Grid2x2"
 						            Size="18"
 						            StrokeWidth="2.5" />
 						<TextBlock Classes="snapValue"
 						           Text="Off"
+						           VerticalAlignment="Center"
 						           IsVisible="{Binding !TranslateSnapEnabled}" />
 						<TextBlock Classes="snapValue"
 						           Text="{Binding TranslateSnap, Converter={StaticResource SnapValueConverter}}"
 						           IsVisible="{Binding TranslateSnapEnabled}"
+						           VerticalAlignment="Center"
 						           HorizontalAlignment="Right" />
 					</StackPanel>
 				</ToggleButton>
@@ -202,16 +222,19 @@
 				              ToolTip.Tip="Rotate snapping (Shift+G)"
 				              IsChecked="{Binding RotateSnapEnabled}">
 					<StackPanel Orientation="Horizontal"
+					            VerticalAlignment="Center"
 					            Spacing="8">
 						<LucideIcon Kind="RotateCw"
 						            Size="18"
 						            StrokeWidth="2.5" />
 						<TextBlock Classes="snapValue"
 						           Text="Off"
+						           VerticalAlignment="Center"
 						           IsVisible="{Binding !RotateSnapEnabled}" />
 						<TextBlock Classes="snapValue"
 						           Text="{Binding RotateSnap, Converter={StaticResource SnapValueConverter}, ConverterParameter=int}"
 						           IsVisible="{Binding RotateSnapEnabled}"
+						           VerticalAlignment="Center"
 						           HorizontalAlignment="Right" />
 					</StackPanel>
 				</ToggleButton>
@@ -220,16 +243,19 @@
 				              ToolTip.Tip="Scale snapping (Alt+G)"
 				              IsChecked="{Binding ScaleSnapEnabled}">
 					<StackPanel Orientation="Horizontal"
+					            VerticalAlignment="Center"
 					            Spacing="8">
 						<LucideIcon Kind="Maximize2"
 						            Size="18"
 						            StrokeWidth="2.5" />
 						<TextBlock Classes="snapValue"
 						           Text="Off"
+						           VerticalAlignment="Center"
 						           IsVisible="{Binding !ScaleSnapEnabled}" />
 						<TextBlock Classes="snapValue"
 						           Text="{Binding ScaleSnap, Converter={StaticResource SnapValueConverter}}"
 						           IsVisible="{Binding ScaleSnapEnabled}"
+						           VerticalAlignment="Center"
 						           HorizontalAlignment="Right" />
 					</StackPanel>
 				</ToggleButton>
@@ -359,12 +385,98 @@
 				<Button Background="{StaticResource Bg3}"
 				        CornerRadius="6, 0, 0, 6"
 				        ToolTip.Tip="Change viewport mode">
+					<Button.Flyout>
+						<MenuFlyout>
+							<MenuItem Header="Lit"
+							          Command="{Binding SetRenderModeCommand}"
+							          CommandParameter="Lit" />
+							<MenuItem Header="Cluster Heatmap"
+							          Command="{Binding SetRenderModeCommand}"
+							          CommandParameter="ClusterHeatmap"
+							          ToolTip.Tip="Forward+ debug view: per-pixel clustered light count (blue=0, red=8+)" />
+							<Separator />
+							<MenuItem Header="Albedo"
+							          Command="{Binding SetRenderModeCommand}"
+							          CommandParameter="Albedo"
+							          ToolTip.Tip="Base colour as sampled, before any lighting" />
+							<MenuItem Header="Normal"
+							          Command="{Binding SetRenderModeCommand}"
+							          CommandParameter="Normal"
+							          ToolTip.Tip="World-space shading normal, remapped to 0..1" />
+							<MenuItem Header="Metallic / Roughness"
+							          Command="{Binding SetRenderModeCommand}"
+							          CommandParameter="MetallicRoughness"
+							          ToolTip.Tip="Red is metallic, green is roughness" />
+							<MenuItem Header="Ambient"
+							          Command="{Binding SetRenderModeCommand}"
+							          CommandParameter="Ambient"
+							          ToolTip.Tip="Ambient radiance reaching the surface, before albedo" />
+							<MenuItem Header="Specular IBL"
+							          Command="{Binding SetRenderModeCommand}"
+							          CommandParameter="SpecularIbl"
+							          ToolTip.Tip="Prefiltered environment along the reflection vector - the only thing lighting a metal in an unlit scene" />
+							<MenuItem Header="Specular IBL (mip 0)"
+							          Command="{Binding SetRenderModeCommand}"
+							          CommandParameter="SpecularIblMip0"
+							          ToolTip.Tip="Same lookup pinned to the sharpest mip - isolates whether the coarse mips are the problem" />
+							<MenuItem Header="Reflection Vector"
+							          Command="{Binding SetRenderModeCommand}"
+							          CommandParameter="Reflection"
+							          ToolTip.Tip="Reflection direction remapped to 0..1 - shows which patch of the cubemap a surface samples" />
+							<MenuItem Header="Reflection Probes"
+							          Command="{Binding SetRenderModeCommand}"
+							          CommandParameter="ReflectionProbes"
+							          ToolTip.Tip="Which probe owns each surface (hue) and how strongly (brightness); grey means the global environment" />
+							<MenuItem Header="Probe Capture"
+							          Command="{Binding SetRenderModeCommand}"
+							          CommandParameter="ProbeCapture"
+							          ToolTip.Tip="What the owning probe captured; magenta = no probe, yellow = unbaked, black = the capture itself is black" />
+							<MenuItem Header="Probe Cubemap"
+							          Command="{Binding SetRenderModeCommand}"
+							          CommandParameter="ProbeCubemap"
+							          ToolTip.Tip="The probe's cubemap along the view ray - look around inside the capture; roughness picks the mip" />
+							<Separator />
+							<MenuItem Header="Normal Buffer"
+							          Command="{Binding SetRenderModeCommand}"
+							          CommandParameter="NormalBuffer"
+							          ToolTip.Tip="The G-buffer's world normals, read back out of the buffer SSR traces against; black means nothing wrote there" />
+							<MenuItem Header="Roughness Buffer"
+							          Command="{Binding SetRenderModeCommand}"
+							          CommandParameter="RoughnessBuffer"
+							          ToolTip.Tip="The other half of the G-buffer - what SSR uses to decide how much a surface reflects" />
+							<MenuItem Header="SSR Only"
+							          Command="{Binding SetRenderModeCommand}"
+							          CommandParameter="SsrOnly"
+							          ToolTip.Tip="The traced reflection before it is weighted into the scene - separates a failed march from a discarded one" />
+							<MenuItem Header="Ambient Occlusion"
+							          Command="{Binding SetRenderModeCommand}"
+							          CommandParameter="AmbientOcclusion"
+							          ToolTip.Tip="The AO factor on its own - white is unoccluded, so a fully white image means the radius is too small for the scene's scale" />
+							<MenuItem Header="Irradiance Volumes"
+							          Command="{Binding SetRenderModeCommand}"
+							          CommandParameter="IrradianceVolumes"
+							          ToolTip.Tip="Interpolated volume irradiance; magenta = no volume covers this point, yellow = covered but never baked" />
+							<Separator />
+							<MenuItem Header="Traced Shadows (visibility)"
+							          Command="{Binding SetRenderModeCommand}"
+							          CommandParameter="TracedShadowsOnly"
+							          ToolTip.Tip="Ray-traced directional visibility on its own - white lit, black occluded. Needs ray query support" />
+							<MenuItem Header="Traced Shadows (applied)"
+							          Command="{Binding SetRenderModeCommand}"
+							          CommandParameter="TracedShadows"
+							          ToolTip.Tip="The lit scene multiplied by traced visibility, for comparing against the shadow-map result" />
+							<MenuItem Header="Shadow Term"
+							          Command="{Binding SetRenderModeCommand}"
+							          CommandParameter="ShadowTerm"
+							          ToolTip.Tip="The shadow factor every light resolved to, strongest occlusion wins - white lit, black fully shadowed. Toggle 'Traced shadows (all lights)' in the Toast Debug panel to swap a ray-traced reference under the same camera; wherever the two disagree is the shadow map's error" />
+						</MenuFlyout>
+					</Button.Flyout>
 					<StackPanel Orientation="Horizontal"
 					            Spacing="8">
 						<LucideIcon Kind="Eclipse"
 						            Size="18"
 						            StrokeWidth="2.5" />
-						<TextBlock Text="Mode" />
+						<TextBlock Text="{Binding ActiveRenderMode}" />
 					</StackPanel>
 				</Button>
 				<Button Background="{StaticResource Bg3}"
@@ -418,7 +530,86 @@
 				</ToggleButton>
 				<Button CornerRadius="0, 6, 6, 0"
 				        Background="{StaticResource Bg3}"
-				        ToolTip.Tip="Camera settings">
+				        ToolTip.Tip="Camera settings"
+				        IsEnabled="{Binding !GameCamera}">
+					<Button.Flyout>
+						<Flyout Placement="BottomEdgeAlignedRight">
+							<StackPanel Spacing="8"
+							            MinWidth="180">
+								<Grid ColumnDefinitions="*,*">
+									<ToggleButton Grid.Column="0"
+									              Classes="tool red camMode"
+									              CornerRadius="6, 0, 0, 6"
+									              HorizontalAlignment="Stretch"
+									              HorizontalContentAlignment="Left"
+									              ToolTip.Tip="Fly camera: hold RMB to look, WASD to move"
+									              Command="{Binding SetEditorCameraModeCommand}"
+									              CommandParameter="Free"
+									              IsChecked="{Binding CameraMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Free, Mode=OneWay}">
+										<StackPanel Orientation="Horizontal"
+										            Spacing="8">
+											<LucideIcon Kind="Camera"
+											            Size="16"
+											            StrokeWidth="2.5" />
+											<TextBlock Text="Free" />
+										</StackPanel>
+									</ToggleButton>
+									<ToggleButton Grid.Column="1"
+									              Classes="tool red camMode"
+									              CornerRadius="0, 6, 6, 0"
+									              HorizontalAlignment="Stretch"
+									              HorizontalContentAlignment="Left"
+									              ToolTip.Tip="Orbit the world origin: two-finger drag to swing, pinch to zoom"
+									              Command="{Binding SetEditorCameraModeCommand}"
+									              CommandParameter="Orbit"
+									              IsChecked="{Binding CameraMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Orbit, Mode=OneWay}">
+										<StackPanel Orientation="Horizontal"
+										            Spacing="8">
+											<LucideIcon Kind="Rotate3d"
+											            Size="16"
+											            StrokeWidth="2.5" />
+											<TextBlock Text="Orbit" />
+										</StackPanel>
+									</ToggleButton>
+								</Grid>
+								<Grid ColumnDefinitions="Auto,*,Auto,Auto"
+								      ColumnSpacing="8">
+									<LucideIcon Grid.Column="0"
+									            Kind="Gauge"
+									            Size="16"
+									            StrokeWidth="2.5"
+									            VerticalAlignment="Center" />
+									<TextBlock Grid.Column="1"
+									           Classes="snapValue"
+									           Text="{Binding CameraSpeed, Converter={StaticResource SnapValueConverter}}"
+									           VerticalAlignment="Center"
+									           HorizontalAlignment="Right" />
+									<Button Grid.Column="2"
+									        Classes="chev"
+									        Width="24"
+									        Height="24"
+									        Padding="0"
+									        Command="{Binding StepCameraSpeedCommand}"
+									        CommandParameter="-1">
+										<LucideIcon Kind="Minus"
+										            Size="14"
+										            StrokeWidth="2.5" />
+									</Button>
+									<Button Grid.Column="3"
+									        Classes="chev"
+									        Width="24"
+									        Height="24"
+									        Padding="0"
+									        Command="{Binding StepCameraSpeedCommand}"
+									        CommandParameter="1">
+										<LucideIcon Kind="Plus"
+										            Size="14"
+										            StrokeWidth="2.5" />
+									</Button>
+								</Grid>
+							</StackPanel>
+						</Flyout>
+					</Button.Flyout>
 					<LucideIcon Kind="ChevronDown"
 					            Size="18"
 					            StrokeWidth="2.5" />

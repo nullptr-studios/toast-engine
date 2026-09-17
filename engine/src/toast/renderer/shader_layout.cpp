@@ -6,6 +6,7 @@
 #include <format>
 #include <map>
 #include <toast/log.hpp>
+#include <tracy/Tracy.hpp>
 
 namespace renderer {
 
@@ -19,6 +20,7 @@ auto toDescriptorType(ShaderBindingKind kind) -> vk::DescriptorType {
 		case ShaderBindingKind::sampled_image: return vk::DescriptorType::eSampledImage;
 		case ShaderBindingKind::sampler: return vk::DescriptorType::eSampler;
 		case ShaderBindingKind::storage_image: return vk::DescriptorType::eStorageImage;
+		case ShaderBindingKind::acceleration_structure: return vk::DescriptorType::eAccelerationStructureKHR;
 	}
 	return vk::DescriptorType::eUniformBuffer;
 }
@@ -26,13 +28,13 @@ auto toDescriptorType(ShaderBindingKind kind) -> vk::DescriptorType {
 }
 
 void ShaderLayout::rebuild(const VulkanCore& core, const ShaderReflection& reflection, std::string_view debug_name) {
+	ZoneScoped;
 	m_descriptor_set_layouts.clear();
 	m_push_constant_ranges.clear();
 	m_pipeline_layout = nullptr;
 
 	const auto& device = core.getDevice();
 
-	// Group bindings by set index
 	// Sets must stay contiguous for the pipeline layout
 	std::map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>> set_map;
 	for (const auto& binding : reflection.bindings) {
@@ -54,9 +56,26 @@ void ShaderLayout::rebuild(const VulkanCore& core, const ShaderReflection& refle
 			bindings = it->second;
 		}
 
+		// Always partially bound or an unwritten binding is undefined on devices without ray query
+		std::vector<vk::DescriptorBindingFlags> binding_flags(bindings.size(), vk::DescriptorBindingFlags {});
+		bool any_partially_bound = false;
+		for (size_t i = 0; i < bindings.size(); ++i) {
+			if (bindings[i].descriptorType == vk::DescriptorType::eAccelerationStructureKHR) {
+				binding_flags[i] = vk::DescriptorBindingFlagBits::ePartiallyBound;
+				any_partially_bound = true;
+			}
+		}
+
+		vk::DescriptorSetLayoutBindingFlagsCreateInfo flags_ci {};
+		flags_ci.bindingCount = static_cast<uint32_t>(binding_flags.size());
+		flags_ci.pBindingFlags = binding_flags.data();
+
 		vk::DescriptorSetLayoutCreateInfo layout_ci {};
 		layout_ci.bindingCount = static_cast<uint32_t>(bindings.size());
 		layout_ci.pBindings = bindings.empty() ? nullptr : bindings.data();
+		if (any_partially_bound) {
+			layout_ci.pNext = &flags_ci;
+		}
 
 		m_descriptor_set_layouts.emplace_back(device, layout_ci);
 		raw_handles.push_back(*m_descriptor_set_layouts.back());
@@ -65,7 +84,8 @@ void ShaderLayout::rebuild(const VulkanCore& core, const ShaderReflection& refle
 
 	for (const auto& push : reflection.push_constants) {
 		vk::PushConstantRange range {};
-		range.stageFlags = vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment;
+		// eAll since every vkCmdPushConstants must use the same stage flags
+		range.stageFlags = vk::ShaderStageFlagBits::eAll;
 		range.offset = 0;
 		range.size = push.size;
 		if (range.size > 0) {
