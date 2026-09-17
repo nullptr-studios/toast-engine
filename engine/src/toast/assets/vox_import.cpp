@@ -62,8 +62,8 @@ auto voxPlacementOf(const VoxTransform& world, glm::uvec3 model_dims) -> Lattice
 	out.orientation = world.orientation;
 	for (uint32_t axis = 0; axis < 3; ++axis) {
 		const auto size = static_cast<int32_t>(model_dims[world.orientation.source[axis]]);
-		out.offset[axis] = world.orientation.flip[axis] ? world.translation[axis] + ((size + 1) / 2)
-		                                                 : world.translation[axis] - (size / 2);
+		out.offset[axis] =
+		    world.orientation.flip[axis] ? world.translation[axis] + ((size + 1) / 2) : world.translation[axis] - (size / 2);
 	}
 	return out;
 }
