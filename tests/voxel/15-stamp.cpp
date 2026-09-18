@@ -7,7 +7,7 @@
 #include <set>
 #include <toast/voxel/stamp.hpp>
 
-using namespace toast::voxel;
+using namespace voxel;
 using namespace voxeltest;
 
 TOAST_TEST_NAMED("voxel", "voxel/15-stamp", test_voxel_15_stamp) {

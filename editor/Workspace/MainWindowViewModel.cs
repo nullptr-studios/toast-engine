@@ -913,7 +913,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			LoaderTask.Run(
 				"dotnet publish player",
 				"dotnet",
-				$"publish \"{playerPath}\" -c Release -p:PublishAot=true -p:PublishSingleFile=true -p:OptimizationPreference=Speed -o \"{outputDir}\""
+				$"publish \"{playerPath}\" -c Release -p:PublishSingleFile=true -p:OptimizationPreference=Speed -o \"{outputDir}\""
 			),
 			// Generate CMake on Release
 			LoaderTask.Run(

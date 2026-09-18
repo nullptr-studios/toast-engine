@@ -6,7 +6,7 @@
 #include <toast/voxel/surface.hpp>
 #include <toast/voxel/voxel_volume.hpp>
 
-using namespace toast::voxel;
+using namespace voxel;
 using namespace voxeltest;
 
 namespace {

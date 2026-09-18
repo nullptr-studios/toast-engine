@@ -1,6 +1,6 @@
 // Twin of toast/voxel/ray_march.cpp with layout from toast/voxel/gpu_layout.hpp so change them together
 
-/// Mirrors toast::voxel::gpu::VolumeRecord
+/// Mirrors voxel::gpu::VolumeRecord
 struct VolumeRecord
 {
     uint brickDimsX;

@@ -5,7 +5,7 @@
 #include <toast/voxel/surface.hpp>
 #include <vector>
 
-using namespace toast::voxel;
+using namespace voxel;
 using namespace voxeltest;
 
 TOAST_TEST_NAMED("voxel", "voxel/09-surface-classification", test_voxel_09_surface_classification) {

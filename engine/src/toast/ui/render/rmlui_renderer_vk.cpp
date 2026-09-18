@@ -888,7 +888,7 @@ void RenderInterface_VK::CreateShaders() noexcept {
 	};
 
 	const Rml::Vector<shader_data_t> shaders = {
-	  {	      reinterpret_cast<const uint32_t*>(shader_vert),         sizeof(shader_vert),   VK_SHADER_STAGE_VERTEX_BIT},
+	  {        reinterpret_cast<const uint32_t*>(shader_vert),         sizeof(shader_vert),   VK_SHADER_STAGE_VERTEX_BIT},
 	  {  reinterpret_cast<const uint32_t*>(shader_frag_color),   sizeof(shader_frag_color), VK_SHADER_STAGE_FRAGMENT_BIT},
 	  {reinterpret_cast<const uint32_t*>(shader_frag_texture), sizeof(shader_frag_texture), VK_SHADER_STAGE_FRAGMENT_BIT},
 	};

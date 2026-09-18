@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "aabb.hpp"
 #include "body.hpp"
 
 #include <compare>
@@ -92,7 +93,8 @@ constexpr auto boxClipFeature(int reference_axis, bool reference_positive, int s
 enum class ShapeType : uint8_t {
 	sphere,
 	box,
-	capsule
+	capsule,
+	voxel
 };
 
 struct SphereShape {
@@ -113,6 +115,19 @@ struct CapsuleShape {
 	float height = 1.0f;
 };
 
+struct VoxelDataID {
+	uint32_t slot = std::numeric_limits<uint32_t>::max();
+	uint32_t generation = 0;
+	auto operator<=>(const VoxelDataID&) const = default;
+};
+
+struct VoxelShape {
+	VoxelDataID data;
+	glm::vec3 local_center = {};
+	glm::quat local_rotation = {1.0f, 0.0f, 0.0f, 0.0f};
+	AABB local_bounds = {};
+};
+
 struct Shape {
 	BodyID owner;
 	ShapeType type = ShapeType::sphere;
@@ -123,6 +138,7 @@ struct Shape {
 		SphereShape sphere;
 		BoxShape box;
 		CapsuleShape capsule;
+		VoxelShape voxel;
 	};
 };
 

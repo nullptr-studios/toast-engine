@@ -8,7 +8,7 @@
 #include <toast/assets/asset_registry.hpp>
 #include <toast/assets/voxel_model.hpp>
 
-using namespace toast::voxel;
+using namespace voxel;
 using namespace voxeltest;
 using assets::SaveMode;
 using assets::VoxelModel;

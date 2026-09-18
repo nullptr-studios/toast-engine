@@ -20,13 +20,13 @@
 
 namespace assets {
 
-using toast::voxel::BrickPool;
-using toast::voxel::k_brick_dim;
-using toast::voxel::k_palette_size;
-using toast::voxel::k_voxel_size;
-using toast::voxel::LatticePlacement;
-using toast::voxel::PaletteEntry;
-using toast::voxel::Volume;
+using voxel::BrickPool;
+using voxel::k_brick_dim;
+using voxel::k_palette_size;
+using voxel::k_voxel_size;
+using voxel::LatticePlacement;
+using voxel::PaletteEntry;
+using voxel::Volume;
 
 namespace {
 
@@ -76,7 +76,7 @@ struct VoxNodeTransform {
 
 /// @brief Mirrored orientations have no quaternion so one axis gets a negative scale
 [[nodiscard]]
-auto voxTransformOf(const toast::voxel::LatticeOrientation& orientation, glm::ivec3 offset) -> VoxNodeTransform {
+auto voxTransformOf(const voxel::LatticeOrientation& orientation, glm::ivec3 offset) -> VoxNodeTransform {
 	VoxNodeTransform out;
 	out.position = glm::vec3(offset) * k_voxel_size;
 
@@ -215,7 +215,7 @@ auto writeVoxIntermediates(const std::filesystem::path& source, const std::files
 			json["model"] = file_by_model[i];
 			json["mobility"] = 0;
 			voxWriteTransform(
-			    json, voxTransformOf(toast::voxel::LatticeOrientation {}, voxPlacementOf(VoxTransform {}, scene.models[i].dims).offset)
+			    json, voxTransformOf(voxel::LatticeOrientation {}, voxPlacementOf(VoxTransform {}, scene.models[i].dims).offset)
 			);
 			manifest["nodes"].push_back(std::move(json));
 		}

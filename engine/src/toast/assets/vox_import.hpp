@@ -37,7 +37,7 @@ struct VoxModel {
 
 /// @brief Translation positions the node centre not its corner
 struct VoxTransform {
-	toast::voxel::LatticeOrientation orientation;
+	voxel::LatticeOrientation orientation;
 	glm::ivec3 translation {0};
 
 	[[nodiscard]]
@@ -62,37 +62,37 @@ struct VoxScene {
 	/// nodes[0] is the root
 	std::vector<VoxNode> nodes;
 
-	toast::voxel::Palette palette;
+	voxel::Palette palette;
 
 	std::vector<std::string> warnings;
 };
 
 /// @brief Bits 0-1 source axis of x bits 2-3 source axis of y bits 4-6 negate x y z so the identity is 4 not 0
 [[nodiscard]]
-TOAST_API auto voxOrientationFromByte(uint8_t rotation) -> std::optional<toast::voxel::LatticeOrientation>;
+TOAST_API auto voxOrientationFromByte(uint8_t rotation) -> std::optional<voxel::LatticeOrientation>;
 
 [[nodiscard]]
-TOAST_API auto voxOrientationToByte(const toast::voxel::LatticeOrientation& orientation) -> uint8_t;
+TOAST_API auto voxOrientationToByte(const voxel::LatticeOrientation& orientation) -> uint8_t;
 
 [[nodiscard]]
 TOAST_API auto composeVoxTransforms(const VoxTransform& parent, const VoxTransform& local) -> VoxTransform;
 
 /// @brief Half the size moves into the offset floored on unflipped axes and rounded up on flipped ones
 [[nodiscard]]
-TOAST_API auto voxPlacementOf(const VoxTransform& world, glm::uvec3 model_dims) -> toast::voxel::LatticePlacement;
+TOAST_API auto voxPlacementOf(const VoxTransform& world, glm::uvec3 model_dims) -> voxel::LatticePlacement;
 
 struct VoxPlacement {
 	uint32_t model = 0;
 	std::string name;
 	bool hidden = false;
-	toast::voxel::LatticePlacement placement;
+	voxel::LatticePlacement placement;
 };
 
 [[nodiscard]]
 TOAST_API auto flattenVoxScene(const VoxScene& scene) -> std::vector<VoxPlacement>;
 
 [[nodiscard]]
-TOAST_API auto buildVoxVolume(const VoxModel& model, toast::voxel::BrickPool& pool) -> std::optional<toast::voxel::Volume>;
+TOAST_API auto buildVoxVolume(const VoxModel& model, voxel::BrickPool& pool) -> std::optional<voxel::Volume>;
 
 /// @throws std::runtime_error on anything unrepresentable
 [[nodiscard]]

@@ -12,7 +12,7 @@
 #include <cassert>
 #include <cstdint>
 
-namespace toast::voxel {
+namespace voxel {
 
 /// @brief One 64-bit word per z-slice with bit y * 8 + x
 struct BrickOccupancy {

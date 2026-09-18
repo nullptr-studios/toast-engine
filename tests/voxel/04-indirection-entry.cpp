@@ -3,7 +3,7 @@
 #include <cassert>
 #include <toast/voxel/voxel_constants.hpp>
 
-using namespace toast::voxel;
+using namespace voxel;
 
 TOAST_TEST_NAMED("voxel", "voxel/04-indirection-entry", test_voxel_04_indirection_entry) {
 	assert(BrickEntry {}.tag() == BrickTag::empty && BrickEntry {}.payload() == 0);

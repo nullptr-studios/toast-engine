@@ -11,7 +11,7 @@
 #include <cstdint>
 #include <glm/glm.hpp>
 
-namespace toast::voxel {
+namespace voxel {
 
 inline constexpr int64_t k_moment_safe_limit = int64_t {1} << 62;
 

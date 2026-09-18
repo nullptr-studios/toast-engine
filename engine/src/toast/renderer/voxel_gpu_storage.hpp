@@ -66,9 +66,7 @@ private:
 
 class VoxelSceneUpload : public PendingResourceUpload {
 public:
-	VoxelSceneUpload(
-	    std::shared_ptr<VoxelGpuStorage> storage, toast::voxel::gpu::PackedPool pool, toast::voxel::gpu::PackedScene scene
-	);
+	VoxelSceneUpload(std::shared_ptr<VoxelGpuStorage> storage, voxel::gpu::PackedPool pool, voxel::gpu::PackedScene scene);
 
 	void build(const VulkanCore& core) override;
 
@@ -79,8 +77,8 @@ public:
 private:
 	std::shared_ptr<VoxelGpuStorage> m_storage;
 
-	toast::voxel::gpu::PackedPool m_pool;
-	toast::voxel::gpu::PackedScene m_scene;
+	voxel::gpu::PackedPool m_pool;
+	voxel::gpu::PackedScene m_scene;
 
 	vma::raii::Buffer m_staging = nullptr;
 	std::array<vk::DeviceSize, VoxelGpuStorage::k_section_count> m_offsets {};

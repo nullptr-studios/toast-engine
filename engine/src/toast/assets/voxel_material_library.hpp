@@ -33,7 +33,7 @@ struct VoxelMaterialInfo {
 
 class TOAST_API VoxelMaterialLibrary : public Asset, public ISaveable {
 public:
-	VoxelMaterialLibrary(toast::voxel::MaterialLibrary library, std::vector<VoxelMaterialInfo> info);
+	VoxelMaterialLibrary(voxel::MaterialLibrary library, std::vector<VoxelMaterialInfo> info);
 
 	/// @brief Throws on unrepresentable values and warns on wrong but representable ones
 	[[nodiscard]]
@@ -48,7 +48,7 @@ public:
 	auto serialize(SaveMode mode) const -> std::vector<uint8_t> override;
 
 	[[nodiscard]]
-	auto library() const noexcept -> const toast::voxel::MaterialLibrary& {
+	auto library() const noexcept -> const voxel::MaterialLibrary& {
 		return m_library;
 	}
 
@@ -66,7 +66,7 @@ public:
 	auto indexOf(std::string_view name) const -> std::optional<uint32_t>;
 
 private:
-	toast::voxel::MaterialLibrary m_library;
+	voxel::MaterialLibrary m_library;
 
 	/// Parallel to m_library.materials
 	std::vector<VoxelMaterialInfo> m_info;

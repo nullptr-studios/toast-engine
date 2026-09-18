@@ -4,7 +4,7 @@
 #include <cmath>
 #include <limits>
 
-namespace toast::voxel {
+namespace voxel {
 
 namespace {
 

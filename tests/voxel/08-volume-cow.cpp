@@ -4,7 +4,7 @@
 #include <toast/voxel/voxel_volume.hpp>
 #include <utility>
 
-using namespace toast::voxel;
+using namespace voxel;
 
 namespace {
 

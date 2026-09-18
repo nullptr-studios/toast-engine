@@ -9,10 +9,10 @@
 
 namespace assets {
 
-using toast::voxel::MaterialLibrary;
-using toast::voxel::PhysicalMaterial;
-using toast::voxel::TableIssue;
-using toast::voxel::TableProblem;
+using voxel::MaterialLibrary;
+using voxel::PhysicalMaterial;
+using voxel::TableIssue;
+using voxel::TableProblem;
 
 VoxelMaterialLibrary::VoxelMaterialLibrary(MaterialLibrary library, std::vector<VoxelMaterialInfo> info)
     : m_library(std::move(library)),
@@ -103,13 +103,13 @@ auto VoxelMaterialLibrary::fromToml(const toml::table& table) -> std::unique_ptr
 		material.fuel = number("fuel", material.fuel);
 
 		if (flag("indestructible")) {
-			material.flags |= toast::voxel::k_material_indestructible;
+			material.flags |= voxel::k_material_indestructible;
 		}
 		if (flag("passable")) {
-			material.flags |= toast::voxel::k_material_passable;
+			material.flags |= voxel::k_material_passable;
 		}
 		if (flag("flammable")) {
-			material.flags |= toast::voxel::k_material_flammable;
+			material.flags |= voxel::k_material_flammable;
 		}
 
 		if (const toml::node* sound = entry->get("impact_sound")) {
@@ -157,7 +157,7 @@ auto VoxelMaterialLibrary::fromToml(const toml::table& table) -> std::unique_ptr
 				    "AssetManager",
 				    "Voxel material library has {} materials; at most {} are supported",
 				    problem.index,
-				    toast::voxel::k_max_physical_materials
+				    voxel::k_max_physical_materials
 				);
 				break;
 			case TableIssue::zero_density:

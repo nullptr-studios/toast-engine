@@ -1,9 +1,11 @@
 #include "test_registry.hpp"
 #include "voxel_test_utils.hpp"
 
+#include <array>
 #include <cassert>
+#include <utility>
 
-using namespace toast::voxel;
+using namespace voxel;
 using namespace voxeltest;
 
 TOAST_TEST_NAMED("voxel", "voxel/07-volume-writes", test_voxel_07_volume_writes) {
@@ -79,5 +81,37 @@ TOAST_TEST_NAMED("voxel", "voxel/07-volume-writes", test_voxel_07_volume_writes)
 			assert(pool.allocatedCount() == 2);
 		}
 		assert(pool.allocatedCount() == 0);
+	}
+
+	{
+		BrickPool pool(4);
+		Volume volume(pool, glm::uvec3(1, 1, 1));
+		uint32_t seen = volume.revision();
+		const auto moved = [&volume, &seen] {
+			const bool changed = volume.revision() != seen;
+			seen = volume.revision();
+			return changed;
+		};
+
+		volume.setVoxel(glm::ivec3(1), 4);
+		assert(moved());
+		volume.setVoxel(glm::ivec3(1), 4);
+		volume.setVoxel(glm::ivec3(-1), 4);
+		assert(!moved());
+
+		volume.setBrickUniform(glm::ivec3(0), 4);
+		assert(moved());
+		volume.setBrickUniform(glm::ivec3(0), 4);
+		assert(!moved());
+
+		std::array<uint8_t, k_brick_material_bytes> bytes {};
+		bytes.fill(4);
+		bytes[7] = 5;
+		assert(volume.setBrickMaterial(glm::ivec3(0), bytes) && moved());
+		volume.setVoxel(localVoxel(7), 4);
+		assert(moved() && volume.tryCollapseUniform(glm::ivec3(0)) && !moved());
+
+		const Volume taken = std::move(volume);
+		assert(taken.revision() == seen);
 	}
 }

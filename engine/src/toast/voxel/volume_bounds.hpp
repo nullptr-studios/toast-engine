@@ -11,7 +11,7 @@
 #include <cmath>
 #include <glm/glm.hpp>
 
-namespace toast::voxel {
+namespace voxel {
 
 [[nodiscard]]
 inline auto localExtent(glm::uvec3 brick_dims) noexcept -> glm::vec3 {
@@ -42,8 +42,8 @@ inline auto containsPoint(const glm::mat4& inverse_model, glm::uvec3 brick_dims,
 	const glm::vec3 local = glm::vec3(inverse_model * glm::vec4(world_point, 1.0f));
 	const float largest_scale = std::max(
 	    {glm::length(glm::vec3(inverse_model[0])),
-	     glm::length(glm::vec3(inverse_model[1])),
-	     glm::length(glm::vec3(inverse_model[2]))}
+			 glm::length(glm::vec3(inverse_model[1])),
+			 glm::length(glm::vec3(inverse_model[2]))}
 	);
 	const glm::vec3 guard(margin * largest_scale);
 	return glm::all(glm::greaterThanEqual(local, -guard)) && glm::all(glm::lessThanEqual(local, localExtent(brick_dims) + guard));

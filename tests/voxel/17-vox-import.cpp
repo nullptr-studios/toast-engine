@@ -10,12 +10,12 @@
 #include <vector>
 
 using namespace assets;
-using toast::voxel::LatticeOrientation;
+using voxel::LatticeOrientation;
 using voxbuild::Builder;
 using voxeltest::throws;
 
 TOAST_TEST_NAMED("voxel", "voxel/17-vox-import", test_voxel_17_vox_import) {
-	const std::array<LatticeOrientation, 48> all = toast::voxel::allLatticeOrientations();
+	const std::array<LatticeOrientation, 48> all = voxel::allLatticeOrientations();
 	LatticeOrientation quarter;
 	quarter.source = {1, 0, 2};
 	quarter.flip = {true, false, false};
@@ -50,7 +50,7 @@ TOAST_TEST_NAMED("voxel", "voxel/17-vox-import", test_voxel_17_vox_import) {
 	for (uint32_t dim : {8u, 5u}) {
 		for (const LatticeOrientation& orientation : all) {
 			const VoxTransform transform {orientation, glm::ivec3(7, -3, 20)};
-			const toast::voxel::LatticePlacement placement = voxPlacementOf(transform, glm::uvec3(dim));
+			const voxel::LatticePlacement placement = voxPlacementOf(transform, glm::uvec3(dim));
 			voxeltest::forEachCell(glm::ivec3(static_cast<int32_t>(dim)), [&](glm::ivec3 v) {
 				const glm::vec3 centred = glm::vec3(v) + 0.5f - static_cast<float>(dim) * 0.5f;
 				assert(placeVoxel(placement, v) == glm::ivec3(glm::floor(toMatrix(orientation) * centred)) + transform.translation);
@@ -68,7 +68,7 @@ TOAST_TEST_NAMED("voxel", "voxel/17-vox-import", test_voxel_17_vox_import) {
 		assert(scene.models.size() == 1 && scene.models[0].dims == glm::uvec3(3, 4, 5) && scene.models[0].voxels.size() == 2);
 		assert(scene.models[0].voxels[1].palette_index == 255 && scene.nodes.empty());
 		assert(scene.palette.entries[1].albedo_g == 255 && scene.palette.entries[255].albedo_r == 254);
-		assert(scene.palette.entries[0] == toast::voxel::PaletteEntry {});
+		assert(scene.palette.entries[0] == voxel::PaletteEntry {});
 
 		const std::vector<VoxPlacement> placed = flattenVoxScene(scene);
 		assert(placed.size() == 1 && placed[0].placement.offset == glm::ivec3(-1, -2, -2));
@@ -120,10 +120,10 @@ TOAST_TEST_NAMED("voxel", "voxel/17-vox-import", test_voxel_17_vox_import) {
 		builder.matl(4, {{"_type", "_glass"}, {"_alpha", "0.4"}});
 		builder.matl(300, {{"_rough", "1"}});
 
-		const toast::voxel::Palette palette = importVox(builder.file(200)).palette;
+		const voxel::Palette palette = importVox(builder.file(200)).palette;
 		assert(palette.entries[1].roughness == 64 && palette.entries[1].metallic == 255);
 		assert(palette.max_emissive == 4.0f && palette.entries[2].emissive == 255 && palette.entries[3].emissive == 32);
-		assert((palette.entries[4].flags & toast::voxel::k_entry_transparent) != 0);
+		assert((palette.entries[4].flags & voxel::k_entry_transparent) != 0);
 		assert(importVox(builder.file(200)).warnings.size() == 1);
 		assert(importVox(Builder::singleVoxel(1, 1, 1).file()).palette.max_emissive == 1.0f);
 	}
@@ -148,12 +148,12 @@ TOAST_TEST_NAMED("voxel", "voxel/17-vox-import", test_voxel_17_vox_import) {
 		builder.xyzi({{0, 0, 0, 1}, {8, 2, 2, 2}});
 		const VoxScene scene = importVox(builder.file());
 
-		toast::voxel::BrickPool pool(4);
-		const std::optional<toast::voxel::Volume> volume = buildVoxVolume(scene.models[0], pool);
+		voxel::BrickPool pool(4);
+		const std::optional<voxel::Volume> volume = buildVoxVolume(scene.models[0], pool);
 		assert(volume.has_value() && volume->brickDims() == glm::uvec3(2, 1, 1) && volume->solidVoxelCount() == 2);
 		assert(volume->materialAt(glm::ivec3(8, 2, 2)) == 2);
 
-		toast::voxel::BrickPool exhausted(1);
+		voxel::BrickPool exhausted(1);
 		assert(!buildVoxVolume(scene.models[0], exhausted).has_value() && exhausted.allocatedCount() == 0);
 	}
 

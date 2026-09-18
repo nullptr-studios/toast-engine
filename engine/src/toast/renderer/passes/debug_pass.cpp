@@ -1027,13 +1027,7 @@ void DebugPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t ima
 	if (m_fill_vertex_counts[frame_index] > 0 && m_fill_pipeline.isReady()) {
 		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_fill_pipeline.getPipeline());
 		const DrawPushConstants pc {glm::mat4(1.0f)};
-		cmd.pushConstants(
-		    *m_shader_layout.getPipelineLayout(),
-		    vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
-		    0,
-		    sizeof(pc),
-		    &pc
-		);
+		cmd.pushConstants(*m_shader_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eAll, 0, sizeof(DrawPushConstants), &pc);
 		cmd.bindVertexBuffers(
 		    0, std::array<vk::Buffer, 1> {*m_fill_vertex_buffers[frame_index].buffer}, std::array<vk::DeviceSize, 1> {0}
 		);
@@ -1042,14 +1036,8 @@ void DebugPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t ima
 	if (line_vertex_count > 0 && m_line_pipeline.isReady()) {
 		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_line_pipeline.getPipeline());
 
-		const DrawPushConstants pc {};    // identity - line vertices are already in world space
-		cmd.pushConstants(
-		    *m_shader_layout.getPipelineLayout(),
-		    vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
-		    0,
-		    sizeof(DrawPushConstants),
-		    &pc
-		);
+		const DrawPushConstants pc {glm::mat4(1.0f)};
+		cmd.pushConstants(*m_shader_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eAll, 0, sizeof(DrawPushConstants), &pc);
 
 		cmd.bindVertexBuffers(
 		    0, std::array<vk::Buffer, 1> {*m_line_vertex_buffers[frame_index].buffer}, std::array<vk::DeviceSize, 1> {0}
@@ -1385,7 +1373,7 @@ void DebugPass::createGizmoGeometry(const renderer::VulkanCore& core) {
 	       std::pair {0,   k_red},
           std::pair {1, k_green},
           std::pair {2,  k_blue}
-  }) {
+	}) {
 		appendShaftAlongAxis(vertices, axis, k_shaft_length, k_shaft_half_size, color);
 		appendPyramidAlongAxis(vertices, axis, k_shaft_length, k_shaft_length + k_head_length, k_head_half_size, color);
 	}

@@ -6,7 +6,7 @@
 #include <cassert>
 #include <toast/voxel/gpu_layout.hpp>
 
-using namespace toast::voxel;
+using namespace voxel;
 using namespace voxeltest;
 
 TOAST_TEST_NAMED("voxel", "voxel/19-gpu-layout", test_voxel_19_gpu_layout) {

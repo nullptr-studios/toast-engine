@@ -8,6 +8,14 @@
 #include <toast/export.hpp>
 #include <toast/scripting/lua_value_codec.hpp>
 
+namespace assets {
+class VoxelMaterialLibrary;
+}
+
+namespace toast {
+class VoxelNode;
+}
+
 namespace toast::_detail {
 
 struct TOAST_API WorldTestAccess {
@@ -55,6 +63,9 @@ struct TOAST_API WorldTestAccess {
 	static auto isPrefabInterior(const Node& node) -> bool;
 
 	static void initThreadPool();
+
+	// Test-only: resolvedMaterialLibrary() otherwise loads the palette library through the AssetManager
+	static void setVoxelMaterialLibrary(VoxelNode& node, assets::Handle<assets::VoxelMaterialLibrary> library);
 
 	static void setWorldRoot(World& world, Node& node);
 

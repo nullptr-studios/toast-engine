@@ -9,7 +9,7 @@
 #include <toast/assets/voxel_palette.hpp>
 #include <toast/uid.hpp>
 
-using namespace toast::voxel;
+using namespace voxel;
 using namespace voxeltest;
 using assets::SaveMode;
 using assets::VoxelMaterialLibrary;

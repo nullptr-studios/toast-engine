@@ -4,7 +4,7 @@
 #include <cassert>
 #include <toast/voxel/brick_pool.hpp>
 
-using namespace toast::voxel;
+using namespace voxel;
 
 TOAST_TEST_NAMED("voxel", "voxel/06-brick-pool", test_voxel_06_brick_pool) {
 	BrickPool pool(4);

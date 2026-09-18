@@ -10,7 +10,7 @@
 #include <cstdint>
 #include <toast/export.hpp>
 
-namespace toast::voxel {
+namespace voxel {
 
 inline constexpr uint32_t k_runtime_brick_capacity = 1u << 16;
 

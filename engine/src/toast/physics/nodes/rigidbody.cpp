@@ -9,6 +9,7 @@
 #include <cmath>
 #include <toast/physics/contact_events.hpp>
 #include <toast/physics/simulator.hpp>
+#include <toast/world/voxel_node.hpp>
 
 namespace physics {
 
@@ -34,6 +35,9 @@ void Rigidbody::updateInspectorMessages() {
 			return !box->disabled && std::isfinite(box->size.x) && box->size.x > 0.0f && std::isfinite(box->size.y) &&
 			       box->size.y > 0.0f && std::isfinite(box->size.z) && box->size.z > 0.0f && std::isfinite(rotation_length_squared) &&
 			       rotation_length_squared > 1.0e-10f;
+		}
+		if (const auto voxel = child.template as<toast::VoxelNode>(); voxel.exists()) {
+			return voxel->resolvedModel() != nullptr;
 		}
 		return false;
 	});

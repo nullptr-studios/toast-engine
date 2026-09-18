@@ -1,8 +1,11 @@
 #include "voxel_node.hpp"
 
+#include <toast/assets/voxel_material_library.hpp>
 #include <toast/log.hpp>
+#include <toast/physics/simulator.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
 #include <toast/voxel/runtime_pool.hpp>
+#include <toast/world/world_test_access.hpp>
 
 namespace toast {
 
@@ -31,6 +34,32 @@ auto VoxelNode::paletteUid() const -> uint64_t {
 	return 0;
 }
 
+void VoxelNode::setModel(assets::Handle<assets::VoxelModel> model) {
+	if (m_model == model) {
+		return;
+	}
+	releaseVolume();
+	// Draw the new model at once and let physics adopt it on its next step
+	m_physics_volume = {};
+	m_model = std::move(model);
+	m_model_palette = {};
+	m_material_library = {};
+	++m_revision;
+}
+
+void VoxelNode::setPalette(assets::Handle<assets::VoxelPalette> palette) {
+	if (m_palette == palette) {
+		return;
+	}
+	m_palette = std::move(palette);
+	m_material_library = {};
+	++m_revision;
+}
+
+auto VoxelNode::resolvedModel() const -> const assets::VoxelModel* {
+	return voxelNodeAssetOfType(m_model, "voxel_model");
+}
+
 auto VoxelNode::localBoundingSphere() const -> glm::vec4 {
 	const auto* model = voxelNodeAssetOfType(m_model, "voxel_model");
 	if (model == nullptr) {
@@ -45,6 +74,10 @@ auto VoxelNode::latticePlacement() const -> std::optional<voxel::LatticePlacemen
 }
 
 auto VoxelNode::volume() -> voxel::Volume* {
+	if (voxel::Volume* simulated = physics::Simulator::voxelVolume(m_physics_volume)) {
+		return simulated;
+	}
+
 	const assets::VoxelModel* model = voxelNodeAssetOfType(m_model, "voxel_model");
 
 	if (m_model.hasValue() && model == nullptr && m_reported_wrong_model != m_model.uid().data()) {
@@ -111,16 +144,54 @@ auto VoxelNode::resolvedPalette() -> const voxel::Palette* {
 	return palette != nullptr ? &palette->palette() : nullptr;
 }
 
+auto VoxelNode::resolvedMaterialLibrary() -> const voxel::MaterialLibrary* {
+	const assets::VoxelPalette* palette = voxelNodeAssetOfType(m_palette, "voxel_palette");
+	if (palette == nullptr && m_palette.uid().data() == 0) {
+		const assets::VoxelModel* model = resolvedModel();
+		if (model != nullptr && model->paletteUid() != 0) {
+			if (m_model_palette.uid().data() != model->paletteUid()) {
+				m_model_palette = assets::load<assets::VoxelPalette>(UID(model->paletteUid()));
+			}
+			palette = voxelNodeAssetOfType(m_model_palette, "voxel_palette");
+		}
+	}
+	if (palette == nullptr || palette->libraryUid() == 0) {
+		return nullptr;
+	}
+
+	if (m_material_library.uid().data() != palette->libraryUid()) {
+		m_material_library = assets::load<assets::VoxelMaterialLibrary>(UID(palette->libraryUid()));
+	}
+	const auto* library = voxelNodeAssetOfType(m_material_library, "voxel_material_library");
+	return library != nullptr ? &library->library() : nullptr;
+}
+
 void VoxelNode::releaseVolume() {
 	m_volume.reset();
 	m_instanced_from = nullptr;
+}
+
+auto VoxelNode::takeVolume() -> std::optional<voxel::Volume> {
+	if (volume() == nullptr || !m_volume.has_value()) {
+		return std::nullopt;
+	}
+	std::optional<voxel::Volume> taken = std::move(m_volume);
+	releaseVolume();
+	return taken;
 }
 
 void VoxelNode::init() {
 	m_registered_proxy = renderer::registerVoxelNodeProxy(this);
 }
 
+void VoxelNode::begin() {
+	if (participatesIn(NodeOwnerParticipation::gameplay_tick)) {
+		physics::Simulator::registerVoxelNode(*this);
+	}
+}
+
 void VoxelNode::end() {
+	physics::Simulator::unregisterVoxelNode(*this);
 	releaseVolume();
 	if (!m_registered_proxy) {
 		return;
@@ -132,6 +203,14 @@ void VoxelNode::end() {
 
 void VoxelNode::destroy() {
 	end();
+}
+
+}
+
+namespace toast::_detail {
+
+void WorldTestAccess::setVoxelMaterialLibrary(VoxelNode& node, assets::Handle<assets::VoxelMaterialLibrary> library) {
+	node.m_material_library = std::move(library);
 }
 
 }

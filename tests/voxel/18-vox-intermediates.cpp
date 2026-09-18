@@ -19,8 +19,8 @@
 #include <vector>
 
 using namespace assets;
-using toast::voxel::LatticeOrientation;
-using toast::voxel::LatticePlacement;
+using voxel::LatticeOrientation;
+using voxel::LatticePlacement;
 using voxeltest::throws;
 
 namespace {
@@ -58,7 +58,7 @@ auto placementOf(const Prefab::BasicNode& node) -> std::optional<LatticePlacemen
 	const glm::mat4 transform = glm::translate(glm::mat4(1.0f), node.find("position")->as<glm::vec3>()) *
 	                            glm::mat4_cast(node.find("rotation")->as<glm::quat>()) *
 	                            glm::scale(glm::mat4(1.0f), node.find("scale")->as<glm::vec3>());
-	return toast::voxel::placementFromTransform(transform);
+	return voxel::placementFromTransform(transform);
 }
 
 }

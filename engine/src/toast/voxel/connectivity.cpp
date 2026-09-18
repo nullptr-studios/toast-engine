@@ -4,7 +4,7 @@
 #include <tracy/Tracy.hpp>
 #include <utility>
 
-namespace toast::voxel {
+namespace voxel {
 
 auto analyseConnectivity(const Volume& volume) -> Connectivity {
 	ZoneScoped;
