@@ -3,6 +3,7 @@
 #include "../csv.hpp"
 
 #include <toast/log.hpp>
+#include <tracy/Tracy.hpp>
 
 namespace assets {
 
@@ -11,6 +12,7 @@ LocalizationBase::LocalizationBase(std::vector<uint8_t> data) {
 }
 
 void LocalizationBase::reload(std::vector<uint8_t> data) {
+	ZoneScoped;
 	m_languages.clear();
 	m_ids.clear();
 	m_rows.clear();

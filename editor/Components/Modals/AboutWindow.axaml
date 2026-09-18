@@ -16,9 +16,11 @@
 	        ClipToBounds="True"
 	        Background="Transparent">
 		<Grid ColumnDefinitions="*,*">
-			<!-- Splash image -->
-			<Border Grid.Column="0"
-			        Background="Transparent">
+			<!-- Splash image; clicking it rolls another cat -->
+			<Border x:Name="SplashPanel"
+			        Grid.Column="0"
+			        Background="Transparent"
+			        Cursor="Hand">
 				<Image x:Name="SplashImage"
 				       Stretch="UniformToFill" />
 			</Border>

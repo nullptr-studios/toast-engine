@@ -43,7 +43,9 @@ internal static class KtxWriter {
 
 	private static void PrepareImage(string srcPath, string tempPng, TextureImporter.Settings s, Action<string>? log) {
 		using var image = new MagickImage(srcPath);
-		image.ColorSpace = ColorSpace.sRGB;
+
+		// Only colour data gets converted
+		if (s.ColorSpace == TextureColorSpace.sRGB) image.ColorSpace = ColorSpace.sRGB;
 
 		if (image.Width > (uint)s.MaxResolution || image.Height > (uint)s.MaxResolution) {
 			log?.Invoke($"Resizing to {s.MaxResolution}px max...");
@@ -57,6 +59,12 @@ internal static class KtxWriter {
 
 	private static string BuildArgs(TextureImporter.Settings s, string destPath, string inputPath) {
 		var sb = new StringBuilder("--t2 --assign_oetf srgb ");
+
+		// Assigns the transfer function without touching the pixels, so the KTX2 carries "linear" and the
+		// engine (which takes VkFormat straight off the file - see TextureUpload::build) ends up with a
+		// _UNORM format instead of _SRGB
+		if (s.ColorSpace == TextureColorSpace.Linear)
+			sb.Append("--assign_oetf linear ");
 
 		if (s.GenerateMipmaps)
 			sb.Append("--genmipmap ");

@@ -230,6 +230,10 @@
 					<MenuItem Header="_Build project"
 					          InputGesture="F8"
 					          Command="{Binding CompileGameReleaseCommand}" />
+					<Separator />
+					<MenuItem Header="_Clean baked lighting cache"
+					          Command="{Binding CleanBakedLightingCacheCommand}"
+					          ToolTip.Tip="Deletes cached reflection probe and irradiance volume bakes whose node no longer exists in this project" />
 				</MenuItem>
 				<MenuItem Header="_Tools">
 					<MenuItem Header="_Hierarchy"
@@ -256,6 +260,9 @@
 					          ToggleType="CheckBox"
 					          IsChecked="{Binding SchemaEditorVisible, Mode=TwoWay}"
 					          InputGesture="Alt+Shift+D3" />
+					<MenuItem Header="_Renderer Settings"
+					          ToggleType="CheckBox"
+					          IsChecked="{Binding RendererSettingsVisible, Mode=TwoWay}" />
 					<Separator />
 					<MenuItem Header="_Logs"
 					          ToggleType="CheckBox"
@@ -273,6 +280,10 @@
 					          ToggleType="CheckBox"
 					          IsChecked="{Binding TableEditorVisible, Mode=TwoWay}"
 					          InputGesture="Alt+D6" />
+					<MenuItem Header="Pa_lette Editor"
+					          ToggleType="CheckBox"
+					          IsChecked="{Binding PaletteEditorVisible, Mode=TwoWay}"
+					          InputGesture="Alt+D7" />
 				</MenuItem>
 				<MenuItem x:Name="WindowMenu"
 				          Header="_Window">

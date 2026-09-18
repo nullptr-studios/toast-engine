@@ -16,6 +16,9 @@
 #ifdef __linux__
 #include <unistd.h>
 #endif
+#if defined(__linux__) || defined(__APPLE__)
+#include <dlfcn.h>
+#endif
 #ifdef __APPLE__
 #include <mach-o/dyld.h>
 #endif
@@ -26,6 +29,35 @@
 namespace logging {
 
 namespace {
+/// Directory of the binary that owns this code
+auto moduleDirectory() -> std::filesystem::path {
+	try {
+#if defined(_WIN32)
+		HMODULE module = nullptr;
+		if (!GetModuleHandleExA(
+		        GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+		        reinterpret_cast<LPCSTR>(&moduleDirectory),
+		        &module
+		    )) {
+			return {};
+		}
+		std::array<char, MAX_PATH> path;
+		if (GetModuleFileNameA(module, path.data(), MAX_PATH) == 0) {
+			return {};
+		}
+		return std::filesystem::path(path.data()).parent_path();
+#elif defined(__linux__) || defined(__APPLE__)
+		Dl_info info;
+		if (dladdr(reinterpret_cast<const void*>(&moduleDirectory), &info) != 0 && info.dli_fname != nullptr) {
+			return std::filesystem::path(info.dli_fname).parent_path();
+		}
+		return {};
+#else
+		return {};
+#endif
+	} catch (...) { return {}; }
+}
+
 std::mutex fallback_database_mutex;
 std::vector<std::tuple<std::string, unsigned, char, std::string, std::string>> fallback_database;
 }
@@ -77,14 +109,19 @@ auto Logger::create() noexcept -> std::unique_ptr<Logger> {
 #endif
 				} catch (...) { std::println(std::cerr, "Couldnt find log server executable"); }
 
-				std::vector<std::filesystem::path> candidates;
-
-				if (!exe_dir.empty()) {
 #if defined(_WIN32)
-					candidates.push_back(exe_dir / "log_server.exe");
+				constexpr std::string_view server_name = "log_server.exe";
 #else
-					candidates.push_back(exe_dir / "log_server");
+				constexpr std::string_view server_name = "log_server";
 #endif
+
+				// Module first
+				std::vector<std::filesystem::path> candidates;
+				if (auto module_dir = moduleDirectory(); !module_dir.empty()) {
+					candidates.push_back(module_dir / server_name);
+				}
+				if (!exe_dir.empty()) {
+					candidates.push_back(exe_dir / server_name);
 				}
 
 				std::filesystem::path server_path;
@@ -132,10 +169,7 @@ auto Logger::create() noexcept -> std::unique_ptr<Logger> {
 						std::println(std::cerr, "  - {}", candidate.string());
 					}
 				}
-			} catch (...) {
-				std::println(std::cerr, "[Logger] Failed to spawn log server");
-				abort();
-			}
+			} catch (...) { std::println(std::cerr, "[Logger] Failed to spawn log server"); }
 		}
 
 		instance->initNetworkRetry();
@@ -193,6 +227,11 @@ void Logger::log(std::string_view file, unsigned line, char severity, std::strin
 		// Add the logs to a fallback database if it doesn't exist, then send them when initialized
 		std::lock_guard lock(fallback_database_mutex);
 		fallback_database.emplace_back(file, line, severity, sink, message);
+		return;
+	}
+
+	// Nothing downstream to receive
+	if (logger->m.unavailable.load(std::memory_order_acquire)) {
 		return;
 	}
 
@@ -270,7 +309,14 @@ void Logger::initNetworkRetry() {
 		} catch (const std::exception& e) {
 			if (attempt == max_attempts) {
 				std::println(std::cerr, "[Logger] Failed to connect after {} attempts: {}", max_attempts, e.what());
-				abort();
+				std::println(std::cerr, "[Logger] Continuing without log delivery, records will be discarded");
+				m.unavailable.store(true, std::memory_order_release);
+
+				// Whatever queued up while we were retrying has nowhere to go
+				if (!m.drain_pending.exchange(true)) {
+					toast::ThreadPool::push([this] { drain(); });
+				}
+				return;
 			}
 			std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
 		}
@@ -303,6 +349,13 @@ void Logger::stop() {
 
 void Logger::drain() {
 	ZoneScoped;
+
+	if (m.unavailable.load(std::memory_order_acquire)) {
+		[[maybe_unused]]
+		auto discarded = collectQueue();
+		m.drain_pending.store(false, std::memory_order_release);
+		return;
+	}
 
 	// The socket is open but not yet connected while initNetworkRetry is still running
 	if (!m.connected.load(std::memory_order_acquire)) {

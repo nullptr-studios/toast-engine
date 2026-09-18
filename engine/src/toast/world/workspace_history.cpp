@@ -5,6 +5,7 @@
 #include <sstream>
 #include <toast/events/event.hpp>
 #include <toast/log.hpp>
+#include <tracy/Tracy.hpp>
 #include <unordered_set>
 
 namespace toast {
@@ -263,6 +264,7 @@ WorkspaceHistory::WorkspaceHistory(uint64_t handle, Capture capture, Restore res
       m_initially_saved(initially_saved) { }
 
 void WorkspaceHistory::sendInitial() const {
+	ZoneScoped;
 	event::WorkspaceHistoryInitialSnapshot initial;
 	initial.workspace_handle = m_handle;
 	initial.available = m_available;
@@ -279,6 +281,7 @@ auto WorkspaceHistory::same(const Snapshot& a, const Snapshot& b) const -> bool 
 }
 
 void WorkspaceHistory::begin(uint64_t transaction, Context context) {
+	ZoneScoped;
 	if (!m_available || m_restoring || m_transaction) {
 		return;
 	}
@@ -290,6 +293,7 @@ void WorkspaceHistory::begin(uint64_t transaction, Context context) {
 }
 
 auto WorkspaceHistory::beginAtomic(Context context) -> bool {
+	ZoneScoped;
 	if (!m_available || m_restoring) {
 		return false;
 	}
@@ -320,6 +324,7 @@ void WorkspaceHistory::finishAtomic(bool owned) {
 }
 
 void WorkspaceHistory::commit(uint64_t transaction) {
+	ZoneScoped;
 	if (!m_available || !m_transaction) {
 		return;
 	}
@@ -357,6 +362,7 @@ void WorkspaceHistory::commit(uint64_t transaction) {
 }
 
 void WorkspaceHistory::apply(const event::WorkspaceApplyHistorySnapshot& request) {
+	ZoneScoped;
 	event::WorkspaceHistorySnapshotApplied result;
 	result.workspace_handle = m_handle;
 	result.request = request.request;
@@ -392,6 +398,7 @@ void WorkspaceHistory::apply(const event::WorkspaceApplyHistorySnapshot& request
 }
 
 void WorkspaceHistory::cancel(uint64_t transaction) {
+	ZoneScoped;
 	if (!m_available || !m_transaction) {
 		return;
 	}
@@ -406,6 +413,7 @@ void WorkspaceHistory::cancel(uint64_t transaction) {
 }
 
 void WorkspaceHistory::prepareMerge(const event::WorkspacePrepareHistoryMerge& request) {
+	ZoneScoped;
 	if (!m_available || m_transaction || m_pending) {
 		event::WorkspaceHistoryMergePrepared result;
 		result.workspace_handle = m_handle;
@@ -441,6 +449,7 @@ void WorkspaceHistory::beginMerge(
     uint64_t request, bool merge_operation, std::shared_ptr<const Snapshot> base, std::shared_ptr<const Snapshot> current,
     std::shared_ptr<const Snapshot> incoming
 ) {
+	ZoneScoped;
 	m_pending = std::make_unique<PendingMerge>();
 	m_pending->request = request;
 	m_pending->is_merge = merge_operation;
@@ -710,6 +719,7 @@ void WorkspaceHistory::beginMerge(
 }
 
 void WorkspaceHistory::resolve(const event::WorkspaceResolveHistoryConflicts& resolutions) {
+	ZoneScoped;
 	if (!m_pending || resolutions.request != m_pending->request) {
 		m_pending.reset();
 		return;

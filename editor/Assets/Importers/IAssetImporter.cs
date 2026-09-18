@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using editor.Assets.Types;
 using Lucide.Avalonia;
@@ -9,6 +10,15 @@ namespace editor.Assets.Importers;
 /// <summary>Destination dir + virtual path for the .meta</summary>
 public record ImportContext {
 	public required string DestDir { get; init; }
+
+	/// <summary>
+	/// True when <paramref name="dir"/> is already the folder an asset named <paramref name="name"/> would
+	/// create for itself. Importers that support a "create subfolder" setting must check this before appending
+	/// </summary>
+	public static bool AlreadyNamed(string dir, string name) {
+		return string.Equals(
+			new DirectoryInfo(dir).Name, name, StringComparison.OrdinalIgnoreCase);
+	}
 	public required string SourceVirtualPath { get; init; }
 
 	// On a reimport we want the regenerated assets to keep the UIDs they had before

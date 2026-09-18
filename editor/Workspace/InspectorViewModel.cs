@@ -38,6 +38,7 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 	[ObservableProperty] private bool m_enabled = true;
 
 	[ObservableProperty] private string m_filterText = "";
+	[ObservableProperty] private bool m_hasMessages;
 	[ObservableProperty] private bool m_hasSelection;
 	[ObservableProperty] private string m_iconColorKey = "TextMuted";
 
@@ -64,6 +65,9 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
       ]
     },
     ""functions"": {},
+    ""tick_functions"": {},
+    ""methods"": [],
+    ""signals"": [],
     ""global_fields"": [],
     ""groups"": [],
     ""name"": ""DirectionalLight"",
@@ -82,6 +86,9 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
       ]
     },
     ""functions"": {},
+    ""tick_functions"": {},
+    ""methods"": [],
+    ""signals"": [],
     ""global_fields"": [],
     ""groups"": [],
     ""name"": ""Light"",
@@ -102,6 +109,9 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
       ]
     },
     ""functions"": {},
+    ""tick_functions"": {},
+    ""methods"": [],
+    ""signals"": [],
     ""global_fields"": [
       {
         ""attributes"": {
@@ -152,6 +162,9 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
       ]
     },
     ""functions"": {},
+    ""tick_functions"": {},
+    ""methods"": [],
+    ""signals"": [],
     ""global_fields"": [
       {
         ""attributes"": {
@@ -227,7 +240,7 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 			Name = "Neptune Sun";
 			TypeDisplay = "toast::DirectionalLight";
 			IconColorKey = ReflectionDatabase.Nodes != null ? ReflectionDatabase.ResolveColor(TypeDisplay) : "TextMuted";
-			var iconName = ReflectionDatabase.ResolveColor(TypeDisplay);
+			var iconName = ReflectionDatabase.ResolveIcon(TypeDisplay);
 			try {
 				LargeIcon = new Bitmap(
 					AssetLoader.Open(new Uri($"avares://editor/Resources/node_icons/2x/{iconName}.png")));
@@ -240,20 +253,16 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 			IsEditingName = false;
 			HasSelection = true;
 
-			// Construct using original Proto.Events.HierarchyElement constructor to avoid changes to outer projects/DLLs
-			var protoElement = new Proto.Events.HierarchyElement {
-				Name = "Neptune Sun",
-				Uid = m_uid,
-				Type = TypeDisplay,
-				Enabled = true
-			};
-			var dummy = new HierarchyElement(protoElement, null!);
-			Rebuild(dummy);
+			Rebuild(m_uid, TypeDisplay, InspectorState.CreateTransient());
 
 			if (m_fieldByParam.TryGetValue("m_position", out var posField)) posField.ApplyEngineString("1.5 2.0 -3.5");
 			if (m_fieldByParam.TryGetValue("m_rotation", out var rotField)) rotField.ApplyEngineString("0 45 90");
 			if (m_fieldByParam.TryGetValue("m_scale", out var scaleField)) scaleField.ApplyEngineString("1 1 1");
 			if (m_fieldByParam.TryGetValue("m_parent", out var parentField)) parentField.ApplyEngineString("1001");
+			UpdateMessages([
+				new InspectorMessage { Message = "This node uses a fallback shadow map.", Error = false },
+				new InspectorMessage { Message = "A light texture could not be loaded.", Error = true }
+			]);
 			return;
 		}
 
@@ -273,6 +282,8 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 				if ((DateTime.UtcNow - vm.LastEdit).TotalMilliseconds < 250) continue;
 				vm.ApplyEngineString(p.Value);
 			}
+
+			UpdateMessages(e.Messages);
 		}));
 
 		// exported script variables stream beside the reflected fields
@@ -296,6 +307,7 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 	}
 
 	public ObservableCollection<ClassCardVM> Cards { get; } = [];
+	public ObservableCollection<InspectorMessage> Messages { get; } = [];
 
 	public void Dispose() {
 		CommitFieldEdit();
@@ -319,9 +331,22 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 		m_suppressEnabled = false;
 	}
 
+	private void UpdateMessages(IEnumerable<InspectorMessage> messages) {
+		var next = messages.ToArray();
+		if (Messages.Count == next.Length && Messages.Zip(next)
+		    .All(pair => pair.First.Error == pair.Second.Error && pair.First.Message == pair.Second.Message))
+			return;
+
+		Messages.Clear();
+		foreach (var message in next)
+			Messages.Add(new InspectorMessage { Error = message.Error, Message = message.Message });
+		HasMessages = Messages.Count > 0;
+	}
+
 	private void OnSelectionChanged(HierarchyElement? node) {
 		CommitFieldEdit();
 		Dispatcher.UIThread.Post(() => {
+			UpdateMessages([]);
 			if (node is null) {
 				HasSelection = false;
 				Cards.Clear();
@@ -357,25 +382,29 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 	}
 
 	private void Rebuild(HierarchyElement node) {
+		Rebuild(node.Uid, node.Type, InspectorState.Load(node.Uid));
+	}
+
+	private void Rebuild(string uid, string type, InspectorState state) {
 		Cards.Clear();
 		m_fieldByParam.Clear();
 		m_luaCards.Clear();
 		m_builtLuaVersion = 0;
 		if (ReflectionDatabase.Nodes is null) return;
 
-		m_state = InspectorState.Load(node.Uid);
+		m_state = state;
 		var colorCounter = 0;
 
 		// walk the inheritance chain most-derived -> base
-		var current = Bare(node.Type);
+		var current = Bare(type);
 		while (ReflectionDatabase.Nodes.TryGetValue(current, out var info)) {
 			Cards.Add(BuildCard(info, ref colorCounter));
 			if (info.Parent is null) break;
 			current = Bare(info.Parent.Name);
 		}
 
-		m_builtUid = node.Uid;
-		m_builtType = node.Type;
+		m_builtUid = uid;
+		m_builtType = type;
 		ApplyFilter();
 	}
 

@@ -657,6 +657,7 @@ auto ScriptInstance::hasFunction(std::string_view fn_name) const noexcept -> boo
 }
 
 ScriptRuntime::ScriptRuntime(toast::Box<toast::Node> node, const std::vector<assets::Handle<assets::Script>>& scripts) {
+	ZoneScoped;
 	if (scripts.empty()) {
 		return;
 	}

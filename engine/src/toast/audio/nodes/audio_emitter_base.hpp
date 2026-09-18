@@ -58,6 +58,7 @@ protected:
 	virtual auto emitterUp() -> glm::vec3;
 
 private:
+	void updateInspectorMessages() override;
 	void onEnable();
 	void onDisable();
 	void begin();

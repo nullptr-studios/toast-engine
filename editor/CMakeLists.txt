@@ -14,6 +14,7 @@ add_custom_target(editor ALL
         COMMAND ${DOTNET_EXECUTABLE} build
         "${CSHARP_PROJECT}"
         --configuration ${DOTNET_CONFIG}
+        --property:Platform=AnyCPU
         --output "${OUTPUT_ROOT}/$<CONFIG>/editor"
         --nologo
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -26,3 +27,6 @@ add_dependencies(editor dummy_game)
 add_dependencies(editor packer)
 add_dependencies(editor unpacker)
 add_dependencies(editor pack_viewer)
+
+# Native editor crashes launch it
+add_dependencies(editor crash_reporter)

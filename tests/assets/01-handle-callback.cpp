@@ -31,4 +31,9 @@ TOAST_TEST_NAMED("Assets", "assets/01-handle-callback", test_assets_01_handle_ca
 	handle = empty;
 	assert(changes == 2);
 	assert(!handle.hasValue());
+
+	const assets::Handle<TestAsset> unresolved(nullptr, toast::UID {42}, "4FGpak528Z0");
+	const assets::Handle<TestAsset> copied(unresolved);
+	assert(copied.uid() == unresolved.uid());
+	assert(copied.path() == "4FGpak528Z0");
 }

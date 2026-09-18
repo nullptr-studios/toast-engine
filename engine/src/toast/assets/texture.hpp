@@ -30,16 +30,13 @@ public:
 	}
 
 	[[nodiscard]]
-	auto get() const noexcept -> const std::vector<uint8_t>&;
-
-	[[nodiscard]]
 	auto gpuTexture() const -> const renderer::VulkanTexture&;
 
 	[[nodiscard]]
 	auto gpuTexture() -> renderer::VulkanTexture&;
 
 private:
-	std::vector<uint8_t> m_data;
+	// No CPU-side copy of the encoded bytes
 	std::unique_ptr<renderer::VulkanTexture> m_gpu_texture;
 };
 }

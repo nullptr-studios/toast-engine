@@ -1,10 +1,12 @@
 #include "slang_vfs.hpp"
 
+#include <algorithm>
 #include <atomic>
 #include <cstring>
 #include <string>
 #include <toast/assets/asset_manager.hpp>
 #include <toast/log.hpp>
+#include <tracy/Tracy.hpp>
 #include <vector>
 
 namespace renderer {
@@ -42,7 +44,8 @@ public:
 		return refs;
 	}
 
-	SLANG_NO_THROW auto getBufferPointer() -> const void* SLANG_MCALL override { return m_data.data(); }
+	// SLANG_MCALL before the name since after the return type it binds to the pointer
+	SLANG_NO_THROW auto SLANG_MCALL getBufferPointer() -> const void* override { return m_data.data(); }
 
 	SLANG_NO_THROW auto SLANG_MCALL getBufferSize() -> size_t override { return m_data.size(); }
 
@@ -82,12 +85,10 @@ auto SlangVfs::castAs(const SlangUUID& uuid) -> void* {
 auto SlangVfs::normalizeUri(std::string_view path) -> std::string {
 	std::string_view in = path;
 
-	// Strip any ./ or .\ prefixes
 	while (in.starts_with("./") || in.starts_with(".\\")) {
 		in.remove_prefix(2);
 	}
 
-	// Locate the scheme separator
 	auto sep = in.find("://");
 	size_t rel_start = 0;
 	if (sep != std::string_view::npos) {
@@ -106,7 +107,6 @@ auto SlangVfs::normalizeUri(std::string_view path) -> std::string {
 		rel.remove_prefix(1);
 	}
 
-	// Collapse duplicate slashes and backslashes in the relative part
 	std::string clean_rel;
 	clean_rel.reserve(rel.size());
 	char prev = '\0';
@@ -130,6 +130,7 @@ auto SlangVfs::makeBlob(const void* data, size_t size) -> ISlangBlob* {
 }
 
 auto SlangVfs::loadFile(const char* path, ISlangBlob** out_blob) -> SlangResult {
+	ZoneScoped;
 	if (path == nullptr || out_blob == nullptr) {
 		return SLANG_E_INVALID_ARG;
 	}
@@ -137,7 +138,6 @@ auto SlangVfs::loadFile(const char* path, ISlangBlob** out_blob) -> SlangResult 
 
 	const std::string uri = normalizeUri(path);
 	if (uri.empty()) {
-		// Not a virtual URI
 		return SLANG_E_NOT_FOUND;
 	}
 
@@ -147,8 +147,27 @@ auto SlangVfs::loadFile(const char* path, ISlangBlob** out_blob) -> SlangResult 
 	}
 
 	TOAST_TRACE("Render", "SlangVfs resolved '{}' ({} bytes)", uri, bytes->size());
+	if (s_recorder != nullptr) {
+		s_recorder->record(uri);
+	}
+
 	*out_blob = new VfsBlob(std::move(*bytes));
 	return SLANG_OK;
+}
+
+SlangVfs::Recorder::Recorder() {
+	TOAST_ASSERT(s_recorder == nullptr, "Render", "A SlangVfs::Recorder is already active; shader compiles must not overlap");
+	s_recorder = this;
+}
+
+SlangVfs::Recorder::~Recorder() {
+	s_recorder = nullptr;
+}
+
+void SlangVfs::Recorder::record(std::string uri) {
+	if (std::ranges::find(m_resolved, uri) == m_resolved.end()) {
+		m_resolved.push_back(std::move(uri));
+	}
 }
 
 }

@@ -8,11 +8,14 @@
 
 #include "../material_runtime.hpp"
 #include "../render_pass_base.hpp"
+#include "../scene_descriptor_set.hpp"
 #include "../shader_layout.hpp"
 #include "../vulkan_pipeline.hpp"
+#include "../vulkan_renderer.hpp"
 
 #include <atomic>
 #include <memory>
+#include <optional>
 #include <string>
 #include <toast/assets/material.hpp>
 #include <unordered_map>
@@ -21,10 +24,6 @@
 namespace renderer {
 class VulkanCore;
 
-/**
- * @class MaterialPass
- * @brief Draws every mesh instance whose root material owns this pass
- */
 class MaterialPass : public IRenderPass {
 public:
 	MaterialPass(
@@ -39,15 +38,15 @@ public:
 
 	void record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) override;
 
+	void recordInstance(vk::CommandBuffer cmd, uint32_t frame_index, const VulkanRenderer::MeshInstanceProxy& proxy);
+
 	[[nodiscard]]
 	auto rootMaterial() const -> assets::Material* {
 		return m_root_material;
 	}
 
-	/// Schedules a full pipeline + descriptor rebuild at the start of the next record()
 	void markShadersDirty() { m_rebuild_pending.store(true, std::memory_order_release); }
 
-	/// Schedules a re-bake of parameter values
 	void markValuesDirty() { m_values_dirty.store(true, std::memory_order_release); }
 
 	[[nodiscard]]
@@ -55,8 +54,30 @@ public:
 		return m_pipeline.isReady();
 	}
 
+	[[nodiscard]]
+	auto usesCutout() const noexcept -> bool {
+		return m_uses_cutout;
+	}
+
+	[[nodiscard]]
+	auto isBlended() const -> bool {
+		return m_root_material != nullptr && m_root_material->settings().blend_mode != assets::BlendMode::opaque;
+	}
+
 private:
-	/// Per material GPU resources within this pass
+	[[nodiscard]]
+	auto resolvedAlphaCutoff() -> float;
+
+	[[nodiscard]]
+	static auto resolvedAlphaCutoffOf(MaterialRuntime& runtime) -> float;
+
+	bool m_uses_cutout = false;
+
+	void drawInstance(
+	    vk::CommandBuffer cmd, uint32_t frame_index, const VulkanRenderer::MeshInstanceProxy& proxy, vk::Buffer posed_vertices,
+	    uint32_t posed_vertex_offset, assets::Material** bound_material, uint32_t instance_count = 1
+	);
+
 	struct InstanceResources {
 		std::unique_ptr<MaterialRuntime> runtime;
 
@@ -74,10 +95,11 @@ private:
 	void rebuildPipeline();
 	auto ensureInstanceResources(assets::Material* material) -> InstanceResources*;
 	void updateInstanceDescriptors(InstanceResources& res, uint32_t frame_index);
-	void createFrameSets();
 
 	const VulkanCore* m_core = nullptr;
 	assets::Material* m_root_material = nullptr;
+
+	assets::Handle<assets::Material> m_root_material_ref;
 	std::string m_name;
 
 	vk::Format m_color_format = vk::Format::eUndefined;
@@ -88,8 +110,11 @@ private:
 	ShaderLayout m_layout;
 	VulkanPipeline m_pipeline;
 
-	std::vector<vk::raii::DescriptorSet> m_frame_descriptor_sets;
+	SceneDescriptorSets m_scene_sets;
 	std::unordered_map<assets::Material*, InstanceResources> m_instances;
+
+	std::vector<std::byte> m_push_scratch;
+	std::vector<uint32_t> m_draw_order;
 
 	std::atomic_bool m_rebuild_pending {false};
 	std::atomic_bool m_values_dirty {false};

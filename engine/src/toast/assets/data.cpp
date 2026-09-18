@@ -5,6 +5,7 @@
 #include <limits>
 #include <sstream>
 #include <toast/log.hpp>
+#include <tracy/Tracy.hpp>
 
 namespace assets {
 
@@ -83,6 +84,7 @@ void Data::reload(const toml::table& table) {
 }
 
 auto Data::buildRoot(const toml::table& table, const Schema* schema) -> DataValue {
+	ZoneScoped;
 	auto root = DataValue::makeObject();
 
 	if (schema == nullptr) {
@@ -112,6 +114,7 @@ auto Data::buildRoot(const toml::table& table, const Schema* schema) -> DataValu
 }
 
 auto Data::serialize(SaveMode mode) const -> std::vector<uint8_t> {
+	ZoneScoped;
 	if (mode == SaveMode::game) {
 		// BSON, write only
 		auto j = m_root.toJson();

@@ -105,7 +105,12 @@ public:
 	[[nodiscard]]
 	auto as() const -> T {
 		TOAST_ASSERT(m_value.has_value(), "DataValue", "as<T>() called on a Null DataValue");
-		if (const T* ptr = std::any_cast<T>(&m_value)) {
+		if constexpr (std::is_same_v<T, std::string_view>) {
+			// Strings are stored as std::string; the view points into it and lives as long as this DataValue
+			if (const auto* str = std::any_cast<std::string>(&m_value)) {
+				return T {*str};
+			}
+		} else if (const T* ptr = std::any_cast<T>(&m_value)) {
 			return *ptr;
 		}
 		TOAST_ASSERT(false, "DataValue", "Type mismatch in DataValue::as<T>()");

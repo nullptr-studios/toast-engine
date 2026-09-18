@@ -3,11 +3,27 @@
 #include <toast/assets/assets.hpp>
 #include <toast/audio/audio_event.hpp>
 #include <toast/audio/audio_system.hpp>
+#include <toast/log.hpp>
 
 namespace toast {
 
+void AudioEmitter::updateInspectorMessages() {
+	static const NodeMessage message {
+	  .severity = NodeMessage::warning,
+	  .id = 10,
+	  .text = "AudioEmitter requires an AudioEvent",
+	};
+
+	if (m_event.hasValue()) {
+		removeInspectorMessage(message);
+	} else {
+		addInspectorMessage(message);
+	}
+}
+
 void AudioEmitter::play() {
 	if (!m_event.hasValue()) {
+		TOAST_WARN("Audio", "{} ({}) has no audio event to play", name(), uid());
 		return;
 	}
 
@@ -88,7 +104,8 @@ void AudioEmitter::allowFadeout(bool value) {
 }
 
 void AudioEmitter::onEnable() {
-	if (m_play_on_enable) {
+	// Opening a scene in the editor runs onEnable too; only a running game should start sounds
+	if (m_play_on_enable && !(owner() && owner()->isEditing())) {
 		play();
 	}
 }

@@ -1,6 +1,6 @@
 /// @file SharedTextureOutputTarget.hpp
 /// @author dario
-/// @date 16/05/2026.
+/// @date 16/05/2026
 
 #pragma once
 
@@ -15,11 +15,10 @@ namespace renderer {
 
 class VulkanCore;
 
-/// @brief Description of the latest finished frame
 struct ViewportFrameDesc {
 	uint32_t width = 0;
 	uint32_t height = 0;
-	uint32_t row_pitch = 0;    ///< Bytes per row (= width * 4 for BGRA8)
+	uint32_t row_pitch = 0;
 	uint64_t frame_id = 0;
 };
 
@@ -58,7 +57,6 @@ public:
 	[[nodiscard]]
 	auto present(uint32_t image_index, vk::Semaphore render_finished) -> vk::Result override;
 
-	// no swapchain semaphore handshake on offscreen
 	[[nodiscard]]
 	auto usesAcquirePresentSemaphores() const -> bool override {
 		return false;
@@ -69,8 +67,7 @@ public:
 
 	void recreate(vk::Extent2D extent) override;
 
-	/// @brief Copies the latest finished frame's BGRA8 pixels into @p dst
-	/// @return 1 if copied; 0 if no frame is available yet; -1 if @p dst_capacity is too small
+	/// @return 1 when copied 0 when no frame is ready -1 when @p dst_capacity is too small
 	[[nodiscard]]
 	auto copyLatestFrame(void* dst, uint32_t dst_capacity, ViewportFrameDesc* out) -> int;
 

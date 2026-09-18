@@ -30,6 +30,7 @@ public:
 	void reload();
 
 private:
+	void updateInspectorMessages() override;
 	void init();
 
 	void destroy();

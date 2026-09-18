@@ -10,6 +10,7 @@
 #include <toast/scripting/script_runtime.hpp>
 #include <toast/uid.hpp>
 #include <toast/world/node.hpp>
+#include <tracy/Tracy.hpp>
 #include <unordered_set>
 
 using namespace toast;
@@ -320,6 +321,7 @@ auto Prefab::operator=(Prefab&& other) noexcept -> Prefab& {
 }
 
 Prefab::Prefab(std::istream& file) {
+	ZoneScoped;
 	std::vector<std::string> lines;
 	std::string line;
 	std::string continued_line;
@@ -408,6 +410,7 @@ auto Prefab::serialize(SaveMode mode) const -> std::vector<uint8_t> {
 }
 
 auto Prefab::toFile() const -> std::string {
+	ZoneScoped;
 	std::stringstream ss;
 
 	ss << std::format("~format @{} = {}\n", _detail::int_str, _detail::format_version);
@@ -426,6 +429,7 @@ auto Prefab::toFile() const -> std::string {
 }
 
 auto Prefab::parseNodeChunk(std::span<const std::string> lines) -> std::optional<BasicNode> {
+	ZoneScoped;
 	if (lines.empty()) {
 		return std::nullopt;
 	}
@@ -1103,6 +1107,7 @@ void Prefab::writeField(const Field& field, std::stringstream& ss, std::string o
 }
 
 auto Prefab::toBinary() const -> std::vector<uint8_t> {
+	ZoneScoped;
 	std::vector<uint8_t> buffer;
 	_detail::NodeFileBinaryHeader header;
 	header.node_count = static_cast<uint32_t>(nodes.size());
@@ -1209,6 +1214,7 @@ auto Prefab::toBinary() const -> std::vector<uint8_t> {
 }
 
 Prefab::Prefab(std::span<const uint8_t> bytes) {
+	ZoneScoped;
 	BinaryReader reader {bytes};
 	auto header = reader.readValue<_detail::NodeFileBinaryHeader>();
 
@@ -1358,6 +1364,7 @@ Prefab::Prefab(std::span<const uint8_t> bytes) {
 }
 
 Prefab::Prefab(const toast::Node& node, toast::UID self_uid) : m_self_uid(self_uid) {
+	ZoneScoped;
 	auto collect = [](this auto&& self, const toast::Node& n, std::unordered_set<uint64_t>& allowed) -> void {
 		allowed.insert(n.uid().data());
 		for (const auto& child : n.m_children) {
@@ -1376,6 +1383,7 @@ Prefab::Prefab(const toast::Node& node, toast::UID self_uid) : m_self_uid(self_u
 }
 
 void Prefab::serializeNode(const toast::Node& node, bool is_root) {
+	ZoneScoped;
 	const auto* node_info = node.info();
 	if (!node_info) {
 		TOAST_ERROR("ResourceManager", "Cannot serialize node '{}': no reflection info attached", node.name());
@@ -1677,6 +1685,7 @@ auto Prefab::flattenedRootFields(const Handle<Prefab>& source) const -> std::opt
 }
 
 auto Prefab::validate() const -> bool {
+	ZoneScoped;
 	std::unordered_set<uint64_t> seen_uids;
 	int rootless_count = 0;
 	bool ok = true;

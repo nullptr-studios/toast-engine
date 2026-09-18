@@ -582,7 +582,7 @@ public partial class ImportWindowViewModel : ViewModelBase {
 			var ext = Path.GetExtension(realSourcePath).ToLowerInvariant();
 			var importer = m_importers.First(i => i.CanHandle(realSourcePath));
 			var destDir = ProjectContext.Resolve(LocationPath);
-			// Use a synthetic virtual path so importers don't crash (won't be tracked in DB).
+			// Use a synthetic virtual path so importers don't crash (won't be tracked in DB)
 			var fakeVirtual = "artwork://" + Path.GetFileName(realSourcePath);
 			var ctx = new ImportContext { DestDir = destDir, SourceVirtualPath = fakeVirtual };
 			await importer.Import(realSourcePath, ctx, log, progress);

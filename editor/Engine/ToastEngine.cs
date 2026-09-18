@@ -109,6 +109,12 @@ public partial class ToastEngine : IDisposable {
 
 	public static bool IsEngineReady { get; private set; }
 
+	/// Unfocused holds the renderer at 30 fps, minimized stops rendering until the editor is restored
+	public static void SetWindowState(bool focused, bool minimized) {
+		if (!IsEngineReady) return;
+		toast_set_window_state(focused ? 1 : 0, minimized ? 1 : 0);
+	}
+
 	public string ProjectPath { get; }
 	public string CorePath { get; }
 
@@ -349,7 +355,7 @@ public partial class ToastEngine : IDisposable {
 	private static partial IntPtr toast_create();
 
 	[LibraryImport(EngineLib)]
-	private static partial IntPtr toast_init();
+	private static partial void toast_init();
 
 	[LibraryImport(EngineLib)]
 	private static partial void toast_tick();
@@ -362,6 +368,9 @@ public partial class ToastEngine : IDisposable {
 
 	[LibraryImport(EngineLib)]
 	private static partial void toast_create_avalonia_window();
+
+	[LibraryImport(EngineLib)]
+	private static partial void toast_set_window_state(int focused, int minimized);
 
 	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
 	private static partial void toast_set_working_directory(

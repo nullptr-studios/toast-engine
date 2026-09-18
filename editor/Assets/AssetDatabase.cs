@@ -161,6 +161,7 @@ public static class AssetDatabase {
 		if (LoadAssetDatabase() is not { } db) return;
 
 		var changed = false;
+		var discardAll = false;
 		foreach (var (type, collectionNode) in db.ToList()) {
 			if (type is "version" or "generated_at") continue;
 			if (collectionNode is not JsonObject collection) continue;
@@ -172,6 +173,14 @@ public static class AssetDatabase {
 				if (File.Exists(realPath)) continue;
 
 				log($"Missing file: {virtualPath}");
+
+				if (discardAll) {
+					TryDelete(realPath + ".meta");
+					changed = true;
+					log($"Discarded {virtualPath}");
+					continue;
+				}
+
 				var result = await ShowRelocateModal(
 					"Missing file",
 					$"File {virtualPath} could not be found, do you wish to relocate?",
@@ -184,6 +193,7 @@ public static class AssetDatabase {
 							changed = true;
 						break;
 					case RelocateDecision.Discard:
+						if (result.AppliedToAll) discardAll = true;
 						TryDelete(realPath + ".meta");
 						changed = true;
 						log($"Discarded {virtualPath}");
@@ -201,6 +211,7 @@ public static class AssetDatabase {
 	public static async Task RelocateMissingArtwork(Action<string> log) {
 		var db = LoadArtworkDatabase();
 		var changed = false;
+		var discardAll = false;
 
 		foreach (var (sourceVirtual, node) in db.ToList()) {
 			if (sourceVirtual is "version" or "type") continue;
@@ -209,6 +220,15 @@ public static class AssetDatabase {
 			if (File.Exists(realPath)) continue;
 
 			log($"Missing artwork: {sourceVirtual}");
+
+			// See RelocateMissingAssets()
+			if (discardAll) {
+				db.Remove(sourceVirtual);
+				changed = true;
+				log($"Removed link {sourceVirtual}");
+				continue;
+			}
+
 			var result = await ShowRelocateModal(
 				"Missing artwork",
 				$"Artwork file {sourceVirtual} could not be found, do you wish to relocate?",
@@ -232,6 +252,7 @@ public static class AssetDatabase {
 					log($"Relocated artwork {sourceVirtual} -> {newVirtual}");
 					break;
 				case RelocateDecision.Discard:
+					if (result.AppliedToAll) discardAll = true;
 					db.Remove(sourceVirtual);
 					changed = true;
 					log($"Removed link {sourceVirtual}");
@@ -301,15 +322,20 @@ public static class AssetDatabase {
 			.ToList() ?? [];
 
 		// find where the existing outputs live + the settings they were imported with
-		var (destDir, textureSection, psdSection, gltfSection) = LocateOutputs(uids);
+		var (destDir, textureSection, psdSection, gltfSection, voxSection) = LocateOutputs(uids);
 
 		var textureSettings = SettingsFromMeta(textureSection);
 		var ext = Path.GetExtension(realSource).ToLowerInvariant();
+		// "Master.strings.bank" only has ".bank" as its extension, so the name has to tell the two FMOD importers apart
+		var isStringsBank = Path.GetFileName(realSource).EndsWith(".strings.bank", StringComparison.OrdinalIgnoreCase);
 		IAssetImporter importer = ext switch {
 			".psd" => new PsdImporter(textureSettings, SettingsFromMeta(psdSection)),
 			".glb" or ".gltf" => new GltfImporter(SettingsFromMeta(gltfSection), textureSettings),
+			".vox" => new VoxImporter(SettingsFromMeta(voxSection)),
 			".ttf" => new FontImporter(),
 			".tga" => new UIImageImporter(),
+			".bank" when isStringsBank => new AudioStringImporter(new AudioStringImporter.Settings()),
+			".bank" => new AudioBankImporter(),
 			_ => new TextureImporter(textureSettings)
 		};
 
@@ -379,10 +405,11 @@ public static class AssetDatabase {
 	}
 
 	// finds the directory + import settings for a set of output UIDs by scanning their .meta sidecars
-	private static (string? destDir, TextureMetaSection? texture, PsdMetaSection? psd, GltfMetaSection? gltf)
+	private static (string? destDir, TextureMetaSection? texture, PsdMetaSection? psd, GltfMetaSection? gltf,
+		VoxMetaSection? vox)
 		LocateOutputs(IReadOnlyCollection<string> uids) {
 		if (uids.Count == 0 || !Directory.Exists(ProjectContext.AssetsPath))
-			return (null, null, null, null);
+			return (null, null, null, null, null);
 
 		var wanted = new HashSet<string>(uids);
 		foreach (var metaPath in MetaFile.FindAll(ProjectContext.AssetsPath)) {
@@ -393,10 +420,11 @@ public static class AssetDatabase {
 			return (Path.GetDirectoryName(assetReal),
 				MetaFile.ReadTextureSection(metaPath),
 				MetaFile.ReadPsdSection(metaPath),
-				MetaFile.ReadGltfSection(metaPath));
+				MetaFile.ReadGltfSection(metaPath),
+				MetaFile.ReadVoxSection(metaPath));
 		}
 
-		return (null, null, null, null);
+		return (null, null, null, null, null);
 	}
 
 	private static TextureImporter.Settings SettingsFromMeta(TextureMetaSection? s) {
@@ -411,6 +439,7 @@ public static class AssetDatabase {
 		if (Enum.TryParse<AddressMode>(s.AddressU, true, out var au)) settings.AddressU = au;
 		if (Enum.TryParse<AddressMode>(s.AddressV, true, out var av)) settings.AddressV = av;
 		if (Enum.TryParse<FilterMode>(s.Filter, true, out var f)) settings.Filter = f;
+		if (Enum.TryParse<TextureColorSpace>(s.ColorSpace, true, out var cs)) settings.ColorSpace = cs;
 		return settings;
 	}
 
@@ -423,6 +452,16 @@ public static class AssetDatabase {
 		return settings;
 	}
 
+	private static VoxImporter.Settings SettingsFromMeta(VoxMetaSection? s) {
+		var settings = new VoxImporter.Settings();
+		if (s is null) return settings;
+
+		settings.CreateSubfolder = s.CreateFolder;
+		settings.ImportPalette = s.ImportPalette;
+		settings.GeneratePrefab = s.GeneratePrefab;
+		return settings;
+	}
+
 	private static GltfImporter.Settings SettingsFromMeta(GltfMetaSection? s) {
 		var settings = new GltfImporter.Settings();
 		if (s is null) return settings;
@@ -432,6 +471,7 @@ public static class AssetDatabase {
 		settings.ImportTextures = s.ImportTextures;
 		settings.ImportCameras = s.ImportCameras;
 		settings.ImportLights = s.ImportLights;
+		settings.ImportAnimations = s.ImportAnimations;
 		settings.GeneratePrefab = s.GeneratePrefab;
 		return settings;
 	}
@@ -527,7 +567,7 @@ public static class AssetDatabase {
 	private static async Task<RelocateResult> ShowRelocateModal(
 		string title, string message, string startVirtualPath, string extension) {
 		while (true) {
-			var choice = await ShowChoice(new ModalConfig(
+			var (choice, appliedToAll) = await ShowChoiceEx(new ModalConfig(
 				title,
 				message,
 				ModalButtons.OkNoCancel,
@@ -537,25 +577,33 @@ public static class AssetDatabase {
 				"Discard",
 				"Skip",
 				LucideIconKind.Folders,
-				LucideIconKind.Shredder));
+				LucideIconKind.Shredder,
+				NoAllLabel: "Discard All",
+				NoAllIcon: LucideIconKind.Trash2));
 
 			switch (choice) {
 				case true:
 					var picked = await PickFile(title, extension, startVirtualPath);
 					if (picked is null) continue; // empty pick -> reopen the popup
-					return new RelocateResult(RelocateDecision.Relocate, picked);
+					return new RelocateResult(RelocateDecision.Relocate, picked, false);
 				case false:
-					return new RelocateResult(RelocateDecision.Discard, null);
+					return new RelocateResult(RelocateDecision.Discard, null, appliedToAll);
 				default:
-					return new RelocateResult(RelocateDecision.Skip, null);
+					return new RelocateResult(RelocateDecision.Skip, null, false);
 			}
 		}
 	}
 
 	private static async Task<bool?> ShowChoice(ModalConfig cfg) {
+		return (await ShowChoiceEx(cfg)).Choice;
+	}
+
+	private static async Task<(bool? Choice, bool AppliedToAll)> ShowChoiceEx(ModalConfig cfg) {
 		var owner = ActiveWindow();
-		if (owner is null) return null;
-		return await new MessageModal(cfg).ShowDialog<bool?>(owner);
+		if (owner is null) return (null, false);
+		var modal = new MessageModal(cfg);
+		var choice = await modal.ShowDialog<bool?>(owner);
+		return (choice, modal.AppliedToAll);
 	}
 
 	private static async Task<string?> PickFile(string title, string extension, string startVirtualPath) {
@@ -595,5 +643,5 @@ public static class AssetDatabase {
 
 	private enum RelocateDecision { Relocate, Discard, Skip }
 
-	private readonly record struct RelocateResult(RelocateDecision Decision, string? PickedPath);
+	private readonly record struct RelocateResult(RelocateDecision Decision, string? PickedPath, bool AppliedToAll);
 }

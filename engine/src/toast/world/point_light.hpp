@@ -14,10 +14,17 @@
 namespace toast {
 class [[ToastNode, Icon("PointLight")]] TOAST_API PointLight : public Light {
 public:
-	PointLight() = default;
+	PointLight() { setLightType(LightType::point); }
 
 	~PointLight() override = default;
 
+	[[nodiscard]]
+	auto attenuation() const -> float {
+		return m_attenuation;
+	}
+
 private:
+	[[Reflect, Unit("m"), Range(0, 1000)]]
+	float m_attenuation = 10.0f;
 };
 }

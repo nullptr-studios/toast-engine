@@ -53,7 +53,7 @@ auto luaPrint(lua_State* state) -> int {
 		}
 
 		if (i < nargs) {
-			output += "\t";
+			output += '\t';
 		}
 	}
 
@@ -74,7 +74,7 @@ auto luaWarn(lua_State* state) -> int {
 		}
 
 		if (i < nargs) {
-			output += "\t";
+			output += '\t';
 		}
 	}
 
@@ -180,33 +180,12 @@ auto LuaState::tryLock(size_t index) noexcept -> Lock {
 	return {std::move(guard), entry.state, index};
 }
 
-void LuaState::plotMemory() noexcept {
-#ifdef TRACY_ENABLE
-	// Tracy keeps plot names by pointer, so they need stable storage
-	static const auto plot_names = [] {
-		std::array<std::string, pool_size> names;
-		for (size_t i = 0; i < pool_size; ++i) {
-			names[i] = std::format("Lua memory #{} (KB)", i);
-		}
-		return names;
-	}();
-
-	for (size_t i = 0; i < pool_size; ++i) {
-		Lock guard = tryLock(i);
-		if (!guard) {
-			continue;    // busy running a script; sample it next time
-		}
-		const auto kilobytes = static_cast<int64_t>(lua_gc(guard.state(), LUA_GCCOUNT));
-		TracyPlot(plot_names[i].c_str(), kilobytes);
-	}
-#endif
-}
-
 auto LuaState::nextIndex() noexcept -> size_t {
-	return m_next_index.fetch_add(1, std::memory_order_relaxed) % pool_size;
+	return m_next_index.fetch_add(1, std::memory_order_relaxed) % m_pool_size;
 }
 
 auto LuaState::runString(std::string_view lua_code) noexcept -> bool {
+	ZoneScoped;
 	Lock guard = lock(0);
 	if (!guard) {
 		return false;
@@ -230,10 +209,12 @@ auto LuaState::runString(std::string_view lua_code) noexcept -> bool {
 	return true;
 }
 
-LuaState::LuaState() {
+LuaState::LuaState() : m_pool_size(1 + toast::ThreadPool::workerCount()), m_entries(m_pool_size) {
+	ZoneScoped;
 	LuaState::instance = this;
 
-	for (Entry& entry : m_entries) {
+	for (size_t i = 0; i < m_pool_size; ++i) {
+		Entry& entry = m_entries[i];
 		entry.state = luaL_newstate();
 		TOAST_ASSERT(entry.state != nullptr, "Lua", "Failed to create Lua state");
 		luaL_openlibs(entry.state);
@@ -252,7 +233,7 @@ LuaState::LuaState() {
 		registerApi(entry.state);
 	}
 
-	TOAST_INFO("Lua", "Created pool of {} lua states", pool_size);
+	TOAST_INFO("Lua", "Created pool of {} lua states", m_pool_size);
 }
 
 LuaState::~LuaState() noexcept {
@@ -264,6 +245,7 @@ LuaState::~LuaState() noexcept {
 }
 
 void LuaState::registerApi(lua_State* state) noexcept {
+	ZoneScoped;
 	using namespace luabridge;
 
 	getGlobalNamespace(state)
@@ -684,13 +666,13 @@ void LuaState::registerTypeMarkers(lua_State* state) noexcept {
 }
 
 void LuaState::refreshTypeMarkers() noexcept {
-	for (size_t i = 0; i < pool_size; ++i) {
+	for (size_t i = 0; i < m_pool_size; ++i) {
 		Lock guard = lock(i);
 		if (guard) {
 			registerTypeMarkers(guard.state());
 		}
 	}
-	TOAST_INFO("Lua", "Refreshed type markers on {} states", pool_size);
+	TOAST_INFO("Lua", "Refreshed type markers on {} states", m_pool_size);
 }
 
 }

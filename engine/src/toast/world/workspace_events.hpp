@@ -7,7 +7,7 @@
 #pragma once
 #include <toast/events/event.hpp>
 #include <toast/uid.hpp>
-#include <toast/world/box.hpp>
+#include <toast/world/node.hpp>
 #include <utility>
 
 namespace event {
@@ -202,6 +202,14 @@ struct SetGizmoTool : Event<SetGizmoTool> {
 	SetGizmoTool(uint32_t tool) : tool(tool) { }
 };
 
+/// @brief Viewport shading mode, sent by the toolbar's "Mode" dropdown - 0 Lit, 1 ClusterHeatmap (clustered
+/// forward+ per-pixel light-count debug view). Consumed straight by VulkanRenderer, not per-workspace state
+struct SetRenderMode : Event<SetRenderMode> {
+	uint32_t mode;
+
+	SetRenderMode(uint32_t mode) : mode(mode) { }
+};
+
 struct SetCoordinateSpace : Event<SetCoordinateSpace> {
 	bool world;
 
@@ -222,6 +230,66 @@ struct SetCameraMode : Event<SetCameraMode> {
 	SetCameraMode(bool game) : game(game) { }
 };
 
+/// @brief editor fly camera toggle, sent on RMB down/up in edit mode
+struct EditorCameraFlyMode : Event<EditorCameraFlyMode> {
+	bool active;
+
+	EditorCameraFlyMode(bool active) : active(active) { }
+};
+
+/// @brief Requests a single RenderDoc frame capture around the next rendered frame, sent on F12 in the
+/// viewport; no-op if RenderDoc isn't attached
+struct CaptureFrame : Event<CaptureFrame> { };
+
+/// @brief Held-key snapshot for the editor fly camera
+struct EditorCameraMoveState : Event<EditorCameraMoveState> {
+	bool forward, back, left, right, up, down, boost;
+
+	EditorCameraMoveState(bool forward, bool back, bool left, bool right, bool up, bool down, bool boost)
+	    : forward(forward),
+	      back(back),
+	      left(left),
+	      right(right),
+	      up(up),
+	      down(down),
+	      boost(boost) { }
+};
+
+/// @brief Raw mouse delta while the editor fly camera is active
+struct EditorCameraLook : Event<EditorCameraLook> {
+	float dx, dy;
+
+	EditorCameraLook(float dx, float dy) : dx(dx), dy(dy) { }
+};
+
+enum class EditorCameraMode : uint32_t {
+	free = 0,
+	orbit = 1
+};
+
+struct SetEditorCameraSettings : Event<SetEditorCameraSettings> {
+	EditorCameraMode mode;
+	float speed;
+
+	uint64_t workspace_handle;
+
+	SetEditorCameraSettings(EditorCameraMode mode, float speed, uint64_t workspace_handle = 0)
+	    : mode(mode),
+	      speed(speed),
+	      workspace_handle(workspace_handle) { }
+
+	SetEditorCameraSettings(uint32_t mode, float speed, uint64_t workspace_handle = 0)
+	    : mode(static_cast<EditorCameraMode>(mode)),
+	      speed(speed),
+	      workspace_handle(workspace_handle) { }
+};
+
+struct EditorCameraGesture : Event<EditorCameraGesture> {
+	float dx, dy, zoom;
+
+	EditorCameraGesture(float dx, float dy, float zoom) : dx(dx), dy(dy), zoom(zoom) { }
+};
+
 struct InspectorContent : Event<InspectorContent> {
 	struct InspectorField {
 		std::string name;
@@ -234,12 +302,17 @@ struct InspectorContent : Event<InspectorContent> {
 	std::string name;
 	bool enabled;
 	std::vector<InspectorField> parameters;
+	std::vector<toast::NodeMessage> messages;
 
-	InspectorContent(std::string_view uid, std::string_view name, bool enabled, std::vector<InspectorField> fields)
+	InspectorContent(
+	    std::string_view uid, std::string_view name, bool enabled, std::vector<InspectorField> fields,
+	    std::vector<toast::NodeMessage> messages
+	)
 	    : uid(uid),
 	      name(name),
 	      enabled(enabled),
-	      parameters(std::move(fields)) { }
+	      parameters(std::move(fields)),
+	      messages(std::move(messages)) { }
 };
 
 struct InspectorLuaContent : Event<InspectorLuaContent> {

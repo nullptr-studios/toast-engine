@@ -50,7 +50,7 @@
 		           TextWrapping="Wrap"
 		           Foreground="{StaticResource Text}" />
 
-		<Grid ColumnDefinitions="auto, *, auto, auto"
+		<Grid ColumnDefinitions="auto, *, auto, auto, auto"
 		      ColumnSpacing="8"
 		      Margin="0,8,0,0">
 			<Button Grid.Column="0"
@@ -71,6 +71,20 @@
 			</Button>
 			<Button Grid.Column="2"
 			        TabIndex="1"
+			        IsVisible="{Binding ShowNoAll}"
+			        Click="OnNoAll"
+			        HorizontalContentAlignment="Center">
+				<StackPanel Orientation="Horizontal">
+					<LucideIcon Size="16"
+					            StrokeWidth="2.5"
+					            Margin="0,0,4,0"
+					            IsVisible="{Binding HasNoAllIcon}"
+					            Kind="{Binding NoAllIcon}" />
+					<TextBlock Text="{Binding NoAllLabel}" />
+				</StackPanel>
+			</Button>
+			<Button Grid.Column="3"
+			        TabIndex="2"
 			        IsVisible="{Binding ShowNo}"
 			        Click="OnNo"
 			        HorizontalContentAlignment="Center">
@@ -84,8 +98,8 @@
 				</StackPanel>
 			</Button>
 			<Button x:Name="OkButton"
-			        Grid.Column="3"
-			        TabIndex="2"
+			        Grid.Column="4"
+			        TabIndex="3"
 			        IsDefault="True"
 			        Classes="primary"
 			        Click="OnOk"

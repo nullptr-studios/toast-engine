@@ -29,6 +29,7 @@ public:
 	void onAudioTargetExit(const VolumeTarget& target) override;
 
 private:
+	void updateInspectorMessages() override;
 	void onVolumeTick() override;
 
 	void spawnAmbience();

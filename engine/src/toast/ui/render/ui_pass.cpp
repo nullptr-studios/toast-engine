@@ -32,6 +32,7 @@ UIPass::UIPass(
     const renderer::VulkanCore& core, vk::Format output_color_format, vk::Format output_depth_format, vk::Extent2D extent
 )
     : m_core(&core) {
+	ZoneScoped;
 	const auto uid = assets::resolveURI("core://shaders/ui.slang");
 	const auto shader = uid.has_value() ? renderer::ShaderCache::get().acquire(*uid) : nullptr;
 	if (!shader) {

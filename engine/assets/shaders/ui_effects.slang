@@ -3,16 +3,16 @@
 #define MAX_NUM_STOPS 16
 #define PI 3.14159265
 
-// Shared 96-byte push constant:
-//   vsFullscreen: v0.xy = uv offset
+// Shared 96-byte push constant
+//   vsFullscreen   v0.xy = uv offset
 //                 v0.zw = uv scale
-//   fsPassthrough: v1.x = blend factor
-//   fsBlur: v1.xy = texel offset
+//   fsPassthrough  v1.x = blend factor
+//   fsBlur         v1.xy = texel offset
 //           v2.xy/zw = texcoord min/max
 //           v3 = weights[4]
-//   fsDropShadow: v1 = shadow color
+//   fsDropShadow   v1 = shadow color
 //                 v2.xy/zw = texcoord min/max
-//   fsColorMatrix: v2..v5 = color matrix rows
+//   fsColorMatrix  v2..v5 = color matrix rows
 struct EffectsPush {
     float4 v0;
     float4 v1;
@@ -102,7 +102,7 @@ struct VertexUserData
 ConstantBuffer<VertexUserData> gVertexData;
 
 struct GradientData {
-    int func; // 0 linear, 1 radial, 2 conic, 3-5 repeating variants
+    int func; // 0 linear 1 radial 2 conic 3-5 repeating
     int num_stops;
     float2 p;
     float2 v;
@@ -162,23 +162,19 @@ float4 fsGradient(GeometryFSInput input) : SV_Target0 {
     float t = 0.0;
 
     if (func == 0 || func == 3) {
-        // linear
         float dist_square = dot(gGradient.v, gGradient.v);
         float2 V = input.uv - gGradient.p;
         t = dot(gGradient.v, V) / dist_square;
     } else if (func == 1 || func == 4) {
-        // radial
         float2 V = input.uv - gGradient.p;
         t = length(gGradient.v * V);
     } else if (func == 2 || func == 5) {
-        // conic
         float2x2 R = float2x2(gGradient.v.x, -gGradient.v.y, gGradient.v.y, gGradient.v.x);
         float2 V = mul(R, input.uv - gGradient.p);
         t = 0.5 + atan2(-V.x, V.y) / (2.0 * PI);
     }
 
     if (func >= 3) {
-        // repeating
         float t0 = stopPosition(0);
         float t1 = stopPosition(gGradient.num_stops - 1);
         t = t0 + fmod(t - t0, t1 - t0);

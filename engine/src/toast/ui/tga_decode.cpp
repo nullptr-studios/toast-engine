@@ -1,6 +1,7 @@
 #include "tga_decode.hpp"
 
 #include <cstring>
+#include <tracy/Tracy.hpp>
 
 namespace ui {
 
@@ -41,6 +42,7 @@ void writePixel(uint8_t* dst, const uint8_t* src, uint32_t bytes_per_pixel) {
 }
 
 auto decodeTga(std::span<const uint8_t> data) -> std::optional<TgaImage> {
+	ZoneScoped;
 	if (data.size() < k_header_size) {
 		return std::nullopt;
 	}

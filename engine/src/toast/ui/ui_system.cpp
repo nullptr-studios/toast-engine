@@ -220,6 +220,7 @@ void UISystem::tick() noexcept {
 }
 
 auto UISystem::createContext(std::string_view name, glm::ivec2 dimensions, std::optional<float> fixed_dp_ratio) -> Rml::Context* {
+	ZoneScoped;
 	// RmlUi requires globally unique context names
 	const auto unique_name = std::format("{}#{}", name, m_next_context_id++);
 	Rml::Context* context = Rml::CreateContext(unique_name, {dimensions.x, dimensions.y}, m_render_interface.get());
@@ -416,6 +417,7 @@ auto UISystem::currentLanguage() const -> std::string {
 }
 
 void UISystem::setLanguage(std::string language) {
+	ZoneScoped;
 	const auto* settings = toast::ProjectSettings::get();
 	if (settings != nullptr) {
 		const auto& languages = toast::ProjectSettings::uiSettings().languages();
@@ -442,6 +444,7 @@ void UISystem::setLanguage(std::string language) {
 }
 
 void UISystem::reloadAllDocuments() {
+	ZoneScoped;
 	for (toast::Panel* panel : m_panels) {
 		panel->reloadDocument();
 	}

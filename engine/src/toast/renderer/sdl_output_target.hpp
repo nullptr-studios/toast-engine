@@ -1,6 +1,6 @@
 /// @file SDLOutputTarget.hpp
 /// @author dario
-/// @date 16/05/2026.
+/// @date 16/05/2026
 
 #pragma once
 
@@ -48,6 +48,9 @@ public:
 	auto recordFinalize(vk::CommandBuffer command_buffer, uint32_t image_index) -> void override;
 
 	auto recreate(vk::Extent2D extent) -> void override;
+
+	[[nodiscard]]
+	auto isPresentable() const -> bool override;
 
 	[[nodiscard]]
 	auto getWindow() const -> SDL_Window*;

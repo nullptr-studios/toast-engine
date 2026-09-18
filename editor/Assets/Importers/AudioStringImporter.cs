@@ -9,15 +9,16 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using editor.Assets.Types;
 using Lucide.Avalonia;
 using Tomlyn;
+using Tomlyn.Serialization;
 
 namespace editor.Assets.Importers;
 
 public class FMODMetadata {
-	public required string Schema { get; set; } = "EsFCxxgiok0";
-	public required string Type { get; set; }
-	public required string Name { get; set; }
-	public required string Path { get; set; }
-	public required string Guid { get; set; }
+	[TomlPropertyName("schema")] public required string Schema { get; set; } = "EsFCxxgiok0";
+	[TomlPropertyName("type")] public required string Type { get; set; }
+	[TomlPropertyName("name")] public required string Name { get; set; }
+	[TomlPropertyName("path")] public required string Path { get; set; }
+	[TomlPropertyName("guid")] public required string Guid { get; set; }
 }
 
 public partial class AudioStringImporter(AudioStringImporter.Settings settings) : IAssetImporter {

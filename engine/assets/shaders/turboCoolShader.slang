@@ -1,15 +1,7 @@
-// turboCoolShader.slang
-
-// --------------------------------------------------------------------------
-// HARDCODED UNIFORMS & RESOURCES (No Descriptors Required)
-// --------------------------------------------------------------------------
 static const float  iTime = 15.0; 
 static const float3 iResolution = float3(1920.0, 1080.0, 1.0); 
 static const float4 iMouse = float4(0.0);
 
-// --------------------------------------------------------------------------
-// NATIVE TYPES & COMPILER CLEANUP
-// --------------------------------------------------------------------------
 #define PI 3.14159265359
 #define TWO_PI 6.28318530718
 
@@ -32,15 +24,12 @@ static const float4 iMouse = float4(0.0);
 #define MATCHES_SURFACE_ID(id1, id2) (id1 > (id2 - .5)) && (id1 < (id2 + .5))
 #define NUM_AA_SAMPLES 8
 
-// Exact math behaviors for domain repetition
+// GLSL mod semantics
 float glsl_mod(float x, float y) { return x - y * floor(x / y); }
 float2 glsl_mod(float2 x, float2 y) { return x - y * floor(x / y); }
 float3 glsl_mod(float3 x, float3 y) { return x - y * floor(x / y); }
 float3 glsl_mod(float3 x, float y) { return x - y * floor(x / y); }
 
-// --------------------------------------------------------------------------
-// GLOBALS
-// --------------------------------------------------------------------------
 static float3 g_debugcolor  = float3(0.0);
 static float  g_time        = 0.0;
 static float  g_exposure    = 1.0;
@@ -49,9 +38,6 @@ static float3 g_moonpos     = float3(0.0);
 static float3 g_camorigin   = float3(0.0);
 static float3 g_campointsat = float3(0.0);
 
-// --------------------------------------------------------------------------
-// DATA STRUCTURES
-// --------------------------------------------------------------------------
 struct VS_Output
 {
     float4 position : SV_Position;
@@ -87,9 +73,6 @@ struct MaterialInfo
     float3 emissive_color;
 };
 
-// --------------------------------------------------------------------------
-// HIGH PERFORMANCE BITWISE INTEGER VALUE NOISE (No sin/cos)
-// --------------------------------------------------------------------------
 float hash(uint n) 
 {
     n = (n << 13U) ^ n;
@@ -136,9 +119,6 @@ float map4(in float3 p)
     return f;
 }
 
-// --------------------------------------------------------------------------
-// DISTANCE FIELDS & ACCELERATION STRUCTURES
-// --------------------------------------------------------------------------
 float sphere_df(float3 p, float r) { return length(p) - r; }
 float roundbox_df(float3 p, float3 b, float r) { return length(max(abs(p - float3(0., .5 * b.y, 0.)) - .5 * b, 0.0)) - r; }
 
@@ -147,11 +127,9 @@ float uniondf(float a, float b) { return min(a, b); }
 
 float2 scene_df(float3 p)
 {
-    // Bounding-box acceleration: Check proximity before computing 4-octave FBM noise
     float3 gp_base = p * float3(.2, 1., .2) + float3(7.2, 3.3, -2.);
     float base_dist = sphere_df(gp_base, 2.9);
     
-    // Only pay the ALU cost if the ray is within proximity boundary
     if (base_dist < 0.8) 
     {
         float3 gp_noise = p * float3(.2, 1., .2) + float3(0., 10., 0.) * (.5 * map4(.2 * p) - .5) + float3(7.2, 3.3, -2.);
@@ -204,7 +182,6 @@ float2 scene_df(float3 p)
     return obj;
 }
 
-// Optimized Tetrahedral configuration: 4 samples instead of 6
 float3 calc_normal(float3 p)
 {
     const float2 k = float2(1.0, -1.0);
@@ -218,9 +195,6 @@ float3 calc_normal(float3 p)
     );
 }
 
-// --------------------------------------------------------------------------
-// RENDERING PIPELINE FUNCTIONS
-// --------------------------------------------------------------------------
 float3 rotate_xaxis(float3 point_val, float cosa, float sina)
 {
     return float3(point_val.x,
@@ -434,7 +408,6 @@ float3 light_from_point_light(SurfaceInfo surface, MaterialInfo material, float3
     return light_color * (diffuse_shading + reflective_shading);
 }
 
-// Loop completely unwrapped via unroll attribute
 float4 shade_clouds(float3 ro, float3 rd, float depth)
 {
     float4 cloud_rgba = float4(0.);
@@ -589,9 +562,6 @@ float3 shade_world(SurfaceInfo surface)
     return scene_color.rgb;
 }
 
-// --------------------------------------------------------------------------
-// MAIN ENTRY POINTS
-// --------------------------------------------------------------------------
 [shader("vertex")]
 VS_Output vertexMain(uint vertexID : SV_VertexID)
 {

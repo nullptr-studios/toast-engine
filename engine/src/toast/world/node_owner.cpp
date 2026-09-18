@@ -4,6 +4,7 @@
 #include "camera_controller.hpp"
 #include "node.hpp"
 #include "node_3d.hpp"
+#include "workspace.hpp"
 
 #include <algorithm>
 #include <charconv>
@@ -38,6 +39,11 @@ void INodeOwner::updateTransforms(Node& root) {
 	Walker::walk(root);
 }
 
+auto INodeOwner::isEditing() noexcept -> bool {
+	const Workspace* workspace = asWorkspace();
+	return workspace != nullptr && !workspace->isPlaying();
+}
+
 void INodeOwner::activateCamera(Camera& camera) {
 	if (m_is_shutting_down || (camera.m_state != NodeState::root && camera.m_state != NodeState::global) || !camera.enabled()) {
 		return;
@@ -54,6 +60,31 @@ void INodeOwner::activateCamera(Camera& camera) {
 
 	m_active_camera = camera.box().as<Camera>();
 	m_active_camera->m_is_active = true;
+	TOAST_INFO("World", "Active camera is now {} ({})", camera.name(), camera.uid());
+	applyActiveCamera();
+}
+
+void INodeOwner::setMainCamera(Camera& camera) {
+	if (m_is_shutting_down || (camera.m_state != NodeState::root && camera.m_state != NodeState::global) || !camera.enabled()) {
+		return;
+	}
+
+	if (m_has_camera_controller && m_active_camera_controller.exists()) {
+		m_active_camera_controller->addCamera(camera);
+		m_active_camera_controller->setActiveCamera(camera.box().as<Camera>());
+		return;
+	}
+
+	if (m_active_camera.exists()) {
+		if (m_active_camera.rid() == camera.box().rid()) {
+			return;
+		}
+		m_active_camera->m_is_active = false;
+	}
+
+	m_active_camera = camera.box().as<Camera>();
+	m_active_camera->m_is_active = true;
+	TOAST_INFO("World", "Main camera {} ({}) is now the active camera", camera.name(), camera.uid());
 	applyActiveCamera();
 }
 
@@ -86,19 +117,32 @@ void INodeOwner::findCamera() {
 		return;
 	}
 
+	// Prefer a camera flagged as main; otherwise the first live camera found
 	Box<Camera> candidate;
+	Box<Camera> main_candidate;
 	{
 		std::scoped_lock lock(nodes_mutex);
-		forEachNode([&candidate](const _detail::ControlBox& control) {
-			if (candidate.exists() || control.node == nullptr || !control.node->enabled()) {
+		forEachNode([&candidate, &main_candidate](const _detail::ControlBox& control) {
+			if (main_candidate.exists() || control.node == nullptr || !control.node->enabled()) {
 				return;
 			}
-			if (control.node->state() == NodeState::root || control.node->state() == NodeState::global) {
-				candidate = control.node->box().as<Camera>();
+			if (control.node->state() != NodeState::root && control.node->state() != NodeState::global) {
+				return;
+			}
+			Box<Camera> camera = control.node->box().as<Camera>();
+			if (!camera.exists()) {
+				return;
+			}
+			if (camera->isMainCamera()) {
+				main_candidate = camera;
+			} else if (!candidate.exists()) {
+				candidate = camera;
 			}
 		});
 	}
-	if (candidate.exists()) {
+	if (main_candidate.exists()) {
+		activateCamera(*main_candidate);
+	} else if (candidate.exists()) {
 		activateCamera(*candidate);
 	}
 }
@@ -196,15 +240,32 @@ auto INodeOwner::activeCamera() noexcept -> Box<Camera>& {
 	return m_active_camera;
 }
 
+INodeOwner::INodeOwner() = default;
+INodeOwner::~INodeOwner() = default;
+
 auto INodeOwner::activeRenderCamera() noexcept -> Camera* {
 	if (m_has_camera_controller) {
-		if (!m_active_camera_controller.exists()) {
-			return nullptr;
+		if (m_active_camera_controller.exists()) {
+			if (Box<Camera> camera = m_active_camera_controller->getActiveCamera(); camera.exists()) {
+				return &*camera;
+			}
 		}
-		Box<Camera> camera = m_active_camera_controller->getActiveCamera();
-		return camera.exists() ? &*camera : nullptr;
+	} else if (m_active_camera.exists()) {
+		return &*m_active_camera;
 	}
-	return m_active_camera.exists() ? &*m_active_camera : nullptr;
+
+	// Nothing in the scene to look through. Handing back null makes every consumer carry a no-camera path,
+	// and the one in the renderer only ever existed on paper while the engine leaked a bootstrap camera to
+	// keep it non-null. A placeholder at the origin renders the scene from 0,0,0 instead of nothing
+	if (m_is_shutting_down) {
+		return nullptr;
+	}
+	if (!m_fallback_camera) {
+		m_fallback_camera = std::make_unique<Camera>();
+		m_fallback_camera->syncTransform();
+		TOAST_WARN("World", "No camera in the scene; rendering from a placeholder at the origin");
+	}
+	return m_fallback_camera.get();
 }
 
 namespace {
@@ -357,19 +418,12 @@ auto INodeOwner::nodeAllocation(std::string_view type) noexcept -> Box<Node> {
 
 	const NodeInfo* info = NodeRegistry::reflect(type);
 
-#ifndef NDEBUG
 	if (!info) {
 		TOAST_WARN("World", "Reflection information for type {} not found. Falling back to toast::Node", type);
 		info = NodeRegistry::reflect("toast::Node");
 	}
-#endif
 
-	// Node allocation
-#ifdef NDEBUG
-	Node* raw_node = info->construct();
-#else
 	Node* raw_node = (info && info->construct) ? info->construct() : new Node();
-#endif
 
 	{
 		std::scoped_lock lock(nodes_mutex);
@@ -377,7 +431,7 @@ auto INodeOwner::nodeAllocation(std::string_view type) noexcept -> Box<Node> {
 		TOAST_ASSERT(result, "World", "Node allocation failed");
 	}
 	raw_node->m_info = info;     // attach reflection data
-	raw_node->m_reflect_type_name = info->type;
+	raw_node->m_reflect_type_name = info ? info->type : std::string_view {"toast::Node"};
 	raw_node->m_owner = this;    // attach owner ptr
 
 	return raw_node->box();
@@ -419,12 +473,10 @@ void INodeOwner::applyFields(Node& node, const assets::Prefab::BasicNode& data) 
 				continue;
 			}
 
-#ifndef NDEBUG
 			if (not f.set) {
 				TOAST_WARN("World", "No valid set function found for {}", f.name);
 				continue;
 			}
-#endif
 
 			f.set(&node, f_data->value);
 		}
@@ -432,6 +484,7 @@ void INodeOwner::applyFields(Node& node, const assets::Prefab::BasicNode& data) 
 }
 
 void INodeOwner::applyLuaOverrides(Node& node, const assets::Prefab::BasicNode& data, const scripting::NodeResolver& find_node) {
+	ZoneScoped;
 	if (data.lua_vars.empty()) {
 		return;
 	}
@@ -691,6 +744,7 @@ void INodeOwner::reapTombstones() noexcept {
 }
 
 void INodeOwner::reloadScriptsUsing(UID script_uid) noexcept {
+	ZoneScoped;
 	std::scoped_lock lock(nodes_mutex);
 	forEachNode([&](const _detail::ControlBox& control) {
 		if (control.node == nullptr) {

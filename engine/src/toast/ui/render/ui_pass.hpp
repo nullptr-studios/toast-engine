@@ -32,6 +32,13 @@ public:
 
 	UIPass(const renderer::VulkanCore& core, vk::Format output_color_format, vk::Format output_depth_format, vk::Extent2D extent);
 
+	/// UI is authored in display space - its colours are the exact values that should reach the screen, so it
+	/// composites after the tonemap rather than being exposed along with the scene
+	[[nodiscard]]
+	auto stage() const -> RenderStage override {
+		return RenderStage::overlay;
+	}
+
 	[[nodiscard]]
 	auto name() const -> std::string_view override {
 		return "UI";

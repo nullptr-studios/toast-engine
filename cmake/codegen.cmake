@@ -1,9 +1,10 @@
 macro(run_codegen)
+
+    file(LOCK "${OUTPUT_ROOT}/.codegen.lock" GUARD PROCESS)
     file(REMOVE_RECURSE "${CMAKE_SOURCE_DIR}/engine/generated")
     file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/engine/generated")
     file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/engine/assets")
 
-    # Protobuf
     find_package(protobuf CONFIG REQUIRED)
 
     get_target_property(_protoc protobuf::protoc IMPORTED_LOCATION_RELEASE)

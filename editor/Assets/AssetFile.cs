@@ -30,11 +30,29 @@ public class AssetFile : INotifyPropertyChanged {
 		Definition = AssetTypeRegistry.ByExtension(ext);
 	}
 
+	/// <summary>
+	/// A file that is not a tracked asset it has no .meta sidecar, no UID and no thumbnail
+	/// </summary>
+	private AssetFile(string path, bool raw) {
+		IsRaw = raw;
+		Filepath = Path.GetFullPath(path);
+		Name = Path.GetFileName(path);
+		Definition = AssetTypeRegistry.ByExtension(AssetTypeRegistry.GetExtension(Name));
+	}
+
+	public static AssetFile Raw(string path) {
+		return new AssetFile(path, true);
+	}
+
+	// True for a cache:// entry
+	public bool IsRaw { get; }
+
 	public string Name { get; }
 	public string Filepath { get; }
 	public BaseAsset? Definition { get; }
 	public LucideIconKind Icon => Definition?.Icon ?? LucideIconKind.OctagonAlert;
-	public string TypeLabel => Definition?.ChipText ?? "?";
+	public string TypeLabel =>
+		Definition?.ChipText ?? (IsRaw ? Path.GetExtension(Name).TrimStart('.').ToUpperInvariant() : "?");
 
 	public AssetBrowserViewModel? Owner { get; set; }
 
@@ -55,7 +73,8 @@ public class AssetFile : INotifyPropertyChanged {
 		get {
 			if (m_uidChecked) return m_uid;
 			m_uidChecked = true;
-			m_uid = MetaFile.ReadHeader(Filepath)?.Uid;
+			// A raw file has no sidecar, so there is nothing to read and no UID to show
+			m_uid = IsRaw ? null : MetaFile.ReadHeader(Filepath)?.Uid;
 			return m_uid;
 		}
 	}
@@ -64,7 +83,7 @@ public class AssetFile : INotifyPropertyChanged {
 		get {
 			if (m_thumbnailChecked) return m_thumbnail;
 			m_thumbnailChecked = true;
-			if (Definition?.HasThumbnail != true || !ProjectContext.IsInitialized) return null;
+			if (IsRaw || Definition?.HasThumbnail != true || !ProjectContext.IsInitialized) return null;
 
 			var filepath = Filepath;
 			Task.Run(() => {

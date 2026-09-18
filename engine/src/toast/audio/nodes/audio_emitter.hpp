@@ -39,6 +39,7 @@ public:
 	signals::Signal<bool> audio_paused;
 
 private:
+	void updateInspectorMessages() override;
 	void onEnable();
 	void onDisable();
 

@@ -3,9 +3,35 @@
 #include "../audio_system.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <toast/time.hpp>
 
 namespace toast {
+
+void SnapshotVolume::updateInspectorMessages() {
+	Volume::updateInspectorMessages();
+	static const NodeMessage snapshot_message {
+	  .severity = NodeMessage::warning,
+	  .id = 15,
+	  .text = "SnapshotVolume requires an AudioSnapshot",
+	};
+	static const NodeMessage fade_message {
+	  .severity = NodeMessage::error,
+	  .id = 16,
+	  .text = "Snapshot fade times must be non-negative",
+	};
+
+	if (m_snapshot.hasValue()) {
+		removeInspectorMessage(snapshot_message);
+	} else {
+		addInspectorMessage(snapshot_message);
+	}
+	if (std::isfinite(m_fade_in) && m_fade_in >= 0.0f && std::isfinite(m_fade_out) && m_fade_out >= 0.0f) {
+		removeInspectorMessage(fade_message);
+	} else {
+		addInspectorMessage(fade_message);
+	}
+}
 
 auto SnapshotVolume::evaluateTarget(const VolumeTarget& target, float weight) -> bool {
 	float w = calculateWeight(target) * weight;

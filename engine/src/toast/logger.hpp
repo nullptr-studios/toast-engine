@@ -46,6 +46,12 @@ class Logger {
 		 * @brief True once initNetworkRetry has established the connection
 		 */
 		std::atomic<bool> connected = false;
+
+		/**
+		 * @brief Set once initNetworkRetry has given up
+		 *
+		 */
+		std::atomic<bool> unavailable = false;
 	} m;
 
 	static constexpr uint16_t port = 12800;                ///< Port to connect to the server

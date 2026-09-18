@@ -16,6 +16,7 @@
 #include "box.hpp"
 #include "control_box.hpp"
 
+#include <list>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -28,6 +29,10 @@
 #include <toast/reflect/reflect_node.hpp>
 #include <toast/uid.hpp>
 #include <toast/world/node_owner.hpp>
+
+namespace physics {
+class Collider;
+}
 
 namespace assets {
 class Script;
@@ -60,6 +65,18 @@ enum class NodeType : uint8_t {
 	world_root,    ///< This node is the root that resides in the world
 };
 
+struct NodeMessage {
+	enum Severity : uint8_t {
+		warning,
+		error
+	} severity;
+
+	uint8_t id;
+	std::string text;
+
+	auto operator==(const NodeMessage& rhs) const noexcept -> bool { return id == rhs.id; }
+};
+
 class [[ToastNode, Icon("Circle")]] TOAST_API Node {
 	friend class INodeOwner;
 	friend class World;
@@ -71,23 +88,17 @@ class [[ToastNode, Icon("Circle")]] TOAST_API Node {
 	friend struct _detail::ControlBox;
 	friend struct _detail::NodeCluster;
 	friend struct toast::_detail::WorldTestAccess;
+	friend class physics::Collider;
 
 public:
 	Node();
 	virtual ~Node();
 
-	/**
-	 * @brief Stable unique identifier for this node
-	 * @return The UID assigned at construction or deserialization; never changes
-	 */
+	/// @brief Stable unique identifier, assigned at construction or deserialization. Never changes
 	[[nodiscard]]
 	auto uid() const noexcept -> const UID&;
 
-	/**
-	 * @brief Display name of this node
-	 * @note Siblings may share names; names are not unique identifiers
-	 * @return The current display name
-	 */
+	/// @brief Display name. Siblings may share one - this is not an identifier
 	[[nodiscard]]
 	auto name() const noexcept -> std::string_view;
 
@@ -108,6 +119,17 @@ public:
 	[[nodiscard]]
 	auto participatesIn(NodeOwnerParticipation use) const noexcept -> bool {
 		return m_owner != nullptr && m_owner->participatesIn(use);
+	}
+
+	/**
+	 * @brief The World or Workspace this node belongs to
+	 *
+	 * Tells whose tree a node came from without downcasting. Proxies land in one global list regardless of
+	 * owner, so the renderer needs this to keep one workspace out of another's viewport
+	 */
+	[[nodiscard]]
+	auto owner() const noexcept -> INodeOwner* {
+		return m_owner;
 	}
 
 	/**
@@ -166,10 +188,7 @@ public:
 		return m_type;
 	}
 
-	/**
-	 * @brief The event Listener owned by this node
-	 * @return Reference to the Listener; lazy-allocated on the first call; not freed until the node is destroyed
-	 */
+	/// @brief The event Listener owned by this node. Lazy-allocated, freed only with the node
 	[[nodiscard]]
 	auto listener() noexcept -> event::Listener&;
 
@@ -363,6 +382,20 @@ protected:
 
 	virtual void onReflectedFieldChanged(std::string_view /*field_name*/) { }
 
+	virtual void updateInspectorMessages() { }
+
+	void addInspectorMessage(const NodeMessage& message) {
+		for (auto& existing : m_messages) {
+			if (existing == message) {
+				existing = message;
+				return;
+			}
+		}
+		m_messages.emplace_back(message);
+	}
+
+	void removeInspectorMessage(const NodeMessage& message) { m_messages.remove(message); }
+
 private:
 	[[Reflect, Hidden]]
 	UID m_uid;    // serialized unique id
@@ -423,6 +456,8 @@ private:
 
 	/// Builds m_script_runtime from m_scripts
 	void loadScripts() noexcept;
+
+	std::list<NodeMessage> m_messages;
 };
 
 }
