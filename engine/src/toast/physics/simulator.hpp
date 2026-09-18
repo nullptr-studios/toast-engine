@@ -259,7 +259,14 @@ private:
 	void publishProfile(std::span<const SimulationIsland> islands) const;
 
 	inline static Simulator* instance = nullptr;
-	const std::thread::id m_owner_thread = std::this_thread::get_id();
+
+	// The thread allowed to mutate physics-owned data right now. The editor constructs/loads
+	// workspaces on its UI thread (while the background tick loop is paused) but ticks gameplay
+	// from a dedicated background thread, so this is not a single fixed thread for the process's
+	// lifetime. It is re-latched to the calling thread whenever the simulator is idle (see
+	// mainThreadMutationAllowed) and held fixed while a step is in flight, so a worker thread
+	// mutating state mid-step is still caught.
+	mutable std::thread::id m_owner_thread;
 	std::atomic<SimulationPhase> m_phase = SimulationPhase::idle;
 
 	std::vector<BodySlot> m_bodies;

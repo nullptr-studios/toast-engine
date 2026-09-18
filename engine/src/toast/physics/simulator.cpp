@@ -267,8 +267,16 @@ auto Simulator::nodeFor(BodyID body) -> toast::Box<toast::Node> {
 }
 
 auto Simulator::mainThreadMutationAllowed() const -> bool {
+	const SimulationPhase phase = m_phase.load(std::memory_order_relaxed);
+	if (phase == SimulationPhase::idle) {
+		// No step is in flight, so whichever thread calls now becomes the designated mutation
+		// thread until the next step starts. This lets the editor build/load workspaces on its
+		// UI thread (tick loop paused) and still catches a worker thread mutating physics state
+		// while a step owned by a different thread is actually running.
+		m_owner_thread = std::this_thread::get_id();
+	}
 	const bool is_owner_thread = std::this_thread::get_id() == m_owner_thread;
-	const bool workers_are_idle = m_phase.load(std::memory_order_relaxed) != SimulationPhase::worker_execution;
+	const bool workers_are_idle = phase != SimulationPhase::worker_execution;
 	TOAST_ASSERT(is_owner_thread, "Physics", "Physics-owned data may only be mutated from the simulator thread");
 	TOAST_ASSERT(workers_are_idle, "Physics", "Physics-owned data may not be mutated while worker jobs are executing");
 	return is_owner_thread && workers_are_idle;
@@ -598,7 +606,7 @@ void Simulator::publishVoxelRenderRecords() {
 		      .palette = &data->palette,
 		      .transform = body_transform * local_transform,
 		      .revision = data->surface_revision,
-    }
+		}
 		);
 	}
 
@@ -1859,7 +1867,7 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 			islands.emplace_back(
 			    SimulationIsland {
 			      .sort_key = BodyID {.slot = static_cast<uint32_t>(root), .generation = root_slot.generation},
-      }
+			}
 			);
 		}
 
