@@ -495,7 +495,7 @@ auto Simulator::generateManifoldsAsync(CollisionWorldView world, std::span<const
 	ZoneScopedN("physics::NarrowPhase");
 
 	constexpr size_t minimum_candidates_per_job = 4;
-	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), 1ul);
+	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), static_cast<size_t>(1));
 	const size_t maximum_job_count = worker_count * 3;
 	const size_t job_count =
 	    candidates.empty() ? 0 : std::min(maximum_job_count, std::max(candidates.size() / minimum_candidates_per_job, size_t {1}));
@@ -1373,7 +1373,7 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 			islands.emplace_back(
 			    SimulationIsland {
 			      .sort_key = BodyID {.slot = static_cast<uint32_t>(root), .generation = root_slot.generation},
-      }
+			}
 			);
 		}
 
@@ -1594,7 +1594,7 @@ void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
 	}
 
 	constexpr size_t minimum_islands_per_job = 1;
-	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), 1ul);
+	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), static_cast<size_t>(1));
 	const size_t maximum_job_count = worker_count * 3;
 	const size_t job_count = std::min(maximum_job_count, std::max(islands.size() / minimum_islands_per_job, size_t {1}));
 
