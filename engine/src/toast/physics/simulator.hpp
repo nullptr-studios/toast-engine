@@ -10,6 +10,7 @@
 #include "body.hpp"
 #include "broad_phase.hpp"
 #include "constraint.hpp"
+#include "damage_command.hpp"
 #include "manifold.hpp"
 #include "narrow_phase.hpp"
 #include "physics_material.hpp"
@@ -31,10 +32,6 @@
 #include <toml++/impl/preprocessor.hpp>
 #include <vector>
 
-namespace assets {
-class VoxelModel;
-}
-
 namespace physics {
 
 class Rigidbody;
@@ -52,6 +49,11 @@ class TOAST_API Simulator {
 	friend class toast::VoxelNode;
 
 public:
+	struct DebugDirtyBrick {
+		ShapeID shape;
+		glm::ivec3 brick {};
+	};
+
 	Simulator();
 	~Simulator();
 	Simulator(const Simulator&) = delete;
@@ -73,6 +75,16 @@ public:
 
 	auto setTransform(BodyID body, const glm::vec3& position, const glm::quat& rotation) -> bool;
 	auto setLinearVelocity(BodyID body, const glm::vec3& velocity) -> bool;
+
+	void recordDamage(DamageCommand&& command);
+	void applyDamageCommands();
+	void applyDamageCommand(const DamageCommand& c);
+	void applyExplosion(const glm::vec3& position, float radius, float energy);
+
+	[[nodiscard]]
+	auto debugDirtyBricks() const -> std::span<const DebugDirtyBrick> {
+		return m_debug_dirty_bricks;
+	}
 
 	static void callTick();
 	static void registerRigidbody(Rigidbody& node);
@@ -172,7 +184,7 @@ private:
 	auto createCapsule(BodyID owner, const CapsuleShape& capsule, PhysicsMaterial material) -> ShapeID;
 	[[nodiscard]]
 	auto createVoxelShape(
-	    BodyID owner, const VoxelShape& shape, const assets::VoxelModel& model, const voxel::Palette& palette,
+	    BodyID owner, const VoxelShape& shape, voxel::Volume& volume, const voxel::Palette& palette,
 	    const voxel::MaterialLibrary& materials
 	) -> ShapeID;
 	[[nodiscard]]
@@ -207,6 +219,8 @@ private:
 	static void wakeBody(BodyID id);
 	static void sleepBody(BodyID id);
 	void wakeBodiesTouching(BodyID id);
+	void wakeBodiesInBounds(const AABB& bounds);
+	void convertImpulsesToDamage(std::span<const SimulationIsland> islands);
 	void wakeContactGroups();
 	void updateSleeping(float dt);
 	[[nodiscard]]
@@ -260,12 +274,6 @@ private:
 
 	inline static Simulator* instance = nullptr;
 
-	// The thread allowed to mutate physics-owned data right now. The editor constructs/loads
-	// workspaces on its UI thread (while the background tick loop is paused) but ticks gameplay
-	// from a dedicated background thread, so this is not a single fixed thread for the process's
-	// lifetime. It is re-latched to the calling thread whenever the simulator is idle (see
-	// mainThreadMutationAllowed) and held fixed while a step is in flight, so a worker thread
-	// mutating state mid-step is still caught.
 	mutable std::thread::id m_owner_thread;
 	std::atomic<SimulationPhase> m_phase = SimulationPhase::idle;
 
@@ -285,10 +293,13 @@ private:
 	std::vector<CachedManifold> m_cached_manifolds;
 	PhysicsStepProfile m_profile;
 
-	voxel::BrickPool m_voxel_pool {voxel::k_runtime_brick_capacity};
 	std::vector<VoxelShapeSlot> m_voxel_shapes;
 	std::deque<uint32_t> m_free_voxel_shape_slots;
 	std::vector<VoxelRenderRecord> m_voxel_render_records;
+
+	std::mutex m_damage_mutex;
+	std::vector<DamageCommand> m_damage_commands;
+	std::vector<DebugDirtyBrick> m_debug_dirty_bricks;
 };
 
 }

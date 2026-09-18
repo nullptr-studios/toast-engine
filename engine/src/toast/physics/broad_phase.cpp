@@ -199,6 +199,11 @@ auto BroadPhase::findPairs(CollisionWorldView world) -> std::vector<BroadPhasePa
 	return pairs;
 }
 
+auto BroadPhase::queryBounds(const AABB& bounds) const -> std::vector<ShapeID> {
+	ZoneScopedN("physics::QueryBounds");
+	return m_tree.query(bounds);
+}
+
 auto BroadPhase::debugNodes() const -> std::vector<AABBTreeDebugNode> {
 	return m_tree.debugNodes();
 }

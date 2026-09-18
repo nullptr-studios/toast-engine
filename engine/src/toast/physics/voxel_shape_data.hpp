@@ -11,6 +11,7 @@
 
 #include <cstdint>
 #include <optional>
+#include <toast/voxel/mass_accumulator.hpp>
 #include <toast/voxel/palette.hpp>
 #include <toast/voxel/runtime_pool.hpp>
 #include <toast/voxel/surface.hpp>
@@ -19,8 +20,9 @@
 namespace physics {
 
 struct VoxelShapeData {
-	voxel::Volume volume;
+	voxel::Volume* volume = nullptr;
 	voxel::VolumeSurface surface;
+	voxel::MassMoments moments;
 	voxel::Palette palette;
 	voxel::MaterialLibrary materials;
 	uint32_t source_revision = 0;

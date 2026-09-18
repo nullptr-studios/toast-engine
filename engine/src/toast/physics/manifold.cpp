@@ -1035,7 +1035,7 @@ void collideSphereVoxel(
 	  .max = local_center + glm::vec3(radius),
 	};
 	const VoxelQueryContext context {
-	  .volume = voxel_data.volume, .surface = voxel_data.surface, .palette = voxel_data.palette, .materials = voxel_data.materials
+	  .volume = *voxel_data.volume, .surface = voxel_data.surface, .palette = voxel_data.palette, .materials = voxel_data.materials
 	};
 
 	struct BestContact {
@@ -1371,7 +1371,7 @@ void collideCapsuleVoxel(
 	  .max = glm::max(local_a, local_b) + glm::vec3(radius),
 	};
 	const VoxelQueryContext context {
-	  .volume = voxel_data.volume, .surface = voxel_data.surface, .palette = voxel_data.palette, .materials = voxel_data.materials
+	  .volume = *voxel_data.volume, .surface = voxel_data.surface, .palette = voxel_data.palette, .materials = voxel_data.materials
 	};
 
 	struct BestContact {
@@ -1502,7 +1502,7 @@ void collideBoxVoxel(
 	  .max = local_box.center + local_world_extents,
 	};
 	const VoxelQueryContext context {
-	  .volume = voxel_data.volume, .surface = voxel_data.surface, .palette = voxel_data.palette, .materials = voxel_data.materials
+	  .volume = *voxel_data.volume, .surface = voxel_data.surface, .palette = voxel_data.palette, .materials = voxel_data.materials
 	};
 
 	std::array<std::vector<_detail::ContactCandidate>, voxel::k_normal_direction_count> candidates_per_normal;
