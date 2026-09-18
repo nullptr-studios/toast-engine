@@ -126,7 +126,7 @@ TOAST_TEST_NAMED("voxel", "voxel/18-vox-intermediates", test_voxel_18_vox_interm
 	const uint64_t root_uid = prefab.nodes[0].find("m_uid")->as<toast::UID>().data();
 	for (size_t i = 1; i < prefab.nodes.size(); ++i) {
 		const Prefab::BasicNode& node = prefab.nodes[i];
-		assert(node.type == "voxelNode" && node.find("m_parent")->as<toast::UID>().data() == root_uid);
+		assert(node.type == "toast::VoxelNode" && node.find("m_parent")->as<toast::UID>().data() == root_uid);
 		assert(node.find("m_palette")->as<toast::UID>().data() == palette_uid && node.find("m_mobility")->as<int>() == 0);
 		assert(node.find("m_local_enabled")->as<bool>() == (i != 3));
 	}
@@ -143,11 +143,11 @@ TOAST_TEST_NAMED("voxel", "voxel/18-vox-intermediates", test_voxel_18_vox_interm
 		assert(VoxelModel(readBytes(out / "rock_model0.tvox")).paletteUid() == 0);
 
 		const nlohmann::json json = nlohmann::json::parse(readText(out / "rock.json"));
-		assert(json["nodes"].size() == 1 && json["nodes"][0]["type"] == "voxelNode" && !json["nodes"][0].contains("children"));
+		assert(json["nodes"].size() == 1 && json["nodes"][0]["type"] == "toast::VoxelNode" && !json["nodes"][0].contains("children"));
 	}
 
 	{
-		std::ofstream(out / "unpatched.json") << R"({"name":"x","palette":"x.tpal","nodes":[{"name":"n","type":"voxelNode","model":"x.tvox"}]})";
+		std::ofstream(out / "unpatched.json") << R"({"name":"x","palette":"x.tpal","nodes":[{"name":"n","type":"toast::VoxelNode","model":"x.tvox"}]})";
 		voxManifestToPrefab(out / "unpatched.json", out / "unpatched.tnode");
 		std::stringstream text(readText(out / "unpatched.tnode"));
 		const Prefab unpatched(text);

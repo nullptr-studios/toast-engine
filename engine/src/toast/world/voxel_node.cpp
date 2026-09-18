@@ -1,9 +1,11 @@
 #include "voxel_node.hpp"
 
-#include <toast/physics/simulator.hpp>
+#include <toast/assets/voxel_material_library.hpp>
 #include <toast/log.hpp>
+#include <toast/physics/simulator.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
 #include <toast/voxel/runtime_pool.hpp>
+#include <toast/world/world_test_access.hpp>
 
 namespace toast {
 
@@ -37,6 +39,8 @@ void VoxelNode::setModel(assets::Handle<assets::VoxelModel> model) {
 		return;
 	}
 	releaseVolume();
+	// Draw the new model at once and let physics adopt it on its next step
+	m_physics_volume = {};
 	m_model = std::move(model);
 	m_model_palette = {};
 	m_material_library = {};
@@ -70,6 +74,10 @@ auto VoxelNode::latticePlacement() const -> std::optional<voxel::LatticePlacemen
 }
 
 auto VoxelNode::volume() -> voxel::Volume* {
+	if (voxel::Volume* simulated = physics::Simulator::voxelVolume(m_physics_volume)) {
+		return simulated;
+	}
+
 	const assets::VoxelModel* model = voxelNodeAssetOfType(m_model, "voxel_model");
 
 	if (m_model.hasValue() && model == nullptr && m_reported_wrong_model != m_model.uid().data()) {
@@ -163,6 +171,15 @@ void VoxelNode::releaseVolume() {
 	m_instanced_from = nullptr;
 }
 
+auto VoxelNode::takeVolume() -> std::optional<voxel::Volume> {
+	if (volume() == nullptr || !m_volume.has_value()) {
+		return std::nullopt;
+	}
+	std::optional<voxel::Volume> taken = std::move(m_volume);
+	releaseVolume();
+	return taken;
+}
+
 void VoxelNode::init() {
 	m_registered_proxy = renderer::registerVoxelNodeProxy(this);
 }
@@ -186,6 +203,14 @@ void VoxelNode::end() {
 
 void VoxelNode::destroy() {
 	end();
+}
+
+}
+
+namespace toast::_detail {
+
+void WorldTestAccess::setVoxelMaterialLibrary(VoxelNode& node, assets::Handle<assets::VoxelMaterialLibrary> library) {
+	node.m_material_library = std::move(library);
 }
 
 }

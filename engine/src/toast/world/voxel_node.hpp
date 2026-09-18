@@ -10,12 +10,17 @@
 #include <cstdint>
 #include <optional>
 #include <toast/assets/types.hpp>
+#include <toast/physics/shape.hpp>
 #include <toast/voxel/stamp.hpp>
 
 namespace assets {
 class VoxelModel;
 class VoxelPalette;
 class VoxelMaterialLibrary;
+}
+
+namespace physics {
+class Simulator;
 }
 
 namespace toast {
@@ -71,7 +76,8 @@ public:
 	[[nodiscard]]
 	auto latticePlacement() const -> std::optional<voxel::LatticePlacement>;
 
-	/// @note Lazy. Main thread only
+	/// @brief The simulated volume while physics holds it else a lazy instance of the model
+	/// @note Main thread only
 	[[nodiscard]]
 	auto volume() -> voxel::Volume*;
 
@@ -88,12 +94,19 @@ public:
 	}
 
 private:
+	friend class physics::Simulator;
+	friend struct toast::_detail::WorldTestAccess;
+
 	void init();
 	void begin();
 	void end();
 	void destroy();
 
 	void releaseVolume();
+
+	/// @brief Moves the lazy instance out so physics adopts it instead of instantiating a second copy
+	[[nodiscard]]
+	auto takeVolume() -> std::optional<voxel::Volume>;
 
 	[[Reflect, Name("Model")]]
 	assets::Handle<assets::VoxelModel> m_model;
@@ -114,6 +127,9 @@ private:
 	assets::Handle<assets::VoxelMaterialLibrary> m_material_library;
 
 	uint32_t m_revision = 0;
+
+	/// Stale ids read as unbound
+	physics::VoxelDataID m_physics_volume;
 
 	uint64_t m_reported_wrong_model = 0;
 	uint64_t m_reported_wrong_palette = 0;

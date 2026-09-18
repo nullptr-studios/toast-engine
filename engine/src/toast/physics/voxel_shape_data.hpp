@@ -23,7 +23,6 @@ struct VoxelShapeData {
 	voxel::VolumeSurface surface;
 	voxel::Palette palette;
 	voxel::MaterialLibrary materials;
-	uint32_t source_revision = 0;
 	uint32_t surface_revision = 1;
 };
 

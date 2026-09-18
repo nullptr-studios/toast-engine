@@ -3455,7 +3455,9 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		}
 
 		gathered.push_back({node, volume, palette});
-		key.push_back({.node_uid = node->uid().data(), .revision = node->revision(), .palette = palette});
+		key.push_back(
+		    {.node_uid = node->uid().data(), .revision = node->revision(), .content = volume->revision(), .palette = palette}
+		);
 	}
 
 	if (key != m_voxel_scene_key) {

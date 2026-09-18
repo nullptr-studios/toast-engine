@@ -25,7 +25,9 @@ constexpr float sleep_delay = 0.5f;
 }
 
 Simulator::PhaseScope::PhaseScope(Simulator& simulator, SimulationPhase expected, SimulationPhase next)
-    : m_simulator(simulator), m_previous(expected), m_active(next) {
+    : m_simulator(simulator),
+      m_previous(expected),
+      m_active(next) {
 	const SimulationPhase current = m_simulator.m_phase.load(std::memory_order_relaxed);
 	TOAST_ASSERT(current == expected, "Physics", "Invalid physics simulation phase transition");
 	m_previous = current;
@@ -34,7 +36,8 @@ Simulator::PhaseScope::PhaseScope(Simulator& simulator, SimulationPhase expected
 
 Simulator::PhaseScope::~PhaseScope() {
 	TOAST_ASSERT(
-	    m_simulator.m_phase.load(std::memory_order_relaxed) == m_active, "Physics",
+	    m_simulator.m_phase.load(std::memory_order_relaxed) == m_active,
+	    "Physics",
 	    "Physics simulation phase changed while a phase scope was active"
 	);
 	m_simulator.m_phase.store(m_previous, std::memory_order_relaxed);
@@ -48,6 +51,7 @@ Simulator::Simulator() {
 
 Simulator::~Simulator() {
 	TOAST_INFO("Physics", "Simulator destroyed");
+	unbindVoxelNodes();
 	instance = nullptr;
 }
 
@@ -101,7 +105,7 @@ void Simulator::registerRigidbody(Rigidbody& node) {
 				    material
 				);
 				collider = capsule;
-			} else if (const auto voxel = child.as<toast::VoxelNode>(); voxel.exists()) {
+			} else if (auto voxel = child.as<toast::VoxelNode>(); voxel.exists()) {
 				shape = instance->createVoxelShape(body, *voxel);
 				voxel_node = voxel;
 			} else {
@@ -119,18 +123,7 @@ void Simulator::registerRigidbody(Rigidbody& node) {
 				binding.colliders.push_back({.shape = shape, .node = std::move(collider)});
 			} else {
 				setShapeEnabled(shape, node.enabled() && voxel_node->enabled());
-				const uint32_t source_revision = voxel_node->revision();
-				const uint64_t source_model = voxel_node->getModel().uid().data();
-				const uint64_t source_palette = voxel_node->paletteUid();
-				binding.voxels.push_back(
-				    {
-				      .shape = shape,
-				      .node = std::move(voxel_node),
-				      .source_revision = source_revision,
-				      .source_model = source_model,
-				      .source_palette = source_palette,
-				    }
-				);
+				binding.voxels.push_back(makeVoxelBinding(shape, *voxel_node));
 			}
 			wakeBody(body);
 			++registered_shape_count;
@@ -170,6 +163,11 @@ void Simulator::unregisterRigidbody(Rigidbody& node) {
 				collider.node->assignShape({});
 			}
 		}
+		for (VoxelBinding& voxel : binding.voxels) {
+			if (voxel.node.exists()) {
+				voxel.node->m_physics_volume = {};
+			}
+		}
 	}
 	instance->destroyBody(body);
 	std::erase_if(instance->m_node_bindings, [body](const NodeBinding& binding) { return binding.body == body; });
@@ -186,7 +184,7 @@ void Simulator::registerVoxelNode(toast::VoxelNode& node) {
 	}
 	if (std::ranges::any_of(instance->m_standalone_voxel_bindings, [&node](const StandaloneVoxelBinding& binding) {
 		    return binding.voxel.node.exists() && &*binding.voxel.node == &node;
-		})) {
+	    })) {
 		return;
 	}
 
@@ -206,18 +204,7 @@ void Simulator::registerVoxelNode(toast::VoxelNode& node) {
 
 	setBodyEnabled(body, node.enabled());
 	setShapeEnabled(shape, node.enabled());
-	instance->m_standalone_voxel_bindings.push_back(
-	    {
-	      .body = body,
-	      .voxel = {
-	        .shape = shape,
-	        .node = node.box().as<toast::VoxelNode>(),
-	        .source_revision = node.revision(),
-	        .source_model = node.getModel().uid().data(),
-	        .source_palette = node.paletteUid(),
-	      },
-	    }
-	);
+	instance->m_standalone_voxel_bindings.push_back({.body = body, .voxel = makeVoxelBinding(shape, node)});
 }
 
 void Simulator::unregisterVoxelNode(toast::VoxelNode& node) {
@@ -231,12 +218,92 @@ void Simulator::unregisterVoxelNode(toast::VoxelNode& node) {
 
 	for (const StandaloneVoxelBinding& binding : instance->m_standalone_voxel_bindings) {
 		if (binding.voxel.node.exists() && &*binding.voxel.node == &node) {
+			node.m_physics_volume = {};
 			instance->destroyBody(binding.body);
 		}
 	}
 	std::erase_if(instance->m_standalone_voxel_bindings, [&node](const StandaloneVoxelBinding& binding) {
 		return binding.voxel.node.exists() && &*binding.voxel.node == &node;
 	});
+}
+
+auto Simulator::voxelVolume(VoxelDataID data) -> voxel::Volume* {
+	if (not instance || not instance->valid(data)) {
+		return nullptr;
+	}
+	VoxelShapeData* shape_data = instance->tryGetVoxelData(data);
+	return shape_data != nullptr ? &shape_data->volume : nullptr;
+}
+
+auto Simulator::makeVoxelBinding(ShapeID shape, toast::VoxelNode& node) -> VoxelBinding {
+	return {
+	  .shape = shape,
+	  .node = node.box().as<toast::VoxelNode>(),
+	  .source_model = node.getModel().uid().data(),
+	  .source_asset = node.resolvedModel(),
+	  .source_palette = node.paletteUid(),
+	};
+}
+
+void Simulator::syncVoxelBinding(BodyID body, bool body_enabled, VoxelBinding& binding) {
+	if (not binding.node.exists()) {
+		return;
+	}
+	toast::VoxelNode& node = *binding.node;
+
+	if (binding.source_model != node.getModel().uid().data() || binding.source_asset != node.resolvedModel()) {
+		destroyShape(binding.shape);
+		binding = makeVoxelBinding(createVoxelShape(body, node), node);
+		rebuildMassProperties(body);
+	} else if (binding.source_palette != node.paletteUid()) {
+		if (not refreshVoxelTables(binding.shape, node)) {
+			destroyShape(binding.shape);
+			binding.shape = {};
+		}
+		binding.source_palette = node.paletteUid();
+		rebuildMassProperties(body);
+	}
+
+	Shape* shape = tryGetShape(binding.shape);
+	if (shape == nullptr) {
+		return;
+	}
+	const bool enabled = body_enabled && node.enabled();
+	if (shape->enabled != enabled) {
+		shape->enabled = enabled;
+		incrementShapeRevision(binding.shape);
+	}
+}
+
+auto Simulator::refreshVoxelTables(ShapeID shape, toast::VoxelNode& node) -> bool {
+	const Shape* stored = tryGetShape(shape);
+	VoxelShapeData* data = stored != nullptr && stored->type == ShapeType::voxel ? tryGetVoxelData(stored->voxel.data) : nullptr;
+	const voxel::Palette* palette = node.resolvedPalette();
+	const voxel::MaterialLibrary* materials = node.resolvedMaterialLibrary();
+	if (data == nullptr || palette == nullptr || materials == nullptr || not voxel::validateLibrary(*materials).empty() ||
+	    not voxel::validatePalette(*palette, *materials).empty()) {
+		TOAST_WARN("Physics", "Voxel node '{}' now names a missing or invalid palette or material library", node.name());
+		return false;
+	}
+
+	data->palette = *palette;
+	data->materials = *materials;
+	incrementShapeRevision(shape);
+	return true;
+}
+
+void Simulator::unbindVoxelNodes() {
+	const auto unbind = [](VoxelBinding& binding) {
+		if (binding.node.exists()) {
+			binding.node->m_physics_volume = {};
+		}
+	};
+	for (NodeBinding& binding : m_node_bindings) {
+		std::ranges::for_each(binding.voxels, unbind);
+	}
+	for (StandaloneVoxelBinding& binding : m_standalone_voxel_bindings) {
+		unbind(binding.voxel);
+	}
 }
 
 auto Simulator::rigidbodyFor(BodyID body) -> toast::Box<Rigidbody> {
@@ -297,34 +364,6 @@ void Simulator::publishProfile(std::span<const SimulationIsland> islands) const 
 
 void Simulator::syncEnabledState() {
 	ZoneScopedN("physics::SyncEnabledState");
-	const auto sync_voxel = [this](BodyID body_id, bool body_enabled, VoxelBinding& binding) {
-		if (not binding.node.exists()) {
-			return;
-		}
-
-		const uint64_t model = binding.node->getModel().uid().data();
-		const uint64_t palette = binding.node->paletteUid();
-		if (binding.source_revision != binding.node->revision() || binding.source_model != model ||
-		    binding.source_palette != palette) {
-			destroyShape(binding.shape);
-			binding.shape = createVoxelShape(body_id, *binding.node);
-			binding.source_revision = binding.node->revision();
-			binding.source_model = model;
-			binding.source_palette = palette;
-			rebuildMassProperties(body_id);
-		}
-
-		Shape* shape = tryGetShape(binding.shape);
-		if (shape == nullptr) {
-			return;
-		}
-		const bool enabled = body_enabled && binding.node->enabled();
-		if (shape->enabled != enabled) {
-			shape->enabled = enabled;
-			incrementShapeRevision(binding.shape);
-		}
-	};
-
 	for (NodeBinding& binding : m_node_bindings) {
 		Body* body = tryGetBody(binding.body);
 		if (not body) {
@@ -352,7 +391,7 @@ void Simulator::syncEnabledState() {
 			}
 		}
 		for (VoxelBinding& voxel_binding : binding.voxels) {
-			sync_voxel(binding.body, body->enabled, voxel_binding);
+			syncVoxelBinding(binding.body, body->enabled, voxel_binding);
 		}
 	}
 
@@ -362,9 +401,8 @@ void Simulator::syncEnabledState() {
 			continue;
 		}
 		binding.voxel.node->syncTransform();
-		const bool position_changed = glm::any(
-		    glm::greaterThan(glm::abs(body->position - binding.voxel.node->world_position), glm::vec3(1.0e-5f))
-		);
+		const bool position_changed =
+		    glm::any(glm::greaterThan(glm::abs(body->position - binding.voxel.node->world_position), glm::vec3(1.0e-5f)));
 		const bool rotation_changed = 1.0f - std::abs(glm::dot(body->rotation, binding.voxel.node->world_rotation)) > 1.0e-5f;
 		if (position_changed || rotation_changed) {
 			setTransform(binding.body, binding.voxel.node->world_position, binding.voxel.node->world_rotation);
@@ -374,7 +412,7 @@ void Simulator::syncEnabledState() {
 			}
 		}
 		body->enabled = binding.voxel.node->enabled();
-		sync_voxel(binding.body, body->enabled, binding.voxel);
+		syncVoxelBinding(binding.body, body->enabled, binding.voxel);
 	}
 }
 
@@ -1176,7 +1214,7 @@ auto Simulator::createCapsule(BodyID owner, const CapsuleShape& capsule, Physics
 
 auto Simulator::createVoxelShape(
     BodyID owner, const VoxelShape& shape, const assets::VoxelModel& model, const voxel::Palette& palette,
-    const voxel::MaterialLibrary& materials
+    const voxel::MaterialLibrary& materials, std::optional<voxel::Volume> volume
 ) -> ShapeID {
 	ZoneScopedN("physics::CreateVoxelShape");
 	ZoneValue(static_cast<uint64_t>(owner.slot));
@@ -1204,9 +1242,15 @@ auto Simulator::createVoxelShape(
 		return {};
 	}
 
-	std::optional<voxel::Volume> volume = model.instantiate(m_voxel_pool);
+	voxel::BrickPool& pool = voxel::runtimeBrickPool();
+	if (volume.has_value() && (volume->pool() != &pool || volume->brickDims() != brick_dims)) {
+		volume.reset();
+	}
 	if (not volume.has_value()) {
-		TOAST_WARN("Physics", "Rejected voxel shape because the physics brick pool is out of its {} bricks", m_voxel_pool.capacity());
+		volume = model.instantiate(pool);
+	}
+	if (not volume.has_value()) {
+		TOAST_WARN("Physics", "Rejected voxel shape because the runtime brick pool is out of its {} bricks", pool.capacity());
 		return {};
 	}
 
@@ -1285,12 +1329,9 @@ auto Simulator::createVoxelShape(BodyID owner, toast::VoxelNode& node) -> ShapeI
 		voxel_shape.local_rotation = node.rotation;
 	}
 
-	const ShapeID shape = createVoxelShape(owner, voxel_shape, *model, *palette, *materials);
-	const Shape* stored_shape = tryGetShape(shape);
-	if (stored_shape != nullptr) {
-		if (VoxelShapeData* data = tryGetVoxelData(stored_shape->voxel.data)) {
-			data->source_revision = node.revision();
-		}
+	const ShapeID shape = createVoxelShape(owner, voxel_shape, *model, *palette, *materials, node.takeVolume());
+	if (const Shape* stored_shape = tryGetShape(shape)) {
+		node.m_physics_volume = stored_shape->voxel.data;
 	}
 	return shape;
 }
@@ -1763,7 +1804,7 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 			islands.emplace_back(
 			    SimulationIsland {
 			      .sort_key = BodyID {.slot = static_cast<uint32_t>(root), .generation = root_slot.generation},
-			    }
+      }
 			);
 		}
 

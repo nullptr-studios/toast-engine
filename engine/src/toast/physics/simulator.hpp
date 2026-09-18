@@ -81,6 +81,11 @@ public:
 	static void registerVoxelNode(toast::VoxelNode& node);
 	static void unregisterVoxelNode(toast::VoxelNode& node);
 
+	/// @brief Null without a simulator or for a stale id
+	/// @note Main thread only and never during a step
+	[[nodiscard]]
+	static auto voxelVolume(VoxelDataID data) -> voxel::Volume*;
+
 private:
 	enum class SimulationPhase : uint8_t {
 		idle,
@@ -106,11 +111,12 @@ private:
 		toast::Box<Collider> node;
 	};
 
+	/// Carves never change the source so only a new model or palette reaches the shape
 	struct VoxelBinding {
 		ShapeID shape;
 		toast::Box<toast::VoxelNode> node;
-		uint32_t source_revision = 0;
 		uint64_t source_model = 0;
+		const assets::VoxelModel* source_asset = nullptr;
 		uint64_t source_palette = 0;
 	};
 
@@ -171,13 +177,22 @@ private:
 	auto createBox(BodyID owner, const BoxShape& box, PhysicsMaterial material) -> ShapeID;
 	[[nodiscard]]
 	auto createCapsule(BodyID owner, const CapsuleShape& capsule, PhysicsMaterial material) -> ShapeID;
+	/// @brief Adopts @p volume when it matches @p model else instantiates into the runtime pool the renderer packs
 	[[nodiscard]]
 	auto createVoxelShape(
 	    BodyID owner, const VoxelShape& shape, const assets::VoxelModel& model, const voxel::Palette& palette,
-	    const voxel::MaterialLibrary& materials
+	    const voxel::MaterialLibrary& materials, std::optional<voxel::Volume> volume
 	) -> ShapeID;
+	/// @brief Binds the node to the created volume
 	[[nodiscard]]
 	auto createVoxelShape(BodyID owner, toast::VoxelNode& node) -> ShapeID;
+	[[nodiscard]]
+	static auto makeVoxelBinding(ShapeID shape, toast::VoxelNode& node) -> VoxelBinding;
+	/// @brief Swaps palette and materials in place so carved voxels survive
+	[[nodiscard]]
+	auto refreshVoxelTables(ShapeID shape, toast::VoxelNode& node) -> bool;
+	void syncVoxelBinding(BodyID body, bool body_enabled, VoxelBinding& binding);
+	void unbindVoxelNodes();
 
 	void destroyShape(ShapeID shape);
 	[[nodiscard]]
@@ -274,7 +289,6 @@ private:
 	std::vector<CachedManifold> m_cached_manifolds;
 	PhysicsStepProfile m_profile;
 
-	voxel::BrickPool m_voxel_pool {voxel::k_runtime_brick_capacity};
 	std::vector<VoxelShapeSlot> m_voxel_shapes;
 	std::deque<uint32_t> m_free_voxel_shape_slots;
 };
