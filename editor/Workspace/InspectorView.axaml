@@ -79,8 +79,6 @@
 		<Style Selector="TextBlock.subgroup">
 			<Setter Property="FontWeight"
 			        Value="SemiBold" />
-			<Setter Property="FontSize"
-			        Value="12" />
 			<Setter Property="Foreground"
 			        Value="{StaticResource TextMuted}" />
 			<Setter Property="VerticalAlignment"

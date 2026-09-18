@@ -28,11 +28,6 @@ class Simulator;
 
 namespace toast {
 
-enum class VoxelMobility : uint8_t {
-	static_geometry = 0,
-	dynamic = 1,
-};
-
 class [[ToastNode, Icon("BoxMesh")]] TOAST_API VoxelNode : public Node3D {
 	friend class physics::Simulator;
 
@@ -45,9 +40,6 @@ public:
 	signals::Signal<toast::Box<toast::Node>> contact_end;
 	signals::Signal<> went_to_sleep;
 	signals::Signal<> woke_up;
-
-	[[Reflect, Name("Indestructible")]]
-	bool indestructible = false;
 
 	[[nodiscard]]
 	auto getModel() const -> const assets::Handle<assets::VoxelModel>& {
@@ -67,13 +59,6 @@ public:
 	}
 
 	void setPalette(assets::Handle<assets::VoxelPalette> palette);
-
-	[[nodiscard]]
-	auto mobility() const noexcept -> VoxelMobility {
-		return m_mobility;
-	}
-
-	void setMobility(VoxelMobility mobility) noexcept { m_mobility = mobility; }
 
 	/// @returns the override else the model palette else 0
 	[[nodiscard]]
@@ -104,49 +89,9 @@ public:
 	}
 
 	[[Reflect]]
-	assets::Handle<assets::PhysicsMaterial> material;
-
-	[[Reflect, Name("Lock X"), Group("Position Locks"), ReadOnly]]
-	bool lock_pos_x = false;
-	[[Reflect, Name("Lock Y"), Group("Position Locks"), ReadOnly]]
-	bool lock_pos_y = false;
-	[[Reflect, Name("Lock Z"), Group("Position Locks"), ReadOnly]]
-	bool lock_pos_z = false;
-	[[Reflect, Name("Lock X"), Group("Rotation Locks"), ReadOnly]]
-	bool lock_rot_x = false;
-	[[Reflect, Name("Lock Y"), Group("Rotation Locks"), ReadOnly]]
-	bool lock_rot_y = false;
-	[[Reflect, Name("Lock Z"), Group("Rotation Locks"), ReadOnly]]
-	bool lock_rot_z = false;
-
-	[[Reflect]]
 	void sleep();
 	[[Reflect]]
 	void wake();
-
-	[[Reflect, Unit("kg")]]
-	float mass = 1.0f;
-	[[Reflect]]
-	float gravity_scale = 1.0f;
-	[[Reflect]]
-	bool allow_sleep = true;
-	[[Reflect, ReadOnly]]
-	bool awake = true;
-
-	[[Reflect, Group("Mass Distribution"), Unit("m"), ReadOnly]]
-	glm::vec3 center_of_mass = {};
-	[[Reflect, Group("Mass Distribution"), Unit("kg•m²"), ReadOnly]]
-	glm::vec3 inertia = {};
-
-	[[Reflect, Group("Velocities"), Unit("m/s"), ReadOnly]]
-	glm::vec3 linear_velocity = {};
-	[[Reflect, Group("Velocities"), Unit("rad/s"), ReadOnly]]
-	glm::vec3 angular_velocity = {};
-
-	[[Reflect, Group("Constant Forces"), Unit("N"), ReadOnly]]
-	glm::vec3 constant_force = {};
-	[[Reflect, Group("Constant Forces"), Unit("N•m"), ReadOnly]]
-	glm::vec3 constant_torque = {};
 
 private:
 	struct ActiveContact {
@@ -185,14 +130,55 @@ private:
 		return m_shape;
 	}
 
-	[[Reflect, Name("Model")]]
+	[[Reflect]]
 	assets::Handle<assets::VoxelModel> m_model;
 
 	[[Reflect, Name("Palette Override")]]
 	assets::Handle<assets::VoxelPalette> m_palette;
 
-	[[Reflect, Name("Mobility"), Enum("Static", "Dynamic")]]
-	VoxelMobility m_mobility = VoxelMobility::static_geometry;
+	[[Reflect]]
+	bool indestructible = false;
+
+	[[Reflect]]
+	bool allow_sleep = true;
+
+	[[Reflect, ReadOnly]]
+	bool awake = true;
+
+	[[Reflect, Group("Physics")]]
+	float gravity_scale = 1.0f;
+
+	[[Reflect, Group("Physics")]]
+	bool auto_mass_center = true;
+
+	[[Reflect, Group("Physics"), Unit("m"), ReadOnly("auto_mass_center")]]
+	glm::vec3 center_of_mass = {};
+
+	[[Reflect, Group("Physics"), Unit("kg•m²"), ReadOnly("auto_mass_center")]]
+	glm::vec3 inertia = {};
+
+	[[Reflect, Group("Physics"), Subgroup("Velocities"), Unit("m/s"), ReadOnly]]
+	glm::vec3 linear_velocity = {};
+	[[Reflect, Group("Physics"), Subgroup("Velocities"), Unit("rad/s"), ReadOnly]]
+	glm::vec3 angular_velocity = {};
+
+	[[Reflect, Group("Physics"), Subgroup("Constant Forces"), Unit("N"), ReadOnly]]
+	glm::vec3 constant_force = {};
+	[[Reflect, Group("Physics"), Subgroup("Constant Forces"), Unit("N•m"), ReadOnly]]
+	glm::vec3 constant_torque = {};
+
+	[[Reflect, Name("Lock X"), Group("Physics"), Subgroup("Position Locks"), ReadOnly]]
+	bool lock_pos_x = false;
+	[[Reflect, Name("Lock Y"), Group("Physics"), Subgroup("Position Locks"), ReadOnly]]
+	bool lock_pos_y = false;
+	[[Reflect, Name("Lock Z"), Group("Physics"), Subgroup("Position Locks"), ReadOnly]]
+	bool lock_pos_z = false;
+	[[Reflect, Name("Lock X"), Group("Physics"), Subgroup("Rotation Locks"), ReadOnly]]
+	bool lock_rot_x = false;
+	[[Reflect, Name("Lock Y"), Group("Physics"), Subgroup("Rotation Locks"), ReadOnly]]
+	bool lock_rot_y = false;
+	[[Reflect, Name("Lock Z"), Group("Physics"), Subgroup("Rotation Locks"), ReadOnly]]
+	bool lock_rot_z = false;
 
 	bool m_registered_proxy = false;
 	bool m_registration_requested = false;

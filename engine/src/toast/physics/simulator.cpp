@@ -174,22 +174,23 @@ void Simulator::registerVoxelNode(toast::VoxelNode& node) {
 		return;
 	}
 
+	// TODO: THIS IS SEVERILY HARDCODED
 	PhysicsMaterial material;
-	if (node.material.hasValue()) {
-		material.restitution = node.material->restitution();
-		material.static_friction = node.material->staticFriction();
-		material.dynamic_friction = node.material->dynamicFriction();
-	}
+	// if (node.material.hasValue()) {
+	// 	material.restitution = node.material->restitution();
+	// 	material.static_friction = node.material->staticFriction();
+	// 	material.dynamic_friction = node.material->dynamicFriction();
+	// }
 
 	node.syncTransform();
-	const bool dynamic_body = not node.indestructible && node.mobility() == toast::VoxelMobility::dynamic;
+	const bool dynamic_body = not node.indestructible;
 	const BodyID body = instance->createBody(
 	    BodyDescriptor {
 	      .type = dynamic_body ? BodyType::dynamic_body : BodyType::static_body,
 	      .allow_sleep = node.allow_sleep,
 	      .position = node.world_position,
 	      .rotation = node.world_rotation,
-	      .mass = node.mass,
+	      .mass = 1.0f,    // HACK: HARDCODED
 	      .gravity_scale = node.gravity_scale,
 	    }
 	);
@@ -360,7 +361,7 @@ void Simulator::syncEnabledState() {
 			continue;
 		}
 
-		const bool wants_dynamic = not binding.node->indestructible && binding.node->mobility() == toast::VoxelMobility::dynamic;
+		const bool wants_dynamic = not binding.node->indestructible;
 		if (wants_dynamic != (body->type == BodyType::dynamic_body)) {
 			voxel_nodes_to_reregister.push_back(binding.node);
 			continue;
