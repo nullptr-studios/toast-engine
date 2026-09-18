@@ -1804,7 +1804,7 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 			islands.emplace_back(
 			    SimulationIsland {
 			      .sort_key = BodyID {.slot = static_cast<uint32_t>(root), .generation = root_slot.generation},
-      }
+			}
 			);
 		}
 
