@@ -80,7 +80,7 @@ auto BroadPhase::findPairs(CollisionWorldView world) -> std::vector<BroadPhasePa
 	m_stats = {.input_shapes = world.shapes.size()};
 
 	constexpr size_t minimum_bounds_per_job = 32;
-	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), 1ull);
+	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), static_cast<size_t>(1));
 	const size_t maximum_job_count = worker_count * 3;
 	const size_t job_count =
 	    world.shapes.empty() ? 0 : std::min(maximum_job_count, std::max(world.shapes.size() / minimum_bounds_per_job, size_t {1}));

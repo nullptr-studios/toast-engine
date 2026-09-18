@@ -13,6 +13,7 @@ logs/
 **[Bb]in
 **[Oo]bj**
 **[Tt]arget**
+!**/CrashTarget.cs
 [Oo]ut
 engine/include/
 vcpkg_installed/

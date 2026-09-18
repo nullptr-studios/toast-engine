@@ -25,6 +25,10 @@ namespace scripting {
 namespace {
 
 auto luaArgToAny(lua_State* l, const luabridge::LuaRef& v, std::string_view cpp_type, const char* param_name) -> std::any {
+	if (cpp_type.contains("luabridge::LuaRef")) {
+		return std::any {std::in_place_type<luabridge::LuaRef>, v};
+	}
+
 	const bool is_bool = cpp_type.contains("bool");
 	const bool is_float = cpp_type.contains("float");
 	const bool is_double = cpp_type.contains("double");

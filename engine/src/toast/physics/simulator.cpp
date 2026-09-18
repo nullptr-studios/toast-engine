@@ -495,7 +495,7 @@ auto Simulator::generateManifoldsAsync(CollisionWorldView world, std::span<const
 	ZoneScopedN("physics::NarrowPhase");
 
 	constexpr size_t minimum_candidates_per_job = 4;
-	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), 1ull);
+	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), static_cast<size_t>(1));
 	const size_t maximum_job_count = worker_count * 3;
 	const size_t job_count =
 	    candidates.empty() ? 0 : std::min(maximum_job_count, std::max(candidates.size() / minimum_candidates_per_job, size_t {1}));
@@ -1475,13 +1475,13 @@ auto Simulator::prepareConstraint(const Manifold& manifold, const ContactPoint& 
 	float tangent_mass = 0.0f;
 
 	if (tangent_length_sq > 1.0e-10f) {
-		tangent = tangent_velocity / sqrt(tangent_length_sq);
+		tangent = tangent_velocity / std::sqrt(tangent_length_sq);
 	} else if (cached_contact) {
 		const glm::vec3 projected_tangent =
 		    cached_contact->tangent_impulse - manifold.normal * glm::dot(cached_contact->tangent_impulse, manifold.normal);
 		const float projected_length_sq = glm::dot(projected_tangent, projected_tangent);
 		if (projected_length_sq > 1.0e-10f && std::isfinite(projected_length_sq)) {
-			tangent = projected_tangent / sqrt(projected_length_sq);
+			tangent = projected_tangent / std::sqrt(projected_length_sq);
 		}
 	}
 
@@ -1594,7 +1594,7 @@ void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
 	}
 
 	constexpr size_t minimum_islands_per_job = 1;
-	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), 1ull);
+	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), static_cast<size_t>(1));
 	const size_t maximum_job_count = worker_count * 3;
 	const size_t job_count = std::min(maximum_job_count, std::max(islands.size() / minimum_islands_per_job, size_t {1}));
 
