@@ -19,6 +19,7 @@
 #include <vector>
 
 namespace toast {
+
 struct Transition {
 	std::string to;
 	std::optional<std::function<bool()>> condition;
@@ -34,20 +35,23 @@ struct State {
 
 class [[ToastNode]] TOAST_API StateMachine : public Node {
 public:
-	[[Reflect]]
-	std::string default_state;
-
-	[[Reflect, ReadOnly]]
-	std::string current_state;
-
 	void addState(const std::string& name, const State& state);
 
 	[[Reflect]]
 	void addState(const std::string& name, const luabridge::LuaRef& table);
 
+	[[Reflect]]
 	void setState(const std::string& name);
 
+	[[Reflect]]
+	auto getState() -> std::string_view {
+		return current_state;
+	}
+
 private:
+	[[Reflect, ReadOnly]]
+	std::string current_state;
+
 	std::map<std::string, std::unique_ptr<State>> states;
 	State* cached_state = nullptr;
 

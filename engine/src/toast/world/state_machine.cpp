@@ -21,14 +21,27 @@ auto callFn(auto fn) {
 }
 
 void StateMachine::begin() {
-	setState(default_state);
+	if (not cached_state && current_state.empty()) {
+		return;
+	}
+	if (states.contains(current_state)) {
+		cached_state = states.at(current_state).get();
+	}
+	if (cached_state) {
+		callFn(cached_state->entry);
+	}
 }
 
 void StateMachine::end() {
-	if (not cached_state) {
+	if (not cached_state && current_state.empty()) {
 		return;
 	}
-	callFn(cached_state->exit);
+	if (states.contains(current_state)) {
+		cached_state = states.at(current_state).get();
+	}
+	if (cached_state) {
+		callFn(cached_state->exit);
+	}
 	cached_state = nullptr;
 }
 
@@ -40,11 +53,19 @@ void StateMachine::tick() {
 	for (const auto& trans : cached_state->transitions) {
 		if (callFn(trans.condition)) {
 			setState(trans.to);
+			break;
 		}
 	}
 }
 
 void StateMachine::setState(const std::string& name) {
+	if (current_state == name) {
+		return;
+	}
+	if (not cached_state) {
+		current_state = name;
+		return;
+	}
 	if (cached_state) {
 		callFn(cached_state->exit);
 
@@ -58,9 +79,9 @@ void StateMachine::setState(const std::string& name) {
 
 	if (states.contains(name)) {
 		cached_state = states[name].get();
+		current_state = name;
 	} else {
 		TOAST_WARN("StateMachine", "Nodes: {}:{}, NON VALID STATE: {}", this->uid(), this->name(), name);
-		cached_state = nullptr;
 		return;
 	}
 
@@ -68,7 +89,12 @@ void StateMachine::setState(const std::string& name) {
 }
 
 void StateMachine::addState(const std::string& name, const State& state) {
-	if (states.contains(name)) { }
+	if (states.contains(name)) {
+		TOAST_WARN("StateMachine", "Overwriting existing state: {}", name);
+	}
+	if (cached_state != nullptr) {
+		TOAST_WARN("StateMachine", "Cannot Add State: {} After initiation", name);
+	}
 	states.emplace(name, std::make_unique<State>(state));
 }
 
