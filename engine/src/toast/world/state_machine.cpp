@@ -5,9 +5,71 @@
 
 namespace toast {
 
+auto callFn(auto fn) {
+	using ReturnType = std::invoke_result_t<decltype(*fn)>;
 
-void StateMachine::addState(std::string_view name, const State& state) {
-	states.emplace(name,state);
+	if constexpr (std::is_void_v<ReturnType>) {
+		if (fn) {
+			(*fn)();
+		}
+	} else {
+		if (fn) {
+			return (*fn)();
+		}
+		return ReturnType {};
+	}
+}
+
+void StateMachine::begin() {
+	setState(default_state);
+}
+
+void StateMachine::end() {
+	if (not cached_state) {
+		return;
+	}
+	callFn(cached_state->exit);
+	cached_state = nullptr;
+}
+
+void StateMachine::tick() {
+	if (not cached_state) {
+		return;
+	}
+	callFn(cached_state->tick);
+	for (const auto& trans : cached_state->transitions) {
+		if (callFn(trans.condition)) {
+			setState(trans.to);
+		}
+	}
+}
+
+void StateMachine::setState(const std::string& name) {
+	if (cached_state) {
+		callFn(cached_state->exit);
+
+		for (const auto& trans : cached_state->transitions) {
+			if (trans.to == name) {
+				callFn(trans.invoke);
+				break;
+			}
+		}
+	}
+
+	if (states.contains(name)) {
+		cached_state = states[name].get();
+	} else {
+		TOAST_WARN("StateMachine", "Nodes: {}:{}, NON VALID STATE: {}", this->uid(), this->name(), name);
+		cached_state = nullptr;
+		return;
+	}
+
+	callFn(cached_state->entry);
+}
+
+void StateMachine::addState(const std::string& name, const State& state) {
+	if (states.contains(name)) { }
+	states.emplace(name, std::make_unique<State>(state));
 }
 
 auto luaVoidCallback(const luabridge::LuaRef& value, std::string_view name) -> std::optional<std::function<void()>> {
@@ -68,7 +130,6 @@ auto parseTransition(const luabridge::LuaRef& table) -> std::optional<Transition
 	transition.invoke = luaVoidCallback(table["invoke"], "transition.invoke");
 	return transition;
 }
-
 
 void StateMachine::addState(const std::string& name, const luabridge::LuaRef& table) {
 	if (!table.isTable()) {

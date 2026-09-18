@@ -6,12 +6,14 @@
 
 #pragma once
 
+#include "toast/log.hpp"
 #include "toast/world/node.hpp"
 
 #include <functional>
 #include <lua.hpp>
 #include <luabridge3/LuaBridge/detail/LuaRef.h>
 #include <map>
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
@@ -38,19 +40,19 @@ public:
 	[[Reflect, ReadOnly]]
 	std::string current_state;
 
-	void addState(std::string_view name, const State& state);
+	void addState(const std::string& name, const State& state);
 
 	[[Reflect]]
 	void addState(const std::string& name, const luabridge::LuaRef& table);
 
-private:
-	std::map<std::string, State> states;
-	State* cached_state;
+	void setState(const std::string& name);
 
-	void tick() {
-		if (cached_state->tick) {
-			(*cached_state->tick)();
-		}
-	}
+private:
+	std::map<std::string, std::unique_ptr<State>> states;
+	State* cached_state = nullptr;
+
+	void begin();
+	void end();
+	void tick();
 };
 }
