@@ -42,12 +42,12 @@ void VoxelSceneUpload::build(const VulkanCore& core) {
 
 	const std::array<std::pair<const void*, vk::DeviceSize>, VoxelGpuStorage::k_section_count> sources {
 	  {
-	   {m_pool.materials.data(), m_pool.materials.size() * sizeof(uint32_t)},
-	   {m_pool.occupancy.data(), m_pool.occupancy.size() * sizeof(uint32_t)},
-	   {m_scene.grids.data(), m_scene.grids.size() * sizeof(uint32_t)},
-	   {m_scene.coarse.data(), m_scene.coarse.size() * sizeof(uint32_t)},
-	   {m_scene.palettes.data(), m_scene.palettes.size() * sizeof(uint32_t)},
-	   {m_scene.records.data(), m_scene.records.size() * sizeof(toast::voxel::gpu::VolumeRecord)},
+     {m_pool.materials.data(), m_pool.materials.size() * sizeof(uint32_t)},
+     {m_pool.occupancy.data(), m_pool.occupancy.size() * sizeof(uint32_t)},
+     {m_scene.grids.data(), m_scene.grids.size() * sizeof(uint32_t)},
+     {m_scene.coarse.data(), m_scene.coarse.size() * sizeof(uint32_t)},
+     {m_scene.palettes.data(), m_scene.palettes.size() * sizeof(uint32_t)},
+     {m_scene.records.data(), m_scene.records.size() * sizeof(toast::voxel::gpu::VolumeRecord)},
 	   }
 	};
 	constexpr std::array<std::string_view, VoxelGpuStorage::k_section_count> k_names {
