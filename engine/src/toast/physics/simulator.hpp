@@ -27,6 +27,7 @@
 #include <thread>
 #include <toast/export.hpp>
 #include <toast/log.hpp>
+#include <toast/voxel/connectivity.hpp>
 #include <toast/world/box.hpp>
 #include <toast/world/voxel_node.hpp>
 #include <toml++/impl/preprocessor.hpp>
@@ -52,6 +53,11 @@ public:
 	struct DebugDirtyBrick {
 		ShapeID shape;
 		glm::ivec3 brick {};
+	};
+
+	struct ConnectivityResult {
+		ShapeID shape;
+		voxel::Connectivity connectivity;
 	};
 
 	Simulator();
@@ -80,6 +86,9 @@ public:
 	void applyDamageCommands();
 	void applyDamageCommand(const DamageCommand& c);
 	void applyExplosion(const glm::vec3& position, float radius, float energy);
+
+	[[nodiscard]]
+	auto runConnectivityAnalysis() -> std::vector<ConnectivityResult>;
 
 	[[nodiscard]]
 	auto debugDirtyBricks() const -> std::span<const DebugDirtyBrick> {

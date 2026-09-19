@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include "anchor_mask.hpp"
+#include "component_classification.hpp"
 #include "shape.hpp"
 
 #include <cstdint>
@@ -27,6 +29,9 @@ struct VoxelShapeData {
 	voxel::MaterialLibrary materials;
 	uint32_t source_revision = 0;
 	uint32_t surface_revision = 1;
+	AnchorMask anchor_mask = k_anchor_null;
+	bool connectivity_dirty = false;
+	std::vector<DetachedComponent> detached_components;
 };
 
 struct VoxelShapeSlot {

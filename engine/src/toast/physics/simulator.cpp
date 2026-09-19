@@ -1,6 +1,7 @@
 #include "simulator.hpp"
 
 #include "accumulator.hpp"
+#include "anchor_mask.hpp"
 #include "contact_events.hpp"
 #include "nodes/box_collider.hpp"
 #include "nodes/capsule_collider.hpp"
@@ -345,6 +346,21 @@ void Simulator::tick() {
 	const float dt = static_cast<float>(Accumulator::fixed_delta);
 	syncEnabledState();
 	applyDamageCommands();
+	auto connectivity_results = runConnectivityAnalysis();
+	for (const auto& r : connectivity_results) {
+		const Shape* shape = tryGetShape(r.shape);
+		if (shape == nullptr || shape->type != ShapeType::voxel) {
+			continue;
+		}
+		VoxelShapeData* data = tryGetVoxelData(shape->voxel.data);
+		if (data == nullptr || data->volume == nullptr) {
+			continue;
+		}
+
+		const glm::uvec3 brick_dims = data->volume->brickDims();
+		const std::vector<ComponentClass> classes = classifyComponents(r.connectivity, brick_dims, data->anchor_mask);
+		data->detached_components = buildDetachedComponents(r.connectivity, classes, brick_dims);
+	}
 	integrate(dt);
 
 	{
@@ -1371,12 +1387,15 @@ auto Simulator::createVoxelShape(
 		moments = accumulateMassMoments(volume, palette, materials);
 	}
 
+	const AnchorMask default_anchor_mask = tryGetBody(owner)->type == BodyType::static_body ? k_anchor_bottom : k_anchor_null;
+
 	VoxelShapeData voxel_data {
 	  .volume = &volume,
 	  .surface = std::move(surface),
 	  .moments = moments,
 	  .palette = palette,
 	  .materials = materials,
+	  .anchor_mask = default_anchor_mask,
 	};
 
 	VoxelDataID data_id;
@@ -1897,10 +1916,11 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 									continue;
 								}
 
-								if (volume.setVoxel(v, voxel::k_empty_palette_index).changed) {
-									// keep the running moments exact so the mass rebuild below stays O(1)
+								voxel::Volume::VoxelWrite write = volume.setVoxel(v, voxel::k_empty_palette_index);
+								if (write.changed) {
 									data->moments.remove(v.x, v.y, v.z, material.density);
 									brick_dirty = true;
+									data->connectivity_dirty = true;
 								}
 							}
 						}
@@ -1983,6 +2003,69 @@ void Simulator::applyExplosion(const glm::vec3& position, float radius, float en
 		    }
 		);
 	}
+}
+
+auto Simulator::runConnectivityAnalysis() -> std::vector<ConnectivityResult> {
+	ZoneScoped;
+
+	struct PendingJob {
+		ShapeID shape;
+		uint32_t revision;
+		std::future<voxel::Connectivity> future;
+	};
+
+	std::vector<PendingJob> pending;
+
+	std::scoped_lock voxel_lock {voxelDataMutex()};
+
+	for (const auto& [index, slot] : m_shapes | std::views::enumerate) {
+		if (not slot.occupied || slot.shape.type != ShapeType::voxel) {
+			continue;
+		}
+
+		auto* data = tryGetVoxelData(slot.shape.voxel.data);
+		if (not data || not data->connectivity_dirty) {
+			continue;
+		}
+
+		auto* volume = data->volume;
+		if (volume == nullptr) {
+			continue;
+		}
+
+		ShapeID id {.slot = static_cast<uint32_t>(index), .generation = slot.generation};
+		uint32_t revision = shapeRevision(id);
+		data->connectivity_dirty = false;
+
+		// clang-format off
+		pending.emplace_back(PendingJob {
+			.shape = id,
+			.revision = revision,
+			.future = toast::ThreadPool::push([volume] {
+				ZoneScoped;
+				return voxel::analyseConnectivity(*volume);
+			})
+		});
+		// clang-format on
+	}
+
+	std::vector<ConnectivityResult> results;
+	results.reserve(pending.size());
+	for (auto& p : pending) {
+		auto c = p.future.get();
+		if (shapeRevision(p.shape) != p.revision) {
+			// shape was changed mid-compute, discard
+			if (const Shape* shape = tryGetShape(p.shape); shape != nullptr && shape->type == ShapeType::voxel) {
+				if (VoxelShapeData* data = tryGetVoxelData(shape->voxel.data)) {
+					data->connectivity_dirty = true;
+				}
+			}
+			continue;
+		}
+		results.emplace_back(ConnectivityResult {.shape = p.shape, .connectivity = std::move(c)});
+	}
+
+	return results;
 }
 
 void Simulator::convertImpulsesToDamage(std::span<const SimulationIsland> islands) {
