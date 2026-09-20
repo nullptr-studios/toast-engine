@@ -966,20 +966,29 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 	const auto& fill_vertices = frame->debug_triangle_vertices;
 	m_fill_vertex_counts[frame_index] = static_cast<uint32_t>(fill_vertices.size());
 	if (!fill_vertices.empty()) {
-		std::vector<std::array<DebugVertex, 3>> triangles;
-		triangles.reserve(fill_vertices.size() / 3);
-		for (size_t i = 0; i + 2 < fill_vertices.size(); i += 3) {
-			triangles.push_back({fill_vertices[i], fill_vertices[i + 1], fill_vertices[i + 2]});
+		ZoneScopedN("DebugPass::SortFill");
+
+		const size_t triangle_count = fill_vertices.size() / 3;
+		m_fill_sort_order.resize(triangle_count);
+		m_fill_sort_depths.resize(triangle_count);
+
+		const glm::mat4& view = frame->frame_data.view;
+		for (size_t triangle = 0; triangle < triangle_count; ++triangle) {
+			const size_t base = triangle * 3;
+			const glm::vec3 center =
+			    (fill_vertices[base].position + fill_vertices[base + 1].position + fill_vertices[base + 2].position) / 3.0f;
+			m_fill_sort_order[triangle] = static_cast<uint32_t>(triangle);
+			m_fill_sort_depths[triangle] = (view * glm::vec4(center, 1.0f)).z;
 		}
-		auto depth = [&](const auto& triangle) {
-			const glm::vec3 center = (triangle[0].position + triangle[1].position + triangle[2].position) / 3.0f;
-			return (frame->frame_data.view * glm::vec4(center, 1.0f)).z;
-		};
-		std::stable_sort(triangles.begin(), triangles.end(), [&](const auto& a, const auto& b) { return depth(a) < depth(b); });
+
+		std::stable_sort(m_fill_sort_order.begin(), m_fill_sort_order.end(), [this](uint32_t a, uint32_t b) {
+			return m_fill_sort_depths[a] < m_fill_sort_depths[b];
+		});
+
 		ensureLineCapacity(core, fill_buffer, fill_vertices.size());
 		auto* destination = static_cast<DebugVertex*>(fill_buffer.mapped);
-		for (const auto& triangle : triangles) {
-			std::memcpy(destination, triangle.data(), 3 * sizeof(DebugVertex));
+		for (const uint32_t triangle : m_fill_sort_order) {
+			std::memcpy(destination, &fill_vertices[static_cast<size_t>(triangle) * 3], 3 * sizeof(DebugVertex));
 			destination += 3;
 		}
 		fill_buffer.buffer.getAllocation().flush(0, fill_vertices.size() * sizeof(DebugVertex));

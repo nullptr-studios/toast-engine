@@ -33,6 +33,7 @@
 #include <toast/assets/assets.hpp>
 #include <toast/assets/material.hpp>
 #include <toast/log.hpp>
+#include <toast/physics/simulator.hpp>
 #include <toast/physics/voxel_data_lock.hpp>
 #include <toast/thread_pool.hpp>
 #include <toast/time.hpp>
@@ -3403,6 +3404,11 @@ auto defaultVoxelPalette() -> const voxel::Palette& {
 	return palette;
 }
 
+[[nodiscard]]
+auto voxelFragmentRenderId(physics::ShapeID shape) -> uint64_t {
+	return 0xF7A6'1D00'0000'0000ull ^ ((static_cast<uint64_t>(shape.slot) << 32) | shape.generation);
+}
+
 }
 
 void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
@@ -3428,9 +3434,10 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 	}
 
 	struct Gathered {
-		toast::VoxelNode* node;
-		voxel::Volume* volume;
+		uint64_t id;
+		const voxel::Volume* volume;
 		const voxel::Palette* palette;
+		glm::mat4 model;
 	};
 
 	std::vector<Gathered> gathered;
@@ -3457,8 +3464,19 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 			palette = &defaultVoxelPalette();
 		}
 
-		gathered.push_back({node, volume, palette});
+		gathered.push_back({node->uid().data(), volume, palette, node->getWorldTransform()});
 		key.push_back({.node_uid = node->uid().data(), .revision = node->revision(), .palette = palette});
+	}
+
+	for (const physics::VoxelRenderRecord& record : physics::Simulator::voxelFragmentRecords()) {
+		if (record.volume == nullptr) {
+			continue;
+		}
+		const voxel::Palette* palette = record.palette != nullptr ? record.palette : &defaultVoxelPalette();
+		const uint64_t id = voxelFragmentRenderId(record.shape);
+
+		gathered.push_back({id, record.volume, palette, record.transform});
+		key.push_back({.node_uid = id, .revision = record.revision, .palette = palette});
 	}
 
 	if (key != m_voxel_scene_key) {
@@ -3477,7 +3495,7 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 			brick_dims.reserve(gathered.size());
 			for (const Gathered& entry : gathered) {
 				scene_volumes.push_back({.volume = entry.volume, .palette = entry.palette});
-				node_uids.push_back(entry.node->uid().data());
+				node_uids.push_back(entry.id);
 				brick_dims.push_back(entry.volume->brickDims());
 			}
 
@@ -3502,14 +3520,14 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 	frame.voxel_instances.reserve(gathered.size());
 
 	for (const Gathered& entry : gathered) {
-		const uint64_t node_uid = entry.node->uid().data();
+		const uint64_t node_uid = entry.id;
 		const std::optional<uint32_t> record = m_voxel_storage->recordIndexOf(node_uid);
 		if (!record.has_value()) {
 			continue;
 		}
 
 		const glm::uvec3 dims = m_voxel_storage->recordBrickDims(*record);
-		const glm::mat4 model = entry.node->getWorldTransform();
+		const glm::mat4 model = entry.model;
 		const glm::vec4 sphere = voxel::worldBoundingSphere(model, dims);
 		const auto previous = m_voxel_previous_models.find(node_uid);
 

@@ -209,4 +209,9 @@ void collideCapsuleVoxel(
 [[nodiscard]]
 auto collideCapsules(BroadPhasePair pair, CollisionElement a, CollisionElement b) -> std::optional<Manifold>;
 
+void collideVoxelVoxel(
+    BroadPhasePair pair, CollisionElement a, const VoxelShapeData& data_a, CollisionElement b, const VoxelShapeData& data_b,
+    std::vector<Manifold>& output
+);
+
 }

@@ -1343,6 +1343,204 @@ auto collideCapsules(BroadPhasePair pair, CollisionElement a, CollisionElement b
 	};
 }
 
+namespace {
+
+struct VoxelVoxelScratch {
+	std::array<std::vector<_detail::ContactCandidate>, voxel::k_normal_direction_count> candidates_per_normal;
+	std::array<glm::vec3, voxel::k_normal_direction_count> normal_per_group {};
+	std::array<ContactMaterial, voxel::k_normal_direction_count> material_per_group {};
+	std::array<bool, voxel::k_normal_direction_count> group_started {};
+
+	void reset() {
+		for (std::vector<_detail::ContactCandidate>& bucket : candidates_per_normal) {
+			bucket.clear();
+		}
+		group_started.fill(false);
+	}
+};
+
+}
+
+void collideVoxelVoxel(
+    BroadPhasePair pair, CollisionElement a, const VoxelShapeData& data_a, CollisionElement b, const VoxelShapeData& data_b,
+    std::vector<Manifold>& output
+) {
+	ZoneScoped;
+	ZoneValue((static_cast<uint64_t>(pair.a.shape.slot) << 32) | static_cast<uint64_t>(pair.b.shape.slot));
+
+	bool a_is_probe = data_a.solid_voxel_count <= data_b.solid_voxel_count;
+	auto probe = a_is_probe ? a : b;
+	const VoxelShapeData& probe_data = a_is_probe ? data_a : data_b;
+	auto ref = a_is_probe ? b : a;
+	const VoxelShapeData& ref_data = a_is_probe ? data_b : data_a;
+
+	glm::quat probe_rotation = glm::normalize(probe.body.rotation * probe.shape.voxel.local_rotation);
+	glm::vec3 probe_origin = probe.body.position + probe.body.rotation * probe.shape.voxel.local_center;
+	glm::mat3 probe_basis = glm::mat3_cast(probe_rotation);
+	glm::mat3 probe_basis_inv = glm::transpose(probe_basis);
+
+	glm::quat ref_rotation = glm::normalize(ref.body.rotation * ref.shape.voxel.local_rotation);
+	glm::vec3 ref_origin = ref.body.position + ref.body.rotation * ref.shape.voxel.local_center;
+	glm::mat3 ref_basis = glm::mat3_cast(ref_rotation);
+	glm::mat3 ref_basis_inv = glm::transpose(ref_basis);
+
+	// clang-format off
+	VoxelQueryContext probe_context = {
+		.volume = *probe_data.volume,
+		.surface = probe_data.surface,
+		.palette = probe_data.palette,
+		.materials = probe_data.materials,
+	};
+	
+	VoxelQueryContext ref_context = {
+		.volume = *ref_data.volume,
+		.surface = ref_data.surface,
+		.palette = ref_data.palette,
+		.materials = ref_data.materials,
+	};
+	// clang-format on
+
+	const glm::mat3 reference_to_probe = probe_basis_inv * ref_basis;
+	const glm::vec3 reference_to_probe_offset = probe_basis_inv * (ref_origin - probe_origin);
+	const AABB& reference_bounds = ref.shape.voxel.local_bounds;
+	const glm::vec3 reference_center = (reference_bounds.min + reference_bounds.max) * 0.5f;
+	const glm::vec3 reference_extent = (reference_bounds.max - reference_bounds.min) * 0.5f;
+	const glm::vec3 reference_center_in_probe = (reference_to_probe * reference_center) + reference_to_probe_offset;
+	const glm::vec3 reference_extent_in_probe = glm::abs(reference_to_probe[0]) * reference_extent.x +
+	                                            glm::abs(reference_to_probe[1]) * reference_extent.y +
+	                                            glm::abs(reference_to_probe[2]) * reference_extent.z;
+
+	const AABB probe_search_bounds {
+	  .min = glm::max(probe.shape.voxel.local_bounds.min, reference_center_in_probe - reference_extent_in_probe),
+	  .max = glm::min(probe.shape.voxel.local_bounds.max, reference_center_in_probe + reference_extent_in_probe),
+	};
+	if (glm::any(glm::greaterThan(probe_search_bounds.min, probe_search_bounds.max))) {
+		return;
+	}
+
+	static thread_local VoxelVoxelScratch scratch;
+	scratch.reset();
+	auto& candidates_per_normal = scratch.candidates_per_normal;
+	auto& normal_per_group = scratch.normal_per_group;
+	auto& material_per_group = scratch.material_per_group;
+	auto& group_started = scratch.group_started;
+	size_t remaining_budget = 256;
+
+	queryVoxelSurface(probe_context, probe_search_bounds, [&](const VoxelCandidate& probe_c) -> bool {
+		if (remaining_budget == 0) {
+			return false;
+		}
+
+		glm::vec3 probe_center_world = probe_origin + probe_basis * ((probe_c.min + probe_c.max) * 0.5f);
+		glm::vec3 half_extent = (probe_c.max - probe_c.min) * 0.5f;
+
+		// clang-format off
+		_detail::WorldBox probe_box_reference_local {
+		  .center = ref_basis_inv * (probe_center_world - ref_origin),
+		  .rotation = ref_basis_inv * probe_basis,
+		  .half_extents = half_extent,
+		};
+		// clang-format on
+
+		glm::vec3 extents = glm::abs(probe_box_reference_local.rotation[0]) * half_extent.x +
+		                    glm::abs(probe_box_reference_local.rotation[1]) * half_extent.y +
+		                    glm::abs(probe_box_reference_local.rotation[2]) * half_extent.z;
+		AABB probe_bounds_reference_local {
+		  .min = probe_box_reference_local.center - extents,
+		  .max = probe_box_reference_local.center + extents,
+		};
+
+		FeatureType probe_f_type;
+		{
+			using voxel::VoxelClass;
+			probe_f_type = probe_c.classification == VoxelClass::edge ? FeatureType::voxel_edge : FeatureType::voxel_face;
+		}
+		ContactFeatureID probe_feature = voxelFeature(probe_f_type, probe_c.brick_slot, probe_c.local_index, probe_c.normal_index);
+		queryVoxelSurface(ref_context, probe_bounds_reference_local, [&](const VoxelCandidate& ref_c) -> bool {
+			if (remaining_budget == 0) {
+				return false;
+			}
+			if (ref_c.normal_index >= candidates_per_normal.size()) {
+				return true;
+			}
+			--remaining_budget;
+
+			_detail::WorldBox ref_voxel_box {
+			  .center = (ref_c.min + ref_c.max) * 0.5f,
+			  .rotation = glm::mat3(1.0f),
+			  .half_extents = (ref_c.max - ref_c.min) * 0.5f,
+			};
+			auto sat = _detail::collideWorldBoxes(probe_box_reference_local, ref_voxel_box);
+			if (not sat.has_value()) {
+				return true;
+			}
+
+			auto ref_f_type = ref_c.classification == voxel::VoxelClass::edge ? FeatureType::voxel_edge : FeatureType::voxel_face;
+			auto ref_feature = voxelFeature(ref_f_type, ref_c.brick_slot, ref_c.local_index, ref_c.normal_index);
+
+			std::vector<_detail::ContactCandidate>& bucket = candidates_per_normal[ref_c.normal_index];
+			for (_detail::ContactCandidate& raw : sat->candidates) {
+				raw.feature_a = probe_feature;
+				raw.feature_b = ref_feature;
+				bucket.push_back(raw);
+			}
+
+			// clang-format off
+			if (not group_started[ref_c.normal_index]) {
+				group_started[ref_c.normal_index] = true;
+				normal_per_group[ref_c.normal_index] = sat->normal;
+				material_per_group[ref_c.normal_index] = _detail::combineMaterials(
+					PhysicsMaterial {
+						.restitution = probe_c.material->restitution,
+						.static_friction = probe_c.material->static_friction,
+						.dynamic_friction = probe_c.material->dynamic_friction
+					},
+					PhysicsMaterial {
+						.restitution = ref_c.material->restitution,
+						.static_friction = ref_c.material->static_friction,
+						.dynamic_friction = ref_c.material->dynamic_friction
+					}
+				);
+			}
+			// clang-format on
+			return true;
+		});
+
+		return remaining_budget > 0;
+	});
+
+	for (size_t i = 0; i < candidates_per_normal.size(); ++i) {
+		std::vector<_detail::ContactCandidate>& bucket = candidates_per_normal[i];
+		if (bucket.empty()) {
+			continue;
+		}
+
+		glm::vec3 local_normal = normal_per_group[i];
+		bucket = _detail::reduceContacts(std::move(bucket), local_normal);
+		const std::vector<_detail::ContactCandidate>& reduced = bucket;
+		glm::vec3 world_normal = ref_basis * local_normal;
+
+		Manifold manifold {
+		  .pair = pair,
+		  .normal = a_is_probe ? world_normal : -world_normal,
+		  .normal_index = static_cast<uint8_t>(i),
+		  .contact_count = static_cast<uint8_t>(reduced.size()),
+		};
+
+		for (size_t j = 0; j < reduced.size(); ++j) {
+			manifold.contacts[j] = ContactPoint {
+			  .position = ref_origin + ref_basis * reduced[j].position,
+			  .penetration = reduced[j].penetration,
+			  .feature_a = a_is_probe ? reduced[j].feature_a : reduced[j].feature_b,
+			  .feature_b = a_is_probe ? reduced[j].feature_b : reduced[j].feature_a,
+			  .material = material_per_group[i],
+			};
+		}
+
+		output.push_back(manifold);
+	}
+}
+
 void collideCapsuleVoxel(
     BroadPhasePair pair, CollisionElement capsule_element, CollisionElement voxel_element, const VoxelShapeData& voxel_data,
     std::vector<Manifold>& output

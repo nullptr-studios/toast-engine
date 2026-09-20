@@ -142,6 +142,11 @@ void NarrowPhase::collide(CollisionWorldView world, BroadPhasePair pair, std::ve
 
 	if (shape_a->type == ShapeType::voxel || shape_b->type == ShapeType::voxel) {
 		if (shape_a->type == ShapeType::voxel && shape_b->type == ShapeType::voxel) {
+			const auto* voxel_data_a = world.voxelData(shape_a->voxel.data);
+			const auto* voxel_data_b = world.voxelData(shape_b->voxel.data);
+			if (voxel_data_a && voxel_data_b) {
+				collideVoxelVoxel(pair, element_a, *voxel_data_a, element_b, *voxel_data_b, output);
+			}
 			return;
 		}
 

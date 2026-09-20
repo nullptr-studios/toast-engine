@@ -91,6 +91,9 @@ private:
 	std::vector<DynamicVertexBuffer> m_fill_vertex_buffers;
 	std::vector<uint32_t> m_fill_vertex_counts;
 
+	std::vector<uint32_t> m_fill_sort_order;
+	std::vector<float> m_fill_sort_depths;
+
 	vma::raii::Buffer m_gizmo_vertex_buffer = nullptr;
 	uint32_t m_gizmo_vertex_count = 0;
 

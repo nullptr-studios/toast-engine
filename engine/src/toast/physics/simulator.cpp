@@ -3,6 +3,7 @@
 #include "accumulator.hpp"
 #include "anchor_mask.hpp"
 #include "contact_events.hpp"
+#include "fragment_extraction.hpp"
 #include "nodes/box_collider.hpp"
 #include "nodes/capsule_collider.hpp"
 #include "nodes/collider.hpp"
@@ -292,6 +293,7 @@ void Simulator::unregisterVoxelNode(toast::VoxelNode& node) {
 
 	for (const VoxelNodeBinding& binding : instance->m_voxel_bindings) {
 		if (binding.node.exists() && &*binding.node == &node) {
+			instance->destroyFragmentsOf(binding.body);
 			instance->destroyBody(binding.body);
 		}
 	}
@@ -360,6 +362,16 @@ void Simulator::tick() {
 		const glm::uvec3 brick_dims = data->volume->brickDims();
 		const std::vector<ComponentClass> classes = classifyComponents(r.connectivity, brick_dims, data->anchor_mask);
 		data->detached_components = buildDetachedComponents(r.connectivity, classes, brick_dims);
+
+		std::vector<DetachedComponent> components_to_spawn = data->detached_components;
+		const Body* source_body = tryGetBody(shape->owner);
+		if (source_body != nullptr && source_body->type == BodyType::dynamic_body && not components_to_spawn.empty()) {
+			components_to_spawn.erase(std::ranges::max_element(components_to_spawn, {}, &DetachedComponent::voxel_count));
+		}
+
+		for (const DetachedComponent& component : components_to_spawn) {
+			spawnFragmentBody(r.shape, component);
+		}
 	}
 	integrate(dt);
 
@@ -389,6 +401,174 @@ void Simulator::tick() {
 void Simulator::publishProfile(std::span<const SimulationIsland> islands) const {
 	ZoneScopedN("physics::PublishProfile");
 	(void)islands;
+}
+
+void Simulator::clearFragmentFromSource(
+    ShapeID shape_id, VoxelShapeData& data, voxel::Volume& source, const DetachedComponent& component
+) {
+	std::vector<glm::ivec3> dirty_bricks;
+
+	for (const auto& p : component.pieces) {
+		dirty_bricks.emplace_back(p.brick);
+
+		for (uint32_t i = 0; i < voxel::k_brick_voxel_count; ++i) {
+			if (not voxel::isSolid(p.voxels, i)) {
+				continue;
+			}
+
+			auto coords = voxel::localFromIndex(i);
+			glm::ivec3 pos = p.brick * static_cast<int32_t>(voxel::k_brick_dim) + glm::ivec3(coords.x, coords.y, coords.z);
+			uint8_t palette_index = source.materialAt(pos);
+			uint32_t material_index = voxel::resolveMaterialIndex(data.palette, data.materials, palette_index);
+			uint16_t density = data.materials.materials[material_index].density;
+
+			if (source.setVoxel(pos, voxel::k_empty_palette_index).changed) {
+				data.moments.remove(pos.x, pos.y, pos.z, density);
+				data.solid_voxel_count -= data.solid_voxel_count > 0 ? 1u : 0u;
+			}
+		}
+	}
+
+	for (const auto& b : dirty_bricks) {
+		data.surface.repairBrickRegion(source, b);
+		source.tryCollapseUniform(b);
+	}
+
+	++data.surface_revision;
+	incrementShapeRevision(shape_id);
+
+	auto* shape = tryGetShape(shape_id);
+	if (shape == nullptr) {
+		return;
+	}
+	auto* body = tryGetBody(shape->owner);
+	if (body == nullptr || body->type != BodyType::dynamic_body) {
+		return;
+	}
+	if (source.solidVoxelCount() == 0) {
+		retireVoxelBody(shape->owner);
+		return;
+	}
+	rebuildMassProperties(shape->owner);
+}
+
+void Simulator::retireVoxelBody(BodyID id) {
+	ZoneScopedN("physics::RetireVoxelBody");
+
+	Body* body = tryGetBody(id);
+	if (body == nullptr) {
+		return;
+	}
+
+	body->enabled = false;
+	body->awake = false;
+	body->linear_velocity = {};
+	body->angular_velocity = {};
+
+	for (ShapeSlot& slot : m_shapes) {
+		if (slot.occupied && slot.shape.owner == id) {
+			slot.shape.enabled = false;
+		}
+	}
+}
+
+void Simulator::destroyFragmentsOf(BodyID origin) {
+	ZoneScopedN("physics::DestroyFragmentsOf");
+
+	if (not valid(origin)) {
+		return;
+	}
+
+	std::vector<BodyID> doomed;
+	for (const ShapeSlot& slot : m_shapes) {
+		if (not slot.occupied || slot.shape.type != ShapeType::voxel) {
+			continue;
+		}
+		const VoxelShapeData* data = tryGetVoxelData(slot.shape.voxel.data);
+		if (data == nullptr || data->fragment_origin != origin) {
+			continue;
+		}
+		doomed.push_back(slot.shape.owner);
+	}
+
+	for (const BodyID body : doomed) {
+		destroyBody(body);
+	}
+}
+
+void Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedComponent& component) {
+	Shape* shape = tryGetShape(source_shape_id);
+	if (shape == nullptr) {
+		return;
+	}
+	VoxelShapeData* data = tryGetVoxelData(shape->voxel.data);
+	if (data == nullptr || data->volume == nullptr) {
+		return;
+	}
+	Body* body = tryGetBody(shape->owner);
+	if (body == nullptr) {
+		return;
+	}
+
+	glm::vec3 position = body->position;
+	glm::quat rotation = body->rotation;
+	glm::vec3 linear_velocity = body->linear_velocity;
+	glm::vec3 angular_velocity = body->angular_velocity;
+	glm::vec3 world_com = body->worldCenterOfMass();
+	glm::vec3 local_center = shape->voxel.local_center;
+	glm::quat local_rotation = shape->voxel.local_rotation;
+	voxel::Palette palette = data->palette;
+	voxel::MaterialLibrary materials = data->materials;
+	const BodyID origin = valid(data->fragment_origin) ? data->fragment_origin : shape->owner;
+
+	auto extracted = extractFragmentVolume(*data->volume, component);
+	clearFragmentFromSource(source_shape_id, *data, *data->volume, component);
+
+	glm::vec3 origin_local = glm::vec3(extracted.offset) * static_cast<float>(voxel::k_brick_dim) * voxel::k_voxel_size;
+	glm::quat frag_rotation = glm::normalize(rotation * local_rotation);
+	glm::vec3 frag_pos = position + rotation * (local_center + local_rotation * origin_local);
+	// clang-format off
+	auto frag_body = createBody(BodyDescriptor {
+		.type = BodyType::dynamic_body,
+		.position = frag_pos,
+		.rotation = frag_rotation,
+		.angular_velocity = angular_velocity,
+	});
+	// clang-format on
+
+	if (not valid(frag_body)) {
+		return;
+	}
+
+	const ShapeID frag_shape = createVoxelShape(frag_body, VoxelShape {}, std::move(extracted.volume), palette, materials);
+	if (not valid(frag_shape)) {
+		destroyBody(frag_body);
+		return;
+	}
+	if (const Shape* stored = tryGetShape(frag_shape)) {
+		if (VoxelShapeData* frag_data = tryGetVoxelData(stored->voxel.data)) {
+			frag_data->fragment_origin = origin;
+		}
+	}
+	rebuildMassProperties(frag_body);
+
+	TOAST_TRACE(
+	    "Physics",
+	    "Fragment body {} broke off shape {}: {} voxels across {} bricks at brick offset {} {} {}",
+	    frag_body.slot,
+	    source_shape_id.slot,
+	    component.voxel_count,
+	    component.pieces.size(),
+	    extracted.offset.x,
+	    extracted.offset.y,
+	    extracted.offset.z
+	);
+
+	if (auto* b = tryGetBody(frag_body)) {
+		glm::vec3 frag_com_world = b->worldCenterOfMass();
+		glm::vec3 r = frag_com_world - world_com;
+		b->linear_velocity = linear_velocity + glm::cross(angular_velocity, r);
+	}
 }
 
 void Simulator::syncEnabledState() {
@@ -650,8 +830,14 @@ auto Simulator::publishVoxelTransform(VoxelNodeBinding& binding) -> bool {
 	return true;
 }
 
+namespace {
+inline constexpr uint64_t k_max_render_record_bricks = 1u << 22u;
+}
+
 void Simulator::publishVoxelRenderRecords() {
 	ZoneScopedN("physics::PublishVoxelRenderRecords");
+
+	std::scoped_lock voxel_lock {voxelDataMutex()};
 	m_voxel_render_records.clear();
 
 	for (const auto& [index, slot] : m_shapes | std::views::enumerate) {
@@ -662,6 +848,24 @@ void Simulator::publishVoxelRenderRecords() {
 		const VoxelShapeData* data = tryGetVoxelData(slot.shape.voxel.data);
 		const Body* body = tryGetBody(slot.shape.owner);
 		if (data == nullptr || body == nullptr) {
+			continue;
+		}
+		if (data->owned_volume == nullptr) {
+			continue;
+		}
+
+		const glm::uvec3 record_dims = data->volume->brickDims();
+		const uint64_t record_bricks =
+		    static_cast<uint64_t>(record_dims.x) * static_cast<uint64_t>(record_dims.y) * static_cast<uint64_t>(record_dims.z);
+		if (record_bricks == 0 || record_bricks > k_max_render_record_bricks) {
+			TOAST_ERROR(
+			    "Physics",
+			    "Voxel shape {} reports {} x {} x {} bricks, refusing to publish it for rendering",
+			    index,
+			    record_dims.x,
+			    record_dims.y,
+			    record_dims.z
+			);
 			continue;
 		}
 
@@ -681,6 +885,11 @@ void Simulator::publishVoxelRenderRecords() {
 	}
 
 	ZoneValue(static_cast<uint64_t>(m_voxel_render_records.size()));
+}
+
+auto Simulator::voxelFragmentRecords() -> std::span<const VoxelRenderRecord> {
+	return instance != nullptr ? std::span<const VoxelRenderRecord> {instance->m_voxel_render_records}
+	                           : std::span<const VoxelRenderRecord> {};
 }
 
 auto Simulator::velocityAtPoint(const Body& body, const glm::vec3& r) -> glm::vec3 {
@@ -1353,11 +1562,31 @@ auto Simulator::createVoxelShape(
     BodyID owner, const VoxelShape& shape, voxel::Volume& volume, const voxel::Palette& palette,
     const voxel::MaterialLibrary& materials
 ) -> ShapeID {
+	return createVoxelShapeInternal(owner, shape, &volume, nullptr, palette, materials);
+}
+
+auto Simulator::createVoxelShape(
+    BodyID owner, const VoxelShape& shape, voxel::Volume&& volume, const voxel::Palette& palette,
+    const voxel::MaterialLibrary& materials
+) -> ShapeID {
+	return createVoxelShapeInternal(owner, shape, nullptr, std::make_unique<voxel::Volume>(std::move(volume)), palette, materials);
+}
+
+auto Simulator::createVoxelShapeInternal(
+    BodyID owner, const VoxelShape& shape, voxel::Volume* external, std::unique_ptr<voxel::Volume> owned,
+    const voxel::Palette& palette, const voxel::MaterialLibrary& materials
+) -> ShapeID {
 	ZoneScopedN("physics::CreateVoxelShape");
 	ZoneValue(static_cast<uint64_t>(owner.slot));
 	if (not mainThreadMutationAllowed()) {
 		return {};
 	}
+
+	if ((owned != nullptr) == (external != nullptr)) {
+		TOAST_WARN("Physics", "Rejected voxel shape that names neither exactly one owned nor one borrowed volume");
+		return {};
+	}
+	voxel::Volume& volume = owned != nullptr ? *owned : *external;
 
 	if (not valid(owner)) {
 		TOAST_WARN("Physics", "Rejected voxel shape registration for an invalid body");
@@ -1395,7 +1624,9 @@ auto Simulator::createVoxelShape(
 	  .moments = moments,
 	  .palette = palette,
 	  .materials = materials,
+	  .solid_voxel_count = volume.solidVoxelCount(),
 	  .anchor_mask = default_anchor_mask,
+	  .owned_volume = std::move(owned),
 	};
 
 	VoxelDataID data_id;
@@ -1497,6 +1728,10 @@ void Simulator::destroyShape(ShapeID shape) {
 
 	ShapeSlot& slot = m_shapes[shape.slot];
 	if (slot.shape.type == ShapeType::voxel) {
+		{
+			std::scoped_lock voxel_lock {voxelDataMutex()};
+			std::erase_if(m_voxel_render_records, [shape](const VoxelRenderRecord& record) { return record.shape == shape; });
+		}
 		destroyVoxelData(slot.shape.voxel.data);
 	}
 	slot.occupied = false;
@@ -1566,6 +1801,7 @@ void Simulator::destroyVoxelData(VoxelDataID data) {
 		return;
 	}
 
+	std::scoped_lock voxel_lock {voxelDataMutex()};
 	VoxelShapeSlot& slot = m_voxel_shapes[data.slot];
 	slot.data.reset();
 	++slot.generation;
@@ -1863,6 +2099,11 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 	glm::vec3 in_body_frame = glm::inverse(body->rotation) * (c.world_center - body->position);
 	glm::vec3 local_center = glm::inverse(shape->voxel.local_rotation) * (in_body_frame - shape->voxel.local_center);
 
+	const float shell = glm::max(c.shell_voxels, 0.0f) * voxel::k_voxel_size;
+	const float inner_radius = shell > 0.0f ? glm::max(c.radius - shell, 0.0f) : 0.0f;
+	const float outer_squared = c.radius * c.radius;
+	const float inner_squared = inner_radius * inner_radius;
+
 	voxel::Volume& volume = *data->volume;
 	const glm::ivec3 voxel_dims = glm::ivec3(volume.voxelDims());
 
@@ -1906,7 +2147,8 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 
 								const glm::vec3 voxel_center = (glm::vec3 {v} + 0.5f) * voxel::k_voxel_size;
 								const glm::vec3 offset = voxel_center - local_center;
-								if (glm::dot(offset, offset) > c.radius * c.radius) {
+								const float distance_squared = glm::dot(offset, offset);
+								if (distance_squared > outer_squared || distance_squared < inner_squared) {
 									continue;
 								}
 
@@ -1919,6 +2161,7 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 								voxel::Volume::VoxelWrite write = volume.setVoxel(v, voxel::k_empty_palette_index);
 								if (write.changed) {
 									data->moments.remove(v.x, v.y, v.z, material.density);
+									data->solid_voxel_count -= data->solid_voxel_count > 0 ? 1u : 0u;
 									brick_dirty = true;
 									data->connectivity_dirty = true;
 								}
@@ -1956,7 +2199,11 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 	}
 
 	if (body->type == BodyType::dynamic_body) {
-		rebuildMassProperties(shape->owner);
+		if (volume.solidVoxelCount() == 0) {
+			retireVoxelBody(shape->owner);
+		} else {
+			rebuildMassProperties(shape->owner);
+		}
 	}
 
 	wakeBodiesInBounds(

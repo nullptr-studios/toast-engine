@@ -12,6 +12,7 @@
 #include "shape.hpp"
 
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <toast/voxel/mass_accumulator.hpp>
 #include <toast/voxel/palette.hpp>
@@ -29,9 +30,12 @@ struct VoxelShapeData {
 	voxel::MaterialLibrary materials;
 	uint32_t source_revision = 0;
 	uint32_t surface_revision = 1;
+	uint32_t solid_voxel_count = 0;
 	AnchorMask anchor_mask = k_anchor_null;
 	bool connectivity_dirty = false;
 	std::vector<DetachedComponent> detached_components;
+	std::unique_ptr<voxel::Volume> owned_volume;
+	BodyID fragment_origin;
 };
 
 struct VoxelShapeSlot {

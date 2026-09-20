@@ -102,9 +102,7 @@ public:
 	static void unregisterVoxelNode(toast::VoxelNode& node);
 
 	[[nodiscard]]
-	auto voxelRenderRecords() const -> std::span<const VoxelRenderRecord> {
-		return m_voxel_render_records;
-	}
+	static auto voxelFragmentRecords() -> std::span<const VoxelRenderRecord>;
 
 private:
 	enum class SimulationPhase : uint8_t {
@@ -197,6 +195,11 @@ private:
 	    const voxel::MaterialLibrary& materials
 	) -> ShapeID;
 	[[nodiscard]]
+	auto createVoxelShape(
+	    BodyID owner, const VoxelShape& shape, voxel::Volume&& volume, const voxel::Palette& palette,
+	    const voxel::MaterialLibrary& materials
+	) -> ShapeID;
+	[[nodiscard]]
 	auto createVoxelShape(BodyID owner, toast::VoxelNode& node) -> ShapeID;
 
 	void destroyShape(ShapeID shape);
@@ -280,6 +283,15 @@ private:
 	[[nodiscard]]
 	auto correctPositions(std::span<const size_t> manifold_indices) -> size_t;
 	void publishProfile(std::span<const SimulationIsland> islands) const;
+
+	void clearFragmentFromSource(ShapeID shape_id, VoxelShapeData& data, voxel::Volume& source, const DetachedComponent& component);
+	void spawnFragmentBody(ShapeID source_shape_id, const DetachedComponent& component);
+	void retireVoxelBody(BodyID id);
+	void destroyFragmentsOf(BodyID origin);
+	auto createVoxelShapeInternal(
+	    BodyID owner, const VoxelShape& shape, voxel::Volume* external, std::unique_ptr<voxel::Volume> owned,
+	    const voxel::Palette& palette, const voxel::MaterialLibrary& materials
+	) -> ShapeID;
 
 	inline static Simulator* instance = nullptr;
 
