@@ -27,6 +27,8 @@ struct BroadPhaseStats {
 	size_t inserted_leaves = 0;
 	size_t reinserted_leaves = 0;
 	size_t removed_leaves = 0;
+	size_t skipped_refits = 0;
+	size_t skipped_self_queries = 0;
 	size_t queries = 0;
 	size_t query_hits = 0;
 	size_t pair_records = 0;
@@ -39,6 +41,9 @@ struct BroadPhaseStats {
 	size_t rejected_immovable_bodies = 0;
 	size_t tree_nodes = 0;
 };
+
+[[nodiscard]]
+auto worldShapeBounds(const Body& body, const Shape& shape) -> AABB;
 
 class BroadPhase {
 public:

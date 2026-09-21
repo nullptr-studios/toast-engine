@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cmath>
 #include <glm/gtc/matrix_transform.hpp>
+#include <limits>
 #include <toast/assets/voxel_model.hpp>
 #include <toast/thread_pool.hpp>
 #include <toast/voxel/mass_accumulator.hpp>
@@ -45,6 +46,51 @@ auto placeholderMaterialLibrary() -> const voxel::MaterialLibrary& {
 		return lib;
 	}();
 	return library;
+}
+
+[[nodiscard]]
+auto computeOccupiedBounds(const voxel::Volume& volume) -> AABB {
+	ZoneScopedN("physics::ComputeOccupiedBounds");
+
+	const glm::ivec3 brick_dims = glm::ivec3(volume.brickDims());
+	const auto brick_dim = static_cast<int32_t>(voxel::k_brick_dim);
+	glm::ivec3 min {std::numeric_limits<int32_t>::max()};
+	glm::ivec3 max {std::numeric_limits<int32_t>::min()};
+
+	for (int32_t z = 0; z < brick_dims.z; ++z) {
+		for (int32_t y = 0; y < brick_dims.y; ++y) {
+			for (int32_t x = 0; x < brick_dims.x; ++x) {
+				const glm::ivec3 brick {x, y, z};
+				if (volume.entryAt(brick).tag() == voxel::BrickTag::empty) {
+					continue;
+				}
+
+				const glm::ivec3 brick_base = brick * brick_dim;
+				for (int32_t lz = 0; lz < brick_dim; ++lz) {
+					for (int32_t ly = 0; ly < brick_dim; ++ly) {
+						for (int32_t lx = 0; lx < brick_dim; ++lx) {
+							const glm::ivec3 voxel_pos = brick_base + glm::ivec3(lx, ly, lz);
+							if (not volume.isSolidAt(voxel_pos)) {
+								continue;
+							}
+							min = glm::min(min, voxel_pos);
+							max = glm::max(max, voxel_pos);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if (glm::any(glm::greaterThan(min, max))) {
+		// nothing left
+		return {};
+	}
+
+	return {
+	  .min = glm::vec3(min) * voxel::k_voxel_size,
+	  .max = glm::vec3(max + glm::ivec3(1)) * voxel::k_voxel_size,
+	};
 }
 
 [[nodiscard]]
@@ -441,6 +487,8 @@ void Simulator::clearFragmentFromSource(
 	if (shape == nullptr) {
 		return;
 	}
+	shape->voxel.local_bounds = computeOccupiedBounds(source);
+
 	auto* body = tryGetBody(shape->owner);
 	if (body == nullptr || body->type != BodyType::dynamic_body) {
 		return;
@@ -522,6 +570,7 @@ void Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedCompone
 	const BodyID origin = valid(data->fragment_origin) ? data->fragment_origin : shape->owner;
 
 	auto extracted = extractFragmentVolume(*data->volume, component);
+	const glm::uvec3 extracted_brick_dims = extracted.volume.brickDims();
 	clearFragmentFromSource(source_shape_id, *data, *data->volume, component);
 
 	glm::vec3 origin_local = glm::vec3(extracted.offset) * static_cast<float>(voxel::k_brick_dim) * voxel::k_voxel_size;
@@ -554,11 +603,21 @@ void Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedCompone
 
 	TOAST_TRACE(
 	    "Physics",
-	    "Fragment body {} broke off shape {}: {} voxels across {} bricks at brick offset {} {} {}",
+	    "Fragment body {} broke off shape {}: {} voxels across {} pieces, extracted volume {}x{}x{} bricks ({}x{}x{} voxels, "
+	    "{:.2f}x{:.2f}x{:.2f} m) at brick offset {} {} {}",
 	    frag_body.slot,
 	    source_shape_id.slot,
 	    component.voxel_count,
 	    component.pieces.size(),
+	    extracted_brick_dims.x,
+	    extracted_brick_dims.y,
+	    extracted_brick_dims.z,
+	    extracted_brick_dims.x * voxel::k_brick_dim,
+	    extracted_brick_dims.y * voxel::k_brick_dim,
+	    extracted_brick_dims.z * voxel::k_brick_dim,
+	    static_cast<float>(extracted_brick_dims.x) * voxel::k_brick_size,
+	    static_cast<float>(extracted_brick_dims.y) * voxel::k_brick_size,
+	    static_cast<float>(extracted_brick_dims.z) * voxel::k_brick_size,
 	    extracted.offset.x,
 	    extracted.offset.y,
 	    extracted.offset.z
@@ -880,6 +939,9 @@ void Simulator::publishVoxelRenderRecords() {
 		      .palette = &data->palette,
 		      .transform = body_transform * local_transform,
 		      .revision = data->surface_revision,
+		      .fragment_origin = data->fragment_origin,
+		      .awake = body->awake,
+		      .world_bounds = worldShapeBounds(*body, slot.shape),
 		}
 		);
 	}
@@ -1050,23 +1112,43 @@ auto Simulator::shouldSolve(const Manifold& manifold) const -> bool {
 	return a_is_active || b_is_active;
 }
 
+auto Simulator::pairNeedsNarrowPhase(CollisionWorldView world, const BroadPhasePair& pair) const -> bool {
+	const Body* body_a = world.body(pair.a.body);
+	const Body* body_b = world.body(pair.b.body);
+	const bool a_is_active = body_a && body_a->type == BodyType::dynamic_body && body_a->enabled && body_a->awake;
+	const bool b_is_active = body_b && body_b->type == BodyType::dynamic_body && body_b->enabled && body_b->awake;
+	return a_is_active || b_is_active;
+}
+
 auto Simulator::generateManifoldsAsync(CollisionWorldView world, std::span<const BroadPhasePair> candidates)
     -> std::vector<Manifold> {
 	ZoneScopedN("physics::NarrowPhase");
+
+	std::vector<BroadPhasePair> active_candidates;
+	active_candidates.reserve(candidates.size());
+	for (const BroadPhasePair& pair : candidates) {
+		if (pairNeedsNarrowPhase(world, pair)) {
+			active_candidates.emplace_back(pair);
+		} else {
+			++m_profile.sleeping_pairs_skipped;
+		}
+	}
 
 	constexpr size_t minimum_candidates_per_job = 4;
 	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), 1ull);
 	const size_t maximum_job_count = worker_count * 3;
 	const size_t job_count =
-	    candidates.empty() ? 0 : std::min(maximum_job_count, std::max(candidates.size() / minimum_candidates_per_job, size_t {1}));
+	    active_candidates.empty()
+	        ? 0
+	        : std::min(maximum_job_count, std::max(active_candidates.size() / minimum_candidates_per_job, size_t {1}));
 
 	std::vector<std::future<ManifoldQueue>> futures;
 	futures.reserve(job_count);
 
 	for (size_t job_index = 0; job_index < job_count; ++job_index) {
-		const size_t begin = job_index * candidates.size() / job_count;
-		const size_t end = (job_index + 1) * candidates.size() / job_count;
-		auto batch = candidates.subspan(begin, end - begin);
+		const size_t begin = job_index * active_candidates.size() / job_count;
+		const size_t end = (job_index + 1) * active_candidates.size() / job_count;
+		auto batch = std::span<const BroadPhasePair> {active_candidates}.subspan(begin, end - begin);
 
 		futures.emplace_back(toast::ThreadPool::push([this, world, batch] {
 			ZoneScopedN("physics::NarrowPhaseBatch");
@@ -1075,10 +1157,10 @@ auto Simulator::generateManifoldsAsync(CollisionWorldView world, std::span<const
 		}));
 	}
 	m_profile.narrow_jobs = futures.size();
-	m_profile.narrow_candidates = candidates.size();
+	m_profile.narrow_candidates = active_candidates.size();
 
 	std::vector<Manifold> merged;
-	merged.reserve(candidates.size());
+	merged.reserve(active_candidates.size());
 
 	{
 		ZoneScopedNC("physics::NarrowPhaseAwait", 0x202020);
@@ -1258,12 +1340,23 @@ void Simulator::updateCache(std::span<const Manifold> manifolds) {
 		const bool still_colliding = std::ranges::any_of(manifolds, [&cached](const Manifold& manifold) {
 			return manifold.pair == cached.pair && manifold.normal_index == cached.normal_index;
 		});
-		if (not still_colliding) {
-			wakeBody(cached.pair.a.body);
-			wakeBody(cached.pair.b.body);
-			++m_profile.contact_ends;
-			event::send<event::ContactEnd>(cached.pair);
+		if (still_colliding) {
+			continue;
 		}
+
+		const Body* body_a = tryGetBody(cached.pair.a.body);
+		const Body* body_b = tryGetBody(cached.pair.b.body);
+		const bool a_active = body_a && body_a->type == BodyType::dynamic_body && body_a->enabled && body_a->awake;
+		const bool b_active = body_b && body_b->type == BodyType::dynamic_body && body_b->enabled && body_b->awake;
+		if (body_a && body_b && not a_active && not b_active) {
+			next_cache.emplace_back(cached);
+			continue;
+		}
+
+		wakeBody(cached.pair.a.body);
+		wakeBody(cached.pair.b.body);
+		++m_profile.contact_ends;
+		event::send<event::ContactEnd>(cached.pair);
 	}
 
 	m_cached_manifolds = std::move(next_cache);
@@ -1647,10 +1740,7 @@ auto Simulator::createVoxelShapeInternal(
 	VoxelShape stored_shape = shape;
 	stored_shape.data = data_id;
 	stored_shape.local_rotation = glm::normalize(shape.local_rotation);
-	stored_shape.local_bounds = {
-	  .min = glm::vec3(0.0f),
-	  .max = glm::vec3(brick_dims) * voxel::k_brick_size,
-	};
+	stored_shape.local_bounds = computeOccupiedBounds(volume);
 
 	Shape physics_shape {
 	  .owner = owner,
@@ -2009,6 +2099,24 @@ auto Simulator::state(BodyID body) const -> std::optional<BodyState> {
 	};
 }
 
+auto Simulator::shapeWorldBounds(ShapeID shape) -> std::optional<AABB> {
+	if (not instance) {
+		return std::nullopt;
+	}
+
+	const Shape* value = instance->tryGetShape(shape);
+	if (not value) {
+		return std::nullopt;
+	}
+
+	const Body* body = instance->tryGetBody(value->owner);
+	if (not body) {
+		return std::nullopt;
+	}
+
+	return worldShapeBounds(*body, *value);
+}
+
 auto Simulator::setTransform(BodyID body, const glm::vec3& position, const glm::quat& rotation) -> bool {
 	ZoneScopedN("physics::SetTransform");
 	ZoneValue(static_cast<uint64_t>(body.slot));
@@ -2188,6 +2296,7 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 
 	++data->surface_revision;
 	incrementShapeRevision(c.shape);
+	shape->voxel.local_bounds = computeOccupiedBounds(volume);
 
 	for (VoxelNodeBinding& binding : m_voxel_bindings) {
 		if (binding.shape != c.shape || not binding.node.exists()) {

@@ -34,4 +34,11 @@ struct DetachedComponent {
 auto buildDetachedComponents(const voxel::Connectivity& c, std::span<const ComponentClass> classes, glm::uvec3 brick_size)
     -> std::vector<DetachedComponent>;
 
+inline constexpr int32_t k_max_fragment_extent_bricks = 1;
+
+[[nodiscard]]
+auto splitBySpatialCompactness(
+    std::vector<DetachedComponent> components, int32_t max_extent_bricks = k_max_fragment_extent_bricks
+) -> std::vector<DetachedComponent>;
+
 }

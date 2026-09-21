@@ -1,11 +1,13 @@
 #include "voxel_node.hpp"
 
 #include <algorithm>
+#include <glm/gtc/matrix_transform.hpp>
 #include <toast/log.hpp>
 #include <toast/physics/contact_events.hpp>
 #include <toast/physics/simulator.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
 #include <toast/voxel/runtime_pool.hpp>
+#include <tracy/Tracy.hpp>
 
 namespace toast {
 
@@ -279,6 +281,12 @@ void VoxelNode::updateInspectorMessages() {
 
 void VoxelNode::init() {
 	m_registered_proxy = renderer::registerVoxelNodeProxy(this);
+	m_debug_visible = enabled();
+	if (renderer::VulkanRenderer::instance) {
+		renderer::VulkanRenderer::instance->registerDebugDraw(this, [](toast::Node3D& node) {
+			static_cast<VoxelNode&>(node).drawDebug();
+		});
+	}
 }
 
 void VoxelNode::begin() {
@@ -313,16 +321,46 @@ void VoxelNode::end() {
 
 void VoxelNode::destroy() {
 	end();
+	if (renderer::VulkanRenderer::instance) {
+		renderer::VulkanRenderer::instance->unregisterDebugDraw(this);
+	}
 }
 
 void VoxelNode::onEnable() {
+	m_debug_visible = true;
 	physics::Simulator::setBodyEnabled(m_body, true);
 	physics::Simulator::setShapeEnabled(m_shape, true);
 }
 
 void VoxelNode::onDisable() {
+	m_debug_visible = false;
 	physics::Simulator::setBodyEnabled(m_body, false);
 	physics::Simulator::setShapeEnabled(m_shape, false);
+}
+
+void VoxelNode::drawDebug() {
+	ZoneScoped;
+	if (!m_debug_visible || !show_aabb) {
+		return;
+	}
+
+	const auto drawBounds = [this](const physics::AABB& bounds, bool is_awake, const glm::vec4& base_color) {
+		const glm::vec4 draw_color = is_awake ? base_color : glm::vec4(0.5f, 0.5f, 0.5f, base_color.a);
+		const glm::mat4 transform =
+		    glm::translate(glm::mat4(1.0f), (bounds.min + bounds.max) * 0.5f) * glm::scale(glm::mat4(1.0f), bounds.max - bounds.min);
+		renderer::debugDrawShapeBox(transform, draw_color, aabb_fill);
+	};
+
+	if (const auto bounds = physics::Simulator::shapeWorldBounds(m_shape)) {
+		drawBounds(*bounds, awake, aabb_color);
+	}
+
+	static const glm::vec4 fragment_aabb_color {0.2f, 0.9f, 1.0f, 0.6f};
+	for (const physics::VoxelRenderRecord& record : physics::Simulator::voxelFragmentRecords()) {
+		if (record.fragment_origin == m_body) {
+			drawBounds(record.world_bounds, record.awake, fragment_aabb_color);
+		}
+	}
 }
 
 }

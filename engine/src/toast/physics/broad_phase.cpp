@@ -17,7 +17,18 @@ auto normalized(const glm::quat& rotation) -> glm::quat {
 	                                                                  : glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 }
 
-auto shapeBounds(const Body& body, const Shape& shape) -> AABB {
+auto isShapeAsleep(CollisionWorldView world, ShapeID shape_id) -> bool {
+	const Shape* shape = world.shape(shape_id);
+	if (shape == nullptr) {
+		return false;
+	}
+	const Body* body = world.body(shape->owner);
+	return body != nullptr && body->type == BodyType::dynamic_body && body->enabled && not body->awake;
+}
+
+}
+
+auto worldShapeBounds(const Body& body, const Shape& shape) -> AABB {
 	switch (shape.type) {
 		case ShapeType::sphere: {
 			const glm::vec3 center = body.position + body.rotation * shape.sphere.local_center;
@@ -59,8 +70,6 @@ auto shapeBounds(const Body& body, const Shape& shape) -> AABB {
 	return {};
 }
 
-}
-
 auto BroadPhase::calculateBounds(CollisionWorldView world, size_t begin, size_t end) const -> std::vector<ShapeBoundsUpdate> {
 	ZoneScopedN("physics::CalculateBounds");
 
@@ -76,7 +85,7 @@ auto BroadPhase::calculateBounds(CollisionWorldView world, size_t begin, size_t 
 		updates.emplace_back(
 		    ShapeBoundsUpdate {
 		      .shape = shape_id,
-		      .bounds = active ? shapeBounds(*body, slot.shape) : AABB {},
+		      .bounds = active ? worldShapeBounds(*body, slot.shape) : AABB {},
 		      .active = active,
 		    }
 		);
@@ -154,6 +163,8 @@ auto BroadPhase::findPairs(CollisionWorldView world) -> std::vector<BroadPhasePa
 				entry.node = m_tree.insert(update.shape, update.bounds);
 				entry.generation = update.shape.generation;
 				++m_stats.inserted_leaves;
+			} else if (isShapeAsleep(world, update.shape)) {
+				++m_stats.skipped_refits;
 			} else {
 				m_stats.reinserted_leaves += m_tree.updateLeaf(entry.node, update.bounds);
 			}
@@ -171,6 +182,11 @@ auto BroadPhase::findPairs(CollisionWorldView world) -> std::vector<BroadPhasePa
 
 			const ShapeBoundsUpdate& update = bounds[shape_index];
 			if (not update.active) {
+				continue;
+			}
+
+			if (isShapeAsleep(world, update.shape)) {
+				++m_stats.skipped_self_queries;
 				continue;
 			}
 
@@ -255,5 +271,4 @@ auto BroadPhase::testPair(CollisionWorldView world, ShapeID shape_a_id, ShapeID 
 	    }
 	);
 }
-
 }

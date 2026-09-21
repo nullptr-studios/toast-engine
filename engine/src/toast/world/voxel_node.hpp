@@ -107,6 +107,7 @@ private:
 	void destroy();
 	void onEnable();
 	void onDisable();
+	void drawDebug();
 
 	void releaseVolume();
 
@@ -145,6 +146,15 @@ private:
 	[[Reflect, ReadOnly]]
 	bool awake = true;
 
+	[[Reflect, Name("Show AABB"), Group("AABB")]]
+	bool show_aabb = false;
+
+	[[Reflect, Color, Name("AABB Color"), Group("AABB")]]
+	glm::vec4 aabb_color = glm::vec4(1.0f, 0.75f, 0.15f, 0.6f);
+
+	[[Reflect, Name("Fill Shape"), Group("AABB")]]
+	bool aabb_fill = false;
+
 	[[Reflect, Group("Physics")]]
 	float gravity_scale = 1.0f;
 
@@ -182,6 +192,7 @@ private:
 
 	bool m_registered_proxy = false;
 	bool m_registration_requested = false;
+	bool m_debug_visible = false;
 
 	physics::BodyID m_body;
 	physics::ShapeID m_shape;

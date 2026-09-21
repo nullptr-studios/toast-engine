@@ -22,6 +22,10 @@ struct VoxelRenderRecord {
 	const voxel::Palette* palette = nullptr;
 	glm::mat4 transform {1.0f};
 	uint32_t revision = 0;
+
+	BodyID fragment_origin;
+	bool awake = true;
+	AABB world_bounds {};
 };
 
 }

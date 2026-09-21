@@ -170,6 +170,19 @@ public:
 		return m_brick_dims;
 	}
 
+	template<typename Callback>
+	void forEachPopulatedBrick(Callback&& callback) const {
+		for (const auto& [slot, voxels] : m_bricks) {
+			(void)voxels;
+			const glm::ivec3 brick {
+			  static_cast<int32_t>(slot % m_brick_dims.x),
+			  static_cast<int32_t>((slot / m_brick_dims.x) % m_brick_dims.y),
+			  static_cast<int32_t>(slot / (m_brick_dims.x * m_brick_dims.y)),
+			};
+			callback(brick);
+		}
+	}
+
 private:
 	[[nodiscard]]
 	auto contains(glm::ivec3 brick) const noexcept -> bool;

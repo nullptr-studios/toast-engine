@@ -778,7 +778,7 @@ auto collideWorldBoxes(const WorldBox& box_a, const WorldBox& box_b) -> std::opt
 }
 
 auto collideSpheres(BroadPhasePair pair, CollisionElement a, CollisionElement b) -> std::optional<Manifold> {
-	ZoneScopedN("physics::SphereSphere");
+	ZoneScoped;
 	ZoneValue((static_cast<uint64_t>(pair.a.shape.slot) << 32) | static_cast<uint64_t>(pair.b.shape.slot));
 
 	const Shape& shape_a = a.shape;
@@ -827,7 +827,7 @@ auto collideSpheres(BroadPhasePair pair, CollisionElement a, CollisionElement b)
 
 auto collideSphereBox(BroadPhasePair pair, CollisionElement sphere_element, CollisionElement box_element)
     -> std::optional<Manifold> {
-	ZoneScopedN("physics::SphereBox");
+	ZoneScoped;
 	ZoneValue((static_cast<uint64_t>(pair.a.shape.slot) << 32) | static_cast<uint64_t>(pair.b.shape.slot));
 
 	const Shape& sph_shape = sphere_element.shape;
@@ -937,7 +937,7 @@ auto collideSphereBox(BroadPhasePair pair, CollisionElement sphere_element, Coll
 
 auto collideSphereCapsule(BroadPhasePair pair, CollisionElement sphere_element, CollisionElement capsule_element)
     -> std::optional<Manifold> {
-	ZoneScopedN("physics::SphereCapsule");
+	ZoneScoped;
 	ZoneValue((static_cast<uint64_t>(pair.a.shape.slot) << 32) | static_cast<uint64_t>(pair.b.shape.slot));
 
 	const Shape& sph_shape = sphere_element.shape;
@@ -1011,11 +1011,19 @@ auto collideSphereCapsule(BroadPhasePair pair, CollisionElement sphere_element, 
 	};
 }
 
+namespace {
+[[nodiscard]]
+auto queryVolumeInVoxels(const AABB& bounds) -> uint64_t {
+	const glm::vec3 extent = glm::max(bounds.max - bounds.min, glm::vec3(0.0f)) / voxel::k_voxel_size;
+	return static_cast<uint64_t>(extent.x) * static_cast<uint64_t>(extent.y) * static_cast<uint64_t>(extent.z);
+}
+}
+
 void collideSphereVoxel(
     BroadPhasePair pair, CollisionElement sphere_element, CollisionElement voxel_element, const VoxelShapeData& voxel_data,
     std::vector<Manifold>& output
 ) {
-	ZoneScopedN("physics::SphereVoxel");
+	ZoneScoped;
 	ZoneValue((static_cast<uint64_t>(pair.a.shape.slot) << 32) | static_cast<uint64_t>(pair.b.shape.slot));
 
 	const Shape& sph_shape = sphere_element.shape;
@@ -1034,6 +1042,8 @@ void collideSphereVoxel(
 	  .min = local_center - glm::vec3(radius),
 	  .max = local_center + glm::vec3(radius),
 	};
+	ZoneValue(queryVolumeInVoxels(local_bounds));
+
 	const VoxelQueryContext context {
 	  .volume = *voxel_data.volume, .surface = voxel_data.surface, .palette = voxel_data.palette, .materials = voxel_data.materials
 	};
@@ -1050,83 +1060,89 @@ void collideSphereVoxel(
 	// one slot per classified normal so a sphere touching a floor and a wall keeps both contacts
 	std::array<std::optional<BestContact>, voxel::k_normal_direction_count> best_per_normal;
 
-	queryVoxelSurface(context, local_bounds, [&](const VoxelCandidate& candidate) {
-		if (candidate.normal_index >= best_per_normal.size()) {
-			return;
+	{
+		ZoneScopedN("physics::VoxelQueryWalk");
+		queryVoxelSurface(context, local_bounds, [&](const VoxelCandidate& candidate) {
+			if (candidate.normal_index >= best_per_normal.size()) {
+				return;
+			}
+
+			const glm::vec3 closest = glm::clamp(local_center, candidate.min, candidate.max);
+			const glm::vec3 delta = closest - local_center;
+			const float distance_sq = glm::dot(delta, delta);
+			if (not std::isfinite(distance_sq) || distance_sq > radius * radius) {
+				return;
+			}
+
+			glm::vec3 local_normal;
+			glm::vec3 local_surface;
+			float penetration;
+			if (distance_sq <= _detail::direction_epsilon_sq) {
+				local_normal = -glm::vec3(voxel::normalDirection(candidate.normal_index));
+				local_surface = local_center - local_normal * radius;
+				penetration = radius;
+			} else {
+				const float distance = std::sqrt(distance_sq);
+				local_normal = delta / distance;
+				local_surface = local_center + local_normal * radius;
+				penetration = radius - distance;
+			}
+
+			std::optional<BestContact>& slot = best_per_normal[candidate.normal_index];
+			if (slot.has_value() && slot->penetration >= penetration) {
+				return;
+			}
+
+			const FeatureType type =
+			    candidate.classification == voxel::VoxelClass::edge ? FeatureType::voxel_edge : FeatureType::voxel_face;
+			slot = BestContact {
+			  .local_normal = local_normal,
+			  .local_point = closest,
+			  .local_surface = local_surface,
+			  .penetration = penetration,
+			  .voxel_feature = voxelFeature(type, candidate.brick_slot, candidate.local_index, candidate.normal_index),
+			  .material = {
+			               .restitution = candidate.material->restitution,
+			               .static_friction = candidate.material->static_friction,
+			               .dynamic_friction = candidate.material->dynamic_friction,
+			               },
+			};
+		});
+	}
+
+	{
+		ZoneScopedN("physics::BuildManifolds");
+		for (size_t normal_index = 0; normal_index < best_per_normal.size(); ++normal_index) {
+			const std::optional<BestContact>& best = best_per_normal[normal_index];
+			if (not best.has_value()) {
+				continue;
+			}
+
+			const glm::vec3 world_normal = voxel_basis * best->local_normal;
+			const glm::vec3 sphere_surface_point = voxel_origin + voxel_basis * best->local_surface;
+			const glm::vec3 voxel_surface_point = voxel_origin + voxel_basis * best->local_point;
+
+			output.push_back(
+			    Manifold {
+			      .pair = pair,
+			      .normal = world_normal,
+			      .normal_index = static_cast<uint8_t>(normal_index),
+			      .contacts = {ContactPoint {
+			        .position = (sphere_surface_point + voxel_surface_point) * 0.5f,
+			        .penetration = best->penetration,
+			        .feature_a = sphere_surface_feature,
+			        .feature_b = best->voxel_feature,
+			        .material = best->material,
+			      }},
+			      .contact_count = 1,
+			    }
+			);
 		}
-
-		const glm::vec3 closest = glm::clamp(local_center, candidate.min, candidate.max);
-		const glm::vec3 delta = closest - local_center;
-		const float distance_sq = glm::dot(delta, delta);
-		if (not std::isfinite(distance_sq) || distance_sq > radius * radius) {
-			return;
-		}
-
-		glm::vec3 local_normal;
-		glm::vec3 local_surface;
-		float penetration;
-		if (distance_sq <= _detail::direction_epsilon_sq) {
-			local_normal = -glm::vec3(voxel::normalDirection(candidate.normal_index));
-			local_surface = local_center - local_normal * radius;
-			penetration = radius;
-		} else {
-			const float distance = std::sqrt(distance_sq);
-			local_normal = delta / distance;
-			local_surface = local_center + local_normal * radius;
-			penetration = radius - distance;
-		}
-
-		std::optional<BestContact>& slot = best_per_normal[candidate.normal_index];
-		if (slot.has_value() && slot->penetration >= penetration) {
-			return;
-		}
-
-		const FeatureType type =
-		    candidate.classification == voxel::VoxelClass::edge ? FeatureType::voxel_edge : FeatureType::voxel_face;
-		slot = BestContact {
-		  .local_normal = local_normal,
-		  .local_point = closest,
-		  .local_surface = local_surface,
-		  .penetration = penetration,
-		  .voxel_feature = voxelFeature(type, candidate.brick_slot, candidate.local_index, candidate.normal_index),
-		  .material = {
-		               .restitution = candidate.material->restitution,
-		               .static_friction = candidate.material->static_friction,
-		               .dynamic_friction = candidate.material->dynamic_friction,
-		               },
-		};
-	});
-
-	for (size_t normal_index = 0; normal_index < best_per_normal.size(); ++normal_index) {
-		const std::optional<BestContact>& best = best_per_normal[normal_index];
-		if (not best.has_value()) {
-			continue;
-		}
-
-		const glm::vec3 world_normal = voxel_basis * best->local_normal;
-		const glm::vec3 sphere_surface_point = voxel_origin + voxel_basis * best->local_surface;
-		const glm::vec3 voxel_surface_point = voxel_origin + voxel_basis * best->local_point;
-
-		output.push_back(
-		    Manifold {
-		      .pair = pair,
-		      .normal = world_normal,
-		      .normal_index = static_cast<uint8_t>(normal_index),
-		      .contacts = {ContactPoint {
-		        .position = (sphere_surface_point + voxel_surface_point) * 0.5f,
-		        .penetration = best->penetration,
-		        .feature_a = sphere_surface_feature,
-		        .feature_b = best->voxel_feature,
-		        .material = best->material,
-		      }},
-		      .contact_count = 1,
-		    }
-		);
 	}
 }
 
 auto collideBoxes(BroadPhasePair pair, CollisionElement a, CollisionElement b) -> std::optional<Manifold> {
-	ZoneScopedN("physics::BoxBox");
+	ZoneScoped;
 	ZoneValue((static_cast<uint64_t>(pair.a.shape.slot) << 32) | static_cast<uint64_t>(pair.b.shape.slot));
 
 	const Shape& shape_a = a.shape;
@@ -1163,7 +1179,7 @@ auto collideBoxes(BroadPhasePair pair, CollisionElement a, CollisionElement b) -
 
 auto collideCapsuleBox(BroadPhasePair pair, CollisionElement capsule_element, CollisionElement box_element)
     -> std::optional<Manifold> {
-	ZoneScopedN("physics::CapsuleBox");
+	ZoneScoped;
 	ZoneValue((static_cast<uint64_t>(pair.a.shape.slot) << 32) | static_cast<uint64_t>(pair.b.shape.slot));
 
 	const Shape& capsule_shape = capsule_element.shape;
@@ -1261,7 +1277,7 @@ auto collideCapsuleBox(BroadPhasePair pair, CollisionElement capsule_element, Co
 }
 
 auto collideCapsules(BroadPhasePair pair, CollisionElement a, CollisionElement b) -> std::optional<Manifold> {
-	ZoneScopedN("physics::CapsuleCapsule");
+	ZoneScoped;
 	ZoneValue((static_cast<uint64_t>(pair.a.shape.slot) << 32) | static_cast<uint64_t>(pair.b.shape.slot));
 
 	const Shape& shape_a = a.shape;
@@ -1417,6 +1433,9 @@ void collideVoxelVoxel(
 	if (glm::any(glm::greaterThan(probe_search_bounds.min, probe_search_bounds.max))) {
 		return;
 	}
+	ZoneValue(queryVolumeInVoxels(probe_search_bounds));
+	ZoneValue(queryVolumeInVoxels(probe.shape.voxel.local_bounds));
+	ZoneValue(queryVolumeInVoxels(ref.shape.voxel.local_bounds));
 
 	static thread_local VoxelVoxelScratch scratch;
 	scratch.reset();
@@ -1426,66 +1445,69 @@ void collideVoxelVoxel(
 	auto& group_started = scratch.group_started;
 	size_t remaining_budget = 256;
 
-	queryVoxelSurface(probe_context, probe_search_bounds, [&](const VoxelCandidate& probe_c) -> bool {
-		if (remaining_budget == 0) {
-			return false;
-		}
+	{
+		ZoneScopedN("physics::VoxelQueryWalk");
+		queryVoxelSurface(probe_context, probe_search_bounds, [&](const VoxelCandidate& probe_c) -> bool {
+			if (remaining_budget == 0) {
+				return false;
+			}
 
-		glm::vec3 probe_center_world = probe_origin + probe_basis * ((probe_c.min + probe_c.max) * 0.5f);
-		glm::vec3 half_extent = (probe_c.max - probe_c.min) * 0.5f;
+			glm::vec3 probe_center_world = probe_origin + probe_basis * ((probe_c.min + probe_c.max) * 0.5f);
+			glm::vec3 half_extent = (probe_c.max - probe_c.min) * 0.5f;
 
-		// clang-format off
+			// clang-format off
 		_detail::WorldBox probe_box_reference_local {
 		  .center = ref_basis_inv * (probe_center_world - ref_origin),
 		  .rotation = ref_basis_inv * probe_basis,
 		  .half_extents = half_extent,
 		};
-		// clang-format on
+			// clang-format on
 
-		glm::vec3 extents = glm::abs(probe_box_reference_local.rotation[0]) * half_extent.x +
-		                    glm::abs(probe_box_reference_local.rotation[1]) * half_extent.y +
-		                    glm::abs(probe_box_reference_local.rotation[2]) * half_extent.z;
-		AABB probe_bounds_reference_local {
-		  .min = probe_box_reference_local.center - extents,
-		  .max = probe_box_reference_local.center + extents,
-		};
-
-		FeatureType probe_f_type;
-		{
-			using voxel::VoxelClass;
-			probe_f_type = probe_c.classification == VoxelClass::edge ? FeatureType::voxel_edge : FeatureType::voxel_face;
-		}
-		ContactFeatureID probe_feature = voxelFeature(probe_f_type, probe_c.brick_slot, probe_c.local_index, probe_c.normal_index);
-		queryVoxelSurface(ref_context, probe_bounds_reference_local, [&](const VoxelCandidate& ref_c) -> bool {
-			if (remaining_budget == 0) {
-				return false;
-			}
-			if (ref_c.normal_index >= candidates_per_normal.size()) {
-				return true;
-			}
-			--remaining_budget;
-
-			_detail::WorldBox ref_voxel_box {
-			  .center = (ref_c.min + ref_c.max) * 0.5f,
-			  .rotation = glm::mat3(1.0f),
-			  .half_extents = (ref_c.max - ref_c.min) * 0.5f,
+			glm::vec3 extents = glm::abs(probe_box_reference_local.rotation[0]) * half_extent.x +
+			                    glm::abs(probe_box_reference_local.rotation[1]) * half_extent.y +
+			                    glm::abs(probe_box_reference_local.rotation[2]) * half_extent.z;
+			AABB probe_bounds_reference_local {
+			  .min = probe_box_reference_local.center - extents,
+			  .max = probe_box_reference_local.center + extents,
 			};
-			auto sat = _detail::collideWorldBoxes(probe_box_reference_local, ref_voxel_box);
-			if (not sat.has_value()) {
-				return true;
+
+			FeatureType probe_f_type;
+			{
+				using voxel::VoxelClass;
+				probe_f_type = probe_c.classification == VoxelClass::edge ? FeatureType::voxel_edge : FeatureType::voxel_face;
 			}
+			ContactFeatureID probe_feature = voxelFeature(probe_f_type, probe_c.brick_slot, probe_c.local_index, probe_c.normal_index);
+			queryVoxelSurface(ref_context, probe_bounds_reference_local, [&](const VoxelCandidate& ref_c) -> bool {
+				if (remaining_budget == 0) {
+					return false;
+				}
+				if (ref_c.normal_index >= candidates_per_normal.size()) {
+					return true;
+				}
+				--remaining_budget;
 
-			auto ref_f_type = ref_c.classification == voxel::VoxelClass::edge ? FeatureType::voxel_edge : FeatureType::voxel_face;
-			auto ref_feature = voxelFeature(ref_f_type, ref_c.brick_slot, ref_c.local_index, ref_c.normal_index);
+				_detail::WorldBox ref_voxel_box {
+				  .center = (ref_c.min + ref_c.max) * 0.5f,
+				  .rotation = glm::mat3(1.0f),
+				  .half_extents = (ref_c.max - ref_c.min) * 0.5f,
+				};
+				ZoneScopedN("physics::VoxelVoxelSAT");
+				auto sat = _detail::collideWorldBoxes(probe_box_reference_local, ref_voxel_box);
+				if (not sat.has_value()) {
+					return true;
+				}
 
-			std::vector<_detail::ContactCandidate>& bucket = candidates_per_normal[ref_c.normal_index];
-			for (_detail::ContactCandidate& raw : sat->candidates) {
-				raw.feature_a = probe_feature;
-				raw.feature_b = ref_feature;
-				bucket.push_back(raw);
-			}
+				auto ref_f_type = ref_c.classification == voxel::VoxelClass::edge ? FeatureType::voxel_edge : FeatureType::voxel_face;
+				auto ref_feature = voxelFeature(ref_f_type, ref_c.brick_slot, ref_c.local_index, ref_c.normal_index);
 
-			// clang-format off
+				std::vector<_detail::ContactCandidate>& bucket = candidates_per_normal[ref_c.normal_index];
+				for (_detail::ContactCandidate& raw : sat->candidates) {
+					raw.feature_a = probe_feature;
+					raw.feature_b = ref_feature;
+					bucket.push_back(raw);
+				}
+
+				// clang-format off
 			if (not group_started[ref_c.normal_index]) {
 				group_started[ref_c.normal_index] = true;
 				normal_per_group[ref_c.normal_index] = sat->normal;
@@ -1502,42 +1524,46 @@ void collideVoxelVoxel(
 					}
 				);
 			}
-			// clang-format on
-			return true;
+				// clang-format on
+				return true;
+			});
+
+			return remaining_budget > 0;
 		});
+	}
 
-		return remaining_budget > 0;
-	});
+	{
+		ZoneScopedN("physics::BuildManifolds");
+		for (size_t i = 0; i < candidates_per_normal.size(); ++i) {
+			std::vector<_detail::ContactCandidate>& bucket = candidates_per_normal[i];
+			if (bucket.empty()) {
+				continue;
+			}
 
-	for (size_t i = 0; i < candidates_per_normal.size(); ++i) {
-		std::vector<_detail::ContactCandidate>& bucket = candidates_per_normal[i];
-		if (bucket.empty()) {
-			continue;
-		}
+			glm::vec3 local_normal = normal_per_group[i];
+			bucket = _detail::reduceContacts(std::move(bucket), local_normal);
+			const std::vector<_detail::ContactCandidate>& reduced = bucket;
+			glm::vec3 world_normal = ref_basis * local_normal;
 
-		glm::vec3 local_normal = normal_per_group[i];
-		bucket = _detail::reduceContacts(std::move(bucket), local_normal);
-		const std::vector<_detail::ContactCandidate>& reduced = bucket;
-		glm::vec3 world_normal = ref_basis * local_normal;
-
-		Manifold manifold {
-		  .pair = pair,
-		  .normal = a_is_probe ? world_normal : -world_normal,
-		  .normal_index = static_cast<uint8_t>(i),
-		  .contact_count = static_cast<uint8_t>(reduced.size()),
-		};
-
-		for (size_t j = 0; j < reduced.size(); ++j) {
-			manifold.contacts[j] = ContactPoint {
-			  .position = ref_origin + ref_basis * reduced[j].position,
-			  .penetration = reduced[j].penetration,
-			  .feature_a = a_is_probe ? reduced[j].feature_a : reduced[j].feature_b,
-			  .feature_b = a_is_probe ? reduced[j].feature_b : reduced[j].feature_a,
-			  .material = material_per_group[i],
+			Manifold manifold {
+			  .pair = pair,
+			  .normal = a_is_probe ? world_normal : -world_normal,
+			  .normal_index = static_cast<uint8_t>(i),
+			  .contact_count = static_cast<uint8_t>(reduced.size()),
 			};
-		}
 
-		output.push_back(manifold);
+			for (size_t j = 0; j < reduced.size(); ++j) {
+				manifold.contacts[j] = ContactPoint {
+				  .position = ref_origin + ref_basis * reduced[j].position,
+				  .penetration = reduced[j].penetration,
+				  .feature_a = a_is_probe ? reduced[j].feature_a : reduced[j].feature_b,
+				  .feature_b = a_is_probe ? reduced[j].feature_b : reduced[j].feature_a,
+				  .material = material_per_group[i],
+				};
+			}
+
+			output.push_back(manifold);
+		}
 	}
 }
 
@@ -1545,7 +1571,7 @@ void collideCapsuleVoxel(
     BroadPhasePair pair, CollisionElement capsule_element, CollisionElement voxel_element, const VoxelShapeData& voxel_data,
     std::vector<Manifold>& output
 ) {
-	ZoneScopedN("physics::CapsuleVoxel");
+	ZoneScoped;
 	ZoneValue((static_cast<uint64_t>(pair.a.shape.slot) << 32) | static_cast<uint64_t>(pair.b.shape.slot));
 
 	const Shape& caps_shape = capsule_element.shape;
@@ -1568,6 +1594,7 @@ void collideCapsuleVoxel(
 	  .min = glm::min(local_a, local_b) - glm::vec3(radius),
 	  .max = glm::max(local_a, local_b) + glm::vec3(radius),
 	};
+	ZoneValue(queryVolumeInVoxels(local_bounds));
 	const VoxelQueryContext context {
 	  .volume = *voxel_data.volume, .surface = voxel_data.surface, .palette = voxel_data.palette, .materials = voxel_data.materials
 	};
@@ -1585,85 +1612,91 @@ void collideCapsuleVoxel(
 	// one slot per classified normal, same reasoning as collideSphereVoxel
 	std::array<std::optional<BestContact>, voxel::k_normal_direction_count> best_per_normal;
 
-	queryVoxelSurface(context, local_bounds, [&](const VoxelCandidate& candidate) {
-		if (candidate.normal_index >= best_per_normal.size()) {
-			return;
+	{
+		ZoneScopedN("physics::VoxelQueryWalk");
+		queryVoxelSurface(context, local_bounds, [&](const VoxelCandidate& candidate) {
+			if (candidate.normal_index >= best_per_normal.size()) {
+				return;
+			}
+
+			const _detail::WorldBox voxel_box {
+			  .center = (candidate.min + candidate.max) * 0.5f,
+			  .rotation = glm::mat3(1.0f),
+			  .half_extents = (candidate.max - candidate.min) * 0.5f,
+			};
+
+			const _detail::SegmentBoxClosestPoints closest = _detail::closestPointsSegmentBox(local_a, local_b, voxel_box);
+			const glm::vec3 delta = closest.box_point - closest.segment_point;
+			const float distance_sq = glm::dot(delta, delta);
+			if (not std::isfinite(distance_sq) || distance_sq > radius * radius) {
+				return;
+			}
+
+			glm::vec3 local_normal;
+			glm::vec3 local_surface;
+			float penetration;
+			if (distance_sq <= _detail::direction_epsilon_sq) {
+				local_normal = -glm::vec3(voxel::normalDirection(candidate.normal_index));
+				local_surface = closest.segment_point - local_normal * radius;
+				penetration = radius;
+			} else {
+				const float distance = std::sqrt(distance_sq);
+				local_normal = delta / distance;
+				local_surface = closest.segment_point + local_normal * radius;
+				penetration = radius - distance;
+			}
+
+			std::optional<BestContact>& slot = best_per_normal[candidate.normal_index];
+			if (slot.has_value() && slot->penetration >= penetration) {
+				return;
+			}
+
+			const FeatureType type =
+			    candidate.classification == voxel::VoxelClass::edge ? FeatureType::voxel_edge : FeatureType::voxel_face;
+			slot = BestContact {
+			  .local_normal = local_normal,
+			  .local_point = closest.box_point,
+			  .local_surface = local_surface,
+			  .penetration = penetration,
+			  .segment_parameter = closest.segment_parameter,
+			  .voxel_feature = voxelFeature(type, candidate.brick_slot, candidate.local_index, candidate.normal_index),
+			  .material = {
+			               .restitution = candidate.material->restitution,
+			               .static_friction = candidate.material->static_friction,
+			               .dynamic_friction = candidate.material->dynamic_friction,
+			               },
+			};
+		});
+	}
+
+	{
+		ZoneScopedN("physics::BuildManifolds");
+		for (size_t normal_index = 0; normal_index < best_per_normal.size(); ++normal_index) {
+			const std::optional<BestContact>& best = best_per_normal[normal_index];
+			if (not best.has_value()) {
+				continue;
+			}
+
+			const glm::vec3 world_normal = voxel_basis * best->local_normal;
+			const glm::vec3 capsule_surface_point = voxel_origin + voxel_basis * best->local_surface;
+			const glm::vec3 voxel_surface_point = voxel_origin + voxel_basis * best->local_point;
+
+			output.push_back(
+			    Manifold {
+			      .pair = pair,
+			      .normal = world_normal,
+			      .normal_index = static_cast<uint8_t>(normal_index),
+			      .contacts = {ContactPoint {
+			        .position = (capsule_surface_point + voxel_surface_point) * 0.5f,
+			        .penetration = best->penetration,
+			        .feature_a = capsuleFeature(best->segment_parameter),
+			        .feature_b = best->voxel_feature,
+			        .material = best->material,
+			      }},
+			      .contact_count = 1,
+			    }
+			);
 		}
-
-		const _detail::WorldBox voxel_box {
-		  .center = (candidate.min + candidate.max) * 0.5f,
-		  .rotation = glm::mat3(1.0f),
-		  .half_extents = (candidate.max - candidate.min) * 0.5f,
-		};
-
-		const _detail::SegmentBoxClosestPoints closest = _detail::closestPointsSegmentBox(local_a, local_b, voxel_box);
-		const glm::vec3 delta = closest.box_point - closest.segment_point;
-		const float distance_sq = glm::dot(delta, delta);
-		if (not std::isfinite(distance_sq) || distance_sq > radius * radius) {
-			return;
-		}
-
-		glm::vec3 local_normal;
-		glm::vec3 local_surface;
-		float penetration;
-		if (distance_sq <= _detail::direction_epsilon_sq) {
-			local_normal = -glm::vec3(voxel::normalDirection(candidate.normal_index));
-			local_surface = closest.segment_point - local_normal * radius;
-			penetration = radius;
-		} else {
-			const float distance = std::sqrt(distance_sq);
-			local_normal = delta / distance;
-			local_surface = closest.segment_point + local_normal * radius;
-			penetration = radius - distance;
-		}
-
-		std::optional<BestContact>& slot = best_per_normal[candidate.normal_index];
-		if (slot.has_value() && slot->penetration >= penetration) {
-			return;
-		}
-
-		const FeatureType type =
-		    candidate.classification == voxel::VoxelClass::edge ? FeatureType::voxel_edge : FeatureType::voxel_face;
-		slot = BestContact {
-		  .local_normal = local_normal,
-		  .local_point = closest.box_point,
-		  .local_surface = local_surface,
-		  .penetration = penetration,
-		  .segment_parameter = closest.segment_parameter,
-		  .voxel_feature = voxelFeature(type, candidate.brick_slot, candidate.local_index, candidate.normal_index),
-		  .material = {
-		               .restitution = candidate.material->restitution,
-		               .static_friction = candidate.material->static_friction,
-		               .dynamic_friction = candidate.material->dynamic_friction,
-		               },
-		};
-	});
-
-	for (size_t normal_index = 0; normal_index < best_per_normal.size(); ++normal_index) {
-		const std::optional<BestContact>& best = best_per_normal[normal_index];
-		if (not best.has_value()) {
-			continue;
-		}
-
-		const glm::vec3 world_normal = voxel_basis * best->local_normal;
-		const glm::vec3 capsule_surface_point = voxel_origin + voxel_basis * best->local_surface;
-		const glm::vec3 voxel_surface_point = voxel_origin + voxel_basis * best->local_point;
-
-		output.push_back(
-		    Manifold {
-		      .pair = pair,
-		      .normal = world_normal,
-		      .normal_index = static_cast<uint8_t>(normal_index),
-		      .contacts = {ContactPoint {
-		        .position = (capsule_surface_point + voxel_surface_point) * 0.5f,
-		        .penetration = best->penetration,
-		        .feature_a = capsuleFeature(best->segment_parameter),
-		        .feature_b = best->voxel_feature,
-		        .material = best->material,
-		      }},
-		      .contact_count = 1,
-		    }
-		);
 	}
 }
 
@@ -1671,7 +1704,7 @@ void collideBoxVoxel(
     BroadPhasePair pair, CollisionElement box_element, CollisionElement voxel_element, const VoxelShapeData& voxel_data,
     std::vector<Manifold>& output
 ) {
-	ZoneScopedN("physics::BoxVoxel");
+	ZoneScoped;
 	ZoneValue((static_cast<uint64_t>(pair.a.shape.slot) << 32) | static_cast<uint64_t>(pair.b.shape.slot));
 
 	const Shape& box_shape = box_element.shape;
@@ -1699,6 +1732,8 @@ void collideBoxVoxel(
 	  .min = local_box.center - local_world_extents,
 	  .max = local_box.center + local_world_extents,
 	};
+	ZoneValue(queryVolumeInVoxels(local_bounds));
+	ZoneValue(queryVolumeInVoxels(voxel_shape.voxel.local_bounds));
 	const VoxelQueryContext context {
 	  .volume = *voxel_data.volume, .surface = voxel_data.surface, .palette = voxel_data.palette, .materials = voxel_data.materials
 	};
@@ -1708,70 +1743,77 @@ void collideBoxVoxel(
 	std::array<ContactMaterial, voxel::k_normal_direction_count> material_per_group {};
 	std::array<bool, voxel::k_normal_direction_count> group_started {};
 
-	queryVoxelSurface(context, local_bounds, [&](const VoxelCandidate& candidate) {
-		if (candidate.normal_index >= candidates_per_normal.size()) {
-			return;
-		}
+	{
+		ZoneScopedN("physics::VoxelQueryWalk");
+		queryVoxelSurface(context, local_bounds, [&](const VoxelCandidate& candidate) {
+			if (candidate.normal_index >= candidates_per_normal.size()) {
+				return;
+			}
 
-		const _detail::WorldBox voxel_box {
-		  .center = (candidate.min + candidate.max) * 0.5f,
-		  .rotation = glm::mat3(1.0f),
-		  .half_extents = (candidate.max - candidate.min) * 0.5f,
-		};
-
-		auto sat = _detail::collideWorldBoxes(local_box, voxel_box);
-		if (not sat.has_value()) {
-			return;
-		}
-
-		const FeatureType type =
-		    candidate.classification == voxel::VoxelClass::edge ? FeatureType::voxel_edge : FeatureType::voxel_face;
-		const ContactFeatureID voxel_feature =
-		    voxelFeature(type, candidate.brick_slot, candidate.local_index, candidate.normal_index);
-
-		std::vector<_detail::ContactCandidate>& bucket = candidates_per_normal[candidate.normal_index];
-		for (_detail::ContactCandidate& raw : sat->candidates) {
-			raw.feature_b = voxel_feature;
-			bucket.push_back(raw);
-		}
-
-		if (not group_started[candidate.normal_index]) {
-			group_started[candidate.normal_index] = true;
-			normal_per_group[candidate.normal_index] = sat->normal;
-			material_per_group[candidate.normal_index] = {
-			  .restitution = candidate.material->restitution,
-			  .static_friction = candidate.material->static_friction,
-			  .dynamic_friction = candidate.material->dynamic_friction,
+			const _detail::WorldBox voxel_box {
+			  .center = (candidate.min + candidate.max) * 0.5f,
+			  .rotation = glm::mat3(1.0f),
+			  .half_extents = (candidate.max - candidate.min) * 0.5f,
 			};
-		}
-	});
 
-	for (size_t normal_index = 0; normal_index < candidates_per_normal.size(); ++normal_index) {
-		std::vector<_detail::ContactCandidate>& bucket = candidates_per_normal[normal_index];
-		if (bucket.empty()) {
-			continue;
-		}
+			ZoneScopedN("physics::BoxVoxelSAT");
+			auto sat = _detail::collideWorldBoxes(local_box, voxel_box);
+			if (not sat.has_value()) {
+				return;
+			}
 
-		const glm::vec3 local_normal = normal_per_group[normal_index];
-		std::vector<_detail::ContactCandidate> reduced = _detail::reduceContacts(std::move(bucket), local_normal);
-		const glm::vec3 world_normal = voxel_basis * local_normal;
+			const FeatureType type =
+			    candidate.classification == voxel::VoxelClass::edge ? FeatureType::voxel_edge : FeatureType::voxel_face;
+			const ContactFeatureID voxel_feature =
+			    voxelFeature(type, candidate.brick_slot, candidate.local_index, candidate.normal_index);
 
-		Manifold manifold {
-		  .pair = pair,
-		  .normal = world_normal,
-		  .normal_index = static_cast<uint8_t>(normal_index),
-		  .contact_count = static_cast<uint8_t>(reduced.size()),
-		};
-		for (size_t index = 0; index < reduced.size(); ++index) {
-			manifold.contacts[index] = ContactPoint {
-			  .position = voxel_origin + voxel_basis * reduced[index].position,
-			  .penetration = reduced[index].penetration,
-			  .feature_a = reduced[index].feature_a,
-			  .feature_b = reduced[index].feature_b,
-			  .material = material_per_group[normal_index],
+			std::vector<_detail::ContactCandidate>& bucket = candidates_per_normal[candidate.normal_index];
+			for (_detail::ContactCandidate& raw : sat->candidates) {
+				raw.feature_b = voxel_feature;
+				bucket.push_back(raw);
+			}
+
+			if (not group_started[candidate.normal_index]) {
+				group_started[candidate.normal_index] = true;
+				normal_per_group[candidate.normal_index] = sat->normal;
+				material_per_group[candidate.normal_index] = {
+				  .restitution = candidate.material->restitution,
+				  .static_friction = candidate.material->static_friction,
+				  .dynamic_friction = candidate.material->dynamic_friction,
+				};
+			}
+		});
+	}
+
+	{
+		ZoneScopedN("physics::BuildManifolds");
+		for (size_t normal_index = 0; normal_index < candidates_per_normal.size(); ++normal_index) {
+			std::vector<_detail::ContactCandidate>& bucket = candidates_per_normal[normal_index];
+			if (bucket.empty()) {
+				continue;
+			}
+
+			const glm::vec3 local_normal = normal_per_group[normal_index];
+			std::vector<_detail::ContactCandidate> reduced = _detail::reduceContacts(std::move(bucket), local_normal);
+			const glm::vec3 world_normal = voxel_basis * local_normal;
+
+			Manifold manifold {
+			  .pair = pair,
+			  .normal = world_normal,
+			  .normal_index = static_cast<uint8_t>(normal_index),
+			  .contact_count = static_cast<uint8_t>(reduced.size()),
 			};
+			for (size_t index = 0; index < reduced.size(); ++index) {
+				manifold.contacts[index] = ContactPoint {
+				  .position = voxel_origin + voxel_basis * reduced[index].position,
+				  .penetration = reduced[index].penetration,
+				  .feature_a = reduced[index].feature_a,
+				  .feature_b = reduced[index].feature_b,
+				  .material = material_per_group[normal_index],
+				};
+			}
+			output.push_back(manifold);
 		}
-		output.push_back(manifold);
 	}
 }
 

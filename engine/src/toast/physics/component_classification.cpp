@@ -1,6 +1,9 @@
 #include "component_classification.hpp"
 
+#include <algorithm>
+#include <limits>
 #include <tracy/Tracy.hpp>
+#include <tuple>
 
 namespace physics {
 
@@ -139,6 +142,80 @@ auto buildDetachedComponents(const voxel::Connectivity& c, std::span<const Compo
 	});
 
 	return components;
+}
+
+namespace {
+
+struct RunningCluster {
+	glm::ivec3 min {std::numeric_limits<int32_t>::max()};
+	glm::ivec3 max {std::numeric_limits<int32_t>::min()};
+	DetachedComponent component;
+};
+
+[[nodiscard]]
+auto fitsWithinCap(glm::ivec3 min, glm::ivec3 max, int32_t cap) -> bool {
+	const glm::ivec3 extent = max - min + glm::ivec3(1);
+	return extent.x <= cap && extent.y <= cap && extent.z <= cap;
+}
+
+}
+
+auto splitBySpatialCompactness(std::vector<DetachedComponent> components, int32_t max_extent_bricks)
+    -> std::vector<DetachedComponent> {
+	ZoneScoped;
+
+	std::vector<DetachedComponent> result;
+	result.reserve(components.size());
+
+	for (DetachedComponent& component : components) {
+		if (component.pieces.empty()) {
+			continue;
+		}
+
+		glm::ivec3 min {std::numeric_limits<int32_t>::max()};
+		glm::ivec3 max {std::numeric_limits<int32_t>::min()};
+		for (const voxel::BrickPiece& piece : component.pieces) {
+			min = glm::min(min, piece.brick);
+			max = glm::max(max, piece.brick);
+		}
+
+		if (fitsWithinCap(min, max, max_extent_bricks)) {
+			result.push_back(std::move(component));
+			continue;
+		}
+
+		std::ranges::sort(component.pieces, {}, [](const voxel::BrickPiece& piece) {
+			return std::tuple(piece.brick.z, piece.brick.y, piece.brick.x);
+		});
+
+		std::vector<RunningCluster> clusters;
+		for (const voxel::BrickPiece& piece : component.pieces) {
+			RunningCluster* target = nullptr;
+			for (RunningCluster& cluster : clusters) {
+				if (fitsWithinCap(glm::min(cluster.min, piece.brick), glm::max(cluster.max, piece.brick), max_extent_bricks)) {
+					target = &cluster;
+					break;
+				}
+			}
+
+			if (target == nullptr) {
+				clusters.push_back(RunningCluster {.min = piece.brick, .max = piece.brick});
+				target = &clusters.back();
+				target->component.component = component.component;
+			}
+
+			target->min = glm::min(target->min, piece.brick);
+			target->max = glm::max(target->max, piece.brick);
+			target->component.voxel_count += voxel::popCount(piece.voxels);
+			target->component.pieces.push_back(piece);
+		}
+
+		for (RunningCluster& cluster : clusters) {
+			result.push_back(std::move(cluster.component));
+		}
+	}
+
+	return result;
 }
 
 }

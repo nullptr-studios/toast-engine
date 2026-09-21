@@ -95,6 +95,9 @@ public:
 		return m_debug_dirty_bricks;
 	}
 
+	[[nodiscard]]
+	static auto shapeWorldBounds(ShapeID shape) -> std::optional<AABB>;
+
 	static void callTick();
 	static void registerRigidbody(Rigidbody& node);
 	static void unregisterRigidbody(Rigidbody& node);
@@ -156,6 +159,7 @@ private:
 		size_t narrow_jobs = 0;
 		size_t narrow_candidates = 0;
 		size_t narrow_collisions = 0;
+		size_t sleeping_pairs_skipped = 0;
 		size_t rejected_manifolds = 0;
 		size_t contact_points = 0;
 		size_t bodies_woken = 0;
@@ -237,6 +241,8 @@ private:
 	void updateSleeping(float dt);
 	[[nodiscard]]
 	auto shouldSolve(const Manifold& manifold) const -> bool;
+	[[nodiscard]]
+	auto pairNeedsNarrowPhase(CollisionWorldView world, const BroadPhasePair& pair) const -> bool;
 
 	[[nodiscard]]
 	auto generateManifoldsAsync(CollisionWorldView world, std::span<const BroadPhasePair> candidates) -> std::vector<Manifold>;
