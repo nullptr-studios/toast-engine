@@ -33,6 +33,7 @@
 #include <toast/assets/assets.hpp>
 #include <toast/assets/material.hpp>
 #include <toast/log.hpp>
+#include <toast/physics/voxel_data_lock.hpp>
 #include <toast/thread_pool.hpp>
 #include <toast/time.hpp>
 #include <toast/voxel/runtime_pool.hpp>
@@ -3436,6 +3437,8 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 	std::vector<VoxelSceneKey> key;
 	gathered.reserve(nodes.size());
 	key.reserve(nodes.size());
+
+	std::scoped_lock voxel_data_lock {physics::voxelDataMutex()};
 
 	for (auto* node : nodes) {
 		if (node == nullptr || !node->enabled()) {

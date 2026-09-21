@@ -42,6 +42,18 @@ auto shapeBounds(const Body& body, const Shape& shape) -> AABB {
 			                                glm::abs(rotation[2]) * half_extents.z;
 			return {.min = center - world_extents, .max = center + world_extents};
 		}
+		case ShapeType::voxel: {
+			const AABB& bounds = shape.voxel.local_bounds;
+			const glm::vec3 local_center = (bounds.min + bounds.max) * 0.5f;
+			const glm::vec3 half_extents = (bounds.max - bounds.min) * 0.5f;
+			const glm::quat rotation = normalized(body.rotation * shape.voxel.local_rotation);
+			const glm::vec3 world_center = body.position + body.rotation * shape.voxel.local_center + rotation * local_center;
+			const glm::mat3 r = glm::mat3_cast(rotation);
+			const glm::vec3 world_extents =
+			    glm::abs(r[0]) * half_extents.x + glm::abs(r[1]) * half_extents.y + glm::abs(r[2]) * half_extents.z;
+
+			return {.min = world_center - world_extents, .max = world_center + world_extents};
+		}
 	}
 
 	return {};
@@ -185,6 +197,11 @@ auto BroadPhase::findPairs(CollisionWorldView world) -> std::vector<BroadPhasePa
 	m_stats.tree_nodes = m_tree.size();
 	ZoneValue(static_cast<uint64_t>(pairs.size()));
 	return pairs;
+}
+
+auto BroadPhase::queryBounds(const AABB& bounds) const -> std::vector<ShapeID> {
+	ZoneScopedN("physics::QueryBounds");
+	return m_tree.query(bounds);
 }
 
 auto BroadPhase::debugNodes() const -> std::vector<AABBTreeDebugNode> {

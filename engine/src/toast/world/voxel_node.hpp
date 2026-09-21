@@ -10,13 +10,16 @@
 #include <cstdint>
 #include <optional>
 #include <toast/assets/types.hpp>
-#include <toast/physics/shape.hpp>
+#include <toast/physics/body.hpp>
+#include <toast/physics/collision.hpp>
 #include <toast/voxel/stamp.hpp>
+#include <vector>
 
 namespace assets {
 class VoxelModel;
 class VoxelPalette;
 class VoxelMaterialLibrary;
+class PhysicsMaterial;
 }
 
 namespace physics {
@@ -25,18 +28,18 @@ class Simulator;
 
 namespace toast {
 
-enum class VoxelMobility : uint8_t {
-	/// Must sit on the lattice with a whole voxel offset and one of the 48 orientations
-	static_geometry = 0,
-
-	dynamic = 1,
-};
-
 class [[ToastNode, Icon("BoxMesh")]] TOAST_API VoxelNode : public Node3D {
+	friend class physics::Simulator;
+
 public:
 	VoxelNode() = default;
 
 	VoxelNode(assets::Handle<assets::VoxelModel> model) : m_model(std::move(model)) { }
+
+	signals::Signal<toast::Box<toast::Node>> contact_begin;
+	signals::Signal<toast::Box<toast::Node>> contact_end;
+	signals::Signal<> went_to_sleep;
+	signals::Signal<> woke_up;
 
 	[[nodiscard]]
 	auto getModel() const -> const assets::Handle<assets::VoxelModel>& {
@@ -57,13 +60,6 @@ public:
 
 	void setPalette(assets::Handle<assets::VoxelPalette> palette);
 
-	[[nodiscard]]
-	auto mobility() const noexcept -> VoxelMobility {
-		return m_mobility;
-	}
-
-	void setMobility(VoxelMobility mobility) noexcept { m_mobility = mobility; }
-
 	/// @returns the override else the model palette else 0
 	[[nodiscard]]
 	auto paletteUid() const -> uint64_t;
@@ -76,8 +72,7 @@ public:
 	[[nodiscard]]
 	auto latticePlacement() const -> std::optional<voxel::LatticePlacement>;
 
-	/// @brief The simulated volume while physics holds it else a lazy instance of the model
-	/// @note Main thread only
+	/// @note Lazy. Main thread only
 	[[nodiscard]]
 	auto volume() -> voxel::Volume*;
 
@@ -93,31 +88,104 @@ public:
 		return m_revision;
 	}
 
-private:
-	friend class physics::Simulator;
-	friend struct toast::_detail::WorldTestAccess;
+	[[Reflect]]
+	void sleep();
+	[[Reflect]]
+	void wake();
 
+private:
+	struct ActiveContact {
+		physics::BodyID other_body;
+		toast::Box<toast::Node> other_node;
+		uint32_t shape_pair_count = 0;
+	};
+
+	void updateInspectorMessages() override;
 	void init();
 	void begin();
 	void end();
 	void destroy();
+	void onEnable();
+	void onDisable();
 
 	void releaseVolume();
 
-	/// @brief Moves the lazy instance out so physics adopts it instead of instantiating a second copy
-	[[nodiscard]]
-	auto takeVolume() -> std::optional<voxel::Volume>;
+	void handleContactBegin(const physics::BroadPhasePair& pair);
+	void handleContactEnd(const physics::BroadPhasePair& pair);
 
-	[[Reflect, Name("Model")]]
+	void applyPhysicsTransform(const glm::vec3& position, const glm::quat& rotation);
+	void publishPhysicsState(bool is_awake, const glm::vec3& current_linear_velocity, const glm::vec3& current_angular_velocity);
+
+	void assignBody(physics::BodyID body) noexcept { m_body = body; }
+
+	void assignShape(physics::ShapeID shape) noexcept { m_shape = shape; }
+
+	[[nodiscard]]
+	auto bodyID() const noexcept -> physics::BodyID {
+		return m_body;
+	}
+
+	[[nodiscard]]
+	auto shapeID() const noexcept -> physics::ShapeID {
+		return m_shape;
+	}
+
+	[[Reflect]]
 	assets::Handle<assets::VoxelModel> m_model;
 
 	[[Reflect, Name("Palette Override")]]
 	assets::Handle<assets::VoxelPalette> m_palette;
 
-	[[Reflect, Name("Mobility"), Enum("Static", "Dynamic")]]
-	VoxelMobility m_mobility = VoxelMobility::static_geometry;
+	[[Reflect]]
+	bool indestructible = false;
+
+	[[Reflect]]
+	bool allow_sleep = true;
+
+	[[Reflect, ReadOnly]]
+	bool awake = true;
+
+	[[Reflect, Group("Physics")]]
+	float gravity_scale = 1.0f;
+
+	[[Reflect, Group("Physics")]]
+	bool auto_mass_center = true;
+
+	[[Reflect, Group("Physics"), Unit("m"), ReadOnly("auto_mass_center")]]
+	glm::vec3 center_of_mass = {};
+
+	[[Reflect, Group("Physics"), Unit("kg•m²"), ReadOnly("auto_mass_center")]]
+	glm::vec3 inertia = {};
+
+	[[Reflect, Group("Physics"), Subgroup("Velocities"), Unit("m/s"), ReadOnly]]
+	glm::vec3 linear_velocity = {};
+	[[Reflect, Group("Physics"), Subgroup("Velocities"), Unit("rad/s"), ReadOnly]]
+	glm::vec3 angular_velocity = {};
+
+	[[Reflect, Group("Physics"), Subgroup("Constant Forces"), Unit("N"), ReadOnly]]
+	glm::vec3 constant_force = {};
+	[[Reflect, Group("Physics"), Subgroup("Constant Forces"), Unit("N•m"), ReadOnly]]
+	glm::vec3 constant_torque = {};
+
+	[[Reflect, Name("Lock X"), Group("Physics"), Subgroup("Position Locks"), ReadOnly]]
+	bool lock_pos_x = false;
+	[[Reflect, Name("Lock Y"), Group("Physics"), Subgroup("Position Locks"), ReadOnly]]
+	bool lock_pos_y = false;
+	[[Reflect, Name("Lock Z"), Group("Physics"), Subgroup("Position Locks"), ReadOnly]]
+	bool lock_pos_z = false;
+	[[Reflect, Name("Lock X"), Group("Physics"), Subgroup("Rotation Locks"), ReadOnly]]
+	bool lock_rot_x = false;
+	[[Reflect, Name("Lock Y"), Group("Physics"), Subgroup("Rotation Locks"), ReadOnly]]
+	bool lock_rot_y = false;
+	[[Reflect, Name("Lock Z"), Group("Physics"), Subgroup("Rotation Locks"), ReadOnly]]
+	bool lock_rot_z = false;
 
 	bool m_registered_proxy = false;
+	bool m_registration_requested = false;
+
+	physics::BodyID m_body;
+	physics::ShapeID m_shape;
+	std::vector<ActiveContact> m_active_contacts;
 
 	std::optional<voxel::Volume> m_volume;
 
@@ -127,9 +195,6 @@ private:
 	assets::Handle<assets::VoxelMaterialLibrary> m_material_library;
 
 	uint32_t m_revision = 0;
-
-	/// Stale ids read as unbound
-	physics::VoxelDataID m_physics_volume;
 
 	uint64_t m_reported_wrong_model = 0;
 	uint64_t m_reported_wrong_palette = 0;

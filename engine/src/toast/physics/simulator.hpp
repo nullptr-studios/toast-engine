@@ -10,10 +10,12 @@
 #include "body.hpp"
 #include "broad_phase.hpp"
 #include "constraint.hpp"
+#include "damage_command.hpp"
 #include "manifold.hpp"
 #include "narrow_phase.hpp"
 #include "physics_material.hpp"
 #include "shape.hpp"
+#include "voxel_render.hpp"
 #include "voxel_shape_data.hpp"
 
 #include <atomic>
@@ -25,13 +27,11 @@
 #include <thread>
 #include <toast/export.hpp>
 #include <toast/log.hpp>
+#include <toast/voxel/connectivity.hpp>
 #include <toast/world/box.hpp>
+#include <toast/world/voxel_node.hpp>
 #include <toml++/impl/preprocessor.hpp>
 #include <vector>
-
-namespace assets {
-class VoxelModel;
-}
 
 namespace physics {
 
@@ -41,18 +41,25 @@ class Collider;
 
 }
 
-namespace toast {
-class VoxelNode;
-}
-
 namespace physics {
 
 class TOAST_API Simulator {
 	friend class Collider;
 	friend class Rigidbody;
 	friend class DynamicRigidbody;
+	friend class toast::VoxelNode;
 
 public:
+	struct DebugDirtyBrick {
+		ShapeID shape;
+		glm::ivec3 brick {};
+	};
+
+	struct ConnectivityResult {
+		ShapeID shape;
+		voxel::Connectivity connectivity;
+	};
+
 	Simulator();
 	~Simulator();
 	Simulator(const Simulator&) = delete;
@@ -75,16 +82,29 @@ public:
 	auto setTransform(BodyID body, const glm::vec3& position, const glm::quat& rotation) -> bool;
 	auto setLinearVelocity(BodyID body, const glm::vec3& velocity) -> bool;
 
+	void recordDamage(DamageCommand&& command);
+	void applyDamageCommands();
+	void applyDamageCommand(const DamageCommand& c);
+	void applyExplosion(const glm::vec3& position, float radius, float energy);
+
+	[[nodiscard]]
+	auto runConnectivityAnalysis() -> std::vector<ConnectivityResult>;
+
+	[[nodiscard]]
+	auto debugDirtyBricks() const -> std::span<const DebugDirtyBrick> {
+		return m_debug_dirty_bricks;
+	}
+
 	static void callTick();
 	static void registerRigidbody(Rigidbody& node);
 	static void unregisterRigidbody(Rigidbody& node);
 	static void registerVoxelNode(toast::VoxelNode& node);
 	static void unregisterVoxelNode(toast::VoxelNode& node);
 
-	/// @brief Null without a simulator or for a stale id
-	/// @note Main thread only and never during a step
 	[[nodiscard]]
-	static auto voxelVolume(VoxelDataID data) -> voxel::Volume*;
+	auto voxelRenderRecords() const -> std::span<const VoxelRenderRecord> {
+		return m_voxel_render_records;
+	}
 
 private:
 	enum class SimulationPhase : uint8_t {
@@ -111,25 +131,19 @@ private:
 		toast::Box<Collider> node;
 	};
 
-	/// Carves never change the source so only a new model or palette reaches the shape
-	struct VoxelBinding {
-		ShapeID shape;
-		toast::Box<toast::VoxelNode> node;
-		uint64_t source_model = 0;
-		const assets::VoxelModel* source_asset = nullptr;
-		uint64_t source_palette = 0;
-	};
-
 	struct NodeBinding {
 		BodyID body;
 		toast::Box<Rigidbody> node;
 		std::vector<ColliderBinding> colliders;
-		std::vector<VoxelBinding> voxels;
 	};
 
-	struct StandaloneVoxelBinding {
+	struct VoxelNodeBinding {
 		BodyID body;
-		VoxelBinding voxel;
+		ShapeID shape;
+		toast::Box<toast::VoxelNode> node;
+		uint32_t source_revision = 0;
+		uint64_t source_model = 0;
+		uint64_t source_palette = 0;
 	};
 
 	struct SimulationIsland {
@@ -167,7 +181,7 @@ private:
 	};
 
 	[[nodiscard]]
-	static auto rigidbodyFor(BodyID body) -> toast::Box<Rigidbody>;
+	static auto nodeFor(BodyID body) -> toast::Box<toast::Node>;
 	[[nodiscard]]
 	auto mainThreadMutationAllowed() const -> bool;
 
@@ -177,22 +191,13 @@ private:
 	auto createBox(BodyID owner, const BoxShape& box, PhysicsMaterial material) -> ShapeID;
 	[[nodiscard]]
 	auto createCapsule(BodyID owner, const CapsuleShape& capsule, PhysicsMaterial material) -> ShapeID;
-	/// @brief Adopts @p volume when it matches @p model else instantiates into the runtime pool the renderer packs
 	[[nodiscard]]
 	auto createVoxelShape(
-	    BodyID owner, const VoxelShape& shape, const assets::VoxelModel& model, const voxel::Palette& palette,
-	    const voxel::MaterialLibrary& materials, std::optional<voxel::Volume> volume
+	    BodyID owner, const VoxelShape& shape, voxel::Volume& volume, const voxel::Palette& palette,
+	    const voxel::MaterialLibrary& materials
 	) -> ShapeID;
-	/// @brief Binds the node to the created volume
 	[[nodiscard]]
 	auto createVoxelShape(BodyID owner, toast::VoxelNode& node) -> ShapeID;
-	[[nodiscard]]
-	static auto makeVoxelBinding(ShapeID shape, toast::VoxelNode& node) -> VoxelBinding;
-	/// @brief Swaps palette and materials in place so carved voxels survive
-	[[nodiscard]]
-	auto refreshVoxelTables(ShapeID shape, toast::VoxelNode& node) -> bool;
-	void syncVoxelBinding(BodyID body, bool body_enabled, VoxelBinding& binding);
-	void unbindVoxelNodes();
 
 	void destroyShape(ShapeID shape);
 	[[nodiscard]]
@@ -223,6 +228,8 @@ private:
 	static void wakeBody(BodyID id);
 	static void sleepBody(BodyID id);
 	void wakeBodiesTouching(BodyID id);
+	void wakeBodiesInBounds(const AABB& bounds);
+	void convertImpulsesToDamage(std::span<const SimulationIsland> islands);
 	void wakeContactGroups();
 	void updateSleeping(float dt);
 	[[nodiscard]]
@@ -240,10 +247,12 @@ private:
 	    -> std::vector<SimulationIsland>;
 	void updateCache(std::span<const Manifold> manifolds);
 	[[nodiscard]]
-	auto findCachedContact(const BroadPhasePair& pair, ContactFeatureID feature_a, ContactFeatureID feature_b) -> CachedContact*;
+	auto findCachedContact(const BroadPhasePair& pair, uint8_t normal_index, ContactFeatureID feature_a, ContactFeatureID feature_b)
+	    -> CachedContact*;
 	[[nodiscard]]
-	auto findCachedContact(const BroadPhasePair& pair, ContactFeatureID feature_a, ContactFeatureID feature_b) const
-	    -> const CachedContact*;
+	auto findCachedContact(
+	    const BroadPhasePair& pair, uint8_t normal_index, ContactFeatureID feature_a, ContactFeatureID feature_b
+	) const -> const CachedContact*;
 	void warmStartConstraints(std::span<Constraint> constraints);
 	void storeConstraintImpulses(std::span<const Constraint> constraints);
 	[[nodiscard]]
@@ -257,6 +266,9 @@ private:
 	void publishTransforms();
 	[[nodiscard]]
 	auto publishTransform(NodeBinding& binding) -> bool;
+	[[nodiscard]]
+	auto publishVoxelTransform(VoxelNodeBinding& binding) -> bool;
+	void publishVoxelRenderRecords();
 
 	static auto velocityAtPoint(const Body& body, const glm::vec3& r) -> glm::vec3;
 	static auto effectiveMassAlong(
@@ -270,13 +282,14 @@ private:
 	void publishProfile(std::span<const SimulationIsland> islands) const;
 
 	inline static Simulator* instance = nullptr;
-	const std::thread::id m_owner_thread = std::this_thread::get_id();
+
+	mutable std::thread::id m_owner_thread;
 	std::atomic<SimulationPhase> m_phase = SimulationPhase::idle;
 
 	std::vector<BodySlot> m_bodies;
 	std::deque<uint32_t> m_free_body_slots;
 	std::vector<NodeBinding> m_node_bindings;
-	std::vector<StandaloneVoxelBinding> m_standalone_voxel_bindings;
+	std::vector<VoxelNodeBinding> m_voxel_bindings;
 
 	std::vector<ShapeSlot> m_shapes;
 	std::deque<uint32_t> m_free_shape_slots;
@@ -291,6 +304,11 @@ private:
 
 	std::vector<VoxelShapeSlot> m_voxel_shapes;
 	std::deque<uint32_t> m_free_voxel_shape_slots;
+	std::vector<VoxelRenderRecord> m_voxel_render_records;
+
+	std::mutex m_damage_mutex;
+	std::vector<DamageCommand> m_damage_commands;
+	std::vector<DebugDirtyBrick> m_debug_dirty_bricks;
 };
 
 }

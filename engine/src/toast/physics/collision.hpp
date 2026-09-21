@@ -35,4 +35,6 @@ inline auto canonicalPair(BodyShapeKey first, BodyShapeKey second) -> BroadPhase
 	return {.a = first, .b = second};
 }
 
+inline constexpr uint8_t k_primitive_manifold_normal_index = 0xFFu;
+
 }

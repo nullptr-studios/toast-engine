@@ -49,6 +49,9 @@ public:
 	auto findPairs(CollisionWorldView world) -> std::vector<BroadPhasePair>;
 
 	[[nodiscard]]
+	auto queryBounds(const AABB& bounds) const -> std::vector<ShapeID>;
+
+	[[nodiscard]]
 	auto debugNodes() const -> std::vector<AABBTreeDebugNode>;
 	[[nodiscard]]
 	auto stats() const -> const BroadPhaseStats&;

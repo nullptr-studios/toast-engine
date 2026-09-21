@@ -65,6 +65,12 @@ struct Body {
 	float gravity_scale = 1.0f;
 	glm::mat3 inverse_inertia_local = {0.0f};
 	glm::mat3 inverse_inertia_world = {0.0f};
+	glm::vec3 local_center_of_mass = {};
+
+	[[nodiscard]]
+	auto worldCenterOfMass() const -> glm::vec3 {
+		return position + rotation * local_center_of_mass;
+	}
 };
 
 struct BodySlot {

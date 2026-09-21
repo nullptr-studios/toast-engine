@@ -2,7 +2,7 @@
  * @file shape.hpp
  * @author Xein
  * @date 10 Sep 2026
- * @brief Shape identifiers, geometry, and physics-owned runtime records
+ * @brief Shape identifiers, geometry, and runtime records
  */
 
 #pragma once
@@ -37,7 +37,9 @@ enum class FeatureType : uint8_t {
 	box_face,
 	box_edge,
 	box_vertex,
-	box_clip
+	box_clip,
+	voxel_face,
+	voxel_edge,
 };
 
 struct ContactFeatureID {
@@ -88,6 +90,31 @@ constexpr auto boxClipFeature(int reference_axis, bool reference_positive, int s
 	payload |= static_cast<uint64_t>(side_axis) << 3;
 	payload |= static_cast<uint64_t>(side_positive) << 5;
 	return makeContactFeature(FeatureType::box_clip, payload);
+}
+
+[[nodiscard]]
+constexpr auto voxelFeature(FeatureType type, uint32_t brick_slot, uint16_t local_index, uint8_t normal_index)
+    -> ContactFeatureID {
+	uint64_t payload = static_cast<uint64_t>(local_index) & 0x1FFu;
+	payload |= (static_cast<uint64_t>(normal_index) & 0x1Fu) << 9;
+	payload |= (static_cast<uint64_t>(brick_slot) & 0xFFFF'FFFFu) << 14;
+	return makeContactFeature(type, payload);
+}
+
+struct VoxelFeaturePayload {
+	uint32_t slot = 0;
+	uint16_t local_index = 0;
+	uint8_t normal_index = 0;
+};
+
+[[nodiscard]]
+constexpr auto unpackVoxelFeature(ContactFeatureID id) -> VoxelFeaturePayload {
+	const uint64_t payload = id.value & contact_feature_payload_mask;
+	return {
+	  .slot = static_cast<uint32_t>((payload >> 14) & 0xFFFF'FFFFu),
+	  .local_index = static_cast<uint16_t>(payload & 0x1FFu),
+	  .normal_index = static_cast<uint8_t>((payload >> 9) & 0x1Fu),
+	};
 }
 
 enum class ShapeType : uint8_t {
