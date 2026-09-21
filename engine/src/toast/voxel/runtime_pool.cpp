@@ -8,4 +8,10 @@ auto runtimeBrickPool() -> BrickPool& {
 	return *pool;
 }
 
+auto runtimePoolMutex() -> std::mutex& {
+	// Leaked like the pool
+	static std::mutex* mutex = new std::mutex;
+	return *mutex;
+}
+
 }

@@ -34,7 +34,8 @@ Volume::~Volume() {
 Volume::Volume(Volume&& other) noexcept
     : m_pool(other.m_pool),
       m_brick_dims(other.m_brick_dims),
-      m_entries(std::move(other.m_entries)) {
+      m_entries(std::move(other.m_entries)),
+      m_revision(other.m_revision) {
 	other.m_pool = nullptr;
 	other.m_brick_dims = glm::uvec3 {0};
 	other.m_entries.clear();
@@ -46,6 +47,7 @@ auto Volume::operator=(Volume&& other) noexcept -> Volume& {
 		m_pool = other.m_pool;
 		m_brick_dims = other.m_brick_dims;
 		m_entries = std::move(other.m_entries);
+		m_revision = other.m_revision;
 		other.m_pool = nullptr;
 		other.m_brick_dims = glm::uvec3 {0};
 		other.m_entries.clear();
@@ -199,6 +201,7 @@ auto Volume::setVoxel(glm::ivec3 voxel, uint8_t material) -> VoxelWrite {
 	setSolid(m_pool->occupancy(id), local.x, local.y, local.z, material != k_empty_palette_index);
 
 	result.changed = true;
+	++m_revision;
 
 	if (material != k_empty_palette_index) {
 		result.brick_became_occupied = !was_occupied;
@@ -217,11 +220,16 @@ void Volume::setBrickUniform(glm::ivec3 brick, uint8_t material) {
 	}
 
 	const uint32_t index = entryIndex(brick);
+	const BrickEntry next = material == k_empty_palette_index ? BrickEntry {} : BrickEntry::make(BrickTag::uniform, material);
+	if (m_entries[index] == next) {
+		return;
+	}
 	if (m_entries[index].tag() == BrickTag::owned) {
 		m_pool->free(m_entries[index].payload());
 	}
 
-	m_entries[index] = material == k_empty_palette_index ? BrickEntry {} : BrickEntry::make(BrickTag::uniform, material);
+	m_entries[index] = next;
+	++m_revision;
 }
 
 auto Volume::tryCollapseUniform(glm::ivec3 brick) -> bool {
@@ -283,6 +291,7 @@ auto Volume::setBrickMaterial(glm::ivec3 brick, std::span<const uint8_t, k_brick
 		occupancy[z] = word;
 	}
 	m_pool->occupancy(id) = occupancy;
+	++m_revision;
 	return true;
 }
 

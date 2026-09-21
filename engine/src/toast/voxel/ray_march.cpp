@@ -125,6 +125,7 @@ auto marchRay(
 
 		const glm::ivec3 coarse = voxel / k_coarse_voxels;
 		if (!gpu::sampleCoarse(scene, volume, coarse)) {
+			++out.coarse_steps;
 			leave(coarse * k_coarse_voxels, k_coarse_voxels);
 			continue;
 		}
@@ -134,6 +135,7 @@ auto marchRay(
 		const uint32_t tag = entry & 3u;
 
 		if (tag == static_cast<uint32_t>(BrickTag::empty)) {
+			++out.brick_steps;
 			leave(brick * k_brick, k_brick);
 			continue;
 		}

@@ -20,6 +20,10 @@ namespace renderer {
 class VulkanCore;
 class ClusterLightingPass;
 
+namespace voxel_debug {
+class Monitor;
+}
+
 class DebugPass : public IRenderPass {
 public:
 	DebugPass(
@@ -124,6 +128,8 @@ private:
 
 	struct PerfOverlay;
 	std::unique_ptr<PerfOverlay> m_perf;
+
+	std::unique_ptr<voxel_debug::Monitor> m_voxels;
 
 	void drawPerformanceWindow();
 

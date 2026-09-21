@@ -96,6 +96,12 @@ public:
 	[[nodiscard]]
 	auto sharedBrickCount() const -> uint32_t;
 
+	/// @brief Bumped only by writes that change a voxel
+	[[nodiscard]]
+	auto revision() const noexcept -> uint32_t {
+		return m_revision;
+	}
+
 	[[nodiscard]]
 	auto pool() const noexcept -> BrickPool* {
 		return m_pool;
@@ -113,6 +119,8 @@ private:
 	glm::uvec3 m_brick_dims {0};
 
 	std::vector<BrickEntry> m_entries;
+
+	uint32_t m_revision = 0;
 };
 
 }

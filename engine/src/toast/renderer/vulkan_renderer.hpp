@@ -472,6 +472,14 @@ public:
 
 	static constexpr double k_background_frame_rate_limit = 30.0;
 
+	/// False repeats the last frame instead of waiting for a new one
+	void setClampToSimulation(bool clamp) noexcept { m_clamp_to_simulation.store(clamp, std::memory_order_relaxed); }
+
+	[[nodiscard]]
+	auto clampToSimulation() const noexcept -> bool {
+		return m_clamp_to_simulation.load(std::memory_order_relaxed);
+	}
+
 	void setApplicationFocused(bool focused) noexcept { m_application_focused.store(focused, std::memory_order_relaxed); }
 
 	[[nodiscard]]
@@ -1097,6 +1105,7 @@ private:
 	struct VoxelSceneKey {
 		uint64_t node_uid = 0;
 		uint32_t revision = 0;
+		uint32_t content = 0;
 		const voxel::Palette* palette = nullptr;
 
 		[[nodiscard]]
@@ -1107,6 +1116,10 @@ private:
 
 	std::unordered_map<uint64_t, glm::mat4> m_voxel_previous_models;
 	bool m_voxel_upload_failed_warned = false;
+
+	/// Toggling re-packs to add or drop the mirror
+	bool m_voxel_mirror_kept = false;
+	uint64_t m_voxel_upload_sequence = 0;
 
 	std::mutex m_light_proxy_mutex;
 	std::vector<toast::Light*> m_light_proxy_nodes;
@@ -1214,6 +1227,7 @@ private:
 	std::atomic<double> m_frame_rate_limit_hz {0.0};
 	std::atomic_bool m_application_focused {true};
 	std::atomic_bool m_rendering_paused {false};
+	std::atomic_bool m_clamp_to_simulation {true};
 };
 
 inline void start() {

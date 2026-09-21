@@ -179,7 +179,7 @@ auto writeVoxIntermediates(const std::filesystem::path& source, const std::files
 			    nlohmann::json json;
 			    json["name"] = name.empty() ? out.base_name + "_" + std::to_string(index) : name;
 			    json["hidden"] = hidden;
-			    json["type"] = "voxelNode";
+			    json["type"] = "toast::VoxelNode";
 			    json["model"] = file_by_model[*node.model];
 			    json["mobility"] = 0;    // VoxelMobility::static_geometry since world/ cannot be included here
 			    voxWriteTransform(
@@ -210,7 +210,7 @@ auto writeVoxIntermediates(const std::filesystem::path& source, const std::files
 		for (uint32_t i = 0; i < scene.models.size(); ++i) {
 			nlohmann::json json;
 			json["name"] = out.base_name + (scene.models.size() == 1 ? "" : "_" + std::to_string(i));
-			json["type"] = "voxelNode";
+			json["type"] = "toast::VoxelNode";
 			json["hidden"] = false;
 			json["model"] = file_by_model[i];
 			json["mobility"] = 0;
@@ -292,7 +292,7 @@ void voxManifestToPrefab(const std::filesystem::path& manifest_path, const std::
 		transform.fields.push_back({"scale", toast::FieldType::vec3_t, false, vec3_of("scale", glm::vec3(1.0f))});
 		basic.groups.push_back(std::move(transform));
 
-		if (basic.type == "voxelNode") {
+		if (basic.type == "toast::VoxelNode") {
 			if (const std::optional<toast::UID> model = uid_of(node, "model")) {
 				basic.fields.push_back({"m_model", toast::FieldType::uid_t, false, *model});
 			}

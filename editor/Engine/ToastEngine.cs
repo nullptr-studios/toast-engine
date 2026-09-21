@@ -43,7 +43,7 @@ public partial class ToastEngine : IDisposable {
 
 	private readonly Task m_tickTask;
 
-	private readonly Lock m_windowsLock = new();
+	//private readonly Lock m_windowsLock = new();
 	private bool m_closeEventSent;
 	private IntPtr m_currentGameInstance;
 

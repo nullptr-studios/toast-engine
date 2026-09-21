@@ -44,6 +44,9 @@ public:
 
 		bool depth_only = false;
 
+		/// With depth_only keeps the fragment stage for shaders that write SV_Depth
+		bool depth_fragment = false;
+
 		/// Must equal every RenderingInfo viewMask. 0 is not multiview and leaves SV_ViewID undefined
 		uint32_t view_mask = 0;
 

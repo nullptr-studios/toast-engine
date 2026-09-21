@@ -44,17 +44,18 @@ auto createGraphicsPipelineImpl(
 	// The create infos point into these strings
 	const std::string vertex_entry =
 	    spirv::resolveEntryPoint(config.shader_spirv, spirv::ExecutionModel::vertex, config.vertex_entry, config.debug_name);
+	const bool has_fragment_stage = !config.depth_only || config.depth_fragment;
 	const std::string fragment_entry =
-	    config.depth_only ? config.fragment_entry
-			                  : spirv::resolveEntryPoint(
-	                            config.shader_spirv, spirv::ExecutionModel::fragment, config.fragment_entry, config.debug_name
-	                        );
+	    has_fragment_stage ? spirv::resolveEntryPoint(
+	                             config.shader_spirv, spirv::ExecutionModel::fragment, config.fragment_entry, config.debug_name
+	                         )
+			                   : config.fragment_entry;
 
 	const std::array shader_stages = {
 	  vk::PipelineShaderStageCreateInfo({}, vk::ShaderStageFlagBits::eVertex, *shader_module, vertex_entry.c_str()),
 	  vk::PipelineShaderStageCreateInfo({}, vk::ShaderStageFlagBits::eFragment, *shader_module, fragment_entry.c_str())
 	};
-	const uint32_t stage_count = config.depth_only ? 1u : static_cast<uint32_t>(shader_stages.size());
+	const uint32_t stage_count = has_fragment_stage ? static_cast<uint32_t>(shader_stages.size()) : 1u;
 
 	std::vector<vk::Format> color_attachment_formats {config.color_format};
 	color_attachment_formats.insert(

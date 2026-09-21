@@ -13,6 +13,7 @@
 #include "passes/skinning_pass.hpp"
 #include "ray_tracing_scene.hpp"
 #include "skinned_blas_pool.hpp"
+#include "voxel_debug.hpp"
 #include "vulkan_debug.hpp"
 
 #include <algorithm>
@@ -34,7 +35,6 @@
 #include <toast/assets/material.hpp>
 #include <toast/log.hpp>
 #include <toast/physics/simulator.hpp>
-#include <toast/physics/voxel_data_lock.hpp>
 #include <toast/thread_pool.hpp>
 #include <toast/time.hpp>
 #include <toast/voxel/runtime_pool.hpp>
@@ -1203,16 +1203,21 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 		const GpuScope scene_scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, "Scene");
 		std::lock_guard lock(m_pass_mutex);
 
-		recordMeshScene(*frame.command_buffer, image_index);
-
-		for (auto& pass : m_render_passes) {
-			if (!pass->isEnabled() || pass->stage() != RenderStage::world) {
-				continue;
+		const auto record_stage = [&](RenderStage stage) {
+			for (auto& pass : m_render_passes) {
+				if (!pass->isEnabled() || pass->stage() != stage) {
+					continue;
+				}
+				TracyVkZone(m_tracy_vk_ctx, *frame.command_buffer, "WorldPass");
+				const GpuScope scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, pass->name());
+				pass->record(*frame.command_buffer, m_current_frame, image_index);
 			}
-			TracyVkZone(m_tracy_vk_ctx, *frame.command_buffer, "WorldPass");
-			const GpuScope scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, pass->name());
-			pass->record(*frame.command_buffer, m_current_frame, image_index);
-		}
+		};
+
+		// Ahead of all mesh colour so opaque meshes behind it fail early depth and blended ones blend over it
+		record_stage(RenderStage::world_opaque);
+		recordMeshScene(*frame.command_buffer, image_index);
+		record_stage(RenderStage::world);
 	}
 
 	frame.command_buffer.endRendering();
@@ -2129,6 +2134,7 @@ void VulkanRenderer::mainRenderThread() {
 		bool consumed_queued_frame = false;
 
 		const double limit_hz = m_bake_active.load(std::memory_order_relaxed) ? 0.0 : effectiveFrameRateLimit();
+		const bool clamp_to_simulation = m_clamp_to_simulation.load(std::memory_order_relaxed);
 
 		{
 			std::unique_lock lock(m_queue_mutex);
@@ -2140,7 +2146,7 @@ void VulkanRenderer::mainRenderThread() {
 
 			const auto frame_wait_start = clock::now();
 			if (m_ready_frames.empty()) {
-				if (!has_frame) {
+				if (!has_frame || clamp_to_simulation) {
 					m_frame_cv.wait(lock, wake_condition);
 				} else if (limit_hz > 0.0) {
 					const auto now = clock::now();
@@ -3438,6 +3444,7 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		const voxel::Volume* volume;
 		const voxel::Palette* palette;
 		glm::mat4 model;
+		std::string debug_name;
 	};
 
 	std::vector<Gathered> gathered;
@@ -3445,7 +3452,7 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 	gathered.reserve(nodes.size());
 	key.reserve(nodes.size());
 
-	std::scoped_lock voxel_data_lock {physics::voxelDataMutex()};
+	std::unique_lock voxel_lock {voxel::runtimePoolMutex()};
 
 	for (auto* node : nodes) {
 		if (node == nullptr || !node->enabled()) {
@@ -3464,8 +3471,21 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 			palette = &defaultVoxelPalette();
 		}
 
-		gathered.push_back({node->uid().data(), volume, palette, node->getWorldTransform()});
-		key.push_back({.node_uid = node->uid().data(), .revision = node->revision(), .palette = palette});
+		// clang-format off
+		gathered.push_back(Gathered {
+			.id = node->uid().data(),
+			.volume = volume,
+			.palette = palette,
+			.model = node->getWorldTransform(),
+			.debug_name = std::string{node->name()}
+		});
+		key.push_back({
+			.node_uid = node->uid().data(),
+			.revision = node->revision(),
+			.content = volume->revision(),
+			.palette = palette
+		});
+		// clang-format on
 	}
 
 	for (const physics::VoxelRenderRecord& record : physics::Simulator::voxelFragmentRecords()) {
@@ -3475,12 +3495,15 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		const voxel::Palette* palette = record.palette != nullptr ? record.palette : &defaultVoxelPalette();
 		const uint64_t id = voxelFragmentRenderId(record.shape);
 
-		gathered.push_back({id, record.volume, palette, record.transform});
-		key.push_back({.node_uid = id, .revision = record.revision, .palette = palette});
+		gathered.push_back({id, record.volume, palette, record.transform, "Voxel fragment " + std::to_string(record.shape.slot)});
+		key.push_back({.node_uid = id, .revision = record.revision, .content = record.volume->revision(), .palette = palette});
 	}
 
-	if (key != m_voxel_scene_key) {
+	const bool keep_mirror = voxel_debug::isView(m_render_mode);
+
+	if (key != m_voxel_scene_key || keep_mirror != m_voxel_mirror_kept) {
 		m_voxel_scene_key = key;
+		m_voxel_mirror_kept = keep_mirror;
 		m_voxel_upload_failed_warned = false;
 
 		if (gathered.empty()) {
@@ -3490,23 +3513,55 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 			std::vector<voxel::gpu::SceneVolume> scene_volumes;
 			std::vector<uint64_t> node_uids;
 			std::vector<glm::uvec3> brick_dims;
+			VoxelStorageDebugInfo debug;
 			scene_volumes.reserve(gathered.size());
 			node_uids.reserve(gathered.size());
 			brick_dims.reserve(gathered.size());
+			debug.node_names.reserve(gathered.size());
 			for (const Gathered& entry : gathered) {
 				scene_volumes.push_back({.volume = entry.volume, .palette = entry.palette});
 				node_uids.push_back(entry.id);
 				brick_dims.push_back(entry.volume->brickDims());
+				debug.node_names.emplace_back(entry.debug_name);
+			}
+
+			const auto pack_start = std::chrono::steady_clock::now();
+			auto packed = std::make_shared<VoxelPackedScene>(VoxelPackedScene {
+			  .pool = voxel::gpu::packPool(voxel::runtimeBrickPool()), .scene = voxel::gpu::packScene(scene_volumes)
+			});
+			debug.pack_ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - pack_start).count();
+			voxel_lock.unlock();
+
+			debug.sequence = ++m_voxel_upload_sequence;
+			debug.packed_slots = static_cast<uint32_t>(packed->pool.materials.size() / voxel::gpu::k_material_words_per_brick);
+			debug.packed_palettes = static_cast<uint32_t>(packed->scene.palettes.size() / voxel::gpu::k_palette_words);
+			debug.bricks.reserve(packed->scene.records.size());
+			for (const voxel::gpu::VolumeRecord& record : packed->scene.records) {
+				VoxelStorageDebugInfo::BrickCensus census;
+				const uint32_t count = record.brick_dims_x * record.brick_dims_y * record.brick_dims_z;
+				for (uint32_t i = 0; i < count; ++i) {
+					switch (voxel::BrickEntry {packed->scene.grids[record.grid_offset + i]}.tag()) {
+						case voxel::BrickTag::uniform: ++census.uniform; break;
+						case voxel::BrickTag::shared: ++census.shared; break;
+						case voxel::BrickTag::owned: ++census.owned; break;
+						case voxel::BrickTag::empty: break;
+					}
+				}
+				debug.bricks.push_back(census);
+			}
+			if (keep_mirror) {
+				debug.mirror = packed;
 			}
 
 			auto storage = std::make_shared<VoxelGpuStorage>(std::move(node_uids), std::move(brick_dims));
-			queueResourceUpload(
-			    std::make_unique<VoxelSceneUpload>(
-			        storage, voxel::gpu::packPool(voxel::runtimeBrickPool()), voxel::gpu::packScene(scene_volumes)
-			    )
-			);
+			storage->setDebugInfo(std::move(debug));
+			queueResourceUpload(std::make_unique<VoxelSceneUpload>(storage, std::move(packed)));
 			m_voxel_storage_pending = std::move(storage);
 		}
+	}
+
+	if (voxel_lock.owns_lock()) {
+		voxel_lock.unlock();
 	}
 
 	frame.voxel_storage = m_voxel_storage;

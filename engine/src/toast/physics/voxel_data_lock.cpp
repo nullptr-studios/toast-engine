@@ -1,10 +1,11 @@
 #include "voxel_data_lock.hpp"
 
+#include <toast/voxel/runtime_pool.hpp>
+
 namespace physics {
 
 auto voxelDataMutex() -> std::mutex& {
-	static std::mutex mutex;
-	return mutex;
+	return voxel::runtimePoolMutex();
 }
 
 }

@@ -12,6 +12,7 @@
 enum class RenderStage : uint8_t {
 	world,
 	overlay,
+	world_opaque,
 };
 
 class IRenderPass {
