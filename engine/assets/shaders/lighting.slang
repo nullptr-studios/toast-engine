@@ -28,7 +28,7 @@ struct ReflectionProbeGpu
     // xyz position w influence radius
     float4 positionRadius;
 
-    // xyz box half extents w intensity. Zero extents select sphere projection
+    // xyz box half extents w intensity Zero extents select sphere projection
     float4 boxExtentsIntensity;
 
     // x cubemap index in gProbeMaps and gProbeIrradiance
@@ -136,7 +136,7 @@ SamplerCube gProbeIrradiance[8];
 [[vk::binding(12,0)]]
 StructuredBuffer<float4> gIrradianceSH;
 
-// Ray query only since declaring the capability elsewhere fails pipeline creation. Gated on tracedShadowParams.x
+// Ray query only Gated on tracedShadowParams.x
 #if TOAST_RAY_QUERY
 [[vk::binding(14,0)]]
 RaytracingAccelerationStructure gScene;
@@ -723,6 +723,18 @@ ClusterCell clusterCellAt(float viewSpaceZ, float2 pixel)
     return cell;
 }
 
+// Mirrored by renderer::voxel_debug::View and the editor RenderMode enum
+static const uint kRenderModeVoxelSteps = 20;
+static const uint kRenderModeVoxelTraversal = 21;
+static const uint kRenderModeVoxelBricks = 22;
+static const uint kRenderModeVoxelVolumes = 23;
+static const uint kRenderModeVoxelMaterials = 24;
+
+bool isVoxelDebugMode(uint mode)
+{
+    return mode >= kRenderModeVoxelSteps && mode <= kRenderModeVoxelMaterials;
+}
+
 float4 evaluateDebugView(Surface surface, ClusterCell cluster)
 {
     float3 albedo = surface.albedo;
@@ -735,6 +747,12 @@ float4 evaluateDebugView(Surface surface, ClusterCell cluster)
     if (gCamera.renderModePad.x == 1)
     {
         return float4(clusterHeatmapColor(lightCountInCluster), 1.0);
+    }
+
+    // Neutral so no mesh colour reads as part of a voxel legend
+    if (isVoxelDebugMode(gCamera.renderModePad.x))
+    {
+        return float4(float3(0.06, 0.06, 0.07) + 0.2 * saturate(dot(N, V)), 1.0);
     }
 
     switch (gCamera.renderModePad.x)

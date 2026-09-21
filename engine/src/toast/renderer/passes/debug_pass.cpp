@@ -8,6 +8,7 @@
 #include "../ray_tracing_scene.hpp"
 #include "../shader_cache.hpp"
 #include "../skinned_blas_pool.hpp"
+#include "../voxel_debug.hpp"
 #include "../vulkan_core.hpp"
 #include "../vulkan_debug.hpp"
 #include "../vulkan_mesh.hpp"
@@ -751,6 +752,11 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 
 		drawPerformanceWindow();
 
+		if (!m_voxels) {
+			m_voxels = std::make_unique<voxel_debug::Monitor>();
+		}
+		m_voxels->update(*frame);
+
 		if (m_editor_panels && ImGui::Begin("Toast Debug")) {
 			{
 				const uint32_t dropped = VulkanRenderer::instance->getDroppedFrameCount();
@@ -760,6 +766,11 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 				}
 
 				ImGui::TextDisabled("Frames dropped: %u", dropped);
+
+				bool clamp_to_simulation = VulkanRenderer::instance->clampToSimulation();
+				if (ImGui::Checkbox("Clamp to game thread", &clamp_to_simulation)) {
+					VulkanRenderer::instance->setClampToSimulation(clamp_to_simulation);
+				}
 
 				float cap = static_cast<float>(VulkanRenderer::instance->frameRateLimit());
 				if (ImGui::SliderFloat("FPS cap", &cap, 0.0f, 144.0f, cap <= 0.0f ? "uncapped" : "%.0f")) {
@@ -913,8 +924,14 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 				ImGui::TextDisabled("range cutoff %.2f m, %u samples", ssao.range_cutoff, ssao.sample_count);
 			}
 
+			m_voxels->drawPanel(*frame);
+
 			ImGui::Separator();
-			ImGui::Text("Render mode: %s", frame->render_mode == 1 ? "Cluster Heatmap (toolbar Mode button)" : "Lit");
+			if (voxel_debug::isView(frame->render_mode)) {
+				ImGui::Text("Render mode: voxel view %u, legend bottom left", frame->render_mode);
+			} else {
+				ImGui::Text("Render mode: %s", frame->render_mode == 1 ? "Cluster Heatmap (toolbar Mode button)" : "Lit");
+			}
 			if (frame->render_mode == 1) {
 				ImGui::TextColored(ImVec4(0.3f, 0.6f, 1.0f, 1.0f), "Blue = 0 lights/cluster");
 				ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "Red = 8+ lights/cluster");
@@ -923,6 +940,8 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 		if (m_editor_panels) {
 			ImGui::End();
 		}
+
+		m_voxels->drawOverlay(*frame);
 
 		if (frame->render_mode == 1 && m_cluster_lighting_pass != nullptr) {
 			const auto counts = m_cluster_lighting_pass->getClusterLightGridCounts(frame_index);

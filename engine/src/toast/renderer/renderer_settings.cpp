@@ -13,12 +13,24 @@ namespace {
 using toast::settings::Meta;
 
 void registerDisplay(VulkanRenderer& renderer) {
+	toast::settings::declareBool(
+	    "renderer.display.clamp_to_simulation",
+	    true,
+	    {.label = "Clamp to game thread",
+			 .category = "Display",
+			 .description = "On (default): the render thread waits for each new simulation frame instead of "
+			                "presenting it more than once, so it never draws faster than the game thread ticks. "
+			                "Off: the render thread never waits, repeating the last frame as fast as the GPU "
+			                "allows (100% GPU usage) between simulation updates."}
+	)
+	    .onChange([&renderer](bool clamp) { renderer.setClampToSimulation(clamp); });
+
 	toast::settings::declareFloat(
 	    "renderer.display.frame_rate_limit",
 	    0.0,
 	    {.label = "Frame rate limit",
 			 .category = "Display",
-			 .description = "Hz the render thread draws and presents at. 0 runs uncapped.",
+			 .description = "Hz the render thread draws and presents at. 0 runs uncapped. Applies in either mode.",
 			 .min = 0.0,
 			 .max = 360.0,
 			 .step = 1.0}

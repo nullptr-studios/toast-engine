@@ -453,7 +453,7 @@ void Engine::createSDLWindow(const char* w_name) {
 	// World-stage passes render into the HDR scene target
 	const auto scene_format = m->renderer->getSceneColorFormat();
 
-	// Voxel volumes are opaque so before the blended world-space UI
+	// Records ahead of all mesh colour whatever its place here since its stage is world_opaque
 	m->renderer->addRenderPass(std::make_unique<renderer::VoxelPass>(*m->vulkan_core, scene_format, depth_format, extent));
 
 	// World-space UI panels are scene content and get exposed with it, the screen-space UI does not
@@ -535,7 +535,7 @@ void Engine::createAvaloniaWindow() {
 	// World-stage passes render into the HDR scene target
 	const auto scene_format = m->renderer->getSceneColorFormat();
 
-	// Voxel volumes are opaque so before the blended world-space UI
+	// Records ahead of all mesh colour whatever its place here since its stage is world_opaque
 	m->renderer->addRenderPass(std::make_unique<renderer::VoxelPass>(*m->vulkan_core, scene_format, depth_format, extent));
 
 	// World-space UI panels are scene content
