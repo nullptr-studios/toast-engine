@@ -34,7 +34,6 @@
 #include <toast/assets/assets.hpp>
 #include <toast/assets/material.hpp>
 #include <toast/log.hpp>
-#include <toast/physics/voxel_data_lock.hpp>
 #include <toast/thread_pool.hpp>
 #include <toast/time.hpp>
 #include <toast/voxel/runtime_pool.hpp>
@@ -3445,7 +3444,7 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 	gathered.reserve(nodes.size());
 	key.reserve(nodes.size());
 
-	std::scoped_lock voxel_data_lock {physics::voxelDataMutex()};
+	std::unique_lock voxel_lock {voxel::runtimePoolMutex()};
 
 	for (auto* node : nodes) {
 		if (node == nullptr || !node->enabled()) {
@@ -3501,6 +3500,7 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 			  .pool = voxel::gpu::packPool(voxel::runtimeBrickPool()), .scene = voxel::gpu::packScene(scene_volumes)
 			});
 			debug.pack_ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - pack_start).count();
+			voxel_lock.unlock();
 
 			debug.sequence = ++m_voxel_upload_sequence;
 			debug.packed_slots = static_cast<uint32_t>(packed->pool.materials.size() / voxel::gpu::k_material_words_per_brick);
@@ -3528,6 +3528,10 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 			queueResourceUpload(std::make_unique<VoxelSceneUpload>(storage, std::move(packed)));
 			m_voxel_storage_pending = std::move(storage);
 		}
+	}
+
+	if (voxel_lock.owns_lock()) {
+		voxel_lock.unlock();
 	}
 
 	frame.voxel_storage = m_voxel_storage;

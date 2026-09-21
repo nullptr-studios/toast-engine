@@ -38,7 +38,7 @@ void VoxelNode::setModel(assets::Handle<assets::VoxelModel> model) {
 	if (m_model == model) {
 		return;
 	}
-	releaseVolume();
+	m_volume_stale = true;
 	m_model = std::move(model);
 	m_model_palette = {};
 	m_material_library = {};
@@ -86,14 +86,17 @@ auto VoxelNode::volume() -> voxel::Volume* {
 		);
 	}
 
-	if (model != m_instanced_from) {
-		releaseVolume();
+	if (model != m_instanced_from || m_volume_stale) {
+		retireVolume();
 		m_instanced_from = model;
+		m_volume_stale = false;
 		m_model_palette = {};
 
 		if (model != nullptr) {
-			m_volume = model->instantiate(voxel::runtimeBrickPool());
-			if (!m_volume.has_value()) {
+			std::optional<voxel::Volume> instance = model->instantiate(voxel::runtimeBrickPool());
+			if (instance.has_value()) {
+				m_volume = std::make_unique<voxel::Volume>(std::move(*instance));
+			} else {
 				TOAST_WARN(
 				    "Voxel",
 				    "'{}' could not be instantiated: the runtime brick pool is out of its {} bricks",
@@ -104,7 +107,7 @@ auto VoxelNode::volume() -> voxel::Volume* {
 		}
 		++m_revision;
 	}
-	return m_volume.has_value() ? &*m_volume : nullptr;
+	return m_volume.get();
 }
 
 auto VoxelNode::resolvedPalette() -> const voxel::Palette* {
@@ -162,7 +165,15 @@ auto VoxelNode::resolvedMaterialLibrary() -> const voxel::MaterialLibrary* {
 
 void VoxelNode::releaseVolume() {
 	m_volume.reset();
+	m_retired_volumes.clear();
 	m_instanced_from = nullptr;
+}
+
+void VoxelNode::retireVolume() {
+	if (m_volume != nullptr && physicsBound()) {
+		m_retired_volumes.push_back(std::move(m_volume));
+	}
+	m_volume.reset();
 }
 
 void VoxelNode::sleep() {

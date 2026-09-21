@@ -8,6 +8,7 @@
 #include "node_3d.hpp"
 
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <toast/assets/types.hpp>
 #include <toast/physics/body.hpp>
@@ -27,6 +28,11 @@ class Simulator;
 }
 
 namespace toast {
+
+enum class VoxelMobility : uint8_t {
+	static_geometry = 0,
+	dynamic = 1,
+};
 
 class [[ToastNode, Icon("BoxMesh")]] TOAST_API VoxelNode : public Node3D {
 	friend class physics::Simulator;
@@ -59,6 +65,13 @@ public:
 	}
 
 	void setPalette(assets::Handle<assets::VoxelPalette> palette);
+
+	[[nodiscard]]
+	auto mobility() const noexcept -> VoxelMobility {
+		return m_mobility;
+	}
+
+	void setMobility(VoxelMobility mobility) noexcept { m_mobility = mobility; }
 
 	/// @returns the override else the model palette else 0
 	[[nodiscard]]
@@ -109,6 +122,12 @@ private:
 	void onDisable();
 
 	void releaseVolume();
+	void retireVolume();
+
+	[[nodiscard]]
+	auto physicsBound() const noexcept -> bool {
+		return m_body != physics::BodyID {};
+	}
 
 	void handleContactBegin(const physics::BroadPhasePair& pair);
 	void handleContactEnd(const physics::BroadPhasePair& pair);
@@ -135,6 +154,9 @@ private:
 
 	[[Reflect, Name("Palette Override")]]
 	assets::Handle<assets::VoxelPalette> m_palette;
+
+	[[Reflect, Name("Mobility"), Enum("Static", "Dynamic")]]
+	VoxelMobility m_mobility = VoxelMobility::static_geometry;
 
 	[[Reflect]]
 	bool indestructible = false;
@@ -187,7 +209,12 @@ private:
 	physics::ShapeID m_shape;
 	std::vector<ActiveContact> m_active_contacts;
 
-	std::optional<voxel::Volume> m_volume;
+	std::unique_ptr<voxel::Volume> m_volume;
+
+	/// Kept until physics rebinds since its shape points at the old volume
+	std::vector<std::unique_ptr<voxel::Volume>> m_retired_volumes;
+
+	bool m_volume_stale = false;
 
 	const assets::VoxelModel* m_instanced_from = nullptr;
 

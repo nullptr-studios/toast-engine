@@ -239,7 +239,7 @@ void Simulator::registerVoxelNode(toast::VoxelNode& node) {
 	// }
 
 	node.syncTransform();
-	const bool dynamic_body = not node.indestructible;
+	const bool dynamic_body = node.mobility() == toast::VoxelMobility::dynamic;
 	const BodyID body = instance->createBody(
 	    BodyDescriptor {
 	      .type = dynamic_body ? BodyType::dynamic_body : BodyType::static_body,
@@ -300,6 +300,9 @@ void Simulator::unregisterVoxelNode(toast::VoxelNode& node) {
 	});
 	node.assignBody({});
 	node.assignShape({});
+
+	std::scoped_lock voxel_lock {voxelDataMutex()};
+	node.m_retired_volumes.clear();
 }
 
 auto Simulator::nodeFor(BodyID body) -> toast::Box<toast::Node> {
@@ -430,7 +433,7 @@ void Simulator::syncEnabledState() {
 			continue;
 		}
 
-		const bool wants_dynamic = not binding.node->indestructible;
+		const bool wants_dynamic = binding.node->mobility() == toast::VoxelMobility::dynamic;
 		if (wants_dynamic != (body->type == BodyType::dynamic_body)) {
 			voxel_nodes_to_reregister.push_back(binding.node);
 			continue;
@@ -467,6 +470,10 @@ void Simulator::syncEnabledState() {
 			binding.source_revision = binding.node->revision();
 			binding.source_model = model;
 			binding.source_palette = palette;
+			{
+				std::scoped_lock voxel_lock {voxelDataMutex()};
+				binding.node->m_retired_volumes.clear();
+			}
 			if (body->type == BodyType::dynamic_body) {
 				rebuildMassProperties(binding.body);
 			}
@@ -599,6 +606,7 @@ void Simulator::publishTransforms() {
 
 	for (auto binding = m_node_bindings.begin(); binding != m_node_bindings.end();) {
 		if (not publishTransform(*binding)) {
+			destroyBody(binding->body);
 			binding = m_node_bindings.erase(binding);
 			continue;
 		}
@@ -607,6 +615,7 @@ void Simulator::publishTransforms() {
 
 	for (auto binding = m_voxel_bindings.begin(); binding != m_voxel_bindings.end();) {
 		if (not publishVoxelTransform(*binding)) {
+			destroyBody(binding->body);
 			binding = m_voxel_bindings.erase(binding);
 			continue;
 		}
@@ -1859,6 +1868,11 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 		return;
 	}
 
+	const auto binding = std::ranges::find(m_voxel_bindings, c.shape, &VoxelNodeBinding::shape);
+	if (binding != m_voxel_bindings.end() && binding->node.exists() && binding->node->indestructible) {
+		return;
+	}
+
 	// we get the position in volume space
 	glm::vec3 in_body_frame = glm::inverse(body->rotation) * (c.world_center - body->position);
 	glm::vec3 local_center = glm::inverse(shape->voxel.local_rotation) * (in_body_frame - shape->voxel.local_center);
@@ -1944,16 +1958,6 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 	}
 
 	++data->surface_revision;
-	incrementShapeRevision(c.shape);
-
-	for (VoxelNodeBinding& binding : m_voxel_bindings) {
-		if (binding.shape != c.shape || not binding.node.exists()) {
-			continue;
-		}
-		++binding.node->m_revision;
-		binding.source_revision = binding.node->revision();
-		break;
-	}
 
 	if (body->type == BodyType::dynamic_body) {
 		rebuildMassProperties(shape->owner);
