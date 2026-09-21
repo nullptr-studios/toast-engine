@@ -28,6 +28,7 @@ namespace {
 constexpr float sleep_linear_threshold_squared = 0.05f * 0.05f;
 constexpr float sleep_angular_threshold_squared = 0.05f * 0.05f;
 constexpr float sleep_delay = 0.5f;
+constexpr float unit_scale_tolerance = 1.0e-4f;
 
 // TODO: do this but with materials
 [[nodiscard]]
@@ -657,10 +658,7 @@ void Simulator::syncEnabledState() {
 
 			const bool enabled = body->enabled && collider_binding.node.exists() && collider_binding.node->enabled() &&
 			                     not collider_binding.node->disabled;
-			if (shape->enabled != enabled) {
-				shape->enabled = enabled;
-				incrementShapeRevision(collider_binding.shape);
-			}
+			setShapeEnabled(collider_binding.shape, enabled);
 		}
 	}
 
@@ -773,6 +771,16 @@ void Simulator::wakeBodiesTouching(BodyID id) {
 	}
 }
 
+void Simulator::wakeBodiesTouching(ShapeID id) {
+	for (const CachedManifold& manifold : m_cached_manifolds) {
+		if (manifold.pair.a.shape == id) {
+			wakeBody(manifold.pair.b.body);
+		} else if (manifold.pair.b.shape == id) {
+			wakeBody(manifold.pair.a.body);
+		}
+	}
+}
+
 void Simulator::wakeContactGroups() {
 	ZoneScopedN("physics::WakeContactGroups");
 
@@ -832,6 +840,10 @@ void Simulator::setShapeEnabled(ShapeID shape, bool enabled) {
 		if (value->enabled != enabled) {
 			if (enabled) {
 				wakeBody(value->owner);
+			} else if (
+			    const Body* owner = instance->tryGetBody(value->owner); owner != nullptr && owner->type != BodyType::dynamic_body
+			) {
+				instance->wakeBodiesTouching(shape);
 			}
 			value->enabled = enabled;
 			instance->incrementShapeRevision(shape);
@@ -1143,7 +1155,7 @@ auto Simulator::generateManifoldsAsync(CollisionWorldView world, std::span<const
 		}
 	}
 
-	constexpr size_t minimum_candidates_per_job = 4;
+	constexpr size_t minimum_candidates_per_job = 2;
 	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), 1ull);
 	const size_t maximum_job_count = worker_count * 3;
 	const size_t job_count =
@@ -1786,7 +1798,8 @@ auto Simulator::createVoxelShape(BodyID owner, toast::VoxelNode& node) -> ShapeI
 	}
 
 	node.syncTransform();
-	const bool has_unit_scale = glm::all(glm::lessThanEqual(glm::abs(node.world_scale - glm::vec3(1.0f)), glm::vec3(1.0e-5f)));
+	const bool has_unit_scale =
+	    glm::all(glm::lessThanEqual(glm::abs(node.world_scale - glm::vec3(1.0f)), glm::vec3(unit_scale_tolerance)));
 	if (not has_unit_scale) {
 		TOAST_WARN("Physics", "Voxel node '{}' cannot register with non-unit world scale", node.name());
 		return {};

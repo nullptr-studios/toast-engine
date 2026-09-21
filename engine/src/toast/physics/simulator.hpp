@@ -235,6 +235,7 @@ private:
 	static void wakeBody(BodyID id);
 	static void sleepBody(BodyID id);
 	void wakeBodiesTouching(BodyID id);
+	void wakeBodiesTouching(ShapeID id);
 	void wakeBodiesInBounds(const AABB& bounds);
 	void convertImpulsesToDamage(std::span<const SimulationIsland> islands);
 	void wakeContactGroups();
