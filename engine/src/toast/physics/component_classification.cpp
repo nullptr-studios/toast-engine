@@ -10,8 +10,6 @@ namespace physics {
 namespace {
 
 auto touchesFace(const voxel::BrickOccupancy& voxels, AnchorFace face) -> bool {
-	ZoneScoped;
-
 	switch (face) {
 		case AnchorFace::neg_x: {
 			for (auto s : voxels.slices) {
@@ -92,6 +90,7 @@ auto brickSlot(glm::ivec3 brick, glm::uvec3 brick_dims) -> uint32_t {
 }
 
 auto classifyComponents(const voxel::Connectivity& c, glm::uvec3 brick_size, AnchorMask mask) -> std::vector<ComponentClass> {
+	ZoneScopedN("physics::ClassifyComponents");
 	std::vector<ComponentClass> classes(c.component_count, ComponentClass::dropped);
 
 	for (const voxel::BrickPiece& piece : c.pieces) {
@@ -117,6 +116,7 @@ auto classifyComponents(const voxel::Connectivity& c, glm::uvec3 brick_size, Anc
 
 auto buildDetachedComponents(const voxel::Connectivity& c, std::span<const ComponentClass> classes, glm::uvec3 brick_size)
     -> std::vector<DetachedComponent> {
+	ZoneScopedN("physics::BuildDetachedComponents");
 	std::vector<DetachedComponent> components(classes.size());
 	for (size_t i = 0; i < classes.size(); ++i) {
 		components[i].component = static_cast<uint32_t>(i);

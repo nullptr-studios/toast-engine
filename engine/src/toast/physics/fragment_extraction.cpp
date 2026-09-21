@@ -7,7 +7,7 @@
 namespace physics {
 
 auto extractFragmentVolume(const voxel::Volume& source, const DetachedComponent& component) -> ExtractedFragment {
-	ZoneScoped;
+	ZoneScopedN("physics::ExtractFragment");
 
 	glm::ivec3 min {std::numeric_limits<int32_t>::max()};
 	glm::ivec3 max {std::numeric_limits<int32_t>::min()};
