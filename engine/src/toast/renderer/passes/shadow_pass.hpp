@@ -9,6 +9,7 @@
 #include "../render_pass_base.hpp"
 #include "../shader_layout.hpp"
 #include "../shadow_constants.hpp"
+#include "../voxel_change_history.hpp"
 #include "../vulkan_common.hpp"
 #include "../vulkan_pipeline.hpp"
 
@@ -66,6 +67,12 @@ public:
 		return m_cached_count;
 	}
 
+	/// Cached groups that a voxel edit elsewhere would have re-rendered
+	[[nodiscard]]
+	auto getVoxelSparedCount() const noexcept -> uint32_t {
+		return m_voxel_spared_count;
+	}
+
 private:
 	/// Mirrors voxel_shadow.slang ShadowUBO and shadow_depth.slang reads only the first array
 	struct ShadowUBO {
@@ -108,6 +115,9 @@ private:
 		bool dirty = true;
 
 		std::optional<uint64_t> signature;
+
+		/// Voxel storage this group last matched
+		std::optional<uint64_t> voxel_generation;
 	};
 
 	struct ShadowMap {
@@ -165,6 +175,8 @@ private:
 	uint32_t m_draw_count = 0;
 	uint32_t m_pass_count = 0;
 	uint32_t m_cached_count = 0;
+	uint32_t m_voxel_spared_count = 0;
+	std::vector<VoxelCaster> m_voxel_eligible;
 
 	vk::raii::Sampler m_sampler = nullptr;
 	std::vector<vk::raii::DescriptorSet> m_descriptor_sets;

@@ -102,13 +102,12 @@ auto classifyComponents(const voxel::Connectivity& c, glm::uvec3 brick_size, Anc
 		}
 	}
 
+	// Size filtering happens when fragments are queued so discarded debris is also cleared from the source.
 	for (uint32_t component = 0; component < c.component_count; ++component) {
 		if (classes[component] == ComponentClass::anchored) {
 			continue;
 		}
-		if (c.voxelCount(component) >= minFragmentVoxels()) {
-			classes[component] = ComponentClass::detached;
-		}
+		classes[component] = ComponentClass::detached;
 	}
 
 	return classes;

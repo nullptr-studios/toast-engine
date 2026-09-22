@@ -32,7 +32,7 @@ namespace toast {
  *
  * @see World, INodeOwner
  */
-class Workspace : public INodeOwner {
+class TOAST_API Workspace : public INodeOwner {
 public:
 	struct SizeHandlePoint {
 		glm::vec3 world_position {0.0f};
@@ -91,7 +91,12 @@ public:
 		return false;
 	}
 
+	void preparePrefabReload(UID uid);
+	void finishPrefabReload();
+
 protected:
+	auto owningPrefabUid() const -> UID override { return m_handle; }
+
 	/// disambiguates the protected ctor from Workspace(UID)
 	struct EmptyTag { };
 
@@ -181,6 +186,12 @@ protected:
 	void applyActiveCamera() override;
 
 private:
+	struct PendingPrefabReload {
+		Box<Node> node;
+		assets::Prefab reference;
+	};
+
+	std::vector<PendingPrefabReload> m_prefab_reloads;
 	double m_inspector_accum = 0.0;
 
 	/**

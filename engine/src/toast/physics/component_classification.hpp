@@ -14,10 +14,6 @@
 
 namespace physics {
 
-inline auto minFragmentVoxels() -> uint32_t {
-	return tunables().min_fragment_voxels;
-}
-
 enum class ComponentClass : uint8_t {
 	anchored,
 	detached,

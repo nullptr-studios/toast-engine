@@ -6,6 +6,8 @@ using editor.Assets;
 namespace editor.Workspace;
 
 public sealed class HierarchyState {
+	public const string RootKey = "__root__";
+
 	private readonly Dictionary<string, bool> m_collapsed;
 	private readonly string m_path;
 
@@ -14,8 +16,8 @@ public sealed class HierarchyState {
 		m_collapsed = collapsed;
 	}
 
-	public static HierarchyState Load(string rootUid) {
-		var path = ProjectContext.Resolve($"cache://tools/hierarchy/{rootUid}.json");
+	public static HierarchyState Load(string key) {
+		var path = ProjectContext.Resolve($"cache://tools/hierarchy/{key}.json");
 		Dictionary<string, bool>? data = null;
 		try {
 			if (File.Exists(path))

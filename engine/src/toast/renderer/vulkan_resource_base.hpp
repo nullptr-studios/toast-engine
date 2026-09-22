@@ -55,6 +55,12 @@ public:
 
 	virtual void record(vk::CommandBuffer cmd) = 0;
 
+	/// False while another upload has to be recorded first
+	[[nodiscard]]
+	virtual auto canRecord() const -> bool {
+		return true;
+	}
+
 	virtual void finished() {
 		if (!resource()->hasFailed()) {
 			resource()->markReady();

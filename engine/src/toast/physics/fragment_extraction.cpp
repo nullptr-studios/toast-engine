@@ -2,6 +2,7 @@
 
 #include "toast/voxel/runtime_pool.hpp"
 
+#include <array>
 #include <tracy/Tracy.hpp>
 
 namespace physics {
@@ -19,8 +20,10 @@ auto extractFragmentVolume(const voxel::Volume& source, const DetachedComponent&
 
 	voxel::Volume extracted(voxel::runtimeBrickPool(), new_dimension);
 
+	// setBrickMaterial collapses a fully one material piece to uniform on its own
+	std::array<uint8_t, voxel::k_brick_material_bytes> brick_material {};
 	for (const voxel::BrickPiece& p : component.pieces) {
-		const glm::ivec3 local = p.brick - min;
+		brick_material.fill(voxel::k_empty_palette_index);
 
 		for (uint32_t i = 0; i < voxel::k_brick_voxel_count; ++i) {
 			if (!voxel::isSolid(p.voxels, i)) {
@@ -29,13 +32,11 @@ auto extractFragmentVolume(const voxel::Volume& source, const DetachedComponent&
 
 			const voxel::BrickCoord c = voxel::localFromIndex(i);
 			const glm::ivec3 local_offset {static_cast<int32_t>(c.x), static_cast<int32_t>(c.y), static_cast<int32_t>(c.z)};
-
 			const glm::ivec3 source_voxel = p.brick * static_cast<int32_t>(voxel::k_brick_dim) + local_offset;
-			const glm::ivec3 dest_voxel = local * static_cast<int32_t>(voxel::k_brick_dim) + local_offset;
-
-			const uint8_t material = source.materialAt(source_voxel);
-			extracted.setVoxel(dest_voxel, material);
+			brick_material[i] = source.materialAt(source_voxel);
 		}
+
+		extracted.setBrickMaterial(p.brick - min, brick_material);
 	}
 
 	return ExtractedFragment {.volume = std::move(extracted), .offset = min};

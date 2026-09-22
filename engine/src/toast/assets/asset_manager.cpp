@@ -13,6 +13,18 @@
 
 namespace assets {
 
+void AssetManager::replacePrefab(toast::UID uid, const Prefab& prefab) {
+	std::lock_guard lock(mutex);
+	auto it = cache.find(uid.data());
+	if (it != cache.end()) {
+		if (auto* existing = dynamic_cast<Prefab*>(it->second.get())) {
+			*existing = prefab;
+		}
+	} else {
+		cache.emplace(uid.data(), std::make_unique<Prefab>(prefab));
+	}
+}
+
 void AssetManager::setLoadMode(SaveMode mode) {
 	load_mode = mode;
 	TOAST_INFO("AssetManager", "Load mode set to {}", mode == SaveMode::game ? "game" : "editor");

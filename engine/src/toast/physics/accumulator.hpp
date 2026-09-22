@@ -9,6 +9,7 @@
 #include "physics_settings.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <toast/log.hpp>
@@ -21,6 +22,9 @@ struct StepResult {
 	unsigned steps = 0;
 	double alpha = 0.0;
 	bool dropped_time = false;
+
+	/// The loop stopped early on the real-time budget, so a slow tick shrinks its own catch-up allowance
+	bool time_budget_reached = false;
 };
 
 class Accumulator {
@@ -44,8 +48,17 @@ public:
 		StepResult result;
 		const double fixed_delta = fixedDelta();
 		const unsigned max_steps = maxSteps();
+		const auto burst_start = std::chrono::steady_clock::now();
 
 		while (m_accumulator >= fixed_delta && result.steps < max_steps) {
+			if (result.steps > 0) {
+				const auto elapsed = std::chrono::duration<double>(std::chrono::steady_clock::now() - burst_start).count();
+				if (elapsed >= tunables().max_burst_seconds) {
+					result.time_budget_reached = true;
+					break;
+				}
+			}
+
 			fn();
 
 			m_accumulator -= fixed_delta;

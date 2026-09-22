@@ -31,6 +31,7 @@
 #include <toast/world/box.hpp>
 #include <toast/world/voxel_node.hpp>
 #include <toml++/impl/preprocessor.hpp>
+#include <unordered_map>
 #include <vector>
 
 namespace physics {
@@ -95,6 +96,77 @@ public:
 		return m_debug_dirty_bricks;
 	}
 
+	/// Counters and phase timings for one tick snapshotted at a safe point for a debug view to read
+	struct PhysicsStepProfile {
+		std::array<size_t, static_cast<size_t>(NarrowPhasePairType::count)> narrow_pair_candidates = {};
+		size_t narrow_jobs = 0;
+		size_t narrow_candidates = 0;
+		size_t narrow_collisions = 0;
+		size_t sleeping_pairs_skipped = 0;
+		size_t rejected_manifolds = 0;
+		size_t contact_points = 0;
+		size_t bodies_woken = 0;
+		size_t bodies_slept = 0;
+		size_t contact_begins = 0;
+		size_t contact_persists = 0;
+		size_t contact_ends = 0;
+		size_t reused_cached_contacts = 0;
+		size_t cold_cached_contacts = 0;
+		size_t constraints = 0;
+		size_t rejected_constraints = 0;
+		size_t warm_started_constraints = 0;
+		size_t island_jobs = 0;
+		size_t invalid_constraints = 0;
+		size_t position_corrections = 0;
+
+		double tick_ms = 0.0;
+		double damage_apply_ms = 0.0;
+		double connectivity_ms = 0.0;
+		double narrow_phase_ms = 0.0;
+		double solve_ms = 0.0;
+
+		size_t body_count = 0;
+		size_t awake_body_count = 0;
+		size_t voxel_shape_count = 0;
+		size_t manifold_count = 0;
+
+		size_t damage_commands = 0;
+		size_t dirty_bricks = 0;
+		size_t surface_bricks_repaired = 0;
+
+		size_t connectivity_jobs = 0;
+		size_t connectivity_jobs_dispatched = 0;
+		size_t connectivity_jobs_stale = 0;
+		size_t connectivity_shapes_waiting = 0;
+
+		size_t fragments_spawned = 0;
+		size_t fragment_spawn_failures = 0;
+		size_t fragments_pending = 0;
+		size_t fragments_active = 0;
+		size_t fragments_sleep_locked = 0;
+		size_t fragments_despawned = 0;
+		size_t fragments_evicted = 0;
+
+		uint32_t brick_pool_allocated = 0;
+		uint32_t brick_pool_capacity = 0;
+
+		/// Peak constraint batch count across islands this tick
+		size_t max_constraint_batches = 0;
+
+		/// How many ticks the fixed step accumulator ran this frame since tick_ms above is only the last one
+		size_t ticks_this_frame = 1;
+
+		/// The accumulator cut this frame catch up burst short on time rather than running out of work
+		bool ticks_capped_by_time_budget = false;
+	};
+
+	/// The last tick profile is safe to read from another thread between ticks
+	[[nodiscard]]
+	static auto stepProfile() -> const PhysicsStepProfile&;
+
+	/// Stamps how many ticks the accumulator ran once it stops catching up for this frame
+	static void recordTickBurst(size_t steps, bool time_budget_reached);
+
 	[[nodiscard]]
 	static auto shapeWorldBounds(ShapeID shape) -> std::optional<AABB>;
 
@@ -152,6 +224,9 @@ private:
 		std::vector<BodyID> dynamic_bodies;
 		std::vector<Constraint> constraints;
 		std::vector<size_t> manifold_indices;
+
+		/// constraints[batch_offsets[i] .. batch_offsets[i + 1]) never share a dynamic body
+		std::vector<size_t> batch_offsets;
 	};
 
 	struct FragmentRecord {
@@ -164,45 +239,6 @@ private:
 		ShapeID shape;
 		std::vector<DetachedComponent> components;
 		size_t cursor = 0;
-	};
-
-	struct PhysicsStepProfile {
-		std::array<size_t, static_cast<size_t>(NarrowPhasePairType::count)> narrow_pair_candidates = {};
-		size_t narrow_jobs = 0;
-		size_t narrow_candidates = 0;
-		size_t narrow_collisions = 0;
-		size_t sleeping_pairs_skipped = 0;
-		size_t rejected_manifolds = 0;
-		size_t contact_points = 0;
-		size_t bodies_woken = 0;
-		size_t bodies_slept = 0;
-		size_t contact_begins = 0;
-		size_t contact_persists = 0;
-		size_t contact_ends = 0;
-		size_t reused_cached_contacts = 0;
-		size_t cold_cached_contacts = 0;
-		size_t constraints = 0;
-		size_t rejected_constraints = 0;
-		size_t warm_started_constraints = 0;
-		size_t island_jobs = 0;
-		size_t invalid_constraints = 0;
-		size_t position_corrections = 0;
-
-		size_t damage_commands = 0;
-		size_t dirty_bricks = 0;
-		size_t surface_bricks_repaired = 0;
-		size_t connectivity_jobs = 0;
-		size_t fragments_spawned = 0;
-		size_t fragments_pending = 0;
-		size_t fragments_active = 0;
-		size_t fragments_evicted = 0;
-		uint32_t bricks_allocated = 0;
-		uint32_t bricks_free = 0;
-	};
-
-	struct IslandSolveStats {
-		size_t invalid_constraints = 0;
-		size_t position_corrections = 0;
 	};
 
 	[[nodiscard]]
@@ -296,7 +332,7 @@ private:
 	void incrementShapeRevision(ShapeID shape);
 	void solveIslands(std::vector<SimulationIsland>& islands);
 	[[nodiscard]]
-	auto solveIsland(SimulationIsland& island) -> IslandSolveStats;
+	auto solveConstraintBatch(std::span<Constraint> batch) -> size_t;
 	[[nodiscard]]
 	auto solveConstraint(Constraint& constraint) -> bool;
 	void publishTransforms();
@@ -320,6 +356,7 @@ private:
 	void clearFragmentFromSource(ShapeID shape_id, VoxelShapeData& data, voxel::Volume& source, const DetachedComponent& component);
 	[[nodiscard]]
 	auto spawnFragmentBody(ShapeID source_shape_id, const DetachedComponent& component) -> bool;
+	void despawnSettledFragments(float dt);
 	void retireVoxelBody(BodyID id);
 	void destroyFragmentsOf(BodyID origin);
 
@@ -329,8 +366,9 @@ private:
 	void spawnBudgetedFragments();
 	[[nodiscard]]
 	auto reconcileComponent(const voxel::Volume& volume, const DetachedComponent& component) const -> bool;
-	void updateFragmentProfile();
-	void touchFragment(BodyID id);
+	void enforceFragmentBudget();
+	void unlockSleep(BodyID id);
+	void rebuildFragmentIndex();
 	auto createVoxelShapeInternal(
 	    BodyID owner, const VoxelShape& shape, voxel::Volume* external, std::unique_ptr<voxel::Volume> owned,
 	    const voxel::Palette& palette, const voxel::MaterialLibrary& materials
@@ -354,6 +392,7 @@ private:
 	std::vector<Manifold> m_manifolds;
 	std::vector<CachedManifold> m_cached_manifolds;
 	PhysicsStepProfile m_profile;
+	PhysicsStepProfile m_published_profile;
 
 	std::vector<VoxelShapeSlot> m_voxel_shapes;
 	std::deque<uint32_t> m_free_voxel_shape_slots;
@@ -365,8 +404,13 @@ private:
 
 	uint64_t m_next_fragment_sequence = 1;
 	std::vector<FragmentRecord> m_fragments;
+	/// body slot -> index in m_fragments rebuilt whenever an erase shifts indices
+	std::unordered_map<uint32_t, size_t> m_fragment_index;
 	std::vector<PendingFragments> m_pending_fragments;
 	std::vector<BodyID> m_doomed_fragments;
+
+	/// Round robin start so a connectivity job cap does not starve the same shapes
+	size_t m_connectivity_cursor = 0;
 };
 
 }

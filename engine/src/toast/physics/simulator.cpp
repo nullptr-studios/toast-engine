@@ -14,6 +14,7 @@
 #include "voxel_data_lock.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <glm/gtc/matrix_transform.hpp>
 #include <limits>
@@ -46,6 +47,49 @@ auto cachedManifoldLess(const CachedManifold& lhs, const CachedManifold& rhs) ->
 [[nodiscard]]
 auto cachedManifoldMatches(const CachedManifold& manifold, CachedManifoldKey key) -> bool {
 	return manifold.pair == key.pair && manifold.normal_index == key.normal_index;
+}
+
+/// One thread pool job share of a constraint wave may hold pieces of more than one island batch
+struct ConstraintChunk {
+	std::vector<std::span<Constraint>> pieces;
+};
+
+/// Splits a wave per island spans into at most job_count roughly equal chunks cutting across islands freely
+auto chunkConstraintWave(std::span<const std::span<Constraint>> spans, size_t job_count) -> std::vector<ConstraintChunk> {
+	size_t total = 0;
+	for (const std::span<Constraint>& span : spans) {
+		total += span.size();
+	}
+	if (total == 0 || job_count == 0) {
+		return {};
+	}
+	job_count = std::min(job_count, total);
+	const size_t target = (total + job_count - 1) / job_count;
+
+	std::vector<ConstraintChunk> chunks;
+	chunks.reserve(job_count);
+	ConstraintChunk current;
+	size_t current_size = 0;
+	for (const std::span<Constraint>& span : spans) {
+		size_t offset = 0;
+		while (offset < span.size()) {
+			const size_t room = target - current_size;
+			const size_t take = std::min(room, span.size() - offset);
+			if (take == 0) {
+				chunks.push_back(std::move(current));
+				current = ConstraintChunk {};
+				current_size = 0;
+				continue;
+			}
+			current.pieces.push_back(span.subspan(offset, take));
+			current_size += take;
+			offset += take;
+		}
+	}
+	if (!current.pieces.empty()) {
+		chunks.push_back(std::move(current));
+	}
+	return chunks;
 }
 
 // TODO: do this but with materials
@@ -407,14 +451,26 @@ void Simulator::tick() {
 	PhaseScope step_phase {*this, SimulationPhase::idle, SimulationPhase::mutation};
 	m_profile = {};
 
+	const auto tick_start = std::chrono::steady_clock::now();
+	const auto elapsedMs = [](std::chrono::steady_clock::time_point from, std::chrono::steady_clock::time_point to) {
+		return std::chrono::duration<double, std::milli>(to - from).count();
+	};
+
 	const float dt = static_cast<float>(Accumulator::fixedDelta());
 	reapFragments();
 	syncEnabledState();
 	applyDamageCommands();
+	const auto after_damage = std::chrono::steady_clock::now();
+	m_profile.damage_apply_ms = elapsedMs(tick_start, after_damage);
+
 	auto connectivity_results = runConnectivityAnalysis();
+	const auto after_connectivity = std::chrono::steady_clock::now();
+	m_profile.connectivity_ms = elapsedMs(after_damage, after_connectivity);
+
 	queuePendingFragments(connectivity_results);
 	spawnBudgetedFragments();
-	updateFragmentProfile();
+	enforceFragmentBudget();
+	despawnSettledFragments(dt);
 	integrate(dt);
 
 	{
@@ -423,6 +479,9 @@ void Simulator::tick() {
 		const auto candidates = m_broad_phase.findPairs(world);
 		m_manifolds = generateManifoldsAsync(world, candidates);
 	}
+	const auto after_narrow = std::chrono::steady_clock::now();
+	m_profile.narrow_phase_ms = elapsedMs(after_connectivity, after_narrow);
+
 	updateCache(m_manifolds);
 	wakeContactGroups();
 
@@ -432,17 +491,35 @@ void Simulator::tick() {
 	solveIslands(islands);
 	convertImpulsesToDamage(islands);
 	updateSleeping(dt);
-	publishProfile(islands);
+	m_profile.solve_ms = elapsedMs(after_narrow, std::chrono::steady_clock::now());
+
+	m_profile.manifold_count = m_manifolds.size();
+	m_profile.voxel_shape_count = static_cast<size_t>(std::ranges::count_if(m_shapes, [](const ShapeSlot& s) {
+		return s.occupied && s.shape.type == ShapeType::voxel;
+	}));
+	for (const BodySlot& b : m_bodies) {
+		if (!b.occupied) {
+			continue;
+		}
+		++m_profile.body_count;
+		m_profile.awake_body_count += b.body.awake ? 1 : 0;
+	}
+	const voxel::BrickPool& pool = voxel::runtimeBrickPool();
+	m_profile.brick_pool_allocated = pool.allocatedCount();
+	m_profile.brick_pool_capacity = pool.capacity();
 
 	// push poses after simulation settles
 	publishTransforms();
 	publishVoxelRenderRecords();
+	m_profile.tick_ms = elapsedMs(tick_start, std::chrono::steady_clock::now());
+	publishProfile(islands);
 	FrameMarkNamed("PhysicsStep");
 }
 
 void Simulator::publishProfile(std::span<const SimulationIsland> islands) {
 	ZoneScopedN("physics::PublishProfile");
 	(void)islands;
+	m_published_profile = m_profile;
 }
 
 void Simulator::clearFragmentFromSource(
@@ -476,11 +553,12 @@ void Simulator::clearFragmentFromSource(
 			}
 		}
 
+		// Not tryCollapseUniform here since clearing a voxel only unfills a brick and never passes isFull
 		data.surface.repairBricks(source, dirty_bricks);
 	}
 
+	// Carving does not bump the shape revision so its contacts stay warm
 	++data.surface_revision;
-	incrementShapeRevision(shape_id);
 
 	auto* shape = tryGetShape(shape_id);
 	if (shape == nullptr) {
@@ -548,11 +626,20 @@ void Simulator::destroyFragmentsOf(BodyID origin) {
 	}
 
 	std::erase_if(m_pending_fragments, [this](const PendingFragments& pending) { return not valid(pending.shape); });
+	rebuildFragmentIndex();
 }
 
 void Simulator::destroyFragmentRecord(BodyID id) {
 	destroyBody(id);
 	std::erase_if(m_fragments, [id](const FragmentRecord& record) { return record.body == id; });
+}
+
+void Simulator::rebuildFragmentIndex() {
+	m_fragment_index.clear();
+	m_fragment_index.reserve(m_fragments.size());
+	for (size_t i = 0; i < m_fragments.size(); ++i) {
+		m_fragment_index[m_fragments[i].body.slot] = i;
+	}
 }
 
 void Simulator::reapFragments() {
@@ -566,10 +653,14 @@ void Simulator::reapFragments() {
 	std::erase_if(m_fragments, [this](const FragmentRecord& record) { return not valid(record.body); });
 	std::erase_if(m_pending_fragments, [this](const PendingFragments& pending) { return not valid(pending.shape); });
 
+	// Picks least recently touched, not oldest created, so eviction never kills something still active
 	while (not m_fragments.empty() && voxel::runtimeBrickPool().freeCount() < tunables().fragment_pool_headroom) {
-		destroyFragmentRecord(m_fragments.front().body);
+		const auto oldest = std::ranges::min_element(m_fragments, {}, &FragmentRecord::sequence);
+		destroyFragmentRecord(oldest->body);
 		++m_profile.fragments_evicted;
 	}
+
+	rebuildFragmentIndex();
 }
 
 void Simulator::queuePendingFragments(std::span<const ConnectivityResult> results) {
@@ -589,7 +680,17 @@ void Simulator::queuePendingFragments(std::span<const ConnectivityResult> result
 		const std::vector<ComponentClass> classes = classifyComponents(r.connectivity, brick_dims, data->anchor_mask);
 		data->detached_components = buildDetachedComponents(r.connectivity, classes, brick_dims);
 
-		std::vector<DetachedComponent> components_to_spawn = data->detached_components;
+		// Debris sized pieces never become a tracked body
+		std::vector<DetachedComponent> components_to_spawn;
+		components_to_spawn.reserve(data->detached_components.size());
+		for (const DetachedComponent& component : data->detached_components) {
+			if (component.voxel_count < tunables().min_fragment_voxels) {
+				clearFragmentFromSource(r.shape, *data, *data->volume, component);
+				continue;
+			}
+			components_to_spawn.push_back(component);
+		}
+
 		const Body* source_body = tryGetBody(shape->owner);
 		if (source_body != nullptr && source_body->type == BodyType::dynamic_body && not components_to_spawn.empty()) {
 			components_to_spawn.erase(std::ranges::max_element(components_to_spawn, {}, &DetachedComponent::voxel_count));
@@ -645,8 +746,13 @@ void Simulator::spawnBudgetedFragments() {
 			}
 
 			if (not spawnFragmentBody(pending.shape, component)) {
-				pool_full = true;
-				break;
+				// false only means this component failed, not that the pool is full
+				if (voxel::runtimeBrickPool().freeCount() == 0) {
+					pool_full = true;
+					break;
+				}
+				++pending.cursor;
+				continue;
 			}
 
 			++pending.cursor;
@@ -670,7 +776,7 @@ void Simulator::spawnBudgetedFragments() {
 	}
 }
 
-void Simulator::updateFragmentProfile() {
+void Simulator::enforceFragmentBudget() {
 	ZoneScopedN("physics::FragmentProfile");
 
 	size_t active = 0;
@@ -681,19 +787,52 @@ void Simulator::updateFragmentProfile() {
 		}
 	}
 
+	// only claim a fragment already about to sleep on its own
+	for (const FragmentRecord& record : m_fragments) {
+		if (active <= tunables().max_active_fragments) {
+			break;
+		}
+		Body* body = tryGetBody(record.body);
+		if (body == nullptr || not body->enabled || not body->awake) {
+			continue;
+		}
+		const bool nearly_at_rest =
+		    glm::dot(body->linear_velocity, body->linear_velocity) <
+		        tunables().sleep_linear_threshold * tunables().sleep_linear_threshold * tunables().force_sleep_slack &&
+		    glm::dot(body->angular_velocity, body->angular_velocity) <
+		        tunables().sleep_angular_threshold * tunables().sleep_angular_threshold * tunables().force_sleep_slack;
+		if (not nearly_at_rest) {
+			continue;
+		}
+		body->sleep_locked = true;
+		sleepBody(record.body);
+		--active;
+	}
+
+	size_t sleep_locked = 0;
+	for (const FragmentRecord& record : m_fragments) {
+		const Body* body = tryGetBody(record.body);
+		if (body != nullptr && body->sleep_locked) {
+			++sleep_locked;
+		}
+	}
 	m_profile.fragments_active = active;
+	m_profile.fragments_sleep_locked = sleep_locked;
 }
 
-void Simulator::touchFragment(BodyID id) {
-	wakeBody(id);
-
-	const auto it = std::ranges::find(m_fragments, id, &FragmentRecord::body);
-	if (it == m_fragments.end()) {
+void Simulator::unlockSleep(BodyID id) {
+	// no reordering, a rotate here used to cost O(m_fragments) per wake
+	const auto it = m_fragment_index.find(id.slot);
+	if (it == m_fragment_index.end() || it->second >= m_fragments.size() || m_fragments[it->second].body != id) {
 		return;
 	}
 
-	it->sequence = m_next_fragment_sequence++;
-	std::rotate(it, it + 1, m_fragments.end());
+	if (Body* body = tryGetBody(id)) {
+		body->sleep_locked = false;
+	}
+	wakeBody(id);
+
+	m_fragments[it->second].sequence = m_next_fragment_sequence++;
 }
 
 auto Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedComponent& component) -> bool {
@@ -728,6 +867,16 @@ auto Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedCompone
 		std::scoped_lock voxel_lock {voxelDataMutex()};
 		return extractFragmentVolume(*data->volume, component);
 	}();
+	if (extracted.volume.solidVoxelCount() == 0) {
+		++m_profile.fragment_spawn_failures;
+		// setVoxel silently no ops when the runtime brick pool has no room left
+		TOAST_WARN(
+		    "Physics",
+		    "Fragment body could not be extracted from shape {}: the runtime brick pool is out of bricks",
+		    source_shape_id.slot
+		);
+		return false;
+	}
 
 	if (extracted.volume.solidVoxelCount() != component.voxel_count) {
 		TOAST_WARN(
@@ -768,6 +917,7 @@ auto Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedCompone
 			frag_data->fragment_sequence = m_next_fragment_sequence;
 		}
 	}
+	m_fragment_index[frag_body.slot] = m_fragments.size();
 	m_fragments.push_back(FragmentRecord {.body = frag_body, .shape = frag_shape, .sequence = m_next_fragment_sequence});
 	++m_next_fragment_sequence;
 
@@ -811,6 +961,39 @@ auto Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedCompone
 	}
 
 	return true;
+}
+
+void Simulator::despawnSettledFragments(float dt) {
+	ZoneScopedN("physics::DespawnSettledFragments");
+
+	std::vector<BodyID> doomed;
+	for (uint32_t index = 0; index < m_shapes.size(); ++index) {
+		const ShapeSlot& slot = m_shapes[index];
+		if (not slot.occupied || slot.shape.type != ShapeType::voxel) {
+			continue;
+		}
+		VoxelShapeData* data = tryGetVoxelData(slot.shape.voxel.data);
+		if (data == nullptr || not valid(data->fragment_origin)) {
+			continue;
+		}
+
+		const Body* body = tryGetBody(slot.shape.owner);
+		if (body == nullptr || not body->enabled || body->awake) {
+			data->fragment_sleep_seconds = 0.0f;
+			continue;
+		}
+
+		data->fragment_sleep_seconds += dt;
+		if (data->solid_voxel_count <= tunables().fragment_despawn_max_voxels &&
+		    data->fragment_sleep_seconds >= tunables().fragment_despawn_settle_seconds) {
+			doomed.push_back(slot.shape.owner);
+		}
+	}
+
+	for (const BodyID id : doomed) {
+		destroyBody(id);
+	}
+	m_profile.fragments_despawned = doomed.size();
 }
 
 void Simulator::syncEnabledState() {
@@ -919,6 +1102,9 @@ void Simulator::wakeBody(BodyID id) {
 		return;
 	}
 	if (Body* body = instance->tryGetBody(id); body && body->type == BodyType::dynamic_body) {
+		if (body->sleep_locked) {
+			return;
+		}
 		instance->m_profile.bodies_woken += not body->awake;
 		body->awake = true;
 		body->sleep_timer = 0.0f;
@@ -1014,7 +1200,8 @@ void Simulator::wakeContactGroups() {
 
 	for (size_t index = 0; index < m_bodies.size(); ++index) {
 		const BodySlot& slot = m_bodies[index];
-		if (slot.occupied && slot.body.enabled && slot.body.type == BodyType::dynamic_body && group_is_awake[find_root(index)]) {
+		if (slot.occupied && slot.body.enabled && slot.body.type == BodyType::dynamic_body && not slot.body.sleep_locked &&
+		    group_is_awake[find_root(index)]) {
 			wakeBody(BodyID {.slot = static_cast<uint32_t>(index), .generation = slot.generation});
 		}
 	}
@@ -1200,6 +1387,18 @@ auto Simulator::voxelFragmentRecords() -> std::span<const VoxelRenderRecord> {
 	                           : std::span<const VoxelRenderRecord> {};
 }
 
+auto Simulator::stepProfile() -> const PhysicsStepProfile& {
+	static const PhysicsStepProfile empty;
+	return instance != nullptr ? instance->m_published_profile : empty;
+}
+
+void Simulator::recordTickBurst(size_t steps, bool time_budget_reached) {
+	if (instance != nullptr) {
+		instance->m_published_profile.ticks_this_frame = steps;
+		instance->m_published_profile.ticks_capped_by_time_budget = time_budget_reached;
+	}
+}
+
 auto Simulator::velocityAtPoint(const Body& body, const glm::vec3& r) -> glm::vec3 {
 	return body.linear_velocity + glm::cross(body.angular_velocity, r);
 }
@@ -1222,8 +1421,6 @@ auto Simulator::effectiveMassAlong(
 }
 
 void Simulator::applyImpulse(Body& body_a, Body& body_b, const glm::vec3& r_a, const glm::vec3& r_b, const glm::vec3& impulse) {
-	ZoneScopedN("physics::ApplyImpulse");
-
 	if (body_a.inverse_mass > 0.0f) {
 		body_a.linear_velocity -= impulse * body_a.inverse_mass;
 		body_a.angular_velocity -= body_a.inverse_inertia_world * glm::cross(r_a, impulse);
@@ -1234,9 +1431,8 @@ void Simulator::applyImpulse(Body& body_a, Body& body_b, const glm::vec3& r_a, c
 	}
 }
 
+// No ZoneScoped below this runs hundreds of thousands of times a tick and the push costs more than the math
 auto Simulator::solveNormal(Constraint& constraint, Body& body_a, Body& body_b) -> bool {
-	ZoneScopedN("physics::SolveNormal");
-
 	glm::vec3 relative_velocity = velocityAtPoint(body_b, constraint.r_b) - velocityAtPoint(body_a, constraint.r_a);
 	float normal_speed = glm::dot(relative_velocity, constraint.normal);
 	if (not std::isfinite(normal_speed)) {
@@ -1253,8 +1449,6 @@ auto Simulator::solveNormal(Constraint& constraint, Body& body_a, Body& body_b) 
 }
 
 auto Simulator::solveFriction(Constraint& constraint, Body& body_a, Body& body_b) -> bool {
-	ZoneScopedN("physics::SolveFriction");
-
 	if (constraint.tangent_mass <= 0.0f) {
 		return true;
 	}
@@ -2292,7 +2486,7 @@ void Simulator::rebuildMassProperties(BodyID id) {
 			break;
 		}
 		case ShapeType::capsule: {
-			// Conservative approximation: use a box with dimensions (2r, 2r, height)
+			// Conservative approximation using a box with dimensions (2r, 2r, height)
 			float diameter = 2.0f * shape->capsule.radius;
 			float diameter_sq = diameter * diameter;
 			float height_sq = shape->capsule.height * shape->capsule.height;
@@ -2563,8 +2757,8 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 	m_profile.dirty_bricks += dirty_bricks.size();
 	m_profile.surface_bricks_repaired += dirty_bricks.size();
 
+	// Carving does not bump the shape revision so its contacts stay warm
 	++data->surface_revision;
-	incrementShapeRevision(c.shape);
 	shape->voxel.local_bounds = computeOccupiedBounds(volume);
 
 	for (VoxelNodeBinding& binding : m_voxel_bindings) {
@@ -2584,7 +2778,7 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 		}
 	}
 
-	touchFragment(shape->owner);
+	unlockSleep(shape->owner);
 
 	wakeBodiesInBounds(
 	    AABB {
@@ -2645,7 +2839,12 @@ auto Simulator::runConnectivityAnalysis() -> std::vector<ConnectivityResult> {
 
 	std::scoped_lock voxel_lock {voxelDataMutex()};
 
-	for (const auto& [index, slot] : m_shapes | std::views::enumerate) {
+	// A rotating start point so a sustained overload does not always starve the same high index shapes
+	const size_t shape_count = m_shapes.size();
+	for (size_t scanned = 0, index = shape_count == 0 ? 0 : m_connectivity_cursor % shape_count;
+	     scanned < shape_count && pending.size() < tunables().max_connectivity_jobs_per_tick;
+	     ++scanned, index = (index + 1) % shape_count) {
+		const ShapeSlot& slot = m_shapes[index];
 		if (not slot.occupied || slot.shape.type != ShapeType::voxel) {
 			continue;
 		}
@@ -2661,7 +2860,7 @@ auto Simulator::runConnectivityAnalysis() -> std::vector<ConnectivityResult> {
 		}
 
 		ShapeID id {.slot = static_cast<uint32_t>(index), .generation = slot.generation};
-		uint32_t revision = shapeRevision(id);
+		uint32_t revision = data->surface_revision;
 		data->connectivity_dirty = false;
 
 		// clang-format off
@@ -2674,7 +2873,10 @@ auto Simulator::runConnectivityAnalysis() -> std::vector<ConnectivityResult> {
 			})
 		});
 		// clang-format on
+
+		m_connectivity_cursor = (index + 1) % shape_count;
 	}
+	m_profile.connectivity_jobs_dispatched = pending.size();
 
 	ZoneValue(static_cast<uint64_t>(pending.size()));
 	m_profile.connectivity_jobs = pending.size();
@@ -2685,18 +2887,27 @@ auto Simulator::runConnectivityAnalysis() -> std::vector<ConnectivityResult> {
 		ZoneScopedNC("physics::ConnectivityAwait", 0x202020);
 		for (auto& p : pending) {
 			auto c = p.future.get();
-			if (shapeRevision(p.shape) != p.revision) {
-				// shape was changed mid-compute, discard
-				if (const Shape* shape = tryGetShape(p.shape); shape != nullptr && shape->type == ShapeType::voxel) {
-					if (VoxelShapeData* data = tryGetVoxelData(shape->voxel.data)) {
-						data->connectivity_dirty = true;
-					}
+			const Shape* shape = tryGetShape(p.shape);
+			VoxelShapeData* data = shape != nullptr && shape->type == ShapeType::voxel ? tryGetVoxelData(shape->voxel.data) : nullptr;
+			if (data == nullptr || data->surface_revision != p.revision) {
+				// The volume changed mid compute so this result no longer matches it
+				if (data != nullptr) {
+					data->connectivity_dirty = true;
 				}
+				++m_profile.connectivity_jobs_stale;
 				continue;
 			}
 			results.emplace_back(ConnectivityResult {.shape = p.shape, .connectivity = std::move(c)});
 		}
 	}
+
+	m_profile.connectivity_shapes_waiting = static_cast<size_t>(std::ranges::count_if(m_shapes, [this](const ShapeSlot& s) {
+		if (not s.occupied || s.shape.type != ShapeType::voxel) {
+			return false;
+		}
+		const auto* data = tryGetVoxelData(s.shape.voxel.data);
+		return data != nullptr && data->connectivity_dirty;
+	}));
 
 	return results;
 }
@@ -2983,6 +3194,9 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 		}
 	}
 
+	// A shared scratch array since islands never share a dynamic body so never reset between them
+	std::vector<uint32_t> next_free_batch(m_bodies.size(), 0);
+
 	for (SimulationIsland& island : islands) {
 		std::ranges::sort(island.constraints, [](const Constraint& lhs, const Constraint& rhs) {
 			if (lhs.pair != rhs.pair) {
@@ -2993,6 +3207,48 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 			}
 			return lhs.feature_b < rhs.feature_b;
 		});
+
+		// Greedy list coloring a constraint batch is one past the highest batch its dynamic bodies reached
+		std::vector<uint32_t> constraint_batch(island.constraints.size());
+		uint32_t batch_count = island.constraints.empty() ? 0 : 1;
+		for (size_t i = 0; i < island.constraints.size(); ++i) {
+			const Constraint& constraint = island.constraints[i];
+			const Body* body_a = tryGetBody(constraint.body_a);
+			const Body* body_b = tryGetBody(constraint.body_b);
+			const bool a_dynamic = body_a != nullptr && body_a->inverse_mass > 0.0f;
+			const bool b_dynamic = body_b != nullptr && body_b->inverse_mass > 0.0f;
+
+			uint32_t batch = 0;
+			if (a_dynamic) {
+				batch = std::max(batch, next_free_batch[constraint.body_a.slot]);
+			}
+			if (b_dynamic) {
+				batch = std::max(batch, next_free_batch[constraint.body_b.slot]);
+			}
+			constraint_batch[i] = batch;
+			batch_count = std::max(batch_count, batch + 1);
+			if (a_dynamic) {
+				next_free_batch[constraint.body_a.slot] = batch + 1;
+			}
+			if (b_dynamic) {
+				next_free_batch[constraint.body_b.slot] = batch + 1;
+			}
+		}
+
+		// Counting sort into batch contiguous storage stable within a batch since i is scanned in order
+		island.batch_offsets.assign(batch_count + 1, 0);
+		for (uint32_t batch : constraint_batch) {
+			++island.batch_offsets[batch + 1];
+		}
+		for (size_t i = 1; i < island.batch_offsets.size(); ++i) {
+			island.batch_offsets[i] += island.batch_offsets[i - 1];
+		}
+		std::vector<Constraint> reordered(island.constraints.size());
+		std::vector<size_t> cursor(island.batch_offsets.begin(), island.batch_offsets.end() - 1);
+		for (size_t i = 0; i < island.constraints.size(); ++i) {
+			reordered[cursor[constraint_batch[i]]++] = island.constraints[i];
+		}
+		island.constraints = std::move(reordered);
 	}
 
 	std::ranges::sort(islands, [](const SimulationIsland& lhs, const SimulationIsland& rhs) {
@@ -3132,28 +3388,14 @@ void Simulator::storeConstraintImpulses(std::span<const Constraint> constraints)
 	}
 }
 
-auto Simulator::solveIsland(SimulationIsland& island) -> IslandSolveStats {
-	ZoneScopedN("physics::SolveIsland");
-	ZoneValue(static_cast<uint64_t>(island.constraints.size()));
-
-	const uint32_t solver_iterations = tunables().solver_iterations;
-	size_t invalid_constraint_count = 0;
-	warmStartConstraints(island.constraints);
-
-	for (uint32_t iteration = 0; iteration < solver_iterations; ++iteration) {
-		ZoneScopedN("iteration");
-		ZoneValue(static_cast<uint64_t>(iteration));
-		for (Constraint& constraint : island.constraints) {
-			if (not solveConstraint(constraint)) {
-				++invalid_constraint_count;
-			}
+auto Simulator::solveConstraintBatch(std::span<Constraint> batch) -> size_t {
+	size_t invalid_count = 0;
+	for (Constraint& constraint : batch) {
+		if (not solveConstraint(constraint)) {
+			++invalid_count;
 		}
 	}
-
-	return {
-	  .invalid_constraints = invalid_constraint_count,
-	  .position_corrections = correctPositions(island.manifold_indices),
-	};
+	return invalid_count;
 }
 
 void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
@@ -3165,46 +3407,78 @@ void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
 	}
 	PhaseScope worker_phase {*this, SimulationPhase::mutation, SimulationPhase::worker_execution};
 
-	const size_t minimum_islands_per_job = tunables().min_islands_per_job;
 	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), 1ull);
-	const size_t maximum_job_count = worker_count * 3;
-	const size_t job_count = std::min(maximum_job_count, std::max(islands.size() / minimum_islands_per_job, size_t {1}));
 
-	std::vector<std::future<IslandSolveStats>> futures;
-	futures.reserve(job_count);
-
-	for (size_t job_index = 0; job_index < job_count; ++job_index) {
-		const size_t begin = job_index * islands.size() / job_count;
-		const size_t end = (job_index + 1) * islands.size() / job_count;
-		auto batch = std::span<SimulationIsland> {islands}.subspan(begin, end - begin);
-		size_t constraint_count = 0;
-		for (const SimulationIsland& island : batch) {
-			constraint_count += island.constraints.size();
-		}
-
-		futures.emplace_back(toast::ThreadPool::push([this, batch, constraint_count] {
-			ZoneScopedN("physics::IslandBatch");
-			ZoneValue(static_cast<uint64_t>(constraint_count));
-
-			IslandSolveStats stats;
-			for (SimulationIsland& island : batch) {
-				const IslandSolveStats island_stats = solveIsland(island);
-				stats.invalid_constraints += island_stats.invalid_constraints;
-				stats.position_corrections += island_stats.position_corrections;
-			}
-			return stats;
-		}));
+	// Warm start is one pass over each island constraints cheap enough to just do right here
+	for (SimulationIsland& island : islands) {
+		warmStartConstraints(island.constraints);
 	}
-	m_profile.island_jobs = futures.size();
+
+	// Solve in lockstep waves a wave can be chunked across islands since none share a dynamic body
+	const uint32_t solver_iterations = tunables().solver_iterations;
+	size_t max_batches = 0;
+	for (const SimulationIsland& island : islands) {
+		max_batches = std::max(max_batches, island.batch_offsets.empty() ? size_t {0} : island.batch_offsets.size() - 1);
+	}
+	m_profile.max_constraint_batches = max_batches;
 
 	size_t invalid_constraint_count = 0;
-	size_t position_correction_count = 0;
-	{
-		ZoneScopedNC("physics::IslandSolveAwait", 0x202020);
-		for (auto& future : futures) {
-			const IslandSolveStats stats = future.get();
-			invalid_constraint_count += stats.invalid_constraints;
-			position_correction_count += stats.position_corrections;
+	std::vector<std::span<Constraint>> wave_spans;
+	for (uint32_t iteration = 0; iteration < solver_iterations; ++iteration) {
+		ZoneScopedN("iteration");
+		ZoneValue(static_cast<uint64_t>(iteration));
+
+		for (size_t wave = 0; wave < max_batches; ++wave) {
+			wave_spans.clear();
+			for (SimulationIsland& island : islands) {
+				if (wave + 1 >= island.batch_offsets.size()) {
+					continue;
+				}
+				const size_t begin = island.batch_offsets[wave];
+				const size_t end = island.batch_offsets[wave + 1];
+				if (end > begin) {
+					wave_spans.push_back(std::span<Constraint> {island.constraints}.subspan(begin, end - begin));
+				}
+			}
+			if (wave_spans.empty()) {
+				continue;
+			}
+
+			size_t wave_total = 0;
+			for (const std::span<Constraint>& span : wave_spans) {
+				wave_total += span.size();
+			}
+			if (wave_total < tunables().min_wave_constraints_for_dispatch) {
+				// Not enough work this wave to be worth a thread pool round trip
+				for (const std::span<Constraint>& span : wave_spans) {
+					invalid_constraint_count += solveConstraintBatch(span);
+				}
+				continue;
+			}
+
+			auto chunks = chunkConstraintWave(wave_spans, worker_count);
+			if (chunks.size() <= 1) {
+				for (const std::span<Constraint>& span : wave_spans) {
+					invalid_constraint_count += solveConstraintBatch(span);
+				}
+				continue;
+			}
+
+			std::vector<std::future<size_t>> futures;
+			futures.reserve(chunks.size());
+			for (ConstraintChunk& chunk : chunks) {
+				futures.emplace_back(toast::ThreadPool::push([this, pieces = std::move(chunk.pieces)] {
+					ZoneScopedN("physics::ConstraintWaveChunk");
+					size_t invalid = 0;
+					for (const std::span<Constraint>& piece : pieces) {
+						invalid += solveConstraintBatch(piece);
+					}
+					return invalid;
+				}));
+			}
+			for (auto& future : futures) {
+				invalid_constraint_count += future.get();
+			}
 		}
 	}
 
@@ -3212,7 +3486,15 @@ void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
 		TOAST_WARN("Physics", "Skipped {} invalid solver constraint(s)", invalid_constraint_count);
 	}
 	m_profile.invalid_constraints = invalid_constraint_count;
+
+	// Position correction is one pass over each island manifolds same reasoning as warm start above
+	size_t position_correction_count = 0;
+	for (SimulationIsland& island : islands) {
+		position_correction_count += correctPositions(island.manifold_indices);
+	}
 	m_profile.position_corrections = position_correction_count;
+
+	m_profile.island_jobs = islands.size();
 
 	for (const SimulationIsland& island : islands) {
 		storeConstraintImpulses(island.constraints);
@@ -3220,8 +3502,6 @@ void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
 }
 
 auto Simulator::solveConstraint(Constraint& constraint) -> bool {
-	ZoneScopedN("physics::SolveConstraint");
-
 	Body* body_a = tryGetBody(constraint.body_a);
 	Body* body_b = tryGetBody(constraint.body_b);
 

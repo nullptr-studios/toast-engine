@@ -2,8 +2,10 @@
 
 #include "passes/environment_pass.hpp"
 #include "shadow_constants.hpp"
+#include "shadow_slots.hpp"
 #include "vulkan_renderer.hpp"
 
+#include <algorithm>
 #include <toast/settings/settings.hpp>
 #include <utility>
 
@@ -108,6 +110,32 @@ void registerShadows() {
 			 .step = 5.0}
 	)
 	    .onChange([](double v) { shadows::setShadowDistance(static_cast<float>(v)); });
+
+	toast::settings::declareFloat(
+	    "renderer.shadows.slot_retention",
+	    shadow_slots::k_default_retention,
+	    {.label = "Slot retention",
+			 .category = "Shadows",
+			 .description = "How many times more important than the weakest shadowed light another light must be to "
+			                "take its shadow slot. Higher keeps cached shadow maps longer.",
+			 .min = 1.0,
+			 .max = 4.0,
+			 .step = 0.05}
+	)
+	    .onChange([](double v) { shadow_slots::setRetention(static_cast<float>(v)); });
+
+	toast::settings::declareInt(
+	    "renderer.shadows.slot_grace",
+	    shadow_slots::k_default_grace_frames,
+	    {.label = "Slot grace",
+			 .category = "Shadows",
+			 .description = "Frames a shadowed light keeps its slot after leaving the view while another light wants "
+			                "it. Higher re-renders less when looking around, lower favours what is on screen.",
+			 .min = 0.0,
+			 .max = 300.0,
+			 .step = 1.0}
+	)
+	    .onChange([](int64_t frames) { shadow_slots::setGraceFrames(static_cast<uint32_t>(std::max<int64_t>(frames, 0))); });
 }
 
 void registerEnvironment(VulkanRenderer& renderer) {

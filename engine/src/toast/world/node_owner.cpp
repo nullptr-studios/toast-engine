@@ -342,7 +342,17 @@ auto INodeOwner::requestRuntimeSpawn(Node& parent, UID uid) -> Box<Node> {
 	// Allocation
 	INodeOwner::InstantiateContext ctx;
 	ctx.resolver = [](UID id) { return assets::load<assets::Prefab>(id); };
-	Box<Node> root = this->instantiate(file, ctx);
+	seedPrefabContext(ctx, &parent);
+	assets::Prefab wrapper;
+	assets::Prefab::BasicNode reference = file->nodes.empty() ? assets::Prefab::BasicNode {} : file->nodes.front();
+	reference.fields.clear();
+	reference.groups.clear();
+	reference.lua_vars.clear();
+	reference.signals.clear();
+	reference.fields.push_back({"m_source_prefab", FieldType::uid_t, false, uid});
+	wrapper.nodes.push_back(std::move(reference));
+	assets::Handle<assets::Prefab> wrapper_handle(&wrapper, UID(0), "");
+	Box<Node> root = this->instantiate(wrapper_handle, ctx);
 	if (not root.exists()) {
 		TOAST_ERROR("World", "Failed to instantiate prefab {} to spawn", uid);
 		return {};
@@ -574,7 +584,7 @@ auto INodeOwner::buildTree(std::vector<Box<Node>>&& nodes, const assets::Handle<
 			return it != uid_map.end() ? it->second : Box<Node> {};
 		});
 
-		node->m_type = has_parent ? NodeType::child : NodeType::root;
+		node->m_type = node->isInstanceRoot() || !has_parent ? NodeType::root : NodeType::child;
 
 		if (not has_parent) {
 #ifndef NDEBUG
@@ -638,6 +648,17 @@ auto INodeOwner::buildTree(std::vector<Box<Node>>&& nodes, const assets::Handle<
 	return root;
 }
 
+void INodeOwner::seedPrefabContext(InstantiateContext& context, const Node* parent) const {
+	if (owningPrefabUid().data() != 0) {
+		context.asset_chain.push_back(owningPrefabUid().data());
+	}
+	for (const Node* n = parent; n; n = n->m_parent.exists() ? &*n->m_parent : nullptr) {
+		if (n->sourcePrefab().uid().data() != 0) {
+			context.asset_chain.push_back(n->sourcePrefab().uid().data());
+		}
+	}
+}
+
 auto INodeOwner::instantiate(const assets::Handle<assets::Prefab>& file, InstantiateContext& ctx) -> Box<Node> {
 	ZoneScoped;
 
@@ -691,6 +712,15 @@ auto INodeOwner::instantiate(const assets::Handle<assets::Prefab>& file, Instant
 			    cycle ? "cycle detected" : "asset missing"
 			);
 			slots[i] = make_unresolved(*chunk, ref_uid);
+			if (cycle) {
+				slots[i]->m_recursive_prefab = true;
+				slots[i]->addInspectorMessage({
+				  .severity = NodeMessage::error,
+				  .id = 0,
+				  .text = "Cannot have prefab inside itself",
+				});
+				TOAST_ERROR("World", "Cannot have prefab inside itself");
+			}
 			continue;
 		}
 
@@ -701,6 +731,7 @@ auto INodeOwner::instantiate(const assets::Handle<assets::Prefab>& file, Instant
 		}
 
 		applyFields(*sub_root, *chunk);
+		sub_root->m_source_prefab = sub;
 
 		// Everything below an instance root is interior to that instance
 		auto mark_interior = [](this auto&& self, Node& n) -> void {
@@ -720,7 +751,7 @@ auto INodeOwner::instantiate(const assets::Handle<assets::Prefab>& file, Instant
 
 	Box<Node> root = buildTree(std::move(slots), file);
 
-	if (root.exists() && root->m_source_prefab.uid().data() == 0) {
+	if (root.exists() && root->m_source_prefab.uid().data() == 0 && file.uid().data() != 0) {
 		root->m_source_prefab = file;
 	}
 

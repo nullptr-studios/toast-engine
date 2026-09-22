@@ -48,7 +48,7 @@ void registerPhysicsSettings() {
 
 	uint_setting(
 	    "physics.solver.iterations",
-	    8,
+	    4,
 	    {.label = "Iterations",
 			 .category = "Solver",
 			 .description = "Sequential impulse passes per step",
@@ -139,6 +139,17 @@ void registerPhysicsSettings() {
 			 .step = 1.0},
 	    &Tunables::max_substeps
 	);
+	toast::settings::declareFloat(
+	    "physics.step.max_burst_seconds",
+	    0.1,
+	    {.label = "Max burst seconds",
+			 .category = "Step",
+			 .description = "Real-time budget for a fixed-step catch-up burst after its first step",
+			 .min = 0.0,
+			 .max = 1.0,
+			 .step = 0.01}
+	)
+	    .onChange([](double v) { g_tunables.max_burst_seconds = std::max(v, 0.0); });
 
 	flt("physics.broadphase.fat_margin",
 	    0.1,
@@ -151,8 +162,19 @@ void registerPhysicsSettings() {
 	    &Tunables::broadphase_fat_margin);
 
 	uint_setting(
+	    "physics.fracture.max_connectivity_jobs_per_tick",
+	    24,
+	    {.label = "Max connectivity jobs per tick",
+			 .category = "Fracture",
+			 .description = "Concurrent connectivity analyses started in one physics tick",
+			 .min = 1.0,
+			 .max = 256.0,
+			 .step = 1.0},
+	    &Tunables::max_connectivity_jobs_per_tick
+	);
+	uint_setting(
 	    "physics.fracture.max_spawns_per_step",
-	    8,
+	    24,
 	    {.label = "Max fragment spawns per step",
 			 .category = "Fracture",
 			 .description = "Fragments promoted to their own bodies in one step",
@@ -160,6 +182,17 @@ void registerPhysicsSettings() {
 			 .max = 64.0,
 			 .step = 1.0},
 	    &Tunables::max_fragment_spawns_per_step
+	);
+	uint_setting(
+	    "physics.fracture.max_active_fragments",
+	    1024,
+	    {.label = "Max active fragments",
+			 .category = "Fracture",
+			 .description = "Awake fragment budget before nearly settled debris is forced to sleep",
+			 .min = 0.0,
+			 .max = 16384.0,
+			 .step = 64.0},
+	    &Tunables::max_active_fragments
 	);
 	uint_setting(
 	    "physics.fracture.pool_headroom",
@@ -174,15 +207,44 @@ void registerPhysicsSettings() {
 	);
 	uint_setting(
 	    "physics.fracture.min_fragment_voxels",
-	    4,
+	    0,
 	    {.label = "Min fragment voxels",
 			 .category = "Fracture",
 			 .description = "Disconnected pieces smaller than this are discarded instead of becoming debris",
-			 .min = 1.0,
+			 .min = 0.0,
 			 .max = 256.0,
 			 .step = 1.0},
 	    &Tunables::min_fragment_voxels
 	);
+	uint_setting(
+	    "physics.fracture.despawn_max_voxels",
+	    16,
+	    {.label = "Despawn max voxels",
+			 .category = "Fracture",
+			 .description = "Largest settled fragment eligible for automatic despawning",
+			 .min = 0.0,
+			 .max = 1024.0,
+			 .step = 1.0},
+	    &Tunables::fragment_despawn_max_voxels
+	);
+	flt("physics.fracture.despawn_settle_seconds",
+	    3.0,
+	    {.label = "Despawn settle time",
+	     .category = "Fracture",
+	     .description = "Seconds a small fragment must remain asleep before despawning",
+	     .min = 0.0,
+	     .max = 60.0,
+	     .step = 0.25},
+	    &Tunables::fragment_despawn_settle_seconds);
+	flt("physics.fracture.force_sleep_slack",
+	    4.0,
+	    {.label = "Force sleep slack",
+	     .category = "Fracture",
+	     .description = "Multiplier on sleep velocity thresholds when enforcing the active fragment budget",
+	     .min = 1.0,
+	     .max = 64.0,
+	     .step = 0.5},
+	    &Tunables::force_sleep_slack);
 	toast::settings::declareInt(
 	    "physics.fracture.max_fragment_extent_bricks",
 	    1,
@@ -227,15 +289,15 @@ void registerPhysicsSettings() {
 	    &Tunables::min_candidates_per_job
 	);
 	uint_setting(
-	    "physics.jobs.min_islands_per_job",
-	    1,
-	    {.label = "Min islands per job",
+	    "physics.jobs.min_wave_constraints_for_dispatch",
+	    512,
+	    {.label = "Min wave constraints per dispatch",
 			 .category = "Jobs",
-			 .description = "Solver islands below this run inline",
+			 .description = "Constraint waves below this size solve inline",
 			 .min = 1.0,
-			 .max = 1024.0,
+			 .max = 65536.0,
 			 .step = 1.0},
-	    &Tunables::min_islands_per_job
+	    &Tunables::min_wave_constraints_for_dispatch
 	);
 }
 

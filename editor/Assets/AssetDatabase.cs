@@ -545,6 +545,13 @@ public static class AssetDatabase {
 	}
 
 	public static void RemoveArtworkOutputs(string uid) {
+		RemoveArtworkOutputs([uid]);
+	}
+
+	public static void RemoveArtworkOutputs(IEnumerable<string> uids) {
+		var targets = new HashSet<string>(uids, StringComparer.Ordinal);
+		if (targets.Count == 0) return;
+
 		var db = LoadArtworkDatabase();
 		var changed = false;
 		foreach (var key in db.Select(kv => kv.Key).ToList()) {
@@ -552,7 +559,7 @@ public static class AssetDatabase {
 			if (db[key] is not JsonObject entry) continue;
 			if (entry["outputs"] is not JsonArray outputs) continue;
 			for (var i = outputs.Count - 1; i >= 0; i--) {
-				if (outputs[i]?.GetValue<string>() != uid) continue;
+				if (outputs[i]?.GetValue<string>() is not { } output || !targets.Contains(output)) continue;
 				outputs.RemoveAt(i);
 				changed = true;
 			}

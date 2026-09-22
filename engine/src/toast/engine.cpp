@@ -585,6 +585,28 @@ void Engine::createAvaloniaWindow() {
 	m->renderer->start();
 }
 
+void Engine::publishPrefab(UID uid, const assets::Prefab& prefab) {
+	if (uid.data() == 0) {
+		return;
+	}
+	std::scoped_lock lock(m->owners_mutex);
+	std::vector<Workspace*> workspaces;
+	for (const auto& [_, owner] : m->owners) {
+		if (dynamic_cast<PlayWorkspace*>(owner.get())) {
+			continue;
+		}
+		if (auto* workspace = dynamic_cast<Workspace*>(owner.get())) {
+			workspace->preparePrefabReload(uid);
+			workspaces.push_back(workspace);
+		}
+	}
+	assets::AssetManager::get().replacePrefab(uid, prefab);
+	for (Workspace* workspace : workspaces) {
+		workspace->finishPrefabReload();
+	}
+	event::send<event::PrefabAssetReloaded>(uid);
+}
+
 auto Engine::createWorkspace(std::string_view type) -> std::pair<UID, std::string> {
 	UID uid;
 	uid.generate();

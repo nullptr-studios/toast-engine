@@ -343,11 +343,12 @@ auto probe(const VulkanRenderer::RenderFrame& frame, glm::vec2 cursor) -> std::o
 void Monitor::update(const VulkanRenderer::RenderFrame& frame) {
 	ZoneScoped;
 	const auto now = std::chrono::steady_clock::now();
-	const uint64_t sequence = frame.voxel_storage ? frame.voxel_storage->debugInfo().sequence : 0;
+	const VoxelStorageDebugInfo* info = frame.voxel_storage ? &frame.voxel_storage->debugInfo() : nullptr;
+	const uint64_t sequence = info != nullptr ? info->sequence : 0;
 	if (sequence != m_sequence) {
 		m_sequence = sequence;
 		m_frames_since_upload = 0;
-		if (sequence != 0) {
+		if (sequence != 0 && !info->patched) {
 			m_uploads.push_back(now);
 		}
 	} else {
@@ -419,9 +420,11 @@ void Monitor::drawOverlay(const VulkanRenderer::RenderFrame& frame) const {
 		    static_cast<size_t>(inside)
 		);
 		if (m_uploads.size() >= k_upload_churn) {
-			ImGui::TextColored(k_warn_color, "%zu uploads in the last 5 s: the scene is re-uploading", m_uploads.size());
+			ImGui::TextColored(k_warn_color, "%zu full uploads in the last 5 s: the scene is re-uploading", m_uploads.size());
 		} else {
-			ImGui::TextDisabled("Upload #%llu, %zu in the last 5 s", static_cast<unsigned long long>(m_sequence), m_uploads.size());
+			ImGui::TextDisabled(
+			    "Upload #%llu, %zu full in the last 5 s", static_cast<unsigned long long>(m_sequence), m_uploads.size()
+			);
 		}
 	}
 	ImGui::End();
@@ -453,13 +456,22 @@ void Monitor::drawPanel(const VulkanRenderer::RenderFrame& frame) const {
 	const VoxelGpuStorage& storage = *frame.voxel_storage;
 	const VoxelStorageDebugInfo& info = storage.debugInfo();
 
-	ImGui::Text(
-	    "Upload   #%llu, packed in %.2f ms on the game thread", static_cast<unsigned long long>(info.sequence), info.pack_ms
-	);
-	if (m_uploads.size() >= k_upload_churn) {
-		ImGui::TextColored(k_warn_color, "%zu uploads in the last 5 s: the scene is re-uploading", m_uploads.size());
+	if (info.patched) {
+		ImGui::Text(
+		    "Upload   #%llu, patched %u bricks in %.2f ms on the game thread",
+		    static_cast<unsigned long long>(info.sequence),
+		    info.patched_bricks,
+		    info.pack_ms
+		);
 	} else {
-		ImGui::TextDisabled("%zu in the last 5 s, %u rendered frames ago", m_uploads.size(), m_frames_since_upload);
+		ImGui::Text(
+		    "Upload   #%llu, packed in %.2f ms on the game thread", static_cast<unsigned long long>(info.sequence), info.pack_ms
+		);
+	}
+	if (m_uploads.size() >= k_upload_churn) {
+		ImGui::TextColored(k_warn_color, "%zu full uploads in the last 5 s: the scene is re-uploading", m_uploads.size());
+	} else {
+		ImGui::TextDisabled("%zu full in the last 5 s, %u rendered frames ago", m_uploads.size(), m_frames_since_upload);
 	}
 	ImGui::TextDisabled("%u pool slots, %u palettes, %u records", info.packed_slots, info.packed_palettes, storage.recordCount());
 	ImGui::TextDisabled("CPU mirror %s", info.mirror ? "kept for the cursor probe" : "off, kept only while a voxel view is active");
