@@ -181,7 +181,7 @@ auto writeVoxIntermediates(const std::filesystem::path& source, const std::files
 			    json["hidden"] = hidden;
 			    json["type"] = "toast::VoxelNode";
 			    json["model"] = file_by_model[*node.model];
-			    json["mobility"] = 0;    // VoxelMobility::static_geometry since world/ cannot be included here
+			    json["indestructible"] = true;
 			    voxWriteTransform(
 			        json, voxTransformOf(local.orientation, voxPlacementOf(local, scene.models[*node.model].dims).offset)
 			    );
@@ -213,7 +213,7 @@ auto writeVoxIntermediates(const std::filesystem::path& source, const std::files
 			json["type"] = "toast::VoxelNode";
 			json["hidden"] = false;
 			json["model"] = file_by_model[i];
-			json["mobility"] = 0;
+			json["indestructible"] = true;
 			voxWriteTransform(
 			    json, voxTransformOf(voxel::LatticeOrientation {}, voxPlacementOf(VoxTransform {}, scene.models[i].dims).offset)
 			);
@@ -299,7 +299,7 @@ void voxManifestToPrefab(const std::filesystem::path& manifest_path, const std::
 			if (palette_uid.has_value()) {
 				basic.fields.push_back({"m_palette", toast::FieldType::uid_t, false, *palette_uid});
 			}
-			basic.fields.push_back({"m_mobility", toast::FieldType::int_t, false, node.value("mobility", 0)});
+			basic.fields.push_back({"indestructible", toast::FieldType::bool_t, false, node.value("indestructible", true)});
 		}
 
 		prefab.nodes.push_back(std::move(basic));

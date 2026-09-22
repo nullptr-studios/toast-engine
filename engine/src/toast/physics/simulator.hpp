@@ -154,6 +154,18 @@ private:
 		std::vector<size_t> manifold_indices;
 	};
 
+	struct FragmentRecord {
+		BodyID body;
+		ShapeID shape;
+		uint64_t sequence = 0;
+	};
+
+	struct PendingFragments {
+		ShapeID shape;
+		std::vector<DetachedComponent> components;
+		size_t cursor = 0;
+	};
+
 	struct PhysicsStepProfile {
 		std::array<size_t, static_cast<size_t>(NarrowPhasePairType::count)> narrow_pair_candidates = {};
 		size_t narrow_jobs = 0;
@@ -175,6 +187,18 @@ private:
 		size_t island_jobs = 0;
 		size_t invalid_constraints = 0;
 		size_t position_corrections = 0;
+
+		size_t damage_commands = 0;
+		size_t dirty_bricks = 0;
+		size_t surface_bricks_repaired = 0;
+		size_t connectivity_jobs = 0;
+		size_t fragments_spawned = 0;
+		size_t fragments_pending = 0;
+		size_t fragments_active = 0;
+		size_t fragments_sleep_locked = 0;
+		size_t fragments_evicted = 0;
+		uint32_t bricks_allocated = 0;
+		uint32_t bricks_free = 0;
 	};
 
 	struct IslandSolveStats {
@@ -289,12 +313,22 @@ private:
 	static auto solveFriction(Constraint& constraint, Body& body_a, Body& body_b) -> bool;
 	[[nodiscard]]
 	auto correctPositions(std::span<const size_t> manifold_indices) -> size_t;
-	void publishProfile(std::span<const SimulationIsland> islands) const;
+	void publishProfile(std::span<const SimulationIsland> islands);
 
 	void clearFragmentFromSource(ShapeID shape_id, VoxelShapeData& data, voxel::Volume& source, const DetachedComponent& component);
-	void spawnFragmentBody(ShapeID source_shape_id, const DetachedComponent& component);
+	[[nodiscard]]
+	auto spawnFragmentBody(ShapeID source_shape_id, const DetachedComponent& component) -> bool;
 	void retireVoxelBody(BodyID id);
 	void destroyFragmentsOf(BodyID origin);
+
+	void reapFragments();
+	void destroyFragmentRecord(BodyID id);
+	void queuePendingFragments(std::span<const ConnectivityResult> results);
+	void spawnBudgetedFragments();
+	[[nodiscard]]
+	auto reconcileComponent(const voxel::Volume& volume, const DetachedComponent& component) const -> bool;
+	void enforceFragmentBudget();
+	void unlockSleep(BodyID id);
 	auto createVoxelShapeInternal(
 	    BodyID owner, const VoxelShape& shape, voxel::Volume* external, std::unique_ptr<voxel::Volume> owned,
 	    const voxel::Palette& palette, const voxel::MaterialLibrary& materials
@@ -328,6 +362,11 @@ private:
 	std::mutex m_damage_mutex;
 	std::vector<DamageCommand> m_damage_commands;
 	std::vector<DebugDirtyBrick> m_debug_dirty_bricks;
+
+	uint64_t m_next_fragment_sequence = 1;
+	std::vector<FragmentRecord> m_fragments;
+	std::vector<PendingFragments> m_pending_fragments;
+	std::vector<BodyID> m_doomed_fragments;
 };
 
 }

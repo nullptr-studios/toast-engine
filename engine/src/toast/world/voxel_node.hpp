@@ -29,11 +29,6 @@ class Simulator;
 
 namespace toast {
 
-enum class VoxelMobility : uint8_t {
-	static_geometry = 0,
-	dynamic = 1,
-};
-
 class [[ToastNode, Icon("BoxMesh")]] TOAST_API VoxelNode : public Node3D {
 	friend class physics::Simulator;
 
@@ -65,13 +60,6 @@ public:
 	}
 
 	void setPalette(assets::Handle<assets::VoxelPalette> palette);
-
-	[[nodiscard]]
-	auto mobility() const noexcept -> VoxelMobility {
-		return m_mobility;
-	}
-
-	void setMobility(VoxelMobility mobility) noexcept { m_mobility = mobility; }
 
 	/// @returns the override else the model palette else 0
 	[[nodiscard]]
@@ -155,9 +143,6 @@ private:
 
 	[[Reflect, Name("Palette Override")]]
 	assets::Handle<assets::VoxelPalette> m_palette;
-
-	[[Reflect, Name("Mobility"), Enum("Static", "Dynamic")]]
-	VoxelMobility m_mobility = VoxelMobility::static_geometry;
 
 	[[Reflect]]
 	bool indestructible = false;

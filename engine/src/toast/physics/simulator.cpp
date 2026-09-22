@@ -30,6 +30,10 @@ constexpr float sleep_angular_threshold_squared = 0.05f * 0.05f;
 constexpr float sleep_delay = 0.5f;
 constexpr float unit_scale_tolerance = 1.0e-4f;
 
+constexpr size_t k_max_fragment_spawns_per_step = 8;
+constexpr size_t k_max_active_fragments = 96;
+constexpr uint32_t k_fragment_pool_headroom = 4096;
+
 // TODO: do this but with materials
 [[nodiscard]]
 auto placeholderMaterialLibrary() -> const voxel::MaterialLibrary& {
@@ -287,7 +291,7 @@ void Simulator::registerVoxelNode(toast::VoxelNode& node) {
 	// }
 
 	node.syncTransform();
-	const bool dynamic_body = node.mobility() == toast::VoxelMobility::dynamic;
+	const bool dynamic_body = not node.indestructible;
 	const BodyID body = instance->createBody(
 	    BodyDescriptor {
 	      .type = dynamic_body ? BodyType::dynamic_body : BodyType::static_body,
@@ -396,33 +400,13 @@ void Simulator::tick() {
 	m_profile = {};
 
 	const float dt = static_cast<float>(Accumulator::fixed_delta);
+	reapFragments();
 	syncEnabledState();
 	applyDamageCommands();
 	auto connectivity_results = runConnectivityAnalysis();
-	for (const auto& r : connectivity_results) {
-		const Shape* shape = tryGetShape(r.shape);
-		if (shape == nullptr || shape->type != ShapeType::voxel) {
-			continue;
-		}
-		VoxelShapeData* data = tryGetVoxelData(shape->voxel.data);
-		if (data == nullptr || data->volume == nullptr) {
-			continue;
-		}
-
-		const glm::uvec3 brick_dims = data->volume->brickDims();
-		const std::vector<ComponentClass> classes = classifyComponents(r.connectivity, brick_dims, data->anchor_mask);
-		data->detached_components = buildDetachedComponents(r.connectivity, classes, brick_dims);
-
-		std::vector<DetachedComponent> components_to_spawn = data->detached_components;
-		const Body* source_body = tryGetBody(shape->owner);
-		if (source_body != nullptr && source_body->type == BodyType::dynamic_body && not components_to_spawn.empty()) {
-			components_to_spawn.erase(std::ranges::max_element(components_to_spawn, {}, &DetachedComponent::voxel_count));
-		}
-
-		for (const DetachedComponent& component : components_to_spawn) {
-			spawnFragmentBody(r.shape, component);
-		}
-	}
+	queuePendingFragments(connectivity_results);
+	spawnBudgetedFragments();
+	enforceFragmentBudget();
 	integrate(dt);
 
 	{
@@ -448,7 +432,7 @@ void Simulator::tick() {
 	FrameMarkNamed("PhysicsStep");
 }
 
-void Simulator::publishProfile(std::span<const SimulationIsland> islands) const {
+void Simulator::publishProfile(std::span<const SimulationIsland> islands) {
 	ZoneScopedN("physics::PublishProfile");
 	(void)islands;
 }
@@ -456,32 +440,35 @@ void Simulator::publishProfile(std::span<const SimulationIsland> islands) const 
 void Simulator::clearFragmentFromSource(
     ShapeID shape_id, VoxelShapeData& data, voxel::Volume& source, const DetachedComponent& component
 ) {
+	ZoneScoped;
+
 	std::vector<glm::ivec3> dirty_bricks;
 
-	for (const auto& p : component.pieces) {
-		dirty_bricks.emplace_back(p.brick);
+	{
+		std::scoped_lock voxel_lock {voxelDataMutex()};
 
-		for (uint32_t i = 0; i < voxel::k_brick_voxel_count; ++i) {
-			if (not voxel::isSolid(p.voxels, i)) {
-				continue;
-			}
+		for (const auto& p : component.pieces) {
+			dirty_bricks.emplace_back(p.brick);
 
-			auto coords = voxel::localFromIndex(i);
-			glm::ivec3 pos = p.brick * static_cast<int32_t>(voxel::k_brick_dim) + glm::ivec3(coords.x, coords.y, coords.z);
-			uint8_t palette_index = source.materialAt(pos);
-			uint32_t material_index = voxel::resolveMaterialIndex(data.palette, data.materials, palette_index);
-			uint16_t density = data.materials.materials[material_index].density;
+			for (uint32_t i = 0; i < voxel::k_brick_voxel_count; ++i) {
+				if (not voxel::isSolid(p.voxels, i)) {
+					continue;
+				}
 
-			if (source.setVoxel(pos, voxel::k_empty_palette_index).changed) {
-				data.moments.remove(pos.x, pos.y, pos.z, density);
-				data.solid_voxel_count -= data.solid_voxel_count > 0 ? 1u : 0u;
+				auto coords = voxel::localFromIndex(i);
+				glm::ivec3 pos = p.brick * static_cast<int32_t>(voxel::k_brick_dim) + glm::ivec3(coords.x, coords.y, coords.z);
+				uint8_t palette_index = source.materialAt(pos);
+				uint32_t material_index = voxel::resolveMaterialIndex(data.palette, data.materials, palette_index);
+				uint16_t density = data.materials.materials[material_index].density;
+
+				if (source.setVoxel(pos, voxel::k_empty_palette_index).changed) {
+					data.moments.remove(pos.x, pos.y, pos.z, density);
+					data.solid_voxel_count -= data.solid_voxel_count > 0 ? 1u : 0u;
+				}
 			}
 		}
-	}
 
-	for (const auto& b : dirty_bricks) {
-		data.surface.repairBrickRegion(source, b);
-		source.tryCollapseUniform(b);
+		data.surface.repairBricks(source, dirty_bricks);
 	}
 
 	++data.surface_revision;
@@ -520,6 +507,13 @@ void Simulator::retireVoxelBody(BodyID id) {
 	for (ShapeSlot& slot : m_shapes) {
 		if (slot.occupied && slot.shape.owner == id) {
 			slot.shape.enabled = false;
+
+			if (slot.shape.type == ShapeType::voxel) {
+				const VoxelShapeData* data = tryGetVoxelData(slot.shape.voxel.data);
+				if (data != nullptr && data->fragment_sequence != 0) {
+					m_doomed_fragments.push_back(id);
+				}
+			}
 		}
 	}
 }
@@ -532,34 +526,208 @@ void Simulator::destroyFragmentsOf(BodyID origin) {
 	}
 
 	std::vector<BodyID> doomed;
-	for (const ShapeSlot& slot : m_shapes) {
-		if (not slot.occupied || slot.shape.type != ShapeType::voxel) {
-			continue;
-		}
-		const VoxelShapeData* data = tryGetVoxelData(slot.shape.voxel.data);
+	for (const FragmentRecord& record : m_fragments) {
+		const Shape* shape = tryGetShape(record.shape);
+		const VoxelShapeData* data = shape != nullptr ? tryGetVoxelData(shape->voxel.data) : nullptr;
 		if (data == nullptr || data->fragment_origin != origin) {
 			continue;
 		}
-		doomed.push_back(slot.shape.owner);
+		doomed.push_back(record.body);
 	}
 
 	for (const BodyID body : doomed) {
-		destroyBody(body);
+		destroyFragmentRecord(body);
+	}
+
+	std::erase_if(m_pending_fragments, [this](const PendingFragments& pending) { return not valid(pending.shape); });
+}
+
+void Simulator::destroyFragmentRecord(BodyID id) {
+	destroyBody(id);
+	std::erase_if(m_fragments, [id](const FragmentRecord& record) { return record.body == id; });
+}
+
+void Simulator::reapFragments() {
+	ZoneScopedN("physics::ReapFragments");
+
+	for (const BodyID id : m_doomed_fragments) {
+		destroyFragmentRecord(id);
+	}
+	m_doomed_fragments.clear();
+
+	std::erase_if(m_fragments, [this](const FragmentRecord& record) { return not valid(record.body); });
+	std::erase_if(m_pending_fragments, [this](const PendingFragments& pending) { return not valid(pending.shape); });
+
+	while (not m_fragments.empty() && voxel::runtimeBrickPool().freeCount() < k_fragment_pool_headroom) {
+		destroyFragmentRecord(m_fragments.front().body);
+		++m_profile.fragments_evicted;
 	}
 }
 
-void Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedComponent& component) {
+void Simulator::queuePendingFragments(std::span<const ConnectivityResult> results) {
+	ZoneScopedN("physics::QueueFragments");
+
+	for (const auto& r : results) {
+		const Shape* shape = tryGetShape(r.shape);
+		if (shape == nullptr || shape->type != ShapeType::voxel) {
+			continue;
+		}
+		VoxelShapeData* data = tryGetVoxelData(shape->voxel.data);
+		if (data == nullptr || data->volume == nullptr) {
+			continue;
+		}
+
+		const glm::uvec3 brick_dims = data->volume->brickDims();
+		const std::vector<ComponentClass> classes = classifyComponents(r.connectivity, brick_dims, data->anchor_mask);
+		data->detached_components = buildDetachedComponents(r.connectivity, classes, brick_dims);
+
+		std::vector<DetachedComponent> components_to_spawn = data->detached_components;
+		const Body* source_body = tryGetBody(shape->owner);
+		if (source_body != nullptr && source_body->type == BodyType::dynamic_body && not components_to_spawn.empty()) {
+			components_to_spawn.erase(std::ranges::max_element(components_to_spawn, {}, &DetachedComponent::voxel_count));
+		}
+
+		const auto existing = std::ranges::find(m_pending_fragments, r.shape, &PendingFragments::shape);
+		if (components_to_spawn.empty()) {
+			if (existing != m_pending_fragments.end()) {
+				m_pending_fragments.erase(existing);
+			}
+			continue;
+		}
+
+		if (existing != m_pending_fragments.end()) {
+			*existing = PendingFragments {.shape = r.shape, .components = std::move(components_to_spawn), .cursor = 0};
+		} else {
+			m_pending_fragments.push_back(
+			    PendingFragments {.shape = r.shape, .components = std::move(components_to_spawn), .cursor = 0}
+			);
+		}
+	}
+}
+
+auto Simulator::reconcileComponent(const voxel::Volume& volume, const DetachedComponent& component) const -> bool {
+	uint32_t surviving = 0;
+	for (const voxel::BrickPiece& piece : component.pieces) {
+		const voxel::BrickOccupancy* occupancy = volume.occupancyPointer(piece.brick);
+		if (occupancy == nullptr) {
+			continue;
+		}
+		surviving += voxel::popCount(*occupancy & piece.voxels);
+	}
+	return surviving == component.voxel_count;
+}
+
+void Simulator::spawnBudgetedFragments() {
+	ZoneScopedN("physics::SpawnFragments");
+
+	size_t spawned_this_step = 0;
+	for (auto it = m_pending_fragments.begin();
+	     it != m_pending_fragments.end() && spawned_this_step < k_max_fragment_spawns_per_step;) {
+		PendingFragments& pending = *it;
+		bool pool_full = false;
+
+		while (pending.cursor < pending.components.size() && spawned_this_step < k_max_fragment_spawns_per_step) {
+			const DetachedComponent& component = pending.components[pending.cursor];
+
+			const Shape* shape = tryGetShape(pending.shape);
+			const VoxelShapeData* data = shape != nullptr ? tryGetVoxelData(shape->voxel.data) : nullptr;
+			if (data == nullptr || data->volume == nullptr || not reconcileComponent(*data->volume, component)) {
+				++pending.cursor;
+				continue;
+			}
+
+			if (not spawnFragmentBody(pending.shape, component)) {
+				pool_full = true;
+				break;
+			}
+
+			++pending.cursor;
+			++spawned_this_step;
+		}
+
+		if (pool_full) {
+			break;
+		}
+
+		if (pending.cursor >= pending.components.size()) {
+			it = m_pending_fragments.erase(it);
+		} else {
+			++it;
+		}
+	}
+
+	m_profile.fragments_pending = 0;
+	for (const PendingFragments& pending : m_pending_fragments) {
+		m_profile.fragments_pending += pending.components.size() - pending.cursor;
+	}
+}
+
+void Simulator::enforceFragmentBudget() {
+	ZoneScopedN("physics::FragmentBudget");
+
+	size_t active = 0;
+	for (const FragmentRecord& record : m_fragments) {
+		const Body* body = tryGetBody(record.body);
+		if (body != nullptr && body->enabled && body->awake) {
+			++active;
+		}
+	}
+
+	for (const FragmentRecord& record : m_fragments) {
+		if (active <= k_max_active_fragments) {
+			break;
+		}
+		Body* body = tryGetBody(record.body);
+		if (body == nullptr || not body->enabled || not body->awake) {
+			continue;
+		}
+		body->sleep_locked = true;
+		sleepBody(record.body);
+		--active;
+	}
+
+	size_t sleep_locked = 0;
+	for (const FragmentRecord& record : m_fragments) {
+		const Body* body = tryGetBody(record.body);
+		if (body != nullptr && body->sleep_locked) {
+			++sleep_locked;
+		}
+	}
+
+	m_profile.fragments_active = active;
+	m_profile.fragments_sleep_locked = sleep_locked;
+}
+
+void Simulator::unlockSleep(BodyID id) {
+	const auto it = std::ranges::find(m_fragments, id, &FragmentRecord::body);
+	if (it == m_fragments.end()) {
+		return;
+	}
+
+	if (Body* body = tryGetBody(id)) {
+		body->sleep_locked = false;
+	}
+	wakeBody(id);
+
+	it->sequence = m_next_fragment_sequence++;
+	std::rotate(it, it + 1, m_fragments.end());
+}
+
+auto Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedComponent& component) -> bool {
+	ZoneScopedN("physics::SpawnFragment");
+	ZoneValue(static_cast<uint64_t>(component.voxel_count));
+
 	Shape* shape = tryGetShape(source_shape_id);
 	if (shape == nullptr) {
-		return;
+		return true;
 	}
 	VoxelShapeData* data = tryGetVoxelData(shape->voxel.data);
 	if (data == nullptr || data->volume == nullptr) {
-		return;
+		return true;
 	}
 	Body* body = tryGetBody(shape->owner);
 	if (body == nullptr) {
-		return;
+		return true;
 	}
 
 	glm::vec3 position = body->position;
@@ -573,10 +741,23 @@ void Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedCompone
 	voxel::MaterialLibrary materials = data->materials;
 	const BodyID origin = valid(data->fragment_origin) ? data->fragment_origin : shape->owner;
 
-	auto extracted = extractFragmentVolume(*data->volume, component);
-	const glm::uvec3 extracted_brick_dims = extracted.volume.brickDims();
-	clearFragmentFromSource(source_shape_id, *data, *data->volume, component);
+	auto extracted = [&] {
+		std::scoped_lock voxel_lock {voxelDataMutex()};
+		return extractFragmentVolume(*data->volume, component);
+	}();
 
+	if (extracted.volume.solidVoxelCount() != component.voxel_count) {
+		TOAST_WARN(
+		    "Physics",
+		    "Fragment extraction from shape {} ran out of pool bricks: expected {} voxels, got {}",
+		    source_shape_id.slot,
+		    component.voxel_count,
+		    extracted.volume.solidVoxelCount()
+		);
+		return false;
+	}
+
+	const glm::uvec3 extracted_brick_dims = extracted.volume.brickDims();
 	glm::vec3 origin_local = glm::vec3(extracted.offset) * static_cast<float>(voxel::k_brick_dim) * voxel::k_voxel_size;
 	glm::quat frag_rotation = glm::normalize(rotation * local_rotation);
 	glm::vec3 frag_pos = position + rotation * (local_center + local_rotation * origin_local);
@@ -590,20 +771,33 @@ void Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedCompone
 	// clang-format on
 
 	if (not valid(frag_body)) {
-		return;
+		return true;
 	}
 
 	const ShapeID frag_shape = createVoxelShape(frag_body, VoxelShape {}, std::move(extracted.volume), palette, materials);
 	if (not valid(frag_shape)) {
 		destroyBody(frag_body);
-		return;
+		return true;
 	}
 	if (const Shape* stored = tryGetShape(frag_shape)) {
 		if (VoxelShapeData* frag_data = tryGetVoxelData(stored->voxel.data)) {
 			frag_data->fragment_origin = origin;
+			frag_data->fragment_sequence = m_next_fragment_sequence;
 		}
 	}
+	m_fragments.push_back(FragmentRecord {.body = frag_body, .shape = frag_shape, .sequence = m_next_fragment_sequence});
+	++m_next_fragment_sequence;
+
+	shape = tryGetShape(source_shape_id);
+	if (shape != nullptr) {
+		if (VoxelShapeData* source_data = tryGetVoxelData(shape->voxel.data)) {
+			clearFragmentFromSource(source_shape_id, *source_data, *source_data->volume, component);
+		}
+	}
+
 	rebuildMassProperties(frag_body);
+
+	++m_profile.fragments_spawned;
 
 	TOAST_TRACE(
 	    "Physics",
@@ -632,6 +826,8 @@ void Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedCompone
 		glm::vec3 r = frag_com_world - world_com;
 		b->linear_velocity = linear_velocity + glm::cross(angular_velocity, r);
 	}
+
+	return true;
 }
 
 void Simulator::syncEnabledState() {
@@ -670,7 +866,7 @@ void Simulator::syncEnabledState() {
 			continue;
 		}
 
-		const bool wants_dynamic = binding.node->mobility() == toast::VoxelMobility::dynamic;
+		const bool wants_dynamic = not binding.node->indestructible;
 		if (wants_dynamic != (body->type == BodyType::dynamic_body)) {
 			voxel_nodes_to_reregister.push_back(binding.node);
 			continue;
@@ -740,6 +936,9 @@ void Simulator::wakeBody(BodyID id) {
 		return;
 	}
 	if (Body* body = instance->tryGetBody(id); body && body->type == BodyType::dynamic_body) {
+		if (body->sleep_locked) {
+			return;
+		}
 		instance->m_profile.bodies_woken += not body->awake;
 		body->awake = true;
 		body->sleep_timer = 0.0f;
@@ -2181,13 +2380,13 @@ auto Simulator::setLinearVelocity(BodyID body, const glm::vec3& velocity) -> boo
 }
 
 void Simulator::recordDamage(DamageCommand&& command) {
-	ZoneScoped;
+	ZoneScopedN("physics::RecordDamage");
 	std::scoped_lock lock {m_damage_mutex};
 	m_damage_commands.emplace_back(command);
 }
 
 void Simulator::applyDamageCommands() {
-	ZoneScoped;
+	ZoneScopedN("physics::ApplyDamageCommands");
 	m_debug_dirty_bricks.clear();
 
 	std::vector<DamageCommand> c;
@@ -2197,13 +2396,16 @@ void Simulator::applyDamageCommands() {
 		m_damage_commands.clear();
 	}
 
+	ZoneValue(static_cast<uint64_t>(c.size()));
+	m_profile.damage_commands = c.size();
+
 	for (const auto& command : c) {
 		applyDamageCommand(command);
 	}
 }
 
 void Simulator::applyDamageCommand(const DamageCommand& c) {
-	ZoneScoped;
+	ZoneScopedN("physics::ApplyDamage");
 
 	if (not mainThreadMutationAllowed()) {
 		return;
@@ -2315,11 +2517,15 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 			return;
 		}
 
+		data->surface.repairBricks(volume, dirty_bricks);
 		for (const glm::ivec3& brick : dirty_bricks) {
-			data->surface.repairBrickRegion(volume, brick);
 			m_debug_dirty_bricks.push_back({.shape = c.shape, .brick = brick});
 		}
 	}
+
+	ZoneValue(static_cast<uint64_t>(dirty_bricks.size()));
+	m_profile.dirty_bricks += dirty_bricks.size();
+	m_profile.surface_bricks_repaired += dirty_bricks.size();
 
 	++data->surface_revision;
 	incrementShapeRevision(c.shape);
@@ -2341,6 +2547,8 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 			rebuildMassProperties(shape->owner);
 		}
 	}
+
+	unlockSleep(shape->owner);
 
 	wakeBodiesInBounds(
 	    AABB {
@@ -2389,7 +2597,7 @@ void Simulator::applyExplosion(const glm::vec3& position, float radius, float en
 }
 
 auto Simulator::runConnectivityAnalysis() -> std::vector<ConnectivityResult> {
-	ZoneScoped;
+	ZoneScopedN("physics::ConnectivityAnalysis");
 
 	struct PendingJob {
 		ShapeID shape;
@@ -2425,27 +2633,33 @@ auto Simulator::runConnectivityAnalysis() -> std::vector<ConnectivityResult> {
 			.shape = id,
 			.revision = revision,
 			.future = toast::ThreadPool::push([volume] {
-				ZoneScoped;
+				ZoneScopedN("physics::ConnectivityBatch");
 				return voxel::analyseConnectivity(*volume);
 			})
 		});
 		// clang-format on
 	}
 
+	ZoneValue(static_cast<uint64_t>(pending.size()));
+	m_profile.connectivity_jobs = pending.size();
+
 	std::vector<ConnectivityResult> results;
 	results.reserve(pending.size());
-	for (auto& p : pending) {
-		auto c = p.future.get();
-		if (shapeRevision(p.shape) != p.revision) {
-			// shape was changed mid-compute, discard
-			if (const Shape* shape = tryGetShape(p.shape); shape != nullptr && shape->type == ShapeType::voxel) {
-				if (VoxelShapeData* data = tryGetVoxelData(shape->voxel.data)) {
-					data->connectivity_dirty = true;
+	{
+		ZoneScopedNC("physics::ConnectivityAwait", 0x202020);
+		for (auto& p : pending) {
+			auto c = p.future.get();
+			if (shapeRevision(p.shape) != p.revision) {
+				// shape was changed mid-compute, discard
+				if (const Shape* shape = tryGetShape(p.shape); shape != nullptr && shape->type == ShapeType::voxel) {
+					if (VoxelShapeData* data = tryGetVoxelData(shape->voxel.data)) {
+						data->connectivity_dirty = true;
+					}
 				}
+				continue;
 			}
-			continue;
+			results.emplace_back(ConnectivityResult {.shape = p.shape, .connectivity = std::move(c)});
 		}
-		results.emplace_back(ConnectivityResult {.shape = p.shape, .connectivity = std::move(c)});
 	}
 
 	return results;

@@ -7,7 +7,7 @@
 namespace voxel {
 
 auto analyseConnectivity(const Volume& volume) -> Connectivity {
-	ZoneScoped;
+	ZoneScopedN("voxel::AnalyseConnectivity");
 
 	Connectivity out;
 	const glm::uvec3 dims = volume.brickDims();

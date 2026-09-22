@@ -36,6 +36,7 @@ struct VoxelShapeData {
 	std::vector<DetachedComponent> detached_components;
 	std::unique_ptr<voxel::Volume> owned_volume;
 	BodyID fragment_origin;
+	uint64_t fragment_sequence = 0;
 };
 
 struct VoxelShapeSlot {

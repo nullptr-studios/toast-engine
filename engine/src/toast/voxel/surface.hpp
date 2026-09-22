@@ -106,9 +106,8 @@ struct SurfaceVoxel {
 
 static_assert(sizeof(SurfaceVoxel) == 4, "a surface list entry must be four bytes");
 
-/// @brief Without @p neighbours every voxel on the outer brick faces reads as exposed
-[[nodiscard]]
-inline auto buildBrickSurface(const BrickOccupancy& brick, const BrickNeighbourhood& neighbours) -> std::vector<SurfaceVoxel> {
+inline void
+    buildBrickSurfaceInto(const BrickOccupancy& brick, const BrickNeighbourhood& neighbours, std::vector<SurfaceVoxel>& out) {
 	const BrickOccupancy neg_x = neighboursNegX(brick, neighbours.neg_x);
 	const BrickOccupancy pos_x = neighboursPosX(brick, neighbours.pos_x);
 	const BrickOccupancy neg_y = neighboursNegY(brick, neighbours.neg_y);
@@ -118,8 +117,6 @@ inline auto buildBrickSurface(const BrickOccupancy& brick, const BrickNeighbourh
 
 	const BrickOccupancy shell = brick & ~(neg_x & pos_x & neg_y & pos_y & neg_z & pos_z);
 
-	std::vector<SurfaceVoxel> out;
-	out.reserve(popCount(shell));
 	for (uint32_t z = 0; z < k_brick_dim; ++z) {
 		uint64_t word = shell[z];
 		while (word != 0ull) {
@@ -140,6 +137,13 @@ inline auto buildBrickSurface(const BrickOccupancy& brick, const BrickNeighbourh
 			out.push_back(entry);
 		}
 	}
+}
+
+[[nodiscard]]
+inline auto buildBrickSurface(const BrickOccupancy& brick, const BrickNeighbourhood& neighbours) -> std::vector<SurfaceVoxel> {
+	std::vector<SurfaceVoxel> out;
+	out.reserve(popCount(brick));
+	buildBrickSurfaceInto(brick, neighbours, out);
 	return out;
 }
 
@@ -153,6 +157,8 @@ public:
 	void repairAround(const Volume& volume, glm::ivec3 voxel);
 
 	void repairBrickRegion(const Volume& volume, glm::ivec3 brick);
+
+	void repairBricks(const Volume& volume, std::span<const glm::ivec3> dirty);
 
 	[[nodiscard]]
 	auto brickSurface(glm::ivec3 brick) const -> std::span<const SurfaceVoxel>;
