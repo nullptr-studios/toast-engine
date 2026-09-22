@@ -26,9 +26,9 @@ public class PhysicsMaterialAsset : BaseAsset {
 		File.WriteAllText(path,
 			$"# Toast Physics Material\n" +
 			$"schema = \"{schemaUid}\"\n" +
-			$"restitution = 0.5\n" +
+			$"restitution = 0.1\n" +
 			$"static_friction = 0.6\n" +
-			$"dynamic_friction = 0.4\n");
+			$"dynamic_friction = 0.5\n");
 		return Task.CompletedTask;
 	}
 }

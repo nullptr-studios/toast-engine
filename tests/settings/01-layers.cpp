@@ -47,10 +47,9 @@ TOAST_TEST_NAMED("settings", "settings/01-layers", test_settings_01_layers) {
 	assert(settings.save());
 	assert(std::filesystem::exists(project_file));
 
-	// A value left at its code default is not written, so a later patch may still move it
 	const auto project_text = readAll(project_file);
 	assert(project_text.find("quality") != std::string::npos);
-	assert(project_text.find("enabled") == std::string::npos);
+	assert(project_text.find("enabled") != std::string::npos);
 
 	// Packaged game: a player's tweak lands on top without touching what shipped
 	settings.setActiveLayer(Layer::user);

@@ -48,7 +48,7 @@ void registerPhysicsSettings() {
 
 	uint_setting(
 	    "physics.solver.iterations",
-	    4,
+	    8,
 	    {.label = "Iterations",
 			 .category = "Solver",
 			 .description = "Sequential impulse passes per step",
@@ -174,7 +174,7 @@ void registerPhysicsSettings() {
 	);
 	uint_setting(
 	    "physics.fracture.max_spawns_per_step",
-	    24,
+	    8,
 	    {.label = "Max fragment spawns per step",
 			 .category = "Fracture",
 			 .description = "Fragments promoted to their own bodies in one step",
@@ -185,7 +185,7 @@ void registerPhysicsSettings() {
 	);
 	uint_setting(
 	    "physics.fracture.max_active_fragments",
-	    1024,
+	    96,
 	    {.label = "Max active fragments",
 			 .category = "Fracture",
 			 .description = "Awake fragment budget before nearly settled debris is forced to sleep",
@@ -207,11 +207,11 @@ void registerPhysicsSettings() {
 	);
 	uint_setting(
 	    "physics.fracture.min_fragment_voxels",
-	    0,
+	    4,
 	    {.label = "Min fragment voxels",
 			 .category = "Fracture",
 			 .description = "Disconnected pieces smaller than this are discarded instead of becoming debris",
-			 .min = 0.0,
+			 .min = 1.0,
 			 .max = 256.0,
 			 .step = 1.0},
 	    &Tunables::min_fragment_voxels

@@ -415,8 +415,21 @@ auto Settings::save() -> bool {
 
 	const size_t index = layerIndex(m_active_layer);
 	toml::table root;
+	if (m_active_layer == Layer::project && std::filesystem::exists(path)) {
+		try {
+			root = toml::parse_file(path.string());
+		} catch (const std::exception& e) {
+			TOAST_ERROR(k_sink, "Failed to parse {} before saving: {}", path.string(), e.what());
+			return false;
+		}
+	}
 
 	for (const auto& entry : m_entries) {
+		if (m_active_layer == Layer::project) {
+			tomlInsert(root, entry.key, entry.overrides[index].value_or(entry.default_value));
+			continue;
+		}
+
 		if (!entry.overrides[index].has_value()) {
 			continue;
 		}
@@ -451,7 +464,6 @@ auto Settings::save() -> bool {
 			TOAST_ERROR(k_sink, "Could not open {} for writing", path.string());
 			return false;
 		}
-		out << "# Toast Engine settings. Generated - edits are preserved, formatting is not.\n";
 		out << root;
 		out << '\n';
 	} catch (const std::exception& e) {

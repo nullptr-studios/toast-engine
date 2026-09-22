@@ -35,7 +35,8 @@ TOAST_TEST_NAMED("settings", "settings/02-undeclared-keys", test_settings_02_und
 
 	{
 		std::ofstream out(project_file);
-		out << "[test.pending]\nlate = 7\nforeign = \"kept\"\n";
+		out << "name = \"Settings Test\"\ndatabases = [\"assets\", \"dlc\"]\n"
+		       "[test.pending]\nlate = 7\nforeign = \"kept\"\n";
 	}
 
 	auto& settings = Settings::get();
@@ -49,7 +50,12 @@ TOAST_TEST_NAMED("settings", "settings/02-undeclared-keys", test_settings_02_und
 
 	// Nothing declares this one, and a save must not prune it
 	assert(settings.save());
-	assert(readAll(project_file).find("foreign") != std::string::npos);
+	const auto project_text = readAll(project_file);
+	assert(project_text.find("foreign") != std::string::npos);
+	assert(project_text.find("Settings Test") != std::string::npos);
+	assert(project_text.find("databases") != std::string::npos);
+	assert(project_text.find("assets") != std::string::npos);
+	assert(project_text.find("dlc") != std::string::npos);
 
 	std::filesystem::remove_all(dir);
 }

@@ -17,14 +17,14 @@
       "type": "number",
       "x-toast-type" : "float",
       "x-toast-unit" : "J",
-      "default" : 100.0,
+      "default" : 1000.0,
       "minimum" : 0
     },
     "structural_strength": {
       "type": "number",
       "x-toast-type" : "float",
       "x-toast-unit" : "Pa",
-      "default" : 0.0,
+      "default" : 1000.0,
       "minimum" : 0
     },
     "shatter_radius": {

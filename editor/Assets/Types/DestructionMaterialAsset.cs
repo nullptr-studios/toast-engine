@@ -27,8 +27,8 @@ public class DestructionMaterialAsset : BaseAsset {
 			$"# Toast Destruction Material\n" +
 			$"schema = \"{schemaUid}\"\n" +
 			$"density = 1000.0\n" +
-			$"toughness = 100.0\n" +
-			$"structural_strength = 0.0\n" +
+			$"toughness = 1000.0\n" +
+			$"structural_strength = 1000.0\n" +
 			$"shatter_radius = 0.5\n" +
 			$"flammable = false\n" +
 			$"burn_rate = 0.0\n");

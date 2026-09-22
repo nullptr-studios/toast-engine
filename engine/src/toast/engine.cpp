@@ -145,8 +145,8 @@ void Engine::init() {
 	registerEngineTypes();
 
 	// Find the first .toast project file in the project root and load settings
+	std::filesystem::path toast_path;
 	{
-		std::filesystem::path toast_path;
 		const auto& proj_root = assets::AssetManager::projectRoot();
 		if (!proj_root.empty() && std::filesystem::is_directory(proj_root)) {
 			for (const auto& entry : std::filesystem::directory_iterator(proj_root)) {
@@ -179,7 +179,7 @@ void Engine::init() {
 			SDL_free(pref_path);
 		}
 
-		settings.setPaths(proj_root / "settings.toml", user_file);
+		settings.setPaths(toast_path, user_file);
 		settings.load();
 
 		// Before the renderer exists, ShadowPass reads its resolution when it allocates, so this cannot wait

@@ -97,15 +97,7 @@ auto chunkConstraintWave(std::span<const std::span<Constraint>> spans, size_t jo
 auto placeholderMaterialLibrary() -> const voxel::MaterialLibrary& {
 	static const voxel::MaterialLibrary library = [] {
 		voxel::MaterialLibrary lib;
-		lib.materials.assign(
-		    voxel::k_max_physical_materials,
-		    voxel::PhysicalMaterial {
-		      .density = 1000,
-		      .toughness = 1000.0f,
-		      .structural_strength = 1000.0f,
-		      .shatter_radius = 0.5f,
-		    }
-		);
+		lib.materials.assign(voxel::k_max_physical_materials, voxel::PhysicalMaterial {});
 		return lib;
 	}();
 	return library;
