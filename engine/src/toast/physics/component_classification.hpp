@@ -13,8 +13,6 @@
 
 namespace physics {
 
-inline constexpr uint32_t k_min_fragment_voxels = 4;
-
 enum class ComponentClass : uint8_t {
 	anchored,
 	detached,

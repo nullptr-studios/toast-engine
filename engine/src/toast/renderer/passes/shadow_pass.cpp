@@ -7,6 +7,7 @@
 #include "shadow_pass.hpp"
 
 #include "../descriptor_writer.hpp"
+#include "../frustum.hpp"
 #include "../shader_cache.hpp"
 #include "../voxel_gpu_storage.hpp"
 #include "../vulkan_core.hpp"
@@ -554,7 +555,7 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, uint32_t frame
 		return reaches(group, voxel_proxies[index].bounds_center, voxel_proxies[index].bounds_radius);
 	};
 
-	const auto signature_of = [&](const LayerGroup& group) -> std::optional<uint64_t> {
+	const auto signature_of = [&](const LayerGroup& group, std::vector<VoxelCaster>& eligible_voxels) -> std::optional<uint64_t> {
 		ShadowSignature signature;
 		for (uint32_t i = 0; i < group.layer_count; ++i) {
 			const auto* member = layer_views[group.base_layer + i];
@@ -575,7 +576,6 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, uint32_t frame
 
 		// Summed since voxel proxies are sorted by camera distance and a static light must not re-render as the camera moves
 		uint64_t voxel_casters = 0;
-		bool any_voxel = false;
 		for (size_t index = 0; index < m_voxel_instance_count; ++index) {
 			if (!voxel_eligible(group, index)) {
 				continue;
@@ -584,13 +584,36 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, uint32_t frame
 			caster.add(voxel_proxies[index].node_uid);
 			caster.add(voxel_proxies[index].model);
 			voxel_casters += caster.value;
-			any_voxel = true;
+			eligible_voxels.push_back({.node_uid = voxel_proxies[index].node_uid, .model = voxel_proxies[index].model});
 		}
-		if (any_voxel) {
+		if (!eligible_voxels.empty()) {
 			signature.add(voxel_casters);
-			signature.add(frame->voxel_storage->generation());
 		}
 		return signature.value;
+	};
+
+	const std::optional<uint64_t> voxel_generation =
+	    frame->voxel_storage != nullptr ? std::optional {frame->voxel_storage->generation()} : std::nullopt;
+
+	/// A region published since the group last matched reaches one of its views
+	const auto voxel_changed = [&](const LayerGroup& group) -> bool {
+		if (!group.voxel_generation.has_value() || frame->voxel_storage == nullptr) {
+			return true;
+		}
+
+		std::array<FrustumPlanes, shadows::k_cube_faces> view_planes;
+		size_t view_count = 0;
+		for (uint32_t i = 0; i < group.layer_count && view_count < view_planes.size(); ++i) {
+			if (const auto* member = layer_views[group.base_layer + i]; member != nullptr) {
+				view_planes[view_count++] = extractFrustumPlanes(member->view_projection);
+			}
+		}
+		return regionsReach(
+		    frame->voxel_storage->changeHistory(),
+		    *group.voxel_generation,
+		    m_voxel_eligible,
+		    std::span {view_planes.data(), view_count}
+		);
 	};
 
 	enum class GroupWork : uint8_t {
@@ -603,13 +626,20 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, uint32_t frame
 	std::vector<std::optional<uint64_t>> group_signatures(map.groups.size());
 	bool any_layer_recorded = false;
 	for (size_t g = 0; g < map.groups.size(); ++g) {
-		const auto& group = map.groups[g];
+		auto& group = map.groups[g];
 		if (!occupied(group)) {
 			group_work[g] = group.dirty ? GroupWork::clear : GroupWork::skip;
 		} else {
-			group_signatures[g] = signature_of(group);
-			if (group_signatures[g].has_value() && group.signature == group_signatures[g]) {
+			m_voxel_eligible.clear();
+			group_signatures[g] = signature_of(group, m_voxel_eligible);
+			const bool has_voxels = !m_voxel_eligible.empty();
+			const bool matches = group_signatures[g].has_value() && group.signature == group_signatures[g];
+			if (matches && !(has_voxels && voxel_changed(group))) {
 				++m_cached_count;
+				if (has_voxels && group.voxel_generation != voxel_generation) {
+					++m_voxel_spared_count;
+				}
+				group.voxel_generation = voxel_generation;
 			} else {
 				group_work[g] = GroupWork::render;
 			}
@@ -655,6 +685,7 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, uint32_t frame
 		const bool render = group_work[g] == GroupWork::render;
 		group.dirty = render;
 		group.signature = render ? group_signatures[g] : std::nullopt;
+		group.voxel_generation = render ? voxel_generation : std::nullopt;
 
 		const VulkanRenderer::ShadowView* view = render ? layer_views[group.base_layer] : nullptr;
 		const uint32_t view_index = layer_view_indices[group.base_layer];
@@ -841,6 +872,7 @@ void ShadowPass::recordPre(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t
 	m_draw_count = 0;
 	m_pass_count = 0;
 	m_cached_count = 0;
+	m_voxel_spared_count = 0;
 
 	if (target.ubo.gpu_buffer.has_value()) {
 		ShadowUBO ubo {};

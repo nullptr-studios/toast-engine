@@ -6,6 +6,7 @@
  */
 
 #pragma once
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <toast/log.hpp>
@@ -18,6 +19,9 @@ struct StepResult {
 	unsigned steps = 0;
 	double alpha = 0.0;
 	bool dropped_time = false;
+
+	/// The loop stopped early on max_burst_seconds so a slow tick shrinks its own catch up allowance
+	bool time_budget_reached = false;
 };
 
 class Accumulator {
@@ -27,6 +31,9 @@ public:
 	static constexpr double fixed_delta = 1.0 / frequency;
 	static constexpr unsigned max_steps = 8;
 
+	/// Real time cap on one catch up burst once the first step has already run
+	static constexpr double max_burst_seconds = 0.1;
+
 	template<typename Fn>
 	auto tick(double dt, Fn&& fn) -> StepResult {
 		ZoneScopedN("physics::Accumulator");
@@ -34,8 +41,17 @@ public:
 		m_accumulator += dt;
 
 		StepResult result;
+		const auto burst_start = std::chrono::steady_clock::now();
 
 		while (m_accumulator >= fixed_delta && result.steps < max_steps) {
+			if (result.steps > 0) {
+				const auto elapsed = std::chrono::duration<double>(std::chrono::steady_clock::now() - burst_start).count();
+				if (elapsed >= max_burst_seconds) {
+					result.time_budget_reached = true;
+					break;
+				}
+			}
+
 			fn();
 
 			m_accumulator -= fixed_delta;

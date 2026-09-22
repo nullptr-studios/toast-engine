@@ -103,8 +103,9 @@ void World::tick() {
 
 	m_scheduler.runPhase(m_scheduler.schedule.tick, TickFunctionList::tick, "tick");
 
-	m_accumulator.tick(Time::delta(), [&]() { physics::Simulator::callTick(); });
-	// TODO: Is this class really needed?
+	const auto step_result = m_accumulator.tick(Time::delta(), [&]() { physics::Simulator::callTick(); });
+	physics::Simulator::recordTickBurst(step_result.steps, step_result.time_budget_reached);
+	// TODO Is this class really needed?
 	m_scheduler.runPhase(m_scheduler.schedule.post_physics, TickFunctionList::post_physics, "post_physics");
 
 	m_scheduler.runPhase(m_scheduler.schedule.late_tick, TickFunctionList::late_tick, "late_tick");
@@ -233,7 +234,7 @@ void World::spawn(UID prefab, Node& parent) {
 			return;
 		}
 
-		// spawned instances need a unique UID within the parent's namespace
+		// spawned instances need a unique UID within the parent namespace
 		// even if two copies of the same prefab are spawned concurrently
 		generateUid(*root);
 		root->propagateCallTick(root->info(), TickFunctionList::init);
@@ -533,7 +534,7 @@ auto World::searchFrom(const Node& origin, std::string_view query) -> std::vecto
 
 	std::vector<Box<Node>> out;
 
-	// "global" with no path lists the world's global nodes
+	// "global" with no path lists the world global nodes
 	if (pq.root == QueryRoot::global && pq.segments.empty()) {
 		out.reserve(trees.global.size());
 		for (auto& g : trees.global) {
@@ -839,7 +840,7 @@ auto World::moveToCached(Node& node) -> Box<Node> {
 	node.enabled(false);
 	node.propagateCallTick(node.info(), TickFunctionList::end);
 
-	// ensure there's only root nodes or children nodes, no world_root
+	// ensure there is only root nodes or children nodes, no world_root
 	// world_root only exists in global and root
 	if (node.m_type == NodeType::world_root) {
 		node.m_type = NodeType::root;
@@ -1137,9 +1138,8 @@ void WorldTestAccess::registerDependency(Node& from, Node& to) {
 }
 
 void WorldTestAccess::addTickStage(Node& node, TickFunctionList stage) {
-	// Test-only: fabricate a per-instance NodeInfo carrying the requested tick flags so the
-	// scheduler (which reads m_info) treats this node as participating in `stage`. Real nodes
-	// get their NodeInfo from the type registry instead.
+	// Test-only fabricated per-instance NodeInfo so the scheduler treats this node as participating
+	// in stage since real nodes get their NodeInfo from the type registry instead
 	NodeInfo& info = testNodeInfos()[&node];
 	info.type = "test::Node";
 	info.functions.list = info.functions.list | stage;

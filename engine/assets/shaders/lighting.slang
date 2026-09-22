@@ -84,15 +84,16 @@ struct ClusterParams
 {
     float4x4 inverseProjection;
     uint4 clusterDims;         // xyz dims w max lights per cluster
-    float4 screenSizeNearFar;  // xy screen size z near w far
-    uint lightCount;
-    float3 _pad0;
+    float4 screenSizeNearFar;  // xy screen size z camera near w camera far
+    float4 sliceDepth;         // x log range start y log range end z slices per log unit
+    uint4 lightCounts;         // x light count
 };
 
 struct GpuLight
 {
     float4 worldPosRange;
     float4 viewPosType;     // w type 0 point 1 spot
+    float4 viewDirection;   // xyz view space spot axis
     float4 colorIntensity;
     float4 directionPad;    // w shadow layer or -1
     float4 coneAngles;      // x cos outer y cos inner z shadow near w shadow far
@@ -695,13 +696,12 @@ ClusterCell clusterCellAt(float viewSpaceZ, float2 pixel)
     surface.pixel = pixel;
 
     float dist = max(-surface.viewSpaceZ, gClusterParams.screenSizeNearFar.z);
-    float near = gClusterParams.screenSizeNearFar.z;
-    float far = gClusterParams.screenSizeNearFar.w;
     uint dimX = gClusterParams.clusterDims.x;
     uint dimY = gClusterParams.clusterDims.y;
     uint dimZ = gClusterParams.clusterDims.z;
 
-    uint zSlice = uint(clamp(log(dist / near) * float(dimZ) / log(far / near), 0.0, float(dimZ - 1)));
+    uint zSlice = uint(clamp(
+        log(dist / gClusterParams.sliceDepth.x) * gClusterParams.sliceDepth.z, 0.0, float(dimZ - 1)));
 
     float2 tileSize = gClusterParams.screenSizeNearFar.xy / float2(dimX, dimY);
     uint2 tile = uint2(clamp(surface.pixel / tileSize, float2(0.0, 0.0), float2(dimX - 1, dimY - 1)));
@@ -712,7 +712,7 @@ ClusterCell clusterCellAt(float viewSpaceZ, float2 pixel)
     uint lightCountInCluster = 0;
     if (clusterIndex < clusterCount)
     {
-        lightCountInCluster = gClusterLightGrid[clusterIndex];
+        lightCountInCluster = min(gClusterLightGrid[clusterIndex], gClusterParams.clusterDims.w);
     }
 
     ClusterCell cell;
@@ -898,11 +898,17 @@ ShadingResult evaluateLighting(Surface surface, ClusterCell cluster)
     uint shadowCasterIndex = uint(gCamera.shadowParams.x) - 1;
 
     float debugMinShadow = 1.0;
+    bool shadowDebugView = gCamera.renderModePad.x == 19;
 
     for (uint di = 0; di < gCamera.directionalLightCountPad.x; ++di)
     {
         DirectionalLightGpu light = gCamera.directionalLights[di];
         float3 L = normalize(-light.direction.xyz);
+        if (dot(N, L) <= 0.0 && !shadowDebugView)
+        {
+            continue;
+        }
+
         float3 radiance = light.colorIntensity.rgb * light.colorIntensity.a;
 
         float shadow = 1.0;
@@ -941,6 +947,12 @@ ShadingResult evaluateLighting(Surface surface, ClusterCell cluster)
             {
                 float cosAngle = dot(-L, normalize(light.directionPad.xyz));
                 atten *= smoothstep(light.coneAngles.x, light.coneAngles.y, cosAngle);
+            }
+
+            // Zero contribution so skip before any shadow or ray work
+            if ((atten <= 0.0 || dot(N, L) <= 0.0) && !shadowDebugView)
+            {
+                continue;
             }
 
             float shadow;

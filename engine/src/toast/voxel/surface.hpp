@@ -76,10 +76,11 @@ inline auto classifyFromNeighbours(
 		return packClassification(VoxelClass::inside, k_normal_undefined);
 	}
 
+	// subtracting flags cancels to (0,0,0) for an isolated voxel which reads as undefined and gets dropped
 	const glm::ivec3 direction(
-	    static_cast<int>(!solid_pos_x) - static_cast<int>(!solid_neg_x),
-	    static_cast<int>(!solid_pos_y) - static_cast<int>(!solid_neg_y),
-	    static_cast<int>(!solid_pos_z) - static_cast<int>(!solid_neg_z)
+	    !solid_pos_x ? 1 : (!solid_neg_x ? -1 : 0),
+	    !solid_pos_y ? 1 : (!solid_neg_y ? -1 : 0),
+	    !solid_pos_z ? 1 : (!solid_neg_z ? -1 : 0)
 	);
 	const uint8_t normal = normalIndexOf(direction);
 

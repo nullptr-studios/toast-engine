@@ -586,50 +586,57 @@ struct BoxSatContacts {
 	std::vector<ContactCandidate> candidates;
 };
 
+auto boxSatContactsFromAxis(
+    const WorldBox& box_a, const WorldBox& box_b, const BoxSatResult& best_axis, const glm::vec3& center_delta
+) -> BoxSatContacts;
+
 auto collideWorldBoxes(const WorldBox& box_a, const WorldBox& box_b) -> std::optional<BoxSatContacts> {
 	glm::vec3 center_delta = box_b.center - box_a.center;
 	BoxSatResult best_axis;
 	bool separated = false;
 
-	auto test_axis = [&](glm::vec3 axis, BoxAxisType type, int axis_a, int axis_b) {
-		float length_squared = glm::dot(axis, axis);
-		if (length_squared <= parallel_axis_epsilon_sq) {
-			return;
-		}
+	// A negative hint means compute the projection radius the general way since extent is never negative
+	auto test_axis =
+	    [&](glm::vec3 axis, BoxAxisType type, int axis_a, int axis_b, float radius_a_hint = -1.0f, float radius_b_hint = -1.0f) {
+		    float length_squared = glm::dot(axis, axis);
+		    if (length_squared <= parallel_axis_epsilon_sq) {
+			    return;
+		    }
 
-		axis /= std::sqrt(length_squared);
-		float radius_a = boxProjectionRadius(box_a, axis);
-		float radius_b = boxProjectionRadius(box_b, axis);
-		float center_distance = std::abs(glm::dot(center_delta, axis));
-		float overlap = radius_a + radius_b - center_distance;
-		if (overlap < -contact_tolerance) {
-			separated = true;
-			return;
-		}
+		    axis /= std::sqrt(length_squared);
+		    float radius_a = radius_a_hint >= 0.0f ? radius_a_hint : boxProjectionRadius(box_a, axis);
+		    float radius_b = radius_b_hint >= 0.0f ? radius_b_hint : boxProjectionRadius(box_b, axis);
+		    float center_distance = std::abs(glm::dot(center_delta, axis));
+		    float overlap = radius_a + radius_b - center_distance;
+		    if (overlap < -contact_tolerance) {
+			    separated = true;
+			    return;
+		    }
 
-		float penetration = std::max(overlap, 0.0f);
-		bool new_is_face = type != BoxAxisType::edge;
-		bool old_is_face = best_axis.type != BoxAxisType::edge;
-		bool better = penetration < best_axis.penetration - contact_tolerance;
-		bool nearly_equal = std::abs(penetration - best_axis.penetration) <= contact_tolerance;
-		if (better || (nearly_equal && new_is_face && !old_is_face)) {
-			best_axis.axis = axis;
-			best_axis.penetration = penetration;
-			best_axis.type = type;
-			best_axis.axis_a = axis_a;
-			best_axis.axis_b = axis_b;
-		}
-	};
+		    float penetration = std::max(overlap, 0.0f);
+		    bool new_is_face = type != BoxAxisType::edge;
+		    bool old_is_face = best_axis.type != BoxAxisType::edge;
+		    bool better = penetration < best_axis.penetration - contact_tolerance;
+		    bool nearly_equal = std::abs(penetration - best_axis.penetration) <= contact_tolerance;
+		    if (better || (nearly_equal && new_is_face && !old_is_face)) {
+			    best_axis.axis = axis;
+			    best_axis.penetration = penetration;
+			    best_axis.type = type;
+			    best_axis.axis_a = axis_a;
+			    best_axis.axis_b = axis_b;
+		    }
+	    };
 
+	// A box own face axis is an orthonormal rotation column so its own projection radius there is its half extent
 	for (int axis = 0; axis < 3; ++axis) {
-		test_axis(box_a.rotation[axis], BoxAxisType::face_a, axis, 0);
+		test_axis(box_a.rotation[axis], BoxAxisType::face_a, axis, 0, box_a.half_extents[axis]);
 		if (separated) {
 			return std::nullopt;
 		}
 	}
 
 	for (int axis = 0; axis < 3; ++axis) {
-		test_axis(box_b.rotation[axis], BoxAxisType::face_b, 0, axis);
+		test_axis(box_b.rotation[axis], BoxAxisType::face_b, 0, axis, -1.0f, box_b.half_extents[axis]);
 		if (separated) {
 			return std::nullopt;
 		}
@@ -645,6 +652,13 @@ auto collideWorldBoxes(const WorldBox& box_a, const WorldBox& box_b) -> std::opt
 		}
 	}
 
+	return boxSatContactsFromAxis(box_a, box_b, best_axis, center_delta);
+}
+
+/// Builds contacts from an already chosen separating axis shared by every box vs box SAT variant
+auto boxSatContactsFromAxis(
+    const WorldBox& box_a, const WorldBox& box_b, const BoxSatResult& best_axis, const glm::vec3& center_delta
+) -> BoxSatContacts {
 	glm::vec3 normal = best_axis.axis;
 	float normal_direction = glm::dot(center_delta, normal);
 	if (normal_direction < 0.0f) {
@@ -773,6 +787,83 @@ auto collideWorldBoxes(const WorldBox& box_a, const WorldBox& box_b) -> std::opt
 	}
 
 	return BoxSatContacts {.normal = normal, .candidates = std::move(candidates)};
+}
+
+/// Same SAT as collideWorldBoxes but assumes box_b.rotation is identity always true for the ref voxel box
+auto collideBoxAgainstAxisAlignedBox(const WorldBox& box_a, const WorldBox& box_b) -> std::optional<BoxSatContacts> {
+	glm::vec3 center_delta = box_b.center - box_a.center;
+	BoxSatResult best_axis;
+	bool separated = false;
+
+	auto test_axis = [&](glm::vec3 axis, BoxAxisType type, int axis_a, int axis_b, float radius_a_hint) {
+		float length_squared = glm::dot(axis, axis);
+		if (length_squared <= parallel_axis_epsilon_sq) {
+			return;
+		}
+
+		axis /= std::sqrt(length_squared);
+		float radius_a = radius_a_hint >= 0.0f ? radius_a_hint : boxProjectionRadius(box_a, axis);
+		float radius_b = glm::dot(glm::abs(axis), box_b.half_extents);
+		float center_distance = std::abs(glm::dot(center_delta, axis));
+		float overlap = radius_a + radius_b - center_distance;
+		if (overlap < -contact_tolerance) {
+			separated = true;
+			return;
+		}
+
+		float penetration = std::max(overlap, 0.0f);
+		bool new_is_face = type != BoxAxisType::edge;
+		bool old_is_face = best_axis.type != BoxAxisType::edge;
+		bool better = penetration < best_axis.penetration - contact_tolerance;
+		bool nearly_equal = std::abs(penetration - best_axis.penetration) <= contact_tolerance;
+		if (better || (nearly_equal && new_is_face && !old_is_face)) {
+			best_axis.axis = axis;
+			best_axis.penetration = penetration;
+			best_axis.type = type;
+			best_axis.axis_a = axis_a;
+			best_axis.axis_b = axis_b;
+		}
+	};
+
+	for (int axis = 0; axis < 3; ++axis) {
+		test_axis(box_a.rotation[axis], BoxAxisType::face_a, axis, 0, box_a.half_extents[axis]);
+		if (separated) {
+			return std::nullopt;
+		}
+	}
+
+	static constexpr std::array<glm::vec3, 3> k_world_axes {
+	  glm::vec3 {1, 0, 0},
+     glm::vec3 {0, 1, 0},
+     glm::vec3 {0, 0, 1}
+	};
+	for (int axis = 0; axis < 3; ++axis) {
+		test_axis(k_world_axes[axis], BoxAxisType::face_b, 0, axis, -1.0f);
+		if (separated) {
+			return std::nullopt;
+		}
+	}
+
+	// cross(v world basis k) by component shuffle instead of a general cross product
+	auto crossWithWorldAxis = [](glm::vec3 v, int k) -> glm::vec3 {
+		if (k == 0) {
+			return {0.0f, v.z, -v.y};
+		}
+		if (k == 1) {
+			return {-v.z, 0.0f, v.x};
+		}
+		return {v.y, -v.x, 0.0f};
+	};
+	for (int axis_a = 0; axis_a < 3; ++axis_a) {
+		for (int axis_b = 0; axis_b < 3; ++axis_b) {
+			test_axis(crossWithWorldAxis(box_a.rotation[axis_a], axis_b), BoxAxisType::edge, axis_a, axis_b, -1.0f);
+			if (separated) {
+				return std::nullopt;
+			}
+		}
+	}
+
+	return boxSatContactsFromAxis(box_a, box_b, best_axis, center_delta);
 }
 
 }
@@ -1491,8 +1582,8 @@ void collideVoxelVoxel(
 				  .rotation = glm::mat3(1.0f),
 				  .half_extents = (ref_c.max - ref_c.min) * 0.5f,
 				};
-				ZoneScopedN("physics::VoxelVoxelSAT");
-				auto sat = _detail::collideWorldBoxes(probe_box_reference_local, ref_voxel_box);
+				// ref_voxel_box is always axis aligned so this skips the generic cross products
+				auto sat = _detail::collideBoxAgainstAxisAlignedBox(probe_box_reference_local, ref_voxel_box);
 				if (not sat.has_value()) {
 					return true;
 				}

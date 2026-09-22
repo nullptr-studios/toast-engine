@@ -32,6 +32,8 @@
 #include <string>
 #include <toast/assets/assets.hpp>
 #include <toast/log.hpp>
+#include <toast/physics/narrow_phase.hpp>
+#include <toast/physics/simulator.hpp>
 #include <tracy/Tracy.hpp>
 
 namespace renderer {
@@ -705,7 +707,7 @@ void DebugPass::drawPerformanceWindow() {
 			const auto visible = std::ranges::count_if(frame->mesh_instances, [](const auto& proxy) { return proxy.visible; });
 			ImGui::Text("Mesh instances  %zu visible of %zu", static_cast<size_t>(visible), frame->mesh_instances.size());
 			ImGui::Text("Material ranges %zu", frame->material_ranges.size());
-			ImGui::Text("Lights          %zu", frame->lights.size());
+			ImGui::Text("Lights          %zu of %u submitted", frame->lights.size(), frame->light_stats.submitted);
 			ImGui::Text("Voxel volumes   %zu", frame->voxel_instances.size());
 		}
 	}
@@ -782,11 +784,24 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 
 			if (const auto* shadows = VulkanRenderer::instance->getShadowPass(); shadows != nullptr) {
 				ImGui::TextDisabled(
-				    "Shadow pass: %u draws, %u scopes, %u cached",
+				    "Shadow pass: %u draws, %u scopes, %u cached, %u spared",
 				    shadows->getDrawCount(),
 				    shadows->getPassCount(),
-				    shadows->getCachedCount()
+				    shadows->getCachedCount(),
+				    shadows->getVoxelSparedCount()
 				);
+
+				if (const auto* frame = VulkanRenderer::instance->renderingFrame(); frame != nullptr) {
+					const auto& stats = frame->light_stats;
+					ImGui::TextDisabled(
+					    "Shadow slots: %u of %u spot, %u of %u point, %llu displaced",
+					    stats.spot_shadows,
+					    renderer::shadows::k_max_spot_shadows,
+					    stats.point_shadows,
+					    renderer::shadows::k_max_point_shadows,
+					    static_cast<unsigned long long>(stats.shadow_displaced)
+					);
+				}
 			}
 
 			if (const auto* skinning = VulkanRenderer::instance->getSkinningPass(); skinning != nullptr) {
@@ -924,7 +939,159 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 				ImGui::TextDisabled("range cutoff %.2f m, %u samples", ssao.range_cutoff, ssao.sample_count);
 			}
 
+			if (ImGui::CollapsingHeader("Clustered lighting")) {
+				using namespace clustered_lighting;
+
+				const auto& stats = frame->light_stats;
+				ImGui::Text("Lights %zu of %u submitted", frame->lights.size(), stats.submitted);
+				ImGui::TextDisabled("%u off screen, %u over the %u cap", stats.offscreen, stats.truncated, k_max_lights);
+				ImGui::TextDisabled("Depth %.2f to %.1f m", frame->cluster_near, frame->cluster_far);
+
+				if (m_cluster_lighting_pass != nullptr) {
+					m_cluster_lighting_pass->requestGridReadback();
+
+					const auto counts = m_cluster_lighting_pass->getClusterLightGridCounts(frame_index);
+					if (counts.empty()) {
+						ImGui::TextDisabled("Waiting for the cluster grid");
+					} else {
+						const auto grid = ClusterLightingPass::summarizeGrid(counts);
+						ImGui::Text("Clusters %u of %u occupied", grid.occupied, k_cluster_count);
+						ImGui::TextDisabled("Per cluster mean %.1f p95 %u max %u", grid.mean, grid.p95, grid.max_count);
+						if (grid.overflowed > 0) {
+							ImGui::TextColored(
+							    ImVec4(1.0f, 0.4f, 0.2f, 1.0f),
+							    "%u clusters over %u lights, %u entries dropped",
+							    grid.overflowed,
+							    k_max_lights_per_cluster,
+							    grid.dropped
+							);
+						}
+					}
+				}
+			}
+
 			m_voxels->drawPanel(*frame);
+
+			if (ImGui::CollapsingHeader("Voxel physics")) {
+				const physics::Simulator::PhysicsStepProfile& phys = physics::Simulator::stepProfile();
+
+				ImGui::Text(
+				    "Tick %6.2f ms  damage %.2f  connectivity %.2f  narrow %.2f  solve %.2f",
+				    phys.tick_ms,
+				    phys.damage_apply_ms,
+				    phys.connectivity_ms,
+				    phys.narrow_phase_ms,
+				    phys.solve_ms
+				);
+				if (phys.ticks_this_frame > 1) {
+					ImGui::TextColored(
+					    ImVec4(1.0f, 0.7f, 0.2f, 1.0f),
+					    "The fixed step accumulator ran %zu ticks this frame trying to catch up, roughly %zu x the "
+					    "numbers above, not one of them%s",
+					    phys.ticks_this_frame,
+					    phys.ticks_this_frame,
+					    phys.ticks_capped_by_time_budget ? " (stopped by the burst time budget, not max_steps)" : ""
+					);
+				}
+				ImGui::TextDisabled(
+				    "%zu bodies (%zu awake), %zu voxel shapes, %zu manifolds, %zu constraints",
+				    phys.body_count,
+				    phys.awake_body_count,
+				    phys.voxel_shape_count,
+				    phys.manifold_count,
+				    phys.constraints
+				);
+
+				ImGui::Separator();
+				ImGui::Text(
+				    "Connectivity %zu jobs dispatched, %zu stale, %zu shapes still waiting",
+				    phys.connectivity_jobs_dispatched,
+				    phys.connectivity_jobs_stale,
+				    phys.connectivity_shapes_waiting
+				);
+				if (phys.connectivity_shapes_waiting > 0) {
+					ImGui::TextColored(
+					    ImVec4(1.0f, 0.7f, 0.2f, 1.0f), "Connectivity backlog: destruction is outrunning the per tick job cap"
+					);
+				}
+				ImGui::Text(
+				    "Fragments %zu spawned this tick, %zu pending, %zu active (%zu sleep locked), %zu despawned",
+				    phys.fragments_spawned,
+				    phys.fragments_pending,
+				    phys.fragments_active,
+				    phys.fragments_sleep_locked,
+				    phys.fragments_despawned
+				);
+				if (phys.fragment_spawn_failures > 0) {
+					ImGui::TextColored(
+					    ImVec4(1.0f, 0.3f, 0.3f, 1.0f),
+					    "%zu fragment extractions failed this tick, brick pool is full",
+					    phys.fragment_spawn_failures
+					);
+				}
+
+				ImGui::Separator();
+				const float pool_ratio = phys.brick_pool_capacity > 0 ? static_cast<float>(phys.brick_pool_allocated) /
+				                                                            static_cast<float>(phys.brick_pool_capacity)
+				                                                      : 0.0f;
+				const ImVec4 pool_color = pool_ratio > 0.9f    ? ImVec4(1.0f, 0.3f, 0.3f, 1.0f)
+				                          : pool_ratio > 0.75f ? ImVec4(1.0f, 0.7f, 0.2f, 1.0f)
+				                                               : ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+				ImGui::TextColored(
+				    pool_color,
+				    "Brick pool %u of %u bricks (%.0f%%)",
+				    phys.brick_pool_allocated,
+				    phys.brick_pool_capacity,
+				    pool_ratio * 100.0f
+				);
+
+				ImGui::Separator();
+				const size_t total_cached = phys.reused_cached_contacts + phys.cold_cached_contacts;
+				const float warm_ratio =
+				    total_cached > 0 ? static_cast<float>(phys.reused_cached_contacts) / static_cast<float>(total_cached) : 1.0f;
+				ImGui::TextDisabled(
+				    "Contacts %zu begin, %zu persist, %zu end, %.0f%% warm started (%zu of %zu)",
+				    phys.contact_begins,
+				    phys.contact_persists,
+				    phys.contact_ends,
+				    warm_ratio * 100.0f,
+				    phys.reused_cached_contacts,
+				    total_cached
+				);
+				ImGui::TextDisabled(
+				    "Constraints %zu warm started, %zu rejected, %zu invalid, %zu islands, %zu parallel batches",
+				    phys.warm_started_constraints,
+				    phys.rejected_constraints,
+				    phys.invalid_constraints,
+				    phys.island_jobs,
+				    phys.max_constraint_batches
+				);
+				ImGui::TextDisabled(
+				    "Narrowphase %zu jobs, %zu candidates, %zu collisions, %zu rejected manifolds, %zu sleeping pairs skipped",
+				    phys.narrow_jobs,
+				    phys.narrow_candidates,
+				    phys.narrow_collisions,
+				    phys.rejected_manifolds,
+				    phys.sleeping_pairs_skipped
+				);
+
+				using PT = physics::NarrowPhasePairType;
+				constexpr std::array<std::pair<PT, const char*>, 4> k_voxel_pairs {
+				  {{PT::sphere_voxel, "Sphere-voxel"},
+					 {PT::box_voxel, "Box-voxel"},
+					 {PT::capsule_voxel, "Capsule-voxel"},
+					 {PT::voxel_voxel, "Voxel-voxel"}}
+				};
+				if (ImGui::BeginTable("##voxel_pair_candidates", 2, ImGuiTableFlags_SizingFixedFit)) {
+					for (const auto& [type, label] : k_voxel_pairs) {
+						ImGui::TableNextColumn();
+						ImGui::TextDisabled("%s", label);
+						ImGui::TableNextColumn();
+						ImGui::TextDisabled("%zu", phys.narrow_pair_candidates[static_cast<size_t>(type)]);
+					}
+					ImGui::EndTable();
+				}
+			}
 
 			ImGui::Separator();
 			if (voxel_debug::isView(frame->render_mode)) {
@@ -944,6 +1111,8 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 		m_voxels->drawOverlay(*frame);
 
 		if (frame->render_mode == 1 && m_cluster_lighting_pass != nullptr) {
+			m_cluster_lighting_pass->requestGridReadback();
+
 			const auto counts = m_cluster_lighting_pass->getClusterLightGridCounts(frame_index);
 			if (!counts.empty()) {
 				using namespace clustered_lighting;

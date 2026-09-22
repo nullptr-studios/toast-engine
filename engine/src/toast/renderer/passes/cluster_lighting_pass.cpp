@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstring>
 #include <format>
 #include <toast/assets/assets.hpp>
@@ -20,7 +21,7 @@
 namespace renderer {
 
 auto ClusterLightingPass::createBuffer(
-    const renderer::VulkanCore& core, vk::DeviceSize size, vk::BufferUsageFlags usage, bool host_visible
+    const renderer::VulkanCore& core, vk::DeviceSize size, vk::BufferUsageFlags usage, HostAccess access
 ) -> vma::raii::Buffer {
 	const uint32_t graphics_family = core.getGraphicsQueueFamilyIndex();
 	const uint32_t compute_family = core.getComputeQueueFamilyIndex();
@@ -40,11 +41,16 @@ auto ClusterLightingPass::createBuffer(
 	}
 
 	vma::AllocationCreateInfo alloc_ci {};
-	if (host_visible) {
-		alloc_ci.usage = vma::MemoryUsage::eAutoPreferHost;
-		alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
-	} else {
-		alloc_ci.usage = vma::MemoryUsage::eAutoPreferDevice;
+	switch (access) {
+		case HostAccess::write:
+			alloc_ci.usage = vma::MemoryUsage::eAutoPreferHost;
+			alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
+			break;
+		case HostAccess::read:
+			alloc_ci.usage = vma::MemoryUsage::eAutoPreferHost;
+			alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessRandom;
+			break;
+		case HostAccess::none: alloc_ci.usage = vma::MemoryUsage::eAutoPreferDevice; break;
 	}
 
 	return core.getAllocator().createBuffer(buffer_ci, alloc_ci);
@@ -105,29 +111,36 @@ void ClusterLightingPass::createResources(const renderer::VulkanCore& core) {
 	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
 		auto& fb = m_frame_buffers[i];
 
-		fb.cluster_params.gpu_buffer.emplace(createBuffer(core, cluster_params_size, vk::BufferUsageFlagBits::eUniformBuffer, true));
+		fb.cluster_params.gpu_buffer.emplace(
+		    createBuffer(core, cluster_params_size, vk::BufferUsageFlagBits::eUniformBuffer, HostAccess::write)
+		);
 		setDebugName(core, **fb.cluster_params.gpu_buffer, std::format("ClusterLightingPass ClusterParams[{}]", i));
 
-		fb.lights.gpu_buffer.emplace(createBuffer(core, lights_size, vk::BufferUsageFlagBits::eStorageBuffer, true));
+		fb.lights.gpu_buffer.emplace(createBuffer(core, lights_size, vk::BufferUsageFlagBits::eStorageBuffer, HostAccess::write));
 		setDebugName(core, **fb.lights.gpu_buffer, std::format("ClusterLightingPass Lights[{}]", i));
 
-		fb.cluster_aabb.gpu_buffer.emplace(createBuffer(core, cluster_aabb_size, vk::BufferUsageFlagBits::eStorageBuffer, false));
+		fb.cluster_aabb.gpu_buffer.emplace(
+		    createBuffer(core, cluster_aabb_size, vk::BufferUsageFlagBits::eStorageBuffer, HostAccess::none)
+		);
 		setDebugName(core, **fb.cluster_aabb.gpu_buffer, std::format("ClusterLightingPass ClusterAABB[{}]", i));
 
 		fb.cluster_light_grid.gpu_buffer.emplace(createBuffer(
-		    core, cluster_light_grid_size, vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferSrc, false
+		    core,
+		    cluster_light_grid_size,
+		    vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferSrc,
+		    HostAccess::none
 		));
 		setDebugName(core, **fb.cluster_light_grid.gpu_buffer, std::format("ClusterLightingPass ClusterLightGrid[{}]", i));
 
 		fb.cluster_light_grid_readback.gpu_buffer.emplace(
-		    createBuffer(core, cluster_light_grid_size, vk::BufferUsageFlagBits::eTransferDst, true)
+		    createBuffer(core, cluster_light_grid_size, vk::BufferUsageFlagBits::eTransferDst, HostAccess::read)
 		);
 		setDebugName(
 		    core, **fb.cluster_light_grid_readback.gpu_buffer, std::format("ClusterLightingPass ClusterLightGridReadback[{}]", i)
 		);
 
 		fb.light_index_list.gpu_buffer.emplace(
-		    createBuffer(core, light_index_list_size, vk::BufferUsageFlagBits::eStorageBuffer, false)
+		    createBuffer(core, light_index_list_size, vk::BufferUsageFlagBits::eStorageBuffer, HostAccess::none)
 		);
 		setDebugName(core, **fb.light_index_list.gpu_buffer, std::format("ClusterLightingPass LightIndexList[{}]", i));
 
@@ -173,11 +186,14 @@ void ClusterLightingPass::update(uint32_t frame_index, float dt) {
 
 	const uint32_t light_count = std::min<uint32_t>(static_cast<uint32_t>(frame->lights.size()), k_max_lights);
 
+	const float log_ratio = std::max(std::log(frame->cluster_far / frame->cluster_near), 0.001f);
+
 	ClusterParamsGpu params {};
 	params.inverse_projection = glm::inverse(frame->frame_data.projection);
 	params.cluster_dims = glm::uvec4(k_cluster_dim_x, k_cluster_dim_y, k_cluster_dim_z, k_max_lights_per_cluster);
 	params.screen_size_near_far = glm::vec4(frame->viewport_extent, frame->camera_near, frame->camera_far);
-	params.light_count = light_count;
+	params.slice_depth = glm::vec4(frame->cluster_near, frame->cluster_far, static_cast<float>(k_cluster_dim_z) / log_ratio, 0.0f);
+	params.light_counts = glm::uvec4(light_count, 0, 0, 0);
 
 	if (fb.cluster_params.gpu_buffer.has_value()) {
 		void* mapped = fb.cluster_params.gpu_buffer->getAllocation().getInfo().pMappedData;
@@ -233,7 +249,11 @@ void ClusterLightingPass::dispatch(vk::CommandBuffer cmd, uint32_t frame_index) 
 	cmd.bindPipeline(vk::PipelineBindPoint::eCompute, m_cull_lights_pipeline.getPipeline());
 	cmd.dispatch(group_count, 1, 1);
 
-	if (fb.cluster_light_grid_readback.gpu_buffer.has_value()) {
+	fb.readback_valid =
+	    m_readback_hold.load(std::memory_order_relaxed) > 0 && fb.cluster_light_grid_readback.gpu_buffer.has_value();
+	if (fb.readback_valid) {
+		m_readback_hold.fetch_sub(1, std::memory_order_relaxed);
+
 		const vk::BufferMemoryBarrier to_transfer(
 		    vk::AccessFlagBits::eShaderWrite,
 		    vk::AccessFlagBits::eTransferRead,
@@ -281,8 +301,13 @@ auto ClusterLightingPass::getLightIndexListBuffer(uint32_t frame_index) const ->
 	return **m_frame_buffers[frame_index].light_index_list.gpu_buffer;
 }
 
+void ClusterLightingPass::requestGridReadback() const noexcept {
+	constexpr uint32_t k_hold_frames = 4;
+	m_readback_hold.store(k_hold_frames, std::memory_order_relaxed);
+}
+
 auto ClusterLightingPass::getClusterLightGridCounts(uint32_t frame_index) const -> std::span<const uint32_t> {
-	if (frame_index >= m_frame_buffers.size()) {
+	if (frame_index >= m_frame_buffers.size() || !m_frame_buffers[frame_index].readback_valid) {
 		return {};
 	}
 	const auto& readback = m_frame_buffers[frame_index].cluster_light_grid_readback.gpu_buffer;
@@ -293,7 +318,39 @@ auto ClusterLightingPass::getClusterLightGridCounts(uint32_t frame_index) const 
 	if (mapped == nullptr) {
 		return {};
 	}
+	readback->getAllocation().invalidate(0, sizeof(uint32_t) * clustered_lighting::k_cluster_count);
 	return {mapped, clustered_lighting::k_cluster_count};
+}
+
+auto ClusterLightingPass::summarizeGrid(std::span<const uint32_t> counts) -> GridStats {
+	using namespace clustered_lighting;
+
+	GridStats stats;
+	std::array<uint32_t, k_cluster_count> occupied {};
+	uint64_t total = 0;
+
+	for (const uint32_t count : counts.first(std::min<size_t>(counts.size(), k_cluster_count))) {
+		if (count == 0) {
+			continue;
+		}
+		occupied[stats.occupied++] = count;
+		total += count;
+		stats.max_count = std::max(stats.max_count, count);
+		if (count > k_max_lights_per_cluster) {
+			++stats.overflowed;
+			stats.dropped += count - k_max_lights_per_cluster;
+		}
+	}
+
+	if (stats.occupied > 0) {
+		stats.mean = static_cast<float>(total) / static_cast<float>(stats.occupied);
+
+		const auto end = occupied.begin() + stats.occupied;
+		const auto p95 = occupied.begin() + ((static_cast<size_t>(stats.occupied) * 95) / 100);
+		std::nth_element(occupied.begin(), p95, end);
+		stats.p95 = *p95;
+	}
+	return stats;
 }
 
 }    // namespace renderer

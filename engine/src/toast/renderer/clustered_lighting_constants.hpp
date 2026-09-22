@@ -15,4 +15,8 @@ inline constexpr uint32_t k_cluster_count = k_cluster_dim_x * k_cluster_dim_y * 
 inline constexpr uint32_t k_max_lights_per_cluster = 128;
 inline constexpr uint32_t k_max_lights = 512;
 
+// Slice 0 still starts at the camera near plane
+inline constexpr float k_min_cluster_near = 0.1f;
+inline constexpr float k_min_cluster_depth_ratio = 4.0f;
+
 }

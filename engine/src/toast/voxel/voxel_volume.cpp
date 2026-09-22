@@ -1,6 +1,7 @@
 #include "voxel_volume.hpp"
 
 #include <algorithm>
+#include <atomic>
 #include <cassert>
 #include <utility>
 
@@ -20,9 +21,15 @@ auto localOf(glm::ivec3 voxel) noexcept -> BrickCoord {
 	return BrickCoord {static_cast<uint32_t>(voxel.x & 7), static_cast<uint32_t>(voxel.y & 7), static_cast<uint32_t>(voxel.z & 7)};
 }
 
+[[nodiscard]]
+auto nextVolumeId() noexcept -> uint64_t {
+	static std::atomic<uint64_t> counter {0};
+	return counter.fetch_add(1, std::memory_order_relaxed) + 1;
 }
 
-Volume::Volume(BrickPool& pool, glm::uvec3 brick_dims) : m_pool(&pool), m_brick_dims(brick_dims) {
+}
+
+Volume::Volume(BrickPool& pool, glm::uvec3 brick_dims) : m_pool(&pool), m_brick_dims(brick_dims), m_id(nextVolumeId()) {
 	const size_t count = static_cast<size_t>(brick_dims.x) * brick_dims.y * brick_dims.z;
 	m_entries.assign(count, BrickEntry {});
 }
@@ -35,10 +42,17 @@ Volume::Volume(Volume&& other) noexcept
     : m_pool(other.m_pool),
       m_brick_dims(other.m_brick_dims),
       m_entries(std::move(other.m_entries)),
-      m_revision(other.m_revision) {
+      m_revision(other.m_revision),
+      m_id(other.m_id),
+      m_dirty_mask(std::move(other.m_dirty_mask)),
+      m_dirty_list(std::move(other.m_dirty_list)),
+      m_dirty_since(other.m_dirty_since) {
 	other.m_pool = nullptr;
 	other.m_brick_dims = glm::uvec3 {0};
 	other.m_entries.clear();
+	other.m_dirty_mask.clear();
+	other.m_dirty_list.clear();
+	other.m_id = 0;
 }
 
 auto Volume::operator=(Volume&& other) noexcept -> Volume& {
@@ -48,9 +62,16 @@ auto Volume::operator=(Volume&& other) noexcept -> Volume& {
 		m_brick_dims = other.m_brick_dims;
 		m_entries = std::move(other.m_entries);
 		m_revision = other.m_revision;
+		m_id = other.m_id;
+		m_dirty_mask = std::move(other.m_dirty_mask);
+		m_dirty_list = std::move(other.m_dirty_list);
+		m_dirty_since = other.m_dirty_since;
 		other.m_pool = nullptr;
 		other.m_brick_dims = glm::uvec3 {0};
 		other.m_entries.clear();
+		other.m_dirty_mask.clear();
+		other.m_dirty_list.clear();
+		other.m_id = 0;
 	}
 	return *this;
 }
@@ -202,6 +223,7 @@ auto Volume::setVoxel(glm::ivec3 voxel, uint8_t material) -> VoxelWrite {
 
 	result.changed = true;
 	++m_revision;
+	markDirty(brickOf(voxel));
 
 	if (material != k_empty_palette_index) {
 		result.brick_became_occupied = !was_occupied;
@@ -230,6 +252,7 @@ void Volume::setBrickUniform(glm::ivec3 brick, uint8_t material) {
 
 	m_entries[index] = next;
 	++m_revision;
+	markDirty(brick);
 }
 
 auto Volume::tryCollapseUniform(glm::ivec3 brick) -> bool {
@@ -259,6 +282,8 @@ auto Volume::tryCollapseUniform(glm::ivec3 brick) -> bool {
 
 	m_pool->free(id);
 	m_entries[index] = BrickEntry::make(BrickTag::uniform, first);
+	++m_revision;
+	markDirty(brick);
 	return true;
 }
 
@@ -292,7 +317,46 @@ auto Volume::setBrickMaterial(glm::ivec3 brick, std::span<const uint8_t, k_brick
 	}
 	m_pool->occupancy(id) = occupancy;
 	++m_revision;
+	markDirty(brick);
 	return true;
+}
+
+void Volume::markDirty(glm::ivec3 brick) {
+	const uint32_t index = entryIndex(brick);
+	if (m_dirty_mask.empty()) {
+		m_dirty_mask.assign((m_entries.size() + 63) / 64, 0);
+	}
+
+	uint64_t& word = m_dirty_mask[index >> 6];
+	const uint64_t bit = 1ull << (index & 63);
+	if ((word & bit) == 0) {
+		word |= bit;
+		m_dirty_list.push_back(index);
+	}
+}
+
+auto Volume::dirtyBricksSince(uint32_t revision) const noexcept -> std::optional<std::span<const uint32_t>> {
+	if (revision < m_dirty_since || revision > m_revision) {
+		return std::nullopt;
+	}
+	return std::span<const uint32_t> {m_dirty_list};
+}
+
+void Volume::discardDirty() const noexcept {
+	for (const uint32_t index : m_dirty_list) {
+		m_dirty_mask[index >> 6] &= ~(1ull << (index & 63));
+	}
+	m_dirty_list.clear();
+	m_dirty_since = m_revision;
+}
+
+auto Volume::brickAtIndex(uint32_t index) const noexcept -> glm::ivec3 {
+	const uint32_t layer = m_brick_dims.x * m_brick_dims.y;
+	return glm::ivec3(
+	    static_cast<int>(index % m_brick_dims.x),
+	    static_cast<int>((index / m_brick_dims.x) % m_brick_dims.y),
+	    static_cast<int>(index / layer)
+	);
 }
 
 auto Volume::solidVoxelCount() const -> uint32_t {

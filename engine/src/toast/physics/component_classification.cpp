@@ -102,13 +102,12 @@ auto classifyComponents(const voxel::Connectivity& c, glm::uvec3 brick_size, Anc
 		}
 	}
 
+	// size is queuePendingFragments job now, not a dead zone that never spawns or clears
 	for (uint32_t component = 0; component < c.component_count; ++component) {
 		if (classes[component] == ComponentClass::anchored) {
 			continue;
 		}
-		if (c.voxelCount(component) >= k_min_fragment_voxels) {
-			classes[component] = ComponentClass::detached;
-		}
+		classes[component] = ComponentClass::detached;
 	}
 
 	return classes;
