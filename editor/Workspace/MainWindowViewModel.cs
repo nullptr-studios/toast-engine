@@ -310,7 +310,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		var recoverVirtual = recoverPath is null ? null : ProjectContext.ToVirtual(recoverPath);
 		if (WorkspaceViewModel.OpenFile(m_toast, uid, virtualPath, recoverVirtual) is not { } ws) return;
 		m_workspaces[ws.Handle] = m_dockFactory.AddWorkspace(ws);
-		if (recoverVirtual is not null) ws.IsModified = true; // recovered content is unsaved by definition
 		SyncActiveWorkspace();
 	}
 
@@ -334,6 +333,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		var handle = workspace?.EffectiveHandle ?? 0;
 		if (handle == m_activeWorkspaceHandle) return;
 		m_activeWorkspaceHandle = handle;
+		m_dockFactory.Hierarchy?.Clear();
 		m_dockFactory.History?.SetWorkspace(workspace is { PlayHandle: 0 } ? workspace.History : null);
 		Events.Send(new SetActiveWorkspace { Handle = handle });
 	}
@@ -539,7 +539,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 
 		if (WorkspaceViewModel.CreateNew(m_toast, result) is not { } ws) return;
 		m_workspaces[ws.Handle] = m_dockFactory.AddWorkspace(ws);
-		ws.IsModified = true;
 		SyncActiveWorkspace();
 	}
 
