@@ -307,6 +307,13 @@ public:
 		assets::Handle<assets::Mesh> mesh;
 	};
 
+	struct SizeHandleDraw {
+		glm::vec3 world_position {0.0f};
+		toast::GizmoHandle handle = toast::GizmoHandle::none;
+	};
+
+	static constexpr size_t k_max_size_handles = 6;
+
 	struct TransformGizmoDraw {
 		bool visible = false;
 		toast::GizmoTool tool = toast::GizmoTool::select;
@@ -314,6 +321,10 @@ public:
 		toast::GizmoHandle hover = toast::GizmoHandle::none;
 		toast::GizmoHandle active = toast::GizmoHandle::none;
 		float drag_scale_factor = 1.0f;
+
+		std::array<SizeHandleDraw, k_max_size_handles> size_handles {};
+		uint32_t size_handle_count = 0;
+		float size_handle_scale = 1.0f;
 	};
 
 	struct GizmoState {
@@ -324,6 +335,10 @@ public:
 		toast::GizmoHandle hover = toast::GizmoHandle::none;
 		toast::GizmoHandle active = toast::GizmoHandle::none;
 		float drag_scale_factor = 1.0f;
+
+		std::array<SizeHandleDraw, k_max_size_handles> size_handles {};
+		uint32_t size_handle_count = 0;
+		float size_handle_scale = 1.0f;
 	};
 
 	struct ImGuiKeyEvent {

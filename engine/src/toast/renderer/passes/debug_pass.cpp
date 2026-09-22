@@ -1201,6 +1201,27 @@ void DebugPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t ima
 		}
 	}
 
+	if (frame->transform_gizmo.size_handle_count > 0 && m_gizmo_pipeline.isReady() && m_size_gizmo_vertex_count > 0) {
+		constexpr glm::vec4 k_highlight {1.0f, 0.85f, 0.1f, 1.0f};
+		constexpr glm::vec4 k_size_dot_color {0.0f, 1.0f, 0.251f, 1.0f};    // editor green, matching the collider
+
+		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_gizmo_pipeline.getPipeline());
+		cmd.bindVertexBuffers(0, std::array<vk::Buffer, 1> {*m_size_gizmo_vertex_buffer}, std::array<vk::DeviceSize, 1> {0});
+
+		for (uint32_t i = 0; i < frame->transform_gizmo.size_handle_count; ++i) {
+			const auto& dot = frame->transform_gizmo.size_handles[i];
+			const bool highlighted = dot.handle == frame->transform_gizmo.hover || dot.handle == frame->transform_gizmo.active;
+
+			DrawPushConstants pc {};
+			pc.model = glm::translate(glm::mat4(1.0f), dot.world_position) *
+			           glm::scale(glm::mat4(1.0f), glm::vec3(frame->transform_gizmo.size_handle_scale));
+			pc.tint = highlighted ? k_highlight : k_size_dot_color;
+
+			cmd.pushConstants(*m_shader_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eAll, 0, sizeof(DrawPushConstants), &pc);
+			cmd.draw(m_size_gizmo_vertex_count, 1, 0, 0);
+		}
+	}
+
 	if (m_imgui_ready) {
 		ImDrawData* draw_data = ImGui::GetDrawData();
 		if (draw_data != nullptr) {
@@ -1253,6 +1274,7 @@ void DebugPass::createResources(const renderer::VulkanCore& core) {
 	createTranslateGizmoGeometry(core);
 	createRotateGizmoGeometry(core);
 	createScaleGizmoGeometry(core);
+	createSizeGizmoGeometry(core);
 }
 
 void DebugPass::createBillboardResources(
@@ -1554,6 +1576,30 @@ void DebugPass::createScaleGizmoGeometry(const renderer::VulkanCore& core) {
 	void* mapped = m_scale_gizmo_vertex_buffer.getAllocation().getInfo().pMappedData;
 	std::memcpy(mapped, vertices.data(), vertices.size() * sizeof(DebugVertex));
 	m_scale_gizmo_vertex_buffer.getAllocation().flush(0, vertices.size() * sizeof(DebugVertex));
+}
+
+void DebugPass::createSizeGizmoGeometry(const renderer::VulkanCore& core) {
+	using namespace toast::gizmo_layout;
+	constexpr glm::vec4 k_white {1.0f, 1.0f, 1.0f, 1.0f};
+
+	std::vector<DebugVertex> vertices;
+	appendBox(vertices, glm::vec3(-k_size_dot_half_size), glm::vec3(k_size_dot_half_size), k_white);
+	m_size_gizmo_vertex_count = static_cast<uint32_t>(vertices.size());
+
+	vk::BufferCreateInfo buffer_ci {};
+	buffer_ci.size = vertices.size() * sizeof(DebugVertex);
+	buffer_ci.usage = vk::BufferUsageFlagBits::eVertexBuffer;
+
+	vma::AllocationCreateInfo alloc_ci {};
+	alloc_ci.usage = vma::MemoryUsage::eAuto;
+	alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
+
+	m_size_gizmo_vertex_buffer = core.getAllocator().createBuffer(buffer_ci, alloc_ci);
+	setDebugName(core, *m_size_gizmo_vertex_buffer, "DebugPass SizeGizmoVertexBuffer");
+
+	void* mapped = m_size_gizmo_vertex_buffer.getAllocation().getInfo().pMappedData;
+	std::memcpy(mapped, vertices.data(), vertices.size() * sizeof(DebugVertex));
+	m_size_gizmo_vertex_buffer.getAllocation().flush(0, vertices.size() * sizeof(DebugVertex));
 }
 
 void DebugPass::ensureLineCapacity(const renderer::VulkanCore& core, DynamicVertexBuffer& buffer, size_t required_vertex_count) {

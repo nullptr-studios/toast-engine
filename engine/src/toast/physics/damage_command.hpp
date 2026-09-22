@@ -7,13 +7,12 @@
 
 #pragma once
 #include "body.hpp"
+#include "physics_settings.hpp"
 #include "shape.hpp"
 
 #include <glm/glm.hpp>
 
 namespace physics {
-
-inline constexpr float k_fracture_shell_voxels = 2.0f;
 
 struct DamageCommand {
 	ShapeID shape;
@@ -22,7 +21,7 @@ struct DamageCommand {
 	float energy = 0.0f;
 	BodyID source;
 
-	float shell_voxels = k_fracture_shell_voxels;
+	float shell_voxels = tunables().fracture_shell_voxels;
 };
 
 }

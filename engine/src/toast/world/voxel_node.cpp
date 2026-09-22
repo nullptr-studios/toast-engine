@@ -43,7 +43,6 @@ void VoxelNode::setModel(assets::Handle<assets::VoxelModel> model) {
 	m_volume_stale = true;
 	m_model = std::move(model);
 	m_model_palette = {};
-	m_material_library = {};
 	++m_revision;
 }
 
@@ -52,7 +51,6 @@ void VoxelNode::setPalette(assets::Handle<assets::VoxelPalette> palette) {
 		return;
 	}
 	m_palette = std::move(palette);
-	m_material_library = {};
 	++m_revision;
 }
 
@@ -154,15 +152,11 @@ auto VoxelNode::resolvedMaterialLibrary() -> const voxel::MaterialLibrary* {
 			palette = voxelNodeAssetOfType(m_model_palette, "voxel_palette");
 		}
 	}
-	if (palette == nullptr || palette->libraryUid() == 0) {
+	if (palette == nullptr) {
 		return nullptr;
 	}
 
-	if (m_material_library.uid().data() != palette->libraryUid()) {
-		m_material_library = assets::load<assets::VoxelMaterialLibrary>(UID(palette->libraryUid()));
-	}
-	const auto* library = voxelNodeAssetOfType(m_material_library, "voxel_material_library");
-	return library != nullptr ? &library->library() : nullptr;
+	return &palette->materialLibrary();
 }
 
 void VoxelNode::releaseVolume() {
@@ -209,6 +203,11 @@ void VoxelNode::applyPhysicsTransform(const glm::vec3& position, const glm::quat
 	world_position = position;
 	world_rotation = rotation;
 	syncTransform();
+}
+
+void VoxelNode::onEditorTransformChanged() {
+	syncTransform();
+	physics::Simulator::setBodyTransform(bodyID(), world_position, world_rotation);
 }
 
 void VoxelNode::handleContactBegin(const physics::BroadPhasePair& pair) {

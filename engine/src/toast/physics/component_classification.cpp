@@ -106,7 +106,7 @@ auto classifyComponents(const voxel::Connectivity& c, glm::uvec3 brick_size, Anc
 		if (classes[component] == ComponentClass::anchored) {
 			continue;
 		}
-		if (c.voxelCount(component) >= k_min_fragment_voxels) {
+		if (c.voxelCount(component) >= minFragmentVoxels()) {
 			classes[component] = ComponentClass::detached;
 		}
 	}

@@ -195,7 +195,6 @@ private:
 		size_t fragments_spawned = 0;
 		size_t fragments_pending = 0;
 		size_t fragments_active = 0;
-		size_t fragments_sleep_locked = 0;
 		size_t fragments_evicted = 0;
 		uint32_t bricks_allocated = 0;
 		uint32_t bricks_free = 0;
@@ -254,6 +253,9 @@ private:
 
 	static void integrateBody(BodyID id, Body& body, const glm::vec3& gravity, float dt);
 	static void setBodyEnabled(BodyID body, bool enabled);
+
+	static void setBodyTransform(BodyID body, const glm::vec3& position, const glm::quat& rotation);
+
 	static void setShapeEnabled(ShapeID shape, bool enabled);
 	void syncEnabledState();
 	static void wakeBody(BodyID id);
@@ -327,8 +329,8 @@ private:
 	void spawnBudgetedFragments();
 	[[nodiscard]]
 	auto reconcileComponent(const voxel::Volume& volume, const DetachedComponent& component) const -> bool;
-	void enforceFragmentBudget();
-	void unlockSleep(BodyID id);
+	void updateFragmentProfile();
+	void touchFragment(BodyID id);
 	auto createVoxelShapeInternal(
 	    BodyID owner, const VoxelShape& shape, voxel::Volume* external, std::unique_ptr<voxel::Volume> owned,
 	    const voxel::Palette& palette, const voxel::MaterialLibrary& materials
@@ -346,8 +348,6 @@ private:
 
 	std::vector<ShapeSlot> m_shapes;
 	std::deque<uint32_t> m_free_shape_slots;
-
-	glm::vec3 gravity = {0.0f, 0.0f, -9.8f};
 
 	BroadPhase m_broad_phase;
 	NarrowPhase m_narrow_phase;

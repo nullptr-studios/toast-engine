@@ -75,6 +75,8 @@ private:
 	void createRotateGizmoGeometry(const renderer::VulkanCore& core);
 	void createScaleGizmoGeometry(const renderer::VulkanCore& core);
 
+	void createSizeGizmoGeometry(const renderer::VulkanCore& core);
+
 	void createBillboardResources(
 	    const renderer::VulkanCore& core, vk::Format color_format, vk::Format depth_format, vk::Extent2D extent
 	);
@@ -109,6 +111,9 @@ private:
 
 	vma::raii::Buffer m_scale_gizmo_vertex_buffer = nullptr;
 	std::array<GizmoHandleRange, 7> m_scale_gizmo_handles;
+
+	vma::raii::Buffer m_size_gizmo_vertex_buffer = nullptr;
+	uint32_t m_size_gizmo_vertex_count = 0;
 
 	VulkanPipeline m_mesh_pipeline;
 

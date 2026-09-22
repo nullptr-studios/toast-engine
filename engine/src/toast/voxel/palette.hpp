@@ -42,7 +42,9 @@ struct PaletteEntry {
 	/// 0 burns away and only read for flammable materials
 	uint8_t transforms_to = 0;
 
-	std::array<uint8_t, 6> reserved {};
+	uint8_t alpha = 255;
+
+	std::array<uint8_t, 5> reserved {};
 
 	[[nodiscard]]
 	constexpr auto operator==(const PaletteEntry&) const noexcept -> bool = default;

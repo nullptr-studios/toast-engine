@@ -6,6 +6,9 @@
  */
 
 #pragma once
+#include "physics_settings.hpp"
+
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <toast/log.hpp>
@@ -22,10 +25,15 @@ struct StepResult {
 
 class Accumulator {
 public:
-	// TODO: This should read from the project settings
-	static constexpr double frequency = 60.0;
-	static constexpr double fixed_delta = 1.0 / frequency;
-	static constexpr unsigned max_steps = 8;
+	[[nodiscard]]
+	static auto fixedDelta() -> double {
+		return tunables().fixedDelta();
+	}
+
+	[[nodiscard]]
+	static auto maxSteps() -> unsigned {
+		return std::max(tunables().max_substeps, 1u);
+	}
 
 	template<typename Fn>
 	auto tick(double dt, Fn&& fn) -> StepResult {
@@ -34,6 +42,8 @@ public:
 		m_accumulator += dt;
 
 		StepResult result;
+		const double fixed_delta = fixedDelta();
+		const unsigned max_steps = maxSteps();
 
 		while (m_accumulator >= fixed_delta && result.steps < max_steps) {
 			fn();
@@ -54,7 +64,7 @@ public:
 
 	[[nodiscard]]
 	auto alpha() const noexcept -> double {
-		return m_accumulator / fixed_delta;
+		return m_accumulator / fixedDelta();
 	}
 
 	[[nodiscard]]

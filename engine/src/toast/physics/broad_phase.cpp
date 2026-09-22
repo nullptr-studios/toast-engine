@@ -1,5 +1,7 @@
 #include "broad_phase.hpp"
 
+#include "physics_settings.hpp"
+
 #include <algorithm>
 #include <cmath>
 #include <future>
@@ -100,7 +102,7 @@ auto BroadPhase::findPairs(CollisionWorldView world) -> std::vector<BroadPhasePa
 	ZoneValue(static_cast<uint64_t>(world.shapes.size()));
 	m_stats = {.input_shapes = world.shapes.size()};
 
-	constexpr size_t minimum_bounds_per_job = 32;
+	const size_t minimum_bounds_per_job = tunables().min_bounds_per_job;
 	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), 1ull);
 	const size_t maximum_job_count = worker_count * 3;
 	const size_t job_count =

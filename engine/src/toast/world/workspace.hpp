@@ -34,6 +34,13 @@ namespace toast {
  */
 class Workspace : public INodeOwner {
 public:
+	struct SizeHandlePoint {
+		glm::vec3 world_position {0.0f};
+		GizmoHandle handle = GizmoHandle::none;
+	};
+
+	static constexpr size_t k_max_size_handles = 6;
+
 	/**
 	 * @brief Creates a new workspace rooted at a single fresh node of the given type
 	 * @param type Fully-qualified C++ class name for the root node, e.g. "toast::Node3D"
@@ -130,6 +137,10 @@ protected:
 	glm::vec3 m_gizmo_drag_plane_normal {0.0f};    ///< world-space plane normal, for plane/center/ring drags
 	float m_gizmo_drag_start_angle = 0.0f;         ///< radians, for rotate drags
 	float m_gizmo_drag_current_factor = 1.0f;      ///< live scale factor, for the scale feedback stretch
+
+	glm::vec3 m_gizmo_drag_start_size {0.0f};
+	glm::vec3 m_gizmo_drag_start_local_pos {0.0f};
+	glm::quat m_gizmo_drag_start_local_rot {1.0f, 0.0f, 0.0f, 0.0f};
 	/// dragged field's value at drag start, set while the drag owns the open history transaction
 	std::optional<std::string> m_gizmo_history_start;
 
@@ -139,6 +150,13 @@ protected:
 	auto gizmoOrientation() const -> glm::quat;
 	[[nodiscard]]
 	auto gizmoScale() const -> float;
+	[[nodiscard]]
+	auto gizmoInteractionAllowed() const -> bool;
+
+	[[nodiscard]]
+	auto collectSizeHandles() const -> std::pair<std::array<SizeHandlePoint, k_max_size_handles>, uint32_t>;
+
+	void gizmoApplySizeDrag(float delta);
 	void gizmoUpdateHover();
 	void gizmoBeginDrag(GizmoHandle handle);
 	void gizmoUpdateDrag();
@@ -199,6 +217,10 @@ public:
 		GizmoHandle hover = GizmoHandle::none;
 		GizmoHandle active = GizmoHandle::none;
 		float drag_scale_factor = 1.0f;    ///< scale tool only: live multiplicative factor for the active handle
+
+		std::array<SizeHandlePoint, k_max_size_handles> size_handles {};
+		uint32_t size_handle_count = 0;
+		float size_handle_scale = 1.0f;
 	};
 
 	/// @brief snapshot of the active gizmo's transform/highlight state, resolved on the main thread for Engine::tick() to hand to

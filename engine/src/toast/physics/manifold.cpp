@@ -5,8 +5,10 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <toast/log.hpp>
 #include <tracy/Tracy.hpp>
 #include <utility>
 #include <vector>
@@ -343,6 +345,51 @@ struct BoxClipVertex {
 	bool clip_positive = false;
 };
 
+template<typename T, size_t Capacity>
+class FixedBuffer {
+public:
+	[[nodiscard]]
+	auto begin() noexcept {
+		return m_values.begin();
+	}
+
+	[[nodiscard]]
+	auto end() noexcept {
+		return m_values.begin() + static_cast<std::ptrdiff_t>(m_size);
+	}
+
+	[[nodiscard]]
+	auto begin() const noexcept {
+		return m_values.begin();
+	}
+
+	[[nodiscard]]
+	auto end() const noexcept {
+		return m_values.begin() + static_cast<std::ptrdiff_t>(m_size);
+	}
+
+	[[nodiscard]]
+	auto back() const -> const T& {
+		return m_values[m_size - 1];
+	}
+
+	[[nodiscard]]
+	auto empty() const noexcept -> bool {
+		return m_size == 0;
+	}
+
+	void emplace_back(const T& value) {
+		TOAST_ASSERT(m_size < Capacity, "Physics", "Fixed collision buffer capacity exceeded");
+		if (m_size < Capacity) {
+			m_values[m_size++] = value;
+		}
+	}
+
+private:
+	std::array<T, Capacity> m_values {};
+	size_t m_size = 0;
+};
+
 auto boxProjectionRadius(const WorldBox& box, const glm::vec3& axis) -> float {
 	float radius = 0.0f;
 	for (int index = 0; index < 3; ++index) {
@@ -399,10 +446,10 @@ auto clippedIncidentFeature(const BoxClipVertex& first, const BoxClipVertex& sec
 }
 
 auto clipPolygonAgainstPlane(
-    std::vector<BoxClipVertex> polygon, const glm::vec3& plane_center, const glm::vec3& plane_normal, float plane_extent,
+    FixedBuffer<BoxClipVertex, 8> polygon, const glm::vec3& plane_center, const glm::vec3& plane_normal, float plane_extent,
     int plane_axis, bool plane_positive
-) -> std::vector<BoxClipVertex> {
-	std::vector<BoxClipVertex> result;
+) -> FixedBuffer<BoxClipVertex, 8> {
+	FixedBuffer<BoxClipVertex, 8> result;
 	if (polygon.empty()) {
 		return result;
 	}
@@ -443,7 +490,7 @@ auto clipPolygonAgainstPlane(
 	return result;
 }
 
-auto incidentFaceVertices(const WorldBox& box, const glm::vec3& reference_normal) -> std::vector<BoxClipVertex> {
+auto incidentFaceVertices(const WorldBox& box, const glm::vec3& reference_normal) -> FixedBuffer<BoxClipVertex, 8> {
 	int face_axis = 0;
 	float greatest_alignment = -1.0f;
 	for (int axis = 0; axis < 3; ++axis) {
@@ -481,7 +528,12 @@ auto incidentFaceVertices(const WorldBox& box, const glm::vec3& reference_normal
 		};
 	};
 
-	return {vertex(-1.0f, -1.0f), vertex(1.0f, -1.0f), vertex(1.0f, 1.0f), vertex(-1.0f, 1.0f)};
+	FixedBuffer<BoxClipVertex, 8> result;
+	result.emplace_back(vertex(-1.0f, -1.0f));
+	result.emplace_back(vertex(1.0f, -1.0f));
+	result.emplace_back(vertex(1.0f, 1.0f));
+	result.emplace_back(vertex(-1.0f, 1.0f));
+	return result;
 }
 
 auto reduceContacts(std::vector<ContactCandidate> candidates, const glm::vec3& normal) -> std::vector<ContactCandidate> {
@@ -583,7 +635,7 @@ auto reduceContacts(std::vector<ContactCandidate> candidates, const glm::vec3& n
 
 struct BoxSatContacts {
 	glm::vec3 normal;
-	std::vector<ContactCandidate> candidates;
+	FixedBuffer<ContactCandidate, 8> candidates;
 };
 
 auto collideWorldBoxes(const WorldBox& box_a, const WorldBox& box_b) -> std::optional<BoxSatContacts> {
@@ -661,7 +713,7 @@ auto collideWorldBoxes(const WorldBox& box_a, const WorldBox& box_b) -> std::opt
 		}
 	}
 
-	std::vector<ContactCandidate> candidates;
+	FixedBuffer<ContactCandidate, 8> candidates;
 	if (best_axis.type == BoxAxisType::edge) {
 		auto edge_a = boxSupportEdge(box_a, best_axis.axis_a, normal);
 		auto edge_b = boxSupportEdge(box_b, best_axis.axis_b, -normal);
@@ -685,7 +737,7 @@ auto collideWorldBoxes(const WorldBox& box_a, const WorldBox& box_b) -> std::opt
 		    reference.center + reference.rotation[reference_axis] * reference.half_extents[reference_axis] * reference_sign;
 		int tangent_a = (reference_axis + 1) % 3;
 		int tangent_b = (reference_axis + 2) % 3;
-		std::vector<BoxClipVertex> polygon = incidentFaceVertices(incident, reference_normal);
+		FixedBuffer<BoxClipVertex, 8> polygon = incidentFaceVertices(incident, reference_normal);
 
 		polygon = clipPolygonAgainstPlane(
 		    std::move(polygon),
@@ -1158,7 +1210,8 @@ auto collideBoxes(BroadPhasePair pair, CollisionElement a, CollisionElement b) -
 		return std::nullopt;
 	}
 
-	std::vector<_detail::ContactCandidate> candidates = _detail::reduceContacts(std::move(sat->candidates), sat->normal);
+	std::vector<_detail::ContactCandidate> candidates(sat->candidates.begin(), sat->candidates.end());
+	candidates = _detail::reduceContacts(std::move(candidates), sat->normal);
 	const ContactMaterial material = _detail::combineMaterials(shape_a.material, shape_b.material);
 	Manifold manifold {
 	  .pair = pair,

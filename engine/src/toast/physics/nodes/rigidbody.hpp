@@ -74,6 +74,8 @@ private:
 
 	void applyPhysicsTransform(const glm::vec3& position, const glm::quat& rotation);
 
+	void onEditorTransformChanged() override;
+
 	BodyType m_body_type;
 	BodyID m_body;
 	std::vector<ActiveContact> m_active_contacts;

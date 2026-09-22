@@ -153,7 +153,7 @@ auto writeVoxIntermediates(const std::filesystem::path& source, const std::files
 			defaulted.push_back(static_cast<uint8_t>(i));
 		}
 	}
-	const VoxelPalette palette(scene.palette, 0, std::move(defaulted));
+	const VoxelPalette palette(scene.palette, VoxelMaterialSlots {}, std::move(defaulted));
 	out.palette_file_name = out.base_name + ".tpal";
 	voxWriteFile(out_dir / out.palette_file_name, palette.serialize(SaveMode::editor));
 

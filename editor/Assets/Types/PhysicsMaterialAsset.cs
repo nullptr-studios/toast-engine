@@ -13,7 +13,7 @@ public class PhysicsMaterialAsset : BaseAsset {
 	public override string ChipColor => "Green";
 	public override LucideIconKind Icon => LucideIconKind.Atom;
 	public override bool CanBeCreated => true;
-	public override string Category => "Data";
+	public override string Category => "Physics";
 	public override bool HasThumbnail => false;
 	public override bool CanBeEdited => true;
 	public override string EditorTool => "GenericEditor";

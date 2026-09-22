@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id" : "core://schemas/destruction_material.schema.json",
+  "title": "Destruction Material (.tdm)",
+  "type": "object",
+  "required" : ["density", "toughness"],
+  "properties": {
+    "density": {
+      "type": "number",
+      "x-toast-type" : "float",
+      "x-toast-unit" : "kg/m^3",
+      "default" : 1000.0,
+      "minimum" : 1,
+      "maximum" : 65535
+    },
+    "toughness": {
+      "type": "number",
+      "x-toast-type" : "float",
+      "x-toast-unit" : "J",
+      "default" : 100.0,
+      "minimum" : 0
+    },
+    "structural_strength": {
+      "type": "number",
+      "x-toast-type" : "float",
+      "x-toast-unit" : "Pa",
+      "default" : 0.0,
+      "minimum" : 0
+    },
+    "shatter_radius": {
+      "type": "number",
+      "x-toast-type" : "float",
+      "x-toast-unit" : "m",
+      "default" : 0.5,
+      "minimum" : 0
+    },
+    "flammable": {
+      "type": "boolean",
+      "default" : false
+    },
+    "burn_rate": {
+      "type": "number",
+      "x-toast-type" : "float",
+      "x-toast-unit" : "s/m",
+      "default" : 0.0,
+      "minimum" : 0
+    }
+  }
+}

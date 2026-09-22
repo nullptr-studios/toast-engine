@@ -65,6 +65,8 @@ public:
 	[[nodiscard]]
 	auto getWorldTransform() const noexcept -> const glm::mat4&;
 
+	virtual void onEditorTransformChanged() { }
+
 	static constexpr glm::vec3 world_up = {0.0f, 0.0f, 1.0f};
 	static constexpr glm::vec3 world_forward = {0.0f, 1.0f, 0.0f};
 

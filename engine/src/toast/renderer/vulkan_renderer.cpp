@@ -3224,6 +3224,14 @@ void VulkanRenderer::tick(float time) noexcept {
 		frame.transform_gizmo.drag_scale_factor = m_gizmo_state.drag_scale_factor;
 	}
 
+	if (m_gizmo_state.size_handle_count > 0) {
+		frame.transform_gizmo.size_handles = m_gizmo_state.size_handles;
+		frame.transform_gizmo.size_handle_count = m_gizmo_state.size_handle_count;
+		frame.transform_gizmo.size_handle_scale = m_gizmo_state.size_handle_scale;
+		frame.transform_gizmo.hover = m_gizmo_state.hover;
+		frame.transform_gizmo.active = m_gizmo_state.active;
+	}
+
 	{
 		const bool is_capture = frame.probe_capture_index >= 0 || frame.irradiance_capture_index >= 0;
 

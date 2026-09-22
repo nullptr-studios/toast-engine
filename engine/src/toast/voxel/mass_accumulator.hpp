@@ -130,6 +130,12 @@ struct MassProperties {
 };
 
 [[nodiscard]]
+inline auto resolveMass(const MassMoments& moments, float voxel_size = k_voxel_size) -> float {
+	const double s = static_cast<double>(voxel_size);
+	return static_cast<float>(static_cast<double>(moments.mass) * s * s * s);
+}
+
+[[nodiscard]]
 inline auto resolve(const MassMoments& moments, float voxel_size = k_voxel_size) -> MassProperties {
 	MassProperties out;
 	if (moments.mass <= 0) {

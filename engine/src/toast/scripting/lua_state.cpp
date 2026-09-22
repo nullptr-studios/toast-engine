@@ -23,6 +23,7 @@
 #include <luabridge3/LuaBridge/LuaBridge.h>
 #include <toast/assets/asset_registry.hpp>
 #include <toast/assets/assets.hpp>
+#include <toast/input/action.hpp>
 #include <toast/log.hpp>
 #include <toast/reflect/reflect_node.hpp>
 #include <toast/time.hpp>
@@ -101,6 +102,29 @@ void luaToastError(const std::string& msg) {
 thread_local std::vector<size_t> t_held_states;    // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
 
 constexpr auto k_cross_state_timeout = std::chrono::milliseconds(500);
+
+auto inputActionValue(const input::Action& action, lua_State* state) -> luabridge::LuaRef {
+	const input::Value& value = action.value();
+	switch (action.valueType()) {
+		case input::ValueType::axis_0d: return {state, value.as<bool>()};
+		case input::ValueType::axis_1d: return {state, static_cast<lua_Number>(value.as<float>())};
+		case input::ValueType::axis_2d: return {state, value.as<glm::vec2>()};
+	}
+	return {state};
+}
+
+auto inputActionBinds(const input::Action& action, lua_State* state) -> luabridge::LuaRef {
+	const auto& binds = action.binds();
+	lua_createtable(state, static_cast<int>(binds.size()), 0);
+	for (size_t i = 0; i < binds.size(); ++i) {
+		lua_pushinteger(state, static_cast<lua_Integer>(i + 1));
+		if (auto result = luabridge::Stack<input::Bind>::push(state, binds[i]); !result) {
+			lua_pushnil(state);
+		}
+		lua_settable(state, -3);
+	}
+	return luabridge::LuaRef::fromStack(state);
+}
 }
 
 LuaState::Lock::Lock(std::unique_lock<std::recursive_timed_mutex> lock, lua_State* state, size_t index) noexcept
@@ -369,6 +393,15 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    .addFunction("max", [](const glm::vec3& a, const glm::vec3& b) { return glm::max(a, b); })
 	    .endClass()
 
+	    .deriveClass<Vec3FieldProxy, glm::vec3>("__field_vec3")
+	    .addProperty("x", &Vec3FieldProxy::getX, &Vec3FieldProxy::setX)
+	    .addProperty("y", &Vec3FieldProxy::getY, &Vec3FieldProxy::setY)
+	    .addProperty("z", &Vec3FieldProxy::getZ, &Vec3FieldProxy::setZ)
+	    .addProperty("r", &Vec3FieldProxy::getX, &Vec3FieldProxy::setX)
+	    .addProperty("g", &Vec3FieldProxy::getY, &Vec3FieldProxy::setY)
+	    .addProperty("b", &Vec3FieldProxy::getZ, &Vec3FieldProxy::setZ)
+	    .endClass()
+
 	    // vec4
 	    .beginClass<glm::vec4>("vec4")
 	    .addConstructor<void (*)(float, float, float, float)>()
@@ -485,6 +518,96 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    .addFunction("vec4", [](const Color4& c) { return c.rgba; })
 	    .addFunction("__tostring", &Color4::toString)
 	    .endClass()
+
+	    .beginClass<input::KeyCode>("InputKeyCode")
+	    .addProperty(
+	        "device", +[](const input::KeyCode* key) { return static_cast<lua_Integer>(key->device); }
+	    )
+	    .addProperty(
+	        "kind", +[](const input::KeyCode* key) { return static_cast<lua_Integer>(key->kind); }
+	    )
+	    .addProperty(
+	        "code", +[](const input::KeyCode* key) { return key->code; }
+	    )
+	    .addProperty(
+	        "valid", +[](const input::KeyCode* key) { return key->valid; }
+	    )
+	    .endClass()
+
+	    .beginClass<input::Bind>("InputBind")
+	    .addFunction(
+	        "keycode", +[](const input::Bind& bind) { return bind.keycode(); }
+	    )
+	    .addFunction(
+	        "keycodeString", +[](const input::Bind& bind) { return std::string(bind.keycodeString()); }
+	    )
+	    .endClass()
+
+	    .beginClass<input::Action>("InputAction")
+	    .addFunction(
+	        "uid", +[](const input::Action& action) { return static_cast<lua_Integer>(action.uid().data()); }
+	    )
+	    .addFunction(
+	        "name", +[](const input::Action& action) { return std::string(action.name()); }
+	    )
+	    .addFunction(
+	        "functionName", +[](const input::Action& action) { return std::string(action.functionName()); }
+	    )
+	    .addFunction(
+	        "valueType", +[](const input::Action& action) { return static_cast<lua_Integer>(action.valueType()); }
+	    )
+	    .addFunction("value", inputActionValue)
+	    .addFunction(
+	        "modifiers", +[](const input::Action& action) { return static_cast<lua_Integer>(action.modifiers()); }
+	    )
+	    .addFunction(
+	        "device", +[](const input::Action& action) { return static_cast<lua_Integer>(action.device()); }
+	    )
+	    .addFunction("timeSinceStart", &input::Action::timeSinceStart)
+	    .addFunction("timeSinceTry", &input::Action::timeSinceTry)
+	    .addFunction("remainingCountdown", &input::Action::remainingCountdown)
+	    .addFunction("binds", inputActionBinds)
+	    .addFunction(
+	        "__tostring", +[](const input::Action& action) { return std::format("InputAction({})", action.name()); }
+	    )
+	    .endClass()
+
+	    .beginNamespace("InputEvent")
+	    .addVariable("start", input::ActionEvent::start)
+	    .addVariable("hold", input::ActionEvent::hold)
+	    .addVariable("release", input::ActionEvent::release)
+	    .addVariable("tries", input::ActionEvent::tries)
+	    .addVariable("countdown", input::ActionEvent::countdown)
+	    .addVariable("cancelled", input::ActionEvent::cancelled)
+	    .endNamespace()
+
+	    .beginNamespace("InputDevice")
+	    .addVariable("none", input::Device::none)
+	    .addVariable("keyboard", input::Device::keyboard)
+	    .addVariable("mouse", input::Device::mouse)
+	    .addVariable("controller", input::Device::controller)
+	    .endNamespace()
+
+	    .beginNamespace("InputValueType")
+	    .addVariable("axis0d", input::ValueType::axis_0d)
+	    .addVariable("axis1d", input::ValueType::axis_1d)
+	    .addVariable("axis2d", input::ValueType::axis_2d)
+	    .endNamespace()
+
+	    .beginNamespace("InputModifier")
+	    .addVariable("none", input::ModifierKey::none)
+	    .addVariable("shift", input::ModifierKey::shift)
+	    .addVariable("control", input::ModifierKey::control)
+	    .addVariable("alt", input::ModifierKey::alt)
+	    .endNamespace()
+
+	    .beginNamespace("InputKind")
+	    .addVariable("button", input::InputKind::button)
+	    .addVariable("axis1d", input::InputKind::axis1d)
+	    .addVariable("axis2d", input::InputKind::axis2d)
+	    .addVariable("scroll", input::InputKind::scroll)
+	    .addVariable("cursor", input::InputKind::cursor)
+	    .endNamespace()
 
 	    // AssetProxy
 	    .beginClass<AssetProxy>("Asset")

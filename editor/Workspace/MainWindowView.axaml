@@ -260,9 +260,6 @@
 					          ToggleType="CheckBox"
 					          IsChecked="{Binding SchemaEditorVisible, Mode=TwoWay}"
 					          InputGesture="Alt+Shift+D3" />
-					<MenuItem Header="_Renderer Settings"
-					          ToggleType="CheckBox"
-					          IsChecked="{Binding RendererSettingsVisible, Mode=TwoWay}" />
 					<Separator />
 					<MenuItem Header="_Logs"
 					          ToggleType="CheckBox"

@@ -90,7 +90,13 @@ public sealed partial class FloatSettingRow : SettingRow {
 
 	public bool UseSlider => Descriptor.HasRange;
 
+	public float FloatValue {
+		get => (float)Value;
+		set => Value = value;
+	}
+
 	partial void OnValueChanged(double value) {
+		OnPropertyChanged(nameof(FloatValue));
 		if (SuppressWrite) return;
 		ToastSettings.SetFloat(Key, value);
 	}
@@ -113,7 +119,17 @@ public sealed partial class IntSettingRow : SettingRow {
 	public decimal Maximum => Descriptor.HasRange ? (decimal)Descriptor.Max : decimal.MaxValue;
 	public decimal Increment => Descriptor.Step > 0.0 ? (decimal)Descriptor.Step : 1m;
 
+	public int IntValue {
+		get => (int)Value;
+		set => Value = value;
+	}
+
+	public double MinimumDouble => (double)Minimum;
+
+	public double MaximumDouble => (double)Maximum;
+
 	partial void OnValueChanged(decimal value) {
+		OnPropertyChanged(nameof(IntValue));
 		if (SuppressWrite) return;
 		ToastSettings.SetInt(Key, (long)value);
 	}

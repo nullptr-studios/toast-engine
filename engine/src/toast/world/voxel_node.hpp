@@ -19,7 +19,6 @@
 namespace assets {
 class VoxelModel;
 class VoxelPalette;
-class VoxelMaterialLibrary;
 class PhysicsMaterial;
 }
 
@@ -122,6 +121,8 @@ private:
 	void handleContactEnd(const physics::BroadPhasePair& pair);
 
 	void applyPhysicsTransform(const glm::vec3& position, const glm::quat& rotation);
+
+	void onEditorTransformChanged() override;
 	void publishPhysicsState(bool is_awake, const glm::vec3& current_linear_velocity, const glm::vec3& current_angular_velocity);
 
 	void assignBody(physics::BodyID body) noexcept { m_body = body; }
@@ -147,10 +148,13 @@ private:
 	[[Reflect]]
 	bool indestructible = false;
 
-	[[Reflect]]
+	[[Reflect, ReadOnly, Unit("kg")]]
+	float mass = 0.0f;
+
+	[[Reflect, Group("Physics")]]
 	bool allow_sleep = true;
 
-	[[Reflect, ReadOnly]]
+	[[Reflect, Group("Physics"), ReadOnly]]
 	bool awake = true;
 
 	[[Reflect, Name("Show AABB"), Group("AABB")]]
@@ -215,7 +219,6 @@ private:
 	const assets::VoxelModel* m_instanced_from = nullptr;
 
 	assets::Handle<assets::VoxelPalette> m_model_palette;
-	assets::Handle<assets::VoxelMaterialLibrary> m_material_library;
 
 	uint32_t m_revision = 0;
 

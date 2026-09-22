@@ -137,4 +137,9 @@ void Rigidbody::applyPhysicsTransform(const glm::vec3& position, const glm::quat
 	syncTransform();
 }
 
+void Rigidbody::onEditorTransformChanged() {
+	syncTransform();
+	Simulator::setBodyTransform(m_body, world_position, world_rotation);
+}
+
 }

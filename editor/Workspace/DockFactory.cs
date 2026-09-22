@@ -24,7 +24,7 @@ public class DockFactory : Factory {
 	public HierarchyViewModel? Hierarchy { get; private set; }
 	public HistoryViewModel? History { get; private set; }
 	public InspectorViewModel? Inspector { get; private set; }
-	public RendererSettingsViewModel? RendererSettingsVm { get; private set; }
+	public ProjectSettingsViewModel? ProjectSettingsVm { get; private set; }
 	public SignalsViewModel? Signals { get; private set; }
 	public GenericViewModel? GenericEditorVm { get; private set; }
 	public SchemaViewModel? SchemaEditorVm { get; private set; }
@@ -38,14 +38,14 @@ public class DockFactory : Factory {
 		var signals = new SignalsViewModel { Id = "Signals", Title = "Signals" };
 		var generic = new GenericViewModel { Id = "GenericEditor", Title = "Data Editor" };
 		var schema = new SchemaViewModel { Id = "SchemaEditor", Title = "Schema Editor" };
-		var rendererSettings = new RendererSettingsViewModel {
-			Id = "RendererSettings", Title = "Renderer Settings", CanPin = false
+		var projectSettings = new ProjectSettingsViewModel {
+			Id = "ProjectSettings", Title = "Project Settings", CanPin = false, CanFloat = true
 		};
 
 		Hierarchy = hierarchy;
 		History = history;
 		Inspector = inspector;
-		RendererSettingsVm = rendererSettings;
+		ProjectSettingsVm = projectSettings;
 		Signals = signals;
 		GenericEditorVm = generic;
 		SchemaEditorVm = schema;
@@ -126,7 +126,7 @@ public class DockFactory : Factory {
 			["Signals"] = () => layout,
 			["GenericEditor"] = () => layout,
 			["SchemaEditor"] = () => layout,
-			["RendererSettings"] = () => layout
+			["ProjectSettings"] = () => layout
 		};
 		DockableLocator = new Dictionary<string, Func<IDockable?>> {
 			["Root"] = () => m_rootDock,
@@ -134,7 +134,7 @@ public class DockFactory : Factory {
 			["History"] = () => History,
 			["GenericEditor"] = () => GenericEditorVm,
 			["SchemaEditor"] = () => SchemaEditorVm,
-			["RendererSettings"] = () => RendererSettingsVm
+			["ProjectSettings"] = () => ProjectSettingsVm
 		};
 		HostWindowLocator = new Dictionary<string, Func<IHostWindow?>> {
 			[nameof(IDockWindow)] = () => new EditorHostWindow()
@@ -299,7 +299,7 @@ public class DockFactory : Factory {
 			"Signals" => Signals,
 			"GenericEditor" => GenericEditorVm,
 			"SchemaEditor" => SchemaEditorVm,
-			"RendererSettings" => RendererSettingsVm,
+			"ProjectSettings" => ProjectSettingsVm,
 			_ => null
 		};
 	}
@@ -311,7 +311,7 @@ public class DockFactory : Factory {
 		yield return Signals;
 		yield return GenericEditorVm;
 		yield return SchemaEditorVm;
-		yield return RendererSettingsVm;
+		yield return ProjectSettingsVm;
 	}
 
 	private IToolDock? PreferredDockFor(Tool tool) {
@@ -352,8 +352,62 @@ public class DockFactory : Factory {
 		return ReferenceEquals(dock, m_rootDock) || LayoutSerializer.ContainsVisible(m_rootDock, dock);
 	}
 
+	private void FloatTool(Tool tool, double width, double height) {
+		if (m_rootDock is null) return;
+
+		var toolDock = CreateToolDock();
+		toolDock.Id = tool.Id + "Dock";
+		toolDock.Alignment = Alignment.Unset;
+		toolDock.VisibleDockables = CreateList<IDockable>(tool);
+		toolDock.ActiveDockable = tool;
+
+		var layout = CreateRootDock();
+		layout.Id = tool.Id + "Root";
+		layout.IsCollapsable = false;
+		layout.VisibleDockables = CreateList<IDockable>(toolDock);
+		layout.HiddenDockables = CreateList<IDockable>();
+		layout.Windows = CreateList<IDockWindow>();
+		layout.ActiveDockable = toolDock;
+		layout.DefaultDockable = toolDock;
+
+		var window = CreateDockWindow();
+		window.Id = tool.Id + "Window";
+		window.Title = tool.Title ?? tool.Id;
+		window.Width = width;
+		window.Height = height;
+		window.Owner = m_rootDock;
+		window.Layout = layout;
+		layout.Window = window;
+
+		m_rootDock.HiddenDockables?.Remove(tool);
+		m_rootDock.Windows?.Add(window);
+		window.Present(false);
+	}
+
+	private bool IsToolFloating(Tool tool) {
+		return m_rootDock?.Windows?.Any(w => w.Layout is { } layout && LayoutSerializer.ContainsVisible(layout, tool)) ?? false;
+	}
+
 	public bool ToggleTool(string id) {
 		if (ToolById(id) is not { } tool) return false;
+
+		if (id == "ProjectSettings") {
+			if (IsToolFloating(tool)) {
+				var window = m_rootDock?.Windows?.FirstOrDefault(
+					w => w.Layout is { } layout && LayoutSerializer.ContainsVisible(layout, tool));
+				window?.Exit();
+				return false;
+			}
+
+			if (LayoutSerializer.ContainsVisible(m_rootDock, tool)) {
+				HideTool(tool);
+				return false;
+			}
+
+			FloatTool(tool, 1200, 800);
+			return true;
+		}
+
 		if (IsToolVisible(id)) {
 			HideTool(tool);
 			return false;
@@ -365,7 +419,8 @@ public class DockFactory : Factory {
 
 
 	public bool IsToolVisible(string id) {
-		return ToolById(id) is { } tool && LayoutSerializer.ContainsVisible(m_rootDock, tool);
+		if (ToolById(id) is not { } tool) return false;
+		return LayoutSerializer.ContainsVisible(m_rootDock, tool) || IsToolFloating(tool);
 	}
 
 	public void OpenGenericEditor(

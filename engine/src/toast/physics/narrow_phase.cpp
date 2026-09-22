@@ -76,7 +76,6 @@ auto NarrowPhase::generateManifolds(CollisionWorldView world, std::span<const Br
 		}
 	}
 
-	std::ranges::sort(queue.manifolds, [](const Manifold& lhs, const Manifold& rhs) { return lhs < rhs; });
 	return queue;
 }
 

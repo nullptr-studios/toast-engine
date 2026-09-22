@@ -10,6 +10,7 @@
 #include "nodes/dynamic_rigidbody.hpp"
 #include "nodes/rigidbody.hpp"
 #include "nodes/sphere_collider.hpp"
+#include "physics_settings.hpp"
 #include "voxel_data_lock.hpp"
 
 #include <algorithm>
@@ -25,14 +26,27 @@
 namespace physics {
 
 namespace {
-constexpr float sleep_linear_threshold_squared = 0.05f * 0.05f;
-constexpr float sleep_angular_threshold_squared = 0.05f * 0.05f;
-constexpr float sleep_delay = 0.5f;
 constexpr float unit_scale_tolerance = 1.0e-4f;
 
-constexpr size_t k_max_fragment_spawns_per_step = 8;
-constexpr size_t k_max_active_fragments = 96;
-constexpr uint32_t k_fragment_pool_headroom = 4096;
+struct CachedManifoldKey {
+	const BroadPhasePair& pair;
+	uint8_t normal_index;
+};
+
+[[nodiscard]]
+auto cachedManifoldLess(const CachedManifold& manifold, CachedManifoldKey key) -> bool {
+	return manifold.pair < key.pair || (manifold.pair == key.pair && manifold.normal_index < key.normal_index);
+}
+
+[[nodiscard]]
+auto cachedManifoldLess(const CachedManifold& lhs, const CachedManifold& rhs) -> bool {
+	return cachedManifoldLess(lhs, CachedManifoldKey {.pair = rhs.pair, .normal_index = rhs.normal_index});
+}
+
+[[nodiscard]]
+auto cachedManifoldMatches(const CachedManifold& manifold, CachedManifoldKey key) -> bool {
+	return manifold.pair == key.pair && manifold.normal_index == key.normal_index;
+}
 
 // TODO: do this but with materials
 [[nodiscard]]
@@ -282,13 +296,7 @@ void Simulator::registerVoxelNode(toast::VoxelNode& node) {
 		return;
 	}
 
-	// TODO: THIS IS SEVERILY HARDCODED
 	PhysicsMaterial material;
-	// if (node.material.hasValue()) {
-	// 	material.restitution = node.material->restitution();
-	// 	material.static_friction = node.material->staticFriction();
-	// 	material.dynamic_friction = node.material->dynamicFriction();
-	// }
 
 	node.syncTransform();
 	const bool dynamic_body = not node.indestructible;
@@ -298,7 +306,7 @@ void Simulator::registerVoxelNode(toast::VoxelNode& node) {
 	      .allow_sleep = node.allow_sleep,
 	      .position = node.world_position,
 	      .rotation = node.world_rotation,
-	      .mass = 1.0f,    // HACK: HARDCODED
+	      .mass = 1.0f,
 	      .gravity_scale = node.gravity_scale,
 	    }
 	);
@@ -399,14 +407,14 @@ void Simulator::tick() {
 	PhaseScope step_phase {*this, SimulationPhase::idle, SimulationPhase::mutation};
 	m_profile = {};
 
-	const float dt = static_cast<float>(Accumulator::fixed_delta);
+	const float dt = static_cast<float>(Accumulator::fixedDelta());
 	reapFragments();
 	syncEnabledState();
 	applyDamageCommands();
 	auto connectivity_results = runConnectivityAnalysis();
 	queuePendingFragments(connectivity_results);
 	spawnBudgetedFragments();
-	enforceFragmentBudget();
+	updateFragmentProfile();
 	integrate(dt);
 
 	{
@@ -558,7 +566,7 @@ void Simulator::reapFragments() {
 	std::erase_if(m_fragments, [this](const FragmentRecord& record) { return not valid(record.body); });
 	std::erase_if(m_pending_fragments, [this](const PendingFragments& pending) { return not valid(pending.shape); });
 
-	while (not m_fragments.empty() && voxel::runtimeBrickPool().freeCount() < k_fragment_pool_headroom) {
+	while (not m_fragments.empty() && voxel::runtimeBrickPool().freeCount() < tunables().fragment_pool_headroom) {
 		destroyFragmentRecord(m_fragments.front().body);
 		++m_profile.fragments_evicted;
 	}
@@ -622,11 +630,11 @@ void Simulator::spawnBudgetedFragments() {
 
 	size_t spawned_this_step = 0;
 	for (auto it = m_pending_fragments.begin();
-	     it != m_pending_fragments.end() && spawned_this_step < k_max_fragment_spawns_per_step;) {
+	     it != m_pending_fragments.end() && spawned_this_step < tunables().max_fragment_spawns_per_step;) {
 		PendingFragments& pending = *it;
 		bool pool_full = false;
 
-		while (pending.cursor < pending.components.size() && spawned_this_step < k_max_fragment_spawns_per_step) {
+		while (pending.cursor < pending.components.size() && spawned_this_step < tunables().max_fragment_spawns_per_step) {
 			const DetachedComponent& component = pending.components[pending.cursor];
 
 			const Shape* shape = tryGetShape(pending.shape);
@@ -662,8 +670,8 @@ void Simulator::spawnBudgetedFragments() {
 	}
 }
 
-void Simulator::enforceFragmentBudget() {
-	ZoneScopedN("physics::FragmentBudget");
+void Simulator::updateFragmentProfile() {
+	ZoneScopedN("physics::FragmentProfile");
 
 	size_t active = 0;
 	for (const FragmentRecord& record : m_fragments) {
@@ -673,41 +681,16 @@ void Simulator::enforceFragmentBudget() {
 		}
 	}
 
-	for (const FragmentRecord& record : m_fragments) {
-		if (active <= k_max_active_fragments) {
-			break;
-		}
-		Body* body = tryGetBody(record.body);
-		if (body == nullptr || not body->enabled || not body->awake) {
-			continue;
-		}
-		body->sleep_locked = true;
-		sleepBody(record.body);
-		--active;
-	}
-
-	size_t sleep_locked = 0;
-	for (const FragmentRecord& record : m_fragments) {
-		const Body* body = tryGetBody(record.body);
-		if (body != nullptr && body->sleep_locked) {
-			++sleep_locked;
-		}
-	}
-
 	m_profile.fragments_active = active;
-	m_profile.fragments_sleep_locked = sleep_locked;
 }
 
-void Simulator::unlockSleep(BodyID id) {
+void Simulator::touchFragment(BodyID id) {
+	wakeBody(id);
+
 	const auto it = std::ranges::find(m_fragments, id, &FragmentRecord::body);
 	if (it == m_fragments.end()) {
 		return;
 	}
-
-	if (Body* body = tryGetBody(id)) {
-		body->sleep_locked = false;
-	}
-	wakeBody(id);
 
 	it->sequence = m_next_fragment_sequence++;
 	std::rotate(it, it + 1, m_fragments.end());
@@ -936,9 +919,6 @@ void Simulator::wakeBody(BodyID id) {
 		return;
 	}
 	if (Body* body = instance->tryGetBody(id); body && body->type == BodyType::dynamic_body) {
-		if (body->sleep_locked) {
-			return;
-		}
 		instance->m_profile.bodies_woken += not body->awake;
 		body->awake = true;
 		body->sleep_timer = 0.0f;
@@ -952,7 +932,7 @@ void Simulator::sleepBody(BodyID id) {
 	if (Body* body = instance->tryGetBody(id); body && body->type == BodyType::dynamic_body) {
 		instance->m_profile.bodies_slept += body->awake;
 		body->awake = false;
-		body->sleep_timer = sleep_delay;
+		body->sleep_timer = tunables().sleep_delay;
 		body->linear_velocity = {};
 		body->angular_velocity = {};
 		body->previous_position = body->position;
@@ -983,28 +963,68 @@ void Simulator::wakeBodiesTouching(ShapeID id) {
 void Simulator::wakeContactGroups() {
 	ZoneScopedN("physics::WakeContactGroups");
 
-	bool woke_body = true;
-	while (woke_body) {
-		woke_body = false;
-		for (const Manifold& manifold : m_manifolds) {
-			Body* body_a = tryGetBody(manifold.pair.a.body);
-			Body* body_b = tryGetBody(manifold.pair.b.body);
-			if (not body_a || not body_b) {
-				continue;
-			}
+	std::vector<size_t> parents(m_bodies.size());
+	std::vector<size_t> ranks(m_bodies.size(), 0);
+	for (size_t index = 0; index < parents.size(); ++index) {
+		parents[index] = index;
+	}
 
-			const bool a_can_wake = body_a->type == BodyType::dynamic_body && body_a->awake;
-			const bool b_can_wake = body_b->type == BodyType::dynamic_body && body_b->awake;
-			if (a_can_wake && body_b->type == BodyType::dynamic_body && not body_b->awake) {
-				wakeBody(manifold.pair.b.body);
-				woke_body = true;
-			}
-			if (b_can_wake && body_a->type == BodyType::dynamic_body && not body_a->awake) {
-				wakeBody(manifold.pair.a.body);
-				woke_body = true;
-			}
+	auto find_root = [&parents](size_t index) {
+		size_t root = index;
+		while (parents[root] != root) {
+			root = parents[root];
+		}
+		while (parents[index] != index) {
+			const size_t next = parents[index];
+			parents[index] = root;
+			index = next;
+		}
+		return root;
+	};
+
+	for (const Manifold& manifold : m_manifolds) {
+		const Body* body_a = tryGetBody(manifold.pair.a.body);
+		const Body* body_b = tryGetBody(manifold.pair.b.body);
+		if (body_a == nullptr || body_b == nullptr || body_a->type != BodyType::dynamic_body ||
+		    body_b->type != BodyType::dynamic_body) {
+			continue;
+		}
+
+		size_t root_a = find_root(manifold.pair.a.body.slot);
+		size_t root_b = find_root(manifold.pair.b.body.slot);
+		if (root_a == root_b) {
+			continue;
+		}
+		if (ranks[root_a] < ranks[root_b]) {
+			std::swap(root_a, root_b);
+		}
+		parents[root_b] = root_a;
+		if (ranks[root_a] == ranks[root_b]) {
+			++ranks[root_a];
 		}
 	}
+
+	std::vector<bool> group_is_awake(m_bodies.size(), false);
+	for (size_t index = 0; index < m_bodies.size(); ++index) {
+		const BodySlot& slot = m_bodies[index];
+		if (slot.occupied && slot.body.enabled && slot.body.type == BodyType::dynamic_body && slot.body.awake) {
+			group_is_awake[find_root(index)] = true;
+		}
+	}
+
+	for (size_t index = 0; index < m_bodies.size(); ++index) {
+		const BodySlot& slot = m_bodies[index];
+		if (slot.occupied && slot.body.enabled && slot.body.type == BodyType::dynamic_body && group_is_awake[find_root(index)]) {
+			wakeBody(BodyID {.slot = static_cast<uint32_t>(index), .generation = slot.generation});
+		}
+	}
+}
+
+void Simulator::setBodyTransform(BodyID body, const glm::vec3& position, const glm::quat& rotation) {
+	if (instance == nullptr) {
+		return;
+	}
+	instance->setTransform(body, position, rotation);
 }
 
 void Simulator::setBodyEnabled(BodyID body, bool enabled) {
@@ -1105,6 +1125,12 @@ auto Simulator::publishVoxelTransform(VoxelNodeBinding& binding) -> bool {
 			binding.node->applyPhysicsTransform(body->position, body->rotation);
 		}
 		binding.node->publishPhysicsState(body->awake, body->linear_velocity, body->angular_velocity);
+	}
+
+	if (const Shape* shape = tryGetShape(binding.shape); shape != nullptr && shape->type == ShapeType::voxel) {
+		if (const VoxelShapeData* voxel_data = tryGetVoxelData(shape->voxel.data); voxel_data != nullptr) {
+			binding.node->mass = voxel::resolveMass(voxel_data->moments);
+		}
 	}
 	return true;
 }
@@ -1267,10 +1293,6 @@ auto Simulator::correctPositions(std::span<const size_t> manifold_indices) -> si
 	ZoneValue(static_cast<uint64_t>(manifold_indices.size()));
 	size_t correction_count = 0;
 
-	constexpr float penetration_slop = 0.005f;
-	constexpr float correction_beta = 0.2f;
-	constexpr float max_correction = 0.05f;
-
 	for (const size_t manifold_index : manifold_indices) {
 		const Manifold& manifold = m_manifolds[manifold_index];
 		if (not shouldSolve(manifold)) {
@@ -1300,12 +1322,12 @@ auto Simulator::correctPositions(std::span<const size_t> manifold_indices) -> si
 		}
 
 		// ignore tiny overlaps to prevent jitter
-		float excess_penetration = std::max(deepest_penetration - penetration_slop, 0.0f);
+		float excess_penetration = std::max(deepest_penetration - tunables().penetration_slop, 0.0f);
 		if (excess_penetration == 0.0f) {
 			continue;
 		}
 
-		float correction_distance = std::min(correction_beta * excess_penetration, max_correction);
+		float correction_distance = std::min(tunables().correction_beta * excess_penetration, tunables().max_correction);
 		glm::vec3 correction = manifold.normal * (correction_distance / inv_mass);
 
 		if (body_a->inverse_mass > 0.0f) {
@@ -1354,7 +1376,7 @@ auto Simulator::generateManifoldsAsync(CollisionWorldView world, std::span<const
 		}
 	}
 
-	constexpr size_t minimum_candidates_per_job = 2;
+	const size_t minimum_candidates_per_job = tunables().min_candidates_per_job;
 	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), 1ull);
 	const size_t maximum_job_count = worker_count * 3;
 	const size_t job_count =
@@ -1453,10 +1475,10 @@ void Simulator::updateSleeping(float dt) {
 		const float linear_speed_squared = glm::dot(body.linear_velocity, body.linear_velocity);
 		const float angular_speed_squared = glm::dot(body.angular_velocity, body.angular_velocity);
 		const bool is_still = std::isfinite(linear_speed_squared) && std::isfinite(angular_speed_squared) &&
-		                      linear_speed_squared <= sleep_linear_threshold_squared &&
-		                      angular_speed_squared <= sleep_angular_threshold_squared;
+		                      linear_speed_squared <= tunables().sleep_linear_threshold * tunables().sleep_linear_threshold &&
+		                      angular_speed_squared <= tunables().sleep_angular_threshold * tunables().sleep_angular_threshold;
 		if (is_still) {
-			body.sleep_timer = std::min(body.sleep_timer + dt, sleep_delay);
+			body.sleep_timer = std::min(body.sleep_timer + dt, tunables().sleep_delay);
 		} else {
 			wakeBody(BodyID {.slot = static_cast<uint32_t>(index), .generation = slot.generation});
 		}
@@ -1473,7 +1495,7 @@ void Simulator::updateSleeping(float dt) {
 
 		const size_t root = find_root(index);
 		group_exists[root] = true;
-		group_can_sleep[root] = group_can_sleep[root] && body.allow_sleep && body.sleep_timer >= sleep_delay;
+		group_can_sleep[root] = group_can_sleep[root] && body.allow_sleep && body.sleep_timer >= tunables().sleep_delay;
 	}
 
 	for (size_t index = 0; index < m_bodies.size(); ++index) {
@@ -1500,11 +1522,15 @@ void Simulator::updateCache(std::span<const Manifold> manifolds) {
 	for (const Manifold& manifold : manifolds) {
 		const uint32_t revision_a = shapeRevision(manifold.pair.a.shape);
 		const uint32_t revision_b = shapeRevision(manifold.pair.b.shape);
-		const auto old_manifold = std::ranges::find_if(m_cached_manifolds, [&manifold](const CachedManifold& cached) {
-			return cached.pair == manifold.pair && cached.normal_index == manifold.normal_index;
-		});
-		const bool revisions_match = old_manifold != m_cached_manifolds.end() && old_manifold->shape_a_revision == revision_a &&
-		                             old_manifold->shape_b_revision == revision_b;
+		const CachedManifoldKey key {.pair = manifold.pair, .normal_index = manifold.normal_index};
+		const auto old_manifold = std::lower_bound(
+		    m_cached_manifolds.begin(), m_cached_manifolds.end(), key, [](const CachedManifold& cached, CachedManifoldKey candidate) {
+			    return cachedManifoldLess(cached, candidate);
+		    }
+		);
+		const bool found_old = old_manifold != m_cached_manifolds.end() && cachedManifoldMatches(*old_manifold, key);
+		const bool revisions_match =
+		    found_old && old_manifold->shape_a_revision == revision_a && old_manifold->shape_b_revision == revision_b;
 
 		if (revisions_match) {
 			++m_profile.contact_persists;
@@ -1512,7 +1538,7 @@ void Simulator::updateCache(std::span<const Manifold> manifolds) {
 		} else {
 			wakeBody(manifold.pair.a.body);
 			wakeBody(manifold.pair.b.body);
-			if (old_manifold != m_cached_manifolds.end()) {
+			if (found_old) {
 				++m_profile.contact_ends;
 				event::send<event::ContactEnd>(old_manifold->pair);
 			}
@@ -1557,9 +1583,14 @@ void Simulator::updateCache(std::span<const Manifold> manifolds) {
 	}
 
 	for (const CachedManifold& cached : m_cached_manifolds) {
-		const bool still_colliding = std::ranges::any_of(manifolds, [&cached](const Manifold& manifold) {
-			return manifold.pair == cached.pair && manifold.normal_index == cached.normal_index;
-		});
+		const CachedManifoldKey key {.pair = cached.pair, .normal_index = cached.normal_index};
+		const auto current =
+		    std::lower_bound(manifolds.begin(), manifolds.end(), key, [](const Manifold& manifold, CachedManifoldKey candidate) {
+			    return manifold.pair < candidate.pair ||
+					       (manifold.pair == candidate.pair && manifold.normal_index < candidate.normal_index);
+		    });
+		const bool still_colliding =
+		    current != manifolds.end() && current->pair == cached.pair && current->normal_index == cached.normal_index;
 		if (still_colliding) {
 			continue;
 		}
@@ -1579,6 +1610,9 @@ void Simulator::updateCache(std::span<const Manifold> manifolds) {
 		event::send<event::ContactEnd>(cached.pair);
 	}
 
+	std::ranges::sort(next_cache, [](const CachedManifold& lhs, const CachedManifold& rhs) {
+		return cachedManifoldLess(lhs, rhs);
+	});
 	m_cached_manifolds = std::move(next_cache);
 	ZoneValue(static_cast<uint64_t>(m_cached_manifolds.size()));
 }
@@ -1600,7 +1634,9 @@ void Simulator::integrate(float dt) {
 			continue;
 		}
 
-		integrateBody(BodyID {.slot = static_cast<uint32_t>(index), .generation = slot.generation}, slot.body, gravity, dt);
+		integrateBody(
+		    BodyID {.slot = static_cast<uint32_t>(index), .generation = slot.generation}, slot.body, tunables().gravity, dt
+		);
 	}
 }
 
@@ -2548,7 +2584,7 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 		}
 	}
 
-	unlockSleep(shape->owner);
+	touchFragment(shape->owner);
 
 	wakeBodiesInBounds(
 	    AABB {
@@ -2753,10 +2789,13 @@ auto Simulator::findCachedContact(
 ) -> CachedContact* {
 	ZoneScopedN("physics::FindCachedContact");
 
-	const auto manifold = std::ranges::find_if(m_cached_manifolds, [&pair, normal_index](const CachedManifold& cached) {
-		return cached.pair == pair && cached.normal_index == normal_index;
-	});
-	if (manifold == m_cached_manifolds.end()) {
+	const CachedManifoldKey key {.pair = pair, .normal_index = normal_index};
+	const auto manifold = std::lower_bound(
+	    m_cached_manifolds.begin(), m_cached_manifolds.end(), key, [](const CachedManifold& cached, CachedManifoldKey candidate) {
+		    return cachedManifoldLess(cached, candidate);
+	    }
+	);
+	if (manifold == m_cached_manifolds.end() || not cachedManifoldMatches(*manifold, key)) {
 		return nullptr;
 	}
 
@@ -2776,10 +2815,13 @@ auto Simulator::findCachedContact(
 ) const -> const CachedContact* {
 	ZoneScopedN("physics::FindCachedContact");
 
-	const auto manifold = std::ranges::find_if(m_cached_manifolds, [&pair, normal_index](const CachedManifold& cached) {
-		return cached.pair == pair && cached.normal_index == normal_index;
-	});
-	if (manifold == m_cached_manifolds.end()) {
+	const CachedManifoldKey key {.pair = pair, .normal_index = normal_index};
+	const auto manifold = std::lower_bound(
+	    m_cached_manifolds.begin(), m_cached_manifolds.end(), key, [](const CachedManifold& cached, CachedManifoldKey candidate) {
+		    return cachedManifoldLess(cached, candidate);
+	    }
+	);
+	if (manifold == m_cached_manifolds.end() || not cachedManifoldMatches(*manifold, key)) {
 		return nullptr;
 	}
 
@@ -2990,7 +3032,7 @@ auto Simulator::prepareConstraint(const Manifold& manifold, const ContactPoint& 
 	const CachedContact* cached_contact =
 	    findCachedContact(manifold.pair, manifold.normal_index, contact.feature_a, contact.feature_b);
 	const float restitution = contact.material.restitution;
-	constexpr float bounce_threshold = 1.0f;
+	const float bounce_threshold = tunables().bounce_threshold;
 	float restitution_bias = 0.0f;
 	if (initial_normal_speed < -bounce_threshold) {
 		restitution_bias = -restitution * initial_normal_speed;
@@ -3094,7 +3136,7 @@ auto Simulator::solveIsland(SimulationIsland& island) -> IslandSolveStats {
 	ZoneScopedN("physics::SolveIsland");
 	ZoneValue(static_cast<uint64_t>(island.constraints.size()));
 
-	constexpr uint32_t solver_iterations = 8;    // try 4 or 16
+	const uint32_t solver_iterations = tunables().solver_iterations;
 	size_t invalid_constraint_count = 0;
 	warmStartConstraints(island.constraints);
 
@@ -3123,7 +3165,7 @@ void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
 	}
 	PhaseScope worker_phase {*this, SimulationPhase::mutation, SimulationPhase::worker_execution};
 
-	constexpr size_t minimum_islands_per_job = 1;
+	const size_t minimum_islands_per_job = tunables().min_islands_per_job;
 	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), 1ull);
 	const size_t maximum_job_count = worker_count * 3;
 	const size_t job_count = std::min(maximum_job_count, std::max(islands.size() / minimum_islands_per_job, size_t {1}));

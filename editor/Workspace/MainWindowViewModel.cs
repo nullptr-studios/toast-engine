@@ -5,6 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -27,6 +30,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 	private readonly DockFactory m_dockFactory;
 	private readonly ToastEngine m_toast;
 	private readonly ToastZoneFactory m_toastZoneFactory;
+	private ProjectSettingsWindow? m_projectSettingsWindow;
 
 	private readonly Dictionary<ulong, WorkspaceViewModel> m_workspaces = [];
 	[ObservableProperty] private string m_activeLayoutName = LayoutStore.DefaultName;
@@ -42,8 +46,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 	[ObservableProperty] private bool m_inspectorVisible = true;
 	[ObservableProperty] private bool m_signalsVisible = true;
 	[ObservableProperty] private bool m_logsVisible = true;
-	[ObservableProperty] private bool m_rendererSettingsVisible;
-
 	[ObservableProperty] private IRootDock m_mainLayout;
 	[ObservableProperty] private bool m_schemaEditorVisible;
 	[ObservableProperty] private bool m_tableEditorVisible;
@@ -137,6 +139,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 
 	public void Dispose() {
 		m_autosave.Stop();
+		m_projectSettingsWindow?.Close();
+		m_projectSettingsWindow = null;
 		EditorManager.OpenRequested -= OnEditorOpenRequested;
 		WorkspaceViewModel.PlayModeChanged -= OnPlayModeChanged;
 		if (m_dockFactory.SchemaEditorVm is { } schema) schema.SchemaSaved -= OnSchemaSaved;
@@ -184,17 +188,24 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 
 	[RelayCommand]
 	private void OpenProjectSettings() {
-		if (!ProjectContext.IsInitialized) return;
+		if (m_projectSettingsWindow is { } existing) {
+			if (existing.WindowState == WindowState.Minimized) existing.WindowState = WindowState.Normal;
+			existing.Activate();
+			return;
+		}
 
-		var toastFile = Directory.EnumerateFiles(ProjectContext.ProjectPath, "*.toast").FirstOrDefault();
-		if (toastFile is null) return;
+		if (m_dockFactory.ProjectSettingsVm is not { } viewModel) return;
 
-		var virtualPath = $"project://{Path.GetFileName(toastFile)}";
-		var definition = new ProjectSettingsAsset();
+		var window = new ProjectSettingsWindow(viewModel);
+		m_projectSettingsWindow = window;
+		window.Closed += (_, _) => m_projectSettingsWindow = null;
 
-		// Use the filename as a synthetic uid so the editor can track the open file
-		m_dockFactory.OpenGenericEditor(Path.GetFileNameWithoutExtension(toastFile), virtualPath, definition);
-		GenericEditorVisible = true;
+		if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime {
+			    MainWindow: { } owner
+		    })
+			window.Show(owner);
+		else
+			window.Show();
 	}
 
 	partial void OnHierarchyVisibleChanged(bool value) {
@@ -219,11 +230,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 
 	partial void OnSchemaEditorVisibleChanged(bool value) {
 		ToggleMainTool("SchemaEditor", value);
-	}
-
-	partial void OnRendererSettingsVisibleChanged(bool value) {
-		if (value != m_dockFactory.IsToolVisible("RendererSettings"))
-			m_dockFactory.ToggleTool("RendererSettings");
 	}
 
 	partial void OnLogsVisibleChanged(bool value) {

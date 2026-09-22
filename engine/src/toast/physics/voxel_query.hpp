@@ -60,6 +60,9 @@ void queryVoxelSurface(const VoxelQueryContext& context, const AABB& aabb, Callb
 	glm::ivec3 last = glm::ivec3(glm::ceil(aabb.max / voxel::k_voxel_size)) - 1;
 
 	const glm::ivec3 voxel_dims = glm::ivec3(context.volume.voxelDims());
+	if (glm::any(glm::lessThan(last, glm::ivec3(0))) || glm::any(glm::greaterThanEqual(first, voxel_dims))) {
+		return;
+	}
 	first = glm::clamp(first, glm::ivec3(0), voxel_dims - 1);
 	last = glm::clamp(last, glm::ivec3(0), voxel_dims - 1);
 	if (first.x > last.x || first.y > last.y || first.z > last.z) {

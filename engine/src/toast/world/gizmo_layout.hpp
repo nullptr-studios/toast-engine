@@ -37,9 +37,31 @@ enum class GizmoHandle : int8_t {
 	plane_yz = 4,
 	plane_xz = 5,
 	center = 6,
+
+	size_neg_x = 7,
+	size_pos_x = 8,
+	size_neg_y = 9,
+	size_pos_y = 10,
+	size_neg_z = 11,
+	size_pos_z = 12,
 };
 
 namespace gizmo_layout {
+
+[[nodiscard]]
+constexpr auto isSizeHandle(GizmoHandle handle) noexcept -> bool {
+	return handle >= GizmoHandle::size_neg_x && handle <= GizmoHandle::size_pos_z;
+}
+
+[[nodiscard]]
+constexpr auto sizeHandleAxis(GizmoHandle handle) noexcept -> int {
+	return (static_cast<int>(handle) - static_cast<int>(GizmoHandle::size_neg_x)) / 2;
+}
+
+[[nodiscard]]
+constexpr auto sizeHandleSign(GizmoHandle handle) noexcept -> float {
+	return (static_cast<int>(handle) - static_cast<int>(GizmoHandle::size_neg_x)) % 2 == 0 ? -1.0f : 1.0f;
+}
 
 constexpr float k_screen_size = 0.15f;    ///< world-units of gizmo size per world-unit of camera distance
 
@@ -65,6 +87,10 @@ constexpr int k_ring_segments = 48;
 
 // Scale: same shaft as translate, but a cube head instead of a pyramid, plus a center cube for uniform scale
 constexpr float k_scale_head_half_size = 0.07f;
+
+constexpr float k_size_dot_half_size = 0.05f;
+constexpr float k_size_dot_hit_radius = 0.09f;
+constexpr float k_min_collider_extent = 0.01f;
 
 /// @brief Deterministic in-plane basis (u,v) perpendicular to axis
 inline auto ringBasis(const glm::vec3& axis) -> std::pair<glm::vec3, glm::vec3> {

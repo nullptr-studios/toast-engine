@@ -54,7 +54,6 @@ struct Body {
 	bool enabled = true;
 	bool awake = true;
 	bool allow_sleep = true;
-	bool sleep_locked = false;
 	float sleep_timer = 0.0f;
 	glm::vec3 position = {};
 	glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);

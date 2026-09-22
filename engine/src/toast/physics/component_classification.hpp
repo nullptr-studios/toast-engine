@@ -7,13 +7,16 @@
 
 #pragma once
 #include "anchor_mask.hpp"
+#include "physics_settings.hpp"
 
 #include <glm/glm.hpp>
 #include <toast/voxel/connectivity.hpp>
 
 namespace physics {
 
-inline constexpr uint32_t k_min_fragment_voxels = 4;
+inline auto minFragmentVoxels() -> uint32_t {
+	return tunables().min_fragment_voxels;
+}
 
 enum class ComponentClass : uint8_t {
 	anchored,
@@ -34,11 +37,12 @@ struct DetachedComponent {
 auto buildDetachedComponents(const voxel::Connectivity& c, std::span<const ComponentClass> classes, glm::uvec3 brick_size)
     -> std::vector<DetachedComponent>;
 
-inline constexpr int32_t k_max_fragment_extent_bricks = 1;
+inline auto maxFragmentExtentBricks() -> int32_t {
+	return tunables().max_fragment_extent_bricks;
+}
 
 [[nodiscard]]
-auto splitBySpatialCompactness(
-    std::vector<DetachedComponent> components, int32_t max_extent_bricks = k_max_fragment_extent_bricks
-) -> std::vector<DetachedComponent>;
+auto splitBySpatialCompactness(std::vector<DetachedComponent> components, int32_t max_extent_bricks = maxFragmentExtentBricks())
+    -> std::vector<DetachedComponent>;
 
 }

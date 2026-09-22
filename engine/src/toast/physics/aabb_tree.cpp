@@ -1,11 +1,17 @@
 #include "aabb_tree.hpp"
 
+#include "physics_settings.hpp"
+
 #include <algorithm>
-#include <cassert>
 #include <stdexcept>
+#include <toast/log.hpp>
 #include <tracy/Tracy.hpp>
 
 namespace physics {
+
+auto AABBTree::fatMargin() -> float {
+	return tunables().broadphase_fat_margin;
+}
 
 auto TreeNode::isAllocated() const -> bool {
 	return height >= 0;
@@ -50,14 +56,14 @@ void AABBTree::freeNode(TreeNodeID node_id) {
 	ZoneScopedN("physics::AABBTree::FreeNode");
 	ZoneValue(static_cast<uint64_t>(node_id));
 	const bool is_valid = node_id != null_node && node_id < m_nodes.size();
-	assert(is_valid && "Cannot free an invalid AABB tree node");
+	TOAST_ASSERT(is_valid, "Physics", "Cannot free an invalid AABB tree node");
 	if (not is_valid) {
 		return;
 	}
 
 	auto& node = m_nodes[node_id];
 	const bool can_free = node.isAllocated() && node.parent == null_node && node.left == null_node && node.right == null_node;
-	assert(can_free && "AABB tree nodes must be allocated and disconnected before being freed");
+	TOAST_ASSERT(can_free, "Physics", "AABB tree nodes must be allocated and disconnected before being freed");
 	if (not can_free) {
 		return;
 	}
@@ -72,10 +78,12 @@ auto AABBTree::insert(ShapeID shape, const AABB& bounds) -> TreeNodeID {
 	ZoneScopedN("physics::AABBTree::Insert");
 	ZoneValue(static_cast<uint64_t>(shape.slot));
 	const TreeNodeID leaf_id = allocateNode();
-	m_nodes[leaf_id].bounds = bounds.expanded(fat_margin);
+	m_nodes[leaf_id].bounds = bounds.expanded(fatMargin());
 	m_nodes[leaf_id].shape = shape;
 	insertLeaf(leaf_id);
-	assert(validate());
+#if defined(TOAST_VALIDATE_AABB_TREE)
+	TOAST_ASSERT(validate(), "Physics", "AABB tree validation failed after inserting a leaf");
+#endif
 	return leaf_id;
 }
 
@@ -83,8 +91,8 @@ void AABBTree::insertLeaf(TreeNodeID leaf_id) {
 	ZoneScopedN("physics::AABBTree::InsertLeaf");
 	ZoneValue(static_cast<uint64_t>(leaf_id));
 	auto& leaf = m_nodes[leaf_id];
-	assert(leaf.isLeaf());
-	assert(leaf.parent == null_node);
+	TOAST_ASSERT(leaf.isLeaf(), "Physics", "AABB tree insertion requires a leaf node");
+	TOAST_ASSERT(leaf.parent == null_node, "Physics", "AABB tree insertion requires a detached leaf");
 	if (m_root == null_node) {
 		m_root = leaf_id;
 		return;
@@ -116,7 +124,9 @@ void AABBTree::insertLeaf(TreeNodeID leaf_id) {
 		m_root = new_parent_id;
 	} else {
 		auto& old_parent = m_nodes[old_parent_id];
-		assert((old_parent.left == sibling_id || old_parent.right == sibling_id) && "Sibling must belong to its parent");
+		TOAST_ASSERT(
+		    old_parent.left == sibling_id || old_parent.right == sibling_id, "Physics", "AABB tree sibling must belong to its parent"
+		);
 		if (old_parent.left == sibling_id) {
 			old_parent.left = new_parent_id;
 		} else {
@@ -131,21 +141,23 @@ void AABBTree::remove(TreeNodeID leaf_id) {
 	ZoneScopedN("physics::AABBTree::Remove");
 	ZoneValue(static_cast<uint64_t>(leaf_id));
 	const bool is_valid_leaf = leaf_id != null_node && leaf_id < m_nodes.size() && m_nodes[leaf_id].isLeaf();
-	assert(is_valid_leaf && "AABBTree::remove requires an allocated leaf");
+	TOAST_ASSERT(is_valid_leaf, "Physics", "AABBTree::remove requires an allocated leaf");
 	if (not is_valid_leaf) {
 		return;
 	}
 
 	detachLeaf(leaf_id);
 	freeNode(leaf_id);
-	assert(validate());
+#if defined(TOAST_VALIDATE_AABB_TREE)
+	TOAST_ASSERT(validate(), "Physics", "AABB tree validation failed after removing a leaf");
+#endif
 }
 
 void AABBTree::detachLeaf(TreeNodeID leaf_id) {
 	ZoneScopedN("physics::AABBTree::DetachLeaf");
 	ZoneValue(static_cast<uint64_t>(leaf_id));
 	auto& leaf = m_nodes[leaf_id];
-	assert(leaf.isLeaf());
+	TOAST_ASSERT(leaf.isLeaf(), "Physics", "AABB tree detach requires a leaf node");
 	if (leaf_id == m_root) {
 		m_root = null_node;
 		return;
@@ -153,7 +165,7 @@ void AABBTree::detachLeaf(TreeNodeID leaf_id) {
 
 	const TreeNodeID parent_id = leaf.parent;
 	const auto& parent = m_nodes[parent_id];
-	assert(parent.left == leaf_id || parent.right == leaf_id);
+	TOAST_ASSERT(parent.left == leaf_id || parent.right == leaf_id, "Physics", "AABB tree leaf must belong to its recorded parent");
 	const TreeNodeID sibling_id = parent.left == leaf_id ? parent.right : parent.left;
 	const TreeNodeID grandparent_id = parent.parent;
 
@@ -165,7 +177,7 @@ void AABBTree::detachLeaf(TreeNodeID leaf_id) {
 		if (grandparent.left == parent_id) {
 			grandparent.left = sibling_id;
 		} else {
-			assert(grandparent.right == parent_id);
+			TOAST_ASSERT(grandparent.right == parent_id, "Physics", "AABB tree parent must belong to its recorded grandparent");
 			grandparent.right = sibling_id;
 		}
 		m_nodes[sibling_id].parent = grandparent_id;
@@ -187,15 +199,17 @@ auto AABBTree::updateLeaf(TreeNodeID leaf_id, const AABB& tight_bounds) -> bool 
 	ZoneScopedN("physics::AABBTree::UpdateLeaf");
 	ZoneValue(static_cast<uint64_t>(leaf_id));
 	const bool is_valid_leaf = leaf_id != null_node && leaf_id < m_nodes.size() && m_nodes[leaf_id].isLeaf();
-	assert(is_valid_leaf && "AABBTree::updateLeaf requires an allocated leaf");
+	TOAST_ASSERT(is_valid_leaf, "Physics", "AABBTree::updateLeaf requires an allocated leaf");
 	if (not is_valid_leaf || m_nodes[leaf_id].bounds.contains(tight_bounds)) {
 		return false;
 	}
 
 	detachLeaf(leaf_id);
-	m_nodes[leaf_id].bounds = tight_bounds.expanded(fat_margin);
+	m_nodes[leaf_id].bounds = tight_bounds.expanded(fatMargin());
 	insertLeaf(leaf_id);
-	assert(validate());
+#if defined(TOAST_VALIDATE_AABB_TREE)
+	TOAST_ASSERT(validate(), "Physics", "AABB tree validation failed after updating a leaf");
+#endif
 	return true;
 }
 
@@ -252,7 +266,7 @@ auto AABBTree::debugNodes() const -> std::vector<AABBTreeDebugNode> {
 
 void AABBTree::recalculate(TreeNodeID node_id) {
 	auto& node = m_nodes[node_id];
-	assert(not node.isLeaf());
+	TOAST_ASSERT(not node.isLeaf(), "Physics", "Cannot recalculate an AABB tree leaf");
 	const auto& left = m_nodes[node.left];
 	const auto& right = m_nodes[node.right];
 	node.bounds = combine(left.bounds, right.bounds);
@@ -282,7 +296,9 @@ auto AABBTree::balance(TreeNodeID node_id) -> TreeNodeID {
 		auto& right = m_nodes[right_id];
 		const TreeNodeID right_left_id = right.left;
 		const TreeNodeID right_right_id = right.right;
-		assert(right_left_id != null_node && right_right_id != null_node);
+		TOAST_ASSERT(
+		    right_left_id != null_node && right_right_id != null_node, "Physics", "AABB tree right rotation requires two children"
+		);
 
 		right.left = node_id;
 		right.parent = node.parent;
@@ -292,7 +308,9 @@ auto AABBTree::balance(TreeNodeID node_id) -> TreeNodeID {
 		} else if (m_nodes[right.parent].left == node_id) {
 			m_nodes[right.parent].left = right_id;
 		} else {
-			assert(m_nodes[right.parent].right == node_id);
+			TOAST_ASSERT(
+			    m_nodes[right.parent].right == node_id, "Physics", "AABB tree node must belong to its parent before right rotation"
+			);
 			m_nodes[right.parent].right = right_id;
 		}
 
@@ -316,7 +334,9 @@ auto AABBTree::balance(TreeNodeID node_id) -> TreeNodeID {
 		auto& left = m_nodes[left_id];
 		const TreeNodeID left_left_id = left.left;
 		const TreeNodeID left_right_id = left.right;
-		assert(left_left_id != null_node && left_right_id != null_node);
+		TOAST_ASSERT(
+		    left_left_id != null_node && left_right_id != null_node, "Physics", "AABB tree left rotation requires two children"
+		);
 
 		left.right = node_id;
 		left.parent = node.parent;
@@ -326,7 +346,9 @@ auto AABBTree::balance(TreeNodeID node_id) -> TreeNodeID {
 		} else if (m_nodes[left.parent].left == node_id) {
 			m_nodes[left.parent].left = left_id;
 		} else {
-			assert(m_nodes[left.parent].right == node_id);
+			TOAST_ASSERT(
+			    m_nodes[left.parent].right == node_id, "Physics", "AABB tree node must belong to its parent before left rotation"
+			);
 			m_nodes[left.parent].right = left_id;
 		}
 

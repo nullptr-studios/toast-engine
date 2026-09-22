@@ -308,7 +308,11 @@ struct PaletteSample
     float roughness;
     float metallic;
 
+    float reflectivity;
+
     float emissive;
+
+    float alpha;
 
     /// Physical material id where 0 also covers entries authored without one
     uint material;
@@ -325,12 +329,15 @@ PaletteSample samplePalette(VolumeRecord record, uint index)
     const uint base = (record.paletteOffset + index) * 4;
     const uint word0 = gPalettes[base];
     const uint word1 = gPalettes[base + 1];
+    const uint word2 = gPalettes[base + 2];
 
     PaletteSample sample;
     sample.albedo = srgbToLinear(float3(word0 & 0xFFu, (word0 >> 8) & 0xFFu, (word0 >> 16) & 0xFFu) / 255.0);
     sample.roughness = float((word0 >> 24) & 0xFFu) / 255.0;
     sample.metallic = float(word1 & 0xFFu) / 255.0;
+    sample.reflectivity = float((word1 >> 8) & 0xFFu) / 255.0;
     sample.emissive = float((word1 >> 16) & 0xFFu) / 255.0 * record.maxEmissive;
     sample.material = word1 >> 24;
+    sample.alpha = float((word2 >> 16) & 0xFFu) / 255.0;
     return sample;
 }

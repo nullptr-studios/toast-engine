@@ -64,7 +64,8 @@ public:
 	auto validate() const -> bool;
 
 private:
-	static constexpr float fat_margin = 0.1f;
+	[[nodiscard]]
+	static auto fatMargin() -> float;
 
 	auto allocateNode() -> TreeNodeID;
 	void freeNode(TreeNodeID node_id);

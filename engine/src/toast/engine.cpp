@@ -12,6 +12,7 @@
 #include "input/input_events.hpp"
 #include "input/input_system.hpp"
 #include "logger.hpp"
+#include "physics/physics_settings.hpp"
 #include "physics/simulator.hpp"
 #include "project_settings.hpp"
 #include "reflect/reflect.hpp"
@@ -184,6 +185,8 @@ void Engine::init() {
 		// Before the renderer exists, ShadowPass reads its resolution when it allocates, so this cannot wait
 		// for the rest of the renderer settings
 		renderer::registerRendererStartupSettings();
+
+		physics::registerPhysicsSettings();
 	}
 
 	m->asset_manager = std::make_unique<assets::AssetManager>();
@@ -362,17 +365,23 @@ void Engine::tick() {
 		if (m->renderer && it != m->owners.end()) {
 			if (Workspace* ws = it->second->asWorkspace()) {
 				const auto gizmo = ws->gizmoRenderState();
-				m->renderer->setGizmoState(
-				    renderer::VulkanRenderer::GizmoState {
-				      .visible = gizmo.visible,
-				      .tool = gizmo.tool,
-				      .origin = gizmo.origin,
-				      .orientation = gizmo.orientation,
-				      .hover = gizmo.hover,
-				      .active = gizmo.active,
-				      .drag_scale_factor = gizmo.drag_scale_factor,
-				    }
-				);
+				renderer::VulkanRenderer::GizmoState gizmo_state {
+				  .visible = gizmo.visible,
+				  .tool = gizmo.tool,
+				  .origin = gizmo.origin,
+				  .orientation = gizmo.orientation,
+				  .hover = gizmo.hover,
+				  .active = gizmo.active,
+				  .drag_scale_factor = gizmo.drag_scale_factor,
+				  .size_handle_count = gizmo.size_handle_count,
+				  .size_handle_scale = gizmo.size_handle_scale,
+				};
+				for (uint32_t i = 0; i < gizmo.size_handle_count; ++i) {
+					gizmo_state.size_handles[i] = {
+					  .world_position = gizmo.size_handles[i].world_position, .handle = gizmo.size_handles[i].handle
+					};
+				}
+				m->renderer->setGizmoState(gizmo_state);
 			}
 		}
 	}

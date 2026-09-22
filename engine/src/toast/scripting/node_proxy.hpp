@@ -9,6 +9,7 @@
 #pragma once
 
 #include <any>
+#include <glm/vec3.hpp>
 #include <string>
 #include <toast/world/box.hpp>
 #include <vector>
@@ -20,10 +21,34 @@ class LuaRef;
 }
 
 namespace toast {
+struct FieldInfo;
 class Node;
 }
 
 namespace scripting {
+
+class Vec3FieldProxy : public glm::vec3 {
+public:
+	Vec3FieldProxy(toast::Box<toast::Node> node, const toast::FieldInfo* field, const glm::vec3& value) noexcept;
+
+	[[nodiscard]]
+	auto getX() const -> float;
+	[[nodiscard]]
+	auto getY() const -> float;
+	[[nodiscard]]
+	auto getZ() const -> float;
+	void setX(float value);
+	void setY(float value);
+	void setZ(float value);
+
+private:
+	[[nodiscard]]
+	auto current() const -> glm::vec3;
+	void commit(const glm::vec3& value);
+
+	toast::Box<toast::Node> m_node;
+	const toast::FieldInfo* m_field = nullptr;
+};
 
 class NodeProxy {
 public:
