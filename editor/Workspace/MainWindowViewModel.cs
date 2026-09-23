@@ -359,8 +359,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			Name = name,
 			Main = m_dockFactory.CaptureLayout(),
 			Toast = m_toastZoneFactory.CaptureLayout(),
-			ToastZoneHeight = ToastZoneHeight,
-			ToastZonePinned = m_toastZonePinned
+			ToastZoneHeight = ToastZoneHeight
 		};
 	}
 
@@ -393,7 +392,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 
 			SyncVisibilityFromDocks();
 			ToastZoneHeight = Math.Clamp(file.ToastZoneHeight, 100, 4000);
-			m_toastZonePinned = file.ToastZonePinned;
 		} catch (Exception e) {
 			Log.Warn($"Failed to apply layout '{file.Name}': {e.Message}");
 		} finally {

@@ -390,17 +390,20 @@ void Engine::tick() {
 		m->renderer->tick(Time::uptime());
 	}
 
-	// FIXME: SHOULDNT THIS ALSO HAPPEN IN RELEASE EDITOR BUILDS?
 #ifdef DEBUG
-	// dev builds hot-reload scripts, shaders and materials edited on disk
-	script_reload_timer += Time::delta();
-	if (script_reload_timer > 1.0) {
-		script_reload_timer = 0.0;
-		if (m->asset_manager) {
-			m->asset_manager->pollModifiedAssets();
+	constexpr bool debug_build = true;
+#else
+	constexpr bool debug_build = false;
+#endif
+	if (debug_build || m->shared_target != nullptr) {
+		script_reload_timer += Time::delta();
+		if (script_reload_timer > 1.0) {
+			script_reload_timer = 0.0;
+			if (m->asset_manager) {
+				m->asset_manager->pollModifiedAssets();
+			}
 		}
 	}
-#endif
 
 	FrameMark;
 }
