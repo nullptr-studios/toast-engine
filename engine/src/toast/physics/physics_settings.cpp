@@ -34,11 +34,11 @@ void registerPhysicsSettings() {
 		    key,
 		    value,
 		    {.label = std::string {label},
-				 .category = "World",
-				 .description = "Acceleration applied to every dynamic body, scaled per body by its gravity scale.",
-				 .min = -100.0,
-				 .max = 100.0,
-				 .step = 0.1}
+		     .category = "World",
+		     .description = "Acceleration applied to every dynamic body, scaled per body by its gravity scale.",
+		     .min = -100.0,
+		     .max = 100.0,
+		     .step = 0.1}
 		)
 		    .onChange([axis](double v) { g_tunables.gravity[axis] = static_cast<float>(v); });
 	};
@@ -50,11 +50,11 @@ void registerPhysicsSettings() {
 	    "physics.solver.iterations",
 	    8,
 	    {.label = "Iterations",
-			 .category = "Solver",
-			 .description = "Sequential impulse passes per step",
-			 .min = 1.0,
-			 .max = 32.0,
-			 .step = 1.0},
+	     .category = "Solver",
+	     .description = "Sequential impulse passes per step",
+	     .min = 1.0,
+	     .max = 32.0,
+	     .step = 1.0},
 	    &Tunables::solver_iterations
 	);
 	flt("physics.solver.penetration_slop",
@@ -132,22 +132,22 @@ void registerPhysicsSettings() {
 	    "physics.step.max_substeps",
 	    8,
 	    {.label = "Max substeps",
-			 .category = "Step",
-			 .description = "Ceiling on catch-up steps in a single frame",
-			 .min = 1.0,
-			 .max = 32.0,
-			 .step = 1.0},
+	     .category = "Step",
+	     .description = "Ceiling on catch-up steps in a single frame",
+	     .min = 1.0,
+	     .max = 32.0,
+	     .step = 1.0},
 	    &Tunables::max_substeps
 	);
 	toast::settings::declareFloat(
 	    "physics.step.max_burst_seconds",
 	    0.1,
 	    {.label = "Max burst seconds",
-			 .category = "Step",
-			 .description = "Real-time budget for a fixed-step catch-up burst after its first step",
-			 .min = 0.0,
-			 .max = 1.0,
-			 .step = 0.01}
+	     .category = "Step",
+	     .description = "Real-time budget for a fixed-step catch-up burst after its first step",
+	     .min = 0.0,
+	     .max = 1.0,
+	     .step = 0.01}
 	)
 	    .onChange([](double v) { g_tunables.max_burst_seconds = std::max(v, 0.0); });
 
@@ -165,66 +165,66 @@ void registerPhysicsSettings() {
 	    "physics.fracture.max_connectivity_jobs_per_tick",
 	    24,
 	    {.label = "Max connectivity jobs per tick",
-			 .category = "Fracture",
-			 .description = "Concurrent connectivity analyses started in one physics tick",
-			 .min = 1.0,
-			 .max = 256.0,
-			 .step = 1.0},
+	     .category = "Fracture",
+	     .description = "Concurrent connectivity analyses started in one physics tick",
+	     .min = 1.0,
+	     .max = 256.0,
+	     .step = 1.0},
 	    &Tunables::max_connectivity_jobs_per_tick
 	);
 	uint_setting(
 	    "physics.fracture.max_spawns_per_step",
 	    8,
 	    {.label = "Max fragment spawns per step",
-			 .category = "Fracture",
-			 .description = "Fragments promoted to their own bodies in one step",
-			 .min = 0.0,
-			 .max = 64.0,
-			 .step = 1.0},
+	     .category = "Fracture",
+	     .description = "Fragments promoted to their own bodies in one step",
+	     .min = 0.0,
+	     .max = 64.0,
+	     .step = 1.0},
 	    &Tunables::max_fragment_spawns_per_step
 	);
 	uint_setting(
 	    "physics.fracture.max_active_fragments",
 	    96,
 	    {.label = "Max active fragments",
-			 .category = "Fracture",
-			 .description = "Awake fragment budget before nearly settled debris is forced to sleep",
-			 .min = 0.0,
-			 .max = 16384.0,
-			 .step = 64.0},
+	     .category = "Fracture",
+	     .description = "Awake fragment budget before nearly settled debris is forced to sleep",
+	     .min = 0.0,
+	     .max = 16384.0,
+	     .step = 64.0},
 	    &Tunables::max_active_fragments
 	);
 	uint_setting(
 	    "physics.fracture.pool_headroom",
 	    4096,
 	    {.label = "Fragment pool headroom",
-			 .category = "Fracture",
-			 .description = "Bricks kept spare for fragments",
-			 .min = 0.0,
-			 .max = 65536.0,
-			 .step = 256.0},
+	     .category = "Fracture",
+	     .description = "Bricks kept spare for fragments",
+	     .min = 0.0,
+	     .max = 65536.0,
+	     .step = 256.0},
 	    &Tunables::fragment_pool_headroom
 	);
 	uint_setting(
 	    "physics.fracture.min_fragment_voxels",
 	    4,
 	    {.label = "Min fragment voxels",
-			 .category = "Fracture",
-			 .description = "Disconnected pieces smaller than this are discarded instead of becoming debris",
-			 .min = 1.0,
-			 .max = 256.0,
-			 .step = 1.0},
+	     .category = "Fracture",
+	     .description = "Disconnected pieces smaller than this are discarded instead of becoming debris",
+	     .min = 1.0,
+	     .max = 256.0,
+	     .step = 1.0},
 	    &Tunables::min_fragment_voxels
 	);
 	uint_setting(
 	    "physics.fracture.despawn_max_voxels",
 	    16,
 	    {.label = "Despawn max voxels",
-			 .category = "Fracture",
-			 .description = "Largest settled fragment eligible for automatic despawning",
-			 .min = 0.0,
-			 .max = 1024.0,
-			 .step = 1.0},
+	     .category = "Fracture",
+	     .description = "Largest settled fragment eligible for automatic despawning",
+	     .min = 0.0,
+	     .max = 1024.0,
+	     .step = 1.0},
 	    &Tunables::fragment_despawn_max_voxels
 	);
 	flt("physics.fracture.despawn_settle_seconds",
@@ -249,11 +249,11 @@ void registerPhysicsSettings() {
 	    "physics.fracture.max_fragment_extent_bricks",
 	    1,
 	    {.label = "Max fragment extent (bricks)",
-			 .category = "Fracture",
-			 .description = "Largest piece, in bricks along any axis, still treated as a fragment",
-			 .min = 1.0,
-			 .max = 16.0,
-			 .step = 1.0}
+	     .category = "Fracture",
+	     .description = "Largest piece, in bricks along any axis, still treated as a fragment",
+	     .min = 1.0,
+	     .max = 16.0,
+	     .step = 1.0}
 	)
 	    .onChange([](int64_t v) { g_tunables.max_fragment_extent_bricks = static_cast<int32_t>(std::max<int64_t>(v, 1)); });
 	flt("physics.fracture.shell_voxels",
@@ -270,33 +270,33 @@ void registerPhysicsSettings() {
 	    "physics.jobs.min_bounds_per_job",
 	    32,
 	    {.label = "Min bounds per job",
-			 .category = "Jobs",
-			 .description = "Broadphase bounds updates below this run inline - a job costs more than the work",
-			 .min = 1.0,
-			 .max = 1024.0,
-			 .step = 1.0},
+	     .category = "Jobs",
+	     .description = "Broadphase bounds updates below this run inline - a job costs more than the work",
+	     .min = 1.0,
+	     .max = 1024.0,
+	     .step = 1.0},
 	    &Tunables::min_bounds_per_job
 	);
 	uint_setting(
 	    "physics.jobs.min_candidates_per_job",
 	    2,
 	    {.label = "Min candidates per job",
-			 .category = "Jobs",
-			 .description = "Narrow phase candidate pairs below this run inline",
-			 .min = 1.0,
-			 .max = 1024.0,
-			 .step = 1.0},
+	     .category = "Jobs",
+	     .description = "Narrow phase candidate pairs below this run inline",
+	     .min = 1.0,
+	     .max = 1024.0,
+	     .step = 1.0},
 	    &Tunables::min_candidates_per_job
 	);
 	uint_setting(
 	    "physics.jobs.min_wave_constraints_for_dispatch",
 	    512,
 	    {.label = "Min wave constraints per dispatch",
-			 .category = "Jobs",
-			 .description = "Constraint waves below this size solve inline",
-			 .min = 1.0,
-			 .max = 65536.0,
-			 .step = 1.0},
+	     .category = "Jobs",
+	     .description = "Constraint waves below this size solve inline",
+	     .min = 1.0,
+	     .max = 65536.0,
+	     .step = 1.0},
 	    &Tunables::min_wave_constraints_for_dispatch
 	);
 }

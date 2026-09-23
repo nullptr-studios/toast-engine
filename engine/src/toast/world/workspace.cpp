@@ -481,7 +481,7 @@ void Workspace::preparePrefabReload(UID uid) {
 		}
 		return false;
 	};
-	auto visit = [&](this auto&& self, Node& node) -> void {
+	auto visit = [&](auto&& self, Node& node) -> void {
 		for (auto& child : node.m_children) {
 			if (child->isInstanceRoot()) {
 				if (!depends(*child)) {
@@ -498,11 +498,11 @@ void Workspace::preparePrefabReload(UID uid) {
 				}
 				m_prefab_reloads.push_back({child, std::move(reference)});
 			} else {
-				self(*child);
+				self(self, *child);
 			}
 		}
 	};
-	visit(*m_root_node);
+	visit(visit, *m_root_node);
 }
 
 void Workspace::finishPrefabReload() {
@@ -1759,7 +1759,7 @@ void Workspace::eventSubscriptions() {
 		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
 			return false;
 		}
-		auto target = e.node.data() != 0 ? findFrom(m_root_node, e.node) : m_focused_node;
+		toast::Box<Node> target = e.node.data() != 0 ? findFrom(m_root_node, e.node) : m_focused_node;
 		if (not target.exists()) {
 			return false;
 		}

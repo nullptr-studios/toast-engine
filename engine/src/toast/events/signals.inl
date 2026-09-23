@@ -1,6 +1,8 @@
 #pragma once
 #include "signals.hpp"
-#include "toast/world/node.hpp"
+
+#include <toast/world/node.hpp>
+#include <tracy/Tracy.hpp>
 
 namespace signals {
 
@@ -17,10 +19,10 @@ inline void Signal<Args...>::connect(toast::Node& node, F&& cb) {
 	};
 	m_connections.push_back(
 	    {.uid = node.uid(),
-			 .identifier = "Unnamed",
-			 .source = ConnectionSource::cpp,
-			 .node = toast::Box<toast::Node>(node),
-			 .cb = std::move(wrapper)}
+	     .identifier = "Unnamed",
+	     .source = ConnectionSource::cpp,
+	     .node = toast::Box<toast::Node>(node),
+	     .cb = std::move(wrapper)}
 	);
 }
 
@@ -37,11 +39,11 @@ inline void
 	}
 	m_connections.push_back(
 	    {.uid = node.uid(),
-			 .identifier = std::string(identifier),
-			 .source = source,
-			 .forwards_args = forwards_args,
-			 .node = toast::Box<toast::Node>(node),
-			 .cb = std::move(wrapper)}
+	     .identifier = std::string(identifier),
+	     .source = source,
+	     .forwards_args = forwards_args,
+	     .node = toast::Box<toast::Node>(node),
+	     .cb = std::move(wrapper)}
 	);
 }
 
@@ -69,6 +71,7 @@ inline auto Signal<Args...>::connections() const -> std::vector<ConnectionInfo> 
 
 template<typename... Args>
 inline void Signal<Args...>::fire(const Args&... args) {
+	ZoneScoped;
 	std::erase_if(m_connections, [](const Connection& listener) { return !listener.node; });
 	for (auto& listener : m_connections) {
 		listener.cb(args...);
@@ -127,6 +130,7 @@ inline void Signal<Args...>::clear(void* signal, ConnectionSource source) {
 template<typename... Args>
 template<typename NodeType, auto MemberPtr>
 inline auto Signal<Args...>::fire(void* signal, std::span<const std::any> args) -> bool {
+	ZoneScoped;
 	if (!signal || args.size() != sizeof...(Args)) {
 		return false;
 	}

@@ -92,6 +92,10 @@
 			./out/Debug/editor/editor "$@"
 		'';
 
+		gdb_editor = pkgs.writeShellScriptBin "editor" ''
+			gdb --args ./out/Debug/editor/editor "$@"
+		'';
+
 		kenzo = pkgs.writeShellScriptBin "kenzo" ''
 			./out/Debug/kenzo/kenzo "$@"
 		'';
@@ -121,6 +125,7 @@
 				cmake-gen
 				cmake-build
 				editor
+				gdb_editor
 				kenzo
 
 				autoconf
