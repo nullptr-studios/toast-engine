@@ -81,15 +81,15 @@ struct MassMoments {
 
 		MassMoments out;
 		out.mass = mass;
-		out.m_x = m_x + dx * mass;
-		out.m_y = m_y + dy * mass;
-		out.m_z = m_z + dz * mass;
-		out.m_xx = m_xx + 2 * dx * m_x + dx * dx * mass;
-		out.m_yy = m_yy + 2 * dy * m_y + dy * dy * mass;
-		out.m_zz = m_zz + 2 * dz * m_z + dz * dz * mass;
-		out.m_xy = m_xy + dx * m_y + dy * m_x + dx * dy * mass;
-		out.m_xz = m_xz + dx * m_z + dz * m_x + dx * dz * mass;
-		out.m_yz = m_yz + dy * m_z + dz * m_y + dy * dz * mass;
+		out.m_x = m_x + (dx * mass);
+		out.m_y = m_y + (dy * mass);
+		out.m_z = m_z + (dz * mass);
+		out.m_xx = m_xx + (2 * dx * m_x) + (dx * dx * mass);
+		out.m_yy = m_yy + (2 * dy * m_y) + (dy * dy * mass);
+		out.m_zz = m_zz + (2 * dz * m_z) + (dz * dz * mass);
+		out.m_xy = m_xy + (dx * m_y) + (dy * m_x) + (dx * dy * mass);
+		out.m_xz = m_xz + (dx * m_z) + (dz * m_x) + (dx * dz * mass);
+		out.m_yz = m_yz + (dy * m_z) + (dz * m_y) + (dy * dz * mass);
 		out.checkHeadroom();
 		return out;
 	}
@@ -151,7 +151,7 @@ inline auto resolve(const MassMoments& moments, float voxel_size = k_voxel_size)
 
 	// sum(d * (l_a + 1/2) * (l_b + 1/2)) = m_ab + (m_a + m_b)/2 + density_sum/4
 	const auto product = [&](int64_t m_ab, int64_t m_a, int64_t m_b) {
-		return static_cast<double>(m_ab) + 0.5 * (static_cast<double>(m_a) + static_cast<double>(m_b)) + 0.25 * density_sum;
+		return static_cast<double>(m_ab) + (0.5 * (static_cast<double>(m_a) + static_cast<double>(m_b))) + (0.25 * density_sum);
 	};
 
 	const double p_xx = product(moments.m_xx, moments.m_x, moments.m_x);
@@ -161,23 +161,23 @@ inline auto resolve(const MassMoments& moments, float voxel_size = k_voxel_size)
 	const double p_xz = product(moments.m_xz, moments.m_x, moments.m_z);
 	const double p_yz = product(moments.m_yz, moments.m_y, moments.m_z);
 
-	const double com_x = (static_cast<double>(moments.m_x) / density_sum + 0.5) * s;
-	const double com_y = (static_cast<double>(moments.m_y) / density_sum + 0.5) * s;
-	const double com_z = (static_cast<double>(moments.m_z) / density_sum + 0.5) * s;
+	const double com_x = ((static_cast<double>(moments.m_x) / density_sum) + 0.5) * s;
+	const double com_y = ((static_cast<double>(moments.m_y) / density_sum) + 0.5) * s;
+	const double com_z = ((static_cast<double>(moments.m_z) / density_sum) + 0.5) * s;
 
 	// A cube of edge s adds m * s² / 6 to every diagonal
 	const double self_term = total_mass * s * s / 6.0;
 
-	double i_xx = s5 * (p_yy + p_zz) + self_term;
-	double i_yy = s5 * (p_xx + p_zz) + self_term;
-	double i_zz = s5 * (p_xx + p_yy) + self_term;
+	double i_xx = (s5 * (p_yy + p_zz)) + self_term;
+	double i_yy = (s5 * (p_xx + p_zz)) + self_term;
+	double i_zz = (s5 * (p_xx + p_yy)) + self_term;
 	double i_xy = -s5 * p_xy;
 	double i_xz = -s5 * p_xz;
 	double i_yz = -s5 * p_yz;
 
-	i_xx -= total_mass * (com_y * com_y + com_z * com_z);
-	i_yy -= total_mass * (com_x * com_x + com_z * com_z);
-	i_zz -= total_mass * (com_x * com_x + com_y * com_y);
+	i_xx -= total_mass * ((com_y * com_y) + (com_z * com_z));
+	i_yy -= total_mass * ((com_x * com_x) + (com_z * com_z));
+	i_zz -= total_mass * ((com_x * com_x) + (com_y * com_y));
 	i_xy += total_mass * com_x * com_y;
 	i_xz += total_mass * com_x * com_z;
 	i_yz += total_mass * com_y * com_z;

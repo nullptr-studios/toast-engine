@@ -64,7 +64,7 @@ public:
 	}
 
 private:
-	enum class Kind {
+	enum class Kind : uint8_t {
 		none,
 		pan,
 		pinch

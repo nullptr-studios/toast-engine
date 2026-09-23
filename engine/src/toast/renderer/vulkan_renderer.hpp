@@ -112,7 +112,7 @@ public:
 		glm::mat4 model {1.0f};
 		uint32_t joint_offset = 0;
 		/// Scalars not uint3 since std430 aligns uint3 to 16 bytes
-		std::array<uint32_t, 3> _pad0 {0, 0, 0};
+		std::array<uint32_t, 3> pad0 {0, 0, 0};
 	};
 
 	static_assert(sizeof(InstanceData) == 80, "InstanceData stride must match mesh.slang's std430 layout");

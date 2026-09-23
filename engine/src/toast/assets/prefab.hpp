@@ -53,7 +53,7 @@ struct TOAST_API NodeFileBinaryHeader {
 
 class TOAST_API Prefab final : public Asset, public ISaveable {
 public:
-	enum class Purpose {
+	enum class Purpose : uint8_t {
 		asset_definition,
 		instance_copy,
 		editor_snapshot

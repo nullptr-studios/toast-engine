@@ -19,7 +19,7 @@
 namespace renderer {
 class VulkanCore;
 
-enum class TonemapMode : uint32_t {
+enum class TonemapMode : uint8_t {
 	reinhard = 0,
 	aces = 1,
 };
@@ -48,7 +48,7 @@ private:
 		float vignette = 0.0f;
 		float grain = 0.0f;
 		float time = 0.0f;
-		glm::vec4 _pad0 {0.0f};
+		glm::vec4 pad0 {0.0f};
 	};
 
 	void createResources(const VulkanCore& core);

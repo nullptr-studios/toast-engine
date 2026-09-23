@@ -5,6 +5,7 @@
  */
 
 #pragma once
+#include <array>
 #include <cstdint>
 #include <deque>
 #include <filesystem>
@@ -72,7 +73,7 @@ struct Entry {
 	Type type = Type::boolean;
 	Meta meta;
 	Value default_value;
-	std::optional<Value> overrides[k_layer_count];    ///< Indexed by Layer minus one
+	std::array<std::optional<Value>, k_layer_count> overrides;    ///< Indexed by Layer minus one
 	Value resolved;
 	std::vector<std::function<void(const Value&)>> on_change;
 };
@@ -191,7 +192,7 @@ private:
 	/// A settings file outlives the code that reads it: a key may belong to a system not constructed yet, or
 	/// to one that no longer exists. Holding them here means the first case works and the second is harmless
 	/// - and save() writes them back out, so a file is never silently pruned by a run that did not touch it
-	std::unordered_map<std::string, Value> m_pending[k_layer_count];
+	std::array<std::unordered_map<std::string, Value>, k_layer_count> m_pending;
 
 	std::filesystem::path m_project_path;
 	std::filesystem::path m_user_path;
@@ -249,7 +250,7 @@ public:
 		if (m_entry == nullptr) {
 			return;
 		}
-		auto wrapper = [callback](const Value& v) {
+		auto wrapper = [callback = std::move(callback)](const Value& v) {
 			if (const auto* typed = std::get_if<T>(&v)) {
 				callback(*typed);
 			}

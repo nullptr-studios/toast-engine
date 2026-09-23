@@ -59,6 +59,7 @@ public:
 	[[Reflect]]
 	void setMouseLocked(bool locked);
 
+	// NOLINTNEXTLINE(modernize-use-nodiscard) refgen would copy [[nodiscard]] into the reflected metadata
 	[[Reflect]]
 	auto isMouseLocked() const -> bool;
 

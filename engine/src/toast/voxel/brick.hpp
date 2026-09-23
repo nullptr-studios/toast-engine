@@ -72,7 +72,7 @@ constexpr auto localFromIndex(uint32_t index) noexcept -> BrickCoord {
 [[nodiscard]]
 constexpr auto sliceBit(uint32_t x, uint32_t y) noexcept -> uint32_t {
 	assert(x < k_brick_dim && y < k_brick_dim);
-	return y * k_brick_dim + x;
+	return (y * k_brick_dim) + x;
 }
 
 [[nodiscard]]
@@ -260,7 +260,7 @@ constexpr auto faceNegX(const BrickOccupancy& brick) noexcept -> uint64_t {
 	for (uint32_t z = 0; z < k_brick_dim; ++z) {
 		for (uint32_t y = 0; y < k_brick_dim; ++y) {
 			if (((brick[z] >> sliceBit(0, y)) & 1ull) != 0ull) {
-				out |= 1ull << (z * k_brick_dim + y);
+				out |= 1ull << ((z * k_brick_dim) + y);
 			}
 		}
 	}
@@ -274,7 +274,7 @@ constexpr auto facePosX(const BrickOccupancy& brick) noexcept -> uint64_t {
 	for (uint32_t z = 0; z < k_brick_dim; ++z) {
 		for (uint32_t y = 0; y < k_brick_dim; ++y) {
 			if (((brick[z] >> sliceBit(k_brick_dim - 1, y)) & 1ull) != 0ull) {
-				out |= 1ull << (z * k_brick_dim + y);
+				out |= 1ull << ((z * k_brick_dim) + y);
 			}
 		}
 	}

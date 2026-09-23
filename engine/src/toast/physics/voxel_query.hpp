@@ -76,7 +76,7 @@ void queryVoxelSurface(const VoxelQueryContext& context, const AABB& aabb, Callb
 
 	bool stopped = false;
 
-	const auto processBrick = [&](glm::ivec3 brick) {
+	const auto process_brick = [&](glm::ivec3 brick) {
 		const voxel::BrickEntry entry = context.volume.entryAt(brick);
 		if (entry.tag() == voxel::BrickTag::empty) {
 			return;
@@ -88,8 +88,8 @@ void queryVoxelSurface(const VoxelQueryContext& context, const AABB& aabb, Callb
 		}
 
 		// private in Volume and VolumeSurface so recompute it the same way here
-		const uint32_t brick_slot = static_cast<uint32_t>(brick.x) + static_cast<uint32_t>(brick.y) * brick_dims.x +
-		                            static_cast<uint32_t>(brick.z) * brick_dims.x * brick_dims.y;
+		const uint32_t brick_slot = static_cast<uint32_t>(brick.x) + (static_cast<uint32_t>(brick.y) * brick_dims.x) +
+		                            (static_cast<uint32_t>(brick.z) * brick_dims.x * brick_dims.y);
 
 		const glm::ivec3 brick_base = brick * brick_dim;
 		const auto emit = [&](const voxel::SurfaceVoxel& surface_voxel, glm::ivec3 global_voxel) -> bool {
@@ -181,13 +181,13 @@ void queryVoxelSurface(const VoxelQueryContext& context, const AABB& aabb, Callb
 			if (glm::any(glm::lessThan(brick, first_brick)) || glm::any(glm::greaterThan(brick, last_brick))) {
 				return;
 			}
-			processBrick(brick);
+			process_brick(brick);
 		});
 	} else {
 		for (int32_t z = first_brick.z; z <= last_brick.z && not stopped; ++z) {
 			for (int32_t y = first_brick.y; y <= last_brick.y && not stopped; ++y) {
 				for (int32_t x = first_brick.x; x <= last_brick.x && not stopped; ++x) {
-					processBrick({x, y, z});
+					process_brick({x, y, z});
 				}
 			}
 		}
