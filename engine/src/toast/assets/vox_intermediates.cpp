@@ -20,13 +20,13 @@
 
 namespace assets {
 
-using toast::voxel::BrickPool;
-using toast::voxel::k_brick_dim;
-using toast::voxel::k_palette_size;
-using toast::voxel::k_voxel_size;
-using toast::voxel::LatticePlacement;
-using toast::voxel::PaletteEntry;
-using toast::voxel::Volume;
+using voxel::BrickPool;
+using voxel::k_brick_dim;
+using voxel::k_palette_size;
+using voxel::k_voxel_size;
+using voxel::LatticePlacement;
+using voxel::PaletteEntry;
+using voxel::Volume;
 
 namespace {
 
@@ -76,7 +76,7 @@ struct VoxNodeTransform {
 
 /// @brief Mirrored orientations have no quaternion so one axis gets a negative scale
 [[nodiscard]]
-auto voxTransformOf(const toast::voxel::LatticeOrientation& orientation, glm::ivec3 offset) -> VoxNodeTransform {
+auto voxTransformOf(const voxel::LatticeOrientation& orientation, glm::ivec3 offset) -> VoxNodeTransform {
 	VoxNodeTransform out;
 	out.position = glm::vec3(offset) * k_voxel_size;
 
@@ -153,7 +153,7 @@ auto writeVoxIntermediates(const std::filesystem::path& source, const std::files
 			defaulted.push_back(static_cast<uint8_t>(i));
 		}
 	}
-	const VoxelPalette palette(scene.palette, 0, std::move(defaulted));
+	const VoxelPalette palette(scene.palette, VoxelMaterialSlots {}, std::move(defaulted));
 	out.palette_file_name = out.base_name + ".tpal";
 	voxWriteFile(out_dir / out.palette_file_name, palette.serialize(SaveMode::editor));
 
@@ -181,7 +181,7 @@ auto writeVoxIntermediates(const std::filesystem::path& source, const std::files
 			    json["hidden"] = hidden;
 			    json["type"] = "toast::VoxelNode";
 			    json["model"] = file_by_model[*node.model];
-			    json["mobility"] = 0;    // VoxelMobility::static_geometry since world/ cannot be included here
+			    json["indestructible"] = true;
 			    voxWriteTransform(
 			        json, voxTransformOf(local.orientation, voxPlacementOf(local, scene.models[*node.model].dims).offset)
 			    );
@@ -213,9 +213,9 @@ auto writeVoxIntermediates(const std::filesystem::path& source, const std::files
 			json["type"] = "toast::VoxelNode";
 			json["hidden"] = false;
 			json["model"] = file_by_model[i];
-			json["mobility"] = 0;
+			json["indestructible"] = true;
 			voxWriteTransform(
-			    json, voxTransformOf(toast::voxel::LatticeOrientation {}, voxPlacementOf(VoxTransform {}, scene.models[i].dims).offset)
+			    json, voxTransformOf(voxel::LatticeOrientation {}, voxPlacementOf(VoxTransform {}, scene.models[i].dims).offset)
 			);
 			manifest["nodes"].push_back(std::move(json));
 		}
@@ -299,7 +299,7 @@ void voxManifestToPrefab(const std::filesystem::path& manifest_path, const std::
 			if (palette_uid.has_value()) {
 				basic.fields.push_back({"m_palette", toast::FieldType::uid_t, false, *palette_uid});
 			}
-			basic.fields.push_back({"m_mobility", toast::FieldType::int_t, false, node.value("mobility", 0)});
+			basic.fields.push_back({"indestructible", toast::FieldType::bool_t, false, node.value("indestructible", true)});
 		}
 
 		prefab.nodes.push_back(std::move(basic));

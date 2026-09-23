@@ -4,7 +4,10 @@
 
 #include "vulkan_renderer.hpp"
 
+#include "clustered_lighting_constants.hpp"
 #include "cube_face_basis.hpp"
+#include "frustum.hpp"
+#include "light_culling.hpp"
 #include "passes/depth_prepass.hpp"
 #include "passes/environment_pass.hpp"
 #include "passes/material_pass.hpp"
@@ -12,7 +15,9 @@
 #include "passes/shadow_pass.hpp"
 #include "passes/skinning_pass.hpp"
 #include "ray_tracing_scene.hpp"
+#include "shadow_slots.hpp"
 #include "skinned_blas_pool.hpp"
+#include "voxel_debug.hpp"
 #include "vulkan_debug.hpp"
 
 #include <algorithm>
@@ -24,8 +29,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <iostream>
+#include <iterator>
 #include <limits>
 #include <map>
+#include <numeric>
 #include <optional>
 #include <stdexcept>
 #include <toast/assets/animation.hpp>
@@ -33,6 +40,7 @@
 #include <toast/assets/assets.hpp>
 #include <toast/assets/material.hpp>
 #include <toast/log.hpp>
+#include <toast/physics/simulator.hpp>
 #include <toast/thread_pool.hpp>
 #include <toast/time.hpp>
 #include <toast/voxel/runtime_pool.hpp>
@@ -177,35 +185,6 @@ auto computeCascadeSplits(float near_plane, float far_plane) -> std::array<float
 	}
 
 	return splits;
-}
-
-/// @brief Inward normalized frustum planes. With [0,1] clip depth near is row 2 alone
-auto extractFrustumPlanes(const glm::mat4& view_projection) -> std::array<glm::vec4, 6> {
-	const auto& m = view_projection;
-	// glm is column major
-	const glm::vec4 row0(m[0][0], m[1][0], m[2][0], m[3][0]);
-	const glm::vec4 row1(m[0][1], m[1][1], m[2][1], m[3][1]);
-	const glm::vec4 row2(m[0][2], m[1][2], m[2][2], m[3][2]);
-	const glm::vec4 row3(m[0][3], m[1][3], m[2][3], m[3][3]);
-
-	std::array planes {row3 + row0, row3 - row0, row3 + row1, row3 - row1, row2, row3 - row2};
-
-	for (auto& plane : planes) {
-		const float length = glm::length(glm::vec3(plane));
-		if (length > 0.0f) {
-			plane /= length;
-		}
-	}
-	return planes;
-}
-
-auto sphereInFrustum(const std::array<glm::vec4, 6>& planes, const glm::vec3& center, float radius) -> bool {
-	for (const auto& plane : planes) {
-		if (glm::dot(glm::vec3(plane), center) + plane.w < -radius) {
-			return false;
-		}
-	}
-	return true;
 }
 
 auto probeCacheUri(const toast::ReflectionProbe& probe) -> std::string {
@@ -1201,16 +1180,21 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 		const GpuScope scene_scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, "Scene");
 		std::lock_guard lock(m_pass_mutex);
 
-		recordMeshScene(*frame.command_buffer, image_index);
-
-		for (auto& pass : m_render_passes) {
-			if (!pass->isEnabled() || pass->stage() != RenderStage::world) {
-				continue;
+		const auto record_stage = [&](RenderStage stage) {
+			for (auto& pass : m_render_passes) {
+				if (!pass->isEnabled() || pass->stage() != stage) {
+					continue;
+				}
+				TracyVkZone(m_tracy_vk_ctx, *frame.command_buffer, "WorldPass");
+				const GpuScope scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, pass->name());
+				pass->record(*frame.command_buffer, m_current_frame, image_index);
 			}
-			TracyVkZone(m_tracy_vk_ctx, *frame.command_buffer, "WorldPass");
-			const GpuScope scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, pass->name());
-			pass->record(*frame.command_buffer, m_current_frame, image_index);
-		}
+		};
+
+		// Ahead of all mesh colour so opaque meshes behind it fail early depth and blended ones blend over it
+		record_stage(RenderStage::world_opaque);
+		recordMeshScene(*frame.command_buffer, image_index);
+		record_stage(RenderStage::world);
 	}
 
 	frame.command_buffer.endRendering();
@@ -2127,6 +2111,7 @@ void VulkanRenderer::mainRenderThread() {
 		bool consumed_queued_frame = false;
 
 		const double limit_hz = m_bake_active.load(std::memory_order_relaxed) ? 0.0 : effectiveFrameRateLimit();
+		const bool clamp_to_simulation = m_clamp_to_simulation.load(std::memory_order_relaxed);
 
 		{
 			std::unique_lock lock(m_queue_mutex);
@@ -2138,7 +2123,7 @@ void VulkanRenderer::mainRenderThread() {
 
 			const auto frame_wait_start = clock::now();
 			if (m_ready_frames.empty()) {
-				if (!has_frame) {
+				if (!has_frame || clamp_to_simulation) {
 					m_frame_cv.wait(lock, wake_condition);
 				} else if (limit_hz > 0.0) {
 					const auto now = clock::now();
@@ -2334,10 +2319,11 @@ void VulkanRenderer::submitFrame() noexcept {
 
 void VulkanRenderer::fitShadowViews(
     RenderFrame& frame, float aspect, int32_t shadow_caster_index, const glm::vec3& shadow_caster_direction,
-    std::vector<PunctualShadowCandidate>& spot_candidates, std::vector<PunctualShadowCandidate>& point_candidates
+    const std::vector<PunctualShadowCandidate>& spot_candidates, const std::vector<PunctualShadowCandidate>& point_candidates
 ) {
 	ZoneScoped;
 	if (m_shadow_pass == nullptr) {
+		releaseShadowSlots();
 		return;
 	}
 	frame.frame_data.shadow_params.z = 1.0f / static_cast<float>(shadows::cascadeResolution());
@@ -2376,15 +2362,14 @@ void VulkanRenderer::fitShadowViews(
 		frame.frame_data.shadow_params.y = static_cast<float>(shadows::k_cascade_count);
 	}
 
-	const auto by_distance = [](const PunctualShadowCandidate& a, const PunctualShadowCandidate& b) {
-		return a.distance_squared < b.distance_squared;
-	};
-	std::ranges::sort(spot_candidates, by_distance);
-	std::ranges::sort(point_candidates, by_distance);
-
-	const size_t spot_shadow_count = std::min<size_t>(spot_candidates.size(), shadows::k_max_spot_shadows);
-	for (size_t slot = 0; slot < spot_shadow_count; ++slot) {
-		GpuLight& light = frame.lights[spot_candidates[slot].light_index];
+	assignShadowSlots(spot_candidates, m_spot_slots);
+	for (size_t i = 0; i < spot_candidates.size(); ++i) {
+		const int32_t slot = m_tick_slot_of[i];
+		if (slot < 0) {
+			continue;
+		}
+		const PunctualShadowCandidate& candidate = spot_candidates[i];
+		GpuLight& light = frame.lights[candidate.light_index];
 
 		const glm::vec3 position = glm::vec3(light.world_pos_range);
 		const glm::vec3 direction = glm::normalize(glm::vec3(light.direction_pad));
@@ -2400,9 +2385,10 @@ void VulkanRenderer::fitShadowViews(
 		const glm::mat4 projection = glm::perspectiveRH_ZO(fov, 1.0f, shadows::k_punctual_near, range);
 		const glm::mat4 view_projection = projection * view;
 
-		const uint32_t resolution = shadows::punctualShadowResolution(
-		    std::sqrt(spot_candidates[slot].distance_squared), spot_candidates[slot].resolution_scale
-		);
+		auto& owner = m_spot_slots[static_cast<size_t>(slot)];
+		owner.resolution =
+		    shadow_slots::stableResolution(owner.resolution, std::sqrt(candidate.distance_squared), candidate.resolution_scale);
+		const uint32_t resolution = owner.resolution;
 
 		const uint32_t layer = shadows::k_spot_layer_base + static_cast<uint32_t>(slot);
 		light.direction_pad.w = static_cast<float>(layer);
@@ -2423,16 +2409,22 @@ void VulkanRenderer::fitShadowViews(
 		frame.shadows.matrices.push_back(view_projection);
 	}
 
-	const size_t point_shadow_count = std::min<size_t>(point_candidates.size(), shadows::k_max_point_shadows);
-	for (size_t slot = 0; slot < point_shadow_count; ++slot) {
-		GpuLight& light = frame.lights[point_candidates[slot].light_index];
+	assignShadowSlots(point_candidates, m_point_slots);
+	for (size_t i = 0; i < point_candidates.size(); ++i) {
+		const int32_t slot = m_tick_slot_of[i];
+		if (slot < 0) {
+			continue;
+		}
+		const PunctualShadowCandidate& candidate = point_candidates[i];
+		GpuLight& light = frame.lights[candidate.light_index];
 
 		const glm::vec3 position = glm::vec3(light.world_pos_range);
 		const float range = std::max(light.world_pos_range.w, 0.01f);
 
-		const uint32_t resolution = shadows::punctualShadowResolution(
-		    std::sqrt(point_candidates[slot].distance_squared), point_candidates[slot].resolution_scale
-		);
+		auto& owner = m_point_slots[static_cast<size_t>(slot)];
+		owner.resolution =
+		    shadow_slots::stableResolution(owner.resolution, std::sqrt(candidate.distance_squared), candidate.resolution_scale);
+		const uint32_t resolution = owner.resolution;
 
 		const uint32_t base_layer = shadows::k_point_layer_base + (static_cast<uint32_t>(slot) * shadows::k_cube_faces);
 		light.direction_pad.w = static_cast<float>(base_layer);
@@ -2464,6 +2456,85 @@ void VulkanRenderer::fitShadowViews(
 			frame.shadows.matrices.push_back(view_projection);
 		}
 	}
+}
+
+void VulkanRenderer::assignShadowSlots(
+    const std::vector<PunctualShadowCandidate>& candidates, std::span<shadow_slots::Slot> slots
+) {
+	m_tick_slot_candidates.clear();
+	for (const PunctualShadowCandidate& candidate : candidates) {
+		m_tick_slot_candidates.push_back({.key = candidate.key, .importance = candidate.importance, .visible = candidate.visible});
+	}
+	m_tick_slot_of.resize(candidates.size());
+	m_shadow_displaced_total += shadow_slots::assign(m_tick_slot_candidates, slots, m_tick_slot_of);
+}
+
+void VulkanRenderer::releaseShadowSlots() {
+	m_spot_slots = {};
+	m_point_slots = {};
+}
+
+void VulkanRenderer::finalizeLights(RenderFrame& frame) {
+	ZoneScoped;
+	using namespace clustered_lighting;
+
+	auto& lights = frame.lights;
+	auto& meta = m_tick_light_meta;
+
+	size_t kept = 0;
+	for (size_t i = 0; i < lights.size(); ++i) {
+		const bool owns_shadow = lights[i].direction_pad.w >= 0.0f;
+		if (!meta[i].visible && !owns_shadow) {
+			++frame.light_stats.offscreen;
+			continue;
+		}
+		if (owns_shadow) {
+			meta[i].importance = std::numeric_limits<float>::max();
+		}
+		lights[kept] = lights[i];
+		meta[kept] = meta[i];
+		++kept;
+	}
+	lights.resize(kept);
+	meta.resize(kept);
+
+	float light_reach = 0.0f;
+	if (kept > k_max_lights_per_cluster) {
+		auto& order = m_tick_light_order;
+		order.resize(kept);
+		std::iota(order.begin(), order.end(), 0U);
+		std::ranges::stable_sort(order, [&meta](uint32_t a, uint32_t b) { return meta[a].importance > meta[b].importance; });
+
+		const size_t final_count = std::min<size_t>(kept, k_max_lights);
+		frame.light_stats.truncated = static_cast<uint32_t>(kept - final_count);
+
+		auto& scratch = m_tick_light_scratch;
+		scratch.assign(lights.begin(), lights.end());
+		lights.resize(final_count);
+		for (size_t i = 0; i < final_count; ++i) {
+			lights[i] = scratch[order[i]];
+			if (meta[order[i]].visible) {
+				light_reach = std::max(light_reach, meta[order[i]].depth_reach);
+			}
+		}
+	} else {
+		for (const LightMeta& entry : meta) {
+			if (entry.visible) {
+				light_reach = std::max(light_reach, entry.depth_reach);
+			}
+		}
+	}
+
+	const auto occupied = [](const auto& slots) {
+		return static_cast<uint32_t>(std::ranges::count_if(slots, [](const shadow_slots::Slot& slot) { return slot.key != 0; }));
+	};
+	frame.light_stats.spot_shadows = occupied(m_spot_slots);
+	frame.light_stats.point_shadows = occupied(m_point_slots);
+	frame.light_stats.shadow_displaced = m_shadow_displaced_total;
+
+	const auto depth = light_culling::clusterDepthRange(frame.camera_near, frame.camera_far, light_reach);
+	frame.cluster_near = depth.near_depth;
+	frame.cluster_far = depth.far_depth;
 }
 
 void VulkanRenderer::tick(float time) noexcept {
@@ -2583,6 +2654,7 @@ void VulkanRenderer::tick(float time) noexcept {
 		light_nodes_snapshot.assign(m_light_proxy_nodes.begin(), m_light_proxy_nodes.end());
 	}
 	frame.lights.clear();
+	frame.light_stats = {};
 
 	for (auto* node : mesh_nodes_snapshot) {
 		if (node == nullptr || !node->enabled() || !node->participatesIn(toast::NodeOwnerParticipation::render)) {
@@ -2984,6 +3056,57 @@ void VulkanRenderer::tick(float time) noexcept {
 	auto& point_candidates = m_tick_point_candidates;
 	spot_candidates.clear();
 	point_candidates.clear();
+	m_tick_light_meta.clear();
+
+	const glm::mat4& frame_view = frame.frame_data.view;
+	const auto frustum = extractFrustumPlanes(frame.frame_data.view_projection);
+
+	struct PunctualSubmit {
+		GpuLight gpu;
+		light_culling::Sphere bounds;
+		uint64_t key = 0;
+		float cone_fraction = 1.0f;
+		float camera_distance = 0.0f;
+		float resolution_scale = 1.0f;
+		bool casts_shadows = false;
+	};
+
+	const auto submit_punctual = [&](const PunctualSubmit& submit, std::vector<PunctualShadowCandidate>& candidates) {
+		++frame.light_stats.submitted;
+
+		const bool visible = sphereInFrustum(frustum, submit.bounds.center, submit.bounds.radius);
+		if (!visible && !submit.casts_shadows) {
+			++frame.light_stats.offscreen;
+			return;
+		}
+
+		const GpuLight& gpu = submit.gpu;
+		const float importance = light_culling::importance(
+		    glm::vec3(gpu.color_intensity), gpu.color_intensity.w, gpu.world_pos_range.w, submit.camera_distance, submit.cone_fraction
+		);
+
+		if (submit.casts_shadows) {
+			candidates.push_back(
+			    PunctualShadowCandidate {
+			      .light_index = frame.lights.size(),
+			      .distance_squared = submit.camera_distance * submit.camera_distance,
+			      .resolution_scale = submit.resolution_scale,
+			      .visible = visible,
+			      .key = submit.key,
+			      .importance = importance,
+			    }
+			);
+		}
+
+		m_tick_light_meta.push_back(
+		    LightMeta {
+		      .importance = importance,
+		      .depth_reach = -(frame_view * glm::vec4(submit.bounds.center, 1.0f)).z + submit.bounds.radius,
+		      .visible = visible,
+		    }
+		);
+		frame.lights.push_back(gpu);
+	};
 
 	for (auto* light : light_nodes_snapshot) {
 		if (light == nullptr || !light->enabled()) {
@@ -3002,8 +3125,12 @@ void VulkanRenderer::tick(float time) noexcept {
 			continue;
 		}
 
+		const uint64_t light_key = light->uid().data() != 0 ? light->uid().data() : reinterpret_cast<std::uintptr_t>(light);
+		const bool holds_slot = shadow_slots::owns(m_spot_slots, light_key) || shadow_slots::owns(m_point_slots, light_key);
+		const float shadow_limit = light->shadowDistance() * (holds_slot ? shadow_slots::k_distance_slack : 1.0f);
+
 		const bool casts_shadows =
-		    light->castsShadows() && (!positional || light->shadowDistance() <= 0.0f || camera_distance <= light->shadowDistance());
+		    light->castsShadows() && (!positional || light->shadowDistance() <= 0.0f || camera_distance <= shadow_limit);
 
 		constexpr float k_light_icon_size = 0.5f;
 		debugDrawBillboard(light->world_position, k_light_icon_size, lightIcon(light->lightType()), glm::vec4(light->color(), 1.0f));
@@ -3033,57 +3160,62 @@ void VulkanRenderer::tick(float time) noexcept {
 			case toast::LightType::point: {
 				auto* point = static_cast<toast::PointLight*>(light);
 				const glm::vec3 world_pos = point->world_position;
-				const glm::vec3 view_pos = glm::vec3(camera_view * glm::vec4(world_pos, 1.0f));
+				const glm::vec3 view_pos = glm::vec3(frame_view * glm::vec4(world_pos, 1.0f));
 
 				debugDrawSphere(world_pos, point->attenuation(), glm::vec4(point->color(), 1.0f));
 
-				if (casts_shadows) {
-					point_candidates.push_back(
-					    PunctualShadowCandidate {
-					      .light_index = frame.lights.size(),
-					      .distance_squared = camera_distance * camera_distance,
-					      .resolution_scale = point->shadowResolutionScale(),
-					    }
-					);
-				}
-
-				frame.lights.push_back(
-				    GpuLight {
-				      .world_pos_range = glm::vec4(world_pos, point->attenuation()),
-				      .view_pos_type = glm::vec4(view_pos, 0.0f),
-				      .color_intensity = glm::vec4(point->color(), point->intensity()),
-				      .direction_pad = glm::vec4(0.0f, 0.0f, 0.0f, -1.0f),
-				      .cone_angles = glm::vec4(0.0f),
-				    }
+				submit_punctual(
+				    PunctualSubmit {
+				      .gpu =
+				          GpuLight {
+				                    .world_pos_range = glm::vec4(world_pos, point->attenuation()),
+				                    .view_pos_type = glm::vec4(view_pos, 0.0f),
+				                    .color_intensity = glm::vec4(point->color(), point->intensity()),
+				                    .direction_pad = glm::vec4(0.0f, 0.0f, 0.0f, -1.0f),
+				                    .cone_angles = glm::vec4(0.0f),
+				                    },
+				      .bounds = light_culling::Sphere {world_pos, point->attenuation()},
+				      .key = light_key,
+				      .camera_distance = camera_distance,
+				      .resolution_scale = point->shadowResolutionScale(),
+				      .casts_shadows = casts_shadows,
+				},
+				    point_candidates
 				);
 				break;
 			}
 			case toast::LightType::spot: {
 				auto* spot = static_cast<toast::Spotlight*>(light);
 				const glm::vec3 world_pos = spot->world_position;
-				const glm::vec3 view_pos = glm::vec3(camera_view * glm::vec4(world_pos, 1.0f));
+				const glm::vec3 forward = glm::normalize(spot->forward());
+				const glm::vec3 view_pos = glm::vec3(frame_view * glm::vec4(world_pos, 1.0f));
+				const glm::vec3 view_axis = glm::normalize(glm::mat3(frame_view) * forward);
 
-				debugDrawCone(world_pos, spot->forward(), spot->attenuation(), spot->outerRadius(), glm::vec4(spot->color(), 1.0f));
+				// Inner past outer would invert the smoothstep edges
+				const float outer = glm::radians(spot->outerRadius());
+				const float inner = std::min(glm::radians(spot->innerRadius()), outer);
 
-				if (casts_shadows) {
-					spot_candidates.push_back(
-					    PunctualShadowCandidate {
-					      .light_index = frame.lights.size(),
-					      .distance_squared = camera_distance * camera_distance,
-					      .resolution_scale = spot->shadowResolutionScale(),
-					    }
-					);
-				}
+				debugDrawCone(world_pos, forward, spot->attenuation(), spot->outerRadius(), glm::vec4(spot->color(), 1.0f));
 
-				frame.lights.push_back(
-				    GpuLight {
-				      .world_pos_range = glm::vec4(world_pos, spot->attenuation()),
-				      .view_pos_type = glm::vec4(view_pos, 1.0f),
-				      .color_intensity = glm::vec4(spot->color(), spot->intensity()),
-				      .direction_pad = glm::vec4(spot->forward(), -1.0f),
-				      .cone_angles =
-				          glm::vec4(std::cos(glm::radians(spot->outerRadius())), std::cos(glm::radians(spot->innerRadius())), 0.0f, 0.0f),
-				    }
+				submit_punctual(
+				    PunctualSubmit {
+				      .gpu =
+				          GpuLight {
+				                    .world_pos_range = glm::vec4(world_pos, spot->attenuation()),
+				                    .view_pos_type = glm::vec4(view_pos, 1.0f),
+				                    .view_direction = glm::vec4(view_axis, 0.0f),
+				                    .color_intensity = glm::vec4(spot->color(), spot->intensity()),
+				                    .direction_pad = glm::vec4(forward, -1.0f),
+				                    .cone_angles = glm::vec4(std::cos(outer), std::cos(inner), 0.0f, 0.0f),
+				                    },
+				      .bounds = light_culling::spotBounds(world_pos, forward, spot->attenuation(), outer),
+				      .key = light_key,
+				      .cone_fraction = 0.5f * (1.0f - std::cos(outer)),
+				      .camera_distance = camera_distance,
+				      .resolution_scale = spot->shadowResolutionScale(),
+				      .casts_shadows = casts_shadows,
+				},
+				    spot_candidates
 				);
 				break;
 			}
@@ -3165,7 +3297,7 @@ void VulkanRenderer::tick(float time) noexcept {
 		auto state = std::tuple {
 		  ambient_sum.r + ambient_sum.g + ambient_sum.b,
 		  directional_count,
-		  frame.lights.size(),
+		  frame.light_stats.submitted,
 		  frame.frame_data.environment_params.x,
 		  frame.mesh_instances.size(),
 		  frame.render_mode,
@@ -3184,7 +3316,7 @@ void VulkanRenderer::tick(float time) noexcept {
 			    ambient_sum.g,
 			    ambient_sum.b,
 			    directional_count,
-			    frame.lights.size(),
+			    frame.light_stats.submitted,
 			    frame.frame_data.environment_params.x >= 0.5f ? "ready" : "absent",
 			    frame.mesh_instances.size(),
 			    frame.render_mode,
@@ -3201,7 +3333,11 @@ void VulkanRenderer::tick(float time) noexcept {
 
 	if (!trace_shadows) {
 		fitShadowViews(frame, aspect, shadow_caster_index, shadow_caster_direction, spot_candidates, point_candidates);
+	} else {
+		releaseShadowSlots();
 	}
+
+	finalizeLights(frame);
 
 	// TODO compile out of non editor builds
 	if (m_gizmo_state.visible) {
@@ -3214,6 +3350,14 @@ void VulkanRenderer::tick(float time) noexcept {
 		frame.transform_gizmo.hover = m_gizmo_state.hover;
 		frame.transform_gizmo.active = m_gizmo_state.active;
 		frame.transform_gizmo.drag_scale_factor = m_gizmo_state.drag_scale_factor;
+	}
+
+	if (m_gizmo_state.size_handle_count > 0) {
+		frame.transform_gizmo.size_handles = m_gizmo_state.size_handles;
+		frame.transform_gizmo.size_handle_count = m_gizmo_state.size_handle_count;
+		frame.transform_gizmo.size_handle_scale = m_gizmo_state.size_handle_scale;
+		frame.transform_gizmo.hover = m_gizmo_state.hover;
+		frame.transform_gizmo.active = m_gizmo_state.active;
 	}
 
 	{
@@ -3240,7 +3384,7 @@ void VulkanRenderer::tick(float time) noexcept {
 		const glm::vec3 eye = frame.frame_data.camera_position;
 		const float near_plane = m_camera->near_plane;
 		for (auto& proxy : frame.voxel_instances) {
-			proxy.camera_inside = toast::voxel::containsPoint(proxy.inverse_model, proxy.brick_dims, eye, near_plane);
+			proxy.camera_inside = voxel::containsPoint(proxy.inverse_model, proxy.brick_dims, eye, near_plane);
 			proxy.visible = proxy.camera_inside || sphereInFrustum(planes, proxy.bounds_center, proxy.bounds_radius);
 			proxy.view_distance = std::max(glm::distance(eye, proxy.bounds_center) - proxy.bounds_radius, 0.0f);
 		}
@@ -3388,10 +3532,10 @@ void VulkanRenderer::unregisterVoxelNodeProxy(toast::VoxelNode* node) {
 namespace {
 
 [[nodiscard]]
-auto defaultVoxelPalette() -> const toast::voxel::Palette& {
-	static const toast::voxel::Palette palette = [] {
-		toast::voxel::Palette out;
-		for (uint32_t i = 1; i < toast::voxel::k_palette_size; ++i) {
+auto defaultVoxelPalette() -> const voxel::Palette& {
+	static const voxel::Palette palette = [] {
+		voxel::Palette out;
+		for (uint32_t i = 1; i < voxel::k_palette_size; ++i) {
 			out.entries[i].albedo_r = 160;
 			out.entries[i].albedo_g = 160;
 			out.entries[i].albedo_b = 160;
@@ -3400,6 +3544,11 @@ auto defaultVoxelPalette() -> const toast::voxel::Palette& {
 		return out;
 	}();
 	return palette;
+}
+
+[[nodiscard]]
+auto voxelFragmentRenderId(physics::ShapeID shape) -> uint64_t {
+	return 0xF7A6'1D00'0000'0000ull ^ ((static_cast<uint64_t>(shape.slot) << 32) | shape.generation);
 }
 
 }
@@ -3417,25 +3566,32 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		if (m_voxel_storage_pending->isReady()) {
 			m_voxel_storage = std::move(m_voxel_storage_pending);
 			m_voxel_storage_pending.reset();
+			m_voxel_change_tracker.published();
 		} else if (m_voxel_storage_pending->hasFailed()) {
 			if (!m_voxel_upload_failed_warned) {
 				m_voxel_upload_failed_warned = true;
 				TOAST_ERROR("Render", "Voxel scene upload failed; voxel volumes draw from the previous upload, if any");
 			}
 			m_voxel_storage_pending.reset();
+			m_voxel_patcher.reset();
+			m_voxel_latest_storage.reset();
 		}
 	}
 
 	struct Gathered {
-		toast::VoxelNode* node;
-		toast::voxel::Volume* volume;
-		const toast::voxel::Palette* palette;
+		uint64_t id;
+		const voxel::Volume* volume;
+		const voxel::Palette* palette;
+		glm::mat4 model;
+		std::string debug_name;
 	};
 
 	std::vector<Gathered> gathered;
 	std::vector<VoxelSceneKey> key;
 	gathered.reserve(nodes.size());
 	key.reserve(nodes.size());
+
+	std::unique_lock voxel_lock {voxel::runtimePoolMutex()};
 
 	for (auto* node : nodes) {
 		if (node == nullptr || !node->enabled()) {
@@ -3445,47 +3601,189 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 			continue;
 		}
 
-		toast::voxel::Volume* volume = node->volume();
+		voxel::Volume* volume = node->volume();
 		if (volume == nullptr) {
 			continue;
 		}
-		const toast::voxel::Palette* palette = node->resolvedPalette();
+		const voxel::Palette* palette = node->resolvedPalette();
 		if (palette == nullptr) {
 			palette = &defaultVoxelPalette();
 		}
 
-		gathered.push_back({node, volume, palette});
-		key.push_back({.node_uid = node->uid().data(), .revision = node->revision(), .palette = palette});
+		// clang-format off
+		gathered.push_back(Gathered {
+			.id = node->uid().data(),
+			.volume = volume,
+			.palette = palette,
+			.model = node->getWorldTransform(),
+			.debug_name = std::string{node->name()}
+		});
+		key.push_back({
+			.node_uid = node->uid().data(),
+			.revision = node->revision(),
+			.content = volume->revision(),
+			.palette = palette,
+			.palette_revision = palette->revision
+		});
+		// clang-format on
 	}
 
-	if (key != m_voxel_scene_key) {
+	for (const physics::VoxelRenderRecord& record : physics::Simulator::voxelFragmentRecords()) {
+		if (record.volume == nullptr) {
+			continue;
+		}
+		const voxel::Palette* palette = record.palette != nullptr ? record.palette : &defaultVoxelPalette();
+		const uint64_t id = voxelFragmentRenderId(record.shape);
+
+		gathered.push_back({id, record.volume, palette, record.transform, "Voxel fragment " + std::to_string(record.shape.slot)});
+		key.push_back(
+		    {.node_uid = id,
+				 .revision = record.revision,
+				 .content = record.volume->revision(),
+				 .palette = palette,
+				 .palette_revision = palette->revision}
+		);
+	}
+
+	const bool keep_mirror = voxel_debug::isView(m_render_mode);
+
+	// A pack still uploading is left alone rather than replaced every frame
+	if (m_voxel_storage_pending == nullptr && (key != m_voxel_scene_key || keep_mirror != m_voxel_mirror_kept)) {
+		std::vector<TrackedVolume> tracked;
+		tracked.reserve(gathered.size());
+		for (const Gathered& entry : gathered) {
+			tracked.push_back({.node_uid = entry.id, .volume = entry.volume});
+		}
+		std::vector<VolumeDelta> deltas;
+		m_voxel_change_tracker.observe(
+		    tracked,
+		    [this](uint64_t node_uid) -> std::optional<glm::uvec3> {
+			    const auto record = m_voxel_storage ? m_voxel_storage->recordIndexOf(node_uid) : std::nullopt;
+			    return record.has_value() ? std::optional {m_voxel_storage->recordBrickDims(*record)} : std::nullopt;
+		    },
+		    &deltas
+		);
+
 		m_voxel_scene_key = key;
+		m_voxel_mirror_kept = keep_mirror;
 		m_voxel_upload_failed_warned = false;
 
 		if (gathered.empty()) {
 			m_voxel_storage.reset();
 			m_voxel_storage_pending.reset();
+			m_voxel_change_tracker.reset();
+			m_voxel_patcher.reset();
+			m_voxel_latest_storage.reset();
 		} else {
-			std::vector<toast::voxel::gpu::SceneVolume> scene_volumes;
+			std::vector<voxel::gpu::SceneVolume> scene_volumes;
 			std::vector<uint64_t> node_uids;
 			std::vector<glm::uvec3> brick_dims;
+			VoxelStorageDebugInfo debug;
 			scene_volumes.reserve(gathered.size());
 			node_uids.reserve(gathered.size());
 			brick_dims.reserve(gathered.size());
+			debug.node_names.reserve(gathered.size());
 			for (const Gathered& entry : gathered) {
 				scene_volumes.push_back({.volume = entry.volume, .palette = entry.palette});
-				node_uids.push_back(entry.node->uid().data());
+				node_uids.push_back(entry.id);
 				brick_dims.push_back(entry.volume->brickDims());
+				debug.node_names.emplace_back(entry.debug_name);
 			}
 
-			auto storage = std::make_shared<VoxelGpuStorage>(std::move(node_uids), std::move(brick_dims));
-			queueResourceUpload(
-			    std::make_unique<VoxelSceneUpload>(
-			        storage, toast::voxel::gpu::packPool(toast::voxel::runtimeBrickPool()), toast::voxel::gpu::packScene(scene_volumes)
-			    )
-			);
-			m_voxel_storage_pending = std::move(storage);
+			const auto pack_start = std::chrono::steady_clock::now();
+			const auto elapsed_ms = [&pack_start] {
+				return std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - pack_start).count();
+			};
+
+			std::optional<voxel::gpu::ScenePatch> patch;
+			if (!keep_mirror && m_voxel_latest_storage != nullptr && !m_voxel_latest_storage->hasFailed()) {
+				patch = m_voxel_patcher.tryPatch(voxel::runtimeBrickPool(), scene_volumes, node_uids, deltas);
+			}
+
+			if (patch.has_value()) {
+				debug.pack_ms = elapsed_ms();
+				voxel_lock.unlock();
+
+				const VoxelStorageDebugInfo& previous = m_voxel_latest_storage->debugInfo();
+				debug.sequence = ++m_voxel_upload_sequence;
+				debug.packed_slots = patch->pool_slots;
+				debug.packed_palettes = previous.packed_palettes;
+				debug.bricks = previous.bricks;
+				for (size_t i = 0; i < debug.bricks.size() && i < patch->tags.size(); ++i) {
+					const auto apply = [](uint32_t count, int32_t delta) {
+						return static_cast<uint32_t>(static_cast<int64_t>(count) + delta);
+					};
+					debug.bricks[i].uniform = apply(debug.bricks[i].uniform, patch->tags[i].uniform);
+					debug.bricks[i].shared = apply(debug.bricks[i].shared, patch->tags[i].shared);
+					debug.bricks[i].owned = apply(debug.bricks[i].owned, patch->tags[i].owned);
+				}
+				debug.patched = true;
+				debug.patched_bricks = static_cast<uint32_t>(
+				    std::accumulate(deltas.begin(), deltas.end(), size_t {0}, [](size_t sum, const VolumeDelta& delta) {
+					    return sum + delta.bricks.size();
+				    })
+				);
+
+				const voxel::gpu::PackedScene& retained = m_voxel_patcher.scene();
+				const VoxelScenePatchUpload::SectionBytes section_bytes {
+				  static_cast<vk::DeviceSize>(patch->pool_slots) * voxel::gpu::k_material_words_per_brick * sizeof(uint32_t),
+				  static_cast<vk::DeviceSize>(patch->pool_slots) * voxel::gpu::k_occupancy_words_per_brick * sizeof(uint32_t),
+				  retained.grids.size() * sizeof(uint32_t),
+				  retained.coarse.size() * sizeof(uint32_t),
+				  retained.palettes.size() * sizeof(uint32_t),
+				  retained.records.size() * sizeof(voxel::gpu::VolumeRecord),
+				};
+
+				auto storage = std::make_shared<VoxelGpuStorage>(std::move(node_uids), std::move(brick_dims));
+				storage->setDebugInfo(std::move(debug));
+				storage->setChangeHistory(m_voxel_change_tracker.packed(storage->generation()));
+				queueResourceUpload(
+				    std::make_unique<VoxelScenePatchUpload>(storage, m_voxel_latest_storage, std::move(*patch), section_bytes)
+				);
+				m_voxel_storage_pending = storage;
+				m_voxel_latest_storage = std::move(storage);
+			} else {
+				auto packed = std::make_shared<VoxelPackedScene>(VoxelPackedScene {
+				  .pool = voxel::gpu::packPool(voxel::runtimeBrickPool()), .scene = voxel::gpu::packScene(scene_volumes)
+				});
+				debug.pack_ms = elapsed_ms();
+				voxel_lock.unlock();
+
+				debug.sequence = ++m_voxel_upload_sequence;
+				debug.packed_slots = static_cast<uint32_t>(packed->pool.materials.size() / voxel::gpu::k_material_words_per_brick);
+				debug.packed_palettes = static_cast<uint32_t>(packed->scene.palettes.size() / voxel::gpu::k_palette_words);
+				debug.bricks.reserve(packed->scene.records.size());
+				for (const voxel::gpu::VolumeRecord& record : packed->scene.records) {
+					VoxelStorageDebugInfo::BrickCensus census;
+					const uint32_t count = record.brick_dims_x * record.brick_dims_y * record.brick_dims_z;
+					for (uint32_t i = 0; i < count; ++i) {
+						switch (voxel::BrickEntry {packed->scene.grids[record.grid_offset + i]}.tag()) {
+							case voxel::BrickTag::uniform: ++census.uniform; break;
+							case voxel::BrickTag::shared: ++census.shared; break;
+							case voxel::BrickTag::owned: ++census.owned; break;
+							case voxel::BrickTag::empty: break;
+						}
+					}
+					debug.bricks.push_back(census);
+				}
+				if (keep_mirror) {
+					debug.mirror = packed;
+				}
+
+				m_voxel_patcher.adopt(packed->scene, debug.packed_slots, node_uids);
+
+				auto storage = std::make_shared<VoxelGpuStorage>(std::move(node_uids), std::move(brick_dims));
+				storage->setDebugInfo(std::move(debug));
+				storage->setChangeHistory(m_voxel_change_tracker.packed(storage->generation()));
+				queueResourceUpload(std::make_unique<VoxelSceneUpload>(storage, std::move(packed)));
+				m_voxel_storage_pending = storage;
+				m_voxel_latest_storage = std::move(storage);
+			}
 		}
+	}
+
+	if (voxel_lock.owns_lock()) {
+		voxel_lock.unlock();
 	}
 
 	frame.voxel_storage = m_voxel_storage;
@@ -3499,15 +3797,15 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 	frame.voxel_instances.reserve(gathered.size());
 
 	for (const Gathered& entry : gathered) {
-		const uint64_t node_uid = entry.node->uid().data();
+		const uint64_t node_uid = entry.id;
 		const std::optional<uint32_t> record = m_voxel_storage->recordIndexOf(node_uid);
 		if (!record.has_value()) {
 			continue;
 		}
 
 		const glm::uvec3 dims = m_voxel_storage->recordBrickDims(*record);
-		const glm::mat4 model = entry.node->getWorldTransform();
-		const glm::vec4 sphere = toast::voxel::worldBoundingSphere(model, dims);
+		const glm::mat4 model = entry.model;
+		const glm::vec4 sphere = voxel::worldBoundingSphere(model, dims);
 		const auto previous = m_voxel_previous_models.find(node_uid);
 
 		frame.voxel_instances.push_back(
@@ -3905,21 +4203,49 @@ void VulkanRenderer::flushResourceUploads() {
 		m_upload_staging.clear();
 	}
 
+	// Jobs that read another upload go back in front until that one is recorded
+	const auto defer = [this](std::vector<std::unique_ptr<PendingResourceUpload>>& jobs) {
+		if (jobs.empty()) {
+			return;
+		}
+		std::lock_guard<std::mutex> lock(m_upload_mutex);
+		m_upload_staging.insert(m_upload_staging.begin(), std::make_move_iterator(jobs.begin()), std::make_move_iterator(jobs.end()));
+		jobs.clear();
+	};
+
+	if (std::ranges::none_of(jobs_to_flush, [](const auto& job) { return job->canRecord(); })) {
+		defer(jobs_to_flush);
+		return;
+	}
+
 	const auto& device = m_core->getDevice();
 
 	device.resetFences(*slot.fence);
 	slot.command_buffer.reset();
 	slot.command_buffer.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
 
-	for (auto& job : jobs_to_flush) {
-		job->record(*slot.command_buffer);
+	// Recording one job can free the next so repeat until nothing more can go
+	std::vector<std::unique_ptr<PendingResourceUpload>> recorded;
+	for (bool progressed = true; progressed && !jobs_to_flush.empty();) {
+		progressed = false;
+		for (auto job = jobs_to_flush.begin(); job != jobs_to_flush.end();) {
+			if (!(*job)->canRecord()) {
+				++job;
+				continue;
+			}
+			(*job)->record(*slot.command_buffer);
+			recorded.push_back(std::move(*job));
+			job = jobs_to_flush.erase(job);
+			progressed = true;
+		}
 	}
+	defer(jobs_to_flush);
 
 	slot.command_buffer.end();
 
 	BatchedUploadGroup batch;
 	batch.slot = m_next_upload_slot;
-	batch.jobs = std::move(jobs_to_flush);
+	batch.jobs = std::move(recorded);
 
 	const vk::CommandBuffer raw_transfer_cmd = *slot.command_buffer;
 	const vk::SubmitInfo submit_info(0, nullptr, nullptr, 1, &raw_transfer_cmd);

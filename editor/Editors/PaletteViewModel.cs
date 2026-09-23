@@ -45,6 +45,51 @@ public partial class PaletteSwatchVM : ObservableObject {
 	}
 }
 
+public partial class PaletteSlotVM : ObservableObject {
+	private readonly Action m_touch;
+	private readonly VoxelMaterialSlot m_slot;
+	private bool m_loading;
+
+	[ObservableProperty] private string? m_destructionUid;
+	[ObservableProperty] private string m_name;
+	[ObservableProperty] private string? m_physicsUid;
+
+	public PaletteSlotVM(int index, VoxelMaterialSlot slot, Action touch) {
+		Index = index;
+		m_slot = slot;
+		m_touch = touch;
+
+		m_loading = true;
+		m_name = slot.Name;
+		m_physicsUid = slot.PhysicsUid.Length > 0 ? slot.PhysicsUid : null;
+		m_destructionUid = slot.DestructionUid.Length > 0 ? slot.DestructionUid : null;
+		m_loading = false;
+	}
+
+	public int Index { get; }
+
+	public string Label => string.IsNullOrWhiteSpace(Name) ? $"{Index}:" : $"{Index}: {Name}";
+
+	partial void OnNameChanged(string value) {
+		OnPropertyChanged(nameof(Label));
+		if (m_loading) return;
+		m_slot.Name = value ?? "";
+		m_touch();
+	}
+
+	partial void OnPhysicsUidChanged(string? value) {
+		if (m_loading) return;
+		m_slot.PhysicsUid = value ?? "";
+		m_touch();
+	}
+
+	partial void OnDestructionUidChanged(string? value) {
+		if (m_loading) return;
+		m_slot.DestructionUid = value ?? "";
+		m_touch();
+	}
+}
+
 /// <summary>Assigns entry materials which a reimport of the source .vox cannot re-derive</summary>
 public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 	private const string BaseTitle = "Palette Editor";
@@ -62,9 +107,7 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 	[ObservableProperty] private bool m_entryInUse;
 	[ObservableProperty] private string m_fileName = "";
 	[ObservableProperty] private bool m_isDirty;
-	[ObservableProperty] private string? m_libraryUid;
 	private bool m_loading;
-	[ObservableProperty] private string? m_materialName;
 	[ObservableProperty] private float m_maxEmissive = 1f;
 	[ObservableProperty] private float m_metallic;
 
@@ -72,6 +115,8 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 	[ObservableProperty] private float m_reflectivity;
 	[ObservableProperty] private float m_roughness;
 	[ObservableProperty] private int m_selectedIndex = 1;
+	[ObservableProperty] private float m_alpha = 1f;
+	[ObservableProperty] private int m_materialSlot;
 	[ObservableProperty] private int m_transformsTo;
 	[ObservableProperty] private bool m_transparent;
 
@@ -84,8 +129,8 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 
 	public ObservableCollection<PaletteSwatchVM> Swatches { get; } = [];
 
-	/// <summary>"(none)" plus the library materials so position 0 is authored without a material</summary>
-	public ObservableCollection<string> MaterialOptions { get; } = [NoMaterial];
+	/// <summary>The palette's eight material slots, rebuilt whenever a file is opened</summary>
+	public ObservableCollection<PaletteSlotVM> Slots { get; } = [];
 
 	public bool HasContent => m_palette is not null;
 
@@ -95,8 +140,6 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 	public string EmissiveHint => Emissive > 0f
 		? $"{Emissive * MaxEmissive:0.##} intensity"
 		: "not emissive";
-
-	private const string NoMaterial = "(none)";
 
 	private bool Ignore => m_loading || m_palette is null;
 
@@ -169,10 +212,9 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 
 		m_palette = palette;
 		FileName = Path.GetFileName(virtualPath);
-		LibraryUid = palette.LibraryUid.Length > 0 ? palette.LibraryUid : null;
 		MaxEmissive = palette.MaxEmissive;
 
-		RefreshMaterialOptions();
+		RebuildSlots();
 		for (var i = 1; i < VoxelPaletteFile.Size; i++) RefreshSwatch(i);
 
 		SelectedIndex = FirstUsedIndex();
@@ -196,7 +238,6 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 		CurrentUid = "";
 		CurrentPath = "";
 		FileName = "";
-		LibraryUid = null;
 		foreach (var swatch in Swatches) {
 			swatch.Brush = s_emptyBrush;
 			swatch.IsUsed = false;
@@ -206,19 +247,19 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 		OnPropertyChanged(nameof(HasContent));
 	}
 
-	private void RefreshMaterialOptions() {
-		var names = VoxelMaterialLibraryFile.LoadNames(LibraryUid ?? "");
+	private void RebuildSlots() {
+		Slots.Clear();
+		if (m_palette is not { } palette) return;
 
-		MaterialOptions.Clear();
-		MaterialOptions.Add(NoMaterial);
-		for (var i = 0; i < names.Count; i++) MaterialOptions.Add($"{i}: {names[i]}");
+		for (var i = 0; i < VoxelPaletteFile.SlotCount; i++) {
+			Slots.Add(new PaletteSlotVM(i, palette.Slots[i], MarkSlotDirty));
+		}
+	}
 
-		// Without a library keep an assigned index editable instead of resetting it to none
-		if (names.Count == 0)
-			for (var i = 0; i < 8; i++)
-				MaterialOptions.Add($"{i}");
-
-		LoadSelectedMaterial();
+	/// <summary>A slot edit dirties the palette but authors no entry - slots exist without any voxel using them</summary>
+	private void MarkSlotDirty() {
+		if (m_loading || m_palette is null) return;
+		IsDirty = true;
 	}
 
 	private void RefreshSwatch(int index) {
@@ -250,6 +291,7 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 		Metallic = entry.Metallic;
 		Reflectivity = entry.Reflectivity;
 		Emissive = entry.Emissive;
+		Alpha = entry.Alpha;
 		TransformsTo = entry.TransformsTo;
 		Transparent = entry.Transparent;
 		LoadSelectedMaterial();
@@ -258,14 +300,13 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 		m_loading = wasLoading;
 	}
 
+	/// <summary>An entry with no authored material still reads as slot 0, which is what the engine resolves it to</summary>
 	private void LoadSelectedMaterial() {
 		if (Selected is not { } entry) return;
 
 		var wasLoading = m_loading;
 		m_loading = true;
-		MaterialName = entry.HasMaterial && entry.Material + 1 < MaterialOptions.Count
-			? MaterialOptions[entry.Material + 1]
-			: NoMaterial;
+		MaterialSlot = entry.HasMaterial ? Math.Clamp(entry.Material, 0, VoxelPaletteFile.SlotCount - 1) : 0;
 		m_loading = wasLoading;
 	}
 
@@ -275,10 +316,29 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 		if (!entry.InUse) {
 			entry.InUse = true;
 			EntryInUse = true;
+			SeedNewEntryDefaults(entry);
 		}
 
 		RefreshSwatch(SelectedIndex);
 		IsDirty = true;
+	}
+
+	/// <summary>A newly authored entry starts from a plausible dielectric rather than a black mirror</summary>
+	/// <remarks>
+	/// Only the fields the user has not touched yet: whichever property triggered TouchEntry() has already
+	/// written its own value, and the reload below leaves it alone
+	/// </remarks>
+	private void SeedNewEntryDefaults(VoxelPaletteEntry entry) {
+		if (entry.Roughness == 0f && Roughness == 0f) entry.Roughness = 0.5f;
+		if (entry.Metallic == 0f && Metallic == 0f) entry.Metallic = 0.1f;
+		if (entry.Reflectivity == 0f && Reflectivity == 0f) entry.Reflectivity = 0.5f;
+
+		var wasLoading = m_loading;
+		m_loading = true;
+		Roughness = entry.Roughness;
+		Metallic = entry.Metallic;
+		Reflectivity = entry.Reflectivity;
+		m_loading = wasLoading;
 	}
 
 	[RelayCommand]
@@ -301,6 +361,7 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 		entry.Material = 0;
 		entry.R = entry.G = entry.B = 0;
 		entry.Roughness = entry.Metallic = entry.Reflectivity = entry.Emissive = 0f;
+		entry.Alpha = 1f;
 		entry.TransformsTo = 0;
 		entry.Transparent = false;
 
@@ -313,13 +374,6 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 		for (var i = 0; i < Swatches.Count; i++) Swatches[i].IsSelected = Swatches[i].Index == value;
 		OnPropertyChanged(nameof(SelectedLabel));
 		LoadSelectedEntry();
-	}
-
-	partial void OnLibraryUidChanged(string? value) {
-		if (m_palette is not { } palette) return;
-		palette.LibraryUid = value ?? "";
-		RefreshMaterialOptions();
-		if (!m_loading) IsDirty = true;
 	}
 
 	partial void OnMaxEmissiveChanged(float value) {
@@ -384,19 +438,18 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 		TouchEntry();
 	}
 
-	partial void OnMaterialNameChanged(string? value) {
+	partial void OnMaterialSlotChanged(int value) {
 		if (Ignore || Selected is not { } entry) return;
 
-		var position = value is null ? 0 : MaterialOptions.IndexOf(value);
-		if (position <= 0) {
-			// Unassigned which is not material zero
-			entry.HasMaterial = false;
-			entry.Material = 0;
-		} else {
-			entry.HasMaterial = true;
-			entry.Material = position - 1;
-		}
+		// Picking a slot authors the material, so the entry stops being one the engine warns about
+		entry.HasMaterial = true;
+		entry.Material = Math.Clamp(value, 0, VoxelPaletteFile.SlotCount - 1);
+		TouchEntry();
+	}
 
+	partial void OnAlphaChanged(float value) {
+		if (Ignore || Selected is not { } entry) return;
+		entry.Alpha = Math.Clamp(value, 0f, 1f);
 		TouchEntry();
 	}
 

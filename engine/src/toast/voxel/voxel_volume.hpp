@@ -11,10 +11,12 @@
 
 #include <cstdint>
 #include <glm/glm.hpp>
+#include <optional>
+#include <span>
 #include <toast/export.hpp>
 #include <vector>
 
-namespace toast::voxel {
+namespace voxel {
 
 class TOAST_API Volume {
 public:
@@ -96,12 +98,36 @@ public:
 	[[nodiscard]]
 	auto sharedBrickCount() const -> uint32_t;
 
+	/// @brief Bumped by writes that change a voxel and by a collapse since that changes the packed form
+	[[nodiscard]]
+	auto revision() const noexcept -> uint32_t {
+		return m_revision;
+	}
+
 	[[nodiscard]]
 	auto pool() const noexcept -> BrickPool* {
 		return m_pool;
 	}
 
+	/// Unique to this content so a replaced volume never matches the id of the one before it
+	[[nodiscard]]
+	auto id() const noexcept -> uint64_t {
+		return m_id;
+	}
+
+	/// Nullopt once the history from @p revision was discarded
+	[[nodiscard]]
+	auto dirtyBricksSince(uint32_t revision) const noexcept -> std::optional<std::span<const uint32_t>>;
+
+	[[nodiscard]]
+	auto brickAtIndex(uint32_t index) const noexcept -> glm::ivec3;
+
+	/// Forgets the history up to now and only the renderer reads it
+	void discardDirty() const noexcept;
+
 private:
+	void markDirty(glm::ivec3 brick);
+
 	[[nodiscard]]
 	auto entryIndex(glm::ivec3 brick) const noexcept -> uint32_t;
 
@@ -113,6 +139,15 @@ private:
 	glm::uvec3 m_brick_dims {0};
 
 	std::vector<BrickEntry> m_entries;
+
+	uint32_t m_revision = 0;
+
+	uint64_t m_id = 0;
+
+	/// Bookkeeping for the renderer so reading it never counts as a change
+	mutable std::vector<uint64_t> m_dirty_mask;
+	mutable std::vector<uint32_t> m_dirty_list;
+	mutable uint32_t m_dirty_since = 0;
 };
 
 }

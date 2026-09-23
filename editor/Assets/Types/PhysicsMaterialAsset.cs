@@ -13,7 +13,7 @@ public class PhysicsMaterialAsset : BaseAsset {
 	public override string ChipColor => "Green";
 	public override LucideIconKind Icon => LucideIconKind.Atom;
 	public override bool CanBeCreated => true;
-	public override string Category => "Data";
+	public override string Category => "Physics";
 	public override bool HasThumbnail => false;
 	public override bool CanBeEdited => true;
 	public override string EditorTool => "GenericEditor";
@@ -26,9 +26,9 @@ public class PhysicsMaterialAsset : BaseAsset {
 		File.WriteAllText(path,
 			$"# Toast Physics Material\n" +
 			$"schema = \"{schemaUid}\"\n" +
-			$"restitution = 0.5\n" +
+			$"restitution = 0.1\n" +
 			$"static_friction = 0.6\n" +
-			$"dynamic_friction = 0.4\n");
+			$"dynamic_friction = 0.5\n");
 		return Task.CompletedTask;
 	}
 }

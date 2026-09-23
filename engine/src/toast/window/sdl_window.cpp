@@ -145,7 +145,12 @@ void SDLWindow::pollEvents() {
 				// Mouse comes in window coordinates
 				// the renderer and UI work in pixels
 				const float density = SDL_GetWindowPixelDensity(m.sdl_window.get());
-				event::send<event::WindowMousePosition>(event.motion.x * density, event.motion.y * density);
+				if (m.cursor_locked) {
+					m.virtual_mouse_position += glm::vec2 {event.motion.xrel, event.motion.yrel} * density;
+					event::send<event::WindowMousePosition>(m.virtual_mouse_position.x, m.virtual_mouse_position.y);
+				} else {
+					event::send<event::WindowMousePosition>(event.motion.x * density, event.motion.y * density);
+				}
 				break;
 			}
 
@@ -207,6 +212,27 @@ void SDLWindow::pollEvents() {
 
 void SDLWindow::swapFramebuffers() {
 	ZoneScoped;
+}
+
+void SDLWindow::setCursorLocked(bool locked) {
+	if (m.cursor_locked == locked) {
+		return;
+	}
+
+	m.cursor_locked = locked;
+	SDL_SetWindowRelativeMouseMode(m.sdl_window.get(), locked);
+
+	if (locked) {
+		float x = 0.0f;
+		float y = 0.0f;
+		SDL_GetMouseState(&x, &y);
+		const float density = SDL_GetWindowPixelDensity(m.sdl_window.get());
+		m.virtual_mouse_position = glm::vec2 {x, y} * density;
+	}
+}
+
+auto SDLWindow::isCursorLocked() const -> bool {
+	return m.cursor_locked;
 }
 
 }

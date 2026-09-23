@@ -170,6 +170,18 @@ auto Node3D::getWorldTransform() const noexcept -> const glm::mat4& {
 }
 
 void Node3D::init() {
+	refreshTransformParent();
+}
+
+void Node3D::refreshTransformParent() {
+	if (m_transform_parent.exists()) {
+		m_owner->unregisterDependency(*m_transform_parent, *this);
+	}
+	m_transform_parent = {};
+	m_dirty_world = true;
+	world_position = m_previous_world_position;
+	world_rotation = m_previous_world_rotation;
+	world_scale = m_previous_world_scale;
 	// Find the closest Node3D parent
 	// we ONLY register dependency on the found one
 	for (Box<Node> p = parentInternal(); p.exists(); p = p->parentInternal()) {

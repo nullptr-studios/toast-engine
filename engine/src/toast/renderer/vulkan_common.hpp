@@ -25,7 +25,7 @@ inline constexpr vk::Format k_scene_normal_format = vk::Format::eR16G16B16A16Sfl
 
 inline constexpr vk::Format k_scene_indirect_format = vk::Format::eB10G11R11UfloatPack32;
 
-/// @warning RenderStage::world only since the overlay scope has one attachment
+/// @warning RenderStage::world and world_opaque only since the overlay scope has one attachment
 [[nodiscard]]
 inline auto worldStageExtraColorFormats() -> std::vector<vk::Format> {
 	return {k_scene_normal_format, k_scene_indirect_format};

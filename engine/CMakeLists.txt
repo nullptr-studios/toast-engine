@@ -65,6 +65,7 @@ add_custom_command(
         --include-root "${CMAKE_SOURCE_DIR}/engine/src"
         --register-fn "registerEngineTypes"
         --split-typeinfo
+        --lua-stubs "${CMAKE_SOURCE_DIR}/engine/assets/lua/types.d.lua"
         COMMAND ${CMAKE_COMMAND} -E touch "${CMAKE_CURRENT_BINARY_DIR}/reflection.stamp"
         DEPENDS ${TOAST_REFLECTED_HEADERS}
         COMMENT "Regenerating reflection metadata"

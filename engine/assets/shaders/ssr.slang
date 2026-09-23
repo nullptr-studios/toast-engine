@@ -273,6 +273,12 @@ float4 compositeMain(VSOutput input) : SV_Target0
         return float4(normalRoughness.www, 1.0);
     }
 
+    // Voxel debug views 20 to 24 so a floor never reflects a legend colour
+    if (renderMode >= 20 && renderMode <= 24)
+    {
+        return float4(sceneColor, 1.0);
+    }
+
     bool ssrOnly = (renderMode == 14);
     float3 passthrough = ssrOnly ? float3(0.0, 0.0, 0.0) : sceneColor;
 

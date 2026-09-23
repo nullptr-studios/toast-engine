@@ -19,11 +19,8 @@ namespace editor.Workspace;
 public enum GizmoTool { Select, Translate, Rotate, Scale, Ruler }
 public enum CameraMode { Free, Orbit }
 
-// Must stay in sync with mesh.slang's renderModePad.x branches (0 Lit, 1 ClusterHeatmap, then the debug views)
-// Ordinal, and the shaders compare against raw numbers - renderer::TracedShadowPass pins 17 and 18 in
-// constants, and mesh.slang switches on the rest. Append only; inserting anywhere above shifts every mode
-// after it, which shows up as the wrong view being drawn rather than as any kind of error
-public enum RenderMode { Lit, ClusterHeatmap, Albedo, Normal, MetallicRoughness, Ambient, SpecularIbl, SpecularIblMip0, Reflection, ReflectionProbes, ProbeCapture, ProbeCubemap, NormalBuffer, RoughnessBuffer, SsrOnly, AmbientOcclusion, IrradianceVolumes, TracedShadowsOnly, TracedShadows, ShadowTerm }
+
+public enum RenderMode { Lit, ClusterHeatmap, Albedo, Normal, MetallicRoughness, Ambient, SpecularIbl, SpecularIblMip0, Reflection, ReflectionProbes, ProbeCapture, ProbeCubemap, NormalBuffer, RoughnessBuffer, SsrOnly, AmbientOcclusion, IrradianceVolumes, TracedShadowsOnly, TracedShadows, ShadowTerm, VoxelSteps, VoxelTraversal, VoxelBricks, VoxelVolumes, VoxelMaterials }
 
 public enum PlayState { Stopped, Playing, PlayingExternal }
 
@@ -44,10 +41,10 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 	[ObservableProperty] private double m_cameraSpeed = 5.0;
 	[ObservableProperty] private bool m_isPaused;
 	private ulong m_nextSaveRequest = 1;
-	private string? m_pendingRootName;
 	private TaskCompletionSource<WorkspaceSaveCompleted>? m_pendingSave;
 	private ulong m_pendingSaveRequest;
 	private bool m_loadingViewportSettings;
+	private string? m_pendingRootName;
 
 	[ObservableProperty] private PlayState m_playState;
 
@@ -192,10 +189,12 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 
 	private void OnSaveCompleted(WorkspaceSaveCompleted completed) {
 		if (completed.WorkspaceHandle != Handle || completed.Request != m_pendingSaveRequest) return;
+		if (completed.Success) History.MarkSaved(completed.Snapshot);
 		m_pendingSave?.TrySetResult(completed);
 	}
 
 	private async Task<bool> SaveNativeAsync(string target, string path) {
+		if (m_pendingSave is not null) return false;
 		var request = m_nextSaveRequest++;
 		m_pendingSaveRequest = request;
 		m_pendingSave =
@@ -210,7 +209,6 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 		m_pendingSave = null;
 		m_pendingSaveRequest = 0;
 		if (!completed.Success) return false;
-		History.MarkSaved(completed.Snapshot);
 		return true;
 	}
 
@@ -510,6 +508,7 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 			Id = $"Workspace_{res.Uid}"
 		};
 		ws.InitializeHistory();
+		ws.History.MarkUnsaved();
 		return ws;
 	}
 
@@ -529,6 +528,7 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 		ws.BindBackingFile(virtualPath, assetUid);
 		ws.m_pendingRootName = Path.GetFileNameWithoutExtension(virtualPath);
 		ws.InitializeHistory();
+		if (recoverVirtualPath is not null) ws.History.MarkUnsaved();
 		return ws;
 	}
 }

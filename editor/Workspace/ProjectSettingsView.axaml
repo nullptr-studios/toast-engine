@@ -1,0 +1,256 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:editor.Workspace"
+             xmlns:editors="using:editor.Editors"
+             xmlns:elements="using:editor.Components.Elements"
+             xmlns:lucide="using:Lucide.Avalonia"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignWidth="1200"
+             d:DesignHeight="800"
+             x:Class="editor.Workspace.ProjectSettingsView"
+             Background="{StaticResource Bg2}"
+             x:DataType="vm:ProjectSettingsViewModel">
+
+	<Design.DataContext>
+		<vm:ProjectSettingsViewModel />
+	</Design.DataContext>
+
+	<UserControl.Styles>
+		<Style Selector="TextBlock.lbl">
+			<Setter Property="Foreground"
+			        Value="{StaticResource TextMuted}" />
+			<Setter Property="VerticalAlignment"
+			        Value="Center" />
+			<Setter Property="TextTrimming"
+			        Value="CharacterEllipsis" />
+		</Style>
+		<Style Selector="TextBlock.hint">
+			<Setter Property="Foreground"
+			        Value="{StaticResource TextMuted}" />
+			<Setter Property="FontSize"
+			        Value="11" />
+			<Setter Property="TextWrapping"
+			        Value="Wrap" />
+			<Setter Property="Margin"
+			        Value="0,2,0,0" />
+		</Style>
+		<Style Selector="TextBlock.category">
+			<Setter Property="FontWeight"
+			        Value="SemiBold" />
+			<Setter Property="VerticalAlignment"
+			        Value="Center" />
+		</Style>
+		<Style Selector="Border.card">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg3}" />
+			<Setter Property="CornerRadius"
+			        Value="8" />
+			<Setter Property="Padding"
+			        Value="8" />
+		</Style>
+		<Style Selector="Button.icon-btn">
+			<Setter Property="BorderThickness"
+			        Value="0" />
+			<Setter Property="Padding"
+			        Value="5" />
+			<Setter Property="CornerRadius"
+			        Value="6" />
+			<Setter Property="Cursor"
+			        Value="Hand" />
+			<Setter Property="Background"
+			        Value="Transparent" />
+			<Setter Property="VerticalAlignment"
+			        Value="Center" />
+		</Style>
+	</UserControl.Styles>
+
+	<UserControl.DataTemplates>
+		<DataTemplate DataType="vm:BoolSettingRow">
+			<elements:BoolBox Value="{Binding Value, Mode=TwoWay}" />
+		</DataTemplate>
+
+		<DataTemplate DataType="vm:EnumSettingRow">
+			<ComboBox ItemsSource="{Binding Options}"
+			          SelectedIndex="{Binding SelectedIndex, Mode=TwoWay}"
+			          HorizontalAlignment="Stretch" />
+		</DataTemplate>
+
+		<DataTemplate DataType="vm:IntSettingRow">
+			<elements:DragIntBox Value="{Binding IntValue, Mode=TwoWay}"
+			                     Minimum="{Binding MinimumDouble}"
+			                     Maximum="{Binding MaximumDouble}" />
+		</DataTemplate>
+
+		<DataTemplate DataType="vm:FloatSettingRow">
+			<elements:DragFloatBox Value="{Binding FloatValue, Mode=TwoWay}"
+			                       Minimum="{Binding Minimum}"
+			                       Maximum="{Binding Maximum}" />
+		</DataTemplate>
+
+		<DataTemplate DataType="vm:StringSettingRow">
+			<elements:StringBox Value="{Binding Value, Mode=TwoWay}"
+			                    Wrap="False" />
+		</DataTemplate>
+	</UserControl.DataTemplates>
+
+	<Grid ColumnDefinitions="0.2*,4,0.8*"
+	      Margin="8">
+
+		<Border Grid.Column="0"
+		        Classes="card">
+			<TreeView ItemsSource="{Binding Sections}"
+			          SelectedItem="{Binding SelectedSection, Mode=TwoWay}">
+				<TreeView.ItemTemplate>
+					<TreeDataTemplate ItemsSource="{Binding Children}"
+					                  x:DataType="vm:SettingsSection">
+						<TextBlock Text="{Binding Name}"
+						           VerticalAlignment="Center" />
+					</TreeDataTemplate>
+				</TreeView.ItemTemplate>
+			</TreeView>
+		</Border>
+
+		<GridSplitter Grid.Column="1"
+		              Background="Transparent"
+		              ResizeDirection="Columns" />
+
+		<Border Grid.Column="2"
+		        Classes="card">
+			<DockPanel LastChildFill="True">
+
+				<DockPanel DockPanel.Dock="Top"
+				           Margin="0,0,0,8">
+					<StackPanel DockPanel.Dock="Right"
+					            Orientation="Horizontal"
+					            Spacing="4">
+						<Button Classes="icon-btn"
+						        Command="{Binding ReloadCommand}"
+						        ToolTip.Tip="Re-read every setting from the engine">
+							<lucide:LucideIcon Kind="RefreshCw"
+							                   Size="16"
+							                   StrokeWidth="2.5" />
+						</Button>
+						<Button Classes="icon-btn"
+						        Command="{Binding ResetAllCommand}"
+						        IsVisible="{Binding !IsGeneral}"
+						        ToolTip.Tip="Drop every override, exposing the defaults underneath">
+							<lucide:LucideIcon Kind="Undo2"
+							                   Size="16"
+							                   StrokeWidth="2.5" />
+						</Button>
+						<Button Classes="icon-btn"
+						        Command="{Binding SaveCommand}"
+						        IsVisible="{Binding !IsGeneral}"
+						        Background="{StaticResource Red}"
+						        ToolTip.Tip="Write the project settings layer">
+							<lucide:LucideIcon Kind="Save"
+							                   Size="16"
+							                   StrokeWidth="2.5" />
+						</Button>
+					</StackPanel>
+					<TextBlock Text="{Binding SelectedSection.Name}"
+					           Classes="category"
+					           FontSize="15" />
+				</DockPanel>
+
+				<TextBlock DockPanel.Dock="Bottom"
+				           Classes="hint"
+				           Text="{Binding StatusMessage}"
+				           IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+				<Panel>
+
+					<editors:GenericView DataContext="{Binding GeneralEditor}"
+					                     IsVisible="{Binding $parent[UserControl].((vm:ProjectSettingsViewModel)DataContext).IsGeneral}" />
+
+					
+					<ScrollViewer IsVisible="{Binding !IsGeneral}">
+						<StackPanel Spacing="12">
+
+							
+							<Border Classes="card"
+							        IsVisible="{Binding IsRendering}">
+								<StackPanel Spacing="6">
+									<TextBlock Text="Baking"
+									           Classes="category" />
+									<StackPanel Orientation="Horizontal"
+									            Spacing="6">
+										<Button Content="Reflection probes"
+										        Command="{Binding BakeReflectionProbesCommand}" />
+										<Button Content="Irradiance volumes"
+										        Command="{Binding BakeIrradianceVolumesCommand}" />
+									</StackPanel>
+									<TextBlock Classes="hint"
+									           Text="Some reflection probes are stale"
+									           IsVisible="{Binding HasStaleReflectionProbes}" />
+									<TextBlock Classes="hint"
+									           Text="Some irradiance volumes are stale"
+									           IsVisible="{Binding HasStaleIrradianceVolumes}" />
+									<TextBlock Classes="hint"
+									           Text="This device has no ray query, so traced shadows do nothing"
+									           IsVisible="{Binding !RayTracingSupported}" />
+								</StackPanel>
+							</Border>
+
+							<ItemsControl ItemsSource="{Binding VisibleCategories}">
+								<ItemsControl.ItemTemplate>
+									<DataTemplate x:DataType="vm:SettingCategory">
+										<Border Classes="card"
+										        Margin="0,0,0,8">
+											<StackPanel Spacing="6">
+												<TextBlock Text="{Binding Name}"
+												           Classes="category" />
+
+												<ItemsControl ItemsSource="{Binding Rows}">
+													<ItemsControl.ItemTemplate>
+														<DataTemplate x:DataType="vm:SettingRow">
+															<Grid ColumnDefinitions="180,*,Auto"
+															      ColumnSpacing="8"
+															      Margin="0,0,0,6">
+																<StackPanel Grid.Column="0"
+																            VerticalAlignment="Center">
+																	<TextBlock Text="{Binding Label}"
+																	           Classes="lbl" />
+																	<TextBlock Text="Needs a restart"
+																	           Classes="hint"
+																	           IsVisible="{Binding RequiresRestart}" />
+																</StackPanel>
+
+																<StackPanel Grid.Column="1"
+																            VerticalAlignment="Center">
+																	<ContentControl Content="{Binding}" />
+																	<TextBlock Text="{Binding Description}"
+																	           Classes="hint"
+																	           IsVisible="{Binding HasDescription}" />
+																</StackPanel>
+
+																<Button Grid.Column="2"
+																        Classes="icon-btn"
+																        Command="{Binding ResetCommand}"
+																        ToolTip.Tip="Drop this override">
+																	<lucide:LucideIcon Kind="Undo2"
+																	                   Size="14"
+																	                   StrokeWidth="2.5" />
+																</Button>
+															</Grid>
+														</DataTemplate>
+													</ItemsControl.ItemTemplate>
+												</ItemsControl>
+											</StackPanel>
+										</Border>
+									</DataTemplate>
+								</ItemsControl.ItemTemplate>
+							</ItemsControl>
+
+							<TextBlock Classes="hint"
+							           Text="Nothing declared under this prefix yet - open a workspace so the system starts."
+							           IsVisible="{Binding !VisibleCategories.Count}" />
+						</StackPanel>
+					</ScrollViewer>
+				</Panel>
+			</DockPanel>
+		</Border>
+	</Grid>
+</UserControl>

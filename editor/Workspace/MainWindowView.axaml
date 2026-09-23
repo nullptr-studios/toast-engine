@@ -154,6 +154,11 @@
 					          IsEnabled="{Binding History.HasWorkspace}"
 					          Command="{Binding Hierarchy.PasteCommand}"
 					          CommandParameter="{Binding Hierarchy.SelectedNode}" />
+					<MenuItem Header="Paste as Child"
+					          InputGesture="Ctrl+Shift+V"
+					          IsEnabled="{Binding History.HasWorkspace}"
+					          Command="{Binding Hierarchy.PasteAsChildCommand}"
+					          CommandParameter="{Binding Hierarchy.SelectedNode}" />
 					<MenuItem Header="_Duplicate"
 					          InputGesture="Ctrl+D"
 					          IsEnabled="{Binding History.HasWorkspace}"
@@ -260,9 +265,6 @@
 					          ToggleType="CheckBox"
 					          IsChecked="{Binding SchemaEditorVisible, Mode=TwoWay}"
 					          InputGesture="Alt+Shift+D3" />
-					<MenuItem Header="_Renderer Settings"
-					          ToggleType="CheckBox"
-					          IsChecked="{Binding RendererSettingsVisible, Mode=TwoWay}" />
 					<Separator />
 					<MenuItem Header="_Logs"
 					          ToggleType="CheckBox"

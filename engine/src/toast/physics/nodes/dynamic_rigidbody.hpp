@@ -24,6 +24,12 @@ public:
 	void sleep();
 	[[Reflect]]
 	void wake();
+	[[Reflect]]
+	void setLinearVelocity(const glm::vec3& velocity);
+	[[Reflect]]
+	void setPosition(const glm::vec3& position);
+	[[Reflect]]
+	void setRotation(const glm::quat& rotation);
 
 	[[Reflect, Unit("kg")]]
 	float mass = 1.0f;

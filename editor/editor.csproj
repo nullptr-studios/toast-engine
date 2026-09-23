@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
-        <TargetFramework>net10.0</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -9,6 +9,7 @@
         <Company>nullptr Studios</Company>
         <UseRidGraph>true</UseRidGraph>
 				<RunWorkingDirectory>$(MSBuildProjectDirectory)</RunWorkingDirectory>
+				<LangVersion>14</LangVersion>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
         <OutputPath>../out/Debug/editor</OutputPath>
@@ -54,7 +55,7 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="JsonSchema.Net" Version="9.2.2" />
-        <PackageReference Include="Lucide.Avalonia" Version="0.2.9" />
+        <PackageReference Include="Lucide.Avalonia" Version="0.2.0" />
         <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.*" />
         <PackageReference Include="Svg.Controls.Skia.Avalonia" Version="12.0.0.13" />
         <PackageReference Include="tinyspline" Version="0.6.0.1" />

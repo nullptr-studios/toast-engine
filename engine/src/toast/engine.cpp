@@ -12,6 +12,7 @@
 #include "input/input_events.hpp"
 #include "input/input_system.hpp"
 #include "logger.hpp"
+#include "physics/physics_settings.hpp"
 #include "physics/simulator.hpp"
 #include "project_settings.hpp"
 #include "reflect/reflect.hpp"
@@ -144,8 +145,8 @@ void Engine::init() {
 	registerEngineTypes();
 
 	// Find the first .toast project file in the project root and load settings
+	std::filesystem::path toast_path;
 	{
-		std::filesystem::path toast_path;
 		const auto& proj_root = assets::AssetManager::projectRoot();
 		if (!proj_root.empty() && std::filesystem::is_directory(proj_root)) {
 			for (const auto& entry : std::filesystem::directory_iterator(proj_root)) {
@@ -178,12 +179,14 @@ void Engine::init() {
 			SDL_free(pref_path);
 		}
 
-		settings.setPaths(proj_root / "settings.toml", user_file);
+		settings.setPaths(toast_path, user_file);
 		settings.load();
 
 		// Before the renderer exists, ShadowPass reads its resolution when it allocates, so this cannot wait
 		// for the rest of the renderer settings
 		renderer::registerRendererStartupSettings();
+
+		physics::registerPhysicsSettings();
 	}
 
 	m->asset_manager = std::make_unique<assets::AssetManager>();
@@ -362,17 +365,23 @@ void Engine::tick() {
 		if (m->renderer && it != m->owners.end()) {
 			if (Workspace* ws = it->second->asWorkspace()) {
 				const auto gizmo = ws->gizmoRenderState();
-				m->renderer->setGizmoState(
-				    renderer::VulkanRenderer::GizmoState {
-				      .visible = gizmo.visible,
-				      .tool = gizmo.tool,
-				      .origin = gizmo.origin,
-				      .orientation = gizmo.orientation,
-				      .hover = gizmo.hover,
-				      .active = gizmo.active,
-				      .drag_scale_factor = gizmo.drag_scale_factor,
-				    }
-				);
+				renderer::VulkanRenderer::GizmoState gizmo_state {
+				  .visible = gizmo.visible,
+				  .tool = gizmo.tool,
+				  .origin = gizmo.origin,
+				  .orientation = gizmo.orientation,
+				  .hover = gizmo.hover,
+				  .active = gizmo.active,
+				  .drag_scale_factor = gizmo.drag_scale_factor,
+				  .size_handle_count = gizmo.size_handle_count,
+				  .size_handle_scale = gizmo.size_handle_scale,
+				};
+				for (uint32_t i = 0; i < gizmo.size_handle_count; ++i) {
+					gizmo_state.size_handles[i] = {
+					  .world_position = gizmo.size_handles[i].world_position, .handle = gizmo.size_handles[i].handle
+					};
+				}
+				m->renderer->setGizmoState(gizmo_state);
 			}
 		}
 	}
@@ -398,6 +407,21 @@ void Engine::tick() {
 
 auto Engine::shouldClose() -> bool {
 	return m->window ? m->window->shouldClose() : false;
+}
+
+void Engine::setCursorLocked(bool locked) {
+	if (m->window) {
+		m->window->setCursorLocked(locked);
+	}
+}
+
+auto Engine::isCursorLocked() -> bool {
+	return m->window && m->window->isCursorLocked();
+}
+
+auto Engine::shootVoxel(const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy, float min_radius)
+    -> bool {
+	return m->physics_simulator && m->physics_simulator->shootVoxel(origin, direction, max_distance, energy, min_radius);
 }
 
 void Engine::createSDLWindow(const char* w_name) {
@@ -453,7 +477,7 @@ void Engine::createSDLWindow(const char* w_name) {
 	// World-stage passes render into the HDR scene target
 	const auto scene_format = m->renderer->getSceneColorFormat();
 
-	// Voxel volumes are opaque so before the blended world-space UI
+	// Records ahead of all mesh colour whatever its place here since its stage is world_opaque
 	m->renderer->addRenderPass(std::make_unique<renderer::VoxelPass>(*m->vulkan_core, scene_format, depth_format, extent));
 
 	// World-space UI panels are scene content and get exposed with it, the screen-space UI does not
@@ -535,7 +559,7 @@ void Engine::createAvaloniaWindow() {
 	// World-stage passes render into the HDR scene target
 	const auto scene_format = m->renderer->getSceneColorFormat();
 
-	// Voxel volumes are opaque so before the blended world-space UI
+	// Records ahead of all mesh colour whatever its place here since its stage is world_opaque
 	m->renderer->addRenderPass(std::make_unique<renderer::VoxelPass>(*m->vulkan_core, scene_format, depth_format, extent));
 
 	// World-space UI panels are scene content
@@ -574,6 +598,28 @@ void Engine::createAvaloniaWindow() {
 	renderer::registerRendererSettings(*m->renderer);
 
 	m->renderer->start();
+}
+
+void Engine::publishPrefab(UID uid, const assets::Prefab& prefab) {
+	if (uid.data() == 0) {
+		return;
+	}
+	std::scoped_lock lock(m->owners_mutex);
+	std::vector<Workspace*> workspaces;
+	for (const auto& [_, owner] : m->owners) {
+		if (dynamic_cast<PlayWorkspace*>(owner.get())) {
+			continue;
+		}
+		if (auto* workspace = dynamic_cast<Workspace*>(owner.get())) {
+			workspace->preparePrefabReload(uid);
+			workspaces.push_back(workspace);
+		}
+	}
+	assets::AssetManager::get().replacePrefab(uid, prefab);
+	for (Workspace* workspace : workspaces) {
+		workspace->finishPrefabReload();
+	}
+	event::send<event::PrefabAssetReloaded>(uid);
 }
 
 auto Engine::createWorkspace(std::string_view type) -> std::pair<UID, std::string> {

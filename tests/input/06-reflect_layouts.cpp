@@ -15,6 +15,9 @@ TOAST_TEST_NAMED("input", "input/06-reflect_layouts", test_input_reflect_layouts
 	assert(field != nullptr);
 	assert(field->value_type == toast::FieldType::uid_t);
 	assert(field->is_array);
+	assert(info->getMethod("setLayout") != nullptr);
+	assert(info->getMethod("setLayer") != nullptr);
+	assert(info->getMethod("playHaptic") != nullptr);
 
 	input::PlayerController controller;
 	controller.layouts.emplace_back(nullptr, toast::UID(11), "");

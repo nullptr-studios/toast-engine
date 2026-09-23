@@ -42,7 +42,6 @@ void AssetRegistry::init() {
 	// Plain TOML loaders
 	s_toml["curve"] = [](const toml::table& t) { return Curve::fromToml(t); };
 	s_toml["voxel_palette"] = [](const toml::table& t) { return VoxelPalette::fromToml(t); };
-	s_toml["voxel_material_library"] = [](const toml::table& t) { return VoxelMaterialLibrary::fromToml(t); };
 
 	// TOML + Schema loaders
 	s_schema_toml["data"] = [](const toml::table& t, Handle<Schema> s) { return std::make_unique<Data>(t, std::move(s)); };
@@ -75,6 +74,13 @@ void AssetRegistry::init() {
 	s_schema_toml["audio_vca"] = [](const toml::table& t, Handle<Schema> s) { return std::make_unique<AudioVca>(t, std::move(s)); };
 	s_schema_toml["color_scheme"] = [](const toml::table& t, Handle<Schema> s) {
 		return std::make_unique<ColorScheme>(t, std::move(s));
+	};
+
+	s_schema_toml["physics_material"] = [](const toml::table& t, Handle<Schema> s) {
+		return std::make_unique<PhysicsMaterial>(t, std::move(s));
+	};
+	s_schema_toml["destruction_material"] = [](const toml::table& t, Handle<Schema> s) {
+		return std::make_unique<DestructionMaterial>(t, std::move(s));
 	};
 
 	// Lua global names

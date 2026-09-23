@@ -122,16 +122,16 @@ void PlayerController::dispatchToParent(const event::InputEvent& event) {
 
 	toast::Node& target = *m_parent;
 	const toast::NodeInfo* info = target.info();
-	if (info == nullptr) {
-		return;
-	}
-
 	const Action& action = event.action;
 	const std::string function_name(action.functionName());
-	const toast::FunctionInfo* method = info->getMethod(function_name);
+	const toast::FunctionInfo* method = info != nullptr ? info->getMethod(function_name) : nullptr;
 	if (method == nullptr) {
-		// The parent does not implement this action's function; nothing to call
-		TOAST_WARN("Input", "Function '{}' does not exist on parent", function_name);
+		if (!target.hasCallable(function_name)) {
+			TOAST_WARN("Input", "Function '{}' does not exist on parent", function_name);
+			return;
+		}
+
+		target.call<void>(function_name, action, event.type);
 		return;
 	}
 
@@ -144,13 +144,23 @@ void PlayerController::dispatchToParent(const event::InputEvent& event) {
 	const bool takes_action = method->parameters.size() == 1 && method->parameters[0].type_id != nullptr &&
 	                          *method->parameters[0].type_id == typeid(input::Action);
 	if (takes_action) {
-		info->call<void>(&target, function_name, action);
+		target.call<void>(function_name, action);
+		return;
+	}
+
+	const bool takes_action_event = method->parameters.size() == 2 && method->parameters[0].type_id != nullptr &&
+	                                *method->parameters[0].type_id == typeid(input::Action) &&
+	                                method->parameters[1].type_id != nullptr &&
+	                                *method->parameters[1].type_id == typeid(input::ActionEvent);
+	if (takes_action_event) {
+		target.call<void>(function_name, action, event.type);
 		return;
 	}
 
 	TOAST_WARN(
 	    "Input",
-	    "Function '{}' on parent has an incompatible signature; expected (const input::Action&) or no arguments",
+	    "Function '{}' on parent has an incompatible signature; expected (), (const input::Action&), or "
+	    "(const input::Action&, input::ActionEvent)",
 	    function_name
 	);
 }

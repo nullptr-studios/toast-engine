@@ -12,13 +12,13 @@
 
 namespace assets {
 
-using toast::voxel::BrickPool;
-using toast::voxel::k_brick_dim;
-using toast::voxel::k_palette_size;
-using toast::voxel::LatticeOrientation;
-using toast::voxel::LatticePlacement;
-using toast::voxel::PaletteEntry;
-using toast::voxel::Volume;
+using voxel::BrickPool;
+using voxel::k_brick_dim;
+using voxel::k_palette_size;
+using voxel::LatticeOrientation;
+using voxel::LatticePlacement;
+using voxel::PaletteEntry;
+using voxel::Volume;
 
 auto voxOrientationFromByte(uint8_t rotation) -> std::optional<LatticeOrientation> {
 	const uint8_t row_x = rotation & 0x03u;
@@ -383,7 +383,7 @@ auto importVox(std::span<const uint8_t> data) -> VoxScene {
 				if (voxel.x >= model.dims.x || voxel.y >= model.dims.y || voxel.z >= model.dims.z) {
 					throw std::runtime_error(".vox: a voxel lies outside the model its SIZE declared");
 				}
-				if (voxel.palette_index == toast::voxel::k_empty_palette_index) {
+				if (voxel.palette_index == voxel::k_empty_palette_index) {
 					continue;
 				}
 				model.voxels.push_back(voxel);
@@ -404,7 +404,7 @@ auto importVox(std::span<const uint8_t> data) -> VoxScene {
 				entry.albedo_g = g;
 				entry.albedo_b = b;
 				if (a < 255) {
-					entry.flags |= toast::voxel::k_entry_transparent;
+					entry.flags |= voxel::k_entry_transparent;
 				}
 			}
 			has_rgba = true;
@@ -549,7 +549,7 @@ auto importVox(std::span<const uint8_t> data) -> VoxScene {
 		entry.metallic = voxByteFromUnit(material.metallic);
 		entry.emissive = voxByteFromUnit(material.emission / scene.palette.max_emissive);
 		if (material.transparent) {
-			entry.flags |= toast::voxel::k_entry_transparent;
+			entry.flags |= voxel::k_entry_transparent;
 		}
 	}
 

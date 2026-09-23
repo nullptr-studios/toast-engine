@@ -11,7 +11,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace toast::voxel {
+namespace voxel {
 
 inline constexpr uint32_t k_max_physical_materials = 32;
 
@@ -42,7 +42,9 @@ struct PaletteEntry {
 	/// 0 burns away and only read for flammable materials
 	uint8_t transforms_to = 0;
 
-	std::array<uint8_t, 6> reserved {};
+	uint8_t alpha = 255;
+
+	std::array<uint8_t, 5> reserved {};
 
 	[[nodiscard]]
 	constexpr auto operator==(const PaletteEntry&) const noexcept -> bool = default;
@@ -55,6 +57,8 @@ struct Palette {
 	std::array<PaletteEntry, k_palette_size> entries {};
 
 	float max_emissive = 1.0f;
+
+	uint32_t revision = 0;
 };
 
 [[nodiscard]]
@@ -71,16 +75,16 @@ inline constexpr uint8_t k_material_flammable = 1u << 2;
 
 struct PhysicalMaterial {
 	/// kg/m³ never zero and integer so MassMoments stays exact
-	uint16_t density = 0;
+	uint16_t density = 1000;
 
 	uint8_t flags = 0;
 
 	/// Uncalibrated joules so only ordering matters
-	float toughness = 0.0f;
+	float toughness = 1000.0f;
 
-	float structural_strength = 0.0f;
+	float structural_strength = 1000.0f;
 
-	float shatter_radius = 0.0f;
+	float shatter_radius = 0.5f;
 
 	float static_friction = 0.6f;
 	float dynamic_friction = 0.5f;

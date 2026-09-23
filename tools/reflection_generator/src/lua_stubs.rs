@@ -62,6 +62,30 @@ fn uid_lua_type(typename: &str) -> String {
 /// Lua type of a method parameter or return
 fn cpp_lua_type(cpp: &str) -> String {
     let t = cpp.trim();
+    if t.contains("input::ActionEvent") {
+        return "InputActionEvent".to_string();
+    }
+    if t.contains("input::Action") {
+        return "InputAction".to_string();
+    }
+    if t.contains("input::Bind") {
+        return "InputBind".to_string();
+    }
+    if t.contains("input::KeyCode") {
+        return "InputKeyCode".to_string();
+    }
+    if t.contains("input::Device") {
+        return "InputDeviceValue".to_string();
+    }
+    if t.contains("input::ValueType") {
+        return "InputValueTypeValue".to_string();
+    }
+    if t.contains("input::ModifierKey") {
+        return "InputModifierValue".to_string();
+    }
+    if t.contains("input::InputKind") {
+        return "InputKindValue".to_string();
+    }
     if t.contains("Box<") {
         let inner = t.split("Box<").nth(1).unwrap_or("Node");
         return bare(inner.trim_end_matches(['>', '&', ' '])).to_string();

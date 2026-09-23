@@ -47,10 +47,10 @@ public:
 	explicit VoxelModel(const std::vector<uint8_t>& data);
 
 	[[nodiscard]]
-	static auto capture(const toast::voxel::Volume& volume, uint64_t palette_uid) -> std::unique_ptr<VoxelModel>;
+	static auto capture(const voxel::Volume& volume, uint64_t palette_uid) -> std::unique_ptr<VoxelModel>;
 
 	[[nodiscard]]
-	auto instantiate(toast::voxel::BrickPool& pool) const -> std::optional<toast::voxel::Volume>;
+	auto instantiate(voxel::BrickPool& pool) const -> std::optional<voxel::Volume>;
 
 	[[nodiscard]]
 	auto type() const -> std::string_view override {
@@ -72,7 +72,7 @@ public:
 
 	[[nodiscard]]
 	auto storedBrickCount() const noexcept -> uint32_t {
-		return static_cast<uint32_t>(m_bricks.size() / toast::voxel::k_brick_material_bytes);
+		return static_cast<uint32_t>(m_bricks.size() / voxel::k_brick_material_bytes);
 	}
 
 	[[nodiscard]]
@@ -85,7 +85,7 @@ private:
 	uint64_t m_palette_uid = 0;
 
 	/// Stored bricks are tagged owned with the stored brick index as payload
-	std::vector<toast::voxel::BrickEntry> m_grid;
+	std::vector<voxel::BrickEntry> m_grid;
 
 	std::vector<uint8_t> m_bricks;
 };

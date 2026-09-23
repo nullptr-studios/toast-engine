@@ -20,6 +20,10 @@ namespace renderer {
 class VulkanCore;
 class ClusterLightingPass;
 
+namespace voxel_debug {
+class Monitor;
+}
+
 class DebugPass : public IRenderPass {
 public:
 	DebugPass(
@@ -71,6 +75,8 @@ private:
 	void createRotateGizmoGeometry(const renderer::VulkanCore& core);
 	void createScaleGizmoGeometry(const renderer::VulkanCore& core);
 
+	void createSizeGizmoGeometry(const renderer::VulkanCore& core);
+
 	void createBillboardResources(
 	    const renderer::VulkanCore& core, vk::Format color_format, vk::Format depth_format, vk::Extent2D extent
 	);
@@ -91,6 +97,9 @@ private:
 	std::vector<DynamicVertexBuffer> m_fill_vertex_buffers;
 	std::vector<uint32_t> m_fill_vertex_counts;
 
+	std::vector<uint32_t> m_fill_sort_order;
+	std::vector<float> m_fill_sort_depths;
+
 	vma::raii::Buffer m_gizmo_vertex_buffer = nullptr;
 	uint32_t m_gizmo_vertex_count = 0;
 
@@ -102,6 +111,9 @@ private:
 
 	vma::raii::Buffer m_scale_gizmo_vertex_buffer = nullptr;
 	std::array<GizmoHandleRange, 7> m_scale_gizmo_handles;
+
+	vma::raii::Buffer m_size_gizmo_vertex_buffer = nullptr;
+	uint32_t m_size_gizmo_vertex_count = 0;
 
 	VulkanPipeline m_mesh_pipeline;
 
@@ -121,6 +133,8 @@ private:
 
 	struct PerfOverlay;
 	std::unique_ptr<PerfOverlay> m_perf;
+
+	std::unique_ptr<voxel_debug::Monitor> m_voxels;
 
 	void drawPerformanceWindow();
 

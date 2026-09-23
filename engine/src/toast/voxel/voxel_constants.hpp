@@ -8,7 +8,7 @@
 
 #include <cstdint>
 
-namespace toast::voxel {
+namespace voxel {
 
 inline constexpr float k_voxel_size = 0.1f;
 

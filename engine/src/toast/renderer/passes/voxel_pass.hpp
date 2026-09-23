@@ -6,6 +6,7 @@
 
 #pragma once
 #include "../render_pass_base.hpp"
+#include "../scene_descriptor_set.hpp"
 #include "../shader_layout.hpp"
 #include "../vulkan_pipeline.hpp"
 
@@ -25,7 +26,7 @@ public:
 
 	[[nodiscard]]
 	auto stage() const -> RenderStage override {
-		return RenderStage::world;
+		return RenderStage::world_opaque;
 	}
 
 	void record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) override;
@@ -41,16 +42,6 @@ private:
 	/// Mirrors voxel.slang PushConstants
 	struct PushConstants {
 		uint32_t instance_index = 0;
-		uint32_t pad0 = 0;
-		uint32_t pad1 = 0;
-		uint32_t pad2 = 0;
-	};
-
-	/// Mirrors voxel_dda.slang VoxelInstance
-	struct InstanceGpu {
-		glm::mat4 voxel_to_world {1.0f};
-		glm::mat4 world_to_voxel {1.0f};
-		uint32_t record_index = 0;
 		uint32_t pad0 = 0;
 		uint32_t pad1 = 0;
 		uint32_t pad2 = 0;
@@ -75,7 +66,7 @@ private:
 	};
 
 	void createInstanceBuffers(const VulkanCore& core);
-	void createDescriptors(const VulkanCore& core);
+	void createDescriptors(const VulkanCore& core, const ShaderReflection& reflection);
 
 	void bindStorage(uint32_t frame_index, const std::shared_ptr<const VoxelGpuStorage>& storage);
 
@@ -85,9 +76,9 @@ private:
 	/// Indexed [cull][depth]
 	std::array<std::array<VulkanPipeline, 2>, 2> m_pipelines;
 
-	std::vector<vk::raii::DescriptorSet> m_camera_sets;
+	SceneDescriptorSets m_scene_sets;
 
-	std::vector<vk::raii::DescriptorSet> m_scene_sets;
+	std::vector<vk::raii::DescriptorSet> m_storage_sets;
 
 	std::vector<vma::raii::Buffer> m_instance_buffers;
 

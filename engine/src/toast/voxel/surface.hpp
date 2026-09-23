@@ -17,7 +17,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace toast::voxel {
+namespace voxel {
 
 enum class VoxelClass : uint8_t {
 	empty = 0,
@@ -76,10 +76,11 @@ inline auto classifyFromNeighbours(
 		return packClassification(VoxelClass::inside, k_normal_undefined);
 	}
 
+	// subtracting flags cancels to (0,0,0) for an isolated voxel which reads as undefined and gets dropped
 	const glm::ivec3 direction(
-	    static_cast<int>(!solid_pos_x) - static_cast<int>(!solid_neg_x),
-	    static_cast<int>(!solid_pos_y) - static_cast<int>(!solid_neg_y),
-	    static_cast<int>(!solid_pos_z) - static_cast<int>(!solid_neg_z)
+	    !solid_pos_x ? 1 : (!solid_neg_x ? -1 : 0),
+	    !solid_pos_y ? 1 : (!solid_neg_y ? -1 : 0),
+	    !solid_pos_z ? 1 : (!solid_neg_z ? -1 : 0)
 	);
 	const uint8_t normal = normalIndexOf(direction);
 
@@ -106,9 +107,8 @@ struct SurfaceVoxel {
 
 static_assert(sizeof(SurfaceVoxel) == 4, "a surface list entry must be four bytes");
 
-/// @brief Without @p neighbours every voxel on the outer brick faces reads as exposed
-[[nodiscard]]
-inline auto buildBrickSurface(const BrickOccupancy& brick, const BrickNeighbourhood& neighbours) -> std::vector<SurfaceVoxel> {
+inline void
+    buildBrickSurfaceInto(const BrickOccupancy& brick, const BrickNeighbourhood& neighbours, std::vector<SurfaceVoxel>& out) {
 	const BrickOccupancy neg_x = neighboursNegX(brick, neighbours.neg_x);
 	const BrickOccupancy pos_x = neighboursPosX(brick, neighbours.pos_x);
 	const BrickOccupancy neg_y = neighboursNegY(brick, neighbours.neg_y);
@@ -118,8 +118,6 @@ inline auto buildBrickSurface(const BrickOccupancy& brick, const BrickNeighbourh
 
 	const BrickOccupancy shell = brick & ~(neg_x & pos_x & neg_y & pos_y & neg_z & pos_z);
 
-	std::vector<SurfaceVoxel> out;
-	out.reserve(popCount(shell));
 	for (uint32_t z = 0; z < k_brick_dim; ++z) {
 		uint64_t word = shell[z];
 		while (word != 0ull) {
@@ -140,6 +138,13 @@ inline auto buildBrickSurface(const BrickOccupancy& brick, const BrickNeighbourh
 			out.push_back(entry);
 		}
 	}
+}
+
+[[nodiscard]]
+inline auto buildBrickSurface(const BrickOccupancy& brick, const BrickNeighbourhood& neighbours) -> std::vector<SurfaceVoxel> {
+	std::vector<SurfaceVoxel> out;
+	out.reserve(popCount(brick));
+	buildBrickSurfaceInto(brick, neighbours, out);
 	return out;
 }
 
@@ -153,6 +158,8 @@ public:
 	void repairAround(const Volume& volume, glm::ivec3 voxel);
 
 	void repairBrickRegion(const Volume& volume, glm::ivec3 brick);
+
+	void repairBricks(const Volume& volume, std::span<const glm::ivec3> dirty);
 
 	[[nodiscard]]
 	auto brickSurface(glm::ivec3 brick) const -> std::span<const SurfaceVoxel>;
@@ -168,6 +175,19 @@ public:
 	[[nodiscard]]
 	auto brickDims() const noexcept -> glm::uvec3 {
 		return m_brick_dims;
+	}
+
+	template<typename Callback>
+	void forEachPopulatedBrick(Callback&& callback) const {
+		for (const auto& [slot, voxels] : m_bricks) {
+			(void)voxels;
+			const glm::ivec3 brick {
+			  static_cast<int32_t>(slot % m_brick_dims.x),
+			  static_cast<int32_t>((slot / m_brick_dims.x) % m_brick_dims.y),
+			  static_cast<int32_t>(slot / (m_brick_dims.x * m_brick_dims.y)),
+			};
+			callback(brick);
+		}
 	}
 
 private:

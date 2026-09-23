@@ -110,5 +110,14 @@ void Collider::drawDebug() {
 	} else if (const auto cube = box().as<BoxCollider>(); cube.exists()) {
 		renderer::debugDrawShapeBox(glm::scale(transform, cube->size), color, debug_fill);
 	}
+
+	if (show_aabb) {
+		if (const auto bounds = Simulator::shapeWorldBounds(m_shape)) {
+			const glm::vec4 aabb_draw_color = disabled || sleeping ? glm::vec4(0.5f, 0.5f, 0.5f, aabb_color.a) : aabb_color;
+			const glm::mat4 aabb_transform = glm::translate(glm::mat4(1.0f), (bounds->min + bounds->max) * 0.5f) *
+			                                 glm::scale(glm::mat4(1.0f), bounds->max - bounds->min);
+			renderer::debugDrawShapeBox(aabb_transform, aabb_draw_color, aabb_fill);
+		}
+	}
 }
 }

@@ -65,6 +65,12 @@ namespace event {
  */
 struct ReloadAssetsManifest : public Event<ReloadAssetsManifest> { };
 
+struct PrefabAssetReloaded : public Event<PrefabAssetReloaded> {
+	toast::UID uid;
+
+	explicit PrefabAssetReloaded(toast::UID uid) : uid(uid) { }
+};
+
 /**
  * @brief Fired after a hot-reload
  */
@@ -90,6 +96,12 @@ struct MaterialAssetReloaded : public Event<MaterialAssetReloaded> {
 	toast::UID uid;
 
 	explicit MaterialAssetReloaded(toast::UID uid) : uid(uid) { }
+};
+
+struct VoxelPaletteAssetReloaded : public Event<VoxelPaletteAssetReloaded> {
+	toast::UID uid;
+
+	explicit VoxelPaletteAssetReloaded(toast::UID uid) : uid(uid) { }
 };
 
 /**

@@ -115,7 +115,7 @@ void SceneDescriptorSets::create(
 				    binding.binding,
 				    vk::DescriptorType::eCombinedImageSampler,
 				    has_map && shadow_pass != nullptr ? shadow_pass->getShadowSampler()
-				                                      : VulkanRenderer::instance->getDefaultShadowSampler(),
+						                                  : VulkanRenderer::instance->getDefaultShadowSampler(),
 				    has_map ? view : VulkanRenderer::instance->getDefaultShadowMapView(),
 				    vk::ImageLayout::eShaderReadOnlyOptimal
 				);

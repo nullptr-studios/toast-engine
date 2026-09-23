@@ -6,24 +6,91 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <toast/assets/assets.hpp>
 #include <toast/log.hpp>
+#include <toast/physics/assets.hpp>
 #include <toast/uid.hpp>
 #include <tracy/Tracy.hpp>
 #include <utility>
 
 namespace assets {
 
-using toast::voxel::Palette;
-using toast::voxel::PaletteEntry;
+using voxel::Palette;
+using voxel::PaletteEntry;
 
-VoxelPalette::VoxelPalette(Palette palette, uint64_t library_uid, std::vector<uint8_t> defaulted)
+VoxelPalette::VoxelPalette(Palette palette, VoxelMaterialSlots slots, std::vector<uint8_t> defaulted)
     : m_palette(palette),
-      m_library_uid(library_uid),
+      m_slots(std::move(slots)),
       m_defaulted(std::move(defaulted)) {
 	std::sort(m_defaulted.begin(), m_defaulted.end());
 }
 
+auto VoxelPalette::materialLibrary() const -> const voxel::MaterialLibrary& {
+	m_library.materials.assign(k_palette_material_slots, voxel::PhysicalMaterial {});
+
+	for (size_t i = 0; i < k_palette_material_slots; ++i) {
+		const VoxelMaterialSlot& slot = m_slots[i];
+		voxel::PhysicalMaterial& out = m_library.materials[i];
+
+		if (slot.physics_uid != 0) {
+			if (m_physics[i].uid().data() != slot.physics_uid) {
+				m_physics[i] = load<PhysicsMaterial>(toast::UID(slot.physics_uid));
+			}
+			if (m_physics[i].hasValue()) {
+				out.static_friction = m_physics[i]->staticFriction();
+				out.dynamic_friction = m_physics[i]->dynamicFriction();
+				out.restitution = m_physics[i]->restitution();
+			}
+		}
+
+		if (slot.destruction_uid != 0) {
+			if (m_destruction[i].uid().data() != slot.destruction_uid) {
+				m_destruction[i] = load<DestructionMaterial>(toast::UID(slot.destruction_uid));
+			}
+			if (m_destruction[i].hasValue()) {
+				const DestructionMaterial& d = *m_destruction[i];
+				const double density = std::clamp(static_cast<double>(d.density()), 1.0, 65535.0);
+				out.density = static_cast<uint16_t>(std::lround(density));
+				out.toughness = d.toughness();
+				out.structural_strength = d.structuralStrength();
+				out.shatter_radius = d.shatterRadius();
+				out.burn_rate = d.burnRate();
+				if (d.flammable()) {
+					out.flags |= voxel::k_material_flammable;
+				}
+			}
+		}
+
+		if (out.density == 0) {
+			out.density = 1000;
+		}
+	}
+
+	return m_library;
+}
+
 auto VoxelPalette::fromToml(const toml::table& table) -> std::unique_ptr<VoxelPalette> {
+	ZoneScoped;
+	Parsed parsed = parseToml(table);
+	return std::make_unique<VoxelPalette>(parsed.palette, std::move(parsed.slots), std::move(parsed.defaulted));
+}
+
+void VoxelPalette::reload(const toml::table& table) {
+	ZoneScoped;
+	Parsed parsed = parseToml(table);
+
+	const uint32_t revision = m_palette.revision + 1;
+	m_palette = parsed.palette;
+	m_palette.revision = revision;
+	m_slots = std::move(parsed.slots);
+	m_defaulted = std::move(parsed.defaulted);
+	std::sort(m_defaulted.begin(), m_defaulted.end());
+
+	m_physics.fill({});
+	m_destruction.fill({});
+}
+
+auto VoxelPalette::parseToml(const toml::table& table) -> Parsed {
 	ZoneScoped;
 
 	Palette palette;
@@ -36,17 +103,55 @@ auto VoxelPalette::fromToml(const toml::table& table) -> std::unique_ptr<VoxelPa
 		palette.max_emissive = static_cast<float>(*value);
 	}
 
-	uint64_t library_uid = 0;
-	if (const toml::node* library = table.get("library")) {
-		const std::optional<std::string> uid = library->value<std::string>();
-		library_uid = uid ? toast::UID::fromString(*uid) : 0;
-		if (library_uid == 0) {
-			throw std::runtime_error("voxel palette: library is not a valid asset UID");
+	VoxelMaterialSlots slots;
+	if (const toml::array* materials = table["materials"].as_array()) {
+		for (size_t i = 0; i < materials->size(); ++i) {
+			if (i >= k_palette_material_slots) {
+				TOAST_WARN(
+				    "AssetManager",
+				    "Voxel palette: {} material slots authored but only {} are addressable - the rest are dropped",
+				    materials->size(),
+				    k_palette_material_slots
+				);
+				break;
+			}
+			const toml::table* entry = (*materials)[i].as_table();
+			if (entry == nullptr) {
+				throw std::runtime_error("voxel palette: material slot " + std::to_string(i) + " is not a table");
+			}
+
+			const auto slot_uid = [&](std::string_view key) -> uint64_t {
+				const toml::node* node = entry->get(key);
+				if (node == nullptr) {
+					return 0;
+				}
+				const std::optional<std::string> text = node->value<std::string>();
+				const uint64_t uid = text ? toast::UID::fromString(*text) : 0;
+				if (uid == 0) {
+					throw std::runtime_error(
+					    "voxel palette: material slot " + std::to_string(i) + ": " + std::string(key) + " is not a valid asset UID"
+					);
+				}
+				return uid;
+			};
+
+			VoxelMaterialSlot& slot = slots[i];
+			slot.name = entry->get("name") != nullptr ? entry->get("name")->value_or(std::string {}) : std::string {};
+			slot.physics_uid = slot_uid("physics");
+			slot.destruction_uid = slot_uid("destruction");
+			slot.impact_sound = entry->get("impact_sound") != nullptr ? slot_uid("impact_sound") : 0;
+			slot.tag = entry->get("tag") != nullptr ? entry->get("tag")->value_or(std::string {}) : std::string {};
+
+			if (const toml::array* dust = entry->get("dust_colour") != nullptr ? entry->get("dust_colour")->as_array() : nullptr) {
+				for (size_t c = 0; c < 3 && c < dust->size(); ++c) {
+					slot.dust_colour[c] = static_cast<uint8_t>(std::clamp<int64_t>((*dust)[c].value_or<int64_t>(128), 0, 255));
+				}
+			}
 		}
 	}
 
 	std::vector<uint8_t> defaulted;
-	std::array<bool, toast::voxel::k_palette_size> seen {};
+	std::array<bool, voxel::k_palette_size> seen {};
 
 	if (const toml::array* list = table["entries"].as_array()) {
 		for (size_t i = 0; i < list->size(); ++i) {
@@ -86,7 +191,7 @@ auto VoxelPalette::fromToml(const toml::table& table) -> std::unique_ptr<VoxelPa
 			if (!index) {
 				throw fail("needs an index");
 			}
-			if (std::cmp_equal(*index, toast::voxel::k_empty_palette_index)) {
+			if (std::cmp_equal(*index, voxel::k_empty_palette_index)) {
 				throw fail("index 0 is the empty voxel and cannot be authored");
 			}
 			if (seen[static_cast<size_t>(*index)]) {
@@ -113,15 +218,21 @@ auto VoxelPalette::fromToml(const toml::table& table) -> std::unique_ptr<VoxelPa
 				out.albedo_b = channels[2];
 			}
 
+			const auto unit_or = [&](std::string_view key, uint8_t fallback) -> uint8_t {
+				return entry->get(key) != nullptr ? unit(key) : fallback;
+			};
+
 			out.roughness = unit("roughness");
 			out.metallic = unit("metallic");
 			out.reflectivity = unit("reflectivity");
 			out.emissive = unit("emissive");
 
+			out.alpha = unit_or("alpha", 255);
+
 			if (const std::optional<int64_t> material = whole("material", 0, 255)) {
 				out.material = static_cast<uint8_t>(*material);
 			} else {
-				out.material = toast::voxel::k_default_material;
+				out.material = voxel::k_default_material;
 				defaulted.push_back(static_cast<uint8_t>(*index));
 			}
 
@@ -135,7 +246,7 @@ auto VoxelPalette::fromToml(const toml::table& table) -> std::unique_ptr<VoxelPa
 					throw fail("transparent must be true or false");
 				}
 				if (*value) {
-					out.flags |= toast::voxel::k_entry_transparent;
+					out.flags |= voxel::k_entry_transparent;
 				}
 			}
 
@@ -154,22 +265,47 @@ auto VoxelPalette::fromToml(const toml::table& table) -> std::unique_ptr<VoxelPa
 		TOAST_WARN("AssetManager", "Voxel palette: {} entries have no material and use the default: {}", defaulted.size(), list);
 	}
 
-	return std::make_unique<VoxelPalette>(palette, library_uid, std::move(defaulted));
+	return Parsed {std::move(palette), std::move(slots), std::move(defaulted)};
 }
 
 auto VoxelPalette::serialize(SaveMode /*mode*/) const -> std::vector<uint8_t> {
 	ZoneScoped;
 
 	toml::table root;
-	if (m_library_uid != 0) {
-		root.insert("library", toast::UID::toString(m_library_uid));
-	}
 	root.insert("max_emissive", static_cast<double>(m_palette.max_emissive));
+
+	toml::array materials;
+	for (const VoxelMaterialSlot& slot : m_slots) {
+		toml::table entry;
+		entry.insert("name", slot.name);
+		if (slot.physics_uid != 0) {
+			entry.insert("physics", toast::UID::toString(slot.physics_uid));
+		}
+		if (slot.destruction_uid != 0) {
+			entry.insert("destruction", toast::UID::toString(slot.destruction_uid));
+		}
+		if (slot.impact_sound != 0) {
+			entry.insert("impact_sound", toast::UID::toString(slot.impact_sound));
+		}
+		if (!slot.tag.empty()) {
+			entry.insert("tag", slot.tag);
+		}
+		entry.insert(
+		    "dust_colour",
+		    toml::array {
+		      static_cast<int64_t>(slot.dust_colour[0]),
+		      static_cast<int64_t>(slot.dust_colour[1]),
+		      static_cast<int64_t>(slot.dust_colour[2])
+		    }
+		);
+		materials.push_back(std::move(entry));
+	}
+	root.insert("materials", std::move(materials));
 
 	const auto as_unit = [](uint8_t byte) { return static_cast<double>(byte) / 255.0; };
 
 	toml::array list;
-	for (uint32_t index = 1; index < toast::voxel::k_palette_size; ++index) {
+	for (uint32_t index = 1; index < voxel::k_palette_size; ++index) {
 		const PaletteEntry& e = m_palette.entries[index];
 		const bool is_defaulted = std::binary_search(m_defaulted.begin(), m_defaulted.end(), static_cast<uint8_t>(index));
 
@@ -188,11 +324,12 @@ auto VoxelPalette::serialize(SaveMode /*mode*/) const -> std::vector<uint8_t> {
 		entry.insert("metallic", as_unit(e.metallic));
 		entry.insert("reflectivity", as_unit(e.reflectivity));
 		entry.insert("emissive", as_unit(e.emissive));
+		entry.insert("alpha", as_unit(e.alpha));
 		if (!is_defaulted) {
 			entry.insert("material", static_cast<int64_t>(e.material));
 		}
 		entry.insert("transforms_to", static_cast<int64_t>(e.transforms_to));
-		entry.insert("transparent", (e.flags & toast::voxel::k_entry_transparent) != 0);
+		entry.insert("transparent", (e.flags & voxel::k_entry_transparent) != 0);
 		list.push_back(std::move(entry));
 	}
 	root.insert("entries", std::move(list));

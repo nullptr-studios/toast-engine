@@ -14,7 +14,7 @@
 #include <toast/export.hpp>
 #include <vector>
 
-namespace toast::voxel {
+namespace voxel {
 
 inline constexpr uint32_t k_no_component = 0xFFFFFFFFu;
 
