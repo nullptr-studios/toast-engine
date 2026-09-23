@@ -213,10 +213,10 @@ void GpuTimer::collect(uint32_t slot) {
 		const bool seen = previous != m_smoothed.scopes.end();
 		m_scratch.scopes.push_back(
 		    {.name = sample.name,
-				 .depth = sample.depth,
-				 .count = sample.count,
-				 .cpu_ms = smooth(seen ? previous->cpu_ms : 0.0, sample.cpu_ms, !seen),
-				 .gpu_ms = smooth(seen ? previous->gpu_ms : 0.0, sample.gpu_ms, !seen)}
+		     .depth = sample.depth,
+		     .count = sample.count,
+		     .cpu_ms = smooth(seen ? previous->cpu_ms : 0.0, sample.cpu_ms, !seen),
+		     .gpu_ms = smooth(seen ? previous->gpu_ms : 0.0, sample.gpu_ms, !seen)}
 		);
 	}
 	std::swap(m_smoothed, m_scratch);

@@ -663,7 +663,7 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, uint32_t frame
 	);
 	cmd.pipelineBarrier(
 	    map.layout == vk::ImageLayout::eShaderReadOnlyOptimal ? vk::PipelineStageFlagBits::eFragmentShader
-			                                                      : vk::PipelineStageFlagBits::eTopOfPipe,
+	                                                          : vk::PipelineStageFlagBits::eTopOfPipe,
 	    vk::PipelineStageFlagBits::eEarlyFragmentTests,
 	    {},
 	    nullptr,

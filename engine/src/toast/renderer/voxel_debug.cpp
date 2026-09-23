@@ -478,12 +478,12 @@ void Monitor::drawPanel(const VulkanRenderer::RenderFrame& frame) const {
 
 	constexpr std::array<std::pair<VoxelGpuStorage::Section, const char*>, VoxelGpuStorage::k_section_count> k_sections {
 	  {
-	   {VoxelGpuStorage::Section::materials, "Materials"},
-	   {VoxelGpuStorage::Section::occupancy, "Occupancy"},
-	   {VoxelGpuStorage::Section::grids, "Grids"},
-	   {VoxelGpuStorage::Section::coarse, "Coarse"},
-	   {VoxelGpuStorage::Section::palettes, "Palettes"},
-	   {VoxelGpuStorage::Section::records, "Records"},
+     {VoxelGpuStorage::Section::materials, "Materials"},
+     {VoxelGpuStorage::Section::occupancy, "Occupancy"},
+     {VoxelGpuStorage::Section::grids, "Grids"},
+     {VoxelGpuStorage::Section::coarse, "Coarse"},
+     {VoxelGpuStorage::Section::palettes, "Palettes"},
+     {VoxelGpuStorage::Section::records, "Records"},
 	   }
 	};
 	constexpr ImGuiTableFlags k_table_flags =

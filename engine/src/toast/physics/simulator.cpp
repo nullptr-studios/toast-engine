@@ -1245,9 +1245,8 @@ void Simulator::setShapeEnabled(ShapeID shape, bool enabled) {
 		if (value->enabled != enabled) {
 			if (enabled) {
 				wakeBody(value->owner);
-			} else if (
-			    const Body* owner = instance->tryGetBody(value->owner); owner != nullptr && owner->type != BodyType::dynamic_body
-			) {
+			} else if (const Body* owner = instance->tryGetBody(value->owner);
+			           owner != nullptr && owner->type != BodyType::dynamic_body) {
 				instance->wakeBodiesTouching(shape);
 			}
 			value->enabled = enabled;
@@ -1374,7 +1373,7 @@ void Simulator::publishVoxelRenderRecords() {
 		      .fragment_origin = data->fragment_origin,
 		      .awake = body->awake,
 		      .world_bounds = worldShapeBounds(*body, slot.shape),
-		}
+    }
 		);
 	}
 
@@ -1570,7 +1569,7 @@ auto Simulator::generateManifoldsAsync(CollisionWorldView world, std::span<const
 	}
 
 	const size_t minimum_candidates_per_job = tunables().min_candidates_per_job;
-	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), 1ull);
+	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), static_cast<size_t>(1));
 	const size_t maximum_job_count = worker_count * 3;
 	const size_t job_count =
 	    active_candidates.empty()
@@ -1780,7 +1779,7 @@ void Simulator::updateCache(std::span<const Manifold> manifolds) {
 		const auto current =
 		    std::lower_bound(manifolds.begin(), manifolds.end(), key, [](const Manifold& manifold, CachedManifoldKey candidate) {
 			    return manifold.pair < candidate.pair ||
-					       (manifold.pair == candidate.pair && manifold.normal_index < candidate.normal_index);
+			           (manifold.pair == candidate.pair && manifold.normal_index < candidate.normal_index);
 		    });
 		const bool still_colliding =
 		    current != manifolds.end() && current->pair == cached.pair && current->normal_index == cached.normal_index;
@@ -3279,7 +3278,7 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 			islands.emplace_back(
 			    SimulationIsland {
 			      .sort_key = BodyID {.slot = static_cast<uint32_t>(root), .generation = root_slot.generation},
-			}
+      }
 			);
 		}
 
@@ -3427,13 +3426,13 @@ auto Simulator::prepareConstraint(const Manifold& manifold, const ContactPoint& 
 	float tangent_mass = 0.0f;
 
 	if (tangent_length_sq > 1.0e-10f) {
-		tangent = tangent_velocity / sqrt(tangent_length_sq);
+		tangent = tangent_velocity / std::sqrt(tangent_length_sq);
 	} else if (cached_contact) {
 		const glm::vec3 projected_tangent =
 		    cached_contact->tangent_impulse - manifold.normal * glm::dot(cached_contact->tangent_impulse, manifold.normal);
 		const float projected_length_sq = glm::dot(projected_tangent, projected_tangent);
 		if (projected_length_sq > 1.0e-10f && std::isfinite(projected_length_sq)) {
-			tangent = projected_tangent / sqrt(projected_length_sq);
+			tangent = projected_tangent / std::sqrt(projected_length_sq);
 		}
 	}
 
@@ -3534,7 +3533,7 @@ void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
 	}
 	PhaseScope worker_phase {*this, SimulationPhase::mutation, SimulationPhase::worker_execution};
 
-	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), 1ull);
+	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), static_cast<size_t>(1));
 
 	// Warm start is one pass over each island constraints cheap enough to just do right here
 	for (SimulationIsland& island : islands) {

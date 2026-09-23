@@ -79,6 +79,10 @@ void Vec3FieldProxy::setZ(float value) {
 namespace {
 
 auto luaArgToAny(lua_State* l, const luabridge::LuaRef& v, std::string_view cpp_type, const char* param_name) -> std::any {
+	if (cpp_type.contains("luabridge::LuaRef")) {
+		return std::any {std::in_place_type<luabridge::LuaRef>, v};
+	}
+
 	const bool is_input_action_event = cpp_type.contains("input::ActionEvent");
 	const bool is_input_action = !is_input_action_event && cpp_type.contains("input::Action");
 	const bool is_input_bind = cpp_type.contains("input::Bind");
