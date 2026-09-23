@@ -141,6 +141,9 @@
 				export DOTNET_ROOT="${dotnet-sdk}/share/dotnet";
 				export PATH="${dotnet-sdk}/bin:$PATH";
 				export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath runtimeLibs}:$LD_LIBRARY_PATH";
+				# Tracy's rpmalloc client uses initial-exec TLS. The editor loads the
+				# engine after .NET has started, so reserve space for that TLS block.
+				export GLIBC_TUNABLES="glibc.rtld.optional_static_tls=2048''${GLIBC_TUNABLES:+:$GLIBC_TUNABLES}";
 				export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1;
 				export CMAKE_C_COMPILER_LAUNCHER=ccache;
 				export CMAKE_CXX_COMPILER_LAUNCHER=ccache;
