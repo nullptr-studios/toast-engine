@@ -11,6 +11,7 @@
 #include <toast/ui/assets.hpp>
 #include <toast/world/node_3d.hpp>
 
+// NOLINTNEXTLINE(readability-identifier-naming)
 namespace Rml {
 class Context;
 class ElementDocument;

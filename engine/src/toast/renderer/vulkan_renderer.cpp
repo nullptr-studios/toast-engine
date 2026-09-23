@@ -3179,7 +3179,7 @@ void VulkanRenderer::tick(float time) noexcept {
 				      .camera_distance = camera_distance,
 				      .resolution_scale = point->shadowResolutionScale(),
 				      .casts_shadows = casts_shadows,
-        },
+				},
 				    point_candidates
 				);
 				break;
@@ -3214,7 +3214,7 @@ void VulkanRenderer::tick(float time) noexcept {
 				      .camera_distance = camera_distance,
 				      .resolution_scale = spot->shadowResolutionScale(),
 				      .casts_shadows = casts_shadows,
-        },
+				},
 				    spot_candidates
 				);
 				break;
@@ -3638,10 +3638,10 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		gathered.push_back({id, record.volume, palette, record.transform, "Voxel fragment " + std::to_string(record.shape.slot)});
 		key.push_back(
 		    {.node_uid = id,
-		     .revision = record.revision,
-		     .content = record.volume->revision(),
-		     .palette = palette,
-		     .palette_revision = palette->revision}
+				 .revision = record.revision,
+				 .content = record.volume->revision(),
+				 .palette = palette,
+				 .palette_revision = palette->revision}
 		);
 	}
 

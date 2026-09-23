@@ -58,6 +58,9 @@ public:
 	auto forward() const -> glm::vec3;
 
 	void syncTransform() const;
+
+	void syncWorldTransform() const;
+
 	void refreshTransformParent();
 
 	[[nodiscard]]

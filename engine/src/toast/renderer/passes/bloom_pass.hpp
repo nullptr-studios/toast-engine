@@ -39,7 +39,7 @@ private:
 		float knee = 0.5f;
 		float filter_radius = 1.0f;
 		float strength = 0.05f;
-		glm::vec2 _pad0 {0.0f};
+		glm::vec2 pad0 {0.0f};
 	};
 
 	struct Mip {

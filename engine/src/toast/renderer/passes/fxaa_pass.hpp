@@ -39,7 +39,7 @@ private:
 		float contrast_threshold = 0.0312f;
 		float relative_threshold = 0.125f;
 		float subpixel_blending = 0.75f;
-		glm::vec2 _pad0 {0.0f};
+		glm::vec2 pad0 {0.0f};
 	};
 
 	void createResources(const VulkanCore& core);

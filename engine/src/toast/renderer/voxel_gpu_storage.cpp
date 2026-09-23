@@ -123,12 +123,12 @@ void VoxelSceneUpload::build(const VulkanCore& core) {
 	const voxel::gpu::PackedScene& scene = m_packed->scene;
 	const std::array<std::pair<const void*, vk::DeviceSize>, VoxelGpuStorage::k_section_count> sources {
 	  {
-     {pool.materials.data(), pool.materials.size() * sizeof(uint32_t)},
-     {pool.occupancy.data(), pool.occupancy.size() * sizeof(uint32_t)},
-     {scene.grids.data(), scene.grids.size() * sizeof(uint32_t)},
-     {scene.coarse.data(), scene.coarse.size() * sizeof(uint32_t)},
-     {scene.palettes.data(), scene.palettes.size() * sizeof(uint32_t)},
-     {scene.records.data(), scene.records.size() * sizeof(voxel::gpu::VolumeRecord)},
+	   {pool.materials.data(), pool.materials.size() * sizeof(uint32_t)},
+	   {pool.occupancy.data(), pool.occupancy.size() * sizeof(uint32_t)},
+	   {scene.grids.data(), scene.grids.size() * sizeof(uint32_t)},
+	   {scene.coarse.data(), scene.coarse.size() * sizeof(uint32_t)},
+	   {scene.palettes.data(), scene.palettes.size() * sizeof(uint32_t)},
+	   {scene.records.data(), scene.records.size() * sizeof(voxel::gpu::VolumeRecord)},
 	   }
 	};
 

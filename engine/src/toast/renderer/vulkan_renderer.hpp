@@ -112,7 +112,7 @@ public:
 		glm::mat4 model {1.0f};
 		uint32_t joint_offset = 0;
 		/// Scalars not uint3 since std430 aligns uint3 to 16 bytes
-		std::array<uint32_t, 3> _pad0 {0, 0, 0};
+		std::array<uint32_t, 3> pad0 {0, 0, 0};
 	};
 
 	static_assert(sizeof(InstanceData) == 80, "InstanceData stride must match mesh.slang's std430 layout");
@@ -646,21 +646,21 @@ public:
 	auto getInstanceBuffer(uint32_t frame_index) const -> vk::Buffer {
 		return frame_index < m_instance_res.size() && m_instance_res[frame_index].gpu_buffer.has_value()
 		           ? **m_instance_res[frame_index].gpu_buffer
-		           : vk::Buffer {};
+							 : vk::Buffer {};
 	}
 
 	[[nodiscard]]
 	auto getShadowInstanceBuffer(uint32_t frame_index) const -> vk::Buffer {
 		return frame_index < m_shadow_instance_res.size() && m_shadow_instance_res[frame_index].gpu_buffer.has_value()
 		           ? **m_shadow_instance_res[frame_index].gpu_buffer
-		           : vk::Buffer {};
+							 : vk::Buffer {};
 	}
 
 	[[nodiscard]]
 	auto getJointMatrixBuffer(uint32_t frame_index) const -> vk::Buffer {
 		return frame_index < m_joint_matrix_res.size() && m_joint_matrix_res[frame_index].gpu_buffer.has_value()
 		           ? **m_joint_matrix_res[frame_index].gpu_buffer
-		           : vk::Buffer {};
+							 : vk::Buffer {};
 	}
 
 	[[nodiscard]]

@@ -42,7 +42,7 @@ struct Manifold {
 };
 
 [[nodiscard]]
-inline bool operator<(const Manifold& lhs, const Manifold& rhs) {
+inline auto operator<(const Manifold& lhs, const Manifold& rhs) -> bool {
 	if (lhs.pair != rhs.pair) {
 		return lhs.pair < rhs.pair;
 	}

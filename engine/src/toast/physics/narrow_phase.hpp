@@ -10,12 +10,13 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <span>
 #include <vector>
 
 namespace physics {
 
-enum class NarrowPhasePairType : size_t {
+enum class NarrowPhasePairType : uint8_t {
 	sphere_sphere,
 	sphere_box,
 	sphere_capsule,

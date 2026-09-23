@@ -743,6 +743,11 @@ auto Workspace::restoreHistorySnapshot(const assets::Prefab& snapshot) -> bool {
 	return true;
 }
 
+void Workspace::inheritEditorCamera(const Workspace& source) {
+	m_editor_camera_controller.copyViewFrom(source.m_editor_camera_controller);
+	m_editor_camera_controller.tick(0.0f, m_editor_camera.get());
+}
+
 void Workspace::applyActiveCamera() {
 	if (!isActiveWorkspace()) {
 		return;
@@ -1801,7 +1806,7 @@ void Workspace::eventSubscriptions() {
 
 		if (field->name == "position" || field->name == "rotation" || field->name == "world_position" ||
 		    field->name == "world_rotation") {
-			if (auto node3d = target.as<Node3D>(); node3d.exists()) {
+			if (auto node3d = target.template as<Node3D>(); node3d.exists()) {
 				node3d->onEditorTransformChanged();
 			}
 		}
@@ -2329,7 +2334,7 @@ void Workspace::tick() {
 	// Only for the workspace actually being looked through, matching applyActiveCamera()'s gating. The
 	// controller has to be *told*, not just skipped: every workspace owns one and they all subscribe to the
 	// same global input, so an unguarded one accumulates movement from a drag in another viewport
-	const bool camera_active = isActiveWorkspace() && !m_game_camera && !isPlaying();
+	const bool camera_active = isActiveWorkspace() && !m_game_camera;
 	m_editor_camera_controller.setEnabled(camera_active);
 	if (camera_active) {
 		m_editor_camera_controller.tick(static_cast<float>(Time::delta()), m_editor_camera.get());

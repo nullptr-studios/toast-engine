@@ -42,9 +42,6 @@ public:
 	// window
 	void createSDLWindow(const char*);
 	void createAvaloniaWindow();
-	void setCursorLocked(bool locked);
-	[[nodiscard]]
-	auto isCursorLocked() -> bool;
 
 	auto shootVoxel(const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy, float min_radius = 0.0f)
 	    -> bool;

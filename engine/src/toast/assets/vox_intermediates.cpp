@@ -125,7 +125,7 @@ auto writeVoxIntermediates(const std::filesystem::path& source, const std::files
 	for (uint32_t i = 0; i < scene.models.size(); ++i) {
 		std::string name = model_names[i].empty() ? "model" + std::to_string(i) : model_names[i];
 		while (!taken.insert(name).second) {
-			name += "_";
+			name += '_';
 		}
 
 		const VoxModel& model = scene.models[i];

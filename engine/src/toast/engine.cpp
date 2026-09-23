@@ -390,33 +390,26 @@ void Engine::tick() {
 		m->renderer->tick(Time::uptime());
 	}
 
-	// FIXME: SHOULDNT THIS ALSO HAPPEN IN RELEASE EDITOR BUILDS?
 #ifdef DEBUG
-	// dev builds hot-reload scripts, shaders and materials edited on disk
-	script_reload_timer += Time::delta();
-	if (script_reload_timer > 1.0) {
-		script_reload_timer = 0.0;
-		if (m->asset_manager) {
-			m->asset_manager->pollModifiedAssets();
+	constexpr bool debug_build = true;
+#else
+	constexpr bool debug_build = false;
+#endif
+	if (debug_build || m->shared_target != nullptr) {
+		script_reload_timer += Time::delta();
+		if (script_reload_timer > 1.0) {
+			script_reload_timer = 0.0;
+			if (m->asset_manager) {
+				m->asset_manager->pollModifiedAssets();
+			}
 		}
 	}
-#endif
 
 	FrameMark;
 }
 
 auto Engine::shouldClose() -> bool {
 	return m->window ? m->window->shouldClose() : false;
-}
-
-void Engine::setCursorLocked(bool locked) {
-	if (m->window) {
-		m->window->setCursorLocked(locked);
-	}
-}
-
-auto Engine::isCursorLocked() -> bool {
-	return m->window && m->window->isCursorLocked();
 }
 
 auto Engine::shootVoxel(const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy, float min_radius)
@@ -701,6 +694,7 @@ auto Engine::playWorkspace(UID source_handle) -> std::pair<UID, std::string> {
 		m->owners.erase(it);
 		return {};
 	}
+	play->inheritEditorCamera(*source);
 
 	std::string name = it->second->name();
 	return {handle, name};

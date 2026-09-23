@@ -84,7 +84,7 @@ private:
 	struct PendingScope {
 		ScopeName name;
 		uint32_t depth = 0;
-		std::chrono::steady_clock::time_point cpu_start {};
+		std::chrono::steady_clock::time_point cpu_start;
 		double cpu_ms = 0.0;
 	};
 

@@ -29,10 +29,6 @@ public:
 	virtual void pollEvents() = 0;
 	virtual void swapFramebuffers() = 0;
 
-	virtual void setCursorLocked(bool locked) = 0;
-	[[nodiscard]]
-	virtual auto isCursorLocked() const -> bool = 0;
-
 	// Variables
 
 protected:

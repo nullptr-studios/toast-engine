@@ -1,11 +1,13 @@
 #include "crash_handler.hpp"
 
+#include <array>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <exception>
 #include <ffi/crash.h>
+#include <print>
 #include <stdexcept>
 #include <vector>
 
@@ -23,7 +25,7 @@ namespace toast::crash {
 namespace {
 
 /// Mirrored by CrashKind in tools/crash_reporter/CrashTarget.cs
-enum class Kind : int {
+enum class Kind : uint8_t {
 	exception = 0,
 	crt_report = 1,
 	terminate = 2,
@@ -37,7 +39,7 @@ constexpr DWORD k_status_heap_corruption = 0xC0000374;
 
 /// Static so reporting never allocates since the heap may be what broke
 struct SharedState {
-	char message[4096] {};
+	std::array<char, 4096> message {};
 	EXCEPTION_RECORD record {};
 	CONTEXT context {};
 	EXCEPTION_POINTERS pointers {};
@@ -47,17 +49,17 @@ SharedState g_shared;
 Kind g_kind = Kind::exception;
 DWORD g_crashed_thread = 0;
 
-wchar_t g_reporter_path[MAX_PATH] {};
-wchar_t g_dump_directory[MAX_PATH] {};
-wchar_t g_command_line[4 * MAX_PATH] {};
-char g_scratch_message[4096] {};
+std::array<wchar_t, MAX_PATH> g_reporter_path {};
+std::array<wchar_t, MAX_PATH> g_dump_directory {};
+std::array<wchar_t, 4 * MAX_PATH> g_command_line {};
+std::array<char, 4096> g_scratch_message {};
 
 std::atomic_bool g_installed {false};
 std::atomic<DWORD> g_reporting_thread {0};
 
 auto enabled() noexcept -> bool {
-	wchar_t value[4] {};
-	const DWORD length = GetEnvironmentVariableW(L"TOAST_CRASH_HANDLER", value, 4);
+	std::array<wchar_t, 4> value {};
+	const DWORD length = GetEnvironmentVariableW(L"TOAST_CRASH_HANDLER", value.data(), static_cast<DWORD>(value.size()));
 	if (length > 0 && length < 4) {
 		return value[0] != L'0';
 	}
@@ -74,9 +76,9 @@ auto fileExists(const wchar_t* path) noexcept -> bool {
 }
 
 auto resolveReporter() noexcept -> bool {
-	const DWORD override_length = GetEnvironmentVariableW(L"TOAST_CRASH_REPORTER", g_reporter_path, MAX_PATH);
+	const DWORD override_length = GetEnvironmentVariableW(L"TOAST_CRASH_REPORTER", g_reporter_path.data(), MAX_PATH);
 	if (override_length > 0 && override_length < MAX_PATH) {
-		return fileExists(g_reporter_path);
+		return fileExists(g_reporter_path.data());
 	}
 
 	HMODULE engine = nullptr;
@@ -88,21 +90,21 @@ auto resolveReporter() noexcept -> bool {
 		return false;
 	}
 
-	wchar_t directory[MAX_PATH] {};
-	const DWORD length = GetModuleFileNameW(engine, directory, MAX_PATH);
+	std::array<wchar_t, MAX_PATH> directory {};
+	const DWORD length = GetModuleFileNameW(engine, directory.data(), MAX_PATH);
 	if (length == 0 || length >= MAX_PATH) {
 		return false;
 	}
-	if (wchar_t* slash = wcsrchr(directory, L'\\')) {
+	if (wchar_t* slash = wcsrchr(directory.data(), L'\\')) {
 		*slash = L'\0';
 	}
 
-	wchar_t candidate[MAX_PATH] {};
+	std::array<wchar_t, MAX_PATH> candidate {};
 	for (const wchar_t* relative : {L"\\..\\..\\crash_reporter\\crash_reporter.exe", L"\\crash_reporter\\crash_reporter.exe"}) {
-		if (swprintf_s(candidate, L"%ls%ls", directory, relative) < 0) {
+		if (swprintf_s(candidate.data(), candidate.size(), L"%ls%ls", directory.data(), relative) < 0) {
 			continue;
 		}
-		if (GetFullPathNameW(candidate, MAX_PATH, g_reporter_path, nullptr) > 0 && fileExists(g_reporter_path)) {
+		if (GetFullPathNameW(candidate.data(), MAX_PATH, g_reporter_path.data(), nullptr) > 0 && fileExists(g_reporter_path.data())) {
 			return true;
 		}
 	}
@@ -111,21 +113,23 @@ auto resolveReporter() noexcept -> bool {
 
 auto WINAPI launchReporter(LPVOID) -> DWORD {
 	swprintf_s(
-	    g_command_line,
+	    g_command_line.data(),
+	    g_command_line.size(),
 	    L"\"%ls\" --pid %lu --tid %lu --pointers 0x%llx --message 0x%llx --kind %d --dump-dir \"%ls\"",
-	    g_reporter_path,
+	    g_reporter_path.data(),
 	    GetCurrentProcessId(),
 	    g_crashed_thread,
 	    static_cast<unsigned long long>(reinterpret_cast<std::uintptr_t>(&g_shared.pointers)),
-	    static_cast<unsigned long long>(reinterpret_cast<std::uintptr_t>(g_shared.message)),
+	    static_cast<unsigned long long>(reinterpret_cast<std::uintptr_t>(g_shared.message.data())),
 	    static_cast<int>(g_kind),
-	    g_dump_directory
+	    g_dump_directory.data()
 	);
 
 	STARTUPINFOW startup {};
 	startup.cb = sizeof(startup);
 	PROCESS_INFORMATION process {};
-	if (!CreateProcessW(nullptr, g_command_line, nullptr, nullptr, FALSE, 0, nullptr, nullptr, &startup, &process)) {
+	if (!CreateProcessW(nullptr, g_command_line.data(), nullptr, nullptr, FALSE, 0, nullptr, nullptr, &startup, &process)) {
+		// NOLINTNEXTLINE(modernize-use-std-print) fprintf since this runs mid-crash where the heap may be broken
 		std::fprintf(stderr, "[Crash] Could not start the crash reporter (error %lu)\n", GetLastError());
 		return 1;
 	}
@@ -154,7 +158,7 @@ void report(Kind kind, const EXCEPTION_POINTERS* pointers, const char* message) 
 	g_kind = kind;
 	g_crashed_thread = self;
 	if (message != nullptr) {
-		strncpy_s(g_shared.message, message, _TRUNCATE);
+		strncpy_s(g_shared.message.data(), g_shared.message.size(), message, _TRUNCATE);
 	}
 
 	if (pointers != nullptr) {
@@ -232,6 +236,7 @@ auto CALLBACK onVectoredException(EXCEPTION_POINTERS* pointers) -> LONG {
 
 #ifdef _DEBUG
 /// With a debugger attached the CRT dialog is the better tool
+// NOLINTNEXTLINE(readability-non-const-parameter) signature fixed by _CRT_REPORT_HOOK
 auto __cdecl onCrtReport(int type, char* message, int* return_value) -> int {
 	(void)return_value;
 	if (type == _CRT_WARN || IsDebuggerPresent()) {
@@ -240,13 +245,16 @@ auto __cdecl onCrtReport(int type, char* message, int* return_value) -> int {
 	report(Kind::crt_report, nullptr, message);
 }
 
+// NOLINTNEXTLINE(readability-non-const-parameter) signature fixed by _CRT_REPORT_HOOKW
 auto __cdecl onCrtReportWide(int type, wchar_t* message, int* return_value) -> int {
 	(void)return_value;
 	if (type == _CRT_WARN || IsDebuggerPresent()) {
 		return FALSE;
 	}
-	WideCharToMultiByte(CP_UTF8, 0, message, -1, g_scratch_message, sizeof(g_scratch_message) - 1, nullptr, nullptr);
-	report(Kind::crt_report, nullptr, g_scratch_message);
+	WideCharToMultiByte(
+	    CP_UTF8, 0, message, -1, g_scratch_message.data(), static_cast<int>(g_scratch_message.size() - 1), nullptr, nullptr
+	);
+	report(Kind::crt_report, nullptr, g_scratch_message.data());
 }
 #endif
 
@@ -258,8 +266,8 @@ void onTerminate() noexcept {
 		try {
 			std::rethrow_exception(current);
 		} catch (const std::exception& e) {
-			std::snprintf(g_scratch_message, sizeof(g_scratch_message), "Unhandled C++ exception: %s", e.what());
-			message = g_scratch_message;
+			std::snprintf(g_scratch_message.data(), g_scratch_message.size(), "Unhandled C++ exception: %s", e.what());
+			message = g_scratch_message.data();
 		} catch (...) { message = "Unhandled C++ exception of a type not derived from std::exception"; }
 	}
 
@@ -286,17 +294,20 @@ void __cdecl onInvalidParameter(
 	}
 
 	// Release CRTs pass nulls
-	wchar_t text[1024] {};
+	std::array<wchar_t, 1024> text {};
 	swprintf_s(
-	    text,
+	    text.data(),
+	    text.size(),
 	    L"%ls in %ls (%ls:%u)",
 	    expression != nullptr ? expression : L"?",
 	    function != nullptr ? function : L"?",
 	    file != nullptr ? file : L"?",
 	    line
 	);
-	WideCharToMultiByte(CP_UTF8, 0, text, -1, g_scratch_message, sizeof(g_scratch_message) - 1, nullptr, nullptr);
-	report(Kind::invalid_parameter, nullptr, g_scratch_message);
+	WideCharToMultiByte(
+	    CP_UTF8, 0, text.data(), -1, g_scratch_message.data(), static_cast<int>(g_scratch_message.size() - 1), nullptr, nullptr
+	);
+	report(Kind::invalid_parameter, nullptr, g_scratch_message.data());
 }
 
 void __cdecl onAbortSignal(int signal) {
@@ -316,7 +327,7 @@ namespace {
 #pragma warning(disable : 4717)    // recursive on all control paths on purpose
 #endif
 void overflowStack(volatile std::uint64_t depth) {
-	volatile char padding[4096] {};
+	std::array<volatile char, 4096> padding {};
 	padding[0] = static_cast<char>(depth);
 	overflowStack(depth + 1);
 	padding[1] = padding[0];    // after the call so it cannot become a loop
@@ -333,7 +344,7 @@ void install() noexcept {
 		return;
 	}
 	if (!resolveReporter()) {
-		std::fprintf(stderr, "[Crash] crash_reporter.exe was not found next to the engine; native crashes will not be reported\n");
+		std::println(stderr, "[Crash] crash_reporter.exe was not found next to the engine; native crashes will not be reported");
 		return;
 	}
 
@@ -358,7 +369,7 @@ void setDumpDirectory(const std::filesystem::path& directory) noexcept {
 		while (!text.empty() && (text.back() == L'\\' || text.back() == L'/')) {
 			text.pop_back();
 		}
-		wcsncpy_s(g_dump_directory, text.c_str(), _TRUNCATE);
+		wcsncpy_s(g_dump_directory.data(), g_dump_directory.size(), text.c_str(), _TRUNCATE);
 	} catch (...) { g_dump_directory[0] = L'\0'; }
 #else
 	(void)directory;

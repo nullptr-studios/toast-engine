@@ -80,7 +80,10 @@ public:
 	};
 
 protected:
-	virtual auto owningPrefabUid() const -> UID { return UID(0); }
+	[[nodiscard]]
+	virtual auto owningPrefabUid() const -> UID {
+		return {0};
+	}
 
 	void seedPrefabContext(InstantiateContext& context, const Node* parent = nullptr) const;
 	static void updateTransforms(Node& root);

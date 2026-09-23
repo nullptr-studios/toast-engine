@@ -641,7 +641,7 @@
 			            Orientation="Horizontal">
 				<ToggleButton Classes="tool red"
 				              CornerRadius="6, 0, 0, 6"
-				              ToolTip.Tip="Play/Stop (F5)"
+				              ToolTip.Tip="Play (F5)"
 				              Command="{Binding TogglePlayCommand}"
 				              IsChecked="{Binding IsPlaying, Mode=OneWay}">
 					<Panel>
@@ -655,9 +655,25 @@
 						            IsVisible="{Binding IsPlaying}" />
 					</Panel>
 				</ToggleButton>
+				<ToggleButton Classes="tool red"
+				              CornerRadius="0"
+				              ToolTip.Tip="Simulate (Shift+F5)"
+				              Command="{Binding ToggleSimulateCommand}"
+				              IsChecked="{Binding IsSimulating, Mode=OneWay}">
+					<Panel>
+						<LucideIcon Kind="BugPlay"
+						            Size="18"
+						            StrokeWidth="2.5"
+						            IsVisible="{Binding !IsSimulating}" />
+						<LucideIcon Kind="Square"
+						            Size="18"
+						            StrokeWidth="2.5"
+						            IsVisible="{Binding IsSimulating}" />
+					</Panel>
+				</ToggleButton>
 				<ToggleButton Classes="tool orange"
 				              CornerRadius="0"
-				              ToolTip.Tip="Pause simulation"
+				              ToolTip.Tip="Pause"
 				              IsEnabled="{Binding CanPause}"
 				              IsChecked="{Binding IsPaused}">
 					<LucideIcon Kind="Pause"
@@ -684,7 +700,7 @@
 		</Grid>
 		<Panel x:Name="ViewportPanel">
 			<vm:ViewportControl x:Name="Viewport"
-			                    PlayMode="{Binding IsPlaying}"
+			                    PlayMode="{Binding IsPlayingInViewport}"
 			                    IsVisible="{Binding !IsPlayingExternal}" />
 			<!-- while playing on the external window the tab viewport is blacked out -->
 			<Border CornerRadius="8"
