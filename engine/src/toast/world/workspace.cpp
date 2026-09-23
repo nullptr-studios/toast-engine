@@ -491,7 +491,7 @@ void Workspace::preparePrefabReload(UID uid) {
 				if (reference.nodes.empty()) {
 					continue;
 				}
-				for (const auto name : {"position", "rotation", "scale"}) {
+				for (const auto* const name : {"position", "rotation", "scale"}) {
 					if (const auto* field = child->info()->getField(name); field && !reference.nodes[0].find(name)) {
 						reference.nodes[0].fields.push_back({std::string(name), field->value_type, field->is_array, field->get(&*child)});
 					}
@@ -973,7 +973,7 @@ void Workspace::gizmoApplySizeDrag(float delta) {
 
 	if (auto capsule = m_focused_node.as<physics::CapsuleCollider>(); capsule.exists()) {
 		if (axis == 2) {
-			const float next = std::max(m_gizmo_drag_start_size.z + growth * 2.0f, gizmo_layout::k_min_collider_extent);
+			const float next = std::max(m_gizmo_drag_start_size.z + (growth * 2.0f), gizmo_layout::k_min_collider_extent);
 			capsule->height = std::max(next, 2.0f * capsule->radius);
 		} else {
 			const float next = std::max(m_gizmo_drag_start_size.x + growth, gizmo_layout::k_min_collider_extent);
@@ -1027,7 +1027,7 @@ void Workspace::gizmoUpdateHover() {
 			if (along < 0.0f) {
 				continue;
 			}
-			const float off_axis_squared = glm::dot(to_dot, to_dot) - along * along;
+			const float off_axis_squared = glm::dot(to_dot, to_dot) - (along * along);
 			if (off_axis_squared <= radius * radius && along < nearest) {
 				nearest = along;
 				m_gizmo_hover = dots[i].handle;

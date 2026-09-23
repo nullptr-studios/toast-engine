@@ -1034,9 +1034,14 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 				const float pool_ratio = phys.brick_pool_capacity > 0 ? static_cast<float>(phys.brick_pool_allocated) /
 				                                                            static_cast<float>(phys.brick_pool_capacity)
 				                                                      : 0.0f;
-				const ImVec4 pool_color = pool_ratio > 0.9f    ? ImVec4(1.0f, 0.3f, 0.3f, 1.0f)
-				                          : pool_ratio > 0.75f ? ImVec4(1.0f, 0.7f, 0.2f, 1.0f)
-				                                               : ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+				ImVec4 pool_color;
+				if (pool_ratio > 0.9f) {
+					pool_color = ImVec4(1.0f, 0.3f, 0.3f, 1.0f);
+				} else if (pool_ratio > 0.75f) {
+					pool_color = ImVec4(1.0f, 0.7f, 0.2f, 1.0f);
+				} else {
+					pool_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+				}
 				ImGui::TextColored(
 				    pool_color,
 				    "Brick pool %u of %u bricks (%.0f%%)",

@@ -265,7 +265,7 @@ auto VoxelPalette::parseToml(const toml::table& table) -> Parsed {
 		TOAST_WARN("AssetManager", "Voxel palette: {} entries have no material and use the default: {}", defaulted.size(), list);
 	}
 
-	return Parsed {std::move(palette), std::move(slots), std::move(defaulted)};
+	return Parsed {palette, slots, defaulted};
 }
 
 auto VoxelPalette::serialize(SaveMode /*mode*/) const -> std::vector<uint8_t> {

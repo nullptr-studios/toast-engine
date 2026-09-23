@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 namespace physics {
 
 enum class AnchorFace : uint8_t {

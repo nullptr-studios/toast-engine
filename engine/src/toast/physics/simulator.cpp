@@ -444,7 +444,7 @@ void Simulator::tick() {
 	m_profile = {};
 
 	const auto tick_start = std::chrono::steady_clock::now();
-	const auto elapsedMs = [](std::chrono::steady_clock::time_point from, std::chrono::steady_clock::time_point to) {
+	const auto elapsed_ms = [](std::chrono::steady_clock::time_point from, std::chrono::steady_clock::time_point to) {
 		return std::chrono::duration<double, std::milli>(to - from).count();
 	};
 
@@ -453,11 +453,11 @@ void Simulator::tick() {
 	syncEnabledState();
 	applyDamageCommands();
 	const auto after_damage = std::chrono::steady_clock::now();
-	m_profile.damage_apply_ms = elapsedMs(tick_start, after_damage);
+	m_profile.damage_apply_ms = elapsed_ms(tick_start, after_damage);
 
 	auto connectivity_results = runConnectivityAnalysis();
 	const auto after_connectivity = std::chrono::steady_clock::now();
-	m_profile.connectivity_ms = elapsedMs(after_damage, after_connectivity);
+	m_profile.connectivity_ms = elapsed_ms(after_damage, after_connectivity);
 
 	queuePendingFragments(connectivity_results);
 	spawnBudgetedFragments();
@@ -472,7 +472,7 @@ void Simulator::tick() {
 		m_manifolds = generateManifoldsAsync(world, candidates);
 	}
 	const auto after_narrow = std::chrono::steady_clock::now();
-	m_profile.narrow_phase_ms = elapsedMs(after_connectivity, after_narrow);
+	m_profile.narrow_phase_ms = elapsed_ms(after_connectivity, after_narrow);
 
 	updateCache(m_manifolds);
 	wakeContactGroups();
@@ -483,7 +483,7 @@ void Simulator::tick() {
 	solveIslands(islands);
 	convertImpulsesToDamage(islands);
 	updateSleeping(dt);
-	m_profile.solve_ms = elapsedMs(after_narrow, std::chrono::steady_clock::now());
+	m_profile.solve_ms = elapsed_ms(after_narrow, std::chrono::steady_clock::now());
 
 	m_profile.manifold_count = m_manifolds.size();
 	m_profile.voxel_shape_count = static_cast<size_t>(std::ranges::count_if(m_shapes, [](const ShapeSlot& s) {
@@ -503,7 +503,7 @@ void Simulator::tick() {
 	// push poses after simulation settles
 	publishTransforms();
 	publishVoxelRenderRecords();
-	m_profile.tick_ms = elapsedMs(tick_start, std::chrono::steady_clock::now());
+	m_profile.tick_ms = elapsed_ms(tick_start, std::chrono::steady_clock::now());
 	publishProfile(islands);
 	FrameMarkNamed("PhysicsStep");
 }
@@ -959,8 +959,7 @@ void Simulator::despawnSettledFragments(float dt) {
 	ZoneScopedN("physics::DespawnSettledFragments");
 
 	std::vector<BodyID> doomed;
-	for (uint32_t index = 0; index < m_shapes.size(); ++index) {
-		const ShapeSlot& slot = m_shapes[index];
+	for (const auto& slot : m_shapes) {
 		if (not slot.occupied || slot.shape.type != ShapeType::voxel) {
 			continue;
 		}
