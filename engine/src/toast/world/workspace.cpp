@@ -1806,7 +1806,7 @@ void Workspace::eventSubscriptions() {
 
 		if (field->name == "position" || field->name == "rotation" || field->name == "world_position" ||
 		    field->name == "world_rotation") {
-			if (auto node3d = target.as<Node3D>(); node3d.exists()) {
+			if (auto node3d = target.template as<Node3D>(); node3d.exists()) {
 				node3d->onEditorTransformChanged();
 			}
 		}

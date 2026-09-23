@@ -18,6 +18,7 @@
 #include <cmath>
 #include <glm/gtc/matrix_transform.hpp>
 #include <limits>
+#include <span>
 #include <toast/assets/voxel_model.hpp>
 #include <toast/thread_pool.hpp>
 #include <toast/voxel/mass_accumulator.hpp>
@@ -1581,7 +1582,7 @@ auto Simulator::generateManifoldsAsync(CollisionWorldView world, std::span<const
 	}
 
 	const size_t minimum_candidates_per_job = tunables().min_candidates_per_job;
-	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), 1ull);
+	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), size_t {1});
 	const size_t maximum_job_count = worker_count * 3;
 	const size_t job_count =
 	    active_candidates.empty()
@@ -1769,12 +1770,11 @@ void Simulator::updateCache(std::span<const Manifold> manifolds) {
 				continue;
 			}
 
-			const auto old_contact_end = old_manifold->contacts.begin() + old_manifold->contact_count;
-			const auto old_contact =
-			    std::find_if(old_manifold->contacts.begin(), old_contact_end, [&current_contact](const CachedContact& cached) {
-				    return cached.feature_a == current_contact.feature_a && cached.feature_b == current_contact.feature_b;
-			    });
-			if (old_contact != old_contact_end) {
+			const std::span<const CachedContact> old_contacts(old_manifold->contacts.data(), old_manifold->contact_count);
+			const auto old_contact = std::ranges::find_if(old_contacts, [&current_contact](const CachedContact& cached) {
+				return cached.feature_a == current_contact.feature_a && cached.feature_b == current_contact.feature_b;
+			});
+			if (old_contact != old_contacts.end()) {
 				++m_profile.reused_cached_contacts;
 				next_contact.normal_impulse = old_contact->normal_impulse;
 				next_contact.tangent_impulse = old_contact->tangent_impulse;
@@ -3149,14 +3149,11 @@ auto Simulator::findCachedContact(
 	}
 
 	const size_t contact_count = std::min<size_t>(manifold->contact_count, manifold->contacts.size());
-	const auto contact = std::find_if(
-	    manifold->contacts.begin(),
-	    manifold->contacts.begin() + contact_count,
-	    [feature_a, feature_b](const CachedContact& cached) {
-		    return cached.feature_a == feature_a && cached.feature_b == feature_b;
-	    }
-	);
-	return contact != manifold->contacts.begin() + contact_count ? &*contact : nullptr;
+	const std::span<CachedContact> contacts(manifold->contacts.data(), contact_count);
+	const auto contact = std::ranges::find_if(contacts, [feature_a, feature_b](const CachedContact& cached) {
+		return cached.feature_a == feature_a && cached.feature_b == feature_b;
+	});
+	return contact != contacts.end() ? &*contact : nullptr;
 }
 
 auto Simulator::findCachedContact(
@@ -3175,14 +3172,11 @@ auto Simulator::findCachedContact(
 	}
 
 	const size_t contact_count = std::min<size_t>(manifold->contact_count, manifold->contacts.size());
-	const auto contact = std::find_if(
-	    manifold->contacts.begin(),
-	    manifold->contacts.begin() + contact_count,
-	    [feature_a, feature_b](const CachedContact& cached) {
-		    return cached.feature_a == feature_a && cached.feature_b == feature_b;
-	    }
-	);
-	return contact != manifold->contacts.begin() + contact_count ? &*contact : nullptr;
+	const std::span<const CachedContact> contacts(manifold->contacts.data(), contact_count);
+	const auto contact = std::ranges::find_if(contacts, [feature_a, feature_b](const CachedContact& cached) {
+		return cached.feature_a == feature_a && cached.feature_b == feature_b;
+	});
+	return contact != contacts.end() ? &*contact : nullptr;
 }
 
 auto Simulator::prepareConstraints(const std::vector<Manifold>& manifolds) -> std::vector<Constraint> {
@@ -3438,13 +3432,13 @@ auto Simulator::prepareConstraint(const Manifold& manifold, const ContactPoint& 
 	float tangent_mass = 0.0f;
 
 	if (tangent_length_sq > 1.0e-10f) {
-		tangent = tangent_velocity / sqrt(tangent_length_sq);
+		tangent = tangent_velocity / std::sqrt(tangent_length_sq);
 	} else if (cached_contact) {
 		const glm::vec3 projected_tangent =
 		    cached_contact->tangent_impulse - manifold.normal * glm::dot(cached_contact->tangent_impulse, manifold.normal);
 		const float projected_length_sq = glm::dot(projected_tangent, projected_tangent);
 		if (projected_length_sq > 1.0e-10f && std::isfinite(projected_length_sq)) {
-			tangent = projected_tangent / sqrt(projected_length_sq);
+			tangent = projected_tangent / std::sqrt(projected_length_sq);
 		}
 	}
 
@@ -3545,7 +3539,7 @@ void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
 	}
 	PhaseScope worker_phase {*this, SimulationPhase::mutation, SimulationPhase::worker_execution};
 
-	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), 1ull);
+	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), size_t {1});
 
 	// Warm start is one pass over each island constraints cheap enough to just do right here
 	for (SimulationIsland& island : islands) {

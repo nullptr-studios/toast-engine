@@ -12,6 +12,7 @@
 #include "../vulkan_common.hpp"
 #include "../vulkan_pipeline.hpp"
 
+#include <cstdint>
 #include <glm/glm.hpp>
 #include <optional>
 #include <vector>

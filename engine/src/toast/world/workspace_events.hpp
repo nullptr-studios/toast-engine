@@ -5,6 +5,7 @@
  */
 
 #pragma once
+#include <cstdint>
 #include <toast/events/event.hpp>
 #include <toast/uid.hpp>
 #include <toast/world/node.hpp>
