@@ -49,7 +49,7 @@ auto createGraphicsPipelineImpl(
 	    has_fragment_stage ? spirv::resolveEntryPoint(
 	                             config.shader_spirv, spirv::ExecutionModel::fragment, config.fragment_entry, config.debug_name
 	                         )
-	                       : config.fragment_entry;
+			                   : config.fragment_entry;
 
 	const std::array shader_stages = {
 	  vk::PipelineShaderStageCreateInfo({}, vk::ShaderStageFlagBits::eVertex, *shader_module, vertex_entry.c_str()),

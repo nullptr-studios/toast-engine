@@ -27,7 +27,7 @@ void triangle(glm::vec3 a, glm::vec3 b, glm::vec3 c, glm::vec4 color) {
 	      {a, color},
         {b, color},
         {c, color}
-  }
+	}
 	);
 }
 

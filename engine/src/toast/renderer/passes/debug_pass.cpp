@@ -1083,9 +1083,9 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 				using PT = physics::NarrowPhasePairType;
 				constexpr std::array<std::pair<PT, const char*>, 4> k_voxel_pairs {
 				  {{PT::sphere_voxel, "Sphere-voxel"},
-				   {PT::box_voxel, "Box-voxel"},
-				   {PT::capsule_voxel, "Capsule-voxel"},
-				   {PT::voxel_voxel, "Voxel-voxel"}}
+					 {PT::box_voxel, "Box-voxel"},
+					 {PT::capsule_voxel, "Capsule-voxel"},
+					 {PT::voxel_voxel, "Voxel-voxel"}}
 				};
 				if (ImGui::BeginTable("##voxel_pair_candidates", 2, ImGuiTableFlags_SizingFixedFit)) {
 					for (const auto& [type, label] : k_voxel_pairs) {
@@ -1597,7 +1597,7 @@ void DebugPass::createGizmoGeometry(const renderer::VulkanCore& core) {
 	       std::pair {0,   k_red},
           std::pair {1, k_green},
           std::pair {2,  k_blue}
-  }) {
+	}) {
 		appendShaftAlongAxis(vertices, axis, k_shaft_length, k_shaft_half_size, color);
 		appendPyramidAlongAxis(vertices, axis, k_shaft_length, k_shaft_length + k_head_length, k_head_half_size, color);
 	}

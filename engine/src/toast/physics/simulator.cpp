@@ -1257,8 +1257,9 @@ void Simulator::setShapeEnabled(ShapeID shape, bool enabled) {
 		if (value->enabled != enabled) {
 			if (enabled) {
 				wakeBody(value->owner);
-			} else if (const Body* owner = instance->tryGetBody(value->owner);
-			           owner != nullptr && owner->type != BodyType::dynamic_body) {
+			} else if (
+			    const Body* owner = instance->tryGetBody(value->owner); owner != nullptr && owner->type != BodyType::dynamic_body
+			) {
 				instance->wakeBodiesTouching(shape);
 			}
 			value->enabled = enabled;
@@ -1771,8 +1772,8 @@ void Simulator::updateCache(std::span<const Manifold> manifolds) {
 
 			const std::span<const CachedContact> old_contacts(old_manifold->contacts.data(), old_manifold->contact_count);
 			const auto old_contact = std::ranges::find_if(old_contacts, [&current_contact](const CachedContact& cached) {
-				    return cached.feature_a == current_contact.feature_a && cached.feature_b == current_contact.feature_b;
-			    });
+				return cached.feature_a == current_contact.feature_a && cached.feature_b == current_contact.feature_b;
+			});
 			if (old_contact != old_contacts.end()) {
 				++m_profile.reused_cached_contacts;
 				next_contact.normal_impulse = old_contact->normal_impulse;
@@ -3150,7 +3151,7 @@ auto Simulator::findCachedContact(
 	const size_t contact_count = std::min<size_t>(manifold->contact_count, manifold->contacts.size());
 	const std::span<CachedContact> contacts(manifold->contacts.data(), contact_count);
 	const auto contact = std::ranges::find_if(contacts, [feature_a, feature_b](const CachedContact& cached) {
-		    return cached.feature_a == feature_a && cached.feature_b == feature_b;
+		return cached.feature_a == feature_a && cached.feature_b == feature_b;
 	});
 	return contact != contacts.end() ? &*contact : nullptr;
 }
@@ -3173,7 +3174,7 @@ auto Simulator::findCachedContact(
 	const size_t contact_count = std::min<size_t>(manifold->contact_count, manifold->contacts.size());
 	const std::span<const CachedContact> contacts(manifold->contacts.data(), contact_count);
 	const auto contact = std::ranges::find_if(contacts, [feature_a, feature_b](const CachedContact& cached) {
-		    return cached.feature_a == feature_a && cached.feature_b == feature_b;
+		return cached.feature_a == feature_a && cached.feature_b == feature_b;
 	});
 	return contact != contacts.end() ? &*contact : nullptr;
 }

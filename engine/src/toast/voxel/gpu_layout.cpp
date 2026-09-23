@@ -41,8 +41,8 @@ void appendWords(PatchSection& section, std::span<const uint32_t> destinations, 
 		}
 		section.runs.push_back(
 		    {.dst = destinations[first],
-		     .count = static_cast<uint32_t>(end - first),
-		     .src = static_cast<uint32_t>(section.words.size())}
+				 .count = static_cast<uint32_t>(end - first),
+				 .src = static_cast<uint32_t>(section.words.size())}
 		);
 		for (size_t i = first; i < end; ++i) {
 			section.words.push_back(source[destinations[i]]);
@@ -62,8 +62,8 @@ void appendSlots(PatchSection& section, std::span<const uint32_t> slots, uint32_
 		const size_t base = section.words.size();
 		section.runs.push_back(
 		    {.dst = slots[first] * words_per_slot,
-		     .count = static_cast<uint32_t>(end - first) * words_per_slot,
-		     .src = static_cast<uint32_t>(base)}
+				 .count = static_cast<uint32_t>(end - first) * words_per_slot,
+				 .src = static_cast<uint32_t>(base)}
 		);
 		section.words.resize(base + ((end - first) * words_per_slot));
 		for (size_t i = first; i < end; ++i) {
