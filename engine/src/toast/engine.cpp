@@ -412,16 +412,6 @@ auto Engine::shouldClose() -> bool {
 	return m->window ? m->window->shouldClose() : false;
 }
 
-void Engine::setCursorLocked(bool locked) {
-	if (m->window) {
-		m->window->setCursorLocked(locked);
-	}
-}
-
-auto Engine::isCursorLocked() -> bool {
-	return m->window && m->window->isCursorLocked();
-}
-
 auto Engine::shootVoxel(const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy, float min_radius)
     -> bool {
 	return m->physics_simulator && m->physics_simulator->shootVoxel(origin, direction, max_distance, energy, min_radius);

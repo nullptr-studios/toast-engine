@@ -5,9 +5,14 @@
 #include <toast/input/haptics_system.hpp>
 #include <toast/input/input_events.hpp>
 #include <toast/log.hpp>
+#include <toast/window/window_events.hpp>
 #include <typeinfo>
 
 namespace input {
+
+namespace {
+bool g_mouse_locked = false;
+}
 
 void PlayerController::updateInspectorMessages() {
 	static const toast::NodeMessage parent_message {
@@ -86,6 +91,12 @@ void PlayerController::init() {
 	TOAST_TRACE("Input", "PlayerController init: layout '{}', layer '{}'", active_layout, active_layer);
 }
 
+void PlayerController::end() {
+	if (m_holds_mouse_lock) {
+		setMouseLocked(false);
+	}
+}
+
 void PlayerController::setLayout(std::string_view layout) {
 	active_layout = std::string(layout);
 	rebuildEnabledActions();
@@ -98,6 +109,22 @@ void PlayerController::setLayer(std::string_view layer) {
 
 void PlayerController::playHaptic(assets::Handle<assets::Haptic> haptic) const {
 	HapticsSystem::get().play(controller_id, std::move(haptic));
+}
+
+void PlayerController::setMouseLocked(bool locked) {
+	if (locked && !participatesIn(toast::NodeOwnerParticipation::runtime_input)) {
+		return;
+	}
+	m_holds_mouse_lock = locked;
+	if (g_mouse_locked == locked) {
+		return;
+	}
+	g_mouse_locked = locked;
+	event::send<event::WindowMouseLock>(locked);
+}
+
+auto PlayerController::isMouseLocked() const -> bool {
+	return g_mouse_locked;
 }
 
 void PlayerController::rebuildEnabledActions() {

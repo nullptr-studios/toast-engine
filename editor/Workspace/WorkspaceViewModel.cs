@@ -22,7 +22,7 @@ public enum CameraMode { Free, Orbit }
 
 public enum RenderMode { Lit, ClusterHeatmap, Albedo, Normal, MetallicRoughness, Ambient, SpecularIbl, SpecularIblMip0, Reflection, ReflectionProbes, ProbeCapture, ProbeCubemap, NormalBuffer, RoughnessBuffer, SsrOnly, AmbientOcclusion, IrradianceVolumes, TracedShadowsOnly, TracedShadows, ShadowTerm, VoxelSteps, VoxelTraversal, VoxelBricks, VoxelVolumes, VoxelMaterials }
 
-public enum PlayState { Stopped, Playing, PlayingExternal }
+public enum PlayState { Stopped, Playing, Simulating, PlayingExternal }
 
 public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 	private static int s_playingCount;
@@ -39,7 +39,6 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 	[ObservableProperty] private bool m_gameCamera;
 	[ObservableProperty] private CameraMode m_cameraMode;
 	[ObservableProperty] private double m_cameraSpeed = 5.0;
-	[ObservableProperty] private bool m_playInGameCamera = true;
 	[ObservableProperty] private bool m_isPaused;
 	private ulong m_nextSaveRequest = 1;
 	private TaskCompletionSource<WorkspaceSaveCompleted>? m_pendingSave;
@@ -108,6 +107,8 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 	public ulong EffectiveHandle => PlayHandle != 0 ? PlayHandle : Handle;
 
 	public bool IsPlaying => PlayState == PlayState.Playing;
+	public bool IsSimulating => PlayState == PlayState.Simulating;
+	public bool IsPlayingInViewport => PlayState is PlayState.Playing or PlayState.Simulating;
 	public bool IsPlayingExternal => PlayState == PlayState.PlayingExternal;
 	public bool IsPlayModeActive => PlayState != PlayState.Stopped;
 	public bool CanPause => PlayState != PlayState.Stopped;
@@ -158,7 +159,6 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 		m_loadingViewportSettings = true;
 		CameraMode = settings.Mode;
 		CameraSpeed = Nearest(s_cameraSpeedSteps, settings.Speed);
-		PlayInGameCamera = settings.PlayInGameCamera;
 		m_loadingViewportSettings = false;
 		SendCameraSettings();
 		if (m_pendingRootName is { } name) {
@@ -289,10 +289,6 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 		SaveAndSendCameraSettings();
 	}
 
-	partial void OnPlayInGameCameraChanged(bool value) {
-		SaveViewportSettings();
-	}
-
 	private void SaveAndSendCameraSettings() {
 		if (m_loadingViewportSettings) return;
 		SaveViewportSettings();
@@ -303,7 +299,7 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 
 	private void SaveViewportSettings() {
 		if (m_loadingViewportSettings || ViewportSettingsKey is not { } key) return;
-		ViewportSettingsStore.Save(key, new ViewportSettings(CameraMode, CameraSpeed, PlayInGameCamera));
+		ViewportSettingsStore.Save(key, new ViewportSettings(CameraMode, CameraSpeed));
 	}
 
 	private void SendCameraSettings() {
@@ -359,10 +355,13 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 
 	partial void OnPlayStateChanged(PlayState value) {
 		OnPropertyChanged(nameof(IsPlaying));
+		OnPropertyChanged(nameof(IsSimulating));
+		OnPropertyChanged(nameof(IsPlayingInViewport));
 		OnPropertyChanged(nameof(IsPlayingExternal));
 		OnPropertyChanged(nameof(IsPlayModeActive));
 		OnPropertyChanged(nameof(CanPause));
 		TogglePlayCommand.NotifyCanExecuteChanged();
+		ToggleSimulateCommand.NotifyCanExecuteChanged();
 		TogglePlayExternalCommand.NotifyCanExecuteChanged();
 
 		var playing = value != PlayState.Stopped;
@@ -376,30 +375,45 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 	partial void OnIsPausedChanged(bool value) {
 		if (PlayHandle != 0) Events.Send(new WorkspacePause { Handle = PlayHandle, Paused = value });
 		TogglePlayCommand.NotifyCanExecuteChanged();
+		ToggleSimulateCommand.NotifyCanExecuteChanged();
 		TogglePlayExternalCommand.NotifyCanExecuteChanged();
 	}
 
+	private bool CanToggle(PlayState mode) {
+		return !IsPaused && (PlayState == PlayState.Stopped || PlayState == mode);
+	}
+
 	private bool CanTogglePlay() {
-		return !IsPaused && PlayState != PlayState.PlayingExternal;
+		return CanToggle(PlayState.Playing);
+	}
+
+	private bool CanToggleSimulate() {
+		return CanToggle(PlayState.Simulating);
 	}
 
 	private bool CanTogglePlayExternal() {
-		return !IsPaused && PlayState != PlayState.Playing;
+		return CanToggle(PlayState.PlayingExternal);
 	}
 
 	[RelayCommand(CanExecute = nameof(CanTogglePlay))]
 	private async Task TogglePlay() {
-		if (PlayState == PlayState.Stopped) await StartPlay(false);
+		if (PlayState == PlayState.Stopped) await StartPlay(PlayState.Playing);
+		else StopPlay();
+	}
+
+	[RelayCommand(CanExecute = nameof(CanToggleSimulate))]
+	private async Task ToggleSimulate() {
+		if (PlayState == PlayState.Stopped) await StartPlay(PlayState.Simulating);
 		else StopPlay();
 	}
 
 	[RelayCommand(CanExecute = nameof(CanTogglePlayExternal))]
 	private async Task TogglePlayExternal() {
-		if (PlayState == PlayState.Stopped) await StartPlay(true);
+		if (PlayState == PlayState.Stopped) await StartPlay(PlayState.PlayingExternal);
 		else StopPlay();
 	}
 
-	private async Task StartPlay(bool external) {
+	private async Task StartPlay(PlayState mode) {
 		if (Engine is null) return;
 
 		// keep an autosave before going into game mode
@@ -419,10 +433,10 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 
 		// hierarchy and inspector follow the active workspace
 		Events.Send(new SetActiveWorkspace { Handle = PlayHandle });
-		SetGameCamera(PlayInGameCamera);
-		PlayState = external ? PlayState.PlayingExternal : PlayState.Playing;
+		SetGameCamera(mode != PlayState.Simulating);
+		PlayState = mode;
 
-		if (external) {
+		if (mode == PlayState.PlayingExternal) {
 			m_playWindow = new PlayWindow { DataContext = this };
 			m_playWindow.Closed += OnPlayWindowClosed;
 			m_playWindow.Show();

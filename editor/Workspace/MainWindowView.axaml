@@ -31,6 +31,8 @@
 		            Command="{Binding SaveAllNodesCommand}" />
 		<KeyBinding Gesture="F5"
 		            Command="{Binding PlayCommand}" />
+		<KeyBinding Gesture="Shift+F5"
+		            Command="{Binding SimulateCommand}" />
 		<KeyBinding Gesture="F6"
 		            Command="{Binding PlayInWindowCommand}" />
 		<KeyBinding Gesture="F7"
@@ -226,6 +228,9 @@
 					<MenuItem Header="_Play"
 					          InputGesture="F5"
 					          Command="{Binding PlayCommand}" />
+					<MenuItem Header="_Simulate"
+					          InputGesture="Shift+F5"
+					          Command="{Binding SimulateCommand}" />
 					<MenuItem Header="Play in _window"
 					          InputGesture="F6"
 					          Command="{Binding PlayInWindowCommand}" />

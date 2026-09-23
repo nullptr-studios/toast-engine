@@ -53,6 +53,15 @@ public:
 	[[Reflect]]
 	void playHaptic(assets::Handle<assets::Haptic> haptic) const;
 
+	/**
+	 * @brief Locks the mouse to the game
+	 */
+	[[Reflect]]
+	void setMouseLocked(bool locked);
+
+	[[Reflect]]
+	auto isMouseLocked() const -> bool;
+
 	[[Reflect, ReadOnly]]
 	std::string active_layout;
 
@@ -81,6 +90,7 @@ public:
 private:
 	void updateInspectorMessages() override;
 	void init();
+	void end();
 
 	void rebuildEnabledActions();
 
@@ -91,6 +101,7 @@ private:
 
 	std::unordered_set<uint64_t> m_enabled_actions;
 	toast::Box<toast::Node> m_parent;
+	bool m_holds_mouse_lock = false;
 };
 
 }

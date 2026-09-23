@@ -33,11 +33,9 @@ public:
 	void pollEvents() override;
 	void swapFramebuffers() override;
 
-	void setCursorLocked(bool locked) override;
-	[[nodiscard]]
-	auto isCursorLocked() const -> bool override;
-
 private:
+	void applyMouseLock(bool locked);
+
 	struct {
 		// do not confuse SDL_Window with SDLWindow, they are not the same
 		std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)> sdl_window = {nullptr, SDL_DestroyWindow};

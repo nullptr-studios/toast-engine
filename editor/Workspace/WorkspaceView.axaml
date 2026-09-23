@@ -1,7 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:editor.Workspace"
-             xmlns:elements="using:editor.Components.Elements"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
@@ -629,15 +628,6 @@
 										            StrokeWidth="2.5" />
 									</Button>
 								</Grid>
-								<Grid ColumnDefinitions="*,Auto"
-								      ColumnSpacing="8"
-								      ToolTip.Tip="Pressing play switches to the game camera and hands it the input">
-									<TextBlock Grid.Column="0"
-									           Text="Play in Game cam"
-									           VerticalAlignment="Center" />
-									<elements:BoolBox Grid.Column="1"
-									                  Value="{Binding PlayInGameCamera, Mode=TwoWay}" />
-								</Grid>
 							</StackPanel>
 						</Flyout>
 					</Button.Flyout>
@@ -651,7 +641,7 @@
 			            Orientation="Horizontal">
 				<ToggleButton Classes="tool red"
 				              CornerRadius="6, 0, 0, 6"
-				              ToolTip.Tip="Play/Stop (F5)"
+				              ToolTip.Tip="Play (F5)"
 				              Command="{Binding TogglePlayCommand}"
 				              IsChecked="{Binding IsPlaying, Mode=OneWay}">
 					<Panel>
@@ -665,9 +655,25 @@
 						            IsVisible="{Binding IsPlaying}" />
 					</Panel>
 				</ToggleButton>
+				<ToggleButton Classes="tool red"
+				              CornerRadius="0"
+				              ToolTip.Tip="Simulate (Shift+F5)"
+				              Command="{Binding ToggleSimulateCommand}"
+				              IsChecked="{Binding IsSimulating, Mode=OneWay}">
+					<Panel>
+						<LucideIcon Kind="BugPlay"
+						            Size="18"
+						            StrokeWidth="2.5"
+						            IsVisible="{Binding !IsSimulating}" />
+						<LucideIcon Kind="Square"
+						            Size="18"
+						            StrokeWidth="2.5"
+						            IsVisible="{Binding IsSimulating}" />
+					</Panel>
+				</ToggleButton>
 				<ToggleButton Classes="tool orange"
 				              CornerRadius="0"
-				              ToolTip.Tip="Pause simulation"
+				              ToolTip.Tip="Pause"
 				              IsEnabled="{Binding CanPause}"
 				              IsChecked="{Binding IsPaused}">
 					<LucideIcon Kind="Pause"
@@ -694,7 +700,7 @@
 		</Grid>
 		<Panel x:Name="ViewportPanel">
 			<vm:ViewportControl x:Name="Viewport"
-			                    PlayMode="{Binding IsPlaying}"
+			                    PlayMode="{Binding IsPlayingInViewport}"
 			                    IsVisible="{Binding !IsPlayingExternal}" />
 			<!-- while playing on the external window the tab viewport is blacked out -->
 			<Border CornerRadius="8"

@@ -118,6 +118,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			SyncActiveWorkspace();
 			if (m_dockFactory.Signals?.IsActive == true) m_dockFactory.Signals.Refresh();
 			PlayCommand.NotifyCanExecuteChanged();
+			SimulateCommand.NotifyCanExecuteChanged();
 			PlayInWindowCommand.NotifyCanExecuteChanged();
 		};
 
@@ -658,6 +659,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		return m_dockFactory.ActiveWorkspace is { } ws && ws.TogglePlayCommand.CanExecute(null);
 	}
 
+	private bool CanSimulate() {
+		return m_dockFactory.ActiveWorkspace is { } ws && ws.ToggleSimulateCommand.CanExecute(null);
+	}
+
 	private bool CanPlayInWindow() {
 		return m_dockFactory.ActiveWorkspace is { } ws && ws.TogglePlayExternalCommand.CanExecute(null);
 	}
@@ -666,6 +671,12 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 	private void Play() {
 		if (m_dockFactory.ActiveWorkspace is { } ws)
 			ws.TogglePlayCommand.Execute(null);
+	}
+
+	[RelayCommand(CanExecute = nameof(CanSimulate))]
+	private void Simulate() {
+		if (m_dockFactory.ActiveWorkspace is { } ws)
+			ws.ToggleSimulateCommand.Execute(null);
 	}
 
 	[RelayCommand(CanExecute = nameof(CanPlayInWindow))]

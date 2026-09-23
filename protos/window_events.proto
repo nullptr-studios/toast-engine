@@ -46,3 +46,7 @@ message WindowResize {
 message WindowDisplayScale {
   float scale = 1;
 }
+
+message WindowMouseLock {
+  bool locked = 1;
+}

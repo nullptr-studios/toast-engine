@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
@@ -43,8 +44,16 @@ public partial class ViewportControl : UserControl {
 	private int m_trackpadX = int.MinValue, m_trackpadY, m_trackpadW, m_trackpadH;
 
 	private WriteableBitmap? m_bitmap;
-	private bool m_captured;
 	private ToastEngine? m_engine;
+	private Listener? m_listener;
+
+	private bool m_captured;
+	private bool m_gameInput;
+	private bool m_mouseLockRequested;
+	private Point m_lockPoint;
+	private Point m_lockVirtual;
+	private Point m_lastPointerPoint;
+
 	private CancellationTokenSource? m_hintCts;
 	private Transitions? m_hintTransitions;
 	private ulong m_lastFrameId;
@@ -91,20 +100,36 @@ public partial class ViewportControl : UserControl {
 
 	public bool IsEditorFlying => m_editorFlyActive;
 	private bool GameOwnsInput => PlayMode && !CanControlEditorCamera; 
-	private bool ShouldForward => GameOwnsInput ? m_captured : IsFocused;
-
-	private bool ShouldForwardPointer => !GameOwnsInput || m_captured;
-
+	private bool ShouldForward => GameOwnsInput ? m_gameInput : IsFocused;
+	private bool ShouldForwardPointer => !GameOwnsInput || m_gameInput;
+	private bool MouseLocked => m_captured && !m_editorFlyActive;
+	
 	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change) {
 		base.OnPropertyChanged(change);
 		if (change.Property != PlayModeProperty) return;
 
-		if (change.GetNewValue<bool>()) { } /*BeginCapture();*/ else {
-			ReleaseCapture();
+		if (!change.GetNewValue<bool>()) {
+			m_gameInput = false;
+			m_mouseLockRequested = false;
+			UpdateCapture();
 		}
 	}
 
-	private void BeginCapture(bool showHint = true) {
+	private void OnMouseLock(WindowMouseLock e) {
+		if (!PlayMode) return;
+		m_mouseLockRequested = e.Locked;
+		if (e.Locked && GameOwnsInput && IsEffectivelyVisible) m_gameInput = true;
+		UpdateCapture();
+	}
+
+	private void UpdateCapture() {
+		var capture = m_editorFlyActive || (GameOwnsInput && m_gameInput && m_mouseLockRequested);
+		if (capture == m_captured) return;
+		if (capture) BeginCapture();
+		else ReleaseCapture();
+	}
+
+	private void BeginCapture() {
 		Focus();
 		// hide the cursor over the whole window
 		Cursor = new Cursor(StandardCursorType.None);
@@ -114,9 +139,27 @@ public partial class ViewportControl : UserControl {
 		// can't steal clicks or focus
 		m_pointer?.Capture(Surface);
 		ForceHiddenCursor();
-		// the  hint only applies to play-mode capture
-		if (showHint) _ = ShowFocusHintAsync();
+		if (m_editorFlyActive) return;
+
+		m_lockPoint = m_lastPointerPoint;
+		m_lockVirtual = m_lastPointerPoint * RenderScaling();
+		RecenterLockedPointer();
+		_ = ShowFocusHintAsync();
 	}
+
+	private void RecenterLockedPointer() {
+		if (!OperatingSystem.IsWindows()) return;
+		var center = new Point(Bounds.Width / 2, Bounds.Height / 2);
+		if (Math.Abs(m_lockPoint.X - center.X) < Bounds.Width / 4 &&
+		    Math.Abs(m_lockPoint.Y - center.Y) < Bounds.Height / 4) return;
+
+		var screen = this.PointToScreen(center);
+		if (SetCursorPos(screen.X, screen.Y)) m_lockPoint = center;
+	}
+
+	[LibraryImport("user32.dll", EntryPoint = "SetCursorPos")]
+	[return: MarshalAs(UnmanagedType.Bool)]
+	private static partial bool SetCursorPos(int x, int y);
 
 	private void ReleaseCapture() {
 		m_captured = false;
@@ -167,6 +210,9 @@ public partial class ViewportControl : UserControl {
 	private void OnAttached(object? sender, VisualTreeAttachmentEventArgs e) {
 		m_engine ??= (DataContext as WorkspaceViewModel)?.Engine;
 
+		m_listener ??= new Listener();
+		m_listener.SubscribeOnUiThread<WindowMouseLock>(OnMouseLock);
+
 		// capture auto-clears on every mouse-up and events outside our bounds never reach us
 		m_topLevel = TopLevel.GetTopLevel(this);
 		m_topLevel?.AddHandler(PointerMovedEvent, OnTopLevelPointerMoved, RoutingStrategies.Tunnel, true);
@@ -199,6 +245,10 @@ public partial class ViewportControl : UserControl {
 	private void OnDetached(object? sender, VisualTreeAttachmentEventArgs e) {
 		if (m_editorFlyActive) EndEditorFly();
 		ReleaseFlyKeys();
+		m_gameInput = false;
+		UpdateCapture();
+		m_listener?.Dispose();
+		m_listener = null;
 
 		m_topLevel?.RemoveHandler(PointerMovedEvent, OnTopLevelPointerMoved);
 		if (m_trackpadHandle != 0) {
@@ -366,10 +416,11 @@ public partial class ViewportControl : UserControl {
 	}
 
 	private void OnLostFocus(object? sender, RoutedEventArgs e) {
-		if (PlayMode && m_captured)
+		if (MouseLocked)
 			Dispatcher.UIThread.Post(() => {
-				if (PlayMode && m_captured) Focus();
+				if (MouseLocked) Focus();
 			});
+		else if (GameOwnsInput) m_gameInput = false;
 
 		if (m_editorFlyActive) EndEditorFly();
 		ReleaseFlyKeys();
@@ -378,7 +429,7 @@ public partial class ViewportControl : UserControl {
 	// RMB released, focus lost, or the control detached mid-drag
 	private void EndEditorFly() {
 		m_editorFlyActive = false;
-		ReleaseCapture();
+		UpdateCapture();
 		if (m_engine is not null) Events.Send(new EditorCameraFlyMode { Active = false });
 
 		if (!m_flyUp && !m_flyDown) return;
@@ -446,6 +497,18 @@ public partial class ViewportControl : UserControl {
 			return;
 		}
 
+		if (MouseLocked) {
+			var delta = point - m_lockPoint;
+			m_lockPoint = point;
+			if (delta == default) return; // the recenter warp landing
+			m_lockVirtual += delta * scale;
+			if (m_engine is not null)
+				Events.Send(new WindowMousePosition { X = (float)m_lockVirtual.X, Y = (float)m_lockVirtual.Y });
+			RecenterLockedPointer();
+			return;
+		}
+
+		m_lastPointerPoint = point;
 		if (!ShouldForwardPointer || m_engine is null) return;
 		SendMousePosition(point);
 	}
@@ -467,20 +530,21 @@ public partial class ViewportControl : UserControl {
 		if (CanControlEditorCamera && button == 3) {
 			m_editorFlyActive = true;
 			m_lastFlyPoint = e.GetPosition(this);
-			BeginCapture(showHint: false);
+			UpdateCapture();
 			TrackPointer(e.Pointer);
 			if (m_engine is not null) Events.Send(new EditorCameraFlyMode { Active = true });
 			return;
 		}
 
-		// clicking the viewport during play recaptures (and re-hides) the mouse
-		if (GameOwnsInput && !m_captured) BeginCapture();
-		else Focus();
+		if (GameOwnsInput) m_gameInput = true;
+		if (!MouseLocked) m_lastPointerPoint = e.GetPosition(this);
+		Focus();
+		UpdateCapture();
 
 		TrackPointer(e.Pointer);
 		if (m_engine is null) return;
 
-		if (ShouldForwardPointer) SendMousePosition(e.GetPosition(this));
+		if (ShouldForwardPointer && !MouseLocked) SendMousePosition(e.GetPosition(this));
 		if (button != 0)
 			Events.Send(new WindowMouseButton {
 				Button = button,
@@ -569,7 +633,8 @@ public partial class ViewportControl : UserControl {
 
 		// backtick frees the mouse during play; never forwarded to the game
 		if (PlayMode && e.Key == Key.OemTilde) {
-			ReleaseCapture();
+			m_gameInput = false;
+			UpdateCapture();
 			e.Handled = true;
 			return;
 		}

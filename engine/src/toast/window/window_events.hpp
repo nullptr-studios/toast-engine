@@ -94,6 +94,12 @@ struct WindowDisplayScale : Event<WindowDisplayScale> {
 	explicit WindowDisplayScale(float scale) : scale(scale) { }
 };
 
+struct WindowMouseLock : Event<WindowMouseLock> {
+	bool locked;
+
+	explicit WindowMouseLock(bool locked) : locked(locked) { }
+};
+
 /// @brief Event sent when the window gains or loses input focus
 struct WindowFocus : Event<WindowFocus> {
 	bool focused;
