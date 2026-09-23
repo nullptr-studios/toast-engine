@@ -39,17 +39,17 @@ protected:
 	[[Reflect]]
 	assets::Handle<assets::PhysicsMaterial> material;
 
-	[[Reflect, Name("Lock X"), Group("Position Locks"), ReadOnly]]
+	[[Reflect, Name("Lock X"), Group("Position Locks")]]
 	bool lock_pos_x = false;
-	[[Reflect, Name("Lock Y"), Group("Position Locks"), ReadOnly]]
+	[[Reflect, Name("Lock Y"), Group("Position Locks")]]
 	bool lock_pos_y = false;
-	[[Reflect, Name("Lock Z"), Group("Position Locks"), ReadOnly]]
+	[[Reflect, Name("Lock Z"), Group("Position Locks")]]
 	bool lock_pos_z = false;
-	[[Reflect, Name("Lock X"), Group("Rotation Locks"), ReadOnly]]
+	[[Reflect, Name("Lock X"), Group("Rotation Locks")]]
 	bool lock_rot_x = false;
-	[[Reflect, Name("Lock Y"), Group("Rotation Locks"), ReadOnly]]
+	[[Reflect, Name("Lock Y"), Group("Rotation Locks")]]
 	bool lock_rot_y = false;
-	[[Reflect, Name("Lock Z"), Group("Rotation Locks"), ReadOnly]]
+	[[Reflect, Name("Lock Z"), Group("Rotation Locks")]]
 	bool lock_rot_z = false;
 
 private:
@@ -73,6 +73,8 @@ private:
 	void assignBody(BodyID body) noexcept { m_body = body; }
 
 	void applyPhysicsTransform(const glm::vec3& position, const glm::quat& rotation);
+
+	void onEditorTransformChanged() override;
 
 	BodyType m_body_type;
 	BodyID m_body;

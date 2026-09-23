@@ -1,6 +1,6 @@
 // Twin of toast/voxel/ray_march.cpp with layout from toast/voxel/gpu_layout.hpp so change them together
 
-/// Mirrors toast::voxel::gpu::VolumeRecord
+/// Mirrors voxel::gpu::VolumeRecord
 struct VolumeRecord
 {
     uint brickDimsX;
@@ -50,8 +50,25 @@ static const uint kMaxMarchSteps = 1024;
 static const float kMarchTieEpsilon = 1e-6;    // Matches k_march_tie_epsilon
 static const float kFloatMax = 3.402823e38;
 
+// Counter clockwise from outside
+static const float3 kBoxCorners[8] = {
+    float3(0.0, 0.0, 0.0), float3(1.0, 0.0, 0.0), float3(1.0, 1.0, 0.0), float3(0.0, 1.0, 0.0),
+    float3(0.0, 0.0, 1.0), float3(1.0, 0.0, 1.0), float3(1.0, 1.0, 1.0), float3(0.0, 1.0, 1.0),
+};
+
+static const uint kBoxIndices[36] = {
+    0, 2, 1, 0, 3, 2,    // -Z
+    4, 5, 6, 4, 6, 7,    // +Z
+    0, 1, 5, 0, 5, 4,    // -Y
+    3, 7, 6, 3, 6, 2,    // +Y
+    0, 4, 7, 0, 7, 3,    // -X
+    1, 2, 6, 1, 6, 5,    // +X
+};
+
 static const uint kTagEmpty = 0;
 static const uint kTagUniform = 1;
+static const uint kTagShared = 2;
+static const uint kTagOwned = 3;
 
 struct RayHit
 {
@@ -65,6 +82,10 @@ struct RayHit
 
     uint material;
     uint steps;
+
+    /// Steps that skipped a whole coarse cell or brick so the rest are single voxels
+    uint coarseSteps;
+    uint brickSteps;
 };
 
 uint gridEntry(VolumeRecord record, uint3 brick)
@@ -145,6 +166,8 @@ RayHit marchRay(uint volume, float3 origin, float3 direction, float tMin, float 
     result.axis = -1;
     result.material = 0;
     result.steps = 0;
+    result.coarseSteps = 0;
+    result.brickSteps = 0;
 
     const VolumeRecord record = gVolumeRecords[volume];
     const uint3 brickDims = uint3(record.brickDimsX, record.brickDimsY, record.brickDimsZ);
@@ -235,6 +258,7 @@ RayHit marchRay(uint volume, float3 origin, float3 direction, float tMin, float 
         const int3 coarse = voxel / kCoarseVoxels;
         if (!coarseSolid(record, coarse))
         {
+            ++result.coarseSteps;
             leaveCell(origin, inverse, stepSign, coarse * kCoarseVoxels, kCoarseVoxels, t, axis, crossed);
             continue;
         }
@@ -245,6 +269,7 @@ RayHit marchRay(uint volume, float3 origin, float3 direction, float tMin, float 
 
         if (tag == kTagEmpty)
         {
+            ++result.brickSteps;
             leaveCell(origin, inverse, stepSign, brick * int(kBrickDim), int(kBrickDim), t, axis, crossed);
             continue;
         }
@@ -283,7 +308,14 @@ struct PaletteSample
     float roughness;
     float metallic;
 
+    float reflectivity;
+
     float emissive;
+
+    float alpha;
+
+    /// Physical material id where 0 also covers entries authored without one
+    uint material;
 };
 
 float3 srgbToLinear(float3 value)
@@ -297,11 +329,15 @@ PaletteSample samplePalette(VolumeRecord record, uint index)
     const uint base = (record.paletteOffset + index) * 4;
     const uint word0 = gPalettes[base];
     const uint word1 = gPalettes[base + 1];
+    const uint word2 = gPalettes[base + 2];
 
     PaletteSample sample;
     sample.albedo = srgbToLinear(float3(word0 & 0xFFu, (word0 >> 8) & 0xFFu, (word0 >> 16) & 0xFFu) / 255.0);
     sample.roughness = float((word0 >> 24) & 0xFFu) / 255.0;
     sample.metallic = float(word1 & 0xFFu) / 255.0;
+    sample.reflectivity = float((word1 >> 8) & 0xFFu) / 255.0;
     sample.emissive = float((word1 >> 16) & 0xFFu) / 255.0 * record.maxEmissive;
+    sample.material = word1 >> 24;
+    sample.alpha = float((word2 >> 16) & 0xFFu) / 255.0;
     return sample;
 }

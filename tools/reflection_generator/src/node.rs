@@ -194,6 +194,15 @@ pub fn build_template_context(node: &NodeInfo) -> json_t {
         })
         .collect();
 
+    if node.class.methods.iter().any(|method| {
+        method
+            .parameters
+            .iter()
+            .any(|parameter| parameter.type_name.contains("Handle<"))
+    }) {
+        has_asset_handle = true;
+    }
+
     // --- 6. Final Payload Assembly ---
     json!({
         "name":                  node.class.name,

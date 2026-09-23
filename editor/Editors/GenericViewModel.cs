@@ -656,6 +656,15 @@ public partial class GenericViewModel : Tool, IAutosavable {
 		if (m_dynamicSchema && Definition?.Type == "material_instance") return SerializeInstanceDelta();
 
 		var table = new TomlTable();
+		if (Definition is ProjectSettingsAsset) {
+			var realPath = ProjectContext.Resolve(CurrentPath);
+			if (File.Exists(realPath))
+				try {
+					table = TomlSerializer.Deserialize<TomlTable>(File.ReadAllText(realPath)) ?? [];
+				} catch {
+                    // ...
+				}
+		}
 
 		// Preserve schema UID reference
 		if (!SchemaLocked && !string.IsNullOrEmpty(SchemaUid))

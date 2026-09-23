@@ -11,7 +11,7 @@
 #include <glm/glm.hpp>
 #include <toast/export.hpp>
 
-namespace toast::voxel {
+namespace voxel {
 
 inline constexpr uint32_t k_max_march_steps = 1024;
 
@@ -32,6 +32,10 @@ struct RayHit {
 	uint8_t material = k_empty_palette_index;
 
 	uint32_t steps = 0;
+
+	/// Steps that skipped a whole coarse cell or brick so the rest are single voxels
+	uint32_t coarse_steps = 0;
+	uint32_t brick_steps = 0;
 };
 
 /// @brief CPU twin of voxel_dda.slang marchRay so change both together

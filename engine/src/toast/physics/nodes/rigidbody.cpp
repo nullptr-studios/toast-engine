@@ -83,7 +83,7 @@ void Rigidbody::handleContactBegin(const BroadPhasePair& pair) {
 		return;
 	}
 
-	const toast::Box<toast::Node> other_node = Simulator::rigidbodyFor(other_body);
+	const toast::Box<toast::Node> other_node = Simulator::nodeFor(other_body);
 	m_active_contacts.emplace_back(ActiveContact {.other_body = other_body, .other_node = other_node, .shape_pair_count = 1});
 	contact_begin.fire(other_node);
 }
@@ -127,6 +127,8 @@ auto Rigidbody::descriptor() const -> BodyDescriptor {
 	result.type = m_body_type;
 	result.position = world_position;
 	result.rotation = world_rotation;
+	result.lock_position = {lock_pos_x, lock_pos_y, lock_pos_z};
+	result.lock_rotation = {lock_rot_x, lock_rot_y, lock_rot_z};
 	configureBodyDescriptor(result);
 	return result;
 }
@@ -135,6 +137,11 @@ void Rigidbody::applyPhysicsTransform(const glm::vec3& position, const glm::quat
 	world_position = position;
 	world_rotation = rotation;
 	syncTransform();
+}
+
+void Rigidbody::onEditorTransformChanged() {
+	syncTransform();
+	Simulator::setBodyTransform(m_body, world_position, world_rotation);
 }
 
 }

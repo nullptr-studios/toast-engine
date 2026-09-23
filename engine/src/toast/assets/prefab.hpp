@@ -53,6 +53,11 @@ struct TOAST_API NodeFileBinaryHeader {
 
 class TOAST_API Prefab final : public Asset, public ISaveable {
 public:
+	enum class Purpose {
+		asset_definition,
+		instance_copy,
+		editor_snapshot
+	};
 	/**
 	 * @brief Parses a prefab from a text (.tnode) stream
 	 * @param file Open input stream positioned at the start of the file
@@ -73,7 +78,7 @@ public:
 	 * @param self_uid UID of this prefab asset on disk; stored in m_self_uid to detect self-referencing loops
 	 *                 during instantiation
 	 */
-	explicit Prefab(const toast::Node& node, toast::UID self_uid = toast::UID(0));
+	explicit Prefab(const toast::Node& node, toast::UID self_uid = toast::UID(0), Purpose purpose = Purpose::asset_definition);
 
 	Prefab() = default;
 	Prefab(const Prefab& other);
@@ -283,6 +288,7 @@ private:
 	auto flattenedRootFields(const Handle<Prefab>& source) const -> std::optional<BasicNode>;
 
 	toast::UID m_self_uid;    ///< if this prefab embeds itself, this UID breaks the recursion during instantiation
+	Purpose m_purpose = Purpose::asset_definition;
 	std::unordered_set<uint64_t>
 	    m_allowed_uids;    ///< populated during serialization; ensures child-prefab UIDs don't collide with the parent's UID space
 };

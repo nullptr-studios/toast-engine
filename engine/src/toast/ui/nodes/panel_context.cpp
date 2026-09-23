@@ -62,8 +62,10 @@ void PanelContext::onReflectedFieldChanged(std::string_view field_name) {
 		for (const auto& font : m_fonts) {
 			ui::UISystem::get().loadFontFace(font);
 		}
-	} else if (field_name == "m_styles" || field_name == "m_color_schemes" || field_name == "m_localizations" ||
-	           field_name == "m_image_localizations") {
+	} else if (
+	    field_name == "m_styles" || field_name == "m_color_schemes" || field_name == "m_localizations" ||
+	    field_name == "m_image_localizations"
+	) {
 		unregisterAssets();
 		registerAssets();
 	}

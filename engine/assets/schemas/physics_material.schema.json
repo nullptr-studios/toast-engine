@@ -8,7 +8,7 @@
     "restitution": {
       "type": "number",
       "x-toast-type" : "float",
-      "default" : 0.5,
+      "default" : 0.1,
       "minimum" : 0,
       "maximum" : 1
     },
@@ -20,7 +20,7 @@
     "dynamic_friction": {
       "type": "number",
       "x-toast-type" : "float",
-      "default" : 0.4
+      "default" : 0.5
     }
   }
 }

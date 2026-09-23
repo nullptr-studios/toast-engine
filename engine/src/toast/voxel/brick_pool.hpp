@@ -14,7 +14,7 @@
 #include <toast/export.hpp>
 #include <vector>
 
-namespace toast::voxel {
+namespace voxel {
 
 inline constexpr size_t k_brick_material_bytes = static_cast<size_t>(k_brick_voxel_count);
 

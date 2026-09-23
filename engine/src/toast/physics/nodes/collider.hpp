@@ -28,6 +28,15 @@ public:
 	[[Reflect]]
 	bool debug_fill = true;
 
+	[[Reflect, Name("Show AABB"), Group("AABB")]]
+	bool show_aabb = false;
+
+	[[Reflect, Color, Name("AABB Color"), Group("AABB")]]
+	glm::vec4 aabb_color = glm::vec4(1.0f, 0.75f, 0.15f, 0.6f);
+
+	[[Reflect, Name("Fill Shape"), Group("AABB")]]
+	bool aabb_fill = false;
+
 private:
 	void updateInspectorMessages() override;
 	void init();

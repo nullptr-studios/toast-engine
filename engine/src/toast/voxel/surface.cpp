@@ -1,10 +1,12 @@
 #include "surface.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <tracy/Tracy.hpp>
+#include <tuple>
 #include <utility>
 
-namespace toast::voxel {
+namespace voxel {
 
 namespace {
 
@@ -28,7 +30,7 @@ auto VolumeSurface::slotOf(glm::ivec3 brick) const noexcept -> uint32_t {
 }
 
 void VolumeSurface::rebuild(const Volume& volume) {
-	ZoneScoped;
+	ZoneScopedN("voxel::RebuildSurface");
 	m_brick_dims = volume.brickDims();
 	m_bricks.clear();
 
@@ -54,16 +56,16 @@ void VolumeSurface::rebuildBrick(const Volume& volume, glm::ivec3 brick) {
 		return;
 	}
 
-	std::vector<SurfaceVoxel> list = buildBrickSurface(*occupancy, volume.neighbourhoodOf(brick));
+	std::vector<SurfaceVoxel>& list = m_bricks[slot];
+	list.clear();
+	buildBrickSurfaceInto(*occupancy, volume.neighbourhoodOf(brick), list);
 	if (list.empty()) {
 		m_bricks.erase(slot);
-	} else {
-		m_bricks[slot] = std::move(list);
 	}
 }
 
 void VolumeSurface::repairAround(const Volume& volume, glm::ivec3 voxel) {
-	ZoneScoped;
+	ZoneScopedN("voxel::RepairAround");
 	if (!volume.containsVoxel(voxel)) {
 		return;
 	}
@@ -85,12 +87,36 @@ void VolumeSurface::repairAround(const Volume& volume, glm::ivec3 voxel) {
 }
 
 void VolumeSurface::repairBrickRegion(const Volume& volume, glm::ivec3 brick) {
+	ZoneScopedN("voxel::RepairBrickRegion");
 	rebuildBrick(volume, brick);
 	for (int32_t axis = 0; axis < 3; ++axis) {
 		glm::ivec3 step {0};
 		step[axis] = 1;
 		rebuildBrick(volume, brick - step);
 		rebuildBrick(volume, brick + step);
+	}
+}
+
+void VolumeSurface::repairBricks(const Volume& volume, std::span<const glm::ivec3> dirty) {
+	ZoneScopedN("voxel::RepairBricks");
+
+	std::vector<glm::ivec3> unique_bricks;
+	unique_bricks.reserve(dirty.size() * 7);
+	for (const glm::ivec3& brick : dirty) {
+		unique_bricks.push_back(brick);
+		for (int32_t axis = 0; axis < 3; ++axis) {
+			glm::ivec3 step {0};
+			step[axis] = 1;
+			unique_bricks.push_back(brick - step);
+			unique_bricks.push_back(brick + step);
+		}
+	}
+	std::ranges::sort(unique_bricks, {}, [](const glm::ivec3& b) { return std::tuple(b.x, b.y, b.z); });
+	unique_bricks.erase(std::unique(unique_bricks.begin(), unique_bricks.end()), unique_bricks.end());
+
+	ZoneValue(static_cast<uint64_t>(unique_bricks.size()));
+	for (const glm::ivec3& brick : unique_bricks) {
+		rebuildBrick(volume, brick);
 	}
 }
 

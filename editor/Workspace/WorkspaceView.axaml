@@ -469,6 +469,27 @@
 							          Command="{Binding SetRenderModeCommand}"
 							          CommandParameter="ShadowTerm"
 							          ToolTip.Tip="The shadow factor every light resolved to, strongest occlusion wins - white lit, black fully shadowed. Toggle 'Traced shadows (all lights)' in the Toast Debug panel to swap a ray-traced reference under the same camera; wherever the two disagree is the shadow map's error" />
+							<Separator />
+							<MenuItem Header="Voxel DDA Steps"
+							          Command="{Binding SetRenderModeCommand}"
+							          CommandParameter="VoxelSteps"
+							          ToolTip.Tip="March cost per pixel in power-of-two bands, blue 1-3 steps up to magenta 256+, white where a ray hit the step cap. Hatched pixels are box pixels whose ray missed but still marched. Meshes go grey; the legend and the voxel under the cursor show bottom left" />
+							<MenuItem Header="Voxel Traversal Levels"
+							          Command="{Binding SetRenderModeCommand}"
+							          CommandParameter="VoxelTraversal"
+							          ToolTip.Tip="Where each ray spent its steps - blue skipping empty 32-voxel coarse cells, green skipping empty bricks, red stepping voxel by voxel. Red far from any surface means empty-space skipping is not engaging" />
+							<MenuItem Header="Voxel Brick Storage"
+							          Command="{Binding SetRenderModeCommand}"
+							          CommandParameter="VoxelBricks"
+							          ToolTip.Tip="Each brick's storage - blue uniform (no pool memory), green shared with the asset, orange owned by this instance after a write. Dark lines are brick edges, white coarse cells. Watch damaged bricks turn orange" />
+							<MenuItem Header="Voxel Volumes"
+							          Command="{Binding SetRenderModeCommand}"
+							          CommandParameter="VoxelVolumes"
+							          ToolTip.Tip="One hue per volume, with the box footprint hatched where the ray missed - the rasterized area paid for but empty" />
+							<MenuItem Header="Voxel Materials"
+							          Command="{Binding SetRenderModeCommand}"
+							          CommandParameter="VoxelMaterials"
+							          ToolTip.Tip="One hue per physical material id. Magenta stripes are material 0, the default that every palette entry authored without a material silently falls back to" />
 						</MenuFlyout>
 					</Button.Flyout>
 					<StackPanel Orientation="Horizontal"

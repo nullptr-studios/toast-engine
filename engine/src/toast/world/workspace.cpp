@@ -4,11 +4,13 @@
 #include "camera.hpp"
 #include "node.hpp"
 #include "node_3d.hpp"
+#include "voxel_node.hpp"
 #include "workspace_events.hpp"
 
 #include <array>
 #include <charconv>
 #include <cmath>
+#include <filesystem>
 #include <format>
 #include <functional>
 #include <glm/glm.hpp>
@@ -24,6 +26,10 @@
 #include <toast/engine.hpp>
 #include <toast/events/signals_events.hpp>
 #include <toast/log.hpp>
+#include <toast/physics/nodes/box_collider.hpp>
+#include <toast/physics/nodes/capsule_collider.hpp>
+#include <toast/physics/nodes/rigidbody.hpp>
+#include <toast/physics/nodes/sphere_collider.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
 #include <toast/scripting/asset_proxy.hpp>
 #include <toast/scripting/lua_types.hpp>
@@ -296,8 +302,22 @@ static auto inspectorValue(Node& node, const FieldInfo& field) -> std::string {
 	return assets::Prefab::stringifyValue(field.value_type, field.is_array, value);
 }
 
-// The transform field each gizmo tool drags, so a drag's undo step reads like the equivalent inspector edit
-static auto gizmoField(GizmoTool tool, Node& node) -> const FieldInfo* {
+static auto gizmoField(GizmoTool tool, GizmoHandle handle, Node& node) -> const FieldInfo* {
+	if (gizmo_layout::isSizeHandle(handle)) {
+		const Box<Node> box = node.box();
+		if (box.as<physics::BoxCollider>().exists()) {
+			return node.info()->getField("size");
+		}
+		if (box.as<physics::SphereCollider>().exists()) {
+			return node.info()->getField("radius");
+		}
+		if (box.as<physics::CapsuleCollider>().exists()) {
+			// The capsule's two dots drive different fields, and a drag is one undo step for one of them
+			return node.info()->getField(gizmo_layout::sizeHandleAxis(handle) == 2 ? "height" : "radius");
+		}
+		return nullptr;
+	}
+
 	switch (tool) {
 		case GizmoTool::translate: return node.info()->getField("world_position");
 		case GizmoTool::rotate: return node.info()->getField("world_rotation");
@@ -403,6 +423,9 @@ void Workspace::initFromPrefab(const assets::Handle<assets::Prefab>& file) {
 	node->m_parent = {};
 	node->changeNodeState(NodeState::root);
 	node->m_type = NodeType::world_root;
+	if (node->m_source_prefab.uid() == m_handle) {
+		node->m_source_prefab = assets::Handle<assets::Prefab>(nullptr, m_handle, file.path());
+	}
 	node->m_inherited_enabled = true;
 
 	// Initialization
@@ -417,11 +440,236 @@ void Workspace::initFromPrefab(const assets::Handle<assets::Prefab>& file) {
 void Workspace::initializeHistory(bool available, bool initially_saved) {
 	m_history = std::make_unique<WorkspaceHistory>(
 	    m_handle.data(),
-	    [this] { return assets::Prefab(*m_root_node); },
+	    [this] {
+		    INodeOwner::updateTransforms(*m_root_node);
+		    return assets::Prefab(*m_root_node, m_handle, assets::Prefab::Purpose::editor_snapshot);
+	    },
 	    [this](const assets::Prefab& snapshot) { return restoreHistorySnapshot(snapshot); },
 	    available,
 	    initially_saved
 	);
+}
+
+void Workspace::preparePrefabReload(UID uid) {
+	m_prefab_reloads.clear();
+	if (!m_root_node.exists()) {
+		return;
+	}
+	if (m_history) {
+		m_history->commit();
+	}
+	updateTransforms(*m_root_node);
+	auto depends = [&](this auto&& self, const Node& node) -> bool {
+		if (node.sourcePrefab().uid() == uid) {
+			return true;
+		}
+		if (std::ranges::any_of(node.children(), [&](const auto& child) { return self(*child); })) {
+			return true;
+		}
+		auto source = node.sourcePrefab();
+		std::unordered_set<uint64_t> seen;
+		while (source.hasValue() && !source->nodes.empty() && seen.insert(source.uid().data()).second) {
+			auto base = source->nodes.front().find("m_source_prefab");
+			if (!base) {
+				break;
+			}
+			const UID base_uid = base->as<UID>();
+			if (base_uid == uid) {
+				return true;
+			}
+			source = assets::load<assets::Prefab>(base_uid);
+		}
+		return false;
+	};
+	auto visit = [&](this auto&& self, Node& node) -> void {
+		for (auto& child : node.m_children) {
+			if (child->isInstanceRoot()) {
+				if (!depends(*child)) {
+					continue;
+				}
+				assets::Prefab reference(*child, UID(0), assets::Prefab::Purpose::instance_copy);
+				if (reference.nodes.empty()) {
+					continue;
+				}
+				for (const auto name : {"position", "rotation", "scale"}) {
+					if (const auto* field = child->info()->getField(name); field && !reference.nodes[0].find(name)) {
+						reference.nodes[0].fields.push_back({std::string(name), field->value_type, field->is_array, field->get(&*child)});
+					}
+				}
+				m_prefab_reloads.push_back({child, std::move(reference)});
+			} else {
+				self(*child);
+			}
+		}
+	};
+	visit(*m_root_node);
+}
+
+void Workspace::finishPrefabReload() {
+	if (m_prefab_reloads.empty()) {
+		return;
+	}
+	std::unordered_map<size_t, Box<Node>> remap;
+	std::vector<Box<Node>> retired;
+	auto reconcile = [&](this auto&& self, Box<Node> current, Box<Node> incoming) -> Box<Node> {
+		if (current->info()->type != incoming->info()->type) {
+			remap[current.rid()] = incoming;
+			retired.push_back(current);
+			return incoming;
+		}
+		remap[incoming.rid()] = current;
+		current->callTick(current->info(), TickFunctionList::on_disable);
+		current->callTick(current->info(), TickFunctionList::end);
+		current->callTick(current->info(), TickFunctionList::destroy);
+		current->m_listener.reset();
+		current->info()->forEachBaseType([&](const NodeInfo& level) {
+			for (const auto& field : level.all_fields) {
+				if (!field.set || field.name == "m_parent" || field.name == "m_uid" || field.hasAttribute("NoSerialize") ||
+				    field.hasAttribute("ReadOnly")) {
+					continue;
+				}
+				const auto value = field.get(&*incoming);
+				if (const auto* box = std::any_cast<Box<Node>>(&value); box && !box->exists()) {
+					continue;
+				}
+				field.set(&*current, value);
+			}
+		});
+		current->m_name = incoming->m_name;
+		current->m_source_prefab = incoming->m_source_prefab;
+		current->m_unresolved_chunk = incoming->m_unresolved_chunk;
+		current->m_recursive_prefab = incoming->m_recursive_prefab;
+		current->m_messages = incoming->m_messages;
+		current->m_prefab_interior = incoming->m_prefab_interior;
+		current->reloadScripts();
+		if (auto* source = incoming->scriptRuntime()) {
+			if (auto* destination = current->scriptRuntime()) {
+				for (size_t i = 0; i < source->instanceCount(); ++i) {
+					if (const auto* schema = source->instanceSchema(i)) {
+						schema->forEach([&](const scripting::LuaVarDesc& d) {
+							destination->setVarByPath(i, d.path, source->getVarByPath(i, d.path));
+						});
+					}
+				}
+			}
+		}
+		std::vector<Box<Node>> old_children = std::move(current->m_children);
+		for (auto& child : incoming->m_children) {
+			auto previous =
+			    std::ranges::find_if(old_children, [&](const auto& old) { return old.exists() && old->uid() == child->uid(); });
+			Box<Node> adopted = child;
+			if (previous != old_children.end()) {
+				adopted = self(*previous, child);
+				*previous = {};
+			}
+			adopted->m_parent = current;
+			current->m_children.push_back(adopted);
+		}
+		for (auto& child : old_children) {
+			if (child.exists()) {
+				retired.push_back(child);
+			}
+		}
+		incoming->m_children.clear();
+		retired.push_back(incoming);
+		return current;
+	};
+	for (auto& pending : m_prefab_reloads) {
+		if (!pending.node.exists() || !pending.node->m_parent.exists()) {
+			continue;
+		}
+		auto parent = pending.node->m_parent;
+		InstantiateContext context;
+		context.resolver = [](UID id) { return assets::load<assets::Prefab>(id); };
+		seedPrefabContext(context, &*parent);
+		assets::Handle<assets::Prefab> handle(&pending.reference, UID(0), "");
+		Box<Node> incoming = instantiate(handle, context);
+		if (!incoming.exists()) {
+			continue;
+		}
+		auto slot = std::ranges::find(parent->m_children, pending.node);
+		if (slot == parent->m_children.end()) {
+			destroyOwnedTree(incoming);
+			continue;
+		}
+		*slot = reconcile(pending.node, incoming);
+		(*slot)->m_parent = parent;
+		(*slot)->m_type = NodeType::root;
+		(*slot)->changeNodeState(parent->m_state);
+		(*slot)->m_inherited_enabled = parent->enabled();
+	}
+	auto repair_value = [&](std::any& value) -> bool {
+		auto repair = [&](Box<Node>& box) {
+			if (auto it = remap.find(box.rid()); it != remap.end()) {
+				box = it->second;
+				return true;
+			}
+			return false;
+		};
+		if (auto* box = std::any_cast<Box<Node>>(&value)) {
+			return repair(*box);
+		}
+		if (auto* boxes = std::any_cast<std::vector<Box<Node>>>(&value)) {
+			bool changed = false;
+			for (auto& box : *boxes) {
+				changed = repair(box) || changed;
+			}
+			return changed;
+		}
+		return false;
+	};
+	auto repair_tree = [&](this auto&& self, Node& node) -> void {
+		node.info()->forEachBaseType([&](const NodeInfo& level) {
+			for (const auto& field : level.all_fields) {
+				if (!field.set) {
+					continue;
+				}
+				auto value = field.get(&node);
+				if (repair_value(value)) {
+					field.set(&node, value);
+				}
+			}
+		});
+		if (auto* runtime = node.scriptRuntime()) {
+			for (size_t i = 0; i < runtime->instanceCount(); ++i) {
+				if (const auto* schema = runtime->instanceSchema(i)) {
+					schema->forEach([&](const scripting::LuaVarDesc& d) {
+						auto value = runtime->getVarByPath(i, d.path);
+						if (repair_value(value)) {
+							runtime->setVarByPath(i, d.path, value);
+						}
+					});
+				}
+			}
+		}
+		for (auto& child : node.m_children) {
+			self(*child);
+		}
+	};
+	repair_tree(*m_root_node);
+	if (auto it = remap.find(m_focused_node.rid()); it != remap.end()) {
+		m_focused_node = it->second;
+	}
+	for (auto& node : retired) {
+		destroyOwnedTree(node);
+	}
+	for (auto& pending : m_prefab_reloads) {
+		Box<Node> root = pending.node;
+		if (auto it = remap.find(root.rid()); it != remap.end()) {
+			root = it->second;
+		}
+		if (!root.exists()) {
+			continue;
+		}
+		root->propagateCallTick(root->info(), TickFunctionList::load);
+		root->propagateCallTick(root->info(), TickFunctionList::init);
+		root->propagateCallTick(root->info(), TickFunctionList::begin);
+		root->propagateEnable();
+	}
+	m_prefab_reloads.clear();
+	updateTransforms(*m_root_node);
+	applyActiveCamera();
+	event::send<event::RequestHierarchyUpdate>();
 }
 
 void Workspace::destroyOwnedTree(Box<Node>& root) {
@@ -467,6 +715,7 @@ auto Workspace::restoreHistorySnapshot(const assets::Prefab& snapshot) -> bool {
 	assets::Handle<assets::Prefab> handle(owned_snapshot.get(), toast::UID(0), "");
 	INodeOwner::InstantiateContext context;
 	context.resolver = [](toast::UID id) { return assets::load<assets::Prefab>(id); };
+	seedPrefabContext(context);
 	Box<Node> replacement = instantiate(handle, context);
 	if (!replacement.exists()) {
 		TOAST_WARN("World", "Could not restore workspace history snapshot");
@@ -639,6 +888,103 @@ auto Workspace::gizmoScale() const -> float {
 	return gizmo_layout::k_screen_size * glm::distance(camera->world_position, gizmoOrigin());
 }
 
+auto Workspace::collectSizeHandles() const -> std::pair<std::array<SizeHandlePoint, k_max_size_handles>, uint32_t> {
+	std::array<SizeHandlePoint, k_max_size_handles> out {};
+	uint32_t count = 0;
+
+	auto node3d = m_focused_node.as<Node3D>();
+	if (not node3d.exists()) {
+		return {out, 0};
+	}
+	node3d->syncTransform();
+
+	const glm::vec3 origin = node3d->world_position;
+	const glm::quat rotation = node3d->world_rotation;
+
+	const auto emit = [&](GizmoHandle handle, float distance) {
+		glm::vec3 local {0.0f};
+		local[gizmo_layout::sizeHandleAxis(handle)] = gizmo_layout::sizeHandleSign(handle) * distance;
+		out[count++] = SizeHandlePoint {.world_position = origin + rotation * local, .handle = handle};
+	};
+
+	if (auto box = m_focused_node.as<physics::BoxCollider>(); box.exists()) {
+		emit(GizmoHandle::size_neg_x, box->size.x * 0.5f);
+		emit(GizmoHandle::size_pos_x, box->size.x * 0.5f);
+		emit(GizmoHandle::size_neg_y, box->size.y * 0.5f);
+		emit(GizmoHandle::size_pos_y, box->size.y * 0.5f);
+		emit(GizmoHandle::size_neg_z, box->size.z * 0.5f);
+		emit(GizmoHandle::size_pos_z, box->size.z * 0.5f);
+		return {out, count};
+	}
+
+	if (auto sphere = m_focused_node.as<physics::SphereCollider>(); sphere.exists()) {
+		emit(GizmoHandle::size_pos_x, sphere->radius);
+		return {out, count};
+	}
+
+	if (auto capsule = m_focused_node.as<physics::CapsuleCollider>(); capsule.exists()) {
+		emit(GizmoHandle::size_pos_x, capsule->radius);
+		emit(GizmoHandle::size_pos_z, capsule->height * 0.5f);
+		return {out, count};
+	}
+
+	return {out, 0};
+}
+
+void Workspace::gizmoApplySizeDrag(float delta) {
+	if (not gizmo_layout::isSizeHandle(m_gizmo_drag)) {
+		return;
+	}
+
+	auto node3d = m_focused_node.as<Node3D>();
+	if (not node3d.exists()) {
+		return;
+	}
+
+	const int axis = gizmo_layout::sizeHandleAxis(m_gizmo_drag);
+	const float sign = gizmo_layout::sizeHandleSign(m_gizmo_drag);
+
+	float growth = delta * sign;
+	if (m_translate_snap.enabled && m_translate_snap.value > 0.0001f) {
+		growth = std::round(growth / m_translate_snap.value) * m_translate_snap.value;
+	}
+
+	if (auto box = m_focused_node.as<physics::BoxCollider>(); box.exists()) {
+		const float start = m_gizmo_drag_start_size[axis];
+		const float next = std::max(start + growth, gizmo_layout::k_min_collider_extent);
+
+		box->size[axis] = next;
+		glm::vec3 shift {0.0f};
+		shift[axis] = sign * (next - start) * 0.5f;
+		node3d->position = m_gizmo_drag_start_local_pos + m_gizmo_drag_start_local_rot * shift;
+		node3d->syncTransform();
+		return;
+	}
+
+	if (auto sphere = m_focused_node.as<physics::SphereCollider>(); sphere.exists()) {
+		sphere->radius = std::max(m_gizmo_drag_start_size.x + growth, gizmo_layout::k_min_collider_extent);
+		return;
+	}
+
+	if (auto capsule = m_focused_node.as<physics::CapsuleCollider>(); capsule.exists()) {
+		if (axis == 2) {
+			const float next = std::max(m_gizmo_drag_start_size.z + growth * 2.0f, gizmo_layout::k_min_collider_extent);
+			capsule->height = std::max(next, 2.0f * capsule->radius);
+		} else {
+			const float next = std::max(m_gizmo_drag_start_size.x + growth, gizmo_layout::k_min_collider_extent);
+			capsule->radius = next;
+			capsule->height = std::max(capsule->height, 2.0f * next);
+		}
+	}
+}
+
+auto Workspace::gizmoInteractionAllowed() const -> bool {
+	if (not isPlaying()) {
+		return true;
+	}
+	return m_focused_node.as<physics::Rigidbody>().exists() || m_focused_node.as<VoxelNode>().exists();
+}
+
 void Workspace::gizmoUpdateHover() {
 	// mid-drag, the grabbed handle stays active regardless of what the cursor is over
 	if (m_gizmo_drag != GizmoHandle::none) {
@@ -647,7 +993,7 @@ void Workspace::gizmoUpdateHover() {
 
 	const bool tool_has_gizmo =
 	    m_gizmo_tool == GizmoTool::translate || m_gizmo_tool == GizmoTool::rotate || m_gizmo_tool == GizmoTool::scale;
-	if (not tool_has_gizmo || not m_focused_node.as<Node3D>().exists()) {
+	if (not m_focused_node.as<Node3D>().exists()) {
 		m_gizmo_hover = GizmoHandle::none;
 		return;
 	}
@@ -662,7 +1008,27 @@ void Workspace::gizmoUpdateHover() {
 	const glm::vec2 viewport_size {static_cast<float>(extent.width), static_cast<float>(extent.height)};
 	const Ray ray = camera->screenPointToRay(m_gizmo_mouse_pos, viewport_size);
 
-	m_gizmo_hover = pickGizmoHandle(m_gizmo_tool, ray, gizmoOrigin(), gizmoOrientation(), gizmoScale()).handle;
+	m_gizmo_hover = tool_has_gizmo ? pickGizmoHandle(m_gizmo_tool, ray, gizmoOrigin(), gizmoOrientation(), gizmoScale()).handle
+	                               : GizmoHandle::none;
+
+	if (m_gizmo_hover == GizmoHandle::none) {
+		const auto [dots, count] = collectSizeHandles();
+		const float radius = gizmo_layout::k_size_dot_hit_radius * gizmoScale();
+		float nearest = std::numeric_limits<float>::max();
+
+		for (uint32_t i = 0; i < count; ++i) {
+			const glm::vec3 to_dot = dots[i].world_position - ray.origin;
+			const float along = glm::dot(to_dot, ray.direction);
+			if (along < 0.0f) {
+				continue;
+			}
+			const float off_axis_squared = glm::dot(to_dot, to_dot) - along * along;
+			if (off_axis_squared <= radius * radius && along < nearest) {
+				nearest = along;
+				m_gizmo_hover = dots[i].handle;
+			}
+		}
+	}
 }
 
 void Workspace::gizmoBeginDrag(GizmoHandle handle) {
@@ -678,9 +1044,22 @@ void Workspace::gizmoBeginDrag(GizmoHandle handle) {
 	m_gizmo_drag_start_rotation = node3d->world_rotation;
 	m_gizmo_drag_start_scale = node3d->world_scale;
 	m_gizmo_drag_current_factor = 1.0f;
+	m_gizmo_drag_start_local_pos = node3d->position;
+	m_gizmo_drag_start_local_rot = node3d->rotation;
+	m_gizmo_drag_start_size = glm::vec3(0.0f);
+
+	if (gizmo_layout::isSizeHandle(handle)) {
+		if (auto box = m_focused_node.as<physics::BoxCollider>(); box.exists()) {
+			m_gizmo_drag_start_size = box->size;
+		} else if (auto sphere = m_focused_node.as<physics::SphereCollider>(); sphere.exists()) {
+			m_gizmo_drag_start_size = glm::vec3(sphere->radius);
+		} else if (auto capsule = m_focused_node.as<physics::CapsuleCollider>(); capsule.exists()) {
+			m_gizmo_drag_start_size = glm::vec3(capsule->radius, capsule->radius, capsule->height);
+		}
+	}
 
 	// The undo step before snapshot has to be taken now, before anything moves, gizmoEndDrag() commits it
-	if (const auto* field = gizmoField(m_gizmo_tool, *m_focused_node); field && m_history) {
+	if (const auto* field = gizmoField(m_gizmo_tool, handle, *m_focused_node); field && m_history) {
 		std::string start = inspectorValue(*m_focused_node, *field);
 		auto context = historyContext(
 		    event::HistoryOperation::change_value, m_focused_node, std::format("{} changed", field->name), start, start
@@ -697,6 +1076,16 @@ void Workspace::gizmoBeginDrag(GizmoHandle handle) {
 	const auto extent = renderer::getOutputTarget().getExtent();
 	const glm::vec2 viewport_size {static_cast<float>(extent.width), static_cast<float>(extent.height)};
 	const Ray ray = camera->screenPointToRay(m_gizmo_mouse_pos, viewport_size);
+
+	if (gizmo_layout::isSizeHandle(handle)) {
+		glm::vec3 axis {0.0f};
+		axis[gizmo_layout::sizeHandleAxis(handle)] = 1.0f;
+		m_gizmo_drag_axis = glm::normalize(node3d->world_rotation * axis);
+
+		const auto [_, t2] = closestPointsBetweenLines(ray.origin, ray.direction, origin, m_gizmo_drag_axis);
+		m_gizmo_drag_anchor = origin + m_gizmo_drag_axis * t2;
+		return;
+	}
 
 	if (m_gizmo_tool == GizmoTool::rotate && is_axis) {
 		m_gizmo_drag_axis = axisDirectionFor(handle, orientation);
@@ -752,6 +1141,15 @@ void Workspace::gizmoUpdateDrag() {
 	const bool is_axis =
 	    m_gizmo_drag == GizmoHandle::axis_x || m_gizmo_drag == GizmoHandle::axis_y || m_gizmo_drag == GizmoHandle::axis_z;
 
+	if (gizmo_layout::isSizeHandle(m_gizmo_drag)) {
+		const auto [_, t2] = closestPointsBetweenLines(ray.origin, ray.direction, origin, m_gizmo_drag_axis);
+		const glm::vec3 current = origin + m_gizmo_drag_axis * t2;
+		gizmoApplySizeDrag(glm::dot(current - m_gizmo_drag_anchor, m_gizmo_drag_axis));
+
+		m_focused_node->onReflectedFieldChanged("size");
+		return;
+	}
+
 	if (m_gizmo_tool == GizmoTool::rotate) {
 		auto hit_t = rayPlaneIntersect(ray, origin, m_gizmo_drag_plane_normal);
 		if (not hit_t.has_value()) {
@@ -769,6 +1167,7 @@ void Workspace::gizmoUpdateDrag() {
 
 		node3d->world_rotation = glm::normalize(glm::angleAxis(delta_angle, m_gizmo_drag_axis) * m_gizmo_drag_start_rotation);
 		node3d->syncTransform();
+		node3d->onEditorTransformChanged();
 		return;
 	}
 
@@ -810,6 +1209,7 @@ void Workspace::gizmoUpdateDrag() {
 
 		node3d->world_scale = new_scale;
 		node3d->syncTransform();
+		node3d->onEditorTransformChanged();
 		return;
 	}
 
@@ -834,13 +1234,14 @@ void Workspace::gizmoUpdateDrag() {
 
 	node3d->world_position = m_gizmo_drag_start_world_pos + delta;
 	node3d->syncTransform();
+	node3d->onEditorTransformChanged();
 }
 
 void Workspace::gizmoEndDrag() {
 	if (m_gizmo_drag == GizmoHandle::none) {
 		return;
 	}
-	m_gizmo_drag = GizmoHandle::none;
+	const GizmoHandle released = std::exchange(m_gizmo_drag, GizmoHandle::none);
 
 	auto start = std::exchange(m_gizmo_history_start, std::nullopt);
 	if (not start || not m_history) {
@@ -848,7 +1249,7 @@ void Workspace::gizmoEndDrag() {
 	}
 	// The transaction opened in gizmoBeginDrag() is still open, so this beginAtomic() only records the final value. The
 	// commit then diffs the tree against the drag-start snapshot, making the whole drag a single undo step
-	if (const auto* field = m_focused_node.exists() ? gizmoField(m_gizmo_tool, *m_focused_node) : nullptr) {
+	if (const auto* field = m_focused_node.exists() ? gizmoField(m_gizmo_tool, released, *m_focused_node) : nullptr) {
 		m_history->beginAtomic(historyContext(
 		    event::HistoryOperation::change_value,
 		    m_focused_node,
@@ -1118,7 +1519,7 @@ void Workspace::eventSubscriptions() {
 			    return false;
 		    }
 
-		    event::send<event::UpdateHierarchyData>(m_root_node);
+		    event::send<event::UpdateHierarchyData>(m_root_node, m_handle.data());
 		    return true;
 	    },
 	    100
@@ -1196,13 +1597,24 @@ void Workspace::eventSubscriptions() {
 			return true;
 		}
 
-		// TODO: rename the root node to the file stem once SetNodeParameter exists
-		assets::Prefab prefab(*node);
+		const auto saved_name = std::filesystem::path(e.uri).stem().string();
+		if (!saved_name.empty() && node->name() != saved_name) {
+			auto context = historyContext(event::HistoryOperation::rename, node, "Renamed", std::string(node->name()), saved_name);
+			recordHistory(std::move(context), [&] { node->m_name = saved_name; });
+			event::send<event::RequestHierarchyUpdate>();
+		}
+		INodeOwner::updateTransforms(*m_root_node);
+		if (m_history) {
+			m_history->commit();
+		}
+		const UID saved_uid = assets::AssetManager::resolveURI(e.uri).value_or(node == m_root_node ? m_handle : UID(0));
+		assets::Prefab prefab(*node, saved_uid);
 		auto bytes = prefab.serialize(assets::SaveMode::editor);
 		completed.success = assets::AssetManager::get().saveBytes(e.uri, bytes);
 		if (completed.success) {
 			TOAST_INFO("World", "Saved workspace {} to {}", node->name(), e.uri);
-			completed.snapshot = assets::Prefab(*m_root_node).toBinary();
+			completed.snapshot = assets::Prefab(*m_root_node, m_handle, assets::Prefab::Purpose::editor_snapshot).toBinary();
+			Engine::get()->publishPrefab(saved_uid, prefab);
 		} else {
 			completed.error = "The workspace file could not be written";
 		}
@@ -1222,7 +1634,7 @@ void Workspace::eventSubscriptions() {
 			return true;
 		}
 
-		assets::Prefab prefab(*m_root_node);
+		assets::Prefab prefab(*m_root_node, m_handle);
 		auto bytes = prefab.serialize(assets::SaveMode::editor);
 		if (assets::AssetManager::get().saveBytes(e.uri, bytes)) {
 			TOAST_INFO("World", "Autosaved workspace {} to {}", m_root_node->name(), e.uri);
@@ -1293,6 +1705,17 @@ void Workspace::eventSubscriptions() {
 			}
 
 			node->m_parent = dest_parent;
+			if (reparenting) {
+				auto refresh = [](const Box<Node>& current, auto&& self) -> void {
+					if (auto spatial = current.as<Node3D>(); spatial.exists()) {
+						spatial->refreshTransformParent();
+					}
+					for (const auto& child : current->children()) {
+						self(child, self);
+					}
+				};
+				refresh(node, refresh);
+			}
 
 			// Insert at the position requested by the predecessor uid
 			auto& children = dest_parent->m_children;
@@ -1371,10 +1794,19 @@ void Workspace::eventSubscriptions() {
 		recordHistory(std::move(context), [&] {
 			field->set(&*target, value);
 			target->onReflectedFieldChanged(field->name);
+			if (field->name == "m_scripts") {
+				target->reloadScripts();
+			}
 		});
 
+		if (field->name == "position" || field->name == "rotation" || field->name == "world_position" ||
+		    field->name == "world_rotation") {
+			if (auto node3d = target.as<Node3D>(); node3d.exists()) {
+				node3d->onEditorTransformChanged();
+			}
+		}
+
 		if (field->name == "m_scripts") {
-			target->reloadScripts();
 			event::send<event::RequestHierarchyUpdate>();
 		}
 		return true;
@@ -1535,11 +1967,12 @@ void Workspace::eventSubscriptions() {
 		}
 		auto history_context = historyContext(event::HistoryOperation::duplicate, {}, "Duplicated", std::string {src->name()}, "");
 		recordHistory(std::move(history_context), [&] {
-			assets::Prefab prefab(*src);
+			assets::Prefab prefab(*src, UID(0), assets::Prefab::Purpose::instance_copy);
 			assets::Handle<assets::Prefab> handle(&prefab, toast::UID(0), "");
 
 			InstantiateContext ctx;
 			ctx.resolver = [](toast::UID id) { return assets::load<assets::Prefab>(id); };
+			seedPrefabContext(ctx, &*par);
 			Box<Node> copy = instantiate(handle, ctx);
 			if (not copy.exists()) {
 				TOAST_WARN("World", "WorkspaceDuplicateNode: instantiation failed");
@@ -1555,17 +1988,13 @@ void Workspace::eventSubscriptions() {
 			};
 			regen(regen, copy);
 
-			// The in-memory prefab has no meaningful UID, so clear the root's source_prefab
-			// to avoid marking the copy as a prefab instance with UID 0
-			copy->m_source_prefab = {};
-
 			// Ensure the copy doesn't share its name with an existing sibling
 			copy->m_name = uniqueChildName(*par, copy->name());
 
 			copy->m_parent = par;
 			par->m_children.emplace_back(copy);
 			copy->m_state = par->m_state;
-			copy->m_type = NodeType::child;
+			copy->m_type = copy->isInstanceRoot() ? NodeType::root : NodeType::child;
 			copy->m_inherited_enabled = par->enabled();
 
 			copy->propagateCallTick(copy->info(), TickFunctionList::init);
@@ -1778,7 +2207,7 @@ void Workspace::eventSubscriptions() {
 
 	// Translate-gizmo interaction, driven straight off the raw window mouse events already forwarded by the editor in edit mode
 	m_listener.subscribe<event::WindowMousePosition>([this](const auto& e) {
-		if (m_handle.data() != Engine::get()->activeWorkspace().data() || m_game_camera || isPlaying()) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data() || m_game_camera || not gizmoInteractionAllowed()) {
 			return false;
 		}
 		m_gizmo_mouse_pos = {e.x, e.y};
@@ -1791,7 +2220,7 @@ void Workspace::eventSubscriptions() {
 	});
 
 	m_listener.subscribe<event::WindowMouseButton>([this](const auto& e) {
-		if (m_handle.data() != Engine::get()->activeWorkspace().data() || m_game_camera || isPlaying()) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data() || m_game_camera || not gizmoInteractionAllowed()) {
 			return false;
 		}
 		if (e.button != 1) {
@@ -1824,7 +2253,7 @@ void Workspace::eventSubscriptions() {
 			TOAST_WARN("World", "WorkspaceCopyNode: source not found");
 			return true;
 		}
-		s_clipboard = std::make_unique<assets::Prefab>(*src);
+		s_clipboard = std::make_unique<assets::Prefab>(*src, UID(0), assets::Prefab::Purpose::instance_copy);
 		return true;
 	});
 
@@ -1845,6 +2274,7 @@ void Workspace::eventSubscriptions() {
 			assets::Handle<assets::Prefab> handle(s_clipboard.get(), toast::UID(0), "");
 			InstantiateContext ctx;
 			ctx.resolver = [](toast::UID id) { return assets::load<assets::Prefab>(id); };
+			seedPrefabContext(ctx, &*par);
 			Box<Node> copy = instantiate(handle, ctx);
 			if (not copy.exists()) {
 				TOAST_WARN("World", "WorkspacePasteNode: instantiation failed");
@@ -1859,12 +2289,11 @@ void Workspace::eventSubscriptions() {
 			};
 			regen(regen, copy);
 
-			copy->m_source_prefab = {};
 			copy->m_name = uniqueChildName(*par, copy->name());
 			copy->m_parent = par;
 			par->m_children.emplace_back(copy);
 			copy->m_state = par->m_state;
-			copy->m_type = NodeType::child;
+			copy->m_type = copy->isInstanceRoot() ? NodeType::root : NodeType::child;
 			copy->m_inherited_enabled = par->enabled();
 
 			copy->propagateCallTick(copy->info(), TickFunctionList::init);
@@ -2018,10 +2447,24 @@ void Workspace::tick() {
 
 auto Workspace::gizmoRenderState() const -> GizmoRenderState {
 	GizmoRenderState state;
+	const bool has_node = m_focused_node.as<Node3D>().exists();
+	const bool interactive = gizmoInteractionAllowed() && has_node;
+
+	if (interactive) {
+		const auto [dots, count] = collectSizeHandles();
+		state.size_handle_count = count;
+		state.size_handle_scale = gizmoScale();
+		for (uint32_t i = 0; i < count; ++i) {
+			state.size_handles[i] = {.world_position = dots[i].world_position, .handle = dots[i].handle};
+		}
+	}
+
 	const bool tool_has_gizmo =
 	    m_gizmo_tool == GizmoTool::translate || m_gizmo_tool == GizmoTool::rotate || m_gizmo_tool == GizmoTool::scale;
-	state.visible = not isPlaying() && tool_has_gizmo && m_focused_node.as<Node3D>().exists();
+	state.visible = interactive && tool_has_gizmo;
 	if (not state.visible) {
+		state.hover = m_gizmo_hover;
+		state.active = m_gizmo_drag;
 		return state;
 	}
 	state.tool = m_gizmo_tool;

@@ -13,6 +13,7 @@ public:
     [[Reflect]] Box<Node3D> m_target;
 
     [[Reflect]] float takeDamage(float amount, bool crit = false) { return 0.0f; }
+	[[Reflect]] void onInput(const input::Action& action, input::ActionEvent event) {}
 
     signals::Signal<> ready;
     signals::Signal<int, double> hit;
@@ -55,6 +56,12 @@ public:
             "---@field takeDamage fun(self: StubNode, amount: number, crit?: boolean): number"
         ),
         "method signature wrong:\n{stubs}"
+    );
+    assert!(
+        stubs.contains(
+            "---@field onInput fun(self: StubNode, action: InputAction, event: InputActionEvent)"
+        ),
+        "input callback signature wrong:\n{stubs}"
     );
     assert!(
         stubs.contains("---@field ready Signal0"),

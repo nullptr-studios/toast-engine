@@ -6,6 +6,10 @@
  */
 
 #pragma once
+#include "physics_settings.hpp"
+
+#include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <toast/log.hpp>
@@ -18,14 +22,22 @@ struct StepResult {
 	unsigned steps = 0;
 	double alpha = 0.0;
 	bool dropped_time = false;
+
+	/// The loop stopped early on the real-time budget, so a slow tick shrinks its own catch-up allowance
+	bool time_budget_reached = false;
 };
 
 class Accumulator {
 public:
-	// TODO: This should read from the project settings
-	static constexpr double frequency = 60.0;
-	static constexpr double fixed_delta = 1.0 / frequency;
-	static constexpr unsigned max_steps = 8;
+	[[nodiscard]]
+	static auto fixedDelta() -> double {
+		return tunables().fixedDelta();
+	}
+
+	[[nodiscard]]
+	static auto maxSteps() -> unsigned {
+		return std::max(tunables().max_substeps, 1u);
+	}
 
 	template<typename Fn>
 	auto tick(double dt, Fn&& fn) -> StepResult {
@@ -34,8 +46,19 @@ public:
 		m_accumulator += dt;
 
 		StepResult result;
+		const double fixed_delta = fixedDelta();
+		const unsigned max_steps = maxSteps();
+		const auto burst_start = std::chrono::steady_clock::now();
 
 		while (m_accumulator >= fixed_delta && result.steps < max_steps) {
+			if (result.steps > 0) {
+				const auto elapsed = std::chrono::duration<double>(std::chrono::steady_clock::now() - burst_start).count();
+				if (elapsed >= tunables().max_burst_seconds) {
+					result.time_budget_reached = true;
+					break;
+				}
+			}
+
 			fn();
 
 			m_accumulator -= fixed_delta;
@@ -54,7 +77,7 @@ public:
 
 	[[nodiscard]]
 	auto alpha() const noexcept -> double {
-		return m_accumulator / fixed_delta;
+		return m_accumulator / fixedDelta();
 	}
 
 	[[nodiscard]]

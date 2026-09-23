@@ -69,11 +69,11 @@ struct ProtoTraits<SignalState> {
 			for (const auto& pc : ps.connections()) {
 				signal.connections.push_back(
 				    {toast::UID::fromString(pc.target_uid()),
-				     pc.target_name(),
-				     pc.target_type(),
-				     pc.function(),
-				     fromProtoSource(pc.source()),
-				     pc.forwards_args()}
+						 pc.target_name(),
+						 pc.target_type(),
+						 pc.function(),
+						 fromProtoSource(pc.source()),
+						 pc.forwards_args()}
 				);
 			}
 		}

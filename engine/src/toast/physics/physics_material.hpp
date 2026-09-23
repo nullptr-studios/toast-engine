@@ -30,9 +30,9 @@ public:
 	auto dynamicFriction() const noexcept -> float;
 
 private:
-	float m_restitution = 0.0f;
+	float m_restitution = 0.1f;
 	float m_static_friction = 0.6f;
-	float m_dynamic_friction = 0.4f;
+	float m_dynamic_friction = 0.5f;
 };
 
 }

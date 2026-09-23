@@ -18,7 +18,7 @@ struct TonemapParams
 
     float time;
 
-    // std140 rounds this block to 48 bytes and the C++ struct pads to match
+    // std140 rounds this block to 48 bytes
     float _pad0;
 };
 

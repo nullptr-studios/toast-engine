@@ -486,6 +486,11 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 					break;
 				case AssetFolder folder when IsEditable(folder):
 					try {
+						var uids = new List<string>();
+						foreach (var meta in MetaFile.FindAll(folder.Filepath))
+							if (MetaFile.ReadHeader(meta)?.Uid is { } folderUid)
+								uids.Add(folderUid);
+						AssetDatabase.RemoveArtworkOutputs(uids);
 						Directory.Delete(folder.Filepath, true);
 					} catch {
 						/* ignore */

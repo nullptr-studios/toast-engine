@@ -8,10 +8,8 @@
 
 #include <array>
 #include <format>
-#include <glm/gtc/matrix_transform.hpp>
 #include <toast/assets/assets.hpp>
 #include <toast/log.hpp>
-#include <toast/voxel/voxel_constants.hpp>
 #include <tracy/Tracy.hpp>
 
 namespace renderer {
@@ -20,8 +18,8 @@ namespace {
 
 static_assert(sizeof(glm::mat4) == 64);
 
-constexpr uint32_t k_camera_set = 0;
-constexpr uint32_t k_scene_set = 1;
+constexpr uint32_t k_scene_set = 0;
+constexpr uint32_t k_storage_set = 1;
 constexpr uint32_t k_instance_binding = 6;
 
 }
@@ -29,7 +27,6 @@ constexpr uint32_t k_instance_binding = 6;
 VoxelPass::VoxelPass(const VulkanCore& core, vk::Format scene_format, vk::Format depth_format, vk::Extent2D extent)
     : m_core(&core) {
 	ZoneScoped;
-	static_assert(sizeof(InstanceGpu) == 144, "InstanceGpu is mirrored by voxel_dda.slang's VoxelInstance");
 	static_assert(sizeof(PushConstants) == 16, "PushConstants is mirrored by voxel.slang");
 
 	const auto uid = assets::resolveURI("core://shaders/voxel.slang");
@@ -69,7 +66,7 @@ VoxelPass::VoxelPass(const VulkanCore& core, vk::Format scene_format, vk::Format
 	}
 
 	createInstanceBuffers(core);
-	createDescriptors(core);
+	createDescriptors(core, shader->reflection);
 	TOAST_INFO("Render", "VoxelPass ready: dense DDA, up to {} volumes a frame", k_max_instances);
 }
 
@@ -80,7 +77,7 @@ void VoxelPass::createInstanceBuffers(const VulkanCore& core) {
 
 	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
 		vk::BufferCreateInfo buffer_ci {};
-		buffer_ci.size = sizeof(InstanceGpu) * k_max_instances;
+		buffer_ci.size = sizeof(VoxelInstanceGpu) * k_max_instances;
 		buffer_ci.usage = vk::BufferUsageFlagBits::eStorageBuffer;
 
 		vma::AllocationCreateInfo alloc_ci {};
@@ -92,72 +89,45 @@ void VoxelPass::createInstanceBuffers(const VulkanCore& core) {
 	}
 }
 
-void VoxelPass::createDescriptors(const VulkanCore& core) {
+void VoxelPass::createDescriptors(const VulkanCore& core, const ShaderReflection& reflection) {
 	ZoneScoped;
 	const auto& layouts = m_shader_layout.getDescriptorSetLayouts();
-	if (layouts.size() <= k_scene_set) {
+	if (layouts.size() <= k_storage_set) {
 		TOAST_ERROR(
-		    "Render", "VoxelPass shader layout declares {} descriptor sets; it needs the camera's and the scene's", layouts.size()
+		    "Render",
+		    "VoxelPass shader layout declares {} descriptor sets; it needs the engine scene set and the voxel storage set",
+		    layouts.size()
 		);
 		setEnabled(false);
 		return;
 	}
 
+	m_scene_sets.create(core, reflection, *layouts[k_scene_set], "VoxelPass");
+
 	const vk::DescriptorPool pool = VulkanRenderer::instance->getDescriptorPoolHandle();
 	const auto& device = core.getDevice();
 
-	m_camera_sets.clear();
-	m_scene_sets.clear();
+	m_storage_sets.clear();
 	m_bound_storage.assign(VulkanRenderer::k_frames_in_flight, nullptr);
 
 	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
-		const vk::DescriptorSetLayout camera_layout = *layouts[k_camera_set];
-		auto camera = device.allocateDescriptorSets(vk::DescriptorSetAllocateInfo(pool, 1, &camera_layout));
-		m_camera_sets.push_back(std::move(camera[0]));
-		setDebugName(core, *m_camera_sets.back(), std::format("VoxelPass CameraSet[{}]", i));
+		const vk::DescriptorSetLayout storage_layout = *layouts[k_storage_set];
+		auto storage = device.allocateDescriptorSets(vk::DescriptorSetAllocateInfo(pool, 1, &storage_layout));
+		m_storage_sets.push_back(std::move(storage[0]));
+		setDebugName(core, *m_storage_sets.back(), std::format("VoxelPass StorageSet[{}]", i));
 
-		const vk::DescriptorSetLayout scene_layout = *layouts[k_scene_set];
-		auto scene = device.allocateDescriptorSets(vk::DescriptorSetAllocateInfo(pool, 1, &scene_layout));
-		m_scene_sets.push_back(std::move(scene[0]));
-		setDebugName(core, *m_scene_sets.back(), std::format("VoxelPass SceneSet[{}]", i));
-
-		const auto* frame_res = VulkanRenderer::instance->getFrameUBORes(i);
-		if (!frame_res->gpu_buffer.has_value()) {
-			TOAST_CRITICAL("Render", "Frame UBO buffer missing for frame {}", i);
-			continue;
-		}
-
-		const vk::DescriptorBufferInfo camera_info(**frame_res->gpu_buffer, 0, sizeof(VulkanRenderer::FrameUBO));
-		const vk::DescriptorBufferInfo instance_info(*m_instance_buffers[i], 0, sizeof(InstanceGpu) * k_max_instances);
-		const std::array writes {
-		  vk::WriteDescriptorSet(*m_camera_sets[i], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &camera_info),
-		  vk::WriteDescriptorSet(
-		      *m_scene_sets[i], k_instance_binding, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &instance_info
-		  ),
-		};
-		device.updateDescriptorSets(writes, {});
+		const vk::DescriptorBufferInfo instance_info(*m_instance_buffers[i], 0, sizeof(VoxelInstanceGpu) * k_max_instances);
+		const vk::WriteDescriptorSet write(
+		    *m_storage_sets[i], k_instance_binding, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &instance_info
+		);
+		device.updateDescriptorSets(write, {});
 	}
 }
 
 void VoxelPass::bindStorage(uint32_t frame_index, const std::shared_ptr<const VoxelGpuStorage>& storage) {
 	ZoneScoped;
-	using Section = VoxelGpuStorage::Section;
-	constexpr std::array k_sections {
-	  Section::materials, Section::occupancy, Section::grids, Section::coarse, Section::palettes, Section::records
-	};
-
-	std::array<vk::DescriptorBufferInfo, VoxelGpuStorage::k_section_count> infos {};
-	std::array<vk::WriteDescriptorSet, VoxelGpuStorage::k_section_count> writes {};
-	for (size_t i = 0; i < k_sections.size(); ++i) {
-		infos[i] = vk::DescriptorBufferInfo(storage->buffer(k_sections[i]), 0, storage->size(k_sections[i]));
-		// Section order matches voxel_dda.slang binding order
-		writes[i] = vk::WriteDescriptorSet(
-		    *m_scene_sets[frame_index], static_cast<uint32_t>(i), 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &infos[i]
-		);
-	}
-
 	// Safe since the fence of this slot was waited on
-	m_core->getDevice().updateDescriptorSets(writes, {});
+	writeVoxelStorageDescriptors(m_core->getDevice(), *m_storage_sets[frame_index], *storage);
 	m_bound_storage[frame_index] = storage;
 }
 
@@ -165,7 +135,7 @@ void VoxelPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t ima
 	ZoneScoped;
 	(void)image_index;
 
-	if (frame_index >= m_scene_sets.size() || frame_index >= m_instance_buffers.size()) {
+	if (frame_index >= m_storage_sets.size() || frame_index >= m_instance_buffers.size() || !m_scene_sets.get(frame_index)) {
 		return;
 	}
 
@@ -178,11 +148,8 @@ void VoxelPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t ima
 		bindStorage(frame_index, frame->voxel_storage);
 	}
 
-	const glm::mat4 voxel_scale = glm::scale(glm::mat4(1.0f), glm::vec3(toast::voxel::k_voxel_size));
-	const glm::mat4 inverse_voxel_scale = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f / toast::voxel::k_voxel_size));
-
 	const auto& allocation = m_instance_buffers[frame_index].getAllocation();
-	auto* instances = static_cast<InstanceGpu*>(allocation.getInfo().pMappedData);
+	auto* instances = static_cast<VoxelInstanceGpu*>(allocation.getInfo().pMappedData);
 	if (instances == nullptr) {
 		return;
 	}
@@ -197,11 +164,7 @@ void VoxelPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t ima
 		}
 
 		const auto index = static_cast<uint32_t>(m_draws.size());
-		instances[index] = InstanceGpu {
-		  .voxel_to_world = proxy.model * voxel_scale,
-		  .world_to_voxel = inverse_voxel_scale * proxy.inverse_model,
-		  .record_index = proxy.record_index,
-		};
+		instances[index] = makeVoxelInstance(proxy.model, proxy.inverse_model, proxy.record_index);
 		m_draws.push_back(
 		    Draw {
 		      .instance = index,
@@ -213,10 +176,11 @@ void VoxelPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t ima
 	if (m_draws.empty()) {
 		return;
 	}
-	allocation.flush(0, sizeof(InstanceGpu) * m_draws.size());
+	allocation.flush(0, sizeof(VoxelInstanceGpu) * m_draws.size());
 
 	const vk::PipelineLayout layout = *m_shader_layout.getPipelineLayout();
 	const VulkanPipeline* bound = nullptr;
+	m_scene_sets.updateTlas(frame_index);
 
 	for (const Draw& draw : m_draws) {
 		const VulkanPipeline& pipeline = m_pipelines[static_cast<size_t>(draw.cull)][static_cast<size_t>(draw.depth)];
@@ -229,8 +193,8 @@ void VoxelPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t ima
 				cmd.bindDescriptorSets(
 				    vk::PipelineBindPoint::eGraphics,
 				    layout,
-				    k_camera_set,
-				    std::array<vk::DescriptorSet, 2> {*m_camera_sets[frame_index], *m_scene_sets[frame_index]},
+				    k_scene_set,
+				    std::array<vk::DescriptorSet, 2> {m_scene_sets.get(frame_index), *m_storage_sets[frame_index]},
 				    {}
 				);
 			}

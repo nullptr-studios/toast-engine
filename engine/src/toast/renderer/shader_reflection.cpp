@@ -542,12 +542,12 @@ auto ShaderReflection::toJson() const -> nlohmann::json {
 	auto bindings_json = nlohmann::json::array();
 	for (const auto& binding : bindings) {
 		nlohmann::json b {
-		  {    "set",		                binding.set},
+		  {    "set",                    binding.set},
 		  {"binding",                binding.binding},
-		  {   "name",		               binding.name},
+		  {   "name",                   binding.name},
 		  {   "kind",         toString(binding.kind)},
-		  {  "count",		              binding.count},
-		  {   "size",		               binding.size},
+		  {  "count",                  binding.count},
+		  {   "size",                   binding.size},
 		  {"members", membersToJson(binding.members)},
 		};
 		if (!binding.engine_semantic.empty()) {
@@ -561,8 +561,8 @@ auto ShaderReflection::toJson() const -> nlohmann::json {
 	auto push_json = nlohmann::json::array();
 	for (const auto& push : push_constants) {
 		push_json.push_back({
-		  {   "name",		               push.name},
-		  {   "size",		               push.size},
+		  {   "name",                   push.name},
+		  {   "size",                   push.size},
 		  {"members", membersToJson(push.members)},
 		});
 	}

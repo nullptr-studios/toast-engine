@@ -14,6 +14,7 @@
 #include <glm/vec4.hpp>
 #include <lua.hpp>
 #include <luabridge3/LuaBridge/LuaBridge.h>
+#include <toast/input/action.hpp>
 #include <toast/log.hpp>
 #include <toast/reflect/reflect.hpp>
 #include <toast/reflect/reflect_node.hpp>
@@ -22,6 +23,59 @@
 
 namespace scripting {
 
+Vec3FieldProxy::Vec3FieldProxy(toast::Box<toast::Node> node, const toast::FieldInfo* field, const glm::vec3& value) noexcept
+    : glm::vec3(value),
+      m_node(std::move(node)),
+      m_field(field) { }
+
+auto Vec3FieldProxy::current() const -> glm::vec3 {
+	if (m_node.exists() && m_field != nullptr) {
+		if (const auto value = m_field->get(const_cast<toast::Node*>(&*m_node)); value.has_value()) {
+			if (const auto* vector = std::any_cast<glm::vec3>(&value)) {
+				return *vector;
+			}
+		}
+	}
+	return *this;
+}
+
+void Vec3FieldProxy::commit(const glm::vec3& value) {
+	static_cast<glm::vec3&>(*this) = value;
+	if (m_node.exists() && m_field != nullptr) {
+		m_field->set(&*m_node, value);
+	}
+}
+
+auto Vec3FieldProxy::getX() const -> float {
+	return current().x;
+}
+
+auto Vec3FieldProxy::getY() const -> float {
+	return current().y;
+}
+
+auto Vec3FieldProxy::getZ() const -> float {
+	return current().z;
+}
+
+void Vec3FieldProxy::setX(float value) {
+	auto vector = current();
+	vector.x = value;
+	commit(vector);
+}
+
+void Vec3FieldProxy::setY(float value) {
+	auto vector = current();
+	vector.y = value;
+	commit(vector);
+}
+
+void Vec3FieldProxy::setZ(float value) {
+	auto vector = current();
+	vector.z = value;
+	commit(vector);
+}
+
 namespace {
 
 auto luaArgToAny(lua_State* l, const luabridge::LuaRef& v, std::string_view cpp_type, const char* param_name) -> std::any {
@@ -29,6 +83,14 @@ auto luaArgToAny(lua_State* l, const luabridge::LuaRef& v, std::string_view cpp_
 		return std::any {std::in_place_type<luabridge::LuaRef>, v};
 	}
 
+	const bool is_input_action_event = cpp_type.contains("input::ActionEvent");
+	const bool is_input_action = !is_input_action_event && cpp_type.contains("input::Action");
+	const bool is_input_bind = cpp_type.contains("input::Bind");
+	const bool is_input_keycode = cpp_type.contains("input::KeyCode");
+	const bool is_input_kind = cpp_type.contains("input::InputKind");
+	const bool is_input_device = cpp_type.contains("input::Device");
+	const bool is_input_value_type = cpp_type.contains("input::ValueType");
+	const bool is_input_modifier = cpp_type.contains("input::ModifierKey");
 	const bool is_bool = cpp_type.contains("bool");
 	const bool is_float = cpp_type.contains("float");
 	const bool is_double = cpp_type.contains("double");
@@ -61,9 +123,54 @@ auto luaArgToAny(lua_State* l, const luabridge::LuaRef& v, std::string_view cpp_
 		}
 		return v.unsafe_cast<lua_Number>();
 	}
+	if (is_input_action) {
+		if (!v.isInstance<input::Action>()) {
+			luaL_error(l, "argument '%s': expected InputAction", param_name);
+		}
+		return v.unsafe_cast<input::Action>();
+	}
+	if (is_input_bind) {
+		if (!v.isInstance<input::Bind>()) {
+			luaL_error(l, "argument '%s': expected InputBind", param_name);
+		}
+		return v.unsafe_cast<input::Bind>();
+	}
+	if (is_input_keycode) {
+		if (!v.isInstance<input::KeyCode>()) {
+			luaL_error(l, "argument '%s': expected InputKeyCode", param_name);
+		}
+		return v.unsafe_cast<input::KeyCode>();
+	}
+	if (is_input_action_event || is_input_device || is_input_value_type || is_input_modifier || is_input_kind) {
+		if (!v.isNumber()) {
+			luaL_error(l, "argument '%s': expected input enum integer", param_name);
+		}
+		const auto raw = static_cast<uint8_t>(v.unsafe_cast<lua_Integer>());
+		if (is_input_action_event) {
+			return static_cast<input::ActionEvent>(raw);
+		}
+		if (is_input_device) {
+			return static_cast<input::Device>(raw);
+		}
+		if (is_input_value_type) {
+			return static_cast<input::ValueType>(raw);
+		}
+		if (is_input_kind) {
+			return static_cast<input::InputKind>(raw);
+		}
+		return static_cast<input::ModifierKey>(raw);
+	}
 	if (is_str) {
 		if (!v.isString()) {
 			luaL_error(l, "argument '%s': expected string", param_name);
+		}
+		if (cpp_type.contains("string_view")) {
+			v.push(l);
+			size_t length = 0;
+			const char* data = lua_tolstring(l, -1, &length);
+			const std::string_view result(data, length);
+			lua_pop(l, 1);
+			return result;
 		}
 		return v.tostring();
 	}
@@ -200,6 +307,30 @@ auto anyReturnToLuaRef(lua_State* l, const std::any& val, std::string_view retur
 	}
 	if (const auto* v = std::any_cast<Color4>(&val)) {
 		return {l, *v};
+	}
+	if (const auto* v = std::any_cast<input::Action>(&val)) {
+		return {l, *v};
+	}
+	if (const auto* v = std::any_cast<input::ActionEvent>(&val)) {
+		return {l, static_cast<lua_Integer>(*v)};
+	}
+	if (const auto* v = std::any_cast<input::Bind>(&val)) {
+		return {l, *v};
+	}
+	if (const auto* v = std::any_cast<input::KeyCode>(&val)) {
+		return {l, *v};
+	}
+	if (const auto* v = std::any_cast<input::Device>(&val)) {
+		return {l, static_cast<lua_Integer>(*v)};
+	}
+	if (const auto* v = std::any_cast<input::ValueType>(&val)) {
+		return {l, static_cast<lua_Integer>(*v)};
+	}
+	if (const auto* v = std::any_cast<input::ModifierKey>(&val)) {
+		return {l, static_cast<lua_Integer>(*v)};
+	}
+	if (const auto* v = std::any_cast<input::InputKind>(&val)) {
+		return {l, static_cast<lua_Integer>(*v)};
 	}
 	if (const auto* v = std::any_cast<toast::Box<toast::Node>>(&val)) {
 		if (!v->exists()) {
@@ -796,6 +927,15 @@ auto luaRefValueToAny(lua_State* l, const luabridge::LuaRef& v) -> std::any {
 	if (v.isInstance<AssetProxy>()) {
 		return v.unsafe_cast<AssetProxy>();
 	}
+	if (v.isInstance<input::Action>()) {
+		return v.unsafe_cast<input::Action>();
+	}
+	if (v.isInstance<input::Bind>()) {
+		return v.unsafe_cast<input::Bind>();
+	}
+	if (v.isInstance<input::KeyCode>()) {
+		return v.unsafe_cast<input::KeyCode>();
+	}
 	if (v.isTable()) {
 		return luaArrayTableToAny(l, v);
 	}
@@ -909,6 +1049,11 @@ auto nodeProxyIndex(NodeProxy& proxy, const luabridge::LuaRef& key, lua_State* l
 	const toast::FieldInfo* f = lookupField(info, key_str);
 	if (f) {
 		std::any value = f->get(n);
+		if (!f->is_array && f->value_type == toast::FieldType::vec3_t && !f->hasAttribute("Color")) {
+			if (const auto* vector = std::any_cast<glm::vec3>(&value)) {
+				return {l, Vec3FieldProxy(proxy.box(), f, *vector)};
+			}
+		}
 		return anyToLuaRef(l, value, *f);
 	}
 
@@ -917,6 +1062,12 @@ auto nodeProxyIndex(NodeProxy& proxy, const luabridge::LuaRef& key, lua_State* l
 	}
 
 	if (info->getMethod(key_str)) {
+		lua_pushstring(l, key_str.c_str());
+		lua_pushcclosure(l, proxyMethodDispatch, 1);
+		return luabridge::LuaRef::fromStack(l);
+	}
+
+	if (scripting::ScriptRuntime* runtime = n->scriptRuntime(); runtime != nullptr && runtime->hasFunction(key_str)) {
 		lua_pushstring(l, key_str.c_str());
 		lua_pushcclosure(l, proxyMethodDispatch, 1);
 		return luabridge::LuaRef::fromStack(l);
@@ -1024,6 +1175,7 @@ auto nodeProxyDispatchMethod(NodeProxy& np, std::string_view name, lua_State* l,
 	}
 
 	// Reflected C++ method
+	bool called_scripts = false;
 	if (info) {
 		if (const toast::FunctionInfo* fn = info->getMethod(name); fn && fn->invoke_dynamic) {
 			// Validate arg count against required parameters
@@ -1067,7 +1219,13 @@ auto nodeProxyDispatchMethod(NodeProxy& np, std::string_view name, lua_State* l,
 
 			if (scripting::ScriptRuntime* rt = n->scriptRuntime()) {
 				rt->callWithLuaStack(name, l, args_base, n_args);
+				called_scripts = true;
 			}
+		}
+	}
+	if (!called_scripts) {
+		if (scripting::ScriptRuntime* rt = n->scriptRuntime(); rt && rt->hasFunction(name)) {
+			rt->callWithLuaStack(name, l, args_base, n_args);
 		}
 	}
 

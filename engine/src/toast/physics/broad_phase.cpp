@@ -1,5 +1,7 @@
 #include "broad_phase.hpp"
 
+#include "physics_settings.hpp"
+
 #include <algorithm>
 #include <cmath>
 #include <future>
@@ -17,7 +19,18 @@ auto normalized(const glm::quat& rotation) -> glm::quat {
 	                                                                  : glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 }
 
-auto shapeBounds(const Body& body, const Shape& shape) -> AABB {
+auto isShapeAsleep(CollisionWorldView world, ShapeID shape_id) -> bool {
+	const Shape* shape = world.shape(shape_id);
+	if (shape == nullptr) {
+		return false;
+	}
+	const Body* body = world.body(shape->owner);
+	return body != nullptr && body->type == BodyType::dynamic_body && body->enabled && not body->awake;
+}
+
+}
+
+auto worldShapeBounds(const Body& body, const Shape& shape) -> AABB {
 	switch (shape.type) {
 		case ShapeType::sphere: {
 			const glm::vec3 center = body.position + body.rotation * shape.sphere.local_center;
@@ -42,11 +55,21 @@ auto shapeBounds(const Body& body, const Shape& shape) -> AABB {
 			                                glm::abs(rotation[2]) * half_extents.z;
 			return {.min = center - world_extents, .max = center + world_extents};
 		}
+		case ShapeType::voxel: {
+			const AABB& bounds = shape.voxel.local_bounds;
+			const glm::vec3 local_center = (bounds.min + bounds.max) * 0.5f;
+			const glm::vec3 half_extents = (bounds.max - bounds.min) * 0.5f;
+			const glm::quat rotation = normalized(body.rotation * shape.voxel.local_rotation);
+			const glm::vec3 world_center = body.position + body.rotation * shape.voxel.local_center + rotation * local_center;
+			const glm::mat3 r = glm::mat3_cast(rotation);
+			const glm::vec3 world_extents =
+			    glm::abs(r[0]) * half_extents.x + glm::abs(r[1]) * half_extents.y + glm::abs(r[2]) * half_extents.z;
+
+			return {.min = world_center - world_extents, .max = world_center + world_extents};
+		}
 	}
 
 	return {};
-}
-
 }
 
 auto BroadPhase::calculateBounds(CollisionWorldView world, size_t begin, size_t end) const -> std::vector<ShapeBoundsUpdate> {
@@ -64,7 +87,7 @@ auto BroadPhase::calculateBounds(CollisionWorldView world, size_t begin, size_t 
 		updates.emplace_back(
 		    ShapeBoundsUpdate {
 		      .shape = shape_id,
-		      .bounds = active ? shapeBounds(*body, slot.shape) : AABB {},
+		      .bounds = active ? worldShapeBounds(*body, slot.shape) : AABB {},
 		      .active = active,
 		    }
 		);
@@ -79,7 +102,7 @@ auto BroadPhase::findPairs(CollisionWorldView world) -> std::vector<BroadPhasePa
 	ZoneValue(static_cast<uint64_t>(world.shapes.size()));
 	m_stats = {.input_shapes = world.shapes.size()};
 
-	constexpr size_t minimum_bounds_per_job = 32;
+	const size_t minimum_bounds_per_job = tunables().min_bounds_per_job;
 	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), static_cast<size_t>(1));
 	const size_t maximum_job_count = worker_count * 3;
 	const size_t job_count =
@@ -142,6 +165,8 @@ auto BroadPhase::findPairs(CollisionWorldView world) -> std::vector<BroadPhasePa
 				entry.node = m_tree.insert(update.shape, update.bounds);
 				entry.generation = update.shape.generation;
 				++m_stats.inserted_leaves;
+			} else if (isShapeAsleep(world, update.shape)) {
+				++m_stats.skipped_refits;
 			} else {
 				m_stats.reinserted_leaves += m_tree.updateLeaf(entry.node, update.bounds);
 			}
@@ -159,6 +184,11 @@ auto BroadPhase::findPairs(CollisionWorldView world) -> std::vector<BroadPhasePa
 
 			const ShapeBoundsUpdate& update = bounds[shape_index];
 			if (not update.active) {
+				continue;
+			}
+
+			if (isShapeAsleep(world, update.shape)) {
+				++m_stats.skipped_self_queries;
 				continue;
 			}
 
@@ -185,6 +215,11 @@ auto BroadPhase::findPairs(CollisionWorldView world) -> std::vector<BroadPhasePa
 	m_stats.tree_nodes = m_tree.size();
 	ZoneValue(static_cast<uint64_t>(pairs.size()));
 	return pairs;
+}
+
+auto BroadPhase::queryBounds(const AABB& bounds) const -> std::vector<ShapeID> {
+	ZoneScopedN("physics::QueryBounds");
+	return m_tree.query(bounds);
 }
 
 auto BroadPhase::debugNodes() const -> std::vector<AABBTreeDebugNode> {
@@ -238,5 +273,4 @@ auto BroadPhase::testPair(CollisionWorldView world, ShapeID shape_a_id, ShapeID 
 	    }
 	);
 }
-
 }

@@ -8,6 +8,7 @@
 #include "../ray_tracing_scene.hpp"
 #include "../shader_cache.hpp"
 #include "../skinned_blas_pool.hpp"
+#include "../voxel_debug.hpp"
 #include "../vulkan_core.hpp"
 #include "../vulkan_debug.hpp"
 #include "../vulkan_mesh.hpp"
@@ -31,6 +32,8 @@
 #include <string>
 #include <toast/assets/assets.hpp>
 #include <toast/log.hpp>
+#include <toast/physics/narrow_phase.hpp>
+#include <toast/physics/simulator.hpp>
 #include <tracy/Tracy.hpp>
 
 namespace renderer {
@@ -704,7 +707,7 @@ void DebugPass::drawPerformanceWindow() {
 			const auto visible = std::ranges::count_if(frame->mesh_instances, [](const auto& proxy) { return proxy.visible; });
 			ImGui::Text("Mesh instances  %zu visible of %zu", static_cast<size_t>(visible), frame->mesh_instances.size());
 			ImGui::Text("Material ranges %zu", frame->material_ranges.size());
-			ImGui::Text("Lights          %zu", frame->lights.size());
+			ImGui::Text("Lights          %zu of %u submitted", frame->lights.size(), frame->light_stats.submitted);
 			ImGui::Text("Voxel volumes   %zu", frame->voxel_instances.size());
 		}
 	}
@@ -751,6 +754,11 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 
 		drawPerformanceWindow();
 
+		if (!m_voxels) {
+			m_voxels = std::make_unique<voxel_debug::Monitor>();
+		}
+		m_voxels->update(*frame);
+
 		if (m_editor_panels && ImGui::Begin("Toast Debug")) {
 			{
 				const uint32_t dropped = VulkanRenderer::instance->getDroppedFrameCount();
@@ -760,6 +768,11 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 				}
 
 				ImGui::TextDisabled("Frames dropped: %u", dropped);
+
+				bool clamp_to_simulation = VulkanRenderer::instance->clampToSimulation();
+				if (ImGui::Checkbox("Clamp to game thread", &clamp_to_simulation)) {
+					VulkanRenderer::instance->setClampToSimulation(clamp_to_simulation);
+				}
 
 				float cap = static_cast<float>(VulkanRenderer::instance->frameRateLimit());
 				if (ImGui::SliderFloat("FPS cap", &cap, 0.0f, 144.0f, cap <= 0.0f ? "uncapped" : "%.0f")) {
@@ -771,11 +784,24 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 
 			if (const auto* shadows = VulkanRenderer::instance->getShadowPass(); shadows != nullptr) {
 				ImGui::TextDisabled(
-				    "Shadow pass: %u draws, %u scopes, %u cached",
+				    "Shadow pass: %u draws, %u scopes, %u cached, %u spared",
 				    shadows->getDrawCount(),
 				    shadows->getPassCount(),
-				    shadows->getCachedCount()
+				    shadows->getCachedCount(),
+				    shadows->getVoxelSparedCount()
 				);
+
+				if (const auto* frame = VulkanRenderer::instance->renderingFrame(); frame != nullptr) {
+					const auto& stats = frame->light_stats;
+					ImGui::TextDisabled(
+					    "Shadow slots: %u of %u spot, %u of %u point, %llu displaced",
+					    stats.spot_shadows,
+					    renderer::shadows::k_max_spot_shadows,
+					    stats.point_shadows,
+					    renderer::shadows::k_max_point_shadows,
+					    static_cast<unsigned long long>(stats.shadow_displaced)
+					);
+				}
 			}
 
 			if (const auto* skinning = VulkanRenderer::instance->getSkinningPass(); skinning != nullptr) {
@@ -913,8 +939,166 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 				ImGui::TextDisabled("range cutoff %.2f m, %u samples", ssao.range_cutoff, ssao.sample_count);
 			}
 
+			if (ImGui::CollapsingHeader("Clustered lighting")) {
+				using namespace clustered_lighting;
+
+				const auto& stats = frame->light_stats;
+				ImGui::Text("Lights %zu of %u submitted", frame->lights.size(), stats.submitted);
+				ImGui::TextDisabled("%u off screen, %u over the %u cap", stats.offscreen, stats.truncated, k_max_lights);
+				ImGui::TextDisabled("Depth %.2f to %.1f m", frame->cluster_near, frame->cluster_far);
+
+				if (m_cluster_lighting_pass != nullptr) {
+					m_cluster_lighting_pass->requestGridReadback();
+
+					const auto counts = m_cluster_lighting_pass->getClusterLightGridCounts(frame_index);
+					if (counts.empty()) {
+						ImGui::TextDisabled("Waiting for the cluster grid");
+					} else {
+						const auto grid = ClusterLightingPass::summarizeGrid(counts);
+						ImGui::Text("Clusters %u of %u occupied", grid.occupied, k_cluster_count);
+						ImGui::TextDisabled("Per cluster mean %.1f p95 %u max %u", grid.mean, grid.p95, grid.max_count);
+						if (grid.overflowed > 0) {
+							ImGui::TextColored(
+							    ImVec4(1.0f, 0.4f, 0.2f, 1.0f),
+							    "%u clusters over %u lights, %u entries dropped",
+							    grid.overflowed,
+							    k_max_lights_per_cluster,
+							    grid.dropped
+							);
+						}
+					}
+				}
+			}
+
+			m_voxels->drawPanel(*frame);
+
+			if (ImGui::CollapsingHeader("Voxel physics")) {
+				const physics::Simulator::PhysicsStepProfile& phys = physics::Simulator::stepProfile();
+
+				ImGui::Text(
+				    "Tick %6.2f ms  damage %.2f  connectivity %.2f  narrow %.2f  solve %.2f",
+				    phys.tick_ms,
+				    phys.damage_apply_ms,
+				    phys.connectivity_ms,
+				    phys.narrow_phase_ms,
+				    phys.solve_ms
+				);
+				if (phys.ticks_this_frame > 1) {
+					ImGui::TextColored(
+					    ImVec4(1.0f, 0.7f, 0.2f, 1.0f),
+					    "The fixed step accumulator ran %zu ticks this frame trying to catch up, roughly %zu x the "
+					    "numbers above, not one of them%s",
+					    phys.ticks_this_frame,
+					    phys.ticks_this_frame,
+					    phys.ticks_capped_by_time_budget ? " (stopped by the burst time budget, not max_steps)" : ""
+					);
+				}
+				ImGui::TextDisabled(
+				    "%zu bodies (%zu awake), %zu voxel shapes, %zu manifolds, %zu constraints",
+				    phys.body_count,
+				    phys.awake_body_count,
+				    phys.voxel_shape_count,
+				    phys.manifold_count,
+				    phys.constraints
+				);
+
+				ImGui::Separator();
+				ImGui::Text(
+				    "Connectivity %zu jobs dispatched, %zu stale, %zu shapes still waiting",
+				    phys.connectivity_jobs_dispatched,
+				    phys.connectivity_jobs_stale,
+				    phys.connectivity_shapes_waiting
+				);
+				if (phys.connectivity_shapes_waiting > 0) {
+					ImGui::TextColored(
+					    ImVec4(1.0f, 0.7f, 0.2f, 1.0f), "Connectivity backlog: destruction is outrunning the per tick job cap"
+					);
+				}
+				ImGui::Text(
+				    "Fragments %zu spawned this tick, %zu pending, %zu active (%zu sleep locked), %zu despawned",
+				    phys.fragments_spawned,
+				    phys.fragments_pending,
+				    phys.fragments_active,
+				    phys.fragments_sleep_locked,
+				    phys.fragments_despawned
+				);
+				if (phys.fragment_spawn_failures > 0) {
+					ImGui::TextColored(
+					    ImVec4(1.0f, 0.3f, 0.3f, 1.0f),
+					    "%zu fragment extractions failed this tick, brick pool is full",
+					    phys.fragment_spawn_failures
+					);
+				}
+
+				ImGui::Separator();
+				const float pool_ratio = phys.brick_pool_capacity > 0 ? static_cast<float>(phys.brick_pool_allocated) /
+				                                                            static_cast<float>(phys.brick_pool_capacity)
+				                                                      : 0.0f;
+				const ImVec4 pool_color = pool_ratio > 0.9f    ? ImVec4(1.0f, 0.3f, 0.3f, 1.0f)
+				                          : pool_ratio > 0.75f ? ImVec4(1.0f, 0.7f, 0.2f, 1.0f)
+				                                               : ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+				ImGui::TextColored(
+				    pool_color,
+				    "Brick pool %u of %u bricks (%.0f%%)",
+				    phys.brick_pool_allocated,
+				    phys.brick_pool_capacity,
+				    pool_ratio * 100.0f
+				);
+
+				ImGui::Separator();
+				const size_t total_cached = phys.reused_cached_contacts + phys.cold_cached_contacts;
+				const float warm_ratio =
+				    total_cached > 0 ? static_cast<float>(phys.reused_cached_contacts) / static_cast<float>(total_cached) : 1.0f;
+				ImGui::TextDisabled(
+				    "Contacts %zu begin, %zu persist, %zu end, %.0f%% warm started (%zu of %zu)",
+				    phys.contact_begins,
+				    phys.contact_persists,
+				    phys.contact_ends,
+				    warm_ratio * 100.0f,
+				    phys.reused_cached_contacts,
+				    total_cached
+				);
+				ImGui::TextDisabled(
+				    "Constraints %zu warm started, %zu rejected, %zu invalid, %zu islands, %zu parallel batches",
+				    phys.warm_started_constraints,
+				    phys.rejected_constraints,
+				    phys.invalid_constraints,
+				    phys.island_jobs,
+				    phys.max_constraint_batches
+				);
+				ImGui::TextDisabled(
+				    "Narrowphase %zu jobs, %zu candidates, %zu collisions, %zu rejected manifolds, %zu sleeping pairs skipped",
+				    phys.narrow_jobs,
+				    phys.narrow_candidates,
+				    phys.narrow_collisions,
+				    phys.rejected_manifolds,
+				    phys.sleeping_pairs_skipped
+				);
+
+				using PT = physics::NarrowPhasePairType;
+				constexpr std::array<std::pair<PT, const char*>, 4> k_voxel_pairs {
+				  {{PT::sphere_voxel, "Sphere-voxel"},
+					 {PT::box_voxel, "Box-voxel"},
+					 {PT::capsule_voxel, "Capsule-voxel"},
+					 {PT::voxel_voxel, "Voxel-voxel"}}
+				};
+				if (ImGui::BeginTable("##voxel_pair_candidates", 2, ImGuiTableFlags_SizingFixedFit)) {
+					for (const auto& [type, label] : k_voxel_pairs) {
+						ImGui::TableNextColumn();
+						ImGui::TextDisabled("%s", label);
+						ImGui::TableNextColumn();
+						ImGui::TextDisabled("%zu", phys.narrow_pair_candidates[static_cast<size_t>(type)]);
+					}
+					ImGui::EndTable();
+				}
+			}
+
 			ImGui::Separator();
-			ImGui::Text("Render mode: %s", frame->render_mode == 1 ? "Cluster Heatmap (toolbar Mode button)" : "Lit");
+			if (voxel_debug::isView(frame->render_mode)) {
+				ImGui::Text("Render mode: voxel view %u, legend bottom left", frame->render_mode);
+			} else {
+				ImGui::Text("Render mode: %s", frame->render_mode == 1 ? "Cluster Heatmap (toolbar Mode button)" : "Lit");
+			}
 			if (frame->render_mode == 1) {
 				ImGui::TextColored(ImVec4(0.3f, 0.6f, 1.0f, 1.0f), "Blue = 0 lights/cluster");
 				ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "Red = 8+ lights/cluster");
@@ -924,7 +1108,11 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 			ImGui::End();
 		}
 
+		m_voxels->drawOverlay(*frame);
+
 		if (frame->render_mode == 1 && m_cluster_lighting_pass != nullptr) {
+			m_cluster_lighting_pass->requestGridReadback();
+
 			const auto counts = m_cluster_lighting_pass->getClusterLightGridCounts(frame_index);
 			if (!counts.empty()) {
 				using namespace clustered_lighting;
@@ -966,20 +1154,29 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 	const auto& fill_vertices = frame->debug_triangle_vertices;
 	m_fill_vertex_counts[frame_index] = static_cast<uint32_t>(fill_vertices.size());
 	if (!fill_vertices.empty()) {
-		std::vector<std::array<DebugVertex, 3>> triangles;
-		triangles.reserve(fill_vertices.size() / 3);
-		for (size_t i = 0; i + 2 < fill_vertices.size(); i += 3) {
-			triangles.push_back({fill_vertices[i], fill_vertices[i + 1], fill_vertices[i + 2]});
+		ZoneScopedN("DebugPass::SortFill");
+
+		const size_t triangle_count = fill_vertices.size() / 3;
+		m_fill_sort_order.resize(triangle_count);
+		m_fill_sort_depths.resize(triangle_count);
+
+		const glm::mat4& view = frame->frame_data.view;
+		for (size_t triangle = 0; triangle < triangle_count; ++triangle) {
+			const size_t base = triangle * 3;
+			const glm::vec3 center =
+			    (fill_vertices[base].position + fill_vertices[base + 1].position + fill_vertices[base + 2].position) / 3.0f;
+			m_fill_sort_order[triangle] = static_cast<uint32_t>(triangle);
+			m_fill_sort_depths[triangle] = (view * glm::vec4(center, 1.0f)).z;
 		}
-		auto depth = [&](const auto& triangle) {
-			const glm::vec3 center = (triangle[0].position + triangle[1].position + triangle[2].position) / 3.0f;
-			return (frame->frame_data.view * glm::vec4(center, 1.0f)).z;
-		};
-		std::stable_sort(triangles.begin(), triangles.end(), [&](const auto& a, const auto& b) { return depth(a) < depth(b); });
+
+		std::stable_sort(m_fill_sort_order.begin(), m_fill_sort_order.end(), [this](uint32_t a, uint32_t b) {
+			return m_fill_sort_depths[a] < m_fill_sort_depths[b];
+		});
+
 		ensureLineCapacity(core, fill_buffer, fill_vertices.size());
 		auto* destination = static_cast<DebugVertex*>(fill_buffer.mapped);
-		for (const auto& triangle : triangles) {
-			std::memcpy(destination, triangle.data(), 3 * sizeof(DebugVertex));
+		for (const uint32_t triangle : m_fill_sort_order) {
+			std::memcpy(destination, &fill_vertices[static_cast<size_t>(triangle) * 3], 3 * sizeof(DebugVertex));
 			destination += 3;
 		}
 		fill_buffer.buffer.getAllocation().flush(0, fill_vertices.size() * sizeof(DebugVertex));
@@ -1027,13 +1224,7 @@ void DebugPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t ima
 	if (m_fill_vertex_counts[frame_index] > 0 && m_fill_pipeline.isReady()) {
 		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_fill_pipeline.getPipeline());
 		const DrawPushConstants pc {glm::mat4(1.0f)};
-		cmd.pushConstants(
-		    *m_shader_layout.getPipelineLayout(),
-		    vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
-		    0,
-		    sizeof(pc),
-		    &pc
-		);
+		cmd.pushConstants(*m_shader_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eAll, 0, sizeof(DrawPushConstants), &pc);
 		cmd.bindVertexBuffers(
 		    0, std::array<vk::Buffer, 1> {*m_fill_vertex_buffers[frame_index].buffer}, std::array<vk::DeviceSize, 1> {0}
 		);
@@ -1042,14 +1233,8 @@ void DebugPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t ima
 	if (line_vertex_count > 0 && m_line_pipeline.isReady()) {
 		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_line_pipeline.getPipeline());
 
-		const DrawPushConstants pc {};    // identity - line vertices are already in world space
-		cmd.pushConstants(
-		    *m_shader_layout.getPipelineLayout(),
-		    vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
-		    0,
-		    sizeof(DrawPushConstants),
-		    &pc
-		);
+		const DrawPushConstants pc {glm::mat4(1.0f)};
+		cmd.pushConstants(*m_shader_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eAll, 0, sizeof(DrawPushConstants), &pc);
 
 		cmd.bindVertexBuffers(
 		    0, std::array<vk::Buffer, 1> {*m_line_vertex_buffers[frame_index].buffer}, std::array<vk::DeviceSize, 1> {0}
@@ -1185,6 +1370,27 @@ void DebugPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t ima
 		}
 	}
 
+	if (frame->transform_gizmo.size_handle_count > 0 && m_gizmo_pipeline.isReady() && m_size_gizmo_vertex_count > 0) {
+		constexpr glm::vec4 k_highlight {1.0f, 0.85f, 0.1f, 1.0f};
+		constexpr glm::vec4 k_size_dot_color {0.0f, 1.0f, 0.251f, 1.0f};    // editor green, matching the collider
+
+		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_gizmo_pipeline.getPipeline());
+		cmd.bindVertexBuffers(0, std::array<vk::Buffer, 1> {*m_size_gizmo_vertex_buffer}, std::array<vk::DeviceSize, 1> {0});
+
+		for (uint32_t i = 0; i < frame->transform_gizmo.size_handle_count; ++i) {
+			const auto& dot = frame->transform_gizmo.size_handles[i];
+			const bool highlighted = dot.handle == frame->transform_gizmo.hover || dot.handle == frame->transform_gizmo.active;
+
+			DrawPushConstants pc {};
+			pc.model = glm::translate(glm::mat4(1.0f), dot.world_position) *
+			           glm::scale(glm::mat4(1.0f), glm::vec3(frame->transform_gizmo.size_handle_scale));
+			pc.tint = highlighted ? k_highlight : k_size_dot_color;
+
+			cmd.pushConstants(*m_shader_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eAll, 0, sizeof(DrawPushConstants), &pc);
+			cmd.draw(m_size_gizmo_vertex_count, 1, 0, 0);
+		}
+	}
+
 	if (m_imgui_ready) {
 		ImDrawData* draw_data = ImGui::GetDrawData();
 		if (draw_data != nullptr) {
@@ -1237,6 +1443,7 @@ void DebugPass::createResources(const renderer::VulkanCore& core) {
 	createTranslateGizmoGeometry(core);
 	createRotateGizmoGeometry(core);
 	createScaleGizmoGeometry(core);
+	createSizeGizmoGeometry(core);
 }
 
 void DebugPass::createBillboardResources(
@@ -1385,7 +1592,7 @@ void DebugPass::createGizmoGeometry(const renderer::VulkanCore& core) {
 	       std::pair {0,   k_red},
           std::pair {1, k_green},
           std::pair {2,  k_blue}
-  }) {
+	}) {
 		appendShaftAlongAxis(vertices, axis, k_shaft_length, k_shaft_half_size, color);
 		appendPyramidAlongAxis(vertices, axis, k_shaft_length, k_shaft_length + k_head_length, k_head_half_size, color);
 	}
@@ -1538,6 +1745,30 @@ void DebugPass::createScaleGizmoGeometry(const renderer::VulkanCore& core) {
 	void* mapped = m_scale_gizmo_vertex_buffer.getAllocation().getInfo().pMappedData;
 	std::memcpy(mapped, vertices.data(), vertices.size() * sizeof(DebugVertex));
 	m_scale_gizmo_vertex_buffer.getAllocation().flush(0, vertices.size() * sizeof(DebugVertex));
+}
+
+void DebugPass::createSizeGizmoGeometry(const renderer::VulkanCore& core) {
+	using namespace toast::gizmo_layout;
+	constexpr glm::vec4 k_white {1.0f, 1.0f, 1.0f, 1.0f};
+
+	std::vector<DebugVertex> vertices;
+	appendBox(vertices, glm::vec3(-k_size_dot_half_size), glm::vec3(k_size_dot_half_size), k_white);
+	m_size_gizmo_vertex_count = static_cast<uint32_t>(vertices.size());
+
+	vk::BufferCreateInfo buffer_ci {};
+	buffer_ci.size = vertices.size() * sizeof(DebugVertex);
+	buffer_ci.usage = vk::BufferUsageFlagBits::eVertexBuffer;
+
+	vma::AllocationCreateInfo alloc_ci {};
+	alloc_ci.usage = vma::MemoryUsage::eAuto;
+	alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
+
+	m_size_gizmo_vertex_buffer = core.getAllocator().createBuffer(buffer_ci, alloc_ci);
+	setDebugName(core, *m_size_gizmo_vertex_buffer, "DebugPass SizeGizmoVertexBuffer");
+
+	void* mapped = m_size_gizmo_vertex_buffer.getAllocation().getInfo().pMappedData;
+	std::memcpy(mapped, vertices.data(), vertices.size() * sizeof(DebugVertex));
+	m_size_gizmo_vertex_buffer.getAllocation().flush(0, vertices.size() * sizeof(DebugVertex));
 }
 
 void DebugPass::ensureLineCapacity(const renderer::VulkanCore& core, DynamicVertexBuffer& buffer, size_t required_vertex_count) {

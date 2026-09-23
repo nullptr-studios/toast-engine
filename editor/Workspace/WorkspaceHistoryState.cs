@@ -34,6 +34,7 @@ public partial class WorkspaceHistoryState : ObservableObject {
 	private PendingApply? m_pendingApply;
 	private PendingMerge? m_pendingMerge;
 	private ByteString? m_savedSnapshot;
+	private bool m_forceUnsaved;
 	[ObservableProperty] private bool m_transactionOpen;
 	[ObservableProperty] private string m_unavailableReason = "Loading history…";
 
@@ -68,7 +69,7 @@ public partial class WorkspaceHistoryState : ObservableObject {
 		};
 		m_revisions.Add(revision.Id, revision);
 		CurrentRevision = revision.Id;
-		m_savedSnapshot = initial.InitiallySaved ? revision.Snapshot : null;
+		m_savedSnapshot = initial.InitiallySaved && !m_forceUnsaved ? revision.Snapshot : null;
 		RefreshDirty();
 		Changed?.Invoke();
 	}
@@ -108,6 +109,7 @@ public partial class WorkspaceHistoryState : ObservableObject {
 	}
 
 	public void MarkSaved(ByteString canonicalSnapshot) {
+		m_forceUnsaved = false;
 		m_savedSnapshot = canonicalSnapshot;
 		RefreshDirty();
 		Changed?.Invoke();
@@ -117,6 +119,13 @@ public partial class WorkspaceHistoryState : ObservableObject {
 		if (!CanNavigate() || !m_revisions.TryGetValue(CurrentRevision, out var current) || current.Parents.Count == 0)
 			return false;
 		return ApplyExisting(current.Parents[0]);
+	}
+
+	public void MarkUnsaved() {
+		m_forceUnsaved = true;
+		m_savedSnapshot = null;
+		RefreshDirty();
+		Changed?.Invoke();
 	}
 
 	public bool Redo() {

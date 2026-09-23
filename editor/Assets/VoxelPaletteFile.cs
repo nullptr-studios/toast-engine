@@ -4,7 +4,6 @@
 //
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using Tomlyn;
 using Tomlyn.Model;
@@ -23,6 +22,8 @@ public sealed class VoxelPaletteEntry {
 	public float Reflectivity { get; set; }
 	public float Emissive { get; set; }
 
+	public float Alpha { get; set; } = 1f;
+
 	public int Material { get; set; }
 
 	/// <summary>Authored without a material which differs from material 0</summary>
@@ -32,20 +33,43 @@ public sealed class VoxelPaletteEntry {
 	public bool Transparent { get; set; }
 }
 
+public sealed class VoxelMaterialSlot {
+	public string Name { get; set; } = "";
+
+	public string PhysicsUid { get; set; } = "";
+
+	public string DestructionUid { get; set; } = "";
+
+	public string ImpactSoundUid { get; set; } = "";
+	public byte[] DustColour { get; set; } = [128, 128, 128];
+	public string Tag { get; set; } = "";
+
+	public bool IsEmpty =>
+		Name.Length == 0 && PhysicsUid.Length == 0 && DestructionUid.Length == 0;
+}
+
 /// <summary>Mirrors the assets::VoxelPalette TOML shape</summary>
 public sealed class VoxelPaletteFile {
 	public const int Size = 256;
 
-	public string LibraryUid { get; set; } = "";
+	public const int SlotCount = 8;
 
 	public float MaxEmissive { get; set; } = 1f;
 
 	public VoxelPaletteEntry[] Entries { get; } = CreateEntries();
 
+	public VoxelMaterialSlot[] Slots { get; } = CreateSlots();
+
 	private static VoxelPaletteEntry[] CreateEntries() {
 		var entries = new VoxelPaletteEntry[Size];
 		for (var i = 0; i < Size; i++) entries[i] = new VoxelPaletteEntry();
 		return entries;
+	}
+
+	private static VoxelMaterialSlot[] CreateSlots() {
+		var slots = new VoxelMaterialSlot[SlotCount];
+		for (var i = 0; i < SlotCount; i++) slots[i] = new VoxelMaterialSlot();
+		return slots;
 	}
 
 	public static VoxelPaletteFile FromFile(string path) {
@@ -57,9 +81,22 @@ public sealed class VoxelPaletteFile {
 			?? throw new FormatException("Voxel palette: failed to parse TOML");
 
 		var palette = new VoxelPaletteFile {
-			LibraryUid = GetString(table, "library", ""),
 			MaxEmissive = GetFloat(table, "max_emissive", 1f)
 		};
+
+		if (table.TryGetValue("materials", out var slotList) && slotList is TomlTableArray slotTables)
+			for (var i = 0; i < slotTables.Count && i < SlotCount; i++) {
+				var source = slotTables[i];
+				var slot = palette.Slots[i];
+				slot.Name = GetString(source, "name", "");
+				slot.PhysicsUid = GetString(source, "physics", "");
+				slot.DestructionUid = GetString(source, "destruction", "");
+				slot.ImpactSoundUid = GetString(source, "impact_sound", "");
+				slot.Tag = GetString(source, "tag", "");
+
+				if (source.TryGetValue("dust_colour", out var dust) && dust is TomlArray rgb && rgb.Count == 3)
+					slot.DustColour = [ToByte(rgb[0]), ToByte(rgb[1]), ToByte(rgb[2])];
+			}
 
 		if (!table.TryGetValue("entries", out var list) || list is not TomlTableArray entries) return palette;
 
@@ -80,6 +117,7 @@ public sealed class VoxelPaletteFile {
 			target.Metallic = GetFloat(entry, "metallic", 0f);
 			target.Reflectivity = GetFloat(entry, "reflectivity", 0f);
 			target.Emissive = GetFloat(entry, "emissive", 0f);
+			target.Alpha = GetFloat(entry, "alpha", 1f);
 
 			target.HasMaterial = entry.ContainsKey("material");
 			target.Material = GetInt(entry, "material", 0);
@@ -96,9 +134,24 @@ public sealed class VoxelPaletteFile {
 	}
 
 	public string Serialize() {
-		var root = new TomlTable();
-		if (LibraryUid.Length > 0) root["library"] = LibraryUid;
-		root["max_emissive"] = (double)MaxEmissive;
+		var root = new TomlTable {
+			["max_emissive"] = (double)MaxEmissive
+		};
+
+		var slots = new TomlTableArray();
+		foreach (var slot in Slots) {
+			var table = new TomlTable { ["name"] = slot.Name };
+			if (slot.PhysicsUid.Length > 0) table["physics"] = slot.PhysicsUid;
+			if (slot.DestructionUid.Length > 0) table["destruction"] = slot.DestructionUid;
+			if (slot.ImpactSoundUid.Length > 0) table["impact_sound"] = slot.ImpactSoundUid;
+			if (slot.Tag.Length > 0) table["tag"] = slot.Tag;
+			table["dust_colour"] = new TomlArray {
+				(long)slot.DustColour[0], (long)slot.DustColour[1], (long)slot.DustColour[2]
+			};
+			slots.Add(table);
+		}
+
+		root["materials"] = slots;
 
 		var list = new TomlTableArray();
 		for (var index = 1; index < Size; index++) {
@@ -111,9 +164,10 @@ public sealed class VoxelPaletteFile {
 				["roughness"] = (double)Clamp01(entry.Roughness),
 				["metallic"] = (double)Clamp01(entry.Metallic),
 				["reflectivity"] = (double)Clamp01(entry.Reflectivity),
-				["emissive"] = (double)Clamp01(entry.Emissive)
+				["emissive"] = (double)Clamp01(entry.Emissive),
+				["alpha"] = (double)Clamp01(entry.Alpha)
 			};
-			if (entry.HasMaterial) table["material"] = (long)Math.Clamp(entry.Material, 0, 255);
+			if (entry.HasMaterial) table["material"] = (long)Math.Clamp(entry.Material, 0, SlotCount - 1);
 			table["transforms_to"] = (long)Math.Clamp(entry.TransformsTo, 0, 255);
 			table["transparent"] = entry.Transparent;
 			list.Add(table);
@@ -151,28 +205,5 @@ public sealed class VoxelPaletteFile {
 		return t.TryGetValue(key, out var v)
 			? v switch { double d => (float)d, float f => f, long l => l, int i => i, _ => fallback }
 			: fallback;
-	}
-}
-
-public static class VoxelMaterialLibraryFile {
-	public static List<string> LoadNames(string uid) {
-		if (string.IsNullOrEmpty(uid)) return [];
-		if (!AssetDatabase.TryResolve(uid, out var virtualPath, out _)) return [];
-
-		try {
-			var table = TomlSerializer.Deserialize<TomlTable>(File.ReadAllText(ProjectContext.Resolve(virtualPath)));
-			if (table is null || !table.TryGetValue("materials", out var list) || list is not TomlTableArray materials)
-				return [];
-
-			var names = new List<string>(materials.Count);
-			for (var i = 0; i < materials.Count; i++) {
-				names.Add(materials[i].TryGetValue("name", out var name) && name is string text && text.Length > 0
-					? text
-					: $"material {i}");
-			}
-			return names;
-		} catch {
-			return [];
-		}
 	}
 }

@@ -10,7 +10,6 @@
 
 #include <array>
 #include <cstddef>
-#include <optional>
 #include <span>
 #include <vector>
 
@@ -23,6 +22,10 @@ enum class NarrowPhasePairType : size_t {
 	box_box,
 	box_capsule,
 	capsule_capsule,
+	sphere_voxel,
+	box_voxel,
+	capsule_voxel,
+	voxel_voxel,
 	count
 };
 
@@ -41,8 +44,7 @@ public:
 	auto generateManifolds(CollisionWorldView world, std::span<const BroadPhasePair> candidates) const -> ManifoldQueue;
 
 private:
-	[[nodiscard]]
-	auto collide(CollisionWorldView world, BroadPhasePair pair) const -> std::optional<Manifold>;
+	void collide(CollisionWorldView world, BroadPhasePair pair, std::vector<Manifold>& output) const;
 
 	[[nodiscard]]
 	auto validate(CollisionWorldView world, Manifold& manifold) const -> bool;

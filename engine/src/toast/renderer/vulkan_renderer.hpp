@@ -12,7 +12,9 @@
 #include "render_pass_base.hpp"
 #include "shader_layout.hpp"
 #include "shadow_constants.hpp"
+#include "shadow_slots.hpp"
 #include "voxel_gpu_storage.hpp"
+#include "voxel_scene_patcher.hpp"
 #include "vulkan_core.hpp"
 #include "vulkan_mesh.hpp"
 #include "vulkan_pipeline.hpp"
@@ -31,6 +33,7 @@
 #include <optional>
 #include <queue>
 #include <semaphore>
+#include <span>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -205,16 +208,19 @@ public:
 	/// Mirrors GpuLight in lighting.slang and cluster_lighting.slang
 	struct GpuLight {
 		glm::vec4 world_pos_range;
-		glm::vec4 view_pos_type;    // w type 0 point 1 spot
+		glm::vec4 view_pos_type;     // w type 0 point 1 spot
+		glm::vec4 view_direction;    // xyz view space spot axis
 		glm::vec4 color_intensity;
-		glm::vec4 direction_pad;    // w shadow layer or -1
-		glm::vec4 cone_angles;      // x cos outer y cos inner z shadow near w shadow far
+		glm::vec4 direction_pad;     // w shadow layer or -1
+		glm::vec4 cone_angles;       // x cos outer y cos inner z shadow near w shadow far
 
 		// x fraction of the layer rendered y point light face scale inside the guard band
 		glm::vec4 shadow_atlas {1.0f, 1.0f, 0.0f, 0.0f};
 
 		glm::mat4 shadow_view_projection {1.0f};
 	};
+
+	static_assert(sizeof(GpuLight) == 176, "GpuLight must match the stride in lighting.slang and cluster_lighting.slang");
 
 	struct ShadowView {
 		glm::mat4 view_projection {1.0f};
@@ -307,6 +313,13 @@ public:
 		assets::Handle<assets::Mesh> mesh;
 	};
 
+	struct SizeHandleDraw {
+		glm::vec3 world_position {0.0f};
+		toast::GizmoHandle handle = toast::GizmoHandle::none;
+	};
+
+	static constexpr size_t k_max_size_handles = 6;
+
 	struct TransformGizmoDraw {
 		bool visible = false;
 		toast::GizmoTool tool = toast::GizmoTool::select;
@@ -314,6 +327,10 @@ public:
 		toast::GizmoHandle hover = toast::GizmoHandle::none;
 		toast::GizmoHandle active = toast::GizmoHandle::none;
 		float drag_scale_factor = 1.0f;
+
+		std::array<SizeHandleDraw, k_max_size_handles> size_handles {};
+		uint32_t size_handle_count = 0;
+		float size_handle_scale = 1.0f;
 	};
 
 	struct GizmoState {
@@ -324,6 +341,10 @@ public:
 		toast::GizmoHandle hover = toast::GizmoHandle::none;
 		toast::GizmoHandle active = toast::GizmoHandle::none;
 		float drag_scale_factor = 1.0f;
+
+		std::array<SizeHandleDraw, k_max_size_handles> size_handles {};
+		uint32_t size_handle_count = 0;
+		float size_handle_scale = 1.0f;
 	};
 
 	struct ImGuiKeyEvent {
@@ -338,6 +359,15 @@ public:
 		float mouse_wheel_y = 0.0f;
 		std::vector<ImGuiKeyEvent> key_events;
 		std::vector<uint32_t> char_events;
+	};
+
+	struct LightStats {
+		uint32_t submitted = 0;
+		uint32_t offscreen = 0;
+		uint32_t truncated = 0;
+		uint32_t spot_shadows = 0;
+		uint32_t point_shadows = 0;
+		uint64_t shadow_displaced = 0;
 	};
 
 	struct RenderFrame {
@@ -373,6 +403,11 @@ public:
 		glm::vec2 viewport_extent {0.0f};
 		float camera_near = 0.01f;
 		float camera_far = 5000.0f;
+
+		float cluster_near = 0.1f;
+		float cluster_far = 5000.0f;
+
+		LightStats light_stats;
 
 		ImGuiInputSnapshot imgui_input;
 
@@ -471,6 +506,14 @@ public:
 	}
 
 	static constexpr double k_background_frame_rate_limit = 30.0;
+
+	/// False repeats the last frame instead of waiting for a new one
+	void setClampToSimulation(bool clamp) noexcept { m_clamp_to_simulation.store(clamp, std::memory_order_relaxed); }
+
+	[[nodiscard]]
+	auto clampToSimulation() const noexcept -> bool {
+		return m_clamp_to_simulation.load(std::memory_order_relaxed);
+	}
 
 	void setApplicationFocused(bool focused) noexcept { m_application_focused.store(focused, std::memory_order_relaxed); }
 
@@ -603,21 +646,21 @@ public:
 	auto getInstanceBuffer(uint32_t frame_index) const -> vk::Buffer {
 		return frame_index < m_instance_res.size() && m_instance_res[frame_index].gpu_buffer.has_value()
 		           ? **m_instance_res[frame_index].gpu_buffer
-		           : vk::Buffer {};
+							 : vk::Buffer {};
 	}
 
 	[[nodiscard]]
 	auto getShadowInstanceBuffer(uint32_t frame_index) const -> vk::Buffer {
 		return frame_index < m_shadow_instance_res.size() && m_shadow_instance_res[frame_index].gpu_buffer.has_value()
 		           ? **m_shadow_instance_res[frame_index].gpu_buffer
-		           : vk::Buffer {};
+							 : vk::Buffer {};
 	}
 
 	[[nodiscard]]
 	auto getJointMatrixBuffer(uint32_t frame_index) const -> vk::Buffer {
 		return frame_index < m_joint_matrix_res.size() && m_joint_matrix_res[frame_index].gpu_buffer.has_value()
 		           ? **m_joint_matrix_res[frame_index].gpu_buffer
-		           : vk::Buffer {};
+							 : vk::Buffer {};
 	}
 
 	[[nodiscard]]
@@ -929,12 +972,23 @@ private:
 		size_t light_index = 0;
 		float distance_squared = 0.0f;
 		float resolution_scale = 1.0f;
+		bool visible = true;
+		uint64_t key = 0;
+		float importance = 0.0f;
 	};
 
 	void fitShadowViews(
 	    RenderFrame& frame, float aspect, int32_t shadow_caster_index, const glm::vec3& shadow_caster_direction,
-	    std::vector<PunctualShadowCandidate>& spot_candidates, std::vector<PunctualShadowCandidate>& point_candidates
+	    const std::vector<PunctualShadowCandidate>& spot_candidates, const std::vector<PunctualShadowCandidate>& point_candidates
 	);
+
+	/// Fills m_tick_slot_of with the slot of each candidate or -1
+	void assignShadowSlots(const std::vector<PunctualShadowCandidate>& candidates, std::span<shadow_slots::Slot> slots);
+
+	void releaseShadowSlots();
+
+	/// Drops unseen lights without a shadow slot then ranks and caps what is left
+	void finalizeLights(RenderFrame& frame);
 
 	struct UploadSlot {
 		vk::raii::CommandBuffer command_buffer = nullptr;
@@ -1097,7 +1151,10 @@ private:
 	struct VoxelSceneKey {
 		uint64_t node_uid = 0;
 		uint32_t revision = 0;
-		const toast::voxel::Palette* palette = nullptr;
+		uint32_t content = 0;
+		const voxel::Palette* palette = nullptr;
+
+		uint32_t palette_revision = 0;
 
 		[[nodiscard]]
 		auto operator==(const VoxelSceneKey&) const -> bool = default;
@@ -1105,8 +1162,18 @@ private:
 
 	std::vector<VoxelSceneKey> m_voxel_scene_key;
 
+	VoxelChangeTracker m_voxel_change_tracker;
+
+	/// Describes the newest storage whether published or pending so a patch starts from it
+	VoxelScenePatcher m_voxel_patcher;
+	std::shared_ptr<VoxelGpuStorage> m_voxel_latest_storage;
+
 	std::unordered_map<uint64_t, glm::mat4> m_voxel_previous_models;
 	bool m_voxel_upload_failed_warned = false;
+
+	/// Toggling re-packs to add or drop the mirror
+	bool m_voxel_mirror_kept = false;
+	uint64_t m_voxel_upload_sequence = 0;
 
 	std::mutex m_light_proxy_mutex;
 	std::vector<toast::Light*> m_light_proxy_nodes;
@@ -1130,6 +1197,24 @@ private:
 	std::vector<std::pair<uint32_t, const toast::ReflectionProbe*>> m_tick_probes_by_distance;
 	std::vector<PunctualShadowCandidate> m_tick_spot_candidates;
 	std::vector<PunctualShadowCandidate> m_tick_point_candidates;
+
+	/// Survive across ticks so a shadowed light keeps its layer and its cached map
+	std::array<shadow_slots::Slot, shadows::k_max_spot_shadows> m_spot_slots {};
+	std::array<shadow_slots::Slot, shadows::k_max_point_shadows> m_point_slots {};
+	uint64_t m_shadow_displaced_total = 0;
+	std::vector<shadow_slots::Candidate> m_tick_slot_candidates;
+	std::vector<int32_t> m_tick_slot_of;
+
+	/// Parallel to RenderFrame::lights until finalizeLights
+	struct LightMeta {
+		float importance = 0.0f;
+		float depth_reach = 0.0f;
+		bool visible = false;
+	};
+
+	std::vector<LightMeta> m_tick_light_meta;
+	std::vector<uint32_t> m_tick_light_order;
+	std::vector<GpuLight> m_tick_light_scratch;
 	std::vector<toast::PostProcessVolume*> m_tick_post_volumes;
 
 	std::vector<toast::IrradianceVolume*> m_irradiance_published_nodes;
@@ -1214,6 +1299,7 @@ private:
 	std::atomic<double> m_frame_rate_limit_hz {0.0};
 	std::atomic_bool m_application_focused {true};
 	std::atomic_bool m_rendering_paused {false};
+	std::atomic_bool m_clamp_to_simulation {true};
 };
 
 inline void start() {

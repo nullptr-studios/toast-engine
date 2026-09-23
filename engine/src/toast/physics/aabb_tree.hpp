@@ -7,33 +7,16 @@
  */
 
 #pragma once
+#include "aabb.hpp"
 #include "shape.hpp"
 
 #include <cstddef>
 #include <cstdint>
-#include <glm/vec3.hpp>
 #include <limits>
 #include <toast/export.hpp>
 #include <vector>
 
 namespace physics {
-
-struct TOAST_API AABB {
-	glm::vec3 min;
-	glm::vec3 max;
-
-	[[nodiscard]]
-	auto overlaps(const AABB& other) const -> bool;
-	[[nodiscard]]
-	auto contains(const AABB& other) const -> bool;
-	[[nodiscard]]
-	auto expanded(float amount) const -> AABB;
-	[[nodiscard]]
-	auto area() const -> float;
-};
-
-auto combine(const AABB& lhs, const AABB& rhs) -> AABB;
-auto operator+(const AABB& lhs, const AABB& rhs) -> AABB;
 
 using TreeNodeID = uint32_t;
 inline constexpr TreeNodeID null_node = std::numeric_limits<TreeNodeID>::max();
@@ -81,7 +64,8 @@ public:
 	auto validate() const -> bool;
 
 private:
-	static constexpr float fat_margin = 0.1f;
+	[[nodiscard]]
+	static auto fatMargin() -> float;
 
 	auto allocateNode() -> TreeNodeID;
 	void freeNode(TreeNodeID node_id);

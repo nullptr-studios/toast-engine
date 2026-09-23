@@ -6,7 +6,7 @@
 #include <unordered_set>
 #include <utility>
 
-namespace toast::voxel {
+namespace voxel {
 
 auto stamp(Volume& target, const Volume& piece, const LatticePlacement& placement, const PaletteRemapTable& remap)
     -> StampResult {

@@ -7,7 +7,9 @@
 #include "shadow_pass.hpp"
 
 #include "../descriptor_writer.hpp"
+#include "../frustum.hpp"
 #include "../shader_cache.hpp"
+#include "../voxel_gpu_storage.hpp"
 #include "../vulkan_core.hpp"
 #include "../vulkan_debug.hpp"
 #include "../vulkan_mesh.hpp"
@@ -15,11 +17,13 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <cstring>
 #include <format>
 #include <toast/assets/assets.hpp>
 #include <toast/log.hpp>
+#include <toast/voxel/voxel_constants.hpp>
 #include <tracy/Tracy.hpp>
 
 namespace renderer {
@@ -145,6 +149,7 @@ ShadowPass::ShadowPass(const VulkanCore& core) : m_core(&core) {
 	}
 
 	createResources(core);
+	createVoxelResources(core);
 
 	TOAST_INFO(
 	    "Render",
@@ -312,6 +317,166 @@ void ShadowPass::createResources(const VulkanCore& core) {
 	}
 }
 
+void ShadowPass::createVoxelResources(const VulkanCore& core) {
+	ZoneScoped;
+	static_assert(sizeof(VoxelShadowPush) == 16, "VoxelShadowPush is mirrored by voxel_shadow.slang");
+
+	const auto uid = assets::resolveURI("core://shaders/voxel_shadow.slang");
+	const auto shader = uid.has_value() ? ShaderCache::get().acquire(*uid) : nullptr;
+	if (!shader) {
+		TOAST_WARN("Render", "ShadowPass voxel shader core://shaders/voxel_shadow.slang unavailable, voxels will not cast shadows");
+		return;
+	}
+
+	m_voxel_layout.rebuild(core, shader->reflection, "ShadowPass Voxels");
+	const auto& layouts = m_voxel_layout.getDescriptorSetLayouts();
+	if (layouts.size() < 2 || m_targets.size() < VulkanRenderer::k_frames_in_flight) {
+		TOAST_ERROR("Render", "ShadowPass voxel shader needs the shadow set and the voxel storage set, voxels will not cast shadows");
+		return;
+	}
+
+	VulkanPipeline::Config config;
+	config.pipeline_type = VulkanPipeline::PipelineType::graphics;
+	config.depth_only = true;
+	config.depth_fragment = true;
+	config.depth_format = m_format;
+	config.extent = vk::Extent2D {shadows::cascadeResolution(), shadows::cascadeResolution()};
+	config.shader_spirv = shader->spirv;
+	config.pipeline_layout = *m_voxel_layout.getPipelineLayout();
+	config.vertex_bindings = {};
+	config.vertex_attributes = {};
+	config.topology = vk::PrimitiveTopology::eTriangleList;
+	config.depth_test = true;
+	config.depth_write = true;
+
+	for (size_t mask_index = 0; mask_index < m_voxel_pipeline_sets.size(); ++mask_index) {
+		VoxelPipelineSet& set = m_voxel_pipeline_sets[mask_index];
+		set.view_mask = m_pipeline_sets[mask_index].view_mask;
+		for (const bool cull_front : {false, true}) {
+			for (const bool exact : {false, true}) {
+				VulkanPipeline::Config variant = config;
+				variant.view_mask = set.view_mask;
+				variant.cull_mode = cull_front ? vk::CullModeFlagBits::eFront : vk::CullModeFlagBits::eBack;
+				variant.fragment_entry = exact ? "fragmentInside" : "fragmentOutside";
+				variant.debug_name = std::format(
+				    "ShadowPass Voxels [viewMask {:#x}] {} {}",
+				    set.view_mask,
+				    cull_front ? "CullFront" : "CullBack",
+				    exact ? "Inside" : "Outside"
+				);
+				set.pipelines[cull_front ? 1 : 0][exact ? 1 : 0].rebuild(core, variant);
+			}
+		}
+	}
+
+	const auto& device = core.getDevice();
+	const vk::DescriptorPool pool = VulkanRenderer::instance->getDescriptorPoolHandle();
+	const vk::DescriptorSetLayout shadow_layout = *layouts[0];
+	const vk::DescriptorSetLayout storage_layout = *layouts[1];
+
+	m_voxel_shadow_sets.clear();
+	m_voxel_storage_sets.clear();
+	m_voxel_instance_buffers.clear();
+	m_voxel_bound_storage.assign(VulkanRenderer::k_frames_in_flight, nullptr);
+
+	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
+		vk::BufferCreateInfo buffer_ci {};
+		buffer_ci.size = sizeof(VoxelInstanceGpu) * k_max_voxel_casters;
+		buffer_ci.usage = vk::BufferUsageFlagBits::eStorageBuffer;
+
+		vma::AllocationCreateInfo alloc_ci {};
+		alloc_ci.usage = vma::MemoryUsage::eAutoPreferHost;
+		alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
+
+		m_voxel_instance_buffers.push_back(core.getAllocator().createBuffer(buffer_ci, alloc_ci));
+		setDebugName(core, *m_voxel_instance_buffers.back(), std::format("ShadowPass VoxelInstances[{}]", i));
+
+		auto shadow_set = device.allocateDescriptorSets(vk::DescriptorSetAllocateInfo(pool, 1, &shadow_layout));
+		m_voxel_shadow_sets.push_back(std::move(shadow_set[0]));
+		setDebugName(core, *m_voxel_shadow_sets.back(), std::format("ShadowPass VoxelShadowSet[{}]", i));
+
+		auto storage_set = device.allocateDescriptorSets(vk::DescriptorSetAllocateInfo(pool, 1, &storage_layout));
+		m_voxel_storage_sets.push_back(std::move(storage_set[0]));
+		setDebugName(core, *m_voxel_storage_sets.back(), std::format("ShadowPass VoxelStorageSet[{}]", i));
+
+		DescriptorWriter writer;
+		for (const auto& binding : shader->reflection.bindings) {
+			if (binding.set == 0 && binding.name == "gShadow" && m_targets[i].ubo.gpu_buffer.has_value()) {
+				writer.buffer(
+				    *m_voxel_shadow_sets[i],
+				    binding.binding,
+				    vk::DescriptorType::eUniformBuffer,
+				    **m_targets[i].ubo.gpu_buffer,
+				    sizeof(ShadowUBO)
+				);
+			} else if (binding.set == 1 && binding.name == "gVoxelInstances") {
+				writer.buffer(
+				    *m_voxel_storage_sets[i],
+				    binding.binding,
+				    vk::DescriptorType::eStorageBuffer,
+				    *m_voxel_instance_buffers[i],
+				    sizeof(VoxelInstanceGpu) * k_max_voxel_casters
+				);
+			}
+		}
+		writer.flush(device);
+	}
+
+	// Matches depth_bias_constant in units of the smallest depth step of each format
+	m_voxel_constant_bias = m_format == vk::Format::eD16Unorm ? 1.5f / 65535.0f : std::ldexp(1.5f, -24);
+
+	m_voxels_ready = std::ranges::all_of(m_voxel_pipeline_sets, [](const VoxelPipelineSet& set) {
+		return std::ranges::all_of(set.pipelines, [](const auto& by_depth) {
+			return std::ranges::all_of(by_depth, [](const VulkanPipeline& pipeline) { return pipeline.isReady(); });
+		});
+	});
+	if (!m_voxels_ready) {
+		TOAST_ERROR("Render", "ShadowPass voxel pipelines failed to build, voxels will not cast shadows");
+	}
+}
+
+auto ShadowPass::prepareVoxels(uint32_t frame_index) -> uint32_t {
+	ZoneScoped;
+	const auto* frame = VulkanRenderer::instance->renderingFrame();
+	if (!m_voxels_ready || frame == nullptr || frame_index >= m_voxel_instance_buffers.size()) {
+		return 0;
+	}
+
+	const auto& storage = frame->voxel_storage;
+	if (frame->voxel_instances.empty() || !storage || !storage->isReady()) {
+		return 0;
+	}
+
+	if (m_voxel_bound_storage[frame_index] != storage) {
+		// Safe since the fence of this slot was waited on
+		writeVoxelStorageDescriptors(m_core->getDevice(), *m_voxel_storage_sets[frame_index], *storage);
+		m_voxel_bound_storage[frame_index] = storage;
+	}
+
+	const auto& allocation = m_voxel_instance_buffers[frame_index].getAllocation();
+	auto* instances = static_cast<VoxelInstanceGpu*>(allocation.getInfo().pMappedData);
+	if (instances == nullptr) {
+		return 0;
+	}
+
+	// Every proxy not only camera visible ones since an off screen volume still casts into view
+	const auto count = static_cast<uint32_t>(std::min<size_t>(frame->voxel_instances.size(), k_max_voxel_casters));
+	for (uint32_t i = 0; i < count; ++i) {
+		const auto& proxy = frame->voxel_instances[i];
+		instances[i] = makeVoxelInstance(proxy.model, proxy.inverse_model, proxy.record_index);
+	}
+	allocation.flush(0, sizeof(VoxelInstanceGpu) * count);
+	return count;
+}
+
+auto ShadowPass::voxelPipelineSetFor(uint32_t view_mask) const -> const VoxelPipelineSet* {
+	if (!m_voxels_ready) {
+		return nullptr;
+	}
+	const auto found = std::ranges::find(m_voxel_pipeline_sets, view_mask, &VoxelPipelineSet::view_mask);
+	return found != m_voxel_pipeline_sets.end() ? &*found : nullptr;
+}
+
 auto ShadowPass::getCascadeMapView(uint32_t frame_index) const -> vk::ImageView {
 	if (frame_index >= m_targets.size() || !m_targets[frame_index].cascades.array_view.has_value()) {
 		return nullptr;
@@ -365,18 +530,14 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, uint32_t frame
 		return result;
 	};
 
-	const auto eligible = [&](const LayerGroup& group, size_t index) {
-		const auto& proxy = proxies[index];
-		if (proxy.mesh == nullptr || !proxy.mesh->isReady()) {
-			return false;
-		}
+	const auto reaches = [&](const LayerGroup& group, const glm::vec3& center, float radius) {
 		for (uint32_t i = 0; i < group.layer_count; ++i) {
 			const auto* member = layer_views[group.base_layer + i];
 			if (member == nullptr) {
 				continue;
 			}
-			const glm::vec3 offset = proxy.bounds_center - glm::vec3(member->cull_sphere);
-			const float reach = member->cull_sphere.w + proxy.bounds_radius;
+			const glm::vec3 offset = center - glm::vec3(member->cull_sphere);
+			const float reach = member->cull_sphere.w + radius;
 			if (glm::dot(offset, offset) <= (reach * reach)) {
 				return true;
 			}
@@ -384,7 +545,17 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, uint32_t frame
 		return false;
 	};
 
-	const auto signature_of = [&](const LayerGroup& group) -> std::optional<uint64_t> {
+	const auto eligible = [&](const LayerGroup& group, size_t index) {
+		const auto& proxy = proxies[index];
+		return proxy.mesh != nullptr && proxy.mesh->isReady() && reaches(group, proxy.bounds_center, proxy.bounds_radius);
+	};
+
+	const auto& voxel_proxies = frame->voxel_instances;
+	const auto voxel_eligible = [&](const LayerGroup& group, size_t index) {
+		return reaches(group, voxel_proxies[index].bounds_center, voxel_proxies[index].bounds_radius);
+	};
+
+	const auto signature_of = [&](const LayerGroup& group, std::vector<VoxelCaster>& eligible_voxels) -> std::optional<uint64_t> {
 		ShadowSignature signature;
 		for (uint32_t i = 0; i < group.layer_count; ++i) {
 			const auto* member = layer_views[group.base_layer + i];
@@ -402,7 +573,47 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, uint32_t frame
 			signature.add(static_cast<uint64_t>(reinterpret_cast<std::uintptr_t>(proxy.mesh)));
 			signature.add(proxy.model);
 		}
+
+		// Summed since voxel proxies are sorted by camera distance and a static light must not re-render as the camera moves
+		uint64_t voxel_casters = 0;
+		for (size_t index = 0; index < m_voxel_instance_count; ++index) {
+			if (!voxel_eligible(group, index)) {
+				continue;
+			}
+			ShadowSignature caster;
+			caster.add(voxel_proxies[index].node_uid);
+			caster.add(voxel_proxies[index].model);
+			voxel_casters += caster.value;
+			eligible_voxels.push_back({.node_uid = voxel_proxies[index].node_uid, .model = voxel_proxies[index].model});
+		}
+		if (!eligible_voxels.empty()) {
+			signature.add(voxel_casters);
+		}
 		return signature.value;
+	};
+
+	const std::optional<uint64_t> voxel_generation =
+	    frame->voxel_storage != nullptr ? std::optional {frame->voxel_storage->generation()} : std::nullopt;
+
+	/// A region published since the group last matched reaches one of its views
+	const auto voxel_changed = [&](const LayerGroup& group) -> bool {
+		if (!group.voxel_generation.has_value() || frame->voxel_storage == nullptr) {
+			return true;
+		}
+
+		std::array<FrustumPlanes, shadows::k_cube_faces> view_planes;
+		size_t view_count = 0;
+		for (uint32_t i = 0; i < group.layer_count && view_count < view_planes.size(); ++i) {
+			if (const auto* member = layer_views[group.base_layer + i]; member != nullptr) {
+				view_planes[view_count++] = extractFrustumPlanes(member->view_projection);
+			}
+		}
+		return regionsReach(
+		    frame->voxel_storage->changeHistory(),
+		    *group.voxel_generation,
+		    m_voxel_eligible,
+		    std::span {view_planes.data(), view_count}
+		);
 	};
 
 	enum class GroupWork : uint8_t {
@@ -415,13 +626,20 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, uint32_t frame
 	std::vector<std::optional<uint64_t>> group_signatures(map.groups.size());
 	bool any_layer_recorded = false;
 	for (size_t g = 0; g < map.groups.size(); ++g) {
-		const auto& group = map.groups[g];
+		auto& group = map.groups[g];
 		if (!occupied(group)) {
 			group_work[g] = group.dirty ? GroupWork::clear : GroupWork::skip;
 		} else {
-			group_signatures[g] = signature_of(group);
-			if (group_signatures[g].has_value() && group.signature == group_signatures[g]) {
+			m_voxel_eligible.clear();
+			group_signatures[g] = signature_of(group, m_voxel_eligible);
+			const bool has_voxels = !m_voxel_eligible.empty();
+			const bool matches = group_signatures[g].has_value() && group.signature == group_signatures[g];
+			if (matches && !(has_voxels && voxel_changed(group))) {
 				++m_cached_count;
+				if (has_voxels && group.voxel_generation != voxel_generation) {
+					++m_voxel_spared_count;
+				}
+				group.voxel_generation = voxel_generation;
 			} else {
 				group_work[g] = GroupWork::render;
 			}
@@ -445,7 +663,7 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, uint32_t frame
 	);
 	cmd.pipelineBarrier(
 	    map.layout == vk::ImageLayout::eShaderReadOnlyOptimal ? vk::PipelineStageFlagBits::eFragmentShader
-	                                                          : vk::PipelineStageFlagBits::eTopOfPipe,
+			                                                      : vk::PipelineStageFlagBits::eTopOfPipe,
 	    vk::PipelineStageFlagBits::eEarlyFragmentTests,
 	    {},
 	    nullptr,
@@ -467,6 +685,7 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, uint32_t frame
 		const bool render = group_work[g] == GroupWork::render;
 		group.dirty = render;
 		group.signature = render ? group_signatures[g] : std::nullopt;
+		group.voxel_generation = render ? voxel_generation : std::nullopt;
 
 		const VulkanRenderer::ShadowView* view = render ? layer_views[group.base_layer] : nullptr;
 		const uint32_t view_index = layer_view_indices[group.base_layer];
@@ -543,6 +762,74 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, uint32_t frame
 
 				i += run;
 			}
+
+			if (const VoxelPipelineSet* voxel_pipelines = voxelPipelineSetFor(group.view_mask);
+			    voxel_pipelines != nullptr && m_voxel_instance_count > 0) {
+				const vk::PipelineLayout voxel_layout = *m_voxel_layout.getPipelineLayout();
+
+				m_voxel_draw_order.clear();
+				for (uint32_t index = 0; index < m_voxel_instance_count; ++index) {
+					if (voxel_eligible(group, index)) {
+						m_voxel_draw_order.push_back(index);
+					}
+				}
+
+				// Nearest to the light first by clip z which grows with distance under both projections
+				std::ranges::sort(m_voxel_draw_order, {}, [&](uint32_t index) {
+					return (view->view_projection * glm::vec4(voxel_proxies[index].bounds_center, 1.0f)).z;
+				});
+
+				// A corner in front of any near plane clips the front faces so only exact back faces are safe
+				const auto crosses_near_plane = [&](const VulkanRenderer::VoxelVolumeProxy& proxy) {
+					const glm::vec3 extent = glm::vec3(proxy.brick_dims) * voxel::k_brick_size;
+					for (uint32_t i = 0; i < group.layer_count; ++i) {
+						const auto* member = layer_views[group.base_layer + i];
+						if (member == nullptr) {
+							continue;
+						}
+						const glm::mat4 to_clip = member->view_projection * proxy.model;
+						for (uint32_t corner = 0; corner < 8; ++corner) {
+							const glm::vec3 local(
+							    (corner & 1u) != 0 ? extent.x : 0.0f, (corner & 2u) != 0 ? extent.y : 0.0f, (corner & 4u) != 0 ? extent.z : 0.0f
+							);
+							if ((to_clip * glm::vec4(local, 1.0f)).z < 0.0f) {
+								return true;
+							}
+						}
+					}
+					return false;
+				};
+
+				const VulkanPipeline* bound = nullptr;
+				for (const uint32_t index : m_voxel_draw_order) {
+					const auto& proxy = voxel_proxies[index];
+					const bool inside = crosses_near_plane(proxy);
+					const bool cull_front = inside != proxy.mirrored;
+					const VulkanPipeline& pipeline = voxel_pipelines->pipelines[cull_front ? 1 : 0][inside ? 1 : 0];
+					if (bound == nullptr) {
+						cmd.bindDescriptorSets(
+						    vk::PipelineBindPoint::eGraphics,
+						    voxel_layout,
+						    0,
+						    std::array<vk::DescriptorSet, 2> {*m_voxel_shadow_sets[frame_index], *m_voxel_storage_sets[frame_index]},
+						    {}
+						);
+					}
+					if (bound != &pipeline) {
+						cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.getPipeline());
+						bound = &pipeline;
+					}
+
+					const VoxelShadowPush push {
+					  .instance_index = index,
+					  .view_index = view_index,
+					  .constant_bias = m_voxel_constant_bias,
+					};
+					cmd.pushConstants(voxel_layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(VoxelShadowPush), &push);
+					cmd.draw(36, 1, 0, 0);
+					++m_draw_count;
+				}
+			}
 		}
 
 		cmd.endRendering();
@@ -585,11 +872,15 @@ void ShadowPass::recordPre(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t
 	m_draw_count = 0;
 	m_pass_count = 0;
 	m_cached_count = 0;
+	m_voxel_spared_count = 0;
 
 	if (target.ubo.gpu_buffer.has_value()) {
 		ShadowUBO ubo {};
 		const size_t view_count = std::min<size_t>(frame->shadows.matrices.size(), shadows::k_max_shadow_views);
 		std::copy_n(frame->shadows.matrices.begin(), view_count, ubo.view_projection.begin());
+		for (size_t i = 0; i < view_count; ++i) {
+			ubo.inverse_view_projection[i] = glm::inverse(ubo.view_projection[i]);
+		}
 
 		const auto& allocation = target.ubo.gpu_buffer->getAllocation();
 		if (auto* mapped = allocation.getInfo().pMappedData) {
@@ -597,6 +888,8 @@ void ShadowPass::recordPre(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t
 			allocation.flush(0, sizeof(ShadowUBO));
 		}
 	}
+
+	m_voxel_instance_count = prepareVoxels(frame_index);
 
 	recordMap(cmd, target.cascades, frame_index, true);
 	recordMap(cmd, target.punctual, frame_index, false);

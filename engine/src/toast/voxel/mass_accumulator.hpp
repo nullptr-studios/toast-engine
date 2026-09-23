@@ -11,7 +11,7 @@
 #include <cstdint>
 #include <glm/glm.hpp>
 
-namespace toast::voxel {
+namespace voxel {
 
 inline constexpr int64_t k_moment_safe_limit = int64_t {1} << 62;
 
@@ -128,6 +128,12 @@ struct MassProperties {
 	/// kg·m² about the centre of mass
 	glm::mat3 inertia {0.0f};
 };
+
+[[nodiscard]]
+inline auto resolveMass(const MassMoments& moments, float voxel_size = k_voxel_size) -> float {
+	const double s = static_cast<double>(voxel_size);
+	return static_cast<float>(static_cast<double>(moments.mass) * s * s * s);
+}
 
 [[nodiscard]]
 inline auto resolve(const MassMoments& moments, float voxel_size = k_voxel_size) -> MassProperties {

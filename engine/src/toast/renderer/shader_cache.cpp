@@ -189,10 +189,10 @@ auto ShaderCache::compileLocked(toast::UID uid) -> std::shared_ptr<const Entry> 
 
 	nlohmann::json deps_json = nlohmann::json::object();
 	nlohmann::json cache_json {
-	  {	    "format",             k_cache_format},
-	  {	    "shader",	                uid.get()},
-	  {	    "source",          entry->source_uri},
-	  {	      "hash",     hashToHex(entry->hash)},
+	  {      "format",             k_cache_format},
+	  {      "shader",                  uid.get()},
+	  {      "source",          entry->source_uri},
+	  {        "hash",     hashToHex(entry->hash)},
 	  {"dependencies",        entry->dependencies},
 	  {  "reflection", entry->reflection.toJson()},
 	};
@@ -209,7 +209,7 @@ auto ShaderCache::compileLocked(toast::UID uid) -> std::shared_ptr<const Entry> 
 	}
 	m_hash_index["shaders"][uid.get()] = {
 	  {"hash", hashToHex(entry->hash)},
-	  {"deps",	            deps_json},
+	  {"deps",              deps_json},
 	};
 	saveHashIndexLocked();
 
