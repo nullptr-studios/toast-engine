@@ -46,6 +46,8 @@ public:
 	[[nodiscard]]
 	static auto fromToml(const toml::table& table) -> std::unique_ptr<VoxelPalette>;
 
+	void reload(const toml::table& table);
+
 	[[nodiscard]]
 	auto type() const -> std::string_view override {
 		return "voxel_palette";
@@ -74,6 +76,15 @@ public:
 	}
 
 private:
+	struct Parsed {
+		voxel::Palette palette;
+		VoxelMaterialSlots slots;
+		std::vector<uint8_t> defaulted;
+	};
+
+	[[nodiscard]]
+	static auto parseToml(const toml::table& table) -> Parsed;
+
 	voxel::Palette m_palette;
 	VoxelMaterialSlots m_slots;
 	std::vector<uint8_t> m_defaulted;

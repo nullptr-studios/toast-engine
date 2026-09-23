@@ -3622,7 +3622,8 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 			.node_uid = node->uid().data(),
 			.revision = node->revision(),
 			.content = volume->revision(),
-			.palette = palette
+			.palette = palette,
+			.palette_revision = palette->revision
 		});
 		// clang-format on
 	}
@@ -3635,7 +3636,13 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		const uint64_t id = voxelFragmentRenderId(record.shape);
 
 		gathered.push_back({id, record.volume, palette, record.transform, "Voxel fragment " + std::to_string(record.shape.slot)});
-		key.push_back({.node_uid = id, .revision = record.revision, .content = record.volume->revision(), .palette = palette});
+		key.push_back(
+		    {.node_uid = id,
+				 .revision = record.revision,
+				 .content = record.volume->revision(),
+				 .palette = palette,
+				 .palette_revision = palette->revision}
+		);
 	}
 
 	const bool keep_mirror = voxel_debug::isView(m_render_mode);

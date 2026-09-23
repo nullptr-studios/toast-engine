@@ -23,6 +23,7 @@
 #include <luabridge3/LuaBridge/LuaBridge.h>
 #include <toast/assets/asset_registry.hpp>
 #include <toast/assets/assets.hpp>
+#include <toast/engine.hpp>
 #include <toast/input/action.hpp>
 #include <toast/log.hpp>
 #include <toast/reflect/reflect_node.hpp>
@@ -758,6 +759,29 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    )
 	    .addFunction(
 	        "language", +[]() -> std::string { return ui::UISystem::exists() ? ui::UISystem::get().language() : std::string(); }
+	    )
+	    .endNamespace()
+
+	    .beginNamespace("Window")
+	    .addFunction(
+	        "setCursorLocked",
+	        +[](bool locked) {
+		        if (toast::Engine::get()) {
+			        toast::Engine::get()->setCursorLocked(locked);
+		        }
+	        }
+	    )
+	    .addFunction(
+	        "isCursorLocked", +[]() -> bool { return toast::Engine::get() && toast::Engine::get()->isCursorLocked(); }
+	    )
+	    .endNamespace()
+
+	    .beginNamespace("Physics")
+	    .addFunction(
+	        "shootVoxel",
+	        +[](const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy, float min_radius) -> bool {
+		        return toast::Engine::get() && toast::Engine::get()->shootVoxel(origin, direction, max_distance, energy, min_radius);
+	        }
 	    )
 	    .endNamespace();
 

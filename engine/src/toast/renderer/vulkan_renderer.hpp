@@ -1154,6 +1154,8 @@ private:
 		uint32_t content = 0;
 		const voxel::Palette* palette = nullptr;
 
+		uint32_t palette_revision = 0;
+
 		[[nodiscard]]
 		auto operator==(const VoxelSceneKey&) const -> bool = default;
 	};

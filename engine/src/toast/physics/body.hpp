@@ -36,6 +36,8 @@ struct BodyDescriptor {
 	glm::vec3 angular_velocity = {};
 	float mass = 1.0f;
 	float gravity_scale = 1.0f;
+	glm::bvec3 lock_position = glm::bvec3(false);
+	glm::bvec3 lock_rotation = glm::bvec3(false);
 };
 
 struct BodyState {
@@ -67,6 +69,8 @@ struct Body {
 	glm::mat3 inverse_inertia_local = {0.0f};
 	glm::mat3 inverse_inertia_world = {0.0f};
 	glm::vec3 local_center_of_mass = {};
+	glm::bvec3 lock_position = glm::bvec3(false);
+	glm::bvec3 lock_rotation = glm::bvec3(false);
 
 	[[nodiscard]]
 	auto worldCenterOfMass() const -> glm::vec3 {

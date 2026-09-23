@@ -1206,6 +1206,13 @@ void Simulator::setBodyTransform(BodyID body, const glm::vec3& position, const g
 	instance->setTransform(body, position, rotation);
 }
 
+auto Simulator::setBodyLinearVelocity(BodyID body, const glm::vec3& velocity) -> bool {
+	if (instance == nullptr) {
+		return false;
+	}
+	return instance->setLinearVelocity(body, velocity);
+}
+
 void Simulator::setBodyEnabled(BodyID body, bool enabled) {
 	ZoneScopedN("physics::SetBodyEnabled");
 	ZoneValue(static_cast<uint64_t>(body.slot));
@@ -1849,9 +1856,27 @@ void Simulator::integrateBody(BodyID id, Body& body, const glm::vec3& gravity, f
 
 	// linear integration
 	body.linear_velocity += gravity * body.gravity_scale * dt;
+	if (body.lock_position.x) {
+		body.linear_velocity.x = 0.0f;
+	}
+	if (body.lock_position.y) {
+		body.linear_velocity.y = 0.0f;
+	}
+	if (body.lock_position.z) {
+		body.linear_velocity.z = 0.0f;
+	}
 	const glm::vec3 center_of_mass = body.worldCenterOfMass() + body.linear_velocity * dt;
 
 	// angular integration
+	if (body.lock_rotation.x) {
+		body.angular_velocity.x = 0.0f;
+	}
+	if (body.lock_rotation.y) {
+		body.angular_velocity.y = 0.0f;
+	}
+	if (body.lock_rotation.z) {
+		body.angular_velocity.z = 0.0f;
+	}
 	glm::quat omega_q = {0.0f, body.angular_velocity.x, body.angular_velocity.y, body.angular_velocity.z};
 	glm::quat rotation_derivative = 0.5f * omega_q * body.rotation;
 	glm::quat next_rotation = body.rotation + rotation_derivative * dt;
@@ -1908,7 +1933,9 @@ auto Simulator::createBody(const BodyDescriptor& descriptor) -> BodyID {
 	  .linear_velocity = descriptor.linear_velocity,
 	  .angular_velocity = descriptor.angular_velocity,
 	  .inverse_mass = inverse_mass,
-	  .gravity_scale = descriptor.gravity_scale
+	  .gravity_scale = descriptor.gravity_scale,
+	  .lock_position = descriptor.lock_position,
+	  .lock_rotation = descriptor.lock_rotation
 	};
 
 	if (not m_free_body_slots.empty()) {
@@ -2816,6 +2843,114 @@ void Simulator::applyExplosion(const glm::vec3& position, float radius, float en
 		    }
 		);
 	}
+}
+
+auto Simulator::shootVoxel(
+    const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy, float min_radius
+) -> bool {
+	ZoneScopedN("physics::ShootVoxel");
+
+	if (not mainThreadMutationAllowed()) {
+		return false;
+	}
+	if (not std::isfinite(max_distance) || max_distance <= 0.0f || not std::isfinite(energy)) {
+		return false;
+	}
+
+	const float length = glm::length(direction);
+	if (not std::isfinite(length) || length <= 1.0e-6f) {
+		return false;
+	}
+	const glm::vec3 dir = direction / length;
+	const glm::vec3 inv_dir = 1.0f / dir;
+	const glm::vec3 end = origin + dir * max_distance;
+	const AABB sweep_bounds {.min = glm::min(origin, end), .max = glm::max(origin, end)};
+
+	struct Candidate {
+		ShapeID shape;
+		float t_min;
+		float t_max;
+	};
+
+	std::vector<Candidate> candidates;
+
+	for (const ShapeID shape_id : m_broad_phase.queryBounds(sweep_bounds)) {
+		const Shape* shape = tryGetShape(shape_id);
+		if (shape == nullptr || shape->type != ShapeType::voxel || not shape->enabled) {
+			continue;
+		}
+		const Body* body = tryGetBody(shape->owner);
+		if (body == nullptr) {
+			continue;
+		}
+		const std::optional<AABB::RayHit> hit = worldShapeBounds(*body, *shape).intersectRay(origin, inv_dir, max_distance);
+		if (not hit) {
+			continue;
+		}
+		candidates.push_back(Candidate {.shape = shape_id, .t_min = hit->t_min, .t_max = hit->t_max});
+	}
+
+	if (candidates.empty()) {
+		return false;
+	}
+
+	std::ranges::sort(candidates, {}, &Candidate::t_min);
+
+	const float march_step = voxel::k_voxel_size * 0.25f;
+
+	for (const Candidate& candidate : candidates) {
+		const Shape* shape = tryGetShape(candidate.shape);
+		if (shape == nullptr) {
+			continue;
+		}
+		VoxelShapeData* data = tryGetVoxelData(shape->voxel.data);
+		if (data == nullptr || data->volume == nullptr) {
+			continue;
+		}
+		const Body* body = tryGetBody(shape->owner);
+		if (body == nullptr) {
+			continue;
+		}
+
+		const glm::quat inv_body_rotation = glm::inverse(body->rotation);
+		const glm::quat inv_local_rotation = glm::inverse(shape->voxel.local_rotation);
+		const glm::vec3 origin_local =
+		    inv_local_rotation * (inv_body_rotation * (origin - body->position) - shape->voxel.local_center);
+		const glm::vec3 dir_local = inv_local_rotation * (inv_body_rotation * dir);
+
+		const glm::ivec3 voxel_dims = glm::ivec3(data->volume->voxelDims());
+		const float t_end = std::min(candidate.t_max, max_distance);
+
+		for (float t = std::max(candidate.t_min, 0.0f); t <= t_end; t += march_step) {
+			const glm::vec3 local_point = origin_local + dir_local * t;
+			const glm::ivec3 voxel_coord = glm::ivec3(glm::floor(local_point / voxel::k_voxel_size));
+			if (glm::any(glm::lessThan(voxel_coord, glm::ivec3(0))) || glm::any(glm::greaterThanEqual(voxel_coord, voxel_dims))) {
+				continue;
+			}
+			const uint8_t palette_index = data->volume->materialAt(voxel_coord);
+			if (palette_index == voxel::k_empty_palette_index) {
+				continue;
+			}
+
+			const glm::vec3 hit_point = origin + dir * t;
+			const uint32_t material_index = voxel::resolveMaterialIndex(data->palette, data->materials, palette_index);
+			const voxel::PhysicalMaterial& material = data->materials.materials[material_index];
+			const float final_radius = std::max({material.shatter_radius, voxel::k_voxel_size, min_radius});
+
+			recordDamage(
+			    DamageCommand {
+			      .shape = candidate.shape,
+			      .world_center = hit_point,
+			      .radius = final_radius,
+			      .energy = energy,
+			      .shell_voxels = 2.0f,
+			    }
+			);
+			return true;
+		}
+	}
+
+	return false;
 }
 
 auto Simulator::runConnectivityAnalysis() -> std::vector<ConnectivityResult> {

@@ -98,6 +98,12 @@ struct MaterialAssetReloaded : public Event<MaterialAssetReloaded> {
 	explicit MaterialAssetReloaded(toast::UID uid) : uid(uid) { }
 };
 
+struct VoxelPaletteAssetReloaded : public Event<VoxelPaletteAssetReloaded> {
+	toast::UID uid;
+
+	explicit VoxelPaletteAssetReloaded(toast::UID uid) : uid(uid) { }
+};
+
 /**
  * @brief Fired after an RML document or RCSS stylesheet hot-reload
  */

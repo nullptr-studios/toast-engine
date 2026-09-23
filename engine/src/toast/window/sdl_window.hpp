@@ -11,6 +11,7 @@
 #include "window_events.hpp"
 
 #include <SDL3/SDL.h>
+#include <glm/vec2.hpp>
 #include <memory>
 #include <toast/events/listener.hpp>
 #include <toast/log.hpp>
@@ -32,12 +33,18 @@ public:
 	void pollEvents() override;
 	void swapFramebuffers() override;
 
+	void setCursorLocked(bool locked) override;
+	[[nodiscard]]
+	auto isCursorLocked() const -> bool override;
+
 private:
 	struct {
 		// do not confuse SDL_Window with SDLWindow, they are not the same
 		std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)> sdl_window = {nullptr, SDL_DestroyWindow};
 		event::Listener event_listener;
 		bool should_close = false;
+		bool cursor_locked = false;
+		glm::vec2 virtual_mouse_position {0.0f};
 	} m;
 };
 

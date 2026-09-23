@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <toast/log.hpp>
 #include <tracy/Tracy.hpp>
+#include <utility>
 
 namespace physics {
 
@@ -501,6 +502,26 @@ auto AABB::expanded(float amount) const -> AABB {
 auto AABB::area() const -> float {
 	auto d = max - min;
 	return 2 * ((d.x * d.y) + (d.x * d.z) + (d.y * d.z));
+}
+
+auto AABB::intersectRay(const glm::vec3& origin, const glm::vec3& inv_dir, float max_distance) const -> std::optional<RayHit> {
+	float t_min = 0.0f;
+	float t_max = max_distance;
+
+	for (int axis = 0; axis < 3; ++axis) {
+		float t1 = (min[axis] - origin[axis]) * inv_dir[axis];
+		float t2 = (max[axis] - origin[axis]) * inv_dir[axis];
+		if (t1 > t2) {
+			std::swap(t1, t2);
+		}
+		t_min = std::max(t_min, t1);
+		t_max = std::min(t_max, t2);
+		if (t_min > t_max) {
+			return std::nullopt;
+		}
+	}
+
+	return RayHit {.t_min = t_min, .t_max = t_max};
 }
 
 auto combine(const AABB& lhs, const AABB& rhs) -> AABB {

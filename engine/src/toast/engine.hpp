@@ -3,6 +3,7 @@
 /// @date 10 Feb 2026
 
 #include <cstdint>
+#include <glm/vec3.hpp>
 #include <toast/uid.hpp>
 
 namespace assets {
@@ -41,6 +42,12 @@ public:
 	// window
 	void createSDLWindow(const char*);
 	void createAvaloniaWindow();
+	void setCursorLocked(bool locked);
+	[[nodiscard]]
+	auto isCursorLocked() -> bool;
+
+	auto shootVoxel(const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy, float min_radius = 0.0f)
+	    -> bool;
 
 	// nodes
 	auto createWorkspace(std::string_view type) -> std::pair<UID, std::string>;

@@ -57,6 +57,8 @@ struct Palette {
 	std::array<PaletteEntry, k_palette_size> entries {};
 
 	float max_emissive = 1.0f;
+
+	uint32_t revision = 0;
 };
 
 [[nodiscard]]

@@ -88,6 +88,9 @@ public:
 	void applyDamageCommand(const DamageCommand& c);
 	void applyExplosion(const glm::vec3& position, float radius, float energy);
 
+	auto shootVoxel(const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy, float min_radius = 0.0f)
+	    -> bool;
+
 	[[nodiscard]]
 	auto runConnectivityAnalysis() -> std::vector<ConnectivityResult>;
 
@@ -291,6 +294,7 @@ private:
 	static void setBodyEnabled(BodyID body, bool enabled);
 
 	static void setBodyTransform(BodyID body, const glm::vec3& position, const glm::quat& rotation);
+	static auto setBodyLinearVelocity(BodyID body, const glm::vec3& velocity) -> bool;
 
 	static void setShapeEnabled(ShapeID shape, bool enabled);
 	void syncEnabledState();

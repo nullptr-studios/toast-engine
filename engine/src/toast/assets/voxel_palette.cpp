@@ -71,6 +71,27 @@ auto VoxelPalette::materialLibrary() const -> const voxel::MaterialLibrary& {
 
 auto VoxelPalette::fromToml(const toml::table& table) -> std::unique_ptr<VoxelPalette> {
 	ZoneScoped;
+	Parsed parsed = parseToml(table);
+	return std::make_unique<VoxelPalette>(parsed.palette, std::move(parsed.slots), std::move(parsed.defaulted));
+}
+
+void VoxelPalette::reload(const toml::table& table) {
+	ZoneScoped;
+	Parsed parsed = parseToml(table);
+
+	const uint32_t revision = m_palette.revision + 1;
+	m_palette = parsed.palette;
+	m_palette.revision = revision;
+	m_slots = std::move(parsed.slots);
+	m_defaulted = std::move(parsed.defaulted);
+	std::sort(m_defaulted.begin(), m_defaulted.end());
+
+	m_physics.fill({});
+	m_destruction.fill({});
+}
+
+auto VoxelPalette::parseToml(const toml::table& table) -> Parsed {
+	ZoneScoped;
 
 	Palette palette;
 
@@ -244,7 +265,7 @@ auto VoxelPalette::fromToml(const toml::table& table) -> std::unique_ptr<VoxelPa
 		TOAST_WARN("AssetManager", "Voxel palette: {} entries have no material and use the default: {}", defaulted.size(), list);
 	}
 
-	return std::make_unique<VoxelPalette>(palette, std::move(slots), std::move(defaulted));
+	return Parsed {std::move(palette), std::move(slots), std::move(defaulted)};
 }
 
 auto VoxelPalette::serialize(SaveMode /*mode*/) const -> std::vector<uint8_t> {

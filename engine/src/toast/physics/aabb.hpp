@@ -8,6 +8,7 @@
 #pragma once
 
 #include <glm/vec3.hpp>
+#include <optional>
 #include <toast/export.hpp>
 
 namespace physics {
@@ -24,6 +25,14 @@ struct TOAST_API AABB {
 	auto expanded(float amount) const -> AABB;
 	[[nodiscard]]
 	auto area() const -> float;
+
+	struct RayHit {
+		float t_min;
+		float t_max;
+	};
+
+	[[nodiscard]]
+	auto intersectRay(const glm::vec3& origin, const glm::vec3& inv_dir, float max_distance) const -> std::optional<RayHit>;
 };
 
 [[nodiscard]]
