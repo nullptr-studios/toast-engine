@@ -334,7 +334,7 @@ void Simulator::registerVoxelNode(toast::VoxelNode& node) {
 
 	PhysicsMaterial material;
 
-	node.syncTransform();
+	node.syncWorldTransform();
 	const bool dynamic_body = not node.indestructible;
 	const BodyID body = instance->createBody(
 	    BodyDescriptor {
@@ -1003,6 +1003,18 @@ void Simulator::syncEnabledState() {
 			if (not body->allow_sleep) {
 				wakeBody(binding.body);
 			}
+		} else if (binding.node.exists()) {
+			binding.node->syncWorldTransform();
+			const bool position_changed =
+			    glm::any(glm::greaterThan(glm::abs(body->position - binding.node->world_position), glm::vec3(1.0e-5f)));
+			const bool rotation_changed = 1.0f - std::abs(glm::dot(body->rotation, binding.node->world_rotation)) > 1.0e-5f;
+			if (position_changed || rotation_changed) {
+				setTransform(binding.body, binding.node->world_position, binding.node->world_rotation);
+				body = tryGetBody(binding.body);
+				if (body == nullptr) {
+					continue;
+				}
+			}
 		}
 		for (ColliderBinding& collider_binding : binding.colliders) {
 			Shape* shape = tryGetShape(collider_binding.shape);
@@ -1036,7 +1048,7 @@ void Simulator::syncEnabledState() {
 				wakeBody(binding.body);
 			}
 		} else {
-			binding.node->syncTransform();
+			binding.node->syncWorldTransform();
 			const bool position_changed =
 			    glm::any(glm::greaterThan(glm::abs(body->position - binding.node->world_position), glm::vec3(1.0e-5f)));
 			const bool rotation_changed = 1.0f - std::abs(glm::dot(body->rotation, binding.node->world_rotation)) > 1.0e-5f;
