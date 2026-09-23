@@ -5,6 +5,7 @@
  */
 
 #pragma once
+#include <cstdint>
 #include <toast/events/event.hpp>
 #include <toast/uid.hpp>
 #include <toast/world/node.hpp>
@@ -266,7 +267,7 @@ struct EditorCameraLook : Event<EditorCameraLook> {
 	EditorCameraLook(float dx, float dy) : dx(dx), dy(dy) { }
 };
 
-enum class EditorCameraMode : uint32_t {
+enum class EditorCameraMode : uint8_t {
 	free = 0,
 	orbit = 1
 };

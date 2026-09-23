@@ -77,6 +77,10 @@ SDLWindow::SDLWindow(const char* title, unsigned width, unsigned height, uint64_
 
 		return false;
 	});
+	m.event_listener.subscribe<event::WindowMouseLock>([this](const event::WindowMouseLock& e) {
+		applyMouseLock(e.locked);
+		return false;
+	});
 
 	m.sdl_window = std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)>(
 	    SDL_CreateWindow(title, width, height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY | flags), SDL_DestroyWindow
@@ -214,7 +218,7 @@ void SDLWindow::swapFramebuffers() {
 	ZoneScoped;
 }
 
-void SDLWindow::setCursorLocked(bool locked) {
+void SDLWindow::applyMouseLock(bool locked) {
 	if (m.cursor_locked == locked) {
 		return;
 	}
@@ -229,10 +233,6 @@ void SDLWindow::setCursorLocked(bool locked) {
 		const float density = SDL_GetWindowPixelDensity(m.sdl_window.get());
 		m.virtual_mouse_position = glm::vec2 {x, y} * density;
 	}
-}
-
-auto SDLWindow::isCursorLocked() const -> bool {
-	return m.cursor_locked;
 }
 
 }

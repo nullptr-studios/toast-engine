@@ -45,7 +45,7 @@ auto entryPointNames(std::span<const std::byte> spirv, ExecutionModel model) -> 
 		}
 
 		if (opcode == k_op_entry_point && instruction_words > k_entry_point_name_word &&
-		    static_cast<ExecutionModel>(words[i + 1]) == model) {
+		    words[i + 1] == static_cast<uint32_t>(model)) {
 			const auto* chars = reinterpret_cast<const char*>(&words[i + k_entry_point_name_word]);
 			const size_t max_bytes = (instruction_words - k_entry_point_name_word) * sizeof(uint32_t);
 			names.emplace_back(chars, ::strnlen(chars, max_bytes));

@@ -91,11 +91,15 @@ public:
 		return false;
 	}
 
+	void inheritEditorCamera(const Workspace& source);
 	void preparePrefabReload(UID uid);
 	void finishPrefabReload();
 
 protected:
-	auto owningPrefabUid() const -> UID override { return m_handle; }
+	[[nodiscard]]
+	auto owningPrefabUid() const -> UID override {
+		return m_handle;
+	}
 
 	/// disambiguates the protected ctor from Workspace(UID)
 	struct EmptyTag { };

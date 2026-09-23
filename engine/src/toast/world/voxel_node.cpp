@@ -354,7 +354,7 @@ void VoxelNode::drawDebug() {
 		return;
 	}
 
-	const auto drawBounds = [this](const physics::AABB& bounds, bool is_awake, const glm::vec4& base_color) {
+	const auto draw_bounds = [this](const physics::AABB& bounds, bool is_awake, const glm::vec4& base_color) {
 		const glm::vec4 draw_color = is_awake ? base_color : glm::vec4(0.5f, 0.5f, 0.5f, base_color.a);
 		const glm::mat4 transform =
 		    glm::translate(glm::mat4(1.0f), (bounds.min + bounds.max) * 0.5f) * glm::scale(glm::mat4(1.0f), bounds.max - bounds.min);
@@ -362,13 +362,13 @@ void VoxelNode::drawDebug() {
 	};
 
 	if (const auto bounds = physics::Simulator::shapeWorldBounds(m_shape)) {
-		drawBounds(*bounds, awake, aabb_color);
+		draw_bounds(*bounds, awake, aabb_color);
 	}
 
 	static const glm::vec4 fragment_aabb_color {0.2f, 0.9f, 1.0f, 0.6f};
 	for (const physics::VoxelRenderRecord& record : physics::Simulator::voxelFragmentRecords()) {
 		if (record.fragment_origin == m_body) {
-			drawBounds(record.world_bounds, record.awake, fragment_aabb_color);
+			draw_bounds(record.world_bounds, record.awake, fragment_aabb_color);
 		}
 	}
 }

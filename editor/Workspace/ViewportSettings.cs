@@ -11,32 +11,33 @@ internal readonly record struct ViewportSettings(CameraMode Mode, double Speed);
 internal static class ViewportSettingsStore {
 	private const double DefaultSpeed = 5.0;
 
-	public static ViewportSettings Load(string rootUid, bool defaultOrbit) {
+	public static ViewportSettings Load(string key, bool defaultOrbit) {
 		var fallback = new ViewportSettings(defaultOrbit ? CameraMode.Orbit : CameraMode.Free, DefaultSpeed);
-		var path = PathFor(rootUid);
+		var path = PathFor(key);
 		try {
 			if (!File.Exists(path)) return fallback;
 			var dto = TomlSerializer.Deserialize<ViewportSettingsDto>(File.ReadAllText(path));
 			if (dto is null) return fallback;
-			if (!double.IsFinite(dto.Speed) || dto.Speed <= 0) return fallback;
-			if (dto.Mode.Equals("orbit", StringComparison.OrdinalIgnoreCase))
-				return new ViewportSettings(CameraMode.Orbit, dto.Speed);
-			if (dto.Mode.Equals("free", StringComparison.OrdinalIgnoreCase))
-				return new ViewportSettings(CameraMode.Free, dto.Speed);
-			return fallback;
+			var speed = double.IsFinite(dto.Speed) && dto.Speed > 0 ? dto.Speed : DefaultSpeed;
+			var mode = dto.Mode.ToLowerInvariant() switch {
+				"orbit" => CameraMode.Orbit,
+				"free" => CameraMode.Free,
+				_ => fallback.Mode
+			};
+			return new ViewportSettings(mode, speed);
 		} catch {
 			return fallback;
 		}
 	}
 
-	public static void Save(string rootUid, CameraMode mode, double speed) {
-		var path = PathFor(rootUid);
+	public static void Save(string key, ViewportSettings settings) {
+		var path = PathFor(key);
 		var temp = path + ".tmp";
 		try {
 			Directory.CreateDirectory(Path.GetDirectoryName(path)!);
 			var dto = new ViewportSettingsDto {
-				Mode = mode == CameraMode.Orbit ? "orbit" : "free",
-				Speed = speed
+				Mode = settings.Mode == CameraMode.Orbit ? "orbit" : "free",
+				Speed = settings.Speed
 			};
 			File.WriteAllText(temp, TomlSerializer.Serialize(dto));
 			File.Move(temp, path, true);
@@ -49,8 +50,8 @@ internal static class ViewportSettingsStore {
 		}
 	}
 
-	private static string PathFor(string rootUid) {
-		return ProjectContext.Resolve($"cache://tools/viewport/{rootUid}.toml");
+	private static string PathFor(string key) {
+		return ProjectContext.Resolve($"cache://tools/viewport/{key}.toml");
 	}
 
 	private sealed class ViewportSettingsDto {

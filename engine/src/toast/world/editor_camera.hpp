@@ -31,6 +31,8 @@ public:
 	void setEnabled(bool enabled) noexcept;
 	void configure(event::EditorCameraMode mode, float speed);
 
+	void copyViewFrom(const EditorCameraController& other) noexcept;
+
 	[[nodiscard]]
 	auto mode() const noexcept -> event::EditorCameraMode {
 		return m_mode;

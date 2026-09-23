@@ -118,6 +118,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			SyncActiveWorkspace();
 			if (m_dockFactory.Signals?.IsActive == true) m_dockFactory.Signals.Refresh();
 			PlayCommand.NotifyCanExecuteChanged();
+			SimulateCommand.NotifyCanExecuteChanged();
 			PlayInWindowCommand.NotifyCanExecuteChanged();
 		};
 
@@ -359,8 +360,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			Name = name,
 			Main = m_dockFactory.CaptureLayout(),
 			Toast = m_toastZoneFactory.CaptureLayout(),
-			ToastZoneHeight = ToastZoneHeight,
-			ToastZonePinned = m_toastZonePinned
+			ToastZoneHeight = ToastZoneHeight
 		};
 	}
 
@@ -393,7 +393,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 
 			SyncVisibilityFromDocks();
 			ToastZoneHeight = Math.Clamp(file.ToastZoneHeight, 100, 4000);
-			m_toastZonePinned = file.ToastZonePinned;
 		} catch (Exception e) {
 			Log.Warn($"Failed to apply layout '{file.Name}': {e.Message}");
 		} finally {
@@ -660,6 +659,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		return m_dockFactory.ActiveWorkspace is { } ws && ws.TogglePlayCommand.CanExecute(null);
 	}
 
+	private bool CanSimulate() {
+		return m_dockFactory.ActiveWorkspace is { } ws && ws.ToggleSimulateCommand.CanExecute(null);
+	}
+
 	private bool CanPlayInWindow() {
 		return m_dockFactory.ActiveWorkspace is { } ws && ws.TogglePlayExternalCommand.CanExecute(null);
 	}
@@ -668,6 +671,12 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 	private void Play() {
 		if (m_dockFactory.ActiveWorkspace is { } ws)
 			ws.TogglePlayCommand.Execute(null);
+	}
+
+	[RelayCommand(CanExecute = nameof(CanSimulate))]
+	private void Simulate() {
+		if (m_dockFactory.ActiveWorkspace is { } ws)
+			ws.ToggleSimulateCommand.Execute(null);
 	}
 
 	[RelayCommand(CanExecute = nameof(CanPlayInWindow))]

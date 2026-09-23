@@ -36,7 +36,7 @@ inline auto normalIndexOf(glm::ivec3 direction) noexcept -> uint8_t {
 	if (direction.x == 0 && direction.y == 0 && direction.z == 0) {
 		return k_normal_undefined;
 	}
-	const int raw = (direction.x + 1) + (direction.y + 1) * 3 + (direction.z + 1) * 9;
+	const int raw = (direction.x + 1) + ((direction.y + 1) * 3) + ((direction.z + 1) * 9);
 	return static_cast<uint8_t>(raw < 13 ? raw : raw - 1);
 }
 
@@ -46,7 +46,7 @@ inline auto normalDirection(uint8_t index) noexcept -> glm::ivec3 {
 		return glm::ivec3(0);
 	}
 	const int raw = index < 13 ? index : index + 1;
-	return glm::ivec3(raw % 3 - 1, (raw / 3) % 3 - 1, raw / 9 - 1);
+	return {(raw % 3) - 1, ((raw / 3) % 3) - 1, (raw / 9) - 1};
 }
 
 /// @brief Class in the low three bits and normal index in the high five
@@ -77,11 +77,13 @@ inline auto classifyFromNeighbours(
 	}
 
 	// subtracting flags cancels to (0,0,0) for an isolated voxel which reads as undefined and gets dropped
-	const glm::ivec3 direction(
-	    !solid_pos_x ? 1 : (!solid_neg_x ? -1 : 0),
-	    !solid_pos_y ? 1 : (!solid_neg_y ? -1 : 0),
-	    !solid_pos_z ? 1 : (!solid_neg_z ? -1 : 0)
-	);
+	const auto axis = [](bool solid_pos, bool solid_neg) -> int {
+		if (!solid_pos) {
+			return 1;
+		}
+		return solid_neg ? 0 : -1;
+	};
+	const glm::ivec3 direction(axis(solid_pos_x, solid_neg_x), axis(solid_pos_y, solid_neg_y), axis(solid_pos_z, solid_neg_z));
 	const uint8_t normal = normalIndexOf(direction);
 
 	VoxelClass type = VoxelClass::corner;
@@ -126,7 +128,7 @@ inline void
 			const uint64_t mask = 1ull << bit;
 
 			SurfaceVoxel entry;
-			entry.local_index = static_cast<uint16_t>(z * 64u + bit);
+			entry.local_index = static_cast<uint16_t>((z * 64u) + bit);
 			entry.classification = classifyFromNeighbours(
 			    (neg_x[z] & mask) != 0ull,
 			    (pos_x[z] & mask) != 0ull,

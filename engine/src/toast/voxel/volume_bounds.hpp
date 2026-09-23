@@ -32,7 +32,7 @@ inline auto worldBoundingSphere(const glm::mat4& model, glm::uvec3 brick_dims) -
 		const glm::vec3 offset = glm::vec3(model * glm::vec4(local, 1.0f)) - centre;
 		radius_squared = std::max(radius_squared, glm::dot(offset, offset));
 	}
-	return glm::vec4(centre, std::sqrt(radius_squared));
+	return {centre, std::sqrt(radius_squared)};
 }
 
 /// @brief Pass the near plane distance as @p margin

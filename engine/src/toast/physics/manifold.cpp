@@ -378,7 +378,7 @@ public:
 		return m_size == 0;
 	}
 
-	void emplace_back(const T& value) {
+	void emplaceBack(const T& value) {
 		TOAST_ASSERT(m_size < Capacity, "Physics", "Fixed collision buffer capacity exceeded");
 		if (m_size < Capacity) {
 			m_values[m_size++] = value;
@@ -466,7 +466,7 @@ auto clipPolygonAgainstPlane(
 			float denominator = previous_distance - current_distance;
 			if (std::abs(denominator) > 1.0e-8f) {
 				float amount = previous_distance / denominator;
-				result.emplace_back(
+				result.emplaceBack(
 				    BoxClipVertex {
 				      .position = previous.position + (current.position - previous.position) * amount,
 				      .incident_feature = clippedIncidentFeature(previous, current),
@@ -479,7 +479,7 @@ auto clipPolygonAgainstPlane(
 		}
 
 		if (current_inside) {
-			result.emplace_back(current);
+			result.emplaceBack(current);
 		}
 
 		previous = current;
@@ -529,10 +529,10 @@ auto incidentFaceVertices(const WorldBox& box, const glm::vec3& reference_normal
 	};
 
 	FixedBuffer<BoxClipVertex, 8> result;
-	result.emplace_back(vertex(-1.0f, -1.0f));
-	result.emplace_back(vertex(1.0f, -1.0f));
-	result.emplace_back(vertex(1.0f, 1.0f));
-	result.emplace_back(vertex(-1.0f, 1.0f));
+	result.emplaceBack(vertex(-1.0f, -1.0f));
+	result.emplaceBack(vertex(1.0f, -1.0f));
+	result.emplaceBack(vertex(1.0f, 1.0f));
+	result.emplaceBack(vertex(-1.0f, 1.0f));
 	return result;
 }
 
@@ -732,7 +732,7 @@ auto boxSatContactsFromAxis(
 		auto edge_a = boxSupportEdge(box_a, best_axis.axis_a, normal);
 		auto edge_b = boxSupportEdge(box_b, best_axis.axis_b, -normal);
 		auto closest = closestPointsBetweenSegments(edge_a.points[0], edge_a.points[1], edge_b.points[0], edge_b.points[1]);
-		candidates.emplace_back(
+		candidates.emplaceBack(
 		    ContactCandidate {
 		      .position = (closest.point_a + closest.point_b) * 0.5f,
 		      .penetration = best_axis.penetration,
@@ -754,36 +754,16 @@ auto boxSatContactsFromAxis(
 		FixedBuffer<BoxClipVertex, 8> polygon = incidentFaceVertices(incident, reference_normal);
 
 		polygon = clipPolygonAgainstPlane(
-		    std::move(polygon),
-		    reference_face_center,
-		    reference.rotation[tangent_a],
-		    reference.half_extents[tangent_a],
-		    tangent_a,
-		    true
+		    polygon, reference_face_center, reference.rotation[tangent_a], reference.half_extents[tangent_a], tangent_a, true
 		);
 		polygon = clipPolygonAgainstPlane(
-		    std::move(polygon),
-		    reference_face_center,
-		    -reference.rotation[tangent_a],
-		    reference.half_extents[tangent_a],
-		    tangent_a,
-		    false
+		    polygon, reference_face_center, -reference.rotation[tangent_a], reference.half_extents[tangent_a], tangent_a, false
 		);
 		polygon = clipPolygonAgainstPlane(
-		    std::move(polygon),
-		    reference_face_center,
-		    reference.rotation[tangent_b],
-		    reference.half_extents[tangent_b],
-		    tangent_b,
-		    true
+		    polygon, reference_face_center, reference.rotation[tangent_b], reference.half_extents[tangent_b], tangent_b, true
 		);
 		polygon = clipPolygonAgainstPlane(
-		    std::move(polygon),
-		    reference_face_center,
-		    -reference.rotation[tangent_b],
-		    reference.half_extents[tangent_b],
-		    tangent_b,
-		    false
+		    polygon, reference_face_center, -reference.rotation[tangent_b], reference.half_extents[tangent_b], tangent_b, false
 		);
 
 		for (const BoxClipVertex& incident_vertex : polygon) {
@@ -820,7 +800,7 @@ auto boxSatContactsFromAxis(
 				}
 			}
 			if (!duplicate) {
-				candidates.emplace_back(new_candidate);
+				candidates.emplaceBack(new_candidate);
 			}
 		}
 	}
@@ -828,7 +808,7 @@ auto boxSatContactsFromAxis(
 	if (candidates.empty()) {
 		auto point_a = boxSupportPoint(box_a, normal);
 		auto point_b = boxSupportPoint(box_b, -normal);
-		candidates.emplace_back(
+		candidates.emplaceBack(
 		    ContactCandidate {
 		      .position = (point_a.position + point_b.position) * 0.5f,
 		      .penetration = best_axis.penetration,
@@ -838,7 +818,7 @@ auto boxSatContactsFromAxis(
 		);
 	}
 
-	return BoxSatContacts {.normal = normal, .candidates = std::move(candidates)};
+	return BoxSatContacts {.normal = normal, .candidates = candidates};
 }
 
 /// Same SAT as collideWorldBoxes but assumes box_b.rotation is identity always true for the ref voxel box
@@ -897,7 +877,7 @@ auto collideBoxAgainstAxisAlignedBox(const WorldBox& box_a, const WorldBox& box_
 	}
 
 	// cross(v world basis k) by component shuffle instead of a general cross product
-	auto crossWithWorldAxis = [](glm::vec3 v, int k) -> glm::vec3 {
+	auto cross_with_world_axis = [](glm::vec3 v, int k) -> glm::vec3 {
 		if (k == 0) {
 			return {0.0f, v.z, -v.y};
 		}
@@ -908,7 +888,7 @@ auto collideBoxAgainstAxisAlignedBox(const WorldBox& box_a, const WorldBox& box_
 	};
 	for (int axis_a = 0; axis_a < 3; ++axis_a) {
 		for (int axis_b = 0; axis_b < 3; ++axis_b) {
-			test_axis(crossWithWorldAxis(box_a.rotation[axis_a], axis_b), BoxAxisType::edge, axis_a, axis_b, -1.0f);
+			test_axis(cross_with_world_axis(box_a.rotation[axis_a], axis_b), BoxAxisType::edge, axis_a, axis_b, -1.0f);
 			if (separated) {
 				return std::nullopt;
 			}

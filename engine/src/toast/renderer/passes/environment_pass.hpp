@@ -89,7 +89,7 @@ private:
 		glm::vec4 face_forward {0.0f};
 		float roughness = 0.0f;
 		float intensity = 1.0f;
-		glm::vec2 _pad0 {0.0f};
+		glm::vec2 pad0 {0.0f};
 	};
 
 	void createPipelines(const VulkanCore& core);

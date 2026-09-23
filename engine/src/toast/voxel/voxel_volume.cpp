@@ -352,11 +352,11 @@ void Volume::discardDirty() const noexcept {
 
 auto Volume::brickAtIndex(uint32_t index) const noexcept -> glm::ivec3 {
 	const uint32_t layer = m_brick_dims.x * m_brick_dims.y;
-	return glm::ivec3(
-	    static_cast<int>(index % m_brick_dims.x),
-	    static_cast<int>((index / m_brick_dims.x) % m_brick_dims.y),
-	    static_cast<int>(index / layer)
-	);
+	return {
+	  static_cast<int>(index % m_brick_dims.x),
+	  static_cast<int>((index / m_brick_dims.x) % m_brick_dims.y),
+	  static_cast<int>(index / layer)
+	};
 }
 
 auto Volume::solidVoxelCount() const -> uint32_t {

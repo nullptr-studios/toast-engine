@@ -134,7 +134,7 @@ struct VolumeDirty {
 
 [[nodiscard]]
 constexpr auto gridIndex(glm::uvec3 dims, glm::uvec3 brick) noexcept -> uint32_t {
-	return brick.x + brick.y * dims.x + brick.z * dims.x * dims.y;
+	return brick.x + (brick.y * dims.x) + (brick.z * dims.x * dims.y);
 }
 
 [[nodiscard]]

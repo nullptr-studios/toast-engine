@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 #include <toast/export.hpp>
 
@@ -46,11 +47,11 @@ inline auto punctualShadowResolution(float camera_distance, float resolution_sca
 	const uint32_t full_resolution = punctualResolution();
 	const float span = k_punctual_min_resolution_distance - k_punctual_full_resolution_distance;
 	float t = span > 0.0f ? (camera_distance - k_punctual_full_resolution_distance) / span : 1.0f;
-	t = t < 0.0f ? 0.0f : (t > 1.0f ? 1.0f : t);
+	t = std::clamp(t, 0.0f, 1.0f);
 
 	const auto max_resolution = static_cast<float>(full_resolution);
 	const auto min_resolution = static_cast<float>(k_min_punctual_resolution);
-	const float scale = resolution_scale < 0.0f ? 0.0f : (resolution_scale > 1.0f ? 1.0f : resolution_scale);
+	const float scale = std::clamp(resolution_scale, 0.0f, 1.0f);
 	const float target = (max_resolution + ((min_resolution - max_resolution) * t)) * scale;
 
 	uint32_t resolution = k_min_punctual_resolution;

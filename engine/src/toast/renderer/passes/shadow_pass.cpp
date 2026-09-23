@@ -165,8 +165,12 @@ ShadowPass::ShadowPass(const VulkanCore& core) : m_core(&core) {
 }
 
 auto ShadowPass::pipelineSetFor(uint32_t view_mask) const -> const PipelineSet* {
-	const auto it = std::ranges::find(m_pipeline_sets, view_mask, &PipelineSet::view_mask);
-	return it != m_pipeline_sets.end() ? &*it : nullptr;
+	for (const PipelineSet& set : m_pipeline_sets) {
+		if (set.view_mask == view_mask) {
+			return &set;
+		}
+	}
+	return nullptr;
 }
 
 void ShadowPass::createShadowMap(
@@ -473,8 +477,12 @@ auto ShadowPass::voxelPipelineSetFor(uint32_t view_mask) const -> const VoxelPip
 	if (!m_voxels_ready) {
 		return nullptr;
 	}
-	const auto found = std::ranges::find(m_voxel_pipeline_sets, view_mask, &VoxelPipelineSet::view_mask);
-	return found != m_voxel_pipeline_sets.end() ? &*found : nullptr;
+	for (const VoxelPipelineSet& set : m_voxel_pipeline_sets) {
+		if (set.view_mask == view_mask) {
+			return &set;
+		}
+	}
+	return nullptr;
 }
 
 auto ShadowPass::getCascadeMapView(uint32_t frame_index) const -> vk::ImageView {

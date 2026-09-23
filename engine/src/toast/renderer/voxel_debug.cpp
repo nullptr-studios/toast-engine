@@ -108,7 +108,7 @@ void voxelDebugOutline(
 	};
 	const auto screen = [&](const glm::vec4& point) {
 		const glm::vec2 ndc = glm::vec2(point) / point.w;
-		return ImVec2((ndc.x * 0.5f + 0.5f) * frame.viewport_extent.x, (ndc.y * 0.5f + 0.5f) * frame.viewport_extent.y);
+		return ImVec2(((ndc.x * 0.5f) + 0.5f) * frame.viewport_extent.x, ((ndc.y * 0.5f) + 0.5f) * frame.viewport_extent.y);
 	};
 	for (const auto& [a, b] : k_edges) {
 		if (clip[a].w <= 1.0e-4f || clip[b].w <= 1.0e-4f) {

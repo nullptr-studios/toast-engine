@@ -481,7 +481,7 @@ void Workspace::preparePrefabReload(UID uid) {
 		}
 		return false;
 	};
-	auto visit = [&](this auto&& self, Node& node) -> void {
+	auto visit = [&](auto&& self, Node& node) -> void {
 		for (auto& child : node.m_children) {
 			if (child->isInstanceRoot()) {
 				if (!depends(*child)) {
@@ -491,18 +491,18 @@ void Workspace::preparePrefabReload(UID uid) {
 				if (reference.nodes.empty()) {
 					continue;
 				}
-				for (const auto name : {"position", "rotation", "scale"}) {
+				for (const auto* const name : {"position", "rotation", "scale"}) {
 					if (const auto* field = child->info()->getField(name); field && !reference.nodes[0].find(name)) {
 						reference.nodes[0].fields.push_back({std::string(name), field->value_type, field->is_array, field->get(&*child)});
 					}
 				}
 				m_prefab_reloads.push_back({child, std::move(reference)});
 			} else {
-				self(*child);
+				self(self, *child);
 			}
 		}
 	};
-	visit(*m_root_node);
+	visit(visit, *m_root_node);
 }
 
 void Workspace::finishPrefabReload() {
@@ -743,6 +743,11 @@ auto Workspace::restoreHistorySnapshot(const assets::Prefab& snapshot) -> bool {
 	return true;
 }
 
+void Workspace::inheritEditorCamera(const Workspace& source) {
+	m_editor_camera_controller.copyViewFrom(source.m_editor_camera_controller);
+	m_editor_camera_controller.tick(0.0f, m_editor_camera.get());
+}
+
 void Workspace::applyActiveCamera() {
 	if (!isActiveWorkspace()) {
 		return;
@@ -968,7 +973,7 @@ void Workspace::gizmoApplySizeDrag(float delta) {
 
 	if (auto capsule = m_focused_node.as<physics::CapsuleCollider>(); capsule.exists()) {
 		if (axis == 2) {
-			const float next = std::max(m_gizmo_drag_start_size.z + growth * 2.0f, gizmo_layout::k_min_collider_extent);
+			const float next = std::max(m_gizmo_drag_start_size.z + (growth * 2.0f), gizmo_layout::k_min_collider_extent);
 			capsule->height = std::max(next, 2.0f * capsule->radius);
 		} else {
 			const float next = std::max(m_gizmo_drag_start_size.x + growth, gizmo_layout::k_min_collider_extent);
@@ -1022,7 +1027,7 @@ void Workspace::gizmoUpdateHover() {
 			if (along < 0.0f) {
 				continue;
 			}
-			const float off_axis_squared = glm::dot(to_dot, to_dot) - along * along;
+			const float off_axis_squared = glm::dot(to_dot, to_dot) - (along * along);
 			if (off_axis_squared <= radius * radius && along < nearest) {
 				nearest = along;
 				m_gizmo_hover = dots[i].handle;
@@ -1754,7 +1759,7 @@ void Workspace::eventSubscriptions() {
 		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
 			return false;
 		}
-		auto target = e.node.data() != 0 ? findFrom(m_root_node, e.node) : m_focused_node;
+		toast::Box<Node> target = e.node.data() != 0 ? findFrom(m_root_node, e.node) : m_focused_node;
 		if (not target.exists()) {
 			return false;
 		}
@@ -1801,7 +1806,7 @@ void Workspace::eventSubscriptions() {
 
 		if (field->name == "position" || field->name == "rotation" || field->name == "world_position" ||
 		    field->name == "world_rotation") {
-			if (auto node3d = target.as<Node3D>(); node3d.exists()) {
+			if (auto node3d = target.template as<Node3D>(); node3d.exists()) {
 				node3d->onEditorTransformChanged();
 			}
 		}
@@ -2329,7 +2334,7 @@ void Workspace::tick() {
 	// Only for the workspace actually being looked through, matching applyActiveCamera()'s gating. The
 	// controller has to be *told*, not just skipped: every workspace owns one and they all subscribe to the
 	// same global input, so an unguarded one accumulates movement from a drag in another viewport
-	const bool camera_active = isActiveWorkspace() && !m_game_camera && !isPlaying();
+	const bool camera_active = isActiveWorkspace() && !m_game_camera;
 	m_editor_camera_controller.setEnabled(camera_active);
 	if (camera_active) {
 		m_editor_camera_controller.tick(static_cast<float>(Time::delta()), m_editor_camera.get());

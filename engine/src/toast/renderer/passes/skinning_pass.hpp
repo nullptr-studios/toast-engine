@@ -48,7 +48,7 @@ private:
 		uint32_t vertex_count = 0;
 		uint32_t output_base = 0;
 		uint32_t joint_offset = 0;
-		uint32_t _pad0 = 0;
+		uint32_t pad0 = 0;
 	};
 
 	struct MeshResources {
