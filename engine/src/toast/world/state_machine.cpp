@@ -21,6 +21,7 @@ auto callFn(auto fn) {
 }
 
 void StateMachine::begin() {
+	ZoneScoped;
 	if (not cached_state && current_state.empty()) {
 		return;
 	}
@@ -33,6 +34,7 @@ void StateMachine::begin() {
 }
 
 void StateMachine::end() {
+	ZoneScoped;
 	if (not cached_state && current_state.empty()) {
 		return;
 	}
@@ -46,6 +48,7 @@ void StateMachine::end() {
 }
 
 void StateMachine::tick() {
+	ZoneScoped;
 	if (not cached_state) {
 		return;
 	}
@@ -59,6 +62,7 @@ void StateMachine::tick() {
 }
 
 void StateMachine::setState(const std::string& name) {
+	ZoneScoped;
 	if (current_state == name) {
 		return;
 	}
