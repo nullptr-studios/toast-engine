@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:editor.Workspace"
+             xmlns:elements="using:editor.Components.Elements"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
@@ -627,6 +628,15 @@
 										            Size="14"
 										            StrokeWidth="2.5" />
 									</Button>
+								</Grid>
+								<Grid ColumnDefinitions="*,Auto"
+								      ColumnSpacing="8"
+								      ToolTip.Tip="Pressing play switches to the game camera and hands it the input">
+									<TextBlock Grid.Column="0"
+									           Text="Play in Game cam"
+									           VerticalAlignment="Center" />
+									<elements:BoolBox Grid.Column="1"
+									                  Value="{Binding PlayInGameCamera, Mode=TwoWay}" />
 								</Grid>
 							</StackPanel>
 						</Flyout>

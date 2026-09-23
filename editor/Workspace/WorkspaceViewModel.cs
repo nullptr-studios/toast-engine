@@ -39,6 +39,7 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 	[ObservableProperty] private bool m_gameCamera;
 	[ObservableProperty] private CameraMode m_cameraMode;
 	[ObservableProperty] private double m_cameraSpeed = 5.0;
+	[ObservableProperty] private bool m_playInGameCamera = true;
 	[ObservableProperty] private bool m_isPaused;
 	private ulong m_nextSaveRequest = 1;
 	private TaskCompletionSource<WorkspaceSaveCompleted>? m_pendingSave;
@@ -153,10 +154,11 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 		RootType = type;
 		var defaultsToOrbit = ReflectionDatabase.IsTypeOrSubtypeOf(type, "Node3D") ||
 		                      type.EndsWith("::Node3D", StringComparison.Ordinal);
-		var settings = ViewportSettingsStore.Load(uid, defaultsToOrbit);
+		var settings = ViewportSettingsStore.Load(ViewportSettingsKey!, defaultsToOrbit);
 		m_loadingViewportSettings = true;
 		CameraMode = settings.Mode;
 		CameraSpeed = Nearest(s_cameraSpeedSteps, settings.Speed);
+		PlayInGameCamera = settings.PlayInGameCamera;
 		m_loadingViewportSettings = false;
 		SendCameraSettings();
 		if (m_pendingRootName is { } name) {
@@ -168,6 +170,7 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 	public void BindBackingFile(string virtualUri, string assetUid) {
 		BackingUri = virtualUri;
 		BackingAssetUid = assetUid;
+		SaveViewportSettings();
 	}
 
 	public override bool OnClose() {
@@ -286,10 +289,21 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 		SaveAndSendCameraSettings();
 	}
 
+	partial void OnPlayInGameCameraChanged(bool value) {
+		SaveViewportSettings();
+	}
+
 	private void SaveAndSendCameraSettings() {
 		if (m_loadingViewportSettings) return;
-		if (RootUid is { } uid) ViewportSettingsStore.Save(uid, CameraMode, CameraSpeed);
+		SaveViewportSettings();
 		SendCameraSettings();
+	}
+
+	private string? ViewportSettingsKey => RootUid is null ? null : BackingAssetUid ?? RootUid;
+
+	private void SaveViewportSettings() {
+		if (m_loadingViewportSettings || ViewportSettingsKey is not { } key) return;
+		ViewportSettingsStore.Save(key, new ViewportSettings(CameraMode, CameraSpeed, PlayInGameCamera));
 	}
 
 	private void SendCameraSettings() {
@@ -405,7 +419,7 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 
 		// hierarchy and inspector follow the active workspace
 		Events.Send(new SetActiveWorkspace { Handle = PlayHandle });
-		SetGameCamera(true);
+		SetGameCamera(PlayInGameCamera);
 		PlayState = external ? PlayState.PlayingExternal : PlayState.Playing;
 
 		if (external) {

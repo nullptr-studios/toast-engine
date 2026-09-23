@@ -91,6 +91,7 @@ public:
 		return false;
 	}
 
+	void inheritEditorCamera(const Workspace& source);
 	void preparePrefabReload(UID uid);
 	void finishPrefabReload();
 

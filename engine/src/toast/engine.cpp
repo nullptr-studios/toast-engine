@@ -704,6 +704,7 @@ auto Engine::playWorkspace(UID source_handle) -> std::pair<UID, std::string> {
 		m->owners.erase(it);
 		return {};
 	}
+	play->inheritEditorCamera(*source);
 
 	std::string name = it->second->name();
 	return {handle, name};
