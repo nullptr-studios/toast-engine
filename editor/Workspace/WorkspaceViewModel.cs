@@ -334,6 +334,13 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 		Events.Send(new SetCameraMode { Game = value });
 	}
 
+	// always reaches the engine: the newly active workspace starts on its own camera even when the toggle already
+	// shows the requested one, which would otherwise leave the button and the viewport out of sync
+	private void SetGameCamera(bool value) {
+		if (GameCamera == value) Events.Send(new SetCameraMode { Game = value });
+		else GameCamera = value;
+	}
+
 	public static event Action? PlayModeChanged;
 
 	partial void OnPlayStateChanged(PlayState value) {
@@ -398,7 +405,7 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 
 		// hierarchy and inspector follow the active workspace
 		Events.Send(new SetActiveWorkspace { Handle = PlayHandle });
-		GameCamera = true;
+		SetGameCamera(true);
 		PlayState = external ? PlayState.PlayingExternal : PlayState.Playing;
 
 		if (external) {
@@ -423,10 +430,10 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 		OnPropertyChanged(nameof(EffectiveHandle));
 		IsPaused = false;
 		PlayState = PlayState.Stopped;
-		GameCamera = false;
 
 		// the source workspace was never closed
 		Events.Send(new SetActiveWorkspace { Handle = Handle });
+		SetGameCamera(false);
 	}
 
 	// closing the play window by hand behaves like pressing stop
