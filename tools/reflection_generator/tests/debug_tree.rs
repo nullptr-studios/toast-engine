@@ -1,4 +1,4 @@
-use tree_sitter::{Parser};
+use tree_sitter::Parser;
 
 #[test]
 fn debug_tree_simple() {
@@ -8,7 +8,9 @@ public:
 };"#;
 
     let mut parser = Parser::new();
-    parser.set_language(&tree_sitter_cpp::LANGUAGE.into()).expect("Language error");
+    parser
+        .set_language(&tree_sitter_cpp::LANGUAGE.into())
+        .expect("Language error");
     let tree = parser.parse(source, None).unwrap();
 
     print_tree(&tree.root_node(), source, 0);

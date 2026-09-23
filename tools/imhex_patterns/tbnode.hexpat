@@ -44,7 +44,7 @@ struct Quat {
 };
 
 struct UID {
-    u8 data[11];
+    u64 data;
 };
 
 struct Item {
@@ -88,17 +88,68 @@ struct Group {
     String name;
     u32 item_count;
     Item items[item_count];
-    
+
     u32 subgroup_count;
     Subgroup subgroups[subgroup_count];
 };
 
-struct Node {
+struct LuaVarOverride {
+    String path;
+    String value;
+};
+
+struct SignalConnection {
+    UID target;
+    String function;
+};
+
+struct Signal {
+    String name;
+    u32 connection_count;
+    SignalConnection connections[connection_count];
+};
+
+// Binary format versions:
+// v2: fields and groups
+// v3: adds Lua variable overrides
+// v4: adds reflected signal connections
+struct NodeV2 {
+    String name;
+    String type;
+
+    u32 item_count;
+    Item items[item_count];
+
+    u32 group_count;
+    Group groups[group_count];
+};
+
+struct NodeV3 {
+    String name;
+    String type;
+
+    u32 item_count;
+    Item items[item_count];
+
+    u32 lua_var_count;
+    LuaVarOverride lua_vars[lua_var_count];
+
+    u32 group_count;
+    Group groups[group_count];
+};
+
+struct NodeV4 {
     String name;
     String type;
     
     u32 item_count;
     Item items[item_count];
+
+    u32 lua_var_count;
+    LuaVarOverride lua_vars[lua_var_count];
+
+    u32 signal_count;
+    Signal signals[signal_count];
     
     u32 group_count;
     Group groups[group_count];
@@ -116,7 +167,13 @@ struct TNODE {
     u32 global_item_count;
     Item global_items[global_item_count];
     
-    Node nodes[header.node_count];
+    if (header.version >= 4) {
+        NodeV4 nodes[header.node_count];
+    } else if (header.version >= 3) {
+        NodeV3 nodes[header.node_count];
+    } else {
+        NodeV2 nodes[header.node_count];
+    }
 };
 
 TNODE file @ 0x00;

@@ -23,13 +23,13 @@ public partial class AssetTreeNode : ObservableObject {
 		TypeLabel = "";
 
 		var folder = new AssetFolder(realPath);
-		foreach (var sub in folder.SubFolders) {
+		foreach (var sub in PickerOrdering.ByName(folder.SubFolders, sub => sub.Name)) {
 			var child = new AssetTreeNode(sub.Filepath, typeFilter);
 			Children.Add(child);
 			FilteredChildren.Add(child);
 		}
 
-		foreach (var file in folder.Files) {
+		foreach (var file in PickerOrdering.ByName(folder.Files, file => file.Name)) {
 			if (typeFilter is not null &&
 			    !string.Equals(file.Definition?.Type, typeFilter, StringComparison.OrdinalIgnoreCase)) continue;
 			if (file.Uid is null) continue;
@@ -91,15 +91,12 @@ public class AssetTreeViewModel : PickerViewModel {
 		if (!ProjectContext.IsInitialized) return;
 
 		// One root per content database, plus core://
-		foreach (var dbRoot in ProjectContext.DatabaseRoots) {
-			var node = new AssetTreeNode(dbRoot, typeFilter);
+		var roots = ProjectContext.DatabaseRoots.Append(ProjectContext.CorePath)
+			.Select(root => new AssetTreeNode(root, typeFilter));
+		foreach (var node in PickerOrdering.ByName(roots, root => root.Name)) {
 			m_roots.Add(node);
 			m_filtered.Add(node);
 		}
-
-		var coreNode = new AssetTreeNode(ProjectContext.CorePath, typeFilter);
-		m_roots.Add(coreNode);
-		m_filtered.Add(coreNode);
 	}
 
 	public override string WindowTitle => "Select an Asset...";
@@ -131,7 +128,7 @@ public class AssetTreeViewModel : PickerViewModel {
 		var newPath = Path.Combine(parent.RealPath, folderName);
 		Directory.CreateDirectory(newPath);
 		var newNode = new AssetTreeNode(newPath, m_filter);
-		parent.Children.Insert(0, newNode);
-		parent.FilteredChildren.Insert(0, newNode);
+		PickerOrdering.InsertFolderFirst(parent.Children, newNode, node => node.IsFolder, node => node.Name);
+		PickerOrdering.InsertFolderFirst(parent.FilteredChildren, newNode, node => node.IsFolder, node => node.Name);
 	}
 }

@@ -87,4 +87,18 @@ struct WindowResize : Event<WindowResize> {
 	WindowResize(int width, int height) : width(width), height(height) { }
 };
 
+/// @brief Event sent when the window's dpi ratio changes
+struct WindowDisplayScale : Event<WindowDisplayScale> {
+	float scale;
+
+	explicit WindowDisplayScale(float scale) : scale(scale) { }
+};
+
+/// @brief Event sent when the window gains or loses input focus
+struct WindowFocus : Event<WindowFocus> {
+	bool focused;
+
+	explicit WindowFocus(bool focused) : focused(focused) { }
+};
+
 }

@@ -17,7 +17,7 @@ public partial class AssetFolderNode : ObservableObject {
 	public AssetFolderNode(string realPath) {
 		RealPath = realPath;
 		Name = Path.GetFileName(realPath) is { Length: > 0 } n ? n : realPath;
-		foreach (var dir in Directory.EnumerateDirectories(realPath)) {
+		foreach (var dir in PickerOrdering.ByName(Directory.EnumerateDirectories(realPath), Path.GetFileName)) {
 			var child = new AssetFolderNode(dir);
 			Children.Add(child);
 			FilteredChildren.Add(child);
@@ -62,8 +62,8 @@ public class AssetFolderTreeViewModel : PickerViewModel {
 			m_filtered.Add(root);
 		} else {
 			// writable content databases only (core is read-only, excluded)
-			foreach (var dbRoot in ProjectContext.DatabaseRoots) {
-				var node = new AssetFolderNode(dbRoot);
+			var roots = ProjectContext.DatabaseRoots.Select(dbRoot => new AssetFolderNode(dbRoot));
+			foreach (var node in PickerOrdering.ByName(roots, root => root.Name)) {
 				m_roots.Add(node);
 				m_filtered.Add(node);
 			}
@@ -103,7 +103,7 @@ public class AssetFolderTreeViewModel : PickerViewModel {
 		var newPath = Path.Combine(parent.RealPath, folderName);
 		Directory.CreateDirectory(newPath);
 		var newNode = new AssetFolderNode(newPath);
-		parent.Children.Insert(0, newNode);
-		parent.FilteredChildren.Insert(0, newNode);
+		PickerOrdering.InsertByName(parent.Children, newNode, node => node.Name);
+		PickerOrdering.InsertByName(parent.FilteredChildren, newNode, node => node.Name);
 	}
 }

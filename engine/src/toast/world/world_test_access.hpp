@@ -21,15 +21,22 @@ struct TOAST_API WorldTestAccess {
 
 	static auto createNode(World& world, std::string_view name, NodeState state = NodeState::root) -> Box<Node>;
 
+	// activeRenderCamera() is protected on INodeOwner
+	static auto activeRenderCamera(World& world) -> Camera*;
+	static auto hasActiveCamera(World& world) -> bool;
+
 	static void registerDependency(Node& from, Node& to);
 
 	// Test-only: make `node` participate in the given tick stage by attaching a fabricated
 	// NodeInfo (the per-instance NodeFunctionTable no longer exists).
 	static void addTickStage(Node& node, TickFunctionList stage);
 
+	// Test-only: like addTickStage(), but the fabricated NodeInfo also calls `callback` for onEnable
+	static void setEnableCallback(Node& node, void (*callback)(void*));
+
 	// Test-only: appends a script asset to the node and (re)builds its ScriptRuntime;
 	// requires a LuaState to exist
-	static void attachScript(Node& node, const assets::AssetHandle<assets::Script>& script);
+	static void attachScript(Node& node, const assets::Handle<assets::Script>& script);
 
 	static void applyLuaOverrides(
 	    World& world, Node& node, const assets::Prefab::BasicNode& data, const scripting::NodeResolver& find_node
@@ -41,7 +48,7 @@ struct TOAST_API WorldTestAccess {
 
 	static void computeDependencyGraph(World& world);
 
-	static auto instantiate(World& world, const assets::AssetHandle<assets::Prefab>& file, INodeOwner::InstantiateContext& ctx)
+	static auto instantiate(World& world, const assets::Handle<assets::Prefab>& file, INodeOwner::InstantiateContext& ctx)
 	    -> Box<Node>;
 
 	static auto childrenOf(const Node& node) -> const std::vector<Box<Node>>&;
@@ -51,8 +58,11 @@ struct TOAST_API WorldTestAccess {
 
 	static void setWorldRoot(World& world, Node& node);
 
+	// Moves a freshly instantiated tree to the cache, then World::swapRoot() it so begin/onEnable run
+	static auto activateLoadedRoot(World& world, Node& node) -> Box<Node>;
+
 	static auto
-	    spawnSync(World& world, const assets::AssetHandle<assets::Prefab>& file, Node& parent, INodeOwner::InstantiateContext& ctx)
+	    spawnSync(World& world, const assets::Handle<assets::Prefab>& file, Node& parent, INodeOwner::InstantiateContext& ctx)
 	        -> Box<Node>;
 
 	static void initAssetManager(std::string_view assets_dir, std::string_view cache_dir);

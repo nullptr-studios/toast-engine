@@ -1,5 +1,12 @@
-uid = "wShpomWHssM"
+uid = "ui60Hw-ugkA"
 type = "mesh"
-source = "artwork://primitives.glb"
-created_at = "2026-06-22T17:13:08.1640223Z"
-modified_at = "2026-06-22T17:13:08.1640241Z"
+source = "artwork://Default meshes.glb"
+created_at = "2026-07-20T10:21:25.0766280Z"
+modified_at = "2026-07-20T10:21:25.0766288Z"
+[gltf]
+create_folder = false
+import_materials = false
+import_textures = false
+import_cameras = false
+import_lights = false
+generate_prefab = false

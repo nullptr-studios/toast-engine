@@ -73,7 +73,8 @@ declares its element type the same way: `loot = { Asset }`.
 
 `self` doubles as the node: `find`, `search`, `create`, `call`, `addDependsOn`,
 `enabled`, `name`, `uid` and `exists` are all available on it and on any node reference.
-`find`/`search` accept the same queries as C++ (bare name, slash path, `node://` URIs).
+`find`/`search` accept the same name queries as C++ (bare name, slash path, `node://`
+URIs with the `root`/`world`/`global` keywords); UIDs are not valid strings
 `call` invokes a reflected C++ method base-to-derived and then any same-named function on
 the target's scripts.
 

@@ -1,3 +1,4 @@
+using System;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 
@@ -13,6 +14,12 @@ public partial class SaveFileModal : Window {
 		InitializeComponent();
 		var vm = new SaveFileViewModel(defaultName, extension);
 		DataContext = vm;
+	}
+
+	protected override void OnOpened(EventArgs e) {
+		base.OnOpened(e);
+		NameTextbox.SelectAll();
+		NameTextbox.Focus();
 	}
 
 	private void Name_OnTextChanged(object? sender, TextChangedEventArgs e) {

@@ -1,17 +1,20 @@
 #include "play_workspace.hpp"
 
 #include "node.hpp"
+#include "toast/physics/simulator.hpp"
 #include "workspace_events.hpp"
 
 #include <toast/assets/assets.hpp>
 #include <toast/log.hpp>
+#include <tracy/Tracy.hpp>
 
 namespace toast {
 
 PlayWorkspace::PlayWorkspace(UID handle, assets::Prefab& prefab) : Workspace(handle, EmptyTag {}) {
 	ZoneScoped;
 
-	assets::AssetHandle<assets::Prefab> file(&prefab, handle, "");
+	m_owned_source_prefab = std::make_unique<assets::Prefab>(prefab);
+	assets::Handle<assets::Prefab> file(m_owned_source_prefab.get(), handle, "");
 
 	INodeOwner::InstantiateContext ctx;
 	ctx.resolver = [](toast::UID id) { return assets::load<assets::Prefab>(id); };
@@ -24,16 +27,15 @@ PlayWorkspace::PlayWorkspace(UID handle, assets::Prefab& prefab) : Workspace(han
 	// node->propagateCallTick(node->info(), TickFunctionList::pre_init);
 
 	node->m_parent = {};
-	node->m_state = NodeState::root;
+	node->changeNodeState(NodeState::root);
 	node->m_type = NodeType::world_root;
 	node->m_inherited_enabled = true;
 
 	node->propagateCallTick(node->info(), TickFunctionList::init);
-	node->propagateCallTick(node->info(), TickFunctionList::begin);
 	node->m_local_enabled = true;
-	node->propagateEnable();
 
 	m_root_node = node;
+	initializeHistory(false, false);
 
 	m_listener.subscribe<event::WorkspacePause>([this](const auto& e) {
 		if (e.handle != m_handle.data()) {
@@ -57,7 +59,7 @@ PlayWorkspace::~PlayWorkspace() {
 		return;
 	}
 
-	TOAST_INFO("World", "Destroyed play workspace {}", m_root_node->name());
+	TOAST_INFO("World", "Destroying play workspace {}", m_root_node->name());
 }
 
 auto PlayWorkspace::name() -> std::string {
@@ -65,26 +67,54 @@ auto PlayWorkspace::name() -> std::string {
 }
 
 void PlayWorkspace::registerDependency(Node& from, Node& to) {
-	m_scheduler.registerDependency(from, to);
-	m_schedule_dirty = true;
+	if (m_scheduler.registerDependency(from, to)) {
+		m_schedule_dirty = true;
+	}
 }
 
 void PlayWorkspace::unregisterDependency(Node& from, Node& to) {
-	m_scheduler.unregisterDependency(from, to);
-	m_schedule_dirty = true;
+	if (m_scheduler.unregisterDependency(from, to)) {
+		m_schedule_dirty = true;
+	}
 }
 
 void PlayWorkspace::tick() {
-	if (not m_paused && m_root_node.exists()) {
-		if (m_schedule_dirty) {
-			computeSchedule();
-			m_schedule_dirty = false;
+	ZoneScoped;
+
+	if (participatesIn(NodeOwnerParticipation::gameplay_tick) && m_root_node.exists()) {
+		if (!m_started) {
+			m_root_node->propagateCallTick(m_root_node->info(), TickFunctionList::begin);
+			m_root_node->propagateEnable();
+			m_started = true;
 		}
-		m_scheduler.run();
+
+		if (!m_paused) {
+			if (m_schedule_dirty) {
+				computeSchedule();
+				m_schedule_dirty = false;
+			}
+
+			m_scheduler.runPhase(m_scheduler.schedule.early_tick, TickFunctionList::early_tick, "early_tick");
+
+			INodeOwner::updateTransforms(*m_root_node);
+
+			m_scheduler.runPhase(m_scheduler.schedule.tick, TickFunctionList::tick, "tick");
+
+			const auto step_result = m_accumulator.tick(Time::delta(), [&]() { physics::Simulator::callTick(); });
+			physics::Simulator::recordTickBurst(step_result.steps, step_result.time_budget_reached);
+			m_scheduler.runPhase(m_scheduler.schedule.post_physics, TickFunctionList::post_physics, "post_physics");
+
+			m_scheduler.runPhase(m_scheduler.schedule.late_tick, TickFunctionList::late_tick, "late_tick");
+		}
 	}
 
-	// inspector streaming for the focused node
-	Workspace::tick();
+	if (isActiveWorkspace()) {
+		Workspace::tick();
+	}
+}
+
+auto PlayWorkspace::participatesIn(NodeOwnerParticipation /*use*/) const noexcept -> bool {
+	return isActiveWorkspace();
 }
 
 void PlayWorkspace::computeSchedule() {

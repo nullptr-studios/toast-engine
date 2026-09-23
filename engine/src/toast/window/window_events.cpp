@@ -160,4 +160,20 @@ struct ProtoTraits<WindowResize> {
 
 TOAST_PROTO_EVENT(WindowResize);
 
+template<>
+struct ProtoTraits<WindowDisplayScale> {
+	using Proto = proto::events::WindowDisplayScale;
+	using Event = WindowDisplayScale;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_scale(e.scale);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return Event {p.scale()}; }
+};
+
+TOAST_PROTO_EVENT(WindowDisplayScale);
+
 }

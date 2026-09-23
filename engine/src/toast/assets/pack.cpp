@@ -5,6 +5,7 @@
 #include <lz4.h>
 #include <stdexcept>
 #include <toast/log.hpp>
+#include <tracy/Tracy.hpp>
 #include <utility>
 
 namespace assets {
@@ -33,6 +34,7 @@ auto PackArchive::fnv1a64(std::string_view s) -> uint64_t {
 }
 
 PackArchive::PackArchive(const std::filesystem::path& path) : m_path(path) {
+	ZoneScoped;
 	std::ifstream f(path, std::ios::binary);
 	if (!f.is_open()) {
 		throw std::runtime_error("PackArchive: cannot open " + path.string());
@@ -84,6 +86,7 @@ PackArchive::PackArchive(const std::filesystem::path& path) : m_path(path) {
 }
 
 auto PackArchive::read(std::string_view rel_path) const -> std::optional<std::vector<uint8_t>> {
+	ZoneScoped;
 	// Normalise to forward slashes before hashing
 	std::string key(rel_path);
 	for (auto& c : key) {

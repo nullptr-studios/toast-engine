@@ -1,11 +1,12 @@
 /// @file SDLOutputTarget.cpp
 /// @author dario
-/// @date 16/05/2026.
+/// @date 16/05/2026
 
 #include "sdl_output_target.hpp"
 
 #include <stdexcept>
 #include <toast/log.hpp>
+#include <tracy/Tracy.hpp>
 
 namespace renderer {
 
@@ -13,12 +14,11 @@ auto SDLOutputTarget::getRequiredInstanceExtensions() -> std::vector<const char*
 	Uint32 count = 0;
 	const char* const* raw_extensions = SDL_Vulkan_GetInstanceExtensions(&count);
 
-	TOAST_TRACE("SDLOutputTarget", "SDL required Vulkan instance extensions: {}", count);
+	TOAST_TRACE("Render", "SDL required Vulkan instance extensions: {}", count);
 	return {raw_extensions, raw_extensions + count};
 }
 
 auto SDLOutputTarget::getRequiredInstanceExtensions(SDL_Window* window) -> std::vector<const char*> {
-	// SDL3 does not require a window
 	(void)window;
 	return getRequiredInstanceExtensions();
 }
@@ -29,7 +29,7 @@ auto SDLOutputTarget::getRequiredDeviceExtensions() -> std::vector<const char*> 
 
 auto SDLOutputTarget::queryExtent(SDL_Window* window) -> vk::Extent2D {
 	if (!window) {
-		TOAST_CRITICAL("SDLOutputTarget", "Toast Engine Error: SDL output target requires a valid window!");
+		TOAST_CRITICAL("Render", "Toast Engine Error: SDL output target requires a valid window!");
 	}
 
 	int width = 0;
@@ -46,11 +46,11 @@ auto SDLOutputTarget::queryExtent(SDL_Window* window) -> vk::Extent2D {
 auto SDLOutputTarget::createSurface(const VulkanCore& core, SDL_Window* window) -> vk::raii::SurfaceKHR {
 	VkSurfaceKHR raw_surface = VK_NULL_HANDLE;
 	if (!SDL_Vulkan_CreateSurface(window, static_cast<VkInstance>(*core.getInstance()), nullptr, &raw_surface)) {
-		TOAST_ERROR("SDLOutputTarget", "SDL_Vulkan_CreateSurface failed: {}", SDL_GetError());
-		TOAST_CRITICAL("SDLOutputTarget", "Toast Engine Error: Failed to create SDL Vulkan surface!");
+		TOAST_ERROR("Render", "SDL_Vulkan_CreateSurface failed: {}", SDL_GetError());
+		TOAST_CRITICAL("Render", "Toast Engine Error: Failed to create SDL Vulkan surface!");
 	}
 
-	TOAST_TRACE("SDLOutputTarget", "SDL Vulkan surface created successfully");
+	TOAST_TRACE("Render", "SDL Vulkan surface created successfully");
 	return {core.getInstance(), raw_surface};
 }
 
@@ -99,7 +99,7 @@ auto SDLOutputTarget::present(uint32_t image_index, vk::Semaphore render_finishe
 }
 
 auto SDLOutputTarget::recordFinalize(vk::CommandBuffer command_buffer, uint32_t image_index) -> void {
-	// Transition the rendered image from color-attachment to present-source for the swapchain
+	ZoneScoped;
 	const vk::ImageMemoryBarrier barrier(
 	    vk::AccessFlagBits::eColorAttachmentWrite,
 	    vk::AccessFlags {},
@@ -117,6 +117,14 @@ auto SDLOutputTarget::recordFinalize(vk::CommandBuffer command_buffer, uint32_t 
 
 auto SDLOutputTarget::recreate(vk::Extent2D extent) -> void {
 	m_swapchain->recreate(extent);
+}
+
+auto SDLOutputTarget::isPresentable() const -> bool {
+	try {
+		const auto capabilities = m_core->getPhysicalDevice().getSurfaceCapabilitiesKHR(*m_surface);
+		return capabilities.maxImageExtent.width > 0 && capabilities.maxImageExtent.height > 0 &&
+		       capabilities.currentExtent.width > 0 && capabilities.currentExtent.height > 0;
+	} catch (const vk::SystemError&) { return false; }
 }
 
 }

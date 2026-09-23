@@ -36,19 +36,22 @@ public:
 	 * @brief Switches the active layout by name and recomputes the enabled action set
 	 * @param layout Name of a layout owned by this controller
 	 */
+	[[Reflect]]
 	void setLayout(std::string_view layout);
 
 	/**
 	 * @brief Switches the active layer by name and recomputes the enabled action set
 	 * @param layer Name of a layer present in the active layout
 	 */
+	[[Reflect]]
 	void setLayer(std::string_view layer);
 
 	/**
 	 * @brief Plays a haptic effect on this controller's physical gamepad
 	 * @param haptic The effect to play, routed through @c controller_id
 	 */
-	void playHaptic(assets::AssetHandle<assets::Haptic> haptic) const;
+	[[Reflect]]
+	void playHaptic(assets::Handle<assets::Haptic> haptic) const;
 
 	[[Reflect, ReadOnly]]
 	std::string active_layout;
@@ -63,7 +66,7 @@ public:
 	std::string default_layer;
 
 	[[Reflect]]
-	std::vector<assets::AssetHandle<assets::InputLayout>> layouts;
+	std::vector<assets::Handle<assets::InputLayout>> layouts;
 
 	[[Reflect]]
 	bool use_settings = false;
@@ -76,6 +79,7 @@ public:
 	uint32_t controller_id = 0;
 
 private:
+	void updateInspectorMessages() override;
 	void init();
 
 	void rebuildEnabledActions();

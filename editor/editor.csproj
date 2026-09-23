@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
-        <TargetFramework>net10.0</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -9,6 +9,7 @@
         <Company>nullptr Studios</Company>
         <UseRidGraph>true</UseRidGraph>
 				<RunWorkingDirectory>$(MSBuildProjectDirectory)</RunWorkingDirectory>
+				<LangVersion>14</LangVersion>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
         <OutputPath>../out/Debug/editor</OutputPath>
@@ -17,6 +18,11 @@
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
         <OutputPath>../out/Release/editor</OutputPath>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)' == 'RelWithDebInfo' ">
+        <OutputPath>../out/RelWithDebInfo/editor</OutputPath>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
         <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
     </PropertyGroup>
@@ -49,7 +55,7 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="JsonSchema.Net" Version="9.2.2" />
-        <PackageReference Include="Lucide.Avalonia" Version="0.2.9" />
+        <PackageReference Include="Lucide.Avalonia" Version="0.2.0" />
         <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.*" />
         <PackageReference Include="Svg.Controls.Skia.Avalonia" Version="12.0.0.13" />
         <PackageReference Include="tinyspline" Version="0.6.0.1" />
@@ -59,6 +65,10 @@
     <ItemGroup>
         <Compile Update="Logger\LogsView.axaml.cs">
             <DependentUpon>LogsView.axaml</DependentUpon>
+            <SubType>Code</SubType>
+        </Compile>
+        <Compile Update="Logger\LogDetailWindow.axaml.cs">
+            <DependentUpon>LogDetailWindow.axaml</DependentUpon>
             <SubType>Code</SubType>
         </Compile>
         <Compile Update="Workspace\ColorsDemo.axaml.cs">
@@ -97,6 +107,12 @@
         </Protobuf>
         <Protobuf Include="..\protos\workspace_events.proto">
             <Link>Protos\workspace_events.proto</Link>
+        </Protobuf>
+        <Protobuf Include="..\protos\signals.proto">
+            <Link>Protos\signals.proto</Link>
+        </Protobuf>
+        <Protobuf Include="..\protos\render_events.proto">
+            <Link>Protos\render_events.proto</Link>
         </Protobuf>
     </ItemGroup>
 

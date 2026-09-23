@@ -1,0 +1,359 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:editor.Editors"
+             xmlns:elements="using:editor.Components.Elements"
+             xmlns:lucide="using:Lucide.Avalonia"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignWidth="1200"
+             d:DesignHeight="560"
+             x:Class="editor.Editors.PaletteView"
+             x:DataType="vm:PaletteViewModel"
+             Background="{StaticResource Bg2}"
+             Padding="8">
+
+	<UserControl.KeyBindings>
+		<KeyBinding Gesture="Ctrl+S"
+		            Command="{Binding SaveCommand}" />
+	</UserControl.KeyBindings>
+
+	<UserControl.Styles>
+		<Style Selector="TextBlock.lbl">
+			<Setter Property="Foreground"
+			        Value="{StaticResource TextMuted}" />
+			<Setter Property="VerticalAlignment"
+			        Value="Center" />
+			<Setter Property="TextTrimming"
+			        Value="CharacterEllipsis" />
+		</Style>
+		<Style Selector="TextBlock.section">
+			<Setter Property="FontWeight"
+			        Value="SemiBold" />
+			<Setter Property="VerticalAlignment"
+			        Value="Center" />
+		</Style>
+		<Style Selector="Button.icon-btn">
+			<Setter Property="BorderThickness"
+			        Value="0" />
+			<Setter Property="Padding"
+			        Value="5" />
+			<Setter Property="CornerRadius"
+			        Value="6" />
+			<Setter Property="Cursor"
+			        Value="Hand" />
+			<Setter Property="Background"
+			        Value="Transparent" />
+			<Setter Property="VerticalAlignment"
+			        Value="Center" />
+		</Style>
+		<!-- Fill is the entry albedo and border marks selection -->
+		<Style Selector="Button.swatch">
+			<Setter Property="Padding"
+			        Value="0" />
+			<Setter Property="Margin"
+			        Value="1" />
+			<Setter Property="HorizontalAlignment"
+			        Value="Stretch" />
+			<Setter Property="VerticalAlignment"
+			        Value="Stretch" />
+			<Setter Property="CornerRadius"
+			        Value="3" />
+			<Setter Property="Cursor"
+			        Value="Hand" />
+			<Setter Property="BorderThickness"
+			        Value="2" />
+			<Setter Property="BorderBrush"
+			        Value="Transparent" />
+		</Style>
+		<Style Selector="Button.swatch.selected">
+			<Setter Property="BorderBrush"
+			        Value="{StaticResource Text}" />
+		</Style>
+		<!-- Unauthored index draws as a hole not black -->
+		<Style Selector="Button.swatch.unused">
+			<Setter Property="Opacity"
+			        Value="0.35" />
+		</Style>
+		<Style Selector="Border.card">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg3}" />
+			<Setter Property="CornerRadius"
+			        Value="8" />
+			<Setter Property="Padding"
+			        Value="8" />
+		</Style>
+		<Style Selector="Border.slot">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg2}" />
+			<Setter Property="CornerRadius"
+			        Value="6" />
+			<Setter Property="Padding"
+			        Value="6" />
+		</Style>
+	</UserControl.Styles>
+
+	<Design.DataContext>
+		<vm:PaletteViewModel />
+	</Design.DataContext>
+
+	<Panel>
+
+		<Grid ColumnDefinitions="0.6*,6,0.2*,6,0.2*"
+		      IsVisible="{Binding HasContent}">
+
+			<!-- The 255 swatches -->
+			<Border Grid.Column="0"
+			        Classes="card">
+				<DockPanel VerticalSpacing="8">
+
+					<DockPanel DockPanel.Dock="Top">
+						<Button DockPanel.Dock="Right"
+						        Classes="icon-btn"
+						        Command="{Binding SaveCommand}"
+						        Background="{StaticResource Red}"
+						        ToolTip.Tip="Save (Ctrl+S)">
+							<lucide:LucideIcon Kind="Save"
+							                   Size="16"
+							                   StrokeWidth="2.5" />
+						</Button>
+						<TextBlock Text="{Binding DisplayTitle}"
+						           Classes="section" />
+					</DockPanel>
+
+					<ItemsControl ItemsSource="{Binding Swatches}">
+						<ItemsControl.ItemsPanel>
+							<ItemsPanelTemplate>
+								<UniformGrid Rows="16"
+								             Columns="16" />
+							</ItemsPanelTemplate>
+						</ItemsControl.ItemsPanel>
+						<ItemsControl.ItemTemplate>
+							<DataTemplate x:DataType="vm:PaletteSwatchVM">
+								<Button Classes="swatch"
+								        Classes.selected="{Binding IsSelected}"
+								        Classes.unused="{Binding !IsUsed}"
+								        Background="{Binding Brush}"
+								        Command="{Binding SelectCommand}"
+								        ToolTip.Tip="{Binding Index}" />
+							</DataTemplate>
+						</ItemsControl.ItemTemplate>
+					</ItemsControl>
+
+				</DockPanel>
+			</Border>
+
+			<GridSplitter Grid.Column="1"
+			              Background="Transparent"
+			              ResizeDirection="Columns" />
+
+			<!-- How the selected entry looks -->
+			<Border Grid.Column="2"
+			        Classes="card">
+				<ScrollViewer>
+					<StackPanel Spacing="8">
+
+						<DockPanel>
+							<Button DockPanel.Dock="Right"
+							        Classes="icon-btn"
+							        Command="{Binding ClearEntryCommand}"
+							        IsEnabled="{Binding EntryInUse}"
+							        ToolTip.Tip="Remove this entry from the palette">
+								<lucide:LucideIcon Kind="Trash2"
+								                   Size="16"
+								                   StrokeWidth="2.5" />
+							</Button>
+							<TextBlock Text="{Binding SelectedLabel}"
+							           Classes="section" />
+						</DockPanel>
+
+						<TextBlock Classes="lbl"
+						           Text="Not yet in this palette - editing anything below adds it"
+						           TextWrapping="Wrap"
+						           IsVisible="{Binding !EntryInUse}" />
+
+						<Grid ColumnDefinitions="Auto,*"
+						      RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+						      RowSpacing="6"
+						      ColumnSpacing="8">
+							<TextBlock Classes="lbl"
+							           Text="Albedo" />
+							<elements:Color3Box Grid.Column="1"
+							                    R="{Binding AlbedoR, Mode=TwoWay}"
+							                    G="{Binding AlbedoG, Mode=TwoWay}"
+							                    B="{Binding AlbedoB, Mode=TwoWay}" />
+
+							<TextBlock Grid.Row="1"
+							           Classes="lbl"
+							           Text="Roughness" />
+							<elements:DragFloatBox Grid.Row="1"
+							                       Grid.Column="1"
+							                       Value="{Binding Roughness, Mode=TwoWay}"
+							                       Minimum="0"
+							                       Maximum="1" />
+
+							<TextBlock Grid.Row="2"
+							           Classes="lbl"
+							           Text="Metallic" />
+							<elements:DragFloatBox Grid.Row="2"
+							                       Grid.Column="1"
+							                       Value="{Binding Metallic, Mode=TwoWay}"
+							                       Minimum="0"
+							                       Maximum="1" />
+
+							<TextBlock Grid.Row="3"
+							           Classes="lbl"
+							           Text="Reflectivity" />
+							<elements:DragFloatBox Grid.Row="3"
+							                       Grid.Column="1"
+							                       Value="{Binding Reflectivity, Mode=TwoWay}"
+							                       Minimum="0"
+							                       Maximum="1" />
+
+							<TextBlock Grid.Row="4"
+							           Classes="lbl"
+							           Text="Emissive" />
+							<elements:DragFloatBox Grid.Row="4"
+							                       Grid.Column="1"
+							                       Value="{Binding Emissive, Mode=TwoWay}"
+							                       Minimum="0"
+							                       Maximum="1" />
+
+							<TextBlock Grid.Row="5"
+							           Grid.Column="1"
+							           Classes="lbl"
+							           Text="{Binding EmissiveHint}"
+							           FontSize="11" />
+
+							<TextBlock Grid.Row="6"
+							           Classes="lbl"
+							           Text="Transparent" />
+							<elements:BoolBox Grid.Row="6"
+							                  Grid.Column="1"
+							                  Value="{Binding Transparent, Mode=TwoWay}" />
+
+							<TextBlock Grid.Row="7"
+							           Classes="lbl"
+							           Text="Alpha" />
+							<elements:DragFloatBox Grid.Row="7"
+							                       Grid.Column="1"
+							                       Value="{Binding Alpha, Mode=TwoWay}"
+							                       Minimum="0"
+							                       Maximum="1" />
+						</Grid>
+
+						<Separator />
+<Grid ColumnDefinitions="Auto,*"
+						      RowSpacing="6"
+						      ColumnSpacing="8">
+							<TextBlock Classes="lbl"
+							           Text="Max emissive" />
+							<elements:DragFloatBox Grid.Column="1"
+							                       Value="{Binding MaxEmissive, Mode=TwoWay}"
+							                       Minimum="0" />
+						</Grid>
+
+					</StackPanel>
+				</ScrollViewer>
+			</Border>
+
+			<GridSplitter Grid.Column="3"
+			              Background="Transparent"
+			              ResizeDirection="Columns" />
+			<Border Grid.Column="4"
+			        Classes="card">
+				<ScrollViewer>
+					<StackPanel Spacing="8">
+
+						<TextBlock Text="Physics"
+						           Classes="section" />
+
+						<Grid ColumnDefinitions="Auto,*"
+						      RowDefinitions="Auto,Auto"
+						      RowSpacing="6"
+						      ColumnSpacing="8">
+							<TextBlock Classes="lbl"
+							           Text="Slot" />
+							<elements:DragIntBox Grid.Column="1"
+							                     Value="{Binding MaterialSlot, Mode=TwoWay}"
+							                     Minimum="0"
+							                     Maximum="7"
+							                     ToolTip.Tip="Which of the eight slots below this voxel uses" />
+
+							<TextBlock Grid.Row="1"
+							           Classes="lbl"
+							           Text="Burns into" />
+							<elements:DragIntBox Grid.Row="1"
+							                     Grid.Column="1"
+							                     Value="{Binding TransformsTo, Mode=TwoWay}"
+							                     Minimum="0"
+							                     Maximum="255" />
+						</Grid>
+
+						<Separator />
+
+						<TextBlock Text="Slots"
+						           Classes="section" />
+						<TextBlock Classes="lbl"
+						           Text="Shared by every voxel on the slot"
+						           TextWrapping="Wrap"
+						           FontSize="11" />
+
+						<ItemsControl ItemsSource="{Binding Slots}">
+							<ItemsControl.ItemTemplate>
+								<DataTemplate x:DataType="vm:PaletteSlotVM">
+									<Border Classes="slot"
+									        Margin="0,0,0,6">
+										<StackPanel Spacing="4">
+											<TextBlock Text="{Binding Label}"
+											           Classes="section"
+											           FontSize="12" />
+
+											<Grid ColumnDefinitions="Auto,*"
+											      RowDefinitions="Auto,Auto,Auto"
+											      RowSpacing="4"
+											      ColumnSpacing="6">
+												<TextBlock Classes="lbl"
+												           Text="Name"
+												           FontSize="11" />
+												<elements:StringBox Grid.Column="1"
+												                    Value="{Binding Name, Mode=TwoWay}"
+												                    Wrap="False" />
+
+												<TextBlock Grid.Row="1"
+												           Classes="lbl"
+												           Text="Physics"
+												           FontSize="11" />
+												<elements:AssetBox Grid.Row="1"
+												                   Grid.Column="1"
+												                   Value="{Binding PhysicsUid, Mode=TwoWay}"
+												                   AssetType="physics_material" />
+
+												<TextBlock Grid.Row="2"
+												           Classes="lbl"
+												           Text="Destruction"
+												           FontSize="11" />
+												<elements:AssetBox Grid.Row="2"
+												                   Grid.Column="1"
+												                   Value="{Binding DestructionUid, Mode=TwoWay}"
+												                   AssetType="destruction_material" />
+											</Grid>
+										</StackPanel>
+									</Border>
+								</DataTemplate>
+							</ItemsControl.ItemTemplate>
+						</ItemsControl>
+
+					</StackPanel>
+				</ScrollViewer>
+			</Border>
+		</Grid>
+
+		<!-- Nothing open -->
+		<TextBlock Text="Open a .tpal from the Asset Browser"
+		           Classes="lbl"
+		           HorizontalAlignment="Center"
+		           VerticalAlignment="Center"
+		           IsVisible="{Binding !HasContent}" />
+	</Panel>
+</UserControl>

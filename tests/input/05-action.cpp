@@ -36,7 +36,7 @@ TOAST_TEST_NAMED("input", "input/05-action", test_input_action) {
 	    "countdown = 0\n";
 
 	auto* asset = new assets::Action(toml::parse(toml_str));
-	assets::AssetHandle<assets::Action> handle(asset, toast::UID(99), "");
+	assets::Handle<assets::Action> handle(asset, toast::UID(99), "");
 
 	auto action = Action::fromAsset(handle);
 	assert(action != nullptr);

@@ -8,6 +8,7 @@
         CanMaximize="False"
         CanMinimize="False"
         WindowStartupLocation="CenterOwner"
+        KeyboardNavigation.TabNavigation="Cycle"
         Background="{StaticResource Bg2}"
         Padding="12">
 
@@ -16,7 +17,9 @@
 		            HorizontalAlignment="Right"
 		            Orientation="Horizontal"
 		            Spacing="8">
-			<Button Click="OnCancel"
+			<Button TabIndex="1"
+			        IsCancel="True"
+			        Click="OnCancel"
 			        CornerRadius="6">
 				<StackPanel Orientation="Horizontal"
 				            Spacing="4">
@@ -27,6 +30,8 @@
 				</StackPanel>
 			</Button>
 			<Button x:Name="CreateButton"
+			        TabIndex="2"
+			        IsDefault="True"
 			        Click="OnCreate"
 			        CornerRadius="6"
 			        Background="{StaticResource Red}"
@@ -42,11 +47,11 @@
 			</Button>
 		</StackPanel>
 		<TextBox x:Name="FolderNameBox"
+		         TabIndex="0"
 		         PlaceholderText="Folder name..."
 		         BorderThickness="0"
 		         Background="{StaticResource Bg1}"
 		         CornerRadius="6"
-		         VerticalContentAlignment="Center"
-		         KeyDown="OnKeyDown" />
+		         VerticalContentAlignment="Center" />
 	</DockPanel>
 </Window>

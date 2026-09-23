@@ -1,9 +1,12 @@
 #include "lua_state.hpp"
 
 #include "asset_proxy.hpp"
+#include "lua_signal.hpp"
 #include "lua_types.hpp"
 #include "lua_util.hpp"
 #include "node_proxy.hpp"
+#include "signal_proxy.hpp"
+#include "ui_binds_proxy.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -20,9 +23,12 @@
 #include <luabridge3/LuaBridge/LuaBridge.h>
 #include <toast/assets/asset_registry.hpp>
 #include <toast/assets/assets.hpp>
+#include <toast/engine.hpp>
+#include <toast/input/action.hpp>
 #include <toast/log.hpp>
 #include <toast/reflect/reflect_node.hpp>
 #include <toast/time.hpp>
+#include <toast/ui/ui_system.hpp>
 #include <tracy/Tracy.hpp>
 #include <tracy/TracyLua.hpp>
 
@@ -49,7 +55,7 @@ auto luaPrint(lua_State* state) -> int {
 		}
 
 		if (i < nargs) {
-			output += "\t";
+			output += '\t';
 		}
 	}
 
@@ -70,7 +76,7 @@ auto luaWarn(lua_State* state) -> int {
 		}
 
 		if (i < nargs) {
-			output += "\t";
+			output += '\t';
 		}
 	}
 
@@ -97,6 +103,29 @@ void luaToastError(const std::string& msg) {
 thread_local std::vector<size_t> t_held_states;    // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
 
 constexpr auto k_cross_state_timeout = std::chrono::milliseconds(500);
+
+auto inputActionValue(const input::Action& action, lua_State* state) -> luabridge::LuaRef {
+	const input::Value& value = action.value();
+	switch (action.valueType()) {
+		case input::ValueType::axis_0d: return {state, value.as<bool>()};
+		case input::ValueType::axis_1d: return {state, static_cast<lua_Number>(value.as<float>())};
+		case input::ValueType::axis_2d: return {state, value.as<glm::vec2>()};
+	}
+	return {state};
+}
+
+auto inputActionBinds(const input::Action& action, lua_State* state) -> luabridge::LuaRef {
+	const auto& binds = action.binds();
+	lua_createtable(state, static_cast<int>(binds.size()), 0);
+	for (size_t i = 0; i < binds.size(); ++i) {
+		lua_pushinteger(state, static_cast<lua_Integer>(i + 1));
+		if (auto result = luabridge::Stack<input::Bind>::push(state, binds[i]); !result) {
+			lua_pushnil(state);
+		}
+		lua_settable(state, -3);
+	}
+	return luabridge::LuaRef::fromStack(state);
+}
 }
 
 LuaState::Lock::Lock(std::unique_lock<std::recursive_timed_mutex> lock, lua_State* state, size_t index) noexcept
@@ -176,33 +205,12 @@ auto LuaState::tryLock(size_t index) noexcept -> Lock {
 	return {std::move(guard), entry.state, index};
 }
 
-void LuaState::plotMemory() noexcept {
-#ifdef TRACY_ENABLE
-	// Tracy keeps plot names by pointer, so they need stable storage
-	static const auto plot_names = [] {
-		std::array<std::string, pool_size> names;
-		for (size_t i = 0; i < pool_size; ++i) {
-			names[i] = std::format("Lua memory #{} (KB)", i);
-		}
-		return names;
-	}();
-
-	for (size_t i = 0; i < pool_size; ++i) {
-		Lock guard = tryLock(i);
-		if (!guard) {
-			continue;    // busy running a script; sample it next time
-		}
-		const auto kilobytes = static_cast<int64_t>(lua_gc(guard.state(), LUA_GCCOUNT));
-		TracyPlot(plot_names[i].c_str(), kilobytes);
-	}
-#endif
-}
-
 auto LuaState::nextIndex() noexcept -> size_t {
-	return m_next_index.fetch_add(1, std::memory_order_relaxed) % pool_size;
+	return m_next_index.fetch_add(1, std::memory_order_relaxed) % m_pool_size;
 }
 
 auto LuaState::runString(std::string_view lua_code) noexcept -> bool {
+	ZoneScoped;
 	Lock guard = lock(0);
 	if (!guard) {
 		return false;
@@ -226,10 +234,12 @@ auto LuaState::runString(std::string_view lua_code) noexcept -> bool {
 	return true;
 }
 
-LuaState::LuaState() {
+LuaState::LuaState() : m_pool_size(1 + toast::ThreadPool::workerCount()), m_entries(m_pool_size) {
+	ZoneScoped;
 	LuaState::instance = this;
 
-	for (Entry& entry : m_entries) {
+	for (size_t i = 0; i < m_pool_size; ++i) {
+		Entry& entry = m_entries[i];
 		entry.state = luaL_newstate();
 		TOAST_ASSERT(entry.state != nullptr, "Lua", "Failed to create Lua state");
 		luaL_openlibs(entry.state);
@@ -248,7 +258,7 @@ LuaState::LuaState() {
 		registerApi(entry.state);
 	}
 
-	TOAST_INFO("Lua", "Created pool of {} lua states", pool_size);
+	TOAST_INFO("Lua", "Created pool of {} lua states", m_pool_size);
 }
 
 LuaState::~LuaState() noexcept {
@@ -260,6 +270,7 @@ LuaState::~LuaState() noexcept {
 }
 
 void LuaState::registerApi(lua_State* state) noexcept {
+	ZoneScoped;
 	using namespace luabridge;
 
 	getGlobalNamespace(state)
@@ -383,6 +394,15 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    .addFunction("max", [](const glm::vec3& a, const glm::vec3& b) { return glm::max(a, b); })
 	    .endClass()
 
+	    .deriveClass<Vec3FieldProxy, glm::vec3>("__field_vec3")
+	    .addProperty("x", &Vec3FieldProxy::getX, &Vec3FieldProxy::setX)
+	    .addProperty("y", &Vec3FieldProxy::getY, &Vec3FieldProxy::setY)
+	    .addProperty("z", &Vec3FieldProxy::getZ, &Vec3FieldProxy::setZ)
+	    .addProperty("r", &Vec3FieldProxy::getX, &Vec3FieldProxy::setX)
+	    .addProperty("g", &Vec3FieldProxy::getY, &Vec3FieldProxy::setY)
+	    .addProperty("b", &Vec3FieldProxy::getZ, &Vec3FieldProxy::setZ)
+	    .endClass()
+
 	    // vec4
 	    .beginClass<glm::vec4>("vec4")
 	    .addConstructor<void (*)(float, float, float, float)>()
@@ -500,6 +520,96 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    .addFunction("__tostring", &Color4::toString)
 	    .endClass()
 
+	    .beginClass<input::KeyCode>("InputKeyCode")
+	    .addProperty(
+	        "device", +[](const input::KeyCode* key) { return static_cast<lua_Integer>(key->device); }
+	    )
+	    .addProperty(
+	        "kind", +[](const input::KeyCode* key) { return static_cast<lua_Integer>(key->kind); }
+	    )
+	    .addProperty(
+	        "code", +[](const input::KeyCode* key) { return key->code; }
+	    )
+	    .addProperty(
+	        "valid", +[](const input::KeyCode* key) { return key->valid; }
+	    )
+	    .endClass()
+
+	    .beginClass<input::Bind>("InputBind")
+	    .addFunction(
+	        "keycode", +[](const input::Bind& bind) { return bind.keycode(); }
+	    )
+	    .addFunction(
+	        "keycodeString", +[](const input::Bind& bind) { return std::string(bind.keycodeString()); }
+	    )
+	    .endClass()
+
+	    .beginClass<input::Action>("InputAction")
+	    .addFunction(
+	        "uid", +[](const input::Action& action) { return static_cast<lua_Integer>(action.uid().data()); }
+	    )
+	    .addFunction(
+	        "name", +[](const input::Action& action) { return std::string(action.name()); }
+	    )
+	    .addFunction(
+	        "functionName", +[](const input::Action& action) { return std::string(action.functionName()); }
+	    )
+	    .addFunction(
+	        "valueType", +[](const input::Action& action) { return static_cast<lua_Integer>(action.valueType()); }
+	    )
+	    .addFunction("value", inputActionValue)
+	    .addFunction(
+	        "modifiers", +[](const input::Action& action) { return static_cast<lua_Integer>(action.modifiers()); }
+	    )
+	    .addFunction(
+	        "device", +[](const input::Action& action) { return static_cast<lua_Integer>(action.device()); }
+	    )
+	    .addFunction("timeSinceStart", &input::Action::timeSinceStart)
+	    .addFunction("timeSinceTry", &input::Action::timeSinceTry)
+	    .addFunction("remainingCountdown", &input::Action::remainingCountdown)
+	    .addFunction("binds", inputActionBinds)
+	    .addFunction(
+	        "__tostring", +[](const input::Action& action) { return std::format("InputAction({})", action.name()); }
+	    )
+	    .endClass()
+
+	    .beginNamespace("InputEvent")
+	    .addVariable("start", input::ActionEvent::start)
+	    .addVariable("hold", input::ActionEvent::hold)
+	    .addVariable("release", input::ActionEvent::release)
+	    .addVariable("tries", input::ActionEvent::tries)
+	    .addVariable("countdown", input::ActionEvent::countdown)
+	    .addVariable("cancelled", input::ActionEvent::cancelled)
+	    .endNamespace()
+
+	    .beginNamespace("InputDevice")
+	    .addVariable("none", input::Device::none)
+	    .addVariable("keyboard", input::Device::keyboard)
+	    .addVariable("mouse", input::Device::mouse)
+	    .addVariable("controller", input::Device::controller)
+	    .endNamespace()
+
+	    .beginNamespace("InputValueType")
+	    .addVariable("axis0d", input::ValueType::axis_0d)
+	    .addVariable("axis1d", input::ValueType::axis_1d)
+	    .addVariable("axis2d", input::ValueType::axis_2d)
+	    .endNamespace()
+
+	    .beginNamespace("InputModifier")
+	    .addVariable("none", input::ModifierKey::none)
+	    .addVariable("shift", input::ModifierKey::shift)
+	    .addVariable("control", input::ModifierKey::control)
+	    .addVariable("alt", input::ModifierKey::alt)
+	    .endNamespace()
+
+	    .beginNamespace("InputKind")
+	    .addVariable("button", input::InputKind::button)
+	    .addVariable("axis1d", input::InputKind::axis1d)
+	    .addVariable("axis2d", input::InputKind::axis2d)
+	    .addVariable("scroll", input::InputKind::scroll)
+	    .addVariable("cursor", input::InputKind::cursor)
+	    .endNamespace()
+
 	    // AssetProxy
 	    .beginClass<AssetProxy>("Asset")
 	    .addFunction("path", &AssetProxy::path)
@@ -521,6 +631,79 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    .addFunction("call", &NodeProxy::call)
 	    .addIndexMetaMethod(nodeProxyIndex)
 	    .addNewIndexMetaMethod(nodeProxyNewindex)
+	    .endClass()
+
+	    // SignalProxy
+	    .beginClass<SignalProxy>("Signal")
+	    .addFunction(
+	        "connect",
+	        overload<SignalProxy&, const NodeProxy&, const std::string&>(
+	            +[](SignalProxy& signal, const NodeProxy& target, const std::string& function) {
+		            return signal.connect(target, function, signals::ConnectionSource::lua, true);
+	            }
+	        ),
+	        overload<SignalProxy&, const NodeProxy&, const std::string&, bool>(
+	            +[](SignalProxy& signal, const NodeProxy& target, const std::string& function, bool forwards_args) {
+		            return signal.connect(target, function, signals::ConnectionSource::lua, forwards_args);
+	            }
+	        ),
+	        overload<SignalProxy&, const luabridge::LuaRef&, const std::string&>(
+	            +[](SignalProxy& signal, const luabridge::LuaRef& target, const std::string& function) {
+		            return target.isTable() && signal.connectSelf(function, signals::ConnectionSource::lua);
+	            }
+	        ),
+	        overload<SignalProxy&, const luabridge::LuaRef&, const std::string&, bool>(
+	            +[](SignalProxy& signal, const luabridge::LuaRef& target, const std::string& function, bool forwards_args) {
+		            return target.isTable() && signal.connectSelf(function, signals::ConnectionSource::lua, forwards_args);
+	            }
+	        )
+	    )
+	    .addFunction(
+	        "disconnect",
+	        [](SignalProxy& signal, const NodeProxy& target, const std::string& function) {
+		        return signal.disconnect(target, signals::ConnectionSource::lua, function);
+	        },
+	        [](SignalProxy& signal, const luabridge::LuaRef& target, const std::string& function) {
+		        return target.isTable() && signal.disconnectSelf(signals::ConnectionSource::lua, function);
+	        }
+	    )
+	    .addFunction("clear", [](SignalProxy& signal) { signal.clear(signals::ConnectionSource::lua); })
+	    .addFunction("fire", &SignalProxy::fire)
+	    .endClass()
+
+	    .beginClass<LuaSignal>("LuaSignal")
+	    .addFunction(
+	        "connect",
+	        [](LuaSignal& signal, const NodeProxy& target, const std::string& function) {
+		        return signal.connect(target, function, signals::ConnectionSource::lua);
+	        },
+	        [](LuaSignal& signal, const luabridge::LuaRef& target, const std::string& function) {
+		        return target.isTable() && signal.connectSelf(function, signals::ConnectionSource::lua);
+	        }
+	    )
+	    .addFunction(
+	        "disconnect",
+	        [](LuaSignal& signal, const NodeProxy& target, const std::string& function) {
+		        return signal.disconnect(target, function, signals::ConnectionSource::lua);
+	        },
+	        [](LuaSignal& signal, const luabridge::LuaRef& target, const std::string& function) {
+		        return target.isTable() && signal.disconnectSelf(function, signals::ConnectionSource::lua);
+	        }
+	    )
+	    .addFunction("clear", [](LuaSignal& signal) { signal.clear(signals::ConnectionSource::lua); })
+	    .addFunction("fire", &LuaSignal::fire)
+	    .endClass()
+
+	    .beginNamespace("Signal")
+	    .addFunction(
+	        "create", +[](const luabridge::LuaRef&) { return LuaSignal {}; }
+	    )
+	    .endNamespace()
+
+	    // UIBindsProxy
+	    .beginClass<UIBindsProxy>("UIBinds")
+	    .addIndexMetaMethod(uiBindsProxyIndex)
+	    .addNewIndexMetaMethod(uiBindsProxyNewindex)
 	    .endClass()
 
 	    // TypeMarker
@@ -563,6 +746,43 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    .addFunction(
 	        "resume", +[]() { Time::resume(); }
 	    )
+	    .endNamespace()
+
+	    .beginNamespace("UI")
+	    .addFunction(
+	        "setLanguage",
+	        +[](const std::string& language) {
+		        if (ui::UISystem::exists()) {
+			        ui::UISystem::get().setLanguage(language);
+		        }
+	        }
+	    )
+	    .addFunction(
+	        "language", +[]() -> std::string { return ui::UISystem::exists() ? ui::UISystem::get().language() : std::string(); }
+	    )
+	    .endNamespace()
+
+	    .beginNamespace("Window")
+	    .addFunction(
+	        "setCursorLocked",
+	        +[](bool locked) {
+		        if (toast::Engine::get()) {
+			        toast::Engine::get()->setCursorLocked(locked);
+		        }
+	        }
+	    )
+	    .addFunction(
+	        "isCursorLocked", +[]() -> bool { return toast::Engine::get() && toast::Engine::get()->isCursorLocked(); }
+	    )
+	    .endNamespace()
+
+	    .beginNamespace("Physics")
+	    .addFunction(
+	        "shootVoxel",
+	        +[](const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy, float min_radius) -> bool {
+		        return toast::Engine::get() && toast::Engine::get()->shootVoxel(origin, direction, max_distance, energy, min_radius);
+	        }
+	    )
 	    .endNamespace();
 
 	registerTypeMarkers(state);
@@ -593,13 +813,13 @@ void LuaState::registerTypeMarkers(lua_State* state) noexcept {
 }
 
 void LuaState::refreshTypeMarkers() noexcept {
-	for (size_t i = 0; i < pool_size; ++i) {
+	for (size_t i = 0; i < m_pool_size; ++i) {
 		Lock guard = lock(i);
 		if (guard) {
 			registerTypeMarkers(guard.state());
 		}
 	}
-	TOAST_INFO("Lua", "Refreshed type markers on {} states", pool_size);
+	TOAST_INFO("Lua", "Refreshed type markers on {} states", m_pool_size);
 }
 
 }

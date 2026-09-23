@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,6 +11,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using editor.Engine;
 using Proto.Events;
 
@@ -21,6 +23,12 @@ public partial class ViewportControl : UserControl {
 
 	private const int ScancodeMask = 1 << 30; // SDLK_SCANCODE_MASK
 
+	private const double TrackpadNotchEpsilon = 1e-3;
+
+	private const double PanScale = 40.0;
+	private const float PinchZoomScale = 100f;
+	private const float WheelZoomScale = 20f;
+
 	public static readonly StyledProperty<bool> PlayModeProperty =
 		AvaloniaProperty.Register<ViewportControl, bool>(nameof(PlayMode));
 
@@ -31,18 +39,38 @@ public partial class ViewportControl : UserControl {
 		typeof(ITopLevelImpl).GetMethod(
 			"SetCursor", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
+	private ulong m_trackpadHandle;
+	private int m_trackpadX = int.MinValue, m_trackpadY, m_trackpadW, m_trackpadH;
+
 	private WriteableBitmap? m_bitmap;
 	private bool m_captured;
 	private ToastEngine? m_engine;
 	private CancellationTokenSource? m_hintCts;
 	private Transitions? m_hintTransitions;
 	private ulong m_lastFrameId;
+	private double m_lastScale;
+
+	// editor fly camera: RMB-drag in edit mode
+	private bool m_editorFlyActive;
+	private Point m_lastFlyPoint;
+	private bool m_flyForward, m_flyBack, m_flyLeft, m_flyRight, m_flyUp, m_flyDown, m_flyBoost;
 
 	private IPointer? m_pointer;
 	private int m_surfaceH;
 
 	private int m_surfaceW;
-	private DispatcherTimer? m_timer;
+
+	/// <summary>
+	/// Whether the per-frame callback should keep rescheduling itself
+	/// </summary>
+	/// <remarks>
+	/// RequestAnimationFrame, not a <c>DispatcherTimer</c>. A timer made the viewport a third unsynchronized
+	/// clock against the renderer and the compositor, and three rates that never divide evenly beat against
+	/// each other - a frame reaching the screen after two composites, then three, then two. Capping the
+	/// renderer made it worse, because a regular beat is more visible than an irregular one
+	/// </remarks>
+	private bool m_frameLoopActive;
+
 	private TopLevel? m_topLevel;
 	private bool m_wasVisible;
 
@@ -53,6 +81,7 @@ public partial class ViewportControl : UserControl {
 		AttachedToVisualTree += OnAttached;
 		DetachedFromVisualTree += OnDetached;
 		LostFocus += OnLostFocus;
+		PointerTouchPadGestureMagnify += OnTouchpadMagnify;
 	}
 
 	public bool PlayMode {
@@ -72,7 +101,7 @@ public partial class ViewportControl : UserControl {
 		}
 	}
 
-	private void BeginCapture() {
+	private void BeginCapture(bool showHint = true) {
 		Focus();
 		// hide the cursor over the whole window
 		Cursor = new Cursor(StandardCursorType.None);
@@ -82,7 +111,8 @@ public partial class ViewportControl : UserControl {
 		// can't steal clicks or focus
 		m_pointer?.Capture(Surface);
 		ForceHiddenCursor();
-		_ = ShowFocusHintAsync();
+		// the  hint only applies to play-mode capture
+		if (showHint) _ = ShowFocusHintAsync();
 	}
 
 	private void ReleaseCapture() {
@@ -137,20 +167,44 @@ public partial class ViewportControl : UserControl {
 		// capture auto-clears on every mouse-up and events outside our bounds never reach us
 		m_topLevel = TopLevel.GetTopLevel(this);
 		m_topLevel?.AddHandler(PointerMovedEvent, OnTopLevelPointerMoved, RoutingStrategies.Tunnel, true);
+		if (OperatingSystem.IsWindows() && TrackpadBridge.Supported &&
+		    m_topLevel?.TryGetPlatformHandle() is { } platformHandle &&
+		    platformHandle.HandleDescriptor == "HWND")
+			m_trackpadHandle = TrackpadBridge.Create(platformHandle.Handle);
 
-		m_timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
-		m_timer.Tick += OnTick;
-		m_timer.Start();
+		m_frameLoopActive = true;
+		ScheduleFrame();
+	}
+
+	/// <summary>Queues the next per-composite frame pickup; re-arms itself until detached.</summary>
+	private void ScheduleFrame() {
+		if (!m_frameLoopActive || m_topLevel is null)
+			return;
+
+		m_topLevel.RequestAnimationFrame(_ => {
+			if (!m_frameLoopActive)
+				return;
+
+			OnTick(this, EventArgs.Empty);
+
+			// Re-armed from inside the callback rather than kept running by a timer: if compositing stalls,
+			// the viewport stops asking for frames instead of queueing up work nobody will display
+			ScheduleFrame();
+		});
 	}
 
 	private void OnDetached(object? sender, VisualTreeAttachmentEventArgs e) {
+		if (m_editorFlyActive) EndEditorFly();
+
 		m_topLevel?.RemoveHandler(PointerMovedEvent, OnTopLevelPointerMoved);
+		if (m_trackpadHandle != 0) {
+			TrackpadBridge.Destroy(m_trackpadHandle);
+			m_trackpadHandle = 0;
+		}
 		m_topLevel = null;
 
-		if (m_timer is null) return;
-		m_timer.Stop();
-		m_timer.Tick -= OnTick;
-		m_timer = null;
+		// Stops the callback re-arming; any already-queued one returns immediately
+		m_frameLoopActive = false;
 	}
 
 	private void OnTopLevelPointerMoved(object? sender, PointerEventArgs e) {
@@ -166,9 +220,13 @@ public partial class ViewportControl : UserControl {
 		}
 
 		if (!IsEffectivelyVisible) {
+			HideTrackpadViewport();
 			m_wasVisible = false;
 			return;
 		}
+
+		UpdateTrackpadViewport();
+		PollTrackpadGestures();
 
 		if (!m_wasVisible) {
 			m_wasVisible = true;
@@ -210,6 +268,56 @@ public partial class ViewportControl : UserControl {
 			Surface.InvalidateVisual();
 	}
 
+	private bool CanControlEditorCamera =>
+		!PlayMode && DataContext is WorkspaceViewModel { GameCamera: false };
+
+	private void SendEditorCameraGesture(float dx, float dy, float zoom) {
+		if (!CanControlEditorCamera || m_engine is null) return;
+		Events.Send(new EditorCameraGesture { Dx = dx, Dy = dy, Zoom = zoom });
+	}
+
+	private void PollTrackpadGestures() {
+		if (m_trackpadHandle == 0) return;
+		TrackpadBridge.Update(m_trackpadHandle);
+
+		if (!CanControlEditorCamera) return;
+		if (!TrackpadBridge.Drain(m_trackpadHandle, out var gesture)) return;
+
+		var sign = gesture.Inverted != 0 ? 1f : -1f;
+		SendEditorCameraGesture(gesture.PanX * sign, gesture.PanY * sign, gesture.Zoom);
+	}
+
+	private void UpdateTrackpadViewport() {
+		if (m_trackpadHandle == 0 || m_topLevel is null) return;
+		var origin = this.TranslatePoint(default, m_topLevel);
+		if (origin is null) return;
+
+		var scale = RenderScaling();
+		var x = (int)Math.Round(origin.Value.X * scale);
+		var y = (int)Math.Round(origin.Value.Y * scale);
+		var width = Math.Max(1, (int)Math.Round(Bounds.Width * scale));
+		var height = Math.Max(1, (int)Math.Round(Bounds.Height * scale));
+		if (x == m_trackpadX && y == m_trackpadY && width == m_trackpadW && height == m_trackpadH) return;
+
+		m_trackpadX = x;
+		m_trackpadY = y;
+		m_trackpadW = width;
+		m_trackpadH = height;
+		TrackpadBridge.SetRect(m_trackpadHandle, x, y, width, height);
+	}
+
+	private void HideTrackpadViewport() {
+		if (m_trackpadHandle == 0 || m_trackpadX == int.MinValue) return;
+		m_trackpadX = int.MinValue;
+		TrackpadBridge.SetRect(m_trackpadHandle, -32000, -32000, 1, 1);
+	}
+
+	private void OnTouchpadMagnify(object? sender, PointerDeltaEventArgs e) {
+		if (!CanControlEditorCamera) return;
+		SendEditorCameraGesture(0f, 0f, (float)(e.Delta.X != 0 ? e.Delta.X : e.Delta.Y) * PinchZoomScale);
+		e.Handled = true;
+	}
+
 	private void AllocateBitmap(int width, int height) {
 		if (width <= 0 || height <= 0)
 			return;
@@ -229,6 +337,12 @@ public partial class ViewportControl : UserControl {
 			return;
 
 		var scale = RenderScaling();
+
+		if (Math.Abs(scale - m_lastScale) > 1e-6) {
+			m_lastScale = scale;
+			Events.Send(new WindowDisplayScale { Scale = (float)scale });
+		}
+
 		var width = Math.Max(1, (int)Math.Round(Bounds.Width * scale));
 		var height = Math.Max(1, (int)Math.Round(Bounds.Height * scale));
 
@@ -253,23 +367,86 @@ public partial class ViewportControl : UserControl {
 			Dispatcher.UIThread.Post(() => {
 				if (PlayMode && m_captured) Focus();
 			});
+
+		if (m_editorFlyActive) EndEditorFly();
+	}
+
+	// RMB released, focus lost, or the control detached mid-drag
+	private void EndEditorFly() {
+		m_editorFlyActive = false;
+		m_flyForward = m_flyBack = m_flyLeft = m_flyRight = m_flyUp = m_flyDown = m_flyBoost = false;
+		ReleaseCapture();
+		if (m_engine is not null) Events.Send(new EditorCameraFlyMode { Active = false });
+	}
+
+	private void SendFlyMoveState() {
+		if (m_engine is null) return;
+		Events.Send(new EditorCameraMoveState {
+			Forward = m_flyForward,
+			Back = m_flyBack,
+			Left = m_flyLeft,
+			Right = m_flyRight,
+			Up = m_flyUp,
+			Down = m_flyDown,
+			Boost = m_flyBoost
+		});
+	}
+
+	// WASD + E/Q + Shift, only while m_editorFlyActive
+	private bool HandleFlyKey(Key key, bool pressed) {
+		switch (key) {
+			case Key.W: m_flyForward = pressed; break;
+			case Key.S: m_flyBack = pressed; break;
+			case Key.A: m_flyLeft = pressed; break;
+			case Key.D: m_flyRight = pressed; break;
+			case Key.E: m_flyUp = pressed; break;
+			case Key.Q: m_flyDown = pressed; break;
+			case Key.LeftShift or Key.RightShift: m_flyBoost = pressed; break;
+			default: return false;
+		}
+
+		SendFlyMoveState();
+		return true;
 	}
 
 	protected override void OnPointerMoved(PointerEventArgs e) {
 		base.OnPointerMoved(e);
 		TrackPointer(e.Pointer);
+
+		var scale = RenderScaling();
+		var point = e.GetPosition(this);
+
+		if (m_editorFlyActive) {
+			var dx = (float)((point.X - m_lastFlyPoint.X) * scale);
+			var dy = (float)((point.Y - m_lastFlyPoint.Y) * scale);
+			m_lastFlyPoint = point;
+			if (m_engine is not null && (dx != 0f || dy != 0f))
+				Events.Send(new EditorCameraLook { Dx = dx, Dy = dy });
+			return;
+		}
+
 		if (!ShouldForward || m_engine is null) return;
 
-		var p = e.GetPosition(this);
-		var scale = RenderScaling();
 		Events.Send(new WindowMousePosition {
-			X = (float)(Math.Clamp(p.X, 0, Bounds.Width) * scale),
-			Y = (float)(Math.Clamp(p.Y, 0, Bounds.Height) * scale)
+			X = (float)(Math.Clamp(point.X, 0, Bounds.Width) * scale),
+			Y = (float)(Math.Clamp(point.Y, 0, Bounds.Height) * scale)
 		});
 	}
 
 	protected override void OnPointerPressed(PointerPressedEventArgs e) {
 		base.OnPointerPressed(e);
+
+		var button = ButtonFromUpdateKind(e.GetCurrentPoint(this).Properties.PointerUpdateKind);
+
+		// RMB in edit mode starts the fly camera
+		if (CanControlEditorCamera && button == 3) {
+			m_editorFlyActive = true;
+			m_lastFlyPoint = e.GetPosition(this);
+			BeginCapture(showHint: false);
+			TrackPointer(e.Pointer);
+			if (m_engine is not null) Events.Send(new EditorCameraFlyMode { Active = true });
+			return;
+		}
 
 		// clicking the viewport during play recaptures (and re-hides) the mouse
 		if (PlayMode && !m_captured) BeginCapture();
@@ -278,7 +455,6 @@ public partial class ViewportControl : UserControl {
 		TrackPointer(e.Pointer);
 		if (m_engine is null) return;
 
-		var button = ButtonFromUpdateKind(e.GetCurrentPoint(this).Properties.PointerUpdateKind);
 		if (button != 0)
 			Events.Send(new WindowMouseButton {
 				Button = button,
@@ -290,9 +466,16 @@ public partial class ViewportControl : UserControl {
 	protected override void OnPointerReleased(PointerReleasedEventArgs e) {
 		base.OnPointerReleased(e);
 		TrackPointer(e.Pointer);
-		if (!ShouldForward || m_engine is null) return;
 
 		var button = ButtonFromUpdateKind(e.GetCurrentPoint(this).Properties.PointerUpdateKind);
+
+		if (m_editorFlyActive && button == 3) {
+			EndEditorFly();
+			return;
+		}
+
+		if (!ShouldForward || m_engine is null) return;
+
 		if (button != 0)
 			Events.Send(new WindowMouseButton {
 				Button = button,
@@ -303,6 +486,35 @@ public partial class ViewportControl : UserControl {
 
 	protected override void OnPointerWheelChanged(PointerWheelEventArgs e) {
 		base.OnPointerWheelChanged(e);
+
+		if (m_trackpadHandle != 0) {
+			if (TrackpadBridge.Active(m_trackpadHandle)) {
+				e.Handled = true;
+				return;
+			}
+		} else if (CanControlEditorCamera && e.KeyModifiers.HasFlag(KeyModifiers.Control)) {
+			SendEditorCameraGesture(0f, 0f, (float)e.Delta.Y * PinchZoomScale);
+			e.Handled = true;
+			return;
+		} else if (CanControlEditorCamera && (e.Delta.X != 0 || Math.Abs(e.Delta.Y % 1.0) > TrackpadNotchEpsilon)) {
+			SendEditorCameraGesture((float)(e.Delta.X * PanScale), (float)(e.Delta.Y * PanScale), 0f);
+			e.Handled = true;
+			return;
+		}
+
+		if (CanControlEditorCamera && DataContext is WorkspaceViewModel { CameraMode: CameraMode.Orbit }) {
+			SendEditorCameraGesture(0f, 0f, (float)e.Delta.Y * WheelZoomScale);
+			e.Handled = true;
+			return;
+		}
+
+		// scrolling while flying adjusts fly speed
+		if (m_editorFlyActive) {
+			if (DataContext is WorkspaceViewModel vm) vm.StepCameraSpeedFromWheel(e.Delta.Y);
+			e.Handled = true;
+			return;
+		}
+
 		if (!ShouldForward || m_engine is null) return;
 
 		Events.Send(new WindowMouseScroll {
@@ -319,10 +531,33 @@ public partial class ViewportControl : UserControl {
 	protected override void OnKeyDown(KeyEventArgs e) {
 		base.OnKeyDown(e);
 
+		// GPU capture (RenderDoc or Nsight Graphics); always intercepted locally, never forwarded to the
+		// game. Not gated on RenderDocDetector.IsAttached - the native side already no-ops if neither
+		// RenderDoc nor an injected Nsight Graphics Capture activity is present, and gating here on a
+		// RenderDoc-only check meant F12 silently did nothing for a Nsight-only session
+		if (e.Key == Key.F12) {
+			if (m_engine is not null) Events.Send(new CaptureFrame());
+			e.Handled = true;
+			return;
+		}
+
 		// backtick frees the mouse during play; never forwarded to the game
 		if (PlayMode && e.Key == Key.OemTilde) {
 			ReleaseCapture();
 			e.Handled = true;
+			return;
+		}
+
+		// fly-camera keys are consumed locally while RMB-drag flying
+		if (m_editorFlyActive && HandleFlyKey(e.Key, true)) {
+			e.Handled = true;
+			return;
+		}
+
+		if (PlayMode && ShouldForward && e.Key == Key.V &&
+		    (e.KeyModifiers.HasFlag(KeyModifiers.Control) || e.KeyModifiers.HasFlag(KeyModifiers.Meta))) {
+			e.Handled = true;
+			_ = PasteClipboardAsync();
 			return;
 		}
 
@@ -340,6 +575,18 @@ public partial class ViewportControl : UserControl {
 
 	protected override void OnKeyUp(KeyEventArgs e) {
 		base.OnKeyUp(e);
+
+		// matches the OnKeyDown intercept - F12 down is never forwarded, so its key-up shouldn't be either
+		if (e.Key == Key.F12) {
+			e.Handled = true;
+			return;
+		}
+
+		if (m_editorFlyActive && HandleFlyKey(e.Key, false)) {
+			e.Handled = true;
+			return;
+		}
+
 		if (IsEditorShortcut(e)) return;
 		if (!ShouldForward || m_engine is null) return;
 
@@ -357,6 +604,23 @@ public partial class ViewportControl : UserControl {
 		if (!ShouldForward || m_engine is null || string.IsNullOrEmpty(e.Text)) return;
 
 		foreach (var rune in e.Text.AsSpan().EnumerateRunes()) Events.Send(new WindowChar { Key = (uint)rune.Value });
+	}
+
+	private async Task PasteClipboardAsync() {
+		if (!ShouldForward || m_engine is null) return;
+		var clipboard = m_topLevel?.Clipboard;
+		if (clipboard is null) return;
+		var data = await clipboard.TryGetDataAsync();
+		if (data is null) return;
+
+		foreach (var item in data.Items) {
+			if (!item.Formats.Contains(DataFormat.Text)) continue;
+			if (await item.TryGetRawAsync(DataFormat.Text) is not string text || string.IsNullOrEmpty(text)) continue;
+
+			foreach (var rune in text.AsSpan().EnumerateRunes())
+				Events.Send(new WindowChar { Key = (uint)rune.Value });
+			return;
+		}
 	}
 
 	private static int ButtonFromUpdateKind(PointerUpdateKind kind) {

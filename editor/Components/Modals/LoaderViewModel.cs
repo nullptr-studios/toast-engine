@@ -17,7 +17,7 @@ public partial class LoaderViewModel : ViewModelBase {
 	[ObservableProperty] private double m_progress;
 
 	public LoaderViewModel(IEnumerable<LoaderTask> tasks) {
-		m_tasks = [..tasks];
+		m_tasks = [.. tasks];
 	}
 
 	// fake data for the designer
@@ -45,6 +45,7 @@ public partial class LoaderViewModel : ViewModelBase {
 		for (var i = 0; i < total; i++) {
 			var task = m_tasks[i];
 			AppendLine($"> [{i + 1}/{total}] {task.Label}");
+			await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
 
 			void ReportProgress(double frac) {
 				Dispatcher.UIThread.Post(() => Progress = (i + Math.Clamp(frac, 0.0, 1.0)) / total * 100.0);
@@ -135,6 +136,7 @@ public partial class LoaderViewModel : ViewModelBase {
 	// posts to the UI thread because this is called from background tasks and process callbacks
 	private void AppendLine(string text) {
 		Log.Trace(text);
-		Dispatcher.UIThread.Post(() => ConsoleLines.Add(text));
+		if (Dispatcher.UIThread.CheckAccess()) ConsoleLines.Add(text);
+		else Dispatcher.UIThread.Post(() => ConsoleLines.Add(text));
 	}
 }

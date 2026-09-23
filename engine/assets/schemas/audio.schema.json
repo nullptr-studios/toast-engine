@@ -2,24 +2,14 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "core://schemas/audio.schema.json",
   "title": "Audio Assets Schema",
+  "description": "FMOD object (event, bus, vca, port, snapshot)",
   "type": "object",
-  "properties": {
-    "schema": {
-      "$ref": "core://schemas/core.schema.json#/definitions/asset",
-    },
-    "type": {
-      "$ref": "core://schemas/core.schema.json#/definitions/string",
-    },
-    "name": {
-      "$ref": "core://schemas/core.schema.json#/definitions/string",
-    },
-    "path": {
-      "$ref": "core://schemas/core.schema.json#/definitions/string",
-    },
-    "guid": {
-      "$ref": "core://schemas/core.schema.json#/definitions/string",
-    }
-  },
   "required": ["type", "name", "path", "guid"],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "properties": {
+    "type": { "type": "string", "x-toast-type": "string", "description": "FMOD object kind: event, bus, vca, port or snapshot." },
+    "name": { "type": "string", "x-toast-type": "string", "description": "Display name, the last segment of the path." },
+    "path": { "type": "string", "x-toast-type": "string", "description": "FMOD path, e.g. event:/Music/Theme." },
+    "guid": { "type": "string", "x-toast-type": "string", "description": "FMOD GUID in {xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx} form." }
+  }
 }

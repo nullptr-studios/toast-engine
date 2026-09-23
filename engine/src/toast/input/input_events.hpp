@@ -76,12 +76,10 @@ struct ReloadInputActions : Event<ReloadInputActions> { };
  */
 struct PlayHaptic : Event<PlayHaptic> {
 	/// @param target Name of the PlayerController's parent
-	PlayHaptic(std::string target, assets::AssetHandle<assets::Haptic> haptic)
-	    : target(std::move(target)),
-	      haptic(std::move(haptic)) { }
+	PlayHaptic(std::string target, assets::Handle<assets::Haptic> haptic) : target(std::move(target)), haptic(std::move(haptic)) { }
 
 	std::string target;
-	assets::AssetHandle<assets::Haptic> haptic;
+	assets::Handle<assets::Haptic> haptic;
 };
 
 /**
@@ -91,12 +89,12 @@ struct PlayHaptic : Event<PlayHaptic> {
  */
 struct PlayHapticDirect : Event<PlayHapticDirect> {
 	/// @param controller SDL_JoystickID of the target controller; 0 = first/active gamepad
-	PlayHapticDirect(uint32_t controller, assets::AssetHandle<assets::Haptic> haptic)
+	PlayHapticDirect(uint32_t controller, assets::Handle<assets::Haptic> haptic)
 	    : controller(controller),
 	      haptic(std::move(haptic)) { }
 
 	uint32_t controller;
-	assets::AssetHandle<assets::Haptic> haptic;
+	assets::Handle<assets::Haptic> haptic;
 };
 
 /**

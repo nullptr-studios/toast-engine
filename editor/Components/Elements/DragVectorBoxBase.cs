@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Windows.Input;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
@@ -49,6 +50,12 @@ public abstract class DragVectorBoxBase : Decorator {
 	public static readonly StyledProperty<double> DragSensitivityProperty =
 		AvaloniaProperty.Register<DragVectorBoxBase, double>(nameof(DragSensitivity), 4.0);
 
+	public static readonly StyledProperty<ICommand?> CopyCommandProperty =
+		AvaloniaProperty.Register<DragVectorBoxBase, ICommand?>(nameof(CopyCommand));
+
+	public static readonly StyledProperty<ICommand?> PasteCommandProperty =
+		AvaloniaProperty.Register<DragVectorBoxBase, ICommand?>(nameof(PasteCommand));
+
 	private Compaction m_level;
 
 	protected DragVectorBoxBase() {
@@ -88,6 +95,16 @@ public abstract class DragVectorBoxBase : Decorator {
 	public double DragSensitivity {
 		get => GetValue(DragSensitivityProperty);
 		set => SetValue(DragSensitivityProperty, value);
+	}
+
+	public ICommand? CopyCommand {
+		get => GetValue(CopyCommandProperty);
+		set => SetValue(CopyCommandProperty, value);
+	}
+
+	public ICommand? PasteCommand {
+		get => GetValue(PasteCommandProperty);
+		set => SetValue(PasteCommandProperty, value);
 	}
 
 	protected abstract int AxisCount { get; }
@@ -233,6 +250,8 @@ public abstract class DragVectorBoxBase : Decorator {
 				new ColumnDefinition(GridLength.Star)
 			}
 		};
+		if (CopyCommand is not null || PasteCommand is not null)
+			cell.ContextMenu = BuildClipboardMenu(index, GetValue(spec.Label));
 		Grid.SetColumn(chip, 0);
 		Grid.SetColumn(box, 1);
 		cell.Children.Add(chip);
@@ -245,7 +264,36 @@ public abstract class DragVectorBoxBase : Decorator {
 		if (change.Property == DecimalsProperty) {
 			Child = null;
 			InvalidateMeasure();
+		} else if (change.Property == CopyCommandProperty || change.Property == PasteCommandProperty) {
+			ContextMenu = CopyCommand is not null || PasteCommand is not null
+				? BuildClipboardMenu(null, "Vector")
+				: null;
+			Child = null;
+			InvalidateMeasure();
 		}
+	}
+
+	private ContextMenu BuildClipboardMenu(int? component, string label) {
+		var menu = new ContextMenu();
+		if (component is { } index) {
+			menu.Items.Add(CommandItem($"Copy {label}", CopyCommandProperty, index));
+			menu.Items.Add(CommandItem("Copy Vector", CopyCommandProperty, null));
+			menu.Items.Add(new Separator());
+			menu.Items.Add(CommandItem("Paste", PasteCommandProperty, index));
+		} else {
+			menu.Items.Add(CommandItem("Copy Vector", CopyCommandProperty, null));
+			menu.Items.Add(CommandItem("Paste", PasteCommandProperty, null));
+		}
+		AsyncCommandMenu.Attach(menu);
+		return menu;
+	}
+
+	private MenuItem CommandItem(string header, StyledProperty<ICommand?> property, object? parameter) {
+		return new MenuItem {
+			Header = header,
+			Command = GetValue(property),
+			CommandParameter = parameter
+		};
 	}
 
 	private static IBrush? Brush(string key) {

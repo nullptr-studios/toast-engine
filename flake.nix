@@ -14,8 +14,8 @@
 		libraries = with pkgs; [
 			lua5_4
 			lua54Packages.luafilesystem
-			llvmPackages.clang
-			llvmPackages.llvm
+			llvmPackages_23.clang
+			llvmPackages_23.llvm
 
 			vulkan-loader
 			vulkan-validation-layers
@@ -105,6 +105,7 @@
 				gdb
 				lldb
 				pkg-config
+				shader-slang
 
 				cmake-gen
 				cmake-build

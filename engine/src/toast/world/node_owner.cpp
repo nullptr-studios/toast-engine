@@ -1,6 +1,10 @@
 #include "node_owner.hpp"
 
+#include "camera.hpp"
+#include "camera_controller.hpp"
 #include "node.hpp"
+#include "node_3d.hpp"
+#include "workspace.hpp"
 
 #include <algorithm>
 #include <charconv>
@@ -15,6 +19,254 @@
 #include <tracy/Tracy.hpp>
 
 namespace toast {
+
+void INodeOwner::updateTransforms(Node& root) {
+	ZoneScoped;
+
+	struct Walker {
+		static void updateNode3D(Node3D& n3d) { n3d.syncTransform(); }
+
+		static void walk(const Node& node) {
+			if (auto* n3d = reflect_cast<Node3D>(const_cast<Node*>(&node))) {
+				updateNode3D(*n3d);
+			}
+			for (const auto& child : node.children()) {
+				walk(*child);
+			}
+		}
+	};
+
+	Walker::walk(root);
+}
+
+auto INodeOwner::isEditing() noexcept -> bool {
+	const Workspace* workspace = asWorkspace();
+	return workspace != nullptr && !workspace->isPlaying();
+}
+
+void INodeOwner::activateCamera(Camera& camera) {
+	if (m_is_shutting_down || (camera.m_state != NodeState::root && camera.m_state != NodeState::global) || !camera.enabled()) {
+		return;
+	}
+
+	if (m_has_camera_controller && m_active_camera_controller.exists()) {
+		m_active_camera_controller->addCamera(camera);
+		return;
+	}
+
+	if (m_active_camera.exists()) {
+		return;
+	}
+
+	m_active_camera = camera.box().as<Camera>();
+	m_active_camera->m_is_active = true;
+	TOAST_INFO("World", "Active camera is now {} ({})", camera.name(), camera.uid());
+	applyActiveCamera();
+}
+
+void INodeOwner::setMainCamera(Camera& camera) {
+	if (m_is_shutting_down || (camera.m_state != NodeState::root && camera.m_state != NodeState::global) || !camera.enabled()) {
+		return;
+	}
+
+	if (m_has_camera_controller && m_active_camera_controller.exists()) {
+		m_active_camera_controller->addCamera(camera);
+		m_active_camera_controller->setActiveCamera(camera.box().as<Camera>());
+		return;
+	}
+
+	if (m_active_camera.exists()) {
+		if (m_active_camera.rid() == camera.box().rid()) {
+			return;
+		}
+		m_active_camera->m_is_active = false;
+	}
+
+	m_active_camera = camera.box().as<Camera>();
+	m_active_camera->m_is_active = true;
+	TOAST_INFO("World", "Main camera {} ({}) is now the active camera", camera.name(), camera.uid());
+	applyActiveCamera();
+}
+
+void INodeOwner::deactivateCamera(Camera& camera) {
+	if (m_is_shutting_down) {
+		if (m_active_camera.exists() && m_active_camera.rid() == camera.box().rid()) {
+			camera.m_is_active = false;
+			m_active_camera = {};
+		}
+		return;
+	}
+
+	if (m_has_camera_controller && m_active_camera_controller.exists()) {
+		m_active_camera_controller->removeCamera(camera);
+		return;
+	}
+
+	if (!m_active_camera.exists() || m_active_camera.rid() != camera.box().rid()) {
+		return;
+	}
+
+	camera.m_is_active = false;
+	m_active_camera = {};
+	findCamera();
+	applyActiveCamera();
+}
+
+void INodeOwner::findCamera() {
+	if (m_has_camera_controller || m_active_camera.exists()) {
+		return;
+	}
+
+	// Prefer a camera flagged as main; otherwise the first live camera found
+	Box<Camera> candidate;
+	Box<Camera> main_candidate;
+	{
+		std::scoped_lock lock(nodes_mutex);
+		forEachNode([&candidate, &main_candidate](const _detail::ControlBox& control) {
+			if (main_candidate.exists() || control.node == nullptr || !control.node->enabled()) {
+				return;
+			}
+			if (control.node->state() != NodeState::root && control.node->state() != NodeState::global) {
+				return;
+			}
+			Box<Camera> camera = control.node->box().as<Camera>();
+			if (!camera.exists()) {
+				return;
+			}
+			if (camera->isMainCamera()) {
+				main_candidate = camera;
+			} else if (!candidate.exists()) {
+				candidate = camera;
+			}
+		});
+	}
+	if (main_candidate.exists()) {
+		activateCamera(*main_candidate);
+	} else if (candidate.exists()) {
+		activateCamera(*candidate);
+	}
+}
+
+void INodeOwner::activateCameraController(CameraController& controller) {
+	if (m_is_shutting_down || m_active_camera_controller.exists() ||
+	    (controller.m_state != NodeState::root && controller.m_state != NodeState::global) || !controller.enabled()) {
+		return;
+	}
+
+	if (m_active_camera.exists()) {
+		m_active_camera->m_is_active = false;
+		m_active_camera = {};
+	}
+
+	m_active_camera_controller = controller.box().as<CameraController>();
+	m_has_camera_controller = true;
+
+	std::vector<Box<Camera>> cameras;
+	{
+		std::scoped_lock lock(nodes_mutex);
+		forEachNode([&cameras](const _detail::ControlBox& control) {
+			if (control.node == nullptr || !control.node->enabled() ||
+			    (control.node->state() != NodeState::root && control.node->state() != NodeState::global)) {
+				return;
+			}
+			if (Box<Camera> camera = control.node->box().as<Camera>(); camera.exists()) {
+				cameras.emplace_back(std::move(camera));
+			}
+		});
+	}
+
+	for (Box<Camera>& camera : cameras) {
+		m_active_camera_controller->addCamera(*camera);
+	}
+	applyActiveCamera();
+}
+
+void INodeOwner::deactivateCameraController(CameraController& controller) {
+	if (!m_active_camera_controller.exists() || m_active_camera_controller.rid() != controller.box().rid()) {
+		return;
+	}
+
+	m_active_camera_controller = {};
+	m_has_camera_controller = false;
+	if (m_is_shutting_down) {
+		return;
+	}
+	findCameraController();
+	if (!m_has_camera_controller) {
+		findCamera();
+	}
+	applyActiveCamera();
+}
+
+void INodeOwner::findCameraController() {
+	if (m_active_camera_controller.exists()) {
+		return;
+	}
+
+	Box<CameraController> candidate;
+	{
+		std::scoped_lock lock(nodes_mutex);
+		forEachNode([&candidate](const _detail::ControlBox& control) {
+			if (candidate.exists() || control.node == nullptr || !control.node->enabled() ||
+			    (control.node->state() != NodeState::root && control.node->state() != NodeState::global)) {
+				return;
+			}
+			candidate = control.node->box().as<CameraController>();
+		});
+	}
+	if (candidate.exists()) {
+		activateCameraController(*candidate);
+	}
+}
+
+void INodeOwner::tickActiveCameraController() {
+	if (!m_has_camera_controller || !m_active_camera_controller.exists()) {
+		return;
+	}
+	m_active_camera_controller->callTick(m_active_camera_controller->info(), TickFunctionList::tick);
+}
+
+void INodeOwner::beginCameraShutdown() noexcept {
+	m_is_shutting_down = true;
+	if (m_active_camera.exists()) {
+		m_active_camera->m_is_active = false;
+		m_active_camera = {};
+	}
+	m_active_camera_controller = {};
+	m_has_camera_controller = false;
+}
+
+auto INodeOwner::activeCamera() noexcept -> Box<Camera>& {
+	return m_active_camera;
+}
+
+INodeOwner::INodeOwner() = default;
+INodeOwner::~INodeOwner() = default;
+
+auto INodeOwner::activeRenderCamera() noexcept -> Camera* {
+	if (m_has_camera_controller) {
+		if (m_active_camera_controller.exists()) {
+			if (Box<Camera> camera = m_active_camera_controller->getActiveCamera(); camera.exists()) {
+				return &*camera;
+			}
+		}
+	} else if (m_active_camera.exists()) {
+		return &*m_active_camera;
+	}
+
+	// Nothing in the scene to look through. Handing back null makes every consumer carry a no-camera path,
+	// and the one in the renderer only ever existed on paper while the engine leaked a bootstrap camera to
+	// keep it non-null. A placeholder at the origin renders the scene from 0,0,0 instead of nothing
+	if (m_is_shutting_down) {
+		return nullptr;
+	}
+	if (!m_fallback_camera) {
+		m_fallback_camera = std::make_unique<Camera>();
+		m_fallback_camera->syncTransform();
+		TOAST_WARN("World", "No camera in the scene; rendering from a placeholder at the origin");
+	}
+	return m_fallback_camera.get();
+}
 
 namespace {
 auto referenceUid(const assets::Prefab::BasicNode& chunk) -> uint64_t {
@@ -90,7 +342,17 @@ auto INodeOwner::requestRuntimeSpawn(Node& parent, UID uid) -> Box<Node> {
 	// Allocation
 	INodeOwner::InstantiateContext ctx;
 	ctx.resolver = [](UID id) { return assets::load<assets::Prefab>(id); };
-	Box<Node> root = this->instantiate(file, ctx);
+	seedPrefabContext(ctx, &parent);
+	assets::Prefab wrapper;
+	assets::Prefab::BasicNode reference = file->nodes.empty() ? assets::Prefab::BasicNode {} : file->nodes.front();
+	reference.fields.clear();
+	reference.groups.clear();
+	reference.lua_vars.clear();
+	reference.signals.clear();
+	reference.fields.push_back({"m_source_prefab", FieldType::uid_t, false, uid});
+	wrapper.nodes.push_back(std::move(reference));
+	assets::Handle<assets::Prefab> wrapper_handle(&wrapper, UID(0), "");
+	Box<Node> root = this->instantiate(wrapper_handle, ctx);
 	if (not root.exists()) {
 		TOAST_ERROR("World", "Failed to instantiate prefab {} to spawn", uid);
 		return {};
@@ -166,19 +428,12 @@ auto INodeOwner::nodeAllocation(std::string_view type) noexcept -> Box<Node> {
 
 	const NodeInfo* info = NodeRegistry::reflect(type);
 
-#ifndef NDEBUG
 	if (!info) {
 		TOAST_WARN("World", "Reflection information for type {} not found. Falling back to toast::Node", type);
 		info = NodeRegistry::reflect("toast::Node");
 	}
-#endif
 
-	// Node allocation
-#ifdef NDEBUG
-	Node* raw_node = info->construct();
-#else
 	Node* raw_node = (info && info->construct) ? info->construct() : new Node();
-#endif
 
 	{
 		std::scoped_lock lock(nodes_mutex);
@@ -186,7 +441,7 @@ auto INodeOwner::nodeAllocation(std::string_view type) noexcept -> Box<Node> {
 		TOAST_ASSERT(result, "World", "Node allocation failed");
 	}
 	raw_node->m_info = info;     // attach reflection data
-	raw_node->m_reflect_type_name = info->type;
+	raw_node->m_reflect_type_name = info ? info->type : std::string_view {"toast::Node"};
 	raw_node->m_owner = this;    // attach owner ptr
 
 	return raw_node->box();
@@ -222,17 +477,16 @@ void INodeOwner::applyFields(Node& node, const assets::Prefab::BasicNode& data) 
 				continue;
 			}
 
-			// Read only attributes shouldn't be serialized
-			if (f.hasAttribute("ReadOnly")) {
+			// Read-only and transient fields are never restored from persisted data. Checking
+			// NoSerialize here also keeps older files containing those fields safe to load.
+			if (f.hasAttribute("ReadOnly") || f.hasAttribute("NoSerialize")) {
 				continue;
 			}
 
-#ifndef NDEBUG
 			if (not f.set) {
 				TOAST_WARN("World", "No valid set function found for {}", f.name);
 				continue;
 			}
-#endif
 
 			f.set(&node, f_data->value);
 		}
@@ -240,6 +494,7 @@ void INodeOwner::applyFields(Node& node, const assets::Prefab::BasicNode& data) 
 }
 
 void INodeOwner::applyLuaOverrides(Node& node, const assets::Prefab::BasicNode& data, const scripting::NodeResolver& find_node) {
+	ZoneScoped;
 	if (data.lua_vars.empty()) {
 		return;
 	}
@@ -272,7 +527,7 @@ void INodeOwner::applyLuaOverrides(Node& node, const assets::Prefab::BasicNode& 
 	}
 }
 
-auto INodeOwner::buildTree(std::vector<Box<Node>>&& nodes, const assets::AssetHandle<assets::Prefab>& file) -> Box<Node> {
+auto INodeOwner::buildTree(std::vector<Box<Node>>&& nodes, const assets::Handle<assets::Prefab>& file) -> Box<Node> {
 	ZoneScoped;
 
 	std::unordered_map<uint64_t, Box<Node>> uid_map;
@@ -329,7 +584,7 @@ auto INodeOwner::buildTree(std::vector<Box<Node>>&& nodes, const assets::AssetHa
 			return it != uid_map.end() ? it->second : Box<Node> {};
 		});
 
-		node->m_type = has_parent ? NodeType::child : NodeType::root;
+		node->m_type = node->isInstanceRoot() || !has_parent ? NodeType::root : NodeType::child;
 
 		if (not has_parent) {
 #ifndef NDEBUG
@@ -338,6 +593,35 @@ auto INodeOwner::buildTree(std::vector<Box<Node>>&& nodes, const assets::AssetHa
 			}
 #endif
 			root = node;
+		}
+	}
+
+	// Signals are restored after every node has been allocated and indexed, so connection targets
+	// can be resolved regardless of their order in the prefab file.
+	for (size_t i = 0; i < nodes.size(); ++i) {
+		auto& node = nodes[i];
+		const auto& data = file->nodes[i];
+		const NodeInfo* info = node->info();
+		if (!info) {
+			continue;
+		}
+
+		for (const auto& signal_data : data.signals) {
+			const SignalInfo* signal = info->getSignal(signal_data.name);
+			if (!signal || !signal->connect) {
+				TOAST_WARN("World", "Prefab signal '{}' is not available on node '{}'", signal_data.name, node->name());
+				continue;
+			}
+			for (const auto& connection : signal_data.connections) {
+				auto target = uid_map.find(connection.target.data());
+				if (target == uid_map.end()) {
+					TOAST_WARN(
+					    "World", "Prefab signal '{}' on '{}' references missing UID {}", signal_data.name, node->name(), connection.target
+					);
+					continue;
+				}
+				signal->connect(&*node, *target->second, connection.function, signals::ConnectionSource::editor, true);
+			}
 		}
 	}
 
@@ -364,7 +648,18 @@ auto INodeOwner::buildTree(std::vector<Box<Node>>&& nodes, const assets::AssetHa
 	return root;
 }
 
-auto INodeOwner::instantiate(const assets::AssetHandle<assets::Prefab>& file, InstantiateContext& ctx) -> Box<Node> {
+void INodeOwner::seedPrefabContext(InstantiateContext& context, const Node* parent) const {
+	if (owningPrefabUid().data() != 0) {
+		context.asset_chain.push_back(owningPrefabUid().data());
+	}
+	for (const Node* n = parent; n; n = n->m_parent.exists() ? &*n->m_parent : nullptr) {
+		if (n->sourcePrefab().uid().data() != 0) {
+			context.asset_chain.push_back(n->sourcePrefab().uid().data());
+		}
+	}
+}
+
+auto INodeOwner::instantiate(const assets::Handle<assets::Prefab>& file, InstantiateContext& ctx) -> Box<Node> {
 	ZoneScoped;
 
 	if (not file.hasValue()) {
@@ -388,7 +683,7 @@ auto INodeOwner::instantiate(const assets::AssetHandle<assets::Prefab>& file, In
 		node->m_unresolved_chunk = std::make_shared<const assets::Prefab::BasicNode>(chunk);
 		UID uid {ref_uid};
 		std::string uri = assets::AssetManager::getURI(uid);
-		node->m_source_prefab = assets::AssetHandle<assets::Prefab>(nullptr, uid, uri);
+		node->m_source_prefab = assets::Handle<assets::Prefab>(nullptr, uid, uri);
 		return node;
 	};
 
@@ -407,7 +702,7 @@ auto INodeOwner::instantiate(const assets::AssetHandle<assets::Prefab>& file, In
 
 		// expand a nested instance synchronously on this thread
 		bool cycle = std::ranges::find(ctx.asset_chain, ref_uid) != ctx.asset_chain.end();
-		assets::AssetHandle<assets::Prefab> sub = cycle ? assets::AssetHandle<assets::Prefab> {} : ctx.resolver(toast::UID(ref_uid));
+		assets::Handle<assets::Prefab> sub = cycle ? assets::Handle<assets::Prefab> {} : ctx.resolver(toast::UID(ref_uid));
 
 		if (cycle or not sub.hasValue()) {
 			TOAST_ERROR(
@@ -417,6 +712,15 @@ auto INodeOwner::instantiate(const assets::AssetHandle<assets::Prefab>& file, In
 			    cycle ? "cycle detected" : "asset missing"
 			);
 			slots[i] = make_unresolved(*chunk, ref_uid);
+			if (cycle) {
+				slots[i]->m_recursive_prefab = true;
+				slots[i]->addInspectorMessage({
+				  .severity = NodeMessage::error,
+				  .id = 0,
+				  .text = "Cannot have prefab inside itself",
+				});
+				TOAST_ERROR("World", "Cannot have prefab inside itself");
+			}
 			continue;
 		}
 
@@ -427,6 +731,7 @@ auto INodeOwner::instantiate(const assets::AssetHandle<assets::Prefab>& file, In
 		}
 
 		applyFields(*sub_root, *chunk);
+		sub_root->m_source_prefab = sub;
 
 		// Everything below an instance root is interior to that instance
 		auto mark_interior = [](this auto&& self, Node& n) -> void {
@@ -446,7 +751,7 @@ auto INodeOwner::instantiate(const assets::AssetHandle<assets::Prefab>& file, In
 
 	Box<Node> root = buildTree(std::move(slots), file);
 
-	if (root.exists() && root->m_source_prefab.uid().data() == 0) {
+	if (root.exists() && root->m_source_prefab.uid().data() == 0 && file.uid().data() != 0) {
 		root->m_source_prefab = file;
 	}
 
@@ -470,6 +775,7 @@ void INodeOwner::reapTombstones() noexcept {
 }
 
 void INodeOwner::reloadScriptsUsing(UID script_uid) noexcept {
+	ZoneScoped;
 	std::scoped_lock lock(nodes_mutex);
 	forEachNode([&](const _detail::ControlBox& control) {
 		if (control.node == nullptr) {

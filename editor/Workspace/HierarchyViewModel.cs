@@ -31,7 +31,8 @@ public class HierarchyElement : INotifyPropertyChanged {
 
 	private bool m_isSelected;
 
-	public HierarchyElement(Proto.Events.HierarchyElement e, HierarchyViewModel owner, HierarchyElement? parent = null) {
+	public HierarchyElement(
+		Proto.Events.HierarchyElement e, HierarchyViewModel owner, HierarchyElement? parent = null, bool isRoot = false) {
 		Owner = owner;
 		Parent = parent;
 		Name = e.Name;
@@ -39,7 +40,8 @@ public class HierarchyElement : INotifyPropertyChanged {
 		Type = e.Type;
 		IsPrefab = e.IsPrefab;
 		Enabled = e.Enabled;
-		m_isExpanded = !owner.IsCollapsed(e.Uid); // restore persisted fold state
+		IsRoot = isRoot;
+		m_isExpanded = !owner.IsCollapsed(StateKey); // restore persisted fold state
 		Color = ReflectionDatabase.ResolveColor(e.Type);
 		foreach (var c in e.Children) {
 			if (c is null) continue;
@@ -66,8 +68,10 @@ public class HierarchyElement : INotifyPropertyChanged {
 	public Bitmap? SmallIcon { get; set; } // On avares://editor/Resources/node_icons/1x/<Icon Attribute>.png
 	public Bitmap? LargeIcon { get; set; } // On avares://editor/Resources/node_icons/2x/<Icon Attribute>.png
 	public string? Color { get; set; }
-	public bool IsRoot { get; set; }
+	public bool IsRoot { get; private set; }
 	public bool IsPrefab { get; set; }
+
+	public string StateKey => IsRoot ? HierarchyState.RootKey : Uid;
 	public ObservableCollection<HierarchyElement> Children { get; set; } = [];
 	public ObservableCollection<HierarchyElement> FilteredChildren { get; } = [];
 
@@ -147,7 +151,7 @@ public class HierarchyElement : INotifyPropertyChanged {
 	}
 }
 
-public partial class HierarchyViewModel : Tool {
+public partial class HierarchyViewModel : Tool, IDisposable {
 	// "end" -> engine inserts the node after the last sibling
 	private const string MoveToEnd = "end";
 
@@ -162,6 +166,8 @@ public partial class HierarchyViewModel : Tool {
 
 	private bool m_pendingRenameAfterUpdate;
 	private HashSet<string>? m_rowUidsSnapshot;
+	private bool m_disposed;
+	private ulong m_hierarchyHandle;
 
 	[ObservableProperty] private HierarchyElement? m_selectedNode;
 
@@ -172,25 +178,29 @@ public partial class HierarchyViewModel : Tool {
 		m_listener = new Listener();
 		Root.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasNodes));
 
-		WorkspaceViewModel.PlayModeChanged += () => {
-			SaveCommand.NotifyCanExecuteChanged();
-			SaveAsCommand.NotifyCanExecuteChanged();
-		};
+		WorkspaceViewModel.PlayModeChanged += OnPlayModeChanged;
 
 		// engine sends UpdateHierarchyData after every change (create, delete, move, rename...)
 		// we post to the UI thread because engine callbacks come on the native tick thread
 		m_listener.Subscribe<UpdateHierarchyData>(e => {
 			Dispatcher.UIThread.Post(() => {
+				if (m_disposed || ActiveWorkspace is not { } workspace || e.WorkspaceHandle != workspace.EffectiveHandle) return;
+				if (e.IsEmpty) {
+					ClearState();
+					return;
+				}
+				if (m_hierarchyHandle != e.WorkspaceHandle) ClearState();
+				m_hierarchyHandle = e.WorkspaceHandle;
 				var prevUid = SelectedNode?.Uid;
 				Root.Clear();
 				if (!e.IsEmpty) {
-					m_hierState = HierarchyState.Load(e.Root.Uid);
-					Root.Add(new HierarchyElement(e.Root, this) { IsRoot = true });
+					m_hierState = HierarchyState.Load(workspace.BackingAssetUid ?? e.Root.Uid);
+					Root.Add(new HierarchyElement(e.Root, this, isRoot: true));
 				}
 
 				// restore selection after the tree rebuilds so editing a node doesnt lose focus
 				SelectedNode = prevUid is null ? null : Find(Root, prevUid);
-				if (Root.Count > 0) ActiveWorkspace?.SetRootNode(Root[0].Uid);
+				if (Root.Count > 0 && e.WorkspaceHandle == workspace.Handle) workspace.SetRootNode(Root[0].Uid, Root[0].Type);
 				ApplyFilterToRoot();
 				RebuildRows();
 				HierarchyChanged?.Invoke();
@@ -219,7 +229,22 @@ public partial class HierarchyViewModel : Tool {
 
 	public ObservableCollection<HierarchyElement> Rows { get; } = [];
 
-	private WorkspaceViewModel? ActiveWorkspace => Root.Count > 0 && Factory is DockFactory f ? f.ActiveWorkspace : null;
+	public WorkspaceViewModel? ActiveWorkspace => Factory is DockFactory f ? f.ActiveWorkspace : null;
+	public ulong ActiveWorkspaceHandle => ActiveWorkspace?.EffectiveHandle ?? 0;
+	public bool HasCurrentHierarchy => m_hierarchyHandle != 0 && m_hierarchyHandle == ActiveWorkspaceHandle;
+
+	public void Dispose() {
+		m_disposed = true;
+		WorkspaceViewModel.PlayModeChanged -= OnPlayModeChanged;
+		m_listener.Dispose();
+		if (ReferenceEquals(Current, this)) Current = null;
+		GC.SuppressFinalize(this);
+	}
+
+	private void OnPlayModeChanged() {
+		SaveCommand.NotifyCanExecuteChanged();
+		SaveAsCommand.NotifyCanExecuteChanged();
+	}
 
 	public event Action? HierarchyChanged;
 	public event Action<HierarchyElement>? RenameStarted;
@@ -240,8 +265,8 @@ public partial class HierarchyViewModel : Tool {
 		HierarchyChanged?.Invoke();
 	}
 
-	internal bool IsCollapsed(string uid) {
-		return m_hierState?.Get(uid, false) ?? false;
+	internal bool IsCollapsed(string key) {
+		return m_hierState?.Get(key, false) ?? false;
 	}
 
 	public void RebuildRows() {
@@ -262,7 +287,7 @@ public partial class HierarchyViewModel : Tool {
 
 	public void ToggleExpand(HierarchyElement node) {
 		node.IsExpanded = !node.IsExpanded;
-		m_hierState?.Set(node.Uid, !node.IsExpanded); // store collapsed=true, expanded=false
+		m_hierState?.Set(node.StateKey, !node.IsExpanded); // store collapsed=true, expanded=false
 		RebuildRows();
 		HierarchyChanged?.Invoke();
 	}
@@ -293,7 +318,7 @@ public partial class HierarchyViewModel : Tool {
 
 	private void SetExpanded(HierarchyElement node, bool expanded) {
 		node.IsExpanded = expanded;
-		m_hierState?.Set(node.Uid, !expanded);
+		m_hierState?.Set(node.StateKey, !expanded);
 	}
 
 	public static bool IsSelfOrDescendant(HierarchyElement node, HierarchyElement candidate) {
@@ -307,7 +332,6 @@ public partial class HierarchyViewModel : Tool {
 	public void DropInto(HierarchyElement dragged, HierarchyElement target) {
 		if (dragged.Uid == target.Uid) return;
 		Events.Send(new WorkspaceMoveNodeTo { Target = dragged.Uid, NewParent = target.Uid, Predecessor = MoveToEnd });
-		WorkspaceState.MarkModified();
 	}
 
 	public void DropBeside(HierarchyElement dragged, HierarchyElement target, bool after) {
@@ -318,7 +342,6 @@ public partial class HierarchyViewModel : Tool {
 		var predecessor = after ? target.Uid : idx - 1 >= 0 ? siblings[idx - 1].Uid : "";
 		if (predecessor == dragged.Uid) return; // already in place
 		Events.Send(new WorkspaceMoveNodeTo { Target = dragged.Uid, NewParent = parent.Uid, Predecessor = predecessor });
-		WorkspaceState.MarkModified();
 	}
 
 	partial void OnSelectedNodeChanged(HierarchyElement? value) {
@@ -332,10 +355,19 @@ public partial class HierarchyViewModel : Tool {
 	}
 
 	public void Clear() {
-		Dispatcher.UIThread.Post(() => {
-			Root.Clear();
-			SelectedNode = null;
-		});
+		if (Dispatcher.UIThread.CheckAccess()) ClearState();
+		else Dispatcher.UIThread.Post(ClearState);
+	}
+
+	private void ClearState() {
+		Root.Clear();
+		Rows.Clear();
+		SelectedNode = null;
+		m_hierState = null;
+		m_hierarchyHandle = 0;
+		m_pendingRenameAfterUpdate = false;
+		m_rowUidsSnapshot = null;
+		HierarchyChanged?.Invoke();
 	}
 
 	public HierarchyElement? Find(string uid) {
@@ -353,6 +385,7 @@ public partial class HierarchyViewModel : Tool {
 
 	// explicit arg -> selected node -> root, fallback chain for all hierarchy commands
 	private HierarchyElement? Target(HierarchyElement? target) {
+		if (ActiveWorkspace is not { } workspace || workspace.EffectiveHandle != m_hierarchyHandle) return null;
 		return target ?? SelectedNode ?? (Root.Count > 0 ? Root[0] : null);
 	}
 
@@ -366,7 +399,6 @@ public partial class HierarchyViewModel : Tool {
 		if (type is null) return;
 
 		Events.Send(new WorkspaceCreateNode { Parent = t.Uid, Type = type });
-		WorkspaceState.MarkModified();
 	}
 
 	[RelayCommand]
@@ -379,7 +411,6 @@ public partial class HierarchyViewModel : Tool {
 		if (uid is null) return;
 
 		Events.Send(new WorkspaceSpawn { Parent = t.Uid, IsUri = false, Uid = uid });
-		WorkspaceState.MarkModified();
 	}
 
 	[RelayCommand]
@@ -402,9 +433,20 @@ public partial class HierarchyViewModel : Tool {
 
 	[RelayCommand]
 	private void Paste(HierarchyElement? target) {
+		var selected = Target(target);
+		PasteInto(selected?.Parent ?? selected);
+	}
+
+	[RelayCommand]
+	private void PasteAsChild(HierarchyElement? target) {
+		PasteInto(Target(target));
+	}
+
+	private void PasteInto(HierarchyElement? t) {
 		if (m_clipboardUid is null) return;
-		var t = Target(target);
 		if (t is null || t.IsPrefab || t.IsInsidePrefab) return;
+		if (m_clipboardIsCut && Find(m_clipboardUid) is { } source && IsSelfOrDescendant(source, t)) return;
+		SetExpanded(t, true);
 
 		m_rowUidsSnapshot = new HashSet<string>(Rows.Select(r => r.Uid));
 		m_pendingRenameAfterUpdate = true;
@@ -414,8 +456,6 @@ public partial class HierarchyViewModel : Tool {
 			m_clipboardUid = null;
 			m_clipboardIsCut = false;
 		}
-
-		WorkspaceState.MarkModified();
 	}
 
 	[RelayCommand(CanExecute = nameof(CanRename))]
@@ -429,7 +469,7 @@ public partial class HierarchyViewModel : Tool {
 
 	private bool CanRename(HierarchyElement? target) {
 		var t = target ?? SelectedNode;
-		return t is null || !t.IsRoot;
+		return t is not null && !t.IsRoot;
 	}
 
 	[RelayCommand]
@@ -442,7 +482,6 @@ public partial class HierarchyViewModel : Tool {
 		if (type is null) return;
 
 		Events.Send(new NodeChangeType { Node = t.Uid, Type = type });
-		WorkspaceState.MarkModified();
 	}
 
 	[RelayCommand]
@@ -452,7 +491,6 @@ public partial class HierarchyViewModel : Tool {
 		m_rowUidsSnapshot = new HashSet<string>(Rows.Select(r => r.Uid));
 		m_pendingRenameAfterUpdate = true;
 		Events.Send(new WorkspaceDuplicateNode { Source = t.Uid, Parent = t.Parent?.Uid ?? "" });
-		WorkspaceState.MarkModified();
 	}
 
 	[RelayCommand]
@@ -466,7 +504,6 @@ public partial class HierarchyViewModel : Tool {
 		// empty string means "insert at the start"
 		var before = i - 2 >= 0 ? siblings[i - 2].Uid : "";
 		Events.Send(new WorkspaceMoveNodeTo { Target = t.Uid, NewParent = parent.Uid, Predecessor = before });
-		WorkspaceState.MarkModified();
 	}
 
 	[RelayCommand]
@@ -479,7 +516,6 @@ public partial class HierarchyViewModel : Tool {
 		// move after i+1 (the node below us becomes our predecessor)
 		Events.Send(new WorkspaceMoveNodeTo
 			{ Target = t.Uid, NewParent = parent.Uid, Predecessor = siblings[i + 1].Uid });
-		WorkspaceState.MarkModified();
 	}
 
 	[RelayCommand]
@@ -493,7 +529,6 @@ public partial class HierarchyViewModel : Tool {
 		if (newParent is null || newParent == t.Uid || newParent == prevParent.Uid) return;
 
 		Events.Send(new WorkspaceMoveNodeTo { Target = t.Uid, NewParent = newParent, Predecessor = MoveToEnd });
-		WorkspaceState.MarkModified();
 	}
 
 	[RelayCommand]
@@ -512,7 +547,6 @@ public partial class HierarchyViewModel : Tool {
 		AssetDatabase.RebuildAssetDatabase();
 		Events.Send(new ReloadAssetsManifest());
 		Events.Send(new WorkspacePromoteNode { Target = t.Uid, Path = virtualPath });
-		WorkspaceState.MarkModified();
 	}
 
 	[RelayCommand]
@@ -520,7 +554,6 @@ public partial class HierarchyViewModel : Tool {
 		var t = target ?? SelectedNode;
 		if (t is null || t.IsInsidePrefab) return;
 		Events.Send(new NodeEnabled { Node = t.Uid, Enabled = !t.Enabled });
-		WorkspaceState.MarkModified();
 	}
 
 	// saving is locked while any tab is in play mode
@@ -543,6 +576,5 @@ public partial class HierarchyViewModel : Tool {
 		if (Rows.Any(r => r.IsRenaming)) return;
 		if (target is null || Root.Count == 0 || target == Root[0] || target.IsInsidePrefab) return;
 		Events.Send(new WorkspaceRemoveNode { Target = target.Uid });
-		WorkspaceState.MarkModified();
 	}
 }

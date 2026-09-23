@@ -8,11 +8,12 @@
 
 #pragma once
 
-#include <array>
 #include <atomic>
 #include <mutex>
+#include <string_view>
 #include <toast/export.hpp>
 #include <toast/thread_pool.hpp>
+#include <vector>
 
 struct lua_State;
 
@@ -20,8 +21,6 @@ namespace scripting {
 
 class TOAST_API LuaState {
 public:
-	static constexpr size_t pool_size = 1 + toast::ThreadPool::thread_count;
-
 	class Lock {
 	public:
 		Lock() = default;
@@ -69,8 +68,6 @@ public:
 	[[nodiscard]]
 	auto tryLock(size_t index) noexcept -> Lock;
 
-	void plotMemory() noexcept;
-
 	[[nodiscard]]
 	auto nextIndex() noexcept -> size_t;
 
@@ -88,7 +85,8 @@ private:
 		std::recursive_timed_mutex mutex;
 	};
 
-	std::array<Entry, pool_size> m_entries;
+	size_t m_pool_size = 0;
+	std::vector<Entry> m_entries;
 	std::atomic<size_t> m_next_index = 0;
 
 	LuaState();

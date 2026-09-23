@@ -60,13 +60,13 @@ public:
 		std::unordered_map<Box<Node>, std::vector<Box<Node>>> inverse_connections;    ///< reverse edges
 	};
 
-	                                                                                // clang-format off
+	// clang-format off
   /**
    * @brief Records a tick ordering constraint between two nodes
    * @note The schedule is NOT rebuilt automatically; the owner calls compute() when appropriate
    */
-	void registerDependency(Node& from, Node& to);
-	void unregisterDependency(Node& from, Node& to);
+	auto registerDependency(Node& from, Node& to) -> bool;
+	auto unregisterDependency(Node& from, Node& to) -> bool;
 	// clang-format on
 
 	/**
@@ -76,6 +76,9 @@ public:
 
 	/// Runs all four phases (early_tick → tick → post_physics → late_tick) of the schedule
 	void run() const;
+
+	/// Dispatches a single phase of the tick schedule
+	void runPhase(const std::vector<_detail::TickSchedule::Wave>& phase, TickFunctionList func, std::string_view name) const;
 
 	DependencyGraph graph;
 	_detail::TickSchedule schedule;

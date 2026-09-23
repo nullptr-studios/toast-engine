@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
@@ -41,27 +42,50 @@ public static class TextHighlight {
 		tb.Inlines ??= new InlineCollection();
 		tb.Inlines.Clear();
 
-		if (string.IsNullOrEmpty(query) || string.IsNullOrEmpty(text)) {
+		var tokens = query.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+		if (tokens.Length == 0 || string.IsNullOrEmpty(text)) {
 			tb.Inlines.Add(new Run(text));
 			return;
 		}
 
-		var red = ResolveRed();
-		var i = 0;
-		while (i < text.Length) {
-			var m = text.IndexOf(query, i, StringComparison.OrdinalIgnoreCase);
-			if (m < 0) {
-				tb.Inlines.Add(new Run(text[i..]));
-				break;
+		var ranges = new List<(int Start, int End)>();
+		foreach (var token in tokens) {
+			var i = 0;
+			while (i < text.Length) {
+				var m = text.IndexOf(token, i, StringComparison.OrdinalIgnoreCase);
+				if (m < 0) break;
+				ranges.Add((m, m + token.Length));
+				i = m + token.Length;
+			}
+		}
+
+		if (ranges.Count == 0) {
+			tb.Inlines.Add(new Run(text));
+			return;
+		}
+
+		ranges.Sort((a, b) => a.Start.CompareTo(b.Start));
+		var merged = new List<(int Start, int End)>();
+		foreach (var r in ranges)
+			if (merged.Count > 0 && r.Start <= merged[^1].End) {
+				var last = merged[^1];
+				merged[^1] = (last.Start, Math.Max(last.End, r.End));
+			} else {
+				merged.Add(r);
 			}
 
-			if (m > i) tb.Inlines.Add(new Run(text[i..m]));
-			tb.Inlines.Add(new Run(text.Substring(m, query.Length)) {
+		var red = ResolveRed();
+		var pos = 0;
+		foreach (var (start, end) in merged) {
+			if (start > pos) tb.Inlines.Add(new Run(text[pos..start]));
+			tb.Inlines.Add(new Run(text[start..end]) {
 				Foreground = red,
 				FontWeight = FontWeight.Bold
 			});
-			i = m + query.Length;
+			pos = end;
 		}
+
+		if (pos < text.Length) tb.Inlines.Add(new Run(text[pos..]));
 	}
 
 	private static IBrush ResolveRed() {

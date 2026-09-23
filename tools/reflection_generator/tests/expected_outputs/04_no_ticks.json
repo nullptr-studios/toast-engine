@@ -44,6 +44,7 @@
     "name": "DataNode",
     "namespace": "data",
     "parent": null,
+    "signals": [],
     "source_file": "04_no_ticks.hpp",
     "tick_functions": {
       "begin": false,

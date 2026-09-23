@@ -15,13 +15,12 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using editor.Assets;
 using editor.Components.Modals;
 using editor.Engine;
 using Lucide.Avalonia;
-using Tomlyn;
-using Tomlyn.Model;
 
 namespace editor.StartWindow;
 
@@ -30,31 +29,41 @@ public partial class StartWindowViewModel : ViewModelBase {
 		Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "../toast_engine"));
 
 	private readonly ProjectList m_projectList = ProjectList.LoadList();
+
+	[ObservableProperty] private string m_searchText = "";
 	private Window? m_window;
 
 	// Fake data for the previewer
 	public StartWindowViewModel() {
-		if (!Design.IsDesignMode) return;
-		m_projectList.Projects.Add(new ProjectListItem {
-			Title = "My Awesome Game",
-			Path = "C:/Projects/my_awesome_game/my_awesome_game.toast",
-			Date = "23 Jun 2026 14:30",
-			Version = "v1.0.0",
-			ThumbnailPath = ""
-		});
-		m_projectList.Projects.Add(new ProjectListItem {
-			Title = "Space Adventure",
-			Path = "C:/Projects/space_adventure/space_adventure.toast",
-			Date = "20 Jun 2026 09:15",
-			Version = "v0.2.0",
-			ThumbnailPath = ""
-		});
+		Projects.CollectionChanged += (_, _) => RebuildFilteredProjects();
+		RebuildFilteredProjects();
 	}
 
 	public ObservableCollection<ProjectListItem> Projects => m_projectList.Projects;
 
+	public ObservableCollection<ProjectListItem> FilteredProjects { get; } = [];
+
 	public void SaveProjects() {
 		m_projectList.SaveList();
+	}
+
+	public void ResetSearch() {
+		SearchText = "";
+	}
+
+	partial void OnSearchTextChanged(string value) {
+		RebuildFilteredProjects();
+	}
+
+	private void RebuildFilteredProjects() {
+		FilteredProjects.Clear();
+
+		var tokens = SearchText.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+		var matches = tokens.Length == 0
+			? Projects
+			: Projects.Where(p => tokens.All(t => p.Title.Contains(t, StringComparison.OrdinalIgnoreCase)));
+
+		foreach (var project in matches) FilteredProjects.Add(project);
 	}
 
 	public void SetWindow(Window window) {
@@ -62,8 +71,8 @@ public partial class StartWindowViewModel : ViewModelBase {
 	}
 
 	private void LaunchProject(string projectPath, Window parentWindow) {
-		var projectItem = m_projectList.Projects.FirstOrDefault(p => p.Path == projectPath);
-		if (projectItem.Path != null) projectItem.Date = DateTime.Now.ToString("dd MMM yyyy HH:mm");
+		m_projectList.Upsert(projectPath);
+		m_projectList.SaveList();
 
 		var projectDir = Directory.Exists(projectPath) ? projectPath : Path.GetDirectoryName(projectPath)!;
 		var corePath = Path.Combine(ToastPath, "bin", "assets");
@@ -84,17 +93,13 @@ public partial class StartWindowViewModel : ViewModelBase {
 		tasks.Add(LoaderTask.Do("Check for missing files", AssetDatabase.RelocateMissingAssets));
 		tasks.Add(LoaderTask.Do("Check for missing artwork", AssetDatabase.RelocateMissingArtwork));
 
-		tasks.Add(LoaderTask.Do("Generate missing metadata", async log => {
-			AssetDatabase.GenerateMissingMetas(log);
-			await Task.CompletedTask;
-		}));
+		tasks.Add(LoaderTask.Do("Generate missing metadata",
+			async log => { await Task.Run(() => AssetDatabase.GenerateMissingMetas(log)); }));
 
 		tasks.Add(LoaderTask.Do("Generate asset database", async log => {
-			AssetDatabase.RebuildAssetDatabase();
+			await Task.Run(() => AssetDatabase.RebuildAssetDatabase(false));
 			log(
 				$"Rebuilt asset database ({string.Join(", ", ProjectContext.Databases.Select(db => db + "://"))}, core://)");
-
-			await Task.CompletedTask;
 		}));
 
 		tasks.Add(LoaderTask.Do("Check for artwork changes", AssetDatabase.CheckArtworkChanges));
@@ -165,7 +170,7 @@ public partial class StartWindowViewModel : ViewModelBase {
 			));
 
 			await modal.ShowDialog(m_window!);
-			RemoveProject(projectToRemove);
+			await RemoveProject(projectToRemove);
 
 			return;
 		}
@@ -188,31 +193,6 @@ public partial class StartWindowViewModel : ViewModelBase {
 
 		if (files.Count > 0) {
 			var projectPath = files[0].Path.LocalPath;
-
-			if (m_projectList.Projects.All(p => p.Path != projectPath))
-				try {
-					var projectContent = File.ReadAllText(projectPath);
-					var projectData = TomlSerializer.Deserialize<TomlTable>(projectContent);
-					var thumbnailPath = Path.Combine(Path.GetDirectoryName(projectPath)!, ".toast", "thumbnails",
-						"project.png");
-
-					m_projectList.Projects.Add(new ProjectListItem {
-						Title = projectData?["name"].ToString() ?? "Untitled Project",
-						Path = projectPath,
-						Date = DateTime.Now.ToString("dd MMM yyyy HH:mm"),
-						Version = projectData?["version"].ToString() ?? "",
-						ThumbnailPath = File.Exists(thumbnailPath) ? thumbnailPath : ""
-					});
-				} catch {
-					m_projectList.Projects.Add(new ProjectListItem {
-						Title = "Untitled Project",
-						Path = projectPath,
-						Date = DateTime.Now.ToString("dd MMM yyyy HH:mm"),
-						Version = "",
-						ThumbnailPath = ""
-					});
-				}
-
 			LaunchProject(projectPath, parentWindow);
 		}
 	}
@@ -224,32 +204,7 @@ public partial class StartWindowViewModel : ViewModelBase {
 		};
 		var result = await dialog.ShowDialog<bool>(parentWindow);
 
-		if (result) {
-			if (m_projectList.Projects.All(p => p.Path != dialog.ProjectPath))
-				try {
-					var projectContent = File.ReadAllText(dialog.ProjectPath);
-					var projectData = TomlSerializer.Deserialize<TomlTable>(projectContent);
-					var thumbnailPath = dialog.ProjectThumbnail;
-
-					m_projectList.Projects.Add(new ProjectListItem {
-						Title = dialog.ProjectTitle,
-						Path = dialog.ProjectPath,
-						Date = DateTime.Now.ToString("dd MMM yyyy HH:mm"),
-						Version = projectData?["version"].ToString() ?? $"v{string.Join(".", dialog.ProjectVersion)}",
-						ThumbnailPath = File.Exists(thumbnailPath) ? thumbnailPath : ""
-					});
-				} catch {
-					m_projectList.Projects.Add(new ProjectListItem {
-						Title = dialog.ProjectTitle,
-						Path = dialog.ProjectPath,
-						Date = DateTime.Now.ToString("dd MMM yyyy HH:mm"),
-						Version = $"v{string.Join(".", dialog.ProjectVersion)}",
-						ThumbnailPath = ""
-					});
-				}
-
-			LaunchProject(dialog.ProjectPath, parentWindow);
-		}
+		if (result) LaunchProject(dialog.ProjectPath, parentWindow);
 	}
 
 	[RelayCommand]
@@ -258,7 +213,11 @@ public partial class StartWindowViewModel : ViewModelBase {
 	}
 
 	[RelayCommand]
-	public void RemoveProject(ProjectListItem item) {
+	public async Task RemoveProject(ProjectListItem item) {
+		var confirmed = await App.Modals.ShowConfirm("Remove Project",
+			$"Remove \"{item.Title}\" from the list? This won't delete any files.");
+		if (!confirmed) return;
+
 		m_projectList.Projects.Remove(item);
 	}
 }

@@ -7,7 +7,7 @@
 #pragma once
 #include <toast/events/event.hpp>
 #include <toast/uid.hpp>
-#include <toast/world/box.hpp>
+#include <toast/world/node.hpp>
 #include <utility>
 
 namespace event {
@@ -30,10 +30,14 @@ struct UpdateHierarchyData : Event<UpdateHierarchyData> {
 
 	HierarchyElement root;
 	bool is_empty = false;
+	uint64_t workspace_handle = 0;
 
-	UpdateHierarchyData(const toast::Box<toast::Node>& node);
+	UpdateHierarchyData(const toast::Box<toast::Node>& node, uint64_t handle);
 
-	UpdateHierarchyData(const HierarchyElement& h, bool is_empty) : root(h), is_empty(is_empty) { }
+	UpdateHierarchyData(const HierarchyElement& h, bool is_empty, uint64_t handle)
+	    : root(h),
+	      is_empty(is_empty),
+	      workspace_handle(handle) { }
 };
 
 struct RequestHierarchyUpdate : Event<RequestHierarchyUpdate> { };
@@ -79,8 +83,22 @@ struct SetActiveWorkspace : Event<SetActiveWorkspace> {
 struct WorkspaceSave : Event<WorkspaceSave> {
 	toast::UID target;
 	std::string uri;
+	uint64_t workspace_handle = 0;
+	uint64_t request = 0;
 
-	WorkspaceSave(toast::UID target, std::string uri) : target(target), uri(std::move(uri)) { }
+	WorkspaceSave(toast::UID target, std::string uri, uint64_t workspace_handle = 0, uint64_t request = 0)
+	    : target(target),
+	      uri(std::move(uri)),
+	      workspace_handle(workspace_handle),
+	      request(request) { }
+};
+
+struct WorkspaceSaveCompleted : Event<WorkspaceSaveCompleted> {
+	uint64_t workspace_handle = 0;
+	uint64_t request = 0;
+	bool success = false;
+	std::vector<uint8_t> snapshot;
+	std::string error;
 };
 
 struct WorkspaceAutosave : Event<WorkspaceAutosave> {
@@ -144,10 +162,14 @@ struct SetFocusedNode : Event<SetFocusedNode> {
 };
 
 struct NodeChangeParam : Event<NodeChangeParam> {
+	toast::UID node;
 	std::string parameter;
 	std::string value;
 
-	NodeChangeParam(std::string_view parameter, std::string_view value) : parameter(parameter), value(value) { }
+	NodeChangeParam(toast::UID node, std::string_view parameter, std::string_view value)
+	    : node(node),
+	      parameter(parameter),
+	      value(value) { }
 };
 
 struct NodeChangeName : Event<NodeChangeName> {
@@ -158,9 +180,10 @@ struct NodeChangeName : Event<NodeChangeName> {
 };
 
 struct NodeCallFunction : Event<NodeCallFunction> {
+	toast::UID node;
 	std::string function;
 
-	NodeCallFunction(std::string_view f) : function(f) { }
+	NodeCallFunction(toast::UID node, std::string_view f) : node(node), function(f) { }
 };
 
 struct NodeEnabled : Event<NodeEnabled> {
@@ -183,6 +206,14 @@ struct SetGizmoTool : Event<SetGizmoTool> {
 	SetGizmoTool(uint32_t tool) : tool(tool) { }
 };
 
+/// @brief Viewport shading mode, sent by the toolbar's "Mode" dropdown - 0 Lit, 1 ClusterHeatmap (clustered
+/// forward+ per-pixel light-count debug view). Consumed straight by VulkanRenderer, not per-workspace state
+struct SetRenderMode : Event<SetRenderMode> {
+	uint32_t mode;
+
+	SetRenderMode(uint32_t mode) : mode(mode) { }
+};
+
 struct SetCoordinateSpace : Event<SetCoordinateSpace> {
 	bool world;
 
@@ -203,6 +234,66 @@ struct SetCameraMode : Event<SetCameraMode> {
 	SetCameraMode(bool game) : game(game) { }
 };
 
+/// @brief editor fly camera toggle, sent on RMB down/up in edit mode
+struct EditorCameraFlyMode : Event<EditorCameraFlyMode> {
+	bool active;
+
+	EditorCameraFlyMode(bool active) : active(active) { }
+};
+
+/// @brief Requests a single RenderDoc frame capture around the next rendered frame, sent on F12 in the
+/// viewport; no-op if RenderDoc isn't attached
+struct CaptureFrame : Event<CaptureFrame> { };
+
+/// @brief Held-key snapshot for the editor fly camera
+struct EditorCameraMoveState : Event<EditorCameraMoveState> {
+	bool forward, back, left, right, up, down, boost;
+
+	EditorCameraMoveState(bool forward, bool back, bool left, bool right, bool up, bool down, bool boost)
+	    : forward(forward),
+	      back(back),
+	      left(left),
+	      right(right),
+	      up(up),
+	      down(down),
+	      boost(boost) { }
+};
+
+/// @brief Raw mouse delta while the editor fly camera is active
+struct EditorCameraLook : Event<EditorCameraLook> {
+	float dx, dy;
+
+	EditorCameraLook(float dx, float dy) : dx(dx), dy(dy) { }
+};
+
+enum class EditorCameraMode : uint32_t {
+	free = 0,
+	orbit = 1
+};
+
+struct SetEditorCameraSettings : Event<SetEditorCameraSettings> {
+	EditorCameraMode mode;
+	float speed;
+
+	uint64_t workspace_handle;
+
+	SetEditorCameraSettings(EditorCameraMode mode, float speed, uint64_t workspace_handle = 0)
+	    : mode(mode),
+	      speed(speed),
+	      workspace_handle(workspace_handle) { }
+
+	SetEditorCameraSettings(uint32_t mode, float speed, uint64_t workspace_handle = 0)
+	    : mode(static_cast<EditorCameraMode>(mode)),
+	      speed(speed),
+	      workspace_handle(workspace_handle) { }
+};
+
+struct EditorCameraGesture : Event<EditorCameraGesture> {
+	float dx, dy, zoom;
+
+	EditorCameraGesture(float dx, float dy, float zoom) : dx(dx), dy(dy), zoom(zoom) { }
+};
+
 struct InspectorContent : Event<InspectorContent> {
 	struct InspectorField {
 		std::string name;
@@ -215,12 +306,17 @@ struct InspectorContent : Event<InspectorContent> {
 	std::string name;
 	bool enabled;
 	std::vector<InspectorField> parameters;
+	std::vector<toast::NodeMessage> messages;
 
-	InspectorContent(std::string_view uid, std::string_view name, bool enabled, std::vector<InspectorField> fields)
+	InspectorContent(
+	    std::string_view uid, std::string_view name, bool enabled, std::vector<InspectorField> fields,
+	    std::vector<toast::NodeMessage> messages
+	)
 	    : uid(uid),
 	      name(name),
 	      enabled(enabled),
-	      parameters(std::move(fields)) { }
+	      parameters(std::move(fields)),
+	      messages(std::move(messages)) { }
 };
 
 struct InspectorLuaContent : Event<InspectorLuaContent> {
@@ -264,10 +360,195 @@ struct InspectorLuaContent : Event<InspectorLuaContent> {
 };
 
 struct NodeChangeLuaParam : Event<NodeChangeLuaParam> {
+	toast::UID node;
 	std::string path;
 	std::string value;
 
-	NodeChangeLuaParam(std::string_view path, std::string_view value) : path(path), value(value) { }
+	NodeChangeLuaParam(toast::UID node, std::string_view path, std::string_view value) : node(node), path(path), value(value) { }
+};
+
+enum class HistoryOperation : uint8_t {
+	initial,
+	create,
+	remove,
+	rename,
+	enable,
+	change_value,
+	move,
+	reparent,
+	retype,
+	duplicate,
+	spawn_prefab,
+	paste,
+	promote,
+	call_function,
+	cherry_pick,
+	merge
+};
+
+struct HistoryRevision {
+	uint64_t id = 0;
+	uint64_t sequence = 0;
+	std::vector<uint64_t> parents;
+	toast::UID node_uid;
+	std::string node_name;
+	HistoryOperation operation = HistoryOperation::initial;
+	std::string subject;
+	std::string previous_value;
+	std::string current_value;
+};
+
+struct WorkspaceHistoryInitialSnapshot : Event<WorkspaceHistoryInitialSnapshot> {
+	uint64_t workspace_handle = 0;
+	std::vector<uint8_t> snapshot;
+	bool available = true;
+	bool initially_saved = false;
+	std::string unavailable_reason;
+};
+
+struct WorkspaceHistoryCommitted : Event<WorkspaceHistoryCommitted> {
+	uint64_t workspace_handle = 0;
+	std::vector<uint8_t> before_snapshot;
+	std::vector<uint8_t> after_snapshot;
+	toast::UID node_uid;
+	std::string node_name;
+	HistoryOperation operation = HistoryOperation::change_value;
+	std::string subject;
+	std::string previous_value;
+	std::string current_value;
+};
+
+struct WorkspaceApplyHistorySnapshot : Event<WorkspaceApplyHistorySnapshot> {
+	uint64_t workspace_handle = 0;
+	uint64_t request = 0;
+	std::vector<uint8_t> snapshot;
+};
+
+struct WorkspaceHistorySnapshotApplied : Event<WorkspaceHistorySnapshotApplied> {
+	uint64_t workspace_handle = 0;
+	uint64_t request = 0;
+	bool success = false;
+	std::string error;
+};
+
+struct WorkspacePrepareHistoryMerge : Event<WorkspacePrepareHistoryMerge> {
+	uint64_t workspace_handle = 0;
+	uint64_t request = 0;
+	bool is_merge = false;
+	std::vector<uint8_t> base_snapshot;
+	std::vector<uint8_t> current_snapshot;
+	std::vector<uint8_t> incoming_snapshot;
+};
+
+struct WorkspaceHistoryMergePrepared : Event<WorkspaceHistoryMergePrepared> {
+	uint64_t workspace_handle = 0;
+	uint64_t request = 0;
+	bool success = false;
+	std::vector<uint8_t> snapshot;
+	std::string error;
+};
+
+struct UpdateWorkspaceHistory : Event<UpdateWorkspaceHistory> {
+	uint64_t workspace_handle = 0;
+	bool available = true;
+	std::string unavailable_reason;
+	uint64_t current_revision = 0;
+	bool is_dirty = false;
+	bool transaction_open = false;
+	std::vector<HistoryRevision> revisions;
+};
+
+struct RequestWorkspaceHistory : Event<RequestWorkspaceHistory> {
+	uint64_t workspace_handle = 0;
+};
+
+struct WorkspaceUndo : Event<WorkspaceUndo> {
+	uint64_t workspace_handle = 0;
+};
+
+struct WorkspaceRedo : Event<WorkspaceRedo> {
+	uint64_t workspace_handle = 0;
+};
+
+struct WorkspaceCheckoutHistory : Event<WorkspaceCheckoutHistory> {
+	uint64_t workspace_handle = 0;
+	uint64_t revision = 0;
+};
+
+struct WorkspaceCherryPickHistory : Event<WorkspaceCherryPickHistory> {
+	uint64_t workspace_handle = 0;
+	uint64_t revision = 0;
+};
+
+struct WorkspaceMergeHistory : Event<WorkspaceMergeHistory> {
+	uint64_t workspace_handle = 0;
+	uint64_t revision = 0;
+};
+
+struct WorkspaceHistoryTransaction : Event<WorkspaceHistoryTransaction> {
+	enum class Phase : uint8_t {
+		begin,
+		commit,
+		cancel
+	};
+	uint64_t workspace_handle = 0;
+	uint64_t transaction = 0;
+	Phase phase = Phase::begin;
+	HistoryOperation operation = HistoryOperation::change_value;
+	toast::UID node;
+	std::string subject;
+};
+
+enum class HistoryConflictKind : uint8_t {
+	value,
+	name,
+	type,
+	enabled,
+	parent,
+	order,
+	existence,
+	lua_value
+};
+
+struct HistoryConflict {
+	uint64_t id = 0;
+	toast::UID node_uid;
+	std::string node_name;
+	HistoryConflictKind kind = HistoryConflictKind::value;
+	std::string field;
+	uint32_t value_type = 0;
+	bool is_array = false;
+	std::string ref_type;
+	std::string base_value;
+	std::string current_value;
+	std::string incoming_value;
+};
+
+struct WorkspaceHistoryConflicts : Event<WorkspaceHistoryConflicts> {
+	uint64_t workspace_handle = 0;
+	uint64_t request = 0;
+	bool is_merge = false;
+	uint64_t source_revision = 0;
+	std::vector<HistoryConflict> conflicts;
+};
+
+struct HistoryConflictResolution {
+	enum class Choice : uint8_t {
+		base,
+		current,
+		incoming,
+		custom_value
+	};
+	uint64_t conflict = 0;
+	Choice choice = Choice::current;
+	std::string custom_value;
+};
+
+struct WorkspaceResolveHistoryConflicts : Event<WorkspaceResolveHistoryConflicts> {
+	uint64_t workspace_handle = 0;
+	uint64_t request = 0;
+	bool cancel = false;
+	std::vector<HistoryConflictResolution> resolutions;
 };
 
 }

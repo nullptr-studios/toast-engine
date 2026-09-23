@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
@@ -22,6 +23,8 @@ public partial class NewProjectWindow : Window {
 
 		m_baseFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 		UpdateProjectData();
+
+		AddHandler(KeyDownEvent, OnWindowKeyDown, RoutingStrategies.Tunnel);
 	}
 
 	public string ProjectTitle { get; private set; } = "";
@@ -122,5 +125,21 @@ public partial class NewProjectWindow : Window {
 
 	private void Exit_OnClick(object? sender, RoutedEventArgs e) {
 		Close(false);
+	}
+
+	private void OnWindowKeyDown(object? sender, KeyEventArgs e) {
+		switch (e.Key) {
+			case Key.Enter:
+				e.Handled = true;
+				Create_OnClick(sender, e);
+				break;
+			case Key.Escape:
+				e.Handled = true;
+				if (FocusManager?.GetFocusedElement() == TitleTextbox)
+					FocusManager.Focus(null);
+				else
+					Exit_OnClick(sender, e);
+				break;
+		}
 	}
 }

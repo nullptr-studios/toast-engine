@@ -12,6 +12,7 @@
 #include <filesystem>
 #include <fmod/fmod_studio.h>
 #include <glm/glm.hpp>
+#include <toast/events/listener.hpp>
 #include <toast/world/box.hpp>
 
 namespace toast {
@@ -39,10 +40,12 @@ public:
 
 	void tick() noexcept;
 
-	void generateIntermediates(const std::filesystem::path& path);
+	/// @brief Reads a strings bank's GUID/path table into cache://fmod/audio.json for the editor's importer
+	/// @note Static, on a throwaway FMOD system: it runs before a project has any banks, and must not touch the live one
+	static void generateIntermediates(const std::filesystem::path& path);
 
 	[[nodiscard]]
-	auto loadBank(assets::AssetHandle<assets::AudioBank> bank) const -> std::pair<FMOD_STUDIO_BANK*, std::vector<std::string>>;
+	auto loadBank(assets::Handle<assets::AudioBank> bank) const -> std::pair<FMOD_STUDIO_BANK*, std::vector<std::string>>;
 	void unloadBank(FMOD_STUDIO_BANK*) const;
 
 	void updateListenerAttributes(
@@ -105,17 +108,28 @@ public:
 
 private:
 	static inline AudioSystem* instance = nullptr;
-	FMOD_STUDIO_SYSTEM* m_system;
-	FMOD_SYSTEM* m_core_system;
+	FMOD_STUDIO_SYSTEM* m_system = nullptr;
+	FMOD_SYSTEM* m_core_system = nullptr;
+
+	/// @brief Loads Master.strings.bank then Master.bank once both are in the asset database
+	/// @returns whether they are loaded, now or already
+	auto loadMasterBanks() -> bool;
+
+	bool m_master_banks_loaded = false;
+	/// Set when the asset manifest reloads before the Master banks exist; the next tick() tries again
+	bool m_retry_master_banks = false;
+	event::Listener m_listener;
 
 	[[nodiscard]]
 	auto loadBankData(const std::vector<uint8_t>& data) const -> FMOD_STUDIO_BANK*;
 
 	std::unordered_map<std::string, FMOD_STUDIO_EVENTINSTANCE*> m_active_instances;    ///< 2D events, one instance per GUID
 	auto getOrCreateInstance(std::string_view guid_str) -> FMOD_STUDIO_EVENTINSTANCE*;
+	/// pins a 3D event played through the 2D API to the first listener, so it is heard at full volume
+	void keepOnListener(FMOD_STUDIO_EVENTINSTANCE* inst) const;
 
-	uint64_t m_next_instance_id = 1;                                                   // 0 = null
-	std::unordered_map<uint64_t, FMOD_STUDIO_EVENTINSTANCE*> m_instances_3d;           ///< 3D events, unique ID per play call
+	uint64_t m_next_instance_id = 1;                                            // 0 = null
+	std::unordered_map<uint64_t, FMOD_STUDIO_EVENTINSTANCE*> m_instances_3d;    ///< 3D events, unique ID per play call
 
 	std::unordered_map<std::string, FMOD_STUDIO_EVENTINSTANCE*>
 	    m_snapshot_instances;                       ///< snapshots tracked separately for intensity, not playback

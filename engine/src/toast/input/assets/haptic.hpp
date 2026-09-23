@@ -32,7 +32,7 @@ enum class HapticChannels : uint8_t {
  */
 class TOAST_API Haptic : public Data {
 public:
-	explicit Haptic(const toml::table& table, AssetHandle<Schema> schema = {});
+	explicit Haptic(const toml::table& table, Handle<Schema> schema = {});
 
 	[[nodiscard]]
 	auto type() const -> std::string_view override {

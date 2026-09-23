@@ -53,22 +53,26 @@ public class AssetListPickerViewModel : PickerViewModel {
 	private readonly List<AssetPickerItem> m_all = [];
 	private readonly ObservableCollection<AssetPickerItem> m_filtered = [];
 
-	public AssetListPickerViewModel(string? assetType) {
-		foreach (var item in EnumerateAssets(assetType)) m_all.Add(item);
-		m_all.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
+	public AssetListPickerViewModel(string? assetType, string? extraType = null) {
+		foreach (var item in EnumerateAssets(assetType, extraType)) m_all.Add(item);
+		m_all.Sort((a, b) => {
+			var result = PickerOrdering.CompareNames(a.Name, b.Name);
+			return result != 0 ? result : PickerOrdering.CompareNames(a.Path, b.Path);
+		});
 		foreach (var item in m_all) m_filtered.Add(item);
 	}
 
 	public override string WindowTitle => "Select an Asset...";
 	public override IEnumerable Items => m_filtered;
 
-	private static IEnumerable<AssetPickerItem> EnumerateAssets(string? typeFilter) {
+	private static IEnumerable<AssetPickerItem> EnumerateAssets(string? typeFilter, string? extraType = null) {
 		if (!ProjectContext.IsInitialized) yield break;
 		foreach (var root in ProjectContext.DatabaseRoots.Append(ProjectContext.CorePath)) {
 			if (!Directory.Exists(root)) continue;
 			foreach (var file in Flatten(new AssetFolder(root))) {
-				if (typeFilter is not null &&
-				    !string.Equals(file.Definition?.Type, typeFilter, StringComparison.OrdinalIgnoreCase)) continue;
+				if (typeFilter is not null
+				    && !string.Equals(file.Definition?.Type, typeFilter, StringComparison.OrdinalIgnoreCase)
+				    && !string.Equals(file.Definition?.Type, extraType, StringComparison.OrdinalIgnoreCase)) continue;
 				if (file.Uid is not { } uid) continue;
 				var assetReal = file.Filepath[..^5];
 				var path = ProjectContext.ToVirtual(assetReal) ?? assetReal;

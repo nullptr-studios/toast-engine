@@ -19,7 +19,11 @@ public:
     for class in &classes {
         eprintln!("Class: {}", class.name);
         eprintln!("  Namespace: {:?}", class.namespace);
-        eprintln!("  Attributes: {} ({:?})", class.attributes.len(), class.attributes.iter().map(|a| &a.name).collect::<Vec<_>>());
+        eprintln!(
+            "  Attributes: {} ({:?})",
+            class.attributes.len(),
+            class.attributes.iter().map(|a| &a.name).collect::<Vec<_>>()
+        );
         eprintln!("  Fields: {}", class.fields.len());
         for field in &class.fields {
             eprintln!("    - {}: {}", field.name, field.typename);

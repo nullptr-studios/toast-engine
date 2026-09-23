@@ -9,6 +9,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
+using editor.Components.Elements;
 
 namespace editor.Workspace;
 
@@ -54,5 +55,9 @@ public partial class InspectorView : UserControl {
 
 	private void OnNameLostFocus(object? sender, RoutedEventArgs e) {
 		m_vm?.CommitRename();
+	}
+
+	private async void OnClipboardContextMenuOpening(object? sender, CancelEventArgs e) {
+		if (sender is ContextMenu menu) await AsyncCommandMenu.RefreshAsync(menu);
 	}
 }

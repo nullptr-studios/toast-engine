@@ -10,7 +10,7 @@ public sealed class MeshAsset : BaseAsset {
 	public override string ChipColor => "Blue";
 	public override LucideIconKind Icon => LucideIconKind.Shapes;
 	public override bool CanBeCreated => false;
-	public override string Category => "";
+	public override string Category => "Visual";
 	public override bool HasThumbnail => false;
 	public override bool CanBeEdited => false;
 	public override string EditorTool => "";

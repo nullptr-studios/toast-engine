@@ -1,0 +1,219 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:editor.Workspace"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignWidth="300"
+             d:DesignHeight="900"
+             x:Class="editor.Workspace.SignalsView"
+             x:DataType="vm:SignalsViewModel"
+             Background="{StaticResource Bg2}">
+	<UserControl.Styles>
+		<Style Selector="ListBox.signal-tree">
+			<Setter Property="Background"
+			        Value="Transparent" />
+		</Style>
+		<Style Selector="Border.signal-row">
+			<Setter Property="Background"
+			        Value="Transparent" />
+		</Style>
+		<Style Selector="ListBox.signal-tree ListBoxItem">
+			<Setter Property="Padding"
+			        Value="0" />
+			<Setter Property="HorizontalContentAlignment"
+			        Value="Stretch" />
+			<Setter Property="Background"
+			        Value="Transparent" />
+		</Style>
+		<Style Selector="ListBox.signal-tree ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background"
+			        Value="Transparent" />
+		</Style>
+		<Style Selector="ListBox.signal-tree ListBoxItem:pointerover">
+			<Setter Property="Background"
+			        Value="Transparent" />
+		</Style>
+		<Style Selector="ListBox.signal-tree ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background"
+			        Value="Transparent" />
+		</Style>
+		<Style Selector="ListBox.signal-tree ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background"
+			        Value="Transparent" />
+		</Style>
+		<Style Selector="ListBox.signal-tree ListBoxItem:selected Border.signal-row">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg4}" />
+		</Style>
+		<Style Selector="Border.signal-row:pointerover">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg4}" />
+		</Style>
+		<Style Selector="ToggleButton.card-header">
+			<Setter Property="Background"
+			        Value="Transparent" />
+			<Setter Property="BorderThickness"
+			        Value="0" />
+			<Setter Property="Padding"
+			        Value="4" />
+			<Setter Property="HorizontalAlignment"
+			        Value="Stretch" />
+			<Setter Property="HorizontalContentAlignment"
+			        Value="Stretch" />
+			<Setter Property="Foreground"
+			        Value="{StaticResource Text}" />
+			<Setter Property="Cursor"
+			        Value="Hand" />
+		</Style>
+		<Style Selector="ToggleButton.card-header /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background"
+			        Value="Transparent" />
+			<Setter Property="CornerRadius"
+			        Value="6" />
+		</Style>
+		<Style Selector="ToggleButton.card-header:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg4}" />
+		</Style>
+		<Style Selector="ToggleButton.card-header:pressed /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg4}" />
+		</Style>
+	</UserControl.Styles>
+
+	<Grid>
+		<ScrollViewer IsVisible="{Binding HasSignals}">
+			<ItemsControl ItemsSource="{Binding Cards}"
+			              Margin="8">
+				<ItemsControl.ItemTemplate>
+					<DataTemplate x:DataType="vm:SignalCardViewModel">
+						<Border Background="{StaticResource Bg3}"
+						        CornerRadius="8"
+						        Padding="8"
+						        Margin="0,0,0,8">
+							<StackPanel>
+								<ToggleButton Classes="card-header"
+								              IsChecked="{Binding Expanded, Mode=TwoWay}">
+									<StackPanel Orientation="Horizontal"
+									            HorizontalAlignment="Center"
+									            Spacing="8">
+										<Border Width="16"
+										        Height="16"
+										        Background="{Binding Color}">
+											<Border.OpacityMask>
+												<ImageBrush Source="{Binding Icon}" />
+											</Border.OpacityMask>
+										</Border>
+										<TextBlock Text="{Binding TypeName}"
+										           FontWeight="Bold"
+										           VerticalAlignment="Center" />
+									</StackPanel>
+								</ToggleButton>
+								<ListBox Classes="signal-tree"
+								         ItemsSource="{Binding Signals}"
+								         SelectionMode="Single"
+								         IsVisible="{Binding Expanded}"
+								         Margin="4,8,4,0">
+									<ListBox.ItemTemplate>
+										<DataTemplate x:DataType="vm:SignalItemViewModel">
+											<StackPanel>
+												<Border Classes="signal-row"
+											        CornerRadius="6"
+											        Height="28"
+											        Padding="4,0"
+												        DoubleTapped="OnSignalDoubleTapped">
+													<Border.ContextMenu>
+														<ContextMenu>
+															<MenuItem Header="Add connection"
+															          Command="{Binding AddConnectionCommand}" />
+															<MenuItem Header="Remove all connections"
+															          Command="{Binding RemoveAllConnectionsCommand}" />
+														</ContextMenu>
+													</Border.ContextMenu>
+													<Grid ColumnDefinitions="Auto,*">
+														<LucideIcon Kind="Rss"
+														            Size="16"
+														            StrokeWidth="2.5"
+														            Foreground="{StaticResource Red}"
+														            VerticalAlignment="Center" />
+														<TextBlock Grid.Column="1"
+														           Text="{Binding Signature}"
+														           Margin="8,0,0,0"
+														           VerticalAlignment="Center"
+														           TextTrimming="CharacterEllipsis" />
+													</Grid>
+												</Border>
+										<ItemsControl ItemsSource="{Binding Connections}"
+										              Margin="7,0,0,0">
+													<ItemsControl.ItemTemplate>
+														<DataTemplate x:DataType="vm:SignalConnectionViewModel">
+													<Grid Height="28"
+													      ColumnDefinitions="12,*">
+														<Grid>
+															<Border Width="2"
+															        HorizontalAlignment="Left"
+															        Background="{StaticResource Bg4}"
+															        IsVisible="{Binding !IsLast}" />
+															<Border Width="2"
+															        Height="15"
+															        HorizontalAlignment="Left"
+															        VerticalAlignment="Top"
+															        Background="{StaticResource Bg4}"
+															        IsVisible="{Binding IsLast}" />
+															<Border Width="12"
+															        Height="2"
+															        Background="{StaticResource Bg4}"
+															        VerticalAlignment="Center" />
+														</Grid>
+																<Border Grid.Column="1">
+																	<Border.ContextMenu>
+																		<ContextMenu>
+																			<MenuItem Header="Delete"
+																			          Command="{Binding DeleteCommand}"
+																			          IsEnabled="{Binding CanDelete}" />
+																		</ContextMenu>
+																	</Border.ContextMenu>
+																	<StackPanel Orientation="Horizontal"
+																	            Spacing="5"
+																	            VerticalAlignment="Center">
+																		<LucideIcon Kind="SquareArrowRightEnter"
+																		            Size="16"
+																		            StrokeWidth="2.5"
+																		            Foreground="{Binding Color}" />
+																		<TextBlock Text="{Binding Label}"
+																		           TextTrimming="CharacterEllipsis">
+																			<ToolTip.Tip>
+																				<StackPanel Spacing="4"
+																				            Margin="4">
+																					<TextBlock Text="{Binding TargetType}" />
+																					<TextBlock Text="{Binding Detail}" />
+																				</StackPanel>
+																			</ToolTip.Tip>
+																		</TextBlock>
+																	</StackPanel>
+																</Border>
+															</Grid>
+														</DataTemplate>
+													</ItemsControl.ItemTemplate>
+												</ItemsControl>
+											</StackPanel>
+										</DataTemplate>
+									</ListBox.ItemTemplate>
+								</ListBox>
+							</StackPanel>
+						</Border>
+					</DataTemplate>
+				</ItemsControl.ItemTemplate>
+			</ItemsControl>
+		</ScrollViewer>
+		<TextBlock Text="{Binding EmptyMessage}"
+		           IsVisible="{Binding !HasSignals}"
+		           Foreground="{StaticResource TextMuted}"
+		           HorizontalAlignment="Center"
+		           VerticalAlignment="Center"
+		           TextAlignment="Center"
+		           TextWrapping="Wrap"
+		           Margin="24" />
+	</Grid>
+</UserControl>

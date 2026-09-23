@@ -30,7 +30,9 @@ find_package(protobuf CONFIG REQUIRED)
 find_package(tinysplinecxx CONFIG REQUIRED)
 find_package(lz4 CONFIG REQUIRED)
 find_package(tomlplusplus CONFIG REQUIRED)
+find_package(RmlUi CONFIG REQUIRED)
 find_package(Lua REQUIRED)
+find_package(imgui CONFIG REQUIRED)
 find_path(LUABRIDGE3_INCLUDE_DIRS "luabridge3/LuaBridge/Array.h")
 
 # External paths
@@ -49,10 +51,10 @@ else ()
     set(EXTERNAL_DLLS_RELEASE ${EXTERNAL_LIBS_RELEASE})
 endif ()
 
-file(GLOB_RECURSE SOURCE "src/*.cpp" "generated/*.cpp" "generated/*.cc")
+# CONFIGURE_DEPENDS since run_codegen() regenerates engine/generated and a stale glob drops the .pb.cc files
+file(GLOB_RECURSE SOURCE CONFIGURE_DEPENDS "src/*.cpp" "generated/*.cpp" "generated/*.cc")
 add_library(toast_engine SHARED ${SOURCE})
 
-# Reflection generator
 file(GLOB_RECURSE TOAST_REFLECTED_HEADERS CONFIGURE_DEPENDS "src/toast/*.hpp" "src/toast/*.h")
 add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/reflection.stamp"
@@ -63,6 +65,7 @@ add_custom_command(
         --include-root "${CMAKE_SOURCE_DIR}/engine/src"
         --register-fn "registerEngineTypes"
         --split-typeinfo
+        --lua-stubs "${CMAKE_SOURCE_DIR}/engine/assets/lua/types.d.lua"
         COMMAND ${CMAKE_COMMAND} -E touch "${CMAKE_CURRENT_BINARY_DIR}/reflection.stamp"
         DEPENDS ${TOAST_REFLECTED_HEADERS}
         COMMENT "Regenerating reflection metadata"
@@ -81,12 +84,8 @@ target_include_directories(toast_engine
         PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}/ffi" "${CMAKE_CURRENT_SOURCE_DIR}/generated"
 )
 
-# target_compile_definitions(toast_engine PRIVATE VK_NO_PROTOTYPES)
-# target_compile_definitions(toast_engine PRIVATE VULKAN_HPP_DISPATCH_LOADER_DYNAMIC)
-
-
 target_link_libraries(toast_engine
-    PRIVATE
+        PRIVATE
         asio::asio
         SDL3::SDL3
         Vulkan::Vulkan
@@ -94,6 +93,8 @@ target_link_libraries(toast_engine
         unofficial::VulkanMemoryAllocator-Hpp::VulkanMemoryAllocator-Hpp
         slang::gfx slang::slang protobuf::libprotobuf tinysplinecxx::tinysplinecxx
         LZ4::lz4
+        imgui::imgui
+        RmlUi::RmlUi
         $<$<CONFIG:Debug>:${EXTERNAL_LIBS_DEBUG}>
         $<$<NOT:$<CONFIG:Debug>>:${EXTERNAL_LIBS_RELEASE}>
         ${LUA_LIBRARIES}
@@ -112,24 +113,40 @@ foreach (config IN ITEMS Debug Release RelWithDebInfo MinSizeRel)
 endforeach ()
 
 target_compile_definitions(toast_engine PRIVATE TOAST_EXPORT)
-target_precompile_headers(toast_engine PRIVATE pch.h)
-# vma.cpp defines VMA_IMPLEMENTATION, it must not consume the PCH
-set_source_files_properties(src/toast/renderer/vma.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON SKIP_UNITY_BUILD_INCLUSION ON)
 
-# protoc-generated .pb.cc files use file-local symbol names, so avoid UNITY inclusion
+# windows.h min and max macros break std::numeric_limits<T>::max() in whatever unity TU they land in
+if (WIN32)
+    target_compile_definitions(toast_engine PRIVATE NOMINMAX)
+    target_link_libraries(toast_engine PRIVATE ole32 uuid comctl32)
+endif ()
+target_precompile_headers(toast_engine PRIVATE pch.h)
+# Defines VMA_IMPLEMENTATION so it must not use the PCH
+set_source_files_properties(src/toast/renderer/vma.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON SKIP_UNITY_BUILD_INCLUSION ON)
+# Defines STB_IMAGE_IMPLEMENTATION
+set_source_files_properties(src/toast/assets/hdr_image.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON SKIP_UNITY_BUILD_INCLUSION ON)
+set_source_files_properties(src/toast/input/trackpad.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON SKIP_UNITY_BUILD_INCLUSION ON)
+set_source_files_properties(src/toast/crash_handler.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+
+# protoc output uses file local symbol names
 file(GLOB _TOAST_PROTO_SOURCES "generated/*.pb.cc")
 set_source_files_properties(${_TOAST_PROTO_SOURCES} PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
-set_target_properties(toast_engine PROPERTIES UNITY_BUILD ON UNITY_BUILD_BATCH_SIZE 8)
+# OFF for clang-tidy since unity TUs leave compile_commands.json without per file entries
+option(TOAST_UNITY_BUILD "Merge engine sources into unity translation units" ON)
+if (TOAST_UNITY_BUILD)
+    set_target_properties(toast_engine PROPERTIES UNITY_BUILD ON UNITY_BUILD_BATCH_SIZE 8)
+endif ()
 
 target_compile_definitions(toast_engine PUBLIC
         $<$<CONFIG:Debug>:DEBUG>
         $<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>>:NDEBUG>
         $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:TRACY_ENABLE>
-        # $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>:TRACY_ON_DEMAND> #Apparently tracy lua lib is precompiled and does not define TRACY_ON_DEMAND in debug builds
 )
 
 if (MSVC)
-    target_compile_options(toast_engine PRIVATE $<$<CONFIG:Release>:/O2;/Ob2;/Oi;/Ot;/GL;/Gy;/Gw;/fp:fast>)
+    target_compile_options(toast_engine PRIVATE
+            /bigobj
+            $<$<CONFIG:Release>:/O2;/Ob2;/Oi;/Ot;/GL;/Gy;/Gw;/fp:fast>
+    )
     target_link_options(toast_engine PRIVATE $<$<CONFIG:Release>:/LTCG>)
 endif ()
 
@@ -215,5 +232,14 @@ if (WIN32)
             VERBATIM
     )
 endif ()
+
+
+add_custom_command(TARGET toast_engine POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${OUTPUT_ROOT}/$<CONFIG>/log_server/log_server${CMAKE_EXECUTABLE_SUFFIX}"
+        "${TOAST_ENGINE_BIN_DIR}"
+        COMMENT "Copying log server"
+        VERBATIM
+)
 
 install(TARGETS toast_engine RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)

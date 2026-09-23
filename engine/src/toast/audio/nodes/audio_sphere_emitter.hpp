@@ -17,6 +17,8 @@ namespace toast {
  * outdoor ambient areas and weather effects
  */
 class TOAST_API [[ToastNode]] AudioSphereEmitter : public AudioEmitterBase {
+	friend class AudioEmitterBase;
+
 public:
 	void radius(float value);
 

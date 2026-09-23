@@ -10,7 +10,7 @@ public sealed class TextureAsset : BaseAsset {
 	public override string ChipColor => "Orange";
 	public override LucideIconKind Icon => LucideIconKind.Image;
 	public override bool CanBeCreated => false;
-	public override string Category => "";
+	public override string Category => "Visual";
 	public override bool HasThumbnail => true;
 	public override bool CanBeEdited => false;
 	public override string EditorTool => "";

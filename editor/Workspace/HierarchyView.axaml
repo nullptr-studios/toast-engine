@@ -33,6 +33,9 @@
 		<KeyBinding Gesture="Ctrl+V"
 		            Command="{Binding PasteCommand}"
 		            CommandParameter="{Binding SelectedNode}" />
+		<KeyBinding Gesture="Ctrl+Shift+V"
+		            Command="{Binding PasteAsChildCommand}"
+		            CommandParameter="{Binding SelectedNode}" />
 		<KeyBinding Gesture="F2"
 		            Command="{Binding RenameCommand}"
 		            CommandParameter="{Binding SelectedNode}" />
@@ -123,14 +126,20 @@
 		<Style Selector="ToggleButton.prefabToggle:checked /template/ ContentPresenter#PART_ContentPresenter">
 			<Setter Property="Background"
 			        Value="{StaticResource Red}" />
+			<Setter Property="Foreground"
+			        Value="{StaticResource Bg1}" />
 		</Style>
 		<Style Selector="ToggleButton.prefabToggle:checked:pointerover /template/ ContentPresenter#PART_ContentPresenter">
 			<Setter Property="Background"
 			        Value="{StaticResource Red}" />
+			<Setter Property="Foreground"
+			        Value="{StaticResource Bg1}" />
 		</Style>
 		<Style Selector="ToggleButton.prefabToggle:checked:pressed /template/ ContentPresenter#PART_ContentPresenter">
 			<Setter Property="Background"
 			        Value="{StaticResource Red}" />
+			<Setter Property="Foreground"
+			        Value="{StaticResource Bg1}" />
 		</Style>
 	</UserControl.Styles>
 
@@ -149,15 +158,13 @@
 						<Button Grid.Column="0"
 						        Command="{Binding AddNodeCommand}"
 						        CornerRadius="6"
-						        Background="{StaticResource Red}">
+						        Background="{StaticResource Bg4}">
 							<StackPanel Orientation="Horizontal"
 							            Spacing="2">
 								<LucideIcon Kind="Plus"
 								            Size="18"
-								            StrokeWidth="2.5"
-								            Foreground="{StaticResource Text}" />
-								<TextBlock Text="Add"
-								           Foreground="{StaticResource Text}" />
+								            StrokeWidth="3" />
+								<TextBlock Text="Add" />
 							</StackPanel>
 							<ToolTip.Tip>
 								Add a new Node as child
@@ -165,7 +172,8 @@
 						</Button>
 						<Button Grid.Column="1"
 						        Command="{Binding LoadNodeCommand}"
-						        CornerRadius="6">
+						        CornerRadius="6"
+						        Background="{StaticResource Bg4}">
 							<StackPanel Orientation="Horizontal"
 							            Spacing="2">
 								<LucideIcon Kind="Package"
@@ -180,7 +188,8 @@
 						<ToggleButton Grid.Column="3"
 						              IsChecked="{Binding ShowPrefabChildren}"
 						              CornerRadius="6"
-						              Classes="prefabToggle">
+						              Classes="prefabToggle"
+						              Background="{StaticResource Bg4}">
 							<LucideIcon Kind="FileBox"
 							            Size="18"
 							            StrokeWidth="2" />
@@ -190,22 +199,24 @@
 						</ToggleButton>
 						<Button Grid.Column="4"
 						        Command="{Binding ExpandAllCommand}"
-						        CornerRadius="6">
+						        CornerRadius="6"
+						        Background="{StaticResource Bg4}">
 							<LucideIcon Kind="ChevronsUpDown"
 							            Size="18"
-							            StrokeWidth="2" />
+							            StrokeWidth="2.5" />
 							<ToolTip.Tip>
-								Expand all nodes (except the selected one)
+								Expand all nodes
 							</ToolTip.Tip>
 						</Button>
 						<Button Grid.Column="5"
 						        Command="{Binding CollapseAllCommand}"
-						        CornerRadius="6">
+						        CornerRadius="6"
+						        Background="{StaticResource Bg4}">
 							<LucideIcon Kind="ChevronsDownUp"
 							            Size="18"
-							            StrokeWidth="2" />
+							            StrokeWidth="2.5" />
 							<ToolTip.Tip>
-								Collapse all nodes (except the selected one)
+								Collapse all nodes
 							</ToolTip.Tip>
 						</Button>
 					</Grid>
@@ -272,6 +283,8 @@
 									</StackPanel>
 								</MenuItem.Header>
 							</MenuItem>
+							<MenuItem Header="Paste" InputGesture="Ctrl+V" Command="{Binding PasteCommand}" />
+							<MenuItem Header="Paste as Child" InputGesture="Ctrl+Shift+V" Command="{Binding PasteAsChildCommand}" />
 						</ContextMenu>
 					</ScrollViewer.ContextMenu>
 					<Grid>
@@ -279,10 +292,13 @@
 						                            HorizontalAlignment="Stretch"
 						                            VerticalAlignment="Top" />
 						<ItemsControl x:Name="Rows"
+						              DragDrop.AllowDrop="True"
+						              HorizontalAlignment="Stretch"
 						              ItemsSource="{Binding Rows}">
 							<ItemsControl.ItemTemplate>
 								<DataTemplate x:DataType="vm:HierarchyElement">
 									<Border Height="28"
+									        HorizontalAlignment="Stretch"
 									        Classes="row"
 									        Classes.drop="{Binding IsDropTarget}"
 									        DragDrop.AllowDrop="True"
@@ -351,7 +367,6 @@
 														</MenuItem.Header>
 													</MenuItem>
 													<MenuItem InputGesture="Ctrl+V"
-													          IsEnabled="{Binding CanAddChildren}"
 													          Command="{Binding Owner.PasteCommand}"
 													          CommandParameter="{Binding}">
 														<MenuItem.Header>
@@ -365,6 +380,11 @@
 														</MenuItem.Header>
 													</MenuItem>
 
+													<MenuItem Header="Paste as Child"
+													          InputGesture="Ctrl+Shift+V"
+													          IsEnabled="{Binding CanAddChildren}"
+													          Command="{Binding Owner.PasteAsChildCommand}"
+													          CommandParameter="{Binding}" />
 													<Separator />
 													<MenuItem IsEnabled="{Binding CanAddChildren}"
 													          Command="{Binding Owner.ChangeTypeCommand}"

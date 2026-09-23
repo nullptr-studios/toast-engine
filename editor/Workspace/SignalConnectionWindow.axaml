@@ -1,0 +1,173 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:editor.Workspace"
+        x:Class="editor.Workspace.SignalConnectionWindow"
+        x:DataType="vm:SignalConnectionDialogViewModel"
+        Title="Add signal connection"
+        Width="820"
+        Height="540"
+        MinWidth="640"
+        MinHeight="400"
+        WindowStartupLocation="CenterOwner"
+        Padding="8"
+        Background="{StaticResource Bg2}">
+	<Window.Styles>
+		<Style Selector="TreeView.connection-workspace TreeViewItem">
+			<Setter Property="IsExpanded"
+			        Value="True" />
+		</Style>
+		<Style Selector="TreeView.connection-workspace TreeViewItem /template/ Border#PART_LayoutRoot">
+			<Setter Property="Background"
+			        Value="Transparent" />
+			<Setter Property="CornerRadius"
+			        Value="6" />
+		</Style>
+		<Style Selector="TreeView.connection-workspace TreeViewItem:selected /template/ Border#PART_LayoutRoot">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg3}" />
+		</Style>
+		<Style Selector="TreeView.connection-workspace TreeViewItem /template/ Border#PART_LayoutRoot:pointerover">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg4}" />
+		</Style>
+		<Style Selector="TreeView.connection-workspace TreeViewItem:selected:pointerover /template/ Border#PART_LayoutRoot">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg4}" />
+		</Style>
+		<Style Selector="ListBox.connection-functions ListBoxItem">
+			<Setter Property="Padding"
+			        Value="4" />
+			<Setter Property="HorizontalContentAlignment"
+			        Value="Stretch" />
+			<Setter Property="Background"
+			        Value="Transparent" />
+			<Setter Property="CornerRadius"
+			        Value="6" />
+		</Style>
+		<Style Selector="ListBox.connection-functions ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background"
+			        Value="Transparent" />
+			<Setter Property="CornerRadius"
+			        Value="6" />
+		</Style>
+		<Style Selector="ListBox.connection-functions ListBoxItem:selected">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg3}" />
+		</Style>
+		<Style Selector="ListBox.connection-functions ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg3}" />
+		</Style>
+		<Style Selector="ListBox.connection-functions ListBoxItem:pointerover">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg4}" />
+		</Style>
+		<Style Selector="ListBox.connection-functions ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg4}" />
+		</Style>
+		<Style Selector="ListBox.connection-functions ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg4}" />
+		</Style>
+	</Window.Styles>
+
+	<Grid RowDefinitions="Auto,*,Auto"
+	      RowSpacing="12">
+		<TextBlock Text="Choose a node and a function"
+		           FontSize="18"
+		           FontWeight="SemiBold" />
+		<Grid Grid.Row="1"
+		      ColumnDefinitions="*,*"
+		      ColumnSpacing="12">
+			<Border Background="{StaticResource Bg1}"
+			        CornerRadius="8"
+			        Padding="8">
+				<Grid RowDefinitions="Auto,*"
+				      RowSpacing="8">
+					<TextBlock Text="Workspace nodes"
+					           FontWeight="SemiBold" />
+					<TreeView Grid.Row="1"
+					          Classes="connection-workspace"
+					          ItemsSource="{Binding Nodes}"
+					          SelectedItem="{Binding SelectedNode, Mode=TwoWay}">
+						<TreeView.ItemTemplate>
+							<TreeDataTemplate ItemsSource="{Binding Children}"
+							                  x:DataType="vm:HierarchyElement">
+								<StackPanel Orientation="Horizontal"
+								            Spacing="6">
+									<Image Source="{Binding SmallIcon}"
+									       Width="16"
+									       Height="16" />
+									<TextBlock Text="{Binding Name}" />
+								</StackPanel>
+							</TreeDataTemplate>
+						</TreeView.ItemTemplate>
+					</TreeView>
+				</Grid>
+			</Border>
+			<Border Grid.Column="1"
+			        Background="{StaticResource Bg1}"
+			        CornerRadius="8"
+			        Padding="8">
+				<Grid RowDefinitions="Auto,*"
+				      RowSpacing="8">
+					<TextBlock Text="Functions"
+					           FontWeight="SemiBold" />
+					<Grid Grid.Row="1">
+						<ListBox Classes="connection-functions"
+						         ItemsSource="{Binding Functions}"
+						         SelectedItem="{Binding SelectedFunction, Mode=TwoWay}"
+						         Background="{StaticResource Bg1}">
+							<ListBox.ItemTemplate>
+								<DataTemplate x:DataType="vm:SignalFunctionViewModel">
+									<Grid ColumnDefinitions="Auto,*"
+									      ColumnSpacing="8"
+									      IsEnabled="{Binding IsEnabled}"
+									      Opacity="{Binding Opacity}"
+									      ToolTip.Tip="{Binding DisabledReason}">
+										<LucideIcon Kind="SquareFunction"
+										            Size="17"
+										            Foreground="{Binding Brush}" />
+										<TextBlock Grid.Column="1"
+										           Text="{Binding Signature}"
+										           TextTrimming="CharacterEllipsis" />
+									</Grid>
+								</DataTemplate>
+							</ListBox.ItemTemplate>
+						</ListBox>
+						<TextBlock Text="{Binding EmptyMessage}"
+						           IsVisible="{Binding !Functions.Count}"
+						           Foreground="{StaticResource TextMuted}"
+						           HorizontalAlignment="Center"
+						           VerticalAlignment="Center"
+						           TextAlignment="Center"
+						           TextWrapping="Wrap"
+						           Margin="16" />
+					</Grid>
+				</Grid>
+			</Border>
+		</Grid>
+		<StackPanel Grid.Row="2"
+		            Orientation="Horizontal"
+		            HorizontalAlignment="Right"
+		            Spacing="8">
+			<Button Content="Cancel"
+			        Click="OnCancel"
+			        CornerRadius="6"/>
+			<Button IsEnabled="{Binding CanAccept}"
+			        Click="OnAccept"
+			        CornerRadius="6"
+			        Background="{StaticResource Red}">
+				<StackPanel Orientation="Horizontal"
+				            Spacing="6">
+					<LucideIcon Kind="Cable"
+					            Size="16"
+					            StrokeWidth="3"/>
+					<TextBlock Text="Connect"
+					           FontWeight="Bold"/>
+				</StackPanel>
+			</Button>
+		</StackPanel>
+	</Grid>
+</Window>

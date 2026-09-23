@@ -1,6 +1,6 @@
 /// @file vulkan_resource_base.hpp
 /// @author dario
-/// @date 6/27/2026.
+/// @date 6/27/2026
 
 #pragma once
 
@@ -13,7 +13,9 @@ class IVulkanResource {
 public:
 	enum class UploadState : std::uint8_t {
 		uploading,
-		ready
+		ready,
+		failed_load,
+		failed_gpu
 	};
 
 	virtual ~IVulkanResource() = default;
@@ -22,9 +24,21 @@ public:
 
 	void markReady() { m_state = UploadState::ready; }
 
+	void markFailed(UploadState reason) { m_state = reason; }
+
 	[[nodiscard]]
 	auto isReady() const -> bool {
 		return m_state == UploadState::ready;
+	}
+
+	[[nodiscard]]
+	auto hasFailed() const -> bool {
+		return m_state == UploadState::failed_load || m_state == UploadState::failed_gpu;
+	}
+
+	[[nodiscard]]
+	auto state() const -> UploadState {
+		return m_state;
 	}
 
 private:
@@ -41,9 +55,19 @@ public:
 
 	virtual void record(vk::CommandBuffer cmd) = 0;
 
-	virtual void finished() { resource()->markReady(); }
+	/// False while another upload has to be recorded first
+	[[nodiscard]]
+	virtual auto canRecord() const -> bool {
+		return true;
+	}
 
-	vk::raii::Fence completion_fence = nullptr;
+	virtual void finished() {
+		if (!resource()->hasFailed()) {
+			resource()->markReady();
+		}
+	}
+
+	vk::DeviceSize host_bytes = 0;
 };
 
 }

@@ -3,11 +3,27 @@
 #include <toast/assets/assets.hpp>
 #include <toast/audio/audio_event.hpp>
 #include <toast/audio/audio_system.hpp>
+#include <toast/log.hpp>
 
 namespace toast {
 
+void AudioEmitter::updateInspectorMessages() {
+	static const NodeMessage message {
+	  .severity = NodeMessage::warning,
+	  .id = 10,
+	  .text = "AudioEmitter requires an AudioEvent",
+	};
+
+	if (m_event.hasValue()) {
+		removeInspectorMessage(message);
+	} else {
+		addInspectorMessage(message);
+	}
+}
+
 void AudioEmitter::play() {
 	if (!m_event.hasValue()) {
+		TOAST_WARN("Audio", "{} ({}) has no audio event to play", name(), uid());
 		return;
 	}
 
@@ -17,6 +33,7 @@ void AudioEmitter::play() {
 	sys.playEvent(guid_str);
 	sys.setVolume(guid_str, m_volume);
 	sys.setPitch(guid_str, m_pitch);
+	audio_started.fire(m_event->name());
 }
 
 void AudioEmitter::stop() {
@@ -24,6 +41,7 @@ void AudioEmitter::stop() {
 		return;
 	}
 	audio::AudioSystem::get().stopEvent(m_event->guid(), m_allow_fadeout);
+	audio_stopped.fire(m_event->name());
 }
 
 void AudioEmitter::pause(bool value) {
@@ -31,6 +49,7 @@ void AudioEmitter::pause(bool value) {
 		return;
 	}
 	audio::AudioSystem::get().pauseEvent(m_event->guid(), value);
+	audio_paused.fire(value);
 }
 
 void AudioEmitter::setParameter(std::string_view name, float value) {
@@ -85,7 +104,8 @@ void AudioEmitter::allowFadeout(bool value) {
 }
 
 void AudioEmitter::onEnable() {
-	if (m_play_on_enable) {
+	// Opening a scene in the editor runs onEnable too; only a running game should start sounds
+	if (m_play_on_enable && !(owner() && owner()->isEditing())) {
 		play();
 	}
 }

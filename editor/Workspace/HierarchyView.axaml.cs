@@ -4,6 +4,7 @@
 //
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
@@ -20,6 +21,8 @@ namespace editor.Workspace;
 public partial class HierarchyView : UserControl {
 	private const double DragThreshold = 4;
 
+	private static readonly HashSet<string> s_reservedNames = ["root", "world", "global"];
+
 	private HierarchyElement? m_dropTarget;
 	private PointerPressedEventArgs? m_pressArgs;
 
@@ -33,6 +36,7 @@ public partial class HierarchyView : UserControl {
 
 		Rows.AddHandler(DragDrop.DragOverEvent, OnDragOver);
 		Rows.AddHandler(DragDrop.DropEvent, OnDrop);
+		Rows.AddHandler(DragDrop.DragLeaveEvent, (_, _) => ClearDropFeedback());
 	}
 
 	private HierarchyViewModel? Vm => DataContext as HierarchyViewModel;
@@ -60,6 +64,7 @@ public partial class HierarchyView : UserControl {
 	}
 
 	private void RefreshConnector() {
+		ClearDropFeedback();
 		if (Vm is not { } vm) return;
 		Connector.Rows = vm.Rows;
 		var selected = -1;
@@ -167,32 +172,48 @@ public partial class HierarchyView : UserControl {
 			CommitRename(el);
 	}
 
-	private static void CommitRename(HierarchyElement el) {
+	private static async void CommitRename(HierarchyElement el) {
 		el.IsRenaming = false;
 		var name = el.DraftName?.Trim();
 		if (string.IsNullOrEmpty(name) || name == el.Name) return;
+		if (s_reservedNames.Contains(name)) {
+			await App.Modals.ShowWarning("Reserved Name",
+				$"'{name}' is a reserved keyword and cannot be used as a node name.");
+			return;
+		}
+
 		Events.Send(new NodeChangeName { Node = el.Uid, Name = name });
-		WorkspaceState.MarkModified();
 	}
 
 	// the middle of a row reparents; the top/bottom edge reorders
 	private (DropMode mode, HierarchyElement? target) ResolveDrop(DragEventArgs e) {
+		if (Vm is not { HasCurrentHierarchy: true } vm) return (DropMode.None, null);
+		var position = e.GetPosition(Rows);
+		var index = (int)Math.Floor(position.Y / HierarchyConnectorLayer.RowHeight);
+		var target = position.X >= 0 && position.X < Rows.Bounds.Width && index >= 0 && index < vm.Rows.Count
+			? vm.Rows[index] : null;
+		if (target is null) return (DropMode.None, null);
+		if (e.DataTransfer.TryGetValue(AssetDragData.Format) is { } asset) {
+			return string.Equals(asset.Type, "node", StringComparison.OrdinalIgnoreCase) && target.CanAddChildren
+				? (DropMode.Into, target) : (DropMode.None, null);
+		}
 		var dragged = e.DataTransfer.TryGetValue(NodeDragData.Format);
-		var target = RowFrom(e.Source);
-		if (dragged is null || target is null || HierarchyViewModel.IsSelfOrDescendant(dragged, target))
+		if (dragged is not null) dragged = vm.Find(dragged.Uid);
+		if (dragged is null || dragged.IsRoot || dragged.IsInsidePrefab || HierarchyViewModel.IsSelfOrDescendant(dragged, target))
 			return (DropMode.None, null);
 
-		if (target.IsRoot) return (DropMode.Into, target); // root has no siblings
+		if (target.IsRoot) return target.CanAddChildren ? (DropMode.Into, target) : (DropMode.None, null);
 
 		var local = e.GetPosition(Rows).Y - target.Index * HierarchyConnectorLayer.RowHeight;
-		if (local < HierarchyConnectorLayer.RowHeight * 0.25) return (DropMode.Before, target);
-		if (local > HierarchyConnectorLayer.RowHeight * 0.75) return (DropMode.After, target);
-		return (DropMode.Into, target);
+		if (local < HierarchyConnectorLayer.RowHeight * 0.25 && target.Parent?.CanAddChildren == true) return (DropMode.Before, target);
+		if (local > HierarchyConnectorLayer.RowHeight * 0.75 && target.Parent?.CanAddChildren == true) return (DropMode.After, target);
+		return target.CanAddChildren ? (DropMode.Into, target) : (DropMode.None, null);
 	}
 
 	private void OnDragOver(object? sender, DragEventArgs e) {
 		var (mode, target) = ResolveDrop(e);
-		e.DragEffects = mode == DropMode.None ? DragDropEffects.None : DragDropEffects.Move;
+		e.DragEffects = mode == DropMode.None ? DragDropEffects.None
+			: e.DataTransfer.TryGetValue(AssetDragData.Format) is not null ? DragDropEffects.Copy : DragDropEffects.Move;
 		e.Handled = true;
 
 		// Into highlight the row
@@ -214,6 +235,11 @@ public partial class HierarchyView : UserControl {
 		Connector.SetDropLine(-1, 0);
 		e.Handled = true;
 
+		if (target is not null && mode == DropMode.Into && e.DataTransfer.TryGetValue(AssetDragData.Format) is { } asset) {
+			if (!target.IsExpanded) Vm?.ToggleExpand(target);
+			Events.Send(new WorkspaceSpawn { Parent = target.Uid, Uid = asset.Uid, IsUri = false });
+			return;
+		}
 		if (dragged is null || target is null || mode == DropMode.None || Vm is not { } vm) return;
 
 		if (mode == DropMode.Into) vm.DropInto(dragged, target);
@@ -238,11 +264,9 @@ public partial class HierarchyView : UserControl {
 		if (m_dropTarget is not null) m_dropTarget.IsDropTarget = true;
 	}
 
-	private static HierarchyElement? RowFrom(object? source) {
-		for (var c = source as Control; c is not null; c = c.Parent as Control)
-			if (c.DataContext is HierarchyElement row)
-				return row;
-		return null;
+	private void ClearDropFeedback() {
+		SetDropTarget(null);
+		Connector.SetDropLine(-1, 0);
 	}
 
 	private enum DropMode { None, Into, Before, After }

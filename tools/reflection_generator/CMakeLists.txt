@@ -15,7 +15,7 @@ add_custom_target(reflection_generator ALL
         COMMAND ${CMAKE_COMMAND}
             -DCARGO_TARGET_DIR=${CARGO_TARGET_DIR}
             -DPROFILE_NAME=${CARGO_PROFILE_NAME}
-            -DBINARY_NAME=reflection_generator
+            "-DBINARY_NAMES=reflection_generator"
             -DEXE_SUFFIX=${CMAKE_EXECUTABLE_SUFFIX}
             -DDEST_DIR=${OUTPUT_ROOT}/$<CONFIG>/reflection_generator
             -P ${CMAKE_SOURCE_DIR}/cmake/install_cargo_output.cmake

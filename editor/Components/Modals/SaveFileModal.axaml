@@ -14,12 +14,14 @@
         CanResize="False"
         CanMinimize="False"
         WindowStartupLocation="CenterOwner"
+        KeyboardNavigation.TabNavigation="Cycle"
         Background="{StaticResource Bg3}">
 
 	<StackPanel Margin="10"
 	            Spacing="4">
 		<TextBlock Foreground="{StaticResource TextMuted}">Name:</TextBlock>
 		<TextBox Text="{Binding Name}"
+		         TabIndex="0"
 		         TextChanged="Name_OnTextChanged"
 		         x:Name="NameTextbox"
 		         CornerRadius="6"
@@ -39,6 +41,7 @@
 			         CornerRadius="6"
 			         Background="{StaticResource Bg1}" />
 			<Button Click="Folder_OnClick"
+			        TabIndex="1"
 			        Grid.Column="1"
 			        Margin="5, 0, 0, 0"
 			        CornerRadius="6">
@@ -51,7 +54,9 @@
 		            HorizontalAlignment="Right"
 		            Margin="0, 16, 0, 0"
 		            Spacing="8">
-			<Button Click="Cancel_OnClick"
+			<Button TabIndex="2"
+			        IsCancel="True"
+			        Click="Cancel_OnClick"
 			        Height="32"
 			        CornerRadius="6">
 				<StackPanel Orientation="Horizontal"
@@ -62,7 +67,9 @@
 					<TextBlock Text="Cancel" />
 				</StackPanel>
 			</Button>
-			<Button Click="Save_OnClick"
+			<Button TabIndex="3"
+			        IsDefault="True"
+			        Click="Save_OnClick"
 			        Background="{StaticResource Red}"
 			        Height="32"
 			        CornerRadius="6">

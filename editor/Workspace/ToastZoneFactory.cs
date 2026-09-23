@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
-using Dock.Avalonia.Controls;
 using Dock.Model.Controls;
 using Dock.Model.Core;
 using Dock.Model.Mvvm;
@@ -15,12 +15,17 @@ namespace editor.Workspace;
 public class ToastZoneFactory : Factory {
 	private bool m_curveClosePending;
 	private bool m_hapticsClosePending;
+	private bool m_paletteClosePending;
 	private IRootDock? m_rootDock;
-	private ToolDock? m_toolDock;
+	private bool m_tableClosePending;
+	private IToolDock? m_toolDock;
 
 	public LogsViewModel? LogsVm { get; private set; }
 	public CurveViewModel? CurveEditorVm { get; private set; }
 	public HapticsViewModel? HapticsEditorVm { get; private set; }
+	public TableViewModel? TableEditorVm { get; private set; }
+	public PaletteViewModel? PaletteEditorVm { get; private set; }
+	public AssetBrowserViewModel? AssetBrowserVm { get; private set; }
 
 	public override IRootDock CreateLayout() {
 		var assetBrowser = new AssetBrowserViewModel {
@@ -32,22 +37,27 @@ public class ToastZoneFactory : Factory {
 			{ Id = "Haptics", Title = "Haptics Editor", CanPin = false, CanFloat = false };
 		var curveEditor = new CurveViewModel
 			{ Id = "Curve", Title = "Curve Editor", CanPin = false, CanFloat = false };
+		var tableEditor = new TableViewModel
+			{ Id = "Table", Title = "Table Editor", CanPin = false, CanFloat = false };
+		var paletteEditor = new PaletteViewModel
+			{ Id = "Palette", Title = "Palette Editor", CanPin = false, CanFloat = false };
 
+		AssetBrowserVm = assetBrowser;
 		LogsVm = logs;
 		HapticsEditorVm = hapticsEditor;
 		CurveEditorVm = curveEditor;
+		TableEditorVm = tableEditor;
+		PaletteEditorVm = paletteEditor;
 
 		m_toolDock = new ToolDock {
 			AllowedDropOperations = DockOperationMask.Fill | DockOperationMask.Left | DockOperationMask.Right,
 			ActiveDockable = assetBrowser,
 			VisibleDockables = CreateList<IDockable>(
 				assetBrowser,
-				logs,
-				hapticsEditor,
-				curveEditor
+				logs
 			),
 			Alignment = Alignment.Bottom,
-			GripMode = GripMode.Visible
+			GripMode = GripMode.Hidden
 		};
 
 		var mainLayout = new ProportionalDock {
@@ -66,28 +76,97 @@ public class ToastZoneFactory : Factory {
 
 	// Brings a toast-zone tab to the front, re-adding it if it was closed
 	public void ShowTool(Tool tool) {
-		if (m_toolDock is null) return;
-		if (m_toolDock.VisibleDockables?.Contains(tool) != true)
-			AddDockable(m_toolDock, tool);
+		if (m_rootDock is null) return;
+		if (LayoutSerializer.ContainsVisible(m_rootDock, tool)) {
+			SetActiveDockable(tool);
+			return;
+		}
+
+		var target = tool.OriginalOwner as IToolDock ?? m_toolDock;
+		if (target is null || !LayoutSerializer.ContainsVisible(m_rootDock, target)) target = FirstToolDock();
+		if (target is null) return;
+
+		m_rootDock.HiddenDockables?.Remove(tool);
+		AddDockable(target, tool);
 		SetActiveDockable(tool);
 	}
 
 	private void HideTool(Tool tool) {
-		if (m_toolDock?.VisibleDockables?.Contains(tool) == true)
-			CloseDockable(tool);
+		if (LayoutSerializer.ContainsVisible(m_rootDock, tool)) CloseDockable(tool);
 	}
 
-	private Tool? ToolById(string id) {
+	private IToolDock? FirstToolDock() {
+		return LayoutSerializer.EnumerateDocks(m_rootDock, false).OfType<IToolDock>().FirstOrDefault();
+	}
+
+	public Tool? ToolById(string id) {
 		return id switch {
 			"Logs" => LogsVm,
 			"Haptics" => HapticsEditorVm,
 			"Curve" => CurveEditorVm,
+			"Table" => TableEditorVm,
+			"Palette" => PaletteEditorVm,
 			_ => null
 		};
 	}
 
 	public bool IsToolVisible(string id) {
-		return ToolById(id) is { } tool && m_toolDock?.VisibleDockables?.Contains(tool) == true;
+		return ToolById(id) is { } tool && LayoutSerializer.ContainsVisible(m_rootDock, tool);
+	}
+
+	public LayoutNode? CaptureLayout() {
+		return LayoutSerializer.Capture(m_rootDock, null);
+	}
+
+	public IRootDock? RebuildLayout(LayoutNode? node) {
+		if (node is null) return null;
+
+		var root = LayoutSerializer.BuildRoot(node, this, ResolveDockable);
+		if (root is null) return null;
+
+		foreach (var tool in AllTools())
+			if (tool is not null)
+				tool.Owner = null;
+
+		m_rootDock = root;
+		m_toolDock = FindBottomDock(root);
+		EnsureAssetBrowser(root);
+		return root;
+	}
+
+	private IDockable? ResolveDockable(string id) {
+		return id == "AssetBrowser" ? AssetBrowserVm : ToolById(id);
+	}
+
+	private IEnumerable<Tool?> AllTools() {
+		yield return AssetBrowserVm;
+		yield return LogsVm;
+		yield return HapticsEditorVm;
+		yield return CurveEditorVm;
+		yield return TableEditorVm;
+		yield return PaletteEditorVm;
+	}
+
+	private static IToolDock? FindBottomDock(IRootDock root) {
+		var docks = LayoutSerializer.EnumerateDocks(root, false).OfType<IToolDock>().ToList();
+		return docks.FirstOrDefault(d => d.Alignment == Alignment.Bottom) ?? docks.FirstOrDefault();
+	}
+
+	private void EnsureAssetBrowser(IRootDock root) {
+		if (AssetBrowserVm is null || LayoutSerializer.ContainsVisible(root, AssetBrowserVm)) return;
+
+		if (m_toolDock is null) {
+			m_toolDock = CreateToolDock();
+			m_toolDock.Alignment = Alignment.Bottom;
+			m_toolDock.GripMode = GripMode.Hidden;
+			m_toolDock.VisibleDockables = CreateList<IDockable>();
+			root.VisibleDockables ??= CreateList<IDockable>();
+			root.VisibleDockables.Add(m_toolDock);
+		}
+
+		m_toolDock.VisibleDockables ??= CreateList<IDockable>();
+		m_toolDock.VisibleDockables.Insert(0, AssetBrowserVm);
+		m_toolDock.ActiveDockable ??= AssetBrowserVm;
 	}
 
 	public bool ToggleTool(string id) {
@@ -106,15 +185,19 @@ public class ToastZoneFactory : Factory {
 			["AssetBrowser"] = () => layout,
 			["Logs"] = () => layout,
 			["Haptics"] = () => layout,
-			["Curve"] = () => layout
+			["Curve"] = () => layout,
+			["Table"] = () => layout,
+			["Palette"] = () => layout
 		};
 		DockableLocator = new Dictionary<string, Func<IDockable?>> {
 			["Root"] = () => m_rootDock,
 			["Haptics"] = () => HapticsEditorVm,
-			["Curve"] = () => CurveEditorVm
+			["Curve"] = () => CurveEditorVm,
+			["Table"] = () => TableEditorVm,
+			["Palette"] = () => PaletteEditorVm
 		};
 		HostWindowLocator = new Dictionary<string, Func<IHostWindow?>> {
-			[nameof(IDockWindow)] = () => new HostWindow()
+			[nameof(IDockWindow)] = () => new EditorHostWindow()
 		};
 		HideToolsOnClose = true;
 		base.InitLayout(layout);
@@ -130,6 +213,16 @@ public class ToastZoneFactory : Factory {
 
 		if (dockable == HapticsEditorVm && HapticsEditorVm!.IsDirty && !m_hapticsClosePending) {
 			_ = GatedClose(HapticsEditorVm, HapticsEditorVm, v => m_hapticsClosePending = v);
+			return;
+		}
+
+		if (dockable == TableEditorVm && TableEditorVm!.IsDirty && !m_tableClosePending) {
+			_ = GatedClose(TableEditorVm, TableEditorVm, v => m_tableClosePending = v);
+			return;
+		}
+
+		if (dockable == PaletteEditorVm && PaletteEditorVm!.IsDirty && !m_paletteClosePending) {
+			_ = GatedClose(PaletteEditorVm, PaletteEditorVm, v => m_paletteClosePending = v);
 			return;
 		}
 
