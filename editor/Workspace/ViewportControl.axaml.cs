@@ -93,6 +93,8 @@ public partial class ViewportControl : UserControl {
 	private bool GameOwnsInput => PlayMode && !CanControlEditorCamera; 
 	private bool ShouldForward => GameOwnsInput ? m_captured : IsFocused;
 
+	private bool ShouldForwardPointer => !GameOwnsInput || m_captured;
+
 	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change) {
 		base.OnPropertyChanged(change);
 		if (change.Property != PlayModeProperty) return;
@@ -444,8 +446,12 @@ public partial class ViewportControl : UserControl {
 			return;
 		}
 
-		if (!ShouldForward || m_engine is null) return;
+		if (!ShouldForwardPointer || m_engine is null) return;
+		SendMousePosition(point);
+	}
 
+	private void SendMousePosition(Point point) {
+		var scale = RenderScaling();
 		Events.Send(new WindowMousePosition {
 			X = (float)(Math.Clamp(point.X, 0, Bounds.Width) * scale),
 			Y = (float)(Math.Clamp(point.Y, 0, Bounds.Height) * scale)
@@ -474,6 +480,7 @@ public partial class ViewportControl : UserControl {
 		TrackPointer(e.Pointer);
 		if (m_engine is null) return;
 
+		if (ShouldForwardPointer) SendMousePosition(e.GetPosition(this));
 		if (button != 0)
 			Events.Send(new WindowMouseButton {
 				Button = button,
