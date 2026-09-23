@@ -27,7 +27,7 @@ void Volume::updateInspectorMessages() {
 	syncTransform();
 	const bool valid_scale =
 	    m_is_global || (std::isfinite(world_scale.x) && world_scale.x != 0.0f && std::isfinite(world_scale.y) &&
-			                world_scale.y != 0.0f && std::isfinite(world_scale.z) && world_scale.z != 0.0f);
+	                    world_scale.y != 0.0f && std::isfinite(world_scale.z) && world_scale.z != 0.0f);
 	if (valid_scale) {
 		removeInspectorMessage(scale_message);
 	} else {

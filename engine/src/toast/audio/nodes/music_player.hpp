@@ -62,7 +62,7 @@ public:
 		float fade_elapsed = 0.0f;    ///< current_vol/target_vol and fade_duration/elapsed drive the crossfade lerp
 	};
 
-	// public so the static FMOD callback can read it without needing friend
+	                                // public so the static FMOD callback can read it without needing friend
 	//
 	// FMOD's event callback fires from its own Studio update thread, asynchronously from the game thread
 	// that stops/destroys the player. Unregistering the callback (SetCallback(nullptr)) before destruction
