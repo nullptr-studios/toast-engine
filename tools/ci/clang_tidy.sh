@@ -12,6 +12,14 @@ if [[ ! -f "$BUILD_DIR/compile_commands.json" ]]; then
     exit 1
 fi
 
+EXPECTED_TIDY_VERSION=23
+TIDY_VERSION="$(clang-tidy --version | grep -oE 'version [0-9]+' | cut -d' ' -f2)"
+echo "Using $(command -v clang-tidy) (LLVM ${TIDY_VERSION:-unknown})"
+if [[ "$TIDY_VERSION" != "$EXPECTED_TIDY_VERSION" ]]; then
+    echo "Error: expected clang-tidy $EXPECTED_TIDY_VERSION, found ${TIDY_VERSION:-unknown}. Run inside 'nix develop'."
+    exit 1
+fi
+
 echo "Running clang-tidy check..."
 
 find engine/ \

@@ -8,6 +8,7 @@
 
 #pragma once
 
+// NOLINTNEXTLINE(readability-identifier-naming)
 namespace Rml {
 class ElementDocument;
 }

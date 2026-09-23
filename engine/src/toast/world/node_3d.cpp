@@ -161,6 +161,13 @@ void Node3D::syncTransform() const {
 	}
 }
 
+void Node3D::syncWorldTransform() const {
+	if (m_transform_parent.exists()) {
+		m_transform_parent->syncWorldTransform();
+	}
+	syncTransform();
+}
+
 auto Node3D::getTransform() const noexcept -> const glm::mat4& {
 	return m_transform;
 }

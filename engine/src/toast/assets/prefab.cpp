@@ -493,8 +493,10 @@ auto Prefab::parseNodeChunk(std::span<const std::string> lines) -> std::optional
 				node.lua_vars.push_back(std::move(*lua_var));
 			}
 			i++;
-		} else if (const size_t name_end = current.find(' ');
-		           name_end != std::string::npos && std::string_view(current).substr(name_end + 1).starts_with("@signal ")) {
+		} else if (
+		    const size_t name_end = current.find(' ');
+		    name_end != std::string::npos && std::string_view(current).substr(name_end + 1).starts_with("@signal ")
+		) {
 			auto signal = parseSignal(current);
 			if (signal) {
 				auto existing = std::ranges::find(node.signals, signal->name, &Signal::name);

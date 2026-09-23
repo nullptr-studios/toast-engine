@@ -13,7 +13,6 @@ public sealed class LayoutFile {
 	public LayoutNode? Main { get; set; }
 	public LayoutNode? Toast { get; set; }
 	public double ToastZoneHeight { get; set; } = 400;
-	public bool ToastZonePinned { get; set; }
 }
 
 public sealed class LayoutNode {

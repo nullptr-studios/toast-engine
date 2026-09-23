@@ -176,4 +176,20 @@ struct ProtoTraits<WindowDisplayScale> {
 
 TOAST_PROTO_EVENT(WindowDisplayScale);
 
+template<>
+struct ProtoTraits<WindowMouseLock> {
+	using Proto = proto::events::WindowMouseLock;
+	using Event = WindowMouseLock;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_locked(e.locked);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return Event {p.locked()}; }
+};
+
+TOAST_PROTO_EVENT(WindowMouseLock);
+
 }

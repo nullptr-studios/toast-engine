@@ -32,7 +32,7 @@ inline auto worldBoundingSphere(const glm::mat4& model, glm::uvec3 brick_dims) -
 		const glm::vec3 offset = glm::vec3(model * glm::vec4(local, 1.0f)) - centre;
 		radius_squared = std::max(radius_squared, glm::dot(offset, offset));
 	}
-	return glm::vec4(centre, std::sqrt(radius_squared));
+	return {centre, std::sqrt(radius_squared)};
 }
 
 /// @brief Pass the near plane distance as @p margin
@@ -42,8 +42,8 @@ inline auto containsPoint(const glm::mat4& inverse_model, glm::uvec3 brick_dims,
 	const glm::vec3 local = glm::vec3(inverse_model * glm::vec4(world_point, 1.0f));
 	const float largest_scale = std::max(
 	    {glm::length(glm::vec3(inverse_model[0])),
-	     glm::length(glm::vec3(inverse_model[1])),
-	     glm::length(glm::vec3(inverse_model[2]))}
+			 glm::length(glm::vec3(inverse_model[1])),
+			 glm::length(glm::vec3(inverse_model[2]))}
 	);
 	const glm::vec3 guard(margin * largest_scale);
 	return glm::all(glm::greaterThanEqual(local, -guard)) && glm::all(glm::lessThanEqual(local, localExtent(brick_dims) + guard));

@@ -28,7 +28,7 @@ inline constexpr uint32_t k_palette_size = 256;
 
 inline constexpr uint8_t k_empty_palette_index = 0;
 
-enum class BrickTag : uint32_t {
+enum class BrickTag : uint8_t {
 	empty = 0,
 	/// The payload is a palette index not a brick id
 	uniform = 1,

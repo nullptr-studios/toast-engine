@@ -762,20 +762,6 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    )
 	    .endNamespace()
 
-	    .beginNamespace("Window")
-	    .addFunction(
-	        "setCursorLocked",
-	        +[](bool locked) {
-		        if (toast::Engine::get()) {
-			        toast::Engine::get()->setCursorLocked(locked);
-		        }
-	        }
-	    )
-	    .addFunction(
-	        "isCursorLocked", +[]() -> bool { return toast::Engine::get() && toast::Engine::get()->isCursorLocked(); }
-	    )
-	    .endNamespace()
-
 	    .beginNamespace("Physics")
 	    .addFunction(
 	        "shootVoxel",

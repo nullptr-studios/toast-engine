@@ -11,6 +11,17 @@
 		pkgs = nixpkgs.legacyPackages.${system};
 		dotnet-sdk = pkgs.dotnetCorePackages.sdk_10_0;
 
+		# The nixpkgs wrappers use bash syntax under a #!/bin/sh shebang, which breaks where /bin/sh is dash.
+		clang-tools = pkgs.llvmPackages_23.clang-tools.overrideAttrs (old: {
+			postInstall = (old.postInstall or "") + ''
+				for f in $out/bin/*; do
+					if [ ! -L "$f" ] && isScript "$f"; then
+						sed -i "1s|^#!/bin/sh|#!${pkgs.bash}/bin/bash|" "$f"
+					fi
+				done
+			'';
+		});
+
 		libraries = with pkgs; [
 			lua5_4
 			lua54Packages.luafilesystem

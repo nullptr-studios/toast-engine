@@ -122,7 +122,7 @@ void Rigidbody::onDisable() {
 }
 
 auto Rigidbody::descriptor() const -> BodyDescriptor {
-	syncTransform();
+	syncWorldTransform();
 	BodyDescriptor result;
 	result.type = m_body_type;
 	result.position = world_position;

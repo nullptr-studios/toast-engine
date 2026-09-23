@@ -18,6 +18,7 @@
 #include <cmath>
 #include <glm/gtc/matrix_transform.hpp>
 #include <limits>
+#include <span>
 #include <toast/assets/voxel_model.hpp>
 #include <toast/thread_pool.hpp>
 #include <toast/voxel/mass_accumulator.hpp>
@@ -334,7 +335,7 @@ void Simulator::registerVoxelNode(toast::VoxelNode& node) {
 
 	PhysicsMaterial material;
 
-	node.syncTransform();
+	node.syncWorldTransform();
 	const bool dynamic_body = not node.indestructible;
 	const BodyID body = instance->createBody(
 	    BodyDescriptor {
@@ -444,7 +445,7 @@ void Simulator::tick() {
 	m_profile = {};
 
 	const auto tick_start = std::chrono::steady_clock::now();
-	const auto elapsedMs = [](std::chrono::steady_clock::time_point from, std::chrono::steady_clock::time_point to) {
+	const auto elapsed_ms = [](std::chrono::steady_clock::time_point from, std::chrono::steady_clock::time_point to) {
 		return std::chrono::duration<double, std::milli>(to - from).count();
 	};
 
@@ -453,11 +454,11 @@ void Simulator::tick() {
 	syncEnabledState();
 	applyDamageCommands();
 	const auto after_damage = std::chrono::steady_clock::now();
-	m_profile.damage_apply_ms = elapsedMs(tick_start, after_damage);
+	m_profile.damage_apply_ms = elapsed_ms(tick_start, after_damage);
 
 	auto connectivity_results = runConnectivityAnalysis();
 	const auto after_connectivity = std::chrono::steady_clock::now();
-	m_profile.connectivity_ms = elapsedMs(after_damage, after_connectivity);
+	m_profile.connectivity_ms = elapsed_ms(after_damage, after_connectivity);
 
 	queuePendingFragments(connectivity_results);
 	spawnBudgetedFragments();
@@ -472,7 +473,7 @@ void Simulator::tick() {
 		m_manifolds = generateManifoldsAsync(world, candidates);
 	}
 	const auto after_narrow = std::chrono::steady_clock::now();
-	m_profile.narrow_phase_ms = elapsedMs(after_connectivity, after_narrow);
+	m_profile.narrow_phase_ms = elapsed_ms(after_connectivity, after_narrow);
 
 	updateCache(m_manifolds);
 	wakeContactGroups();
@@ -483,7 +484,7 @@ void Simulator::tick() {
 	solveIslands(islands);
 	convertImpulsesToDamage(islands);
 	updateSleeping(dt);
-	m_profile.solve_ms = elapsedMs(after_narrow, std::chrono::steady_clock::now());
+	m_profile.solve_ms = elapsed_ms(after_narrow, std::chrono::steady_clock::now());
 
 	m_profile.manifold_count = m_manifolds.size();
 	m_profile.voxel_shape_count = static_cast<size_t>(std::ranges::count_if(m_shapes, [](const ShapeSlot& s) {
@@ -503,7 +504,7 @@ void Simulator::tick() {
 	// push poses after simulation settles
 	publishTransforms();
 	publishVoxelRenderRecords();
-	m_profile.tick_ms = elapsedMs(tick_start, std::chrono::steady_clock::now());
+	m_profile.tick_ms = elapsed_ms(tick_start, std::chrono::steady_clock::now());
 	publishProfile(islands);
 	FrameMarkNamed("PhysicsStep");
 }
@@ -959,8 +960,7 @@ void Simulator::despawnSettledFragments(float dt) {
 	ZoneScopedN("physics::DespawnSettledFragments");
 
 	std::vector<BodyID> doomed;
-	for (uint32_t index = 0; index < m_shapes.size(); ++index) {
-		const ShapeSlot& slot = m_shapes[index];
+	for (const auto& slot : m_shapes) {
 		if (not slot.occupied || slot.shape.type != ShapeType::voxel) {
 			continue;
 		}
@@ -1003,6 +1003,18 @@ void Simulator::syncEnabledState() {
 			if (not body->allow_sleep) {
 				wakeBody(binding.body);
 			}
+		} else if (binding.node.exists()) {
+			binding.node->syncWorldTransform();
+			const bool position_changed =
+			    glm::any(glm::greaterThan(glm::abs(body->position - binding.node->world_position), glm::vec3(1.0e-5f)));
+			const bool rotation_changed = 1.0f - std::abs(glm::dot(body->rotation, binding.node->world_rotation)) > 1.0e-5f;
+			if (position_changed || rotation_changed) {
+				setTransform(binding.body, binding.node->world_position, binding.node->world_rotation);
+				body = tryGetBody(binding.body);
+				if (body == nullptr) {
+					continue;
+				}
+			}
 		}
 		for (ColliderBinding& collider_binding : binding.colliders) {
 			Shape* shape = tryGetShape(collider_binding.shape);
@@ -1036,7 +1048,7 @@ void Simulator::syncEnabledState() {
 				wakeBody(binding.body);
 			}
 		} else {
-			binding.node->syncTransform();
+			binding.node->syncWorldTransform();
 			const bool position_changed =
 			    glm::any(glm::greaterThan(glm::abs(body->position - binding.node->world_position), glm::vec3(1.0e-5f)));
 			const bool rotation_changed = 1.0f - std::abs(glm::dot(body->rotation, binding.node->world_rotation)) > 1.0e-5f;
@@ -1245,8 +1257,9 @@ void Simulator::setShapeEnabled(ShapeID shape, bool enabled) {
 		if (value->enabled != enabled) {
 			if (enabled) {
 				wakeBody(value->owner);
-			} else if (const Body* owner = instance->tryGetBody(value->owner);
-			           owner != nullptr && owner->type != BodyType::dynamic_body) {
+			} else if (
+			    const Body* owner = instance->tryGetBody(value->owner); owner != nullptr && owner->type != BodyType::dynamic_body
+			) {
 				instance->wakeBodiesTouching(shape);
 			}
 			value->enabled = enabled;
@@ -1373,7 +1386,7 @@ void Simulator::publishVoxelRenderRecords() {
 		      .fragment_origin = data->fragment_origin,
 		      .awake = body->awake,
 		      .world_bounds = worldShapeBounds(*body, slot.shape),
-    }
+		}
 		);
 	}
 
@@ -1757,12 +1770,11 @@ void Simulator::updateCache(std::span<const Manifold> manifolds) {
 				continue;
 			}
 
-			const auto old_contact_end = old_manifold->contacts.begin() + old_manifold->contact_count;
-			const auto old_contact =
-			    std::find_if(old_manifold->contacts.begin(), old_contact_end, [&current_contact](const CachedContact& cached) {
-				    return cached.feature_a == current_contact.feature_a && cached.feature_b == current_contact.feature_b;
-			    });
-			if (old_contact != old_contact_end) {
+			const std::span<const CachedContact> old_contacts(old_manifold->contacts.data(), old_manifold->contact_count);
+			const auto old_contact = std::ranges::find_if(old_contacts, [&current_contact](const CachedContact& cached) {
+				return cached.feature_a == current_contact.feature_a && cached.feature_b == current_contact.feature_b;
+			});
+			if (old_contact != old_contacts.end()) {
 				++m_profile.reused_cached_contacts;
 				next_contact.normal_impulse = old_contact->normal_impulse;
 				next_contact.tangent_impulse = old_contact->tangent_impulse;
@@ -1779,7 +1791,7 @@ void Simulator::updateCache(std::span<const Manifold> manifolds) {
 		const auto current =
 		    std::lower_bound(manifolds.begin(), manifolds.end(), key, [](const Manifold& manifold, CachedManifoldKey candidate) {
 			    return manifold.pair < candidate.pair ||
-			           (manifold.pair == candidate.pair && manifold.normal_index < candidate.normal_index);
+					       (manifold.pair == candidate.pair && manifold.normal_index < candidate.normal_index);
 		    });
 		const bool still_colliding =
 		    current != manifolds.end() && current->pair == cached.pair && current->normal_index == cached.normal_index;
@@ -3137,14 +3149,11 @@ auto Simulator::findCachedContact(
 	}
 
 	const size_t contact_count = std::min<size_t>(manifold->contact_count, manifold->contacts.size());
-	const auto contact = std::find_if(
-	    manifold->contacts.begin(),
-	    manifold->contacts.begin() + contact_count,
-	    [feature_a, feature_b](const CachedContact& cached) {
-		    return cached.feature_a == feature_a && cached.feature_b == feature_b;
-	    }
-	);
-	return contact != manifold->contacts.begin() + contact_count ? &*contact : nullptr;
+	const std::span<CachedContact> contacts(manifold->contacts.data(), contact_count);
+	const auto contact = std::ranges::find_if(contacts, [feature_a, feature_b](const CachedContact& cached) {
+		return cached.feature_a == feature_a && cached.feature_b == feature_b;
+	});
+	return contact != contacts.end() ? &*contact : nullptr;
 }
 
 auto Simulator::findCachedContact(
@@ -3163,14 +3172,11 @@ auto Simulator::findCachedContact(
 	}
 
 	const size_t contact_count = std::min<size_t>(manifold->contact_count, manifold->contacts.size());
-	const auto contact = std::find_if(
-	    manifold->contacts.begin(),
-	    manifold->contacts.begin() + contact_count,
-	    [feature_a, feature_b](const CachedContact& cached) {
-		    return cached.feature_a == feature_a && cached.feature_b == feature_b;
-	    }
-	);
-	return contact != manifold->contacts.begin() + contact_count ? &*contact : nullptr;
+	const std::span<const CachedContact> contacts(manifold->contacts.data(), contact_count);
+	const auto contact = std::ranges::find_if(contacts, [feature_a, feature_b](const CachedContact& cached) {
+		return cached.feature_a == feature_a && cached.feature_b == feature_b;
+	});
+	return contact != contacts.end() ? &*contact : nullptr;
 }
 
 auto Simulator::prepareConstraints(const std::vector<Manifold>& manifolds) -> std::vector<Constraint> {
@@ -3278,7 +3284,7 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 			islands.emplace_back(
 			    SimulationIsland {
 			      .sort_key = BodyID {.slot = static_cast<uint32_t>(root), .generation = root_slot.generation},
-      }
+			}
 			);
 		}
 

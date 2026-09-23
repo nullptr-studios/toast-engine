@@ -12,8 +12,10 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstddef>
 #include <cstring>
 #include <format>
+#include <span>
 #include <toast/assets/assets.hpp>
 #include <toast/log.hpp>
 #include <tracy/Tracy.hpp>
@@ -345,10 +347,11 @@ auto ClusterLightingPass::summarizeGrid(std::span<const uint32_t> counts) -> Gri
 	if (stats.occupied > 0) {
 		stats.mean = static_cast<float>(total) / static_cast<float>(stats.occupied);
 
-		const auto end = occupied.begin() + stats.occupied;
-		const auto p95 = occupied.begin() + ((static_cast<size_t>(stats.occupied) * 95) / 100);
-		std::nth_element(occupied.begin(), p95, end);
-		stats.p95 = *p95;
+		// Fuckass MSVC
+		const std::span<uint32_t> filled(occupied.data(), stats.occupied);
+		const size_t p95 = (static_cast<size_t>(stats.occupied) * 95) / 100;
+		std::ranges::nth_element(filled, filled.begin() + static_cast<std::ptrdiff_t>(p95));
+		stats.p95 = filled[p95];
 	}
 	return stats;
 }

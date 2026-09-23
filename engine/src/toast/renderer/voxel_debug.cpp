@@ -108,7 +108,7 @@ void voxelDebugOutline(
 	};
 	const auto screen = [&](const glm::vec4& point) {
 		const glm::vec2 ndc = glm::vec2(point) / point.w;
-		return ImVec2((ndc.x * 0.5f + 0.5f) * frame.viewport_extent.x, (ndc.y * 0.5f + 0.5f) * frame.viewport_extent.y);
+		return ImVec2(((ndc.x * 0.5f) + 0.5f) * frame.viewport_extent.x, ((ndc.y * 0.5f) + 0.5f) * frame.viewport_extent.y);
 	};
 	for (const auto& [a, b] : k_edges) {
 		if (clip[a].w <= 1.0e-4f || clip[b].w <= 1.0e-4f) {
@@ -478,12 +478,12 @@ void Monitor::drawPanel(const VulkanRenderer::RenderFrame& frame) const {
 
 	constexpr std::array<std::pair<VoxelGpuStorage::Section, const char*>, VoxelGpuStorage::k_section_count> k_sections {
 	  {
-     {VoxelGpuStorage::Section::materials, "Materials"},
-     {VoxelGpuStorage::Section::occupancy, "Occupancy"},
-     {VoxelGpuStorage::Section::grids, "Grids"},
-     {VoxelGpuStorage::Section::coarse, "Coarse"},
-     {VoxelGpuStorage::Section::palettes, "Palettes"},
-     {VoxelGpuStorage::Section::records, "Records"},
+	   {VoxelGpuStorage::Section::materials, "Materials"},
+	   {VoxelGpuStorage::Section::occupancy, "Occupancy"},
+	   {VoxelGpuStorage::Section::grids, "Grids"},
+	   {VoxelGpuStorage::Section::coarse, "Coarse"},
+	   {VoxelGpuStorage::Section::palettes, "Palettes"},
+	   {VoxelGpuStorage::Section::records, "Records"},
 	   }
 	};
 	constexpr ImGuiTableFlags k_table_flags =

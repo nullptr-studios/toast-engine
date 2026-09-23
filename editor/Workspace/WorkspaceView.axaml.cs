@@ -14,7 +14,7 @@ public partial class WorkspaceView : UserControl {
 	private void OnShortcut(object? sender, KeyEventArgs e) {
 		if (DataContext is not WorkspaceViewModel vm) return;
 
-		if (vm.IsPlayModeActive) return;
+		if (vm.IsPlayModeActive || Viewport.IsEditorFlying) return;
 
 		var mods = e.KeyModifiers;
 

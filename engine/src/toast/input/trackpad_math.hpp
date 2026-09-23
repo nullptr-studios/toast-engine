@@ -8,6 +8,7 @@
 #pragma once
 
 #include <cmath>
+#include <cstdint>
 
 namespace toast::input {
 
@@ -64,7 +65,7 @@ public:
 	}
 
 private:
-	enum class Kind {
+	enum class Kind : uint8_t {
 		none,
 		pan,
 		pinch
