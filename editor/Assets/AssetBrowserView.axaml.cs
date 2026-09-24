@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Windows.Input;
 using Avalonia;
@@ -35,6 +36,14 @@ public partial class AssetBrowserView : UserControl {
 
 		var bg = this.FindControl<Border>("AssetViewBackground");
 		if (bg?.ContextMenu is { } menu) menu.Opening += (_, _) => RebuildContextMenu(menu);
+
+		AssetBrowserViewModel? subscribed = null;
+		DataContextChanged += (_, _) => {
+			if (subscribed is not null) subscribed.PropertyChanged -= OnViewModelPropertyChanged;
+			subscribed = DataContext as AssetBrowserViewModel;
+			if (subscribed is not null) subscribed.PropertyChanged += OnViewModelPropertyChanged;
+			ApplyCardSize();
+		};
 	}
 
 	private AssetBrowserViewModel Vm => (AssetBrowserViewModel)DataContext!;
@@ -44,7 +53,15 @@ public partial class AssetBrowserView : UserControl {
 	}
 
 	private void OnCardPointerPressed(object? sender, PointerPressedEventArgs e) {
-		if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+		var point = e.GetCurrentPoint(this);
+		if (point.Properties.IsRightButtonPressed) {
+			if (GetCardItem(e.Source) is AssetFile rightClickedFile)
+				PrepareFileContextMenu(e.Source, rightClickedFile);
+			return;
+		}
+
+		if (!point.Properties.IsLeftButtonPressed) return;
+		if (IsTagRemoveButton(e.Source)) return;
 		var item = GetCardItem(e.Source);
 		if (item is null) return;
 		Vm.SelectItem(item, e.KeyModifiers);
@@ -137,6 +154,99 @@ public partial class AssetBrowserView : UserControl {
 		if (!Vm.CanMoveAsset(dragRef.Uid, target)) return;
 		Vm.MoveAsset(dragRef.Uid, target);
 		e.Handled = true;
+	}
+
+	private static bool IsTagRemoveButton(object? source) {
+		for (var ctrl = source as Control; ctrl is not null and not ItemsRepeater; ctrl = ctrl.Parent as Control)
+			if (ctrl.Classes.Contains(TagStrip.RemoveClass))
+				return true;
+		return false;
+	}
+
+	private void OnFileContextMenuOpening(object? sender, CancelEventArgs e) {
+		if (sender is not ContextMenu menu) return;
+		if (menu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Name == "TagsMenuItem") is not { } tagsItem) return;
+		var file = menu.PlacementTarget?.DataContext as AssetFile ?? menu.DataContext as AssetFile;
+		if (file is null) {
+			tagsItem.Items.Clear();
+			tagsItem.IsEnabled = false;
+			ToolTip.SetTip(tagsItem, "Tags are unavailable for this item");
+			return;
+		}
+
+		menu.DataContext = file;
+		RebuildTagsMenu(tagsItem, file);
+	}
+
+	private void OnFileContextRequested(object? sender, ContextRequestedEventArgs e) {
+		if (sender is Border { DataContext: AssetFile file } card)
+			PrepareFileContextMenu(card, file);
+	}
+
+	private void PrepareFileContextMenu(object? source, AssetFile file) {
+		for (var control = source as Control; control is not null and not ItemsRepeater;
+		     control = control.Parent as Control) {
+			if (control.ContextMenu is not { } menu) continue;
+			menu.DataContext = file;
+			if (menu.Items.OfType<MenuItem>().FirstOrDefault(item => item.Name == "TagsMenuItem") is { } tagsItem)
+				RebuildTagsMenu(tagsItem, file);
+			return;
+		}
+	}
+
+	private void RebuildTagsMenu(MenuItem tagsItem, AssetFile file) {
+		tagsItem.Items.Clear();
+
+		var tags = AssetBrowserSettings.Tags;
+		var targets = Vm.TagTargets(file);
+		if (tags.Count == 0 || targets.Count == 0) {
+			tagsItem.IsEnabled = false;
+			ToolTip.SetTip(tagsItem, tags.Count == 0
+				? "No tags yet. Create them in Project Settings > Editor > Asset Browser"
+				: "Only assets in the project databases can be tagged");
+			return;
+		}
+
+		tagsItem.IsEnabled = true;
+		ToolTip.SetTip(tagsItem, targets.Count > 1 ? $"Applies to the {targets.Count} selected assets" : null);
+
+		foreach (var tag in tags) {
+			var dot = new Border {
+				Width = 8,
+				Height = 8,
+				CornerRadius = new CornerRadius(100),
+				Background = tag.Brush,
+				VerticalAlignment = VerticalAlignment.Center
+			};
+			var header = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+			header.Children.Add(dot);
+			header.Children.Add(new TextBlock { Text = tag.Name, VerticalAlignment = VerticalAlignment.Center });
+
+			var item = new MenuItem {
+				Header = header,
+				ToggleType = MenuItemToggleType.CheckBox,
+				StaysOpenOnClick = true,
+				IsChecked = targets.All(t => t.TagIds.Contains(tag.Id))
+			};
+			item.Click += (_, _) => {
+			    var current = Vm.TagTargets(file);
+				var enable = !current.All(t => t.TagIds.Contains(tag.Id));
+				Vm.SetTag(current, tag, enable);
+				item.IsChecked = enable;
+			};
+			tagsItem.Items.Add(item);
+		}
+	}
+
+	private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e) {
+		if (e.PropertyName is nameof(AssetBrowserViewModel.CardWidth) or nameof(AssetBrowserViewModel.CardHeight))
+			ApplyCardSize();
+	}
+
+	private void ApplyCardSize() {
+		if (DataContext is not AssetBrowserViewModel vm || AssetRepeater.Layout is not UniformGridLayout layout) return;
+		layout.MinItemWidth = vm.CardWidth;
+		layout.MinItemHeight = vm.CardHeight;
 	}
 
 	private static object? GetCardItem(object? source) {

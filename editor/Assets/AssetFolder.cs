@@ -33,12 +33,17 @@ public class AssetFolder : INotifyPropertyChanged {
 
 		foreach (var sub in dirInfo.EnumerateDirectories()
 			         .OrderBy(d => d.Name, StringComparer.OrdinalIgnoreCase)
-			         .ThenBy(d => d.Name, StringComparer.Ordinal))
+			         .ThenBy(d => d.Name, StringComparer.Ordinal)) {
+			if (AssetBrowserSettings.IsHidden(sub.Name)) continue;
 			SubFolders.Add(new AssetFolder(sub.FullName, this, listRawFiles));
+		}
 
 		foreach (var file in dirInfo.EnumerateFiles()
 			         .OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
 			         .ThenBy(f => f.Name, StringComparer.Ordinal)) {
+			var assetName = file.Extension == ".meta" ? Path.GetFileNameWithoutExtension(file.Name) : file.Name;
+			if (AssetBrowserSettings.IsHidden(assetName)) continue;
+
 			if (listRawFiles) {
 				if (file.Extension == ".meta")
 				    continue;

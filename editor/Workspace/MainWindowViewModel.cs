@@ -26,6 +26,8 @@ namespace editor.Workspace;
 public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 	private readonly AutosaveService m_autosave;
 
+	public static MainWindowViewModel? Current { get; private set; }
+
 	private readonly LayoutFile m_defaultLayout;
 	private readonly DockFactory m_dockFactory;
 	private readonly ToastEngine m_toast;
@@ -56,6 +58,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 	private bool m_toastZonePinned;
 
 	public MainWindowViewModel(ToastEngine toast) {
+		Current = this;
 		m_toast = toast;
 
 		m_dockFactory = new DockFactory();
@@ -139,6 +142,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 	public bool CanModifyActiveLayout => !LayoutStore.IsBuiltin(ActiveLayoutName);
 
 	public void Dispose() {
+		if (ReferenceEquals(Current, this)) Current = null;
 		m_autosave.Stop();
 		m_projectSettingsWindow?.Close();
 		m_projectSettingsWindow = null;
@@ -207,6 +211,11 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			window.Show(owner);
 		else
 			window.Show();
+	}
+
+	public void OpenProjectSettingsAt(SettingsTab tab, string? category = null) {
+		OpenProjectSettings();
+		m_dockFactory.ProjectSettingsVm?.SelectSection(tab, category);
 	}
 
 	partial void OnHierarchyVisibleChanged(bool value) {

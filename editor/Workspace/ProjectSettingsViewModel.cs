@@ -22,7 +22,8 @@ namespace editor.Workspace;
 public enum SettingsTab {
 	General,
 	Rendering,
-	Physics
+	Physics,
+	Editor
 }
 
 public sealed class SettingsSection {
@@ -39,6 +40,7 @@ public sealed class SettingsSection {
 public partial class ProjectSettingsViewModel : Tool {
 	private const string RendererPrefix = "renderer.";
 	private const string PhysicsPrefix = "physics.";
+	public const string AssetBrowserCategory = "Asset Browser";
 
 	private readonly DispatcherTimer m_statusTimer;
 
@@ -57,9 +59,15 @@ public partial class ProjectSettingsViewModel : Tool {
 
 		m_statusTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1.0) };
 		m_statusTimer.Tick += (_, _) => RefreshStatus();
+
+		AssetBrowserSettings.Saved += ok => {
+			if (IsEditor) StatusMessage = ok ? $"Saved to {Path.GetFileName(SavePathOfProject())}" : "Save failed";
+		};
 	}
 
 	public GenericViewModel GeneralEditor { get; }
+
+	public AssetBrowserSettingsViewModel AssetBrowser { get; } = new();
 
 	public ObservableCollection<SettingsSection> Sections { get; }
 
@@ -70,6 +78,8 @@ public partial class ProjectSettingsViewModel : Tool {
 	public bool IsGeneral => ActiveTab == SettingsTab.General;
 	public bool IsRendering => ActiveTab == SettingsTab.Rendering;
 	public bool IsPhysics => ActiveTab == SettingsTab.Physics;
+	public bool IsEditor => ActiveTab == SettingsTab.Editor;
+    public bool IsEngineTab => IsRendering || IsPhysics;
 
 	public bool HasStaleReflectionProbes => StaleReflectionProbes > 0;
 	public bool HasStaleIrradianceVolumes => StaleIrradianceVolumes > 0;
@@ -81,6 +91,7 @@ public partial class ProjectSettingsViewModel : Tool {
 		Sections.Add(BuildRoot("General", SettingsTab.General, []));
 		Sections.Add(BuildRoot("Rendering", SettingsTab.Rendering, SettingRowFactory.BuildCategories(RendererPrefix)));
 		Sections.Add(BuildRoot("Physics", SettingsTab.Physics, SettingRowFactory.BuildCategories(PhysicsPrefix)));
+		Sections.Add(BuildEditorRoot());
 
 		SavePath = ToastSettings.ActivePath;
 		RayTracingSupported = ToastRenderer.SupportsRayTracing;
@@ -103,11 +114,32 @@ public partial class ProjectSettingsViewModel : Tool {
 		m_statusTimer.Stop();
 	}
 
+	public void SelectSection(SettingsTab tab, string? category = null) {
+		if (Sections.Count == 0) Load();
+		SelectedSection = Sections
+			                  .SelectMany(root => new[] { root }.Concat(root.Children))
+			                  .FirstOrDefault(s => s.Tab == tab && s.Category == category)
+		                  ?? SelectedSection;
+	}
+
+	private static SettingsSection BuildEditorRoot() {
+		var root = new SettingsSection { Name = "Editor", Tab = SettingsTab.Editor };
+		root.Children.Add(new SettingsSection
+			{ Name = AssetBrowserCategory, Tab = SettingsTab.Editor, Category = AssetBrowserCategory });
+		return root;
+	}
+
 	private static SettingsSection BuildRoot(string name, SettingsTab tab, List<SettingCategory> categories) {
 		var root = new SettingsSection { Name = name, Tab = tab };
 		foreach (var category in categories)
 			root.Children.Add(new SettingsSection { Name = category.Name, Tab = tab, Category = category.Name });
 		return root;
+	}
+
+	private static string SavePathOfProject() {
+		return ProjectContext.IsInitialized
+			? Directory.EnumerateFiles(ProjectContext.ProjectPath, "*.toast").FirstOrDefault() ?? ""
+			: "";
 	}
 
 	private void OpenProjectSettingsFile() {
@@ -128,7 +160,7 @@ public partial class ProjectSettingsViewModel : Tool {
 
 	private void RefreshVisibleCategories() {
 		VisibleCategories.Clear();
-		if (SelectedSection is not { } section || section.Tab == SettingsTab.General) return;
+		if (SelectedSection is not { } section || section.Tab is SettingsTab.General or SettingsTab.Editor) return;
 
 		var prefix = section.Tab == SettingsTab.Rendering ? RendererPrefix : PhysicsPrefix;
 		foreach (var category in SettingRowFactory.BuildCategories(prefix)) {
@@ -142,6 +174,8 @@ public partial class ProjectSettingsViewModel : Tool {
 		OnPropertyChanged(nameof(IsGeneral));
 		OnPropertyChanged(nameof(IsRendering));
 		OnPropertyChanged(nameof(IsPhysics));
+		OnPropertyChanged(nameof(IsEditor));
+		OnPropertyChanged(nameof(IsEngineTab));
 	}
 
 	private void RefreshStatus() {

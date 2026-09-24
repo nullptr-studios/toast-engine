@@ -3,13 +3,18 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:editor.Assets"
+             xmlns:elements="using:editor.Components.Elements"
              mc:Ignorable="d"
-             d:DesignWidth="1800"
+             d:DesignWidth="1500"
              d:DesignHeight="400"
              Background="{StaticResource Bg2}"
              x:Class="editor.Assets.AssetBrowserView"
              x:DataType="vm:AssetBrowserViewModel"
              Focusable="True">
+
+	<Design.DataContext>
+		<vm:AssetBrowserViewModel />
+	</Design.DataContext>
 
 	<UserControl.Styles>
 		<!-- Breadcrumb buttons -->
@@ -321,7 +326,7 @@
 					<!-- Search -->
 					<TextBox Grid.Column="4"
 					         Text="{Binding SearchText, Mode=TwoWay}"
-					         PlaceholderText="Search… or Type=Texture"
+					         PlaceholderText="Search…, Type= or Tag="
 					         MinWidth="320"
 					         MaxWidth="480"
 					         CornerRadius="6"
@@ -345,9 +350,69 @@
 							<Flyout Placement="BottomEdgeAlignedRight">
 								<StackPanel MinWidth="240"
 								            Spacing="2">
-									<StackPanel.Resources>
-									</StackPanel.Resources>
-									<TextBlock Text="Type"
+									<!-- By tag -->
+									<TextBlock Text="By tag"
+									           FontWeight="SemiBold"
+									           FontSize="12" />
+									<StackPanel IsVisible="{Binding HasTags}"
+									            Spacing="2">
+										<CheckBox Classes="asset-filter"
+										          Content="All tags"
+										          IsChecked="{Binding TagFilterAll}"
+										          IsThreeState="True" />
+										<ScrollViewer MaxHeight="200"
+										              VerticalScrollBarVisibility="Auto">
+											<ItemsControl ItemsSource="{Binding TagFilters}"
+											              Margin="15,0,0,0">
+												<ItemsControl.ItemTemplate>
+													<DataTemplate x:DataType="vm:AssetTagFilter">
+														<CheckBox Classes="asset-filter"
+														          IsChecked="{Binding IsEnabled, Mode=TwoWay}"
+														          Margin="0,1">
+															<StackPanel Orientation="Horizontal"
+															            Spacing="5">
+																<Border Background="{Binding Brush}"
+																        Width="7"
+																        Height="7"
+																        CornerRadius="100"
+																        VerticalAlignment="Center" />
+																<TextBlock Text="{Binding Label}"
+																           FontSize="12"
+																           Classes.untagged="{Binding IsUntagged}"
+																           VerticalAlignment="Center">
+																	<TextBlock.Styles>
+																		<Style Selector="TextBlock.untagged">
+																			<Setter Property="Foreground"
+																			        Value="{StaticResource TextMuted}" />
+																			<Setter Property="FontStyle"
+																			        Value="Italic" />
+																		</Style>
+																	</TextBlock.Styles>
+																</TextBlock>
+															</StackPanel>
+														</CheckBox>
+													</DataTemplate>
+												</ItemsControl.ItemTemplate>
+											</ItemsControl>
+										</ScrollViewer>
+									</StackPanel>
+									<StackPanel IsVisible="{Binding !HasTags}"
+									            Spacing="2">
+										<TextBlock Text="This project has no tags yet"
+										           Foreground="{StaticResource TextMuted}"
+										           FontSize="12" />
+										<Button Command="{Binding ManageTagsCommand}"
+										        Classes="breadcrumb"
+										        FontSize="12"
+										        Padding="0,2"
+										        Foreground="{StaticResource Blue}"
+										        Content="Create tags in Project Settings" />
+									</StackPanel>
+
+									<Separator Margin="0,6" />
+
+									<!-- By type -->
+									<TextBlock Text="By type"
 									           FontWeight="SemiBold"
 									           FontSize="12" />
 									<CheckBox Classes="asset-filter"
@@ -443,12 +508,13 @@
 							<ItemsRepeater.ItemTemplate>
 								<RecyclingElementFactory SelectTemplateKey="OnSelectTemplateKey">
 									<RecyclingElementFactory.Templates>
+										<!-- Folder -->
 										<DataTemplate x:Key="folder"
 										              x:DataType="vm:AssetFolder">
 											<Border Classes="card-border"
 											        Classes.selected="{ReflectionBinding IsSelected}"
-											        Width="130"
-											        Height="170"
+											        Width="{Binding Owner.CardWidth, FallbackValue=130}"
+											        Height="{Binding Owner.CardHeight, FallbackValue=170}"
 											        CornerRadius="8"
 											        ClipToBounds="True"
 											        Background="{StaticResource Bg3}"
@@ -499,12 +565,13 @@
 														</MenuItem>
 													</ContextMenu>
 												</Border.ContextMenu>
-												<Grid RowDefinitions="110, *">
+												<Grid RowDefinitions="Auto, *">
 													<Border Grid.Row="0"
+													        Height="{Binding Owner.PreviewHeight, FallbackValue=110}"
 													        Background="{x:Static vm:CheckerBrush.Instance}"
 													        CornerRadius="4">
 														<LucideIcon Kind="Folder"
-														            Size="52"
+														            Size="{Binding Owner.PreviewIconSize, FallbackValue=52}"
 														            VerticalAlignment="Center"
 														            HorizontalAlignment="Center"
 														            StrokeWidth="2.5" />
@@ -522,18 +589,21 @@
 												</Grid>
 											</Border>
 										</DataTemplate>
+										<!-- Asset -->
 										<DataTemplate x:Key="file"
 										              x:DataType="vm:AssetFile">
 											<Border Classes="card-border"
+											        ContextRequested="OnFileContextRequested"
 											        Classes.selected="{ReflectionBinding IsSelected}"
-											        Width="130"
-											        Height="170"
+											        Width="{Binding Owner.CardWidth, FallbackValue=130}"
+											        Height="{Binding Owner.CardHeight, FallbackValue=170}"
 											        CornerRadius="8"
 											        ClipToBounds="True"
 											        Background="{StaticResource Bg3}"
 											        BorderThickness="4">
 												<Border.ContextMenu>
-													<ContextMenu x:DataType="vm:AssetFile">
+													<ContextMenu x:DataType="vm:AssetFile"
+													             Opening="OnFileContextMenuOpening">
 														<MenuItem Command="{Binding Owner.RenameCommand}"
 														          CommandParameter="{Binding}"
 														          InputGesture="F2"
@@ -601,6 +671,31 @@
 															</MenuItem.Header>
 														</MenuItem>
 														<Separator />
+														<MenuItem Name="TagsMenuItem"
+														          IsEnabled="False"
+														          ToolTip.ShowOnDisabled="True">
+															<MenuItem.Header>
+																<StackPanel Orientation="Horizontal"
+																            Spacing="8">
+																	<LucideIcon Kind="Tag"
+																	            StrokeWidth="2.5"
+																	            Size="16" />
+																	<TextBlock Text="Tags" />
+																</StackPanel>
+															</MenuItem.Header>
+														</MenuItem>
+														<MenuItem Command="{Binding Owner.ManageTagsCommand}">
+															<MenuItem.Header>
+																<StackPanel Orientation="Horizontal"
+																            Spacing="8">
+																	<LucideIcon Kind="Tags"
+																	            StrokeWidth="2.5"
+																	            Size="16" />
+																	<TextBlock Text="Manage Tags…" />
+																</StackPanel>
+															</MenuItem.Header>
+														</MenuItem>
+														<Separator />
 														<MenuItem Command="{Binding Owner.ReimportCommand}"
 														          CommandParameter="{Binding}"
 														          ToolTip.Tip="Re-run the importer from the original artwork source">
@@ -631,9 +726,10 @@
 														</MenuItem>
 													</ContextMenu>
 												</Border.ContextMenu>
-												<Grid RowDefinitions="110, *">
+												<Grid RowDefinitions="Auto, *, Auto">
 													<!-- Preview -->
 													<Border Grid.Row="0"
+													        Height="{Binding Owner.PreviewHeight, FallbackValue=110}"
 													        Background="{x:Static vm:CheckerBrush.Instance}"
 													        ClipToBounds="True"
 													        CornerRadius="4">
@@ -644,7 +740,7 @@
 															       HorizontalAlignment="Center"
 															       VerticalAlignment="Center" />
 															<LucideIcon Kind="{Binding Icon}"
-															            Size="52"
+															            Size="{Binding Owner.PreviewIconSize, FallbackValue=52}"
 															            VerticalAlignment="Center"
 															            HorizontalAlignment="Center"
 															            StrokeWidth="2.5"
@@ -652,6 +748,7 @@
 															            IsVisible="{Binding !HasThumbnail}" />
 															<Border VerticalAlignment="Bottom"
 															        HorizontalAlignment="Left"
+															        IsVisible="{Binding Owner.ShowTypeBadge, FallbackValue=True}"
 															        Background="{Binding TypeColor}"
 															        CornerRadius="4"
 															        Padding="6,2"
@@ -669,11 +766,18 @@
 													            Spacing="1">
 														<TextBlock Text="{Binding Name}"
 														           TextWrapping="Wrap"
-														           MaxLines="3"
+														           MaxLines="2"
 														           FontSize="12"
 														           FontWeight="SemiBold"
 														           Foreground="{StaticResource Text}" />
 													</StackPanel>
+													<!-- Tags -->
+													<elements:TagStrip Grid.Row="2"
+													                   Margin="2"
+													                   Tags="{Binding Tags}"
+													                   RemoveCommand="{Binding RemoveTagCommand}"
+													                   CanRemove="{Binding CanTag}"
+													                   IsVisible="{Binding Owner.ShowTags, FallbackValue=True}" />
 												</Grid>
 											</Border>
 										</DataTemplate>

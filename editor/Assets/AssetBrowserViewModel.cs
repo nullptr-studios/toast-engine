@@ -20,6 +20,7 @@ using editor.Assets.Importers;
 using editor.Assets.Types;
 using editor.Components.Modals;
 using editor.Engine;
+using editor.Workspace;
 using Lucide.Avalonia;
 
 namespace editor.Assets;
@@ -75,6 +76,11 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 	private int m_selectedCount;
 	private AssetFolder? m_selectedFolder;
 
+	private IReadOnlyList<string> m_loadedHiddenPatterns = [];
+	private bool m_loadedShowCache;
+	private bool m_loadedShowCore;
+	private bool m_updatingTagFilters;
+
 	public AssetBrowserViewModel() {
 		Current = this;
 
@@ -118,10 +124,13 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 		NewAssetCommand = Track(new AsyncRelayCommand<object>(o => CreateNewAsset(o as BaseAsset),
 			o => o is BaseAsset && CanWriteToSelectedFolder));
 		ReimportCommand = Track(new AsyncRelayCommand<object>(ReimportAsync, CanReimport));
+		SyncTagFilters();
+		CaptureFolderSettings();
 		LoadFolders();
 
 		// auto-reload whenever the asset database changes
 		AssetDatabase.ReloadedDatabase += OnDatabaseReloaded;
+		AssetBrowserSettings.Changed += OnSettingsChanged;
 	}
 
 	public static AssetBrowserViewModel? Current { get; private set; }
@@ -197,6 +206,54 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 		}
 	}
 
+	public ObservableCollection<AssetTagFilter> TagFilters { get; } = [];
+
+	public bool HasTags => AssetBrowserSettings.Tags.Count > 0;
+
+	public bool? TagFilterAll {
+		get {
+			var all = TagFilters.All(f => f.IsEnabled);
+			var none = TagFilters.All(f => !f.IsEnabled);
+			return all ? true : none ? false : null;
+		}
+		set {
+			var v = value ?? TagFilterAll != true;
+			m_updatingTagFilters = true;
+			foreach (var f in TagFilters)
+				f.IsEnabled = v;
+			m_updatingTagFilters = false;
+			Notify(nameof(TagFilterAll));
+			RefreshCurrentItems();
+		}
+	}
+
+	public bool ShowTags => AssetBrowserSettings.ShowTags;
+	public bool ShowTypeBadge => AssetBrowserSettings.ShowTypeBadge;
+
+	public double CardWidth => AssetBrowserSettings.CardSize switch {
+		AssetCardSize.Small => 105,
+		AssetCardSize.Large => 170,
+		_ => 130
+	};
+
+	public double CardHeight => AssetBrowserSettings.CardSize switch {
+		AssetCardSize.Small => 140,
+		AssetCardSize.Large => 215,
+		_ => 170
+	};
+
+	public double PreviewHeight => AssetBrowserSettings.CardSize switch {
+		AssetCardSize.Small => 80,
+		AssetCardSize.Large => 150,
+		_ => 110
+	};
+
+	public double PreviewIconSize => AssetBrowserSettings.CardSize switch {
+		AssetCardSize.Small => 38,
+		AssetCardSize.Large => 68,
+		_ => 52
+	};
+
 	public IReadOnlyList<BreadcrumbItem> BreadcrumbItems {
 		get {
 			if (m_selectedFolder is null) return [];
@@ -231,9 +288,18 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 	public ICommand NewAssetCommand { get; }
 	public ICommand ReimportCommand { get; }
 
+	public ICommand ManageTagsCommand { get; } = new RelayCommand(() =>
+		MainWindowViewModel.Current?.OpenProjectSettingsAt(SettingsTab.Editor,
+			ProjectSettingsViewModel.AssetBrowserCategory));
+
 	public void Dispose() {
 		AssetDatabase.ReloadedDatabase -= OnDatabaseReloaded;
+		AssetBrowserSettings.Changed -= OnSettingsChanged;
 		foreach (var filter in Filters) filter.PropertyChanged -= OnFilterChanged;
+		foreach (var filter in TagFilters) {
+			filter.PropertyChanged -= OnTagFilterChanged;
+			filter.Detach();
+		}
 		if (ReferenceEquals(Current, this)) Current = null;
 		GC.SuppressFinalize(this);
 	}
@@ -278,6 +344,29 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 		m_selectedCount = 0;
 		Notify(nameof(ItemCount));
 		NotifyActionStateChanged();
+	}
+
+	public IReadOnlyList<AssetFile> TagTargets(AssetFile clicked) {
+		if (!m_selectedItems.Contains(clicked)) return clicked.CanTag ? [clicked] : [];
+		return m_selectedItems.OfType<AssetFile>().Where(f => f.CanTag).ToList();
+	}
+
+	public void SetTag(IReadOnlyCollection<AssetFile> files, AssetTag tag, bool enabled) {
+		var changed = false;
+		foreach (var file in files) {
+			if (!file.CanTag) continue;
+			var ids = file.TagIds.ToList();
+			if (enabled == ids.Contains(tag.Id)) continue;
+			if (enabled) ids.Add(tag.Id);
+			else ids.Remove(tag.Id);
+			ids.RemoveAll(id => AssetBrowserSettings.ById(id) is null);
+			changed |= file.WriteTags(ids);
+		}
+
+		if (!changed) return;
+		RecountTags();
+		if (TagFilterAll != true || ParseSearch(m_searchText).Tags.Count > 0)
+			RefreshCurrentItems();
 	}
 
 	private static void SetIsSelected(object item, bool selected) {
@@ -463,17 +552,19 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 			}
 			: $"{targets.Count} items";
 
-		var window = ActiveWindow();
-		if (window is null) return;
-		var confirmed = await new MessageModal(new ModalConfig(
-			"Delete", $"Delete {label}? This cannot be undone.",
-			ModalButtons.OkCancel,
-			LucideIconKind.Shredder,
-			new SolidColorBrush(Color.Parse("#d04040")),
-			"Delete",
-			OkIcon: LucideIconKind.Shredder
-		)).ShowDialog<bool?>(window) == true;
-		if (!confirmed) return;
+		if (AssetBrowserSettings.ConfirmDelete) {
+			var window = ActiveWindow();
+			if (window is null) return;
+			var confirmed = await new MessageModal(new ModalConfig(
+				"Delete", $"Delete {label}? This cannot be undone.",
+				ModalButtons.OkCancel,
+				LucideIconKind.Shredder,
+				new SolidColorBrush(Color.Parse("#d04040")),
+				"Delete",
+				OkIcon: LucideIconKind.Shredder
+			)).ShowDialog<bool?>(window) == true;
+			if (!confirmed) return;
+		}
 
 		foreach (var t in targets)
 			switch (t) {
@@ -802,29 +893,92 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 		RefreshCurrentItems();
 	}
 
+	private void OnTagFilterChanged(object? sender, PropertyChangedEventArgs e) {
+		if (m_updatingTagFilters || e.PropertyName != nameof(AssetTagFilter.IsEnabled)) return;
+		Notify(nameof(TagFilterAll));
+		RefreshCurrentItems();
+	}
+
+	private void OnSettingsChanged() {
+		SyncTagFilters();
+		Notify(nameof(ShowTags));
+		Notify(nameof(ShowTypeBadge));
+		Notify(nameof(CardWidth));
+		Notify(nameof(CardHeight));
+		Notify(nameof(PreviewHeight));
+		Notify(nameof(PreviewIconSize));
+
+		if (m_loadedShowCore != AssetBrowserSettings.ShowCore ||
+		    m_loadedShowCache != AssetBrowserSettings.ShowCache ||
+		    !m_loadedHiddenPatterns.SequenceEqual(AssetBrowserSettings.HiddenPatterns)) {
+			CaptureFolderSettings();
+			Refresh();
+			return;
+		}
+
+		foreach (var file in CurrentItems.OfType<AssetFile>())
+			file.NotifyTagsChanged();
+		RecountTags();
+		RefreshCurrentItems();
+	}
+
+	private void CaptureFolderSettings() {
+		m_loadedShowCore = AssetBrowserSettings.ShowCore;
+		m_loadedShowCache = AssetBrowserSettings.ShowCache;
+		m_loadedHiddenPatterns = AssetBrowserSettings.HiddenPatterns;
+	}
+
+	private void SyncTagFilters() {
+		var previous = new Dictionary<string, bool>();
+		foreach (var filter in TagFilters) {
+			previous[filter.Tag?.Id ?? ""] = filter.IsEnabled;
+			filter.PropertyChanged -= OnTagFilterChanged;
+			filter.Detach();
+		}
+
+		TagFilters.Clear();
+		foreach (var tag in AssetBrowserSettings.Tags.Cast<AssetTag?>().Append(null)) {
+			var filter = new AssetTagFilter(tag) { IsEnabled = previous.GetValueOrDefault(tag?.Id ?? "", true) };
+			filter.PropertyChanged += OnTagFilterChanged;
+			TagFilters.Add(filter);
+		}
+
+		Notify(nameof(HasTags));
+		Notify(nameof(TagFilterAll));
+	}
+
+	private void RecountTags() {
+		var tags = AssetBrowserSettings.Tags;
+		if (tags.Count == 0) return;
+
+		var counts = new Dictionary<string, int>();
+		foreach (var root in Folders)
+		foreach (var file in GetAllFiles(root))
+		foreach (var id in file.TagIds)
+			counts[id] = counts.GetValueOrDefault(id) + 1;
+
+		foreach (var tag in tags)
+			tag.AssetCount = counts.GetValueOrDefault(tag.Id);
+	}
+
 	private void RefreshCurrentItems() {
+		var isTagVisible = BuildTagVisibility();
 		IEnumerable<object> items;
 		if (!string.IsNullOrWhiteSpace(m_searchText)) {
-			var (textFilter, typeFilter) = ParseSearch(m_searchText);
-			items = Folders
-				.SelectMany(GetAllFiles)
-				.Where(f => IsTypeVisible(f.Definition))
-				.Where(f => typeFilter is null || f.Definition == typeFilter)
-				.Where(f => string.IsNullOrEmpty(textFilter) ||
-					f.Name.Contains(textFilter, StringComparison.OrdinalIgnoreCase))
-				.OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
-				.ThenBy(f => f.Name, StringComparer.Ordinal);
+			var search = ParseSearch(m_searchText);
+			var scope = AssetBrowserSettings.SearchScope == AssetSearchScope.CurrentFolder && m_selectedFolder is not null
+				? GetAllFiles(m_selectedFolder)
+				: Folders.SelectMany(GetAllFiles);
+			var files = scope
+				.Where(f => IsTypeVisible(f.Definition) && isTagVisible(f))
+				.Where(f => search.Type is null || f.Definition == search.Type)
+				.Where(f => search.Tags.Count == 0 || MatchesTagTerms(f, search.Tags))
+				.Where(f => string.IsNullOrEmpty(search.Text) ||
+					f.Name.Contains(search.Text, StringComparison.OrdinalIgnoreCase));
+			items = SortFiles(files).Cast<object>();
 		} else if (m_selectedFolder is not null) {
-			var folders = m_selectedFolder.SubFolders
-				.OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
-				.ThenBy(f => f.Name, StringComparer.Ordinal)
-				.Cast<object>();
-			var files = m_selectedFolder.Files
-				.Where(f => IsTypeVisible(f.Definition))
-				.OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
-				.ThenBy(f => f.Name, StringComparer.Ordinal)
-				.Cast<object>();
-			items = folders.Concat(files);
+			var files = m_selectedFolder.Files.Where(f => IsTypeVisible(f.Definition) && isTagVisible(f));
+			items = SortEntries(m_selectedFolder.SubFolders, files);
 		} else {
 			items = [];
 		}
@@ -870,17 +1024,24 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 				roots.Add(new AssetFolder(dbPath) { Name = db + "://" });
 			}
 
-			// core:// is always appended
-			roots.Add(new AssetFolder(ProjectContext.CorePath) { Name = "core://" });
+			if (AssetBrowserSettings.ShowCore)
+				roots.Add(new AssetFolder(ProjectContext.CorePath) { Name = "core://" });
 
 			// cache:// - everything the engine generates rather than the project authors
-			if (Directory.Exists(ProjectContext.CachePath))
+			if (AssetBrowserSettings.ShowCache && Directory.Exists(ProjectContext.CachePath))
 				roots.Add(new AssetFolder(ProjectContext.CachePath, listRawFiles: true) { Name = "cache://" });
 		} else {
-			// show a minimal placeholder
-			var fallbackFolder = new AssetFolder(@"C:\Users\Xein\Desktop\unnamed_project\assets") {
-				Name = "assets://", IsExpanded = true
-			};
+			var fallbackPath = Path.Combine(Environment.CurrentDirectory, "assets");
+			var fallbackFolder = AssetFolder.Placeholder("assets://", fallbackPath);
+			fallbackFolder.IsExpanded = true;
+			if (Design.IsDesignMode) {
+				var demoFolder = AssetFolder.Placeholder(
+					"Demo Folder",
+					Path.Combine(fallbackPath, "Demo Folder"),
+					fallbackFolder);
+				fallbackFolder.SubFolders.Add(demoFolder);
+				fallbackFolder.Files.Add(new AssetFile(Path.Combine(fallbackPath, "Demo Asset.tmat.meta")));
+			}
 			roots.Add(fallbackFolder);
 		}
 
@@ -899,6 +1060,7 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 		m_selectedFolder = restored ?? FindFallbackFolder();
 		if (m_selectedFolder is not null) ExpandToFolder(m_selectedFolder);
 
+		RecountTags();
 		Notify(nameof(SelectedFolder));
 		RefreshCurrentItems();
 		Notify(nameof(BreadcrumbItems));
@@ -944,23 +1106,79 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 			yield return file;
 	}
 
-	private static (string text, BaseAsset? type) ParseSearch(string query) {
-		var match = Regex.Match(query, @"Type=(\w+)", RegexOptions.IgnoreCase);
-		BaseAsset? typeFilter = null;
+	private static SearchQuery ParseSearch(string query) {
 		var text = query;
+		BaseAsset? typeFilter = null;
+		var match = Regex.Match(query, @"Type=(\w+)", RegexOptions.IgnoreCase);
 		if (match.Success) {
 			typeFilter = AssetTypeRegistry.All
 				.FirstOrDefault(a => a.DisplayName.Equals(match.Groups[1].Value, StringComparison.OrdinalIgnoreCase));
-			text = query.Replace(match.Value, "").Trim();
+			text = text.Replace(match.Value, "");
 		}
 
-		return (text, typeFilter);
+		var tags = new List<string>();
+		foreach (Match tagMatch in Regex.Matches(query, "Tag=(?:\"([^\"]*)\"|(\\S+))", RegexOptions.IgnoreCase)) {
+			var name = tagMatch.Groups[1].Success ? tagMatch.Groups[1].Value : tagMatch.Groups[2].Value;
+			if (name.Length > 0) tags.Add(name);
+			text = text.Replace(tagMatch.Value, "");
+		}
+
+		return new SearchQuery(Regex.Replace(text, @"\s+", " ").Trim(), typeFilter, tags);
+	}
+
+	private static bool MatchesTagTerms(AssetFile file, IReadOnlyList<string> terms) {
+		if (file.TagIds.Count == 0) return false;
+		foreach (var term in terms)
+			if (AssetBrowserSettings.ByName(term) is not { } tag || !file.TagIds.Contains(tag.Id))
+				return false;
+		return true;
 	}
 
 	private bool IsTypeVisible(BaseAsset? def) {
 		if (def is null) return m_unknownFilter.IsEnabled;
 		return Filters.FirstOrDefault(f => f.Definition == def)?.IsEnabled ?? true;
 	}
+
+	private Func<AssetFile, bool> BuildTagVisibility() {
+		if (!HasTags || TagFilters.All(f => f.IsEnabled)) return _ => true;
+
+		var showUntagged = TagFilters.FirstOrDefault(f => f.IsUntagged)?.IsEnabled ?? true;
+		var enabled = TagFilters.Where(f => f is { IsUntagged: false, IsEnabled: true })
+			.Select(f => f.Tag!.Id)
+			.ToHashSet();
+		return file => {
+			var tags = file.Tags;
+			return tags.Count == 0 ? showUntagged : tags.Any(t => enabled.Contains(t.Id));
+		};
+	}
+
+	private static IEnumerable<AssetFile> SortFiles(IEnumerable<AssetFile> files) {
+		return AssetBrowserSettings.SortBy switch {
+			AssetSortBy.Type => files
+				.OrderBy(f => f.Definition?.DisplayName ?? "￿", StringComparer.OrdinalIgnoreCase)
+				.ThenBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
+				.ThenBy(f => f.Name, StringComparer.Ordinal),
+			AssetSortBy.Modified => files
+				.OrderByDescending(f => f.ModifiedAt, StringComparer.Ordinal)
+				.ThenBy(f => f.Name, StringComparer.OrdinalIgnoreCase),
+			_ => files
+				.OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
+				.ThenBy(f => f.Name, StringComparer.Ordinal)
+		};
+	}
+
+	private static IEnumerable<object> SortEntries(IEnumerable<AssetFolder> folders, IEnumerable<AssetFile> files) {
+		var sortedFolders = folders
+			.OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
+			.ThenBy(f => f.Name, StringComparer.Ordinal)
+			.ToList();
+		var sortedFiles = SortFiles(files).Cast<object>();
+		return AssetBrowserSettings.FoldersFirst
+			? sortedFolders.Cast<object>().Concat(sortedFiles)
+			: sortedFiles.Concat(sortedFolders);
+	}
+
+	private sealed record SearchQuery(string Text, BaseAsset? Type, IReadOnlyList<string> Tags);
 
 	// clipboard
 	private enum ClipMode { None, Copy, Cut }

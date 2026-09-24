@@ -108,3 +108,43 @@ public class AssetTypeFilterGroup : INotifyPropertyChanged {
 		PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 	}
 }
+
+public class AssetTagFilter : INotifyPropertyChanged {
+	private static readonly IBrush s_untaggedBrush = new SolidColorBrush(Color.Parse("#696969"));
+	private bool m_isEnabled = true;
+
+	// A null tag is the Untagged entry
+	public AssetTagFilter(AssetTag? tag) {
+		Tag = tag;
+		if (tag is not null) tag.PropertyChanged += OnTagPropertyChanged;
+	}
+
+	public AssetTag? Tag { get; }
+	public string Label => Tag?.Name ?? "Untagged";
+	public IBrush Brush => Tag?.Brush ?? s_untaggedBrush;
+	public bool IsUntagged => Tag is null;
+
+	public bool IsEnabled {
+		get => m_isEnabled;
+		set {
+			if (m_isEnabled == value) return;
+			m_isEnabled = value;
+			Notify();
+		}
+	}
+
+	public event PropertyChangedEventHandler? PropertyChanged;
+
+	public void Detach() {
+		if (Tag is not null) Tag.PropertyChanged -= OnTagPropertyChanged;
+	}
+
+	private void OnTagPropertyChanged(object? sender, PropertyChangedEventArgs e) {
+		if (e.PropertyName == nameof(AssetTag.Name)) Notify(nameof(Label));
+		else if (e.PropertyName == nameof(AssetTag.Brush)) Notify(nameof(Brush));
+	}
+
+	private void Notify([CallerMemberName] string? name = null) {
+		PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+	}
+}
