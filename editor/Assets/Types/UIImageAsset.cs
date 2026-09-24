@@ -19,8 +19,7 @@ public sealed class UIImageAsset : BaseAsset {
 
 	public override IReadOnlyList<string> CppTypeNames => ["UIImage"];
 
-	public override void GenerateThumbnail() {
-		if (!string.IsNullOrEmpty(Uid) && Meta?.TryGetValue("source", out var src) == true && src is string source)
-			ThumbnailService.Generate(source, Uid);
+	public override void GenerateThumbnail(string realPath, string uid) {
+		ThumbnailService.Generate(realPath, uid);
 	}
 }

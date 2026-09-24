@@ -11,6 +11,16 @@ public class AssetFolder : INotifyPropertyChanged {
 	private bool m_isExpanded;
 	private bool m_isSelected;
 
+	private AssetFolder(string name, string path, AssetFolder? parent) {
+		Name = name;
+		Filepath = Path.GetFullPath(path);
+		Parent = parent;
+	}
+
+	internal static AssetFolder Placeholder(string name, string path, AssetFolder? parent = null) {
+		return new AssetFolder(name, path, parent);
+	}
+
 	/// <param name="listRawFiles">
 	/// List every file rather than only tracked assets
 	/// </param>

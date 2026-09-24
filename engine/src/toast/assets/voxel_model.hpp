@@ -78,6 +78,9 @@ public:
 	[[nodiscard]]
 	auto solidVoxelCount() const -> uint32_t;
 
+	[[nodiscard]]
+	auto materialAt(glm::uvec3 voxel) const noexcept -> uint8_t;
+
 private:
 	VoxelModel() = default;
 

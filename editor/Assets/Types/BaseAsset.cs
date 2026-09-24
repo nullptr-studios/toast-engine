@@ -32,7 +32,7 @@ public abstract class BaseAsset {
 		}
 	}
 
-	public virtual void GenerateThumbnail() { }
+	public virtual void GenerateThumbnail(string realPath, string uid) { }
 
 	public virtual Task CreateAsync(string path) {
 		File.WriteAllText(path, "");

@@ -97,6 +97,9 @@ public partial class VoxImporter : IAssetImporter {
 			progress?.Invoke((double)doneItems / totalItems);
 		}
 
+		var palette = temp.GetFiles("*.tpal").FirstOrDefault();
+		var thumbnailPalettePath = paletteExisted ? paletteDest : palette?.FullName ?? "";
+
 		var modelUids = new Dictionary<string, string>();
 		log($"Importing {models.Count} voxel model(s)...");
 		foreach (var model in models) {
@@ -111,12 +114,18 @@ public partial class VoxImporter : IAssetImporter {
 				{ Uid = uid, Type = AssetTypeRegistry.ByExtension(".tvox")!.Type, Source = ctx.SourceVirtualPath };
 			MetaFile.Write(destPath, header, m_settings.ToSection());
 			importedUids.Add(uid);
+
+			try {
+				await Task.Run(() => ThumbnailService.GenerateFromVoxel(destPath, thumbnailPalettePath, uid));
+			} catch (Exception e) {
+				log($"Warning: could not generate a thumbnail for {model.Name}: {e.Message}");
+			}
+
 			doneItems++;
 			ReportProgress();
 		}
 
 		// Palette on first import only because materials are assigned by hand
-		var palette = temp.GetFiles("*.tpal").FirstOrDefault();
 		if (m_settings.ImportPalette && palette is not null) {
 			if (paletteExisted) {
 				log($"Keeping the existing palette {name}.tpal - a reimport would discard its material assignments");
