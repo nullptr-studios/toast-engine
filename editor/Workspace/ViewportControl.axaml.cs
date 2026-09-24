@@ -707,7 +707,7 @@ public partial class ViewportControl : UserControl {
 			if (!item.Formats.Contains(DataFormat.Text)) continue;
 			if (await item.TryGetRawAsync(DataFormat.Text) is not string text || string.IsNullOrEmpty(text)) continue;
 
-			foreach (var rune in text.AsSpan().EnumerateRunes())
+			foreach (var rune in text.EnumerateRunes())
 				Events.Send(new WindowChar { Key = (uint)rune.Value });
 			return;
 		}

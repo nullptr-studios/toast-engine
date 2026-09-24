@@ -9,7 +9,7 @@
 	let
 		system = "x86_64-linux";
 		pkgs = nixpkgs.legacyPackages.${system};
-		dotnet-sdk = pkgs.dotnetCorePackages.sdk_10_0;
+		dotnet-sdk = pkgs.dotnetCorePackages.sdk_8_0;
 
 		# The nixpkgs wrappers use bash syntax under a #!/bin/sh shebang, which breaks where /bin/sh is dash.
 		clang-tools = pkgs.llvmPackages_23.clang-tools.overrideAttrs (old: {

@@ -40,7 +40,9 @@ public partial class NewProjectWindow : Window {
 		var projectDirectory = Path.Combine(m_baseFolderPath, formattedTitle);
 		m_projectFolder = projectDirectory;
 
-		PathTextbox?.Text = projectDirectory;
+		if (PathTextbox is not null) {
+			PathTextbox.Text = projectDirectory;
+		}
 
 		ProjectPath = Path.Combine(projectDirectory, formattedTitle + ".toast");
 		ProjectThumbnail = Path.Combine(projectDirectory, ".toast", "thumbnails", "project.png");
