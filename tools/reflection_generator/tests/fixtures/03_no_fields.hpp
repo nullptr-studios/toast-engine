@@ -2,7 +2,7 @@
 
 class [[ToastNode]] TickOnlyNode {
 public:
-    void preInit() {}
+    void editorTick() {}
     void tick() {}
     void lateTick() {}
     void destroy() {}

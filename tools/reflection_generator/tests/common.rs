@@ -101,7 +101,7 @@ pub fn minimal_node_json(name: &str, namespace: Option<&str>) -> JsonValue {
         "source_file": "test.hpp",
         "attributes": {},
         "functions": {
-            "pre_init": false,
+            "editor_tick": false,
             "init": false,
             "begin": false,
             "early_tick": false,

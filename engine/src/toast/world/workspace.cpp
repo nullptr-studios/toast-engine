@@ -340,7 +340,6 @@ Workspace::Workspace(std::string_view type, UID handle) : m_handle(handle) {
 
 	// Allocation
 	Box node = this->nodeAllocation(type);
-	node->propagateCallTick(node->info(), TickFunctionList::pre_init);
 	node->propagateCallTick(node->info(), TickFunctionList::load);
 
 	// Data structure generation
@@ -416,7 +415,6 @@ void Workspace::initFromPrefab(const assets::Handle<assets::Prefab>& file) {
 		return;
 	}
 	// node->propagateCallTick(node->info(), TickFunctionList::load);
-	// node->propagateCallTick(node->info(), TickFunctionList::pre_init);
 
 	// Data structure generation
 	generateUid(node);
@@ -2033,7 +2031,6 @@ void Workspace::eventSubscriptions() {
 		recordHistory(std::move(history_context), [&] {
 			// Allocate the replacement node
 			Box<Node> fresh = nodeAllocation(e.type);
-			fresh->propagateCallTick(fresh->info(), TickFunctionList::pre_init);
 
 			fresh->m_uid = target->m_uid;
 			fresh->m_name = target->m_name;
@@ -2328,6 +2325,7 @@ void Workspace::tick() {
 		tickActiveCameraController();
 		if (m_root_node.exists()) {
 			tickAnimationPreviews(*m_root_node);
+			m_root_node->propagateCallTick(m_root_node->info(), TickFunctionList::editor_tick);
 		}
 	}
 

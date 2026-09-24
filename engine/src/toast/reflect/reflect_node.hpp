@@ -35,7 +35,7 @@ auto callMethodChain(const NodeInfo* info, void* obj, std::string_view method_na
  */
 enum class TickFunctionList : uint16_t {
 	none = 0,
-	pre_init = 1 << 1,
+	editor_tick = 1 << 1,
 	init = 1 << 2,
 	destroy = 1 << 3,
 	begin = 1 << 4,
@@ -48,7 +48,7 @@ enum class TickFunctionList : uint16_t {
 	late_tick = 1 << 11,
 	load = 1 << 12,
 	save = 1 << 13,
-	tick_mask = early_tick | tick | post_physics | late_tick,
+	tick_mask = early_tick | tick | post_physics | late_tick | editor_tick,
 	all = 0xFFFF,
 };
 
@@ -93,7 +93,7 @@ struct TickFunctions {
 
 	Invoker load = nullptr;
 	Invoker save = nullptr;
-	Invoker pre_init = nullptr;
+	Invoker editor_tick = nullptr;
 	Invoker init = nullptr;
 	Invoker destroy = nullptr;
 	Invoker begin = nullptr;

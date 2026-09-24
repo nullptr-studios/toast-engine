@@ -208,7 +208,7 @@ private:
 
 public:
 	/**
-	 * @brief Editor-only per-frame work: camera preview, animation preview, inspector streaming
+	 * @brief Editor-only per-frame work: camera preview, animation preview, editorTick lifecycle, inspector streaming
 	 *
 	 * Not the gameplay tick scheduler - only what the viewport needs to stay live. See PlayWorkspace::tick()
 	 */

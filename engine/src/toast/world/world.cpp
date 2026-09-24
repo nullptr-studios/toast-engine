@@ -129,7 +129,6 @@ void World::loadNode(UID uid) {
 	//		2: dispatch 1:
 	//				- control block allocation
 	//				- deserialize
-	//				- preInit()
 	//		3: data structure building:
 	//				- build tree structure
 	//		4: dispatch 2:

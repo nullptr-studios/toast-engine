@@ -214,7 +214,7 @@ public:
 	 * @brief Creates a new child node of the given type and attaches it to this node
 	 * @param type Fully-qualified C++ class name, e.g. "toast::Node3D"; defaults to "toast::Node"
 	 * @return The new child node, or an empty box if the type is not registered
-	 * @note Only valid on nodes in the root or global state; calls the child's pre_init and init lifecycle
+	 * @note Only valid on nodes in the root or global state; calls the child's init lifecycle
 	 */
 	auto create(std::string_view type = "toast::Node") noexcept -> Box<Node> {
 		if (m_state == NodeState::root or m_state == NodeState::global) {

@@ -53,7 +53,7 @@ auto phaseToLuaName(toast::TickFunctionList phase) noexcept -> const char* {
 	switch (phase) {
 		case F::load: return "load";
 		case F::save: return "save";
-		case F::pre_init: return "pre_init";
+		case F::editor_tick: return "editorTick";
 		case F::init: return "init";
 		case F::destroy: return "destroy";
 		case F::begin: return "begin";
@@ -259,7 +259,7 @@ void ScriptInstance::snapshotTickMask() noexcept {
 	constexpr std::array all_phases = {
 	  F::load,
 	  F::save,
-	  F::pre_init,
+	  F::editor_tick,
 	  F::init,
 	  F::destroy,
 	  F::begin,

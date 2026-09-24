@@ -2,7 +2,7 @@
 
 class [[ToastNode]] AllTicksNode {
 public:
-    void preInit() {}
+    void editorTick() {}
     void init() {}
     void begin() {}
     void earlyTick() {}

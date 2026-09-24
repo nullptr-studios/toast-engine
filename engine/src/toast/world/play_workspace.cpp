@@ -24,7 +24,6 @@ PlayWorkspace::PlayWorkspace(UID handle, assets::Prefab& prefab) : Workspace(han
 		return;
 	}
 	// node->propagateCallTick(node->info(), TickFunctionList::load);
-	// node->propagateCallTick(node->info(), TickFunctionList::pre_init);
 
 	node->m_parent = {};
 	node->changeNodeState(NodeState::root);

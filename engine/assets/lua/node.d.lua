@@ -42,7 +42,7 @@ function NodeProxy:find(query) end
 function NodeProxy:search(query) end
 
 ---Creates a new child node of the given type and attaches it to this node
----Only valid on nodes in the root or global state; calls the child's pre_init and init lifecycle
+---Only valid on nodes in the root or global state; calls the child's init lifecycle
 ---@param type string? [C++ class name, e.g. "toast::Node3D"; defaults to "toast::Node"]
 ---@return Node? [The new child node, or an empty box if the type is not registered]
 function NodeProxy:create(type) end
