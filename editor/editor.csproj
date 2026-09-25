@@ -9,7 +9,7 @@
         <Company>nullptr Studios</Company>
         <UseRidGraph>true</UseRidGraph>
 				<RunWorkingDirectory>$(MSBuildProjectDirectory)</RunWorkingDirectory>
-				<LangVersion>14</LangVersion>
+				<LangVersion>12</LangVersion>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
         <OutputPath>../out/Debug/editor</OutputPath>

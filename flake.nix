@@ -9,7 +9,7 @@
 	let
 		system = "x86_64-linux";
 		pkgs = nixpkgs.legacyPackages.${system};
-		dotnet-sdk = pkgs.dotnetCorePackages.sdk_10_0;
+		dotnet-sdk = pkgs.dotnetCorePackages.sdk_8_0;
 
 		# The nixpkgs wrappers use bash syntax under a #!/bin/sh shebang, which breaks where /bin/sh is dash.
 		clang-tools = pkgs.llvmPackages_23.clang-tools.overrideAttrs (old: {
@@ -152,6 +152,9 @@
 				export DOTNET_ROOT="${dotnet-sdk}/share/dotnet";
 				export PATH="${dotnet-sdk}/bin:$PATH";
 				export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath runtimeLibs}:$LD_LIBRARY_PATH";
+				# Tracy's rpmalloc client uses initial-exec TLS. The editor loads the
+				# engine after .NET has started, so reserve space for that TLS block.
+				export GLIBC_TUNABLES="glibc.rtld.optional_static_tls=2048''${GLIBC_TUNABLES:+:$GLIBC_TUNABLES}";
 				export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1;
 				export CMAKE_C_COMPILER_LAUNCHER=ccache;
 				export CMAKE_CXX_COMPILER_LAUNCHER=ccache;
