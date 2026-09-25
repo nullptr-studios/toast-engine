@@ -215,8 +215,8 @@ auto AABBTree::updateLeaf(TreeNodeID leaf_id, const AABB& tight_bounds) -> bool 
 }
 
 auto AABBTree::query(const AABB& bounds, ShapeID ignored_shape) const -> std::vector<ShapeID> {
-	ZoneScopedN("physics::AABBTree::Query");
-	ZoneValue(static_cast<uint64_t>(ignored_shape.slot));
+	// ZoneScopedN("physics::AABBTree::Query");
+	// ZoneValue(static_cast<uint64_t>(ignored_shape.slot));
 	std::vector<ShapeID> result;
 	if (m_root == null_node) {
 		return result;
@@ -242,7 +242,7 @@ auto AABBTree::query(const AABB& bounds, ShapeID ignored_shape) const -> std::ve
 
 	std::ranges::sort(result);
 	result.erase(std::unique(result.begin(), result.end()), result.end());
-	ZoneValue(static_cast<uint64_t>(result.size()));
+	// ZoneValue(static_cast<uint64_t>(result.size()));
 	return result;
 }
 

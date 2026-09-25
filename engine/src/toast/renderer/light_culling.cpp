@@ -24,7 +24,7 @@ auto spotBounds(const glm::vec3& position, const glm::vec3& direction, float ran
 }
 
 auto importance(const glm::vec3& color, float intensity, float range, float camera_distance, float cone_fraction) -> float {
-	constexpr glm::vec3 k_luminance {0.2126f, 0.7152f, 0.0722f};
+	const glm::vec3 k_luminance {0.2126f, 0.7152f, 0.0722f};
 
 	const float reach_squared = range * range;
 	const float brightness = glm::dot(color, k_luminance) * std::max(intensity, 0.0f);

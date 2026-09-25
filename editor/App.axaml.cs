@@ -4,6 +4,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using editor.Components.Modals;
 using editor.StartWindow;
+using editor.Workspace;
 
 namespace editor;
 
@@ -18,6 +19,8 @@ public class App : Application {
 	}
 
 	public override void OnFrameworkInitializationCompleted() {
+		PlayModeShortcuts.Install();
+
 		if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop) {
 			desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
 

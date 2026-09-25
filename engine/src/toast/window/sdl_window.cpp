@@ -226,13 +226,25 @@ void SDLWindow::applyMouseLock(bool locked) {
 	m.cursor_locked = locked;
 	SDL_SetWindowRelativeMouseMode(m.sdl_window.get(), locked);
 
+	const float density = SDL_GetWindowPixelDensity(m.sdl_window.get());
 	if (locked) {
 		float x = 0.0f;
 		float y = 0.0f;
 		SDL_GetMouseState(&x, &y);
-		const float density = SDL_GetWindowPixelDensity(m.sdl_window.get());
 		m.virtual_mouse_position = glm::vec2 {x, y} * density;
+		return;
 	}
+
+	// free the cursor where the game last saw it so position consumers do not see a jump
+	int width = 0;
+	int height = 0;
+	SDL_GetWindowSize(m.sdl_window.get(), &width, &height);
+	const glm::vec2 cursor = glm::clamp(
+	    m.virtual_mouse_position / (density > 0.0f ? density : 1.0f),
+	    glm::vec2 {0.0f},
+	    glm::vec2 {static_cast<float>(width), static_cast<float>(height)}
+	);
+	SDL_WarpMouseInWindow(m.sdl_window.get(), cursor.x, cursor.y);
 }
 
 }

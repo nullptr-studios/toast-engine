@@ -14,6 +14,7 @@ using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Media;
 using editor.Assets;
+using editor.Workspace;
 
 namespace editor.Components.CurveCanvas;
 
@@ -466,7 +467,7 @@ public sealed class CurveCanvas : Control {
 
 	protected override void OnKeyDown(KeyEventArgs e) {
 		base.OnKeyDown(e);
-		if (e.Key is not (Key.Delete or Key.Back)) return;
+		if (e.Key is not (Key.Delete or Key.Back) || PlayModeShortcuts.Blocked) return;
 		if (!CanEdit || ActiveItem is not { } item || SelectedPointIndex < 0) return;
 		RemoveAt(item, SelectedPointIndex);
 		e.Handled = true;

@@ -464,6 +464,7 @@ void Simulator::tick() {
 	spawnBudgetedFragments();
 	enforceFragmentBudget();
 	despawnSettledFragments(dt);
+	stepCharacters(dt);
 	integrate(dt);
 
 	{
@@ -1408,6 +1409,16 @@ void Simulator::recordTickBurst(size_t steps, bool time_budget_reached) {
 		instance->m_published_profile.ticks_this_frame = steps;
 		instance->m_published_profile.ticks_capped_by_time_budget = time_budget_reached;
 	}
+}
+
+void Simulator::recordInterpolationAlpha(double alpha) {
+	if (instance != nullptr) {
+		instance->m_interpolation_alpha = static_cast<float>(std::clamp(alpha, 0.0, 1.0));
+	}
+}
+
+auto Simulator::interpolationAlpha() -> float {
+	return instance != nullptr ? instance->m_interpolation_alpha : 1.0f;
 }
 
 auto Simulator::velocityAtPoint(const Body& body, const glm::vec3& r) -> glm::vec3 {

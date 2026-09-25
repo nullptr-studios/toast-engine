@@ -198,7 +198,7 @@ public sealed class NodeBox : TemplatedControl {
 	}
 
 	private void OnHostKeyDown(object? sender, KeyEventArgs e) {
-		if (!IsEnabled || string.IsNullOrEmpty(Value) || e.Key is not (Key.Delete or Key.Back)) return;
+		if (!IsEnabled || PlayModeShortcuts.Blocked || string.IsNullOrEmpty(Value) || e.Key is not (Key.Delete or Key.Back)) return;
 		Clear();
 		e.Handled = true;
 	}

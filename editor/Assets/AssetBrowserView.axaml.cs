@@ -206,7 +206,7 @@ public partial class AssetBrowserView : UserControl {
 	}
 
 	private void OnShortcut(object? sender, KeyEventArgs e) {
-		if (e.Source is TextBox) return;
+		if (e.Source is TextBox || PlayModeShortcuts.Blocked) return;
 
 		var command = (e.Key, e.KeyModifiers) switch {
 			(Key.F2, KeyModifiers.None) => Vm.RenameCommand,

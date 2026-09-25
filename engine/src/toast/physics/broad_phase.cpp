@@ -116,8 +116,8 @@ auto BroadPhase::findPairs(CollisionWorldView world) -> std::vector<BroadPhasePa
 		const size_t end = (job_index + 1) * world.shapes.size() / job_count;
 
 		futures.emplace_back(toast::ThreadPool::push([this, world, begin, end] {
-			ZoneScopedN("physics::AABBBatch");
-			ZoneValue(static_cast<uint64_t>(end - begin));
+			// ZoneScopedN("physics::AABBBatch");
+			// ZoneValue(static_cast<uint64_t>(end - begin));
 			return calculateBounds(world, begin, end);
 		}));
 	}
@@ -127,7 +127,7 @@ auto BroadPhase::findPairs(CollisionWorldView world) -> std::vector<BroadPhasePa
 	bounds.reserve(world.shapes.size());
 
 	{
-		ZoneScopedNC("physics::AABBAwait", 0x202020);
+		// ZoneScopedNC("physics::AABBAwait", 0x202020);
 		for (auto& future : futures) {
 			std::vector<ShapeBoundsUpdate> local = future.get();
 			bounds.insert_range(bounds.end(), std::move(local));
@@ -135,7 +135,7 @@ auto BroadPhase::findPairs(CollisionWorldView world) -> std::vector<BroadPhasePa
 	}
 
 	{
-		ZoneScopedN("physics::UpdateAABBTree");
+		// ZoneScopedN("physics::UpdateAABBTree");
 		while (m_shape_leaves.size() > world.shapes.size()) {
 			const auto& entry = m_shape_leaves.back();
 			if (entry.node != null_node) {
@@ -175,7 +175,7 @@ auto BroadPhase::findPairs(CollisionWorldView world) -> std::vector<BroadPhasePa
 
 	std::vector<BroadPhasePair> pairs;
 	{
-		ZoneScopedN("physics::QueryAABBTree");
+		// ZoneScopedN("physics::QueryAABBTree");
 		for (size_t shape_index = 0; shape_index < m_shape_leaves.size(); ++shape_index) {
 			const auto& entry = m_shape_leaves[shape_index];
 			if (entry.node == null_node) {
@@ -204,8 +204,8 @@ auto BroadPhase::findPairs(CollisionWorldView world) -> std::vector<BroadPhasePa
 	}
 
 	{
-		ZoneScopedN("physics::SortAndDeduplicatePairs");
-		ZoneValue(static_cast<uint64_t>(pairs.size()));
+		// ZoneScopedN("physics::SortAndDeduplicatePairs");
+		// ZoneValue(static_cast<uint64_t>(pairs.size()));
 		m_stats.pair_records = pairs.size();
 		std::ranges::sort(pairs);
 		pairs.erase(std::unique(pairs.begin(), pairs.end()), pairs.end());
@@ -213,7 +213,7 @@ auto BroadPhase::findPairs(CollisionWorldView world) -> std::vector<BroadPhasePa
 	m_stats.candidate_pairs = pairs.size();
 	m_stats.duplicate_pairs = m_stats.pair_records - m_stats.candidate_pairs;
 	m_stats.tree_nodes = m_tree.size();
-	ZoneValue(static_cast<uint64_t>(pairs.size()));
+	// ZoneValue(static_cast<uint64_t>(pairs.size()));
 	return pairs;
 }
 
@@ -231,8 +231,8 @@ auto BroadPhase::stats() const -> const BroadPhaseStats& {
 }
 
 auto BroadPhase::testPair(CollisionWorldView world, ShapeID shape_a_id, ShapeID shape_b_id) -> std::optional<BroadPhasePair> {
-	ZoneScoped;
-	ZoneValue((static_cast<uint64_t>(shape_a_id.slot) << 32) | static_cast<uint64_t>(shape_b_id.slot));
+	// ZoneScoped;
+	// ZoneValue((static_cast<uint64_t>(shape_a_id.slot) << 32) | static_cast<uint64_t>(shape_b_id.slot));
 
 	const Shape* shape_a = world.shape(shape_a_id);
 	const Shape* shape_b = world.shape(shape_b_id);

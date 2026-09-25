@@ -15,6 +15,7 @@
 #include "narrow_phase.hpp"
 #include "physics_material.hpp"
 #include "shape.hpp"
+#include "shape_query.hpp"
 #include "voxel_render.hpp"
 #include "voxel_shape_data.hpp"
 
@@ -39,6 +40,7 @@ namespace physics {
 class Rigidbody;
 class DynamicRigidbody;
 class Collider;
+class Character;
 
 }
 
@@ -48,6 +50,7 @@ class TOAST_API Simulator {
 	friend class Collider;
 	friend class Rigidbody;
 	friend class DynamicRigidbody;
+	friend class Character;
 	friend class toast::VoxelNode;
 
 public:
@@ -169,6 +172,11 @@ public:
 
 	/// Stamps how many ticks the accumulator ran once it stops catching up for this frame
 	static void recordTickBurst(size_t steps, bool time_budget_reached);
+
+	/// Leftover accumulator time as a fraction of one step for blending the last two poses
+	static void recordInterpolationAlpha(double alpha);
+	[[nodiscard]]
+	static auto interpolationAlpha() -> float;
 
 	[[nodiscard]]
 	static auto shapeWorldBounds(ShapeID shape) -> std::optional<AABB>;
@@ -298,6 +306,29 @@ private:
 
 	static void setShapeEnabled(ShapeID shape, bool enabled);
 	void syncEnabledState();
+
+	void stepCharacters(float dt);
+	[[nodiscard]]
+	auto queryCandidates(BodyID ignored, const AABB& bounds) const -> std::vector<ShapeID>;
+	void collideCapsuleProbe(
+	    const Body& probe_body, const Shape& probe_shape, std::span<const ShapeID> candidates, std::vector<QueryContact>& contacts
+	) const;
+	[[nodiscard]]
+	auto overlapCapsule(
+	    BodyID ignored, const CapsuleShape& capsule, const glm::vec3& position, const glm::quat& rotation, float min_penetration,
+	    std::vector<QueryContact>& contacts
+	) const -> bool;
+	/// Moves a capsule until it would dig into something
+	[[nodiscard]]
+	auto sweepCapsule(
+	    BodyID ignored, const CapsuleShape& capsule, const glm::quat& rotation, const glm::vec3& from, const glm::vec3& to,
+	    float skin
+	) const -> SweepHit;
+	void setCapsuleShape(ShapeID shape, const CapsuleShape& capsule);
+	void moveKinematicBody(BodyID body, const glm::vec3& position, const glm::quat& rotation, const glm::vec3& velocity);
+	/// Raises the velocity of a dynamic body along direction
+	void pushBody(BodyID body, const glm::vec3& point, const glm::vec3& direction, float speed, float max_impulse);
+	
 	static void wakeBody(BodyID id);
 	static void sleepBody(BodyID id);
 	void wakeBodiesTouching(BodyID id);
@@ -415,6 +446,8 @@ private:
 
 	/// Round robin start so a connectivity job cap does not starve the same shapes
 	size_t m_connectivity_cursor = 0;
+
+	float m_interpolation_alpha = 0.0f;
 };
 
 }
