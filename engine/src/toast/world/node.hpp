@@ -382,6 +382,8 @@ protected:
 
 	virtual void onReflectedFieldChanged(std::string_view /*field_name*/) { }
 
+	virtual void onScriptsReloaded() { }
+
 	virtual void updateInspectorMessages() { }
 
 	void addInspectorMessage(const NodeMessage& message) {

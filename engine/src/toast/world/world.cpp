@@ -1132,6 +1132,20 @@ auto WorldTestAccess::createNode(World& world, std::string_view name, NodeState 
 	return node;
 }
 
+auto WorldTestAccess::createTypedNode(World& world, std::string_view type, std::string_view name) -> Box<Node> {
+	auto node = world.nodeAllocation(type);
+	node->m_name = name;
+	node->m_state = NodeState::root;
+	node->m_type = NodeType::child;
+	node->m_local_enabled = true;
+	node->m_inherited_enabled = true;
+	return node;
+}
+
+void WorldTestAccess::callTick(Node& node, TickFunctionList stage) {
+	node.callTick(node.info(), stage);
+}
+
 void WorldTestAccess::registerDependency(Node& from, Node& to) {
 	World::instance->registerDependency(from, to);
 }

@@ -89,6 +89,29 @@ auto Volume::instanceOf(const Volume& source) -> Volume {
 	return out;
 }
 
+auto Volume::adoptResized(Volume& source, glm::ivec3 brick_offset, glm::uvec3 brick_dims) -> Volume {
+	assert(source.m_pool != nullptr);
+	Volume out(*source.m_pool, brick_dims);
+
+	for (uint32_t index = 0; index < source.m_entries.size(); ++index) {
+		BrickEntry& entry = source.m_entries[index];
+		if (entry.tag() == BrickTag::empty) {
+			continue;
+		}
+
+		const glm::ivec3 target = source.brickAtIndex(index) + brick_offset;
+		if (!out.containsBrick(target)) {
+			continue;
+		}
+
+		out.m_entries[out.entryIndex(target)] = entry;
+		if (entry.tag() == BrickTag::owned) {
+			entry = BrickEntry::make(BrickTag::shared, entry.payload());
+		}
+	}
+	return out;
+}
+
 void Volume::releaseOwned() {
 	if (m_pool == nullptr) {
 		return;

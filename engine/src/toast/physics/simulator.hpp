@@ -364,6 +364,9 @@ private:
 	void retireVoxelBody(BodyID id);
 	void destroyFragmentsOf(BodyID origin);
 
+	[[nodiscard]]
+	auto voxelNodeFor(ShapeID shape) -> toast::VoxelNode*;
+
 	void reapFragments();
 	void destroyFragmentRecord(BodyID id);
 	void queuePendingFragments(std::span<const ConnectivityResult> results);

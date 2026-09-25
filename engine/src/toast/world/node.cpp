@@ -250,6 +250,7 @@ void Node::reloadScripts() noexcept {
 	}
 
 	TOAST_INFO("Lua", "Reloaded scripts on {} ({}): {} value(s) preserved", name(), uid(), preserved);
+	onScriptsReloaded();
 }
 
 void Node::callTick(const NodeInfo* info, TickFunctionList func_type) noexcept {

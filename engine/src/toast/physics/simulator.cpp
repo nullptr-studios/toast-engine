@@ -553,6 +553,12 @@ void Simulator::clearFragmentFromSource(
 	// Carving does not bump the shape revision so its contacts stay warm
 	++data.surface_revision;
 
+	if (data.solid_voxel_count == 0) {
+		if (toast::VoxelNode* node = voxelNodeFor(shape_id)) {
+			node->m_pending_events.emptied = true;
+		}
+	}
+
 	auto* shape = tryGetShape(shape_id);
 	if (shape == nullptr) {
 		return;
@@ -568,6 +574,11 @@ void Simulator::clearFragmentFromSource(
 		return;
 	}
 	rebuildMassProperties(shape->owner);
+}
+
+auto Simulator::voxelNodeFor(ShapeID shape) -> toast::VoxelNode* {
+	const auto binding = std::ranges::find(m_voxel_bindings, shape, &VoxelNodeBinding::shape);
+	return binding != m_voxel_bindings.end() && binding->node.exists() ? &*binding->node : nullptr;
 }
 
 void Simulator::retireVoxelBody(BodyID id) {
@@ -919,6 +930,9 @@ auto Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedCompone
 		if (VoxelShapeData* source_data = tryGetVoxelData(shape->voxel.data)) {
 			clearFragmentFromSource(source_shape_id, *source_data, *source_data->volume, component);
 		}
+	}
+	if (toast::VoxelNode* node = voxelNodeFor(source_shape_id)) {
+		node->m_pending_events.broken_pieces.push_back(static_cast<int>(component.voxel_count));
 	}
 
 	rebuildMassProperties(frag_body);
@@ -2243,11 +2257,9 @@ auto Simulator::createVoxelShapeInternal(
 }
 
 auto Simulator::createVoxelShape(BodyID owner, toast::VoxelNode& node) -> ShapeID {
-	const assets::VoxelModel* model = node.resolvedModel();
 	const voxel::Palette* palette = node.resolvedPalette();
-	if (model == nullptr || palette == nullptr) {
-		TOAST_WARN("Physics", "Voxel node '{}' is missing a valid model or palette", node.name());
-		return {};
+	if (palette == nullptr) {
+		palette = &voxel::defaultPalette();
 	}
 
 	// TODO:
@@ -2274,13 +2286,17 @@ auto Simulator::createVoxelShape(BodyID owner, toast::VoxelNode& node) -> ShapeI
 		return {};
 	}
 
-	const VoxelShape voxel_shape;
+	const VoxelShape voxel_shape {.local_center = glm::vec3(node.voxelOrigin()) * voxel::k_voxel_size};
 
 	const ShapeID shape = createVoxelShape(owner, voxel_shape, *volume, *palette, *materials);
 	const Shape* stored_shape = tryGetShape(shape);
 	if (stored_shape != nullptr) {
 		if (VoxelShapeData* data = tryGetVoxelData(stored_shape->voxel.data)) {
 			data->source_revision = node.revision();
+			if (node.m_split_pending) {
+				data->connectivity_dirty = true;
+				node.m_split_pending = false;
+			}
 		}
 	}
 	return shape;
@@ -2717,6 +2733,8 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 	const glm::ivec3 last_brick = last / brick_dim;
 
 	std::vector<glm::ivec3> dirty_bricks;
+	uint32_t removed = 0;
+	glm::vec3 removed_sum {0.0f};
 
 	{
 		std::scoped_lock voxel_lock {voxelDataMutex()};
@@ -2761,6 +2779,8 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 									data->solid_voxel_count -= data->solid_voxel_count > 0 ? 1u : 0u;
 									brick_dirty = true;
 									data->connectivity_dirty = true;
+									++removed;
+									removed_sum += glm::vec3(v);
 								}
 							}
 						}
@@ -2797,6 +2817,10 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 		}
 		++binding.node->m_revision;
 		binding.source_revision = binding.node->revision();
+		binding.node->recordDamage(removed, removed_sum);
+		if (data->solid_voxel_count == 0) {
+			binding.node->m_pending_events.emptied = true;
+		}
 		break;
 	}
 

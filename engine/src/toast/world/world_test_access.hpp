@@ -21,6 +21,9 @@ struct TOAST_API WorldTestAccess {
 
 	static auto createNode(World& world, std::string_view name, NodeState state = NodeState::root) -> Box<Node>;
 
+	static auto createTypedNode(World& world, std::string_view type, std::string_view name) -> Box<Node>;
+	static void callTick(Node& node, TickFunctionList stage);
+
 	// activeRenderCamera() is protected on INodeOwner
 	static auto activeRenderCamera(World& world) -> Camera*;
 	static auto hasActiveCamera(World& world) -> bool;

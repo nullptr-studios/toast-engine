@@ -3533,17 +3533,7 @@ namespace {
 
 [[nodiscard]]
 auto defaultVoxelPalette() -> const voxel::Palette& {
-	static const voxel::Palette palette = [] {
-		voxel::Palette out;
-		for (uint32_t i = 1; i < voxel::k_palette_size; ++i) {
-			out.entries[i].albedo_r = 160;
-			out.entries[i].albedo_g = 160;
-			out.entries[i].albedo_b = 160;
-			out.entries[i].roughness = 200;
-		}
-		return out;
-	}();
-	return palette;
+	return voxel::defaultPalette();
 }
 
 [[nodiscard]]
@@ -3615,7 +3605,7 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 			.id = node->uid().data(),
 			.volume = volume,
 			.palette = palette,
-			.model = node->getWorldTransform(),
+			.model = node->getWorldTransform() * node->volumeLocalTransform(),
 			.debug_name = std::string{node->name()}
 		});
 		key.push_back({
