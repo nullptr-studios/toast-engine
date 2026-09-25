@@ -328,7 +328,7 @@ private:
 	void moveKinematicBody(BodyID body, const glm::vec3& position, const glm::quat& rotation, const glm::vec3& velocity);
 	/// Raises the velocity of a dynamic body along direction
 	void pushBody(BodyID body, const glm::vec3& point, const glm::vec3& direction, float speed, float max_impulse);
-	
+
 	static void wakeBody(BodyID id);
 	static void sleepBody(BodyID id);
 	void wakeBodiesTouching(BodyID id);

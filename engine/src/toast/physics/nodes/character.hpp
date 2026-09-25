@@ -17,7 +17,7 @@ namespace physics {
 class CapsuleCollider;
 
 /**
- * @brief Source engine movement 
+ * @brief Source engine movement
  * runs inside fixed physics step
  */
 class [[ToastNode, Icon("CharacterBody")]] TOAST_API Character : public physics::KinematicRigidbody {
@@ -25,7 +25,7 @@ class [[ToastNode, Icon("CharacterBody")]] TOAST_API Character : public physics:
 
 public:
 	signals::Signal<> jumped;
-	signals::Signal<float> landed; ///< Fall speed at the moment of touching ground
+	signals::Signal<float> landed;    ///< Fall speed at the moment of touching ground
 
 	[[Reflect]]
 	void move(const input::Action& action, input::ActionEvent event);
@@ -40,6 +40,7 @@ public:
 
 	[[Reflect]]
 	void setMoveInput(const glm::vec2& input);
+	/// TODO: Improve camera feeling
 	[[Reflect]]
 	void addLookInput(const glm::vec2& degrees);
 	[[Reflect]]
@@ -86,7 +87,7 @@ public:
 	[[Reflect, Group("Air")]]
 	float air_acceleration = 10.0f;
 	[[Reflect, Group("Air"), Unit("m/s")]]
-	float air_speed_cap = 0.762f;					///< Strafe jumping needs this below max speed
+	float air_speed_cap = 0.762f;    ///< Strafe jumping needs this below max speed
 	[[Reflect, Group("Air")]]
 	float gravity_scale = 2.07f;
 	[[Reflect, Group("Air"), Unit("m/s")]]
@@ -133,7 +134,7 @@ public:
 	[[Reflect, ReadOnly, Group("State")]]
 	bool crouched = false;
 	[[Reflect, ReadOnly, Group("State"), Unit("°")]]
-	glm::vec2 view_angles = {};			///< x pitch y yaw
+	glm::vec2 view_angles = {};    ///< x pitch y yaw
 
 private:
 	struct PushHit {

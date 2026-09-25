@@ -17,7 +17,7 @@
 /**
  * based on Source SDK 2013 gamemovement.cpp
  * https://raw.githubusercontent.com/ValveSoftware/source-sdk-2013/refs/heads/master/src/game/shared/gamemovement.cpp
- * 
+ *
  * keeps original hl2 bugs lmao
  */
 
@@ -28,7 +28,7 @@ namespace {
 /// Gap kept between the hull and the world
 constexpr float k_skin = 0.005f;
 constexpr float k_ground_probe = 0.05f;
-constexpr float k_non_jump_velocity = 3.556f;		///< Rising faster than this is never standing on ground
+constexpr float k_non_jump_velocity = 3.556f;    ///< Rising faster than this is never standing on ground
 constexpr float k_stop_epsilon = 0.00254f;
 constexpr float k_min_walk_speed = 0.0254f;
 constexpr float k_ground_snap_epsilon = 0.0005f;
@@ -44,7 +44,7 @@ void clipVelocity(const glm::vec3& in, const glm::vec3& normal, glm::vec3& out, 
 			out[axis] = 0.0f;
 		}
 	}
-	
+
 	if (const float adjust = glm::dot(out, normal); adjust < 0.0f) {
 		out -= normal * adjust;
 	}
