@@ -2745,6 +2745,7 @@ void VulkanRenderer::tick(float time) noexcept {
 	buildVoxelProxies(frame);
 
 	const auto extent = m_output_target->getExtent();
+	beginDebugLineCollection(frame);
 	{
 		std::scoped_lock lock(m_mesh_proxy_mutex);
 		for (const auto& [node, draw] : m_debug_nodes) {
@@ -3485,6 +3486,7 @@ void VulkanRenderer::tick(float time) noexcept {
 		m_ui_frame_builder(frame);
 	}
 
+	endDebugLineCollection();
 	count_build();
 	submitFrame();
 }
