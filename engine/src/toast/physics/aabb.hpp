@@ -20,6 +20,8 @@ struct TOAST_API AABB {
 	[[nodiscard]]
 	auto overlaps(const AABB& other) const -> bool;
 	[[nodiscard]]
+	auto overlaps(const glm::vec3& origin, const glm::vec3& inv_dir) const -> bool;
+	[[nodiscard]]
 	auto contains(const AABB& other) const -> bool;
 	[[nodiscard]]
 	auto expanded(float amount) const -> AABB;
@@ -32,7 +34,7 @@ struct TOAST_API AABB {
 	};
 
 	[[nodiscard]]
-	auto intersectRay(const glm::vec3& origin, const glm::vec3& inv_dir, float max_distance) const -> std::optional<RayHit>;
+	auto intersectRay(const glm::vec3& origin, const glm::vec3& inv_dir) const -> std::optional<RayHit>;
 };
 
 [[nodiscard]]

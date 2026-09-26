@@ -2351,17 +2351,10 @@ auto Simulator::valid(VoxelDataID data) const -> bool {
 }
 
 auto Simulator::tryGetVoxelData(VoxelDataID data) -> VoxelShapeData* {
-	if (not mainThreadMutationAllowed()) {
+	if (not instance->mainThreadMutationAllowed()) {
 		return nullptr;
 	}
-	return valid(data) ? &*m_voxel_shapes[data.slot].data : nullptr;
-}
-
-auto Simulator::tryGetVoxelData(VoxelDataID data) const -> const VoxelShapeData* {
-	if (not mainThreadMutationAllowed()) {
-		return nullptr;
-	}
-	return valid(data) ? &*m_voxel_shapes[data.slot].data : nullptr;
+	return instance->valid(data) ? &*(instance->m_voxel_shapes)[data.slot].data : nullptr;
 }
 
 void Simulator::destroyVoxelData(VoxelDataID data) {
@@ -2894,7 +2887,7 @@ auto Simulator::shootVoxel(
 		if (body == nullptr) {
 			continue;
 		}
-		const std::optional<AABB::RayHit> hit = worldShapeBounds(*body, *shape).intersectRay(origin, inv_dir, max_distance);
+		const std::optional<AABB::RayHit> hit = worldShapeBounds(*body, *shape).intersectRay(origin, inv_dir);
 		if (not hit) {
 			continue;
 		}

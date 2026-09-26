@@ -6,13 +6,13 @@ assets::PhysicsMaterial::PhysicsMaterial(const toml::table& table, Handle<Schema
     : Data(table, std::move(schema), Data::keep_all_keys) {
 	const auto& d = static_cast<const DataValue&>(m_root);
 	if (d.contains("restitution")) {
-		m_restitution = d["restitution"].as<float>();
+		m_restitution = d["restitution"].as<double>();
 	}
 	if (d.contains("static_friction")) {
-		m_static_friction = d["static_friction"].as<float>();
+		m_static_friction = d["static_friction"].as<double>();
 	}
 	if (d.contains("dynamic_friction")) {
-		m_dynamic_friction = d["dynamic_friction"].as<float>();
+		m_dynamic_friction = d["dynamic_friction"].as<double>();
 	}
 }
 
