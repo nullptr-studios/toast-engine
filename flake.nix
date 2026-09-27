@@ -127,6 +127,7 @@
 				editor
 				gdb_editor
 				kenzo
+				tracy_0_13
 
 				autoconf
 				autoconf-archive

@@ -250,6 +250,8 @@ private:
 	[[nodiscard]]
 	static auto nodeFor(BodyID body) -> toast::Box<toast::Node>;
 	[[nodiscard]]
+	static auto colliderFor(BodyID body, ShapeID shape) -> toast::Box<toast::Node>;
+	[[nodiscard]]
 	auto mainThreadMutationAllowed() const -> bool;
 
 	[[nodiscard]]

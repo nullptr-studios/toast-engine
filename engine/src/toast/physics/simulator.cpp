@@ -11,6 +11,7 @@
 #include "nodes/rigidbody.hpp"
 #include "nodes/sphere_collider.hpp"
 #include "physics_settings.hpp"
+#include "toast/physics/body.hpp"
 #include "voxel_data_lock.hpp"
 
 #include <algorithm>
@@ -408,6 +409,8 @@ auto Simulator::nodeFor(BodyID body) -> toast::Box<toast::Node> {
 		return {};
 	}
 
+	ZoneScoped;
+
 	const auto rigidbody_binding =
 	    std::ranges::find_if(instance->m_node_bindings, [body](const NodeBinding& candidate) { return candidate.body == body; });
 	if (rigidbody_binding != instance->m_node_bindings.end()) {
@@ -419,6 +422,36 @@ auto Simulator::nodeFor(BodyID body) -> toast::Box<toast::Node> {
 	});
 	if (voxel_binding != instance->m_voxel_bindings.end()) {
 		return voxel_binding->node;
+	}
+
+	return {};
+}
+
+auto Simulator::colliderFor(BodyID body, ShapeID shape) -> toast::Box<toast::Node> {
+	if (!instance) {
+		return {};
+	}
+
+	ZoneScoped;
+
+	for (const NodeBinding& binding : instance->m_node_bindings) {
+		if (binding.body != body) {
+			continue;
+		}
+
+		const auto collider = std::ranges::find(binding.colliders, shape, &ColliderBinding::shape);
+
+		if (collider != binding.colliders.end() && collider->node.exists()) {
+			return collider->node;
+		}
+
+		return {};
+	}
+
+	for (const VoxelNodeBinding& binding : instance->m_voxel_bindings) {
+		if (binding.body == body && binding.shape == shape && binding.node.exists()) {
+			return binding.node;
+		}
 	}
 
 	return {};

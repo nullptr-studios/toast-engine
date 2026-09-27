@@ -1,3 +1,4 @@
+#include "toast/log.hpp"
 #include "toast/physics/broad_phase.hpp"
 #include "toast/physics/shape.hpp"
 #include "toast/physics/simulator.hpp"
@@ -8,6 +9,7 @@
 #include <limits>
 #include <optional>
 #include <toast/renderer/vulkan_renderer.hpp>
+#include <tracy/Tracy.hpp>
 
 namespace {
 using namespace physics;
@@ -19,8 +21,9 @@ struct LocalHit {
 
 /// @brief Raycast To Sphere
 auto raycastSphere(const SphereShape& obj, glm::vec3 pos, glm::vec3 dir) -> std::optional<LocalHit> {
-	// Solve the ray/sphere intersection in local space.
-	float b = glm::dot(pos, dir);
+	ZoneScoped
+	    // Solve the ray/sphere intersection in local space.
+	    float b = glm::dot(pos, dir);
 	float c = dot(pos, pos) - (obj.radius * obj.radius);
 	float h = (b * b) - c;
 
@@ -51,8 +54,9 @@ auto raycastSphere(const SphereShape& obj, glm::vec3 pos, glm::vec3 dir) -> std:
 
 /// @brief Raycast to AABB
 auto raycastBox(const BoxShape& obj, glm::vec3 pos, glm::vec3 dir) -> std::optional<LocalHit> {
-	// Calculate Half Extents
-	glm::vec3 half_extents = obj.size * 0.5f;
+	ZoneScoped
+	    // Calculate Half Extents
+	    glm::vec3 half_extents = obj.size * 0.5f;
 
 	// values for the entry and exit intersection of the ray (dir * t)
 	float entry = -std::numeric_limits<float>::infinity();
@@ -115,7 +119,7 @@ auto raycastBox(const BoxShape& obj, glm::vec3 pos, glm::vec3 dir) -> std::optio
 
 /// @brief Raycast to Sphere
 auto raycastCapsule(const CapsuleShape& obj, glm::vec3 pos, glm::vec3 dir) -> std::optional<LocalHit> {
-	float shaft_half_length = (obj.height * 0.5f) - obj.radius;
+	ZoneScoped float shaft_half_length = (obj.height * 0.5f) - obj.radius;
 
 	// A short capsule is a sphere
 	if (shaft_half_length <= 1.0e-6f) {
@@ -186,7 +190,7 @@ auto raycastCapsule(const CapsuleShape& obj, glm::vec3 pos, glm::vec3 dir) -> st
 
 /// @brief Raycast to Voxel
 auto raycastVoxel(const VoxelShape& shape, glm::vec3 pos, glm::vec3 dir) -> std::optional<LocalHit> {
-	VoxelShapeData* shape_data = Simulator::tryGetVoxelData(shape.data);
+	ZoneScoped VoxelShapeData* shape_data = Simulator::tryGetVoxelData(shape.data);
 	if (shape_data == nullptr || shape_data->volume == nullptr) {
 		return std::nullopt;
 	}
@@ -302,7 +306,7 @@ auto raycastVoxel(const VoxelShape& shape, glm::vec3 pos, glm::vec3 dir) -> std:
 
 namespace physics {
 auto Simulator::raycast(glm::vec3 pos, glm::vec3 dir) -> std::vector<RayHit> {
-	if (instance == nullptr) {
+	ZoneScoped if (instance == nullptr) {
 		return {};
 	}
 
@@ -365,12 +369,14 @@ auto Simulator::raycast(glm::vec3 pos, glm::vec3 dir) -> std::vector<RayHit> {
 			glm::vec3 world_normal = glm::normalize(combined_rotation * hit->normal);
 			glm::vec3 hit_pos = pos + dir * hit->distance;
 
+			renderer::debugDrawLine(pos, hit_pos, {0, 0, 1, 1});
 			renderer::debugDrawArrow(hit_pos, hit_pos + world_normal * 0.5f, {0, 1, 1, 1});
+			renderer::debugDrawArrow(hit_pos, hit_pos + glm::tan(world_normal) * 0.5f, {1, .5, .5, 1});
 			renderer::debugDrawSphere(hit_pos, .1, {0, 1, 1, 1});
 
 			results.emplace_back(
 			    RayHit {
-			      .node = nodeFor(shape->owner),
+			      .node = colliderFor(shape->owner, target),
 			      .position = hit_pos,
 			      .normal = world_normal,
 			      .distance = hit->distance,
