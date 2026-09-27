@@ -472,20 +472,20 @@ auto ProceduralVoxel::getPieceAt(glm::vec3 pos) -> Box<Node> {
 
 auto ProceduralVoxel::pieceAt(glm::ivec3 voxel) -> VoxelPiece* {
 	// The last piece that draws that voxel is the one whose color shows there
-	for (auto it = m_layout.rbegin(); it != m_layout.rend(); ++it) {
-		if (it->kind == PieceKind::carve || !it->node.exists()) {
+	for (auto& it : std::views::reverse(m_layout)) {
+		if (it.kind == PieceKind::carve || !it.node.exists()) {
 			continue;
 		}
-		auto* piece = reflect_cast<VoxelPiece>(&const_cast<Node&>(*it->node));
+		auto* piece = reflect_cast<VoxelPiece>(&const_cast<Node&>(*it.node));
 		const voxel::Volume* grid = piece != nullptr ? piece->grid() : nullptr;
 		if (grid == nullptr) {
 			continue;
 		}
 		glm::ivec3 local;
 		for (int axis = 0; axis < 3; ++axis) {
-			const int32_t along = voxel[axis] - it->placement.offset[axis];
-			local[it->placement.orientation.source[static_cast<size_t>(axis)]] =
-			    it->placement.orientation.flip[static_cast<size_t>(axis)] ? -along - 1 : along;
+			const int32_t along = voxel[axis] - it.placement.offset[axis];
+			local[it.placement.orientation.source[static_cast<size_t>(axis)]] =
+			    it.placement.orientation.flip[static_cast<size_t>(axis)] ? -along - 1 : along;
 		}
 		if (grid->containsVoxel(local) && grid->isSolidAt(local)) {
 			return piece;
