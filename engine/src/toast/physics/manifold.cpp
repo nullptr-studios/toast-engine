@@ -318,13 +318,6 @@ struct BoxSatResult {
 	int axis_b = 0;
 };
 
-struct ContactCandidate {
-	glm::vec3 position {};
-	float penetration = 0.0f;
-	ContactFeatureID feature_a {};
-	ContactFeatureID feature_b {};
-};
-
 struct BoxSupportPoint {
 	glm::vec3 position {};
 	ContactFeatureID feature {};
@@ -535,6 +528,9 @@ auto incidentFaceVertices(const WorldBox& box, const glm::vec3& reference_normal
 	result.emplaceBack(vertex(-1.0f, 1.0f));
 	return result;
 }
+
+/// Collapses a bucket through reduceContacts at this size instead of once at the end so dedup stays O(n) not O(n^2)
+constexpr size_t k_contact_reduce_batch_size = 32;
 
 auto reduceContacts(std::vector<ContactCandidate> candidates, const glm::vec3& normal) -> std::vector<ContactCandidate> {
 	std::erase_if(candidates, [](const ContactCandidate& candidate) {
@@ -1140,6 +1136,15 @@ auto queryVolumeInVoxels(const AABB& bounds) -> uint64_t {
 	const glm::vec3 extent = glm::max(bounds.max - bounds.min, glm::vec3(0.0f)) / voxel::k_voxel_size;
 	return static_cast<uint64_t>(extent.x) * static_cast<uint64_t>(extent.y) * static_cast<uint64_t>(extent.z);
 }
+
+// Surface area not volume since queryVoxelSurface only ever visits surface-classified voxels
+[[nodiscard]]
+auto querySurfaceAreaInVoxels(const AABB& bounds) -> uint64_t {
+	const glm::vec3 extent = glm::max(bounds.max - bounds.min, glm::vec3(0.0f)) / voxel::k_voxel_size;
+	const double area = 2.0 * (static_cast<double>(extent.x) * extent.y + static_cast<double>(extent.y) * extent.z +
+	                           static_cast<double>(extent.z) * extent.x);
+	return static_cast<uint64_t>(area);
+}
 }
 
 void collideSphereVoxel(
@@ -1501,6 +1506,279 @@ struct VoxelVoxelScratch {
 
 }
 
+auto resolveVoxelVoxelPair(CollisionWorldView world, BroadPhasePair pair) -> std::optional<VoxelVoxelPairView> {
+	const Shape* shape_a = world.shape(pair.a.shape);
+	const Shape* shape_b = world.shape(pair.b.shape);
+	const Body* body_a = world.body(pair.a.body);
+	const Body* body_b = world.body(pair.b.body);
+	if (shape_a == nullptr || shape_b == nullptr || body_a == nullptr || body_b == nullptr) {
+		return std::nullopt;
+	}
+	if (shape_a->type != ShapeType::voxel || shape_b->type != ShapeType::voxel) {
+		return std::nullopt;
+	}
+
+	const VoxelShapeData* voxel_data_a = world.voxelData(shape_a->voxel.data);
+	const VoxelShapeData* voxel_data_b = world.voxelData(shape_b->voxel.data);
+	if (voxel_data_a == nullptr || voxel_data_b == nullptr) {
+		return std::nullopt;
+	}
+
+	const bool a_is_probe = voxel_data_a->solid_voxel_count <= voxel_data_b->solid_voxel_count;
+	return VoxelVoxelPairView {
+	  .probe = a_is_probe ? CollisionElement {*shape_a, *body_a}
+         : CollisionElement {*shape_b, *body_b},
+	  .probe_data = a_is_probe ? *voxel_data_a : *voxel_data_b,
+	  .ref = a_is_probe ? CollisionElement {*shape_b, *body_b}
+         : CollisionElement {*shape_a, *body_a},
+	  .ref_data = a_is_probe ? *voxel_data_b : *voxel_data_a,
+	  .a_is_probe = a_is_probe,
+	};
+}
+
+namespace {
+
+struct VoxelVoxelSetup {
+	glm::vec3 probe_origin;
+	glm::mat3 probe_basis;
+	glm::mat3 ref_basis_inv;
+	glm::vec3 ref_origin;
+	glm::mat3 ref_basis;
+	VoxelQueryContext probe_context;
+	VoxelQueryContext ref_context;
+	AABB probe_search_bounds;
+};
+
+// Shared by classifyVoxelVoxelSplit and collideVoxelVoxelRegion so this transform math has one copy
+[[nodiscard]]
+auto voxelVoxelSetup(const VoxelVoxelPairView& view) -> std::optional<VoxelVoxelSetup> {
+	const CollisionElement& probe = view.probe;
+	const CollisionElement& ref = view.ref;
+
+	const glm::quat probe_rotation = glm::normalize(probe.body.rotation * probe.shape.voxel.local_rotation);
+	const glm::vec3 probe_origin = probe.body.position + probe.body.rotation * probe.shape.voxel.local_center;
+	const glm::mat3 probe_basis = glm::mat3_cast(probe_rotation);
+	const glm::mat3 probe_basis_inv = glm::transpose(probe_basis);
+
+	const glm::quat ref_rotation = glm::normalize(ref.body.rotation * ref.shape.voxel.local_rotation);
+	const glm::vec3 ref_origin = ref.body.position + ref.body.rotation * ref.shape.voxel.local_center;
+	const glm::mat3 ref_basis = glm::mat3_cast(ref_rotation);
+	const glm::mat3 ref_basis_inv = glm::transpose(ref_basis);
+
+	const glm::mat3 reference_to_probe = probe_basis_inv * ref_basis;
+	const glm::vec3 reference_to_probe_offset = probe_basis_inv * (ref_origin - probe_origin);
+	const AABB& reference_bounds = ref.shape.voxel.local_bounds;
+	const glm::vec3 reference_center = (reference_bounds.min + reference_bounds.max) * 0.5f;
+	const glm::vec3 reference_extent = (reference_bounds.max - reference_bounds.min) * 0.5f;
+	const glm::vec3 reference_center_in_probe = (reference_to_probe * reference_center) + reference_to_probe_offset;
+	const glm::vec3 reference_extent_in_probe = glm::abs(reference_to_probe[0]) * reference_extent.x +
+	                                            glm::abs(reference_to_probe[1]) * reference_extent.y +
+	                                            glm::abs(reference_to_probe[2]) * reference_extent.z;
+
+	const AABB probe_search_bounds {
+	  .min = glm::max(probe.shape.voxel.local_bounds.min, reference_center_in_probe - reference_extent_in_probe),
+	  .max = glm::min(probe.shape.voxel.local_bounds.max, reference_center_in_probe + reference_extent_in_probe),
+	};
+	if (glm::any(glm::greaterThan(probe_search_bounds.min, probe_search_bounds.max))) {
+		return std::nullopt;
+	}
+
+	// clang-format off
+	return VoxelVoxelSetup {
+	  .probe_origin = probe_origin,
+	  .probe_basis = probe_basis,
+	  .ref_basis_inv = ref_basis_inv,
+	  .ref_origin = ref_origin,
+	  .ref_basis = ref_basis,
+	  .probe_context = {
+	    .volume = *view.probe_data.volume, .surface = view.probe_data.surface, .palette = view.probe_data.palette,
+	    .materials = view.probe_data.materials,
+	  },
+	  .ref_context = {
+	    .volume = *view.ref_data.volume, .surface = view.ref_data.surface, .palette = view.ref_data.palette,
+	    .materials = view.ref_data.materials,
+	  },
+	  .probe_search_bounds = probe_search_bounds,
+	};
+	// clang-format on
+}
+
+}
+
+auto classifyVoxelVoxelSplit(const VoxelVoxelPairView& view) -> std::optional<VoxelVoxelSplitInfo> {
+	const auto setup = voxelVoxelSetup(view);
+	if (not setup) {
+		return std::nullopt;
+	}
+	return VoxelVoxelSplitInfo {
+	  .probe_search_bounds = setup->probe_search_bounds,
+	  .estimated_voxels = querySurfaceAreaInVoxels(setup->probe_search_bounds),
+	};
+}
+
+auto collideVoxelVoxelRegion(const VoxelVoxelPairView& view, const AABB& probe_region) -> VoxelPairPartial {
+	ZoneScoped;
+
+	VoxelPairPartial partial;
+	const auto setup = voxelVoxelSetup(view);
+	if (not setup) {
+		return partial;
+	}
+
+	const glm::vec3 probe_origin = setup->probe_origin;
+	const glm::mat3 probe_basis = setup->probe_basis;
+	const glm::mat3 ref_basis_inv = setup->ref_basis_inv;
+	const glm::vec3 ref_origin = setup->ref_origin;
+	size_t remaining_budget = 256;
+
+	queryVoxelSurface(setup->probe_context, probe_region, [&](const VoxelCandidate& probe_c) -> bool {
+		if (remaining_budget == 0) {
+			return false;
+		}
+
+		const glm::vec3 probe_center_world = probe_origin + probe_basis * ((probe_c.min + probe_c.max) * 0.5f);
+		const glm::vec3 half_extent = (probe_c.max - probe_c.min) * 0.5f;
+
+		const _detail::WorldBox probe_box_reference_local {
+		  .center = ref_basis_inv * (probe_center_world - ref_origin),
+		  .rotation = ref_basis_inv * probe_basis,
+		  .half_extents = half_extent,
+		};
+
+		const glm::vec3 extents = glm::abs(probe_box_reference_local.rotation[0]) * half_extent.x +
+		                          glm::abs(probe_box_reference_local.rotation[1]) * half_extent.y +
+		                          glm::abs(probe_box_reference_local.rotation[2]) * half_extent.z;
+		const AABB probe_bounds_reference_local {
+		  .min = probe_box_reference_local.center - extents,
+		  .max = probe_box_reference_local.center + extents,
+		};
+
+		const FeatureType probe_f_type =
+		    probe_c.classification == voxel::VoxelClass::edge ? FeatureType::voxel_edge : FeatureType::voxel_face;
+		const ContactFeatureID probe_feature =
+		    voxelFeature(probe_f_type, probe_c.brick_slot, probe_c.local_index, probe_c.normal_index);
+
+		queryVoxelSurface(setup->ref_context, probe_bounds_reference_local, [&](const VoxelCandidate& ref_c) -> bool {
+			if (remaining_budget == 0) {
+				return false;
+			}
+			if (ref_c.normal_index >= partial.candidates_per_normal.size()) {
+				return true;
+			}
+			--remaining_budget;
+
+			const _detail::WorldBox ref_voxel_box {
+			  .center = (ref_c.min + ref_c.max) * 0.5f,
+			  .rotation = glm::mat3(1.0f),
+			  .half_extents = (ref_c.max - ref_c.min) * 0.5f,
+			};
+			// ref_voxel_box is always axis aligned so this skips the generic cross products
+			auto sat = _detail::collideBoxAgainstAxisAlignedBox(probe_box_reference_local, ref_voxel_box);
+			if (not sat.has_value()) {
+				return true;
+			}
+
+			const FeatureType ref_f_type =
+			    ref_c.classification == voxel::VoxelClass::edge ? FeatureType::voxel_edge : FeatureType::voxel_face;
+			const ContactFeatureID ref_feature = voxelFeature(ref_f_type, ref_c.brick_slot, ref_c.local_index, ref_c.normal_index);
+
+			std::vector<_detail::ContactCandidate>& bucket = partial.candidates_per_normal[ref_c.normal_index];
+			for (_detail::ContactCandidate& raw : sat->candidates) {
+				raw.feature_a = probe_feature;
+				raw.feature_b = ref_feature;
+				bucket.push_back(raw);
+			}
+
+			if (not partial.group_started[ref_c.normal_index]) {
+				partial.group_started[ref_c.normal_index] = true;
+				partial.normal_per_group[ref_c.normal_index] = sat->normal;
+				partial.material_per_group[ref_c.normal_index] = _detail::combineMaterials(
+				    PhysicsMaterial {
+				      .restitution = probe_c.material->restitution,
+				      .static_friction = probe_c.material->static_friction,
+				      .dynamic_friction = probe_c.material->dynamic_friction,
+				    },
+				    PhysicsMaterial {
+				      .restitution = ref_c.material->restitution,
+				      .static_friction = ref_c.material->static_friction,
+				      .dynamic_friction = ref_c.material->dynamic_friction,
+				    }
+				);
+			}
+
+			// Same reasoning as collideBoxVoxel bounds one region bucket to a batch at a time
+			if (bucket.size() >= _detail::k_contact_reduce_batch_size) {
+				bucket = _detail::reduceContacts(std::move(bucket), partial.normal_per_group[ref_c.normal_index]);
+			}
+
+			return true;
+		});
+
+		return remaining_budget > 0;
+	});
+
+	return partial;
+}
+
+void mergeVoxelVoxelPartials(
+    BroadPhasePair pair, const VoxelVoxelPairView& view, std::span<VoxelPairPartial> partials, std::vector<Manifold>& output
+) {
+	ZoneScopedN("physics::MergeVoxelVoxelPartials");
+
+	const glm::quat ref_rotation = glm::normalize(view.ref.body.rotation * view.ref.shape.voxel.local_rotation);
+	const glm::vec3 ref_origin = view.ref.body.position + view.ref.body.rotation * view.ref.shape.voxel.local_center;
+	const glm::mat3 ref_basis = glm::mat3_cast(ref_rotation);
+
+	for (size_t normal_index = 0; normal_index < voxel::k_normal_direction_count; ++normal_index) {
+		std::vector<_detail::ContactCandidate> merged;
+		glm::vec3 local_normal {};
+		ContactMaterial material {};
+		bool started = false;
+
+		for (VoxelPairPartial& partial : partials) {
+			std::vector<_detail::ContactCandidate>& bucket = partial.candidates_per_normal[normal_index];
+			if (bucket.empty()) {
+				continue;
+			}
+			if (not started) {
+				started = true;
+				local_normal = partial.normal_per_group[normal_index];
+				material = partial.material_per_group[normal_index];
+			}
+			merged.insert(merged.end(), std::make_move_iterator(bucket.begin()), std::make_move_iterator(bucket.end()));
+		}
+
+		if (not started) {
+			continue;
+		}
+
+		std::vector<_detail::ContactCandidate> reduced = _detail::reduceContacts(std::move(merged), local_normal);
+		if (reduced.empty()) {
+			continue;
+		}
+		const glm::vec3 world_normal = ref_basis * local_normal;
+
+		// Matches the a_is_probe flip below in collideVoxelVoxel own BuildManifolds
+		Manifold manifold {
+		  .pair = pair,
+		  .normal = view.a_is_probe ? world_normal : -world_normal,
+		  .normal_index = static_cast<uint8_t>(normal_index),
+		  .contact_count = static_cast<uint8_t>(reduced.size()),
+		};
+		for (size_t index = 0; index < reduced.size(); ++index) {
+			const _detail::ContactCandidate& candidate = reduced[index];
+			manifold.contacts[index] = ContactPoint {
+			  .position = ref_origin + ref_basis * candidate.position,
+			  .penetration = candidate.penetration,
+			  .feature_a = view.a_is_probe ? candidate.feature_a : candidate.feature_b,
+			  .feature_b = view.a_is_probe ? candidate.feature_b : candidate.feature_a,
+			  .material = material,
+			};
+		}
+		output.push_back(manifold);
+	}
+}
+
 void collideVoxelVoxel(
     BroadPhasePair pair, CollisionElement a, const VoxelShapeData& data_a, CollisionElement b, const VoxelShapeData& data_b,
     std::vector<Manifold>& output
@@ -1649,6 +1927,12 @@ void collideVoxelVoxel(
 				);
 			}
 				// clang-format on
+
+				// Same reasoning as collideBoxVoxel bounds a bucket to a batch at a time
+				if (bucket.size() >= _detail::k_contact_reduce_batch_size) {
+					bucket = _detail::reduceContacts(std::move(bucket), normal_per_group[ref_c.normal_index]);
+				}
+
 				return true;
 			});
 
@@ -1824,6 +2108,235 @@ void collideCapsuleVoxel(
 	}
 }
 
+namespace {
+
+// Reused across calls like VoxelVoxelScratch but no candidate budget since a box has no size cap
+struct BoxVoxelScratch {
+	std::array<std::vector<_detail::ContactCandidate>, voxel::k_normal_direction_count> candidates_per_normal;
+	std::array<glm::vec3, voxel::k_normal_direction_count> normal_per_group {};
+	std::array<ContactMaterial, voxel::k_normal_direction_count> material_per_group {};
+	std::array<bool, voxel::k_normal_direction_count> group_started {};
+
+	void reset() {
+		for (std::vector<_detail::ContactCandidate>& bucket : candidates_per_normal) {
+			bucket.clear();
+		}
+		group_started.fill(false);
+	}
+};
+
+}
+
+auto resolveBoxVoxelPair(CollisionWorldView world, BroadPhasePair pair) -> std::optional<BoxVoxelPairView> {
+	const Shape* shape_a = world.shape(pair.a.shape);
+	const Shape* shape_b = world.shape(pair.b.shape);
+	const Body* body_a = world.body(pair.a.body);
+	const Body* body_b = world.body(pair.b.body);
+	if (shape_a == nullptr || shape_b == nullptr || body_a == nullptr || body_b == nullptr) {
+		return std::nullopt;
+	}
+
+	const bool a_is_box = shape_a->type == ShapeType::box;
+	const bool b_is_box = shape_b->type == ShapeType::box;
+	const bool a_is_voxel = shape_a->type == ShapeType::voxel;
+	const bool b_is_voxel = shape_b->type == ShapeType::voxel;
+	if (not((a_is_box && b_is_voxel) || (a_is_voxel && b_is_box))) {
+		return std::nullopt;
+	}
+
+	const bool voxel_is_a = a_is_voxel;
+	const Shape& voxel_shape = voxel_is_a ? *shape_a : *shape_b;
+	const VoxelShapeData* voxel_data = world.voxelData(voxel_shape.voxel.data);
+	if (voxel_data == nullptr) {
+		return std::nullopt;
+	}
+
+	return BoxVoxelPairView {
+	  .box = voxel_is_a ? CollisionElement {*shape_b, *body_b}
+         : CollisionElement {*shape_a, *body_a},
+	  .voxel = voxel_is_a ? CollisionElement {*shape_a, *body_a}
+         : CollisionElement {*shape_b, *body_b},
+	  .voxel_data = *voxel_data,
+	  .voxel_is_a = voxel_is_a,
+	};
+}
+
+namespace {
+[[nodiscard]]
+auto boxVoxelLocalBox(const BoxVoxelPairView& view) -> _detail::WorldBox {
+	const _detail::WorldBox world_box = _detail::worldBox(view.box.body, view.box.shape.box);
+	const glm::quat voxel_rotation = glm::normalize(view.voxel.body.rotation * view.voxel.shape.voxel.local_rotation);
+	const glm::vec3 voxel_origin = view.voxel.body.position + view.voxel.body.rotation * view.voxel.shape.voxel.local_center;
+	const glm::mat3 voxel_basis_inv = glm::transpose(glm::mat3_cast(voxel_rotation));
+
+	return _detail::WorldBox {
+	  .center = voxel_basis_inv * (world_box.center - voxel_origin),
+	  .rotation = voxel_basis_inv * world_box.rotation,
+	  .half_extents = world_box.half_extents,
+	};
+}
+}
+
+auto classifyBoxVoxelSplit(const BoxVoxelPairView& view) -> BoxVoxelSplitInfo {
+	const _detail::WorldBox local_box = boxVoxelLocalBox(view);
+	const glm::vec3 local_world_extents = glm::abs(local_box.rotation[0]) * local_box.half_extents.x +
+	                                      glm::abs(local_box.rotation[1]) * local_box.half_extents.y +
+	                                      glm::abs(local_box.rotation[2]) * local_box.half_extents.z;
+	const AABB local_bounds {.min = local_box.center - local_world_extents, .max = local_box.center + local_world_extents};
+
+	return {.local_bounds = local_bounds, .estimated_voxels = querySurfaceAreaInVoxels(local_bounds)};
+}
+
+auto splitVoxelRegions(const AABB& local_bounds, size_t region_count) -> std::vector<AABB> {
+	if (region_count <= 1) {
+		return {local_bounds};
+	}
+
+	const glm::vec3 extent = local_bounds.max - local_bounds.min;
+	const int axis = extent.x >= extent.y && extent.x >= extent.z ? 0 : (extent.y >= extent.z ? 1 : 2);
+
+	const auto first_voxel = static_cast<int64_t>(std::floor(local_bounds.min[axis] / voxel::k_voxel_size));
+	const auto last_voxel = static_cast<int64_t>(std::ceil(local_bounds.max[axis] / voxel::k_voxel_size)) - 1;
+	const int64_t voxel_span = last_voxel - first_voxel + 1;
+	if (voxel_span <= static_cast<int64_t>(region_count)) {
+		return {local_bounds};
+	}
+
+	std::vector<AABB> regions;
+	regions.reserve(region_count);
+	for (size_t i = 0; i < region_count; ++i) {
+		const int64_t chunk_first = first_voxel + (voxel_span * static_cast<int64_t>(i)) / static_cast<int64_t>(region_count);
+		const int64_t chunk_last = first_voxel + (voxel_span * static_cast<int64_t>(i + 1)) / static_cast<int64_t>(region_count) - 1;
+		if (chunk_last < chunk_first) {
+			continue;
+		}
+
+		AABB region = local_bounds;
+		region.min[axis] = static_cast<float>(chunk_first) * voxel::k_voxel_size;
+		region.max[axis] = static_cast<float>(chunk_last + 1) * voxel::k_voxel_size;
+		regions.push_back(region);
+	}
+	return regions;
+}
+
+auto collideBoxVoxelRegion(const BoxVoxelPairView& view, const AABB& region) -> VoxelPairPartial {
+	ZoneScoped;
+
+	const _detail::WorldBox local_box = boxVoxelLocalBox(view);
+	const VoxelQueryContext context {
+	  .volume = *view.voxel_data.volume,
+	  .surface = view.voxel_data.surface,
+	  .palette = view.voxel_data.palette,
+	  .materials = view.voxel_data.materials,
+	};
+
+	VoxelPairPartial partial;
+
+	queryVoxelSurface(context, region, [&](const VoxelCandidate& candidate) {
+		if (candidate.normal_index >= partial.candidates_per_normal.size()) {
+			return;
+		}
+
+		const _detail::WorldBox voxel_box {
+		  .center = (candidate.min + candidate.max) * 0.5f,
+		  .rotation = glm::mat3(1.0f),
+		  .half_extents = (candidate.max - candidate.min) * 0.5f,
+		};
+
+		auto sat = _detail::collideWorldBoxes(local_box, voxel_box);
+		if (not sat.has_value()) {
+			return;
+		}
+
+		const FeatureType type =
+		    candidate.classification == voxel::VoxelClass::edge ? FeatureType::voxel_edge : FeatureType::voxel_face;
+		const ContactFeatureID voxel_feature =
+		    voxelFeature(type, candidate.brick_slot, candidate.local_index, candidate.normal_index);
+
+		std::vector<_detail::ContactCandidate>& bucket = partial.candidates_per_normal[candidate.normal_index];
+		for (_detail::ContactCandidate& raw : sat->candidates) {
+			raw.feature_b = voxel_feature;
+			bucket.push_back(raw);
+		}
+
+		if (not partial.group_started[candidate.normal_index]) {
+			partial.group_started[candidate.normal_index] = true;
+			partial.normal_per_group[candidate.normal_index] = sat->normal;
+			partial.material_per_group[candidate.normal_index] = {
+			  .restitution = candidate.material->restitution,
+			  .static_friction = candidate.material->static_friction,
+			  .dynamic_friction = candidate.material->dynamic_friction,
+			};
+		}
+
+		// Same reasoning as collideBoxVoxel bounds one region bucket to a batch at a time
+		if (bucket.size() >= _detail::k_contact_reduce_batch_size) {
+			bucket = _detail::reduceContacts(std::move(bucket), partial.normal_per_group[candidate.normal_index]);
+		}
+	});
+
+	return partial;
+}
+
+void mergeBoxVoxelPartials(
+    BroadPhasePair pair, const BoxVoxelPairView& view, std::span<VoxelPairPartial> partials, std::vector<Manifold>& output
+) {
+	ZoneScopedN("physics::MergeBoxVoxelPartials");
+
+	const glm::quat voxel_rotation = glm::normalize(view.voxel.body.rotation * view.voxel.shape.voxel.local_rotation);
+	const glm::vec3 voxel_origin = view.voxel.body.position + view.voxel.body.rotation * view.voxel.shape.voxel.local_center;
+	const glm::mat3 voxel_basis = glm::mat3_cast(voxel_rotation);
+
+	for (size_t normal_index = 0; normal_index < voxel::k_normal_direction_count; ++normal_index) {
+		std::vector<_detail::ContactCandidate> merged;
+		glm::vec3 local_normal {};
+		ContactMaterial material {};
+		bool started = false;
+
+		for (VoxelPairPartial& partial : partials) {
+			std::vector<_detail::ContactCandidate>& bucket = partial.candidates_per_normal[normal_index];
+			if (bucket.empty()) {
+				continue;
+			}
+			if (not started) {
+				started = true;
+				local_normal = partial.normal_per_group[normal_index];
+				material = partial.material_per_group[normal_index];
+			}
+			merged.insert(merged.end(), std::make_move_iterator(bucket.begin()), std::make_move_iterator(bucket.end()));
+		}
+
+		if (not started) {
+			continue;
+		}
+
+		std::vector<_detail::ContactCandidate> reduced = _detail::reduceContacts(std::move(merged), local_normal);
+		if (reduced.empty()) {
+			continue;
+		}
+		const glm::vec3 world_normal = voxel_basis * local_normal;
+
+		// Matches NarrowPhase::flip mirrors normal and features back when the voxel was pair.a
+		Manifold manifold {
+		  .pair = pair,
+		  .normal = view.voxel_is_a ? -world_normal : world_normal,
+		  .normal_index = static_cast<uint8_t>(normal_index),
+		  .contact_count = static_cast<uint8_t>(reduced.size()),
+		};
+		for (size_t index = 0; index < reduced.size(); ++index) {
+			const _detail::ContactCandidate& candidate = reduced[index];
+			manifold.contacts[index] = ContactPoint {
+			  .position = voxel_origin + voxel_basis * candidate.position,
+			  .penetration = candidate.penetration,
+			  .feature_a = view.voxel_is_a ? candidate.feature_b : candidate.feature_a,
+			  .feature_b = view.voxel_is_a ? candidate.feature_a : candidate.feature_b,
+			  .material = material,
+			};
+		}
+		output.push_back(manifold);
+	}
+}
+
 void collideBoxVoxel(
     BroadPhasePair pair, CollisionElement box_element, CollisionElement voxel_element, const VoxelShapeData& voxel_data,
     std::vector<Manifold>& output
@@ -1862,10 +2375,12 @@ void collideBoxVoxel(
 	  .volume = *voxel_data.volume, .surface = voxel_data.surface, .palette = voxel_data.palette, .materials = voxel_data.materials
 	};
 
-	std::array<std::vector<_detail::ContactCandidate>, voxel::k_normal_direction_count> candidates_per_normal;
-	std::array<glm::vec3, voxel::k_normal_direction_count> normal_per_group {};
-	std::array<ContactMaterial, voxel::k_normal_direction_count> material_per_group {};
-	std::array<bool, voxel::k_normal_direction_count> group_started {};
+	static thread_local BoxVoxelScratch scratch;
+	scratch.reset();
+	auto& candidates_per_normal = scratch.candidates_per_normal;
+	auto& normal_per_group = scratch.normal_per_group;
+	auto& material_per_group = scratch.material_per_group;
+	auto& group_started = scratch.group_started;
 
 	{
 		ZoneScopedN("physics::VoxelQueryWalk");
@@ -1905,6 +2420,11 @@ void collideBoxVoxel(
 				  .static_friction = candidate.material->static_friction,
 				  .dynamic_friction = candidate.material->dynamic_friction,
 				};
+			}
+
+			// Bounds this to a batch worth of candidates at a time survivors compete again next batch
+			if (bucket.size() >= _detail::k_contact_reduce_batch_size) {
+				bucket = _detail::reduceContacts(std::move(bucket), normal_per_group[candidate.normal_index]);
 			}
 		});
 	}

@@ -464,7 +464,11 @@ void Simulator::tick() {
 	spawnBudgetedFragments();
 	enforceFragmentBudget();
 	despawnSettledFragments(dt);
+
+	const auto before_characters = std::chrono::steady_clock::now();
 	stepCharacters(dt);
+	m_profile.character_step_ms = elapsed_ms(before_characters, std::chrono::steady_clock::now());
+
 	integrate(dt);
 
 	{
@@ -477,14 +481,31 @@ void Simulator::tick() {
 	m_profile.narrow_phase_ms = elapsed_ms(after_connectivity, after_narrow);
 
 	updateCache(m_manifolds);
+	const auto after_cache = std::chrono::steady_clock::now();
+	m_profile.cache_update_ms = elapsed_ms(after_narrow, after_cache);
+
 	wakeContactGroups();
+	const auto after_wake = std::chrono::steady_clock::now();
+	m_profile.wake_groups_ms = elapsed_ms(after_cache, after_wake);
 
 	// resolve
 	auto constraints = prepareConstraints(m_manifolds);
+	const auto after_prepare = std::chrono::steady_clock::now();
+	m_profile.prepare_constraints_ms = elapsed_ms(after_wake, after_prepare);
+
 	auto islands = buildIslands(m_manifolds, constraints);
+	const auto after_islands = std::chrono::steady_clock::now();
+	m_profile.build_islands_ms = elapsed_ms(after_prepare, after_islands);
+
 	solveIslands(islands);
+	const auto after_solve = std::chrono::steady_clock::now();
+	m_profile.island_solve_ms = elapsed_ms(after_islands, after_solve);
+
 	convertImpulsesToDamage(islands);
+	const auto after_damage_conversion = std::chrono::steady_clock::now();
+
 	updateSleeping(dt);
+	m_profile.sleep_update_ms = elapsed_ms(after_damage_conversion, std::chrono::steady_clock::now());
 	m_profile.solve_ms = elapsed_ms(after_narrow, std::chrono::steady_clock::now());
 
 	m_profile.manifold_count = m_manifolds.size();
@@ -1151,27 +1172,14 @@ void Simulator::wakeBodiesTouching(ShapeID id) {
 	}
 }
 
-void Simulator::wakeContactGroups() {
-	ZoneScopedN("physics::WakeContactGroups");
+void Simulator::buildContactGroups() {
+	ZoneScopedN("physics::BuildContactGroups");
 
-	std::vector<size_t> parents(m_bodies.size());
-	std::vector<size_t> ranks(m_bodies.size(), 0);
-	for (size_t index = 0; index < parents.size(); ++index) {
-		parents[index] = index;
+	m_contact_group_parents.resize(m_bodies.size());
+	m_contact_group_ranks.assign(m_bodies.size(), 0);
+	for (size_t index = 0; index < m_contact_group_parents.size(); ++index) {
+		m_contact_group_parents[index] = index;
 	}
-
-	auto find_root = [&parents](size_t index) {
-		size_t root = index;
-		while (parents[root] != root) {
-			root = parents[root];
-		}
-		while (parents[index] != index) {
-			const size_t next = parents[index];
-			parents[index] = root;
-			index = next;
-		}
-		return root;
-	};
 
 	for (const Manifold& manifold : m_manifolds) {
 		const Body* body_a = tryGetBody(manifold.pair.a.body);
@@ -1181,32 +1189,51 @@ void Simulator::wakeContactGroups() {
 			continue;
 		}
 
-		size_t root_a = find_root(manifold.pair.a.body.slot);
-		size_t root_b = find_root(manifold.pair.b.body.slot);
+		size_t root_a = findContactGroupRoot(manifold.pair.a.body.slot);
+		size_t root_b = findContactGroupRoot(manifold.pair.b.body.slot);
 		if (root_a == root_b) {
 			continue;
 		}
-		if (ranks[root_a] < ranks[root_b]) {
+		if (m_contact_group_ranks[root_a] < m_contact_group_ranks[root_b]) {
 			std::swap(root_a, root_b);
 		}
-		parents[root_b] = root_a;
-		if (ranks[root_a] == ranks[root_b]) {
-			++ranks[root_a];
+		m_contact_group_parents[root_b] = root_a;
+		if (m_contact_group_ranks[root_a] == m_contact_group_ranks[root_b]) {
+			++m_contact_group_ranks[root_a];
 		}
 	}
+}
 
-	std::vector<bool> group_is_awake(m_bodies.size(), false);
+auto Simulator::findContactGroupRoot(size_t body_index) -> size_t {
+	size_t root = body_index;
+	while (m_contact_group_parents[root] != root) {
+		root = m_contact_group_parents[root];
+	}
+	while (m_contact_group_parents[body_index] != body_index) {
+		const size_t next = m_contact_group_parents[body_index];
+		m_contact_group_parents[body_index] = root;
+		body_index = next;
+	}
+	return root;
+}
+
+void Simulator::wakeContactGroups() {
+	ZoneScopedN("physics::WakeContactGroups");
+
+	buildContactGroups();
+
+	m_contact_group_awake.assign(m_bodies.size(), false);
 	for (size_t index = 0; index < m_bodies.size(); ++index) {
 		const BodySlot& slot = m_bodies[index];
 		if (slot.occupied && slot.body.enabled && slot.body.type == BodyType::dynamic_body && slot.body.awake) {
-			group_is_awake[find_root(index)] = true;
+			m_contact_group_awake[findContactGroupRoot(index)] = true;
 		}
 	}
 
 	for (size_t index = 0; index < m_bodies.size(); ++index) {
 		const BodySlot& slot = m_bodies[index];
 		if (slot.occupied && slot.body.enabled && slot.body.type == BodyType::dynamic_body && not slot.body.sleep_locked &&
-		    group_is_awake[find_root(index)]) {
+		    m_contact_group_awake[findContactGroupRoot(index)]) {
 			wakeBody(BodyID {.slot = static_cast<uint32_t>(index), .generation = slot.generation});
 		}
 	}
@@ -1592,6 +1619,72 @@ auto Simulator::generateManifoldsAsync(CollisionWorldView world, std::span<const
 		}
 	}
 
+	// Pulled out before per-chunk dispatch so one big box-voxel pair never serializes behind a chunk
+	struct SplitPair {
+		BroadPhasePair pair;
+		BoxVoxelPairView view;
+		AABB local_bounds;
+	};
+
+	std::vector<SplitPair> split_pairs;
+	size_t box_voxel_max_estimated_voxels = 0;
+	float box_voxel_max_extent_meters = 0.0f;
+	std::erase_if(active_candidates, [&](const BroadPhasePair& pair) {
+		const auto view = resolveBoxVoxelPair(world, pair);
+		if (not view) {
+			return false;
+		}
+		const BoxVoxelSplitInfo split_info = classifyBoxVoxelSplit(*view);
+		if (split_info.estimated_voxels > box_voxel_max_estimated_voxels) {
+			box_voxel_max_estimated_voxels = split_info.estimated_voxels;
+			const glm::vec3 extent = split_info.local_bounds.max - split_info.local_bounds.min;
+			box_voxel_max_extent_meters = std::max({extent.x, extent.y, extent.z});
+		}
+		if (split_info.estimated_voxels < tunables().box_voxel_split_min_voxels) {
+			return false;
+		}
+		split_pairs.push_back({.pair = pair, .view = *view, .local_bounds = split_info.local_bounds});
+		return true;
+	});
+	m_profile.box_voxel_max_estimated_voxels = box_voxel_max_estimated_voxels;
+	m_profile.box_voxel_max_extent_meters = box_voxel_max_extent_meters;
+
+	// Same idea, same reasoning, for a voxel-voxel pair whose probe search region is big enough
+	struct SplitPairVV {
+		BroadPhasePair pair;
+		VoxelVoxelPairView view;
+		AABB probe_search_bounds;
+	};
+
+	std::vector<SplitPairVV> split_pairs_vv;
+	size_t voxel_voxel_max_estimated_voxels = 0;
+	size_t voxel_voxel_resolved_pairs = 0;
+	size_t voxel_voxel_nondegenerate_pairs = 0;
+	std::erase_if(active_candidates, [&](const BroadPhasePair& pair) {
+		const auto view = resolveVoxelVoxelPair(world, pair);
+		if (not view) {
+			return false;
+		}
+		++voxel_voxel_resolved_pairs;
+
+		const auto split_info = classifyVoxelVoxelSplit(*view);
+		if (not split_info) {
+			// Probe and reference bounds do not actually overlap not a bug just not this pair
+			return false;
+		}
+		++voxel_voxel_nondegenerate_pairs;
+
+		voxel_voxel_max_estimated_voxels = std::max<size_t>(voxel_voxel_max_estimated_voxels, split_info->estimated_voxels);
+		if (split_info->estimated_voxels < tunables().voxel_voxel_split_min_voxels) {
+			return false;
+		}
+		split_pairs_vv.push_back({.pair = pair, .view = *view, .probe_search_bounds = split_info->probe_search_bounds});
+		return true;
+	});
+	m_profile.voxel_voxel_resolved_pairs = voxel_voxel_resolved_pairs;
+	m_profile.voxel_voxel_nondegenerate_pairs = voxel_voxel_nondegenerate_pairs;
+	m_profile.voxel_voxel_max_estimated_voxels = voxel_voxel_max_estimated_voxels;
+
 	const size_t minimum_candidates_per_job = tunables().min_candidates_per_job;
 	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), static_cast<size_t>(1));
 	const size_t maximum_job_count = worker_count * 3;
@@ -1614,11 +1707,54 @@ auto Simulator::generateManifoldsAsync(CollisionWorldView world, std::span<const
 			return m_narrow_phase.generateManifolds(world, batch);
 		}));
 	}
+
+	// Pushed flat from this thread never nested, ThreadPool has no work stealing so a nested wait can deadlock
+	const size_t region_count = std::max<size_t>(tunables().voxel_pair_split_regions, 1);
+	std::vector<std::vector<std::future<VoxelPairPartial>>> split_futures;
+	split_futures.reserve(split_pairs.size());
+	for (const SplitPair& split : split_pairs) {
+		const std::vector<AABB> regions = splitVoxelRegions(split.local_bounds, region_count);
+		std::vector<std::future<VoxelPairPartial>> region_futures;
+		region_futures.reserve(regions.size());
+		for (const AABB& region : regions) {
+			const BoxVoxelPairView view = split.view;
+			region_futures.emplace_back(toast::ThreadPool::push([view, region] {
+				ZoneScopedN("physics::BoxVoxelRegion");
+				return collideBoxVoxelRegion(view, region);
+			}));
+		}
+		split_futures.emplace_back(std::move(region_futures));
+	}
+
+	std::vector<std::vector<std::future<VoxelPairPartial>>> split_futures_vv;
+	split_futures_vv.reserve(split_pairs_vv.size());
+	for (const SplitPairVV& split : split_pairs_vv) {
+		const std::vector<AABB> regions = splitVoxelRegions(split.probe_search_bounds, region_count);
+		std::vector<std::future<VoxelPairPartial>> region_futures;
+		region_futures.reserve(regions.size());
+		for (const AABB& region : regions) {
+			const VoxelVoxelPairView view = split.view;
+			region_futures.emplace_back(toast::ThreadPool::push([view, region] {
+				ZoneScopedN("physics::VoxelVoxelRegion");
+				return collideVoxelVoxelRegion(view, region);
+			}));
+		}
+		split_futures_vv.emplace_back(std::move(region_futures));
+	}
+
 	m_profile.narrow_jobs = futures.size();
-	m_profile.narrow_candidates = active_candidates.size();
+	for (const auto& region_futures : split_futures) {
+		m_profile.narrow_jobs += region_futures.size();
+	}
+	for (const auto& region_futures : split_futures_vv) {
+		m_profile.narrow_jobs += region_futures.size();
+	}
+	m_profile.narrow_candidates = active_candidates.size() + split_pairs.size() + split_pairs_vv.size();
+	m_profile.box_voxel_split_pairs = split_pairs.size();
+	m_profile.voxel_voxel_split_pairs = split_pairs_vv.size();
 
 	std::vector<Manifold> merged;
-	merged.reserve(active_candidates.size());
+	merged.reserve(active_candidates.size() + split_pairs.size() + split_pairs_vv.size());
 
 	{
 		ZoneScopedNC("physics::NarrowPhaseAwait", 0x202020);
@@ -1629,7 +1765,66 @@ auto Simulator::generateManifoldsAsync(CollisionWorldView world, std::span<const
 			m_profile.contact_points += queue.contact_count;
 			for (size_t type = 0; type < queue.pair_candidates.size(); ++type) {
 				m_profile.narrow_pair_candidates[type] += queue.pair_candidates[type];
+				m_profile.narrow_pair_time_ms[type] += queue.pair_time_ms[type];
 			}
+			merged.insert_range(merged.end(), std::move(queue.manifolds));
+		}
+	}
+
+	{
+		ZoneScopedNC("physics::BoxVoxelSplitAwait", 0x202020);
+		std::vector<VoxelPairPartial> partials;
+		std::vector<Manifold> pair_manifolds;
+		for (size_t split_index = 0; split_index < split_pairs.size(); ++split_index) {
+			const SplitPair& split = split_pairs[split_index];
+			const auto split_start = std::chrono::steady_clock::now();
+
+			partials.clear();
+			partials.reserve(split_futures[split_index].size());
+			for (auto& future : split_futures[split_index]) {
+				partials.push_back(future.get());
+			}
+
+			pair_manifolds.clear();
+			mergeBoxVoxelPartials(split.pair, split.view, partials, pair_manifolds);
+
+			ManifoldQueue queue;
+			m_narrow_phase.accumulate(pair_manifolds, world, queue);
+			m_profile.narrow_collisions += queue.collision_count;
+			m_profile.rejected_manifolds += queue.rejected_manifold_count;
+			m_profile.contact_points += queue.contact_count;
+			++m_profile.narrow_pair_candidates[static_cast<size_t>(NarrowPhasePairType::box_voxel)];
+			m_profile.narrow_pair_time_ms[static_cast<size_t>(NarrowPhasePairType::box_voxel)] +=
+			    std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - split_start).count();
+			merged.insert_range(merged.end(), std::move(queue.manifolds));
+		}
+	}
+
+	{
+		ZoneScopedNC("physics::VoxelVoxelSplitAwait", 0x202020);
+		std::vector<VoxelPairPartial> partials;
+		std::vector<Manifold> pair_manifolds;
+		for (size_t split_index = 0; split_index < split_pairs_vv.size(); ++split_index) {
+			const SplitPairVV& split = split_pairs_vv[split_index];
+			const auto split_start = std::chrono::steady_clock::now();
+
+			partials.clear();
+			partials.reserve(split_futures_vv[split_index].size());
+			for (auto& future : split_futures_vv[split_index]) {
+				partials.push_back(future.get());
+			}
+
+			pair_manifolds.clear();
+			mergeVoxelVoxelPartials(split.pair, split.view, partials, pair_manifolds);
+
+			ManifoldQueue queue;
+			m_narrow_phase.accumulate(pair_manifolds, world, queue);
+			m_profile.narrow_collisions += queue.collision_count;
+			m_profile.rejected_manifolds += queue.rejected_manifold_count;
+			m_profile.contact_points += queue.contact_count;
+			++m_profile.narrow_pair_candidates[static_cast<size_t>(NarrowPhasePairType::voxel_voxel)];
+			m_profile.narrow_pair_time_ms[static_cast<size_t>(NarrowPhasePairType::voxel_voxel)] +=
+			    std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - split_start).count();
 			merged.insert_range(merged.end(), std::move(queue.manifolds));
 		}
 	}
@@ -1649,33 +1844,7 @@ void Simulator::updateSleeping(float dt) {
 		return;
 	}
 
-	std::vector<size_t> parents(m_bodies.size());
-	for (size_t index = 0; index < parents.size(); ++index) {
-		parents[index] = index;
-	}
-
-	auto find_root = [&parents](size_t index) {
-		while (parents[index] != index) {
-			parents[index] = parents[parents[index]];
-			index = parents[index];
-		}
-		return index;
-	};
-
-	for (const Manifold& manifold : m_manifolds) {
-		Body* body_a = tryGetBody(manifold.pair.a.body);
-		Body* body_b = tryGetBody(manifold.pair.b.body);
-		if (not body_a || not body_b || body_a->type != BodyType::dynamic_body || body_b->type != BodyType::dynamic_body) {
-			continue;
-		}
-
-		const size_t root_a = find_root(manifold.pair.a.body.slot);
-		const size_t root_b = find_root(manifold.pair.b.body.slot);
-		if (root_a != root_b) {
-			parents[root_b] = root_a;
-		}
-	}
-
+	// Reuses m_contact_group_parents wakeContactGroups already built this tick over the same manifolds and body types
 	for (size_t index = 0; index < m_bodies.size(); ++index) {
 		BodySlot& slot = m_bodies[index];
 		Body& body = slot.body;
@@ -1700,8 +1869,8 @@ void Simulator::updateSleeping(float dt) {
 		}
 	}
 
-	std::vector<bool> group_exists(m_bodies.size(), false);
-	std::vector<bool> group_can_sleep(m_bodies.size(), true);
+	m_sleep_group_exists.assign(m_bodies.size(), false);
+	m_sleep_group_can_sleep.assign(m_bodies.size(), true);
 	for (size_t index = 0; index < m_bodies.size(); ++index) {
 		const BodySlot& slot = m_bodies[index];
 		const Body& body = slot.body;
@@ -1709,9 +1878,10 @@ void Simulator::updateSleeping(float dt) {
 			continue;
 		}
 
-		const size_t root = find_root(index);
-		group_exists[root] = true;
-		group_can_sleep[root] = group_can_sleep[root] && body.allow_sleep && body.sleep_timer >= tunables().sleep_delay;
+		const size_t root = findContactGroupRoot(index);
+		m_sleep_group_exists[root] = true;
+		m_sleep_group_can_sleep[root] =
+		    m_sleep_group_can_sleep[root] && body.allow_sleep && body.sleep_timer >= tunables().sleep_delay;
 	}
 
 	for (size_t index = 0; index < m_bodies.size(); ++index) {
@@ -1721,8 +1891,8 @@ void Simulator::updateSleeping(float dt) {
 			continue;
 		}
 
-		const size_t root = find_root(index);
-		if (group_exists[root] && group_can_sleep[root]) {
+		const size_t root = findContactGroupRoot(index);
+		if (m_sleep_group_exists[root] && m_sleep_group_can_sleep[root]) {
 			sleepBody(BodyID {.slot = static_cast<uint32_t>(index), .generation = slot.generation});
 		}
 	}
@@ -1843,15 +2013,43 @@ void Simulator::integrate(float dt) {
 		return;
 	}
 
-	for (size_t index = 0; index < m_bodies.size(); ++index) {
-		BodySlot& slot = m_bodies[index];
-		if (not slot.occupied) {
-			continue;
+	const glm::vec3 gravity = tunables().gravity;
+	const auto integrate_range = [this, gravity, dt](size_t begin, size_t end) {
+		for (size_t index = begin; index < end; ++index) {
+			BodySlot& slot = m_bodies[index];
+			if (not slot.occupied) {
+				continue;
+			}
+			integrateBody(BodyID {.slot = static_cast<uint32_t>(index), .generation = slot.generation}, slot.body, gravity, dt);
 		}
+	};
 
-		integrateBody(
-		    BodyID {.slot = static_cast<uint32_t>(index), .generation = slot.generation}, slot.body, tunables().gravity, dt
-		);
+	const size_t minimum_bodies_per_job = tunables().min_bodies_per_job;
+	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), static_cast<size_t>(1));
+	const size_t maximum_job_count = worker_count * 3;
+	const size_t job_count =
+	    m_bodies.empty() ? 0 : std::min(maximum_job_count, std::max(m_bodies.size() / minimum_bodies_per_job, size_t {1}));
+
+	if (job_count <= 1) {
+		// Not enough bodies this tick to be worth a thread pool round trip
+		integrate_range(0, m_bodies.size());
+		return;
+	}
+
+	PhaseScope worker_phase {*this, SimulationPhase::mutation, SimulationPhase::worker_execution};
+
+	std::vector<std::future<void>> futures;
+	futures.reserve(job_count);
+	for (size_t job_index = 0; job_index < job_count; ++job_index) {
+		const size_t begin = job_index * m_bodies.size() / job_count;
+		const size_t end = (job_index + 1) * m_bodies.size() / job_count;
+		futures.emplace_back(toast::ThreadPool::push([&integrate_range, begin, end] {
+			ZoneScopedN("physics::IntegrateBodiesBatch");
+			integrate_range(begin, end);
+		}));
+	}
+	for (auto& future : futures) {
+		future.get();
 	}
 }
 
@@ -3192,28 +3390,69 @@ auto Simulator::findCachedContact(
 
 auto Simulator::prepareConstraints(const std::vector<Manifold>& manifolds) -> std::vector<Constraint> {
 	ZoneScopedN("physics::PrepareConstraints");
-	std::vector<Constraint> constraints;
+
+	std::vector<const Manifold*> active_manifolds;
+	active_manifolds.reserve(manifolds.size());
 	size_t contact_count = 0;
-	for (const Manifold& manifold : manifolds) {
-		contact_count += std::min<size_t>(manifold.contact_count, manifold.contacts.size());
-	}
-	constraints.reserve(contact_count);
-
-	size_t rejected_contact_count = 0;
-
 	for (const Manifold& manifold : manifolds) {
 		if (not shouldSolve(manifold)) {
 			continue;
 		}
+		active_manifolds.push_back(&manifold);
+		contact_count += std::min<size_t>(manifold.contact_count, manifold.contacts.size());
+	}
 
-		const size_t valid_contact_count = std::min<size_t>(manifold.contact_count, manifold.contacts.size());
-		for (size_t contact_index = 0; contact_index < valid_contact_count; ++contact_index) {
-			if (auto constraint = prepareConstraint(manifold, manifold.contacts[contact_index])) {
-				constraints.emplace_back(*constraint);
-			} else {
-				++rejected_contact_count;
-			}
+	struct PreparedChunk {
+		std::vector<Constraint> constraints;
+		size_t rejected = 0;
+	};
+
+	const size_t minimum_manifolds_per_job = tunables().min_manifolds_per_job;
+	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), static_cast<size_t>(1));
+	const size_t maximum_job_count = worker_count * 3;
+	const size_t job_count =
+	    active_manifolds.empty()
+	        ? 0
+	        : std::min(maximum_job_count, std::max(active_manifolds.size() / minimum_manifolds_per_job, size_t {1}));
+
+	std::vector<std::future<PreparedChunk>> futures;
+	futures.reserve(job_count);
+
+	{
+		// Contacts are independent of each other so this only needs read access to bodies and the contact cache
+		PhaseScope worker_phase {*this, SimulationPhase::mutation, SimulationPhase::worker_execution};
+
+		for (size_t job_index = 0; job_index < job_count; ++job_index) {
+			const size_t begin = job_index * active_manifolds.size() / job_count;
+			const size_t end = (job_index + 1) * active_manifolds.size() / job_count;
+			auto batch = std::span<const Manifold* const> {active_manifolds}.subspan(begin, end - begin);
+
+			futures.emplace_back(toast::ThreadPool::push([this, batch] {
+				ZoneScopedN("physics::PrepareConstraintsBatch");
+				PreparedChunk chunk;
+				for (const Manifold* manifold : batch) {
+					const size_t valid_contact_count = std::min<size_t>(manifold->contact_count, manifold->contacts.size());
+					for (size_t contact_index = 0; contact_index < valid_contact_count; ++contact_index) {
+						if (auto constraint = prepareConstraint(*manifold, manifold->contacts[contact_index])) {
+							chunk.constraints.emplace_back(*constraint);
+						} else {
+							++chunk.rejected;
+						}
+					}
+				}
+				return chunk;
+			}));
 		}
+	}
+
+	// Gathered in dispatch order so this matches the order a serial pass would produce, buildIslands relies on it
+	std::vector<Constraint> constraints;
+	constraints.reserve(contact_count);
+	size_t rejected_contact_count = 0;
+	for (auto& future : futures) {
+		PreparedChunk chunk = future.get();
+		rejected_contact_count += chunk.rejected;
+		constraints.insert_range(constraints.end(), std::move(chunk.constraints));
 	}
 
 	if (rejected_contact_count > 0) {
@@ -3229,20 +3468,20 @@ auto Simulator::prepareConstraints(const std::vector<Manifold>& manifolds) -> st
 	return constraints;
 }
 
-auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vector<Constraint>& constraints) const
+auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vector<Constraint>& constraints)
     -> std::vector<SimulationIsland> {
 	ZoneScopedN("physics::BuildIslands");
 
-	std::vector<size_t> parents(m_bodies.size());
-	std::vector<bool> participates(m_bodies.size(), false);
-	for (size_t index = 0; index < parents.size(); ++index) {
-		parents[index] = index;
+	m_island_parents.resize(m_bodies.size());
+	m_island_participates.assign(m_bodies.size(), false);
+	for (size_t index = 0; index < m_island_parents.size(); ++index) {
+		m_island_parents[index] = index;
 	}
 
-	auto find_root = [&parents](size_t index) {
-		while (parents[index] != index) {
-			parents[index] = parents[parents[index]];
-			index = parents[index];
+	auto find_root = [this](size_t index) {
+		while (m_island_parents[index] != index) {
+			m_island_parents[index] = m_island_parents[m_island_parents[index]];
+			index = m_island_parents[index];
 		}
 		return index;
 	};
@@ -3262,36 +3501,36 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 		const bool b_is_dynamic = is_active_dynamic(body_b);
 
 		if (a_is_dynamic) {
-			participates[manifold.pair.a.body.slot] = true;
+			m_island_participates[manifold.pair.a.body.slot] = true;
 		}
 		if (b_is_dynamic) {
-			participates[manifold.pair.b.body.slot] = true;
+			m_island_participates[manifold.pair.b.body.slot] = true;
 		}
 
 		if (a_is_dynamic && b_is_dynamic) {
 			const size_t root_a = find_root(manifold.pair.a.body.slot);
 			const size_t root_b = find_root(manifold.pair.b.body.slot);
 			if (root_a < root_b) {
-				parents[root_b] = root_a;
+				m_island_parents[root_b] = root_a;
 			} else if (root_b < root_a) {
-				parents[root_a] = root_b;
+				m_island_parents[root_a] = root_b;
 			}
 		}
 	}
 
 	const size_t no_island = m_bodies.size();
-	std::vector<size_t> island_by_root(m_bodies.size(), no_island);
+	m_island_by_root.assign(m_bodies.size(), no_island);
 	std::vector<SimulationIsland> islands;
 
 	for (size_t body_index = 0; body_index < m_bodies.size(); ++body_index) {
-		if (not participates[body_index]) {
+		if (not m_island_participates[body_index]) {
 			continue;
 		}
 
 		const size_t root = find_root(body_index);
-		if (island_by_root[root] == no_island) {
+		if (m_island_by_root[root] == no_island) {
 			const BodySlot& root_slot = m_bodies[root];
-			island_by_root[root] = islands.size();
+			m_island_by_root[root] = islands.size();
 			islands.emplace_back(
 			    SimulationIsland {
 			      .sort_key = BodyID {.slot = static_cast<uint32_t>(root), .generation = root_slot.generation},
@@ -3300,7 +3539,7 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 		}
 
 		const BodySlot& slot = m_bodies[body_index];
-		islands[island_by_root[root]].dynamic_bodies.emplace_back(
+		islands[m_island_by_root[root]].dynamic_bodies.emplace_back(
 		    BodyID {.slot = static_cast<uint32_t>(body_index), .generation = slot.generation}
 		);
 	}
@@ -3308,12 +3547,12 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 	const auto island_for_pair = [&](const BroadPhasePair& pair) -> size_t {
 		const Body* body_a = tryGetBody(pair.a.body);
 		if (is_active_dynamic(body_a)) {
-			return island_by_root[find_root(pair.a.body.slot)];
+			return m_island_by_root[find_root(pair.a.body.slot)];
 		}
 
 		const Body* body_b = tryGetBody(pair.b.body);
 		if (is_active_dynamic(body_b)) {
-			return island_by_root[find_root(pair.b.body.slot)];
+			return m_island_by_root[find_root(pair.b.body.slot)];
 		}
 
 		return no_island;
@@ -3337,10 +3576,11 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 		}
 	}
 
-	// A shared scratch array since islands never share a dynamic body so never reset between them
-	std::vector<uint32_t> next_free_batch(m_bodies.size(), 0);
+	// Shared across islands since none share a dynamic body so never reset between them, only once per call
+	m_island_next_free_batch.assign(m_bodies.size(), 0);
 
 	for (SimulationIsland& island : islands) {
+		// Load bearing: makes the greedy coloring below deterministic, not just the final storage order
 		std::ranges::sort(island.constraints, [](const Constraint& lhs, const Constraint& rhs) {
 			if (lhs.pair != rhs.pair) {
 				return lhs.pair < rhs.pair;
@@ -3352,7 +3592,7 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 		});
 
 		// Greedy list coloring a constraint batch is one past the highest batch its dynamic bodies reached
-		std::vector<uint32_t> constraint_batch(island.constraints.size());
+		m_island_constraint_batch.resize(island.constraints.size());
 		uint32_t batch_count = island.constraints.empty() ? 0 : 1;
 		for (size_t i = 0; i < island.constraints.size(); ++i) {
 			const Constraint& constraint = island.constraints[i];
@@ -3363,35 +3603,36 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 
 			uint32_t batch = 0;
 			if (a_dynamic) {
-				batch = std::max(batch, next_free_batch[constraint.body_a.slot]);
+				batch = std::max(batch, m_island_next_free_batch[constraint.body_a.slot]);
 			}
 			if (b_dynamic) {
-				batch = std::max(batch, next_free_batch[constraint.body_b.slot]);
+				batch = std::max(batch, m_island_next_free_batch[constraint.body_b.slot]);
 			}
-			constraint_batch[i] = batch;
+			m_island_constraint_batch[i] = batch;
 			batch_count = std::max(batch_count, batch + 1);
 			if (a_dynamic) {
-				next_free_batch[constraint.body_a.slot] = batch + 1;
+				m_island_next_free_batch[constraint.body_a.slot] = batch + 1;
 			}
 			if (b_dynamic) {
-				next_free_batch[constraint.body_b.slot] = batch + 1;
+				m_island_next_free_batch[constraint.body_b.slot] = batch + 1;
 			}
 		}
 
 		// Counting sort into batch contiguous storage stable within a batch since i is scanned in order
 		island.batch_offsets.assign(batch_count + 1, 0);
-		for (uint32_t batch : constraint_batch) {
+		for (uint32_t batch : m_island_constraint_batch) {
 			++island.batch_offsets[batch + 1];
 		}
 		for (size_t i = 1; i < island.batch_offsets.size(); ++i) {
 			island.batch_offsets[i] += island.batch_offsets[i - 1];
 		}
-		std::vector<Constraint> reordered(island.constraints.size());
-		std::vector<size_t> cursor(island.batch_offsets.begin(), island.batch_offsets.end() - 1);
+		// Reused scratch grows to the largest island seen instead of a fresh allocation every island every tick
+		m_island_reordered_scratch.resize(island.constraints.size());
+		m_island_batch_cursor.assign(island.batch_offsets.begin(), island.batch_offsets.end() - 1);
 		for (size_t i = 0; i < island.constraints.size(); ++i) {
-			reordered[cursor[constraint_batch[i]]++] = island.constraints[i];
+			m_island_reordered_scratch[m_island_batch_cursor[m_island_constraint_batch[i]]++] = island.constraints[i];
 		}
-		island.constraints = std::move(reordered);
+		island.constraints.swap(m_island_reordered_scratch);
 	}
 
 	std::ranges::sort(islands, [](const SimulationIsland& lhs, const SimulationIsland& rhs) {
@@ -3607,20 +3848,25 @@ void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
 				continue;
 			}
 
-			std::vector<std::future<size_t>> futures;
-			futures.reserve(chunks.size());
-			for (ConstraintChunk& chunk : chunks) {
-				futures.emplace_back(toast::ThreadPool::push([this, pieces = std::move(chunk.pieces)] {
+			// pushRaw + one shared counter instead of one std::future per chunk, cheaper at this call volume
+			m_wave_chunk_invalid_counts.assign(chunks.size(), 0);
+			std::atomic<size_t> chunks_remaining {chunks.size()};
+			for (size_t chunk_index = 0; chunk_index < chunks.size(); ++chunk_index) {
+				toast::ThreadPool::pushRaw([this, pieces = std::move(chunks[chunk_index].pieces), chunk_index, &chunks_remaining] {
 					ZoneScopedN("physics::ConstraintWaveChunk");
 					size_t invalid = 0;
 					for (const std::span<Constraint>& piece : pieces) {
 						invalid += solveConstraintBatch(piece);
 					}
-					return invalid;
-				}));
+					m_wave_chunk_invalid_counts[chunk_index] = invalid;
+					chunks_remaining.fetch_sub(1, std::memory_order_acq_rel);
+				});
 			}
-			for (auto& future : futures) {
-				invalid_constraint_count += future.get();
+			while (chunks_remaining.load(std::memory_order_acquire) != 0) {
+				std::this_thread::yield();
+			}
+			for (size_t invalid : m_wave_chunk_invalid_counts) {
+				invalid_constraint_count += invalid;
 			}
 		}
 	}

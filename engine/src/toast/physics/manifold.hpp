@@ -8,6 +8,7 @@
 
 #pragma once
 #include "collision.hpp"
+#include "collision_world.hpp"
 #include "voxel_shape_data.hpp"
 
 #include <array>
@@ -15,6 +16,7 @@
 #include <cstdint>
 #include <glm/glm.hpp>
 #include <optional>
+#include <span>
 #include <vector>
 
 namespace physics {
@@ -144,6 +146,13 @@ struct SegmentBoxClosestPoints {
 	BoxFeature box_feature;
 };
 
+struct ContactCandidate {
+	glm::vec3 position {};
+	float penetration = 0.0f;
+	ContactFeatureID feature_a {};
+	ContactFeatureID feature_b {};
+};
+
 [[nodiscard]]
 auto boxFeature(const glm::vec3& point, const glm::vec3& half_extents) -> BoxFeature;
 [[nodiscard]]
@@ -175,6 +184,76 @@ struct CollisionElement {
 	const Shape& shape;
 	const Body& body;
 };
+
+/// Box/voxel roles already resolved so splitting one pair across jobs only pays that resolution once
+struct BoxVoxelPairView {
+	CollisionElement box;
+	CollisionElement voxel;
+	const VoxelShapeData& voxel_data;
+	bool voxel_is_a = false;
+};
+
+[[nodiscard]]
+auto resolveBoxVoxelPair(CollisionWorldView world, BroadPhasePair pair) -> std::optional<BoxVoxelPairView>;
+
+struct BoxVoxelSplitInfo {
+	/// The box AABB in voxel local space safe to partition spatially across jobs
+	AABB local_bounds {};
+	/// Cheap surface area estimate, not an actual walk, since queryVoxelSurface only visits surface voxels
+	uint64_t estimated_voxels = 0;
+};
+
+[[nodiscard]]
+auto classifyBoxVoxelSplit(const BoxVoxelPairView& view) -> BoxVoxelSplitInfo;
+
+/// Splits local_bounds along its longest axis into up to region_count voxel-aligned, non-overlapping AABBs
+[[nodiscard]]
+auto splitVoxelRegions(const AABB& local_bounds, size_t region_count) -> std::vector<AABB>;
+
+/// One region share of a split pair candidates owned per call since concurrent regions need independent storage
+struct VoxelPairPartial {
+	std::array<std::vector<_detail::ContactCandidate>, voxel::k_normal_direction_count> candidates_per_normal;
+	std::array<glm::vec3, voxel::k_normal_direction_count> normal_per_group {};
+	std::array<ContactMaterial, voxel::k_normal_direction_count> material_per_group {};
+	std::array<bool, voxel::k_normal_direction_count> group_started {};
+};
+
+[[nodiscard]]
+auto collideBoxVoxelRegion(const BoxVoxelPairView& view, const AABB& region) -> VoxelPairPartial;
+
+void mergeBoxVoxelPartials(
+    BroadPhasePair pair, const BoxVoxelPairView& view, std::span<VoxelPairPartial> partials, std::vector<Manifold>& output
+);
+
+/// A voxel-voxel pair with the smaller-shape-is-probe role already resolved, same reasoning as BoxVoxelPairView
+struct VoxelVoxelPairView {
+	CollisionElement probe;
+	const VoxelShapeData& probe_data;
+	CollisionElement ref;
+	const VoxelShapeData& ref_data;
+	bool a_is_probe = false;
+};
+
+[[nodiscard]]
+auto resolveVoxelVoxelPair(CollisionWorldView world, BroadPhasePair pair) -> std::optional<VoxelVoxelPairView>;
+
+struct VoxelVoxelSplitInfo {
+	/// The probe shape search bounds in its own local space safe to partition spatially across jobs
+	AABB probe_search_bounds {};
+	/// Same surface area estimate as BoxVoxelSplitInfo::estimated_voxels, see its comment for why
+	uint64_t estimated_voxels = 0;
+};
+
+/// nullopt means the bounds do not actually overlap, distinct from a present-but-zero estimate
+[[nodiscard]]
+auto classifyVoxelVoxelSplit(const VoxelVoxelPairView& view) -> std::optional<VoxelVoxelSplitInfo>;
+
+[[nodiscard]]
+auto collideVoxelVoxelRegion(const VoxelVoxelPairView& view, const AABB& probe_region) -> VoxelPairPartial;
+
+void mergeVoxelVoxelPartials(
+    BroadPhasePair pair, const VoxelVoxelPairView& view, std::span<VoxelPairPartial> partials, std::vector<Manifold>& output
+);
 
 [[nodiscard]]
 auto collideSpheres(BroadPhasePair pair, CollisionElement a, CollisionElement b) -> std::optional<Manifold>;

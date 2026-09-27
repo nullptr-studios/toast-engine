@@ -289,6 +289,39 @@ void registerPhysicsSettings() {
 	    &Tunables::min_candidates_per_job
 	);
 	uint_setting(
+	    "physics.jobs.min_manifolds_per_job",
+	    4,
+	    {.label = "Min manifolds per job",
+			 .category = "Jobs",
+			 .description = "Active manifolds below this run constraint preparation inline",
+			 .min = 1.0,
+			 .max = 1024.0,
+			 .step = 1.0},
+	    &Tunables::min_manifolds_per_job
+	);
+	uint_setting(
+	    "physics.jobs.min_shapes_per_query_job",
+	    16,
+	    {.label = "Min shapes per query job",
+			 .category = "Jobs",
+			 .description = "Leaf shapes below this run broadphase tree queries inline",
+			 .min = 1.0,
+			 .max = 1024.0,
+			 .step = 1.0},
+	    &Tunables::min_shapes_per_query_job
+	);
+	uint_setting(
+	    "physics.jobs.min_bodies_per_job",
+	    64,
+	    {.label = "Min bodies per job",
+			 .category = "Jobs",
+			 .description = "Bodies below this run integration inline instead of across the thread pool",
+			 .min = 1.0,
+			 .max = 4096.0,
+			 .step = 1.0},
+	    &Tunables::min_bodies_per_job
+	);
+	uint_setting(
 	    "physics.jobs.min_wave_constraints_for_dispatch",
 	    512,
 	    {.label = "Min wave constraints per dispatch",
@@ -298,6 +331,50 @@ void registerPhysicsSettings() {
 			 .max = 65536.0,
 			 .step = 1.0},
 	    &Tunables::min_wave_constraints_for_dispatch
+	);
+	uint_setting(
+	    "physics.jobs.box_voxel_split_min_voxels",
+	    500000,
+	    {.label = "Box-voxel split threshold",
+			 .category = "Jobs",
+			 .description = "Box-voxel pairs above this surface area split across jobs, kept high until measured",
+			 .min = 1.0,
+			 .max = 1000000.0,
+			 .step = 1.0},
+	    &Tunables::box_voxel_split_min_voxels
+	);
+	uint_setting(
+	    "physics.jobs.voxel_voxel_split_min_voxels",
+	    250000,
+	    {.label = "Voxel-voxel split threshold",
+			 .category = "Jobs",
+			 .description = "Same reasoning and same deliberately-off-for-now state as box_voxel_split_min_voxels",
+			 .min = 1.0,
+			 .max = 1000000.0,
+			 .step = 1.0},
+	    &Tunables::voxel_voxel_split_min_voxels
+	);
+	uint_setting(
+	    "physics.jobs.voxel_pair_split_regions",
+	    8,
+	    {.label = "Voxel pair split regions",
+			 .category = "Jobs",
+			 .description = "How many jobs a split box-voxel or voxel-voxel pair divides into",
+			 .min = 1.0,
+			 .max = 64.0,
+			 .step = 1.0},
+	    &Tunables::voxel_pair_split_regions
+	);
+	uint_setting(
+	    "physics.character.sweep_refine_iterations",
+	    6,
+	    {.label = "Sweep refine iterations",
+			 .category = "Character",
+			 .description = "Bisection steps a sweep refines by once it hits something, a clear sweep never pays it",
+			 .min = 1.0,
+			 .max = 32.0,
+			 .step = 1.0},
+	    &Tunables::sweep_refine_iterations
 	);
 }
 

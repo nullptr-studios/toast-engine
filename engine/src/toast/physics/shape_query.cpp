@@ -12,7 +12,6 @@ namespace physics {
 
 namespace {
 
-constexpr int k_sweep_refine_iterations = 12;
 constexpr float k_approach_epsilon = 1.0e-4f;
 
 auto capsuleProbe(BodyID owner, const CapsuleShape& capsule) -> Shape {
@@ -124,6 +123,7 @@ auto Simulator::overlapCapsule(
     std::vector<QueryContact>& contacts
 ) const -> bool {
 	ZoneScopedN("physics::OverlapCapsule");
+	++m_profile.character_overlap_calls;
 
 	contacts.clear();
 	const Shape probe_shape = capsuleProbe(ignored, capsule);
@@ -138,6 +138,7 @@ auto Simulator::sweepCapsule(
     BodyID ignored, const CapsuleShape& capsule, const glm::quat& rotation, const glm::vec3& from, const glm::vec3& to, float skin
 ) const -> SweepHit {
 	ZoneScopedN("physics::SweepCapsule");
+	++m_profile.character_sweep_calls;
 
 	SweepHit result {.position = to};
 	const glm::vec3 delta = to - from;
@@ -197,7 +198,8 @@ auto Simulator::sweepCapsule(
 		}
 	}
 
-	for (int iteration = 0; iteration < k_sweep_refine_iterations; ++iteration) {
+	const auto refine_iterations = static_cast<int>(tunables().sweep_refine_iterations);
+	for (int iteration = 0; iteration < refine_iterations; ++iteration) {
 		const float middle = 0.5f * (clear + blocked);
 		if (auto contact = blockingContact(middle)) {
 			blocked = middle;

@@ -105,8 +105,20 @@ public:
 	/// Counters and phase timings for one tick snapshotted at a safe point for a debug view to read
 	struct PhysicsStepProfile {
 		std::array<size_t, static_cast<size_t>(NarrowPhasePairType::count)> narrow_pair_candidates = {};
+		std::array<double, static_cast<size_t>(NarrowPhasePairType::count)> narrow_pair_time_ms = {};
 		size_t narrow_jobs = 0;
 		size_t narrow_candidates = 0;
+		/// Of narrow_pair_candidates box_voxel/voxel_voxel how many crossed the split threshold
+		size_t box_voxel_split_pairs = 0;
+		size_t voxel_voxel_split_pairs = 0;
+		/// Of resolved voxel-voxel candidates how many had a non-degenerate overlap
+		size_t voxel_voxel_resolved_pairs = 0;
+		size_t voxel_voxel_nondegenerate_pairs = 0;
+		/// Largest estimated_voxels seen this tick regardless of threshold
+		size_t box_voxel_max_estimated_voxels = 0;
+		size_t voxel_voxel_max_estimated_voxels = 0;
+		/// World-space longest axis metres behind box_voxel_max_estimated_voxels
+		float box_voxel_max_extent_meters = 0.0f;
 		size_t narrow_collisions = 0;
 		size_t sleeping_pairs_skipped = 0;
 		size_t rejected_manifolds = 0;
@@ -128,8 +140,21 @@ public:
 		double tick_ms = 0.0;
 		double damage_apply_ms = 0.0;
 		double connectivity_ms = 0.0;
+		double character_step_ms = 0.0;
 		double narrow_phase_ms = 0.0;
 		double solve_ms = 0.0;
+
+		/// Call counts this tick not character count a movement tick calls trace/fits several times
+		size_t character_sweep_calls = 0;
+		size_t character_overlap_calls = 0;
+
+		/// solve_ms broken down island_solve_ms is solveIslands itself the rest is bookkeeping around it
+		double cache_update_ms = 0.0;
+		double wake_groups_ms = 0.0;
+		double prepare_constraints_ms = 0.0;
+		double build_islands_ms = 0.0;
+		double island_solve_ms = 0.0;
+		double sleep_update_ms = 0.0;
 
 		size_t body_count = 0;
 		size_t awake_body_count = 0;
@@ -336,6 +361,10 @@ private:
 	void wakeBodiesInBounds(const AABB& bounds);
 	void convertImpulsesToDamage(std::span<const SimulationIsland> islands);
 	void wakeContactGroups();
+	/// Rebuilds m_contact_group_parents shared by wakeContactGroups and updateSleeping so it only runs once
+	void buildContactGroups();
+	[[nodiscard]]
+	auto findContactGroupRoot(size_t body_index) -> size_t;
 	void updateSleeping(float dt);
 	[[nodiscard]]
 	auto shouldSolve(const Manifold& manifold) const -> bool;
@@ -350,7 +379,7 @@ private:
 	[[nodiscard]]
 	auto prepareConstraint(const Manifold& manifold, const ContactPoint& contact) const -> std::optional<Constraint>;
 	[[nodiscard]]
-	auto buildIslands(std::span<const Manifold> manifolds, const std::vector<Constraint>& constraints) const
+	auto buildIslands(std::span<const Manifold> manifolds, const std::vector<Constraint>& constraints)
 	    -> std::vector<SimulationIsland>;
 	void updateCache(std::span<const Manifold> manifolds);
 	[[nodiscard]]
@@ -419,6 +448,25 @@ private:
 	std::vector<NodeBinding> m_node_bindings;
 	std::vector<VoxelNodeBinding> m_voxel_bindings;
 
+	/// Persistent wake/sleep scratch sized to m_bodies each tick instead of reallocated
+	std::vector<size_t> m_contact_group_parents;
+	std::vector<size_t> m_contact_group_ranks;
+	std::vector<bool> m_contact_group_awake;
+	std::vector<bool> m_sleep_group_exists;
+	std::vector<bool> m_sleep_group_can_sleep;
+
+	/// Persistent buildIslands scratch reused across ticks and across islands instead of reallocated
+	std::vector<size_t> m_island_parents;
+	std::vector<bool> m_island_participates;
+	std::vector<size_t> m_island_by_root;
+	std::vector<uint32_t> m_island_next_free_batch;
+	std::vector<uint32_t> m_island_constraint_batch;
+	std::vector<size_t> m_island_batch_cursor;
+	std::vector<Constraint> m_island_reordered_scratch;
+
+	/// Reused across waves instead of a fresh vector every iteration x wave x tick
+	std::vector<size_t> m_wave_chunk_invalid_counts;
+
 	std::vector<ShapeSlot> m_shapes;
 	std::deque<uint32_t> m_free_shape_slots;
 
@@ -426,7 +474,8 @@ private:
 	NarrowPhase m_narrow_phase;
 	std::vector<Manifold> m_manifolds;
 	std::vector<CachedManifold> m_cached_manifolds;
-	PhysicsStepProfile m_profile;
+	/// mutable so const query methods (overlapCapsule/sweepCapsule) can still count how often they run
+	mutable PhysicsStepProfile m_profile;
 	PhysicsStepProfile m_published_profile;
 
 	std::vector<VoxelShapeSlot> m_voxel_shapes;
