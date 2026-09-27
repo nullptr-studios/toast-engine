@@ -11,8 +11,11 @@ public sealed class NodeAsset : BaseAsset {
 	public override LucideIconKind Icon => LucideIconKind.Box;
 	public override bool CanBeCreated => false;
 	public override string Category => "";
-	public override bool HasThumbnail => false;
+	public override bool HasThumbnail => true;
 	public override bool CanBeEdited => true;
 	public override string EditorTool => "NodeEditor";
 	public override string SchemaPath => "";
+
+    // screenshoted from the viewport :3
+	public override void GenerateThumbnail(string realPath, string uid) { }
 }

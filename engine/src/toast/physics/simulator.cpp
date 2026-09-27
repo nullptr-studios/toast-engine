@@ -19,10 +19,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <limits>
 #include <span>
-#include <toast/assets/voxel_model.hpp>
 #include <toast/thread_pool.hpp>
+#include <toast/voxel/assets/voxel_model.hpp>
 #include <toast/voxel/mass_accumulator.hpp>
-#include <toast/world/voxel_node.hpp>
+#include <toast/voxel/nodes/voxel_node.hpp>
 #include <tracy/Tracy.hpp>
 
 namespace physics {

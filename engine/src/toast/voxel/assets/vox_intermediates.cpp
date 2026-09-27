@@ -1,6 +1,5 @@
 #include "vox_intermediates.hpp"
 
-#include "prefab.hpp"
 #include "vox_importer.h"    // ffi TOAST_C_API or the entry points are not exported
 #include "voxel_model.hpp"
 #include "voxel_palette.hpp"
@@ -13,6 +12,7 @@
 #include <glm/gtc/quaternion.hpp>
 #include <nlohmann/json.hpp>
 #include <stdexcept>
+#include <toast/assets/prefab.hpp>
 #include <toast/log.hpp>
 #include <toast/uid.hpp>
 #include <tracy/Tracy.hpp>

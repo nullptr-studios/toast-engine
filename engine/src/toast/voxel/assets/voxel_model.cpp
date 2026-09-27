@@ -181,6 +181,14 @@ auto VoxelModel::instantiate(BrickPool& pool) const -> std::optional<Volume> {
 	return {std::move(volume)};
 }
 
+void VoxelModel::reload(const std::vector<uint8_t>& data) {
+	VoxelModel fresh(data);
+	m_brick_dims = fresh.m_brick_dims;
+	m_palette_uid = fresh.m_palette_uid;
+	m_grid = std::move(fresh.m_grid);
+	m_bricks = std::move(fresh.m_bricks);
+}
+
 auto VoxelModel::solidVoxelCount() const -> uint32_t {
 	uint32_t total = 0;
 	for (const BrickEntry& entry : m_grid) {

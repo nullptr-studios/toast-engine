@@ -420,6 +420,12 @@ struct TOAST_API NodeInfo {
 	}
 };
 
+template<class T>
+struct NodeTypeInfo {
+	[[nodiscard]]
+	static auto get() noexcept -> const NodeInfo*;
+};
+
 namespace _detail {
 
 // Walks base->derived, calling the method at every level where it is defined

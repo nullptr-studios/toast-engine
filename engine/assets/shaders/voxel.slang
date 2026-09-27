@@ -91,6 +91,82 @@ float gridLine(float2 position, float2 voxelsPerPixel, float period, float halfW
     return saturate(halfWidthPixels + 0.5 - min(pixels.x, pixels.y));
 }
 
+// VoxelEditor grid modes
+static const uint kOverlayUnitGrid = 1u;
+static const uint kOverlayVoxelGrid = 2u;
+static const uint kOverlayVoxelEdges = 4u;
+static const float3 kSelectionTint = float3(1.0, 0.366, 0.0);
+
+/// Voxel contour thing so it's easier to see 3D on the VoxelEditor
+float voxelEdgeCoverage(VolumeRecord record, RayHit hit, float3 cellPosition, float3 voxelsPerPixel, int3 outward)
+{
+    const uint u = (uint(hit.axis) + 1u) % 3u;
+    const uint v = (uint(hit.axis) + 2u) % 3u;
+    float coverage = 0.0;
+    for (uint side = 0u; side < 4u; ++side)
+    {
+        const uint axis = side < 2u ? u : v;
+        const int sign = (side % 2u) == 0u ? 1 : -1;
+        int3 step = int3(0, 0, 0);
+        step[axis] = sign;
+        const int3 neighbour = hit.voxel + step;
+        const bool edge = voxelMaterialAt(record, neighbour) == 0u || voxelMaterialAt(record, neighbour + outward) != 0u;
+        if (!edge)
+        {
+            continue;
+        }
+        const float inside = frac(cellPosition[axis]);
+        const float distance = (sign > 0 ? 1.0 - inside : inside) / max(voxelsPerPixel[axis], 1e-6);
+        coverage = max(coverage, saturate(1.5 - distance));
+    }
+    return coverage;
+}
+
+/// VoxelEditor grids
+float3 applyEditorOverlays(float3 color, VoxelInstance instance, RayHit hit, float3 direction, float3 cellPosition, float3 voxelsPerPixel,
+                           float3 hitWorld, float3 worldPerPixel, float3 normal)
+{
+    const uint overlays = gCamera.renderModePad.y;
+    if (hit.axis >= 0)
+    {
+        const uint u = (uint(hit.axis) + 1u) % 3u;
+        const uint v = (uint(hit.axis) + 2u) % 3u;
+        const float2 face = float2(cellPosition[u], cellPosition[v]);
+        const float2 width = float2(voxelsPerPixel[u], voxelsPerPixel[v]);
+
+        if ((overlays & kOverlayVoxelGrid) != 0u)
+        {
+            // remove once a voxel is under about three pixels
+            const float fade = saturate((0.35 - max(width.x, width.y)) / 0.2);
+            color *= 1.0 - 0.35 * fade * gridLine(face, width, 1.0, 0.0);
+        }
+        if ((overlays & kOverlayUnitGrid) != 0u)
+        {
+            // Big grud
+            const float3 absolute = abs(normal);
+            const uint dominant = absolute.x > absolute.y ? (absolute.x > absolute.z ? 0u : 2u) : (absolute.y > absolute.z ? 1u : 2u);
+            const uint wu = (dominant + 1u) % 3u;
+            const uint wv = (dominant + 2u) % 3u;
+            const float2 worldFace = float2(hitWorld[wu], hitWorld[wv]);
+            const float2 worldWidth = float2(worldPerPixel[wu], worldPerPixel[wv]);
+            color *= 1.0 - 0.6 * gridLine(worldFace, worldWidth, 1.0, 0.5);
+        }
+        if ((overlays & kOverlayVoxelEdges) != 0u)
+        {
+            int3 outward = int3(0, 0, 0);
+            outward[hit.axis] = direction[hit.axis] > 0.0 ? -1 : 1;
+            const float edge = voxelEdgeCoverage(gVolumeRecords[instance.recordIndex], hit, cellPosition, voxelsPerPixel, outward);
+            color = lerp(color, float3(0.01, 0.01, 0.01), 0.85 * edge);
+        }
+    }
+
+    if (instance.highlightRecord != 0u && voxelMaterialAt(gVolumeRecords[instance.highlightRecord - 1u], hit.voxel) != 0u)
+    {
+        color = lerp(color, kSelectionTint, 0.55);
+    }
+    return color;
+}
+
 /// False discards
 bool shadeDebug(uint mode, VSOutput input, VoxelInstance instance, float3 origin, float3 direction, RayHit hit, float3 normal, float3 toCamera, inout FSOutput output)
 {
@@ -149,6 +225,12 @@ bool shadeDebug(uint mode, VSOutput input, VoxelInstance instance, float3 origin
             color = lerp(color, float3(1.0, 1.0, 1.0), 0.8 * gridLine(face, width, float(kCoarseVoxels), 0.5));
         }
     }
+    else if (mode == kRenderModeVoxelPaletteId)
+    {
+        // pick colors that are different so you can tell them appart easily
+        // https://en.wikipedia.org/wiki/Five_color_theorem tye shit
+        color = debugHue(frac(float(hit.material) * 0.618034 + 0.12)) * 0.85 + 0.15;
+    }
     else
     {
         const PaletteSample palette = samplePalette(gVolumeRecords[instance.recordIndex], hit.material);
@@ -183,6 +265,10 @@ bool shade(VSOutput input, out FSOutput output, out float depth)
     const RayHit hit = marchRay(instance.recordIndex, origin, direction, tMin, kFloatMax);
 
     const float3 hitWorld = camera + worldDirection * hit.t;
+
+    const float3 cellPosition = origin + direction * hit.t;
+    const float3 voxelsPerPixel = fwidth(cellPosition);
+    const float3 worldPerPixel = fwidth(hitWorld);
 
     // Not camera minus hit since a ray starting inside a solid voxel hits at t = 0
     const float3 toCamera = -normalize(worldDirection);
@@ -235,11 +321,12 @@ bool shade(VSOutput input, out FSOutput output, out float depth)
 
     if (lit.isDebugView)
     {
-        output.color = float4(lit.color, 1.0);
+        output.color = float4(applyEditorOverlays(lit.color, instance, hit, direction, cellPosition, voxelsPerPixel, hitWorld, worldPerPixel, normal), 1.0);
         return true;
     }
 
-    output.color = float4(lit.color + palette.albedo * palette.emissive, 1.0);
+    const float3 shaded = lit.color + palette.albedo * palette.emissive;
+    output.color = float4(applyEditorOverlays(shaded, instance, hit, direction, cellPosition, voxelsPerPixel, hitWorld, worldPerPixel, normal), 1.0);
     return true;
 }
 

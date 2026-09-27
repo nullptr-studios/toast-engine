@@ -63,6 +63,7 @@ class ReflectionProbe;
 class IrradianceVolume;
 class PostProcessVolume;
 class INodeOwner;
+class Node;
 class Node3D;
 }
 
@@ -286,6 +287,7 @@ public:
 		bool visible = true;
 
 		uint64_t node_uid = 0;
+		uint32_t highlight_record = 0;
 	};
 
 	struct UIWorldPanelProxy {
@@ -891,6 +893,25 @@ public:
 		cancelIrradianceBake();
 	}
 
+	/**
+	 * Tints the voxels of node that are solid in highlight
+	 * @note nullptr clears it
+	 */
+	void setVoxelHighlight(const toast::VoxelNode* node, const voxel::Volume* highlight) {
+		std::scoped_lock lock(m_voxel_proxy_mutex);
+		if (highlight == nullptr) {
+			m_voxel_highlights.erase(node);
+		} else {
+			m_voxel_highlights[node] = highlight;
+		}
+	}
+
+	void setSecondaryOwner(const toast::INodeOwner* owner, const glm::mat4& transform, const toast::Node* hidden) {
+		m_secondary_owner = owner;
+		m_secondary_transform = transform;
+		m_secondary_hidden = hidden;
+	}
+
 	[[nodiscard]]
 	auto renderingFrame() const -> const RenderFrame* {
 		return m_rendering_frame;
@@ -1120,6 +1141,13 @@ private:
 	std::optional<PostProcessSettings> m_pending_post_settings;
 
 	const toast::INodeOwner* m_render_owner_filter = nullptr;
+	std::unordered_map<const toast::VoxelNode*, const voxel::Volume*> m_voxel_highlights;
+	const toast::INodeOwner* m_secondary_owner = nullptr;
+	glm::mat4 m_secondary_transform {1.0f};
+	const toast::Node* m_secondary_hidden = nullptr;
+
+	[[nodiscard]]
+	auto ownerTransform(const toast::Node& node) const -> const glm::mat4*;
 
 	event::Listener m_capture_listener;
 	std::atomic_bool m_capture_frame_requested {false};

@@ -1,5 +1,6 @@
 #include "workspace_events.hpp"
 
+#include <cstring>
 #include <generated/workspace_events.pb.h>
 #include <limits>
 #include <toast/assets/assets.hpp>
@@ -14,6 +15,9 @@ UpdateHierarchyData::HierarchyElement::HierarchyElement(const toast::Box<toast::
 	type = node->info()->type;
 	enabled = node->enabled();
 	is_prefab = node->isInstanceRoot() && node->type() != toast::NodeType::world_root;
+	if (is_prefab) {
+		prefab_uid = node->sourcePrefab().uid();
+	}
 	children.reserve(node->children().size());
 	for (const auto& c : node->children()) {
 		// TODO: not go down if its a prefab
@@ -28,6 +32,7 @@ UpdateHierarchyData::HierarchyElement::HierarchyElement(const HierarchyElement& 
 	enabled = other.enabled;
 	children = other.children;
 	is_prefab = other.is_prefab;
+	prefab_uid = other.prefab_uid;
 }
 
 UpdateHierarchyData::UpdateHierarchyData(const toast::Box<toast::Node>& node, uint64_t handle) : workspace_handle(handle) {
@@ -50,6 +55,9 @@ struct ProtoTraits<UpdateHierarchyData::HierarchyElement> {
 		p.set_type(e.type);
 		p.set_enabled(e.enabled);
 		p.set_is_prefab(e.is_prefab);
+		if (e.prefab_uid.data() != 0) {
+			p.set_prefab_uid(e.prefab_uid);
+		}
 		for (const auto& c : e.children) {
 			auto* element = p.add_children();
 			*element = toProto(c);
@@ -64,6 +72,7 @@ struct ProtoTraits<UpdateHierarchyData::HierarchyElement> {
 		e.type = p.type();
 		e.enabled = p.enabled();
 		e.is_prefab = p.is_prefab();
+		e.prefab_uid = toast::UID::fromString(p.prefab_uid());
 		e.children.reserve(p.children_size());
 		for (const auto& c : p.children()) {
 			e.children.emplace_back(fromProto(c));
@@ -949,6 +958,485 @@ struct ProtoTraits<WorkspacePromoteNode> {
 };
 
 TOAST_PROTO_EVENT(WorkspacePromoteNode);
+
+template<>
+struct ProtoTraits<WorkspaceConvertToProceduralVoxel> {
+	using Proto = proto::events::WorkspaceConvertToProceduralVoxel;
+	using Event = WorkspaceConvertToProceduralVoxel;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_target(e.target);
+		p.set_path(e.path);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.target = toast::UID::fromString(p.target());
+		e.path = p.path();
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(WorkspaceConvertToProceduralVoxel);
+
+template<>
+struct ProtoTraits<ProceduralVoxelPromoted> {
+	using Proto = proto::events::ProceduralVoxelPromoted;
+	using Event = ProceduralVoxelPromoted;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_workspace_handle(e.workspace_handle);
+		p.set_prefab_uid(e.prefab_uid);
+		p.set_success(e.success);
+		p.set_error(e.error);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.workspace_handle = p.workspace_handle();
+		e.prefab_uid = toast::UID::fromString(p.prefab_uid());
+		e.success = p.success();
+		e.error = p.error();
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(ProceduralVoxelPromoted);
+
+namespace {
+
+void writeInt3(proto::events::VoxelInt3* out, glm::ivec3 value) {
+	out->set_x(value.x);
+	out->set_y(value.y);
+	out->set_z(value.z);
+}
+
+auto readInt3(const proto::events::VoxelInt3& in) -> glm::ivec3 {
+	return {in.x(), in.y(), in.z()};
+}
+
+template<typename Repeated>
+auto readUids(const Repeated& in) -> std::vector<toast::UID> {
+	std::vector<toast::UID> out;
+	out.reserve(static_cast<size_t>(in.size()));
+	for (const auto& uid : in) {
+		out.emplace_back(toast::UID::fromString(uid));
+	}
+	return out;
+}
+
+template<typename Repeated>
+void writeUids(Repeated* out, const std::vector<toast::UID>& in) {
+	for (const toast::UID& uid : in) {
+		out->Add(std::string(uid));
+	}
+}
+
+}
+
+template<>
+struct ProtoTraits<ProceduralVoxelLayout> {
+	using Proto = proto::events::ProceduralVoxelLayout;
+	using Event = ProceduralVoxelLayout;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_root_uid(e.root_uid);
+		for (const VoxelPieceLayoutData& piece : e.pieces) {
+			auto* out = p.add_pieces();
+			out->set_uid(piece.uid);
+			out->set_name(piece.name);
+			out->set_kind(piece.kind);
+			writeInt3(out->mutable_min(), piece.min);
+			writeInt3(out->mutable_max(), piece.max);
+			out->set_r(piece.color.r);
+			out->set_g(piece.color.g);
+			out->set_b(piece.color.b);
+			for (const glm::vec4& plane : piece.planes) {
+				out->add_planes(plane.x);
+				out->add_planes(plane.y);
+				out->add_planes(plane.z);
+				out->add_planes(plane.w);
+			}
+			out->set_resizable(piece.resizable);
+			out->set_color_id(piece.color_id);
+		}
+		if (e.palette_uid.data() != 0) {
+			p.set_palette_uid(e.palette_uid);
+		}
+		for (const VoxelProjectionData& projection : e.projections) {
+			auto* out = p.add_projections();
+			out->set_min_h(projection.min_h);
+			out->set_min_v(projection.min_v);
+			out->set_width(projection.width);
+			out->set_height(projection.height);
+			out->set_colors(projection.colors.data(), projection.colors.size());
+			out->set_depths(projection.depths.data(), projection.depths.size() * sizeof(int16_t));
+			out->set_edges_h(projection.edges_h.data(), projection.edges_h.size());
+			out->set_edges_v(projection.edges_v.data(), projection.edges_v.size());
+		}
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.root_uid = toast::UID::fromString(p.root_uid());
+		for (const auto& in : p.pieces()) {
+			VoxelPieceLayoutData piece;
+			piece.uid = toast::UID::fromString(in.uid());
+			piece.name = in.name();
+			piece.kind = in.kind();
+			piece.min = readInt3(in.min());
+			piece.max = readInt3(in.max());
+			piece.color = {in.r(), in.g(), in.b()};
+			for (int i = 0; i + 3 < in.planes_size(); i += 4) {
+				piece.planes.emplace_back(in.planes(i), in.planes(i + 1), in.planes(i + 2), in.planes(i + 3));
+			}
+			piece.resizable = in.resizable();
+			piece.color_id = in.color_id();
+			e.pieces.push_back(std::move(piece));
+		}
+		e.palette_uid = toast::UID::fromString(p.palette_uid());
+		for (const auto& in : p.projections()) {
+			VoxelProjectionData projection;
+			projection.min_h = in.min_h();
+			projection.min_v = in.min_v();
+			projection.width = in.width();
+			projection.height = in.height();
+			projection.colors.assign(in.colors().begin(), in.colors().end());
+			projection.depths.resize(in.depths().size() / sizeof(int16_t));
+			std::memcpy(projection.depths.data(), in.depths().data(), projection.depths.size() * sizeof(int16_t));
+			projection.edges_h.assign(in.edges_h().begin(), in.edges_h().end());
+			projection.edges_v.assign(in.edges_v().begin(), in.edges_v().end());
+			e.projections.push_back(std::move(projection));
+		}
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(ProceduralVoxelLayout);
+
+template<>
+struct ProtoTraits<VoxelSetPieceBounds> {
+	using Proto = proto::events::VoxelSetPieceBounds;
+	using Event = VoxelSetPieceBounds;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_target(e.target);
+		writeInt3(p.mutable_min(), e.min);
+		writeInt3(p.mutable_max(), e.max);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.target = toast::UID::fromString(p.target());
+		e.min = readInt3(p.min());
+		e.max = readInt3(p.max());
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(VoxelSetPieceBounds);
+
+template<>
+struct ProtoTraits<VoxelCreatePiece> {
+	using Proto = proto::events::VoxelCreatePiece;
+	using Event = VoxelCreatePiece;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_parent(e.parent);
+		p.set_type(e.type);
+		if (e.source.data() != 0) {
+			p.set_source(e.source);
+		}
+		writeInt3(p.mutable_min(), e.min);
+		writeInt3(p.mutable_max(), e.max);
+		if (e.script.data() != 0) {
+			p.set_script(e.script);
+		}
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.parent = toast::UID::fromString(p.parent());
+		e.type = p.type();
+		e.source = toast::UID::fromString(p.source());
+		e.min = readInt3(p.min());
+		e.max = readInt3(p.max());
+		e.script = toast::UID::fromString(p.script());
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(VoxelCreatePiece);
+
+template<>
+struct ProtoTraits<VoxelExtrude> {
+	using Proto = proto::events::VoxelExtrude;
+	using Event = VoxelExtrude;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_source(e.source);
+		writeInt3(p.mutable_min(), e.min);
+		writeInt3(p.mutable_max(), e.max);
+		p.set_inward(e.inward);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.source = toast::UID::fromString(p.source());
+		e.min = readInt3(p.min());
+		e.max = readInt3(p.max());
+		e.inward = p.inward();
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(VoxelExtrude);
+
+template<>
+struct ProtoTraits<VoxelSplitPieces> {
+	using Proto = proto::events::VoxelSplitPieces;
+	using Event = VoxelSplitPieces;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		writeUids(p.mutable_targets(), e.targets);
+		p.set_nx(e.plane.x);
+		p.set_ny(e.plane.y);
+		p.set_nz(e.plane.z);
+		p.set_w(e.plane.w);
+		p.set_keep(e.keep);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.targets = readUids(p.targets());
+		e.plane = {p.nx(), p.ny(), p.nz(), p.w()};
+		e.keep = p.keep();
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(VoxelSplitPieces);
+
+template<>
+struct ProtoTraits<VoxelRotatePieces> {
+	using Proto = proto::events::VoxelRotatePieces;
+	using Event = VoxelRotatePieces;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		writeUids(p.mutable_targets(), e.targets);
+		p.set_axis(e.axis);
+		p.set_turns(e.turns);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.targets = readUids(p.targets());
+		e.axis = p.axis();
+		e.turns = p.turns();
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(VoxelRotatePieces);
+
+template<>
+struct ProtoTraits<VoxelBucketFill> {
+	using Proto = proto::events::VoxelBucketFill;
+	using Event = VoxelBucketFill;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_target(e.target);
+		writeInt3(p.mutable_voxel(), e.voxel);
+		p.set_id(e.id);
+		p.set_search(e.search);
+		p.set_search_axis(e.search_axis);
+		p.set_search_step(e.search_step);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.target = toast::UID::fromString(p.target());
+		e.voxel = readInt3(p.voxel());
+		e.id = p.id();
+		e.search = p.search();
+		e.search_axis = p.search_axis();
+		e.search_step = p.search_step() < 0 ? -1 : 1;
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(VoxelBucketFill);
+
+template<>
+struct ProtoTraits<VoxelCollapsePieces> {
+	using Proto = proto::events::VoxelCollapsePieces;
+	using Event = VoxelCollapsePieces;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		writeUids(p.mutable_targets(), e.targets);
+		p.set_path(e.path);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.targets = readUids(p.targets());
+		e.path = p.path();
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(VoxelCollapsePieces);
+
+template<>
+struct ProtoTraits<SetVoxelEditorOverlays> {
+	using Proto = proto::events::SetVoxelEditorOverlays;
+	using Event = SetVoxelEditorOverlays;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_unit_grid(e.unit_grid);
+		p.set_voxel_grid(e.voxel_grid);
+		p.set_edges(e.edges);
+		p.set_voxel_edges(e.voxel_edges);
+		p.set_projections(e.projections);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.unit_grid = p.unit_grid();
+		e.voxel_grid = p.voxel_grid();
+		e.edges = p.edges();
+		e.voxel_edges = p.voxel_edges();
+		e.projections = p.projections();
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(SetVoxelEditorOverlays);
+
+template<>
+struct ProtoTraits<SetVoxelCutPreview> {
+	using Proto = proto::events::SetVoxelCutPreview;
+	using Event = SetVoxelCutPreview;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_root(e.root);
+		p.set_active(e.active);
+		p.set_nx(e.plane.x);
+		p.set_ny(e.plane.y);
+		p.set_nz(e.plane.z);
+		p.set_w(e.plane.w);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.root = toast::UID::fromString(p.root());
+		e.active = p.active();
+		e.plane = {p.nx(), p.ny(), p.nz(), p.w()};
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(SetVoxelCutPreview);
+
+template<>
+struct ProtoTraits<SetShowOthers> {
+	using Proto = proto::events::SetShowOthers;
+	using Event = SetShowOthers;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_show(e.show);
+		p.set_workspace(e.workspace);
+		p.set_source_workspace(e.source_workspace);
+		p.set_source_instance(e.source_instance);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.show = p.show();
+		e.workspace = p.workspace();
+		e.source_workspace = p.source_workspace();
+		e.source_instance = toast::UID::fromString(p.source_instance());
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(SetShowOthers);
+
+template<>
+struct ProtoTraits<SetVoxelTool> {
+	using Proto = proto::events::SetVoxelTool;
+	using Event = SetVoxelTool;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_tool(e.tool);
+		p.set_paint_id(e.paint_id);
+		if (e.default_script.data() != 0) {
+			p.set_default_script(e.default_script);
+		}
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.tool = p.tool();
+		e.paint_id = p.paint_id();
+		e.default_script = toast::UID::fromString(p.default_script());
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(SetVoxelTool);
+
+template<>
+struct ProtoTraits<NodePicked> {
+	using Proto = proto::events::NodePicked;
+	using Event = NodePicked;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_workspace_handle(e.workspace_handle);
+		if (e.node.data() != 0) {
+			p.set_node(e.node);
+		}
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.workspace_handle = p.workspace_handle();
+		e.node = toast::UID::fromString(p.node());
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(NodePicked);
 
 template<>
 struct ProtoTraits<HistoryRevision> {

@@ -2,6 +2,7 @@
 /// @author Xein
 /// @date 10 Feb 2026
 
+#pragma once
 #include <cstdint>
 #include <glm/vec3.hpp>
 #include <toast/uid.hpp>

@@ -151,7 +151,7 @@
 			        Background="{StaticResource Bg3}"
 			        Padding="8"
 			        CornerRadius="8"
-			        IsVisible="{Binding HasNodes}">
+			        IsVisible="{Binding ShowHeader}">
 				<StackPanel Spacing="8">
 					<Grid ColumnDefinitions="Auto, Auto, *, Auto, Auto, Auto, Auto"
 					      ColumnSpacing="4">

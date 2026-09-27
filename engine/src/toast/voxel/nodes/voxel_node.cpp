@@ -3,12 +3,12 @@
 #include <algorithm>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
-#include <toast/assets/voxel_model.hpp>
-#include <toast/assets/voxel_palette.hpp>
 #include <toast/log.hpp>
 #include <toast/physics/contact_events.hpp>
 #include <toast/physics/simulator.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
+#include <toast/voxel/assets/voxel_model.hpp>
+#include <toast/voxel/assets/voxel_palette.hpp>
 #include <toast/voxel/runtime_pool.hpp>
 #include <tracy/Tracy.hpp>
 #include <utility>
@@ -210,6 +210,7 @@ void VoxelNode::retireVolume() {
 }
 
 void VoxelNode::refreshVolume() {
+	ZoneScopedN("voxel::RefreshVolume");    // NOLINT
 	if (m_rebuild_requested) {
 		m_rebuild_requested = false;
 		m_volume_stale = true;
@@ -221,6 +222,7 @@ void VoxelNode::refreshVolume() {
 	m_edit_shape_pending = false;
 	m_pending_events = {};
 	m_building_shape = true;
+	buildShape();
 	call("editShape");
 	m_building_shape = false;
 	rebuilt_shape.fire();
@@ -324,19 +326,8 @@ void VoxelNode::edit(const voxel::EditBounds& local_bounds, bool grows, std::str
 	commitEdit(kernel(*target), operation);
 }
 
-namespace {
-
-[[nodiscard]]
-auto toVoxel(glm::vec3 pos) noexcept -> glm::ivec3 {
-	return glm::ivec3(glm::floor(pos));
-}
-
-[[nodiscard]]
-auto toId(int id) noexcept -> uint8_t {
-	return static_cast<uint8_t>(std::clamp(id, 0, 255));
-}
-
-}
+using _detail::toId;
+using _detail::toVoxel;
 
 auto VoxelNode::getVoxel(glm::vec3 pos) -> int {
 	const voxel::Volume* current = volume();
@@ -466,7 +457,7 @@ void VoxelNode::extrudeFace(glm::vec3 pos, glm::vec3 normal, int distance) {
 }
 
 void VoxelNode::stamp(
-    assets::Handle<assets::VoxelModel> asset, glm::vec3 pos, glm::quat rotation, voxel::WriteMode mode, int match_id
+    const assets::Handle<assets::VoxelModel>& asset, glm::vec3 pos, glm::quat rotation, voxel::WriteMode mode, int match_id
 ) {
 	const assets::VoxelModel* model = voxelNodeAssetOfType(asset, "voxel_model");
 	if (model == nullptr) {
@@ -573,7 +564,7 @@ auto VoxelNode::worldToVoxel(glm::vec3 pos) -> glm::vec3 {
 
 auto VoxelNode::voxelToWorld(glm::vec3 pos) -> glm::vec3 {
 	syncTransform();
-	return glm::vec3(getWorldTransform() * glm::vec4(pos * voxel::k_voxel_size, 1.0f));
+	return {getWorldTransform() * glm::vec4(pos * voxel::k_voxel_size, 1.0f)};
 }
 
 void VoxelNode::sleep() {
@@ -709,6 +700,7 @@ void VoxelNode::onScriptsReloaded() {
 void VoxelNode::init() {
 	// you dont need a model any more
 	m_volume_stale = true;
+	m_shape_key = shapeKey();
 	refreshVolume();
 
 	m_registered_proxy = renderer::registerVoxelNodeProxy(this);
@@ -721,6 +713,10 @@ void VoxelNode::init() {
 }
 
 void VoxelNode::editorTick() {
+	if (const uint64_t key = shapeKey(); key != m_shape_key) {
+		m_shape_key = key;
+		m_rebuild_requested = true;
+	}
 	refreshVolume();
 }
 

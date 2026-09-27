@@ -9,10 +9,10 @@ namespace voxel {
 
 namespace {
 
-static_assert(k_brick_dim == 8, "brickOf and localOf shift and mask by 3 and 7");
+static_assert(k_brick_dim == 8, "brickOfVoxel and localOf shift and mask by 3 and 7");
 
 [[nodiscard]]
-auto brickOf(glm::ivec3 voxel) noexcept -> glm::ivec3 {
+auto brickOfVoxel(glm::ivec3 voxel) noexcept -> glm::ivec3 {
 	return {voxel.x >> 3, voxel.y >> 3, voxel.z >> 3};
 }
 
@@ -130,7 +130,7 @@ auto Volume::containsBrick(glm::ivec3 brick) const noexcept -> bool {
 }
 
 auto Volume::containsVoxel(glm::ivec3 voxel) const noexcept -> bool {
-	return containsBrick(brickOf(voxel));
+	return containsBrick(brickOfVoxel(voxel));
 }
 
 auto Volume::entryIndex(glm::ivec3 brick) const noexcept -> uint32_t {
@@ -151,7 +151,7 @@ auto Volume::materialAt(glm::ivec3 voxel) const noexcept -> uint8_t {
 		return k_empty_palette_index;
 	}
 
-	const BrickEntry entry = m_entries[entryIndex(brickOf(voxel))];
+	const BrickEntry entry = m_entries[entryIndex(brickOfVoxel(voxel))];
 	switch (entry.tag()) {
 		case BrickTag::empty: return k_empty_palette_index;
 		case BrickTag::uniform: return static_cast<uint8_t>(entry.payload());
@@ -232,7 +232,7 @@ auto Volume::setVoxel(glm::ivec3 voxel, uint8_t material) -> VoxelWrite {
 		return result;
 	}
 
-	const uint32_t index = entryIndex(brickOf(voxel));
+	const uint32_t index = entryIndex(brickOfVoxel(voxel));
 	const bool was_occupied = m_entries[index].tag() != BrickTag::empty;
 
 	const uint32_t id = makeWritable(index);
@@ -246,7 +246,7 @@ auto Volume::setVoxel(glm::ivec3 voxel, uint8_t material) -> VoxelWrite {
 
 	result.changed = true;
 	++m_revision;
-	markDirty(brickOf(voxel));
+	markDirty(brickOfVoxel(voxel));
 
 	if (material != k_empty_palette_index) {
 		result.brick_became_occupied = !was_occupied;

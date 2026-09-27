@@ -83,6 +83,11 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 
 	public AssetBrowserViewModel() {
 		Current = this;
+		NodeThumbnails.Updated += uid => {
+			foreach (var folder in Folders)
+			foreach (var file in GetAllFiles(folder))
+				if (file.Uid == uid) file.RefreshThumbnail();
+		};
 
 		m_unknownFilter = new AssetTypeFilter(null);
 		var filters = AssetTypeRegistry.All

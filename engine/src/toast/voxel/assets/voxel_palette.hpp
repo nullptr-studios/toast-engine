@@ -5,13 +5,12 @@
  */
 
 #pragma once
-#include "core_types.hpp"
-
 #include <array>
 #include <cstdint>
 #include <memory>
 #include <string>
 #include <string_view>
+#include <toast/assets/core_types.hpp>
 #include <toast/voxel/palette.hpp>
 #include <vector>
 

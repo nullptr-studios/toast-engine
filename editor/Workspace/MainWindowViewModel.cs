@@ -60,6 +60,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 	public MainWindowViewModel(ToastEngine toast) {
 		Current = this;
 		m_toast = toast;
+		VoxelEditor.VoxelEditorActions.Register();
 
 		m_dockFactory = new DockFactory();
 		MainLayout = m_dockFactory.CreateLayout();
@@ -339,6 +340,25 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		// pin the zone so it stays up while editing
 		m_toastZonePinned = true;
 		ToastZoneActive = true;
+	}
+
+	public ToastEngine Engine => m_toast;
+
+	public WorkspaceViewModel? FindOpenWorkspace(string assetUid) {
+		return m_workspaces.Values.FirstOrDefault(w => w.BackingAssetUid == assetUid);
+	}
+
+	// if another window spawns we need to be able to give focus back to the game window
+	public void ReclaimEngine() {
+		if (ViewportFocus.DetachedOwner == 0) return;
+		Events.Send(new SetVoxelEditorOverlays { UnitGrid = false, VoxelGrid = false, Edges = false, VoxelEdges = false });
+		Events.Send(new SetShowOthers { Show = false });
+		ViewportFocus.DetachedOwner = 0;
+		m_dockFactory.Hierarchy?.MakeCurrent();
+		m_activeWorkspaceHandle = ulong.MaxValue;
+		SyncActiveWorkspace();
+		if (m_dockFactory.ActiveWorkspace is { } workspace) workspace.ResendViewState();
+		Events.Send(new RequestHierarchyUpdate());
 	}
 
 	private void SyncActiveWorkspace() {

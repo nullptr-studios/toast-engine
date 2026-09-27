@@ -18,6 +18,7 @@
 #include <toast/log.hpp>
 #include <toast/voxel/voxel_constants.hpp>
 #include <tracy/Tracy.hpp>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -47,8 +48,8 @@ struct VoxThumbGrid {
 
 	[[nodiscard]]
 	auto at(int32_t x, int32_t y, int32_t z) const noexcept -> uint8_t {
-		if (x < 0 || y < 0 || z < 0 || static_cast<uint32_t>(x) >= dims.x || static_cast<uint32_t>(y) >= dims.y ||
-		    static_cast<uint32_t>(z) >= dims.z) {
+		if (x < 0 || y < 0 || z < 0 || std::cmp_greater_equal(x, dims.x) || std::cmp_greater_equal(y, dims.y) ||
+		    std::cmp_greater_equal(z, dims.z)) {
 			return k_empty_palette_index;
 		}
 		return materials[static_cast<size_t>(x) + (static_cast<size_t>(y) * dims.x) + (static_cast<size_t>(z) * dims.x * dims.y)];
@@ -222,8 +223,8 @@ auto voxThumbRaycast(const VoxThumbGrid& grid, glm::vec3 origin, glm::vec3 dir) 
 			last_normal = glm::vec3(0.0f, 0.0f, static_cast<float>(-step.z));
 		}
 
-		if (cell.x < 0 || cell.y < 0 || cell.z < 0 || static_cast<uint32_t>(cell.x) >= grid.dims.x ||
-		    static_cast<uint32_t>(cell.y) >= grid.dims.y || static_cast<uint32_t>(cell.z) >= grid.dims.z) {
+		if (cell.x < 0 || cell.y < 0 || cell.z < 0 || std::cmp_greater_equal(cell.x, grid.dims.x) ||
+		    std::cmp_greater_equal(cell.y, grid.dims.y) || std::cmp_greater_equal(cell.z, grid.dims.z)) {
 			break;
 		}
 	}
@@ -277,9 +278,9 @@ auto toast_tvox_render_thumbnail(const char* tvox_path, const char* palette_path
 		std::vector<RgbaF> samples(static_cast<size_t>(super_size) * super_size);
 
 		for (uint32_t sy = 0; sy < super_size; ++sy) {
-			const float v = (((static_cast<float>(sy) + 0.5f) / static_cast<float>(super_size)) * -2.0f + 1.0f) * cam.half_extent;
+			const float v = ((((static_cast<float>(sy) + 0.5f) / static_cast<float>(super_size)) * -2.0f) + 1.0f) * cam.half_extent;
 			for (uint32_t sx = 0; sx < super_size; ++sx) {
-				const float u = (((static_cast<float>(sx) + 0.5f) / static_cast<float>(super_size)) * 2.0f - 1.0f) * cam.half_extent;
+				const float u = ((((static_cast<float>(sx) + 0.5f) / static_cast<float>(super_size)) * 2.0f) - 1.0f) * cam.half_extent;
 
 				const glm::vec3 plane_point = cam.origin_center + (cam.right * u) + (cam.up * v);
 				const glm::vec3 origin = plane_point - (cam.forward * 10000.0f);

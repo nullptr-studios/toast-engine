@@ -311,6 +311,25 @@ public:
 	 */
 	void reloadScripts() noexcept;
 
+	/** The scripts attached to this node in call order */
+	[[nodiscard]]
+	auto scripts() const noexcept -> const std::vector<assets::Handle<assets::Script>>& {
+		return m_scripts;
+	}
+
+	/** Replaces every script and rebuilds the script runtime */
+	void setScripts(std::vector<assets::Handle<assets::Script>> scripts) noexcept {
+		m_scripts = std::move(scripts);
+		loadScripts();
+		onScriptsReloaded();
+	}
+
+	/** Attaches a script at the end and rebuilds the script runtime */
+	void addScript(const assets::Handle<assets::Script>& script) noexcept {
+		m_scripts.push_back(script);
+		loadScripts();
+	}
+
 	/**
 	 * @brief Invokes all C++ reflected implementations of `name` (base→derived) and
 	 *        all same-named Lua functions across every attached script, forwarding `args`
@@ -383,6 +402,9 @@ protected:
 	virtual void onReflectedFieldChanged(std::string_view /*field_name*/) { }
 
 	virtual void onScriptsReloaded() { }
+
+	/** A script variable was edited from outside the script, path is "<instance>:<group/name>" */
+	virtual void onScriptVarChanged(std::string_view path) { }
 
 	virtual void updateInspectorMessages() { }
 
@@ -476,7 +498,7 @@ private:
 /// null-safe RTTI replacement; walks the NodeInfo chain instead of dynamic_cast
 template<typename T>
 auto reflect_cast(toast::Node* n) -> T* {    // NOLINT
-	if (n && n->info() && n->info()->isA(&toast::Reflect<T>::type_info)) {
+	if (n && n->info() && n->info()->isA(toast::NodeTypeInfo<T>::get())) {
 		return static_cast<T*>(n);
 	}
 	return nullptr;

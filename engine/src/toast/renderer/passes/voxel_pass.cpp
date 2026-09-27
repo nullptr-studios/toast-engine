@@ -165,6 +165,7 @@ void VoxelPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t ima
 
 		const auto index = static_cast<uint32_t>(m_draws.size());
 		instances[index] = makeVoxelInstance(proxy.model, proxy.inverse_model, proxy.record_index);
+		instances[index].pad0 = proxy.highlight_record;
 		m_draws.push_back(
 		    Draw {
 		      .instance = index,

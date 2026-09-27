@@ -134,6 +134,13 @@ public class AssetFile : INotifyPropertyChanged {
 
 	public bool HasThumbnail => Thumbnail is not null;
 
+	public void RefreshThumbnail() {
+		m_thumbnailChecked = false;
+		m_thumbnail = null;
+		Notify(nameof(Thumbnail));
+		Notify(nameof(HasThumbnail));
+	}
+
 	public IBrush TypeColor {
 		get {
 			if (Definition is null) return s_unknownBrush;

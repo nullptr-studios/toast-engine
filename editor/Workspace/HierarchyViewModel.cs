@@ -39,6 +39,7 @@ public class HierarchyElement : INotifyPropertyChanged {
 		Uid = e.Uid;
 		Type = e.Type;
 		IsPrefab = e.IsPrefab;
+		PrefabUid = e.PrefabUid;
 		Enabled = e.Enabled;
 		IsRoot = isRoot;
 		m_isExpanded = !owner.IsCollapsed(StateKey); // restore persisted fold state
@@ -70,6 +71,8 @@ public class HierarchyElement : INotifyPropertyChanged {
 	public string? Color { get; set; }
 	public bool IsRoot { get; private set; }
 	public bool IsPrefab { get; set; }
+
+	public string PrefabUid { get; set; } = "";
 
 	public string StateKey => IsRoot ? HierarchyState.RootKey : Uid;
 	public ObservableCollection<HierarchyElement> Children { get; set; } = [];
@@ -168,20 +171,38 @@ public partial class HierarchyViewModel : Tool, IDisposable {
 	private HashSet<string>? m_rowUidsSnapshot;
 	private bool m_disposed;
 	private ulong m_hierarchyHandle;
+	private readonly Func<WorkspaceViewModel?>? m_workspaceProvider;
 
 	[ObservableProperty] private HierarchyElement? m_selectedNode;
 
 	[ObservableProperty] private bool m_showPrefabChildren;
 
-	public HierarchyViewModel() {
-		Current = this;
+	public HierarchyViewModel() : this(null) { }
+
+	public HierarchyViewModel(Func<WorkspaceViewModel?>? workspace) {
+		m_workspaceProvider = workspace;
+		IsPrimary = workspace is null;
+		if (IsPrimary) Current = this;
 		m_listener = new Listener();
-		Root.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasNodes));
+		Root.CollectionChanged += (_, _) => {
+			OnPropertyChanged(nameof(HasNodes));
+			OnPropertyChanged(nameof(ShowHeader));
+		};
 
 		WorkspaceViewModel.PlayModeChanged += OnPlayModeChanged;
 
 		// engine sends UpdateHierarchyData after every change (create, delete, move, rename...)
 		// we post to the UI thread because engine callbacks come on the native tick thread
+		// A click in the viewport picked a node, its parents open so the row shows
+		m_listener.Subscribe<NodePicked>(e => {
+			Dispatcher.UIThread.Post(() => {
+				if (m_disposed || ActiveWorkspace is not { } workspace || e.WorkspaceHandle != workspace.EffectiveHandle) return;
+				var picked = string.IsNullOrEmpty(e.Node) ? null : Find(e.Node);
+				for (var parent = picked?.Parent; parent is not null; parent = parent.Parent) parent.IsExpanded = true;
+				SelectedNode = picked;
+			});
+		});
+
 		m_listener.Subscribe<UpdateHierarchyData>(e => {
 			Dispatcher.UIThread.Post(() => {
 				if (m_disposed || ActiveWorkspace is not { } workspace || e.WorkspaceHandle != workspace.EffectiveHandle) return;
@@ -227,9 +248,24 @@ public partial class HierarchyViewModel : Tool, IDisposable {
 
 	public bool HasNodes => Root.Count > 0;
 
+	// The header only shows in the main window
+	public bool ShowHeader => IsPrimary && HasNodes;
+
+	// Adding, loading, retyping and promoting nodes only make sense in a level but never in the VoxelEditor
+	private bool CanRestructure(HierarchyElement? target) {
+		return IsPrimary;
+	}
+
 	public ObservableCollection<HierarchyElement> Rows { get; } = [];
 
-	public WorkspaceViewModel? ActiveWorkspace => Factory is DockFactory f ? f.ActiveWorkspace : null;
+	public WorkspaceViewModel? ActiveWorkspace =>
+		m_workspaceProvider is not null ? m_workspaceProvider() : Factory is DockFactory f ? f.ActiveWorkspace : null;
+
+	public bool IsPrimary { get; }
+
+	public void MakeCurrent() {
+		Current = this;
+	}
 	public ulong ActiveWorkspaceHandle => ActiveWorkspace?.EffectiveHandle ?? 0;
 	public bool HasCurrentHierarchy => m_hierarchyHandle != 0 && m_hierarchyHandle == ActiveWorkspaceHandle;
 
@@ -251,6 +287,9 @@ public partial class HierarchyViewModel : Tool, IDisposable {
 
 	// raised whenever the selected node changes
 	public static event Action<HierarchyElement?>? SelectionChanged;
+
+	// raised whenever this hierarchy selects another node
+	public event Action<HierarchyElement?>? SelectedChanged;
 
 	// partial method hooked by the source generator -> fires when FilterText changes
 	partial void OnFilterTextChanged(string value) {
@@ -347,7 +386,8 @@ public partial class HierarchyViewModel : Tool, IDisposable {
 	partial void OnSelectedNodeChanged(HierarchyElement? value) {
 		// tell the engine which node to stream inspector data for ("" clears the focus)
 		Events.Send(new SetFocusedNode { Node = value?.Uid ?? "" });
-		SelectionChanged?.Invoke(value);
+		SelectedChanged?.Invoke(value);
+		if (IsPrimary) SelectionChanged?.Invoke(value);
 	}
 
 	private void ApplyFilterToRoot() {
@@ -389,7 +429,7 @@ public partial class HierarchyViewModel : Tool, IDisposable {
 		return target ?? SelectedNode ?? (Root.Count > 0 ? Root[0] : null);
 	}
 
-	[RelayCommand]
+	[RelayCommand(CanExecute = nameof(CanRestructure))]
 	private async Task AddNode(HierarchyElement? target) {
 		var t = Target(target);
 		if (t is null || t.IsPrefab || t.IsInsidePrefab) return;
@@ -401,7 +441,7 @@ public partial class HierarchyViewModel : Tool, IDisposable {
 		Events.Send(new WorkspaceCreateNode { Parent = t.Uid, Type = type });
 	}
 
-	[RelayCommand]
+	[RelayCommand(CanExecute = nameof(CanRestructure))]
 	private async Task LoadNode(HierarchyElement? target) {
 		var t = Target(target);
 		if (t is null || t.IsPrefab || t.IsInsidePrefab) return;
@@ -472,7 +512,7 @@ public partial class HierarchyViewModel : Tool, IDisposable {
 		return t is not null && !t.IsRoot;
 	}
 
-	[RelayCommand]
+	[RelayCommand(CanExecute = nameof(CanRestructure))]
 	private async Task ChangeType(HierarchyElement? target) {
 		var t = Target(target);
 		if (t is null || t.IsPrefab || t.IsInsidePrefab) return;
@@ -531,7 +571,7 @@ public partial class HierarchyViewModel : Tool, IDisposable {
 		Events.Send(new WorkspaceMoveNodeTo { Target = t.Uid, NewParent = newParent, Predecessor = MoveToEnd });
 	}
 
-	[RelayCommand]
+	[RelayCommand(CanExecute = nameof(CanRestructure))]
 	private async Task Promote(HierarchyElement? target) {
 		var t = Target(target);
 		if (t is null || t.IsRoot || t.IsPrefab || t.IsInsidePrefab) return;

@@ -9,8 +9,8 @@ public sealed class VoxelModelAsset : BaseAsset {
 	public override string Extension => ".tvox";
 	public override string DisplayName => "Voxel Model";
 	public override string ChipText => "VOX";
-	public override string ChipColor => "Cyan";
-	public override LucideIconKind Icon => LucideIconKind.Box;
+	public override string ChipColor => "Magenta";
+	public override LucideIconKind Icon => LucideIconKind.Boxes;
 
 	public override bool CanBeCreated => false;
 	public override string Category => "Visual";

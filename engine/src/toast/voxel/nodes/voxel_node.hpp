@@ -6,8 +6,9 @@
  */
 
 #pragma once
-#include "node_3d.hpp"
+#include "voxel.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -30,6 +31,22 @@ class Simulator;
 
 namespace toast {
 
+namespace _detail {
+
+/** Snaps a position to the voxel it falls in */
+[[nodiscard]]
+inline auto toVoxel(glm::vec3 pos) noexcept -> glm::ivec3 {
+	return {glm::floor(pos)};
+}
+
+/** Clamps a script id to a palette id */
+[[nodiscard]]
+inline auto toId(int id) noexcept -> uint8_t {
+	return static_cast<uint8_t>(std::clamp(id, 0, 255));
+}
+
+}
+
 /**
  * A shape made of voxels that renders and collides
  *
@@ -42,7 +59,7 @@ namespace toast {
  *
  * Ids are palette colors with 0 meaning the voxel is empty
  */
-class [[ToastNode, Icon("BoxMesh")]] TOAST_API VoxelNode : public Node3D {
+class [[ToastNode, Icon("BoxMesh")]] TOAST_API VoxelNode : public Voxel {
 	friend class physics::Simulator;
 
 public:
@@ -233,7 +250,7 @@ public:
 	 */
 	[[Reflect]]
 	void stamp(
-	    assets::Handle<assets::VoxelModel> asset, glm::vec3 pos, glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f),
+	    const assets::Handle<assets::VoxelModel>& asset, glm::vec3 pos, glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f),
 	    voxel::WriteMode mode = voxel::WriteMode::replace, int match_id = 0
 	);
 
@@ -277,6 +294,14 @@ public:
 	[[Reflect]]
 	void wake();
 
+	// Editor
+
+	/**
+	 * Opens the VoxelEditor
+	 */
+	[[Reflect, Button("Edit Voxel"), EditorAction("voxel_editor.open")]]
+	void editVoxel() { }
+
 	// Backend
 
 	[[nodiscard]]
@@ -301,7 +326,23 @@ public:
 	[[nodiscard]]
 	auto latticePlacement() const -> std::optional<voxel::LatticePlacement>;
 
-private:
+protected:
+	/**
+	 * Runs right before editShape on every rebuild, subclasses build their shape here
+	 */
+	virtual void buildShape() { }
+
+	/**
+	 * A hash of everything the shape is built from besides the model
+	 */
+	[[nodiscard]]
+	virtual auto shapeKey() -> uint64_t {
+		return 0;
+	}
+
+	/** Rebuilds the shape the next time it refreshes */
+	void requestRebuild() noexcept { m_rebuild_requested = true; }
+
 	void init();
 	void begin();
 	void end();
@@ -315,7 +356,7 @@ private:
 	void onScriptsReloaded() override;
 	void updateInspectorMessages() override;
 	void onEditorTransformChanged() override;
-	void drawDebug();
+	virtual void drawDebug();
 
 	void refreshVolume();
 	void releaseVolume();
@@ -478,6 +519,7 @@ private:
 
 	bool m_registered_proxy = false;
 	bool m_debug_visible = false;
+	uint64_t m_shape_key = 0;
 
 	uint64_t m_reported_wrong_model = 0;
 	uint64_t m_reported_wrong_palette = 0;

@@ -1,0 +1,258 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ve="using:editor.VoxelEditor"
+             xmlns:ws="using:editor.Workspace"
+             xmlns:elements="using:editor.Components.Elements"
+             x:Class="editor.VoxelEditor.VoxelEditorView"
+             x:DataType="ve:VoxelEditorViewModel"
+             Background="{StaticResource Bg2}"
+             Padding="8">
+	<UserControl.Styles>
+		<StyleInclude Source="avares://editor/Resources/ToolbarStyles.axaml" />
+	</UserControl.Styles>
+
+	<Grid RowDefinitions="Auto,*"
+	      RowSpacing="8">
+		<!-- Top bar -->
+		<Grid Grid.Row="0"
+		      ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto,Auto,Auto"
+		      ColumnSpacing="8">
+			<StackPanel Grid.Column="0"
+			            Orientation="Horizontal">
+				<ToggleButton Classes="tool purple"
+				              CornerRadius="6,0,0,6"
+				              ToolTip.Tip="Select (Q)"
+				              Command="{Binding SetToolCommand}"
+				              CommandParameter="Select"
+				              IsChecked="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Select, Mode=OneWay}">
+					<LucideIcon Kind="MousePointer2" Size="18" StrokeWidth="2.5" />
+				</ToggleButton>
+				<ToggleButton Classes="tool red"
+				              CornerRadius="0"
+				              ToolTip.Tip="Move (E)"
+				              Command="{Binding SetToolCommand}"
+				              CommandParameter="Move"
+				              IsChecked="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Move, Mode=OneWay}">
+					<LucideIcon Kind="Move" Size="18" StrokeWidth="2.5" />
+				</ToggleButton>
+				<ToggleButton Classes="tool red"
+				              CornerRadius="0"
+				              ToolTip.Tip="Extrude (Shift+E)"
+				              Command="{Binding SetToolCommand}"
+				              CommandParameter="Extrude"
+				              IsChecked="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Extrude, Mode=OneWay}">
+					<LucideIcon Kind="ArrowUpFromLine" Size="18" StrokeWidth="2.5" />
+				</ToggleButton>
+				<ToggleButton Classes="tool green"
+				              CornerRadius="0"
+				              ToolTip.Tip="Create volume (R)"
+				              Command="{Binding SetToolCommand}"
+				              CommandParameter="Buildup"
+				              IsChecked="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Buildup, Mode=OneWay}">
+					<LucideIcon Kind="Box" Size="18" StrokeWidth="2.5" />
+				</ToggleButton>
+				<ToggleButton Classes="tool green"
+				              CornerRadius="0"
+				              ToolTip.Tip="Carve volume (Shift+R)"
+				              Command="{Binding SetToolCommand}"
+				              CommandParameter="Carve"
+				              IsChecked="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Carve, Mode=OneWay}">
+					<LucideIcon Kind="Eraser" Size="18" StrokeWidth="2.5" />
+				</ToggleButton>
+				<ToggleButton Classes="tool blue"
+				              CornerRadius="0"
+				              ToolTip.Tip="Paint volume (T)"
+				              Command="{Binding SetToolCommand}"
+				              CommandParameter="Paint"
+				              IsChecked="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Paint, Mode=OneWay}">
+					<LucideIcon Kind="Brush" Size="18" StrokeWidth="2.5" />
+				</ToggleButton>
+				<ToggleButton Classes="tool blue"
+				              CornerRadius="0"
+				              ToolTip.Tip="Paint bucket (Shift+T)"
+				              Command="{Binding SetToolCommand}"
+				              CommandParameter="Bucket"
+				              IsChecked="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Bucket, Mode=OneWay}">
+					<LucideIcon Kind="PaintBucket" Size="18" StrokeWidth="2.5" />
+				</ToggleButton>
+				<ToggleButton Classes="tool orange"
+				              CornerRadius="0"
+				              ToolTip.Tip="Split (Y)"
+				              Command="{Binding SetToolCommand}"
+				              CommandParameter="Split"
+				              IsChecked="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Split, Mode=OneWay}">
+					<LucideIcon Kind="Scissors" Size="18" StrokeWidth="2.5" />
+				</ToggleButton>
+				<ToggleButton Classes="tool orange"
+				              CornerRadius="0,6,6,0"
+				              ToolTip.Tip="Slice (Shift+Y)"
+				              Command="{Binding SetToolCommand}"
+				              CommandParameter="Slice"
+				              IsChecked="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Slice, Mode=OneWay}">
+					<LucideIcon Kind="Slice" Size="18" StrokeWidth="2.5" />
+				</ToggleButton>
+			</StackPanel>
+
+			<StackPanel Grid.Column="1"
+			            Orientation="Horizontal">
+				<ToggleButton Classes="snapTool"
+				              CornerRadius="6,0,0,6"
+				              ToolTip.Tip="Unit grid (G)"
+				              IsChecked="{Binding ShowUnitGrid}">
+					<LucideIcon Kind="Grid2x2" Size="18" StrokeWidth="2.5" />
+				</ToggleButton>
+				<ToggleButton Classes="snapTool"
+				              CornerRadius="0"
+				              ToolTip.Tip="Voxel grid (Shift+G)"
+				              IsChecked="{Binding ShowVoxelGrid}">
+					<LucideIcon Kind="Grid3x3" Size="18" StrokeWidth="2.5" />
+				</ToggleButton>
+				<ToggleButton Classes="snapTool"
+				              CornerRadius="0"
+				              ToolTip.Tip="Voxel edges (Alt+G)"
+				              IsChecked="{Binding ShowVoxelEdges}">
+					<LucideIcon Kind="Boxes" Size="18" StrokeWidth="2.5" />
+				</ToggleButton>
+				<ToggleButton Classes="snapTool"
+				              CornerRadius="0"
+				              ToolTip.Tip="Volume edges (Space)"
+				              IsChecked="{Binding ShowEdges}">
+					<LucideIcon Kind="SquareDashed" Size="18" StrokeWidth="2.5" />
+				</ToggleButton>
+				<ToggleButton Classes="snapTool"
+				              CornerRadius="0,6,6,0"
+				              ToolTip.Tip="Hammer View (Z)"
+				              IsChecked="{Binding FourUp}">
+					<LucideIcon Kind="LayoutGrid" Size="18" StrokeWidth="2.5" />
+				</ToggleButton>
+			</StackPanel>
+
+			<StackPanel Grid.Column="2"
+			            Orientation="Horizontal">
+				<Button Classes="chev"
+				        CornerRadius="6,0,0,6"
+				        ToolTip.Tip="View mode">
+					<StackPanel Orientation="Horizontal"
+					            Spacing="6">
+						<LucideIcon Kind="Eye" Size="18" StrokeWidth="2.5" />
+						<TextBlock Text="{Binding ViewMode}"
+						           VerticalAlignment="Center" />
+					</StackPanel>
+					<Button.Flyout>
+						<MenuFlyout>
+							<MenuItem Header="Lit" Command="{Binding SetViewModeCommand}" CommandParameter="Lit" />
+							<MenuItem Header="Albedo" Command="{Binding SetViewModeCommand}" CommandParameter="Albedo" />
+							<MenuItem Header="Metallic/Roughness" Command="{Binding SetViewModeCommand}" CommandParameter="MetallicRoughness" />
+							<MenuItem Header="Palette ID" Command="{Binding SetViewModeCommand}" CommandParameter="PaletteId" />
+							<MenuItem Header="Physics material ID" Command="{Binding SetViewModeCommand}" CommandParameter="PhysicsMaterial" />
+							<MenuItem Header="Voxel DDA steps" Command="{Binding SetViewModeCommand}" CommandParameter="DdaSteps" />
+						</MenuFlyout>
+					</Button.Flyout>
+				</Button>
+				<ToggleButton Classes="snapTool"
+				              CornerRadius="0,6,6,0"
+				              ToolTip.Tip="Level preview (F)"
+				              IsEnabled="{Binding CanShowOthers}"
+				              IsChecked="{Binding ShowOthers}">
+					<LucideIcon Kind="Layers" Size="18" StrokeWidth="2.5" />
+				</ToggleButton>
+			</StackPanel>
+
+			<ve:VoxelPalettePicker x:Name="PalettePicker"
+			                       Grid.Column="3" />
+
+			<StackPanel Grid.Column="5"
+			            Orientation="Horizontal"
+			            Spacing="6"
+			            ToolTip.Tip="Script">
+				<LucideIcon Kind="FileCode" Size="18" StrokeWidth="2.5"
+				            Foreground="{StaticResource TextMuted}"
+				            VerticalAlignment="Center" />
+				<elements:AssetBox AssetType="Script"
+				                   Width="200"
+				                   Value="{Binding DefaultScript, Mode=TwoWay}" />
+			</StackPanel>
+
+			<Button Grid.Column="6"
+			        Classes="chev"
+			        CornerRadius="6"
+			        Command="{Binding BakeCommand}"
+			        ToolTip.Tip="Bake (destructive)">
+				<StackPanel Orientation="Horizontal"
+				            Spacing="6">
+					<LucideIcon Kind="ChefHat" Size="18" StrokeWidth="2.5" />
+					<TextBlock Text="Bake"
+					           VerticalAlignment="Center" />
+				</StackPanel>
+			</Button>
+
+			<Button Grid.Column="7"
+			        Classes="chev"
+			        CornerRadius="6"
+			        Command="{Binding SaveCommand}"
+			        ToolTip.Tip="Save (Ctrl+S)">
+				<StackPanel Orientation="Horizontal"
+				            Spacing="6">
+					<LucideIcon Kind="Save" Size="18" StrokeWidth="2.5" />
+					<TextBlock Text="Save"
+					           VerticalAlignment="Center" />
+				</StackPanel>
+			</Button>
+		</Grid>
+
+		<!-- Main area | splitter | right panels -->
+		<Grid Grid.Row="1"
+		      ColumnDefinitions="*,4,340">
+			<Grid x:Name="Views"
+			      Grid.Column="0"
+			      RowDefinitions="*,*"
+			      ColumnDefinitions="*,*"
+			      RowSpacing="4"
+			      ColumnSpacing="4">
+				<Border x:Name="FrontViewHost" Grid.Row="0" Grid.Column="0" CornerRadius="6" ClipToBounds="True">
+					<ve:VoxelOrthoView x:Name="FrontView" Projection="Front" />
+				</Border>
+				<Border x:Name="SideViewHost" Grid.Row="0" Grid.Column="1" CornerRadius="6" ClipToBounds="True">
+					<ve:VoxelOrthoView x:Name="SideView" Projection="Side" />
+				</Border>
+				<Border x:Name="TopViewHost" Grid.Row="1" Grid.Column="0" CornerRadius="6" ClipToBounds="True">
+					<ve:VoxelOrthoView x:Name="TopView" Projection="Top" />
+				</Border>
+				<Border x:Name="ViewportHost"
+				        Grid.Row="0"
+				        Grid.Column="0"
+				        Grid.RowSpan="2"
+				        Grid.ColumnSpan="2"
+				        CornerRadius="6"
+				        ClipToBounds="True">
+					<ws:ViewportControl x:Name="Viewport"
+					                    DataContext="{Binding Workspace}"
+					                    Detached="True" />
+				</Border>
+			</Grid>
+
+			<GridSplitter Grid.Column="1"
+			              ResizeDirection="Columns"
+			              Background="Transparent" />
+
+			<Grid Grid.Column="2"
+			      RowDefinitions="*,4,*">
+				<ws:HierarchyView Grid.Row="0"
+				                  DataContext="{Binding Hierarchy}" />
+				<GridSplitter Grid.Row="1"
+				              ResizeDirection="Rows"
+				              Background="Transparent" />
+				<Border Grid.Row="2"
+				        Background="{StaticResource Bg3}"
+				        CornerRadius="8"
+				        Margin="8"
+				        Padding="8"
+				        ClipToBounds="True">
+					<ws:InspectorView DataContext="{Binding Inspector}"
+					                  Background="Transparent"
+					                  Padding="0" />
+				</Border>
+			</Grid>
+		</Grid>
+	</Grid>
+</UserControl>

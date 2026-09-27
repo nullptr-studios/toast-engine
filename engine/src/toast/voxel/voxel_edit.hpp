@@ -9,6 +9,7 @@
 #include "stamp.hpp"
 #include "voxel_volume.hpp"
 
+#include <array>
 #include <cstdint>
 #include <glm/glm.hpp>
 #include <optional>
@@ -144,6 +145,83 @@ TOAST_API auto stampVolume(
     Volume& target, const Volume& piece, const LatticePlacement& placement, const PaletteRemapTable& remap, WriteMode mode,
     uint8_t match_id
 ) -> EditResult;
+
+/**
+ * Empties every target voxel the piece has a solid voxel on
+ * @note The carve counterpart of stampVolume
+ */
+TOAST_API auto carveVolume(Volume& target, const Volume& piece, const LatticePlacement& placement) -> EditResult;
+
+// Shapes that fit a box instead of a radius
+
+/** Fills the box from a to b with its edges rounded by radius */
+TOAST_API auto fillRoundBox(Volume& volume, glm::ivec3 a, glm::ivec3 b, float radius, const WriteBrush& brush) -> EditResult;
+
+/** Fills the ellipsoid that touches every face of the box from a to b */
+TOAST_API auto fillEllipsoid(Volume& volume, glm::ivec3 a, glm::ivec3 b, const WriteBrush& brush) -> EditResult;
+
+// Clip planes
+//
+// A plane is a vec4 with the normal in xyz and the offset in w, in voxels
+// A voxel is kept when dot(normal, centre) + w >= 0
+
+/** Empties every voxel that is on the wrong side of any plane */
+TOAST_API auto clipByPlanes(Volume& volume, std::span<const glm::vec4> planes) -> EditResult;
+
+/** The plane that keeps what plane drops */
+[[nodiscard]]
+TOAST_API auto complementPlane(glm::vec4 plane) noexcept -> glm::vec4;
+
+// Tiling
+
+enum class TileFit : uint8_t {
+	crop,
+	stretch,
+	center,
+};
+
+enum class TileAnchor : uint8_t {
+	min,
+	center,
+	max,
+};
+
+struct TileOptions {
+	TileFit fit = TileFit::crop;
+	std::array<TileAnchor, 3> anchor {TileAnchor::min, TileAnchor::min, TileAnchor::min};
+	glm::ivec3 offset {0};        ///< Shifts the tiles by this many voxels
+	glm::bvec3 mirror {false};    ///< Flips every other tile on that axis
+};
+
+/**
+ * Repeats the solid part of pattern across the box from a to b
+ * @param remap Maps pattern ids to target ids and 0 skips the voxel
+ */
+TOAST_API auto tileVolume(
+    Volume& target, const Volume& pattern, glm::ivec3 a, glm::ivec3 b, const TileOptions& options, const PaletteRemapTable& remap,
+    WriteMode mode = WriteMode::replace, uint8_t match_id = k_empty_palette_index
+) -> EditResult;
+
+/** Repaints the solid voxels connected to seed that share its id */
+TOAST_API auto floodFill(Volume& volume, glm::ivec3 seed, uint8_t id) -> EditResult;
+
+struct VolumeHit {
+	glm::ivec3 voxel {0};     ///< The solid voxel it stopped in
+	glm::ivec3 normal {0};    ///< The face it came through, zero when it started inside
+	float t = 0.0f;
+};
+
+/**
+ * Walks a ray through the volume one voxel at a time
+ * @param origin In voxels, a voxel spans [v, v + 1]
+ * @returns the first solid voxel within max_t
+ */
+[[nodiscard]]
+TOAST_API auto raycast(const Volume& volume, glm::vec3 origin, glm::vec3 direction, float max_t) -> std::optional<VolumeHit>;
+
+/** How many voxels hold each palette id */
+[[nodiscard]]
+TOAST_API auto idHistogram(const Volume& volume) -> std::array<uint32_t, k_palette_size>;
 
 [[nodiscard]]
 TOAST_API auto snapOrientation(const glm::mat3& rotation) noexcept -> LatticeOrientation;

@@ -736,9 +736,9 @@
 														<Panel>
 															<Image Source="{Binding Thumbnail}"
 															       IsVisible="{Binding HasThumbnail}"
-															       Stretch="None"
-															       HorizontalAlignment="Center"
-															       VerticalAlignment="Center" />
+															       Stretch="UniformToFill"
+															       HorizontalAlignment="Stretch"
+															       VerticalAlignment="Stretch" />
 															<LucideIcon Kind="{Binding Icon}"
 															            Size="{Binding Owner.PreviewIconSize, FallbackValue=52}"
 															            VerticalAlignment="Center"

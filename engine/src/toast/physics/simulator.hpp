@@ -28,8 +28,8 @@
 #include <toast/export.hpp>
 #include <toast/log.hpp>
 #include <toast/voxel/connectivity.hpp>
+#include <toast/voxel/nodes/voxel_node.hpp>
 #include <toast/world/box.hpp>
-#include <toast/world/voxel_node.hpp>
 #include <toml++/impl/preprocessor.hpp>
 #include <unordered_map>
 #include <vector>

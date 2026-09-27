@@ -27,8 +27,8 @@ constexpr auto headTag(uint64_t head) noexcept -> uint32_t {
 BrickPool::BrickPool(uint32_t capacity)
     : m_capacity(capacity),
       m_free_head(packHead(k_invalid_brick, 0)),
-      m_next_free(std::make_unique<std::atomic<uint32_t>[]>(capacity)),
-      m_is_free(std::make_unique<std::atomic<bool>[]>(capacity)) {
+      m_next_free(std::make_unique<std::atomic<uint32_t>[]>(capacity)),    // NOLINT(modernize-avoid-c-arrays)
+      m_is_free(std::make_unique<std::atomic<bool>[]>(capacity)) {         // NOLINT(modernize-avoid-c-arrays)
 	assert(capacity < k_invalid_brick);
 
 	m_material.assign(static_cast<size_t>(capacity) * k_brick_material_bytes, k_empty_palette_index);
