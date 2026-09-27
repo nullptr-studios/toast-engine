@@ -144,7 +144,7 @@ auto createGraphicsPipelineImpl(
 	    vk::BlendFactor::eOne,
 	    vk::BlendFactor::eZero,
 	    vk::BlendOp::eAdd,
-	    rgb_write
+	    config.write_color_alpha ? (rgb_write | vk::ColorComponentFlagBits::eA) : rgb_write
 	);
 
 	for ([[maybe_unused]]

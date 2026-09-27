@@ -25,10 +25,25 @@ inline constexpr vk::Format k_scene_normal_format = vk::Format::eR16G16B16A16Sfl
 
 inline constexpr vk::Format k_scene_indirect_format = vk::Format::eB10G11R11UfloatPack32;
 
-/// @warning RenderStage::world and world_opaque only since the overlay scope has one attachment
+/// xy uv motion current minus previous z reactive w 1 when written
+inline constexpr vk::Format k_scene_motion_format = vk::Format::eR16G16B16A16Sfloat;
+
+/// rgb albedo a 1 lit 0.5 debug colour 0 no voxel
+inline constexpr vk::Format k_voxel_albedo_format = vk::Format::eR8G8B8A8Srgb;
+
+/// r metallic g reflectivity b roughness a log encoded emissive
+inline constexpr vk::Format k_voxel_material_format = vk::Format::eR8G8B8A8Unorm;
+
+/// @warning RenderStage::world only since the overlay scope has one attachment
 [[nodiscard]]
 inline auto worldStageExtraColorFormats() -> std::vector<vk::Format> {
-	return {k_scene_normal_format, k_scene_indirect_format};
+	return {k_scene_normal_format, k_scene_indirect_format, k_scene_motion_format};
+}
+
+/// After k_voxel_albedo_format in the voxel G-buffer scope
+[[nodiscard]]
+inline auto voxelGbufferExtraColorFormats() -> std::vector<vk::Format> {
+	return {k_scene_normal_format, k_voxel_material_format, k_scene_motion_format};
 }
 
 [[nodiscard]]

@@ -114,6 +114,20 @@ private:
 	[[Reflect, Name("Film Grain"), Range(0.0, 1.0), Group("Tonemap")]]
 	float m_grain = 0.0f;
 
+	/// Exposure above becomes a compensation on the metered value
+	[[Reflect, Name("Auto Exposure"), Group("Auto Exposure")]]
+	bool m_auto_exposure = false;
+	/// log2 of the average scene luminance so one step is one stop
+	[[Reflect, Name("Min Brightness"), Range(-16.0, 16.0), Group("Auto Exposure")]]
+	float m_auto_exposure_min = -8.0f;
+	[[Reflect, Name("Max Brightness"), Range(-16.0, 16.0), Group("Auto Exposure")]]
+	float m_auto_exposure_max = 4.0f;
+	/// Per second toward a brighter scene
+	[[Reflect, Name("Adapt Speed Up"), Range(0.0, 20.0), Group("Auto Exposure")]]
+	float m_adapt_speed_up = 3.0f;
+	[[Reflect, Name("Adapt Speed Down"), Range(0.0, 20.0), Group("Auto Exposure")]]
+	float m_adapt_speed_down = 1.0f;
+
 	[[Reflect, Name("FXAA Contrast Threshold"), Range(0.0, 0.2), Group("FXAA")]]
 	float m_fxaa_contrast_threshold = 0.0312f;
 	[[Reflect, Name("FXAA Relative Threshold"), Range(0.0, 0.5), Group("FXAA")]]

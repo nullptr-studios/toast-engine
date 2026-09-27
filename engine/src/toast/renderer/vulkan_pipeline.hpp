@@ -42,6 +42,9 @@ public:
 
 		bool write_extra_color = false;
 
+		/// color_format keeps its destination alpha unless set
+		bool write_color_alpha = false;
+
 		bool depth_only = false;
 
 		/// With depth_only keeps the fragment stage for shaders that write SV_Depth

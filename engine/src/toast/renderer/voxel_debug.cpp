@@ -205,7 +205,7 @@ void voxelDebugProbeText(const VulkanRenderer::RenderFrame& frame, const std::op
 		ImGui::Text("brick %s, %s %u", voxelDebugTagName(probe.brick_entry), uniform ? "palette" : "pool slot", payload);
 
 		ImGui::Text(
-		    "palette %u  material %u  #%02X%02X%02X  rough %.2f  metal %.2f  emissive %.2f%s",
+		    "palette %u  material %u  #%02X%02X%02X  rough %.2f  metal %.2f  refl %.2f  emissive %.2f%s",
 		    static_cast<uint32_t>(probe.hit.material),
 		    static_cast<uint32_t>(entry.material),
 		    entry.albedo_r,
@@ -213,6 +213,7 @@ void voxelDebugProbeText(const VulkanRenderer::RenderFrame& frame, const std::op
 		    entry.albedo_b,
 		    static_cast<float>(entry.roughness) / 255.0f,
 		    static_cast<float>(entry.metallic) / 255.0f,
+		    static_cast<float>(entry.reflectivity) / 255.0f,
 		    static_cast<float>(entry.emissive) / 255.0f * probe.max_emissive,
 		    (entry.flags & voxel::k_entry_transparent) != 0 ? "  transparent" : ""
 		);

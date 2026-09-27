@@ -44,6 +44,11 @@ struct CameraUBO
     float3 position;
     float time;
 
+    // viewProjection plus the TAA jitter for world raster only
+    float4x4 jitteredViewProjection;
+    // Unjittered viewProjection of the last presented frame
+    float4x4 previousViewProjection;
+
     float4 ambientColorIntensity;
     uint4 directionalLightCountPad;
     DirectionalLightGpu directionalLights[4];
@@ -339,7 +344,7 @@ float2 environmentBRDF(float roughness, float NdotV)
     return float2(-1.04, 1.04) * a004 + r.zw;
 }
 
-float3 shadeLight(float3 N, float3 V, float3 L, float3 radiance, float3 albedo, float metallic, float roughness)
+float3 shadeLight(float3 N, float3 V, float3 L, float3 radiance, float3 albedo, float metallic, float roughness, float reflectivity)
 {
     float NdotL = max(dot(N, L), 0.0);
     if (NdotL <= 0.0)
@@ -358,9 +363,9 @@ float3 shadeLight(float3 N, float3 V, float3 L, float3 radiance, float3 albedo, 
     float denominator = 4.0 * max(dot(N, V), 0.0) * NdotL + 0.0001;
     float3 specular = numerator / denominator;
 
-    float3 kD = (float3(1.0, 1.0, 1.0) - F) * (1.0 - metallic);
+    float3 kD = lerp(float3(1.0, 1.0, 1.0), (float3(1.0, 1.0, 1.0) - F) * (1.0 - metallic), reflectivity);
 
-    return (kD * albedo / kPi + specular) * radiance * NdotL;
+    return (kD * albedo / kPi + specular * reflectivity) * radiance * NdotL;
 }
 
 float attenuateRange(float dist, float range)
@@ -663,6 +668,9 @@ struct Surface
     float  metallic;
     float  roughness;
 
+    /// Blends 1 full metallic roughness PBR down to 0 pure Lambert
+    float  reflectivity;
+
     float  occlusion;
 
     float  viewSpaceZ;
@@ -880,6 +888,7 @@ ShadingResult evaluateLighting(Surface surface, ClusterCell cluster)
     float3 albedo = surface.albedo;
     float metallic = surface.metallic;
     float roughness = surface.roughness;
+    float reflectivity = saturate(surface.reflectivity);
     float occlusion = surface.occlusion;
 
     uint clusterIndex = cluster.index;
@@ -926,7 +935,7 @@ ShadingResult evaluateLighting(Surface surface, ClusterCell cluster)
             debugMinShadow = min(debugMinShadow, shadow);
         }
 
-        color += shadeLight(N, V, L, radiance, albedo, metallic, roughness) * shadow;
+        color += shadeLight(N, V, L, radiance, albedo, metallic, roughness, reflectivity) * shadow;
     }
 
     if (clusterIndex < clusterCount)
@@ -974,7 +983,7 @@ ShadingResult evaluateLighting(Surface surface, ClusterCell cluster)
 
             float3 radiance = light.colorIntensity.rgb * light.colorIntensity.a * atten;
 
-            color += shadeLight(N, V, L, radiance, albedo, metallic, roughness) * shadow;
+            color += shadeLight(N, V, L, radiance, albedo, metallic, roughness, reflectivity) * shadow;
         }
     }
 
@@ -1063,11 +1072,11 @@ ShadingResult evaluateLighting(Surface surface, ClusterCell cluster)
     float3 F0 = lerp(float3(0.04, 0.04, 0.04), albedo, metallic);
     float3 specularFresnel = fresnelSchlickRoughness(NdotV, F0, roughness);
 
-    float3 diffuseWeight = (float3(1.0, 1.0, 1.0) - specularFresnel) * (1.0 - metallic);
+    float3 diffuseWeight = lerp(float3(1.0, 1.0, 1.0), (float3(1.0, 1.0, 1.0) - specularFresnel) * (1.0 - metallic), reflectivity);
 
     float2 envBrdf = environmentBRDF(roughness, NdotV);
     float3 ambientDiffuse = irradiance * albedo * diffuseWeight;
-    float3 ambientSpecular = prefiltered * (specularFresnel * envBrdf.x + envBrdf.y);
+    float3 ambientSpecular = prefiltered * (specularFresnel * envBrdf.x + envBrdf.y) * reflectivity;
 
     color += (ambientDiffuse + ambientSpecular) * occlusion;
 
