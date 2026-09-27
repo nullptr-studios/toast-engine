@@ -303,7 +303,7 @@ public partial class MainWindowView : Window {
 	}
 
 	private void OnKeyDown(object? sender, KeyEventArgs e) {
-		if (!IsTextInputFocused()) {
+		if (!IsTextInputFocused() && !PlayModeShortcuts.Blocked) {
 			if (e.Key == Key.Q && e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift)) {
 				e.Handled = true;
 				OnQuitEditor(null, e);

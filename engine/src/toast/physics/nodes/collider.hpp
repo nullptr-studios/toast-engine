@@ -14,9 +14,11 @@
 namespace physics {
 
 class Simulator;
+class Character;
 
 class [[ToastNode, Hidden, Interface, Color("Green")]] TOAST_API Collider : public toast::Node3D {
 	friend class Simulator;
+	friend class Character;
 
 public:
 	[[Reflect]]

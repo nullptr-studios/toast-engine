@@ -79,7 +79,7 @@ constexpr std::array<toast::GizmoHandle, 3> k_axis_handles {
   toast::GizmoHandle::axis_x, toast::GizmoHandle::axis_y, toast::GizmoHandle::axis_z
 };
 
-constexpr std::array<glm::vec4, 3> k_axis_colors {
+const std::array<glm::vec4, 3> k_axis_colors {
   glm::vec4 {  1.0f, 0.086f, 0.349f, 1.0f}, // X
   glm::vec4 {  0.0f,   1.0f, 0.251f, 1.0f}, // Y
   glm::vec4 {0.161f, 0.678f,   1.0f, 1.0f}  // Z
@@ -1342,7 +1342,7 @@ void DebugPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t ima
 			cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_gizmo_pipeline.getPipeline());
 			cmd.bindVertexBuffers(0, std::array<vk::Buffer, 1> {buffer}, std::array<vk::DeviceSize, 1> {0});
 
-			constexpr glm::vec4 k_highlight {1.0f, 0.85f, 0.1f, 1.0f};
+			const glm::vec4 k_highlight {1.0f, 0.85f, 0.1f, 1.0f};
 
 			for (size_t i = 0; i < handles->size(); ++i) {
 				const auto& range = (*handles)[i];
@@ -1376,8 +1376,8 @@ void DebugPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t ima
 	}
 
 	if (frame->transform_gizmo.size_handle_count > 0 && m_gizmo_pipeline.isReady() && m_size_gizmo_vertex_count > 0) {
-		constexpr glm::vec4 k_highlight {1.0f, 0.85f, 0.1f, 1.0f};
-		constexpr glm::vec4 k_size_dot_color {0.0f, 1.0f, 0.251f, 1.0f};    // editor green, matching the collider
+		const glm::vec4 k_highlight {1.0f, 0.85f, 0.1f, 1.0f};
+		const glm::vec4 k_size_dot_color {0.0f, 1.0f, 0.251f, 1.0f};    // editor green, matching the collider
 
 		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_gizmo_pipeline.getPipeline());
 		cmd.bindVertexBuffers(0, std::array<vk::Buffer, 1> {*m_size_gizmo_vertex_buffer}, std::array<vk::DeviceSize, 1> {0});
@@ -1587,9 +1587,9 @@ void DebugPass::createGizmoGeometry(const renderer::VulkanCore& core) {
 	constexpr float k_head_length = 0.25f;
 	constexpr float k_head_half_size = 0.06f;
 
-	constexpr glm::vec4 k_red {1.0f, 0.1f, 0.1f, 1.0f};
-	constexpr glm::vec4 k_green {0.1f, 1.0f, 0.1f, 1.0f};
-	constexpr glm::vec4 k_blue {0.1f, 0.1f, 1.0f, 1.0f};
+	const glm::vec4 k_red {1.0f, 0.1f, 0.1f, 1.0f};
+	const glm::vec4 k_green {0.1f, 1.0f, 0.1f, 1.0f};
+	const glm::vec4 k_blue {0.1f, 0.1f, 1.0f, 1.0f};
 
 	std::vector<DebugVertex> vertices;
 
@@ -1623,7 +1623,7 @@ void DebugPass::createGizmoGeometry(const renderer::VulkanCore& core) {
 void DebugPass::createTranslateGizmoGeometry(const renderer::VulkanCore& core) {
 	using namespace toast::gizmo_layout;
 
-	constexpr glm::vec4 k_white {1.0f, 1.0f, 1.0f, 1.0f};
+	const glm::vec4 k_white {1.0f, 1.0f, 1.0f, 1.0f};
 
 	std::vector<DebugVertex> vertices;
 
@@ -1644,7 +1644,7 @@ void DebugPass::createTranslateGizmoGeometry(const renderer::VulkanCore& core) {
 	  toast::GizmoHandle::plane_xy, toast::GizmoHandle::plane_yz, toast::GizmoHandle::plane_xz
 	};
 	constexpr std::array<int, 3> plane_normal_axis {2, 0, 1};    // xy Z yz X xz Y
-	constexpr std::array<glm::vec4, 3> plane_colors {
+	const std::array<glm::vec4, 3> plane_colors {
 	  glm::vec4 {0.161f, 0.678f,   1.0f, 1.0f},
      glm::vec4 {  1.0f, 0.086f, 0.349f, 1.0f},
      glm::vec4 {  0.0f,   1.0f, 0.251f, 1.0f}
@@ -1679,7 +1679,7 @@ void DebugPass::createTranslateGizmoGeometry(const renderer::VulkanCore& core) {
 
 void DebugPass::createRotateGizmoGeometry(const renderer::VulkanCore& core) {
 	using namespace toast::gizmo_layout;
-	constexpr glm::vec4 k_white {1.0f, 1.0f, 1.0f, 1.0f};
+	const glm::vec4 k_white {1.0f, 1.0f, 1.0f, 1.0f};
 
 	std::vector<DebugVertex> vertices;
 
@@ -1709,7 +1709,7 @@ void DebugPass::createRotateGizmoGeometry(const renderer::VulkanCore& core) {
 
 void DebugPass::createScaleGizmoGeometry(const renderer::VulkanCore& core) {
 	using namespace toast::gizmo_layout;
-	constexpr glm::vec4 k_white {1.0f, 1.0f, 1.0f, 1.0f};
+	const glm::vec4 k_white {1.0f, 1.0f, 1.0f, 1.0f};
 
 	std::vector<DebugVertex> vertices;
 
@@ -1754,7 +1754,7 @@ void DebugPass::createScaleGizmoGeometry(const renderer::VulkanCore& core) {
 
 void DebugPass::createSizeGizmoGeometry(const renderer::VulkanCore& core) {
 	using namespace toast::gizmo_layout;
-	constexpr glm::vec4 k_white {1.0f, 1.0f, 1.0f, 1.0f};
+	const glm::vec4 k_white {1.0f, 1.0f, 1.0f, 1.0f};
 
 	std::vector<DebugVertex> vertices;
 	appendBox(vertices, glm::vec3(-k_size_dot_half_size), glm::vec3(k_size_dot_half_size), k_white);

@@ -140,15 +140,26 @@ target_compile_definitions(toast_engine PUBLIC
         $<$<CONFIG:Debug>:DEBUG>
         $<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>>:NDEBUG>
         $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:TRACY_ENABLE>
+        GLM_FORCE_INTRINSICS
 )
 
 if (MSVC)
+    target_compile_options(toast_engine PUBLIC $<$<CONFIG:Release>:/arch:AVX2>)
     target_compile_options(toast_engine PRIVATE
             /bigobj
             /EHc-
-            $<$<CONFIG:Release>:/O2;/Ob2;/Oi;/Ot;/GL;/Gy;/Gw;/fp:fast>
+            $<$<CONFIG:Release>:/O2;/Ob2;/Oi;/Ot;/GL;/Gy;/Gw;/fp:fast;/Qpar>
+            $<$<CONFIG:Release>:/GS->
     )
-    target_link_options(toast_engine PRIVATE $<$<CONFIG:Release>:/LTCG>)
+    target_link_options(toast_engine PRIVATE $<$<CONFIG:Release>:/LTCG;/OPT:REF;/OPT:ICF>)
+else ()
+    if (ARCH STREQUAL "x86_64")
+        target_compile_options(toast_engine PUBLIC $<$<CONFIG:Release>:-march=x86-64-v3>)
+    endif ()
+    target_compile_options(toast_engine PRIVATE
+            $<$<CONFIG:Release>:-O3;-flto;-fno-math-errno;-fassociative-math;-freciprocal-math;-fno-signed-zeros;-fno-trapping-math;-funroll-loops;-ffunction-sections;-fdata-sections>
+    )
+    target_link_options(toast_engine PRIVATE $<$<CONFIG:Release>:-flto;-Wl,--gc-sections>)
 endif ()
 
 target_compile_options(toast_engine PUBLIC

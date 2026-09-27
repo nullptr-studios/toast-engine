@@ -35,6 +35,14 @@ else ()
   )
 endif ()
 
+# Must match engine/CMakeLists.txt config exactly
+target_compile_definitions(toast_engine INTERFACE GLM_FORCE_INTRINSICS)
+if (MSVC)
+  target_compile_options(toast_engine INTERFACE $<$<CONFIG:Release>:/arch:AVX2>)
+elseif (CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$")
+  target_compile_options(toast_engine INTERFACE $<$<CONFIG:Release>:-march=x86-64-v3>)
+endif ()
+
 file(GLOB_RECURSE SOURCE "src/*.cpp" "generated/*.cpp")
 add_library(my_game SHARED ${SOURCE})
 target_include_directories(my_game PUBLIC

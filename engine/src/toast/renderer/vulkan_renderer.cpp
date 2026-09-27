@@ -4310,7 +4310,7 @@ void debugDrawFrustumFromMatrix(const glm::mat4& view_projection, glm::vec4 colo
 	}
 	const glm::mat4 inverse = glm::inverse(view_projection);
 
-	static constexpr std::array<glm::vec3, 8> ndc_corners {
+	static const std::array<glm::vec3, 8> ndc_corners {
 	  glm::vec3 {-1.0f, -1.0f, 0.0f},
 	  glm::vec3 { 1.0f, -1.0f, 0.0f},
 	  glm::vec3 { 1.0f,  1.0f, 0.0f},

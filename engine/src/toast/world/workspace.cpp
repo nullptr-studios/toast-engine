@@ -1547,6 +1547,9 @@ void Workspace::eventSubscriptions() {
 			auto node = requestRuntimeCreate(parent, e.type);
 			if (node.exists()) {
 				created_name = node->name();
+				if (node->hasCallable("createDefaultChildren")) {
+					node->call("createDefaultChildren");
+				}
 			}
 		});
 		TOAST_INFO("World", "Created node {} in Workspace {}", created_name, m_root_node->name());
