@@ -944,6 +944,8 @@ public partial class ClassCardVM : ObservableObject, IInspectorClipboardScope {
 	[ObservableProperty] private bool m_expanded = true;
 	[ObservableProperty] private bool m_visible = true;
 
+	public bool IsPlain { get; init; }
+
 	internal ClassCardVM(string typeName, string colorKey, string iconName, string key, InspectorState state,
 		IInspectorClipboardHost clipboardHost) {
 		TypeName = typeName;

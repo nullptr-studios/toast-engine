@@ -84,13 +84,15 @@ float channelOf(float4 value, float index)
 struct InstanceData
 {
     float4x4 model;
+    float4x4 previousModel;
 
     uint jointOffset;
 
-    // Scalars not uint3 since std430 aligns uint3 to 16
+    // VulkanRenderer::k_instance_no_motion in bit 0
+    uint flags;
+
     uint _pad0;
     uint _pad1;
-    uint _pad2;
 };
 
 [[vk::binding(13,0)]]
@@ -146,6 +148,16 @@ struct VSOutput
 
     [[vk::location(6)]]
     float tangentSign : TEXCOORD4;
+
+    // Both unjittered so TAA jitter never reads as motion
+    [[vk::location(7)]]
+    float4 currentClip : TEXCOORD5;
+
+    [[vk::location(8)]]
+    float4 previousClip : TEXCOORD6;
+
+    [[vk::location(9)]]
+    nointerpolation uint flags : TEXCOORD7;
 };
 
 [shader("vertex")]
@@ -154,14 +166,19 @@ VSOutput vertexMain(VSInput input, uint instanceID : SV_InstanceID)
     VSOutput output;
 
     // firstInstance is always 0 so the run start comes from the push constant
-    float4x4 model = gInstances[gPush.instanceBase + instanceID].model;
+    InstanceData instance = gInstances[gPush.instanceBase + instanceID];
+    float4x4 model = instance.model;
 
     float4 worldPos = mul(model, float4(input.position, 1.0));
 
     output.position =
         mul(
-            gCamera.viewProjection,
+            gCamera.jitteredViewProjection,
             worldPos);
+
+    output.currentClip = mul(gCamera.viewProjection, worldPos);
+    output.previousClip = mul(gCamera.previousViewProjection, mul(instance.previousModel, float4(input.position, 1.0)));
+    output.flags = instance.flags;
 
     output.worldPosition = worldPos.xyz;
     output.viewSpaceZ = mul(gCamera.view, worldPos).z;
@@ -243,6 +260,7 @@ float4 shadeSurface(VSOutput input, inout float4 outNormalRoughness, inout float
     surface.albedo = albedo;
     surface.metallic = metallic;
     surface.roughness = roughness;
+    surface.reflectivity = 1.0;
     surface.occlusion = occlusion;
     surface.viewSpaceZ = input.viewSpaceZ;
     surface.pixel = input.position.xy;
@@ -268,7 +286,20 @@ struct FragmentOutput
     float4 color : SV_Target0;
     float4 normalRoughness : SV_Target1;
     float4 indirectDiffuse : SV_Target2;
+    float4 motion : SV_Target3;
 };
+
+// Skinned poses keep no previous frame so TAA reprojects them from depth
+float4 motionOf(VSOutput input)
+{
+    if ((input.flags & 1u) != 0u)
+    {
+        return float4(0.0, 0.0, 0.5, 0.0);
+    }
+    float2 current = input.currentClip.xy / input.currentClip.w;
+    float2 previous = input.previousClip.xy / input.previousClip.w;
+    return float4((current - previous) * 0.5, 0.0, 1.0);
+}
 
 // Two entry points since a reachable discard forces late Z even behind a bool parameter
 // Check with slangc mesh.slang -target spirv-assembly -entry fragmentMain -stage fragment | grep OpKill
@@ -281,6 +312,7 @@ FragmentOutput fragmentMain(VSOutput input)
     float3 indirectDiffuse = float3(0.0, 0.0, 0.0);
     output.color = shadeSurface(input, output.normalRoughness, indirectDiffuse);
     output.indirectDiffuse = float4(indirectDiffuse, 1.0);
+    output.motion = motionOf(input);
     return output;
 }
 
@@ -300,5 +332,6 @@ FragmentOutput fragmentMainCutout(VSOutput input)
     float3 indirectDiffuse = float3(0.0, 0.0, 0.0);
     output.color = shadeSurface(input, output.normalRoughness, indirectDiffuse);
     output.indirectDiffuse = float4(indirectDiffuse, 1.0);
+    output.motion = motionOf(input);
     return output;
 }

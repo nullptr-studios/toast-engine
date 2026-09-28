@@ -12,7 +12,8 @@
 enum class RenderStage : uint8_t {
 	world,
 	overlay,
-	world_opaque,
+	/// Recorded by VulkanRenderer in its own scope ahead of the world scope
+	voxel_gbuffer,
 };
 
 class IRenderPass {

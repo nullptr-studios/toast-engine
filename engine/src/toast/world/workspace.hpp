@@ -22,6 +22,9 @@
 #include <utility>
 
 namespace toast {
+
+class ProceduralVoxel;
+
 /**
  * @brief Single-viewport node owner used by the editor
  *
@@ -175,6 +178,67 @@ protected:
 	void initializeHistory(bool available, bool initially_saved);
 	auto restoreHistorySnapshot(const assets::Prefab& snapshot) -> bool;
 	void destroyOwnedTree(Box<Node>& root);
+	auto duplicateNode(Box<Node> src, Box<Node> par, bool after_source) -> Box<Node>;
+
+	/** Listens to the VoxelEditor commands, lives in workspace_voxel.cpp */
+	void subscribeVoxelEditing();
+
+	/** The VoxelEditor tools in the 3D viewport */
+	struct VoxelToolState {
+		enum class Phase : uint8_t {
+			idle,
+			face,         ///< Extrude: the cut line follows the mouse over a face of the selected box, Tab swaps its axis
+			part,         ///< Extrude: the cut is set, the part of the face under the mouse is the one that grows
+			box,          ///< Dragging the footprint on a face for buildup, carve or paint
+			height,       ///< Moving the mouse pulls the footprint out, a click places it
+			cut,          ///< Dragging the Split or Slice line
+			pick_side,    ///< Slice waits for a click on the side to keep
+		};
+
+		uint32_t tool = 0;
+		uint8_t paint_id = 1;
+		UID default_script;       ///< What new volumes draw with
+		Phase phase = Phase::idle;
+		bool dragging = false;    ///< if its drawing the mouse make it 2 clicks rather than 3
+		UID extrude_source;       ///< The piece Extrude grows from
+		int axis = 2;             ///< The face the box lies on
+		int32_t surface = 0;      ///< The voxel layer of the face that was clicked
+		float plane = 0.0f;       ///< Where along axis the mouse ray is cut to find the rectangle
+		int32_t sign = 1;         ///< Which way is out of the face
+		int32_t depth = 1;
+		glm::ivec3 anchor {0};
+		glm::ivec3 current {0};
+		glm::ivec3 face_min {std::numeric_limits<int32_t>::min()};    ///< Extrude keeps the footprint on its face
+		glm::ivec3 face_max {std::numeric_limits<int32_t>::max()};
+		int cut_axis = 0;                                             ///< Extrude: 0 first in face axis, 1 second
+		int32_t cut_at = 0;                                           ///< Extrude: the voxel boundary the cut sits on
+		glm::vec2 cut_start {0.0f};
+		glm::vec4 cut_plane {0.0f};
+
+		/** The footprint pulled depth layers out of the face, or into it when negative */
+		[[nodiscard]]
+		auto box() const -> std::pair<glm::ivec3, glm::ivec3>;
+	};
+
+	VoxelToolState m_voxel_tool;
+
+	Box<Node> m_voxel_preview;
+	void voxelUpdatePreview(uint8_t kind);
+
+	void voxelReparent(Box<Node> node, Box<Node> parent, size_t index);
+	auto voxelWrapInGroup(Box<Node> node, std::string_view name) -> Box<Node>;
+
+	[[nodiscard]]
+	auto voxelToolShape() -> ProceduralVoxel*;
+	void voxelToolMouseMove();
+	auto voxelToolMouseButton(uint32_t button, bool pressed, int mods) -> bool;
+	void voxelToolCancel();
+
+	auto pickNodeUnderMouse() -> Box<Node>;
+	std::optional<glm::vec2> m_pick_press;
+
+	auto retypeNode(Box<Node>& target, std::string_view type, bool keep_fields) -> Box<Node>;
+	void promoteNode(Box<Node>& target, std::string_view path);
 
 	template<typename F>
 	void recordHistory(WorkspaceHistory::Context context, F&& mutation) {
@@ -208,7 +272,7 @@ private:
 
 public:
 	/**
-	 * @brief Editor-only per-frame work: camera preview, animation preview, inspector streaming
+	 * @brief Editor-only per-frame work: camera preview, animation preview, editorTick lifecycle, inspector streaming
 	 *
 	 * Not the gameplay tick scheduler - only what the viewport needs to stay live. See PlayWorkspace::tick()
 	 */
@@ -223,6 +287,9 @@ public:
 	auto isValid() const -> bool {
 		return m_root_node.exists();
 	}
+
+	[[nodiscard]]
+	auto findPrefabInstance(UID prefab, UID instance) -> Box<Node>;
 
 	struct GizmoRenderState {
 		bool visible = false;

@@ -20,6 +20,7 @@
 #include "vulkan_pipeline.hpp"
 #include "vulkan_texture.hpp"
 
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <cmath>
@@ -63,6 +64,7 @@ class ReflectionProbe;
 class IrradianceVolume;
 class PostProcessVolume;
 class INodeOwner;
+class Node;
 class Node3D;
 }
 
@@ -75,6 +77,7 @@ class EnvironmentPass;
 class ReflectionProbePass;
 class DepthPrepass;
 class SkinningPass;
+class VoxelPass;
 class RayTracingScene;
 class SkinnedBlasPool;
 
@@ -107,15 +110,18 @@ public:
 
 	static constexpr uint32_t k_max_instances = 16384;
 
-	/// Mirrors mesh.slang InstanceData
+	static constexpr uint32_t k_instance_no_motion = 1u << 0;
+
+	/// Mirrors mesh.slang depth_prepass.slang and shadow_depth.slang InstanceData
 	struct InstanceData {
 		glm::mat4 model {1.0f};
+		glm::mat4 previous_model {1.0f};
 		uint32_t joint_offset = 0;
-		/// Scalars not uint3 since std430 aligns uint3 to 16 bytes
-		std::array<uint32_t, 3> pad0 {0, 0, 0};
+		uint32_t flags = 0;
+		std::array<uint32_t, 2> pad0 {0, 0};
 	};
 
-	static_assert(sizeof(InstanceData) == 80, "InstanceData stride must match mesh.slang's std430 layout");
+	static_assert(sizeof(InstanceData) == 144, "InstanceData stride must match mesh.slang's std430 layout");
 
 	struct DirectionalLightData {
 		glm::vec4 direction;
@@ -162,6 +168,12 @@ public:
 
 		float time = 0.0f;
 
+		/// view_projection with the TAA jitter for world raster only
+		glm::mat4 jittered_view_projection {1.0f};
+
+		/// Unjittered view_projection of the last presented frame
+		glm::mat4 previous_view_projection {1.0f};
+
 		glm::vec4 ambient_color_intensity {0.0f};
 
 		// uvec4 so std140 and cbuffer packing agree
@@ -199,10 +211,14 @@ public:
 
 	// Verify offsets with slangc -target spirv-assembly | grep OpMemberDecorate
 	static_assert(
-	    offsetof(FrameUBO, irradiance_volumes) == 1136, "FrameUBO::irradiance_volumes must match lighting.slang's std140 layout"
+	    offsetof(FrameUBO, jittered_view_projection) == 208,
+	    "FrameUBO::jittered_view_projection must match lighting.slang and depth_prepass.slang"
 	);
 	static_assert(
-	    offsetof(FrameUBO, traced_shadow_params) == 1392, "FrameUBO::traced_shadow_params must match lighting.slang's std140 layout"
+	    offsetof(FrameUBO, irradiance_volumes) == 1264, "FrameUBO::irradiance_volumes must match lighting.slang's std140 layout"
+	);
+	static_assert(
+	    offsetof(FrameUBO, traced_shadow_params) == 1520, "FrameUBO::traced_shadow_params must match lighting.slang's std140 layout"
 	);
 
 	/// Mirrors GpuLight in lighting.slang and cluster_lighting.slang
@@ -286,6 +302,7 @@ public:
 		bool visible = true;
 
 		uint64_t node_uid = 0;
+		uint32_t highlight_record = 0;
 	};
 
 	struct UIWorldPanelProxy {
@@ -414,6 +431,12 @@ public:
 		uint32_t render_mode = 0;
 
 		uint64_t sequence = 0;
+
+		/// Jittered and resolved by TaaPass which then skips FxaaPass
+		bool taa_active = false;
+
+		/// History is stale since the camera switched or TAA just turned on
+		bool taa_reset = false;
 
 		PostProcessSettings post_process;
 
@@ -578,6 +601,37 @@ public:
 		return m_scene_indirect.view.has_value() ? **m_scene_indirect.view : vk::ImageView {};
 	}
 
+	[[nodiscard]]
+	auto getSceneMotionView() const noexcept -> vk::ImageView {
+		return m_scene_motion.view.has_value() ? **m_scene_motion.view : vk::ImageView {};
+	}
+
+	[[nodiscard]]
+	auto getVoxelAlbedoView() const noexcept -> vk::ImageView {
+		return m_voxel_albedo.view.has_value() ? **m_voxel_albedo.view : vk::ImageView {};
+	}
+
+	[[nodiscard]]
+	auto getVoxelMaterialView() const noexcept -> vk::ImageView {
+		return m_voxel_material.view.has_value() ? **m_voxel_material.view : vk::ImageView {};
+	}
+
+	/// Holds flat face normals not the rounded scene normal ones
+	[[nodiscard]]
+	auto getVoxelFaceNormalView() const noexcept -> vk::ImageView {
+		return m_voxel_face_normal.view.has_value() ? **m_voxel_face_normal.view : vk::ImageView {};
+	}
+
+	/// Edge rounding radius in voxels where 0 keeps the flat face normals
+	void setVoxelNormalRounding(float voxels) noexcept {
+		m_voxel_normal_rounding.store(std::max(voxels, 0.0f), std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto voxelNormalRounding() const noexcept -> float {
+		return m_voxel_normal_rounding.load(std::memory_order_relaxed);
+	}
+
 	/// Left in eDepthReadOnlyOptimal
 	[[nodiscard]]
 	auto getDepthView() const noexcept -> vk::ImageView {
@@ -692,6 +746,9 @@ public:
 	auto getEnvironmentPass() const noexcept -> const EnvironmentPass* {
 		return m_environment_pass;
 	}
+
+	/// Still registered with addRenderPass so it lists and toggles like any pass
+	void setVoxelPass(VoxelPass* pass) noexcept { m_voxel_pass = pass; }
 
 	void setReflectionProbePass(ReflectionProbePass* pass) noexcept { m_reflection_probe_pass = pass; }
 
@@ -873,6 +930,20 @@ public:
 		return m_traced_shadows_enabled.load(std::memory_order_relaxed);
 	}
 
+	void setTaaEnabled(bool enabled) noexcept { m_taa_enabled.store(enabled, std::memory_order_relaxed); }
+
+	[[nodiscard]]
+	auto taaEnabled() const noexcept -> bool {
+		return m_taa_enabled.load(std::memory_order_relaxed);
+	}
+
+	void setTaaHistoryWeight(float weight) noexcept { m_taa_history_weight.store(weight, std::memory_order_relaxed); }
+
+	[[nodiscard]]
+	auto taaHistoryWeight() const noexcept -> float {
+		return m_taa_history_weight.load(std::memory_order_relaxed);
+	}
+
 	void setPostProcessSettings(const PostProcessSettings& settings) noexcept { m_post_process_settings = settings; }
 
 	[[nodiscard]]
@@ -893,6 +964,25 @@ public:
 		}
 		m_render_owner_filter = owner;
 		cancelIrradianceBake();
+	}
+
+	/**
+	 * Tints the voxels of node that are solid in highlight
+	 * @note nullptr clears it
+	 */
+	void setVoxelHighlight(const toast::VoxelNode* node, const voxel::Volume* highlight) {
+		std::scoped_lock lock(m_voxel_proxy_mutex);
+		if (highlight == nullptr) {
+			m_voxel_highlights.erase(node);
+		} else {
+			m_voxel_highlights[node] = highlight;
+		}
+	}
+
+	void setSecondaryOwner(const toast::INodeOwner* owner, const glm::mat4& transform, const toast::Node* hidden) {
+		m_secondary_owner = owner;
+		m_secondary_transform = transform;
+		m_secondary_hidden = hidden;
 	}
 
 	[[nodiscard]]
@@ -952,6 +1042,9 @@ private:
 	void createPerImageSync();
 	void createDepthResources();
 	void createSceneColorResources();
+
+	/// @returns true when this frame had voxels to draw
+	auto recordVoxelScopes(FrameContext& frame, const vk::Viewport& viewport, const vk::Rect2D& scissor, bool depth_loaded) -> bool;
 
 	void publishCompletedFrames();
 
@@ -1074,6 +1167,8 @@ private:
 
 	ReflectionProbePass* m_reflection_probe_pass = nullptr;
 
+	VoxelPass* m_voxel_pass = nullptr;
+
 	std::atomic_bool m_probe_bake_requested {false};
 	std::atomic<uint32_t> m_probe_stale_count {0};
 	/// probe = cursor / 6 and face = cursor % 6 or -1 when idle
@@ -1090,6 +1185,15 @@ private:
 
 	static constexpr vk::Format m_scene_indirect_format = renderer::k_scene_indirect_format;
 	SceneColorResources m_scene_indirect;
+
+	static constexpr vk::Format m_scene_motion_format = renderer::k_scene_motion_format;
+	SceneColorResources m_scene_motion;
+
+	SceneColorResources m_voxel_albedo;
+	SceneColorResources m_voxel_material;
+	SceneColorResources m_voxel_face_normal;
+
+	std::atomic<float> m_voxel_normal_rounding {0.3f};
 
 	ShaderLayout m_present_layout;
 	VulkanPipeline m_present_pipeline;
@@ -1118,6 +1222,20 @@ private:
 
 	std::atomic_bool m_traced_shadows_enabled {false};
 
+	std::atomic_bool m_taa_enabled {true};
+	std::atomic<float> m_taa_history_weight {0.9f};
+
+	/// Game thread only
+	struct TaaHistory {
+		glm::mat4 previous_view_projection {1.0f};
+		const toast::Camera* camera = nullptr;
+		uint64_t jitter_index = 0;
+		bool has_previous = false;
+		bool was_active = false;
+	};
+
+	TaaHistory m_taa_history;
+
 	std::atomic_bool m_debug_draw_enabled {false};
 	std::mutex m_debug_line_mutex;
 	std::vector<DebugVertex> m_pending_debug_line_vertices;
@@ -1130,6 +1248,13 @@ private:
 	std::optional<PostProcessSettings> m_pending_post_settings;
 
 	const toast::INodeOwner* m_render_owner_filter = nullptr;
+	std::unordered_map<const toast::VoxelNode*, const voxel::Volume*> m_voxel_highlights;
+	const toast::INodeOwner* m_secondary_owner = nullptr;
+	glm::mat4 m_secondary_transform {1.0f};
+	const toast::Node* m_secondary_hidden = nullptr;
+
+	[[nodiscard]]
+	auto ownerTransform(const toast::Node& node) const -> const glm::mat4*;
 
 	event::Listener m_capture_listener;
 	std::atomic_bool m_capture_frame_requested {false};
@@ -1179,6 +1304,10 @@ private:
 	std::shared_ptr<VoxelGpuStorage> m_voxel_latest_storage;
 
 	std::unordered_map<uint64_t, glm::mat4> m_voxel_previous_models;
+
+	/// Swaps into m_voxel_previous_models unless this frame is a probe capture
+	std::unordered_map<uint64_t, glm::mat4> m_voxel_drawn_models;
+	std::unordered_map<uint64_t, glm::mat4> m_mesh_previous_models;
 	bool m_voxel_upload_failed_warned = false;
 
 	/// Toggling re-packs to add or drop the mirror

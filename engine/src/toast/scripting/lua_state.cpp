@@ -30,6 +30,7 @@
 #include <toast/reflect/reflect_node.hpp>
 #include <toast/time.hpp>
 #include <toast/ui/ui_system.hpp>
+#include <toast/voxel/voxel_edit.hpp>
 #include <tracy/Tracy.hpp>
 #include <tracy/TracyLua.hpp>
 
@@ -626,6 +627,13 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    .addVariable("axis2d", input::InputKind::axis2d)
 	    .addVariable("scroll", input::InputKind::scroll)
 	    .addVariable("cursor", input::InputKind::cursor)
+	    .endNamespace()
+
+	    .beginNamespace("VoxelWrite")
+	    .addVariable("Replace", voxel::WriteMode::replace)
+	    .addVariable("EmptyOnly", voxel::WriteMode::empty_only)
+	    .addVariable("SolidOnly", voxel::WriteMode::solid_only)
+	    .addVariable("Match", voxel::WriteMode::match)
 	    .endNamespace()
 
 	    // AssetProxy

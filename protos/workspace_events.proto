@@ -8,6 +8,7 @@ message HierarchyElement {
   bool enabled = 4;
   repeated HierarchyElement children = 5;
   bool is_prefab = 6;
+  string prefab_uid = 7;
 }
 
 message UpdateHierarchyData {
@@ -125,6 +126,152 @@ message WorkspacePasteNode {
 message WorkspacePromoteNode {
   string target = 1;
   string path = 2;
+}
+
+message WorkspaceConvertToProceduralVoxel {
+  string target = 1;
+  string path = 2;
+}
+
+message ProceduralVoxelPromoted {
+  uint64 workspace_handle = 1;
+  string prefab_uid = 2;
+  bool success = 3;
+  string error = 4;
+}
+
+message VoxelInt3 {
+  sint32 x = 1;
+  sint32 y = 2;
+  sint32 z = 3;
+}
+
+message VoxelPieceLayout {
+  string uid = 1;
+  string name = 2;
+  uint32 kind = 3;
+  VoxelInt3 min = 4;
+  VoxelInt3 max = 5;
+  float r = 6;
+  float g = 7;
+  float b = 8;
+  repeated float planes = 9;
+  bool resizable = 10;
+  uint32 color_id = 11;
+}
+
+message ProceduralVoxelLayout {
+  string root_uid = 1;
+  repeated VoxelPieceLayout pieces = 2;
+  string palette_uid = 3;
+  repeated VoxelProjection projections = 4;
+}
+
+message VoxelProjection {
+  sint32 min_h = 1;
+  sint32 min_v = 2;
+  uint32 width = 3;
+  uint32 height = 4;
+  bytes colors = 5;
+  bytes depths = 6;
+  bytes edges_h = 7;
+  bytes edges_v = 8;
+}
+
+message VoxelSetPieceBounds {
+  string target = 1;
+  VoxelInt3 min = 2;
+  VoxelInt3 max = 3;
+}
+
+message VoxelCreatePiece {
+  string parent = 1;
+  string type = 2;
+  string source = 3;
+  VoxelInt3 min = 4;
+  VoxelInt3 max = 5;
+  string script = 6;
+}
+
+message VoxelExtrude {
+  string source = 1;
+  VoxelInt3 min = 2;
+  VoxelInt3 max = 3;
+  bool inward = 4;
+}
+
+message VoxelSplitPieces {
+  repeated string targets = 1;
+  float nx = 2;
+  float ny = 3;
+  float nz = 4;
+  float w = 5;
+  uint32 keep = 6;
+}
+
+message VoxelRotatePieces {
+  repeated string targets = 1;
+  uint32 axis = 2;
+  sint32 turns = 3;
+}
+
+message VoxelBucketFill {
+  string target = 1;
+  VoxelInt3 voxel = 2;
+  uint32 id = 3;
+  bool search = 4;
+  uint32 search_axis = 5;
+  sint32 search_step = 6;
+}
+
+message VoxelCollapsePieces {
+  repeated string targets = 1;
+  string path = 2;
+}
+
+message VoxelBake {
+  string target = 1;
+  string path = 2;
+  bool replace = 3;
+}
+
+message VoxelBakeCompleted {
+  string path = 1;
+}
+
+message SetVoxelEditorOverlays {
+  bool unit_grid = 1;
+  bool voxel_grid = 2;
+  bool edges = 3;
+  bool voxel_edges = 4;
+  bool projections = 5;
+}
+
+message SetVoxelCutPreview {
+  string root = 1;
+  bool active = 2;
+  float nx = 3;
+  float ny = 4;
+  float nz = 5;
+  float w = 6;
+}
+
+message NodePicked {
+  uint64 workspace_handle = 1;
+  string node = 2;
+}
+
+message SetVoxelTool {
+  uint32 tool = 1;
+  uint32 paint_id = 2;
+  string default_script = 3;
+}
+
+message SetShowOthers {
+  bool show = 1;
+  uint64 workspace = 2;
+  uint64 source_workspace = 3;
+  string source_instance = 4;
 }
 
 message WorkspacePause {

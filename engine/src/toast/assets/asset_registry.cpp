@@ -112,6 +112,8 @@ void AssetRegistry::init() {
 	s_lua_names["color_scheme"] = "ColorScheme";
 	s_lua_names["localization"] = "Localization";
 	s_lua_names["image_localization"] = "ImageLocalization";
+	s_lua_names["voxel_model"] = "VoxelModel";
+	s_lua_names["voxel_palette"] = "VoxelPalette";
 }
 
 void AssetRegistry::registerLuaName(std::string_view type, std::string_view lua_name) {

@@ -159,3 +159,5 @@ AudioPort = nil
 AudioSnapshot = nil
 ---@type TypeMarker
 AudioVca = nil
+---@type TypeMarker
+VoxelModel = nil

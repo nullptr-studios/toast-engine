@@ -4,7 +4,12 @@
              RequestedThemeVariant="Dark">
 
 	<Application.Resources>
-		<Color x:Key="SystemAccentColor">#ff1659</Color>
+		<ResourceDictionary>
+			<Color x:Key="SystemAccentColor">#ff1659</Color>
+			<ResourceDictionary.MergedDictionaries>
+				<ResourceInclude Source="avares://crash_reporter/Resources/EditorColors.axaml" />
+			</ResourceDictionary.MergedDictionaries>
+		</ResourceDictionary>
 	</Application.Resources>
 
 	<Application.Styles>

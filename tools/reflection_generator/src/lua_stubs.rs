@@ -98,6 +98,9 @@ fn cpp_lua_type(cpp: &str) -> String {
     if t.contains("input::InputKind") {
         return "InputKindValue".to_string();
     }
+    if t.contains("voxel::WriteMode") {
+        return "VoxelWriteValue".to_string();
+    }
     if t.contains("Box<") {
         let inner = t.split("Box<").nth(1).unwrap_or("Node");
         return bare(inner.trim_end_matches(['>', '&', ' '])).to_string();

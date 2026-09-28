@@ -6,6 +6,7 @@
 
 #include "clustered_lighting_constants.hpp"
 #include "cube_face_basis.hpp"
+#include "editor_overlays.hpp"
 #include "frustum.hpp"
 #include "light_culling.hpp"
 #include "passes/depth_prepass.hpp"
@@ -14,6 +15,7 @@
 #include "passes/reflection_probe_pass.hpp"
 #include "passes/shadow_pass.hpp"
 #include "passes/skinning_pass.hpp"
+#include "passes/voxel_pass.hpp"
 #include "ray_tracing_scene.hpp"
 #include "shadow_slots.hpp"
 #include "skinned_blas_pool.hpp"
@@ -43,6 +45,7 @@
 #include <toast/physics/simulator.hpp>
 #include <toast/thread_pool.hpp>
 #include <toast/time.hpp>
+#include <toast/voxel/nodes/voxel_node.hpp>
 #include <toast/voxel/runtime_pool.hpp>
 #include <toast/voxel/volume_bounds.hpp>
 #include <toast/window/window_events.hpp>
@@ -55,7 +58,6 @@
 #include <toast/world/post_process_volume.hpp>
 #include <toast/world/reflection_probe.hpp>
 #include <toast/world/spotlight.hpp>
-#include <toast/world/voxel_node.hpp>
 #include <toast/world/workspace_events.hpp>
 #include <tracy/Tracy.hpp>
 #include <tuple>
@@ -751,6 +753,10 @@ void VulkanRenderer::createSceneColorResources() {
 	create(m_scene_color, m_scene_color_format, "SceneColor");
 	create(m_scene_normal, m_scene_normal_format, "SceneNormal");
 	create(m_scene_indirect, m_scene_indirect_format, "SceneIndirect");
+	create(m_scene_motion, m_scene_motion_format, "SceneMotion");
+	create(m_voxel_albedo, k_voxel_albedo_format, "VoxelAlbedo");
+	create(m_voxel_material, k_voxel_material_format, "VoxelMaterial");
+	create(m_voxel_face_normal, k_scene_normal_format, "VoxelFaceNormal");
 }
 
 void VulkanRenderer::createDescriptorPool() {
@@ -988,6 +994,200 @@ void VulkanRenderer::recordMeshScene(vk::CommandBuffer cmd, uint32_t image_index
 	}
 }
 
+auto VulkanRenderer::recordVoxelScopes(
+    FrameContext& frame, const vk::Viewport& viewport, const vk::Rect2D& scissor, bool depth_loaded
+) -> bool {
+	ZoneScoped;
+	const bool targets_ready = m_depth_resources.view.has_value() && m_voxel_albedo.view.has_value() &&
+	                           m_voxel_material.view.has_value() && m_voxel_face_normal.view.has_value() &&
+	                           m_scene_color.view.has_value() && m_scene_normal.view.has_value() &&
+	                           m_scene_indirect.view.has_value() && m_scene_motion.view.has_value();
+	if (m_voxel_pass == nullptr || !m_voxel_pass->isEnabled() || !targets_ready ||
+	    m_depth_layout != vk::ImageLayout::eDepthAttachmentOptimal || !m_voxel_pass->prepare(m_current_frame)) {
+		return false;
+	}
+
+	const vk::CommandBuffer cmd = *frame.command_buffer;
+
+	const auto to_layout = [cmd](SceneColorResources& target, vk::ImageLayout layout) {
+		if (target.layout == layout) {
+			return;
+		}
+		vk::AccessFlags src_access {};
+		vk::PipelineStageFlags src_stage = vk::PipelineStageFlagBits::eTopOfPipe;
+		if (target.layout == vk::ImageLayout::eColorAttachmentOptimal) {
+			src_access = vk::AccessFlagBits::eColorAttachmentWrite;
+			src_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+		} else if (target.layout == vk::ImageLayout::eShaderReadOnlyOptimal) {
+			src_access = vk::AccessFlagBits::eShaderRead;
+			src_stage = vk::PipelineStageFlagBits::eFragmentShader;
+		}
+		const bool sampled = layout == vk::ImageLayout::eShaderReadOnlyOptimal;
+		transitionImageLayout(
+		    cmd,
+		    **target.image,
+		    target.layout,
+		    layout,
+		    src_access,
+		    sampled ? vk::AccessFlags(vk::AccessFlagBits::eShaderRead)
+				        : vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite,
+		    src_stage,
+		    sampled ? vk::PipelineStageFlagBits::eFragmentShader : vk::PipelineStageFlagBits::eColorAttachmentOutput,
+		    colorSubresourceRange()
+		);
+		target.layout = layout;
+	};
+
+	// Scopes give no ordering between a write and the next load
+	const auto attachment_barrier = [cmd]() {
+		const vk::MemoryBarrier barrier(
+		    vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite,
+		    vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite |
+		        vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite
+		);
+		cmd.pipelineBarrier(
+		    vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eLateFragmentTests,
+		    vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests |
+		        vk::PipelineStageFlagBits::eLateFragmentTests,
+		    {},
+		    barrier,
+		    nullptr,
+		    nullptr
+		);
+	};
+
+	const auto attachment = [](const SceneColorResources& target, vk::AttachmentLoadOp load, const vk::ClearValue& clear) {
+		vk::RenderingAttachmentInfo info {};
+		info.imageView = **target.view;
+		info.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
+		info.resolveMode = vk::ResolveModeFlagBits::eNone;
+		info.loadOp = load;
+		info.storeOp = vk::AttachmentStoreOp::eStore;
+		info.clearValue = clear;
+		return info;
+	};
+
+	const vk::ClearValue clear_zero(vk::ClearColorValue(std::array {0.0f, 0.0f, 0.0f, 0.0f}));
+	const vk::ClearValue clear_scene(vk::ClearColorValue(std::array {0.0f, 0.0f, 0.0f, 1.0f}));
+	const auto depth_range = depthAttachmentRange(m_depth_format);
+
+	attachment_barrier();
+	to_layout(m_voxel_albedo, vk::ImageLayout::eColorAttachmentOptimal);
+	to_layout(m_voxel_face_normal, vk::ImageLayout::eColorAttachmentOptimal);
+	to_layout(m_voxel_material, vk::ImageLayout::eColorAttachmentOptimal);
+	to_layout(m_scene_motion, vk::ImageLayout::eColorAttachmentOptimal);
+
+	// Order matches voxel.slang FSOutput
+	const std::array gbuffer_attachments {
+	  attachment(m_voxel_albedo, vk::AttachmentLoadOp::eClear, clear_zero),
+	  attachment(m_voxel_face_normal, vk::AttachmentLoadOp::eClear, clear_zero),
+	  attachment(m_voxel_material, vk::AttachmentLoadOp::eClear, clear_zero),
+	  attachment(m_scene_motion, vk::AttachmentLoadOp::eClear, clear_zero),
+	};
+
+	vk::RenderingAttachmentInfo depth_attachment {};
+	depth_attachment.imageView = **m_depth_resources.view;
+	depth_attachment.imageLayout = vk::ImageLayout::eDepthAttachmentOptimal;
+	depth_attachment.loadOp = depth_loaded ? vk::AttachmentLoadOp::eLoad : vk::AttachmentLoadOp::eClear;
+	depth_attachment.storeOp = vk::AttachmentStoreOp::eStore;
+	depth_attachment.clearValue = vk::ClearDepthStencilValue {1.0f, 0};
+
+	vk::RenderingInfo gbuffer_info {};
+	gbuffer_info.renderArea = scissor;
+	gbuffer_info.layerCount = 1;
+	gbuffer_info.colorAttachmentCount = static_cast<uint32_t>(gbuffer_attachments.size());
+	gbuffer_info.pColorAttachments = gbuffer_attachments.data();
+	gbuffer_info.pDepthAttachment = &depth_attachment;
+
+	cmd.beginRendering(gbuffer_info);
+	cmd.setViewport(0, std::array {viewport});
+	cmd.setScissor(0, std::array {scissor});
+	{
+		TracyVkZone(m_tracy_vk_ctx, cmd, "VoxelGbuffer");
+		const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Voxel G-buffer");
+		m_voxel_pass->record(cmd, m_current_frame, 0);
+	}
+	cmd.endRendering();
+
+	to_layout(m_voxel_albedo, vk::ImageLayout::eShaderReadOnlyOptimal);
+	to_layout(m_voxel_face_normal, vk::ImageLayout::eShaderReadOnlyOptimal);
+	to_layout(m_voxel_material, vk::ImageLayout::eShaderReadOnlyOptimal);
+	transitionImageLayout(
+	    cmd,
+	    **m_depth_resources.image,
+	    vk::ImageLayout::eDepthAttachmentOptimal,
+	    vk::ImageLayout::eDepthReadOnlyOptimal,
+	    vk::AccessFlagBits::eDepthStencilAttachmentWrite,
+	    vk::AccessFlagBits::eShaderRead,
+	    vk::PipelineStageFlagBits::eLateFragmentTests,
+	    vk::PipelineStageFlagBits::eFragmentShader,
+	    depth_range
+	);
+	m_depth_layout = vk::ImageLayout::eDepthReadOnlyOptimal;
+
+	// Rounded normals land in the shared target other passes already read
+	to_layout(m_scene_normal, vk::ImageLayout::eColorAttachmentOptimal);
+	const std::array blur_attachments {attachment(m_scene_normal, vk::AttachmentLoadOp::eClear, clear_zero)};
+
+	vk::RenderingInfo blur_info {};
+	blur_info.renderArea = scissor;
+	blur_info.layerCount = 1;
+	blur_info.colorAttachmentCount = static_cast<uint32_t>(blur_attachments.size());
+	blur_info.pColorAttachments = blur_attachments.data();
+
+	cmd.beginRendering(blur_info);
+	cmd.setViewport(0, std::array {viewport});
+	cmd.setScissor(0, std::array {scissor});
+	{
+		TracyVkZone(m_tracy_vk_ctx, cmd, "VoxelNormalBlur");
+		const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Voxel normal blur");
+		m_voxel_pass->recordNormalBlur(cmd, m_current_frame, scissor.extent);
+	}
+	cmd.endRendering();
+	to_layout(m_scene_normal, vk::ImageLayout::eShaderReadOnlyOptimal);
+
+	to_layout(m_scene_color, vk::ImageLayout::eColorAttachmentOptimal);
+	to_layout(m_scene_indirect, vk::ImageLayout::eColorAttachmentOptimal);
+
+	// Clears what no voxel covers since the world scope now loads instead
+	const std::array lighting_attachments {
+	  attachment(m_scene_color, vk::AttachmentLoadOp::eClear, clear_scene),
+	  attachment(m_scene_indirect, vk::AttachmentLoadOp::eClear, clear_zero),
+	};
+
+	vk::RenderingInfo lighting_info {};
+	lighting_info.renderArea = scissor;
+	lighting_info.layerCount = 1;
+	lighting_info.colorAttachmentCount = static_cast<uint32_t>(lighting_attachments.size());
+	lighting_info.pColorAttachments = lighting_attachments.data();
+
+	cmd.beginRendering(lighting_info);
+	cmd.setViewport(0, std::array {viewport});
+	cmd.setScissor(0, std::array {scissor});
+	{
+		TracyVkZone(m_tracy_vk_ctx, cmd, "VoxelLighting");
+		const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Voxel lighting");
+		m_voxel_pass->recordLighting(cmd, m_current_frame);
+	}
+	cmd.endRendering();
+
+	to_layout(m_scene_normal, vk::ImageLayout::eColorAttachmentOptimal);
+	transitionImageLayout(
+	    cmd,
+	    **m_depth_resources.image,
+	    vk::ImageLayout::eDepthReadOnlyOptimal,
+	    vk::ImageLayout::eDepthAttachmentOptimal,
+	    vk::AccessFlagBits::eShaderRead,
+	    vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite,
+	    vk::PipelineStageFlagBits::eFragmentShader,
+	    vk::PipelineStageFlagBits::eEarlyFragmentTests | vk::PipelineStageFlagBits::eLateFragmentTests,
+	    depth_range
+	);
+	m_depth_layout = vk::ImageLayout::eDepthAttachmentOptimal;
+	attachment_barrier();
+	return true;
+}
+
 auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noexcept -> void {
 	ZoneScoped;
 	frame.command_buffer.reset();
@@ -1080,6 +1280,23 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 		m_scene_indirect.layout = vk::ImageLayout::eColorAttachmentOptimal;
 	}
 
+	const vk::Image motion_image = m_scene_motion.image ? **m_scene_motion.image : VK_NULL_HANDLE;
+	if (motion_image != VK_NULL_HANDLE && m_scene_motion.layout != vk::ImageLayout::eColorAttachmentOptimal) {
+		const bool motion_was_sampled = m_scene_motion.layout == vk::ImageLayout::eShaderReadOnlyOptimal;
+		transitionImageLayout(
+		    frame.command_buffer,
+		    motion_image,
+		    m_scene_motion.layout,
+		    vk::ImageLayout::eColorAttachmentOptimal,
+		    motion_was_sampled ? vk::AccessFlagBits::eShaderRead : vk::AccessFlags {},
+		    vk::AccessFlagBits::eColorAttachmentWrite,
+		    motion_was_sampled ? vk::PipelineStageFlagBits::eFragmentShader : vk::PipelineStageFlagBits::eTopOfPipe,
+		    vk::PipelineStageFlagBits::eColorAttachmentOutput,
+		    colorSubresourceRange()
+		);
+		m_scene_motion.layout = vk::ImageLayout::eColorAttachmentOptimal;
+	}
+
 	const vk::Image depth_image = m_depth_resources.image ? **m_depth_resources.image : VK_NULL_HANDLE;
 	if (depth_image != VK_NULL_HANDLE && m_depth_layout != vk::ImageLayout::eDepthAttachmentOptimal) {
 		transitionImageLayout(
@@ -1144,11 +1361,16 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 		frame.command_buffer.endRendering();
 	}
 
+	const bool voxels_drawn = recordVoxelScopes(frame, scene_viewport, scene_scissor, prepass_active);
+	const vk::AttachmentLoadOp world_load = voxels_drawn ? vk::AttachmentLoadOp::eLoad : vk::AttachmentLoadOp::eClear;
+	scene_attachment_info.loadOp = world_load;
+	normal_attachment_info.loadOp = world_load;
+
 	vk::RenderingAttachmentInfo depth_attachment_info {};
 	if (m_depth_resources.view.has_value()) {
 		depth_attachment_info.imageView = **m_depth_resources.view;
 		depth_attachment_info.imageLayout = vk::ImageLayout::eDepthAttachmentOptimal;
-		depth_attachment_info.loadOp = prepass_active ? vk::AttachmentLoadOp::eLoad : vk::AttachmentLoadOp::eClear;
+		depth_attachment_info.loadOp = prepass_active || voxels_drawn ? vk::AttachmentLoadOp::eLoad : vk::AttachmentLoadOp::eClear;
 		depth_attachment_info.storeOp = vk::AttachmentStoreOp::eStore;
 		depth_attachment_info.clearValue = clear_depth;
 	}
@@ -1157,11 +1379,21 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	indirect_attachment_info.imageView = indirect_image != VK_NULL_HANDLE ? **m_scene_indirect.view : nullptr;
 	indirect_attachment_info.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
 	indirect_attachment_info.resolveMode = vk::ResolveModeFlagBits::eNone;
-	indirect_attachment_info.loadOp = vk::AttachmentLoadOp::eClear;
+	indirect_attachment_info.loadOp = world_load;
 	indirect_attachment_info.storeOp = vk::AttachmentStoreOp::eStore;
 	indirect_attachment_info.clearValue = vk::ClearValue(vk::ClearColorValue(std::array {0.0f, 0.0f, 0.0f, 0.0f}));
 
-	const std::array scene_color_attachments {scene_attachment_info, normal_attachment_info, indirect_attachment_info};
+	vk::RenderingAttachmentInfo motion_attachment_info {};
+	motion_attachment_info.imageView = motion_image != VK_NULL_HANDLE ? **m_scene_motion.view : nullptr;
+	motion_attachment_info.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
+	motion_attachment_info.resolveMode = vk::ResolveModeFlagBits::eNone;
+	motion_attachment_info.loadOp = world_load;
+	motion_attachment_info.storeOp = vk::AttachmentStoreOp::eStore;
+	motion_attachment_info.clearValue = vk::ClearValue(vk::ClearColorValue(std::array {0.0f, 0.0f, 0.0f, 0.0f}));
+
+	const std::array scene_color_attachments {
+	  scene_attachment_info, normal_attachment_info, indirect_attachment_info, motion_attachment_info
+	};
 
 	vk::RenderingInfo scene_rendering_info {};
 	scene_rendering_info.renderArea = scene_scissor;
@@ -1191,8 +1423,6 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 			}
 		};
 
-		// Ahead of all mesh colour so opaque meshes behind it fail early depth and blended ones blend over it
-		record_stage(RenderStage::world_opaque);
 		recordMeshScene(*frame.command_buffer, image_index);
 		record_stage(RenderStage::world);
 	}
@@ -1314,6 +1544,21 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 		    colorSubresourceRange()
 		);
 		m_scene_indirect.layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+	}
+
+	if (motion_image != VK_NULL_HANDLE && m_scene_motion.layout != vk::ImageLayout::eShaderReadOnlyOptimal) {
+		transitionImageLayout(
+		    frame.command_buffer,
+		    motion_image,
+		    m_scene_motion.layout,
+		    vk::ImageLayout::eShaderReadOnlyOptimal,
+		    vk::AccessFlagBits::eColorAttachmentWrite,
+		    vk::AccessFlagBits::eShaderRead,
+		    vk::PipelineStageFlagBits::eColorAttachmentOutput,
+		    vk::PipelineStageFlagBits::eFragmentShader,
+		    colorSubresourceRange()
+		);
+		m_scene_motion.layout = vk::ImageLayout::eShaderReadOnlyOptimal;
 	}
 
 	if (depth_image != VK_NULL_HANDLE && m_depth_layout != vk::ImageLayout::eDepthReadOnlyOptimal) {
@@ -2660,7 +2905,8 @@ void VulkanRenderer::tick(float time) noexcept {
 		if (node == nullptr || !node->enabled() || !node->participatesIn(toast::NodeOwnerParticipation::render)) {
 			continue;
 		}
-		if (m_render_owner_filter != nullptr && node->owner() != m_render_owner_filter) {
+		const glm::mat4* owner_transform = ownerTransform(*node);
+		if (owner_transform == nullptr) {
 			continue;
 		}
 
@@ -2692,7 +2938,7 @@ void VulkanRenderer::tick(float time) noexcept {
 			continue;
 		}
 
-		const auto world_transform = node->worldTransformForRender();
+		const auto world_transform = *owner_transform * node->worldTransformForRender();
 
 		uint32_t joint_offset = 0;
 		uint32_t joint_count = 0;
@@ -2768,6 +3014,12 @@ void VulkanRenderer::tick(float time) noexcept {
 	  .time = time,
 	  .render_mode_pad = glm::uvec4(frame.render_mode, 0, 0, 0),
 	};
+
+	{
+		const EditorOverlays& overlays = editorOverlays();
+		frame.frame_data.render_mode_pad.y =
+		    (overlays.surface_unit_grid ? 1u : 0u) | (overlays.surface_voxel_grid ? 2u : 0u) | (overlays.voxel_edges ? 4u : 0u);
+	}
 
 	{
 		std::scoped_lock lock(m_reflection_probe_mutex);
@@ -3448,9 +3700,13 @@ void VulkanRenderer::tick(float time) noexcept {
 			if (frame.shadow_instance_data.size() >= k_max_instances) {
 				break;
 			}
-			frame.shadow_instance_data.push_back(InstanceData {.model = instance_model_of(proxy), .joint_offset = proxy.joint_offset});
+			const glm::mat4 model = instance_model_of(proxy);
+			frame.shadow_instance_data.push_back(
+			    InstanceData {.model = model, .previous_model = model, .joint_offset = proxy.joint_offset}
+			);
 		}
 
+		std::unordered_map<uint64_t, glm::mat4> drawn_mesh_models;
 		for (auto& proxy : frame.mesh_instances) {
 			if (!proxy.visible) {
 				continue;
@@ -3459,8 +3715,28 @@ void VulkanRenderer::tick(float time) noexcept {
 				proxy.visible = false;
 				continue;
 			}
+
+			// Posed vertices have no previous pose so TAA reprojects them from depth
+			const bool posed = proxy.posed_vertex_offset != MeshInstanceProxy::k_no_posed_vertices;
+			const glm::mat4 model = instance_model_of(proxy);
+			const auto previous = m_mesh_previous_models.find(proxy.node_uid);
+			const bool has_previous = !posed && proxy.node_uid != 0 && previous != m_mesh_previous_models.end();
+
 			proxy.instance_index = static_cast<uint32_t>(frame.instance_data.size());
-			frame.instance_data.push_back(InstanceData {.model = instance_model_of(proxy), .joint_offset = proxy.joint_offset});
+			frame.instance_data.push_back(
+			    InstanceData {
+			      .model = model,
+			      .previous_model = has_previous ? previous->second : model,
+			      .joint_offset = proxy.joint_offset,
+			      .flags = posed ? k_instance_no_motion : 0u,
+			    }
+			);
+			if (!posed && proxy.node_uid != 0) {
+				drawn_mesh_models.insert_or_assign(proxy.node_uid, model);
+			}
+		}
+		if (!is_capture) {
+			m_mesh_previous_models.swap(drawn_mesh_models);
 		}
 
 		if (m_cull_debug_draw.load(std::memory_order_relaxed) && !is_capture) {
@@ -3479,6 +3755,40 @@ void VulkanRenderer::tick(float time) noexcept {
 				const glm::vec4 color = proxy.visible ? glm::vec4(0.2f, 0.85f, 1.0f, 1.0f) : glm::vec4(1.0f, 0.25f, 0.2f, 1.0f);
 				debugDrawSphere(proxy.bounds_center, proxy.bounds_radius, color, k_debug_sphere_segments);
 			}
+		}
+	}
+
+	{
+		const bool is_capture = frame.probe_capture_index >= 0 || frame.irradiance_capture_index >= 0;
+		const bool taa = taaEnabled() && !is_capture && frame.render_mode == 0;
+		const bool same_camera = m_taa_history.has_previous && m_taa_history.camera == m_camera;
+
+		frame.frame_data.previous_view_projection =
+		    same_camera ? m_taa_history.previous_view_projection : frame.frame_data.view_projection;
+		frame.frame_data.jittered_view_projection = frame.frame_data.view_projection;
+		frame.taa_active = taa;
+		frame.taa_reset = taa && (!m_taa_history.was_active || !same_camera);
+
+		if (taa && extent.width > 0 && extent.height > 0) {
+			// R2 low discrepancy sequence from the plastic number
+			constexpr double k_plastic = 1.32471795724474602596;
+			const auto n = static_cast<double>(++m_taa_history.jitter_index);
+			const glm::vec2 pixel_offset(
+			    static_cast<float>(std::fmod(0.5 + (n / k_plastic), 1.0)) - 0.5f,
+			    static_cast<float>(std::fmod(0.5 + (n / (k_plastic * k_plastic)), 1.0)) - 0.5f
+			);
+			const glm::vec2 ndc_offset =
+			    2.0f * pixel_offset / glm::vec2(static_cast<float>(extent.width), static_cast<float>(extent.height));
+			frame.frame_data.jittered_view_projection =
+			    glm::translate(glm::mat4(1.0f), glm::vec3(ndc_offset, 0.0f)) * frame.frame_data.view_projection;
+		}
+
+		if (!is_capture) {
+			m_taa_history.previous_view_projection = frame.frame_data.view_projection;
+			m_taa_history.camera = m_camera;
+			m_taa_history.has_previous = true;
+			m_taa_history.was_active = taa;
+			m_voxel_previous_models.swap(m_voxel_drawn_models);
 		}
 	}
 
@@ -3511,6 +3821,26 @@ void VulkanRenderer::unregisterMeshNodeProxy(toast::MeshNode* node) {
 	std::erase(m_mesh_proxy_nodes, node);
 }
 
+auto VulkanRenderer::ownerTransform(const toast::Node& node) const -> const glm::mat4* {
+	static const glm::mat4 identity(1.0f);
+	if (m_render_owner_filter == nullptr || node.owner() == m_render_owner_filter) {
+		return &identity;
+	}
+	if (m_secondary_owner == nullptr || node.owner() != m_secondary_owner) {
+		return nullptr;
+	}
+
+	// The instance being edited draws from the VoxelEditor not from the level around it
+	for (const toast::Node* current = &node; current != nullptr;) {
+		if (current == m_secondary_hidden) {
+			return nullptr;
+		}
+		toast::Box<toast::Node> parent = const_cast<toast::Node*>(current)->parent();
+		current = parent.exists() ? &*parent : nullptr;
+	}
+	return &m_secondary_transform;
+}
+
 void VulkanRenderer::registerVoxelNodeProxy(toast::VoxelNode* node) {
 	if (node == nullptr) {
 		return;
@@ -3535,17 +3865,7 @@ namespace {
 
 [[nodiscard]]
 auto defaultVoxelPalette() -> const voxel::Palette& {
-	static const voxel::Palette palette = [] {
-		voxel::Palette out;
-		for (uint32_t i = 1; i < voxel::k_palette_size; ++i) {
-			out.entries[i].albedo_r = 160;
-			out.entries[i].albedo_g = 160;
-			out.entries[i].albedo_b = 160;
-			out.entries[i].roughness = 200;
-		}
-		return out;
-	}();
-	return palette;
+	return voxel::defaultPalette();
 }
 
 [[nodiscard]]
@@ -3586,7 +3906,13 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		const voxel::Palette* palette;
 		glm::mat4 model;
 		std::string debug_name;
+		bool data_only = false;
+		uint64_t highlight_id = 0;
+		const toast::VoxelNode* node = nullptr;
 	};
+
+	// Highlights share the voxel grid of their node so the shader looks up the same voxel
+	constexpr uint64_t k_highlight_id_bit = uint64_t {1} << 63;
 
 	std::vector<Gathered> gathered;
 	std::vector<VoxelSceneKey> key;
@@ -3599,7 +3925,8 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		if (node == nullptr || !node->enabled()) {
 			continue;
 		}
-		if (m_render_owner_filter != nullptr && node->owner() != m_render_owner_filter) {
+		const glm::mat4* owner_transform = ownerTransform(*node);
+		if (owner_transform == nullptr) {
 			continue;
 		}
 
@@ -3617,8 +3944,9 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 			.id = node->uid().data(),
 			.volume = volume,
 			.palette = palette,
-			.model = node->getWorldTransform(),
-			.debug_name = std::string{node->name()}
+			.model = *owner_transform * node->getWorldTransform() * node->volumeLocalTransform(),
+			.debug_name = std::string{node->name()},
+			.node = node
 		});
 		key.push_back({
 			.node_uid = node->uid().data(),
@@ -3628,6 +3956,35 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 			.palette_revision = palette->revision
 		});
 		// clang-format on
+	}
+
+	{
+		std::scoped_lock lock(m_voxel_proxy_mutex);
+		const size_t drawn = gathered.size();
+		for (size_t i = 0; i < drawn; ++i) {
+			auto it = m_voxel_highlights.find(gathered[i].node);
+			if (gathered[i].node == nullptr || it == m_voxel_highlights.end() ||
+			    it->second->brickDims() != gathered[i].volume->brickDims()) {
+				continue;
+			}
+			const uint64_t id = gathered[i].id ^ k_highlight_id_bit;
+			gathered[i].highlight_id = id;
+			gathered.push_back({
+			  .id = id,
+			  .volume = it->second,
+			  .palette = gathered[i].palette,
+			  .model = gathered[i].model,
+			  .debug_name = gathered[i].debug_name + " highlight",
+			  .data_only = true,
+			});
+			key.push_back(
+			    {.node_uid = id,
+					 .revision = 0,
+					 .content = it->second->revision(),
+					 .palette = gathered[i].palette,
+					 .palette_revision = gathered[i].palette->revision}
+			);
+		}
 	}
 
 	for (const physics::VoxelRenderRecord& record : physics::Simulator::voxelFragmentRecords()) {
@@ -3791,8 +4148,15 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 	frame.voxel_storage = m_voxel_storage;
 	if (!m_voxel_storage) {
 		m_voxel_previous_models.clear();
+		m_voxel_drawn_models.clear();
 		return;
 	}
+
+	// 1 + the packed record of a highlight so 0 stays none
+	const auto highlight_record_of = [this](uint64_t id) -> uint32_t {
+		const std::optional<uint32_t> record = id != 0 ? m_voxel_storage->recordIndexOf(id) : std::nullopt;
+		return record.has_value() ? *record + 1u : 0u;
+	};
 
 	std::unordered_map<uint64_t, glm::mat4> drawn_models;
 	drawn_models.reserve(gathered.size());
@@ -3800,6 +4164,9 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 
 	for (const Gathered& entry : gathered) {
 		const uint64_t node_uid = entry.id;
+		if (entry.data_only) {
+			continue;
+		}
 		const std::optional<uint32_t> record = m_voxel_storage->recordIndexOf(node_uid);
 		if (!record.has_value()) {
 			continue;
@@ -3821,12 +4188,13 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		      .bounds_radius = sphere.w,
 		      .mirrored = glm::determinant(model) < 0.0f,
 		      .node_uid = node_uid,
+		      .highlight_record = highlight_record_of(entry.highlight_id),
 		    }
 		);
 		drawn_models.insert_or_assign(node_uid, model);
 	}
 
-	m_voxel_previous_models.swap(drawn_models);
+	m_voxel_drawn_models = std::move(drawn_models);
 }
 
 void VulkanRenderer::requestMaterialFrameSetRebuild() {
