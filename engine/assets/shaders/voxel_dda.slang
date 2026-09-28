@@ -15,12 +15,13 @@ struct VolumeRecord
     float maxEmissive;
 };
 
-/// Mirrors renderer::VoxelPass::InstanceGpu
+/// Mirrors renderer::VoxelInstanceGpu
 struct VoxelInstance
 {
     /// Voxel (x y z) occupies [x x + 1] in this space
     float4x4 voxelToWorld;
     float4x4 worldToVoxel;
+    float4x4 previousVoxelToWorld;
     uint recordIndex;
     uint highlightRecord; /// this is for selection tint
     uint pad1;

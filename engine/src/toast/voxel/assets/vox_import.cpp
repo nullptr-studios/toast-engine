@@ -272,9 +272,11 @@ auto voxByteFromUnit(float value) -> uint8_t {
 	return static_cast<uint8_t>(std::lround(std::clamp(value, 0.0f, 1.0f) * 255.0f));
 }
 
+/// Defaults are MagicaVoxel diffuse which is Lambert whatever _rough says
 struct VoxMaterial {
-	float roughness = 0.0f;
+	float roughness = 1.0f;
 	float metallic = 0.0f;
+	float reflectivity = 0.0f;
 	float emission = 0.0f;
 	bool transparent = false;
 };
@@ -414,14 +416,23 @@ auto importVox(std::span<const uint8_t> data) -> VoxScene {
 			if (index < 1 || std::cmp_greater_equal(index, k_palette_size)) {
 				scene.warnings.emplace_back("a MATL chunk names palette index " + std::to_string(index) + ", which cannot exist");
 			} else {
-				const auto type = attributes.find("_type");
+				const auto found_type = attributes.find("_type");
+				const std::string type = found_type != attributes.end() ? found_type->second : "_diffuse";
+
 				VoxMaterial material;
-				material.roughness = voxDictFloat(attributes, "_rough", 0.0f);
-				material.metallic = voxDictFloat(attributes, "_metal", 0.0f);
+				// Only metal glass and blend read _rough and _metal
+				if (type == "_metal" || type == "_blend") {
+					material.roughness = voxDictFloat(attributes, "_rough", 1.0f);
+					material.metallic = voxDictInt(attributes, "_plastic", 0) != 0 ? 0.0f : voxDictFloat(attributes, "_metal", 0.0f);
+					material.reflectivity = 1.0f;
+				} else if (type == "_glass") {
+					material.roughness = voxDictFloat(attributes, "_rough", 1.0f);
+					material.reflectivity = 1.0f;
+				}
 				// _flux multiplies the emission by 2^flux
 				material.emission = voxDictFloat(attributes, "_emit", 0.0f) * std::pow(2.0f, voxDictFloat(attributes, "_flux", 0.0f));
-				material.transparent =
-				    (type != attributes.end() && type->second == "_glass") || voxDictFloat(attributes, "_alpha", 1.0f) < 1.0f;
+				material.transparent = type == "_glass" || voxDictFloat(attributes, "_alpha", 1.0f) < 1.0f ||
+				                       (type == "_blend" && voxDictFloat(attributes, "_trans", 0.0f) > 0.0f);
 				materials.insert_or_assign(static_cast<uint32_t>(index), material);
 			}
 		} else if (is("nTRN")) {
@@ -543,10 +554,16 @@ auto importVox(std::span<const uint8_t> data) -> VoxScene {
 	}
 	scene.palette.max_emissive = brightest > 0.0f ? brightest : 1.0f;
 
+	// An index with no MATL chunk is MagicaVoxel diffuse too
+	for (uint32_t i = 1; i < k_palette_size; ++i) {
+		scene.palette.entries[i].roughness = voxByteFromUnit(VoxMaterial {}.roughness);
+	}
+
 	for (const auto& [index, material] : materials) {
 		PaletteEntry& entry = scene.palette.entries[index];
 		entry.roughness = voxByteFromUnit(material.roughness);
 		entry.metallic = voxByteFromUnit(material.metallic);
+		entry.reflectivity = voxByteFromUnit(material.reflectivity);
 		entry.emissive = voxByteFromUnit(material.emission / scene.palette.max_emissive);
 		if (material.transparent) {
 			entry.flags |= voxel::k_entry_transparent;

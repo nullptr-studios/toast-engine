@@ -1,4 +1,5 @@
 import voxel_dda;
+import voxel_gbuffer;
 import lighting;
 
 struct PushConstants
@@ -32,18 +33,22 @@ VSOutput vertexMain(uint vertexId : SV_VertexID)
 
     VSOutput output;
     output.worldPosition = world.xyz;
-    output.position = mul(gCamera.viewProjection, world);
+    output.position = mul(gCamera.jitteredViewProjection, world);
     return output;
 }
 
+// Mirrors the voxel G-buffer attachment order
 struct FSOutput
 {
-    float4 color : SV_Target0;
+    float4 albedo : SV_Target0;
 
-    /// xyz world normal w roughness
+    /// xyz world normal w roughness as SSR sees it
     float4 normalRoughness : SV_Target1;
 
-    float4 indirectDiffuse : SV_Target2;
+    float4 material : SV_Target2;
+
+    /// xy uv motion z reactive w 1 when written
+    float4 motion : SV_Target3;
 };
 
 // Mirrored by renderer::voxel_debug for the overlay legend
@@ -176,7 +181,6 @@ bool shadeDebug(uint mode, VSOutput input, VoxelInstance instance, float3 origin
 
     // Zero normal so SSAO and SSR pass the colour through
     output.normalRoughness = float4(0.0, 0.0, 0.0, 0.0);
-    output.indirectDiffuse = float4(0.0, 0.0, 0.0, 1.0);
 
     const bool showsMisses = mode == kRenderModeVoxelSteps || mode == kRenderModeVoxelTraversal || mode == kRenderModeVoxelVolumes;
     if (!hit.hit && !showsMisses)
@@ -238,15 +242,16 @@ bool shadeDebug(uint mode, VSOutput input, VoxelInstance instance, float3 origin
                                        : debugHue(frac(float(palette.material) * 0.618034 + 0.33));
     }
 
-    output.color = float4(color * light, 1.0);
+    output.albedo = float4(color * light, kGbufferUnlit);
     return true;
 }
 
 bool shade(VSOutput input, out FSOutput output, out float depth)
 {
-    output.color = float4(0.0, 0.0, 0.0, 1.0);
+    output.albedo = float4(0.0, 0.0, 0.0, 0.0);
     output.normalRoughness = float4(0.0, 0.0, 1.0, 1.0);
-    output.indirectDiffuse = float4(0.0, 0.0, 0.0, 1.0);
+    output.material = float4(0.0, 0.0, 0.0, 0.0);
+    output.motion = float4(0.0, 0.0, 0.0, 0.0);
     depth = input.position.z;
 
     const VoxelInstance instance = gVoxelInstances[gPush.instanceIndex];
@@ -279,6 +284,11 @@ bool shade(VSOutput input, out FSOutput output, out float depth)
         const float4 clip = mul(gCamera.viewProjection, float4(hitWorld, 1.0));
         depth = clip.z / clip.w;
 
+        // Voxel-space hit through the previous model is where it was last frame
+        const float4 previousWorld = mul(instance.previousVoxelToWorld, float4(origin + direction * hit.t, 1.0));
+        const float4 previousClip = mul(gCamera.previousViewProjection, previousWorld);
+        output.motion = float4((clip.xy / clip.w - previousClip.xy / previousClip.w) * 0.5, 0.0, 1.0);
+
         if (hit.axis >= 0)
         {
             float3 voxelNormal = float3(0.0, 0.0, 0.0);
@@ -302,31 +312,11 @@ bool shade(VSOutput input, out FSOutput output, out float depth)
     const PaletteSample palette = samplePalette(record, hit.material);
     const float roughness = clamp(palette.roughness, 0.045, 1.0);
 
-    output.normalRoughness = float4(normal, roughness);
+    output.albedo = float4(applyEditorOverlays(palette.albedo, instance, hit, direction, cellPosition, voxelsPerPixel, hitWorld, worldPerPixel, normal), kGbufferLit);
 
-    Surface surface;
-    surface.worldPosition = hitWorld;
-    surface.normal = normal;
-    surface.geometricNormal = normal;
-    surface.viewDirection = toCamera;
-    surface.albedo = palette.albedo;
-    surface.metallic = palette.metallic;
-    surface.roughness = roughness;
-    surface.occlusion = 1.0;
-    surface.viewSpaceZ = mul(gCamera.view, float4(hitWorld, 1.0)).z;
-    surface.pixel = input.position.xy;
-
-    const ShadingResult lit = shadeSurfaceLighting(surface);
-    output.indirectDiffuse = float4(lit.indirectDiffuse, 1.0);
-
-    if (lit.isDebugView)
-    {
-        output.color = float4(applyEditorOverlays(lit.color, instance, hit, direction, cellPosition, voxelsPerPixel, hitWorld, worldPerPixel, normal), 1.0);
-        return true;
-    }
-
-    const float3 shaded = lit.color + palette.albedo * palette.emissive;
-    output.color = float4(applyEditorOverlays(shaded, instance, hit, direction, cellPosition, voxelsPerPixel, hitWorld, worldPerPixel, normal), 1.0);
+    // SSR only reads roughness so zero reflectivity must look fully rough
+    output.normalRoughness = float4(normal, lerp(1.0, roughness, palette.reflectivity));
+    output.material = float4(palette.metallic, palette.reflectivity, roughness, encodeEmissive(palette.emissive));
     return true;
 }
 

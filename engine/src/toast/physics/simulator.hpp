@@ -25,6 +25,7 @@
 #include <optional>
 #include <span>
 #include <thread>
+#include <toast/events/listener.hpp>
 #include <toast/export.hpp>
 #include <toast/log.hpp>
 #include <toast/voxel/connectivity.hpp>
@@ -376,6 +377,7 @@ private:
 	void enforceFragmentBudget();
 	void unlockSleep(BodyID id);
 	void rebuildFragmentIndex();
+	void refreshPalette(uint64_t palette_uid);
 	auto createVoxelShapeInternal(
 	    BodyID owner, const VoxelShape& shape, voxel::Volume* external, std::unique_ptr<voxel::Volume> owned,
 	    const voxel::Palette& palette, const voxel::MaterialLibrary& materials
@@ -418,6 +420,10 @@ private:
 
 	/// Round robin start so a connectivity job cap does not starve the same shapes
 	size_t m_connectivity_cursor = 0;
+
+	float m_interpolation_alpha = 0.0f;
+
+	event::Listener m_listener;
 };
 
 }
