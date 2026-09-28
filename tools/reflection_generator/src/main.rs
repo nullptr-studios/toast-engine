@@ -40,6 +40,10 @@ struct Cli {
     /// Path of the lua LSP to emit (types.d.lua)
     #[arg(long)]
     lua_stubs: Option<PathBuf>,
+
+    /// Path of the lua Events definitions (events.d.lua)
+    #[arg(long)]
+    event_lua_stubs: Option<PathBuf>,
 }
 
 fn main() {
@@ -68,6 +72,7 @@ fn main() {
 
     // Parse each file
     let mut all_nodes: Vec<NodeInfo> = Vec::new();
+    let mut all_events: Vec<EventInfo> = Vec::new();
 
     for file_path in &header_files {
         let include_path = compute_include_path(file_path, cli.include_root.as_deref());
@@ -82,6 +87,7 @@ fn main() {
 
         let preprocessed = strip_export_macros(&source);
         let classes = parse(&preprocessed, &include_path);
+        all_events.extend(parse_events(&preprocessed, &include_path));
 
         for class in &classes {
             if let Err(msg) = validate_class(class) {
@@ -101,7 +107,12 @@ fn main() {
         fs::create_dir_all(parent)
             .unwrap_or_else(|e| eprintln!("warning: cannot create database directory: {e}"));
     }
-    let json = serde_json::to_string_pretty(&generate_json(&all_nodes))
+    all_events.sort_by_key(EventInfo::qualified_name);
+    all_events.dedup_by_key(|e| e.qualified_name());
+    for event in all_events.iter().filter(|e| !e.supported) {
+        eprintln!("warning: skipped Lua event {}: {}", event.qualified_name(), event.skip_reason.as_deref().unwrap_or("unsupported"));
+    }
+    let json = serde_json::to_string_pretty(&generate_database(&all_nodes, &all_events))
         .expect("JSON serialisation failed");
     fs::write(&cli.database, json).unwrap_or_else(|e| {
         eprintln!(
@@ -112,8 +123,9 @@ fn main() {
 
     // Generate files, sorted so base classes are included before derived classes
     let all_nodes = topological_sort(all_nodes);
-    generate_files(
+    generate_files_with_events(
         &all_nodes,
+        &all_events,
         &cli.output,
         &cli.register_fn,
         cli.split_typeinfo,
@@ -132,6 +144,13 @@ fn main() {
                 stub_path.display()
             )
         });
+    }
+
+    if let Some(stub_path) = &cli.event_lua_stubs {
+        if let Some(parent) = stub_path.parent() && !parent.as_os_str().is_empty() {
+            fs::create_dir_all(parent).unwrap_or_else(|e| eprintln!("warning: cannot create event lua stub directory: {e}"));
+        }
+        fs::write(stub_path, generate_event_lua_stubs(&all_events)).unwrap_or_else(|e| eprintln!("warning: cannot write event lua stubs '{}': {e}", stub_path.display()));
     }
 
     println!(
@@ -161,7 +180,7 @@ fn inject_attributes(node: &mut NodeInfo, attributes: &[std::string::String]) {
     }
 }
 
-/// Walk all input dirs and return paths of .hpp files containing [[ToastNode]]
+/// Walk all input dirs and return headers containing useful information
 fn find_headers(inputs: &[PathBuf]) -> Vec<PathBuf> {
     let mut result = Vec::new();
     for dir in inputs {
@@ -171,7 +190,7 @@ fn find_headers(inputs: &[PathBuf]) -> Vec<PathBuf> {
                 continue;
             }
             if let Ok(content) = fs::read_to_string(&path)
-                && content.contains("ToastNode")
+                && (content.contains("ToastNode") || content.contains("Event<"))
             {
                 result.push(path);
             }

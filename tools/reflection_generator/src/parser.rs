@@ -53,6 +53,144 @@ pub fn parse(source: &str, file_path: &str) -> Vec<Class> {
     classes
 }
 
+pub fn parse_events(source: &str, file_path: &str) -> Vec<EventInfo> {
+    let mut parser = Parser::new();
+    parser.set_language(&tree_sitter_cpp::LANGUAGE.into()).expect("Language error");
+    let tree = parser.parse(source, None).unwrap();
+    let query = Query::new(&tree_sitter_cpp::LANGUAGE.into(), "[(class_specifier) (struct_specifier)] @class").unwrap();
+    let mut cursor = QueryCursor::new();
+    let mut captures = cursor.captures(&query, tree.root_node(), source.as_bytes());
+    let mut result = Vec::new();
+
+    while let Some((m, idx)) = captures.next() {
+        let node = m.captures[*idx].node;
+        let Some(name_node) = node.child_by_field_name("name") else { continue };
+        let name = source[name_node.byte_range()].to_string();
+        if !is_event_base(node, source, &name) { continue; }
+
+        let fields = get_event_fields(node, source);
+        let constructor_compatible = event_constructor_compatible(node, source, &name, &fields);
+        let unsupported = fields.iter().find(|f| f.lua_type.is_none());
+        let skip_reason = if let Some(field) = unsupported {
+            Some(format!("field '{}' has unsupported type '{}'", field.name, field.typename))
+        } else if !constructor_compatible {
+            Some("no constructor accepts the public fields in declaration order".to_string())
+        } else { None };
+
+        result.push(EventInfo {
+            name,
+            namespace: get_namespace(node, source),
+            fields,
+            source_file: file_path.to_string(),
+            constructor_compatible,
+            supported: skip_reason.is_none(),
+            skip_reason,
+        });
+    }
+    result
+}
+
+fn is_event_base(node: tree_sitter::Node, source: &str, name: &str) -> bool {
+    for child in node.children(&mut node.walk()) {
+        if child.kind() != "base_class_clause" { continue; }
+        let compact: String = source[child.byte_range()].chars().filter(|c| !c.is_whitespace()).collect();
+        let needle = format!("Event<{name}>");
+        let exact = compact.match_indices(&needle).any(|(index, _)| {
+            index == 0 || compact[..index].ends_with(':') || compact[..index].ends_with(',')
+        });
+        if exact {
+            return true;
+        }
+    }
+    false
+}
+
+fn lua_event_type(type_name: &str) -> Option<String> {
+    let t: String = type_name.chars().filter(|c| !c.is_whitespace()).collect();
+    let bare = t.trim_start_matches("const").trim_start_matches("std::").trim_start_matches("glm::");
+    match bare {
+        "bool" => Some("boolean".into()),
+        "float" | "double" => Some("number".into()),
+        "char" | "short" | "int" | "long" | "longlong" | "unsigned" | "unsignedint" |
+        "unsignedlong" | "unsignedlonglong" | "int8_t" | "int16_t" | "int32_t" | "int64_t" |
+        "uint8_t" | "uint16_t" | "uint32_t" | "uint64_t" | "size_t" => Some("integer".into()),
+        "string" => Some("string".into()),
+        "vec2" => Some("vec2".into()),
+        "vec3" => Some("vec3".into()),
+        "vec4" => Some("vec4".into()),
+        "quat" | "quaternion" => Some("quat".into()),
+        "toast::UID" | "UID" => Some("integer".into()),
+        _ => None,
+    }
+}
+
+fn get_event_fields(node: tree_sitter::Node, source: &str) -> Vec<EventField> {
+    let Some(body) = node.child_by_field_name("body") else { return Vec::new() };
+    let default_public = node.kind() == "struct_specifier";
+    let mut public = default_public;
+    let mut fields = Vec::new();
+    for child in body.named_children(&mut body.walk()) {
+        if child.kind() == "access_specifier" {
+            public = source[child.byte_range()].trim_start().starts_with("public");
+            continue;
+        }
+        if !public || child.kind() != "field_declaration" { continue; }
+        let Some(ty) = child.child_by_field_name("type") else { continue };
+        if matches!(ty.kind(), "struct_specifier" | "class_specifier" | "enum_specifier") { continue; }
+        let type_name = source[ty.byte_range()].trim().to_string();
+        if type_name.contains("Event<") { continue; }
+        let mut identifiers = Vec::new();
+        collect_field_identifiers(child, &mut identifiers);
+        for decl in identifiers {
+            let mut declared_type = type_name.clone();
+            let mut current = decl.parent();
+            while let Some(parent) = current {
+                if parent.id() == child.id() { break; }
+                if parent.kind() == "pointer_declarator" { declared_type.push('*'); }
+                if parent.kind() == "reference_declarator" { declared_type.push('&'); }
+                current = parent.parent();
+            }
+            fields.push(EventField {
+                name: source[decl.byte_range()].to_string(),
+                typename: declared_type.clone(),
+                lua_type: lua_event_type(&declared_type),
+            });
+        }
+    }
+    fields
+}
+
+fn collect_field_identifiers<'a>(node: tree_sitter::Node<'a>, result: &mut Vec<tree_sitter::Node<'a>>) {
+    if node.kind() == "field_identifier" {
+        result.push(node);
+        return;
+    }
+    for child in node.named_children(&mut node.walk()) {
+        collect_field_identifiers(child, result);
+    }
+}
+
+fn normalized_type(t: &str) -> String {
+    t.replace("const", "").replace('&', "").replace("&&", "").chars().filter(|c| !c.is_whitespace()).collect()
+}
+
+fn event_constructor_compatible(node: tree_sitter::Node, source: &str, name: &str, fields: &[EventField]) -> bool {
+    if fields.is_empty() { return true; }
+    let query = Query::new(&tree_sitter_cpp::LANGUAGE.into(), "(function_declarator) @fn").unwrap();
+    let mut cursor = QueryCursor::new();
+    let mut captures = cursor.captures(&query, node, source.as_bytes());
+    while let Some((m, _)) = captures.next() {
+        let decl = m.captures[0].node;
+        let Some(name_node) = decl.child_by_field_name("declarator") else { continue };
+        if source[name_node.byte_range()].trim() != name { continue; }
+        let params = get_parameters(decl, source);
+        if params.len() == fields.len() && params.iter().zip(fields).all(|(p, f)| normalized_type(&p.type_name) == normalized_type(&f.typename)) {
+            return true;
+        }
+    }
+    false
+}
+
 fn get_class(node: tree_sitter::Node, source: &str, file_path: &str) -> Option<Class> {
     let name = node
         .child_by_field_name("name")

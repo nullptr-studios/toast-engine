@@ -108,6 +108,32 @@ pub struct Class {
     pub source_file: String,
 }
 
+#[derive(Serialize, Clone)]
+pub struct EventInfo {
+    pub name: String,
+    pub namespace: Option<String>,
+    pub fields: Vec<EventField>,
+    pub source_file: String,
+    pub constructor_compatible: bool,
+    pub supported: bool,
+    pub skip_reason: Option<String>,
+}
+
+#[derive(Serialize, Clone)]
+pub struct EventField {
+    pub name: String,
+    pub typename: String,
+    pub lua_type: Option<String>,
+}
+
+impl EventInfo {
+    pub fn qualified_name(&self) -> String {
+        self.namespace
+            .as_ref()
+            .map_or_else(|| self.name.clone(), |ns| format!("{ns}::{}", self.name))
+    }
+}
+
 // tree-sitter sees TOAST_API and __declspec attributes as identifiers that break field parsing
 pub fn strip_export_macros(source: &str) -> String {
     source
@@ -118,4 +144,8 @@ pub fn strip_export_macros(source: &str) -> String {
 
 pub fn generate_json(nodes: &[NodeInfo]) -> json_t {
     to_value(nodes).unwrap_or(json_t::Array(vec![]))
+}
+
+pub fn generate_database(nodes: &[NodeInfo], events: &[EventInfo]) -> json_t {
+    json!({ "nodes": nodes, "events": events })
 }
