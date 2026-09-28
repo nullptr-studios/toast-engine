@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Media;
@@ -11,6 +10,7 @@ using editor.Assets;
 using editor.Engine;
 using editor.Workspace;
 using Proto.Events;
+using HierarchyElement = editor.Workspace.HierarchyElement;
 
 namespace editor.VoxelEditor;
 
@@ -50,7 +50,7 @@ public partial class VoxelEditorViewModel : ObservableObject, IDisposable {
 	public const double VoxelSize = 0.1;
 	public const double RightAngle = 90.0;
 
-	public const string DrawBoxScript = "core://VoxelScripts/DrawBox.lua";
+	public const string DrawBoxScript = "core://voxel_scripts/draw_box.lua";
 
 	private static ulong s_nextTransaction = 1 << 20;
 
@@ -81,6 +81,8 @@ public partial class VoxelEditorViewModel : ObservableObject, IDisposable {
 		DefaultScript = ResolveUid(DrawBoxScript);
 
 		Hierarchy = new HierarchyViewModel(() => Workspace) { Id = "VoxelHierarchy", Title = "Volumes" };
+		Hierarchy.CanContextBake = CanBakeFromHierarchy;
+		Hierarchy.ContextBake = BakeFromHierarchy;
 		Inspector = new InspectorViewModel(Hierarchy) {
 			Id = "VoxelInspector", Title = "Inspector", Profile = new InspectorProfile(SectionsFor, true)
 		};
@@ -132,7 +134,8 @@ public partial class VoxelEditorViewModel : ObservableObject, IDisposable {
 				new InspectorSection("Script", "Magenta", "Circle", ["m_shape_script"])
 			],
 			"VoxelMesh" => [
-				new InspectorSection("Mesh", green, "MeshItem", ["position", "m_model", "m_palette"]),
+				new InspectorSection("Position", green, "Move3d", ["position"]),
+				new InspectorSection("Model", green, "MeshItem", ["m_model"]),
 				new InspectorSection("Script", "Magenta", "Circle", ["m_shape_script"])
 			],
 			"ProceduralVoxel" => [
@@ -194,6 +197,8 @@ public partial class VoxelEditorViewModel : ObservableObject, IDisposable {
 				return new VoxelProjectionInfo(p.MinH, p.MinV, (int)p.Width, (int)p.Height, p.Colors.ToByteArray(), depths,
 					p.EdgesH.ToByteArray(), p.EdgesV.ToByteArray());
 			}).ToArray();
+		else if (FourUp)
+			Projections = [];
 
 		if (PaletteUid != e.PaletteUid) {
 			PaletteUid = e.PaletteUid;
@@ -304,6 +309,12 @@ public partial class VoxelEditorViewModel : ObservableObject, IDisposable {
 		});
 	}
 
+	[RelayCommand]
+	private void AddMesh() {
+		EnsureEngine();
+		Events.Send(new WorkspaceCreateNode { Parent = CreationParent(), Type = "toast::VoxelMesh" });
+	}
+
 	// Extrude grows part of a face, the source and the new piece end up in one group
 	public void Extrude(string sourceUid, (int X, int Y, int Z) min, (int X, int Y, int Z) max, bool inward) {
 		Events.Send(new VoxelExtrude { Source = sourceUid, Min = Int3(min), Max = Int3(max), Inward = inward });
@@ -351,21 +362,50 @@ public partial class VoxelEditorViewModel : ObservableObject, IDisposable {
 
 	[RelayCommand]
 	private async Task Bake() {
-		var targets = SelectedPiece is { } piece ? [piece.Uid] : Pieces.Select(p => p.Uid).ToList();
-		if (targets.Count == 0) return;
-
-		var virtualPath = await App.Modals.ShowSaveFile($"{Workspace.Title}_baked.tvox");
+		var virtualPath = await App.Modals.ShowSaveFile($"{Workspace.Title}_baked", ".tvox");
 		if (virtualPath is null) return;
-		var realPath = ProjectContext.Resolve(virtualPath);
-		Directory.CreateDirectory(Path.GetDirectoryName(realPath)!);
-		File.WriteAllBytes(realPath, Array.Empty<byte>());
-		MetaFile.Write(realPath, new MetaHeader { Uid = UidGenerator.Generate(), Type = "voxel_model" });
-		AssetDatabase.RebuildAssetDatabase();
-		Events.Send(new ReloadAssetsManifest());
+		if (Workspace.RootUid is not { } root) return;
+		VoxelEditorActions.CreateVoxelAsset(virtualPath);
+		Events.Send(new VoxelBake { Target = root, Path = virtualPath, Replace = false });
+	}
 
+	private static bool CanBakeFromHierarchy(HierarchyElement node) {
+		return !node.IsInsidePrefab && (IsVolume(node) || node.Type.EndsWith("VoxelGroup", StringComparison.Ordinal));
+	}
+
+	private async Task BakeFromHierarchy(HierarchyElement node) {
+		EnsureEngine();
+		var pieces = IsVolume(node)
+			? [node]
+			: Descendants(node).Where(IsPiece).ToList();
+		if (pieces.Count == 0) {
+			await App.Modals.ShowWarning("Bake Voxel", "This group contains no voxel pieces");
+			return;
+		}
+
+		var virtualPath = await App.Modals.ShowSaveFile($"{node.Name}_baked", ".tvox");
+		if (virtualPath is null) return;
+		VoxelEditorActions.CreateVoxelAsset(virtualPath);
 		var e = new VoxelCollapsePieces { Path = virtualPath };
-		e.Targets.AddRange(targets);
+		e.Targets.AddRange(pieces.Select(p => p.Uid));
 		Events.Send(e);
+	}
+
+	private static IEnumerable<HierarchyElement> Descendants(HierarchyElement node) {
+		foreach (var child in node.Children) {
+			yield return child;
+			foreach (var descendant in Descendants(child)) yield return descendant;
+		}
+	}
+
+	private static bool IsVolume(HierarchyElement node) {
+		return node.Type.EndsWith("FillVolume", StringComparison.Ordinal) ||
+		       node.Type.EndsWith("CarveVolume", StringComparison.Ordinal) ||
+		       node.Type.EndsWith("PaintVolume", StringComparison.Ordinal);
+	}
+
+	private static bool IsPiece(HierarchyElement node) {
+		return IsVolume(node) || node.Type.EndsWith("VoxelMesh", StringComparison.Ordinal);
 	}
 
 	// Split and Slice only cut the selected shape

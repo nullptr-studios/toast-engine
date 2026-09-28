@@ -161,6 +161,20 @@
 			<ve:VoxelPalettePicker x:Name="PalettePicker"
 			                       Grid.Column="3" />
 
+			<Button Grid.Column="4"
+			        Classes="chev"
+			        CornerRadius="6"
+			        HorizontalAlignment="Right"
+			        Command="{Binding AddMeshCommand}"
+			        ToolTip.Tip="Add a voxel mesh">
+				<StackPanel Orientation="Horizontal"
+				            Spacing="6">
+					<LucideIcon Kind="Plus" Size="18" StrokeWidth="2.5" />
+					<TextBlock Text="Add Mesh"
+					           VerticalAlignment="Center" />
+				</StackPanel>
+			</Button>
+
 			<StackPanel Grid.Column="5"
 			            Orientation="Horizontal"
 			            Spacing="6"
@@ -177,7 +191,7 @@
 			        Classes="chev"
 			        CornerRadius="6"
 			        Command="{Binding BakeCommand}"
-			        ToolTip.Tip="Bake (destructive)">
+			        ToolTip.Tip="Bake">
 				<StackPanel Orientation="Horizontal"
 				            Spacing="6">
 					<LucideIcon Kind="ChefHat" Size="18" StrokeWidth="2.5" />

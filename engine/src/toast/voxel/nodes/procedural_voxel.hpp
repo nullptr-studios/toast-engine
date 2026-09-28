@@ -56,6 +56,10 @@ public:
 	[[Reflect, Button("Rebuild")]]
 	void rebuild();
 
+	/** Bakes the whole shape to a .tvox and replaces this node with a VoxelNode */
+	[[Reflect, Button("Bake"), EditorAction("voxel_editor.bake")]]
+	void bakeVoxel() { }
+
 	/** Tells the VoxelEditor where every piece is, it is also sent after every editor rebuild */
 	void sendLayout();
 

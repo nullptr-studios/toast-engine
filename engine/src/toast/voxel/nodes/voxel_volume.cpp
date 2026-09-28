@@ -10,7 +10,7 @@ namespace toast {
 
 namespace {
 
-constexpr std::string_view k_default_volume_script = "core://VoxelScripts/DrawBox.lua";
+constexpr std::string_view k_default_volume_script = "core://voxel_scripts/draw_box.lua";
 
 using _detail::toId;
 

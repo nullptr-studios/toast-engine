@@ -83,6 +83,7 @@ public class HierarchyElement : INotifyPropertyChanged {
 
 	public bool IsInsidePrefab => Parent?.IsPrefab == true || Parent?.IsInsidePrefab == true;
 	public bool CanAddChildren => !IsPrefab && !IsInsidePrefab;
+	public bool CanContextBake => Owner.CanContextBake?.Invoke(this) == true;
 
 	public int Depth { get; set; }
 	public int Index { get; set; }
@@ -268,6 +269,9 @@ public partial class HierarchyViewModel : Tool, IDisposable {
 	}
 	public ulong ActiveWorkspaceHandle => ActiveWorkspace?.EffectiveHandle ?? 0;
 	public bool HasCurrentHierarchy => m_hierarchyHandle != 0 && m_hierarchyHandle == ActiveWorkspaceHandle;
+
+	public Func<HierarchyElement, bool>? CanContextBake { get; set; }
+	public Func<HierarchyElement, Task>? ContextBake { get; set; }
 
 	public void Dispose() {
 		m_disposed = true;
@@ -616,5 +620,11 @@ public partial class HierarchyViewModel : Tool, IDisposable {
 		if (Rows.Any(r => r.IsRenaming)) return;
 		if (target is null || Root.Count == 0 || target == Root[0] || target.IsInsidePrefab) return;
 		Events.Send(new WorkspaceRemoveNode { Target = target.Uid });
+	}
+
+	[RelayCommand]
+	private async Task BakeContext(HierarchyElement? target) {
+		if (target is not null && CanContextBake?.Invoke(target) == true && ContextBake is not null)
+			await ContextBake(target);
 	}
 }

@@ -250,6 +250,16 @@ struct VoxelCollapsePieces : Event<VoxelCollapsePieces> {
 	std::string path;
 };
 
+struct VoxelBake : Event<VoxelBake> {
+	toast::UID target;
+	std::string path;
+	bool replace = false;
+};
+
+struct VoxelBakeCompleted : Event<VoxelBakeCompleted> {
+	std::string path;
+};
+
 struct SetVoxelEditorOverlays : Event<SetVoxelEditorOverlays> {
 	bool unit_grid = true;
 	bool voxel_grid = false;

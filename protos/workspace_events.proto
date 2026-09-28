@@ -229,6 +229,16 @@ message VoxelCollapsePieces {
   string path = 2;
 }
 
+message VoxelBake {
+  string target = 1;
+  string path = 2;
+  bool replace = 3;
+}
+
+message VoxelBakeCompleted {
+  string path = 1;
+}
+
 message SetVoxelEditorOverlays {
   bool unit_grid = 1;
   bool voxel_grid = 2;

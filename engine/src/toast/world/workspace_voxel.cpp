@@ -338,7 +338,7 @@ void Workspace::voxelUpdatePreview(uint8_t kind) {
 	volume->setId(colour);
 	const assets::Handle<assets::Script> script = m_voxel_tool.default_script.data() != 0
 	                                                  ? assets::load<assets::Script>(m_voxel_tool.default_script)
-	                                                  : assets::load<assets::Script>("core://VoxelScripts/DrawBox.lua");
+	                                                  : assets::load<assets::Script>("core://voxel_scripts/draw_box.lua");
 	if (volume->scripts().empty() || volume->scripts().front().uid() != script.uid()) {
 		volume->setShapeScript(script);
 	}
@@ -1002,6 +1002,17 @@ void Workspace::subscribeVoxelEditing() {
 			TOAST_WARN("Voxel", "Bake needs pieces of one ProceduralVoxel");
 			return true;
 		}
+		const std::vector<Box<Node>> selected_boxes = boxes;
+		std::erase_if(boxes, [&](const Box<Node>& candidate) {
+			Box<Node> ancestor = candidate->parentInternal();
+			while (ancestor.exists() && &*ancestor != shape) {
+				if (std::ranges::find(selected_boxes, ancestor) != selected_boxes.end()) {
+					return true;
+				}
+				ancestor = ancestor->parentInternal();
+			}
+			return false;
+		});
 
 		std::optional<ProceduralVoxel::Composed> composed = shape->composePieces(pieces);
 		if (!composed.has_value()) {
@@ -1014,6 +1025,9 @@ void Workspace::subscribeVoxelEditing() {
 			TOAST_WARN("Voxel", "Bake could not write {}", e.path);
 			return true;
 		}
+		event::VoxelBakeCompleted completed;
+		completed.path = e.path;
+		event::send<event::VoxelBakeCompleted>(completed);
 		const std::optional<UID> model_uid = assets::resolveURI(e.path);
 		if (!model_uid.has_value()) {
 			TOAST_WARN("Voxel", "Bake: {} is not in the asset manifest", e.path);
@@ -1040,6 +1054,76 @@ void Workspace::subscribeVoxelEditing() {
 			}
 		});
 		event::send<event::RequestHierarchyUpdate>();
+		return true;
+	});
+
+	m_listener.subscribe<event::VoxelBake>([this, active](const auto& e) {
+		if (!active()) {
+			return false;
+		}
+
+		Box<Node> target = findFrom(m_root_node, e.target);
+		auto* shape = target.exists() ? reflect_cast<ProceduralVoxel>(&*target) : nullptr;
+		if (shape == nullptr) {
+			TOAST_WARN("Voxel", "Bake needs a ProceduralVoxel");
+			return true;
+		}
+
+		shape->rebuild();
+		std::vector<VoxelPiece*> pieces;
+		pieces.reserve(shape->layout().size());
+		for (const ProceduralVoxel::PieceLayout& entry : shape->layout()) {
+			if (auto* piece = voxelPieceOf(entry.node)) {
+				pieces.push_back(piece);
+			}
+		}
+
+		try {
+			std::optional<ProceduralVoxel::Composed> composed = shape->composePieces(pieces);
+			if (!composed.has_value()) {
+				TOAST_WARN("Voxel", "Bake: the ProceduralVoxel draws nothing");
+				return true;
+			}
+			const std::vector<uint8_t> bytes =
+			    assets::VoxelModel::capture(composed->volume, shape->paletteUid())->serialize(assets::SaveMode::editor);
+			if (!assets::AssetManager::get().saveBytes(e.path, bytes)) {
+				TOAST_WARN("Voxel", "Bake could not write {}", e.path);
+				return true;
+			}
+			event::VoxelBakeCompleted completed;
+			completed.path = e.path;
+			event::send<event::VoxelBakeCompleted>(completed);
+			if (!e.replace) {
+				return true;
+			}
+
+			const std::optional<UID> model_uid = assets::resolveURI(e.path);
+			if (!model_uid.has_value()) {
+				TOAST_WARN("Voxel", "Bake: {} is not in the asset manifest", e.path);
+				return true;
+			}
+
+			recordHistory(voxelHistory(event::HistoryOperation::retype, target, "Baked"), [&] {
+				Box<Node> replacement = retypeNode(target, "toast::VoxelNode", true);
+				auto* voxel_node = replacement.exists() ? reflect_cast<VoxelNode>(&*replacement) : nullptr;
+				if (voxel_node == nullptr) {
+					return;
+				}
+
+				// The baked asset begins at zero
+				const glm::vec3 offset = glm::vec3(composed->origin) * voxel::k_voxel_size;
+				voxel_node->position += voxel_node->rotation * (voxel_node->scale * offset);
+				voxel_node->syncTransform();
+				voxel_node->setModel(assets::load<assets::VoxelModel>(*model_uid));
+
+				// Retyping preserves compatible node fields
+				for (Box<Node>& child : replacement->m_children) {
+					destroyOwnedTree(child);
+				}
+				replacement->m_children.clear();
+			});
+			event::send<event::RequestHierarchyUpdate>();
+		} catch (const std::exception& error) { TOAST_WARN("Voxel", "Bake failed: {}", error.what()); }
 		return true;
 	});
 }

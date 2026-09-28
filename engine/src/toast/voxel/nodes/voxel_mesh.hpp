@@ -41,7 +41,7 @@ public:
 protected:
 	auto prepareGrid() -> std::unique_ptr<voxel::Volume> override;
 
-	[[Reflect, Name("Mesh")]]
+	[[Reflect, Name("Model")]]
 	assets::Handle<assets::VoxelModel> m_model;
 
 	[[Reflect, Name("Palette Override")]]

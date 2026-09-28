@@ -1308,6 +1308,50 @@ struct ProtoTraits<VoxelCollapsePieces> {
 TOAST_PROTO_EVENT(VoxelCollapsePieces);
 
 template<>
+struct ProtoTraits<VoxelBake> {
+	using Proto = proto::events::VoxelBake;
+	using Event = VoxelBake;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_target(e.target);
+		p.set_path(e.path);
+		p.set_replace(e.replace);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.target = toast::UID::fromString(p.target());
+		e.path = p.path();
+		e.replace = p.replace();
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(VoxelBake);
+
+template<>
+struct ProtoTraits<VoxelBakeCompleted> {
+	using Proto = proto::events::VoxelBakeCompleted;
+	using Event = VoxelBakeCompleted;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_path(e.path);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.path = p.path();
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(VoxelBakeCompleted);
+
+template<>
 struct ProtoTraits<SetVoxelEditorOverlays> {
 	using Proto = proto::events::SetVoxelEditorOverlays;
 	using Event = SetVoxelEditorOverlays;

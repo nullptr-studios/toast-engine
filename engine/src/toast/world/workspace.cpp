@@ -799,10 +799,14 @@ auto Workspace::retypeNode(Box<Node>& target, std::string_view type, bool keep_f
 
 	// Replace the old node in the parent's children list
 	fresh->m_parent = parent;
-	auto& siblings = parent->m_children;
-	auto it = std::ranges::find(siblings, target);
-	if (it != siblings.end()) {
-		*it = fresh;
+	if (parent.exists()) {
+		auto& siblings = parent->m_children;
+		auto it = std::ranges::find(siblings, target);
+		if (it != siblings.end()) {
+			*it = fresh;
+		}
+	} else if (m_root_node == target) {
+		m_root_node = fresh;
 	}
 
 	// Destroy the old node

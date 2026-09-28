@@ -10,6 +10,7 @@ namespace editor.Assets;
 /// </summary>
 public static partial class ThumbnailService {
 	private const int Size = 110;
+	public static event Action<string>? Updated;
 
 	public static string Generate(string realSourcePath, string uid) {
 		var destDir = Path.Combine(ProjectContext.CachePath, "thumbnails");
@@ -24,6 +25,7 @@ public static partial class ThumbnailService {
 		image.Extent(Size, Size, Gravity.Center);
 
 		image.Write(destPath, MagickFormat.Png);
+		Updated?.Invoke(uid);
 		return destPath;
 	}
 
@@ -39,6 +41,7 @@ public static partial class ThumbnailService {
 		var settings = new PixelReadSettings(Size, Size, StorageType.Char, PixelMapping.RGBA);
 		using var image = new MagickImage(pixels, settings);
 		image.Write(destPath, MagickFormat.Png);
+		Updated?.Invoke(uid);
 		return destPath;
 	}
 
@@ -54,6 +57,7 @@ public static partial class ThumbnailService {
 		var settings = new PixelReadSettings(Size, Size, StorageType.Char, PixelMapping.RGBA);
 		using var image = new MagickImage(pixels, settings);
 		image.Write(destPath, MagickFormat.Png);
+		Updated?.Invoke(uid);
 		return destPath;
 	}
 

@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using editor.Assets;
+using editor.Assets.Types;
 using editor.Engine;
 using editor.Workspace;
 using Proto.Events;
@@ -11,9 +12,51 @@ namespace editor.VoxelEditor;
 
 public static class VoxelEditorActions {
 	private const string ProceduralVoxelType = "toast::ProceduralVoxel";
+	private static readonly Listener s_listener = new();
+	private static bool s_registered;
 
 	public static void Register() {
+		if (s_registered) return;
+		s_registered = true;
 		EditorActions.Register("voxel_editor.open", OpenAsync);
+		EditorActions.Register("voxel_editor.bake", BakeAsync);
+		s_listener.SubscribeOnUiThread<VoxelBakeCompleted>(OnBakeCompleted);
+	}
+
+	private static async void OnBakeCompleted(VoxelBakeCompleted completed) {
+		try {
+			var realPath = ProjectContext.Resolve(completed.Path);
+			var header = MetaFile.ReadHeader(realPath);
+			if (header is null) return;
+			await Task.Run(() => new VoxelModelAsset().GenerateThumbnail(realPath, header.Uid));
+		} catch (Exception e) {
+			Log.Warn($"Could not generate thumbnail for {completed.Path}: {e.Message}");
+		}
+	}
+
+	private static async Task BakeAsync(HierarchyElement node) {
+		if (node.Type != ProceduralVoxelType) {
+			await App.Modals.ShowWarning("Bake Voxel", "Only a ProceduralVoxel can be baked");
+			return;
+		}
+		if (node.IsInsidePrefab) {
+			await App.Modals.ShowWarning("Bake Voxel", "This shape belongs to another prefab, edit that prefab instead");
+			return;
+		}
+
+		var virtualPath = await App.Modals.ShowSaveFile($"{node.Name}_baked", ".tvox");
+		if (virtualPath is null) return;
+		CreateVoxelAsset(virtualPath);
+		Events.Send(new VoxelBake { Target = node.Uid, Path = virtualPath, Replace = true });
+	}
+
+	internal static void CreateVoxelAsset(string virtualPath) {
+		var realPath = ProjectContext.Resolve(virtualPath);
+		Directory.CreateDirectory(Path.GetDirectoryName(realPath)!);
+		File.WriteAllBytes(realPath, Array.Empty<byte>());
+		MetaFile.Write(realPath, new MetaHeader { Uid = UidGenerator.Generate(), Type = "voxel_model" });
+		AssetDatabase.RebuildAssetDatabase();
+		Events.Send(new ReloadAssetsManifest());
 	}
 
 	private static async Task OpenAsync(HierarchyElement node) {

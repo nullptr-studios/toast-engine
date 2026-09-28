@@ -83,11 +83,8 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 
 	public AssetBrowserViewModel() {
 		Current = this;
-		NodeThumbnails.Updated += uid => {
-			foreach (var folder in Folders)
-			foreach (var file in GetAllFiles(folder))
-				if (file.Uid == uid) file.RefreshThumbnail();
-		};
+		NodeThumbnails.Updated += OnThumbnailUpdated;
+		ThumbnailService.Updated += OnThumbnailUpdated;
 
 		m_unknownFilter = new AssetTypeFilter(null);
 		var filters = AssetTypeRegistry.All
@@ -298,6 +295,8 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 			ProjectSettingsViewModel.AssetBrowserCategory));
 
 	public void Dispose() {
+		NodeThumbnails.Updated -= OnThumbnailUpdated;
+		ThumbnailService.Updated -= OnThumbnailUpdated;
 		AssetDatabase.ReloadedDatabase -= OnDatabaseReloaded;
 		AssetBrowserSettings.Changed -= OnSettingsChanged;
 		foreach (var filter in Filters) filter.PropertyChanged -= OnFilterChanged;
@@ -307,6 +306,14 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 		}
 		if (ReferenceEquals(Current, this)) Current = null;
 		GC.SuppressFinalize(this);
+	}
+
+	private void OnThumbnailUpdated(string uid) {
+		Dispatcher.UIThread.Post(() => {
+			foreach (var folder in Folders)
+			foreach (var file in GetAllFiles(folder))
+				if (file.Uid == uid) file.RefreshThumbnail();
+		});
 	}
 
 	public new event PropertyChangedEventHandler? PropertyChanged;
