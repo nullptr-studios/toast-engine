@@ -11,6 +11,7 @@
 #include "broad_phase.hpp"
 #include "constraint.hpp"
 #include "damage_command.hpp"
+#include "fragment_extraction.hpp"
 #include "manifold.hpp"
 #include "narrow_phase.hpp"
 #include "physics_material.hpp"
@@ -177,6 +178,7 @@ public:
 		size_t fragments_sleep_locked = 0;
 		size_t fragments_despawned = 0;
 		size_t fragments_evicted = 0;
+		size_t static_splits_spawned = 0;
 
 		uint32_t brick_pool_allocated = 0;
 		uint32_t brick_pool_capacity = 0;
@@ -269,6 +271,9 @@ private:
 		BodyID body;
 		ShapeID shape;
 		uint64_t sequence = 0;
+		float rest_seconds = 0.0f;
+		glm::vec3 rest_center = {};
+		glm::quat rest_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 	};
 
 	struct PendingFragments {
@@ -356,15 +361,21 @@ private:
 
 	static void wakeBody(BodyID id);
 	static void sleepBody(BodyID id);
+	/// A calm awake neighbor never wakes a sleeper so contact churn stays quiet
+	void releaseSleeper(BodyID sleeper, BodyID other);
 	void wakeBodiesTouching(BodyID id);
 	void wakeBodiesTouching(ShapeID id);
 	void wakeBodiesInBounds(const AABB& bounds);
 	void convertImpulsesToDamage(std::span<const SimulationIsland> islands);
-	void wakeContactGroups();
-	/// Rebuilds m_contact_group_parents shared by wakeContactGroups and updateSleeping so it only runs once
-	void buildContactGroups();
+	void wakeDisturbedSleepers(float dt);
+	void unlockDisturbedFragments();
+	void markSupportedBodies();
 	[[nodiscard]]
-	auto findContactGroupRoot(size_t body_index) -> size_t;
+	auto isStill(const Body& body, float scale) const -> bool;
+	[[nodiscard]]
+	auto sleepScale(size_t slot) const -> float;
+	[[nodiscard]]
+	auto sleeperIsHeldUp(BodyID id) const -> bool;
 	void updateSleeping(float dt);
 	[[nodiscard]]
 	auto shouldSolve(const Manifold& manifold) const -> bool;
@@ -417,9 +428,14 @@ private:
 	auto correctPositions(std::span<const size_t> manifold_indices) -> size_t;
 	void publishProfile(std::span<const SimulationIsland> islands);
 
-	void clearFragmentFromSource(ShapeID shape_id, VoxelShapeData& data, voxel::Volume& source, const DetachedComponent& component);
+	void clearFragmentFromSource(
+	    ShapeID shape_id, VoxelShapeData& data, voxel::Volume& source, const DetachedComponent& component,
+	    const RemovedVoxels* already_removed = nullptr
+	);
 	[[nodiscard]]
 	auto spawnFragmentBody(ShapeID source_shape_id, const DetachedComponent& component) -> bool;
+	[[nodiscard]]
+	auto spawnStaticSplitBody(ShapeID source_shape_id, const DetachedComponent& component) -> bool;
 	void despawnSettledFragments(float dt);
 	void retireVoxelBody(BodyID id);
 	void destroyFragmentsOf(BodyID origin);
@@ -430,12 +446,13 @@ private:
 	void spawnBudgetedFragments();
 	[[nodiscard]]
 	auto reconcileComponent(const voxel::Volume& volume, const DetachedComponent& component) const -> bool;
-	void enforceFragmentBudget();
+	void enforceFragmentBudget(float dt);
 	void unlockSleep(BodyID id);
+	void wakeNeighborsOf(BodyID id);
 	void rebuildFragmentIndex();
 	auto createVoxelShapeInternal(
-	    BodyID owner, const VoxelShape& shape, voxel::Volume* external, std::unique_ptr<voxel::Volume> owned,
-	    const voxel::Palette& palette, const voxel::MaterialLibrary& materials
+	    BodyID owner, const VoxelShape& shape, voxel::Volume* external, std::unique_ptr<voxel::Volume>& owned,
+	    const voxel::Palette& palette, const voxel::MaterialLibrary& materials, const voxel::MassMoments* known_moments = nullptr
 	) -> ShapeID;
 
 	inline static Simulator* instance = nullptr;
@@ -449,11 +466,10 @@ private:
 	std::vector<VoxelNodeBinding> m_voxel_bindings;
 
 	/// Persistent wake/sleep scratch sized to m_bodies each tick instead of reallocated
-	std::vector<size_t> m_contact_group_parents;
-	std::vector<size_t> m_contact_group_ranks;
-	std::vector<bool> m_contact_group_awake;
-	std::vector<bool> m_sleep_group_exists;
-	std::vector<bool> m_sleep_group_can_sleep;
+	std::vector<uint8_t> m_body_supported;
+	std::vector<uint8_t> m_sleep_ready;
+	std::vector<uint8_t> m_sleep_moving;
+	std::vector<uint8_t> m_sleep_blocked;
 
 	/// Persistent buildIslands scratch reused across ticks and across islands instead of reallocated
 	std::vector<size_t> m_island_parents;

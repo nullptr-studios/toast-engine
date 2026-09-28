@@ -121,6 +121,15 @@ void registerPhysicsSettings() {
 	     .max = 10.0,
 	     .step = 0.1},
 	    &Tunables::sleep_delay);
+	flt("physics.sleep.drift",
+	    0.05,
+	    {.label = "Drift",
+	     .category = "Sleep",
+	     .description = "Meters the farthest point of a body may travel during the delay and still sleep",
+	     .min = 0.005,
+	     .max = 0.5,
+	     .step = 0.005},
+	    &Tunables::sleep_drift);
 
 	toast::settings::declareFloat(
 	    "physics.step.frequency",
@@ -245,6 +254,15 @@ void registerPhysicsSettings() {
 	     .max = 64.0,
 	     .step = 0.5},
 	    &Tunables::force_sleep_slack);
+	flt("physics.fracture.sleep_scale",
+	    3.0,
+	    {.label = "Fragment sleep scale",
+	     .category = "Fracture",
+	     .description = "Multiplier on the sleep thresholds for fragments so debris settles sooner than other bodies",
+	     .min = 1.0,
+	     .max = 20.0,
+	     .step = 0.5},
+	    &Tunables::fragment_sleep_scale);
 	toast::settings::declareInt(
 	    "physics.fracture.max_fragment_extent_bricks",
 	    1,

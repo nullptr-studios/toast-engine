@@ -1048,6 +1048,9 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 					    phys.fragment_spawn_failures
 					);
 				}
+				if (phys.static_splits_spawned > 0) {
+					ImGui::Text("%zu static bodies split off this tick", phys.static_splits_spawned);
+				}
 
 				ImGui::Separator();
 				const float pool_ratio = phys.brick_pool_capacity > 0 ? static_cast<float>(phys.brick_pool_allocated) /

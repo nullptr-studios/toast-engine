@@ -21,6 +21,7 @@ struct Tunables {
 	float sleep_linear_threshold = 0.05f;
 	float sleep_angular_threshold = 0.05f;
 	float sleep_delay = 0.5f;
+	float sleep_drift = 0.05f;
 	double frequency = 60.0;
 	uint32_t max_substeps = 8;
 	double max_burst_seconds = 0.1;
@@ -33,6 +34,7 @@ struct Tunables {
 	uint32_t fragment_despawn_max_voxels = 16;
 	float fragment_despawn_settle_seconds = 3.0f;
 	float force_sleep_slack = 4.0f;
+	float fragment_sleep_scale = 3.0f;
 	int32_t max_fragment_extent_bricks = 1;
 	float fracture_shell_voxels = 2.0f;
 	uint32_t min_bounds_per_job = 32;

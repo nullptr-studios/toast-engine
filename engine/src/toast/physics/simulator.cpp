@@ -117,23 +117,15 @@ auto computeOccupiedBounds(const voxel::Volume& volume) -> AABB {
 		for (int32_t y = 0; y < brick_dims.y; ++y) {
 			for (int32_t x = 0; x < brick_dims.x; ++x) {
 				const glm::ivec3 brick {x, y, z};
-				if (volume.entryAt(brick).tag() == voxel::BrickTag::empty) {
+				const voxel::BrickOccupancy* occupancy = volume.occupancyPointer(brick);
+				if (occupancy == nullptr || voxel::isEmpty(*occupancy)) {
 					continue;
 				}
 
+				const voxel::BrickExtent extent = voxel::occupiedExtent(*occupancy);
 				const glm::ivec3 brick_base = brick * brick_dim;
-				for (int32_t lz = 0; lz < brick_dim; ++lz) {
-					for (int32_t ly = 0; ly < brick_dim; ++ly) {
-						for (int32_t lx = 0; lx < brick_dim; ++lx) {
-							const glm::ivec3 voxel_pos = brick_base + glm::ivec3(lx, ly, lz);
-							if (not volume.isSolidAt(voxel_pos)) {
-								continue;
-							}
-							min = glm::min(min, voxel_pos);
-							max = glm::max(max, voxel_pos);
-						}
-					}
-				}
+				min = glm::min(min, brick_base + glm::ivec3(extent.min.x, extent.min.y, extent.min.z));
+				max = glm::max(max, brick_base + glm::ivec3(extent.max.x, extent.max.y, extent.max.z));
 			}
 		}
 	}
@@ -462,7 +454,7 @@ void Simulator::tick() {
 
 	queuePendingFragments(connectivity_results);
 	spawnBudgetedFragments();
-	enforceFragmentBudget();
+	enforceFragmentBudget(dt);
 	despawnSettledFragments(dt);
 
 	const auto before_characters = std::chrono::steady_clock::now();
@@ -484,7 +476,8 @@ void Simulator::tick() {
 	const auto after_cache = std::chrono::steady_clock::now();
 	m_profile.cache_update_ms = elapsed_ms(after_narrow, after_cache);
 
-	wakeContactGroups();
+	wakeDisturbedSleepers(dt);
+	unlockDisturbedFragments();
 	const auto after_wake = std::chrono::steady_clock::now();
 	m_profile.wake_groups_ms = elapsed_ms(after_cache, after_wake);
 
@@ -538,34 +531,24 @@ void Simulator::publishProfile(std::span<const SimulationIsland> islands) {
 }
 
 void Simulator::clearFragmentFromSource(
-    ShapeID shape_id, VoxelShapeData& data, voxel::Volume& source, const DetachedComponent& component
+    ShapeID shape_id, VoxelShapeData& data, voxel::Volume& source, const DetachedComponent& component,
+    const RemovedVoxels* already_removed
 ) {
 	ZoneScoped;
-
-	std::vector<glm::ivec3> dirty_bricks;
 
 	{
 		std::scoped_lock voxel_lock {voxelDataMutex()};
 
+		const RemovedVoxels removed = already_removed != nullptr
+		                                  ? *already_removed
+		                                  : discardComponent(source, component, voxel::densityTable(data.palette, data.materials));
+		data.moments -= removed.moments;
+		data.solid_voxel_count -= std::min(data.solid_voxel_count, removed.voxels);
+
+		std::vector<glm::ivec3> dirty_bricks;
+		dirty_bricks.reserve(component.pieces.size());
 		for (const auto& p : component.pieces) {
 			dirty_bricks.emplace_back(p.brick);
-
-			for (uint32_t i = 0; i < voxel::k_brick_voxel_count; ++i) {
-				if (not voxel::isSolid(p.voxels, i)) {
-					continue;
-				}
-
-				auto coords = voxel::localFromIndex(i);
-				glm::ivec3 pos = p.brick * static_cast<int32_t>(voxel::k_brick_dim) + glm::ivec3(coords.x, coords.y, coords.z);
-				uint8_t palette_index = source.materialAt(pos);
-				uint32_t material_index = voxel::resolveMaterialIndex(data.palette, data.materials, palette_index);
-				uint16_t density = data.materials.materials[material_index].density;
-
-				if (source.setVoxel(pos, voxel::k_empty_palette_index).changed) {
-					data.moments.remove(pos.x, pos.y, pos.z, density);
-					data.solid_voxel_count -= data.solid_voxel_count > 0 ? 1u : 0u;
-				}
-			}
 		}
 
 		// Not tryCollapseUniform here since clearing a voxel only unfills a brick and never passes isFull
@@ -645,6 +628,7 @@ void Simulator::destroyFragmentsOf(BodyID origin) {
 }
 
 void Simulator::destroyFragmentRecord(BodyID id) {
+	wakeNeighborsOf(id);
 	destroyBody(id);
 	std::erase_if(m_fragments, [id](const FragmentRecord& record) { return record.body == id; });
 }
@@ -693,6 +677,27 @@ void Simulator::queuePendingFragments(std::span<const ConnectivityResult> result
 
 		const glm::uvec3 brick_dims = data->volume->brickDims();
 		const std::vector<ComponentClass> classes = classifyComponents(r.connectivity, brick_dims, data->anchor_mask);
+
+		// Extra anchored components split into their own static bodies
+		auto anchored_components = buildDetachedComponents(r.connectivity, classes, brick_dims, ComponentClass::anchored);
+		if (anchored_components.size() > 1) {
+			const auto largest = std::ranges::max_element(anchored_components, {}, &DetachedComponent::voxel_count);
+			for (auto it = anchored_components.begin(); it != anchored_components.end(); ++it) {
+				if (it != largest) {
+					spawnStaticSplitBody(r.shape, *it);
+				}
+			}
+
+			shape = tryGetShape(r.shape);
+			if (shape == nullptr || shape->type != ShapeType::voxel) {
+				continue;
+			}
+			data = tryGetVoxelData(shape->voxel.data);
+			if (data == nullptr || data->volume == nullptr) {
+				continue;
+			}
+		}
+
 		data->detached_components = buildDetachedComponents(r.connectivity, classes, brick_dims);
 
 		// Debris sized pieces never become a tracked body
@@ -791,32 +796,100 @@ void Simulator::spawnBudgetedFragments() {
 	}
 }
 
-void Simulator::enforceFragmentBudget() {
+namespace {
+
+/// Sleeping bodies are immovable in the solver
+auto movable(const Body& body) -> bool {
+	return body.inverse_mass > 0.0f && (body.awake || body.type != BodyType::dynamic_body);
+}
+
+/// Approach speed into a sleeper that wakes it in sleep thresholds
+constexpr float k_wake_approach = 0.75f;
+
+/// Speed that wakes every touching sleeper in sleep thresholds
+constexpr float k_wake_racing = 4.0f;
+
+/// Speed a body leaving a sleeper needs to wake it in sleep thresholds
+constexpr float k_end_looseness = 2.0f;
+
+/// Seconds between the checks that a sleeper is still held up
+constexpr float k_support_check_seconds = 1.0f;
+
+/// A shape this close counts as holding a sleeper up
+constexpr float k_support_margin = 0.02f;
+
+auto supportCheckPeriod(size_t slot) -> float {
+	const float phase = static_cast<float>((slot * 2654435761u) % 1024u) / 1024.0f;
+	return k_support_check_seconds * (0.75f + 0.5f * phase);
+}
+
+/// Sleep time lost per second of motion in seconds gained
+constexpr float k_sleep_decay = 2.0f;
+
+/// A small body may spin faster than a big one at the same point speed
+auto effectiveAngularLimit(const Body& body, float angular_limit, float linear_reference) -> float {
+	return body.extent_radius > 1.0e-3f ? std::max(angular_limit, linear_reference / body.extent_radius) : angular_limit;
+}
+
+/// Farthest point travel since a pose so a slow creep or tip never counts as rest
+auto driftSince(const Body& body, const glm::vec3& center, const glm::quat& rotation) -> float {
+	const float alignment = std::min(std::abs(glm::dot(body.rotation, rotation)), 1.0f);
+	const float turn = 2.0f * std::sqrt(std::max(1.0f - alignment * alignment, 0.0f));
+	return glm::length(body.worldCenterOfMass() - center) + turn * body.extent_radius;
+}
+
+}
+
+void Simulator::enforceFragmentBudget(float dt) {
 	ZoneScopedN("physics::FragmentProfile");
 
+	// Never below the limit a fragment may sleep at on its own
+	const float force_scale = std::max(tunables().fragment_sleep_scale, std::sqrt(tunables().force_sleep_slack));
+	const float linear_limit = tunables().sleep_linear_threshold * force_scale;
+	const float angular_limit = tunables().sleep_angular_threshold * force_scale;
+
 	size_t active = 0;
-	for (const FragmentRecord& record : m_fragments) {
+	for (FragmentRecord& record : m_fragments) {
 		const Body* body = tryGetBody(record.body);
-		if (body != nullptr && body->enabled && body->awake) {
-			++active;
+		if (body == nullptr || not body->enabled || not body->awake) {
+			record.rest_seconds = 0.0f;
+			continue;
+		}
+		++active;
+		const float body_angular_limit = effectiveAngularLimit(*body, angular_limit, linear_limit);
+		const bool nearly_at_rest =
+		    glm::dot(body->linear_velocity, body->linear_velocity) < linear_limit * linear_limit &&
+		    glm::dot(body->angular_velocity, body->angular_velocity) < body_angular_limit * body_angular_limit;
+		if (record.rest_seconds > 0.0f && driftSince(*body, record.rest_center, record.rest_rotation) > tunables().sleep_drift) {
+			record.rest_seconds = 0.0f;
+		} else if (nearly_at_rest) {
+			if (record.rest_seconds <= 0.0f) {
+				record.rest_center = body->worldCenterOfMass();
+				record.rest_rotation = body->rotation;
+			}
+			record.rest_seconds += dt;
+		} else {
+			record.rest_seconds = std::max(record.rest_seconds - dt * k_sleep_decay, 0.0f);
 		}
 	}
 
-	// only claim a fragment already about to sleep on its own
+	// Sustained rest only so a fresh spawn or the top of a hop never freezes mid air
 	for (const FragmentRecord& record : m_fragments) {
 		if (active <= tunables().max_active_fragments) {
 			break;
+		}
+		if (record.rest_seconds < tunables().sleep_delay) {
+			continue;
 		}
 		Body* body = tryGetBody(record.body);
 		if (body == nullptr || not body->enabled || not body->awake) {
 			continue;
 		}
-		const bool nearly_at_rest =
-		    glm::dot(body->linear_velocity, body->linear_velocity) <
-		        tunables().sleep_linear_threshold * tunables().sleep_linear_threshold * tunables().force_sleep_slack &&
-		    glm::dot(body->angular_velocity, body->angular_velocity) <
-		        tunables().sleep_angular_threshold * tunables().sleep_angular_threshold * tunables().force_sleep_slack;
-		if (not nearly_at_rest) {
+		const size_t slot = record.body.slot;
+		if (body->gravity_scale != 0.0f && (slot >= m_body_supported.size() || m_body_supported[slot] == 0)) {
+			continue;
+		}
+		if (slot < m_sleep_blocked.size() && m_sleep_blocked[slot] != 0) {
 			continue;
 		}
 		body->sleep_locked = true;
@@ -878,13 +951,13 @@ auto Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedCompone
 	voxel::MaterialLibrary materials = data->materials;
 	const BodyID origin = valid(data->fragment_origin) ? data->fragment_origin : shape->owner;
 
-	auto extracted = [&] {
+	const DensityTable densities = voxel::densityTable(palette, materials);
+	auto extracted_fragment = [&] {
 		std::scoped_lock voxel_lock {voxelDataMutex()};
-		return extractFragmentVolume(*data->volume, component);
+		return extractFragmentVolume(*data->volume, component, densities);
 	}();
-	if (extracted.volume.solidVoxelCount() == 0) {
+	if (not extracted_fragment.has_value()) {
 		++m_profile.fragment_spawn_failures;
-		// setVoxel silently no ops when the runtime brick pool has no room left
 		TOAST_WARN(
 		    "Physics",
 		    "Fragment body could not be extracted from shape {}: the runtime brick pool is out of bricks",
@@ -893,16 +966,12 @@ auto Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedCompone
 		return false;
 	}
 
-	if (extracted.volume.solidVoxelCount() != component.voxel_count) {
-		TOAST_WARN(
-		    "Physics",
-		    "Fragment extraction from shape {} ran out of pool bricks: expected {} voxels, got {}",
-		    source_shape_id.slot,
-		    component.voxel_count,
-		    extracted.volume.solidVoxelCount()
-		);
-		return false;
-	}
+	ExtractedFragment& extracted = *extracted_fragment;
+	const glm::ivec3 source_shift = extracted.offset * static_cast<int32_t>(voxel::k_brick_dim);
+	const RemovedVoxels removed {
+	  .moments = extracted.moments.shifted(source_shift.x, source_shift.y, source_shift.z),
+	  .voxels = extracted.voxels,
+	};
 
 	const glm::uvec3 extracted_brick_dims = extracted.volume.brickDims();
 	glm::vec3 origin_local = glm::vec3(extracted.offset) * static_cast<float>(voxel::k_brick_dim) * voxel::k_voxel_size;
@@ -917,13 +986,27 @@ auto Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedCompone
 	});
 	// clang-format on
 
+	// A failed spawn gives the bricks back
+	const auto restore_to_source = [&](voxel::Volume& fragment_volume) {
+		const Shape* source_shape = tryGetShape(source_shape_id);
+		VoxelShapeData* source_data = source_shape != nullptr ? tryGetVoxelData(source_shape->voxel.data) : nullptr;
+		if (source_data != nullptr && source_data->volume != nullptr) {
+			std::scoped_lock voxel_lock {voxelDataMutex()};
+			restoreFragment(*source_data->volume, fragment_volume, extracted.offset);
+		}
+	};
+
 	if (not valid(frag_body)) {
+		restore_to_source(extracted.volume);
 		return true;
 	}
 
-	const ShapeID frag_shape = createVoxelShape(frag_body, VoxelShape {}, std::move(extracted.volume), palette, materials);
+	auto owned_volume = std::make_unique<voxel::Volume>(std::move(extracted.volume));
+	const ShapeID frag_shape =
+	    createVoxelShapeInternal(frag_body, VoxelShape {}, nullptr, owned_volume, palette, materials, &extracted.moments);
 	if (not valid(frag_shape)) {
 		destroyBody(frag_body);
+		restore_to_source(*owned_volume);
 		return true;
 	}
 	if (const Shape* stored = tryGetShape(frag_shape)) {
@@ -939,7 +1022,7 @@ auto Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedCompone
 	shape = tryGetShape(source_shape_id);
 	if (shape != nullptr) {
 		if (VoxelShapeData* source_data = tryGetVoxelData(shape->voxel.data)) {
-			clearFragmentFromSource(source_shape_id, *source_data, *source_data->volume, component);
+			clearFragmentFromSource(source_shape_id, *source_data, *source_data->volume, component, &removed);
 		}
 	}
 
@@ -978,6 +1061,107 @@ auto Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedCompone
 	return true;
 }
 
+auto Simulator::spawnStaticSplitBody(ShapeID source_shape_id, const DetachedComponent& component) -> bool {
+	ZoneScopedN("physics::SpawnStaticSplit");
+	ZoneValue(static_cast<uint64_t>(component.voxel_count));
+
+	Shape* shape = tryGetShape(source_shape_id);
+	if (shape == nullptr) {
+		return true;
+	}
+	VoxelShapeData* data = tryGetVoxelData(shape->voxel.data);
+	if (data == nullptr || data->volume == nullptr) {
+		return true;
+	}
+	Body* body = tryGetBody(shape->owner);
+	if (body == nullptr) {
+		return true;
+	}
+
+	glm::vec3 position = body->position;
+	glm::quat rotation = body->rotation;
+	glm::vec3 local_center = shape->voxel.local_center;
+	glm::quat local_rotation = shape->voxel.local_rotation;
+	voxel::Palette palette = data->palette;
+	voxel::MaterialLibrary materials = data->materials;
+
+	const DensityTable densities = voxel::densityTable(palette, materials);
+	auto extracted_fragment = [&] {
+		std::scoped_lock voxel_lock {voxelDataMutex()};
+		return extractFragmentVolume(*data->volume, component, densities);
+	}();
+	if (not extracted_fragment.has_value()) {
+		TOAST_WARN(
+		    "Physics",
+		    "Static split body could not be extracted from shape {}: the runtime brick pool is out of bricks",
+		    source_shape_id.slot
+		);
+		return false;
+	}
+
+	ExtractedFragment& extracted = *extracted_fragment;
+	const glm::ivec3 source_shift = extracted.offset * static_cast<int32_t>(voxel::k_brick_dim);
+	const RemovedVoxels removed {
+	  .moments = extracted.moments.shifted(source_shift.x, source_shift.y, source_shift.z),
+	  .voxels = extracted.voxels,
+	};
+
+	const glm::vec3 origin_local = glm::vec3(extracted.offset) * static_cast<float>(voxel::k_brick_dim) * voxel::k_voxel_size;
+	const glm::quat piece_rotation = glm::normalize(rotation * local_rotation);
+	const glm::vec3 piece_pos = position + rotation * (local_center + local_rotation * origin_local);
+
+	// clang-format off
+	auto split_body = createBody(BodyDescriptor {
+		.type = BodyType::static_body,
+		.position = piece_pos,
+		.rotation = piece_rotation,
+	});
+	// clang-format on
+	// A failed spawn gives the bricks back
+	const auto restore_to_source = [&](voxel::Volume& fragment_volume) {
+		const Shape* source_shape = tryGetShape(source_shape_id);
+		VoxelShapeData* source_data = source_shape != nullptr ? tryGetVoxelData(source_shape->voxel.data) : nullptr;
+		if (source_data != nullptr && source_data->volume != nullptr) {
+			std::scoped_lock voxel_lock {voxelDataMutex()};
+			restoreFragment(*source_data->volume, fragment_volume, extracted.offset);
+		}
+	};
+
+	if (not valid(split_body)) {
+		restore_to_source(extracted.volume);
+		return true;
+	}
+
+	auto owned_volume = std::make_unique<voxel::Volume>(std::move(extracted.volume));
+	const ShapeID split_shape =
+	    createVoxelShapeInternal(split_body, VoxelShape {}, nullptr, owned_volume, palette, materials, &extracted.moments);
+	if (not valid(split_shape)) {
+		destroyBody(split_body);
+		restore_to_source(*owned_volume);
+		return true;
+	}
+
+	shape = tryGetShape(source_shape_id);
+	if (shape != nullptr) {
+		if (VoxelShapeData* source_data = tryGetVoxelData(shape->voxel.data)) {
+			clearFragmentFromSource(source_shape_id, *source_data, *source_data->volume, component, &removed);
+		}
+	}
+
+	++m_profile.static_splits_spawned;
+
+	TOAST_TRACE(
+	    "Physics",
+	    "Static body {} split off shape {}: {} voxels across {} pieces, still anchored",
+	    split_body.slot,
+	    source_shape_id.slot,
+	    component.voxel_count,
+	    component.pieces.size()
+	);
+
+	return true;
+}
+
 void Simulator::despawnSettledFragments(float dt) {
 	ZoneScopedN("physics::DespawnSettledFragments");
 
@@ -1005,6 +1189,7 @@ void Simulator::despawnSettledFragments(float dt) {
 	}
 
 	for (const BodyID id : doomed) {
+		wakeNeighborsOf(id);
 		destroyBody(id);
 	}
 	m_profile.fragments_despawned = doomed.size();
@@ -1137,12 +1322,72 @@ void Simulator::wakeBody(BodyID id) {
 	}
 }
 
+auto Simulator::sleeperIsHeldUp(BodyID id) const -> bool {
+	const Body* body = tryGetBody(id);
+	if (body == nullptr || body->gravity_scale == 0.0f) {
+		return true;
+	}
+
+	std::optional<AABB> bounds;
+	const auto include = [&](const Shape& shape) {
+		const AABB shape_bounds = worldShapeBounds(*body, shape);
+		bounds = bounds.has_value() ? combine(*bounds, shape_bounds) : shape_bounds;
+	};
+	if (const auto fragment = m_fragment_index.find(id.slot);
+	    fragment != m_fragment_index.end() && fragment->second < m_fragments.size()) {
+		if (const Shape* shape = tryGetShape(m_fragments[fragment->second].shape)) {
+			include(*shape);
+		}
+	} else {
+		for (const ShapeSlot& slot : m_shapes) {
+			if (slot.occupied && slot.shape.owner == id) {
+				include(slot.shape);
+			}
+		}
+	}
+	if (not bounds.has_value()) {
+		return true;
+	}
+
+	const AABB probe = bounds->expanded(k_support_margin);
+	for (const ShapeID shape_id : m_broad_phase.queryBounds(probe)) {
+		const Shape* shape = tryGetShape(shape_id);
+		if (shape == nullptr || not shape->enabled || shape->owner == id) {
+			continue;
+		}
+		const Body* other = tryGetBody(shape->owner);
+		if (other != nullptr && other->enabled && worldShapeBounds(*other, *shape).overlaps(probe)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void Simulator::releaseSleeper(BodyID sleeper, BodyID other) {
+	const Body* body = tryGetBody(sleeper);
+	if (body == nullptr || body->awake) {
+		return;
+	}
+	const Body* neighbor = tryGetBody(other);
+	if (neighbor != nullptr && neighbor->type == BodyType::dynamic_body && neighbor->awake && isStill(*neighbor, k_end_looseness)) {
+		return;
+	}
+	if (body->sleep_locked) {
+		unlockSleep(sleeper);
+	} else {
+		wakeBody(sleeper);
+	}
+}
+
 void Simulator::sleepBody(BodyID id) {
 	if (not instance) {
 		return;
 	}
 	if (Body* body = instance->tryGetBody(id); body && body->type == BodyType::dynamic_body) {
 		instance->m_profile.bodies_slept += body->awake;
+		if (body->awake) {
+			body->asleep_seconds = 0.0f;
+		}
 		body->awake = false;
 		body->sleep_timer = tunables().sleep_delay;
 		body->linear_velocity = {};
@@ -1172,69 +1417,92 @@ void Simulator::wakeBodiesTouching(ShapeID id) {
 	}
 }
 
-void Simulator::buildContactGroups() {
-	ZoneScopedN("physics::BuildContactGroups");
+void Simulator::markSupportedBodies() {
+	ZoneScopedN("physics::MarkSupportedBodies");
 
-	m_contact_group_parents.resize(m_bodies.size());
-	m_contact_group_ranks.assign(m_bodies.size(), 0);
-	for (size_t index = 0; index < m_contact_group_parents.size(); ++index) {
-		m_contact_group_parents[index] = index;
+	m_body_supported.assign(m_bodies.size(), 0);
+	for (const Manifold& manifold : m_manifolds) {
+		if (manifold.contact_count == 0) {
+			continue;
+		}
+		m_body_supported[manifold.pair.a.body.slot] = 1;
+		m_body_supported[manifold.pair.b.body.slot] = 1;
 	}
+}
+
+auto Simulator::sleepScale(size_t slot) const -> float {
+	return m_fragment_index.contains(static_cast<uint32_t>(slot)) ? tunables().fragment_sleep_scale : 1.0f;
+}
+
+auto Simulator::isStill(const Body& body, float scale) const -> bool {
+	const float linear_limit = tunables().sleep_linear_threshold * scale;
+	const float angular_limit =
+	    effectiveAngularLimit(body, tunables().sleep_angular_threshold * scale, tunables().sleep_linear_threshold * scale);
+	const float linear_speed_squared = glm::dot(body.linear_velocity, body.linear_velocity);
+	const float angular_speed_squared = glm::dot(body.angular_velocity, body.angular_velocity);
+	return std::isfinite(linear_speed_squared) && std::isfinite(angular_speed_squared) &&
+	       linear_speed_squared <= linear_limit * linear_limit && angular_speed_squared <= angular_limit * angular_limit;
+}
+
+void Simulator::wakeDisturbedSleepers(float dt) {
+	ZoneScopedN("physics::WakeDisturbedSleepers");
+
+	markSupportedBodies();
+
+	// A sleeper wakes when a body runs into it or races past and slow creeping never does
+	const float gravity_speed = glm::length(tunables().gravity) * dt;
+	for (const Manifold& manifold : m_manifolds) {
+		const Body* a = tryGetBody(manifold.pair.a.body);
+		const Body* b = tryGetBody(manifold.pair.b.body);
+		if (a == nullptr || b == nullptr || a->type != BodyType::dynamic_body || b->type != BodyType::dynamic_body ||
+		    a->awake == b->awake) {
+			continue;
+		}
+
+		const bool a_sleeps = not a->awake;
+		const Body& sleeper = a_sleeps ? *a : *b;
+		const Body& mover = a_sleeps ? *b : *a;
+		if (not sleeper.enabled) {
+			continue;
+		}
+
+		// Gravity has just added a step of speed to a body resting on the sleeper
+		const float approach_limit = tunables().sleep_linear_threshold * k_wake_approach + gravity_speed * mover.gravity_scale;
+		float approach = 0.0f;
+		const size_t contact_count = std::min<size_t>(manifold.contact_count, manifold.contacts.size());
+		for (size_t index = 0; index < contact_count; ++index) {
+			const glm::vec3& point = manifold.contacts[index].position;
+			const glm::vec3 relative =
+			    velocityAtPoint(*b, point - b->worldCenterOfMass()) - velocityAtPoint(*a, point - a->worldCenterOfMass());
+			approach = std::max(approach, -glm::dot(relative, manifold.normal));
+		}
+		if (approach > approach_limit || not isStill(mover, k_wake_racing)) {
+			wakeBody(a_sleeps ? manifold.pair.a.body : manifold.pair.b.body);
+		}
+	}
+}
+
+void Simulator::unlockDisturbedFragments() {
+	ZoneScopedN("physics::UnlockDisturbedFragments");
+
+	// A moving neighbor may be taking the support away
+	const float limit = tunables().sleep_linear_threshold * tunables().sleep_linear_threshold * tunables().force_sleep_slack;
+	const auto disturbs = [limit](const Body& mover, const Body& sleeper) {
+		return sleeper.sleep_locked && mover.type != BodyType::static_body &&
+		       (mover.type == BodyType::kinematic_body || mover.awake) &&
+		       glm::dot(mover.linear_velocity, mover.linear_velocity) > limit;
+	};
 
 	for (const Manifold& manifold : m_manifolds) {
-		const Body* body_a = tryGetBody(manifold.pair.a.body);
-		const Body* body_b = tryGetBody(manifold.pair.b.body);
-		if (body_a == nullptr || body_b == nullptr || body_a->type != BodyType::dynamic_body ||
-		    body_b->type != BodyType::dynamic_body) {
+		const Body* a = tryGetBody(manifold.pair.a.body);
+		const Body* b = tryGetBody(manifold.pair.b.body);
+		if (a == nullptr || b == nullptr) {
 			continue;
 		}
-
-		size_t root_a = findContactGroupRoot(manifold.pair.a.body.slot);
-		size_t root_b = findContactGroupRoot(manifold.pair.b.body.slot);
-		if (root_a == root_b) {
-			continue;
-		}
-		if (m_contact_group_ranks[root_a] < m_contact_group_ranks[root_b]) {
-			std::swap(root_a, root_b);
-		}
-		m_contact_group_parents[root_b] = root_a;
-		if (m_contact_group_ranks[root_a] == m_contact_group_ranks[root_b]) {
-			++m_contact_group_ranks[root_a];
-		}
-	}
-}
-
-auto Simulator::findContactGroupRoot(size_t body_index) -> size_t {
-	size_t root = body_index;
-	while (m_contact_group_parents[root] != root) {
-		root = m_contact_group_parents[root];
-	}
-	while (m_contact_group_parents[body_index] != body_index) {
-		const size_t next = m_contact_group_parents[body_index];
-		m_contact_group_parents[body_index] = root;
-		body_index = next;
-	}
-	return root;
-}
-
-void Simulator::wakeContactGroups() {
-	ZoneScopedN("physics::WakeContactGroups");
-
-	buildContactGroups();
-
-	m_contact_group_awake.assign(m_bodies.size(), false);
-	for (size_t index = 0; index < m_bodies.size(); ++index) {
-		const BodySlot& slot = m_bodies[index];
-		if (slot.occupied && slot.body.enabled && slot.body.type == BodyType::dynamic_body && slot.body.awake) {
-			m_contact_group_awake[findContactGroupRoot(index)] = true;
-		}
-	}
-
-	for (size_t index = 0; index < m_bodies.size(); ++index) {
-		const BodySlot& slot = m_bodies[index];
-		if (slot.occupied && slot.body.enabled && slot.body.type == BodyType::dynamic_body && not slot.body.sleep_locked &&
-		    m_contact_group_awake[findContactGroupRoot(index)]) {
-			wakeBody(BodyID {.slot = static_cast<uint32_t>(index), .generation = slot.generation});
+		if (disturbs(*a, *b)) {
+			unlockSleep(manifold.pair.b.body);
+		} else if (disturbs(*b, *a)) {
+			unlockSleep(manifold.pair.a.body);
 		}
 	}
 }
@@ -1457,10 +1725,12 @@ auto Simulator::effectiveMassAlong(
 ) -> std::optional<float> {
 	ZoneScopedN("physics::EffectiveMass");
 
-	glm::vec3 angular_a = body_a.inverse_inertia_world * glm::cross(r_a, direction);
-	glm::vec3 angular_b = body_b.inverse_inertia_world * glm::cross(r_b, direction);
-	float denominator =
-	    body_a.inverse_mass + body_b.inverse_mass + glm::dot(direction, glm::cross(angular_a, r_a) + glm::cross(angular_b, r_b));
+	const bool a_moves = movable(body_a);
+	const bool b_moves = movable(body_b);
+	glm::vec3 angular_a = a_moves ? body_a.inverse_inertia_world * glm::cross(r_a, direction) : glm::vec3 {0.0f};
+	glm::vec3 angular_b = b_moves ? body_b.inverse_inertia_world * glm::cross(r_b, direction) : glm::vec3 {0.0f};
+	float denominator = (a_moves ? body_a.inverse_mass : 0.0f) + (b_moves ? body_b.inverse_mass : 0.0f) +
+	                    glm::dot(direction, glm::cross(angular_a, r_a) + glm::cross(angular_b, r_b));
 
 	if (not std::isfinite(denominator) || denominator <= 1.0e-8f) {
 		return std::nullopt;
@@ -1470,11 +1740,11 @@ auto Simulator::effectiveMassAlong(
 }
 
 void Simulator::applyImpulse(Body& body_a, Body& body_b, const glm::vec3& r_a, const glm::vec3& r_b, const glm::vec3& impulse) {
-	if (body_a.inverse_mass > 0.0f) {
+	if (movable(body_a)) {
 		body_a.linear_velocity -= impulse * body_a.inverse_mass;
 		body_a.angular_velocity -= body_a.inverse_inertia_world * glm::cross(r_a, impulse);
 	}
-	if (body_b.inverse_mass > 0.0f) {
+	if (movable(body_b)) {
 		body_b.linear_velocity += impulse * body_b.inverse_mass;
 		body_b.angular_velocity += body_b.inverse_inertia_world * glm::cross(r_b, impulse);
 	}
@@ -1558,7 +1828,7 @@ auto Simulator::correctPositions(std::span<const size_t> manifold_indices) -> si
 			}
 		}
 
-		float inv_mass = body_a->inverse_mass + body_b->inverse_mass;
+		float inv_mass = (movable(*body_a) ? body_a->inverse_mass : 0.0f) + (movable(*body_b) ? body_b->inverse_mass : 0.0f);
 		if (not std::isfinite(inv_mass) || inv_mass <= 1.0e-8f) {
 			// both bodies are static
 			continue;
@@ -1573,10 +1843,10 @@ auto Simulator::correctPositions(std::span<const size_t> manifold_indices) -> si
 		float correction_distance = std::min(tunables().correction_beta * excess_penetration, tunables().max_correction);
 		glm::vec3 correction = manifold.normal * (correction_distance / inv_mass);
 
-		if (body_a->inverse_mass > 0.0f) {
+		if (movable(*body_a)) {
 			body_a->position -= correction * body_a->inverse_mass;
 		}
-		if (body_b->inverse_mass > 0.0f) {
+		if (movable(*body_b)) {
 			body_b->position += correction * body_b->inverse_mass;
 		}
 		++correction_count;
@@ -1844,7 +2114,8 @@ void Simulator::updateSleeping(float dt) {
 		return;
 	}
 
-	// Reuses m_contact_group_parents wakeContactGroups already built this tick over the same manifolds and body types
+	m_sleep_ready.assign(m_bodies.size(), 0);
+	m_sleep_moving.assign(m_bodies.size(), 0);
 	for (size_t index = 0; index < m_bodies.size(); ++index) {
 		BodySlot& slot = m_bodies[index];
 		Body& body = slot.body;
@@ -1852,48 +2123,65 @@ void Simulator::updateSleeping(float dt) {
 			continue;
 		}
 
+		const BodyID id {.slot = static_cast<uint32_t>(index), .generation = slot.generation};
 		if (not body.allow_sleep) {
-			wakeBody(BodyID {.slot = static_cast<uint32_t>(index), .generation = slot.generation});
+			wakeBody(id);
 			continue;
 		}
 
-		const float linear_speed_squared = glm::dot(body.linear_velocity, body.linear_velocity);
-		const float angular_speed_squared = glm::dot(body.angular_velocity, body.angular_velocity);
-		const bool is_still = std::isfinite(linear_speed_squared) && std::isfinite(angular_speed_squared) &&
-		                      linear_speed_squared <= tunables().sleep_linear_threshold * tunables().sleep_linear_threshold &&
-		                      angular_speed_squared <= tunables().sleep_angular_threshold * tunables().sleep_angular_threshold;
-		if (is_still) {
+		if (not body.awake) {
+			body.asleep_seconds += dt;
+			if (body.asleep_seconds >= supportCheckPeriod(index)) {
+				body.asleep_seconds = 0.0f;
+				if (not sleeperIsHeldUp(id)) {
+					if (body.sleep_locked) {
+						unlockSleep(id);
+					} else {
+						wakeBody(id);
+					}
+				}
+			}
+			continue;
+		}
+
+		bool still = isStill(body, sleepScale(index));
+		if (still && body.sleep_timer > 0.0f &&
+		    driftSince(body, body.sleep_anchor_center, body.sleep_anchor_rotation) > tunables().sleep_drift) {
+			body.sleep_timer = 0.0f;
+			still = false;
+		}
+		if (still) {
+			if (body.sleep_timer <= 0.0f) {
+				body.sleep_anchor_center = body.worldCenterOfMass();
+				body.sleep_anchor_rotation = body.rotation;
+			}
 			body.sleep_timer = std::min(body.sleep_timer + dt, tunables().sleep_delay);
 		} else {
-			wakeBody(BodyID {.slot = static_cast<uint32_t>(index), .generation = slot.generation});
+			body.sleep_timer = std::max(body.sleep_timer - dt * k_sleep_decay, 0.0f);
+			m_sleep_moving[index] = 1;
+		}
+
+		// Nothing touching means falling or about to so only a body in contact may sleep
+		const bool supported = body.gravity_scale == 0.0f || (index < m_body_supported.size() && m_body_supported[index] != 0);
+		m_sleep_ready[index] = body.awake && supported && body.sleep_timer >= tunables().sleep_delay ? 1 : 0;
+	}
+
+	// A body waits while a body touching it still moves so a calm pile never hangs on one restless piece
+	m_sleep_blocked.assign(m_bodies.size(), 0);
+	for (const Manifold& manifold : m_manifolds) {
+		const size_t a = manifold.pair.a.body.slot;
+		const size_t b = manifold.pair.b.body.slot;
+		if (m_sleep_moving[b] != 0) {
+			m_sleep_blocked[a] = 1;
+		}
+		if (m_sleep_moving[a] != 0) {
+			m_sleep_blocked[b] = 1;
 		}
 	}
 
-	m_sleep_group_exists.assign(m_bodies.size(), false);
-	m_sleep_group_can_sleep.assign(m_bodies.size(), true);
 	for (size_t index = 0; index < m_bodies.size(); ++index) {
-		const BodySlot& slot = m_bodies[index];
-		const Body& body = slot.body;
-		if (not slot.occupied || not body.enabled || body.type != BodyType::dynamic_body) {
-			continue;
-		}
-
-		const size_t root = findContactGroupRoot(index);
-		m_sleep_group_exists[root] = true;
-		m_sleep_group_can_sleep[root] =
-		    m_sleep_group_can_sleep[root] && body.allow_sleep && body.sleep_timer >= tunables().sleep_delay;
-	}
-
-	for (size_t index = 0; index < m_bodies.size(); ++index) {
-		const BodySlot& slot = m_bodies[index];
-		const Body& body = slot.body;
-		if (not slot.occupied || not body.enabled || body.type != BodyType::dynamic_body) {
-			continue;
-		}
-
-		const size_t root = findContactGroupRoot(index);
-		if (m_sleep_group_exists[root] && m_sleep_group_can_sleep[root]) {
-			sleepBody(BodyID {.slot = static_cast<uint32_t>(index), .generation = slot.generation});
+		if (m_sleep_ready[index] != 0 && m_sleep_blocked[index] == 0) {
+			sleepBody(BodyID {.slot = static_cast<uint32_t>(index), .generation = m_bodies[index].generation});
 		}
 	}
 }
@@ -1922,8 +2210,6 @@ void Simulator::updateCache(std::span<const Manifold> manifolds) {
 			++m_profile.contact_persists;
 			event::send<event::ContactPersist>(manifold);
 		} else {
-			wakeBody(manifold.pair.a.body);
-			wakeBody(manifold.pair.b.body);
 			if (found_old) {
 				++m_profile.contact_ends;
 				event::send<event::ContactEnd>(old_manifold->pair);
@@ -1989,8 +2275,8 @@ void Simulator::updateCache(std::span<const Manifold> manifolds) {
 			continue;
 		}
 
-		wakeBody(cached.pair.a.body);
-		wakeBody(cached.pair.b.body);
+		releaseSleeper(cached.pair.a.body, cached.pair.b.body);
+		releaseSleeper(cached.pair.b.body, cached.pair.a.body);
 		++m_profile.contact_ends;
 		event::send<event::ContactEnd>(cached.pair);
 	}
@@ -2344,19 +2630,21 @@ auto Simulator::createVoxelShape(
     BodyID owner, const VoxelShape& shape, voxel::Volume& volume, const voxel::Palette& palette,
     const voxel::MaterialLibrary& materials
 ) -> ShapeID {
-	return createVoxelShapeInternal(owner, shape, &volume, nullptr, palette, materials);
+	std::unique_ptr<voxel::Volume> no_owned;
+	return createVoxelShapeInternal(owner, shape, &volume, no_owned, palette, materials);
 }
 
 auto Simulator::createVoxelShape(
     BodyID owner, const VoxelShape& shape, voxel::Volume&& volume, const voxel::Palette& palette,
     const voxel::MaterialLibrary& materials
 ) -> ShapeID {
-	return createVoxelShapeInternal(owner, shape, nullptr, std::make_unique<voxel::Volume>(std::move(volume)), palette, materials);
+	auto owned = std::make_unique<voxel::Volume>(std::move(volume));
+	return createVoxelShapeInternal(owner, shape, nullptr, owned, palette, materials);
 }
 
 auto Simulator::createVoxelShapeInternal(
-    BodyID owner, const VoxelShape& shape, voxel::Volume* external, std::unique_ptr<voxel::Volume> owned,
-    const voxel::Palette& palette, const voxel::MaterialLibrary& materials
+    BodyID owner, const VoxelShape& shape, voxel::Volume* external, std::unique_ptr<voxel::Volume>& owned,
+    const voxel::Palette& palette, const voxel::MaterialLibrary& materials, const voxel::MassMoments* known_moments
 ) -> ShapeID {
 	ZoneScopedN("physics::CreateVoxelShape");
 	ZoneValue(static_cast<uint64_t>(owner.slot));
@@ -2395,7 +2683,7 @@ auto Simulator::createVoxelShapeInternal(
 	{
 		std::scoped_lock voxel_lock {voxelDataMutex()};
 		surface.rebuild(volume);
-		moments = accumulateMassMoments(volume, palette, materials);
+		moments = known_moments != nullptr ? *known_moments : accumulateMassMoments(volume, palette, materials);
 	}
 
 	const AnchorMask default_anchor_mask = tryGetBody(owner)->type == BodyType::static_body ? k_anchor_bottom : k_anchor_null;
@@ -2763,6 +3051,31 @@ void Simulator::rebuildMassProperties(BodyID id) {
 		}
 	}
 
+	switch (shape->type) {
+		case ShapeType::sphere: body->extent_radius = glm::length(shape->sphere.local_center) + shape->sphere.radius; break;
+		case ShapeType::box: body->extent_radius = glm::length(shape->box.local_center) + 0.5f * glm::length(shape->box.size); break;
+		case ShapeType::capsule:
+			body->extent_radius = glm::length(shape->capsule.local_center) + 0.5f * shape->capsule.height + shape->capsule.radius;
+			break;
+		case ShapeType::voxel: {
+			const glm::vec3 center =
+			    glm::inverse(shape->voxel.local_rotation) * (body->local_center_of_mass - shape->voxel.local_center);
+			const AABB& bounds = shape->voxel.local_bounds;
+			float farthest_squared = 0.0f;
+			for (int corner = 0; corner < 8; ++corner) {
+				const glm::vec3 point {
+				  (corner & 1) != 0 ? bounds.max.x : bounds.min.x,
+				  (corner & 2) != 0 ? bounds.max.y : bounds.min.y,
+				  (corner & 4) != 0 ? bounds.max.z : bounds.min.z,
+				};
+				const glm::vec3 offset = point - center;
+				farthest_squared = std::max(farthest_squared, glm::dot(offset, offset));
+			}
+			body->extent_radius = std::sqrt(farthest_squared);
+			break;
+		}
+	}
+
 	const glm::vec3 center_shift = body->rotation * (body->local_center_of_mass - previous_center_of_mass);
 	body->linear_velocity += glm::cross(body->angular_velocity, center_shift);
 }
@@ -3031,10 +3344,38 @@ void Simulator::wakeBodiesInBounds(const AABB& bounds) {
 	ZoneScopedN("physics::WakeBodiesInBounds");
 
 	for (const ShapeID shape_id : m_broad_phase.queryBounds(bounds)) {
-		if (const Shape* shape = tryGetShape(shape_id)) {
+		const Shape* shape = tryGetShape(shape_id);
+		if (shape == nullptr) {
+			continue;
+		}
+		const Body* body = tryGetBody(shape->owner);
+		if (body != nullptr && body->sleep_locked) {
+			unlockSleep(shape->owner);
+		} else {
 			wakeBody(shape->owner);
 		}
 	}
+}
+
+void Simulator::wakeNeighborsOf(BodyID id) {
+	const Body* body = tryGetBody(id);
+	if (body == nullptr) {
+		return;
+	}
+
+	AABB bounds {.min = glm::vec3(std::numeric_limits<float>::max()), .max = glm::vec3(std::numeric_limits<float>::lowest())};
+	for (const ShapeSlot& slot : m_shapes) {
+		if (slot.occupied && slot.shape.owner == id) {
+			const AABB shape_bounds = worldShapeBounds(*body, slot.shape);
+			bounds.min = glm::min(bounds.min, shape_bounds.min);
+			bounds.max = glm::max(bounds.max, shape_bounds.max);
+		}
+	}
+	if (bounds.min.x > bounds.max.x) {
+		return;
+	}
+
+	wakeBodiesInBounds(bounds.expanded(tunables().broadphase_fat_margin));
 }
 
 void Simulator::applyExplosion(const glm::vec3& position, float radius, float energy) {
@@ -3598,8 +3939,8 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 			const Constraint& constraint = island.constraints[i];
 			const Body* body_a = tryGetBody(constraint.body_a);
 			const Body* body_b = tryGetBody(constraint.body_b);
-			const bool a_dynamic = body_a != nullptr && body_a->inverse_mass > 0.0f;
-			const bool b_dynamic = body_b != nullptr && body_b->inverse_mass > 0.0f;
+			const bool a_dynamic = body_a != nullptr && movable(*body_a);
+			const bool b_dynamic = body_b != nullptr && movable(*body_b);
 
 			uint32_t batch = 0;
 			if (a_dynamic) {

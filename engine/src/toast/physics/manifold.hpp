@@ -214,6 +214,7 @@ auto splitVoxelRegions(const AABB& local_bounds, size_t region_count) -> std::ve
 struct VoxelPairPartial {
 	std::array<std::vector<_detail::ContactCandidate>, voxel::k_normal_direction_count> candidates_per_normal;
 	std::array<glm::vec3, voxel::k_normal_direction_count> normal_per_group {};
+	std::array<glm::vec3, voxel::k_normal_direction_count> normal_sum_per_group {};
 	std::array<ContactMaterial, voxel::k_normal_direction_count> material_per_group {};
 	std::array<bool, voxel::k_normal_direction_count> group_started {};
 };

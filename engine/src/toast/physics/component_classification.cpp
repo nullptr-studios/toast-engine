@@ -113,8 +113,9 @@ auto classifyComponents(const voxel::Connectivity& c, glm::uvec3 brick_size, Anc
 	return classes;
 }
 
-auto buildDetachedComponents(const voxel::Connectivity& c, std::span<const ComponentClass> classes, glm::uvec3 brick_size)
-    -> std::vector<DetachedComponent> {
+auto buildDetachedComponents(
+    const voxel::Connectivity& c, std::span<const ComponentClass> classes, glm::uvec3 brick_size, ComponentClass target_class
+) -> std::vector<DetachedComponent> {
 	ZoneScopedN("physics::BuildDetachedComponents");
 	std::vector<DetachedComponent> components(classes.size());
 	for (size_t i = 0; i < classes.size(); ++i) {
@@ -122,7 +123,7 @@ auto buildDetachedComponents(const voxel::Connectivity& c, std::span<const Compo
 	}
 
 	for (const voxel::BrickPiece& piece : c.pieces) {
-		if (classes[piece.component] != ComponentClass::detached) {
+		if (classes[piece.component] != target_class) {
 			continue;
 		}
 		DetachedComponent& out = components[piece.component];

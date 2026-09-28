@@ -634,6 +634,21 @@ struct BoxSatContacts {
 	FixedBuffer<ContactCandidate, 8> candidates;
 };
 
+/// Weight of one voxel pair in the blended normal of a bucket
+auto groupNormalWeight(const BoxSatContacts& sat) -> float {
+	float weight = 1.0e-4f;
+	for (const ContactCandidate& candidate : sat.candidates) {
+		weight = std::max(weight, candidate.penetration + 1.0e-4f);
+	}
+	return weight;
+}
+
+/// One voxel pair picking a different axis must not flip the whole bucket so every pair votes
+auto blendedGroupNormal(const glm::vec3& sum, const glm::vec3& first) -> glm::vec3 {
+	const float length_squared = glm::dot(sum, sum);
+	return length_squared > 1.0e-12f ? sum / std::sqrt(length_squared) : first;
+}
+
 auto boxSatContactsFromAxis(
     const WorldBox& box_a, const WorldBox& box_b, const BoxSatResult& best_axis, const glm::vec3& center_delta
 ) -> BoxSatContacts;
@@ -1493,6 +1508,7 @@ namespace {
 struct VoxelVoxelScratch {
 	std::array<std::vector<_detail::ContactCandidate>, voxel::k_normal_direction_count> candidates_per_normal;
 	std::array<glm::vec3, voxel::k_normal_direction_count> normal_per_group {};
+	std::array<glm::vec3, voxel::k_normal_direction_count> normal_sum_per_group {};
 	std::array<ContactMaterial, voxel::k_normal_direction_count> material_per_group {};
 	std::array<bool, voxel::k_normal_direction_count> group_started {};
 
@@ -1501,6 +1517,7 @@ struct VoxelVoxelScratch {
 			bucket.clear();
 		}
 		group_started.fill(false);
+		normal_sum_per_group.fill(glm::vec3 {0.0f});
 	}
 };
 
@@ -1689,6 +1706,7 @@ auto collideVoxelVoxelRegion(const VoxelVoxelPairView& view, const AABB& probe_r
 				bucket.push_back(raw);
 			}
 
+			partial.normal_sum_per_group[ref_c.normal_index] += sat->normal * _detail::groupNormalWeight(*sat);
 			if (not partial.group_started[ref_c.normal_index]) {
 				partial.group_started[ref_c.normal_index] = true;
 				partial.normal_per_group[ref_c.normal_index] = sat->normal;
@@ -1708,7 +1726,12 @@ auto collideVoxelVoxelRegion(const VoxelVoxelPairView& view, const AABB& probe_r
 
 			// Same reasoning as collideBoxVoxel bounds one region bucket to a batch at a time
 			if (bucket.size() >= _detail::k_contact_reduce_batch_size) {
-				bucket = _detail::reduceContacts(std::move(bucket), partial.normal_per_group[ref_c.normal_index]);
+				bucket = _detail::reduceContacts(
+				    std::move(bucket),
+				    _detail::blendedGroupNormal(
+				        partial.normal_sum_per_group[ref_c.normal_index], partial.normal_per_group[ref_c.normal_index]
+				    )
+				);
 			}
 
 			return true;
@@ -1732,6 +1755,7 @@ void mergeVoxelVoxelPartials(
 	for (size_t normal_index = 0; normal_index < voxel::k_normal_direction_count; ++normal_index) {
 		std::vector<_detail::ContactCandidate> merged;
 		glm::vec3 local_normal {};
+		glm::vec3 normal_sum {0.0f};
 		ContactMaterial material {};
 		bool started = false;
 
@@ -1745,12 +1769,14 @@ void mergeVoxelVoxelPartials(
 				local_normal = partial.normal_per_group[normal_index];
 				material = partial.material_per_group[normal_index];
 			}
+			normal_sum += partial.normal_sum_per_group[normal_index];
 			merged.insert(merged.end(), std::make_move_iterator(bucket.begin()), std::make_move_iterator(bucket.end()));
 		}
 
 		if (not started) {
 			continue;
 		}
+		local_normal = _detail::blendedGroupNormal(normal_sum, local_normal);
 
 		std::vector<_detail::ContactCandidate> reduced = _detail::reduceContacts(std::move(merged), local_normal);
 		if (reduced.empty()) {
@@ -1843,6 +1869,7 @@ void collideVoxelVoxel(
 	scratch.reset();
 	auto& candidates_per_normal = scratch.candidates_per_normal;
 	auto& normal_per_group = scratch.normal_per_group;
+	auto& normal_sum_per_group = scratch.normal_sum_per_group;
 	auto& material_per_group = scratch.material_per_group;
 	auto& group_started = scratch.group_started;
 	size_t remaining_budget = 256;
@@ -1909,6 +1936,7 @@ void collideVoxelVoxel(
 					bucket.push_back(raw);
 				}
 
+				normal_sum_per_group[ref_c.normal_index] += sat->normal * _detail::groupNormalWeight(*sat);
 				// clang-format off
 			if (not group_started[ref_c.normal_index]) {
 				group_started[ref_c.normal_index] = true;
@@ -1930,7 +1958,10 @@ void collideVoxelVoxel(
 
 				// Same reasoning as collideBoxVoxel bounds a bucket to a batch at a time
 				if (bucket.size() >= _detail::k_contact_reduce_batch_size) {
-					bucket = _detail::reduceContacts(std::move(bucket), normal_per_group[ref_c.normal_index]);
+					bucket = _detail::reduceContacts(
+					    std::move(bucket),
+					    _detail::blendedGroupNormal(normal_sum_per_group[ref_c.normal_index], normal_per_group[ref_c.normal_index])
+					);
 				}
 
 				return true;
@@ -1948,7 +1979,7 @@ void collideVoxelVoxel(
 				continue;
 			}
 
-			glm::vec3 local_normal = normal_per_group[i];
+			glm::vec3 local_normal = _detail::blendedGroupNormal(normal_sum_per_group[i], normal_per_group[i]);
 			bucket = _detail::reduceContacts(std::move(bucket), local_normal);
 			const std::vector<_detail::ContactCandidate>& reduced = bucket;
 			glm::vec3 world_normal = ref_basis * local_normal;
@@ -2114,6 +2145,7 @@ namespace {
 struct BoxVoxelScratch {
 	std::array<std::vector<_detail::ContactCandidate>, voxel::k_normal_direction_count> candidates_per_normal;
 	std::array<glm::vec3, voxel::k_normal_direction_count> normal_per_group {};
+	std::array<glm::vec3, voxel::k_normal_direction_count> normal_sum_per_group {};
 	std::array<ContactMaterial, voxel::k_normal_direction_count> material_per_group {};
 	std::array<bool, voxel::k_normal_direction_count> group_started {};
 
@@ -2122,6 +2154,7 @@ struct BoxVoxelScratch {
 			bucket.clear();
 		}
 		group_started.fill(false);
+		normal_sum_per_group.fill(glm::vec3 {0.0f});
 	}
 };
 
@@ -2259,6 +2292,7 @@ auto collideBoxVoxelRegion(const BoxVoxelPairView& view, const AABB& region) -> 
 			bucket.push_back(raw);
 		}
 
+		partial.normal_sum_per_group[candidate.normal_index] += sat->normal * _detail::groupNormalWeight(*sat);
 		if (not partial.group_started[candidate.normal_index]) {
 			partial.group_started[candidate.normal_index] = true;
 			partial.normal_per_group[candidate.normal_index] = sat->normal;
@@ -2271,7 +2305,12 @@ auto collideBoxVoxelRegion(const BoxVoxelPairView& view, const AABB& region) -> 
 
 		// Same reasoning as collideBoxVoxel bounds one region bucket to a batch at a time
 		if (bucket.size() >= _detail::k_contact_reduce_batch_size) {
-			bucket = _detail::reduceContacts(std::move(bucket), partial.normal_per_group[candidate.normal_index]);
+			bucket = _detail::reduceContacts(
+			    std::move(bucket),
+			    _detail::blendedGroupNormal(
+			        partial.normal_sum_per_group[candidate.normal_index], partial.normal_per_group[candidate.normal_index]
+			    )
+			);
 		}
 	});
 
@@ -2290,6 +2329,7 @@ void mergeBoxVoxelPartials(
 	for (size_t normal_index = 0; normal_index < voxel::k_normal_direction_count; ++normal_index) {
 		std::vector<_detail::ContactCandidate> merged;
 		glm::vec3 local_normal {};
+		glm::vec3 normal_sum {0.0f};
 		ContactMaterial material {};
 		bool started = false;
 
@@ -2303,12 +2343,14 @@ void mergeBoxVoxelPartials(
 				local_normal = partial.normal_per_group[normal_index];
 				material = partial.material_per_group[normal_index];
 			}
+			normal_sum += partial.normal_sum_per_group[normal_index];
 			merged.insert(merged.end(), std::make_move_iterator(bucket.begin()), std::make_move_iterator(bucket.end()));
 		}
 
 		if (not started) {
 			continue;
 		}
+		local_normal = _detail::blendedGroupNormal(normal_sum, local_normal);
 
 		std::vector<_detail::ContactCandidate> reduced = _detail::reduceContacts(std::move(merged), local_normal);
 		if (reduced.empty()) {
@@ -2379,6 +2421,7 @@ void collideBoxVoxel(
 	scratch.reset();
 	auto& candidates_per_normal = scratch.candidates_per_normal;
 	auto& normal_per_group = scratch.normal_per_group;
+	auto& normal_sum_per_group = scratch.normal_sum_per_group;
 	auto& material_per_group = scratch.material_per_group;
 	auto& group_started = scratch.group_started;
 
@@ -2412,6 +2455,7 @@ void collideBoxVoxel(
 				bucket.push_back(raw);
 			}
 
+			normal_sum_per_group[candidate.normal_index] += sat->normal * _detail::groupNormalWeight(*sat);
 			if (not group_started[candidate.normal_index]) {
 				group_started[candidate.normal_index] = true;
 				normal_per_group[candidate.normal_index] = sat->normal;
@@ -2424,7 +2468,10 @@ void collideBoxVoxel(
 
 			// Bounds this to a batch worth of candidates at a time survivors compete again next batch
 			if (bucket.size() >= _detail::k_contact_reduce_batch_size) {
-				bucket = _detail::reduceContacts(std::move(bucket), normal_per_group[candidate.normal_index]);
+				bucket = _detail::reduceContacts(
+				    std::move(bucket),
+				    _detail::blendedGroupNormal(normal_sum_per_group[candidate.normal_index], normal_per_group[candidate.normal_index])
+				);
 			}
 		});
 	}
@@ -2437,7 +2484,8 @@ void collideBoxVoxel(
 				continue;
 			}
 
-			const glm::vec3 local_normal = normal_per_group[normal_index];
+			const glm::vec3 local_normal =
+			    _detail::blendedGroupNormal(normal_sum_per_group[normal_index], normal_per_group[normal_index]);
 			std::vector<_detail::ContactCandidate> reduced = _detail::reduceContacts(std::move(bucket), local_normal);
 			const glm::vec3 world_normal = voxel_basis * local_normal;
 
