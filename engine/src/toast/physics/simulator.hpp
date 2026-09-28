@@ -15,6 +15,7 @@
 #include "narrow_phase.hpp"
 #include "physics_material.hpp"
 #include "shape.hpp"
+#include "toast/physics/raycast.hpp"
 #include "voxel_render.hpp"
 #include "voxel_shape_data.hpp"
 
@@ -75,6 +76,8 @@ public:
 	[[nodiscard]]
 	auto createBody(const BodyDescriptor& descriptor) -> BodyID;
 	void destroyBody(BodyID body);
+
+	static auto raycast(glm::vec3 pos, glm::vec3 dir) -> std::vector<RayHit>;
 
 	[[nodiscard]]
 	auto valid(BodyID body) const -> bool;
@@ -248,6 +251,8 @@ private:
 	[[nodiscard]]
 	static auto nodeFor(BodyID body) -> toast::Box<toast::Node>;
 	[[nodiscard]]
+	static auto colliderFor(BodyID body, ShapeID shape) -> toast::Box<toast::Node>;
+	[[nodiscard]]
 	auto mainThreadMutationAllowed() const -> bool;
 
 	[[nodiscard]]
@@ -278,10 +283,12 @@ private:
 	auto tryGetShape(ShapeID shape) const -> const Shape*;
 	[[nodiscard]]
 	auto valid(VoxelDataID data) const -> bool;
+
+public:
 	[[nodiscard]]
-	auto tryGetVoxelData(VoxelDataID data) -> VoxelShapeData*;
-	[[nodiscard]]
-	auto tryGetVoxelData(VoxelDataID data) const -> const VoxelShapeData*;
+	static auto tryGetVoxelData(VoxelDataID data) -> VoxelShapeData*;
+
+private:
 	void destroyVoxelData(VoxelDataID data);
 
 	void rebuildMassProperties(BodyID id);

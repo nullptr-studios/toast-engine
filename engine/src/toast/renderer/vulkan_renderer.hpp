@@ -484,6 +484,10 @@ public:
 
 	void submitFrame() noexcept;
 
+	/// Queues a debug line for the current render frame, or for the next one when
+	/// called from gameplay code before frame construction begins.
+	void queueDebugLine(glm::vec3 a, glm::vec3 b, glm::vec4 color);
+
 	void tick(float time) noexcept;
 
 	void registerMeshNodeProxy(toast::MeshNode* node);
@@ -1233,6 +1237,12 @@ private:
 	TaaHistory m_taa_history;
 
 	std::atomic_bool m_debug_draw_enabled {false};
+	std::mutex m_debug_line_mutex;
+	std::vector<DebugVertex> m_pending_debug_line_vertices;
+	bool m_collecting_debug_lines = false;
+
+	void beginDebugLineCollection(RenderFrame& frame);
+	void endDebugLineCollection();
 
 	std::mutex m_pending_post_settings_mutex;
 	std::optional<PostProcessSettings> m_pending_post_settings;
@@ -1565,16 +1575,15 @@ void debugDrawShapeBox(const glm::mat4& transform, glm::vec4 color, bool fill);
 void debugDrawCapsule(const glm::mat4& transform, float radius, float height, glm::vec4 color, bool fill);
 
 /**
- * @brief Queues a debug line segmentfor the frame currently being built
- * @note Call between beginFrameBuild() and submitFrame()
+ * @brief Queues a debug line segment for rendering
+ * @note Calls made before frame construction (for example from gameplay ticks)
+ *       are carried into the next frame.
  */
 inline void debugDrawLine(glm::vec3 a, glm::vec3 b, glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f}) {
 	if (!VulkanRenderer::instance->debugDrawEnabled()) {
 		return;
 	}
-	auto& frame = VulkanRenderer::instance->beginFrameBuild();
-	frame.debug_line_vertices.push_back({a, color});
-	frame.debug_line_vertices.push_back({b, color});
+	VulkanRenderer::instance->queueDebugLine(a, b, color);
 }
 
 inline void debugDrawBox(glm::vec3 min, glm::vec3 max, glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f}) {

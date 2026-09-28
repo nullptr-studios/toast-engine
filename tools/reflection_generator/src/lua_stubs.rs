@@ -62,7 +62,16 @@ fn uid_lua_type(typename: &str) -> String {
 /// Lua type of a method parameter or return
 fn cpp_lua_type(cpp: &str) -> String {
     let t = cpp.trim();
-    if let Some(inner) = t.strip_prefix("std::vector<").and_then(|rest| rest.strip_suffix('>')) {
+    if let Some(inner) = t
+        .strip_prefix("std::optional<")
+        .and_then(|type_name| type_name.strip_suffix('>'))
+    {
+        return format!("{}|nil", cpp_lua_type(inner));
+    }
+    if let Some(inner) = t
+        .strip_prefix("std::vector<")
+        .and_then(|type_name| type_name.strip_suffix('>'))
+    {
         return format!("{}[]", cpp_lua_type(inner));
     }
     if t.contains("input::ActionEvent") {
@@ -98,6 +107,9 @@ fn cpp_lua_type(cpp: &str) -> String {
     }
     if t.contains("Handle<") {
         return "Asset".to_string();
+    }
+    if t.contains("physics::RayHit") {
+        return "RayHit".to_string();
     }
     if t.contains("bool") {
         return "boolean".to_string();

@@ -4,6 +4,7 @@
 #include "lua_types.hpp"
 #include "script_runtime.hpp"
 #include "signal_proxy.hpp"
+#include "toast/physics/raycast.hpp"
 #include "ui_binds_proxy.hpp"
 
 #include <algorithm>
@@ -14,6 +15,7 @@
 #include <glm/vec4.hpp>
 #include <lua.hpp>
 #include <luabridge3/LuaBridge/LuaBridge.h>
+#include <optional>
 #include <toast/input/action.hpp>
 #include <toast/log.hpp>
 #include <toast/reflect/reflect.hpp>
@@ -320,6 +322,12 @@ auto anyReturnToLuaRef(lua_State* l, const std::any& val, std::string_view retur
 	if (const auto* v = std::any_cast<Color4>(&val)) {
 		return {l, *v};
 	}
+	if (const auto* v = std::any_cast<physics::RayHit>(&val)) {
+		return {l, *v};
+	}
+	if (const auto* v = std::any_cast<std::optional<physics::RayHit>>(&val)) {
+		return v->has_value() ? LuaRef {l, **v} : LuaRef {l};
+	}
 	if (const auto* v = std::any_cast<input::Action>(&val)) {
 		return {l, *v};
 	}
@@ -459,6 +467,9 @@ auto anyVectorToLuaRef(lua_State* l, const std::any& value) -> luabridge::LuaRef
 		return r;
 	}
 	if (auto r = pushVecTable<Color4>(l, value); !r.isNil()) {
+		return r;
+	}
+	if (auto r = pushVecTable<physics::RayHit>(l, value); !r.isNil()) {
 		return r;
 	}
 	if (auto r = pushVecTable<AssetProxy>(l, value); !r.isNil()) {

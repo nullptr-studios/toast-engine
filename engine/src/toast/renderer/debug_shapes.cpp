@@ -6,6 +6,27 @@
 
 namespace renderer {
 
+void VulkanRenderer::queueDebugLine(glm::vec3 a, glm::vec3 b, glm::vec4 color) {
+	std::scoped_lock lock(m_debug_line_mutex);
+	auto& vertices = m_collecting_debug_lines ? beginFrameBuild().debug_line_vertices : m_pending_debug_line_vertices;
+	vertices.push_back({a, color});
+	vertices.push_back({b, color});
+}
+
+void VulkanRenderer::beginDebugLineCollection(RenderFrame& frame) {
+	std::scoped_lock lock(m_debug_line_mutex);
+	frame.debug_line_vertices.insert(
+	    frame.debug_line_vertices.end(), m_pending_debug_line_vertices.begin(), m_pending_debug_line_vertices.end()
+	);
+	m_pending_debug_line_vertices.clear();
+	m_collecting_debug_lines = true;
+}
+
+void VulkanRenderer::endDebugLineCollection() {
+	std::scoped_lock lock(m_debug_line_mutex);
+	m_collecting_debug_lines = false;
+}
+
 void VulkanRenderer::registerDebugDraw(toast::Node3D* node, void (*draw)(toast::Node3D&)) {
 	std::scoped_lock lock(m_mesh_proxy_mutex);
 	if (std::ranges::none_of(m_debug_nodes, [node](const auto& entry) { return entry.first == node; })) {

@@ -1,0 +1,5 @@
+---@class RayHit
+---@field node Node
+---@field position vec3
+---@field normal vec3
+---@field distance number
