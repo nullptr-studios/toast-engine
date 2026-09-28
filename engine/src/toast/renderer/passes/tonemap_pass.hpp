@@ -105,7 +105,7 @@ private:
 
 	bool m_exposure_ready = false;
 	bool m_was_metering = false;
-	std::chrono::steady_clock::time_point m_last_meter {};
+	std::chrono::steady_clock::time_point m_last_meter;
 };
 
 }
