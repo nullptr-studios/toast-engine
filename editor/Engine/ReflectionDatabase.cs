@@ -83,6 +83,11 @@ public record NodeInfo(
 	string SourceFile
 );
 
+public record ReflectionFile(
+	[property: JsonPropertyName("nodes")] NodeInfo[] Nodes,
+	[property: JsonPropertyName("events")] JsonElement[] Events
+);
+
 public class NodeTreeItem(string name, NodeInfo info) {
 	public string Name { get; } = name;
 	public NodeInfo Info { get; } = info;
@@ -100,8 +105,8 @@ public static class ReflectionDatabase {
 		var projectPath = ProjectContext.Resolve(m_reflectionPaths[1]);
 		if (!File.Exists(enginePath) || !File.Exists(projectPath)) return;
 
-		var engine = JsonSerializer.Deserialize<NodeInfo[]>(File.ReadAllText(enginePath));
-		var project = JsonSerializer.Deserialize<NodeInfo[]>(File.ReadAllText(projectPath));
+		var engine = ReadNodes(enginePath);
+		var project = ReadNodes(projectPath);
 		if (engine is null || project is null) return;
 
 		Nodes = engine.Concat(project).ToDictionary(n => n.Name);
@@ -113,6 +118,14 @@ public static class ReflectionDatabase {
 				parentItem.Children.Add(treeItems[name]);
 
 		NodeTree = treeItems.GetValueOrDefault("Node");
+	}
+
+	private static NodeInfo[]? ReadNodes(string path) {
+		var json = File.ReadAllText(path);
+		using var document = JsonDocument.Parse(json);
+		return document.RootElement.ValueKind == JsonValueKind.Array
+			? JsonSerializer.Deserialize<NodeInfo[]>(json)
+			: JsonSerializer.Deserialize<ReflectionFile>(json)?.Nodes;
 	}
 
 	// types are namespaced ("toast::Camera") but Nodes is keyed by bare name ("Camera")

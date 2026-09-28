@@ -1,0 +1,39 @@
+-- ============================================================
+-- AUTO-GENERATED FILE - DO NOT MODIFY DIRECTLY
+-- Changes will not persist
+-- ============================================================
+
+---@class EventDescriptor<T>
+---@field name string
+
+---@class EventListener
+local EventListener = {}
+---@generic T
+---@param descriptor EventDescriptor<T>
+---@param callback string|fun(event: T): boolean?
+function EventListener:subscribe(descriptor, callback) end
+---@generic T
+---@param descriptor EventDescriptor<T>
+---@param method_name string?
+function EventListener:unsubscribe(descriptor, method_name) end
+
+---@class eventlib
+event = {}
+---@generic T
+---@param descriptor EventDescriptor<T>
+---@param payload T
+function event.send(descriptor, payload) end
+
+---@class EventsTable
+{% for event in events %}
+---@field {{ event.name }} EventDescriptor<{{ event.name }}>
+{% endfor %}
+Events = {}
+
+{% for event in events %}
+---@class {{ event.name }}
+{% for field in event.fields %}
+---@field {{ field.name }} {{ field.lua_type }}
+{% endfor %}
+
+{% endfor %}

@@ -1,6 +1,7 @@
 #include "node_proxy.hpp"
 
 #include "asset_proxy.hpp"
+#include "lua_event.hpp"
 #include "lua_types.hpp"
 #include "script_runtime.hpp"
 #include "signal_proxy.hpp"
@@ -1040,6 +1041,9 @@ auto nodeProxyIndex(NodeProxy& proxy, const luabridge::LuaRef& key, lua_State* l
 
 	const std::string key_str = key.tostring();
 	toast::Node* n = proxy.box().operator->();
+	if (key_str == "listener") {
+		return {l, ListenerProxy(proxy.box())};
+	}
 
 	const toast::NodeInfo* info = n->info();
 	if (!info) {

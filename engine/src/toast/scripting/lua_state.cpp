@@ -1,6 +1,7 @@
 #include "lua_state.hpp"
 
 #include "asset_proxy.hpp"
+#include "lua_event.hpp"
 #include "lua_signal.hpp"
 #include "lua_types.hpp"
 #include "lua_util.hpp"
@@ -262,6 +263,7 @@ LuaState::LuaState() : m_pool_size(1 + toast::ThreadPool::workerCount()), m_entr
 }
 
 LuaState::~LuaState() noexcept {
+	clearAllLuaEventSubscriptions();
 	for (Entry& entry : m_entries) {
 		lua_close(entry.state);
 	}
@@ -282,6 +284,31 @@ void LuaState::registerApi(lua_State* state) noexcept {
 
 	    .addFunction(
 	        "load", +[](const std::string& path) -> AssetProxy { return AssetProxy(assets::load(path)); }
+	    )
+	    .endNamespace()
+
+	    .beginNamespace("event")
+	    .addFunction(
+	        "send",
+	        +[](const LuaEventDescriptor& descriptor, const luabridge::LuaRef& payload, lua_State* state) {
+		        auto binding = LuaEventRegistry::find(descriptor.name);
+		        if (!binding) {
+			        luaL_error(state, "event.send: unknown event descriptor '%s'", descriptor.name.c_str());
+			        return;
+		        }
+		        if (!payload.isTable()) {
+			        luaL_error(state, "event.send: payload must be a table");
+			        return;
+		        }
+		        payload.push(state);
+		        const int table = lua_absindex(state, -1);
+		        std::string error;
+		        const bool sent = binding->send(state, table, error);
+		        lua_pop(state, 1);
+		        if (!sent) {
+			        luaL_error(state, "event.send(%s): %s", descriptor.name.c_str(), error.c_str());
+		        }
+	        }
 	    )
 	    .endNamespace()
 
@@ -633,6 +660,19 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    .addNewIndexMetaMethod(nodeProxyNewindex)
 	    .endClass()
 
+	    .beginClass<LuaEventDescriptor>("EventDescriptor")
+	    .addProperty("name", &LuaEventDescriptor::name)
+	    .endClass()
+
+	    .beginClass<ListenerProxy>("EventListener")
+	    .addFunction("subscribe", &ListenerProxy::subscribe)
+	    .addFunction(
+	        "unsubscribe",
+	        overload<const LuaEventDescriptor&>(&ListenerProxy::unsubscribe),
+	        overload<const LuaEventDescriptor&, const std::string&>(&ListenerProxy::unsubscribe)
+	    )
+	    .endClass()
+
 	    // SignalProxy
 	    .beginClass<SignalProxy>("Signal")
 	    .addFunction(
@@ -775,6 +815,7 @@ void LuaState::registerApi(lua_State* state) noexcept {
 }
 
 void LuaState::registerTypeMarkers(lua_State* state) noexcept {
+	LuaEventRegistry::installDescriptors(state);
 	// Node type markers
 	toast::NodeRegistry::forEachType([&](const toast::NodeInfo* info) {
 		const std::string_view bare = stripNamespace(info->type);

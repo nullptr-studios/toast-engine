@@ -24,6 +24,7 @@ vcpkg_installed/
 engine/generated
 engine/assets/engine_reflect.json
 engine/assets/lua/types.d.lua
+engine/assets/lua/events.d.lua
 
 compile_commands.json
 CMakeUserPresets.json

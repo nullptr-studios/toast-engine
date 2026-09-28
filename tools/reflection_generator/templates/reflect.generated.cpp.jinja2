@@ -7,7 +7,11 @@
 {% for node in nodes %}
 #include "{{ node.snake_name }}.generated.hpp"
 {% endfor %}
+{% for event in events %}
+#include <{{ event.source_file }}>
+{% endfor %}
 #include <toast/reflect/reflect_node.hpp>
+#include <toast/scripting/lua_event.hpp>
 #include <toast/log.hpp>
 #include <array>
 // clang-format on
@@ -22,6 +26,9 @@ void {{ register_fn }}() {
 	for (const auto* info : all_types) {
 		NodeRegistry::registerNode(info);
 	}
+	{% for event in events %}
+	scripting::registerLuaEvent<{{ event.qualified_name }}>("{{ event.name }}"{% for field in event.fields %}, scripting::luaEventField("{{ field.name }}", &{{ event.qualified_name }}::{{ field.name }}){% endfor %});
+	{% endfor %}
 	TOAST_INFO("Reflection", "Registered {} types ({{ register_fn }})", all_types.size());
 }
 } // namespace toast
