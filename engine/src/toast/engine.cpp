@@ -62,6 +62,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <new>
@@ -108,6 +109,8 @@ struct EnginePimpl {
 	std::mutex owners_mutex;
 	std::map<toast::UID, std::unique_ptr<INodeOwner>> owners;
 	toast::UID active_workspace {0};
+	event::SetShowOthers show_others;
+	bool show_others_warned = false;
 };
 
 Engine::Engine() noexcept {
@@ -228,6 +231,12 @@ void Engine::init() {
 		m->active_workspace = e.handle;
 		event::send<event::RequestHierarchyUpdate>();
 		return false;
+	});
+
+	m->listener.subscribe<event::SetShowOthers>([this](const event::SetShowOthers& e) {
+		m->show_others = e;
+		m->show_others_warned = false;
+		return true;
 	});
 
 	// A script source changed on disk
@@ -360,6 +369,40 @@ void Engine::tick() {
 		// draws into the one viewport. No active workspace means no filter, which is the standalone case
 		if (m->renderer) {
 			m->renderer->setRenderOwnerFilter(it != m->owners.end() ? it->second.get() : nullptr);
+		}
+
+		if (m->renderer) {
+			const INodeOwner* other = nullptr;
+			glm::mat4 other_transform(1.0f);
+			const Node* hidden = nullptr;
+			const event::SetShowOthers& show = m->show_others;
+			if (show.show && show.workspace == m->active_workspace.data()) {
+				auto source = m->owners.find(UID(show.source_workspace));
+				Workspace* level = source != m->owners.end() ? source->second->asWorkspace() : nullptr;
+				// An opened prefab workspace has the prefab asset uid as its handle
+				Box<Node> instance =
+				    level != nullptr ? level->findPrefabInstance(m->active_workspace, show.source_instance) : Box<Node> {};
+				Workspace* editing = it != m->owners.end() ? it->second->asWorkspace() : nullptr;
+				const Node3D* root =
+				    editing != nullptr && editing->isValid() ? reflect_cast<Node3D>(const_cast<Node*>(&editing->rootNode())) : nullptr;
+				if (auto spatial = instance.as<Node3D>(); spatial.exists() && root != nullptr) {
+					// The level moves so the instance lands on the prefab root
+					spatial->syncTransform();
+					root->syncTransform();
+					other = level;
+					other_transform = root->getWorldTransform() * glm::inverse(spatial->getWorldTransform());
+					hidden = &*instance;
+				} else if (!m->show_others_warned) {
+					m->show_others_warned = true;
+					TOAST_WARN(
+					    "Engine",
+					    "Show Others: level {} {} the prefab instance",
+					    show.source_workspace,
+					    level == nullptr ? "is not open, cannot find" : "does not hold"
+					);
+				}
+			}
+			m->renderer->setSecondaryOwner(other, other_transform, hidden);
 		}
 
 		if (m->renderer && it != m->owners.end()) {

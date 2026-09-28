@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using Lucide.Avalonia;
 
 namespace editor.Assets.Types;
@@ -16,8 +18,12 @@ public sealed class TextureAsset : BaseAsset {
 	public override string EditorTool => "";
 	public override string SchemaPath => "";
 
-	public override void GenerateThumbnail() {
-		if (!string.IsNullOrEmpty(Uid) && Meta?.TryGetValue("source", out var src) == true && src is string source)
-			ThumbnailService.Generate(source, Uid);
+	public override void GenerateThumbnail(string realPath, string uid) {
+		var source = MetaFile.ReadHeader(realPath)?.Source;
+		var realSource = string.IsNullOrEmpty(source) ? null : ProjectContext.Resolve(source);
+		if (realSource is null || !File.Exists(realSource))
+			throw new Exception($"cannot regenerate thumbnail for '{realPath}': its original source is missing");
+
+		ThumbnailService.Generate(realSource, uid);
 	}
 }

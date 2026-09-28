@@ -97,7 +97,7 @@
       "on_disable": false,
       "on_enable": false,
       "post_physics": false,
-      "pre_init": false,
+      "editor_tick": false,
       "save": false,
       "tick": true
     }

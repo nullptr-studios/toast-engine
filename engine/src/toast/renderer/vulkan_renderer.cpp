@@ -6,6 +6,7 @@
 
 #include "clustered_lighting_constants.hpp"
 #include "cube_face_basis.hpp"
+#include "editor_overlays.hpp"
 #include "frustum.hpp"
 #include "light_culling.hpp"
 #include "passes/depth_prepass.hpp"
@@ -43,6 +44,7 @@
 #include <toast/physics/simulator.hpp>
 #include <toast/thread_pool.hpp>
 #include <toast/time.hpp>
+#include <toast/voxel/nodes/voxel_node.hpp>
 #include <toast/voxel/runtime_pool.hpp>
 #include <toast/voxel/volume_bounds.hpp>
 #include <toast/window/window_events.hpp>
@@ -55,7 +57,6 @@
 #include <toast/world/post_process_volume.hpp>
 #include <toast/world/reflection_probe.hpp>
 #include <toast/world/spotlight.hpp>
-#include <toast/world/voxel_node.hpp>
 #include <toast/world/workspace_events.hpp>
 #include <tracy/Tracy.hpp>
 #include <tuple>
@@ -2660,7 +2661,8 @@ void VulkanRenderer::tick(float time) noexcept {
 		if (node == nullptr || !node->enabled() || !node->participatesIn(toast::NodeOwnerParticipation::render)) {
 			continue;
 		}
-		if (m_render_owner_filter != nullptr && node->owner() != m_render_owner_filter) {
+		const glm::mat4* owner_transform = ownerTransform(*node);
+		if (owner_transform == nullptr) {
 			continue;
 		}
 
@@ -2692,7 +2694,7 @@ void VulkanRenderer::tick(float time) noexcept {
 			continue;
 		}
 
-		const auto world_transform = node->worldTransformForRender();
+		const auto world_transform = *owner_transform * node->worldTransformForRender();
 
 		uint32_t joint_offset = 0;
 		uint32_t joint_count = 0;
@@ -2767,6 +2769,12 @@ void VulkanRenderer::tick(float time) noexcept {
 	  .time = time,
 	  .render_mode_pad = glm::uvec4(frame.render_mode, 0, 0, 0),
 	};
+
+	{
+		const EditorOverlays& overlays = editorOverlays();
+		frame.frame_data.render_mode_pad.y =
+		    (overlays.surface_unit_grid ? 1u : 0u) | (overlays.surface_voxel_grid ? 2u : 0u) | (overlays.voxel_edges ? 4u : 0u);
+	}
 
 	{
 		std::scoped_lock lock(m_reflection_probe_mutex);
@@ -3509,6 +3517,26 @@ void VulkanRenderer::unregisterMeshNodeProxy(toast::MeshNode* node) {
 	std::erase(m_mesh_proxy_nodes, node);
 }
 
+auto VulkanRenderer::ownerTransform(const toast::Node& node) const -> const glm::mat4* {
+	static const glm::mat4 identity(1.0f);
+	if (m_render_owner_filter == nullptr || node.owner() == m_render_owner_filter) {
+		return &identity;
+	}
+	if (m_secondary_owner == nullptr || node.owner() != m_secondary_owner) {
+		return nullptr;
+	}
+
+	// The instance being edited draws from the VoxelEditor not from the level around it
+	for (const toast::Node* current = &node; current != nullptr;) {
+		if (current == m_secondary_hidden) {
+			return nullptr;
+		}
+		toast::Box<toast::Node> parent = const_cast<toast::Node*>(current)->parent();
+		current = parent.exists() ? &*parent : nullptr;
+	}
+	return &m_secondary_transform;
+}
+
 void VulkanRenderer::registerVoxelNodeProxy(toast::VoxelNode* node) {
 	if (node == nullptr) {
 		return;
@@ -3533,17 +3561,7 @@ namespace {
 
 [[nodiscard]]
 auto defaultVoxelPalette() -> const voxel::Palette& {
-	static const voxel::Palette palette = [] {
-		voxel::Palette out;
-		for (uint32_t i = 1; i < voxel::k_palette_size; ++i) {
-			out.entries[i].albedo_r = 160;
-			out.entries[i].albedo_g = 160;
-			out.entries[i].albedo_b = 160;
-			out.entries[i].roughness = 200;
-		}
-		return out;
-	}();
-	return palette;
+	return voxel::defaultPalette();
 }
 
 [[nodiscard]]
@@ -3584,7 +3602,13 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		const voxel::Palette* palette;
 		glm::mat4 model;
 		std::string debug_name;
+		bool data_only = false;
+		uint64_t highlight_id = 0;
+		const toast::VoxelNode* node = nullptr;
 	};
+
+	// Highlights share the voxel grid of their node so the shader looks up the same voxel
+	constexpr uint64_t k_highlight_id_bit = uint64_t {1} << 63;
 
 	std::vector<Gathered> gathered;
 	std::vector<VoxelSceneKey> key;
@@ -3597,7 +3621,8 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		if (node == nullptr || !node->enabled()) {
 			continue;
 		}
-		if (m_render_owner_filter != nullptr && node->owner() != m_render_owner_filter) {
+		const glm::mat4* owner_transform = ownerTransform(*node);
+		if (owner_transform == nullptr) {
 			continue;
 		}
 
@@ -3615,8 +3640,9 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 			.id = node->uid().data(),
 			.volume = volume,
 			.palette = palette,
-			.model = node->getWorldTransform(),
-			.debug_name = std::string{node->name()}
+			.model = *owner_transform * node->getWorldTransform() * node->volumeLocalTransform(),
+			.debug_name = std::string{node->name()},
+			.node = node
 		});
 		key.push_back({
 			.node_uid = node->uid().data(),
@@ -3626,6 +3652,35 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 			.palette_revision = palette->revision
 		});
 		// clang-format on
+	}
+
+	{
+		std::scoped_lock lock(m_voxel_proxy_mutex);
+		const size_t drawn = gathered.size();
+		for (size_t i = 0; i < drawn; ++i) {
+			auto it = m_voxel_highlights.find(gathered[i].node);
+			if (gathered[i].node == nullptr || it == m_voxel_highlights.end() ||
+			    it->second->brickDims() != gathered[i].volume->brickDims()) {
+				continue;
+			}
+			const uint64_t id = gathered[i].id ^ k_highlight_id_bit;
+			gathered[i].highlight_id = id;
+			gathered.push_back({
+			  .id = id,
+			  .volume = it->second,
+			  .palette = gathered[i].palette,
+			  .model = gathered[i].model,
+			  .debug_name = gathered[i].debug_name + " highlight",
+			  .data_only = true,
+			});
+			key.push_back(
+			    {.node_uid = id,
+					 .revision = 0,
+					 .content = it->second->revision(),
+					 .palette = gathered[i].palette,
+					 .palette_revision = gathered[i].palette->revision}
+			);
+		}
 	}
 
 	for (const physics::VoxelRenderRecord& record : physics::Simulator::voxelFragmentRecords()) {
@@ -3792,12 +3847,21 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		return;
 	}
 
+	// 1 + the packed record of a highlight so 0 stays none
+	const auto highlight_record_of = [this](uint64_t id) -> uint32_t {
+		const std::optional<uint32_t> record = id != 0 ? m_voxel_storage->recordIndexOf(id) : std::nullopt;
+		return record.has_value() ? *record + 1u : 0u;
+	};
+
 	std::unordered_map<uint64_t, glm::mat4> drawn_models;
 	drawn_models.reserve(gathered.size());
 	frame.voxel_instances.reserve(gathered.size());
 
 	for (const Gathered& entry : gathered) {
 		const uint64_t node_uid = entry.id;
+		if (entry.data_only) {
+			continue;
+		}
 		const std::optional<uint32_t> record = m_voxel_storage->recordIndexOf(node_uid);
 		if (!record.has_value()) {
 			continue;
@@ -3819,6 +3883,7 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		      .bounds_radius = sphere.w,
 		      .mirrored = glm::determinant(model) < 0.0f,
 		      .node_uid = node_uid,
+		      .highlight_record = highlight_record_of(entry.highlight_id),
 		    }
 		);
 		drawn_models.insert_or_assign(node_uid, model);

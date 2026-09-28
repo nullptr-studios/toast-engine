@@ -14,7 +14,7 @@ pub struct NodeInfo {
 
 #[derive(Serialize)]
 pub struct TickFunctions {
-    pub pre_init: bool,
+    pub editor_tick: bool,
     pub init: bool,
     pub begin: bool,
     pub early_tick: bool,
@@ -145,7 +145,7 @@ pub fn build_template_context(node: &NodeInfo) -> json_t {
     let active_tick_fns: Vec<json_t> = [
         (tf.load, "load", "load"),
         (tf.save, "save", "save"),
-        (tf.pre_init, "pre_init", "preInit"),
+        (tf.editor_tick, "editor_tick", "editorTick"),
         (tf.init, "init", "init"),
         (tf.destroy, "destroy", "destroy"),
         (tf.begin, "begin", "begin"),
@@ -254,7 +254,7 @@ pub fn validate_class(class: &Class) -> std::result::Result<(), String> {
 fn build_tick_functions(class: &Class) -> TickFunctions {
     let fns = &class.functions;
     TickFunctions {
-        pre_init: fns.contains(&"preInit".to_string()),
+        editor_tick: fns.contains(&"editorTick".to_string()),
         init: fns.contains(&"init".to_string()),
         begin: fns.contains(&"begin".to_string()),
         early_tick: fns.contains(&"earlyTick".to_string()),

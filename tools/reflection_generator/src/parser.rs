@@ -131,7 +131,7 @@ fn get_parent(node: tree_sitter::Node, source: &str) -> Option<Parent> {
 fn get_functions(node: tree_sitter::Node, source: &str) -> Vec<String> {
     // must match TickFunctionList in reflect.hpp; add new lifecycle methods here too
     const TICK_FUNCTIONS: &[&str] = &[
-        "preInit",
+        "editorTick",
         "init",
         "begin",
         "earlyTick",

@@ -32,4 +32,8 @@
         <PackageReference Include="Avalonia.Fonts.Inter" Version="12.0.3" />
     </ItemGroup>
 
+    <ItemGroup>
+        <AvaloniaResource Include="../../editor/Resources/EditorColors.axaml" Link="Resources/EditorColors.axaml" />
+    </ItemGroup>
+
 </Project>

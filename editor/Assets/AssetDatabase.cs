@@ -157,6 +157,34 @@ public static class AssetDatabase {
 		}
 	}
 
+	public static void GenerateMissingThumbnails(Action<string>? log = null) {
+		var roots = ProjectContext.DatabaseRoots.Append(ProjectContext.CorePath);
+		foreach (var root in roots) {
+			if (!Directory.Exists(root)) continue;
+			foreach (var file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories)) {
+				if (Path.GetExtension(file).Equals(".meta", StringComparison.OrdinalIgnoreCase)) continue;
+
+				var ext = AssetTypeRegistry.GetExtension(Path.GetFileName(file));
+				if (!s_assetTypes.TryGetValue(ext, out _)) continue;
+				var definition = AssetTypeRegistry.ByExtension(ext);
+				if (definition is not { HasThumbnail: true }) continue;
+
+				var header = MetaFile.ReadHeader(file);
+				if (header is null) continue;
+
+				var thumbPath = ProjectContext.Resolve($"cache://thumbnails/{header.Uid}.png");
+				if (File.Exists(thumbPath)) continue;
+
+				try {
+					definition.GenerateThumbnail(file, header.Uid);
+					log?.Invoke($"Generated thumbnail for {ProjectContext.ToVirtual(file) ?? file}");
+				} catch (Exception e) {
+					log?.Invoke($"warning: could not generate a thumbnail for {ProjectContext.ToVirtual(file) ?? file}: {e.Message}");
+				}
+			}
+		}
+	}
+
 	public static async Task RelocateMissingAssets(Action<string> log) {
 		if (LoadAssetDatabase() is not { } db) return;
 

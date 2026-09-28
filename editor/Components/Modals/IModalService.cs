@@ -10,5 +10,5 @@ public interface IModalService {
 	Task ShowError(string title, string message);
 	Task<bool> ShowConfirm(string title, string message);
 	Task<SaveChangesResult> ShowSaveChanges(string filename);
-	Task<string?> ShowSaveFile(string defaultPath);
+	Task<string?> ShowSaveFile(string defaultPath, string extension = ".tnode");
 }

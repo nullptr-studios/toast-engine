@@ -269,7 +269,7 @@ public sealed class AssetBox : TemplatedControl {
 	}
 
 	private async void OpenPicker() {
-		if (!IsEnabled || App.MainWindow is not { } owner) return;
+		if (!IsEnabled || (TopLevel.GetTopLevel(this) as Window ?? App.MainWindow) is not { } owner) return;
 		var normalized = NormalizeAssetType(AssetType);
 		// A material picker should also show material instances
 		var extra = normalized == "material" ? "material_instance" : null;
