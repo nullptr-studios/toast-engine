@@ -24,6 +24,7 @@
 #include <luabridge3/LuaBridge/LuaBridge.h>
 #include <toast/assets/asset_registry.hpp>
 #include <toast/assets/assets.hpp>
+#include <toast/assets/data_schema_codegen.hpp>
 #include <toast/engine.hpp>
 #include <toast/input/action.hpp>
 #include <toast/log.hpp>
@@ -643,7 +644,10 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    .addFunction("uid", [](const AssetProxy& a) { return static_cast<lua_Integer>(a.uid().data()); })
 	    .addFunction("hasValue", &AssetProxy::hasValue)
 	    .addFunction("type", &AssetProxy::type)
+	    .addFunction("get", &AssetProxy::get)
 	    .addFunction("__tostring", &AssetProxy::toString)
+	    .addIndexMetaMethod(assetProxyIndex)
+	    .addNewIndexMetaMethod(assetProxyNewindex)
 	    .endClass()
 
 	    // NodeProxy
@@ -836,6 +840,17 @@ void LuaState::registerTypeMarkers(lua_State* state) noexcept {
 	}
 	if (auto r = luabridge::Stack<TypeMarker>::push(state, TypeMarker {TypeMarker::Kind::asset, ""}); r) {
 		lua_setglobal(state, "Asset");
+	}
+
+	const auto schema_entries = assets::namedSchemaEntries();
+	if (!schema_entries.empty()) {
+		lua_newtable(state);
+		for (const auto& entry : schema_entries) {
+			if (auto r = luabridge::Stack<TypeMarker>::push(state, TypeMarker {TypeMarker::Kind::asset, "data"}); r) {
+				lua_setfield(state, -2, entry.name.c_str());
+			}
+		}
+		lua_setglobal(state, "Schemas");
 	}
 }
 

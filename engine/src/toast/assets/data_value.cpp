@@ -239,7 +239,7 @@ static auto extractNumbers(const toml::array& arr, size_t count) -> std::vector<
 	return nums;
 }
 
-auto DataValue::fromToml(const toml::node& n, const SchemaField* field) -> DataValue {
+auto DataValue::fromToml(const toml::node& n, const SchemaField* field, const toml::table* root) -> DataValue {
 	// Schema-less mode
 	if (field == nullptr) {
 		switch (n.type()) {
@@ -250,12 +250,12 @@ auto DataValue::fromToml(const toml::node& n, const SchemaField* field) -> DataV
 			case toml::node_type::array: {
 				auto result = DataValue::makeArray();
 				for (const auto& elem : *n.as_array()) {
-					result.push(fromToml(elem, nullptr));
+					result.push(fromToml(elem, nullptr, root));
 				}
 				return result;
 			}
 			case toml::node_type::table: {
-				return fromObject(*n.as_table(), {});
+				return fromObject(*n.as_table(), {}, root);
 			}
 			default: return DataValue {};
 		}
@@ -272,7 +272,7 @@ auto DataValue::fromToml(const toml::node& n, const SchemaField* field) -> DataV
 		elem_field.is_array = false;
 		auto result = DataValue::makeArray();
 		for (const auto& elem : *arr) {
-			result.push(fromToml(elem, &elem_field));
+			result.push(fromToml(elem, &elem_field, root));
 		}
 		return result;
 	}
@@ -381,31 +381,84 @@ auto DataValue::fromToml(const toml::node& n, const SchemaField* field) -> DataV
 				TOAST_WARN("AssetManager", "Expected table for object field '{}'; returning empty object", field->name);
 				return DataValue::makeObject();
 			}
-			return fromObject(*tbl, field->children);
+			return fromObject(*tbl, field->children, root);
 		}
 
 		default: return DataValue {};
 	}
 }
 
-auto DataValue::fromObject(const toml::table& t, const std::vector<SchemaField>& fields) -> DataValue {
+namespace {
+
+/**
+ * @brief Resolves an x-toast-type-switch field against the root Data table
+ */
+auto resolveTypeSwitch(const SchemaField& field, const toml::table* root) -> std::optional<SchemaField> {
+	if (root == nullptr) {
+		return std::nullopt;
+	}
+	const auto it = root->find(field.type_switch->field);
+	if (it == root->end()) {
+		return std::nullopt;
+	}
+	const auto controller_value = it->second.value<std::string>();
+	if (!controller_value) {
+		return std::nullopt;
+	}
+	for (const auto& c : field.type_switch->cases) {
+		if (c.case_value == *controller_value) {
+			SchemaField resolved = field;
+			resolved.type = c.type;
+			resolved.default_value = c.default_value;
+			resolved.type_switch.reset();
+			return resolved;
+		}
+	}
+	return std::nullopt;
+}
+
+}
+
+auto DataValue::fromObject(const toml::table& t, const std::vector<SchemaField>& fields, const toml::table* root) -> DataValue {
 	auto obj = DataValue::makeObject();
+
+	// The Data root resolves type switches against itself
+	if (root == nullptr) {
+		root = &t;
+	}
 
 	if (fields.empty()) {
 		// Schema-less, include every key
 		for (const auto& [k, v] : t) {
-			obj.set(std::string(k.str()), fromToml(v, nullptr));
+			obj.set(std::string(k.str()), fromToml(v, nullptr, root));
 		}
 	} else {
 		// Schema-guided, emit exactly the schema keys in order
 		for (const auto& f : fields) {
-			auto it = t.find(f.name);
+			SchemaField resolved_f = f;
+			if (f.type_switch.has_value()) {
+				auto resolved = resolveTypeSwitch(f, root);
+				if (!resolved) {
+					TOAST_WARN(
+					    "AssetManager",
+					    "Could not resolve x-toast-type-switch for field '{}' (controller '{}' missing or unmatched); "
+					    "leaving null",
+					    f.name,
+					    f.type_switch->field
+					);
+					obj.set(f.name, DataValue {});
+					continue;
+				}
+				resolved_f = std::move(*resolved);
+			}
+
+			auto it = t.find(resolved_f.name);
 			if (it != t.end()) {
-				obj.set(f.name, fromToml(it->second, &f));
-			} else if (f.default_value.has_value()) {
-				obj.set(f.name, *f.default_value);
+				obj.set(resolved_f.name, fromToml(it->second, &resolved_f, root));
+			} else if (resolved_f.default_value.has_value()) {
+				obj.set(resolved_f.name, *resolved_f.default_value);
 			} else {
-				obj.set(f.name, DataValue {});    // Null
+				obj.set(resolved_f.name, DataValue {});    // Null
 			}
 		}
 	}

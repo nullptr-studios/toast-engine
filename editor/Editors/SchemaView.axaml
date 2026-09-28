@@ -94,6 +94,36 @@
 			                    Wrap="False" />
 		</DataTemplate>
 
+		<!-- Type switch case row -->
+		<DataTemplate x:DataType="vm:TypeSwitchCaseVM">
+			<StackPanel Spacing="4">
+				<Grid ColumnDefinitions="60,*"
+				      ColumnSpacing="8">
+					<TextBlock Classes="lbl"
+					           Text="Case" />
+					<elements:StringBox Grid.Column="1"
+					                    Value="{Binding CaseValue, Mode=TwoWay}"
+					                    Wrap="False" />
+				</Grid>
+				<Grid ColumnDefinitions="60,*"
+				      ColumnSpacing="8">
+					<TextBlock Classes="lbl"
+					           Text="Type" />
+					<elements:EnumBox Grid.Column="1"
+					                  Value="{Binding TypeKey, Mode=TwoWay}"
+					                  Options="{Binding AvailableTypes, x:CompileBindings=False}" />
+				</Grid>
+				<Grid ColumnDefinitions="60,*"
+				      ColumnSpacing="8">
+					<TextBlock Classes="lbl"
+					           Text="Default" />
+					<elements:StringBox Grid.Column="1"
+					                    Value="{Binding DefaultString, Mode=TwoWay}"
+					                    Wrap="False" />
+				</Grid>
+			</StackPanel>
+		</DataTemplate>
+
 		<!-- Schema field card -->
 		<DataTemplate x:DataType="vm:SchemaFieldItemVM">
 			<StackPanel Spacing="8">
@@ -121,6 +151,38 @@
 					                  Value="{Binding IsArray, Mode=TwoWay}" />
 				</Grid>
 
+				<!-- Type switch toggle -->
+				<Grid ColumnDefinitions="150,*"
+				      ColumnSpacing="8"
+				      IsVisible="{Binding AdvancedView}">
+					<TextBlock Classes="lbl"
+					           Text="Type Switch" />
+					<elements:BoolBox Grid.Column="1"
+					                  Value="{Binding UseTypeSwitch, Mode=TwoWay}" />
+				</Grid>
+
+				<!-- Type switch controller + cases -->
+				<StackPanel Spacing="8"
+				            IsVisible="{Binding UseTypeSwitch}">
+					<Grid ColumnDefinitions="150,*"
+					      ColumnSpacing="8">
+						<TextBlock Classes="lbl"
+						           Text="Controller Field" />
+						<elements:EnumBox Grid.Column="1"
+						                  Value="{Binding TypeSwitchField, Mode=TwoWay}"
+						                  Options="{Binding TypeSwitchFieldOptions, x:CompileBindings=False}" />
+					</Grid>
+					<TextBlock Classes="lbl"
+					           Text="Cases" />
+					<elements:ArrayBox Background="{StaticResource Bg0}"
+					                   Padding="4"
+					                   Items="{Binding TypeSwitchCases, Mode=TwoWay}"
+					                   AddLabel="Add Case"
+					                   AddCommand="{Binding AddTypeSwitchCaseCommand}"
+					                   CanReorder="True"
+					                   CanAddRemove="True" />
+				</StackPanel>
+
 				<!-- Asset / Node subtype constraint -->
 				<Grid ColumnDefinitions="150,*"
 				      ColumnSpacing="8"
@@ -145,6 +207,12 @@
 				<Grid ColumnDefinitions="150,*"
 				      ColumnSpacing="8"
 				      IsVisible="{Binding HasMinMax}">
+					<Grid.IsVisible>
+						<MultiBinding Converter="{x:Static BoolConverters.And}">
+							<Binding Path="HasMinMax" />
+							<Binding Path="AdvancedView" />
+						</MultiBinding>
+					</Grid.IsVisible>
 					<TextBlock Classes="lbl"
 					           Text="Min" />
 					<elements:StringBox Grid.Column="1"
@@ -152,8 +220,13 @@
 					                    Wrap="False" />
 				</Grid>
 				<Grid ColumnDefinitions="150,*"
-				      ColumnSpacing="8"
-				      IsVisible="{Binding HasMinMax}">
+				      ColumnSpacing="8">
+					<Grid.IsVisible>
+						<MultiBinding Converter="{x:Static BoolConverters.And}">
+							<Binding Path="HasMinMax" />
+							<Binding Path="AdvancedView" />
+						</MultiBinding>
+					</Grid.IsVisible>
 					<TextBlock Classes="lbl"
 					           Text="Max" />
 					<elements:StringBox Grid.Column="1"
@@ -212,9 +285,10 @@
 					                      Z="{Binding DefaultZ, Mode=TwoWay}" />
 				</StackPanel>
 
-				<!-- Description -->
+				<!-- Description (Advanced) -->
 				<Grid ColumnDefinitions="150,*"
-				      ColumnSpacing="8">
+				      ColumnSpacing="8"
+				      IsVisible="{Binding AdvancedView}">
 					<TextBlock Classes="lbl"
 					           Text="Description" />
 					<elements:StringBox Grid.Column="1"
@@ -235,8 +309,9 @@
 					                   CanAddRemove="True" />
 				</StackPanel>
 
-				<!-- Variants -->
-				<StackPanel Spacing="4">
+				<!-- Variants (Advanced) -->
+				<StackPanel Spacing="4"
+				            IsVisible="{Binding AdvancedView}">
 					<TextBlock Classes="lbl"
 					           Text="Variants" />
 					<elements:ArrayBox Background="{StaticResource Bg0}"
@@ -280,9 +355,10 @@
 				</TextBox>
 
 				<StackPanel Spacing="8">
-					<!-- Discriminator -->
+					<!-- Discriminator (Advanced) -->
 					<Grid ColumnDefinitions="150,*"
-					      ColumnSpacing="8">
+					      ColumnSpacing="8"
+					      IsVisible="{Binding AdvancedView}">
 						<TextBlock Classes="lbl"
 						           Text="Discriminator" />
 						<elements:EnumBox Grid.Column="1"
@@ -368,36 +444,65 @@
 			              IsVisible="{Binding HasContent, x:CompileBindings=False}">
 
 				<StackPanel Spacing="8">
-					<StackPanel Orientation="Horizontal"
-					            HorizontalAlignment="Center"
-					            Spacing="8">
-						<Button Classes="tab-btn"
-						        Classes.selected="{Binding ShowProperties}"
-						        Command="{Binding SelectPropertiesTabCommand}">
-							<StackPanel Orientation="Horizontal"
-							            Spacing="6">
-								<LucideIcon Kind="TableProperties"
-								            Size="16"
-								            StrokeWidth="2.5"
-								            Foreground="{StaticResource Text}" />
-								<TextBlock Text="Fields"
-								           Foreground="{StaticResource Text}" />
-							</StackPanel>
-						</Button>
-						<Button Classes="tab-btn"
-						        Classes.selected="{Binding ShowTypes}"
-						        Command="{Binding SelectTypesTabCommand}">
-							<StackPanel Orientation="Horizontal"
-							            Spacing="6">
-								<LucideIcon Kind="Settings2"
-								            Size="16"
-								            StrokeWidth="2.5"
-								            Foreground="{StaticResource Text}" />
-								<TextBlock Text="Types"
-								           Foreground="{StaticResource Text}" />
-							</StackPanel>
-						</Button>
-					</StackPanel>
+					<Grid ColumnDefinitions="Auto,*,Auto">
+						<StackPanel Grid.Column="1"
+						            Orientation="Horizontal"
+						            HorizontalAlignment="Center"
+						            Spacing="8">
+							<Button Classes="tab-btn"
+							        Classes.selected="{Binding ShowProperties}"
+							        Command="{Binding SelectPropertiesTabCommand}">
+								<StackPanel Orientation="Horizontal"
+								            Spacing="6">
+									<LucideIcon Kind="TableProperties"
+									            Size="16"
+									            StrokeWidth="2.5"
+									            Foreground="{StaticResource Text}" />
+									<TextBlock Text="Fields"
+									           Foreground="{StaticResource Text}" />
+								</StackPanel>
+							</Button>
+							<Button Classes="tab-btn"
+							        Classes.selected="{Binding ShowTypes}"
+							        Command="{Binding SelectTypesTabCommand}">
+								<StackPanel Orientation="Horizontal"
+								            Spacing="6">
+									<LucideIcon Kind="Settings2"
+									            Size="16"
+									            StrokeWidth="2.5"
+									            Foreground="{StaticResource Text}" />
+									<TextBlock Text="Types"
+									           Foreground="{StaticResource Text}" />
+								</StackPanel>
+							</Button>
+						</StackPanel>
+
+						<!-- Advanced view toggle -->
+						<StackPanel Grid.Column="2"
+						            Orientation="Horizontal"
+						            Spacing="6"
+						            VerticalAlignment="Center">
+							<TextBlock Classes="lbl"
+							           Text="Advanced" />
+							<elements:BoolBox Value="{Binding AdvancedView, Mode=TwoWay}" />
+						</StackPanel>
+					</Grid>
+
+					<!-- Root discriminator (Advanced, Fields tab) -->
+					<Grid ColumnDefinitions="150,*"
+					      ColumnSpacing="8">
+						<Grid.IsVisible>
+							<MultiBinding Converter="{x:Static BoolConverters.And}">
+								<Binding Path="ShowProperties" />
+								<Binding Path="AdvancedView" />
+							</MultiBinding>
+						</Grid.IsVisible>
+						<TextBlock Classes="lbl"
+						           Text="Root Discriminator" />
+						<elements:EnumBox Grid.Column="1"
+						                  Value="{Binding RootDiscriminator, Mode=TwoWay}"
+						                  Options="{Binding RootDiscriminatorOptions}" />
+					</Grid>
 
 					<!-- Properties list -->
 					<elements:ArrayBox x:Name="FieldsBox"

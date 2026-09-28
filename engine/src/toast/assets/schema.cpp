@@ -42,7 +42,10 @@ Schema::Schema(std::string_view json_content) {
 			resolveStructRefs(fields);
 		}
 
-	} catch (const json_t::exception& e) { TOAST_ERROR("Schema", "Failed to parse schema JSON: {}", e.what()); }
+	} catch (const json_t::exception& e) {
+		TOAST_ERROR("Schema", "Failed to parse schema JSON: {}", e.what());
+		m_valid = false;
+	}
 }
 
 auto Schema::hasDefinition(std::string_view name) const noexcept -> bool {
@@ -69,7 +72,7 @@ auto Schema::toastTypeOf(const std::string& x_type) -> DataType {
 	if (x_type == "float") {
 		return DataType::float_t;
 	}
-	if (x_type == "string") {
+	if (x_type == "string" || x_type == "enum") {
 		return DataType::string_t;
 	}
 	if (x_type == "node") {
@@ -235,6 +238,15 @@ auto Schema::parseOneField(const std::string& name, const json_t& properties) ->
 		field.max = properties["exclusiveMaximum"].get<double>();
 	}
 
+	// Enum options
+	if (properties.contains("enum") && properties["enum"].is_array()) {
+		for (const auto& v : properties["enum"]) {
+			if (v.is_string()) {
+				field.enum_options.push_back(v.get<std::string>());
+			}
+		}
+	}
+
 	// Reference subtype constraints
 	if (properties.contains("x-toast-asset-type") && properties["x-toast-asset-type"].is_string()) {
 		field.asset_type = properties["x-toast-asset-type"].get<std::string>();
@@ -248,6 +260,31 @@ auto Schema::parseOneField(const std::string& name, const json_t& properties) ->
 		for (const auto& v : properties["x-toast-variants"]) {
 			if (v.is_string()) {
 				field.variants.push_back(v.get<std::string>());
+			}
+		}
+	}
+
+	// Type switch
+	if (properties.contains("x-toast-type-switch") && properties["x-toast-type-switch"].is_object()) {
+		const auto& sw = properties["x-toast-type-switch"];
+		if (sw.contains("field") && sw["field"].is_string() && sw.contains("cases") && sw["cases"].is_object()) {
+			TypeSwitch type_switch;
+			type_switch.field = sw["field"].get<std::string>();
+			for (const auto& [case_value, case_obj] : sw["cases"].items()) {
+				if (!case_obj.is_object()) {
+					continue;
+				}
+				TypeSwitchCase c;
+				c.case_value = case_value;
+				c.type = case_obj.contains("type") && case_obj["type"].is_string() ? toastTypeOf(case_obj["type"].get<std::string>())
+				                                                                   : DataType::null;
+				if (case_obj.contains("default") && !case_obj["default"].is_null()) {
+					c.default_value = parseDefault(c.type, false, case_obj["default"]);
+				}
+				type_switch.cases.push_back(std::move(c));
+			}
+			if (!type_switch.cases.empty()) {
+				field.type_switch = std::move(type_switch);
 			}
 		}
 	}

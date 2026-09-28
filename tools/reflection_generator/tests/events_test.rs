@@ -36,11 +36,33 @@ struct Unsupported : Event<Unsupported> {
 };
 struct WrongCtor : Event<WrongCtor> {
     int value;
-    WrongCtor() : value(0) {}
+    explicit WrongCtor(float other) : value(0) {}
 };
 "#;
     let events = parse_events(source, "events.hpp");
     assert_eq!(events.len(), 2);
     assert!(events[0].skip_reason.as_deref().unwrap().contains("unsupported type"));
     assert!(events[1].skip_reason.as_deref().unwrap().contains("no constructor"));
+}
+
+#[test]
+fn accepts_aggregate_events_with_node_and_enum_fields() {
+    let source = r#"
+enum class DamageType : uint8_t { physical, bullet };
+struct DamageEvent : public event::Event<DamageEvent> {
+    toast::Box<toast::Node> target;
+    toast::Box<toast::Node> attacker;
+    float amount = 0.0f;
+    DamageType type = DamageType::physical;
+};
+struct Defaulted : Event<Defaulted> {
+    int value;
+    Defaulted() : value(0) {}
+};
+"#;
+    let events = parse_events(source, "damage_event.hpp");
+    assert_eq!(events.len(), 2);
+    assert!(events.iter().all(|e| e.supported), "{:?}", events.iter().map(|e| &e.skip_reason).collect::<Vec<_>>());
+    let types: Vec<_> = events[0].fields.iter().map(|f| f.lua_type.as_deref().unwrap()).collect();
+    assert_eq!(types, ["Node", "Node", "number", "integer"]);
 }

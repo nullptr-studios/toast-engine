@@ -474,12 +474,11 @@ private:
 /// null-safe RTTI replacement; walks the NodeInfo chain instead of dynamic_cast
 template<typename T>
 auto reflect_cast(toast::Node* n) -> T* {    // NOLINT
-	if (n && n->info() && n->info()->isA(&toast::Reflect<T>::type_info)) {
+	if (n && n->info() && n->info()->isA(toast::nodeTypeInfo<T>())) {
 		return static_cast<T*>(n);
 	}
 	return nullptr;
 }
 
 #undef NODEFILE
-#include <node.generated.hpp>
 #include <toast/events/signals.inl>

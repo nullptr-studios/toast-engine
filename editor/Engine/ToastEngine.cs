@@ -96,6 +96,7 @@ public partial class ToastEngine : IDisposable {
 		// init after set_working_directory so the engine knows where to find its assets
 		toast_init();
 		IsEngineReady = true;
+		DataSchemaStubGenerator.Generate();
 		toast_create_avalonia_window();
 
 		ReflectionDatabase.Update();
@@ -438,6 +439,14 @@ public partial class ToastEngine : IDisposable {
 
 	public static void BakeAsset(string uid, string outPath) {
 		if (IsEngineReady) toast_bake_asset(uid, outPath);
+	}
+
+	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
+	private static partial int toast_generate_data_schema_stubs(string outPath);
+
+	/// Regenerates the Schemas.* lua stuff
+	public static bool GenerateDataSchemaStubs(string outPath) {
+		return IsEngineReady && toast_generate_data_schema_stubs(outPath) != 0;
 	}
 
 	private delegate IntPtr GameCreate();

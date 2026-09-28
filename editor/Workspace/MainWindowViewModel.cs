@@ -157,6 +157,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 
 	private void OnSchemaSaved(string path) {
 		m_dockFactory.GenericEditorVm?.RefreshFromSchema(path);
+		DataSchemaStubGenerator.Generate();
 	}
 
 	private void OnPlayModeChanged() {

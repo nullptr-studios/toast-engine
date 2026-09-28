@@ -94,6 +94,8 @@ public static class AssetDatabase {
 		if (ToastEngine.IsEngineReady)
 			ToastEngine.ReloadManifest();
 
+		DataSchemaStubGenerator.Generate();
+
 		if (notifyListeners) ReloadedDatabase?.Invoke();
 	}
 

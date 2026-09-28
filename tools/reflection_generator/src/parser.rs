@@ -58,6 +58,7 @@ pub fn parse_events(source: &str, file_path: &str) -> Vec<EventInfo> {
     parser.set_language(&tree_sitter_cpp::LANGUAGE.into()).expect("Language error");
     let tree = parser.parse(source, None).unwrap();
     let query = Query::new(&tree_sitter_cpp::LANGUAGE.into(), "[(class_specifier) (struct_specifier)] @class").unwrap();
+    let enums = collect_enum_names(tree.root_node(), source);
     let mut cursor = QueryCursor::new();
     let mut captures = cursor.captures(&query, tree.root_node(), source.as_bytes());
     let mut result = Vec::new();
@@ -68,7 +69,7 @@ pub fn parse_events(source: &str, file_path: &str) -> Vec<EventInfo> {
         let name = source[name_node.byte_range()].to_string();
         if !is_event_base(node, source, &name) { continue; }
 
-        let fields = get_event_fields(node, source);
+        let fields = get_event_fields(node, source, &enums);
         let constructor_compatible = event_constructor_compatible(node, source, &name, &fields);
         let unsupported = fields.iter().find(|f| f.lua_type.is_none());
         let skip_reason = if let Some(field) = unsupported {
@@ -105,10 +106,26 @@ fn is_event_base(node: tree_sitter::Node, source: &str, name: &str) -> bool {
     false
 }
 
-fn lua_event_type(type_name: &str) -> Option<String> {
+fn collect_enum_names(root: tree_sitter::Node, source: &str) -> Vec<String> {
+    let query = Query::new(&tree_sitter_cpp::LANGUAGE.into(), "(enum_specifier name: (type_identifier) @name body: (_))").unwrap();
+    let mut cursor = QueryCursor::new();
+    let mut captures = cursor.captures(&query, root, source.as_bytes());
+    let mut names = Vec::new();
+    while let Some((m, idx)) = captures.next() {
+        names.push(source[m.captures[*idx].node.byte_range()].to_string());
+    }
+    names
+}
+
+fn lua_event_type(type_name: &str, enums: &[String]) -> Option<String> {
     let t: String = type_name.chars().filter(|c| !c.is_whitespace()).collect();
     let bare = t.trim_start_matches("const").trim_start_matches("std::").trim_start_matches("glm::");
+    let unqualified = bare.rsplit("::").next().unwrap_or(bare);
+    if enums.iter().any(|e| e == unqualified) {
+        return Some("integer".into());
+    }
     match bare {
+        "toast::Box<toast::Node>" | "Box<toast::Node>" | "toast::Box<Node>" | "Box<Node>" => Some("Node".into()),
         "bool" => Some("boolean".into()),
         "float" | "double" => Some("number".into()),
         "char" | "short" | "int" | "long" | "longlong" | "unsigned" | "unsignedint" |
@@ -124,7 +141,7 @@ fn lua_event_type(type_name: &str) -> Option<String> {
     }
 }
 
-fn get_event_fields(node: tree_sitter::Node, source: &str) -> Vec<EventField> {
+fn get_event_fields(node: tree_sitter::Node, source: &str, enums: &[String]) -> Vec<EventField> {
     let Some(body) = node.child_by_field_name("body") else { return Vec::new() };
     let default_public = node.kind() == "struct_specifier";
     let mut public = default_public;
@@ -153,7 +170,7 @@ fn get_event_fields(node: tree_sitter::Node, source: &str) -> Vec<EventField> {
             fields.push(EventField {
                 name: source[decl.byte_range()].to_string(),
                 typename: declared_type.clone(),
-                lua_type: lua_event_type(&declared_type),
+                lua_type: lua_event_type(&declared_type, enums),
             });
         }
     }
@@ -179,16 +196,21 @@ fn event_constructor_compatible(node: tree_sitter::Node, source: &str, name: &st
     let query = Query::new(&tree_sitter_cpp::LANGUAGE.into(), "(function_declarator) @fn").unwrap();
     let mut cursor = QueryCursor::new();
     let mut captures = cursor.captures(&query, node, source.as_bytes());
+    let mut has_constructor = false;
     while let Some((m, _)) = captures.next() {
         let decl = m.captures[0].node;
         let Some(name_node) = decl.child_by_field_name("declarator") else { continue };
         if source[name_node.byte_range()].trim() != name { continue; }
+        has_constructor = true;
         let params = get_parameters(decl, source);
+        if params.is_empty() {
+            return true;
+        }
         if params.len() == fields.len() && params.iter().zip(fields).all(|(p, f)| normalized_type(&p.type_name) == normalized_type(&f.typename)) {
             return true;
         }
     }
-    false
+    !has_constructor
 }
 
 fn get_class(node: tree_sitter::Node, source: &str, file_path: &str) -> Option<Class> {

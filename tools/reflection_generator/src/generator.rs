@@ -81,9 +81,10 @@ pub fn generate_files_with_events(nodes: &[NodeInfo], events: &[EventInfo], outp
         "fields": e.fields,
     })).collect();
     let cpp_ctx = serde_json::json!({
-        "nodes":       all_ctx,
-        "events":      event_ctx,
-        "register_fn": register_fn,
+        "nodes":          all_ctx,
+        "events":         event_ctx,
+        "register_fn":    register_fn,
+        "split_typeinfo": split_typeinfo,
     });
 
     let out = output.join("reflect.generated.cpp");

@@ -82,6 +82,12 @@ TOAST_C_API void toast_pop_application(void) NOEXCEPT;
  */
 TOAST_C_API void toast_bake_asset(const char* uid, const char* out_path) NOEXCEPT;
 
+/**
+ * @brief Regenerates the schema's lua files
+ * @param out_path Absolute path to the .d.lua file
+ */
+TOAST_C_API int toast_generate_data_schema_stubs(const char* out_path) NOEXCEPT;
+
 // clang-format off
 /// sets all five URI roots; must be called before toast_init()
 /// @param assets  content addressed by UID (assets://)

@@ -177,12 +177,13 @@ public:
 	/**
 	 * @brief Parse a DataValue from a TOML node, using the schema field for type context
 	 */
-	static auto fromToml(const toml::node& n, const SchemaField* field) -> DataValue;
+	static auto fromToml(const toml::node& n, const SchemaField* field, const toml::table* root = nullptr) -> DataValue;
 
 	/**
 	 * @brief Build an Object DataValue from a TOML table, guided by a field list
 	 */
-	static auto fromObject(const toml::table& t, const std::vector<SchemaField>& fields) -> DataValue;
+	static auto fromObject(const toml::table& t, const std::vector<SchemaField>& fields, const toml::table* root = nullptr)
+	    -> DataValue;
 
 	/** Inserts this value into a TOML table under @c key */
 	void appendTo(toml::table& tbl, const std::string& key) const;

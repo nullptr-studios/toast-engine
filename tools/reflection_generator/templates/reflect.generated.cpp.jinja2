@@ -17,6 +17,14 @@
 // clang-format on
 
 namespace toast {
+template<class T>
+auto nodeTypeInfo() noexcept -> const NodeInfo* {
+	return &Reflect<T>::type_info;
+}
+{% for node in nodes %}
+template {% if split_typeinfo %}TOAST_API {% endif %}auto nodeTypeInfo<{{ node.qualified_name }}>() noexcept -> const NodeInfo*;
+{% endfor %}
+
 void {{ register_fn }}() {
 	static const std::array<const NodeInfo*, {{ nodes | length }}> all_types = {{ '{{' }}
 {% for node in nodes %}

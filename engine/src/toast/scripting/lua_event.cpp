@@ -2,9 +2,14 @@
 
 #include "lua_state.hpp"
 #include "lua_util.hpp"
+#include "node_proxy.hpp"
 #include "script_runtime.hpp"
 
 #include <atomic>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
 #include <iterator>
 #include <mutex>
 #include <toast/log.hpp>
@@ -12,6 +17,177 @@
 #include <unordered_map>
 
 namespace scripting {
+
+namespace _detail {
+namespace {
+
+template<typename Read>
+auto withField(lua_State* state, int table, std::string_view field, Read&& read) -> bool {
+	lua_getfield(state, table, std::string(field).c_str());
+	const bool ok = read(lua_gettop(state));
+	lua_pop(state, 1);
+	return ok;
+}
+
+template<typename T>
+auto readUserdata(lua_State* state, int table, std::string_view field, T& out) -> bool {
+	return withField(state, table, field, [&](int index) {
+		auto result = luabridge::Stack<T>::get(state, index);
+		if (!result) {
+			return false;
+		}
+		out = *result;
+		return true;
+	});
+}
+
+template<typename T>
+void pushUserdata(lua_State* state, const T& value) {
+	if (!luabridge::Stack<T>::push(state, value)) {
+		lua_pushnil(state);
+	}
+}
+
+}
+
+auto readEventPrimitive(lua_State* state, int table, std::string_view field, bool& out) -> bool {
+	return withField(state, table, field, [&](int index) {
+		if (!lua_isboolean(state, index)) {
+			return false;
+		}
+		out = lua_toboolean(state, index) != 0;
+		return true;
+	});
+}
+
+auto readEventPrimitive(lua_State* state, int table, std::string_view field, int64_t& out) -> bool {
+	return withField(state, table, field, [&](int index) {
+		if (!lua_isinteger(state, index)) {
+			return false;
+		}
+		out = static_cast<int64_t>(lua_tointeger(state, index));
+		return true;
+	});
+}
+
+auto readEventPrimitive(lua_State* state, int table, std::string_view field, double& out) -> bool {
+	return withField(state, table, field, [&](int index) {
+		if (!lua_isnumber(state, index)) {
+			return false;
+		}
+		out = static_cast<double>(lua_tonumber(state, index));
+		return true;
+	});
+}
+
+auto readEventPrimitive(lua_State* state, int table, std::string_view field, std::string& out) -> bool {
+	return withField(state, table, field, [&](int index) {
+		if (lua_type(state, index) != LUA_TSTRING) {
+			return false;
+		}
+		size_t length = 0;
+		const char* text = lua_tolstring(state, index, &length);
+		out.assign(text, length);
+		return true;
+	});
+}
+
+auto readEventPrimitive(lua_State* state, int table, std::string_view field, toast::UID& out) -> bool {
+	return withField(state, table, field, [&](int index) {
+		if (!lua_isinteger(state, index)) {
+			return false;
+		}
+		out = toast::UID(static_cast<uint64_t>(lua_tointeger(state, index)));
+		return true;
+	});
+}
+
+auto readEventPrimitive(lua_State* state, int table, std::string_view field, toast::Box<toast::Node>& out) -> bool {
+	return withField(state, table, field, [&](int index) {
+		// nil is a valid "no node"
+		if (lua_isnil(state, index)) {
+			out = {};
+			return true;
+		}
+		auto result = luabridge::Stack<NodeProxy>::get(state, index);
+		if (!result) {
+			return false;
+		}
+		out = (*result).box();
+		return true;
+	});
+}
+
+auto readEventPrimitive(lua_State* state, int table, std::string_view field, glm::vec2& out) -> bool {
+	return readUserdata(state, table, field, out);
+}
+
+auto readEventPrimitive(lua_State* state, int table, std::string_view field, glm::vec3& out) -> bool {
+	return readUserdata(state, table, field, out);
+}
+
+auto readEventPrimitive(lua_State* state, int table, std::string_view field, glm::vec4& out) -> bool {
+	return readUserdata(state, table, field, out);
+}
+
+auto readEventPrimitive(lua_State* state, int table, std::string_view field, glm::quat& out) -> bool {
+	return readUserdata(state, table, field, out);
+}
+
+void pushEventPrimitive(lua_State* state, bool value) {
+	lua_pushboolean(state, value ? 1 : 0);
+}
+
+void pushEventPrimitive(lua_State* state, int64_t value) {
+	lua_pushinteger(state, static_cast<lua_Integer>(value));
+}
+
+void pushEventPrimitive(lua_State* state, double value) {
+	lua_pushnumber(state, static_cast<lua_Number>(value));
+}
+
+void pushEventPrimitive(lua_State* state, std::string_view value) {
+	lua_pushlstring(state, value.data(), value.size());
+}
+
+void pushEventPrimitive(lua_State* state, toast::UID value) {
+	lua_pushinteger(state, static_cast<lua_Integer>(value.data()));
+}
+
+void pushEventPrimitive(lua_State* state, const toast::Box<toast::Node>& value) {
+	if (!value.exists()) {
+		lua_pushnil(state);
+		return;
+	}
+	pushUserdata(state, NodeProxy(value));
+}
+
+void pushEventPrimitive(lua_State* state, const glm::vec2& value) {
+	pushUserdata(state, value);
+}
+
+void pushEventPrimitive(lua_State* state, const glm::vec3& value) {
+	pushUserdata(state, value);
+}
+
+void pushEventPrimitive(lua_State* state, const glm::vec4& value) {
+	pushUserdata(state, value);
+}
+
+void pushEventPrimitive(lua_State* state, const glm::quat& value) {
+	pushUserdata(state, value);
+}
+
+void pushEventTable(lua_State* state, int field_count) {
+	lua_createtable(state, 0, field_count);
+}
+
+void setEventTableField(lua_State* state, std::string_view field) {
+	lua_setfield(state, -2, std::string(field).c_str());
+}
+
+}
+
 namespace {
 std::mutex g_registry_mutex;
 std::unordered_map<std::string, std::shared_ptr<LuaEventBinding>> g_bindings;

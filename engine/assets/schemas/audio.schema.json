@@ -7,9 +7,9 @@
   "required": ["type", "name", "path", "guid"],
   "additionalProperties": false,
   "properties": {
-    "type": { "type": "string", "x-toast-type": "string", "description": "FMOD object kind: event, bus, vca, port or snapshot." },
-    "name": { "type": "string", "x-toast-type": "string", "description": "Display name, the last segment of the path." },
-    "path": { "type": "string", "x-toast-type": "string", "description": "FMOD path, e.g. event:/Music/Theme." },
-    "guid": { "type": "string", "x-toast-type": "string", "description": "FMOD GUID in {xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx} form." }
+    "type": { "type": "string", "x-toast-type": "string", "description": "FMOD object kind" },
+    "name": { "type": "string", "x-toast-type": "string", "description": "Display name" },
+    "path": { "type": "string", "x-toast-type": "string", "description": "FMOD path (event:/Music/Theme)" },
+    "guid": { "type": "string", "x-toast-type": "string", "description": "FMOD GUID ({xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx})" }
   }
 }

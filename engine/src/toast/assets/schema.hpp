@@ -18,6 +18,17 @@
 
 namespace assets {
 
+struct TOAST_API TypeSwitchCase {
+	std::string case_value;
+	DataType type {DataType::null};
+	std::optional<DataValue> default_value;
+};
+
+struct TOAST_API TypeSwitch {
+	std::string field;    ///< Name of the root-level controller field
+	std::vector<TypeSwitchCase> cases;
+};
+
 /**
  * @brief Descriptor for one field in a schema
  */
@@ -34,9 +45,11 @@ struct TOAST_API SchemaField {
 	std::optional<double> min;
 	std::optional<double> max;
 
-	std::string asset_type;               ///< x-toast-asset-type: asset subtype constraint for asset_t fields
-	std::string node_type;                ///< x-toast-node-type: node subtype constraint for node_t fields
-	std::vector<std::string> variants;    ///< x-toast-variants: discriminator values this field applies to
+	std::string asset_type;                   ///< x-toast-asset-type: asset subtype constraint for asset_t fields
+	std::string node_type;                    ///< x-toast-node-type: node subtype constraint for node_t fields
+	std::vector<std::string> variants;        ///< x-toast-variants: discriminator values this field applies to
+	std::vector<std::string> enum_options;    ///< "enum": allowed string values, for x-toast-type "enum" fields
+	std::optional<TypeSwitch> type_switch;    ///< x-toast-type-switch: type depends on a root controller field
 
 	std::vector<SchemaField> children;
 };
@@ -56,6 +69,11 @@ public:
 	[[nodiscard]]
 	auto title() const -> std::string_view {
 		return m_title;
+	}
+
+	[[nodiscard]]
+	auto isValid() const noexcept -> bool {
+		return m_valid;
 	}
 
 	[[nodiscard]]
@@ -80,6 +98,7 @@ public:
 
 private:
 	std::string m_title;
+	bool m_valid {true};
 	std::vector<SchemaField> m_fields;
 	std::map<std::string, std::vector<SchemaField>> m_definitions;
 	std::map<std::string, std::string> m_discriminators;

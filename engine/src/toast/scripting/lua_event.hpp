@@ -65,44 +65,50 @@ constexpr auto luaEventField(std::string_view name, Member Owner::* member) -> L
 }
 
 namespace _detail {
+TOAST_API auto readEventPrimitive(lua_State* state, int table, std::string_view field, bool& out) -> bool;
+TOAST_API auto readEventPrimitive(lua_State* state, int table, std::string_view field, int64_t& out) -> bool;
+TOAST_API auto readEventPrimitive(lua_State* state, int table, std::string_view field, double& out) -> bool;
+TOAST_API auto readEventPrimitive(lua_State* state, int table, std::string_view field, std::string& out) -> bool;
+TOAST_API auto readEventPrimitive(lua_State* state, int table, std::string_view field, toast::UID& out) -> bool;
+TOAST_API auto readEventPrimitive(lua_State* state, int table, std::string_view field, toast::Box<toast::Node>& out) -> bool;
+TOAST_API auto readEventPrimitive(lua_State* state, int table, std::string_view field, glm::vec2& out) -> bool;
+TOAST_API auto readEventPrimitive(lua_State* state, int table, std::string_view field, glm::vec3& out) -> bool;
+TOAST_API auto readEventPrimitive(lua_State* state, int table, std::string_view field, glm::vec4& out) -> bool;
+TOAST_API auto readEventPrimitive(lua_State* state, int table, std::string_view field, glm::quat& out) -> bool;
+
+TOAST_API void pushEventPrimitive(lua_State* state, bool value);
+TOAST_API void pushEventPrimitive(lua_State* state, int64_t value);
+TOAST_API void pushEventPrimitive(lua_State* state, double value);
+TOAST_API void pushEventPrimitive(lua_State* state, std::string_view value);
+TOAST_API void pushEventPrimitive(lua_State* state, toast::UID value);
+TOAST_API void pushEventPrimitive(lua_State* state, const toast::Box<toast::Node>& value);
+TOAST_API void pushEventPrimitive(lua_State* state, const glm::vec2& value);
+TOAST_API void pushEventPrimitive(lua_State* state, const glm::vec3& value);
+TOAST_API void pushEventPrimitive(lua_State* state, const glm::vec4& value);
+TOAST_API void pushEventPrimitive(lua_State* state, const glm::quat& value);
+TOAST_API void pushEventTable(lua_State* state, int field_count);
+TOAST_API void setEventTableField(lua_State* state, std::string_view field);
+
 template<typename T>
 auto readEventValue(lua_State* state, int table, std::string_view field, T& out, std::string& error) -> bool {
-	lua_getfield(state, table, std::string(field).c_str());
-	const int value = lua_gettop(state);
-	bool ok = true;
+	bool ok = false;
 	if constexpr (std::same_as<T, bool>) {
-		ok = lua_isboolean(state, value) != 0;
+		ok = readEventPrimitive(state, table, field, out);
+	} else if constexpr (std::is_enum_v<T> || std::integral<T>) {
+		int64_t value = 0;
+		ok = readEventPrimitive(state, table, field, value);
 		if (ok) {
-			out = lua_toboolean(state, value) != 0;
-		}
-	} else if constexpr (std::same_as<T, toast::UID>) {
-		ok = lua_isinteger(state, value) != 0;
-		if (ok) {
-			out = toast::UID(static_cast<uint64_t>(lua_tointeger(state, value)));
-		}
-	} else if constexpr (std::integral<T>) {
-		ok = lua_isinteger(state, value) != 0;
-		if (ok) {
-			out = static_cast<T>(lua_tointeger(state, value));
+			out = static_cast<T>(value);
 		}
 	} else if constexpr (std::floating_point<T>) {
-		ok = lua_isnumber(state, value) != 0;
+		double value = 0.0;
+		ok = readEventPrimitive(state, table, field, value);
 		if (ok) {
-			out = static_cast<T>(lua_tonumber(state, value));
-		}
-	} else if constexpr (std::same_as<T, std::string>) {
-		ok = lua_type(state, value) == LUA_TSTRING;
-		if (ok) {
-			out = lua_tostring(state, value);
+			out = static_cast<T>(value);
 		}
 	} else {
-		auto result = luabridge::Stack<T>::get(state, value);
-		ok = static_cast<bool>(result);
-		if (ok) {
-			out = std::move(*result);
-		}
+		ok = readEventPrimitive(state, table, field, out);
 	}
-	lua_pop(state, 1);
 	if (!ok) {
 		error = "invalid or missing field '" + std::string(field) + "'";
 	}
@@ -112,17 +118,15 @@ auto readEventValue(lua_State* state, int table, std::string_view field, T& out,
 template<typename T>
 void pushEventValue(lua_State* state, const T& value) {
 	if constexpr (std::same_as<T, bool>) {
-		lua_pushboolean(state, value ? 1 : 0);
-	} else if constexpr (std::same_as<T, toast::UID>) {
-		lua_pushinteger(state, static_cast<lua_Integer>(value.data()));
-	} else if constexpr (std::integral<T>) {
-		lua_pushinteger(state, static_cast<lua_Integer>(value));
+		pushEventPrimitive(state, value);
+	} else if constexpr (std::is_enum_v<T> || std::integral<T>) {
+		pushEventPrimitive(state, static_cast<int64_t>(value));
 	} else if constexpr (std::floating_point<T>) {
-		lua_pushnumber(state, static_cast<lua_Number>(value));
+		pushEventPrimitive(state, static_cast<double>(value));
 	} else if constexpr (std::same_as<T, std::string>) {
-		lua_pushlstring(state, value.data(), value.size());
-	} else if (auto result = luabridge::Stack<T>::push(state, value); !result) {
-		lua_pushnil(state);
+		pushEventPrimitive(state, std::string_view(value));
+	} else {
+		pushEventPrimitive(state, value);
 	}
 }
 
@@ -134,16 +138,20 @@ auto sendEvent(lua_State* state, int payload, std::string& error, const std::tup
 	if (!valid) {
 		return false;
 	}
-	std::apply([](auto&&... args) { event::send<Event>(std::move(args)...); }, values);
+	if constexpr (std::is_constructible_v<Event, decltype(std::move(std::get<I>(values)))...>) {
+		std::apply([](auto&&... args) { event::send<Event>(std::move(args)...); }, values);
+	} else {
+		Event built {};
+		((built.*(std::get<I>(fields).member) = std::move(std::get<I>(values))), ...);
+		event::send<Event>(std::move(built));
+	}
 	return true;
 }
 
 template<typename Event, typename... Fields, size_t... I>
 void pushEvent(lua_State* state, const Event& value, const std::tuple<Fields...>& fields, std::index_sequence<I...>) {
-	lua_createtable(state, 0, sizeof...(Fields));
-	((pushEventValue(state, value.*(std::get<I>(fields).member)),
-	  lua_setfield(state, -2, std::string(std::get<I>(fields).name).c_str())),
-	 ...);
+	pushEventTable(state, static_cast<int>(sizeof...(Fields)));
+	((pushEventValue(state, value.*(std::get<I>(fields).member)), setEventTableField(state, std::get<I>(fields).name)), ...);
 }
 }
 
@@ -151,8 +159,9 @@ template<typename Event, typename... Fields>
 void registerLuaEvent(std::string_view name, Fields... fields) {
 	using Values = std::tuple<std::remove_cv_t<std::remove_reference_t<decltype(std::declval<Event>().*fields.member)>>...>;
 	static_assert(
-	    []<typename... T>(std::tuple<T...>*) { return std::is_constructible_v<Event, T...>; }(static_cast<Values*>(nullptr)),
-	    "Lua event fields must match a callable event constructor"
+	    std::is_default_constructible_v<Event> ||
+	        []<typename... T>(std::tuple<T...>*) { return std::is_constructible_v<Event, T...>; }(static_cast<Values*>(nullptr)),
+	    "Lua events need a constructor taking the public fields in order, or a default constructor"
 	);
 	auto metadata = std::make_shared<std::tuple<Fields...>>(fields...);
 	auto binding = std::make_shared<LuaEventBinding>();

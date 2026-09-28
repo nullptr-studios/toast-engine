@@ -7,6 +7,7 @@
 #include "lua_types.hpp"
 #include "lua_util.hpp"
 #include "node_proxy.hpp"
+#include "script_context.hpp"
 
 #include <algorithm>
 #include <array>
@@ -440,6 +441,7 @@ void ScriptInstance::call(std::string_view fn_name) noexcept {
 	if (!m_self || m_self->isNil()) {
 		return;
 	}
+	ScriptNodeContextScope script_node_ctx(m_proxy.box());
 	lua_State* l = m_state;
 	// instance table, so rawget finds them
 	m_self->push(l);
@@ -467,6 +469,7 @@ void ScriptInstance::callWithLuaStack(std::string_view name, lua_State* l, int a
 	if (!m_self || m_self->isNil()) {
 		return;
 	}
+	ScriptNodeContextScope script_node_ctx(m_proxy.box());
 	// Only calls functions defined in the Lua table
 	m_self->push(l);
 	lua_pushlstring(l, name.data(), name.size());
@@ -495,6 +498,7 @@ auto ScriptInstance::callEventMethod(std::string_view name, lua_State* l, int ev
 	if (!m_self || m_self->isNil()) {
 		return false;
 	}
+	ScriptNodeContextScope script_node_ctx(m_proxy.box());
 	m_self->push(l);
 	lua_pushlstring(l, name.data(), name.size());
 	lua_rawget(l, -2);
@@ -519,6 +523,7 @@ void ScriptInstance::callWithAnyArgs(std::string_view name, std::span<const std:
 	if (!m_self || m_self->isNil()) {
 		return;
 	}
+	ScriptNodeContextScope script_node_ctx(m_proxy.box());
 	lua_State* l = m_state;
 
 	// recursion guard

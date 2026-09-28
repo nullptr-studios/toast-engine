@@ -16,6 +16,31 @@ public partial class StringOptionVM : ObservableObject {
 	[ObservableProperty] private string m_value = "";
 }
 
+public partial class TypeSwitchCaseVM : ObservableObject {
+	private readonly SchemaViewModel? m_owner;
+	[ObservableProperty] private string m_caseValue = "case";
+	[ObservableProperty] private string m_defaultString = "";
+	[ObservableProperty] private string m_typeKey = "string";
+
+	public TypeSwitchCaseVM(SchemaViewModel? owner = null) {
+		m_owner = owner;
+	}
+
+	public IEnumerable<string> AvailableTypes => SchemaFieldItemVM.PrimitiveTypes;
+
+	partial void OnCaseValueChanged(string value) {
+		if (m_owner != null) m_owner.IsDirty = true;
+	}
+
+	partial void OnTypeKeyChanged(string value) {
+		if (m_owner != null) m_owner.IsDirty = true;
+	}
+
+	partial void OnDefaultStringChanged(string value) {
+		if (m_owner != null) m_owner.IsDirty = true;
+	}
+}
+
 public partial class SchemaFieldItemVM : ObservableObject, IRowSplittable {
 	public static readonly IReadOnlyList<string> PrimitiveTypes = [
 		"bool", "int", "float", "string", "enum", "node", "asset", "vec2", "vec3", "color3", "color4"
@@ -35,17 +60,29 @@ public partial class SchemaFieldItemVM : ObservableObject, IRowSplittable {
 	[ObservableProperty] private string m_refTypeString = "";
 	[ObservableProperty] private string m_typeKey = "float";
 
+	[ObservableProperty] private bool m_useTypeSwitch;
+	[ObservableProperty] private string m_typeSwitchField = "";
+
 	public SchemaFieldItemVM(SchemaViewModel owner) {
 		m_owner = owner;
 		EnumOptions.CollectionChanged += OnEnumOptionsChanged;
 		Variants.CollectionChanged += (_, _) => m_owner.IsDirty = true;
+		TypeSwitchCases.CollectionChanged += (_, _) => m_owner.IsDirty = true;
 	}
-
-	public string TypeSwitchJson { get; set; } = "";
 
 	public ObservableCollection<StringOptionVM> EnumOptions { get; } = [];
 
 	public ObservableCollection<StringOptionVM> Variants { get; } = [];
+
+	public ObservableCollection<TypeSwitchCaseVM> TypeSwitchCases { get; } = [];
+
+	public IEnumerable<string> TypeSwitchFieldOptions => m_owner.RootEnumFieldNames;
+
+	public bool AdvancedView => m_owner.AdvancedView;
+
+	public void NotifyAdvancedViewChanged() {
+		OnPropertyChanged(nameof(AdvancedView));
+	}
 
 	public IEnumerable<string> AssetTypeOptions => AssetTypeRegistry.All.Select(a => a.Type).OrderBy(t => t);
 
@@ -65,10 +102,10 @@ public partial class SchemaFieldItemVM : ObservableObject, IRowSplittable {
 	public bool IsColor4Type => TypeKey == "color4";
 
 	public bool HasTypedDefault =>
-		!IsArray && (IsBoolType || IsIntType || IsFloatType || IsStringType ||
+		!UseTypeSwitch && !IsArray && (IsBoolType || IsIntType || IsFloatType || IsStringType ||
 			IsEnum || IsNodeType || IsAssetType || IsColor3Type || IsColor4Type);
 
-	public bool HasMinMax => (IsIntType || IsFloatType || IsVec2Type || IsVec3Type) && !IsArray;
+	public bool HasMinMax => !UseTypeSwitch && (IsIntType || IsFloatType || IsVec2Type || IsVec3Type) && !IsArray;
 
 	public bool DefaultBool {
 		get => DefaultString == "true";
@@ -166,8 +203,17 @@ public partial class SchemaFieldItemVM : ObservableObject, IRowSplittable {
 		Variants.Add(new StringOptionVM { Value = "variant" });
 	}
 
+	[RelayCommand]
+	private void AddTypeSwitchCase() {
+		TypeSwitchCases.Add(new TypeSwitchCaseVM(m_owner));
+	}
+
 	public void NotifyAvailableTypesChanged() {
 		OnPropertyChanged(nameof(AvailableTypes));
+	}
+
+	public void NotifyTypeSwitchOptionsChanged() {
+		OnPropertyChanged(nameof(TypeSwitchFieldOptions));
 	}
 
 	partial void OnTypeKeyChanged(string value) {
@@ -186,13 +232,25 @@ public partial class SchemaFieldItemVM : ObservableObject, IRowSplittable {
 		OnPropertyChanged(nameof(HasTypedDefault));
 		OnPropertyChanged(nameof(HasMinMax));
 		LoadVecDefault();
+		m_owner.NotifyRootFieldOptionsChanged();
 	}
 
 	partial void OnNameChanged(string value) {
 		m_owner.IsDirty = true;
+		m_owner.NotifyRootFieldOptionsChanged();
 	}
 
 	partial void OnRefTypeStringChanged(string value) {
+		m_owner.IsDirty = true;
+	}
+
+	partial void OnUseTypeSwitchChanged(bool value) {
+		m_owner.IsDirty = true;
+		OnPropertyChanged(nameof(HasTypedDefault));
+		OnPropertyChanged(nameof(HasMinMax));
+	}
+
+	partial void OnTypeSwitchFieldChanged(string value) {
 		m_owner.IsDirty = true;
 	}
 
@@ -244,6 +302,12 @@ public partial class StructTypeVM : ObservableObject, IRowSplittable {
 		new[] { "" }.Concat(Fields.Where(f => f.TypeKey == "enum").Select(f => f.Name));
 
 	public bool ShouldSplitRow => true;
+
+	public bool AdvancedView => m_owner.AdvancedView;
+
+	public void NotifyAdvancedViewChanged() {
+		OnPropertyChanged(nameof(AdvancedView));
+	}
 
 	partial void OnDiscriminatorChanged(string value) {
 		m_owner.IsDirty = true;
