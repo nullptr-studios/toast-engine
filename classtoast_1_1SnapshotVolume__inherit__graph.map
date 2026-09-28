@@ -1,0 +1,11 @@
+<map id="toast::SnapshotVolume" name="toast::SnapshotVolume">
+<area shape="rect" id="Node000001" title="Fades an FMOD snapshot in and out based on accumulated listener weight." alt="" coords="5,308,177,336"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1AudioVolume.html" title="Base interface for audio&#45;reactive volumes." alt="" coords="17,232,165,260"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="93,274,93,309,89,307,89,278"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1Volume.html" title=" " alt="" coords="35,157,147,184"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="92,198,94,233,88,231,90,203"/>
+<area shape="rect" id="Node000004" href="$classtoast_1_1Node3D.html" title=" " alt="" coords="34,81,148,109"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="92,122,94,157,88,156,90,127"/>
+<area shape="rect" id="Node000005" href="$classtoast_1_1Node.html" title=" " alt="" coords="43,5,139,33"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="91,46,94,81,88,80,91,51"/>
+</map>

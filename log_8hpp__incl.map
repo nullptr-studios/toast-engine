@@ -1,0 +1,17 @@
+<map id="engine/src/toast/log.hpp" name="engine/src/toast/log.hpp">
+<area shape="rect" id="Node000001" title="Public logging interface for the engine." alt="" coords="246,5,424,33"/>
+<area shape="rect" id="Node000002" href="$export_8hpp.html" title=" " alt="" coords="5,81,97,109"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="285,36,112,80,111,75,284,31"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="121,81,189,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="305,33,202,77,200,72,300,34"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="213,81,278,109"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="322,33,274,73,272,69,317,34"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="303,81,367,109"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="337,32,337,67,333,64,333,35"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="392,81,457,109"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="352,31,399,71,394,71,350,36"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="482,81,578,109"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="370,31,484,75,478,75,369,36"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="602,81,721,109"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="394,31,591,77,585,77,393,36"/>
+</map>

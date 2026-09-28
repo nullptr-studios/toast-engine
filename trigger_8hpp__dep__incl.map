@@ -1,0 +1,11 @@
+<map id="engine/src/toast/input/trigger.hpp" name="engine/src/toast/input/trigger.hpp">
+<area shape="rect" id="Node000001" title="Triggers turn a raw input sample into an action value and discrete events." alt="" coords="5,5,168,50"/>
+<area shape="rect" id="Node000002" href="$bind_8hpp.html" title="A bind maps one keycode to a set of triggers and per&#45;bind modifiers." alt="" coords="5,98,168,143"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="87,63,89,98,84,98,86,68"/>
+<area shape="rect" id="Node000003" href="$action_8hpp.html" title="Maps a group of binds to a function and a value." alt="" coords="5,191,168,235"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="87,156,89,191,84,190,86,161"/>
+<area shape="rect" id="Node000004" href="$input__system_8hpp.html" title="Owns all runtime input state and dispatches input events." alt="" coords="5,283,168,328"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="87,248,89,284,84,283,86,253"/>
+<area shape="rect" id="Node000005" href="$input__system_8cpp.html" title="Implementation of the input system singleton." alt="" coords="5,376,168,421"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="88,342,89,377,84,375,85,346"/>
+</map>

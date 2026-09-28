@@ -1,0 +1,5 @@
+<map id="event::ProtoTraits&lt; RemoveSignalConnection &gt;" name="event::ProtoTraits&lt; RemoveSignalConnection &gt;">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,106,224,151"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1ProtoTraits.html" title="Specialization point that exposes a C++ event type over the C# FFI via protobuf." alt="" coords="28,5,201,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="116,47,117,106,112,105,113,51"/>
+</map>

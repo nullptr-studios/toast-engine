@@ -1,0 +1,12 @@
+<map id="event::ScriptAssetReloaded" name="event::ScriptAssetReloaded">
+<area shape="rect" id="Node000001" title="Fired after a hot&#45;reload." alt="" coords="122,301,322,328"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="5,183,197,228"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="138,235,210,299,205,301,135,240"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="16,5,175,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="98,46,103,183,98,182,95,50"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="117,82,258,110"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="123,40,174,81,169,83,124,46"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="166,124,121,184,117,181,169,120"/>
+<area shape="rect" id="Node000005" href="$structtoast_1_1UID.html" title=" " alt="" coords="220,192,307,219"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="256,232,229,302,225,298,251,235"/>
+</map>

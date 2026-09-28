@@ -1,0 +1,10 @@
+<map id="event::RequestHierarchyUpdate" name="event::RequestHierarchyUpdate">
+<area shape="rect" id="Node000001" title=" " alt="" coords="8,277,237,305"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="5,183,240,228"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="124,241,125,278,120,275,121,245"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="38,5,197,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="120,46,125,183,119,182,116,50"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="138,82,280,110"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="145,40,196,81,191,83,145,46"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="191,120,142,184,138,181,187,124"/>
+</map>

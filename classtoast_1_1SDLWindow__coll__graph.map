@@ -1,0 +1,7 @@
+<map id="toast::SDLWindow" name="toast::SDLWindow">
+<area shape="rect" id="Node000001" title=" " alt="" coords="90,106,228,134"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1IBaseWindow.html" title=" " alt="" coords="5,5,156,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="102,43,151,105,146,106,99,48"/>
+<area shape="rect" id="Node000003" href="$classevent_1_1Listener.html" title="manages the lifetime, subscription, and unsubscription of callbacks" alt="" coords="180,5,298,33"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="222,44,172,107,168,103,217,46"/>
+</map>

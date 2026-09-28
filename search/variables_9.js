@@ -1,7 +1,7 @@
 var searchData=
 [
-  ['jfacomputeshader_0',['jfaComputeShader',['../da/d32/classrenderer_1_1OpenGLRenderer.html#a962e1fd0b8e6be55218fe1e0c0bea23b',1,'renderer::OpenGLRenderer']]],
-  ['jfainitcomputeshader_1',['jfaInitComputeShader',['../da/d32/classrenderer_1_1OpenGLRenderer.html#aad7850602efe7466a6244f633360f24f',1,'renderer::OpenGLRenderer']]],
-  ['jfatex_2',['jfaTex',['../da/d32/classrenderer_1_1OpenGLRenderer.html#a3cf08130be0dbcd063271248b552f1bf',1,'renderer::OpenGLRenderer']]],
-  ['jid_3',['jid',['../df/d2c/structevent_1_1WindowInputDevice.html#aa365fba8481ba70c87715a5b2db70876',1,'event::WindowInputDevice']]]
+  ['jittered_5fview_5fprojection_0',['jittered_view_projection',['../structrenderer_1_1VulkanRenderer_1_1FrameUBO.html#a26245e99772d3f6d681ba03d3bea117e',1,'renderer::VulkanRenderer::FrameUBO']]],
+  ['job_5favailable_1',['job_available',['../classtoast_1_1ThreadPool.html#ac8ac78d66323460cfe40ca44a6202a2c',1,'toast::ThreadPool']]],
+  ['jobs_2',['jobs',['../classtoast_1_1ThreadPool.html#a6dfbf3a9370a8e85c4ead2268deed48d',1,'toast::ThreadPool']]],
+  ['joints_3',['joints',['../structassets_1_1Skin.html#a2547dfa4b57b50ced515e79dac292236',1,'assets::Skin']]]
 ];

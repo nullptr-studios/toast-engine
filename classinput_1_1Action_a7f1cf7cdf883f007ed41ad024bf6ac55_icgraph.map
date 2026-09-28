@@ -1,0 +1,6 @@
+<map id="input::Action::binds" name="input::Action::binds">
+<area shape="rect" id="Node000001" title=" " alt="" coords="232,29,378,57"/>
+<area shape="poly" id="edge1_Node000001_Node000001" title=" " alt="" coords="339,14,328,10,305,8,283,10,271,15,268,20,273,30,268,28,263,20,267,11,282,5,305,3,330,5,344,14"/>
+<area shape="rect" id="Node000002" href="$classinput_1_1Action.html#abd4c701ee0ced06bb804991275571064" title="Builds a runtime action from its asset." alt="" coords="5,29,184,57"/>
+<area shape="poly" id="edge2_Node000001_Node000002" title=" " alt="" coords="214,43,184,46,184,41,219,43"/>
+</map>

@@ -1,16 +1,8 @@
 var searchData=
 [
-  ['macos_2einl_0',['MacOS.inl',['../d7/d42/MacOS_8inl.html',1,'']]],
-  ['manager_2ecpp_1',['Manager.cpp',['../df/de9/Manager_8cpp.html',1,'']]],
-  ['manager_2ehpp_2',['Manager.hpp',['../d9/d54/Manager_8hpp.html',1,'']]],
-  ['manifold_2ehpp_3',['Manifold.hpp',['../d7/d26/Manifold_8hpp.html',1,'']]],
-  ['material_2ecpp_4',['Material.cpp',['../d4/d0f/Material_8cpp.html',1,'']]],
-  ['material_2ehpp_5',['Material.hpp',['../d0/d70/Material_8hpp.html',1,'']]],
-  ['memory_2ecpp_6',['Memory.cpp',['../d8/dcc/Memory_8cpp.html',1,'']]],
-  ['memory_2ehpp_7',['Memory.hpp',['../d4/d18/Memory_8hpp.html',1,'']]],
-  ['mesh_2ecpp_8',['Mesh.cpp',['../d2/dcc/Mesh_8cpp.html',1,'']]],
-  ['mesh_2ehpp_9',['Mesh.hpp',['../d1/d62/Mesh_8hpp.html',1,'']]],
-  ['meshrenderercomponent_2ecpp_10',['MeshRendererComponent.cpp',['../d6/dac/MeshRendererComponent_8cpp.html',1,'']]],
-  ['meshrenderercomponent_2ehpp_11',['MeshRendererComponent.hpp',['../d7/de2/MeshRendererComponent_8hpp.html',1,'']]],
-  ['modifier_2ehpp_12',['Modifier.hpp',['../dc/d96/Modifier_8hpp.html',1,'']]]
+  ['narrow_5fphase_2ehpp_0',['narrow_phase.hpp',['../narrow__phase_8hpp.html',1,'']]],
+  ['node_2ehpp_1',['node.hpp',['../node_8hpp.html',1,'']]],
+  ['node_5f3d_2ehpp_2',['node_3d.hpp',['../node__3d_8hpp.html',1,'']]],
+  ['node_5fproxy_2ehpp_3',['node_proxy.hpp',['../node__proxy_8hpp.html',1,'']]],
+  ['nodes_2ehpp_4',['nodes.hpp',['../nodes_8hpp.html',1,'']]]
 ];

@@ -1,0 +1,44 @@
+<map id="engine/src/toast/assets/data_value.hpp" name="engine/src/toast/assets/data_value.hpp">
+<area shape="rect" id="Node000001" title="Recursive typed value for schema&#45;driven TOML data assets." alt="" coords="669,5,840,50"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,98,51,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="666,31,551,39,402,50,236,70,67,101,65,95,235,65,402,45,551,33,671,30"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="75,98,184,126"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="666,39,460,65,200,100,199,95,459,59,671,37"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="208,98,317,126"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="667,44,334,100,333,95,670,40"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="341,98,451,126"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="666,49,467,97,465,92,671,48"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="475,98,525,126"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="688,50,541,100,540,95,683,51"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="549,98,694,126"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="722,50,656,92,654,87,717,52"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="718,98,792,126"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="756,48,757,84,753,81,753,52"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="816,98,874,126"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="779,48,822,88,817,87,778,53"/>
+<area shape="rect" id="Node000010" href="$export_8hpp.html" title=" " alt="" coords="832,174,960,201"/>
+<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="826,48,861,68,889,97,900,127,902,160,897,157,895,128,884,99,858,72,825,53"/>
+<area shape="rect" id="Node000011" href="$log_8hpp.html" title="Public logging interface for the engine." alt="" coords="1080,98,1186,126"/>
+<area shape="poly" id="edge10_Node000001_Node000011" title=" " alt="" coords="841,45,1068,96,1062,96,840,50"/>
+<area shape="rect" id="Node000018" href="$uid_8hpp.html" title="Unique identifier for everything that exists in our engine." alt="" coords="950,98,1056,126"/>
+<area shape="poly" id="edge18_Node000001_Node000018" title=" " alt="" coords="821,48,951,93,946,93,820,53"/>
+<area shape="rect" id="Node000019" title=" " alt="" coords="1211,98,1346,126"/>
+<area shape="poly" id="edge21_Node000001_Node000019" title=" " alt="" coords="841,40,1198,97,1193,98,840,45"/>
+<area shape="rect" id="Node000020" title=" " alt="" coords="1370,98,1432,126"/>
+<area shape="poly" id="edge22_Node000001_Node000020" title=" " alt="" coords="841,32,1070,52,1211,70,1358,98,1352,98,1210,76,1070,58,841,37"/>
+<area shape="poly" id="edge11_Node000011_Node000010" title=" " alt="" coords="1094,126,953,171,952,166,1088,127"/>
+<area shape="rect" id="Node000012" title=" " alt="" coords="1515,174,1584,201"/>
+<area shape="poly" id="edge12_Node000011_Node000012" title=" " alt="" coords="1187,121,1199,123,1348,145,1502,173,1497,173,1347,150,1198,128,1187,126"/>
+<area shape="rect" id="Node000013" title=" " alt="" coords="1074,174,1139,201"/>
+<area shape="poly" id="edge13_Node000011_Node000013" title=" " alt="" coords="1131,125,1118,161,1115,157,1126,128"/>
+<area shape="rect" id="Node000014" title=" " alt="" coords="1164,174,1228,201"/>
+<area shape="poly" id="edge14_Node000011_Node000014" title=" " alt="" coords="1146,124,1178,163,1173,161,1143,129"/>
+<area shape="rect" id="Node000015" title=" " alt="" coords="985,174,1050,201"/>
+<area shape="poly" id="edge15_Node000011_Node000015" title=" " alt="" coords="1115,125,1052,168,1050,163,1110,127"/>
+<area shape="rect" id="Node000016" title=" " alt="" coords="1252,174,1348,201"/>
+<area shape="poly" id="edge16_Node000011_Node000016" title=" " alt="" coords="1164,124,1259,167,1254,167,1163,129"/>
+<area shape="rect" id="Node000017" title=" " alt="" coords="1373,174,1491,201"/>
+<area shape="poly" id="edge17_Node000011_Node000017" title=" " alt="" coords="1187,124,1366,170,1361,169,1187,129"/>
+<area shape="poly" id="edge20_Node000018_Node000010" title=" " alt="" coords="986,125,928,167,926,162,981,127"/>
+<area shape="poly" id="edge19_Node000018_Node000015" title=" " alt="" coords="1007,124,1014,160,1010,157,1004,128"/>
+</map>

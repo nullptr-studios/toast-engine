@@ -1,0 +1,11 @@
+<map id="toast::AmbienceVolume" name="toast::AmbienceVolume">
+<area shape="rect" id="Node000001" title="Ambient sound generator." alt="" coords="5,308,182,336"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1AudioVolume.html" title="Base interface for audio&#45;reactive volumes." alt="" coords="19,232,168,260"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="95,274,96,309,91,307,92,278"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1Volume.html" title=" " alt="" coords="38,157,149,184"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="95,198,96,233,91,231,92,203"/>
+<area shape="rect" id="Node000004" href="$classtoast_1_1Node3D.html" title=" " alt="" coords="36,81,151,109"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="94,122,96,157,91,156,93,127"/>
+<area shape="rect" id="Node000005" href="$classtoast_1_1Node.html" title=" " alt="" coords="45,5,142,33"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="94,46,96,81,91,80,93,51"/>
+</map>

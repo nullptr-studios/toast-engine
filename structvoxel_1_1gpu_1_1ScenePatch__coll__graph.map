@@ -1,0 +1,5 @@
+<map id="voxel::gpu::ScenePatch" name="voxel::gpu::ScenePatch">
+<area shape="rect" id="Node000001" title=" " alt="" coords="10,173,180,201"/>
+<area shape="rect" id="Node000002" href="$structvoxel_1_1gpu_1_1PatchSection.html" title=" " alt="" coords="5,5,185,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="97,48,98,173,92,172,93,49"/>
+</map>

@@ -1,0 +1,7 @@
+<map id="engine/src/toast/input/action.hpp" name="engine/src/toast/input/action.hpp">
+<area shape="rect" id="Node000001" title="Maps a group of binds to a function and a value." alt="" coords="5,5,168,50"/>
+<area shape="rect" id="Node000002" href="$input__system_8hpp.html" title="Owns all runtime input state and dispatches input events." alt="" coords="5,98,168,143"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="87,63,89,98,84,97,86,68"/>
+<area shape="rect" id="Node000003" href="$input__system_8cpp.html" title="Implementation of the input system singleton." alt="" coords="5,191,168,235"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="88,156,89,191,84,190,85,160"/>
+</map>

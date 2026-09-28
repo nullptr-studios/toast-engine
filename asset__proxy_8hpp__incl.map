@@ -1,0 +1,23 @@
+<map id="engine/src/toast/scripting/asset_proxy.hpp" name="engine/src/toast/scripting/asset_proxy.hpp">
+<area shape="rect" id="Node000001" title="Lua&#45;side proxy for an asset handle, registered as &quot;Asset&quot; in Lua." alt="" coords="291,5,476,50"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="200,98,258,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="341,52,269,93,266,88,345,49"/>
+<area shape="rect" id="Node000003" href="$core__types_8hpp.html" title="Base types for the asset system." alt="" coords="282,98,486,126"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="385,48,386,84,381,81,382,53"/>
+<area shape="rect" id="Node000007" href="$uid_8hpp.html" title="Unique identifier for everything that exists in our engine." alt="" coords="561,174,668,201"/>
+<area shape="poly" id="edge11_Node000001_Node000007" title=" " alt="" coords="422,48,499,96,589,164,584,164,496,100,421,53"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="5,174,72,201"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="310,129,88,175,86,170,311,124"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="95,174,240,201"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="343,127,221,171,220,166,348,125"/>
+<area shape="rect" id="Node000006" href="$export_8hpp.html" title=" " alt="" coords="322,249,451,277"/>
+<area shape="poly" id="edge5_Node000003_Node000006" title=" " alt="" coords="359,125,335,142,315,160,304,180,303,190,306,200,323,222,346,242,341,241,319,226,301,203,298,190,299,178,311,156,332,138,354,127"/>
+<area shape="poly" id="edge6_Node000003_Node000007" title=" " alt="" coords="425,124,561,168,556,169,425,129"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="316,174,452,201"/>
+<area shape="poly" id="edge9_Node000003_Node000009" title=" " alt="" coords="385,124,386,159,382,157,382,128"/>
+<area shape="rect" id="Node000010" title=" " alt="" coords="475,174,538,201"/>
+<area shape="poly" id="edge10_Node000003_Node000010" title=" " alt="" coords="406,124,474,165,469,165,405,129"/>
+<area shape="poly" id="edge8_Node000007_Node000006" title=" " alt="" coords="576,202,442,247,441,242,571,202"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="582,249,647,277"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="616,200,617,235,612,232,613,204"/>
+</map>

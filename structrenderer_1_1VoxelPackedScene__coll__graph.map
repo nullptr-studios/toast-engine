@@ -1,0 +1,7 @@
+<map id="renderer::VoxelPackedScene" name="renderer::VoxelPackedScene">
+<area shape="rect" id="Node000001" title=" " alt="" coords="87,106,290,134"/>
+<area shape="rect" id="Node000002" href="$structvoxel_1_1gpu_1_1PackedPool.html" title=" " alt="" coords="5,5,175,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="114,41,178,105,173,106,112,46"/>
+<area shape="rect" id="Node000003" href="$structvoxel_1_1gpu_1_1PackedScene.html" title=" " alt="" coords="198,5,379,33"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="268,43,204,108,201,103,262,44"/>
+</map>

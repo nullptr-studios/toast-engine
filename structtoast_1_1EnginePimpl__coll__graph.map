@@ -1,0 +1,15 @@
+<map id="toast::EnginePimpl" name="toast::EnginePimpl">
+<area shape="rect" id="Node000001" title=" " alt="" coords="622,123,766,150"/>
+<area shape="rect" id="Node000002" href="$classTime.html" title="Class that controls the time of the application." alt="" coords="310,11,365,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="380,21,483,29,542,40,599,59,624,72,647,89,682,123,677,122,643,93,621,77,597,64,541,45,482,34,381,26"/>
+<area shape="rect" id="Node000003" href="$classevent_1_1Listener.html" title="manages the lifetime, subscription, and unsubscription of callbacks" alt="" coords="278,67,397,94"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="412,83,502,92,599,107,650,122,645,122,598,112,501,97,413,88"/>
+<area shape="rect" id="Node000004" href="$classtoast_1_1NodeRegistry.html" title="Global registry mapping fully&#45;qualified type names to NodeInfo pointers." alt="" coords="262,120,413,148"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="428,132,625,135,620,137,429,137"/>
+<area shape="rect" id="Node000005" href="$classrenderer_1_1SharedTextureOutputTarget.html" title=" " alt="" coords="227,171,448,216"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="463,182,598,163,649,151,654,150,599,168,464,188"/>
+<area shape="rect" id="Node000006" href="$classrenderer_1_1IOutputTarget.html" title=" " alt="" coords="5,180,178,208"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="193,191,229,193,224,194,194,196"/>
+<area shape="rect" id="Node000007" href="$structtoast_1_1UID.html" title=" " alt="" coords="294,240,381,268"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="396,251,493,241,546,229,597,211,621,197,644,181,678,152,683,149,647,185,624,202,599,216,548,234,494,246,397,256"/>
+</map>

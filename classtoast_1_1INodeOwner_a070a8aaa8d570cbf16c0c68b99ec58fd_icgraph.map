@@ -1,0 +1,7 @@
+<map id="toast::INodeOwner::asWorkspace" name="toast::INodeOwner::asWorkspace">
+<area shape="rect" id="Node000001" title="Downcast helper for owners that need Workspace&#45;specific state." alt="" coords="402,5,552,50"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1INodeOwner.html#a64b6034e9beabc313d99ca24a26e8cd4" title="True for a Workspace open for editing: lifecycle callbacks still run there, but the game is not runni..." alt="" coords="204,5,354,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="384,28,354,30,354,25,389,28"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1INodeOwner.html#a58b28b0f5f24f971e81234d2d845068a" title="Determines if this owner is elegible for runtime systems." alt="" coords="5,5,156,50"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="186,28,156,30,156,25,191,27"/>
+</map>

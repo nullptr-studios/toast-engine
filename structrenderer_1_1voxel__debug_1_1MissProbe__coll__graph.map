@@ -1,0 +1,7 @@
+<map id="renderer::voxel_debug::MissProbe" name="renderer::voxel_debug::MissProbe">
+<area shape="rect" id="Node000001" title="The costliest box the cursor ray entered without hitting anything." alt="" coords="101,123,267,168"/>
+<area shape="rect" id="Node000002" href="$structrenderer_1_1VulkanRenderer_1_1VoxelVolumeProxy.html" title=" " alt="" coords="5,5,192,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="125,60,171,122,165,123,122,65"/>
+<area shape="rect" id="Node000003" href="$structvoxel_1_1RayHit.html" title=" " alt="" coords="216,14,325,42"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="254,53,202,125,198,121,249,55"/>
+</map>

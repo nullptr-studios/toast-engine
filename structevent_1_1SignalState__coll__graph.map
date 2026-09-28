@@ -1,0 +1,12 @@
+<map id="event::SignalState" name="event::SignalState">
+<area shape="rect" id="Node000001" title=" " alt="" coords="167,284,307,311"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="5,183,213,211"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="139,218,222,282,217,284,137,223"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="24,5,183,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="106,47,111,183,106,182,103,50"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="125,82,266,110"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="131,40,182,81,177,83,132,46"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="176,120,123,184,119,181,172,124"/>
+<area shape="rect" id="Node000005" href="$structtoast_1_1UID.html" title=" " alt="" coords="236,183,323,211"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="270,223,245,285,241,281,266,226"/>
+</map>

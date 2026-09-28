@@ -1,0 +1,9 @@
+<map id="editor.Workspace.InspectorViewModel" name="editor.Workspace.InspectorViewModel">
+<area shape="rect" id="Node000001" title=" " alt="" coords="26,98,224,143"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,14,53,42"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="55,50,104,96,100,99,53,55"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="76,14,174,42"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="127,55,127,98,123,96,123,59"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="198,5,399,50"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="246,57,167,100,165,95,241,58"/>
+</map>

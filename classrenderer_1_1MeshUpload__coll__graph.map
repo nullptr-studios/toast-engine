@@ -1,0 +1,17 @@
+<map id="renderer::MeshUpload" name="renderer::MeshUpload">
+<area shape="rect" id="Node000001" title=" " alt="" coords="603,104,768,132"/>
+<area shape="rect" id="Node000002" href="$classrenderer_1_1PendingResourceUpload.html" title=" " alt="" coords="308,5,504,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="519,50,580,68,659,104,654,104,578,73,519,55"/>
+<area shape="rect" id="Node000003" href="$classrenderer_1_1VulkanMesh.html" title=" " alt="" coords="325,74,487,102"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="502,96,605,109,600,110,503,101"/>
+<area shape="rect" id="Node000004" href="$classrenderer_1_1IVulkanResource.html" title=" " alt="" coords="5,74,197,102"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="212,85,327,86,322,89,213,90"/>
+<area shape="rect" id="Node000005" href="$structrenderer_1_1VulkanMesh_1_1UploadData.html" title=" " alt="" coords="325,125,487,170"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="502,146,579,141,630,133,635,132,579,146,503,151"/>
+<area shape="rect" id="Node000006" href="$classassets_1_1HandleBase.html" title="Base class for type&#45;erased asset handles." alt="" coords="331,194,480,222"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="495,196,537,187,578,176,624,154,661,134,666,132,627,159,580,180,538,193,496,201"/>
+<area shape="rect" id="Node000007" href="$classassets_1_1Asset.html" title="Base class for all engine assets." alt="" coords="47,166,155,194"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="170,183,333,199,329,203,170,189"/>
+<area shape="rect" id="Node000008" href="$structtoast_1_1UID.html" title=" " alt="" coords="58,222,144,250"/>
+<area shape="poly" id="edge7_Node000006_Node000008" title=" " alt="" coords="159,231,283,223,328,220,333,220,284,229,160,237"/>
+</map>

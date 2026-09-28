@@ -1,0 +1,10 @@
+<map id="event::WorkspaceApplyHistorySnapshot" name="event::WorkspaceApplyHistorySnapshot">
+<area shape="rect" id="Node000001" title=" " alt="" coords="8,277,229,322"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="5,183,232,228"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="120,241,121,278,116,275,117,245"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="34,5,193,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="116,46,121,183,115,182,112,50"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="134,82,276,110"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="141,40,192,81,187,83,141,46"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="187,120,138,184,134,181,183,124"/>
+</map>

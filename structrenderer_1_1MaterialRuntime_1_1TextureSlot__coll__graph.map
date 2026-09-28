@@ -1,0 +1,14 @@
+<map id="renderer::MaterialRuntime::TextureSlot" name="renderer::MaterialRuntime::TextureSlot">
+<area shape="rect" id="Node000001" title=" " alt="" coords="28,401,221,446"/>
+<area shape="rect" id="Node000002" href="$classassets_1_1Handle.html" title=" " alt="" coords="37,284,212,328"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="126,342,127,402,122,400,122,346"/>
+<area shape="rect" id="Node000003" href="$classassets_1_1HandleBase.html" title="Base class for type&#45;erased asset handles." alt="" coords="44,106,194,134"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="121,147,126,283,121,283,118,151"/>
+<area shape="rect" id="Node000006" href="$classassets_1_1Handle.html" title="Type&#45;safe smart pointer for assets." alt="" coords="140,183,295,211"/>
+<area shape="poly" id="edge6_Node000006_Node000003" title=" " alt="" coords="148,141,203,182,198,184,148,146"/>
+<area shape="rect" id="Node000004" href="$classassets_1_1Asset.html" title="Base class for all engine assets." alt="" coords="5,5,113,33"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="69,44,90,81,109,105,104,106,86,83,70,50"/>
+<area shape="rect" id="Node000005" href="$structtoast_1_1UID.html" title=" " alt="" coords="137,5,224,33"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="168,50,153,83,134,107,130,104,149,81,171,45"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="194,225,145,285,141,281,198,221"/>
+</map>

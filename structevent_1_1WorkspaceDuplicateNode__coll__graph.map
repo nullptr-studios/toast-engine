@@ -1,0 +1,12 @@
+<map id="event::WorkspaceDuplicateNode" name="event::WorkspaceDuplicateNode">
+<area shape="rect" id="Node000001" title=" " alt="" coords="110,323,344,351"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="5,183,257,228"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="157,238,220,322,215,323,154,242"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="46,5,205,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="128,46,133,183,128,182,125,50"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="147,82,288,110"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="153,40,204,81,199,83,154,46"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="199,120,151,184,147,181,196,124"/>
+<area shape="rect" id="Node000005" href="$structtoast_1_1UID.html" title=" " alt="" coords="281,192,368,219"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="308,231,239,324,235,320,303,232"/>
+</map>

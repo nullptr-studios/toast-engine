@@ -1,0 +1,10 @@
+<map id="event::WindowMouseButton" name="event::WindowMouseButton">
+<area shape="rect" id="Node000001" title="Event sent when user clicks a button on the mouse." alt="" coords="10,277,214,305"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="5,183,219,228"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="114,241,114,278,110,275,110,245"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="27,5,186,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="109,47,114,183,109,182,106,50"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="128,82,269,110"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="134,40,185,81,180,83,134,46"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="181,120,132,184,128,181,177,124"/>
+</map>

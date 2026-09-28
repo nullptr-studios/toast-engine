@@ -1,0 +1,10 @@
+<map id="event::ExitApplication" name="event::ExitApplication">
+<area shape="rect" id="Node000001" title="Send this event to tell the engine to close the window." alt="" coords="39,260,203,288"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="5,183,237,211"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="123,224,123,261,119,259,119,228"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="36,5,195,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="119,47,123,183,118,182,114,50"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="137,82,278,110"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="144,40,194,81,189,83,143,46"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="188,120,135,184,131,181,184,123"/>
+</map>

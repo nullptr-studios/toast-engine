@@ -1,0 +1,11 @@
+<map id="engine/src/toast/world/light.hpp" name="engine/src/toast/world/light.hpp">
+<area shape="rect" id="Node000001" title="Base light node; registers with the renderer so it can be collected into the per&#45;frame light list." alt="" coords="289,5,455,50"/>
+<area shape="rect" id="Node000002" href="$ambient__light_8hpp.html" title="TODO: Brief description of the file&#39;s purpose." alt="" coords="5,98,171,143"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="292,55,157,100,155,95,287,56"/>
+<area shape="rect" id="Node000003" href="$directional__light_8hpp.html" title="TODO: Brief description of the file&#39;s purpose." alt="" coords="195,98,360,143"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="341,60,301,100,298,96,336,62"/>
+<area shape="rect" id="Node000004" href="$point__light_8hpp.html" title="TODO: Brief description of the file&#39;s purpose." alt="" coords="384,98,549,143"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="406,58,447,98,442,97,404,63"/>
+<area shape="rect" id="Node000005" href="$spotlight_8hpp.html" title="TODO: Brief description of the file&#39;s purpose." alt="" coords="573,98,739,143"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="455,53,591,97,585,98,454,58"/>
+</map>

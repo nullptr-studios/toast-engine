@@ -1,0 +1,10 @@
+<map id="event::RequestSignalCallables" name="event::RequestSignalCallables">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,277,225,305"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="9,183,221,228"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="117,241,117,278,113,275,113,245"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="30,5,189,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="112,47,117,183,112,182,109,50"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="131,82,272,110"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="137,40,188,81,183,83,137,46"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="184,120,135,184,131,181,180,124"/>
+</map>

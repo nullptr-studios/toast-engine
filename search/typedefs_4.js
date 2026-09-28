@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['factoryfunction_0',['FactoryFunction',['../da/d8d/Children_8inl.html#ac8137d1a5cdf0985e80eedae0c02cece',1,'Children.inl']]]
+  ['paletteremaptable_0',['PaletteRemapTable',['../stamp_8hpp.html#ac4204c2958c44b445c98ce2bd10f8432',1,'voxel']]],
+  ['publisheddims_1',['PublishedDims',['../voxel__change__history_8hpp.html#aafa8f00853f4d026ed771e2d1a5e80f4',1,'renderer']]]
 ];

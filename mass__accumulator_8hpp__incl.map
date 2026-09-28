@@ -1,0 +1,12 @@
+<map id="engine/src/toast/voxel/mass_accumulator.hpp" name="engine/src/toast/voxel/mass_accumulator.hpp">
+<area shape="rect" id="Node000001" title=" " alt="" coords="146,5,321,50"/>
+<area shape="rect" id="Node000002" href="$voxel__constants_8hpp.html" title=" " alt="" coords="5,98,160,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="191,52,121,93,118,88,195,49"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="107,174,172,201"/>
+<area shape="poly" id="edge4_Node000001_Node000003" title=" " alt="" coords="223,50,157,162,153,158,218,51"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="235,98,303,126"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="244,48,260,84,255,83,242,53"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="327,98,430,126"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="272,48,345,90,339,90,271,53"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="94,124,123,161,118,162,92,129"/>
+</map>

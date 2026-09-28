@@ -1,0 +1,13 @@
+<map id="engine/src/toast/scripting/lua_types.hpp" name="engine/src/toast/scripting/lua_types.hpp">
+<area shape="rect" id="Node000001" title="Small value types registered as Lua usertypes." alt="" coords="147,5,332,50"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,98,71,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="187,53,85,94,83,89,185,48"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="95,98,160,126"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="212,50,159,91,156,86,207,51"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="185,98,294,126"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="241,48,242,84,237,81,237,52"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="318,98,427,126"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="275,48,341,90,336,90,274,53"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="452,98,510,126"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="304,48,440,95,434,96,303,53"/>
+</map>

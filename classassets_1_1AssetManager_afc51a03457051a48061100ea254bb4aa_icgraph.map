@@ -1,0 +1,7 @@
+<map id="assets::AssetManager::load" name="assets::AssetManager::load">
+<area shape="rect" id="Node000001" title="Loads an asset by UID, returning the cached copy if already resident." alt="" coords="218,40,382,85"/>
+<area shape="rect" id="Node000002" href="$classassets_1_1AssetManager.html#a6998c32f3ba1a397ffab6956b5c51728" title="Loads an asset by virtual URI, returning the cached copy if already resident." alt="" coords="5,5,170,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="200,47,170,44,170,38,205,46"/>
+<area shape="rect" id="Node000003" href="$classassets_1_1AssetManager.html#a4d007c760dc434758decfa7a89c98182" title="Searches the manifest for entries whose path contains the given query string." alt="" coords="5,75,170,119"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="200,79,171,86,170,81,205,78"/>
+</map>

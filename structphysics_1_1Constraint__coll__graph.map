@@ -1,0 +1,14 @@
+<map id="physics::Constraint" name="physics::Constraint">
+<area shape="rect" id="Node000001" title=" " alt="" coords="122,352,267,380"/>
+<area shape="rect" id="Node000002" href="$structphysics_1_1BroadPhasePair.html" title=" " alt="" coords="105,229,284,257"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="197,271,197,352,192,350,193,274"/>
+<area shape="rect" id="Node000003" href="$structphysics_1_1BodyShapeKey.html" title=" " alt="" coords="107,106,282,134"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="196,147,197,229,192,228,193,152"/>
+<area shape="rect" id="Node000004" href="$structphysics_1_1BodyID.html" title=" " alt="" coords="5,5,131,33"/>
+<area shape="poly" id="edge6_Node000001_Node000004" title=" " alt="" coords="66,46,67,91,69,144,78,201,96,256,113,285,135,311,179,351,174,352,131,315,109,288,91,258,73,202,64,144,61,91,65,51"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="96,40,180,104,175,107,97,45"/>
+<area shape="rect" id="Node000005" href="$structphysics_1_1ShapeID.html" title=" " alt="" coords="155,5,288,33"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="215,46,201,106,196,104,213,50"/>
+<area shape="rect" id="Node000006" href="$structphysics_1_1ContactFeatureID.html" title=" " alt="" coords="308,229,500,257"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="371,265,219,354,216,349,366,264"/>
+</map>

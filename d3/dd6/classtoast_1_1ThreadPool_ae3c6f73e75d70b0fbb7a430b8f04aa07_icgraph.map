@@ -1,4 +1,0 @@
-<map id="toast::ThreadPool::ThreadLoop" name="toast::ThreadPool::ThreadLoop">
-<area shape="rect" id="node1" title="Main loop executed by each worker thread." alt="" coords="219,5,363,45"/>
-<area shape="rect" id="node2" href="$d3/dd6/classtoast_1_1ThreadPool.html#ab75efbc1973673ceb4f4083ade733208" title="Initializes the thread pool with worker threads." alt="" coords="5,13,171,38"/>
-</map>

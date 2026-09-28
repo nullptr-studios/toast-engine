@@ -1,0 +1,14 @@
+<map id="engine/src/toast/world/volume.hpp" name="engine/src/toast/world/volume.hpp">
+<area shape="rect" id="Node000001" title="Generic cubic volume." alt="" coords="217,5,382,50"/>
+<area shape="rect" id="Node000002" href="$audio__volume_8hpp_source.html" title=" " alt="" coords="98,98,286,143"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="261,62,219,99,216,96,265,58"/>
+<area shape="rect" id="Node000006" href="$post__process__volume_8hpp.html" title="Per&#45;level post&#45;process grading, as a node an artist places in the scene." alt="" coords="310,98,505,143"/>
+<area shape="poly" id="edge6_Node000001_Node000006" title=" " alt="" coords="337,57,385,97,379,98,336,62"/>
+<area shape="rect" id="Node000003" href="$audio__ambience__volume_8hpp.html" title="Randomly spawns one&#45;shot audio events at positions inside the volume." alt="" coords="5,191,181,252"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="158,156,125,192,121,188,161,152"/>
+<area shape="rect" id="Node000005" href="$audio__snapshot__volume_8hpp.html" title="Triggers an FMOD snapshot while listeners are inside the volume." alt="" coords="205,191,376,252"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="224,151,263,190,258,190,223,156"/>
+<area shape="rect" id="Node000004" href="$nodes_8hpp.html" title="Wrapper file with all node files." alt="" coords="109,300,274,345"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="135,261,173,300,167,300,133,266"/>
+<area shape="poly" id="edge5_Node000005_Node000004" title=" " alt="" coords="252,263,215,302,212,298,247,265"/>
+</map>

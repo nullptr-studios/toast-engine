@@ -1,0 +1,5 @@
+<map id="input::DeadzoneModifier" name="input::DeadzoneModifier">
+<area shape="rect" id="Node000001" title="Zeroes input below a lower threshold and remaps the rest to [0, 1]." alt="" coords="5,81,186,109"/>
+<area shape="rect" id="Node000002" href="$classinput_1_1IModifier.html" title="Polymorphic base for all modifiers." alt="" coords="36,5,155,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="97,47,98,82,93,80,94,51"/>
+</map>

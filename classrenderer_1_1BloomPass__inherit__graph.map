@@ -1,0 +1,5 @@
+<map id="renderer::BloomPass" name="renderer::BloomPass">
+<area shape="rect" id="Node000001" title=" " alt="" coords="25,81,181,109"/>
+<area shape="rect" id="Node000002" href="$classrenderer_1_1IPostProcessPass.html" title=" " alt="" coords="5,5,201,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="105,47,105,82,101,80,101,51"/>
+</map>

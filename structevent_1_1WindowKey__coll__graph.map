@@ -1,0 +1,10 @@
+<map id="event::WindowKey" name="event::WindowKey">
+<area shape="rect" id="Node000001" title="Event sent when user presses a key." alt="" coords="39,260,181,288"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="5,183,215,211"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="112,224,112,261,108,259,108,228"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="25,5,184,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="108,47,112,183,107,182,103,50"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="126,82,267,110"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="133,40,183,81,178,83,132,46"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="177,120,124,184,120,181,173,124"/>
+</map>

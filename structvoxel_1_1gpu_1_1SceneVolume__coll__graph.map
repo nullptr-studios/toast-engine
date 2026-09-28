@@ -1,0 +1,7 @@
+<map id="voxel::gpu::SceneVolume" name="voxel::gpu::SceneVolume">
+<area shape="rect" id="Node000001" title="Neither pointer may be null." alt="" coords="38,106,222,134"/>
+<area shape="rect" id="Node000002" href="$classvoxel_1_1Volume.html" title=" " alt="" coords="5,5,119,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="81,44,124,105,118,106,78,48"/>
+<area shape="rect" id="Node000003" href="$structvoxel_1_1Palette.html" title="Entry 0 is the empty voxel and must stay all zero." alt="" coords="143,5,253,33"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="188,46,168,84,146,108,143,103,164,80,184,49"/>
+</map>

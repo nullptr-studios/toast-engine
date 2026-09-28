@@ -1,0 +1,5 @@
+<map id="voxel::LatticePlacement" name="voxel::LatticePlacement">
+<area shape="rect" id="Node000001" title=" " alt="" coords="7,106,185,134"/>
+<area shape="rect" id="Node000002" href="$structvoxel_1_1LatticeOrientation.html" title="Output axis i reads input axis source[i] negated when flip[i]." alt="" coords="5,5,187,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="98,47,99,106,93,105,94,50"/>
+</map>

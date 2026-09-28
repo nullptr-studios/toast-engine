@@ -1,0 +1,21 @@
+<map id="engine/src/toast/renderer/ray_tracing_scene.hpp" name="engine/src/toast/renderer/ray_tracing_scene.hpp">
+<area shape="rect" id="Node000001" title=" " alt="" coords="188,5,372,50"/>
+<area shape="rect" id="Node000002" href="$vulkan__common_8hpp_source.html" title=" " alt="" coords="202,98,358,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="281,48,282,84,277,81,278,53"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,182,109,210"/>
+<area shape="poly" id="edge8_Node000001_Node000003" title=" " alt="" coords="241,52,172,100,84,174,80,170,169,96,245,49"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="132,182,195,210"/>
+<area shape="poly" id="edge10_Node000001_Node000004" title=" " alt="" coords="242,49,215,73,191,99,176,133,168,168,164,165,171,131,187,97,211,69,238,52"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="382,98,447,126"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="316,48,383,90,377,90,315,53"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="470,98,545,126"/>
+<area shape="poly" id="edge9_Node000001_Node000009" title=" " alt="" coords="340,48,460,92,455,93,340,53"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="245,129,108,179,106,174,243,124"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="264,125,196,175,193,171,258,127"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="218,174,424,218"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="288,124,306,161,301,159,285,129"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="447,182,571,210"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="317,124,460,176,455,177,316,129"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="595,182,762,210"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="347,124,583,171,607,178,601,178,582,176,347,129"/>
+</map>

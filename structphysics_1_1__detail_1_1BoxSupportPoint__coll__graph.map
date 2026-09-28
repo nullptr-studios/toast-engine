@@ -1,0 +1,5 @@
+<map id="physics::_detail::BoxSupportPoint" name="physics::_detail::BoxSupportPoint">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,106,211,151"/>
+<area shape="rect" id="Node000002" href="$structphysics_1_1ContactFeatureID.html" title=" " alt="" coords="12,5,204,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="110,47,111,106,105,105,106,51"/>
+</map>

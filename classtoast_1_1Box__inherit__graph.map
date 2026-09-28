@@ -1,0 +1,19 @@
+<map id="toast::Box&lt; T &gt;" name="toast::Box&lt; T &gt;">
+<area shape="rect" id="Node000001" title="Intrusive reference&#45;counted handle to a Node." alt="" coords="5,272,131,299"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1Box.html" title=" " alt="" coords="377,20,520,65"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="69,256,77,215,92,165,116,116,133,94,153,75,178,59,206,47,265,32,324,28,379,31,374,34,324,33,266,37,208,52,181,64,156,80,137,98,121,119,97,167,82,216,75,257"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1Box.html" title=" " alt="" coords="377,90,520,134"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="78,256,106,203,127,177,153,155,208,129,266,114,324,107,379,106,374,109,325,112,267,119,210,134,156,160,131,181,111,206,83,258"/>
+<area shape="rect" id="Node000004" href="$classtoast_1_1Box.html" title=" " alt="" coords="373,159,524,204"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="96,260,124,242,154,227,209,209,267,196,374,184,370,187,268,201,211,214,156,232,126,247,101,264"/>
+<area shape="rect" id="Node000005" href="$classtoast_1_1Box.html" title=" " alt="" coords="373,228,524,273"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="146,276,373,255,371,260,147,281"/>
+<area shape="rect" id="Node000006" href="$classtoast_1_1Box.html" title=" " alt="" coords="377,298,520,342"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="131,301,155,305,272,316,379,320,374,323,271,321,154,310,133,306"/>
+<area shape="rect" id="Node000007" href="$classtoast_1_1Box.html" title=" " alt="" coords="377,367,520,412"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="93,308,123,331,156,349,212,368,270,379,379,390,374,392,269,385,210,373,154,354,120,335,94,313"/>
+<area shape="rect" id="Node000008" href="$classtoast_1_1Box.html" title=" " alt="" coords="373,436,524,481"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="79,311,109,368,130,395,156,418,208,442,265,456,321,462,375,465,369,466,321,468,264,462,206,447,153,422,126,399,105,371,79,317"/>
+<area shape="rect" id="Node000009" href="$classtoast_1_1Box.html" title=" " alt="" coords="377,506,520,550"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="72,312,82,356,96,405,120,454,137,475,156,494,181,509,208,521,266,535,324,539,374,539,379,539,324,544,265,540,206,526,178,514,153,498,133,479,116,457,91,407,77,357,72,317"/>
+</map>

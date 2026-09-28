@@ -1,4 +1,0 @@
-<map id="renderer::HUD::HUDLayer::GetFramebuffer" name="renderer::HUD::HUDLayer::GetFramebuffer">
-<area shape="rect" id="node1" title="Get the HUD framebuffer for compositing." alt="" coords="248,5,437,45"/>
-<area shape="rect" id="node2" href="$da/d32/classrenderer_1_1OpenGLRenderer.html#ae710c3e5e20e988eb3e5af541eac17c8" title=" " alt="" coords="5,5,200,45"/>
-</map>

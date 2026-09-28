@@ -1,6 +1,0 @@
-<map id="resource::ResourceManager::SaveFile" name="resource::ResourceManager::SaveFile">
-<area shape="rect" id="node1" title="Saves content to a file on disk." alt="" coords="381,27,584,67"/>
-<area shape="rect" id="node2" href="$d8/d5c/namespaceresource.html#a9d51862d8c41be438c01c8b713c75877" title=" " alt="" coords="192,5,333,31"/>
-<area shape="rect" id="node3" href="$d4/de6/classrenderer_1_1Material.html#aaa539180c1c05e42e926889cf484eccf" title="Saves the current material state to its JSON file." alt="" coords="193,55,332,95"/>
-<area shape="rect" id="node4" href="$d4/de6/classrenderer_1_1Material.html#a0e4285ae426362c5e03b56568323d5dd" title="Shows the material editor UI (editor only)." alt="" coords="5,55,144,95"/>
-</map>

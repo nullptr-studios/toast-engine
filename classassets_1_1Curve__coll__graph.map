@@ -1,0 +1,7 @@
+<map id="assets::Curve" name="assets::Curve">
+<area shape="rect" id="Node000001" title=" " alt="" coords="76,81,186,109"/>
+<area shape="rect" id="Node000002" href="$classassets_1_1Asset.html" title="Base class for all engine assets." alt="" coords="5,5,113,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="84,42,121,80,116,81,81,47"/>
+<area shape="rect" id="Node000003" href="$classassets_1_1ISaveable.html" title="Inherit from this class to allow an asset to be saved." alt="" coords="137,5,272,33"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="183,43,146,83,142,78,178,45"/>
+</map>

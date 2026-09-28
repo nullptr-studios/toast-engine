@@ -1,0 +1,8 @@
+<map id="input::Value::magnitude" name="input::Value::magnitude">
+<area shape="rect" id="Node000001" title=" " alt="" coords="222,32,398,60"/>
+<area shape="poly" id="edge3_Node000001_Node000001" title=" " alt="" coords="346,16,334,13,310,11,287,13,274,17,271,23,277,32,272,31,266,23,271,13,286,7,310,5,336,8,351,17"/>
+<area shape="rect" id="Node000002" href="$classinput_1_1Action.html#a27efea1b461c69209e3a37915b77ffd3" title="Evaluates every bind, accumulates the value and updates timing state." alt="" coords="5,5,174,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="204,34,174,32,174,27,209,33"/>
+<area shape="rect" id="Node000003" href="$classinput_1_1Bind.html#a39c8ae835260be52ce6742b387afe499" title="Evaluates every trigger and applies per&#45;bind modifiers." alt="" coords="11,57,168,85"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="204,58,169,65,168,60,209,57"/>
+</map>

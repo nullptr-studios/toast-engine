@@ -1,0 +1,7 @@
+<map id="editor.Components.Modals.AssetTree" name="editor.Components.Modals.AssetTree">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,174,205,218"/>
+<area shape="rect" id="Node000002" href="$classeditor_1_1Components_1_1Modals_1_1PickerWindow.html" title=" " alt="" coords="5,81,205,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="107,139,107,174,103,173,103,143"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="68,5,142,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="106,46,108,81,102,80,104,51"/>
+</map>

@@ -1,0 +1,9 @@
+<map id="engine/src/toast/world/gizmo_layout.hpp" name="engine/src/toast/world/gizmo_layout.hpp">
+<area shape="rect" id="Node000001" title="Geometry + hit&#45;test constants shared between DebugPass (renders the gizmos) and Workspace (hit&#45;tests/..." alt="" coords="63,5,229,50"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,98,71,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="120,50,69,90,66,86,115,51"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="94,98,198,126"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="148,48,148,84,144,81,144,52"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="222,98,281,126"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="175,48,225,88,220,88,173,53"/>
+</map>

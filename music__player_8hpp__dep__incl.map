@@ -1,0 +1,5 @@
+<map id="engine/src/toast/audio/nodes/music_player.hpp" name="engine/src/toast/audio/nodes/music_player.hpp">
+<area shape="rect" id="Node000001" title="Multi&#45;track FMOD music player with crossfade and beat callbacks." alt="" coords="5,5,188,50"/>
+<area shape="rect" id="Node000002" href="$nodes_8hpp.html" title="Wrapper file with all node files." alt="" coords="14,98,179,143"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="98,64,99,99,94,97,95,68"/>
+</map>

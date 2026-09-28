@@ -1,0 +1,9 @@
+<map id="toast::AmbientLight" name="toast::AmbientLight">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,232,155,260"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1Light.html" title=" " alt="" coords="33,157,127,184"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="82,198,83,233,77,231,78,202"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1Node3D.html" title=" " alt="" coords="23,81,137,109"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="81,122,83,157,77,156,79,127"/>
+<area shape="rect" id="Node000004" href="$classtoast_1_1Node.html" title=" " alt="" coords="32,5,128,33"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="81,46,83,81,77,80,79,51"/>
+</map>

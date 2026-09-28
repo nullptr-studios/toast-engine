@@ -1,0 +1,5 @@
+<map id="physics::_detail::BoxClipVertex" name="physics::_detail::BoxClipVertex">
+<area shape="rect" id="Node000001" title=" " alt="" coords="11,106,191,151"/>
+<area shape="rect" id="Node000002" href="$structphysics_1_1ContactFeatureID.html" title=" " alt="" coords="5,5,197,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="103,47,104,106,98,105,99,51"/>
+</map>

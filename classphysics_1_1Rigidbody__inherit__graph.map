@@ -1,0 +1,13 @@
+<map id="physics::Rigidbody" name="physics::Rigidbody">
+<area shape="rect" id="Node000001" title=" " alt="" coords="264,157,407,184"/>
+<area shape="rect" id="Node000004" href="$classphysics_1_1DynamicRigidbody.html" title=" " alt="" coords="5,232,207,260"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="282,190,148,234,146,229,277,189"/>
+<area shape="rect" id="Node000005" href="$classphysics_1_1KinematicRigidbody.html" title=" " alt="" coords="231,232,440,260"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="337,198,337,234,333,230,333,202"/>
+<area shape="rect" id="Node000006" href="$classphysics_1_1StaticRigidbody.html" title=" " alt="" coords="464,232,644,260"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="389,187,518,232,512,232,388,192"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1Node3D.html" title=" " alt="" coords="278,81,392,109"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="337,122,338,158,333,155,334,127"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1Node.html" title=" " alt="" coords="287,5,384,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="337,47,338,82,333,79,334,51"/>
+</map>

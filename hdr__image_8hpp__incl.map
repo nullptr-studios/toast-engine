@@ -1,0 +1,11 @@
+<map id="engine/src/toast/assets/hdr_image.hpp" name="engine/src/toast/assets/hdr_image.hpp">
+<area shape="rect" id="Node000001" title="Decoding for high&#45;dynamic&#45;range images, used for imported environment maps." alt="" coords="84,5,256,50"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,98,71,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="138,51,73,92,70,87,132,50"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="94,98,147,126"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="159,49,138,86,134,83,155,52"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="171,98,268,126"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="184,48,206,85,201,84,182,53"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="292,98,354,126"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="211,48,288,90,283,91,210,53"/>
+</map>

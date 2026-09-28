@@ -1,0 +1,5 @@
+<map id="toast::CameraController" name="toast::CameraController">
+<area shape="rect" id="Node000001" title="Manages switching between different active cameras." alt="" coords="5,81,183,109"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1Node.html" title=" " alt="" coords="46,5,142,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="96,47,96,82,92,80,92,51"/>
+</map>

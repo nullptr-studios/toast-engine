@@ -1,0 +1,9 @@
+<map id="editor.Editors.HapticsViewModel" name="editor.Editors.HapticsViewModel">
+<area shape="rect" id="Node000001" title=" " alt="" coords="72,98,264,143"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,14,53,42"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="62,48,137,96,132,99,61,53"/>
+<area shape="rect" id="Node000003" href="$interfaceeditor_1_1Editors_1_1IToastZoneEditor.html" title=" " alt="" coords="76,5,259,50"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="169,64,170,99,165,97,166,68"/>
+<area shape="rect" id="Node000004" href="$interfaceeditor_1_1Workspace_1_1IAutosavable.html" title=" " alt="" coords="283,14,506,42"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="350,47,223,100,221,95,345,48"/>
+</map>

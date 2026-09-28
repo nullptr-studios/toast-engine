@@ -1,0 +1,5 @@
+<map id="input::StartTrigger" name="input::StartTrigger">
+<area shape="rect" id="Node000001" title="Fires once when the input goes from off to on." alt="" coords="5,81,143,109"/>
+<area shape="rect" id="Node000002" href="$classinput_1_1ITrigger.html" title="Polymorphic base for all triggers." alt="" coords="19,5,129,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="76,47,77,81,71,80,72,51"/>
+</map>

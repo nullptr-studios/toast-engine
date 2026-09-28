@@ -1,0 +1,5 @@
+<map id="editor.Workspace.SettingRow" name="editor.Workspace.SettingRow">
+<area shape="rect" id="Node000001" title="Base for one editable row in a settings panel." alt="" coords="5,81,217,109"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="42,5,180,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="113,47,113,82,109,79,109,51"/>
+</map>

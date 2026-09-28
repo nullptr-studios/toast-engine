@@ -1,0 +1,9 @@
+<map id="input::ITrigger::fromToml" name="input::ITrigger::fromToml">
+<area shape="rect" id="Node000001" title="Builds a trigger from a TOML table keyed by its &quot;name&quot; field." alt="" coords="455,32,635,60"/>
+<area shape="rect" id="Node000002" href="$classinput_1_1ITrigger.html#a5c06be5531ae4cb4bbb06e1ddf7c80da" title="Evaluates the trigger against the current input sample." alt="" coords="232,5,407,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="437,33,408,32,408,27,442,33"/>
+<area shape="rect" id="Node000003" href="$classinput_1_1Bind.html#a935dd38f61ee68e176fe32198dc8d1f2" title="Builds a bind from a [[bind]] TOML table." alt="" coords="239,57,400,85"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="442,57,401,65,400,59,437,58"/>
+<area shape="rect" id="Node000004" href="$classinput_1_1Action.html#abd4c701ee0ced06bb804991275571064" title="Builds a runtime action from its asset." alt="" coords="5,57,184,85"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="221,71,184,74,184,69,226,71"/>
+</map>

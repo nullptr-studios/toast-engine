@@ -1,0 +1,5 @@
+<map id="toast::settings::Settings::save" name="toast::settings::Settings::save">
+<area shape="rect" id="Node000001" title="Writes the active layer, creating parent directories as needed." alt="" coords="229,5,404,50"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1settings_1_1Settings.html#a95906bf3c8b27a6c6e4476ad59a5ccd4" title="save(), but only when something changed since the last one" alt="" coords="5,5,181,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="211,28,181,30,181,25,216,27"/>
+</map>

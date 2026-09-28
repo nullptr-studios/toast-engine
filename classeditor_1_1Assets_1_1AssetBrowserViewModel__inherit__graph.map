@@ -1,0 +1,9 @@
+<map id="editor.Assets.AssetBrowserViewModel" name="editor.Assets.AssetBrowserViewModel">
+<area shape="rect" id="Node000001" title=" " alt="" coords="66,81,264,126"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,5,53,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="64,39,131,79,127,82,63,44"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="77,5,253,33"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="167,47,167,82,163,79,163,51"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="278,5,375,33"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="289,40,209,83,207,78,284,41"/>
+</map>

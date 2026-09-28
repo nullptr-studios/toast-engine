@@ -1,0 +1,5 @@
+<map id="input::ReleaseTrigger" name="input::ReleaseTrigger">
+<area shape="rect" id="Node000001" title="Fires once when the input goes from on to off." alt="" coords="5,81,164,109"/>
+<area shape="rect" id="Node000002" href="$classinput_1_1ITrigger.html" title="Polymorphic base for all triggers." alt="" coords="29,5,140,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="86,47,87,81,82,80,83,51"/>
+</map>

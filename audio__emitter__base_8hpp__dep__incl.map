@@ -1,0 +1,16 @@
+<map id="engine/src/toast/audio/nodes/audio_emitter_base.hpp" name="engine/src/toast/audio/nodes/audio_emitter_base.hpp">
+<area shape="rect" id="Node000001" title="Abstract base for all spatialized 3D audio emitters." alt="" coords="381,5,607,50"/>
+<area shape="rect" id="Node000002" href="$audio__box__emitter_8hpp.html" title="Box&#45;shaped 3D audio emitter." alt="" coords="5,98,223,143"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="386,56,206,100,204,95,390,52"/>
+<area shape="rect" id="Node000004" href="$audio__capsule__emitter_8hpp.html" title="Capsule&#45;shaped 3D audio emitter." alt="" coords="247,98,490,143"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="454,58,400,100,397,95,450,60"/>
+<area shape="rect" id="Node000005" href="$audio__emitter__3d_8hpp.html" title="Point&#45;source 3D emitter, positioned at the node&#39;s world origin." alt="" coords="514,98,724,143"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="537,57,592,98,587,97,535,62"/>
+<area shape="rect" id="Node000006" href="$audio__sphere__emitter_8hpp.html" title="Sphere&#45;shaped 3D audio emitter." alt="" coords="749,98,986,143"/>
+<area shape="poly" id="edge7_Node000001_Node000006" title=" " alt="" coords="598,51,781,97,775,98,598,57"/>
+<area shape="rect" id="Node000003" href="$nodes_8hpp.html" title="Wrapper file with all node files." alt="" coords="411,191,577,235"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="220,144,413,191,409,193,219,149"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="411,149,467,191,461,190,410,154"/>
+<area shape="poly" id="edge6_Node000005_Node000003" title=" " alt="" coords="580,151,525,193,523,188,575,153"/>
+<area shape="poly" id="edge8_Node000006_Node000003" title=" " alt="" coords="766,146,577,194,576,189,761,147"/>
+</map>

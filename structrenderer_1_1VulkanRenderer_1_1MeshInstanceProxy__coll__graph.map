@@ -1,0 +1,29 @@
+<map id="renderer::VulkanRenderer::MeshInstanceProxy" name="renderer::VulkanRenderer::MeshInstanceProxy">
+<area shape="rect" id="Node000001" title=" " alt="" coords="1672,64,1858,109"/>
+<area shape="rect" id="Node000002" href="$classrenderer_1_1VulkanMesh.html" title=" " alt="" coords="1366,33,1528,60"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1544,56,1674,75,1669,75,1544,61"/>
+<area shape="rect" id="Node000003" href="$classrenderer_1_1IVulkanResource.html" title=" " alt="" coords="1125,33,1316,60"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="1332,44,1368,46,1362,47,1332,49"/>
+<area shape="rect" id="Node000004" href="$classassets_1_1Material.html" title="Shader&#45;driven material asset." alt="" coords="1384,112,1510,139"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="1525,127,1585,127,1648,121,1701,110,1706,109,1648,126,1585,132,1525,133"/>
+<area shape="rect" id="Node000005" href="$classassets_1_1Data.html" title=" " alt="" coords="1170,112,1272,139"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="1287,123,1386,125,1381,125,1288,128"/>
+<area shape="rect" id="Node000006" href="$classassets_1_1Asset.html" title="Base class for all engine assets." alt="" coords="5,14,113,42"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="127,16,209,7,297,3,873,3,939,5,991,14,1040,30,1102,55,1126,70,1196,111,1191,110,1124,74,1100,60,1039,35,989,19,939,11,873,8,297,8,209,12,129,21"/>
+<area shape="rect" id="Node000011" href="$classassets_1_1HandleBase.html" title="Base class for type&#45;erased asset handles." alt="" coords="224,73,373,100"/>
+<area shape="poly" id="edge11_Node000011_Node000006" title=" " alt="" coords="126,44,137,46,235,71,231,74,136,52,128,49"/>
+<area shape="rect" id="Node000007" href="$classassets_1_1ISaveable.html" title="Inherit from this class to allow an asset to be saved." alt="" coords="804,112,940,139"/>
+<area shape="poly" id="edge6_Node000005_Node000007" title=" " alt="" coords="955,123,1172,125,1166,126,955,128"/>
+<area shape="rect" id="Node000008" href="$structassets_1_1Data_1_1KeepAllKeysTag.html" title="Tag type for the keep&#45;all&#45;keys constructor." alt="" coords="766,164,978,191"/>
+<area shape="poly" id="edge7_Node000005_Node000008" title=" " alt="" coords="993,167,1101,153,1168,140,1173,139,1101,158,994,172"/>
+<area shape="rect" id="Node000009" href="$classassets_1_1DataValue.html" title="Typed value for TOML files." alt="" coords="803,217,941,244"/>
+<area shape="poly" id="edge8_Node000005_Node000009" title=" " alt="" coords="956,224,1027,215,1100,196,1156,168,1199,141,1204,139,1159,172,1102,201,1028,220,957,230"/>
+<area shape="rect" id="Node000010" href="$classassets_1_1Handle.html" title=" " alt="" coords="785,43,959,88"/>
+<area shape="poly" id="edge9_Node000005_Node000010" title=" " alt="" coords="975,80,1172,117,1167,117,975,86"/>
+<area shape="poly" id="edge10_Node000010_Node000011" title=" " alt="" coords="388,78,397,77,786,65,782,69,397,83,389,83"/>
+<area shape="rect" id="Node000013" href="$classassets_1_1Handle.html" title="Type&#45;safe smart pointer for assets." alt="" coords="422,98,578,126"/>
+<area shape="poly" id="edge14_Node000013_Node000011" title=" " alt="" coords="388,95,424,102,419,103,388,101"/>
+<area shape="rect" id="Node000012" href="$structtoast_1_1UID.html" title=" " alt="" coords="16,93,102,120"/>
+<area shape="poly" id="edge12_Node000011_Node000012" title=" " alt="" coords="117,106,199,102,231,100,226,102,200,108,118,111"/>
+<area shape="poly" id="edge13_Node000010_Node000013" title=" " alt="" coords="593,112,666,110,741,102,799,89,805,88,742,108,666,116,593,118"/>
+</map>

@@ -1,0 +1,9 @@
+<map id="engine/src/toast/world/tick_scheduler.hpp" name="engine/src/toast/world/tick_scheduler.hpp">
+<area shape="rect" id="Node000001" title="Dependency&#45;graph tick scheduling shared by World and PlayWorkspace." alt="" coords="100,5,265,50"/>
+<area shape="rect" id="Node000002" href="$play__workspace_8hpp.html" title="Ticking clone of a Workspace used by the editor&#39;s play mode." alt="" coords="5,98,171,143"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="148,63,112,100,108,96,151,59"/>
+<area shape="rect" id="Node000003" href="$world_8hpp_source.html" title=" " alt="" coords="195,98,360,143"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="217,58,258,98,252,98,215,63"/>
+<area shape="rect" id="Node000004" href="$world__test__access_8hpp_source.html" title=" " alt="" coords="191,191,364,235"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="279,156,280,192,275,189,275,160"/>
+</map>

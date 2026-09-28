@@ -1,0 +1,10 @@
+<map id="event::NodeCallFunction" name="event::NodeCallFunction">
+<area shape="rect" id="Node000001" title=" " alt="" coords="39,260,219,288"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="5,183,253,211"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="131,224,131,261,127,259,127,228"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="44,5,203,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="127,47,131,183,126,182,122,50"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="145,82,286,110"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="152,40,202,81,197,83,151,46"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="196,120,143,184,139,181,192,123"/>
+</map>

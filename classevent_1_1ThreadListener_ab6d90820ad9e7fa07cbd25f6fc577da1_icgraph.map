@@ -1,0 +1,5 @@
+<map id="event::ThreadListener::subscribe" name="event::ThreadListener::subscribe">
+<area shape="rect" id="Node000001" title="subscribes a callback to an TEvent" alt="" coords="217,5,380,50"/>
+<area shape="rect" id="Node000002" href="$classevent_1_1ThreadListener.html#a766d38149dbe58c4a86729d4b452321b" title="subscribes a callback to an TEvent (name will be set to &quot;unnamed&quot;)" alt="" coords="5,5,169,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="199,28,169,30,169,25,204,27"/>
+</map>

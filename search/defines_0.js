@@ -1,9 +1,9 @@
 var searchData=
 [
-  ['check_5fgl_0',['CHECK_GL',['../d9/d33/ToastGPUDriver_8cpp.html#aab12f88c1ad74a5b4876f37fcf105bda',1,'CHECK_GL():&#160;ToastGPUDriver.cpp'],['../d2/d7b/OpenGLRenderer_8cpp.html#aab12f88c1ad74a5b4876f37fcf105bda',1,'CHECK_GL():&#160;OpenGLRenderer.cpp']]],
-  ['client_5fassert_1',['CLIENT_ASSERT',['../d0/d82/Log_8hpp.html#a16317c93e48906c36ebe34e3fb1a400f',1,'Log.hpp']]],
-  ['client_5ferror_2',['CLIENT_ERROR',['../d0/d82/Log_8hpp.html#a181041110e2a07e4e4d19454b86827a1',1,'Log.hpp']]],
-  ['client_5finfo_3',['CLIENT_INFO',['../d0/d82/Log_8hpp.html#abdd48c67d71d141e6cecfdbcdae815ce',1,'Log.hpp']]],
-  ['client_5ftrace_4',['CLIENT_TRACE',['../d0/d82/Log_8hpp.html#a39e82baec717462816c68e0a88e8d285',1,'Log.hpp']]],
-  ['client_5fwarn_5',['CLIENT_WARN',['../d0/d82/Log_8hpp.html#a8ead27c14acde9624fefb09437e7b2eb',1,'Log.hpp']]]
+  ['toast_5fcritical_0',['TOAST_CRITICAL',['../log_8hpp.html#a2e36d1aeba4992f54d434dc3b7e6238d',1,'log.hpp']]],
+  ['toast_5ferror_1',['TOAST_ERROR',['../log_8hpp.html#a293821ed69c038c635ffd476cf37b34e',1,'log.hpp']]],
+  ['toast_5finfo_2',['TOAST_INFO',['../log_8hpp.html#a81f3c60aa916507adc3fe5b33dbad9a6',1,'log.hpp']]],
+  ['toast_5fproto_5fevent_3',['TOAST_PROTO_EVENT',['../proto__event_8hpp.html#a2bbcfed34845458456f06d4b69ed9cc2',1,'proto_event.hpp']]],
+  ['toast_5ftrace_4',['TOAST_TRACE',['../log_8hpp.html#af6029a75aaa234731c019449ec02063c',1,'log.hpp']]],
+  ['toast_5fwarn_5',['TOAST_WARN',['../log_8hpp.html#ab63a5bc8461f5f1c3fab37b7fb8627f9',1,'log.hpp']]]
 ];

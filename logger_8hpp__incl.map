@@ -1,0 +1,23 @@
+<map id="engine/src/toast/logger.hpp" name="engine/src/toast/logger.hpp">
+<area shape="rect" id="Node000001" title="Internal log delivery system." alt="" coords="463,5,660,33"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,81,177,109"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="477,36,191,81,190,75,477,31"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="201,81,277,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="504,34,293,83,292,78,498,34"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="302,81,368,109"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="524,33,383,81,382,76,518,34"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="393,81,461,109"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="540,33,465,76,463,71,535,34"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="485,81,550,109"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="556,32,535,70,532,65,551,35"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="575,81,636,109"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="571,31,593,69,588,67,568,36"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="661,81,737,109"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="587,31,664,74,659,73,586,36"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="761,81,824,109"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="603,31,748,79,743,79,602,36"/>
+<area shape="rect" id="Node000010" title=" " alt="" coords="848,81,944,109"/>
+<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="622,31,836,80,831,80,622,36"/>
+<area shape="rect" id="Node000011" title=" " alt="" coords="969,81,1032,109"/>
+<area shape="poly" id="edge10_Node000001_Node000011" title=" " alt="" coords="661,30,796,49,957,81,952,81,796,54,661,35"/>
+</map>

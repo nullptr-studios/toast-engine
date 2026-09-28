@@ -1,0 +1,7 @@
+<map id="assets::Localization" name="assets::Localization">
+<area shape="rect" id="Node000001" title=" " alt="" coords="21,157,171,184"/>
+<area shape="rect" id="Node000002" href="$classassets_1_1LocalizationBase.html" title=" " alt="" coords="5,81,187,109"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="98,123,98,157,94,155,94,126"/>
+<area shape="rect" id="Node000003" href="$classassets_1_1Asset.html" title="Base class for all engine assets." alt="" coords="42,5,150,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="97,46,99,81,93,80,95,51"/>
+</map>

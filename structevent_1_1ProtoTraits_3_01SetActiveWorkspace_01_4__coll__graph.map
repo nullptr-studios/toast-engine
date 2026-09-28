@@ -1,0 +1,5 @@
+<map id="event::ProtoTraits&lt; SetActiveWorkspace &gt;" name="event::ProtoTraits&lt; SetActiveWorkspace &gt;">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,106,190,151"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1ProtoTraits.html" title="Specialization point that exposes a C++ event type over the C# FFI via protobuf." alt="" coords="11,5,184,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="99,47,100,106,95,105,96,51"/>
+</map>

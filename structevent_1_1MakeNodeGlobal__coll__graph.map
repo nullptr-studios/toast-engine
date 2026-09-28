@@ -1,0 +1,16 @@
+<map id="event::MakeNodeGlobal" name="event::MakeNodeGlobal">
+<area shape="rect" id="Node000001" title=" " alt="" coords="135,307,312,335"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="5,207,250,234"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="152,243,213,306,208,307,150,248"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="14,5,174,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="79,50,69,89,67,111,70,133,91,173,117,206,112,207,87,176,65,134,61,111,64,87,81,44"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="80,106,221,134"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="109,44,145,105,140,106,109,49"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="145,147,133,207,128,205,142,151"/>
+<area shape="rect" id="Node000005" href="$classtoast_1_1Node.html" title=" " alt="" coords="274,207,370,234"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="301,244,238,309,235,304,296,246"/>
+<area shape="rect" id="Node000006" href="$classtoast_1_1INodeOwner.html" title=" " alt="" coords="251,106,393,134"/>
+<area shape="poly" id="edge6_Node000005_Node000006" title=" " alt="" coords="324,147,325,207,320,205,321,151"/>
+<area shape="rect" id="Node000007" href="$classphysics_1_1Accumulator.html" title=" " alt="" coords="242,5,402,33"/>
+<area shape="poly" id="edge7_Node000006_Node000007" title=" " alt="" coords="324,46,325,106,320,104,321,51"/>
+</map>

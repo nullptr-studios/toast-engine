@@ -1,0 +1,12 @@
+<map id="engine/src/toast/world/workspace_events.hpp" name="engine/src/toast/world/workspace_events.hpp">
+<area shape="rect" id="Node000001" title=" " alt="" coords="97,5,271,50"/>
+<area shape="rect" id="Node000002" href="$editor__camera_8hpp.html" title=" " alt="" coords="5,98,171,143"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="149,63,113,100,109,96,152,58"/>
+<area shape="rect" id="Node000005" href="$workspace__history_8hpp_source.html" title=" " alt="" coords="195,98,368,143"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="218,58,261,97,255,98,218,63"/>
+<area shape="rect" id="Node000003" href="$workspace_8hpp_source.html" title=" " alt="" coords="101,191,267,235"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="122,151,164,190,159,191,121,156"/>
+<area shape="rect" id="Node000004" href="$play__workspace_8hpp.html" title="Ticking clone of a Workspace used by the editor&#39;s play mode." alt="" coords="101,283,267,328"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="186,249,186,284,182,282,182,253"/>
+<area shape="poly" id="edge5_Node000005_Node000003" title=" " alt="" coords="249,152,209,192,206,188,245,155"/>
+</map>

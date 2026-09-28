@@ -1,0 +1,19 @@
+<map id="physics::Shape" name="physics::Shape">
+<area shape="rect" id="Node000001" title=" " alt="" coords="597,145,715,173"/>
+<area shape="rect" id="Node000002" href="$structphysics_1_1BodyID.html" title=" " alt="" coords="333,5,458,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="473,25,525,38,574,61,599,80,620,102,649,146,644,144,616,106,595,84,572,65,523,43,474,30"/>
+<area shape="rect" id="Node000003" href="$structphysics_1_1PhysicsMaterial.html" title=" " alt="" coords="305,61,486,89"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="501,89,574,110,607,126,637,145,631,145,604,130,572,115,501,94"/>
+<area shape="rect" id="Node000004" href="$structphysics_1_1SphereShape.html" title=" " alt="" coords="314,117,477,145"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="493,139,599,152,594,153,493,144"/>
+<area shape="rect" id="Node000005" href="$structphysics_1_1BoxShape.html" title=" " alt="" coords="324,173,467,201"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="482,185,573,178,608,173,603,174,573,183,483,190"/>
+<area shape="rect" id="Node000006" href="$structphysics_1_1CapsuleShape.html" title=" " alt="" coords="310,229,480,257"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="495,233,534,226,572,214,608,194,637,174,642,172,611,198,574,219,536,231,496,239"/>
+<area shape="rect" id="Node000007" href="$structphysics_1_1VoxelShape.html" title=" " alt="" coords="319,285,472,313"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="487,291,531,280,572,262,597,242,618,217,646,175,650,172,622,221,600,246,574,266,532,285,488,296"/>
+<area shape="rect" id="Node000008" href="$structphysics_1_1VoxelDataID.html" title=" " alt="" coords="5,257,164,285"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="179,277,320,291,316,294,179,282"/>
+<area shape="rect" id="Node000009" href="$structphysics_1_1AABB.html" title=" " alt="" coords="27,313,142,341"/>
+<area shape="poly" id="edge8_Node000007_Node000009" title=" " alt="" coords="157,324,280,316,316,314,321,313,281,321,158,329"/>
+</map>

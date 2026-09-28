@@ -1,0 +1,15 @@
+<map id="toast::AmbienceVolume" name="toast::AmbienceVolume">
+<area shape="rect" id="Node000001" title="Ambient sound generator." alt="" coords="5,515,182,542"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1AudioVolume.html" title="Base interface for audio&#45;reactive volumes." alt="" coords="19,438,168,465"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="95,479,96,515,91,513,92,483"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1Volume.html" title=" " alt="" coords="38,361,149,388"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="95,401,96,438,91,437,92,406"/>
+<area shape="rect" id="Node000004" href="$classtoast_1_1Node3D.html" title=" " alt="" coords="36,284,151,311"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="94,324,96,361,91,360,93,329"/>
+<area shape="rect" id="Node000005" href="$classtoast_1_1Node.html" title=" " alt="" coords="45,207,142,234"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="94,247,96,284,91,283,93,252"/>
+<area shape="rect" id="Node000006" href="$classtoast_1_1INodeOwner.html" title=" " alt="" coords="22,106,165,134"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="94,147,96,206,91,206,93,152"/>
+<area shape="rect" id="Node000007" href="$classphysics_1_1Accumulator.html" title=" " alt="" coords="13,5,174,33"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="94,46,96,106,91,105,93,51"/>
+</map>

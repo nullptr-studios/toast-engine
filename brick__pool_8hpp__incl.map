@@ -1,0 +1,25 @@
+<map id="engine/src/toast/voxel/brick_pool.hpp" name="engine/src/toast/voxel/brick_pool.hpp">
+<area shape="rect" id="Node000001" title=" " alt="" coords="399,5,563,50"/>
+<area shape="rect" id="Node000002" href="$brick_8hpp.html" title=" " alt="" coords="264,98,346,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="432,52,348,93,346,89,437,49"/>
+<area shape="rect" id="Node000003" href="$voxel__constants_8hpp.html" title=" " alt="" coords="5,174,160,201"/>
+<area shape="poly" id="edge8_Node000001_Node000003" title=" " alt="" coords="396,51,327,74,253,100,180,134,119,168,116,163,178,129,251,96,326,69,401,49"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="164,249,230,277"/>
+<area shape="poly" id="edge10_Node000001_Node000004" title=" " alt="" coords="486,48,491,83,489,124,480,166,471,186,458,203,443,214,422,224,366,240,246,260,245,254,365,235,420,219,440,210,454,199,466,183,475,164,484,123,485,83,483,52"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="406,174,444,201"/>
+<area shape="poly" id="edge9_Node000001_Node000006" title=" " alt="" coords="476,49,437,161,433,157,471,52"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="519,98,571,126"/>
+<area shape="poly" id="edge11_Node000001_Node000008" title=" " alt="" coords="499,48,528,86,523,85,497,53"/>
+<area shape="rect" id="Node000009" href="$export_8hpp.html" title=" " alt="" coords="596,98,724,126"/>
+<area shape="poly" id="edge12_Node000001_Node000009" title=" " alt="" coords="529,48,620,91,615,91,528,53"/>
+<area shape="rect" id="Node000010" title=" " alt="" coords="749,98,811,126"/>
+<area shape="poly" id="edge13_Node000001_Node000010" title=" " alt="" coords="562,48,736,97,731,98,562,53"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="264,128,138,171,136,166,267,124"/>
+<area shape="poly" id="edge7_Node000002_Node000004" title=" " alt="" coords="281,125,251,148,225,175,211,204,203,235,198,232,206,203,220,172,248,144,277,128"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="235,174,290,201"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="300,125,280,162,276,158,295,128"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="327,124,395,166,390,167,326,129"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="314,174,382,201"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="314,124,335,161,330,160,312,129"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="104,199,167,240,162,242,102,204"/>
+</map>

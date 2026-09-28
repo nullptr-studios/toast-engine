@@ -1,0 +1,11 @@
+<map id="editor.Editors.GenericFieldVM" name="editor.Editors.GenericFieldVM">
+<area shape="rect" id="Node000001" title=" " alt="" coords="267,100,480,128"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="43,5,181,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="196,35,220,42,288,70,347,99,342,100,286,74,218,47,197,40"/>
+<area shape="rect" id="Node000003" href="$interfaceeditor_1_1Components_1_1Elements_1_1IRowSplittable.html" title=" " alt="" coords="5,57,219,102"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="234,93,269,99,264,100,235,98"/>
+<area shape="rect" id="Node000004" href="$interfaceeditor_1_1Components_1_1Elements_1_1IRowVisible.html" title="Items can opt out of being shown as a row." alt="" coords="5,126,219,171"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="234,130,269,127,264,129,235,135"/>
+<area shape="rect" id="Node000005" href="$interfaceeditor_1_1Components_1_1Elements_1_1IStructRow.html" title=" " alt="" coords="5,196,219,240"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="200,187,218,181,340,129,346,127,220,186,201,192"/>
+</map>

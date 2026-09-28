@@ -1,0 +1,29 @@
+<map id="engine/src/toast/input/trigger.hpp" name="engine/src/toast/input/trigger.hpp">
+<area shape="rect" id="Node000001" title="Triggers turn a raw input sample into an action value and discrete events." alt="" coords="148,5,311,50"/>
+<area shape="rect" id="Node000002" href="$parse__util_8hpp.html" title="Small helpers shared by the TOML parsing paths of triggers, modifiers and binds." alt="" coords="293,98,406,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="261,48,320,88,315,90,261,53"/>
+<area shape="rect" id="Node000003" href="$value_8hpp.html" title="Value type shared by triggers, modifiers and actionsg." alt="" coords="132,174,218,201"/>
+<area shape="poly" id="edge12_Node000001_Node000003" title=" " alt="" coords="224,48,187,160,182,158,220,52"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="5,325,102,353"/>
+<area shape="poly" id="edge15_Node000001_Node000006" title=" " alt="" coords="195,52,154,85,103,131,56,186,36,217,21,250,19,266,21,281,36,312,31,313,16,283,13,266,16,249,32,215,52,183,99,127,150,81,198,48"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="30,249,93,277"/>
+<area shape="poly" id="edge13_Node000001_Node000009" title=" " alt="" coords="211,53,122,175,80,238,76,235,118,172,214,48"/>
+<area shape="rect" id="Node000010" title=" " alt="" coords="330,249,433,277"/>
+<area shape="poly" id="edge14_Node000001_Node000010" title=" " alt="" coords="241,48,284,124,325,185,364,237,359,236,321,188,279,127,239,53"/>
+<area shape="rect" id="Node000011" title=" " alt="" coords="384,174,520,201"/>
+<area shape="poly" id="edge16_Node000001_Node000011" title=" " alt="" coords="311,40,369,61,396,76,421,96,440,126,450,159,445,158,436,128,417,100,393,81,367,66,311,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="316,128,221,170,218,165,320,125"/>
+<area shape="poly" id="edge10_Node000002_Node000010" title=" " alt="" coords="354,124,378,235,373,233,351,128"/>
+<area shape="poly" id="edge11_Node000002_Node000011" title=" " alt="" coords="368,124,424,164,419,165,367,129"/>
+<area shape="rect" id="Node000004" href="$keycodes_8hpp.html" title=" " alt="" coords="196,249,306,277"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="189,199,229,238,224,239,188,204"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="116,249,172,277"/>
+<area shape="poly" id="edge7_Node000003_Node000008" title=" " alt="" coords="171,200,158,236,153,233,168,204"/>
+<area shape="poly" id="edge8_Node000003_Node000009" title=" " alt="" coords="153,204,96,243,93,239,156,200"/>
+<area shape="poly" id="edge9_Node000003_Node000010" title=" " alt="" coords="212,199,333,243,328,245,212,205"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="309,325,374,353"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="268,275,316,315,311,315,266,280"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="217,280,104,322,102,317,214,275"/>
+<area shape="rect" id="Node000007" href="$export_8hpp.html" title=" " alt="" coords="156,325,284,353"/>
+<area shape="poly" id="edge6_Node000004_Node000007" title=" " alt="" coords="248,276,233,312,230,309,243,279"/>
+</map>

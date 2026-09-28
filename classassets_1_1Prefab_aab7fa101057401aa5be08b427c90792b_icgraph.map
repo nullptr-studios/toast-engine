@@ -1,0 +1,14 @@
+<map id="assets::Prefab::validate" name="assets::Prefab::validate">
+<area shape="rect" id="Node000001" title="Checks structural invariants." alt="" coords="441,80,615,108"/>
+<area shape="rect" id="Node000002" href="$classassets_1_1Prefab.html#a54f959eb9a48c453f92a10a81467bff3" title="Parses a prefab from a text (.tnode) stream." alt="" coords="223,29,386,57"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="447,76,369,60,369,55,452,76"/>
+<area shape="rect" id="Node000004" href="$classassets_1_1Prefab.html#a46610436e751d4c0598853829b36bf91" title="Parses a prefab from a binary (.tbnode) byte span." alt="" coords="5,80,169,108"/>
+<area shape="poly" id="edge5_Node000001_Node000004" title=" " alt="" coords="425,96,169,96,169,91,427,91"/>
+<area shape="rect" id="Node000005" href="$classassets_1_1Prefab.html#a931fb83c5d2514520089edca16028f78" title="Convenience wrapper that delegates to toFile() or toBinary() based on mode." alt="" coords="217,155,393,182"/>
+<area shape="poly" id="edge6_Node000001_Node000005" title=" " alt="" coords="473,113,350,157,348,151,467,113"/>
+<area shape="poly" id="edge3_Node000002_Node000002" title=" " alt="" coords="341,14,329,10,305,8,282,10,270,15,267,20,272,29,267,28,261,20,266,11,281,5,305,3,330,5,346,14"/>
+<area shape="rect" id="Node000003" href="$classassets_1_1Prefab.html#a3de64fe76f794078d83b87c3de91467f" title="Serializes a live node tree into a Prefab object." alt="" coords="5,28,169,56"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="205,44,170,45,168,40,210,41"/>
+<area shape="poly" id="edge4_Node000002_Node000004" title=" " alt="" coords="225,62,150,82,149,77,230,60"/>
+<area shape="poly" id="edge7_Node000005_Node000005" title=" " alt="" coords="341,139,329,136,305,133,282,135,270,140,267,145,272,155,267,153,261,146,266,136,281,130,305,128,330,131,346,140"/>
+</map>

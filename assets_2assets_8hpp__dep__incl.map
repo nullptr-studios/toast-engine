@@ -1,0 +1,41 @@
+<map id="engine/src/toast/assets/assets.hpp" name="engine/src/toast/assets/assets.hpp">
+<area shape="rect" id="Node000001" title="Public API for the asset management system." alt="" coords="1344,5,1516,50"/>
+<area shape="rect" id="Node000002" href="$asset__field__access_8hpp.html" title="Reflection accessor for assets::Handle&lt;T&gt; members." alt="" coords="5,106,180,151"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1326,29,1125,35,849,45,536,65,376,81,220,101,177,108,175,103,219,95,375,76,535,60,849,39,1125,29,1331,29"/>
+<area shape="rect" id="Node000004" href="$asset__manager_8hpp.html" title="Maps URI schemes to filesystem roots and manages asset lifetime." alt="" coords="275,106,446,151"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="1326,30,1163,36,948,47,707,67,584,82,465,101,430,109,428,103,464,95,584,77,706,62,947,41,1163,31,1332,29"/>
+<area shape="rect" id="Node000005" href="$environment__pass_8cpp.html" title=" " alt="" coords="146,216,367,261"/>
+<area shape="poly" id="edge11_Node000001_Node000005" title=" " alt="" coords="1326,32,1050,42,706,56,407,75,309,87,279,94,265,100,250,126,245,157,247,188,252,217,247,215,242,189,239,157,245,124,261,96,277,89,308,82,406,70,706,51,1050,37,1331,31"/>
+<area shape="rect" id="Node000006" href="$reflection__probe__pass_8cpp.html" title=" " alt="" coords="391,208,575,269"/>
+<area shape="poly" id="edge13_Node000001_Node000006" title=" " alt="" coords="1326,30,1113,37,856,47,735,56,630,68,552,82,526,91,510,100,493,123,484,151,481,181,481,209,477,206,476,180,479,150,488,121,507,96,524,86,551,77,630,62,734,51,856,42,1113,31,1331,29"/>
+<area shape="rect" id="Node000007" href="$input__system_8cpp.html" title="Implementation of the input system singleton." alt="" coords="521,106,683,151"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="1326,32,1201,41,1042,53,869,72,696,101,664,109,663,103,695,95,868,67,1042,47,1201,35,1331,31"/>
+<area shape="rect" id="Node000008" href="$bloom__pass_8cpp.html" title=" " alt="" coords="707,106,891,151"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="1326,38,1131,63,1017,80,904,101,870,109,869,103,903,95,1016,75,1131,58,1331,37"/>
+<area shape="rect" id="Node000009" href="$cluster__lighting__pass_8cpp.html" title=" " alt="" coords="915,98,1099,160"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="1332,49,1112,101,1100,104,1099,98,1111,95,1326,50"/>
+<area shape="rect" id="Node000010" href="$debug__pass_8cpp.html" title=" " alt="" coords="1123,106,1307,151"/>
+<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="1372,56,1263,108,1261,103,1367,58"/>
+<area shape="rect" id="Node000011" href="$depth__prepass_8cpp.html" title=" " alt="" coords="1332,106,1528,151"/>
+<area shape="poly" id="edge10_Node000001_Node000011" title=" " alt="" coords="1432,64,1432,108,1428,104,1428,67"/>
+<area shape="rect" id="Node000012" href="$fxaa__pass_8cpp.html" title=" " alt="" coords="1552,106,1737,151"/>
+<area shape="poly" id="edge12_Node000001_Node000012" title=" " alt="" coords="1491,54,1600,106,1595,106,1490,59"/>
+<area shape="rect" id="Node000013" href="$shadow__pass_8cpp.html" title=" " alt="" coords="1761,106,1949,151"/>
+<area shape="poly" id="edge14_Node000001_Node000013" title=" " alt="" coords="1531,47,1749,95,1782,106,1776,106,1748,101,1531,52"/>
+<area shape="rect" id="Node000014" href="$skinning__pass_8cpp.html" title=" " alt="" coords="1973,106,2166,151"/>
+<area shape="poly" id="edge15_Node000001_Node000014" title=" " alt="" coords="1531,35,1731,58,1847,75,1962,95,1999,106,1994,106,1961,101,1846,80,1731,63,1531,41"/>
+<area shape="rect" id="Node000015" href="$ssao__pass_8cpp.html" title=" " alt="" coords="2191,106,2375,151"/>
+<area shape="poly" id="edge16_Node000001_Node000015" title=" " alt="" coords="1531,30,1662,37,1824,49,2002,68,2180,95,2216,106,2211,106,2179,101,2001,73,1823,54,1661,42,1531,35"/>
+<area shape="rect" id="Node000016" href="$ssr__pass_8cpp.html" title=" " alt="" coords="2399,106,2583,151"/>
+<area shape="poly" id="edge17_Node000001_Node000016" title=" " alt="" coords="1530,27,1695,31,1909,42,2148,62,2269,77,2388,95,2425,106,2420,106,2387,101,2268,82,2147,67,1909,47,1695,36,1531,32"/>
+<area shape="rect" id="Node000017" href="$taa__pass_8cpp.html" title=" " alt="" coords="2607,106,2791,151"/>
+<area shape="poly" id="edge18_Node000001_Node000017" title=" " alt="" coords="1531,30,2079,53,2378,72,2501,83,2596,95,2633,106,2628,106,2595,101,2501,88,2377,77,2078,58,1531,35"/>
+<area shape="rect" id="Node000018" href="$tonemap__pass_8cpp.html" title=" " alt="" coords="2816,106,3012,151"/>
+<area shape="poly" id="edge19_Node000001_Node000018" title=" " alt="" coords="1531,29,2178,50,2540,70,2690,82,2804,95,2844,106,2839,106,2803,101,2689,87,2539,75,2178,55,1531,34"/>
+<area shape="rect" id="Node000019" href="$traced__shadow__pass_8cpp.html" title=" " alt="" coords="3036,106,3272,151"/>
+<area shape="poly" id="edge20_Node000001_Node000019" title=" " alt="" coords="1531,28,2283,50,2711,69,2890,81,3025,95,3072,106,3066,106,3024,101,2889,87,2711,75,2283,55,1531,34"/>
+<area shape="rect" id="Node000003" href="$pch_8h.html" title=" " alt="" coords="18,225,122,252"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="87,165,75,225,70,223,82,168"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="332,161,279,218,276,213,327,164"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="398,159,451,207,446,207,396,164"/>
+</map>

@@ -1,12 +1,8 @@
 var searchData=
 [
-  ['actort_0',['ActorT',['../d7/d01/namespacetoast.html#a701a4bc5b00fe11e576737195d02d743a0c44051bc51025048159e4cc930e2f1a',1,'toast']]],
-  ['addbox_1',['AddBox',['../d6/dd8/classphysics_1_1PhysicsSystem.html#a730fc75334cd32f9612ade62d88269f6a017ac2b7bc9e996a83be4f1dab623594',1,'physics::PhysicsSystem']]],
-  ['addcollider_2',['AddCollider',['../d6/dd8/classphysics_1_1PhysicsSystem.html#a730fc75334cd32f9612ade62d88269f6aa0091fedcf67417cfb1e5dc185c8c387',1,'physics::PhysicsSystem']]],
-  ['addrigidbody_3',['AddRigidbody',['../d6/dd8/classphysics_1_1PhysicsSystem.html#a730fc75334cd32f9612ade62d88269f6abf991507ce86aae7cf81842d2367d37e',1,'physics::PhysicsSystem']]],
-  ['addtrigger_4',['AddTrigger',['../d6/dd8/classphysics_1_1PhysicsSystem.html#a730fc75334cd32f9612ade62d88269f6a1e26e4a2205604ea64b66319d256b2e0',1,'physics::PhysicsSystem']]],
-  ['all_5',['All',['../dd/d06/ColliderFlags_8hpp.html#ab24e00ae3493fd723980767febb345c6ab1c94ca2fbc3e78fc30069c8d0f01680',1,'ColliderFlags.hpp']]],
-  ['alreadyloaded_6',['AlreadyLoaded',['../d2/d11/namespaceaudio.html#aec5ea71da3ec787a15a48adc710fa506a3cd0dcca263062e228b48dc510f78334',1,'audio']]],
-  ['alt_7',['Alt',['../dc/d73/namespaceinput.html#a1e6e3b3649b55b03da60a1868fe936f0aa2e92861b757ab878312dd57993d60cf',1,'input']]],
-  ['audio_8',['AUDIO',['../d8/d5c/namespaceresource.html#ae2a86d06df242b0c6949e3cbc90ed78fae423b8bde9bfbfd7e9409b23b23aed91',1,'resource']]]
+  ['axis1d_0',['axis1d',['../keycodes_8hpp.html#ab7d04281ee27da5d4a965d933f80047aa1a18a7c7d8bd2a3fe062531386f05981',1,'input']]],
+  ['axis2d_1',['axis2d',['../keycodes_8hpp.html#ab7d04281ee27da5d4a965d933f80047aa6c557d99a2416c0e283be732602bee95',1,'input']]],
+  ['axis_5f0d_2',['axis_0d',['../value_8hpp.html#a8f28be5d81868506148c8ba232cd5f19a478547618f45daea9c2ba217ceb373f1',1,'input']]],
+  ['axis_5f1d_3',['axis_1d',['../value_8hpp.html#a8f28be5d81868506148c8ba232cd5f19a60504a25c57807da2d030e51228cd524',1,'input']]],
+  ['axis_5f2d_4',['axis_2d',['../value_8hpp.html#a8f28be5d81868506148c8ba232cd5f19a9d62c863f00a563f11dfaf22c26f3912',1,'input']]]
 ];

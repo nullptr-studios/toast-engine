@@ -1,0 +1,5 @@
+<map id="renderer::VoxelScenePatchUpload" name="renderer::VoxelScenePatchUpload">
+<area shape="rect" id="Node000001" title="Copies the previous storage and overwrites what changed so a carve does not pack or send the whole sc..." alt="" coords="7,98,200,143"/>
+<area shape="rect" id="Node000002" href="$classrenderer_1_1PendingResourceUpload.html" title=" " alt="" coords="5,5,202,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="105,64,106,99,101,97,102,68"/>
+</map>

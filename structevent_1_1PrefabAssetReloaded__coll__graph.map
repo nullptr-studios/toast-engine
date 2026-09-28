@@ -1,0 +1,12 @@
+<map id="event::PrefabAssetReloaded" name="event::PrefabAssetReloaded">
+<area shape="rect" id="Node000001" title=" " alt="" coords="125,301,330,328"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="5,183,202,228"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="141,235,215,299,210,301,139,240"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="18,5,178,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="101,46,106,183,100,182,97,50"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="120,82,261,110"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="126,40,177,81,172,83,126,46"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="169,124,123,184,119,181,172,120"/>
+<area shape="rect" id="Node000005" href="$structtoast_1_1UID.html" title=" " alt="" coords="226,192,312,219"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="261,232,235,302,231,298,256,235"/>
+</map>

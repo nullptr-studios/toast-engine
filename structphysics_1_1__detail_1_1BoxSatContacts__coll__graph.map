@@ -1,0 +1,7 @@
+<map id="physics::_detail::BoxSatContacts" name="physics::_detail::BoxSatContacts">
+<area shape="rect" id="Node000001" title=" " alt="" coords="63,263,240,308"/>
+<area shape="rect" id="Node000002" href="$classphysics_1_1__detail_1_1FixedBuffer.html" title=" " alt="" coords="5,145,298,190"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="153,204,154,263,149,261,150,208"/>
+<area shape="rect" id="Node000003" href="$classphysics_1_1__detail_1_1FixedBuffer.html" title=" " alt="" coords="50,5,253,50"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="153,63,154,146,149,144,150,68"/>
+</map>

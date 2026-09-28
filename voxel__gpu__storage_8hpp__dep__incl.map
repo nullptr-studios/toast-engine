@@ -1,0 +1,43 @@
+<map id="engine/src/toast/renderer/voxel_gpu_storage.hpp" name="engine/src/toast/renderer/voxel_gpu_storage.hpp">
+<area shape="rect" id="Node000001" title=" " alt="" coords="793,5,977,50"/>
+<area shape="rect" id="Node000002" href="$shadow__pass_8cpp.html" title=" " alt="" coords="5,199,194,244"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="775,54,518,117,207,193,177,201,175,196,206,188,517,111,780,52"/>
+<area shape="rect" id="Node000003" href="$vulkan__renderer_8hpp_source.html" title=" " alt="" coords="1578,98,1762,143"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="993,39,1580,108,1575,109,993,44"/>
+<area shape="poly" id="edge11_Node000003_Node000002" title=" " alt="" coords="1560,124,1264,133,873,146,487,166,328,179,207,193,170,201,168,196,206,188,327,173,487,161,872,141,1264,128,1565,123"/>
+<area shape="rect" id="Node000004" href="$bloom__pass_8cpp.html" title=" " alt="" coords="218,199,402,244"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="1560,125,972,149,649,169,516,180,415,193,379,201,377,196,414,188,515,175,649,163,972,144,1565,124"/>
+<area shape="rect" id="Node000005" href="$cluster__lighting__pass_8cpp.html" title=" " alt="" coords="426,191,610,252"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="1560,122,1384,128,1151,139,891,159,758,174,629,193,611,197,610,191,628,188,758,169,890,154,1151,134,1384,123,1565,122"/>
+<area shape="rect" id="Node000006" href="$debug__pass_8cpp.html" title=" " alt="" coords="1833,300,2017,345"/>
+<area shape="poly" id="edge5_Node000003_Node000006" title=" " alt="" coords="1559,121,1328,125,1048,134,916,143,803,155,719,172,691,182,675,193,665,207,661,222,665,236,675,250,690,257,723,264,831,277,1161,297,1537,310,1835,320,1829,320,1537,315,1161,302,831,282,722,270,688,262,671,254,660,238,656,222,660,205,671,189,689,177,717,167,802,150,915,138,1048,129,1328,120,1565,121"/>
+<area shape="rect" id="Node000007" href="$depth__prepass_8cpp.html" title=" " alt="" coords="685,199,882,244"/>
+<area shape="poly" id="edge6_Node000003_Node000007" title=" " alt="" coords="1560,126,1261,148,1077,166,895,193,858,201,857,196,894,188,1077,161,1260,142,1565,125"/>
+<area shape="rect" id="Node000008" href="$environment__pass_8cpp.html" title=" " alt="" coords="906,199,1128,244"/>
+<area shape="poly" id="edge7_Node000003_Node000008" title=" " alt="" coords="1560,133,1366,158,1140,193,1102,201,1101,196,1139,188,1365,153,1566,132"/>
+<area shape="rect" id="Node000009" href="$fxaa__pass_8cpp.html" title=" " alt="" coords="1151,199,1336,244"/>
+<area shape="poly" id="edge8_Node000003_Node000009" title=" " alt="" coords="1566,142,1348,193,1318,201,1317,196,1347,188,1560,143"/>
+<area shape="rect" id="Node000010" href="$material__pass_8hpp.html" title=" " alt="" coords="1360,199,1554,244"/>
+<area shape="poly" id="edge9_Node000003_Node000010" title=" " alt="" coords="1612,149,1504,201,1503,196,1607,150"/>
+<area shape="rect" id="Node000011" href="$reflection__probe__pass_8cpp.html" title=" " alt="" coords="1578,191,1762,252"/>
+<area shape="poly" id="edge10_Node000003_Node000011" title=" " alt="" coords="1672,156,1672,192,1668,188,1668,160"/>
+<area shape="rect" id="Node000012" href="$skinning__pass_8cpp.html" title=" " alt="" coords="1787,199,1980,244"/>
+<area shape="poly" id="edge12_Node000003_Node000012" title=" " alt="" coords="1731,147,1839,199,1834,198,1730,152"/>
+<area shape="rect" id="Node000013" href="$ssao__pass_8cpp.html" title=" " alt="" coords="2005,199,2189,244"/>
+<area shape="poly" id="edge13_Node000003_Node000013" title=" " alt="" coords="1778,140,1993,188,2026,199,2020,198,1992,193,1777,145"/>
+<area shape="rect" id="Node000014" href="$ssr__pass_8cpp.html" title=" " alt="" coords="2213,199,2397,244"/>
+<area shape="poly" id="edge14_Node000003_Node000014" title=" " alt="" coords="1778,128,1976,151,2089,168,2201,188,2237,199,2231,198,2200,193,2088,173,1975,156,1778,134"/>
+<area shape="rect" id="Node000015" href="$taa__pass_8cpp.html" title=" " alt="" coords="2421,199,2605,244"/>
+<area shape="poly" id="edge15_Node000003_Node000015" title=" " alt="" coords="1778,123,2065,142,2237,161,2409,188,2446,199,2441,198,2408,193,2237,167,2064,148,1778,128"/>
+<area shape="rect" id="Node000016" href="$tonemap__pass_8cpp.html" title=" " alt="" coords="2629,199,2826,244"/>
+<area shape="poly" id="edge16_Node000003_Node000016" title=" " alt="" coords="1778,120,1941,125,2151,136,2384,157,2617,188,2657,199,2651,198,2616,193,2383,162,2150,142,1941,131,1778,126"/>
+<area shape="rect" id="Node000017" href="$traced__shadow__pass_8cpp.html" title=" " alt="" coords="2849,199,3086,244"/>
+<area shape="poly" id="edge17_Node000003_Node000017" title=" " alt="" coords="1778,119,1976,123,2240,134,2538,154,2690,169,2839,188,2885,199,2879,198,2838,193,2689,175,2538,160,2240,139,1976,129,1778,125"/>
+<area shape="rect" id="Node000018" href="$voxel__debug_8hpp.html" title=" " alt="" coords="3110,199,3294,244"/>
+<area shape="poly" id="edge18_Node000003_Node000018" title=" " alt="" coords="1778,121,2070,128,2451,141,2825,161,2981,173,3099,188,3137,199,3132,198,3098,193,2980,179,2825,166,2450,146,2070,133,1778,126"/>
+<area shape="rect" id="Node000019" href="$ui__system_8hpp.html" title="Singleton owning the RmlUi library." alt="" coords="3318,199,3460,244"/>
+<area shape="poly" id="edge20_Node000003_Node000019" title=" " alt="" coords="1778,119,2108,123,2550,133,2777,142,2988,153,3169,169,3307,188,3338,199,3333,198,3306,193,3169,174,2987,159,2776,147,2550,138,2108,128,1778,125"/>
+<area shape="rect" id="Node000020" href="$camera_8cpp.html" title=" " alt="" coords="3484,199,3649,244"/>
+<area shape="poly" id="edge21_Node000003_Node000020" title=" " alt="" coords="1778,119,2138,123,2628,133,2880,142,3116,154,3318,169,3472,188,3508,199,3502,198,3471,193,3318,174,3115,159,2880,147,2628,139,2138,128,1778,125"/>
+<area shape="poly" id="edge19_Node000018_Node000006" title=" " alt="" coords="3122,248,3099,255,3002,268,2876,279,2570,298,2018,321,2017,316,2570,293,2875,274,3002,262,3098,250,3117,248"/>
+</map>

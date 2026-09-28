@@ -1,0 +1,5 @@
+<map id="toast::Workspace::Workspace" name="toast::Workspace::Workspace">
+<area shape="rect" id="Node000001" title="Creates a new workspace rooted at a single fresh node of the given type." alt="" coords="281,5,493,33"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1Workspace.html#a3d51ba78b03318129802006b5267f5cc" title="Downcast helper for owners that need Workspace&#45;specific state." alt="" coords="5,5,233,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="263,19,233,22,233,17,268,19"/>
+</map>

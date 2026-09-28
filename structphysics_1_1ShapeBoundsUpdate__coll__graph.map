@@ -1,0 +1,7 @@
+<map id="physics::ShapeBoundsUpdate" name="physics::ShapeBoundsUpdate">
+<area shape="rect" id="Node000001" title=" " alt="" coords="38,106,252,134"/>
+<area shape="rect" id="Node000002" href="$structphysics_1_1ShapeID.html" title=" " alt="" coords="5,5,138,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="91,43,138,105,132,106,89,48"/>
+<area shape="rect" id="Node000003" href="$structphysics_1_1AABB.html" title=" " alt="" coords="162,5,277,33"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="203,44,157,107,153,103,198,46"/>
+</map>

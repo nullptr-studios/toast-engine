@@ -1,0 +1,9 @@
+<map id="editor.Components.Elements.IRowSplittable" name="editor.Components.Elements.IRowSplittable">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,57,219,102"/>
+<area shape="rect" id="Node000002" href="$classeditor_1_1Editors_1_1GenericFieldVM.html" title=" " alt="" coords="267,5,480,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="226,50,312,33,307,35,228,55"/>
+<area shape="rect" id="Node000003" href="$classeditor_1_1Editors_1_1SchemaFieldItemVM.html" title=" " alt="" coords="276,57,470,102"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="234,77,278,79,273,80,235,82"/>
+<area shape="rect" id="Node000004" href="$classeditor_1_1Editors_1_1StructTypeVM.html" title=" " alt="" coords="273,125,474,153"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="227,103,312,124,307,125,227,108"/>
+</map>

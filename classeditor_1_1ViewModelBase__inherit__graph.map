@@ -1,0 +1,21 @@
+<map id="editor.ViewModelBase" name="editor.ViewModelBase">
+<area shape="rect" id="Node000001" title=" " alt="" coords="191,187,357,215"/>
+<area shape="rect" id="Node000003" href="$classeditor_1_1Assets_1_1Importers_1_1CompactImportWindowViewModel.html" title=" " alt="" coords="405,5,651,50"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="291,173,338,116,369,86,404,60,431,49,426,52,406,65,372,90,342,119,295,176"/>
+<area shape="rect" id="Node000004" href="$classeditor_1_1Assets_1_1Importers_1_1ImportNodeViewModel.html" title=" " alt="" coords="440,75,616,119"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="310,177,354,152,404,129,442,118,437,121,406,134,357,157,313,181"/>
+<area shape="rect" id="Node000007" href="$classeditor_1_1Assets_1_1Importers_1_1ImportWindowViewModel.html" title=" " alt="" coords="434,144,622,189"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="372,185,436,178,431,180,373,190"/>
+<area shape="rect" id="Node000008" href="$classeditor_1_1Components_1_1Modals_1_1LoaderViewModel.html" title=" " alt="" coords="428,213,628,258"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="372,212,431,222,425,223,373,217"/>
+<area shape="rect" id="Node000009" href="$classeditor_1_1StartWindow_1_1StartWindowViewModel.html" title=" " alt="" coords="438,283,618,327"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="312,220,357,245,406,268,441,282,436,282,404,273,354,250,311,226"/>
+<area shape="rect" id="Node000010" href="$classeditor_1_1Workspace_1_1MainWindowViewModel.html" title=" " alt="" coords="418,352,639,397"/>
+<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="294,225,342,283,372,312,406,337,431,352,426,351,404,342,369,316,338,286,292,230"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,187,143,215"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="157,199,193,200,188,202,159,203"/>
+<area shape="rect" id="Node000005" href="$classeditor_1_1Assets_1_1Importers_1_1ImportFileViewModel.html" title=" " alt="" coords="699,40,876,85"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="631,81,701,73,696,75,633,86"/>
+<area shape="rect" id="Node000006" href="$classeditor_1_1Assets_1_1Importers_1_1ImportFolderViewModel.html" title=" " alt="" coords="699,109,876,154"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="632,108,701,119,696,120,632,113"/>
+</map>

@@ -1,0 +1,30 @@
+<map id="engine/src/toast/input/keycodes.hpp" name="engine/src/toast/input/keycodes.hpp">
+<area shape="rect" id="Node000001" title=" " alt="" coords="268,5,430,50"/>
+<area shape="rect" id="Node000002" href="$bind_8hpp.html" title="A bind maps one keycode to a set of triggers and per&#45;bind modifiers." alt="" coords="361,376,524,421"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="445,41,496,62,519,77,538,96,575,154,586,182,592,209,592,237,587,266,576,297,559,329,535,358,504,378,501,373,532,354,555,327,571,295,581,265,587,237,587,210,581,183,571,157,534,100,515,81,494,66,446,46"/>
+<area shape="rect" id="Node000004" href="$input__system_8hpp.html" title="Owns all runtime input state and dispatches input events." alt="" coords="5,561,168,606"/>
+<area shape="poly" id="edge5_Node000001_Node000004" title=" " alt="" coords="251,46,181,67,145,81,111,99,82,121,59,147,44,177,38,212,38,400,43,445,53,490,79,561,74,561,48,491,37,446,33,400,33,211,39,175,55,144,79,117,109,95,143,76,179,61,255,42"/>
+<area shape="rect" id="Node000006" href="$keycodes_8cpp.html" title="Implementation of the keycode parser." alt="" coords="361,98,524,143"/>
+<area shape="poly" id="edge6_Node000001_Node000006" title=" " alt="" coords="382,58,423,97,418,98,382,63"/>
+<area shape="rect" id="Node000007" href="$value_8hpp.html" title="Value type shared by triggers, modifiers and actionsg." alt="" coords="175,98,337,143"/>
+<area shape="poly" id="edge7_Node000001_Node000007" title=" " alt="" coords="315,63,280,99,276,96,318,58"/>
+<area shape="rect" id="Node000003" href="$action_8hpp.html" title="Maps a group of binds to a function and a value." alt="" coords="149,469,312,513"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="376,429,282,470,280,466,380,426"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="181,524,122,563,119,559,185,520"/>
+<area shape="rect" id="Node000005" href="$input__system_8cpp.html" title="Implementation of the input system singleton." alt="" coords="5,654,168,699"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="88,620,89,655,84,653,85,624"/>
+<area shape="poly" id="edge9_Node000007_Node000002" title=" " alt="" coords="351,142,406,162,460,192,506,231,524,255,538,282,545,306,538,329,517,357,489,378,486,373,513,353,533,327,539,306,533,284,520,258,502,235,457,196,404,167,352,147"/>
+<area shape="poly" id="edge8_Node000007_Node000003" title=" " alt="" coords="228,158,195,214,178,248,165,284,161,310,162,336,175,387,196,432,217,468,212,468,191,435,170,388,157,336,156,309,160,283,173,246,190,212,231,153"/>
+<area shape="poly" id="edge10_Node000007_Node000004" title=" " alt="" coords="200,153,164,180,127,215,100,257,92,280,89,304,89,400,89,561,84,561,84,400,84,304,87,279,95,255,123,212,161,176,203,149"/>
+<area shape="rect" id="Node000008" href="$modifier_8hpp.html" title="Modifiers post&#45;process a value in place before it reaches the action." alt="" coords="175,283,337,328"/>
+<area shape="poly" id="edge11_Node000007_Node000008" title=" " alt="" coords="241,154,233,191,231,213,233,235,248,283,243,283,228,236,225,213,228,190,239,159"/>
+<area shape="rect" id="Node000009" href="$parse__util_8hpp.html" title="Small helpers shared by the TOML parsing paths of triggers, modifiers and binds." alt="" coords="243,191,405,235"/>
+<area shape="poly" id="edge14_Node000007_Node000009" title=" " alt="" coords="281,153,310,190,305,191,281,158"/>
+<area shape="rect" id="Node000010" href="$trigger_8hpp.html" title="Triggers turn a raw input sample into an action value and discrete events." alt="" coords="361,283,524,328"/>
+<area shape="poly" id="edge18_Node000007_Node000010" title=" " alt="" coords="351,143,389,162,419,189,433,212,441,237,446,284,441,282,436,238,428,214,415,192,386,166,352,148"/>
+<area shape="poly" id="edge13_Node000008_Node000002" title=" " alt="" coords="314,332,401,375,396,376,314,338"/>
+<area shape="poly" id="edge12_Node000008_Node000003" title=" " alt="" coords="252,341,236,469,231,468,249,346"/>
+<area shape="poly" id="edge15_Node000009_Node000008" title=" " alt="" coords="297,250,274,285,270,282,300,246"/>
+<area shape="poly" id="edge16_Node000009_Node000010" title=" " alt="" coords="364,242,417,282,412,283,364,247"/>
+<area shape="poly" id="edge17_Node000010_Node000002" title=" " alt="" coords="444,341,445,377,440,375,441,346"/>
+</map>

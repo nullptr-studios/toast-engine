@@ -1,0 +1,7 @@
+<map id="input::ITrigger::Result" name="input::ITrigger::Result">
+<area shape="rect" id="Node000001" title="Outcome of evaluating a trigger for one frame." alt="" coords="43,106,202,134"/>
+<area shape="rect" id="Node000002" href="$structinput_1_1Value.html" title="A tagged value that may represent a bool, a float or a glm::vec2." alt="" coords="5,5,104,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="74,44,116,105,111,106,71,48"/>
+<area shape="rect" id="Node000003" href="$structinput_1_1SignalList.html" title="Fixed&#45;capacity buffer of discrete events fired in a single frame." alt="" coords="128,5,253,33"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="175,45,134,107,130,103,170,47"/>
+</map>

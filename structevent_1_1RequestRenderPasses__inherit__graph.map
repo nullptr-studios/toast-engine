@@ -1,0 +1,10 @@
+<map id="event::RequestRenderPasses" name="event::RequestRenderPasses">
+<area shape="rect" id="Node000001" title=" " alt="" coords="9,277,219,305"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="5,183,223,228"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="116,241,116,278,112,275,112,245"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="29,5,188,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="111,47,116,183,111,182,108,50"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="130,82,271,110"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="136,40,187,81,182,83,136,46"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="183,120,134,184,130,181,179,124"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="editor.Components.Modals.HierarchyDisplayItem" name="editor.Components.Modals.HierarchyDisplayItem">
+<area shape="rect" id="Node000001" title=" " alt="" coords="12,98,212,143"/>
+<area shape="rect" id="Node000002" href="$classeditor_1_1Components_1_1Elements_1_1SearchableTreeItem-1-g.html" title="Base for tree nodes with text filtering — UpdateFilter recurses down and returns true if anything in ..." alt="" coords="5,5,219,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="114,64,114,99,110,97,110,68"/>
+</map>

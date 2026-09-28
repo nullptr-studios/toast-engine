@@ -1,0 +1,5 @@
+<map id="renderer::GpuTimer::ScopeTiming" name="renderer::GpuTimer::ScopeTiming">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,123,154,168"/>
+<area shape="rect" id="Node000002" href="$structrenderer_1_1GpuTimer_1_1ScopeName.html" title="Copied since a pass can be destroyed before its frame is read back." alt="" coords="5,5,154,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="82,64,82,123,77,122,77,68"/>
+</map>

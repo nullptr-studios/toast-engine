@@ -1,0 +1,24 @@
+<map id="engine/src/toast/assets/curve.hpp" name="engine/src/toast/assets/curve.hpp">
+<area shape="rect" id="Node000001" title="Spline curve asset using tinyspline." alt="" coords="374,5,546,50"/>
+<area shape="rect" id="Node000002" href="$core__types_8hpp.html" title="Base types for the asset system." alt="" coords="264,98,384,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="426,49,360,92,357,87,421,52"/>
+<area shape="rect" id="Node000010" title=" " alt="" coords="408,98,512,126"/>
+<area shape="poly" id="edge10_Node000001_Node000010" title=" " alt="" coords="461,48,462,84,458,81,458,53"/>
+<area shape="rect" id="Node000011" title=" " alt="" coords="536,98,656,126"/>
+<area shape="poly" id="edge11_Node000001_Node000011" title=" " alt="" coords="496,48,564,90,558,90,496,53"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,174,72,201"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="270,129,88,175,86,170,271,124"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="95,174,240,201"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="294,127,211,169,208,164,298,125"/>
+<area shape="rect" id="Node000005" href="$export_8hpp.html" title=" " alt="" coords="214,249,343,277"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="321,124,306,174,288,236,284,233,301,173,317,128"/>
+<area shape="rect" id="Node000006" href="$uid_8hpp.html" title="Unique identifier for everything that exists in our engine." alt="" coords="316,174,422,201"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="333,124,356,161,350,160,331,129"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="447,174,582,201"/>
+<area shape="poly" id="edge8_Node000002_Node000008" title=" " alt="" coords="358,124,469,167,464,168,358,129"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="606,174,668,201"/>
+<area shape="poly" id="edge9_Node000002_Node000009" title=" " alt="" coords="385,123,594,172,588,174,384,128"/>
+<area shape="poly" id="edge7_Node000006_Node000005" title=" " alt="" coords="355,201,308,242,305,237,350,203"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="367,249,432,277"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="376,200,391,236,386,234,373,204"/>
+</map>

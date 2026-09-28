@@ -1,0 +1,36 @@
+<map id="engine/src/toast/scripting/ui_binds_proxy.hpp" name="engine/src/toast/scripting/ui_binds_proxy.hpp">
+<area shape="rect" id="Node000001" title="Lua handle for a Panel data binds." alt="" coords="60,5,245,50"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,325,102,353"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="148,51,65,312,60,310,143,50"/>
+<area shape="rect" id="Node000003" href="$box_8hpp.html" title="pseudo shared pointer for Nodes" alt="" coords="188,98,338,126"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="181,48,236,88,231,89,181,53"/>
+<area shape="rect" id="Node000004" href="$control__box_8hpp.html" title="Control block for the pseudo shared pointer Box&lt;Node&gt;." alt="" coords="710,249,835,277"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="308,124,715,243,711,246,307,129"/>
+<area shape="rect" id="Node000010" title=" " alt="" coords="126,325,192,353"/>
+<area shape="poly" id="edge9_Node000003_Node000010" title=" " alt="" coords="254,124,221,175,190,247,169,311,164,308,185,245,217,172,250,128"/>
+<area shape="rect" id="Node000011" href="$box_8inl_source.html" title=" " alt="" coords="230,174,296,201"/>
+<area shape="poly" id="edge10_Node000003_Node000011" title=" " alt="" coords="257,124,256,159,252,157,254,129"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="994,325,1060,353"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="818,275,981,324,976,323,817,280"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="781,325,859,353"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="782,275,806,313,801,311,779,280"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="692,325,757,353"/>
+<area shape="poly" id="edge6_Node000004_Node000007" title=" " alt="" coords="766,276,742,314,740,310,761,279"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="884,325,970,353"/>
+<area shape="poly" id="edge7_Node000004_Node000008" title=" " alt="" coords="800,275,888,318,883,318,799,280"/>
+<area shape="rect" id="Node000009" href="$export_8hpp.html" title=" " alt="" coords="539,325,667,353"/>
+<area shape="poly" id="edge8_Node000004_Node000009" title=" " alt="" coords="745,277,647,321,646,316,739,278"/>
+<area shape="poly" id="edge11_Node000011_Node000003" title=" " alt="" coords="267,172,270,143,273,139,272,174"/>
+<area shape="rect" id="Node000012" href="$log_8hpp.html" title="Public logging interface for the engine." alt="" coords="280,249,387,277"/>
+<area shape="poly" id="edge12_Node000011_Node000012" title=" " alt="" coords="276,199,313,238,308,238,275,204"/>
+<area shape="poly" id="edge18_Node000012_Node000002" title=" " alt="" coords="284,280,117,324,116,318,283,275"/>
+<area shape="poly" id="edge15_Node000012_Node000007" title=" " alt="" coords="387,270,515,290,679,325,674,325,514,296,387,275"/>
+<area shape="poly" id="edge13_Node000012_Node000009" title=" " alt="" coords="382,275,543,320,538,321,381,280"/>
+<area shape="poly" id="edge17_Node000012_Node000010" title=" " alt="" coords="305,277,205,321,203,316,300,278"/>
+<area shape="rect" id="Node000013" title=" " alt="" coords="358,325,426,353"/>
+<area shape="poly" id="edge14_Node000012_Node000013" title=" " alt="" coords="345,275,375,313,370,312,343,280"/>
+<area shape="rect" id="Node000014" title=" " alt="" coords="451,325,515,353"/>
+<area shape="poly" id="edge16_Node000012_Node000014" title=" " alt="" coords="361,275,445,318,440,318,360,280"/>
+<area shape="rect" id="Node000015" title=" " alt="" coords="216,325,334,353"/>
+<area shape="poly" id="edge19_Node000012_Node000015" title=" " alt="" coords="325,276,296,315,293,311,321,279"/>
+</map>

@@ -1,0 +1,23 @@
+<map id="engine/src/toast/renderer/shadow_slots.cpp" name="engine/src/toast/renderer/shadow_slots.cpp">
+<area shape="rect" id="Node000001" title=" " alt="" coords="314,5,498,50"/>
+<area shape="rect" id="Node000002" href="$shadow__slots_8hpp.html" title=" " alt="" coords="5,98,143,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="317,53,142,96,141,91,319,48"/>
+<area shape="rect" id="Node000005" href="$shadow__constants_8hpp.html" title="Mirrored by shadow_depth.slang and mesh.slang." alt="" coords="167,98,336,126"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="367,50,291,93,288,88,363,52"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="336,174,420,201"/>
+<area shape="poly" id="edge8_Node000001_Node000006" title=" " alt="" coords="404,49,385,159,381,157,400,52"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="412,98,467,126"/>
+<area shape="poly" id="edge9_Node000001_Node000008" title=" " alt="" coords="416,48,431,84,426,83,413,53"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="492,98,558,126"/>
+<area shape="poly" id="edge10_Node000001_Node000009" title=" " alt="" coords="438,48,496,89,491,89,437,53"/>
+<area shape="rect" id="Node000010" title=" " alt="" coords="582,98,641,126"/>
+<area shape="poly" id="edge11_Node000001_Node000010" title=" " alt="" coords="461,48,570,93,565,93,460,53"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="93,174,159,201"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="84,124,111,161,105,161,82,129"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="17,174,70,201"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="71,124,57,160,52,158,67,128"/>
+<area shape="poly" id="edge6_Node000005_Node000003" title=" " alt="" coords="232,126,162,168,160,163,226,127"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="275,124,345,166,340,166,273,129"/>
+<area shape="rect" id="Node000007" href="$export_8hpp.html" title=" " alt="" coords="183,174,312,201"/>
+<area shape="poly" id="edge7_Node000005_Node000007" title=" " alt="" coords="253,124,251,160,247,156,249,128"/>
+</map>

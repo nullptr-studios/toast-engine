@@ -1,0 +1,16 @@
+<map id="event::DestroyNode" name="event::DestroyNode">
+<area shape="rect" id="Node000001" title=" " alt="" coords="145,307,297,335"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="22,207,241,234"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="154,243,212,306,206,307,152,248"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="5,5,165,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="69,49,58,89,55,111,60,133,71,154,85,174,117,206,112,207,81,178,66,157,54,135,50,111,52,88,70,44"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="69,106,210,134"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="100,44,135,105,130,106,99,49"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="139,146,135,207,130,205,136,151"/>
+<area shape="rect" id="Node000005" href="$classtoast_1_1Node.html" title=" " alt="" coords="265,207,361,234"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="293,245,235,309,232,305,288,246"/>
+<area shape="rect" id="Node000006" href="$classtoast_1_1INodeOwner.html" title=" " alt="" coords="242,106,384,134"/>
+<area shape="poly" id="edge6_Node000005_Node000006" title=" " alt="" coords="315,147,315,207,311,205,311,151"/>
+<area shape="rect" id="Node000007" href="$classphysics_1_1Accumulator.html" title=" " alt="" coords="233,5,393,33"/>
+<area shape="poly" id="edge7_Node000006_Node000007" title=" " alt="" coords="314,46,315,106,311,104,312,51"/>
+</map>

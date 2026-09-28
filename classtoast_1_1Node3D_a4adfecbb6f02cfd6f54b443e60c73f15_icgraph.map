@@ -1,0 +1,11 @@
+<map id="toast::Node3D::forward" name="toast::Node3D::forward">
+<area shape="rect" id="Node000001" title=" " alt="" coords="253,100,425,128"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1AudioCapsuleEmitter.html#ad333d8f3fc40ea877dd450c17d7c3788" title="override this to project listener to the shape&#39;s nearest surface" alt="" coords="5,5,205,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="285,95,204,65,172,53,172,48,206,60,290,93"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1Node3D.html#adad24d149f2272f82a98518028bbece9" title="Orients the node so its forward axis points at a world&#45;space target." alt="" coords="23,74,187,102"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="235,104,188,100,187,94,240,102"/>
+<area shape="rect" id="Node000004" href="$classtoast_1_1Node3D.html#a683830b92106346ba6e3446ead55a23d" title="lookAt() constrained to the XY plane; the node faces the target with no roll" alt="" coords="18,126,192,154"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="235,126,193,133,192,128,240,124"/>
+<area shape="rect" id="Node000005" href="$classtoast_1_1Camera.html#a2f7dd23d2ef0791018fbcde9ae81f85b" title="Unprojects a viewport&#45;space pixel into a world&#45;space ray." alt="" coords="6,177,204,222"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="289,133,206,168,173,179,171,174,204,162,284,135"/>
+</map>

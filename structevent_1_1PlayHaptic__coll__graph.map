@@ -1,0 +1,21 @@
+<map id="event::PlayHaptic" name="event::PlayHaptic">
+<area shape="rect" id="Node000001" title="Requests that a controller play a haptic effect." alt="" coords="144,401,280,429"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="5,292,209,320"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="132,329,202,400,197,401,129,334"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="31,106,191,134"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="105,147,102,183,102,243,107,292,102,291,96,244,96,183,104,152"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="111,183,252,211"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="134,142,172,182,167,183,134,148"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="166,221,118,293,114,290,162,225"/>
+<area shape="rect" id="Node000005" href="$classassets_1_1Handle.html" title=" " alt="" coords="233,284,408,328"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="291,338,227,403,224,399,285,340"/>
+<area shape="rect" id="Node000006" href="$classassets_1_1HandleBase.html" title="Base class for type&#45;erased asset handles." alt="" coords="250,106,399,134"/>
+<area shape="poly" id="edge6_Node000005_Node000006" title=" " alt="" coords="326,147,323,284,318,282,322,151"/>
+<area shape="rect" id="Node000009" href="$classassets_1_1Handle.html" title="Type&#45;safe smart pointer for assets." alt="" coords="336,183,491,211"/>
+<area shape="poly" id="edge10_Node000009_Node000006" title=" " alt="" coords="352,141,401,183,396,183,351,146"/>
+<area shape="rect" id="Node000007" href="$classassets_1_1Asset.html" title="Base class for all engine assets." alt="" coords="209,5,317,33"/>
+<area shape="poly" id="edge7_Node000006_Node000007" title=" " alt="" coords="267,45,281,81,305,105,300,106,276,83,266,51"/>
+<area shape="rect" id="Node000008" href="$structtoast_1_1UID.html" title=" " alt="" coords="341,5,428,33"/>
+<area shape="poly" id="edge8_Node000006_Node000008" title=" " alt="" coords="370,44,335,107,330,104,367,48"/>
+<area shape="poly" id="edge9_Node000005_Node000009" title=" " alt="" coords="394,221,341,285,338,281,390,224"/>
+</map>

@@ -1,0 +1,21 @@
+<map id="event::PlayHapticDirect" name="event::PlayHapticDirect">
+<area shape="rect" id="Node000001" title="Requests a haptic play on a controller without routing through a PlayerController." alt="" coords="113,401,288,429"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="5,284,194,328"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="132,337,191,401,186,401,129,342"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="21,106,180,134"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="95,147,91,183,92,237,98,283,93,283,87,237,86,183,94,152"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="101,183,242,211"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="124,142,162,182,157,183,124,148"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="135,222,125,236,113,260,106,285,101,282,108,258,121,233,138,218"/>
+<area shape="rect" id="Node000005" href="$classassets_1_1Handle.html" title=" " alt="" coords="218,284,392,328"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="276,339,215,403,212,399,271,340"/>
+<area shape="rect" id="Node000006" href="$classassets_1_1HandleBase.html" title="Base class for type&#45;erased asset handles." alt="" coords="240,106,389,134"/>
+<area shape="poly" id="edge6_Node000005_Node000006" title=" " alt="" coords="315,147,308,284,303,282,311,151"/>
+<area shape="rect" id="Node000009" href="$classassets_1_1Handle.html" title="Type&#45;safe smart pointer for assets." alt="" coords="326,183,481,211"/>
+<area shape="poly" id="edge10_Node000009_Node000006" title=" " alt="" coords="341,141,391,183,385,183,341,146"/>
+<area shape="rect" id="Node000007" href="$classassets_1_1Asset.html" title="Base class for all engine assets." alt="" coords="199,5,306,33"/>
+<area shape="poly" id="edge7_Node000006_Node000007" title=" " alt="" coords="256,45,271,81,295,105,290,106,266,83,255,51"/>
+<area shape="rect" id="Node000008" href="$structtoast_1_1UID.html" title=" " alt="" coords="331,5,417,33"/>
+<area shape="poly" id="edge8_Node000006_Node000008" title=" " alt="" coords="360,44,324,107,320,104,357,48"/>
+<area shape="poly" id="edge9_Node000005_Node000009" title=" " alt="" coords="384,221,327,285,323,281,379,224"/>
+</map>

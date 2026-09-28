@@ -1,0 +1,5 @@
+<map id="input::HoldTrigger" name="input::HoldTrigger">
+<area shape="rect" id="Node000001" title="Reports a hold every frame while the input is on." alt="" coords="5,81,142,109"/>
+<area shape="rect" id="Node000002" href="$classinput_1_1ITrigger.html" title="Polymorphic base for all triggers." alt="" coords="18,5,129,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="75,47,76,81,71,80,72,51"/>
+</map>

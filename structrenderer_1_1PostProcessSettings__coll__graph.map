@@ -1,0 +1,13 @@
+<map id="renderer::PostProcessSettings" name="renderer::PostProcessSettings">
+<area shape="rect" id="Node000001" title=" " alt="" coords="363,152,578,180"/>
+<area shape="rect" id="Node000002" href="$structrenderer_1_1PostProcessSettings_1_1Bloom.html" title=" " alt="" coords="19,5,235,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="224,52,249,60,295,73,340,91,399,121,449,152,444,152,397,126,338,95,293,78,248,65,225,58"/>
+<area shape="rect" id="Node000003" href="$structrenderer_1_1PostProcessSettings_1_1Tonemap.html" title=" " alt="" coords="19,75,235,119"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="250,116,339,133,413,151,408,153,338,138,250,121"/>
+<area shape="rect" id="Node000004" href="$structrenderer_1_1PostProcessSettings_1_1Fxaa.html" title=" " alt="" coords="19,144,235,189"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="250,164,365,165,360,167,251,169"/>
+<area shape="rect" id="Node000005" href="$structrenderer_1_1PostProcessSettings_1_1Ssr.html" title=" " alt="" coords="5,212,249,240"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="259,207,338,194,415,180,410,181,339,199,260,212"/>
+<area shape="rect" id="Node000006" href="$structrenderer_1_1PostProcessSettings_1_1Ssao.html" title=" " alt="" coords="19,264,235,309"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="249,262,338,236,397,207,445,182,450,180,400,212,340,240,250,267"/>
+</map>

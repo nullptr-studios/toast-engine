@@ -1,0 +1,5 @@
+<map id="event::ProtoTraits&lt; UpdateHierarchyData &gt;" name="event::ProtoTraits&lt; UpdateHierarchyData &gt;">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,106,198,151"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1ProtoTraits.html" title="Specialization point that exposes a C++ event type over the C# FFI via protobuf." alt="" coords="15,5,188,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="103,47,104,106,99,105,100,51"/>
+</map>

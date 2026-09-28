@@ -1,0 +1,11 @@
+<map id="editor.Editors.TableViewModel" name="editor.Editors.TableViewModel">
+<area shape="rect" id="Node000001" title=" " alt="" coords="192,98,370,143"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,14,53,42"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="62,47,66,48,134,74,201,97,196,98,132,79,64,52,64,52"/>
+<area shape="rect" id="Node000003" href="$interfaceeditor_1_1Editors_1_1IToastZoneEditor.html" title=" " alt="" coords="76,5,259,50"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="207,57,257,98,251,98,206,62"/>
+<area shape="rect" id="Node000004" href="$interfaceeditor_1_1Workspace_1_1IAutosavable.html" title=" " alt="" coords="283,14,506,42"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="369,50,309,100,307,95,364,52"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="530,14,627,42"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="529,46,518,53,359,100,358,95,516,47,524,48"/>
+</map>

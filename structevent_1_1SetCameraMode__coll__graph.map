@@ -1,0 +1,10 @@
+<map id="event::SetCameraMode" name="event::SetCameraMode">
+<area shape="rect" id="Node000001" title=" " alt="" coords="39,260,213,288"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="5,183,247,211"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="128,224,128,261,124,259,124,228"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="41,5,200,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="124,47,128,183,123,182,119,50"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="142,82,283,110"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="149,40,199,81,194,83,148,46"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="193,120,140,184,136,181,189,123"/>
+</map>

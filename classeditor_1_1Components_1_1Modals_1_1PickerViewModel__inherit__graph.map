@@ -1,0 +1,13 @@
+<map id="editor.Components.Modals.PickerViewModel" name="editor.Components.Modals.PickerViewModel">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,144,205,189"/>
+<area shape="rect" id="Node000002" href="$classeditor_1_1Components_1_1Modals_1_1AssetFolderTreeViewModel.html" title=" " alt="" coords="253,5,452,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="143,132,194,95,251,60,281,49,276,52,254,65,197,100,147,136"/>
+<area shape="rect" id="Node000003" href="$classeditor_1_1Components_1_1Modals_1_1AssetListPickerViewModel.html" title=" " alt="" coords="253,75,452,119"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="201,137,272,118,268,121,203,142"/>
+<area shape="rect" id="Node000004" href="$classeditor_1_1Components_1_1Modals_1_1AssetTreeViewModel.html" title=" " alt="" coords="253,144,452,189"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="219,164,255,165,250,167,221,169"/>
+<area shape="rect" id="Node000005" href="$classeditor_1_1Components_1_1Modals_1_1HierarchyPickerViewModel.html" title=" " alt="" coords="253,213,452,258"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="202,191,273,212,268,214,202,196"/>
+<area shape="rect" id="Node000006" href="$classeditor_1_1Components_1_1Modals_1_1NodeTypePickerViewModel.html" title=" " alt="" coords="253,283,452,327"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="146,196,197,233,254,268,281,282,276,282,251,273,194,237,145,201"/>
+</map>

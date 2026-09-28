@@ -1,0 +1,69 @@
+<map id="toast::Node3D" name="toast::Node3D">
+<area shape="rect" id="Node000001" title=" " alt="" coords="150,552,264,580"/>
+<area shape="rect" id="Node000003" href="$classphysics_1_1Collider.html" title=" " alt="" coords="338,84,466,112"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="211,536,246,399,274,312,310,226,349,160,390,110,387,114,354,163,314,228,279,314,251,401,217,538"/>
+<area shape="rect" id="Node000007" href="$classphysics_1_1Rigidbody.html" title=" " alt="" coords="330,239,473,266"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="211,536,222,488,242,427,271,363,310,304,336,281,367,265,364,269,339,286,314,308,275,366,247,429,227,490,216,538"/>
+<area shape="rect" id="Node000011" href="$classtoast_1_1AnimationPlayer.html" title="Drives node transforms from an Animation clip." alt="" coords="316,317,487,345"/>
+<area shape="poly" id="edge10_Node000001_Node000011" title=" " alt="" coords="212,536,224,496,244,448,272,398,310,356,334,344,330,348,314,360,277,401,249,450,229,498,217,538"/>
+<area shape="rect" id="Node000012" href="$classtoast_1_1AudioEmitterBase.html" title="Base class for shape&#45;based audio emitters." alt="" coords="312,369,491,397"/>
+<area shape="poly" id="edge11_Node000001_Node000012" title=" " alt="" coords="217,536,253,472,279,437,310,408,336,396,332,399,314,412,283,441,257,475,222,539"/>
+<area shape="rect" id="Node000017" href="$classtoast_1_1AudioListener.html" title=" " alt="" coords="326,421,477,449"/>
+<area shape="poly" id="edge16_Node000001_Node000017" title=" " alt="" coords="226,538,263,498,311,460,340,448,336,451,313,464,266,501,230,541"/>
+<area shape="rect" id="Node000018" href="$classtoast_1_1Camera.html" title=" " alt="" coords="345,473,458,501"/>
+<area shape="poly" id="edge17_Node000001_Node000018" title=" " alt="" coords="245,542,311,511,349,500,345,503,313,516,248,547"/>
+<area shape="rect" id="Node000019" href="$classtoast_1_1IrradianceVolume.html" title="A box filled with a regular grid of probes storing the light arriving at each point." alt="" coords="314,525,490,553"/>
+<area shape="poly" id="edge18_Node000001_Node000019" title=" " alt="" coords="278,554,315,550,311,553,281,558"/>
+<area shape="rect" id="Node000020" href="$classtoast_1_1Light.html" title=" " alt="" coords="354,577,449,605"/>
+<area shape="poly" id="edge19_Node000001_Node000020" title=" " alt="" coords="279,573,357,584,352,586,280,578"/>
+<area shape="rect" id="Node000025" href="$classtoast_1_1MeshNode.html" title=" " alt="" coords="336,629,467,657"/>
+<area shape="poly" id="edge24_Node000001_Node000025" title=" " alt="" coords="248,585,313,614,350,628,345,629,311,619,248,590"/>
+<area shape="rect" id="Node000026" href="$classtoast_1_1Panel3D.html" title=" " alt="" coords="344,681,459,709"/>
+<area shape="poly" id="edge25_Node000001_Node000026" title=" " alt="" coords="229,589,267,630,313,666,346,682,341,683,311,671,263,633,228,595"/>
+<area shape="rect" id="Node000027" href="$classtoast_1_1ReflectionProbe.html" title="A volume in which reflections are reprojected onto local geometry instead of infinity." alt="" coords="320,733,484,761"/>
+<area shape="poly" id="edge26_Node000001_Node000027" title=" " alt="" coords="220,591,257,656,283,690,314,718,337,733,332,733,310,723,279,693,253,659,219,596"/>
+<area shape="rect" id="Node000028" href="$classtoast_1_1TestNode2.html" title=" " alt="" coords="336,785,467,813"/>
+<area shape="poly" id="edge27_Node000001_Node000028" title=" " alt="" coords="215,592,230,634,249,681,277,729,314,770,339,787,333,787,310,775,273,733,244,684,225,636,214,597"/>
+<area shape="rect" id="Node000029" href="$classtoast_1_1Volume.html" title=" " alt="" coords="346,837,457,865"/>
+<area shape="poly" id="edge28_Node000001_Node000029" title=" " alt="" coords="212,593,224,644,242,705,271,768,290,797,314,822,329,833,348,843,343,843,326,838,310,827,286,801,266,771,237,707,218,645,211,598"/>
+<area shape="rect" id="Node000034" href="$classtoast_1_1VoxelNode.html" title=" " alt="" coords="336,889,467,917"/>
+<area shape="poly" id="edge33_Node000001_Node000034" title=" " alt="" coords="210,593,218,654,235,729,248,768,265,807,287,843,314,874,338,892,333,891,310,879,283,846,260,809,243,770,230,730,213,655,208,598"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1Node.html" title=" " alt="" coords="5,552,102,580"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="116,564,152,564,147,567,119,568"/>
+<area shape="rect" id="Node000004" href="$classphysics_1_1BoxCollider.html" title=" " alt="" coords="567,5,721,33"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="450,76,539,43,584,32,580,35,540,48,453,80"/>
+<area shape="rect" id="Node000005" href="$classphysics_1_1CapsuleCollider.html" title=" " alt="" coords="554,57,734,85"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="479,87,556,80,551,83,482,91"/>
+<area shape="rect" id="Node000006" href="$classphysics_1_1SphereCollider.html" title=" " alt="" coords="557,109,731,137"/>
+<area shape="poly" id="edge5_Node000003_Node000006" title=" " alt="" coords="480,104,559,113,554,115,482,109"/>
+<area shape="rect" id="Node000008" href="$classphysics_1_1DynamicRigidbody.html" title=" " alt="" coords="543,161,745,189"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="451,230,539,199,584,188,580,191,540,204,454,235"/>
+<area shape="rect" id="Node000009" href="$classphysics_1_1KinematicRigidbody.html" title=" " alt="" coords="539,213,749,241"/>
+<area shape="poly" id="edge8_Node000007_Node000009" title=" " alt="" coords="488,241,541,237,537,240,490,246"/>
+<area shape="rect" id="Node000010" href="$classphysics_1_1StaticRigidbody.html" title=" " alt="" coords="554,265,734,293"/>
+<area shape="poly" id="edge9_Node000007_Node000010" title=" " alt="" coords="488,260,556,268,551,270,490,265"/>
+<area shape="rect" id="Node000013" href="$classtoast_1_1AudioBoxEmitter.html" title="Box&#45;shaped audio source." alt="" coords="558,317,730,345"/>
+<area shape="poly" id="edge12_Node000012_Node000013" title=" " alt="" coords="483,363,578,344,574,347,486,368"/>
+<area shape="rect" id="Node000014" href="$classtoast_1_1AudioCapsuleEmitter.html" title="Capsule&#45;shaped audio source." alt="" coords="544,369,744,397"/>
+<area shape="poly" id="edge13_Node000012_Node000014" title=" " alt="" coords="506,381,546,382,541,384,508,386"/>
+<area shape="rect" id="Node000015" href="$classtoast_1_1AudioEmitter3D.html" title="Simple point&#45;source 3D emitter." alt="" coords="561,421,727,449"/>
+<area shape="poly" id="edge14_Node000012_Node000015" title=" " alt="" coords="484,398,578,420,573,422,485,403"/>
+<area shape="rect" id="Node000016" href="$classtoast_1_1AudioSphereEmitter.html" title="Sphere&#45;shaped audio source." alt="" coords="548,473,740,501"/>
+<area shape="poly" id="edge15_Node000012_Node000016" title=" " alt="" coords="479,401,493,408,508,421,517,434,526,446,541,458,569,472,564,473,538,463,522,450,513,437,504,424,490,412,480,406"/>
+<area shape="rect" id="Node000021" href="$classtoast_1_1AmbientLight.html" title=" " alt="" coords="569,525,719,553"/>
+<area shape="poly" id="edge20_Node000020_Node000021" title=" " alt="" coords="463,575,579,552,574,555,465,580"/>
+<area shape="rect" id="Node000022" href="$classtoast_1_1DirectionalLight.html" title=" " alt="" coords="561,577,727,605"/>
+<area shape="poly" id="edge21_Node000020_Node000022" title=" " alt="" coords="464,589,563,590,558,592,465,594"/>
+<area shape="rect" id="Node000023" href="$classtoast_1_1PointLight.html" title=" " alt="" coords="580,629,708,657"/>
+<area shape="poly" id="edge22_Node000020_Node000023" title=" " alt="" coords="464,602,582,629,577,630,464,607"/>
+<area shape="rect" id="Node000024" href="$classtoast_1_1Spotlight.html" title=" " alt="" coords="584,681,704,709"/>
+<area shape="poly" id="edge23_Node000020_Node000024" title=" " alt="" coords="464,602,493,616,508,629,517,642,526,654,541,666,586,686,581,686,538,671,522,658,513,645,504,632,490,620,464,608"/>
+<area shape="rect" id="Node000030" href="$classtoast_1_1AudioVolume.html" title="Base interface for audio&#45;reactive volumes." alt="" coords="570,811,718,838"/>
+<area shape="poly" id="edge29_Node000029_Node000030" title=" " alt="" coords="473,841,572,832,567,833,473,846"/>
+<area shape="rect" id="Node000033" href="$classtoast_1_1PostProcessVolume.html" title="A region of the world that grades the post chain while the camera is inside it." alt="" coords="549,863,739,890"/>
+<area shape="poly" id="edge32_Node000029_Node000033" title=" " alt="" coords="473,856,552,867,546,867,473,861"/>
+<area shape="rect" id="Node000031" href="$classtoast_1_1AmbienceVolume.html" title="Ambient sound generator." alt="" coords="797,785,973,813"/>
+<area shape="poly" id="edge30_Node000030_Node000031" title=" " alt="" coords="734,812,799,808,793,809,734,818"/>
+<area shape="rect" id="Node000032" href="$classtoast_1_1SnapshotVolume.html" title="Fades an FMOD snapshot in and out based on accumulated listener weight." alt="" coords="799,837,970,865"/>
+<area shape="poly" id="edge31_Node000030_Node000032" title=" " alt="" coords="734,832,801,842,796,842,734,837"/>
+</map>

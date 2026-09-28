@@ -1,0 +1,5 @@
+<map id="assets::Animation" name="assets::Animation">
+<area shape="rect" id="Node000001" title="A set of clips plus the skins they pose." alt="" coords="5,81,144,109"/>
+<area shape="rect" id="Node000002" href="$classassets_1_1Asset.html" title="Base class for all engine assets." alt="" coords="21,5,128,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="76,47,77,81,72,80,73,51"/>
+</map>

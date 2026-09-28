@@ -1,0 +1,21 @@
+<map id="engine/src/toast/audio/audio_bank.hpp" name="engine/src/toast/audio/audio_bank.hpp">
+<area shape="rect" id="Node000001" title="Raw binary .bank blob passed directly to FMOD." alt="" coords="71,5,237,50"/>
+<area shape="rect" id="Node000002" href="$core__types_8hpp.html" title="Base types for the asset system." alt="" coords="216,98,420,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="198,48,281,90,276,92,197,53"/>
+<area shape="rect" id="Node000005" href="$export_8hpp.html" title=" " alt="" coords="148,249,277,277"/>
+<area shape="poly" id="edge10_Node000001_Node000005" title=" " alt="" coords="113,53,72,82,32,119,18,139,10,159,9,180,19,200,42,223,70,239,102,250,136,258,130,259,100,255,68,244,39,227,14,203,4,181,4,158,13,136,28,115,69,78,116,48"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="495,174,562,201"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="356,124,483,169,478,170,355,129"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="29,174,175,201"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="277,128,156,171,154,166,281,124"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="295,125,266,148,240,175,226,204,218,235,214,232,221,203,236,172,262,144,291,127"/>
+<area shape="rect" id="Node000006" href="$uid_8hpp.html" title="Unique identifier for everything that exists in our engine." alt="" coords="586,174,692,201"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="376,124,573,170,568,171,376,129"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="250,174,386,201"/>
+<area shape="poly" id="edge8_Node000002_Node000008" title=" " alt="" coords="320,124,320,159,316,157,316,128"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="409,174,472,201"/>
+<area shape="poly" id="edge9_Node000002_Node000009" title=" " alt="" coords="340,124,408,165,403,166,339,129"/>
+<area shape="poly" id="edge7_Node000006_Node000005" title=" " alt="" coords="588,199,574,204,293,252,292,246,573,199,583,200"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="607,249,672,277"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="641,200,641,235,637,232,637,204"/>
+</map>

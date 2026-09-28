@@ -1,0 +1,7 @@
+<map id="engine/src/toast/crash_handler.hpp" name="engine/src/toast/crash_handler.hpp">
+<area shape="rect" id="Node000001" title="The reporter runs out of process since after a crash the heap, loader and locks here may be unusable." alt="" coords="34,5,199,50"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,98,95,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="101,49,72,88,68,84,97,52"/>
+<area shape="rect" id="Node000003" href="$export_8hpp.html" title=" " alt="" coords="119,98,248,126"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="135,48,166,86,160,86,133,53"/>
+</map>

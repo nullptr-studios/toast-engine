@@ -1,0 +1,7 @@
+<map id="physics::Simulator::ConnectivityResult" name="physics::Simulator::ConnectivityResult">
+<area shape="rect" id="Node000001" title=" " alt="" coords="77,106,229,151"/>
+<area shape="rect" id="Node000002" href="$structphysics_1_1ShapeID.html" title=" " alt="" coords="5,5,138,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="92,43,139,105,134,106,89,48"/>
+<area shape="rect" id="Node000003" href="$structvoxel_1_1Connectivity.html" title="Labels are deterministic with pieces in brick order and components by first appearance." alt="" coords="162,5,309,33"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="219,44,171,107,168,103,214,47"/>
+</map>

@@ -1,0 +1,12 @@
+<map id="event::RemoveSignalConnection" name="event::RemoveSignalConnection">
+<area shape="rect" id="Node000001" title=" " alt="" coords="124,323,358,351"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="5,183,218,228"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="145,236,230,322,225,323,142,241"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="26,5,186,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="109,46,114,183,108,182,105,50"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="128,82,269,110"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="134,40,185,81,180,83,134,46"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="177,124,131,184,127,181,180,120"/>
+<area shape="rect" id="Node000005" href="$structtoast_1_1UID.html" title=" " alt="" coords="242,192,328,219"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="278,232,247,324,243,321,273,235"/>
+</map>

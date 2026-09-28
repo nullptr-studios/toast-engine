@@ -1,0 +1,6 @@
+<map id="logging::Logger::log" name="logging::Logger::log">
+<area shape="rect" id="Node000001" title="Entry point for all engine logs." alt="" coords="224,29,373,57"/>
+<area shape="poly" id="edge2_Node000001_Node000001" title=" " alt="" coords="332,14,321,10,298,8,277,10,265,15,262,20,267,30,262,28,257,20,261,11,276,5,298,3,323,5,338,14"/>
+<area shape="rect" id="Node000002" href="$classlogging_1_1Logger.html#aa9e80cc95ca58b9adb7e3a8323313e51" title="Set up the global logger instance, gives ownership to the caller." alt="" coords="5,29,176,57"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="206,43,176,46,176,41,211,43"/>
+</map>

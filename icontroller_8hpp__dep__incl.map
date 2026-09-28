@@ -1,0 +1,5 @@
+<map id="engine/src/toast/world/icontroller.hpp" name="engine/src/toast/world/icontroller.hpp">
+<area shape="rect" id="Node000001" title="Hidden base node for every input controller." alt="" coords="5,5,171,50"/>
+<area shape="rect" id="Node000002" href="$player__controller_8hpp.html" title="Controller node driven by a human player." alt="" coords="5,98,171,143"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="90,64,91,99,85,97,86,68"/>
+</map>

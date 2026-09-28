@@ -1,0 +1,11 @@
+<map id="toast::AudioEmitterBase" name="toast::AudioEmitterBase">
+<area shape="rect" id="Node000001" title="Base class for shape&#45;based audio emitters." alt="" coords="5,361,185,388"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1Node3D.html" title=" " alt="" coords="38,284,152,311"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="97,325,97,361,93,359,93,329"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1Node.html" title=" " alt="" coords="47,207,143,234"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="96,247,98,284,92,283,94,252"/>
+<area shape="rect" id="Node000004" href="$classtoast_1_1INodeOwner.html" title=" " alt="" coords="24,106,166,134"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="96,147,98,206,92,206,94,152"/>
+<area shape="rect" id="Node000005" href="$classphysics_1_1Accumulator.html" title=" " alt="" coords="15,5,175,33"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="96,46,98,106,92,105,94,51"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="assets::InputLayout::Entry" name="assets::InputLayout::Entry">
+<area shape="rect" id="Node000001" title="One action reference inside a layout." alt="" coords="5,106,154,151"/>
+<area shape="rect" id="Node000002" href="$structtoast_1_1UID.html" title=" " alt="" coords="36,5,123,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="82,47,82,106,77,105,77,50"/>
+</map>

@@ -1,0 +1,7 @@
+<map id="toast::TickScheduler" name="toast::TickScheduler">
+<area shape="rect" id="Node000001" title=" " alt="" coords="105,123,259,151"/>
+<area shape="rect" id="Node000002" href="$structtoast_1_1TickScheduler_1_1DependencyGraph.html" title=" " alt="" coords="5,5,159,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="114,59,173,122,167,123,111,64"/>
+<area shape="rect" id="Node000003" href="$structtoast_1_1__detail_1_1TickSchedule.html" title=" " alt="" coords="183,14,384,42"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="263,52,196,124,193,120,258,54"/>
+</map>

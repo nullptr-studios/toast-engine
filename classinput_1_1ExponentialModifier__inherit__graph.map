@@ -1,0 +1,5 @@
+<map id="input::ExponentialModifier" name="input::ExponentialModifier">
+<area shape="rect" id="Node000001" title="Converts a linear value to an exponential curve, preserving sign." alt="" coords="5,81,198,109"/>
+<area shape="rect" id="Node000002" href="$classinput_1_1IModifier.html" title="Polymorphic base for all modifiers." alt="" coords="42,5,161,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="103,47,104,82,99,80,100,51"/>
+</map>

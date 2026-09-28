@@ -1,0 +1,5 @@
+<map id="assets::AssetManager::save" name="assets::AssetManager::save">
+<area shape="rect" id="Node000001" title="Serializes the cached asset at the given UID back to its backing file." alt="" coords="218,5,382,50"/>
+<area shape="rect" id="Node000002" href="$classassets_1_1AssetManager.html#a80398cd3da9804b3b361efe99fab6f87" title="Serializes the cached asset at the given URI back to its backing file." alt="" coords="5,5,170,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="200,28,170,30,170,25,205,27"/>
+</map>

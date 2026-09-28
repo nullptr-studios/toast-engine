@@ -1,0 +1,9 @@
+<map id="assets::Handle&lt; T &gt;" name="assets::Handle&lt; T &gt;">
+<area shape="rect" id="Node000001" title="Type&#45;safe smart pointer for assets." alt="" coords="41,183,197,211"/>
+<area shape="rect" id="Node000002" href="$classassets_1_1HandleBase.html" title="Base class for type&#45;erased asset handles." alt="" coords="44,106,194,134"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="121,147,121,184,117,182,117,151"/>
+<area shape="rect" id="Node000003" href="$classassets_1_1Asset.html" title="Base class for all engine assets." alt="" coords="5,5,113,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="70,44,90,81,109,105,104,106,86,83,69,50"/>
+<area shape="rect" id="Node000004" href="$structtoast_1_1UID.html" title=" " alt="" coords="137,5,224,33"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="171,45,153,83,134,107,130,104,149,81,168,49"/>
+</map>

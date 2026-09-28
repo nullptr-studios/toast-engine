@@ -1,0 +1,11 @@
+<map id="editor.Components.Elements.DragVectorBoxBase" name="editor.Components.Elements.DragVectorBoxBase">
+<area shape="rect" id="Node000001" title=" " alt="" coords="139,75,352,119"/>
+<area shape="rect" id="Node000003" href="$classeditor_1_1Components_1_1Elements_1_1DragVec2Box.html" title=" " alt="" coords="400,5,613,50"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="346,68,422,50,417,51,348,73"/>
+<area shape="rect" id="Node000004" href="$classeditor_1_1Components_1_1Elements_1_1DragVec3Box.html" title=" " alt="" coords="400,75,613,119"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="367,94,402,97,397,97,368,100"/>
+<area shape="rect" id="Node000005" href="$classeditor_1_1Components_1_1Elements_1_1DragVec4Box.html" title=" " alt="" coords="400,144,613,189"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="347,121,422,143,417,143,347,127"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,83,91,111"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="106,94,141,96,136,98,107,100"/>
+</map>

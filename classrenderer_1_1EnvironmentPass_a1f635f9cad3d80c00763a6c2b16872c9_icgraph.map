@@ -1,0 +1,4 @@
+<map id="renderer::EnvironmentPass::recordPre" name="renderer::EnvironmentPass::recordPre">
+<area shape="rect" id="Node000001" title="Records outside any rendering scope before the main scope opens." alt="" coords="5,29,202,74"/>
+<area shape="poly" id="edge1_Node000001_Node000001" title=" " alt="" coords="133,14,123,10,103,8,85,10,74,15,70,21,71,30,66,28,64,19,71,10,84,5,104,3,124,5,139,14"/>
+</map>

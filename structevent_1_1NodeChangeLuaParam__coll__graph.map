@@ -1,0 +1,12 @@
+<map id="event::NodeChangeLuaParam" name="event::NodeChangeLuaParam">
+<area shape="rect" id="Node000001" title=" " alt="" coords="83,301,297,328"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="5,183,207,228"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="134,238,183,300,177,301,131,243"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="21,5,180,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="103,46,108,183,103,182,100,50"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="122,82,263,110"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="128,40,179,81,174,83,129,46"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="171,124,126,184,122,181,174,120"/>
+<area shape="rect" id="Node000005" href="$structtoast_1_1UID.html" title=" " alt="" coords="231,192,317,219"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="257,231,202,302,199,298,252,233"/>
+</map>

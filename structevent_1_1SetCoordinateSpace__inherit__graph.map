@@ -1,0 +1,10 @@
+<map id="event::SetCoordinateSpace" name="event::SetCoordinateSpace">
+<area shape="rect" id="Node000001" title=" " alt="" coords="12,277,209,305"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="5,183,216,228"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="112,241,113,278,108,275,109,245"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="26,5,185,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="108,47,113,183,107,182,104,50"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="126,82,268,110"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="133,40,184,81,179,83,133,46"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="179,120,130,184,126,181,175,124"/>
+</map>

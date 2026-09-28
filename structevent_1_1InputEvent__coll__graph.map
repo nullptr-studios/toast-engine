@@ -1,0 +1,14 @@
+<map id="event::InputEvent" name="event::InputEvent">
+<area shape="rect" id="Node000001" title="Sent whenever an input action fires." alt="" coords="208,284,344,311"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="5,183,209,211"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="143,216,256,282,251,284,142,221"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="22,5,181,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="104,47,109,183,104,182,101,50"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="123,82,264,110"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="129,40,180,81,175,83,130,46"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="170,124,121,184,117,181,174,120"/>
+<area shape="rect" id="Node000005" href="$structtoast_1_1UID.html" title=" " alt="" coords="233,183,320,211"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="278,225,279,284,274,282,274,228"/>
+<area shape="rect" id="Node000006" href="$classinput_1_1Action.html" title=" " alt="" coords="343,183,447,211"/>
+<area shape="poly" id="edge6_Node000001_Node000006" title=" " alt="" coords="382,223,350,262,311,286,309,281,347,258,377,225"/>
+</map>

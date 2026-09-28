@@ -1,0 +1,5 @@
+<map id="input::Axis2DTrigger" name="input::Axis2DTrigger">
+<area shape="rect" id="Node000001" title="Continuous 2D axis input." alt="" coords="5,81,158,109"/>
+<area shape="rect" id="Node000002" href="$classinput_1_1ITrigger.html" title="Polymorphic base for all triggers." alt="" coords="26,5,137,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="83,47,84,81,79,80,80,51"/>
+</map>

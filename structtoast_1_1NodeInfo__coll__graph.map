@@ -1,0 +1,12 @@
+<map id="toast::NodeInfo" name="toast::NodeInfo">
+<area shape="rect" id="Node000001" title="Complete reflection record for a registered Node type." alt="" coords="70,330,191,357"/>
+<area shape="poly" id="edge1_Node000001_Node000001" title=" " alt="" coords="207,333,218,343,210,353,192,357,191,352,207,349,212,344,205,338"/>
+<area shape="rect" id="Node000002" href="$structtoast_1_1TickFunctions.html" title="Set of lifecycle function pointers for one Node type." alt="" coords="5,207,157,234"/>
+<area shape="poly" id="edge2_Node000001_Node000002" title=" " alt="" coords="89,247,109,305,123,330,118,329,104,307,86,252"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1Node.html" title=" " alt="" coords="181,207,277,234"/>
+<area shape="poly" id="edge3_Node000001_Node000003" title=" " alt="" coords="217,246,199,278,176,307,150,331,147,327,172,304,195,275,213,249"/>
+<area shape="rect" id="Node000004" href="$classtoast_1_1INodeOwner.html" title=" " alt="" coords="158,106,300,134"/>
+<area shape="poly" id="edge4_Node000003_Node000004" title=" " alt="" coords="230,147,232,207,226,205,228,152"/>
+<area shape="rect" id="Node000005" href="$classphysics_1_1Accumulator.html" title=" " alt="" coords="149,5,309,33"/>
+<area shape="poly" id="edge5_Node000004_Node000005" title=" " alt="" coords="230,46,232,106,226,105,228,51"/>
+</map>

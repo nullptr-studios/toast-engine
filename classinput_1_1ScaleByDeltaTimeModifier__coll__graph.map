@@ -1,0 +1,5 @@
+<map id="input::ScaleByDeltaTimeModifier" name="input::ScaleByDeltaTimeModifier">
+<area shape="rect" id="Node000001" title="Multiplies each axis by the frame delta time." alt="" coords="5,81,241,109"/>
+<area shape="rect" id="Node000002" href="$classinput_1_1IModifier.html" title="Polymorphic base for all modifiers." alt="" coords="63,5,183,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="125,47,125,82,121,79,121,51"/>
+</map>

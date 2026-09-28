@@ -1,0 +1,19 @@
+<map id="toast::Workspace" name="toast::Workspace">
+<area shape="rect" id="Node000001" title="Single&#45;viewport node owner used by the editor." alt="" coords="785,175,918,203"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1INodeOwner.html" title=" " alt="" coords="365,16,508,44"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="522,14,579,10,641,13,704,25,734,35,762,49,795,77,820,111,838,146,848,176,843,173,833,148,815,114,791,80,760,54,732,40,702,30,641,18,579,15,524,19"/>
+<area shape="rect" id="Node000003" href="$classphysics_1_1Accumulator.html" title=" " alt="" coords="5,16,166,44"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="181,28,367,28,363,32,182,33"/>
+<area shape="rect" id="Node000004" href="$structtoast_1_1UID.html" title=" " alt="" coords="393,68,480,96"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="494,75,552,75,621,79,693,90,762,112,786,125,807,141,841,175,836,174,804,145,783,129,760,117,691,95,620,84,552,80,496,81"/>
+<area shape="rect" id="Node000005" href="$classtoast_1_1Box.html" title=" " alt="" coords="365,135,508,179"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="523,161,787,183,782,185,524,166"/>
+<area shape="rect" id="Node000006" href="$classtoast_1_1Box.html" title="Intrusive reference&#45;counted handle to a Node." alt="" coords="23,143,148,171"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="163,154,366,155,362,159,164,160"/>
+<area shape="rect" id="Node000007" href="$classevent_1_1Listener.html" title="manages the lifetime, subscription, and unsubscription of callbacks" alt="" coords="377,203,496,231"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="511,220,629,222,695,220,761,213,813,203,808,204,761,218,695,225,629,228,511,225"/>
+<area shape="rect" id="Node000008" href="$structtoast_1_1Workspace_1_1SnapSetting.html" title=" " alt="" coords="327,303,546,331"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="545,330,597,332,653,328,708,317,760,298,788,277,811,251,841,205,846,202,816,255,792,281,762,302,709,323,653,333,598,337,545,335"/>
+<area shape="rect" id="Node000009" href="$classtoast_1_1EditorCameraController.html" title=" " alt="" coords="329,359,544,387"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="507,388,566,396,631,398,698,388,730,378,760,362,780,347,796,327,822,282,838,237,846,205,850,201,843,239,827,284,801,330,783,350,762,367,732,383,700,393,632,403,565,401,507,393"/>
+</map>

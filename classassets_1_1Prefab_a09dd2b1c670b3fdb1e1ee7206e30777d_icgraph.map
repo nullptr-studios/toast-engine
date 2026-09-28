@@ -1,0 +1,7 @@
+<map id="assets::Prefab::toBinary" name="assets::Prefab::toBinary">
+<area shape="rect" id="Node000001" title="Serializes to the compact binary format." alt="" coords="230,29,406,57"/>
+<area shape="poly" id="edge3_Node000001_Node000001" title=" " alt="" coords="355,14,343,10,318,8,294,10,282,15,278,20,284,30,279,28,273,20,278,11,293,5,318,3,344,5,360,14"/>
+<area shape="rect" id="Node000002" href="$classassets_1_1Prefab.html#a931fb83c5d2514520089edca16028f78" title="Convenience wrapper that delegates to toFile() or toBinary() based on mode." alt="" coords="5,29,182,57"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="212,43,182,46,182,41,217,43"/>
+<area shape="poly" id="edge2_Node000002_Node000002" title=" " alt="" coords="130,14,118,10,93,8,70,10,57,15,54,20,60,29,55,29,49,20,54,11,69,5,94,3,120,5,136,14"/>
+</map>

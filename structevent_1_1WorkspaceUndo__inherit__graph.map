@@ -1,0 +1,10 @@
+<map id="event::WorkspaceUndo" name="event::WorkspaceUndo">
+<area shape="rect" id="Node000001" title=" " alt="" coords="39,260,210,288"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="5,183,244,211"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="126,224,127,261,122,259,123,228"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="40,5,199,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="122,47,127,183,121,182,118,50"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="140,82,282,110"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="147,40,198,81,193,83,147,46"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="192,120,138,184,134,181,188,123"/>
+</map>

@@ -1,0 +1,17 @@
+<map id="engine/src/toast/input/value.hpp" name="engine/src/toast/input/value.hpp">
+<area shape="rect" id="Node000001" title="Value type shared by triggers, modifiers and actionsg." alt="" coords="210,5,372,50"/>
+<area shape="rect" id="Node000002" href="$keycodes_8hpp.html" title=" " alt="" coords="88,98,198,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="250,52,182,92,179,88,254,49"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="222,98,278,126"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="282,49,265,86,262,82,278,52"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="302,98,364,126"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="303,48,322,85,317,83,301,53"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="388,98,491,126"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="331,48,405,90,400,90,330,53"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,174,71,201"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="127,126,70,167,67,163,122,127"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="95,174,192,201"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="145,124,146,159,141,157,142,128"/>
+<area shape="rect" id="Node000005" href="$export_8hpp.html" title=" " alt="" coords="215,174,344,201"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="168,124,244,165,239,167,167,129"/>
+</map>

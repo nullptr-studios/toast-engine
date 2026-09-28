@@ -1,0 +1,22 @@
+<map id="engine/src/toast/renderer/descriptor_writer.hpp" name="engine/src/toast/renderer/descriptor_writer.hpp">
+<area shape="rect" id="Node000001" title=" " alt="" coords="322,5,506,50"/>
+<area shape="rect" id="Node000002" href="$vulkan__common_8hpp_source.html" title=" " alt="" coords="201,98,357,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="381,49,315,92,312,87,376,52"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="5,182,68,210"/>
+<area shape="poly" id="edge10_Node000001_Node000004" title=" " alt="" coords="322,52,258,74,190,100,123,137,67,175,64,171,120,133,187,96,256,69,326,49"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="381,98,446,126"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="415,48,416,84,412,81,412,53"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="471,98,532,126"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="438,48,479,88,474,87,436,53"/>
+<area shape="rect" id="Node000010" title=" " alt="" coords="557,98,609,126"/>
+<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="459,48,546,91,540,91,458,53"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="92,182,195,210"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="260,126,179,176,177,171,255,127"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="225,127,157,149,80,176,76,178,74,173,78,171,156,144,230,125"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="219,174,424,218"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="287,124,306,161,301,159,285,129"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="448,182,572,210"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="317,124,461,176,456,177,316,129"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="596,182,763,210"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="347,124,584,171,608,179,603,178,583,176,347,129"/>
+</map>

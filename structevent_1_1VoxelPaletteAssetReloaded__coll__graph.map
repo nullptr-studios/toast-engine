@@ -1,0 +1,12 @@
+<map id="event::VoxelPaletteAssetReloaded" name="event::VoxelPaletteAssetReloaded">
+<area shape="rect" id="Node000001" title=" " alt="" coords="96,301,278,345"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="5,183,204,228"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="130,238,174,300,169,300,127,243"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="20,5,179,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="102,46,107,183,101,182,98,50"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="120,82,262,110"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="127,40,178,81,173,83,127,46"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="170,124,124,184,120,181,173,120"/>
+<area shape="rect" id="Node000005" href="$structtoast_1_1UID.html" title=" " alt="" coords="228,192,314,219"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="255,230,205,302,201,298,251,233"/>
+</map>

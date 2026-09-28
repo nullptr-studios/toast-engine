@@ -1,0 +1,28 @@
+<map id="toast::Node::box" name="toast::Node::box">
+<area shape="rect" id="Node000001" title="Returns an owning handle to this node." alt="" coords="1027,138,1155,166"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1CameraController.html#ab547ae869930f4f31f591fda4e0c0b61" title=" " alt="" coords="801,29,979,74"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1053,129,977,89,952,77,953,72,980,84,1058,130"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1INodeOwner.html#a0647eb16371fc38e00edfb2c9ed41a69" title="Allocates a Node and its ControlBox in one contiguous block." alt="" coords="815,99,965,143"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="1009,140,966,135,966,130,1014,140"/>
+<area shape="rect" id="Node000011" href="$classtoast_1_1Node.html#a666186f691b352223f039060d7d1d2a9" title="The topmost ancestor that is not the world root." alt="" coords="825,167,955,195"/>
+<area shape="poly" id="edge11_Node000001_Node000011" title=" " alt="" coords="1014,163,956,174,955,169,1008,164"/>
+<area shape="rect" id="Node000012" href="$classtoast_1_1INodeOwner.html#a6f5391e16c2c81dd8706ed39dacc63d3" title="Like activateCamera(), but replaces whatever camera is currently active." alt="" coords="815,219,965,263"/>
+<area shape="poly" id="edge12_Node000001_Node000012" title=" " alt="" coords="1051,172,980,209,951,221,950,216,978,204,1046,173"/>
+<area shape="rect" id="Node000004" href="$classtoast_1_1INodeOwner.html#a355810be0f38823d417eb26cb8da1ff0" title="Allocates and initializes a full node tree from a prefab asset." alt="" coords="572,29,722,74"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="797,95,723,76,723,70,803,95"/>
+<area shape="rect" id="Node000008" href="$classtoast_1_1INodeOwner.html#a333c47f462b54397b66344b3cf90841b" title="Allocates a Node and initializes its name and type from a prefab data record." alt="" coords="572,99,722,143"/>
+<area shape="poly" id="edge8_Node000003_Node000008" title=" " alt="" coords="797,121,723,124,722,118,802,121"/>
+<area shape="rect" id="Node000009" href="$classtoast_1_1Workspace.html#ad87f633bb92169c991d17c94acca0d81" title="Creates a new workspace rooted at a single fresh node of the given type." alt="" coords="541,167,753,195"/>
+<area shape="poly" id="edge9_Node000003_Node000009" title=" " alt="" coords="802,143,754,158,709,169,708,164,753,153,797,144"/>
+<area shape="poly" id="edge7_Node000004_Node000004" title=" " alt="" coords="685,14,672,10,647,8,624,10,610,15,605,21,606,30,601,27,600,19,607,10,623,5,647,3,673,5,691,14"/>
+<area shape="rect" id="Node000005" href="$classtoast_1_1Workspace.html#acecbe8833a3838a8a3fe77aa661b2d1d" title="instantiates the prefab and sets up the root node" alt="" coords="282,29,477,74"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="554,52,478,54,477,49,559,51"/>
+<area shape="rect" id="Node000006" href="$classtoast_1_1Workspace.html#a1a98997469f53cfc60df37bf5e43bce1" title="Opens an existing workspace by loading the prefab at the given UID." alt="" coords="5,12,218,40"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="264,42,219,39,217,34,268,40"/>
+<area shape="rect" id="Node000007" href="$classtoast_1_1Workspace.html#aee0cb0b76f3c488f5fdf9d674b8673d3" title="Opens a workspace bound to the given asset UID but loading its content from another file." alt="" coords="5,64,218,92"/>
+<area shape="poly" id="edge6_Node000005_Node000007" title=" " alt="" coords="264,64,219,70,217,65,268,62"/>
+<area shape="rect" id="Node000010" href="$classtoast_1_1Workspace.html#a3d51ba78b03318129802006b5267f5cc" title="Downcast helper for owners that need Workspace&#45;specific state." alt="" coords="266,167,493,195"/>
+<area shape="poly" id="edge10_Node000009_Node000010" title=" " alt="" coords="523,181,494,184,493,178,528,181"/>
+<area shape="rect" id="Node000013" href="$classtoast_1_1INodeOwner.html#a58b28b0f5f24f971e81234d2d845068a" title="Determines if this owner is elegible for runtime systems." alt="" coords="572,219,722,263"/>
+<area shape="poly" id="edge13_Node000012_Node000013" title=" " alt="" coords="797,241,723,244,723,238,802,241"/>
+</map>

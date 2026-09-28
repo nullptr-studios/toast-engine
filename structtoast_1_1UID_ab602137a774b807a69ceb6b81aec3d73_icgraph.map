@@ -1,0 +1,11 @@
+<map id="toast::UID::get" name="toast::UID::get">
+<area shape="rect" id="Node000001" title="Encodes the 64&#45;bit value as an 11&#45;character base64url string." alt="" coords="454,57,569,85"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1World.html#a6d15e1e0f5130f99dcf83a867e3a02b5" title="Begins asynchronous loading of a prefab into the cache." alt="" coords="237,31,406,58"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="436,61,407,59,407,54,441,61"/>
+<area shape="rect" id="Node000005" href="$structtoast_1_1UID.html#af68e9f3b607ddad3575c72fb22f2094d" title="Implicit conversion to std::string." alt="" coords="256,83,387,110"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="441,81,387,90,387,85,436,81"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1World.html#ac27d4d5140a79069209fe3fb86fe0fac" title="Begins asynchronous loading of a prefab into the cache." alt="" coords="12,5,182,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="219,34,182,31,182,26,224,33"/>
+<area shape="rect" id="Node000004" href="$classtoast_1_1Engine.html#a6422840e9cb030d171f3126b67c50b57" title="Creates the World, then loads and activates the init_scene from project settings." alt="" coords="5,57,189,85"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="219,57,190,63,189,58,224,56"/>
+</map>

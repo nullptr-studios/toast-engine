@@ -1,0 +1,10 @@
+<map id="event::ShaderRecompiled" name="event::ShaderRecompiled">
+<area shape="rect" id="Node000001" title=" " alt="" coords="39,260,227,288"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="5,183,261,211"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="135,224,135,261,131,259,131,228"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="48,5,207,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="131,47,135,183,130,182,126,50"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="149,82,290,110"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="156,40,206,81,201,83,155,46"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="200,120,147,184,143,181,196,123"/>
+</map>

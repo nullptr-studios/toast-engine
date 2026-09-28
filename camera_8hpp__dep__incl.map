@@ -1,0 +1,13 @@
+<map id="engine/src/toast/world/camera.hpp" name="engine/src/toast/world/camera.hpp">
+<area shape="rect" id="Node000001" title="TODO: Brief description of the file&#39;s purpose." alt="" coords="197,5,363,50"/>
+<area shape="rect" id="Node000002" href="$camera_8cpp.html" title=" " alt="" coords="5,98,171,143"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="219,59,135,100,132,95,222,55"/>
+<area shape="rect" id="Node000003" href="$camera__controller_8hpp_source.html" title=" " alt="" coords="195,98,365,143"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="281,63,282,99,278,97,279,68"/>
+<area shape="rect" id="Node000004" href="$editor__camera_8hpp.html" title=" " alt="" coords="389,98,555,143"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="340,54,429,97,424,98,340,60"/>
+<area shape="rect" id="Node000005" href="$workspace_8hpp_source.html" title=" " alt="" coords="389,191,555,235"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="474,156,474,192,470,189,470,160"/>
+<area shape="rect" id="Node000006" href="$play__workspace_8hpp.html" title="Ticking clone of a Workspace used by the editor&#39;s play mode." alt="" coords="389,283,555,328"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="474,249,474,285,470,282,470,253"/>
+</map>

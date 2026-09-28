@@ -1,0 +1,5 @@
+<map id="voxel::BrickNeighbourhood" name="voxel::BrickNeighbourhood">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,218,202,245"/>
+<area shape="rect" id="Node000002" href="$structvoxel_1_1BrickOccupancy.html" title="One 64&#45;bit word per z&#45;slice with bit y * 8 + x." alt="" coords="19,5,188,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="106,48,106,217,101,217,101,50"/>
+</map>

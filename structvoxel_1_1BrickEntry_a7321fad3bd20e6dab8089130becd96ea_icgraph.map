@@ -1,0 +1,11 @@
+<map id="voxel::BrickEntry::payload" name="voxel::BrickEntry::payload">
+<area shape="rect" id="Node000001" title=" " alt="" coords="245,105,383,150"/>
+<area shape="rect" id="Node000002" href="$classvoxel_1_1Volume.html#aa236e44cc527b63472b98760e09b886f" title="Shares every brick with source until written." alt="" coords="5,29,197,57"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="257,98,196,71,164,60,163,55,198,66,262,97"/>
+<area shape="rect" id="Node000003" href="$classvoxel_1_1Volume.html#a45bdb135fa7d2963cd27bd2c5a188637" title="Null when the brick holds nothing." alt="" coords="6,105,196,150"/>
+<area shape="poly" id="edge3_Node000001_Node000003" title=" " alt="" coords="226,128,197,130,196,125,232,126"/>
+<area shape="rect" id="Node000004" href="$classassets_1_1VoxelModel.html#a2ee01b58121d32d1836ddd80581f4271" title="Throws on malformed or non canonical data." alt="" coords="28,174,174,219"/>
+<area shape="poly" id="edge5_Node000001_Node000004" title=" " alt="" coords="232,154,173,176,171,171,227,155"/>
+<area shape="poly" id="edge2_Node000002_Node000002" title=" " alt="" coords="136,15,125,10,101,8,79,10,67,15,64,20,69,28,64,29,58,20,63,11,78,5,101,3,126,5,141,13"/>
+<area shape="poly" id="edge4_Node000003_Node000003" title=" " alt="" coords="134,90,123,86,101,83,81,85,69,90,64,96,65,105,60,104,59,95,66,86,80,80,101,78,124,81,139,89"/>
+</map>

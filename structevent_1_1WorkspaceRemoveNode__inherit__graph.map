@@ -1,0 +1,10 @@
+<map id="event::WorkspaceRemoveNode" name="event::WorkspaceRemoveNode">
+<area shape="rect" id="Node000001" title=" " alt="" coords="14,277,240,305"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="5,183,249,228"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="129,241,129,278,125,275,125,245"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="42,5,201,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="124,46,129,183,124,182,121,50"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="143,82,284,110"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="150,40,200,81,195,83,149,46"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="196,120,147,184,143,181,192,124"/>
+</map>

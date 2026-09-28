@@ -1,0 +1,5 @@
+<map id="engine/src/toast/audio/nodes/audio_ambience_volume.hpp" name="engine/src/toast/audio/nodes/audio_ambience_volume.hpp">
+<area shape="rect" id="Node000001" title="Randomly spawns one&#45;shot audio events at positions inside the volume." alt="" coords="5,5,181,67"/>
+<area shape="rect" id="Node000002" href="$nodes_8hpp.html" title="Wrapper file with all node files." alt="" coords="10,115,176,160"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="95,81,96,115,90,114,91,85"/>
+</map>

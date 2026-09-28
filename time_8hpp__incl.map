@@ -1,0 +1,11 @@
+<map id="engine/src/toast/time.hpp" name="engine/src/toast/time.hpp">
+<area shape="rect" id="Node000001" title="Controls the time of the application." alt="" coords="78,5,266,33"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,81,72,109"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="150,36,76,76,74,71,146,32"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="95,81,160,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="166,32,145,69,142,66,162,35"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="184,81,250,109"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="181,31,204,68,198,67,179,36"/>
+<area shape="rect" id="Node000005" href="$export_8hpp.html" title=" " alt="" coords="274,81,403,109"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="202,31,298,74,292,75,201,36"/>
+</map>

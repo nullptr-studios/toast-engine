@@ -1,16 +1,17 @@
 var searchData=
 [
-  ['name_0',['name',['../d1/da3/classtoast_1_1Object.html#a9ae515365126c17df9c86e1ac6a80e69',1,'toast::Object::name() const noexcept'],['../d1/da3/classtoast_1_1Object.html#a660234a003a2a3eb54bdff3c43565c0f',1,'toast::Object::name(std::string &amp;&amp;name) noexcept'],['../d4/ddb/structtoast_1_1ProjectSettings.html#a11868202ac426e93bcb68339443d35bb',1,'toast::ProjectSettings::name()'],['../dd/ddc/classeditor_1_1ResourceSlot.html#a902c20a0be3b13ab7cd8bd1d64de1d95',1,'editor::ResourceSlot::name()'],['../dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#a27c889d08742766f72fe4142cc4f7a55',1,'toast::hud::ToastGPUDriver::name()']]],
-  ['new_1',['New',['../d6/d7d/classtoast_1_1World.html#a131a256e445f7d3a18a7788547dee12b',1,'toast::World::New(const std::optional&lt; std::string &gt; &amp;name=std::nullopt) -&gt; T *'],['../d6/d7d/classtoast_1_1World.html#acf4ed739984731f27accd1863f285e25',1,'toast::World::New(std::string_view type, const std::optional&lt; std::string &gt; &amp;name=std::nullopt) -&gt; Object *']]],
-  ['nextcrossfadetodefault_2',['NextCrossFadeToDefault',['../d0/dc7/classSpineRendererComponent.html#add32ea1ef11796c185bf217e7cdb277b',1,'SpineRendererComponent']]],
-  ['nextgeometryid_3',['NextGeometryId',['../dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#a7250d3a4f271c855c7664696cf306580',1,'toast::hud::ToastGPUDriver']]],
-  ['nextlevel_4',['NextLevel',['../d6/dbd/classtoast_1_1GameFlow.html#ad20bf8c23fc5cc9ae04746532256cf62',1,'toast::GameFlow']]],
-  ['nextplayanimation_5',['NextPlayAnimation',['../d0/dc7/classSpineRendererComponent.html#a6fd92e0e723525ba2746325030958911',1,'SpineRendererComponent']]],
-  ['nextrenderbufferid_6',['NextRenderBufferId',['../dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#a94516751c16fefea83ee7a0a485459c9',1,'toast::hud::ToastGPUDriver']]],
-  ['nexttextureid_7',['NextTextureId',['../dc/d10/classtoast_1_1hud_1_1ToastGPUDriver.html#a677e2a558766f139fdcfea16f94f7c9e',1,'toast::hud::ToastGPUDriver']]],
-  ['nextworld_8',['NextWorld',['../d6/dbd/classtoast_1_1GameFlow.html#a7ddf33d4fb36f377da046a61650d9d16',1,'toast::GameFlow']]],
-  ['normalize_5fname_9',['normalize_name',['../dc/d73/namespaceinput.html#a7faf7e3a337505cad3a89d967bd8c14d',1,'input']]],
-  ['normalizepath_10',['NormalizePath',['../df/d71/classToastFileSystem.html#aaaafa08fdbf0a5868c0c54ef5c1b0707',1,'ToastFileSystem']]],
-  ['notify_11',['Notify',['../da/ddb/structevent_1_1IEvent.html#a1166375ac94c2ea879c2a7a3a49a21bd',1,'event::IEvent::Notify()'],['../d7/d51/structevent_1_1Event.html#ac9aeee991c0f5ca1ae5d534417f65aa0',1,'event::Event::Notify()']]],
-  ['nuke_12',['Nuke',['../d1/da3/classtoast_1_1Object.html#a951d9c058d1d04212d5c9da193a47d25',1,'toast::Object']]]
+  ['observe_0',['observe',['../classrenderer_1_1VoxelChangeTracker.html#a93b865f981c1ac9885f2b6abb8db19de',1,'renderer::VoxelChangeTracker']]],
+  ['occupancypointer_1',['occupancyPointer',['../classvoxel_1_1Volume.html#a45bdb135fa7d2963cd27bd2c5a188637',1,'voxel::Volume::occupancyPointer()'],['../classassets_1_1Volume.html#a45bdb135fa7d2963cd27bd2c5a188637',1,'assets::Volume::occupancyPointer()']]],
+  ['onchange_2',['onChange',['../classtoast_1_1settings_1_1Setting.html#a0260892211f3f141fcd4a1b030d38799',1,'toast::settings::Setting']]],
+  ['onchangecallback_3',['onChangeCallback',['../classassets_1_1HandleBase.html#a0b98c112b08598835ffcc3c66e9a0aa2',1,'assets::HandleBase']]],
+  ['ondockabledocked_4',['OnDockableDocked',['../classeditor_1_1Workspace_1_1DockFactory.html#a151f28aff2a3e37ef5946f8e0b9fab07',1,'editor::Workspace::DockFactory']]],
+  ['onframebegin_5',['OnFrameBegin',['../classRenderInterface__VK.html#aac70a74eebd89a5710c0ab037e329751',1,'RenderInterface_VK']]],
+  ['onvolumetick_6',['onVolumeTick',['../classtoast_1_1AudioVolume.html#a28a73fe2ce7479edd41f6625d6c61319',1,'toast::AudioVolume']]],
+  ['openworkspace_7',['openWorkspace',['../classtoast_1_1Engine.html#a64756aa78630dca42d2f521c296e5994',1,'toast::Engine']]],
+  ['openworkspacefrom_8',['OpenWorkspaceFrom',['../classeditor_1_1Engine_1_1ToastEngine.html#a5941cae397c8d98102d5be803376743b',1,'editor::Engine::ToastEngine']]],
+  ['operator_20bool_9',['operator bool',['../structtoast_1_1__detail_1_1ControlBox.html#aa65eaa16c22530664b78821dc460cbf7',1,'toast::_detail::ControlBox']]],
+  ['operator_20std_3a_3astring_10',['string',['../structtoast_1_1UID.html#af68e9f3b607ddad3575c72fb22f2094d',1,'toast::UID']]],
+  ['operator_3c_3d_3e_11',['operator&lt;=&gt;',['../structtoast_1_1__detail_1_1ControlBox.html#af1339a0eced373135cad92057c834435',1,'toast::_detail::ControlBox']]],
+  ['operator_3d_12',['operator=',['../classtoast_1_1Box.html#abd18e13eeea1db4a551a8f46424d4238',1,'toast::Box::operator=(const Box &amp;other) noexcept -&gt; Box &amp;'],['../classtoast_1_1Box.html#a99a57e938eddfb68697cf943302d1f91',1,'toast::Box::operator=(Box &amp;&amp;other) noexcept -&gt; Box &amp;'],['../classtoast_1_1Box.html#a0c509f642cbe06ec70397e72bef81c6a',1,'toast::Box::operator=(const Box&lt; U &gt; &amp;other) noexcept -&gt; Box &amp;'],['../classtoast_1_1Box.html#a227e7be62219b91e7e6a244856d7375d',1,'toast::Box::operator=(Box&lt; U &gt; &amp;&amp;other) noexcept -&gt; Box &amp;']]],
+  ['owner_13',['owner',['../classtoast_1_1Node.html#aa3cb3efd8b2995f499fa25e7154ce422',1,'toast::Node']]]
 ];

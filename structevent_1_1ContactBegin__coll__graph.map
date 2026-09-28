@@ -1,0 +1,20 @@
+<map id="event::ContactBegin" name="event::ContactBegin">
+<area shape="rect" id="Node000001" title=" " alt="" coords="151,430,304,458"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="5,330,226,357"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="142,365,215,429,210,430,140,370"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="21,106,180,134"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="85,150,69,199,64,228,67,256,85,296,107,329,102,330,81,299,62,257,59,227,63,198,86,145"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="77,229,218,257"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="112,146,145,228,140,229,111,151"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="140,269,122,330,117,328,137,273"/>
+<area shape="rect" id="Node000005" href="$structevent_1_1ContactEventData.html" title=" " alt="" coords="250,330,434,357"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="318,367,244,432,241,427,313,368"/>
+<area shape="rect" id="Node000006" href="$structphysics_1_1BroadPhasePair.html" title=" " alt="" coords="252,229,432,257"/>
+<area shape="poly" id="edge6_Node000005_Node000006" title=" " alt="" coords="344,270,345,330,340,328,340,274"/>
+<area shape="rect" id="Node000007" href="$structphysics_1_1BodyShapeKey.html" title=" " alt="" coords="254,106,430,134"/>
+<area shape="poly" id="edge7_Node000006_Node000007" title=" " alt="" coords="344,147,345,229,340,227,341,152"/>
+<area shape="rect" id="Node000008" href="$structphysics_1_1BodyID.html" title=" " alt="" coords="202,5,328,33"/>
+<area shape="poly" id="edge8_Node000007_Node000008" title=" " alt="" coords="285,43,334,105,329,106,284,48"/>
+<area shape="rect" id="Node000009" href="$structphysics_1_1ShapeID.html" title=" " alt="" coords="352,5,484,33"/>
+<area shape="poly" id="edge9_Node000007_Node000009" title=" " alt="" coords="401,43,354,107,350,104,397,47"/>
+</map>

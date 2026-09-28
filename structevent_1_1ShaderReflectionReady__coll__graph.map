@@ -1,0 +1,10 @@
+<map id="event::ShaderReflectionReady" name="event::ShaderReflectionReady">
+<area shape="rect" id="Node000001" title=" " alt="" coords="11,277,228,305"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="5,183,234,228"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="121,241,122,278,117,275,118,245"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="34,5,194,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="117,46,122,183,116,182,113,50"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="136,82,277,110"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="142,40,193,81,188,83,142,46"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="188,120,139,184,135,181,184,124"/>
+</map>

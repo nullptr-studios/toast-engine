@@ -1,0 +1,11 @@
+<map id="editor.Editors.IToastZoneEditor" name="editor.Editors.IToastZoneEditor">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,109,188,154"/>
+<area shape="rect" id="Node000002" href="$classeditor_1_1Editors_1_1CurveViewModel.html" title=" " alt="" coords="241,5,422,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="152,99,235,60,267,49,263,52,237,65,155,104"/>
+<area shape="rect" id="Node000003" href="$classeditor_1_1Editors_1_1HapticsViewModel.html" title=" " alt="" coords="236,75,428,119"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="202,114,237,110,233,112,204,119"/>
+<area shape="rect" id="Node000004" href="$classeditor_1_1Editors_1_1PaletteViewModel.html" title="Assigns entry materials which a reimport of the source .vox cannot re&#45;derive." alt="" coords="238,144,426,189"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="203,145,240,152,235,153,203,150"/>
+<area shape="rect" id="Node000005" href="$classeditor_1_1Editors_1_1TableViewModel.html" title=" " alt="" coords="243,213,420,258"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="154,159,237,199,267,213,262,213,235,203,153,164"/>
+</map>

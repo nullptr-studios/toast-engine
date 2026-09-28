@@ -1,0 +1,10 @@
+<map id="toast::Node::state" name="toast::Node::state">
+<area shape="rect" id="Node000001" title=" " alt="" coords="426,48,563,76"/>
+<area shape="poly" id="edge1_Node000001_Node000001" title=" " alt="" coords="526,33,516,29,495,27,475,29,464,34,462,39,466,49,461,47,456,40,461,30,474,24,495,22,517,24,531,34"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1AudioVolume.html#af10612bd91c6605a77b47aa6ae08828e" title="returns true if the inside state changed" alt="" coords="230,40,378,85"/>
+<area shape="poly" id="edge2_Node000001_Node000002" title=" " alt="" coords="408,63,378,65,378,60,413,62"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1AmbienceVolume.html#a018f9441db30ae008f1f8c1b71cb2282" title="Evaluates if a target is inside the volume or not." alt="" coords="5,5,182,50"/>
+<area shape="poly" id="edge3_Node000002_Node000003" title=" " alt="" coords="212,48,182,45,182,40,217,47"/>
+<area shape="rect" id="Node000004" href="$classtoast_1_1SnapshotVolume.html#a7e4fc43980f65e5a595ca3ad9b899fa0" title="Evaluates if a target is inside the volume or not." alt="" coords="8,75,179,119"/>
+<area shape="poly" id="edge4_Node000002_Node000004" title=" " alt="" coords="212,78,180,85,179,80,217,77"/>
+</map>

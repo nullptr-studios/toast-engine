@@ -1,0 +1,5 @@
+<map id="assets::AssetManager::clearUnusedAssets" name="assets::AssetManager::clearUnusedAssets">
+<area shape="rect" id="Node000001" title="Evicts all assets whose ref count is zero from the cache." alt="" coords="218,5,382,50"/>
+<area shape="rect" id="Node000002" href="$classassets_1_1AssetManager.html#a48777d56402a8a54a22bbf19adb99da7" title="Re&#45;reads the project manifest from disk." alt="" coords="5,5,170,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="200,28,170,30,170,25,205,27"/>
+</map>

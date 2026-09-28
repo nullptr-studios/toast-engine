@@ -1,0 +1,12 @@
+<map id="event::UIAssetReloaded" name="event::UIAssetReloaded">
+<area shape="rect" id="Node000001" title="Fired after an RML document or RCSS stylesheet hot&#45;reload." alt="" coords="180,284,358,311"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="5,183,250,211"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="159,217,252,282,247,284,158,222"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="42,5,202,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="125,47,130,183,124,182,121,50"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="144,82,285,110"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="150,40,201,81,196,83,150,46"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="195,120,141,184,137,181,191,124"/>
+<area shape="rect" id="Node000005" href="$structtoast_1_1UID.html" title=" " alt="" coords="274,183,360,211"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="306,223,277,285,273,281,302,226"/>
+</map>

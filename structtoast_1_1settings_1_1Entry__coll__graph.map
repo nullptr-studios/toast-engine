@@ -1,0 +1,5 @@
+<map id="toast::settings::Entry" name="toast::settings::Entry">
+<area shape="rect" id="Node000001" title="One registered setting. Held by the registry; Setting&lt;T&gt; is a handle to it." alt="" coords="5,106,162,134"/>
+<area shape="rect" id="Node000002" href="$structtoast_1_1settings_1_1Meta.html" title="Everything the editor needs to render a setting without knowing what it is." alt="" coords="6,5,161,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="86,47,86,106,81,105,81,50"/>
+</map>

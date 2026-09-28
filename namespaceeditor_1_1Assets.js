@@ -1,0 +1,25 @@
+var namespaceeditor_1_1Assets =
+[
+    [ "Importers", "namespaceeditor_1_1Assets_1_1Importers.html", "namespaceeditor_1_1Assets_1_1Importers" ],
+    [ "Types", "namespaceeditor_1_1Assets_1_1Types.html", "namespaceeditor_1_1Assets_1_1Types" ],
+    [ "AssetBrowserView", "classeditor_1_1Assets_1_1AssetBrowserView.html", null ],
+    [ "AssetBrowserViewModel", "classeditor_1_1Assets_1_1AssetBrowserViewModel.html", null ],
+    [ "AssetFile", "classeditor_1_1Assets_1_1AssetFile.html", null ],
+    [ "AssetFolder", "classeditor_1_1Assets_1_1AssetFolder.html", "classeditor_1_1Assets_1_1AssetFolder" ],
+    [ "AssetTypeFilter", "classeditor_1_1Assets_1_1AssetTypeFilter.html", null ],
+    [ "AssetTypeFilterGroup", "classeditor_1_1Assets_1_1AssetTypeFilterGroup.html", null ],
+    [ "BreadcrumbItem", "classeditor_1_1Assets_1_1BreadcrumbItem.html", null ],
+    [ "Curve", "classeditor_1_1Assets_1_1Curve.html", null ],
+    [ "CurveDto", "classeditor_1_1Assets_1_1CurveDto.html", null ],
+    [ "GltfSectionDto", "classeditor_1_1Assets_1_1GltfSectionDto.html", null ],
+    [ "Haptic", "classeditor_1_1Assets_1_1Haptic.html", null ],
+    [ "IMetaSection", "interfaceeditor_1_1Assets_1_1IMetaSection.html", null ],
+    [ "MetaFileDto", "classeditor_1_1Assets_1_1MetaFileDto.html", null ],
+    [ "PointDto", "classeditor_1_1Assets_1_1PointDto.html", null ],
+    [ "PsdSectionDto", "classeditor_1_1Assets_1_1PsdSectionDto.html", null ],
+    [ "TextureSectionDto", "classeditor_1_1Assets_1_1TextureSectionDto.html", null ],
+    [ "VoxelMaterialSlot", "classeditor_1_1Assets_1_1VoxelMaterialSlot.html", null ],
+    [ "VoxelPaletteEntry", "classeditor_1_1Assets_1_1VoxelPaletteEntry.html", "classeditor_1_1Assets_1_1VoxelPaletteEntry" ],
+    [ "VoxelPaletteFile", "classeditor_1_1Assets_1_1VoxelPaletteFile.html", null ],
+    [ "VoxSectionDto", "classeditor_1_1Assets_1_1VoxSectionDto.html", null ]
+];

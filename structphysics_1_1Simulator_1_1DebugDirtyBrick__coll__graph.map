@@ -1,0 +1,5 @@
+<map id="physics::Simulator::DebugDirtyBrick" name="physics::Simulator::DebugDirtyBrick">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,106,147,151"/>
+<area shape="rect" id="Node000002" href="$structphysics_1_1ShapeID.html" title=" " alt="" coords="10,5,142,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="78,47,79,106,73,105,74,50"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="event::ProtoTraits&lt; RequestSignalCallables &gt;" name="event::ProtoTraits&lt; RequestSignalCallables &gt;">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,106,210,151"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1ProtoTraits.html" title="Specialization point that exposes a C++ event type over the C# FFI via protobuf." alt="" coords="21,5,194,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="109,47,110,106,105,105,106,51"/>
+</map>

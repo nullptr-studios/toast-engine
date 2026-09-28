@@ -1,0 +1,9 @@
+<map id="renderer::IVulkanResource" name="renderer::IVulkanResource">
+<area shape="rect" id="Node000001" title=" " alt="" coords="210,5,401,33"/>
+<area shape="rect" id="Node000002" href="$classrenderer_1_1VoxelGpuStorage.html" title=" " alt="" coords="5,81,201,109"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="258,39,140,83,138,78,253,38"/>
+<area shape="rect" id="Node000003" href="$classrenderer_1_1VulkanMesh.html" title=" " alt="" coords="224,81,387,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="308,47,308,82,304,79,304,51"/>
+<area shape="rect" id="Node000004" href="$classrenderer_1_1VulkanTexture.html" title=" " alt="" coords="411,81,587,109"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="355,36,467,80,462,81,354,41"/>
+</map>

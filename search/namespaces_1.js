@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['editor_0',['editor',['../db/d4c/namespaceeditor.html',1,'']]],
-  ['event_1',['event',['../dc/dd0/namespaceevent.html',1,'']]]
+  ['toast_3a_3a_5fdetail_0',['_detail',['../namespacetoast_1_1__detail.html',1,'toast']]]
 ];

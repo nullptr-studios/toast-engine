@@ -1,0 +1,5 @@
+<map id="physics::BodySlot" name="physics::BodySlot">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,106,142,134"/>
+<area shape="rect" id="Node000002" href="$structphysics_1_1Body.html" title=" " alt="" coords="18,5,129,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="76,47,76,106,71,105,71,50"/>
+</map>

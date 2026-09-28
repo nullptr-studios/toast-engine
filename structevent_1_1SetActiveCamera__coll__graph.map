@@ -1,0 +1,14 @@
+<map id="event::SetActiveCamera" name="event::SetActiveCamera">
+<area shape="rect" id="Node000001" title=" " alt="" coords="155,301,335,328"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="14,192,260,219"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="162,228,234,300,229,300,159,232"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="5,5,165,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="86,46,97,109,114,154,132,191,127,191,109,156,92,111,85,51"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="106,82,248,110"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="113,40,164,81,159,83,113,46"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="169,122,144,192,140,190,165,126"/>
+<area shape="rect" id="Node000005" href="$classtoast_1_1Box.html" title=" " alt="" coords="284,183,427,228"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="325,238,260,303,257,298,320,239"/>
+<area shape="rect" id="Node000006" href="$classtoast_1_1Box.html" title="Intrusive reference&#45;counted handle to a Node." alt="" coords="293,82,418,110"/>
+<area shape="poly" id="edge6_Node000005_Node000006" title=" " alt="" coords="357,124,358,184,353,181,354,128"/>
+</map>

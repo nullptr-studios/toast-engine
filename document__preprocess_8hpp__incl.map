@@ -1,0 +1,15 @@
+<map id="engine/src/toast/ui/document_preprocess.hpp" name="engine/src/toast/ui/document_preprocess.hpp">
+<area shape="rect" id="Node000001" title="Prepares .rml text before it reaches RmlUi." alt="" coords="196,5,392,50"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,98,92,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="230,53,103,95,101,90,228,48"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="115,98,190,126"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="259,50,189,92,187,88,254,51"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="214,98,272,126"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="283,49,261,87,258,83,278,52"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="296,98,393,126"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="308,48,331,85,326,84,306,53"/>
+<area shape="rect" id="Node000006" href="$export_8hpp.html" title=" " alt="" coords="416,98,545,126"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="344,48,439,91,434,91,343,53"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="569,98,632,126"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="378,48,557,97,551,98,378,53"/>
+</map>

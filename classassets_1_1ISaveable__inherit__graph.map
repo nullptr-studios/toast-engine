@@ -1,0 +1,41 @@
+<map id="assets::ISaveable" name="assets::ISaveable">
+<area shape="rect" id="Node000001" title="Inherit from this class to allow an asset to be saved." alt="" coords="5,369,141,397"/>
+<area shape="rect" id="Node000002" href="$classassets_1_1Curve.html" title=" " alt="" coords="210,265,319,293"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="102,358,142,330,187,303,219,292,215,295,190,308,145,335,106,361"/>
+<area shape="rect" id="Node000003" href="$classassets_1_1Data.html" title=" " alt="" coords="213,317,316,345"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="140,362,215,343,211,347,143,367"/>
+<area shape="rect" id="Node000018" href="$classassets_1_1Prefab.html" title=" " alt="" coords="208,369,321,397"/>
+<area shape="poly" id="edge17_Node000001_Node000018" title=" " alt="" coords="155,381,209,382,205,385,157,386"/>
+<area shape="rect" id="Node000019" href="$classassets_1_1VoxelModel.html" title=" " alt="" coords="191,421,338,449"/>
+<area shape="poly" id="edge18_Node000001_Node000019" title=" " alt="" coords="141,399,213,419,208,422,142,404"/>
+<area shape="rect" id="Node000020" href="$classassets_1_1VoxelPalette.html" title=" " alt="" coords="189,473,340,501"/>
+<area shape="poly" id="edge19_Node000001_Node000020" title=" " alt="" coords="104,404,145,432,190,458,220,472,214,473,187,463,142,436,105,409"/>
+<area shape="rect" id="Node000004" href="$classassets_1_1Action.html" title="Asset representing one input action loaded from a .taction file." alt="" coords="432,5,544,33"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="328,312,338,303,358,270,366,238,365,206,360,174,355,142,355,110,364,77,386,44,407,29,434,21,430,25,409,34,390,48,369,79,360,110,361,142,365,174,370,206,371,239,363,272,342,306,331,316"/>
+<area shape="rect" id="Node000005" href="$classassets_1_1AudioBus.html" title=" " alt="" coords="422,57,554,85"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="327,312,338,303,355,277,362,252,363,226,360,200,358,175,359,148,367,122,386,96,402,84,423,77,419,80,405,88,390,100,372,124,364,149,363,174,366,200,368,226,367,252,360,279,342,306,331,316"/>
+<area shape="rect" id="Node000006" href="$classassets_1_1AudioEvent.html" title=" " alt="" coords="416,109,561,137"/>
+<area shape="poly" id="edge5_Node000003_Node000006" title=" " alt="" coords="327,311,338,303,352,284,359,265,361,226,363,187,371,167,386,148,417,131,413,135,390,152,375,170,368,188,366,227,364,266,357,286,342,306,331,315"/>
+<area shape="rect" id="Node000007" href="$classassets_1_1AudioPort.html" title=" " alt="" coords="421,161,555,189"/>
+<area shape="poly" id="edge6_Node000003_Node000007" title=" " alt="" coords="328,310,338,303,349,290,355,278,361,252,367,226,374,213,386,200,423,183,419,186,390,204,379,216,372,228,366,253,360,280,353,293,342,306,331,314"/>
+<area shape="rect" id="Node000008" href="$classassets_1_1AudioSnapshot.html" title=" " alt="" coords="404,213,572,241"/>
+<area shape="poly" id="edge7_Node000003_Node000008" title=" " alt="" coords="328,308,338,302,353,290,362,277,371,264,387,252,417,240,413,243,389,256,375,268,366,280,357,293,342,307,332,312"/>
+<area shape="rect" id="Node000009" href="$classassets_1_1AudioVca.html" title=" " alt="" coords="422,265,554,293"/>
+<area shape="poly" id="edge8_Node000003_Node000009" title=" " alt="" coords="329,314,428,292,423,295,332,318"/>
+<area shape="rect" id="Node000010" href="$classassets_1_1ColorScheme.html" title=" " alt="" coords="410,317,567,345"/>
+<area shape="poly" id="edge9_Node000003_Node000010" title=" " alt="" coords="330,329,411,330,407,332,332,334"/>
+<area shape="rect" id="Node000011" href="$classassets_1_1DestructionMaterial.html" title=" " alt="" coords="388,369,588,397"/>
+<area shape="poly" id="edge10_Node000003_Node000011" title=" " alt="" coords="330,344,428,368,423,370,331,349"/>
+<area shape="rect" id="Node000012" href="$classassets_1_1Haptic.html" title="Asset representing a single haptic effect loaded from a .thaptic file." alt="" coords="432,421,545,449"/>
+<area shape="poly" id="edge11_Node000003_Node000012" title=" " alt="" coords="330,349,342,356,357,369,366,382,375,394,389,406,434,425,429,426,387,411,371,398,362,385,353,372,338,360,330,355"/>
+<area shape="rect" id="Node000013" href="$classassets_1_1InputLayout.html" title="Asset representing an input layout loaded from a .tlayout file." alt="" coords="414,473,562,501"/>
+<area shape="poly" id="edge12_Node000003_Node000013" title=" " alt="" coords="329,347,342,356,353,369,360,383,366,409,372,435,379,447,390,458,416,475,411,475,386,463,374,450,367,437,361,410,355,385,349,372,338,360,329,353"/>
+<area shape="rect" id="Node000014" href="$classassets_1_1InputSettings.html" title=" " alt="" coords="410,525,567,553"/>
+<area shape="poly" id="edge13_Node000003_Node000014" title=" " alt="" coords="329,346,342,356,357,376,364,396,366,436,368,474,375,492,390,511,412,527,407,526,386,514,371,495,363,475,361,436,359,397,352,379,338,360,329,352"/>
+<area shape="rect" id="Node000015" href="$classassets_1_1Material.html" title="Shader&#45;driven material asset." alt="" coords="426,577,551,605"/>
+<area shape="poly" id="edge14_Node000003_Node000015" title=" " alt="" coords="329,346,342,356,360,383,367,410,368,436,366,462,363,488,364,513,372,538,390,563,406,575,428,585,422,585,404,579,386,566,367,540,359,514,358,488,360,462,363,436,362,411,355,385,338,360,329,351"/>
+<area shape="rect" id="Node000017" href="$classassets_1_1PhysicsMaterial.html" title=" " alt="" coords="401,629,575,657"/>
+<area shape="poly" id="edge16_Node000003_Node000017" title=" " alt="" coords="330,346,342,356,363,390,371,423,370,456,365,489,361,521,360,552,369,583,390,615,406,630,401,628,386,618,364,585,355,553,355,520,360,488,365,456,366,424,358,392,338,360,329,351"/>
+<area shape="rect" id="Node000016" href="$classassets_1_1MaterialInstance.html" title="Mirrors a parent Material&#39;s parameters, overriding only the values it sets." alt="" coords="636,577,817,605"/>
+<area shape="poly" id="edge15_Node000015_Node000016" title=" " alt="" coords="566,589,638,591,633,591,566,594"/>
+</map>

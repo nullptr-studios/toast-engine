@@ -1,0 +1,5 @@
+<map id="toast::FieldInfo::getAttribute" name="toast::FieldInfo::getAttribute">
+<area shape="rect" id="Node000001" title="Returns the first string value of a JSON annotation." alt="" coords="256,5,460,33"/>
+<area shape="rect" id="Node000002" href="$structtoast_1_1FieldInfo.html#a7af022a7daeab74ab40a77b39ab1b481" title="Returns the value of the &quot;Group&quot; annotation, or an empty string if not present." alt="" coords="5,5,208,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="238,19,208,22,208,17,243,19"/>
+</map>
