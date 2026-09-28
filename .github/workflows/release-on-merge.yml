@@ -105,7 +105,7 @@ jobs:
         run: nix develop --command bash -c 'doxygen Doxyfile'
 
       - name: Deploy to docs branch
-        uses: DenverCoder1/doxygen-github-pages-deploy-action@v2.0.0
+        uses: DenverCoder1/doxygen-github-pages-action@v2.0.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: docs
