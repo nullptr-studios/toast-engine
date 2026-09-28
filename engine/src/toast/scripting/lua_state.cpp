@@ -6,6 +6,7 @@
 #include "lua_util.hpp"
 #include "node_proxy.hpp"
 #include "signal_proxy.hpp"
+#include "toast/physics/raycast.hpp"
 #include "ui_binds_proxy.hpp"
 
 #include <algorithm>
@@ -573,6 +574,23 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    )
 	    .endClass()
 
+	    .beginClass<physics::RayHit>("RayHit")
+	    .addProperty("position", &physics::RayHit::position)
+	    .addProperty("normal", &physics::RayHit::normal)
+	    .addProperty("distance", &physics::RayHit::distance)
+	    .addProperty(
+	        "node", +[](const physics::RayHit* hit) { return NodeProxy(hit->node); }
+	    )
+	    .addFunction(
+	        "__tostring",
+	        [](const physics::RayHit& hit) -> std::string {
+		        return std::format(
+		            "RayHit(distance: {}, pos: vec3({}, {}, {}))", hit.distance, hit.position.x, hit.position.y, hit.position.z
+		        );
+	        }
+	    )
+	    .endClass()
+
 	    .beginNamespace("InputEvent")
 	    .addVariable("start", input::ActionEvent::start)
 	    .addVariable("hold", input::ActionEvent::hold)
@@ -763,12 +781,6 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    .endNamespace()
 
 	    .beginNamespace("Physics")
-	    .addFunction(
-	        "shootVoxel",
-	        +[](const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy, float min_radius) -> bool {
-		        return toast::Engine::get() && toast::Engine::get()->shootVoxel(origin, direction, max_distance, energy, min_radius);
-	        }
-	    )
 	    .endNamespace();
 
 	registerTypeMarkers(state);

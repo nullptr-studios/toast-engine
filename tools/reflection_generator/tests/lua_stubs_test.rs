@@ -14,6 +14,8 @@ public:
 
     [[Reflect]] float takeDamage(float amount, bool crit = false) { return 0.0f; }
 	[[Reflect]] void onInput(const input::Action& action, input::ActionEvent event) {}
+	[[Reflect]] std::optional<physics::RayHit> raycast(glm::vec3 pos, glm::vec3 dir) {}
+	[[Reflect]] std::vector<physics::RayHit> raycasts(glm::vec3 pos, glm::vec3 dir) {}
 
     signals::Signal<> ready;
     signals::Signal<int, double> hit;
@@ -62,6 +64,14 @@ public:
             "---@field onInput fun(self: StubNode, action: InputAction, event: InputActionEvent)"
         ),
         "input callback signature wrong:\n{stubs}"
+    );
+    assert!(
+        stubs.contains("---@field raycast fun(self: StubNode, pos: vec3, dir: vec3): RayHit|nil"),
+        "optional custom return should be typed:\n{stubs}"
+    );
+    assert!(
+        stubs.contains("---@field raycasts fun(self: StubNode, pos: vec3, dir: vec3): RayHit[]"),
+        "vector custom return should be typed:\n{stubs}"
     );
     assert!(
         stubs.contains("---@field ready Signal0"),

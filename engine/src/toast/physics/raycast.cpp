@@ -1,4 +1,3 @@
-#include "toast/log.hpp"
 #include "toast/physics/broad_phase.hpp"
 #include "toast/physics/shape.hpp"
 #include "toast/physics/simulator.hpp"

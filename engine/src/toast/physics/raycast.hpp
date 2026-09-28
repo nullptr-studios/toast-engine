@@ -9,7 +9,6 @@
 
 #pragma once
 
-#include "toast/physics/shape.hpp"
 #include "toast/world/box.hpp"
 
 #include <glm/glm.hpp>
