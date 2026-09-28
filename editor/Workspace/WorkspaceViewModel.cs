@@ -20,7 +20,7 @@ public enum GizmoTool { Select, Translate, Rotate, Scale, Ruler }
 public enum CameraMode { Free, Orbit }
 
 
-public enum RenderMode { Lit, ClusterHeatmap, Albedo, Normal, MetallicRoughness, Ambient, SpecularIbl, SpecularIblMip0, Reflection, ReflectionProbes, ProbeCapture, ProbeCubemap, NormalBuffer, RoughnessBuffer, SsrOnly, AmbientOcclusion, IrradianceVolumes, TracedShadowsOnly, TracedShadows, ShadowTerm, VoxelSteps, VoxelTraversal, VoxelBricks, VoxelVolumes, VoxelMaterials }
+public enum RenderMode { Lit, ClusterHeatmap, Albedo, Normal, MetallicRoughness, Ambient, SpecularIbl, SpecularIblMip0, Reflection, ReflectionProbes, ProbeCapture, ProbeCubemap, NormalBuffer, RoughnessBuffer, SsrOnly, AmbientOcclusion, IrradianceVolumes, TracedShadowsOnly, TracedShadows, ShadowTerm, VoxelSteps, VoxelTraversal, VoxelBricks, VoxelVolumes, VoxelMaterials, MotionVectors }
 
 public enum PlayState { Stopped, Playing, Simulating, PlayingExternal }
 

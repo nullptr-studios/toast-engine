@@ -18,8 +18,8 @@ struct TonemapParams
 
     float time;
 
-    // std140 rounds this block to 48 bytes
-    float _pad0;
+    // 1 multiplies exposure by the metered gExposure
+    uint autoExposure;
 };
 
 [[vk::binding(0,0)]]
@@ -27,6 +27,10 @@ ConstantBuffer<TonemapParams> gParams;
 
 [[vk::binding(1,0)]]
 Sampler2D gSceneColor;
+
+// Written by exposure.slang adaptMain
+[[vk::binding(2,0)]]
+StructuredBuffer<float> gExposure;
 
 typedef FullscreenVSOutput VSOutput;
 
@@ -65,7 +69,8 @@ float ditherOffset(float2 pixel)
 [shader("fragment")]
 float4 fragmentMain(VSOutput input) : SV_Target0
 {
-    float3 color = gSceneColor.Sample(input.uv).rgb * gParams.exposure;
+    float exposure = gParams.autoExposure != 0u ? gParams.exposure * gExposure[1] : gParams.exposure;
+    float3 color = gSceneColor.Sample(input.uv).rgb * exposure;
 
     color = gParams.mode == 1 ? tonemapACES(color) : tonemapReinhard(color);
 

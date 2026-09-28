@@ -467,7 +467,7 @@ auto ShadowPass::prepareVoxels(uint32_t frame_index) -> uint32_t {
 	const auto count = static_cast<uint32_t>(std::min<size_t>(frame->voxel_instances.size(), k_max_voxel_casters));
 	for (uint32_t i = 0; i < count; ++i) {
 		const auto& proxy = frame->voxel_instances[i];
-		instances[i] = makeVoxelInstance(proxy.model, proxy.inverse_model, proxy.record_index);
+		instances[i] = makeVoxelInstance(proxy.model, proxy.inverse_model, proxy.model, proxy.record_index);
 	}
 	allocation.flush(0, sizeof(VoxelInstanceGpu) * count);
 	return count;

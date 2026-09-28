@@ -19,6 +19,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <limits>
 #include <span>
+#include <toast/assets/assets.hpp>
 #include <toast/assets/voxel_model.hpp>
 #include <toast/thread_pool.hpp>
 #include <toast/voxel/mass_accumulator.hpp>
@@ -207,6 +208,10 @@ Simulator::Simulator() {
 	TOAST_ASSERT(not instance, "Physics", "Simulator can only be created once");
 	TOAST_INFO("Physics", "Simulator created");
 	instance = this;
+
+	m_listener.subscribe<event::VoxelPaletteAssetReloaded>([this](event::VoxelPaletteAssetReloaded& e) {
+		refreshPalette(e.uid.data());
+	});
 }
 
 Simulator::~Simulator() {
@@ -635,6 +640,53 @@ void Simulator::rebuildFragmentIndex() {
 	}
 }
 
+void Simulator::refreshPalette(uint64_t palette_uid) {
+	ZoneScopedN("physics::RefreshPalette");
+
+	if (palette_uid == 0 || not mainThreadMutationAllowed()) {
+		return;
+	}
+	const auto asset = assets::load<assets::VoxelPalette>(toast::UID(palette_uid));
+	if (not asset.hasValue()) {
+		return;
+	}
+
+	// Copied before the voxel lock since materialLibrary() may load physics material assets
+	const voxel::Palette palette = asset->palette();
+	const voxel::MaterialLibrary materials = asset->materialLibrary();
+	if (not voxel::validateLibrary(materials).empty() || not voxel::validatePalette(palette, materials).empty()) {
+		TOAST_WARN("Physics", "Reloaded voxel palette {} is invalid, bodies keep the previous one", toast::UID(palette_uid));
+		return;
+	}
+
+	std::vector<BodyID> dynamic_owners;
+	{
+		std::scoped_lock voxel_lock {voxelDataMutex()};
+		for (const ShapeSlot& slot : m_shapes) {
+			if (not slot.occupied || slot.shape.type != ShapeType::voxel) {
+				continue;
+			}
+			VoxelShapeData* data = tryGetVoxelData(slot.shape.voxel.data);
+			if (data == nullptr || data->volume == nullptr || data->palette_uid != palette_uid) {
+				continue;
+			}
+
+			data->palette = palette;
+			data->materials = materials;
+			data->moments = accumulateMassMoments(*data->volume, palette, materials);
+
+			const Body* body = tryGetBody(slot.shape.owner);
+			if (body != nullptr && body->type == BodyType::dynamic_body) {
+				dynamic_owners.push_back(slot.shape.owner);
+			}
+		}
+	}
+
+	for (const BodyID owner : dynamic_owners) {
+		rebuildMassProperties(owner);
+	}
+}
+
 void Simulator::reapFragments() {
 	ZoneScopedN("physics::ReapFragments");
 
@@ -854,6 +906,7 @@ auto Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedCompone
 	glm::quat local_rotation = shape->voxel.local_rotation;
 	voxel::Palette palette = data->palette;
 	voxel::MaterialLibrary materials = data->materials;
+	const uint64_t palette_uid = data->palette_uid;
 	const BodyID origin = valid(data->fragment_origin) ? data->fragment_origin : shape->owner;
 
 	auto extracted = [&] {
@@ -908,6 +961,7 @@ auto Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedCompone
 		if (VoxelShapeData* frag_data = tryGetVoxelData(stored->voxel.data)) {
 			frag_data->fragment_origin = origin;
 			frag_data->fragment_sequence = m_next_fragment_sequence;
+			frag_data->palette_uid = palette_uid;
 		}
 	}
 	m_fragment_index[frag_body.slot] = m_fragments.size();
@@ -2281,6 +2335,7 @@ auto Simulator::createVoxelShape(BodyID owner, toast::VoxelNode& node) -> ShapeI
 	if (stored_shape != nullptr) {
 		if (VoxelShapeData* data = tryGetVoxelData(stored_shape->voxel.data)) {
 			data->source_revision = node.revision();
+			data->palette_uid = node.paletteUid();
 		}
 	}
 	return shape;

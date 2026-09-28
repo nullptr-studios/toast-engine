@@ -26,6 +26,7 @@
 #include "renderer/passes/shadow_pass.hpp"
 #include "renderer/passes/ssao_pass.hpp"
 #include "renderer/passes/ssr_pass.hpp"
+#include "renderer/passes/taa_pass.hpp"
 #include "renderer/passes/tonemap_pass.hpp"
 #include "renderer/passes/traced_shadow_pass.hpp"
 #include "renderer/passes/voxel_pass.hpp"
@@ -470,8 +471,10 @@ void Engine::createSDLWindow(const char* w_name) {
 	// World-stage passes render into the HDR scene target
 	const auto scene_format = m->renderer->getSceneColorFormat();
 
-	// Records ahead of all mesh colour whatever its place here since its stage is world_opaque
-	m->renderer->addRenderPass(std::make_unique<renderer::VoxelPass>(*m->vulkan_core, scene_format, depth_format, extent));
+	// Recorded in its own scopes so registration order here does not matter
+	auto voxel_pass = std::make_unique<renderer::VoxelPass>(*m->vulkan_core, scene_format, depth_format, extent);
+	m->renderer->setVoxelPass(voxel_pass.get());
+	m->renderer->addRenderPass(std::move(voxel_pass));
 
 	// World-space UI panels are scene content and get exposed with it, the screen-space UI does not
 	m->renderer->addRenderPass(std::make_unique<ui::WorldUIPass>(*m->vulkan_core, scene_format, depth_format, extent));
@@ -483,6 +486,7 @@ void Engine::createSDLWindow(const char* w_name) {
 	// SSAO first
 	m->renderer->addPostProcessPass(std::make_unique<renderer::SsaoPass>(*m->vulkan_core, scene_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::SsrPass>(*m->vulkan_core, scene_format, extent));
+	m->renderer->addPostProcessPass(std::make_unique<renderer::TaaPass>(*m->vulkan_core, scene_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::BloomPass>(*m->vulkan_core, scene_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::TonemapPass>(*m->vulkan_core, color_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::FxaaPass>(*m->vulkan_core, color_format, extent));
@@ -552,8 +556,10 @@ void Engine::createAvaloniaWindow() {
 	// World-stage passes render into the HDR scene target
 	const auto scene_format = m->renderer->getSceneColorFormat();
 
-	// Records ahead of all mesh colour whatever its place here since its stage is world_opaque
-	m->renderer->addRenderPass(std::make_unique<renderer::VoxelPass>(*m->vulkan_core, scene_format, depth_format, extent));
+	// Recorded in its own scopes so registration order here does not matter
+	auto voxel_pass = std::make_unique<renderer::VoxelPass>(*m->vulkan_core, scene_format, depth_format, extent);
+	m->renderer->setVoxelPass(voxel_pass.get());
+	m->renderer->addRenderPass(std::move(voxel_pass));
 
 	// World-space UI panels are scene content
 	m->renderer->addRenderPass(std::make_unique<ui::WorldUIPass>(*m->vulkan_core, scene_format, depth_format, extent));
@@ -565,6 +571,7 @@ void Engine::createAvaloniaWindow() {
 	// SSAO first
 	m->renderer->addPostProcessPass(std::make_unique<renderer::SsaoPass>(*m->vulkan_core, scene_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::SsrPass>(*m->vulkan_core, scene_format, extent));
+	m->renderer->addPostProcessPass(std::make_unique<renderer::TaaPass>(*m->vulkan_core, scene_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::BloomPass>(*m->vulkan_core, scene_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::TonemapPass>(*m->vulkan_core, color_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::FxaaPass>(*m->vulkan_core, color_format, extent));

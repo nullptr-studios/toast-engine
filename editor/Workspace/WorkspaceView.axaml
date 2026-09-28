@@ -490,6 +490,11 @@
 							          Command="{Binding SetRenderModeCommand}"
 							          CommandParameter="VoxelMaterials"
 							          ToolTip.Tip="One hue per physical material id. Magenta stripes are material 0, the default that every palette entry authored without a material silently falls back to" />
+							<Separator />
+							<MenuItem Header="Motion Vectors"
+							          Command="{Binding SetRenderModeCommand}"
+							          CommandParameter="MotionVectors"
+							          ToolTip.Tip="Hue is direction and brightness is pixels moved. Grey pixels reproject from depth, magenta ones are reactive" />
 						</MenuFlyout>
 					</Button.Flyout>
 					<StackPanel Orientation="Horizontal"

@@ -144,17 +144,20 @@ private:
 struct VoxelInstanceGpu {
 	glm::mat4 voxel_to_world {1.0f};
 	glm::mat4 world_to_voxel {1.0f};
+	glm::mat4 previous_voxel_to_world {1.0f};
 	uint32_t record_index = 0;
 	uint32_t pad0 = 0;
 	uint32_t pad1 = 0;
 	uint32_t pad2 = 0;
 };
 
-static_assert(sizeof(VoxelInstanceGpu) == 144, "VoxelInstanceGpu is mirrored by voxel_dda.slang VoxelInstance");
+static_assert(sizeof(VoxelInstanceGpu) == 208, "VoxelInstanceGpu is mirrored by voxel_dda.slang VoxelInstance");
 
 /// Voxel (x y z) occupies [x x + 1] in the space the instance maps from
 [[nodiscard]]
-auto makeVoxelInstance(const glm::mat4& model, const glm::mat4& inverse_model, uint32_t record_index) -> VoxelInstanceGpu;
+auto makeVoxelInstance(
+    const glm::mat4& model, const glm::mat4& inverse_model, const glm::mat4& previous_model, uint32_t record_index
+) -> VoxelInstanceGpu;
 
 /// Bindings 0 to 5 of set 1 in voxel_dda.slang order
 /// @note The set must not be in use by a frame still in flight

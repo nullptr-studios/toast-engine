@@ -94,6 +94,11 @@ auto FxaaPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView
 		return source_view;
 	}
 
+	const auto* frame = VulkanRenderer::instance->renderingFrame();
+	if (frame != nullptr && frame->taa_active) {
+		return source_view;
+	}
+
 	if (m_bound_views[frame_index] != source_view) {
 		vk::DescriptorImageInfo image_info {};
 		image_info.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
@@ -109,7 +114,6 @@ auto FxaaPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView
 
 	m_target.beginScope(cmd);
 
-	const auto* frame = VulkanRenderer::instance->renderingFrame();
 	const auto settings = frame != nullptr ? frame->post_process.fxaa : VulkanRenderer::PostProcessSettings::Fxaa {};
 
 	const Params params {
