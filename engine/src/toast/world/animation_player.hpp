@@ -105,5 +105,3 @@ private:
 };
 
 }
-
-#include <animationplayer.generated.hpp>

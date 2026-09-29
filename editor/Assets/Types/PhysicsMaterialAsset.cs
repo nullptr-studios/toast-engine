@@ -10,7 +10,7 @@ public class PhysicsMaterialAsset : BaseAsset {
 	public override string Extension => ".tpm";
 	public override string DisplayName => "Physics Material";
 	public override string ChipText => "PHYS";
-	public override string ChipColor => "Green";
+	public override string ChipColor => "Orange";
 	public override LucideIconKind Icon => LucideIconKind.Atom;
 	public override bool CanBeCreated => true;
 	public override string Category => "Physics";

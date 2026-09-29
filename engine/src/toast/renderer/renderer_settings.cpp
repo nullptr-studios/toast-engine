@@ -51,7 +51,28 @@ void registerQuality(VulkanRenderer& renderer) {
 	pass_toggle("renderer.quality.bloom", "Bloom", true, "Glow around highlights bright enough to overwhelm a lens.");
 	pass_toggle("renderer.quality.ssr", "SSR", true, "Screen-space reflections. The most expensive post pass.");
 	pass_toggle("renderer.quality.ssao", "SSAO", true, "Contact darkening where geometry meets geometry.");
-	pass_toggle("renderer.quality.fxaa", "FXAA", true, "Edge anti-aliasing on the tonemapped image.");
+	pass_toggle("renderer.quality.fxaa", "FXAA", true, "Edge anti-aliasing on the tonemapped image. Skipped while TAA is on.");
+
+	toast::settings::declareBool(
+	    "renderer.quality.taa",
+	    true,
+	    {.label = "TAA",
+			 .category = "Quality",
+			 .description = "Temporal anti-aliasing. Jitters the camera and resolves across frames in place of FXAA."}
+	)
+	    .onChange([&renderer](bool enabled) { renderer.setTaaEnabled(enabled); });
+
+	toast::settings::declareFloat(
+	    "renderer.quality.taa_history",
+	    0.9,
+	    {.label = "TAA history",
+			 .category = "Quality",
+			 .description = "Share of the previous frame each pixel keeps. Higher is smoother and ghosts more.",
+			 .min = 0.5,
+			 .max = 0.98,
+			 .step = 0.01}
+	)
+	    .onChange([&renderer](double v) { renderer.setTaaHistoryWeight(static_cast<float>(v)); });
 
 	toast::settings::declareBool(
 	    "renderer.quality.traced_shadows",
@@ -138,6 +159,20 @@ void registerShadows() {
 	    .onChange([](int64_t frames) { shadow_slots::setGraceFrames(static_cast<uint32_t>(std::max<int64_t>(frames, 0))); });
 }
 
+void registerVoxels(VulkanRenderer& renderer) {
+	toast::settings::declareFloat(
+	    "renderer.voxels.edge_rounding",
+	    0.3,
+	    {.label = "Edge rounding",
+			 .category = "Voxels",
+			 .description = "Width in voxels that normals blend across edges near the camera. 0 keeps flat faces.",
+			 .min = 0.0,
+			 .max = 1.0,
+			 .step = 0.05}
+	)
+	    .onChange([&renderer](double v) { renderer.setVoxelNormalRounding(static_cast<float>(v)); });
+}
+
 void registerEnvironment(VulkanRenderer& renderer) {
 	toast::settings::declareFloat(
 	    "renderer.environment.sky_intensity",
@@ -165,6 +200,7 @@ void registerRendererStartupSettings() {
 void registerRendererSettings(VulkanRenderer& renderer) {
 	registerDisplay(renderer);
 	registerQuality(renderer);
+	registerVoxels(renderer);
 	registerEnvironment(renderer);
 }
 

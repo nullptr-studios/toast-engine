@@ -100,17 +100,7 @@ auto Data::buildRoot(const toml::table& table, const Schema* schema) -> DataValu
 	}
 
 	// emit exactly the schema fields in order
-	for (const auto& field : schema->fields()) {
-		auto it = table.find(field.name);
-		if (it != table.end()) {
-			root.set(field.name, DataValue::fromToml(it->second, &field));
-		} else if (field.default_value.has_value()) {
-			root.set(field.name, *field.default_value);
-		} else {
-			root.set(field.name, DataValue {});    // Null placeholder
-		}
-	}
-	return root;
+	return DataValue::fromObject(table, schema->fields(), &table);
 }
 
 auto Data::serialize(SaveMode mode) const -> std::vector<uint8_t> {

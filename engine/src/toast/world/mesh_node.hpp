@@ -93,5 +93,3 @@ private:
 	bool m_registered_proxy = false;
 };
 }
-
-#include <meshnode.generated.hpp>

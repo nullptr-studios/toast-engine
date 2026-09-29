@@ -17,6 +17,7 @@
 #include "physics_material.hpp"
 #include "shape.hpp"
 #include "shape_query.hpp"
+#include "toast/physics/raycast.hpp"
 #include "voxel_render.hpp"
 #include "voxel_shape_data.hpp"
 
@@ -27,11 +28,12 @@
 #include <optional>
 #include <span>
 #include <thread>
+#include <toast/events/listener.hpp>
 #include <toast/export.hpp>
 #include <toast/log.hpp>
 #include <toast/voxel/connectivity.hpp>
+#include <toast/voxel/nodes/voxel_node.hpp>
 #include <toast/world/box.hpp>
-#include <toast/world/voxel_node.hpp>
 #include <toml++/impl/preprocessor.hpp>
 #include <unordered_map>
 #include <vector>
@@ -77,8 +79,8 @@ public:
 	auto createBody(const BodyDescriptor& descriptor) -> BodyID;
 	void destroyBody(BodyID body);
 
-	[[nodiscard]]
-	auto valid(ShapeID shape) const -> bool;
+	static auto raycast(glm::vec3 pos, glm::vec3 dir) -> std::vector<RayHit>;
+
 	[[nodiscard]]
 	auto valid(BodyID body) const -> bool;
 	[[nodiscard]]
@@ -208,6 +210,10 @@ public:
 	[[nodiscard]]
 	static auto shapeWorldBounds(ShapeID shape) -> std::optional<AABB>;
 
+	/// Rigidbody or VoxelNode that owns @c body
+	[[nodiscard]]
+	static auto nodeFor(BodyID body) -> toast::Box<toast::Node>;
+
 	static void callTick();
 	static void registerRigidbody(Rigidbody& node);
 	static void unregisterRigidbody(Rigidbody& node);
@@ -225,11 +231,11 @@ public:
 	    BodyID ignored, const CapsuleShape& capsule, const glm::quat& rotation, const glm::vec3& from, const glm::vec3& to,
 	    float skin
 	) const -> SweepHit;
-	void setCapsuleShape(ShapeID shape, const CapsuleShape& capsule);
-	void moveKinematicBody(BodyID body, const glm::vec3& position, const glm::quat& rotation, const glm::vec3& velocity);
+	/// Resizes the capsule collider of a body
+	auto setCapsuleShape(BodyID body, const CapsuleShape& capsule) -> bool;
+	void moveKinematicBody(BodyID id, const glm::vec3& position, const glm::quat& rotation, const glm::vec3& velocity);
 	/// Raises the velocity of a dynamic body along direction
-	void pushBody(BodyID body, const glm::vec3& point, const glm::vec3& direction, float speed, float max_impulse);
-	void wakeBodiesInBounds(const AABB& bounds);
+	void pushBody(BodyID id, const glm::vec3& point, const glm::vec3& direction, float speed, float max_impulse);
 
 	/// Simulator running the current step, null outside a play session
 	[[nodiscard]]
@@ -304,7 +310,7 @@ private:
 	};
 
 	[[nodiscard]]
-	static auto nodeFor(BodyID body) -> toast::Box<toast::Node>;
+	static auto colliderFor(BodyID body, ShapeID shape) -> toast::Box<toast::Node>;
 	[[nodiscard]]
 	auto mainThreadMutationAllowed() const -> bool;
 
@@ -329,15 +335,19 @@ private:
 
 	void destroyShape(ShapeID shape);
 	[[nodiscard]]
+	auto valid(ShapeID shape) const -> bool;
+	[[nodiscard]]
 	auto tryGetShape(ShapeID shape) -> Shape*;
 	[[nodiscard]]
 	auto tryGetShape(ShapeID shape) const -> const Shape*;
 	[[nodiscard]]
 	auto valid(VoxelDataID data) const -> bool;
+
+public:
 	[[nodiscard]]
-	auto tryGetVoxelData(VoxelDataID data) -> VoxelShapeData*;
-	[[nodiscard]]
-	auto tryGetVoxelData(VoxelDataID data) const -> const VoxelShapeData*;
+	static auto tryGetVoxelData(VoxelDataID data) -> VoxelShapeData*;
+
+private:
 	void destroyVoxelData(VoxelDataID data);
 
 	void rebuildMassProperties(BodyID id);
@@ -356,7 +366,6 @@ private:
 	static void setShapeEnabled(ShapeID shape, bool enabled);
 	void syncEnabledState();
 
-	void stepKinematicControllers(float dt);
 	[[nodiscard]]
 	auto queryCandidates(BodyID ignored, const AABB& bounds) const -> std::vector<ShapeID>;
 	void collideCapsuleProbe(
@@ -369,6 +378,7 @@ private:
 	void releaseSleeper(BodyID sleeper, BodyID other);
 	void wakeBodiesTouching(BodyID id);
 	void wakeBodiesTouching(ShapeID id);
+	void wakeBodiesInBounds(const AABB& bounds);
 	void convertImpulsesToDamage(std::span<const SimulationIsland> islands);
 	void wakeDisturbedSleepers(float dt);
 	void unlockDisturbedFragments();
@@ -443,6 +453,9 @@ private:
 	void retireVoxelBody(BodyID id);
 	void destroyFragmentsOf(BodyID origin);
 
+	[[nodiscard]]
+	auto voxelNodeFor(ShapeID shape) -> toast::VoxelNode*;
+
 	void reapFragments();
 	void destroyFragmentRecord(BodyID id);
 	void queuePendingFragments(std::span<const ConnectivityResult> results);
@@ -453,6 +466,7 @@ private:
 	void unlockSleep(BodyID id);
 	void wakeNeighborsOf(BodyID id);
 	void rebuildFragmentIndex();
+	void refreshPalette(uint64_t palette_uid);
 	auto createVoxelShapeInternal(
 	    BodyID owner, const VoxelShape& shape, voxel::Volume* external, std::unique_ptr<voxel::Volume>& owned,
 	    const voxel::Palette& palette, const voxel::MaterialLibrary& materials, const voxel::MassMoments* known_moments = nullptr
@@ -516,6 +530,8 @@ private:
 	size_t m_connectivity_cursor = 0;
 
 	float m_interpolation_alpha = 0.0f;
+
+	event::Listener m_listener;
 };
 
 }

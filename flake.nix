@@ -92,7 +92,7 @@
 			./out/Debug/editor/editor "$@"
 		'';
 
-		gdb_editor = pkgs.writeShellScriptBin "editor" ''
+		gdb_editor = pkgs.writeShellScriptBin "gdb_editor" ''
 			gdb --args ./out/Debug/editor/editor "$@"
 		'';
 
@@ -127,6 +127,7 @@
 				editor
 				gdb_editor
 				kenzo
+				tracy_0_13
 
 				autoconf
 				autoconf-archive

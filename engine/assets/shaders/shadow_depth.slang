@@ -13,10 +13,11 @@ ConstantBuffer<ShadowUBO> gShadow;
 struct InstanceData
 {
     float4x4 model;
+    float4x4 previousModel;
     uint jointOffset;
+    uint flags;
     uint pad0;
     uint pad1;
-    uint pad2;
 };
 
 [[vk::binding(2,0)]]

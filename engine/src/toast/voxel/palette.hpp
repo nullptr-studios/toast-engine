@@ -62,6 +62,21 @@ struct Palette {
 };
 
 [[nodiscard]]
+inline auto defaultPalette() -> const Palette& {
+	static const Palette palette = [] {
+		Palette out;
+		for (uint32_t i = 1; i < k_palette_size; ++i) {
+			out.entries[i].albedo_r = 160;
+			out.entries[i].albedo_g = 160;
+			out.entries[i].albedo_b = 160;
+			out.entries[i].roughness = 200;
+		}
+		return out;
+	}();
+	return palette;
+}
+
+[[nodiscard]]
 inline auto emissiveIntensity(const Palette& palette, uint8_t index) noexcept -> float {
 	return static_cast<float>(palette.entries[index].emissive) / 255.0f * palette.max_emissive;
 }

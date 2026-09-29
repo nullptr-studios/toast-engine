@@ -250,6 +250,7 @@ void Node::reloadScripts() noexcept {
 	}
 
 	TOAST_INFO("Lua", "Reloaded scripts on {} ({}): {} value(s) preserved", name(), uid(), preserved);
+	onScriptsReloaded();
 }
 
 void Node::callTick(const NodeInfo* info, TickFunctionList func_type) noexcept {
@@ -284,8 +285,8 @@ void Node::callTick(const NodeInfo* info, TickFunctionList func_type) noexcept {
 		invoker = funcs.load;
 	} else if (hasFlag(func_type, TickFunctionList::save) && hasFlag(funcs.list, TickFunctionList::save)) {
 		invoker = funcs.save;
-	} else if (hasFlag(func_type, TickFunctionList::pre_init) && hasFlag(funcs.list, TickFunctionList::pre_init)) {
-		invoker = funcs.pre_init;
+	} else if (hasFlag(func_type, TickFunctionList::editor_tick) && hasFlag(funcs.list, TickFunctionList::editor_tick)) {
+		invoker = funcs.editor_tick;
 	} else if (hasFlag(func_type, TickFunctionList::init) && hasFlag(funcs.list, TickFunctionList::init)) {
 		invoker = funcs.init;
 	} else if (hasFlag(func_type, TickFunctionList::destroy) && hasFlag(funcs.list, TickFunctionList::destroy)) {
@@ -302,6 +303,8 @@ void Node::callTick(const NodeInfo* info, TickFunctionList func_type) noexcept {
 		invoker = funcs.early_tick;
 	} else if (hasFlag(func_type, TickFunctionList::tick) && hasFlag(funcs.list, TickFunctionList::tick)) {
 		invoker = funcs.tick;
+	} else if (hasFlag(func_type, TickFunctionList::physics_tick) && hasFlag(funcs.list, TickFunctionList::physics_tick)) {
+		invoker = funcs.physics_tick;
 	} else if (hasFlag(func_type, TickFunctionList::post_physics) && hasFlag(funcs.list, TickFunctionList::post_physics)) {
 		invoker = funcs.post_physics;
 	} else if (hasFlag(func_type, TickFunctionList::late_tick) && hasFlag(funcs.list, TickFunctionList::late_tick)) {

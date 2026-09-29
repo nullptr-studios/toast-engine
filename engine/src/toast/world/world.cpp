@@ -11,6 +11,7 @@
 #include <toast/assets/assets.hpp>
 #include <toast/assets/types.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
+#include <toast/scripting/script_runtime.hpp>
 #include <toast/thread_pool.hpp>
 #include <toast/uri_handler.hpp>
 #include <tracy/Tracy.hpp>
@@ -81,7 +82,7 @@ void World::tick() {
 	 *   2: earlyTick [dispatch]
 	 *   3: transform update
 	 *   4: tick [dispatch]
-	 *   5: accumulation update
+	 *   5: accumulation update (physicsTick runs before each fixed step)
 	 *   6: lateTick [dispatch]
 	 *
 	 * The only real discrepancy is that the accumulation update will not be handled
@@ -103,7 +104,10 @@ void World::tick() {
 
 	m_scheduler.runPhase(m_scheduler.schedule.tick, TickFunctionList::tick, "tick");
 
-	const auto step_result = m_accumulator.tick(Time::delta(), [&]() { physics::Simulator::callTick(); });
+	const auto step_result = m_accumulator.tick(Time::delta(), [&]() {
+		m_scheduler.runPhaseSerial(m_scheduler.schedule.physics_tick, TickFunctionList::physics_tick, "physics_tick");
+		physics::Simulator::callTick();
+	});
 	physics::Simulator::recordTickBurst(step_result.steps, step_result.time_budget_reached);
 	// TODO Is this class really needed?
 	m_scheduler.runPhase(m_scheduler.schedule.post_physics, TickFunctionList::post_physics, "post_physics");
@@ -129,7 +133,6 @@ void World::loadNode(UID uid) {
 	//		2: dispatch 1:
 	//				- control block allocation
 	//				- deserialize
-	//				- preInit()
 	//		3: data structure building:
 	//				- build tree structure
 	//		4: dispatch 2:
@@ -1081,6 +1084,7 @@ auto World::dependencyGraphGraphviz() const -> std::string {
 
 	emit_stage("early_tick", m_scheduler.schedule.early_tick);
 	emit_stage("tick", m_scheduler.schedule.tick);
+	emit_stage("physics_tick", m_scheduler.schedule.physics_tick);
 	emit_stage("post_physics", m_scheduler.schedule.post_physics);
 	emit_stage("late_tick", m_scheduler.schedule.late_tick);
 
@@ -1126,11 +1130,25 @@ auto WorldTestAccess::createNode(World& world, std::string_view name, NodeState 
 
 	NodeInfo& info = testNodeInfos()[&*node];
 	info.type = "test::Node";
-	info.signals = Reflect<toast::Node>::type_info.signals;
+	info.signals = nodeTypeInfo<toast::Node>()->signals;
 	info.functions.list = TickFunctionList::none;
 	node->m_info = &info;
 
 	return node;
+}
+
+auto WorldTestAccess::createTypedNode(World& world, std::string_view type, std::string_view name) -> Box<Node> {
+	auto node = world.nodeAllocation(type);
+	node->m_name = name;
+	node->m_state = NodeState::root;
+	node->m_type = NodeType::child;
+	node->m_local_enabled = true;
+	node->m_inherited_enabled = true;
+	return node;
+}
+
+void WorldTestAccess::callTick(Node& node, TickFunctionList stage) {
+	node.callTick(node.info(), stage);
 }
 
 void WorldTestAccess::registerDependency(Node& from, Node& to) {
@@ -1180,6 +1198,32 @@ void WorldTestAccess::computeDependencyGraph(World& world) {
 auto WorldTestAccess::instantiate(World& world, const assets::Handle<assets::Prefab>& file, INodeOwner::InstantiateContext& ctx)
     -> Box<Node> {
 	return world.instantiate(file, ctx);
+}
+
+auto WorldTestAccess::changeField(Node& node, std::string_view name, const std::any& value) -> bool {
+	const FieldInfo* field = node.info()->getField(name);
+	if (field == nullptr || !field->set) {
+		return false;
+	}
+	field->set(&node, value);
+	node.onReflectedFieldChanged(field->name);
+	if (field->name == "m_scripts") {
+		node.reloadScripts();
+	}
+	return true;
+}
+
+auto WorldTestAccess::setScriptVar(Node& node, std::string_view path, const std::any& value) -> bool {
+	if (node.scriptRuntime() == nullptr || !node.scriptRuntime()->setVarByPath(0, path, value)) {
+		return false;
+	}
+	node.onScriptVarChanged(std::string("0:") + std::string(path));
+	return true;
+}
+
+void WorldTestAccess::attachChild(Node& parent, Node& child) {
+	child.m_parent = parent.box();
+	parent.m_children.push_back(child.box());
 }
 
 auto WorldTestAccess::childrenOf(const Node& node) -> const std::vector<Box<Node>>& {

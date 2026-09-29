@@ -24,4 +24,9 @@ TOAST_API const toast::NodeInfo Reflect<{{ qualified_name }}>::type_info = {
 	.destroy    = {% if is_interface %}nullptr{% else %}reinterpret_cast<toast::NodeInfo::Deleter>(&_detail::{{ snake_name }}_delete){% endif %},
 };
 
+template<>
+TOAST_API auto NodeTypeInfo<{{ qualified_name }}>::get() noexcept -> const NodeInfo* {
+	return &Reflect<{{ qualified_name }}>::type_info;
+}
+
 } // namespace toast

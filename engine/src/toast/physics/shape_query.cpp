@@ -1,6 +1,5 @@
 #include "broad_phase.hpp"
 #include "manifold.hpp"
-#include "nodes/kinematic_rigidbody.hpp"
 #include "physics_settings.hpp"
 #include "simulator.hpp"
 
@@ -13,6 +12,7 @@ namespace physics {
 namespace {
 
 constexpr float k_approach_epsilon = 1.0e-4f;
+constexpr float k_kinematic_wake_margin = 0.05f;
 
 auto capsuleProbe(BodyID owner, const CapsuleShape& capsule) -> Shape {
 	return Shape {.owner = owner, .type = ShapeType::capsule, .capsule = capsule};
@@ -26,20 +26,6 @@ auto probeBody(const glm::vec3& position, const glm::quat& rotation) -> Body {
 
 auto Simulator::current() -> Simulator* {
 	return instance;
-}
-
-void Simulator::stepKinematicControllers(float dt) {
-	ZoneScopedN("physics::StepKinematicControllers");
-
-	for (size_t index = 0; index < m_node_bindings.size(); ++index) {
-		const Body* body = tryGetBody(m_node_bindings[index].body);
-		if (body == nullptr || not body->enabled) {
-			continue;
-		}
-		if (auto controller = m_node_bindings[index].node.as<KinematicRigidbody>(); controller.exists()) {
-			controller->simulate(*this, dt);
-		}
-	}
 }
 
 auto Simulator::queryCandidates(BodyID ignored, const AABB& bounds) const -> std::vector<ShapeID> {
@@ -168,7 +154,7 @@ auto Simulator::sweepCapsule(
 
 	// resting on or sliding off a surface must never block so only contacts the move digs into count
 	std::vector<QueryContact> contacts;
-	const auto blockingContact = [&](float t) -> std::optional<QueryContact> {
+	const auto blocking_contact = [&](float t) -> std::optional<QueryContact> {
 		probe_body.position = from + delta * t;
 		contacts.clear();
 		collideCapsuleProbe(probe_body, probe_shape, candidates, contacts);
@@ -191,7 +177,7 @@ auto Simulator::sweepCapsule(
 	float blocked = 1.0f;
 	std::optional<QueryContact> hit;
 	for (float t = std::min(sample_step, 1.0f);; t = std::min(t + sample_step, 1.0f)) {
-		hit = blockingContact(t);
+		hit = blocking_contact(t);
 		if (hit.has_value()) {
 			blocked = t;
 			break;
@@ -205,7 +191,7 @@ auto Simulator::sweepCapsule(
 	const auto refine_iterations = static_cast<int>(tunables().sweep_refine_iterations);
 	for (int iteration = 0; iteration < refine_iterations; ++iteration) {
 		const float middle = 0.5f * (clear + blocked);
-		if (auto contact = blockingContact(middle)) {
+		if (auto contact = blocking_contact(middle)) {
 			blocked = middle;
 			hit = contact;
 		} else {
@@ -224,24 +210,39 @@ auto Simulator::sweepCapsule(
 	};
 }
 
-void Simulator::setCapsuleShape(ShapeID shape_id, const CapsuleShape& capsule) {
+auto Simulator::setCapsuleShape(BodyID body, const CapsuleShape& capsule) -> bool {
 	if (not mainThreadMutationAllowed()) {
-		return;
+		return false;
 	}
 
-	Shape* shape = tryGetShape(shape_id);
+	Shape* shape = nullptr;
+	ShapeID shape_id;
+	for (const NodeBinding& binding : m_node_bindings) {
+		if (binding.body != body) {
+			continue;
+		}
+		for (const ColliderBinding& collider : binding.colliders) {
+			if (Shape* candidate = tryGetShape(collider.shape); candidate != nullptr && candidate->type == ShapeType::capsule) {
+				shape = candidate;
+				shape_id = collider.shape;
+				break;
+			}
+		}
+		break;
+	}
 	const float rotation_length_squared = glm::dot(capsule.local_rotation, capsule.local_rotation);
 	const bool valid_capsule = std::isfinite(capsule.radius) && capsule.radius > 0.0f && std::isfinite(capsule.height) &&
 	                           capsule.height >= 2.0f * capsule.radius && std::isfinite(rotation_length_squared) &&
 	                           rotation_length_squared > 1.0e-10f;
-	if (shape == nullptr || shape->type != ShapeType::capsule || not valid_capsule) {
-		return;
+	if (shape == nullptr || not valid_capsule) {
+		return false;
 	}
 
 	shape->capsule = capsule;
 	shape->capsule.local_rotation = glm::normalize(capsule.local_rotation);
 	incrementShapeRevision(shape_id);
 	wakeBodiesTouching(shape_id);
+	return true;
 }
 
 void Simulator::moveKinematicBody(BodyID id, const glm::vec3& position, const glm::quat& rotation, const glm::vec3& velocity) {
@@ -254,10 +255,26 @@ void Simulator::moveKinematicBody(BodyID id, const glm::vec3& position, const gl
 		return;
 	}
 
+	const bool moved = body->position != position;
 	body->position = position;
 	body->rotation = glm::normalize(rotation);
 	body->linear_velocity = velocity;
 	body->angular_velocity = {};
+
+	if (not moved) {
+		return;
+	}
+	for (const NodeBinding& binding : m_node_bindings) {
+		if (binding.body != id) {
+			continue;
+		}
+		for (const ColliderBinding& collider : binding.colliders) {
+			if (const Shape* shape = tryGetShape(collider.shape)) {
+				wakeBodiesInBounds(worldShapeBounds(*body, *shape).expanded(k_kinematic_wake_margin));
+			}
+		}
+		break;
+	}
 }
 
 void Simulator::pushBody(BodyID id, const glm::vec3& point, const glm::vec3& direction, float speed, float max_impulse) {

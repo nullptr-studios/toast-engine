@@ -43,7 +43,7 @@ struct BroadPhaseStats {
 };
 
 [[nodiscard]]
-TOAST_API auto worldShapeBounds(const Body& body, const Shape& shape) -> AABB;
+auto worldShapeBounds(const Body& body, const Shape& shape) -> AABB;
 
 class BroadPhase {
 public:
@@ -55,6 +55,9 @@ public:
 
 	[[nodiscard]]
 	auto queryBounds(const AABB& bounds) const -> std::vector<ShapeID>;
+
+	[[nodiscard]]
+	auto queryRay(glm::vec3 pos, glm::vec3 dir) const -> std::vector<ShapeID>;
 
 	[[nodiscard]]
 	auto debugNodes() const -> std::vector<AABBTreeDebugNode>;

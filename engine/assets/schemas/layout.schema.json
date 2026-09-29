@@ -7,9 +7,9 @@
   "required": ["name"],
   "additionalProperties": false,
   "properties": {
-    "name":   { "type": "string", "x-toast-type": "string", "default": "Unnamed Layout", "description": "Display name of the layout." },
-    "layers": { "type": "array",  "x-toast-type": "string[]", "default": [], "description": "Named layers. The hidden 'default' layer is implicit and always present" },
-    "action": { "type": "array",  "x-toast-type": "entry[]",  "description": "Action references owned by this layout" }
+    "name":   { "type": "string", "x-toast-type": "string", "default": "Unnamed Layout" },
+    "layers": { "type": "array",  "x-toast-type": "string[]", "default": [] },
+    "action": { "type": "array",  "x-toast-type": "entry[]" }
   },
   "definitions": {
     "entry": {
@@ -17,9 +17,9 @@
       "required": ["id"],
       "additionalProperties": false,
       "properties": {
-        "id":       { "type": "string", "x-toast-type": "asset",    "x-toast-asset-type": "input_action", "description": "UID of the referenced input_action asset" },
-        "included": { "type": "array",  "x-toast-type": "string[]", "description": "Whitelist of layers this action is active in" },
-        "excluded": { "type": "array",  "x-toast-type": "string[]", "description": "Blacklist of layers. An excluded layer always disables the action" }
+        "id":       { "type": "string", "x-toast-type": "asset",    "x-toast-asset-type": "input_action" },
+        "included": { "type": "array",  "x-toast-type": "string[]", "description": "Layers this action will run" },
+        "excluded": { "type": "array",  "x-toast-type": "string[]", "description": "Layers this action will not run" }
       }
     }
   }

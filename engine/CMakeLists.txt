@@ -66,6 +66,7 @@ add_custom_command(
         --register-fn "registerEngineTypes"
         --split-typeinfo
         --lua-stubs "${CMAKE_SOURCE_DIR}/engine/assets/lua/types.d.lua"
+        --event-lua-stubs "${CMAKE_SOURCE_DIR}/engine/assets/lua/events.d.lua"
         COMMAND ${CMAKE_COMMAND} -E touch "${CMAKE_CURRENT_BINARY_DIR}/reflection.stamp"
         DEPENDS ${TOAST_REFLECTED_HEADERS}
         COMMENT "Regenerating reflection metadata"
@@ -216,6 +217,8 @@ add_custom_command(TARGET toast_engine POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${_tracy_include}/common" "${TOAST_ENGINE_OUTPUT_ROOT}/include/common"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${_toml_include}/toml++" "${TOAST_ENGINE_OUTPUT_ROOT}/include/toml++"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${_glm_include}/glm" "${TOAST_ENGINE_OUTPUT_ROOT}/include/glm"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${LUA_INCLUDE_DIR}" "${TOAST_ENGINE_OUTPUT_ROOT}/include"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${LUABRIDGE3_INCLUDE_DIRS}" "${TOAST_ENGINE_OUTPUT_ROOT}/include"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different "${_tinyspline_include}/tinyspline.h" "${TOAST_ENGINE_OUTPUT_ROOT}/include/tinyspline.h"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different "${_tinyspline_include}/tinysplinecxx.h" "${TOAST_ENGINE_OUTPUT_ROOT}/include/tinysplinecxx.h"
         # Runtimes

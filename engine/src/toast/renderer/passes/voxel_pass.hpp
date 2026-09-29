@@ -20,16 +20,28 @@ namespace renderer {
 class VulkanCore;
 class VoxelGpuStorage;
 
+/// Deferred so lighting runs once per visible voxel pixel not once per march
 class VoxelPass : public IRenderPass {
 public:
 	VoxelPass(const VulkanCore& core, vk::Format scene_format, vk::Format depth_format, vk::Extent2D extent);
 
 	[[nodiscard]]
 	auto stage() const -> RenderStage override {
-		return RenderStage::world_opaque;
+		return RenderStage::voxel_gbuffer;
 	}
 
+	/// @returns false when nothing draws so the caller skips both voxel scopes
+	[[nodiscard]]
+	auto prepare(uint32_t frame_index) -> bool;
+
+	/// Inside the voxel G-buffer scope after prepare()
 	void record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) override;
+
+	/// Writes scene normal while reading face normals and depth
+	void recordNormalBlur(vk::CommandBuffer cmd, uint32_t frame_index, vk::Extent2D viewport);
+
+	/// Writes scene colour and indirect while reading the G-buffer and depth
+	void recordLighting(vk::CommandBuffer cmd, uint32_t frame_index);
 
 	[[nodiscard]]
 	auto name() const -> std::string_view override {
@@ -45,6 +57,18 @@ private:
 		uint32_t pad0 = 0;
 		uint32_t pad1 = 0;
 		uint32_t pad2 = 0;
+	};
+
+	/// Mirrors voxel_lighting.slang LightingPushConstants
+	struct LightingPushConstants {
+		glm::mat4 inverse_view_projection {1.0f};
+	};
+
+	/// Mirrors voxel_normal_blur.slang NormalBlurParams
+	struct NormalBlurParams {
+		glm::mat4 inverse_view_projection {1.0f};
+		glm::vec4 camera_radius {0.0f};
+		glm::vec4 viewport {0.0f};
 	};
 
 	enum class Cull : uint8_t {
@@ -67,6 +91,8 @@ private:
 
 	void createInstanceBuffers(const VulkanCore& core);
 	void createDescriptors(const VulkanCore& core, const ShaderReflection& reflection);
+	void createLighting(const VulkanCore& core, vk::Format scene_format, vk::Extent2D extent);
+	void createNormalBlur(const VulkanCore& core, vk::Extent2D extent);
 
 	void bindStorage(uint32_t frame_index, const std::shared_ptr<const VoxelGpuStorage>& storage);
 
@@ -85,6 +111,23 @@ private:
 	std::vector<std::shared_ptr<const VoxelGpuStorage>> m_bound_storage;
 
 	std::vector<Draw> m_draws;
+
+	ShaderLayout m_lighting_layout;
+	VulkanPipeline m_lighting_pipeline;
+	SceneDescriptorSets m_lighting_scene_sets;
+
+	vk::raii::Sampler m_point_sampler = nullptr;
+	std::vector<vk::raii::DescriptorSet> m_gbuffer_sets;
+
+	/// Albedo normal material depth and face normal last written into each set
+	std::vector<std::array<vk::ImageView, 5>> m_bound_gbuffer;
+
+	ShaderLayout m_blur_layout;
+	VulkanPipeline m_blur_pipeline;
+	std::vector<vk::raii::DescriptorSet> m_blur_sets;
+
+	/// Albedo face normal and depth last written into each set
+	std::vector<std::array<vk::ImageView, 3>> m_bound_blur;
 };
 
 }

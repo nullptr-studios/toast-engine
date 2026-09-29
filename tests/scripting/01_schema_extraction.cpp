@@ -18,18 +18,33 @@ TOAST_TEST_NAMED("Scripting", "scripting/01_schema_extraction", test_scripting_0
 local M = {}
 
 M.alive = true
+
+---@name "Hit Points"
+---@range 0 250
+---@unit "hp"
 M.health = 100
+
+---@readonly
 M.speed = 4.5
 M.title = "hi"
 M.dir = vec3(1, 0, 0)
 M.tint = color3(1, 0, 0)
 M.target = Node
 M.names = { "a", "b" }
+
+---@hidden
 M._hidden = 3
 
+---@hidden
+M.internal = 7
+
 M.movement = {
+	---@range -10.5 20
 	accel = 2.0,
-	air = { control = 0.5 },
+	air = {
+		---@unit '%'
+		control = 0.5,
+	},
 }
 
 function M:tick() end
@@ -50,7 +65,9 @@ return M
 	for (const auto& f : schema->fields) {
 		names.push_back(f.name);
 	}
-	const std::vector<std::string> expected {"alive", "health", "speed", "title", "dir", "tint", "target", "names"};
+	const std::vector<std::string> expected {
+	  "alive", "health", "speed", "title", "dir", "tint", "target", "names", "internal"
+	};
 	assert(names == expected);
 
 	assert(schema->find("alive")->kind == LuaVarKind::boolean);
@@ -63,15 +80,24 @@ return M
 	assert(schema->find("names")->kind == LuaVarKind::string);
 	assert(schema->find("names")->is_array);
 	assert(schema->find("_hidden") == nullptr);
+	assert(schema->find("health")->display_name == "Hit Points");
+	assert(schema->find("health")->min == 0.0);
+	assert(schema->find("health")->max == 250.0);
+	assert(schema->find("health")->unit == "hp");
+	assert(schema->find("speed")->read_only);
+	assert(schema->find("internal")->hidden);
 
 	// nested tables: group with a leaf and a subgroup, addressable by slash path
 	assert(schema->groups.size() == 1);
 	assert(schema->groups[0].name == "movement");
 	assert(schema->find("movement/accel") != nullptr);
 	assert(schema->find("movement/accel")->kind == LuaVarKind::number);
+	assert(schema->find("movement/accel")->min == -10.5);
+	assert(schema->find("movement/accel")->max == 20.0);
 	assert(schema->groups[0].subgroups.size() == 1);
 	assert(schema->groups[0].subgroups[0].name == "air");
 	assert(schema->find("movement/air/control") != nullptr);
+	assert(schema->find("movement/air/control")->unit == "%");
 
 	// the tick mask cache sees the tick() function and nothing else
 	assert(rt->hasTick(toast::TickFunctionList::tick));

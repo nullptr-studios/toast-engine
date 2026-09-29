@@ -5,14 +5,13 @@
  */
 
 #pragma once
-#include "core_types.hpp"
-
 #include <array>
 #include <cstdint>
 #include <glm/glm.hpp>
 #include <memory>
 #include <optional>
 #include <string_view>
+#include <toast/assets/core_types.hpp>
 #include <toast/voxel/brick_pool.hpp>
 #include <toast/voxel/voxel_constants.hpp>
 #include <toast/voxel/voxel_volume.hpp>
@@ -52,6 +51,8 @@ public:
 	[[nodiscard]]
 	auto instantiate(voxel::BrickPool& pool) const -> std::optional<voxel::Volume>;
 
+	void reload(const std::vector<uint8_t>& data);
+
 	[[nodiscard]]
 	auto type() const -> std::string_view override {
 		return "voxel_model";
@@ -77,6 +78,9 @@ public:
 
 	[[nodiscard]]
 	auto solidVoxelCount() const -> uint32_t;
+
+	[[nodiscard]]
+	auto materialAt(glm::uvec3 voxel) const noexcept -> uint8_t;
 
 private:
 	VoxelModel() = default;

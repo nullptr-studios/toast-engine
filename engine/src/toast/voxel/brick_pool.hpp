@@ -8,8 +8,10 @@
 #include "brick.hpp"
 #include "voxel_constants.hpp"
 
+#include <atomic>
 #include <bit>
 #include <cstdint>
+#include <memory>
 #include <span>
 #include <toast/export.hpp>
 #include <vector>
@@ -20,7 +22,7 @@ inline constexpr size_t k_brick_material_bytes = static_cast<size_t>(k_brick_vox
 
 inline constexpr uint32_t k_invalid_brick = k_brick_payload_mask;
 
-/// @note Not thread safe
+/// @note Allocate and free are thread safe, rest is not
 class TOAST_API BrickPool {
 public:
 	explicit BrickPool(uint32_t capacity);
@@ -51,7 +53,7 @@ public:
 
 	[[nodiscard]]
 	auto allocatedCount() const noexcept -> uint32_t {
-		return m_next_unused - static_cast<uint32_t>(m_free_list.size());
+		return m_allocated.load(std::memory_order_relaxed);
 	}
 
 	[[nodiscard]]
@@ -61,7 +63,7 @@ public:
 
 	[[nodiscard]]
 	auto isValid(uint32_t id) const noexcept -> bool {
-		return id < m_next_unused;
+		return id < m_next_unused.load(std::memory_order_acquire);
 	}
 
 private:
@@ -69,9 +71,13 @@ private:
 
 	uint32_t m_capacity = 0;
 
-	uint32_t m_next_unused = 0;
+	std::atomic<uint32_t> m_next_unused {0};
 
-	std::vector<uint32_t> m_free_list;
+	std::atomic<uint32_t> m_allocated {0};
+
+	std::atomic<uint64_t> m_free_head;
+	std::unique_ptr<std::atomic<uint32_t>[]> m_next_free;    // NOLINT(modernize-avoid-c-arrays)
+	std::unique_ptr<std::atomic<bool>[]> m_is_free;          // NOLINT(modernize-avoid-c-arrays)
 
 	std::vector<uint8_t> m_material;
 	std::vector<BrickOccupancy> m_occupancy;

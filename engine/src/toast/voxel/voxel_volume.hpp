@@ -44,6 +44,9 @@ public:
 	static auto instanceOf(const Volume& source) -> Volume;
 
 	[[nodiscard]]
+	static auto adoptResized(Volume& source, glm::ivec3 brick_offset, glm::uvec3 brick_dims) -> Volume;
+
+	[[nodiscard]]
 	auto brickDims() const noexcept -> glm::uvec3 {
 		return m_brick_dims;
 	}

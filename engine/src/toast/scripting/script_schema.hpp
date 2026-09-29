@@ -10,6 +10,7 @@
 
 #include <any>
 #include <cstdint>
+#include <limits>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -33,8 +34,14 @@ enum class LuaVarKind : uint8_t {
 struct LuaVarDesc {
 	std::string name;
 	std::string path;
+	std::string display_name;
 	LuaVarKind kind = LuaVarKind::boolean;
 	bool is_array = false;
+	bool read_only = false;
+	bool hidden = false;
+	double min = -std::numeric_limits<double>::infinity();
+	double max = std::numeric_limits<double>::infinity();
+	std::string unit;
 	std::string ref_type;
 	std::any default_value;
 };

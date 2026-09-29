@@ -2,6 +2,7 @@
 
 #include "application.hpp"
 #include "assets/asset_manager.hpp"
+#include "assets/data_schema_codegen.hpp"
 #include "assets/prefab.hpp"
 #include "audio/audio_system.hpp"
 #include "crash_handler.hpp"
@@ -26,6 +27,7 @@
 #include "renderer/passes/shadow_pass.hpp"
 #include "renderer/passes/ssao_pass.hpp"
 #include "renderer/passes/ssr_pass.hpp"
+#include "renderer/passes/taa_pass.hpp"
 #include "renderer/passes/tonemap_pass.hpp"
 #include "renderer/passes/traced_shadow_pass.hpp"
 #include "renderer/passes/voxel_pass.hpp"
@@ -62,6 +64,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <new>
@@ -108,6 +111,8 @@ struct EnginePimpl {
 	std::mutex owners_mutex;
 	std::map<toast::UID, std::unique_ptr<INodeOwner>> owners;
 	toast::UID active_workspace {0};
+	event::SetShowOthers show_others;
+	bool show_others_warned = false;
 };
 
 Engine::Engine() noexcept {
@@ -228,6 +233,12 @@ void Engine::init() {
 		m->active_workspace = e.handle;
 		event::send<event::RequestHierarchyUpdate>();
 		return false;
+	});
+
+	m->listener.subscribe<event::SetShowOthers>([this](const event::SetShowOthers& e) {
+		m->show_others = e;
+		m->show_others_warned = false;
+		return true;
 	});
 
 	// A script source changed on disk
@@ -362,6 +373,40 @@ void Engine::tick() {
 			m->renderer->setRenderOwnerFilter(it != m->owners.end() ? it->second.get() : nullptr);
 		}
 
+		if (m->renderer) {
+			const INodeOwner* other = nullptr;
+			glm::mat4 other_transform(1.0f);
+			const Node* hidden = nullptr;
+			const event::SetShowOthers& show = m->show_others;
+			if (show.show && show.workspace == m->active_workspace.data()) {
+				auto source = m->owners.find(UID(show.source_workspace));
+				Workspace* level = source != m->owners.end() ? source->second->asWorkspace() : nullptr;
+				// An opened prefab workspace has the prefab asset uid as its handle
+				Box<Node> instance =
+				    level != nullptr ? level->findPrefabInstance(m->active_workspace, show.source_instance) : Box<Node> {};
+				Workspace* editing = it != m->owners.end() ? it->second->asWorkspace() : nullptr;
+				const Node3D* root =
+				    editing != nullptr && editing->isValid() ? reflect_cast<Node3D>(const_cast<Node*>(&editing->rootNode())) : nullptr;
+				if (auto spatial = instance.as<Node3D>(); spatial.exists() && root != nullptr) {
+					// The level moves so the instance lands on the prefab root
+					spatial->syncTransform();
+					root->syncTransform();
+					other = level;
+					other_transform = root->getWorldTransform() * glm::inverse(spatial->getWorldTransform());
+					hidden = &*instance;
+				} else if (!m->show_others_warned) {
+					m->show_others_warned = true;
+					TOAST_WARN(
+					    "Engine",
+					    "Show Others: level {} {} the prefab instance",
+					    show.source_workspace,
+					    level == nullptr ? "is not open, cannot find" : "does not hold"
+					);
+				}
+			}
+			m->renderer->setSecondaryOwner(other, other_transform, hidden);
+		}
+
 		if (m->renderer && it != m->owners.end()) {
 			if (Workspace* ws = it->second->asWorkspace()) {
 				const auto gizmo = ws->gizmoRenderState();
@@ -470,8 +515,10 @@ void Engine::createSDLWindow(const char* w_name) {
 	// World-stage passes render into the HDR scene target
 	const auto scene_format = m->renderer->getSceneColorFormat();
 
-	// Records ahead of all mesh colour whatever its place here since its stage is world_opaque
-	m->renderer->addRenderPass(std::make_unique<renderer::VoxelPass>(*m->vulkan_core, scene_format, depth_format, extent));
+	// Recorded in its own scopes so registration order here does not matter
+	auto voxel_pass = std::make_unique<renderer::VoxelPass>(*m->vulkan_core, scene_format, depth_format, extent);
+	m->renderer->setVoxelPass(voxel_pass.get());
+	m->renderer->addRenderPass(std::move(voxel_pass));
 
 	// World-space UI panels are scene content and get exposed with it, the screen-space UI does not
 	m->renderer->addRenderPass(std::make_unique<ui::WorldUIPass>(*m->vulkan_core, scene_format, depth_format, extent));
@@ -483,6 +530,7 @@ void Engine::createSDLWindow(const char* w_name) {
 	// SSAO first
 	m->renderer->addPostProcessPass(std::make_unique<renderer::SsaoPass>(*m->vulkan_core, scene_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::SsrPass>(*m->vulkan_core, scene_format, extent));
+	m->renderer->addPostProcessPass(std::make_unique<renderer::TaaPass>(*m->vulkan_core, scene_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::BloomPass>(*m->vulkan_core, scene_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::TonemapPass>(*m->vulkan_core, color_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::FxaaPass>(*m->vulkan_core, color_format, extent));
@@ -552,8 +600,10 @@ void Engine::createAvaloniaWindow() {
 	// World-stage passes render into the HDR scene target
 	const auto scene_format = m->renderer->getSceneColorFormat();
 
-	// Records ahead of all mesh colour whatever its place here since its stage is world_opaque
-	m->renderer->addRenderPass(std::make_unique<renderer::VoxelPass>(*m->vulkan_core, scene_format, depth_format, extent));
+	// Recorded in its own scopes so registration order here does not matter
+	auto voxel_pass = std::make_unique<renderer::VoxelPass>(*m->vulkan_core, scene_format, depth_format, extent);
+	m->renderer->setVoxelPass(voxel_pass.get());
+	m->renderer->addRenderPass(std::move(voxel_pass));
 
 	// World-space UI panels are scene content
 	m->renderer->addRenderPass(std::make_unique<ui::WorldUIPass>(*m->vulkan_core, scene_format, depth_format, extent));
@@ -565,6 +615,7 @@ void Engine::createAvaloniaWindow() {
 	// SSAO first
 	m->renderer->addPostProcessPass(std::make_unique<renderer::SsaoPass>(*m->vulkan_core, scene_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::SsrPass>(*m->vulkan_core, scene_format, extent));
+	m->renderer->addPostProcessPass(std::make_unique<renderer::TaaPass>(*m->vulkan_core, scene_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::BloomPass>(*m->vulkan_core, scene_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::TonemapPass>(*m->vulkan_core, color_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::FxaaPass>(*m->vulkan_core, color_format, extent));
@@ -953,6 +1004,11 @@ void toast_reload_manifest() noexcept {
 	auto& mgr = assets::AssetManager::get();
 	mgr.clearUnusedAssets();
 	mgr.reloadManifest();
+
+	// update lua schemas file
+	if (scripting::LuaState::exists()) {
+		scripting::LuaState::get().refreshTypeMarkers();
+	}
 }
 
 void toast_reload_project_settings() noexcept {
@@ -1017,6 +1073,19 @@ void toast_bake_asset(const char* uid_str, const char* out_path) noexcept {
 		out.write(reinterpret_cast<const char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
 		TOAST_TRACE("Engine", "Baked asset {} → {}", uid_str, out_path);
 	} catch (const std::exception& e) { TOAST_ERROR("Engine", "toast_bake_asset: {}", e.what()); }
+}
+
+auto toast_generate_data_schema_stubs(const char* out_path) noexcept -> int {
+	ZoneScoped;
+	if (!out_path) {
+		return 0;
+	}
+	try {
+		return assets::generateDataSchemaLuaStubs(out_path) ? 1 : 0;
+	} catch (const std::exception& e) {
+		TOAST_ERROR("Engine", "toast_generate_data_schema_stubs: {}", e.what());
+		return 0;
+	}
 }
 
 void toast_haptics_test(const char* toml_text) noexcept {

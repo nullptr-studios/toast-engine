@@ -26,6 +26,17 @@
 	</UserControl.Resources>
 
 	<UserControl.Styles>
+		<Style Selector="Panel.spaced">
+			<Setter Property="Margin" Value="0,8,0,0" />
+		</Style>
+		<Style Selector="Border:not(.card) > StackPanel > StackPanel > ItemsControl">
+			<Setter Property="Margin" Value="0" />
+		</Style>
+		<Style Selector="Border.card">
+			<Setter Property="Background" Value="{StaticResource Bg3}" />
+			<Setter Property="CornerRadius" Value="8" />
+			<Setter Property="Padding" Value="8" />
+		</Style>
 		<Style Selector="Border.inspector-message.warning">
 			<Setter Property="Background"
 			        Value="{StaticResource Orange}" />
@@ -550,12 +561,11 @@
 
 		<!-- Class card -->
 		<DataTemplate DataType="vm:ClassCardVM">
-			<Border Background="{StaticResource Bg3}"
-			        CornerRadius="8"
-			        Padding="8"
+			<Border Classes.card="{Binding !IsPlain}"
 			        IsVisible="{Binding Visible}">
 				<StackPanel>
 					<ToggleButton Classes="hdr"
+					              IsVisible="{Binding !IsPlain}"
 					              IsChecked="{Binding Expanded, Mode=TwoWay}">
 						<ToggleButton.ContextMenu>
 							<ContextMenu Opening="OnClipboardContextMenuOpening">
@@ -607,7 +617,7 @@
 		        Background="{StaticResource Bg3}"
 		        CornerRadius="8"
 		        Padding="8"
-		        IsVisible="{Binding HasSelection}">
+		        IsVisible="{Binding ShowHeader}">
 			<StackPanel Spacing="8">
 				<Grid ColumnDefinitions="Auto,*,Auto"
 				      ColumnSpacing="8">
@@ -695,7 +705,7 @@
 
 		<!-- Node parameters -->
 		<Panel Grid.Row="2"
-		       Margin="0,8,0,0">
+		       Classes.spaced="{Binding ShowHeader}">
 			<ScrollViewer CornerRadius="8"
 			              AllowAutoHide="True"
 			              VerticalScrollBarVisibility="Auto"

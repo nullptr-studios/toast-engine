@@ -53,6 +53,179 @@ pub fn parse(source: &str, file_path: &str) -> Vec<Class> {
     classes
 }
 
+pub fn parse_events(source: &str, file_path: &str) -> Vec<EventInfo> {
+    let mut parser = Parser::new();
+    parser.set_language(&tree_sitter_cpp::LANGUAGE.into()).expect("Language error");
+    let tree = parser.parse(source, None).unwrap();
+    let query = Query::new(&tree_sitter_cpp::LANGUAGE.into(), "[(class_specifier) (struct_specifier)] @class").unwrap();
+    let enums = collect_enum_names(tree.root_node(), source);
+    let mut cursor = QueryCursor::new();
+    let mut captures = cursor.captures(&query, tree.root_node(), source.as_bytes());
+    let mut result = Vec::new();
+
+    while let Some((m, idx)) = captures.next() {
+        let node = m.captures[*idx].node;
+        let Some(name_node) = node.child_by_field_name("name") else { continue };
+        let name = source[name_node.byte_range()].to_string();
+        if !is_event_base(node, source, &name) { continue; }
+
+        let fields = get_event_fields(node, source, &enums);
+        let constructor_compatible = event_constructor_compatible(node, source, &name, &fields);
+        let unsupported = fields.iter().find(|f| f.lua_type.is_none());
+        let skip_reason = unsupported.map(|field| format!("field '{}' has unsupported type '{}'", field.name, field.typename));
+        let sendable = skip_reason.is_none() && constructor_compatible && fields.iter().all(|f| f.readable);
+
+        result.push(EventInfo {
+            name,
+            namespace: get_namespace(node, source),
+            fields,
+            source_file: file_path.to_string(),
+            constructor_compatible,
+            supported: skip_reason.is_none(),
+            sendable,
+            skip_reason,
+        });
+    }
+    result
+}
+
+fn is_event_base(node: tree_sitter::Node, source: &str, name: &str) -> bool {
+    for child in node.children(&mut node.walk()) {
+        if child.kind() != "base_class_clause" { continue; }
+        let compact: String = source[child.byte_range()].chars().filter(|c| !c.is_whitespace()).collect();
+        let needle = format!("Event<{name}>");
+        let exact = compact.match_indices(&needle).any(|(index, _)| {
+            index == 0 || compact[..index].ends_with(':') || compact[..index].ends_with(',')
+        });
+        if exact {
+            return true;
+        }
+    }
+    false
+}
+
+fn collect_enum_names(root: tree_sitter::Node, source: &str) -> Vec<String> {
+    let query = Query::new(&tree_sitter_cpp::LANGUAGE.into(), "(enum_specifier name: (type_identifier) @name body: (_))").unwrap();
+    let mut cursor = QueryCursor::new();
+    let mut captures = cursor.captures(&query, root, source.as_bytes());
+    let mut names = Vec::new();
+    while let Some((m, idx)) = captures.next() {
+        names.push(source[m.captures[*idx].node.byte_range()].to_string());
+    }
+    names
+}
+
+fn lua_event_type(type_name: &str, enums: &[String]) -> Option<(String, bool)> {
+    let t: String = type_name.chars().filter(|c| !c.is_whitespace()).collect();
+    let bare = t.trim_start_matches("const").trim_start_matches("std::").trim_start_matches("glm::");
+    if let Some(inner) = bare.strip_prefix("vector<").and_then(|s| s.strip_suffix('>')) {
+        return lua_event_type(inner, enums).map(|(lua, readable)| (format!("{lua}[]"), readable));
+    }
+    if bare.starts_with("assets::Handle<") || bare.starts_with("Handle<") {
+        return Some(("Asset".into(), true));
+    }
+    let unqualified = bare.rsplit("::").next().unwrap_or(bare);
+    if enums.iter().any(|e| e == unqualified) {
+        return Some(("integer".into(), true));
+    }
+    let readable = |lua: &str| Some((lua.to_string(), true));
+    let push_only = |lua: &str| Some((lua.to_string(), false));
+    match bare {
+        "toast::Box<toast::Node>" | "Box<toast::Node>" | "toast::Box<Node>" | "Box<Node>" | "toast::Node*" | "Node*" => readable("Node"),
+        "bool" => readable("boolean"),
+        "float" | "double" => readable("number"),
+        "char" | "short" | "int" | "long" | "longlong" | "unsigned" | "unsignedint" |
+        "unsignedlong" | "unsignedlonglong" | "int8_t" | "int16_t" | "int32_t" | "int64_t" |
+        "uint8_t" | "uint16_t" | "uint32_t" | "uint64_t" | "size_t" => readable("integer"),
+        "string" => readable("string"),
+        "vec2" | "ivec2" => readable("vec2"),
+        "vec3" | "ivec3" => readable("vec3"),
+        "vec4" | "ivec4" => readable("vec4"),
+        "quat" | "quaternion" => readable("quat"),
+        "toast::UID" | "UID" => readable("UID"),
+        "input::Device" => readable("InputDeviceValue"),
+        "input::ActionEvent" => readable("InputActionEvent"),
+        "input::Action&" | "input::Action" => push_only("InputAction"),
+        "ContactEventData" | "event::ContactEventData" => push_only("ContactEventData"),
+        "physics::BroadPhasePair" | "BroadPhasePair" => push_only("BroadPhasePair"),
+        _ => None,
+    }
+}
+
+fn get_event_fields(node: tree_sitter::Node, source: &str, enums: &[String]) -> Vec<EventField> {
+    let Some(body) = node.child_by_field_name("body") else { return Vec::new() };
+    let default_public = node.kind() == "struct_specifier";
+    let mut public = default_public;
+    let mut fields = Vec::new();
+    for child in body.named_children(&mut body.walk()) {
+        if child.kind() == "access_specifier" {
+            public = source[child.byte_range()].trim_start().starts_with("public");
+            continue;
+        }
+        if !public || child.kind() != "field_declaration" { continue; }
+        let Some(ty) = child.child_by_field_name("type") else { continue };
+        if matches!(ty.kind(), "struct_specifier" | "class_specifier" | "enum_specifier") { continue; }
+        let type_name = source[ty.byte_range()].trim().to_string();
+        if type_name.contains("Event<") { continue; }
+        let mut identifiers = Vec::new();
+        collect_field_identifiers(child, &mut identifiers);
+        for decl in identifiers {
+            let mut declared_type = type_name.clone();
+            let mut current = decl.parent();
+            while let Some(parent) = current {
+                if parent.id() == child.id() { break; }
+                if parent.kind() == "pointer_declarator" { declared_type.push('*'); }
+                if parent.kind() == "reference_declarator" { declared_type.push('&'); }
+                current = parent.parent();
+            }
+            let mapped = lua_event_type(&declared_type, enums);
+            fields.push(EventField {
+                name: source[decl.byte_range()].to_string(),
+                typename: declared_type.clone(),
+                readable: mapped.as_ref().is_some_and(|(_, readable)| *readable),
+                lua_type: mapped.map(|(lua, _)| lua),
+            });
+        }
+    }
+    fields
+}
+
+fn collect_field_identifiers<'a>(node: tree_sitter::Node<'a>, result: &mut Vec<tree_sitter::Node<'a>>) {
+    if node.kind() == "field_identifier" {
+        result.push(node);
+        return;
+    }
+    for child in node.named_children(&mut node.walk()) {
+        collect_field_identifiers(child, result);
+    }
+}
+
+fn normalized_type(t: &str) -> String {
+    t.replace("const", "").replace('&', "").replace("&&", "").chars().filter(|c| !c.is_whitespace()).collect()
+}
+
+fn event_constructor_compatible(node: tree_sitter::Node, source: &str, name: &str, fields: &[EventField]) -> bool {
+    if fields.is_empty() { return true; }
+    let query = Query::new(&tree_sitter_cpp::LANGUAGE.into(), "(function_declarator) @fn").unwrap();
+    let mut cursor = QueryCursor::new();
+    let mut captures = cursor.captures(&query, node, source.as_bytes());
+    let mut has_constructor = false;
+    while let Some((m, _)) = captures.next() {
+        let decl = m.captures[0].node;
+        let Some(name_node) = decl.child_by_field_name("declarator") else { continue };
+        if source[name_node.byte_range()].trim() != name { continue; }
+        has_constructor = true;
+        let params = get_parameters(decl, source);
+        if params.is_empty() {
+            return true;
+        }
+        if params.len() == fields.len() && params.iter().zip(fields).all(|(p, f)| normalized_type(&p.type_name) == normalized_type(&f.typename)) {
+            return true;
+        }
+    }
+    !has_constructor
+}
+
 fn get_class(node: tree_sitter::Node, source: &str, file_path: &str) -> Option<Class> {
     let name = node
         .child_by_field_name("name")
@@ -131,11 +304,12 @@ fn get_parent(node: tree_sitter::Node, source: &str) -> Option<Parent> {
 fn get_functions(node: tree_sitter::Node, source: &str) -> Vec<String> {
     // must match TickFunctionList in reflect.hpp; add new lifecycle methods here too
     const TICK_FUNCTIONS: &[&str] = &[
-        "preInit",
+        "editorTick",
         "init",
         "begin",
         "earlyTick",
         "tick",
+        "physicsTick",
         "postPhysics",
         "lateTick",
         "end",

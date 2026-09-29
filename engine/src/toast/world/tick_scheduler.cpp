@@ -27,6 +27,12 @@ void NodeCluster::tick() {
 	}
 }
 
+void NodeCluster::physicsTick() {
+	for (auto& node : nodes) {
+		node->callTick(node->info(), TickFunctionList::physics_tick);
+	}
+}
+
 void NodeCluster::postPhysics() {
 	for (auto& node : nodes) {
 		node->callTick(node->info(), TickFunctionList::post_physics);
@@ -51,6 +57,15 @@ auto NodeCluster::hasEarlyTick() -> bool {
 auto NodeCluster::hasTick() -> bool {
 	for (auto& node : nodes) {
 		if (node->hasTickFunction(TickFunctionList::tick)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+auto NodeCluster::hasPhysicsTick() -> bool {
+	for (auto& node : nodes) {
+		if (node->hasTickFunction(TickFunctionList::physics_tick)) {
 			return true;
 		}
 	}
@@ -143,9 +158,10 @@ void TickScheduler::compute(const std::vector<Box<Node>>& all_nodes) {
 	schedule = std::move(ts);
 	TOAST_TRACE(
 	    "World",
-	    "Dependency graph: early={} tick={} post_physics={} late={} waves",
+	    "Dependency graph: early={} tick={} physics={} post_physics={} late={} waves",
 	    schedule.early_tick.size(),
 	    schedule.tick.size(),
+	    schedule.physics_tick.size(),
 	    schedule.post_physics.size(),
 	    schedule.late_tick.size()
 	);
@@ -183,6 +199,26 @@ void TickScheduler::runPhase(const std::vector<TickSchedule::Wave>& phase, TickF
 			ZoneScopedN("Thread Pool semaphore");    // NOLINT
 			for (auto& f : futures) {
 				f.get();
+			}
+		}
+	}
+}
+
+void TickScheduler::runPhaseSerial(
+    const std::vector<TickSchedule::Wave>& phase, TickFunctionList func, std::string_view name
+) const {
+	ZoneScoped;    // NOLINT
+	ZoneNameF("%s", name.data());
+
+	for (const auto& wave : phase) {
+		for (const auto& item : wave) {
+			if (std::holds_alternative<Box<Node>>(item)) {
+				auto node = std::get<Box<Node>>(item);
+				node->callTick(node->info(), func);
+				continue;
+			}
+			for (auto node : std::get<NodeCluster>(item).nodes) {
+				node->callTick(node->info(), func);
 			}
 		}
 	}
@@ -490,6 +526,7 @@ auto TickScheduler::optimizeWaves(const std::vector<TickSchedule::Wave>& waves) 
 	TickSchedule schedule = {
 	  .early_tick = waves,
 	  .tick = waves,
+	  .physics_tick = waves,
 	  .post_physics = waves,
 	  .late_tick = waves,
 	};
@@ -542,6 +579,7 @@ auto TickScheduler::optimizeWaves(const std::vector<TickSchedule::Wave>& waves) 
 	filter_and_assign_wave(schedule.tick, 1, [](auto n) { return n->hasTickFunction(TickFunctionList::tick); });
 	filter_and_assign_wave(schedule.post_physics, 2, [](auto n) { return n->hasTickFunction(TickFunctionList::post_physics); });
 	filter_and_assign_wave(schedule.late_tick, 3, [](auto n) { return n->hasTickFunction(TickFunctionList::late_tick); });
+	filter_and_assign_wave(schedule.physics_tick, 4, [](auto n) { return n->hasTickFunction(TickFunctionList::physics_tick); });
 
 	return schedule;
 }

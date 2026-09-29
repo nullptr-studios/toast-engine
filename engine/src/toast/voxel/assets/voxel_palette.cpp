@@ -222,7 +222,7 @@ auto VoxelPalette::parseToml(const toml::table& table) -> Parsed {
 				return entry->get(key) != nullptr ? unit(key) : fallback;
 			};
 
-			out.roughness = unit("roughness");
+			out.roughness = unit_or("roughness", 255);
 			out.metallic = unit("metallic");
 			out.reflectivity = unit("reflectivity");
 			out.emissive = unit("emissive");
