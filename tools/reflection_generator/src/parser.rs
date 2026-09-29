@@ -72,11 +72,8 @@ pub fn parse_events(source: &str, file_path: &str) -> Vec<EventInfo> {
         let fields = get_event_fields(node, source, &enums);
         let constructor_compatible = event_constructor_compatible(node, source, &name, &fields);
         let unsupported = fields.iter().find(|f| f.lua_type.is_none());
-        let skip_reason = if let Some(field) = unsupported {
-            Some(format!("field '{}' has unsupported type '{}'", field.name, field.typename))
-        } else if !constructor_compatible {
-            Some("no constructor accepts the public fields in declaration order".to_string())
-        } else { None };
+        let skip_reason = unsupported.map(|field| format!("field '{}' has unsupported type '{}'", field.name, field.typename));
+        let sendable = skip_reason.is_none() && constructor_compatible && fields.iter().all(|f| f.readable);
 
         result.push(EventInfo {
             name,
@@ -85,6 +82,7 @@ pub fn parse_events(source: &str, file_path: &str) -> Vec<EventInfo> {
             source_file: file_path.to_string(),
             constructor_compatible,
             supported: skip_reason.is_none(),
+            sendable,
             skip_reason,
         });
     }
@@ -117,26 +115,39 @@ fn collect_enum_names(root: tree_sitter::Node, source: &str) -> Vec<String> {
     names
 }
 
-fn lua_event_type(type_name: &str, enums: &[String]) -> Option<String> {
+fn lua_event_type(type_name: &str, enums: &[String]) -> Option<(String, bool)> {
     let t: String = type_name.chars().filter(|c| !c.is_whitespace()).collect();
     let bare = t.trim_start_matches("const").trim_start_matches("std::").trim_start_matches("glm::");
+    if let Some(inner) = bare.strip_prefix("vector<").and_then(|s| s.strip_suffix('>')) {
+        return lua_event_type(inner, enums).map(|(lua, readable)| (format!("{lua}[]"), readable));
+    }
+    if bare.starts_with("assets::Handle<") || bare.starts_with("Handle<") {
+        return Some(("Asset".into(), true));
+    }
     let unqualified = bare.rsplit("::").next().unwrap_or(bare);
     if enums.iter().any(|e| e == unqualified) {
-        return Some("integer".into());
+        return Some(("integer".into(), true));
     }
+    let readable = |lua: &str| Some((lua.to_string(), true));
+    let push_only = |lua: &str| Some((lua.to_string(), false));
     match bare {
-        "toast::Box<toast::Node>" | "Box<toast::Node>" | "toast::Box<Node>" | "Box<Node>" => Some("Node".into()),
-        "bool" => Some("boolean".into()),
-        "float" | "double" => Some("number".into()),
+        "toast::Box<toast::Node>" | "Box<toast::Node>" | "toast::Box<Node>" | "Box<Node>" | "toast::Node*" | "Node*" => readable("Node"),
+        "bool" => readable("boolean"),
+        "float" | "double" => readable("number"),
         "char" | "short" | "int" | "long" | "longlong" | "unsigned" | "unsignedint" |
         "unsignedlong" | "unsignedlonglong" | "int8_t" | "int16_t" | "int32_t" | "int64_t" |
-        "uint8_t" | "uint16_t" | "uint32_t" | "uint64_t" | "size_t" => Some("integer".into()),
-        "string" => Some("string".into()),
-        "vec2" => Some("vec2".into()),
-        "vec3" => Some("vec3".into()),
-        "vec4" => Some("vec4".into()),
-        "quat" | "quaternion" => Some("quat".into()),
-        "toast::UID" | "UID" => Some("integer".into()),
+        "uint8_t" | "uint16_t" | "uint32_t" | "uint64_t" | "size_t" => readable("integer"),
+        "string" => readable("string"),
+        "vec2" | "ivec2" => readable("vec2"),
+        "vec3" | "ivec3" => readable("vec3"),
+        "vec4" | "ivec4" => readable("vec4"),
+        "quat" | "quaternion" => readable("quat"),
+        "toast::UID" | "UID" => readable("UID"),
+        "input::Device" => readable("InputDeviceValue"),
+        "input::ActionEvent" => readable("InputActionEvent"),
+        "input::Action&" | "input::Action" => push_only("InputAction"),
+        "ContactEventData" | "event::ContactEventData" => push_only("ContactEventData"),
+        "physics::BroadPhasePair" | "BroadPhasePair" => push_only("BroadPhasePair"),
         _ => None,
     }
 }
@@ -167,10 +178,12 @@ fn get_event_fields(node: tree_sitter::Node, source: &str, enums: &[String]) -> 
                 if parent.kind() == "reference_declarator" { declared_type.push('&'); }
                 current = parent.parent();
             }
+            let mapped = lua_event_type(&declared_type, enums);
             fields.push(EventField {
                 name: source[decl.byte_range()].to_string(),
                 typename: declared_type.clone(),
-                lua_type: lua_event_type(&declared_type, enums),
+                readable: mapped.as_ref().is_some_and(|(_, readable)| *readable),
+                lua_type: mapped.map(|(lua, _)| lua),
             });
         }
     }

@@ -177,6 +177,10 @@ public:
 	[[nodiscard]]
 	static auto shapeWorldBounds(ShapeID shape) -> std::optional<AABB>;
 
+	/// Rigidbody or VoxelNode that owns @c body
+	[[nodiscard]]
+	static auto nodeFor(BodyID body) -> toast::Box<toast::Node>;
+
 	static void callTick();
 	static void registerRigidbody(Rigidbody& node);
 	static void unregisterRigidbody(Rigidbody& node);
@@ -248,8 +252,6 @@ private:
 		size_t cursor = 0;
 	};
 
-	[[nodiscard]]
-	static auto nodeFor(BodyID body) -> toast::Box<toast::Node>;
 	[[nodiscard]]
 	static auto colliderFor(BodyID body, ShapeID shape) -> toast::Box<toast::Node>;
 	[[nodiscard]]

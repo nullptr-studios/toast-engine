@@ -299,6 +299,10 @@ void LuaState::registerApi(lua_State* state) noexcept {
 			        luaL_error(state, "event.send: unknown event descriptor '%s'", descriptor.name.c_str());
 			        return;
 		        }
+		        if (!binding->send) {
+			        luaL_error(state, "event.send: '%s' is receive-only", descriptor.name.c_str());
+			        return;
+		        }
 		        if (!payload.isTable()) {
 			        luaL_error(state, "event.send: payload must be a table");
 			        return;

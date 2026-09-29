@@ -116,6 +116,7 @@ pub struct EventInfo {
     pub source_file: String,
     pub constructor_compatible: bool,
     pub supported: bool,
+    pub sendable: bool,
     pub skip_reason: Option<String>,
 }
 
@@ -124,6 +125,7 @@ pub struct EventField {
     pub name: String,
     pub typename: String,
     pub lua_type: Option<String>,
+    pub readable: bool,
 }
 
 impl EventInfo {

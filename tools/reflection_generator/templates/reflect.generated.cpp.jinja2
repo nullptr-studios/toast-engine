@@ -35,7 +35,7 @@ void {{ register_fn }}() {
 		NodeRegistry::registerNode(info);
 	}
 	{% for event in events %}
-	scripting::registerLuaEvent<{{ event.qualified_name }}>("{{ event.name }}"{% for field in event.fields %}, scripting::luaEventField("{{ field.name }}", &{{ event.qualified_name }}::{{ field.name }}){% endfor %});
+	scripting::registerLuaEvent<{{ event.qualified_name }}, {{ "true" if event.sendable else "false" }}>("{{ event.name }}"{% for field in event.fields %}, scripting::luaEventField<{{ event.qualified_name }}>("{{ field.name }}", "{{ field.typename }}", [](const {{ event.qualified_name }}& e) -> const auto& { return e.{{ field.name }}; }, [](auto& e, auto&& v) { e.{{ field.name }} = std::forward<decltype(v)>(v); }){% endfor %});
 	{% endfor %}
 	TOAST_INFO("Reflection", "Registered {} types ({{ register_fn }})", all_types.size());
 }

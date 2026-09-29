@@ -2,8 +2,10 @@
 #include "test_registry.hpp"
 #include "toast/events/event.hpp"
 #include "toast/events/listener.hpp"
+#include "toast/physics/contact_events.hpp"
 #include "toast/scripting/script_runtime.hpp"
 #include "toast/window/window_events.hpp"
+#include "toast/world/workspace_events.hpp"
 
 #include <any>
 #include <cassert>
@@ -60,7 +62,7 @@ return M
 	assert(observed == 1);
 	node->call("sendInvalid");
 	event::pollEvents();
-	assert(observed == 1); // validation rejected the malformed payload
+	assert(observed == 1);    // validation rejected the malformed payload
 	node->call("consumeNext");
 	event::send<event::WindowResize>(8, 9);
 	event::pollEvents();
@@ -73,7 +75,7 @@ return M
 	event::pollEvents();
 	assert(std::any_cast<int>(node->scriptRuntime()->getVar("inline")) == 7);
 	assert(observed == 2);
-	event::pollEvents(); // nested width=2 event queued by the inline callback
+	event::pollEvents();    // nested width=2 event queued by the inline callback
 	assert(std::any_cast<int>(node->scriptRuntime()->getVar("inline")) == 10);
 	assert(observed == 3);
 
@@ -97,13 +99,16 @@ return M
 
 	// A subscription on another pooled interpreter receives an independently marshalled table.
 	auto other = toast::_detail::WorldTestAccess::createNode(*world_owner, "other event host");
-	auto other_script = makeScript(R"lua(
+	auto other_script = makeScript(
+	    R"lua(
 local M = { total = 0 }
 function M:setup()
     self.listener:subscribe(Events.WindowResize, function(e) M.total = M.total + e.width + e.height end)
 end
 return M
-)lua", 2);
+)lua",
+	    2
+	);
 	toast::_detail::WorldTestAccess::attachScript(*other, other_script);
 	other->call("setup");
 	assert(other->scriptRuntime()->stateIndex() != node->scriptRuntime()->stateIndex());
@@ -116,4 +121,71 @@ return M
 		return std::vector<uint8_t>(replacement.begin(), replacement.end());
 	}());
 	other->reloadScripts();
+
+	// I hate  having to modify tests lol this is not fun without a clanker
+	auto typed = toast::_detail::WorldTestAccess::createNode(*world_owner, "typed event host");
+	auto typed_script = makeScript(
+	    R"lua(
+local M = { bytes = 0, files = 0, first_target_ok = false, voxel_sum = 0, contacts = -1, receive_only_rejected = false }
+function M:setup()
+    self.listener:subscribe(Events.WorkspaceSaveCompleted, function(e)
+        for _, b in ipairs(e.snapshot) do M.bytes = M.bytes + b end
+    end)
+    self.listener:subscribe(Events.WindowDrop, function(e) M.files = #e.files end)
+    self.listener:subscribe(Events.VoxelCollapsePieces, function(e)
+        M.first_target_ok = type(e.targets[1]) == "string" and #e.targets[1] == 11
+        event.send(Events.VoxelCollapsePieces, { targets = { e.targets[2] }, path = "echo" })
+    end)
+    self.listener:subscribe(Events.VoxelBucketFill, function(e) M.voxel_sum = math.tointeger(e.voxel.x + e.voxel.y + e.voxel.z) end)
+    self.listener:subscribe(Events.ContactBegin, function(e) M.contacts = #e.contact.contacts end)
+end
+function M:sendTyped()
+    event.send(Events.WorkspaceSaveCompleted, { workspace_handle = 1, request = 2, success = true, snapshot = { 1, 2, 3 }, error = "" })
+    event.send(Events.VoxelBucketFill, { target = "", voxel = vec3(1.2, 2, 3), id = 0, search = false, search_axis = 0, search_step = 1 })
+    M.receive_only_rejected = not pcall(event.send, Events.ContactBegin, { contact = {} })
+end
+return M
+)lua",
+	    3
+	);
+	toast::_detail::WorldTestAccess::attachScript(*typed, typed_script);
+	typed->call("setup");
+
+	event::Listener typed_observer;
+	std::vector<uint8_t> observed_snapshot;
+	glm::ivec3 observed_voxel {};
+	std::vector<toast::UID> echoed;
+	typed_observer.subscribe<event::WorkspaceSaveCompleted>([&](const event::WorkspaceSaveCompleted& e) {
+		observed_snapshot = e.snapshot;
+	});
+	typed_observer.subscribe<event::VoxelBucketFill>([&](const event::VoxelBucketFill& e) { observed_voxel = e.voxel; });
+	typed_observer.subscribe<event::VoxelCollapsePieces>([&](const event::VoxelCollapsePieces& e) {
+		if (e.path == "echo") {
+			echoed = e.targets;
+		}
+	});
+
+	typed->call("sendTyped");
+	event::send<event::WindowDrop>(std::vector<std::string> {"a.png", "b.png"});
+	event::VoxelCollapsePieces pieces;
+	pieces.targets = {toast::UID(5), toast::UID(6)};
+	event::send<event::VoxelCollapsePieces>(std::move(pieces));
+	event::send<event::ContactBegin>(physics::Manifold {.contact_count = 2});
+	event::pollEvents();
+	event::pollEvents();    // echo queued by the VoxelCollapsePieces callback
+	auto typed_var = [&](std::string_view name) { return typed->scriptRuntime()->getVar(name); };
+	assert(std::any_cast<int>(typed_var("bytes")) == 6);
+	assert(observed_snapshot == std::vector<uint8_t> {1, 2, 3});
+	assert(observed_voxel == glm::ivec3(1, 2, 3));
+	assert(std::any_cast<int>(typed_var("voxel_sum")) == 6);
+	assert(std::any_cast<int>(typed_var("files")) == 2);
+	assert(std::any_cast<bool>(typed_var("first_target_ok")));
+	assert(echoed == std::vector<toast::UID> {toast::UID(6)});
+	assert(std::any_cast<int>(typed_var("contacts")) == 2);
+	assert(std::any_cast<bool>(typed_var("receive_only_rejected")));
+	typed_script->setData([] {
+		constexpr std::string_view replacement = "local M = {}\nreturn M\n";
+		return std::vector<uint8_t>(replacement.begin(), replacement.end());
+	}());
+	typed->reloadScripts();
 }

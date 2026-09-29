@@ -78,6 +78,7 @@ pub fn generate_files_with_events(nodes: &[NodeInfo], events: &[EventInfo], outp
         "name": e.name,
         "qualified_name": e.qualified_name(),
         "source_file": e.source_file,
+        "sendable": e.sendable,
         "fields": e.fields,
     })).collect();
     let cpp_ctx = serde_json::json!({

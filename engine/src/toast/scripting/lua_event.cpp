@@ -1,18 +1,23 @@
 #include "lua_event.hpp"
 
+#include "asset_proxy.hpp"
 #include "lua_state.hpp"
 #include "lua_util.hpp"
 #include "node_proxy.hpp"
 #include "script_runtime.hpp"
 
 #include <atomic>
+#include <glm/common.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include <iterator>
 #include <mutex>
+#include <toast/input/action.hpp>
 #include <toast/log.hpp>
+#include <toast/physics/contact_events.hpp>
+#include <toast/physics/simulator.hpp>
 #include <toast/world/node.hpp>
 #include <unordered_map>
 
@@ -21,24 +26,14 @@ namespace scripting {
 namespace _detail {
 namespace {
 
-template<typename Read>
-auto withField(lua_State* state, int table, std::string_view field, Read&& read) -> bool {
-	lua_getfield(state, table, std::string(field).c_str());
-	const bool ok = read(lua_gettop(state));
-	lua_pop(state, 1);
-	return ok;
-}
-
 template<typename T>
-auto readUserdata(lua_State* state, int table, std::string_view field, T& out) -> bool {
-	return withField(state, table, field, [&](int index) {
-		auto result = luabridge::Stack<T>::get(state, index);
-		if (!result) {
-			return false;
-		}
-		out = *result;
-		return true;
-	});
+auto readUserdata(lua_State* state, int index, T& out) -> bool {
+	auto result = luabridge::Stack<T>::get(state, index);
+	if (!result) {
+		return false;
+	}
+	out = *result;
+	return true;
 }
 
 template<typename T>
@@ -48,90 +43,149 @@ void pushUserdata(lua_State* state, const T& value) {
 	}
 }
 
+// glm::ivec support
+// Casted to float Vec on lua since ints more or less doesnt exist
+template<typename Float, typename Int>
+auto readIntVector(lua_State* state, int index, Int& out) -> bool {
+	Float value {};
+	if (!readUserdata(state, index, value)) {
+		return false;
+	}
+	out = Int(glm::round(value));
+	return true;
 }
 
-auto readEventPrimitive(lua_State* state, int table, std::string_view field, bool& out) -> bool {
-	return withField(state, table, field, [&](int index) {
-		if (!lua_isboolean(state, index)) {
-			return false;
-		}
-		out = lua_toboolean(state, index) != 0;
-		return true;
-	});
+auto packId(uint32_t slot, uint32_t generation) -> int64_t {
+	return static_cast<int64_t>((static_cast<uint64_t>(generation) << 32U) | slot);
 }
 
-auto readEventPrimitive(lua_State* state, int table, std::string_view field, int64_t& out) -> bool {
-	return withField(state, table, field, [&](int index) {
-		if (!lua_isinteger(state, index)) {
-			return false;
-		}
-		out = static_cast<int64_t>(lua_tointeger(state, index));
-		return true;
-	});
+void pushBodyShape(lua_State* state, const physics::BodyShapeKey& key) {
+	lua_createtable(state, 0, 3);
+	pushEventPrimitive(state, physics::Simulator::nodeFor(key.body));
+	lua_setfield(state, -2, "node");
+	pushEventPrimitive(state, packId(key.body.slot, key.body.generation));
+	lua_setfield(state, -2, "body");
+	pushEventPrimitive(state, packId(key.shape.slot, key.shape.generation));
+	lua_setfield(state, -2, "shape");
 }
 
-auto readEventPrimitive(lua_State* state, int table, std::string_view field, double& out) -> bool {
-	return withField(state, table, field, [&](int index) {
-		if (!lua_isnumber(state, index)) {
-			return false;
-		}
-		out = static_cast<double>(lua_tonumber(state, index));
-		return true;
-	});
 }
 
-auto readEventPrimitive(lua_State* state, int table, std::string_view field, std::string& out) -> bool {
-	return withField(state, table, field, [&](int index) {
-		if (lua_type(state, index) != LUA_TSTRING) {
-			return false;
-		}
-		size_t length = 0;
-		const char* text = lua_tolstring(state, index, &length);
-		out.assign(text, length);
-		return true;
-	});
+auto readEventPrimitive(lua_State* state, int index, bool& out) -> bool {
+	if (!lua_isboolean(state, index)) {
+		return false;
+	}
+	out = lua_toboolean(state, index) != 0;
+	return true;
 }
 
-auto readEventPrimitive(lua_State* state, int table, std::string_view field, toast::UID& out) -> bool {
-	return withField(state, table, field, [&](int index) {
-		if (!lua_isinteger(state, index)) {
-			return false;
-		}
+auto readEventPrimitive(lua_State* state, int index, int64_t& out) -> bool {
+	if (!lua_isinteger(state, index)) {
+		return false;
+	}
+	out = static_cast<int64_t>(lua_tointeger(state, index));
+	return true;
+}
+
+auto readEventPrimitive(lua_State* state, int index, double& out) -> bool {
+	if (!lua_isnumber(state, index)) {
+		return false;
+	}
+	out = static_cast<double>(lua_tonumber(state, index));
+	return true;
+}
+
+auto readEventPrimitive(lua_State* state, int index, std::string& out) -> bool {
+	if (lua_type(state, index) != LUA_TSTRING) {
+		return false;
+	}
+	size_t length = 0;
+	const char* text = lua_tolstring(state, index, &length);
+	out.assign(text, length);
+	return true;
+}
+
+auto readEventPrimitive(lua_State* state, int index, toast::UID& out) -> bool {
+	// Integers are accepted so node:uid() or asset:uid() can be passed
+	if (lua_isinteger(state, index)) {
 		out = toast::UID(static_cast<uint64_t>(lua_tointeger(state, index)));
 		return true;
-	});
+	}
+	std::string text;
+	if (!readEventPrimitive(state, index, text) || (!text.empty() && text.size() != 11)) {
+		return false;
+	}
+	out = toast::UID(toast::UID::fromString(text));
+	return true;
 }
 
-auto readEventPrimitive(lua_State* state, int table, std::string_view field, toast::Box<toast::Node>& out) -> bool {
-	return withField(state, table, field, [&](int index) {
-		// nil is a valid "no node"
-		if (lua_isnil(state, index)) {
-			out = {};
-			return true;
-		}
-		auto result = luabridge::Stack<NodeProxy>::get(state, index);
-		if (!result) {
-			return false;
-		}
-		out = (*result).box();
+auto readEventPrimitive(lua_State* state, int index, toast::Box<toast::Node>& out) -> bool {
+	// nil is a valid "no node"
+	if (lua_isnil(state, index)) {
+		out = {};
 		return true;
-	});
+	}
+	auto result = luabridge::Stack<NodeProxy>::get(state, index);
+	if (!result) {
+		return false;
+	}
+	out = (*result).box();
+	return true;
 }
 
-auto readEventPrimitive(lua_State* state, int table, std::string_view field, glm::vec2& out) -> bool {
-	return readUserdata(state, table, field, out);
+auto readEventPrimitive(lua_State* state, int index, toast::Node*& out) -> bool {
+	toast::Box<toast::Node> box;
+	if (!readEventPrimitive(state, index, box)) {
+		return false;
+	}
+	out = box.exists() ? &*box : nullptr;
+	return true;
 }
 
-auto readEventPrimitive(lua_State* state, int table, std::string_view field, glm::vec3& out) -> bool {
-	return readUserdata(state, table, field, out);
+auto readEventPrimitive(lua_State* state, int index, glm::vec2& out) -> bool {
+	return readUserdata(state, index, out);
 }
 
-auto readEventPrimitive(lua_State* state, int table, std::string_view field, glm::vec4& out) -> bool {
-	return readUserdata(state, table, field, out);
+auto readEventPrimitive(lua_State* state, int index, glm::vec3& out) -> bool {
+	return readUserdata(state, index, out);
 }
 
-auto readEventPrimitive(lua_State* state, int table, std::string_view field, glm::quat& out) -> bool {
-	return readUserdata(state, table, field, out);
+auto readEventPrimitive(lua_State* state, int index, glm::vec4& out) -> bool {
+	return readUserdata(state, index, out);
+}
+
+auto readEventPrimitive(lua_State* state, int index, glm::ivec2& out) -> bool {
+	return readIntVector<glm::vec2>(state, index, out);
+}
+
+auto readEventPrimitive(lua_State* state, int index, glm::ivec3& out) -> bool {
+	return readIntVector<glm::vec3>(state, index, out);
+}
+
+auto readEventPrimitive(lua_State* state, int index, glm::ivec4& out) -> bool {
+	return readIntVector<glm::vec4>(state, index, out);
+}
+
+auto readEventPrimitive(lua_State* state, int index, glm::quat& out) -> bool {
+	return readUserdata(state, index, out);
+}
+
+auto readEventHandle(lua_State* state, int index, std::string_view type, assets::HandleBase& out) -> bool {
+	// nil is a valid "no asset"
+	if (lua_isnil(state, index)) {
+		out = {};
+		return true;
+	}
+	auto result = luabridge::Stack<AssetProxy>::get(state, index);
+	if (!result) {
+		return false;
+	}
+	if (const std::string error = (*result).checkType(type); !error.empty()) {
+		TOAST_WARN("Lua", "event.send: {}", error);
+		return false;
+	}
+	out = (*result).handle();
+	return true;
 }
 
 void pushEventPrimitive(lua_State* state, bool value) {
@@ -151,7 +205,7 @@ void pushEventPrimitive(lua_State* state, std::string_view value) {
 }
 
 void pushEventPrimitive(lua_State* state, toast::UID value) {
-	lua_pushinteger(state, static_cast<lua_Integer>(value.data()));
+	pushEventPrimitive(state, std::string_view(value.get()));
 }
 
 void pushEventPrimitive(lua_State* state, const toast::Box<toast::Node>& value) {
@@ -160,6 +214,14 @@ void pushEventPrimitive(lua_State* state, const toast::Box<toast::Node>& value) 
 		return;
 	}
 	pushUserdata(state, NodeProxy(value));
+}
+
+void pushEventPrimitive(lua_State* state, const toast::Node* value) {
+	if (value == nullptr) {
+		lua_pushnil(state);
+		return;
+	}
+	pushEventPrimitive(state, toast::Box<toast::Node>(value));
 }
 
 void pushEventPrimitive(lua_State* state, const glm::vec2& value) {
@@ -174,8 +236,55 @@ void pushEventPrimitive(lua_State* state, const glm::vec4& value) {
 	pushUserdata(state, value);
 }
 
+void pushEventPrimitive(lua_State* state, const glm::ivec2& value) {
+	pushUserdata(state, glm::vec2(value));
+}
+
+void pushEventPrimitive(lua_State* state, const glm::ivec3& value) {
+	pushUserdata(state, glm::vec3(value));
+}
+
+void pushEventPrimitive(lua_State* state, const glm::ivec4& value) {
+	pushUserdata(state, glm::vec4(value));
+}
+
 void pushEventPrimitive(lua_State* state, const glm::quat& value) {
 	pushUserdata(state, value);
+}
+
+void pushEventPrimitive(lua_State* state, const assets::HandleBase& value) {
+	pushUserdata(state, AssetProxy(value));
+}
+
+void pushEventPrimitive(lua_State* state, const input::Action& value) {
+	pushUserdata(state, value);
+}
+
+void pushEventPrimitive(lua_State* state, const physics::BroadPhasePair& value) {
+	lua_createtable(state, 0, 2);
+	pushBodyShape(state, value.a);
+	lua_setfield(state, -2, "a");
+	pushBodyShape(state, value.b);
+	lua_setfield(state, -2, "b");
+}
+
+void pushEventPrimitive(lua_State* state, const event::ContactEventData& value) {
+	lua_createtable(state, 0, 3);
+	pushEventPrimitive(state, value.pair);
+	lua_setfield(state, -2, "pair");
+	pushEventPrimitive(state, value.normal);
+	lua_setfield(state, -2, "normal");
+	lua_createtable(state, value.contact_count, 0);
+	for (uint8_t i = 0; i < value.contact_count; ++i) {
+		const physics::ContactPoint& point = value.contacts[i];
+		lua_createtable(state, 0, 2);
+		pushEventPrimitive(state, point.position);
+		lua_setfield(state, -2, "position");
+		pushEventPrimitive(state, static_cast<double>(point.penetration));
+		lua_setfield(state, -2, "penetration");
+		lua_rawseti(state, -2, i + 1);
+	}
+	lua_setfield(state, -2, "contacts");
 }
 
 void pushEventTable(lua_State* state, int field_count) {
@@ -186,11 +295,41 @@ void setEventTableField(lua_State* state, std::string_view field) {
 	lua_setfield(state, -2, std::string(field).c_str());
 }
 
+auto pushEventField(lua_State* state, int table, std::string_view field) -> int {
+	lua_getfield(state, table, std::string(field).c_str());
+	return lua_gettop(state);
+}
+
+auto pushEventElement(lua_State* state, int table, int64_t i) -> int {
+	lua_rawgeti(state, table, static_cast<lua_Integer>(i));
+	return lua_gettop(state);
+}
+
+void popEventValue(lua_State* state) {
+	lua_pop(state, 1);
+}
+
+auto eventArrayLength(lua_State* state, int index) -> int64_t {
+	if (!lua_istable(state, index)) {
+		return -1;
+	}
+	return static_cast<int64_t>(lua_rawlen(state, index));
+}
+
+void pushEventArray(lua_State* state, size_t size) {
+	lua_createtable(state, static_cast<int>(size), 0);
+}
+
+void setEventArrayElement(lua_State* state, int64_t i) {
+	lua_rawseti(state, -2, static_cast<lua_Integer>(i));
+}
+
 }
 
 namespace {
 std::mutex g_registry_mutex;
-std::unordered_map<std::string, std::shared_ptr<LuaEventBinding>> g_bindings;
+// Leaked on purpose don't even ask
+auto& g_bindings = *new std::unordered_map<std::string, std::shared_ptr<LuaEventBinding>>();
 
 struct Subscription {
 	std::atomic<bool> live {true};

@@ -109,8 +109,10 @@ fn main() {
     }
     all_events.sort_by_key(EventInfo::qualified_name);
     all_events.dedup_by_key(|e| e.qualified_name());
-    for event in all_events.iter().filter(|e| !e.supported) {
-        eprintln!("warning: skipped Lua event {}: {}", event.qualified_name(), event.skip_reason.as_deref().unwrap_or("unsupported"));
+    let skipped = all_events.iter().filter(|e| !e.supported).count();
+    if skipped > 0 {
+        // was too noisy otherwise
+        eprintln!("warning: skipped {skipped} Lua events");
     }
     let json = serde_json::to_string_pretty(&generate_database(&all_nodes, &all_events))
         .expect("JSON serialisation failed");

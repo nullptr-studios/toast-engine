@@ -42,7 +42,7 @@ struct WrongCtor : Event<WrongCtor> {
     let events = parse_events(source, "events.hpp");
     assert_eq!(events.len(), 2);
     assert!(events[0].skip_reason.as_deref().unwrap().contains("unsupported type"));
-    assert!(events[1].skip_reason.as_deref().unwrap().contains("no constructor"));
+    assert!(events[1].supported && !events[1].sendable);
 }
 
 #[test]

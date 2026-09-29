@@ -270,6 +270,7 @@ pub fn generate_event_lua_stubs(events: &[EventInfo]) -> String {
                 .collect();
             json!({
                 "name": event.name,
+                "sendable": event.sendable,
                 "fields": fields,
             })
         })

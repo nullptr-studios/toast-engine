@@ -19,10 +19,32 @@ function EventListener:unsubscribe(descriptor, method_name) end
 
 ---@class eventlib
 event = {}
+---Errors on receive-only events
 ---@generic T
 ---@param descriptor EventDescriptor<T>
 ---@param payload T
 function event.send(descriptor, payload) end
+
+---b64 toast::UID
+---@alias UID string
+
+---@class PhysicsBodyShape
+---@field node Node? [Rigidbody or VoxelNode owning the body, nil if it is gone]
+---@field body integer [Opaque body id]
+---@field shape integer [Opaque shape id]
+
+---@class BroadPhasePair
+---@field a PhysicsBodyShape
+---@field b PhysicsBodyShape
+
+---@class ContactPoint
+---@field position vec3
+---@field penetration number
+
+---@class ContactEventData
+---@field pair BroadPhasePair
+---@field normal vec3
+---@field contacts ContactPoint[]
 
 ---@class EventsTable
 {% for event in events %}
@@ -31,6 +53,9 @@ function event.send(descriptor, payload) end
 Events = {}
 
 {% for event in events %}
+{% if not event.sendable %}
+---Receive only: can only be sent on c++
+{% endif %}
 ---@class {{ event.name }}
 {% for field in event.fields %}
 ---@field {{ field.name }} {{ field.lua_type }}
