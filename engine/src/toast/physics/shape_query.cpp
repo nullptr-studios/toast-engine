@@ -1,6 +1,6 @@
 #include "broad_phase.hpp"
 #include "manifold.hpp"
-#include "nodes/character.hpp"
+#include "nodes/kinematic_rigidbody.hpp"
 #include "physics_settings.hpp"
 #include "simulator.hpp"
 
@@ -25,16 +25,20 @@ auto probeBody(const glm::vec3& position, const glm::quat& rotation) -> Body {
 
 }
 
-void Simulator::stepCharacters(float dt) {
-	ZoneScopedN("physics::StepCharacters");
+auto Simulator::current() -> Simulator* {
+	return instance;
+}
+
+void Simulator::stepKinematicControllers(float dt) {
+	ZoneScopedN("physics::StepKinematicControllers");
 
 	for (size_t index = 0; index < m_node_bindings.size(); ++index) {
 		const Body* body = tryGetBody(m_node_bindings[index].body);
 		if (body == nullptr || not body->enabled) {
 			continue;
 		}
-		if (auto character = m_node_bindings[index].node.as<Character>(); character.exists()) {
-			character->simulate(*this, dt);
+		if (auto controller = m_node_bindings[index].node.as<KinematicRigidbody>(); controller.exists()) {
+			controller->simulate(*this, dt);
 		}
 	}
 }

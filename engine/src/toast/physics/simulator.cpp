@@ -464,7 +464,7 @@ void Simulator::tick() {
 	spawnBudgetedFragments();
 	enforceFragmentBudget();
 	despawnSettledFragments(dt);
-	stepCharacters(dt);
+	stepKinematicControllers(dt);
 	integrate(dt);
 
 	{

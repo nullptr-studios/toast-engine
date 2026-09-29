@@ -14,11 +14,9 @@
 namespace physics {
 
 class Simulator;
-class Character;
 
 class [[ToastNode, Hidden, Interface, Color("Green")]] TOAST_API Collider : public toast::Node3D {
 	friend class Simulator;
-	friend class Character;
 
 public:
 	[[Reflect]]
@@ -38,6 +36,12 @@ public:
 
 	[[Reflect, Name("Fill Shape"), Group("AABB")]]
 	bool aabb_fill = false;
+
+	/// Simulator shape backing this collider, invalid until the node is registered
+	[[nodiscard]]
+	auto shapeID() const noexcept -> ShapeID {
+		return m_shape;
+	}
 
 private:
 	void updateInspectorMessages() override;
