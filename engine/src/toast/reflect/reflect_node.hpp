@@ -48,7 +48,8 @@ enum class TickFunctionList : uint16_t {
 	late_tick = 1 << 11,
 	load = 1 << 12,
 	save = 1 << 13,
-	tick_mask = early_tick | tick | post_physics | late_tick | editor_tick,
+	physics_tick = 1 << 14,
+	tick_mask = early_tick | tick | physics_tick | post_physics | late_tick | editor_tick,
 	all = 0xFFFF,
 };
 
@@ -102,6 +103,7 @@ struct TickFunctions {
 	Invoker on_disable = nullptr;
 	Invoker early_tick = nullptr;
 	Invoker tick = nullptr;
+	Invoker physics_tick = nullptr;
 	Invoker post_physics = nullptr;
 	Invoker late_tick = nullptr;
 };

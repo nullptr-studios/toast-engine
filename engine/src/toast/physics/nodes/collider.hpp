@@ -37,12 +37,6 @@ public:
 	[[Reflect, Name("Fill Shape"), Group("AABB")]]
 	bool aabb_fill = false;
 
-	/// Simulator shape backing this collider, invalid until the node is registered
-	[[nodiscard]]
-	auto shapeID() const noexcept -> ShapeID {
-		return m_shape;
-	}
-
 private:
 	void updateInspectorMessages() override;
 	void init();

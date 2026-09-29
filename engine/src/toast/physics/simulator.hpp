@@ -81,8 +81,6 @@ public:
 	static auto raycast(glm::vec3 pos, glm::vec3 dir) -> std::vector<RayHit>;
 
 	[[nodiscard]]
-	auto valid(ShapeID shape) const -> bool;
-	[[nodiscard]]
 	auto valid(BodyID body) const -> bool;
 	[[nodiscard]]
 	auto state(BodyID body) const -> std::optional<BodyState>;
@@ -202,11 +200,11 @@ public:
 	    BodyID ignored, const CapsuleShape& capsule, const glm::quat& rotation, const glm::vec3& from, const glm::vec3& to,
 	    float skin
 	) const -> SweepHit;
-	void setCapsuleShape(ShapeID shape, const CapsuleShape& capsule);
+	/// Resizes the capsule collider of a body
+	auto setCapsuleShape(BodyID body, const CapsuleShape& capsule) -> bool;
 	void moveKinematicBody(BodyID id, const glm::vec3& position, const glm::quat& rotation, const glm::vec3& velocity);
 	/// Raises the velocity of a dynamic body along direction
 	void pushBody(BodyID id, const glm::vec3& point, const glm::vec3& direction, float speed, float max_impulse);
-	void wakeBodiesInBounds(const AABB& bounds);
 
 	/// Simulator running the current step, null outside a play session
 	[[nodiscard]]
@@ -305,6 +303,8 @@ private:
 
 	void destroyShape(ShapeID shape);
 	[[nodiscard]]
+	auto valid(ShapeID shape) const -> bool;
+	[[nodiscard]]
 	auto tryGetShape(ShapeID shape) -> Shape*;
 	[[nodiscard]]
 	auto tryGetShape(ShapeID shape) const -> const Shape*;
@@ -334,7 +334,6 @@ private:
 	static void setShapeEnabled(ShapeID shape, bool enabled);
 	void syncEnabledState();
 
-	void stepKinematicControllers(float dt);
 	[[nodiscard]]
 	auto queryCandidates(BodyID ignored, const AABB& bounds) const -> std::vector<ShapeID>;
 	void collideCapsuleProbe(
@@ -345,6 +344,7 @@ private:
 	static void sleepBody(BodyID id);
 	void wakeBodiesTouching(BodyID id);
 	void wakeBodiesTouching(ShapeID id);
+	void wakeBodiesInBounds(const AABB& bounds);
 	void convertImpulsesToDamage(std::span<const SimulationIsland> islands);
 	void wakeContactGroups();
 	void updateSleeping(float dt);

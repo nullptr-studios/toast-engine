@@ -789,6 +789,12 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    .endNamespace()
 
 	    .beginNamespace("Physics")
+	    .addFunction(
+	        "shootVoxel",
+	        +[](const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy, float min_radius) -> bool {
+		        return toast::Engine::get() && toast::Engine::get()->shootVoxel(origin, direction, max_distance, energy, min_radius);
+	        }
+	    )
 	    .endNamespace();
 
 	registerTypeMarkers(state);

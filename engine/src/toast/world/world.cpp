@@ -82,7 +82,7 @@ void World::tick() {
 	 *   2: earlyTick [dispatch]
 	 *   3: transform update
 	 *   4: tick [dispatch]
-	 *   5: accumulation update
+	 *   5: accumulation update (physicsTick runs before each fixed step)
 	 *   6: lateTick [dispatch]
 	 *
 	 * The only real discrepancy is that the accumulation update will not be handled
@@ -104,7 +104,10 @@ void World::tick() {
 
 	m_scheduler.runPhase(m_scheduler.schedule.tick, TickFunctionList::tick, "tick");
 
-	const auto step_result = m_accumulator.tick(Time::delta(), [&]() { physics::Simulator::callTick(); });
+	const auto step_result = m_accumulator.tick(Time::delta(), [&]() {
+		m_scheduler.runPhaseSerial(m_scheduler.schedule.physics_tick, TickFunctionList::physics_tick, "physics_tick");
+		physics::Simulator::callTick();
+	});
 	physics::Simulator::recordTickBurst(step_result.steps, step_result.time_budget_reached);
 	// TODO Is this class really needed?
 	m_scheduler.runPhase(m_scheduler.schedule.post_physics, TickFunctionList::post_physics, "post_physics");
@@ -1081,6 +1084,7 @@ auto World::dependencyGraphGraphviz() const -> std::string {
 
 	emit_stage("early_tick", m_scheduler.schedule.early_tick);
 	emit_stage("tick", m_scheduler.schedule.tick);
+	emit_stage("physics_tick", m_scheduler.schedule.physics_tick);
 	emit_stage("post_physics", m_scheduler.schedule.post_physics);
 	emit_stage("late_tick", m_scheduler.schedule.late_tick);
 

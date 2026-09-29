@@ -136,6 +136,7 @@ fn get_functions(node: tree_sitter::Node, source: &str) -> Vec<String> {
         "begin",
         "earlyTick",
         "tick",
+        "physicsTick",
         "postPhysics",
         "lateTick",
         "end",
