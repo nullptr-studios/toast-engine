@@ -1,6 +1,7 @@
 #include "lua_state.hpp"
 
 #include "asset_proxy.hpp"
+#include "lua_event.hpp"
 #include "lua_signal.hpp"
 #include "lua_types.hpp"
 #include "lua_util.hpp"
@@ -24,6 +25,7 @@
 #include <luabridge3/LuaBridge/LuaBridge.h>
 #include <toast/assets/asset_registry.hpp>
 #include <toast/assets/assets.hpp>
+#include <toast/assets/data_schema_codegen.hpp>
 #include <toast/engine.hpp>
 #include <toast/input/action.hpp>
 #include <toast/log.hpp>
@@ -264,6 +266,7 @@ LuaState::LuaState() : m_pool_size(1 + toast::ThreadPool::workerCount()), m_entr
 }
 
 LuaState::~LuaState() noexcept {
+	clearAllLuaEventSubscriptions();
 	for (Entry& entry : m_entries) {
 		lua_close(entry.state);
 	}
@@ -284,6 +287,35 @@ void LuaState::registerApi(lua_State* state) noexcept {
 
 	    .addFunction(
 	        "load", +[](const std::string& path) -> AssetProxy { return AssetProxy(assets::load(path)); }
+	    )
+	    .endNamespace()
+
+	    .beginNamespace("event")
+	    .addFunction(
+	        "send",
+	        +[](const LuaEventDescriptor& descriptor, const luabridge::LuaRef& payload, lua_State* state) {
+		        auto binding = LuaEventRegistry::find(descriptor.name);
+		        if (!binding) {
+			        luaL_error(state, "event.send: unknown event descriptor '%s'", descriptor.name.c_str());
+			        return;
+		        }
+		        if (!binding->send) {
+			        luaL_error(state, "event.send: '%s' is receive-only", descriptor.name.c_str());
+			        return;
+		        }
+		        if (!payload.isTable()) {
+			        luaL_error(state, "event.send: payload must be a table");
+			        return;
+		        }
+		        payload.push(state);
+		        const int table = lua_absindex(state, -1);
+		        std::string error;
+		        const bool sent = binding->send(state, table, error);
+		        lua_pop(state, 1);
+		        if (!sent) {
+			        luaL_error(state, "event.send(%s): %s", descriptor.name.c_str(), error.c_str());
+		        }
+	        }
 	    )
 	    .endNamespace()
 
@@ -642,7 +674,10 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    .addFunction("uid", [](const AssetProxy& a) { return static_cast<lua_Integer>(a.uid().data()); })
 	    .addFunction("hasValue", &AssetProxy::hasValue)
 	    .addFunction("type", &AssetProxy::type)
+	    .addFunction("get", &AssetProxy::get)
 	    .addFunction("__tostring", &AssetProxy::toString)
+	    .addIndexMetaMethod(assetProxyIndex)
+	    .addNewIndexMetaMethod(assetProxyNewindex)
 	    .endClass()
 
 	    // NodeProxy
@@ -657,6 +692,19 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    .addFunction("call", &NodeProxy::call)
 	    .addIndexMetaMethod(nodeProxyIndex)
 	    .addNewIndexMetaMethod(nodeProxyNewindex)
+	    .endClass()
+
+	    .beginClass<LuaEventDescriptor>("EventDescriptor")
+	    .addProperty("name", &LuaEventDescriptor::name)
+	    .endClass()
+
+	    .beginClass<ListenerProxy>("EventListener")
+	    .addFunction("subscribe", &ListenerProxy::subscribe)
+	    .addFunction(
+	        "unsubscribe",
+	        overload<const LuaEventDescriptor&>(&ListenerProxy::unsubscribe),
+	        overload<const LuaEventDescriptor&, const std::string&>(&ListenerProxy::unsubscribe)
+	    )
 	    .endClass()
 
 	    // SignalProxy
@@ -795,6 +843,7 @@ void LuaState::registerApi(lua_State* state) noexcept {
 }
 
 void LuaState::registerTypeMarkers(lua_State* state) noexcept {
+	LuaEventRegistry::installDescriptors(state);
 	// Node type markers
 	toast::NodeRegistry::forEachType([&](const toast::NodeInfo* info) {
 		const std::string_view bare = stripNamespace(info->type);
@@ -815,6 +864,17 @@ void LuaState::registerTypeMarkers(lua_State* state) noexcept {
 	}
 	if (auto r = luabridge::Stack<TypeMarker>::push(state, TypeMarker {TypeMarker::Kind::asset, ""}); r) {
 		lua_setglobal(state, "Asset");
+	}
+
+	const auto schema_entries = assets::namedSchemaEntries();
+	if (!schema_entries.empty()) {
+		lua_newtable(state);
+		for (const auto& entry : schema_entries) {
+			if (auto r = luabridge::Stack<TypeMarker>::push(state, TypeMarker {TypeMarker::Kind::asset, "data"}); r) {
+				lua_setfield(state, -2, entry.name.c_str());
+			}
+		}
+		lua_setglobal(state, "Schemas");
 	}
 }
 

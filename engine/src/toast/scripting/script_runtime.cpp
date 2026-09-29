@@ -1,11 +1,13 @@
 #include "script_runtime.hpp"
 
 #include "asset_proxy.hpp"
+#include "lua_event.hpp"
 #include "lua_signal.hpp"
 #include "lua_state.hpp"
 #include "lua_types.hpp"
 #include "lua_util.hpp"
 #include "node_proxy.hpp"
+#include "script_context.hpp"
 
 #include <algorithm>
 #include <array>
@@ -439,6 +441,7 @@ void ScriptInstance::call(std::string_view fn_name) noexcept {
 	if (!m_self || m_self->isNil()) {
 		return;
 	}
+	ScriptNodeContextScope script_node_ctx(m_proxy.box());
 	lua_State* l = m_state;
 	// instance table, so rawget finds them
 	m_self->push(l);
@@ -466,6 +469,7 @@ void ScriptInstance::callWithLuaStack(std::string_view name, lua_State* l, int a
 	if (!m_self || m_self->isNil()) {
 		return;
 	}
+	ScriptNodeContextScope script_node_ctx(m_proxy.box());
 	// Only calls functions defined in the Lua table
 	m_self->push(l);
 	lua_pushlstring(l, name.data(), name.size());
@@ -490,10 +494,36 @@ void ScriptInstance::callWithLuaStack(std::string_view name, lua_State* l, int a
 	}
 }
 
+auto ScriptInstance::callEventMethod(std::string_view name, lua_State* l, int event_index) noexcept -> bool {
+	if (!m_self || m_self->isNil()) {
+		return false;
+	}
+	ScriptNodeContextScope script_node_ctx(m_proxy.box());
+	m_self->push(l);
+	lua_pushlstring(l, name.data(), name.size());
+	lua_rawget(l, -2);
+	lua_remove(l, -2);
+	if (!lua_isfunction(l, -1)) {
+		lua_pop(l, 1);
+		return false;
+	}
+	m_self->push(l);
+	lua_pushvalue(l, event_index);
+	if (pcallTraceback(l, 2, 1) != LUA_OK) {
+		TOAST_ERROR("Lua", "Error in event method '{}': {}", name, lua_tostring(l, -1));
+		lua_pop(l, 1);
+		return false;
+	}
+	const bool consumed = lua_isboolean(l, -1) && lua_toboolean(l, -1) != 0;
+	lua_pop(l, 1);
+	return consumed;
+}
+
 void ScriptInstance::callWithAnyArgs(std::string_view name, std::span<const std::any> args) noexcept {
 	if (!m_self || m_self->isNil()) {
 		return;
 	}
+	ScriptNodeContextScope script_node_ctx(m_proxy.box());
 	lua_State* l = m_state;
 
 	// recursion guard
@@ -701,6 +731,14 @@ ScriptRuntime::ScriptRuntime(toast::Box<toast::Node> node, const std::vector<ass
 	}
 }
 
+ScriptRuntime::~ScriptRuntime() {
+	LuaState::Lock guard;
+	if (m_lua && LuaState::exists()) {
+		guard = LuaState::get().lock(m_state_index);
+	}
+	clearLuaEventSubscriptions(this);
+}
+
 auto ScriptRuntime::instanceSchema(size_t index) const noexcept -> const ScriptSchema* {
 	if (index >= m_instances.size() || !m_instances[index] || !m_instances[index]->isValid()) {
 		return nullptr;
@@ -838,6 +876,22 @@ void ScriptRuntime::callWithLuaStack(std::string_view name, lua_State* l, int ar
 			inst->callWithLuaStack(name, l, args_base, n_args);
 		}
 	}
+}
+
+auto ScriptRuntime::callEventMethod(std::string_view name, lua_State* l, int event_index) noexcept -> bool {
+	if (m_instances.empty() || l != m_lua) {
+		return false;
+	}
+	LuaState::Lock guard = LuaState::get().lock(m_state_index);
+	if (!guard) {
+		return false;
+	}
+	for (auto& instance : m_instances) {
+		if (instance && instance->isValid() && instance->callEventMethod(name, l, event_index)) {
+			return true;
+		}
+	}
+	return false;
 }
 
 void ScriptRuntime::callWithAnyArgs(std::string_view name, std::span<const std::any> args) noexcept {

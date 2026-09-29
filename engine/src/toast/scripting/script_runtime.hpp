@@ -46,8 +46,11 @@ public:
 	/// Calls the named lifecycle function
 	void call(std::string_view fn_name) noexcept;
 
-	/// rawget self[name]; if a function, pcall(self, forwarded_args...).
+	/// rawget self[name]; if a function, pcall(self, forwarded_args...)
 	void callWithLuaStack(std::string_view name, lua_State* l, int args_base, int n_args) noexcept;
+
+	/// Calls a lua method on the self table
+	auto callEventMethod(std::string_view name, lua_State* l, int event_index) noexcept -> bool;
 
 	/// Fan-out call with args provided as std::any values
 	void callWithAnyArgs(std::string_view name, std::span<const std::any> args) noexcept;
@@ -126,7 +129,7 @@ private:
 class TOAST_API ScriptRuntime {
 public:
 	ScriptRuntime(toast::Box<toast::Node> node, const std::vector<assets::Handle<assets::Script>>& scripts);
-	~ScriptRuntime() = default;
+	~ScriptRuntime();
 
 	ScriptRuntime(const ScriptRuntime&) = delete;
 	auto operator=(const ScriptRuntime&) -> ScriptRuntime& = delete;
@@ -145,6 +148,7 @@ public:
 	auto functions() const noexcept -> std::vector<LuaFunctionDesc>;
 
 	void callWithLuaStack(std::string_view name, lua_State* l, int args_base, int n_args) noexcept;
+	auto callEventMethod(std::string_view name, lua_State* l, int event_index) noexcept -> bool;
 
 	/// Ccall with args provided as std::any values
 	void callWithAnyArgs(std::string_view name, std::span<const std::any> args) noexcept;

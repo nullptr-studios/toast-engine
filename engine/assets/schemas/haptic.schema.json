@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "core://schemas/haptic.schema.json",
   "title": "Toast Haptic (.thaptic)",
-  "description": "Defines a controller haptic effect with a mode, duration, and optional curve data",
+  "description": "Defines a controller haptic effect",
   "type": "object",
   "required": ["mode", "duration_ms"],
   "additionalProperties": false,

@@ -7,18 +7,24 @@
 {% for node in nodes %}
 #include "{{ node.snake_name }}.generated.hpp"
 {% endfor %}
+{% for event in events %}
+#include <{{ event.source_file }}>
+{% endfor %}
 #include <toast/reflect/reflect_node.hpp>
+#include <toast/scripting/lua_event.hpp>
 #include <toast/log.hpp>
 #include <array>
 // clang-format on
 
 namespace toast {
-{% for node in nodes %}{% if not node.split_typeinfo %}
-template<>
-auto NodeTypeInfo<{{ node.qualified_name }}>::get() noexcept -> const NodeInfo* {
-	return &Reflect<{{ node.qualified_name }}>::type_info;
+template<class T>
+auto nodeTypeInfo() noexcept -> const NodeInfo* {
+	return &Reflect<T>::type_info;
 }
-{% endif %}{% endfor %}
+{% for node in nodes %}
+template {% if split_typeinfo %}TOAST_API {% endif %}auto nodeTypeInfo<{{ node.qualified_name }}>() noexcept -> const NodeInfo*;
+{% endfor %}
+
 void {{ register_fn }}() {
 	static const std::array<const NodeInfo*, {{ nodes | length }}> all_types = {{ '{{' }}
 {% for node in nodes %}
@@ -28,6 +34,9 @@ void {{ register_fn }}() {
 	for (const auto* info : all_types) {
 		NodeRegistry::registerNode(info);
 	}
+	{% for event in events %}
+	scripting::registerLuaEvent<{{ event.qualified_name }}, {{ "true" if event.sendable else "false" }}>("{{ event.name }}"{% for field in event.fields %}, scripting::luaEventField<{{ event.qualified_name }}>("{{ field.name }}", "{{ field.typename }}", [](const {{ event.qualified_name }}& e) -> const auto& { return e.{{ field.name }}; }, [](auto& e, auto&& v) { e.{{ field.name }} = std::forward<decltype(v)>(v); }){% endfor %});
+	{% endfor %}
 	TOAST_INFO("Reflection", "Registered {} types ({{ register_fn }})", all_types.size());
 }
 } // namespace toast

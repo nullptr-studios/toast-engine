@@ -6,6 +6,10 @@ use std::fs;
 use std::path::Path;
 
 pub fn generate_files(nodes: &[NodeInfo], output: &Path, register_fn: &str, split_typeinfo: bool) {
+    generate_files_with_events(nodes, &[], output, register_fn, split_typeinfo);
+}
+
+pub fn generate_files_with_events(nodes: &[NodeInfo], events: &[EventInfo], output: &Path, register_fn: &str, split_typeinfo: bool) {
     // Templates live next to the executable: <exe_dir>/templates/
     let exe_dir = std::env::current_exe()
         .expect("cannot locate executable")
@@ -70,9 +74,18 @@ pub fn generate_files(nodes: &[NodeInfo], output: &Path, register_fn: &str, spli
             }
         }
     }
+    let event_ctx: Vec<json_t> = events.iter().filter(|e| e.supported).map(|e| json!({
+        "name": e.name,
+        "qualified_name": e.qualified_name(),
+        "source_file": e.source_file,
+        "sendable": e.sendable,
+        "fields": e.fields,
+    })).collect();
     let cpp_ctx = serde_json::json!({
-        "nodes":       all_ctx,
-        "register_fn": register_fn,
+        "nodes":          all_ctx,
+        "events":         event_ctx,
+        "register_fn":    register_fn,
+        "split_typeinfo": split_typeinfo,
     });
 
     let out = output.join("reflect.generated.cpp");

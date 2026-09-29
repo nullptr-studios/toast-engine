@@ -2,6 +2,7 @@
 
 #include "application.hpp"
 #include "assets/asset_manager.hpp"
+#include "assets/data_schema_codegen.hpp"
 #include "assets/prefab.hpp"
 #include "audio/audio_system.hpp"
 #include "crash_handler.hpp"
@@ -1003,6 +1004,11 @@ void toast_reload_manifest() noexcept {
 	auto& mgr = assets::AssetManager::get();
 	mgr.clearUnusedAssets();
 	mgr.reloadManifest();
+
+	// update lua schemas file
+	if (scripting::LuaState::exists()) {
+		scripting::LuaState::get().refreshTypeMarkers();
+	}
 }
 
 void toast_reload_project_settings() noexcept {
@@ -1067,6 +1073,19 @@ void toast_bake_asset(const char* uid_str, const char* out_path) noexcept {
 		out.write(reinterpret_cast<const char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
 		TOAST_TRACE("Engine", "Baked asset {} → {}", uid_str, out_path);
 	} catch (const std::exception& e) { TOAST_ERROR("Engine", "toast_bake_asset: {}", e.what()); }
+}
+
+auto toast_generate_data_schema_stubs(const char* out_path) noexcept -> int {
+	ZoneScoped;
+	if (!out_path) {
+		return 0;
+	}
+	try {
+		return assets::generateDataSchemaLuaStubs(out_path) ? 1 : 0;
+	} catch (const std::exception& e) {
+		TOAST_ERROR("Engine", "toast_generate_data_schema_stubs: {}", e.what());
+		return 0;
+	}
 }
 
 void toast_haptics_test(const char* toml_text) noexcept {

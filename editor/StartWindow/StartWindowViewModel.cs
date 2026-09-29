@@ -117,10 +117,11 @@ public partial class StartWindowViewModel : ViewModelBase {
 			"..", "reflection_generator", $"reflection_generator{exeExt}"));
 		var gameDb = ProjectContext.Resolve("cache://game_reflect.json");
 		var gameLuaStubs = ProjectContext.Resolve("cache://lua/game_types.d.lua");
+		var gameEventLuaStubs = ProjectContext.Resolve("cache://lua/game_events.d.lua");
 		tasks.Add(LoaderTask.Run("Generate game reflection", refgen,
 			$"--database \"{gameDb}\" --output \"{libGenerated}\" --input \"{libSrc}\" " +
 			$"--include-root \"{libSrc}\" --register-fn registerGameTypes --attribute Game " +
-			$"--lua-stubs \"{gameLuaStubs}\""));
+			$"--lua-stubs \"{gameLuaStubs}\" --event-lua-stubs \"{gameEventLuaStubs}\""));
 
 		// Copy the engine reflection database to cache://
 		tasks.Add(LoaderTask.Do("Copy engine reflection", async log => {

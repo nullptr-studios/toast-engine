@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <toast/assets/assets.hpp>
 #include <toast/log.hpp>
 #include <toast/physics/contact_events.hpp>
 #include <toast/physics/simulator.hpp>

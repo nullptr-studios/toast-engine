@@ -1,0 +1,21 @@
+-- ============================================================
+-- AUTO-GENERATED FILE - DO NOT MODIFY DIRECTLY
+-- Changes will not persist
+-- ============================================================
+
+{% for node in nodes %}
+---@class {{ node.name }}{{ node.inheritance }}
+{% for field in node.fields %}
+---@field {{ field.name }} {{ field.lua_type }}
+{% endfor %}
+{% for method in node.methods %}
+---@field {{ method.name }} {{ method.signature }}
+{% endfor %}
+{% for signal in node.signals %}
+---@field {{ signal.name }} {{ signal.lua_type }}
+{% endfor %}
+
+---@type TypeMarker
+{{ node.name }} = nil
+
+{% endfor %}

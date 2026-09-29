@@ -206,22 +206,30 @@ void Logger::log(std::string_view file, unsigned line, char severity, std::strin
 	}
 
 	if (not logger) {
-#if !defined(NDEBUG)
-		switch (severity) {
-			case 4:     // critical
-			case 3:     // error
-				std::println("\033[31m[ERROR] {}: {}\033[0m", trimmed_sink, message);
-				break;
-			case 2:     // warning
-				std::println("\033[33m[WARNING] {}: {}\033[0m", trimmed_sink, message);
-				break;
-			case 1:     // info
-				std::println("\033[32m[INFO] {}: {}\033[0m", trimmed_sink, message);
-				break;
-			default:    // trace
-				std::println("[TRACE] {}: {}", trimmed_sink, message);
-				break;
+#ifdef DEBUG
+		try {
+			switch (severity) {
+				case 4:     // critical
+				case 3:     // error
+					std::println("\033[31m[ERROR] {}: {}\033[0m", trimmed_sink, message);
+					break;
+				case 2:     // warning
+					std::println("\033[33m[WARNING] {}: {}\033[0m", trimmed_sink, message);
+					break;
+				case 1:     // info
+					std::println("\033[32m[INFO] {}: {}\033[0m", trimmed_sink, message);
+					break;
+				default:    // trace
+					std::println("[TRACE] {}: {}", trimmed_sink, message);
+					break;
+			}
+		} catch (...) {
+			// std::println can sometimes throw if cstdout doesnt exist yet so rather than printing it just add it to the fallback
+			// database (down below) and do nothing else
+			// Trully c# moment this only happens sometimes because of some bullshit of the .NET worker execution pool -x
+			(void)0;    // avoid clang-tidy error about empty catch block
 		}
+
 #endif
 
 		// Add the logs to a fallback database if it doesn't exist, then send them when initialized

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using editor.Engine;
+using editor.Workspace;
 using Proto.Events;
 using Tomlyn;
 using Tomlyn.Model;
@@ -39,6 +40,8 @@ public static class ProjectContext {
 
 	public static void Reset() {
 		UIBindStubGenerator.StopWatching();
+		DataSchemaStubGenerator.StopWatching();
+		SchemaEditorState.Reset();
 		AssetDatabase.Reset();
 		IsInitialized = false;
 		ProjectPath = ArtworkPath = AssetsPath = CachePath = CorePath = SavedPath = "";
@@ -66,6 +69,8 @@ public static class ProjectContext {
 		AssetBrowserSettings.Load();
 		UIBindStubGenerator.Generate();
 		UIBindStubGenerator.StartWatching();
+		DataSchemaStubGenerator.Generate();
+		DataSchemaStubGenerator.StartWatching();
 	}
 
 	public static void SyncLuaDefinitions(Action<string>? log = null) {
@@ -87,6 +92,7 @@ public static class ProjectContext {
 
 		// Emit UI bind stubs alongside the engine definitions
 		UIBindStubGenerator.Generate();
+		DataSchemaStubGenerator.Generate();
 
 		var luarc = Path.Combine(ProjectPath, ".luarc.json");
 		if (File.Exists(luarc)) return;

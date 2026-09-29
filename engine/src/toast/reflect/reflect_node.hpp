@@ -507,4 +507,7 @@ private:
 
 TOAST_API void registerEngineTypes();
 
+template<class T>
+auto nodeTypeInfo() noexcept -> const NodeInfo*;
+
 }

@@ -13,6 +13,7 @@
 --   return M
 
 ---@class Node
+---@field listener EventListener
 local NodeProxy = {}
 
 ---True while the referenced node is alive.
