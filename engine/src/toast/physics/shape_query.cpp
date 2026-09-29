@@ -258,7 +258,7 @@ void Simulator::moveKinematicBody(BodyID id, const glm::vec3& position, const gl
 	body->rotation = glm::normalize(rotation);
 	body->linear_velocity = velocity;
 	body->angular_velocity = {};
-	
+
 	if (not moved) {
 		return;
 	}
