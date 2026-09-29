@@ -465,6 +465,12 @@ struct InspectorLuaContent : Event<InspectorLuaContent> {
 		std::string ref_type;
 		std::string value;
 		std::string default_value;
+		std::string display_name;
+		bool read_only = false;
+		bool hidden = false;
+		double min = 0.0;
+		double max = 0.0;
+		std::string unit;
 	};
 
 	struct LuaSubgroup {

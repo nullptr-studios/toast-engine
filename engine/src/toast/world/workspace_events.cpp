@@ -711,11 +711,31 @@ struct ProtoTraits<InspectorLuaContent::LuaField> {
 		p.set_ref_type(e.ref_type);
 		p.set_value(e.value);
 		p.set_default_value(e.default_value);
+		p.set_display_name(e.display_name);
+		p.set_read_only(e.read_only);
+		p.set_hidden(e.hidden);
+		p.set_min(e.min);
+		p.set_max(e.max);
+		p.set_unit(e.unit);
 		return p;
 	}
 
 	static auto fromProto(const Proto& p) -> Event {
-		return {p.path(), p.name(), p.kind(), p.is_array(), p.ref_type(), p.value(), p.default_value()};
+		return {
+		  p.path(),
+		  p.name(),
+		  p.kind(),
+		  p.is_array(),
+		  p.ref_type(),
+		  p.value(),
+		  p.default_value(),
+		  p.display_name(),
+		  p.read_only(),
+		  p.hidden(),
+		  p.min(),
+		  p.max(),
+		  p.unit()
+		};
 	}
 };
 

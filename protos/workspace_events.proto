@@ -372,6 +372,12 @@ message LuaField {
   string ref_type = 5;
   string value = 6;
   string default_value = 7;
+  string display_name = 8;
+  bool read_only = 9;
+  bool hidden = 10;
+  double min = 11;
+  double max = 12;
+  string unit = 13;
 }
 
 message LuaSubgroup {
