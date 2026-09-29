@@ -9,6 +9,10 @@
 #pragma once
 #include "box.hpp"
 #include "node.hpp"
+#include "toast/physics/raycast.hpp"
+
+#include <optional>
+#include <vector>
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
@@ -31,6 +35,11 @@ public:
 	[[Reflect, NoSerialize, Unit("°"), Group("World Transform")]] alignas(16) mutable glm::quat world_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 	[[Reflect, NoSerialize, Group("World Transform")]]            alignas(16) mutable glm::vec3 world_scale = glm::vec3(1.0f);
 	// clang-format on
+
+	[[Reflect]]
+	auto raycasts(glm::vec3 pos, glm::vec3 dir) const -> std::vector<physics::RayHit>;
+	[[Reflect]]
+	auto raycast(glm::vec3 pos, glm::vec3 dir) const -> std::optional<physics::RayHit>;
 
 	/**
 	 * @brief Orients the node so its forward axis points at a world-space target

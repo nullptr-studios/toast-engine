@@ -35,7 +35,8 @@
       "minimum" : 0
     },
     "flammable": {
-      "type": "boolean",
+      "type": "bool",
+		  "x-toast-type" : "bool",
       "default" : false
     },
     "burn_rate": {

@@ -57,6 +57,9 @@ public:
 	auto queryBounds(const AABB& bounds) const -> std::vector<ShapeID>;
 
 	[[nodiscard]]
+	auto queryRay(glm::vec3 pos, glm::vec3 dir) const -> std::vector<ShapeID>;
+
+	[[nodiscard]]
 	auto debugNodes() const -> std::vector<AABBTreeDebugNode>;
 	[[nodiscard]]
 	auto stats() const -> const BroadPhaseStats&;

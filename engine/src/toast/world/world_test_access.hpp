@@ -2,6 +2,7 @@
 
 #include "world.hpp"
 
+#include <any>
 #include <memory>
 #include <string_view>
 #include <toast/assets/script.hpp>
@@ -20,6 +21,9 @@ struct TOAST_API WorldTestAccess {
 	static auto createWorld() -> WorldPtr;
 
 	static auto createNode(World& world, std::string_view name, NodeState state = NodeState::root) -> Box<Node>;
+
+	static auto createTypedNode(World& world, std::string_view type, std::string_view name) -> Box<Node>;
+	static void callTick(Node& node, TickFunctionList stage);
 
 	// activeRenderCamera() is protected on INodeOwner
 	static auto activeRenderCamera(World& world) -> Camera*;
@@ -52,6 +56,9 @@ struct TOAST_API WorldTestAccess {
 	    -> Box<Node>;
 
 	static auto childrenOf(const Node& node) -> const std::vector<Box<Node>>&;
+	static auto changeField(Node& node, std::string_view name, const std::any& value) -> bool;
+	static auto setScriptVar(Node& node, std::string_view path, const std::any& value) -> bool;
+	static void attachChild(Node& parent, Node& child);
 	static auto isPrefabInterior(const Node& node) -> bool;
 
 	static void initThreadPool();

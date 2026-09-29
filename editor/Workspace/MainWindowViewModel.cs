@@ -26,6 +26,8 @@ namespace editor.Workspace;
 public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 	private readonly AutosaveService m_autosave;
 
+	public static MainWindowViewModel? Current { get; private set; }
+
 	private readonly LayoutFile m_defaultLayout;
 	private readonly DockFactory m_dockFactory;
 	private readonly ToastEngine m_toast;
@@ -56,7 +58,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 	private bool m_toastZonePinned;
 
 	public MainWindowViewModel(ToastEngine toast) {
+		Current = this;
 		m_toast = toast;
+		VoxelEditor.VoxelEditorActions.Register();
 
 		m_dockFactory = new DockFactory();
 		MainLayout = m_dockFactory.CreateLayout();
@@ -139,6 +143,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 	public bool CanModifyActiveLayout => !LayoutStore.IsBuiltin(ActiveLayoutName);
 
 	public void Dispose() {
+		if (ReferenceEquals(Current, this)) Current = null;
 		m_autosave.Stop();
 		m_projectSettingsWindow?.Close();
 		m_projectSettingsWindow = null;
@@ -207,6 +212,11 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			window.Show(owner);
 		else
 			window.Show();
+	}
+
+	public void OpenProjectSettingsAt(SettingsTab tab, string? category = null) {
+		OpenProjectSettings();
+		m_dockFactory.ProjectSettingsVm?.SelectSection(tab, category);
 	}
 
 	partial void OnHierarchyVisibleChanged(bool value) {
@@ -330,6 +340,25 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		// pin the zone so it stays up while editing
 		m_toastZonePinned = true;
 		ToastZoneActive = true;
+	}
+
+	public ToastEngine Engine => m_toast;
+
+	public WorkspaceViewModel? FindOpenWorkspace(string assetUid) {
+		return m_workspaces.Values.FirstOrDefault(w => w.BackingAssetUid == assetUid);
+	}
+
+	// if another window spawns we need to be able to give focus back to the game window
+	public void ReclaimEngine() {
+		if (ViewportFocus.DetachedOwner == 0) return;
+		Events.Send(new SetVoxelEditorOverlays { UnitGrid = false, VoxelGrid = false, Edges = false, VoxelEdges = false });
+		Events.Send(new SetShowOthers { Show = false });
+		ViewportFocus.DetachedOwner = 0;
+		m_dockFactory.Hierarchy?.MakeCurrent();
+		m_activeWorkspaceHandle = ulong.MaxValue;
+		SyncActiveWorkspace();
+		if (m_dockFactory.ActiveWorkspace is { } workspace) workspace.ResendViewState();
+		Events.Send(new RequestHierarchyUpdate());
 	}
 
 	private void SyncActiveWorkspace() {

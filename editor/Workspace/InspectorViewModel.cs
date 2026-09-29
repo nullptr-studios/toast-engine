@@ -16,6 +16,10 @@ using Proto.Events;
 
 namespace editor.Workspace;
 
+public sealed record InspectorSection(string Title, string ColorKey, string Icon, IReadOnlyList<string> Fields);
+
+public sealed record InspectorProfile(Func<string, IReadOnlyList<InspectorSection>?> SectionsFor, bool FirstScriptOnly);
+
 public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboardHost {
 	private static readonly string[] Palette =
 		["Red", "Green", "Blue", "Magenta", "Orange", "Yellow", "Cyan", "Beige"];
@@ -52,8 +56,14 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 	private bool m_suppressEnabled;
 	[ObservableProperty] private string m_typeDisplay = "";
 	private string? m_uid;
+	private readonly HierarchyViewModel? m_follow;
+	private IReadOnlyList<InspectorSection>? m_sections;
+	private HierarchyElement? m_selected;
 
-	public InspectorViewModel() {
+	public InspectorViewModel() : this(null) { }
+
+	public InspectorViewModel(HierarchyViewModel? follow) {
+		m_follow = follow;
 		if (Design.IsDesignMode) {
 			m_listener = null!;
 			try {
@@ -290,7 +300,8 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 		m_listener.Subscribe<InspectorLuaContent>(e => Dispatcher.UIThread.Post(() => {
 			if (!HasSelection || e.Uid != m_builtUid) return;
 
-			if (e.SchemaVersion != m_builtLuaVersion || e.Scripts.Count != m_luaCards.Count) {
+			var shownScripts = m_sections is not null && Profile?.FirstScriptOnly == true ? Math.Min(e.Scripts.Count, 1) : e.Scripts.Count;
+			if (e.SchemaVersion != m_builtLuaVersion || shownScripts != m_luaCards.Count) {
 				RebuildLuaCards(e);
 				return;
 			}
@@ -302,8 +313,21 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 			}
 		}));
 
-		HierarchyViewModel.SelectionChanged += OnSelectionChanged;
-		if (HierarchyViewModel.Current?.SelectedNode is { } sel) OnSelectionChanged(sel);
+		if (m_follow is not null) {
+			m_follow.SelectedChanged += OnSelectionChanged;
+			if (m_follow.SelectedNode is { } followed) OnSelectionChanged(followed);
+		} else {
+			HierarchyViewModel.SelectionChanged += OnSelectionChanged;
+			if (HierarchyViewModel.Current?.SelectedNode is { } sel) OnSelectionChanged(sel);
+		}
+	}
+
+	public InspectorProfile? Profile { get; init; }
+
+	public bool ShowHeader => HasSelection && Profile is null;
+
+	partial void OnHasSelectionChanged(bool value) {
+		OnPropertyChanged(nameof(ShowHeader));
 	}
 
 	public ObservableCollection<ClassCardVM> Cards { get; } = [];
@@ -311,7 +335,8 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 
 	public void Dispose() {
 		CommitFieldEdit();
-		HierarchyViewModel.SelectionChanged -= OnSelectionChanged;
+		if (m_follow is not null) m_follow.SelectedChanged -= OnSelectionChanged;
+		else HierarchyViewModel.SelectionChanged -= OnSelectionChanged;
 		if (!Design.IsDesignMode) m_listener.Dispose();
 		GC.SuppressFinalize(this);
 	}
@@ -356,10 +381,12 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 				m_builtUid = null;
 				m_builtType = null;
 				m_uid = null;
+				m_selected = null;
 				return;
 			}
 
 			m_uid = node.Uid;
+			m_selected = node;
 			Name = node.Name;
 			TypeDisplay = node.Type;
 			IconColorKey = ReflectionDatabase.ResolveColor(node.Type);
@@ -394,6 +421,16 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 
 		m_state = state;
 		var colorCounter = 0;
+		m_sections = Profile?.SectionsFor(Bare(type));
+
+		if (m_sections is not null) {
+			BuildProfiledCards(Bare(type), m_sections);
+			m_builtUid = uid;
+			m_builtType = type;
+			ApplyFilter();
+			return;
+		}
+
 
 		// walk the inheritance chain most-derived -> base
 		var current = Bare(type);
@@ -406,6 +443,36 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 		m_builtUid = uid;
 		m_builtType = type;
 		ApplyFilter();
+	}
+
+	// Only show the fields the profile names in th order they appear
+	private void BuildProfiledCards(string type, IReadOnlyList<InspectorSection> sections) {
+		var fields = new Dictionary<string, FieldInfo>();
+		var groups = new Dictionary<string, List<FieldInfo>>();
+		var current = type;
+		while (ReflectionDatabase.Nodes!.TryGetValue(current, out var info)) {
+			foreach (var field in info.GlobalFields) fields.TryAdd(field.Name, field);
+			foreach (var group in info.Groups) {
+				var all = group.Fields.Concat(group.Subgroups.SelectMany(s => s.Fields)).ToList();
+				foreach (var field in all) fields.TryAdd(field.Name, field);
+				if (!groups.ContainsKey(group.Name)) groups[group.Name] = all;
+			}
+			if (info.Parent is null) break;
+			current = Bare(info.Parent.Name);
+		}
+
+		foreach (var section in sections) {
+			var card = new ClassCardVM(section.Title, section.ColorKey, section.Icon, $"profile:{type}/{section.Title}", m_state!, this) { IsPlain = true };
+			foreach (var name in section.Fields) {
+				if (name.StartsWith("group:", StringComparison.Ordinal)) {
+					if (groups.TryGetValue(name[6..], out var members))
+						foreach (var member in members) AddField(card.Fields, member);
+				} else if (fields.TryGetValue(name, out var field)) {
+					AddField(card.Fields, field);
+				}
+			}
+			if (card.Fields.Count > 0) Cards.Add(card);
+		}
 	}
 
 	private ClassCardVM BuildCard(NodeInfo info, ref int colorCounter) {
@@ -438,7 +505,11 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 			var label = string.IsNullOrWhiteSpace(customLabel)
 				? InspectorFormat.MethodDisplayName(method.Name)
 				: customLabel;
-			card.Buttons.Add(new ButtonVM(label, method.Name, OnButtonInvoked));
+			// EditorAction buttons run in the editor instead of calling the engine
+			var action = ReflectionDatabase.GetAttr(method.Attributes, "EditorAction");
+			card.Buttons.Add(string.IsNullOrWhiteSpace(action)
+				? new ButtonVM(label, method.Name, OnButtonInvoked)
+				: new ButtonVM(label, action, OnEditorActionInvoked));
 		}
 
 		return card;
@@ -504,6 +575,10 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 		if (m_uid is not null) Events.Send(new NodeCallFunction { Node = m_uid, Function = function });
 	}
 
+	private void OnEditorActionInvoked(string action) {
+		if (m_selected is not null) EditorActions.Invoke(action, m_selected);
+	}
+
 	// script cards sit above the class cards
 	private void RebuildLuaCards(InspectorLuaContent e) {
 		foreach (var card in m_luaCards) Cards.Remove(card);
@@ -513,9 +588,11 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 
 		var insertAt = 0;
 		var colorCounter = 0;
-		foreach (var script in e.Scripts) {
-			var title = ScriptStem(script.Script);
-			var card = new ClassCardVM(title, "Magenta", "Circle", $"lua:{title}", m_state!, this);
+		var scripts = m_sections is not null && Profile?.FirstScriptOnly == true ? e.Scripts.Take(1) : e.Scripts;
+		if (m_sections is not null) insertAt = Cards.Count;
+		foreach (var script in scripts) {
+			var title = m_sections is not null ? $"Script parameters ({ScriptStem(script.Script)})" : ScriptStem(script.Script);
+			var card = new ClassCardVM(title, "Magenta", "Circle", $"lua:{title}", m_state!, this) { IsPlain = m_sections is not null };
 
 			foreach (var f in script.Fields) AddLuaField(card.Fields, f);
 

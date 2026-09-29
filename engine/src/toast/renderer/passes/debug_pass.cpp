@@ -113,6 +113,29 @@ void appendBox(std::vector<DebugVertex>& out, glm::vec3 min, glm::vec3 max, glm:
 	}
 }
 
+// for the gizmos for resizing volumes
+void appendSphere(std::vector<DebugVertex>& out, float radius, int rings, int segments, glm::vec4 color) {
+	const auto point = [&](int ring, int segment) {
+		const float polar = glm::pi<float>() * static_cast<float>(ring) / static_cast<float>(rings);
+		const float azimuth = glm::two_pi<float>() * static_cast<float>(segment) / static_cast<float>(segments);
+		return glm::vec3(std::sin(polar) * std::cos(azimuth), std::sin(polar) * std::sin(azimuth), std::cos(polar)) * radius;
+	};
+	for (int ring = 0; ring < rings; ++ring) {
+		for (int segment = 0; segment < segments; ++segment) {
+			const glm::vec3 a = point(ring, segment);
+			const glm::vec3 b = point(ring + 1, segment);
+			const glm::vec3 c = point(ring + 1, segment + 1);
+			const glm::vec3 d = point(ring, segment + 1);
+			out.push_back({a, color});
+			out.push_back({b, color});
+			out.push_back({c, color});
+			out.push_back({a, color});
+			out.push_back({c, color});
+			out.push_back({d, color});
+		}
+	}
+}
+
 void appendShaftAlongAxis(std::vector<DebugVertex>& out, int axis, float length, float half_size, glm::vec4 color) {
 	glm::vec3 min {-half_size, -half_size, -half_size};
 	glm::vec3 max {half_size, half_size, half_size};
@@ -1757,7 +1780,7 @@ void DebugPass::createSizeGizmoGeometry(const renderer::VulkanCore& core) {
 	const glm::vec4 k_white {1.0f, 1.0f, 1.0f, 1.0f};
 
 	std::vector<DebugVertex> vertices;
-	appendBox(vertices, glm::vec3(-k_size_dot_half_size), glm::vec3(k_size_dot_half_size), k_white);
+	appendSphere(vertices, k_size_dot_half_size * 1.25f, 8, 12, k_white);
 	m_size_gizmo_vertex_count = static_cast<uint32_t>(vertices.size());
 
 	vk::BufferCreateInfo buffer_ci {};

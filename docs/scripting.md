@@ -50,9 +50,12 @@ source file swaps in while tuned values survive.
 A script is a chunk that returns a table. Functions on that table with lifecycle names
 are called by the engine, everything else becomes an inspector variable:
 
-`load`, `save`, `pre_init`, `init`, `begin`, `earlyTick`, `tick`, `postPhysics`,
+`load`, `save`, `init`, `begin`, `earlyTick`, `tick`, `postPhysics`,
 `lateTick`, `_end` (frame end; `end` is a reserved keyword in lua), `onEnable`,
-`onDisable`, `destroy`.
+`onDisable`, `destroy`, `editorTick`.
+
+`editorTick` only runs while the node lives in an editor Workspace (a paused editor
+tab), not in a PlayWorkspace (a playing editor tab) or a live game World.
 
 All of them receive the script table as `self`. Reflected fields are reachable with or
 without the `m_` prefix (`self.health` finds a reflected `m_health`).

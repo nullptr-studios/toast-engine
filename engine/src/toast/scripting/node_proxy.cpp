@@ -4,6 +4,7 @@
 #include "lua_types.hpp"
 #include "script_runtime.hpp"
 #include "signal_proxy.hpp"
+#include "toast/physics/raycast.hpp"
 #include "ui_binds_proxy.hpp"
 
 #include <algorithm>
@@ -14,10 +15,12 @@
 #include <glm/vec4.hpp>
 #include <lua.hpp>
 #include <luabridge3/LuaBridge/LuaBridge.h>
+#include <optional>
 #include <toast/input/action.hpp>
 #include <toast/log.hpp>
 #include <toast/reflect/reflect.hpp>
 #include <toast/reflect/reflect_node.hpp>
+#include <toast/voxel/voxel_edit.hpp>
 #include <toast/world/node.hpp>
 #include <utility>
 
@@ -91,6 +94,7 @@ auto luaArgToAny(lua_State* l, const luabridge::LuaRef& v, std::string_view cpp_
 	const bool is_input_device = cpp_type.contains("input::Device");
 	const bool is_input_value_type = cpp_type.contains("input::ValueType");
 	const bool is_input_modifier = cpp_type.contains("input::ModifierKey");
+	const bool is_voxel_write = cpp_type.contains("WriteMode");
 	const bool is_bool = cpp_type.contains("bool");
 	const bool is_float = cpp_type.contains("float");
 	const bool is_double = cpp_type.contains("double");
@@ -159,6 +163,16 @@ auto luaArgToAny(lua_State* l, const luabridge::LuaRef& v, std::string_view cpp_
 			return static_cast<input::InputKind>(raw);
 		}
 		return static_cast<input::ModifierKey>(raw);
+	}
+	if (is_voxel_write) {
+		if (!v.isNumber()) {
+			luaL_error(l, "argument '%s': expected a VoxelWrite value", param_name);
+		}
+		const lua_Integer raw = v.unsafe_cast<lua_Integer>();
+		if (raw < 0 || raw > static_cast<lua_Integer>(voxel::WriteMode::match)) {
+			luaL_error(l, "argument '%s': %d is not a VoxelWrite value", param_name, static_cast<int>(raw));
+		}
+		return static_cast<voxel::WriteMode>(raw);
 	}
 	if (is_str) {
 		if (!v.isString()) {
@@ -308,6 +322,12 @@ auto anyReturnToLuaRef(lua_State* l, const std::any& val, std::string_view retur
 	if (const auto* v = std::any_cast<Color4>(&val)) {
 		return {l, *v};
 	}
+	if (const auto* v = std::any_cast<physics::RayHit>(&val)) {
+		return {l, *v};
+	}
+	if (const auto* v = std::any_cast<std::optional<physics::RayHit>>(&val)) {
+		return v->has_value() ? LuaRef {l, **v} : LuaRef {l};
+	}
 	if (const auto* v = std::any_cast<input::Action>(&val)) {
 		return {l, *v};
 	}
@@ -447,6 +467,9 @@ auto anyVectorToLuaRef(lua_State* l, const std::any& value) -> luabridge::LuaRef
 		return r;
 	}
 	if (auto r = pushVecTable<Color4>(l, value); !r.isNil()) {
+		return r;
+	}
+	if (auto r = pushVecTable<physics::RayHit>(l, value); !r.isNil()) {
 		return r;
 	}
 	if (auto r = pushVecTable<AssetProxy>(l, value); !r.isNil()) {
@@ -1204,14 +1227,15 @@ auto nodeProxyDispatchMethod(NodeProxy& np, std::string_view name, lua_State* l,
 			args.reserve(params.size());
 			for (int i = 0; i < effective; ++i) {
 				luabridge::LuaRef v = luabridge::LuaRef::fromStack(l, args_base + i);
+				if (v.isNil() && params[i].default_value.has_value()) {
+					args.emplace_back();
+					continue;
+				}
 				args.push_back(luaArgToAny(l, v, params[i].type, std::string(params[i].name).c_str()));
 			}
-			if (std::cmp_less(effective, params.size())) {
-				// Can't fill default args dynamically without re-generating defaults as std::any
-				// TODO: encode default_value strings to std::any in the generator for full support
-				for (int i = effective; std::cmp_less(i, params.size()); ++i) {
-					args.emplace_back();
-				}
+			// Missing trailing arguments stay empty and the generated invoker fills in their C++ defaults
+			for (int i = effective; std::cmp_less(i, params.size()); ++i) {
+				args.emplace_back();
 			}
 
 			std::any ret = info->callAllDynamic(n, name, args);

@@ -48,8 +48,8 @@ public class ModalService : IModalService {
 		};
 	}
 
-	public async Task<string?> ShowSaveFile(string defaultPath) {
-		var window = new SaveFileModal(defaultPath);
+	public async Task<string?> ShowSaveFile(string defaultPath, string extension = ".tnode") {
+		var window = new SaveFileModal(defaultPath, extension);
 		var owner = FindActiveWindow();
 		if (owner is null) return null;
 		return await window.ShowDialog<string?>(owner);

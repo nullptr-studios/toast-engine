@@ -18,6 +18,7 @@
 
 # Lua
 *.lua linguist-detectable=true linguist-language=Lua
+*.d.lua linguist-detectable=true linguist-language=Lua
 
 # Slang
 *.slang linguist-detectable=true linguist-language=Slang

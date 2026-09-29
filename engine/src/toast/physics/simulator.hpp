@@ -16,6 +16,7 @@
 #include "physics_material.hpp"
 #include "shape.hpp"
 #include "shape_query.hpp"
+#include "toast/physics/raycast.hpp"
 #include "voxel_render.hpp"
 #include "voxel_shape_data.hpp"
 
@@ -26,11 +27,12 @@
 #include <optional>
 #include <span>
 #include <thread>
+#include <toast/events/listener.hpp>
 #include <toast/export.hpp>
 #include <toast/log.hpp>
 #include <toast/voxel/connectivity.hpp>
+#include <toast/voxel/nodes/voxel_node.hpp>
 #include <toast/world/box.hpp>
-#include <toast/world/voxel_node.hpp>
 #include <toml++/impl/preprocessor.hpp>
 #include <unordered_map>
 #include <vector>
@@ -75,6 +77,8 @@ public:
 	[[nodiscard]]
 	auto createBody(const BodyDescriptor& descriptor) -> BodyID;
 	void destroyBody(BodyID body);
+
+	static auto raycast(glm::vec3 pos, glm::vec3 dir) -> std::vector<RayHit>;
 
 	[[nodiscard]]
 	auto valid(ShapeID shape) const -> bool;
@@ -276,6 +280,8 @@ private:
 	[[nodiscard]]
 	static auto nodeFor(BodyID body) -> toast::Box<toast::Node>;
 	[[nodiscard]]
+	static auto colliderFor(BodyID body, ShapeID shape) -> toast::Box<toast::Node>;
+	[[nodiscard]]
 	auto mainThreadMutationAllowed() const -> bool;
 
 	[[nodiscard]]
@@ -304,10 +310,12 @@ private:
 	auto tryGetShape(ShapeID shape) const -> const Shape*;
 	[[nodiscard]]
 	auto valid(VoxelDataID data) const -> bool;
+
+public:
 	[[nodiscard]]
-	auto tryGetVoxelData(VoxelDataID data) -> VoxelShapeData*;
-	[[nodiscard]]
-	auto tryGetVoxelData(VoxelDataID data) const -> const VoxelShapeData*;
+	static auto tryGetVoxelData(VoxelDataID data) -> VoxelShapeData*;
+
+private:
 	void destroyVoxelData(VoxelDataID data);
 
 	void rebuildMassProperties(BodyID id);
@@ -398,6 +406,9 @@ private:
 	void retireVoxelBody(BodyID id);
 	void destroyFragmentsOf(BodyID origin);
 
+	[[nodiscard]]
+	auto voxelNodeFor(ShapeID shape) -> toast::VoxelNode*;
+
 	void reapFragments();
 	void destroyFragmentRecord(BodyID id);
 	void queuePendingFragments(std::span<const ConnectivityResult> results);
@@ -407,6 +418,7 @@ private:
 	void enforceFragmentBudget();
 	void unlockSleep(BodyID id);
 	void rebuildFragmentIndex();
+	void refreshPalette(uint64_t palette_uid);
 	auto createVoxelShapeInternal(
 	    BodyID owner, const VoxelShape& shape, voxel::Volume* external, std::unique_ptr<voxel::Volume> owned,
 	    const voxel::Palette& palette, const voxel::MaterialLibrary& materials
@@ -451,6 +463,8 @@ private:
 	size_t m_connectivity_cursor = 0;
 
 	float m_interpolation_alpha = 0.0f;
+
+	event::Listener m_listener;
 };
 
 }

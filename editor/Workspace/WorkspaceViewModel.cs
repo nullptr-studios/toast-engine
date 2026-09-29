@@ -16,11 +16,11 @@ using Proto.Events;
 
 namespace editor.Workspace;
 
-public enum GizmoTool { Select, Translate, Rotate, Scale, Ruler }
+public enum GizmoTool { Select, Translate, Rotate, Scale, Ruler, VolumeFaces }
 public enum CameraMode { Free, Orbit }
 
 
-public enum RenderMode { Lit, ClusterHeatmap, Albedo, Normal, MetallicRoughness, Ambient, SpecularIbl, SpecularIblMip0, Reflection, ReflectionProbes, ProbeCapture, ProbeCubemap, NormalBuffer, RoughnessBuffer, SsrOnly, AmbientOcclusion, IrradianceVolumes, TracedShadowsOnly, TracedShadows, ShadowTerm, VoxelSteps, VoxelTraversal, VoxelBricks, VoxelVolumes, VoxelMaterials }
+public enum RenderMode { Lit, ClusterHeatmap, Albedo, Normal, MetallicRoughness, Ambient, SpecularIbl, SpecularIblMip0, Reflection, ReflectionProbes, ProbeCapture, ProbeCubemap, NormalBuffer, RoughnessBuffer, SsrOnly, AmbientOcclusion, IrradianceVolumes, TracedShadowsOnly, TracedShadows, ShadowTerm, VoxelSteps, VoxelTraversal, VoxelBricks, VoxelVolumes, VoxelMaterials, VoxelPaletteId, MotionVectors }
 
 public enum PlayState { Stopped, Playing, Simulating, PlayingExternal }
 
@@ -192,7 +192,10 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 
 	private void OnSaveCompleted(WorkspaceSaveCompleted completed) {
 		if (completed.WorkspaceHandle != Handle || completed.Request != m_pendingSaveRequest) return;
-		if (completed.Success) History.MarkSaved(completed.Snapshot);
+		if (completed.Success) {
+			History.MarkSaved(completed.Snapshot);
+			NodeThumbnails.Capture(Engine, BackingAssetUid);
+		}
 		m_pendingSave?.TrySetResult(completed);
 	}
 
@@ -338,6 +341,15 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 
 	private static void SendSnapping(uint kind, bool enabled, double value) {
 		Events.Send(new SetSnapping { Kind = kind, Enabled = enabled, Value = (float)value });
+	}
+
+	public void ResendViewState() {
+		Events.Send(new SetGizmoTool { Tool = (uint)ActiveTool });
+		Events.Send(new SetRenderMode { Mode = (uint)ActiveRenderMode });
+		Events.Send(new SetCoordinateSpace { World = WorldSpace });
+		SendSnapping(0, TranslateSnapEnabled, TranslateSnap);
+		SendSnapping(1, RotateSnapEnabled, RotateSnap);
+		SendSnapping(2, ScaleSnapEnabled, ScaleSnap);
 	}
 
 	partial void OnGameCameraChanged(bool value) {

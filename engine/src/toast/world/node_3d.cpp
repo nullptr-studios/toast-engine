@@ -1,5 +1,6 @@
 #include "node_3d.hpp"
 
+#include "toast/physics/simulator.hpp"
 #include "world.hpp"
 
 #include <tracy/Tracy.hpp>
@@ -23,6 +24,18 @@ void decomposeTransform(const glm::mat4& transform, glm::vec3& position, glm::qu
 	rotation = glm::normalize(rotation);
 }
 
+}
+
+auto Node3D::raycasts(glm::vec3 pos, glm::vec3 dir) const -> std::vector<physics::RayHit> {
+	return physics::Simulator::raycast(world_position + pos, world_rotation * dir);
+}
+
+auto Node3D::raycast(glm::vec3 pos, glm::vec3 dir) const -> std::optional<physics::RayHit> {
+	auto hits = physics::Simulator::raycast(world_position + pos, world_rotation * dir);
+	if (hits.empty()) {
+		return std::nullopt;
+	}
+	return hits[0];
 }
 
 void Node3D::lookAt(glm::vec3 target, glm::vec3 up) {

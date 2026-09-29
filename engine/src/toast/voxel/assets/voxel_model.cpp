@@ -181,6 +181,14 @@ auto VoxelModel::instantiate(BrickPool& pool) const -> std::optional<Volume> {
 	return {std::move(volume)};
 }
 
+void VoxelModel::reload(const std::vector<uint8_t>& data) {
+	VoxelModel fresh(data);
+	m_brick_dims = fresh.m_brick_dims;
+	m_palette_uid = fresh.m_palette_uid;
+	m_grid = std::move(fresh.m_grid);
+	m_bricks = std::move(fresh.m_bricks);
+}
+
 auto VoxelModel::solidVoxelCount() const -> uint32_t {
 	uint32_t total = 0;
 	for (const BrickEntry& entry : m_grid) {
@@ -192,6 +200,28 @@ auto VoxelModel::solidVoxelCount() const -> uint32_t {
 		total += value != voxel::k_empty_palette_index ? 1u : 0u;
 	}
 	return total;
+}
+
+auto VoxelModel::materialAt(glm::uvec3 voxel) const noexcept -> uint8_t {
+	const glm::uvec3 brick_dim(voxel::k_brick_dim);
+	const glm::uvec3 brick = voxel / brick_dim;
+	if (brick.x >= m_brick_dims.x || brick.y >= m_brick_dims.y || brick.z >= m_brick_dims.z) {
+		return voxel::k_empty_palette_index;
+	}
+
+	const size_t slot = brick.x + (static_cast<size_t>(brick.y) * m_brick_dims.x) +
+	                    (static_cast<size_t>(brick.z) * m_brick_dims.x * m_brick_dims.y);
+	const BrickEntry entry = m_grid[slot];
+	switch (entry.tag()) {
+		case BrickTag::uniform: return static_cast<uint8_t>(entry.payload());
+		case BrickTag::owned: {
+			const glm::uvec3 local = voxel - (brick * brick_dim);
+			const size_t index = local.x + (static_cast<size_t>(local.y) * voxel::k_brick_dim) +
+			                     (static_cast<size_t>(local.z) * voxel::k_brick_dim * voxel::k_brick_dim);
+			return m_bricks[(static_cast<size_t>(entry.payload()) * k_brick_material_bytes) + index];
+		}
+		default: return voxel::k_empty_palette_index;
+	}
 }
 
 auto VoxelModel::serialize(SaveMode /*mode*/) const -> std::vector<uint8_t> {

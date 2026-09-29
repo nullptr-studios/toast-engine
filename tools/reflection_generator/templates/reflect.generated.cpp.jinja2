@@ -13,6 +13,12 @@
 // clang-format on
 
 namespace toast {
+{% for node in nodes %}{% if not node.split_typeinfo %}
+template<>
+auto NodeTypeInfo<{{ node.qualified_name }}>::get() noexcept -> const NodeInfo* {
+	return &Reflect<{{ node.qualified_name }}>::type_info;
+}
+{% endif %}{% endfor %}
 void {{ register_fn }}() {
 	static const std::array<const NodeInfo*, {{ nodes | length }}> all_types = {{ '{{' }}
 {% for node in nodes %}

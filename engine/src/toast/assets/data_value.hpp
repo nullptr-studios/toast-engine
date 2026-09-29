@@ -110,10 +110,24 @@ public:
 			if (const auto* str = std::any_cast<std::string>(&m_value)) {
 				return T {*str};
 			}
+		} else if constexpr (std::is_same_v<T, float>) {
+			if (const auto* ptr = std::any_cast<float>(&m_value)) {
+				return *ptr;
+			}
+			if (const auto* ptr = std::any_cast<double>(&m_value)) {
+				return static_cast<float>(*ptr);
+			}
 		} else if (const T* ptr = std::any_cast<T>(&m_value)) {
 			return *ptr;
 		}
-		TOAST_ASSERT(false, "DataValue", "Type mismatch in DataValue::as<T>()");
+		TOAST_ASSERT(
+		    false,
+		    "DataValue",
+		    "Type mismatch in DataValue::as<{}>(): requested '{}', but m_value contains '{}'",
+		    typeid(T).name(),
+		    typeid(T).name(),
+		    m_value.type().name()
+		);
 		return T {};
 	}
 

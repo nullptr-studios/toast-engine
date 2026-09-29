@@ -26,7 +26,7 @@ private:
 
 class [[ToastNode]] PrintTextNode : public Node {
 private:
-	void preInit() { TOAST_TRACE("Debug", "preInit()"); }
+	void editorTick() { TOAST_TRACE("Debug", "editorTick()"); }
 
 	void init() { TOAST_TRACE("Debug", "init()"); }
 

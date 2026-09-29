@@ -33,6 +33,9 @@ public partial class ViewportControl : UserControl {
 	public static readonly StyledProperty<bool> PlayModeProperty =
 		AvaloniaProperty.Register<ViewportControl, bool>(nameof(PlayMode));
 
+	public static readonly StyledProperty<bool> DetachedProperty =
+		AvaloniaProperty.Register<ViewportControl, bool>(nameof(Detached));
+
 	private static readonly PropertyInfo? s_cursorImpl =
 		typeof(Cursor).GetProperty("PlatformImpl", BindingFlags.NonPublic | BindingFlags.Instance);
 
@@ -100,6 +103,20 @@ public partial class ViewportControl : UserControl {
 	public bool PlayMode {
 		get => GetValue(PlayModeProperty);
 		set => SetValue(PlayModeProperty, value);
+	}
+
+	public bool Detached {
+		get => GetValue(DetachedProperty);
+		set => SetValue(DetachedProperty, value);
+	}
+
+	private bool OwnsEngineFrame {
+		get {
+			var handle = (DataContext as WorkspaceViewModel)?.EffectiveHandle ?? 0;
+			return Detached
+				? handle != 0 && ViewportFocus.DetachedOwner == handle
+				: ViewportFocus.DetachedOwner == 0;
+		}
 	}
 
 	public bool IsEditorFlying => m_editorFlyActive;
@@ -296,6 +313,13 @@ public partial class ViewportControl : UserControl {
 		m_engine ??= (DataContext as WorkspaceViewModel)?.Engine;
 		if (m_engine is null)
 			return;
+
+		if (!OwnsEngineFrame) {
+			// Forget the size so it is sent again once this viewport owns the frame
+			m_surfaceW = 0;
+			m_surfaceH = 0;
+			return;
+		}
 
 		SendResizeIfChanged();
 

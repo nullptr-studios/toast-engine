@@ -167,6 +167,28 @@ struct Shape {
 		CapsuleShape capsule;
 		VoxelShape voxel;
 	};
+
+	[[nodiscard]]
+	auto getLocalCenter() const -> glm::vec3 {
+		switch (type) {
+			case ShapeType::sphere: return sphere.local_center;
+			case ShapeType::box: return box.local_center;
+			case ShapeType::capsule: return capsule.local_center;
+			case ShapeType::voxel: return voxel.local_center;
+		}
+		return glm::vec3(0.0f);
+	}
+
+	[[nodiscard]]
+	auto getLocalRotation() const -> glm::quat {
+		switch (type) {
+			case ShapeType::sphere: return {1.0f, 0.0f, 0.0f, 0.0f};
+			case ShapeType::box: return box.local_rotation;
+			case ShapeType::capsule: return capsule.local_rotation;
+			case ShapeType::voxel: return voxel.local_rotation;
+		}
+		return {1.0f, 0.0f, 0.0f, 0.0f};
+	}
 };
 
 struct ShapeSlot {
