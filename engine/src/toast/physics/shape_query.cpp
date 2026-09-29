@@ -32,12 +32,12 @@ auto Simulator::current() -> Simulator* {
 void Simulator::stepKinematicControllers(float dt) {
 	ZoneScopedN("physics::StepKinematicControllers");
 
-	for (size_t index = 0; index < m_node_bindings.size(); ++index) {
-		const Body* body = tryGetBody(m_node_bindings[index].body);
+	for (const NodeBinding& binding : m_node_bindings) {
+		const Body* body = tryGetBody(binding.body);
 		if (body == nullptr || not body->enabled) {
 			continue;
 		}
-		if (auto controller = m_node_bindings[index].node.as<KinematicRigidbody>(); controller.exists()) {
+		if (auto controller = binding.node.as<KinematicRigidbody>(); controller.exists()) {
 			controller->simulate(*this, dt);
 		}
 	}
@@ -167,7 +167,7 @@ auto Simulator::sweepCapsule(
 
 	// resting on or sliding off a surface must never block so only contacts the move digs into count
 	std::vector<QueryContact> contacts;
-	const auto blockingContact = [&](float t) -> std::optional<QueryContact> {
+	const auto blocking_contact = [&](float t) -> std::optional<QueryContact> {
 		probe_body.position = from + delta * t;
 		contacts.clear();
 		collideCapsuleProbe(probe_body, probe_shape, candidates, contacts);
@@ -190,7 +190,7 @@ auto Simulator::sweepCapsule(
 	float blocked = 1.0f;
 	std::optional<QueryContact> hit;
 	for (float t = std::min(sample_step, 1.0f);; t = std::min(t + sample_step, 1.0f)) {
-		hit = blockingContact(t);
+		hit = blocking_contact(t);
 		if (hit.has_value()) {
 			blocked = t;
 			break;
@@ -203,7 +203,7 @@ auto Simulator::sweepCapsule(
 
 	for (int iteration = 0; iteration < k_sweep_refine_iterations; ++iteration) {
 		const float middle = 0.5f * (clear + blocked);
-		if (auto contact = blockingContact(middle)) {
+		if (auto contact = blocking_contact(middle)) {
 			blocked = middle;
 			hit = contact;
 		} else {

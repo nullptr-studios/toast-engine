@@ -203,9 +203,9 @@ public:
 	    float skin
 	) const -> SweepHit;
 	void setCapsuleShape(ShapeID shape, const CapsuleShape& capsule);
-	void moveKinematicBody(BodyID body, const glm::vec3& position, const glm::quat& rotation, const glm::vec3& velocity);
+	void moveKinematicBody(BodyID id, const glm::vec3& position, const glm::quat& rotation, const glm::vec3& velocity);
 	/// Raises the velocity of a dynamic body along direction
-	void pushBody(BodyID body, const glm::vec3& point, const glm::vec3& direction, float speed, float max_impulse);
+	void pushBody(BodyID id, const glm::vec3& point, const glm::vec3& direction, float speed, float max_impulse);
 	void wakeBodiesInBounds(const AABB& bounds);
 
 	/// Simulator running the current step, null outside a play session
