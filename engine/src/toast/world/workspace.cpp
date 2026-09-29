@@ -2590,6 +2590,12 @@ void Workspace::tick() {
 				f.ref_type = d.ref_type;
 				f.value = stringifyLuaValue(d, rt->getVarByPath(i, d.path));
 				f.default_value = stringifyLuaValue(d, d.default_value);
+				f.display_name = d.display_name;
+				f.read_only = d.read_only;
+				f.hidden = d.hidden;
+				f.min = d.min;
+				f.max = d.max;
+				f.unit = d.unit;
 				return f;
 			};
 

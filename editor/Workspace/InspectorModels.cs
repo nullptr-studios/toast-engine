@@ -357,12 +357,14 @@ public partial class FieldVM : ObservableObject {
 		ParameterName = info.Path;
 		IsLua = true;
 		Kind = InspectorFormat.LuaKindOf(info.Kind, info.IsArray);
-		DisplayName = InspectorFormat.DisplayName(info.Name);
-		ReadOnly = false;
-		Unit = null;
+		DisplayName = string.IsNullOrEmpty(info.DisplayName)
+			? InspectorFormat.DisplayName(info.Name)
+			: info.DisplayName;
+		ReadOnly = info.ReadOnly;
+		Unit = string.IsNullOrEmpty(info.Unit) ? null : info.Unit;
 		RefType = string.IsNullOrEmpty(info.RefType) ? null : InspectorFormat.BareName(info.RefType);
-		Min = double.NegativeInfinity;
-		Max = double.PositiveInfinity;
+		Min = info.Min;
+		Max = info.Max;
 		m_default = string.IsNullOrEmpty(info.DefaultValue) ? null : info.DefaultValue;
 
 		Segments.Add(new TextSegment(DisplayName, false));

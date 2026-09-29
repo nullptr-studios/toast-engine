@@ -13,6 +13,7 @@
 #include <array>
 #include <atomic>
 #include <cctype>
+#include <charconv>
 #include <format>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
@@ -150,6 +151,101 @@ auto declPos(std::string_view src, std::string_view key, size_t from) -> size_t 
 		pos += key.size();
 	}
 	return std::string_view::npos;
+}
+
+auto trim(std::string_view text) -> std::string_view {
+	while (!text.empty() && std::isspace(static_cast<unsigned char>(text.front())) != 0) {
+		text.remove_prefix(1);
+	}
+	while (!text.empty() && std::isspace(static_cast<unsigned char>(text.back())) != 0) {
+		text.remove_suffix(1);
+	}
+	return text;
+}
+
+auto annotationString(std::string_view value) -> std::string {
+	value = trim(value);
+	if (value.size() >= 2 && ((value.front() == '"' && value.back() == '"') || (value.front() == '\'' && value.back() == '\''))) {
+		value.remove_prefix(1);
+		value.remove_suffix(1);
+	}
+	return std::string(value);
+}
+
+auto parseNumber(std::string_view& text, double& value) -> bool {
+	text = trim(text);
+	if (text.empty()) {
+		return false;
+	}
+	const char* begin = text.data();
+	const char* end = begin + text.size();
+	auto [next, error] = std::from_chars(begin, end, value);
+	if (error != std::errc {} || next == begin) {
+		return false;
+	}
+	text.remove_prefix(static_cast<size_t>(next - begin));
+	return true;
+}
+
+void applyFieldAnnotations(LuaVarDesc& desc, std::string_view src, size_t declaration_pos, std::string_view script_name) {
+	if (declaration_pos == std::string_view::npos) {
+		return;
+	}
+
+	const size_t declaration_line = src.rfind('\n', declaration_pos);
+	size_t line_start = declaration_line == std::string_view::npos ? 0 : declaration_line + 1;
+	std::vector<std::string_view> annotations;
+	while (line_start > 0) {
+		const size_t line_end = line_start - 1;
+		const size_t previous_newline = line_end == 0 ? std::string_view::npos : src.rfind('\n', line_end - 1);
+		const size_t previous_start = previous_newline == std::string_view::npos ? 0 : previous_newline + 1;
+		const std::string_view line = trim(src.substr(previous_start, line_end - previous_start));
+
+		if (line.empty()) {
+			line_start = previous_start;
+			continue;
+		}
+		if (!line.starts_with("---@")) {
+			break;
+		}
+		annotations.push_back(line.substr(4));
+		line_start = previous_start;
+	}
+	std::ranges::reverse(annotations);
+
+	for (std::string_view annotation : annotations) {
+		annotation = trim(annotation);
+		const size_t separator = annotation.find_first_of(" \t");
+		const std::string_view tag = annotation.substr(0, separator);
+		const std::string_view arguments =
+		    separator == std::string_view::npos ? std::string_view {} : trim(annotation.substr(separator));
+
+		if (tag == "name") {
+			desc.display_name = annotationString(arguments);
+			if (desc.display_name.empty()) {
+				TOAST_WARN("Lua", "{}: @name on '{}' needs a display name; ignoring", script_name, desc.path);
+			}
+		} else if (tag == "readonly") {
+			desc.read_only = true;
+		} else if (tag == "hidden") {
+			desc.hidden = true;
+		} else if (tag == "unit") {
+			desc.unit = annotationString(arguments);
+			if (desc.unit.empty()) {
+				TOAST_WARN("Lua", "{}: @unit on '{}' needs a unit; ignoring", script_name, desc.path);
+			}
+		} else if (tag == "range") {
+			std::string_view rest = arguments;
+			double min = 0.0;
+			double max = 0.0;
+			if (!parseNumber(rest, min) || !parseNumber(rest, max) || !trim(rest).empty() || min > max) {
+				TOAST_WARN("Lua", "{}: invalid @range on '{}'; expected two numbers with min <= max", script_name, desc.path);
+				continue;
+			}
+			desc.min = min;
+			desc.max = max;
+		}
+	}
 }
 
 template<typename T>
@@ -407,6 +503,24 @@ void ScriptInstance::extractSchema(std::string_view src) noexcept {
 		for (LuaSubgroup& sub : group.subgroups) {
 			const size_t sub_pos = declPos(src, sub.name, from);
 			sortByDeclaration(sub.fields, src, sub_pos == std::string_view::npos ? from : sub_pos);
+		}
+	}
+
+	for (LuaVarDesc& field : m_schema.fields) {
+		applyFieldAnnotations(field, src, declPos(src, field.name, 0), m_name);
+	}
+	for (LuaGroup& group : m_schema.groups) {
+		const size_t group_pos = declPos(src, group.name, 0);
+		const size_t group_from = group_pos == std::string_view::npos ? 0 : group_pos;
+		for (LuaVarDesc& field : group.fields) {
+			applyFieldAnnotations(field, src, declPos(src, field.name, group_from), m_name);
+		}
+		for (LuaSubgroup& subgroup : group.subgroups) {
+			const size_t subgroup_pos = declPos(src, subgroup.name, group_from);
+			const size_t subgroup_from = subgroup_pos == std::string_view::npos ? group_from : subgroup_pos;
+			for (LuaVarDesc& field : subgroup.fields) {
+				applyFieldAnnotations(field, src, declPos(src, field.name, subgroup_from), m_name);
+			}
 		}
 	}
 }

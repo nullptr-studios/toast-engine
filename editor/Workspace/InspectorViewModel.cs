@@ -619,6 +619,7 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 	}
 
 	private void AddLuaField(ObservableCollection<FieldVM> target, LuaField info) {
+		if (info.Hidden) return;
 		var vm = new FieldVM(info);
 		vm.AttachClipboardHost(this);
 		vm.Edited += OnFieldEdited;
