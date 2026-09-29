@@ -784,7 +784,7 @@ auto floodFill(Volume& volume, glm::ivec3 seed, uint8_t id) -> EditResult {
 		return result;
 	}
 
-	constexpr std::array<glm::ivec3, 6> steps {
+	const std::array<glm::ivec3, 6> steps {
 	  glm::ivec3 { 1,  0,  0},
 	  glm::ivec3 {-1,  0,  0},
 	  glm::ivec3 { 0,  1,  0},

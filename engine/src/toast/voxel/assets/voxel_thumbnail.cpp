@@ -101,7 +101,7 @@ auto voxThumbAlbedo(const Palette& palette, uint8_t index) -> glm::vec3 {
 
 [[nodiscard]]
 auto voxThumbShade(glm::vec3 albedo, glm::vec3 normal) -> glm::vec3 {
-	constexpr glm::vec3 k_light_dir = glm::vec3(-0.4f, -0.55f, 0.73f);
+	const glm::vec3 k_light_dir = glm::vec3(-0.4f, -0.55f, 0.73f);
 	constexpr float k_ambient = 0.45f;
 	constexpr float k_diffuse = 0.55f;
 	const float n_dot_l = std::max(0.0f, glm::dot(normal, k_light_dir));
@@ -120,8 +120,8 @@ struct VoxThumbCamera {
 auto voxThumbBuildCamera(const VoxThumbGrid& grid, glm::vec3 center_of_mass) -> VoxThumbCamera {
 	VoxThumbCamera cam;
 
-	constexpr float k_yaw = glm::radians(45.0f);
-	constexpr float k_pitch = glm::radians(30.0f);
+	const float k_yaw = glm::radians(45.0f);
+	const float k_pitch = glm::radians(30.0f);
 	const glm::vec3 forward =
 	    glm::normalize(glm::vec3(std::cos(k_yaw) * std::cos(k_pitch), std::sin(k_yaw) * std::cos(k_pitch), -std::sin(k_pitch)));
 

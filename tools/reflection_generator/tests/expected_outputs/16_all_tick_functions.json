@@ -8,6 +8,7 @@
       "begin",
       "earlyTick",
       "tick",
+      "physicsTick",
       "postPhysics",
       "lateTick",
       "end",
@@ -37,6 +38,7 @@
       "on_disable": true,
       "on_enable": true,
       "editor_tick": true,
+      "physics_tick": true,
       "post_physics": true,
       "save": true,
       "tick": true

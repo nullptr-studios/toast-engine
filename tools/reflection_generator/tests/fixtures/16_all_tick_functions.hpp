@@ -1,4 +1,4 @@
-// Class with ALL 13 tick functions
+// Class with ALL 14 tick functions
 
 class [[ToastNode]] AllTicksNode {
 public:
@@ -7,6 +7,7 @@ public:
     void begin() {}
     void earlyTick() {}
     void tick() {}
+    void physicsTick() {}
     void postPhysics() {}
     void lateTick() {}
     void end() {}

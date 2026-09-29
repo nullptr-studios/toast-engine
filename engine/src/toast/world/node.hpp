@@ -446,9 +446,9 @@ private:
 
 	NodeState m_state = NodeState::null;
 	NodeType m_type = NodeType::null;
-	std::array<uint8_t, 4> m_wave = {
-	  255, 255, 255, 255
-	};    ///< one wave index per tick phase (early/tick/post-physics/late); 255 = unscheduled
+	std::array<uint8_t, 5> m_wave = {
+	  255, 255, 255, 255, 255
+	};    ///< one wave index per tick phase (early/tick/post-physics/late/physics); 255 = unscheduled
 
 	Box<Node> m_box;
 	const NodeInfo* m_info = nullptr;

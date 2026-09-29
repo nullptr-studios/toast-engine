@@ -20,11 +20,15 @@
         <OutputPath>../out/Release/editor</OutputPath>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
         <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+        <Optimize>true</Optimize>
+        <TieredPGO>true</TieredPGO>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)' == 'RelWithDebInfo' ">
         <OutputPath>../out/RelWithDebInfo/editor</OutputPath>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
         <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+        <Optimize>true</Optimize>
+        <TieredPGO>true</TieredPGO>
     </PropertyGroup>
 
     <ItemGroup>

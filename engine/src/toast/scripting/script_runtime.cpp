@@ -64,6 +64,7 @@ auto phaseToLuaName(toast::TickFunctionList phase) noexcept -> const char* {
 		case F::on_disable: return "onDisable";
 		case F::early_tick: return "earlyTick";
 		case F::tick: return "tick";
+		case F::physics_tick: return "physicsTick";
 		case F::post_physics: return "postPhysics";
 		case F::late_tick: return "lateTick";
 		default: return nullptr;
@@ -270,6 +271,7 @@ void ScriptInstance::snapshotTickMask() noexcept {
 	  F::on_disable,
 	  F::early_tick,
 	  F::tick,
+	  F::physics_tick,
 	  F::post_physics,
 	  F::late_tick,
 	};

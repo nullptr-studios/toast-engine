@@ -1,0 +1,191 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:editor.Workspace"
+             xmlns:lucide="using:Lucide.Avalonia"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignWidth="340"
+             d:DesignHeight="900"
+             x:Class="editor.Workspace.RendererSettingsView"
+             Background="{StaticResource Bg2}"
+             x:DataType="vm:RendererSettingsViewModel">
+
+	<Design.DataContext>
+		<vm:RendererSettingsViewModel />
+	</Design.DataContext>
+
+	<UserControl.Styles>
+		<Style Selector="TextBlock.lbl">
+			<Setter Property="Foreground" Value="{StaticResource Text}" />
+			<Setter Property="VerticalAlignment" Value="Center" />
+			<Setter Property="TextWrapping" Value="Wrap" />
+		</Style>
+		<Style Selector="TextBlock.hint">
+			<Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+			<Setter Property="FontSize" Value="11" />
+			<Setter Property="TextWrapping" Value="Wrap" />
+			<Setter Property="Margin" Value="0,2,0,0" />
+		</Style>
+		<Style Selector="TextBlock.category">
+			<Setter Property="Foreground" Value="{StaticResource Text}" />
+			<Setter Property="FontWeight" Value="SemiBold" />
+		</Style>
+		<Style Selector="Border.row">
+			<Setter Property="Padding" Value="8,6" />
+		</Style>
+		<Style Selector="Button.reset">
+			<Setter Property="Padding" Value="4" />
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="VerticalAlignment" Value="Center" />
+		</Style>
+	</UserControl.Styles>
+
+	<UserControl.DataTemplates>
+		<!-- One template per row type. The view model chooses the row subclass from what the engine declared,
+		     so the widget follows the setting's type without a converter deciding it here -->
+
+		<DataTemplate DataType="vm:BoolSettingRow">
+			<CheckBox IsChecked="{Binding Value, Mode=TwoWay}" MinWidth="0" />
+		</DataTemplate>
+
+		<DataTemplate DataType="vm:EnumSettingRow">
+			<ComboBox ItemsSource="{Binding Options}"
+			          SelectedIndex="{Binding SelectedIndex, Mode=TwoWay}"
+			          HorizontalAlignment="Stretch" />
+		</DataTemplate>
+
+		<DataTemplate DataType="vm:IntSettingRow">
+			<NumericUpDown Value="{Binding Value, Mode=TwoWay}"
+			               Minimum="{Binding Minimum}"
+			               Maximum="{Binding Maximum}"
+			               Increment="{Binding Increment}"
+			               FormatString="0"
+			               HorizontalAlignment="Stretch" />
+		</DataTemplate>
+
+		<DataTemplate DataType="vm:FloatSettingRow">
+			<!-- A slider when the engine gave bounds, a number box when it did not: an unbounded slider has no
+			     meaningful travel, and a bounded value is far easier to explore by dragging -->
+			<Panel>
+				<StackPanel IsVisible="{Binding UseSlider}" Orientation="Horizontal" Spacing="6">
+					<Slider Value="{Binding Value, Mode=TwoWay}"
+					        Minimum="{Binding Minimum}"
+					        Maximum="{Binding Maximum}"
+					        TickFrequency="{Binding Increment}"
+					        Width="150"
+					        VerticalAlignment="Center" />
+					<TextBlock Classes="lbl"
+					           MinWidth="42"
+					           Text="{Binding Value, StringFormat='{}{0:0.###}'}" />
+				</StackPanel>
+				<NumericUpDown IsVisible="{Binding !UseSlider}"
+				               Value="{Binding Value, Mode=TwoWay}"
+				               Increment="{Binding Increment}"
+				               HorizontalAlignment="Stretch" />
+			</Panel>
+		</DataTemplate>
+
+		<DataTemplate DataType="vm:StringSettingRow">
+			<TextBox Text="{Binding Value, Mode=TwoWay}" HorizontalAlignment="Stretch" />
+		</DataTemplate>
+	</UserControl.DataTemplates>
+
+	<DockPanel LastChildFill="True">
+
+		<!-- Actions, pinned so a bake is reachable without scrolling past every slider -->
+		<Border DockPanel.Dock="Top" Background="{StaticResource Bg3}" Padding="8" >
+			<StackPanel Spacing="6">
+				<TextBlock Classes="category" Text="Baking" />
+
+				<StackPanel Orientation="Horizontal" Spacing="6">
+					<Button Command="{Binding BakeReflectionProbesCommand}" Content="Bake reflection probes" />
+					<TextBlock Classes="hint"
+					           VerticalAlignment="Center"
+					           IsVisible="{Binding HasStaleReflectionProbes}"
+					           Foreground="{StaticResource Orange}"
+					           Text="{Binding StaleReflectionProbes, StringFormat='{}{0} stale'}" />
+				</StackPanel>
+
+				<StackPanel Orientation="Horizontal" Spacing="6">
+					<Button Command="{Binding BakeIrradianceVolumesCommand}" Content="Bake irradiance volumes" />
+					<TextBlock Classes="hint"
+					           VerticalAlignment="Center"
+					           IsVisible="{Binding HasStaleIrradianceVolumes}"
+					           Foreground="{StaticResource Orange}"
+					           Text="{Binding StaleIrradianceVolumes, StringFormat='{}{0} stale'}" />
+				</StackPanel>
+
+				<TextBlock Classes="hint"
+				           Text="{Binding IrradianceProbeCount, StringFormat='{}{0} irradiance probes registered'}" />
+			</StackPanel>
+		</Border>
+
+		<!-- Persistence, at the bottom because it is the last thing done rather than the first -->
+		<Border DockPanel.Dock="Bottom" Background="{StaticResource Bg3}" Padding="8">
+			<StackPanel Spacing="6">
+				<StackPanel Orientation="Horizontal" Spacing="6">
+					<Button Command="{Binding SaveCommand}" Content="Save" />
+					<Button Command="{Binding ReloadCommand}" Content="Reload" />
+					<Button Command="{Binding ResetAllCommand}" Content="Reset all" />
+				</StackPanel>
+				<TextBlock Classes="hint"
+				           IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+				           Text="{Binding StatusMessage}" />
+				<TextBlock Classes="hint" Text="{Binding SavePath, StringFormat='Writes {0}'}" />
+				<TextBlock Classes="hint"
+				           IsVisible="{Binding !RayTracingSupported}"
+				           Foreground="{StaticResource Orange}"
+				           Text="No ray query on this device - traced shadows will not apply." />
+			</StackPanel>
+		</Border>
+
+		<ScrollViewer>
+			<ItemsControl ItemsSource="{Binding Categories}">
+				<ItemsControl.ItemTemplate>
+					<DataTemplate DataType="vm:SettingCategory">
+						<Expander Header="{Binding Name}" IsExpanded="True" Margin="0,0,0,4" HorizontalAlignment="Stretch">
+							<ItemsControl ItemsSource="{Binding Rows}">
+								<ItemsControl.ItemTemplate>
+									<DataTemplate DataType="vm:SettingRow">
+										<Border Classes="row">
+											<Grid ColumnDefinitions="*,Auto,Auto" RowDefinitions="Auto,Auto">
+												<StackPanel Grid.Row="0" Grid.Column="0" VerticalAlignment="Center">
+													<StackPanel Orientation="Horizontal" Spacing="4">
+														<TextBlock Classes="lbl" Text="{Binding Label}" />
+														<TextBlock Classes="hint"
+														           VerticalAlignment="Center"
+														           IsVisible="{Binding RequiresRestart}"
+														           Foreground="{StaticResource Orange}"
+														           Text="(restart)" />
+													</StackPanel>
+												</StackPanel>
+
+												<!-- The value editor: resolved by the row's own type through the templates above -->
+												<ContentControl Grid.Row="0" Grid.Column="1"
+												                Margin="8,0,4,0"
+												                Content="{Binding}" />
+
+												<Button Grid.Row="0" Grid.Column="2"
+												        Classes="reset"
+												        Command="{Binding ResetCommand}"
+												        ToolTip.Tip="Reset to the value underneath this one">
+													<lucide:LucideIcon Kind="RotateCcw" Size="13" />
+												</Button>
+
+												<TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3"
+												           Classes="hint"
+												           IsVisible="{Binding HasDescription}"
+												           Text="{Binding Description}" />
+											</Grid>
+										</Border>
+									</DataTemplate>
+								</ItemsControl.ItemTemplate>
+							</ItemsControl>
+						</Expander>
+					</DataTemplate>
+				</ItemsControl.ItemTemplate>
+			</ItemsControl>
+		</ScrollViewer>
+	</DockPanel>
+</UserControl>

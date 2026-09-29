@@ -1511,6 +1511,16 @@ void Simulator::recordTickBurst(size_t steps, bool time_budget_reached) {
 	}
 }
 
+void Simulator::recordInterpolationAlpha(double alpha) {
+	if (instance != nullptr) {
+		instance->m_interpolation_alpha = static_cast<float>(std::clamp(alpha, 0.0, 1.0));
+	}
+}
+
+auto Simulator::interpolationAlpha() -> float {
+	return instance != nullptr ? instance->m_interpolation_alpha : 1.0f;
+}
+
 auto Simulator::velocityAtPoint(const Body& body, const glm::vec3& r) -> glm::vec3 {
 	return body.linear_velocity + glm::cross(body.angular_velocity, r);
 }

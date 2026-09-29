@@ -35,11 +35,13 @@ struct NodeCluster {
 
 	void earlyTick();
 	void tick();
+	void physicsTick();
 	void postPhysics();
 	void lateTick();
 
 	auto hasEarlyTick() -> bool;
 	auto hasTick() -> bool;
+	auto hasPhysicsTick() -> bool;
 	auto hasPostPhysics() -> bool;
 	auto hasLateTick() -> bool;
 };
@@ -48,6 +50,7 @@ struct TickSchedule {
 	using Wave = std::vector<std::variant<Box<Node>, NodeCluster>>;
 	std::vector<Wave> early_tick;
 	std::vector<Wave> tick;
+	std::vector<Wave> physics_tick;
 	std::vector<Wave> post_physics;
 	std::vector<Wave> late_tick;
 };
@@ -74,8 +77,11 @@ public:
 	 */
 	void compute(const std::vector<Box<Node>>& all_nodes);
 
-	/// Runs all four phases (early_tick → tick → post_physics → late_tick) of the schedule
+	/// Runs the four frame phases (early_tick → tick → post_physics → late_tick) of the schedule
 	void run() const;
+
+	/// Runs a phase wave by wave on the calling thread; for phases that touch thread-bound state like the physics simulator
+	void runPhaseSerial(const std::vector<_detail::TickSchedule::Wave>& phase, TickFunctionList func, std::string_view name) const;
 
 	/// Dispatches a single phase of the tick schedule
 	void runPhase(const std::vector<_detail::TickSchedule::Wave>& phase, TickFunctionList func, std::string_view name) const;

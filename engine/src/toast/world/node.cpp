@@ -303,6 +303,8 @@ void Node::callTick(const NodeInfo* info, TickFunctionList func_type) noexcept {
 		invoker = funcs.early_tick;
 	} else if (hasFlag(func_type, TickFunctionList::tick) && hasFlag(funcs.list, TickFunctionList::tick)) {
 		invoker = funcs.tick;
+	} else if (hasFlag(func_type, TickFunctionList::physics_tick) && hasFlag(funcs.list, TickFunctionList::physics_tick)) {
+		invoker = funcs.physics_tick;
 	} else if (hasFlag(func_type, TickFunctionList::post_physics) && hasFlag(funcs.list, TickFunctionList::post_physics)) {
 		invoker = funcs.post_physics;
 	} else if (hasFlag(func_type, TickFunctionList::late_tick) && hasFlag(funcs.list, TickFunctionList::late_tick)) {

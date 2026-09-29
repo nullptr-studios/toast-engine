@@ -725,7 +725,7 @@ void ProceduralVoxel::drawDebug() {
 	}
 
 	// The selected piece
-	constexpr glm::vec4 k_selection_orange {1.0f, 0.639f, 0.0f, 1.0f};
+	const glm::vec4 k_selection_orange {1.0f, 0.639f, 0.0f, 1.0f};
 	for (const PieceLayout& piece : m_layout) {
 		if (piece.node.exists() && piece.node->uid() == overlays.selected) {
 			renderer::debugDrawShapeBox(box(glm::vec3(piece.bounds.min), glm::vec3(piece.bounds.max + 1)), k_selection_orange, false);

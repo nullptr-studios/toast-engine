@@ -250,8 +250,9 @@ auto AABBTree::query(glm::vec3 pos, glm::vec3 inv_dir, ShapeID ignored_shape) co
 }
 
 auto AABBTree::query(const AABB& bounds, ShapeID ignored_shape) const -> std::vector<ShapeID> {
-	ZoneScopedN("physics::AABBTree::Query(AABB)");
-	ZoneValue(static_cast<uint64_t>(ignored_shape.slot));
+	// Removed due to bloating tracy shi
+	// ZoneScopedN("physics::AABBTree::Query");
+	// ZoneValue(static_cast<uint64_t>(ignored_shape.slot));
 	std::vector<ShapeID> result;
 	if (m_root == null_node) {
 		return result;
@@ -277,7 +278,7 @@ auto AABBTree::query(const AABB& bounds, ShapeID ignored_shape) const -> std::ve
 
 	std::ranges::sort(result);
 	result.erase(std::unique(result.begin(), result.end()), result.end());
-	ZoneValue(static_cast<uint64_t>(result.size()));
+	// ZoneValue(static_cast<uint64_t>(result.size()));
 	return result;
 }
 
