@@ -40,6 +40,7 @@
       "load": false,
       "on_disable": false,
       "on_enable": false,
+      "physics_tick": false,
       "post_physics": false,
       "editor_tick": false,
       "save": false,

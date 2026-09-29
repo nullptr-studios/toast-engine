@@ -106,6 +106,7 @@ pub fn minimal_node_json(name: &str, namespace: Option<&str>) -> JsonValue {
             "begin": false,
             "early_tick": false,
             "tick": false,
+            "physics_tick": false,
             "post_physics": false,
             "late_tick": false,
             "end": false,
