@@ -149,8 +149,11 @@ private:
 }
 
 auto namedSchemaEntries() -> std::vector<NamedSchemaEntry> {
-	auto& mgr = AssetManager::get();
 	std::vector<NamedSchemaEntry> entries;
+	if (!AssetManager::isInitialized()) {
+		return entries;
+	}
+	auto& mgr = AssetManager::get();
 	for (const auto uid : mgr.listByType("schema")) {
 		auto handle = load<Schema>(uid);
 		if (!handle.hasValue() || !handle->isValid()) {
