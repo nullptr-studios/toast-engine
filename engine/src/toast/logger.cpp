@@ -227,6 +227,7 @@ void Logger::log(std::string_view file, unsigned line, char severity, std::strin
 			// std::println can sometimes throw if cstdout doesnt exist yet so rather than printing it just add it to the fallback
 			// database (down below) and do nothing else
 			// Trully c# moment this only happens sometimes because of some bullshit of the .NET worker execution pool -x
+			(void)0;    // avoid clang-tidy error about empty catch block
 		}
 
 #endif

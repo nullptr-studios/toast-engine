@@ -1075,7 +1075,7 @@ void toast_bake_asset(const char* uid_str, const char* out_path) noexcept {
 	} catch (const std::exception& e) { TOAST_ERROR("Engine", "toast_bake_asset: {}", e.what()); }
 }
 
-int toast_generate_data_schema_stubs(const char* out_path) noexcept {
+auto toast_generate_data_schema_stubs(const char* out_path) noexcept -> int {
 	ZoneScoped;
 	if (!out_path) {
 		return 0;

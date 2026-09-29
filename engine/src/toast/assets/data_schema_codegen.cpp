@@ -106,16 +106,16 @@ private:
 		std::string result;
 		for (size_t i = 0; i < options.size(); ++i) {
 			if (i > 0) {
-				result += "|";
+				result += '|';
 			}
-			result += "\"" + options[i] + "\"";
+			result += '\"' + options[i] + '\"';
 		}
 		return result;
 	}
 
 	auto emitStruct(const SchemaField& field) -> std::string {
 		const std::string local_name = pascalCase(field.struct_type.empty() ? field.name : field.struct_type);
-		const std::string class_name = m_root_name + "." + local_name;
+		const std::string class_name = m_root_name + '.' + local_name;
 		if (m_emitted_classes.insert(class_name).second) {
 			emitClass(class_name, field.children, "");
 		}
