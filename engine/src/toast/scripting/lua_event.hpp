@@ -149,9 +149,7 @@ inline constexpr bool is_handle_v<assets::Handle<T>> = true;
 
 template<typename T>
 auto readEventIndex(lua_State* state, int index, std::string_view type, T& out) -> bool {
-	if constexpr (std::same_as<T, bool>) {
-		return readEventPrimitive(state, index, out);
-	} else if constexpr (std::is_enum_v<T> || std::integral<T>) {
+	if constexpr (!std::same_as<T, bool> && (std::is_enum_v<T> || std::integral<T>)) {
 		int64_t value = 0;
 		if (!readEventPrimitive(state, index, value)) {
 			return false;
@@ -207,9 +205,7 @@ auto readEventValue(lua_State* state, int table, std::string_view field, std::st
 
 template<typename T>
 void pushEventValue(lua_State* state, const T& value) {
-	if constexpr (std::same_as<T, bool>) {
-		pushEventPrimitive(state, value);
-	} else if constexpr (std::is_enum_v<T> || std::integral<T>) {
+	if constexpr (!std::same_as<T, bool> && (std::is_enum_v<T> || std::integral<T>)) {
 		pushEventPrimitive(state, static_cast<int64_t>(value));
 	} else if constexpr (std::floating_point<T>) {
 		pushEventPrimitive(state, static_cast<double>(value));

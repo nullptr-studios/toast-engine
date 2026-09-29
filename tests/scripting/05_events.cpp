@@ -175,7 +175,7 @@ return M
 	event::pollEvents();    // echo queued by the VoxelCollapsePieces callback
 	auto typed_var = [&](std::string_view name) { return typed->scriptRuntime()->getVar(name); };
 	assert(std::any_cast<int>(typed_var("bytes")) == 6);
-	assert(observed_snapshot == std::vector<uint8_t> {1, 2, 3});
+	assert((observed_snapshot == std::vector<uint8_t> {1, 2, 3}));
 	assert(observed_voxel == glm::ivec3(1, 2, 3));
 	assert(std::any_cast<int>(typed_var("voxel_sum")) == 6);
 	assert(std::any_cast<int>(typed_var("files")) == 2);
