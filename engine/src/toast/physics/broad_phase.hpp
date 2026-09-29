@@ -43,7 +43,7 @@ struct BroadPhaseStats {
 };
 
 [[nodiscard]]
-auto worldShapeBounds(const Body& body, const Shape& shape) -> AABB;
+TOAST_API auto worldShapeBounds(const Body& body, const Shape& shape) -> AABB;
 
 class BroadPhase {
 public:

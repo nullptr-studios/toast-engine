@@ -734,7 +734,12 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		tasks.Add(LoaderTask.Run(
 			"cmake build",
 			"cmake",
-			"--build .toast/cmake_cache"
+			// the game shares std types with the engine so both must use the same CRT
+#if DEBUG
+			"--build .toast/cmake_cache --config Debug"
+#else
+			"--build .toast/cmake_cache --config Release"
+#endif
 		));
 
 		tasks.Add(LoaderTask.Do("Reload game", async log => {

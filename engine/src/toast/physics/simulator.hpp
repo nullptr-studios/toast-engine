@@ -41,7 +41,6 @@ namespace physics {
 class Rigidbody;
 class DynamicRigidbody;
 class Collider;
-class Character;
 
 }
 
@@ -51,7 +50,6 @@ class TOAST_API Simulator {
 	friend class Collider;
 	friend class Rigidbody;
 	friend class DynamicRigidbody;
-	friend class Character;
 	friend class toast::VoxelNode;
 
 public:
@@ -79,6 +77,8 @@ public:
 	auto createBody(const BodyDescriptor& descriptor) -> BodyID;
 	void destroyBody(BodyID body);
 
+	[[nodiscard]]
+	auto valid(ShapeID shape) const -> bool;
 	[[nodiscard]]
 	auto valid(BodyID body) const -> bool;
 	[[nodiscard]]
@@ -215,6 +215,27 @@ public:
 	static void unregisterVoxelNode(toast::VoxelNode& node);
 
 	[[nodiscard]]
+	auto overlapCapsule(
+	    BodyID ignored, const CapsuleShape& capsule, const glm::vec3& position, const glm::quat& rotation, float min_penetration,
+	    std::vector<QueryContact>& contacts
+	) const -> bool;
+	/// Moves a capsule until it would dig into something
+	[[nodiscard]]
+	auto sweepCapsule(
+	    BodyID ignored, const CapsuleShape& capsule, const glm::quat& rotation, const glm::vec3& from, const glm::vec3& to,
+	    float skin
+	) const -> SweepHit;
+	void setCapsuleShape(ShapeID shape, const CapsuleShape& capsule);
+	void moveKinematicBody(BodyID body, const glm::vec3& position, const glm::quat& rotation, const glm::vec3& velocity);
+	/// Raises the velocity of a dynamic body along direction
+	void pushBody(BodyID body, const glm::vec3& point, const glm::vec3& direction, float speed, float max_impulse);
+	void wakeBodiesInBounds(const AABB& bounds);
+
+	/// Simulator running the current step, null outside a play session
+	[[nodiscard]]
+	static auto current() -> Simulator*;
+
+	[[nodiscard]]
 	static auto voxelFragmentRecords() -> std::span<const VoxelRenderRecord>;
 
 private:
@@ -308,8 +329,6 @@ private:
 
 	void destroyShape(ShapeID shape);
 	[[nodiscard]]
-	auto valid(ShapeID shape) const -> bool;
-	[[nodiscard]]
 	auto tryGetShape(ShapeID shape) -> Shape*;
 	[[nodiscard]]
 	auto tryGetShape(ShapeID shape) const -> const Shape*;
@@ -337,27 +356,12 @@ private:
 	static void setShapeEnabled(ShapeID shape, bool enabled);
 	void syncEnabledState();
 
-	void stepCharacters(float dt);
+	void stepKinematicControllers(float dt);
 	[[nodiscard]]
 	auto queryCandidates(BodyID ignored, const AABB& bounds) const -> std::vector<ShapeID>;
 	void collideCapsuleProbe(
 	    const Body& probe_body, const Shape& probe_shape, std::span<const ShapeID> candidates, std::vector<QueryContact>& contacts
 	) const;
-	[[nodiscard]]
-	auto overlapCapsule(
-	    BodyID ignored, const CapsuleShape& capsule, const glm::vec3& position, const glm::quat& rotation, float min_penetration,
-	    std::vector<QueryContact>& contacts
-	) const -> bool;
-	/// Moves a capsule until it would dig into something
-	[[nodiscard]]
-	auto sweepCapsule(
-	    BodyID ignored, const CapsuleShape& capsule, const glm::quat& rotation, const glm::vec3& from, const glm::vec3& to,
-	    float skin
-	) const -> SweepHit;
-	void setCapsuleShape(ShapeID shape, const CapsuleShape& capsule);
-	void moveKinematicBody(BodyID body, const glm::vec3& position, const glm::quat& rotation, const glm::vec3& velocity);
-	/// Raises the velocity of a dynamic body along direction
-	void pushBody(BodyID body, const glm::vec3& point, const glm::vec3& direction, float speed, float max_impulse);
 
 	static void wakeBody(BodyID id);
 	static void sleepBody(BodyID id);
@@ -365,7 +369,6 @@ private:
 	void releaseSleeper(BodyID sleeper, BodyID other);
 	void wakeBodiesTouching(BodyID id);
 	void wakeBodiesTouching(ShapeID id);
-	void wakeBodiesInBounds(const AABB& bounds);
 	void convertImpulsesToDamage(std::span<const SimulationIsland> islands);
 	void wakeDisturbedSleepers(float dt);
 	void unlockDisturbedFragments();

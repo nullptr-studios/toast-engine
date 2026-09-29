@@ -458,7 +458,7 @@ void Simulator::tick() {
 	despawnSettledFragments(dt);
 
 	const auto before_characters = std::chrono::steady_clock::now();
-	stepCharacters(dt);
+	stepKinematicControllers(dt);
 	m_profile.character_step_ms = elapsed_ms(before_characters, std::chrono::steady_clock::now());
 
 	integrate(dt);
