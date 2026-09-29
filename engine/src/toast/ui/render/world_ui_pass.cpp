@@ -28,6 +28,7 @@ WorldUIPass::WorldUIPass(const renderer::VulkanCore& core, vk::Format color_form
 	config.debug_name = "WorldUIPass";
 	config.color_format = color_format;
 	config.depth_format = depth_format;
+	config.extra_color_formats = renderer::worldStageExtraColorFormats();
 	config.extent = extent;
 	config.shader_spirv = shader->spirv;
 	config.pipeline_layout = *m_shader_layout.getPipelineLayout();

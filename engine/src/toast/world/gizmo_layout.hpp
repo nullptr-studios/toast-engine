@@ -23,7 +23,8 @@ enum class GizmoTool : uint8_t {
 	translate,
 	rotate,
 	scale,
-	ruler
+	ruler,
+	volume_faces,
 };
 
 /// @brief Which part of the active gizmo a ray/click is interacting with, axis_x/y/z and center are

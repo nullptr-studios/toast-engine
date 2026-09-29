@@ -38,6 +38,11 @@ void blendPostProcess(PostProcessSettings& target, const PostProcessSettings& so
 	target.tonemap.saturation = mix(target.tonemap.saturation, source.tonemap.saturation, t);
 	target.tonemap.vignette = mix(target.tonemap.vignette, source.tonemap.vignette, t);
 	target.tonemap.grain = mix(target.tonemap.grain, source.tonemap.grain, t);
+	target.tonemap.auto_exposure = t >= 0.5f ? source.tonemap.auto_exposure : target.tonemap.auto_exposure;
+	target.tonemap.auto_exposure_min = mix(target.tonemap.auto_exposure_min, source.tonemap.auto_exposure_min, t);
+	target.tonemap.auto_exposure_max = mix(target.tonemap.auto_exposure_max, source.tonemap.auto_exposure_max, t);
+	target.tonemap.adapt_speed_up = mix(target.tonemap.adapt_speed_up, source.tonemap.adapt_speed_up, t);
+	target.tonemap.adapt_speed_down = mix(target.tonemap.adapt_speed_down, source.tonemap.adapt_speed_down, t);
 
 	target.fxaa.contrast_threshold = mix(target.fxaa.contrast_threshold, source.fxaa.contrast_threshold, t);
 	target.fxaa.relative_threshold = mix(target.fxaa.relative_threshold, source.fxaa.relative_threshold, t);

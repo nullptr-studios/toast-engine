@@ -3,6 +3,11 @@ struct CameraUBO
     float4x4 view;
     float4x4 projection;
     float4x4 viewProjection;
+
+    float3 position;
+    float time;
+
+    float4x4 jitteredViewProjection;
 };
 
 [[vk::binding(0,0)]]
@@ -12,10 +17,11 @@ ConstantBuffer<CameraUBO> gCamera;
 struct InstanceData
 {
     float4x4 model;
+    float4x4 previousModel;
     uint jointOffset;
+    uint flags;
     uint _pad0;
     uint _pad1;
-    uint _pad2;
 };
 
 [[vk::binding(13,0)]]
@@ -45,6 +51,6 @@ VSOutput vertexMain(VSInput input, uint instanceID : SV_InstanceID)
 {
     VSOutput output;
     float4x4 model = gInstances[gPush.instanceBase + instanceID].model;
-    output.position = mul(gCamera.viewProjection, mul(model, float4(input.position, 1.0)));
+    output.position = mul(gCamera.jitteredViewProjection, mul(model, float4(input.position, 1.0)));
     return output;
 }

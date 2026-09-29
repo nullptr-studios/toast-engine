@@ -1,0 +1,25 @@
+/**
+ * @file raycast.hpp
+ * @author Dante Harper
+ * @date 25 Sep 26
+ *
+ * @brief Raycast Implmentation mostly from https://iquilezles.org/articles/intersectors/ and
+ * https://www.realtimerendering.com/intersections.html
+ */
+
+#pragma once
+
+#include "toast/world/box.hpp"
+
+#include <glm/glm.hpp>
+
+namespace physics {
+
+struct RayHit {
+	toast::Box<toast::Node> node;
+	glm::vec3 position;
+	glm::vec3 normal;
+	float distance;
+};
+
+}

@@ -28,6 +28,14 @@ struct PostProcessSettings {
 		float saturation = 1.0f;
 		float vignette = 0.0f;
 		float grain = 0.0f;
+
+		bool auto_exposure = false;
+		/// log2 of the average scene luminance the meter may settle on
+		float auto_exposure_min = -8.0f;
+		float auto_exposure_max = 4.0f;
+		/// Per second toward a brighter scene
+		float adapt_speed_up = 3.0f;
+		float adapt_speed_down = 1.0f;
 	} tonemap;
 
 	struct Fxaa {

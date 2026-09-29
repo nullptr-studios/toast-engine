@@ -39,6 +39,11 @@ void PostProcessVolume::syncSettings() const {
 	m_settings.tonemap.saturation = m_saturation;
 	m_settings.tonemap.vignette = m_vignette;
 	m_settings.tonemap.grain = m_grain;
+	m_settings.tonemap.auto_exposure = m_auto_exposure;
+	m_settings.tonemap.auto_exposure_min = m_auto_exposure_min;
+	m_settings.tonemap.auto_exposure_max = m_auto_exposure_max;
+	m_settings.tonemap.adapt_speed_up = m_adapt_speed_up;
+	m_settings.tonemap.adapt_speed_down = m_adapt_speed_down;
 
 	m_settings.fxaa.contrast_threshold = m_fxaa_contrast_threshold;
 	m_settings.fxaa.relative_threshold = m_fxaa_relative_threshold;

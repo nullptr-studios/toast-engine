@@ -11,105 +11,7 @@
              Background="{StaticResource Bg2}"
              Padding="8">
 	<UserControl.Styles>
-		<!-- Toolbar toggle -->
-		<Style Selector="ToggleButton.tool">
-			<Setter Property="Background"
-			        Value="{StaticResource Bg3}" />
-			<Setter Property="Foreground"
-			        Value="{StaticResource Text}" />
-			<Setter Property="BorderThickness"
-			        Value="0" />
-		</Style>
-		<Style Selector="ToggleButton.tool /template/ ContentPresenter#PART_ContentPresenter">
-			<Setter Property="Background"
-			        Value="{StaticResource Bg3}" />
-		</Style>
-		<Style Selector="ToggleButton.tool:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-			<Setter Property="Background"
-			        Value="{StaticResource Bg4}" />
-		</Style>
-		<Style Selector="ToggleButton.tool:checked">
-			<Setter Property="Foreground"
-			        Value="{StaticResource Bg1}" />
-		</Style>
-		<Style Selector="ToggleButton.tool:checked /template/ ContentPresenter#PART_ContentPresenter">
-			<Setter Property="Foreground"
-			        Value="{StaticResource Bg1}" />
-		</Style>
-		<Style Selector="ToggleButton.tool.red:checked /template/ ContentPresenter#PART_ContentPresenter">
-			<Setter Property="Background"
-			        Value="{StaticResource Red}" />
-		</Style>
-		<Style Selector="ToggleButton.tool.green:checked /template/ ContentPresenter#PART_ContentPresenter">
-			<Setter Property="Background"
-			        Value="{StaticResource Green}" />
-		</Style>
-		<Style Selector="ToggleButton.tool.blue:checked /template/ ContentPresenter#PART_ContentPresenter">
-			<Setter Property="Background"
-			        Value="{StaticResource Blue}" />
-		</Style>
-		<Style Selector="ToggleButton.tool.orange:checked /template/ ContentPresenter#PART_ContentPresenter">
-			<Setter Property="Background"
-			        Value="{StaticResource Orange}" />
-		</Style>
-		<Style Selector="ToggleButton.tool.purple:checked /template/ ContentPresenter#PART_ContentPresenter">
-			<Setter Property="Background"
-			        Value="{StaticResource Magenta}" />
-		</Style>
-
-		<Style Selector="ToggleButton.tool.camMode:not(:checked) /template/ ContentPresenter#PART_ContentPresenter">
-			<Setter Property="Background"
-			        Value="{StaticResource Bg4}" />
-		</Style>
-		<Style Selector="ToggleButton.tool.camMode:not(:checked):pointerover /template/ ContentPresenter#PART_ContentPresenter">
-			<Setter Property="Background"
-			        Value="{StaticResource Bg5}" />
-		</Style>
-
-		<!-- Snap value -->
-		<Style Selector="Button.chev">
-			<Setter Property="Background"
-			        Value="{StaticResource Bg3}" />
-			<Setter Property="Foreground"
-			        Value="{StaticResource Text}" />
-			<Setter Property="BorderThickness"
-			        Value="0" />
-		</Style>
-
-		<Style Selector="ToggleButton.snapTool">
-			<Setter Property="Background"
-			        Value="{StaticResource Bg3}" />
-			<Setter Property="Foreground"
-			        Value="{StaticResource Text}" />
-			<Setter Property="BorderThickness"
-			        Value="0" />
-		</Style>
-		<Style Selector="ToggleButton.snapTool /template/ ContentPresenter#PART_ContentPresenter">
-			<Setter Property="Background"
-			        Value="{StaticResource Bg3}" />
-		</Style>
-		<Style Selector="ToggleButton.snapTool:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-			<Setter Property="Background"
-			        Value="{StaticResource Bg4}" />
-		</Style>
-		<Style Selector="ToggleButton.snapTool:not(:checked) LucideIcon">
-			<Setter Property="Foreground"
-			        Value="{StaticResource TextMuted}" />
-		</Style>
-		<Style Selector="ToggleButton.snapTool:not(:checked) TextBlock.snapValue">
-			<Setter Property="Foreground"
-			        Value="{StaticResource TextMuted}" />
-		</Style>
-
-		<!-- Snap value text: fixed-width monospace so the toggle doesn't resize between "OFF" and a value -->
-		<Style Selector="TextBlock.snapValue">
-			<Setter Property="FontFamily"
-			        Value="FiraCode Nerd Font,Consolas,monospace" />
-			<Setter Property="Width"
-			        Value="27" />
-			<Setter Property="TextAlignment"
-			        Value="Center" />
-		</Style>
+		<StyleInclude Source="avares://editor/Resources/ToolbarStyles.axaml" />
 	</UserControl.Styles>
 
 	<DockPanel VerticalSpacing="8">
@@ -490,6 +392,11 @@
 							          Command="{Binding SetRenderModeCommand}"
 							          CommandParameter="VoxelMaterials"
 							          ToolTip.Tip="One hue per physical material id. Magenta stripes are material 0, the default that every palette entry authored without a material silently falls back to" />
+							<Separator />
+							<MenuItem Header="Motion Vectors"
+							          Command="{Binding SetRenderModeCommand}"
+							          CommandParameter="MotionVectors"
+							          ToolTip.Tip="Hue is direction and brightness is pixels moved. Grey pixels reproject from depth, magenta ones are reactive" />
 						</MenuFlyout>
 					</Button.Flyout>
 					<StackPanel Orientation="Horizontal"

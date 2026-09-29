@@ -307,7 +307,6 @@ auto INodeOwner::requestRuntimeCreate(Node& parent, std::string_view type) -> Bo
 
 	// Allocation
 	Box node = this->nodeAllocation(type);
-	node->propagateCallTick(node->info(), TickFunctionList::pre_init);
 
 	// Data structure generation
 	generateUid(node);
@@ -673,7 +672,6 @@ auto INodeOwner::instantiate(const assets::Handle<assets::Prefab>& file, Instant
 	auto alloc_leaf = [this](const assets::Prefab::BasicNode& chunk) -> Box<Node> {
 		Box<Node> node = nodeAllocation(chunk);
 		node->callTick(node->info(), TickFunctionList::load);
-		node->callTick(node->info(), TickFunctionList::pre_init);    // TODO: deprecate pre_init
 		node->m_state = NodeState::loading;
 		return node;
 	};

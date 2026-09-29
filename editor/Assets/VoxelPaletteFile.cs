@@ -113,7 +113,7 @@ public sealed class VoxelPaletteFile {
 				target.B = ToByte(rgb[2]);
 			}
 
-			target.Roughness = GetFloat(entry, "roughness", 0f);
+			target.Roughness = GetFloat(entry, "roughness", 1f);
 			target.Metallic = GetFloat(entry, "metallic", 0f);
 			target.Reflectivity = GetFloat(entry, "reflectivity", 0f);
 			target.Emissive = GetFloat(entry, "emissive", 0f);

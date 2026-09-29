@@ -73,10 +73,14 @@ VoxelGpuStorage::VoxelGpuStorage(std::vector<uint64_t> node_uids, std::vector<gl
       m_brick_dims(std::move(brick_dims)),
       m_generation(g_voxel_storage_generation.fetch_add(1, std::memory_order_relaxed) + 1) { }
 
-auto makeVoxelInstance(const glm::mat4& model, const glm::mat4& inverse_model, uint32_t record_index) -> VoxelInstanceGpu {
+auto makeVoxelInstance(
+    const glm::mat4& model, const glm::mat4& inverse_model, const glm::mat4& previous_model, uint32_t record_index
+) -> VoxelInstanceGpu {
+	const glm::mat4 voxel_scale = glm::scale(glm::mat4(1.0f), glm::vec3(voxel::k_voxel_size));
 	return {
-	  .voxel_to_world = model * glm::scale(glm::mat4(1.0f), glm::vec3(voxel::k_voxel_size)),
+	  .voxel_to_world = model * voxel_scale,
 	  .world_to_voxel = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f / voxel::k_voxel_size)) * inverse_model,
+	  .previous_voxel_to_world = previous_model * voxel_scale,
 	  .record_index = record_index,
 	};
 }

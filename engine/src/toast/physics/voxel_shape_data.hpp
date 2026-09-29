@@ -28,6 +28,8 @@ struct VoxelShapeData {
 	voxel::MassMoments moments;
 	voxel::Palette palette;
 	voxel::MaterialLibrary materials;
+	/// Source palette uid so a hot reload can refresh the copies above
+	uint64_t palette_uid = 0;
 	uint32_t source_revision = 0;
 	uint32_t surface_revision = 1;
 	uint32_t solid_voxel_count = 0;

@@ -48,6 +48,7 @@ public static class ProjectContext {
 		Databases = ["assets"];
 		Languages = ["en"];
 		s_schemes.Clear();
+		AssetBrowserSettings.Reset();
 	}
 
 	public static void Initialize(string projectPath, string corePath) {
@@ -65,6 +66,7 @@ public static class ProjectContext {
 		RegisterSchemes();
 		EnsureDirectories();
 		IsInitialized = true;
+		AssetBrowserSettings.Load();
 		UIBindStubGenerator.Generate();
 		UIBindStubGenerator.StartWatching();
 		DataSchemaStubGenerator.Generate();
@@ -113,6 +115,7 @@ public static class ProjectContext {
 		Languages = ReadLanguagesFromProject(ProjectPath);
 		RegisterSchemes();
 		EnsureDirectories();
+		AssetBrowserSettings.Load();
 		LanguagesChanged?.Invoke();
 
 		ToastEngine.ReloadProjectSettings();

@@ -25,11 +25,12 @@ enum class View : uint8_t {
 	bricks = 22,
 	volumes = 23,
 	materials = 24,
+	palette_id = 25,
 };
 
 [[nodiscard]]
 constexpr auto isView(uint32_t render_mode) noexcept -> bool {
-	return render_mode >= static_cast<uint32_t>(View::steps) && render_mode <= static_cast<uint32_t>(View::materials);
+	return render_mode >= static_cast<uint32_t>(View::steps) && render_mode <= static_cast<uint32_t>(View::palette_id);
 }
 
 struct Rgb {

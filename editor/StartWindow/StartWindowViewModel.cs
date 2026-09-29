@@ -104,6 +104,9 @@ public partial class StartWindowViewModel : ViewModelBase {
 
 		tasks.Add(LoaderTask.Do("Check for artwork changes", AssetDatabase.CheckArtworkChanges));
 
+		tasks.Add(LoaderTask.Do("Generate missing thumbnails",
+			async log => { await Task.Run(() => AssetDatabase.GenerateMissingThumbnails(log)); }));
+
 		// Generate the game's reflection metadata before configuring
 		var libSrc = Path.Combine(projectDir, "lib", "src");
 		var libGenerated = Path.Combine(projectDir, "lib", "generated");

@@ -3,7 +3,7 @@
     "attributes": {},
     "fields": [],
     "functions": [
-      "preInit",
+      "editorTick",
       "init",
       "begin",
       "earlyTick",
@@ -36,8 +36,8 @@
       "load": true,
       "on_disable": true,
       "on_enable": true,
+      "editor_tick": true,
       "post_physics": true,
-      "pre_init": true,
       "save": true,
       "tick": true
     }
