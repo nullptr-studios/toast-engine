@@ -6,6 +6,7 @@
 #include "assets/prefab.hpp"
 #include "audio/audio_system.hpp"
 #include "crash_handler.hpp"
+#include "events/defer.hpp"
 #include "events/event.hpp"
 #include "events/listener.hpp"
 #include "ffi/engine.h"    // ffi
@@ -254,6 +255,8 @@ void Engine::init() {
 		event::send<event::RequestHierarchyUpdate>();
 		return false;
 	});
+
+	m->listener.subscribe<_detail::Defer>([](_detail::Defer& e) { e.cb(); });
 
 	m->audio_system = std::make_unique<audio::AudioSystem>();
 	m->ui_system = std::make_unique<ui::UISystem>();
