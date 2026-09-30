@@ -672,7 +672,7 @@ void Simulator::destroyFragmentsOf(BodyID origin) {
 }
 
 void Simulator::destroyFragmentRecord(BodyID id) {
-	wakeNeighborsOf(id);
+	recheckNeighborsOf(id);
 	destroyBody(id);
 	std::erase_if(m_fragments, [id](const FragmentRecord& record) { return record.body == id; });
 }
@@ -906,8 +906,14 @@ constexpr float k_end_looseness = 2.0f;
 /// Seconds between the checks that a sleeper is still held up
 constexpr float k_support_check_seconds = 1.0f;
 
-/// A shape this close counts as holding a sleeper up
-constexpr float k_support_margin = 0.02f;
+/// Sleep age that makes the next update check the sleeper support
+constexpr float k_support_check_now = 1.0e9f;
+
+/// Contact normal component against gravity that marks the other body as resting on a sleeper
+constexpr float k_resting_on_normal = 0.5f;
+
+/// Contact normal component against gravity that counts as something below holding a body up
+constexpr float k_support_normal = 0.3f;
 
 auto supportCheckPeriod(size_t slot) -> float {
 	const float phase = static_cast<float>((slot * 2654435761u) % 1024u) / 1024.0f;
@@ -1285,7 +1291,7 @@ void Simulator::despawnSettledFragments(float dt) {
 	}
 
 	for (const BodyID id : doomed) {
-		wakeNeighborsOf(id);
+		recheckNeighborsOf(id);
 		destroyBody(id);
 	}
 	m_profile.fragments_despawned = doomed.size();
@@ -1423,51 +1429,32 @@ auto Simulator::sleeperIsHeldUp(BodyID id) const -> bool {
 	if (body == nullptr || body->gravity_scale == 0.0f) {
 		return true;
 	}
-
-	std::optional<AABB> bounds;
-	const auto include = [&](const Shape& shape) {
-		const AABB shape_bounds = worldShapeBounds(*body, shape);
-		bounds = bounds.has_value() ? combine(*bounds, shape_bounds) : shape_bounds;
-	};
-	if (const auto fragment = m_fragment_index.find(id.slot);
-	    fragment != m_fragment_index.end() && fragment->second < m_fragments.size()) {
-		if (const Shape* shape = tryGetShape(m_fragments[fragment->second].shape)) {
-			include(*shape);
-		}
-	} else {
-		for (const ShapeSlot& slot : m_shapes) {
-			if (slot.occupied && slot.shape.owner == id) {
-				include(slot.shape);
-			}
-		}
-	}
-	if (not bounds.has_value()) {
-		return true;
-	}
-
-	const AABB probe = bounds->expanded(k_support_margin);
-	for (const ShapeID shape_id : m_broad_phase.queryBounds(probe)) {
-		const Shape* shape = tryGetShape(shape_id);
-		if (shape == nullptr || not shape->enabled || shape->owner == id) {
-			continue;
-		}
-		const Body* other = tryGetBody(shape->owner);
-		if (other != nullptr && other->enabled && worldShapeBounds(*other, *shape).overlaps(probe)) {
-			return true;
-		}
-	}
-	return false;
+	return id.slot < m_contact_supported.size() && m_contact_supported[id.slot] != 0;
 }
 
-void Simulator::releaseSleeper(BodyID sleeper, BodyID other) {
-	const Body* body = tryGetBody(sleeper);
+void Simulator::releaseSleeper(BodyID sleeper, BodyID other, const glm::vec3& normal_to_other) {
+	Body* body = tryGetBody(sleeper);
 	if (body == nullptr || body->awake) {
 		return;
 	}
+
 	const Body* neighbor = tryGetBody(other);
-	if (neighbor != nullptr && neighbor->type == BodyType::dynamic_body && neighbor->awake && isStill(*neighbor, k_end_looseness)) {
+	if (neighbor == nullptr) {
+		body->asleep_seconds = k_support_check_now;
 		return;
 	}
+	if (neighbor->type == BodyType::dynamic_body && neighbor->awake &&
+	    isStill(*neighbor, k_end_looseness * sleepScale(sleeper.slot))) {
+		return;
+	}
+
+	const glm::vec3 gravity = tunables().gravity;
+	const float gravity_length = glm::length(gravity);
+	if (gravity_length > 1.0e-6f && glm::dot(normal_to_other, -gravity / gravity_length) > k_resting_on_normal) {
+		return;
+	}
+
+	++m_profile.woken_by_contact_end;
 	if (body->sleep_locked) {
 		unlockSleep(sleeper);
 	} else {
@@ -1563,7 +1550,9 @@ void Simulator::wakeDisturbedSleepers(float dt) {
 		}
 
 		// Gravity has just added a step of speed to a body resting on the sleeper
-		const float approach_limit = tunables().sleep_linear_threshold * k_wake_approach + gravity_speed * mover.gravity_scale;
+		const float scale = sleepScale(a_sleeps ? manifold.pair.a.body.slot : manifold.pair.b.body.slot);
+		const float approach_limit =
+		    tunables().sleep_linear_threshold * scale * k_wake_approach + gravity_speed * mover.gravity_scale;
 		float approach = 0.0f;
 		const size_t contact_count = std::min<size_t>(manifold.contact_count, manifold.contacts.size());
 		for (size_t index = 0; index < contact_count; ++index) {
@@ -1572,7 +1561,9 @@ void Simulator::wakeDisturbedSleepers(float dt) {
 			    velocityAtPoint(*b, point - b->worldCenterOfMass()) - velocityAtPoint(*a, point - a->worldCenterOfMass());
 			approach = std::max(approach, -glm::dot(relative, manifold.normal));
 		}
-		if (approach > approach_limit || not isStill(mover, k_wake_racing)) {
+		const bool approaching = approach > approach_limit;
+		if (approaching || not isStill(mover, k_wake_racing * scale)) {
+			++(approaching ? m_profile.woken_by_approach : m_profile.woken_by_racing);
 			wakeBody(a_sleeps ? manifold.pair.a.body : manifold.pair.b.body);
 		}
 	}
@@ -1902,52 +1893,73 @@ auto Simulator::correctPositions(std::span<const size_t> manifold_indices) -> si
 	ZoneValue(static_cast<uint64_t>(manifold_indices.size()));
 	size_t correction_count = 0;
 
-	for (const size_t manifold_index : manifold_indices) {
-		const Manifold& manifold = m_manifolds[manifold_index];
-		if (not shouldSolve(manifold)) {
-			continue;
-		}
+	if (m_position_shift.size() < m_bodies.size()) {
+		m_position_shift.resize(m_bodies.size(), glm::vec3(0.0f));
+	}
+	std::vector<uint32_t> touched;
 
-		auto* body_a = tryGetBody(manifold.pair.a.body);
-		auto* body_b = tryGetBody(manifold.pair.b.body);
+	const uint32_t passes = std::max(tunables().position_iterations, 1u);
+	for (uint32_t pass = 0; pass < passes; ++pass) {
+		for (const size_t manifold_index : manifold_indices) {
+			const Manifold& manifold = m_manifolds[manifold_index];
+			if (not shouldSolve(manifold)) {
+				continue;
+			}
 
-		if (not body_a or not body_b) {
-			continue;
-		}
+			auto* body_a = tryGetBody(manifold.pair.a.body);
+			auto* body_b = tryGetBody(manifold.pair.b.body);
 
-		float deepest_penetration = 0.0f;
-		const size_t contact_count = std::min<size_t>(manifold.contact_count, manifold.contacts.size());
-		for (size_t contact_index = 0; contact_index < contact_count; ++contact_index) {
-			float penetration = manifold.contacts[contact_index].penetration;
-			if (std::isfinite(penetration) && penetration >= 0.0f) {
-				deepest_penetration = std::max(deepest_penetration, penetration);
+			if (not body_a or not body_b) {
+				continue;
+			}
+
+			float deepest_penetration = 0.0f;
+			const size_t contact_count = std::min<size_t>(manifold.contact_count, manifold.contacts.size());
+			for (size_t contact_index = 0; contact_index < contact_count; ++contact_index) {
+				float penetration = manifold.contacts[contact_index].penetration;
+				if (std::isfinite(penetration) && penetration >= 0.0f) {
+					deepest_penetration = std::max(deepest_penetration, penetration);
+				}
+			}
+
+			float inv_mass = (movable(*body_a) ? body_a->inverse_mass : 0.0f) + (movable(*body_b) ? body_b->inverse_mass : 0.0f);
+			if (not std::isfinite(inv_mass) || inv_mass <= 1.0e-8f) {
+				// both bodies are static
+				continue;
+			}
+
+			const glm::vec3 shift_a = m_position_shift[manifold.pair.a.body.slot];
+			const glm::vec3 shift_b = m_position_shift[manifold.pair.b.body.slot];
+			deepest_penetration -= glm::dot(shift_b - shift_a, manifold.normal);
+
+			// ignore tiny overlaps to prevent jitter
+			float excess_penetration = std::max(deepest_penetration - tunables().penetration_slop, 0.0f);
+			if (excess_penetration == 0.0f) {
+				continue;
+			}
+
+			float correction_distance = std::min(tunables().correction_beta * excess_penetration, tunables().max_correction);
+			glm::vec3 correction = manifold.normal * (correction_distance / inv_mass);
+
+			if (movable(*body_a)) {
+				body_a->position -= correction * body_a->inverse_mass;
+				m_position_shift[manifold.pair.a.body.slot] -= correction * body_a->inverse_mass;
+				touched.push_back(manifold.pair.a.body.slot);
+			}
+			if (movable(*body_b)) {
+				body_b->position += correction * body_b->inverse_mass;
+				m_position_shift[manifold.pair.b.body.slot] += correction * body_b->inverse_mass;
+				touched.push_back(manifold.pair.b.body.slot);
+			}
+			if (pass == 0) {
+				++correction_count;
 			}
 		}
-
-		float inv_mass = (movable(*body_a) ? body_a->inverse_mass : 0.0f) + (movable(*body_b) ? body_b->inverse_mass : 0.0f);
-		if (not std::isfinite(inv_mass) || inv_mass <= 1.0e-8f) {
-			// both bodies are static
-			continue;
-		}
-
-		// ignore tiny overlaps to prevent jitter
-		float excess_penetration = std::max(deepest_penetration - tunables().penetration_slop, 0.0f);
-		if (excess_penetration == 0.0f) {
-			continue;
-		}
-
-		float correction_distance = std::min(tunables().correction_beta * excess_penetration, tunables().max_correction);
-		glm::vec3 correction = manifold.normal * (correction_distance / inv_mass);
-
-		if (movable(*body_a)) {
-			body_a->position -= correction * body_a->inverse_mass;
-		}
-		if (movable(*body_b)) {
-			body_b->position += correction * body_b->inverse_mass;
-		}
-		++correction_count;
 	}
 
+	for (const uint32_t slot : touched) {
+		m_position_shift[slot] = glm::vec3(0.0f);
+	}
 	return correction_count;
 }
 
@@ -2210,6 +2222,24 @@ void Simulator::updateSleeping(float dt) {
 		return;
 	}
 
+	const glm::vec3 gravity = tunables().gravity;
+	const float gravity_length = glm::length(gravity);
+	m_contact_supported.assign(m_bodies.size(), gravity_length > 1.0e-6f ? 0 : 1);
+	if (gravity_length > 1.0e-6f) {
+		const glm::vec3 up = -gravity / gravity_length;
+		for (const CachedManifold& cached : m_cached_manifolds) {
+			if (cached.contact_count == 0 || tryGetBody(cached.pair.a.body) == nullptr || tryGetBody(cached.pair.b.body) == nullptr) {
+				continue;
+			}
+			const float along = glm::dot(cached.normal, up);
+			if (along < -k_support_normal) {
+				m_contact_supported[cached.pair.a.body.slot] = 1;
+			} else if (along > k_support_normal) {
+				m_contact_supported[cached.pair.b.body.slot] = 1;
+			}
+		}
+	}
+
 	m_sleep_ready.assign(m_bodies.size(), 0);
 	m_sleep_moving.assign(m_bodies.size(), 0);
 	for (size_t index = 0; index < m_bodies.size(); ++index) {
@@ -2230,6 +2260,7 @@ void Simulator::updateSleeping(float dt) {
 			if (body.asleep_seconds >= supportCheckPeriod(index)) {
 				body.asleep_seconds = 0.0f;
 				if (not sleeperIsHeldUp(id)) {
+					++m_profile.woken_by_support_loss;
 					if (body.sleep_locked) {
 						unlockSleep(id);
 					} else {
@@ -2316,6 +2347,7 @@ void Simulator::updateCache(std::span<const Manifold> manifolds) {
 
 		CachedManifold next_manifold {
 		  .pair = manifold.pair,
+		  .normal = manifold.normal,
 		  .normal_index = manifold.normal_index,
 		  .shape_a_revision = revision_a,
 		  .shape_b_revision = revision_b,
@@ -2371,8 +2403,8 @@ void Simulator::updateCache(std::span<const Manifold> manifolds) {
 			continue;
 		}
 
-		releaseSleeper(cached.pair.a.body, cached.pair.b.body);
-		releaseSleeper(cached.pair.b.body, cached.pair.a.body);
+		releaseSleeper(cached.pair.a.body, cached.pair.b.body, cached.normal);
+		releaseSleeper(cached.pair.b.body, cached.pair.a.body, -cached.normal);
 		++m_profile.contact_ends;
 		event::send<event::ContactEnd>(cached.pair);
 	}
@@ -3457,7 +3489,7 @@ void Simulator::wakeBodiesInBounds(const AABB& bounds) {
 	}
 }
 
-void Simulator::wakeNeighborsOf(BodyID id) {
+void Simulator::recheckNeighborsOf(BodyID id) {
 	const Body* body = tryGetBody(id);
 	if (body == nullptr) {
 		return;
@@ -3475,7 +3507,13 @@ void Simulator::wakeNeighborsOf(BodyID id) {
 		return;
 	}
 
-	wakeBodiesInBounds(bounds.expanded(tunables().broadphase_fat_margin));
+	for (const ShapeID shape_id : m_broad_phase.queryBounds(bounds.expanded(tunables().broadphase_fat_margin))) {
+		const Shape* shape = tryGetShape(shape_id);
+		Body* neighbor = shape != nullptr ? tryGetBody(shape->owner) : nullptr;
+		if (neighbor != nullptr && neighbor->type == BodyType::dynamic_body && not neighbor->awake) {
+			neighbor->asleep_seconds = k_support_check_now;
+		}
+	}
 }
 
 void Simulator::applyExplosion(const glm::vec3& position, float radius, float energy) {

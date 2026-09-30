@@ -649,13 +649,70 @@ auto blendedGroupNormal(const glm::vec3& sum, const glm::vec3& first) -> glm::ve
 	return length_squared > 1.0e-12f ? sum / std::sqrt(length_squared) : first;
 }
 
+/// Same orientation rule boxSatContactsFromAxis applies so an axis can be judged before it is chosen
+auto orientedAxis(const glm::vec3& axis, const glm::vec3& center_delta) -> glm::vec3 {
+	glm::vec3 normal = axis;
+	const float direction = glm::dot(center_delta, normal);
+	if (direction < 0.0f) {
+		return -normal;
+	}
+	if (std::abs(direction) <= 1.0e-8f) {
+		for (int component = 0; component < 3; ++component) {
+			if (std::abs(normal[component]) <= 1.0e-8f) {
+				continue;
+			}
+			if (normal[component] < 0.0f) {
+				normal = -normal;
+			}
+			break;
+		}
+	}
+	return normal;
+}
+
+/// Normal points a to b and each box only offers the faces its exposure mask lists so a face buried in a neighbour never pushes
+auto normalUsesOnlyExposedFaces(
+    const glm::vec3& normal, const glm::mat3& rotation_a, uint8_t exposure_a, const glm::mat3& rotation_b, uint8_t exposure_b
+) -> bool {
+	if (exposure_a == voxel::k_all_faces_exposed && exposure_b == voxel::k_all_faces_exposed) {
+		return true;
+	}
+
+	// Below this a tilt is noise and not a request for that face
+	constexpr float k_component_floor = 0.25f;
+	for (int axis = 0; axis < 3; ++axis) {
+		const float along_a = glm::dot(rotation_a[axis], normal);
+		if ((along_a > k_component_floor && (exposure_a & voxel::faceBit(axis, true)) == 0) ||
+		    (along_a < -k_component_floor && (exposure_a & voxel::faceBit(axis, false)) == 0)) {
+			return false;
+		}
+		const float along_b = -glm::dot(rotation_b[axis], normal);
+		if ((along_b > k_component_floor && (exposure_b & voxel::faceBit(axis, true)) == 0) ||
+		    (along_b < -k_component_floor && (exposure_b & voxel::faceBit(axis, false)) == 0)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+/// A hidden face can force an axis far deeper than the true minimum so only one voxel of extra depth is accepted
+auto pickExposedAxis(const BoxSatResult& best_axis, const BoxSatResult& exposed_axis) -> const BoxSatResult& {
+	const bool usable =
+	    std::isfinite(exposed_axis.penetration) && exposed_axis.penetration <= best_axis.penetration + voxel::k_voxel_size;
+	return usable ? exposed_axis : best_axis;
+}
+
 auto boxSatContactsFromAxis(
     const WorldBox& box_a, const WorldBox& box_b, const BoxSatResult& best_axis, const glm::vec3& center_delta
 ) -> BoxSatContacts;
 
-auto collideWorldBoxes(const WorldBox& box_a, const WorldBox& box_b) -> std::optional<BoxSatContacts> {
+auto collideWorldBoxes(
+    const WorldBox& box_a, const WorldBox& box_b, uint8_t exposure_a = voxel::k_all_faces_exposed,
+    uint8_t exposure_b = voxel::k_all_faces_exposed
+) -> std::optional<BoxSatContacts> {
 	glm::vec3 center_delta = box_b.center - box_a.center;
 	BoxSatResult best_axis;
+	BoxSatResult exposed_axis;
 	bool separated = false;
 
 	// A negative hint means compute the projection radius the general way since extent is never negative
@@ -678,15 +735,26 @@ auto collideWorldBoxes(const WorldBox& box_a, const WorldBox& box_b) -> std::opt
 
 		    float penetration = std::max(overlap, 0.0f);
 		    bool new_is_face = type != BoxAxisType::edge;
-		    bool old_is_face = best_axis.type != BoxAxisType::edge;
-		    bool better = penetration < best_axis.penetration - contact_tolerance;
-		    bool nearly_equal = std::abs(penetration - best_axis.penetration) <= contact_tolerance;
-		    if (better || (nearly_equal && new_is_face && !old_is_face)) {
-			    best_axis.axis = axis;
-			    best_axis.penetration = penetration;
-			    best_axis.type = type;
-			    best_axis.axis_a = axis_a;
-			    best_axis.axis_b = axis_b;
+		    const auto improves = [&](const BoxSatResult& current) {
+			    bool old_is_face = current.type != BoxAxisType::edge;
+			    bool better = penetration < current.penetration - contact_tolerance;
+			    bool nearly_equal = std::abs(penetration - current.penetration) <= contact_tolerance;
+			    return better || (nearly_equal && new_is_face && !old_is_face);
+		    };
+		    const bool improves_any = improves(best_axis);
+		    const bool improves_exposed = improves(exposed_axis);
+		    if (!improves_any && !improves_exposed) {
+			    return;
+		    }
+
+		    const BoxSatResult candidate {.axis = axis, .penetration = penetration, .type = type, .axis_a = axis_a, .axis_b = axis_b};
+		    if (improves_any) {
+			    best_axis = candidate;
+		    }
+		    if (improves_exposed && normalUsesOnlyExposedFaces(
+		                                orientedAxis(axis, center_delta), box_a.rotation, exposure_a, box_b.rotation, exposure_b
+		                            )) {
+			    exposed_axis = candidate;
 		    }
 	    };
 
@@ -715,28 +783,14 @@ auto collideWorldBoxes(const WorldBox& box_a, const WorldBox& box_b) -> std::opt
 		}
 	}
 
-	return boxSatContactsFromAxis(box_a, box_b, best_axis, center_delta);
+	return boxSatContactsFromAxis(box_a, box_b, pickExposedAxis(best_axis, exposed_axis), center_delta);
 }
 
 /// Builds contacts from an already chosen separating axis shared by every box vs box SAT variant
 auto boxSatContactsFromAxis(
     const WorldBox& box_a, const WorldBox& box_b, const BoxSatResult& best_axis, const glm::vec3& center_delta
 ) -> BoxSatContacts {
-	glm::vec3 normal = best_axis.axis;
-	float normal_direction = glm::dot(center_delta, normal);
-	if (normal_direction < 0.0f) {
-		normal = -normal;
-	} else if (std::abs(normal_direction) <= 1.0e-8f) {
-		for (int component = 0; component < 3; ++component) {
-			if (std::abs(normal[component]) <= 1.0e-8f) {
-				continue;
-			}
-			if (normal[component] < 0.0f) {
-				normal = -normal;
-			}
-			break;
-		}
-	}
+	const glm::vec3 normal = orientedAxis(best_axis.axis, center_delta);
 
 	FixedBuffer<ContactCandidate, 8> candidates;
 	if (best_axis.type == BoxAxisType::edge) {
@@ -833,10 +887,15 @@ auto boxSatContactsFromAxis(
 }
 
 /// Same SAT as collideWorldBoxes but assumes box_b.rotation is identity always true for the ref voxel box
-auto collideBoxAgainstAxisAlignedBox(const WorldBox& box_a, const WorldBox& box_b) -> std::optional<BoxSatContacts> {
+auto collideBoxAgainstAxisAlignedBox(
+    const WorldBox& box_a, const WorldBox& box_b, uint8_t exposure_a = voxel::k_all_faces_exposed,
+    uint8_t exposure_b = voxel::k_all_faces_exposed
+) -> std::optional<BoxSatContacts> {
 	glm::vec3 center_delta = box_b.center - box_a.center;
 	BoxSatResult best_axis;
+	BoxSatResult exposed_axis;
 	bool separated = false;
+	const glm::mat3 identity {1.0f};
 
 	auto test_axis = [&](glm::vec3 axis, BoxAxisType type, int axis_a, int axis_b, float radius_a_hint) {
 		float length_squared = glm::dot(axis, axis);
@@ -856,15 +915,25 @@ auto collideBoxAgainstAxisAlignedBox(const WorldBox& box_a, const WorldBox& box_
 
 		float penetration = std::max(overlap, 0.0f);
 		bool new_is_face = type != BoxAxisType::edge;
-		bool old_is_face = best_axis.type != BoxAxisType::edge;
-		bool better = penetration < best_axis.penetration - contact_tolerance;
-		bool nearly_equal = std::abs(penetration - best_axis.penetration) <= contact_tolerance;
-		if (better || (nearly_equal && new_is_face && !old_is_face)) {
-			best_axis.axis = axis;
-			best_axis.penetration = penetration;
-			best_axis.type = type;
-			best_axis.axis_a = axis_a;
-			best_axis.axis_b = axis_b;
+		const auto improves = [&](const BoxSatResult& current) {
+			bool old_is_face = current.type != BoxAxisType::edge;
+			bool better = penetration < current.penetration - contact_tolerance;
+			bool nearly_equal = std::abs(penetration - current.penetration) <= contact_tolerance;
+			return better || (nearly_equal && new_is_face && !old_is_face);
+		};
+		const bool improves_any = improves(best_axis);
+		const bool improves_exposed = improves(exposed_axis);
+		if (!improves_any && !improves_exposed) {
+			return;
+		}
+
+		const BoxSatResult candidate {.axis = axis, .penetration = penetration, .type = type, .axis_a = axis_a, .axis_b = axis_b};
+		if (improves_any) {
+			best_axis = candidate;
+		}
+		if (improves_exposed &&
+		    normalUsesOnlyExposedFaces(orientedAxis(axis, center_delta), box_a.rotation, exposure_a, identity, exposure_b)) {
+			exposed_axis = candidate;
 		}
 	};
 
@@ -906,7 +975,32 @@ auto collideBoxAgainstAxisAlignedBox(const WorldBox& box_a, const WorldBox& box_
 		}
 	}
 
-	return boxSatContactsFromAxis(box_a, box_b, best_axis, center_delta);
+	return boxSatContactsFromAxis(box_a, box_b, pickExposedAxis(best_axis, exposed_axis), center_delta);
+}
+
+}
+
+namespace {
+
+/// Closest of the 26 surface directions so every contact of one touching region shares a manifold
+auto contactGroup(const glm::vec3& normal) -> uint8_t {
+	static const std::array<glm::vec3, voxel::k_normal_direction_count> directions = [] {
+		std::array<glm::vec3, voxel::k_normal_direction_count> out {};
+		for (uint8_t index = 0; index < voxel::k_normal_direction_count; ++index) {
+			out[index] = glm::normalize(glm::vec3(voxel::normalDirection(index)));
+		}
+		return out;
+	}();
+	uint8_t best = 0;
+	float best_alignment = -2.0f;
+	for (uint8_t index = 0; index < voxel::k_normal_direction_count; ++index) {
+		const float alignment = glm::dot(normal, directions[index]);
+		if (alignment > best_alignment) {
+			best_alignment = alignment;
+			best = index;
+		}
+	}
+	return best;
 }
 
 }
@@ -1690,27 +1784,29 @@ auto collideVoxelVoxelRegion(const VoxelVoxelPairView& view, const AABB& probe_r
 			  .half_extents = (ref_c.max - ref_c.min) * 0.5f,
 			};
 			// ref_voxel_box is always axis aligned so this skips the generic cross products
-			auto sat = _detail::collideBoxAgainstAxisAlignedBox(probe_box_reference_local, ref_voxel_box);
+			auto sat =
+			    _detail::collideBoxAgainstAxisAlignedBox(probe_box_reference_local, ref_voxel_box, probe_c.exposure, ref_c.exposure);
 			if (not sat.has_value()) {
 				return true;
 			}
 
+			const uint8_t group = contactGroup(sat->normal);
 			const FeatureType ref_f_type =
 			    ref_c.classification == voxel::VoxelClass::edge ? FeatureType::voxel_edge : FeatureType::voxel_face;
 			const ContactFeatureID ref_feature = voxelFeature(ref_f_type, ref_c.brick_slot, ref_c.local_index, ref_c.normal_index);
 
-			std::vector<_detail::ContactCandidate>& bucket = partial.candidates_per_normal[ref_c.normal_index];
+			std::vector<_detail::ContactCandidate>& bucket = partial.candidates_per_normal[group];
 			for (_detail::ContactCandidate& raw : sat->candidates) {
 				raw.feature_a = probe_feature;
 				raw.feature_b = ref_feature;
 				bucket.push_back(raw);
 			}
 
-			partial.normal_sum_per_group[ref_c.normal_index] += sat->normal * _detail::groupNormalWeight(*sat);
-			if (not partial.group_started[ref_c.normal_index]) {
-				partial.group_started[ref_c.normal_index] = true;
-				partial.normal_per_group[ref_c.normal_index] = sat->normal;
-				partial.material_per_group[ref_c.normal_index] = _detail::combineMaterials(
+			partial.normal_sum_per_group[group] += sat->normal * _detail::groupNormalWeight(*sat);
+			if (not partial.group_started[group]) {
+				partial.group_started[group] = true;
+				partial.normal_per_group[group] = sat->normal;
+				partial.material_per_group[group] = _detail::combineMaterials(
 				    PhysicsMaterial {
 				      .restitution = probe_c.material->restitution,
 				      .static_friction = probe_c.material->static_friction,
@@ -1727,10 +1823,7 @@ auto collideVoxelVoxelRegion(const VoxelVoxelPairView& view, const AABB& probe_r
 			// Same reasoning as collideBoxVoxel bounds one region bucket to a batch at a time
 			if (bucket.size() >= _detail::k_contact_reduce_batch_size) {
 				bucket = _detail::reduceContacts(
-				    std::move(bucket),
-				    _detail::blendedGroupNormal(
-				        partial.normal_sum_per_group[ref_c.normal_index], partial.normal_per_group[ref_c.normal_index]
-				    )
+				    std::move(bucket), _detail::blendedGroupNormal(partial.normal_sum_per_group[group], partial.normal_per_group[group])
 				);
 			}
 
@@ -1921,27 +2014,29 @@ void collideVoxelVoxel(
 				  .half_extents = (ref_c.max - ref_c.min) * 0.5f,
 				};
 				// ref_voxel_box is always axis aligned so this skips the generic cross products
-				auto sat = _detail::collideBoxAgainstAxisAlignedBox(probe_box_reference_local, ref_voxel_box);
+				auto sat =
+				    _detail::collideBoxAgainstAxisAlignedBox(probe_box_reference_local, ref_voxel_box, probe_c.exposure, ref_c.exposure);
 				if (not sat.has_value()) {
 					return true;
 				}
 
+				const uint8_t group = contactGroup(sat->normal);
 				auto ref_f_type = ref_c.classification == voxel::VoxelClass::edge ? FeatureType::voxel_edge : FeatureType::voxel_face;
 				auto ref_feature = voxelFeature(ref_f_type, ref_c.brick_slot, ref_c.local_index, ref_c.normal_index);
 
-				std::vector<_detail::ContactCandidate>& bucket = candidates_per_normal[ref_c.normal_index];
+				std::vector<_detail::ContactCandidate>& bucket = candidates_per_normal[group];
 				for (_detail::ContactCandidate& raw : sat->candidates) {
 					raw.feature_a = probe_feature;
 					raw.feature_b = ref_feature;
 					bucket.push_back(raw);
 				}
 
-				normal_sum_per_group[ref_c.normal_index] += sat->normal * _detail::groupNormalWeight(*sat);
+				normal_sum_per_group[group] += sat->normal * _detail::groupNormalWeight(*sat);
 				// clang-format off
-			if (not group_started[ref_c.normal_index]) {
-				group_started[ref_c.normal_index] = true;
-				normal_per_group[ref_c.normal_index] = sat->normal;
-				material_per_group[ref_c.normal_index] = _detail::combineMaterials(
+			if (not group_started[group]) {
+				group_started[group] = true;
+				normal_per_group[group] = sat->normal;
+				material_per_group[group] = _detail::combineMaterials(
 					PhysicsMaterial {
 						.restitution = probe_c.material->restitution,
 						.static_friction = probe_c.material->static_friction,
@@ -1959,8 +2054,7 @@ void collideVoxelVoxel(
 				// Same reasoning as collideBoxVoxel bounds a bucket to a batch at a time
 				if (bucket.size() >= _detail::k_contact_reduce_batch_size) {
 					bucket = _detail::reduceContacts(
-					    std::move(bucket),
-					    _detail::blendedGroupNormal(normal_sum_per_group[ref_c.normal_index], normal_per_group[ref_c.normal_index])
+					    std::move(bucket), _detail::blendedGroupNormal(normal_sum_per_group[group], normal_per_group[group])
 					);
 				}
 
@@ -2276,27 +2370,28 @@ auto collideBoxVoxelRegion(const BoxVoxelPairView& view, const AABB& region) -> 
 		  .half_extents = (candidate.max - candidate.min) * 0.5f,
 		};
 
-		auto sat = _detail::collideWorldBoxes(local_box, voxel_box);
+		auto sat = _detail::collideWorldBoxes(local_box, voxel_box, voxel::k_all_faces_exposed, candidate.exposure);
 		if (not sat.has_value()) {
 			return;
 		}
 
+		const uint8_t group = contactGroup(sat->normal);
 		const FeatureType type =
 		    candidate.classification == voxel::VoxelClass::edge ? FeatureType::voxel_edge : FeatureType::voxel_face;
 		const ContactFeatureID voxel_feature =
 		    voxelFeature(type, candidate.brick_slot, candidate.local_index, candidate.normal_index);
 
-		std::vector<_detail::ContactCandidate>& bucket = partial.candidates_per_normal[candidate.normal_index];
+		std::vector<_detail::ContactCandidate>& bucket = partial.candidates_per_normal[group];
 		for (_detail::ContactCandidate& raw : sat->candidates) {
 			raw.feature_b = voxel_feature;
 			bucket.push_back(raw);
 		}
 
-		partial.normal_sum_per_group[candidate.normal_index] += sat->normal * _detail::groupNormalWeight(*sat);
-		if (not partial.group_started[candidate.normal_index]) {
-			partial.group_started[candidate.normal_index] = true;
-			partial.normal_per_group[candidate.normal_index] = sat->normal;
-			partial.material_per_group[candidate.normal_index] = {
+		partial.normal_sum_per_group[group] += sat->normal * _detail::groupNormalWeight(*sat);
+		if (not partial.group_started[group]) {
+			partial.group_started[group] = true;
+			partial.normal_per_group[group] = sat->normal;
+			partial.material_per_group[group] = {
 			  .restitution = candidate.material->restitution,
 			  .static_friction = candidate.material->static_friction,
 			  .dynamic_friction = candidate.material->dynamic_friction,
@@ -2306,10 +2401,7 @@ auto collideBoxVoxelRegion(const BoxVoxelPairView& view, const AABB& region) -> 
 		// Same reasoning as collideBoxVoxel bounds one region bucket to a batch at a time
 		if (bucket.size() >= _detail::k_contact_reduce_batch_size) {
 			bucket = _detail::reduceContacts(
-			    std::move(bucket),
-			    _detail::blendedGroupNormal(
-			        partial.normal_sum_per_group[candidate.normal_index], partial.normal_per_group[candidate.normal_index]
-			    )
+			    std::move(bucket), _detail::blendedGroupNormal(partial.normal_sum_per_group[group], partial.normal_per_group[group])
 			);
 		}
 	});
@@ -2439,27 +2531,28 @@ void collideBoxVoxel(
 			};
 
 			ZoneScopedN("physics::BoxVoxelSAT");
-			auto sat = _detail::collideWorldBoxes(local_box, voxel_box);
+			auto sat = _detail::collideWorldBoxes(local_box, voxel_box, voxel::k_all_faces_exposed, candidate.exposure);
 			if (not sat.has_value()) {
 				return;
 			}
 
+			const uint8_t group = contactGroup(sat->normal);
 			const FeatureType type =
 			    candidate.classification == voxel::VoxelClass::edge ? FeatureType::voxel_edge : FeatureType::voxel_face;
 			const ContactFeatureID voxel_feature =
 			    voxelFeature(type, candidate.brick_slot, candidate.local_index, candidate.normal_index);
 
-			std::vector<_detail::ContactCandidate>& bucket = candidates_per_normal[candidate.normal_index];
+			std::vector<_detail::ContactCandidate>& bucket = candidates_per_normal[group];
 			for (_detail::ContactCandidate& raw : sat->candidates) {
 				raw.feature_b = voxel_feature;
 				bucket.push_back(raw);
 			}
 
-			normal_sum_per_group[candidate.normal_index] += sat->normal * _detail::groupNormalWeight(*sat);
-			if (not group_started[candidate.normal_index]) {
-				group_started[candidate.normal_index] = true;
-				normal_per_group[candidate.normal_index] = sat->normal;
-				material_per_group[candidate.normal_index] = {
+			normal_sum_per_group[group] += sat->normal * _detail::groupNormalWeight(*sat);
+			if (not group_started[group]) {
+				group_started[group] = true;
+				normal_per_group[group] = sat->normal;
+				material_per_group[group] = {
 				  .restitution = candidate.material->restitution,
 				  .static_friction = candidate.material->static_friction,
 				  .dynamic_friction = candidate.material->dynamic_friction,
@@ -2469,8 +2562,7 @@ void collideBoxVoxel(
 			// Bounds this to a batch worth of candidates at a time survivors compete again next batch
 			if (bucket.size() >= _detail::k_contact_reduce_batch_size) {
 				bucket = _detail::reduceContacts(
-				    std::move(bucket),
-				    _detail::blendedGroupNormal(normal_sum_per_group[candidate.normal_index], normal_per_group[candidate.normal_index])
+				    std::move(bucket), _detail::blendedGroupNormal(normal_sum_per_group[group], normal_per_group[group])
 				);
 			}
 		});

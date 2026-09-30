@@ -81,6 +81,8 @@ struct CachedContact {
 
 struct CachedManifold {
 	BroadPhasePair pair;
+	/// Points from pair.a to pair.b
+	glm::vec3 normal = {};
 	uint8_t normal_index = k_primitive_manifold_normal_index;
 	uint32_t shape_a_revision = 0;
 	uint32_t shape_b_revision = 0;

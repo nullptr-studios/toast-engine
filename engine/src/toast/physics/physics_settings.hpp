@@ -50,6 +50,7 @@ struct Tunables {
 	uint32_t voxel_pair_split_regions = 8;
 	/// Bisection steps a sweep refines by once it finds a blocking contact a clear sweep never pays this
 	uint32_t sweep_refine_iterations = 6;
+	uint32_t position_iterations = 3;
 
 	[[nodiscard]]
 	auto fixedDelta() const noexcept -> double {

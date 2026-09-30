@@ -57,6 +57,17 @@ void registerPhysicsSettings() {
 			 .step = 1.0},
 	    &Tunables::solver_iterations
 	);
+	uint_setting(
+	    "physics.solver.position_iterations",
+	    3,
+	    {.label = "Position iterations",
+			 .category = "Solver",
+			 .description = "Passes that push overlapping bodies apart after the velocity solve",
+			 .min = 1.0,
+			 .max = 16.0,
+			 .step = 1.0},
+	    &Tunables::position_iterations
+	);
 	flt("physics.solver.penetration_slop",
 	    0.005,
 	    {.label = "Penetration slop",

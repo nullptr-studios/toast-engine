@@ -1109,6 +1109,15 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 				    total_cached
 				);
 				ImGui::TextDisabled(
+				    "Sleep %zu slept, %zu woken (%zu approach, %zu racing, %zu contact end, %zu support)",
+				    phys.bodies_slept,
+				    phys.bodies_woken,
+				    phys.woken_by_approach,
+				    phys.woken_by_racing,
+				    phys.woken_by_contact_end,
+				    phys.woken_by_support_loss
+				);
+				ImGui::TextDisabled(
 				    "Constraints %zu warm started, %zu rejected, %zu invalid, %zu islands, %zu parallel batches",
 				    phys.warm_started_constraints,
 				    phys.rejected_constraints,

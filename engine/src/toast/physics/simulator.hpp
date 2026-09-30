@@ -128,6 +128,11 @@ public:
 		size_t contact_points = 0;
 		size_t bodies_woken = 0;
 		size_t bodies_slept = 0;
+		/// Of bodies_woken what woke each sleeper
+		size_t woken_by_approach = 0;
+		size_t woken_by_racing = 0;
+		size_t woken_by_contact_end = 0;
+		size_t woken_by_support_loss = 0;
 		size_t contact_begins = 0;
 		size_t contact_persists = 0;
 		size_t contact_ends = 0;
@@ -374,8 +379,8 @@ private:
 
 	static void wakeBody(BodyID id);
 	static void sleepBody(BodyID id);
-	/// A calm awake neighbor never wakes a sleeper so contact churn stays quiet
-	void releaseSleeper(BodyID sleeper, BodyID other);
+	/// A lost contact wakes a sleeper only when the body leaving is moving or nothing else still holds it up
+	void releaseSleeper(BodyID sleeper, BodyID other, const glm::vec3& normal_to_other);
 	void wakeBodiesTouching(BodyID id);
 	void wakeBodiesTouching(ShapeID id);
 	void wakeBodiesInBounds(const AABB& bounds);
@@ -464,7 +469,7 @@ private:
 	auto reconcileComponent(const voxel::Volume& volume, const DetachedComponent& component) const -> bool;
 	void enforceFragmentBudget(float dt);
 	void unlockSleep(BodyID id);
-	void wakeNeighborsOf(BodyID id);
+	void recheckNeighborsOf(BodyID id);
 	void rebuildFragmentIndex();
 	void refreshPalette(uint64_t palette_uid);
 	auto createVoxelShapeInternal(
@@ -487,6 +492,10 @@ private:
 	std::vector<uint8_t> m_sleep_ready;
 	std::vector<uint8_t> m_sleep_moving;
 	std::vector<uint8_t> m_sleep_blocked;
+	/// A cached contact with something below holds the body up
+	std::vector<uint8_t> m_contact_supported;
+	/// Overlap already removed from a body this pass so stacked manifolds stop pushing the same overlap twice
+	std::vector<glm::vec3> m_position_shift;
 
 	/// Persistent buildIslands scratch reused across ticks and across islands instead of reallocated
 	std::vector<size_t> m_island_parents;
