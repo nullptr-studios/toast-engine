@@ -27,6 +27,7 @@
 #include <toast/assets/assets.hpp>
 #include <toast/assets/data_schema_codegen.hpp>
 #include <toast/engine.hpp>
+#include <toast/events/defer.hpp>
 #include <toast/input/action.hpp>
 #include <toast/log.hpp>
 #include <toast/reflect/reflect_node.hpp>
@@ -279,6 +280,22 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	using namespace luabridge;
 
 	getGlobalNamespace(state)
+	    .addFunction(
+	        "defer",
+	        +[](const luabridge::LuaRef& fn, lua_State* state) {
+		        if (!fn.isFunction()) {
+			        luaL_error(state, "defer expects a function as its argument");
+			        return;
+		        }
+		        toast::defer([fn]() mutable {
+			        if (fn.isFunction()) {
+				        try {
+					        fn();
+				        } catch (const std::exception& e) { TOAST_ERROR("Lua", "Error inside deferred Lua function: {}", e.what()); }
+			        }
+		        });
+	        }
+	    )
 	    .beginNamespace("toast")
 	    .addFunction("trace", luaToastTrace)
 	    .addFunction("info", luaToastInfo)
