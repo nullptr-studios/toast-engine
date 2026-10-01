@@ -56,6 +56,9 @@ file(GLOB_RECURSE SOURCE CONFIGURE_DEPENDS "src/*.cpp" "generated/*.cpp" "genera
 add_library(toast_engine SHARED ${SOURCE})
 
 file(GLOB_RECURSE TOAST_REFLECTED_HEADERS CONFIGURE_DEPENDS "src/toast/*.hpp" "src/toast/*.h")
+file(GLOB_RECURSE TOAST_REFLECTION_GENERATOR_SOURCES CONFIGURE_DEPENDS
+        "${CMAKE_SOURCE_DIR}/tools/reflection_generator/src/*.rs"
+        "${CMAKE_SOURCE_DIR}/tools/reflection_generator/templates/*")
 add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/reflection.stamp"
         COMMAND "${OUTPUT_ROOT}/$<CONFIG>/reflection_generator/reflection_generator${CMAKE_EXECUTABLE_SUFFIX}"
@@ -68,7 +71,7 @@ add_custom_command(
         --lua-stubs "${CMAKE_SOURCE_DIR}/engine/assets/lua/types.d.lua"
         --event-lua-stubs "${CMAKE_SOURCE_DIR}/engine/assets/lua/events.d.lua"
         COMMAND ${CMAKE_COMMAND} -E touch "${CMAKE_CURRENT_BINARY_DIR}/reflection.stamp"
-        DEPENDS ${TOAST_REFLECTED_HEADERS}
+        DEPENDS ${TOAST_REFLECTED_HEADERS} ${TOAST_REFLECTION_GENERATOR_SOURCES}
         COMMENT "Regenerating reflection metadata"
         VERBATIM
 )

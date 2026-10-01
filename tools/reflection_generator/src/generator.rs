@@ -2,6 +2,7 @@
 
 use crate::*;
 use minijinja::Environment;
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
@@ -93,4 +94,63 @@ pub fn generate_files_with_events(nodes: &[NodeInfo], events: &[EventInfo], outp
         .render(&cpp_ctx)
         .unwrap_or_else(|e| panic!("template error for reflect.generated.cpp: {e}"));
     fs::write(&out, text).unwrap_or_else(|e| panic!("cannot write {}: {e}", out.display()));
+}
+
+fn qualify(namespace: Option<&str>, name: &str) -> String {
+    match namespace {
+        Some(ns) => format!("{ns}::{name}"),
+        None => name.to_string(),
+    }
+}
+
+fn resolve_parent(node: &NodeInfo, known: &HashMap<String, usize>) -> Option<usize> {
+    let parent = node.class.parent.as_ref()?;
+    let written = qualify(parent.namespace.as_deref(), &parent.name);
+    if let Some(global) = written.strip_prefix("::") {
+        return known.get(global).copied();
+    }
+    let mut scope = node.class.namespace.as_deref();
+    loop {
+        let candidate = match scope {
+            Some(ns) => format!("{ns}::{written}"),
+            None => written.clone(),
+        };
+        if let Some(&idx) = known.get(&candidate) {
+            return Some(idx);
+        }
+        scope = match scope {
+            Some(ns) => ns.rfind("::").map(|pos| &ns[..pos]),
+            None => return None,
+        };
+    }
+}
+
+pub fn topological_sort(nodes: Vec<NodeInfo>) -> Vec<NodeInfo> {
+    let known: HashMap<String, usize> = nodes
+        .iter()
+        .enumerate()
+        .map(|(i, n)| (qualify(n.class.namespace.as_deref(), &n.class.name), i))
+        .collect();
+    let parents: Vec<Option<usize>> = nodes.iter().map(|n| resolve_parent(n, &known)).collect();
+
+    let mut placed = vec![false; nodes.len()];
+    let mut order = Vec::with_capacity(nodes.len());
+    for start in 0..nodes.len() {
+        let mut chain = Vec::new();
+        let mut current = Some(start);
+        while let Some(i) = current {
+            if placed[i] || chain.contains(&i) {
+                break;
+            }
+            chain.push(i);
+            current = parents[i];
+        }
+        for &i in chain.iter().rev() {
+            placed[i] = true;
+            order.push(i);
+        }
+    }
+
+    let mut slots: Vec<Option<NodeInfo>> = nodes.into_iter().map(Some).collect();
+    order.into_iter().map(|i| slots[i].take().expect("node placed twice")).collect()
 }
