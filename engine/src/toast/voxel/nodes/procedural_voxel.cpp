@@ -926,11 +926,17 @@ auto ProceduralVoxel::pickPiece(glm::vec3 origin, glm::vec3 direction) -> VoxelP
 		if (layout.kind != PieceKind::carve || !layout.node.exists()) {
 			continue;
 		}
+
 		auto* piece = reflect_cast<VoxelPiece>(&const_cast<Node&>(*layout.node));
-		const VoxelPiece::GridRef grid = piece == nullptr ? nullptr : buildsAsync() ? piece->readyGrid() : piece->gridRef();
-		if (grid == nullptr) {
-			continue;
+		VoxelPiece::GridRef grid = {};
+		if (piece) {
+			if (buildsAsync()) {
+				grid = piece->readyGrid();
+			} else {
+				grid = piece->gridRef();
+			}
 		}
+
 		// Into piece voxels
 		glm::vec3 local_origin;
 		glm::vec3 local_direction;
