@@ -295,7 +295,8 @@ private:
 		std::vector<Constraint> constraints;
 		std::vector<size_t> manifold_indices;
 
-		/// constraints[batch_offsets[i] .. batch_offsets[i + 1]) never share a dynamic body
+		/// constraints[batch_offsets[i] .. batch_offsets[i + 1]) only share a dynamic body within one body pair run
+		/// and each body pair run is contiguous, so a batch can be split anywhere except inside a run
 		std::vector<size_t> batch_offsets;
 	};
 

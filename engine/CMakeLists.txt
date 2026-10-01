@@ -145,10 +145,11 @@ target_compile_definitions(toast_engine PUBLIC
 )
 
 if (MSVC)
+    string(REGEX REPLACE "/EH[a-z-]+" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
     target_compile_options(toast_engine PUBLIC $<$<CONFIG:Release>:/arch:AVX2>)
     target_compile_options(toast_engine PRIVATE
             /bigobj
-            /EHc-
+            /EHs /EHc-
             $<$<CONFIG:Release>:/O2;/Ob2;/Oi;/Ot;/GL;/Gy;/Gw;/fp:fast;/Qpar>
             $<$<CONFIG:Release>:/GS->
     )

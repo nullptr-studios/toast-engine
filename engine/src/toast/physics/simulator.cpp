@@ -52,6 +52,11 @@ auto cachedManifoldMatches(const CachedManifold& manifold, CachedManifoldKey key
 	return manifold.pair == key.pair && manifold.normal_index == key.normal_index;
 }
 
+[[nodiscard]]
+auto sameBodyPair(const Constraint& lhs, const Constraint& rhs) -> bool {
+	return lhs.body_a == rhs.body_a && lhs.body_b == rhs.body_b;
+}
+
 /// One thread pool job share of a constraint wave may hold pieces of more than one island batch
 struct ConstraintChunk {
 	std::vector<std::span<Constraint>> pieces;
@@ -76,17 +81,18 @@ auto chunkConstraintWave(std::span<const std::span<Constraint>> spans, size_t jo
 	for (const std::span<Constraint>& span : spans) {
 		size_t offset = 0;
 		while (offset < span.size()) {
-			const size_t room = target - current_size;
-			const size_t take = std::min(room, span.size() - offset);
-			if (take == 0) {
+			if (current_size >= target) {
 				chunks.push_back(std::move(current));
 				current = ConstraintChunk {};
 				current_size = 0;
-				continue;
 			}
-			current.pieces.push_back(span.subspan(offset, take));
-			current_size += take;
-			offset += take;
+			size_t end = std::min(span.size(), offset + (target - current_size));
+			while (end < span.size() && sameBodyPair(span[end - 1], span[end])) {
+				++end;
+			}
+			current.pieces.push_back(span.subspan(offset, end - offset));
+			current_size += end - offset;
+			offset = end;
 		}
 	}
 	if (!current.pieces.empty()) {
@@ -4086,7 +4092,15 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 
 	for (SimulationIsland& island : islands) {
 		// Load bearing: makes the greedy coloring below deterministic, not just the final storage order
+		// Body pair first so every shape pair between the same two bodies lands in one run
+		// Honextly I thought this was going to help a lot but it barely does anything ngl
 		std::ranges::sort(island.constraints, [](const Constraint& lhs, const Constraint& rhs) {
+			if (lhs.body_a != rhs.body_a) {
+				return lhs.body_a < rhs.body_a;
+			}
+			if (lhs.body_b != rhs.body_b) {
+				return lhs.body_b < rhs.body_b;
+			}
 			if (lhs.pair != rhs.pair) {
 				return lhs.pair < rhs.pair;
 			}
@@ -4096,11 +4110,17 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 			return lhs.feature_b < rhs.feature_b;
 		});
 
-		// Greedy list coloring a constraint batch is one past the highest batch its dynamic bodies reached
+		// Greedy list coloring per body pair not per contact
 		m_island_constraint_batch.resize(island.constraints.size());
 		uint32_t batch_count = island.constraints.empty() ? 0 : 1;
-		for (size_t i = 0; i < island.constraints.size(); ++i) {
-			const Constraint& constraint = island.constraints[i];
+		size_t group_begin = 0;
+		while (group_begin < island.constraints.size()) {
+			const Constraint& constraint = island.constraints[group_begin];
+			size_t group_end = group_begin + 1;
+			while (group_end < island.constraints.size() && sameBodyPair(constraint, island.constraints[group_end])) {
+				++group_end;
+			}
+
 			const Body* body_a = tryGetBody(constraint.body_a);
 			const Body* body_b = tryGetBody(constraint.body_b);
 			const bool a_dynamic = body_a != nullptr && movable(*body_a);
@@ -4113,7 +4133,11 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 			if (b_dynamic) {
 				batch = std::max(batch, m_island_next_free_batch[constraint.body_b.slot]);
 			}
-			m_island_constraint_batch[i] = batch;
+			std::fill(
+			    m_island_constraint_batch.begin() + static_cast<std::ptrdiff_t>(group_begin),
+			    m_island_constraint_batch.begin() + static_cast<std::ptrdiff_t>(group_end),
+			    batch
+			);
 			batch_count = std::max(batch_count, batch + 1);
 			if (a_dynamic) {
 				m_island_next_free_batch[constraint.body_a.slot] = batch + 1;
@@ -4121,6 +4145,7 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 			if (b_dynamic) {
 				m_island_next_free_batch[constraint.body_b.slot] = batch + 1;
 			}
+			group_begin = group_end;
 		}
 
 		// Counting sort into batch contiguous storage stable within a batch since i is scanned in order
@@ -4313,22 +4338,29 @@ void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
 
 	size_t invalid_constraint_count = 0;
 	std::vector<std::span<Constraint>> wave_spans;
+	std::vector<size_t> active_islands;
 	for (uint32_t iteration = 0; iteration < solver_iterations; ++iteration) {
 		ZoneScopedN("iteration");
 		ZoneValue(static_cast<uint64_t>(iteration));
 
-		for (size_t wave = 0; wave < max_batches; ++wave) {
+		active_islands.clear();
+		for (size_t island_index = 0; island_index < islands.size(); ++island_index) {
+			if (islands[island_index].batch_offsets.size() > 1) {
+				active_islands.push_back(island_index);
+			}
+		}
+
+		for (size_t wave = 0; wave < max_batches && not active_islands.empty(); ++wave) {
 			wave_spans.clear();
-			for (SimulationIsland& island : islands) {
-				if (wave + 1 >= island.batch_offsets.size()) {
-					continue;
-				}
+			for (const size_t island_index : active_islands) {
+				SimulationIsland& island = islands[island_index];
 				const size_t begin = island.batch_offsets[wave];
 				const size_t end = island.batch_offsets[wave + 1];
 				if (end > begin) {
 					wave_spans.push_back(std::span<Constraint> {island.constraints}.subspan(begin, end - begin));
 				}
 			}
+			std::erase_if(active_islands, [&](size_t island_index) { return wave + 2 >= islands[island_index].batch_offsets.size(); });
 			if (wave_spans.empty()) {
 				continue;
 			}
