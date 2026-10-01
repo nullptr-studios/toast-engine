@@ -83,10 +83,11 @@ public partial class VoxImporter : IAssetImporter {
 		// An empty directory means the native parse failed
 		var temp = new DirectoryInfo(tempDir);
 		var models = temp.Exists ? temp.GetFiles("*.tvox").OrderBy(f => f.Name).ToList() : [];
-		if (models.Count == 0) {
-			throw new Exception(
-				$"Voxel import produced no models in {tempDir} - check the editor log for the underlying error");
-		}
+		// we need to allow when we only have a palette and no models
+		//if (models.Count == 0) {
+		//	throw new Exception(
+		//		$"Voxel import produced no models in {tempDir} - check the editor log for the underlying error");
+		//}
 
 		var manifest = temp.GetFiles("*.json").FirstOrDefault();
 		var importedUids = new List<string>();

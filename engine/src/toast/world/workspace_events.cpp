@@ -1181,6 +1181,7 @@ struct ProtoTraits<VoxelCreatePiece> {
 		if (e.script.data() != 0) {
 			p.set_script(e.script);
 		}
+		p.set_mode(e.mode);
 		return p;
 	}
 
@@ -1192,6 +1193,7 @@ struct ProtoTraits<VoxelCreatePiece> {
 		e.min = readInt3(p.min());
 		e.max = readInt3(p.max());
 		e.script = toast::UID::fromString(p.script());
+		e.mode = p.mode();
 		return e;
 	}
 };
@@ -1464,6 +1466,7 @@ struct ProtoTraits<SetVoxelTool> {
 		if (e.default_script.data() != 0) {
 			p.set_default_script(e.default_script);
 		}
+		p.set_default_mode(e.default_mode);
 		return p;
 	}
 
@@ -1472,6 +1475,7 @@ struct ProtoTraits<SetVoxelTool> {
 		e.tool = p.tool();
 		e.paint_id = p.paint_id();
 		e.default_script = toast::UID::fromString(p.default_script());
+		e.default_mode = p.default_mode();
 		return e;
 	}
 };

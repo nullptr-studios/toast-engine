@@ -70,6 +70,9 @@ public partial class VoxelEditorViewModel : ObservableObject, IDisposable {
 	[ObservableProperty] private bool m_showOthers;
 	[ObservableProperty] private int m_paletteId = 1;
 	[ObservableProperty] private string? m_defaultScript;
+	[ObservableProperty] private string m_defaultFillModeName = "Replace";
+	public static IReadOnlyList<string> FillModes { get; } = ["Replace", "Empty Only", "Solid Only", "Match"];
+	private uint DefaultFillMode => (uint)Math.Max(0, FillModes.ToList().IndexOf(DefaultFillModeName));
 
 	public VoxelEditorViewModel(
 		WorkspaceViewModel workspace, bool ownsWorkspace, string prefabUid, ulong sourceWorkspace = 0, string sourceInstance = "") {
@@ -305,7 +308,8 @@ public partial class VoxelEditorViewModel : ObservableObject, IDisposable {
 			_ => "toast::FillVolume"
 		};
 		Events.Send(new VoxelCreatePiece {
-			Parent = CreationParent(), Type = type, Min = Int3(min), Max = Int3(max), Script = DefaultScript ?? ""
+			Parent = CreationParent(), Type = type, Min = Int3(min), Max = Int3(max), Script = DefaultScript ?? "",
+			Mode = tool == VoxelTool.Buildup ? DefaultFillMode : 0u
 		});
 	}
 
@@ -313,6 +317,12 @@ public partial class VoxelEditorViewModel : ObservableObject, IDisposable {
 	private void AddMesh() {
 		EnsureEngine();
 		Events.Send(new WorkspaceCreateNode { Parent = CreationParent(), Type = "toast::VoxelMesh" });
+	}
+
+	[RelayCommand]
+	private void AddGroup() {
+		EnsureEngine();
+		Events.Send(new WorkspaceCreateNode { Parent = CreationParent(), Type = "toast::VoxelGroup" });
 	}
 
 	// Extrude grows part of a face, the source and the new piece end up in one group
@@ -450,6 +460,10 @@ public partial class VoxelEditorViewModel : ObservableObject, IDisposable {
 		SendTool();
 	}
 
+	partial void OnDefaultFillModeNameChanged(string value) {
+		SendTool();
+	}
+
 	partial void OnViewModeChanged(VoxelViewMode value) {
 		SendRenderMode();
 	}
@@ -513,7 +527,8 @@ public partial class VoxelEditorViewModel : ObservableObject, IDisposable {
 	private void SendTool() {
 		if (!OwnsEngine) return;
 		Events.Send(new SetVoxelTool {
-			Tool = (uint)ActiveTool, PaintId = (uint)Math.Clamp(PaletteId, 1, 255), DefaultScript = DefaultScript ?? ""
+			Tool = (uint)ActiveTool, PaintId = (uint)Math.Clamp(PaletteId, 1, 255), DefaultScript = DefaultScript ?? "",
+			DefaultMode = DefaultFillMode
 		});
 		var gizmo = ActiveTool == VoxelTool.Move ? GizmoTool.VolumeFaces : GizmoTool.Select;
 		Events.Send(new SetGizmoTool { Tool = (uint)gizmo });

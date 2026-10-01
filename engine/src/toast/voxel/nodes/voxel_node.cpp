@@ -224,9 +224,47 @@ void VoxelNode::refreshVolume() {
 	m_pending_events = {};
 	m_building_shape = true;
 	buildShape();
+	m_building_shape = false;
+	if (!buildsAsync()) {
+		finishShape();
+	}
+}
+
+void VoxelNode::finishShape() {
+	m_building_shape = true;
 	call("editShape");
 	m_building_shape = false;
 	rebuilt_shape.fire();
+}
+
+namespace {
+
+constexpr int32_t k_max_bricks_per_axis = 512;
+constexpr int64_t k_max_bricks = int64_t {1} << 21;
+
+[[nodiscard]]
+auto tooBig(glm::ivec3 dims) noexcept -> bool {
+	return glm::any(glm::greaterThan(dims, glm::ivec3(k_max_bricks_per_axis))) ||
+	       static_cast<int64_t>(dims.x) * dims.y * dims.z > k_max_bricks;
+}
+
+}
+
+auto VoxelNode::replaceVolume(const voxel::EditBounds& bounds) -> voxel::Volume* {
+	if (bounds.empty()) {
+		return nullptr;
+	}
+	const glm::ivec3 first {bounds.min.x >> 3, bounds.min.y >> 3, bounds.min.z >> 3};
+	const glm::ivec3 last {bounds.max.x >> 3, bounds.max.y >> 3, bounds.max.z >> 3};
+	const glm::ivec3 dims = last - first + 1;
+	if (tooBig(dims)) {
+		return nullptr;
+	}
+	retireVolume();
+	m_volume = std::make_unique<voxel::Volume>(voxel::runtimeBrickPool(), glm::uvec3(dims));
+	m_voxel_origin = first * static_cast<int32_t>(voxel::k_brick_dim);
+	++m_revision;
+	return m_volume.get();
 }
 
 auto VoxelNode::ensureContains(const voxel::EditBounds& bounds) -> voxel::Volume* {
@@ -714,6 +752,10 @@ void VoxelNode::init() {
 }
 
 void VoxelNode::editorTick() {
+	if (buildsAsync()) {
+		tickAsyncBuild();
+		return;
+	}
 	if (const uint64_t key = shapeKey(); key != m_shape_key) {
 		m_shape_key = key;
 		m_rebuild_requested = true;
