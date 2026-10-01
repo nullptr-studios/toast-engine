@@ -336,6 +336,8 @@ void Workspace::voxelUpdatePreview(uint8_t kind) {
 		}
 	}
 	volume->setId(colour);
+	// A buildup previews with the fill mode the new volume gets
+	volume->setMode(kind == 0 ? static_cast<voxel::WriteMode>(m_voxel_tool.default_mode) : voxel::WriteMode::replace);
 	const assets::Handle<assets::Script> script = m_voxel_tool.default_script.data() != 0
 	                                                  ? assets::load<assets::Script>(m_voxel_tool.default_script)
 	                                                  : assets::load<assets::Script>("core://voxel_scripts/draw_box.lua");
@@ -503,8 +505,7 @@ auto Workspace::voxelToolMouseButton(uint32_t button, bool pressed, int mods) ->
 		if (!pressed || !m_root_node.exists() || reflect_cast<ProceduralVoxel>(&*m_root_node) == nullptr) {
 			return false;
 		}
-		const std::optional<voxel::VolumeHit> hit = voxelShapeHit(*shape, local);
-		VoxelPiece* piece = hit.has_value() ? shape->pieceAt(hit->voxel) : nullptr;
+		VoxelPiece* piece = shape->pickPiece(local.origin, local.direction);
 		m_focused_node = piece != nullptr ? piece->box() : Box<Node> {};
 		renderer::editorOverlays().selected = piece != nullptr ? piece->uid() : UID {};
 		event::NodePicked picked;
@@ -541,6 +542,7 @@ auto Workspace::voxelToolMouseButton(uint32_t button, bool pressed, int mods) ->
 			create.min = min;
 			create.max = max;
 			create.script = m_voxel_tool.default_script;
+			create.mode = m_voxel_tool.default_mode;
 			event::send<event::VoxelCreatePiece>(create);
 		}
 		voxelToolCancel();
@@ -699,10 +701,15 @@ void Workspace::subscribeVoxelEditing() {
 		if (e.tool != m_voxel_tool.tool) {
 			voxelToolCancel();
 		}
+		// Selecting a piece picks its color we shouldn't resend everything
+		const auto mode = static_cast<uint8_t>(std::min(e.default_mode, 3u));
+		const bool only_colour =
+		    e.tool == m_voxel_tool.tool && e.default_script == m_voxel_tool.default_script && mode == m_voxel_tool.default_mode;
 		m_voxel_tool.tool = e.tool;
 		m_voxel_tool.paint_id = static_cast<uint8_t>(std::clamp(e.paint_id, 1u, 255u));
 		m_voxel_tool.default_script = e.default_script;
-		if (auto* shape = m_root_node.exists() ? reflect_cast<ProceduralVoxel>(&*m_root_node) : nullptr) {
+		m_voxel_tool.default_mode = mode;
+		if (auto* shape = m_root_node.exists() ? reflect_cast<ProceduralVoxel>(&*m_root_node) : nullptr; shape && !only_colour) {
 			shape->sendLayout();
 		}
 		return true;
@@ -759,7 +766,9 @@ void Workspace::subscribeVoxelEditing() {
 			TOAST_WARN("Voxel", "VoxelSetPieceBounds: {} is not a piece", e.target.get());
 			return true;
 		}
-		recordHistory(voxelHistory(event::HistoryOperation::change_value, target, "Volume resized"), [&] {
+		const voxel::EditBounds before = pieceBounds(*piece);
+		const bool moved = before.max - before.min == glm::max(e.min, e.max) - glm::min(e.min, e.max);
+		recordHistory(voxelHistory(event::HistoryOperation::change_value, target, moved ? "Volume moved" : "Volume resized"), [&] {
 			placePiece(*piece, piecePlacement(*piece).orientation, e.min, e.max);
 		});
 		return true;
@@ -795,6 +804,10 @@ void Workspace::subscribeVoxelEditing() {
 				placePiece(*piece, orientation, e.min, e.max);
 				if (e.script.data() != 0) {
 					piece->setShapeScript(assets::load<assets::Script>(e.script));
+				}
+				// Only fills take a mode
+				if (auto* fill = reflect_cast<FillVolume>(piece); fill != nullptr && voxelPieceOf(source) == nullptr) {
+					fill->setMode(static_cast<voxel::WriteMode>(std::min(e.mode, 3u)));
 				}
 			}
 		});

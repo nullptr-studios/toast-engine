@@ -403,6 +403,9 @@ protected:
 
 	virtual void onScriptsReloaded() { }
 
+	/** Runs right before the script runtime is torn down and built again */
+	virtual void onScriptsReloading() { }
+
 	/** A script variable was edited from outside the script, path is "<instance>:<group/name>" */
 	virtual void onScriptVarChanged(std::string_view path) { }
 

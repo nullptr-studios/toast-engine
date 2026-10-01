@@ -39,6 +39,11 @@ auto VoxelMesh::resolvedModel() const -> const assets::VoxelModel* {
 	return assetOfType(m_model, "voxel_model");
 }
 
+auto VoxelMesh::pieceSize() -> glm::ivec3 {
+	const auto* model = assetOfType(m_model, "voxel_model");
+	return model != nullptr ? glm::ivec3(model->brickDims()) * static_cast<int32_t>(voxel::k_brick_dim) : glm::ivec3(0);
+}
+
 auto VoxelMesh::prepareGrid() -> std::unique_ptr<voxel::Volume> {
 	const auto* model = assetOfType(m_model, "voxel_model");
 	return model != nullptr ? instantiateModel(*model) : nullptr;

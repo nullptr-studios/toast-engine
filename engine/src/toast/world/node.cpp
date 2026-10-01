@@ -192,6 +192,7 @@ auto Node::hasCallable(std::string_view callable_name) const noexcept -> bool {
 }
 
 void Node::loadScripts() noexcept {
+	onScriptsReloading();
 	m_script_runtime.reset();
 	if (m_scripts.empty()) {
 		return;

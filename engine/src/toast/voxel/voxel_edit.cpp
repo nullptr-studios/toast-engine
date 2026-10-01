@@ -5,8 +5,10 @@
 #include <cmath>
 #include <deque>
 #include <limits>
+#include <optional>
 #include <tracy/Tracy.hpp>
 #include <unordered_set>
+#include <utility>
 
 namespace voxel {
 
@@ -80,7 +82,10 @@ auto brickMayWrite(BrickEntry entry, const WriteBrush& brush) noexcept -> bool {
 	}
 }
 
-template<typename Inside>
+/**
+ * Writes brush into every voxel whose centre is inside
+ */
+template<bool Convex = false, typename Inside>
 auto fillShape(Volume& volume, EditBounds bounds, const WriteBrush& brush, Inside&& inside) -> EditResult {
 	ZoneScoped;
 	EditResult result;
@@ -95,29 +100,78 @@ auto fillShape(Volume& volume, EditBounds bounds, const WriteBrush& brush, Insid
 		for (int32_t by = first_brick.y; by <= last_brick.y; ++by) {
 			for (int32_t bx = first_brick.x; bx <= last_brick.x; ++bx) {
 				const glm::ivec3 brick {bx, by, bz};
-				if (!brickMayWrite(volume.entryAt(brick), brush)) {
+				const BrickEntry entry = volume.entryAt(brick);
+				if (!brickMayWrite(entry, brush)) {
 					continue;
 				}
 
 				const glm::ivec3 lo = glm::max(bounds.min, brick * k_dim);
 				const glm::ivec3 hi = glm::min(bounds.max, brick * k_dim + (k_dim - 1));
+
+				if constexpr (Convex) {
+					const bool whole = lo == brick * k_dim && hi == brick * k_dim + (k_dim - 1);
+					if (whole && brush.mode == WriteMode::replace) {
+						bool all_inside = true;
+						for (int corner = 0; corner < 8 && all_inside; ++corner) {
+							const glm::ivec3 voxel(
+							    (corner & 1) != 0 ? hi.x : lo.x, (corner & 2) != 0 ? hi.y : lo.y, (corner & 4) != 0 ? hi.z : lo.z
+							);
+							all_inside = inside(centreOf(voxel));
+						}
+						if (all_inside) {
+							const BrickEntry filled =
+							    brush.id == k_empty_palette_index ? BrickEntry {} : BrickEntry::make(BrickTag::uniform, brush.id);
+							if (entry != filled) {
+								volume.setBrickUniform(brick, brush.id);
+								result.changed += k_brick_voxel_count;
+							}
+							continue;
+						}
+					}
+				}
+
+				// Reads and writes go directly to the brick
+				std::optional<Volume::WritableBrick> write;
 				bool touched = false;
+				const auto read = [&](uint32_t local) -> uint8_t {
+					if (write.has_value()) {
+						return write->material[local];
+					}
+					switch (entry.tag()) {
+						case BrickTag::empty: return k_empty_palette_index;
+						case BrickTag::uniform: return static_cast<uint8_t>(entry.payload());
+						default: return std::as_const(*volume.pool()).material(entry.payload())[local];
+					}
+				};
 				for (int32_t z = lo.z; z <= hi.z; ++z) {
 					for (int32_t y = lo.y; y <= hi.y; ++y) {
 						for (int32_t x = lo.x; x <= hi.x; ++x) {
 							const glm::ivec3 voxel {x, y, z};
-							if (!inside(centreOf(voxel)) || !canWrite(volume.materialAt(voxel), brush.mode, brush.match_id)) {
+							if (!inside(centreOf(voxel))) {
 								continue;
 							}
-							touched = writeVoxel(volume, voxel, brush.id, result) || touched;
-							if (result.pool_exhausted) {
-								return result;
+							const uint32_t local =
+							    localIndex(static_cast<uint32_t>(x & 7), static_cast<uint32_t>(y & 7), static_cast<uint32_t>(z & 7));
+							const uint8_t current = read(local);
+							if (current == brush.id || !canWrite(current, brush.mode, brush.match_id)) {
+								continue;
 							}
+							if (!write.has_value()) {
+								write = volume.beginBrickWrite(brick);
+								if (!write.has_value()) {
+									result.pool_exhausted = true;
+									return result;
+								}
+							}
+							write->material[local] = brush.id;
+							setSolid(*write->occupancy, local, brush.id != k_empty_palette_index);
+							touched = true;
+							++result.changed;
 						}
 					}
 				}
-				if (touched && brush.id != k_empty_palette_index) {
-					volume.tryCollapseUniform(brick);
+				if (write.has_value()) {
+					volume.finishBrickWrite(brick, touched);
 				}
 			}
 		}
@@ -247,7 +301,7 @@ auto fillBox(Volume& volume, glm::ivec3 a, glm::ivec3 b, const WriteBrush& brush
 
 auto fillSphere(Volume& volume, glm::vec3 center, float radius, const WriteBrush& brush) -> EditResult {
 	const float radius_squared = radius * radius;
-	return fillShape(volume, sphereBounds(center, radius), brush, [&](glm::vec3 p) {
+	return fillShape<true>(volume, sphereBounds(center, radius), brush, [&](glm::vec3 p) {
 		const glm::vec3 offset = p - center;
 		return glm::dot(offset, offset) <= radius_squared;
 	});
@@ -255,7 +309,7 @@ auto fillSphere(Volume& volume, glm::vec3 center, float radius, const WriteBrush
 
 auto fillCylinder(Volume& volume, glm::vec3 a, glm::vec3 b, float radius, const WriteBrush& brush) -> EditResult {
 	const float radius_squared = radius * radius;
-	return fillShape(volume, segmentBounds(a, b, radius), brush, [&](glm::vec3 p) {
+	return fillShape<true>(volume, segmentBounds(a, b, radius), brush, [&](glm::vec3 p) {
 		const float t = segmentParameter(p, a, b);
 		if (t < 0.0f || t > 1.0f) {
 			return false;
@@ -267,7 +321,7 @@ auto fillCylinder(Volume& volume, glm::vec3 a, glm::vec3 b, float radius, const 
 
 auto fillCapsule(Volume& volume, glm::vec3 a, glm::vec3 b, float radius, const WriteBrush& brush) -> EditResult {
 	const float radius_squared = radius * radius;
-	return fillShape(volume, segmentBounds(a, b, radius), brush, [&](glm::vec3 p) {
+	return fillShape<true>(volume, segmentBounds(a, b, radius), brush, [&](glm::vec3 p) {
 		const float t = std::clamp(segmentParameter(p, a, b), 0.0f, 1.0f);
 		const glm::vec3 offset = p - (a + ((b - a) * t));
 		return glm::dot(offset, offset) <= radius_squared;
@@ -493,6 +547,151 @@ auto pasteRegion(Volume& volume, const Region& region, glm::ivec3 at, WriteMode 
 	return result;
 }
 
+namespace {
+
+[[nodiscard]]
+auto sourceVoxel(const LatticePlacement& placement, glm::ivec3 landed) noexcept -> glm::ivec3 {
+	glm::ivec3 out;
+	for (int axis = 0; axis < 3; ++axis) {
+		const int32_t along = placement.orientation.flip[static_cast<size_t>(axis)] ? placement.offset[axis] - landed[axis] - 1
+		                                                                            : landed[axis] - placement.offset[axis];
+		out[placement.orientation.source[static_cast<size_t>(axis)]] = along;
+	}
+	return out;
+}
+
+[[nodiscard]]
+auto sourceBox(const LatticePlacement& placement, const EditBounds& landed) noexcept -> EditBounds {
+	const glm::ivec3 a = sourceVoxel(placement, landed.min);
+	const glm::ivec3 b = sourceVoxel(placement, landed.max);
+	return {glm::min(a, b), glm::max(a, b)};
+}
+
+struct SourceSummary {
+	bool empty = true;      ///< No solid voxel at all
+	bool full = true;       ///< Every voxel solid
+	bool uniform = true;    ///< Every brick uniform with the same id
+	uint8_t id = k_empty_palette_index;
+};
+
+[[nodiscard]]
+auto summarise(const Volume& piece, const EditBounds& box) noexcept -> SourceSummary {
+	SourceSummary out;
+	bool seen = false;
+	const glm::ivec3 first = brickOf(box.min);
+	const glm::ivec3 last = brickOf(box.max);
+	for (int32_t bz = first.z; bz <= last.z; ++bz) {
+		for (int32_t by = first.y; by <= last.y; ++by) {
+			for (int32_t bx = first.x; bx <= last.x; ++bx) {
+				const BrickEntry entry = piece.entryAt({bx, by, bz});
+				uint8_t id = k_empty_palette_index;
+				switch (entry.tag()) {
+					case BrickTag::empty: out.full = false; break;
+					case BrickTag::uniform:
+						out.empty = false;
+						id = static_cast<uint8_t>(entry.payload());
+						break;
+					default: {
+						const BrickOccupancy& occupancy = std::as_const(*piece.pool()).occupancy(entry.payload());
+						out.empty = out.empty && isEmpty(occupancy);
+						out.full = out.full && isFull(occupancy);
+						out.uniform = false;
+						break;
+					}
+				}
+				if (!seen) {
+					out.id = id;
+					seen = true;
+				} else if (id != out.id) {
+					out.uniform = false;
+				}
+			}
+		}
+	}
+	return out;
+}
+
+[[nodiscard]]
+auto wholeBrick(const EditBounds& box, glm::ivec3 brick) noexcept -> bool {
+	return box.min == brick * k_dim && box.max == brick * k_dim + (k_dim - 1);
+}
+
+class BrickWriter {
+public:
+	BrickWriter(Volume& target, glm::ivec3 brick) : m_target(target), m_brick(brick), m_entry(target.entryAt(brick)) { }
+
+	BrickWriter(const BrickWriter&) = delete;
+	auto operator=(const BrickWriter&) -> BrickWriter& = delete;
+
+	~BrickWriter() {
+		if (m_write.has_value()) {
+			m_target.finishBrickWrite(m_brick, m_changed);
+		}
+	}
+
+	[[nodiscard]]
+	auto entry() const noexcept -> BrickEntry {
+		return m_entry;
+	}
+
+	[[nodiscard]]
+	auto read(uint32_t local) const -> uint8_t {
+		if (m_write.has_value()) {
+			return m_write->material[local];
+		}
+		switch (m_entry.tag()) {
+			case BrickTag::empty: return k_empty_palette_index;
+			case BrickTag::uniform: return static_cast<uint8_t>(m_entry.payload());
+			default: return std::as_const(*m_target.pool()).material(m_entry.payload())[local];
+		}
+	}
+
+	/// @returns false when the pool ran out
+	auto write(uint32_t local, uint8_t id) -> bool {
+		if (!m_write.has_value()) {
+			m_write = m_target.beginBrickWrite(m_brick);
+			if (!m_write.has_value()) {
+				return false;
+			}
+		}
+		m_write->material[local] = id;
+		setSolid(*m_write->occupancy, local, id != k_empty_palette_index);
+		m_changed = true;
+		return true;
+	}
+
+private:
+	Volume& m_target;
+	glm::ivec3 m_brick;
+	BrickEntry m_entry;
+	std::optional<Volume::WritableBrick> m_write;
+	bool m_changed = false;
+};
+
+[[nodiscard]]
+auto localIndexOf(glm::ivec3 voxel) noexcept -> uint32_t {
+	return localIndex(static_cast<uint32_t>(voxel.x & 7), static_cast<uint32_t>(voxel.y & 7), static_cast<uint32_t>(voxel.z & 7));
+}
+
+[[nodiscard]]
+auto landedOnTarget(const Volume& target, const Volume& piece, const LatticePlacement& placement) noexcept -> EditBounds {
+	const EditBounds landed = placedBounds(piece.brickDims(), placement);
+	if (landed.empty()) {
+		return landed;
+	}
+	return clipToVolume(target, landed);
+}
+
+void fillWholeBrick(Volume& target, glm::ivec3 brick, BrickEntry before, uint8_t id, EditResult& result) {
+	const BrickEntry after = id == k_empty_palette_index ? BrickEntry {} : BrickEntry::make(BrickTag::uniform, id);
+	if (before != after) {
+		target.setBrickUniform(brick, id);
+		result.changed += k_brick_voxel_count;
+	}
+}
+
+}
+
 auto stampVolume(
     Volume& target, const Volume& piece, const LatticePlacement& placement, const PaletteRemapTable& remap, WriteMode mode,
     uint8_t match_id
@@ -502,51 +701,69 @@ auto stampVolume(
 	if (&target == &piece) {
 		return result;
 	}
-
-	std::unordered_set<uint64_t> touched_bricks;
-	std::vector<glm::ivec3> touched;
-	const glm::ivec3 target_dims = glm::ivec3(target.brickDims());
-
-	for (uint32_t index = 0; index < piece.brickCount(); ++index) {
-		const glm::ivec3 brick = piece.brickAtIndex(index);
-		const BrickEntry entry = piece.entryAt(brick);
-		if (entry.tag() == BrickTag::empty) {
-			continue;
-		}
-
-		for (uint32_t i = 0; i < k_brick_voxel_count; ++i) {
-			uint8_t material = 0;
-			if (entry.tag() == BrickTag::uniform) {
-				material = static_cast<uint8_t>(entry.payload());
-			} else {
-				material = piece.pool()->material(entry.payload())[i];
-			}
-			const uint8_t mapped = remap[material];
-			if (mapped == k_empty_palette_index) {
-				continue;
-			}
-
-			const BrickCoord local = localFromIndex(i);
-			const glm::ivec3 landed = placeVoxel(placement, brick * k_dim + glm::ivec3(local.x, local.y, local.z));
-			if (!target.containsVoxel(landed) || !canWrite(target.materialAt(landed), mode, match_id)) {
-				continue;
-			}
-			if (writeVoxel(target, landed, mapped, result)) {
-				const glm::ivec3 landed_brick = brickOf(landed);
-				const uint64_t slot = static_cast<uint64_t>(landed_brick.x) + (static_cast<uint64_t>(landed_brick.y) * target_dims.x) +
-				                      (static_cast<uint64_t>(landed_brick.z) * target_dims.x * target_dims.y);
-				if (touched_bricks.insert(slot).second) {
-					touched.push_back(landed_brick);
-				}
-			}
-			if (result.pool_exhausted) {
-				return result;
-			}
-		}
+	const EditBounds landed = landedOnTarget(target, piece, placement);
+	if (landed.empty()) {
+		return result;
 	}
 
-	for (const glm::ivec3& brick : touched) {
-		target.tryCollapseUniform(brick);
+	// Walks the target une brick at a time
+	const glm::ivec3 first = brickOf(landed.min);
+	const glm::ivec3 last = brickOf(landed.max);
+	for (int32_t bz = first.z; bz <= last.z; ++bz) {
+		for (int32_t by = first.y; by <= last.y; ++by) {
+			for (int32_t bx = first.x; bx <= last.x; ++bx) {
+				const glm::ivec3 brick {bx, by, bz};
+				const EditBounds box {glm::max(landed.min, brick * k_dim), glm::min(landed.max, brick * k_dim + (k_dim - 1))};
+				const SourceSummary source = summarise(piece, sourceBox(placement, box));
+				if (source.empty) {
+					continue;
+				}
+				BrickWriter writer(target, brick);
+
+				// Every voxel of the brick gets the same id
+				if (source.uniform && wholeBrick(box, brick)) {
+					const uint8_t mapped = remap[source.id];
+					if (mapped == k_empty_palette_index) {
+						continue;
+					}
+					const BrickEntry before = writer.entry();
+					if (mode == WriteMode::replace) {
+						fillWholeBrick(target, brick, before, mapped, result);
+						continue;
+					}
+					if (!before.isPooled()) {
+						const uint8_t current =
+						    before.tag() == BrickTag::uniform ? static_cast<uint8_t>(before.payload()) : k_empty_palette_index;
+						if (canWrite(current, mode, match_id)) {
+							fillWholeBrick(target, brick, before, mapped, result);
+						}
+						continue;
+					}
+				}
+
+				for (int32_t z = box.min.z; z <= box.max.z; ++z) {
+					for (int32_t y = box.min.y; y <= box.max.y; ++y) {
+						for (int32_t x = box.min.x; x <= box.max.x; ++x) {
+							const glm::ivec3 at {x, y, z};
+							const uint8_t mapped = remap[piece.materialAt(sourceVoxel(placement, at))];
+							if (mapped == k_empty_palette_index) {
+								continue;
+							}
+							const uint32_t local = localIndexOf(at);
+							const uint8_t current = writer.read(local);
+							if (current == mapped || !canWrite(current, mode, match_id)) {
+								continue;
+							}
+							if (!writer.write(local, mapped)) {
+								result.pool_exhausted = true;
+								return result;
+							}
+							++result.changed;
+						}
+					}
+				}
+			}
+		}
 	}
 	return result;
 }
@@ -557,25 +774,51 @@ auto carveVolume(Volume& target, const Volume& piece, const LatticePlacement& pl
 	if (&target == &piece) {
 		return result;
 	}
+	const EditBounds landed = landedOnTarget(target, piece, placement);
+	if (landed.empty()) {
+		return result;
+	}
 
-	for (uint32_t index = 0; index < piece.brickCount(); ++index) {
-		const glm::ivec3 brick = piece.brickAtIndex(index);
-		const BrickOccupancy* occupancy = piece.occupancyPointer(brick);
-		if (occupancy == nullptr || isEmpty(*occupancy)) {
-			continue;
-		}
-		for (uint32_t i = 0; i < k_brick_voxel_count; ++i) {
-			if (!isSolid(*occupancy, i)) {
-				continue;
-			}
-			const BrickCoord local = localFromIndex(i);
-			const glm::ivec3 landed = placeVoxel(placement, brick * k_dim + glm::ivec3(local.x, local.y, local.z));
-			if (!target.containsVoxel(landed) || !target.isSolidAt(landed)) {
-				continue;
-			}
-			writeVoxel(target, landed, k_empty_palette_index, result);
-			if (result.pool_exhausted) {
-				return result;
+	const glm::ivec3 first = brickOf(landed.min);
+	const glm::ivec3 last = brickOf(landed.max);
+	for (int32_t bz = first.z; bz <= last.z; ++bz) {
+		for (int32_t by = first.y; by <= last.y; ++by) {
+			for (int32_t bx = first.x; bx <= last.x; ++bx) {
+				const glm::ivec3 brick {bx, by, bz};
+				const BrickEntry before = target.entryAt(brick);
+				if (before.tag() == BrickTag::empty) {
+					continue;
+				}
+				const EditBounds box {glm::max(landed.min, brick * k_dim), glm::min(landed.max, brick * k_dim + (k_dim - 1))};
+				const SourceSummary source = summarise(piece, sourceBox(placement, box));
+				if (source.empty) {
+					continue;
+				}
+				if (source.full && wholeBrick(box, brick)) {
+					if (const BrickOccupancy* occupancy = target.occupancyPointer(brick)) {
+						result.changed += popCount(*occupancy);
+					}
+					target.setBrickUniform(brick, k_empty_palette_index);
+					continue;
+				}
+
+				BrickWriter writer(target, brick);
+				for (int32_t z = box.min.z; z <= box.max.z; ++z) {
+					for (int32_t y = box.min.y; y <= box.max.y; ++y) {
+						for (int32_t x = box.min.x; x <= box.max.x; ++x) {
+							const glm::ivec3 at {x, y, z};
+							const uint32_t local = localIndexOf(at);
+							if (writer.read(local) == k_empty_palette_index || !piece.isSolidAt(sourceVoxel(placement, at))) {
+								continue;
+							}
+							if (!writer.write(local, k_empty_palette_index)) {
+								result.pool_exhausted = true;
+								return result;
+							}
+							++result.changed;
+						}
+					}
+				}
 			}
 		}
 	}
@@ -591,7 +834,7 @@ auto fillRoundBox(Volume& volume, glm::ivec3 a, glm::ivec3 b, float radius, cons
 	}
 
 	const glm::vec3 centre = glm::vec3(bounds.min) + half;
-	return fillShape(volume, bounds, brush, [&](glm::vec3 p) {
+	return fillShape<true>(volume, bounds, brush, [&](glm::vec3 p) {
 		const glm::vec3 q = glm::abs(p - centre) - half + r;
 		const float outside = glm::length(glm::max(q, glm::vec3(0.0f)));
 		const float inside = std::min(std::max({q.x, q.y, q.z}), 0.0f);
@@ -603,7 +846,7 @@ auto fillEllipsoid(Volume& volume, glm::ivec3 a, glm::ivec3 b, const WriteBrush&
 	const EditBounds bounds = boxBounds(a, b);
 	const glm::vec3 half = glm::vec3(bounds.max - bounds.min + 1) * 0.5f;
 	const glm::vec3 centre = glm::vec3(bounds.min) + half;
-	return fillShape(volume, bounds, brush, [&](glm::vec3 p) {
+	return fillShape<true>(volume, bounds, brush, [&](glm::vec3 p) {
 		const glm::vec3 unit = (p - centre) / half;
 		return glm::dot(unit, unit) <= 1.0f;
 	});

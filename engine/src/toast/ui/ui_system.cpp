@@ -262,11 +262,17 @@ void UISystem::destroyContext(Rml::Context* context) {
 auto UISystem::loadFontFace(std::string_view uri, bool fallback) -> bool {
 	ZoneScoped;
 
+	// RmlUi crashes loading a face it already has (retarded i know)
+	if (m_loaded_fonts.contains(std::string(uri))) {
+		return true;
+	}
+
 	if (!Rml::LoadFontFace(Rml::String(uri), fallback)) {
 		TOAST_WARN("UI", "Failed to load font face '{}'", uri);
 		return false;
 	}
 
+	m_loaded_fonts.emplace(uri);
 	TOAST_TRACE("UI", "Loaded font face '{}'", uri);
 	return true;
 }

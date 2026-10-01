@@ -31,7 +31,10 @@ BrickPool::BrickPool(uint32_t capacity)
       m_is_free(std::make_unique<std::atomic<bool>[]>(capacity)) {         // NOLINT(modernize-avoid-c-arrays)
 	assert(capacity < k_invalid_brick);
 
-	m_material.assign(static_cast<size_t>(capacity) * k_brick_material_bytes, k_empty_palette_index);
+	// allocate clears every brick
+	m_material = std::make_unique_for_overwrite<uint8_t[]>(    // NOLINT(modernize-avoid-c-arrays)
+	    static_cast<size_t>(capacity) * k_brick_material_bytes
+	);    // NOLINT(modernize-avoid-c-arrays)
 	m_occupancy.assign(capacity, BrickOccupancy {});
 }
 
@@ -74,20 +77,20 @@ void BrickPool::free(uint32_t id) {
 void BrickPool::clearBrick(uint32_t id) {
 	assert(id < m_capacity);
 	const size_t base = static_cast<size_t>(id) * k_brick_material_bytes;
-	std::fill_n(m_material.begin() + static_cast<std::ptrdiff_t>(base), k_brick_material_bytes, k_empty_palette_index);
+	std::fill_n(m_material.get() + base, k_brick_material_bytes, k_empty_palette_index);
 	m_occupancy[id] = BrickOccupancy {};
 }
 
 auto BrickPool::material(uint32_t id) -> std::span<uint8_t, k_brick_material_bytes> {
 	assert(isValid(id));
 	const size_t base = static_cast<size_t>(id) * k_brick_material_bytes;
-	return std::span<uint8_t, k_brick_material_bytes>(m_material.data() + base, k_brick_material_bytes);
+	return std::span<uint8_t, k_brick_material_bytes>(m_material.get() + base, k_brick_material_bytes);
 }
 
 auto BrickPool::material(uint32_t id) const -> std::span<const uint8_t, k_brick_material_bytes> {
 	assert(isValid(id));
 	const size_t base = static_cast<size_t>(id) * k_brick_material_bytes;
-	return std::span<const uint8_t, k_brick_material_bytes>(m_material.data() + base, k_brick_material_bytes);
+	return std::span<const uint8_t, k_brick_material_bytes>(m_material.get() + base, k_brick_material_bytes);
 }
 
 auto BrickPool::occupancy(uint32_t id) -> BrickOccupancy& {

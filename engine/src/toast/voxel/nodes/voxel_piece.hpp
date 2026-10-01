@@ -8,7 +8,9 @@
 #pragma once
 #include "voxel.hpp"
 
+#include <array>
 #include <cstdint>
+#include <future>
 #include <memory>
 #include <toast/assets/types.hpp>
 #include <toast/voxel/voxel_edit.hpp>
@@ -186,12 +188,53 @@ public:
 		return 0;
 	}
 
+	struct Grid {
+		std::shared_ptr<const Grid> base;
+		std::unique_ptr<voxel::Volume> volume;
+		std::array<uint32_t, voxel::k_palette_size> histogram {};
+	};
+
+	using GridRef = std::shared_ptr<const Grid>;
+
 	/**
 	 * The grid after the clip planes, rebuilt first when an input changed
 	 * @returns null when there is nothing to draw
+	 * @note Waits for a grid still drawing on another thread
 	 */
 	[[nodiscard]]
 	auto grid() -> const voxel::Volume*;
+
+	/** Like grid() but it keeps the grid alive while someone else reads it */
+	[[nodiscard]]
+	auto gridRef() -> GridRef;
+
+	// Drawing on other threads
+	// for the editor ONLY (dario im looking at you)
+
+	/** Starts drawing the grid on a worker */
+	void requestGrid();
+
+	/** Takes the grid a worker finished */
+	auto collectGrid() -> bool;
+
+	/** The newest grid there is without drawing or waiting, it can be out of date or null */
+	[[nodiscard]]
+	auto readyGrid() -> GridRef;
+
+	/** @returns true while a worker is drawing the grid */
+	[[nodiscard]]
+	auto gridBuilding() const noexcept -> bool {
+		return m_job.valid();
+	}
+
+	/** @returns true when the grid is out of date, drawing or not */
+	[[nodiscard]]
+	auto gridStale() const noexcept -> bool {
+		return m_grid_dirty || m_job.valid();
+	}
+
+	/** Blocks until the worker drawing the grid is done and takes its grid */
+	void waitForGrid();
 
 	/** Bumped whenever something that changes the grid or how it lands changes */
 	[[nodiscard]]
@@ -247,6 +290,7 @@ protected:
 	void markLandingDirty() noexcept { ++m_input_revision; }
 
 	void onReflectedFieldChanged(std::string_view field_name) override;
+	void onScriptsReloading() override;
 	void onScriptsReloaded() override;
 	void onScriptVarChanged(std::string_view path) override;
 	void updateInspectorMessages() override;
@@ -254,7 +298,12 @@ protected:
 	template<typename Kernel>
 	void draw(std::string_view operation, Kernel&& kernel);
 
+	/** The grid being drawn when the calling thread is the one drawing it */
+	[[nodiscard]]
+	auto drawing() const noexcept -> voxel::Volume*;
+
 	void init();
+	void destroy();
 
 	/** The script that draws the piece, it mirrors the first entry of the node scripts */
 	[[Reflect, Name("Script")]]
@@ -265,9 +314,23 @@ protected:
 	std::vector<glm::vec4> m_clip_planes;
 
 private:
-	std::unique_ptr<voxel::Volume> m_grid;
-	std::unique_ptr<voxel::Volume> m_clipped;
-	voxel::Volume* m_drawing = nullptr;
+	/** Runs editShape into a fresh grid, on whatever thread calls it */
+	[[nodiscard]]
+	auto drawGrid() -> GridRef;
+
+	/** Takes a freshly drawn grid */
+	void landGrid(GridRef fresh);
+
+	/** Clips the drawn grid when the planes changed */
+	void applyClip();
+
+	/** The grid the drawing thread is filling, else the newest one without ever waiting on a worker */
+	[[nodiscard]]
+	auto latestGrid() -> const voxel::Volume*;
+
+	GridRef m_drawn;
+	GridRef m_grid;
+	std::future<GridRef> m_job;
 	bool m_grid_dirty = true;
 	bool m_clip_dirty = true;
 	bool m_misaligned = false;

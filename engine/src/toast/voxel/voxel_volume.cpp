@@ -344,6 +344,67 @@ auto Volume::setBrickMaterial(glm::ivec3 brick, std::span<const uint8_t, k_brick
 	return true;
 }
 
+auto Volume::copyBrickFrom(glm::ivec3 brick, const Volume& source, glm::ivec3 source_brick) -> bool {
+	if (!containsBrick(brick)) {
+		return false;
+	}
+	const BrickEntry from = source.entryAt(source_brick);
+	if (from.tag() == BrickTag::empty || from.tag() == BrickTag::uniform) {
+		const uint32_t before = m_revision;
+		setBrickUniform(brick, from.tag() == BrickTag::empty ? k_empty_palette_index : static_cast<uint8_t>(from.payload()));
+		return m_revision != before;
+	}
+
+	const uint32_t index = entryIndex(brick);
+	const std::span<const uint8_t, k_brick_material_bytes> bytes = std::as_const(*source.m_pool).material(from.payload());
+	const BrickEntry current = m_entries[index];
+	if (current.isPooled() && std::ranges::equal(bytes, std::as_const(*m_pool).material(current.payload()))) {
+		return false;
+	}
+
+	const uint32_t id = makeWritable(index);
+	if (id == k_invalid_brick) {
+		return false;
+	}
+	std::ranges::copy(bytes, m_pool->material(id).begin());
+	m_pool->occupancy(id) = std::as_const(*source.m_pool).occupancy(from.payload());
+	++m_revision;
+	markDirty(brick);
+	return true;
+}
+
+auto Volume::beginBrickWrite(glm::ivec3 brick) -> std::optional<WritableBrick> {
+	if (!containsBrick(brick)) {
+		return std::nullopt;
+	}
+	const uint32_t id = makeWritable(entryIndex(brick));
+	if (id == k_invalid_brick) {
+		return std::nullopt;
+	}
+	return WritableBrick {.material = m_pool->material(id), .occupancy = &m_pool->occupancy(id)};
+}
+
+void Volume::finishBrickWrite(glm::ivec3 brick, bool changed) {
+	if (!containsBrick(brick)) {
+		return;
+	}
+	const uint32_t index = entryIndex(brick);
+	const BrickEntry entry = m_entries[index];
+	if (entry.tag() != BrickTag::owned) {
+		return;
+	}
+	if (isEmpty(m_pool->occupancy(entry.payload()))) {
+		m_pool->free(entry.payload());
+		m_entries[index] = BrickEntry {};
+	} else if (changed) {
+		tryCollapseUniform(brick);
+	}
+	if (changed) {
+		++m_revision;
+		markDirty(brick);
+	}
+}
+
 void Volume::markDirty(glm::ivec3 brick) {
 	const uint32_t index = entryIndex(brick);
 	if (m_dirty_mask.empty()) {

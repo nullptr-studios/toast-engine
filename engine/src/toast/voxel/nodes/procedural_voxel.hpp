@@ -19,11 +19,13 @@
 #include "voxel_volume.hpp"
 
 #include <cstdint>
+#include <future>
 #include <memory>
 #include <optional>
 #include <span>
 #include <toast/voxel/stamp.hpp>
 #include <toast/voxel/voxel_edit.hpp>
+#include <unordered_map>
 #include <vector>
 
 namespace event {
@@ -77,6 +79,13 @@ public:
 		return static_cast<int>(m_layout.size());
 	}
 
+	/**
+	 * The piece a ray in shape voxels clicks on
+	 * @returns null when it hits nothing
+	 */
+	[[nodiscard]]
+	auto pickPiece(glm::vec3 origin, glm::vec3 direction) -> VoxelPiece*;
+
 	/** The piece that draws the voxel at shape voxel, null when none does */
 	[[nodiscard]]
 	auto pieceAt(glm::ivec3 voxel) -> VoxelPiece*;
@@ -102,6 +111,8 @@ public:
 protected:
 	void buildShape() override;
 	auto shapeKey() -> uint64_t override;
+	auto buildsAsync() -> bool override;
+	void tickAsyncBuild() override;
 
 	/** Piece outlines and the Split and Slice preview for the VoxelEditor */
 	void drawDebug() override;
@@ -115,12 +126,19 @@ private:
 		glm::mat4 to_root {1.0f};
 	};
 
+	/** Everything needed to write one piece */
 	struct Landing {
-		VoxelPiece* piece = nullptr;
-		const voxel::Volume* grid = nullptr;
+		VoxelPiece* piece = nullptr;    ///< Main thread only
+		VoxelPiece::GridRef grid;
 		voxel::LatticePlacement placement;
 		voxel::PaletteRemapTable remap {};
+		PieceKind kind = PieceKind::fill;
+		voxel::WriteMode mode = voxel::WriteMode::replace;
+		uint8_t match_id = 0;
 	};
+
+	struct ComposeInput;
+	struct ComposeOutput;
 
 	void collect(Node& node, const glm::mat4& to_root, std::vector<Collected>& out);
 
@@ -132,12 +150,32 @@ private:
 	/** Every enabled bucket in hierarchy order, groups included */
 	void collectBuckets(Node& node, const glm::mat4& to_root, std::vector<BucketFill>& out);
 
-	/** Builds the grid of every piece and works out where it lands */
+	/**
+	 * Works out where every piece lands
+	 * @param wait draws and waits for grids that are ood
+	 */
 	[[nodiscard]]
-	auto land(const std::vector<Collected>& pieces) -> std::vector<Landing>;
+	auto land(const std::vector<Collected>& pieces, bool wait) -> std::vector<Landing>;
 
 	/** Writes one piece into target whose first voxel is the shape voxel origin */
 	static auto apply(voxel::Volume& target, const Landing& landing, glm::ivec3 origin) -> voxel::EditResult;
+
+	/** Builds the whole shape into a fresh volume, async */
+	[[nodiscard]]
+	static auto compose(const ComposeInput& input) -> std::shared_ptr<ComposeOutput>;
+
+	[[nodiscard]]
+	auto keyOf(const std::vector<Collected>& pieces) -> uint64_t;
+
+	/** editor layoput */
+	[[nodiscard]]
+	auto layoutOf(const std::vector<Landing>& landings) -> std::vector<PieceLayout>;
+
+	/** Start building the piece async */
+	void launchCompose(const std::vector<Collected>& pieces);
+
+	/** Copies the bricks of a finished compose */
+	void applyComposed(ComposeOutput& output);
 
 	[[nodiscard]]
 	auto averageColor(const Landing& landing) -> glm::vec3;
@@ -145,19 +183,29 @@ private:
 	[[nodiscard]]
 	auto remapFor(const VoxelPiece& piece) -> voxel::PaletteRemapTable;
 
-	/** Builds the box a 3D tool is drawing into the shape so you see what it does before placing it */
-	auto applyToolPreview(voxel::Volume* target) -> voxel::Volume*;
-
-	/** The selected piece voxels that still show, the renderer tints them orange */
-	void rebuildHighlight(const voxel::Volume* target);
-
-	/** Front, side and top views of the built shape for the 2D views */
-	void addProjections(event::ProceduralVoxelLayout& layout);
+	[[nodiscard]]
+	auto toolPiece() -> VoxelPiece*;
 
 	std::unique_ptr<voxel::Volume> m_highlight;
+	UID m_highlight_for;
 
 	std::vector<PieceLayout> m_layout;
+	std::vector<PieceLayout> m_pending_layout;
 	bool m_keep_grids = false;
+
+	std::future<std::shared_ptr<ComposeOutput>> m_compose_job;
+	std::shared_ptr<ComposeOutput> m_last_compose;
+	bool m_compose_wanted = false;
+	bool m_pending_projections = false;
+
+	struct CachedRemap {
+		voxel::PaletteRemapTable table {};
+		uint64_t target_uid = 0;
+		uint32_t source_revision = 0;
+		uint32_t target_revision = 0;
+	};
+
+	std::unordered_map<uint64_t, CachedRemap> m_remaps;
 };
 
 /** @returns true when node sits in a ProceduralVoxel, through any groups */
