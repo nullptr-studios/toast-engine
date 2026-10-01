@@ -198,7 +198,7 @@ auto VoxelPiece::drawGrid() -> GridRef {
 		return nullptr;
 	}
 
-	// Only the thread drawing sees the grid 
+	// Only the thread drawing sees the grid
 	// A piece drawing on a worker never hands it to the main thread
 	const VoxelPiece* previous_piece = std::exchange(t_drawing_piece, this);
 	voxel::Volume* previous_grid = std::exchange(t_drawing_grid, volume.get());

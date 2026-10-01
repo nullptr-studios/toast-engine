@@ -353,6 +353,7 @@ protected:
 	}
 
 	virtual void tickAsyncBuild() { }
+
 	void finishShape();
 
 	void init();

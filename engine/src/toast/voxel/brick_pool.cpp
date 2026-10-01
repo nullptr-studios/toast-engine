@@ -32,7 +32,7 @@ BrickPool::BrickPool(uint32_t capacity)
 	assert(capacity < k_invalid_brick);
 
 	// allocate clears every brick
-	m_material = std::make_unique_for_overwrite<uint8_t[]>(
+	m_material = std::make_unique_for_overwrite<uint8_t[]>(    // NOLINT(modernize-avoid-c-arrays)
 	    static_cast<size_t>(capacity) * k_brick_material_bytes
 	);    // NOLINT(modernize-avoid-c-arrays)
 	m_occupancy.assign(capacity, BrickOccupancy {});

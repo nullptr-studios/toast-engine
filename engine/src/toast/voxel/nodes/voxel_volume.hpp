@@ -69,7 +69,7 @@ protected:
 	void finishGrid(voxel::Volume& grid) override;
 	auto pieceSize() -> glm::ivec3 override;
 	void onReflectedFieldChanged(std::string_view field_name) override;
-	void sizeChanged(); // redraws only when the size changed fr
+	void sizeChanged();    // redraws only when the size changed fr
 
 	glm::ivec3 m_sized_for {0};
 

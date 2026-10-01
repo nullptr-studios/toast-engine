@@ -319,7 +319,7 @@ private:
 	auto drawGrid() -> GridRef;
 
 	/** Takes a freshly drawn grid */
-	void landGrid(GridRef drawn);
+	void landGrid(GridRef fresh);
 
 	/** Clips the drawn grid when the planes changed */
 	void applyClip();
