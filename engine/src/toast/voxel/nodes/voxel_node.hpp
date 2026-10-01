@@ -48,6 +48,16 @@ inline auto toId(int id) noexcept -> uint8_t {
 }
 
 /**
+ * How the physics body of a voxel node moves
+ * @note Pieces that break off a static or kinematic node always become dynamic
+ */
+enum class SimulationType : uint8_t {
+	static_body = 0,    ///< Never moves
+	kinematic = 1,      ///< Follows the node transform and pushes other bodies
+	dynamic = 2,        ///< Fully simulated
+};
+
+/**
  * A shape made of voxels that renders and collides
  *
  * It can start from a voxel model or from nothing
@@ -449,9 +459,12 @@ protected:
 	[[Reflect, Name("Palette Override")]]
 	assets::Handle<assets::VoxelPalette> m_palette;
 
-	/** Makes the body static so it never moves */
-	[[Reflect]]
-	bool indestructible = false;
+	/**
+	 * How the body is simulated
+	 * @note Whether voxels can break is up to their destruction material
+	 */
+	[[Reflect, Name("Simulation Type"), Enum("Static", "Kinematic", "Dynamic")]]
+	SimulationType simulation_type = SimulationType::dynamic;
 
 	[[Reflect, ReadOnly, Unit("kg")]]
 	float mass = 0.0f;

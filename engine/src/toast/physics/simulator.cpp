@@ -317,6 +317,20 @@ void Simulator::unregisterRigidbody(Rigidbody& node) {
 	node.assignBody({});
 }
 
+namespace {
+
+[[nodiscard]]
+constexpr auto bodyTypeOf(toast::SimulationType type) noexcept -> BodyType {
+	switch (type) {
+		case toast::SimulationType::static_body: return BodyType::static_body;
+		case toast::SimulationType::kinematic: return BodyType::kinematic_body;
+		case toast::SimulationType::dynamic: return BodyType::dynamic_body;
+	}
+	return BodyType::dynamic_body;
+}
+
+}
+
 void Simulator::registerVoxelNode(toast::VoxelNode& node) {
 	ZoneScopedN("physics::RegisterVoxelNode");
 	if (not instance) {
@@ -334,10 +348,11 @@ void Simulator::registerVoxelNode(toast::VoxelNode& node) {
 	PhysicsMaterial material;
 
 	node.syncWorldTransform();
-	const bool dynamic_body = not node.indestructible;
+	const BodyType body_type = bodyTypeOf(node.simulation_type);
+	const bool dynamic_body = body_type == BodyType::dynamic_body;
 	const BodyID body = instance->createBody(
 	    BodyDescriptor {
-	      .type = dynamic_body ? BodyType::dynamic_body : BodyType::static_body,
+	      .type = body_type,
 	      .allow_sleep = node.allow_sleep,
 	      .position = node.world_position,
 	      .rotation = node.world_rotation,
@@ -769,12 +784,23 @@ void Simulator::queuePendingFragments(std::span<const ConnectivityResult> result
 		const glm::uvec3 brick_dims = data->volume->brickDims();
 		const std::vector<ComponentClass> classes = classifyComponents(r.connectivity, brick_dims, data->anchor_mask);
 
-		// Extra anchored components split into their own static bodies
+		// Extra anchored components of a static body split into their own static bodies
+		// A kinematic body moves, so a static piece would be left behind and these fall as dynamic fragments instead
+		const bool source_is_kinematic = [&] {
+			const Body* owner = tryGetBody(shape->owner);
+			return owner != nullptr && owner->type == BodyType::kinematic_body;
+		}();
+		std::vector<DetachedComponent> orphaned_anchored;
 		auto anchored_components = buildDetachedComponents(r.connectivity, classes, brick_dims, ComponentClass::anchored);
 		if (anchored_components.size() > 1) {
 			const auto largest = std::ranges::max_element(anchored_components, {}, &DetachedComponent::voxel_count);
 			for (auto it = anchored_components.begin(); it != anchored_components.end(); ++it) {
-				if (it != largest) {
+				if (it == largest) {
+					continue;
+				}
+				if (source_is_kinematic) {
+					orphaned_anchored.push_back(std::move(*it));
+				} else {
 					spawnStaticSplitBody(r.shape, *it);
 				}
 			}
@@ -790,6 +816,11 @@ void Simulator::queuePendingFragments(std::span<const ConnectivityResult> result
 		}
 
 		data->detached_components = buildDetachedComponents(r.connectivity, classes, brick_dims);
+		data->detached_components.insert(
+		    data->detached_components.end(),
+		    std::make_move_iterator(orphaned_anchored.begin()),
+		    std::make_move_iterator(orphaned_anchored.end())
+		);
 
 		// Debris sized pieces never become a tracked body
 		std::vector<DetachedComponent> components_to_spawn;
@@ -1345,8 +1376,7 @@ void Simulator::syncEnabledState() {
 			continue;
 		}
 
-		const bool wants_dynamic = not binding.node->indestructible;
-		if (wants_dynamic != (body->type == BodyType::dynamic_body)) {
+		if (bodyTypeOf(binding.node->simulation_type) != body->type) {
 			voxel_nodes_to_reregister.push_back(binding.node);
 			continue;
 		}
@@ -2814,7 +2844,8 @@ auto Simulator::createVoxelShapeInternal(
 		moments = known_moments != nullptr ? *known_moments : accumulateMassMoments(volume, palette, materials);
 	}
 
-	const AnchorMask default_anchor_mask = tryGetBody(owner)->type == BodyType::static_body ? k_anchor_bottom : k_anchor_null;
+	// Static and kinematic bodies hold their bottom so whatever loses it falls as a dynamic fragment
+	const AnchorMask default_anchor_mask = tryGetBody(owner)->type != BodyType::dynamic_body ? k_anchor_bottom : k_anchor_null;
 
 	VoxelShapeData voxel_data {
 	  .volume = &volume,
@@ -3330,11 +3361,6 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 	}
 	Body* body = tryGetBody(shape->owner);
 	if (body == nullptr) {
-		return;
-	}
-
-	const auto binding = std::ranges::find(m_voxel_bindings, c.shape, &VoxelNodeBinding::shape);
-	if (binding != m_voxel_bindings.end() && binding->node.exists() && binding->node->indestructible) {
 		return;
 	}
 

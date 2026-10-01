@@ -34,6 +34,11 @@
       "default" : 0.5,
       "minimum" : 0
     },
+    "destructible": {
+      "type": "bool",
+      "x-toast-type" : "bool",
+      "default" : true
+    },
     "flammable": {
       "type": "bool",
 		  "x-toast-type" : "bool",
