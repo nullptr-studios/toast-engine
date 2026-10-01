@@ -30,7 +30,15 @@ auto VoxelVolume::pieceSize() -> glm::ivec3 {
 
 void VoxelVolume::setSizeVoxels(glm::ivec3 new_size) {
 	size = glm::vec3(glm::max(new_size, glm::ivec3(1)));
-	markGridDirty();
+	sizeChanged();
+}
+
+void VoxelVolume::sizeChanged() {
+	// please only calculate when the mouse finishes moving not after every pixel it moves :skull:
+	if (sizeVoxels() != m_sized_for) {
+		m_sized_for = sizeVoxels();
+		markGridDirty();
+	}
 }
 
 auto VoxelVolume::matchId() const noexcept -> uint8_t {
@@ -76,6 +84,11 @@ void VoxelVolume::onReflectedFieldChanged(std::string_view field_name) {
 		// Skips VoxelPiece on purpose, these only change how the grid lands so it must not be redrawn
 		Node3D::onReflectedFieldChanged(field_name);    // NOLINT(bugprone-parent-virtual-call)
 		markLandingDirty();
+		return;
+	}
+	if (field_name == "size") {
+		Node3D::onReflectedFieldChanged(field_name);    // NOLINT(bugprone-parent-virtual-call)
+		sizeChanged();
 		return;
 	}
 	VoxelPiece::onReflectedFieldChanged(field_name);

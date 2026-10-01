@@ -215,6 +215,7 @@ struct VoxelCreatePiece : Event<VoxelCreatePiece> {
 	glm::ivec3 min {0};
 	glm::ivec3 max {0};
 	toast::UID script;
+	uint32_t mode = 0;
 };
 
 struct VoxelExtrude : Event<VoxelExtrude> {
@@ -283,6 +284,7 @@ struct SetVoxelTool : Event<SetVoxelTool> {
 	uint32_t tool = 0;
 	uint32_t paint_id = 1;
 	toast::UID default_script;
+	uint32_t default_mode = 0;
 };
 
 struct SetShowOthers : Event<SetShowOthers> {

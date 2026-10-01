@@ -136,11 +136,17 @@ public sealed class VoxelOrthoView : Control {
 	private int ProjectionIndex => Projection switch { OrthoProjection.Front => 0, OrthoProjection.Side => 1, _ => 2 };
 
 	private void RebuildProjection() {
-		m_projectionImage?.Dispose();
-		m_projectionImage = null;
+		// Nothing to redo
+		var next = m_editor is { Projections.Count: 3 } editor ? editor.Projections[ProjectionIndex] : null;
+		if (ReferenceEquals(next, m_projection)) return;
+
 		m_contours.Clear();
-		m_projection = m_editor is { Projections.Count: 3 } editor ? editor.Projections[ProjectionIndex] : null;
-		if (m_projection is not { Width: > 0, Height: > 0 } projection) return;
+		m_projection = next;
+		if (m_projection is not { Width: > 0, Height: > 0 } projection) {
+			m_projectionImage?.Dispose();
+			m_projectionImage = null;
+			return;
+		}
 
 		// Rows run up in the engine and down on screen
 		var pixels = new byte[projection.Width * projection.Height * 4];
@@ -153,8 +159,12 @@ public sealed class VoxelOrthoView : Control {
 			pixels[dst + 2] = projection.Colors[src + 0];
 			pixels[dst + 3] = projection.Colors[src + 3];
 		}
-		m_projectionImage = new WriteableBitmap(new PixelSize(projection.Width, projection.Height), new Vector(96, 96),
-			PixelFormat.Bgra8888, AlphaFormat.Unpremul);
+		// Same size keeps the bitmap and only rewrites its pixels
+		var size = new PixelSize(projection.Width, projection.Height);
+		if (m_projectionImage is null || m_projectionImage.PixelSize != size) {
+			m_projectionImage?.Dispose();
+			m_projectionImage = new WriteableBitmap(size, new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Unpremul);
+		}
 		using (var frame = m_projectionImage.Lock()) {
 			for (var row = 0; row < projection.Height; ++row)
 				Marshal.Copy(pixels, row * projection.Width * 4, frame.Address + row * frame.RowBytes, projection.Width * 4);

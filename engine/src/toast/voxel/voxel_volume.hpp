@@ -85,6 +85,20 @@ public:
 	/// @returns false outside the volume or when the pool is exhausted
 	auto setBrickMaterial(glm::ivec3 brick, std::span<const uint8_t, k_brick_material_bytes> material) -> bool;
 
+	/**
+	 * Makes brick hold what source_brick of source holds
+	 * @returns true when the brick changed
+	 */
+	auto copyBrickFrom(glm::ivec3 brick, const Volume& source, glm::ivec3 source_brick) -> bool;
+
+	struct WritableBrick {
+		std::span<uint8_t, k_brick_material_bytes> material;
+		BrickOccupancy* occupancy = nullptr;
+	};
+
+	auto beginBrickWrite(glm::ivec3 brick) -> std::optional<WritableBrick>;
+	void finishBrickWrite(glm::ivec3 brick, bool changed);
+
 	/// @brief Null when the brick holds nothing
 	[[nodiscard]]
 	auto occupancyPointer(glm::ivec3 brick) const noexcept -> const BrickOccupancy*;

@@ -78,8 +78,7 @@ private:
 	std::atomic<uint64_t> m_free_head;
 	std::unique_ptr<std::atomic<uint32_t>[]> m_next_free;    // NOLINT(modernize-avoid-c-arrays)
 	std::unique_ptr<std::atomic<bool>[]> m_is_free;          // NOLINT(modernize-avoid-c-arrays)
-
-	std::vector<uint8_t> m_material;
+	std::unique_ptr<uint8_t[]> m_material;    // NOLINT(modernize-avoid-c-arrays)
 	std::vector<BrickOccupancy> m_occupancy;
 };
 

@@ -343,6 +343,18 @@ protected:
 	/** Rebuilds the shape the next time it refreshes */
 	void requestRebuild() noexcept { m_rebuild_requested = true; }
 
+	/**
+	 * True when the subclass builds its shape on other threads and applies it itself
+	 * @note Then the editor tick hands over to tickAsyncBuild and a rebuild only asks for one
+	 */
+	[[nodiscard]]
+	virtual auto buildsAsync() -> bool {
+		return false;
+	}
+
+	virtual void tickAsyncBuild() { }
+	void finishShape();
+
 	void init();
 	void begin();
 	void end();
@@ -368,6 +380,12 @@ protected:
 	 * @returns null when there is no volume and nothing to add or it would get too big
 	 */
 	auto ensureContains(const voxel::EditBounds& bounds) -> voxel::Volume*;
+
+	/**
+	 * Swaps the volume for an empty one that covers exactly bounds, rounded out to bricks
+	 * @returns null when it would get too big, the volume is left alone then
+	 */
+	auto replaceVolume(const voxel::EditBounds& bounds) -> voxel::Volume*;
 
 	/** Grows for local_bounds when asked and then runs kernel on the volume */
 	template<typename Kernel>

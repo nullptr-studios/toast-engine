@@ -15,7 +15,7 @@
 	      RowSpacing="8">
 		<!-- Top bar -->
 		<Grid Grid.Row="0"
-		      ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto,Auto,Auto"
+		      ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto,Auto,Auto,Auto"
 		      ColumnSpacing="8">
 			<StackPanel Grid.Column="0"
 			            Orientation="Horizontal">
@@ -161,19 +161,33 @@
 			<ve:VoxelPalettePicker x:Name="PalettePicker"
 			                       Grid.Column="3" />
 
-			<Button Grid.Column="4"
-			        Classes="chev"
-			        CornerRadius="6"
-			        HorizontalAlignment="Right"
-			        Command="{Binding AddMeshCommand}"
-			        ToolTip.Tip="Add a voxel mesh">
-				<StackPanel Orientation="Horizontal"
-				            Spacing="6">
-					<LucideIcon Kind="Plus" Size="18" StrokeWidth="2.5" />
-					<TextBlock Text="Add Mesh"
-					           VerticalAlignment="Center" />
-				</StackPanel>
-			</Button>
+			<StackPanel Grid.Column="4"
+			            Orientation="Horizontal"
+			            Spacing="8"
+			            HorizontalAlignment="Right">
+				<Button Classes="chev"
+				        CornerRadius="6"
+				        Command="{Binding AddMeshCommand}"
+				        ToolTip.Tip="Add a voxel mesh">
+					<StackPanel Orientation="Horizontal"
+					            Spacing="6">
+						<LucideIcon Kind="Plus" Size="18" StrokeWidth="2.5" />
+						<TextBlock Text="Mesh"
+						           VerticalAlignment="Center" />
+					</StackPanel>
+				</Button>
+				<Button Classes="chev"
+				        CornerRadius="6"
+				        Command="{Binding AddGroupCommand}"
+				        ToolTip.Tip="Add a group">
+					<StackPanel Orientation="Horizontal"
+					            Spacing="6">
+						<LucideIcon Kind="Plus" Size="18" StrokeWidth="2.5" />
+						<TextBlock Text="Group"
+						           VerticalAlignment="Center" />
+					</StackPanel>
+				</Button>
+			</StackPanel>
 
 			<StackPanel Grid.Column="5"
 			            Orientation="Horizontal"
@@ -187,7 +201,19 @@
 				                   Value="{Binding DefaultScript, Mode=TwoWay}" />
 			</StackPanel>
 
-			<Button Grid.Column="6"
+			<StackPanel Grid.Column="6"
+			            Orientation="Horizontal"
+			            Spacing="6"
+			            ToolTip.Tip="Fill mode new volumes get">
+				<LucideIcon Kind="Blend" Size="18" StrokeWidth="2.5"
+				            Foreground="{StaticResource TextMuted}"
+				            VerticalAlignment="Center" />
+				<elements:EnumBox Width="140"
+				                  Value="{Binding DefaultFillModeName, Mode=TwoWay}"
+				                  Options="{x:Static ve:VoxelEditorViewModel.FillModes}" />
+			</StackPanel>
+
+			<Button Grid.Column="7"
 			        Classes="chev"
 			        CornerRadius="6"
 			        Command="{Binding BakeCommand}"
@@ -200,7 +226,7 @@
 				</StackPanel>
 			</Button>
 
-			<Button Grid.Column="7"
+			<Button Grid.Column="8"
 			        Classes="chev"
 			        CornerRadius="6"
 			        Command="{Binding SaveCommand}"

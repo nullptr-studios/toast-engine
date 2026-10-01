@@ -40,6 +40,7 @@ public:
 
 protected:
 	auto prepareGrid() -> std::unique_ptr<voxel::Volume> override;
+	auto pieceSize() -> glm::ivec3 override;
 
 	[[Reflect, Name("Model")]]
 	assets::Handle<assets::VoxelModel> m_model;

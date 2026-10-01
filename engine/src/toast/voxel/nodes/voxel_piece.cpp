@@ -4,12 +4,16 @@
 #include "voxel_node_utils.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
+#include <exception>
 #include <glm/gtc/quaternion.hpp>
 #include <toast/assets/script.hpp>
 #include <toast/log.hpp>
+#include <toast/thread_pool.hpp>
 #include <toast/voxel/stamp.hpp>
 #include <tracy/Tracy.hpp>
+#include <utility>
 
 namespace toast {
 
@@ -31,18 +35,22 @@ auto isTransformField(std::string_view field) noexcept -> bool {
 	       field == "world_rotation" || field == "world_scale";
 }
 
+thread_local const VoxelPiece* t_drawing_piece = nullptr;
+thread_local voxel::Volume* t_drawing_grid = nullptr;
+
 }
 
 template<typename Kernel>
 void VoxelPiece::draw(std::string_view operation, Kernel&& kernel) {
-	if (m_drawing == nullptr) {
+	voxel::Volume* target = drawing();
+	if (target == nullptr) {
 		if (!m_warned_outside_edit) {
 			m_warned_outside_edit = true;
 			TOAST_WARN("Voxel", "'{}' {} only works inside editShape", name(), operation);
 		}
 		return;
 	}
-	const voxel::EditResult result = kernel(*m_drawing);
+	const voxel::EditResult result = kernel(*target);
 	if (result.pool_exhausted) {
 		TOAST_WARN(
 		    "Voxel",
@@ -59,12 +67,12 @@ auto VoxelPiece::getSize() -> glm::vec3 {
 }
 
 auto VoxelPiece::pieceSize() -> glm::ivec3 {
-	const voxel::Volume* current = m_drawing != nullptr ? m_drawing : grid();
+	const voxel::Volume* current = latestGrid();
 	return current != nullptr ? glm::ivec3(current->voxelDims()) : glm::ivec3(0);
 }
 
 auto VoxelPiece::getVoxel(glm::vec3 pos) -> int {
-	const voxel::Volume* current = m_drawing != nullptr ? m_drawing : grid();
+	const voxel::Volume* current = latestGrid();
 	return current != nullptr ? current->materialAt(toVoxel(pos)) : 0;
 }
 
@@ -178,37 +186,122 @@ void VoxelPiece::tile(
 	});
 }
 
-auto VoxelPiece::grid() -> const voxel::Volume* {
-	if (m_grid_dirty) {
-		ZoneScopedN("voxel::BuildPieceGrid");    // NOLINT
-		ZoneNameF("%.*s", static_cast<int>(name().size()), name().data());
-		m_clipped.reset();
-		m_grid = prepareGrid();
-		m_grid_dirty = false;
-		m_clip_dirty = true;
-		++m_build_count;
-		if (m_grid != nullptr) {
-			m_drawing = m_grid.get();
-			call("editShape");
-			m_drawing = nullptr;
-			finishGrid(*m_grid);
-			drawn.fire();
-		}
-	}
+auto VoxelPiece::drawing() const noexcept -> voxel::Volume* {
+	return t_drawing_piece == this ? t_drawing_grid : nullptr;
+}
 
-	if (m_grid == nullptr) {
+auto VoxelPiece::drawGrid() -> GridRef {
+	ZoneScopedN("voxel::BuildPieceGrid");    // NOLINT
+	ZoneNameF("%.*s", static_cast<int>(name().size()), name().data());
+	std::unique_ptr<voxel::Volume> volume = prepareGrid();
+	if (volume == nullptr) {
 		return nullptr;
 	}
 
-	if (m_clip_dirty) {
-		m_clip_dirty = false;
-		m_clipped.reset();
-		if (!m_clip_planes.empty()) {
-			m_clipped = std::make_unique<voxel::Volume>(voxel::Volume::instanceOf(*m_grid));
-			voxel::clipByPlanes(*m_clipped, m_clip_planes);
-		}
+	// Only the thread drawing sees the grid 
+	// A piece drawing on a worker never hands it to the main thread
+	const VoxelPiece* previous_piece = std::exchange(t_drawing_piece, this);
+	voxel::Volume* previous_grid = std::exchange(t_drawing_grid, volume.get());
+	call("editShape");
+	t_drawing_piece = previous_piece;
+	t_drawing_grid = previous_grid;
+	finishGrid(*volume);
+
+	auto out = std::make_shared<Grid>();
+	out->histogram = voxel::idHistogram(*volume);
+	out->volume = std::move(volume);
+	return out;
+}
+
+void VoxelPiece::landGrid(GridRef fresh) {
+	const bool drew = fresh != nullptr;
+	m_drawn = std::move(fresh);
+	m_clip_dirty = true;
+	++m_build_count;
+	++m_input_revision;
+	if (drew) {
+		drawn.fire();
 	}
-	return m_clipped != nullptr ? m_clipped.get() : m_grid.get();
+}
+
+void VoxelPiece::applyClip() {
+	if (!m_clip_dirty) {
+		return;
+	}
+	m_clip_dirty = false;
+	if (m_drawn == nullptr || m_clip_planes.empty()) {
+		m_grid = m_drawn;
+		return;
+	}
+	auto clipped = std::make_shared<Grid>();
+	clipped->base = m_drawn;
+	clipped->volume = std::make_unique<voxel::Volume>(voxel::Volume::instanceOf(*m_drawn->volume));
+	voxel::clipByPlanes(*clipped->volume, m_clip_planes);
+	clipped->histogram = voxel::idHistogram(*clipped->volume);
+	m_grid = std::move(clipped);
+}
+
+auto VoxelPiece::gridRef() -> GridRef {
+	waitForGrid();
+	if (m_grid_dirty) {
+		m_grid_dirty = false;
+		landGrid(drawGrid());
+	}
+	applyClip();
+	return m_grid;
+}
+
+auto VoxelPiece::grid() -> const voxel::Volume* {
+	gridRef();
+	return m_grid != nullptr ? m_grid->volume.get() : nullptr;
+}
+
+void VoxelPiece::requestGrid() {
+	if (m_job.valid() || !m_grid_dirty) {
+		return;
+	}
+	m_grid_dirty = false;
+	// The box keeps the node alive
+	m_job = ThreadPool::push([self = Box<Node>(*this), this]() -> GridRef {
+		(void)self;
+		try {
+			return drawGrid();
+		} catch (const std::exception& error) {
+			TOAST_ERROR("Voxel", "'{}' failed to draw: {}", name(), error.what());
+			return nullptr;
+		}
+	});
+}
+
+auto VoxelPiece::collectGrid() -> bool {
+	if (!m_job.valid() || m_job.wait_for(std::chrono::seconds(0)) != std::future_status::ready) {
+		return false;
+	}
+	landGrid(m_job.get());
+	return true;
+}
+
+void VoxelPiece::waitForGrid() {
+	if (m_job.valid()) {
+		landGrid(m_job.get());
+	}
+}
+
+auto VoxelPiece::readyGrid() -> GridRef {
+	applyClip();
+	return m_grid;
+}
+
+auto VoxelPiece::latestGrid() -> const voxel::Volume* {
+	if (voxel::Volume* current = drawing()) {
+		return current;
+	}
+	// Never waits on a worker
+	if (m_job.valid()) {
+		readyGrid();
+		return m_grid != nullptr ? m_grid->volume.get() : nullptr;
+	}
+	return grid();
 }
 
 void VoxelPiece::redraw() {
@@ -255,7 +348,8 @@ auto VoxelPiece::getShape() -> Box<Node> {
 }
 
 void VoxelPiece::releaseGrid() {
-	m_clipped.reset();
+	waitForGrid();
+	m_drawn.reset();
 	m_grid.reset();
 	m_grid_dirty = true;
 	m_clip_dirty = true;
@@ -266,6 +360,10 @@ void VoxelPiece::init() {
 	if (!scripts().empty() && m_shape_script.uid() != scripts().front().uid()) {
 		m_shape_script = scripts().front();
 	}
+}
+
+void VoxelPiece::destroy() {
+	waitForGrid();
 }
 
 void VoxelPiece::setShapeScript(assets::Handle<assets::Script> script) {
@@ -280,7 +378,6 @@ void VoxelPiece::setMisaligned(bool misaligned) {
 
 void VoxelPiece::markGridDirty() noexcept {
 	m_grid_dirty = true;
-	++m_input_revision;
 }
 
 void VoxelPiece::onReflectedFieldChanged(std::string_view field_name) {
@@ -298,6 +395,11 @@ void VoxelPiece::onReflectedFieldChanged(std::string_view field_name) {
 		return;
 	}
 	markGridDirty();
+}
+
+void VoxelPiece::onScriptsReloading() {
+	// A worker could be running the script that is about to be torn down
+	waitForGrid();
 }
 
 void VoxelPiece::onScriptsReloaded() {
