@@ -1586,6 +1586,10 @@ void Prefab::serializeNode(const toast::Node& node, bool is_root) {
 
 		Signal signal {.name = std::string(signal_info.name)};
 		for (const signals::ConnectionInfo& connection : signal_info.get(const_cast<toast::Node*>(&node))) {
+			// do not serialize c++/lua connections
+			if (connection.source != signals::ConnectionSource::editor) {
+				continue;
+			}
 			if (connection.target.data() == 0 || !m_allowed_uids.contains(connection.target.data())) {
 				TOAST_WARN(
 				    "ResourceManager",

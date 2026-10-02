@@ -155,6 +155,7 @@ struct Reflect<{{ qualified_name }}> {
 	inline static const toast::NodeInfo type_info = {
 		.type       = name,
 		.base_type  = {% if parent_qualified_name %}&Reflect<{{ parent_qualified_name }}>::type_info{% else %}nullptr{% endif %},
+		.signals    = signal_info,
 		.all_fields = _all_field_info,
 		.fields     = field_info,
 		.groups     = group_info,

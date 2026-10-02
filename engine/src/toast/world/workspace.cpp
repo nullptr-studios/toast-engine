@@ -363,13 +363,15 @@ Workspace::Workspace(std::string_view type, UID handle) : m_handle(handle) {
 	node->m_inherited_enabled = true;
 	node->m_name = stripNamespace(node->info()->type);
 
+	// Set before initialization so scripts can find("root/...") from init/begin/onEnable
+	m_root_node = node;
+
 	// Initialization
 	node->propagateCallTick(node->info(), TickFunctionList::init);
 	node->propagateCallTick(node->info(), TickFunctionList::begin);
 	node->m_local_enabled = true;
 	node->propagateEnable();
 
-	m_root_node = node;
 	initializeHistory(true, false);
 	TOAST_INFO("World", "Created new workspace");
 }
@@ -439,13 +441,14 @@ void Workspace::initFromPrefab(const assets::Handle<assets::Prefab>& file) {
 	}
 	node->m_inherited_enabled = true;
 
+	// Set before initialization so scripts can find("root/...") from init/begin/onEnable
+	m_root_node = node;
+
 	// Initialization
 	node->propagateCallTick(node->info(), TickFunctionList::init);
 	node->propagateCallTick(node->info(), TickFunctionList::begin);
 	node->m_local_enabled = true;
 	node->propagateEnable();
-
-	m_root_node = node;
 }
 
 void Workspace::initializeHistory(bool available, bool initially_saved) {
@@ -1004,7 +1007,11 @@ auto Workspace::findFrom(const Node& origin, std::string_view query) -> Box<Node
 		return {};
 	};
 
-	return search(search_workspace_root ? *m_root_node : origin);
+	if (not search_workspace_root) {
+		return search(origin);
+	}
+	Box<Node> root = m_root_node.exists() ? m_root_node : origin.root();
+	return root.exists() ? search(*root) : Box<Node> {};
 }
 
 auto Workspace::findFrom(const Node& origin, const UID& uid) -> Box<Node> {
@@ -1635,6 +1642,16 @@ void Workspace::eventSubscriptions() {
 			source->scriptRuntime()->connectLuaSignal(e.signal, *target, e.function, e.forwards_args);
 		} else if (source.exists() && signal && signal->connect && target.exists()) {
 			signal->connect(&*source, *target, e.function, signals::ConnectionSource::editor, e.forwards_args);
+		} else {
+			TOAST_WARN(
+			    "World",
+			    "Couldn't connect signal {}::{} on {} to {}:{}",
+			    e.declaring_type,
+			    e.signal,
+			    e.source_node,
+			    e.target_node,
+			    e.function
+			);
 		}
 		send_signal_state(e.source_node);
 		return true;
