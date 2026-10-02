@@ -1,5 +1,8 @@
 var NAVTREEINDEX0 =
 {
+"DebugDraw_8cpp.html":[15,0,1,0,0,6,6],
+"DebugDraw_8hpp.html":[15,0,1,0,0,6,7],
+"DebugDraw_8hpp_source.html":[15,0,1,0,0,6,7],
 "aabb_8hpp.html":[15,0,1,0,0,4,1],
 "aabb_8hpp_source.html":[15,0,1,0,0,4,1],
 "aabb__tree_8hpp.html":[15,0,1,0,0,4,2],
@@ -246,8 +249,5 @@ var NAVTREEINDEX0 =
 "classeditor_1_1Assets_1_1AssetFile.html":[14,0,2,0,4],
 "classeditor_1_1Assets_1_1AssetFolder.html":[12,0,0,0,5],
 "classeditor_1_1Assets_1_1AssetFolder.html":[14,0,2,0,5],
-"classeditor_1_1Assets_1_1AssetFolder.html#aeceef5b050a627d1639598569eec1b05":[12,0,0,0,5,0],
-"classeditor_1_1Assets_1_1AssetFolder.html#aeceef5b050a627d1639598569eec1b05":[14,0,2,0,5,0],
-"classeditor_1_1Assets_1_1AssetTag.html":[12,0,0,0,6],
-"classeditor_1_1Assets_1_1AssetTag.html":[14,0,2,0,6]
+"classeditor_1_1Assets_1_1AssetFolder.html#aeceef5b050a627d1639598569eec1b05":[12,0,0,0,5,0]
 };

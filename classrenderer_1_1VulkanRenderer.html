@@ -180,8 +180,8 @@ auto&#160;</td><td class="memItemRight"><b>operator=</b> (const VulkanRenderer &
 auto&#160;</td><td class="memItemRight"><b>operator=</b> (VulkanRenderer &amp;&amp;) -&gt; VulkanRenderer &amp;=delete</td></tr>
 <tr class="memitem:a228b5568852c27e2281a8df3bc46b82d" id="r_a228b5568852c27e2281a8df3bc46b82d"><td class="memItemLeft"><a id="a228b5568852c27e2281a8df3bc46b82d" name="a228b5568852c27e2281a8df3bc46b82d"></a>
 void&#160;</td><td class="memItemRight"><b>start</b> () noexcept</td></tr>
-<tr class="memitem:aaa21f8e4472be56ef23052adc348a2d6" id="r_aaa21f8e4472be56ef23052adc348a2d6"><td class="memItemLeft"><a id="aaa21f8e4472be56ef23052adc348a2d6" name="aaa21f8e4472be56ef23052adc348a2d6"></a>
-auto&#160;</td><td class="memItemRight"><b>beginFrameBuild</b> () noexcept -&gt; <a class="el" href="structrenderer_1_1VulkanRenderer_1_1RenderFrame.html">RenderFrame</a> &amp;</td></tr>
+<tr class="memitem:aff383789cb7a9d5fda3e92892458c425" id="r_aff383789cb7a9d5fda3e92892458c425"><td class="memItemLeft"><a id="aff383789cb7a9d5fda3e92892458c425" name="aff383789cb7a9d5fda3e92892458c425"></a>
+auto&#160;</td><td class="memItemRight"><b>getCurrentFrameBuild</b> () noexcept -&gt; <a class="el" href="structrenderer_1_1VulkanRenderer_1_1RenderFrame.html">RenderFrame</a> &amp;</td></tr>
 <tr class="memitem:a61322bd6c4cdb2629b9788485468b14d" id="r_a61322bd6c4cdb2629b9788485468b14d"><td class="memItemLeft"><a id="a61322bd6c4cdb2629b9788485468b14d" name="a61322bd6c4cdb2629b9788485468b14d"></a>
 void&#160;</td><td class="memItemRight"><b>submitFrame</b> () noexcept</td></tr>
 <tr class="memitem:a64451eb0105c628add467b121e7527fe" id="r_a64451eb0105c628add467b121e7527fe"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a64451eb0105c628add467b121e7527fe">queueDebugLine</a> (glm::vec3 a, glm::vec3 b, glm::vec4 color)</td></tr>
@@ -538,6 +538,15 @@ static VulkanRenderer *&#160;</td><td class="memItemRight"><b>instance</b> = nul
       </table>
 </div><div class="memdoc">
 <p>Queues a debug line for the current render frame, or for the next one when called from gameplay code before frame construction begins. </p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="classrenderer_1_1VulkanRenderer_a64451eb0105c628add467b121e7527fe_icgraph.png" border="0" usemap="#aclassrenderer_1_1VulkanRenderer_a64451eb0105c628add467b121e7527fe_icgraph" loading="lazy" alt=""/></div>
+<map name="aclassrenderer_1_1VulkanRenderer_a64451eb0105c628add467b121e7527fe_icgraph" id="aclassrenderer_1_1VulkanRenderer_a64451eb0105c628add467b121e7527fe_icgraph">
+<area shape="rect" title=" " alt="" coords="5,29,192,74"/>
+<area shape="poly" title=" " alt="" coords="127,14,117,10,98,8,81,10,71,15,66,21,68,30,62,28,61,19,67,10,80,5,99,3,118,5,132,14"/>
+</map>
+</div>
 
 </div>
 </div>
@@ -573,7 +582,6 @@ static VulkanRenderer *&#160;</td><td class="memItemRight"><b>instance</b> = nul
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>engine/src/toast/renderer/<a class="el" href="vulkan__renderer_8hpp_source.html">vulkan_renderer.hpp</a></li>
-<li>engine/src/toast/renderer/<b>debug_shapes.cpp</b></li>
 <li>engine/src/toast/renderer/<b>vulkan_renderer.cpp</b></li>
 </ul>
 </div><!-- contents -->

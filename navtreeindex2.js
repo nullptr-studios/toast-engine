@@ -1,5 +1,8 @@
 var NAVTREEINDEX2 =
 {
+"classeditor_1_1Components_1_1Elements_1_1Color4Box.html":[14,0,2,1,2,4],
+"classeditor_1_1Components_1_1Elements_1_1ColorBoxBase.html":[12,0,0,1,3,5],
+"classeditor_1_1Components_1_1Elements_1_1ColorBoxBase.html":[14,0,2,1,2,5],
 "classeditor_1_1Components_1_1Elements_1_1DragFloatBox.html":[12,0,0,1,3,6],
 "classeditor_1_1Components_1_1Elements_1_1DragFloatBox.html":[14,0,2,1,2,6],
 "classeditor_1_1Components_1_1Elements_1_1DragIntBox.html":[12,0,0,1,3,7],
@@ -246,8 +249,5 @@ var NAVTREEINDEX2 =
 "classeditor_1_1Workspace_1_1FloatSettingRow.html":[14,0,2,8,9],
 "classeditor_1_1Workspace_1_1FloatSettingRow.html#af57b27d4b815f84ca8e39ed92f703bff":[12,0,0,8,9,0],
 "classeditor_1_1Workspace_1_1FloatSettingRow.html#af57b27d4b815f84ca8e39ed92f703bff":[14,0,2,8,9,0],
-"classeditor_1_1Workspace_1_1GroupVM.html":[12,0,0,8,10],
-"classeditor_1_1Workspace_1_1GroupVM.html":[14,0,2,8,10],
-"classeditor_1_1Workspace_1_1HierarchyConnectorLayer.html":[12,0,0,8,11],
-"classeditor_1_1Workspace_1_1HierarchyConnectorLayer.html":[14,0,2,8,11]
+"classeditor_1_1Workspace_1_1GroupVM.html":[12,0,0,8,10]
 };

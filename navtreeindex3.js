@@ -1,5 +1,8 @@
 var NAVTREEINDEX3 =
 {
+"classeditor_1_1Workspace_1_1GroupVM.html":[14,0,2,8,10],
+"classeditor_1_1Workspace_1_1HierarchyConnectorLayer.html":[12,0,0,8,11],
+"classeditor_1_1Workspace_1_1HierarchyConnectorLayer.html":[14,0,2,8,11],
 "classeditor_1_1Workspace_1_1HierarchyElement.html":[12,0,0,8,12],
 "classeditor_1_1Workspace_1_1HierarchyElement.html":[14,0,2,8,12],
 "classeditor_1_1Workspace_1_1HierarchyState.html":[12,0,0,8,13],
@@ -246,8 +249,5 @@ var NAVTREEINDEX3 =
 "classrenderer_1_1IVulkanResource.html":[14,0,7,22],
 "classrenderer_1_1MaterialPass.html":[14,0,7,23],
 "classrenderer_1_1MaterialRuntime.html":[14,0,7,24],
-"classrenderer_1_1MeshUpload.html":[14,0,7,25],
-"classrenderer_1_1PendingResourceUpload.html":[14,0,7,27],
-"classrenderer_1_1PendingResourceUpload.html#a0ee4c4bc526d431bdf38aea606e87a1c":[14,0,7,27,0],
-"classrenderer_1_1PostProcessTarget.html":[14,0,7,29]
+"classrenderer_1_1MeshUpload.html":[14,0,7,25]
 };

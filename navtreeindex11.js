@@ -1,5 +1,8 @@
 var NAVTREEINDEX11 =
 {
+"structevent_1_1ProtoTraits_3_01ProceduralVoxelLayout_01_4.html":[14,0,3,73],
+"structevent_1_1ProtoTraits_3_01ProceduralVoxelPromoted_01_4.html":[14,0,3,74],
+"structevent_1_1ProtoTraits_3_01ReloadAssetsManifest_01_4.html":[14,0,3,75],
 "structevent_1_1ProtoTraits_3_01RemoveSignalConnection_01_4.html":[14,0,3,76],
 "structevent_1_1ProtoTraits_3_01RenderPassList_01_4.html":[14,0,3,77],
 "structevent_1_1ProtoTraits_3_01RequestHierarchyUpdate_01_4.html":[14,0,3,78],
@@ -246,8 +249,5 @@ var NAVTREEINDEX11 =
 "structphysics_1_1RayHit.html":[14,0,6,40],
 "structphysics_1_1RemovedVoxels.html":[14,0,6,41],
 "structphysics_1_1RemovedVoxels.html#a62fdb2fc83042d433bc373d611ec9c3d":[14,0,6,41,0],
-"structphysics_1_1Shape.html":[14,0,6,43],
-"structphysics_1_1ShapeBoundsUpdate.html":[14,0,6,44],
-"structphysics_1_1ShapeID.html":[14,0,6,45],
-"structphysics_1_1ShapeSlot.html":[14,0,6,46]
+"structphysics_1_1Shape.html":[14,0,6,43]
 };

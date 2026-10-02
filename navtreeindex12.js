@@ -1,5 +1,8 @@
 var NAVTREEINDEX12 =
 {
+"structphysics_1_1ShapeBoundsUpdate.html":[14,0,6,44],
+"structphysics_1_1ShapeID.html":[14,0,6,45],
+"structphysics_1_1ShapeSlot.html":[14,0,6,46],
 "structphysics_1_1Simulator_1_1ConnectivityResult.html":[14,0,6,47,1],
 "structphysics_1_1Simulator_1_1DebugDirtyBrick.html":[14,0,6,47,0],
 "structphysics_1_1Simulator_1_1PhysicsStepProfile.html":[14,0,6,47,2],
@@ -246,8 +249,5 @@ var NAVTREEINDEX12 =
 "structtoast_1_1MusicPlayer_1_1QueuedCb.html#aeb8f134a5c731d7798fd1af6b327a334":[12,0,1,40,2,1],
 "structtoast_1_1MusicPlayer_1_1QueuedCb.html#aeb8f134a5c731d7798fd1af6b327a334":[14,0,11,42,2,1],
 "structtoast_1_1NodeInfo.html":[12,0,1,43],
-"structtoast_1_1NodeInfo.html":[14,0,11,45],
-"structtoast_1_1NodeInfo.html#a1ec5c7e9ae8d7268e198d4445b9c7e97":[12,0,1,43,5],
-"structtoast_1_1NodeInfo.html#a1ec5c7e9ae8d7268e198d4445b9c7e97":[14,0,11,45,5],
-"structtoast_1_1NodeInfo.html#a5098ea7c2cf4c4674101f7026902c559":[12,0,1,43,4]
+"structtoast_1_1NodeInfo.html":[14,0,11,45]
 };

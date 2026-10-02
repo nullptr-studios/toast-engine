@@ -6,6 +6,8 @@ var dir_b34aee48f901bd6f5bafc675781e59d3 =
     [ "cube_face_basis.hpp", "cube__face__basis_8hpp.html", "cube__face__basis_8hpp" ],
     [ "cubemap_target.cpp", "cubemap__target_8cpp.html", null ],
     [ "cubemap_target.hpp", "cubemap__target_8hpp.html", "cubemap__target_8hpp" ],
+    [ "DebugDraw.cpp", "DebugDraw_8cpp.html", null ],
+    [ "DebugDraw.hpp", "DebugDraw_8hpp.html", null ],
     [ "descriptor_writer.cpp", "descriptor__writer_8cpp.html", null ],
     [ "descriptor_writer.hpp", "descriptor__writer_8hpp.html", "descriptor__writer_8hpp" ],
     [ "editor_overlays.hpp", "editor__overlays_8hpp.html", "editor__overlays_8hpp" ],

@@ -1,44 +1,46 @@
 <map id="engine/src/toast/assets/assets.hpp" name="engine/src/toast/assets/assets.hpp">
-<area shape="rect" id="Node000001" title="Public API for the asset management system." alt="" coords="1296,5,1468,50"/>
-<area shape="rect" id="Node000002" href="$asset__field__access_8hpp.html" title="Reflection accessor for assets::Handle&lt;T&gt; members." alt="" coords="5,106,180,151"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1278,30,1086,37,824,48,528,68,377,83,229,101,181,109,179,104,228,95,376,77,527,63,824,42,1085,32,1283,29"/>
-<area shape="rect" id="Node000004" href="$asset__manager_8hpp.html" title="Maps URI schemes to filesystem roots and manages asset lifetime." alt="" coords="284,106,456,151"/>
-<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="1278,30,1124,37,923,49,699,69,474,101,439,108,438,103,473,95,698,63,923,43,1124,32,1283,30"/>
-<area shape="rect" id="Node000005" href="$environment__pass_8cpp.html" title=" " alt="" coords="136,216,358,261"/>
-<area shape="poly" id="edge12_Node000001_Node000005" title=" " alt="" coords="1278,29,1024,32,707,41,556,49,425,62,327,79,294,89,274,100,256,126,247,157,245,189,246,217,242,215,240,189,242,156,251,123,271,96,292,84,326,73,425,56,556,44,707,35,1024,27,1284,28"/>
-<area shape="rect" id="Node000006" href="$reflection__probe__pass_8cpp.html" title=" " alt="" coords="382,208,566,269"/>
-<area shape="poly" id="edge14_Node000001_Node000006" title=" " alt="" coords="1278,32,1088,43,861,56,662,75,592,87,553,100,527,123,508,151,493,181,483,209,480,205,489,179,503,148,523,119,550,96,591,82,661,70,860,51,1087,37,1283,32"/>
-<area shape="rect" id="Node000007" href="$voxel__node__utils_8hpp.html" title="Helpers the voxel nodes share, not part of the API." alt="" coords="590,216,795,261"/>
-<area shape="poly" id="edge22_Node000001_Node000007" title=" " alt="" coords="1278,30,1089,38,865,49,760,57,671,69,605,83,583,91,570,100,561,114,559,127,563,142,571,158,583,176,599,191,637,216,631,215,596,195,579,179,566,161,558,144,554,128,556,112,567,96,581,86,603,78,670,64,760,52,864,43,1088,32,1283,30"/>
-<area shape="rect" id="Node000008" href="$input__system_8cpp.html" title="Implementation of the input system singleton." alt="" coords="581,106,743,151"/>
-<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="1278,34,1040,57,897,75,756,101,725,109,724,103,755,95,897,70,1040,52,1283,34"/>
-<area shape="rect" id="Node000009" href="$bloom__pass_8cpp.html" title=" " alt="" coords="767,106,951,151"/>
-<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="1278,43,1131,68,964,101,932,109,931,103,963,95,1130,63,1284,42"/>
-<area shape="rect" id="Node000010" href="$cluster__lighting__pass_8cpp.html" title=" " alt="" coords="975,98,1159,160"/>
-<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="1301,55,1161,101,1159,96,1296,56"/>
-<area shape="rect" id="Node000011" href="$debug__pass_8cpp.html" title=" " alt="" coords="1183,106,1367,151"/>
-<area shape="poly" id="edge10_Node000001_Node000011" title=" " alt="" coords="1350,60,1299,109,1297,104,1345,62"/>
-<area shape="rect" id="Node000012" href="$depth__prepass_8cpp.html" title=" " alt="" coords="1392,106,1588,151"/>
-<area shape="poly" id="edge11_Node000001_Node000012" title=" " alt="" coords="1417,58,1469,107,1464,105,1416,63"/>
-<area shape="rect" id="Node000013" href="$fxaa__pass_8cpp.html" title=" " alt="" coords="1612,106,1797,151"/>
-<area shape="poly" id="edge13_Node000001_Node000013" title=" " alt="" coords="1468,52,1637,106,1631,106,1467,58"/>
-<area shape="rect" id="Node000014" href="$shadow__pass_8cpp.html" title=" " alt="" coords="1821,106,2009,151"/>
-<area shape="poly" id="edge15_Node000001_Node000014" title=" " alt="" coords="1483,40,1638,63,1809,95,1844,106,1839,106,1808,101,1637,68,1483,45"/>
-<area shape="rect" id="Node000015" href="$skinning__pass_8cpp.html" title=" " alt="" coords="2033,106,2226,151"/>
-<area shape="poly" id="edge16_Node000001_Node000015" title=" " alt="" coords="1483,32,1729,54,1876,72,2022,95,2060,106,2054,106,2021,101,1875,77,1729,59,1483,38"/>
-<area shape="rect" id="Node000016" href="$ssao__pass_8cpp.html" title=" " alt="" coords="2251,106,2435,151"/>
-<area shape="poly" id="edge17_Node000001_Node000016" title=" " alt="" coords="1483,28,1631,33,1820,45,2030,65,2240,95,2277,106,2272,106,2239,101,2029,70,1820,50,1631,39,1483,33"/>
-<area shape="rect" id="Node000017" href="$ssr__pass_8cpp.html" title=" " alt="" coords="2459,106,2643,151"/>
-<area shape="poly" id="edge18_Node000001_Node000017" title=" " alt="" coords="1483,26,1664,28,1905,38,2176,59,2313,75,2448,95,2485,106,2480,106,2447,101,2313,80,2175,64,1905,43,1664,34,1483,31"/>
-<area shape="rect" id="Node000018" href="$taa__pass_8cpp.html" title=" " alt="" coords="2667,106,2851,151"/>
-<area shape="poly" id="edge19_Node000001_Node000018" title=" " alt="" coords="1483,29,2082,51,2414,70,2551,82,2656,95,2694,106,2689,106,2655,101,2551,87,2413,75,2082,56,1483,34"/>
-<area shape="rect" id="Node000019" href="$tonemap__pass_8cpp.html" title=" " alt="" coords="2876,106,3072,151"/>
-<area shape="poly" id="edge20_Node000001_Node000019" title=" " alt="" coords="1483,28,1783,35,2181,48,2576,68,2739,81,2864,95,2904,106,2899,106,2863,101,2739,86,2575,74,2181,54,1783,41,1483,34"/>
-<area shape="rect" id="Node000020" href="$traced__shadow__pass_8cpp.html" title=" " alt="" coords="3096,106,3332,151"/>
-<area shape="poly" id="edge21_Node000001_Node000020" title=" " alt="" coords="1483,28,1823,35,2285,48,2747,68,2939,81,3085,95,3132,106,3127,106,3084,101,2939,86,2747,73,2285,53,1823,40,1483,33"/>
-<area shape="rect" id="Node000003" href="$pch_8h.html" title=" " alt="" coords="8,225,113,252"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="84,165,67,225,62,223,79,167"/>
-<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="336,161,273,218,271,213,331,162"/>
-<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="402,160,447,208,442,207,400,165"/>
-<area shape="poly" id="edge6_Node000004_Node000007" title=" " alt="" coords="450,154,630,215,625,216,449,159"/>
+<area shape="rect" id="Node000001" title="Public API for the asset management system." alt="" coords="1448,5,1619,50"/>
+<area shape="rect" id="Node000002" href="$asset__field__access_8hpp.html" title="Reflection accessor for assets::Handle&lt;T&gt; members." alt="" coords="29,106,203,151"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1429,29,1217,35,924,45,590,65,420,81,253,101,205,109,203,104,252,95,419,76,590,60,924,39,1217,29,1435,29"/>
+<area shape="rect" id="Node000004" href="$asset__manager_8hpp.html" title="Maps URI schemes to filesystem roots and manages asset lifetime." alt="" coords="385,106,556,151"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="1430,30,1268,36,1054,47,815,67,694,82,575,101,540,109,539,103,574,95,693,77,814,62,1054,42,1268,31,1435,29"/>
+<area shape="rect" id="Node000005" href="$environment__pass_8cpp.html" title=" " alt="" coords="134,216,355,261"/>
+<area shape="poly" id="edge13_Node000001_Node000005" title=" " alt="" coords="1430,31,1164,38,829,50,668,59,527,70,419,84,382,92,357,100,323,125,294,156,272,189,256,218,252,214,267,186,290,153,319,121,355,96,380,87,418,79,526,65,667,54,829,45,1164,33,1435,30"/>
+<area shape="rect" id="Node000006" href="$reflection__probe__pass_8cpp.html" title=" " alt="" coords="379,208,563,269"/>
+<area shape="poly" id="edge15_Node000001_Node000006" title=" " alt="" coords="1430,32,1156,42,813,55,516,75,419,87,389,94,375,100,366,114,365,127,376,158,394,184,419,208,414,207,390,188,371,161,359,127,361,112,372,96,387,88,418,82,515,70,813,50,1156,37,1435,31"/>
+<area shape="rect" id="Node000007" href="$voxel__node__utils_8hpp.html" title="Helpers the voxel nodes share, not part of the API." alt="" coords="587,216,792,261"/>
+<area shape="poly" id="edge23_Node000001_Node000007" title=" " alt="" coords="1429,29,1217,35,961,45,841,53,737,65,661,81,636,90,621,100,613,113,610,127,613,142,620,158,641,188,667,216,662,215,637,191,615,160,608,144,605,127,608,111,617,96,633,85,659,76,737,60,840,48,961,39,1217,29,1435,29"/>
+<area shape="rect" id="Node000008" href="$input__system_8cpp.html" title="Implementation of the input system singleton." alt="" coords="631,106,793,151"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="1430,32,1306,41,1149,53,977,72,806,101,775,109,773,103,805,95,976,67,1149,48,1306,36,1435,32"/>
+<area shape="rect" id="Node000009" href="$DebugDraw_8cpp.html" title=" " alt="" coords="817,106,1002,151"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="1430,38,1238,63,1125,80,1014,101,981,109,980,103,1013,95,1124,75,1237,58,1435,38"/>
+<area shape="rect" id="Node000010" href="$bloom__pass_8cpp.html" title=" " alt="" coords="1025,106,1210,151"/>
+<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="1435,49,1222,101,1192,108,1191,103,1221,95,1430,50"/>
+<area shape="rect" id="Node000011" href="$cluster__lighting__pass_8cpp.html" title=" " alt="" coords="1233,98,1418,160"/>
+<area shape="poly" id="edge10_Node000001_Node000011" title=" " alt="" coords="1477,56,1390,100,1388,95,1471,58"/>
+<area shape="rect" id="Node000012" href="$debug__pass_8cpp.html" title=" " alt="" coords="1441,106,1626,151"/>
+<area shape="poly" id="edge11_Node000001_Node000012" title=" " alt="" coords="1535,64,1536,108,1531,104,1532,67"/>
+<area shape="rect" id="Node000013" href="$depth__prepass_8cpp.html" title=" " alt="" coords="1650,106,1846,151"/>
+<area shape="poly" id="edge12_Node000001_Node000013" title=" " alt="" coords="1595,54,1704,106,1699,106,1594,59"/>
+<area shape="rect" id="Node000014" href="$fxaa__pass_8cpp.html" title=" " alt="" coords="1871,106,2055,151"/>
+<area shape="poly" id="edge14_Node000001_Node000014" title=" " alt="" coords="1635,46,1859,95,1892,106,1886,106,1858,101,1634,51"/>
+<area shape="rect" id="Node000015" href="$shadow__pass_8cpp.html" title=" " alt="" coords="2079,106,2268,151"/>
+<area shape="poly" id="edge16_Node000001_Node000015" title=" " alt="" coords="1634,35,1835,58,1952,75,2067,95,2104,106,2098,106,2066,101,1951,80,1835,63,1634,40"/>
+<area shape="rect" id="Node000016" href="$skinning__pass_8cpp.html" title=" " alt="" coords="2292,106,2485,151"/>
+<area shape="poly" id="edge17_Node000001_Node000016" title=" " alt="" coords="1635,30,1926,50,2104,69,2281,95,2319,106,2313,106,2280,101,2103,74,1926,55,1635,35"/>
+<area shape="rect" id="Node000017" href="$ssao__pass_8cpp.html" title=" " alt="" coords="2509,106,2694,151"/>
+<area shape="poly" id="edge18_Node000001_Node000017" title=" " alt="" coords="1634,27,1800,31,2015,41,2256,62,2379,77,2498,95,2536,106,2530,106,2497,101,2378,82,2256,67,2015,47,1800,36,1634,32"/>
+<area shape="rect" id="Node000018" href="$ssr__pass_8cpp.html" title=" " alt="" coords="2717,106,2902,151"/>
+<area shape="poly" id="edge19_Node000001_Node000018" title=" " alt="" coords="1635,29,2186,52,2487,72,2611,83,2706,95,2744,106,2739,106,2705,101,2611,88,2486,77,2185,58,1635,35"/>
+<area shape="rect" id="Node000019" href="$taa__pass_8cpp.html" title=" " alt="" coords="2925,106,3110,151"/>
+<area shape="poly" id="edge20_Node000001_Node000019" title=" " alt="" coords="1635,28,1916,36,2285,49,2649,69,2799,81,2914,95,2952,106,2947,106,2913,101,2799,86,2648,74,2285,54,1916,41,1635,34"/>
+<area shape="rect" id="Node000020" href="$tonemap__pass_8cpp.html" title=" " alt="" coords="3134,106,3330,151"/>
+<area shape="poly" id="edge21_Node000001_Node000020" title=" " alt="" coords="1635,28,1954,34,2384,47,2810,67,2987,80,3122,95,3163,106,3157,106,3121,101,2987,85,2810,72,2384,52,1954,40,1635,33"/>
+<area shape="rect" id="Node000021" href="$traced__shadow__pass_8cpp.html" title=" " alt="" coords="3354,106,3590,151"/>
+<area shape="poly" id="edge22_Node000001_Node000021" title=" " alt="" coords="1634,28,1994,34,2487,47,2981,67,3187,80,3343,95,3390,106,3385,106,3342,101,3187,85,2981,72,2487,52,1994,39,1635,33"/>
+<area shape="rect" id="Node000003" href="$pch_8h.html" title=" " alt="" coords="5,225,110,252"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="100,164,67,226,62,223,94,166"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="414,158,291,218,289,213,409,159"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="473,165,473,209,469,205,469,169"/>
+<area shape="poly" id="edge6_Node000004_Node000007" title=" " alt="" coords="529,156,648,216,643,215,528,161"/>
 </map>

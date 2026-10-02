@@ -1,5 +1,8 @@
 var NAVTREEINDEX1 =
 {
+"classeditor_1_1Assets_1_1AssetFolder.html#aeceef5b050a627d1639598569eec1b05":[14,0,2,0,5,0],
+"classeditor_1_1Assets_1_1AssetTag.html":[12,0,0,0,6],
+"classeditor_1_1Assets_1_1AssetTag.html":[14,0,2,0,6],
 "classeditor_1_1Assets_1_1AssetTagFilter.html":[12,0,0,0,7],
 "classeditor_1_1Assets_1_1AssetTagFilter.html":[14,0,2,0,7],
 "classeditor_1_1Assets_1_1AssetTypeFilter.html":[12,0,0,0,8],
@@ -246,8 +249,5 @@ var NAVTREEINDEX1 =
 "classeditor_1_1Components_1_1Elements_1_1BoolBox.html":[14,0,2,1,2,2],
 "classeditor_1_1Components_1_1Elements_1_1Color3Box.html":[12,0,0,1,3,3],
 "classeditor_1_1Components_1_1Elements_1_1Color3Box.html":[14,0,2,1,2,3],
-"classeditor_1_1Components_1_1Elements_1_1Color4Box.html":[12,0,0,1,3,4],
-"classeditor_1_1Components_1_1Elements_1_1Color4Box.html":[14,0,2,1,2,4],
-"classeditor_1_1Components_1_1Elements_1_1ColorBoxBase.html":[12,0,0,1,3,5],
-"classeditor_1_1Components_1_1Elements_1_1ColorBoxBase.html":[14,0,2,1,2,5]
+"classeditor_1_1Components_1_1Elements_1_1Color4Box.html":[12,0,0,1,3,4]
 };

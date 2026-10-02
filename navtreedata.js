@@ -182,21 +182,21 @@ var NAVTREE =
 
 var NAVTREEINDEX =
 [
-"aabb_8hpp.html",
-"classeditor_1_1Assets_1_1AssetTagFilter.html",
-"classeditor_1_1Components_1_1Elements_1_1DragFloatBox.html",
-"classeditor_1_1Workspace_1_1HierarchyElement.html",
-"classrenderer_1_1RawTextureUpload.html",
-"classtoast_1_1CarveVolume.html",
-"classtoast_1_1SDLWindow.html",
-"classtoast_1_1VoxelPiece.html#a8b0a1b260a5a50b48565974419355be3",
-"dir_5e3b13ae2ca2708cae0c59ff3dc0407a.html",
-"lua__value__codec_8hpp.html",
-"reflection__probe__pass_8hpp_source.html",
-"structevent_1_1ProtoTraits_3_01RemoveSignalConnection_01_4.html",
-"structphysics_1_1Simulator_1_1ConnectivityResult.html",
-"structtoast_1_1NodeInfo.html#a5098ea7c2cf4c4674101f7026902c559",
-"structvoxel_1_1gpu_1_1PackedScene.html"
+"DebugDraw_8cpp.html",
+"classeditor_1_1Assets_1_1AssetFolder.html#aeceef5b050a627d1639598569eec1b05",
+"classeditor_1_1Components_1_1Elements_1_1Color4Box.html",
+"classeditor_1_1Workspace_1_1GroupVM.html",
+"classrenderer_1_1PendingResourceUpload.html",
+"classtoast_1_1CameraController.html#ab547ae869930f4f31f591fda4e0c0b61",
+"classtoast_1_1ReflectionProbe.html#ab87b2014b797e1b73696b35ef81abedb",
+"classtoast_1_1VoxelPiece.html#a87c31ebe3a13a1f8d772b3eb3a6b7012",
+"dir_40ba4f76dfd782463cec868302450489.html",
+"lua__types_8hpp_source.html",
+"reflection__probe_8hpp_source.html",
+"structevent_1_1ProtoTraits_3_01ProceduralVoxelLayout_01_4.html",
+"structphysics_1_1ShapeBoundsUpdate.html",
+"structtoast_1_1NodeInfo.html#a1ec5c7e9ae8d7268e198d4445b9c7e97",
+"structvoxel_1_1gpu_1_1PackedPool.html"
 ];
 
 const SYNCONMSG = 'click to disable panel synchronization';
