@@ -243,6 +243,11 @@ public:
 	    BodyID ignored, const CapsuleShape& capsule, const glm::vec3& position, const glm::quat& rotation, float min_penetration,
 	    std::vector<QueryContact>& contacts
 	) const -> bool;
+	/// Tests a world-space sphere against enabled physics shapes.
+	[[nodiscard]]
+	auto overlapSphere(
+	    const SphereShape& sphere, const glm::vec3& position, float min_penetration, std::vector<QueryContact>& contacts
+	) const -> bool;
 	/// Moves a capsule until it would dig into something
 	[[nodiscard]]
 	auto sweepCapsule(
@@ -388,6 +393,9 @@ private:
 	[[nodiscard]]
 	auto queryCandidates(BodyID ignored, const AABB& bounds) const -> std::vector<ShapeID>;
 	void collideCapsuleProbe(
+	    const Body& probe_body, const Shape& probe_shape, std::span<const ShapeID> candidates, std::vector<QueryContact>& contacts
+	) const;
+	void collideSphereProbe(
 	    const Body& probe_body, const Shape& probe_shape, std::span<const ShapeID> candidates, std::vector<QueryContact>& contacts
 	) const;
 

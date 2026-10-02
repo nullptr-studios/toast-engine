@@ -22,8 +22,6 @@ struct RayHit {
 	float distance;
 };
 
-/// Cast a ray and return hits in ascending distance order.
-/// A max_distance or max_targets of -1 leaves that limit unbounded.
 TOAST_API auto raycast(glm::vec3 pos, glm::vec3 dir, float max_distance = -1.0f, int max_targets = 3) -> std::vector<RayHit>;
 
 }
