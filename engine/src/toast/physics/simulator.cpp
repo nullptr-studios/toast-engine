@@ -1904,7 +1904,7 @@ void Simulator::rebuildRenderPoseLookup() {
 	}
 
 	// Parents sync before children and a nested driver keeps its own subtree
-	const auto follow = [&](this auto&& self, const toast::Node& parent, BodyID id) -> void {
+	const std::function<void(const toast::Node&, BodyID)> follow = [&](const toast::Node& parent, BodyID id) -> void {
 		for (const toast::Box<toast::Node>& child : parent.children()) {
 			if (not child.exists() || driver_uids.contains(child->uid().data())) {
 				continue;
@@ -1913,7 +1913,7 @@ void Simulator::rebuildRenderPoseLookup() {
 				child_3d->syncTransform();
 			}
 			m_render_body_of_node.insert_or_assign(child->uid().data(), id);
-			self(*child, id);
+			follow(*child, id);
 		}
 	};
 	for (const auto& [node, id] : drivers) {
