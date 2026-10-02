@@ -13,6 +13,6 @@ var dir_eb483000e46a928aea5884b32cf6e2a0 =
     [ "modifier.hpp", "modifier_8hpp.html", "modifier_8hpp" ],
     [ "parse_util.hpp", "parse__util_8hpp.html", null ],
     [ "trackpad_math.hpp", "trackpad__math_8hpp.html", "trackpad__math_8hpp" ],
-    [ "trigger.hpp", "trigger_8hpp.html", "trigger_8hpp" ],
+    [ "trigger.hpp", "input_2trigger_8hpp.html", "input_2trigger_8hpp" ],
     [ "value.hpp", "value_8hpp.html", "value_8hpp" ]
 ];

@@ -1,5 +1,8 @@
 var NAVTREEINDEX4 =
 {
+"classrenderer_1_1MaterialPass.html":[14,0,7,23],
+"classrenderer_1_1MaterialRuntime.html":[14,0,7,24],
+"classrenderer_1_1MeshUpload.html":[14,0,7,25],
 "classrenderer_1_1PendingResourceUpload.html":[14,0,7,27],
 "classrenderer_1_1PendingResourceUpload.html#a0ee4c4bc526d431bdf38aea606e87a1c":[14,0,7,27,0],
 "classrenderer_1_1PostProcessTarget.html":[14,0,7,29],
@@ -246,8 +249,5 @@ var NAVTREEINDEX4 =
 "classtoast_1_1Box.html#af92379c2c117e36e4f6bdca77a0c5a89":[14,0,11,17,4],
 "classtoast_1_1Camera.html":[12,0,1,16],
 "classtoast_1_1Camera.html":[14,0,11,18],
-"classtoast_1_1Camera.html#a2f7dd23d2ef0791018fbcde9ae81f85b":[12,0,1,16,0],
-"classtoast_1_1Camera.html#a2f7dd23d2ef0791018fbcde9ae81f85b":[14,0,11,18,0],
-"classtoast_1_1CameraController.html":[12,0,1,17],
-"classtoast_1_1CameraController.html":[14,0,11,19]
+"classtoast_1_1Camera.html#a2f7dd23d2ef0791018fbcde9ae81f85b":[12,0,1,16,0]
 };

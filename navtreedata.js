@@ -186,17 +186,17 @@ var NAVTREEINDEX =
 "classeditor_1_1Assets_1_1AssetFolder.html#aeceef5b050a627d1639598569eec1b05",
 "classeditor_1_1Components_1_1Elements_1_1Color4Box.html",
 "classeditor_1_1Workspace_1_1GroupVM.html",
-"classrenderer_1_1PendingResourceUpload.html",
-"classtoast_1_1CameraController.html#ab547ae869930f4f31f591fda4e0c0b61",
-"classtoast_1_1ReflectionProbe.html#ab87b2014b797e1b73696b35ef81abedb",
-"classtoast_1_1VoxelPiece.html#a87c31ebe3a13a1f8d772b3eb3a6b7012",
-"dir_40ba4f76dfd782463cec868302450489.html",
-"lua__types_8hpp_source.html",
-"reflection__probe_8hpp_source.html",
-"structevent_1_1ProtoTraits_3_01ProceduralVoxelLayout_01_4.html",
-"structphysics_1_1ShapeBoundsUpdate.html",
-"structtoast_1_1NodeInfo.html#a1ec5c7e9ae8d7268e198d4445b9c7e97",
-"structvoxel_1_1gpu_1_1PackedPool.html"
+"classrenderer_1_1MaterialPass.html",
+"classtoast_1_1Camera.html#a2f7dd23d2ef0791018fbcde9ae81f85b",
+"classtoast_1_1ReflectionProbe.html#a6cd487a53cd94da5b692c59b4f3a0dc2",
+"classtoast_1_1VoxelPiece.html#a775e11481562b88228e1dc743fdda7f0",
+"dir_2d42ade538ca05e4e813c85f6cb29851.html",
+"logger_8hpp_source.html",
+"raycast_8hpp.html",
+"structevent_1_1ProtoTraits_3_01InspectorLuaContent_1_1LuaGroup_01_4.html",
+"structphysics_1_1Meta.html#a95012a506797f5f863d116e0ae041fff",
+"structtoast_1_1MusicPlayer_1_1CallbackData.html",
+"structvoxel_1_1SurfaceVoxel.html#a6cf6b85a37b6422cf93cc5f0a927a95c"
 ];
 
 const SYNCONMSG = 'click to disable panel synchronization';

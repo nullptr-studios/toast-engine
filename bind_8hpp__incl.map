@@ -8,7 +8,7 @@
 <area shape="poly" id="edge31_Node000001_Node000008" title=" " alt="" coords="84,53,69,74,55,99,52,112,55,125,75,185,101,236,95,236,70,187,50,126,47,112,50,97,64,71,86,48"/>
 <area shape="rect" id="Node000012" title=" " alt="" coords="345,249,480,277"/>
 <area shape="poly" id="edge32_Node000001_Node000012" title=" " alt="" coords="181,48,232,68,286,95,338,129,384,172,401,202,411,235,406,233,396,204,379,175,335,134,283,100,230,73,182,53"/>
-<area shape="rect" id="Node000016" href="$trigger_8hpp.html" title="Triggers turn a raw input sample into an action value and discrete events." alt="" coords="64,98,155,126"/>
+<area shape="rect" id="Node000016" href="$input_2trigger_8hpp.html" title="Triggers turn a raw input sample into an action value and discrete events." alt="" coords="64,98,155,126"/>
 <area shape="poly" id="edge24_Node000001_Node000016" title=" " alt="" coords="110,48,112,83,107,82,109,53"/>
 <area shape="rect" id="Node000003" title=" " alt="" coords="268,401,333,428"/>
 <area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="116,351,255,396,251,400,115,356"/>

@@ -165,25 +165,28 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('physics__setti
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  uint32_t voxel_pair_split_regions = 8;</div>
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno"><a class="line" href="structphysics_1_1Tunables.html#a32bcf2b4c962baee596720e64905c6a8">   52</a></span>  uint32_t <a class="code hl_variable" href="structphysics_1_1Tunables.html#a32bcf2b4c962baee596720e64905c6a8">sweep_refine_iterations</a> = 6;</div>
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  uint32_t position_iterations = 3;</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span> </div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <span class="keyword">auto</span> fixedDelta() const noexcept -&gt; <span class="keywordtype">double</span> {</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>    <span class="keywordflow">return</span> frequency &gt; 0.0 ? 1.0 / frequency : 1.0 / 60.0;</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  }</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>};</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno"><a class="line" href="structphysics_1_1Tunables.html#ad9e969f83cc2619dcd4d4d59140aec90">   55</a></span>  <span class="keywordtype">bool</span> <a class="code hl_variable" href="structphysics_1_1Tunables.html#ad9e969f83cc2619dcd4d4d59140aec90">trigger_check_dynamic</a> = <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <span class="keywordtype">bool</span> trigger_check_kinematic = <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  <span class="keyword">auto</span> fixedDelta() const noexcept -&gt; <span class="keywordtype">double</span> {</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>    <span class="keywordflow">return</span> frequency &gt; 0.0 ? 1.0 / frequency : 1.0 / 60.0;</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  }</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>};</div>
 </div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span> </div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>[[nodiscard]]</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>TOAST_API <span class="keyword">auto</span> tunables() -&gt; <span class="keyword">const</span> Tunables&amp;;</div>
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span> </div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>TOAST_API <span class="keywordtype">void</span> registerPhysicsSettings();</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span> </div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>}</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>[[nodiscard]]</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>TOAST_API <span class="keyword">auto</span> tunables() -&gt; <span class="keyword">const</span> Tunables&amp;;</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span> </div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>TOAST_API <span class="keywordtype">void</span> registerPhysicsSettings();</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span> </div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>}</div>
 <div class="ttc" id="aexport_8hpp_html"><div class="ttname"><a href="export_8hpp.html">export.hpp</a></div></div>
 <div class="ttc" id="astructphysics_1_1Tunables_html"><div class="ttname"><a href="structphysics_1_1Tunables.html">physics::Tunables</a></div><div class="ttdef"><b>Definition</b> physics_settings.hpp:14</div></div>
 <div class="ttc" id="astructphysics_1_1Tunables_html_a19fc474a17993c8ae85865d32a505395"><div class="ttname"><a href="structphysics_1_1Tunables.html#a19fc474a17993c8ae85865d32a505395">physics::Tunables::voxel_voxel_split_min_voxels</a></div><div class="ttdeci">uint32_t voxel_voxel_split_min_voxels</div><div class="ttdoc">Same off-until-measured reasoning as box_voxel_split_min_voxels.</div><div class="ttdef"><b>Definition</b> physics_settings.hpp:49</div></div>
 <div class="ttc" id="astructphysics_1_1Tunables_html_a32bcf2b4c962baee596720e64905c6a8"><div class="ttname"><a href="structphysics_1_1Tunables.html#a32bcf2b4c962baee596720e64905c6a8">physics::Tunables::sweep_refine_iterations</a></div><div class="ttdeci">uint32_t sweep_refine_iterations</div><div class="ttdoc">Bisection steps a sweep refines by once it finds a blocking contact a clear sweep never pays this.</div><div class="ttdef"><b>Definition</b> physics_settings.hpp:52</div></div>
 <div class="ttc" id="astructphysics_1_1Tunables_html_a33f6465adbedd8995759ec3373b6a1da"><div class="ttname"><a href="structphysics_1_1Tunables.html#a33f6465adbedd8995759ec3373b6a1da">physics::Tunables::box_voxel_split_min_voxels</a></div><div class="ttdeci">uint32_t box_voxel_split_min_voxels</div><div class="ttdoc">Deliberately very high right now to disable splitting until box_voxel_max_estimated_voxels gives a re...</div><div class="ttdef"><b>Definition</b> physics_settings.hpp:47</div></div>
+<div class="ttc" id="astructphysics_1_1Tunables_html_ad9e969f83cc2619dcd4d4d59140aec90"><div class="ttname"><a href="structphysics_1_1Tunables.html#ad9e969f83cc2619dcd4d4d59140aec90">physics::Tunables::trigger_check_dynamic</a></div><div class="ttdeci">bool trigger_check_dynamic</div><div class="ttdoc">Which body types a trigger reports, static bodies never count.</div><div class="ttdef"><b>Definition</b> physics_settings.hpp:55</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

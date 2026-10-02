@@ -7,5 +7,6 @@ var dir_8908ec0eb07434c8520db9ac1b38f7b6 =
     [ "kinematic_rigidbody.hpp", "kinematic__rigidbody_8hpp_source.html", null ],
     [ "rigidbody.hpp", "rigidbody_8hpp_source.html", null ],
     [ "sphere_collider.hpp", "sphere__collider_8hpp_source.html", null ],
-    [ "static_rigidbody.hpp", "static__rigidbody_8hpp_source.html", null ]
+    [ "static_rigidbody.hpp", "static__rigidbody_8hpp_source.html", null ],
+    [ "trigger.hpp", "physics_2nodes_2trigger_8hpp.html", "physics_2nodes_2trigger_8hpp" ]
 ];

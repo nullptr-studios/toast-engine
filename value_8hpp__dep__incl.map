@@ -10,7 +10,7 @@
 <area shape="poly" id="edge7_Node000001_Node000006" title=" " alt="" coords="226,58,199,76,174,100,161,121,153,145,148,191,143,190,148,144,156,119,170,96,196,72,230,54"/>
 <area shape="rect" id="Node000007" href="$parse__util_8hpp.html" title="Small helpers shared by the TOML parsing paths of triggers, modifiers and binds." alt="" coords="184,98,346,143"/>
 <area shape="poly" id="edge10_Node000001_Node000007" title=" " alt="" coords="300,65,281,99,277,96,303,61"/>
-<area shape="rect" id="Node000008" href="$trigger_8hpp.html" title="Triggers turn a raw input sample into an action value and discrete events." alt="" coords="252,191,414,235"/>
+<area shape="rect" id="Node000008" href="$input_2trigger_8hpp.html" title="Triggers turn a raw input sample into an action value and discrete events." alt="" coords="252,191,414,235"/>
 <area shape="poly" id="edge14_Node000001_Node000008" title=" " alt="" coords="345,61,361,97,363,123,360,148,346,191,341,189,355,147,358,123,356,99,345,66"/>
 <area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="188,431,124,470,121,466,192,427"/>
 <area shape="rect" id="Node000004" href="$input__system_8cpp.html" title="Implementation of the input system singleton." alt="" coords="5,561,168,606"/>

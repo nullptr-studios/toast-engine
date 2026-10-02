@@ -1,4 +1,4 @@
-var trigger_8hpp =
+var input_2trigger_8hpp =
 [
     [ "input::ITrigger", "classinput_1_1ITrigger.html", "classinput_1_1ITrigger" ],
     [ "input::ITrigger::Result", "structinput_1_1ITrigger_1_1Result.html", "structinput_1_1ITrigger_1_1Result" ],

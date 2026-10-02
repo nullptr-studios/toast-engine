@@ -158,6 +158,8 @@ glm::vec3&#160;</td><td class="memItemRight"><b>size</b> = glm::vec3(1.0f)</td><
 <tr class="inherit_header pub_attribs_classphysics_1_1Collider"><td colspan="2">Public Attributes inherited from <a class="el" href="classphysics_1_1Collider.html">physics::Collider</a></td></tr>
 <tr class="memitem:a2b0e15bb9185c4dd046ece8450c6196f pub_attribs_classphysics_1_1Collider" id="r_a2b0e15bb9185c4dd046ece8450c6196f"><td class="memItemLeft">
 bool&#160;</td><td class="memItemRight"><b>disabled</b> = false</td></tr>
+<tr class="memitem:a6a04d8cc8254863abe3e8a15b0c2a084 pub_attribs_classphysics_1_1Collider" id="r_a6a04d8cc8254863abe3e8a15b0c2a084"><td class="memItemLeft">
+bool&#160;</td><td class="memItemRight"><b>draw_debug</b> = true</td></tr>
 <tr class="memitem:a564941847b7f8bd5fe713ac34989749c pub_attribs_classphysics_1_1Collider" id="r_a564941847b7f8bd5fe713ac34989749c"><td class="memItemLeft">
 glm::vec4&#160;</td><td class="memItemRight"><b>debug_color</b> = glm::vec4(0.0f, 1.0f, 0.251f, 0.5f)</td></tr>
 <tr class="memitem:a43778fbf339700bae7312c7242b69f7c pub_attribs_classphysics_1_1Collider" id="r_a43778fbf339700bae7312c7242b69f7c"><td class="memItemLeft">
@@ -193,6 +195,11 @@ signals::Signal&lt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; Node
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-inherited" class="groupheader"><a id="inherited" name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
+<tr class="inherit_header pub_methods_classphysics_1_1Collider"><td colspan="2">Public Member Functions inherited from <a class="el" href="classphysics_1_1Collider.html">physics::Collider</a></td></tr>
+<tr class="memitem:aa3b8f6f2157e4dfa53994df316d80897 pub_methods_classphysics_1_1Collider" id="r_aa3b8f6f2157e4dfa53994df316d80897"><td class="memItemLeft">
+void&#160;</td><td class="memItemRight"><b>overrideColor</b> (glm::vec4 color)</td></tr>
+<tr class="memitem:a6295d9efe8d755c208e674cdea8aa341 pub_methods_classphysics_1_1Collider" id="r_a6295d9efe8d755c208e674cdea8aa341"><td class="memItemLeft">
+void&#160;</td><td class="memItemRight"><b>clearColorOverride</b> ()</td></tr>
 <tr class="inherit_header pub_methods_classtoast_1_1Node3D"><td colspan="2">Public Member Functions inherited from <a class="el" href="classtoast_1_1Node3D.html">toast::Node3D</a></td></tr>
 <tr class="memitem:a6f715f9a846ac2db9f2e7b27a4700c78 pub_methods_classtoast_1_1Node3D" id="r_a6f715f9a846ac2db9f2e7b27a4700c78"><td class="memItemLeft">
 auto&#160;</td><td class="memItemRight"><b>raycasts</b> (glm::vec3 pos, glm::vec3 dir) const -&gt; std::vector&lt; <a class="el" href="structphysics_1_1RayHit.html">physics::RayHit</a> &gt;</td></tr>
@@ -264,6 +271,10 @@ auto&#160;</td><td class="memItemRight"><b>listener</b> () noexcept -&gt; <a cla
 <tr class="memdesc:a7b7629c4dbf68d245c0513f5a4f44644 pub_methods_classtoast_1_1Node"><td class="mdescLeft">&#160;</td><td class="mdescRight">Looks up a node by <a class="el" href="structtoast_1_1UID.html">UID</a> within this node's local root.  <br /></td></tr>
 <tr class="memitem:ab70caacc1806f4952c0480f7c7736570 pub_methods_classtoast_1_1Node" id="r_ab70caacc1806f4952c0480f7c7736570"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="classtoast_1_1Node.html#ab70caacc1806f4952c0480f7c7736570">search</a> (std::string_view query) -&gt; std::vector&lt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; Node &gt; &gt;</td></tr>
 <tr class="memdesc:ab70caacc1806f4952c0480f7c7736570 pub_methods_classtoast_1_1Node"><td class="mdescLeft">&#160;</td><td class="mdescRight">Depth-first search for all matching descendants.  <br /></td></tr>
+<tr class="memitem:a4fc915bd1e4d74dc708a6785c71ea07d pub_methods_classtoast_1_1Node" id="r_a4fc915bd1e4d74dc708a6785c71ea07d"><td class="memItemLeft">
+auto&#160;</td><td class="memItemRight"><b>childrenOfType</b> (const <a class="el" href="structtoast_1_1NodeInfo.html">NodeInfo</a> *type) const -&gt; std::vector&lt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; Node &gt; &gt;</td></tr>
+<tr class="memitem:a05e76f34c82bfd4b2510b4e2853270bf pub_methods_classtoast_1_1Node" id="r_a05e76f34c82bfd4b2510b4e2853270bf"><td class="memItemLeft">
+auto&#160;</td><td class="memItemRight"><b>searchType</b> (const <a class="el" href="structtoast_1_1NodeInfo.html">NodeInfo</a> *type) const -&gt; std::vector&lt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; Node &gt; &gt;</td></tr>
 <tr class="memitem:a9a1d8f9fee15e8480d860f1b921ddde7 pub_methods_classtoast_1_1Node" id="r_a9a1d8f9fee15e8480d860f1b921ddde7"><td class="memItemLeft">
 void&#160;</td><td class="memItemRight"><b>addDependsOn</b> (Node &amp;other)</td></tr>
 <tr class="memitem:ace86075240044e0fc28c8da7031077e1 pub_methods_classtoast_1_1Node" id="r_ace86075240044e0fc28c8da7031077e1"><td class="memItemLeft">

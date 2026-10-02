@@ -366,6 +366,9 @@ var hierarchy =
       [ "event::Event< DestroyNode >", "structevent_1_1Event.html", [
         [ "event::DestroyNode", "structevent_1_1DestroyNode.html", null ]
       ] ],
+      [ "event::Event< DestructionEvent >", "structevent_1_1Event.html", [
+        [ "event::DestructionEvent", "structevent_1_1DestructionEvent.html", null ]
+      ] ],
       [ "event::Event< EditorCameraFlyMode >", "structevent_1_1Event.html", [
         [ "event::EditorCameraFlyMode", "structevent_1_1EditorCameraFlyMode.html", null ]
       ] ],
@@ -923,6 +926,7 @@ var hierarchy =
           [ "physics::KinematicRigidbody", "classphysics_1_1KinematicRigidbody.html", null ],
           [ "physics::StaticRigidbody", "classphysics_1_1StaticRigidbody.html", null ]
         ] ],
+        [ "physics::Trigger", "classphysics_1_1Trigger.html", null ],
         [ "toast::AnimationPlayer", "classtoast_1_1AnimationPlayer.html", null ],
         [ "toast::AudioEmitterBase", "classtoast_1_1AudioEmitterBase.html", [
           [ "toast::AudioBoxEmitter", "classtoast_1_1AudioBoxEmitter.html", null ],
