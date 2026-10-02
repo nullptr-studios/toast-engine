@@ -405,6 +405,23 @@ void registerPhysicsSettings() {
 			 .step = 1.0},
 	    &Tunables::sweep_refine_iterations
 	);
+
+	toast::settings::declareBool(
+	    "physics.triggers.check_dynamic",
+	    true,
+	    {.label = "Check for Dynamic",
+			 .category = "Triggers",
+			 .description = "Triggers report dynamic bodies entering and leaving them"}
+	)
+	    .onChange([](bool v) { g_tunables.trigger_check_dynamic = v; });
+	toast::settings::declareBool(
+	    "physics.triggers.check_kinematic",
+	    true,
+	    {.label = "Check for Kinematic",
+			 .category = "Triggers",
+			 .description = "Triggers report kinematic bodies entering and leaving them"}
+	)
+	    .onChange([](bool v) { g_tunables.trigger_check_kinematic = v; });
 }
 
 }

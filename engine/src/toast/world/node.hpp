@@ -288,6 +288,12 @@ public:
 	[[nodiscard]]
 	auto search(std::string_view query) -> std::vector<Box<Node>>;
 
+	[[nodiscard]]
+	auto childrenOfType(const NodeInfo* type) const -> std::vector<Box<Node>>;
+
+	[[nodiscard]]
+	auto searchType(const NodeInfo* type) const -> std::vector<Box<Node>>;
+
 	void addDependsOn(Node& other);
 	void removeDependsOn(Node& other);
 

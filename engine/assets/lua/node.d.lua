@@ -42,6 +42,20 @@ function NodeProxy:find(query) end
 ---@return Node[] [All matches in depth-first order; may be empty]
 function NodeProxy:search(query) end
 
+---@return Node?
+function NodeProxy:parent() end
+
+---@return Node
+function NodeProxy:root() end
+
+---@param type TypeMarker|string
+---@return Node[] [All matches in depth-first order]
+function NodeProxy:searchType(type) end
+
+---@param type? TypeMarker|string
+---@return Node[]
+function NodeProxy:getChildren(type) end
+
 ---Creates a new child node of the given type and attaches it to this node
 ---Only valid on nodes in the root or global state; calls the child's init lifecycle
 ---@param type string? [C++ class name, e.g. "toast::Node3D"; defaults to "toast::Node"]

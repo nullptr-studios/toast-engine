@@ -5,6 +5,7 @@
 #include "dynamic_rigidbody.hpp"
 #include "rigidbody.hpp"
 #include "sphere_collider.hpp"
+#include "trigger.hpp"
 
 #include <cmath>
 #include <toast/physics/simulator.hpp>
@@ -15,14 +16,14 @@ void Collider::updateInspectorMessages() {
 	static const toast::NodeMessage parent_message {
 	  .severity = toast::NodeMessage::error,
 	  .id = 1,
-	  .text = "Colliders need to be children of a Rigidbody",
+	  .text = "Colliders need to be children of a Rigidbody or a Trigger",
 	};
 	static const toast::NodeMessage invalid_geometry_message {
 	  .severity = toast::NodeMessage::error,
 	  .id = 3,
 	  .text = "Collider dimensions must be greater than zero",
 	};
-	if (parent().as<Rigidbody>().exists()) {
+	if (parent().as<Rigidbody>().exists() || parent().as<Trigger>().exists()) {
 		removeInspectorMessage(parent_message);
 	} else {
 		addInspectorMessage(parent_message);
@@ -80,14 +81,31 @@ void Collider::onDisable() {
 	Simulator::setShapeEnabled(m_shape, false);
 }
 
+void Collider::overrideColor(glm::vec4 color) {
+	m_override_color = true;
+	m_overridden_color = color;
+}
+
+void Collider::clearColorOverride() {
+	m_override_color = false;
+}
+
 void Collider::drawDebug() {
 	ZoneScoped;
 	if (!m_debug_visible) {
 		return;
 	}
+
+	if (not draw_debug) {
+		return;
+	}
+
 	const auto dynamic_body = parent().as<DynamicRigidbody>();
 	const bool sleeping = dynamic_body.exists() && not dynamic_body->awake;
-	const glm::vec4 color = disabled || sleeping ? glm::vec4(0.5f, 0.5f, 0.5f, debug_color.a) : debug_color;
+	glm::vec4 color = m_override_color ? m_overridden_color : debug_color;
+	if (not m_override_color && (disabled || sleeping)) {
+		color = glm::vec4(0.5f, 0.5f, 0.5f, debug_color.a);
+	}
 	syncTransform();
 	auto transform = glm::translate(glm::mat4(1.0f), world_position) * glm::mat4_cast(world_rotation);
 	if (const auto sphere = box().as<SphereCollider>(); sphere.exists()) {

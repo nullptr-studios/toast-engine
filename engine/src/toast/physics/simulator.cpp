@@ -10,6 +10,7 @@
 #include "nodes/dynamic_rigidbody.hpp"
 #include "nodes/rigidbody.hpp"
 #include "nodes/sphere_collider.hpp"
+#include "nodes/trigger.hpp"
 #include "physics_settings.hpp"
 #include "toast/physics/body.hpp"
 #include "voxel_data_lock.hpp"
@@ -423,6 +424,33 @@ void Simulator::unregisterVoxelNode(toast::VoxelNode& node) {
 	node.m_retired_volumes.clear();
 }
 
+void Simulator::registerTrigger(Trigger& node) {
+	ZoneScoped;
+	TOAST_ASSERT(instance, "Physics", "Tried to register a trigger without a physics system");
+
+	if (not instance->mainThreadMutationAllowed()) {
+		return;
+	}
+
+	const auto trigger = node.box().as<Trigger>();
+	if (std::ranges::find(instance->m_triggers, trigger) == instance->m_triggers.end()) {
+		instance->m_triggers.emplace_back(trigger);
+	}
+}
+
+void Simulator::unregisterTrigger(Trigger& node) {
+	ZoneScoped;
+	if (not instance) {
+		return;
+	}
+
+	if (not instance->mainThreadMutationAllowed()) {
+		return;
+	}
+
+	std::erase(instance->m_triggers, node.box().as<Trigger>());
+}
+
 auto Simulator::nodeFor(BodyID body) -> toast::Box<toast::Node> {
 	if (not instance) {
 		return {};
@@ -517,6 +545,7 @@ void Simulator::tick() {
 	enforceFragmentBudget(dt);
 	despawnSettledFragments(dt);
 	integrate(dt);
+	checkTriggers();
 
 	{
 		PhaseScope worker_phase {*this, SimulationPhase::mutation, SimulationPhase::worker_execution};
@@ -2987,6 +3016,74 @@ auto Simulator::createVoxelShapeInternal(
 	const uint32_t index = static_cast<uint32_t>(m_shapes.size());
 	m_shapes.emplace_back(ShapeSlot {.shape = physics_shape, .generation = 1, .occupied = true});
 	return {.slot = index, .generation = 1};
+}
+
+namespace {
+
+// overlap shape of a trigger
+[[nodiscard]]
+auto triggerProbe(const Trigger& trigger) -> std::optional<Shape> {
+	for (const auto& child : trigger.children()) {
+		if (const auto sphere = child.as<SphereCollider>(); sphere.exists() && sphere->enabled() && not sphere->disabled) {
+			return Shape {
+			  .type = ShapeType::sphere,
+			  .sphere = {.local_center = sphere->position, .radius = sphere->radius},
+			};
+		}
+		if (const auto box = child.as<BoxCollider>(); box.exists() && box->enabled() && not box->disabled) {
+			return Shape {
+			  .type = ShapeType::box,
+			  .box = {.local_center = box->position, .local_rotation = box->rotation, .size = box->size},
+			};
+		}
+		if (const auto capsule = child.as<CapsuleCollider>(); capsule.exists() && capsule->enabled() && not capsule->disabled) {
+			return Shape {
+			  .type = ShapeType::capsule,
+			  .capsule = {
+			              .local_center = capsule->position,
+			              .local_rotation = capsule->rotation,
+			              .radius = capsule->radius,
+			              .height = capsule->height
+			  },
+			};
+		}
+	}
+	return std::nullopt;
+}
+
+}
+
+void Simulator::checkTriggers() {
+	ZoneScoped;
+	if (m_triggers.empty()) {
+		return;
+	}
+
+	// handlers may create or destroy triggers while we fire their events
+	std::vector<toast::Box<Trigger>> triggers = m_triggers;
+	std::vector<BodyID> overlapping;
+	for (auto& trigger : triggers) {
+		if (not trigger.exists()) {
+			continue;
+		}
+		ZoneScopedN("physics::CheckTrigger");
+
+		// Trigger::onDisable already sent the exits
+		if (not trigger->enabled()) {
+			continue;
+		}
+
+		overlapping.clear();
+		trigger->syncTransform();
+		if (const auto probe = triggerProbe(*trigger); probe.has_value()) {
+			BodyID ignored;
+			if (const auto body = trigger->parent().as<Rigidbody>(); body.exists()) {
+				ignored = body->bodyID();
+			}
+			overlapShape(ignored, *probe, trigger->world_position, trigger->world_rotation, overlapping);
+		}
+		trigger->updateOverlaps(overlapping);
+	}
 }
 
 auto Simulator::createVoxelShape(BodyID owner, toast::VoxelNode& node) -> ShapeID {

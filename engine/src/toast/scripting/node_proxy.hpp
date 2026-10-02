@@ -27,6 +27,8 @@ class Node;
 
 namespace scripting {
 
+struct TypeMarker;
+
 class Vec3FieldProxy : public glm::vec3 {
 public:
 	Vec3FieldProxy(toast::Box<toast::Node> node, const toast::FieldInfo* field, const glm::vec3& value) noexcept;
@@ -70,6 +72,13 @@ public:
 
 	auto find(const std::string& query, lua_State* l) -> luabridge::LuaRef;
 	auto search(const std::string& query) -> std::vector<NodeProxy>;
+	auto parent(lua_State* l) -> luabridge::LuaRef;
+	auto root(lua_State* l) -> luabridge::LuaRef;
+	auto searchType(const std::string& type, lua_State* l) -> std::vector<NodeProxy>;
+	auto searchType(const TypeMarker& type, lua_State* l) -> std::vector<NodeProxy>;
+	auto getChildren(lua_State* l) -> std::vector<NodeProxy>;
+	auto getChildren(const std::string& type, lua_State* l) -> std::vector<NodeProxy>;
+	auto getChildren(const TypeMarker& type, lua_State* l) -> std::vector<NodeProxy>;
 	auto create(const std::string& type, lua_State* l) -> luabridge::LuaRef;
 	void addDependsOn(const NodeProxy& other);
 

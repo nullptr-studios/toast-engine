@@ -705,6 +705,19 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    .addFunction("uid", [](const NodeProxy& np) { return static_cast<lua_Integer>(np.uid()); })
 	    .addFunction("find", &NodeProxy::find)
 	    .addFunction("search", &NodeProxy::search)
+	    .addFunction("parent", &NodeProxy::parent)
+	    .addFunction("root", &NodeProxy::root)
+	    .addFunction(
+	        "searchType",
+	        overload<const TypeMarker&, lua_State*>(&NodeProxy::searchType),
+	        overload<const std::string&, lua_State*>(&NodeProxy::searchType)
+	    )
+	    .addFunction(
+	        "getChildren",
+	        overload<lua_State*>(&NodeProxy::getChildren),
+	        overload<const TypeMarker&, lua_State*>(&NodeProxy::getChildren),
+	        overload<const std::string&, lua_State*>(&NodeProxy::getChildren)
+	    )
 	    .addFunction("create", &NodeProxy::create)
 	    .addFunction("addDependsOn", &NodeProxy::addDependsOn)
 	    .addFunction("call", &NodeProxy::call)
