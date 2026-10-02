@@ -290,6 +290,9 @@ public:
 
 		glm::mat4 previous_model {1.0f};
 
+		/// False the first frame this node_uid is drawn so the shader reports motion as not written instead of zero
+		bool has_previous = false;
+
 		glm::vec3 bounds_center {0.0f};
 		float bounds_radius = 0.0f;
 

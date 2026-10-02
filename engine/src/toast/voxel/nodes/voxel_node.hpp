@@ -336,6 +336,11 @@ public:
 	[[nodiscard]]
 	auto latticePlacement() const -> std::optional<voxel::LatticePlacement>;
 
+	[[nodiscard]]
+	auto renderOnly() const noexcept -> bool {
+		return render_only;
+	}
+
 protected:
 	/**
 	 * Runs right before editShape on every rebuild, subclasses build their shape here
@@ -468,6 +473,10 @@ protected:
 
 	[[Reflect, ReadOnly, Unit("kg")]]
 	float mass = 0.0f;
+
+	/// Read when the game starts
+	[[Reflect, Group("Physics")]]
+	bool render_only = false;
 
 	[[Reflect, Group("Physics")]]
 	bool allow_sleep = true;

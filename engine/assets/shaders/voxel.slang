@@ -285,9 +285,13 @@ bool shade(VSOutput input, out FSOutput output, out float depth)
         depth = clip.z / clip.w;
 
         // Voxel-space hit through the previous model is where it was last frame
-        const float4 previousWorld = mul(instance.previousVoxelToWorld, float4(origin + direction * hit.t, 1.0));
-        const float4 previousClip = mul(gCamera.previousViewProjection, previousWorld);
-        output.motion = float4((clip.xy / clip.w - previousClip.xy / previousClip.w) * 0.5, 0.0, 1.0);
+        // Bit 0 set means no real previous frame yet so motion stays the default not-written value
+        if ((instance.flags & 1u) == 0u)
+        {
+            const float4 previousWorld = mul(instance.previousVoxelToWorld, float4(origin + direction * hit.t, 1.0));
+            const float4 previousClip = mul(gCamera.previousViewProjection, previousWorld);
+            output.motion = float4((clip.xy / clip.w - previousClip.xy / previousClip.w) * 0.5, 0.0, 1.0);
+        }
 
         if (hit.axis >= 0)
         {

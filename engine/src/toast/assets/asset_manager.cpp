@@ -556,6 +556,21 @@ auto AssetManager::typeOf(toast::UID uid) -> std::string {
 	return it != manager.manifest.end() ? it->second.type : std::string {};
 }
 
+namespace {
+
+auto keepsSchema(const Data& data, const toml::table& table) -> bool {
+	std::string linked;
+	if (const auto* key = table.get("schema")) {
+		if (const auto text = key->value<std::string_view>()) {
+			linked = std::string(*text);
+		}
+	}
+	const std::string current = data.schema().hasValue() ? data.schema().uid().get() : std::string {};
+	return linked == current;
+}
+
+}
+
 void AssetManager::pollModifiedAssets() {
 	ZoneScoped;
 
@@ -576,7 +591,7 @@ void AssetManager::pollModifiedAssets() {
 				continue;
 			}
 			if (type != "script" && type != "shader" && type != "material" && type != "material_instance" && type != "voxel_palette" &&
-			    !is_ui) {
+			    type != "data" && type != "curve" && !is_ui) {
 				continue;
 			}
 			auto real_path = resolveVirtualPath(info.path);
@@ -630,11 +645,29 @@ void AssetManager::pollModifiedAssets() {
 					TOAST_ERROR("AssetManager", "Hot reload parse error for {}: {}", info.path, err.what());
 					continue;
 				}
-			} else {
-				// Materials re-parse their TOML in place so existing handles stay valid
+			} else if (type == "curve") {
 				try {
 					const std::string_view toml_str(reinterpret_cast<const char*>(raw->data()), raw->size());
-					static_cast<Data*>(asset_it->second.get())->reload(toml::parse(toml_str));
+					static_cast<Curve*>(asset_it->second.get())->reload(toml::parse(toml_str));
+				} catch (const std::exception& err) {
+					TOAST_ERROR("AssetManager", "Hot reload parse error for {}: {}", info.path, err.what());
+					continue;
+				}
+			} else {
+				// Materials and Data assets re-parse their TOML in place so existing handles stay valid
+				try {
+					const std::string_view toml_str(reinterpret_cast<const char*>(raw->data()), raw->size());
+					const toml::table table = toml::parse(toml_str);
+					auto* data = static_cast<Data*>(asset_it->second.get());
+					if (type == "data" && !keepsSchema(*data, table)) {
+						TOAST_WARN(
+						    "AssetManager",
+						    "{} does not name the schema it was loaded with (half written file or a schema change), keeping the old values",
+						    info.path
+						);
+						continue;
+					}
+					data->reload(table);
 				} catch (const toml::parse_error& err) {
 					TOAST_ERROR("AssetManager", "Hot reload parse error for {}: {}", info.path, err.description());
 					continue;
@@ -657,6 +690,10 @@ void AssetManager::pollModifiedAssets() {
 			event::send<event::UIAssetReloaded>(uid, type);
 		} else if (type == "voxel_palette") {
 			event::send<event::VoxelPaletteAssetReloaded>(uid);
+		} else if (type == "data") {
+			event::send<event::DataAssetReloaded>(uid);
+		} else if (type == "curve") {
+			// no event, handles see the new points right away
 		} else {
 			event::send<event::MaterialAssetReloaded>(uid);
 		}

@@ -26,6 +26,7 @@
 #include <toast/voxel/mass_accumulator.hpp>
 #include <toast/voxel/nodes/voxel_node.hpp>
 #include <tracy/Tracy.hpp>
+#include <unordered_set>
 
 namespace physics {
 
@@ -1798,6 +1799,7 @@ void Simulator::publishVoxelRenderRecords() {
 		m_voxel_render_records.push_back(
 		    VoxelRenderRecord {
 		      .shape = ShapeID {.slot = static_cast<uint32_t>(index), .generation = slot.generation},
+		      .body = slot.shape.owner,
 		      .volume = data->volume,
 		      .palette = &data->palette,
 		      .transform = body_transform * local_transform,
@@ -1837,6 +1839,86 @@ void Simulator::recordInterpolationAlpha(double alpha) {
 
 auto Simulator::interpolationAlpha() -> float {
 	return instance != nullptr ? instance->m_interpolation_alpha : 1.0f;
+}
+
+auto Simulator::renderPoseDelta(BodyID id) -> glm::mat4 {
+	if (instance == nullptr) {
+		return glm::mat4(1.0f);
+	}
+	const Body* body = instance->tryGetBody(id);
+	if (body == nullptr || body->type != BodyType::dynamic_body || not body->enabled || not body->awake) {
+		return glm::mat4(1.0f);
+	}
+
+	const float alpha = instance->m_interpolation_alpha;
+	const glm::quat blended_rotation = glm::normalize(glm::slerp(body->previous_rotation, body->rotation, alpha));
+	const glm::vec3 blended_position = glm::mix(body->previous_position, body->position, alpha);
+
+	// Blended pose times the inverse tick pose so it composes onto any transform built from the tick pose
+	const glm::quat delta_rotation = blended_rotation * glm::conjugate(body->rotation);
+	const glm::vec3 delta_position = blended_position - delta_rotation * body->position;
+	return glm::translate(glm::mat4(1.0f), delta_position) * glm::mat4_cast(delta_rotation);
+}
+
+auto Simulator::renderPoseDelta(const toast::VoxelNode& node) -> glm::mat4 {
+	return renderPoseDelta(node.bodyID());
+}
+
+auto Simulator::renderPoseDeltaFor(uint64_t node_uid) -> glm::mat4 {
+	if (instance == nullptr) {
+		return glm::mat4(1.0f);
+	}
+	const auto follows = instance->m_render_body_of_node.find(node_uid);
+	return follows != instance->m_render_body_of_node.end() ? renderPoseDelta(follows->second) : glm::mat4(1.0f);
+}
+
+void Simulator::syncRenderPoses() {
+	if (instance != nullptr) {
+		instance->rebuildRenderPoseLookup();
+	}
+}
+
+void Simulator::rebuildRenderPoseLookup() {
+	ZoneScopedN("physics::RebuildRenderPoseLookup");
+
+	m_render_body_of_node.clear();
+
+	std::vector<std::pair<const toast::Node*, BodyID>> drivers;
+	std::unordered_set<uint64_t> driver_uids;
+	const auto add_driver = [&](const toast::Node& node, BodyID id) {
+		const Body* body = tryGetBody(id);
+		if (body != nullptr && body->type == BodyType::dynamic_body) {
+			drivers.emplace_back(&node, id);
+			driver_uids.insert(node.uid().data());
+		}
+	};
+	for (const NodeBinding& binding : m_node_bindings) {
+		if (binding.node.exists()) {
+			add_driver(*binding.node, binding.body);
+		}
+	}
+	for (const VoxelNodeBinding& binding : m_voxel_bindings) {
+		if (binding.node.exists()) {
+			add_driver(*binding.node, binding.body);
+		}
+	}
+
+	// Parents sync before children and a nested driver keeps its own subtree
+	const auto follow = [&](this auto&& self, const toast::Node& parent, BodyID id) -> void {
+		for (const toast::Box<toast::Node>& child : parent.children()) {
+			if (not child.exists() || driver_uids.contains(child->uid().data())) {
+				continue;
+			}
+			if (const auto child_3d = child.as<toast::Node3D>(); child_3d.exists()) {
+				child_3d->syncTransform();
+			}
+			m_render_body_of_node.insert_or_assign(child->uid().data(), id);
+			self(*child, id);
+		}
+	};
+	for (const auto& [node, id] : drivers) {
+		follow(*node, id);
+	}
 }
 
 auto Simulator::velocityAtPoint(const Body& body, const glm::vec3& r) -> glm::vec3 {

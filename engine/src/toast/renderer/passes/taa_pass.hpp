@@ -22,7 +22,7 @@ class VulkanCore;
 class TaaPass : public IPostProcessPass {
 public:
 	/// Mirrors the editor RenderMode.MotionVectors index
-	static constexpr uint32_t k_render_mode_motion = 25;
+	static constexpr uint32_t k_render_mode_motion = 26;
 
 	TaaPass(const VulkanCore& core, vk::Format scene_format, vk::Extent2D extent);
 

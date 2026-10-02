@@ -49,6 +49,16 @@ public:
 	[[nodiscard]]
 	auto evalAtX(float x) const -> float;
 
+	/// evalAtX gives the value of the nearest end outside of this range
+	[[nodiscard]]
+	auto xRange() const noexcept -> glm::vec2 {
+		const size_t count = numPoints();
+		if (count == 0) {
+			return glm::vec2 {0.0f};
+		}
+		return {m_points.front(), m_points[(count - 1) * dimCount()]};
+	}
+
 	[[nodiscard]]
 	auto dimension() const noexcept -> CurveDimension {
 		return m_dim;
@@ -70,6 +80,9 @@ public:
 	}
 
 	void setPoints(std::vector<float> points);
+
+	/// Throws and keeps the old curve when the table is not a curve, nothing may sample it while this runs
+	void reload(const toml::table& tbl);
 
 private:
 	[[nodiscard]]

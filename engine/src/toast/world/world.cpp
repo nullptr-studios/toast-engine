@@ -109,6 +109,8 @@ void World::tick() {
 		physics::Simulator::callTick();
 	});
 	physics::Simulator::recordTickBurst(step_result.steps, step_result.time_budget_reached);
+	physics::Simulator::recordInterpolationAlpha(step_result.alpha);
+	physics::Simulator::syncRenderPoses();
 	// TODO Is this class really needed?
 	m_scheduler.runPhase(m_scheduler.schedule.post_physics, TickFunctionList::post_physics, "post_physics");
 

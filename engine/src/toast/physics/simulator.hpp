@@ -212,6 +212,19 @@ public:
 	[[nodiscard]]
 	static auto interpolationAlpha() -> float;
 
+	/// World transform from the tick pose to the blended pose drawn this frame and identity unless dynamic and awake
+	[[nodiscard]]
+	static auto renderPoseDelta(BodyID body) -> glm::mat4;
+	[[nodiscard]]
+	static auto renderPoseDelta(const toast::VoxelNode& node) -> glm::mat4;
+
+	/// Delta of the dynamic body a node sits below and identity when it follows none
+	[[nodiscard]]
+	static auto renderPoseDeltaFor(uint64_t node_uid) -> glm::mat4;
+
+	/// Once per frame after the ticks so nodes below driven bodies match the tick pose the delta starts from
+	static void syncRenderPoses();
+
 	[[nodiscard]]
 	static auto shapeWorldBounds(ShapeID shape) -> std::optional<AABB>;
 
@@ -435,6 +448,7 @@ private:
 	[[nodiscard]]
 	auto publishVoxelTransform(VoxelNodeBinding& binding) -> bool;
 	void publishVoxelRenderRecords();
+	void rebuildRenderPoseLookup();
 
 	static auto velocityAtPoint(const Body& body, const glm::vec3& r) -> glm::vec3;
 	static auto effectiveMassAlong(
@@ -540,6 +554,9 @@ private:
 	size_t m_connectivity_cursor = 0;
 
 	float m_interpolation_alpha = 0.0f;
+
+	/// Nearest dynamic body above each node uid rebuilt by syncRenderPoses
+	std::unordered_map<uint64_t, BodyID> m_render_body_of_node;
 
 	event::Listener m_listener;
 };

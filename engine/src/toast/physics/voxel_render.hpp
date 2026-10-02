@@ -18,6 +18,7 @@ namespace physics {
 
 struct VoxelRenderRecord {
 	ShapeID shape;
+	BodyID body;
 	const voxel::Volume* volume = nullptr;
 	const voxel::Palette* palette = nullptr;
 	glm::mat4 transform {1.0f};
