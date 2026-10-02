@@ -64,6 +64,7 @@ class ReflectionProbe;
 class IrradianceVolume;
 class PostProcessVolume;
 class INodeOwner;
+class Node;
 class Node3D;
 }
 
@@ -289,6 +290,9 @@ public:
 
 		glm::mat4 previous_model {1.0f};
 
+		/// False the first frame this node_uid is drawn so the shader reports motion as not written instead of zero
+		bool has_previous = false;
+
 		glm::vec3 bounds_center {0.0f};
 		float bounds_radius = 0.0f;
 
@@ -301,6 +305,7 @@ public:
 		bool visible = true;
 
 		uint64_t node_uid = 0;
+		uint32_t highlight_record = 0;
 	};
 
 	struct UIWorldPanelProxy {
@@ -481,6 +486,10 @@ public:
 	}
 
 	void submitFrame() noexcept;
+
+	/// Queues a debug line for the current render frame, or for the next one when
+	/// called from gameplay code before frame construction begins.
+	void queueDebugLine(glm::vec3 a, glm::vec3 b, glm::vec4 color);
 
 	void tick(float time) noexcept;
 
@@ -960,6 +969,25 @@ public:
 		cancelIrradianceBake();
 	}
 
+	/**
+	 * Tints the voxels of node that are solid in highlight
+	 * @note nullptr clears it
+	 */
+	void setVoxelHighlight(const toast::VoxelNode* node, const voxel::Volume* highlight) {
+		std::scoped_lock lock(m_voxel_proxy_mutex);
+		if (highlight == nullptr) {
+			m_voxel_highlights.erase(node);
+		} else {
+			m_voxel_highlights[node] = highlight;
+		}
+	}
+
+	void setSecondaryOwner(const toast::INodeOwner* owner, const glm::mat4& transform, const toast::Node* hidden) {
+		m_secondary_owner = owner;
+		m_secondary_transform = transform;
+		m_secondary_hidden = hidden;
+	}
+
 	[[nodiscard]]
 	auto renderingFrame() const -> const RenderFrame* {
 		return m_rendering_frame;
@@ -1212,11 +1240,24 @@ private:
 	TaaHistory m_taa_history;
 
 	std::atomic_bool m_debug_draw_enabled {false};
+	std::mutex m_debug_line_mutex;
+	std::vector<DebugVertex> m_pending_debug_line_vertices;
+	bool m_collecting_debug_lines = false;
+
+	void beginDebugLineCollection(RenderFrame& frame);
+	void endDebugLineCollection();
 
 	std::mutex m_pending_post_settings_mutex;
 	std::optional<PostProcessSettings> m_pending_post_settings;
 
 	const toast::INodeOwner* m_render_owner_filter = nullptr;
+	std::unordered_map<const toast::VoxelNode*, const voxel::Volume*> m_voxel_highlights;
+	const toast::INodeOwner* m_secondary_owner = nullptr;
+	glm::mat4 m_secondary_transform {1.0f};
+	const toast::Node* m_secondary_hidden = nullptr;
+
+	[[nodiscard]]
+	auto ownerTransform(const toast::Node& node) const -> const glm::mat4*;
 
 	event::Listener m_capture_listener;
 	std::atomic_bool m_capture_frame_requested {false};
@@ -1537,16 +1578,15 @@ void debugDrawShapeBox(const glm::mat4& transform, glm::vec4 color, bool fill);
 void debugDrawCapsule(const glm::mat4& transform, float radius, float height, glm::vec4 color, bool fill);
 
 /**
- * @brief Queues a debug line segmentfor the frame currently being built
- * @note Call between beginFrameBuild() and submitFrame()
+ * @brief Queues a debug line segment for rendering
+ * @note Calls made before frame construction (for example from gameplay ticks)
+ *       are carried into the next frame.
  */
 inline void debugDrawLine(glm::vec3 a, glm::vec3 b, glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f}) {
 	if (!VulkanRenderer::instance->debugDrawEnabled()) {
 		return;
 	}
-	auto& frame = VulkanRenderer::instance->beginFrameBuild();
-	frame.debug_line_vertices.push_back({a, color});
-	frame.debug_line_vertices.push_back({b, color});
+	VulkanRenderer::instance->queueDebugLine(a, b, color);
 }
 
 inline void debugDrawBox(glm::vec3 min, glm::vec3 max, glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f}) {

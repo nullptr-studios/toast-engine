@@ -737,10 +737,11 @@ static const uint kRenderModeVoxelTraversal = 21;
 static const uint kRenderModeVoxelBricks = 22;
 static const uint kRenderModeVoxelVolumes = 23;
 static const uint kRenderModeVoxelMaterials = 24;
+static const uint kRenderModeVoxelPaletteId = 25;
 
 bool isVoxelDebugMode(uint mode)
 {
-    return mode >= kRenderModeVoxelSteps && mode <= kRenderModeVoxelMaterials;
+    return mode >= kRenderModeVoxelSteps && mode <= kRenderModeVoxelPaletteId;
 }
 
 float4 evaluateDebugView(Surface surface, ClusterCell cluster)

@@ -1,3 +1,4 @@
+using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace editor.Components.Modals;
@@ -10,8 +11,14 @@ public partial class SaveFileViewModel : ObservableObject {
 	public SaveFileViewModel() { }
 
 	public SaveFileViewModel(string defaultName, string extension = ".tnode") {
-		Name = defaultName;
-		m_extension = extension;
+		var nameExtension = Path.GetExtension(defaultName);
+		if (!string.IsNullOrEmpty(nameExtension)) {
+			Name = defaultName[..^nameExtension.Length];
+			SetExtension(nameExtension);
+		} else {
+			Name = defaultName;
+			SetExtension(extension);
+		}
 	}
 
 	// updates as user types

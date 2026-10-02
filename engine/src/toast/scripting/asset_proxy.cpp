@@ -1,8 +1,17 @@
 #include "asset_proxy.hpp"
 
+#include "lua_types.hpp"
+#include "node_proxy.hpp"
+#include "script_context.hpp"
+
 #include <format>
+#include <glm/glm.hpp>
+#include <lua.hpp>
+#include <luabridge3/LuaBridge/LuaBridge.h>
 #include <toast/assets/assets.hpp>
+#include <toast/assets/data.hpp>
 #include <toast/log.hpp>
+#include <toast/world/node.hpp>
 
 namespace scripting {
 
@@ -87,6 +96,102 @@ auto AssetProxy::checkType(std::string_view field_type) const -> std::string {
 		return std::format("expected Asset<{}>, got Asset<{}>", expected, actual);
 	}
 	return {};
+}
+
+auto dataValueToLuaRef(lua_State* l, const assets::DataValue& value) -> luabridge::LuaRef {
+	using assets::DataType;
+
+	switch (value.type()) {
+		case DataType::null: return {l};
+		case DataType::bool_t: return {l, value.as<bool>()};
+		case DataType::int_t: return {l, static_cast<lua_Integer>(value.as<int64_t>())};
+		case DataType::float_t: return {l, static_cast<lua_Number>(value.as<double>())};
+		case DataType::string_t: return {l, value.as<std::string>()};
+		case DataType::vec2_t: return {l, value.as<glm::vec2>()};
+		case DataType::vec3_t: return {l, value.as<glm::vec3>()};
+		case DataType::color3_t: return {l, Color3(value.as<glm::vec3>())};
+		case DataType::color4_t: return {l, Color4(value.as<glm::vec4>())};
+
+		case DataType::asset_t: return {l, AssetProxy(value.as<toast::UID>())};
+
+		case DataType::node_t: {
+			auto owner = currentScriptNode();
+			if (!owner.exists()) {
+				return {l};
+			}
+			const auto uid = value.as<toast::UID>();
+			if (uid.data() == 0) {
+				return {l};
+			}
+			auto resolved = owner->find(uid);
+			if (!resolved.exists()) {
+				return {l};
+			}
+			return {l, NodeProxy(resolved)};
+		}
+
+		case DataType::array_t: {
+			lua_createtable(l, static_cast<int>(value.size()), 0);
+			for (size_t i = 0; i < value.size(); ++i) {
+				lua_pushinteger(l, static_cast<lua_Integer>(i + 1));
+				dataValueToLuaRef(l, value[i]).push(l);
+				lua_settable(l, -3);
+			}
+			return luabridge::LuaRef::fromStack(l);
+		}
+
+		case DataType::object_t: {
+			lua_createtable(l, 0, static_cast<int>(value.items().size()));
+			for (const auto& [key, field] : value.items()) {
+				lua_pushlstring(l, key.data(), key.size());
+				dataValueToLuaRef(l, field).push(l);
+				lua_settable(l, -3);
+			}
+			return luabridge::LuaRef::fromStack(l);
+		}
+	}
+
+	return {l};
+}
+
+namespace {
+
+auto dataFieldOrNil(const AssetProxy& proxy, const std::string& name, lua_State* l) -> luabridge::LuaRef {
+	if (proxy.type() != "data" || !proxy.hasValue()) {
+		return {l};
+	}
+	const auto& data = static_cast<const assets::Data&>(proxy.handle().get());
+	if (!data.root().isObject() || !data.root().contains(name)) {
+		return {l};
+	}
+	return dataValueToLuaRef(l, data.root()[name]);
+}
+
+}
+
+auto AssetProxy::get(const std::string& name, lua_State* l) const -> luabridge::LuaRef {
+	return dataFieldOrNil(*this, name, l);
+}
+
+auto assetProxyIndex(AssetProxy& proxy, const luabridge::LuaRef& key, lua_State* l) -> luabridge::LuaRef {
+	if (!key.isString()) {
+		return {l};
+	}
+	return dataFieldOrNil(proxy, key.tostring(), l);
+}
+
+auto assetProxyNewindex(AssetProxy& proxy, const luabridge::LuaRef& key, const luabridge::LuaRef& value, lua_State* l)
+    -> luabridge::LuaRef {
+	(void)value;
+	const std::string name = key.isString() ? key.tostring() : "?";
+	luaL_error(
+	    l,
+	    "Asset '%s' (%s) is read-only; field '%s' cannot be assigned from Lua",
+	    proxy.path().c_str(),
+	    proxy.type().c_str(),
+	    name.c_str()
+	);
+	return {l};
 }
 
 }

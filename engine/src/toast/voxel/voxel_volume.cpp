@@ -9,10 +9,10 @@ namespace voxel {
 
 namespace {
 
-static_assert(k_brick_dim == 8, "brickOf and localOf shift and mask by 3 and 7");
+static_assert(k_brick_dim == 8, "brickOfVoxel and localOf shift and mask by 3 and 7");
 
 [[nodiscard]]
-auto brickOf(glm::ivec3 voxel) noexcept -> glm::ivec3 {
+auto brickOfVoxel(glm::ivec3 voxel) noexcept -> glm::ivec3 {
 	return {voxel.x >> 3, voxel.y >> 3, voxel.z >> 3};
 }
 
@@ -89,6 +89,29 @@ auto Volume::instanceOf(const Volume& source) -> Volume {
 	return out;
 }
 
+auto Volume::adoptResized(Volume& source, glm::ivec3 brick_offset, glm::uvec3 brick_dims) -> Volume {
+	assert(source.m_pool != nullptr);
+	Volume out(*source.m_pool, brick_dims);
+
+	for (uint32_t index = 0; index < source.m_entries.size(); ++index) {
+		BrickEntry& entry = source.m_entries[index];
+		if (entry.tag() == BrickTag::empty) {
+			continue;
+		}
+
+		const glm::ivec3 target = source.brickAtIndex(index) + brick_offset;
+		if (!out.containsBrick(target)) {
+			continue;
+		}
+
+		out.m_entries[out.entryIndex(target)] = entry;
+		if (entry.tag() == BrickTag::owned) {
+			entry = BrickEntry::make(BrickTag::shared, entry.payload());
+		}
+	}
+	return out;
+}
+
 void Volume::releaseOwned() {
 	if (m_pool == nullptr) {
 		return;
@@ -107,7 +130,7 @@ auto Volume::containsBrick(glm::ivec3 brick) const noexcept -> bool {
 }
 
 auto Volume::containsVoxel(glm::ivec3 voxel) const noexcept -> bool {
-	return containsBrick(brickOf(voxel));
+	return containsBrick(brickOfVoxel(voxel));
 }
 
 auto Volume::entryIndex(glm::ivec3 brick) const noexcept -> uint32_t {
@@ -128,7 +151,7 @@ auto Volume::materialAt(glm::ivec3 voxel) const noexcept -> uint8_t {
 		return k_empty_palette_index;
 	}
 
-	const BrickEntry entry = m_entries[entryIndex(brickOf(voxel))];
+	const BrickEntry entry = m_entries[entryIndex(brickOfVoxel(voxel))];
 	switch (entry.tag()) {
 		case BrickTag::empty: return k_empty_palette_index;
 		case BrickTag::uniform: return static_cast<uint8_t>(entry.payload());
@@ -209,7 +232,7 @@ auto Volume::setVoxel(glm::ivec3 voxel, uint8_t material) -> VoxelWrite {
 		return result;
 	}
 
-	const uint32_t index = entryIndex(brickOf(voxel));
+	const uint32_t index = entryIndex(brickOfVoxel(voxel));
 	const bool was_occupied = m_entries[index].tag() != BrickTag::empty;
 
 	const uint32_t id = makeWritable(index);
@@ -223,7 +246,7 @@ auto Volume::setVoxel(glm::ivec3 voxel, uint8_t material) -> VoxelWrite {
 
 	result.changed = true;
 	++m_revision;
-	markDirty(brickOf(voxel));
+	markDirty(brickOfVoxel(voxel));
 
 	if (material != k_empty_palette_index) {
 		result.brick_became_occupied = !was_occupied;
@@ -319,6 +342,143 @@ auto Volume::setBrickMaterial(glm::ivec3 brick, std::span<const uint8_t, k_brick
 	++m_revision;
 	markDirty(brick);
 	return true;
+}
+
+auto Volume::takeBrick(glm::ivec3 brick) -> BrickEntry {
+	if (!containsBrick(brick)) {
+		return BrickEntry {};
+	}
+
+	const uint32_t index = entryIndex(brick);
+	const BrickEntry entry = m_entries[index];
+	if (entry.tag() == BrickTag::empty) {
+		return entry;
+	}
+
+	m_entries[index] = BrickEntry {};
+	++m_revision;
+	markDirty(brick);
+	return entry;
+}
+
+void Volume::adoptBrick(glm::ivec3 brick, BrickEntry entry) {
+	if (!containsBrick(brick)) {
+		return;
+	}
+
+	const uint32_t index = entryIndex(brick);
+	assert(m_entries[index].tag() == BrickTag::empty);
+	if (m_entries[index].tag() == BrickTag::owned) {
+		m_pool->free(m_entries[index].payload());
+	}
+
+	m_entries[index] = entry;
+	++m_revision;
+	markDirty(brick);
+}
+
+auto Volume::clearVoxels(glm::ivec3 brick, const BrickOccupancy& mask) -> bool {
+	const BrickOccupancy* occupancy = occupancyPointer(brick);
+	if (occupancy == nullptr) {
+		return true;
+	}
+
+	const BrickOccupancy affected = mask & *occupancy;
+	if (isEmpty(affected)) {
+		return true;
+	}
+
+	const uint32_t index = entryIndex(brick);
+	if (affected == *occupancy) {
+		if (m_entries[index].tag() == BrickTag::owned) {
+			m_pool->free(m_entries[index].payload());
+		}
+		m_entries[index] = BrickEntry {};
+		++m_revision;
+		markDirty(brick);
+		return true;
+	}
+
+	const uint32_t id = makeWritable(index);
+	if (id == k_invalid_brick) {
+		return false;
+	}
+
+	std::span<uint8_t, k_brick_material_bytes> bytes = m_pool->material(id);
+	BrickOccupancy& stored = m_pool->occupancy(id);
+	for (uint32_t z = 0; z < k_brick_dim; ++z) {
+		uint64_t word = affected[z];
+		stored[z] &= ~word;
+		while (word != 0ull) {
+			bytes[(z * k_brick_dim * k_brick_dim) + static_cast<uint32_t>(std::countr_zero(word))] = k_empty_palette_index;
+			word &= word - 1ull;
+		}
+	}
+
+	++m_revision;
+	markDirty(brick);
+	return true;
+}
+
+auto Volume::copyBrickFrom(glm::ivec3 brick, const Volume& source, glm::ivec3 source_brick) -> bool {
+	if (!containsBrick(brick)) {
+		return false;
+	}
+	const BrickEntry from = source.entryAt(source_brick);
+	if (from.tag() == BrickTag::empty || from.tag() == BrickTag::uniform) {
+		const uint32_t before = m_revision;
+		setBrickUniform(brick, from.tag() == BrickTag::empty ? k_empty_palette_index : static_cast<uint8_t>(from.payload()));
+		return m_revision != before;
+	}
+
+	const uint32_t index = entryIndex(brick);
+	const std::span<const uint8_t, k_brick_material_bytes> bytes = std::as_const(*source.m_pool).material(from.payload());
+	const BrickEntry current = m_entries[index];
+	if (current.isPooled() && std::ranges::equal(bytes, std::as_const(*m_pool).material(current.payload()))) {
+		return false;
+	}
+
+	const uint32_t id = makeWritable(index);
+	if (id == k_invalid_brick) {
+		return false;
+	}
+	std::ranges::copy(bytes, m_pool->material(id).begin());
+	m_pool->occupancy(id) = std::as_const(*source.m_pool).occupancy(from.payload());
+	++m_revision;
+	markDirty(brick);
+	return true;
+}
+
+auto Volume::beginBrickWrite(glm::ivec3 brick) -> std::optional<WritableBrick> {
+	if (!containsBrick(brick)) {
+		return std::nullopt;
+	}
+	const uint32_t id = makeWritable(entryIndex(brick));
+	if (id == k_invalid_brick) {
+		return std::nullopt;
+	}
+	return WritableBrick {.material = m_pool->material(id), .occupancy = &m_pool->occupancy(id)};
+}
+
+void Volume::finishBrickWrite(glm::ivec3 brick, bool changed) {
+	if (!containsBrick(brick)) {
+		return;
+	}
+	const uint32_t index = entryIndex(brick);
+	const BrickEntry entry = m_entries[index];
+	if (entry.tag() != BrickTag::owned) {
+		return;
+	}
+	if (isEmpty(m_pool->occupancy(entry.payload()))) {
+		m_pool->free(entry.payload());
+		m_entries[index] = BrickEntry {};
+	} else if (changed) {
+		tryCollapseUniform(brick);
+	}
+	if (changed) {
+		++m_revision;
+		markDirty(brick);
+	}
 }
 
 void Volume::markDirty(glm::ivec3 brick) {

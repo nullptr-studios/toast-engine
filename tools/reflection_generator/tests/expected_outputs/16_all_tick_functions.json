@@ -3,11 +3,12 @@
     "attributes": {},
     "fields": [],
     "functions": [
-      "preInit",
+      "editorTick",
       "init",
       "begin",
       "earlyTick",
       "tick",
+      "physicsTick",
       "postPhysics",
       "lateTick",
       "end",
@@ -36,8 +37,9 @@
       "load": true,
       "on_disable": true,
       "on_enable": true,
+      "editor_tick": true,
+      "physics_tick": true,
       "post_physics": true,
-      "pre_init": true,
       "save": true,
       "tick": true
     }

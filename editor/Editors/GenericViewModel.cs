@@ -132,7 +132,8 @@ public partial class GenericViewModel : Tool, IAutosavable {
 	}
 
 	async partial void OnSchemaUidChanged(string value) {
-		if (SchemaLocked) return;
+		// OpenFile builds the fields itself so reacting here would add them twice
+		if (SchemaLocked || m_loading) return;
 		OnPropertyChanged(nameof(CanAddFields));
 
 		if (string.IsNullOrEmpty(value)) {
@@ -185,8 +186,8 @@ public partial class GenericViewModel : Tool, IAutosavable {
 		if (!File.Exists(schemaRealPath)) return;
 
 		SchemaLabel = Path.GetFileNameWithoutExtension(schemaVirtualPath);
-		var (descriptors, definitions) = ParseSchema(File.ReadAllText(schemaRealPath));
-		LoadSchemaGuided(new TomlTable(), descriptors, definitions);
+		var (descriptors, definitions, rootDiscriminator) = ParseSchema(File.ReadAllText(schemaRealPath));
+		LoadSchemaGuided(new TomlTable(), descriptors, definitions, rootDiscriminator);
 		m_prevSchemaUid = value;
 	}
 
@@ -226,8 +227,8 @@ public partial class GenericViewModel : Tool, IAutosavable {
 					var schemaPath = ProjectContext.Resolve(definition.SchemaPath);
 					SchemaLabel = Path.GetFileNameWithoutExtension(definition.SchemaPath);
 					if (File.Exists(schemaPath)) {
-						var (descriptors, definitions) = ParseSchema(File.ReadAllText(schemaPath));
-						LoadSchemaGuided(table!, descriptors, definitions);
+						var (descriptors, definitions, rootDiscriminator) = ParseSchema(File.ReadAllText(schemaPath));
+						LoadSchemaGuided(table!, descriptors, definitions, rootDiscriminator);
 					} else {
 						LoadFreeForm(table!);
 					}
@@ -237,8 +238,8 @@ public partial class GenericViewModel : Tool, IAutosavable {
 						var sRealPath = ProjectContext.Resolve(sVirtPath);
 						SchemaLabel = Path.GetFileNameWithoutExtension(sVirtPath);
 						if (File.Exists(sRealPath)) {
-							var (descriptors, definitions) = ParseSchema(File.ReadAllText(sRealPath));
-							LoadSchemaGuided(table!, descriptors, definitions);
+							var (descriptors, definitions, rootDiscriminator) = ParseSchema(File.ReadAllText(sRealPath));
+							LoadSchemaGuided(table!, descriptors, definitions, rootDiscriminator);
 						} else {
 							LoadFreeForm(table!);
 						}
@@ -266,7 +267,7 @@ public partial class GenericViewModel : Tool, IAutosavable {
 
 	private void LoadSchemaGuided(
 		TomlTable table, List<SchemaFieldDescriptor> descriptors,
-		Dictionary<string, StructDef> definitions) {
+		Dictionary<string, StructDef> definitions, string rootDiscriminator = "") {
 		var ctx = new LoadContext(definitions);
 		foreach (var desc in descriptors) {
 			object? tomlVal = table.TryGetValue(desc.Name, out var v) ? v : null;
@@ -274,6 +275,7 @@ public partial class GenericViewModel : Tool, IAutosavable {
 		}
 
 		WireTypeSwitches(ctx);
+		WireVariantVisibility(Fields, rootDiscriminator);
 	}
 
 	private GenericFieldVM BuildField(SchemaFieldDescriptor desc, object? tomlVal, LoadContext ctx) {
@@ -360,18 +362,19 @@ public partial class GenericViewModel : Tool, IAutosavable {
 			parent.Children.Add(child);
 		}
 
-		WireVariantVisibility(parent, structDef.Discriminator);
+		WireVariantVisibility(parent.Children, structDef.Discriminator);
 	}
 
 	/// Shows only the fields whose Variants list contains the discriminator's
 	/// current value
-	private static void WireVariantVisibility(GenericFieldVM parent, string discriminator) {
+	private static void WireVariantVisibility(IEnumerable<GenericFieldVM> siblings, string discriminator) {
 		if (string.IsNullOrEmpty(discriminator)) return;
-		var disc = parent.Children.FirstOrDefault(c => c.Name == discriminator);
+		var fields = siblings as IReadOnlyList<GenericFieldVM> ?? siblings.ToList();
+		var disc = fields.FirstOrDefault(c => c.Name == discriminator);
 		if (disc is null) return;
 
 		void Apply() {
-			foreach (var sibling in parent.Children) {
+			foreach (var sibling in fields) {
 				if (ReferenceEquals(sibling, disc)) continue;
 				sibling.VariantVisible = sibling.Variants.Count == 0 || sibling.Variants.Contains(disc.StringVal);
 			}
@@ -483,13 +486,13 @@ public partial class GenericViewModel : Tool, IAutosavable {
 
 		// Serialize current values, then reload with updated schema
 		var table = new TomlTable();
-		foreach (var field in Fields) table[field.Name] = field.ToTomlValue();
+		foreach (var field in Fields.Where(f => f.VariantVisible)) table[field.Name] = field.ToTomlValue();
 
 		int prevCount = Fields.Count;
 		m_loading = true;
 		Fields.Clear();
-		var (descriptors, definitions) = ParseSchema(File.ReadAllText(schemaRealPath));
-		LoadSchemaGuided(table, descriptors, definitions);
+		var (descriptors, definitions, rootDiscriminator) = ParseSchema(File.ReadAllText(schemaRealPath));
+		LoadSchemaGuided(table, descriptors, definitions, rootDiscriminator);
 		m_loading = false;
 		if (Fields.Count != prevCount) IsDirty = true;
 	}
@@ -506,8 +509,8 @@ public partial class GenericViewModel : Tool, IAutosavable {
 			SchemaLabel = "(shader reflection)";
 		}
 
-		var (descriptors, definitions) = ParseSchema(schemaJson);
-		LoadSchemaGuided(table, descriptors, definitions);
+		var (descriptors, definitions, rootDiscriminator) = ParseSchema(schemaJson);
+		LoadSchemaGuided(table, descriptors, definitions, rootDiscriminator);
 		WireDynamicRebuild();
 	}
 
@@ -548,7 +551,7 @@ public partial class GenericViewModel : Tool, IAutosavable {
 
 		// Preserve current values across the rebuild
 		var table = new TomlTable();
-		foreach (var field in Fields) table[field.Name] = field.ToTomlValue();
+		foreach (var field in Fields.Where(f => f.VariantVisible)) table[field.Name] = field.ToTomlValue();
 
 		m_loading = true;
 		Fields.Clear();
@@ -565,7 +568,7 @@ public partial class GenericViewModel : Tool, IAutosavable {
 
 		var parent = MaterialSchemaGenerator.LoadMaterialTable(parentUid);
 		foreach (var field in Fields) {
-			if (field.Name == "material") continue;
+			if (field.Name == "material" || !field.VariantVisible) continue;
 			var value = field.ToTomlValue();
 			object? parentValue = parent != null && parent.TryGetValue(field.Name, out var pv) ? pv : null;
 
@@ -682,19 +685,22 @@ public partial class GenericViewModel : Tool, IAutosavable {
 			}
 		}
 
-		foreach (var field in Fields)
+		foreach (var field in Fields) {
+			if (!field.VariantVisible) continue;
 			table[field.Name] = field.ToTomlValue();
+		}
 
 		return TomlSerializer.Serialize(table);
 	}
 
-	private static (List<SchemaFieldDescriptor> Fields, Dictionary<string, StructDef> Defs)
+	private static (List<SchemaFieldDescriptor> Fields, Dictionary<string, StructDef> Defs, string RootDiscriminator)
 		ParseSchema(string jsonText) {
 		var fields = new List<SchemaFieldDescriptor>();
 		var defs = new Dictionary<string, StructDef>();
+		var rootDiscriminator = "";
 		try {
 			var root = JsonNode.Parse(jsonText)?.AsObject();
-			if (root is null) return (fields, defs);
+			if (root is null) return (fields, defs, rootDiscriminator);
 
 			if (root["definitions"] is JsonObject defsNode)
 				foreach (var (typeName, typeNode) in defsNode)
@@ -703,11 +709,13 @@ public partial class GenericViewModel : Tool, IAutosavable {
 							typeNode["x-toast-discriminator"]?.GetValue<string>() ?? "",
 							ParseProperties(defProps));
 
+			rootDiscriminator = root["x-toast-discriminator"]?.GetValue<string>() ?? "";
+
 			if (root["properties"] is JsonObject props)
 				fields = ParseProperties(props);
 		} catch { }
 
-		return (fields, defs);
+		return (fields, defs, rootDiscriminator);
 	}
 
 	private static List<SchemaFieldDescriptor> ParseProperties(JsonObject props) {

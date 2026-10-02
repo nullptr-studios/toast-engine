@@ -57,6 +57,8 @@ public:
 	[[nodiscard]]
 	auto query(const AABB& bounds, ShapeID ignored_shape = {}) const -> std::vector<ShapeID>;
 	[[nodiscard]]
+	auto query(glm::vec3 pos, glm::vec3 inv_dir, ShapeID ignored_shape = {}) const -> std::vector<ShapeID>;
+	[[nodiscard]]
 	auto debugNodes() const -> std::vector<AABBTreeDebugNode>;
 	[[nodiscard]]
 	auto size() const -> size_t;

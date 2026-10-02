@@ -51,6 +51,38 @@ struct MassMoments {
 		assert(mass >= 0);
 	}
 
+	constexpr auto operator-=(const MassMoments& other) noexcept -> MassMoments& {
+		mass -= other.mass;
+		m_x -= other.m_x;
+		m_y -= other.m_y;
+		m_z -= other.m_z;
+		m_xx -= other.m_xx;
+		m_yy -= other.m_yy;
+		m_zz -= other.m_zz;
+		m_xy -= other.m_xy;
+		m_xz -= other.m_xz;
+		m_yz -= other.m_yz;
+		assert(mass >= 0);
+		return *this;
+	}
+
+	[[nodiscard]]
+	constexpr auto scaled(int64_t factor) const noexcept -> MassMoments {
+		MassMoments out;
+		out.mass = mass * factor;
+		out.m_x = m_x * factor;
+		out.m_y = m_y * factor;
+		out.m_z = m_z * factor;
+		out.m_xx = m_xx * factor;
+		out.m_yy = m_yy * factor;
+		out.m_zz = m_zz * factor;
+		out.m_xy = m_xy * factor;
+		out.m_xz = m_xz * factor;
+		out.m_yz = m_yz * factor;
+		out.checkHeadroom();
+		return out;
+	}
+
 	constexpr auto operator+=(const MassMoments& other) noexcept -> MassMoments& {
 		mass += other.mass;
 		m_x += other.m_x;

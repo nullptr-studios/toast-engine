@@ -39,6 +39,10 @@ public:
 	[[nodiscard]]
 	auto shatterRadius() const noexcept -> float;
 
+	/// @brief False means voxels of this material never break, whatever hits them
+	[[nodiscard]]
+	auto destructible() const noexcept -> bool;
+
 	[[nodiscard]]
 	auto flammable() const noexcept -> bool;
 
@@ -50,6 +54,7 @@ private:
 	float m_toughness = 1000.0f;
 	float m_structural_strength = 1000.0f;
 	float m_shatter_radius = 0.5f;
+	bool m_destructible = true;
 	bool m_flammable = false;
 	float m_burn_rate = 0.0f;
 };

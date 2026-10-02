@@ -14,6 +14,10 @@ ThreadPool::ThreadPool() {
 	TOAST_INFO("ThreadPool", "Created thread pool with {0} workers", target_thread_num);
 }
 
+void ThreadPool::pushRaw(std::move_only_function<void()>&& job) {
+	enqueue(std::move(job));
+}
+
 void ThreadPool::enqueue(std::move_only_function<void()>&& job) {
 	auto& o = get();
 

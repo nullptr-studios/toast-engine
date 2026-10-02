@@ -1,16 +1,19 @@
 #include "script_runtime.hpp"
 
 #include "asset_proxy.hpp"
+#include "lua_event.hpp"
 #include "lua_signal.hpp"
 #include "lua_state.hpp"
 #include "lua_types.hpp"
 #include "lua_util.hpp"
 #include "node_proxy.hpp"
+#include "script_context.hpp"
 
 #include <algorithm>
 #include <array>
 #include <atomic>
 #include <cctype>
+#include <charconv>
 #include <format>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
@@ -53,7 +56,7 @@ auto phaseToLuaName(toast::TickFunctionList phase) noexcept -> const char* {
 	switch (phase) {
 		case F::load: return "load";
 		case F::save: return "save";
-		case F::pre_init: return "pre_init";
+		case F::editor_tick: return "editorTick";
 		case F::init: return "init";
 		case F::destroy: return "destroy";
 		case F::begin: return "begin";
@@ -62,6 +65,7 @@ auto phaseToLuaName(toast::TickFunctionList phase) noexcept -> const char* {
 		case F::on_disable: return "onDisable";
 		case F::early_tick: return "earlyTick";
 		case F::tick: return "tick";
+		case F::physics_tick: return "physicsTick";
 		case F::post_physics: return "postPhysics";
 		case F::late_tick: return "lateTick";
 		default: return nullptr;
@@ -147,6 +151,101 @@ auto declPos(std::string_view src, std::string_view key, size_t from) -> size_t 
 		pos += key.size();
 	}
 	return std::string_view::npos;
+}
+
+auto trim(std::string_view text) -> std::string_view {
+	while (!text.empty() && std::isspace(static_cast<unsigned char>(text.front())) != 0) {
+		text.remove_prefix(1);
+	}
+	while (!text.empty() && std::isspace(static_cast<unsigned char>(text.back())) != 0) {
+		text.remove_suffix(1);
+	}
+	return text;
+}
+
+auto annotationString(std::string_view value) -> std::string {
+	value = trim(value);
+	if (value.size() >= 2 && ((value.front() == '"' && value.back() == '"') || (value.front() == '\'' && value.back() == '\''))) {
+		value.remove_prefix(1);
+		value.remove_suffix(1);
+	}
+	return std::string(value);
+}
+
+auto parseNumber(std::string_view& text, double& value) -> bool {
+	text = trim(text);
+	if (text.empty()) {
+		return false;
+	}
+	const char* begin = text.data();
+	const char* end = begin + text.size();
+	auto [next, error] = std::from_chars(begin, end, value);
+	if (error != std::errc {} || next == begin) {
+		return false;
+	}
+	text.remove_prefix(static_cast<size_t>(next - begin));
+	return true;
+}
+
+void applyFieldAnnotations(LuaVarDesc& desc, std::string_view src, size_t declaration_pos, std::string_view script_name) {
+	if (declaration_pos == std::string_view::npos) {
+		return;
+	}
+
+	const size_t declaration_line = src.rfind('\n', declaration_pos);
+	size_t line_start = declaration_line == std::string_view::npos ? 0 : declaration_line + 1;
+	std::vector<std::string_view> annotations;
+	while (line_start > 0) {
+		const size_t line_end = line_start - 1;
+		const size_t previous_newline = line_end == 0 ? std::string_view::npos : src.rfind('\n', line_end - 1);
+		const size_t previous_start = previous_newline == std::string_view::npos ? 0 : previous_newline + 1;
+		const std::string_view line = trim(src.substr(previous_start, line_end - previous_start));
+
+		if (line.empty()) {
+			line_start = previous_start;
+			continue;
+		}
+		if (!line.starts_with("---@")) {
+			break;
+		}
+		annotations.push_back(line.substr(4));
+		line_start = previous_start;
+	}
+	std::ranges::reverse(annotations);
+
+	for (std::string_view annotation : annotations) {
+		annotation = trim(annotation);
+		const size_t separator = annotation.find_first_of(" \t");
+		const std::string_view tag = annotation.substr(0, separator);
+		const std::string_view arguments =
+		    separator == std::string_view::npos ? std::string_view {} : trim(annotation.substr(separator));
+
+		if (tag == "name") {
+			desc.display_name = annotationString(arguments);
+			if (desc.display_name.empty()) {
+				TOAST_WARN("Lua", "{}: @name on '{}' needs a display name; ignoring", script_name, desc.path);
+			}
+		} else if (tag == "readonly") {
+			desc.read_only = true;
+		} else if (tag == "hidden") {
+			desc.hidden = true;
+		} else if (tag == "unit") {
+			desc.unit = annotationString(arguments);
+			if (desc.unit.empty()) {
+				TOAST_WARN("Lua", "{}: @unit on '{}' needs a unit; ignoring", script_name, desc.path);
+			}
+		} else if (tag == "range") {
+			std::string_view rest = arguments;
+			double min = 0.0;
+			double max = 0.0;
+			if (!parseNumber(rest, min) || !parseNumber(rest, max) || !trim(rest).empty() || min > max) {
+				TOAST_WARN("Lua", "{}: invalid @range on '{}'; expected two numbers with min <= max", script_name, desc.path);
+				continue;
+			}
+			desc.min = min;
+			desc.max = max;
+		}
+	}
 }
 
 template<typename T>
@@ -259,7 +358,7 @@ void ScriptInstance::snapshotTickMask() noexcept {
 	constexpr std::array all_phases = {
 	  F::load,
 	  F::save,
-	  F::pre_init,
+	  F::editor_tick,
 	  F::init,
 	  F::destroy,
 	  F::begin,
@@ -268,6 +367,7 @@ void ScriptInstance::snapshotTickMask() noexcept {
 	  F::on_disable,
 	  F::early_tick,
 	  F::tick,
+	  F::physics_tick,
 	  F::post_physics,
 	  F::late_tick,
 	};
@@ -405,6 +505,24 @@ void ScriptInstance::extractSchema(std::string_view src) noexcept {
 			sortByDeclaration(sub.fields, src, sub_pos == std::string_view::npos ? from : sub_pos);
 		}
 	}
+
+	for (LuaVarDesc& field : m_schema.fields) {
+		applyFieldAnnotations(field, src, declPos(src, field.name, 0), m_name);
+	}
+	for (LuaGroup& group : m_schema.groups) {
+		const size_t group_pos = declPos(src, group.name, 0);
+		const size_t group_from = group_pos == std::string_view::npos ? 0 : group_pos;
+		for (LuaVarDesc& field : group.fields) {
+			applyFieldAnnotations(field, src, declPos(src, field.name, group_from), m_name);
+		}
+		for (LuaSubgroup& subgroup : group.subgroups) {
+			const size_t subgroup_pos = declPos(src, subgroup.name, group_from);
+			const size_t subgroup_from = subgroup_pos == std::string_view::npos ? group_from : subgroup_pos;
+			for (LuaVarDesc& field : subgroup.fields) {
+				applyFieldAnnotations(field, src, declPos(src, field.name, subgroup_from), m_name);
+			}
+		}
+	}
 }
 
 void ScriptInstance::installMetatable() noexcept {
@@ -439,6 +557,7 @@ void ScriptInstance::call(std::string_view fn_name) noexcept {
 	if (!m_self || m_self->isNil()) {
 		return;
 	}
+	ScriptNodeContextScope script_node_ctx(m_proxy.box());
 	lua_State* l = m_state;
 	// instance table, so rawget finds them
 	m_self->push(l);
@@ -466,6 +585,7 @@ void ScriptInstance::callWithLuaStack(std::string_view name, lua_State* l, int a
 	if (!m_self || m_self->isNil()) {
 		return;
 	}
+	ScriptNodeContextScope script_node_ctx(m_proxy.box());
 	// Only calls functions defined in the Lua table
 	m_self->push(l);
 	lua_pushlstring(l, name.data(), name.size());
@@ -490,10 +610,36 @@ void ScriptInstance::callWithLuaStack(std::string_view name, lua_State* l, int a
 	}
 }
 
+auto ScriptInstance::callEventMethod(std::string_view name, lua_State* l, int event_index) noexcept -> bool {
+	if (!m_self || m_self->isNil()) {
+		return false;
+	}
+	ScriptNodeContextScope script_node_ctx(m_proxy.box());
+	m_self->push(l);
+	lua_pushlstring(l, name.data(), name.size());
+	lua_rawget(l, -2);
+	lua_remove(l, -2);
+	if (!lua_isfunction(l, -1)) {
+		lua_pop(l, 1);
+		return false;
+	}
+	m_self->push(l);
+	lua_pushvalue(l, event_index);
+	if (pcallTraceback(l, 2, 1) != LUA_OK) {
+		TOAST_ERROR("Lua", "Error in event method '{}': {}", name, lua_tostring(l, -1));
+		lua_pop(l, 1);
+		return false;
+	}
+	const bool consumed = lua_isboolean(l, -1) && lua_toboolean(l, -1) != 0;
+	lua_pop(l, 1);
+	return consumed;
+}
+
 void ScriptInstance::callWithAnyArgs(std::string_view name, std::span<const std::any> args) noexcept {
 	if (!m_self || m_self->isNil()) {
 		return;
 	}
+	ScriptNodeContextScope script_node_ctx(m_proxy.box());
 	lua_State* l = m_state;
 
 	// recursion guard
@@ -701,6 +847,14 @@ ScriptRuntime::ScriptRuntime(toast::Box<toast::Node> node, const std::vector<ass
 	}
 }
 
+ScriptRuntime::~ScriptRuntime() {
+	LuaState::Lock guard;
+	if (m_lua && LuaState::exists()) {
+		guard = LuaState::get().lock(m_state_index);
+	}
+	clearLuaEventSubscriptions(this);
+}
+
 auto ScriptRuntime::instanceSchema(size_t index) const noexcept -> const ScriptSchema* {
 	if (index >= m_instances.size() || !m_instances[index] || !m_instances[index]->isValid()) {
 		return nullptr;
@@ -838,6 +992,22 @@ void ScriptRuntime::callWithLuaStack(std::string_view name, lua_State* l, int ar
 			inst->callWithLuaStack(name, l, args_base, n_args);
 		}
 	}
+}
+
+auto ScriptRuntime::callEventMethod(std::string_view name, lua_State* l, int event_index) noexcept -> bool {
+	if (m_instances.empty() || l != m_lua) {
+		return false;
+	}
+	LuaState::Lock guard = LuaState::get().lock(m_state_index);
+	if (!guard) {
+		return false;
+	}
+	for (auto& instance : m_instances) {
+		if (instance && instance->isValid() && instance->callEventMethod(name, l, event_index)) {
+			return true;
+		}
+	}
+	return false;
 }
 
 void ScriptRuntime::callWithAnyArgs(std::string_view name, std::span<const std::any> args) noexcept {

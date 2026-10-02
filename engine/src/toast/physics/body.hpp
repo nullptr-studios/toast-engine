@@ -58,6 +58,10 @@ struct Body {
 	bool allow_sleep = true;
 	bool sleep_locked = false;
 	float sleep_timer = 0.0f;
+	float asleep_seconds = 0.0f;
+	/// Pose the still window opened at
+	glm::vec3 sleep_anchor_center = {};
+	glm::quat sleep_anchor_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 	glm::vec3 position = {};
 	glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 	glm::vec3 previous_position = {};
@@ -69,6 +73,8 @@ struct Body {
 	glm::mat3 inverse_inertia_local = {0.0f};
 	glm::mat3 inverse_inertia_world = {0.0f};
 	glm::vec3 local_center_of_mass = {};
+	/// Distance from the center of mass to the farthest point of the shape
+	float extent_radius = 0.0f;
 	glm::bvec3 lock_position = glm::bvec3(false);
 	glm::bvec3 lock_rotation = glm::bvec3(false);
 

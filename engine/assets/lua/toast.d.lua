@@ -9,6 +9,11 @@ function print(...) end
 ---@param ... any
 function warn(...) end
 
+
+--- Defers execution of callback to end of the frame
+---@param fn fun()
+function defer(fn) end
+
 ---@class toastlib
 toast = {}
 
@@ -159,3 +164,5 @@ AudioPort = nil
 AudioSnapshot = nil
 ---@type TypeMarker
 AudioVca = nil
+---@type TypeMarker
+VoxelModel = nil

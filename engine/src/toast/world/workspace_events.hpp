@@ -6,10 +6,13 @@
 
 #pragma once
 #include <cstdint>
+#include <glm/glm.hpp>
+#include <string>
 #include <toast/events/event.hpp>
 #include <toast/uid.hpp>
 #include <toast/world/node.hpp>
 #include <utility>
+#include <vector>
 
 namespace event {
 
@@ -20,6 +23,7 @@ struct UpdateHierarchyData : Event<UpdateHierarchyData> {
 		std::string type;
 		bool enabled;
 		bool is_prefab;
+		toast::UID prefab_uid;
 		std::vector<HierarchyElement> children;
 
 		HierarchyElement(const toast::Box<toast::Node>& node);
@@ -154,6 +158,140 @@ struct NodeChangeType : Event<NodeChangeType> {
 struct WorkspacePromoteNode : Event<WorkspacePromoteNode> {
 	toast::UID target;
 	std::string path;
+};
+
+struct WorkspaceConvertToProceduralVoxel : Event<WorkspaceConvertToProceduralVoxel> {
+	toast::UID target;
+	std::string path;
+};
+
+struct ProceduralVoxelPromoted : Event<ProceduralVoxelPromoted> {
+	uint64_t workspace_handle = 0;
+	toast::UID prefab_uid;
+	bool success = false;
+	std::string error;
+};
+
+struct VoxelPieceLayoutData {
+	toast::UID uid;
+	std::string name;
+	uint32_t kind = 0;
+	glm::ivec3 min {0};
+	glm::ivec3 max {0};
+	glm::vec3 color {0.0f};
+	std::vector<glm::vec4> planes;
+	bool resizable = false;
+	uint32_t color_id = 0;
+};
+
+struct VoxelProjectionData {
+	int32_t min_h = 0;
+	int32_t min_v = 0;
+	uint32_t width = 0;
+	uint32_t height = 0;
+	std::vector<uint8_t> colors;     ///< rgba, alpha 0 is empty
+	std::vector<int16_t> depths;
+	std::vector<uint8_t> edges_h;    ///< rgba, (width + 1) x height, alpha 0 is no line
+	std::vector<uint8_t> edges_v;    ///< rgba, width x (height + 1)
+};
+
+struct ProceduralVoxelLayout : Event<ProceduralVoxelLayout> {
+	toast::UID root_uid;
+	std::vector<VoxelPieceLayoutData> pieces;
+	toast::UID palette_uid;
+	std::vector<VoxelProjectionData> projections;    ///< front, side, top
+};
+
+struct VoxelSetPieceBounds : Event<VoxelSetPieceBounds> {
+	toast::UID target;
+	glm::ivec3 min {0};
+	glm::ivec3 max {0};
+};
+
+struct VoxelCreatePiece : Event<VoxelCreatePiece> {
+	toast::UID parent;
+	std::string type;
+	toast::UID source;
+	glm::ivec3 min {0};
+	glm::ivec3 max {0};
+	toast::UID script;
+	uint32_t mode = 0;
+};
+
+struct VoxelExtrude : Event<VoxelExtrude> {
+	toast::UID source;
+	glm::ivec3 min {0};
+	glm::ivec3 max {0};
+	bool inward = false;
+};
+
+struct VoxelSplitPieces : Event<VoxelSplitPieces> {
+	std::vector<toast::UID> targets;
+	glm::vec4 plane {0.0f};
+	uint32_t keep = 0;
+};
+
+struct VoxelRotatePieces : Event<VoxelRotatePieces> {
+	std::vector<toast::UID> targets;
+	uint32_t axis = 2;
+	int32_t turns = 1;
+};
+
+struct VoxelBucketFill : Event<VoxelBucketFill> {
+	toast::UID target;
+	glm::ivec3 voxel {0};
+	uint32_t id = 0;
+	bool search = false;
+	uint32_t search_axis = 0;
+	int32_t search_step = 1;
+};
+
+struct VoxelCollapsePieces : Event<VoxelCollapsePieces> {
+	std::vector<toast::UID> targets;
+	std::string path;
+};
+
+struct VoxelBake : Event<VoxelBake> {
+	toast::UID target;
+	std::string path;
+	bool replace = false;
+};
+
+struct VoxelBakeCompleted : Event<VoxelBakeCompleted> {
+	std::string path;
+};
+
+struct SetVoxelEditorOverlays : Event<SetVoxelEditorOverlays> {
+	bool unit_grid = true;
+	bool voxel_grid = false;
+	bool edges = true;
+	bool voxel_edges = false;
+	bool projections = false;
+};
+
+struct SetVoxelCutPreview : Event<SetVoxelCutPreview> {
+	toast::UID root;
+	bool active = false;
+	glm::vec4 plane {0.0f};
+};
+
+struct NodePicked : Event<NodePicked> {
+	uint64_t workspace_handle = 0;
+	toast::UID node;
+};
+
+struct SetVoxelTool : Event<SetVoxelTool> {
+	uint32_t tool = 0;
+	uint32_t paint_id = 1;
+	toast::UID default_script;
+	uint32_t default_mode = 0;
+};
+
+struct SetShowOthers : Event<SetShowOthers> {
+	bool show = false;
+	uint64_t workspace = 0;
+	uint64_t source_workspace = 0;
+	toast::UID source_instance;
 };
 
 struct SetFocusedNode : Event<SetFocusedNode> {
@@ -329,6 +467,12 @@ struct InspectorLuaContent : Event<InspectorLuaContent> {
 		std::string ref_type;
 		std::string value;
 		std::string default_value;
+		std::string display_name;
+		bool read_only = false;
+		bool hidden = false;
+		double min = 0.0;
+		double max = 0.0;
+		std::string unit;
 	};
 
 	struct LuaSubgroup {

@@ -3,6 +3,8 @@
 #include "physics_settings.hpp"
 
 #include <algorithm>
+#include <cmath>
+#include <limits>
 #include <stdexcept>
 #include <toast/log.hpp>
 #include <tracy/Tracy.hpp>
@@ -214,9 +216,43 @@ auto AABBTree::updateLeaf(TreeNodeID leaf_id, const AABB& tight_bounds) -> bool 
 	return true;
 }
 
-auto AABBTree::query(const AABB& bounds, ShapeID ignored_shape) const -> std::vector<ShapeID> {
-	ZoneScopedN("physics::AABBTree::Query");
+auto AABBTree::query(glm::vec3 pos, glm::vec3 inv_dir, ShapeID ignored_shape) const -> std::vector<ShapeID> {
+	ZoneScopedN("physics::AABBTree::Query(Ray)");
 	ZoneValue(static_cast<uint64_t>(ignored_shape.slot));
+
+	std::vector<ShapeID> result;
+	if (m_root == null_node) {
+		return result;
+	}
+
+	std::vector<TreeNodeID> stack {m_root};
+	while (not stack.empty()) {
+		auto node = m_nodes[stack.back()];
+		stack.pop_back();
+		if (not node.bounds.overlaps(pos, inv_dir)) {
+			continue;
+		}
+		if (node.isLeaf()) {
+			if (node.shape != ignored_shape) {
+				result.emplace_back(node.shape);
+			}
+		} else {
+			stack.emplace_back(node.left);
+			stack.emplace_back(node.right);
+		}
+	}
+
+	// :P
+	std::ranges::sort(result);
+	result.erase(std::unique(result.begin(), result.end()), result.end());
+	ZoneValue(static_cast<uint64_t>(result.size()));
+	return result;
+}
+
+auto AABBTree::query(const AABB& bounds, ShapeID ignored_shape) const -> std::vector<ShapeID> {
+	// Removed due to bloating tracy shi
+	// ZoneScopedN("physics::AABBTree::Query");
+	// ZoneValue(static_cast<uint64_t>(ignored_shape.slot));
 	std::vector<ShapeID> result;
 	if (m_root == null_node) {
 		return result;
@@ -242,7 +278,7 @@ auto AABBTree::query(const AABB& bounds, ShapeID ignored_shape) const -> std::ve
 
 	std::ranges::sort(result);
 	result.erase(std::unique(result.begin(), result.end()), result.end());
-	ZoneValue(static_cast<uint64_t>(result.size()));
+	// ZoneValue(static_cast<uint64_t>(result.size()));
 	return result;
 }
 
@@ -481,6 +517,33 @@ auto AABBTree::validate() const -> bool {
 	return true;
 }
 
+auto AABB::overlaps(const glm::vec3& origin, const glm::vec3& inv_dir) const -> bool {
+	float t_entry = -std::numeric_limits<float>::infinity();
+	float t_exit = std::numeric_limits<float>::infinity();
+
+	for (int axis = 0; axis < 3; ++axis) {
+		if (std::isinf(inv_dir[axis])) {
+			if (origin[axis] < min[axis] || origin[axis] > max[axis]) {
+				return false;
+			}
+			continue;
+		}
+
+		float t1 = (min[axis] - origin[axis]) * inv_dir[axis];
+		float t2 = (max[axis] - origin[axis]) * inv_dir[axis];
+		if (t1 > t2) {
+			std::swap(t1, t2);
+		}
+		t_entry = std::max(t_entry, t1);
+		t_exit = std::min(t_exit, t2);
+		if (t_entry > t_exit) {
+			return false;
+		}
+	}
+
+	return t_exit >= 0.0f;
+}
+
 auto AABB::overlaps(const AABB& other) const -> bool {
 	bool intersects_x = min.x <= other.max.x && max.x >= other.min.x;
 	bool intersects_y = min.y <= other.max.y && max.y >= other.min.y;
@@ -504,11 +567,18 @@ auto AABB::area() const -> float {
 	return 2 * ((d.x * d.y) + (d.x * d.z) + (d.y * d.z));
 }
 
-auto AABB::intersectRay(const glm::vec3& origin, const glm::vec3& inv_dir, float max_distance) const -> std::optional<RayHit> {
-	float t_min = 0.0f;
-	float t_max = max_distance;
+auto AABB::intersectRay(const glm::vec3& origin, const glm::vec3& inv_dir) const -> std::optional<RayHit> {
+	float t_min = -std::numeric_limits<float>::infinity();
+	float t_max = std::numeric_limits<float>::infinity();
 
 	for (int axis = 0; axis < 3; ++axis) {
+		if (std::isinf(inv_dir[axis])) {
+			if (origin[axis] < min[axis] || origin[axis] > max[axis]) {
+				return std::nullopt;
+			}
+			continue;
+		}
+
 		float t1 = (min[axis] - origin[axis]) * inv_dir[axis];
 		float t2 = (max[axis] - origin[axis]) * inv_dir[axis];
 		if (t1 > t2) {

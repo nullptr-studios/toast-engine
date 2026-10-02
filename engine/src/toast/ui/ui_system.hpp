@@ -167,6 +167,7 @@ private:
 	std::vector<assets::Handle<assets::ColorScheme>> m_global_schemes;
 	std::unordered_map<uint64_t, size_t> m_global_style_refs;
 	std::unordered_map<uint64_t, size_t> m_global_scheme_refs;
+	std::unordered_set<std::string> m_loaded_fonts;
 
 	std::string m_language;
 	std::vector<assets::Handle<assets::Localization>> m_global_localizations;

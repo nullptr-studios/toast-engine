@@ -15,6 +15,9 @@ assets::DestructionMaterial::DestructionMaterial(const toml::table& table, Handl
 	if (d.contains("shatter_radius")) {
 		m_shatter_radius = d["shatter_radius"].as<float>();
 	}
+	if (d.contains("destructible")) {
+		m_destructible = d["destructible"].as<bool>();
+	}
 	if (d.contains("flammable")) {
 		m_flammable = d["flammable"].as<bool>();
 	}
@@ -41,6 +44,10 @@ auto assets::DestructionMaterial::structuralStrength() const noexcept -> float {
 
 auto assets::DestructionMaterial::shatterRadius() const noexcept -> float {
 	return m_shatter_radius;
+}
+
+auto assets::DestructionMaterial::destructible() const noexcept -> bool {
+	return m_destructible;
 }
 
 auto assets::DestructionMaterial::flammable() const noexcept -> bool {

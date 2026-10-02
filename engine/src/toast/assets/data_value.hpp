@@ -110,10 +110,24 @@ public:
 			if (const auto* str = std::any_cast<std::string>(&m_value)) {
 				return T {*str};
 			}
+		} else if constexpr (std::is_same_v<T, float>) {
+			if (const auto* ptr = std::any_cast<float>(&m_value)) {
+				return *ptr;
+			}
+			if (const auto* ptr = std::any_cast<double>(&m_value)) {
+				return static_cast<float>(*ptr);
+			}
 		} else if (const T* ptr = std::any_cast<T>(&m_value)) {
 			return *ptr;
 		}
-		TOAST_ASSERT(false, "DataValue", "Type mismatch in DataValue::as<T>()");
+		TOAST_ASSERT(
+		    false,
+		    "DataValue",
+		    "Type mismatch in DataValue::as<{}>(): requested '{}', but m_value contains '{}'",
+		    typeid(T).name(),
+		    typeid(T).name(),
+		    m_value.type().name()
+		);
 		return T {};
 	}
 
@@ -177,12 +191,13 @@ public:
 	/**
 	 * @brief Parse a DataValue from a TOML node, using the schema field for type context
 	 */
-	static auto fromToml(const toml::node& n, const SchemaField* field) -> DataValue;
+	static auto fromToml(const toml::node& n, const SchemaField* field, const toml::table* root = nullptr) -> DataValue;
 
 	/**
 	 * @brief Build an Object DataValue from a TOML table, guided by a field list
 	 */
-	static auto fromObject(const toml::table& t, const std::vector<SchemaField>& fields) -> DataValue;
+	static auto fromObject(const toml::table& t, const std::vector<SchemaField>& fields, const toml::table* root = nullptr)
+	    -> DataValue;
 
 	/** Inserts this value into a TOML table under @c key */
 	void appendTo(toml::table& tbl, const std::string& key) const;

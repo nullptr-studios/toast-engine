@@ -30,8 +30,10 @@ struct DetachedComponent {
 };
 
 [[nodiscard]]
-auto buildDetachedComponents(const voxel::Connectivity& c, std::span<const ComponentClass> classes, glm::uvec3 brick_size)
-    -> std::vector<DetachedComponent>;
+auto buildDetachedComponents(
+    const voxel::Connectivity& c, std::span<const ComponentClass> classes, glm::uvec3 brick_size,
+    ComponentClass target_class = ComponentClass::detached
+) -> std::vector<DetachedComponent>;
 
 inline auto maxFragmentExtentBricks() -> int32_t {
 	return tunables().max_fragment_extent_bricks;

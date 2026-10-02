@@ -4,8 +4,6 @@
 // ============================================================
 
 // clang-format off
-{% if parent_snake_name %}#include "{{ parent_snake_name }}.generated.hpp"
-{% endif %}
 #include "{{ snake_name }}.generated.hpp"
 // clang-format on
 
@@ -23,5 +21,10 @@ TOAST_API const toast::NodeInfo Reflect<{{ qualified_name }}>::type_info = {
 	.construct  = {% if is_interface %}nullptr{% else %}reinterpret_cast<toast::NodeInfo::Factory>(&_detail::{{ snake_name }}_construct){% endif %},
 	.destroy    = {% if is_interface %}nullptr{% else %}reinterpret_cast<toast::NodeInfo::Deleter>(&_detail::{{ snake_name }}_delete){% endif %},
 };
+
+template<>
+TOAST_API auto NodeTypeInfo<{{ qualified_name }}>::get() noexcept -> const NodeInfo* {
+	return &Reflect<{{ qualified_name }}>::type_info;
+}
 
 } // namespace toast

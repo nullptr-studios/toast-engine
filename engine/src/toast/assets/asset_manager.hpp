@@ -69,6 +69,11 @@ public:
 
 	static auto get() noexcept -> AssetManager&;
 
+	[[nodiscard]]
+	static auto isInitialized() noexcept -> bool {
+		return instance != nullptr;
+	}
+
 	/**
 	 * @brief Loads an asset by UID, returning the cached copy if already resident
 	 * @param uid The asset's manifest UID

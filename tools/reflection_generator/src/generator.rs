@@ -2,10 +2,15 @@
 
 use crate::*;
 use minijinja::Environment;
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
 pub fn generate_files(nodes: &[NodeInfo], output: &Path, register_fn: &str, split_typeinfo: bool) {
+    generate_files_with_events(nodes, &[], output, register_fn, split_typeinfo);
+}
+
+pub fn generate_files_with_events(nodes: &[NodeInfo], events: &[EventInfo], output: &Path, register_fn: &str, split_typeinfo: bool) {
     // Templates live next to the executable: <exe_dir>/templates/
     let exe_dir = std::env::current_exe()
         .expect("cannot locate executable")
@@ -70,9 +75,18 @@ pub fn generate_files(nodes: &[NodeInfo], output: &Path, register_fn: &str, spli
             }
         }
     }
+    let event_ctx: Vec<json_t> = events.iter().filter(|e| e.supported).map(|e| json!({
+        "name": e.name,
+        "qualified_name": e.qualified_name(),
+        "source_file": e.source_file,
+        "sendable": e.sendable,
+        "fields": e.fields,
+    })).collect();
     let cpp_ctx = serde_json::json!({
-        "nodes":       all_ctx,
-        "register_fn": register_fn,
+        "nodes":          all_ctx,
+        "events":         event_ctx,
+        "register_fn":    register_fn,
+        "split_typeinfo": split_typeinfo,
     });
 
     let out = output.join("reflect.generated.cpp");
@@ -80,4 +94,63 @@ pub fn generate_files(nodes: &[NodeInfo], output: &Path, register_fn: &str, spli
         .render(&cpp_ctx)
         .unwrap_or_else(|e| panic!("template error for reflect.generated.cpp: {e}"));
     fs::write(&out, text).unwrap_or_else(|e| panic!("cannot write {}: {e}", out.display()));
+}
+
+fn qualify(namespace: Option<&str>, name: &str) -> String {
+    match namespace {
+        Some(ns) => format!("{ns}::{name}"),
+        None => name.to_string(),
+    }
+}
+
+fn resolve_parent(node: &NodeInfo, known: &HashMap<String, usize>) -> Option<usize> {
+    let parent = node.class.parent.as_ref()?;
+    let written = qualify(parent.namespace.as_deref(), &parent.name);
+    if let Some(global) = written.strip_prefix("::") {
+        return known.get(global).copied();
+    }
+    let mut scope = node.class.namespace.as_deref();
+    loop {
+        let candidate = match scope {
+            Some(ns) => format!("{ns}::{written}"),
+            None => written.clone(),
+        };
+        if let Some(&idx) = known.get(&candidate) {
+            return Some(idx);
+        }
+        scope = match scope {
+            Some(ns) => ns.rfind("::").map(|pos| &ns[..pos]),
+            None => return None,
+        };
+    }
+}
+
+pub fn topological_sort(nodes: Vec<NodeInfo>) -> Vec<NodeInfo> {
+    let known: HashMap<String, usize> = nodes
+        .iter()
+        .enumerate()
+        .map(|(i, n)| (qualify(n.class.namespace.as_deref(), &n.class.name), i))
+        .collect();
+    let parents: Vec<Option<usize>> = nodes.iter().map(|n| resolve_parent(n, &known)).collect();
+
+    let mut placed = vec![false; nodes.len()];
+    let mut order = Vec::with_capacity(nodes.len());
+    for start in 0..nodes.len() {
+        let mut chain = Vec::new();
+        let mut current = Some(start);
+        while let Some(i) = current {
+            if placed[i] || chain.contains(&i) {
+                break;
+            }
+            chain.push(i);
+            current = parents[i];
+        }
+        for &i in chain.iter().rev() {
+            placed[i] = true;
+            order.push(i);
+        }
+    }
+
+    let mut slots: Vec<Option<NodeInfo>> = nodes.into_iter().map(Some).collect();
+    order.into_iter().map(|i| slots[i].take().expect("node placed twice")).collect()
 }

@@ -147,16 +147,20 @@ struct VoxelInstanceGpu {
 	glm::mat4 previous_voxel_to_world {1.0f};
 	uint32_t record_index = 0;
 	uint32_t pad0 = 0;
-	uint32_t pad1 = 0;
+	uint32_t flags = 0;
 	uint32_t pad2 = 0;
 };
 
 static_assert(sizeof(VoxelInstanceGpu) == 208, "VoxelInstanceGpu is mirrored by voxel_dda.slang VoxelInstance");
 
+/// Bit 0 of VoxelInstanceGpu::flags with the meaning of VulkanRenderer::k_instance_no_motion
+inline constexpr uint32_t k_voxel_instance_no_motion = 1u << 0;
+
 /// Voxel (x y z) occupies [x x + 1] in the space the instance maps from
 [[nodiscard]]
 auto makeVoxelInstance(
-    const glm::mat4& model, const glm::mat4& inverse_model, const glm::mat4& previous_model, uint32_t record_index
+    const glm::mat4& model, const glm::mat4& inverse_model, const glm::mat4& previous_model, bool has_previous,
+    uint32_t record_index
 ) -> VoxelInstanceGpu;
 
 /// Bindings 0 to 5 of set 1 in voxel_dda.slang order

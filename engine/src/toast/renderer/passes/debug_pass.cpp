@@ -33,6 +33,7 @@
 #include <toast/assets/assets.hpp>
 #include <toast/log.hpp>
 #include <toast/physics/narrow_phase.hpp>
+#include <toast/physics/physics_settings.hpp>
 #include <toast/physics/simulator.hpp>
 #include <tracy/Tracy.hpp>
 
@@ -79,7 +80,7 @@ constexpr std::array<toast::GizmoHandle, 3> k_axis_handles {
   toast::GizmoHandle::axis_x, toast::GizmoHandle::axis_y, toast::GizmoHandle::axis_z
 };
 
-constexpr std::array<glm::vec4, 3> k_axis_colors {
+const std::array<glm::vec4, 3> k_axis_colors {
   glm::vec4 {  1.0f, 0.086f, 0.349f, 1.0f}, // X
   glm::vec4 {  0.0f,   1.0f, 0.251f, 1.0f}, // Y
   glm::vec4 {0.161f, 0.678f,   1.0f, 1.0f}  // Z
@@ -110,6 +111,29 @@ void appendBox(std::vector<DebugVertex>& out, glm::vec3 min, glm::vec3 max, glm:
 		out.push_back({v[f[0]], color});
 		out.push_back({v[f[2]], color});
 		out.push_back({v[f[3]], color});
+	}
+}
+
+// for the gizmos for resizing volumes
+void appendSphere(std::vector<DebugVertex>& out, float radius, int rings, int segments, glm::vec4 color) {
+	const auto point = [&](int ring, int segment) {
+		const float polar = glm::pi<float>() * static_cast<float>(ring) / static_cast<float>(rings);
+		const float azimuth = glm::two_pi<float>() * static_cast<float>(segment) / static_cast<float>(segments);
+		return glm::vec3(std::sin(polar) * std::cos(azimuth), std::sin(polar) * std::sin(azimuth), std::cos(polar)) * radius;
+	};
+	for (int ring = 0; ring < rings; ++ring) {
+		for (int segment = 0; segment < segments; ++segment) {
+			const glm::vec3 a = point(ring, segment);
+			const glm::vec3 b = point(ring + 1, segment);
+			const glm::vec3 c = point(ring + 1, segment + 1);
+			const glm::vec3 d = point(ring, segment + 1);
+			out.push_back({a, color});
+			out.push_back({b, color});
+			out.push_back({c, color});
+			out.push_back({a, color});
+			out.push_back({c, color});
+			out.push_back({d, color});
+		}
 	}
 }
 
@@ -976,10 +1000,11 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 				const physics::Simulator::PhysicsStepProfile& phys = physics::Simulator::stepProfile();
 
 				ImGui::Text(
-				    "Tick %6.2f ms  damage %.2f  connectivity %.2f  narrow %.2f  solve %.2f",
+				    "Tick %6.2f ms  damage %.2f  connectivity %.2f  characters %.2f  narrow %.2f  solve %.2f",
 				    phys.tick_ms,
 				    phys.damage_apply_ms,
 				    phys.connectivity_ms,
+				    phys.character_step_ms,
 				    phys.narrow_phase_ms,
 				    phys.solve_ms
 				);
@@ -1000,6 +1025,23 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 				    phys.voxel_shape_count,
 				    phys.manifold_count,
 				    phys.constraints
+				);
+				if (phys.character_sweep_calls > 0 || phys.character_overlap_calls > 0) {
+					ImGui::TextDisabled(
+					    "Characters: %zu sweepCapsule, %zu overlapCapsule calls this tick (each samples the voxel walk "
+					    "several times internally)",
+					    phys.character_sweep_calls,
+					    phys.character_overlap_calls
+					);
+				}
+				ImGui::TextDisabled(
+				    "Solve breakdown: cache %.2f  wake %.2f  prepare %.2f  islands %.2f  solve %.2f  sleep %.2f",
+				    phys.cache_update_ms,
+				    phys.wake_groups_ms,
+				    phys.prepare_constraints_ms,
+				    phys.build_islands_ms,
+				    phys.island_solve_ms,
+				    phys.sleep_update_ms
 				);
 
 				ImGui::Separator();
@@ -1028,6 +1070,9 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 					    "%zu fragment extractions failed this tick, brick pool is full",
 					    phys.fragment_spawn_failures
 					);
+				}
+				if (phys.static_splits_spawned > 0) {
+					ImGui::Text("%zu static bodies split off this tick", phys.static_splits_spawned);
 				}
 
 				ImGui::Separator();
@@ -1064,6 +1109,15 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 				    total_cached
 				);
 				ImGui::TextDisabled(
+				    "Sleep %zu slept, %zu woken (%zu approach, %zu racing, %zu contact end, %zu support)",
+				    phys.bodies_slept,
+				    phys.bodies_woken,
+				    phys.woken_by_approach,
+				    phys.woken_by_racing,
+				    phys.woken_by_contact_end,
+				    phys.woken_by_support_loss
+				);
+				ImGui::TextDisabled(
 				    "Constraints %zu warm started, %zu rejected, %zu invalid, %zu islands, %zu parallel batches",
 				    phys.warm_started_constraints,
 				    phys.rejected_constraints,
@@ -1087,15 +1141,47 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 					 {PT::capsule_voxel, "Capsule-voxel"},
 					 {PT::voxel_voxel, "Voxel-voxel"}}
 				};
-				if (ImGui::BeginTable("##voxel_pair_candidates", 2, ImGuiTableFlags_SizingFixedFit)) {
+				if (ImGui::BeginTable("##voxel_pair_candidates", 3, ImGuiTableFlags_SizingFixedFit)) {
 					for (const auto& [type, label] : k_voxel_pairs) {
 						ImGui::TableNextColumn();
 						ImGui::TextDisabled("%s", label);
 						ImGui::TableNextColumn();
 						ImGui::TextDisabled("%zu", phys.narrow_pair_candidates[static_cast<size_t>(type)]);
+						ImGui::TableNextColumn();
+						ImGui::TextDisabled("%.2f ms", phys.narrow_pair_time_ms[static_cast<size_t>(type)]);
 					}
 					ImGui::EndTable();
 				}
+				if (phys.box_voxel_split_pairs > 0 || phys.voxel_voxel_split_pairs > 0) {
+					ImGui::TextDisabled(
+					    "Split across jobs: %zu of %zu box-voxel, %zu of %zu voxel-voxel",
+					    phys.box_voxel_split_pairs,
+					    phys.narrow_pair_candidates[static_cast<size_t>(physics::NarrowPhasePairType::box_voxel)],
+					    phys.voxel_voxel_split_pairs,
+					    phys.narrow_pair_candidates[static_cast<size_t>(physics::NarrowPhasePairType::voxel_voxel)]
+					);
+				}
+				ImGui::TextDisabled(
+				    "Max estimated_voxels this tick: box-voxel %zu (longest axis %.2f m)  voxel-voxel %zu",
+				    phys.box_voxel_max_estimated_voxels,
+				    phys.box_voxel_max_extent_meters,
+				    phys.voxel_voxel_max_estimated_voxels
+				);
+				if (phys.voxel_voxel_resolved_pairs > 0) {
+					ImGui::TextDisabled(
+					    "Voxel-voxel resolved %zu, of those %zu actually overlapped (rest: bounds don't overlap, "
+					    "not a bug)",
+					    phys.voxel_voxel_resolved_pairs,
+					    phys.voxel_voxel_nondegenerate_pairs
+					);
+				}
+				ImGui::TextColored(
+				    ImVec4(1.0f, 0.4f, 1.0f, 1.0f),
+				    "Live thresholds: box-voxel %u  voxel-voxel %u  regions %u",
+				    physics::tunables().box_voxel_split_min_voxels,
+				    physics::tunables().voxel_voxel_split_min_voxels,
+				    physics::tunables().voxel_pair_split_regions
+				);
 			}
 
 			ImGui::Separator();
@@ -1342,7 +1428,7 @@ void DebugPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t ima
 			cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_gizmo_pipeline.getPipeline());
 			cmd.bindVertexBuffers(0, std::array<vk::Buffer, 1> {buffer}, std::array<vk::DeviceSize, 1> {0});
 
-			constexpr glm::vec4 k_highlight {1.0f, 0.85f, 0.1f, 1.0f};
+			const glm::vec4 k_highlight {1.0f, 0.85f, 0.1f, 1.0f};
 
 			for (size_t i = 0; i < handles->size(); ++i) {
 				const auto& range = (*handles)[i];
@@ -1376,8 +1462,8 @@ void DebugPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t ima
 	}
 
 	if (frame->transform_gizmo.size_handle_count > 0 && m_gizmo_pipeline.isReady() && m_size_gizmo_vertex_count > 0) {
-		constexpr glm::vec4 k_highlight {1.0f, 0.85f, 0.1f, 1.0f};
-		constexpr glm::vec4 k_size_dot_color {0.0f, 1.0f, 0.251f, 1.0f};    // editor green, matching the collider
+		const glm::vec4 k_highlight {1.0f, 0.85f, 0.1f, 1.0f};
+		const glm::vec4 k_size_dot_color {0.0f, 1.0f, 0.251f, 1.0f};    // editor green, matching the collider
 
 		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_gizmo_pipeline.getPipeline());
 		cmd.bindVertexBuffers(0, std::array<vk::Buffer, 1> {*m_size_gizmo_vertex_buffer}, std::array<vk::DeviceSize, 1> {0});
@@ -1587,9 +1673,9 @@ void DebugPass::createGizmoGeometry(const renderer::VulkanCore& core) {
 	constexpr float k_head_length = 0.25f;
 	constexpr float k_head_half_size = 0.06f;
 
-	constexpr glm::vec4 k_red {1.0f, 0.1f, 0.1f, 1.0f};
-	constexpr glm::vec4 k_green {0.1f, 1.0f, 0.1f, 1.0f};
-	constexpr glm::vec4 k_blue {0.1f, 0.1f, 1.0f, 1.0f};
+	const glm::vec4 k_red {1.0f, 0.1f, 0.1f, 1.0f};
+	const glm::vec4 k_green {0.1f, 1.0f, 0.1f, 1.0f};
+	const glm::vec4 k_blue {0.1f, 0.1f, 1.0f, 1.0f};
 
 	std::vector<DebugVertex> vertices;
 
@@ -1623,7 +1709,7 @@ void DebugPass::createGizmoGeometry(const renderer::VulkanCore& core) {
 void DebugPass::createTranslateGizmoGeometry(const renderer::VulkanCore& core) {
 	using namespace toast::gizmo_layout;
 
-	constexpr glm::vec4 k_white {1.0f, 1.0f, 1.0f, 1.0f};
+	const glm::vec4 k_white {1.0f, 1.0f, 1.0f, 1.0f};
 
 	std::vector<DebugVertex> vertices;
 
@@ -1644,7 +1730,7 @@ void DebugPass::createTranslateGizmoGeometry(const renderer::VulkanCore& core) {
 	  toast::GizmoHandle::plane_xy, toast::GizmoHandle::plane_yz, toast::GizmoHandle::plane_xz
 	};
 	constexpr std::array<int, 3> plane_normal_axis {2, 0, 1};    // xy Z yz X xz Y
-	constexpr std::array<glm::vec4, 3> plane_colors {
+	const std::array<glm::vec4, 3> plane_colors {
 	  glm::vec4 {0.161f, 0.678f,   1.0f, 1.0f},
      glm::vec4 {  1.0f, 0.086f, 0.349f, 1.0f},
      glm::vec4 {  0.0f,   1.0f, 0.251f, 1.0f}
@@ -1679,7 +1765,7 @@ void DebugPass::createTranslateGizmoGeometry(const renderer::VulkanCore& core) {
 
 void DebugPass::createRotateGizmoGeometry(const renderer::VulkanCore& core) {
 	using namespace toast::gizmo_layout;
-	constexpr glm::vec4 k_white {1.0f, 1.0f, 1.0f, 1.0f};
+	const glm::vec4 k_white {1.0f, 1.0f, 1.0f, 1.0f};
 
 	std::vector<DebugVertex> vertices;
 
@@ -1709,7 +1795,7 @@ void DebugPass::createRotateGizmoGeometry(const renderer::VulkanCore& core) {
 
 void DebugPass::createScaleGizmoGeometry(const renderer::VulkanCore& core) {
 	using namespace toast::gizmo_layout;
-	constexpr glm::vec4 k_white {1.0f, 1.0f, 1.0f, 1.0f};
+	const glm::vec4 k_white {1.0f, 1.0f, 1.0f, 1.0f};
 
 	std::vector<DebugVertex> vertices;
 
@@ -1754,10 +1840,10 @@ void DebugPass::createScaleGizmoGeometry(const renderer::VulkanCore& core) {
 
 void DebugPass::createSizeGizmoGeometry(const renderer::VulkanCore& core) {
 	using namespace toast::gizmo_layout;
-	constexpr glm::vec4 k_white {1.0f, 1.0f, 1.0f, 1.0f};
+	const glm::vec4 k_white {1.0f, 1.0f, 1.0f, 1.0f};
 
 	std::vector<DebugVertex> vertices;
-	appendBox(vertices, glm::vec3(-k_size_dot_half_size), glm::vec3(k_size_dot_half_size), k_white);
+	appendSphere(vertices, k_size_dot_half_size * 1.25f, 8, 12, k_white);
 	m_size_gizmo_vertex_count = static_cast<uint32_t>(vertices.size());
 
 	vk::BufferCreateInfo buffer_ci {};

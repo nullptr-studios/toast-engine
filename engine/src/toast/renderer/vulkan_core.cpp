@@ -337,10 +337,9 @@ auto nsightResultName(NGFX_Result result) -> std::string_view {
 
 void VulkanCore::initializeNsightActivity() {
 	ZoneScoped;
-	bool capture_injected = false;
-	bool trace_injected = false;
-	(void)NGFX_IsActivityInjected(NGFX_ActivityType_GraphicsCapture, &capture_injected);
-	(void)NGFX_IsActivityInjected(NGFX_ActivityType_GPUTrace, &trace_injected);
+	// NGFX_IsActivityInjected skips its out param once cached and InitializeActivity then reads garbage
+	const bool capture_injected = GetModuleHandleW(NGFX_GRAPHICS_CAPTURE_INJECTION_LIB_NAME) != nullptr;
+	const bool trace_injected = GetModuleHandleW(NGFX_GPU_TRACE_INJECTION_LIB_NAME) != nullptr;
 
 	if (capture_injected) {
 		NGFX_GraphicsCapture_InitializeActivity_Vulkan_Params params {NGFX_GraphicsCapture_InitializeActivity_Vulkan_Params_VER};

@@ -62,6 +62,21 @@ struct Palette {
 };
 
 [[nodiscard]]
+inline auto defaultPalette() -> const Palette& {
+	static const Palette palette = [] {
+		Palette out;
+		for (uint32_t i = 1; i < k_palette_size; ++i) {
+			out.entries[i].albedo_r = 160;
+			out.entries[i].albedo_g = 160;
+			out.entries[i].albedo_b = 160;
+			out.entries[i].roughness = 200;
+		}
+		return out;
+	}();
+	return palette;
+}
+
+[[nodiscard]]
 inline auto emissiveIntensity(const Palette& palette, uint8_t index) noexcept -> float {
 	return static_cast<float>(palette.entries[index].emissive) / 255.0f * palette.max_emissive;
 }
@@ -125,6 +140,15 @@ inline auto resolveMaterialIndex(const Palette& palette, const MaterialLibrary& 
 }
 
 [[nodiscard]]
+inline auto densityTable(const Palette& palette, const MaterialLibrary& library) -> std::array<uint32_t, k_palette_size> {
+	std::array<uint32_t, k_palette_size> out {};
+	for (uint32_t i = 0; i < k_palette_size; ++i) {
+		out[i] = library.materials[resolveMaterialIndex(palette, library, static_cast<uint8_t>(i))].density;
+	}
+	return out;
+}
+
+[[nodiscard]]
 inline auto massPerVoxel(const PhysicalMaterial& material, float voxel_size = k_voxel_size) noexcept -> float {
 	return static_cast<float>(material.density) * voxel_size * voxel_size * voxel_size;
 }
@@ -135,7 +159,6 @@ enum class TableIssue : uint8_t {
 	library_too_large,
 	zero_density,
 	out_of_range,
-	indestructible_with_zero_toughness,
 	reserved_slot_used,
 	unknown_material,
 };
@@ -172,9 +195,6 @@ inline auto validateLibrary(const MaterialLibrary& library) -> std::vector<Table
 		    negative(m.dynamic_friction) || negative(m.restitution) || m.restitution > 1.0f || negative(m.ignition_energy) ||
 		    negative(m.burn_rate) || negative(m.fuel)) {
 			out.push_back({TableIssue::out_of_range, i});
-		}
-		if (m.isIndestructible() && m.toughness == 0.0f) {
-			out.push_back({TableIssue::indestructible_with_zero_toughness, i});
 		}
 	}
 	return out;

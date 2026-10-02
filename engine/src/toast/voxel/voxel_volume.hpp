@@ -44,6 +44,9 @@ public:
 	static auto instanceOf(const Volume& source) -> Volume;
 
 	[[nodiscard]]
+	static auto adoptResized(Volume& source, glm::ivec3 brick_offset, glm::uvec3 brick_dims) -> Volume;
+
+	[[nodiscard]]
 	auto brickDims() const noexcept -> glm::uvec3 {
 		return m_brick_dims;
 	}
@@ -81,6 +84,30 @@ public:
 
 	/// @returns false outside the volume or when the pool is exhausted
 	auto setBrickMaterial(glm::ivec3 brick, std::span<const uint8_t, k_brick_material_bytes> material) -> bool;
+
+	/// Caller must adopt or free a pooled entry
+	[[nodiscard]]
+	auto takeBrick(glm::ivec3 brick) -> BrickEntry;
+
+	/// Slot must be empty and a pooled entry must be owned
+	void adoptBrick(glm::ivec3 brick, BrickEntry entry);
+
+	/// @returns false with nothing changed when the pool has no brick to copy into
+	auto clearVoxels(glm::ivec3 brick, const BrickOccupancy& mask) -> bool;
+
+	/**
+	 * Makes brick hold what source_brick of source holds
+	 * @returns true when the brick changed
+	 */
+	auto copyBrickFrom(glm::ivec3 brick, const Volume& source, glm::ivec3 source_brick) -> bool;
+
+	struct WritableBrick {
+		std::span<uint8_t, k_brick_material_bytes> material;
+		BrickOccupancy* occupancy = nullptr;
+	};
+
+	auto beginBrickWrite(glm::ivec3 brick) -> std::optional<WritableBrick>;
+	void finishBrickWrite(glm::ivec3 brick, bool changed);
 
 	/// @brief Null when the brick holds nothing
 	[[nodiscard]]

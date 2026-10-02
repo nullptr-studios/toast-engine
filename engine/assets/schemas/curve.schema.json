@@ -9,7 +9,7 @@
     "spline_type": {
       "enum": ["linear", "catmull_rom", "bspline", "bezier"],
       "x-toast-type": "enum",
-      "description": "linear: piecewise straight lines. catmull_rom: smooth interpolation through all points (automatic tangents). bspline: smooth cubic approximation (does not pass through interior points). bezier: compound cubic with explicit tangent handles; requires 3k+1 points."
+      "description": "linear: piecewise straight lines, catmull_rom: smooth interpolation through all points, bspline: smooth cubic approximation, bezier: compound cubic with explicit tangent handles"
     },
     "dimension": {
       "enum": ["2d", "3d"],

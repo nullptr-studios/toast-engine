@@ -6,6 +6,7 @@
 #include <cmath>
 #include <future>
 #include <glm/gtc/quaternion.hpp>
+#include <span>
 #include <toast/thread_pool.hpp>
 #include <tracy/Tracy.hpp>
 
@@ -116,8 +117,8 @@ auto BroadPhase::findPairs(CollisionWorldView world) -> std::vector<BroadPhasePa
 		const size_t end = (job_index + 1) * world.shapes.size() / job_count;
 
 		futures.emplace_back(toast::ThreadPool::push([this, world, begin, end] {
-			ZoneScopedN("physics::AABBBatch");
-			ZoneValue(static_cast<uint64_t>(end - begin));
+			// ZoneScopedN("physics::AABBBatch");
+			// ZoneValue(static_cast<uint64_t>(end - begin));
 			return calculateBounds(world, begin, end);
 		}));
 	}
@@ -127,7 +128,7 @@ auto BroadPhase::findPairs(CollisionWorldView world) -> std::vector<BroadPhasePa
 	bounds.reserve(world.shapes.size());
 
 	{
-		ZoneScopedNC("physics::AABBAwait", 0x202020);
+		// ZoneScopedNC("physics::AABBAwait", 0x202020);
 		for (auto& future : futures) {
 			std::vector<ShapeBoundsUpdate> local = future.get();
 			bounds.insert_range(bounds.end(), std::move(local));
@@ -135,7 +136,7 @@ auto BroadPhase::findPairs(CollisionWorldView world) -> std::vector<BroadPhasePa
 	}
 
 	{
-		ZoneScopedN("physics::UpdateAABBTree");
+		// ZoneScopedN("physics::UpdateAABBTree");
 		while (m_shape_leaves.size() > world.shapes.size()) {
 			const auto& entry = m_shape_leaves.back();
 			if (entry.node != null_node) {
@@ -175,37 +176,77 @@ auto BroadPhase::findPairs(CollisionWorldView world) -> std::vector<BroadPhasePa
 
 	std::vector<BroadPhasePair> pairs;
 	{
-		ZoneScopedN("physics::QueryAABBTree");
-		for (size_t shape_index = 0; shape_index < m_shape_leaves.size(); ++shape_index) {
-			const auto& entry = m_shape_leaves[shape_index];
-			if (entry.node == null_node) {
-				continue;
-			}
+		// ZoneScopedN("physics::QueryAABBTree");
+		// Tree is done mutating so concurrent queries are safe each job writes its own stats/pairs only
+		struct QueryChunk {
+			std::vector<BroadPhasePair> pairs;
+			BroadPhaseStats stats;
+		};
 
-			const ShapeBoundsUpdate& update = bounds[shape_index];
-			if (not update.active) {
-				continue;
-			}
+		const size_t minimum_shapes_per_job = tunables().min_shapes_per_query_job;
+		const size_t worker_count = std::max(toast::ThreadPool::workerCount(), static_cast<size_t>(1));
+		const size_t maximum_job_count = worker_count * 3;
+		const size_t shape_count = m_shape_leaves.size();
+		const size_t job_count =
+		    shape_count == 0 ? 0 : std::min(maximum_job_count, std::max(shape_count / minimum_shapes_per_job, size_t {1}));
 
-			if (isShapeAsleep(world, update.shape)) {
-				++m_stats.skipped_self_queries;
-				continue;
-			}
+		const std::span<const ShapeBoundsUpdate> bounds_view {bounds};
+		std::vector<std::future<QueryChunk>> futures;
+		futures.reserve(job_count);
 
-			const std::vector<ShapeID> query_results = m_tree.query(update.bounds, update.shape);
-			++m_stats.queries;
-			m_stats.query_hits += query_results.size();
-			for (ShapeID candidate : query_results) {
-				if (auto pair = testPair(world, update.shape, candidate)) {
-					pairs.emplace_back(*pair);
+		for (size_t job_index = 0; job_index < job_count; ++job_index) {
+			const size_t begin = job_index * shape_count / job_count;
+			const size_t end = (job_index + 1) * shape_count / job_count;
+
+			futures.emplace_back(toast::ThreadPool::push([this, world, bounds_view, begin, end] {
+				ZoneScopedN("physics::QueryAABBTreeBatch");
+				QueryChunk chunk;
+				for (size_t shape_index = begin; shape_index < end; ++shape_index) {
+					const auto& entry = m_shape_leaves[shape_index];
+					if (entry.node == null_node) {
+						continue;
+					}
+
+					const ShapeBoundsUpdate& update = bounds_view[shape_index];
+					if (not update.active) {
+						continue;
+					}
+
+					if (isShapeAsleep(world, update.shape)) {
+						++chunk.stats.skipped_self_queries;
+						continue;
+					}
+
+					const std::vector<ShapeID> query_results = m_tree.query(update.bounds, update.shape);
+					++chunk.stats.queries;
+					chunk.stats.query_hits += query_results.size();
+					for (ShapeID candidate : query_results) {
+						if (auto pair = testPair(world, update.shape, candidate, chunk.stats)) {
+							chunk.pairs.emplace_back(*pair);
+						}
+					}
 				}
-			}
+				return chunk;
+			}));
+		}
+
+		for (auto& future : futures) {
+			QueryChunk chunk = future.get();
+			m_stats.skipped_self_queries += chunk.stats.skipped_self_queries;
+			m_stats.queries += chunk.stats.queries;
+			m_stats.query_hits += chunk.stats.query_hits;
+			m_stats.rejected_invalid_shapes += chunk.stats.rejected_invalid_shapes;
+			m_stats.rejected_disabled_shapes += chunk.stats.rejected_disabled_shapes;
+			m_stats.rejected_same_body += chunk.stats.rejected_same_body;
+			m_stats.rejected_invalid_bodies += chunk.stats.rejected_invalid_bodies;
+			m_stats.rejected_immovable_bodies += chunk.stats.rejected_immovable_bodies;
+			pairs.insert_range(pairs.end(), std::move(chunk.pairs));
 		}
 	}
 
 	{
-		ZoneScopedN("physics::SortAndDeduplicatePairs");
-		ZoneValue(static_cast<uint64_t>(pairs.size()));
+		// ZoneScopedN("physics::SortAndDeduplicatePairs");
+		// ZoneValue(static_cast<uint64_t>(pairs.size()));
 		m_stats.pair_records = pairs.size();
 		std::ranges::sort(pairs);
 		pairs.erase(std::unique(pairs.begin(), pairs.end()), pairs.end());
@@ -213,8 +254,13 @@ auto BroadPhase::findPairs(CollisionWorldView world) -> std::vector<BroadPhasePa
 	m_stats.candidate_pairs = pairs.size();
 	m_stats.duplicate_pairs = m_stats.pair_records - m_stats.candidate_pairs;
 	m_stats.tree_nodes = m_tree.size();
-	ZoneValue(static_cast<uint64_t>(pairs.size()));
+	// ZoneValue(static_cast<uint64_t>(pairs.size()));
 	return pairs;
+}
+
+auto BroadPhase::queryRay(glm::vec3 pos, glm::vec3 dir) const -> std::vector<ShapeID> {
+	ZoneScopedN("physics::QueryRay");
+	return m_tree.query(pos, dir);
 }
 
 auto BroadPhase::queryBounds(const AABB& bounds) const -> std::vector<ShapeID> {
@@ -230,35 +276,36 @@ auto BroadPhase::stats() const -> const BroadPhaseStats& {
 	return m_stats;
 }
 
-auto BroadPhase::testPair(CollisionWorldView world, ShapeID shape_a_id, ShapeID shape_b_id) -> std::optional<BroadPhasePair> {
-	ZoneScoped;
-	ZoneValue((static_cast<uint64_t>(shape_a_id.slot) << 32) | static_cast<uint64_t>(shape_b_id.slot));
+auto BroadPhase::testPair(CollisionWorldView world, ShapeID shape_a_id, ShapeID shape_b_id, BroadPhaseStats& stats)
+    -> std::optional<BroadPhasePair> {
+	// ZoneScoped;
+	// ZoneValue((static_cast<uint64_t>(shape_a_id.slot) << 32) | static_cast<uint64_t>(shape_b_id.slot));
 
 	const Shape* shape_a = world.shape(shape_a_id);
 	const Shape* shape_b = world.shape(shape_b_id);
 	if (not shape_a || not shape_b || shape_a_id == shape_b_id) {
-		++m_stats.rejected_invalid_shapes;
+		++stats.rejected_invalid_shapes;
 		return std::nullopt;
 	}
 	if (not shape_a->enabled || not shape_b->enabled) {
-		++m_stats.rejected_disabled_shapes;
+		++stats.rejected_disabled_shapes;
 		return std::nullopt;
 	}
 
 	if (shape_a->owner == shape_b->owner) {
-		++m_stats.rejected_same_body;
+		++stats.rejected_same_body;
 		return std::nullopt;
 	}
 
 	const Body* body_a = world.body(shape_a->owner);
 	const Body* body_b = world.body(shape_b->owner);
 	if (not body_a || not body_b || not body_a->enabled || not body_b->enabled) {
-		++m_stats.rejected_invalid_bodies;
+		++stats.rejected_invalid_bodies;
 		return std::nullopt;
 	}
 
 	if (body_a->inverse_mass == 0.0f && body_b->inverse_mass == 0.0f) {
-		++m_stats.rejected_immovable_bodies;
+		++stats.rejected_immovable_bodies;
 		return std::nullopt;
 	}
 

@@ -21,6 +21,7 @@ struct Tunables {
 	float sleep_linear_threshold = 0.05f;
 	float sleep_angular_threshold = 0.05f;
 	float sleep_delay = 0.5f;
+	float sleep_drift = 0.05f;
 	double frequency = 60.0;
 	uint32_t max_substeps = 8;
 	double max_burst_seconds = 0.1;
@@ -33,11 +34,23 @@ struct Tunables {
 	uint32_t fragment_despawn_max_voxels = 16;
 	float fragment_despawn_settle_seconds = 3.0f;
 	float force_sleep_slack = 4.0f;
+	float fragment_sleep_scale = 3.0f;
 	int32_t max_fragment_extent_bricks = 1;
 	float fracture_shell_voxels = 2.0f;
 	uint32_t min_bounds_per_job = 32;
 	uint32_t min_candidates_per_job = 2;
+	uint32_t min_manifolds_per_job = 4;
+	uint32_t min_shapes_per_query_job = 16;
+	uint32_t min_bodies_per_job = 64;
 	uint32_t min_wave_constraints_for_dispatch = 512;
+	/// Deliberately very high right now to disable splitting until box_voxel_max_estimated_voxels gives a real number
+	uint32_t box_voxel_split_min_voxels = 500000;
+	/// Same off-until-measured reasoning as box_voxel_split_min_voxels
+	uint32_t voxel_voxel_split_min_voxels = 250000;
+	uint32_t voxel_pair_split_regions = 8;
+	/// Bisection steps a sweep refines by once it finds a blocking contact a clear sweep never pays this
+	uint32_t sweep_refine_iterations = 6;
+	uint32_t position_iterations = 3;
 
 	[[nodiscard]]
 	auto fixedDelta() const noexcept -> double {

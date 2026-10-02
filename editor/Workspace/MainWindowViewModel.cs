@@ -26,6 +26,8 @@ namespace editor.Workspace;
 public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 	private readonly AutosaveService m_autosave;
 
+	public static MainWindowViewModel? Current { get; private set; }
+
 	private readonly LayoutFile m_defaultLayout;
 	private readonly DockFactory m_dockFactory;
 	private readonly ToastEngine m_toast;
@@ -56,7 +58,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 	private bool m_toastZonePinned;
 
 	public MainWindowViewModel(ToastEngine toast) {
+		Current = this;
 		m_toast = toast;
+		VoxelEditor.VoxelEditorActions.Register();
 
 		m_dockFactory = new DockFactory();
 		MainLayout = m_dockFactory.CreateLayout();
@@ -139,6 +143,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 	public bool CanModifyActiveLayout => !LayoutStore.IsBuiltin(ActiveLayoutName);
 
 	public void Dispose() {
+		if (ReferenceEquals(Current, this)) Current = null;
 		m_autosave.Stop();
 		m_projectSettingsWindow?.Close();
 		m_projectSettingsWindow = null;
@@ -157,6 +162,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 
 	private void OnSchemaSaved(string path) {
 		m_dockFactory.GenericEditorVm?.RefreshFromSchema(path);
+		DataSchemaStubGenerator.Generate();
 	}
 
 	private void OnPlayModeChanged() {
@@ -207,6 +213,11 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			window.Show(owner);
 		else
 			window.Show();
+	}
+
+	public void OpenProjectSettingsAt(SettingsTab tab, string? category = null) {
+		OpenProjectSettings();
+		m_dockFactory.ProjectSettingsVm?.SelectSection(tab, category);
 	}
 
 	partial void OnHierarchyVisibleChanged(bool value) {
@@ -330,6 +341,25 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		// pin the zone so it stays up while editing
 		m_toastZonePinned = true;
 		ToastZoneActive = true;
+	}
+
+	public ToastEngine Engine => m_toast;
+
+	public WorkspaceViewModel? FindOpenWorkspace(string assetUid) {
+		return m_workspaces.Values.FirstOrDefault(w => w.BackingAssetUid == assetUid);
+	}
+
+	// if another window spawns we need to be able to give focus back to the game window
+	public void ReclaimEngine() {
+		if (ViewportFocus.DetachedOwner == 0) return;
+		Events.Send(new SetVoxelEditorOverlays { UnitGrid = false, VoxelGrid = false, Edges = false, VoxelEdges = false });
+		Events.Send(new SetShowOthers { Show = false });
+		ViewportFocus.DetachedOwner = 0;
+		m_dockFactory.Hierarchy?.MakeCurrent();
+		m_activeWorkspaceHandle = ulong.MaxValue;
+		SyncActiveWorkspace();
+		if (m_dockFactory.ActiveWorkspace is { } workspace) workspace.ResendViewState();
+		Events.Send(new RequestHierarchyUpdate());
 	}
 
 	private void SyncActiveWorkspace() {
@@ -705,10 +735,11 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			"..", "reflection_generator", $"reflection_generator{exeExt}"));
 		var gameDb = ProjectContext.Resolve("cache://game_reflect.json");
 		var gameLuaStubs = ProjectContext.Resolve("cache://lua/game_types.d.lua");
+		var gameEventLuaStubs = ProjectContext.Resolve("cache://lua/game_events.d.lua");
 		tasks.Add(LoaderTask.Run("Generate game reflection", refgen,
 			$"--database \"{gameDb}\" --output \"{libGenerated}\" --input \"{libSrc}\" " +
 			$"--include-root \"{libSrc}\" --register-fn registerGameTypes --attribute Game " +
-			$"--lua-stubs \"{gameLuaStubs}\""));
+			$"--lua-stubs \"{gameLuaStubs}\" --event-lua-stubs \"{gameEventLuaStubs}\""));
 
 		tasks.Add(LoaderTask.Do("Copy engine reflection", async log => {
 			var src = Path.Combine(ProjectContext.CorePath, "engine_reflect.json");
@@ -734,7 +765,12 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		tasks.Add(LoaderTask.Run(
 			"cmake build",
 			"cmake",
-			"--build .toast/cmake_cache"
+			// the game shares std types with the engine so both must use the same CRT
+#if DEBUG
+			"--build .toast/cmake_cache --config Debug"
+#else
+			"--build .toast/cmake_cache --config Release"
+#endif
 		));
 
 		tasks.Add(LoaderTask.Do("Reload game", async log => {

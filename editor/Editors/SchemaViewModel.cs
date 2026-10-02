@@ -24,13 +24,18 @@ public partial class SchemaViewModel : Tool, IAutosavable {
 	[ObservableProperty] private string m_displayTitle = "Schema Editor";
 	[ObservableProperty] private string m_fileName = "";
 	[ObservableProperty] private bool m_isDirty;
+	[ObservableProperty] private string m_rootDiscriminator = "";
+	[ObservableProperty] private bool m_advancedView;
 
 	private bool m_loading;
+	private bool m_toolStateLoaded;
+	private SchemaEditorState? m_toolState;
 	[ObservableProperty] private bool m_showProperties = true;
 
 	public SchemaViewModel() {
 		Fields.CollectionChanged += (_, _) => {
 			if (!m_loading) IsDirty = true;
+			NotifyRootFieldOptionsChanged();
 		};
 		StructTypes.CollectionChanged += (_, _) => {
 			if (!m_loading) {
@@ -48,6 +53,10 @@ public partial class SchemaViewModel : Tool, IAutosavable {
 	public ObservableCollection<StructTypeVM> StructTypes { get; } = [];
 
 	public IEnumerable<string> AllTypes => SchemaFieldItemVM.PrimitiveTypes.Concat(StructTypes.Select(s => s.Name));
+
+	public IEnumerable<string> RootEnumFieldNames => Fields.Where(f => f.TypeKey == "enum").Select(f => f.Name);
+
+	public IEnumerable<string> RootDiscriminatorOptions => new[] { "" }.Concat(RootEnumFieldNames);
 
 	public bool HasContent => !string.IsNullOrEmpty(CurrentPath);
 
@@ -118,6 +127,22 @@ public partial class SchemaViewModel : Tool, IAutosavable {
 		UpdateTitle();
 	}
 
+	partial void OnRootDiscriminatorChanged(string value) {
+		if (!m_loading) IsDirty = true;
+	}
+
+	partial void OnAdvancedViewChanged(bool value) {
+		foreach (var f in Fields) f.NotifyAdvancedViewChanged();
+		foreach (var st in StructTypes) {
+			st.NotifyAdvancedViewChanged();
+			foreach (var f in st.Fields) f.NotifyAdvancedViewChanged();
+		}
+
+		if (m_toolState is null) return;
+		m_toolState.AdvancedView = value;
+		m_toolState.Save();
+	}
+
 	private void UpdateTitle() {
 		DisplayTitle = string.IsNullOrEmpty(FileName) ? "Schema Editor"
 			: IsDirty ? $"{FileName} *"
@@ -132,12 +157,24 @@ public partial class SchemaViewModel : Tool, IAutosavable {
 			f.NotifyAvailableTypesChanged();
 	}
 
+	public void NotifyRootFieldOptionsChanged() {
+		OnPropertyChanged(nameof(RootEnumFieldNames));
+		OnPropertyChanged(nameof(RootDiscriminatorOptions));
+		foreach (var f in Fields) f.NotifyTypeSwitchOptionsChanged();
+		foreach (var st in StructTypes)
+		foreach (var f in st.Fields)
+			f.NotifyTypeSwitchOptionsChanged();
+	}
+
 	public void OpenFile(string uid, string virtualPath, string? contentSourceRealPath = null) {
+		EnsureToolStateLoaded();
+
 		m_loading = true;
 		CurrentUid = uid;
 		CurrentPath = virtualPath;
 		Fields.Clear();
 		StructTypes.Clear();
+		RootDiscriminator = "";
 
 		var realPath = contentSourceRealPath ?? ProjectContext.Resolve(CurrentPath);
 		try {
@@ -146,6 +183,14 @@ public partial class SchemaViewModel : Tool, IAutosavable {
 
 		IsDirty = contentSourceRealPath != null;
 		m_loading = false;
+	}
+
+	private void EnsureToolStateLoaded() {
+		if (m_toolStateLoaded) return;
+		m_toolStateLoaded = true;
+		m_toolState = SchemaEditorState.Load();
+		AdvancedView = m_toolState.AdvancedView;
+		ShowProperties = m_toolState.SelectedTab != "types";
 	}
 
 	private void LoadFromJson(string text) {
@@ -163,6 +208,8 @@ public partial class SchemaViewModel : Tool, IAutosavable {
 
 		if (root["properties"] is JsonObject props)
 			LoadFieldsInto(props, Fields);
+
+		RootDiscriminator = root["x-toast-discriminator"]?.GetValue<string>() ?? "";
 	}
 
 	private void LoadFieldsInto(JsonObject props, ObservableCollection<SchemaFieldItemVM> target) {
@@ -210,7 +257,19 @@ public partial class SchemaViewModel : Tool, IAutosavable {
 					if (opt?.GetValue<string>() is { } vs)
 						field.Variants.Add(new StringOptionVM { Value = vs });
 
-			field.TypeSwitchJson = val?["x-toast-type-switch"]?.ToJsonString() ?? "";
+			if (val?["x-toast-type-switch"] is JsonObject switchNode) {
+				field.UseTypeSwitch = true;
+				field.TypeSwitchField = switchNode["field"]?.GetValue<string>() ?? "";
+				if (switchNode["cases"] is JsonObject casesNode)
+					foreach (var (caseValue, caseNode) in casesNode) {
+						if (caseNode is not JsonObject co) continue;
+						field.TypeSwitchCases.Add(new TypeSwitchCaseVM(this) {
+							CaseValue = caseValue,
+							TypeKey = co["type"]?.GetValue<string>() ?? "string",
+							DefaultString = co["default"] is { } d ? d.ToJsonString() : ""
+						});
+					}
+			}
 
 			target.Add(field);
 		}
@@ -219,11 +278,19 @@ public partial class SchemaViewModel : Tool, IAutosavable {
 	[RelayCommand]
 	private void SelectPropertiesTab() {
 		ShowProperties = true;
+		SaveSelectedTab("fields");
 	}
 
 	[RelayCommand]
 	private void SelectTypesTab() {
 		ShowProperties = false;
+		SaveSelectedTab("types");
+	}
+
+	private void SaveSelectedTab(string tab) {
+		if (m_toolState is null) return;
+		m_toolState.SelectedTab = tab;
+		m_toolState.Save();
 	}
 
 	[RelayCommand]
@@ -278,6 +345,9 @@ public partial class SchemaViewModel : Tool, IAutosavable {
 			root["definitions"] = defs;
 		}
 
+		if (!string.IsNullOrEmpty(RootDiscriminator))
+			root["x-toast-discriminator"] = RootDiscriminator;
+
 		var props = new JsonObject();
 		foreach (var field in Fields) props[field.Name] = BuildFieldNode(field);
 		root["properties"] = props;
@@ -302,18 +372,10 @@ public partial class SchemaViewModel : Tool, IAutosavable {
 	}
 
 	private JsonObject BuildFieldNode(SchemaFieldItemVM field) {
-		var typeKey = field.TypeKey;
-		var xType = field.IsArray ? typeKey + "[]" : typeKey;
-
-		var node = new JsonObject { ["x-toast-type"] = xType };
+		var node = new JsonObject();
 
 		if (!string.IsNullOrEmpty(field.Description))
 			node["description"] = field.Description;
-
-		if (!string.IsNullOrEmpty(field.RefTypeString)) {
-			if (typeKey == "asset") node["x-toast-asset-type"] = field.RefTypeString;
-			else if (typeKey == "node") node["x-toast-node-type"] = field.RefTypeString;
-		}
 
 		if (field.Variants.Count > 0) {
 			var variantsArr = new JsonArray();
@@ -321,10 +383,38 @@ public partial class SchemaViewModel : Tool, IAutosavable {
 			node["x-toast-variants"] = variantsArr;
 		}
 
-		if (!string.IsNullOrEmpty(field.TypeSwitchJson))
-			try {
-				node["x-toast-type-switch"] = JsonNode.Parse(field.TypeSwitchJson);
-			} catch { }
+		if (field.UseTypeSwitch) {
+			if (!string.IsNullOrEmpty(field.TypeSwitchField) && field.TypeSwitchCases.Count > 0) {
+				var casesObj = new JsonObject();
+				foreach (var c in field.TypeSwitchCases) {
+					var caseNode = new JsonObject { ["type"] = c.TypeKey };
+					if (!string.IsNullOrEmpty(c.DefaultString))
+						try {
+							caseNode["default"] = JsonNode.Parse(c.DefaultString);
+						} catch {
+							caseNode["default"] = c.DefaultString;
+						}
+
+					casesObj[c.CaseValue] = caseNode;
+				}
+
+				node["x-toast-type-switch"] = new JsonObject {
+					["field"] = field.TypeSwitchField,
+					["cases"] = casesObj
+				};
+			}
+
+			return node;
+		}
+
+		var typeKey = field.TypeKey;
+		var xType = field.IsArray ? typeKey + "[]" : typeKey;
+		node["x-toast-type"] = xType;
+
+		if (!string.IsNullOrEmpty(field.RefTypeString)) {
+			if (typeKey == "asset") node["x-toast-asset-type"] = field.RefTypeString;
+			else if (typeKey == "node") node["x-toast-node-type"] = field.RefTypeString;
+		}
 
 		if (!field.IsArray && double.TryParse(field.MinString, NumberStyles.Float,
 			    CultureInfo.InvariantCulture, out var minParsed))

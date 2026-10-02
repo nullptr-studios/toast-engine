@@ -57,6 +57,17 @@ void registerPhysicsSettings() {
 			 .step = 1.0},
 	    &Tunables::solver_iterations
 	);
+	uint_setting(
+	    "physics.solver.position_iterations",
+	    3,
+	    {.label = "Position iterations",
+			 .category = "Solver",
+			 .description = "Passes that push overlapping bodies apart after the velocity solve",
+			 .min = 1.0,
+			 .max = 16.0,
+			 .step = 1.0},
+	    &Tunables::position_iterations
+	);
 	flt("physics.solver.penetration_slop",
 	    0.005,
 	    {.label = "Penetration slop",
@@ -121,6 +132,15 @@ void registerPhysicsSettings() {
 	     .max = 10.0,
 	     .step = 0.1},
 	    &Tunables::sleep_delay);
+	flt("physics.sleep.drift",
+	    0.05,
+	    {.label = "Drift",
+	     .category = "Sleep",
+	     .description = "Meters the farthest point of a body may travel during the delay and still sleep",
+	     .min = 0.005,
+	     .max = 0.5,
+	     .step = 0.005},
+	    &Tunables::sleep_drift);
 
 	toast::settings::declareFloat(
 	    "physics.step.frequency",
@@ -245,6 +265,15 @@ void registerPhysicsSettings() {
 	     .max = 64.0,
 	     .step = 0.5},
 	    &Tunables::force_sleep_slack);
+	flt("physics.fracture.sleep_scale",
+	    3.0,
+	    {.label = "Fragment sleep scale",
+	     .category = "Fracture",
+	     .description = "Multiplier on the sleep thresholds for fragments so debris settles sooner than other bodies",
+	     .min = 1.0,
+	     .max = 20.0,
+	     .step = 0.5},
+	    &Tunables::fragment_sleep_scale);
 	toast::settings::declareInt(
 	    "physics.fracture.max_fragment_extent_bricks",
 	    1,
@@ -289,6 +318,39 @@ void registerPhysicsSettings() {
 	    &Tunables::min_candidates_per_job
 	);
 	uint_setting(
+	    "physics.jobs.min_manifolds_per_job",
+	    4,
+	    {.label = "Min manifolds per job",
+			 .category = "Jobs",
+			 .description = "Active manifolds below this run constraint preparation inline",
+			 .min = 1.0,
+			 .max = 1024.0,
+			 .step = 1.0},
+	    &Tunables::min_manifolds_per_job
+	);
+	uint_setting(
+	    "physics.jobs.min_shapes_per_query_job",
+	    16,
+	    {.label = "Min shapes per query job",
+			 .category = "Jobs",
+			 .description = "Leaf shapes below this run broadphase tree queries inline",
+			 .min = 1.0,
+			 .max = 1024.0,
+			 .step = 1.0},
+	    &Tunables::min_shapes_per_query_job
+	);
+	uint_setting(
+	    "physics.jobs.min_bodies_per_job",
+	    64,
+	    {.label = "Min bodies per job",
+			 .category = "Jobs",
+			 .description = "Bodies below this run integration inline instead of across the thread pool",
+			 .min = 1.0,
+			 .max = 4096.0,
+			 .step = 1.0},
+	    &Tunables::min_bodies_per_job
+	);
+	uint_setting(
 	    "physics.jobs.min_wave_constraints_for_dispatch",
 	    512,
 	    {.label = "Min wave constraints per dispatch",
@@ -298,6 +360,50 @@ void registerPhysicsSettings() {
 			 .max = 65536.0,
 			 .step = 1.0},
 	    &Tunables::min_wave_constraints_for_dispatch
+	);
+	uint_setting(
+	    "physics.jobs.box_voxel_split_min_voxels",
+	    500000,
+	    {.label = "Box-voxel split threshold",
+			 .category = "Jobs",
+			 .description = "Box-voxel pairs above this surface area split across jobs, kept high until measured",
+			 .min = 1.0,
+			 .max = 1000000.0,
+			 .step = 1.0},
+	    &Tunables::box_voxel_split_min_voxels
+	);
+	uint_setting(
+	    "physics.jobs.voxel_voxel_split_min_voxels",
+	    250000,
+	    {.label = "Voxel-voxel split threshold",
+			 .category = "Jobs",
+			 .description = "Same reasoning and same deliberately-off-for-now state as box_voxel_split_min_voxels",
+			 .min = 1.0,
+			 .max = 1000000.0,
+			 .step = 1.0},
+	    &Tunables::voxel_voxel_split_min_voxels
+	);
+	uint_setting(
+	    "physics.jobs.voxel_pair_split_regions",
+	    8,
+	    {.label = "Voxel pair split regions",
+			 .category = "Jobs",
+			 .description = "How many jobs a split box-voxel or voxel-voxel pair divides into",
+			 .min = 1.0,
+			 .max = 64.0,
+			 .step = 1.0},
+	    &Tunables::voxel_pair_split_regions
+	);
+	uint_setting(
+	    "physics.character.sweep_refine_iterations",
+	    6,
+	    {.label = "Sweep refine iterations",
+			 .category = "Character",
+			 .description = "Bisection steps a sweep refines by once it hits something, a clear sweep never pays it",
+			 .min = 1.0,
+			 .max = 32.0,
+			 .step = 1.0},
+	    &Tunables::sweep_refine_iterations
 	);
 }
 

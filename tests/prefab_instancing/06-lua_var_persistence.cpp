@@ -18,6 +18,7 @@ namespace {
 
 constexpr const char* SCRIPT_SOURCE = R"lua(
 local M = {}
+---@readonly
 M.health = 100
 M.tags = { 1, 2, 3 }
 M.target = Node
@@ -48,6 +49,7 @@ TOAST_TEST_NAMED(
 	auto* rt = node->scriptRuntime();
 	assert(rt != nullptr);
 	assert(rt->instanceCount() == 1);
+	assert(rt->instanceSchema(0)->find("health")->read_only);
 
 	// Edit health and target; leave tags at its script-declared default
 	const bool health_set = rt->setVarByPath(0, "health", std::any {50});

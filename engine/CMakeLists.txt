@@ -56,6 +56,9 @@ file(GLOB_RECURSE SOURCE CONFIGURE_DEPENDS "src/*.cpp" "generated/*.cpp" "genera
 add_library(toast_engine SHARED ${SOURCE})
 
 file(GLOB_RECURSE TOAST_REFLECTED_HEADERS CONFIGURE_DEPENDS "src/toast/*.hpp" "src/toast/*.h")
+file(GLOB_RECURSE TOAST_REFLECTION_GENERATOR_SOURCES CONFIGURE_DEPENDS
+        "${CMAKE_SOURCE_DIR}/tools/reflection_generator/src/*.rs"
+        "${CMAKE_SOURCE_DIR}/tools/reflection_generator/templates/*")
 add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/reflection.stamp"
         COMMAND "${OUTPUT_ROOT}/$<CONFIG>/reflection_generator/reflection_generator${CMAKE_EXECUTABLE_SUFFIX}"
@@ -66,8 +69,9 @@ add_custom_command(
         --register-fn "registerEngineTypes"
         --split-typeinfo
         --lua-stubs "${CMAKE_SOURCE_DIR}/engine/assets/lua/types.d.lua"
+        --event-lua-stubs "${CMAKE_SOURCE_DIR}/engine/assets/lua/events.d.lua"
         COMMAND ${CMAKE_COMMAND} -E touch "${CMAKE_CURRENT_BINARY_DIR}/reflection.stamp"
-        DEPENDS ${TOAST_REFLECTED_HEADERS}
+        DEPENDS ${TOAST_REFLECTED_HEADERS} ${TOAST_REFLECTION_GENERATOR_SOURCES}
         COMMENT "Regenerating reflection metadata"
         VERBATIM
 )
@@ -140,15 +144,27 @@ target_compile_definitions(toast_engine PUBLIC
         $<$<CONFIG:Debug>:DEBUG>
         $<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>>:NDEBUG>
         $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:TRACY_ENABLE>
+        GLM_FORCE_INTRINSICS
 )
 
 if (MSVC)
+    string(REGEX REPLACE "/EH[a-z-]+" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+    target_compile_options(toast_engine PUBLIC $<$<CONFIG:Release>:/arch:AVX2>)
     target_compile_options(toast_engine PRIVATE
             /bigobj
-            /EHc-
-            $<$<CONFIG:Release>:/O2;/Ob2;/Oi;/Ot;/GL;/Gy;/Gw;/fp:fast>
+            /EHs /EHc-
+            $<$<CONFIG:Release>:/O2;/Ob2;/Oi;/Ot;/GL;/Gy;/Gw;/fp:fast;/Qpar>
+            $<$<CONFIG:Release>:/GS->
     )
-    target_link_options(toast_engine PRIVATE $<$<CONFIG:Release>:/LTCG>)
+    target_link_options(toast_engine PRIVATE $<$<CONFIG:Release>:/LTCG;/OPT:REF;/OPT:ICF>)
+else ()
+    if (ARCH STREQUAL "x86_64")
+        target_compile_options(toast_engine PUBLIC $<$<CONFIG:Release>:-march=x86-64-v3>)
+    endif ()
+    target_compile_options(toast_engine PRIVATE
+            $<$<CONFIG:Release>:-O3;-flto;-fno-math-errno;-fassociative-math;-freciprocal-math;-fno-signed-zeros;-fno-trapping-math;-funroll-loops;-ffunction-sections;-fdata-sections>
+    )
+    target_link_options(toast_engine PRIVATE $<$<CONFIG:Release>:-flto;-Wl,--gc-sections>)
 endif ()
 
 target_compile_options(toast_engine PUBLIC
@@ -205,6 +221,8 @@ add_custom_command(TARGET toast_engine POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${_tracy_include}/common" "${TOAST_ENGINE_OUTPUT_ROOT}/include/common"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${_toml_include}/toml++" "${TOAST_ENGINE_OUTPUT_ROOT}/include/toml++"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${_glm_include}/glm" "${TOAST_ENGINE_OUTPUT_ROOT}/include/glm"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${LUA_INCLUDE_DIR}" "${TOAST_ENGINE_OUTPUT_ROOT}/include"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${LUABRIDGE3_INCLUDE_DIRS}" "${TOAST_ENGINE_OUTPUT_ROOT}/include"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different "${_tinyspline_include}/tinyspline.h" "${TOAST_ENGINE_OUTPUT_ROOT}/include/tinyspline.h"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different "${_tinyspline_include}/tinysplinecxx.h" "${TOAST_ENGINE_OUTPUT_ROOT}/include/tinysplinecxx.h"
         # Runtimes

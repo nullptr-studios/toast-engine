@@ -57,6 +57,9 @@ public:
 	auto queryBounds(const AABB& bounds) const -> std::vector<ShapeID>;
 
 	[[nodiscard]]
+	auto queryRay(glm::vec3 pos, glm::vec3 dir) const -> std::vector<ShapeID>;
+
+	[[nodiscard]]
 	auto debugNodes() const -> std::vector<AABBTreeDebugNode>;
 	[[nodiscard]]
 	auto stats() const -> const BroadPhaseStats&;
@@ -67,8 +70,10 @@ private:
 		uint32_t generation = 0;
 	};
 
+	/// stats is an explicit out param instead of m_stats so concurrent query jobs each get their own
 	[[nodiscard]]
-	auto testPair(CollisionWorldView world, ShapeID shape_a, ShapeID shape_b) -> std::optional<BroadPhasePair>;
+	auto testPair(CollisionWorldView world, ShapeID shape_a, ShapeID shape_b, BroadPhaseStats& stats)
+	    -> std::optional<BroadPhasePair>;
 
 	AABBTree m_tree;
 	std::vector<ShapeLeaf> m_shape_leaves;

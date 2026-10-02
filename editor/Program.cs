@@ -25,7 +25,7 @@ internal sealed class Program {
 			.WithInterFont();
 
 		// Force software when renderdoc
-		if (RenderDocDetector.IsAttached) {
+		if (GraphicsDebuggerDetector.IsAttached) {
 			builder = builder
 				.With(new Win32PlatformOptions {
 					RenderingMode = [ Win32RenderingMode.Software ]

@@ -33,6 +33,9 @@ public partial class ViewportControl : UserControl {
 	public static readonly StyledProperty<bool> PlayModeProperty =
 		AvaloniaProperty.Register<ViewportControl, bool>(nameof(PlayMode));
 
+	public static readonly StyledProperty<bool> DetachedProperty =
+		AvaloniaProperty.Register<ViewportControl, bool>(nameof(Detached));
+
 	private static readonly PropertyInfo? s_cursorImpl =
 		typeof(Cursor).GetProperty("PlatformImpl", BindingFlags.NonPublic | BindingFlags.Instance);
 
@@ -53,6 +56,8 @@ public partial class ViewportControl : UserControl {
 	private Point m_lockPoint;
 	private Point m_lockVirtual;
 	private Point m_lastPointerPoint;
+	// last position the engine received in pixels
+	private Point? m_lastSentMouse;
 
 	private CancellationTokenSource? m_hintCts;
 	private Transitions? m_hintTransitions;
@@ -87,6 +92,8 @@ public partial class ViewportControl : UserControl {
 		InitializeComponent();
 
 		Focusable = true;
+		AddHandler(KeyDownEvent, OnSwallowedAlt, RoutingStrategies.Bubble, handledEventsToo: true);
+		AddHandler(KeyUpEvent, OnSwallowedAlt, RoutingStrategies.Bubble, handledEventsToo: true);
 		AttachedToVisualTree += OnAttached;
 		DetachedFromVisualTree += OnDetached;
 		LostFocus += OnLostFocus;
@@ -96,6 +103,20 @@ public partial class ViewportControl : UserControl {
 	public bool PlayMode {
 		get => GetValue(PlayModeProperty);
 		set => SetValue(PlayModeProperty, value);
+	}
+
+	public bool Detached {
+		get => GetValue(DetachedProperty);
+		set => SetValue(DetachedProperty, value);
+	}
+
+	private bool OwnsEngineFrame {
+		get {
+			var handle = (DataContext as WorkspaceViewModel)?.EffectiveHandle ?? 0;
+			return Detached
+				? handle != 0 && ViewportFocus.DetachedOwner == handle
+				: ViewportFocus.DetachedOwner == 0;
+		}
 	}
 
 	public bool IsEditorFlying => m_editorFlyActive;
@@ -142,7 +163,8 @@ public partial class ViewportControl : UserControl {
 		if (m_editorFlyActive) return;
 
 		m_lockPoint = m_lastPointerPoint;
-		m_lockVirtual = m_lastPointerPoint * RenderScaling();
+		// resume from what the engine last saw or delta cursor actions read the gap as a flick
+		m_lockVirtual = m_lastSentMouse ?? m_lastPointerPoint * RenderScaling();
 		RecenterLockedPointer();
 		_ = ShowFocusHintAsync();
 	}
@@ -291,6 +313,13 @@ public partial class ViewportControl : UserControl {
 		m_engine ??= (DataContext as WorkspaceViewModel)?.Engine;
 		if (m_engine is null)
 			return;
+
+		if (!OwnsEngineFrame) {
+			// Forget the size so it is sent again once this viewport owns the frame
+			m_surfaceW = 0;
+			m_surfaceH = 0;
+			return;
+		}
 
 		SendResizeIfChanged();
 
@@ -502,8 +531,10 @@ public partial class ViewportControl : UserControl {
 			m_lockPoint = point;
 			if (delta == default) return; // the recenter warp landing
 			m_lockVirtual += delta * scale;
-			if (m_engine is not null)
+			if (m_engine is not null) {
+				m_lastSentMouse = m_lockVirtual;
 				Events.Send(new WindowMousePosition { X = (float)m_lockVirtual.X, Y = (float)m_lockVirtual.Y });
+			}
 			RecenterLockedPointer();
 			return;
 		}
@@ -515,10 +546,9 @@ public partial class ViewportControl : UserControl {
 
 	private void SendMousePosition(Point point) {
 		var scale = RenderScaling();
-		Events.Send(new WindowMousePosition {
-			X = (float)(Math.Clamp(point.X, 0, Bounds.Width) * scale),
-			Y = (float)(Math.Clamp(point.Y, 0, Bounds.Height) * scale)
-		});
+		var sent = new Point(Math.Clamp(point.X, 0, Bounds.Width) * scale, Math.Clamp(point.Y, 0, Bounds.Height) * scale);
+		m_lastSentMouse = sent;
+		Events.Send(new WindowMousePosition { X = (float)sent.X, Y = (float)sent.Y });
 	}
 
 	protected override void OnPointerPressed(PointerPressedEventArgs e) {
@@ -652,15 +682,7 @@ public partial class ViewportControl : UserControl {
 		}
 
 		if (IsEditorShortcut(e)) return;
-		if (!ShouldForward || m_engine is null) return;
-
-		var (key, _) = MapKey(e.Key);
-		Events.Send(new WindowKey {
-			Key = key,
-			Actions = ActionPressed,
-			Mods = SdlMods(e.KeyModifiers)
-		});
-		e.Handled = true;
+		if (SendKey(e, ActionPressed)) e.Handled = true;
 	}
 
 	protected override void OnKeyUp(KeyEventArgs e) {
@@ -678,15 +700,25 @@ public partial class ViewportControl : UserControl {
 		}
 
 		if (IsEditorShortcut(e)) return;
-		if (!ShouldForward || m_engine is null) return;
+		if (SendKey(e, ActionReleased)) e.Handled = true;
+	}
+
+	// PlayModeShortcuts marks Alt handled at the window during play so the normal key overrides never see it
+	private void OnSwallowedAlt(object? sender, KeyEventArgs e) {
+		if (!PlayModeShortcuts.Blocked || !PlayModeShortcuts.IsAlt(e.Key)) return;
+		SendKey(e, e.RoutedEvent == KeyDownEvent ? ActionPressed : ActionReleased);
+	}
+
+	private bool SendKey(KeyEventArgs e, int action) {
+		if (!ShouldForward || m_engine is null) return false;
 
 		var (key, _) = MapKey(e.Key);
 		Events.Send(new WindowKey {
 			Key = key,
-			Actions = ActionReleased,
+			Actions = action,
 			Mods = SdlMods(e.KeyModifiers)
 		});
-		e.Handled = true;
+		return true;
 	}
 
 	protected override void OnTextInput(TextInputEventArgs e) {

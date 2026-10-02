@@ -500,9 +500,10 @@ auto importVox(std::span<const uint8_t> data) -> VoxScene {
 			const int32_t node_id = reader.i32();
 			(void)reader.dict();
 			const int32_t count = reader.i32();
-			if (count < 1) {
-				throw std::runtime_error(".vox: an nSHP chunk with no models");
-			}
+			// we should suppport files without models so we can get the palette from it -x
+			// if (count < 1) {
+			//	throw std::runtime_error(".vox: an nSHP chunk with no models");
+			//}
 
 			RawNode& raw = raw_node_for(node_id);
 			for (int32_t i = 0; i < count; ++i) {

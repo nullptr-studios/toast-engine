@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Tomlyn;
+using Tomlyn.Model;
 using Tomlyn.Serialization;
 
 namespace editor.Assets;
@@ -14,6 +16,7 @@ public record MetaHeader {
 	public string? Source { get; init; }
 	public string CreatedAt { get; init; } = DateTime.UtcNow.ToString("o");
 	public string ModifiedAt { get; set; } = DateTime.UtcNow.ToString("o");
+    public IReadOnlyList<string>? Tags { get; init; }
 }
 
 public record TextureMetaSection : IMetaSection {
@@ -60,12 +63,14 @@ public record AudioStringMetaSection : IMetaSection {
 
 public static class MetaFile {
 	public static void Write(string outputAssetRealPath, MetaHeader header, params IMetaSection[] sections) {
+		var tags = header.Tags ?? ReadHeader(outputAssetRealPath)?.Tags;
 		var dto = new MetaFileDto {
 			Uid = header.Uid,
 			Type = header.Type,
 			Source = header.Source,
 			CreatedAt = header.CreatedAt,
-			ModifiedAt = header.ModifiedAt
+			ModifiedAt = header.ModifiedAt,
+			Tags = tags is { Count: > 0 } ? tags.ToList() : null
 		};
 
 		foreach (var section in sections)
@@ -122,10 +127,31 @@ public static class MetaFile {
 				Type = dto.Type,
 				Source = dto.Source,
 				CreatedAt = dto.CreatedAt,
-				ModifiedAt = dto.ModifiedAt
+				ModifiedAt = dto.ModifiedAt,
+				Tags = dto.Tags
 			};
 		} catch {
 			return null;
+		}
+	}
+
+	public static bool SetTags(string path, IReadOnlyCollection<string> tagIds) {
+		var metaPath = path.EndsWith(".meta") ? path : path + ".meta";
+		if (!File.Exists(metaPath)) return false;
+		try {
+			var table = TomlSerializer.Deserialize<TomlTable>(File.ReadAllText(metaPath))!;
+			if (tagIds.Count == 0) {
+				table.Remove("tags");
+			} else {
+				var array = new TomlArray();
+				foreach (var id in tagIds) array.Add(id);
+				table["tags"] = array;
+			}
+
+			File.WriteAllText(metaPath, TomlSerializer.Serialize(table));
+			return true;
+		} catch {
+			return false;
 		}
 	}
 
@@ -244,6 +270,7 @@ file sealed class MetaFileDto {
 	[TomlPropertyName("source")] public string? Source { get; set; }
 	[TomlPropertyName("created_at")] public string CreatedAt { get; set; } = "";
 	[TomlPropertyName("modified_at")] public string ModifiedAt { get; set; } = "";
+	[TomlPropertyName("tags")] public List<string>? Tags { get; set; }
 
 	[TomlPropertyName("texture")] public TextureSectionDto? Texture { get; set; }
 	[TomlPropertyName("psd")] public PsdSectionDto? Psd { get; set; }

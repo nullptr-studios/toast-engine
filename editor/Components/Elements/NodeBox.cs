@@ -198,7 +198,7 @@ public sealed class NodeBox : TemplatedControl {
 	}
 
 	private void OnHostKeyDown(object? sender, KeyEventArgs e) {
-		if (!IsEnabled || string.IsNullOrEmpty(Value) || e.Key is not (Key.Delete or Key.Back)) return;
+		if (!IsEnabled || PlayModeShortcuts.Blocked || string.IsNullOrEmpty(Value) || e.Key is not (Key.Delete or Key.Back)) return;
 		Clear();
 		e.Handled = true;
 	}
@@ -252,7 +252,7 @@ public sealed class NodeBox : TemplatedControl {
 	}
 
 	private async void OpenPicker() {
-		if (!IsEnabled || HierarchyViewModel.Current is not { } h || App.MainWindow is not { } owner) return;
+		if (!IsEnabled || HierarchyViewModel.Current is not { } h || (TopLevel.GetTopLevel(this) as Window ?? App.MainWindow) is not { } owner) return;
 		var picked = await new HierarchyTree(h.Root, null, NodeType).ShowDialog<string?>(owner);
 		if (picked is not null) Value = picked;
 	}

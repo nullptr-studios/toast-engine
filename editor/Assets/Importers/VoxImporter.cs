@@ -83,10 +83,11 @@ public partial class VoxImporter : IAssetImporter {
 		// An empty directory means the native parse failed
 		var temp = new DirectoryInfo(tempDir);
 		var models = temp.Exists ? temp.GetFiles("*.tvox").OrderBy(f => f.Name).ToList() : [];
-		if (models.Count == 0) {
-			throw new Exception(
-				$"Voxel import produced no models in {tempDir} - check the editor log for the underlying error");
-		}
+		// we need to allow when we only have a palette and no models
+		//if (models.Count == 0) {
+		//	throw new Exception(
+		//		$"Voxel import produced no models in {tempDir} - check the editor log for the underlying error");
+		//}
 
 		var manifest = temp.GetFiles("*.json").FirstOrDefault();
 		var importedUids = new List<string>();
@@ -96,6 +97,9 @@ public partial class VoxImporter : IAssetImporter {
 		void ReportProgress() {
 			progress?.Invoke((double)doneItems / totalItems);
 		}
+
+		var palette = temp.GetFiles("*.tpal").FirstOrDefault();
+		var thumbnailPalettePath = paletteExisted ? paletteDest : palette?.FullName ?? "";
 
 		var modelUids = new Dictionary<string, string>();
 		log($"Importing {models.Count} voxel model(s)...");
@@ -111,12 +115,18 @@ public partial class VoxImporter : IAssetImporter {
 				{ Uid = uid, Type = AssetTypeRegistry.ByExtension(".tvox")!.Type, Source = ctx.SourceVirtualPath };
 			MetaFile.Write(destPath, header, m_settings.ToSection());
 			importedUids.Add(uid);
+
+			try {
+				await Task.Run(() => ThumbnailService.GenerateFromVoxel(destPath, thumbnailPalettePath, uid));
+			} catch (Exception e) {
+				log($"Warning: could not generate a thumbnail for {model.Name}: {e.Message}");
+			}
+
 			doneItems++;
 			ReportProgress();
 		}
 
 		// Palette on first import only because materials are assigned by hand
-		var palette = temp.GetFiles("*.tpal").FirstOrDefault();
 		if (m_settings.ImportPalette && palette is not null) {
 			if (paletteExisted) {
 				log($"Keeping the existing palette {name}.tpal - a reimport would discard its material assignments");

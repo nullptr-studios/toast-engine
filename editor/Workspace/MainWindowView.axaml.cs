@@ -56,6 +56,8 @@ public partial class MainWindowView : Window {
 		AddHandler(KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel);
 		AddHandler(KeyUpEvent, OnKeyUp, RoutingStrategies.Tunnel);
 
+		Activated += (_, _) => (DataContext as MainWindowViewModel)?.ReclaimEngine();
+
 		// Every editor window counts as focus: a floating dock or a modal in use is still the editor in use
 		m_activeWatch = IsActiveProperty.Changed.AddClassHandler<Window>((_, _) => QueueWindowStatePush());
 		m_stateWatch = WindowStateProperty.Changed.AddClassHandler<Window>((_, _) => QueueWindowStatePush());
@@ -303,7 +305,7 @@ public partial class MainWindowView : Window {
 	}
 
 	private void OnKeyDown(object? sender, KeyEventArgs e) {
-		if (!IsTextInputFocused()) {
+		if (!IsTextInputFocused() && !PlayModeShortcuts.Blocked) {
 			if (e.Key == Key.Q && e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift)) {
 				e.Handled = true;
 				OnQuitEditor(null, e);
@@ -332,31 +334,7 @@ public partial class MainWindowView : Window {
 
 	private bool RunEditShortcut(KeyEventArgs e) {
 		if (DataContext is not MainWindowViewModel vm) return false;
-		var ctrl = e.KeyModifiers == KeyModifiers.Control;
-		var ctrlShift = e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift);
-		ICommand? command = null;
-		object? parameter = null;
-
-		if (ctrl && e.Key == Key.Z) command = vm.History?.UndoCommand;
-		else if ((ctrlShift && e.Key == Key.Z) || (ctrl && e.Key == Key.Y)) command = vm.History?.RedoCommand;
-		else if (ctrl && e.Key == Key.A) command = vm.Hierarchy?.AddNodeCommand;
-		else if (ctrlShift && e.Key == Key.A) command = vm.Hierarchy?.LoadNodeCommand;
-		else if (ctrl && e.Key == Key.X) command = vm.Hierarchy?.CutCommand;
-		else if (ctrl && e.Key == Key.C) command = vm.Hierarchy?.CopyCommand;
-		else if (ctrl && e.Key == Key.V) command = vm.Hierarchy?.PasteCommand;
-		else if (ctrlShift && e.Key == Key.V) command = vm.Hierarchy?.PasteAsChildCommand;
-		else if (ctrl && e.Key == Key.D) command = vm.Hierarchy?.DuplicateCommand;
-		else if (ctrl && e.Key == Key.Up) command = vm.Hierarchy?.MoveUpCommand;
-		else if (ctrl && e.Key == Key.Down) command = vm.Hierarchy?.MoveDownCommand;
-		else if (e.KeyModifiers == KeyModifiers.None && e.Key == Key.F2) command = vm.Hierarchy?.RenameCommand;
-		else if (e.KeyModifiers == KeyModifiers.None && e.Key == Key.Delete) command = vm.Hierarchy?.DeleteCommand;
-
-		if (command is null) return false;
-		parameter = vm.Hierarchy?.SelectedNode;
-		if (!command.CanExecute(parameter)) return false;
-		command.Execute(parameter);
-		e.Handled = true;
-		return true;
+		return EditShortcuts.Run(e, vm.History?.UndoCommand, vm.History?.RedoCommand, vm.Hierarchy);
 	}
 
 	private void OnKeyUp(object? sender, KeyEventArgs e) {

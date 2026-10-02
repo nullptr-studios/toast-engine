@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using editor.Engine;
+using editor.Workspace;
 using Proto.Events;
 using Tomlyn;
 using Tomlyn.Model;
@@ -39,12 +40,15 @@ public static class ProjectContext {
 
 	public static void Reset() {
 		UIBindStubGenerator.StopWatching();
+		DataSchemaStubGenerator.StopWatching();
+		SchemaEditorState.Reset();
 		AssetDatabase.Reset();
 		IsInitialized = false;
 		ProjectPath = ArtworkPath = AssetsPath = CachePath = CorePath = SavedPath = "";
 		Databases = ["assets"];
 		Languages = ["en"];
 		s_schemes.Clear();
+		AssetBrowserSettings.Reset();
 	}
 
 	public static void Initialize(string projectPath, string corePath) {
@@ -62,8 +66,11 @@ public static class ProjectContext {
 		RegisterSchemes();
 		EnsureDirectories();
 		IsInitialized = true;
+		AssetBrowserSettings.Load();
 		UIBindStubGenerator.Generate();
 		UIBindStubGenerator.StartWatching();
+		DataSchemaStubGenerator.Generate();
+		DataSchemaStubGenerator.StartWatching();
 	}
 
 	public static void SyncLuaDefinitions(Action<string>? log = null) {
@@ -85,6 +92,7 @@ public static class ProjectContext {
 
 		// Emit UI bind stubs alongside the engine definitions
 		UIBindStubGenerator.Generate();
+		DataSchemaStubGenerator.Generate();
 
 		var luarc = Path.Combine(ProjectPath, ".luarc.json");
 		if (File.Exists(luarc)) return;
@@ -107,6 +115,7 @@ public static class ProjectContext {
 		Languages = ReadLanguagesFromProject(ProjectPath);
 		RegisterSchemes();
 		EnsureDirectories();
+		AssetBrowserSettings.Load();
 		LanguagesChanged?.Invoke();
 
 		ToastEngine.ReloadProjectSettings();

@@ -11,6 +11,7 @@
 #include "nodes/rigidbody.hpp"
 #include "nodes/sphere_collider.hpp"
 #include "physics_settings.hpp"
+#include "toast/physics/body.hpp"
 #include "voxel_data_lock.hpp"
 
 #include <algorithm>
@@ -20,11 +21,12 @@
 #include <limits>
 #include <span>
 #include <toast/assets/assets.hpp>
-#include <toast/assets/voxel_model.hpp>
 #include <toast/thread_pool.hpp>
+#include <toast/voxel/assets/voxel_model.hpp>
 #include <toast/voxel/mass_accumulator.hpp>
-#include <toast/world/voxel_node.hpp>
+#include <toast/voxel/nodes/voxel_node.hpp>
 #include <tracy/Tracy.hpp>
+#include <unordered_set>
 
 namespace physics {
 
@@ -51,6 +53,11 @@ auto cachedManifoldMatches(const CachedManifold& manifold, CachedManifoldKey key
 	return manifold.pair == key.pair && manifold.normal_index == key.normal_index;
 }
 
+[[nodiscard]]
+auto sameBodyPair(const Constraint& lhs, const Constraint& rhs) -> bool {
+	return lhs.body_a == rhs.body_a && lhs.body_b == rhs.body_b;
+}
+
 /// One thread pool job share of a constraint wave may hold pieces of more than one island batch
 struct ConstraintChunk {
 	std::vector<std::span<Constraint>> pieces;
@@ -75,17 +82,18 @@ auto chunkConstraintWave(std::span<const std::span<Constraint>> spans, size_t jo
 	for (const std::span<Constraint>& span : spans) {
 		size_t offset = 0;
 		while (offset < span.size()) {
-			const size_t room = target - current_size;
-			const size_t take = std::min(room, span.size() - offset);
-			if (take == 0) {
+			if (current_size >= target) {
 				chunks.push_back(std::move(current));
 				current = ConstraintChunk {};
 				current_size = 0;
-				continue;
 			}
-			current.pieces.push_back(span.subspan(offset, take));
-			current_size += take;
-			offset += take;
+			size_t end = std::min(span.size(), offset + (target - current_size));
+			while (end < span.size() && sameBodyPair(span[end - 1], span[end])) {
+				++end;
+			}
+			current.pieces.push_back(span.subspan(offset, end - offset));
+			current_size += end - offset;
+			offset = end;
 		}
 	}
 	if (!current.pieces.empty()) {
@@ -118,23 +126,15 @@ auto computeOccupiedBounds(const voxel::Volume& volume) -> AABB {
 		for (int32_t y = 0; y < brick_dims.y; ++y) {
 			for (int32_t x = 0; x < brick_dims.x; ++x) {
 				const glm::ivec3 brick {x, y, z};
-				if (volume.entryAt(brick).tag() == voxel::BrickTag::empty) {
+				const voxel::BrickOccupancy* occupancy = volume.occupancyPointer(brick);
+				if (occupancy == nullptr || voxel::isEmpty(*occupancy)) {
 					continue;
 				}
 
+				const voxel::BrickExtent extent = voxel::occupiedExtent(*occupancy);
 				const glm::ivec3 brick_base = brick * brick_dim;
-				for (int32_t lz = 0; lz < brick_dim; ++lz) {
-					for (int32_t ly = 0; ly < brick_dim; ++ly) {
-						for (int32_t lx = 0; lx < brick_dim; ++lx) {
-							const glm::ivec3 voxel_pos = brick_base + glm::ivec3(lx, ly, lz);
-							if (not volume.isSolidAt(voxel_pos)) {
-								continue;
-							}
-							min = glm::min(min, voxel_pos);
-							max = glm::max(max, voxel_pos);
-						}
-					}
-				}
+				min = glm::min(min, brick_base + glm::ivec3(extent.min.x, extent.min.y, extent.min.z));
+				max = glm::max(max, brick_base + glm::ivec3(extent.max.x, extent.max.y, extent.max.z));
 			}
 		}
 	}
@@ -324,6 +324,20 @@ void Simulator::unregisterRigidbody(Rigidbody& node) {
 	node.assignBody({});
 }
 
+namespace {
+
+[[nodiscard]]
+constexpr auto bodyTypeOf(toast::SimulationType type) noexcept -> BodyType {
+	switch (type) {
+		case toast::SimulationType::static_body: return BodyType::static_body;
+		case toast::SimulationType::kinematic: return BodyType::kinematic_body;
+		case toast::SimulationType::dynamic: return BodyType::dynamic_body;
+	}
+	return BodyType::dynamic_body;
+}
+
+}
+
 void Simulator::registerVoxelNode(toast::VoxelNode& node) {
 	ZoneScopedN("physics::RegisterVoxelNode");
 	if (not instance) {
@@ -341,10 +355,11 @@ void Simulator::registerVoxelNode(toast::VoxelNode& node) {
 	PhysicsMaterial material;
 
 	node.syncWorldTransform();
-	const bool dynamic_body = not node.indestructible;
+	const BodyType body_type = bodyTypeOf(node.simulation_type);
+	const bool dynamic_body = body_type == BodyType::dynamic_body;
 	const BodyID body = instance->createBody(
 	    BodyDescriptor {
-	      .type = dynamic_body ? BodyType::dynamic_body : BodyType::static_body,
+	      .type = body_type,
 	      .allow_sleep = node.allow_sleep,
 	      .position = node.world_position,
 	      .rotation = node.world_rotation,
@@ -413,6 +428,8 @@ auto Simulator::nodeFor(BodyID body) -> toast::Box<toast::Node> {
 		return {};
 	}
 
+	ZoneScoped;
+
 	const auto rigidbody_binding =
 	    std::ranges::find_if(instance->m_node_bindings, [body](const NodeBinding& candidate) { return candidate.body == body; });
 	if (rigidbody_binding != instance->m_node_bindings.end()) {
@@ -424,6 +441,36 @@ auto Simulator::nodeFor(BodyID body) -> toast::Box<toast::Node> {
 	});
 	if (voxel_binding != instance->m_voxel_bindings.end()) {
 		return voxel_binding->node;
+	}
+
+	return {};
+}
+
+auto Simulator::colliderFor(BodyID body, ShapeID shape) -> toast::Box<toast::Node> {
+	if (!instance) {
+		return {};
+	}
+
+	ZoneScoped;
+
+	for (const NodeBinding& binding : instance->m_node_bindings) {
+		if (binding.body != body) {
+			continue;
+		}
+
+		const auto collider = std::ranges::find(binding.colliders, shape, &ColliderBinding::shape);
+
+		if (collider != binding.colliders.end() && collider->node.exists()) {
+			return collider->node;
+		}
+
+		return {};
+	}
+
+	for (const VoxelNodeBinding& binding : instance->m_voxel_bindings) {
+		if (binding.body == body && binding.shape == shape && binding.node.exists()) {
+			return binding.node;
+		}
 	}
 
 	return {};
@@ -467,7 +514,7 @@ void Simulator::tick() {
 
 	queuePendingFragments(connectivity_results);
 	spawnBudgetedFragments();
-	enforceFragmentBudget();
+	enforceFragmentBudget(dt);
 	despawnSettledFragments(dt);
 	integrate(dt);
 
@@ -481,14 +528,32 @@ void Simulator::tick() {
 	m_profile.narrow_phase_ms = elapsed_ms(after_connectivity, after_narrow);
 
 	updateCache(m_manifolds);
-	wakeContactGroups();
+	const auto after_cache = std::chrono::steady_clock::now();
+	m_profile.cache_update_ms = elapsed_ms(after_narrow, after_cache);
+
+	wakeDisturbedSleepers(dt);
+	unlockDisturbedFragments();
+	const auto after_wake = std::chrono::steady_clock::now();
+	m_profile.wake_groups_ms = elapsed_ms(after_cache, after_wake);
 
 	// resolve
 	auto constraints = prepareConstraints(m_manifolds);
+	const auto after_prepare = std::chrono::steady_clock::now();
+	m_profile.prepare_constraints_ms = elapsed_ms(after_wake, after_prepare);
+
 	auto islands = buildIslands(m_manifolds, constraints);
+	const auto after_islands = std::chrono::steady_clock::now();
+	m_profile.build_islands_ms = elapsed_ms(after_prepare, after_islands);
+
 	solveIslands(islands);
+	const auto after_solve = std::chrono::steady_clock::now();
+	m_profile.island_solve_ms = elapsed_ms(after_islands, after_solve);
+
 	convertImpulsesToDamage(islands);
+	const auto after_damage_conversion = std::chrono::steady_clock::now();
+
 	updateSleeping(dt);
+	m_profile.sleep_update_ms = elapsed_ms(after_damage_conversion, std::chrono::steady_clock::now());
 	m_profile.solve_ms = elapsed_ms(after_narrow, std::chrono::steady_clock::now());
 
 	m_profile.manifold_count = m_manifolds.size();
@@ -521,34 +586,24 @@ void Simulator::publishProfile(std::span<const SimulationIsland> islands) {
 }
 
 void Simulator::clearFragmentFromSource(
-    ShapeID shape_id, VoxelShapeData& data, voxel::Volume& source, const DetachedComponent& component
+    ShapeID shape_id, VoxelShapeData& data, voxel::Volume& source, const DetachedComponent& component,
+    const RemovedVoxels* already_removed
 ) {
 	ZoneScoped;
-
-	std::vector<glm::ivec3> dirty_bricks;
 
 	{
 		std::scoped_lock voxel_lock {voxelDataMutex()};
 
+		const RemovedVoxels removed = already_removed != nullptr
+		                                  ? *already_removed
+		                                  : discardComponent(source, component, voxel::densityTable(data.palette, data.materials));
+		data.moments -= removed.moments;
+		data.solid_voxel_count -= std::min(data.solid_voxel_count, removed.voxels);
+
+		std::vector<glm::ivec3> dirty_bricks;
+		dirty_bricks.reserve(component.pieces.size());
 		for (const auto& p : component.pieces) {
 			dirty_bricks.emplace_back(p.brick);
-
-			for (uint32_t i = 0; i < voxel::k_brick_voxel_count; ++i) {
-				if (not voxel::isSolid(p.voxels, i)) {
-					continue;
-				}
-
-				auto coords = voxel::localFromIndex(i);
-				glm::ivec3 pos = p.brick * static_cast<int32_t>(voxel::k_brick_dim) + glm::ivec3(coords.x, coords.y, coords.z);
-				uint8_t palette_index = source.materialAt(pos);
-				uint32_t material_index = voxel::resolveMaterialIndex(data.palette, data.materials, palette_index);
-				uint16_t density = data.materials.materials[material_index].density;
-
-				if (source.setVoxel(pos, voxel::k_empty_palette_index).changed) {
-					data.moments.remove(pos.x, pos.y, pos.z, density);
-					data.solid_voxel_count -= data.solid_voxel_count > 0 ? 1u : 0u;
-				}
-			}
 		}
 
 		// Not tryCollapseUniform here since clearing a voxel only unfills a brick and never passes isFull
@@ -557,6 +612,12 @@ void Simulator::clearFragmentFromSource(
 
 	// Carving does not bump the shape revision so its contacts stay warm
 	++data.surface_revision;
+
+	if (data.solid_voxel_count == 0) {
+		if (toast::VoxelNode* node = voxelNodeFor(shape_id)) {
+			node->m_pending_events.emptied = true;
+		}
+	}
 
 	auto* shape = tryGetShape(shape_id);
 	if (shape == nullptr) {
@@ -573,6 +634,11 @@ void Simulator::clearFragmentFromSource(
 		return;
 	}
 	rebuildMassProperties(shape->owner);
+}
+
+auto Simulator::voxelNodeFor(ShapeID shape) -> toast::VoxelNode* {
+	const auto binding = std::ranges::find(m_voxel_bindings, shape, &VoxelNodeBinding::shape);
+	return binding != m_voxel_bindings.end() && binding->node.exists() ? &*binding->node : nullptr;
 }
 
 void Simulator::retireVoxelBody(BodyID id) {
@@ -628,6 +694,7 @@ void Simulator::destroyFragmentsOf(BodyID origin) {
 }
 
 void Simulator::destroyFragmentRecord(BodyID id) {
+	recheckNeighborsOf(id);
 	destroyBody(id);
 	std::erase_if(m_fragments, [id](const FragmentRecord& record) { return record.body == id; });
 }
@@ -723,7 +790,47 @@ void Simulator::queuePendingFragments(std::span<const ConnectivityResult> result
 
 		const glm::uvec3 brick_dims = data->volume->brickDims();
 		const std::vector<ComponentClass> classes = classifyComponents(r.connectivity, brick_dims, data->anchor_mask);
+
+		// Extra anchored components of a static body split into their own static bodies
+		// A kinematic body moves, so a static piece would be left behind and these fall as dynamic fragments instead
+		const bool source_is_kinematic = [&] {
+			const Body* owner = tryGetBody(shape->owner);
+			return owner != nullptr && owner->type == BodyType::kinematic_body;
+		}();
+		std::vector<DetachedComponent> orphaned_anchored;
+		auto anchored_components = buildDetachedComponents(r.connectivity, classes, brick_dims, ComponentClass::anchored);
+		if (anchored_components.size() > 1) {
+			const auto largest = std::ranges::max_element(anchored_components, {}, &DetachedComponent::voxel_count);
+			for (auto it = anchored_components.begin(); it != anchored_components.end(); ++it) {
+				if (it == largest) {
+					continue;
+				}
+				if (source_is_kinematic) {
+					orphaned_anchored.push_back(std::move(*it));
+				} else {
+					bool result = spawnStaticSplitBody(r.shape, *it);
+					if (not result) {
+						TOAST_WARN("Physics", "Failed to spawn static body");
+					}
+				}
+			}
+
+			shape = tryGetShape(r.shape);
+			if (shape == nullptr || shape->type != ShapeType::voxel) {
+				continue;
+			}
+			data = tryGetVoxelData(shape->voxel.data);
+			if (data == nullptr || data->volume == nullptr) {
+				continue;
+			}
+		}
+
 		data->detached_components = buildDetachedComponents(r.connectivity, classes, brick_dims);
+		data->detached_components.insert(
+		    data->detached_components.end(),
+		    std::make_move_iterator(orphaned_anchored.begin()),
+		    std::make_move_iterator(orphaned_anchored.end())
+		);
 
 		// Debris sized pieces never become a tracked body
 		std::vector<DetachedComponent> components_to_spawn;
@@ -821,32 +928,106 @@ void Simulator::spawnBudgetedFragments() {
 	}
 }
 
-void Simulator::enforceFragmentBudget() {
+namespace {
+
+/// Sleeping bodies are immovable in the solver
+auto movable(const Body& body) -> bool {
+	return body.inverse_mass > 0.0f && (body.awake || body.type != BodyType::dynamic_body);
+}
+
+/// Approach speed into a sleeper that wakes it in sleep thresholds
+constexpr float k_wake_approach = 0.75f;
+
+/// Speed that wakes every touching sleeper in sleep thresholds
+constexpr float k_wake_racing = 4.0f;
+
+/// Speed a body leaving a sleeper needs to wake it in sleep thresholds
+constexpr float k_end_looseness = 2.0f;
+
+/// Seconds between the checks that a sleeper is still held up
+constexpr float k_support_check_seconds = 1.0f;
+
+/// Sleep age that makes the next update check the sleeper support
+constexpr float k_support_check_now = 1.0e9f;
+
+/// Contact normal component against gravity that marks the other body as resting on a sleeper
+constexpr float k_resting_on_normal = 0.5f;
+
+/// Contact normal component against gravity that counts as something below holding a body up
+constexpr float k_support_normal = 0.3f;
+
+auto supportCheckPeriod(size_t slot) -> float {
+	const float phase = static_cast<float>((slot * 2654435761u) % 1024u) / 1024.0f;
+	return k_support_check_seconds * (0.75f + (0.5f * phase));
+}
+
+/// Sleep time lost per second of motion in seconds gained
+constexpr float k_sleep_decay = 2.0f;
+
+/// A small body may spin faster than a big one at the same point speed
+auto effectiveAngularLimit(const Body& body, float angular_limit, float linear_reference) -> float {
+	return body.extent_radius > 1.0e-3f ? std::max(angular_limit, linear_reference / body.extent_radius) : angular_limit;
+}
+
+/// Farthest point travel since a pose so a slow creep or tip never counts as rest
+auto driftSince(const Body& body, const glm::vec3& center, const glm::quat& rotation) -> float {
+	const float alignment = std::min(std::abs(glm::dot(body.rotation, rotation)), 1.0f);
+	const float turn = 2.0f * std::sqrt(std::max(1.0f - (alignment * alignment), 0.0f));
+	return glm::length(body.worldCenterOfMass() - center) + (turn * body.extent_radius);
+}
+
+}
+
+void Simulator::enforceFragmentBudget(float dt) {
 	ZoneScopedN("physics::FragmentProfile");
 
+	// Never below the limit a fragment may sleep at on its own
+	const float force_scale = std::max(tunables().fragment_sleep_scale, std::sqrt(tunables().force_sleep_slack));
+	const float linear_limit = tunables().sleep_linear_threshold * force_scale;
+	const float angular_limit = tunables().sleep_angular_threshold * force_scale;
+
 	size_t active = 0;
-	for (const FragmentRecord& record : m_fragments) {
+	for (FragmentRecord& record : m_fragments) {
 		const Body* body = tryGetBody(record.body);
-		if (body != nullptr && body->enabled && body->awake) {
-			++active;
+		if (body == nullptr || not body->enabled || not body->awake) {
+			record.rest_seconds = 0.0f;
+			continue;
+		}
+		++active;
+		const float body_angular_limit = effectiveAngularLimit(*body, angular_limit, linear_limit);
+		const bool nearly_at_rest =
+		    glm::dot(body->linear_velocity, body->linear_velocity) < linear_limit * linear_limit &&
+		    glm::dot(body->angular_velocity, body->angular_velocity) < body_angular_limit * body_angular_limit;
+		if (record.rest_seconds > 0.0f && driftSince(*body, record.rest_center, record.rest_rotation) > tunables().sleep_drift) {
+			record.rest_seconds = 0.0f;
+		} else if (nearly_at_rest) {
+			if (record.rest_seconds <= 0.0f) {
+				record.rest_center = body->worldCenterOfMass();
+				record.rest_rotation = body->rotation;
+			}
+			record.rest_seconds += dt;
+		} else {
+			record.rest_seconds = std::max(record.rest_seconds - (dt * k_sleep_decay), 0.0f);
 		}
 	}
 
-	// only claim a fragment already about to sleep on its own
+	// Sustained rest only so a fresh spawn or the top of a hop never freezes mid air
 	for (const FragmentRecord& record : m_fragments) {
 		if (active <= tunables().max_active_fragments) {
 			break;
+		}
+		if (record.rest_seconds < tunables().sleep_delay) {
+			continue;
 		}
 		Body* body = tryGetBody(record.body);
 		if (body == nullptr || not body->enabled || not body->awake) {
 			continue;
 		}
-		const bool nearly_at_rest =
-		    glm::dot(body->linear_velocity, body->linear_velocity) <
-		        tunables().sleep_linear_threshold * tunables().sleep_linear_threshold * tunables().force_sleep_slack &&
-		    glm::dot(body->angular_velocity, body->angular_velocity) <
-		        tunables().sleep_angular_threshold * tunables().sleep_angular_threshold * tunables().force_sleep_slack;
-		if (not nearly_at_rest) {
+		const size_t slot = record.body.slot;
+		if (body->gravity_scale != 0.0f && (slot >= m_body_supported.size() || m_body_supported[slot] == 0)) {
+			continue;
+		}
+		if (slot < m_sleep_blocked.size() && m_sleep_blocked[slot] != 0) {
 			continue;
 		}
 		body->sleep_locked = true;
@@ -909,13 +1090,13 @@ auto Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedCompone
 	const uint64_t palette_uid = data->palette_uid;
 	const BodyID origin = valid(data->fragment_origin) ? data->fragment_origin : shape->owner;
 
-	auto extracted = [&] {
+	const DensityTable densities = voxel::densityTable(palette, materials);
+	auto extracted_fragment = [&] {
 		std::scoped_lock voxel_lock {voxelDataMutex()};
-		return extractFragmentVolume(*data->volume, component);
+		return extractFragmentVolume(*data->volume, component, densities);
 	}();
-	if (extracted.volume.solidVoxelCount() == 0) {
+	if (not extracted_fragment.has_value()) {
 		++m_profile.fragment_spawn_failures;
-		// setVoxel silently no ops when the runtime brick pool has no room left
 		TOAST_WARN(
 		    "Physics",
 		    "Fragment body could not be extracted from shape {}: the runtime brick pool is out of bricks",
@@ -924,16 +1105,12 @@ auto Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedCompone
 		return false;
 	}
 
-	if (extracted.volume.solidVoxelCount() != component.voxel_count) {
-		TOAST_WARN(
-		    "Physics",
-		    "Fragment extraction from shape {} ran out of pool bricks: expected {} voxels, got {}",
-		    source_shape_id.slot,
-		    component.voxel_count,
-		    extracted.volume.solidVoxelCount()
-		);
-		return false;
-	}
+	ExtractedFragment& extracted = *extracted_fragment;
+	const glm::ivec3 source_shift = extracted.offset * static_cast<int32_t>(voxel::k_brick_dim);
+	const RemovedVoxels removed {
+	  .moments = extracted.moments.shifted(source_shift.x, source_shift.y, source_shift.z),
+	  .voxels = extracted.voxels,
+	};
 
 	const glm::uvec3 extracted_brick_dims = extracted.volume.brickDims();
 	glm::vec3 origin_local = glm::vec3(extracted.offset) * static_cast<float>(voxel::k_brick_dim) * voxel::k_voxel_size;
@@ -948,13 +1125,27 @@ auto Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedCompone
 	});
 	// clang-format on
 
+	// A failed spawn gives the bricks back
+	const auto restore_to_source = [&](voxel::Volume& fragment_volume) {
+		const Shape* source_shape = tryGetShape(source_shape_id);
+		VoxelShapeData* source_data = source_shape != nullptr ? tryGetVoxelData(source_shape->voxel.data) : nullptr;
+		if (source_data != nullptr && source_data->volume != nullptr) {
+			std::scoped_lock voxel_lock {voxelDataMutex()};
+			restoreFragment(*source_data->volume, fragment_volume, extracted.offset);
+		}
+	};
+
 	if (not valid(frag_body)) {
+		restore_to_source(extracted.volume);
 		return true;
 	}
 
-	const ShapeID frag_shape = createVoxelShape(frag_body, VoxelShape {}, std::move(extracted.volume), palette, materials);
+	auto owned_volume = std::make_unique<voxel::Volume>(std::move(extracted.volume));
+	const ShapeID frag_shape =
+	    createVoxelShapeInternal(frag_body, VoxelShape {}, nullptr, owned_volume, palette, materials, &extracted.moments);
 	if (not valid(frag_shape)) {
 		destroyBody(frag_body);
+		restore_to_source(*owned_volume);
 		return true;
 	}
 	if (const Shape* stored = tryGetShape(frag_shape)) {
@@ -971,8 +1162,11 @@ auto Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedCompone
 	shape = tryGetShape(source_shape_id);
 	if (shape != nullptr) {
 		if (VoxelShapeData* source_data = tryGetVoxelData(shape->voxel.data)) {
-			clearFragmentFromSource(source_shape_id, *source_data, *source_data->volume, component);
+			clearFragmentFromSource(source_shape_id, *source_data, *source_data->volume, component, &removed);
 		}
+	}
+	if (toast::VoxelNode* node = voxelNodeFor(source_shape_id)) {
+		node->m_pending_events.broken_pieces.push_back(static_cast<int>(component.voxel_count));
 	}
 
 	rebuildMassProperties(frag_body);
@@ -1010,6 +1204,107 @@ auto Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedCompone
 	return true;
 }
 
+auto Simulator::spawnStaticSplitBody(ShapeID source_shape_id, const DetachedComponent& component) -> bool {
+	ZoneScopedN("physics::SpawnStaticSplit");
+	ZoneValue(static_cast<uint64_t>(component.voxel_count));
+
+	Shape* shape = tryGetShape(source_shape_id);
+	if (shape == nullptr) {
+		return true;
+	}
+	VoxelShapeData* data = tryGetVoxelData(shape->voxel.data);
+	if (data == nullptr || data->volume == nullptr) {
+		return true;
+	}
+	Body* body = tryGetBody(shape->owner);
+	if (body == nullptr) {
+		return true;
+	}
+
+	glm::vec3 position = body->position;
+	glm::quat rotation = body->rotation;
+	glm::vec3 local_center = shape->voxel.local_center;
+	glm::quat local_rotation = shape->voxel.local_rotation;
+	voxel::Palette palette = data->palette;
+	voxel::MaterialLibrary materials = data->materials;
+
+	const DensityTable densities = voxel::densityTable(palette, materials);
+	auto extracted_fragment = [&] {
+		std::scoped_lock voxel_lock {voxelDataMutex()};
+		return extractFragmentVolume(*data->volume, component, densities);
+	}();
+	if (not extracted_fragment.has_value()) {
+		TOAST_WARN(
+		    "Physics",
+		    "Static split body could not be extracted from shape {}: the runtime brick pool is out of bricks",
+		    source_shape_id.slot
+		);
+		return false;
+	}
+
+	ExtractedFragment& extracted = *extracted_fragment;
+	const glm::ivec3 source_shift = extracted.offset * static_cast<int32_t>(voxel::k_brick_dim);
+	const RemovedVoxels removed {
+	  .moments = extracted.moments.shifted(source_shift.x, source_shift.y, source_shift.z),
+	  .voxels = extracted.voxels,
+	};
+
+	const glm::vec3 origin_local = glm::vec3(extracted.offset) * static_cast<float>(voxel::k_brick_dim) * voxel::k_voxel_size;
+	const glm::quat piece_rotation = glm::normalize(rotation * local_rotation);
+	const glm::vec3 piece_pos = position + rotation * (local_center + local_rotation * origin_local);
+
+	// clang-format off
+	auto split_body = createBody(BodyDescriptor {
+		.type = BodyType::static_body,
+		.position = piece_pos,
+		.rotation = piece_rotation,
+	});
+	// clang-format on
+	// A failed spawn gives the bricks back
+	const auto restore_to_source = [&](voxel::Volume& fragment_volume) {
+		const Shape* source_shape = tryGetShape(source_shape_id);
+		VoxelShapeData* source_data = source_shape != nullptr ? tryGetVoxelData(source_shape->voxel.data) : nullptr;
+		if (source_data != nullptr && source_data->volume != nullptr) {
+			std::scoped_lock voxel_lock {voxelDataMutex()};
+			restoreFragment(*source_data->volume, fragment_volume, extracted.offset);
+		}
+	};
+
+	if (not valid(split_body)) {
+		restore_to_source(extracted.volume);
+		return true;
+	}
+
+	auto owned_volume = std::make_unique<voxel::Volume>(std::move(extracted.volume));
+	const ShapeID split_shape =
+	    createVoxelShapeInternal(split_body, VoxelShape {}, nullptr, owned_volume, palette, materials, &extracted.moments);
+	if (not valid(split_shape)) {
+		destroyBody(split_body);
+		restore_to_source(*owned_volume);
+		return true;
+	}
+
+	shape = tryGetShape(source_shape_id);
+	if (shape != nullptr) {
+		if (VoxelShapeData* source_data = tryGetVoxelData(shape->voxel.data)) {
+			clearFragmentFromSource(source_shape_id, *source_data, *source_data->volume, component, &removed);
+		}
+	}
+
+	++m_profile.static_splits_spawned;
+
+	TOAST_TRACE(
+	    "Physics",
+	    "Static body {} split off shape {}: {} voxels across {} pieces, still anchored",
+	    split_body.slot,
+	    source_shape_id.slot,
+	    component.voxel_count,
+	    component.pieces.size()
+	);
+
+	return true;
+}
+
 void Simulator::despawnSettledFragments(float dt) {
 	ZoneScopedN("physics::DespawnSettledFragments");
 
@@ -1037,6 +1332,7 @@ void Simulator::despawnSettledFragments(float dt) {
 	}
 
 	for (const BodyID id : doomed) {
+		recheckNeighborsOf(id);
 		destroyBody(id);
 	}
 	m_profile.fragments_despawned = doomed.size();
@@ -1090,8 +1386,7 @@ void Simulator::syncEnabledState() {
 			continue;
 		}
 
-		const bool wants_dynamic = not binding.node->indestructible;
-		if (wants_dynamic != (body->type == BodyType::dynamic_body)) {
+		if (bodyTypeOf(binding.node->simulation_type) != body->type) {
 			voxel_nodes_to_reregister.push_back(binding.node);
 			continue;
 		}
@@ -1169,12 +1464,53 @@ void Simulator::wakeBody(BodyID id) {
 	}
 }
 
+auto Simulator::sleeperIsHeldUp(BodyID id) const -> bool {
+	const Body* body = tryGetBody(id);
+	if (body == nullptr || body->gravity_scale == 0.0f) {
+		return true;
+	}
+	return id.slot < m_contact_supported.size() && m_contact_supported[id.slot] != 0;
+}
+
+void Simulator::releaseSleeper(BodyID sleeper, BodyID other, const glm::vec3& normal_to_other) {
+	Body* body = tryGetBody(sleeper);
+	if (body == nullptr || body->awake) {
+		return;
+	}
+
+	const Body* neighbor = tryGetBody(other);
+	if (neighbor == nullptr) {
+		body->asleep_seconds = k_support_check_now;
+		return;
+	}
+	if (neighbor->type == BodyType::dynamic_body && neighbor->awake &&
+	    isStill(*neighbor, k_end_looseness * sleepScale(sleeper.slot))) {
+		return;
+	}
+
+	const glm::vec3 gravity = tunables().gravity;
+	const float gravity_length = glm::length(gravity);
+	if (gravity_length > 1.0e-6f && glm::dot(normal_to_other, -gravity / gravity_length) > k_resting_on_normal) {
+		return;
+	}
+
+	++m_profile.woken_by_contact_end;
+	if (body->sleep_locked) {
+		unlockSleep(sleeper);
+	} else {
+		wakeBody(sleeper);
+	}
+}
+
 void Simulator::sleepBody(BodyID id) {
 	if (not instance) {
 		return;
 	}
 	if (Body* body = instance->tryGetBody(id); body && body->type == BodyType::dynamic_body) {
 		instance->m_profile.bodies_slept += body->awake;
+		if (body->awake) {
+			body->asleep_seconds = 0.0f;
+		}
 		body->awake = false;
 		body->sleep_timer = tunables().sleep_delay;
 		body->linear_velocity = {};
@@ -1204,63 +1540,96 @@ void Simulator::wakeBodiesTouching(ShapeID id) {
 	}
 }
 
-void Simulator::wakeContactGroups() {
-	ZoneScopedN("physics::WakeContactGroups");
+void Simulator::markSupportedBodies() {
+	ZoneScopedN("physics::MarkSupportedBodies");
 
-	std::vector<size_t> parents(m_bodies.size());
-	std::vector<size_t> ranks(m_bodies.size(), 0);
-	for (size_t index = 0; index < parents.size(); ++index) {
-		parents[index] = index;
+	m_body_supported.assign(m_bodies.size(), 0);
+	for (const Manifold& manifold : m_manifolds) {
+		if (manifold.contact_count == 0) {
+			continue;
+		}
+		m_body_supported[manifold.pair.a.body.slot] = 1;
+		m_body_supported[manifold.pair.b.body.slot] = 1;
 	}
+}
 
-	auto find_root = [&parents](size_t index) {
-		size_t root = index;
-		while (parents[root] != root) {
-			root = parents[root];
+auto Simulator::sleepScale(size_t slot) const -> float {
+	return m_fragment_index.contains(static_cast<uint32_t>(slot)) ? tunables().fragment_sleep_scale : 1.0f;
+}
+
+auto Simulator::isStill(const Body& body, float scale) const -> bool {
+	const float linear_limit = tunables().sleep_linear_threshold * scale;
+	const float angular_limit =
+	    effectiveAngularLimit(body, tunables().sleep_angular_threshold * scale, tunables().sleep_linear_threshold * scale);
+	const float linear_speed_squared = glm::dot(body.linear_velocity, body.linear_velocity);
+	const float angular_speed_squared = glm::dot(body.angular_velocity, body.angular_velocity);
+	return std::isfinite(linear_speed_squared) && std::isfinite(angular_speed_squared) &&
+	       linear_speed_squared <= linear_limit * linear_limit && angular_speed_squared <= angular_limit * angular_limit;
+}
+
+void Simulator::wakeDisturbedSleepers(float dt) {
+	ZoneScopedN("physics::WakeDisturbedSleepers");
+
+	markSupportedBodies();
+
+	// A sleeper wakes when a body runs into it or races past and slow creeping never does
+	const float gravity_speed = glm::length(tunables().gravity) * dt;
+	for (const Manifold& manifold : m_manifolds) {
+		const Body* a = tryGetBody(manifold.pair.a.body);
+		const Body* b = tryGetBody(manifold.pair.b.body);
+		if (a == nullptr || b == nullptr || a->type != BodyType::dynamic_body || b->type != BodyType::dynamic_body ||
+		    a->awake == b->awake) {
+			continue;
 		}
-		while (parents[index] != index) {
-			const size_t next = parents[index];
-			parents[index] = root;
-			index = next;
+
+		const bool a_sleeps = not a->awake;
+		const Body& sleeper = a_sleeps ? *a : *b;
+		const Body& mover = a_sleeps ? *b : *a;
+		if (not sleeper.enabled) {
+			continue;
 		}
-		return root;
+
+		// Gravity has just added a step of speed to a body resting on the sleeper
+		const float scale = sleepScale(a_sleeps ? manifold.pair.a.body.slot : manifold.pair.b.body.slot);
+		const float approach_limit =
+		    (tunables().sleep_linear_threshold * scale * k_wake_approach) + (gravity_speed * mover.gravity_scale);
+		float approach = 0.0f;
+		const size_t contact_count = std::min<size_t>(manifold.contact_count, manifold.contacts.size());
+		for (size_t index = 0; index < contact_count; ++index) {
+			const glm::vec3& point = manifold.contacts[index].position;
+			const glm::vec3 relative =
+			    velocityAtPoint(*b, point - b->worldCenterOfMass()) - velocityAtPoint(*a, point - a->worldCenterOfMass());
+			approach = std::max(approach, -glm::dot(relative, manifold.normal));
+		}
+		const bool approaching = approach > approach_limit;
+		if (approaching || not isStill(mover, k_wake_racing * scale)) {
+			++(approaching ? m_profile.woken_by_approach : m_profile.woken_by_racing);
+			wakeBody(a_sleeps ? manifold.pair.a.body : manifold.pair.b.body);
+		}
+	}
+}
+
+void Simulator::unlockDisturbedFragments() {
+	ZoneScopedN("physics::UnlockDisturbedFragments");
+
+	// A moving neighbor may be taking the support away
+	const float limit = tunables().sleep_linear_threshold * tunables().sleep_linear_threshold * tunables().force_sleep_slack;
+	const auto disturbs = [limit](const Body& mover, const Body& sleeper) {
+		return sleeper.sleep_locked && mover.type != BodyType::static_body &&
+		       (mover.type == BodyType::kinematic_body || mover.awake) &&
+		       glm::dot(mover.linear_velocity, mover.linear_velocity) > limit;
 	};
 
 	for (const Manifold& manifold : m_manifolds) {
-		const Body* body_a = tryGetBody(manifold.pair.a.body);
-		const Body* body_b = tryGetBody(manifold.pair.b.body);
-		if (body_a == nullptr || body_b == nullptr || body_a->type != BodyType::dynamic_body ||
-		    body_b->type != BodyType::dynamic_body) {
+		const Body* a = tryGetBody(manifold.pair.a.body);
+		const Body* b = tryGetBody(manifold.pair.b.body);
+		if (a == nullptr || b == nullptr) {
 			continue;
 		}
-
-		size_t root_a = find_root(manifold.pair.a.body.slot);
-		size_t root_b = find_root(manifold.pair.b.body.slot);
-		if (root_a == root_b) {
-			continue;
-		}
-		if (ranks[root_a] < ranks[root_b]) {
-			std::swap(root_a, root_b);
-		}
-		parents[root_b] = root_a;
-		if (ranks[root_a] == ranks[root_b]) {
-			++ranks[root_a];
-		}
-	}
-
-	std::vector<bool> group_is_awake(m_bodies.size(), false);
-	for (size_t index = 0; index < m_bodies.size(); ++index) {
-		const BodySlot& slot = m_bodies[index];
-		if (slot.occupied && slot.body.enabled && slot.body.type == BodyType::dynamic_body && slot.body.awake) {
-			group_is_awake[find_root(index)] = true;
-		}
-	}
-
-	for (size_t index = 0; index < m_bodies.size(); ++index) {
-		const BodySlot& slot = m_bodies[index];
-		if (slot.occupied && slot.body.enabled && slot.body.type == BodyType::dynamic_body && not slot.body.sleep_locked &&
-		    group_is_awake[find_root(index)]) {
-			wakeBody(BodyID {.slot = static_cast<uint32_t>(index), .generation = slot.generation});
+		if (disturbs(*a, *b)) {
+			unlockSleep(manifold.pair.b.body);
+		} else if (disturbs(*b, *a)) {
+			unlockSleep(manifold.pair.a.body);
 		}
 	}
 }
@@ -1433,6 +1802,7 @@ void Simulator::publishVoxelRenderRecords() {
 		m_voxel_render_records.push_back(
 		    VoxelRenderRecord {
 		      .shape = ShapeID {.slot = static_cast<uint32_t>(index), .generation = slot.generation},
+		      .body = slot.shape.owner,
 		      .volume = data->volume,
 		      .palette = &data->palette,
 		      .transform = body_transform * local_transform,
@@ -1464,6 +1834,96 @@ void Simulator::recordTickBurst(size_t steps, bool time_budget_reached) {
 	}
 }
 
+void Simulator::recordInterpolationAlpha(double alpha) {
+	if (instance != nullptr) {
+		instance->m_interpolation_alpha = static_cast<float>(std::clamp(alpha, 0.0, 1.0));
+	}
+}
+
+auto Simulator::interpolationAlpha() -> float {
+	return instance != nullptr ? instance->m_interpolation_alpha : 1.0f;
+}
+
+auto Simulator::renderPoseDelta(BodyID id) -> glm::mat4 {
+	if (instance == nullptr) {
+		return {1.0f};
+	}
+	const Body* body = instance->tryGetBody(id);
+	if (body == nullptr || body->type != BodyType::dynamic_body || not body->enabled || not body->awake) {
+		return {1.0f};
+	}
+
+	const float alpha = instance->m_interpolation_alpha;
+	const glm::quat blended_rotation = glm::normalize(glm::slerp(body->previous_rotation, body->rotation, alpha));
+	const glm::vec3 blended_position = glm::mix(body->previous_position, body->position, alpha);
+
+	// Blended pose times the inverse tick pose so it composes onto any transform built from the tick pose
+	const glm::quat delta_rotation = blended_rotation * glm::conjugate(body->rotation);
+	const glm::vec3 delta_position = blended_position - delta_rotation * body->position;
+	return glm::translate(glm::mat4(1.0f), delta_position) * glm::mat4_cast(delta_rotation);
+}
+
+auto Simulator::renderPoseDelta(const toast::VoxelNode& node) -> glm::mat4 {
+	return renderPoseDelta(node.bodyID());
+}
+
+auto Simulator::renderPoseDeltaFor(uint64_t node_uid) -> glm::mat4 {
+	if (instance == nullptr) {
+		return {1.0f};
+	}
+	const auto follows = instance->m_render_body_of_node.find(node_uid);
+	return follows != instance->m_render_body_of_node.end() ? renderPoseDelta(follows->second) : glm::mat4(1.0f);
+}
+
+void Simulator::syncRenderPoses() {
+	if (instance != nullptr) {
+		instance->rebuildRenderPoseLookup();
+	}
+}
+
+void Simulator::rebuildRenderPoseLookup() {
+	ZoneScopedN("physics::RebuildRenderPoseLookup");
+
+	m_render_body_of_node.clear();
+
+	std::vector<std::pair<const toast::Node*, BodyID>> drivers;
+	std::unordered_set<uint64_t> driver_uids;
+	const auto add_driver = [&](const toast::Node& node, BodyID id) {
+		const Body* body = tryGetBody(id);
+		if (body != nullptr && body->type == BodyType::dynamic_body) {
+			drivers.emplace_back(&node, id);
+			driver_uids.insert(node.uid().data());
+		}
+	};
+	for (const NodeBinding& binding : m_node_bindings) {
+		if (binding.node.exists()) {
+			add_driver(*binding.node, binding.body);
+		}
+	}
+	for (const VoxelNodeBinding& binding : m_voxel_bindings) {
+		if (binding.node.exists()) {
+			add_driver(*binding.node, binding.body);
+		}
+	}
+
+	// Parents sync before children and a nested driver keeps its own subtree
+	const std::function<void(const toast::Node&, BodyID)> follow = [&](const toast::Node& parent, BodyID id) -> void {
+		for (const toast::Box<toast::Node>& child : parent.children()) {
+			if (not child.exists() || driver_uids.contains(child->uid().data())) {
+				continue;
+			}
+			if (const auto child_3d = child.as<toast::Node3D>(); child_3d.exists()) {
+				child_3d->syncTransform();
+			}
+			m_render_body_of_node.insert_or_assign(child->uid().data(), id);
+			follow(*child, id);
+		}
+	};
+	for (const auto& [node, id] : drivers) {
+		follow(*node, id);
+	}
+}
+
 auto Simulator::velocityAtPoint(const Body& body, const glm::vec3& r) -> glm::vec3 {
 	return body.linear_velocity + glm::cross(body.angular_velocity, r);
 }
@@ -1473,10 +1933,12 @@ auto Simulator::effectiveMassAlong(
 ) -> std::optional<float> {
 	ZoneScopedN("physics::EffectiveMass");
 
-	glm::vec3 angular_a = body_a.inverse_inertia_world * glm::cross(r_a, direction);
-	glm::vec3 angular_b = body_b.inverse_inertia_world * glm::cross(r_b, direction);
-	float denominator =
-	    body_a.inverse_mass + body_b.inverse_mass + glm::dot(direction, glm::cross(angular_a, r_a) + glm::cross(angular_b, r_b));
+	const bool a_moves = movable(body_a);
+	const bool b_moves = movable(body_b);
+	glm::vec3 angular_a = a_moves ? body_a.inverse_inertia_world * glm::cross(r_a, direction) : glm::vec3 {0.0f};
+	glm::vec3 angular_b = b_moves ? body_b.inverse_inertia_world * glm::cross(r_b, direction) : glm::vec3 {0.0f};
+	float denominator = (a_moves ? body_a.inverse_mass : 0.0f) + (b_moves ? body_b.inverse_mass : 0.0f) +
+	                    glm::dot(direction, glm::cross(angular_a, r_a) + glm::cross(angular_b, r_b));
 
 	if (not std::isfinite(denominator) || denominator <= 1.0e-8f) {
 		return std::nullopt;
@@ -1486,11 +1948,11 @@ auto Simulator::effectiveMassAlong(
 }
 
 void Simulator::applyImpulse(Body& body_a, Body& body_b, const glm::vec3& r_a, const glm::vec3& r_b, const glm::vec3& impulse) {
-	if (body_a.inverse_mass > 0.0f) {
+	if (movable(body_a)) {
 		body_a.linear_velocity -= impulse * body_a.inverse_mass;
 		body_a.angular_velocity -= body_a.inverse_inertia_world * glm::cross(r_a, impulse);
 	}
-	if (body_b.inverse_mass > 0.0f) {
+	if (movable(body_b)) {
 		body_b.linear_velocity += impulse * body_b.inverse_mass;
 		body_b.angular_velocity += body_b.inverse_inertia_world * glm::cross(r_b, impulse);
 	}
@@ -1552,52 +2014,73 @@ auto Simulator::correctPositions(std::span<const size_t> manifold_indices) -> si
 	ZoneValue(static_cast<uint64_t>(manifold_indices.size()));
 	size_t correction_count = 0;
 
-	for (const size_t manifold_index : manifold_indices) {
-		const Manifold& manifold = m_manifolds[manifold_index];
-		if (not shouldSolve(manifold)) {
-			continue;
-		}
+	if (m_position_shift.size() < m_bodies.size()) {
+		m_position_shift.resize(m_bodies.size(), glm::vec3(0.0f));
+	}
+	std::vector<uint32_t> touched;
 
-		auto* body_a = tryGetBody(manifold.pair.a.body);
-		auto* body_b = tryGetBody(manifold.pair.b.body);
+	const uint32_t passes = std::max(tunables().position_iterations, 1u);
+	for (uint32_t pass = 0; pass < passes; ++pass) {
+		for (const size_t manifold_index : manifold_indices) {
+			const Manifold& manifold = m_manifolds[manifold_index];
+			if (not shouldSolve(manifold)) {
+				continue;
+			}
 
-		if (not body_a or not body_b) {
-			continue;
-		}
+			auto* body_a = tryGetBody(manifold.pair.a.body);
+			auto* body_b = tryGetBody(manifold.pair.b.body);
 
-		float deepest_penetration = 0.0f;
-		const size_t contact_count = std::min<size_t>(manifold.contact_count, manifold.contacts.size());
-		for (size_t contact_index = 0; contact_index < contact_count; ++contact_index) {
-			float penetration = manifold.contacts[contact_index].penetration;
-			if (std::isfinite(penetration) && penetration >= 0.0f) {
-				deepest_penetration = std::max(deepest_penetration, penetration);
+			if (not body_a or not body_b) {
+				continue;
+			}
+
+			float deepest_penetration = 0.0f;
+			const size_t contact_count = std::min<size_t>(manifold.contact_count, manifold.contacts.size());
+			for (size_t contact_index = 0; contact_index < contact_count; ++contact_index) {
+				float penetration = manifold.contacts[contact_index].penetration;
+				if (std::isfinite(penetration) && penetration >= 0.0f) {
+					deepest_penetration = std::max(deepest_penetration, penetration);
+				}
+			}
+
+			float inv_mass = (movable(*body_a) ? body_a->inverse_mass : 0.0f) + (movable(*body_b) ? body_b->inverse_mass : 0.0f);
+			if (not std::isfinite(inv_mass) || inv_mass <= 1.0e-8f) {
+				// both bodies are static
+				continue;
+			}
+
+			const glm::vec3 shift_a = m_position_shift[manifold.pair.a.body.slot];
+			const glm::vec3 shift_b = m_position_shift[manifold.pair.b.body.slot];
+			deepest_penetration -= glm::dot(shift_b - shift_a, manifold.normal);
+
+			// ignore tiny overlaps to prevent jitter
+			float excess_penetration = std::max(deepest_penetration - tunables().penetration_slop, 0.0f);
+			if (excess_penetration == 0.0f) {
+				continue;
+			}
+
+			float correction_distance = std::min(tunables().correction_beta * excess_penetration, tunables().max_correction);
+			glm::vec3 correction = manifold.normal * (correction_distance / inv_mass);
+
+			if (movable(*body_a)) {
+				body_a->position -= correction * body_a->inverse_mass;
+				m_position_shift[manifold.pair.a.body.slot] -= correction * body_a->inverse_mass;
+				touched.push_back(manifold.pair.a.body.slot);
+			}
+			if (movable(*body_b)) {
+				body_b->position += correction * body_b->inverse_mass;
+				m_position_shift[manifold.pair.b.body.slot] += correction * body_b->inverse_mass;
+				touched.push_back(manifold.pair.b.body.slot);
+			}
+			if (pass == 0) {
+				++correction_count;
 			}
 		}
-
-		float inv_mass = body_a->inverse_mass + body_b->inverse_mass;
-		if (not std::isfinite(inv_mass) || inv_mass <= 1.0e-8f) {
-			// both bodies are static
-			continue;
-		}
-
-		// ignore tiny overlaps to prevent jitter
-		float excess_penetration = std::max(deepest_penetration - tunables().penetration_slop, 0.0f);
-		if (excess_penetration == 0.0f) {
-			continue;
-		}
-
-		float correction_distance = std::min(tunables().correction_beta * excess_penetration, tunables().max_correction);
-		glm::vec3 correction = manifold.normal * (correction_distance / inv_mass);
-
-		if (body_a->inverse_mass > 0.0f) {
-			body_a->position -= correction * body_a->inverse_mass;
-		}
-		if (body_b->inverse_mass > 0.0f) {
-			body_b->position += correction * body_b->inverse_mass;
-		}
-		++correction_count;
 	}
 
+	for (const uint32_t slot : touched) {
+		m_position_shift[slot] = glm::vec3(0.0f);
+	}
 	return correction_count;
 }
 
@@ -1635,6 +2118,72 @@ auto Simulator::generateManifoldsAsync(CollisionWorldView world, std::span<const
 		}
 	}
 
+	// Pulled out before per-chunk dispatch so one big box-voxel pair never serializes behind a chunk
+	struct SplitPair {
+		BroadPhasePair pair;
+		BoxVoxelPairView view;
+		AABB local_bounds;
+	};
+
+	std::vector<SplitPair> split_pairs;
+	size_t box_voxel_max_estimated_voxels = 0;
+	float box_voxel_max_extent_meters = 0.0f;
+	std::erase_if(active_candidates, [&](const BroadPhasePair& pair) {
+		const auto view = resolveBoxVoxelPair(world, pair);
+		if (not view) {
+			return false;
+		}
+		const BoxVoxelSplitInfo split_info = classifyBoxVoxelSplit(*view);
+		if (split_info.estimated_voxels > box_voxel_max_estimated_voxels) {
+			box_voxel_max_estimated_voxels = split_info.estimated_voxels;
+			const glm::vec3 extent = split_info.local_bounds.max - split_info.local_bounds.min;
+			box_voxel_max_extent_meters = std::max({extent.x, extent.y, extent.z});
+		}
+		if (split_info.estimated_voxels < tunables().box_voxel_split_min_voxels) {
+			return false;
+		}
+		split_pairs.push_back({.pair = pair, .view = *view, .local_bounds = split_info.local_bounds});
+		return true;
+	});
+	m_profile.box_voxel_max_estimated_voxels = box_voxel_max_estimated_voxels;
+	m_profile.box_voxel_max_extent_meters = box_voxel_max_extent_meters;
+
+	// Same idea, same reasoning, for a voxel-voxel pair whose probe search region is big enough
+	struct SplitPairVV {
+		BroadPhasePair pair;
+		VoxelVoxelPairView view;
+		AABB probe_search_bounds;
+	};
+
+	std::vector<SplitPairVV> split_pairs_vv;
+	size_t voxel_voxel_max_estimated_voxels = 0;
+	size_t voxel_voxel_resolved_pairs = 0;
+	size_t voxel_voxel_nondegenerate_pairs = 0;
+	std::erase_if(active_candidates, [&](const BroadPhasePair& pair) {
+		const auto view = resolveVoxelVoxelPair(world, pair);
+		if (not view) {
+			return false;
+		}
+		++voxel_voxel_resolved_pairs;
+
+		const auto split_info = classifyVoxelVoxelSplit(*view);
+		if (not split_info) {
+			// Probe and reference bounds do not actually overlap not a bug just not this pair
+			return false;
+		}
+		++voxel_voxel_nondegenerate_pairs;
+
+		voxel_voxel_max_estimated_voxels = std::max<size_t>(voxel_voxel_max_estimated_voxels, split_info->estimated_voxels);
+		if (split_info->estimated_voxels < tunables().voxel_voxel_split_min_voxels) {
+			return false;
+		}
+		split_pairs_vv.push_back({.pair = pair, .view = *view, .probe_search_bounds = split_info->probe_search_bounds});
+		return true;
+	});
+	m_profile.voxel_voxel_resolved_pairs = voxel_voxel_resolved_pairs;
+	m_profile.voxel_voxel_nondegenerate_pairs = voxel_voxel_nondegenerate_pairs;
+	m_profile.voxel_voxel_max_estimated_voxels = voxel_voxel_max_estimated_voxels;
+
 	const size_t minimum_candidates_per_job = tunables().min_candidates_per_job;
 	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), static_cast<size_t>(1));
 	const size_t maximum_job_count = worker_count * 3;
@@ -1652,16 +2201,59 @@ auto Simulator::generateManifoldsAsync(CollisionWorldView world, std::span<const
 		auto batch = std::span<const BroadPhasePair> {active_candidates}.subspan(begin, end - begin);
 
 		futures.emplace_back(toast::ThreadPool::push([this, world, batch] {
-			ZoneScopedN("physics::NarrowPhaseBatch");
+			ZoneScopedN("physics::NarrowPhaseBatch");    // NOLINT
 			ZoneValue(static_cast<uint64_t>(batch.size()));
 			return m_narrow_phase.generateManifolds(world, batch);
 		}));
 	}
+
+	// Pushed flat from this thread never nested, ThreadPool has no work stealing so a nested wait can deadlock
+	const size_t region_count = std::max<size_t>(tunables().voxel_pair_split_regions, 1);
+	std::vector<std::vector<std::future<VoxelPairPartial>>> split_futures;
+	split_futures.reserve(split_pairs.size());
+	for (const SplitPair& split : split_pairs) {
+		const std::vector<AABB> regions = splitVoxelRegions(split.local_bounds, region_count);
+		std::vector<std::future<VoxelPairPartial>> region_futures;
+		region_futures.reserve(regions.size());
+		for (const AABB& region : regions) {
+			const BoxVoxelPairView view = split.view;
+			region_futures.emplace_back(toast::ThreadPool::push([view, region] {
+				ZoneScopedN("physics::BoxVoxelRegion");    // NOLINT
+				return collideBoxVoxelRegion(view, region);
+			}));
+		}
+		split_futures.emplace_back(std::move(region_futures));
+	}
+
+	std::vector<std::vector<std::future<VoxelPairPartial>>> split_futures_vv;
+	split_futures_vv.reserve(split_pairs_vv.size());
+	for (const SplitPairVV& split : split_pairs_vv) {
+		const std::vector<AABB> regions = splitVoxelRegions(split.probe_search_bounds, region_count);
+		std::vector<std::future<VoxelPairPartial>> region_futures;
+		region_futures.reserve(regions.size());
+		for (const AABB& region : regions) {
+			const VoxelVoxelPairView view = split.view;
+			region_futures.emplace_back(toast::ThreadPool::push([view, region] {
+				ZoneScopedN("physics::VoxelVoxelRegion");    // NOLINT
+				return collideVoxelVoxelRegion(view, region);
+			}));
+		}
+		split_futures_vv.emplace_back(std::move(region_futures));
+	}
+
 	m_profile.narrow_jobs = futures.size();
-	m_profile.narrow_candidates = active_candidates.size();
+	for (const auto& region_futures : split_futures) {
+		m_profile.narrow_jobs += region_futures.size();
+	}
+	for (const auto& region_futures : split_futures_vv) {
+		m_profile.narrow_jobs += region_futures.size();
+	}
+	m_profile.narrow_candidates = active_candidates.size() + split_pairs.size() + split_pairs_vv.size();
+	m_profile.box_voxel_split_pairs = split_pairs.size();
+	m_profile.voxel_voxel_split_pairs = split_pairs_vv.size();
 
 	std::vector<Manifold> merged;
-	merged.reserve(active_candidates.size());
+	merged.reserve(active_candidates.size() + split_pairs.size() + split_pairs_vv.size());
 
 	{
 		ZoneScopedNC("physics::NarrowPhaseAwait", 0x202020);
@@ -1672,7 +2264,66 @@ auto Simulator::generateManifoldsAsync(CollisionWorldView world, std::span<const
 			m_profile.contact_points += queue.contact_count;
 			for (size_t type = 0; type < queue.pair_candidates.size(); ++type) {
 				m_profile.narrow_pair_candidates[type] += queue.pair_candidates[type];
+				m_profile.narrow_pair_time_ms[type] += queue.pair_time_ms[type];
 			}
+			merged.insert_range(merged.end(), std::move(queue.manifolds));
+		}
+	}
+
+	{
+		ZoneScopedNC("physics::BoxVoxelSplitAwait", 0x202020);
+		std::vector<VoxelPairPartial> partials;
+		std::vector<Manifold> pair_manifolds;
+		for (size_t split_index = 0; split_index < split_pairs.size(); ++split_index) {
+			const SplitPair& split = split_pairs[split_index];
+			const auto split_start = std::chrono::steady_clock::now();
+
+			partials.clear();
+			partials.reserve(split_futures[split_index].size());
+			for (auto& future : split_futures[split_index]) {
+				partials.push_back(future.get());
+			}
+
+			pair_manifolds.clear();
+			mergeBoxVoxelPartials(split.pair, split.view, partials, pair_manifolds);
+
+			ManifoldQueue queue;
+			m_narrow_phase.accumulate(pair_manifolds, world, queue);
+			m_profile.narrow_collisions += queue.collision_count;
+			m_profile.rejected_manifolds += queue.rejected_manifold_count;
+			m_profile.contact_points += queue.contact_count;
+			++m_profile.narrow_pair_candidates[static_cast<size_t>(NarrowPhasePairType::box_voxel)];
+			m_profile.narrow_pair_time_ms[static_cast<size_t>(NarrowPhasePairType::box_voxel)] +=
+			    std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - split_start).count();
+			merged.insert_range(merged.end(), std::move(queue.manifolds));
+		}
+	}
+
+	{
+		ZoneScopedNC("physics::VoxelVoxelSplitAwait", 0x202020);
+		std::vector<VoxelPairPartial> partials;
+		std::vector<Manifold> pair_manifolds;
+		for (size_t split_index = 0; split_index < split_pairs_vv.size(); ++split_index) {
+			const SplitPairVV& split = split_pairs_vv[split_index];
+			const auto split_start = std::chrono::steady_clock::now();
+
+			partials.clear();
+			partials.reserve(split_futures_vv[split_index].size());
+			for (auto& future : split_futures_vv[split_index]) {
+				partials.push_back(future.get());
+			}
+
+			pair_manifolds.clear();
+			mergeVoxelVoxelPartials(split.pair, split.view, partials, pair_manifolds);
+
+			ManifoldQueue queue;
+			m_narrow_phase.accumulate(pair_manifolds, world, queue);
+			m_profile.narrow_collisions += queue.collision_count;
+			m_profile.rejected_manifolds += queue.rejected_manifold_count;
+			m_profile.contact_points += queue.contact_count;
+			++m_profile.narrow_pair_candidates[static_cast<size_t>(NarrowPhasePairType::voxel_voxel)];
+			m_profile.narrow_pair_time_ms[static_cast<size_t>(NarrowPhasePairType::voxel_voxel)] +=
+			    std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - split_start).count();
 			merged.insert_range(merged.end(), std::move(queue.manifolds));
 		}
 	}
@@ -1692,33 +2343,26 @@ void Simulator::updateSleeping(float dt) {
 		return;
 	}
 
-	std::vector<size_t> parents(m_bodies.size());
-	for (size_t index = 0; index < parents.size(); ++index) {
-		parents[index] = index;
-	}
-
-	auto find_root = [&parents](size_t index) {
-		while (parents[index] != index) {
-			parents[index] = parents[parents[index]];
-			index = parents[index];
-		}
-		return index;
-	};
-
-	for (const Manifold& manifold : m_manifolds) {
-		Body* body_a = tryGetBody(manifold.pair.a.body);
-		Body* body_b = tryGetBody(manifold.pair.b.body);
-		if (not body_a || not body_b || body_a->type != BodyType::dynamic_body || body_b->type != BodyType::dynamic_body) {
-			continue;
-		}
-
-		const size_t root_a = find_root(manifold.pair.a.body.slot);
-		const size_t root_b = find_root(manifold.pair.b.body.slot);
-		if (root_a != root_b) {
-			parents[root_b] = root_a;
+	const glm::vec3 gravity = tunables().gravity;
+	const float gravity_length = glm::length(gravity);
+	m_contact_supported.assign(m_bodies.size(), gravity_length > 1.0e-6f ? 0 : 1);
+	if (gravity_length > 1.0e-6f) {
+		const glm::vec3 up = -gravity / gravity_length;
+		for (const CachedManifold& cached : m_cached_manifolds) {
+			if (cached.contact_count == 0 || tryGetBody(cached.pair.a.body) == nullptr || tryGetBody(cached.pair.b.body) == nullptr) {
+				continue;
+			}
+			const float along = glm::dot(cached.normal, up);
+			if (along < -k_support_normal) {
+				m_contact_supported[cached.pair.a.body.slot] = 1;
+			} else if (along > k_support_normal) {
+				m_contact_supported[cached.pair.b.body.slot] = 1;
+			}
 		}
 	}
 
+	m_sleep_ready.assign(m_bodies.size(), 0);
+	m_sleep_moving.assign(m_bodies.size(), 0);
 	for (size_t index = 0; index < m_bodies.size(); ++index) {
 		BodySlot& slot = m_bodies[index];
 		Body& body = slot.body;
@@ -1726,47 +2370,66 @@ void Simulator::updateSleeping(float dt) {
 			continue;
 		}
 
+		const BodyID id {.slot = static_cast<uint32_t>(index), .generation = slot.generation};
 		if (not body.allow_sleep) {
-			wakeBody(BodyID {.slot = static_cast<uint32_t>(index), .generation = slot.generation});
+			wakeBody(id);
 			continue;
 		}
 
-		const float linear_speed_squared = glm::dot(body.linear_velocity, body.linear_velocity);
-		const float angular_speed_squared = glm::dot(body.angular_velocity, body.angular_velocity);
-		const bool is_still = std::isfinite(linear_speed_squared) && std::isfinite(angular_speed_squared) &&
-		                      linear_speed_squared <= tunables().sleep_linear_threshold * tunables().sleep_linear_threshold &&
-		                      angular_speed_squared <= tunables().sleep_angular_threshold * tunables().sleep_angular_threshold;
-		if (is_still) {
+		if (not body.awake) {
+			body.asleep_seconds += dt;
+			if (body.asleep_seconds >= supportCheckPeriod(index)) {
+				body.asleep_seconds = 0.0f;
+				if (not sleeperIsHeldUp(id)) {
+					++m_profile.woken_by_support_loss;
+					if (body.sleep_locked) {
+						unlockSleep(id);
+					} else {
+						wakeBody(id);
+					}
+				}
+			}
+			continue;
+		}
+
+		bool still = isStill(body, sleepScale(index));
+		if (still && body.sleep_timer > 0.0f &&
+		    driftSince(body, body.sleep_anchor_center, body.sleep_anchor_rotation) > tunables().sleep_drift) {
+			body.sleep_timer = 0.0f;
+			still = false;
+		}
+		if (still) {
+			if (body.sleep_timer <= 0.0f) {
+				body.sleep_anchor_center = body.worldCenterOfMass();
+				body.sleep_anchor_rotation = body.rotation;
+			}
 			body.sleep_timer = std::min(body.sleep_timer + dt, tunables().sleep_delay);
 		} else {
-			wakeBody(BodyID {.slot = static_cast<uint32_t>(index), .generation = slot.generation});
+			body.sleep_timer = std::max(body.sleep_timer - (dt * k_sleep_decay), 0.0f);
+			m_sleep_moving[index] = 1;
+		}
+
+		// Nothing touching means falling or about to so only a body in contact may sleep
+		const bool supported = body.gravity_scale == 0.0f || (index < m_body_supported.size() && m_body_supported[index] != 0);
+		m_sleep_ready[index] = body.awake && supported && body.sleep_timer >= tunables().sleep_delay ? 1 : 0;
+	}
+
+	// A body waits while a body touching it still moves so a calm pile never hangs on one restless piece
+	m_sleep_blocked.assign(m_bodies.size(), 0);
+	for (const Manifold& manifold : m_manifolds) {
+		const size_t a = manifold.pair.a.body.slot;
+		const size_t b = manifold.pair.b.body.slot;
+		if (m_sleep_moving[b] != 0) {
+			m_sleep_blocked[a] = 1;
+		}
+		if (m_sleep_moving[a] != 0) {
+			m_sleep_blocked[b] = 1;
 		}
 	}
 
-	std::vector<bool> group_exists(m_bodies.size(), false);
-	std::vector<bool> group_can_sleep(m_bodies.size(), true);
 	for (size_t index = 0; index < m_bodies.size(); ++index) {
-		const BodySlot& slot = m_bodies[index];
-		const Body& body = slot.body;
-		if (not slot.occupied || not body.enabled || body.type != BodyType::dynamic_body) {
-			continue;
-		}
-
-		const size_t root = find_root(index);
-		group_exists[root] = true;
-		group_can_sleep[root] = group_can_sleep[root] && body.allow_sleep && body.sleep_timer >= tunables().sleep_delay;
-	}
-
-	for (size_t index = 0; index < m_bodies.size(); ++index) {
-		const BodySlot& slot = m_bodies[index];
-		const Body& body = slot.body;
-		if (not slot.occupied || not body.enabled || body.type != BodyType::dynamic_body) {
-			continue;
-		}
-
-		const size_t root = find_root(index);
-		if (group_exists[root] && group_can_sleep[root]) {
-			sleepBody(BodyID {.slot = static_cast<uint32_t>(index), .generation = slot.generation});
+		if (m_sleep_ready[index] != 0 && m_sleep_blocked[index] == 0) {
+			sleepBody(BodyID {.slot = static_cast<uint32_t>(index), .generation = m_bodies[index].generation});
 		}
 	}
 }
@@ -1795,8 +2458,6 @@ void Simulator::updateCache(std::span<const Manifold> manifolds) {
 			++m_profile.contact_persists;
 			event::send<event::ContactPersist>(manifold);
 		} else {
-			wakeBody(manifold.pair.a.body);
-			wakeBody(manifold.pair.b.body);
 			if (found_old) {
 				++m_profile.contact_ends;
 				event::send<event::ContactEnd>(old_manifold->pair);
@@ -1807,6 +2468,7 @@ void Simulator::updateCache(std::span<const Manifold> manifolds) {
 
 		CachedManifold next_manifold {
 		  .pair = manifold.pair,
+		  .normal = manifold.normal,
 		  .normal_index = manifold.normal_index,
 		  .shape_a_revision = revision_a,
 		  .shape_b_revision = revision_b,
@@ -1862,8 +2524,8 @@ void Simulator::updateCache(std::span<const Manifold> manifolds) {
 			continue;
 		}
 
-		wakeBody(cached.pair.a.body);
-		wakeBody(cached.pair.b.body);
+		releaseSleeper(cached.pair.a.body, cached.pair.b.body, cached.normal);
+		releaseSleeper(cached.pair.b.body, cached.pair.a.body, -cached.normal);
 		++m_profile.contact_ends;
 		event::send<event::ContactEnd>(cached.pair);
 	}
@@ -1886,15 +2548,43 @@ void Simulator::integrate(float dt) {
 		return;
 	}
 
-	for (size_t index = 0; index < m_bodies.size(); ++index) {
-		BodySlot& slot = m_bodies[index];
-		if (not slot.occupied) {
-			continue;
+	const glm::vec3 gravity = tunables().gravity;
+	const auto integrate_range = [this, gravity, dt](size_t begin, size_t end) {
+		for (size_t index = begin; index < end; ++index) {
+			BodySlot& slot = m_bodies[index];
+			if (not slot.occupied) {
+				continue;
+			}
+			integrateBody(BodyID {.slot = static_cast<uint32_t>(index), .generation = slot.generation}, slot.body, gravity, dt);
 		}
+	};
 
-		integrateBody(
-		    BodyID {.slot = static_cast<uint32_t>(index), .generation = slot.generation}, slot.body, tunables().gravity, dt
-		);
+	const size_t minimum_bodies_per_job = tunables().min_bodies_per_job;
+	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), static_cast<size_t>(1));
+	const size_t maximum_job_count = worker_count * 3;
+	const size_t job_count =
+	    m_bodies.empty() ? 0 : std::min(maximum_job_count, std::max(m_bodies.size() / minimum_bodies_per_job, size_t {1}));
+
+	if (job_count <= 1) {
+		// Not enough bodies this tick to be worth a thread pool round trip
+		integrate_range(0, m_bodies.size());
+		return;
+	}
+
+	PhaseScope worker_phase {*this, SimulationPhase::mutation, SimulationPhase::worker_execution};
+
+	std::vector<std::future<void>> futures;
+	futures.reserve(job_count);
+	for (size_t job_index = 0; job_index < job_count; ++job_index) {
+		const size_t begin = job_index * m_bodies.size() / job_count;
+		const size_t end = (job_index + 1) * m_bodies.size() / job_count;
+		futures.emplace_back(toast::ThreadPool::push([&integrate_range, begin, end] {
+			ZoneScopedN("physics::IntegrateBodiesBatch");    // NOLINT
+			integrate_range(begin, end);
+		}));
+	}
+	for (auto& future : futures) {
+		future.get();
 	}
 }
 
@@ -2189,19 +2879,21 @@ auto Simulator::createVoxelShape(
     BodyID owner, const VoxelShape& shape, voxel::Volume& volume, const voxel::Palette& palette,
     const voxel::MaterialLibrary& materials
 ) -> ShapeID {
-	return createVoxelShapeInternal(owner, shape, &volume, nullptr, palette, materials);
+	std::unique_ptr<voxel::Volume> no_owned;
+	return createVoxelShapeInternal(owner, shape, &volume, no_owned, palette, materials);
 }
 
 auto Simulator::createVoxelShape(
     BodyID owner, const VoxelShape& shape, voxel::Volume&& volume, const voxel::Palette& palette,
     const voxel::MaterialLibrary& materials
 ) -> ShapeID {
-	return createVoxelShapeInternal(owner, shape, nullptr, std::make_unique<voxel::Volume>(std::move(volume)), palette, materials);
+	auto owned = std::make_unique<voxel::Volume>(std::move(volume));
+	return createVoxelShapeInternal(owner, shape, nullptr, owned, palette, materials);
 }
 
 auto Simulator::createVoxelShapeInternal(
-    BodyID owner, const VoxelShape& shape, voxel::Volume* external, std::unique_ptr<voxel::Volume> owned,
-    const voxel::Palette& palette, const voxel::MaterialLibrary& materials
+    BodyID owner, const VoxelShape& shape, voxel::Volume* external, std::unique_ptr<voxel::Volume>& owned,
+    const voxel::Palette& palette, const voxel::MaterialLibrary& materials, const voxel::MassMoments* known_moments
 ) -> ShapeID {
 	ZoneScopedN("physics::CreateVoxelShape");
 	ZoneValue(static_cast<uint64_t>(owner.slot));
@@ -2240,10 +2932,11 @@ auto Simulator::createVoxelShapeInternal(
 	{
 		std::scoped_lock voxel_lock {voxelDataMutex()};
 		surface.rebuild(volume);
-		moments = accumulateMassMoments(volume, palette, materials);
+		moments = known_moments != nullptr ? *known_moments : accumulateMassMoments(volume, palette, materials);
 	}
 
-	const AnchorMask default_anchor_mask = tryGetBody(owner)->type == BodyType::static_body ? k_anchor_bottom : k_anchor_null;
+	// Static and kinematic bodies hold their bottom so whatever loses it falls as a dynamic fragment
+	const AnchorMask default_anchor_mask = tryGetBody(owner)->type != BodyType::dynamic_body ? k_anchor_bottom : k_anchor_null;
 
 	VoxelShapeData voxel_data {
 	  .volume = &volume,
@@ -2297,11 +2990,9 @@ auto Simulator::createVoxelShapeInternal(
 }
 
 auto Simulator::createVoxelShape(BodyID owner, toast::VoxelNode& node) -> ShapeID {
-	const assets::VoxelModel* model = node.resolvedModel();
 	const voxel::Palette* palette = node.resolvedPalette();
-	if (model == nullptr || palette == nullptr) {
-		TOAST_WARN("Physics", "Voxel node '{}' is missing a valid model or palette", node.name());
-		return {};
+	if (palette == nullptr) {
+		palette = &voxel::defaultPalette();
 	}
 
 	// TODO:
@@ -2328,7 +3019,7 @@ auto Simulator::createVoxelShape(BodyID owner, toast::VoxelNode& node) -> ShapeI
 		return {};
 	}
 
-	const VoxelShape voxel_shape;
+	const VoxelShape voxel_shape {.local_center = glm::vec3(node.voxelOrigin()) * voxel::k_voxel_size};
 
 	const ShapeID shape = createVoxelShape(owner, voxel_shape, *volume, *palette, *materials);
 	const Shape* stored_shape = tryGetShape(shape);
@@ -2336,6 +3027,10 @@ auto Simulator::createVoxelShape(BodyID owner, toast::VoxelNode& node) -> ShapeI
 		if (VoxelShapeData* data = tryGetVoxelData(stored_shape->voxel.data)) {
 			data->source_revision = node.revision();
 			data->palette_uid = node.paletteUid();
+			if (node.m_split_pending) {
+				data->connectivity_dirty = true;
+				node.m_split_pending = false;
+			}
 		}
 	}
 	return shape;
@@ -2406,17 +3101,10 @@ auto Simulator::valid(VoxelDataID data) const -> bool {
 }
 
 auto Simulator::tryGetVoxelData(VoxelDataID data) -> VoxelShapeData* {
-	if (not mainThreadMutationAllowed()) {
+	if (not instance->mainThreadMutationAllowed()) {
 		return nullptr;
 	}
-	return valid(data) ? &*m_voxel_shapes[data.slot].data : nullptr;
-}
-
-auto Simulator::tryGetVoxelData(VoxelDataID data) const -> const VoxelShapeData* {
-	if (not mainThreadMutationAllowed()) {
-		return nullptr;
-	}
-	return valid(data) ? &*m_voxel_shapes[data.slot].data : nullptr;
+	return instance->valid(data) ? &*(instance->m_voxel_shapes)[data.slot].data : nullptr;
 }
 
 void Simulator::destroyVoxelData(VoxelDataID data) {
@@ -2609,6 +3297,33 @@ void Simulator::rebuildMassProperties(BodyID id) {
 		}
 	}
 
+	switch (shape->type) {
+		case ShapeType::sphere: body->extent_radius = glm::length(shape->sphere.local_center) + shape->sphere.radius; break;
+		case ShapeType::box:
+			body->extent_radius = glm::length(shape->box.local_center) + (0.5f * glm::length(shape->box.size));
+			break;
+		case ShapeType::capsule:
+			body->extent_radius = glm::length(shape->capsule.local_center) + (0.5f * shape->capsule.height) + shape->capsule.radius;
+			break;
+		case ShapeType::voxel: {
+			const glm::vec3 center =
+			    glm::inverse(shape->voxel.local_rotation) * (body->local_center_of_mass - shape->voxel.local_center);
+			const AABB& bounds = shape->voxel.local_bounds;
+			float farthest_squared = 0.0f;
+			for (int corner = 0; corner < 8; ++corner) {
+				const glm::vec3 point {
+				  (corner & 1) != 0 ? bounds.max.x : bounds.min.x,
+				  (corner & 2) != 0 ? bounds.max.y : bounds.min.y,
+				  (corner & 4) != 0 ? bounds.max.z : bounds.min.z,
+				};
+				const glm::vec3 offset = point - center;
+				farthest_squared = std::max(farthest_squared, glm::dot(offset, offset));
+			}
+			body->extent_radius = std::sqrt(farthest_squared);
+			break;
+		}
+	}
+
 	const glm::vec3 center_shift = body->rotation * (body->local_center_of_mass - previous_center_of_mass);
 	body->linear_velocity += glm::cross(body->angular_velocity, center_shift);
 }
@@ -2742,11 +3457,6 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 		return;
 	}
 
-	const auto binding = std::ranges::find(m_voxel_bindings, c.shape, &VoxelNodeBinding::shape);
-	if (binding != m_voxel_bindings.end() && binding->node.exists() && binding->node->indestructible) {
-		return;
-	}
-
 	// we get the position in volume space
 	glm::vec3 in_body_frame = glm::inverse(body->rotation) * (c.world_center - body->position);
 	glm::vec3 local_center = glm::inverse(shape->voxel.local_rotation) * (in_body_frame - shape->voxel.local_center);
@@ -2772,6 +3482,8 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 	const glm::ivec3 last_brick = last / brick_dim;
 
 	std::vector<glm::ivec3> dirty_bricks;
+	uint32_t removed = 0;
+	glm::vec3 removed_sum {0.0f};
 
 	{
 		std::scoped_lock voxel_lock {voxelDataMutex()};
@@ -2816,6 +3528,8 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 									data->solid_voxel_count -= data->solid_voxel_count > 0 ? 1u : 0u;
 									brick_dirty = true;
 									data->connectivity_dirty = true;
+									++removed;
+									removed_sum += glm::vec3(v);
 								}
 							}
 						}
@@ -2852,6 +3566,10 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 		}
 		++binding.node->m_revision;
 		binding.source_revision = binding.node->revision();
+		binding.node->recordDamage(removed, removed_sum);
+		if (data->solid_voxel_count == 0) {
+			binding.node->m_pending_events.emptied = true;
+		}
 		break;
 	}
 
@@ -2877,8 +3595,42 @@ void Simulator::wakeBodiesInBounds(const AABB& bounds) {
 	ZoneScopedN("physics::WakeBodiesInBounds");
 
 	for (const ShapeID shape_id : m_broad_phase.queryBounds(bounds)) {
-		if (const Shape* shape = tryGetShape(shape_id)) {
+		const Shape* shape = tryGetShape(shape_id);
+		if (shape == nullptr) {
+			continue;
+		}
+		const Body* body = tryGetBody(shape->owner);
+		if (body != nullptr && body->sleep_locked) {
+			unlockSleep(shape->owner);
+		} else {
 			wakeBody(shape->owner);
+		}
+	}
+}
+
+void Simulator::recheckNeighborsOf(BodyID id) {
+	const Body* body = tryGetBody(id);
+	if (body == nullptr) {
+		return;
+	}
+
+	AABB bounds {.min = glm::vec3(std::numeric_limits<float>::max()), .max = glm::vec3(std::numeric_limits<float>::lowest())};
+	for (const ShapeSlot& slot : m_shapes) {
+		if (slot.occupied && slot.shape.owner == id) {
+			const AABB shape_bounds = worldShapeBounds(*body, slot.shape);
+			bounds.min = glm::min(bounds.min, shape_bounds.min);
+			bounds.max = glm::max(bounds.max, shape_bounds.max);
+		}
+	}
+	if (bounds.min.x > bounds.max.x) {
+		return;
+	}
+
+	for (const ShapeID shape_id : m_broad_phase.queryBounds(bounds.expanded(tunables().broadphase_fat_margin))) {
+		const Shape* shape = tryGetShape(shape_id);
+		Body* neighbor = shape != nullptr ? tryGetBody(shape->owner) : nullptr;
+		if (neighbor != nullptr && neighbor->type == BodyType::dynamic_body && not neighbor->awake) {
+			neighbor->asleep_seconds = k_support_check_now;
 		}
 	}
 }
@@ -2949,7 +3701,7 @@ auto Simulator::shootVoxel(
 		if (body == nullptr) {
 			continue;
 		}
-		const std::optional<AABB::RayHit> hit = worldShapeBounds(*body, *shape).intersectRay(origin, inv_dir, max_distance);
+		const std::optional<AABB::RayHit> hit = worldShapeBounds(*body, *shape).intersectRay(origin, inv_dir);
 		if (not hit) {
 			continue;
 		}
@@ -3061,7 +3813,7 @@ auto Simulator::runConnectivityAnalysis() -> std::vector<ConnectivityResult> {
 			.shape = id,
 			.revision = revision,
 			.future = toast::ThreadPool::push([volume] {
-				ZoneScopedN("physics::ConnectivityBatch");
+				ZoneScopedN("physics::ConnectivityBatch");    // NOLINT
 				return voxel::analyseConnectivity(*volume);
 			})
 		});
@@ -3094,7 +3846,7 @@ auto Simulator::runConnectivityAnalysis() -> std::vector<ConnectivityResult> {
 		}
 	}
 
-	m_profile.connectivity_shapes_waiting = static_cast<size_t>(std::ranges::count_if(m_shapes, [this](const ShapeSlot& s) {
+	m_profile.connectivity_shapes_waiting = static_cast<size_t>(std::ranges::count_if(m_shapes, [](const ShapeSlot& s) {
 		if (not s.occupied || s.shape.type != ShapeType::voxel) {
 			return false;
 		}
@@ -3236,28 +3988,69 @@ auto Simulator::findCachedContact(
 
 auto Simulator::prepareConstraints(const std::vector<Manifold>& manifolds) -> std::vector<Constraint> {
 	ZoneScopedN("physics::PrepareConstraints");
-	std::vector<Constraint> constraints;
+
+	std::vector<const Manifold*> active_manifolds;
+	active_manifolds.reserve(manifolds.size());
 	size_t contact_count = 0;
-	for (const Manifold& manifold : manifolds) {
-		contact_count += std::min<size_t>(manifold.contact_count, manifold.contacts.size());
-	}
-	constraints.reserve(contact_count);
-
-	size_t rejected_contact_count = 0;
-
 	for (const Manifold& manifold : manifolds) {
 		if (not shouldSolve(manifold)) {
 			continue;
 		}
+		active_manifolds.push_back(&manifold);
+		contact_count += std::min<size_t>(manifold.contact_count, manifold.contacts.size());
+	}
 
-		const size_t valid_contact_count = std::min<size_t>(manifold.contact_count, manifold.contacts.size());
-		for (size_t contact_index = 0; contact_index < valid_contact_count; ++contact_index) {
-			if (auto constraint = prepareConstraint(manifold, manifold.contacts[contact_index])) {
-				constraints.emplace_back(*constraint);
-			} else {
-				++rejected_contact_count;
-			}
+	struct PreparedChunk {
+		std::vector<Constraint> constraints;
+		size_t rejected = 0;
+	};
+
+	const size_t minimum_manifolds_per_job = tunables().min_manifolds_per_job;
+	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), static_cast<size_t>(1));
+	const size_t maximum_job_count = worker_count * 3;
+	const size_t job_count =
+	    active_manifolds.empty()
+	        ? 0
+	        : std::min(maximum_job_count, std::max(active_manifolds.size() / minimum_manifolds_per_job, size_t {1}));
+
+	std::vector<std::future<PreparedChunk>> futures;
+	futures.reserve(job_count);
+
+	{
+		// Contacts are independent of each other so this only needs read access to bodies and the contact cache
+		PhaseScope worker_phase {*this, SimulationPhase::mutation, SimulationPhase::worker_execution};
+
+		for (size_t job_index = 0; job_index < job_count; ++job_index) {
+			const size_t begin = job_index * active_manifolds.size() / job_count;
+			const size_t end = (job_index + 1) * active_manifolds.size() / job_count;
+			auto batch = std::span<const Manifold* const> {active_manifolds}.subspan(begin, end - begin);
+
+			futures.emplace_back(toast::ThreadPool::push([this, batch] {
+				ZoneScopedN("physics::PrepareConstraintsBatch");    // NOLINT
+				PreparedChunk chunk;
+				for (const Manifold* manifold : batch) {
+					const size_t valid_contact_count = std::min<size_t>(manifold->contact_count, manifold->contacts.size());
+					for (size_t contact_index = 0; contact_index < valid_contact_count; ++contact_index) {
+						if (auto constraint = prepareConstraint(*manifold, manifold->contacts[contact_index])) {
+							chunk.constraints.emplace_back(*constraint);
+						} else {
+							++chunk.rejected;
+						}
+					}
+				}
+				return chunk;
+			}));
 		}
+	}
+
+	// Gathered in dispatch order so this matches the order a serial pass would produce, buildIslands relies on it
+	std::vector<Constraint> constraints;
+	constraints.reserve(contact_count);
+	size_t rejected_contact_count = 0;
+	for (auto& future : futures) {
+		PreparedChunk chunk = future.get();
+		rejected_contact_count += chunk.rejected;
+		constraints.insert_range(constraints.end(), std::move(chunk.constraints));
 	}
 
 	if (rejected_contact_count > 0) {
@@ -3273,20 +4066,20 @@ auto Simulator::prepareConstraints(const std::vector<Manifold>& manifolds) -> st
 	return constraints;
 }
 
-auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vector<Constraint>& constraints) const
+auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vector<Constraint>& constraints)
     -> std::vector<SimulationIsland> {
 	ZoneScopedN("physics::BuildIslands");
 
-	std::vector<size_t> parents(m_bodies.size());
-	std::vector<bool> participates(m_bodies.size(), false);
-	for (size_t index = 0; index < parents.size(); ++index) {
-		parents[index] = index;
+	m_island_parents.resize(m_bodies.size());
+	m_island_participates.assign(m_bodies.size(), false);
+	for (size_t index = 0; index < m_island_parents.size(); ++index) {
+		m_island_parents[index] = index;
 	}
 
-	auto find_root = [&parents](size_t index) {
-		while (parents[index] != index) {
-			parents[index] = parents[parents[index]];
-			index = parents[index];
+	auto find_root = [this](size_t index) {
+		while (m_island_parents[index] != index) {
+			m_island_parents[index] = m_island_parents[m_island_parents[index]];
+			index = m_island_parents[index];
 		}
 		return index;
 	};
@@ -3306,36 +4099,36 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 		const bool b_is_dynamic = is_active_dynamic(body_b);
 
 		if (a_is_dynamic) {
-			participates[manifold.pair.a.body.slot] = true;
+			m_island_participates[manifold.pair.a.body.slot] = true;
 		}
 		if (b_is_dynamic) {
-			participates[manifold.pair.b.body.slot] = true;
+			m_island_participates[manifold.pair.b.body.slot] = true;
 		}
 
 		if (a_is_dynamic && b_is_dynamic) {
 			const size_t root_a = find_root(manifold.pair.a.body.slot);
 			const size_t root_b = find_root(manifold.pair.b.body.slot);
 			if (root_a < root_b) {
-				parents[root_b] = root_a;
+				m_island_parents[root_b] = root_a;
 			} else if (root_b < root_a) {
-				parents[root_a] = root_b;
+				m_island_parents[root_a] = root_b;
 			}
 		}
 	}
 
 	const size_t no_island = m_bodies.size();
-	std::vector<size_t> island_by_root(m_bodies.size(), no_island);
+	m_island_by_root.assign(m_bodies.size(), no_island);
 	std::vector<SimulationIsland> islands;
 
 	for (size_t body_index = 0; body_index < m_bodies.size(); ++body_index) {
-		if (not participates[body_index]) {
+		if (not m_island_participates[body_index]) {
 			continue;
 		}
 
 		const size_t root = find_root(body_index);
-		if (island_by_root[root] == no_island) {
+		if (m_island_by_root[root] == no_island) {
 			const BodySlot& root_slot = m_bodies[root];
-			island_by_root[root] = islands.size();
+			m_island_by_root[root] = islands.size();
 			islands.emplace_back(
 			    SimulationIsland {
 			      .sort_key = BodyID {.slot = static_cast<uint32_t>(root), .generation = root_slot.generation},
@@ -3344,7 +4137,7 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 		}
 
 		const BodySlot& slot = m_bodies[body_index];
-		islands[island_by_root[root]].dynamic_bodies.emplace_back(
+		islands[m_island_by_root[root]].dynamic_bodies.emplace_back(
 		    BodyID {.slot = static_cast<uint32_t>(body_index), .generation = slot.generation}
 		);
 	}
@@ -3352,12 +4145,12 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 	const auto island_for_pair = [&](const BroadPhasePair& pair) -> size_t {
 		const Body* body_a = tryGetBody(pair.a.body);
 		if (is_active_dynamic(body_a)) {
-			return island_by_root[find_root(pair.a.body.slot)];
+			return m_island_by_root[find_root(pair.a.body.slot)];
 		}
 
 		const Body* body_b = tryGetBody(pair.b.body);
 		if (is_active_dynamic(body_b)) {
-			return island_by_root[find_root(pair.b.body.slot)];
+			return m_island_by_root[find_root(pair.b.body.slot)];
 		}
 
 		return no_island;
@@ -3381,11 +4174,20 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 		}
 	}
 
-	// A shared scratch array since islands never share a dynamic body so never reset between them
-	std::vector<uint32_t> next_free_batch(m_bodies.size(), 0);
+	// Shared across islands since none share a dynamic body so never reset between them, only once per call
+	m_island_next_free_batch.assign(m_bodies.size(), 0);
 
 	for (SimulationIsland& island : islands) {
+		// Load bearing: makes the greedy coloring below deterministic, not just the final storage order
+		// Body pair first so every shape pair between the same two bodies lands in one run
+		// Honextly I thought this was going to help a lot but it barely does anything ngl
 		std::ranges::sort(island.constraints, [](const Constraint& lhs, const Constraint& rhs) {
+			if (lhs.body_a != rhs.body_a) {
+				return lhs.body_a < rhs.body_a;
+			}
+			if (lhs.body_b != rhs.body_b) {
+				return lhs.body_b < rhs.body_b;
+			}
 			if (lhs.pair != rhs.pair) {
 				return lhs.pair < rhs.pair;
 			}
@@ -3395,47 +4197,59 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 			return lhs.feature_b < rhs.feature_b;
 		});
 
-		// Greedy list coloring a constraint batch is one past the highest batch its dynamic bodies reached
-		std::vector<uint32_t> constraint_batch(island.constraints.size());
+		// Greedy list coloring per body pair not per contact
+		m_island_constraint_batch.resize(island.constraints.size());
 		uint32_t batch_count = island.constraints.empty() ? 0 : 1;
-		for (size_t i = 0; i < island.constraints.size(); ++i) {
-			const Constraint& constraint = island.constraints[i];
+		size_t group_begin = 0;
+		while (group_begin < island.constraints.size()) {
+			const Constraint& constraint = island.constraints[group_begin];
+			size_t group_end = group_begin + 1;
+			while (group_end < island.constraints.size() && sameBodyPair(constraint, island.constraints[group_end])) {
+				++group_end;
+			}
+
 			const Body* body_a = tryGetBody(constraint.body_a);
 			const Body* body_b = tryGetBody(constraint.body_b);
-			const bool a_dynamic = body_a != nullptr && body_a->inverse_mass > 0.0f;
-			const bool b_dynamic = body_b != nullptr && body_b->inverse_mass > 0.0f;
+			const bool a_dynamic = body_a != nullptr && movable(*body_a);
+			const bool b_dynamic = body_b != nullptr && movable(*body_b);
 
 			uint32_t batch = 0;
 			if (a_dynamic) {
-				batch = std::max(batch, next_free_batch[constraint.body_a.slot]);
+				batch = std::max(batch, m_island_next_free_batch[constraint.body_a.slot]);
 			}
 			if (b_dynamic) {
-				batch = std::max(batch, next_free_batch[constraint.body_b.slot]);
+				batch = std::max(batch, m_island_next_free_batch[constraint.body_b.slot]);
 			}
-			constraint_batch[i] = batch;
+			std::fill(
+			    m_island_constraint_batch.begin() + static_cast<std::ptrdiff_t>(group_begin),
+			    m_island_constraint_batch.begin() + static_cast<std::ptrdiff_t>(group_end),
+			    batch
+			);
 			batch_count = std::max(batch_count, batch + 1);
 			if (a_dynamic) {
-				next_free_batch[constraint.body_a.slot] = batch + 1;
+				m_island_next_free_batch[constraint.body_a.slot] = batch + 1;
 			}
 			if (b_dynamic) {
-				next_free_batch[constraint.body_b.slot] = batch + 1;
+				m_island_next_free_batch[constraint.body_b.slot] = batch + 1;
 			}
+			group_begin = group_end;
 		}
 
 		// Counting sort into batch contiguous storage stable within a batch since i is scanned in order
 		island.batch_offsets.assign(batch_count + 1, 0);
-		for (uint32_t batch : constraint_batch) {
+		for (uint32_t batch : m_island_constraint_batch) {
 			++island.batch_offsets[batch + 1];
 		}
 		for (size_t i = 1; i < island.batch_offsets.size(); ++i) {
 			island.batch_offsets[i] += island.batch_offsets[i - 1];
 		}
-		std::vector<Constraint> reordered(island.constraints.size());
-		std::vector<size_t> cursor(island.batch_offsets.begin(), island.batch_offsets.end() - 1);
+		// Reused scratch grows to the largest island seen instead of a fresh allocation every island every tick
+		m_island_reordered_scratch.resize(island.constraints.size());
+		m_island_batch_cursor.assign(island.batch_offsets.begin(), island.batch_offsets.end() - 1);
 		for (size_t i = 0; i < island.constraints.size(); ++i) {
-			reordered[cursor[constraint_batch[i]]++] = island.constraints[i];
+			m_island_reordered_scratch[m_island_batch_cursor[m_island_constraint_batch[i]]++] = island.constraints[i];
 		}
-		island.constraints = std::move(reordered);
+		island.constraints.swap(m_island_reordered_scratch);
 	}
 
 	std::ranges::sort(islands, [](const SimulationIsland& lhs, const SimulationIsland& rhs) {
@@ -3611,22 +4425,29 @@ void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
 
 	size_t invalid_constraint_count = 0;
 	std::vector<std::span<Constraint>> wave_spans;
+	std::vector<size_t> active_islands;
 	for (uint32_t iteration = 0; iteration < solver_iterations; ++iteration) {
 		ZoneScopedN("iteration");
 		ZoneValue(static_cast<uint64_t>(iteration));
 
-		for (size_t wave = 0; wave < max_batches; ++wave) {
+		active_islands.clear();
+		for (size_t island_index = 0; island_index < islands.size(); ++island_index) {
+			if (islands[island_index].batch_offsets.size() > 1) {
+				active_islands.push_back(island_index);
+			}
+		}
+
+		for (size_t wave = 0; wave < max_batches && not active_islands.empty(); ++wave) {
 			wave_spans.clear();
-			for (SimulationIsland& island : islands) {
-				if (wave + 1 >= island.batch_offsets.size()) {
-					continue;
-				}
+			for (const size_t island_index : active_islands) {
+				SimulationIsland& island = islands[island_index];
 				const size_t begin = island.batch_offsets[wave];
 				const size_t end = island.batch_offsets[wave + 1];
 				if (end > begin) {
 					wave_spans.push_back(std::span<Constraint> {island.constraints}.subspan(begin, end - begin));
 				}
 			}
+			std::erase_if(active_islands, [&](size_t island_index) { return wave + 2 >= islands[island_index].batch_offsets.size(); });
 			if (wave_spans.empty()) {
 				continue;
 			}
@@ -3651,20 +4472,25 @@ void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
 				continue;
 			}
 
-			std::vector<std::future<size_t>> futures;
-			futures.reserve(chunks.size());
-			for (ConstraintChunk& chunk : chunks) {
-				futures.emplace_back(toast::ThreadPool::push([this, pieces = std::move(chunk.pieces)] {
-					ZoneScopedN("physics::ConstraintWaveChunk");
+			// pushRaw + one shared counter instead of one std::future per chunk, cheaper at this call volume
+			m_wave_chunk_invalid_counts.assign(chunks.size(), 0);
+			std::atomic<size_t> chunks_remaining {chunks.size()};
+			for (size_t chunk_index = 0; chunk_index < chunks.size(); ++chunk_index) {
+				toast::ThreadPool::pushRaw([this, pieces = std::move(chunks[chunk_index].pieces), chunk_index, &chunks_remaining] {
+					ZoneScopedN("physics::ConstraintWaveChunk");    // NOLINT
 					size_t invalid = 0;
 					for (const std::span<Constraint>& piece : pieces) {
 						invalid += solveConstraintBatch(piece);
 					}
-					return invalid;
-				}));
+					m_wave_chunk_invalid_counts[chunk_index] = invalid;
+					chunks_remaining.fetch_sub(1, std::memory_order_acq_rel);
+				});
 			}
-			for (auto& future : futures) {
-				invalid_constraint_count += future.get();
+			while (chunks_remaining.load(std::memory_order_acquire) != 0) {
+				std::this_thread::yield();
+			}
+			for (size_t invalid : m_wave_chunk_invalid_counts) {
+				invalid_constraint_count += invalid;
 			}
 		}
 	}

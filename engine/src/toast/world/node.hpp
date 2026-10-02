@@ -214,7 +214,7 @@ public:
 	 * @brief Creates a new child node of the given type and attaches it to this node
 	 * @param type Fully-qualified C++ class name, e.g. "toast::Node3D"; defaults to "toast::Node"
 	 * @return The new child node, or an empty box if the type is not registered
-	 * @note Only valid on nodes in the root or global state; calls the child's pre_init and init lifecycle
+	 * @note Only valid on nodes in the root or global state; calls the child's init lifecycle
 	 */
 	auto create(std::string_view type = "toast::Node") noexcept -> Box<Node> {
 		if (m_state == NodeState::root or m_state == NodeState::global) {
@@ -311,6 +311,25 @@ public:
 	 */
 	void reloadScripts() noexcept;
 
+	/** The scripts attached to this node in call order */
+	[[nodiscard]]
+	auto scripts() const noexcept -> const std::vector<assets::Handle<assets::Script>>& {
+		return m_scripts;
+	}
+
+	/** Replaces every script and rebuilds the script runtime */
+	void setScripts(std::vector<assets::Handle<assets::Script>> scripts) noexcept {
+		m_scripts = std::move(scripts);
+		loadScripts();
+		onScriptsReloaded();
+	}
+
+	/** Attaches a script at the end and rebuilds the script runtime */
+	void addScript(const assets::Handle<assets::Script>& script) noexcept {
+		m_scripts.push_back(script);
+		loadScripts();
+	}
+
 	/**
 	 * @brief Invokes all C++ reflected implementations of `name` (base→derived) and
 	 *        all same-named Lua functions across every attached script, forwarding `args`
@@ -382,6 +401,14 @@ protected:
 
 	virtual void onReflectedFieldChanged(std::string_view /*field_name*/) { }
 
+	virtual void onScriptsReloaded() { }
+
+	/** Runs right before the script runtime is torn down and built again */
+	virtual void onScriptsReloading() { }
+
+	/** A script variable was edited from outside the script, path is "<instance>:<group/name>" */
+	virtual void onScriptVarChanged(std::string_view path) { }
+
 	virtual void updateInspectorMessages() { }
 
 	void addInspectorMessage(const NodeMessage& message) {
@@ -422,9 +449,9 @@ private:
 
 	NodeState m_state = NodeState::null;
 	NodeType m_type = NodeType::null;
-	std::array<uint8_t, 4> m_wave = {
-	  255, 255, 255, 255
-	};    ///< one wave index per tick phase (early/tick/post-physics/late); 255 = unscheduled
+	std::array<uint8_t, 5> m_wave = {
+	  255, 255, 255, 255, 255
+	};    ///< one wave index per tick phase (early/tick/post-physics/late/physics); 255 = unscheduled
 
 	Box<Node> m_box;
 	const NodeInfo* m_info = nullptr;
@@ -474,12 +501,11 @@ private:
 /// null-safe RTTI replacement; walks the NodeInfo chain instead of dynamic_cast
 template<typename T>
 auto reflect_cast(toast::Node* n) -> T* {    // NOLINT
-	if (n && n->info() && n->info()->isA(&toast::Reflect<T>::type_info)) {
+	if (n && n->info() && n->info()->isA(toast::nodeTypeInfo<T>())) {
 		return static_cast<T*>(n);
 	}
 	return nullptr;
 }
 
 #undef NODEFILE
-#include <node.generated.hpp>
 #include <toast/events/signals.inl>

@@ -14,8 +14,8 @@ namespace renderer {
 
 namespace {
 
-/// Bump when the cached reflection shape changes since entries are keyed on the source hash
-constexpr int k_cache_format = 6;
+/// Bump when the cached reflection shape or the compile options change since entries are keyed on the source hash
+constexpr int k_cache_format = 7;
 
 auto spirvUri(toast::UID uid) -> std::string {
 	return "cache://shaders/" + uid.get() + ".spv";

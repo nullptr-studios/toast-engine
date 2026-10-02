@@ -23,8 +23,9 @@ struct VoxelInstance
     float4x4 worldToVoxel;
     float4x4 previousVoxelToWorld;
     uint recordIndex;
-    uint pad0;
-    uint pad1;
+    uint highlightRecord; /// this is for selection tint
+    /// Bit 0 set means previousVoxelToWorld is not a real previous frame
+    uint flags;
     uint pad2;
 };
 
@@ -118,6 +119,27 @@ uint pooledMaterial(uint slot, uint3 local)
     const uint index = local.x + local.y * kBrickDim + local.z * kBrickDim * kBrickDim;
     const uint word = gBrickMaterials[slot * kMaterialWordsPerBrick + index / 4];
     return (word >> (8 * (index % 4))) & 0xFFu;
+}
+
+/// Get the palette ID for a voxel
+uint voxelMaterialAt(VolumeRecord record, int3 voxel)
+{
+    if (any(voxel < 0) || voxel.x >= int(record.brickDimsX * kBrickDim) || voxel.y >= int(record.brickDimsY * kBrickDim) ||
+        voxel.z >= int(record.brickDimsZ * kBrickDim))
+    {
+        return 0u;
+    }
+    const uint entry = gridEntry(record, uint3(voxel) / kBrickDim);
+    const uint tag = entry & 3u;
+    if (tag == kTagEmpty)
+    {
+        return 0u;
+    }
+    if (tag == kTagUniform)
+    {
+        return entry >> 2;
+    }
+    return pooledMaterial(entry >> 2, uint3(voxel) % kBrickDim);
 }
 
 float marchTieSlack(float t)

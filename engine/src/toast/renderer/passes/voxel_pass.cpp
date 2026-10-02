@@ -278,7 +278,9 @@ auto VoxelPass::prepare(uint32_t frame_index) -> bool {
 		}
 
 		const auto index = static_cast<uint32_t>(m_draws.size());
-		instances[index] = makeVoxelInstance(proxy.model, proxy.inverse_model, proxy.previous_model, proxy.record_index);
+		instances[index] =
+		    makeVoxelInstance(proxy.model, proxy.inverse_model, proxy.previous_model, proxy.has_previous, proxy.record_index);
+		instances[index].pad0 = proxy.highlight_record;
 		m_draws.push_back(
 		    Draw {
 		      .instance = index,

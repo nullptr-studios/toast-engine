@@ -36,6 +36,7 @@ struct VoxelCandidate {
 	voxel::VoxelClass classification;
 	uint8_t palette_index;
 	const voxel::PhysicalMaterial* material;
+	uint8_t exposure = voxel::k_all_faces_exposed;
 };
 
 namespace _detail {
@@ -116,6 +117,7 @@ void queryVoxelSurface(const VoxelQueryContext& context, const AABB& aabb, Callb
 			      .classification = voxel::classOf(surface_voxel.classification),
 			      .palette_index = palette_index,
 			      .material = &material,
+			      .exposure = surface_voxel.exposure,
 			    }
 			);
 		};

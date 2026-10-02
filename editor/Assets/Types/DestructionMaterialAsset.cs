@@ -30,6 +30,7 @@ public class DestructionMaterialAsset : BaseAsset {
 			$"toughness = 1000.0\n" +
 			$"structural_strength = 1000.0\n" +
 			$"shatter_radius = 0.5\n" +
+			$"destructible = true\n" +
 			$"flammable = false\n" +
 			$"burn_rate = 0.0\n");
 		return Task.CompletedTask;

@@ -39,6 +39,7 @@ auto voxelDebugViewName(View view) -> const char* {
 		case View::bricks: return "Brick storage";
 		case View::volumes: return "Volumes";
 		case View::materials: return "Physical materials";
+		case View::palette_id: return "Palette ID";
 	}
 	return "Unknown";
 }
@@ -128,29 +129,26 @@ void voxelDebugLegend(View view) {
 				voxelDebugSwatch(k_step_band_colors[i], label.c_str());
 			}
 			voxelDebugSwatch(k_exhausted_color, std::format("hit the {} step cap unresolved", voxel::k_max_march_steps).c_str());
-			ImGui::TextDisabled("Hatched: box pixels whose ray missed, still paid for");
+			ImGui::TextDisabled("Hatched: ray misses");
 			break;
 		}
 		case View::traversal:
-			voxelDebugSwatch({1.0f, 0.0f, 0.0f}, "single voxel steps in non empty bricks");
-			voxelDebugSwatch({0.0f, 1.0f, 0.0f}, "empty bricks skipped 8 voxels at a time");
-			voxelDebugSwatch({0.0f, 0.0f, 1.0f}, "empty coarse cells skipped 32 at a time");
-			ImGui::TextDisabled("Colours mix by share of the ray's steps. Hatched: miss");
+			voxelDebugSwatch({1.0f, 0.0f, 0.0f}, "single voxel steps");
+			voxelDebugSwatch({0.0f, 1.0f, 0.0f}, "empty bricks skipped");
+			voxelDebugSwatch({0.0f, 0.0f, 1.0f}, "empty coarse cells");
+			ImGui::TextDisabled("Hatched: ray misses");
 			break;
 		case View::bricks:
-			voxelDebugSwatch(k_uniform_brick_color, "uniform: solid one material no pool storage");
-			voxelDebugSwatch(k_shared_brick_color, "shared: pooled and still the asset's copy");
-			voxelDebugSwatch(k_owned_brick_color, "owned: copied on write by this instance");
-			ImGui::TextDisabled("Dark lines bricks, white coarse cells, faint voxels");
+			voxelDebugSwatch(k_uniform_brick_color, "uniform");
+			voxelDebugSwatch(k_shared_brick_color, "shared");
+			voxelDebugSwatch(k_owned_brick_color, "owned");
 			break;
-		case View::volumes:
-			ImGui::TextDisabled("One hue per volume record");
-			ImGui::TextDisabled("Hatched: box pixels whose ray missed, the raster overdraw");
-			break;
+		case View::volumes: ImGui::TextDisabled("Hatched: ray misses"); break;
 		case View::materials:
-			voxelDebugSwatch(k_default_material_color, "material 0: the default and every entry without one");
-			ImGui::TextDisabled("Any other hue is one physical material id");
+			voxelDebugSwatch(k_default_material_color, "material 0: default");
+			ImGui::TextDisabled("One hue per physics material id");
 			break;
+		case View::palette_id: ImGui::TextDisabled("One hue per palette id"); break;
 	}
 }
 

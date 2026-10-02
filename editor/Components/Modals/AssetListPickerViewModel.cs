@@ -75,6 +75,7 @@ public class AssetListPickerViewModel : PickerViewModel {
 				    && !string.Equals(file.Definition?.Type, extraType, StringComparison.OrdinalIgnoreCase)) continue;
 				if (file.Uid is not { } uid) continue;
 				var assetReal = file.Filepath[..^5];
+				if (assetReal.EndsWith(".d.lua", StringComparison.OrdinalIgnoreCase)) continue;
 				var path = ProjectContext.ToVirtual(assetReal) ?? assetReal;
 				yield return new AssetPickerItem(uid, file.Name, path, file.TypeColor, file.TypeLabel);
 			}

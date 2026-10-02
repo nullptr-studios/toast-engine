@@ -104,6 +104,13 @@ struct VoxelPaletteAssetReloaded : public Event<VoxelPaletteAssetReloaded> {
 	explicit VoxelPaletteAssetReloaded(toast::UID uid) : uid(uid) { }
 };
 
+/// Anything that copied values out of the asset has to read them again
+struct DataAssetReloaded : public Event<DataAssetReloaded> {
+	toast::UID uid;
+
+	explicit DataAssetReloaded(toast::UID uid) : uid(uid) { }
+};
+
 /**
  * @brief Fired after an RML document or RCSS stylesheet hot-reload
  */

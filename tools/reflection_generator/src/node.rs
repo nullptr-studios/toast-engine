@@ -14,11 +14,12 @@ pub struct NodeInfo {
 
 #[derive(Serialize)]
 pub struct TickFunctions {
-    pub pre_init: bool,
+    pub editor_tick: bool,
     pub init: bool,
     pub begin: bool,
     pub early_tick: bool,
     pub tick: bool,
+    pub physics_tick: bool,
     pub post_physics: bool,
     pub late_tick: bool,
     pub end: bool,
@@ -145,7 +146,7 @@ pub fn build_template_context(node: &NodeInfo) -> json_t {
     let active_tick_fns: Vec<json_t> = [
         (tf.load, "load", "load"),
         (tf.save, "save", "save"),
-        (tf.pre_init, "pre_init", "preInit"),
+        (tf.editor_tick, "editor_tick", "editorTick"),
         (tf.init, "init", "init"),
         (tf.destroy, "destroy", "destroy"),
         (tf.begin, "begin", "begin"),
@@ -154,6 +155,7 @@ pub fn build_template_context(node: &NodeInfo) -> json_t {
         (tf.on_disable, "on_disable", "onDisable"),
         (tf.early_tick, "early_tick", "earlyTick"),
         (tf.tick, "tick", "tick"),
+        (tf.physics_tick, "physics_tick", "physicsTick"),
         (tf.post_physics, "post_physics", "postPhysics"),
         (tf.late_tick, "late_tick", "lateTick"),
     ]
@@ -254,11 +256,12 @@ pub fn validate_class(class: &Class) -> std::result::Result<(), String> {
 fn build_tick_functions(class: &Class) -> TickFunctions {
     let fns = &class.functions;
     TickFunctions {
-        pre_init: fns.contains(&"preInit".to_string()),
+        editor_tick: fns.contains(&"editorTick".to_string()),
         init: fns.contains(&"init".to_string()),
         begin: fns.contains(&"begin".to_string()),
         early_tick: fns.contains(&"earlyTick".to_string()),
         tick: fns.contains(&"tick".to_string()),
+        physics_tick: fns.contains(&"physicsTick".to_string()),
         post_physics: fns.contains(&"postPhysics".to_string()),
         late_tick: fns.contains(&"lateTick".to_string()),
         end: fns.contains(&"end".to_string()),

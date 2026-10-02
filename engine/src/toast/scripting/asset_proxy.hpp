@@ -11,6 +11,16 @@
 #include <toast/assets/core_types.hpp>
 #include <toast/uid.hpp>
 
+struct lua_State;
+
+namespace luabridge {
+class LuaRef;
+}
+
+namespace assets {
+class DataValue;
+}
+
 namespace scripting {
 
 class AssetProxy {
@@ -33,6 +43,9 @@ public:
 	auto checkType(std::string_view field_type) const -> std::string;
 
 	[[nodiscard]]
+	auto get(const std::string& name, lua_State* l) const -> luabridge::LuaRef;
+
+	[[nodiscard]]
 	auto handle() const noexcept -> const assets::HandleBase& {
 		return m_handle;
 	}
@@ -40,5 +53,15 @@ public:
 private:
 	assets::HandleBase m_handle;
 };
+
+// Called AFTER the normal luabridge method fails
+auto assetProxyIndex(AssetProxy& proxy, const luabridge::LuaRef& key, lua_State* l) -> luabridge::LuaRef;
+
+// Data assets are read-only from Lua, trying to modify them will just panic, if someone complains about this
+// im killing them (hi dario)
+auto assetProxyNewindex(AssetProxy& proxy, const luabridge::LuaRef& key, const luabridge::LuaRef& value, lua_State* l)
+    -> luabridge::LuaRef;
+
+auto dataValueToLuaRef(lua_State* l, const assets::DataValue& value) -> luabridge::LuaRef;
 
 }

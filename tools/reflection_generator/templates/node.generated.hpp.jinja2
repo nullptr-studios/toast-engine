@@ -10,7 +10,11 @@
 #include <toast/reflect/reflect_node.hpp>
 {% if has_asset_handle %}#include <toast/assets/asset_field_access.hpp>
 {% endif %}
+{% if parent_snake_name %}#include "{{ parent_snake_name }}.generated.hpp"
+{% endif %}
 #include <{{ source_file }}>
+{% macro dyn_cast(p, i) %}{% if "Box<" in p.type %}std::any_cast<toast::Box<toast::Node>>(args[{{ i }}]).as<{{ p.type | replace("toast::Box<", "") | replace("Box<", "") | replace("const ", "") | replace("&", "") | replace(">", "") | trim }}>(){% elif "Handle<" in p.type %}assets::load<typename std::decay_t<{{ p.type }}>::asset_type>(std::any_cast<toast::UID>(args[{{ i }}])){% else %}std::any_cast<std::decay_t<{{ p.type }}>>(args[{{ i }}]){% endif %}{% endmacro %}
+{% macro dyn_arg(p, i) %}{% if p.default is none %}{{ dyn_cast(p, i) }}{% else %}((args.size() > {{ i }} && args[{{ i }}].has_value()) ? static_cast<std::decay_t<{{ p.type }}>>({{ dyn_cast(p, i) }}) : static_cast<std::decay_t<{{ p.type }}>>({{ p.default }})){% endif %}{% endmacro %}
 
 namespace toast {
 namespace _detail {
@@ -37,10 +41,10 @@ namespace _detail {
 	inline std::any {{ snake_name }}_method_{{ m.name }}_dyn(void* obj, std::span<const std::any> args) {
 		auto* self = static_cast<{{ qualified_name }}*>(obj);
 {% if m.return_type == "void" %}
-		(self->*Accessor<{{ snake_name }}_method_{{ m.name }}_tag>::member)({% for p in m.parameters %}{% if "Box<" in p.type %}std::any_cast<toast::Box<toast::Node>>(args[{{ loop.index0 }}]).as<{{ p.type | replace("toast::Box<", "") | replace("Box<", "") | replace("const ", "") | replace("&", "") | replace(">", "") | trim }}>(){% elif "Handle<" in p.type %}assets::load<typename std::decay_t<{{ p.type }}>::asset_type>(std::any_cast<toast::UID>(args[{{ loop.index0 }}])){% else %}std::any_cast<std::decay_t<{{ p.type }}>>(args[{{ loop.index0 }}]){% endif %}{% if not loop.last %}, {% endif %}{% endfor %});
+		(self->*Accessor<{{ snake_name }}_method_{{ m.name }}_tag>::member)({% for p in m.parameters %}{{ dyn_arg(p, loop.index0) }}{% if not loop.last %}, {% endif %}{% endfor %});
 		return std::any{};
 {% else %}
-		return std::any{ (self->*Accessor<{{ snake_name }}_method_{{ m.name }}_tag>::member)({% for p in m.parameters %}{% if "Box<" in p.type %}std::any_cast<toast::Box<toast::Node>>(args[{{ loop.index0 }}]).as<{{ p.type | replace("toast::Box<", "") | replace("Box<", "") | replace("const ", "") | replace("&", "") | replace(">", "") | trim }}>(){% elif "Handle<" in p.type %}assets::load<typename std::decay_t<{{ p.type }}>::asset_type>(std::any_cast<toast::UID>(args[{{ loop.index0 }}])){% else %}std::any_cast<std::decay_t<{{ p.type }}>>(args[{{ loop.index0 }}]){% endif %}{% if not loop.last %}, {% endif %}{% endfor %}) };
+		return std::any{ (self->*Accessor<{{ snake_name }}_method_{{ m.name }}_tag>::member)({% for p in m.parameters %}{{ dyn_arg(p, loop.index0) }}{% if not loop.last %}, {% endif %}{% endfor %}) };
 {% endif %}
 	}
 {% endfor %}

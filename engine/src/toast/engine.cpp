@@ -2,9 +2,11 @@
 
 #include "application.hpp"
 #include "assets/asset_manager.hpp"
+#include "assets/data_schema_codegen.hpp"
 #include "assets/prefab.hpp"
 #include "audio/audio_system.hpp"
 #include "crash_handler.hpp"
+#include "events/defer.hpp"
 #include "events/event.hpp"
 #include "events/listener.hpp"
 #include "ffi/engine.h"    // ffi
@@ -63,6 +65,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <new>
@@ -109,6 +112,8 @@ struct EnginePimpl {
 	std::mutex owners_mutex;
 	std::map<toast::UID, std::unique_ptr<INodeOwner>> owners;
 	toast::UID active_workspace {0};
+	event::SetShowOthers show_others;
+	bool show_others_warned = false;
 };
 
 Engine::Engine() noexcept {
@@ -231,6 +236,12 @@ void Engine::init() {
 		return false;
 	});
 
+	m->listener.subscribe<event::SetShowOthers>([this](const event::SetShowOthers& e) {
+		m->show_others = e;
+		m->show_others_warned = false;
+		return true;
+	});
+
 	// A script source changed on disk
 	// rebuild the runtimes that use it everywhere and let the schedulers recompute
 	m->listener.subscribe<event::ScriptAssetReloaded>([this](const event::ScriptAssetReloaded& e) {
@@ -244,6 +255,8 @@ void Engine::init() {
 		event::send<event::RequestHierarchyUpdate>();
 		return false;
 	});
+
+	m->listener.subscribe<_detail::Defer>([](_detail::Defer& e) { e.cb(); });
 
 	m->audio_system = std::make_unique<audio::AudioSystem>();
 	m->ui_system = std::make_unique<ui::UISystem>();
@@ -361,6 +374,40 @@ void Engine::tick() {
 		// draws into the one viewport. No active workspace means no filter, which is the standalone case
 		if (m->renderer) {
 			m->renderer->setRenderOwnerFilter(it != m->owners.end() ? it->second.get() : nullptr);
+		}
+
+		if (m->renderer) {
+			const INodeOwner* other = nullptr;
+			glm::mat4 other_transform(1.0f);
+			const Node* hidden = nullptr;
+			const event::SetShowOthers& show = m->show_others;
+			if (show.show && show.workspace == m->active_workspace.data()) {
+				auto source = m->owners.find(UID(show.source_workspace));
+				Workspace* level = source != m->owners.end() ? source->second->asWorkspace() : nullptr;
+				// An opened prefab workspace has the prefab asset uid as its handle
+				Box<Node> instance =
+				    level != nullptr ? level->findPrefabInstance(m->active_workspace, show.source_instance) : Box<Node> {};
+				Workspace* editing = it != m->owners.end() ? it->second->asWorkspace() : nullptr;
+				const Node3D* root =
+				    editing != nullptr && editing->isValid() ? reflect_cast<Node3D>(const_cast<Node*>(&editing->rootNode())) : nullptr;
+				if (auto spatial = instance.as<Node3D>(); spatial.exists() && root != nullptr) {
+					// The level moves so the instance lands on the prefab root
+					spatial->syncTransform();
+					root->syncTransform();
+					other = level;
+					other_transform = root->getWorldTransform() * glm::inverse(spatial->getWorldTransform());
+					hidden = &*instance;
+				} else if (!m->show_others_warned) {
+					m->show_others_warned = true;
+					TOAST_WARN(
+					    "Engine",
+					    "Show Others: level {} {} the prefab instance",
+					    show.source_workspace,
+					    level == nullptr ? "is not open, cannot find" : "does not hold"
+					);
+				}
+			}
+			m->renderer->setSecondaryOwner(other, other_transform, hidden);
 		}
 
 		if (m->renderer && it != m->owners.end()) {
@@ -960,6 +1007,11 @@ void toast_reload_manifest() noexcept {
 	auto& mgr = assets::AssetManager::get();
 	mgr.clearUnusedAssets();
 	mgr.reloadManifest();
+
+	// update lua schemas file
+	if (scripting::LuaState::exists()) {
+		scripting::LuaState::get().refreshTypeMarkers();
+	}
 }
 
 void toast_reload_project_settings() noexcept {
@@ -1024,6 +1076,19 @@ void toast_bake_asset(const char* uid_str, const char* out_path) noexcept {
 		out.write(reinterpret_cast<const char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
 		TOAST_TRACE("Engine", "Baked asset {} → {}", uid_str, out_path);
 	} catch (const std::exception& e) { TOAST_ERROR("Engine", "toast_bake_asset: {}", e.what()); }
+}
+
+auto toast_generate_data_schema_stubs(const char* out_path) noexcept -> int {
+	ZoneScoped;
+	if (!out_path) {
+		return 0;
+	}
+	try {
+		return assets::generateDataSchemaLuaStubs(out_path) ? 1 : 0;
+	} catch (const std::exception& e) {
+		TOAST_ERROR("Engine", "toast_generate_data_schema_stubs: {}", e.what());
+		return 0;
+	}
 }
 
 void toast_haptics_test(const char* toml_text) noexcept {

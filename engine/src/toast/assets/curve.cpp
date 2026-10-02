@@ -38,33 +38,29 @@ auto dimToString(CurveDimension d) -> std::string_view {
 	return d == CurveDimension::d2 ? "2d" : "3d";
 }
 
-}
+struct ParsedCurve {
+	std::vector<float> points;
+	CurveDimension dim = CurveDimension::d2;
+	SplineType type = SplineType::linear;
+	float t_scale = 1.0f;
+};
 
-Curve::Curve(std::vector<float> points, CurveDimension dim, SplineType type, float t_scale)
-    : m_points(std::move(points)),
-      m_dim(dim),
-      m_spline_type(type),
-      m_t_scale(t_scale) {
-	rebuildSpline();
-}
-
-auto Curve::fromToml(const toml::table& tbl) -> std::unique_ptr<Curve> {
-	ZoneScoped;
+auto parseCurve(const toml::table& tbl) -> ParsedCurve {
 	auto spline_type_str = tbl["spline_type"].value<std::string>().value_or("linear");
 	auto dimension_str = tbl["dimension"].value<std::string>().value_or("2d");
-	auto t_scale = (float)tbl["t_scale"].value<double>().value_or(1.0);
 
-	auto dim = (dimension_str == "3d") ? CurveDimension::d3 : CurveDimension::d2;
-	auto type = splineTypeFromString(spline_type_str);
-	size_t n_components = (dim == CurveDimension::d2) ? 2 : 3;
+	ParsedCurve parsed;
+	parsed.t_scale = (float)tbl["t_scale"].value<double>().value_or(1.0);
+	parsed.dim = (dimension_str == "3d") ? CurveDimension::d3 : CurveDimension::d2;
+	parsed.type = splineTypeFromString(spline_type_str);
+	size_t n_components = (parsed.dim == CurveDimension::d2) ? 2 : 3;
 
 	const auto* points_arr = tbl["points"].as_array();
 	if (!points_arr) {
 		throw std::runtime_error("Curve: missing 'points' array");
 	}
 
-	std::vector<float> points;
-	points.reserve(points_arr->size() * n_components);
+	parsed.points.reserve(points_arr->size() * n_components);
 
 	for (const auto& entry : *points_arr) {
 		const auto* pt = entry.as_table();
@@ -78,16 +74,48 @@ auto Curve::fromToml(const toml::table& tbl) -> std::unique_ptr<Curve> {
 			throw std::runtime_error("Curve: point missing x or y");
 		}
 
-		points.push_back((float)x->value<double>().value_or(0.0));
-		points.push_back((float)y->value<double>().value_or(0.0));
+		parsed.points.push_back((float)x->value<double>().value_or(0.0));
+		parsed.points.push_back((float)y->value<double>().value_or(0.0));
 
-		if (dim == CurveDimension::d3) {
+		if (parsed.dim == CurveDimension::d3) {
 			const auto* z = pt->get("z");
-			points.push_back(z ? (float)z->value<double>().value_or(0.0) : 0.0f);
+			parsed.points.push_back(z ? (float)z->value<double>().value_or(0.0) : 0.0f);
 		}
 	}
 
-	return std::make_unique<Curve>(std::move(points), dim, type, t_scale);
+	return parsed;
+}
+
+}
+
+Curve::Curve(std::vector<float> points, CurveDimension dim, SplineType type, float t_scale)
+    : m_points(std::move(points)),
+      m_dim(dim),
+      m_spline_type(type),
+      m_t_scale(t_scale) {
+	rebuildSpline();
+}
+
+auto Curve::fromToml(const toml::table& tbl) -> std::unique_ptr<Curve> {
+	ZoneScoped;
+	ParsedCurve parsed = parseCurve(tbl);
+	return std::make_unique<Curve>(std::move(parsed.points), parsed.dim, parsed.type, parsed.t_scale);
+}
+
+void Curve::reload(const toml::table& tbl) {
+	ZoneScoped;
+	ParsedCurve parsed = parseCurve(tbl);
+
+	const size_t n_components = (parsed.dim == CurveDimension::d2) ? 2 : 3;
+	if (parsed.points.size() / n_components < 2) {
+		throw std::runtime_error("Curve: needs at least 2 points");
+	}
+
+	m_points = std::move(parsed.points);
+	m_dim = parsed.dim;
+	m_spline_type = parsed.type;
+	m_t_scale = parsed.t_scale;
+	rebuildSpline();
 }
 
 auto Curve::serialize(SaveMode /*mode*/) const -> std::vector<uint8_t> {
