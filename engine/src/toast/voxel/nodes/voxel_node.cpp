@@ -828,7 +828,7 @@ void VoxelNode::drawDebug() {
 		const glm::vec4 draw_color = is_awake ? base_color : glm::vec4(0.5f, 0.5f, 0.5f, base_color.a);
 		const glm::mat4 transform =
 		    glm::translate(glm::mat4(1.0f), (bounds.min + bounds.max) * 0.5f) * glm::scale(glm::mat4(1.0f), bounds.max - bounds.min);
-		renderer::debugDrawShapeBox(transform, draw_color, aabb_fill);
+		debug::drawShapeBox(transform, draw_color, aabb_fill);
 	};
 
 	if (const auto bounds = physics::Simulator::shapeWorldBounds(m_shape)) {

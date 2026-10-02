@@ -2786,7 +2786,7 @@ void VulkanRenderer::tick(float time) noexcept {
 	ZoneScopedN("VulkanRenderer::tick()");
 
 	if (m_rendering_paused.load(std::memory_order_relaxed)) {
-		beginFrameBuild().debug_line_vertices.clear();
+		getCurrentFrameBuild().debug_line_vertices.clear();
 		return;
 	}
 
@@ -2818,7 +2818,7 @@ void VulkanRenderer::tick(float time) noexcept {
 		);
 	};
 
-	auto& frame = beginFrameBuild();
+	auto& frame = getCurrentFrameBuild();
 
 	frame.mesh_instances.clear();
 	frame.material_ranges.clear();
@@ -3181,7 +3181,7 @@ void VulkanRenderer::tick(float time) noexcept {
 				const glm::vec3 extents(data.extents_intensity);
 				const glm::uvec3 counts(data.counts_base);
 
-				debugDrawBox(min_corner, min_corner + extents * 2.0f, glm::vec4(1.0f, 0.85f, 0.3f, 1.0f));
+				debug::drawBox(min_corner, min_corner + extents * 2.0f, glm::vec4(1.0f, 0.85f, 0.3f, 1.0f));
 
 				const glm::vec3 step = (extents * 2.0f) / glm::max(glm::vec3(counts) - 1.0f, glm::vec3(1.0f));
 
@@ -3191,7 +3191,7 @@ void VulkanRenderer::tick(float time) noexcept {
 				const float dot_radius = std::min({step.x, step.y, step.z}) * 0.08f;
 				for (uint32_t i = 0; i < total; i += stride) {
 					const glm::uvec3 grid(i % counts.x, (i / counts.x) % counts.y, i / (counts.x * counts.y));
-					debugDrawSphere(min_corner + glm::vec3(grid) * step, dot_radius, glm::vec4(1.0f, 0.85f, 0.3f, 1.0f));
+					debug::drawBox(min_corner + glm::vec3(grid) * step, dot_radius, glm::vec4(1.0f, 0.85f, 0.3f, 1.0f));
 				}
 			}
 		}
@@ -3294,12 +3294,12 @@ void VulkanRenderer::tick(float time) noexcept {
 				continue;
 			}
 			camera->syncTransform();
-			debugDrawMesh(cameraGizmoMesh(), camera->getWorldTransform());
+			debug::drawMesh(cameraGizmoMesh(), camera->getWorldTransform());
 
 			constexpr float k_camera_frustum_length = 3.0f;
 			const auto extent = m_output_target->getExtent();
 			const float aspect = extent.height > 0 ? static_cast<float>(extent.width) / static_cast<float>(extent.height) : 1.0f;
-			debugDrawFrustum(*camera, aspect, glm::vec4(1.0f, 1.0f, 0.2f, 1.0f), k_camera_frustum_length);
+			debug::drawFrustum(*camera, aspect, glm::vec4(1.0f, 1.0f, 0.2f, 1.0f), k_camera_frustum_length);
 		}
 	}
 
@@ -3391,7 +3391,9 @@ void VulkanRenderer::tick(float time) noexcept {
 		    light->castsShadows() && (!positional || light->shadowDistance() <= 0.0f || camera_distance <= shadow_limit);
 
 		constexpr float k_light_icon_size = 0.5f;
-		debugDrawBillboard(light->world_position, k_light_icon_size, lightIcon(light->lightType()), glm::vec4(light->color(), 1.0f));
+		debug::drawBillboard(
+		    light->world_position, k_light_icon_size, lightIcon(light->lightType()), glm::vec4(light->color(), 1.0f)
+		);
 
 		switch (light->lightType()) {
 			case toast::LightType::ambient: {
@@ -3399,7 +3401,7 @@ void VulkanRenderer::tick(float time) noexcept {
 				break;
 			}
 			case toast::LightType::directional: {
-				debugDrawArrow(light->world_position, light->world_position + light->forward() * 2.0f, glm::vec4(light->color(), 1.0f));
+				debug::drawArrow(light->world_position, light->world_position + light->forward() * 2.0f, glm::vec4(light->color(), 1.0f));
 
 				if (directional_count >= k_max_directional_lights) {
 					break;
@@ -3420,7 +3422,7 @@ void VulkanRenderer::tick(float time) noexcept {
 				const glm::vec3 world_pos = point->world_position;
 				const glm::vec3 view_pos = glm::vec3(frame_view * glm::vec4(world_pos, 1.0f));
 
-				debugDrawSphere(world_pos, point->attenuation(), glm::vec4(point->color(), 1.0f));
+				debug::drawBox(world_pos, point->attenuation(), glm::vec4(point->color(), 1.0f));
 
 				submit_punctual(
 				    PunctualSubmit {
@@ -3453,7 +3455,7 @@ void VulkanRenderer::tick(float time) noexcept {
 				const float outer = glm::radians(spot->outerRadius());
 				const float inner = std::min(glm::radians(spot->innerRadius()), outer);
 
-				debugDrawCone(world_pos, forward, spot->attenuation(), spot->outerRadius(), glm::vec4(spot->color(), 1.0f));
+				debug::drawCone(world_pos, forward, spot->attenuation(), spot->outerRadius(), glm::vec4(spot->color(), 1.0f));
 
 				submit_punctual(
 				    PunctualSubmit {
@@ -3514,9 +3516,9 @@ void VulkanRenderer::tick(float time) noexcept {
 		for (const auto& [cube_index, probe] : identified) {
 			const glm::vec4 volume_color(0.35f, 0.8f, 1.0f, 1.0f);
 			if (probe->usesBoxProjection()) {
-				debugDrawBox(probe->world_position - probe->boxExtents(), probe->world_position + probe->boxExtents(), volume_color);
+				debug::drawBox(probe->world_position - probe->boxExtents(), probe->world_position + probe->boxExtents(), volume_color);
 			} else {
-				debugDrawSphere(probe->world_position, probe->influenceRadius(), volume_color);
+				debug::drawBox(probe->world_position, probe->influenceRadius(), volume_color);
 			}
 		}
 
@@ -3745,7 +3747,7 @@ void VulkanRenderer::tick(float time) noexcept {
 		}
 
 		if (m_cull_debug_draw.load(std::memory_order_relaxed) && !is_capture) {
-			debugDrawFrustumFromMatrix(cull_view_projection, glm::vec4(1.0f, 1.0f, 0.2f, 1.0f));
+			debug::drawFrustumFromMatrix(cull_view_projection, glm::vec4(1.0f, 1.0f, 0.2f, 1.0f));
 
 			constexpr int k_debug_sphere_segments = 8;
 			for (const auto& proxy : frame.mesh_instances) {
@@ -3753,12 +3755,12 @@ void VulkanRenderer::tick(float time) noexcept {
 					continue;
 				}
 				const glm::vec4 color = proxy.visible ? glm::vec4(0.2f, 1.0f, 0.3f, 1.0f) : glm::vec4(1.0f, 0.25f, 0.2f, 1.0f);
-				debugDrawSphere(proxy.bounds_center, proxy.bounds_radius, color, k_debug_sphere_segments);
+				debug::drawBox(proxy.bounds_center, proxy.bounds_radius, color, k_debug_sphere_segments);
 			}
 
 			for (const auto& proxy : frame.voxel_instances) {
 				const glm::vec4 color = proxy.visible ? glm::vec4(0.2f, 0.85f, 1.0f, 1.0f) : glm::vec4(1.0f, 0.25f, 0.2f, 1.0f);
-				debugDrawSphere(proxy.bounds_center, proxy.bounds_radius, color, k_debug_sphere_segments);
+				debug::drawBox(proxy.bounds_center, proxy.bounds_radius, color, k_debug_sphere_segments);
 			}
 		}
 	}
@@ -4290,7 +4292,7 @@ void drawOrientedBox(const glm::mat4& transform, const glm::vec3& extents, const
 	  {{0, 1}, {1, 3}, {3, 2}, {2, 0}, {4, 5}, {5, 7}, {7, 6}, {6, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7}}
 	};
 	for (const auto& [a, b] : edges) {
-		debugDrawLine(corners[a], corners[b], color);
+		debug::drawLine(corners[a], corners[b], color);
 	}
 }
 
@@ -4645,118 +4647,39 @@ void VulkanRenderer::forgetCamera(const toast::Camera* camera) {
 	}
 }
 
-void debugDrawFrustum(const toast::Camera& camera, float aspect, glm::vec4 color, float far_override) {
-	if (!VulkanRenderer::instance->debugDrawEnabled()) {
-		return;
-	}
-	const float far_distance = far_override > 0.0f ? std::min(far_override, camera.far_plane) : camera.far_plane;
+// DEBUG SHI
 
-	const float tan_half_fov_y = std::tan(glm::radians(camera.fov) * 0.5f);
-	const float near_height = 2.0f * tan_half_fov_y * camera.near_plane;
-	const float near_width = near_height * aspect;
-	const float far_height = 2.0f * tan_half_fov_y * far_distance;
-	const float far_width = far_height * aspect;
-
-	const std::array<glm::vec3, 8> view_space_corners {
-	  glm::vec3 {-near_width * 0.5f, -near_height * 0.5f, -camera.near_plane},
-	  glm::vec3 { near_width * 0.5f, -near_height * 0.5f, -camera.near_plane},
-	  glm::vec3 { near_width * 0.5f,  near_height * 0.5f, -camera.near_plane},
-	  glm::vec3 {-near_width * 0.5f,  near_height * 0.5f, -camera.near_plane},
-	  glm::vec3 { -far_width * 0.5f,  -far_height * 0.5f,      -far_distance},
-	  glm::vec3 {  far_width * 0.5f,  -far_height * 0.5f,      -far_distance},
-	  glm::vec3 {  far_width * 0.5f,   far_height * 0.5f,      -far_distance},
-	  glm::vec3 { -far_width * 0.5f,   far_height * 0.5f,      -far_distance},
-	};
-
-	const glm::mat4 inv_view = glm::inverse(camera.getView());
-	std::array<glm::vec3, 8> world_corners {};
-	for (int i = 0; i < 8; ++i) {
-		world_corners[i] = glm::vec3(inv_view * glm::vec4(view_space_corners[i], 1.0f));
-	}
-
-	static constexpr std::array<std::pair<int, int>, 12> edges {
-	  {{0, 1}, {1, 2}, {2, 3}, {3, 0}, {4, 5}, {5, 6}, {6, 7}, {7, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7}}
-	};
-	for (const auto& [a, b] : edges) {
-		debugDrawLine(world_corners[a], world_corners[b], color);
+void VulkanRenderer::registerDebugDraw(toast::Node3D* node, void (*draw)(toast::Node3D&)) {
+	std::scoped_lock lock(m_mesh_proxy_mutex);
+	if (std::ranges::none_of(m_debug_nodes, [node](const auto& entry) { return entry.first == node; })) {
+		m_debug_nodes.emplace_back(node, draw);
 	}
 }
 
-void debugDrawFrustumFromMatrix(const glm::mat4& view_projection, glm::vec4 color) {
-	if (!VulkanRenderer::instance->debugDrawEnabled()) {
-		return;
-	}
-	const glm::mat4 inverse = glm::inverse(view_projection);
-
-	static const std::array<glm::vec3, 8> ndc_corners {
-	  glm::vec3 {-1.0f, -1.0f, 0.0f},
-	  glm::vec3 { 1.0f, -1.0f, 0.0f},
-	  glm::vec3 { 1.0f,  1.0f, 0.0f},
-	  glm::vec3 {-1.0f,  1.0f, 0.0f},
-	  glm::vec3 {-1.0f, -1.0f, 1.0f},
-	  glm::vec3 { 1.0f, -1.0f, 1.0f},
-	  glm::vec3 { 1.0f,  1.0f, 1.0f},
-	  glm::vec3 {-1.0f,  1.0f, 1.0f},
-	};
-
-	std::array<glm::vec3, 8> world_corners {};
-	for (int i = 0; i < 8; ++i) {
-		const glm::vec4 unprojected = inverse * glm::vec4(ndc_corners[static_cast<size_t>(i)], 1.0f);
-		world_corners[static_cast<size_t>(i)] = glm::vec3(unprojected) / unprojected.w;
-	}
-
-	static constexpr std::array<std::pair<int, int>, 12> edges {
-	  {{0, 1}, {1, 2}, {2, 3}, {3, 0}, {4, 5}, {5, 6}, {6, 7}, {7, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7}}
-	};
-	for (const auto& [a, b] : edges) {
-		debugDrawLine(world_corners[static_cast<size_t>(a)], world_corners[static_cast<size_t>(b)], color);
-	}
+void VulkanRenderer::unregisterDebugDraw(toast::Node3D* node) {
+	std::scoped_lock lock(m_mesh_proxy_mutex);
+	std::erase_if(m_debug_nodes, [node](const auto& entry) { return entry.first == node; });
 }
 
-void debugDrawMesh(toast::UID mesh, const glm::mat4& transform, glm::vec4 tint) {
-	if (!VulkanRenderer::instance->debugDrawEnabled()) {
-		return;
-	}
-	debugDrawMesh(assets::load<assets::Mesh>(mesh), transform, tint);
+void VulkanRenderer::beginDebugLineCollection(RenderFrame& frame) {
+	std::scoped_lock lock(m_debug_line_mutex);
+	frame.debug_line_vertices.insert(
+	    frame.debug_line_vertices.end(), m_pending_debug_line_vertices.begin(), m_pending_debug_line_vertices.end()
+	);
+	m_pending_debug_line_vertices.clear();
+	m_collecting_debug_lines = true;
 }
 
-void debugDrawBillboard(glm::vec3 world_position, float size, toast::UID texture, glm::vec4 tint) {
-	if (texture.data() == 0 || !VulkanRenderer::instance->debugDrawEnabled()) {
-		return;
-	}
-	debugDrawBillboard(world_position, size, assets::load<assets::Texture>(texture), tint);
+void VulkanRenderer::endDebugLineCollection() {
+	std::scoped_lock lock(m_debug_line_mutex);
+	m_collecting_debug_lines = false;
 }
 
-void debugDrawCone(glm::vec3 apex, glm::vec3 direction, float length, float half_angle_degrees, glm::vec4 color, int segments) {
-	if (!VulkanRenderer::instance->debugDrawEnabled()) {
-		return;
-	}
-	const float dir_len = glm::length(direction);
-	const glm::vec3 axis = dir_len > 0.0001f ? direction / dir_len : glm::vec3(0.0f, 0.0f, -1.0f);
-
-	const glm::vec3 up = std::abs(axis.y) < 0.99f ? glm::vec3(0.0f, 1.0f, 0.0f) : glm::vec3(1.0f, 0.0f, 0.0f);
-	const glm::vec3 u = glm::normalize(glm::cross(up, axis));
-	const glm::vec3 w = glm::cross(axis, u);
-
-	const float radius = length * std::tan(glm::radians(half_angle_degrees));
-	const glm::vec3 base_center = apex + axis * length;
-
-	std::vector<glm::vec3> ring(static_cast<size_t>(segments));
-	for (int i = 0; i < segments; ++i) {
-		const float t = (static_cast<float>(i) / static_cast<float>(segments)) * glm::two_pi<float>();
-		ring[static_cast<size_t>(i)] = base_center + (u * std::cos(t) + w * std::sin(t)) * radius;
-	}
-
-	for (int i = 0; i < segments; ++i) {
-		const int next = (i + 1) % segments;
-		debugDrawLine(ring[static_cast<size_t>(i)], ring[static_cast<size_t>(next)], color);
-	}
-
-	constexpr int k_spokes = 4;
-	for (int i = 0; i < k_spokes; ++i) {
-		const int idx = (i * segments) / k_spokes;
-		debugDrawLine(apex, ring[static_cast<size_t>(idx)], color);
-	}
+void VulkanRenderer::queueDebugLine(glm::vec3 a, glm::vec3 b, glm::vec4 color) {
+	std::scoped_lock lock(m_debug_line_mutex);
+	auto& vertices = m_collecting_debug_lines ? beginFrameBuild().debug_line_vertices : m_pending_debug_line_vertices;
+	vertices.push_back({a, color});
+	vertices.push_back({b, color});
 }
 
 }

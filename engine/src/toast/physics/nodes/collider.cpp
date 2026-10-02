@@ -99,16 +99,16 @@ void Collider::drawDebug() {
 		if (!std::isfinite(sphere->radius) || sphere->radius <= 0.0f) {
 			return;
 		}
-		renderer::debugDrawSphere(center, sphere->radius, color);
+		debug::drawBox(center, sphere->radius, color);
 		if (debug_fill) {
 			auto fill_color = color;
 			fill_color.a *= 0.2f;
-			renderer::debugDrawSolidSphere(center, sphere->radius, fill_color);
+			debug::drawSolidSphere(center, sphere->radius, fill_color);
 		}
 	} else if (const auto capsule = box().as<CapsuleCollider>(); capsule.exists()) {
-		renderer::debugDrawCapsule(transform, capsule->radius, capsule->height, color, debug_fill);
+		debug::drawCapsule(transform, capsule->radius, capsule->height, color, debug_fill);
 	} else if (const auto cube = box().as<BoxCollider>(); cube.exists()) {
-		renderer::debugDrawShapeBox(glm::scale(transform, cube->size), color, debug_fill);
+		debug::drawShapeBox(glm::scale(transform, cube->size), color, debug_fill);
 	}
 
 	if (show_aabb) {
@@ -116,7 +116,7 @@ void Collider::drawDebug() {
 			const glm::vec4 aabb_draw_color = disabled || sleeping ? glm::vec4(0.5f, 0.5f, 0.5f, aabb_color.a) : aabb_color;
 			const glm::mat4 aabb_transform = glm::translate(glm::mat4(1.0f), (bounds->min + bounds->max) * 0.5f) *
 			                                 glm::scale(glm::mat4(1.0f), bounds->max - bounds->min);
-			renderer::debugDrawShapeBox(aabb_transform, aabb_draw_color, aabb_fill);
+			debug::drawShapeBox(aabb_transform, aabb_draw_color, aabb_fill);
 		}
 	}
 }
