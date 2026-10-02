@@ -25,7 +25,7 @@ void TOAST_API drawCapsule(const glm::mat4& transform, float radius, float heigh
 
 void TOAST_API drawLine(glm::vec3 a, glm::vec3 b, glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f});
 void TOAST_API drawBox(glm::vec3 min, glm::vec3 max, glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f});
-void TOAST_API drawBox(glm::vec3 center, float radius, glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f}, int segments = 24);
+void TOAST_API drawSphere(glm::vec3 center, float radius, glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f}, int segments = 24);
 void TOAST_API drawAxes(const glm::mat4& transform);
 
 void TOAST_API drawBillboard(

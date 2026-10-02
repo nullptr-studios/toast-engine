@@ -99,7 +99,7 @@ void Collider::drawDebug() {
 		if (!std::isfinite(sphere->radius) || sphere->radius <= 0.0f) {
 			return;
 		}
-		debug::drawBox(center, sphere->radius, color);
+		debug::drawSphere(center, sphere->radius, color);
 		if (debug_fill) {
 			auto fill_color = color;
 			fill_color.a *= 0.2f;

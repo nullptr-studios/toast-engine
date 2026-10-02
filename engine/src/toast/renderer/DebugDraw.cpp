@@ -142,7 +142,7 @@ void drawBox(glm::vec3 min, glm::vec3 max, glm::vec4 color) {
 	}
 }
 
-void drawBox(glm::vec3 center, float radius, glm::vec4 color, int segments) {
+void drawSphere(glm::vec3 center, float radius, glm::vec4 color, int segments) {
 	if (!renderer::VulkanRenderer::instance->debugDrawEnabled()) {
 		return;
 	}

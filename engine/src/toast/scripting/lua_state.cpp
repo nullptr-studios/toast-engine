@@ -860,8 +860,86 @@ void LuaState::registerApi(lua_State* state) noexcept {
 		        return toast::Engine::get() && toast::Engine::get()->shootVoxel(origin, direction, max_distance, energy, min_radius);
 	        }
 	    )
-	    .endNamespace();
+	    .endNamespace()
 
+	    // DEBUG SHI
+	    .beginNamespace("Debug")
+	    .addFunction(
+	        "drawLine",
+	        +[](const glm::vec3& start, const glm::vec3& end, const glm::vec4& color = {1.0f, 1.0f, 1.0f, 1.0f}) {
+		        debug::drawLine(start, end, color);
+	        }
+	    )
+	    .addFunction(
+	        "drawBox",
+	        +[](const glm::vec3 min, const glm::vec3 max, const glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f}) {
+		        debug::drawBox(min, max, color);
+	        }
+	    )
+	    .addFunction(
+	        "drawSphere",
+	        +[](const glm::vec3& center, float radius, const glm::vec4& color = {1.0f, 1.0f, 1.0f, 1.0f}, int segments = 8) {
+		        debug::drawSphere(center, radius, color, segments);
+	        }
+	    )
+	    .addFunction(
+	        "drawBillboard",
+	        +[](glm::vec3 world_position,
+					    float size,
+					    assets::Handle<assets::Texture>
+					        texture,
+					    glm::vec4 tint = {1.0f, 1.0f, 1.0f, 1.0f}) { debug::drawBillboard(world_position, size, texture, tint); }
+	    )
+	    .addFunction(
+	        "drawMesh",
+	        +[](const assets::Handle<assets::Mesh>& mesh, const glm::mat4& transform, glm::vec4 tint = {1.0f, 1.0f, 1.0f, 1.0f}) {
+		        debug::drawMesh(mesh, transform, tint);
+	        }
+	    )
+	    .addFunction(
+	        "drawBillboard",
+	        +[](glm::vec3 world_position, float size, toast::UID texture, glm::vec4 tint = glm::vec4 {1.0f, 1.0f, 1.0f, 1.0f}) {
+		        debug::drawBillboard(world_position, size, texture, tint);
+	        }
+	    )
+	    .addFunction(
+	        "drawArrow",
+	        +[](glm::vec3 from, glm::vec3 to, glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f}, float head_size = 0.2f) {
+		        debug::drawArrow(from, to, color, head_size);
+	        }
+	    )
+	    .addFunction(
+	        "drawCone",
+	        +[](glm::vec3 apex,
+					    glm::vec3 direction,
+					    float length,
+					    float half_angle_degrees,
+					    glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f},
+					    int segments = 24) { debug::drawCone(apex, direction, length, half_angle_degrees, color, segments); }
+	    )
+	    .addFunction(
+	        "drawFrustum",
+	        +[](const toast::Camera& camera, float aspect, glm::vec4 color = {1.0f, 1.0f, 0.0f, 1.0f}, float far_override = 0.0f) {
+		        debug::drawFrustum(camera, aspect, color, far_override);
+	        }
+	    )
+	    .addFunction(
+	        "drawSolidSphere",
+	        +[](glm::vec3 center, float radius, glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f}) {
+		        debug::drawSolidSphere(center, radius, color);
+	        }
+	    )
+	    .addFunction(
+	        "drawShapeBox",
+	        +[](const glm::mat4& transform, glm::vec4 color, bool fill) { debug::drawShapeBox(transform, color, fill); }
+	    )
+	    .addFunction(
+	        "drawCapsule",
+	        +[](const glm::mat4& transform, float radius, float height, glm::vec4 color, bool fill) {
+		        debug::drawCapsule(transform, radius, height, color, fill);
+	        }
+	    )
+	    .endNamespace();
 	registerTypeMarkers(state);
 }
 

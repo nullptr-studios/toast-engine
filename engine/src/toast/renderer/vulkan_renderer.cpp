@@ -3191,7 +3191,7 @@ void VulkanRenderer::tick(float time) noexcept {
 				const float dot_radius = std::min({step.x, step.y, step.z}) * 0.08f;
 				for (uint32_t i = 0; i < total; i += stride) {
 					const glm::uvec3 grid(i % counts.x, (i / counts.x) % counts.y, i / (counts.x * counts.y));
-					debug::drawBox(min_corner + glm::vec3(grid) * step, dot_radius, glm::vec4(1.0f, 0.85f, 0.3f, 1.0f));
+					debug::drawSphere(min_corner + glm::vec3(grid) * step, dot_radius, glm::vec4(1.0f, 0.85f, 0.3f, 1.0f));
 				}
 			}
 		}
@@ -3422,7 +3422,7 @@ void VulkanRenderer::tick(float time) noexcept {
 				const glm::vec3 world_pos = point->world_position;
 				const glm::vec3 view_pos = glm::vec3(frame_view * glm::vec4(world_pos, 1.0f));
 
-				debug::drawBox(world_pos, point->attenuation(), glm::vec4(point->color(), 1.0f));
+				debug::drawSphere(world_pos, point->attenuation(), glm::vec4(point->color(), 1.0f));
 
 				submit_punctual(
 				    PunctualSubmit {
@@ -3518,7 +3518,7 @@ void VulkanRenderer::tick(float time) noexcept {
 			if (probe->usesBoxProjection()) {
 				debug::drawBox(probe->world_position - probe->boxExtents(), probe->world_position + probe->boxExtents(), volume_color);
 			} else {
-				debug::drawBox(probe->world_position, probe->influenceRadius(), volume_color);
+				debug::drawSphere(probe->world_position, probe->influenceRadius(), volume_color);
 			}
 		}
 
@@ -3755,12 +3755,12 @@ void VulkanRenderer::tick(float time) noexcept {
 					continue;
 				}
 				const glm::vec4 color = proxy.visible ? glm::vec4(0.2f, 1.0f, 0.3f, 1.0f) : glm::vec4(1.0f, 0.25f, 0.2f, 1.0f);
-				debug::drawBox(proxy.bounds_center, proxy.bounds_radius, color, k_debug_sphere_segments);
+				debug::drawSphere(proxy.bounds_center, proxy.bounds_radius, color, k_debug_sphere_segments);
 			}
 
 			for (const auto& proxy : frame.voxel_instances) {
 				const glm::vec4 color = proxy.visible ? glm::vec4(0.2f, 0.85f, 1.0f, 1.0f) : glm::vec4(1.0f, 0.25f, 0.2f, 1.0f);
-				debug::drawBox(proxy.bounds_center, proxy.bounds_radius, color, k_debug_sphere_segments);
+				debug::drawSphere(proxy.bounds_center, proxy.bounds_radius, color, k_debug_sphere_segments);
 			}
 		}
 	}
