@@ -7,6 +7,7 @@
 #include <glm/gtc/quaternion.hpp>
 #include <limits>
 #include <optional>
+#include <queue>
 #include <toast/renderer/vulkan_renderer.hpp>
 #include <tracy/Tracy.hpp>
 
@@ -188,7 +189,7 @@ auto raycastCapsule(const CapsuleShape& obj, glm::vec3 pos, glm::vec3 dir) -> st
 }
 
 /// @brief Raycast to Voxel
-auto raycastVoxel(const VoxelShape& shape, glm::vec3 pos, glm::vec3 dir) -> std::optional<LocalHit> {
+auto raycastVoxel(const VoxelShape& shape, glm::vec3 pos, glm::vec3 dir, float max_distance) -> std::optional<LocalHit> {
 	ZoneScoped VoxelShapeData* shape_data = Simulator::tryGetVoxelData(shape.data);
 	if (shape_data == nullptr || shape_data->volume == nullptr) {
 		return std::nullopt;
@@ -233,6 +234,9 @@ auto raycastVoxel(const VoxelShape& shape, glm::vec3 pos, glm::vec3 dir) -> std:
 	}
 	if (exit < 0.0f) {
 		return std::nullopt;
+	}
+	if (max_distance >= 0.0f) {
+		exit = std::min(exit, max_distance);
 	}
 	/// End of AABB Intersection
 
@@ -305,12 +309,15 @@ auto raycastVoxel(const VoxelShape& shape, glm::vec3 pos, glm::vec3 dir) -> std:
 
 namespace physics {
 
-auto raycast(glm::vec3 pos, glm::vec3 dir) -> std::vector<RayHit> {
-	return Simulator::raycast(pos, dir);
+auto raycast(glm::vec3 pos, glm::vec3 dir, float max_distance, int max_targets) -> std::vector<RayHit> {
+	return Simulator::raycast(pos, dir, max_distance, max_targets);
 }
 
-auto Simulator::raycast(glm::vec3 pos, glm::vec3 dir) -> std::vector<RayHit> {
+auto Simulator::raycast(glm::vec3 pos, glm::vec3 dir, float max_distance, int max_targets) -> std::vector<RayHit> {
 	ZoneScoped if (instance == nullptr) {
+		return {};
+	}
+	if (!std::isfinite(max_distance) || (max_distance < 0.0f && max_distance != -1.0f) || max_targets < -1 || max_targets == 0) {
 		return {};
 	}
 
@@ -323,14 +330,20 @@ auto Simulator::raycast(glm::vec3 pos, glm::vec3 dir) -> std::vector<RayHit> {
 	glm::vec3 inv_dir = 1.0f / dir;
 
 	// Gather possible ray collisions from the AABB tree.
-	std::vector<ShapeID> candidates = instance->m_broad_phase.queryRay(pos, inv_dir);
+	std::vector<ShapeID> candidates = instance->m_broad_phase.queryRay(pos, inv_dir, max_distance);
 	if (candidates.empty()) {
 		return {};
 	}
 
 	/// Iterate Through Potential Intersections ///
 	std::vector<RayHit> results;
-	results.reserve(candidates.size());
+	if (max_targets <= 0) {
+		results.reserve(candidates.size());
+	}
+
+	const bool is_target_limited = max_targets >= 0;
+	auto nearer = [](const RayHit& lhs, const RayHit& rhs) { return lhs.distance < rhs.distance; };
+	std::priority_queue<RayHit, std::vector<RayHit>, decltype(nearer)> nearest_hits {nearer};
 
 	for (ShapeID target : candidates) {
 		Shape* shape = instance->tryGetShape(target);
@@ -344,7 +357,9 @@ auto Simulator::raycast(glm::vec3 pos, glm::vec3 dir) -> std::vector<RayHit> {
 
 		// Skip if ray doesnt hit bounding box
 		auto bounds_hit = worldShapeBounds(*body, *shape).intersectRay(pos, inv_dir);
-		if (!bounds_hit || bounds_hit->t_max < 0.0f) {
+		if (!bounds_hit || bounds_hit->t_max < 0.0f || (max_distance >= 0.0f && bounds_hit->t_min > max_distance) ||
+		    (is_target_limited && nearest_hits.size() == static_cast<size_t>(max_targets) &&
+		     bounds_hit->t_min > nearest_hits.top().distance)) {
 			continue;
 		}
 
@@ -364,32 +379,52 @@ auto Simulator::raycast(glm::vec3 pos, glm::vec3 dir) -> std::vector<RayHit> {
 			case ShapeType::sphere: hit = raycastSphere(shape->sphere, local_pos, local_dir); break;
 			case ShapeType::box: hit = raycastBox(shape->box, local_pos, local_dir); break;
 			case ShapeType::capsule: hit = raycastCapsule(shape->capsule, local_pos, local_dir); break;
-			case ShapeType::voxel: hit = raycastVoxel(shape->voxel, local_pos, local_dir); break;
+			case ShapeType::voxel: hit = raycastVoxel(shape->voxel, local_pos, local_dir, max_distance); break;
 		}
 
-		if (hit) {
-			// bring it back and push
+		if (hit && (max_distance < 0.0f || hit->distance <= max_distance)) {
+			// Bring the local hit back to world space.
 			glm::quat combined_rotation = body->rotation * local_rotation;
 			glm::vec3 world_normal = glm::normalize(combined_rotation * hit->normal);
 			glm::vec3 hit_pos = pos + dir * hit->distance;
+			RayHit ray_hit {
+			  .node = colliderFor(shape->owner, target),
+			  .position = hit_pos,
+			  .normal = world_normal,
+			  .distance = hit->distance,
+			};
+
+			if (is_target_limited) {
+				if (nearest_hits.size() < static_cast<size_t>(max_targets)) {
+					nearest_hits.push(std::move(ray_hit));
+				} else if (ray_hit.distance < nearest_hits.top().distance) {
+					nearest_hits.pop();
+					nearest_hits.push(std::move(ray_hit));
+				} else {
+					continue;
+				}
+			} else {
+				results.emplace_back(std::move(ray_hit));
+			}
 
 			renderer::debugDrawLine(pos, hit_pos, {0, 0, 1, 1});
-			renderer::debugDrawArrow(hit_pos, hit_pos + world_normal * 0.5f, {0, 1, 1, 1});
-			renderer::debugDrawArrow(hit_pos, hit_pos + glm::tan(world_normal) * 0.5f, {1, .5, .5, 1});
 			renderer::debugDrawSphere(hit_pos, .1, {0, 1, 1, 1});
-
-			results.emplace_back(
-			    RayHit {
-			      .node = colliderFor(shape->owner, target),
-			      .position = hit_pos,
-			      .normal = world_normal,
-			      .distance = hit->distance,
-			    }
-			);
 		}
 	}
 
-	// sort list based of off distance
+	if (results.empty()) {
+		renderer::debugDrawLine(pos, pos * dir * max_distance, {1, 0, 0, 1});
+	}
+
+	if (is_target_limited) {
+		results.reserve(nearest_hits.size());
+		while (not nearest_hits.empty()) {
+			results.emplace_back(nearest_hits.top());
+			nearest_hits.pop();
+		}
+	}
+
+	// Sort all returned hits by distance. With a target limit, this sorts at most max_targets entries.
 	std::ranges::sort(results, {}, &RayHit::distance);
 	return results;
 }

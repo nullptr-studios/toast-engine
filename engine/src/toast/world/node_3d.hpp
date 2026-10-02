@@ -37,9 +37,10 @@ public:
 	// clang-format on
 
 	[[Reflect]]
-	auto raycasts(glm::vec3 pos, glm::vec3 dir) const -> std::vector<physics::RayHit>;
+	auto raycasts(glm::vec3 pos, glm::vec3 dir, float max_distance = -1.0f, int max_targets = 3) const
+	    -> std::vector<physics::RayHit>;
 	[[Reflect]]
-	auto raycast(glm::vec3 pos, glm::vec3 dir) const -> std::optional<physics::RayHit>;
+	auto raycast(glm::vec3 pos, glm::vec3 dir, float max_distance = -1.0f) const -> std::optional<physics::RayHit>;
 
 	/**
 	 * @brief Orients the node so its forward axis points at a world-space target

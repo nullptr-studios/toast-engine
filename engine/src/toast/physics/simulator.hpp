@@ -79,7 +79,7 @@ public:
 	auto createBody(const BodyDescriptor& descriptor) -> BodyID;
 	void destroyBody(BodyID body);
 
-	static auto raycast(glm::vec3 pos, glm::vec3 dir) -> std::vector<RayHit>;
+	static auto raycast(glm::vec3 pos, glm::vec3 dir, float max_distance = -1.0f, int max_targets = 3) -> std::vector<RayHit>;
 
 	[[nodiscard]]
 	auto valid(BodyID body) const -> bool;
