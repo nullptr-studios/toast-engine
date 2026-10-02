@@ -30,8 +30,9 @@ namespace {
 
 auto isCallableProxyKey(std::string_view key, const toast::NodeInfo* info) noexcept -> bool {
 	// Builtin methods
-	if (key == "find" || key == "search" || key == "create" || key == "exists" || key == "name" || key == "uid" ||
-	    key == "addDependsOn" || key == "call" || key == "enabled") {
+	if (key == "find" || key == "search" || key == "parent" || key == "root" || key == "searchType" || key == "getChildren" ||
+	    key == "create" || key == "exists" || key == "name" || key == "uid" || key == "addDependsOn" || key == "call" ||
+	    key == "enabled") {
 		return true;
 	}
 	return info != nullptr && info->getMethod(key) != nullptr;

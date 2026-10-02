@@ -10,6 +10,7 @@
 #include <toast/renderer/vulkan_renderer.hpp>
 #include <toast/voxel/assets/voxel_model.hpp>
 #include <toast/voxel/assets/voxel_palette.hpp>
+#include <toast/voxel/destruction_event.hpp>
 #include <toast/voxel/runtime_pool.hpp>
 #include <tracy/Tracy.hpp>
 #include <utility>
@@ -345,8 +346,10 @@ void VoxelNode::postPhysics() {
 	const PendingEvents events = std::exchange(m_pending_events, {});
 
 	if (events.damaged_voxels > 0) {
-		const glm::vec3 centre = events.damaged_sum / static_cast<float>(events.damaged_voxels);
-		damaged.fire(static_cast<int>(events.damaged_voxels), voxelToWorld(centre));
+		const glm::vec3 center = events.damaged_sum / static_cast<float>(events.damaged_voxels);
+		const glm::vec3 world_center = voxelToWorld(center);
+		damaged.fire(static_cast<int>(events.damaged_voxels), world_center);
+		event::send<event::DestructionEvent>(world_center, static_cast<int>(events.damaged_voxels));
 	}
 	for (const int voxels : events.broken_pieces) {
 		broke_apart.fire(voxels);
@@ -828,7 +831,7 @@ void VoxelNode::drawDebug() {
 		const glm::vec4 draw_color = is_awake ? base_color : glm::vec4(0.5f, 0.5f, 0.5f, base_color.a);
 		const glm::mat4 transform =
 		    glm::translate(glm::mat4(1.0f), (bounds.min + bounds.max) * 0.5f) * glm::scale(glm::mat4(1.0f), bounds.max - bounds.min);
-		renderer::debugDrawShapeBox(transform, draw_color, aabb_fill);
+		debug::drawShapeBox(transform, draw_color, aabb_fill);
 	};
 
 	if (const auto bounds = physics::Simulator::shapeWorldBounds(m_shape)) {

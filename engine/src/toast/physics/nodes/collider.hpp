@@ -22,6 +22,9 @@ public:
 	[[Reflect]]
 	bool disabled = false;
 
+	[[Reflect]]
+	bool draw_debug = true;
+
 	[[Reflect, Color]]
 	glm::vec4 debug_color = glm::vec4(0.0f, 1.0f, 0.251f, 0.5f);    // Matches editor green
 
@@ -37,6 +40,9 @@ public:
 	[[Reflect, Name("Fill Shape"), Group("AABB")]]
 	bool aabb_fill = false;
 
+	void overrideColor(glm::vec4 color);
+	void clearColorOverride();
+
 private:
 	void updateInspectorMessages() override;
 	void init();
@@ -49,6 +55,8 @@ private:
 
 	ShapeID m_shape;
 	bool m_debug_visible = false;
+	bool m_override_color = false;
+	glm::vec4 m_overridden_color;
 };
 
 }

@@ -39,6 +39,7 @@
 #include <vector>
 
 namespace physics {
+class Trigger;
 
 class Rigidbody;
 class DynamicRigidbody;
@@ -237,6 +238,8 @@ public:
 	static void unregisterRigidbody(Rigidbody& node);
 	static void registerVoxelNode(toast::VoxelNode& node);
 	static void unregisterVoxelNode(toast::VoxelNode& node);
+	static void registerTrigger(Trigger& node);
+	static void unregisterTrigger(Trigger& node);
 
 	[[nodiscard]]
 	auto overlapCapsule(
@@ -492,6 +495,11 @@ private:
 	    const voxel::Palette& palette, const voxel::MaterialLibrary& materials, const voxel::MassMoments* known_moments = nullptr
 	) -> ShapeID;
 
+	void checkTriggers();
+	void overlapShape(
+	    BodyID ignored, const Shape& probe, const glm::vec3& position, const glm::quat& rotation, std::vector<BodyID>& bodies
+	) const;
+
 	inline static Simulator* instance = nullptr;
 
 	mutable std::thread::id m_owner_thread;
@@ -559,6 +567,9 @@ private:
 	std::unordered_map<uint64_t, BodyID> m_render_body_of_node;
 
 	event::Listener m_listener;
+
+	// triggers stuff
+	std::vector<toast::Box<Trigger>> m_triggers;
 };
 
 }

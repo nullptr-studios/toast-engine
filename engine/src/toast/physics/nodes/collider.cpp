@@ -5,6 +5,7 @@
 #include "dynamic_rigidbody.hpp"
 #include "rigidbody.hpp"
 #include "sphere_collider.hpp"
+#include "trigger.hpp"
 
 #include <cmath>
 #include <toast/physics/simulator.hpp>
@@ -15,14 +16,14 @@ void Collider::updateInspectorMessages() {
 	static const toast::NodeMessage parent_message {
 	  .severity = toast::NodeMessage::error,
 	  .id = 1,
-	  .text = "Colliders need to be children of a Rigidbody",
+	  .text = "Colliders need to be children of a Rigidbody or a Trigger",
 	};
 	static const toast::NodeMessage invalid_geometry_message {
 	  .severity = toast::NodeMessage::error,
 	  .id = 3,
 	  .text = "Collider dimensions must be greater than zero",
 	};
-	if (parent().as<Rigidbody>().exists()) {
+	if (parent().as<Rigidbody>().exists() || parent().as<Trigger>().exists()) {
 		removeInspectorMessage(parent_message);
 	} else {
 		addInspectorMessage(parent_message);
@@ -80,14 +81,31 @@ void Collider::onDisable() {
 	Simulator::setShapeEnabled(m_shape, false);
 }
 
+void Collider::overrideColor(glm::vec4 color) {
+	m_override_color = true;
+	m_overridden_color = color;
+}
+
+void Collider::clearColorOverride() {
+	m_override_color = false;
+}
+
 void Collider::drawDebug() {
 	ZoneScoped;
 	if (!m_debug_visible) {
 		return;
 	}
+
+	if (not draw_debug) {
+		return;
+	}
+
 	const auto dynamic_body = parent().as<DynamicRigidbody>();
 	const bool sleeping = dynamic_body.exists() && not dynamic_body->awake;
-	const glm::vec4 color = disabled || sleeping ? glm::vec4(0.5f, 0.5f, 0.5f, debug_color.a) : debug_color;
+	glm::vec4 color = m_override_color ? m_overridden_color : debug_color;
+	if (not m_override_color && (disabled || sleeping)) {
+		color = glm::vec4(0.5f, 0.5f, 0.5f, debug_color.a);
+	}
 	syncTransform();
 	auto transform = glm::translate(glm::mat4(1.0f), world_position) * glm::mat4_cast(world_rotation);
 	if (const auto sphere = box().as<SphereCollider>(); sphere.exists()) {
@@ -99,16 +117,16 @@ void Collider::drawDebug() {
 		if (!std::isfinite(sphere->radius) || sphere->radius <= 0.0f) {
 			return;
 		}
-		renderer::debugDrawSphere(center, sphere->radius, color);
+		debug::drawSphere(center, sphere->radius, color);
 		if (debug_fill) {
 			auto fill_color = color;
 			fill_color.a *= 0.2f;
-			renderer::debugDrawSolidSphere(center, sphere->radius, fill_color);
+			debug::drawSolidSphere(center, sphere->radius, fill_color);
 		}
 	} else if (const auto capsule = box().as<CapsuleCollider>(); capsule.exists()) {
-		renderer::debugDrawCapsule(transform, capsule->radius, capsule->height, color, debug_fill);
+		debug::drawCapsule(transform, capsule->radius, capsule->height, color, debug_fill);
 	} else if (const auto cube = box().as<BoxCollider>(); cube.exists()) {
-		renderer::debugDrawShapeBox(glm::scale(transform, cube->size), color, debug_fill);
+		debug::drawShapeBox(glm::scale(transform, cube->size), color, debug_fill);
 	}
 
 	if (show_aabb) {
@@ -116,7 +134,7 @@ void Collider::drawDebug() {
 			const glm::vec4 aabb_draw_color = disabled || sleeping ? glm::vec4(0.5f, 0.5f, 0.5f, aabb_color.a) : aabb_color;
 			const glm::mat4 aabb_transform = glm::translate(glm::mat4(1.0f), (bounds->min + bounds->max) * 0.5f) *
 			                                 glm::scale(glm::mat4(1.0f), bounds->max - bounds->min);
-			renderer::debugDrawShapeBox(aabb_transform, aabb_draw_color, aabb_fill);
+			debug::drawShapeBox(aabb_transform, aabb_draw_color, aabb_fill);
 		}
 	}
 }

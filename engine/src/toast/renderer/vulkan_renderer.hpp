@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "DebugDraw.hpp"
 #include "compute_pass_base.hpp"
 #include "gpu_timer.hpp"
 #include "output_target_base.hpp"
@@ -481,7 +482,7 @@ public:
 	void start() noexcept;
 
 	[[nodiscard]]
-	auto beginFrameBuild() noexcept -> RenderFrame& {
+	auto getCurrentFrameBuild() noexcept -> RenderFrame& {
 		return m_render_frames[m_write_index];
 	}
 
@@ -1240,7 +1241,7 @@ private:
 	TaaHistory m_taa_history;
 
 	std::atomic_bool m_debug_draw_enabled {false};
-	std::mutex m_debug_line_mutex;
+	std::mutex m_debug_line_mutex;    // what in the actual fuck is this vro
 	std::vector<DebugVertex> m_pending_debug_line_vertices;
 	bool m_collecting_debug_lines = false;
 
@@ -1453,7 +1454,7 @@ inline void stop() {
 }
 
 inline auto beginFrameBuild() -> VulkanRenderer::RenderFrame& {
-	return VulkanRenderer::instance->beginFrameBuild();
+	return VulkanRenderer::instance->getCurrentFrameBuild();
 }
 
 inline void submitFrame() {
@@ -1570,134 +1571,5 @@ inline auto getRenderDocAPI() -> const RENDERDOC_API_1_6_0* {
 inline auto renderingFrame() -> const VulkanRenderer::RenderFrame* {
 	return VulkanRenderer::instance->renderingFrame();
 }
-
-/// DEBUG LINES
-
-void debugDrawSolidSphere(glm::vec3 center, float radius, glm::vec4 color);
-void debugDrawShapeBox(const glm::mat4& transform, glm::vec4 color, bool fill);
-void debugDrawCapsule(const glm::mat4& transform, float radius, float height, glm::vec4 color, bool fill);
-
-/**
- * @brief Queues a debug line segment for rendering
- * @note Calls made before frame construction (for example from gameplay ticks)
- *       are carried into the next frame.
- */
-inline void debugDrawLine(glm::vec3 a, glm::vec3 b, glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f}) {
-	if (!VulkanRenderer::instance->debugDrawEnabled()) {
-		return;
-	}
-	VulkanRenderer::instance->queueDebugLine(a, b, color);
-}
-
-inline void debugDrawBox(glm::vec3 min, glm::vec3 max, glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f}) {
-	if (!VulkanRenderer::instance->debugDrawEnabled()) {
-		return;
-	}
-	const std::array<glm::vec3, 8> corners {
-	  glm::vec3 {min.x, min.y, min.z},
-	  glm::vec3 {max.x, min.y, min.z},
-	  glm::vec3 {max.x, max.y, min.z},
-	  glm::vec3 {min.x, max.y, min.z},
-	  glm::vec3 {min.x, min.y, max.z},
-	  glm::vec3 {max.x, min.y, max.z},
-	  glm::vec3 {max.x, max.y, max.z},
-	  glm::vec3 {min.x, max.y, max.z},
-	};
-	static constexpr std::array<std::pair<int, int>, 12> edges {
-	  {{0, 1}, {1, 2}, {2, 3}, {3, 0}, {4, 5}, {5, 6}, {6, 7}, {7, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7}}
-	};
-	for (const auto& [a, b] : edges) {
-		debugDrawLine(corners[a], corners[b], color);
-	}
-}
-
-inline void debugDrawSphere(glm::vec3 center, float radius, glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f}, int segments = 24) {
-	if (!VulkanRenderer::instance->debugDrawEnabled()) {
-		return;
-	}
-	for (int axis = 0; axis < 3; ++axis) {
-		glm::vec3 prev {};
-		for (int i = 0; i <= segments; ++i) {
-			const float t = (static_cast<float>(i) / static_cast<float>(segments)) * glm::two_pi<float>();
-			glm::vec3 p {};
-			switch (axis) {
-				case 0: p = center + glm::vec3(0.0f, std::cos(t), std::sin(t)) * radius; break;
-				case 1: p = center + glm::vec3(std::cos(t), 0.0f, std::sin(t)) * radius; break;
-				default: p = center + glm::vec3(std::cos(t), std::sin(t), 0.0f) * radius; break;
-			}
-			if (i > 0) {
-				debugDrawLine(prev, p, color);
-			}
-			prev = p;
-		}
-	}
-}
-
-inline void debugDrawAxes(const glm::mat4& transform) {
-	if (!VulkanRenderer::instance->debugDrawEnabled()) {
-		return;
-	}
-	VulkanRenderer::instance->beginFrameBuild().debug_gizmo_instances.push_back(transform);
-}
-
-inline void debugDrawBillboard(
-    glm::vec3 world_position, float size, assets::Handle<assets::Texture> texture, glm::vec4 tint = {1.0f, 1.0f, 1.0f, 1.0f}
-) {
-	if (!texture.hasValue() || !VulkanRenderer::instance->debugDrawEnabled()) {
-		return;
-	}
-	VulkanRenderer::instance->beginFrameBuild().debug_billboards.push_back(
-	    VulkanRenderer::DebugBillboard {
-	      .position = world_position,
-	      .size = size,
-	      .tint = tint,
-	      .texture = std::move(texture),
-	    }
-	);
-}
-
-inline void debugDrawMesh(
-    const assets::Handle<assets::Mesh>& mesh, const glm::mat4& transform, glm::vec4 tint = {1.0f, 1.0f, 1.0f, 1.0f}
-) {
-	if (!mesh.hasValue() || !VulkanRenderer::instance->debugDrawEnabled()) {
-		return;
-	}
-	VulkanRenderer::instance->beginFrameBuild().debug_meshes.push_back(
-	    VulkanRenderer::DebugMesh {.model = transform, .tint = tint, .mesh = mesh}
-	);
-}
-
-void debugDrawMesh(toast::UID mesh, const glm::mat4& transform, glm::vec4 tint = {1.0f, 1.0f, 1.0f, 1.0f});
-
-/// @note Crashes if the UID is not a texture
-void debugDrawBillboard(glm::vec3 world_position, float size, toast::UID texture, glm::vec4 tint = {1.0f, 1.0f, 1.0f, 1.0f});
-
-inline void debugDrawArrow(glm::vec3 from, glm::vec3 to, glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f}, float head_size = 0.2f) {
-	debugDrawLine(from, to, color);
-
-	const glm::vec3 dir = to - from;
-	const float len = glm::length(dir);
-	if (len < 0.0001f) {
-		return;
-	}
-	const glm::vec3 axis = dir / len;
-	const glm::vec3 up = std::abs(axis.y) < 0.99f ? glm::vec3(0.0f, 1.0f, 0.0f) : glm::vec3(1.0f, 0.0f, 0.0f);
-	const glm::vec3 side = glm::normalize(glm::cross(up, axis));
-
-	const glm::vec3 back = to - axis * head_size;
-	debugDrawLine(to, back + side * head_size * 0.5f, color);
-	debugDrawLine(to, back - side * head_size * 0.5f, color);
-}
-
-void debugDrawCone(
-    glm::vec3 apex, glm::vec3 direction, float length, float half_angle_degrees, glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f},
-    int segments = 24
-);
-
-void debugDrawFrustum(
-    const toast::Camera& camera, float aspect, glm::vec4 color = {1.0f, 1.0f, 0.0f, 1.0f}, float far_override = 0.0f
-);
-
-void debugDrawFrustumFromMatrix(const glm::mat4& view_projection, glm::vec4 color = {1.0f, 1.0f, 0.0f, 1.0f});
 
 }    // namespace renderer
