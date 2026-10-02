@@ -87,12 +87,19 @@ public partial class SignalConnectionDialogViewModel : ObservableObject, IDispos
 	private void ApplyCallables(SignalCallables response) {
 		if (response.Request != m_activeRequest || response.TargetNode != SelectedNode?.Uid) return;
 		if (!string.IsNullOrEmpty(response.Error)) {
+			// the engine can't resolve
+			// drop every connection it has
+			SelectedFunction = null;
+			Functions.Clear();
 			EmptyMessage = response.Error;
 			return;
 		}
 		if (response.Callables.Count > 0) {
+			// replacing the items drops the ListBox selection so restore it by name
+			var selected = SelectedFunction?.Name;
 			Functions.Clear();
 			foreach (var callable in response.Callables) Functions.Add(new SignalFunctionViewModel(callable));
+			SelectedFunction = Functions.FirstOrDefault(function => function.Name == selected);
 		}
 		EmptyMessage = Functions.Count == 0 ? "This node has no callable functions" : "";
 	}
