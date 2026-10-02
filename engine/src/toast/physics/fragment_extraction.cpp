@@ -15,9 +15,9 @@ namespace {
 auto unitBrickMoments() -> const voxel::MassMoments& {
 	static const voxel::MassMoments unit = [] {
 		voxel::MassMoments moments;
-		for (int32_t z = 0; z < static_cast<int32_t>(voxel::k_brick_dim); ++z) {
-			for (int32_t y = 0; y < static_cast<int32_t>(voxel::k_brick_dim); ++y) {
-				for (int32_t x = 0; x < static_cast<int32_t>(voxel::k_brick_dim); ++x) {
+		for (int32_t z = 0; std::cmp_less(z, voxel::k_brick_dim); ++z) {
+			for (int32_t y = 0; std::cmp_less(y, voxel::k_brick_dim); ++y) {
+				for (int32_t x = 0; std::cmp_less(x, voxel::k_brick_dim); ++x) {
 					moments.add(x, y, z, 1);
 				}
 			}

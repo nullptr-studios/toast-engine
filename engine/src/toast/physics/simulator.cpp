@@ -808,7 +808,10 @@ void Simulator::queuePendingFragments(std::span<const ConnectivityResult> result
 				if (source_is_kinematic) {
 					orphaned_anchored.push_back(std::move(*it));
 				} else {
-					spawnStaticSplitBody(r.shape, *it);
+					bool result = spawnStaticSplitBody(r.shape, *it);
+					if (not result) {
+						TOAST_WARN("Physics", "Failed to spawn static body");
+					}
 				}
 			}
 
@@ -955,7 +958,7 @@ constexpr float k_support_normal = 0.3f;
 
 auto supportCheckPeriod(size_t slot) -> float {
 	const float phase = static_cast<float>((slot * 2654435761u) % 1024u) / 1024.0f;
-	return k_support_check_seconds * (0.75f + 0.5f * phase);
+	return k_support_check_seconds * (0.75f + (0.5f * phase));
 }
 
 /// Sleep time lost per second of motion in seconds gained
@@ -969,8 +972,8 @@ auto effectiveAngularLimit(const Body& body, float angular_limit, float linear_r
 /// Farthest point travel since a pose so a slow creep or tip never counts as rest
 auto driftSince(const Body& body, const glm::vec3& center, const glm::quat& rotation) -> float {
 	const float alignment = std::min(std::abs(glm::dot(body.rotation, rotation)), 1.0f);
-	const float turn = 2.0f * std::sqrt(std::max(1.0f - alignment * alignment, 0.0f));
-	return glm::length(body.worldCenterOfMass() - center) + turn * body.extent_radius;
+	const float turn = 2.0f * std::sqrt(std::max(1.0f - (alignment * alignment), 0.0f));
+	return glm::length(body.worldCenterOfMass() - center) + (turn * body.extent_radius);
 }
 
 }
@@ -1004,7 +1007,7 @@ void Simulator::enforceFragmentBudget(float dt) {
 			}
 			record.rest_seconds += dt;
 		} else {
-			record.rest_seconds = std::max(record.rest_seconds - dt * k_sleep_decay, 0.0f);
+			record.rest_seconds = std::max(record.rest_seconds - (dt * k_sleep_decay), 0.0f);
 		}
 	}
 
@@ -1589,7 +1592,7 @@ void Simulator::wakeDisturbedSleepers(float dt) {
 		// Gravity has just added a step of speed to a body resting on the sleeper
 		const float scale = sleepScale(a_sleeps ? manifold.pair.a.body.slot : manifold.pair.b.body.slot);
 		const float approach_limit =
-		    tunables().sleep_linear_threshold * scale * k_wake_approach + gravity_speed * mover.gravity_scale;
+		    (tunables().sleep_linear_threshold * scale * k_wake_approach) + (gravity_speed * mover.gravity_scale);
 		float approach = 0.0f;
 		const size_t contact_count = std::min<size_t>(manifold.contact_count, manifold.contacts.size());
 		for (size_t index = 0; index < contact_count; ++index) {
@@ -1843,11 +1846,11 @@ auto Simulator::interpolationAlpha() -> float {
 
 auto Simulator::renderPoseDelta(BodyID id) -> glm::mat4 {
 	if (instance == nullptr) {
-		return glm::mat4(1.0f);
+		return {1.0f};
 	}
 	const Body* body = instance->tryGetBody(id);
 	if (body == nullptr || body->type != BodyType::dynamic_body || not body->enabled || not body->awake) {
-		return glm::mat4(1.0f);
+		return {1.0f};
 	}
 
 	const float alpha = instance->m_interpolation_alpha;
@@ -1866,7 +1869,7 @@ auto Simulator::renderPoseDelta(const toast::VoxelNode& node) -> glm::mat4 {
 
 auto Simulator::renderPoseDeltaFor(uint64_t node_uid) -> glm::mat4 {
 	if (instance == nullptr) {
-		return glm::mat4(1.0f);
+		return {1.0f};
 	}
 	const auto follows = instance->m_render_body_of_node.find(node_uid);
 	return follows != instance->m_render_body_of_node.end() ? renderPoseDelta(follows->second) : glm::mat4(1.0f);
@@ -2198,7 +2201,7 @@ auto Simulator::generateManifoldsAsync(CollisionWorldView world, std::span<const
 		auto batch = std::span<const BroadPhasePair> {active_candidates}.subspan(begin, end - begin);
 
 		futures.emplace_back(toast::ThreadPool::push([this, world, batch] {
-			ZoneScopedN("physics::NarrowPhaseBatch");
+			ZoneScopedN("physics::NarrowPhaseBatch");    // NOLINT
 			ZoneValue(static_cast<uint64_t>(batch.size()));
 			return m_narrow_phase.generateManifolds(world, batch);
 		}));
@@ -2215,7 +2218,7 @@ auto Simulator::generateManifoldsAsync(CollisionWorldView world, std::span<const
 		for (const AABB& region : regions) {
 			const BoxVoxelPairView view = split.view;
 			region_futures.emplace_back(toast::ThreadPool::push([view, region] {
-				ZoneScopedN("physics::BoxVoxelRegion");
+				ZoneScopedN("physics::BoxVoxelRegion");    // NOLINT
 				return collideBoxVoxelRegion(view, region);
 			}));
 		}
@@ -2231,7 +2234,7 @@ auto Simulator::generateManifoldsAsync(CollisionWorldView world, std::span<const
 		for (const AABB& region : regions) {
 			const VoxelVoxelPairView view = split.view;
 			region_futures.emplace_back(toast::ThreadPool::push([view, region] {
-				ZoneScopedN("physics::VoxelVoxelRegion");
+				ZoneScopedN("physics::VoxelVoxelRegion");    // NOLINT
 				return collideVoxelVoxelRegion(view, region);
 			}));
 		}
@@ -2402,7 +2405,7 @@ void Simulator::updateSleeping(float dt) {
 			}
 			body.sleep_timer = std::min(body.sleep_timer + dt, tunables().sleep_delay);
 		} else {
-			body.sleep_timer = std::max(body.sleep_timer - dt * k_sleep_decay, 0.0f);
+			body.sleep_timer = std::max(body.sleep_timer - (dt * k_sleep_decay), 0.0f);
 			m_sleep_moving[index] = 1;
 		}
 
@@ -2576,7 +2579,7 @@ void Simulator::integrate(float dt) {
 		const size_t begin = job_index * m_bodies.size() / job_count;
 		const size_t end = (job_index + 1) * m_bodies.size() / job_count;
 		futures.emplace_back(toast::ThreadPool::push([&integrate_range, begin, end] {
-			ZoneScopedN("physics::IntegrateBodiesBatch");
+			ZoneScopedN("physics::IntegrateBodiesBatch");    // NOLINT
 			integrate_range(begin, end);
 		}));
 	}
@@ -3296,9 +3299,11 @@ void Simulator::rebuildMassProperties(BodyID id) {
 
 	switch (shape->type) {
 		case ShapeType::sphere: body->extent_radius = glm::length(shape->sphere.local_center) + shape->sphere.radius; break;
-		case ShapeType::box: body->extent_radius = glm::length(shape->box.local_center) + 0.5f * glm::length(shape->box.size); break;
+		case ShapeType::box:
+			body->extent_radius = glm::length(shape->box.local_center) + (0.5f * glm::length(shape->box.size));
+			break;
 		case ShapeType::capsule:
-			body->extent_radius = glm::length(shape->capsule.local_center) + 0.5f * shape->capsule.height + shape->capsule.radius;
+			body->extent_radius = glm::length(shape->capsule.local_center) + (0.5f * shape->capsule.height) + shape->capsule.radius;
 			break;
 		case ShapeType::voxel: {
 			const glm::vec3 center =
@@ -3808,7 +3813,7 @@ auto Simulator::runConnectivityAnalysis() -> std::vector<ConnectivityResult> {
 			.shape = id,
 			.revision = revision,
 			.future = toast::ThreadPool::push([volume] {
-				ZoneScopedN("physics::ConnectivityBatch");
+				ZoneScopedN("physics::ConnectivityBatch");    // NOLINT
 				return voxel::analyseConnectivity(*volume);
 			})
 		});
@@ -3841,7 +3846,7 @@ auto Simulator::runConnectivityAnalysis() -> std::vector<ConnectivityResult> {
 		}
 	}
 
-	m_profile.connectivity_shapes_waiting = static_cast<size_t>(std::ranges::count_if(m_shapes, [this](const ShapeSlot& s) {
+	m_profile.connectivity_shapes_waiting = static_cast<size_t>(std::ranges::count_if(m_shapes, [](const ShapeSlot& s) {
 		if (not s.occupied || s.shape.type != ShapeType::voxel) {
 			return false;
 		}
@@ -4021,7 +4026,7 @@ auto Simulator::prepareConstraints(const std::vector<Manifold>& manifolds) -> st
 			auto batch = std::span<const Manifold* const> {active_manifolds}.subspan(begin, end - begin);
 
 			futures.emplace_back(toast::ThreadPool::push([this, batch] {
-				ZoneScopedN("physics::PrepareConstraintsBatch");
+				ZoneScopedN("physics::PrepareConstraintsBatch");    // NOLINT
 				PreparedChunk chunk;
 				for (const Manifold* manifold : batch) {
 					const size_t valid_contact_count = std::min<size_t>(manifold->contact_count, manifold->contacts.size());
@@ -4472,7 +4477,7 @@ void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
 			std::atomic<size_t> chunks_remaining {chunks.size()};
 			for (size_t chunk_index = 0; chunk_index < chunks.size(); ++chunk_index) {
 				toast::ThreadPool::pushRaw([this, pieces = std::move(chunks[chunk_index].pieces), chunk_index, &chunks_remaining] {
-					ZoneScopedN("physics::ConstraintWaveChunk");
+					ZoneScopedN("physics::ConstraintWaveChunk");    // NOLINT
 					size_t invalid = 0;
 					for (const std::span<Constraint>& piece : pieces) {
 						invalid += solveConstraintBatch(piece);

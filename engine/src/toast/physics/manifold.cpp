@@ -1250,8 +1250,8 @@ auto queryVolumeInVoxels(const AABB& bounds) -> uint64_t {
 [[nodiscard]]
 auto querySurfaceAreaInVoxels(const AABB& bounds) -> uint64_t {
 	const glm::vec3 extent = glm::max(bounds.max - bounds.min, glm::vec3(0.0f)) / voxel::k_voxel_size;
-	const double area = 2.0 * (static_cast<double>(extent.x) * extent.y + static_cast<double>(extent.y) * extent.z +
-	                           static_cast<double>(extent.z) * extent.x);
+	const double area = 2.0 * ((static_cast<double>(extent.x) * extent.y) + (static_cast<double>(extent.y) * extent.z) +
+	                           (static_cast<double>(extent.z) * extent.x));
 	return static_cast<uint64_t>(area);
 }
 }
@@ -2320,20 +2320,28 @@ auto splitVoxelRegions(const AABB& local_bounds, size_t region_count) -> std::ve
 	}
 
 	const glm::vec3 extent = local_bounds.max - local_bounds.min;
-	const int axis = extent.x >= extent.y && extent.x >= extent.z ? 0 : (extent.y >= extent.z ? 1 : 2);
+	int axis = -1;
+	if (extent.x >= extent.y && extent.x >= extent.z) {
+		axis = 0;
+	} else if (extent.y >= extent.z) {
+		axis = 1;
+	} else {
+		axis = 2;
+	}
 
 	const auto first_voxel = static_cast<int64_t>(std::floor(local_bounds.min[axis] / voxel::k_voxel_size));
 	const auto last_voxel = static_cast<int64_t>(std::ceil(local_bounds.max[axis] / voxel::k_voxel_size)) - 1;
 	const int64_t voxel_span = last_voxel - first_voxel + 1;
-	if (voxel_span <= static_cast<int64_t>(region_count)) {
+	if (std::cmp_less_equal(voxel_span, region_count)) {
 		return {local_bounds};
 	}
 
 	std::vector<AABB> regions;
 	regions.reserve(region_count);
 	for (size_t i = 0; i < region_count; ++i) {
-		const int64_t chunk_first = first_voxel + (voxel_span * static_cast<int64_t>(i)) / static_cast<int64_t>(region_count);
-		const int64_t chunk_last = first_voxel + (voxel_span * static_cast<int64_t>(i + 1)) / static_cast<int64_t>(region_count) - 1;
+		const int64_t chunk_first = first_voxel + ((voxel_span * static_cast<int64_t>(i)) / static_cast<int64_t>(region_count));
+		const int64_t chunk_last =
+		    first_voxel + ((voxel_span * static_cast<int64_t>(i + 1)) / static_cast<int64_t>(region_count)) - 1;
 		if (chunk_last < chunk_first) {
 			continue;
 		}
@@ -2530,7 +2538,7 @@ void collideBoxVoxel(
 			  .half_extents = (candidate.max - candidate.min) * 0.5f,
 			};
 
-			ZoneScopedN("physics::BoxVoxelSAT");
+			ZoneScopedN("physics::BoxVoxelSAT");    // NOLINT
 			auto sat = _detail::collideWorldBoxes(local_box, voxel_box, voxel::k_all_faces_exposed, candidate.exposure);
 			if (not sat.has_value()) {
 				return;

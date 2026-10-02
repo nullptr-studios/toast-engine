@@ -100,7 +100,7 @@ inline auto classifyFromNeighbours(
 /// One bit per face in the order neg x pos x neg y pos y neg z pos z
 [[nodiscard]]
 constexpr auto faceBit(int axis, bool positive) noexcept -> uint8_t {
-	return static_cast<uint8_t>(1u << (static_cast<unsigned>(axis) * 2u + (positive ? 1u : 0u)));
+	return static_cast<uint8_t>(1u << ((static_cast<unsigned>(axis) * 2u) + (positive ? 1u : 0u)));
 }
 
 inline constexpr uint8_t k_all_faces_exposed = 0x3F;
