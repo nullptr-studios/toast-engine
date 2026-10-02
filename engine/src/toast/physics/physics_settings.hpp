@@ -51,6 +51,9 @@ struct Tunables {
 	/// Bisection steps a sweep refines by once it finds a blocking contact a clear sweep never pays this
 	uint32_t sweep_refine_iterations = 6;
 	uint32_t position_iterations = 3;
+	/// Which body types a trigger reports, static bodies never count
+	bool trigger_check_dynamic = true;
+	bool trigger_check_kinematic = true;
 
 	[[nodiscard]]
 	auto fixedDelta() const noexcept -> double {
