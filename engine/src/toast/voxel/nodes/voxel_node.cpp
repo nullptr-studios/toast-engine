@@ -10,6 +10,7 @@
 #include <toast/renderer/vulkan_renderer.hpp>
 #include <toast/voxel/assets/voxel_model.hpp>
 #include <toast/voxel/assets/voxel_palette.hpp>
+#include <toast/voxel/destruction_event.hpp>
 #include <toast/voxel/runtime_pool.hpp>
 #include <tracy/Tracy.hpp>
 #include <utility>
@@ -345,8 +346,10 @@ void VoxelNode::postPhysics() {
 	const PendingEvents events = std::exchange(m_pending_events, {});
 
 	if (events.damaged_voxels > 0) {
-		const glm::vec3 centre = events.damaged_sum / static_cast<float>(events.damaged_voxels);
-		damaged.fire(static_cast<int>(events.damaged_voxels), voxelToWorld(centre));
+		const glm::vec3 center = events.damaged_sum / static_cast<float>(events.damaged_voxels);
+		const glm::vec3 world_center = voxelToWorld(center);
+		damaged.fire(static_cast<int>(events.damaged_voxels), world_center);
+		event::send<event::DestructionEvent>(world_center, static_cast<int>(events.damaged_voxels));
 	}
 	for (const int voxels : events.broken_pieces) {
 		broke_apart.fire(voxels);
