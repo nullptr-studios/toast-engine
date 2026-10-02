@@ -36,6 +36,7 @@
 #include <toast/voxel/voxel_edit.hpp>
 #include <tracy/Tracy.hpp>
 #include <tracy/TracyLua.hpp>
+#include <utility>
 
 namespace scripting {
 
@@ -888,7 +889,7 @@ void LuaState::registerApi(lua_State* state) noexcept {
 					    float size,
 					    assets::Handle<assets::Texture>
 					        texture,
-					    glm::vec4 tint = {1.0f, 1.0f, 1.0f, 1.0f}) { debug::drawBillboard(world_position, size, texture, tint); }
+					    glm::vec4 tint = {1.0f, 1.0f, 1.0f, 1.0f}) { debug::drawBillboard(world_position, size, std::move(texture), tint); }
 	    )
 	    .addFunction(
 	        "drawMesh",
