@@ -214,7 +214,7 @@ public:
 
 	/// World transform from the tick pose to the blended pose drawn this frame and identity unless dynamic and awake
 	[[nodiscard]]
-	static auto renderPoseDelta(BodyID body) -> glm::mat4;
+	static auto renderPoseDelta(BodyID id) -> glm::mat4;
 	[[nodiscard]]
 	static auto renderPoseDelta(const toast::VoxelNode& node) -> glm::mat4;
 
