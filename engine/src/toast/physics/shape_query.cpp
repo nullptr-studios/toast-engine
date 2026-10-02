@@ -125,9 +125,14 @@ void Simulator::overlapShape(
 		if (body == nullptr || std::ranges::find(bodies, shape->owner) != bodies.end()) {
 			continue;
 		}
-		const bool checked = body->type == BodyType::dynamic_body     ? settings.trigger_check_dynamic
-		                     : body->type == BodyType::kinematic_body ? settings.trigger_check_kinematic
-		                                                              : false;
+
+		bool checked = false;
+		switch (body->type) {
+			case BodyType::dynamic_body: checked = settings.trigger_check_dynamic; break;
+			case BodyType::kinematic_body: checked = settings.trigger_check_kinematic; break;
+			default: checked = false; break;
+		}
+
 		if (not checked) {
 			continue;
 		}
