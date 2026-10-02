@@ -65,7 +65,7 @@ void Volume::drawDebug() {
 		return;
 	}
 	syncTransform();
-	renderer::debugDrawShapeBox(getWorldTransform(), debug_color, debug_fill);
+	debug::drawShapeBox(getWorldTransform(), debug_color, debug_fill);
 }
 
 auto Volume::isGlobal() const -> bool {

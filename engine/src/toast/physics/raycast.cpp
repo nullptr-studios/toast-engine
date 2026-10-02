@@ -368,10 +368,10 @@ auto Simulator::raycast(glm::vec3 pos, glm::vec3 dir) -> std::vector<RayHit> {
 			glm::vec3 world_normal = glm::normalize(combined_rotation * hit->normal);
 			glm::vec3 hit_pos = pos + dir * hit->distance;
 
-			renderer::debugDrawLine(pos, hit_pos, {0, 0, 1, 1});
-			renderer::debugDrawArrow(hit_pos, hit_pos + world_normal * 0.5f, {0, 1, 1, 1});
-			renderer::debugDrawArrow(hit_pos, hit_pos + glm::tan(world_normal) * 0.5f, {1, .5, .5, 1});
-			renderer::debugDrawSphere(hit_pos, .1, {0, 1, 1, 1});
+			debug::drawLine(pos, hit_pos, {0, 0, 1, 1});
+			debug::drawArrow(hit_pos, hit_pos + world_normal * 0.5f, {0, 1, 1, 1});
+			debug::drawArrow(hit_pos, hit_pos + glm::tan(world_normal) * 0.5f, {1, .5, .5, 1});
+			debug::drawSphere(hit_pos, .1, {0, 1, 1, 1});
 
 			results.emplace_back(
 			    RayHit {
