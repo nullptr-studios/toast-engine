@@ -1011,6 +1011,120 @@ auto NodeProxy::search(const std::string& query) -> std::vector<NodeProxy> {
 	return out;
 }
 
+namespace {
+
+auto resolveNodeType(std::string_view name) -> const toast::NodeInfo* {
+	if (const auto* exact = toast::NodeRegistry::reflect(name)) {
+		return exact;
+	}
+	const toast::NodeInfo* found = nullptr;
+	toast::NodeRegistry::forEachType([&](const toast::NodeInfo* info) {
+		if (found) {
+			return;
+		}
+		std::string_view full = info->type;
+		if (full.size() > name.size() + 2 && full.ends_with(name) && full.substr(full.size() - name.size() - 2, 2) == "::") {
+			found = info;
+		}
+	});
+	return found;
+}
+
+auto toProxies(const std::vector<toast::Box<toast::Node>>& boxes) -> std::vector<NodeProxy> {
+	std::vector<NodeProxy> out;
+	out.reserve(boxes.size());
+	for (const auto& b : boxes) {
+		out.emplace_back(b);
+	}
+	return out;
+}
+
+}
+
+auto NodeProxy::parent(lua_State* l) -> luabridge::LuaRef {
+	if (!m_box.exists()) {
+		luaL_error(l, "parent: node reference is dead");
+		return {l};
+	}
+	auto p = m_box->parent();
+	return p.exists() ? luabridge::LuaRef(l, NodeProxy(p)) : luabridge::LuaRef(l);
+}
+
+auto NodeProxy::root(lua_State* l) -> luabridge::LuaRef {
+	if (!m_box.exists()) {
+		luaL_error(l, "root: node reference is dead");
+		return {l};
+	}
+	auto r = m_box->root();
+	return r.exists() ? luabridge::LuaRef(l, NodeProxy(r)) : luabridge::LuaRef(l);
+}
+
+auto NodeProxy::searchType(const std::string& type, lua_State* l) -> std::vector<NodeProxy> {
+	if (!m_box.exists()) {
+		luaL_error(l, "searchType: node reference is dead");
+		return {};
+	}
+	const toast::NodeInfo* info = resolveNodeType(type);
+	if (!info) {
+		luaL_error(l, "searchType: unknown node type '%s'", type.c_str());
+		return {};
+	}
+	return toProxies(m_box->searchType(info));
+}
+
+auto NodeProxy::getChildren(lua_State* l) -> std::vector<NodeProxy> {
+	if (!m_box.exists()) {
+		luaL_error(l, "getChildren: node reference is dead");
+		return {};
+	}
+	return toProxies(m_box->children());
+}
+
+auto NodeProxy::getChildren(const std::string& type, lua_State* l) -> std::vector<NodeProxy> {
+	if (!m_box.exists()) {
+		luaL_error(l, "getChildren: node reference is dead");
+		return {};
+	}
+	const toast::NodeInfo* info = resolveNodeType(type);
+	if (!info) {
+		luaL_error(l, "getChildren: unknown node type '%s'", type.c_str());
+		return {};
+	}
+	return toProxies(m_box->childrenOfType(info));
+}
+
+namespace {
+
+auto resolveMarker(const TypeMarker& marker, const char* fn, lua_State* l) -> const toast::NodeInfo* {
+	if (marker.kind != TypeMarker::Kind::node) {
+		luaL_error(l, "%s: expected a node type, got an asset type", fn);
+		return nullptr;
+	}
+	const toast::NodeInfo* info = toast::NodeRegistry::reflect(marker.type_name.empty() ? "toast::Node" : marker.type_name);
+	if (!info) {
+		luaL_error(l, "%s: unknown node type '%s'", fn, marker.type_name.c_str());
+	}
+	return info;
+}
+
+}
+
+auto NodeProxy::searchType(const TypeMarker& type, lua_State* l) -> std::vector<NodeProxy> {
+	if (!m_box.exists()) {
+		luaL_error(l, "searchType: node reference is dead");
+		return {};
+	}
+	return toProxies(m_box->searchType(resolveMarker(type, "searchType", l)));
+}
+
+auto NodeProxy::getChildren(const TypeMarker& type, lua_State* l) -> std::vector<NodeProxy> {
+	if (!m_box.exists()) {
+		luaL_error(l, "getChildren: node reference is dead");
+		return {};
+	}
+	return toProxies(m_box->childrenOfType(resolveMarker(type, "getChildren", l)));
+}
+
 auto NodeProxy::create(const std::string& type, lua_State* l) -> luabridge::LuaRef {
 	if (!m_box.exists()) {
 		luaL_error(l, "NodeProxy::create: node reference is dead");
@@ -1141,6 +1255,40 @@ auto nodeProxyDispatchMethod(NodeProxy& np, std::string_view name, lua_State* l,
 			return 0;
 		}
 		auto nodes = np.search(q);
+		lua_createtable(l, static_cast<int>(nodes.size()), 0);
+		for (size_t i = 0; i < nodes.size(); ++i) {
+			lua_pushinteger(l, static_cast<lua_Integer>(i + 1));
+			if (auto r = luabridge::Stack<NodeProxy>::push(l, nodes[i]); !r) {
+				lua_pushnil(l);
+			}
+			lua_settable(l, -3);
+		}
+		return 1;
+	}
+	if (name == "parent" || name == "root") {
+		result = name == "parent" ? np.parent(l) : np.root(l);
+		result.push(l);
+		return 1;
+	}
+	if (name == "searchType" || name == "getChildren") {
+		const bool search = name == "searchType";
+		std::vector<NodeProxy> nodes;
+		if (n_args >= 1 && lua_type(l, args_base) == LUA_TSTRING) {
+			const std::string type_name = lua_tostring(l, args_base);
+			nodes = search ? np.searchType(type_name, l) : np.getChildren(type_name, l);
+		} else if (n_args >= 1 && lua_isuserdata(l, args_base)) {
+			auto marker = luabridge::Stack<TypeMarker>::get(l, args_base);
+			if (!marker) {
+				luaL_error(l, "%s: expected a node type", search ? "searchType" : "getChildren");
+				return 0;
+			}
+			nodes = search ? np.searchType(*marker, l) : np.getChildren(*marker, l);
+		} else if (!search) {
+			nodes = np.getChildren(l);
+		} else {
+			luaL_error(l, "searchType: expected a node type");
+			return 0;
+		}
 		lua_createtable(l, static_cast<int>(nodes.size()), 0);
 		for (size_t i = 0; i < nodes.size(); ++i) {
 			lua_pushinteger(l, static_cast<lua_Integer>(i + 1));

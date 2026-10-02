@@ -132,6 +132,39 @@ auto Node::search(std::string_view query) -> std::vector<Box<Node>> {
 	return m_owner->searchFrom(*this, query);
 }
 
+auto Node::childrenOfType(const NodeInfo* type) const -> std::vector<Box<Node>> {
+	std::vector<Box<Node>> out;
+	if (not type) {
+		return out;
+	}
+	for (const auto& c : m_children) {
+		if (c.exists() and c->info() and c->info()->isA(type)) {
+			out.push_back(c);
+		}
+	}
+	return out;
+}
+
+auto Node::searchType(const NodeInfo* type) const -> std::vector<Box<Node>> {
+	std::vector<Box<Node>> out;
+	if (not type) {
+		return out;
+	}
+	auto dfs = [&](this auto&& self, const Node& n) -> void {
+		for (const auto& c : n.m_children) {
+			if (not c.exists()) {
+				continue;
+			}
+			if (c->info() and c->info()->isA(type)) {
+				out.push_back(c);
+			}
+			self(*c);
+		}
+	};
+	dfs(*this);
+	return out;
+}
+
 void Node::addDependsOn(Node& other) {
 	m_owner->registerDependency(other, *this);
 }
