@@ -84,17 +84,20 @@
 			exec cmake -B build/Debug -G Ninja -DCMAKE_TOOLCHAIN_FILE=${pkgs.vcpkg}/share/vcpkg/scripts/buildsystems/vcpkg.cmake "$@"
 		'';
 
+		cmake-gen-rel = pkgs.writeShellScriptBin "cmake-gen" ''
+			exec cmake --preset linux-relwithdebinfo -DCMAKE_TOOLCHAIN_FILE=${pkgs.vcpkg}/share/vcpkg/scripts/buildsystems/vcpkg.cmake "$@"
+		'';
 		cmake-build = pkgs.writeShellScriptBin "cmake-build" ''
 			exec cmake --build ./build/Debug --parallel "$(nproc)" "$@"
 		'';
 
-		editor = pkgs.writeShellScriptBin "editor" ''
-			./out/Debug/editor/editor "$@"
+		cmake-build-rel = pkgs.writeShellScriptBin "cmake-build" ''
+			exec cmake --build ./build/RelWithDebInfo --parallel "$(nproc)" "$@"
 		'';
 
-		gdb_editor = pkgs.writeShellScriptBin "gdb_editor" ''
-			gdb --args ./out/Debug/editor/editor "$@"
-		'';
+		# editor = pkgs.writeShellScriptBin "editor" ''
+		# 	./out/Debug/editor/editor "$@"
+		# '';
 
 		kenzo = pkgs.writeShellScriptBin "kenzo" ''
 			./out/Debug/kenzo/kenzo "$@"
@@ -124,8 +127,11 @@
 
 				cmake-gen
 				cmake-build
-				editor
-				gdb_editor
+
+				# cmake-gen-rel
+				# cmake-build-rel
+
+				# editor
 				kenzo
 				tracy_0_13
 
@@ -154,8 +160,9 @@
 				export PATH="${dotnet-sdk}/bin:$PATH";
 				export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath runtimeLibs}:$LD_LIBRARY_PATH";
 				# Tracy's rpmalloc client uses initial-exec TLS. The editor loads the
-				# engine after .NET has started, so reserve space for that TLS block.
-				export GLIBC_TUNABLES="glibc.rtld.optional_static_tls=2048''${GLIBC_TUNABLES:+:$GLIBC_TUNABLES}";
+				# engine after .NET has started, so reserve space for its 3744-byte
+				# TLS block (plus the loader's alignment overhead).
+				export GLIBC_TUNABLES="glibc.rtld.optional_static_tls=4096''${GLIBC_TUNABLES:+:$GLIBC_TUNABLES}";
 				export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1;
 				export CMAKE_C_COMPILER_LAUNCHER=ccache;
 				export CMAKE_CXX_COMPILER_LAUNCHER=ccache;

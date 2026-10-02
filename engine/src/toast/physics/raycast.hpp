@@ -22,4 +22,6 @@ struct RayHit {
 	float distance;
 };
 
+TOAST_API auto raycast(glm::vec3 pos, glm::vec3 dir) -> std::vector<RayHit>;
+
 }

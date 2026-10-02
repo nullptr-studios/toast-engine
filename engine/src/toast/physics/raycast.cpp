@@ -304,6 +304,11 @@ auto raycastVoxel(const VoxelShape& shape, glm::vec3 pos, glm::vec3 dir) -> std:
 }
 
 namespace physics {
+
+auto raycast(glm::vec3 pos, glm::vec3 dir) -> std::vector<RayHit> {
+	return Simulator::raycast(pos, dir);
+}
+
 auto Simulator::raycast(glm::vec3 pos, glm::vec3 dir) -> std::vector<RayHit> {
 	ZoneScoped if (instance == nullptr) {
 		return {};
