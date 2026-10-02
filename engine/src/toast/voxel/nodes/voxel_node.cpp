@@ -770,7 +770,7 @@ void VoxelNode::earlyTick() {
 void VoxelNode::begin() {
 	refreshVolume();
 
-	if (not m_registration_requested && participatesIn(NodeOwnerParticipation::gameplay_tick)) {
+	if (not render_only && not m_registration_requested && participatesIn(NodeOwnerParticipation::gameplay_tick)) {
 		m_registration_requested = true;
 		physics::Simulator::registerVoxelNode(*this);
 		listener().subscribe<event::ContactBegin>("voxel_contact_begin", [this](const event::ContactBegin& contact) {

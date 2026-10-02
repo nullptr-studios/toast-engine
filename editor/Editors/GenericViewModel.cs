@@ -132,7 +132,8 @@ public partial class GenericViewModel : Tool, IAutosavable {
 	}
 
 	async partial void OnSchemaUidChanged(string value) {
-		if (SchemaLocked) return;
+		// OpenFile builds the fields itself so reacting here would add them twice
+		if (SchemaLocked || m_loading) return;
 		OnPropertyChanged(nameof(CanAddFields));
 
 		if (string.IsNullOrEmpty(value)) {

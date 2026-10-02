@@ -40,7 +40,13 @@ auto ShaderCompiler::isRayQueryAvailable() -> bool {
 }
 
 auto ShaderCompiler::featureHash() -> uint64_t {
-	return ray_query_available ? 0x9e3779b97f4a7c15ull : 0x0ull;
+	// Debug compiles unoptimized with debug info so a release entry in the shared cache must read as stale and the reverse
+#if defined(NDEBUG)
+	constexpr uint64_t k_build_profile = 0x0ull;
+#else
+	constexpr uint64_t k_build_profile = 0xd3b09c0de5a11e01ull;
+#endif
+	return (ray_query_available ? 0x9e3779b97f4a7c15ull : 0x0ull) ^ k_build_profile;
 }
 
 static auto createSession() -> Slang::ComPtr<slang::ISession> {

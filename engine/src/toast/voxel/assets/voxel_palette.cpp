@@ -55,6 +55,9 @@ auto VoxelPalette::materialLibrary() const -> const voxel::MaterialLibrary& {
 				out.structural_strength = d.structuralStrength();
 				out.shatter_radius = d.shatterRadius();
 				out.burn_rate = d.burnRate();
+				if (not d.destructible()) {
+					out.flags |= voxel::k_material_indestructible;
+				}
 				if (d.flammable()) {
 					out.flags |= voxel::k_material_flammable;
 				}

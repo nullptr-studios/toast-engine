@@ -97,11 +97,30 @@ inline auto classifyFromNeighbours(
 	return packClassification(type, normal);
 }
 
+/// One bit per face in the order neg x pos x neg y pos y neg z pos z
+[[nodiscard]]
+constexpr auto faceBit(int axis, bool positive) noexcept -> uint8_t {
+	return static_cast<uint8_t>(1u << ((static_cast<unsigned>(axis) * 2u) + (positive ? 1u : 0u)));
+}
+
+inline constexpr uint8_t k_all_faces_exposed = 0x3F;
+
+/// A set bit is a face with an empty neighbour behind it
+[[nodiscard]]
+constexpr auto exposureMask(
+    bool solid_neg_x, bool solid_pos_x, bool solid_neg_y, bool solid_pos_y, bool solid_neg_z, bool solid_pos_z
+) noexcept -> uint8_t {
+	return static_cast<uint8_t>(
+	    (solid_neg_x ? 0u : 1u) | (solid_pos_x ? 0u : 2u) | (solid_neg_y ? 0u : 4u) | (solid_pos_y ? 0u : 8u) |
+	    (solid_neg_z ? 0u : 16u) | (solid_pos_z ? 0u : 32u)
+	);
+}
+
 struct SurfaceVoxel {
 	/// localIndex which is also the occupancy bit index
 	uint16_t local_index = 0;
 	uint8_t classification = 0;
-	uint8_t reserved = 0;
+	uint8_t exposure = 0;
 
 	[[nodiscard]]
 	constexpr auto operator==(const SurfaceVoxel&) const noexcept -> bool = default;
@@ -127,16 +146,17 @@ inline void
 			word &= word - 1ull;
 			const uint64_t mask = 1ull << bit;
 
+			const bool solid_neg_x = (neg_x[z] & mask) != 0ull;
+			const bool solid_pos_x = (pos_x[z] & mask) != 0ull;
+			const bool solid_neg_y = (neg_y[z] & mask) != 0ull;
+			const bool solid_pos_y = (pos_y[z] & mask) != 0ull;
+			const bool solid_neg_z = (neg_z[z] & mask) != 0ull;
+			const bool solid_pos_z = (pos_z[z] & mask) != 0ull;
+
 			SurfaceVoxel entry;
 			entry.local_index = static_cast<uint16_t>((z * 64u) + bit);
-			entry.classification = classifyFromNeighbours(
-			    (neg_x[z] & mask) != 0ull,
-			    (pos_x[z] & mask) != 0ull,
-			    (neg_y[z] & mask) != 0ull,
-			    (pos_y[z] & mask) != 0ull,
-			    (neg_z[z] & mask) != 0ull,
-			    (pos_z[z] & mask) != 0ull
-			);
+			entry.classification = classifyFromNeighbours(solid_neg_x, solid_pos_x, solid_neg_y, solid_pos_y, solid_neg_z, solid_pos_z);
+			entry.exposure = exposureMask(solid_neg_x, solid_pos_x, solid_neg_y, solid_pos_y, solid_neg_z, solid_pos_z);
 			out.push_back(entry);
 		}
 	}

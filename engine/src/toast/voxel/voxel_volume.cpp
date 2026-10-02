@@ -344,6 +344,82 @@ auto Volume::setBrickMaterial(glm::ivec3 brick, std::span<const uint8_t, k_brick
 	return true;
 }
 
+auto Volume::takeBrick(glm::ivec3 brick) -> BrickEntry {
+	if (!containsBrick(brick)) {
+		return BrickEntry {};
+	}
+
+	const uint32_t index = entryIndex(brick);
+	const BrickEntry entry = m_entries[index];
+	if (entry.tag() == BrickTag::empty) {
+		return entry;
+	}
+
+	m_entries[index] = BrickEntry {};
+	++m_revision;
+	markDirty(brick);
+	return entry;
+}
+
+void Volume::adoptBrick(glm::ivec3 brick, BrickEntry entry) {
+	if (!containsBrick(brick)) {
+		return;
+	}
+
+	const uint32_t index = entryIndex(brick);
+	assert(m_entries[index].tag() == BrickTag::empty);
+	if (m_entries[index].tag() == BrickTag::owned) {
+		m_pool->free(m_entries[index].payload());
+	}
+
+	m_entries[index] = entry;
+	++m_revision;
+	markDirty(brick);
+}
+
+auto Volume::clearVoxels(glm::ivec3 brick, const BrickOccupancy& mask) -> bool {
+	const BrickOccupancy* occupancy = occupancyPointer(brick);
+	if (occupancy == nullptr) {
+		return true;
+	}
+
+	const BrickOccupancy affected = mask & *occupancy;
+	if (isEmpty(affected)) {
+		return true;
+	}
+
+	const uint32_t index = entryIndex(brick);
+	if (affected == *occupancy) {
+		if (m_entries[index].tag() == BrickTag::owned) {
+			m_pool->free(m_entries[index].payload());
+		}
+		m_entries[index] = BrickEntry {};
+		++m_revision;
+		markDirty(brick);
+		return true;
+	}
+
+	const uint32_t id = makeWritable(index);
+	if (id == k_invalid_brick) {
+		return false;
+	}
+
+	std::span<uint8_t, k_brick_material_bytes> bytes = m_pool->material(id);
+	BrickOccupancy& stored = m_pool->occupancy(id);
+	for (uint32_t z = 0; z < k_brick_dim; ++z) {
+		uint64_t word = affected[z];
+		stored[z] &= ~word;
+		while (word != 0ull) {
+			bytes[(z * k_brick_dim * k_brick_dim) + static_cast<uint32_t>(std::countr_zero(word))] = k_empty_palette_index;
+			word &= word - 1ull;
+		}
+	}
+
+	++m_revision;
+	markDirty(brick);
+	return true;
+}
+
 auto Volume::copyBrickFrom(glm::ivec3 brick, const Volume& source, glm::ivec3 source_brick) -> bool {
 	if (!containsBrick(brick)) {
 		return false;

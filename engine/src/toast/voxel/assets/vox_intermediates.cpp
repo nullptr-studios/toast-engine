@@ -30,6 +30,9 @@ using voxel::Volume;
 
 namespace {
 
+/// Mirrors toast::SimulationType::static_body, imported scenery never moves
+constexpr int k_static_simulation_type = 0;
+
 [[nodiscard]]
 auto voxSanitise(std::string_view name) -> std::string {
 	std::string out;
@@ -181,7 +184,7 @@ auto writeVoxIntermediates(const std::filesystem::path& source, const std::files
 			    json["hidden"] = hidden;
 			    json["type"] = "toast::VoxelNode";
 			    json["model"] = file_by_model[*node.model];
-			    json["indestructible"] = true;
+			    json["simulation_type"] = k_static_simulation_type;
 			    voxWriteTransform(
 			        json, voxTransformOf(local.orientation, voxPlacementOf(local, scene.models[*node.model].dims).offset)
 			    );
@@ -213,7 +216,7 @@ auto writeVoxIntermediates(const std::filesystem::path& source, const std::files
 			json["type"] = "toast::VoxelNode";
 			json["hidden"] = false;
 			json["model"] = file_by_model[i];
-			json["indestructible"] = true;
+			json["simulation_type"] = k_static_simulation_type;
 			voxWriteTransform(
 			    json, voxTransformOf(voxel::LatticeOrientation {}, voxPlacementOf(VoxTransform {}, scene.models[i].dims).offset)
 			);
@@ -299,7 +302,9 @@ void voxManifestToPrefab(const std::filesystem::path& manifest_path, const std::
 			if (palette_uid.has_value()) {
 				basic.fields.push_back({"m_palette", toast::FieldType::uid_t, false, *palette_uid});
 			}
-			basic.fields.push_back({"indestructible", toast::FieldType::bool_t, false, node.value("indestructible", true)});
+			basic.fields.push_back(
+			    {"simulation_type", toast::FieldType::int_t, false, node.value("simulation_type", k_static_simulation_type)}
+			);
 		}
 
 		prefab.nodes.push_back(std::move(basic));

@@ -24,7 +24,8 @@ struct VoxelInstance
     float4x4 previousVoxelToWorld;
     uint recordIndex;
     uint highlightRecord; /// this is for selection tint
-    uint pad1;
+    /// Bit 0 set means previousVoxelToWorld is not a real previous frame
+    uint flags;
     uint pad2;
 };
 

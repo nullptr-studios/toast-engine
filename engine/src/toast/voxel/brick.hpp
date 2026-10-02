@@ -131,6 +131,43 @@ constexpr auto popCount(const BrickOccupancy& brick) noexcept -> uint32_t {
 	return total;
 }
 
+struct BrickExtent {
+	BrickCoord min;
+	BrickCoord max;
+};
+
+/// Brick must not be empty
+[[nodiscard]]
+constexpr auto occupiedExtent(const BrickOccupancy& brick) noexcept -> BrickExtent {
+	uint64_t merged = 0;
+	uint32_t z_min = k_brick_dim;
+	uint32_t z_max = 0;
+	for (uint32_t z = 0; z < k_brick_dim; ++z) {
+		if (brick[z] != 0ull) {
+			merged |= brick[z];
+			z_min = z < z_min ? z : z_min;
+			z_max = z;
+		}
+	}
+
+	uint32_t columns = 0;
+	uint32_t y_min = k_brick_dim;
+	uint32_t y_max = 0;
+	for (uint32_t y = 0; y < k_brick_dim; ++y) {
+		const auto row = static_cast<uint32_t>((merged >> (y * k_brick_dim)) & 0xFFull);
+		if (row != 0u) {
+			columns |= row;
+			y_min = y < y_min ? y : y_min;
+			y_max = y;
+		}
+	}
+
+	return {
+	  .min = {      static_cast<uint32_t>(std::countr_zero(columns)), y_min, z_min},
+	  .max = {31u - static_cast<uint32_t>(std::countl_zero(columns)), y_max, z_max},
+	};
+}
+
 [[nodiscard]]
 constexpr auto operator&(const BrickOccupancy& a, const BrickOccupancy& b) noexcept -> BrickOccupancy {
 	BrickOccupancy out {};

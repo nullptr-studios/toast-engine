@@ -75,6 +75,9 @@ public:
 	template<typename T>
 	static auto push(T&& job) -> std::future<std::invoke_result_t<T>>;
 
+	/// Queues a job with no std::future the caller synchronizes completion itself same queue and workers as push()
+	static void pushRaw(std::move_only_function<void()>&& job);
+
 	/**
 	 * @brief Destroys the thread pool and waits for all workers to finish.
 	 *

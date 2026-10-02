@@ -2938,7 +2938,10 @@ void VulkanRenderer::tick(float time) noexcept {
 			continue;
 		}
 
-		const auto world_transform = *owner_transform * node->worldTransformForRender();
+		// Skinned vertices are posed from joint matrices at the tick pose so they keep it
+		const glm::mat4 pose_delta =
+		    gpu_mesh.isSkinned() ? glm::mat4(1.0f) : physics::Simulator::renderPoseDeltaFor(node->uid().data());
+		const auto world_transform = *owner_transform * pose_delta * node->worldTransformForRender();
 
 		uint32_t joint_offset = 0;
 		uint32_t joint_count = 0;
@@ -3003,14 +3006,16 @@ void VulkanRenderer::tick(float time) noexcept {
 	const float aspect =
 	    extent.height > 0 ? static_cast<float>(extent.width) / static_cast<float>(extent.height) : (1080.0f / 720.0f);
 
-	const glm::mat4 camera_view = m_camera->getView();
+	// A camera below a physics body follows the same blended pose as the meshes around it
+	const glm::mat4 camera_pose_delta = physics::Simulator::renderPoseDeltaFor(m_camera->uid().data());
+	const glm::mat4 camera_view = m_camera->getView() * glm::inverse(camera_pose_delta);
 	const glm::mat4 camera_projection = m_camera->getProjection(aspect);
 
 	frame.frame_data = FrameUBO {
 	  .view = camera_view,
 	  .projection = camera_projection,
 	  .view_projection = camera_projection * camera_view,
-	  .camera_position = m_camera->world_position,
+	  .camera_position = glm::vec3(camera_pose_delta * glm::vec4(m_camera->world_position, 1.0f)),
 	  .time = time,
 	  .render_mode_pad = glm::uvec4(frame.render_mode, 0, 0, 0),
 	};
@@ -3944,7 +3949,7 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 			.id = node->uid().data(),
 			.volume = volume,
 			.palette = palette,
-			.model = *owner_transform * node->getWorldTransform() * node->volumeLocalTransform(),
+			.model = *owner_transform * physics::Simulator::renderPoseDelta(*node) * node->getWorldTransform() * node->volumeLocalTransform(),
 			.debug_name = std::string{node->name()},
 			.node = node
 		});
@@ -3994,7 +3999,8 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		const voxel::Palette* palette = record.palette != nullptr ? record.palette : &defaultVoxelPalette();
 		const uint64_t id = voxelFragmentRenderId(record.shape);
 
-		gathered.push_back({id, record.volume, palette, record.transform, "Voxel fragment " + std::to_string(record.shape.slot)});
+		const glm::mat4 drawn_transform = physics::Simulator::renderPoseDelta(record.body) * record.transform;
+		gathered.push_back({id, record.volume, palette, drawn_transform, "Voxel fragment " + std::to_string(record.shape.slot)});
 		key.push_back(
 		    {.node_uid = id,
 				 .revision = record.revision,
@@ -4176,6 +4182,7 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		const glm::mat4 model = entry.model;
 		const glm::vec4 sphere = voxel::worldBoundingSphere(model, dims);
 		const auto previous = m_voxel_previous_models.find(node_uid);
+		const bool has_previous = previous != m_voxel_previous_models.end();
 
 		frame.voxel_instances.push_back(
 		    VoxelVolumeProxy {
@@ -4183,7 +4190,8 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		      .brick_dims = dims,
 		      .model = model,
 		      .inverse_model = glm::inverse(model),
-		      .previous_model = previous != m_voxel_previous_models.end() ? previous->second : model,
+		      .previous_model = has_previous ? previous->second : model,
+		      .has_previous = has_previous,
 		      .bounds_center = glm::vec3(sphere),
 		      .bounds_radius = sphere.w,
 		      .mirrored = glm::determinant(model) < 0.0f,

@@ -33,6 +33,7 @@
 #include <toast/assets/assets.hpp>
 #include <toast/log.hpp>
 #include <toast/physics/narrow_phase.hpp>
+#include <toast/physics/physics_settings.hpp>
 #include <toast/physics/simulator.hpp>
 #include <tracy/Tracy.hpp>
 
@@ -999,10 +1000,11 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 				const physics::Simulator::PhysicsStepProfile& phys = physics::Simulator::stepProfile();
 
 				ImGui::Text(
-				    "Tick %6.2f ms  damage %.2f  connectivity %.2f  narrow %.2f  solve %.2f",
+				    "Tick %6.2f ms  damage %.2f  connectivity %.2f  characters %.2f  narrow %.2f  solve %.2f",
 				    phys.tick_ms,
 				    phys.damage_apply_ms,
 				    phys.connectivity_ms,
+				    phys.character_step_ms,
 				    phys.narrow_phase_ms,
 				    phys.solve_ms
 				);
@@ -1023,6 +1025,23 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 				    phys.voxel_shape_count,
 				    phys.manifold_count,
 				    phys.constraints
+				);
+				if (phys.character_sweep_calls > 0 || phys.character_overlap_calls > 0) {
+					ImGui::TextDisabled(
+					    "Characters: %zu sweepCapsule, %zu overlapCapsule calls this tick (each samples the voxel walk "
+					    "several times internally)",
+					    phys.character_sweep_calls,
+					    phys.character_overlap_calls
+					);
+				}
+				ImGui::TextDisabled(
+				    "Solve breakdown: cache %.2f  wake %.2f  prepare %.2f  islands %.2f  solve %.2f  sleep %.2f",
+				    phys.cache_update_ms,
+				    phys.wake_groups_ms,
+				    phys.prepare_constraints_ms,
+				    phys.build_islands_ms,
+				    phys.island_solve_ms,
+				    phys.sleep_update_ms
 				);
 
 				ImGui::Separator();
@@ -1051,6 +1070,9 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 					    "%zu fragment extractions failed this tick, brick pool is full",
 					    phys.fragment_spawn_failures
 					);
+				}
+				if (phys.static_splits_spawned > 0) {
+					ImGui::Text("%zu static bodies split off this tick", phys.static_splits_spawned);
 				}
 
 				ImGui::Separator();
@@ -1087,6 +1109,15 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 				    total_cached
 				);
 				ImGui::TextDisabled(
+				    "Sleep %zu slept, %zu woken (%zu approach, %zu racing, %zu contact end, %zu support)",
+				    phys.bodies_slept,
+				    phys.bodies_woken,
+				    phys.woken_by_approach,
+				    phys.woken_by_racing,
+				    phys.woken_by_contact_end,
+				    phys.woken_by_support_loss
+				);
+				ImGui::TextDisabled(
 				    "Constraints %zu warm started, %zu rejected, %zu invalid, %zu islands, %zu parallel batches",
 				    phys.warm_started_constraints,
 				    phys.rejected_constraints,
@@ -1110,15 +1141,47 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 					 {PT::capsule_voxel, "Capsule-voxel"},
 					 {PT::voxel_voxel, "Voxel-voxel"}}
 				};
-				if (ImGui::BeginTable("##voxel_pair_candidates", 2, ImGuiTableFlags_SizingFixedFit)) {
+				if (ImGui::BeginTable("##voxel_pair_candidates", 3, ImGuiTableFlags_SizingFixedFit)) {
 					for (const auto& [type, label] : k_voxel_pairs) {
 						ImGui::TableNextColumn();
 						ImGui::TextDisabled("%s", label);
 						ImGui::TableNextColumn();
 						ImGui::TextDisabled("%zu", phys.narrow_pair_candidates[static_cast<size_t>(type)]);
+						ImGui::TableNextColumn();
+						ImGui::TextDisabled("%.2f ms", phys.narrow_pair_time_ms[static_cast<size_t>(type)]);
 					}
 					ImGui::EndTable();
 				}
+				if (phys.box_voxel_split_pairs > 0 || phys.voxel_voxel_split_pairs > 0) {
+					ImGui::TextDisabled(
+					    "Split across jobs: %zu of %zu box-voxel, %zu of %zu voxel-voxel",
+					    phys.box_voxel_split_pairs,
+					    phys.narrow_pair_candidates[static_cast<size_t>(physics::NarrowPhasePairType::box_voxel)],
+					    phys.voxel_voxel_split_pairs,
+					    phys.narrow_pair_candidates[static_cast<size_t>(physics::NarrowPhasePairType::voxel_voxel)]
+					);
+				}
+				ImGui::TextDisabled(
+				    "Max estimated_voxels this tick: box-voxel %zu (longest axis %.2f m)  voxel-voxel %zu",
+				    phys.box_voxel_max_estimated_voxels,
+				    phys.box_voxel_max_extent_meters,
+				    phys.voxel_voxel_max_estimated_voxels
+				);
+				if (phys.voxel_voxel_resolved_pairs > 0) {
+					ImGui::TextDisabled(
+					    "Voxel-voxel resolved %zu, of those %zu actually overlapped (rest: bounds don't overlap, "
+					    "not a bug)",
+					    phys.voxel_voxel_resolved_pairs,
+					    phys.voxel_voxel_nondegenerate_pairs
+					);
+				}
+				ImGui::TextColored(
+				    ImVec4(1.0f, 0.4f, 1.0f, 1.0f),
+				    "Live thresholds: box-voxel %u  voxel-voxel %u  regions %u",
+				    physics::tunables().box_voxel_split_min_voxels,
+				    physics::tunables().voxel_voxel_split_min_voxels,
+				    physics::tunables().voxel_pair_split_regions
+				);
 			}
 
 			ImGui::Separator();

@@ -85,6 +85,16 @@ public:
 	/// @returns false outside the volume or when the pool is exhausted
 	auto setBrickMaterial(glm::ivec3 brick, std::span<const uint8_t, k_brick_material_bytes> material) -> bool;
 
+	/// Caller must adopt or free a pooled entry
+	[[nodiscard]]
+	auto takeBrick(glm::ivec3 brick) -> BrickEntry;
+
+	/// Slot must be empty and a pooled entry must be owned
+	void adoptBrick(glm::ivec3 brick, BrickEntry entry);
+
+	/// @returns false with nothing changed when the pool has no brick to copy into
+	auto clearVoxels(glm::ivec3 brick, const BrickOccupancy& mask) -> bool;
+
 	/**
 	 * Makes brick hold what source_brick of source holds
 	 * @returns true when the brick changed

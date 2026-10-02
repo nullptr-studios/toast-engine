@@ -3,7 +3,9 @@
 #include "voxel_query.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
+#include <optional>
 #include <tracy/Tracy.hpp>
 
 namespace physics {
@@ -58,25 +60,36 @@ auto NarrowPhase::generateManifolds(CollisionWorldView world, std::span<const Br
 	for (BroadPhasePair pair : candidates) {
 		const Shape* shape_a = world.shape(pair.a.shape);
 		const Shape* shape_b = world.shape(pair.b.shape);
+		std::optional<size_t> type;
 		if (shape_a && shape_b) {
-			++queue.pair_candidates[static_cast<size_t>(pairType(shape_a->type, shape_b->type))];
+			type = static_cast<size_t>(pairType(shape_a->type, shape_b->type));
+			++queue.pair_candidates[*type];
 		}
 
 		pair_manifolds.clear();
+		const auto pair_start = std::chrono::steady_clock::now();
 		collide(world, pair, pair_manifolds);
-
-		for (Manifold& manifold : pair_manifolds) {
-			++queue.collision_count;
-			if (validate(world, manifold)) {
-				queue.contact_count += manifold.contact_count;
-				queue.manifolds.emplace_back(manifold);
-			} else {
-				++queue.rejected_manifold_count;
-			}
+		if (type) {
+			queue.pair_time_ms[*type] +=
+			    std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - pair_start).count();
 		}
+
+		accumulate(pair_manifolds, world, queue);
 	}
 
 	return queue;
+}
+
+void NarrowPhase::accumulate(std::span<Manifold> manifolds, CollisionWorldView world, ManifoldQueue& queue) const {
+	for (Manifold& manifold : manifolds) {
+		++queue.collision_count;
+		if (validate(world, manifold)) {
+			queue.contact_count += manifold.contact_count;
+			queue.manifolds.emplace_back(manifold);
+		} else {
+			++queue.rejected_manifold_count;
+		}
+	}
 }
 
 auto NarrowPhase::validate(CollisionWorldView world, Manifold& manifold) const -> bool {
