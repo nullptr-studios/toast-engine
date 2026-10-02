@@ -1,0 +1,31 @@
+<map id="toast::_detail::toVoxel" name="toast::_detail::toVoxel">
+<area shape="rect" id="Node000001" title=" " alt="" coords="520,299,682,326"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1VoxelNode.html#a37d38d47d4dd25897a0e0fa4e89a3ad7" title=" " alt="" coords="278,5,448,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="592,283,579,233,555,168,520,103,497,74,470,48,449,35,448,29,474,44,501,70,524,100,560,166,584,231,597,284"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1VoxelNode.html#af605cdff14a9e69e345d8e37197d116c" title=" " alt="" coords="254,57,472,85"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="588,283,572,243,547,193,514,142,493,120,470,100,450,88,450,83,474,96,497,116,518,139,552,190,577,241,594,285"/>
+<area shape="rect" id="Node000004" href="$classtoast_1_1VoxelNode.html#a6d5270e5eef351fbf85012df0e863d4f" title=" " alt="" coords="273,109,453,137"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="583,285,540,217,508,181,471,151,450,140,450,135,473,146,512,177,544,214,589,285"/>
+<area shape="rect" id="Node000007" href="$classtoast_1_1VoxelPiece.html#abe4cd35b66ae0bd4fb42ea7e567b863c" title=" " alt="" coords="293,161,433,206"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="570,288,526,255,471,220,434,204,433,199,473,215,529,250,575,288"/>
+<area shape="rect" id="Node000008" href="$classtoast_1_1VoxelPiece.html#a3ddeecc7f46b8ef530b0fd25efcfa909" title=" " alt="" coords="293,230,433,275"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="526,295,434,273,433,268,531,294"/>
+<area shape="rect" id="Node000009" href="$classtoast_1_1VoxelNode.html#adf29c7fab7435488a0e5a0d8b0d2fc57" title=" " alt="" coords="265,299,460,326"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="502,313,462,315,460,310,507,312"/>
+<area shape="rect" id="Node000010" href="$classtoast_1_1VoxelPiece.html#a844123ff3764c5da343b82d584bf76fe" title=" " alt="" coords="293,350,433,395"/>
+<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="526,332,435,357,433,352,531,330"/>
+<area shape="rect" id="Node000011" href="$classtoast_1_1VoxelNode.html#a2695359e967824c33c1b7fdff15be1a3" title=" " alt="" coords="275,419,450,446"/>
+<area shape="poly" id="edge10_Node000001_Node000011" title=" " alt="" coords="576,335,530,375,473,410,444,421,442,416,471,405,527,371,572,338"/>
+<area shape="rect" id="Node000012" href="$classtoast_1_1VoxelNode.html#ad88e8b73bf81e38ec73695701e2ab028" title=" " alt="" coords="266,471,460,498"/>
+<area shape="poly" id="edge11_Node000001_Node000012" title=" " alt="" coords="586,338,540,401,509,433,473,460,447,472,445,468,471,456,506,429,536,398,582,341"/>
+<area shape="rect" id="Node000014" href="$classtoast_1_1VoxelNode.html#ad569cef637a5d677e4a5d1190aa26cd3" title=" " alt="" coords="273,523,453,550"/>
+<area shape="poly" id="edge13_Node000001_Node000014" title=" " alt="" coords="591,339,575,380,549,427,516,473,474,512,450,525,448,520,470,508,512,469,545,424,570,378,588,342"/>
+<area shape="rect" id="Node000015" href="$classtoast_1_1VoxelPiece.html#a87c31ebe3a13a1f8d772b3eb3a6b7012" title=" " alt="" coords="293,574,433,619"/>
+<area shape="poly" id="edge14_Node000001_Node000015" title=" " alt="" coords="595,340,581,390,556,450,521,511,499,539,474,564,455,576,434,586,433,581,452,572,470,560,495,535,516,508,551,447,576,388,591,343"/>
+<area shape="rect" id="Node000005" href="$classtoast_1_1VoxelNode.html#ad2c8c15c4ec1de792c575b287fde5007" title=" " alt="" coords="5,84,206,112"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="255,114,207,110,205,105,259,111"/>
+<area shape="rect" id="Node000006" href="$classtoast_1_1VoxelNode.html#a2ae043169e3f17929dc27058bbcbd026" title=" " alt="" coords="7,136,204,164"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="255,136,206,142,203,137,259,132"/>
+<area shape="rect" id="Node000013" href="$classtoast_1_1VoxelNode.html#a3bb828a1c2e1dca8da164e2d5142d792" title=" " alt="" coords="11,462,200,507"/>
+<area shape="poly" id="edge12_Node000012_Node000013" title=" " alt="" coords="248,485,201,487,200,482,253,484"/>
+</map>

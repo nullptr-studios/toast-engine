@@ -1,0 +1,9 @@
+<map id="toast::VoxelPiece::pieceSize" name="toast::VoxelPiece::pieceSize">
+<area shape="rect" id="Node000001" title=" " alt="" coords="403,40,543,85"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1VoxelPiece.html#a4d1881e98eeeef47f08df453e828d484" title=" " alt="" coords="215,5,355,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="385,47,355,43,355,38,390,47"/>
+<area shape="rect" id="Node000004" href="$classtoast_1_1VoxelPiece.html#afd0a13722e400910f38018b3a7a7b800" title=" " alt="" coords="215,75,355,119"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="390,78,356,87,355,81,385,78"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1VoxelPiece.html#a52838ba051112268889a0f7f502d404b" title=" " alt="" coords="5,14,167,42"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="197,28,168,30,167,25,202,27"/>
+</map>

@@ -1,10 +1,26 @@
 var searchData=
 [
-  ['uid_0',['uid',['../classinput_1_1Action.html#aa23cf332b46fb0585b98edf9e828d86c',1,'input::Action::uid()'],['../classtoast_1_1Node.html#acb5562b9251f4c6e89e2fd0e70bf2fc6',1,'toast::Node::uid()']]],
-  ['uniquechildname_1',['uniqueChildName',['../classtoast_1_1INodeOwner.html#a40dddacaed8a358688f80c3eebdace0f',1,'toast::INodeOwner']]],
-  ['unsubscribe_2',['unsubscribe',['../classevent_1_1Listener.html#a6bce804690ee8ddb6e0523049926be68',1,'event::Listener::unsubscribe()'],['../classevent_1_1ThreadListener.html#adee91cc858efd726b49de39f71ce4b50',1,'event::ThreadListener::unsubscribe()']]],
-  ['up_3',['up',['../classtoast_1_1Node3D.html#aa6e39d1cfe260780ec8ae491b53d4b43',1,'toast::Node3D']]],
-  ['updateselectionfromchildren_4',['UpdateSelectionFromChildren',['../classeditor_1_1Assets_1_1Importers_1_1ImportFolderViewModel.html#a385dd4ed89073f25fc39afb89f80caf3',1,'editor::Assets::Importers::ImportFolderViewModel']]],
-  ['updatetlas_5',['updateTlas',['../classrenderer_1_1SceneDescriptorSets.html#ab888b3b6495cb83fd12da0c50dc9781c',1,'renderer::SceneDescriptorSets']]],
-  ['uptime_6',['uptime',['../classTime.html#a3c11c4f1f25902e2a30393723a997c52',1,'Time']]]
+  ['takebrick_0',['takeBrick',['../classvoxel_1_1Volume.html#ae8fb61d3ee89c914f68fbf7e21f636da',1,'voxel::Volume::takeBrick()'],['../classassets_1_1Volume.html#ae8fb61d3ee89c914f68fbf7e21f636da',1,'assets::Volume::takeBrick()']]],
+  ['testhaptic_1',['TestHaptic',['../classeditor_1_1Engine_1_1ToastEngine.html#ab6c3f1ccf9ffe2aec038e634b292d4e5',1,'editor::Engine::ToastEngine']]],
+  ['tick_2',['tick',['../classTime.html#a0b2c74677cb5a034de53081b5bbeec06',1,'Time::tick()'],['../classtoast_1_1AnimationPlayer.html#aeafe193a19e0f45137932a4b728d636b',1,'toast::AnimationPlayer::tick()'],['../classtoast_1_1EditorCameraController.html#a5f3884cb01d84c2783f39e7574db4a80',1,'toast::EditorCameraController::tick()'],['../classtoast_1_1Workspace.html#a580beb85b06c63ceee52c4df9f101969',1,'toast::Workspace::tick()']]],
+  ['tickmask_3',['tickMask',['../classscripting_1_1ScriptInstance.html#a0ba822cb12d4ed02b150f475374ab813',1,'scripting::ScriptInstance']]],
+  ['tile_4',['tile',['../classtoast_1_1VoxelPiece.html#a52838ba051112268889a0f7f502d404b',1,'toast::VoxelPiece']]],
+  ['time_5',['time',['../classtoast_1_1AnimationPlayer.html#ac03c558f9728450095ce9075ff2cc675',1,'toast::AnimationPlayer']]],
+  ['timesincestart_6',['timeSinceStart',['../classinput_1_1Action.html#aeaefdc06f4f095e5e4e04f8c4c62b7eb',1,'input::Action']]],
+  ['timesincetry_7',['timeSinceTry',['../classinput_1_1Action.html#a30af22d486b3f7ed2a0c87aea15d91c4',1,'input::Action']]],
+  ['tobinary_8',['toBinary',['../classassets_1_1Animation.html#aef9d1d1ea8861e48580cc69b7de107eb',1,'assets::Animation::toBinary()'],['../classassets_1_1Prefab.html#a09dd2b1c670b3fdb1e1ee7206e30777d',1,'assets::Prefab::toBinary() const -&gt; std::vector&lt; uint8_t &gt;']]],
+  ['tofile_9',['toFile',['../classassets_1_1Prefab.html#a53150af8f3a7a8ccbc1f9d18856714ad',1,'assets::Prefab']]],
+  ['tohex_10',['toHex',['../classassets_1_1ColorScheme.html#a66032185b98c0eb90e1db4eb4dee86dd',1,'assets::ColorScheme']]],
+  ['toid_11',['toId',['../namespacetoast_1_1__detail.html#aca153db53f6d7e44036a6be101893bdb',1,'toast::_detail']]],
+  ['tostring_12',['toString',['../structtoast_1_1UID.html#aff71061fa7f535cb6d897068bc47ef30',1,'toast::UID::toString()'],['../shader__reflection_8cpp.html#a767d82754562c6674f6a924d93d9aa67',1,'renderer::toString()']]],
+  ['toughness_13',['toughness',['../classassets_1_1DestructionMaterial.html#a90dfdf43b2bc37914f28da03fc59d529',1,'assets::DestructionMaterial']]],
+  ['tovoxel_14',['toVoxel',['../namespacetoast_1_1__detail.html#a3f003f36854e67d32dba6a3b543fa3bd',1,'toast::_detail']]],
+  ['tps_15',['tps',['../classTime.html#a997b42926df43a9e63946bf6bb03da84',1,'Time']]],
+  ['tracktarget_16',['trackTarget',['../classtoast_1_1AudioVolume.html#af10612bd91c6605a77b47aa6ae08828e',1,'toast::AudioVolume']]],
+  ['transformbox_17',['transformBox',['../frustum_8hpp.html#a5e47b990ea02d05556b9e90fb536f79d',1,'renderer']]],
+  ['tryloadbytes_18',['tryLoadBytes',['../classassets_1_1AssetManager.html#a19fa1f7a6f0e50004241282848a9bcee',1,'assets::AssetManager']]],
+  ['trylock_19',['tryLock',['../classscripting_1_1LuaState.html#ad40f362dfde9f50aa4ac0d57ab6a266e',1,'scripting::LuaState']]],
+  ['trypatch_20',['tryPatch',['../classrenderer_1_1VoxelScenePatcher.html#a41790d88d658cf9891ca5af8667b6e03',1,'renderer::VoxelScenePatcher']]],
+  ['type_21',['type',['../classtoast_1_1Node.html#a006e7b2bb1f1513845392d80cceb5d3e',1,'toast::Node']]],
+  ['typeof_22',['typeOf',['../classassets_1_1AssetManager.html#a267fe0e35247451a287e7a2313365fc4',1,'assets::AssetManager']]]
 ];

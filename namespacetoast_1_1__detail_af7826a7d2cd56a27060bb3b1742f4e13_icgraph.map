@@ -1,0 +1,9 @@
+<map id="toast::_detail::instantiateModel" name="toast::_detail::instantiateModel">
+<area shape="rect" id="Node000001" title=" " alt="" coords="271,57,455,102"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1VoxelMesh.html#aeaaa7d143aece01421535ea45ad63a35" title=" " alt="" coords="5,5,223,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="253,53,222,47,177,36,177,31,223,42,258,52"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1VoxelPiece.html#a87c31ebe3a13a1f8d772b3eb3a6b7012" title=" " alt="" coords="44,57,184,102"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="253,80,185,82,184,77,258,78"/>
+<area shape="rect" id="Node000004" href="$classtoast_1_1VoxelPiece.html#a52838ba051112268889a0f7f502d404b" title=" " alt="" coords="33,125,195,153"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="258,105,223,116,178,127,177,122,222,111,253,106"/>
+</map>

@@ -12,10 +12,13 @@ var searchData=
   ['description_9',['description',['../classassets_1_1Action.html#a52326104f40d41be077256943a7ed9dc',1,'assets::Action']]],
   ['destroy_10',['destroy',['../classtoast_1_1ThreadPool.html#adf9e87ed36a7eaf11a53e7e18598ed44',1,'toast::ThreadPool']]],
   ['destroynode_11',['destroyNode',['../classtoast_1_1World.html#ab02f9d858ce6dccbffe5e78d205ed3e4',1,'toast::World']]],
-  ['device_12',['device',['../classinput_1_1Action.html#a98c8ba7e92d5f15a60ee2dbbc47a437e',1,'input::Action']]],
-  ['dirtybrickssince_13',['dirtyBricksSince',['../classvoxel_1_1Volume.html#af73f7ddf6b2455dfdc36ce8201e1e329',1,'voxel::Volume::dirtyBricksSince()'],['../classassets_1_1Volume.html#af73f7ddf6b2455dfdc36ce8201e1e329',1,'assets::Volume::dirtyBricksSince()']]],
-  ['discarddirty_14',['discardDirty',['../classvoxel_1_1Volume.html#a14580bd1a0ba51a120befce3caea4b21',1,'voxel::Volume::discardDirty()'],['../classassets_1_1Volume.html#a14580bd1a0ba51a120befce3caea4b21',1,'assets::Volume::discardDirty()']]],
-  ['discriminatorof_15',['discriminatorOf',['../classassets_1_1Schema.html#afd585b72568eb03f8ea859e4beb48c02',1,'assets::Schema']]],
-  ['drawoverlay_16',['drawOverlay',['../classrenderer_1_1voxel__debug_1_1Monitor.html#aba4962c6d7ea28ac4fcae1511eca461c',1,'renderer::voxel_debug::Monitor']]],
-  ['drawpanel_17',['drawPanel',['../classrenderer_1_1voxel__debug_1_1Monitor.html#a6b2ed0d73cc6dec17b69b381646fa8bd',1,'renderer::voxel_debug::Monitor']]]
+  ['destructible_12',['destructible',['../classassets_1_1DestructionMaterial.html#a71eca1f16c176e732b9a40a3a6bf8466',1,'assets::DestructionMaterial']]],
+  ['device_13',['device',['../classinput_1_1Action.html#a98c8ba7e92d5f15a60ee2dbbc47a437e',1,'input::Action']]],
+  ['dirtybrickssince_14',['dirtyBricksSince',['../classvoxel_1_1Volume.html#af73f7ddf6b2455dfdc36ce8201e1e329',1,'voxel::Volume::dirtyBricksSince()'],['../classassets_1_1Volume.html#af73f7ddf6b2455dfdc36ce8201e1e329',1,'assets::Volume::dirtyBricksSince()']]],
+  ['discarddirty_15',['discardDirty',['../classvoxel_1_1Volume.html#a14580bd1a0ba51a120befce3caea4b21',1,'voxel::Volume::discardDirty()'],['../classassets_1_1Volume.html#a14580bd1a0ba51a120befce3caea4b21',1,'assets::Volume::discardDirty()']]],
+  ['discriminatorof_16',['discriminatorOf',['../classassets_1_1Schema.html#afd585b72568eb03f8ea859e4beb48c02',1,'assets::Schema']]],
+  ['drawdebug_17',['drawDebug',['../classtoast_1_1ProceduralVoxel.html#aeb4814871ef8a2c2966314c7828c1cce',1,'toast::ProceduralVoxel']]],
+  ['drawing_18',['drawing',['../classtoast_1_1VoxelPiece.html#a1b59d37a4121684fd9427d24b076e337',1,'toast::VoxelPiece']]],
+  ['drawoverlay_19',['drawOverlay',['../classrenderer_1_1voxel__debug_1_1Monitor.html#aba4962c6d7ea28ac4fcae1511eca461c',1,'renderer::voxel_debug::Monitor']]],
+  ['drawpanel_20',['drawPanel',['../classrenderer_1_1voxel__debug_1_1Monitor.html#a6b2ed0d73cc6dec17b69b381646fa8bd',1,'renderer::voxel_debug::Monitor']]]
 ];

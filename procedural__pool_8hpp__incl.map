@@ -1,0 +1,33 @@
+<map id="engine/src/toast/voxel/procedural_pool.hpp" name="engine/src/toast/voxel/procedural_pool.hpp">
+<area shape="rect" id="Node000001" title="Bricks for the grids ProceduralVoxel pieces draw into." alt="" coords="854,5,1018,50"/>
+<area shape="rect" id="Node000002" href="$brick__pool_8hpp.html" title=" " alt="" coords="540,98,657,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="851,50,668,96,667,91,856,48"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="306,325,371,353"/>
+<area shape="poly" id="edge17_Node000001_Node000005" title=" " alt="" coords="960,48,989,81,1015,120,1024,142,1027,163,1025,184,1014,203,995,221,969,237,901,265,817,287,722,305,532,328,387,338,386,333,532,322,722,299,815,282,899,260,967,232,992,217,1010,200,1019,182,1022,163,1018,143,1010,123,985,84,958,53"/>
+<area shape="rect" id="Node000012" href="$export_8hpp.html" title=" " alt="" coords="872,174,1000,201"/>
+<area shape="poly" id="edge18_Node000001_Node000012" title=" " alt="" coords="938,48,938,159,934,157,934,52"/>
+<area shape="rect" id="Node000003" href="$brick_8hpp.html" title=" " alt="" coords="263,174,344,201"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="543,127,360,175,359,170,548,125"/>
+<area shape="rect" id="Node000004" href="$voxel__constants_8hpp.html" title=" " alt="" coords="5,249,160,277"/>
+<area shape="poly" id="edge9_Node000002_Node000004" title=" " alt="" coords="537,119,406,138,328,154,251,176,178,208,117,243,114,239,175,204,250,171,327,149,405,133,542,117"/>
+<area shape="poly" id="edge12_Node000002_Node000005" title=" " alt="" coords="573,125,538,148,507,175,491,202,484,227,476,252,458,279,424,305,386,324,385,319,421,301,454,275,471,250,479,225,486,200,503,172,535,144,568,127"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="406,249,444,277"/>
+<area shape="poly" id="edge11_Node000002_Node000007" title=" " alt="" coords="547,125,502,147,481,160,463,175,444,204,433,236,429,232,439,202,459,172,478,156,500,142,542,127"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="517,174,584,201"/>
+<area shape="poly" id="edge10_Node000002_Node000009" title=" " alt="" coords="592,125,569,163,566,159,588,128"/>
+<area shape="rect" id="Node000010" title=" " alt="" coords="608,174,685,201"/>
+<area shape="poly" id="edge13_Node000002_Node000010" title=" " alt="" coords="608,124,632,161,627,160,606,129"/>
+<area shape="rect" id="Node000011" title=" " alt="" coords="708,174,761,201"/>
+<area shape="poly" id="edge14_Node000002_Node000011" title=" " alt="" coords="623,124,700,166,694,166,622,129"/>
+<area shape="poly" id="edge15_Node000002_Node000012" title=" " alt="" coords="657,123,863,169,858,170,657,129"/>
+<area shape="rect" id="Node000013" title=" " alt="" coords="785,174,847,201"/>
+<area shape="poly" id="edge16_Node000002_Node000013" title=" " alt="" coords="638,124,772,170,767,171,637,129"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="263,204,138,246,136,242,266,200"/>
+<area shape="poly" id="edge8_Node000003_Node000005" title=" " alt="" coords="279,200,254,218,233,236,221,255,221,265,225,276,238,292,254,305,294,326,288,325,251,309,234,296,220,278,216,266,216,254,229,232,251,214,274,203"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="235,249,290,277"/>
+<area shape="poly" id="edge5_Node000003_Node000006" title=" " alt="" coords="299,200,279,237,275,234,294,204"/>
+<area shape="poly" id="edge6_Node000003_Node000007" title=" " alt="" coords="326,199,395,242,390,242,325,205"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="314,249,382,277"/>
+<area shape="poly" id="edge7_Node000003_Node000008" title=" " alt="" coords="313,199,335,237,330,235,311,204"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="129,275,293,322,289,326,128,280"/>
+</map>

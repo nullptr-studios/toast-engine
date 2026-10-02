@@ -1,0 +1,13 @@
+<map id="toast::VoxelPiece::markGridDirty" name="toast::VoxelPiece::markGridDirty">
+<area shape="rect" id="Node000001" title=" " alt="" coords="254,144,394,189"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1VoxelPiece.html#a1889d4bd708f364cb56154d8ac2ff567" title=" " alt="" coords="29,5,182,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="289,133,251,99,204,65,183,53,182,48,207,60,254,94,295,133"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1VoxelPiece.html#afdb4a9193b96fc75a288a524a8b6644a" title=" " alt="" coords="35,75,176,119"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="236,140,176,122,176,117,241,138"/>
+<area shape="rect" id="Node000004" href="$classtoast_1_1VoxelVolume.html#ad619189f2bc901d2d65ec6ebed121c4f" title=" " alt="" coords="32,144,179,189"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="235,167,180,169,178,164,240,165"/>
+<area shape="rect" id="Node000005" href="$classtoast_1_1VoxelMesh.html#a010a807c03e7dceb89aab8b6b64ebf9d" title=" " alt="" coords="5,212,206,240"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="236,193,206,204,165,214,163,209,205,198,241,191"/>
+<area shape="rect" id="Node000006" href="$classtoast_1_1VoxelPiece.html#ac0a1f514751d5b0d8601e7fb65319aa9" title=" " alt="" coords="35,264,176,309"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="287,197,249,228,207,254,177,268,175,263,204,249,246,224,282,200"/>
+</map>

@@ -1,21 +1,24 @@
 <map id="toast::PlayWorkspace" name="toast::PlayWorkspace">
-<area shape="rect" id="Node000001" title="A Workspace that actually runs game logic." alt="" coords="968,175,1129,203"/>
-<area shape="rect" id="Node000002" href="$classtoast_1_1Workspace.html" title="Single&#45;viewport node owner used by the editor." alt="" coords="785,175,918,203"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="934,186,970,189,965,189,934,192"/>
+<area shape="rect" id="Node000001" title="A Workspace that actually runs game logic." alt="" coords="968,224,1129,252"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1Workspace.html" title="Single&#45;viewport node owner used by the editor." alt="" coords="785,224,918,252"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="934,236,970,238,965,239,934,241"/>
 <area shape="rect" id="Node000003" href="$classtoast_1_1INodeOwner.html" title=" " alt="" coords="365,16,508,44"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="522,14,579,10,641,13,704,25,734,35,762,49,795,77,820,111,838,146,848,176,843,173,833,148,815,114,791,80,760,54,732,40,702,30,641,18,579,15,524,19"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="522,19,580,20,642,26,705,43,735,56,763,72,782,88,798,107,824,150,840,191,850,225,845,223,835,193,819,152,794,110,778,92,759,77,732,61,703,48,641,32,580,25,524,24"/>
 <area shape="rect" id="Node000004" href="$classphysics_1_1Accumulator.html" title=" " alt="" coords="5,16,166,44"/>
-<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="181,28,367,28,363,32,182,33"/>
-<area shape="rect" id="Node000005" href="$structtoast_1_1UID.html" title=" " alt="" coords="393,68,480,96"/>
-<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="494,75,552,75,621,79,693,90,762,112,786,125,807,141,841,175,836,174,804,145,783,129,760,117,691,95,620,84,552,80,496,81"/>
-<area shape="rect" id="Node000006" href="$classtoast_1_1Box.html" title=" " alt="" coords="365,135,508,179"/>
-<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="523,161,787,183,782,185,524,166"/>
-<area shape="rect" id="Node000007" href="$classtoast_1_1Box.html" title="Intrusive reference&#45;counted handle to a Node." alt="" coords="23,143,148,171"/>
-<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="163,154,366,155,362,159,164,160"/>
-<area shape="rect" id="Node000008" href="$classevent_1_1Listener.html" title="manages the lifetime, subscription, and unsubscription of callbacks" alt="" coords="377,203,496,231"/>
-<area shape="poly" id="edge7_Node000002_Node000008" title=" " alt="" coords="511,220,629,222,695,220,761,213,813,203,808,204,761,218,695,225,629,228,511,225"/>
-<area shape="rect" id="Node000009" href="$structtoast_1_1Workspace_1_1SnapSetting.html" title=" " alt="" coords="327,303,546,331"/>
-<area shape="poly" id="edge8_Node000002_Node000009" title=" " alt="" coords="545,330,597,332,653,328,708,317,760,298,788,277,811,251,841,205,846,202,816,255,792,281,762,302,709,323,653,333,598,337,545,335"/>
-<area shape="rect" id="Node000010" href="$classtoast_1_1EditorCameraController.html" title=" " alt="" coords="329,359,544,387"/>
-<area shape="poly" id="edge9_Node000002_Node000010" title=" " alt="" coords="507,388,566,396,631,398,698,388,730,378,760,362,780,347,796,327,822,282,838,237,846,205,850,201,843,239,827,284,801,330,783,350,762,367,732,383,700,393,632,403,565,401,507,393"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="180,28,367,28,363,32,182,33"/>
+<area shape="rect" id="Node000005" href="$structtoast_1_1UID.html" title=" " alt="" coords="42,114,129,142"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="143,115,189,109,246,107,303,109,404,103,536,93,603,90,666,92,720,98,762,112,794,136,818,166,836,198,848,225,843,223,832,200,814,169,790,140,760,117,719,103,665,97,603,96,536,98,405,108,303,114,246,113,190,114,146,119"/>
+<area shape="rect" id="Node000011" href="$structtoast_1_1Workspace_1_1VoxelToolState.html" title=" " alt="" coords="335,141,538,186"/>
+<area shape="poly" id="edge11_Node000011_Node000005" title=" " alt="" coords="139,144,190,156,263,164,337,167,332,169,263,169,189,162,141,149"/>
+<area shape="rect" id="Node000006" href="$classtoast_1_1Box.html" title=" " alt="" coords="365,212,508,257"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="523,234,570,235,787,238,782,239,570,240,524,239"/>
+<area shape="rect" id="Node000007" href="$classtoast_1_1Box.html" title="Intrusive reference&#45;counted handle to a Node." alt="" coords="23,220,148,248"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="163,232,366,232,362,236,164,237"/>
+<area shape="rect" id="Node000008" href="$classevent_1_1Listener.html" title="manages the lifetime, subscription, and unsubscription of callbacks" alt="" coords="377,280,496,308"/>
+<area shape="poly" id="edge7_Node000002_Node000008" title=" " alt="" coords="511,291,629,284,695,277,760,266,812,254,817,252,762,271,696,282,629,290,512,296"/>
+<area shape="rect" id="Node000009" href="$structtoast_1_1Workspace_1_1SnapSetting.html" title=" " alt="" coords="327,380,546,408"/>
+<area shape="poly" id="edge8_Node000002_Node000009" title=" " alt="" coords="561,404,611,403,662,397,713,384,760,363,790,339,814,308,843,254,847,251,818,311,794,342,762,368,714,389,663,402,611,408,562,410"/>
+<area shape="rect" id="Node000010" href="$classtoast_1_1EditorCameraController.html" title=" " alt="" coords="329,436,544,464"/>
+<area shape="poly" id="edge9_Node000002_Node000010" title=" " alt="" coords="509,465,568,473,633,474,699,463,731,452,759,436,781,417,799,394,825,342,840,291,847,255,851,251,845,292,830,344,804,397,785,421,763,440,733,457,701,468,634,479,567,478,509,470"/>
+<area shape="poly" id="edge10_Node000002_Node000011" title=" " alt="" coords="552,145,603,143,656,144,710,151,762,165,786,177,807,192,841,225,836,224,804,196,783,181,760,170,709,157,656,150,603,148,554,150"/>
 </map>

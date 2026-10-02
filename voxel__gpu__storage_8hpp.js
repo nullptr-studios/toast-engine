@@ -6,5 +6,6 @@ var voxel__gpu__storage_8hpp =
     [ "renderer::VoxelGpuStorage", "classrenderer_1_1VoxelGpuStorage.html", "classrenderer_1_1VoxelGpuStorage" ],
     [ "renderer::VoxelInstanceGpu", "structrenderer_1_1VoxelInstanceGpu.html", null ],
     [ "renderer::VoxelSceneUpload", "classrenderer_1_1VoxelSceneUpload.html", null ],
-    [ "renderer::VoxelScenePatchUpload", "classrenderer_1_1VoxelScenePatchUpload.html", "classrenderer_1_1VoxelScenePatchUpload" ]
+    [ "renderer::VoxelScenePatchUpload", "classrenderer_1_1VoxelScenePatchUpload.html", "classrenderer_1_1VoxelScenePatchUpload" ],
+    [ "renderer::k_voxel_instance_no_motion", "voxel__gpu__storage_8hpp.html#accf65c8b304f1c01d5519c8740aadc51", null ]
 ];

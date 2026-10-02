@@ -1,0 +1,10 @@
+<map id="event::DataAssetReloaded" name="event::DataAssetReloaded">
+<area shape="rect" id="Node000001" title="Anything that copied values out of the asset has to read them again." alt="" coords="39,260,233,288"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="5,183,267,211"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="138,224,138,261,134,258,134,228"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="51,5,210,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="134,47,138,183,133,182,129,50"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="152,82,293,110"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="159,40,209,81,204,83,158,46"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="203,120,150,184,146,180,199,123"/>
+</map>

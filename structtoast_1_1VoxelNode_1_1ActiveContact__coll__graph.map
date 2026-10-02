@@ -1,0 +1,9 @@
+<map id="toast::VoxelNode::ActiveContact" name="toast::VoxelNode::ActiveContact">
+<area shape="rect" id="Node000001" title=" " alt="" coords="34,224,214,268"/>
+<area shape="rect" id="Node000002" href="$structphysics_1_1BodyID.html" title=" " alt="" coords="5,114,131,142"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="77,155,95,198,110,223,104,223,90,201,74,159"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1Box.html" title=" " alt="" coords="155,106,298,151"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="205,162,175,201,151,225,148,221,171,198,201,165"/>
+<area shape="rect" id="Node000004" href="$classtoast_1_1Box.html" title="Intrusive reference&#45;counted handle to a Node." alt="" coords="164,5,289,33"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="228,46,229,106,224,104,225,51"/>
+</map>

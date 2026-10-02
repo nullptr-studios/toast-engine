@@ -1,4 +1,4 @@
 <map id="toast::Workspace::tick" name="toast::Workspace::tick">
-<area shape="rect" id="Node000001" title="Editor&#45;only per&#45;frame work: camera preview, animation preview, inspector streaming." alt="" coords="5,29,171,57"/>
+<area shape="rect" id="Node000001" title="Editor&#45;only per&#45;frame work: camera preview, animation preview, editorTick lifecycle,..." alt="" coords="5,29,171,57"/>
 <area shape="poly" id="edge1_Node000001_Node000001" title=" " alt="" coords="114,14,106,10,88,8,71,10,62,15,60,20,64,29,59,28,54,20,58,11,70,5,88,3,108,5,120,14"/>
 </map>

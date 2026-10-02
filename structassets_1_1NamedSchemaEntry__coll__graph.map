@@ -1,0 +1,15 @@
+<map id="assets::NamedSchemaEntry" name="assets::NamedSchemaEntry">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,401,210,429"/>
+<area shape="rect" id="Node000002" href="$structtoast_1_1UID.html" title=" " alt="" coords="44,5,131,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="87,46,89,119,89,307,95,359,106,401,101,400,90,360,84,307,84,118,86,51"/>
+<area shape="rect" id="Node000004" href="$classassets_1_1HandleBase.html" title="Base class for type&#45;erased asset handles." alt="" coords="129,106,278,134"/>
+<area shape="poly" id="edge5_Node000004_Node000002" title=" " alt="" coords="110,41,155,80,187,105,182,106,151,84,111,46"/>
+<area shape="rect" id="Node000003" href="$classassets_1_1Handle.html" title=" " alt="" coords="123,284,297,328"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="182,339,122,403,118,399,176,340"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="199,146,195,183,198,237,207,284,202,283,192,238,190,183,197,151"/>
+<area shape="rect" id="Node000006" href="$classassets_1_1Handle.html" title="Type&#45;safe smart pointer for assets." alt="" coords="204,183,360,211"/>
+<area shape="poly" id="edge7_Node000006_Node000004" title=" " alt="" coords="228,142,271,182,266,183,228,147"/>
+<area shape="rect" id="Node000005" href="$classassets_1_1Asset.html" title="Base class for all engine assets." alt="" coords="155,5,262,33"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="208,46,207,106,202,105,206,51"/>
+<area shape="poly" id="edge6_Node000003_Node000006" title=" " alt="" coords="267,222,227,285,223,281,263,225"/>
+</map>

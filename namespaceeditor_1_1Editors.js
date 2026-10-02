@@ -22,5 +22,6 @@ var namespaceeditor_1_1Editors =
     [ "TableRowVM", "classeditor_1_1Editors_1_1TableRowVM.html", null ],
     [ "TableView", "classeditor_1_1Editors_1_1TableView.html", null ],
     [ "TableViewModel", "classeditor_1_1Editors_1_1TableViewModel.html", null ],
+    [ "TypeSwitchCaseVM", "classeditor_1_1Editors_1_1TypeSwitchCaseVM.html", null ],
     [ "SchemaFieldDescriptor", "namespaceeditor_1_1Editors.html#ad79e87d912038a19dabee82671aa15c3", null ]
 ];

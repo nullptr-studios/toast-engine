@@ -1,3 +1,13 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="Node000000" href="$structrenderer_1_1voxel__debug_1_1Rgb.html" title=" " alt="" coords="5,5,205,33"/>
+<area shape="rect" id="Node000000" href="$classrenderer_1_1PendingResourceUpload.html" title=" " alt="" coords="5,101,202,146"/>
+<area shape="rect" id="Node000001" href="$classrenderer_1_1MeshUpload.html" title=" " alt="" coords="270,5,436,33"/>
+<area shape="poly" id="edge543_Node000000_Node000001" title=" " alt="" coords="153,90,199,66,249,43,289,32,285,35,251,48,201,71,156,95"/>
+<area shape="rect" id="Node000002" href="$classrenderer_1_1RawTextureUpload.html" title=" " alt="" coords="250,57,456,85"/>
+<area shape="poly" id="edge544_Node000000_Node000002" title=" " alt="" coords="216,97,285,84,280,87,218,102"/>
+<area shape="rect" id="Node000003" href="$classrenderer_1_1TextureUpload.html" title=" " alt="" coords="264,109,442,137"/>
+<area shape="poly" id="edge545_Node000000_Node000003" title=" " alt="" coords="217,121,266,122,261,124,218,126"/>
+<area shape="rect" id="Node000004" href="$classrenderer_1_1VoxelScenePatchUpload.html" title="Copies the previous storage and overwrites what changed so a carve does not pack or send the whole sc..." alt="" coords="256,161,450,206"/>
+<area shape="poly" id="edge546_Node000000_Node000004" title=" " alt="" coords="214,147,260,160,255,161,214,152"/>
+<area shape="rect" id="Node000005" href="$classrenderer_1_1VoxelSceneUpload.html" title=" " alt="" coords="251,229,455,257"/>
+<area shape="poly" id="edge547_Node000000_Node000005" title=" " alt="" coords="146,152,195,186,251,215,283,229,278,229,249,220,192,190,145,157"/>
 </map>

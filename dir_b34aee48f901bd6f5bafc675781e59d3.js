@@ -8,6 +8,7 @@ var dir_b34aee48f901bd6f5bafc675781e59d3 =
     [ "cubemap_target.hpp", "cubemap__target_8hpp.html", "cubemap__target_8hpp" ],
     [ "descriptor_writer.cpp", "descriptor__writer_8cpp.html", null ],
     [ "descriptor_writer.hpp", "descriptor__writer_8hpp.html", "descriptor__writer_8hpp" ],
+    [ "editor_overlays.hpp", "editor__overlays_8hpp.html", "editor__overlays_8hpp" ],
     [ "frustum.hpp", "frustum_8hpp.html", "frustum_8hpp" ],
     [ "gizmo.hpp", "gizmo_8hpp.html", null ],
     [ "gpu_timer.cpp", "gpu__timer_8cpp.html", null ],

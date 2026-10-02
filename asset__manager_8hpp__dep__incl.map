@@ -1,7 +1,9 @@
 <map id="engine/src/toast/assets/asset_manager.hpp" name="engine/src/toast/assets/asset_manager.hpp">
-<area shape="rect" id="Node000001" title="Maps URI schemes to filesystem roots and manages asset lifetime." alt="" coords="144,5,315,50"/>
+<area shape="rect" id="Node000001" title="Maps URI schemes to filesystem roots and manages asset lifetime." alt="" coords="257,5,428,50"/>
 <area shape="rect" id="Node000002" href="$environment__pass_8cpp.html" title=" " alt="" coords="5,106,227,151"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="196,59,142,108,139,104,191,61"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="282,56,167,108,165,103,277,57"/>
 <area shape="rect" id="Node000003" href="$reflection__probe__pass_8cpp.html" title=" " alt="" coords="250,98,435,160"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="266,58,311,98,306,97,265,63"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="344,64,345,99,340,96,341,67"/>
+<area shape="rect" id="Node000004" href="$voxel__node__utils_8hpp.html" title="Helpers the voxel nodes share, not part of the API." alt="" coords="459,106,664,151"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="405,54,516,106,511,106,404,59"/>
 </map>

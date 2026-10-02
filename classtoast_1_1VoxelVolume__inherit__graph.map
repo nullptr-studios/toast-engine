@@ -1,0 +1,17 @@
+<map id="toast::VoxelVolume" name="toast::VoxelVolume">
+<area shape="rect" id="Node000001" title=" " alt="" coords="171,308,317,336"/>
+<area shape="rect" id="Node000006" href="$classtoast_1_1CarveVolume.html" title=" " alt="" coords="5,384,155,411"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="203,343,110,386,108,381,198,342"/>
+<area shape="rect" id="Node000007" href="$classtoast_1_1FillVolume.html" title=" " alt="" coords="179,384,309,411"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="246,350,246,385,242,382,242,353"/>
+<area shape="rect" id="Node000008" href="$classtoast_1_1PaintVolume.html" title=" " alt="" coords="334,384,477,411"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="287,340,379,383,374,383,286,345"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1VoxelPiece.html" title=" " alt="" coords="178,232,310,260"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="246,274,246,309,242,306,242,278"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1Voxel.html" title=" " alt="" coords="195,157,293,184"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="245,198,246,233,242,231,243,202"/>
+<area shape="rect" id="Node000004" href="$classtoast_1_1Node3D.html" title=" " alt="" coords="187,81,301,109"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="245,122,247,157,241,155,243,127"/>
+<area shape="rect" id="Node000005" href="$classtoast_1_1Node.html" title=" " alt="" coords="196,5,292,33"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="245,46,247,81,241,80,243,51"/>
+</map>

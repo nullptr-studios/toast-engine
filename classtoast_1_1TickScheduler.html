@@ -146,7 +146,10 @@ void&#160;</td><td class="memItemRight"><b>compute</b> (const std::vector&lt; <a
 <tr class="memdesc:ad1b4ad1c9667bcd0c4a6e82b6b455e47"><td class="mdescLeft">&#160;</td><td class="mdescRight">Rebuilds the tick schedule from the given node set. <br /></td></tr>
 <tr class="memitem:a002172089ec3f1e7d6d24789c4547bb4" id="r_a002172089ec3f1e7d6d24789c4547bb4"><td class="memItemLeft"><a id="a002172089ec3f1e7d6d24789c4547bb4" name="a002172089ec3f1e7d6d24789c4547bb4"></a>
 void&#160;</td><td class="memItemRight"><b>run</b> () const</td></tr>
-<tr class="memdesc:a002172089ec3f1e7d6d24789c4547bb4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Runs all four phases (early_tick → tick → post_physics → late_tick) of the schedule. <br /></td></tr>
+<tr class="memdesc:a002172089ec3f1e7d6d24789c4547bb4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Runs the four frame phases (early_tick → tick → post_physics → late_tick) of the schedule. <br /></td></tr>
+<tr class="memitem:a5657cef238867dee9b7a96e7019b1ec2" id="r_a5657cef238867dee9b7a96e7019b1ec2"><td class="memItemLeft"><a id="a5657cef238867dee9b7a96e7019b1ec2" name="a5657cef238867dee9b7a96e7019b1ec2"></a>
+void&#160;</td><td class="memItemRight"><b>runPhaseSerial</b> (const std::vector&lt; _detail::TickSchedule::Wave &gt; &amp;phase, <a class="el" href="reflect__node_8hpp.html#ad08c233710fd0f56aefc18a7a9f1db5a">TickFunctionList</a> func, std::string_view name) const</td></tr>
+<tr class="memdesc:a5657cef238867dee9b7a96e7019b1ec2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Runs a phase wave by wave on the calling thread; for phases that touch thread-bound state like the physics simulator. <br /></td></tr>
 <tr class="memitem:a30cb7092b454ff283d6cd1568dac301c" id="r_a30cb7092b454ff283d6cd1568dac301c"><td class="memItemLeft"><a id="a30cb7092b454ff283d6cd1568dac301c" name="a30cb7092b454ff283d6cd1568dac301c"></a>
 void&#160;</td><td class="memItemRight"><b>runPhase</b> (const std::vector&lt; _detail::TickSchedule::Wave &gt; &amp;phase, <a class="el" href="reflect__node_8hpp.html#ad08c233710fd0f56aefc18a7a9f1db5a">TickFunctionList</a> func, std::string_view name) const</td></tr>
 <tr class="memdesc:a30cb7092b454ff283d6cd1568dac301c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dispatches a single phase of the tick schedule. <br /></td></tr>

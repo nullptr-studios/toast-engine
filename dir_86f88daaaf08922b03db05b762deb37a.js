@@ -8,6 +8,7 @@ var dir_86f88daaaf08922b03db05b762deb37a =
     [ "core_types.hpp", "core__types_8hpp.html", "core__types_8hpp" ],
     [ "curve.hpp", "curve_8hpp.html", "curve_8hpp" ],
     [ "data.hpp", "data_8hpp.html", "data_8hpp" ],
+    [ "data_schema_codegen.hpp", "data__schema__codegen_8hpp.html", "data__schema__codegen_8hpp" ],
     [ "data_value.hpp", "data__value_8hpp.html", "data__value_8hpp" ],
     [ "gltf_importer.hpp", "gltf__importer_8hpp.html", null ],
     [ "hdr_image.cpp", "hdr__image_8cpp.html", "hdr__image_8cpp" ],
@@ -21,9 +22,5 @@ var dir_86f88daaaf08922b03db05b762deb37a =
     [ "script.hpp", "script_8hpp.html", "script_8hpp" ],
     [ "shader.hpp", "shader_8hpp.html", "shader_8hpp" ],
     [ "texture.hpp", "texture_8hpp.html", "texture_8hpp" ],
-    [ "types.hpp", "types_8hpp.html", null ],
-    [ "vox_import.hpp", "vox__import_8hpp.html", "vox__import_8hpp" ],
-    [ "vox_intermediates.hpp", "vox__intermediates_8hpp.html", "vox__intermediates_8hpp" ],
-    [ "voxel_model.hpp", "voxel__model_8hpp.html", "voxel__model_8hpp" ],
-    [ "voxel_palette.hpp", "voxel__palette_8hpp.html", "voxel__palette_8hpp" ]
+    [ "types.hpp", "types_8hpp.html", null ]
 ];

@@ -10,7 +10,7 @@ var classrenderer_1_1VulkanRenderer =
     [ "ShadowView", "structrenderer_1_1VulkanRenderer_1_1ShadowView.html", null ],
     [ "ShadowFrame", "structrenderer_1_1VulkanRenderer_1_1ShadowFrame.html", "structrenderer_1_1VulkanRenderer_1_1ShadowFrame" ],
     [ "MeshInstanceProxy", "structrenderer_1_1VulkanRenderer_1_1MeshInstanceProxy.html", null ],
-    [ "VoxelVolumeProxy", "structrenderer_1_1VulkanRenderer_1_1VoxelVolumeProxy.html", null ],
+    [ "VoxelVolumeProxy", "structrenderer_1_1VulkanRenderer_1_1VoxelVolumeProxy.html", "structrenderer_1_1VulkanRenderer_1_1VoxelVolumeProxy" ],
     [ "UIWorldPanelProxy", "structrenderer_1_1VulkanRenderer_1_1UIWorldPanelProxy.html", null ],
     [ "DebugVertex", "structrenderer_1_1VulkanRenderer_1_1DebugVertex.html", null ],
     [ "DebugBillboard", "structrenderer_1_1VulkanRenderer_1_1DebugBillboard.html", null ],
@@ -30,10 +30,12 @@ var classrenderer_1_1VulkanRenderer =
     [ "getSceneNormalView", "classrenderer_1_1VulkanRenderer.html#aecfbe1f225ae22e09404b5dd473efff6", null ],
     [ "getVoxelFaceNormalView", "classrenderer_1_1VulkanRenderer.html#ad77342b9a4c0d30b1633f814ec950493", null ],
     [ "gpuTimer", "classrenderer_1_1VulkanRenderer.html#ac31919952a1835944a10c95c6fefffa7", null ],
+    [ "queueDebugLine", "classrenderer_1_1VulkanRenderer.html#a64451eb0105c628add467b121e7527fe", null ],
     [ "requestPostProcessSettings", "classrenderer_1_1VulkanRenderer.html#ab68b60d1454b0e6196089c80015764d2", null ],
     [ "setClampToSimulation", "classrenderer_1_1VulkanRenderer.html#a2145059581fd6f688e3c2b0a8fb8f047", null ],
     [ "setFrameRateLimit", "classrenderer_1_1VulkanRenderer.html#a9a5185a0cb7cab573e5863e86bdd4420", null ],
     [ "setRenderOwnerFilter", "classrenderer_1_1VulkanRenderer.html#a31165884aa4a043743e459d974eabbc4", null ],
+    [ "setVoxelHighlight", "classrenderer_1_1VulkanRenderer.html#a3e0fa0039ad273616e5259ebf4706f06", null ],
     [ "setVoxelNormalRounding", "classrenderer_1_1VulkanRenderer.html#a7eecd740bee399682e7462ec13d15382", null ],
     [ "setVoxelPass", "classrenderer_1_1VulkanRenderer.html#af99a4f011583d98972c29370251f71a6", null ]
 ];

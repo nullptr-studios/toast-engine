@@ -1,0 +1,8 @@
+<map id="toast::Node::scripts" name="toast::Node::scripts">
+<area shape="rect" id="Node000001" title=" " alt="" coords="410,29,557,57"/>
+<area shape="poly" id="edge1_Node000001_Node000001" title=" " alt="" coords="517,14,506,10,484,8,462,10,451,15,448,20,453,30,448,28,442,20,447,11,461,5,484,3,508,5,523,14"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1Node.html#adb1a4e905fb787cf144cf6f230f14fba" title=" " alt="" coords="194,29,362,57"/>
+<area shape="poly" id="edge2_Node000001_Node000002" title=" " alt="" coords="392,43,363,46,362,41,397,43"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1VoxelPiece.html#ac0a1f514751d5b0d8601e7fb65319aa9" title=" " alt="" coords="5,21,146,66"/>
+<area shape="poly" id="edge3_Node000002_Node000003" title=" " alt="" coords="176,43,146,46,146,41,181,43"/>
+</map>

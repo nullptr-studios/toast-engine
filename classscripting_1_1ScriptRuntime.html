@@ -140,6 +140,8 @@ auto&#160;</td><td class="memItemRight"><b>hasFunction</b> (std::string_view fn_
 auto&#160;</td><td class="memItemRight"><b>functions</b> () const noexcept -&gt; std::vector&lt; <a class="el" href="structscripting_1_1LuaFunctionDesc.html">LuaFunctionDesc</a> &gt;</td></tr>
 <tr class="memitem:a6d7debcb045c7072682e90f2c57c0389" id="r_a6d7debcb045c7072682e90f2c57c0389"><td class="memItemLeft"><a id="a6d7debcb045c7072682e90f2c57c0389" name="a6d7debcb045c7072682e90f2c57c0389"></a>
 void&#160;</td><td class="memItemRight"><b>callWithLuaStack</b> (std::string_view name, lua_State *l, int args_base, int n_args) noexcept</td></tr>
+<tr class="memitem:ad2b046c776b4ca96d550651c5c1d5fc6" id="r_ad2b046c776b4ca96d550651c5c1d5fc6"><td class="memItemLeft"><a id="ad2b046c776b4ca96d550651c5c1d5fc6" name="ad2b046c776b4ca96d550651c5c1d5fc6"></a>
+auto&#160;</td><td class="memItemRight"><b>callEventMethod</b> (std::string_view name, lua_State *l, int event_index) noexcept -&gt; bool</td></tr>
 <tr class="memitem:ae32366e45abd75badff314bcbe51e955" id="r_ae32366e45abd75badff314bcbe51e955"><td class="memItemLeft"><a id="ae32366e45abd75badff314bcbe51e955" name="ae32366e45abd75badff314bcbe51e955"></a>
 void&#160;</td><td class="memItemRight"><b>callWithAnyArgs</b> (std::string_view name, std::span&lt; const std::any &gt; args) noexcept</td></tr>
 <tr class="memdesc:ae32366e45abd75badff314bcbe51e955"><td class="mdescLeft">&#160;</td><td class="mdescRight">Ccall with args provided as std::any values. <br /></td></tr>

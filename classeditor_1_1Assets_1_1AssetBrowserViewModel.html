@@ -157,6 +157,10 @@ void&#160;</td><td class="memItemRight"><b>RevealAsset</b> (string uid)</td></tr
 void&#160;</td><td class="memItemRight"><b>SelectItem</b> (object item, KeyModifiers modifiers)</td></tr>
 <tr class="memitem:a7dc405550b1515fb7d3d44695ce4e8f5" id="r_a7dc405550b1515fb7d3d44695ce4e8f5"><td class="memItemLeft"><a id="a7dc405550b1515fb7d3d44695ce4e8f5" name="a7dc405550b1515fb7d3d44695ce4e8f5"></a>
 void&#160;</td><td class="memItemRight"><b>ClearSelection</b> ()</td></tr>
+<tr class="memitem:a896e32e989a1605dd30aa770eb25364a" id="r_a896e32e989a1605dd30aa770eb25364a"><td class="memItemLeft"><a id="a896e32e989a1605dd30aa770eb25364a" name="a896e32e989a1605dd30aa770eb25364a"></a>
+IReadOnlyList&lt; <a class="el" href="classeditor_1_1Assets_1_1AssetFile.html">AssetFile</a> &gt;&#160;</td><td class="memItemRight"><b>TagTargets</b> (<a class="el" href="classeditor_1_1Assets_1_1AssetFile.html">AssetFile</a> clicked)</td></tr>
+<tr class="memitem:ae776876d4976410a040b69276663f7ab" id="r_ae776876d4976410a040b69276663f7ab"><td class="memItemLeft"><a id="ae776876d4976410a040b69276663f7ab" name="ae776876d4976410a040b69276663f7ab"></a>
+void&#160;</td><td class="memItemRight"><b>SetTag</b> (IReadOnlyCollection&lt; <a class="el" href="classeditor_1_1Assets_1_1AssetFile.html">AssetFile</a> &gt; files, <a class="el" href="classeditor_1_1Assets_1_1AssetTag.html">AssetTag</a> tag, bool enabled)</td></tr>
 <tr class="memitem:a9b8bc5103d1bc71000fdbde595916bdf" id="r_a9b8bc5103d1bc71000fdbde595916bdf"><td class="memItemLeft"><a id="a9b8bc5103d1bc71000fdbde595916bdf" name="a9b8bc5103d1bc71000fdbde595916bdf"></a>
 async Task&#160;</td><td class="memItemRight"><b>HandleDroppedFilesAsync</b> (IReadOnlyList&lt; string &gt; paths)</td></tr>
 <tr class="memitem:a85c3639601a06454ca43a9dc49d3362a" id="r_a85c3639601a06454ca43a9dc49d3362a"><td class="memItemLeft"><a id="a85c3639601a06454ca43a9dc49d3362a" name="a85c3639601a06454ca43a9dc49d3362a"></a>
@@ -192,6 +196,24 @@ bool&#160;</td><td class="memItemRight"><b>CanWriteToSelectedFolder</b><code> [g
 string&#160;</td><td class="memItemRight"><b>SearchText</b><code> [get, set]</code></td></tr>
 <tr class="memitem:a2e140e3684a76cefbe6a50eedfd9be45" id="r_a2e140e3684a76cefbe6a50eedfd9be45"><td class="memItemLeft"><a id="a2e140e3684a76cefbe6a50eedfd9be45" name="a2e140e3684a76cefbe6a50eedfd9be45"></a>
 bool?&#160;</td><td class="memItemRight"><b>FilterAll</b><code> [get, set]</code></td></tr>
+<tr class="memitem:a422ea27b654064afb9c557f274e71d06" id="r_a422ea27b654064afb9c557f274e71d06"><td class="memItemLeft"><a id="a422ea27b654064afb9c557f274e71d06" name="a422ea27b654064afb9c557f274e71d06"></a>
+ObservableCollection&lt; <a class="el" href="classeditor_1_1Assets_1_1AssetTagFilter.html">AssetTagFilter</a> &gt;&#160;</td><td class="memItemRight"><b>TagFilters</b> = []<code> [get]</code></td></tr>
+<tr class="memitem:a75af04f99b287a6376e726e8c314a924" id="r_a75af04f99b287a6376e726e8c314a924"><td class="memItemLeft"><a id="a75af04f99b287a6376e726e8c314a924" name="a75af04f99b287a6376e726e8c314a924"></a>
+bool&#160;</td><td class="memItemRight"><b>HasTags</b><code> [get]</code></td></tr>
+<tr class="memitem:a05406c5498df0d6c5f840c7cf22d4de9" id="r_a05406c5498df0d6c5f840c7cf22d4de9"><td class="memItemLeft"><a id="a05406c5498df0d6c5f840c7cf22d4de9" name="a05406c5498df0d6c5f840c7cf22d4de9"></a>
+bool?&#160;</td><td class="memItemRight"><b>TagFilterAll</b><code> [get, set]</code></td></tr>
+<tr class="memitem:ae4bad3cdd4287c655dad559122ba1395" id="r_ae4bad3cdd4287c655dad559122ba1395"><td class="memItemLeft"><a id="ae4bad3cdd4287c655dad559122ba1395" name="ae4bad3cdd4287c655dad559122ba1395"></a>
+bool&#160;</td><td class="memItemRight"><b>ShowTags</b><code> [get]</code></td></tr>
+<tr class="memitem:aa9f29e098897b348c84c82537c6ce29f" id="r_aa9f29e098897b348c84c82537c6ce29f"><td class="memItemLeft"><a id="aa9f29e098897b348c84c82537c6ce29f" name="aa9f29e098897b348c84c82537c6ce29f"></a>
+bool&#160;</td><td class="memItemRight"><b>ShowTypeBadge</b><code> [get]</code></td></tr>
+<tr class="memitem:a3a7c017a938488031af00057f2f5ef36" id="r_a3a7c017a938488031af00057f2f5ef36"><td class="memItemLeft"><a id="a3a7c017a938488031af00057f2f5ef36" name="a3a7c017a938488031af00057f2f5ef36"></a>
+double&#160;</td><td class="memItemRight"><b>CardWidth</b><code> [get]</code></td></tr>
+<tr class="memitem:aadeae997457f73e1a77ddd8765c2bd32" id="r_aadeae997457f73e1a77ddd8765c2bd32"><td class="memItemLeft"><a id="aadeae997457f73e1a77ddd8765c2bd32" name="aadeae997457f73e1a77ddd8765c2bd32"></a>
+double&#160;</td><td class="memItemRight"><b>CardHeight</b><code> [get]</code></td></tr>
+<tr class="memitem:ac2d9c85a3140e6ba212729d2add9e00d" id="r_ac2d9c85a3140e6ba212729d2add9e00d"><td class="memItemLeft"><a id="ac2d9c85a3140e6ba212729d2add9e00d" name="ac2d9c85a3140e6ba212729d2add9e00d"></a>
+double&#160;</td><td class="memItemRight"><b>PreviewHeight</b><code> [get]</code></td></tr>
+<tr class="memitem:a43e4c14eff0e092e20b6d89e14439759" id="r_a43e4c14eff0e092e20b6d89e14439759"><td class="memItemLeft"><a id="a43e4c14eff0e092e20b6d89e14439759" name="a43e4c14eff0e092e20b6d89e14439759"></a>
+double&#160;</td><td class="memItemRight"><b>PreviewIconSize</b><code> [get]</code></td></tr>
 <tr class="memitem:abbc947c57036fa3fd3b8546c3445e1a9" id="r_abbc947c57036fa3fd3b8546c3445e1a9"><td class="memItemLeft"><a id="abbc947c57036fa3fd3b8546c3445e1a9" name="abbc947c57036fa3fd3b8546c3445e1a9"></a>
 IReadOnlyList&lt; <a class="el" href="classeditor_1_1Assets_1_1BreadcrumbItem.html">BreadcrumbItem</a> &gt;&#160;</td><td class="memItemRight"><b>BreadcrumbItems</b><code> [get]</code></td></tr>
 <tr class="memitem:a6b7d47745fb43d38bfdc161c58bd3abe" id="r_a6b7d47745fb43d38bfdc161c58bd3abe"><td class="memItemLeft"><a id="a6b7d47745fb43d38bfdc161c58bd3abe" name="a6b7d47745fb43d38bfdc161c58bd3abe"></a>
@@ -228,12 +250,39 @@ ICommand&#160;</td><td class="memItemRight"><b>NewNodeGenericCommand</b><code> [
 ICommand&#160;</td><td class="memItemRight"><b>NewAssetCommand</b><code> [get]</code></td></tr>
 <tr class="memitem:a68798147c1e62b596c1e98a94afb6bad" id="r_a68798147c1e62b596c1e98a94afb6bad"><td class="memItemLeft"><a id="a68798147c1e62b596c1e98a94afb6bad" name="a68798147c1e62b596c1e98a94afb6bad"></a>
 ICommand&#160;</td><td class="memItemRight"><b>ReimportCommand</b><code> [get]</code></td></tr>
+<tr class="memitem:a93934990e00505f34e3173b8121c167f" id="r_a93934990e00505f34e3173b8121c167f"><td class="memItemLeft">ICommand&#160;</td><td class="memItemRight"><a class="el" href="#a93934990e00505f34e3173b8121c167f">ManageTagsCommand</a><code> [get]</code></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-events" class="groupheader"><a id="events" name="events"></a>
 Events</h2></td></tr>
 <tr class="memitem:a599bd6ee244c87696692e77b880a72c3" id="r_a599bd6ee244c87696692e77b880a72c3"><td class="memItemLeft"><a id="a599bd6ee244c87696692e77b880a72c3" name="a599bd6ee244c87696692e77b880a72c3"></a>
 new? PropertyChangedEventHandler&#160;</td><td class="memItemRight"><b>PropertyChanged</b></td></tr>
 </table>
+<a name="doc-property-members" id="doc-property-members"></a><h2 id="header-doc-property-members" class="groupheader">Property Documentation</h2>
+<a id="a93934990e00505f34e3173b8121c167f" name="a93934990e00505f34e3173b8121c167f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a93934990e00505f34e3173b8121c167f">&#9670;&#160;</a></span>ManageTagsCommand</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">ICommand editor.Assets.AssetBrowserViewModel.ManageTagsCommand</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel get">get</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">= <span class="keyword">new</span> RelayCommand(() =&gt;</div>
+<div class="line">    MainWindowViewModel.Current?.OpenProjectSettingsAt(SettingsTab.Editor,</div>
+<div class="line">      ProjectSettingsViewModel.AssetBrowserCategory))</div>
+</div><!-- fragment -->
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>editor/Assets/<b>AssetBrowserViewModel.cs</b></li>
 </ul>

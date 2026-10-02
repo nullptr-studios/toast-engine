@@ -184,6 +184,7 @@ void&#160;</td><td class="memItemRight"><b>start</b> () noexcept</td></tr>
 auto&#160;</td><td class="memItemRight"><b>beginFrameBuild</b> () noexcept -&gt; <a class="el" href="structrenderer_1_1VulkanRenderer_1_1RenderFrame.html">RenderFrame</a> &amp;</td></tr>
 <tr class="memitem:a61322bd6c4cdb2629b9788485468b14d" id="r_a61322bd6c4cdb2629b9788485468b14d"><td class="memItemLeft"><a id="a61322bd6c4cdb2629b9788485468b14d" name="a61322bd6c4cdb2629b9788485468b14d"></a>
 void&#160;</td><td class="memItemRight"><b>submitFrame</b> () noexcept</td></tr>
+<tr class="memitem:a64451eb0105c628add467b121e7527fe" id="r_a64451eb0105c628add467b121e7527fe"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a64451eb0105c628add467b121e7527fe">queueDebugLine</a> (glm::vec3 a, glm::vec3 b, glm::vec4 color)</td></tr>
 <tr class="memitem:a44d0829ba7e4cbd83f99cfa6fd242cde" id="r_a44d0829ba7e4cbd83f99cfa6fd242cde"><td class="memItemLeft"><a id="a44d0829ba7e4cbd83f99cfa6fd242cde" name="a44d0829ba7e4cbd83f99cfa6fd242cde"></a>
 void&#160;</td><td class="memItemRight"><b>tick</b> (float time) noexcept</td></tr>
 <tr class="memitem:ac1fd964be73e25a30deda7e5a76228cf" id="r_ac1fd964be73e25a30deda7e5a76228cf"><td class="memItemLeft"><a id="ac1fd964be73e25a30deda7e5a76228cf" name="ac1fd964be73e25a30deda7e5a76228cf"></a>
@@ -416,6 +417,9 @@ void&#160;</td><td class="memItemRight"><b>requestPostProcessSettings</b> (const
 <tr class="memitem:a31165884aa4a043743e459d974eabbc4" id="r_a31165884aa4a043743e459d974eabbc4"><td class="memItemLeft"><a id="a31165884aa4a043743e459d974eabbc4" name="a31165884aa4a043743e459d974eabbc4"></a>
 void&#160;</td><td class="memItemRight"><b>setRenderOwnerFilter</b> (const <a class="el" href="classtoast_1_1INodeOwner.html">toast::INodeOwner</a> *owner)</td></tr>
 <tr class="memdesc:a31165884aa4a043743e459d974eabbc4"><td class="mdescLeft">&#160;</td><td class="mdescRight">nullptr renders every owner. Main thread only <br /></td></tr>
+<tr class="memitem:a3e0fa0039ad273616e5259ebf4706f06" id="r_a3e0fa0039ad273616e5259ebf4706f06"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a3e0fa0039ad273616e5259ebf4706f06">setVoxelHighlight</a> (const <a class="el" href="classtoast_1_1VoxelNode.html">toast::VoxelNode</a> *node, const <a class="el" href="classvoxel_1_1Volume.html">voxel::Volume</a> *highlight)</td></tr>
+<tr class="memitem:a9f9e8aa2a8136a0250660b9ffc4c934c" id="r_a9f9e8aa2a8136a0250660b9ffc4c934c"><td class="memItemLeft"><a id="a9f9e8aa2a8136a0250660b9ffc4c934c" name="a9f9e8aa2a8136a0250660b9ffc4c934c"></a>
+void&#160;</td><td class="memItemRight"><b>setSecondaryOwner</b> (const <a class="el" href="classtoast_1_1INodeOwner.html">toast::INodeOwner</a> *owner, const glm::mat4 &amp;transform, const <a class="el" href="classtoast_1_1Node.html">toast::Node</a> *hidden)</td></tr>
 <tr class="memitem:ac394e7962137c1e94dba67b0e91be6b0" id="r_ac394e7962137c1e94dba67b0e91be6b0"><td class="memItemLeft"><a id="ac394e7962137c1e94dba67b0e91be6b0" name="ac394e7962137c1e94dba67b0e91be6b0"></a>
 auto&#160;</td><td class="memItemRight"><b>renderingFrame</b> () const -&gt; const <a class="el" href="structrenderer_1_1VulkanRenderer_1_1RenderFrame.html">RenderFrame</a> *</td></tr>
 <tr class="memitem:a04e9f5dd3b7d8b363964c6d92fb080a1" id="r_a04e9f5dd3b7d8b363964c6d92fb080a1"><td class="memItemLeft"><a id="a04e9f5dd3b7d8b363964c6d92fb080a1" name="a04e9f5dd3b7d8b363964c6d92fb080a1"></a>
@@ -507,6 +511,63 @@ static VulkanRenderer *&#160;</td><td class="memItemRight"><b>instance</b> = nul
 </table>
 </div><div class="memdoc">
 <dl class="section note"><dt>Note</dt><dd>Render thread only </dd></dl>
+
+</div>
+</div>
+<a id="a64451eb0105c628add467b121e7527fe" name="a64451eb0105c628add467b121e7527fe"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a64451eb0105c628add467b121e7527fe">&#9670;&#160;</a></span>queueDebugLine()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void renderer::VulkanRenderer::queueDebugLine </td>
+          <td>(</td>
+          <td class="paramtype">glm::vec3</td>          <td class="paramname"><span class="paramname"><em>a</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">glm::vec3</td>          <td class="paramname"><span class="paramname"><em>b</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">glm::vec4</td>          <td class="paramname"><span class="paramname"><em>color</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Queues a debug line for the current render frame, or for the next one when called from gameplay code before frame construction begins. </p>
+
+</div>
+</div>
+<a id="a3e0fa0039ad273616e5259ebf4706f06" name="a3e0fa0039ad273616e5259ebf4706f06"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3e0fa0039ad273616e5259ebf4706f06">&#9670;&#160;</a></span>setVoxelHighlight()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void renderer::VulkanRenderer::setVoxelHighlight </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classtoast_1_1VoxelNode.html">toast::VoxelNode</a> *</td>          <td class="paramname"><span class="paramname"><em>node</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classvoxel_1_1Volume.html">voxel::Volume</a> *</td>          <td class="paramname"><span class="paramname"><em>highlight</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Tints the voxels of node that are solid in highlight </p><dl class="section note"><dt>Note</dt><dd>nullptr clears it </dd></dl>
 
 </div>
 </div>

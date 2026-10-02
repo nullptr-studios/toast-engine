@@ -1,0 +1,11 @@
+<map id="toast::VoxelMesh" name="toast::VoxelMesh">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,308,138,336"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1VoxelPiece.html" title=" " alt="" coords="5,232,138,260"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="73,274,74,308,69,307,70,278"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1Voxel.html" title=" " alt="" coords="23,157,120,184"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="72,198,74,232,69,231,71,203"/>
+<area shape="rect" id="Node000004" href="$classtoast_1_1Node3D.html" title=" " alt="" coords="14,81,129,109"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="72,122,74,157,69,156,71,127"/>
+<area shape="rect" id="Node000005" href="$classtoast_1_1Node.html" title=" " alt="" coords="23,5,120,33"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="72,46,74,81,69,80,71,51"/>
+</map>

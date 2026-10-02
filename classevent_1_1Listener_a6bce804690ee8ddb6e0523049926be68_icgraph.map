@@ -1,0 +1,5 @@
+<map id="event::Listener::unsubscribe" name="event::Listener::unsubscribe">
+<area shape="rect" id="Node000001" title="unsubscribes every event in type TEvent with that name" alt="" coords="249,5,453,33"/>
+<area shape="rect" id="Node000002" href="$lua__event_8hpp.html#a705d9fe8f9b6ac3f16a71b983a83414a" title=" " alt="" coords="5,5,201,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="230,19,201,22,201,17,236,19"/>
+</map>

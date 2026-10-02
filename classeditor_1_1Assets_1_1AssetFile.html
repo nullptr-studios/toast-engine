@@ -143,6 +143,12 @@ Collaboration diagram for editor.Assets.AssetFile:</div>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a605534861c0258c208f5c7a0dac1a3c2" id="r_a605534861c0258c208f5c7a0dac1a3c2"><td class="memItemLeft"><a id="a605534861c0258c208f5c7a0dac1a3c2" name="a605534861c0258c208f5c7a0dac1a3c2"></a>
 &#160;</td><td class="memItemRight"><b>AssetFile</b> (string path)</td></tr>
+<tr class="memitem:ab4435285bb4a6c82a58be762ab414312" id="r_ab4435285bb4a6c82a58be762ab414312"><td class="memItemLeft"><a id="ab4435285bb4a6c82a58be762ab414312" name="ab4435285bb4a6c82a58be762ab414312"></a>
+void&#160;</td><td class="memItemRight"><b>RefreshThumbnail</b> ()</td></tr>
+<tr class="memitem:af7e94e01f4cb61ebb810c31ea0a26069" id="r_af7e94e01f4cb61ebb810c31ea0a26069"><td class="memItemLeft"><a id="af7e94e01f4cb61ebb810c31ea0a26069" name="af7e94e01f4cb61ebb810c31ea0a26069"></a>
+bool&#160;</td><td class="memItemRight"><b>WriteTags</b> (IReadOnlyCollection&lt; string &gt; tagIds)</td></tr>
+<tr class="memitem:a066c2d1260857ae94a1e2a118911d406" id="r_a066c2d1260857ae94a1e2a118911d406"><td class="memItemLeft"><a id="a066c2d1260857ae94a1e2a118911d406" name="a066c2d1260857ae94a1e2a118911d406"></a>
+void&#160;</td><td class="memItemRight"><b>NotifyTagsChanged</b> ()</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -167,10 +173,22 @@ string&#160;</td><td class="memItemRight"><b>TypeLabel</b><code> [get]</code></t
 <a class="el" href="classeditor_1_1Assets_1_1AssetBrowserViewModel.html">AssetBrowserViewModel</a>?&#160;</td><td class="memItemRight"><b>Owner</b><code> [get, set]</code></td></tr>
 <tr class="memitem:ae836d5ef9561708817be54fa6d5d3d2c" id="r_ae836d5ef9561708817be54fa6d5d3d2c"><td class="memItemLeft"><a id="ae836d5ef9561708817be54fa6d5d3d2c" name="ae836d5ef9561708817be54fa6d5d3d2c"></a>
 bool&#160;</td><td class="memItemRight"><b>CanModify</b><code> [get]</code></td></tr>
+<tr class="memitem:a27eff16f072c22f5d54a101ee1d830ea" id="r_a27eff16f072c22f5d54a101ee1d830ea"><td class="memItemLeft"><a id="a27eff16f072c22f5d54a101ee1d830ea" name="a27eff16f072c22f5d54a101ee1d830ea"></a>
+bool&#160;</td><td class="memItemRight"><b>CanTag</b><code> [get]</code></td></tr>
 <tr class="memitem:a9941ba0495a185c64015abac183266cd" id="r_a9941ba0495a185c64015abac183266cd"><td class="memItemLeft"><a id="a9941ba0495a185c64015abac183266cd" name="a9941ba0495a185c64015abac183266cd"></a>
 bool&#160;</td><td class="memItemRight"><b>IsSelected</b><code> [get, set]</code></td></tr>
+<tr class="memitem:a6f60d7404f976fc3c3a923f7bdfdbe03" id="r_a6f60d7404f976fc3c3a923f7bdfdbe03"><td class="memItemLeft"><a id="a6f60d7404f976fc3c3a923f7bdfdbe03" name="a6f60d7404f976fc3c3a923f7bdfdbe03"></a>
+MetaHeader?&#160;</td><td class="memItemRight"><b>Header</b><code> [get]</code></td></tr>
 <tr class="memitem:acbc9b4effee165e3253fc053f6f0c7aa" id="r_acbc9b4effee165e3253fc053f6f0c7aa"><td class="memItemLeft"><a id="acbc9b4effee165e3253fc053f6f0c7aa" name="acbc9b4effee165e3253fc053f6f0c7aa"></a>
 string?&#160;</td><td class="memItemRight"><b>Uid</b><code> [get]</code></td></tr>
+<tr class="memitem:a8e1020deef73175865df51fd86462863" id="r_a8e1020deef73175865df51fd86462863"><td class="memItemLeft"><a id="a8e1020deef73175865df51fd86462863" name="a8e1020deef73175865df51fd86462863"></a>
+string&#160;</td><td class="memItemRight"><b>ModifiedAt</b><code> [get]</code></td></tr>
+<tr class="memitem:adad6ba2a5b28fcc292c4cd20d927acf8" id="r_adad6ba2a5b28fcc292c4cd20d927acf8"><td class="memItemLeft"><a id="adad6ba2a5b28fcc292c4cd20d927acf8" name="adad6ba2a5b28fcc292c4cd20d927acf8"></a>
+IReadOnlyList&lt; string &gt;&#160;</td><td class="memItemRight"><b>TagIds</b><code> [get]</code></td></tr>
+<tr class="memitem:a7bb03869223f4f6471dc0d76c321101b" id="r_a7bb03869223f4f6471dc0d76c321101b"><td class="memItemLeft"><a id="a7bb03869223f4f6471dc0d76c321101b" name="a7bb03869223f4f6471dc0d76c321101b"></a>
+IReadOnlyList&lt; <a class="el" href="classeditor_1_1Assets_1_1AssetTag.html">AssetTag</a> &gt;&#160;</td><td class="memItemRight"><b>Tags</b><code> [get]</code></td></tr>
+<tr class="memitem:acf88e6bffd3d50c7d4202abdbed5add2" id="r_acf88e6bffd3d50c7d4202abdbed5add2"><td class="memItemLeft"><a id="acf88e6bffd3d50c7d4202abdbed5add2" name="acf88e6bffd3d50c7d4202abdbed5add2"></a>
+ICommand&#160;</td><td class="memItemRight"><b>RemoveTagCommand</b><code> [get]</code></td></tr>
 <tr class="memitem:a38d2b784777814641137745850b87eac" id="r_a38d2b784777814641137745850b87eac"><td class="memItemLeft"><a id="a38d2b784777814641137745850b87eac" name="a38d2b784777814641137745850b87eac"></a>
 Bitmap?&#160;</td><td class="memItemRight"><b>Thumbnail</b><code> [get]</code></td></tr>
 <tr class="memitem:affa41a467255a63dc0be43831152dec8" id="r_affa41a467255a63dc0be43831152dec8"><td class="memItemLeft"><a id="affa41a467255a63dc0be43831152dec8" name="affa41a467255a63dc0be43831152dec8"></a>

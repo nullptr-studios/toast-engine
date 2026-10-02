@@ -1,0 +1,5 @@
+<map id="voxel::Volume::WritableBrick" name="voxel::Volume::WritableBrick">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,106,215,134"/>
+<area shape="rect" id="Node000002" href="$structvoxel_1_1BrickOccupancy.html" title="One 64&#45;bit word per z&#45;slice with bit y * 8 + x." alt="" coords="26,5,194,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="112,47,113,106,107,105,108,50"/>
+</map>

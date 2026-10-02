@@ -144,6 +144,8 @@ float&#160;</td><td class="memItemRight"><b>sleep_linear_threshold</b> = 0.05f</
 float&#160;</td><td class="memItemRight"><b>sleep_angular_threshold</b> = 0.05f</td></tr>
 <tr class="memitem:a48f0317aa1f2e4d0b5b3ffb68b83b353" id="r_a48f0317aa1f2e4d0b5b3ffb68b83b353"><td class="memItemLeft"><a id="a48f0317aa1f2e4d0b5b3ffb68b83b353" name="a48f0317aa1f2e4d0b5b3ffb68b83b353"></a>
 float&#160;</td><td class="memItemRight"><b>sleep_delay</b> = 0.5f</td></tr>
+<tr class="memitem:abe86ecc3e4ce13bcfc09c1702f26a242" id="r_abe86ecc3e4ce13bcfc09c1702f26a242"><td class="memItemLeft"><a id="abe86ecc3e4ce13bcfc09c1702f26a242" name="abe86ecc3e4ce13bcfc09c1702f26a242"></a>
+float&#160;</td><td class="memItemRight"><b>sleep_drift</b> = 0.05f</td></tr>
 <tr class="memitem:ab3a8b0f5bf8d883762c0365f4177e5af" id="r_ab3a8b0f5bf8d883762c0365f4177e5af"><td class="memItemLeft"><a id="ab3a8b0f5bf8d883762c0365f4177e5af" name="ab3a8b0f5bf8d883762c0365f4177e5af"></a>
 double&#160;</td><td class="memItemRight"><b>frequency</b> = 60.0</td></tr>
 <tr class="memitem:a4608551ad426c08a8df567f600155e12" id="r_a4608551ad426c08a8df567f600155e12"><td class="memItemLeft"><a id="a4608551ad426c08a8df567f600155e12" name="a4608551ad426c08a8df567f600155e12"></a>
@@ -168,6 +170,8 @@ uint32_t&#160;</td><td class="memItemRight"><b>fragment_despawn_max_voxels</b> =
 float&#160;</td><td class="memItemRight"><b>fragment_despawn_settle_seconds</b> = 3.0f</td></tr>
 <tr class="memitem:a3aa9bae0df84723636b6facc82fd7031" id="r_a3aa9bae0df84723636b6facc82fd7031"><td class="memItemLeft"><a id="a3aa9bae0df84723636b6facc82fd7031" name="a3aa9bae0df84723636b6facc82fd7031"></a>
 float&#160;</td><td class="memItemRight"><b>force_sleep_slack</b> = 4.0f</td></tr>
+<tr class="memitem:af7f4d0c642a94d3c8e7331ff738c325b" id="r_af7f4d0c642a94d3c8e7331ff738c325b"><td class="memItemLeft"><a id="af7f4d0c642a94d3c8e7331ff738c325b" name="af7f4d0c642a94d3c8e7331ff738c325b"></a>
+float&#160;</td><td class="memItemRight"><b>fragment_sleep_scale</b> = 3.0f</td></tr>
 <tr class="memitem:a1bbe4054a621b5084f7f1c9bc5fa58ed" id="r_a1bbe4054a621b5084f7f1c9bc5fa58ed"><td class="memItemLeft"><a id="a1bbe4054a621b5084f7f1c9bc5fa58ed" name="a1bbe4054a621b5084f7f1c9bc5fa58ed"></a>
 int32_t&#160;</td><td class="memItemRight"><b>max_fragment_extent_bricks</b> = 1</td></tr>
 <tr class="memitem:a7dbec84f45b62564ffda8e7af8be3952" id="r_a7dbec84f45b62564ffda8e7af8be3952"><td class="memItemLeft"><a id="a7dbec84f45b62564ffda8e7af8be3952" name="a7dbec84f45b62564ffda8e7af8be3952"></a>
@@ -176,8 +180,27 @@ float&#160;</td><td class="memItemRight"><b>fracture_shell_voxels</b> = 2.0f</td
 uint32_t&#160;</td><td class="memItemRight"><b>min_bounds_per_job</b> = 32</td></tr>
 <tr class="memitem:ab6b89b6e513b90fb8042066c78a33611" id="r_ab6b89b6e513b90fb8042066c78a33611"><td class="memItemLeft"><a id="ab6b89b6e513b90fb8042066c78a33611" name="ab6b89b6e513b90fb8042066c78a33611"></a>
 uint32_t&#160;</td><td class="memItemRight"><b>min_candidates_per_job</b> = 2</td></tr>
+<tr class="memitem:a396afd7166a2b0940d5af7f71c2ddbfe" id="r_a396afd7166a2b0940d5af7f71c2ddbfe"><td class="memItemLeft"><a id="a396afd7166a2b0940d5af7f71c2ddbfe" name="a396afd7166a2b0940d5af7f71c2ddbfe"></a>
+uint32_t&#160;</td><td class="memItemRight"><b>min_manifolds_per_job</b> = 4</td></tr>
+<tr class="memitem:a3ae554c2d44fbdb9eec1b1c46e28240d" id="r_a3ae554c2d44fbdb9eec1b1c46e28240d"><td class="memItemLeft"><a id="a3ae554c2d44fbdb9eec1b1c46e28240d" name="a3ae554c2d44fbdb9eec1b1c46e28240d"></a>
+uint32_t&#160;</td><td class="memItemRight"><b>min_shapes_per_query_job</b> = 16</td></tr>
+<tr class="memitem:af0e6b46237eb668d316f963747c5faba" id="r_af0e6b46237eb668d316f963747c5faba"><td class="memItemLeft"><a id="af0e6b46237eb668d316f963747c5faba" name="af0e6b46237eb668d316f963747c5faba"></a>
+uint32_t&#160;</td><td class="memItemRight"><b>min_bodies_per_job</b> = 64</td></tr>
 <tr class="memitem:a3e12447decedd4950a8fb1aa590670ff" id="r_a3e12447decedd4950a8fb1aa590670ff"><td class="memItemLeft"><a id="a3e12447decedd4950a8fb1aa590670ff" name="a3e12447decedd4950a8fb1aa590670ff"></a>
 uint32_t&#160;</td><td class="memItemRight"><b>min_wave_constraints_for_dispatch</b> = 512</td></tr>
+<tr class="memitem:a33f6465adbedd8995759ec3373b6a1da" id="r_a33f6465adbedd8995759ec3373b6a1da"><td class="memItemLeft"><a id="a33f6465adbedd8995759ec3373b6a1da" name="a33f6465adbedd8995759ec3373b6a1da"></a>
+uint32_t&#160;</td><td class="memItemRight"><b>box_voxel_split_min_voxels</b> = 500000</td></tr>
+<tr class="memdesc:a33f6465adbedd8995759ec3373b6a1da"><td class="mdescLeft">&#160;</td><td class="mdescRight">Deliberately very high right now to disable splitting until box_voxel_max_estimated_voxels gives a real number. <br /></td></tr>
+<tr class="memitem:a19fc474a17993c8ae85865d32a505395" id="r_a19fc474a17993c8ae85865d32a505395"><td class="memItemLeft"><a id="a19fc474a17993c8ae85865d32a505395" name="a19fc474a17993c8ae85865d32a505395"></a>
+uint32_t&#160;</td><td class="memItemRight"><b>voxel_voxel_split_min_voxels</b> = 250000</td></tr>
+<tr class="memdesc:a19fc474a17993c8ae85865d32a505395"><td class="mdescLeft">&#160;</td><td class="mdescRight">Same off-until-measured reasoning as box_voxel_split_min_voxels. <br /></td></tr>
+<tr class="memitem:a52fb5aa5c92bd8f3ef3f2849e38c46a2" id="r_a52fb5aa5c92bd8f3ef3f2849e38c46a2"><td class="memItemLeft"><a id="a52fb5aa5c92bd8f3ef3f2849e38c46a2" name="a52fb5aa5c92bd8f3ef3f2849e38c46a2"></a>
+uint32_t&#160;</td><td class="memItemRight"><b>voxel_pair_split_regions</b> = 8</td></tr>
+<tr class="memitem:a32bcf2b4c962baee596720e64905c6a8" id="r_a32bcf2b4c962baee596720e64905c6a8"><td class="memItemLeft"><a id="a32bcf2b4c962baee596720e64905c6a8" name="a32bcf2b4c962baee596720e64905c6a8"></a>
+uint32_t&#160;</td><td class="memItemRight"><b>sweep_refine_iterations</b> = 6</td></tr>
+<tr class="memdesc:a32bcf2b4c962baee596720e64905c6a8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Bisection steps a sweep refines by once it finds a blocking contact a clear sweep never pays this. <br /></td></tr>
+<tr class="memitem:aa2e6682468a9b15124fc50a440bbd296" id="r_aa2e6682468a9b15124fc50a440bbd296"><td class="memItemLeft"><a id="aa2e6682468a9b15124fc50a440bbd296" name="aa2e6682468a9b15124fc50a440bbd296"></a>
+uint32_t&#160;</td><td class="memItemRight"><b>position_iterations</b> = 3</td></tr>
 </table>
 <hr/>The documentation for this struct was generated from the following file:<ul>
 <li>engine/src/toast/physics/<a class="el" href="physics__settings_8hpp_source.html">physics_settings.hpp</a></li>

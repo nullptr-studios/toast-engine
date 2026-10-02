@@ -158,6 +158,15 @@ Include dependency graph for asset_proxy.hpp:</div>
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
 <tr class="memitem:scripting_3A_3AAssetProxy" id="r_scripting_3A_3AAssetProxy"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classscripting_1_1AssetProxy.html">scripting::AssetProxy</a></td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
+Functions</h2></td></tr>
+<tr class="memitem:aae522b48927a300c7789a0be7f8a413f" id="r_aae522b48927a300c7789a0be7f8a413f"><td class="memItemLeft"><a id="aae522b48927a300c7789a0be7f8a413f" name="aae522b48927a300c7789a0be7f8a413f"></a>
+auto&#160;</td><td class="memItemRight"><b>scripting::assetProxyIndex</b> (<a class="el" href="classscripting_1_1AssetProxy.html">AssetProxy</a> &amp;proxy, const luabridge::LuaRef &amp;key, lua_State *l) -&gt; luabridge::LuaRef</td></tr>
+<tr class="memitem:a296dca02d2f773a85e9849833fd11f24" id="r_a296dca02d2f773a85e9849833fd11f24"><td class="memItemLeft"><a id="a296dca02d2f773a85e9849833fd11f24" name="a296dca02d2f773a85e9849833fd11f24"></a>
+auto&#160;</td><td class="memItemRight"><b>scripting::assetProxyNewindex</b> (<a class="el" href="classscripting_1_1AssetProxy.html">AssetProxy</a> &amp;proxy, const luabridge::LuaRef &amp;key, const luabridge::LuaRef &amp;value, lua_State *l) -&gt; luabridge::LuaRef</td></tr>
+<tr class="memitem:abfd7b287f312cef5b4ca40aa92fd9c2c" id="r_abfd7b287f312cef5b4ca40aa92fd9c2c"><td class="memItemLeft"><a id="abfd7b287f312cef5b4ca40aa92fd9c2c" name="abfd7b287f312cef5b4ca40aa92fd9c2c"></a>
+auto&#160;</td><td class="memItemRight"><b>scripting::dataValueToLuaRef</b> (lua_State *l, const <a class="el" href="classassets_1_1DataValue.html">assets::DataValue</a> &amp;value) -&gt; luabridge::LuaRef</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Lua-side proxy for an asset handle, registered as "Asset" in Lua. </p>

@@ -122,13 +122,13 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('namespaceedito
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
 <tr class="memitem:Events" id="r_Events"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><b>Events</b></td></tr>
+<tr class="memitem:GraphicsDebuggerDetector" id="r_GraphicsDebuggerDetector"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><b>GraphicsDebuggerDetector</b></td></tr>
 <tr class="memitem:Listener" id="r_Listener"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classeditor_1_1Engine_1_1Listener.html">Listener</a></td></tr>
 <tr class="memitem:Log" id="r_Log"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><b>Log</b></td></tr>
 <tr class="memitem:NativeTrackpadState" id="r_NativeTrackpadState"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><b>NativeTrackpadState</b></td></tr>
 <tr class="memitem:NodeTreeItem" id="r_NodeTreeItem"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classeditor_1_1Engine_1_1NodeTreeItem.html">NodeTreeItem</a></td></tr>
 <tr class="memitem:ReflectionDatabase" id="r_ReflectionDatabase"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><b>ReflectionDatabase</b></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="namespaceeditor_1_1Engine.html">Engine</a> + game reflection JSON merged into a node tree. <br /></td></tr>
-<tr class="memitem:RenderDocDetector" id="r_RenderDocDetector"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><b>RenderDocDetector</b></td></tr>
 <tr class="memitem:SettingDescriptor" id="r_SettingDescriptor"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classeditor_1_1Engine_1_1SettingDescriptor.html">SettingDescriptor</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">One setting as the engine describes it, copied out of the native registry.  <a href="classeditor_1_1Engine_1_1SettingDescriptor.html#details">More...</a><br /></td></tr>
 <tr class="memitem:ToastEngine" id="r_ToastEngine"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classeditor_1_1Engine_1_1ToastEngine.html">ToastEngine</a></td></tr>
@@ -169,6 +169,8 @@ record&#160;</td><td class="memItemRight"><b>FunctionInfo</b> ([property:JsonPro
 record&#160;</td><td class="memItemRight"><b>SignalInfo</b> ([property:JsonPropertyName(&quot;name&quot;)] string Name, [property:JsonPropertyName(&quot;typename&quot;)] string TypeName, [property:JsonPropertyName(&quot;arguments&quot;)] string[] Arguments, [property:JsonPropertyName(&quot;attributes&quot;)] JsonElement Attributes)</td></tr>
 <tr class="memitem:a4f824a9a920a5a141de64c5a14357364" id="r_a4f824a9a920a5a141de64c5a14357364"><td class="memItemLeft"><a id="a4f824a9a920a5a141de64c5a14357364" name="a4f824a9a920a5a141de64c5a14357364"></a>
 record&#160;</td><td class="memItemRight"><b>NodeInfo</b> ([property:JsonPropertyName(&quot;name&quot;)] string Name, [property:JsonPropertyName(&quot;namespace&quot;)] string? Namespace, [property:JsonPropertyName(&quot;parent&quot;)] ParentInfo? Parent, [property:JsonPropertyName(&quot;attributes&quot;)] JsonElement Attributes, [property:JsonPropertyName(&quot;tick_functions&quot;)] Dictionary&lt; string, bool &gt; Functions, [property:JsonPropertyName(&quot;groups&quot;)] GroupInfo[] Groups, [property:JsonPropertyName(&quot;global_fields&quot;)] FieldInfo[] GlobalFields, [property:JsonPropertyName(&quot;methods&quot;)] FunctionInfo[] Methods, [property:JsonPropertyName(&quot;signals&quot;)] SignalInfo[] Signals, [property:JsonPropertyName(&quot;source_file&quot;)] string SourceFile)</td></tr>
+<tr class="memitem:a8d0e8d680877128ccc6761903926169a" id="r_a8d0e8d680877128ccc6761903926169a"><td class="memItemLeft"><a id="a8d0e8d680877128ccc6761903926169a" name="a8d0e8d680877128ccc6761903926169a"></a>
+record&#160;</td><td class="memItemRight"><b>ReflectionFile</b> ([property:JsonPropertyName(&quot;nodes&quot;)] NodeInfo[] Nodes, [property:JsonPropertyName(&quot;events&quot;)] JsonElement[] Events)</td></tr>
 </table>
 </div><!-- contents -->
 </div><!-- doc-content -->

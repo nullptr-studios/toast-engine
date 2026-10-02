@@ -1,0 +1,12 @@
+<map id="event::WorkspaceConvertToProceduralVoxel" name="event::WorkspaceConvertToProceduralVoxel">
+<area shape="rect" id="Node000001" title=" " alt="" coords="118,323,320,368"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="5,205,246,250"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="154,260,204,322,199,323,151,264"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="40,5,200,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="123,46,128,205,122,205,119,50"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="142,82,283,110"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="148,40,199,81,194,83,148,46"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="197,121,142,207,138,204,193,125"/>
+<area shape="rect" id="Node000005" href="$structtoast_1_1UID.html" title=" " alt="" coords="270,214,357,242"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="296,252,238,325,235,321,291,254"/>
+</map>

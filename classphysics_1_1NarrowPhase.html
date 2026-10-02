@@ -123,6 +123,9 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classphysics_1
 Public Member Functions</h2></td></tr>
 <tr class="memitem:af4cc69eb276698af3062a335e05f6d51" id="r_af4cc69eb276698af3062a335e05f6d51"><td class="memItemLeft"><a id="af4cc69eb276698af3062a335e05f6d51" name="af4cc69eb276698af3062a335e05f6d51"></a>
 auto&#160;</td><td class="memItemRight"><b>generateManifolds</b> (<a class="el" href="structphysics_1_1CollisionWorldView.html">CollisionWorldView</a> world, std::span&lt; const <a class="el" href="structphysics_1_1BroadPhasePair.html">BroadPhasePair</a> &gt; candidates) const -&gt; <a class="el" href="structphysics_1_1ManifoldQueue.html">ManifoldQueue</a></td></tr>
+<tr class="memitem:aacaf6fec58331dc6262c2dcdd2b5bafd" id="r_aacaf6fec58331dc6262c2dcdd2b5bafd"><td class="memItemLeft"><a id="aacaf6fec58331dc6262c2dcdd2b5bafd" name="aacaf6fec58331dc6262c2dcdd2b5bafd"></a>
+void&#160;</td><td class="memItemRight"><b>accumulate</b> (std::span&lt; <a class="el" href="structphysics_1_1Manifold.html">Manifold</a> &gt; manifolds, <a class="el" href="structphysics_1_1CollisionWorldView.html">CollisionWorldView</a> world, <a class="el" href="structphysics_1_1ManifoldQueue.html">ManifoldQueue</a> &amp;queue) const</td></tr>
+<tr class="memdesc:aacaf6fec58331dc6262c2dcdd2b5bafd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Same validate/count/keep-or-reject step generateManifolds runs so a split pair can fold results in too. <br /></td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>engine/src/toast/physics/<a class="el" href="narrow__phase_8hpp_source.html">narrow_phase.hpp</a></li>

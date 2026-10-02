@@ -122,6 +122,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classvoxel_1_1
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
 <tr class="memitem:VoxelWrite" id="r_VoxelWrite"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structvoxel_1_1Volume_1_1VoxelWrite.html">VoxelWrite</a></td></tr>
+<tr class="memitem:WritableBrick" id="r_WritableBrick"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structvoxel_1_1Volume_1_1WritableBrick.html">WritableBrick</a></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -158,6 +159,18 @@ void&#160;</td><td class="memItemRight"><b>setBrickUniform</b> (glm::ivec3 brick
 <tr class="memitem:a4823c22df4eb2f0df442a1c56b63db8a" id="r_a4823c22df4eb2f0df442a1c56b63db8a"><td class="memItemLeft"><a id="a4823c22df4eb2f0df442a1c56b63db8a" name="a4823c22df4eb2f0df442a1c56b63db8a"></a>
 auto&#160;</td><td class="memItemRight"><b>tryCollapseUniform</b> (glm::ivec3 brick) -&gt; bool</td></tr>
 <tr class="memitem:a6b98f7c9bd8e5dd40496fa711652082d" id="r_a6b98f7c9bd8e5dd40496fa711652082d"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a6b98f7c9bd8e5dd40496fa711652082d">setBrickMaterial</a> (glm::ivec3 brick, std::span&lt; const uint8_t, k_brick_material_bytes &gt; material) -&gt; bool</td></tr>
+<tr class="memitem:ae8fb61d3ee89c914f68fbf7e21f636da" id="r_ae8fb61d3ee89c914f68fbf7e21f636da"><td class="memItemLeft"><a id="ae8fb61d3ee89c914f68fbf7e21f636da" name="ae8fb61d3ee89c914f68fbf7e21f636da"></a>
+auto&#160;</td><td class="memItemRight"><b>takeBrick</b> (glm::ivec3 brick) -&gt; <a class="el" href="structvoxel_1_1BrickEntry.html">BrickEntry</a></td></tr>
+<tr class="memdesc:ae8fb61d3ee89c914f68fbf7e21f636da"><td class="mdescLeft">&#160;</td><td class="mdescRight">Caller must adopt or free a pooled entry. <br /></td></tr>
+<tr class="memitem:a326d054c55c465d0dcbe5b8789054457" id="r_a326d054c55c465d0dcbe5b8789054457"><td class="memItemLeft"><a id="a326d054c55c465d0dcbe5b8789054457" name="a326d054c55c465d0dcbe5b8789054457"></a>
+void&#160;</td><td class="memItemRight"><b>adoptBrick</b> (glm::ivec3 brick, <a class="el" href="structvoxel_1_1BrickEntry.html">BrickEntry</a> entry)</td></tr>
+<tr class="memdesc:a326d054c55c465d0dcbe5b8789054457"><td class="mdescLeft">&#160;</td><td class="mdescRight">Slot must be empty and a pooled entry must be owned. <br /></td></tr>
+<tr class="memitem:af4c13acda0d889fd2ae1cbc09a235897" id="r_af4c13acda0d889fd2ae1cbc09a235897"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#af4c13acda0d889fd2ae1cbc09a235897">clearVoxels</a> (glm::ivec3 brick, const <a class="el" href="structvoxel_1_1BrickOccupancy.html">BrickOccupancy</a> &amp;mask) -&gt; bool</td></tr>
+<tr class="memitem:ab77bc934f85e593735929fabb5a72780" id="r_ab77bc934f85e593735929fabb5a72780"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#ab77bc934f85e593735929fabb5a72780">copyBrickFrom</a> (glm::ivec3 brick, const Volume &amp;source, glm::ivec3 source_brick) -&gt; bool</td></tr>
+<tr class="memitem:a361792c4f0df920faa2d9e7bb5662184" id="r_a361792c4f0df920faa2d9e7bb5662184"><td class="memItemLeft"><a id="a361792c4f0df920faa2d9e7bb5662184" name="a361792c4f0df920faa2d9e7bb5662184"></a>
+auto&#160;</td><td class="memItemRight"><b>beginBrickWrite</b> (glm::ivec3 brick) -&gt; std::optional&lt; <a class="el" href="structvoxel_1_1Volume_1_1WritableBrick.html">WritableBrick</a> &gt;</td></tr>
+<tr class="memitem:a613090e0494e67c2cba7a28c9c937d5f" id="r_a613090e0494e67c2cba7a28c9c937d5f"><td class="memItemLeft"><a id="a613090e0494e67c2cba7a28c9c937d5f" name="a613090e0494e67c2cba7a28c9c937d5f"></a>
+void&#160;</td><td class="memItemRight"><b>finishBrickWrite</b> (glm::ivec3 brick, bool changed)</td></tr>
 <tr class="memitem:a45bdb135fa7d2963cd27bd2c5a188637" id="r_a45bdb135fa7d2963cd27bd2c5a188637"><td class="memItemLeft"><a id="a45bdb135fa7d2963cd27bd2c5a188637" name="a45bdb135fa7d2963cd27bd2c5a188637"></a>
 auto&#160;</td><td class="memItemRight"><b>occupancyPointer</b> (glm::ivec3 brick) const noexcept -&gt; const <a class="el" href="structvoxel_1_1BrickOccupancy.html">BrickOccupancy</a> *</td></tr>
 <tr class="memdesc:a45bdb135fa7d2963cd27bd2c5a188637"><td class="mdescLeft">&#160;</td><td class="mdescRight">Null when the brick holds nothing. <br /></td></tr>
@@ -191,8 +204,77 @@ Static Public Member Functions</h2></td></tr>
 <tr class="memitem:aa236e44cc527b63472b98760e09b886f" id="r_aa236e44cc527b63472b98760e09b886f"><td class="memItemLeft"><a id="aa236e44cc527b63472b98760e09b886f" name="aa236e44cc527b63472b98760e09b886f"></a>
 static auto&#160;</td><td class="memItemRight"><b>instanceOf</b> (const Volume &amp;source) -&gt; Volume</td></tr>
 <tr class="memdesc:aa236e44cc527b63472b98760e09b886f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shares every brick with <code class="param">source</code> until written. <br /></td></tr>
+<tr class="memitem:a87a8adf47b1ed49efe29c4cd15e478a6" id="r_a87a8adf47b1ed49efe29c4cd15e478a6"><td class="memItemLeft"><a id="a87a8adf47b1ed49efe29c4cd15e478a6" name="a87a8adf47b1ed49efe29c4cd15e478a6"></a>
+static auto&#160;</td><td class="memItemRight"><b>adoptResized</b> (Volume &amp;source, glm::ivec3 brick_offset, glm::uvec3 brick_dims) -&gt; Volume</td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
+<a id="af4c13acda0d889fd2ae1cbc09a235897" name="af4c13acda0d889fd2ae1cbc09a235897"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af4c13acda0d889fd2ae1cbc09a235897">&#9670;&#160;</a></span>clearVoxels()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto voxel::Volume::clearVoxels </td>
+          <td>(</td>
+          <td class="paramtype">glm::ivec3</td>          <td class="paramname"><span class="paramname"><em>brick</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structvoxel_1_1BrickOccupancy.html">BrickOccupancy</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>mask</em></span>&#160;) -&gt; bool</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="section return"><dt>Returns</dt><dd>false with nothing changed when the pool has no brick to copy into </dd></dl>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="classvoxel_1_1Volume_af4c13acda0d889fd2ae1cbc09a235897_icgraph.png" border="0" usemap="#aclassvoxel_1_1Volume_af4c13acda0d889fd2ae1cbc09a235897_icgraph" loading="lazy" alt=""/></div>
+<map name="aclassvoxel_1_1Volume_af4c13acda0d889fd2ae1cbc09a235897_icgraph" id="aclassvoxel_1_1Volume_af4c13acda0d889fd2ae1cbc09a235897_icgraph">
+<area shape="rect" title=" " alt="" coords="5,29,201,57"/>
+<area shape="poly" title=" " alt="" coords="135,14,125,10,103,8,83,10,72,15,69,20,74,29,69,28,64,20,68,11,81,5,103,3,126,5,140,14"/>
+</map>
+</div>
+
+</div>
+</div>
+<a id="ab77bc934f85e593735929fabb5a72780" name="ab77bc934f85e593735929fabb5a72780"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab77bc934f85e593735929fabb5a72780">&#9670;&#160;</a></span>copyBrickFrom()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto voxel::Volume::copyBrickFrom </td>
+          <td>(</td>
+          <td class="paramtype">glm::ivec3</td>          <td class="paramname"><span class="paramname"><em>brick</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const Volume &amp;</td>          <td class="paramname"><span class="paramname"><em>source</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">glm::ivec3</td>          <td class="paramname"><span class="paramname"><em>source_brick</em></span>&#160;) -&gt; bool</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Makes brick hold what source_brick of source holds </p><dl class="section return"><dt>Returns</dt><dd>true when the brick changed </dd></dl>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="classvoxel_1_1Volume_ab77bc934f85e593735929fabb5a72780_icgraph.png" border="0" usemap="#aclassvoxel_1_1Volume_ab77bc934f85e593735929fabb5a72780_icgraph" loading="lazy" alt=""/></div>
+<map name="aclassvoxel_1_1Volume_ab77bc934f85e593735929fabb5a72780_icgraph" id="aclassvoxel_1_1Volume_ab77bc934f85e593735929fabb5a72780_icgraph">
+<area shape="rect" title=" " alt="" coords="5,29,224,57"/>
+<area shape="poly" title=" " alt="" coords="150,14,139,10,114,8,92,10,79,15,76,20,82,29,77,28,71,20,76,11,91,5,115,3,140,5,156,14"/>
+</map>
+</div>
+
+</div>
+</div>
 <a id="a6b98f7c9bd8e5dd40496fa711652082d" name="a6b98f7c9bd8e5dd40496fa711652082d"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a6b98f7c9bd8e5dd40496fa711652082d">&#9670;&#160;</a></span>setBrickMaterial()</h2>
 

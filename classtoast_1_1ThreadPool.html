@@ -148,6 +148,9 @@ Static Public Member Functions</h2></td></tr>
 <tr class="memitem:a4840f2494b2a12987c7817e1a945f4b4" id="r_a4840f2494b2a12987c7817e1a945f4b4"><td class="memTemplParams" colspan="2">template&lt;typename T&gt; </td></tr>
 <tr class="memitem:a4840f2494b2a12987c7817e1a945f4b4 template"><td class="memItemLeft">static auto&#160;</td><td class="memItemRight"><a class="el" href="#a4840f2494b2a12987c7817e1a945f4b4">push</a> (T &amp;&amp;job) -&gt; std::future&lt; std::invoke_result_t&lt; T &gt; &gt;</td></tr>
 <tr class="memdesc:a4840f2494b2a12987c7817e1a945f4b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Queues a job for execution by a worker thread.  <br /></td></tr>
+<tr class="memitem:a33a0838ca95de8adde211ca9ff5ae3f5" id="r_a33a0838ca95de8adde211ca9ff5ae3f5"><td class="memItemLeft"><a id="a33a0838ca95de8adde211ca9ff5ae3f5" name="a33a0838ca95de8adde211ca9ff5ae3f5"></a>
+static void&#160;</td><td class="memItemRight"><b>pushRaw</b> (std::move_only_function&lt; void()&gt; &amp;&amp;job)</td></tr>
+<tr class="memdesc:a33a0838ca95de8adde211ca9ff5ae3f5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Queues a job with no std::future the caller synchronizes completion itself same queue and workers as <a class="el" href="#a4840f2494b2a12987c7817e1a945f4b4" title="Queues a job for execution by a worker thread.">push()</a>. <br /></td></tr>
 <tr class="memitem:a21d5bcb325a1aa9a0af1fa04b0b18e23" id="r_a21d5bcb325a1aa9a0af1fa04b0b18e23"><td class="memItemLeft"><a id="a21d5bcb325a1aa9a0af1fa04b0b18e23" name="a21d5bcb325a1aa9a0af1fa04b0b18e23"></a>
 static auto&#160;</td><td class="memItemRight"><b>workerCount</b> () -&gt; size_t</td></tr>
 </table>
@@ -162,9 +165,9 @@ static auto&#160;</td><td class="memItemRight"><b>workerCount</b> () -&gt; size_
 <div class="line"> </div>
 <div class="line">pool.<a class="code hl_function" href="#a4a2d6ba3b1eb148b98b0519e2c4a38ec">waitIdle</a>(); <span class="comment">// Block until all jobs are done</span></div>
 <div class="line">pool.<a class="code hl_function" href="#adf9e87ed36a7eaf11a53e7e18598ed44">destroy</a>();</div>
-<div class="ttc" id="aclasstoast_1_1ThreadPool_html_a4a2d6ba3b1eb148b98b0519e2c4a38ec"><div class="ttname"><a href="#a4a2d6ba3b1eb148b98b0519e2c4a38ec">toast::ThreadPool::waitIdle</a></div><div class="ttdeci">void waitIdle()</div><div class="ttdoc">Blocks the calling thread until all queued and active jobs complete.</div><div class="ttdef"><b>Definition</b> thread_pool.cpp:50</div></div>
-<div class="ttc" id="aclasstoast_1_1ThreadPool_html_aaaf2e9235265347d1915ec2d963e70ac"><div class="ttname"><a href="#aaaf2e9235265347d1915ec2d963e70ac">toast::ThreadPool::create</a></div><div class="ttdeci">static auto create() noexcept -&gt; std::unique_ptr&lt; ThreadPool &gt;</div><div class="ttdoc">Initializes the pool and returns a pointer with ownership.</div><div class="ttdef"><b>Definition</b> thread_pool.cpp:96</div></div>
-<div class="ttc" id="aclasstoast_1_1ThreadPool_html_adf9e87ed36a7eaf11a53e7e18598ed44"><div class="ttname"><a href="#adf9e87ed36a7eaf11a53e7e18598ed44">toast::ThreadPool::destroy</a></div><div class="ttdeci">void destroy()</div><div class="ttdoc">Destroys the thread pool and waits for all workers to finish.</div><div class="ttdef"><b>Definition</b> thread_pool.cpp:28</div></div>
+<div class="ttc" id="aclasstoast_1_1ThreadPool_html_a4a2d6ba3b1eb148b98b0519e2c4a38ec"><div class="ttname"><a href="#a4a2d6ba3b1eb148b98b0519e2c4a38ec">toast::ThreadPool::waitIdle</a></div><div class="ttdeci">void waitIdle()</div><div class="ttdoc">Blocks the calling thread until all queued and active jobs complete.</div><div class="ttdef"><b>Definition</b> thread_pool.cpp:54</div></div>
+<div class="ttc" id="aclasstoast_1_1ThreadPool_html_aaaf2e9235265347d1915ec2d963e70ac"><div class="ttname"><a href="#aaaf2e9235265347d1915ec2d963e70ac">toast::ThreadPool::create</a></div><div class="ttdeci">static auto create() noexcept -&gt; std::unique_ptr&lt; ThreadPool &gt;</div><div class="ttdoc">Initializes the pool and returns a pointer with ownership.</div><div class="ttdef"><b>Definition</b> thread_pool.cpp:100</div></div>
+<div class="ttc" id="aclasstoast_1_1ThreadPool_html_adf9e87ed36a7eaf11a53e7e18598ed44"><div class="ttname"><a href="#adf9e87ed36a7eaf11a53e7e18598ed44">toast::ThreadPool::destroy</a></div><div class="ttdeci">void destroy()</div><div class="ttdoc">Destroys the thread pool and waits for all workers to finish.</div><div class="ttdef"><b>Definition</b> thread_pool.cpp:32</div></div>
 </div><!-- fragment --></dd></dl>
 <dl class="section note"><dt>Note</dt><dd>The pool should be destroyed before the program exits to ensure all worker threads are properly joined.</dd></dl>
 <dl class="section see"><dt>See also</dt><dd><a class="el" href="classtoast_1_1World.html">World</a> (uses <a class="el" href="classtoast_1_1ThreadPool.html" title="A simple thread pool for executing jobs asynchronously.">ThreadPool</a> for async scene loading) </dd></dl>
@@ -290,26 +293,28 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="classtoast_1_1ThreadPool_a4840f2494b2a12987c7817e1a945f4b4_icgraph.png" border="0" usemap="#aclasstoast_1_1ThreadPool_a4840f2494b2a12987c7817e1a945f4b4_icgraph" loading="lazy" alt=""/></div>
 <map name="aclasstoast_1_1ThreadPool_a4840f2494b2a12987c7817e1a945f4b4_icgraph" id="aclasstoast_1_1ThreadPool_a4840f2494b2a12987c7817e1a945f4b4_icgraph">
-<area shape="rect" title="Queues a job for execution by a worker thread." alt="" coords="710,99,885,126"/>
-<area shape="rect" href="classlogging_1_1Logger.html#aa9e80cc95ca58b9adb7e3a8323313e51" title="Set up the global logger instance, gives ownership to the caller." alt="" coords="278,19,448,46"/>
-<area shape="poly" title=" " alt="" coords="768,87,721,53,692,36,662,23,601,11,538,8,479,13,428,21,426,15,479,7,538,3,602,6,663,18,695,31,724,48,773,88"/>
-<area shape="rect" href="classtoast_1_1INodeOwner.html#a355810be0f38823d417eb26cb8da1ff0" title="Allocates and initializes a full node tree from a prefab asset." alt="" coords="510,131,661,176"/>
-<area shape="poly" title=" " alt="" coords="711,129,662,142,661,137,706,130"/>
-<area shape="rect" href="classlogging_1_1Logger.html#a4e48e1e55a2e236783294f836f3bbdac" title="Entry point for all engine logs." alt="" coords="511,56,660,84"/>
-<area shape="poly" title=" " alt="" coords="708,95,658,87,658,82,713,95"/>
-<area shape="rect" href="classtoast_1_1TickScheduler.html#a30cb7092b454ff283d6cd1568dac301c" title="Dispatches a single phase of the tick schedule." alt="" coords="509,201,662,245"/>
-<area shape="poly" title=" " alt="" coords="762,134,664,191,639,203,638,198,661,186,757,135"/>
-<area shape="poly" title=" " alt="" coords="619,116,607,112,586,110,566,112,554,117,549,123,550,132,545,129,544,121,551,112,565,107,586,105,609,107,624,117"/>
-<area shape="rect" href="classtoast_1_1Workspace.html#acecbe8833a3838a8a3fe77aa661b2d1d" title="instantiates the prefab and sets up the root node" alt="" coords="266,131,461,176"/>
-<area shape="poly" title=" " alt="" coords="492,154,462,156,461,151,497,154"/>
-<area shape="rect" href="classtoast_1_1Workspace.html#a1a98997469f53cfc60df37bf5e43bce1" title="Opens an existing workspace by loading the prefab at the given UID." alt="" coords="5,115,218,142"/>
-<area shape="poly" title=" " alt="" coords="248,143,218,142,218,137,253,142"/>
-<area shape="rect" href="classtoast_1_1Workspace.html#aee0cb0b76f3c488f5fdf9d674b8673d3" title="Opens a workspace bound to the given asset UID but loading its content from another file." alt="" coords="5,167,218,194"/>
-<area shape="poly" title=" " alt="" coords="248,166,219,172,218,167,253,165"/>
-<area shape="poly" title=" " alt="" coords="493,55,449,49,449,44,499,54"/>
-<area shape="poly" title=" " alt="" coords="620,41,609,37,586,35,564,37,552,41,549,47,554,56,549,55,543,47,548,37,562,31,586,29,611,32,626,41"/>
-<area shape="rect" href="classtoast_1_1TickScheduler.html#a002172089ec3f1e7d6d24789c4547bb4" title="Runs all four phases (early_tick → tick → post_physics → late_tick) of the schedule." alt="" coords="272,209,454,237"/>
-<area shape="poly" title=" " alt="" coords="491,223,455,226,455,220,496,223"/>
+<area shape="rect" title="Queues a job for execution by a worker thread." alt="" coords="710,145,885,173"/>
+<area shape="rect" href="classlogging_1_1Logger.html#aa9e80cc95ca58b9adb7e3a8323313e51" title="Set up the global logger instance, gives ownership to the caller." alt="" coords="278,24,448,51"/>
+<area shape="poly" title=" " alt="" coords="776,131,757,106,730,77,698,49,661,28,630,18,598,12,531,9,468,15,416,26,414,21,467,10,531,4,598,6,631,13,663,23,701,45,734,73,761,103,782,133"/>
+<area shape="rect" href="classtoast_1_1INodeOwner.html#a355810be0f38823d417eb26cb8da1ff0" title="Allocates and initializes a full node tree from a prefab asset." alt="" coords="510,137,661,181"/>
+<area shape="poly" title=" " alt="" coords="692,159,661,162,661,156,697,159"/>
+<area shape="rect" href="classlogging_1_1Logger.html#a4e48e1e55a2e236783294f836f3bbdac" title="Entry point for all engine logs." alt="" coords="511,61,660,89"/>
+<area shape="poly" title=" " alt="" coords="749,138,661,103,632,92,632,87,663,98,754,138"/>
+<area shape="rect" href="classtoast_1_1VoxelPiece.html#a059ce673693b6726d21fc5427baed01e" title=" " alt="" coords="516,206,656,251"/>
+<area shape="poly" title=" " alt="" coords="741,177,657,208,656,203,736,179"/>
+<area shape="rect" href="classtoast_1_1TickScheduler.html#a30cb7092b454ff283d6cd1568dac301c" title="Dispatches a single phase of the tick schedule." alt="" coords="509,275,662,320"/>
+<area shape="poly" title=" " alt="" coords="771,182,722,225,664,265,642,277,640,272,661,261,719,221,766,184"/>
+<area shape="poly" title=" " alt="" coords="619,121,607,118,586,115,566,117,554,122,549,128,550,137,545,135,544,126,551,118,565,112,586,110,609,112,624,122"/>
+<area shape="rect" href="classtoast_1_1Workspace.html#acecbe8833a3838a8a3fe77aa661b2d1d" title="instantiates the prefab and sets up the root node" alt="" coords="266,137,461,181"/>
+<area shape="poly" title=" " alt="" coords="492,159,462,162,461,156,497,158"/>
+<area shape="rect" href="classtoast_1_1Workspace.html#a1a98997469f53cfc60df37bf5e43bce1" title="Opens an existing workspace by loading the prefab at the given UID." alt="" coords="5,120,218,147"/>
+<area shape="poly" title=" " alt="" coords="248,148,219,147,218,142,253,147"/>
+<area shape="rect" href="classtoast_1_1Workspace.html#aee0cb0b76f3c488f5fdf9d674b8673d3" title="Opens a workspace bound to the given asset UID but loading its content from another file." alt="" coords="5,172,218,199"/>
+<area shape="poly" title=" " alt="" coords="248,172,219,177,217,172,253,170"/>
+<area shape="poly" title=" " alt="" coords="493,60,449,55,448,49,499,59"/>
+<area shape="poly" title=" " alt="" coords="620,46,609,42,586,40,564,42,552,46,549,52,554,61,549,60,543,52,548,43,562,37,586,34,611,37,626,46"/>
+<area shape="rect" href="classtoast_1_1TickScheduler.html#a002172089ec3f1e7d6d24789c4547bb4" title="Runs the four frame phases (early_tick → tick → post_physics → late_tick) of the schedule." alt="" coords="272,284,454,311"/>
+<area shape="poly" title=" " alt="" coords="491,298,455,300,455,295,496,298"/>
 </map>
 </div>
 

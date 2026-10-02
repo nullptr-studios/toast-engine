@@ -206,23 +206,31 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('assets_2assets
 <div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>};</div>
 </div>
 <div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span></div>
-<div class="foldopen" id="foldopen00110" data-start="{" data-end="};">
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno"><a class="line" href="structevent_1_1UIAssetReloaded.html">  110</a></span><span class="keyword">struct </span>UIAssetReloaded : <span class="keyword">public</span> Event&lt;UIAssetReloaded&gt; {</div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> uid;</div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  std::string type;</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span> </div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  UIAssetReloaded(<a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> uid, std::string type) : uid(uid), type(std::move(type)) { }</div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>};</div>
+<div class="foldopen" id="foldopen00108" data-start="{" data-end="};">
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno"><a class="line" href="structevent_1_1DataAssetReloaded.html">  108</a></span><span class="keyword">struct </span>DataAssetReloaded : <span class="keyword">public</span> Event&lt;DataAssetReloaded&gt; {</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> uid;</div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span> </div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  <span class="keyword">explicit</span> DataAssetReloaded(<a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> uid) : uid(uid) { }</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>};</div>
 </div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span></div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno"><a class="line" href="structevent_1_1ClearUnusedAssets.html">  120</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1ClearUnusedAssets.html">ClearUnusedAssets</a> : <span class="keyword">public</span> Event&lt;ClearUnusedAssets&gt; { };</div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span> </div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>}</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span></div>
+<div class="foldopen" id="foldopen00117" data-start="{" data-end="};">
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno"><a class="line" href="structevent_1_1UIAssetReloaded.html">  117</a></span><span class="keyword">struct </span>UIAssetReloaded : <span class="keyword">public</span> Event&lt;UIAssetReloaded&gt; {</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> uid;</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  std::string type;</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span> </div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  UIAssetReloaded(<a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> uid, std::string type) : uid(uid), type(std::move(type)) { }</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>};</div>
+</div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span></div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno"><a class="line" href="structevent_1_1ClearUnusedAssets.html">  127</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1ClearUnusedAssets.html">ClearUnusedAssets</a> : <span class="keyword">public</span> Event&lt;ClearUnusedAssets&gt; { };</div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span> </div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>}</div>
 <div class="ttc" id="aclassassets_1_1HandleBase_html"><div class="ttname"><a href="classassets_1_1HandleBase.html">assets::HandleBase</a></div><div class="ttdoc">Base class for type-erased asset handles.</div><div class="ttdef"><b>Definition</b> core_types.hpp:72</div></div>
 <div class="ttc" id="aclassassets_1_1Handle_html"><div class="ttname"><a href="classassets_1_1Handle.html">assets::Handle</a></div><div class="ttdoc">Type-safe smart pointer for assets.</div><div class="ttdef"><b>Definition</b> core_types.hpp:149</div></div>
 <div class="ttc" id="acore__types_8hpp_html"><div class="ttname"><a href="core__types_8hpp.html">core_types.hpp</a></div><div class="ttdoc">Base types for the asset system.</div></div>
 <div class="ttc" id="aexport_8hpp_html"><div class="ttname"><a href="export_8hpp.html">export.hpp</a></div></div>
-<div class="ttc" id="astructevent_1_1ClearUnusedAssets_html"><div class="ttname"><a href="structevent_1_1ClearUnusedAssets.html">event::ClearUnusedAssets</a></div><div class="ttdoc">Fired to request the unloading of all unused assets.</div><div class="ttdef"><b>Definition</b> assets.hpp:120</div></div>
+<div class="ttc" id="astructevent_1_1ClearUnusedAssets_html"><div class="ttname"><a href="structevent_1_1ClearUnusedAssets.html">event::ClearUnusedAssets</a></div><div class="ttdoc">Fired to request the unloading of all unused assets.</div><div class="ttdef"><b>Definition</b> assets.hpp:127</div></div>
 <div class="ttc" id="astructevent_1_1ReloadAssetsManifest_html"><div class="ttname"><a href="structevent_1_1ReloadAssetsManifest.html">event::ReloadAssetsManifest</a></div><div class="ttdoc">Fired to request a refresh of the asset manifest.</div><div class="ttdef"><b>Definition</b> assets.hpp:66</div></div>
 <div class="ttc" id="astructtoast_1_1UID_html"><div class="ttname"><a href="structtoast_1_1UID.html">toast::UID</a></div><div class="ttdef"><b>Definition</b> uid.hpp:20</div></div>
 <div class="ttc" id="auid_8hpp_html"><div class="ttname"><a href="uid_8hpp.html">uid.hpp</a></div><div class="ttdoc">Unique identifier for everything that exists in our engine.</div></div>

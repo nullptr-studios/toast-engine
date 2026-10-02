@@ -147,8 +147,12 @@ Collaboration diagram for editor.Editors.SchemaFieldItemVM:</div>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:ae1466447a4179a40f105bbeb49fd6f66" id="r_ae1466447a4179a40f105bbeb49fd6f66"><td class="memItemLeft"><a id="ae1466447a4179a40f105bbeb49fd6f66" name="ae1466447a4179a40f105bbeb49fd6f66"></a>
 &#160;</td><td class="memItemRight"><b>SchemaFieldItemVM</b> (<a class="el" href="classeditor_1_1Editors_1_1SchemaViewModel.html">SchemaViewModel</a> owner)</td></tr>
+<tr class="memitem:ae41bcadb2708b06f269b0bb4ca862cce" id="r_ae41bcadb2708b06f269b0bb4ca862cce"><td class="memItemLeft"><a id="ae41bcadb2708b06f269b0bb4ca862cce" name="ae41bcadb2708b06f269b0bb4ca862cce"></a>
+void&#160;</td><td class="memItemRight"><b>NotifyAdvancedViewChanged</b> ()</td></tr>
 <tr class="memitem:ade440128d1069bfe0369a510c5fd60c3" id="r_ade440128d1069bfe0369a510c5fd60c3"><td class="memItemLeft"><a id="ade440128d1069bfe0369a510c5fd60c3" name="ade440128d1069bfe0369a510c5fd60c3"></a>
 void&#160;</td><td class="memItemRight"><b>NotifyAvailableTypesChanged</b> ()</td></tr>
+<tr class="memitem:a3c2de6205be25b453f320f57a6eda772" id="r_a3c2de6205be25b453f320f57a6eda772"><td class="memItemLeft"><a id="a3c2de6205be25b453f320f57a6eda772" name="a3c2de6205be25b453f320f57a6eda772"></a>
+void&#160;</td><td class="memItemRight"><b>NotifyTypeSwitchOptionsChanged</b> ()</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-attribs" class="groupheader"><a id="pub-static-attribs" name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
@@ -156,12 +160,16 @@ Static Public Attributes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-properties" class="groupheader"><a id="properties" name="properties"></a>
 Properties</h2></td></tr>
-<tr class="memitem:ad6ffeb5f1ff1854aff02ce45a5136138" id="r_ad6ffeb5f1ff1854aff02ce45a5136138"><td class="memItemLeft"><a id="ad6ffeb5f1ff1854aff02ce45a5136138" name="ad6ffeb5f1ff1854aff02ce45a5136138"></a>
-string&#160;</td><td class="memItemRight"><b>TypeSwitchJson</b> = &quot;&quot;<code> [get, set]</code></td></tr>
 <tr class="memitem:a6596c706169cba4bc4504e91b0188878" id="r_a6596c706169cba4bc4504e91b0188878"><td class="memItemLeft"><a id="a6596c706169cba4bc4504e91b0188878" name="a6596c706169cba4bc4504e91b0188878"></a>
 ObservableCollection&lt; <a class="el" href="classeditor_1_1Editors_1_1StringOptionVM.html">StringOptionVM</a> &gt;&#160;</td><td class="memItemRight"><b>EnumOptions</b> = []<code> [get]</code></td></tr>
 <tr class="memitem:ab71f7a848d35ea5d23216d684ffae264" id="r_ab71f7a848d35ea5d23216d684ffae264"><td class="memItemLeft"><a id="ab71f7a848d35ea5d23216d684ffae264" name="ab71f7a848d35ea5d23216d684ffae264"></a>
 ObservableCollection&lt; <a class="el" href="classeditor_1_1Editors_1_1StringOptionVM.html">StringOptionVM</a> &gt;&#160;</td><td class="memItemRight"><b>Variants</b> = []<code> [get]</code></td></tr>
+<tr class="memitem:a4c56c6e216d5a43d62db4317f89f9863" id="r_a4c56c6e216d5a43d62db4317f89f9863"><td class="memItemLeft"><a id="a4c56c6e216d5a43d62db4317f89f9863" name="a4c56c6e216d5a43d62db4317f89f9863"></a>
+ObservableCollection&lt; <a class="el" href="classeditor_1_1Editors_1_1TypeSwitchCaseVM.html">TypeSwitchCaseVM</a> &gt;&#160;</td><td class="memItemRight"><b>TypeSwitchCases</b> = []<code> [get]</code></td></tr>
+<tr class="memitem:a46ea74b05f880374bf24df6fcf3d8536" id="r_a46ea74b05f880374bf24df6fcf3d8536"><td class="memItemLeft"><a id="a46ea74b05f880374bf24df6fcf3d8536" name="a46ea74b05f880374bf24df6fcf3d8536"></a>
+IEnumerable&lt; string &gt;&#160;</td><td class="memItemRight"><b>TypeSwitchFieldOptions</b><code> [get]</code></td></tr>
+<tr class="memitem:acd60df64a3e87afb9a9a79757ec7bb96" id="r_acd60df64a3e87afb9a9a79757ec7bb96"><td class="memItemLeft"><a id="acd60df64a3e87afb9a9a79757ec7bb96" name="acd60df64a3e87afb9a9a79757ec7bb96"></a>
+bool&#160;</td><td class="memItemRight"><b>AdvancedView</b><code> [get]</code></td></tr>
 <tr class="memitem:a68f42e88a3cb83dc88e9cd47973c57a4" id="r_a68f42e88a3cb83dc88e9cd47973c57a4"><td class="memItemLeft"><a id="a68f42e88a3cb83dc88e9cd47973c57a4" name="a68f42e88a3cb83dc88e9cd47973c57a4"></a>
 IEnumerable&lt; string &gt;&#160;</td><td class="memItemRight"><b>AssetTypeOptions</b><code> [get]</code></td></tr>
 <tr class="memitem:a027855a648d5323efaa1e84fc6c85931" id="r_a027855a648d5323efaa1e84fc6c85931"><td class="memItemLeft"><a id="a027855a648d5323efaa1e84fc6c85931" name="a027855a648d5323efaa1e84fc6c85931"></a>

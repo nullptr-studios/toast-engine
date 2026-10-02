@@ -6,6 +6,8 @@ var namespaceeditor_1_1Assets =
     [ "AssetBrowserViewModel", "classeditor_1_1Assets_1_1AssetBrowserViewModel.html", null ],
     [ "AssetFile", "classeditor_1_1Assets_1_1AssetFile.html", null ],
     [ "AssetFolder", "classeditor_1_1Assets_1_1AssetFolder.html", "classeditor_1_1Assets_1_1AssetFolder" ],
+    [ "AssetTag", "classeditor_1_1Assets_1_1AssetTag.html", null ],
+    [ "AssetTagFilter", "classeditor_1_1Assets_1_1AssetTagFilter.html", null ],
     [ "AssetTypeFilter", "classeditor_1_1Assets_1_1AssetTypeFilter.html", null ],
     [ "AssetTypeFilterGroup", "classeditor_1_1Assets_1_1AssetTypeFilterGroup.html", null ],
     [ "BreadcrumbItem", "classeditor_1_1Assets_1_1BreadcrumbItem.html", null ],

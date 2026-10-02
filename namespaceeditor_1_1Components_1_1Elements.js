@@ -13,6 +13,7 @@ var namespaceeditor_1_1Components_1_1Elements =
     [ "DragVec3Box", "classeditor_1_1Components_1_1Elements_1_1DragVec3Box.html", null ],
     [ "DragVec4Box", "classeditor_1_1Components_1_1Elements_1_1DragVec4Box.html", null ],
     [ "DragVectorBoxBase", "classeditor_1_1Components_1_1Elements_1_1DragVectorBoxBase.html", null ],
+    [ "EditorColorPalette", "classeditor_1_1Components_1_1Elements_1_1EditorColorPalette.html", null ],
     [ "EnumBox", "classeditor_1_1Components_1_1Elements_1_1EnumBox.html", null ],
     [ "IAsyncCanExecuteCommand", "interfaceeditor_1_1Components_1_1Elements_1_1IAsyncCanExecuteCommand.html", null ],
     [ "IRowSplittable", "interfaceeditor_1_1Components_1_1Elements_1_1IRowSplittable.html", null ],
@@ -20,5 +21,6 @@ var namespaceeditor_1_1Components_1_1Elements =
     [ "IStructRow", "interfaceeditor_1_1Components_1_1Elements_1_1IStructRow.html", null ],
     [ "NodeBox", "classeditor_1_1Components_1_1Elements_1_1NodeBox.html", null ],
     [ "SearchableTreeItem&lt; T &gt;", "classeditor_1_1Components_1_1Elements_1_1SearchableTreeItem-1-g.html", null ],
-    [ "StringBox", "classeditor_1_1Components_1_1Elements_1_1StringBox.html", null ]
+    [ "StringBox", "classeditor_1_1Components_1_1Elements_1_1StringBox.html", null ],
+    [ "TagStrip", "classeditor_1_1Components_1_1Elements_1_1TagStrip.html", null ]
 ];

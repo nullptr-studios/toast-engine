@@ -1,22 +1,24 @@
 <map id="toast::ThreadPool::push" name="toast::ThreadPool::push">
-<area shape="rect" id="Node000001" title="Queues a job for execution by a worker thread." alt="" coords="710,99,885,126"/>
-<area shape="rect" id="Node000002" href="$classlogging_1_1Logger.html#aa9e80cc95ca58b9adb7e3a8323313e51" title="Set up the global logger instance, gives ownership to the caller." alt="" coords="278,19,448,46"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="768,87,721,53,692,36,662,23,601,11,538,8,479,13,428,21,426,15,479,7,538,3,602,6,663,18,695,31,724,48,773,88"/>
-<area shape="rect" id="Node000003" href="$classtoast_1_1INodeOwner.html#a355810be0f38823d417eb26cb8da1ff0" title="Allocates and initializes a full node tree from a prefab asset." alt="" coords="510,131,661,176"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="711,129,662,142,661,137,706,130"/>
-<area shape="rect" id="Node000007" href="$classlogging_1_1Logger.html#a4e48e1e55a2e236783294f836f3bbdac" title="Entry point for all engine logs." alt="" coords="511,56,660,84"/>
-<area shape="poly" id="edge7_Node000001_Node000007" title=" " alt="" coords="708,95,658,87,658,82,713,95"/>
-<area shape="rect" id="Node000008" href="$classtoast_1_1TickScheduler.html#a30cb7092b454ff283d6cd1568dac301c" title="Dispatches a single phase of the tick schedule." alt="" coords="509,201,662,245"/>
-<area shape="poly" id="edge10_Node000001_Node000008" title=" " alt="" coords="762,134,664,191,639,203,638,198,661,186,757,135"/>
-<area shape="poly" id="edge6_Node000003_Node000003" title=" " alt="" coords="619,116,607,112,586,110,566,112,554,117,549,123,550,132,545,129,544,121,551,112,565,107,586,105,609,107,624,117"/>
-<area shape="rect" id="Node000004" href="$classtoast_1_1Workspace.html#acecbe8833a3838a8a3fe77aa661b2d1d" title="instantiates the prefab and sets up the root node" alt="" coords="266,131,461,176"/>
-<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="492,154,462,156,461,151,497,154"/>
-<area shape="rect" id="Node000005" href="$classtoast_1_1Workspace.html#a1a98997469f53cfc60df37bf5e43bce1" title="Opens an existing workspace by loading the prefab at the given UID." alt="" coords="5,115,218,142"/>
-<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="248,143,218,142,218,137,253,142"/>
-<area shape="rect" id="Node000006" href="$classtoast_1_1Workspace.html#aee0cb0b76f3c488f5fdf9d674b8673d3" title="Opens a workspace bound to the given asset UID but loading its content from another file." alt="" coords="5,167,218,194"/>
-<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="248,166,219,172,218,167,253,165"/>
-<area shape="poly" id="edge8_Node000007_Node000002" title=" " alt="" coords="493,55,449,49,449,44,499,54"/>
-<area shape="poly" id="edge9_Node000007_Node000007" title=" " alt="" coords="620,41,609,37,586,35,564,37,552,41,549,47,554,56,549,55,543,47,548,37,562,31,586,29,611,32,626,41"/>
-<area shape="rect" id="Node000009" href="$classtoast_1_1TickScheduler.html#a002172089ec3f1e7d6d24789c4547bb4" title="Runs all four phases (early_tick → tick → post_physics → late_tick) of the schedule." alt="" coords="272,209,454,237"/>
-<area shape="poly" id="edge11_Node000008_Node000009" title=" " alt="" coords="491,223,455,226,455,220,496,223"/>
+<area shape="rect" id="Node000001" title="Queues a job for execution by a worker thread." alt="" coords="710,145,885,173"/>
+<area shape="rect" id="Node000002" href="$classlogging_1_1Logger.html#aa9e80cc95ca58b9adb7e3a8323313e51" title="Set up the global logger instance, gives ownership to the caller." alt="" coords="278,24,448,51"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="776,131,757,106,730,77,698,49,661,28,630,18,598,12,531,9,468,15,416,26,414,21,467,10,531,4,598,6,631,13,663,23,701,45,734,73,761,103,782,133"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1INodeOwner.html#a355810be0f38823d417eb26cb8da1ff0" title="Allocates and initializes a full node tree from a prefab asset." alt="" coords="510,137,661,181"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="692,159,661,162,661,156,697,159"/>
+<area shape="rect" id="Node000007" href="$classlogging_1_1Logger.html#a4e48e1e55a2e236783294f836f3bbdac" title="Entry point for all engine logs." alt="" coords="511,61,660,89"/>
+<area shape="poly" id="edge7_Node000001_Node000007" title=" " alt="" coords="749,138,661,103,632,92,632,87,663,98,754,138"/>
+<area shape="rect" id="Node000008" href="$classtoast_1_1VoxelPiece.html#a059ce673693b6726d21fc5427baed01e" title=" " alt="" coords="516,206,656,251"/>
+<area shape="poly" id="edge10_Node000001_Node000008" title=" " alt="" coords="741,177,657,208,656,203,736,179"/>
+<area shape="rect" id="Node000009" href="$classtoast_1_1TickScheduler.html#a30cb7092b454ff283d6cd1568dac301c" title="Dispatches a single phase of the tick schedule." alt="" coords="509,275,662,320"/>
+<area shape="poly" id="edge11_Node000001_Node000009" title=" " alt="" coords="771,182,722,225,664,265,642,277,640,272,661,261,719,221,766,184"/>
+<area shape="poly" id="edge6_Node000003_Node000003" title=" " alt="" coords="619,121,607,118,586,115,566,117,554,122,549,128,550,137,545,135,544,126,551,118,565,112,586,110,609,112,624,122"/>
+<area shape="rect" id="Node000004" href="$classtoast_1_1Workspace.html#acecbe8833a3838a8a3fe77aa661b2d1d" title="instantiates the prefab and sets up the root node" alt="" coords="266,137,461,181"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="492,159,462,162,461,156,497,158"/>
+<area shape="rect" id="Node000005" href="$classtoast_1_1Workspace.html#a1a98997469f53cfc60df37bf5e43bce1" title="Opens an existing workspace by loading the prefab at the given UID." alt="" coords="5,120,218,147"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="248,148,219,147,218,142,253,147"/>
+<area shape="rect" id="Node000006" href="$classtoast_1_1Workspace.html#aee0cb0b76f3c488f5fdf9d674b8673d3" title="Opens a workspace bound to the given asset UID but loading its content from another file." alt="" coords="5,172,218,199"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="248,172,219,177,217,172,253,170"/>
+<area shape="poly" id="edge8_Node000007_Node000002" title=" " alt="" coords="493,60,449,55,448,49,499,59"/>
+<area shape="poly" id="edge9_Node000007_Node000007" title=" " alt="" coords="620,46,609,42,586,40,564,42,552,46,549,52,554,61,549,60,543,52,548,43,562,37,586,34,611,37,626,46"/>
+<area shape="rect" id="Node000010" href="$classtoast_1_1TickScheduler.html#a002172089ec3f1e7d6d24789c4547bb4" title="Runs the four frame phases (early_tick → tick → post_physics → late_tick) of the schedule." alt="" coords="272,284,454,311"/>
+<area shape="poly" id="edge12_Node000009_Node000010" title=" " alt="" coords="491,298,455,300,455,295,496,298"/>
 </map>

@@ -180,41 +180,47 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('body_8hpp_sour
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  <span class="keywordtype">bool</span> allow_sleep = <span class="keyword">true</span>;</div>
 <div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  <span class="keywordtype">bool</span> sleep_locked = <span class="keyword">false</span>;</div>
 <div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  <span class="keywordtype">float</span> sleep_timer = 0.0f;</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  glm::vec3 position = {};</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  glm::vec3 previous_position = {};</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  glm::quat previous_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  glm::vec3 linear_velocity = {};</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  glm::vec3 angular_velocity = {};</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  <span class="keywordtype">float</span> inverse_mass = 1.0f;</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  <span class="keywordtype">float</span> gravity_scale = 1.0f;</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  glm::mat3 inverse_inertia_local = {0.0f};</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  glm::mat3 inverse_inertia_world = {0.0f};</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  glm::vec3 local_center_of_mass = {};</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  glm::bvec3 lock_position = glm::bvec3(<span class="keyword">false</span>);</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  glm::bvec3 lock_rotation = glm::bvec3(<span class="keyword">false</span>);</div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span> </div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  <span class="keyword">auto</span> worldCenterOfMass() <span class="keyword">const</span> -&gt; glm::vec3 {</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>    <span class="keywordflow">return</span> position + rotation * local_center_of_mass;</div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  }</div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>};</div>
-</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <span class="keywordtype">float</span> asleep_seconds = 0.0f;</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno"><a class="line" href="structphysics_1_1Body.html#a1c6f750c86e895fbc612fb978521f77d">   63</a></span>  glm::vec3 <a class="code hl_variable" href="structphysics_1_1Body.html#a1c6f750c86e895fbc612fb978521f77d">sleep_anchor_center</a> = {};</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  glm::quat sleep_anchor_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  glm::vec3 position = {};</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  glm::vec3 previous_position = {};</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  glm::quat previous_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  glm::vec3 linear_velocity = {};</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  glm::vec3 angular_velocity = {};</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  <span class="keywordtype">float</span> inverse_mass = 1.0f;</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  <span class="keywordtype">float</span> gravity_scale = 1.0f;</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  glm::mat3 inverse_inertia_local = {0.0f};</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  glm::mat3 inverse_inertia_world = {0.0f};</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  glm::vec3 local_center_of_mass = {};</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno"><a class="line" href="structphysics_1_1Body.html#ad9f69ed05409c934d796f2b08267514d">   77</a></span>  <span class="keywordtype">float</span> <a class="code hl_variable" href="structphysics_1_1Body.html#ad9f69ed05409c934d796f2b08267514d">extent_radius</a> = 0.0f;</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  glm::bvec3 lock_position = glm::bvec3(<span class="keyword">false</span>);</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  glm::bvec3 lock_rotation = glm::bvec3(<span class="keyword">false</span>);</div>
 <div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span> </div>
-<div class="foldopen" id="foldopen00081" data-start="{" data-end="};">
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno"><a class="line" href="structphysics_1_1BodySlot.html">   81</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structphysics_1_1BodySlot.html">BodySlot</a> {</div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  <a class="code hl_struct" href="structphysics_1_1Body.html">Body</a> body;</div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  uint32_t generation = 1;</div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  <span class="keywordtype">bool</span> occupied = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  <span class="keyword">auto</span> worldCenterOfMass() const -&gt; glm::vec3 {</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>    <span class="keywordflow">return</span> position + rotation * local_center_of_mass;</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  }</div>
 <div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>};</div>
 </div>
 <div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span> </div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>}</div>
+<div class="foldopen" id="foldopen00087" data-start="{" data-end="};">
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno"><a class="line" href="structphysics_1_1BodySlot.html">   87</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structphysics_1_1BodySlot.html">BodySlot</a> {</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  <a class="code hl_struct" href="structphysics_1_1Body.html">Body</a> body;</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  uint32_t generation = 1;</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  <span class="keywordtype">bool</span> occupied = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>};</div>
+</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span> </div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>}</div>
 <div class="ttc" id="astructphysics_1_1BodyDescriptor_html"><div class="ttname"><a href="structphysics_1_1BodyDescriptor.html">physics::BodyDescriptor</a></div><div class="ttdef"><b>Definition</b> body.hpp:30</div></div>
 <div class="ttc" id="astructphysics_1_1BodyID_html"><div class="ttname"><a href="structphysics_1_1BodyID.html">physics::BodyID</a></div><div class="ttdef"><b>Definition</b> body.hpp:18</div></div>
-<div class="ttc" id="astructphysics_1_1BodySlot_html"><div class="ttname"><a href="structphysics_1_1BodySlot.html">physics::BodySlot</a></div><div class="ttdef"><b>Definition</b> body.hpp:81</div></div>
+<div class="ttc" id="astructphysics_1_1BodySlot_html"><div class="ttname"><a href="structphysics_1_1BodySlot.html">physics::BodySlot</a></div><div class="ttdef"><b>Definition</b> body.hpp:87</div></div>
 <div class="ttc" id="astructphysics_1_1BodyState_html"><div class="ttname"><a href="structphysics_1_1BodyState.html">physics::BodyState</a></div><div class="ttdef"><b>Definition</b> body.hpp:43</div></div>
 <div class="ttc" id="astructphysics_1_1Body_html"><div class="ttname"><a href="structphysics_1_1Body.html">physics::Body</a></div><div class="ttdef"><b>Definition</b> body.hpp:54</div></div>
+<div class="ttc" id="astructphysics_1_1Body_html_a1c6f750c86e895fbc612fb978521f77d"><div class="ttname"><a href="structphysics_1_1Body.html#a1c6f750c86e895fbc612fb978521f77d">physics::Body::sleep_anchor_center</a></div><div class="ttdeci">glm::vec3 sleep_anchor_center</div><div class="ttdoc">Pose the still window opened at.</div><div class="ttdef"><b>Definition</b> body.hpp:63</div></div>
+<div class="ttc" id="astructphysics_1_1Body_html_ad9f69ed05409c934d796f2b08267514d"><div class="ttname"><a href="structphysics_1_1Body.html#ad9f69ed05409c934d796f2b08267514d">physics::Body::extent_radius</a></div><div class="ttdeci">float extent_radius</div><div class="ttdoc">Distance from the center of mass to the farthest point of the shape.</div><div class="ttdef"><b>Definition</b> body.hpp:77</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

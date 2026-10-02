@@ -118,32 +118,59 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('fragment__extr
   <div class="headertitle"><div class="title">fragment_extraction.hpp</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="fragment"><div class="line"><a id="l00001" name="l00001"></a><span class="lineno">    1</span></div>
+<a href="fragment__extraction_8hpp.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a id="l00001" name="l00001"></a><span class="lineno">    1</span></div>
+<div class="line"><a id="l00006" name="l00006"></a><span class="lineno">    6</span> </div>
+<div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span><span class="preprocessor">#pragma once</span></div>
 <div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span> </div>
-<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="preprocessor">#pragma once</span></div>
+<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="preprocessor">#include &quot;<a class="code" href="component__classification_8hpp.html">component_classification.hpp</a>&quot;</span></div>
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span> </div>
-<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &quot;<a class="code" href="component__classification_8hpp.html">component_classification.hpp</a>&quot;</span></div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span> </div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &lt;glm/glm.hpp&gt;</span></div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &lt;<a class="code" href="voxel__volume_8hpp.html">toast/voxel/voxel_volume.hpp</a>&gt;</span></div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span> </div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="keyword">namespace </span>physics {</div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &lt;array&gt;</span></div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &lt;glm/glm.hpp&gt;</span></div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &lt;optional&gt;</span></div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &lt;<a class="code" href="mass__accumulator_8hpp.html">toast/voxel/mass_accumulator.hpp</a>&gt;</span></div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &lt;<a class="code" href="palette_8hpp.html">toast/voxel/palette.hpp</a>&gt;</span></div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &lt;<a class="code" href="voxel__volume_8hpp.html">toast/voxel/voxel_volume.hpp</a>&gt;</span></div>
 <div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span> </div>
-<div class="foldopen" id="foldopen00018" data-start="{" data-end="};">
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno"><a class="line" href="structphysics_1_1ExtractedFragment.html">   18</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structphysics_1_1ExtractedFragment.html">ExtractedFragment</a> {</div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>  <a class="code hl_class" href="classvoxel_1_1Volume.html">voxel::Volume</a> volume;</div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>  glm::ivec3 offset;</div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>};</div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="keyword">namespace </span>physics {</div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span> </div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="keyword">using </span>DensityTable = std::array&lt;uint32_t, voxel::k_palette_size&gt;;</div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span> </div>
+<div class="foldopen" id="foldopen00022" data-start="{" data-end="};">
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno"><a class="line" href="structphysics_1_1RemovedVoxels.html">   22</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structphysics_1_1RemovedVoxels.html">RemovedVoxels</a> {</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno"><a class="line" href="structphysics_1_1RemovedVoxels.html#a62fdb2fc83042d433bc373d611ec9c3d">   24</a></span>  <a class="code hl_struct" href="structvoxel_1_1MassMoments.html">voxel::MassMoments</a> <a class="code hl_variable" href="structphysics_1_1RemovedVoxels.html#a62fdb2fc83042d433bc373d611ec9c3d">moments</a>;</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>  uint32_t voxels = 0;</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>};</div>
 </div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>[[nodiscard]]</div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="keyword">auto</span> extractFragmentVolume(<span class="keyword">const</span> <a class="code hl_class" href="classvoxel_1_1Volume.html">voxel::Volume</a>&amp; source, <span class="keyword">const</span> <a class="code hl_struct" href="structphysics_1_1DetachedComponent.html">DetachedComponent</a>&amp; component) -&gt; <a class="code hl_struct" href="structphysics_1_1ExtractedFragment.html">ExtractedFragment</a>;</div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span> </div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>}</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span> </div>
+<div class="foldopen" id="foldopen00028" data-start="{" data-end="};">
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno"><a class="line" href="structphysics_1_1ExtractedFragment.html">   28</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structphysics_1_1ExtractedFragment.html">ExtractedFragment</a> {</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>  <a class="code hl_class" href="classvoxel_1_1Volume.html">voxel::Volume</a> volume;</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>  glm::ivec3 offset;</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span></div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno"><a class="line" href="structphysics_1_1ExtractedFragment.html#afe5ad6cea1cb2bcdc170a63f7e0533e6">   33</a></span>  <a class="code hl_struct" href="structvoxel_1_1MassMoments.html">voxel::MassMoments</a> <a class="code hl_variable" href="structphysics_1_1ExtractedFragment.html#afe5ad6cea1cb2bcdc170a63f7e0533e6">moments</a>;</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  uint32_t voxels = 0;</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>};</div>
+</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span></div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>[[nodiscard]]</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span><span class="keyword">auto</span> extractFragmentVolume(<a class="code hl_class" href="classvoxel_1_1Volume.html">voxel::Volume</a>&amp; source, <span class="keyword">const</span> <a class="code hl_struct" href="structphysics_1_1DetachedComponent.html">DetachedComponent</a>&amp; component, <span class="keyword">const</span> DensityTable&amp; density)</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>    -&gt; std::optional&lt;ExtractedFragment&gt;;</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span> </div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span><span class="keywordtype">void</span> restoreFragment(<a class="code hl_class" href="classvoxel_1_1Volume.html">voxel::Volume</a>&amp; source, <a class="code hl_class" href="classvoxel_1_1Volume.html">voxel::Volume</a>&amp; fragment, glm::ivec3 offset);</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span><span class="keyword">auto</span> discardComponent(<a class="code hl_class" href="classvoxel_1_1Volume.html">voxel::Volume</a>&amp; source, <span class="keyword">const</span> <a class="code hl_struct" href="structphysics_1_1DetachedComponent.html">DetachedComponent</a>&amp; component, <span class="keyword">const</span> DensityTable&amp; density) -&gt; <a class="code hl_struct" href="structphysics_1_1RemovedVoxels.html">RemovedVoxels</a>;</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>}</div>
 <div class="ttc" id="aclassvoxel_1_1Volume_html"><div class="ttname"><a href="classvoxel_1_1Volume.html">voxel::Volume</a></div><div class="ttdef"><b>Definition</b> voxel_volume.hpp:21</div></div>
 <div class="ttc" id="acomponent__classification_8hpp_html"><div class="ttname"><a href="component__classification_8hpp.html">component_classification.hpp</a></div><div class="ttdoc">TODO: Brief description of the file&#39;s purpose.</div></div>
+<div class="ttc" id="amass__accumulator_8hpp_html"><div class="ttname"><a href="mass__accumulator_8hpp.html">mass_accumulator.hpp</a></div></div>
+<div class="ttc" id="apalette_8hpp_html"><div class="ttname"><a href="palette_8hpp.html">palette.hpp</a></div></div>
 <div class="ttc" id="astructphysics_1_1DetachedComponent_html"><div class="ttname"><a href="structphysics_1_1DetachedComponent.html">physics::DetachedComponent</a></div><div class="ttdef"><b>Definition</b> component_classification.hpp:26</div></div>
-<div class="ttc" id="astructphysics_1_1ExtractedFragment_html"><div class="ttname"><a href="structphysics_1_1ExtractedFragment.html">physics::ExtractedFragment</a></div><div class="ttdef"><b>Definition</b> fragment_extraction.hpp:18</div></div>
+<div class="ttc" id="astructphysics_1_1ExtractedFragment_html"><div class="ttname"><a href="structphysics_1_1ExtractedFragment.html">physics::ExtractedFragment</a></div><div class="ttdef"><b>Definition</b> fragment_extraction.hpp:28</div></div>
+<div class="ttc" id="astructphysics_1_1ExtractedFragment_html_afe5ad6cea1cb2bcdc170a63f7e0533e6"><div class="ttname"><a href="structphysics_1_1ExtractedFragment.html#afe5ad6cea1cb2bcdc170a63f7e0533e6">physics::ExtractedFragment::moments</a></div><div class="ttdeci">voxel::MassMoments moments</div><div class="ttdoc">In fragment voxel coordinates.</div><div class="ttdef"><b>Definition</b> fragment_extraction.hpp:33</div></div>
+<div class="ttc" id="astructphysics_1_1RemovedVoxels_html"><div class="ttname"><a href="structphysics_1_1RemovedVoxels.html">physics::RemovedVoxels</a></div><div class="ttdef"><b>Definition</b> fragment_extraction.hpp:22</div></div>
+<div class="ttc" id="astructphysics_1_1RemovedVoxels_html_a62fdb2fc83042d433bc373d611ec9c3d"><div class="ttname"><a href="structphysics_1_1RemovedVoxels.html#a62fdb2fc83042d433bc373d611ec9c3d">physics::RemovedVoxels::moments</a></div><div class="ttdeci">voxel::MassMoments moments</div><div class="ttdoc">In source voxel coordinates.</div><div class="ttdef"><b>Definition</b> fragment_extraction.hpp:24</div></div>
+<div class="ttc" id="astructvoxel_1_1MassMoments_html"><div class="ttname"><a href="structvoxel_1_1MassMoments.html">voxel::MassMoments</a></div><div class="ttdef"><b>Definition</b> mass_accumulator.hpp:18</div></div>
 <div class="ttc" id="avoxel__volume_8hpp_html"><div class="ttname"><a href="voxel__volume_8hpp.html">voxel_volume.hpp</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -151,7 +178,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('fragment__extr
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><b>engine</b></li><li class="navelem"><b>src</b></li><li class="navelem"><b>toast</b></li><li class="navelem"><b>physics</b></li><li class="navelem"><b>fragment_extraction.hpp</b></li>
+    <li class="navelem"><b>engine</b></li><li class="navelem"><b>src</b></li><li class="navelem"><b>toast</b></li><li class="navelem"><b>physics</b></li><li class="navelem"><a href="fragment__extraction_8hpp.html">fragment_extraction.hpp</a></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.17.0 </li>
   </ul>
 </div>

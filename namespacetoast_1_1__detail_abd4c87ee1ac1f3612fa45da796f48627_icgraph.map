@@ -1,0 +1,15 @@
+<map id="toast::_detail::assetOfType" name="toast::_detail::assetOfType">
+<area shape="rect" id="Node000001" title=" " alt="" coords="271,152,465,180"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1VoxelMesh.html#a435ce63edf75ca2b92a4db0b8bc5ea14" title=" " alt="" coords="13,5,215,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="341,141,289,94,257,69,221,48,193,36,191,31,224,43,260,65,293,90,346,140"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1VoxelMesh.html#aeaaa7d143aece01421535ea45ad63a35" title=" " alt="" coords="5,57,223,85"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="325,145,277,122,222,99,187,88,186,83,224,94,280,117,331,144"/>
+<area shape="rect" id="Node000004" href="$classtoast_1_1VoxelMesh.html#a357a0761421031dcf4461859ce8c927e" title=" " alt="" coords="16,109,212,154"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="252,151,213,147,212,142,257,149"/>
+<area shape="rect" id="Node000005" href="$classtoast_1_1VoxelMesh.html#a234d66fce33e3f959c6e99d461b21301" title=" " alt="" coords="22,178,206,223"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="253,182,207,190,205,185,258,180"/>
+<area shape="rect" id="Node000006" href="$classtoast_1_1VoxelPiece.html#a87c31ebe3a13a1f8d772b3eb3a6b7012" title=" " alt="" coords="44,248,184,292"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="324,188,224,238,186,251,184,247,222,233,328,186"/>
+<area shape="rect" id="Node000007" href="$classtoast_1_1VoxelPiece.html#a52838ba051112268889a0f7f502d404b" title=" " alt="" coords="33,316,195,344"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="349,191,297,251,262,281,224,307,196,319,194,314,221,302,259,277,293,247,345,193"/>
+</map>

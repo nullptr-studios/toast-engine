@@ -7,6 +7,7 @@ var namespaceeditor =
     [ "Engine", "namespaceeditor_1_1Engine.html", "namespaceeditor_1_1Engine" ],
     [ "Logger", "namespaceeditor_1_1Logger.html", "namespaceeditor_1_1Logger" ],
     [ "StartWindow", "namespaceeditor_1_1StartWindow.html", "namespaceeditor_1_1StartWindow" ],
+    [ "VoxelEditor", "namespaceeditor_1_1VoxelEditor.html", "namespaceeditor_1_1VoxelEditor" ],
     [ "Workspace", "namespaceeditor_1_1Workspace.html", "namespaceeditor_1_1Workspace" ],
     [ "App", "classeditor_1_1App.html", null ],
     [ "ViewLocator", "classeditor_1_1ViewLocator.html", null ],

@@ -147,18 +147,20 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('component__cla
 </div>
 <div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span> </div>
 <div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>[[nodiscard]]</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="keyword">auto</span> buildDetachedComponents(<span class="keyword">const</span> <a class="code hl_struct" href="structvoxel_1_1Connectivity.html">voxel::Connectivity</a>&amp; c, std::span&lt;const ComponentClass&gt; classes, glm::uvec3 brick_size)</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>    -&gt; std::vector&lt;DetachedComponent&gt;;</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span> </div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span><span class="keyword">inline</span> <span class="keyword">auto</span> maxFragmentExtentBricks() -&gt; int32_t {</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  <span class="keywordflow">return</span> tunables().max_fragment_extent_bricks;</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>}</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span> </div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>[[nodiscard]]</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span><span class="keyword">auto</span> splitBySpatialCompactness(std::vector&lt;DetachedComponent&gt; components, int32_t max_extent_bricks = maxFragmentExtentBricks())</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>    -&gt; std::vector&lt;DetachedComponent&gt;;</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>}</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="keyword">auto</span> buildDetachedComponents(</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>    <span class="keyword">const</span> <a class="code hl_struct" href="structvoxel_1_1Connectivity.html">voxel::Connectivity</a>&amp; c, std::span&lt;const ComponentClass&gt; classes, glm::uvec3 brick_size,</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>    ComponentClass target_class = ComponentClass::detached</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>) -&gt; std::vector&lt;DetachedComponent&gt;;</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span> </div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span><span class="keyword">inline</span> <span class="keyword">auto</span> maxFragmentExtentBricks() -&gt; int32_t {</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="keywordflow">return</span> tunables().max_fragment_extent_bricks;</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>}</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span> </div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>[[nodiscard]]</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span><span class="keyword">auto</span> splitBySpatialCompactness(std::vector&lt;DetachedComponent&gt; components, int32_t max_extent_bricks = maxFragmentExtentBricks())</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>    -&gt; std::vector&lt;DetachedComponent&gt;;</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>}</div>
 <div class="ttc" id="aanchor__mask_8hpp_html"><div class="ttname"><a href="anchor__mask_8hpp.html">anchor_mask.hpp</a></div><div class="ttdoc">TODO: Brief description of the file&#39;s purpose.</div></div>
 <div class="ttc" id="aconnectivity_8hpp_html"><div class="ttname"><a href="connectivity_8hpp.html">connectivity.hpp</a></div></div>
 <div class="ttc" id="aphysics__settings_8hpp_html"><div class="ttname"><a href="physics__settings_8hpp.html">physics_settings.hpp</a></div></div>

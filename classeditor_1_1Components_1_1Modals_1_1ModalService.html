@@ -146,7 +146,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a8d17a693a92a56a989780feca06a3a88" id="r_a8d17a693a92a56a989780feca06a3a88"><td class="memItemLeft">Task&#160;</td><td class="memItemRight"><a class="el" href="#a8d17a693a92a56a989780feca06a3a88">ShowError</a> (string title, string message)</td></tr>
 <tr class="memitem:adafa2a6425c2f9c6ef770b5231b3474c" id="r_adafa2a6425c2f9c6ef770b5231b3474c"><td class="memItemLeft">async Task&lt; bool &gt;&#160;</td><td class="memItemRight"><a class="el" href="#adafa2a6425c2f9c6ef770b5231b3474c">ShowConfirm</a> (string title, string message)</td></tr>
 <tr class="memitem:a948a74dd79f9bf1ca796dc8b4ea48bc4" id="r_a948a74dd79f9bf1ca796dc8b4ea48bc4"><td class="memItemLeft">async Task&lt; SaveChangesResult &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a948a74dd79f9bf1ca796dc8b4ea48bc4">ShowSaveChanges</a> (string filename)</td></tr>
-<tr class="memitem:a8850c1f1b7453373775b2bae2637e3a9" id="r_a8850c1f1b7453373775b2bae2637e3a9"><td class="memItemLeft">async Task&lt; string?&gt;&#160;</td><td class="memItemRight"><a class="el" href="#a8850c1f1b7453373775b2bae2637e3a9">ShowSaveFile</a> (string defaultPath)</td></tr>
+<tr class="memitem:a09b75c9a472dc815be2ec09d1aa0f48e" id="r_a09b75c9a472dc815be2ec09d1aa0f48e"><td class="memItemLeft">async Task&lt; string?&gt;&#160;</td><td class="memItemRight"><a class="el" href="#a09b75c9a472dc815be2ec09d1aa0f48e">ShowSaveFile</a> (string defaultPath, string extension=&quot;.tnode&quot;)</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -274,8 +274,8 @@ static ? Window&#160;</td><td class="memItemRight"><b>FindActiveWindow</b> ()</t
 
 </div>
 </div>
-<a id="a8850c1f1b7453373775b2bae2637e3a9" name="a8850c1f1b7453373775b2bae2637e3a9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8850c1f1b7453373775b2bae2637e3a9">&#9670;&#160;</a></span>ShowSaveFile()</h2>
+<a id="a09b75c9a472dc815be2ec09d1aa0f48e" name="a09b75c9a472dc815be2ec09d1aa0f48e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a09b75c9a472dc815be2ec09d1aa0f48e">&#9670;&#160;</a></span>ShowSaveFile()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -286,8 +286,12 @@ static ? Window&#160;</td><td class="memItemRight"><b>FindActiveWindow</b> ()</t
         <tr>
           <td class="memname">async Task&lt; string?&gt; editor.Components.Modals.ModalService.ShowSaveFile </td>
           <td>(</td>
-          <td class="paramtype">string</td>          <td class="paramname"><span class="paramname"><em>defaultPath</em></span></td><td>)</td>
+          <td class="paramtype">string</td>          <td class="paramname"><span class="paramname"><em>defaultPath</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">string</td>          <td class="paramname"><span class="paramname"><em>extension</em></span><span class="paramdefsep"> = </span><span class="paramdefval">&quot;.tnode&quot;</span>&#160;)</td>
         </tr>
       </table>
   </td>

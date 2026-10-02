@@ -1,7 +1,7 @@
 <map id="assets::Prefab::stringifyValue" name="assets::Prefab::stringifyValue">
 <area shape="rect" id="Node000001" title="Converts a reflected field value to its text representation." alt="" coords="219,29,393,74"/>
 <area shape="poly" id="edge1_Node000001_Node000001" title=" " alt="" coords="340,14,328,10,306,8,286,10,273,15,268,21,269,30,264,27,263,19,270,10,284,5,306,3,330,5,345,14"/>
-<area shape="rect" id="Node000002" href="$classtoast_1_1Workspace.html#a580beb85b06c63ceee52c4df9f101969" title="Editor&#45;only per&#45;frame work: camera preview, animation preview, inspector streaming." alt="" coords="5,38,171,66"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1Workspace.html#a580beb85b06c63ceee52c4df9f101969" title="Editor&#45;only per&#45;frame work: camera preview, animation preview, editorTick lifecycle,..." alt="" coords="5,38,171,66"/>
 <area shape="poly" id="edge2_Node000001_Node000002" title=" " alt="" coords="200,52,171,54,171,49,206,51"/>
 <area shape="poly" id="edge3_Node000002_Node000002" title=" " alt="" coords="124,23,112,19,88,16,65,18,53,23,50,29,56,37,50,37,45,29,49,19,64,13,88,11,114,14,129,22"/>
 </map>

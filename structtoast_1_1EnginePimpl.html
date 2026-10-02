@@ -123,19 +123,29 @@ Collaboration diagram for toast::EnginePimpl:</div>
 <div class="dyncontent">
 <div class="center"><img src="structtoast_1_1EnginePimpl__coll__graph.png" border="0" usemap="#atoast_1_1EnginePimpl_coll__map" loading="lazy" alt="Collaboration graph"/></div>
 <map name="atoast_1_1EnginePimpl_coll__map" id="atoast_1_1EnginePimpl_coll__map">
-<area shape="rect" title=" " alt="" coords="622,123,766,150"/>
-<area shape="rect" href="classTime.html" title="Class that controls the time of the application." alt="" coords="310,11,365,38"/>
-<area shape="poly" title=" " alt="" coords="380,21,483,29,542,40,599,59,624,72,647,89,682,123,677,122,643,93,621,77,597,64,541,45,482,34,381,26"/>
-<area shape="rect" href="classevent_1_1Listener.html" title="manages the lifetime, subscription, and unsubscription of callbacks" alt="" coords="278,67,397,94"/>
-<area shape="poly" title=" " alt="" coords="412,83,502,92,599,107,650,122,645,122,598,112,501,97,413,88"/>
-<area shape="rect" href="classtoast_1_1NodeRegistry.html" title="Global registry mapping fully&#45;qualified type names to NodeInfo pointers." alt="" coords="262,120,413,148"/>
-<area shape="poly" title=" " alt="" coords="428,132,625,135,620,137,429,137"/>
-<area shape="rect" href="classrenderer_1_1SharedTextureOutputTarget.html" title=" " alt="" coords="227,171,448,216"/>
-<area shape="poly" title=" " alt="" coords="463,182,598,163,649,151,654,150,599,168,464,188"/>
-<area shape="rect" href="classrenderer_1_1IOutputTarget.html" title=" " alt="" coords="5,180,178,208"/>
-<area shape="poly" title=" " alt="" coords="193,191,229,193,224,194,194,196"/>
-<area shape="rect" href="structtoast_1_1UID.html" title=" " alt="" coords="294,240,381,268"/>
-<area shape="poly" title=" " alt="" coords="396,251,493,241,546,229,597,211,621,197,644,181,678,152,683,149,647,185,624,202,599,216,548,234,494,246,397,256"/>
+<area shape="rect" title=" " alt="" coords="1329,157,1472,185"/>
+<area shape="rect" href="classTime.html" title="Class that controls the time of the application." alt="" coords="1017,17,1072,45"/>
+<area shape="poly" title=" " alt="" coords="1087,25,1134,24,1191,29,1250,40,1306,62,1335,82,1360,108,1394,157,1389,156,1356,111,1332,86,1304,67,1248,45,1190,34,1134,30,1088,30"/>
+<area shape="rect" href="classevent_1_1Listener.html" title="manages the lifetime, subscription, and unsubscription of callbacks" alt="" coords="985,73,1104,101"/>
+<area shape="poly" title=" " alt="" coords="1119,87,1209,96,1258,105,1306,118,1346,135,1380,157,1375,156,1343,140,1304,123,1257,110,1209,101,1119,92"/>
+<area shape="rect" href="classtoast_1_1NodeRegistry.html" title="Global registry mapping fully&#45;qualified type names to NodeInfo pointers." alt="" coords="969,125,1120,153"/>
+<area shape="poly" title=" " alt="" coords="1135,144,1332,164,1326,165,1135,150"/>
+<area shape="rect" href="classrenderer_1_1SharedTextureOutputTarget.html" title=" " alt="" coords="934,177,1155,221"/>
+<area shape="poly" title=" " alt="" coords="1170,202,1237,201,1305,195,1354,186,1360,185,1305,200,1237,206,1170,207"/>
+<area shape="rect" href="classrenderer_1_1IOutputTarget.html" title=" " alt="" coords="570,185,743,213"/>
+<area shape="poly" title=" " alt="" coords="758,196,936,198,931,199,759,202"/>
+<area shape="rect" href="structtoast_1_1UID.html" title=" " alt="" coords="613,276,700,303"/>
+<area shape="poly" title=" " alt="" coords="715,285,946,275,1067,267,1155,256,1215,241,1274,221,1366,186,1372,185,1276,226,1216,246,1155,261,1068,272,947,280,716,290"/>
+<area shape="rect" href="structevent_1_1SetShowOthers.html" title=" " alt="" coords="962,318,1127,346"/>
+<area shape="poly" title=" " alt="" coords="715,299,797,312,964,328,959,329,796,317,715,304"/>
+<area shape="poly" title=" " alt="" coords="1142,343,1182,343,1224,339,1265,329,1304,312,1337,284,1363,249,1381,213,1393,187,1397,183,1386,215,1367,251,1341,288,1306,317,1267,334,1225,344,1183,348,1142,348"/>
+<area shape="rect" href="structevent_1_1Event.html" title=" " alt="" coords="540,346,773,374"/>
+<area shape="poly" title=" " alt="" coords="788,348,959,338,964,338,788,353"/>
+<area shape="rect" href="structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="5,348,165,375"/>
+<area shape="poly" title=" " alt="" coords="180,354,189,354,352,350,516,352,543,355,537,356,516,358,352,356,189,359,181,359"/>
+<area shape="rect" href="structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="214,373,355,401"/>
+<area shape="poly" title=" " alt="" coords="181,371,217,378,211,378,180,376"/>
+<area shape="poly" title=" " alt="" coords="371,384,516,377,560,375,566,375,517,383,371,389"/>
 </map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -183,6 +193,10 @@ std::mutex&#160;</td><td class="memItemRight"><b>owners_mutex</b></td></tr>
 std::map&lt; <a class="el" href="structtoast_1_1UID.html">toast::UID</a>, std::unique_ptr&lt; <a class="el" href="classtoast_1_1INodeOwner.html">INodeOwner</a> &gt; &gt;&#160;</td><td class="memItemRight"><b>owners</b></td></tr>
 <tr class="memitem:aefc053e7b9ab3cdde8c64a8290c689b6" id="r_aefc053e7b9ab3cdde8c64a8290c689b6"><td class="memItemLeft"><a id="aefc053e7b9ab3cdde8c64a8290c689b6" name="aefc053e7b9ab3cdde8c64a8290c689b6"></a>
 <a class="el" href="structtoast_1_1UID.html">toast::UID</a>&#160;</td><td class="memItemRight"><b>active_workspace</b> {0}</td></tr>
+<tr class="memitem:a9c92064feb21d78ceb08d1fb2aff49e7" id="r_a9c92064feb21d78ceb08d1fb2aff49e7"><td class="memItemLeft"><a id="a9c92064feb21d78ceb08d1fb2aff49e7" name="a9c92064feb21d78ceb08d1fb2aff49e7"></a>
+<a class="el" href="structevent_1_1SetShowOthers.html">event::SetShowOthers</a>&#160;</td><td class="memItemRight"><b>show_others</b></td></tr>
+<tr class="memitem:a9812449ef1a8e610a707991d9f2769bb" id="r_a9812449ef1a8e610a707991d9f2769bb"><td class="memItemLeft"><a id="a9812449ef1a8e610a707991d9f2769bb" name="a9812449ef1a8e610a707991d9f2769bb"></a>
+bool&#160;</td><td class="memItemRight"><b>show_others_warned</b> = false</td></tr>
 </table>
 <hr/>The documentation for this struct was generated from the following file:<ul>
 <li>engine/src/toast/<b>engine.cpp</b></li>

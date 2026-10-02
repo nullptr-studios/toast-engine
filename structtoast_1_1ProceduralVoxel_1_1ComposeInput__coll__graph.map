@@ -1,0 +1,5 @@
+<map id="toast::ProceduralVoxel::ComposeInput" name="toast::ProceduralVoxel::ComposeInput">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,106,172,151"/>
+<area shape="rect" id="Node000002" href="$structvoxel_1_1Palette.html" title="Entry 0 is the empty voxel and must stay all zero." alt="" coords="34,5,143,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="91,47,91,106,86,105,86,50"/>
+</map>

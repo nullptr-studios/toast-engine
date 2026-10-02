@@ -1,6 +1,6 @@
 var curve_8hpp =
 [
-    [ "assets::Curve", "classassets_1_1Curve.html", null ],
+    [ "assets::Curve", "classassets_1_1Curve.html", "classassets_1_1Curve" ],
     [ "assets::SplineType", "curve_8hpp.html#a3d8ff072f435446fc44dadcede9acd36", [
       [ "linear", "curve_8hpp.html#a3d8ff072f435446fc44dadcede9acd36a9a932b3cb396238423eb2f33ec17d6aa", null ],
       [ "catmull_rom", "curve_8hpp.html#a3d8ff072f435446fc44dadcede9acd36ae526780ea109f4a96ec78c6eaece31fe", null ],

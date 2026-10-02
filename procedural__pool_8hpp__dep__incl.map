@@ -1,0 +1,5 @@
+<map id="engine/src/toast/voxel/procedural_pool.hpp" name="engine/src/toast/voxel/procedural_pool.hpp">
+<area shape="rect" id="Node000001" title="Bricks for the grids ProceduralVoxel pieces draw into." alt="" coords="26,5,190,50"/>
+<area shape="rect" id="Node000002" href="$voxel__node__utils_8hpp.html" title="Helpers the voxel nodes share, not part of the API." alt="" coords="5,98,211,143"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="110,64,110,99,106,97,106,68"/>
+</map>

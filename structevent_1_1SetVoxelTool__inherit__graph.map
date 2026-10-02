@@ -1,0 +1,10 @@
+<map id="event::SetVoxelTool" name="event::SetVoxelTool">
+<area shape="rect" id="Node000001" title=" " alt="" coords="39,260,187,288"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="5,183,221,211"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="115,224,115,261,111,259,111,228"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="28,5,187,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="111,47,115,183,110,182,106,50"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="129,82,270,110"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="136,40,186,81,181,83,135,46"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="180,120,127,184,123,181,176,123"/>
+</map>

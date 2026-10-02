@@ -166,17 +166,50 @@ auto&#160;</td><td class="memItemRight"><b>shootVoxel</b> (const glm::vec3 &amp;
 auto&#160;</td><td class="memItemRight"><b>runConnectivityAnalysis</b> () -&gt; std::vector&lt; <a class="el" href="structphysics_1_1Simulator_1_1ConnectivityResult.html">ConnectivityResult</a> &gt;</td></tr>
 <tr class="memitem:a5b7f6e3384f3544139596da067f557c3" id="r_a5b7f6e3384f3544139596da067f557c3"><td class="memItemLeft"><a id="a5b7f6e3384f3544139596da067f557c3" name="a5b7f6e3384f3544139596da067f557c3"></a>
 auto&#160;</td><td class="memItemRight"><b>debugDirtyBricks</b> () const -&gt; std::span&lt; const <a class="el" href="structphysics_1_1Simulator_1_1DebugDirtyBrick.html">DebugDirtyBrick</a> &gt;</td></tr>
+<tr class="memitem:ab81586bb5e2282e56a3183a8a76cc9b3" id="r_ab81586bb5e2282e56a3183a8a76cc9b3"><td class="memItemLeft"><a id="ab81586bb5e2282e56a3183a8a76cc9b3" name="ab81586bb5e2282e56a3183a8a76cc9b3"></a>
+auto&#160;</td><td class="memItemRight"><b>overlapCapsule</b> (<a class="el" href="structphysics_1_1BodyID.html">BodyID</a> ignored, const <a class="el" href="structphysics_1_1CapsuleShape.html">CapsuleShape</a> &amp;capsule, const glm::vec3 &amp;position, const glm::quat &amp;rotation, float min_penetration, std::vector&lt; <a class="el" href="structphysics_1_1QueryContact.html">QueryContact</a> &gt; &amp;contacts) const -&gt; bool</td></tr>
+<tr class="memitem:a799ba28e4e2e3c7debde2fe63d84d9fd" id="r_a799ba28e4e2e3c7debde2fe63d84d9fd"><td class="memItemLeft"><a id="a799ba28e4e2e3c7debde2fe63d84d9fd" name="a799ba28e4e2e3c7debde2fe63d84d9fd"></a>
+auto&#160;</td><td class="memItemRight"><b>sweepCapsule</b> (<a class="el" href="structphysics_1_1BodyID.html">BodyID</a> ignored, const <a class="el" href="structphysics_1_1CapsuleShape.html">CapsuleShape</a> &amp;capsule, const glm::quat &amp;rotation, const glm::vec3 &amp;from, const glm::vec3 &amp;to, float skin) const -&gt; <a class="el" href="structphysics_1_1SweepHit.html">SweepHit</a></td></tr>
+<tr class="memdesc:a799ba28e4e2e3c7debde2fe63d84d9fd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Moves a capsule until it would dig into something. <br /></td></tr>
+<tr class="memitem:a722e5c202b888caef369974d5a2ee12b" id="r_a722e5c202b888caef369974d5a2ee12b"><td class="memItemLeft"><a id="a722e5c202b888caef369974d5a2ee12b" name="a722e5c202b888caef369974d5a2ee12b"></a>
+auto&#160;</td><td class="memItemRight"><b>setCapsuleShape</b> (<a class="el" href="structphysics_1_1BodyID.html">BodyID</a> body, const <a class="el" href="structphysics_1_1CapsuleShape.html">CapsuleShape</a> &amp;capsule) -&gt; bool</td></tr>
+<tr class="memdesc:a722e5c202b888caef369974d5a2ee12b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resizes the capsule collider of a body. <br /></td></tr>
+<tr class="memitem:a6259b142e1fb1a1a01682e8aa165f100" id="r_a6259b142e1fb1a1a01682e8aa165f100"><td class="memItemLeft"><a id="a6259b142e1fb1a1a01682e8aa165f100" name="a6259b142e1fb1a1a01682e8aa165f100"></a>
+void&#160;</td><td class="memItemRight"><b>moveKinematicBody</b> (<a class="el" href="structphysics_1_1BodyID.html">BodyID</a> id, const glm::vec3 &amp;position, const glm::quat &amp;rotation, const glm::vec3 &amp;velocity)</td></tr>
+<tr class="memitem:ab7ad1534755bea6832ef2d77166320ce" id="r_ab7ad1534755bea6832ef2d77166320ce"><td class="memItemLeft"><a id="ab7ad1534755bea6832ef2d77166320ce" name="ab7ad1534755bea6832ef2d77166320ce"></a>
+void&#160;</td><td class="memItemRight"><b>pushBody</b> (<a class="el" href="structphysics_1_1BodyID.html">BodyID</a> id, const glm::vec3 &amp;point, const glm::vec3 &amp;direction, float speed, float max_impulse)</td></tr>
+<tr class="memdesc:ab7ad1534755bea6832ef2d77166320ce"><td class="mdescLeft">&#160;</td><td class="mdescRight">Raises the velocity of a dynamic body along direction. <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
+<tr class="memitem:ae00ca8f76649eb8e374ae87a7f0e647e" id="r_ae00ca8f76649eb8e374ae87a7f0e647e"><td class="memItemLeft">static auto&#160;</td><td class="memItemRight"><a class="el" href="#ae00ca8f76649eb8e374ae87a7f0e647e">raycast</a> (glm::vec3 pos, glm::vec3 dir) -&gt; std::vector&lt; <a class="el" href="structphysics_1_1RayHit.html">RayHit</a> &gt;</td></tr>
 <tr class="memitem:a7503203a2459c8c1398ba2c67bd6f7b4" id="r_a7503203a2459c8c1398ba2c67bd6f7b4"><td class="memItemLeft"><a id="a7503203a2459c8c1398ba2c67bd6f7b4" name="a7503203a2459c8c1398ba2c67bd6f7b4"></a>
 static auto&#160;</td><td class="memItemRight"><b>stepProfile</b> () -&gt; const <a class="el" href="structphysics_1_1Simulator_1_1PhysicsStepProfile.html">PhysicsStepProfile</a> &amp;</td></tr>
 <tr class="memdesc:a7503203a2459c8c1398ba2c67bd6f7b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">The last tick profile is safe to read from another thread between ticks. <br /></td></tr>
 <tr class="memitem:aea4cf0a2c2cf4df63f29b9c7c4a6991d" id="r_aea4cf0a2c2cf4df63f29b9c7c4a6991d"><td class="memItemLeft"><a id="aea4cf0a2c2cf4df63f29b9c7c4a6991d" name="aea4cf0a2c2cf4df63f29b9c7c4a6991d"></a>
 static void&#160;</td><td class="memItemRight"><b>recordTickBurst</b> (size_t steps, bool time_budget_reached)</td></tr>
 <tr class="memdesc:aea4cf0a2c2cf4df63f29b9c7c4a6991d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Stamps how many ticks the accumulator ran once it stops catching up for this frame. <br /></td></tr>
+<tr class="memitem:a56890cc158b2409e7466282d7023a8ed" id="r_a56890cc158b2409e7466282d7023a8ed"><td class="memItemLeft"><a id="a56890cc158b2409e7466282d7023a8ed" name="a56890cc158b2409e7466282d7023a8ed"></a>
+static void&#160;</td><td class="memItemRight"><b>recordInterpolationAlpha</b> (double alpha)</td></tr>
+<tr class="memdesc:a56890cc158b2409e7466282d7023a8ed"><td class="mdescLeft">&#160;</td><td class="mdescRight">Leftover accumulator time as a fraction of one step for blending the last two poses. <br /></td></tr>
+<tr class="memitem:a2951d233a646dc1ae8ae97d1bc6e6ad2" id="r_a2951d233a646dc1ae8ae97d1bc6e6ad2"><td class="memItemLeft"><a id="a2951d233a646dc1ae8ae97d1bc6e6ad2" name="a2951d233a646dc1ae8ae97d1bc6e6ad2"></a>
+static auto&#160;</td><td class="memItemRight"><b>interpolationAlpha</b> () -&gt; float</td></tr>
+<tr class="memitem:a553fe5d9ed4ef3d1b7806e30fa0a68c3" id="r_a553fe5d9ed4ef3d1b7806e30fa0a68c3"><td class="memItemLeft"><a id="a553fe5d9ed4ef3d1b7806e30fa0a68c3" name="a553fe5d9ed4ef3d1b7806e30fa0a68c3"></a>
+static auto&#160;</td><td class="memItemRight"><b>renderPoseDelta</b> (<a class="el" href="structphysics_1_1BodyID.html">BodyID</a> id) -&gt; glm::mat4</td></tr>
+<tr class="memdesc:a553fe5d9ed4ef3d1b7806e30fa0a68c3"><td class="mdescLeft">&#160;</td><td class="mdescRight">World transform from the tick pose to the blended pose drawn this frame and identity unless dynamic and awake. <br /></td></tr>
+<tr class="memitem:adf1d9b6ef446b67324c24a6e5324b538" id="r_adf1d9b6ef446b67324c24a6e5324b538"><td class="memItemLeft"><a id="adf1d9b6ef446b67324c24a6e5324b538" name="adf1d9b6ef446b67324c24a6e5324b538"></a>
+static auto&#160;</td><td class="memItemRight"><b>renderPoseDelta</b> (const <a class="el" href="classtoast_1_1VoxelNode.html">toast::VoxelNode</a> &amp;node) -&gt; glm::mat4</td></tr>
+<tr class="memitem:a4b0c78b6d62538fdaee37b21c7c20564" id="r_a4b0c78b6d62538fdaee37b21c7c20564"><td class="memItemLeft"><a id="a4b0c78b6d62538fdaee37b21c7c20564" name="a4b0c78b6d62538fdaee37b21c7c20564"></a>
+static auto&#160;</td><td class="memItemRight"><b>renderPoseDeltaFor</b> (uint64_t node_uid) -&gt; glm::mat4</td></tr>
+<tr class="memdesc:a4b0c78b6d62538fdaee37b21c7c20564"><td class="mdescLeft">&#160;</td><td class="mdescRight">Delta of the dynamic body a node sits below and identity when it follows none. <br /></td></tr>
+<tr class="memitem:a1218a8160e07021c9a33a42293ce5412" id="r_a1218a8160e07021c9a33a42293ce5412"><td class="memItemLeft"><a id="a1218a8160e07021c9a33a42293ce5412" name="a1218a8160e07021c9a33a42293ce5412"></a>
+static void&#160;</td><td class="memItemRight"><b>syncRenderPoses</b> ()</td></tr>
+<tr class="memdesc:a1218a8160e07021c9a33a42293ce5412"><td class="mdescLeft">&#160;</td><td class="mdescRight">Once per frame after the ticks so nodes below driven bodies match the tick pose the delta starts from. <br /></td></tr>
 <tr class="memitem:ab6490fe7638aa7aef8d5acd5ef362e7a" id="r_ab6490fe7638aa7aef8d5acd5ef362e7a"><td class="memItemLeft"><a id="ab6490fe7638aa7aef8d5acd5ef362e7a" name="ab6490fe7638aa7aef8d5acd5ef362e7a"></a>
 static auto&#160;</td><td class="memItemRight"><b>shapeWorldBounds</b> (<a class="el" href="structphysics_1_1ShapeID.html">ShapeID</a> shape) -&gt; std::optional&lt; <a class="el" href="structphysics_1_1AABB.html">AABB</a> &gt;</td></tr>
+<tr class="memitem:a693bce2aa13423da515dc12c352c8a8c" id="r_a693bce2aa13423da515dc12c352c8a8c"><td class="memItemLeft"><a id="a693bce2aa13423da515dc12c352c8a8c" name="a693bce2aa13423da515dc12c352c8a8c"></a>
+static auto&#160;</td><td class="memItemRight"><b>nodeFor</b> (<a class="el" href="structphysics_1_1BodyID.html">BodyID</a> body) -&gt; <a class="el" href="classtoast_1_1Box.html">toast::Box</a>&lt; <a class="el" href="classtoast_1_1Node.html">toast::Node</a> &gt;</td></tr>
+<tr class="memdesc:a693bce2aa13423da515dc12c352c8a8c"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classphysics_1_1Rigidbody.html">Rigidbody</a> or VoxelNode that owns <code>body</code>. <br /></td></tr>
 <tr class="memitem:a5babd552dc6498e3a644cc7731a4c4d2" id="r_a5babd552dc6498e3a644cc7731a4c4d2"><td class="memItemLeft"><a id="a5babd552dc6498e3a644cc7731a4c4d2" name="a5babd552dc6498e3a644cc7731a4c4d2"></a>
 static void&#160;</td><td class="memItemRight"><b>callTick</b> ()</td></tr>
 <tr class="memitem:a0822cf03e81e7df18fc1b1276da399fa" id="r_a0822cf03e81e7df18fc1b1276da399fa"><td class="memItemLeft"><a id="a0822cf03e81e7df18fc1b1276da399fa" name="a0822cf03e81e7df18fc1b1276da399fa"></a>
@@ -187,8 +220,13 @@ static void&#160;</td><td class="memItemRight"><b>unregisterRigidbody</b> (Rigid
 static void&#160;</td><td class="memItemRight"><b>registerVoxelNode</b> (<a class="el" href="classtoast_1_1VoxelNode.html">toast::VoxelNode</a> &amp;node)</td></tr>
 <tr class="memitem:ad5dc569143e028b23463fb787be37c1e" id="r_ad5dc569143e028b23463fb787be37c1e"><td class="memItemLeft"><a id="ad5dc569143e028b23463fb787be37c1e" name="ad5dc569143e028b23463fb787be37c1e"></a>
 static void&#160;</td><td class="memItemRight"><b>unregisterVoxelNode</b> (<a class="el" href="classtoast_1_1VoxelNode.html">toast::VoxelNode</a> &amp;node)</td></tr>
+<tr class="memitem:afab5326440fa1fc8ef30454c31d930f4" id="r_afab5326440fa1fc8ef30454c31d930f4"><td class="memItemLeft"><a id="afab5326440fa1fc8ef30454c31d930f4" name="afab5326440fa1fc8ef30454c31d930f4"></a>
+static auto&#160;</td><td class="memItemRight"><b>current</b> () -&gt; Simulator *</td></tr>
+<tr class="memdesc:afab5326440fa1fc8ef30454c31d930f4"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classphysics_1_1Simulator.html">Simulator</a> running the current step, null outside a play session. <br /></td></tr>
 <tr class="memitem:af05dd48e986ef2a542c2579984c63c13" id="r_af05dd48e986ef2a542c2579984c63c13"><td class="memItemLeft"><a id="af05dd48e986ef2a542c2579984c63c13" name="af05dd48e986ef2a542c2579984c63c13"></a>
 static auto&#160;</td><td class="memItemRight"><b>voxelFragmentRecords</b> () -&gt; std::span&lt; const <a class="el" href="structphysics_1_1VoxelRenderRecord.html">VoxelRenderRecord</a> &gt;</td></tr>
+<tr class="memitem:a41916f63569622ba846619c3d3eac000" id="r_a41916f63569622ba846619c3d3eac000"><td class="memItemLeft"><a id="a41916f63569622ba846619c3d3eac000" name="a41916f63569622ba846619c3d3eac000"></a>
+static auto&#160;</td><td class="memItemRight"><b>tryGetVoxelData</b> (<a class="el" href="structphysics_1_1VoxelDataID.html">VoxelDataID</a> data) -&gt; <a class="el" href="structphysics_1_1VoxelShapeData.html">VoxelShapeData</a> *</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-friends" class="groupheader"><a id="friends" name="friends"></a>
 Friends</h2></td></tr>
@@ -201,8 +239,41 @@ class&#160;</td><td class="memItemRight"><b>DynamicRigidbody</b></td></tr>
 <tr class="memitem:af0b085060c882afbbd6a75d5868cf649" id="r_af0b085060c882afbbd6a75d5868cf649"><td class="memItemLeft"><a id="af0b085060c882afbbd6a75d5868cf649" name="af0b085060c882afbbd6a75d5868cf649"></a>
 class&#160;</td><td class="memItemRight"><b>toast::VoxelNode</b></td></tr>
 </table>
+<a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
+<a id="ae00ca8f76649eb8e374ae87a7f0e647e" name="ae00ca8f76649eb8e374ae87a7f0e647e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae00ca8f76649eb8e374ae87a7f0e647e">&#9670;&#160;</a></span>raycast()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto physics::Simulator::raycast </td>
+          <td>(</td>
+          <td class="paramtype">glm::vec3</td>          <td class="paramname"><span class="paramname"><em>pos</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">glm::vec3</td>          <td class="paramname"><span class="paramname"><em>dir</em></span>&#160;) -&gt; std::vector&lt; <a class="el" href="structphysics_1_1RayHit.html">RayHit</a> &gt;</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Iterate Through Potential Intersections ///</p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>engine/src/toast/physics/<a class="el" href="simulator_8hpp_source.html">simulator.hpp</a></li>
+<li>engine/src/toast/physics/<b>raycast.cpp</b></li>
+<li>engine/src/toast/physics/<b>shape_query.cpp</b></li>
 <li>engine/src/toast/physics/<b>simulator.cpp</b></li>
 </ul>
 </div><!-- contents -->

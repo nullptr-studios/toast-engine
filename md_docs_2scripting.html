@@ -145,7 +145,8 @@ Uses</h1>
 <h2 class="doxsection"><a class="anchor" id="autotoc_md65"></a>
 Anatomy of a script</h2>
 <p>A script is a chunk that returns a table. Functions on that table with lifecycle names are called by the engine, everything else becomes an inspector variable:</p>
-<p><span class="tt">load</span>, <span class="tt">save</span>, <span class="tt">pre_init</span>, <span class="tt">init</span>, <span class="tt">begin</span>, <span class="tt">earlyTick</span>, <span class="tt">tick</span>, <span class="tt">postPhysics</span>, <span class="tt">lateTick</span>, <span class="tt">_end</span> (frame end; <span class="tt">end</span> is a reserved keyword in lua), <span class="tt">onEnable</span>, <span class="tt">onDisable</span>, <span class="tt">destroy</span>.</p>
+<p><span class="tt">load</span>, <span class="tt">save</span>, <span class="tt">init</span>, <span class="tt">begin</span>, <span class="tt">earlyTick</span>, <span class="tt">tick</span>, <span class="tt">postPhysics</span>, <span class="tt">lateTick</span>, <span class="tt">_end</span> (frame end; <span class="tt">end</span> is a reserved keyword in lua), <span class="tt">onEnable</span>, <span class="tt">onDisable</span>, <span class="tt">destroy</span>, <span class="tt">editorTick</span>.</p>
+<p><span class="tt">editorTick</span> only runs while the node lives in an editor Workspace (a paused editor tab), not in a PlayWorkspace (a playing editor tab) or a live game World.</p>
 <p>All of them receive the script table as <span class="tt">self</span>. Reflected fields are reachable with or without the <span class="tt">m_</span> prefix (<span class="tt">self.health</span> finds a reflected <span class="tt">m_health</span>).</p>
 <h2 class="doxsection"><a class="anchor" id="autotoc_md66"></a>
 Inspector variables</h2>

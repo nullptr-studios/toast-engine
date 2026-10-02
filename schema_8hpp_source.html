@@ -131,90 +131,118 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('schema_8hpp_so
 <div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#include &lt;vector&gt;</span></div>
 <div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span> </div>
 <div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="keyword">namespace </span>assets {</div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span></div>
-<div class="foldopen" id="foldopen00024" data-start="{" data-end="};">
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno"><a class="line" href="structassets_1_1SchemaField.html">   24</a></span><span class="keyword">struct </span>TOAST_API <a class="code hl_struct" href="structassets_1_1SchemaField.html">SchemaField</a> {</div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>  std::string name;</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>  DataType type {DataType::null};</div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span> </div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>  <span class="keywordtype">bool</span> is_array {<span class="keyword">false</span>};</div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>  std::string struct_type;</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span> </div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>  std::optional&lt;DataValue&gt; default_value;</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>  std::string description;</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span> </div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  std::optional&lt;double&gt; min;</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  std::optional&lt;double&gt; max;</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span> </div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno"><a class="line" href="structassets_1_1SchemaField.html#a0816420124801bc4e0e440e062880273">   37</a></span>  std::string <a class="code hl_variable" href="structassets_1_1SchemaField.html#a0816420124801bc4e0e440e062880273">asset_type</a>;               </div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno"><a class="line" href="structassets_1_1SchemaField.html#a16c129b8994833029fcf29c2ddcf2837">   38</a></span>  std::string <a class="code hl_variable" href="structassets_1_1SchemaField.html#a16c129b8994833029fcf29c2ddcf2837">node_type</a>;                </div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno"><a class="line" href="structassets_1_1SchemaField.html#a6796aa2373822d0b951b4e82cf64b385">   39</a></span>  std::vector&lt;std::string&gt; <a class="code hl_variable" href="structassets_1_1SchemaField.html#a6796aa2373822d0b951b4e82cf64b385">variants</a>;    </div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span> </div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  std::vector&lt;SchemaField&gt; children;</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>};</div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span> </div>
+<div class="foldopen" id="foldopen00021" data-start="{" data-end="};">
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno"><a class="line" href="structassets_1_1TypeSwitchCase.html">   21</a></span><span class="keyword">struct </span>TOAST_API <a class="code hl_struct" href="structassets_1_1TypeSwitchCase.html">TypeSwitchCase</a> {</div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>  std::string case_value;</div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>  DataType type {DataType::null};</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>  std::optional&lt;DataValue&gt; default_value;</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>};</div>
 </div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span></div>
-<div class="foldopen" id="foldopen00047" data-start="{" data-end="};">
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno"><a class="line" href="classassets_1_1Schema.html">   47</a></span><span class="keyword">class </span>TOAST_API Schema : <span class="keyword">public</span> Asset {</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  <span class="keyword">explicit</span> Schema(std::string_view json_content);</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span> </div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  <span class="keyword">auto</span> type() <span class="keyword">const</span> -&gt; std::string_view <span class="keyword">override</span> {</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    <span class="keywordflow">return</span> <span class="stringliteral">&quot;schema&quot;</span>;</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  }</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span> </div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <span class="keyword">auto</span> title() <span class="keyword">const</span> -&gt; std::string_view {</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    <span class="keywordflow">return</span> m_title;</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  }</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span> </div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  <span class="keyword">auto</span> fields() <span class="keyword">const</span> -&gt; <span class="keyword">const</span> std::vector&lt;SchemaField&gt;&amp; {</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    <span class="keywordflow">return</span> m_fields;</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  }</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span> </div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  <span class="keyword">auto</span> hasDefinition(std::string_view name) <span class="keyword">const</span> <span class="keyword">noexcept</span> -&gt; bool;</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span> </div>
+<div class="foldopen" id="foldopen00027" data-start="{" data-end="};">
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno"><a class="line" href="structassets_1_1TypeSwitch.html">   27</a></span><span class="keyword">struct </span>TOAST_API <a class="code hl_struct" href="structassets_1_1TypeSwitch.html">TypeSwitch</a> {</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno"><a class="line" href="structassets_1_1TypeSwitch.html#ad985329a6fc1c6b22b4d10bb3dd7fee7">   28</a></span>  std::string <a class="code hl_variable" href="structassets_1_1TypeSwitch.html#ad985329a6fc1c6b22b4d10bb3dd7fee7">field</a>;    </div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>  std::vector&lt;TypeSwitchCase&gt; cases;</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>};</div>
+</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span></div>
+<div class="foldopen" id="foldopen00035" data-start="{" data-end="};">
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno"><a class="line" href="structassets_1_1SchemaField.html">   35</a></span><span class="keyword">struct </span>TOAST_API <a class="code hl_struct" href="structassets_1_1SchemaField.html">SchemaField</a> {</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>  std::string name;</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  DataType type {DataType::null};</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span> </div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="keywordtype">bool</span> is_array {<span class="keyword">false</span>};</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  std::string struct_type;</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span> </div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  std::optional&lt;DataValue&gt; default_value;</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  std::string description;</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span> </div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  std::optional&lt;double&gt; min;</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  std::optional&lt;double&gt; max;</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span> </div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno"><a class="line" href="structassets_1_1SchemaField.html#a0816420124801bc4e0e440e062880273">   48</a></span>  std::string <a class="code hl_variable" href="structassets_1_1SchemaField.html#a0816420124801bc4e0e440e062880273">asset_type</a>;                   </div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno"><a class="line" href="structassets_1_1SchemaField.html#a16c129b8994833029fcf29c2ddcf2837">   49</a></span>  std::string <a class="code hl_variable" href="structassets_1_1SchemaField.html#a16c129b8994833029fcf29c2ddcf2837">node_type</a>;                    </div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno"><a class="line" href="structassets_1_1SchemaField.html#a6796aa2373822d0b951b4e82cf64b385">   50</a></span>  std::vector&lt;std::string&gt; <a class="code hl_variable" href="structassets_1_1SchemaField.html#a6796aa2373822d0b951b4e82cf64b385">variants</a>;        </div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno"><a class="line" href="structassets_1_1SchemaField.html#a13226bb3ed6960bffb4b9dfc1e144017">   51</a></span>  std::vector&lt;std::string&gt; <a class="code hl_variable" href="structassets_1_1SchemaField.html#a13226bb3ed6960bffb4b9dfc1e144017">enum_options</a>;    </div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno"><a class="line" href="structassets_1_1SchemaField.html#add49304cb1d31788e82c84bc02d079c3">   52</a></span>  std::optional&lt;TypeSwitch&gt; <a class="code hl_variable" href="structassets_1_1SchemaField.html#add49304cb1d31788e82c84bc02d079c3">type_switch</a>;    </div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span> </div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  std::vector&lt;SchemaField&gt; children;</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>};</div>
+</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span></div>
+<div class="foldopen" id="foldopen00060" data-start="{" data-end="};">
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno"><a class="line" href="classassets_1_1Schema.html">   60</a></span><span class="keyword">class </span>TOAST_API Schema : <span class="keyword">public</span> Asset {</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  <span class="keyword">explicit</span> Schema(std::string_view json_content);</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span> </div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  <span class="keyword">auto</span> type() <span class="keyword">const</span> -&gt; std::string_view <span class="keyword">override</span> {</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>    <span class="keywordflow">return</span> <span class="stringliteral">&quot;schema&quot;</span>;</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  }</div>
 <div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span> </div>
 <div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  <span class="keyword">auto</span> getDefinition(std::string_view name) <span class="keyword">const</span> -&gt; <span class="keyword">const</span> std::vector&lt;SchemaField&gt;*;</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span> </div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  <span class="keyword">auto</span> definitions() <span class="keyword">const</span> -&gt; <span class="keyword">const</span> std::map&lt;std::string, std::vector&lt;SchemaField&gt;&gt;&amp; {</div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>    <span class="keywordflow">return</span> m_definitions;</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  }</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span></div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  <span class="keyword">auto</span> <a class="code hl_function" href="classassets_1_1Schema.html#afd585b72568eb03f8ea859e4beb48c02">discriminatorOf</a>(std::string_view definition) <span class="keyword">const</span> -&gt; std::string_view;</div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span> </div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  std::string m_title;</div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  std::vector&lt;SchemaField&gt; m_fields;</div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  std::map&lt;std::string, std::vector&lt;SchemaField&gt;&gt; m_definitions;</div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  std::map&lt;std::string, std::string&gt; m_discriminators;</div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span></div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  <span class="keyword">static</span> <span class="keyword">auto</span> parseOneField(<span class="keyword">const</span> std::string&amp; name, <span class="keyword">const</span> json_t&amp; properties) -&gt; <a class="code hl_struct" href="structassets_1_1SchemaField.html">SchemaField</a>;</div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span></div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>  <span class="keyword">static</span> <span class="keywordtype">void</span> parseFields(<span class="keyword">const</span> json_t&amp; properties, std::vector&lt;SchemaField&gt;&amp; out);</div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span></div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  <span class="keyword">static</span> <span class="keyword">auto</span> parseDefault(DataType t, <span class="keywordtype">bool</span> is_array, <span class="keyword">const</span> json_t&amp; j_value) -&gt; <a class="code hl_class" href="classassets_1_1DataValue.html">DataValue</a>;</div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span></div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>  <span class="keyword">static</span> <span class="keyword">auto</span> toastTypeOf(<span class="keyword">const</span> std::string&amp; x_type) -&gt; DataType;</div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span></div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  <span class="keywordtype">void</span> resolveStructRefs(std::vector&lt;SchemaField&gt;&amp; fields);</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>};</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  <span class="keyword">auto</span> title() <span class="keyword">const</span> -&gt; std::string_view {</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>    <span class="keywordflow">return</span> m_title;</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  }</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span> </div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  <span class="keyword">auto</span> isValid() <span class="keyword">const</span> <span class="keyword">noexcept</span> -&gt; <span class="keywordtype">bool</span> {</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>    <span class="keywordflow">return</span> m_valid;</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  }</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span> </div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>  <span class="keyword">auto</span> fields() <span class="keyword">const</span> -&gt; <span class="keyword">const</span> std::vector&lt;SchemaField&gt;&amp; {</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>    <span class="keywordflow">return</span> m_fields;</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  }</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span> </div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  <span class="keyword">auto</span> hasDefinition(std::string_view name) <span class="keyword">const</span> <span class="keyword">noexcept</span> -&gt; bool;</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span> </div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  <span class="keyword">auto</span> getDefinition(std::string_view name) <span class="keyword">const</span> -&gt; <span class="keyword">const</span> std::vector&lt;SchemaField&gt;*;</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span> </div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>  <span class="keyword">auto</span> definitions() <span class="keyword">const</span> -&gt; <span class="keyword">const</span> std::map&lt;std::string, std::vector&lt;SchemaField&gt;&gt;&amp; {</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>    <span class="keywordflow">return</span> m_definitions;</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>  }</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span></div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>  <span class="keyword">auto</span> <a class="code hl_function" href="classassets_1_1Schema.html#afd585b72568eb03f8ea859e4beb48c02">discriminatorOf</a>(std::string_view definition) <span class="keyword">const</span> -&gt; std::string_view;</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span> </div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>  std::string m_title;</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  <span class="keywordtype">bool</span> m_valid {<span class="keyword">true</span>};</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>  std::vector&lt;SchemaField&gt; m_fields;</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>  std::map&lt;std::string, std::vector&lt;SchemaField&gt;&gt; m_definitions;</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  std::map&lt;std::string, std::string&gt; m_discriminators;</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span></div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>  <span class="keyword">static</span> <span class="keyword">auto</span> parseOneField(<span class="keyword">const</span> std::string&amp; name, <span class="keyword">const</span> json_t&amp; properties) -&gt; <a class="code hl_struct" href="structassets_1_1SchemaField.html">SchemaField</a>;</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span></div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  <span class="keyword">static</span> <span class="keywordtype">void</span> parseFields(<span class="keyword">const</span> json_t&amp; properties, std::vector&lt;SchemaField&gt;&amp; out);</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span></div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  <span class="keyword">static</span> <span class="keyword">auto</span> parseDefault(DataType t, <span class="keywordtype">bool</span> is_array, <span class="keyword">const</span> json_t&amp; j_value) -&gt; <a class="code hl_class" href="classassets_1_1DataValue.html">DataValue</a>;</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span></div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  <span class="keyword">static</span> <span class="keyword">auto</span> toastTypeOf(<span class="keyword">const</span> std::string&amp; x_type) -&gt; DataType;</div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span></div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>  <span class="keywordtype">void</span> resolveStructRefs(std::vector&lt;SchemaField&gt;&amp; fields);</div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>};</div>
 </div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span> </div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>}</div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span> </div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>}</div>
 <div class="ttc" id="aclassassets_1_1DataValue_html"><div class="ttname"><a href="classassets_1_1DataValue.html">assets::DataValue</a></div><div class="ttdoc">Typed value for TOML files.</div><div class="ttdef"><b>Definition</b> data_value.hpp:50</div></div>
-<div class="ttc" id="aclassassets_1_1Schema_html_afd585b72568eb03f8ea859e4beb48c02"><div class="ttname"><a href="classassets_1_1Schema.html#afd585b72568eb03f8ea859e4beb48c02">assets::Schema::discriminatorOf</a></div><div class="ttdeci">auto discriminatorOf(std::string_view definition) const -&gt; std::string_view</div><div class="ttdef"><b>Definition</b> schema.cpp:57</div></div>
+<div class="ttc" id="aclassassets_1_1Schema_html_afd585b72568eb03f8ea859e4beb48c02"><div class="ttname"><a href="classassets_1_1Schema.html#afd585b72568eb03f8ea859e4beb48c02">assets::Schema::discriminatorOf</a></div><div class="ttdeci">auto discriminatorOf(std::string_view definition) const -&gt; std::string_view</div><div class="ttdef"><b>Definition</b> schema.cpp:60</div></div>
 <div class="ttc" id="acore__types_8hpp_html"><div class="ttname"><a href="core__types_8hpp.html">core_types.hpp</a></div><div class="ttdoc">Base types for the asset system.</div></div>
 <div class="ttc" id="adata__value_8hpp_html"><div class="ttname"><a href="data__value_8hpp.html">data_value.hpp</a></div><div class="ttdoc">Recursive typed value for schema-driven TOML data assets.</div></div>
-<div class="ttc" id="astructassets_1_1SchemaField_html"><div class="ttname"><a href="structassets_1_1SchemaField.html">assets::SchemaField</a></div><div class="ttdoc">Descriptor for one field in a schema.</div><div class="ttdef"><b>Definition</b> schema.hpp:24</div></div>
-<div class="ttc" id="astructassets_1_1SchemaField_html_a0816420124801bc4e0e440e062880273"><div class="ttname"><a href="structassets_1_1SchemaField.html#a0816420124801bc4e0e440e062880273">assets::SchemaField::asset_type</a></div><div class="ttdeci">std::string asset_type</div><div class="ttdoc">x-toast-asset-type: asset subtype constraint for asset_t fields</div><div class="ttdef"><b>Definition</b> schema.hpp:37</div></div>
-<div class="ttc" id="astructassets_1_1SchemaField_html_a16c129b8994833029fcf29c2ddcf2837"><div class="ttname"><a href="structassets_1_1SchemaField.html#a16c129b8994833029fcf29c2ddcf2837">assets::SchemaField::node_type</a></div><div class="ttdeci">std::string node_type</div><div class="ttdoc">x-toast-node-type: node subtype constraint for node_t fields</div><div class="ttdef"><b>Definition</b> schema.hpp:38</div></div>
-<div class="ttc" id="astructassets_1_1SchemaField_html_a6796aa2373822d0b951b4e82cf64b385"><div class="ttname"><a href="structassets_1_1SchemaField.html#a6796aa2373822d0b951b4e82cf64b385">assets::SchemaField::variants</a></div><div class="ttdeci">std::vector&lt; std::string &gt; variants</div><div class="ttdoc">x-toast-variants: discriminator values this field applies to</div><div class="ttdef"><b>Definition</b> schema.hpp:39</div></div>
+<div class="ttc" id="astructassets_1_1SchemaField_html"><div class="ttname"><a href="structassets_1_1SchemaField.html">assets::SchemaField</a></div><div class="ttdoc">Descriptor for one field in a schema.</div><div class="ttdef"><b>Definition</b> schema.hpp:35</div></div>
+<div class="ttc" id="astructassets_1_1SchemaField_html_a0816420124801bc4e0e440e062880273"><div class="ttname"><a href="structassets_1_1SchemaField.html#a0816420124801bc4e0e440e062880273">assets::SchemaField::asset_type</a></div><div class="ttdeci">std::string asset_type</div><div class="ttdoc">x-toast-asset-type: asset subtype constraint for asset_t fields</div><div class="ttdef"><b>Definition</b> schema.hpp:48</div></div>
+<div class="ttc" id="astructassets_1_1SchemaField_html_a13226bb3ed6960bffb4b9dfc1e144017"><div class="ttname"><a href="structassets_1_1SchemaField.html#a13226bb3ed6960bffb4b9dfc1e144017">assets::SchemaField::enum_options</a></div><div class="ttdeci">std::vector&lt; std::string &gt; enum_options</div><div class="ttdoc">&quot;enum&quot;: allowed string values, for x-toast-type &quot;enum&quot; fields</div><div class="ttdef"><b>Definition</b> schema.hpp:51</div></div>
+<div class="ttc" id="astructassets_1_1SchemaField_html_a16c129b8994833029fcf29c2ddcf2837"><div class="ttname"><a href="structassets_1_1SchemaField.html#a16c129b8994833029fcf29c2ddcf2837">assets::SchemaField::node_type</a></div><div class="ttdeci">std::string node_type</div><div class="ttdoc">x-toast-node-type: node subtype constraint for node_t fields</div><div class="ttdef"><b>Definition</b> schema.hpp:49</div></div>
+<div class="ttc" id="astructassets_1_1SchemaField_html_a6796aa2373822d0b951b4e82cf64b385"><div class="ttname"><a href="structassets_1_1SchemaField.html#a6796aa2373822d0b951b4e82cf64b385">assets::SchemaField::variants</a></div><div class="ttdeci">std::vector&lt; std::string &gt; variants</div><div class="ttdoc">x-toast-variants: discriminator values this field applies to</div><div class="ttdef"><b>Definition</b> schema.hpp:50</div></div>
+<div class="ttc" id="astructassets_1_1SchemaField_html_add49304cb1d31788e82c84bc02d079c3"><div class="ttname"><a href="structassets_1_1SchemaField.html#add49304cb1d31788e82c84bc02d079c3">assets::SchemaField::type_switch</a></div><div class="ttdeci">std::optional&lt; TypeSwitch &gt; type_switch</div><div class="ttdoc">x-toast-type-switch: type depends on a root controller field</div><div class="ttdef"><b>Definition</b> schema.hpp:52</div></div>
+<div class="ttc" id="astructassets_1_1TypeSwitchCase_html"><div class="ttname"><a href="structassets_1_1TypeSwitchCase.html">assets::TypeSwitchCase</a></div><div class="ttdef"><b>Definition</b> schema.hpp:21</div></div>
+<div class="ttc" id="astructassets_1_1TypeSwitch_html"><div class="ttname"><a href="structassets_1_1TypeSwitch.html">assets::TypeSwitch</a></div><div class="ttdef"><b>Definition</b> schema.hpp:27</div></div>
+<div class="ttc" id="astructassets_1_1TypeSwitch_html_ad985329a6fc1c6b22b4d10bb3dd7fee7"><div class="ttname"><a href="structassets_1_1TypeSwitch.html#ad985329a6fc1c6b22b4d10bb3dd7fee7">assets::TypeSwitch::field</a></div><div class="ttdeci">std::string field</div><div class="ttdoc">Name of the root-level controller field.</div><div class="ttdef"><b>Definition</b> schema.hpp:28</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

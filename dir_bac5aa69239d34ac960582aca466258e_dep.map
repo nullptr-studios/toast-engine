@@ -5,10 +5,11 @@
 <area shape="rect" id="node5" href="dir_acf668bab8a2dd54882521f514035e3a.html" title="Engine" alt="" coords="415,27,481,54"/>
 <area shape="rect" id="node6" href="dir_58a2f63ced00df4d3308bf91d91804c7.html" title="Logger" alt="" coords="505,27,570,54"/>
 <area shape="rect" id="node7" href="dir_014308384593b97fd2698ce814793575.html" title="Resources" alt="" coords="594,27,683,54"/>
-<area shape="rect" id="node10" href="dir_996f45160da62e1a3d7f6046fad68f51.html" title="engine" alt="" coords="606,102,671,130"/>
-<area shape="poly" id="edge1" href="dir_000031_000015.html" alt="" coords="641,53,641,88,637,85,637,57"/>
-<area shape="rect" id="edge1-headlabel" href="dir_000031_000015.html" title="1" alt="" coords="643,75,651,92"/>
+<area shape="rect" id="node11" href="dir_996f45160da62e1a3d7f6046fad68f51.html" title="engine" alt="" coords="606,102,671,130"/>
+<area shape="poly" id="edge1" href="dir_000033_000016.html" alt="" coords="641,53,641,88,637,85,637,57"/>
+<area shape="rect" id="edge1-headlabel" href="dir_000033_000016.html" title="1" alt="" coords="643,75,651,92"/>
 <area shape="rect" id="node8" href="dir_8742a643dedb9a53f34208d8448005e0.html" title="StartWindow" alt="" coords="706,27,811,54"/>
-<area shape="rect" id="node9" href="dir_211d71526c0cab879ece08530654e0ca.html" title="Workspace" alt="" coords="835,27,928,54"/>
-<area shape="rect" id="clust1" href="dir_bac5aa69239d34ac960582aca466258e.html" alt="" coords="16,16,939,65"/>
+<area shape="rect" id="node9" href="dir_e001432fef94b1aa5f5cf34dba241637.html" title="VoxelEditor" alt="" coords="836,27,930,54"/>
+<area shape="rect" id="node10" href="dir_211d71526c0cab879ece08530654e0ca.html" title="Workspace" alt="" coords="954,27,1046,54"/>
+<area shape="rect" id="clust1" href="dir_bac5aa69239d34ac960582aca466258e.html" alt="" coords="16,16,1057,65"/>
 </map>

@@ -283,20 +283,21 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('ui__system_8hp
 <div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>  std::vector&lt;assets::Handle&lt;assets::ColorScheme&gt;&gt; m_global_schemes;</div>
 <div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>  std::unordered_map&lt;uint64_t, <span class="keywordtype">size_t</span>&gt; m_global_style_refs;</div>
 <div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>  std::unordered_map&lt;uint64_t, <span class="keywordtype">size_t</span>&gt; m_global_scheme_refs;</div>
-<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span> </div>
-<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>  std::<span class="keywordtype">string</span> m_language;</div>
-<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>  std::vector&lt;assets::Handle&lt;assets::Localization&gt;&gt; m_global_localizations;</div>
-<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>  std::vector&lt;assets::Handle&lt;assets::ImageLocalization&gt;&gt; m_global_image_localizations;</div>
-<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>  std::unordered_map&lt;uint64_t, <span class="keywordtype">size_t</span>&gt; m_global_localization_refs;</div>
-<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>  std::unordered_map&lt;uint64_t, <span class="keywordtype">size_t</span>&gt; m_global_image_localization_refs;</div>
-<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>  std::vector&lt;<a class="code hl_struct" href="structui_1_1UISystem_1_1LocalizationScope.html">LocalizationScope</a>&gt; m_localization_stack;</div>
-<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span> </div>
-<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>  <span class="keywordtype">bool</span> m_documents_reload_pending = false;</div>
-<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>  <span class="keywordtype">bool</span> m_stylesheet_cache_dirty = false;</div>
-<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>};</div>
+<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>  std::unordered_set&lt;std::<span class="keywordtype">string</span>&gt; m_loaded_fonts;</div>
+<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span> </div>
+<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>  std::<span class="keywordtype">string</span> m_language;</div>
+<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>  std::vector&lt;assets::Handle&lt;assets::Localization&gt;&gt; m_global_localizations;</div>
+<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>  std::vector&lt;assets::Handle&lt;assets::ImageLocalization&gt;&gt; m_global_image_localizations;</div>
+<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>  std::unordered_map&lt;uint64_t, <span class="keywordtype">size_t</span>&gt; m_global_localization_refs;</div>
+<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>  std::unordered_map&lt;uint64_t, <span class="keywordtype">size_t</span>&gt; m_global_image_localization_refs;</div>
+<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>  std::vector&lt;<a class="code hl_struct" href="structui_1_1UISystem_1_1LocalizationScope.html">LocalizationScope</a>&gt; m_localization_stack;</div>
+<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span> </div>
+<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>  <span class="keywordtype">bool</span> m_documents_reload_pending = false;</div>
+<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>  <span class="keywordtype">bool</span> m_stylesheet_cache_dirty = false;</div>
+<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>};</div>
 </div>
-<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span> </div>
-<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>}</div>
+<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span> </div>
+<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>}</div>
 <div class="ttc" id="aclassRenderInterface__VK_html"><div class="ttname"><a href="classRenderInterface__VK.html">RenderInterface_VK</a></div><div class="ttdef"><b>Definition</b> rmlui_renderer_vk.h:33</div></div>
 <div class="ttc" id="aclassassets_1_1ColorScheme_html"><div class="ttname"><a href="classassets_1_1ColorScheme.html">assets::ColorScheme</a></div><div class="ttdef"><b>Definition</b> color_scheme.hpp:19</div></div>
 <div class="ttc" id="aclassassets_1_1Handle_html"><div class="ttname"><a href="classassets_1_1Handle.html">assets::Handle</a></div><div class="ttdoc">Type-safe smart pointer for assets.</div><div class="ttdef"><b>Definition</b> core_types.hpp:149</div></div>
@@ -308,7 +309,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('ui__system_8hp
 <div class="ttc" id="aclassui_1_1UIInputRouter_html"><div class="ttname"><a href="classui_1_1UIInputRouter.html">ui::UIInputRouter</a></div><div class="ttdef"><b>Definition</b> ui_input.hpp:14</div></div>
 <div class="ttc" id="aclassui_1_1UISystemInterface_html"><div class="ttname"><a href="classui_1_1UISystemInterface.html">ui::UISystemInterface</a></div><div class="ttdef"><b>Definition</b> ui_system_interface.hpp:20</div></div>
 <div class="ttc" id="aclassui_1_1UISystem_html_a518e3472f515af3ee4ea3a8f0cbae6dc"><div class="ttname"><a href="classui_1_1UISystem.html#a518e3472f515af3ee4ea3a8f0cbae6dc">ui::UISystem::initializeRenderer</a></div><div class="ttdeci">void initializeRenderer(const renderer::VulkanCore &amp;core)</div><div class="ttdef"><b>Definition</b> ui_system.cpp:67</div></div>
-<div class="ttc" id="astructrenderer_1_1VulkanRenderer_1_1RenderFrame_html"><div class="ttname"><a href="structrenderer_1_1VulkanRenderer_1_1RenderFrame.html">renderer::VulkanRenderer::RenderFrame</a></div><div class="ttdef"><b>Definition</b> vulkan_renderer.hpp:388</div></div>
+<div class="ttc" id="astructrenderer_1_1VulkanRenderer_1_1RenderFrame_html"><div class="ttname"><a href="structrenderer_1_1VulkanRenderer_1_1RenderFrame.html">renderer::VulkanRenderer::RenderFrame</a></div><div class="ttdef"><b>Definition</b> vulkan_renderer.hpp:393</div></div>
 <div class="ttc" id="astructui_1_1UISystem_1_1LocalizationScope_html"><div class="ttname"><a href="structui_1_1UISystem_1_1LocalizationScope.html">ui::UISystem::LocalizationScope</a></div><div class="ttdef"><b>Definition</b> ui_system.hpp:85</div></div>
 <div class="ttc" id="aui_2assets_8hpp_html"><div class="ttname"><a href="ui_2assets_8hpp.html">assets.hpp</a></div><div class="ttdoc">Aggregate header for the UI asset types.</div></div>
 </div><!-- fragment --></div><!-- contents -->

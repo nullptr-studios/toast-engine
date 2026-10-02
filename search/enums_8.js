@@ -1,7 +1,5 @@
 var searchData=
 [
-  ['savemode_0',['SaveMode',['../core__types_8hpp.html#a644eabc35efa6c659ae7a9162cb7eb52',1,'assets']]],
-  ['section_1',['Section',['../classrenderer_1_1VoxelGpuStorage.html#a258a8f2a679aaf82db1e0ed7bc482c5a',1,'renderer::VoxelGpuStorage']]],
-  ['settingtype_2',['SettingType',['../namespaceeditor_1_1Engine.html#a816e3f8b78ffd7fd2e0beafc6fd99f78',1,'editor::Engine']]],
-  ['splinetype_3',['SplineType',['../curve_8hpp.html#a3d8ff072f435446fc44dadcede9acd36',1,'assets']]]
+  ['phase_0',['Phase',['../structtoast_1_1Workspace_1_1VoxelToolState.html#a9a4ac7d1868da1be2ab383525d812de4',1,'toast::Workspace::VoxelToolState']]],
+  ['piecekind_1',['PieceKind',['../voxel__piece_8hpp.html#a888e11004f9432df810994ca7c1ae404',1,'toast']]]
 ];

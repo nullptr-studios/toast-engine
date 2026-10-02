@@ -28,7 +28,6 @@ var dir_2f5e1e55eaa2c6364f5b7f0ebae372a6 =
     [ "state_machine.hpp", "state__machine_8hpp.html", "state__machine_8hpp" ],
     [ "tick_scheduler.hpp", "tick__scheduler_8hpp.html", "tick__scheduler_8hpp" ],
     [ "volume.hpp", "volume_8hpp.html", "volume_8hpp" ],
-    [ "voxel_node.hpp", "voxel__node_8hpp.html", "voxel__node_8hpp" ],
     [ "workspace.hpp", "workspace_8hpp_source.html", null ],
     [ "workspace_events.hpp", "workspace__events_8hpp.html", "workspace__events_8hpp" ],
     [ "workspace_history.hpp", "workspace__history_8hpp_source.html", null ],

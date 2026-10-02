@@ -1,0 +1,7 @@
+<map id="toast::ProceduralVoxel::layout" name="toast::ProceduralVoxel::layout">
+<area shape="rect" id="Node000001" title=" " alt="" coords="220,40,386,85"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1ProceduralVoxel.html#ab7a5111fa8412ed933c96a4882f224f8" title=" " alt="" coords="5,5,172,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="201,47,172,44,172,38,207,46"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1ProceduralVoxel.html#ad50fb391ee4bb3ef6a22dd7c195eb591" title=" " alt="" coords="5,75,172,119"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="201,79,173,86,172,81,207,78"/>
+</map>

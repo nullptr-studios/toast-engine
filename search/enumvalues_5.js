@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['game_0',['game',['../core__types_8hpp.html#a644eabc35efa6c659ae7a9162cb7eb52ac8d46d341bea4fd5bff866a65ff8aea9',1,'assets']]],
-  ['global_1',['global',['../node_8hpp.html#a98d11435d9b92e9901a40a71793fd680a9c70933aff6b2a6d08c687a6cbb6b765',1,'toast']]]
+  ['face_0',['face',['../structtoast_1_1Workspace_1_1VoxelToolState.html#a9a4ac7d1868da1be2ab383525d812de4ad5ca322453f2986b752e58b11af83d96',1,'toast::Workspace::VoxelToolState']]],
+  ['fill_1',['fill',['../voxel__piece_8hpp.html#a888e11004f9432df810994ca7c1ae404aa552c74784b3a82177bca6c8adde0efb',1,'toast']]]
 ];

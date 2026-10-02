@@ -128,10 +128,30 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('structphysics_
 Public Attributes</h2></td></tr>
 <tr class="memitem:afb92a9efbedee185a74e49a2e7b49e1e" id="r_afb92a9efbedee185a74e49a2e7b49e1e"><td class="memItemLeft"><a id="afb92a9efbedee185a74e49a2e7b49e1e" name="afb92a9efbedee185a74e49a2e7b49e1e"></a>
 std::array&lt; size_t, static_cast&lt; size_t &gt;(NarrowPhasePairType::count)&gt;&#160;</td><td class="memItemRight"><b>narrow_pair_candidates</b> = {}</td></tr>
+<tr class="memitem:a24894672510db3b91b2bbfaca2f8b216" id="r_a24894672510db3b91b2bbfaca2f8b216"><td class="memItemLeft"><a id="a24894672510db3b91b2bbfaca2f8b216" name="a24894672510db3b91b2bbfaca2f8b216"></a>
+std::array&lt; double, static_cast&lt; size_t &gt;(NarrowPhasePairType::count)&gt;&#160;</td><td class="memItemRight"><b>narrow_pair_time_ms</b> = {}</td></tr>
 <tr class="memitem:ad4b5eb93e614f8020a4307d8dd7b2b0b" id="r_ad4b5eb93e614f8020a4307d8dd7b2b0b"><td class="memItemLeft"><a id="ad4b5eb93e614f8020a4307d8dd7b2b0b" name="ad4b5eb93e614f8020a4307d8dd7b2b0b"></a>
 size_t&#160;</td><td class="memItemRight"><b>narrow_jobs</b> = 0</td></tr>
 <tr class="memitem:a1f60a35ea72f1239f2218693d6b5d6d1" id="r_a1f60a35ea72f1239f2218693d6b5d6d1"><td class="memItemLeft"><a id="a1f60a35ea72f1239f2218693d6b5d6d1" name="a1f60a35ea72f1239f2218693d6b5d6d1"></a>
 size_t&#160;</td><td class="memItemRight"><b>narrow_candidates</b> = 0</td></tr>
+<tr class="memitem:ad7c569ef50d09b59b527c2169cfc74b4" id="r_ad7c569ef50d09b59b527c2169cfc74b4"><td class="memItemLeft"><a id="ad7c569ef50d09b59b527c2169cfc74b4" name="ad7c569ef50d09b59b527c2169cfc74b4"></a>
+size_t&#160;</td><td class="memItemRight"><b>box_voxel_split_pairs</b> = 0</td></tr>
+<tr class="memdesc:ad7c569ef50d09b59b527c2169cfc74b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Of narrow_pair_candidates box_voxel/voxel_voxel how many crossed the split threshold. <br /></td></tr>
+<tr class="memitem:af4d0a992a53d69531d706fa03f119e93" id="r_af4d0a992a53d69531d706fa03f119e93"><td class="memItemLeft"><a id="af4d0a992a53d69531d706fa03f119e93" name="af4d0a992a53d69531d706fa03f119e93"></a>
+size_t&#160;</td><td class="memItemRight"><b>voxel_voxel_split_pairs</b> = 0</td></tr>
+<tr class="memitem:a1760456eabf97a9a9fd58d9a10e5ada7" id="r_a1760456eabf97a9a9fd58d9a10e5ada7"><td class="memItemLeft"><a id="a1760456eabf97a9a9fd58d9a10e5ada7" name="a1760456eabf97a9a9fd58d9a10e5ada7"></a>
+size_t&#160;</td><td class="memItemRight"><b>voxel_voxel_resolved_pairs</b> = 0</td></tr>
+<tr class="memdesc:a1760456eabf97a9a9fd58d9a10e5ada7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Of resolved voxel-voxel candidates how many had a non-degenerate overlap. <br /></td></tr>
+<tr class="memitem:ac5cf57e04a3b648395115fc6838e6e99" id="r_ac5cf57e04a3b648395115fc6838e6e99"><td class="memItemLeft"><a id="ac5cf57e04a3b648395115fc6838e6e99" name="ac5cf57e04a3b648395115fc6838e6e99"></a>
+size_t&#160;</td><td class="memItemRight"><b>voxel_voxel_nondegenerate_pairs</b> = 0</td></tr>
+<tr class="memitem:a69418e559f8e8d6364c19a2fbedc54a8" id="r_a69418e559f8e8d6364c19a2fbedc54a8"><td class="memItemLeft"><a id="a69418e559f8e8d6364c19a2fbedc54a8" name="a69418e559f8e8d6364c19a2fbedc54a8"></a>
+size_t&#160;</td><td class="memItemRight"><b>box_voxel_max_estimated_voxels</b> = 0</td></tr>
+<tr class="memdesc:a69418e559f8e8d6364c19a2fbedc54a8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Largest estimated_voxels seen this tick regardless of threshold. <br /></td></tr>
+<tr class="memitem:a958e40f2515da1fb2fff2835a4508bf1" id="r_a958e40f2515da1fb2fff2835a4508bf1"><td class="memItemLeft"><a id="a958e40f2515da1fb2fff2835a4508bf1" name="a958e40f2515da1fb2fff2835a4508bf1"></a>
+size_t&#160;</td><td class="memItemRight"><b>voxel_voxel_max_estimated_voxels</b> = 0</td></tr>
+<tr class="memitem:ad80b0c8968fc9e535bf39e527ce6c28e" id="r_ad80b0c8968fc9e535bf39e527ce6c28e"><td class="memItemLeft"><a id="ad80b0c8968fc9e535bf39e527ce6c28e" name="ad80b0c8968fc9e535bf39e527ce6c28e"></a>
+float&#160;</td><td class="memItemRight"><b>box_voxel_max_extent_meters</b> = 0.0f</td></tr>
+<tr class="memdesc:ad80b0c8968fc9e535bf39e527ce6c28e"><td class="mdescLeft">&#160;</td><td class="mdescRight">World-space longest axis metres behind box_voxel_max_estimated_voxels. <br /></td></tr>
 <tr class="memitem:a8c4aae33c0501975595000c432b2b674" id="r_a8c4aae33c0501975595000c432b2b674"><td class="memItemLeft"><a id="a8c4aae33c0501975595000c432b2b674" name="a8c4aae33c0501975595000c432b2b674"></a>
 size_t&#160;</td><td class="memItemRight"><b>narrow_collisions</b> = 0</td></tr>
 <tr class="memitem:a5f78615231ac6fd72c5c52b4a042300e" id="r_a5f78615231ac6fd72c5c52b4a042300e"><td class="memItemLeft"><a id="a5f78615231ac6fd72c5c52b4a042300e" name="a5f78615231ac6fd72c5c52b4a042300e"></a>
@@ -144,6 +164,15 @@ size_t&#160;</td><td class="memItemRight"><b>contact_points</b> = 0</td></tr>
 size_t&#160;</td><td class="memItemRight"><b>bodies_woken</b> = 0</td></tr>
 <tr class="memitem:aea94c33934f3560e7d6bc5fbd3c084eb" id="r_aea94c33934f3560e7d6bc5fbd3c084eb"><td class="memItemLeft"><a id="aea94c33934f3560e7d6bc5fbd3c084eb" name="aea94c33934f3560e7d6bc5fbd3c084eb"></a>
 size_t&#160;</td><td class="memItemRight"><b>bodies_slept</b> = 0</td></tr>
+<tr class="memitem:ab6a13f32cd4095667f88412cad8ea651" id="r_ab6a13f32cd4095667f88412cad8ea651"><td class="memItemLeft"><a id="ab6a13f32cd4095667f88412cad8ea651" name="ab6a13f32cd4095667f88412cad8ea651"></a>
+size_t&#160;</td><td class="memItemRight"><b>woken_by_approach</b> = 0</td></tr>
+<tr class="memdesc:ab6a13f32cd4095667f88412cad8ea651"><td class="mdescLeft">&#160;</td><td class="mdescRight">Of bodies_woken what woke each sleeper. <br /></td></tr>
+<tr class="memitem:a16776ea11b540ac634a331b02a4043e0" id="r_a16776ea11b540ac634a331b02a4043e0"><td class="memItemLeft"><a id="a16776ea11b540ac634a331b02a4043e0" name="a16776ea11b540ac634a331b02a4043e0"></a>
+size_t&#160;</td><td class="memItemRight"><b>woken_by_racing</b> = 0</td></tr>
+<tr class="memitem:ae1d430be8573fd9b50ceaa77be619465" id="r_ae1d430be8573fd9b50ceaa77be619465"><td class="memItemLeft"><a id="ae1d430be8573fd9b50ceaa77be619465" name="ae1d430be8573fd9b50ceaa77be619465"></a>
+size_t&#160;</td><td class="memItemRight"><b>woken_by_contact_end</b> = 0</td></tr>
+<tr class="memitem:ac272595d1ed0d25995c8927d647690ee" id="r_ac272595d1ed0d25995c8927d647690ee"><td class="memItemLeft"><a id="ac272595d1ed0d25995c8927d647690ee" name="ac272595d1ed0d25995c8927d647690ee"></a>
+size_t&#160;</td><td class="memItemRight"><b>woken_by_support_loss</b> = 0</td></tr>
 <tr class="memitem:a4580e56d6fda5a7a158eb450d9b2ecc3" id="r_a4580e56d6fda5a7a158eb450d9b2ecc3"><td class="memItemLeft"><a id="a4580e56d6fda5a7a158eb450d9b2ecc3" name="a4580e56d6fda5a7a158eb450d9b2ecc3"></a>
 size_t&#160;</td><td class="memItemRight"><b>contact_begins</b> = 0</td></tr>
 <tr class="memitem:aaf0a8e5cb5c7b9f0754c2f247a3a776a" id="r_aaf0a8e5cb5c7b9f0754c2f247a3a776a"><td class="memItemLeft"><a id="aaf0a8e5cb5c7b9f0754c2f247a3a776a" name="aaf0a8e5cb5c7b9f0754c2f247a3a776a"></a>
@@ -172,10 +201,30 @@ double&#160;</td><td class="memItemRight"><b>tick_ms</b> = 0.0</td></tr>
 double&#160;</td><td class="memItemRight"><b>damage_apply_ms</b> = 0.0</td></tr>
 <tr class="memitem:ab5846960ac6930fc3e6253a9e3737291" id="r_ab5846960ac6930fc3e6253a9e3737291"><td class="memItemLeft"><a id="ab5846960ac6930fc3e6253a9e3737291" name="ab5846960ac6930fc3e6253a9e3737291"></a>
 double&#160;</td><td class="memItemRight"><b>connectivity_ms</b> = 0.0</td></tr>
+<tr class="memitem:a602ebb008429a165829042dea016ee5a" id="r_a602ebb008429a165829042dea016ee5a"><td class="memItemLeft"><a id="a602ebb008429a165829042dea016ee5a" name="a602ebb008429a165829042dea016ee5a"></a>
+double&#160;</td><td class="memItemRight"><b>character_step_ms</b> = 0.0</td></tr>
 <tr class="memitem:a370057fe0b9da262281d0d79c1f25a3f" id="r_a370057fe0b9da262281d0d79c1f25a3f"><td class="memItemLeft"><a id="a370057fe0b9da262281d0d79c1f25a3f" name="a370057fe0b9da262281d0d79c1f25a3f"></a>
 double&#160;</td><td class="memItemRight"><b>narrow_phase_ms</b> = 0.0</td></tr>
 <tr class="memitem:ae9d45ebfc5ab0276926a69538a958d6c" id="r_ae9d45ebfc5ab0276926a69538a958d6c"><td class="memItemLeft"><a id="ae9d45ebfc5ab0276926a69538a958d6c" name="ae9d45ebfc5ab0276926a69538a958d6c"></a>
 double&#160;</td><td class="memItemRight"><b>solve_ms</b> = 0.0</td></tr>
+<tr class="memitem:af6d699f5f6b4e42861eb48817211cc0a" id="r_af6d699f5f6b4e42861eb48817211cc0a"><td class="memItemLeft"><a id="af6d699f5f6b4e42861eb48817211cc0a" name="af6d699f5f6b4e42861eb48817211cc0a"></a>
+size_t&#160;</td><td class="memItemRight"><b>character_sweep_calls</b> = 0</td></tr>
+<tr class="memdesc:af6d699f5f6b4e42861eb48817211cc0a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Call counts this tick not character count a movement tick calls trace/fits several times. <br /></td></tr>
+<tr class="memitem:a1a7e95546755c20412f7add90f57fba8" id="r_a1a7e95546755c20412f7add90f57fba8"><td class="memItemLeft"><a id="a1a7e95546755c20412f7add90f57fba8" name="a1a7e95546755c20412f7add90f57fba8"></a>
+size_t&#160;</td><td class="memItemRight"><b>character_overlap_calls</b> = 0</td></tr>
+<tr class="memitem:ad8f79d23f20a3e232676a69550fc81b3" id="r_ad8f79d23f20a3e232676a69550fc81b3"><td class="memItemLeft"><a id="ad8f79d23f20a3e232676a69550fc81b3" name="ad8f79d23f20a3e232676a69550fc81b3"></a>
+double&#160;</td><td class="memItemRight"><b>cache_update_ms</b> = 0.0</td></tr>
+<tr class="memdesc:ad8f79d23f20a3e232676a69550fc81b3"><td class="mdescLeft">&#160;</td><td class="mdescRight">solve_ms broken down island_solve_ms is solveIslands itself the rest is bookkeeping around it <br /></td></tr>
+<tr class="memitem:ac088bc4b0691e32e3713b5f59ccdd5be" id="r_ac088bc4b0691e32e3713b5f59ccdd5be"><td class="memItemLeft"><a id="ac088bc4b0691e32e3713b5f59ccdd5be" name="ac088bc4b0691e32e3713b5f59ccdd5be"></a>
+double&#160;</td><td class="memItemRight"><b>wake_groups_ms</b> = 0.0</td></tr>
+<tr class="memitem:ad2d9f2e8bdbfc7e15e1dfa2ee4c4de4b" id="r_ad2d9f2e8bdbfc7e15e1dfa2ee4c4de4b"><td class="memItemLeft"><a id="ad2d9f2e8bdbfc7e15e1dfa2ee4c4de4b" name="ad2d9f2e8bdbfc7e15e1dfa2ee4c4de4b"></a>
+double&#160;</td><td class="memItemRight"><b>prepare_constraints_ms</b> = 0.0</td></tr>
+<tr class="memitem:a56dd9bbcb262a8f762f41eeecef139b4" id="r_a56dd9bbcb262a8f762f41eeecef139b4"><td class="memItemLeft"><a id="a56dd9bbcb262a8f762f41eeecef139b4" name="a56dd9bbcb262a8f762f41eeecef139b4"></a>
+double&#160;</td><td class="memItemRight"><b>build_islands_ms</b> = 0.0</td></tr>
+<tr class="memitem:ad0c18d0515877542c02144e545328c44" id="r_ad0c18d0515877542c02144e545328c44"><td class="memItemLeft"><a id="ad0c18d0515877542c02144e545328c44" name="ad0c18d0515877542c02144e545328c44"></a>
+double&#160;</td><td class="memItemRight"><b>island_solve_ms</b> = 0.0</td></tr>
+<tr class="memitem:a4cbbda88f46606b6b669398546934eee" id="r_a4cbbda88f46606b6b669398546934eee"><td class="memItemLeft"><a id="a4cbbda88f46606b6b669398546934eee" name="a4cbbda88f46606b6b669398546934eee"></a>
+double&#160;</td><td class="memItemRight"><b>sleep_update_ms</b> = 0.0</td></tr>
 <tr class="memitem:a8c8331e76f6525c66d6addc13d972213" id="r_a8c8331e76f6525c66d6addc13d972213"><td class="memItemLeft"><a id="a8c8331e76f6525c66d6addc13d972213" name="a8c8331e76f6525c66d6addc13d972213"></a>
 size_t&#160;</td><td class="memItemRight"><b>body_count</b> = 0</td></tr>
 <tr class="memitem:a7887fa31c3600717a938a545b6a78981" id="r_a7887fa31c3600717a938a545b6a78981"><td class="memItemLeft"><a id="a7887fa31c3600717a938a545b6a78981" name="a7887fa31c3600717a938a545b6a78981"></a>
@@ -212,6 +261,8 @@ size_t&#160;</td><td class="memItemRight"><b>fragments_sleep_locked</b> = 0</td>
 size_t&#160;</td><td class="memItemRight"><b>fragments_despawned</b> = 0</td></tr>
 <tr class="memitem:abcf836c0d51106d464fdda84bfbcb694" id="r_abcf836c0d51106d464fdda84bfbcb694"><td class="memItemLeft"><a id="abcf836c0d51106d464fdda84bfbcb694" name="abcf836c0d51106d464fdda84bfbcb694"></a>
 size_t&#160;</td><td class="memItemRight"><b>fragments_evicted</b> = 0</td></tr>
+<tr class="memitem:af5c516b16dd6130717e0e6cadbec02e5" id="r_af5c516b16dd6130717e0e6cadbec02e5"><td class="memItemLeft"><a id="af5c516b16dd6130717e0e6cadbec02e5" name="af5c516b16dd6130717e0e6cadbec02e5"></a>
+size_t&#160;</td><td class="memItemRight"><b>static_splits_spawned</b> = 0</td></tr>
 <tr class="memitem:a6fe50ed3070866c00d7e251f26c323f0" id="r_a6fe50ed3070866c00d7e251f26c323f0"><td class="memItemLeft"><a id="a6fe50ed3070866c00d7e251f26c323f0" name="a6fe50ed3070866c00d7e251f26c323f0"></a>
 uint32_t&#160;</td><td class="memItemRight"><b>brick_pool_allocated</b> = 0</td></tr>
 <tr class="memitem:a6f48a1fd4859716e2c2646741f781095" id="r_a6f48a1fd4859716e2c2646741f781095"><td class="memItemLeft"><a id="a6f48a1fd4859716e2c2646741f781095" name="a6f48a1fd4859716e2c2646741f781095"></a>

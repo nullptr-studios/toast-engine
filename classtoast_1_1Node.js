@@ -1,5 +1,6 @@
 var classtoast_1_1Node =
 [
+    [ "addScript", "classtoast_1_1Node.html#aa86c1033316ca79b0a43b72cfa775157", null ],
     [ "box", "classtoast_1_1Node.html#a2749148cdb0967f3d924dc376e2fc075", null ],
     [ "call", "classtoast_1_1Node.html#a7ec23f634f735c37e65ce4d258e7e082", null ],
     [ "children", "classtoast_1_1Node.html#a2fcbe02f3e1937abf869fb537fa77988", null ],
@@ -16,12 +17,16 @@ var classtoast_1_1Node =
     [ "listener", "classtoast_1_1Node.html#aeada3f40f2b00d63c299b1dec9b5e6d5", null ],
     [ "name", "classtoast_1_1Node.html#aa8af6f845b777850d02595d7bab2e605", null ],
     [ "name", "classtoast_1_1Node.html#aa9c35963dd85e0bed5f1fa8b0bf49ebf", null ],
+    [ "onScriptsReloading", "classtoast_1_1Node.html#a04e96b6dfe562c1a432322121410255a", null ],
+    [ "onScriptVarChanged", "classtoast_1_1Node.html#ade869bb26a1120658cfe901bd324245b", null ],
     [ "owner", "classtoast_1_1Node.html#aa3cb3efd8b2995f499fa25e7154ce422", null ],
     [ "parent", "classtoast_1_1Node.html#aad1cba24836e1465fdab22b27e71bf27", null ],
     [ "reloadScripts", "classtoast_1_1Node.html#a8ce8c9cb4ecb09ecac5364cddf3af491", null ],
     [ "root", "classtoast_1_1Node.html#a666186f691b352223f039060d7d1d2a9", null ],
+    [ "scripts", "classtoast_1_1Node.html#a734d27bff7adc214bdb2d3caf5db1dcf", null ],
     [ "search", "classtoast_1_1Node.html#ab70caacc1806f4952c0480f7c7736570", null ],
     [ "set", "classtoast_1_1Node.html#a284442460173c86952c31dc5f3712b6e", null ],
+    [ "setScripts", "classtoast_1_1Node.html#adb1a4e905fb787cf144cf6f230f14fba", null ],
     [ "sourcePrefab", "classtoast_1_1Node.html#a56ede5875c85b130097b9642044d580c", null ],
     [ "spawn", "classtoast_1_1Node.html#a9fad50e482a69ed339cff9412b48119b", null ],
     [ "spawn", "classtoast_1_1Node.html#a19495f7f11c522905fc0a1b5f853c009", null ],

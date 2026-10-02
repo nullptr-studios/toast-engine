@@ -120,99 +120,100 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('engine_8hpp_so
 <div class="contents">
 <div class="fragment"><div class="line"><a id="l00001" name="l00001"></a><span class="lineno">    1</span></div>
 <div class="line"><a id="l00004" name="l00004"></a><span class="lineno">    4</span> </div>
-<div class="line"><a id="l00005" name="l00005"></a><span class="lineno">    5</span><span class="preprocessor">#include &lt;cstdint&gt;</span></div>
-<div class="line"><a id="l00006" name="l00006"></a><span class="lineno">    6</span><span class="preprocessor">#include &lt;glm/vec3.hpp&gt;</span></div>
-<div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span><span class="preprocessor">#include &lt;<a class="code" href="uid_8hpp.html">toast/uid.hpp</a>&gt;</span></div>
-<div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span> </div>
-<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="keyword">namespace </span>assets {</div>
-<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="keyword">class </span><a class="code hl_class" href="classassets_1_1Prefab.html">Prefab</a>;</div>
-<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span>}</div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span> </div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="keyword">namespace </span>renderer {</div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="keyword">class </span><a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>;</div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="keyword">class </span><a class="code hl_class" href="classrenderer_1_1VulkanRenderer.html">VulkanRenderer</a>;</div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="keyword">class </span><a class="code hl_class" href="classrenderer_1_1SharedTextureOutputTarget.html">SharedTextureOutputTarget</a>;</div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1ViewportFrameDesc.html">ViewportFrameDesc</a>;</div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>}</div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span> </div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="keyword">namespace </span>toast {</div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span> </div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="keyword">struct </span><a class="code hl_struct" href="structtoast_1_1EnginePimpl.html">EnginePimpl</a>;</div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span> </div>
-<div class="foldopen" id="foldopen00024" data-start="{" data-end="};">
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno"><a class="line" href="classtoast_1_1Engine.html">   24</a></span><span class="keyword">class </span>Engine final {</div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>  Engine() <span class="keyword">noexcept</span>;</div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>  ~Engine() <span class="keyword">noexcept</span>;</div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>  <span class="keyword">static</span> <span class="keyword">auto</span> get() <span class="keyword">noexcept</span> -&gt; Engine*;</div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span> </div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>  Engine(Engine&amp;) = <span class="keyword">delete</span>;</div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>  Engine(Engine&amp;&amp;) = <span class="keyword">delete</span>;</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>  <span class="keyword">auto</span> operator=(<span class="keyword">const</span> Engine&amp;) -&gt; Engine&amp; = <span class="keyword">delete</span>;</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>  <span class="keyword">auto</span> operator=(<span class="keyword">const</span> Engine&amp;&amp;) -&gt; Engine&amp; = <span class="keyword">delete</span>;</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span> </div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  <span class="keywordtype">void</span> init();</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>  <span class="keywordtype">void</span> tick();</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  <span class="keyword">auto</span> shouldClose() -&gt; bool;</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  <span class="keywordtype">void</span> test();</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span> </div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  <span class="keywordtype">void</span> reloadSettings();</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span> </div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  <span class="comment">// window</span></div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  <span class="keywordtype">void</span> createSDLWindow(<span class="keyword">const</span> <span class="keywordtype">char</span>*);</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <span class="keywordtype">void</span> createAvaloniaWindow();</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  <span class="keyword">auto</span> shootVoxel(<span class="keyword">const</span> glm::vec3&amp; origin, <span class="keyword">const</span> glm::vec3&amp; direction, <span class="keywordtype">float</span> max_distance, <span class="keywordtype">float</span> energy, <span class="keywordtype">float</span> min_radius = 0.0f)</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>      -&gt; bool;</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span> </div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  <span class="comment">// nodes</span></div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  <span class="keyword">auto</span> createWorkspace(std::string_view type) -&gt; std::pair&lt;UID, std::string&gt;;</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  <span class="keyword">auto</span> openWorkspace(<a class="code hl_struct" href="structtoast_1_1UID.html">UID</a> uid) -&gt; std::pair&lt;UID, std::string&gt;;</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  <span class="keyword">auto</span> openWorkspace(<a class="code hl_struct" href="structtoast_1_1UID.html">UID</a> uid, std::string_view source_uri) -&gt; std::pair&lt;UID, std::string&gt;;</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  <span class="keyword">auto</span> <a class="code hl_function" href="classtoast_1_1Engine.html#a901620291573a094ba7b625bc8e975f4">playWorkspace</a>(<a class="code hl_struct" href="structtoast_1_1UID.html">UID</a> source_handle) -&gt; std::pair&lt;UID, std::string&gt;;</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <span class="keywordtype">void</span> destroyWorkspace(<a class="code hl_struct" href="structtoast_1_1UID.html">UID</a> handle);</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  <span class="keyword">auto</span> activeWorkspace() -&gt; <a class="code hl_struct" href="structtoast_1_1UID.html">UID</a>;</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  <span class="keywordtype">void</span> publishPrefab(<a class="code hl_struct" href="structtoast_1_1UID.html">UID</a> uid, <span class="keyword">const</span> <a class="code hl_class" href="classassets_1_1Prefab.html">assets::Prefab</a>&amp; prefab);</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span></div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classtoast_1_1Engine.html#a78593ab9e11d3f7d994538b82654dea9">refreshNodeInfos</a>();</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span></div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  <span class="keyword">auto</span> <a class="code hl_function" href="classtoast_1_1Engine.html#ae6fd623ab7223374182af36f90f828aa">getViewportFrame</a>(<span class="keywordtype">void</span>* dst, uint32_t dst_capacity, <a class="code hl_struct" href="structrenderer_1_1ViewportFrameDesc.html">renderer::ViewportFrameDesc</a>* out) -&gt; int;</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span></div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classtoast_1_1Engine.html#a4333f4c5d2fa76f3190053c3da89ea4b">beginApplication</a>();</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span></div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classtoast_1_1Engine.html#a3571fc6b86d24721b6ca9b6cae3a2e34">popApplication</a>();</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span></div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classtoast_1_1Engine.html#a6422840e9cb030d171f3126b67c50b57">startGame</a>();</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span> </div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  <a class="code hl_struct" href="structtoast_1_1EnginePimpl.html">EnginePimpl</a>* m;</div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>  <span class="keyword">static</span> Engine* instance;</div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>};</div>
+<div class="line"><a id="l00005" name="l00005"></a><span class="lineno">    5</span><span class="preprocessor">#pragma once</span></div>
+<div class="line"><a id="l00006" name="l00006"></a><span class="lineno">    6</span><span class="preprocessor">#include &lt;cstdint&gt;</span></div>
+<div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span><span class="preprocessor">#include &lt;glm/vec3.hpp&gt;</span></div>
+<div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="preprocessor">#include &lt;<a class="code" href="uid_8hpp.html">toast/uid.hpp</a>&gt;</span></div>
+<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span> </div>
+<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="keyword">namespace </span>assets {</div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="keyword">class </span><a class="code hl_class" href="classassets_1_1Prefab.html">Prefab</a>;</div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span>}</div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span> </div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="keyword">namespace </span>renderer {</div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="keyword">class </span><a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>;</div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="keyword">class </span><a class="code hl_class" href="classrenderer_1_1VulkanRenderer.html">VulkanRenderer</a>;</div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="keyword">class </span><a class="code hl_class" href="classrenderer_1_1SharedTextureOutputTarget.html">SharedTextureOutputTarget</a>;</div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1ViewportFrameDesc.html">ViewportFrameDesc</a>;</div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>}</div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span> </div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="keyword">namespace </span>toast {</div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="keyword">struct </span><a class="code hl_struct" href="structtoast_1_1EnginePimpl.html">EnginePimpl</a>;</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
+<div class="foldopen" id="foldopen00025" data-start="{" data-end="};">
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno"><a class="line" href="classtoast_1_1Engine.html">   25</a></span><span class="keyword">class </span>Engine final {</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>  Engine() <span class="keyword">noexcept</span>;</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>  ~Engine() <span class="keyword">noexcept</span>;</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>  <span class="keyword">static</span> <span class="keyword">auto</span> get() <span class="keyword">noexcept</span> -&gt; Engine*;</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span> </div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>  Engine(Engine&amp;) = <span class="keyword">delete</span>;</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>  Engine(Engine&amp;&amp;) = <span class="keyword">delete</span>;</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>  <span class="keyword">auto</span> operator=(<span class="keyword">const</span> Engine&amp;) -&gt; Engine&amp; = <span class="keyword">delete</span>;</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  <span class="keyword">auto</span> operator=(<span class="keyword">const</span> Engine&amp;&amp;) -&gt; Engine&amp; = <span class="keyword">delete</span>;</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span> </div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>  <span class="keywordtype">void</span> init();</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  <span class="keywordtype">void</span> tick();</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  <span class="keyword">auto</span> shouldClose() -&gt; bool;</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="keywordtype">void</span> test();</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span> </div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  <span class="keywordtype">void</span> reloadSettings();</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span> </div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  <span class="comment">// window</span></div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <span class="keywordtype">void</span> createSDLWindow(<span class="keyword">const</span> <span class="keywordtype">char</span>*);</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  <span class="keywordtype">void</span> createAvaloniaWindow();</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span> </div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  <span class="keyword">auto</span> shootVoxel(<span class="keyword">const</span> glm::vec3&amp; origin, <span class="keyword">const</span> glm::vec3&amp; direction, <span class="keywordtype">float</span> max_distance, <span class="keywordtype">float</span> energy, <span class="keywordtype">float</span> min_radius = 0.0f)</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>      -&gt; bool;</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span> </div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  <span class="comment">// nodes</span></div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  <span class="keyword">auto</span> createWorkspace(std::string_view type) -&gt; std::pair&lt;UID, std::string&gt;;</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  <span class="keyword">auto</span> openWorkspace(<a class="code hl_struct" href="structtoast_1_1UID.html">UID</a> uid) -&gt; std::pair&lt;UID, std::string&gt;;</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <span class="keyword">auto</span> openWorkspace(<a class="code hl_struct" href="structtoast_1_1UID.html">UID</a> uid, std::string_view source_uri) -&gt; std::pair&lt;UID, std::string&gt;;</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <span class="keyword">auto</span> <a class="code hl_function" href="classtoast_1_1Engine.html#a901620291573a094ba7b625bc8e975f4">playWorkspace</a>(<a class="code hl_struct" href="structtoast_1_1UID.html">UID</a> source_handle) -&gt; std::pair&lt;UID, std::string&gt;;</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <span class="keywordtype">void</span> destroyWorkspace(<a class="code hl_struct" href="structtoast_1_1UID.html">UID</a> handle);</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span> </div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  <span class="keyword">auto</span> activeWorkspace() -&gt; <a class="code hl_struct" href="structtoast_1_1UID.html">UID</a>;</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  <span class="keywordtype">void</span> publishPrefab(<a class="code hl_struct" href="structtoast_1_1UID.html">UID</a> uid, <span class="keyword">const</span> <a class="code hl_class" href="classassets_1_1Prefab.html">assets::Prefab</a>&amp; prefab);</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span></div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classtoast_1_1Engine.html#a78593ab9e11d3f7d994538b82654dea9">refreshNodeInfos</a>();</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span></div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  <span class="keyword">auto</span> <a class="code hl_function" href="classtoast_1_1Engine.html#ae6fd623ab7223374182af36f90f828aa">getViewportFrame</a>(<span class="keywordtype">void</span>* dst, uint32_t dst_capacity, <a class="code hl_struct" href="structrenderer_1_1ViewportFrameDesc.html">renderer::ViewportFrameDesc</a>* out) -&gt; int;</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span></div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classtoast_1_1Engine.html#a4333f4c5d2fa76f3190053c3da89ea4b">beginApplication</a>();</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span></div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classtoast_1_1Engine.html#a3571fc6b86d24721b6ca9b6cae3a2e34">popApplication</a>();</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span></div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classtoast_1_1Engine.html#a6422840e9cb030d171f3126b67c50b57">startGame</a>();</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span> </div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>  <a class="code hl_struct" href="structtoast_1_1EnginePimpl.html">EnginePimpl</a>* m;</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>  <span class="keyword">static</span> Engine* instance;</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>};</div>
 </div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span> </div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span><span class="comment">/*</span></div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span><span class="comment"> *  The order to call and initialize the engine on the Editor and the Player should be:</span></div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span><span class="comment"> *    - Create an engine -&gt; toast_create()</span></div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span><span class="comment"> *    - Create a game -&gt; game_create()</span></div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span><span class="comment"> *    - Set the working directories -&gt; toast_set_working_directory()</span></div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span><span class="comment"> *    - Call Init() -&gt; toast_init()</span></div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span><span class="comment"> *    - Create window -&gt; toast_create_[...]_window()</span></div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span><span class="comment"> */</span></div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span> </div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>}</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span> </div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span><span class="comment">/*</span></div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span><span class="comment"> *  The order to call and initialize the engine on the Editor and the Player should be:</span></div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span><span class="comment"> *    - Create an engine -&gt; toast_create()</span></div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span><span class="comment"> *    - Create a game -&gt; game_create()</span></div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span><span class="comment"> *    - Set the working directories -&gt; toast_set_working_directory()</span></div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span><span class="comment"> *    - Call Init() -&gt; toast_init()</span></div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span><span class="comment"> *    - Create window -&gt; toast_create_[...]_window()</span></div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span><span class="comment"> */</span></div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span> </div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>}</div>
 <div class="ttc" id="aclassassets_1_1Prefab_html"><div class="ttname"><a href="classassets_1_1Prefab.html">assets::Prefab</a></div><div class="ttdef"><b>Definition</b> prefab.hpp:54</div></div>
 <div class="ttc" id="aclassrenderer_1_1SharedTextureOutputTarget_html"><div class="ttname"><a href="classrenderer_1_1SharedTextureOutputTarget.html">renderer::SharedTextureOutputTarget</a></div><div class="ttdef"><b>Definition</b> shared_texture_output_target.hpp:25</div></div>
 <div class="ttc" id="aclassrenderer_1_1VulkanCore_html"><div class="ttname"><a href="classrenderer_1_1VulkanCore.html">renderer::VulkanCore</a></div><div class="ttdef"><b>Definition</b> vulkan_core.hpp:46</div></div>
-<div class="ttc" id="aclassrenderer_1_1VulkanRenderer_html"><div class="ttname"><a href="classrenderer_1_1VulkanRenderer.html">renderer::VulkanRenderer</a></div><div class="ttdef"><b>Definition</b> vulkan_renderer.hpp:83</div></div>
-<div class="ttc" id="aclasstoast_1_1Engine_html_a3571fc6b86d24721b6ca9b6cae3a2e34"><div class="ttname"><a href="classtoast_1_1Engine.html#a3571fc6b86d24721b6ca9b6cae3a2e34">toast::Engine::popApplication</a></div><div class="ttdeci">void popApplication()</div><div class="ttdoc">Destroys the active application layer and nulls the pointer.</div><div class="ttdef"><b>Definition</b> engine.cpp:760</div></div>
-<div class="ttc" id="aclasstoast_1_1Engine_html_a4333f4c5d2fa76f3190053c3da89ea4b"><div class="ttname"><a href="classtoast_1_1Engine.html#a4333f4c5d2fa76f3190053c3da89ea4b">toast::Engine::beginApplication</a></div><div class="ttdeci">void beginApplication()</div><div class="ttdoc">Calls begin() on the currently registered application layer (if any).</div><div class="ttdef"><b>Definition</b> engine.cpp:768</div></div>
-<div class="ttc" id="aclasstoast_1_1Engine_html_a6422840e9cb030d171f3126b67c50b57"><div class="ttname"><a href="classtoast_1_1Engine.html#a6422840e9cb030d171f3126b67c50b57">toast::Engine::startGame</a></div><div class="ttdeci">void startGame()</div><div class="ttdoc">Creates the World, then loads and activates the init_scene from project settings.</div><div class="ttdef"><b>Definition</b> engine.cpp:774</div></div>
-<div class="ttc" id="aclasstoast_1_1Engine_html_a78593ab9e11d3f7d994538b82654dea9"><div class="ttname"><a href="classtoast_1_1Engine.html#a78593ab9e11d3f7d994538b82654dea9">toast::Engine::refreshNodeInfos</a></div><div class="ttdeci">void refreshNodeInfos()</div><div class="ttdoc">Re-resolves NodeInfo after a project reload.</div><div class="ttdef"><b>Definition</b> engine.cpp:722</div></div>
-<div class="ttc" id="aclasstoast_1_1Engine_html_a901620291573a094ba7b625bc8e975f4"><div class="ttname"><a href="classtoast_1_1Engine.html#a901620291573a094ba7b625bc8e975f4">toast::Engine::playWorkspace</a></div><div class="ttdeci">auto playWorkspace(UID source_handle) -&gt; std::pair&lt; UID, std::string &gt;</div><div class="ttdoc">Clones the given workspace&#39;s into a new ticking PlayWorkspace.</div><div class="ttdef"><b>Definition</b> engine.cpp:676</div></div>
-<div class="ttc" id="aclasstoast_1_1Engine_html_ae6fd623ab7223374182af36f90f828aa"><div class="ttname"><a href="classtoast_1_1Engine.html#ae6fd623ab7223374182af36f90f828aa">toast::Engine::getViewportFrame</a></div><div class="ttdeci">auto getViewportFrame(void *dst, uint32_t dst_capacity, renderer::ViewportFrameDesc *out) -&gt; int</div><div class="ttdoc">Copies the latest viewport frame into dst.</div><div class="ttdef"><b>Definition</b> engine.cpp:729</div></div>
+<div class="ttc" id="aclassrenderer_1_1VulkanRenderer_html"><div class="ttname"><a href="classrenderer_1_1VulkanRenderer.html">renderer::VulkanRenderer</a></div><div class="ttdef"><b>Definition</b> vulkan_renderer.hpp:84</div></div>
+<div class="ttc" id="aclasstoast_1_1Engine_html_a3571fc6b86d24721b6ca9b6cae3a2e34"><div class="ttname"><a href="classtoast_1_1Engine.html#a3571fc6b86d24721b6ca9b6cae3a2e34">toast::Engine::popApplication</a></div><div class="ttdeci">void popApplication()</div><div class="ttdoc">Destroys the active application layer and nulls the pointer.</div><div class="ttdef"><b>Definition</b> engine.cpp:807</div></div>
+<div class="ttc" id="aclasstoast_1_1Engine_html_a4333f4c5d2fa76f3190053c3da89ea4b"><div class="ttname"><a href="classtoast_1_1Engine.html#a4333f4c5d2fa76f3190053c3da89ea4b">toast::Engine::beginApplication</a></div><div class="ttdeci">void beginApplication()</div><div class="ttdoc">Calls begin() on the currently registered application layer (if any).</div><div class="ttdef"><b>Definition</b> engine.cpp:815</div></div>
+<div class="ttc" id="aclasstoast_1_1Engine_html_a6422840e9cb030d171f3126b67c50b57"><div class="ttname"><a href="classtoast_1_1Engine.html#a6422840e9cb030d171f3126b67c50b57">toast::Engine::startGame</a></div><div class="ttdeci">void startGame()</div><div class="ttdoc">Creates the World, then loads and activates the init_scene from project settings.</div><div class="ttdef"><b>Definition</b> engine.cpp:821</div></div>
+<div class="ttc" id="aclasstoast_1_1Engine_html_a78593ab9e11d3f7d994538b82654dea9"><div class="ttname"><a href="classtoast_1_1Engine.html#a78593ab9e11d3f7d994538b82654dea9">toast::Engine::refreshNodeInfos</a></div><div class="ttdeci">void refreshNodeInfos()</div><div class="ttdoc">Re-resolves NodeInfo after a project reload.</div><div class="ttdef"><b>Definition</b> engine.cpp:769</div></div>
+<div class="ttc" id="aclasstoast_1_1Engine_html_a901620291573a094ba7b625bc8e975f4"><div class="ttname"><a href="classtoast_1_1Engine.html#a901620291573a094ba7b625bc8e975f4">toast::Engine::playWorkspace</a></div><div class="ttdeci">auto playWorkspace(UID source_handle) -&gt; std::pair&lt; UID, std::string &gt;</div><div class="ttdoc">Clones the given workspace&#39;s into a new ticking PlayWorkspace.</div><div class="ttdef"><b>Definition</b> engine.cpp:723</div></div>
+<div class="ttc" id="aclasstoast_1_1Engine_html_ae6fd623ab7223374182af36f90f828aa"><div class="ttname"><a href="classtoast_1_1Engine.html#ae6fd623ab7223374182af36f90f828aa">toast::Engine::getViewportFrame</a></div><div class="ttdeci">auto getViewportFrame(void *dst, uint32_t dst_capacity, renderer::ViewportFrameDesc *out) -&gt; int</div><div class="ttdoc">Copies the latest viewport frame into dst.</div><div class="ttdef"><b>Definition</b> engine.cpp:776</div></div>
 <div class="ttc" id="astructrenderer_1_1ViewportFrameDesc_html"><div class="ttname"><a href="structrenderer_1_1ViewportFrameDesc.html">renderer::ViewportFrameDesc</a></div><div class="ttdef"><b>Definition</b> shared_texture_output_target.hpp:18</div></div>
-<div class="ttc" id="astructtoast_1_1EnginePimpl_html"><div class="ttname"><a href="structtoast_1_1EnginePimpl.html">toast::EnginePimpl</a></div><div class="ttdef"><b>Definition</b> engine.cpp:86</div></div>
+<div class="ttc" id="astructtoast_1_1EnginePimpl_html"><div class="ttname"><a href="structtoast_1_1EnginePimpl.html">toast::EnginePimpl</a></div><div class="ttdef"><b>Definition</b> engine.cpp:89</div></div>
 <div class="ttc" id="astructtoast_1_1UID_html"><div class="ttname"><a href="structtoast_1_1UID.html">toast::UID</a></div><div class="ttdef"><b>Definition</b> uid.hpp:20</div></div>
 <div class="ttc" id="auid_8hpp_html"><div class="ttname"><a href="uid_8hpp.html">uid.hpp</a></div><div class="ttdoc">Unique identifier for everything that exists in our engine.</div></div>
 </div><!-- fragment --></div><!-- contents -->

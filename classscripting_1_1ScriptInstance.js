@@ -1,6 +1,7 @@
 var classscripting_1_1ScriptInstance =
 [
     [ "call", "classscripting_1_1ScriptInstance.html#a738f9128ed84a7c283633b05de05e105", null ],
+    [ "callEventMethod", "classscripting_1_1ScriptInstance.html#ae96d13ed9ada4699bf69deaf4e30594f", null ],
     [ "callWithAnyArgs", "classscripting_1_1ScriptInstance.html#a4ceb52ee91e90d6c9e913fd0d77b1aa0", null ],
     [ "callWithLuaStack", "classscripting_1_1ScriptInstance.html#a2b592654aa52c3e3e1337ca44ad2353a", null ],
     [ "getVar", "classscripting_1_1ScriptInstance.html#a27aa55c793eb92f4990793529b64ac43", null ],

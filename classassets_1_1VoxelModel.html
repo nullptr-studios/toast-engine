@@ -150,6 +150,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a2ee01b58121d32d1836ddd80581f4271"><td class="mdescLeft">&#160;</td><td class="mdescRight">Throws on malformed or non canonical data. <br /></td></tr>
 <tr class="memitem:a646cce9ecea10273fcf1a2abb7f26338" id="r_a646cce9ecea10273fcf1a2abb7f26338"><td class="memItemLeft"><a id="a646cce9ecea10273fcf1a2abb7f26338" name="a646cce9ecea10273fcf1a2abb7f26338"></a>
 auto&#160;</td><td class="memItemRight"><b>instantiate</b> (<a class="el" href="classvoxel_1_1BrickPool.html">voxel::BrickPool</a> &amp;pool) const -&gt; std::optional&lt; <a class="el" href="classvoxel_1_1Volume.html">voxel::Volume</a> &gt;</td></tr>
+<tr class="memitem:a59a0758104ea67562283df71b98d2fe6" id="r_a59a0758104ea67562283df71b98d2fe6"><td class="memItemLeft"><a id="a59a0758104ea67562283df71b98d2fe6" name="a59a0758104ea67562283df71b98d2fe6"></a>
+void&#160;</td><td class="memItemRight"><b>reload</b> (const std::vector&lt; uint8_t &gt; &amp;data)</td></tr>
 <tr class="memitem:aec3d1349531c80cf706b608ef8bcc7dd" id="r_aec3d1349531c80cf706b608ef8bcc7dd"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#aec3d1349531c80cf706b608ef8bcc7dd">type</a> () const -&gt; std::string_view override</td></tr>
 <tr class="memitem:a010d69e88fb9b9a050d3e5a80f836fe1" id="r_a010d69e88fb9b9a050d3e5a80f836fe1"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a010d69e88fb9b9a050d3e5a80f836fe1">serialize</a> (<a class="el" href="core__types_8hpp.html#a644eabc35efa6c659ae7a9162cb7eb52">SaveMode</a> mode) const -&gt; std::vector&lt; uint8_t &gt; override</td></tr>
 <tr class="memitem:af5814762a6484b2c7be0e0e69e607a40" id="r_af5814762a6484b2c7be0e0e69e607a40"><td class="memItemLeft"><a id="af5814762a6484b2c7be0e0e69e607a40" name="af5814762a6484b2c7be0e0e69e607a40"></a>
@@ -160,6 +162,8 @@ auto&#160;</td><td class="memItemRight"><b>paletteUid</b> () const noexcept -&gt
 auto&#160;</td><td class="memItemRight"><b>storedBrickCount</b> () const noexcept -&gt; uint32_t</td></tr>
 <tr class="memitem:ad4b412ceb1e489b0a8b3e28e21487612" id="r_ad4b412ceb1e489b0a8b3e28e21487612"><td class="memItemLeft"><a id="ad4b412ceb1e489b0a8b3e28e21487612" name="ad4b412ceb1e489b0a8b3e28e21487612"></a>
 auto&#160;</td><td class="memItemRight"><b>solidVoxelCount</b> () const -&gt; uint32_t</td></tr>
+<tr class="memitem:ac85afea4ac1b3cee67b89ec1d73914d1" id="r_ac85afea4ac1b3cee67b89ec1d73914d1"><td class="memItemLeft"><a id="ac85afea4ac1b3cee67b89ec1d73914d1" name="ac85afea4ac1b3cee67b89ec1d73914d1"></a>
+auto&#160;</td><td class="memItemRight"><b>materialAt</b> (glm::uvec3 voxel) const noexcept -&gt; uint8_t</td></tr>
 <tr class="inherit_header pub_methods_classassets_1_1Asset"><td colspan="2">Public Member Functions inherited from <a class="el" href="classassets_1_1Asset.html">assets::Asset</a></td></tr>
 <tr class="memitem:a9a5999a54e477fdc474c8d29af31ccae pub_methods_classassets_1_1Asset" id="r_a9a5999a54e477fdc474c8d29af31ccae"><td class="memItemLeft">
 &#160;</td><td class="memItemRight"><b>Asset</b> (const Asset &amp;)=delete</td></tr>
@@ -237,8 +241,8 @@ void&#160;</td><td class="memItemRight"><b>release</b> () noexcept</td></tr>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>engine/src/toast/assets/<a class="el" href="voxel__model_8hpp_source.html">voxel_model.hpp</a></li>
-<li>engine/src/toast/assets/<b>voxel_model.cpp</b></li>
+<li>engine/src/toast/voxel/assets/<a class="el" href="voxel__model_8hpp_source.html">voxel_model.hpp</a></li>
+<li>engine/src/toast/voxel/assets/<b>voxel_model.cpp</b></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

@@ -163,7 +163,7 @@ var NAVTREE =
       [ "Class Members", "functions.html", [
         [ "All", "functions.html", "functions_dup" ],
         [ "Functions", "functions_func.html", "functions_func" ],
-        [ "Variables", "functions_vars.html", null ],
+        [ "Variables", "functions_vars.html", "functions_vars" ],
         [ "Typedefs", "functions_type.html", null ],
         [ "Enumerations", "functions_enum.html", null ],
         [ "Properties", "functions_prop.html", null ]
@@ -183,18 +183,20 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "aabb_8hpp.html",
-"classeditor_1_1Assets_1_1GltfSectionDto.html",
-"classeditor_1_1Components_1_1Elements_1_1DragVectorBoxBase.html",
-"classeditor_1_1Workspace_1_1LayoutNode.html",
-"classrenderer_1_1VoxelPass.html",
-"classtoast_1_1INodeOwner.html#ab48b767867c37bcf7293f545dd3ec58a",
-"classtoast_1_1Workspace.html#a84e00bf0f57ba518d65d86c1dd59759b",
-"globals_defs.html",
-"namespacemembers_enum.html",
-"structevent_1_1ClearEditorSignalConnections.html",
-"structphysics_1_1BoxShape.html",
-"structtoast_1_1NodeInfo.html#a570327b6b4ea1ce8ea5b4059ec0379a4",
-"value_8hpp.html#a8f28be5d81868506148c8ba232cd5f19a60504a25c57807da2d030e51228cd524"
+"classeditor_1_1Assets_1_1AssetTagFilter.html",
+"classeditor_1_1Components_1_1Elements_1_1DragFloatBox.html",
+"classeditor_1_1Workspace_1_1HierarchyElement.html",
+"classrenderer_1_1RawTextureUpload.html",
+"classtoast_1_1CarveVolume.html",
+"classtoast_1_1SDLWindow.html",
+"classtoast_1_1VoxelPiece.html#a8b0a1b260a5a50b48565974419355be3",
+"dir_5e3b13ae2ca2708cae0c59ff3dc0407a.html",
+"lua__value__codec_8hpp.html",
+"reflection__probe__pass_8hpp_source.html",
+"structevent_1_1ProtoTraits_3_01RemoveSignalConnection_01_4.html",
+"structphysics_1_1Simulator_1_1ConnectivityResult.html",
+"structtoast_1_1NodeInfo.html#a5098ea7c2cf4c4674101f7026902c559",
+"structvoxel_1_1gpu_1_1PackedScene.html"
 ];
 
 const SYNCONMSG = 'click to disable panel synchronization';

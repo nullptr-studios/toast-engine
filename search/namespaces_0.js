@@ -15,5 +15,6 @@ var searchData=
   ['editor_3a_3aengine_12',['Engine',['../namespaceeditor_1_1Engine.html',1,'editor']]],
   ['editor_3a_3alogger_13',['Logger',['../namespaceeditor_1_1Logger.html',1,'editor']]],
   ['editor_3a_3astartwindow_14',['StartWindow',['../namespaceeditor_1_1StartWindow.html',1,'editor']]],
-  ['editor_3a_3aworkspace_15',['Workspace',['../namespaceeditor_1_1Workspace.html',1,'editor']]]
+  ['editor_3a_3avoxeleditor_15',['VoxelEditor',['../namespaceeditor_1_1VoxelEditor.html',1,'editor']]],
+  ['editor_3a_3aworkspace_16',['Workspace',['../namespaceeditor_1_1Workspace.html',1,'editor']]]
 ];

@@ -1,0 +1,5 @@
+<map id="toast::VoxelPiece::grid" name="toast::VoxelPiece::grid">
+<area shape="rect" id="Node000001" title=" " alt="" coords="200,14,365,42"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1VoxelVolume.html#a30f639c798727cbf9dc338176d2be03a" title=" " alt="" coords="5,5,152,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="181,28,152,30,152,25,187,27"/>
+</map>

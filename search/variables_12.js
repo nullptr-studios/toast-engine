@@ -1,12 +1,20 @@
 var searchData=
 [
   ['scancode_0',['scancode',['../structevent_1_1WindowKey.html#adc44e4d75fb177e8cb854c7ae0f2cd8a',1,'event::WindowKey']]],
-  ['send_1',['send',['../structevent_1_1__detail_1_1ProtoEntry.html#a66ba4c7be16383e1781cd635b6243b67',1,'event::_detail::ProtoEntry']]],
-  ['should_5fstop_2',['should_stop',['../classtoast_1_1ThreadPool.html#a7017b446ff2674fedca02c4e2d089c29',1,'toast::ThreadPool']]],
-  ['sig_5fupper_3',['sig_upper',['../structtoast_1_1MusicPlayer_1_1QueuedCb.html#aeb8f134a5c731d7798fd1af6b327a334',1,'toast::MusicPlayer::QueuedCb']]],
-  ['signals_4',['signals',['../structassets_1_1Prefab_1_1BasicNode.html#accdcefb05db648f49de736e2dc19c5ff',1,'assets::Prefab::BasicNode::signals'],['../structinput_1_1ITrigger_1_1Result.html#a7d07416ce1ee3ffab0efe6b316d2a2d9',1,'input::ITrigger::Result::signals']]],
-  ['skeleton_5froot_5',['skeleton_root',['../structassets_1_1Skin.html#a60097c3e68e77fdf05ca2cbd0b018dee',1,'assets::Skin']]],
-  ['step_6',['step',['../structtoast_1_1settings_1_1Meta.html#a0763ae167e255b7f448ef9a97656cd93',1,'toast::settings::Meta::step'],['../structphysics_1_1Meta.html#a0763ae167e255b7f448ef9a97656cd93',1,'physics::Meta::step'],['../structrenderer_1_1Meta.html#a0763ae167e255b7f448ef9a97656cd93',1,'renderer::Meta::step']]],
-  ['subscribe_7',['subscribe',['../structevent_1_1__detail_1_1ProtoEntry.html#ae2a87396c71ed4fde3a74b8981583ec9',1,'event::_detail::ProtoEntry']]],
-  ['suppresswrite_8',['SuppressWrite',['../classeditor_1_1Workspace_1_1SettingRow.html#af651c31eb563c019179dda4f7a636c25',1,'editor::Workspace::SettingRow']]]
+  ['selected_1',['selected',['../structrenderer_1_1EditorOverlays.html#a413121b2252ab4b44e5df1af7bb27a2c',1,'renderer::EditorOverlays']]],
+  ['send_2',['send',['../structevent_1_1__detail_1_1ProtoEntry.html#a66ba4c7be16383e1781cd635b6243b67',1,'event::_detail::ProtoEntry']]],
+  ['should_5fstop_3',['should_stop',['../classtoast_1_1ThreadPool.html#a7017b446ff2674fedca02c4e2d089c29',1,'toast::ThreadPool']]],
+  ['sig_5fupper_4',['sig_upper',['../structtoast_1_1MusicPlayer_1_1QueuedCb.html#aeb8f134a5c731d7798fd1af6b327a334',1,'toast::MusicPlayer::QueuedCb']]],
+  ['sign_5',['sign',['../structtoast_1_1Workspace_1_1VoxelToolState.html#aa35278e72cdb44c13f202e23404793a4',1,'toast::Workspace::VoxelToolState']]],
+  ['signals_6',['signals',['../structassets_1_1Prefab_1_1BasicNode.html#accdcefb05db648f49de736e2dc19c5ff',1,'assets::Prefab::BasicNode::signals'],['../structinput_1_1ITrigger_1_1Result.html#a7d07416ce1ee3ffab0efe6b316d2a2d9',1,'input::ITrigger::Result::signals']]],
+  ['simulation_5ftype_7',['simulation_type',['../classtoast_1_1VoxelNode.html#a97a85c25927ece8f3541460ffedf53ea',1,'toast::VoxelNode']]],
+  ['skeleton_5froot_8',['skeleton_root',['../structassets_1_1Skin.html#a60097c3e68e77fdf05ca2cbd0b018dee',1,'assets::Skin']]],
+  ['sleep_5fanchor_5fcenter_9',['sleep_anchor_center',['../structphysics_1_1Body.html#a1c6f750c86e895fbc612fb978521f77d',1,'physics::Body']]],
+  ['step_10',['step',['../structtoast_1_1settings_1_1Meta.html#a0763ae167e255b7f448ef9a97656cd93',1,'toast::settings::Meta::step'],['../structphysics_1_1Meta.html#a0763ae167e255b7f448ef9a97656cd93',1,'physics::Meta::step'],['../structrenderer_1_1Meta.html#a0763ae167e255b7f448ef9a97656cd93',1,'renderer::Meta::step']]],
+  ['subscribe_11',['subscribe',['../structevent_1_1__detail_1_1ProtoEntry.html#ae2a87396c71ed4fde3a74b8981583ec9',1,'event::_detail::ProtoEntry']]],
+  ['suppresswrite_12',['SuppressWrite',['../classeditor_1_1Workspace_1_1SettingRow.html#af651c31eb563c019179dda4f7a636c25',1,'editor::Workspace::SettingRow']]],
+  ['surface_13',['surface',['../structtoast_1_1Workspace_1_1VoxelToolState.html#a717f78818a38a493bac9509f3194515e',1,'toast::Workspace::VoxelToolState']]],
+  ['surface_5funit_5fgrid_14',['surface_unit_grid',['../structrenderer_1_1EditorOverlays.html#a4a5c8d25fefa559012ec542f0f552bd9',1,'renderer::EditorOverlays']]],
+  ['surface_5fvoxel_5fgrid_15',['surface_voxel_grid',['../structrenderer_1_1EditorOverlays.html#a53a60027f013866d75e4b1df33a649a0',1,'renderer::EditorOverlays']]],
+  ['sweep_5frefine_5fiterations_16',['sweep_refine_iterations',['../structphysics_1_1Tunables.html#a32bcf2b4c962baee596720e64905c6a8',1,'physics::Tunables']]]
 ];

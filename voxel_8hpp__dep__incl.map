@@ -1,0 +1,31 @@
+<map id="engine/src/toast/voxel/nodes/voxel.hpp" name="engine/src/toast/voxel/nodes/voxel.hpp">
+<area shape="rect" id="Node000001" title="Common base of every voxel node." alt="" coords="330,5,494,50"/>
+<area shape="rect" id="Node000002" href="$voxel__bucket_8hpp.html" title="A flood fill inside a ProceduralVoxel." alt="" coords="262,191,443,235"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="393,62,377,99,364,148,357,192,352,189,359,146,372,97,389,66"/>
+<area shape="rect" id="Node000004" href="$voxel__group_8hpp.html" title="Keeps pieces of a ProceduralVoxel together." alt="" coords="387,98,562,143"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="437,60,463,98,457,97,435,65"/>
+<area shape="rect" id="Node000005" href="$voxel__node_8hpp.html" title="Frontend for a Voxel node." alt="" coords="139,98,309,143"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="351,59,270,100,267,95,355,56"/>
+<area shape="rect" id="Node000008" href="$voxel__piece_8hpp.html" title="Base of everything a ProceduralVoxel builds itself from." alt="" coords="587,98,760,143"/>
+<area shape="poly" id="edge9_Node000001_Node000008" title=" " alt="" coords="489,53,614,97,608,98,489,58"/>
+<area shape="rect" id="Node000003" href="$procedural__voxel_8hpp.html" title="Voxel shapes built from an ordered list of volumes." alt="" coords="358,283,565,328"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="391,243,438,283,433,282,389,248"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="474,157,465,285,461,282,470,160"/>
+<area shape="poly" id="edge8_Node000005_Node000003" title=" " alt="" coords="225,156,232,197,240,217,252,234,274,254,300,269,360,292,355,292,298,274,271,258,247,237,235,219,227,199,222,160"/>
+<area shape="rect" id="Node000006" href="$simulator_8hpp.html" title="This class simulates all of the physics of the project." alt="" coords="8,191,187,235"/>
+<area shape="poly" id="edge6_Node000005_Node000006" title=" " alt="" coords="180,154,129,192,126,188,184,150"/>
+<area shape="rect" id="Node000007" href="$debug__pass_8cpp.html" title=" " alt="" coords="5,283,190,328"/>
+<area shape="poly" id="edge7_Node000006_Node000007" title=" " alt="" coords="99,249,100,284,95,282,96,253"/>
+<area shape="poly" id="edge10_Node000008_Node000003" title=" " alt="" coords="628,150,573,193,522,241,481,285,478,281,518,237,569,189,623,152"/>
+<area shape="rect" id="Node000009" href="$voxel__mesh_8hpp.html" title="A voxel model inside a ProceduralVoxel." alt="" coords="582,191,757,235"/>
+<area shape="poly" id="edge11_Node000008_Node000009" title=" " alt="" coords="674,156,673,192,668,189,670,160"/>
+<area shape="rect" id="Node000010" href="$nodes_2voxel__volume_8hpp.html" title="A box of voxels inside a ProceduralVoxel." alt="" coords="781,191,968,235"/>
+<area shape="poly" id="edge12_Node000008_Node000010" title=" " alt="" coords="736,147,829,190,824,190,735,152"/>
+<area shape="poly" id="edge16_Node000010_Node000003" title=" " alt="" coords="768,238,561,285,560,280,763,238"/>
+<area shape="rect" id="Node000011" href="$carve__volume_8hpp.html" title="A volume that empties a ProceduralVoxel." alt="" coords="798,283,986,328"/>
+<area shape="poly" id="edge13_Node000010_Node000011" title=" " alt="" coords="883,248,890,285,886,282,880,253"/>
+<area shape="rect" id="Node000012" href="$fill__volume_8hpp.html" title="A volume that adds voxels to a ProceduralVoxel." alt="" coords="1011,283,1179,328"/>
+<area shape="poly" id="edge14_Node000010_Node000012" title=" " alt="" coords="942,239,1045,283,1040,282,941,244"/>
+<area shape="rect" id="Node000013" href="$paint__volume_8hpp.html" title="A volume that recolors a ProceduralVoxel." alt="" coords="589,283,774,328"/>
+<area shape="poly" id="edge15_Node000010_Node000013" title=" " alt="" coords="817,242,729,285,727,280,812,243"/>
+</map>

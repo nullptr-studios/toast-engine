@@ -149,28 +149,33 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('destruction__m
 <div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span></div>
 <div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  [[nodiscard]]</div>
 <div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  <span class="keyword">auto</span> <a class="code hl_function" href="classassets_1_1DestructionMaterial.html#ad69799011693a4591648d37942a0f9d8">shatterRadius</a>() <span class="keyword">const</span> <span class="keyword">noexcept</span> -&gt; float;</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span> </div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  <span class="keyword">auto</span> flammable() <span class="keyword">const</span> <span class="keyword">noexcept</span> -&gt; bool;</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span> </div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  <span class="keyword">auto</span> burnRate() <span class="keyword">const</span> <span class="keyword">noexcept</span> -&gt; float;</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span> </div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  <span class="keywordtype">float</span> m_density = 1000.0f;</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  <span class="keywordtype">float</span> m_toughness = 1000.0f;</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  <span class="keywordtype">float</span> m_structural_strength = 1000.0f;</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  <span class="keywordtype">float</span> m_shatter_radius = 0.5f;</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  <span class="keywordtype">bool</span> m_flammable = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <span class="keywordtype">float</span> m_burn_rate = 0.0f;</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>};</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span></div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <span class="keyword">auto</span> <a class="code hl_function" href="classassets_1_1DestructionMaterial.html#a71eca1f16c176e732b9a40a3a6bf8466">destructible</a>() <span class="keyword">const</span> <span class="keyword">noexcept</span> -&gt; bool;</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  <span class="keyword">auto</span> flammable() <span class="keyword">const</span> <span class="keyword">noexcept</span> -&gt; bool;</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span> </div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  <span class="keyword">auto</span> burnRate() <span class="keyword">const</span> <span class="keyword">noexcept</span> -&gt; float;</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span> </div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  <span class="keywordtype">float</span> m_density = 1000.0f;</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <span class="keywordtype">float</span> m_toughness = 1000.0f;</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  <span class="keywordtype">float</span> m_structural_strength = 1000.0f;</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <span class="keywordtype">float</span> m_shatter_radius = 0.5f;</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <span class="keywordtype">bool</span> m_destructible = <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  <span class="keywordtype">bool</span> m_flammable = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  <span class="keywordtype">float</span> m_burn_rate = 0.0f;</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>};</div>
 </div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span> </div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>}</div>
-<div class="ttc" id="aclassassets_1_1DestructionMaterial_html_a1e9b7f31e763350676f33525b9b84dd5"><div class="ttname"><a href="classassets_1_1DestructionMaterial.html#a1e9b7f31e763350676f33525b9b84dd5">assets::DestructionMaterial::density</a></div><div class="ttdeci">auto density() const noexcept -&gt; float</div><div class="ttdoc">kg/m3; drives voxel mass through massPerVoxel()</div><div class="ttdef"><b>Definition</b> destruction_material.cpp:30</div></div>
-<div class="ttc" id="aclassassets_1_1DestructionMaterial_html_a7a76488e478d9d6dc2fa87e873ac2939"><div class="ttname"><a href="classassets_1_1DestructionMaterial.html#a7a76488e478d9d6dc2fa87e873ac2939">assets::DestructionMaterial::structuralStrength</a></div><div class="ttdeci">auto structuralStrength() const noexcept -&gt; float</div><div class="ttdoc">Pascals.</div><div class="ttdef"><b>Definition</b> destruction_material.cpp:38</div></div>
-<div class="ttc" id="aclassassets_1_1DestructionMaterial_html_a90dfdf43b2bc37914f28da03fc59d529"><div class="ttname"><a href="classassets_1_1DestructionMaterial.html#a90dfdf43b2bc37914f28da03fc59d529">assets::DestructionMaterial::toughness</a></div><div class="ttdeci">auto toughness() const noexcept -&gt; float</div><div class="ttdoc">Joules of impulse energy a voxel absorbs before it breaks.</div><div class="ttdef"><b>Definition</b> destruction_material.cpp:34</div></div>
-<div class="ttc" id="aclassassets_1_1DestructionMaterial_html_ad69799011693a4591648d37942a0f9d8"><div class="ttname"><a href="classassets_1_1DestructionMaterial.html#ad69799011693a4591648d37942a0f9d8">assets::DestructionMaterial::shatterRadius</a></div><div class="ttdeci">auto shatterRadius() const noexcept -&gt; float</div><div class="ttdoc">Metres of damage radius when a break does happen.</div><div class="ttdef"><b>Definition</b> destruction_material.cpp:42</div></div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span> </div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>}</div>
+<div class="ttc" id="aclassassets_1_1DestructionMaterial_html_a1e9b7f31e763350676f33525b9b84dd5"><div class="ttname"><a href="classassets_1_1DestructionMaterial.html#a1e9b7f31e763350676f33525b9b84dd5">assets::DestructionMaterial::density</a></div><div class="ttdeci">auto density() const noexcept -&gt; float</div><div class="ttdoc">kg/m3; drives voxel mass through massPerVoxel()</div><div class="ttdef"><b>Definition</b> destruction_material.cpp:33</div></div>
+<div class="ttc" id="aclassassets_1_1DestructionMaterial_html_a71eca1f16c176e732b9a40a3a6bf8466"><div class="ttname"><a href="classassets_1_1DestructionMaterial.html#a71eca1f16c176e732b9a40a3a6bf8466">assets::DestructionMaterial::destructible</a></div><div class="ttdeci">auto destructible() const noexcept -&gt; bool</div><div class="ttdoc">False means voxels of this material never break, whatever hits them.</div><div class="ttdef"><b>Definition</b> destruction_material.cpp:49</div></div>
+<div class="ttc" id="aclassassets_1_1DestructionMaterial_html_a7a76488e478d9d6dc2fa87e873ac2939"><div class="ttname"><a href="classassets_1_1DestructionMaterial.html#a7a76488e478d9d6dc2fa87e873ac2939">assets::DestructionMaterial::structuralStrength</a></div><div class="ttdeci">auto structuralStrength() const noexcept -&gt; float</div><div class="ttdoc">Pascals.</div><div class="ttdef"><b>Definition</b> destruction_material.cpp:41</div></div>
+<div class="ttc" id="aclassassets_1_1DestructionMaterial_html_a90dfdf43b2bc37914f28da03fc59d529"><div class="ttname"><a href="classassets_1_1DestructionMaterial.html#a90dfdf43b2bc37914f28da03fc59d529">assets::DestructionMaterial::toughness</a></div><div class="ttdeci">auto toughness() const noexcept -&gt; float</div><div class="ttdoc">Joules of impulse energy a voxel absorbs before it breaks.</div><div class="ttdef"><b>Definition</b> destruction_material.cpp:37</div></div>
+<div class="ttc" id="aclassassets_1_1DestructionMaterial_html_ad69799011693a4591648d37942a0f9d8"><div class="ttname"><a href="classassets_1_1DestructionMaterial.html#ad69799011693a4591648d37942a0f9d8">assets::DestructionMaterial::shatterRadius</a></div><div class="ttdeci">auto shatterRadius() const noexcept -&gt; float</div><div class="ttdoc">Metres of damage radius when a break does happen.</div><div class="ttdef"><b>Definition</b> destruction_material.cpp:45</div></div>
 <div class="ttc" id="aclassassets_1_1Handle_html"><div class="ttname"><a href="classassets_1_1Handle.html">assets::Handle</a></div><div class="ttdoc">Type-safe smart pointer for assets.</div><div class="ttdef"><b>Definition</b> core_types.hpp:149</div></div>
 <div class="ttc" id="adata_8hpp_html"><div class="ttname"><a href="data_8hpp.html">data.hpp</a></div><div class="ttdoc">Typed data asset backed by schema-driven TOML.</div></div>
 </div><!-- fragment --></div><!-- contents -->

@@ -136,7 +136,10 @@ void&#160;</td><td class="memItemRight"><b>call</b> (std::string_view fn_name) n
 <tr class="memdesc:a738f9128ed84a7c283633b05de05e105"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calls the named lifecycle function. <br /></td></tr>
 <tr class="memitem:a2b592654aa52c3e3e1337ca44ad2353a" id="r_a2b592654aa52c3e3e1337ca44ad2353a"><td class="memItemLeft"><a id="a2b592654aa52c3e3e1337ca44ad2353a" name="a2b592654aa52c3e3e1337ca44ad2353a"></a>
 void&#160;</td><td class="memItemRight"><b>callWithLuaStack</b> (std::string_view name, lua_State *l, int args_base, int n_args) noexcept</td></tr>
-<tr class="memdesc:a2b592654aa52c3e3e1337ca44ad2353a"><td class="mdescLeft">&#160;</td><td class="mdescRight">rawget self[name]; if a function, pcall(self, forwarded_args...). <br /></td></tr>
+<tr class="memdesc:a2b592654aa52c3e3e1337ca44ad2353a"><td class="mdescLeft">&#160;</td><td class="mdescRight">rawget self[name]; if a function, pcall(self, forwarded_args...) <br /></td></tr>
+<tr class="memitem:ae96d13ed9ada4699bf69deaf4e30594f" id="r_ae96d13ed9ada4699bf69deaf4e30594f"><td class="memItemLeft"><a id="ae96d13ed9ada4699bf69deaf4e30594f" name="ae96d13ed9ada4699bf69deaf4e30594f"></a>
+auto&#160;</td><td class="memItemRight"><b>callEventMethod</b> (std::string_view name, lua_State *l, int event_index) noexcept -&gt; bool</td></tr>
+<tr class="memdesc:ae96d13ed9ada4699bf69deaf4e30594f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calls a lua method on the self table. <br /></td></tr>
 <tr class="memitem:a4ceb52ee91e90d6c9e913fd0d77b1aa0" id="r_a4ceb52ee91e90d6c9e913fd0d77b1aa0"><td class="memItemLeft"><a id="a4ceb52ee91e90d6c9e913fd0d77b1aa0" name="a4ceb52ee91e90d6c9e913fd0d77b1aa0"></a>
 void&#160;</td><td class="memItemRight"><b>callWithAnyArgs</b> (std::string_view name, std::span&lt; const std::any &gt; args) noexcept</td></tr>
 <tr class="memdesc:a4ceb52ee91e90d6c9e913fd0d77b1aa0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fan-out call with args provided as std::any values. <br /></td></tr>

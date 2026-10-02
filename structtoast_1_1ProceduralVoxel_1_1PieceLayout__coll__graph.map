@@ -1,0 +1,13 @@
+<map id="toast::ProceduralVoxel::PieceLayout" name="toast::ProceduralVoxel::PieceLayout">
+<area shape="rect" id="Node000001" title=" " alt="" coords="178,224,344,268"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1Box.html" title=" " alt="" coords="5,106,149,151"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="125,157,229,222,224,224,123,162"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1Box.html" title="Intrusive reference&#45;counted handle to a Node." alt="" coords="14,5,140,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="78,46,80,106,74,105,76,51"/>
+<area shape="rect" id="Node000004" href="$structvoxel_1_1LatticePlacement.html" title=" " alt="" coords="172,114,350,142"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="263,156,263,225,259,222,259,159"/>
+<area shape="rect" id="Node000005" href="$structvoxel_1_1LatticeOrientation.html" title="Output axis i reads input axis source[i] negated when flip[i]." alt="" coords="170,5,352,33"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="263,46,263,115,259,113,259,51"/>
+<area shape="rect" id="Node000006" href="$structvoxel_1_1EditBounds.html" title=" " alt="" coords="374,114,511,142"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="416,151,345,202,304,226,302,221,342,197,411,153"/>
+</map>

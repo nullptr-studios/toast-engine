@@ -151,37 +151,41 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('narrow__phase_
 <div class="line"><a id="l00033" name="l00033"></a><span class="lineno"><a class="line" href="structphysics_1_1ManifoldQueue.html">   33</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structphysics_1_1ManifoldQueue.html">ManifoldQueue</a> {</div>
 <div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  std::vector&lt;Manifold&gt; manifolds;</div>
 <div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  std::array&lt;size_t, static_cast&lt;size_t&gt;(NarrowPhasePairType::count)&gt; pair_candidates = {};</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>  <span class="keywordtype">size_t</span> candidate_count = 0;</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  <span class="keywordtype">size_t</span> collision_count = 0;</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  <span class="keywordtype">size_t</span> rejected_manifold_count = 0;</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="keywordtype">size_t</span> contact_count = 0;</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>};</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>  std::array&lt;double, static_cast&lt;size_t&gt;(NarrowPhasePairType::count)&gt; pair_time_ms = {};</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  <span class="keywordtype">size_t</span> candidate_count = 0;</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  <span class="keywordtype">size_t</span> collision_count = 0;</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="keywordtype">size_t</span> rejected_manifold_count = 0;</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  <span class="keywordtype">size_t</span> contact_count = 0;</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>};</div>
 </div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span> </div>
-<div class="foldopen" id="foldopen00042" data-start="{" data-end="};">
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno"><a class="line" href="classphysics_1_1NarrowPhase.html">   42</a></span><span class="keyword">class </span><a class="code hl_class" href="classphysics_1_1NarrowPhase.html">NarrowPhase</a> {</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  <span class="keyword">auto</span> generateManifolds(<a class="code hl_struct" href="structphysics_1_1CollisionWorldView.html">CollisionWorldView</a> world, std::span&lt;const BroadPhasePair&gt; candidates) <span class="keyword">const</span> -&gt; <a class="code hl_struct" href="structphysics_1_1ManifoldQueue.html">ManifoldQueue</a>;</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span> </div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  <span class="keywordtype">void</span> collide(<a class="code hl_struct" href="structphysics_1_1CollisionWorldView.html">CollisionWorldView</a> world, <a class="code hl_struct" href="structphysics_1_1BroadPhasePair.html">BroadPhasePair</a> pair, std::vector&lt;Manifold&gt;&amp; output) <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span> </div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  <span class="keyword">auto</span> validate(<a class="code hl_struct" href="structphysics_1_1CollisionWorldView.html">CollisionWorldView</a> world, <a class="code hl_struct" href="structphysics_1_1Manifold.html">Manifold</a>&amp; manifold) <span class="keyword">const</span> -&gt; bool;</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span> </div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  <span class="keyword">static</span> <span class="keywordtype">void</span> flip(<a class="code hl_struct" href="structphysics_1_1Manifold.html">Manifold</a>&amp; manifold);</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>};</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span> </div>
+<div class="foldopen" id="foldopen00043" data-start="{" data-end="};">
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno"><a class="line" href="classphysics_1_1NarrowPhase.html">   43</a></span><span class="keyword">class </span><a class="code hl_class" href="classphysics_1_1NarrowPhase.html">NarrowPhase</a> {</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  <span class="keyword">auto</span> generateManifolds(<a class="code hl_struct" href="structphysics_1_1CollisionWorldView.html">CollisionWorldView</a> world, std::span&lt;const BroadPhasePair&gt; candidates) <span class="keyword">const</span> -&gt; <a class="code hl_struct" href="structphysics_1_1ManifoldQueue.html">ManifoldQueue</a>;</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span></div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classphysics_1_1NarrowPhase.html#aacaf6fec58331dc6262c2dcdd2b5bafd">accumulate</a>(std::span&lt;Manifold&gt; manifolds, <a class="code hl_struct" href="structphysics_1_1CollisionWorldView.html">CollisionWorldView</a> world, <a class="code hl_struct" href="structphysics_1_1ManifoldQueue.html">ManifoldQueue</a>&amp; queue) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span> </div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  <span class="keywordtype">void</span> collide(<a class="code hl_struct" href="structphysics_1_1CollisionWorldView.html">CollisionWorldView</a> world, <a class="code hl_struct" href="structphysics_1_1BroadPhasePair.html">BroadPhasePair</a> pair, std::vector&lt;Manifold&gt;&amp; output) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span> </div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  <span class="keyword">auto</span> validate(<a class="code hl_struct" href="structphysics_1_1CollisionWorldView.html">CollisionWorldView</a> world, <a class="code hl_struct" href="structphysics_1_1Manifold.html">Manifold</a>&amp; manifold) <span class="keyword">const</span> -&gt; bool;</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span> </div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <span class="keyword">static</span> <span class="keywordtype">void</span> flip(<a class="code hl_struct" href="structphysics_1_1Manifold.html">Manifold</a>&amp; manifold);</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>};</div>
 </div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span> </div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>}</div>
-<div class="ttc" id="aclassphysics_1_1NarrowPhase_html"><div class="ttname"><a href="classphysics_1_1NarrowPhase.html">physics::NarrowPhase</a></div><div class="ttdef"><b>Definition</b> narrow_phase.hpp:42</div></div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span> </div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>}</div>
+<div class="ttc" id="aclassphysics_1_1NarrowPhase_html"><div class="ttname"><a href="classphysics_1_1NarrowPhase.html">physics::NarrowPhase</a></div><div class="ttdef"><b>Definition</b> narrow_phase.hpp:43</div></div>
+<div class="ttc" id="aclassphysics_1_1NarrowPhase_html_aacaf6fec58331dc6262c2dcdd2b5bafd"><div class="ttname"><a href="classphysics_1_1NarrowPhase.html#aacaf6fec58331dc6262c2dcdd2b5bafd">physics::NarrowPhase::accumulate</a></div><div class="ttdeci">void accumulate(std::span&lt; Manifold &gt; manifolds, CollisionWorldView world, ManifoldQueue &amp;queue) const</div><div class="ttdoc">Same validate/count/keep-or-reject step generateManifolds runs so a split pair can fold results in to...</div><div class="ttdef"><b>Definition</b> narrow_phase.cpp:83</div></div>
 <div class="ttc" id="acollision__world_8hpp_html"><div class="ttname"><a href="collision__world_8hpp.html">collision_world.hpp</a></div><div class="ttdoc">Read-only access to physics data used by collision detection.</div></div>
 <div class="ttc" id="amanifold_8hpp_html"><div class="ttname"><a href="manifold_8hpp.html">manifold.hpp</a></div><div class="ttdoc">TODO: Brief description of the file&#39;s purpose.</div></div>
 <div class="ttc" id="astructphysics_1_1BroadPhasePair_html"><div class="ttname"><a href="structphysics_1_1BroadPhasePair.html">physics::BroadPhasePair</a></div><div class="ttdef"><b>Definition</b> collision.hpp:24</div></div>
 <div class="ttc" id="astructphysics_1_1CollisionWorldView_html"><div class="ttname"><a href="structphysics_1_1CollisionWorldView.html">physics::CollisionWorldView</a></div><div class="ttdef"><b>Definition</b> collision_world.hpp:16</div></div>
 <div class="ttc" id="astructphysics_1_1ManifoldQueue_html"><div class="ttname"><a href="structphysics_1_1ManifoldQueue.html">physics::ManifoldQueue</a></div><div class="ttdef"><b>Definition</b> narrow_phase.hpp:33</div></div>
-<div class="ttc" id="astructphysics_1_1Manifold_html"><div class="ttname"><a href="structphysics_1_1Manifold.html">physics::Manifold</a></div><div class="ttdef"><b>Definition</b> manifold.hpp:36</div></div>
+<div class="ttc" id="astructphysics_1_1Manifold_html"><div class="ttname"><a href="structphysics_1_1Manifold.html">physics::Manifold</a></div><div class="ttdef"><b>Definition</b> manifold.hpp:38</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

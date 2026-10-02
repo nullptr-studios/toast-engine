@@ -1,0 +1,10 @@
+<map id="toast::_detail::Defer" name="toast::_detail::Defer">
+<area shape="rect" id="Node000001" title=" " alt="" coords="15,260,166,288"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="6,183,175,211"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="92,224,93,261,88,259,88,228"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="5,5,165,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="88,47,93,183,87,182,84,50"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="106,82,248,110"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="113,40,164,81,159,83,113,46"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="157,120,104,184,100,181,154,124"/>
+</map>
