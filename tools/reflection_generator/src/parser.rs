@@ -92,10 +92,14 @@ pub fn parse_events(source: &str, file_path: &str) -> Vec<EventInfo> {
 fn is_event_base(node: tree_sitter::Node, source: &str, name: &str) -> bool {
     for child in node.children(&mut node.walk()) {
         if child.kind() != "base_class_clause" { continue; }
-        let compact: String = source[child.byte_range()].chars().filter(|c| !c.is_whitespace()).collect();
+        let clause = source[child.byte_range()].trim_start().trim_start_matches(':');
         let needle = format!("Event<{name}>");
-        let exact = compact.match_indices(&needle).any(|(index, _)| {
-            index == 0 || compact[..index].ends_with(':') || compact[..index].ends_with(',')
+        let exact = clause.split(',').any(|base| {
+            let compact: String = base
+                .split_whitespace()
+                .filter(|word| !matches!(*word, "public" | "protected" | "private" | "virtual"))
+                .collect();
+            compact == needle || compact.ends_with(&format!("::{needle}"))
         });
         if exact {
             return true;
