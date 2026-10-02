@@ -407,13 +407,23 @@ auto Simulator::raycast(glm::vec3 pos, glm::vec3 dir, float max_distance, int ma
 				results.emplace_back(std::move(ray_hit));
 			}
 
-			renderer::debugDrawLine(pos, hit_pos, {0, 0, 1, 1});
-			renderer::debugDrawSphere(hit_pos, .1, {0, 1, 1, 1});
+			debug::drawLine(pos, hit_pos, {0, 0, 1, 1});
+			debug::drawArrow(hit_pos, hit_pos + world_normal * 0.5f, {0, 1, 1, 1});
+			debug::drawSphere(hit_pos, .1, {0, 1, 1, 1});
+
+			results.emplace_back(
+			    RayHit {
+			      .node = colliderFor(shape->owner, target),
+			      .position = hit_pos,
+			      .normal = world_normal,
+			      .distance = hit->distance,
+			    }
+			);
 		}
 	}
 
 	if (results.empty()) {
-		renderer::debugDrawLine(pos, pos * dir * max_distance, {1, 0, 0, 1});
+		debug::drawLine(pos, pos * dir * max_distance, {1, 0, 0, 1});
 	}
 
 	if (is_target_limited) {

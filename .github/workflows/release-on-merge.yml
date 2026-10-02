@@ -104,10 +104,42 @@ jobs:
       - name: Generate docs
         run: nix develop --command bash -c 'doxygen Doxyfile'
 
-      - name: Deploy to docs branch
-        uses: DenverCoder1/doxygen-github-pages-action@v2.0.0
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: docs
-          folder: docs/html
-          config_file: Doxyfile
+      - name: Publish docs to docs branch
+        env:
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: github-actions[bot]@users.noreply.github.com
+        run: |
+          set -euo pipefail
+
+          if [[ ! -d html ]]; then
+            echo "doxygen produced no html/ output, aborting" >&2
+            exit 1
+          fi
+
+          git worktree prune
+          worktree_dir="$(mktemp -d)"
+
+          if git ls-remote --exit-code --heads origin docs > /dev/null 2>&1; then
+            git fetch origin docs
+            git worktree add -B docs "${worktree_dir}" origin/docs
+          else
+            git worktree add --detach "${worktree_dir}" HEAD
+            git -C "${worktree_dir}" checkout --orphan docs
+            git -C "${worktree_dir}" rm -rf --quiet .
+          fi
+
+          find "${worktree_dir}" -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
+          cp -r html/. "${worktree_dir}/"
+          touch "${worktree_dir}/.nojekyll"
+
+          git -C "${worktree_dir}" add -A
+          if git -C "${worktree_dir}" diff --cached --quiet; then
+            echo "Docs unchanged, nothing to publish."
+          else
+            git -C "${worktree_dir}" commit -m "Update Doxygen docs for ${GITHUB_SHA}"
+            git -C "${worktree_dir}" push origin HEAD:docs
+          fi
+
+          git worktree remove "${worktree_dir}" --force

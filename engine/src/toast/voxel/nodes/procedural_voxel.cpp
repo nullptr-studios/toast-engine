@@ -1083,10 +1083,10 @@ void ProceduralVoxel::drawDebug() {
 	if (drawing_box) {
 		// the outline shows the whole box even where it is hidden
 		const glm::mat4 preview = box(glm::vec3(overlays.tool_box_min), glm::vec3(overlays.tool_box_max + 1));
-		renderer::debugDrawShapeBox(preview, glm::vec4(glm::vec3(overlays.tool_box_color), 1.0f), false);
+		debug::drawShapeBox(preview, glm::vec4(glm::vec3(overlays.tool_box_color), 1.0f), false);
 	}
 	if (overlays.tool_box2_active && overlays.tool_root == uid()) {
-		renderer::debugDrawShapeBox(
+		debug::drawShapeBox(
 		    box(glm::vec3(overlays.tool_box2_min), glm::vec3(overlays.tool_box2_max + 1)),
 		    glm::vec4(glm::vec3(overlays.tool_box_color), 1.0f),
 		    false
@@ -1097,7 +1097,7 @@ void ProceduralVoxel::drawDebug() {
 	const glm::vec4 k_selection_orange {1.0f, 0.639f, 0.0f, 1.0f};
 	for (const PieceLayout& piece : m_layout) {
 		if (piece.node.exists() && piece.node->uid() == overlays.selected) {
-			renderer::debugDrawShapeBox(box(glm::vec3(piece.bounds.min), glm::vec3(piece.bounds.max + 1)), k_selection_orange, false);
+			debug::drawShapeBox(box(glm::vec3(piece.bounds.min), glm::vec3(piece.bounds.max + 1)), k_selection_orange, false);
 		}
 	}
 	if (!overlays.volume_edges && !cutting) {
@@ -1109,7 +1109,7 @@ void ProceduralVoxel::drawDebug() {
 		all = voxel::boundsUnion(all, piece.bounds);
 		if (overlays.volume_edges) {
 			const glm::vec4 color = piece.kind == PieceKind::carve ? glm::vec4(1.0f, 0.35f, 0.2f, 1.0f) : piece.average_color;
-			renderer::debugDrawShapeBox(box(glm::vec3(piece.bounds.min), glm::vec3(piece.bounds.max + 1)), color, false);
+			debug::drawShapeBox(box(glm::vec3(piece.bounds.min), glm::vec3(piece.bounds.max + 1)), color, false);
 		}
 	}
 
@@ -1136,7 +1136,7 @@ void ProceduralVoxel::drawDebug() {
 		const glm::vec3 middle = (on_plane + n * ((from + to) * 0.5f)) * voxel::k_voxel_size;
 		const glm::mat4 transform = world * glm::translate(glm::mat4(1.0f), middle) * basis *
 		                            glm::scale(glm::mat4(1.0f), glm::vec3(extent, extent, std::abs(to - from)) * voxel::k_voxel_size);
-		renderer::debugDrawShapeBox(transform, color, true);
+		debug::drawShapeBox(transform, color, true);
 	};
 	slab(0.0f, extent * 0.5f, {1.0f, 0.15f, 0.15f, 0.12f});
 	slab(-extent * 0.5f, 0.0f, {0.15f, 0.45f, 1.0f, 0.12f});
