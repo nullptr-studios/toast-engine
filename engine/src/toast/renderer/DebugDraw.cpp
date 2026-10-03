@@ -145,9 +145,11 @@ void drawBox(glm::vec3 min, glm::vec3 max, glm::vec4 color) {
 }
 
 void drawSphere(glm::vec3 center, float radius, glm::vec4 color, int segments) {
-	if (!renderer::VulkanRenderer::instance->debugDrawEnabled()) {
+	if (!std::isfinite(radius) || radius <= 0.0f || !std::isfinite(center.x) || !std::isfinite(center.y) ||
+	    !std::isfinite(center.z) || !renderer::VulkanRenderer::instance->debugDrawEnabled()) {
 		return;
 	}
+	segments = std::clamp(segments, 3, 128);
 	for (int axis = 0; axis < 3; ++axis) {
 		glm::vec3 prev {};
 		for (int i = 0; i <= segments; ++i) {
