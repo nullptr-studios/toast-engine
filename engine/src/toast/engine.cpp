@@ -86,6 +86,16 @@ double script_reload_timer = 0.0;
 
 Engine* Engine::instance = nullptr;
 
+NodeRegistry* NodeRegistry::instance = nullptr;
+
+NodeRegistry::NodeRegistry() {
+	instance = this;
+}
+
+void NodeRegistry::registerNode(const NodeInfo* info) {
+	instance->types[info->type] = info;
+}
+
 struct EnginePimpl {
 	std::unique_ptr<ThreadPool> thread_pool = nullptr;
 	std::unique_ptr<logging::Logger> logger = nullptr;

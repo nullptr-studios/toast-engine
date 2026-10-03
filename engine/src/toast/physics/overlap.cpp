@@ -28,4 +28,10 @@ auto sphereOverlap(glm::vec3 position, float radius) -> std::optional<SphereHit>
 	};
 }
 
+auto overlapAABB(glm::vec3 min, glm::vec3 max) -> bool {
+	Simulator* simulator = Simulator::current();
+
+	return simulator->overlapAABB(AABB {.min = min, .max = max});
+}
+
 }

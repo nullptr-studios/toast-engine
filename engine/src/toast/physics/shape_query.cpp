@@ -22,6 +22,10 @@ auto sphereProbe(const SphereShape& sphere) -> Shape {
 	return Shape {.type = ShapeType::sphere, .sphere = sphere};
 }
 
+auto boxProbe(const AABB& bounds) -> Shape {
+	return Shape {.type = ShapeType::box, .box = BoxShape {.size = bounds.max - bounds.min}};
+}
+
 auto probeBody(const glm::vec3& position, const glm::quat& rotation) -> Body {
 	return Body {.type = BodyType::kinematic_body, .position = position, .rotation = rotation};
 }
@@ -206,6 +210,64 @@ auto Simulator::overlapSphere(
 	collideSphereProbe(probe_body, probe_shape, candidates, contacts);
 	std::erase_if(contacts, [min_penetration](const QueryContact& contact) { return contact.penetration <= min_penetration; });
 	return not contacts.empty();
+}
+
+auto Simulator::overlapAABB(const AABB& bounds) const -> bool {
+	ZoneScopedN("physics::OverlapsAABB");
+
+	const glm::vec3 size = bounds.max - bounds.min;
+	if (!std::isfinite(bounds.min.x) || !std::isfinite(bounds.min.y) || !std::isfinite(bounds.min.z) ||
+	    !std::isfinite(bounds.max.x) || !std::isfinite(bounds.max.y) || !std::isfinite(bounds.max.z) || size.x < 0.0f ||
+	    size.y < 0.0f || size.z < 0.0f) {
+		return false;
+	}
+
+	const Shape probe_shape = boxProbe(bounds);
+	const Body probe_body = probeBody((bounds.min + bounds.max) * 0.5f, glm::quat(1.0f, 0.0f, 0.0f, 0.0f));
+	std::vector<Manifold> manifolds;
+	for (const ShapeID shape_id : queryCandidates({}, bounds)) {
+		const Shape* shape = tryGetShape(shape_id);
+		const Body* body = shape != nullptr ? tryGetBody(shape->owner) : nullptr;
+		if (body == nullptr) {
+			continue;
+		}
+
+		const BroadPhasePair pair {
+		  .a = {},
+        .b = {.body = shape->owner, .shape = shape_id}
+		};
+		const CollisionElement probe {probe_shape, probe_body};
+		const CollisionElement other {*shape, *body};
+
+		manifolds.clear();
+		switch (shape->type) {
+			case ShapeType::sphere:
+				if (auto manifold = collideSphereBox(pair, other, probe)) {
+					manifolds.push_back(*manifold);
+				}
+				break;
+			case ShapeType::box:
+				if (auto manifold = collideBoxes(pair, probe, other)) {
+					manifolds.push_back(*manifold);
+				}
+				break;
+			case ShapeType::capsule:
+				if (auto manifold = collideCapsuleBox(pair, other, probe)) {
+					manifolds.push_back(*manifold);
+				}
+				break;
+			case ShapeType::voxel:
+				if (const VoxelShapeData* data = tryGetVoxelData(shape->voxel.data); data != nullptr && data->volume != nullptr) {
+					collideBoxVoxel(pair, probe, other, *data, manifolds);
+				}
+				break;
+		}
+
+		if (std::ranges::any_of(manifolds, [](const Manifold& manifold) { return manifold.contact_count != 0; })) {
+			return true;
+		}
+	}
+	return false;
 }
 
 auto Simulator::sweepCapsule(

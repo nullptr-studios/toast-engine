@@ -14,6 +14,7 @@
 #include <toast/scripting/lua_event.hpp>
 #include <toast/log.hpp>
 #include <array>
+#include <print>
 // clang-format on
 
 namespace toast {
@@ -32,6 +33,7 @@ void {{ register_fn }}() {
 {% endfor %}
 	{{ '}}' }};
 	for (const auto* info : all_types) {
+    std::println("Registering Node: {}", info->type);
 		NodeRegistry::registerNode(info);
 	}
 	{% for event in events %}
