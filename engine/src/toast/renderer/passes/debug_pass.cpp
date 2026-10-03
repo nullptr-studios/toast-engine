@@ -86,9 +86,7 @@ const std::array<glm::vec4, 3> k_axis_colors {
   glm::vec4 {0.161f, 0.678f,   1.0f, 1.0f}  // Z
 };
 
-using DebugVertex = VulkanRenderer::DebugVertex;
-
-void appendBox(std::vector<DebugVertex>& out, glm::vec3 min, glm::vec3 max, glm::vec4 color) {
+void appendBox(std::vector<debug::Vertex>& out, glm::vec3 min, glm::vec3 max, glm::vec4 color) {
 	const std::array<glm::vec3, 8> v {
 	  glm::vec3 {min.x, min.y, min.z},
 	  glm::vec3 {max.x, min.y, min.z},
@@ -115,7 +113,7 @@ void appendBox(std::vector<DebugVertex>& out, glm::vec3 min, glm::vec3 max, glm:
 }
 
 // for the gizmos for resizing volumes
-void appendSphere(std::vector<DebugVertex>& out, float radius, int rings, int segments, glm::vec4 color) {
+void appendSphere(std::vector<debug::Vertex>& out, float radius, int rings, int segments, glm::vec4 color) {
 	const auto point = [&](int ring, int segment) {
 		const float polar = glm::pi<float>() * static_cast<float>(ring) / static_cast<float>(rings);
 		const float azimuth = glm::two_pi<float>() * static_cast<float>(segment) / static_cast<float>(segments);
@@ -137,7 +135,7 @@ void appendSphere(std::vector<DebugVertex>& out, float radius, int rings, int se
 	}
 }
 
-void appendShaftAlongAxis(std::vector<DebugVertex>& out, int axis, float length, float half_size, glm::vec4 color) {
+void appendShaftAlongAxis(std::vector<debug::Vertex>& out, int axis, float length, float half_size, glm::vec4 color) {
 	glm::vec3 min {-half_size, -half_size, -half_size};
 	glm::vec3 max {half_size, half_size, half_size};
 	min[axis] = 0.0f;
@@ -146,7 +144,7 @@ void appendShaftAlongAxis(std::vector<DebugVertex>& out, int axis, float length,
 }
 
 void appendPyramidAlongAxis(
-    std::vector<DebugVertex>& out, int axis, float base_pos, float apex_pos, float half_size, glm::vec4 color
+    std::vector<debug::Vertex>& out, int axis, float base_pos, float apex_pos, float half_size, glm::vec4 color
 ) {
 	const int u = (axis + 1) % 3;
 	const int w = (axis + 2) % 3;
@@ -182,7 +180,7 @@ void appendPyramidAlongAxis(
 	out.push_back({base[2], color});
 }
 
-void appendQuad(std::vector<DebugVertex>& out, int axis, float offset, float size, glm::vec4 color) {
+void appendQuad(std::vector<debug::Vertex>& out, int axis, float offset, float size, glm::vec4 color) {
 	const int u = (axis + 1) % 3;
 	const int w = (axis + 2) % 3;
 
@@ -206,7 +204,7 @@ void appendQuad(std::vector<DebugVertex>& out, int axis, float offset, float siz
 	out.push_back({d, color});
 }
 
-void appendRing(std::vector<DebugVertex>& out, int axis, float radius, float thickness, int segments, glm::vec4 color) {
+void appendRing(std::vector<debug::Vertex>& out, int axis, float radius, float thickness, int segments, glm::vec4 color) {
 	const int u = (axis + 1) % 3;
 	const int w = (axis + 2) % 3;
 	const float inner = radius - (thickness * 0.5f);
@@ -265,10 +263,10 @@ DebugPass::DebugPass(
 	}
 	m_shader_layout.rebuild(core, shape_shader->reflection, "DebugPass");
 
-	const vk::VertexInputBindingDescription debug_vertex_binding(0, sizeof(DebugVertex), vk::VertexInputRate::eVertex);
+	const vk::VertexInputBindingDescription debug_vertex_binding(0, sizeof(debug::Vertex), vk::VertexInputRate::eVertex);
 	const std::vector<vk::VertexInputAttributeDescription> debug_vertex_attributes {
-	  vk::VertexInputAttributeDescription(0, 0, vk::Format::eR32G32B32Sfloat, offsetof(DebugVertex, position)),
-	  vk::VertexInputAttributeDescription(1, 0, vk::Format::eR32G32B32A32Sfloat, offsetof(DebugVertex, color)),
+	  vk::VertexInputAttributeDescription(0, 0, vk::Format::eR32G32B32Sfloat, offsetof(debug::Vertex, position)),
+	  vk::VertexInputAttributeDescription(1, 0, vk::Format::eR32G32B32A32Sfloat, offsetof(debug::Vertex, color)),
 	};
 
 	if (shape_shader) {
@@ -1265,12 +1263,12 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 		});
 
 		ensureLineCapacity(core, fill_buffer, fill_vertices.size());
-		auto* destination = static_cast<DebugVertex*>(fill_buffer.mapped);
+		auto* destination = static_cast<debug::Vertex*>(fill_buffer.mapped);
 		for (const uint32_t triangle : m_fill_sort_order) {
-			std::memcpy(destination, &fill_vertices[static_cast<size_t>(triangle) * 3], 3 * sizeof(DebugVertex));
+			std::memcpy(destination, &fill_vertices[static_cast<size_t>(triangle) * 3], 3 * sizeof(debug::Vertex));
 			destination += 3;
 		}
-		fill_buffer.buffer.getAllocation().flush(0, fill_vertices.size() * sizeof(DebugVertex));
+		fill_buffer.buffer.getAllocation().flush(0, fill_vertices.size() * sizeof(debug::Vertex));
 	}
 	auto& buffer = m_line_vertex_buffers[frame_index];
 	const auto& vertices = frame->debug_line_vertices;
@@ -1281,8 +1279,8 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 	}
 
 	ensureLineCapacity(core, buffer, vertices.size());
-	std::memcpy(buffer.mapped, vertices.data(), vertices.size() * sizeof(DebugVertex));
-	buffer.buffer.getAllocation().flush(0, vertices.size() * sizeof(DebugVertex));
+	std::memcpy(buffer.mapped, vertices.data(), vertices.size() * sizeof(debug::Vertex));
+	buffer.buffer.getAllocation().flush(0, vertices.size() * sizeof(debug::Vertex));
 }
 
 void DebugPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) {
@@ -1677,7 +1675,7 @@ void DebugPass::createGizmoGeometry(const renderer::VulkanCore& core) {
 	const glm::vec4 k_green {0.1f, 1.0f, 0.1f, 1.0f};
 	const glm::vec4 k_blue {0.1f, 0.1f, 1.0f, 1.0f};
 
-	std::vector<DebugVertex> vertices;
+	std::vector<debug::Vertex> vertices;
 
 	for (const auto& [axis, color] : {
 	       std::pair {0,   k_red},
@@ -1691,7 +1689,7 @@ void DebugPass::createGizmoGeometry(const renderer::VulkanCore& core) {
 	m_gizmo_vertex_count = static_cast<uint32_t>(vertices.size());
 
 	vk::BufferCreateInfo buffer_ci {};
-	buffer_ci.size = vertices.size() * sizeof(DebugVertex);
+	buffer_ci.size = vertices.size() * sizeof(debug::Vertex);
 	buffer_ci.usage = vk::BufferUsageFlagBits::eVertexBuffer;
 
 	vma::AllocationCreateInfo alloc_ci {};
@@ -1702,8 +1700,8 @@ void DebugPass::createGizmoGeometry(const renderer::VulkanCore& core) {
 	setDebugName(core, *m_gizmo_vertex_buffer, "DebugPass GizmoVertexBuffer");
 
 	void* mapped = m_gizmo_vertex_buffer.getAllocation().getInfo().pMappedData;
-	std::memcpy(mapped, vertices.data(), vertices.size() * sizeof(DebugVertex));
-	m_gizmo_vertex_buffer.getAllocation().flush(0, vertices.size() * sizeof(DebugVertex));
+	std::memcpy(mapped, vertices.data(), vertices.size() * sizeof(debug::Vertex));
+	m_gizmo_vertex_buffer.getAllocation().flush(0, vertices.size() * sizeof(debug::Vertex));
 }
 
 void DebugPass::createTranslateGizmoGeometry(const renderer::VulkanCore& core) {
@@ -1711,7 +1709,7 @@ void DebugPass::createTranslateGizmoGeometry(const renderer::VulkanCore& core) {
 
 	const glm::vec4 k_white {1.0f, 1.0f, 1.0f, 1.0f};
 
-	std::vector<DebugVertex> vertices;
+	std::vector<debug::Vertex> vertices;
 
 	auto record_handle = [&](toast::GizmoHandle handle, size_t start, glm::vec4 base_color) {
 		m_translate_gizmo_handles[static_cast<size_t>(handle)] = {
@@ -1748,7 +1746,7 @@ void DebugPass::createTranslateGizmoGeometry(const renderer::VulkanCore& core) {
 	}
 
 	vk::BufferCreateInfo buffer_ci {};
-	buffer_ci.size = vertices.size() * sizeof(DebugVertex);
+	buffer_ci.size = vertices.size() * sizeof(debug::Vertex);
 	buffer_ci.usage = vk::BufferUsageFlagBits::eVertexBuffer;
 
 	vma::AllocationCreateInfo alloc_ci {};
@@ -1759,15 +1757,15 @@ void DebugPass::createTranslateGizmoGeometry(const renderer::VulkanCore& core) {
 	setDebugName(core, *m_translate_gizmo_vertex_buffer, "DebugPass TranslateGizmoVertexBuffer");
 
 	void* mapped = m_translate_gizmo_vertex_buffer.getAllocation().getInfo().pMappedData;
-	std::memcpy(mapped, vertices.data(), vertices.size() * sizeof(DebugVertex));
-	m_translate_gizmo_vertex_buffer.getAllocation().flush(0, vertices.size() * sizeof(DebugVertex));
+	std::memcpy(mapped, vertices.data(), vertices.size() * sizeof(debug::Vertex));
+	m_translate_gizmo_vertex_buffer.getAllocation().flush(0, vertices.size() * sizeof(debug::Vertex));
 }
 
 void DebugPass::createRotateGizmoGeometry(const renderer::VulkanCore& core) {
 	using namespace toast::gizmo_layout;
 	const glm::vec4 k_white {1.0f, 1.0f, 1.0f, 1.0f};
 
-	std::vector<DebugVertex> vertices;
+	std::vector<debug::Vertex> vertices;
 
 	for (int axis = 0; axis < 3; ++axis) {
 		const size_t start = vertices.size();
@@ -1778,7 +1776,7 @@ void DebugPass::createRotateGizmoGeometry(const renderer::VulkanCore& core) {
 	}
 
 	vk::BufferCreateInfo buffer_ci {};
-	buffer_ci.size = vertices.size() * sizeof(DebugVertex);
+	buffer_ci.size = vertices.size() * sizeof(debug::Vertex);
 	buffer_ci.usage = vk::BufferUsageFlagBits::eVertexBuffer;
 
 	vma::AllocationCreateInfo alloc_ci {};
@@ -1789,15 +1787,15 @@ void DebugPass::createRotateGizmoGeometry(const renderer::VulkanCore& core) {
 	setDebugName(core, *m_rotate_gizmo_vertex_buffer, "DebugPass RotateGizmoVertexBuffer");
 
 	void* mapped = m_rotate_gizmo_vertex_buffer.getAllocation().getInfo().pMappedData;
-	std::memcpy(mapped, vertices.data(), vertices.size() * sizeof(DebugVertex));
-	m_rotate_gizmo_vertex_buffer.getAllocation().flush(0, vertices.size() * sizeof(DebugVertex));
+	std::memcpy(mapped, vertices.data(), vertices.size() * sizeof(debug::Vertex));
+	m_rotate_gizmo_vertex_buffer.getAllocation().flush(0, vertices.size() * sizeof(debug::Vertex));
 }
 
 void DebugPass::createScaleGizmoGeometry(const renderer::VulkanCore& core) {
 	using namespace toast::gizmo_layout;
 	const glm::vec4 k_white {1.0f, 1.0f, 1.0f, 1.0f};
 
-	std::vector<DebugVertex> vertices;
+	std::vector<debug::Vertex> vertices;
 
 	for (int axis = 0; axis < 3; ++axis) {
 		const size_t start = vertices.size();
@@ -1823,7 +1821,7 @@ void DebugPass::createScaleGizmoGeometry(const renderer::VulkanCore& core) {
 	}
 
 	vk::BufferCreateInfo buffer_ci {};
-	buffer_ci.size = vertices.size() * sizeof(DebugVertex);
+	buffer_ci.size = vertices.size() * sizeof(debug::Vertex);
 	buffer_ci.usage = vk::BufferUsageFlagBits::eVertexBuffer;
 
 	vma::AllocationCreateInfo alloc_ci {};
@@ -1834,20 +1832,20 @@ void DebugPass::createScaleGizmoGeometry(const renderer::VulkanCore& core) {
 	setDebugName(core, *m_scale_gizmo_vertex_buffer, "DebugPass ScaleGizmoVertexBuffer");
 
 	void* mapped = m_scale_gizmo_vertex_buffer.getAllocation().getInfo().pMappedData;
-	std::memcpy(mapped, vertices.data(), vertices.size() * sizeof(DebugVertex));
-	m_scale_gizmo_vertex_buffer.getAllocation().flush(0, vertices.size() * sizeof(DebugVertex));
+	std::memcpy(mapped, vertices.data(), vertices.size() * sizeof(debug::Vertex));
+	m_scale_gizmo_vertex_buffer.getAllocation().flush(0, vertices.size() * sizeof(debug::Vertex));
 }
 
 void DebugPass::createSizeGizmoGeometry(const renderer::VulkanCore& core) {
 	using namespace toast::gizmo_layout;
 	const glm::vec4 k_white {1.0f, 1.0f, 1.0f, 1.0f};
 
-	std::vector<DebugVertex> vertices;
+	std::vector<debug::Vertex> vertices;
 	appendSphere(vertices, k_size_dot_half_size * 1.25f, 8, 12, k_white);
 	m_size_gizmo_vertex_count = static_cast<uint32_t>(vertices.size());
 
 	vk::BufferCreateInfo buffer_ci {};
-	buffer_ci.size = vertices.size() * sizeof(DebugVertex);
+	buffer_ci.size = vertices.size() * sizeof(debug::Vertex);
 	buffer_ci.usage = vk::BufferUsageFlagBits::eVertexBuffer;
 
 	vma::AllocationCreateInfo alloc_ci {};
@@ -1858,17 +1856,17 @@ void DebugPass::createSizeGizmoGeometry(const renderer::VulkanCore& core) {
 	setDebugName(core, *m_size_gizmo_vertex_buffer, "DebugPass SizeGizmoVertexBuffer");
 
 	void* mapped = m_size_gizmo_vertex_buffer.getAllocation().getInfo().pMappedData;
-	std::memcpy(mapped, vertices.data(), vertices.size() * sizeof(DebugVertex));
-	m_size_gizmo_vertex_buffer.getAllocation().flush(0, vertices.size() * sizeof(DebugVertex));
+	std::memcpy(mapped, vertices.data(), vertices.size() * sizeof(debug::Vertex));
+	m_size_gizmo_vertex_buffer.getAllocation().flush(0, vertices.size() * sizeof(debug::Vertex));
 }
 
 void DebugPass::ensureLineCapacity(const renderer::VulkanCore& core, DynamicVertexBuffer& buffer, size_t required_vertex_count) {
-	const vk::DeviceSize required_bytes = required_vertex_count * sizeof(DebugVertex);
+	const vk::DeviceSize required_bytes = required_vertex_count * sizeof(debug::Vertex);
 	if (required_bytes <= buffer.capacity_bytes) {
 		return;
 	}
 
-	const vk::DeviceSize new_capacity = std::max<vk::DeviceSize>(required_bytes * 2, sizeof(DebugVertex) * 1024);
+	const vk::DeviceSize new_capacity = std::max<vk::DeviceSize>(required_bytes * 2, sizeof(debug::Vertex) * 1024);
 
 	vk::BufferCreateInfo buffer_ci {};
 	buffer_ci.size = new_capacity;

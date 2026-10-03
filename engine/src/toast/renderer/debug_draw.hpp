@@ -19,9 +19,31 @@ class Mesh;
 
 namespace debug {
 
+struct Billboard {
+	glm::vec3 position {0.0f};
+	float size = 1.0f;
+	glm::vec4 tint {1.0f};
+	assets::Handle<assets::Texture> texture;
+};
+
+struct Vertex {
+	glm::vec<3, float, glm::packed_highp> position;
+	glm::vec<4, float, glm::packed_highp> color;
+};
+
+static_assert(std::is_standard_layout_v<debug::Vertex>, "DebugVertex must be standard layout");
+
+struct Mesh {
+	glm::mat4 model {1.0f};
+	glm::vec4 tint {1.0f};
+	assets::Handle<assets::Mesh> mesh;
+};
+
 void TOAST_API drawSolidSphere(glm::vec3 center, float radius, glm::vec4 color);
 void TOAST_API drawShapeBox(const glm::mat4& transform, glm::vec4 color, bool fill);
 void TOAST_API drawCapsule(const glm::mat4& transform, float radius, float height, glm::vec4 color, bool fill);
+
+void TOAST_API drawOrientedBox(const glm::mat4& transform, const glm::vec3& extents, const glm::vec4& color);
 
 void TOAST_API drawLine(glm::vec3 a, glm::vec3 b, glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f});
 void TOAST_API drawBox(glm::vec3 min, glm::vec3 max, glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f});
