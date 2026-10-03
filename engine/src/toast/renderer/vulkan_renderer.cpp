@@ -75,6 +75,8 @@ namespace renderer {
 
 VulkanRenderer* VulkanRenderer::instance = nullptr;
 
+#pragma region UTILS
+
 namespace {
 
 auto depthAttachmentRange(vk::Format format) -> vk::ImageSubresourceRange {
@@ -433,22 +435,258 @@ void uploadSinglePixelTexture(
 	texture.markReady();
 }
 
+auto isTraceable(const VulkanRenderer::MeshInstanceProxy& proxy) -> bool {
+	if (proxy.mesh == nullptr) {
+		return false;
+	}
+
+	if (proxy.posed_vertex_offset != VulkanRenderer::MeshInstanceProxy::k_no_posed_vertices) {
+		return proxy.mesh->isReady() && proxy.mesh->getVertexCount() > 0 && proxy.mesh->getIndexCount() >= 3;
+	}
+
+	return proxy.mesh->hasAccelerationStructure();
 }
 
-auto VulkanRenderer::selectDepthFormat(const VulkanCore& core) -> vk::Format {
-	const std::array candidates {
-	  vk::Format::eD32Sfloat, vk::Format::eD24UnormS8Uint, vk::Format::eD32SfloatS8Uint, vk::Format::eD16Unorm
-	};
+[[nodiscard]]
+auto defaultVoxelPalette() -> const voxel::Palette& {
+	return voxel::defaultPalette();
+}
 
-	for (const auto candidate : candidates) {
-		const auto props = core.getPhysicalDevice().getFormatProperties(candidate);
-		if ((props.optimalTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment) != vk::FormatFeatureFlags {}) {
-			return candidate;
+[[nodiscard]]
+auto voxelFragmentRenderId(physics::ShapeID shape) -> uint64_t {
+	return 0xF7A6'1D00'0000'0000ull ^ ((static_cast<uint64_t>(shape.slot) << 32) | shape.generation);
+}
+
+}
+
+auto VulkanRenderer::getPrepassDrawnCount() const noexcept -> uint32_t {
+	return m_depth_prepass != nullptr ? m_depth_prepass->getDrawnCount() : 0u;
+}
+
+auto VulkanRenderer::getPosedVertexBuffer(uint32_t frame_index) const -> vk::Buffer {
+	return m_skinning_pass != nullptr ? m_skinning_pass->getPosedVertexBuffer(frame_index) : vk::Buffer {};
+}
+
+auto VulkanRenderer::materialUsesCutout(assets::Material* material) const -> bool {
+	if (material == nullptr) {
+		return false;
+	}
+
+	// No lock since only the render thread mutates m_material_passes
+	const auto it = m_material_passes.find(material);
+	return it != m_material_passes.end() && it->second->usesCutout();
+}
+
+auto VulkanRenderer::getFailsafeTextureView(bool has_reference, const VulkanTexture* texture) const noexcept -> vk::ImageView {
+	if (!has_reference) {
+		return nullptr;
+	}
+
+	if (texture == nullptr) {
+		return m_missing_texture.isReady() ? m_missing_texture.getView() : vk::ImageView {};
+	}
+
+	switch (texture->state()) {
+		case IVulkanResource::UploadState::failed_load:
+			return m_fail_load_texture.isReady() ? m_fail_load_texture.getView() : vk::ImageView {};
+		case IVulkanResource::UploadState::failed_gpu:
+			return m_fail_gpu_texture.isReady() ? m_fail_gpu_texture.getView() : vk::ImageView {};
+		default: return m_missing_texture.isReady() ? m_missing_texture.getView() : vk::ImageView {};
+	}
+}
+
+void VulkanRenderer::assignShadowSlots(
+    const std::vector<PunctualShadowCandidate>& candidates, std::span<shadow_slots::Slot> slots
+) {
+	m_tick_slot_candidates.clear();
+	for (const PunctualShadowCandidate& candidate : candidates) {
+		m_tick_slot_candidates.push_back({.key = candidate.key, .importance = candidate.importance, .visible = candidate.visible});
+	}
+	m_tick_slot_of.resize(candidates.size());
+	m_shadow_displaced_total += shadow_slots::assign(m_tick_slot_candidates, slots, m_tick_slot_of);
+}
+
+void VulkanRenderer::releaseShadowSlots() {
+	m_spot_slots = {};
+	m_point_slots = {};
+}
+
+auto VulkanRenderer::ownerTransform(const toast::Node& node) const -> const glm::mat4* {
+	static const glm::mat4 identity(1.0f);
+	if (m_render_owner_filter == nullptr || node.owner() == m_render_owner_filter) {
+		return &identity;
+	}
+	if (m_secondary_owner == nullptr || node.owner() != m_secondary_owner) {
+		return nullptr;
+	}
+
+	// The instance being edited draws from the VoxelEditor not from the level around it
+	for (const toast::Node* current = &node; current != nullptr;) {
+		if (current == m_secondary_hidden) {
+			return nullptr;
+		}
+		toast::Box<toast::Node> parent = const_cast<toast::Node*>(current)->parent();
+		current = parent.exists() ? &*parent : nullptr;
+	}
+	return &m_secondary_transform;
+}
+
+void VulkanRenderer::requestMaterialFrameSetRebuild() {
+	std::lock_guard lock(m_pass_mutex);
+	for (auto& [material, pass] : m_material_passes) {
+		pass->markShadersDirty();
+	}
+}
+
+auto VulkanRenderer::blendPostProcessVolumes(const glm::vec3& camera_position) -> PostProcessSettings {
+	ZoneScoped;
+	PostProcessSettings result = m_post_process_settings;
+
+	auto& volumes = m_tick_post_volumes;
+	{
+		std::scoped_lock lock(m_reflection_probe_mutex);
+		volumes.assign(m_post_process_volume_nodes.begin(), m_post_process_volume_nodes.end());
+	}
+
+	std::erase_if(volumes, [this](const toast::PostProcessVolume* volume) {
+		return volume == nullptr || (m_render_owner_filter != nullptr && volume->owner() != m_render_owner_filter);
+	});
+
+	std::ranges::stable_sort(volumes, {}, [](const toast::PostProcessVolume* volume) { return volume->priority(); });
+
+	for (const auto* volume : volumes) {
+		const float influence = volume->influenceAt(camera_position);
+
+		if (!volume->isGlobal()) {
+			const glm::vec4 color = influence > 0.0f ? glm::vec4(0.4f, 1.0f, 0.6f, 1.0f) : glm::vec4(0.4f, 0.55f, 0.5f, 1.0f);
+			debug::drawOrientedBox(volume->getWorldTransform(), volume->extents(), color);
+		}
+
+		if (influence <= 0.0f) {
+			continue;
+		}
+		blendPostProcess(result, volume->settings(), influence);
+	}
+
+	return result;
+}
+
+void VulkanRenderer::cancelIrradianceBake() {
+	if (m_irradiance_bake_cursor < 0) {
+		return;
+	}
+
+	TOAST_INFO("Render", "Irradiance volume set changed mid-bake; cancelling so bases can be reassigned");
+	m_irradiance_bake_cursor = -1;
+}
+
+void VulkanRenderer::beginDebugLineCollection(RenderFrame& frame) {
+	std::scoped_lock lock(m_debug_line_mutex);
+	frame.debug_line_vertices.insert(
+	    frame.debug_line_vertices.end(), m_pending_debug_line_vertices.begin(), m_pending_debug_line_vertices.end()
+	);
+	m_pending_debug_line_vertices.clear();
+	m_collecting_debug_lines = true;
+}
+
+void VulkanRenderer::endDebugLineCollection() {
+	std::scoped_lock lock(m_debug_line_mutex);
+	m_collecting_debug_lines = false;
+}
+
+void VulkanRenderer::queueDebugLine(glm::vec3 a, glm::vec3 b, glm::vec4 color) {
+	std::scoped_lock lock(m_debug_line_mutex);
+	auto& vertices = m_collecting_debug_lines ? beginFrameBuild().debug_line_vertices : m_pending_debug_line_vertices;
+	vertices.push_back({a, color});
+	vertices.push_back({b, color});
+}
+
+void VulkanRenderer::setActiveCamera(toast::Camera* camera) {
+	m_camera = camera;
+}
+
+void VulkanRenderer::forgetCamera(const toast::Camera* camera) {
+	if (m_camera == camera) {
+		m_camera = nullptr;
+	}
+}
+
+auto VulkanRenderer::setPostProcessPassEnabled(std::string_view name, bool enabled) -> bool {
+	std::lock_guard lock(m_pass_mutex);
+	for (auto& pass : m_post_process_passes) {
+		if (pass->name() == name) {
+			pass->setEnabled(enabled);
+			return true;
+		}
+	}
+	return false;
+}
+
+auto VulkanRenderer::isPostProcessPassEnabled(std::string_view name) const -> bool {
+	std::lock_guard lock(m_pass_mutex);
+	for (const auto& pass : m_post_process_passes) {
+		if (pass->name() == name) {
+			return pass->isEnabled();
+		}
+	}
+	return false;
+}
+
+void VulkanRenderer::addComputePass(std::unique_ptr<IComputePass> pass) {
+	m_compute_passes.push_back(std::move(pass));
+}
+
+auto VulkanRenderer::applyResize(vk::Extent2D extent) -> void {
+	if (extent.width == 0 || extent.height == 0) {
+		return;
+	}
+
+	m_pending_resize_packed.store(packExtent(extent), std::memory_order_release);
+	m_frame_cv.notify_one();
+}
+
+void VulkanRenderer::stop() {
+	ZoneScoped;
+	const bool was_running = m_running.exchange(false, std::memory_order_acq_rel);
+	if (!was_running) {
+		return;
+	}
+
+	{
+		// Locked so the notify cannot slip between the m_running check and the wait
+		std::lock_guard lock(m_queue_mutex);
+	}
+	m_frame_cv.notify_all();
+
+	if (m_render_thread.joinable()) {
+		m_render_thread.join();
+	}
+
+	while (m_pending_upload_builds.load(std::memory_order_acquire) > 0) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	}
+
+	if (m_core) {
+		try {
+			m_core->getDevice().waitIdle();
+		} catch (const std::exception& e) {
+			TOAST_ERROR("Render", "Device wait failed during shutdown, tearing down anyway: {}", e.what());
 		}
 	}
 
-	TOAST_CRITICAL("Render", "Toast Engine Error: Failed to find a supported depth format!");
+	m_gpu_timer.reset();
+
+#ifdef TRACY_ENABLE
+	if (m_tracy_vk_ctx != nullptr) {
+		TracyVkDestroy(m_tracy_vk_ctx);
+		m_tracy_vk_ctx = nullptr;
+	}
+#endif
 }
+
+#pragma endregion
+
+#pragma region INITIALIZATION_SHIT
 
 VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTarget> output_target) noexcept
     : m_core(&core),
@@ -784,23 +1022,289 @@ void VulkanRenderer::createDescriptorPool() {
 	setDebugName(*m_core, *m_descriptor_pool, "VulkanRenderer DescriptorPool");
 }
 
-auto VulkanRenderer::getPrepassDrawnCount() const noexcept -> uint32_t {
-	return m_depth_prepass != nullptr ? m_depth_prepass->getDrawnCount() : 0u;
+void VulkanRenderer::createDefaultTexture() {
+	const auto& device = m_core->getDevice();
+
+	uploadSinglePixelTexture(*m_core, m_default_texture, {255, 255, 255, 255}, "VulkanRenderer DefaultWhiteTexture");
+	uploadSinglePixelTexture(*m_core, m_default_black_texture, {0, 0, 0, 255}, "VulkanRenderer DefaultBlackTexture");
+	uploadSinglePixelTexture(*m_core, m_default_normal_texture, {128, 128, 255, 255}, "VulkanRenderer DefaultNormalTexture");
+
+	createDefaultShadowMap();
+	createDefaultCubemap();
+
+	vk::SamplerCreateInfo sampler_ci {};
+	sampler_ci.magFilter = vk::Filter::eNearest;
+	sampler_ci.minFilter = vk::Filter::eNearest;
+	sampler_ci.addressModeU = vk::SamplerAddressMode::eRepeat;
+	sampler_ci.addressModeV = vk::SamplerAddressMode::eRepeat;
+	sampler_ci.addressModeW = vk::SamplerAddressMode::eRepeat;
+	sampler_ci.mipmapMode = vk::SamplerMipmapMode::eNearest;
+	m_default_sampler = vk::raii::Sampler(device, sampler_ci);
+	setDebugName(*m_core, *m_default_sampler, "VulkanRenderer DefaultSampler");
+
+	createFailsafeTextures();
 }
 
-auto VulkanRenderer::getPosedVertexBuffer(uint32_t frame_index) const -> vk::Buffer {
-	return m_skinning_pass != nullptr ? m_skinning_pass->getPosedVertexBuffer(frame_index) : vk::Buffer {};
-}
+auto VulkanRenderer::selectDepthFormat(const VulkanCore& core) -> vk::Format {
+	const std::array candidates {
+	  vk::Format::eD32Sfloat, vk::Format::eD24UnormS8Uint, vk::Format::eD32SfloatS8Uint, vk::Format::eD16Unorm
+	};
 
-auto VulkanRenderer::materialUsesCutout(assets::Material* material) const -> bool {
-	if (material == nullptr) {
-		return false;
+	for (const auto candidate : candidates) {
+		const auto props = core.getPhysicalDevice().getFormatProperties(candidate);
+		if ((props.optimalTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment) != vk::FormatFeatureFlags {}) {
+			return candidate;
+		}
 	}
 
-	// No lock since only the render thread mutates m_material_passes
-	const auto it = m_material_passes.find(material);
-	return it != m_material_passes.end() && it->second->usesCutout();
+	TOAST_CRITICAL("Render", "Toast Engine Error: Failed to find a supported depth format!");
 }
+
+void VulkanRenderer::createPresentResources() {
+	ZoneScoped;
+	const auto uid = assets::resolveURI("core://shaders/present.slang");
+	const auto shader = uid.has_value() ? ShaderCache::get().acquire(*uid) : nullptr;
+	if (!shader) {
+		TOAST_ERROR("Render", "core://shaders/present.slang unavailable; nothing will reach the screen");
+		return;
+	}
+
+	m_present_layout.rebuild(*m_core, shader->reflection, "Present");
+
+	VulkanPipeline::Config config;
+	config.pipeline_type = VulkanPipeline::PipelineType::graphics;
+	config.debug_name = "Present";
+	config.color_format = m_output_target->getColorFormat();
+	config.extent = m_output_target->getExtent();
+	config.shader_spirv = shader->spirv;
+	config.pipeline_layout = *m_present_layout.getPipelineLayout();
+	config.vertex_bindings = {};
+	config.vertex_attributes = {};
+	config.cull_mode = vk::CullModeFlagBits::eNone;
+	config.depth_format = m_depth_format;
+	config.depth_test = false;
+	config.depth_write = false;
+	m_present_pipeline.rebuild(*m_core, config);
+
+	const auto& device = m_core->getDevice();
+
+	const auto sampler_ci = linearClampSamplerInfo();
+	m_present_sampler = vk::raii::Sampler(device, sampler_ci);
+	setDebugName(*m_core, *m_present_sampler, "VulkanRenderer PresentSampler");
+
+	const auto& layouts = m_present_layout.getDescriptorSetLayouts();
+	if (layouts.empty()) {
+		return;
+	}
+
+	const vk::DescriptorSetLayout set_layout = *layouts[0];
+	m_present_sets.clear();
+	m_present_bound_views.assign(k_frames_in_flight, vk::ImageView {});
+	for (uint32_t i = 0; i < k_frames_in_flight; ++i) {
+		const vk::DescriptorSetAllocateInfo alloc_info(*m_descriptor_pool, 1, &set_layout);
+		auto allocated = device.allocateDescriptorSets(alloc_info);
+		m_present_sets.push_back(std::move(allocated[0]));
+		setDebugName(*m_core, *m_present_sets[i], std::format("VulkanRenderer PresentSet[{}]", i));
+	}
+}
+
+void VulkanRenderer::createFrameResources() {
+	ZoneScoped;
+	m_frame_ubo_res.resize(k_frames_in_flight);
+	m_frame_ubos.resize(k_frames_in_flight);
+
+	const auto& device = m_core->getDevice();
+
+	const vk::DeviceSize buffer_size = sizeof(FrameUBO);
+
+	for (uint32_t i = 0; i < m_frame_ubo_res.size(); ++i) {
+		auto& frame = m_frame_ubo_res[i];
+
+		vk::BufferCreateInfo buffer_ci {};
+		buffer_ci.size = buffer_size;
+		buffer_ci.usage = vk::BufferUsageFlagBits::eUniformBuffer;
+
+		vma::AllocationCreateInfo alloc_ci {};
+		alloc_ci.usage = vma::MemoryUsage::eAutoPreferHost;
+
+		alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
+
+		frame.gpu_buffer.emplace(m_core->getAllocator().createBuffer(buffer_ci, alloc_ci));
+		setDebugName(*m_core, **frame.gpu_buffer, std::format("VulkanRenderer FrameUBO[{}]", i));
+	}
+
+	m_joint_matrix_res.resize(k_frames_in_flight);
+	const vk::DeviceSize joint_matrix_buffer_size = sizeof(glm::mat4) * k_max_joint_matrices;
+	for (uint32_t i = 0; i < m_joint_matrix_res.size(); ++i) {
+		auto& frame = m_joint_matrix_res[i];
+
+		vk::BufferCreateInfo buffer_ci {};
+		buffer_ci.size = joint_matrix_buffer_size;
+		buffer_ci.usage = vk::BufferUsageFlagBits::eStorageBuffer;
+
+		vma::AllocationCreateInfo alloc_ci {};
+		alloc_ci.usage = vma::MemoryUsage::eAutoPreferHost;
+		alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
+
+		frame.gpu_buffer.emplace(m_core->getAllocator().createBuffer(buffer_ci, alloc_ci));
+		setDebugName(*m_core, **frame.gpu_buffer, std::format("VulkanRenderer JointMatrices[{}]", i));
+	}
+
+	const auto create_instance_buffers = [this](std::vector<FrameResources>& target, std::string_view debug_name) {
+		target.resize(k_frames_in_flight);
+		for (uint32_t i = 0; i < target.size(); ++i) {
+			vk::BufferCreateInfo buffer_ci {};
+			buffer_ci.size = sizeof(InstanceData) * k_max_instances;
+			buffer_ci.usage = vk::BufferUsageFlagBits::eStorageBuffer;
+
+			vma::AllocationCreateInfo alloc_ci {};
+			alloc_ci.usage = vma::MemoryUsage::eAutoPreferHost;
+			alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
+
+			target[i].gpu_buffer.emplace(m_core->getAllocator().createBuffer(buffer_ci, alloc_ci));
+			setDebugName(*m_core, **target[i].gpu_buffer, std::format("VulkanRenderer {}[{}]", debug_name, i));
+		}
+	};
+
+	create_instance_buffers(m_instance_res, "Instances");
+	create_instance_buffers(m_shadow_instance_res, "ShadowInstances");
+}
+
+void VulkanRenderer::createFailsafeTextures() {
+	vk::SamplerCreateInfo sampler_ci {};
+	sampler_ci.magFilter = vk::Filter::eNearest;
+	sampler_ci.minFilter = vk::Filter::eNearest;
+	sampler_ci.mipmapMode = vk::SamplerMipmapMode::eNearest;
+	sampler_ci.addressModeU = vk::SamplerAddressMode::eRepeat;
+	sampler_ci.addressModeV = vk::SamplerAddressMode::eRepeat;
+	sampler_ci.addressModeW = vk::SamplerAddressMode::eRepeat;
+	sampler_ci.maxLod = VK_LOD_CLAMP_NONE;
+	m_failsafe_sampler = vk::raii::Sampler(m_core->getDevice(), sampler_ci);
+	setDebugName(*m_core, *m_failsafe_sampler, "VulkanRenderer FailsafeSampler");
+
+	const auto load = [this](VulkanTexture& target, std::string_view virtual_path, std::string_view debug_name) {
+		auto bytes = assets::AssetManager::get().tryLoadBytes(virtual_path);
+		if (!bytes.has_value()) {
+			TOAST_WARN("Render", "Failsafe texture '{}' is missing; that slot will fall back to flat white", virtual_path);
+			return;
+		}
+		uploadTextureSync(*m_core, target, std::move(*bytes), debug_name);
+	};
+
+	load(m_fail_load_texture, "core://textures/fail_load.ktx2", "VulkanRenderer FailLoadTexture");
+	load(m_fail_gpu_texture, "core://textures/fail_gpu.ktx2", "VulkanRenderer FailGpuTexture");
+	load(m_missing_texture, "core://textures/MissingTexture.ktx2", "VulkanRenderer MissingTexture");
+}
+
+void VulkanRenderer::createDefaultShadowMap() {
+	ZoneScoped;
+	const auto& device = m_core->getDevice();
+
+	// Comparison samplers only read depth images
+	vk::ImageCreateInfo image_ci {};
+	image_ci.imageType = vk::ImageType::e2D;
+	image_ci.format = m_depth_format;
+	image_ci.extent = vk::Extent3D {1, 1, 1};
+	image_ci.mipLevels = 1;
+	image_ci.arrayLayers = 1;
+	image_ci.samples = vk::SampleCountFlagBits::e1;
+	image_ci.tiling = vk::ImageTiling::eOptimal;
+	image_ci.usage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst;
+	image_ci.sharingMode = vk::SharingMode::eExclusive;
+	image_ci.initialLayout = vk::ImageLayout::eUndefined;
+
+	vma::AllocationCreateInfo allocation_ci {};
+	allocation_ci.usage = vma::MemoryUsage::eAutoPreferDevice;
+	m_default_shadow_image.emplace(m_core->getAllocator().createImage(image_ci, allocation_ci));
+	setDebugName(*m_core, **m_default_shadow_image, "VulkanRenderer DefaultShadowImage");
+
+	const vk::ImageSubresourceRange range(vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1);
+
+	const vk::CommandPoolCreateInfo pool_ci(vk::CommandPoolCreateFlagBits::eTransient, m_core->getGraphicsQueueFamilyIndex());
+	const vk::raii::CommandPool one_shot_pool(device, pool_ci);
+	const vk::CommandBufferAllocateInfo cmd_alloc_info(*one_shot_pool, vk::CommandBufferLevel::ePrimary, 1);
+	auto cmd_buffers = device.allocateCommandBuffers(cmd_alloc_info);
+	const vk::raii::CommandBuffer cmd = std::move(cmd_buffers[0]);
+
+	cmd.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
+
+	recordUndefinedToTransferDst(cmd, **m_default_shadow_image, range);
+
+	const vk::ClearDepthStencilValue clear_value(1.0f, 0);
+	cmd.clearDepthStencilImage(**m_default_shadow_image, vk::ImageLayout::eTransferDstOptimal, clear_value, range);
+
+	recordTransferDstToShaderRead(cmd, **m_default_shadow_image, range);
+
+	cmd.end();
+
+	submitAndWait(device, m_core->getGraphicsQueue(), *cmd);
+
+	// Sampler2DArrayShadow needs an array view
+	vk::ImageViewCreateInfo view_ci {};
+	view_ci.image = **m_default_shadow_image;
+	view_ci.viewType = vk::ImageViewType::e2DArray;
+	view_ci.format = m_depth_format;
+	view_ci.subresourceRange = range;
+	m_default_shadow_view = vk::raii::ImageView(device, view_ci);
+	setDebugName(*m_core, *m_default_shadow_view, "VulkanRenderer DefaultShadowArrayView");
+
+	m_default_shadow_sampler = createShadowSampler(*m_core, m_depth_format);
+	setDebugName(*m_core, *m_default_shadow_sampler, "VulkanRenderer DefaultShadowSampler");
+}
+
+void VulkanRenderer::createDefaultCubemap() {
+	ZoneScoped;
+	const auto& device = m_core->getDevice();
+
+	vk::ImageCreateInfo image_ci {};
+	image_ci.flags = vk::ImageCreateFlagBits::eCubeCompatible;
+	image_ci.imageType = vk::ImageType::e2D;
+	image_ci.format = vk::Format::eR16G16B16A16Sfloat;
+	image_ci.extent = vk::Extent3D {1, 1, 1};
+	image_ci.mipLevels = 1;
+	image_ci.arrayLayers = 6;
+	image_ci.samples = vk::SampleCountFlagBits::e1;
+	image_ci.tiling = vk::ImageTiling::eOptimal;
+	image_ci.usage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst;
+	image_ci.sharingMode = vk::SharingMode::eExclusive;
+	image_ci.initialLayout = vk::ImageLayout::eUndefined;
+
+	vma::AllocationCreateInfo allocation_ci {};
+	allocation_ci.usage = vma::MemoryUsage::eAutoPreferDevice;
+	m_default_cube_image.emplace(m_core->getAllocator().createImage(image_ci, allocation_ci));
+	setDebugName(*m_core, **m_default_cube_image, "VulkanRenderer DefaultCubemap");
+
+	const vk::ImageSubresourceRange range(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 6);
+
+	const vk::CommandPoolCreateInfo pool_ci(vk::CommandPoolCreateFlagBits::eTransient, m_core->getGraphicsQueueFamilyIndex());
+	const vk::raii::CommandPool one_shot_pool(device, pool_ci);
+	const vk::CommandBufferAllocateInfo cmd_alloc_info(*one_shot_pool, vk::CommandBufferLevel::ePrimary, 1);
+	auto cmd_buffers = device.allocateCommandBuffers(cmd_alloc_info);
+	const vk::raii::CommandBuffer cmd = std::move(cmd_buffers[0]);
+
+	cmd.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
+
+	recordUndefinedToTransferDst(cmd, **m_default_cube_image, range);
+
+	const vk::ClearColorValue clear_value(std::array {0.0f, 0.0f, 0.0f, 1.0f});
+	cmd.clearColorImage(**m_default_cube_image, vk::ImageLayout::eTransferDstOptimal, clear_value, range);
+
+	recordTransferDstToShaderRead(cmd, **m_default_cube_image, range);
+
+	cmd.end();
+
+	submitAndWait(device, m_core->getGraphicsQueue(), *cmd);
+
+	vk::ImageViewCreateInfo view_ci {};
+	view_ci.image = **m_default_cube_image;
+	view_ci.viewType = vk::ImageViewType::eCube;
+	view_ci.format = vk::Format::eR16G16B16A16Sfloat;
+	view_ci.subresourceRange = range;
+	m_default_cube_view = vk::raii::ImageView(device, view_ci);
+	setDebugName(*m_core, *m_default_cube_view, "VulkanRenderer DefaultCubemapView");
+}
+
+#pragma endregion
 
 void VulkanRenderer::publishCompletedFrames() {
 	ZoneScoped;
@@ -824,22 +1328,6 @@ void VulkanRenderer::publishCompletedFrames() {
 		pending.has_submitted = false;
 		m_pending_publish.pop_front();
 	}
-}
-
-namespace {
-
-auto isTraceable(const VulkanRenderer::MeshInstanceProxy& proxy) -> bool {
-	if (proxy.mesh == nullptr) {
-		return false;
-	}
-
-	if (proxy.posed_vertex_offset != VulkanRenderer::MeshInstanceProxy::k_no_posed_vertices) {
-		return proxy.mesh->isReady() && proxy.mesh->getVertexCount() > 0 && proxy.mesh->getIndexCount() >= 3;
-	}
-
-	return proxy.mesh->hasAccelerationStructure();
-}
-
 }
 
 void VulkanRenderer::recordAccelerationStructureBuilds(FrameContext& frame) {
@@ -1737,291 +2225,6 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	frame.command_buffer.end();
 }
 
-void VulkanRenderer::createPresentResources() {
-	ZoneScoped;
-	const auto uid = assets::resolveURI("core://shaders/present.slang");
-	const auto shader = uid.has_value() ? ShaderCache::get().acquire(*uid) : nullptr;
-	if (!shader) {
-		TOAST_ERROR("Render", "core://shaders/present.slang unavailable; nothing will reach the screen");
-		return;
-	}
-
-	m_present_layout.rebuild(*m_core, shader->reflection, "Present");
-
-	VulkanPipeline::Config config;
-	config.pipeline_type = VulkanPipeline::PipelineType::graphics;
-	config.debug_name = "Present";
-	config.color_format = m_output_target->getColorFormat();
-	config.extent = m_output_target->getExtent();
-	config.shader_spirv = shader->spirv;
-	config.pipeline_layout = *m_present_layout.getPipelineLayout();
-	config.vertex_bindings = {};
-	config.vertex_attributes = {};
-	config.cull_mode = vk::CullModeFlagBits::eNone;
-	config.depth_format = m_depth_format;
-	config.depth_test = false;
-	config.depth_write = false;
-	m_present_pipeline.rebuild(*m_core, config);
-
-	const auto& device = m_core->getDevice();
-
-	const auto sampler_ci = linearClampSamplerInfo();
-	m_present_sampler = vk::raii::Sampler(device, sampler_ci);
-	setDebugName(*m_core, *m_present_sampler, "VulkanRenderer PresentSampler");
-
-	const auto& layouts = m_present_layout.getDescriptorSetLayouts();
-	if (layouts.empty()) {
-		return;
-	}
-
-	const vk::DescriptorSetLayout set_layout = *layouts[0];
-	m_present_sets.clear();
-	m_present_bound_views.assign(k_frames_in_flight, vk::ImageView {});
-	for (uint32_t i = 0; i < k_frames_in_flight; ++i) {
-		const vk::DescriptorSetAllocateInfo alloc_info(*m_descriptor_pool, 1, &set_layout);
-		auto allocated = device.allocateDescriptorSets(alloc_info);
-		m_present_sets.push_back(std::move(allocated[0]));
-		setDebugName(*m_core, *m_present_sets[i], std::format("VulkanRenderer PresentSet[{}]", i));
-	}
-}
-
-void VulkanRenderer::createFrameResources() {
-	ZoneScoped;
-	m_frame_ubo_res.resize(k_frames_in_flight);
-	m_frame_ubos.resize(k_frames_in_flight);
-
-	const auto& device = m_core->getDevice();
-
-	const vk::DeviceSize buffer_size = sizeof(FrameUBO);
-
-	for (uint32_t i = 0; i < m_frame_ubo_res.size(); ++i) {
-		auto& frame = m_frame_ubo_res[i];
-
-		vk::BufferCreateInfo buffer_ci {};
-		buffer_ci.size = buffer_size;
-		buffer_ci.usage = vk::BufferUsageFlagBits::eUniformBuffer;
-
-		vma::AllocationCreateInfo alloc_ci {};
-		alloc_ci.usage = vma::MemoryUsage::eAutoPreferHost;
-
-		alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
-
-		frame.gpu_buffer.emplace(m_core->getAllocator().createBuffer(buffer_ci, alloc_ci));
-		setDebugName(*m_core, **frame.gpu_buffer, std::format("VulkanRenderer FrameUBO[{}]", i));
-	}
-
-	m_joint_matrix_res.resize(k_frames_in_flight);
-	const vk::DeviceSize joint_matrix_buffer_size = sizeof(glm::mat4) * k_max_joint_matrices;
-	for (uint32_t i = 0; i < m_joint_matrix_res.size(); ++i) {
-		auto& frame = m_joint_matrix_res[i];
-
-		vk::BufferCreateInfo buffer_ci {};
-		buffer_ci.size = joint_matrix_buffer_size;
-		buffer_ci.usage = vk::BufferUsageFlagBits::eStorageBuffer;
-
-		vma::AllocationCreateInfo alloc_ci {};
-		alloc_ci.usage = vma::MemoryUsage::eAutoPreferHost;
-		alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
-
-		frame.gpu_buffer.emplace(m_core->getAllocator().createBuffer(buffer_ci, alloc_ci));
-		setDebugName(*m_core, **frame.gpu_buffer, std::format("VulkanRenderer JointMatrices[{}]", i));
-	}
-
-	const auto create_instance_buffers = [this](std::vector<FrameResources>& target, std::string_view debug_name) {
-		target.resize(k_frames_in_flight);
-		for (uint32_t i = 0; i < target.size(); ++i) {
-			vk::BufferCreateInfo buffer_ci {};
-			buffer_ci.size = sizeof(InstanceData) * k_max_instances;
-			buffer_ci.usage = vk::BufferUsageFlagBits::eStorageBuffer;
-
-			vma::AllocationCreateInfo alloc_ci {};
-			alloc_ci.usage = vma::MemoryUsage::eAutoPreferHost;
-			alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
-
-			target[i].gpu_buffer.emplace(m_core->getAllocator().createBuffer(buffer_ci, alloc_ci));
-			setDebugName(*m_core, **target[i].gpu_buffer, std::format("VulkanRenderer {}[{}]", debug_name, i));
-		}
-	};
-
-	create_instance_buffers(m_instance_res, "Instances");
-	create_instance_buffers(m_shadow_instance_res, "ShadowInstances");
-}
-
-void VulkanRenderer::createDefaultTexture() {
-	const auto& device = m_core->getDevice();
-
-	uploadSinglePixelTexture(*m_core, m_default_texture, {255, 255, 255, 255}, "VulkanRenderer DefaultWhiteTexture");
-	uploadSinglePixelTexture(*m_core, m_default_black_texture, {0, 0, 0, 255}, "VulkanRenderer DefaultBlackTexture");
-	uploadSinglePixelTexture(*m_core, m_default_normal_texture, {128, 128, 255, 255}, "VulkanRenderer DefaultNormalTexture");
-
-	createDefaultShadowMap();
-	createDefaultCubemap();
-
-	vk::SamplerCreateInfo sampler_ci {};
-	sampler_ci.magFilter = vk::Filter::eNearest;
-	sampler_ci.minFilter = vk::Filter::eNearest;
-	sampler_ci.addressModeU = vk::SamplerAddressMode::eRepeat;
-	sampler_ci.addressModeV = vk::SamplerAddressMode::eRepeat;
-	sampler_ci.addressModeW = vk::SamplerAddressMode::eRepeat;
-	sampler_ci.mipmapMode = vk::SamplerMipmapMode::eNearest;
-	m_default_sampler = vk::raii::Sampler(device, sampler_ci);
-	setDebugName(*m_core, *m_default_sampler, "VulkanRenderer DefaultSampler");
-
-	createFailsafeTextures();
-}
-
-void VulkanRenderer::createFailsafeTextures() {
-	vk::SamplerCreateInfo sampler_ci {};
-	sampler_ci.magFilter = vk::Filter::eNearest;
-	sampler_ci.minFilter = vk::Filter::eNearest;
-	sampler_ci.mipmapMode = vk::SamplerMipmapMode::eNearest;
-	sampler_ci.addressModeU = vk::SamplerAddressMode::eRepeat;
-	sampler_ci.addressModeV = vk::SamplerAddressMode::eRepeat;
-	sampler_ci.addressModeW = vk::SamplerAddressMode::eRepeat;
-	sampler_ci.maxLod = VK_LOD_CLAMP_NONE;
-	m_failsafe_sampler = vk::raii::Sampler(m_core->getDevice(), sampler_ci);
-	setDebugName(*m_core, *m_failsafe_sampler, "VulkanRenderer FailsafeSampler");
-
-	const auto load = [this](VulkanTexture& target, std::string_view virtual_path, std::string_view debug_name) {
-		auto bytes = assets::AssetManager::get().tryLoadBytes(virtual_path);
-		if (!bytes.has_value()) {
-			TOAST_WARN("Render", "Failsafe texture '{}' is missing; that slot will fall back to flat white", virtual_path);
-			return;
-		}
-		uploadTextureSync(*m_core, target, std::move(*bytes), debug_name);
-	};
-
-	load(m_fail_load_texture, "core://textures/fail_load.ktx2", "VulkanRenderer FailLoadTexture");
-	load(m_fail_gpu_texture, "core://textures/fail_gpu.ktx2", "VulkanRenderer FailGpuTexture");
-	load(m_missing_texture, "core://textures/MissingTexture.ktx2", "VulkanRenderer MissingTexture");
-}
-
-auto VulkanRenderer::getFailsafeTextureView(bool has_reference, const VulkanTexture* texture) const noexcept -> vk::ImageView {
-	if (!has_reference) {
-		return nullptr;
-	}
-
-	if (texture == nullptr) {
-		return m_missing_texture.isReady() ? m_missing_texture.getView() : vk::ImageView {};
-	}
-
-	switch (texture->state()) {
-		case IVulkanResource::UploadState::failed_load:
-			return m_fail_load_texture.isReady() ? m_fail_load_texture.getView() : vk::ImageView {};
-		case IVulkanResource::UploadState::failed_gpu:
-			return m_fail_gpu_texture.isReady() ? m_fail_gpu_texture.getView() : vk::ImageView {};
-		default: return m_missing_texture.isReady() ? m_missing_texture.getView() : vk::ImageView {};
-	}
-}
-
-void VulkanRenderer::createDefaultShadowMap() {
-	ZoneScoped;
-	const auto& device = m_core->getDevice();
-
-	// Comparison samplers only read depth images
-	vk::ImageCreateInfo image_ci {};
-	image_ci.imageType = vk::ImageType::e2D;
-	image_ci.format = m_depth_format;
-	image_ci.extent = vk::Extent3D {1, 1, 1};
-	image_ci.mipLevels = 1;
-	image_ci.arrayLayers = 1;
-	image_ci.samples = vk::SampleCountFlagBits::e1;
-	image_ci.tiling = vk::ImageTiling::eOptimal;
-	image_ci.usage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst;
-	image_ci.sharingMode = vk::SharingMode::eExclusive;
-	image_ci.initialLayout = vk::ImageLayout::eUndefined;
-
-	vma::AllocationCreateInfo allocation_ci {};
-	allocation_ci.usage = vma::MemoryUsage::eAutoPreferDevice;
-	m_default_shadow_image.emplace(m_core->getAllocator().createImage(image_ci, allocation_ci));
-	setDebugName(*m_core, **m_default_shadow_image, "VulkanRenderer DefaultShadowImage");
-
-	const vk::ImageSubresourceRange range(vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1);
-
-	const vk::CommandPoolCreateInfo pool_ci(vk::CommandPoolCreateFlagBits::eTransient, m_core->getGraphicsQueueFamilyIndex());
-	const vk::raii::CommandPool one_shot_pool(device, pool_ci);
-	const vk::CommandBufferAllocateInfo cmd_alloc_info(*one_shot_pool, vk::CommandBufferLevel::ePrimary, 1);
-	auto cmd_buffers = device.allocateCommandBuffers(cmd_alloc_info);
-	const vk::raii::CommandBuffer cmd = std::move(cmd_buffers[0]);
-
-	cmd.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
-
-	recordUndefinedToTransferDst(cmd, **m_default_shadow_image, range);
-
-	const vk::ClearDepthStencilValue clear_value(1.0f, 0);
-	cmd.clearDepthStencilImage(**m_default_shadow_image, vk::ImageLayout::eTransferDstOptimal, clear_value, range);
-
-	recordTransferDstToShaderRead(cmd, **m_default_shadow_image, range);
-
-	cmd.end();
-
-	submitAndWait(device, m_core->getGraphicsQueue(), *cmd);
-
-	// Sampler2DArrayShadow needs an array view
-	vk::ImageViewCreateInfo view_ci {};
-	view_ci.image = **m_default_shadow_image;
-	view_ci.viewType = vk::ImageViewType::e2DArray;
-	view_ci.format = m_depth_format;
-	view_ci.subresourceRange = range;
-	m_default_shadow_view = vk::raii::ImageView(device, view_ci);
-	setDebugName(*m_core, *m_default_shadow_view, "VulkanRenderer DefaultShadowArrayView");
-
-	m_default_shadow_sampler = createShadowSampler(*m_core, m_depth_format);
-	setDebugName(*m_core, *m_default_shadow_sampler, "VulkanRenderer DefaultShadowSampler");
-}
-
-void VulkanRenderer::createDefaultCubemap() {
-	ZoneScoped;
-	const auto& device = m_core->getDevice();
-
-	vk::ImageCreateInfo image_ci {};
-	image_ci.flags = vk::ImageCreateFlagBits::eCubeCompatible;
-	image_ci.imageType = vk::ImageType::e2D;
-	image_ci.format = vk::Format::eR16G16B16A16Sfloat;
-	image_ci.extent = vk::Extent3D {1, 1, 1};
-	image_ci.mipLevels = 1;
-	image_ci.arrayLayers = 6;
-	image_ci.samples = vk::SampleCountFlagBits::e1;
-	image_ci.tiling = vk::ImageTiling::eOptimal;
-	image_ci.usage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst;
-	image_ci.sharingMode = vk::SharingMode::eExclusive;
-	image_ci.initialLayout = vk::ImageLayout::eUndefined;
-
-	vma::AllocationCreateInfo allocation_ci {};
-	allocation_ci.usage = vma::MemoryUsage::eAutoPreferDevice;
-	m_default_cube_image.emplace(m_core->getAllocator().createImage(image_ci, allocation_ci));
-	setDebugName(*m_core, **m_default_cube_image, "VulkanRenderer DefaultCubemap");
-
-	const vk::ImageSubresourceRange range(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 6);
-
-	const vk::CommandPoolCreateInfo pool_ci(vk::CommandPoolCreateFlagBits::eTransient, m_core->getGraphicsQueueFamilyIndex());
-	const vk::raii::CommandPool one_shot_pool(device, pool_ci);
-	const vk::CommandBufferAllocateInfo cmd_alloc_info(*one_shot_pool, vk::CommandBufferLevel::ePrimary, 1);
-	auto cmd_buffers = device.allocateCommandBuffers(cmd_alloc_info);
-	const vk::raii::CommandBuffer cmd = std::move(cmd_buffers[0]);
-
-	cmd.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
-
-	recordUndefinedToTransferDst(cmd, **m_default_cube_image, range);
-
-	const vk::ClearColorValue clear_value(std::array {0.0f, 0.0f, 0.0f, 1.0f});
-	cmd.clearColorImage(**m_default_cube_image, vk::ImageLayout::eTransferDstOptimal, clear_value, range);
-
-	recordTransferDstToShaderRead(cmd, **m_default_cube_image, range);
-
-	cmd.end();
-
-	submitAndWait(device, m_core->getGraphicsQueue(), *cmd);
-
-	vk::ImageViewCreateInfo view_ci {};
-	view_ci.image = **m_default_cube_image;
-	view_ci.viewType = vk::ImageViewType::eCube;
-	view_ci.format = vk::Format::eR16G16B16A16Sfloat;
-	view_ci.subresourceRange = range;
-	m_default_cube_view = vk::raii::ImageView(device, view_ci);
-	setDebugName(*m_core, *m_default_cube_view, "VulkanRenderer DefaultCubemapView");
-}
-
 void VulkanRenderer::ensureMaterialPasses(RenderFrame& frame_data) {
 	ZoneScoped;
 
@@ -2701,22 +2904,6 @@ void VulkanRenderer::fitShadowViews(
 			frame.shadows.matrices.push_back(view_projection);
 		}
 	}
-}
-
-void VulkanRenderer::assignShadowSlots(
-    const std::vector<PunctualShadowCandidate>& candidates, std::span<shadow_slots::Slot> slots
-) {
-	m_tick_slot_candidates.clear();
-	for (const PunctualShadowCandidate& candidate : candidates) {
-		m_tick_slot_candidates.push_back({.key = candidate.key, .importance = candidate.importance, .visible = candidate.visible});
-	}
-	m_tick_slot_of.resize(candidates.size());
-	m_shadow_displaced_total += shadow_slots::assign(m_tick_slot_candidates, slots, m_tick_slot_of);
-}
-
-void VulkanRenderer::releaseShadowSlots() {
-	m_spot_slots = {};
-	m_point_slots = {};
 }
 
 void VulkanRenderer::finalizeLights(RenderFrame& frame) {
@@ -3808,80 +3995,6 @@ void VulkanRenderer::tick(float time) noexcept {
 	submitFrame();
 }
 
-void VulkanRenderer::registerMeshNodeProxy(toast::MeshNode* node) {
-	if (node == nullptr) {
-		return;
-	}
-
-	std::scoped_lock lock(m_mesh_proxy_mutex);
-	if (!std::ranges::contains(m_mesh_proxy_nodes, node)) {
-		m_mesh_proxy_nodes.push_back(node);
-	}
-}
-
-void VulkanRenderer::unregisterMeshNodeProxy(toast::MeshNode* node) {
-	if (node == nullptr) {
-		return;
-	}
-
-	std::scoped_lock lock(m_mesh_proxy_mutex);
-	std::erase(m_mesh_proxy_nodes, node);
-}
-
-auto VulkanRenderer::ownerTransform(const toast::Node& node) const -> const glm::mat4* {
-	static const glm::mat4 identity(1.0f);
-	if (m_render_owner_filter == nullptr || node.owner() == m_render_owner_filter) {
-		return &identity;
-	}
-	if (m_secondary_owner == nullptr || node.owner() != m_secondary_owner) {
-		return nullptr;
-	}
-
-	// The instance being edited draws from the VoxelEditor not from the level around it
-	for (const toast::Node* current = &node; current != nullptr;) {
-		if (current == m_secondary_hidden) {
-			return nullptr;
-		}
-		toast::Box<toast::Node> parent = const_cast<toast::Node*>(current)->parent();
-		current = parent.exists() ? &*parent : nullptr;
-	}
-	return &m_secondary_transform;
-}
-
-void VulkanRenderer::registerVoxelNodeProxy(toast::VoxelNode* node) {
-	if (node == nullptr) {
-		return;
-	}
-
-	std::scoped_lock lock(m_voxel_proxy_mutex);
-	if (!std::ranges::contains(m_voxel_proxy_nodes, node)) {
-		m_voxel_proxy_nodes.push_back(node);
-	}
-}
-
-void VulkanRenderer::unregisterVoxelNodeProxy(toast::VoxelNode* node) {
-	if (node == nullptr) {
-		return;
-	}
-
-	std::scoped_lock lock(m_voxel_proxy_mutex);
-	std::erase(m_voxel_proxy_nodes, node);
-}
-
-namespace {
-
-[[nodiscard]]
-auto defaultVoxelPalette() -> const voxel::Palette& {
-	return voxel::defaultPalette();
-}
-
-[[nodiscard]]
-auto voxelFragmentRenderId(physics::ShapeID shape) -> uint64_t {
-	return 0xF7A6'1D00'0000'0000ull ^ ((static_cast<uint64_t>(shape.slot) << 32) | shape.generation);
-}
-
-}
-
 void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 	ZoneScoped;
 
@@ -4207,11 +4320,46 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 	m_voxel_drawn_models = std::move(drawn_models);
 }
 
-void VulkanRenderer::requestMaterialFrameSetRebuild() {
-	std::lock_guard lock(m_pass_mutex);
-	for (auto& [material, pass] : m_material_passes) {
-		pass->markShadersDirty();
+#pragma region UNREGISTERS
+
+void VulkanRenderer::registerMeshNodeProxy(toast::MeshNode* node) {
+	if (node == nullptr) {
+		return;
 	}
+
+	std::scoped_lock lock(m_mesh_proxy_mutex);
+	if (!std::ranges::contains(m_mesh_proxy_nodes, node)) {
+		m_mesh_proxy_nodes.push_back(node);
+	}
+}
+
+void VulkanRenderer::unregisterMeshNodeProxy(toast::MeshNode* node) {
+	if (node == nullptr) {
+		return;
+	}
+
+	std::scoped_lock lock(m_mesh_proxy_mutex);
+	std::erase(m_mesh_proxy_nodes, node);
+}
+
+void VulkanRenderer::registerVoxelNodeProxy(toast::VoxelNode* node) {
+	if (node == nullptr) {
+		return;
+	}
+
+	std::scoped_lock lock(m_voxel_proxy_mutex);
+	if (!std::ranges::contains(m_voxel_proxy_nodes, node)) {
+		m_voxel_proxy_nodes.push_back(node);
+	}
+}
+
+void VulkanRenderer::unregisterVoxelNodeProxy(toast::VoxelNode* node) {
+	if (node == nullptr) {
+		return;
+	}
+
+	std::scoped_lock lock(m_voxel_proxy_mutex);
+	std::erase(m_voxel_proxy_nodes, node);
 }
 
 void VulkanRenderer::registerReflectionProbeProxy(toast::ReflectionProbe* node) {
@@ -4279,67 +4427,6 @@ void VulkanRenderer::unregisterPostProcessVolumeProxy(toast::PostProcessVolume* 
 	std::erase(m_post_process_volume_nodes, node);
 }
 
-namespace {
-
-void drawOrientedBox(const glm::mat4& transform, const glm::vec3& extents, const glm::vec4& color) {
-	std::array<glm::vec3, 8> corners {};
-	for (size_t i = 0; i < corners.size(); ++i) {
-		const glm::vec3 sign {(i & 1u) != 0 ? 1.0f : -1.0f, (i & 2u) != 0 ? 1.0f : -1.0f, (i & 4u) != 0 ? 1.0f : -1.0f};
-		corners[i] = glm::vec3(transform * glm::vec4(sign * extents, 1.0f));
-	}
-
-	static constexpr std::array<std::pair<int, int>, 12> edges {
-	  {{0, 1}, {1, 3}, {3, 2}, {2, 0}, {4, 5}, {5, 7}, {7, 6}, {6, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7}}
-	};
-	for (const auto& [a, b] : edges) {
-		debug::drawLine(corners[a], corners[b], color);
-	}
-}
-
-}
-
-auto VulkanRenderer::blendPostProcessVolumes(const glm::vec3& camera_position) -> PostProcessSettings {
-	ZoneScoped;
-	PostProcessSettings result = m_post_process_settings;
-
-	auto& volumes = m_tick_post_volumes;
-	{
-		std::scoped_lock lock(m_reflection_probe_mutex);
-		volumes.assign(m_post_process_volume_nodes.begin(), m_post_process_volume_nodes.end());
-	}
-
-	std::erase_if(volumes, [this](const toast::PostProcessVolume* volume) {
-		return volume == nullptr || (m_render_owner_filter != nullptr && volume->owner() != m_render_owner_filter);
-	});
-
-	std::ranges::stable_sort(volumes, {}, [](const toast::PostProcessVolume* volume) { return volume->priority(); });
-
-	for (const auto* volume : volumes) {
-		const float influence = volume->influenceAt(camera_position);
-
-		if (!volume->isGlobal()) {
-			const glm::vec4 color = influence > 0.0f ? glm::vec4(0.4f, 1.0f, 0.6f, 1.0f) : glm::vec4(0.4f, 0.55f, 0.5f, 1.0f);
-			drawOrientedBox(volume->getWorldTransform(), volume->extents(), color);
-		}
-
-		if (influence <= 0.0f) {
-			continue;
-		}
-		blendPostProcess(result, volume->settings(), influence);
-	}
-
-	return result;
-}
-
-void VulkanRenderer::cancelIrradianceBake() {
-	if (m_irradiance_bake_cursor < 0) {
-		return;
-	}
-
-	TOAST_INFO("Render", "Irradiance volume set changed mid-bake; cancelling so bases can be reassigned");
-	m_irradiance_bake_cursor = -1;
-}
-
 void VulkanRenderer::registerLightNodeProxy(toast::Light* node) {
 	if (node == nullptr) {
 		return;
@@ -4380,53 +4467,7 @@ void VulkanRenderer::unregisterCameraNodeProxy(toast::Camera* node) {
 	std::erase(m_camera_proxy_nodes, node);
 }
 
-void VulkanRenderer::stop() {
-	ZoneScoped;
-	const bool was_running = m_running.exchange(false, std::memory_order_acq_rel);
-	if (!was_running) {
-		return;
-	}
-
-	{
-		// Locked so the notify cannot slip between the m_running check and the wait
-		std::lock_guard lock(m_queue_mutex);
-	}
-	m_frame_cv.notify_all();
-
-	if (m_render_thread.joinable()) {
-		m_render_thread.join();
-	}
-
-	while (m_pending_upload_builds.load(std::memory_order_acquire) > 0) {
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
-	}
-
-	if (m_core) {
-		try {
-			m_core->getDevice().waitIdle();
-		} catch (const std::exception& e) {
-			TOAST_ERROR("Render", "Device wait failed during shutdown, tearing down anyway: {}", e.what());
-		}
-	}
-
-	m_gpu_timer.reset();
-
-#ifdef TRACY_ENABLE
-	if (m_tracy_vk_ctx != nullptr) {
-		TracyVkDestroy(m_tracy_vk_ctx);
-		m_tracy_vk_ctx = nullptr;
-	}
-#endif
-}
-
-auto VulkanRenderer::applyResize(vk::Extent2D extent) -> void {
-	if (extent.width == 0 || extent.height == 0) {
-		return;
-	}
-
-	m_pending_resize_packed.store(packExtent(extent), std::memory_order_release);
-	m_frame_cv.notify_one();
-}
+#pragma endregion
 
 auto VulkanRenderer::applyResizeInternal(vk::Extent2D extent) -> void {
 	ZoneScoped;
@@ -4470,31 +4511,6 @@ void VulkanRenderer::addRenderPass(std::unique_ptr<IRenderPass> pass) {
 void VulkanRenderer::addPostProcessPass(std::unique_ptr<IPostProcessPass> pass) {
 	std::lock_guard lock(m_pass_mutex);
 	m_post_process_passes.push_back(std::move(pass));
-}
-
-auto VulkanRenderer::setPostProcessPassEnabled(std::string_view name, bool enabled) -> bool {
-	std::lock_guard lock(m_pass_mutex);
-	for (auto& pass : m_post_process_passes) {
-		if (pass->name() == name) {
-			pass->setEnabled(enabled);
-			return true;
-		}
-	}
-	return false;
-}
-
-auto VulkanRenderer::isPostProcessPassEnabled(std::string_view name) const -> bool {
-	std::lock_guard lock(m_pass_mutex);
-	for (const auto& pass : m_post_process_passes) {
-		if (pass->name() == name) {
-			return pass->isEnabled();
-		}
-	}
-	return false;
-}
-
-void VulkanRenderer::addComputePass(std::unique_ptr<IComputePass> pass) {
-	m_compute_passes.push_back(std::move(pass));
 }
 
 void VulkanRenderer::queueResourceUpload(std::unique_ptr<PendingResourceUpload> upload_job) {
@@ -4637,16 +4653,6 @@ void VulkanRenderer::flushResourceUploads() {
 	m_pending_uploads.push(std::move(batch));
 }
 
-void VulkanRenderer::setActiveCamera(toast::Camera* camera) {
-	m_camera = camera;
-}
-
-void VulkanRenderer::forgetCamera(const toast::Camera* camera) {
-	if (m_camera == camera) {
-		m_camera = nullptr;
-	}
-}
-
 // DEBUG SHI
 
 void VulkanRenderer::registerDebugDraw(toast::Node3D* node, void (*draw)(toast::Node3D&)) {
@@ -4659,27 +4665,6 @@ void VulkanRenderer::registerDebugDraw(toast::Node3D* node, void (*draw)(toast::
 void VulkanRenderer::unregisterDebugDraw(toast::Node3D* node) {
 	std::scoped_lock lock(m_mesh_proxy_mutex);
 	std::erase_if(m_debug_nodes, [node](const auto& entry) { return entry.first == node; });
-}
-
-void VulkanRenderer::beginDebugLineCollection(RenderFrame& frame) {
-	std::scoped_lock lock(m_debug_line_mutex);
-	frame.debug_line_vertices.insert(
-	    frame.debug_line_vertices.end(), m_pending_debug_line_vertices.begin(), m_pending_debug_line_vertices.end()
-	);
-	m_pending_debug_line_vertices.clear();
-	m_collecting_debug_lines = true;
-}
-
-void VulkanRenderer::endDebugLineCollection() {
-	std::scoped_lock lock(m_debug_line_mutex);
-	m_collecting_debug_lines = false;
-}
-
-void VulkanRenderer::queueDebugLine(glm::vec3 a, glm::vec3 b, glm::vec4 color) {
-	std::scoped_lock lock(m_debug_line_mutex);
-	auto& vertices = m_collecting_debug_lines ? beginFrameBuild().debug_line_vertices : m_pending_debug_line_vertices;
-	vertices.push_back({a, color});
-	vertices.push_back({b, color});
 }
 
 }

@@ -90,46 +90,53 @@ struct RayHit
     uint brickSteps;
 };
 
-uint gridEntry(VolumeRecord record, uint3 brick)
+uint gridEntry(uint volume, uint3 brick)
 {
-    return gVolumeGrids[record.gridOffset + brick.x + brick.y * record.brickDimsX + brick.z * record.brickDimsX * record.brickDimsY];
+    const uint dimsX = gVolumeRecords[volume].brickDimsX;
+    const uint dimsY = gVolumeRecords[volume].brickDimsY;
+    return gVolumeGrids[gVolumeRecords[volume].gridOffset + brick.x + brick.y * dimsX + brick.z * (dimsX * dimsY)];
 }
 
-bool coarseSolid(VolumeRecord record, int3 cell)
+bool coarseSolid(uint volume, int3 cell)
 {
-    if (any(cell < 0) || cell.x >= int(record.coarseDimsX) || cell.y >= int(record.coarseDimsY) || cell.z >= int(record.coarseDimsZ))
-    {
-        return false;
-    }
-    const uint index = uint(cell.x) + uint(cell.y) * record.coarseDimsX + uint(cell.z) * record.coarseDimsX * record.coarseDimsY;
-    return ((gVolumeCoarse[record.coarseOffset + index / 32] >> (index % 32)) & 1u) != 0;
+    const uint dimsX = gVolumeRecords[volume].coarseDimsX;
+    const uint dimsY = gVolumeRecords[volume].coarseDimsY;
+    const uint dimsZ = gVolumeRecords[volume].coarseDimsZ;
+    if (any(uint3(cell) >= uint3(dimsX, dimsY, dimsZ))) return false;
+    
+    const uint index = uint(cell.x) + uint(cell.y) * dimsX + uint(cell.z) * (dimsX * dimsY);
+    return ((gVolumeCoarse[gVolumeRecords[volume].coarseOffset + (index >> 5)] >> (index & 31u)) & 1u) != 0;
 }
 
-/// The 64 bits of slice z are two words low half first
 bool pooledSolid(uint slot, uint3 local)
 {
-    const uint bit = local.y * kBrickDim + local.x;
-    const uint word = gBrickOccupancy[slot * kOccupancyWordsPerBrick + local.z * 2 + bit / 32];
-    return ((word >> (bit % 32)) & 1u) != 0;
+    // wordIdx decouples from local.x, bitIdx decouples from local.z
+    const uint wordIdx = (slot << 4) + (local.z << 1) + (local.y >> 2);
+    const uint bitIdx = ((local.y & 3u) << 3) | local.x;
+    return ((gBrickOccupancy[wordIdx] >> bitIdx) & 1u) != 0;
 }
 
-/// 512 bytes packed four to a word little endian
 uint pooledMaterial(uint slot, uint3 local)
 {
-    const uint index = local.x + local.y * kBrickDim + local.z * kBrickDim * kBrickDim;
-    const uint word = gBrickMaterials[slot * kMaterialWordsPerBrick + index / 4];
-    return (word >> (8 * (index % 4))) & 0xFFu;
+    const uint index = (local.z << 6) | (local.y << 3) | local.x;
+    const uint word = gBrickMaterials[(slot << 7) + (index >> 2)];
+    return (word >> ((index & 3u) << 3)) & 0xFFu;
 }
 
 /// Get the palette ID for a voxel
-uint voxelMaterialAt(VolumeRecord record, int3 voxel)
+uint voxelMaterialAt(uint volume, int3 voxel)
 {
-    if (any(voxel < 0) || voxel.x >= int(record.brickDimsX * kBrickDim) || voxel.y >= int(record.brickDimsY * kBrickDim) ||
-        voxel.z >= int(record.brickDimsZ * kBrickDim))
+    const uint dimsX = gVolumeRecords[volume].brickDimsX;
+    const uint dimsY = gVolumeRecords[volume].brickDimsY;
+    const uint dimsZ = gVolumeRecords[volume].brickDimsZ;
+
+    if (any(voxel < 0) || voxel.x >= int(dimsX * kBrickDim) || voxel.y >= int(dimsY * kBrickDim) || voxel.z >= int(dimsZ * kBrickDim))
     {
         return 0u;
     }
-    const uint entry = gridEntry(record, uint3(voxel) / kBrickDim);
+    
+    // Shifts/masks instead of modulo arithmetic
+    const uint entry = gridEntry(volume, uint3(voxel) >> 3);
     const uint tag = entry & 3u;
     if (tag == kTagEmpty)
     {
@@ -139,7 +146,7 @@ uint voxelMaterialAt(VolumeRecord record, int3 voxel)
     {
         return entry >> 2;
     }
-    return pooledMaterial(entry >> 2, uint3(voxel) % kBrickDim);
+    return pooledMaterial(entry >> 2, uint3(voxel) & 7u);
 }
 
 float marchTieSlack(float t)
@@ -149,32 +156,25 @@ float marchTieSlack(float t)
 
 void leaveCell(float3 origin, float3 inverse, float3 stepSign, int3 cellMin, int size, inout float t, inout int axis, inout uint crossed)
 {
-    float3 planeTimes = float3(kFloatMax, kFloatMax, kFloatMax);
-    float next = kFloatMax;
-    int nextAxis = axis;
-    for (int a = 0; a < 3; ++a)
-    {
-        if (stepSign[a] == 0.0)
-        {
-            continue;
-        }
-        const float plane = float(stepSign[a] > 0.0 ? cellMin[a] + size : cellMin[a]);
-        planeTimes[a] = (plane - origin[a]) * inverse[a];
-        if (planeTimes[a] < next)
-        {
-            next = planeTimes[a];
-            nextAxis = a;
-        }
-    }
-
-    crossed = 0;
-    for (int a = 0; a < 3; ++a)
-    {
-        if (planeTimes[a] <= next + marchTieSlack(next))
-        {
-            crossed |= 1u << uint(a);
-        }
-    }
+    // Explicit scalarization ensures Slang does not reduce vector ternaries into single booleans
+    float3 plane;
+    plane.x = float(cellMin.x) + (stepSign.x > 0.0 ? float(size) : 0.0);
+    plane.y = float(cellMin.y) + (stepSign.y > 0.0 ? float(size) : 0.0);
+    plane.z = float(cellMin.z) + (stepSign.z > 0.0 ? float(size) : 0.0);
+    
+    float3 planeTimes;
+    planeTimes.x = stepSign.x != 0.0 ? (plane.x - origin.x) * inverse.x : kFloatMax;
+    planeTimes.y = stepSign.y != 0.0 ? (plane.y - origin.y) * inverse.y : kFloatMax;
+    planeTimes.z = stepSign.z != 0.0 ? (plane.z - origin.z) * inverse.z : kFloatMax;
+    
+    float next = min(min(planeTimes.x, planeTimes.y), planeTimes.z);
+    int nextAxis = planeTimes.x == next ? 0 : (planeTimes.y == next ? 1 : 2);
+    
+    float slackNext = next + marchTieSlack(next);
+    crossed = (uint(planeTimes.x <= slackNext)) 
+            | (uint(planeTimes.y <= slackNext) << 1) 
+            | (uint(planeTimes.z <= slackNext) << 2);
+    
     t = max(next, t);
     axis = nextAxis;
 }
@@ -192,9 +192,11 @@ RayHit marchRay(uint volume, float3 origin, float3 direction, float tMin, float 
     result.coarseSteps = 0;
     result.brickSteps = 0;
 
-    const VolumeRecord record = gVolumeRecords[volume];
-    const uint3 brickDims = uint3(record.brickDimsX, record.brickDimsY, record.brickDimsZ);
-    const int3 dims = int3(brickDims) * int(kBrickDim);
+    // Read ONLY the extents to avoid keeping a full struct alive
+    const uint dimsX = gVolumeRecords[volume].brickDimsX;
+    const uint dimsY = gVolumeRecords[volume].brickDimsY;
+    const uint dimsZ = gVolumeRecords[volume].brickDimsZ;
+    const int3 dims = int3(dimsX, dimsY, dimsZ) * int(kBrickDim);
 
     float tExit = kFloatMax;
     float3 entryTimes = float3(-kFloatMax, -kFloatMax, -kFloatMax);
@@ -258,45 +260,37 @@ RayHit marchRay(uint volume, float3 origin, float3 direction, float tMin, float 
     for (uint step = 0; step < kMaxMarchSteps; ++step)
     {
         result.steps = step + 1;
-        if (t > tExit)
-        {
-            return result;
-        }
+        if (t > tExit) return result;
 
         const float3 position = origin + direction * t;
+        
+        // Unrolled scalar assignment completely bypasses vector register allocation
         int3 voxel = int3(floor(position));
-        for (int a = 0; a < 3; ++a)
-        {
-            if ((crossed & (1u << uint(a))) != 0)
-            {
-                const int plane = int(round(position[a]));
-                voxel[a] = stepSign[a] > 0.0 ? plane : plane - 1;
-            }
-        }
-        if (any(voxel < 0) || any(voxel >= dims))
-        {
-            return result;
-        }
+        if ((crossed & 1u) != 0) voxel.x = int(round(position.x)) - (stepSign.x < 0.0 ? 1 : 0);
+        if ((crossed & 2u) != 0) voxel.y = int(round(position.y)) - (stepSign.y < 0.0 ? 1 : 0);
+        if ((crossed & 4u) != 0) voxel.z = int(round(position.z)) - (stepSign.z < 0.0 ? 1 : 0);
 
-        const int3 coarse = voxel / kCoarseVoxels;
-        if (!coarseSolid(record, coarse))
+        if (any(uint3(voxel) >= uint3(dims))) return result;
+
+        const int3 coarse = voxel >> 5; 
+        if (!coarseSolid(volume, coarse))
         {
             ++result.coarseSteps;
-            leaveCell(origin, inverse, stepSign, coarse * kCoarseVoxels, kCoarseVoxels, t, axis, crossed);
+            leaveCell(origin, inverse, stepSign, coarse << 5, kCoarseVoxels, t, axis, crossed);
             continue;
         }
 
-        const int3 brick = voxel / int(kBrickDim);
-        const uint entry = gridEntry(record, uint3(brick));
+        const int3 brick = voxel >> 3;
+        const uint entry = gridEntry(volume, uint3(brick));
         const uint tag = entry & 3u;
-
+    
         if (tag == kTagEmpty)
         {
             ++result.brickSteps;
-            leaveCell(origin, inverse, stepSign, brick * int(kBrickDim), int(kBrickDim), t, axis, crossed);
+            leaveCell(origin, inverse, stepSign, brick << 3, int(kBrickDim), t, axis, crossed);
             continue;
         }
-
+    
         if (tag == kTagUniform)
         {
             result.hit = true;
@@ -306,9 +300,10 @@ RayHit marchRay(uint volume, float3 origin, float3 direction, float tMin, float 
             result.material = entry >> 2;
             return result;
         }
-
+    
         const uint slot = entry >> 2;
-        const uint3 local = uint3(voxel - brick * int(kBrickDim));
+        const uint3 local = uint3(voxel & 7u); 
+        
         if (pooledSolid(slot, local))
         {
             result.hit = true;
@@ -318,7 +313,7 @@ RayHit marchRay(uint volume, float3 origin, float3 direction, float tMin, float 
             result.material = pooledMaterial(slot, local);
             return result;
         }
-
+    
         leaveCell(origin, inverse, stepSign, voxel, 1, t, axis, crossed);
     }
 
@@ -347,9 +342,12 @@ float3 srgbToLinear(float3 value)
 }
 
 /// Word 0 bytes albedo rgb roughness and word 1 bytes metallic reflectivity emissive material
-PaletteSample samplePalette(VolumeRecord record, uint index)
+PaletteSample samplePalette(uint volume, uint index)
 {
-    const uint base = (record.paletteOffset + index) * 4;
+    const uint paletteOffset = gVolumeRecords[volume].paletteOffset;
+    const float maxEmissive = gVolumeRecords[volume].maxEmissive;
+    
+    const uint base = (paletteOffset + index) * 4;
     const uint word0 = gPalettes[base];
     const uint word1 = gPalettes[base + 1];
     const uint word2 = gPalettes[base + 2];
@@ -359,7 +357,7 @@ PaletteSample samplePalette(VolumeRecord record, uint index)
     sample.roughness = float((word0 >> 24) & 0xFFu) / 255.0;
     sample.metallic = float(word1 & 0xFFu) / 255.0;
     sample.reflectivity = float((word1 >> 8) & 0xFFu) / 255.0;
-    sample.emissive = float((word1 >> 16) & 0xFFu) / 255.0 * record.maxEmissive;
+    sample.emissive = float((word1 >> 16) & 0xFFu) / 255.0 * maxEmissive;
     sample.material = word1 >> 24;
     sample.alpha = float((word2 >> 16) & 0xFFu) / 255.0;
     return sample;

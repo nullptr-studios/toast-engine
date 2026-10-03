@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "DebugDraw.hpp"
 #include "compute_pass_base.hpp"
+#include "debug_draw.hpp"
 #include "gpu_timer.hpp"
 #include "output_target_base.hpp"
 #include "post_process_pass_base.hpp"
@@ -210,7 +210,6 @@ public:
 		glm::vec4 traced_shadow_params {0.0f};
 	};
 
-	// Verify offsets with slangc -target spirv-assembly | grep OpMemberDecorate
 	static_assert(
 	    offsetof(FrameUBO, jittered_view_projection) == 208,
 	    "FrameUBO::jittered_view_projection must match lighting.slang and depth_prepass.slang"
@@ -312,26 +311,6 @@ public:
 	struct UIWorldPanelProxy {
 		vk::ImageView view = nullptr;
 		glm::mat4 model = glm::mat4(1.0f);
-	};
-
-	struct DebugVertex {
-		glm::vec<3, float, glm::packed_highp> position;
-		glm::vec<4, float, glm::packed_highp> color;
-	};
-
-	static_assert(std::is_standard_layout_v<DebugVertex>, "DebugVertex must be standard layout");
-
-	struct DebugBillboard {
-		glm::vec3 position {0.0f};
-		float size = 1.0f;
-		glm::vec4 tint {1.0f};
-		assets::Handle<assets::Texture> texture;
-	};
-
-	struct DebugMesh {
-		glm::mat4 model {1.0f};
-		glm::vec4 tint {1.0f};
-		assets::Handle<assets::Mesh> mesh;
 	};
 
 	struct SizeHandleDraw {
@@ -452,11 +431,11 @@ public:
 
 		uint32_t capture_extent = 0;
 
-		std::vector<DebugVertex> debug_line_vertices;    // pairs form line segments
-		std::vector<DebugVertex> debug_triangle_vertices;
+		std::vector<debug::Vertex> debug_line_vertices;    // pairs form line segments
+		std::vector<debug::Vertex> debug_triangle_vertices;
 		std::vector<glm::mat4> debug_gizmo_instances;
-		std::vector<DebugBillboard> debug_billboards;
-		std::vector<DebugMesh> debug_meshes;
+		std::vector<debug::Billboard> debug_billboards;
+		std::vector<debug::Mesh> debug_meshes;
 
 		TransformGizmoDraw transform_gizmo;
 
@@ -1242,7 +1221,7 @@ private:
 
 	std::atomic_bool m_debug_draw_enabled {false};
 	std::mutex m_debug_line_mutex;    // what in the actual fuck is this vro
-	std::vector<DebugVertex> m_pending_debug_line_vertices;
+	std::vector<debug::Vertex> m_pending_debug_line_vertices;
 	bool m_collecting_debug_lines = false;
 
 	void beginDebugLineCollection(RenderFrame& frame);
