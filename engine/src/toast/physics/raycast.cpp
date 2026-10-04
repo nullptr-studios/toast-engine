@@ -241,10 +241,12 @@ auto raycastVoxel(const VoxelShape& shape, glm::vec3 pos, glm::vec3 dir) -> std:
 	const glm::vec3 initial_point = pos + dir * t;
 	glm::ivec3 voxel_coord = glm::ivec3(glm::floor(initial_point / voxel::k_voxel_size));
 
-	// If starting exactly on the maximum edge, select the voxel just inside the volume
+	// If starting exactly on an edge, select the voxel just inside the volume
 	for (int axis = 0; axis < 3; ++axis) {
 		if (voxel_coord[axis] == voxel_dims[axis] && dir[axis] < 0.0f) {
 			voxel_coord[axis] = voxel_dims[axis] - 1;
+		} else if (voxel_coord[axis] == -1 && dir[axis] > 0.0f) {
+			voxel_coord[axis] = 0;
 		}
 	}
 
