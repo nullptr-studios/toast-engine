@@ -21,6 +21,7 @@
 				<ResourceInclude Source="avares://editor/Resources/ArrayBox.axaml" />
 				<ResourceInclude Source="avares://editor/Resources/EnumBox.axaml" />
 			</ResourceDictionary.MergedDictionaries>
+			<conv:PathToBitmapConverter x:Key="PathToBitmapConverter" />
 			<conv:SeverityToColorConverter x:Key="SeverityToColorConverter" />
 			<conv:SeverityBarColorConverter x:Key="SeverityBarColorConverter" />
 			<conv:SeverityRowGradientConverter x:Key="SeverityRowGradientConverter" />
