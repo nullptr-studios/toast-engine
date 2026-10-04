@@ -15,8 +15,9 @@ function Signal:clear() end
 
 function Signal:fire() end
 
+---@param ... string
 ---@return Signal
-function Signal:create() end
+function Signal:create(...) end
 
 ---@class Signal0
 local Signal0 = {}

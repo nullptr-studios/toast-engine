@@ -164,6 +164,8 @@ public:
 	auto luaSignals() const -> std::vector<std::string>;
 	[[nodiscard]]
 	auto luaSignalConnections(std::string_view name) const -> std::vector<signals::ConnectionInfo>;
+	[[nodiscard]]
+	auto luaSignalArgTypes(std::string_view name) const -> std::vector<std::string>;
 	auto connectLuaSignal(std::string_view name, toast::Node& target, std::string_view function, bool forwards_args) -> bool;
 	auto disconnectLuaSignal(std::string_view name, toast::Node& target, std::string_view function) -> bool;
 	void clearLuaSignal(std::string_view name);

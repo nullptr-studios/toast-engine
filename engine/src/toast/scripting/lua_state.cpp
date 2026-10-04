@@ -271,7 +271,9 @@ LuaState::LuaState() : m_pool_size(1 + toast::ThreadPool::workerCount()), m_entr
 		luaL_openlibs(entry.state);
 
 		lua_atpanic(entry.state, [](auto* state) -> int {
-			TOAST_ERROR("Lua", "Panic: {}", lua_tostring(state, -1));
+			const char* message = lua_tostring(state, -1);
+			luaL_traceback(state, state, message ? message : "(non-string error)", 0);
+			TOAST_ERROR("Lua", "Panic: {}\n{}", message ? message : "(non-string error)", lua_tostring(state, -1));
 			return 0;
 		});
 
@@ -837,12 +839,34 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	        }
 	    )
 	    .addFunction("clear", [](LuaSignal& signal) { signal.clear(signals::ConnectionSource::lua); })
-	    .addFunction("fire", &LuaSignal::fire)
+	    .addFunction(
+	        "fire",
+	        +[](LuaSignal& signal, lua_State* state) {
+		        signals::DynamicArgs args;
+		        const int top = lua_gettop(state);
+		        for (int i = 2; i <= top; ++i) {
+			        args.values.push_back(luaRefValueToAny(state, luabridge::LuaRef::fromStack(state, i)));
+		        }
+		        signal.fire(std::move(args));
+	        }
+	    )
 	    .endClass()
 
 	    .beginNamespace("Signal")
 	    .addFunction(
-	        "create", +[](const luabridge::LuaRef&) { return LuaSignal {}; }
+	        "create",
+	        +[](lua_State* state) {
+		        LuaSignal signal;
+		        std::vector<std::string> types;
+		        const int top = lua_gettop(state);
+		        for (int i = 1; i <= top; ++i) {
+			        if (lua_type(state, i) == LUA_TSTRING) {
+				        types.emplace_back(lua_tostring(state, i));
+			        }
+		        }
+		        signal.argTypes(std::move(types));
+		        return signal;
+	        }
 	    )
 	    .endNamespace()
 

@@ -147,7 +147,7 @@ public partial class SignalsViewModel : Tool, IDisposable {
 				Cards.Insert(0, card);
 			}
 			if (!card.Signals.Any(item => item.Name == entry.Signal))
-				card.Signals.Add(new SignalItemViewModel(this, state.Node, "Lua", new Engine.SignalInfo(entry.Signal, "Signal0", [], default)));
+				card.Signals.Add(new SignalItemViewModel(this, state.Node, "Lua", new Engine.SignalInfo(entry.Signal, $"Signal{entry.Arguments.Count}", entry.Arguments.ToArray(), default)));
 		}
 		foreach (var signal in Cards.SelectMany(card => card.Signals)) signal.Connections.Clear();
 		foreach (var entry in state.Signals) {

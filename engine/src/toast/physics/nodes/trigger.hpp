@@ -34,6 +34,9 @@ public:
 	[[Reflect]]
 	auto empty() const -> bool;
 
+	[[Reflect]]
+	void enableCollider(bool value);
+
 	/// Color of the collider while something is inside
 	[[Reflect, Color]]
 	glm::vec4 debug_color = glm::vec4(0.0f, 1.0f, 0.251f, 0.5f);
