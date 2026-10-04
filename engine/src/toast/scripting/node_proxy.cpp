@@ -23,6 +23,7 @@
 #include <toast/reflect/reflect_node.hpp>
 #include <toast/voxel/voxel_edit.hpp>
 #include <toast/world/node.hpp>
+#include <toast/world/node_3d.hpp>
 #include <utility>
 
 namespace scripting {
@@ -358,6 +359,12 @@ auto anyReturnToLuaRef(lua_State* l, const std::any& val, std::string_view retur
 			return {l};
 		}
 		return {l, NodeProxy(*v)};
+	}
+	if (const auto* v = std::any_cast<toast::Box<toast::Node3D>>(&val)) {
+		if (!v->exists()) {
+			return {l};
+		}
+		return {l, NodeProxy(toast::Box<toast::Node>(*v))};
 	}
 	if (const auto* v = std::any_cast<AssetProxy>(&val)) {
 		return {l, *v};

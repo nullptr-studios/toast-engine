@@ -23,6 +23,8 @@
 #include <glm/vec4.hpp>
 #include <lua.hpp>
 #include <luabridge3/LuaBridge/LuaBridge.h>
+#include <memory>
+#include <optional>
 #include <toast/assets/asset_registry.hpp>
 #include <toast/assets/assets.hpp>
 #include <toast/assets/data_schema_codegen.hpp>
@@ -202,6 +204,24 @@ auto LuaState::lock(size_t index) noexcept -> Lock {
 	return {std::move(guard), entry.state, index};
 }
 
+auto LuaState::indexOf(lua_State* state) noexcept -> std::optional<size_t> {
+	if (!LuaState::exists()) {
+		return std::nullopt;
+	}
+	// the pool is keyed by the main thread of each interpreter
+	lua_rawgeti(state, LUA_REGISTRYINDEX, LUA_RIDX_MAINTHREAD);
+	lua_State* main_thread = lua_tothread(state, -1);
+	lua_pop(state, 1);
+
+	const auto& entries = LuaState::get().m_entries;
+	for (size_t i = 0; i < entries.size(); ++i) {
+		if (entries[i].state == main_thread) {
+			return i;
+		}
+	}
+	return std::nullopt;
+}
+
 auto LuaState::tryLock(size_t index) noexcept -> Lock {
 	Entry& entry = m_entries[index];
 	std::unique_lock<std::recursive_timed_mutex> guard(entry.mutex, std::try_to_lock);
@@ -288,12 +308,33 @@ void LuaState::registerApi(lua_State* state) noexcept {
 			        luaL_error(state, "defer expects a function as its argument");
 			        return;
 		        }
-		        toast::defer([fn]() mutable {
-			        if (fn.isFunction()) {
-				        try {
-					        fn();
-				        } catch (const std::exception& e) { TOAST_ERROR("Lua", "Error inside deferred Lua function: {}", e.what()); }
+
+		        const std::optional<size_t> index = LuaState::indexOf(state);
+		        auto owned = std::shared_ptr<luabridge::LuaRef>(new luabridge::LuaRef(fn), [index](luabridge::LuaRef* ref) {
+			        if (!index.has_value() || !LuaState::exists()) {
+				        delete ref;
+				        return;
 			        }
+			        if (auto guard = LuaState::get().lock(*index)) {
+				        delete ref;
+			        }
+			        // leaking one registry slot beats corrupting the interpreter
+		        });
+
+		        toast::defer([owned, index]() {
+			        if (!owned->isFunction()) {
+				        return;
+			        }
+			        LuaState::Lock guard;
+			        if (index.has_value()) {
+				        guard = LuaState::get().lock(*index);
+				        if (!guard) {
+					        return;
+				        }
+			        }
+			        try {
+				        (*owned)();
+			        } catch (const std::exception& e) { TOAST_ERROR("Lua", "Error inside deferred Lua function: {}", e.what()); }
 		        });
 	        }
 	    )

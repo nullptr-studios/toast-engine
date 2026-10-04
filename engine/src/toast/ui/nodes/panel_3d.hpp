@@ -45,6 +45,11 @@ public:
 	}
 
 	[[nodiscard]]
+	auto alwaysOnTop() const noexcept -> bool {
+		return m_always_on_top;
+	}
+
+	[[nodiscard]]
 	auto pixelSize() const -> glm::ivec2;
 
 	[[nodiscard]]
@@ -86,6 +91,9 @@ private:
 	[[Reflect]]
 	float m_pixels_per_meter = 512.0f;
 	// TODO: We should probably calculate this depending on the distance to the object
+
+	[[Reflect]]
+	bool m_always_on_top = false;
 
 	Rml::Context* m_context = nullptr;
 	Rml::ElementDocument* m_document = nullptr;

@@ -312,6 +312,7 @@ public:
 	struct UIWorldPanelProxy {
 		vk::ImageView view = nullptr;
 		glm::mat4 model = glm::mat4(1.0f);
+		bool always_on_top = false;
 	};
 
 	struct DebugVertex {

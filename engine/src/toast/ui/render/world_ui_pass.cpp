@@ -11,8 +11,11 @@
 
 namespace ui {
 
-WorldUIPass::WorldUIPass(const renderer::VulkanCore& core, vk::Format color_format, vk::Format depth_format, vk::Extent2D extent)
-    : m_core(&core) {
+WorldUIPass::WorldUIPass(
+    const renderer::VulkanCore& core, vk::Format color_format, vk::Format depth_format, vk::Extent2D extent, Layer layer
+)
+    : m_core(&core),
+      m_layer(layer) {
 	ZoneScoped;
 	const auto uid = assets::resolveURI("core://shaders/ui_world.slang");
 	const auto shader = uid.has_value() ? renderer::ShaderCache::get().acquire(*uid) : nullptr;
@@ -25,17 +28,20 @@ WorldUIPass::WorldUIPass(const renderer::VulkanCore& core, vk::Format color_form
 
 	renderer::VulkanPipeline::Config config;
 	config.pipeline_type = renderer::VulkanPipeline::PipelineType::graphics;
-	config.debug_name = "WorldUIPass";
+	const bool overlay = m_layer == Layer::overlay;
+	config.debug_name = overlay ? "WorldUIPassOverlay" : "WorldUIPass";
 	config.color_format = color_format;
 	config.depth_format = depth_format;
-	config.extra_color_formats = renderer::worldStageExtraColorFormats();
+	if (!overlay) {
+		config.extra_color_formats = renderer::worldStageExtraColorFormats();
+	}
 	config.extent = extent;
 	config.shader_spirv = shader->spirv;
 	config.pipeline_layout = *m_shader_layout.getPipelineLayout();
 	config.topology = vk::PrimitiveTopology::eTriangleList;
 	config.cull_mode = vk::CullModeFlagBits::eNone;
-	config.depth_test = true;
-	config.depth_write = true;
+	config.depth_test = !overlay;
+	config.depth_write = !overlay;
 	config.blend_preset = renderer::VulkanPipeline::BlendPreset::premultiplied;
 	m_pipeline.rebuild(core, config);
 
@@ -92,8 +98,10 @@ void WorldUIPass::recordPre(vk::CommandBuffer cmd, uint32_t frame_index, uint32_
 	const auto& device = m_core->getDevice();
 	const vk::DescriptorSetLayout texture_layout = *m_shader_layout.getDescriptorSetLayouts()[1];
 
+	const bool overlay = m_layer == Layer::overlay;
+
 	for (const auto& panel : frame->ui_world_panels) {
-		if (!panel.view) {
+		if (!panel.view || panel.always_on_top != overlay) {
 			continue;
 		}
 
@@ -129,6 +137,8 @@ void WorldUIPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t i
 	auto& sets = m_panel_sets[frame_index % m_panel_sets.size()];
 	const vk::PipelineLayout layout = *m_shader_layout.getPipelineLayout();
 
+	const bool overlay = m_layer == Layer::overlay;
+
 	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_pipeline.getPipeline());
 	cmd.bindDescriptorSets(
 	    vk::PipelineBindPoint::eGraphics, layout, 0, *m_frame_camera_sets[frame_index % m_frame_camera_sets.size()], nullptr
@@ -136,7 +146,7 @@ void WorldUIPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t i
 
 	uint32_t draw_index = 0;
 	for (const auto& panel : frame->ui_world_panels) {
-		if (!panel.view) {
+		if (!panel.view || panel.always_on_top != overlay) {
 			continue;
 		}
 
