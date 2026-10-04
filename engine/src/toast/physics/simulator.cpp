@@ -3107,6 +3107,10 @@ auto Simulator::tryGetVoxelData(VoxelDataID data) -> VoxelShapeData* {
 	return instance->valid(data) ? &*(instance->m_voxel_shapes)[data.slot].data : nullptr;
 }
 
+auto Simulator::tryGetVoxelDataConst(VoxelDataID data) -> const VoxelShapeData* {
+	return instance->valid(data) ? &*(instance->m_voxel_shapes)[data.slot].data : nullptr;
+}
+
 void Simulator::destroyVoxelData(VoxelDataID data) {
 	if (not mainThreadMutationAllowed()) {
 		return;

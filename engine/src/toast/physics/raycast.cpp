@@ -21,9 +21,9 @@ struct LocalHit {
 
 /// @brief Raycast To Sphere
 auto raycastSphere(const SphereShape& obj, glm::vec3 pos, glm::vec3 dir) -> std::optional<LocalHit> {
-	ZoneScoped
-	    // Solve the ray/sphere intersection in local space.
-	    float b = glm::dot(pos, dir);
+	ZoneScoped;
+	// Solve the ray/sphere intersection in local space.
+	float b = glm::dot(pos, dir);
 	float c = dot(pos, pos) - (obj.radius * obj.radius);
 	float h = (b * b) - c;
 
@@ -54,9 +54,9 @@ auto raycastSphere(const SphereShape& obj, glm::vec3 pos, glm::vec3 dir) -> std:
 
 /// @brief Raycast to AABB
 auto raycastBox(const BoxShape& obj, glm::vec3 pos, glm::vec3 dir) -> std::optional<LocalHit> {
-	ZoneScoped
-	    // Calculate Half Extents
-	    glm::vec3 half_extents = obj.size * 0.5f;
+	ZoneScoped;
+	// Calculate Half Extents
+	glm::vec3 half_extents = obj.size * 0.5f;
 
 	// values for the entry and exit intersection of the ray (dir * t)
 	float entry = -std::numeric_limits<float>::infinity();
@@ -119,7 +119,8 @@ auto raycastBox(const BoxShape& obj, glm::vec3 pos, glm::vec3 dir) -> std::optio
 
 /// @brief Raycast to Sphere
 auto raycastCapsule(const CapsuleShape& obj, glm::vec3 pos, glm::vec3 dir) -> std::optional<LocalHit> {
-	ZoneScoped float shaft_half_length = (obj.height * 0.5f) - obj.radius;
+	ZoneScoped;
+	float shaft_half_length = (obj.height * 0.5f) - obj.radius;
 
 	// A short capsule is a sphere
 	if (shaft_half_length <= 1.0e-6f) {
@@ -190,7 +191,8 @@ auto raycastCapsule(const CapsuleShape& obj, glm::vec3 pos, glm::vec3 dir) -> st
 
 /// @brief Raycast to Voxel
 auto raycastVoxel(const VoxelShape& shape, glm::vec3 pos, glm::vec3 dir, float max_distance) -> std::optional<LocalHit> {
-	ZoneScoped VoxelShapeData* shape_data = Simulator::tryGetVoxelData(shape.data);
+	ZoneScoped;
+	const VoxelShapeData* shape_data = Simulator::tryGetVoxelDataConst(shape.data);
 	if (shape_data == nullptr || shape_data->volume == nullptr) {
 		return std::nullopt;
 	}
@@ -314,7 +316,8 @@ auto raycast(glm::vec3 pos, glm::vec3 dir, float max_distance, int max_targets) 
 }
 
 auto Simulator::raycast(glm::vec3 pos, glm::vec3 dir, float max_distance, int max_targets) -> std::vector<RayHit> {
-	ZoneScoped if (instance == nullptr) {
+	ZoneScoped;
+	if (instance == nullptr) {
 		return {};
 	}
 	if (!std::isfinite(max_distance) || (max_distance < 0.0f && max_distance != -1.0f) || max_targets < -1 || max_targets == 0) {
