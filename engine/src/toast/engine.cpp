@@ -538,6 +538,10 @@ void Engine::createSDLWindow(const char* w_name) {
 	m->renderer->addPostProcessPass(std::make_unique<renderer::TonemapPass>(*m->vulkan_core, color_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::FxaaPass>(*m->vulkan_core, color_format, extent));
 
+	// always_on_top world panels, after the tonemap and under the screen-space UI
+	m->renderer->addRenderPass(
+	    std::make_unique<ui::WorldUIPass>(*m->vulkan_core, color_format, depth_format, extent, ui::WorldUIPass::Layer::overlay)
+	);
 	m->renderer->addRenderPass(std::make_unique<ui::UIPass>(*m->vulkan_core, color_format, depth_format, extent));
 	if (m->ui_system) {
 		m->ui_system->initializeRenderer(*m->vulkan_core);
@@ -631,6 +635,9 @@ void Engine::createAvaloniaWindow() {
 
 	// DebugPass is enabled on editor
 	m->renderer->setDebugDrawEnabled(true);
+	m->renderer->addRenderPass(
+	    std::make_unique<ui::WorldUIPass>(*m->vulkan_core, color_format, depth_format, extent, ui::WorldUIPass::Layer::overlay)
+	);
 	m->renderer->addRenderPass(std::make_unique<ui::UIPass>(*m->vulkan_core, color_format, depth_format, extent));
 	if (m->ui_system) {
 		m->ui_system->initializeRenderer(*m->vulkan_core);

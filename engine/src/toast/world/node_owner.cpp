@@ -608,6 +608,27 @@ auto INodeOwner::buildTree(std::vector<Box<Node>>&& nodes, const assets::Handle<
 		for (const auto& signal_data : data.signals) {
 			const SignalInfo* signal = info->getSignal(signal_data.name);
 			if (!signal || !signal->connect) {
+				auto* runtime = node->scriptRuntime();
+				if (runtime) {
+					const auto lua_names = runtime->luaSignals();
+					if (std::ranges::find(lua_names, signal_data.name) != lua_names.end()) {
+						for (const auto& connection : signal_data.connections) {
+							auto target = uid_map.find(connection.target.data());
+							if (target == uid_map.end()) {
+								TOAST_WARN(
+								    "World",
+								    "Prefab signal '{}' on '{}' references missing UID {}",
+								    signal_data.name,
+								    node->name(),
+								    connection.target
+								);
+								continue;
+							}
+							(void)runtime->connectLuaSignal(signal_data.name, *target->second, connection.function, true);
+						}
+						continue;
+					}
+				}
 				TOAST_WARN("World", "Prefab signal '{}' is not available on node '{}'", signal_data.name, node->name());
 				continue;
 			}

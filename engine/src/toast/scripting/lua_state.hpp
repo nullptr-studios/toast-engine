@@ -10,6 +10,7 @@
 
 #include <atomic>
 #include <mutex>
+#include <optional>
 #include <string_view>
 #include <toast/export.hpp>
 #include <toast/thread_pool.hpp>
@@ -67,6 +68,9 @@ public:
 	/// Non-blocking variant of lock()
 	[[nodiscard]]
 	auto tryLock(size_t index) noexcept -> Lock;
+
+	[[nodiscard]]
+	static auto indexOf(lua_State* state) noexcept -> std::optional<size_t>;
 
 	[[nodiscard]]
 	auto nextIndex() noexcept -> size_t;

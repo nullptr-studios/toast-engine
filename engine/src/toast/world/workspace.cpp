@@ -1519,6 +1519,7 @@ void Workspace::eventSubscriptions() {
 				auto& entry = state.signals.emplace_back();
 				entry.declaring_type = "Lua";
 				entry.signal = signal;
+				entry.arguments = runtime->luaSignalArgTypes(signal);
 				for (const auto& connection : runtime->luaSignalConnections(signal)) {
 					auto target = findFrom(m_root_node, connection.target);
 					auto& item = entry.connections.emplace_back();
@@ -1562,6 +1563,8 @@ void Workspace::eventSubscriptions() {
 			return true;
 		}
 
+		const size_t lua_arg_count = is_lua_signal ? source_runtime->luaSignalArgTypes(e.signal).size() : 0;
+
 		std::unordered_map<std::string, size_t> by_name;
 		for (auto* info = target->info(); info != nullptr; info = info->base_type) {
 			for (const auto& method : info->methods) {
@@ -1599,10 +1602,11 @@ void Workspace::eventSubscriptions() {
 				auto& callable = response.callables.emplace_back();
 				callable.name = function.name;
 				callable.has_lua = true;
-				callable.compatible = is_lua_signal ? (function.parameters.empty() || function.is_vararg)
-				                                    : (function.parameters.empty() || function.parameters.size() == signal->args.size() ||
-				                                       (function.is_vararg && function.parameters.size() <= signal->args.size()));
-				callable.forwards_args = !is_lua_signal && (!function.parameters.empty() || function.is_vararg);
+				const size_t arg_count = is_lua_signal ? lua_arg_count : signal->args.size();
+				callable.compatible = function.parameters.empty() || function.parameters.size() == arg_count ||
+				                      (function.is_vararg && function.parameters.size() <= arg_count) ||
+				                      (is_lua_signal && function.is_vararg);
+				callable.forwards_args = (!is_lua_signal || lua_arg_count > 0) && (!function.parameters.empty() || function.is_vararg);
 				for (const auto& name : function.parameters) {
 					callable.parameters.push_back({name, "any"});
 				}

@@ -45,6 +45,9 @@ struct ProtoTraits<SignalState> {
 			auto* ps = p.add_signals();
 			ps->set_declaring_type(signal.declaring_type);
 			ps->set_signal(signal.signal);
+			for (const auto& argument : signal.arguments) {
+				ps->add_arguments(argument);
+			}
 			for (const auto& connection : signal.connections) {
 				auto* pc = ps->add_connections();
 				pc->set_target_uid(connection.target);
@@ -66,6 +69,7 @@ struct ProtoTraits<SignalState> {
 			auto& signal = e.signals.emplace_back();
 			signal.declaring_type = ps.declaring_type();
 			signal.signal = ps.signal();
+			signal.arguments.assign(ps.arguments().begin(), ps.arguments().end());
 			for (const auto& pc : ps.connections()) {
 				signal.connections.push_back(
 				    {toast::UID::fromString(pc.target_uid()),

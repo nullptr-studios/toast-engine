@@ -165,7 +165,9 @@ void UISystem::buildDrawFrame(renderer::VulkanRenderer::RenderFrame& frame) {
 		panel->syncContextDimensions();
 
 		if (const VkImageView view = record_context(context)) {
-			frame.ui_world_panels.push_back({.view = vk::ImageView(view), .model = panel->worldTransformForRender()});
+			frame.ui_world_panels.push_back(
+			    {.view = vk::ImageView(view), .model = panel->worldTransformForRender(), .always_on_top = panel->alwaysOnTop()}
+			);
 		}
 	}
 }

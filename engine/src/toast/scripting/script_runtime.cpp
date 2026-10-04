@@ -1093,6 +1093,19 @@ auto ScriptRuntime::luaSignalConnections(std::string_view name) const -> std::ve
 	return {};
 }
 
+auto ScriptRuntime::luaSignalArgTypes(std::string_view name) const -> std::vector<std::string> {
+	LuaState::Lock guard = LuaState::get().lock(m_state_index);
+	if (!guard) {
+		return {};
+	}
+	for (const auto& instance : m_instances) {
+		if (auto it = instance->luaSignals().find(std::string(name)); it != instance->luaSignals().end()) {
+			return it->second.argTypes();
+		}
+	}
+	return {};
+}
+
 auto ScriptRuntime::connectLuaSignal(std::string_view name, toast::Node& target, std::string_view function, bool forwards_args)
     -> bool {
 	LuaState::Lock guard = LuaState::get().lock(m_state_index);

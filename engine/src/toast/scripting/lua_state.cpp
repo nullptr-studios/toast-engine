@@ -23,6 +23,8 @@
 #include <glm/vec4.hpp>
 #include <lua.hpp>
 #include <luabridge3/LuaBridge/LuaBridge.h>
+#include <memory>
+#include <optional>
 #include <toast/assets/asset_registry.hpp>
 #include <toast/assets/assets.hpp>
 #include <toast/assets/data_schema_codegen.hpp>
@@ -202,6 +204,24 @@ auto LuaState::lock(size_t index) noexcept -> Lock {
 	return {std::move(guard), entry.state, index};
 }
 
+auto LuaState::indexOf(lua_State* state) noexcept -> std::optional<size_t> {
+	if (!LuaState::exists()) {
+		return std::nullopt;
+	}
+	// the pool is keyed by the main thread of each interpreter
+	lua_rawgeti(state, LUA_REGISTRYINDEX, LUA_RIDX_MAINTHREAD);
+	lua_State* main_thread = lua_tothread(state, -1);
+	lua_pop(state, 1);
+
+	const auto& entries = LuaState::get().m_entries;
+	for (size_t i = 0; i < entries.size(); ++i) {
+		if (entries[i].state == main_thread) {
+			return i;
+		}
+	}
+	return std::nullopt;
+}
+
 auto LuaState::tryLock(size_t index) noexcept -> Lock {
 	Entry& entry = m_entries[index];
 	std::unique_lock<std::recursive_timed_mutex> guard(entry.mutex, std::try_to_lock);
@@ -251,7 +271,9 @@ LuaState::LuaState() : m_pool_size(1 + toast::ThreadPool::workerCount()), m_entr
 		luaL_openlibs(entry.state);
 
 		lua_atpanic(entry.state, [](auto* state) -> int {
-			TOAST_ERROR("Lua", "Panic: {}", lua_tostring(state, -1));
+			const char* message = lua_tostring(state, -1);
+			luaL_traceback(state, state, message ? message : "(non-string error)", 0);
+			TOAST_ERROR("Lua", "Panic: {}\n{}", message ? message : "(non-string error)", lua_tostring(state, -1));
 			return 0;
 		});
 
@@ -288,12 +310,33 @@ void LuaState::registerApi(lua_State* state) noexcept {
 			        luaL_error(state, "defer expects a function as its argument");
 			        return;
 		        }
-		        toast::defer([fn]() mutable {
-			        if (fn.isFunction()) {
-				        try {
-					        fn();
-				        } catch (const std::exception& e) { TOAST_ERROR("Lua", "Error inside deferred Lua function: {}", e.what()); }
+
+		        const std::optional<size_t> index = LuaState::indexOf(state);
+		        auto owned = std::shared_ptr<luabridge::LuaRef>(new luabridge::LuaRef(fn), [index](luabridge::LuaRef* ref) {
+			        if (!index.has_value() || !LuaState::exists()) {
+				        delete ref;
+				        return;
 			        }
+			        if (auto guard = LuaState::get().lock(*index)) {
+				        delete ref;
+			        }
+			        // leaking one registry slot beats corrupting the interpreter
+		        });
+
+		        toast::defer([owned, index]() {
+			        if (!owned->isFunction()) {
+				        return;
+			        }
+			        LuaState::Lock guard;
+			        if (index.has_value()) {
+				        guard = LuaState::get().lock(*index);
+				        if (!guard) {
+					        return;
+				        }
+			        }
+			        try {
+				        (*owned)();
+			        } catch (const std::exception& e) { TOAST_ERROR("Lua", "Error inside deferred Lua function: {}", e.what()); }
 		        });
 	        }
 	    )
@@ -796,12 +839,34 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	        }
 	    )
 	    .addFunction("clear", [](LuaSignal& signal) { signal.clear(signals::ConnectionSource::lua); })
-	    .addFunction("fire", &LuaSignal::fire)
+	    .addFunction(
+	        "fire",
+	        +[](LuaSignal& signal, lua_State* state) {
+		        signals::DynamicArgs args;
+		        const int top = lua_gettop(state);
+		        for (int i = 2; i <= top; ++i) {
+			        args.values.push_back(luaRefValueToAny(state, luabridge::LuaRef::fromStack(state, i)));
+		        }
+		        signal.fire(std::move(args));
+	        }
+	    )
 	    .endClass()
 
 	    .beginNamespace("Signal")
 	    .addFunction(
-	        "create", +[](const luabridge::LuaRef&) { return LuaSignal {}; }
+	        "create",
+	        +[](lua_State* state) {
+		        LuaSignal signal;
+		        std::vector<std::string> types;
+		        const int top = lua_gettop(state);
+		        for (int i = 1; i <= top; ++i) {
+			        if (lua_type(state, i) == LUA_TSTRING) {
+				        types.emplace_back(lua_tostring(state, i));
+			        }
+		        }
+		        signal.argTypes(std::move(types));
+		        return signal;
+	        }
 	    )
 	    .endNamespace()
 

@@ -1607,6 +1607,35 @@ void Prefab::serializeNode(const toast::Node& node, bool is_root) {
 		}
 	});
 
+	// Lua signals declared by the node's scripts; same format, resolved by name when loading
+	if (auto* runtime = const_cast<toast::Node&>(node).scriptRuntime()) {
+		for (const std::string& name : runtime->luaSignals()) {
+			if (std::ranges::any_of(out.signals, [&](const Signal& s) { return s.name == name; })) {
+				continue;    // a reflected signal already claims this name
+			}
+			Signal signal {.name = name};
+			for (const signals::ConnectionInfo& connection : runtime->luaSignalConnections(name)) {
+				if (connection.source != signals::ConnectionSource::editor) {
+					continue;
+				}
+				if (connection.target.data() == 0 || !m_allowed_uids.contains(connection.target.data())) {
+					TOAST_WARN(
+					    "ResourceManager",
+					    "Lua signal '{}' of '{}' references UID {} outside this prefab; omitting",
+					    name,
+					    node.name(),
+					    connection.target
+					);
+					continue;
+				}
+				signal.connections.push_back({.target = connection.target, .function = connection.function});
+			}
+			if (!signal.connections.empty()) {
+				out.signals.push_back(std::move(signal));
+			}
+		}
+	}
+
 	nodes.push_back(std::move(out));
 
 	// we do not go inside prefabs, no need to serialize its children

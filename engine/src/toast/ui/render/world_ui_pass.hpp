@@ -3,7 +3,7 @@
  * @author Xein
  * @date 18 Jul 2026
  *
- * @brief Draws Panel3D output textures as depth-tested quads in world space
+ * @brief Draws Panel3D output textures as quads in world space, depth-tested unless the panel is always on top
  */
 
 #pragma once
@@ -23,11 +23,26 @@ namespace ui {
 
 class WorldUIPass : public IRenderPass {
 public:
-	WorldUIPass(const renderer::VulkanCore& core, vk::Format color_format, vk::Format depth_format, vk::Extent2D extent);
+	/// world draws the depth tested panels into the scene
+	/// overlay draws the always_on_top ones after the tonemap
+	enum class Layer : uint8_t {
+		world,
+		overlay,
+	};
+
+	WorldUIPass(
+	    const renderer::VulkanCore& core, vk::Format color_format, vk::Format depth_format, vk::Extent2D extent,
+	    Layer layer = Layer::world
+	);
 
 	[[nodiscard]]
 	auto name() const -> std::string_view override {
-		return "World UI";
+		return m_layer == Layer::world ? "World UI" : "World UI (always on top)";
+	}
+
+	[[nodiscard]]
+	auto stage() const -> RenderStage override {
+		return m_layer == Layer::world ? RenderStage::world : RenderStage::overlay;
 	}
 
 	void recordPre(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) override;
@@ -39,6 +54,7 @@ private:
 	};
 
 	const renderer::VulkanCore* m_core = nullptr;
+	Layer m_layer = Layer::world;
 
 	vk::raii::Sampler m_sampler = nullptr;
 	renderer::ShaderLayout m_shader_layout;

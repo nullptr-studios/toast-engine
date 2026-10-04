@@ -30,7 +30,16 @@ template<typename... Args>
 inline void
     Signal<Args...>::connect(toast::Node& node, std::string_view identifier, ConnectionSource source, bool forwards_args) {
 	callback_t wrapper;
-	if (forwards_args) {
+	if constexpr (std::is_same_v<std::tuple<Args...>, std::tuple<DynamicArgs>>) {
+		wrapper =
+		    [iden = std::string(identifier), box = toast::Box<toast::Node>(node), forwards_args](const DynamicArgs& args) mutable {
+			    if (forwards_args && !args.values.empty()) {
+				    toast::_detail::callNodeScripts(&*box, iden, args.values);
+			    } else {
+				    box->call(iden);
+			    }
+		    };
+	} else if (forwards_args) {
 		wrapper = [iden = std::string(identifier), box = toast::Box<toast::Node>(node)](const Args&... args) mutable {
 			box->call(iden, args...);
 		};
