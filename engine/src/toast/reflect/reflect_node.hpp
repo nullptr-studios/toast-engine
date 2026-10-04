@@ -471,10 +471,10 @@ auto callMethodChain(const NodeInfo* info, void* obj, std::string_view method_na
  */
 class TOAST_API NodeRegistry {
 public:
-	NodeRegistry() { instance = this; }
+	NodeRegistry();
 
 	/// Called by the generated registration function; inserts a type into the registry
-	static void registerNode(const NodeInfo* info) { (*instance).types[info->type] = info; }
+	static void registerNode(const NodeInfo* info);
 
 	/**
 	 * @brief Looks up a Node type by its fully-qualified C++ name
@@ -504,7 +504,7 @@ public:
 
 private:
 	std::unordered_map<std::string_view, const NodeInfo*> types;
-	static inline NodeRegistry* instance = nullptr;
+	static NodeRegistry* instance;
 };
 
 TOAST_API void registerEngineTypes();
