@@ -53,7 +53,6 @@ else()
 endif()
 
 add_dependencies(editor toast_engine)
-add_dependencies(editor dummy_game)
 add_dependencies(editor packer)
 add_dependencies(editor unpacker)
 add_dependencies(editor pack_viewer)
