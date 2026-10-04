@@ -44,7 +44,7 @@ namespace toast {
  *
  * @see World (uses ThreadPool for async scene loading)
  */
-class ThreadPool {
+class TOAST_API ThreadPool {
 public:
 	/**
 	 * @brief Initializes the pool and returns a pointer with ownership

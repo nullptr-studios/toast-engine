@@ -396,6 +396,9 @@ public:
 	[[nodiscard]]
 	static auto tryGetVoxelData(VoxelDataID data) -> VoxelShapeData*;
 
+	[[nodiscard]]
+	static auto tryGetVoxelDataConst(VoxelDataID data) -> const VoxelShapeData*;
+
 private:
 	void destroyVoxelData(VoxelDataID data);
 
