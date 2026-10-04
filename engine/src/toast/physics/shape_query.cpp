@@ -152,7 +152,7 @@ void Simulator::collideSphereProbe(
 				}
 				break;
 			case ShapeType::voxel:
-				if (const VoxelShapeData* data = tryGetVoxelData(shape->voxel.data); data != nullptr && data->volume != nullptr) {
+				if (const VoxelShapeData* data = tryGetVoxelDataConst(shape->voxel.data); data != nullptr && data->volume != nullptr) {
 					collideSphereVoxel(pair, probe, other, *data, manifolds);
 				}
 				break;
@@ -257,7 +257,7 @@ auto Simulator::overlapAABB(const AABB& bounds) const -> bool {
 				}
 				break;
 			case ShapeType::voxel:
-				if (const VoxelShapeData* data = tryGetVoxelData(shape->voxel.data); data != nullptr && data->volume != nullptr) {
+				if (const VoxelShapeData* data = tryGetVoxelDataConst(shape->voxel.data); data != nullptr && data->volume != nullptr) {
 					collideBoxVoxel(pair, probe, other, *data, manifolds);
 				}
 				break;
