@@ -379,6 +379,7 @@ auto Simulator::raycast(glm::vec3 pos, glm::vec3 dir) -> std::vector<RayHit> {
 			      .position = hit_pos,
 			      .normal = world_normal,
 			      .distance = hit->distance,
+			      .body = shape->owner,
 			    }
 			);
 		}

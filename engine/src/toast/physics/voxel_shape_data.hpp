@@ -9,6 +9,7 @@
 
 #include "anchor_mask.hpp"
 #include "component_classification.hpp"
+#include "damage_command.hpp"
 #include "shape.hpp"
 
 #include <cstdint>
@@ -35,6 +36,7 @@ struct VoxelShapeData {
 	uint32_t solid_voxel_count = 0;
 	AnchorMask anchor_mask = k_anchor_null;
 	bool connectivity_dirty = false;
+	std::optional<FragmentPush> pending_push;
 	std::vector<DetachedComponent> detached_components;
 	std::unique_ptr<voxel::Volume> owned_volume;
 	BodyID fragment_origin;

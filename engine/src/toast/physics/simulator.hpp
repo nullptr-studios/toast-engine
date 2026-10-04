@@ -44,6 +44,7 @@ class Trigger;
 class Rigidbody;
 class DynamicRigidbody;
 class Collider;
+struct SmashVolume;
 
 }
 
@@ -95,8 +96,19 @@ public:
 	void applyDamageCommand(const DamageCommand& c);
 	void applyExplosion(const glm::vec3& position, float radius, float energy);
 
-	auto shootVoxel(const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy, float min_radius = 0.0f)
-	    -> bool;
+	auto shootVoxel(
+	    const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy, float min_radius = 0.0f,
+	    const std::optional<FragmentPush>& push = std::nullopt
+	) -> bool;
+
+	auto smashCapsule(
+	    const CapsuleShape& capsule, const glm::vec3& position, const glm::quat& rotation, const glm::vec3& sweep,
+	    const CapsuleSmash& smash
+	) -> uint32_t;
+
+	/// Burns a thin tube into the first voxels along the ray right away, the radius ignores the material shatter radius
+	auto cutVoxel(const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy, float radius, float depth)
+	    -> uint32_t;
 
 	[[nodiscard]]
 	auto runConnectivityAnalysis() -> std::vector<ConnectivityResult>;
@@ -329,6 +341,13 @@ private:
 		ShapeID shape;
 		std::vector<DetachedComponent> components;
 		size_t cursor = 0;
+		std::optional<FragmentPush> push;
+	};
+
+	struct VoxelRayHit {
+		ShapeID shape;
+		float distance = 0.0f;
+		float shatter_radius = 0.0f;
 	};
 
 	[[nodiscard]]
@@ -469,7 +488,10 @@ private:
 	    const RemovedVoxels* already_removed = nullptr
 	);
 	[[nodiscard]]
-	auto spawnFragmentBody(ShapeID source_shape_id, const DetachedComponent& component) -> bool;
+	auto spawnFragmentBody(ShapeID source_shape_id, const DetachedComponent& component, const FragmentPush* push = nullptr) -> bool;
+	auto smashShape(ShapeID shape_id, const SmashVolume& volume, const CapsuleSmash& smash, bool chunks) -> uint32_t;
+	[[nodiscard]]
+	auto marchVoxelRay(const glm::vec3& origin, const glm::vec3& direction, float max_distance) -> std::optional<VoxelRayHit>;
 	[[nodiscard]]
 	auto spawnStaticSplitBody(ShapeID source_shape_id, const DetachedComponent& component) -> bool;
 	void despawnSettledFragments(float dt);

@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "body.hpp"
 #include "toast/world/box.hpp"
 
 #include <glm/glm.hpp>
@@ -20,6 +21,7 @@ struct RayHit {
 	glm::vec3 position;
 	glm::vec3 normal;
 	float distance;
+	BodyID body;
 };
 
 }
