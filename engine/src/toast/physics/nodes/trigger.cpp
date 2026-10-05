@@ -52,7 +52,7 @@ auto Trigger::empty() const -> bool {
 }
 
 void Trigger::enableCollider(bool value) {
-	for (auto& c : children()) {
+	for (const auto& c : children()) {
 		if (auto shape = c.as<Collider>(); shape.exists()) {
 			shape->disabled = !value;
 		}
