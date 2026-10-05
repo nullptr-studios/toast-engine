@@ -5,6 +5,7 @@
 #include <queue>
 #include <stack>
 #include <toast/log.hpp>
+#include <toast/scripting/script_dispatch.hpp>
 #include <toast/thread_pool.hpp>
 #include <unordered_set>
 
@@ -99,6 +100,8 @@ auto TickScheduler::registerDependency(Node& from, Node& to) -> bool {
 		return false;
 	}
 
+	std::scoped_lock lock(graph_mutex);
+
 	// don't store duplicates
 	auto& edges = graph.connections[from];
 	if (std::ranges::contains(edges, Box<Node>(to))) {
@@ -112,6 +115,7 @@ auto TickScheduler::registerDependency(Node& from, Node& to) -> bool {
 }
 
 auto TickScheduler::unregisterDependency(Node& from, Node& to) -> bool {
+	std::scoped_lock lock(graph_mutex);
 	const Box<Node> from_box(from);
 	const Box<Node> to_box(to);
 	const auto connections = graph.connections.find(from_box);
@@ -130,6 +134,7 @@ auto TickScheduler::unregisterDependency(Node& from, Node& to) -> bool {
 void TickScheduler::compute(const std::vector<Box<Node>>& all_nodes) {
 	ZoneScoped;
 	TOAST_TRACE("World", "Computing dependency graph");
+	std::scoped_lock lock(graph_mutex);
 
 	// Guarantee every existing node exists in the subgraph
 	for (const auto& node : all_nodes) {
@@ -201,6 +206,9 @@ void TickScheduler::runPhase(const std::vector<TickSchedule::Wave>& phase, TickF
 				f.get();
 			}
 		}
+
+		// Script calls that had to wait because their interpreter was busy while the wave ran
+		scripting::ScriptDispatch::deliver();
 	}
 }
 

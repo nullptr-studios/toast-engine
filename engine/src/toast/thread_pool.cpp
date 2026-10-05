@@ -56,11 +56,20 @@ void ThreadPool::waitIdle() {
 	m.all_done.wait(lock, [this] { return m.jobs.empty() && m.active_jobs == 0; });
 }
 
+namespace {
+thread_local bool t_thread_pool_worker = false;
+}
+
+auto ThreadPool::onWorkerThread() noexcept -> bool {
+	return t_thread_pool_worker;
+}
+
 auto ThreadPool::workerCount() -> size_t {
 	return instance ? instance->m.workers.size() : 0;
 }
 
 void ThreadPool::threadLoop() {
+	t_thread_pool_worker = true;
 	static std::atomic<int> worker_id = 0;
 	thread_local static std::string name = std::format("ThreadPool::worker-{}", worker_id++);
 #ifdef TRACY_ENABLE

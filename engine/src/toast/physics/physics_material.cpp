@@ -4,6 +4,17 @@ namespace physics { }
 
 assets::PhysicsMaterial::PhysicsMaterial(const toml::table& table, Handle<Schema> schema)
     : Data(table, std::move(schema), Data::keep_all_keys) {
+	readFields();
+}
+
+void assets::PhysicsMaterial::onReloaded() {
+	readFields();
+}
+
+void assets::PhysicsMaterial::readFields() {
+	m_restitution = 0.1f;
+	m_static_friction = 0.6f;
+	m_dynamic_friction = 0.5f;
 	const auto& d = static_cast<const DataValue&>(m_root);
 	if (d.contains("restitution")) {
 		m_restitution = d["restitution"].as<double>();

@@ -640,8 +640,9 @@ void World::hotReloadScripts(toast::UID script_uid) {
 	if (!instance) {
 		return;
 	}
-	instance->reloadScriptsUsing(script_uid);
-	// a reload can add or remove Lua tick functions, so the schedule needs recompute
+	// The world is one of the engine's node owners, so the caller already rebuilt its nodes; only the schedule is left.
+	// A reload can add or remove Lua tick functions
+	(void)script_uid;
 	instance->computeDependencyGraph();
 }
 
@@ -697,8 +698,11 @@ void World::drainDestroyQueue() {
 				std::erase_if(edges, [&](const Box<Node>& edge) { return edge.exists() && victim_set.contains(&*edge); });
 			}
 		};
-		scrub(m_scheduler.graph.connections);
-		scrub(m_scheduler.graph.inverse_connections);
+		{
+			std::scoped_lock graph_lock(m_scheduler.graph_mutex);
+			scrub(m_scheduler.graph.connections);
+			scrub(m_scheduler.graph.inverse_connections);
+		}
 
 		// Detach the tree structure so no victim holds a Box to another
 		for (Node* victim : victims) {
@@ -1187,6 +1191,14 @@ void WorldTestAccess::applyLuaOverrides(
 
 auto WorldTestAccess::tickSchedule(World& world) noexcept -> TickSchedule& {
 	return world.m_scheduler.schedule;
+}
+
+auto WorldTestAccess::scheduler(World& world) noexcept -> TickScheduler& {
+	return world.m_scheduler;
+}
+
+void WorldTestAccess::runTickFrame(World& world) {
+	world.m_scheduler.run();
 }
 
 auto WorldTestAccess::dependencyGraph(World& world) noexcept -> World::DependencyGraph& {

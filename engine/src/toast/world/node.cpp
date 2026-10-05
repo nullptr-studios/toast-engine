@@ -226,11 +226,13 @@ auto Node::hasCallable(std::string_view callable_name) const noexcept -> bool {
 
 void Node::loadScripts() noexcept {
 	onScriptsReloading();
+	// A runtime that is executing right now (a script replacing its own scripts) must not be freed under its own frames
+	scripting::ScriptRuntime::retire(std::move(m_script_runtime));
 	m_script_runtime.reset();
 	if (m_scripts.empty()) {
 		return;
 	}
-	m_script_runtime = std::make_unique<scripting::ScriptRuntime>(m_box, m_scripts);
+	m_script_runtime = std::make_unique<scripting::ScriptRuntime>(m_box, m_scripts, m_script_group);
 }
 
 void Node::reloadScripts() noexcept {
@@ -244,7 +246,42 @@ void Node::reloadScripts() noexcept {
 		std::any value;
 	};
 
+	struct SavedLuaSignal {
+		std::string signal;
+		UID target;
+		std::string function;
+		bool forwards_args = true;
+	};
+
 	std::vector<std::vector<SavedVar>> saved;
+	std::vector<SavedLuaSignal> editor_signals;
+	const uint8_t reached = m_lifecycle;
+
+	// The old scripts leave the way they would at the end of the node's life, so what they set up is torn down properly
+	if (m_script_runtime) {
+		if ((reached & lifecycle_enabled) != 0 && enabled()) {
+			m_script_runtime->call(TickFunctionList::on_disable);
+		}
+		if ((reached & lifecycle_begun) != 0) {
+			m_script_runtime->call(TickFunctionList::end);
+		}
+		if ((reached & lifecycle_initialized) != 0) {
+			m_script_runtime->call(TickFunctionList::destroy);
+		}
+
+		for (const std::string& signal_name : m_script_runtime->luaSignals()) {
+			for (const signals::ConnectionInfo& connection : m_script_runtime->luaSignalConnections(signal_name)) {
+				if (connection.source == signals::ConnectionSource::editor) {
+					editor_signals.push_back(
+					    {.signal = signal_name,
+							 .target = connection.target,
+							 .function = connection.function,
+							 .forwards_args = connection.forwards_args}
+					);
+				}
+			}
+		}
+	}
 
 	if (m_script_runtime) {
 		saved.resize(m_script_runtime->instanceCount());
@@ -283,6 +320,31 @@ void Node::reloadScripts() noexcept {
 		}
 	}
 
+	// Connections made in the editor to signals the scripts declare died with the old runtime
+	if (m_script_runtime && m_owner != nullptr) {
+		for (const SavedLuaSignal& saved_signal : editor_signals) {
+			if (Box<Node> target = find(saved_signal.target); target.exists()) {
+				m_script_runtime->connectLuaSignal(saved_signal.signal, *target, saved_signal.function, saved_signal.forwards_args);
+			}
+		}
+	}
+
+	// Bring the new scripts to the point the node is at, the same way they would have got there
+	if (m_script_runtime) {
+		if ((reached & lifecycle_loaded) != 0) {
+			m_script_runtime->call(TickFunctionList::load);
+		}
+		if ((reached & lifecycle_initialized) != 0) {
+			m_script_runtime->call(TickFunctionList::init);
+		}
+		if ((reached & lifecycle_begun) != 0) {
+			m_script_runtime->call(TickFunctionList::begin);
+		}
+		if ((reached & lifecycle_enabled) != 0 && enabled()) {
+			m_script_runtime->call(TickFunctionList::on_enable);
+		}
+	}
+
 	TOAST_INFO("Lua", "Reloaded scripts on {} ({}): {} value(s) preserved", name(), uid(), preserved);
 	onScriptsReloaded();
 }
@@ -304,6 +366,19 @@ void Node::callTick(const NodeInfo* info, TickFunctionList func_type) noexcept {
 	// Walk base → derived
 	if (info->base_type) {
 		callTick(info->base_type, func_type);
+	}
+
+	if (info == m_info) {
+		switch (func_type) {
+			case TickFunctionList::load: m_lifecycle |= lifecycle_loaded; break;
+			case TickFunctionList::init: m_lifecycle |= lifecycle_initialized; break;
+			case TickFunctionList::begin: m_lifecycle |= lifecycle_begun; break;
+			case TickFunctionList::on_enable: m_lifecycle |= lifecycle_enabled; break;
+			case TickFunctionList::on_disable: m_lifecycle &= static_cast<uint8_t>(~lifecycle_enabled); break;
+			case TickFunctionList::end: m_lifecycle &= static_cast<uint8_t>(~(lifecycle_begun | lifecycle_enabled)); break;
+			case TickFunctionList::destroy: m_lifecycle = 0; break;
+			default: break;
+		}
 	}
 
 	// Lazy script loading
@@ -367,10 +442,16 @@ void Node::callTick(const NodeInfo* info, TickFunctionList func_type) noexcept {
 void Node::propagateCallTick(const NodeInfo* info, TickFunctionList func_type) noexcept {
 	ZoneScoped;
 
+	// The callback may add children (spawn, create), and those go through the lifecycle by themselves. Walking the live
+	// vector would run it a second time on them and would also invalidate the iteration when it reallocates
+	std::vector<Box<Node>> children = m_children;
+
 	callTick(info, func_type);
 
-	for (auto& child : m_children) {
-		child->propagateCallTick(child->info(), func_type);
+	for (Box<Node>& child : children) {
+		if (child.exists()) {
+			child->propagateCallTick(child->info(), func_type);
+		}
 	}
 }
 

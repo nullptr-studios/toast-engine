@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,6 +33,9 @@ public struct WorkspaceResult {
 	public nint Name;
 }
 
+/// A workspace the engine created; Uid == 0 means it failed
+public readonly record struct WorkspaceInfo(ulong Uid, string? Name);
+
 public partial class ToastEngine : IDisposable {
 	private const string EngineLib = "toast_engine";
 	private readonly CancellationTokenSource m_cancellationSource;
@@ -40,6 +45,12 @@ public partial class ToastEngine : IDisposable {
 
 	private readonly ManualResetEventSlim m_tickGate = new(true);
 	private readonly ManualResetEventSlim m_tickIdle = new(true);
+
+	// Work the engine only accepts from the thread that ticks it, see OnTickThread
+	private readonly ConcurrentQueue<TickWork> m_tickQueue = new();
+	private static ToastEngine? s_instance;
+	private volatile bool m_ticking;
+	private volatile int m_tickThreadId;
 
 	private readonly Task m_tickTask;
 
@@ -104,6 +115,7 @@ public partial class ToastEngine : IDisposable {
 
 		// tick loop runs on a background thread and just calls toast_tick() in a tight loop
 		// until the engine signals it wants to close
+		s_instance = this;
 		m_cancellationSource = new CancellationTokenSource();
 		m_tickTask = Task.Run(() => TickLoop(m_cancellationSource.Token));
 	}
@@ -127,6 +139,7 @@ public partial class ToastEngine : IDisposable {
 		IsEngineReady = false;
 		m_cancellationSource.Cancel();
 		m_tickTask.Wait();
+		if (ReferenceEquals(s_instance, this)) s_instance = null;
 		m_gameDestroy?.Invoke(m_currentGameInstance);
 		toast_destroy(m_engineInstance);
 		ReleaseGameLibraries();
@@ -152,22 +165,76 @@ public partial class ToastEngine : IDisposable {
 		projectList.SaveList();
 	}
 
-	public WorkspaceResult CreateWorkspace(string type) {
-		return toast_create_workspace(type);
+	// Building a workspace instantiates nodes and runs their Lua scripts, so it happens on the tick thread. The name
+	// the engine returns points into thread local storage there, so it is copied out before the work item ends
+	private static WorkspaceInfo ToInfo(WorkspaceResult result) {
+		return new WorkspaceInfo(result.Uid, Marshal.PtrToStringUTF8(result.Name));
 	}
 
-	public WorkspaceResult OpenWorkspace(string assetUid) {
-		return toast_open_workspace(assetUid);
+	public WorkspaceInfo CreateWorkspace(string type) {
+		return OnTickThread(() => ToInfo(toast_create_workspace(type)));
+	}
+
+	public WorkspaceInfo OpenWorkspace(string assetUid) {
+		return OnTickThread(() => ToInfo(toast_open_workspace(assetUid)));
 	}
 
 	/// Opens a workspace bound to assetUid but loading its content from an autosave
-	public WorkspaceResult OpenWorkspaceFrom(string assetUid, string sourceUri) {
-		return toast_open_workspace_from(assetUid, sourceUri);
+	public WorkspaceInfo OpenWorkspaceFrom(string assetUid, string sourceUri) {
+		return OnTickThread(() => ToInfo(toast_open_workspace_from(assetUid, sourceUri)));
 	}
 
 	/// Clones the given workspace's live tree into a new ticking PlayWorkspace
-	public WorkspaceResult PlayWorkspace(ulong sourceHandle) {
-		return toast_play_workspace(sourceHandle);
+	public WorkspaceInfo PlayWorkspace(ulong sourceHandle) {
+		return OnTickThread(() => ToInfo(toast_play_workspace(sourceHandle)));
+	}
+
+	/// The engine's node trees and Lua interpreters belong to the thread that ticks it. Anything that builds or rebuilds
+	/// them (opening a workspace, playing, reloading the manifest) runs there, because doing it from the UI thread while
+	/// a tick is running races with the scripts being executed. Blocks the caller until the work finished
+	public static T OnTickThread<T>(Func<T> work) {
+		var engine = s_instance;
+		if (engine is null || !engine.m_ticking || Environment.CurrentManagedThreadId == engine.m_tickThreadId) return work();
+
+		var result = default(T)!;
+		Exception? failure = null;
+		using var finished = new ManualResetEventSlim(false);
+		engine.m_tickQueue.Enqueue(new TickWork(
+			() => {
+				try {
+					result = work();
+				} catch (Exception ex) {
+					failure = ex;
+				} finally {
+					finished.Set();
+				}
+			},
+			() => {
+				failure = new OperationCanceledException("The engine stopped before the work could run");
+				finished.Set();
+			}));
+		// The loop may have ended right before the enqueue, and then nobody is left to run it
+		if (!engine.m_ticking) engine.CancelPendingTickWork();
+		finished.Wait();
+		if (failure is not null) ExceptionDispatchInfo.Capture(failure).Throw();
+		return result;
+	}
+
+	public static void OnTickThread(Action work) {
+		OnTickThread(() => {
+			work();
+			return true;
+		});
+	}
+
+	private sealed record TickWork(Action Run, Action Cancel);
+
+	private void DrainTickQueue() {
+		while (m_tickQueue.TryDequeue(out var work)) work.Run();
+	}
+
+	private void CancelPendingTickWork() {
+		while (m_tickQueue.TryDequeue(out var work)) work.Cancel();
 	}
 
 	// copies the latest rendered frame into dst (capacity bytes)
@@ -242,6 +309,8 @@ public partial class ToastEngine : IDisposable {
 	}
 
 	private void TickLoop(CancellationToken token) {
+		m_tickThreadId = Environment.CurrentManagedThreadId;
+		m_ticking = true;
 		try {
 			while (!token.IsCancellationRequested && toast_should_close() != 1) {
 				// Wait until the gate is open
@@ -250,6 +319,8 @@ public partial class ToastEngine : IDisposable {
 
 				m_tickIdle.Reset();
 				try {
+					// Work the UI asked for runs between two ticks, never inside one
+					DrainTickQueue();
 					toast_tick();
 				} finally {
 					m_tickIdle.Set();
@@ -257,6 +328,9 @@ public partial class ToastEngine : IDisposable {
 			}
 		} catch (OperationCanceledException) {
 			// Dispose() cancels the token while the loop is on m_tickGate
+		} finally {
+			m_ticking = false;
+			CancelPendingTickWork();
 		}
 	}
 
@@ -403,21 +477,21 @@ public partial class ToastEngine : IDisposable {
 	private static partial void toast_create_tnode(string path, string nodeType);
 
 	public static void CreateTNode(string path, string nodeType) {
-		toast_create_tnode(path, nodeType);
+		OnTickThread(() => toast_create_tnode(path, nodeType));
 	}
 
 	[LibraryImport(EngineLib)]
 	private static partial void toast_reload_manifest();
 
 	public static void ReloadManifest() {
-		toast_reload_manifest();
+		OnTickThread(toast_reload_manifest);
 	}
 
 	[LibraryImport(EngineLib)]
 	private static partial void toast_reload_project_settings();
 
 	public static void ReloadProjectSettings() {
-		if (IsEngineReady) toast_reload_project_settings();
+		if (IsEngineReady) OnTickThread(toast_reload_project_settings);
 	}
 
 	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]

@@ -74,9 +74,19 @@ public:
 	void reloadScriptsUsing(UID script_uid) noexcept;
 	void refreshNodeInfos() noexcept;
 
+	/// Makes every node field that holds the asset resolve it again, after a hot reload replaced the asset's object
+	void rebindAssetHandles(UID asset_uid) noexcept;
+
+	/// Frees the control blocks of destroyed owners once no Box references them any more; call from the main thread
+	static void reapOrphanedControlBoxes() noexcept;
+
 	struct InstantiateContext {
 		std::vector<uint64_t> asset_chain;    ///< UIDs of prefabs currently being instantiated; prevents infinite recursion
 		std::function<assets::Handle<assets::Prefab>(toast::UID)> resolver;    ///< injected loader so tests can swap in a fake
+
+		/// Script group of the nodes being built, 0 until instantiate() assigns one. Internal to instantiate()
+		uint64_t script_group = 0;
+		bool nested = false;    ///< true while expanding a prefab instance that sits inside the file being instantiated
 	};
 
 protected:
@@ -110,7 +120,7 @@ protected:
 	 * @param node_data The BasicNode entry from the prefab file
 	 * @return Owning Box<Node>; the node is in NodeState::null until explicitly placed in a tree
 	 */
-	auto nodeAllocation(const assets::Prefab::BasicNode& node_data) noexcept -> Box<Node>;
+	auto nodeAllocation(const assets::Prefab::BasicNode& node_data, uint64_t script_group = 0) noexcept -> Box<Node>;
 
 	/**
 	 * @brief Assembles a flat list of allocated nodes into a parent/child tree

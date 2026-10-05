@@ -81,6 +81,7 @@ void Data::reload(const toml::table& table) {
 	if (m_schema.hasValue()) {
 		applyConstraints(m_root, m_schema.get().fields());
 	}
+	onReloaded();
 }
 
 auto Data::buildRoot(const toml::table& table, const Schema* schema) -> DataValue {

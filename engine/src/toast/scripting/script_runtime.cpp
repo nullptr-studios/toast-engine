@@ -8,6 +8,7 @@
 #include "lua_util.hpp"
 #include "node_proxy.hpp"
 #include "script_context.hpp"
+#include "script_dispatch.hpp"
 
 #include <algorithm>
 #include <array>
@@ -18,11 +19,17 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
+#include <iterator>
+#include <memory>
+#include <mutex>
+#include <new>
+#include <optional>
 #include <toast/log.hpp>
 #include <toast/world/node.hpp>
 #include <tracy/Tracy.hpp>
 #include <unordered_map>
 #include <utility>
+#include <vector>
 
 namespace scripting {
 
@@ -38,18 +45,45 @@ auto isCallableProxyKey(std::string_view key, const toast::NodeInfo* info) noexc
 	return info != nullptr && info->getMethod(key) != nullptr;
 }
 
+constexpr const char* k_binding_metatable = "toast.ScriptBinding";
+constexpr const char* k_unloaded_instance_message =
+    "this script instance was unloaded (the script was reloaded or its node destroyed); stale references to self cannot be used";
+
+/// Pushes a userdata that keeps the binding of an instance alive for as long as Lua references it
+void pushBinding(lua_State* l, const std::shared_ptr<ScriptBinding>& binding) {
+	void* memory = lua_newuserdatauv(l, sizeof(std::shared_ptr<ScriptBinding>), 0);
+	new (memory) std::shared_ptr<ScriptBinding>(binding);
+	if (luaL_newmetatable(l, k_binding_metatable) != 0) {
+		lua_pushcfunction(l, [](lua_State* state) -> int {
+			std::destroy_at(static_cast<std::shared_ptr<ScriptBinding>*>(lua_touserdata(state, 1)));
+			return 0;
+		});
+		lua_setfield(l, -2, "__gc");
+	}
+	lua_setmetatable(l, -2);
+}
+
+/// The binding stored in the userdata at `index`, or null when that is not a binding
+auto bindingAt(lua_State* l, int index) -> ScriptBinding* {
+	auto* handle = static_cast<std::shared_ptr<ScriptBinding>*>(lua_touserdata(l, index));
+	return handle != nullptr ? handle->get() : nullptr;
+}
+
+/// Like bindingAt(), but null once the instance that created the binding is gone
+auto liveBinding(lua_State* l, int index) -> ScriptBinding* {
+	ScriptBinding* binding = bindingAt(l, index);
+	return binding != nullptr && binding->alive.load(std::memory_order_acquire) ? binding : nullptr;
+}
+
 auto selfMethodDispatch(lua_State* l) -> int {
 	const char* name = lua_tostring(l, lua_upvalueindex(1));
-	auto* np = static_cast<NodeProxy*>(lua_touserdata(l, lua_upvalueindex(2)));
-	if (!np || !name) {
-		if (name) {
-			luaL_error(l, "method '%s': no NodeProxy available", name);
-		}
-		return 0;
+	ScriptBinding* binding = liveBinding(l, lua_upvalueindex(2));
+	if (binding == nullptr || name == nullptr) {
+		return luaL_error(l, "method '%s': %s", name != nullptr ? name : "?", k_unloaded_instance_message);
 	}
 	const int n_args = lua_gettop(l) - 1;    // exclude self at slot 1
 	const int args_base = 2;
-	return nodeProxyDispatchMethod(*np, name, l, args_base, n_args);
+	return nodeProxyDispatchMethod(binding->proxy, name, l, args_base, n_args);
 }
 
 auto phaseToLuaName(toast::TickFunctionList phase) noexcept -> const char* {
@@ -262,8 +296,12 @@ void sortByDeclaration(std::vector<T>& entries, std::string_view src, size_t fro
 }
 
 auto scriptInstanceIndex(lua_State* l) -> int {
-	auto* np = static_cast<NodeProxy*>(lua_touserdata(l, lua_upvalueindex(1)));
-	if (!np || lua_type(l, 2) != LUA_TSTRING) {
+	ScriptBinding* binding = liveBinding(l, lua_upvalueindex(1));
+	if (binding == nullptr) {
+		return luaL_error(l, k_unloaded_instance_message);
+	}
+	NodeProxy* np = &binding->proxy;
+	if (lua_type(l, 2) != LUA_TSTRING) {
 		lua_pushnil(l);
 		return 1;
 	}
@@ -271,8 +309,8 @@ auto scriptInstanceIndex(lua_State* l) -> int {
 	const toast::NodeInfo* info = np->exists() ? np->box()->info() : nullptr;
 
 	if (isCallableProxyKey(lua_tostring(l, 2), info)) {
-		lua_pushvalue(l, 2);             // method name string
-		lua_pushlightuserdata(l, np);    // NodeProxy*
+		lua_pushvalue(l, 2);                      // method name string
+		lua_pushvalue(l, lua_upvalueindex(1));    // binding handle
 		lua_pushcclosure(l, selfMethodDispatch, 2);
 		return 1;
 	}
@@ -285,9 +323,13 @@ auto scriptInstanceIndex(lua_State* l) -> int {
 }
 
 auto scriptInstanceNewindex(lua_State* l) -> int {
-	auto* np = static_cast<NodeProxy*>(lua_touserdata(l, lua_upvalueindex(1)));
+	ScriptBinding* binding = liveBinding(l, lua_upvalueindex(1));
+	if (binding == nullptr) {
+		return luaL_error(l, k_unloaded_instance_message);
+	}
+	NodeProxy* np = &binding->proxy;
 
-	if (np && lua_type(l, 2) == LUA_TSTRING) {
+	if (lua_type(l, 2) == LUA_TSTRING) {
 		const char* key = lua_tostring(l, 2);
 		if (np->hasField(key)) {
 			// Route the write through the proxy
@@ -307,15 +349,21 @@ auto scriptInstanceNewindex(lua_State* l) -> int {
 
 }
 
-ScriptInstance::ScriptInstance(lua_State* l, const assets::Handle<assets::Script>& script, NodeProxy proxy)
+ScriptInstance::ScriptInstance(
+    size_t vm_index, lua_State* l, const assets::Handle<assets::Script>& script, NodeProxy proxy,
+    std::shared_ptr<RuntimeToken> token
+)
     : m_state(l),
-      m_proxy(std::move(proxy)),
+      m_vm_index(vm_index),
+      m_binding(std::make_shared<ScriptBinding>(std::move(proxy))),
+      m_token(std::move(token)),
       m_name(script.path()) {
 	if (!script.hasValue()) {
 		TOAST_WARN("Lua", "ScriptInstance: script asset '{}' is not loaded", script.path());
 		return;
 	}
 
+	TOAST_LUA_ASSERT_OWNED(l);
 	ZoneScopedN("Lua load");    // NOLINT
 	ZoneNameF("Lua load %s", m_name.c_str());
 
@@ -333,7 +381,11 @@ ScriptInstance::ScriptInstance(lua_State* l, const assets::Handle<assets::Script
 
 	// Run the chunk
 	// expect exactly a lua table as a return value
-	int pcall_status = pcallTraceback(l, 0, 1);
+	int pcall_status = LUA_OK;
+	{
+		const ScriptNodeContextScope load_context(m_binding->proxy.box(), m_token);
+		pcall_status = pcallTraceback(l, 0, 1);
+	}
 	if (pcall_status != LUA_OK) {
 		TOAST_ERROR("Lua", "ScriptInstance: error running '{}': {}", script.path(), lua_tostring(l, -1));
 		lua_pop(l, 1);
@@ -349,9 +401,41 @@ ScriptInstance::ScriptInstance(lua_State* l, const assets::Handle<assets::Script
 	// save the returned table in the Lua registry
 	m_self = std::make_unique<luabridge::LuaRef>(luabridge::LuaRef::fromStack(l, -1));
 	lua_pop(l, 1);
+	m_valid = true;
 	extractSchema(src);
 	snapshotTickMask();
 	installMetatable();
+}
+
+auto nodeOfSelfTable(const luabridge::LuaRef& table) -> NodeProxy {
+	if (!table.isTable()) {
+		return {};
+	}
+	lua_State* l = table.state();
+	const int top = lua_gettop(l);
+	NodeProxy result;
+	table.push(l);
+	if (lua_getmetatable(l, -1) != 0) {
+		lua_getfield(l, -1, "__index");
+		// The metatable of a self table carries the binding as the first upvalue of its __index closure
+		if (lua_iscfunction(l, -1) != 0 && lua_tocfunction(l, -1) == scriptInstanceIndex && lua_getupvalue(l, -1, 1) != nullptr) {
+			if (const ScriptBinding* binding = liveBinding(l, -1)) {
+				result = binding->proxy;
+			}
+		}
+	}
+	lua_settop(l, top);
+	return result;
+}
+
+ScriptInstance::~ScriptInstance() {
+	if (m_binding) {
+		// Closures that Lua keeps alive past this point fail with a clear error instead of reading freed memory
+		m_binding->alive.store(false, std::memory_order_release);
+	}
+	if (m_self) {
+		TOAST_LUA_ASSERT_OWNED(m_state);
+	}
 }
 
 void ScriptInstance::snapshotTickMask() noexcept {
@@ -374,7 +458,7 @@ void ScriptInstance::snapshotTickMask() noexcept {
 	};
 	for (F phase : all_phases) {
 		const char* name = phaseToLuaName(phase);
-		if (name && hasFunction(name)) {
+		if (name && knowsFunction(name)) {
 			m_tick_mask |= phase;
 		}
 	}
@@ -384,7 +468,7 @@ void ScriptInstance::extractSchema(std::string_view src) noexcept {
 	ZoneScopedN("Lua schema");    // NOLINT
 
 	m_schema = {};
-	if (!m_self || m_self->isNil()) {
+	if (!m_valid) {
 		return;
 	}
 	lua_State* l = m_state;
@@ -413,6 +497,9 @@ void ScriptInstance::extractSchema(std::string_view src) noexcept {
 	};
 
 	for (luabridge::Iterator it(*m_self); !it.isNil(); ++it) {
+		if (it.key().isString() && it.value().isFunction()) {
+			m_function_names.insert(it.key().tostring());
+		}
 		if (!isExportableKey(it.key())) {
 			continue;
 		}
@@ -435,7 +522,7 @@ void ScriptInstance::extractSchema(std::string_view src) noexcept {
 		}
 		if (val.isInstance<LuaSignal>()) {
 			auto signal = val.unsafe_cast<LuaSignal>();
-			signal.owner(m_proxy.box());
+			signal.owner(m_binding->proxy.box());
 			m_lua_signals.emplace(key, std::move(signal));
 			continue;
 		}
@@ -527,7 +614,7 @@ void ScriptInstance::extractSchema(std::string_view src) noexcept {
 }
 
 void ScriptInstance::installMetatable() noexcept {
-	if (!m_self || m_self->isNil()) {
+	if (!m_self) {
 		return;
 	}
 	lua_State* l = m_state;
@@ -541,12 +628,12 @@ void ScriptInstance::installMetatable() noexcept {
 	const int mt_idx = lua_gettop(l);
 
 	// __index / __newindex
-	// m_proxy is stable for the lifetime of this ScriptInstance
-	lua_pushlightuserdata(l, &m_proxy);
+	// The closures share the binding, so they stay valid for as long as Lua keeps them, even past this instance
+	pushBinding(l, m_binding);
 	lua_pushcclosure(l, scriptInstanceIndex, 1);
 	lua_setfield(l, mt_idx, "__index");
 
-	lua_pushlightuserdata(l, &m_proxy);
+	pushBinding(l, m_binding);
 	lua_pushcclosure(l, scriptInstanceNewindex, 1);
 	lua_setfield(l, mt_idx, "__newindex");
 
@@ -555,10 +642,16 @@ void ScriptInstance::installMetatable() noexcept {
 }
 
 void ScriptInstance::call(std::string_view fn_name) noexcept {
-	if (!m_self || m_self->isNil()) {
+	if (!m_valid) {
 		return;
 	}
-	ScriptNodeContextScope script_node_ctx(m_proxy.box());
+	TOAST_LUA_ASSERT_OWNED(m_state);
+	const ScriptDepthGuard depth;
+	if (!depth.allowed()) {
+		TOAST_ERROR("Lua", "{}: {}() skipped, script calls are nested too deep (call loop?)", m_name, fn_name);
+		return;
+	}
+	const ScriptNodeContextScope script_node_ctx(m_binding->proxy.box(), m_token);
 	lua_State* l = m_state;
 	// instance table, so rawget finds them
 	m_self->push(l);
@@ -583,10 +676,16 @@ void ScriptInstance::call(std::string_view fn_name) noexcept {
 }
 
 void ScriptInstance::callWithLuaStack(std::string_view name, lua_State* l, int args_base, int n_args) noexcept {
-	if (!m_self || m_self->isNil()) {
+	if (!m_valid) {
 		return;
 	}
-	ScriptNodeContextScope script_node_ctx(m_proxy.box());
+	TOAST_LUA_ASSERT_OWNED(l);
+	const ScriptDepthGuard depth;
+	if (!depth.allowed()) {
+		TOAST_ERROR("Lua", "{}: {}() skipped, script calls are nested too deep (call loop?)", m_name, name);
+		return;
+	}
+	const ScriptNodeContextScope script_node_ctx(m_binding->proxy.box(), m_token);
 	// Only calls functions defined in the Lua table
 	m_self->push(l);
 	lua_pushlstring(l, name.data(), name.size());
@@ -612,10 +711,16 @@ void ScriptInstance::callWithLuaStack(std::string_view name, lua_State* l, int a
 }
 
 auto ScriptInstance::callEventMethod(std::string_view name, lua_State* l, int event_index) noexcept -> bool {
-	if (!m_self || m_self->isNil()) {
+	if (!m_valid) {
 		return false;
 	}
-	ScriptNodeContextScope script_node_ctx(m_proxy.box());
+	TOAST_LUA_ASSERT_OWNED(l);
+	const ScriptDepthGuard depth;
+	if (!depth.allowed()) {
+		TOAST_ERROR("Lua", "{}: event method '{}' skipped, script calls are nested too deep (call loop?)", m_name, name);
+		return false;
+	}
+	const ScriptNodeContextScope script_node_ctx(m_binding->proxy.box(), m_token);
 	m_self->push(l);
 	lua_pushlstring(l, name.data(), name.size());
 	lua_rawget(l, -2);
@@ -637,13 +742,18 @@ auto ScriptInstance::callEventMethod(std::string_view name, lua_State* l, int ev
 }
 
 void ScriptInstance::callWithAnyArgs(std::string_view name, std::span<const std::any> args) noexcept {
-	if (!m_self || m_self->isNil()) {
+	if (!m_valid) {
 		return;
 	}
-	ScriptNodeContextScope script_node_ctx(m_proxy.box());
+	TOAST_LUA_ASSERT_OWNED(m_state);
+	const ScriptDepthGuard depth;
+	if (!depth.allowed()) {
+		TOAST_ERROR("Lua", "{}: {}() skipped, script calls are nested too deep (call loop?)", m_name, name);
+		return;
+	}
+	const ScriptNodeContextScope script_node_ctx(m_binding->proxy.box(), m_token);
 	lua_State* l = m_state;
 
-	// recursion guard
 	m_self->push(l);
 	lua_pushlstring(l, name.data(), name.size());
 	lua_rawget(l, -2);
@@ -672,9 +782,10 @@ void ScriptInstance::callWithAnyArgs(std::string_view name, std::span<const std:
 }
 
 auto ScriptInstance::setVar(std::string_view name, const std::any& value) noexcept -> bool {
-	if (!m_self || m_self->isNil()) {
+	if (!m_valid) {
 		return false;
 	}
+	TOAST_LUA_ASSERT_OWNED(m_state);
 	lua_State* l = m_state;
 
 	// Only write to instances that already define this key
@@ -699,7 +810,7 @@ auto ScriptInstance::setVar(std::string_view name, const std::any& value) noexce
 }
 
 auto ScriptInstance::pushByPath(std::string_view path) const noexcept -> bool {
-	if (!m_self || m_self->isNil() || path.empty()) {
+	if (!m_valid || path.empty()) {
 		return false;
 	}
 	lua_State* l = m_state;
@@ -724,6 +835,7 @@ auto ScriptInstance::pushByPath(std::string_view path) const noexcept -> bool {
 }
 
 auto ScriptInstance::getVarByPath(std::string_view path) const noexcept -> std::any {
+	TOAST_LUA_ASSERT_OWNED(m_state);
 	lua_State* l = m_state;
 	if (!pushByPath(path)) {
 		return {};
@@ -734,9 +846,10 @@ auto ScriptInstance::getVarByPath(std::string_view path) const noexcept -> std::
 }
 
 auto ScriptInstance::setVarByPath(std::string_view path, const std::any& value) noexcept -> bool {
-	if (!m_self || m_self->isNil() || path.empty()) {
+	if (!m_valid || path.empty()) {
 		return false;
 	}
+	TOAST_LUA_ASSERT_OWNED(m_state);
 	lua_State* l = m_state;
 
 	// Split off the parent path and descend to the owning table
@@ -774,9 +887,10 @@ auto ScriptInstance::setVarByPath(std::string_view path, const std::any& value) 
 }
 
 auto ScriptInstance::getVar(std::string_view name) const noexcept -> std::any {
-	if (!m_self || m_self->isNil()) {
+	if (!m_valid) {
 		return {};
 	}
+	TOAST_LUA_ASSERT_OWNED(m_state);
 	lua_State* l = m_state;
 
 	m_self->push(l);
@@ -791,9 +905,10 @@ auto ScriptInstance::getVar(std::string_view name) const noexcept -> std::any {
 }
 
 auto ScriptInstance::hasFunction(std::string_view fn_name) const noexcept -> bool {
-	if (!m_self || m_self->isNil()) {
+	if (!m_valid) {
 		return false;
 	}
+	TOAST_LUA_ASSERT_OWNED(m_state);
 	lua_State* l = m_state;
 	m_self->push(l);
 	lua_pushlstring(l, fn_name.data(), fn_name.size());
@@ -803,31 +918,68 @@ auto ScriptInstance::hasFunction(std::string_view fn_name) const noexcept -> boo
 	return is_fn;
 }
 
-ScriptRuntime::ScriptRuntime(toast::Box<toast::Node> node, const std::vector<assets::Handle<assets::Script>>& scripts) {
+namespace {
+
+/// Counts the calls that are running inside a runtime, see ScriptRuntime::executing()
+class ActiveCallScope {
+public:
+	explicit ActiveCallScope(std::atomic<int>& counter) noexcept : m_counter(counter) { ++m_counter; }
+
+	~ActiveCallScope() { --m_counter; }
+
+	ActiveCallScope(const ActiveCallScope&) = delete;
+	auto operator=(const ActiveCallScope&) -> ActiveCallScope& = delete;
+	ActiveCallScope(ActiveCallScope&&) = delete;
+	auto operator=(ActiveCallScope&&) -> ActiveCallScope& = delete;
+
+private:
+	std::atomic<int>& m_counter;
+};
+
+std::atomic<uint32_t> g_next_runtime_id {0};           // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
+auto& g_retired_runtimes_mutex = *new std::mutex();    // NOLINT
+auto& g_retired_runtimes = *new std::vector<std::unique_ptr<ScriptRuntime>>();    // NOLINT
+
+}
+
+ScriptRuntime::ScriptRuntime(
+    toast::Box<toast::Node> node, const std::vector<assets::Handle<assets::Script>>& scripts, uint64_t group
+)
+    : m_node(std::move(node)) {
 	ZoneScoped;
 	if (scripts.empty()) {
 		return;
 	}
 
-	m_state_index = LuaState::get().nextIndex();
-	LuaState::Lock guard = LuaState::get().lock(m_state_index);
+	m_schema_version = ++g_next_runtime_id;
+	m_token = std::make_shared<RuntimeToken>();
+	m_token->id = m_schema_version;
+
+	LuaState& pool = LuaState::get();
+	m_state_index = group != 0 ? pool.indexForGroup(group) : pool.nextIndex();
+	if (const std::optional<size_t> owned = LuaState::lastOwnedIndex();
+	    owned.has_value() && !LuaState::ownedByCurrentThread(m_state_index)) {
+		// A thread that owns an interpreter cannot wait for another one, so the runtime is built on the one it has
+		m_state_index = *owned;
+	}
+	m_token->vm_index = m_state_index;
+
+	LuaState::Lock guard = pool.lock(m_state_index);
 	if (!guard) {
 		TOAST_ERROR("Lua", "ScriptRuntime: could not acquire Lua state #{}; scripts not loaded", m_state_index);
+		m_token->alive.store(false, std::memory_order_release);
 		return;
 	}
 	m_lua = guard.state();
-	NodeProxy proxy(std::move(node));
+	NodeProxy proxy(m_node);
 
 	m_instances.reserve(scripts.size());
 	for (const auto& script : scripts) {
 		if (script.hasValue()) {
-			m_instances.push_back(std::make_unique<ScriptInstance>(m_lua, script, proxy));
+			m_instances.push_back(std::make_unique<ScriptInstance>(m_state_index, m_lua, script, proxy, m_token));
 			m_tick_mask |= m_instances.back()->tickMask();
 		}
 	}
-
-	static std::atomic<uint32_t> s_schema_version {0};
-	m_schema_version = ++s_schema_version;
 
 	// Same-named vars across scripts are ambiguous for name-based get/set: first script wins
 	std::unordered_map<std::string_view, std::string_view> seen;
@@ -849,11 +1001,56 @@ ScriptRuntime::ScriptRuntime(toast::Box<toast::Node> node, const std::vector<ass
 }
 
 ScriptRuntime::~ScriptRuntime() {
-	LuaState::Lock guard;
-	if (m_lua && LuaState::exists()) {
-		guard = LuaState::get().lock(m_state_index);
+	if (m_token) {
+		// Everything C++ kept that calls into these scripts stops working from here on
+		m_token->alive.store(false, std::memory_order_release);
 	}
 	clearLuaEventSubscriptions(this);
+	if (m_instances.empty() || m_lua == nullptr) {
+		return;
+	}
+	// The instances hold registry references and userdata, which only the owner of the interpreter may release
+	LuaState::retireOrLeak(m_state_index, [instances = std::move(m_instances)]() mutable { instances.clear(); });
+}
+
+template<typename F>
+void ScriptRuntime::deferToDispatch(F&& work) const {
+	ScriptDispatch::enqueue(m_state_index, [node = m_node, id = m_schema_version, work = std::forward<F>(work)]() mutable {
+		ScriptRuntime* runtime = node.exists() ? node->scriptRuntime() : nullptr;
+		if (runtime != nullptr && runtime->schemaVersion() == id) {
+			work(*runtime);
+		}
+	});
+}
+
+void ScriptRuntime::retire(std::unique_ptr<ScriptRuntime> runtime) noexcept {
+	if (!runtime) {
+		return;
+	}
+	if (!runtime->executing()) {
+		runtime.reset();
+		return;
+	}
+	// The call that is still running finishes, but nothing new reaches these scripts any more
+	if (runtime->m_token) {
+		runtime->m_token->alive.store(false, std::memory_order_release);
+	}
+	std::scoped_lock lock(g_retired_runtimes_mutex);
+	g_retired_runtimes.push_back(std::move(runtime));
+}
+
+void ScriptRuntime::drainRetired() noexcept {
+	std::vector<std::unique_ptr<ScriptRuntime>> finished;
+	{
+		std::scoped_lock lock(g_retired_runtimes_mutex);
+		if (g_retired_runtimes.empty()) {
+			return;
+		}
+		auto split = std::ranges::partition(g_retired_runtimes, [](const auto& runtime) { return runtime->executing(); });
+		finished.assign(std::make_move_iterator(split.begin()), std::make_move_iterator(split.end()));
+		g_retired_runtimes.erase(split.begin(), split.end());
+	}
+	finished.clear();
 }
 
 auto ScriptRuntime::instanceSchema(size_t index) const noexcept -> const ScriptSchema* {
@@ -876,6 +1073,7 @@ auto ScriptRuntime::getVarByPath(size_t index, std::string_view path) const noex
 	}
 	LuaState::Lock guard = LuaState::get().lock(m_state_index);
 	if (!guard) {
+		TOAST_WARN("Lua", "Lua state #{} is busy; could not read '{}'", m_state_index, path);
 		return {};
 	}
 	return m_instances[index]->getVarByPath(path);
@@ -887,6 +1085,7 @@ auto ScriptRuntime::setVarByPath(size_t index, std::string_view path, const std:
 	}
 	LuaState::Lock guard = LuaState::get().lock(m_state_index);
 	if (!guard) {
+		TOAST_WARN("Lua", "Lua state #{} is busy; could not write '{}'", m_state_index, path);
 		return false;
 	}
 	return m_instances[index]->setVarByPath(path, value);
@@ -903,8 +1102,10 @@ void ScriptRuntime::call(toast::TickFunctionList phase) noexcept {
 
 	LuaState::Lock guard = LuaState::get().lock(m_state_index);
 	if (!guard) {
+		deferToDispatch([phase](ScriptRuntime& runtime) { runtime.call(phase); });
 		return;
 	}
+	const ActiveCallScope active(m_active_calls);
 	for (auto& inst : m_instances) {
 		if (inst && inst->isValid() && toast::hasFlag(inst->tickMask(), phase)) {
 			inst->call(name);
@@ -918,8 +1119,10 @@ void ScriptRuntime::call(std::string_view fn_name) noexcept {
 	}
 	LuaState::Lock guard = LuaState::get().lock(m_state_index);
 	if (!guard) {
+		deferToDispatch([name = std::string(fn_name)](ScriptRuntime& runtime) { runtime.call(std::string_view(name)); });
 		return;
 	}
+	const ActiveCallScope active(m_active_calls);
 	for (auto& inst : m_instances) {
 		if (inst && inst->isValid()) {
 			inst->call(fn_name);
@@ -931,6 +1134,13 @@ auto ScriptRuntime::hasFunction(std::string_view fn_name) const noexcept -> bool
 	if (m_instances.empty()) {
 		return false;
 	}
+	// What the scripts defined at load needs no interpreter, which keeps lookups across busy interpreters cheap
+	for (const auto& inst : m_instances) {
+		if (inst && inst->isValid() && inst->knowsFunction(fn_name)) {
+			return true;
+		}
+	}
+	// A script can also add functions while it runs, and only the owner of the interpreter can see those
 	LuaState::Lock guard = LuaState::get().lock(m_state_index);
 	if (!guard) {
 		return false;
@@ -945,13 +1155,6 @@ auto ScriptRuntime::hasFunction(std::string_view fn_name) const noexcept -> bool
 
 auto ScriptRuntime::functions() const noexcept -> std::vector<LuaFunctionDesc> {
 	std::vector<LuaFunctionDesc> result;
-	if (m_instances.empty()) {
-		return result;
-	}
-	LuaState::Lock guard = LuaState::get().lock(m_state_index);
-	if (!guard) {
-		return result;
-	}
 	for (const auto& instance : m_instances) {
 		if (!instance || !instance->isValid()) {
 			continue;
@@ -974,6 +1177,7 @@ void ScriptRuntime::callWithLuaStack(std::string_view name, lua_State* l, int ar
 	}
 
 	if (l != m_lua) {
+		// Another interpreter or a coroutine: only plain values can cross, and they are read while the caller owns l
 		std::vector<std::any> args;
 		args.reserve(static_cast<size_t>(n_args));
 		for (int i = 0; i < n_args; ++i) {
@@ -984,10 +1188,12 @@ void ScriptRuntime::callWithLuaStack(std::string_view name, lua_State* l, int ar
 		return;
 	}
 
+	// The caller owns the interpreter of this runtime, so this lock is a recursive one
 	LuaState::Lock guard = LuaState::get().lock(m_state_index);
 	if (!guard) {
 		return;
 	}
+	const ActiveCallScope active(m_active_calls);
 	for (auto& inst : m_instances) {
 		if (inst && inst->isValid()) {
 			inst->callWithLuaStack(name, l, args_base, n_args);
@@ -1003,6 +1209,7 @@ auto ScriptRuntime::callEventMethod(std::string_view name, lua_State* l, int eve
 	if (!guard) {
 		return false;
 	}
+	const ActiveCallScope active(m_active_calls);
 	for (auto& instance : m_instances) {
 		if (instance && instance->isValid() && instance->callEventMethod(name, l, event_index)) {
 			return true;
@@ -1017,8 +1224,13 @@ void ScriptRuntime::callWithAnyArgs(std::string_view name, std::span<const std::
 	}
 	LuaState::Lock guard = LuaState::get().lock(m_state_index);
 	if (!guard) {
+		// This thread owns another interpreter and cannot wait for this one, so the call is delivered later
+		deferToDispatch([name = std::string(name), args = std::vector<std::any>(args.begin(), args.end())](ScriptRuntime& runtime) {
+			runtime.callWithAnyArgs(name, args);
+		});
 		return;
 	}
+	const ActiveCallScope active(m_active_calls);
 	for (auto& inst : m_instances) {
 		if (inst && inst->isValid()) {
 			inst->callWithAnyArgs(name, args);
@@ -1032,6 +1244,7 @@ void ScriptRuntime::setVar(std::string_view name, const std::any& value) noexcep
 	}
 	LuaState::Lock guard = LuaState::get().lock(m_state_index);
 	if (!guard) {
+		deferToDispatch([name = std::string(name), value](ScriptRuntime& runtime) { runtime.setVar(name, value); });
 		return;
 	}
 	// First instance defining the name owns it, matching getVar's resolution order
@@ -1048,6 +1261,7 @@ auto ScriptRuntime::getVar(std::string_view name) const noexcept -> std::any {
 	}
 	LuaState::Lock guard = LuaState::get().lock(m_state_index);
 	if (!guard) {
+		TOAST_WARN("Lua", "Lua state #{} is busy; could not read '{}'", m_state_index, name);
 		return {};
 	}
 	for (const auto& inst : m_instances) {
@@ -1061,12 +1275,10 @@ auto ScriptRuntime::getVar(std::string_view name) const noexcept -> std::any {
 	return {};
 }
 
+// The signals are plain C++ objects shared with Lua, they need no interpreter
+
 auto ScriptRuntime::luaSignals() const -> std::vector<std::string> {
-	LuaState::Lock guard = LuaState::get().lock(m_state_index);
 	std::vector<std::string> result;
-	if (!guard) {
-		return result;
-	}
 	for (const auto& instance : m_instances) {
 		if (!instance) {
 			continue;
@@ -1081,10 +1293,6 @@ auto ScriptRuntime::luaSignals() const -> std::vector<std::string> {
 }
 
 auto ScriptRuntime::luaSignalConnections(std::string_view name) const -> std::vector<signals::ConnectionInfo> {
-	LuaState::Lock guard = LuaState::get().lock(m_state_index);
-	if (!guard) {
-		return {};
-	}
 	for (const auto& instance : m_instances) {
 		if (auto it = instance->luaSignals().find(std::string(name)); it != instance->luaSignals().end()) {
 			return it->second.connections();
@@ -1094,10 +1302,6 @@ auto ScriptRuntime::luaSignalConnections(std::string_view name) const -> std::ve
 }
 
 auto ScriptRuntime::luaSignalArgTypes(std::string_view name) const -> std::vector<std::string> {
-	LuaState::Lock guard = LuaState::get().lock(m_state_index);
-	if (!guard) {
-		return {};
-	}
 	for (const auto& instance : m_instances) {
 		if (auto it = instance->luaSignals().find(std::string(name)); it != instance->luaSignals().end()) {
 			return it->second.argTypes();
@@ -1108,10 +1312,6 @@ auto ScriptRuntime::luaSignalArgTypes(std::string_view name) const -> std::vecto
 
 auto ScriptRuntime::connectLuaSignal(std::string_view name, toast::Node& target, std::string_view function, bool forwards_args)
     -> bool {
-	LuaState::Lock guard = LuaState::get().lock(m_state_index);
-	if (!guard) {
-		return false;
-	}
 	for (const auto& instance : m_instances) {
 		if (auto it = instance->luaSignals().find(std::string(name)); it != instance->luaSignals().end()) {
 			return it->second.connect(NodeProxy(target.box()), function, signals::ConnectionSource::editor, forwards_args);
@@ -1121,10 +1321,6 @@ auto ScriptRuntime::connectLuaSignal(std::string_view name, toast::Node& target,
 }
 
 auto ScriptRuntime::disconnectLuaSignal(std::string_view name, toast::Node& target, std::string_view function) -> bool {
-	LuaState::Lock guard = LuaState::get().lock(m_state_index);
-	if (!guard) {
-		return false;
-	}
 	for (const auto& instance : m_instances) {
 		if (auto it = instance->luaSignals().find(std::string(name)); it != instance->luaSignals().end()) {
 			return it->second.disconnect(NodeProxy(target.box()), function, signals::ConnectionSource::editor);
@@ -1134,10 +1330,6 @@ auto ScriptRuntime::disconnectLuaSignal(std::string_view name, toast::Node& targ
 }
 
 void ScriptRuntime::clearLuaSignal(std::string_view name) {
-	LuaState::Lock guard = LuaState::get().lock(m_state_index);
-	if (!guard) {
-		return;
-	}
 	for (const auto& instance : m_instances) {
 		if (auto it = instance->luaSignals().find(std::string(name)); it != instance->luaSignals().end()) {
 			it->second.clear(signals::ConnectionSource::editor);

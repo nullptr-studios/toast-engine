@@ -476,6 +476,19 @@ private:
 	/// Per-node Lua script environment
 	std::unique_ptr<scripting::ScriptRuntime> m_script_runtime;
 
+	/// Nodes of one prefab instance share a group, and a group runs its scripts on one interpreter. 0 means no group
+	uint64_t m_script_group = 0;
+
+	/// The lifecycle phases this node went through, so scripts that are rebuilt later can be brought to the same point
+	enum LifecycleBits : uint8_t {
+		lifecycle_loaded = 1 << 0,
+		lifecycle_initialized = 1 << 1,
+		lifecycle_begun = 1 << 2,
+		lifecycle_enabled = 1 << 3,
+	};
+
+	uint8_t m_lifecycle = 0;
+
 	[[nodiscard]]
 	auto parentInternal() const noexcept -> Box<Node> {
 		return m_parent;

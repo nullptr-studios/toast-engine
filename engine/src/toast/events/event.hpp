@@ -13,6 +13,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <shared_mutex>
 #include <toast/export.hpp>
 #include <toast/log.hpp>
 #include <type_traits>
@@ -126,6 +127,16 @@ struct TOAST_API EventSystem {
 	/// Dispatch table keyed by event type; one entry per registered event type
 	static std::unordered_map<std::type_index, EventInfo> event_data;
 
+	/// Guards event_data and unsubscribe_map, which grow when a type is registered for the first time on any thread
+	static std::shared_mutex registration_mutex;
+
+	/// Unsubscribes a callback of the given event type through the type erased table
+	static void unsubscribeAny(std::type_index type, const std::any& iterator);
+
+	/// The dispatch entry of an event type, looked up once per type because registering other types grows the table
+	template<typename T>
+	static auto info() noexcept -> EventInfo&;
+
 	/// Protects the event queue memory pool during concurrent sends
 	static std::mutex pool_mutex;
 
@@ -142,6 +153,7 @@ struct TOAST_API EventSystem {
 	template<typename T>
 	static void registerEvent() {
 		static_assert(std::is_base_of_v<Event<T>, T>, "CONTRACT VIOLATION: You Must Inhert as 'struct Derived : Event<Derived>'");
+		std::unique_lock registration_lock(registration_mutex);
 		if (event_data.contains(typeid(T))) {
 			// guard against cross-DLL double-registration; same type can be registered from multiple translation units on Windows
 			return;

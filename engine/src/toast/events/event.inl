@@ -20,11 +20,21 @@ void Event<T>::ensureRegistered() noexcept {
 }
 
 template<typename T>
+auto EventSystem::info() noexcept -> EventInfo& {
+	Event<T>::ensureRegistered();
+	static EventInfo& cached = []() -> EventInfo& {
+		std::shared_lock lock(registration_mutex);
+		return event_data.at(std::type_index(typeid(T)));
+	}();
+	return cached;
+}
+
+template<typename T>
 auto Event<T>::subscribe(char priority, callback_t&& callback) noexcept -> iterator_t {
 	ensureRegistered();
 
 	auto cb = new callback_t(std::move(callback));
-	auto& g = EventSystem::event_data[typeid(T)];
+	auto& g = EventSystem::info<T>();
 	{
 		std::scoped_lock _(g.mutex);
 		g.cached = false;
@@ -36,7 +46,7 @@ template<typename T>
 void Event<T>::unsubscribe(iterator_t it) noexcept {
 	ensureRegistered();
 
-	auto& g = EventSystem::event_data[typeid(T)];
+	auto& g = EventSystem::info<T>();
 	{
 		std::scoped_lock _(EventSystem::deletion_mutex);
 		auto deleter = [](void* p) { delete static_cast<std::move_only_function<bool(T&)>*>(p); };
@@ -55,7 +65,7 @@ void Event<T>::notify() noexcept {
 
 	ensureRegistered();
 
-	auto& g = EventSystem::event_data[typeid(T)];
+	auto& g = EventSystem::info<T>();
 	{
 		// build cached list of all the callbacks in order
 		// locks mutex for the shortest period possible

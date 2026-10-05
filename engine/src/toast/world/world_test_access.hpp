@@ -48,6 +48,12 @@ struct TOAST_API WorldTestAccess {
 
 	static auto tickSchedule(World& world) noexcept -> _detail::TickSchedule&;
 
+	/// Test-only: the world's scheduler, so tests can run tick phases without the physics step
+	static auto scheduler(World& world) noexcept -> TickScheduler&;
+
+	/// Test-only: one frame of the scheduled phases (early tick, tick, post physics, late tick)
+	static void runTickFrame(World& world);
+
 	static auto dependencyGraph(World& world) noexcept -> World::DependencyGraph&;
 
 	static void computeDependencyGraph(World& world);

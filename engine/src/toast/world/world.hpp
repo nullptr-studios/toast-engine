@@ -127,7 +127,8 @@ public:
 	static void hotReload();
 
 	/**
-	 * @brief Rebuilds script runtimes using the given script asset and recomputes the schedule
+	 * @brief Recomputes the tick schedule after the script runtimes using the given script asset were rebuilt
+	 * @note The runtimes themselves are rebuilt by INodeOwner::reloadScriptsUsing(), which the engine calls on every owner
 	 */
 	static void hotReloadScripts(toast::UID script_uid);
 

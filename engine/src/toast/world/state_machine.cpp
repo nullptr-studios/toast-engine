@@ -1,7 +1,9 @@
 #include "state_machine.hpp"
 
+#include <format>
 #include <luabridge3/LuaBridge/LuaBridge.h>
 #include <toast/log.hpp>
+#include <toast/scripting/lua_callback.hpp>
 
 namespace toast {
 
@@ -99,7 +101,13 @@ void StateMachine::addState(const std::string& name, const State& state) {
 	if (cached_state != nullptr) {
 		TOAST_WARN("StateMachine", "Cannot Add State: {} After initiation", name);
 	}
-	states.emplace(name, std::make_unique<State>(state));
+	// A rebuilt script registers its states again, and emplace would keep the old ones with their dead callbacks
+	const auto existing = states.find(name);
+	const bool replaces_current = existing != states.end() && cached_state == existing->second.get();
+	states.insert_or_assign(name, std::make_unique<State>(state));
+	if (replaces_current) {
+		cached_state = states.at(name).get();
+	}
 }
 
 auto luaVoidCallback(const luabridge::LuaRef& value, std::string_view name) -> std::optional<std::function<void()>> {
@@ -111,12 +119,9 @@ auto luaVoidCallback(const luabridge::LuaRef& value, std::string_view name) -> s
 		return std::nullopt;
 	}
 
-	return [callback = value, callback_name = std::string(name)] {
-		auto result = callback();
-		if (!result) {
-			TOAST_ERROR("StateMachine", "State callback '{}' failed: {}", callback_name, result.errorMessage());
-		}
-	};
+	// A raw LuaRef here would be called without owning its interpreter and could outlive the script that wrote it
+	return
+	    [callback = scripting::LuaCallback::capture(value, std::format("state callback '{}'", name))] { (void)callback.invoke(); };
 }
 
 auto luaConditionCallback(const luabridge::LuaRef& value) -> std::optional<std::function<bool()>> {
@@ -128,17 +133,8 @@ auto luaConditionCallback(const luabridge::LuaRef& value) -> std::optional<std::
 		return std::nullopt;
 	}
 
-	return [callback = value] {
-		auto result = callback();
-		if (!result) {
-			TOAST_ERROR("StateMachine", "Transition condition failed: {}", result.errorMessage());
-			return false;
-		}
-		if (result.size() != 1 || !result[0].isBool()) {
-			TOAST_WARN("StateMachine", "Transition condition must return a boolean");
-			return false;
-		}
-		return result[0].unsafe_cast<bool>();
+	return [callback = scripting::LuaCallback::capture(value, "transition condition")] {
+		return callback.invokeBool().value_or(false);
 	};
 }
 

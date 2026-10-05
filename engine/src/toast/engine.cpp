@@ -42,6 +42,8 @@
 #include "renderer/vulkan_core.hpp"
 #include "renderer/vulkan_renderer.hpp"
 #include "scripting/lua_state.hpp"
+#include "scripting/script_dispatch.hpp"
+#include "scripting/script_runtime.hpp"
 #include "settings/settings.hpp"
 #include "thread_pool.hpp"
 #include "time.hpp"
@@ -59,6 +61,7 @@
 
 #include <SDL3/SDL.h>
 #include <algorithm>
+#include <atomic>
 #include <cassert>
 #include <cstdlib>
 #include <exception>
@@ -73,6 +76,7 @@
 #include <print>
 #include <span>
 #include <sstream>
+#include <thread>
 #include <tracy/Tracy.hpp>
 
 namespace toast {
@@ -118,6 +122,9 @@ struct EnginePimpl {
 
 	// owned by renderer's output target
 	renderer::SharedTextureOutputTarget* shared_target = nullptr;
+
+	/// Hash of the thread that last ran Engine::tick(), 0 until the first tick
+	std::atomic<size_t> tick_thread {0};
 
 	std::mutex owners_mutex;
 	std::map<toast::UID, std::unique_ptr<INodeOwner>> owners;
@@ -266,6 +273,18 @@ void Engine::init() {
 		return false;
 	});
 
+	// An asset was reloaded as a new object: whatever pointed at the old one has to ask for it again
+	m->listener.subscribe<event::AssetReplaced>([this](const event::AssetReplaced& e) {
+		{
+			std::scoped_lock lock(m->owners_mutex);
+			for (const auto& [_, node_owner] : m->owners) {
+				node_owner->rebindAssetHandles(e.uid);
+			}
+		}
+		event::send<event::RequestHierarchyUpdate>();
+		return false;
+	});
+
 	m->listener.subscribe<_detail::Defer>([](_detail::Defer& e) { e.cb(); });
 
 	m->audio_system = std::make_unique<audio::AudioSystem>();
@@ -286,6 +305,8 @@ Engine::~Engine() noexcept {
 			m->renderer->stop();
 		}
 
+		// Queued script calls hold node handles that must not outlive the nodes
+		scripting::ScriptDispatch::clear();
 		{
 			std::scoped_lock lock(m->owners_mutex);
 			m->owners.clear();
@@ -331,9 +352,30 @@ void Engine::reloadSettings() {
 	}
 }
 
+/// True while a play session (or the game itself) exists
+static auto gameIsRunning(EnginePimpl& pimpl) -> bool {
+	std::scoped_lock lock(pimpl.owners_mutex);
+	return std::ranges::any_of(pimpl.owners, [](const auto& entry) {
+		return dynamic_cast<const PlayWorkspace*>(entry.second.get()) != nullptr ||
+		       dynamic_cast<const World*>(entry.second.get()) != nullptr;
+	});
+}
+
+/// Everything that builds or rebuilds node trees, and so runs Lua, belongs to the thread that ticks the engine.
+/// Another thread doing it races with the tick; the editor marshals these calls onto the tick thread
+static void assertOnTickThread([[maybe_unused]] const std::atomic<size_t>& tick_thread, [[maybe_unused]] std::string_view what) {
+	TOAST_ASSERT(
+	    tick_thread.load() == 0 || tick_thread.load() == std::hash<std::thread::id> {}(std::this_thread::get_id()),
+	    "Engine",
+	    "{} has to run on the thread that ticks the engine",
+	    what
+	);
+}
+
 void Engine::tick() {
 	ZoneScoped;
 
+	m->tick_thread.store(std::hash<std::thread::id> {}(std::this_thread::get_id()));
 	m->time.tick();
 
 	// Poll window events
@@ -342,6 +384,9 @@ void Engine::tick() {
 	}
 
 	event::pollEvents();
+
+	// Script calls that had to wait because their target's interpreter was busy
+	scripting::ScriptDispatch::deliver();
 
 	m->input_system->tick();
 	m->haptics_system->tick();
@@ -352,6 +397,7 @@ void Engine::tick() {
 			node_owner->tick();
 		}
 	}
+	scripting::ScriptDispatch::deliver();
 
 	// Run application layer
 	if (active_application) {
@@ -448,20 +494,23 @@ void Engine::tick() {
 		m->renderer->tick(Time::uptime());
 	}
 
-#ifdef DEBUG
-	constexpr bool debug_build = true;
-#else
-	constexpr bool debug_build = false;
-#endif
-	if (debug_build || m->shared_target != nullptr) {
+	// Files that changed on disk are noticed once a second. Rebuilding scripts and assets in place while the game runs
+	// would race with it, so the reloads are only applied in the editor while nothing is playing. What changed during
+	// play stays pending and is applied as soon as the play session ends
+	if (m->shared_target != nullptr && m->asset_manager) {
 		script_reload_timer += Time::delta();
 		if (script_reload_timer > 1.0) {
 			script_reload_timer = 0.0;
-			if (m->asset_manager) {
-				m->asset_manager->pollModifiedAssets();
-			}
+			m->asset_manager->pollModifiedAssets();
+		}
+		if (m->asset_manager->hasPendingReloads() && !gameIsRunning(*m)) {
+			m->asset_manager->applyPendingReloads();
 		}
 	}
+
+	// Nothing is running scripts here, so runtimes that were replaced while executing can go
+	scripting::ScriptRuntime::drainRetired();
+	INodeOwner::reapOrphanedControlBoxes();
 
 	FrameMark;
 }
@@ -687,6 +736,7 @@ void Engine::publishPrefab(UID uid, const assets::Prefab& prefab) {
 }
 
 auto Engine::createWorkspace(std::string_view type) -> std::pair<UID, std::string> {
+	assertOnTickThread(m->tick_thread, "createWorkspace");
 	UID uid;
 	uid.generate();
 	std::scoped_lock lock(m->owners_mutex);
@@ -697,6 +747,7 @@ auto Engine::createWorkspace(std::string_view type) -> std::pair<UID, std::strin
 
 auto Engine::openWorkspace(UID uid) -> std::pair<UID, std::string> {
 	ZoneScoped;
+	assertOnTickThread(m->tick_thread, "openWorkspace");
 	std::scoped_lock lock(m->owners_mutex);
 	if (m->owners.contains(uid)) {
 		TOAST_ERROR("Engine", "Trying to open workspace {} which is already open", uid);
@@ -718,6 +769,7 @@ auto Engine::openWorkspace(UID uid) -> std::pair<UID, std::string> {
 
 auto Engine::openWorkspace(UID uid, std::string_view source_uri) -> std::pair<UID, std::string> {
 	ZoneScoped;
+	assertOnTickThread(m->tick_thread, "openWorkspace");
 	std::scoped_lock lock(m->owners_mutex);
 	if (m->owners.contains(uid)) {
 		TOAST_ERROR("Engine", "Trying to open workspace {} which is already open", uid);
@@ -739,6 +791,7 @@ auto Engine::openWorkspace(UID uid, std::string_view source_uri) -> std::pair<UI
 
 auto Engine::playWorkspace(UID source_handle) -> std::pair<UID, std::string> {
 	ZoneScoped;
+	assertOnTickThread(m->tick_thread, "playWorkspace");
 	std::scoped_lock lock(m->owners_mutex);
 	auto source_it = m->owners.find(source_handle);
 	if (source_it == m->owners.end()) {

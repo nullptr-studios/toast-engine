@@ -17,13 +17,15 @@ inline void Signal<Args...>::connect(toast::Node& node, F&& cb) {
 			f();
 		}
 	};
-	m_connections.push_back(
-	    {.uid = node.uid(),
-			 .identifier = "Unnamed",
-			 .source = ConnectionSource::cpp,
-			 .node = toast::Box<toast::Node>(node),
-			 .cb = std::move(wrapper)}
-	);
+	modify([&](ConnectionList& list) {
+		list.push_back(
+		    {.uid = node.uid(),
+				 .identifier = "Unnamed",
+				 .source = ConnectionSource::cpp,
+				 .node = toast::Box<toast::Node>(node),
+				 .cb = std::move(wrapper)}
+		);
+	});
 }
 
 template<typename... Args>
@@ -46,33 +48,40 @@ inline void
 	} else {
 		wrapper = [iden = std::string(identifier), box = toast::Box<toast::Node>(node)](const Args&...) mutable { box->call(iden); };
 	}
-	m_connections.push_back(
-	    {.uid = node.uid(),
-			 .identifier = std::string(identifier),
-			 .source = source,
-			 .forwards_args = forwards_args,
-			 .node = toast::Box<toast::Node>(node),
-			 .cb = std::move(wrapper)}
-	);
+	modify([&](ConnectionList& list) {
+		list.push_back(
+		    {.uid = node.uid(),
+				 .identifier = std::string(identifier),
+				 .source = source,
+				 .forwards_args = forwards_args,
+				 .node = toast::Box<toast::Node>(node),
+				 .cb = std::move(wrapper)}
+		);
+	});
 }
 
 template<typename... Args>
 inline void Signal<Args...>::disconnect(toast::Node& node, std::string_view identifier, ConnectionSource source) {
-	std::erase_if(m_connections, [&](const Connection& listener) {
-		return listener.node == toast::Box<toast::Node>(node) && listener.identifier == identifier && listener.source == source;
+	modify([&](ConnectionList& list) {
+		std::erase_if(list, [&](const Connection& listener) {
+			return listener.node == toast::Box<toast::Node>(node) && listener.identifier == identifier && listener.source == source;
+		});
 	});
 }
 
 template<typename... Args>
 inline void Signal<Args...>::clear(ConnectionSource source) {
-	std::erase_if(m_connections, [source](const Connection& listener) { return listener.source == source; });
+	modify([source](ConnectionList& list) {
+		std::erase_if(list, [source](const Connection& listener) { return listener.source == source; });
+	});
 }
 
 template<typename... Args>
 inline auto Signal<Args...>::connections() const -> std::vector<ConnectionInfo> {
+	const auto current = snapshot();
 	std::vector<ConnectionInfo> result;
-	result.reserve(m_connections.size());
-	for (const auto& listener : m_connections) {
+	result.reserve(current->size());
+	for (const auto& listener : *current) {
 		result.push_back({listener.uid, listener.identifier, listener.source, listener.forwards_args});
 	}
 	return result;
@@ -81,9 +90,18 @@ inline auto Signal<Args...>::connections() const -> std::vector<ConnectionInfo> 
 template<typename... Args>
 inline void Signal<Args...>::fire(const Args&... args) {
 	ZoneScoped;
-	std::erase_if(m_connections, [](const Connection& listener) { return !listener.node; });
-	for (auto& listener : m_connections) {
+	// Handlers may connect, disconnect or fire this signal again, they work on their own snapshot
+	const auto current = snapshot();
+	bool has_dead = false;
+	for (const auto& listener : *current) {
+		if (!listener.node) {
+			has_dead = true;
+			continue;
+		}
 		listener.cb(args...);
+	}
+	if (has_dead) {
+		modify([](ConnectionList& list) { std::erase_if(list, [](const Connection& listener) { return !listener.node; }); });
 	}
 }
 

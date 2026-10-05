@@ -15,7 +15,7 @@ Listener::Listener(bool state) {
 Listener::~Listener() {
 	m.enabled->store(false);
 	for (auto& [type, name, callback] : m.callbacks) {
-		EventSystem::unsubscribe_map[type](callback);
+		EventSystem::unsubscribeAny(type, callback);
 	}
 
 	{

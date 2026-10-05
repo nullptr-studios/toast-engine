@@ -62,7 +62,12 @@ public:
 	[[nodiscard]]
 	auto sample(float t) const -> glm::vec2;
 
+protected:
+	void onReloaded() override;
+
 private:
+	void readFields();
+
 	HapticMode m_mode = HapticMode::standard;
 	int m_priority = 0;
 	uint32_t m_duration_ms = 0;

@@ -10,6 +10,7 @@
 #include "box.hpp"
 #include "node.hpp"
 
+#include <mutex>
 #include <unordered_map>
 #include <variant>
 #include <vector>
@@ -86,6 +87,8 @@ public:
 	/// Dispatches a single phase of the tick schedule
 	void runPhase(const std::vector<_detail::TickSchedule::Wave>& phase, TickFunctionList func, std::string_view name) const;
 
+	/// Scripts register dependencies from init(), which may run on a loader thread while the main thread recomputes the schedule
+	std::mutex graph_mutex;
 	DependencyGraph graph;
 	_detail::TickSchedule schedule;
 

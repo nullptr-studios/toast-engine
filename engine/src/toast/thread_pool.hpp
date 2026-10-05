@@ -109,6 +109,10 @@ public:
 
 	static auto workerCount() -> size_t;
 
+	/// True when the calling thread is one of the pool's workers; waiting on other pool jobs from here can starve the pool
+	[[nodiscard]]
+	static auto onWorkerThread() noexcept -> bool;
+
 	// No copy and move constructors
 	ThreadPool(ThreadPool&) = delete;
 	ThreadPool(ThreadPool&&) = delete;

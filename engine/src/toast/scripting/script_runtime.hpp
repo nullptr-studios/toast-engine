@@ -4,15 +4,20 @@
  * @date 10 Jul 2026
  *
  * @brief Per-node Lua script execution environment
+ *
+ * Everything in here that touches Lua happens while the calling thread owns the interpreter the runtime lives on
+ * (see LuaState). Calls that arrive while it is busy on another thread are queued in ScriptDispatch
  */
 
 #pragma once
 
 #include <any>
+#include <atomic>
 #include <cstdint>
 #include <lua.hpp>
 #include <luabridge3/LuaBridge/LuaBridge.h>
 #include <memory>
+#include <set>
 #include <span>
 #include <string>
 #include <string_view>
@@ -21,6 +26,7 @@
 #include <toast/reflect/reflect_node.hpp>
 #include <toast/scripting/lua_signal.hpp>
 #include <toast/scripting/node_proxy.hpp>
+#include <toast/scripting/script_context.hpp>
 #include <toast/scripting/script_schema.hpp>
 #include <toast/world/box.hpp>
 #include <unordered_map>
@@ -32,14 +38,27 @@ class Node;
 
 namespace scripting {
 
+/// Shared between a ScriptInstance and the closures installed in its self table; the closures never see a dangling instance
+struct ScriptBinding {
+	explicit ScriptBinding(NodeProxy node_proxy) : proxy(std::move(node_proxy)) { }
+
+	NodeProxy proxy;
+	std::atomic<bool> alive {true};    ///< false once the instance is destroyed
+};
+
 // One per script
 class ScriptInstance {
 public:
-	ScriptInstance(lua_State* l, const assets::Handle<assets::Script>& script, NodeProxy proxy);
-	~ScriptInstance() = default;
+	ScriptInstance(
+	    size_t vm_index, lua_State* l, const assets::Handle<assets::Script>& script, NodeProxy proxy,
+	    std::shared_ptr<RuntimeToken> token
+	);
 
-	ScriptInstance(ScriptInstance&&) = default;
-	auto operator=(ScriptInstance&&) -> ScriptInstance& = default;
+	/// The owner of the interpreter has to run this, it releases registry references
+	~ScriptInstance();
+
+	ScriptInstance(ScriptInstance&&) = delete;
+	auto operator=(ScriptInstance&&) -> ScriptInstance& = delete;
 	ScriptInstance(const ScriptInstance&) = delete;
 	auto operator=(const ScriptInstance&) -> ScriptInstance& = delete;
 
@@ -71,9 +90,15 @@ public:
 	/// @return true if the variable exists
 	auto setVarByPath(std::string_view path, const std::any& value) noexcept -> bool;
 
-	/// Returns true if the self table has a callable field with this name
+	/// Returns true if the self table has a callable field with this name. Needs the interpreter
 	[[nodiscard]]
 	auto hasFunction(std::string_view fn_name) const noexcept -> bool;
+
+	/// True when the script defined a function with this name when it was loaded; touches no interpreter
+	[[nodiscard]]
+	auto knowsFunction(std::string_view fn_name) const noexcept -> bool {
+		return m_function_names.contains(fn_name);
+	}
 
 	[[nodiscard]]
 	auto luaSignals() const noexcept -> const std::unordered_map<std::string, LuaSignal>& {
@@ -90,9 +115,10 @@ public:
 		return m_schema;
 	}
 
+	/// Cached at load, never touches the interpreter
 	[[nodiscard]]
 	auto isValid() const noexcept -> bool {
-		return m_self && !m_self->isNil();
+		return m_valid;
 	}
 
 	/// Tick phases this script defines
@@ -109,11 +135,16 @@ public:
 
 private:
 	lua_State* m_state = nullptr;
+	size_t m_vm_index = 0;
+	std::shared_ptr<ScriptBinding> m_binding;
+	std::shared_ptr<RuntimeToken> m_token;
 	std::unique_ptr<luabridge::LuaRef> m_self;
-	NodeProxy m_proxy;
+	bool m_valid = false;
 	std::string m_name;
 	ScriptSchema m_schema;
 	std::unordered_map<std::string, LuaSignal> m_lua_signals;
+	std::set<std::string, std::less<>>
+	    m_function_names;    ///< every function the table had at load, underscore prefixed ones included
 	toast::TickFunctionList m_tick_mask = toast::TickFunctionList::none;
 
 	void installMetatable() noexcept;
@@ -125,10 +156,15 @@ private:
 	auto pushByPath(std::string_view path) const noexcept -> bool;
 };
 
+/// The node a script's self table belongs to; empty when the table is not the self table of a live script instance
+[[nodiscard]]
+auto nodeOfSelfTable(const luabridge::LuaRef& table) -> NodeProxy;
+
 // One per node
 class TOAST_API ScriptRuntime {
 public:
-	ScriptRuntime(toast::Box<toast::Node> node, const std::vector<assets::Handle<assets::Script>>& scripts);
+	/// `group` places the runtime on the interpreter of its script group, 0 spreads runtimes round robin
+	ScriptRuntime(toast::Box<toast::Node> node, const std::vector<assets::Handle<assets::Script>>& scripts, uint64_t group = 0);
 	~ScriptRuntime();
 
 	ScriptRuntime(const ScriptRuntime&) = delete;
@@ -191,7 +227,7 @@ public:
 	/// Writes a variable of one instance through its schema path
 	auto setVarByPath(size_t index, std::string_view path, const std::any& value) noexcept -> bool;
 
-	/// Changes whenever the runtime is rebuilt
+	/// Unique for every runtime that was ever built, so it also tells a rebuilt runtime from the one it replaced
 	[[nodiscard]]
 	auto schemaVersion() const noexcept -> uint32_t {
 		return m_schema_version;
@@ -209,12 +245,42 @@ public:
 		return m_state_index;
 	}
 
+	/// Flips to dead as the runtime is torn down. Everything that calls into the scripts later holds it
+	[[nodiscard]]
+	auto token() const noexcept -> const std::shared_ptr<RuntimeToken>& {
+		return m_token;
+	}
+
+	/// True while a call into this runtime is on some thread's stack
+	[[nodiscard]]
+	auto executing() const noexcept -> bool {
+		return m_active_calls.load(std::memory_order_acquire) != 0;
+	}
+
+	/**
+	 * @brief Destroys a runtime that may still be executing
+	 *
+	 * A runtime replaced from inside one of its own calls would be freed under its own stack frames. It waits in a
+	 * list instead, and drainRetired() destroys it once nothing runs in it any more
+	 */
+	static void retire(std::unique_ptr<ScriptRuntime> runtime) noexcept;
+
+	/// Destroys retired runtimes that finished executing; call from the main thread when no script is running
+	static void drainRetired() noexcept;
+
 private:
 	std::vector<std::unique_ptr<ScriptInstance>> m_instances;
 	size_t m_state_index = 0;
 	lua_State* m_lua = nullptr;
+	toast::Box<toast::Node> m_node;
+	std::shared_ptr<RuntimeToken> m_token;
 	toast::TickFunctionList m_tick_mask = toast::TickFunctionList::none;
 	uint32_t m_schema_version = 0;
+	mutable std::atomic<int> m_active_calls {0};
+
+	/// Queues `work` for delivery when the interpreter is busy; it only runs if this runtime is still the node's runtime
+	template<typename F>
+	void deferToDispatch(F&& work) const;
 };
 
 }

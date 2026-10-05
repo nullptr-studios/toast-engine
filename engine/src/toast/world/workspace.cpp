@@ -775,6 +775,7 @@ auto Workspace::retypeNode(Box<Node>& target, std::string_view type, bool keep_f
 	fresh->m_state = target->m_state;
 	fresh->m_type = target->m_type;
 	fresh->m_inherited_enabled = target->m_inherited_enabled;
+	fresh->m_script_group = target->m_script_group;
 
 	if (keep_fields) {
 		target->info()->forEachBaseType([&](const NodeInfo& level) {
