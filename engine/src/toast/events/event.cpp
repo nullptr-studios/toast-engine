@@ -19,6 +19,7 @@
 namespace event {
 
 std::unordered_map<std::type_index, EventSystem::EventInfo> EventSystem::event_data;
+std::shared_mutex EventSystem::registration_mutex;
 std::mutex EventSystem::pool_mutex;
 std::unordered_map<std::type_index, std::function<void(std::any)>> EventSystem::unsubscribe_map;
 std::vector<std::unique_ptr<void, void (*)(void*)>> EventSystem::deletion_queue;
@@ -45,6 +46,19 @@ auto allocate(std::size_t size, std::size_t align) noexcept -> void* {
 	return mem;
 }
 
+}
+
+void EventSystem::unsubscribeAny(std::type_index type, const std::any& iterator) {
+	std::function<void(std::any)> unsubscribe;
+	{
+		std::shared_lock lock(registration_mutex);
+		const auto found = unsubscribe_map.find(type);
+		if (found == unsubscribe_map.end()) {
+			return;
+		}
+		unsubscribe = found->second;
+	}
+	unsubscribe(iterator);
 }
 
 void pollEvents() noexcept {

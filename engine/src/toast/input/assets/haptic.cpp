@@ -25,6 +25,25 @@ auto hapticModeFromString(std::string_view s) -> HapticMode {
 }
 
 Haptic::Haptic(const toml::table& table, Handle<Schema> schema) : Data(table, std::move(schema), Data::keep_all_keys) {
+	readFields();
+}
+
+void Haptic::onReloaded() {
+	readFields();
+}
+
+void Haptic::readFields() {
+	m_mode = HapticMode::standard;
+	m_priority = 0;
+	m_duration_ms = 0;
+	m_left = 0.0f;
+	m_right = 0.0f;
+	m_channels = HapticChannels::single;
+	m_pan = 0.0f;
+	m_multiplier = 1.0f;
+	m_curve.reset();
+	m_curve_right.reset();
+
 	const auto& d = static_cast<const DataValue&>(m_root);
 
 	std::string mode_str;

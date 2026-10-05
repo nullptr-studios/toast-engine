@@ -109,6 +109,14 @@ public:
 
 	static auto workerCount() -> size_t;
 
+	/** @returns how many workers are waiting for a job right now */
+	[[nodiscard]]
+	static auto idleWorkers() noexcept -> size_t;
+
+	/** @returns true when the calling thread is one of the pool's workers */
+	[[nodiscard]]
+	static auto onWorkerThread() noexcept -> bool;
+
 	// No copy and move constructors
 	ThreadPool(ThreadPool&) = delete;
 	ThreadPool(ThreadPool&&) = delete;
@@ -131,6 +139,7 @@ private:
 	struct {
 		bool should_stop = false;                            ///< Flag to signal workers to stop
 		std::atomic<int> active_jobs = 0;                    ///< Number of jobs currently executing
+		std::atomic<int> idle_workers = 0;                   ///< Number of workers waiting for a job
 		std::mutex queue_mutex;                              ///< Mutex protecting the job queue
 		std::condition_variable job_available;               ///< Notified when a job is enqueued or stop is requested
 		std::condition_variable all_done;                    ///< Notified when activeJobs hits 0 and queue is empty

@@ -17,11 +17,16 @@
 #include "voxel_smash.hpp"
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <cmath>
+#include <deque>
+#include <functional>
 #include <glm/gtc/matrix_transform.hpp>
 #include <limits>
+#include <mutex>
 #include <span>
+#include <thread>
 #include <toast/assets/assets.hpp>
 #include <toast/thread_pool.hpp>
 #include <toast/voxel/assets/voxel_model.hpp>
@@ -198,6 +203,23 @@ Simulator::PhaseScope::PhaseScope(Simulator& simulator, SimulationPhase expected
 	m_simulator.m_phase.store(next, std::memory_order_relaxed);
 }
 
+namespace {
+
+std::atomic<std::thread::id> g_simulator_thread {};    // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
+
+struct Requests {
+	std::mutex mutex;
+	std::deque<std::move_only_function<void()>> queue;
+	std::atomic<size_t> pending {0};    ///< queued, plus the one being carried out
+	bool running = false;               ///< only the simulator thread touches it
+};
+
+auto requests() -> Requests& {
+	static auto& value = *new Requests();    // NOLINT(cppcoreguidelines-owning-memory)
+	return value;
+}
+}
+
 Simulator::PhaseScope::~PhaseScope() {
 	TOAST_ASSERT(
 	    m_simulator.m_phase.load(std::memory_order_relaxed) == m_active,
@@ -220,12 +242,26 @@ Simulator::Simulator() {
 Simulator::~Simulator() {
 	TOAST_INFO("Physics", "Simulator destroyed");
 	instance = nullptr;
+	// Finish all requests before destroying
+	Requests& all = requests();
+	std::scoped_lock lock(all.mutex);
+	all.queue.clear();
+	all.pending.store(0, std::memory_order_release);
 }
 
 void Simulator::registerRigidbody(Rigidbody& node) {
 	ZoneScopedN("physics::RegisterRigidbody");
 
 	TOAST_ASSERT(instance, "Physics", "Simulator instance is null; cannot register rigidbody");
+	if (not onSimulatorThread()) {
+		request([box = node.box().as<Rigidbody>()]() mutable {
+			if (box.exists()) {
+				registerRigidbody(*box);
+			}
+		});
+		return;
+	}
+	runPendingRequests();
 	if (not instance->mainThreadMutationAllowed()) {
 		return;
 	}
@@ -305,6 +341,17 @@ void Simulator::unregisterRigidbody(Rigidbody& node) {
 	if (!instance) {
 		return;
 	}
+	if (not onSimulatorThread()) {
+		request([box = node.box().as<Rigidbody>()]() mutable {
+			if (box.exists()) {
+				unregisterRigidbody(*box);
+			} else if (instance) {
+				instance->dropRigidbodyBinding(box);    // the node is gone by now but the body is not
+			}
+		});
+		return;
+	}
+	runPendingRequests();
 	if (not instance->mainThreadMutationAllowed()) {
 		return;
 	}
@@ -346,6 +393,15 @@ void Simulator::registerVoxelNode(toast::VoxelNode& node) {
 	if (not instance) {
 		return;
 	}
+	if (not onSimulatorThread()) {
+		request([box = node.box().as<toast::VoxelNode>()]() mutable {
+			if (box.exists()) {
+				registerVoxelNode(*box);
+			}
+		});
+		return;
+	}
+	runPendingRequests();
 	if (not instance->mainThreadMutationAllowed()) {
 		return;
 	}
@@ -406,6 +462,17 @@ void Simulator::unregisterVoxelNode(toast::VoxelNode& node) {
 	if (not instance) {
 		return;
 	}
+	if (not onSimulatorThread()) {
+		request([box = node.box().as<toast::VoxelNode>()]() mutable {
+			if (box.exists()) {
+				unregisterVoxelNode(*box);
+			} else if (instance) {
+				instance->dropVoxelBinding(box);
+			}
+		});
+		return;
+	}
+	runPendingRequests();
 	if (not instance->mainThreadMutationAllowed()) {
 		return;
 	}
@@ -430,6 +497,15 @@ void Simulator::registerTrigger(Trigger& node) {
 	ZoneScoped;
 	TOAST_ASSERT(instance, "Physics", "Tried to register a trigger without a physics system");
 
+	if (not onSimulatorThread()) {
+		request([box = node.box().as<Trigger>()]() mutable {
+			if (box.exists()) {
+				registerTrigger(*box);
+			}
+		});
+		return;
+	}
+	runPendingRequests();
 	if (not instance->mainThreadMutationAllowed()) {
 		return;
 	}
@@ -446,6 +522,15 @@ void Simulator::unregisterTrigger(Trigger& node) {
 		return;
 	}
 
+	if (not onSimulatorThread()) {
+		request([box = node.box().as<Trigger>()]() mutable {
+			if (instance) {
+				std::erase(instance->m_triggers, box);
+			}
+		});
+		return;
+	}
+	runPendingRequests();
 	if (not instance->mainThreadMutationAllowed()) {
 		return;
 	}
@@ -524,6 +609,7 @@ void Simulator::tick() {
 		return;
 	}
 	PhaseScope step_phase {*this, SimulationPhase::idle, SimulationPhase::mutation};
+	runPendingRequests();
 	m_profile = {};
 
 	const auto tick_start = std::chrono::steady_clock::now();
@@ -1675,6 +1761,11 @@ void Simulator::setBodyTransform(BodyID body, const glm::vec3& position, const g
 	if (instance == nullptr) {
 		return;
 	}
+	if (not onSimulatorThread()) {
+		request([body, position, rotation] { setBodyTransform(body, position, rotation); });
+		return;
+	}
+	runPendingRequests();
 	instance->setTransform(body, position, rotation);
 }
 
@@ -1682,6 +1773,11 @@ auto Simulator::setBodyLinearVelocity(BodyID body, const glm::vec3& velocity) ->
 	if (instance == nullptr) {
 		return false;
 	}
+	if (not onSimulatorThread()) {
+		request([body, velocity] { setBodyLinearVelocity(body, velocity); });
+		return true;
+	}
+	runPendingRequests();
 	return instance->setLinearVelocity(body, velocity);
 }
 
@@ -1692,6 +1788,11 @@ void Simulator::setBodyEnabled(BodyID body, bool enabled) {
 	if (not instance) {
 		return;
 	}
+	if (not onSimulatorThread()) {
+		request([body, enabled] { setBodyEnabled(body, enabled); });
+		return;
+	}
+	runPendingRequests();
 	if (not instance->mainThreadMutationAllowed()) {
 		return;
 	}
@@ -1710,6 +1811,11 @@ void Simulator::setShapeEnabled(ShapeID shape, bool enabled) {
 	if (not instance) {
 		return;
 	}
+	if (not onSimulatorThread()) {
+		request([shape, enabled] { setShapeEnabled(shape, enabled); });
+		return;
+	}
+	runPendingRequests();
 	if (not instance->mainThreadMutationAllowed()) {
 		return;
 	}
@@ -1717,9 +1823,8 @@ void Simulator::setShapeEnabled(ShapeID shape, bool enabled) {
 		if (value->enabled != enabled) {
 			if (enabled) {
 				wakeBody(value->owner);
-			} else if (
-			    const Body* owner = instance->tryGetBody(value->owner); owner != nullptr && owner->type != BodyType::dynamic_body
-			) {
+			} else if (const Body* owner = instance->tryGetBody(value->owner);
+			           owner != nullptr && owner->type != BodyType::dynamic_body) {
 				instance->wakeBodiesTouching(shape);
 			}
 			value->enabled = enabled;
@@ -1847,7 +1952,7 @@ void Simulator::publishVoxelRenderRecords() {
 		      .fragment_origin = data->fragment_origin,
 		      .awake = body->awake,
 		      .world_bounds = worldShapeBounds(*body, slot.shape),
-		}
+    }
 		);
 	}
 
@@ -1914,6 +2019,7 @@ auto Simulator::renderPoseDeltaFor(uint64_t node_uid) -> glm::mat4 {
 
 void Simulator::syncRenderPoses() {
 	if (instance != nullptr) {
+		runPendingRequests();
 		instance->rebuildRenderPoseLookup();
 	}
 }
@@ -2544,7 +2650,7 @@ void Simulator::updateCache(std::span<const Manifold> manifolds) {
 		const auto current =
 		    std::lower_bound(manifolds.begin(), manifolds.end(), key, [](const Manifold& manifold, CachedManifoldKey candidate) {
 			    return manifold.pair < candidate.pair ||
-					       (manifold.pair == candidate.pair && manifold.normal_index < candidate.normal_index);
+			           (manifold.pair == candidate.pair && manifold.normal_index < candidate.normal_index);
 		    });
 		const bool still_colliding =
 		    current != manifolds.end() && current->pair == cached.pair && current->normal_index == cached.normal_index;
@@ -2688,6 +2794,97 @@ void Simulator::integrateBody(BodyID id, Body& body, const glm::vec3& gravity, f
 void Simulator::callTick() {
 	TOAST_ASSERT(instance, "Physics", "Simulator instance is null; cannot tick");
 	instance->tick();
+}
+
+void Simulator::bindToThisThread() noexcept {
+	const std::thread::id self = std::this_thread::get_id();
+	if (g_simulator_thread.load(std::memory_order_relaxed) != self) {
+		g_simulator_thread.store(self, std::memory_order_release);
+	}
+}
+
+auto Simulator::onSimulatorThread() noexcept -> bool {
+	const std::thread::id bound = g_simulator_thread.load(std::memory_order_acquire);
+	return bound == std::thread::id {} || bound == std::this_thread::get_id();
+}
+
+auto Simulator::pendingRequests() noexcept -> size_t {
+	return requests().pending.load(std::memory_order_acquire);
+}
+
+void Simulator::request(std::move_only_function<void()> work) {
+	Requests& all = requests();
+	std::scoped_lock lock(all.mutex);
+	all.queue.push_back(std::move(work));
+	all.pending.fetch_add(1, std::memory_order_release);
+}
+
+void Simulator::runPendingRequests() {
+	Requests& all = requests();
+	// A request that asks the simulator for something itself comes back here, and must not start over
+	if (all.pending.load(std::memory_order_acquire) == 0 || all.running || not onSimulatorThread()) {
+		return;
+	}
+
+	ZoneScopedN("physics::RunRequests");
+	all.running = true;
+	while (true) {
+		std::move_only_function<void()> work;
+		{
+			std::scoped_lock lock(all.mutex);
+			if (all.queue.empty()) {
+				break;
+			}
+			work = std::move(all.queue.front());
+			all.queue.pop_front();
+		}
+		work();
+		all.pending.fetch_sub(1, std::memory_order_release);
+	}
+	all.running = false;
+}
+
+void Simulator::requestSleep(BodyID id) {
+	if (not onSimulatorThread()) {
+		request([id] { sleepBody(id); });
+		return;
+	}
+	runPendingRequests();
+	sleepBody(id);
+}
+
+void Simulator::requestWake(BodyID id) {
+	if (not onSimulatorThread()) {
+		request([id] { wakeBody(id); });
+		return;
+	}
+	runPendingRequests();
+	wakeBody(id);
+}
+
+void Simulator::dropRigidbodyBinding(const toast::Box<Rigidbody>& node) {
+	for (NodeBinding& binding : m_node_bindings) {
+		if (binding.node != node) {
+			continue;
+		}
+		for (ColliderBinding& collider : binding.colliders) {
+			if (collider.node.exists()) {
+				collider.node->assignShape({});
+			}
+		}
+		destroyBody(binding.body);
+	}
+	std::erase_if(m_node_bindings, [&node](const NodeBinding& binding) { return binding.node == node; });
+}
+
+void Simulator::dropVoxelBinding(const toast::Box<toast::VoxelNode>& node) {
+	for (const VoxelNodeBinding& binding : m_voxel_bindings) {
+		if (binding.node == node) {
+			destroyFragmentsOf(binding.body);
+			destroyBody(binding.body);
+		}
+	}
+	std::erase_if(m_voxel_bindings, [&node](const VoxelNodeBinding& binding) { return binding.node == node; });
 }
 
 auto Simulator::createBody(const BodyDescriptor& descriptor) -> BodyID {
@@ -4412,7 +4609,7 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 			islands.emplace_back(
 			    SimulationIsland {
 			      .sort_key = BodyID {.slot = static_cast<uint32_t>(root), .generation = root_slot.generation},
-			}
+      }
 			);
 		}
 

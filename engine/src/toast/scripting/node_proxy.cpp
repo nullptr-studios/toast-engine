@@ -2,6 +2,7 @@
 
 #include "asset_proxy.hpp"
 #include "lua_event.hpp"
+#include "lua_state.hpp"
 #include "lua_types.hpp"
 #include "script_runtime.hpp"
 #include "signal_proxy.hpp"
@@ -1084,7 +1085,7 @@ auto NodeProxy::getChildren(lua_State* l) -> std::vector<NodeProxy> {
 		luaL_error(l, "getChildren: node reference is dead");
 		return {};
 	}
-	return toProxies(m_box->children());
+	return toProxies(m_box->childrenSnapshot());
 }
 
 auto NodeProxy::getChildren(const std::string& type, lua_State* l) -> std::vector<NodeProxy> {
@@ -1152,6 +1153,13 @@ void NodeProxy::addDependsOn(const NodeProxy& other) {
 	m_box->addDependsOn(const_cast<toast::Node&>(*other.m_box));
 }
 
+void NodeProxy::interactsWith(const NodeProxy& other) {
+	if (!m_box.exists() || !other.m_box.exists()) {
+		return;
+	}
+	m_box->interactsWith(const_cast<toast::Node&>(*other.m_box));
+}
+
 auto NodeProxy::hasField(std::string_view key) const noexcept -> bool {
 	if (!m_box.exists()) {
 		return false;
@@ -1174,6 +1182,7 @@ auto NodeProxy::call(const std::string& fn_name, lua_State* l) -> luabridge::Lua
 }
 
 auto nodeProxyIndex(NodeProxy& proxy, const luabridge::LuaRef& key, lua_State* l) -> luabridge::LuaRef {
+	TOAST_LUA_ASSERT_OWNED(l);
 	if (!proxy.exists()) {
 		luaL_error(l, "__index: node reference is dead");
 		return {l};
@@ -1234,6 +1243,7 @@ auto nodeProxyIndex(NodeProxy& proxy, const luabridge::LuaRef& key, lua_State* l
 }
 
 auto nodeProxyDispatchMethod(NodeProxy& np, std::string_view name, lua_State* l, int args_base, int n_args) -> int {
+	TOAST_LUA_ASSERT_OWNED(l);
 	if (!np.exists()) {
 		luaL_error(l, "method '%.*s': node reference is dead", static_cast<int>(name.size()), name.data());
 		return 0;
@@ -1332,6 +1342,17 @@ auto nodeProxyDispatchMethod(NodeProxy& np, std::string_view name, lua_State* l,
 		auto other_result = luabridge::Stack<NodeProxy>::get(l, args_base);
 		if (other_result) {
 			np.addDependsOn(*other_result);
+		}
+		return 0;
+	}
+	if (name == "interactsWith") {
+		if (n_args < 1 || !lua_isuserdata(l, args_base)) {
+			luaL_error(l, "interactsWith: expected a Node argument");
+			return 0;
+		}
+		auto other_result = luabridge::Stack<NodeProxy>::get(l, args_base);
+		if (other_result) {
+			np.interactsWith(*other_result);
 		}
 		return 0;
 	}
@@ -1434,6 +1455,7 @@ auto proxyMethodDispatch(lua_State* l) -> int {
 
 auto nodeProxyNewindex(NodeProxy& proxy, const luabridge::LuaRef& key, const luabridge::LuaRef& value, lua_State* l)
     -> luabridge::LuaRef {
+	TOAST_LUA_ASSERT_OWNED(l);
 	if (!proxy.exists()) {
 		luaL_error(l, "__newindex: node reference is dead");
 		return {l};

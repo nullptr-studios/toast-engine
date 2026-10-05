@@ -15,6 +15,8 @@
 #include <algorithm>
 #include <any>
 #include <functional>
+#include <memory>
+#include <mutex>
 #include <span>
 #include <string>
 #include <string_view>
@@ -45,9 +47,50 @@ class Signal {
 		callback_t cb;
 	};
 
-	std::vector<Connection> m_connections;
+	using ConnectionList = std::vector<Connection>;
+
+	/**
+	 * Copy on write
+	 *
+	 * Hhandlers run against a snapshot so the same signal never invalidates what is being iterated
+	 */
+	mutable std::mutex m_mutex;
+	std::shared_ptr<const ConnectionList> m_connections = std::make_shared<const ConnectionList>();
+
+	[[nodiscard]]
+	auto snapshot() const -> std::shared_ptr<const ConnectionList> {
+		std::scoped_lock lock(m_mutex);
+		return m_connections;
+	}
+
+	template<typename Edit>
+	void modify(Edit&& edit) {
+		std::scoped_lock lock(m_mutex);
+		auto copy = std::make_shared<ConnectionList>(*m_connections);
+		edit(*copy);
+		m_connections = std::move(copy);
+	}
 
 public:
+	Signal() = default;
+
+	Signal(const Signal& other) : m_connections(other.snapshot()) { }
+
+	Signal(Signal&& other) noexcept : m_connections(other.snapshot()) { }
+
+	auto operator=(const Signal& other) -> Signal& {
+		if (this != &other) {
+			auto other_connections = other.snapshot();
+			std::scoped_lock lock(m_mutex);
+			m_connections = std::move(other_connections);
+		}
+		return *this;
+	}
+
+	auto operator=(Signal&& other) noexcept -> Signal& { return *this = other; }
+
+	~Signal() = default;
+
 	template<typename F>
 	  requires(std::is_invocable_r_v<void, F, Args...> || std::is_invocable_r_v<void, F>)
 	void connect(toast::Node& node, F&& cb);

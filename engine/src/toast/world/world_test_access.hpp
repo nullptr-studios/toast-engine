@@ -38,15 +38,39 @@ struct TOAST_API WorldTestAccess {
 	// Test-only: like addTickStage(), but the fabricated NodeInfo also calls `callback` for onEnable
 	static void setEnableCallback(Node& node, void (*callback)(void*));
 
+	// Test-only: like addTickStage(tick), but the fabricated NodeInfo also calls `callback` as the C++ tick of the node
+	static void setTickCallback(Node& node, void (*callback)(void*));
+
+	// Test-only: the fabricated NodeInfo of the node calls `callback` as its C++ function for `stage` (init, begin or onEnable)
+	static void setStageCallback(Node& node, TickFunctionList stage, void (*callback)(void*));
+
+	// Test-only: TickScheduler::runLifecycle() of the world's scheduler
+	static void runLifecycle(World& world, Node& root, TickFunctionList stage);
+
+	// Test-only: the node counts as enabled, without the callbacks that enabling it would run
+	static void markEnabled(Node& node);
+
+	// Test-only: Node::propagateCallTick(), one node after the other on the calling thread
+	static void propagateCallTick(Node& node, TickFunctionList stage);
+
 	// Test-only: appends a script asset to the node and (re)builds its ScriptRuntime;
 	// requires a LuaState to exist
 	static void attachScript(Node& node, const assets::Handle<assets::Script>& script);
+
+	/// Like attachScript(), with the runtime placed together with the other nodes of the script group
+	static void attachScriptInGroup(Node& node, const assets::Handle<assets::Script>& script, uint64_t group);
 
 	static void applyLuaOverrides(
 	    World& world, Node& node, const assets::Prefab::BasicNode& data, const scripting::NodeResolver& find_node
 	);
 
 	static auto tickSchedule(World& world) noexcept -> _detail::TickSchedule&;
+
+	/// Test-only: the world's scheduler, so tests can run tick phases without the physics step
+	static auto scheduler(World& world) noexcept -> TickScheduler&;
+
+	/// Test-only: one frame of the scheduled phases (early tick, tick, post physics, late tick)
+	static void runTickFrame(World& world);
 
 	static auto dependencyGraph(World& world) noexcept -> World::DependencyGraph&;
 
@@ -64,6 +88,9 @@ struct TOAST_API WorldTestAccess {
 	static void initThreadPool();
 
 	static void setWorldRoot(World& world, Node& node);
+
+	/// Test-only: World::moveToChild(), which the engine reaches through events
+	static auto moveToChild(World& world, Node& node, Node& parent) -> Box<Node>;
 
 	// Moves a freshly instantiated tree to the cache, then World::swapRoot() it so begin/onEnable run
 	static auto activateLoadedRoot(World& world, Node& node) -> Box<Node>;

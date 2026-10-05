@@ -29,7 +29,12 @@ public:
 	[[nodiscard]]
 	auto dynamicFriction() const noexcept -> float;
 
+protected:
+	void onReloaded() override;
+
 private:
+	void readFields();
+
 	float m_restitution = 0.1f;
 	float m_static_friction = 0.6f;
 	float m_dynamic_friction = 0.5f;

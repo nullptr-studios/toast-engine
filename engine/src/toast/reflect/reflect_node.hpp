@@ -77,6 +77,26 @@ constexpr auto hasFlag(TickFunctionList flags, TickFunctionList flag) -> bool {
 	return (flags & flag) == flag;
 }
 
+constexpr auto tickFunctionName(TickFunctionList func) -> std::string_view {
+	switch (func) {
+		case TickFunctionList::load: return "load";
+		case TickFunctionList::save: return "save";
+		case TickFunctionList::editor_tick: return "editor_tick";
+		case TickFunctionList::init: return "init";
+		case TickFunctionList::destroy: return "destroy";
+		case TickFunctionList::begin: return "begin";
+		case TickFunctionList::end: return "end";
+		case TickFunctionList::on_enable: return "on_enable";
+		case TickFunctionList::on_disable: return "on_disable";
+		case TickFunctionList::early_tick: return "early_tick";
+		case TickFunctionList::tick: return "tick";
+		case TickFunctionList::physics_tick: return "physics_tick";
+		case TickFunctionList::post_physics: return "post_physics";
+		case TickFunctionList::late_tick: return "late_tick";
+		default: return "none";
+	}
+}
+
 /**
  * @brief Set of lifecycle function pointers for one Node type
  *

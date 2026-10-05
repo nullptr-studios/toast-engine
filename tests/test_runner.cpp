@@ -47,7 +47,8 @@ int main(int argc, char** argv) {
 	}
 
 	auto run_case = [](const toast::tests::TestCase& test_case) {
-		std::cout << "[ RUN      ] " << test_case.name << "\n";
+		// Flushed, so when a test takes the process down the last line names it instead of a test from a buffer ago
+		std::cout << "[ RUN      ] " << test_case.name << '\n' << std::flush;
 		test_case.fn();
 		std::cout << "[     OK   ] " << test_case.name << "\n";
 	};

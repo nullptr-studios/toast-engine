@@ -24,6 +24,7 @@
 #include <atomic>
 #include <cstdint>
 #include <deque>
+#include <functional>
 #include <glm/glm.hpp>
 #include <optional>
 #include <span>
@@ -246,6 +247,24 @@ public:
 	static auto nodeFor(BodyID body) -> toast::Box<toast::Node>;
 
 	static void callTick();
+
+	static void bindToThisThread() noexcept;
+
+	[[nodiscard]]
+	static auto onSimulatorThread() noexcept -> bool;
+
+	/**
+	 * @brief How many requests from other threads are waiting for the simulator thread
+	 */
+	[[nodiscard]]
+	static auto pendingRequests() noexcept -> size_t;
+
+	/// Carries out the requests other threads made, on the simulator thread
+	static void runPendingRequests();
+
+	/// Puts a body to sleep or wakes it, from any thread
+	static void requestSleep(BodyID id);
+	static void requestWake(BodyID id);
 	static void registerRigidbody(Rigidbody& node);
 	static void unregisterRigidbody(Rigidbody& node);
 	static void registerVoxelNode(toast::VoxelNode& node);
@@ -362,6 +381,12 @@ private:
 	static auto colliderFor(BodyID body, ShapeID shape) -> toast::Box<toast::Node>;
 	[[nodiscard]]
 	auto mainThreadMutationAllowed() const -> bool;
+
+	/// Keeps `work` for the simulator thread
+	static void request(std::move_only_function<void()> work);
+
+	void dropRigidbodyBinding(const toast::Box<Rigidbody>& node);
+	void dropVoxelBinding(const toast::Box<toast::VoxelNode>& node);
 
 	[[nodiscard]]
 	auto createSphere(BodyID owner, const SphereShape& sphere, PhysicsMaterial material) -> ShapeID;

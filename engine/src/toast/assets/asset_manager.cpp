@@ -56,41 +56,7 @@ auto AssetManager::get() noexcept -> AssetManager& {
 	return *instance;
 }
 
-auto AssetManager::load(toast::UID uid) -> Asset* {
-	ZoneScoped;
-	uint64_t id = uid.data();
-
-	// empty asset
-	if (id == 0) {
-		return nullptr;
-	}
-
-	std::lock_guard lock(mutex);
-
-	// Check cache
-	if (auto it = cache.find(id); it != cache.end()) {
-		return it->second.get();
-	}
-
-	// Check manifest
-	auto manifest_it = manifest.find(id);
-	if (manifest_it == manifest.end()) {
-		TOAST_ERROR("AssetManager", "Asset with UID {} not found in manifest", uid);
-		return nullptr;
-	}
-
-	const auto& info = manifest_it->second;
-	auto real_path = resolveVirtualPath(info.path);
-	if (!real_path) {
-		TOAST_ERROR("AssetManager", "Could not resolve virtual path: {}", info.path);
-		return nullptr;
-	}
-
-	auto raw_data = readVirtualPath(info.path);
-	if (!raw_data) {
-		return nullptr;
-	}
-
+auto AssetManager::createAsset(const AssetInfo& info, std::vector<uint8_t>& raw_data) -> std::unique_ptr<Asset> {
 	std::unique_ptr<Asset> asset = nullptr;
 
 	auto resolve_schema = [&](const toml::table& table) -> Handle<Schema> {
@@ -128,17 +94,17 @@ auto AssetManager::load(toast::UID uid) -> Asset* {
 
 	if (info.type == "node") {
 		if (load_mode == SaveMode::editor) {
-			std::istringstream stream(std::string(reinterpret_cast<const char*>(raw_data->data()), raw_data->size()));
+			std::istringstream stream(std::string(reinterpret_cast<const char*>(raw_data.data()), raw_data.size()));
 			asset = std::make_unique<Prefab>(stream);
 		} else {
-			asset = std::make_unique<Prefab>(std::span<const uint8_t>(*raw_data));
+			asset = std::make_unique<Prefab>(std::span<const uint8_t>(raw_data));
 		}
 	}
 
 	// raw binary
 	else if (AssetRegistry::hasRaw(info.type)) {
 		try {
-			asset = AssetRegistry::createRaw(info.type, std::move(*raw_data));
+			asset = AssetRegistry::createRaw(info.type, std::move(raw_data));
 		} catch (const std::exception& err) {
 			TOAST_ERROR("AssetManager", "Failed to create asset {}: {}", info.path, err.what());
 			return nullptr;
@@ -148,7 +114,7 @@ auto AssetManager::load(toast::UID uid) -> Asset* {
 	// plain TOML loaders
 	else if (AssetRegistry::hasToml(info.type)) {
 		try {
-			std::string_view toml_str(reinterpret_cast<const char*>(raw_data->data()), raw_data->size());
+			std::string_view toml_str(reinterpret_cast<const char*>(raw_data.data()), raw_data.size());
 			asset = AssetRegistry::createToml(info.type, toml::parse(toml_str));
 		} catch (const toml::parse_error& err) {
 			TOAST_ERROR("AssetManager", "Failed to parse TOML asset {}: {}", info.path, err.description());
@@ -162,7 +128,7 @@ auto AssetManager::load(toast::UID uid) -> Asset* {
 	// TOML + Schema loaders
 	else if (AssetRegistry::hasSchemaToml(info.type)) {
 		try {
-			std::string_view toml_str(reinterpret_cast<const char*>(raw_data->data()), raw_data->size());
+			std::string_view toml_str(reinterpret_cast<const char*>(raw_data.data()), raw_data.size());
 			auto table = toml::parse(toml_str);
 			auto schema_handle = resolve_schema(table);
 			asset = AssetRegistry::createSchemaToml(info.type, std::move(table), std::move(schema_handle));
@@ -182,6 +148,49 @@ auto AssetManager::load(toast::UID uid) -> Asset* {
 
 	if (!asset) {
 		TOAST_ERROR("AssetManager", "Failed to create asset of type '{}' for {}", info.type, info.path);
+		return nullptr;
+	}
+
+	return asset;
+}
+
+auto AssetManager::load(toast::UID uid) -> Asset* {
+	ZoneScoped;
+	uint64_t id = uid.data();
+
+	// empty asset
+	if (id == 0) {
+		return nullptr;
+	}
+
+	std::lock_guard lock(mutex);
+
+	// Check cache
+	if (auto it = cache.find(id); it != cache.end()) {
+		return it->second.get();
+	}
+
+	// Check manifest
+	auto manifest_it = manifest.find(id);
+	if (manifest_it == manifest.end()) {
+		TOAST_ERROR("AssetManager", "Asset with UID {} not found in manifest", uid);
+		return nullptr;
+	}
+
+	const auto& info = manifest_it->second;
+	auto real_path = resolveVirtualPath(info.path);
+	if (!real_path) {
+		TOAST_ERROR("AssetManager", "Could not resolve virtual path: {}", info.path);
+		return nullptr;
+	}
+
+	auto raw_data = readVirtualPath(info.path);
+	if (!raw_data) {
+		return nullptr;
+	}
+
+	std::unique_ptr<Asset> asset = createAsset(info, *raw_data);
+	if (!asset) {
 		return nullptr;
 	}
 
@@ -370,6 +379,8 @@ void AssetManager::clearUnusedAssets() {
 	std::lock_guard lock(mutex);
 	size_t initial_count = cache.size();
 	std::erase_if(cache, [](const auto& item) { return item.second->refCount() == 0; });
+	// Objects replaced by a hot reload go once their last handle dies
+	std::erase_if(retired_assets, [](const auto& asset) { return asset->refCount() == 0; });
 	size_t cleared = initial_count - cache.size();
 	if (cleared > 0) {
 		TOAST_INFO("AssetManager", "Cleared {} unused assets from cache", cleared);
@@ -571,51 +582,92 @@ auto keepsSchema(const Data& data, const toml::table& table) -> bool {
 
 }
 
+namespace {
+
+auto isUiType(std::string_view type) -> bool {
+	return type == "ui_element" || type == "ui_style" || type == "color_scheme" || type == "localization" ||
+	       type == "image_localization";
+}
+
+/// Types that cannot be rebuilt in place
+auto isReplacedOnReload(std::string_view type) -> bool {
+	return type == "mesh" || type == "texture" || type == "animation" || type == "schema" || type == "font" || type == "ui_image";
+}
+
+auto isWatchedType(std::string_view type) -> bool {
+	return type == "script" || type == "shader" || type == "voxel_palette" || type == "curve" || type == "voxel_model" ||
+	       isUiType(type) || isReplacedOnReload(type) || AssetRegistry::hasSchemaToml(type);
+}
+
+}
+
 void AssetManager::pollModifiedAssets() {
 	ZoneScoped;
 
-	struct ChangedAsset {
-		toast::UID uid;
-		std::string type;
-	};
+	std::lock_guard lock(mutex);
+	for (const auto& [id, info] : manifest) {
+		const std::string& type = info.type;
+		if (!isWatchedType(type)) {
+			continue;
+		}
+		// Only assets that are loaded have something to reload; stylesheets are also read straight from the VFS
+		if (!isUiType(type) && !cache.contains(id)) {
+			continue;
+		}
+		auto real_path = resolveVirtualPath(info.path);
+		if (!real_path) {
+			continue;
+		}
 
-	std::vector<ChangedAsset> changed;
+		std::error_code ec;
+		const auto mtime = std::filesystem::last_write_time(*real_path, ec);
+		if (ec) {
+			continue;
+		}
+		auto [it, first_seen] = asset_mtimes.try_emplace(id, mtime);
+		if (first_seen || it->second == mtime) {
+			continue;    // unchanged
+		}
+		it->second = mtime;
+		pending_reloads.insert(id);
+	}
+}
+
+auto AssetManager::hasPendingReloads() const -> bool {
+	std::lock_guard lock(mutex);
+	return !pending_reloads.empty();
+}
+
+auto AssetManager::applyPendingReloads() -> std::vector<ReloadedAsset> {
+	ZoneScoped;
+
+	std::vector<ReloadedAsset> reloaded;
 	{
 		std::lock_guard lock(mutex);
-		for (const auto& [id, info] : manifest) {
-			const std::string& type = info.type;
-			const bool is_ui = type == "ui_element" || type == "ui_style" || type == "color_scheme" || type == "localization" ||
-			                   type == "image_localization";
-			auto asset_it = cache.find(id);
-			if (!is_ui && asset_it == cache.end()) {
-				continue;
-			}
-			if (type != "script" && type != "shader" && type != "material" && type != "material_instance" && type != "voxel_palette" &&
-			    type != "data" && type != "curve" && !is_ui) {
-				continue;
-			}
-			auto real_path = resolveVirtualPath(info.path);
-			if (!real_path) {
-				continue;
-			}
+		std::unordered_set<uint64_t> pending;
+		pending.swap(pending_reloads);
 
-			std::error_code ec;
-			const auto mtime = std::filesystem::last_write_time(*real_path, ec);
-			if (ec) {
+		for (const uint64_t id : pending) {
+			const auto manifest_it = manifest.find(id);
+			if (manifest_it == manifest.end()) {
 				continue;
 			}
-			auto [it, first_seen] = asset_mtimes.try_emplace(id, mtime);
-			if (first_seen || it->second == mtime) {
-				continue;    // unchanged
+			const AssetInfo& info = manifest_it->second;
+			const std::string& type = info.type;
+
+			auto asset_it = cache.find(id);
+			const bool uncached_ui = isUiType(type) && asset_it == cache.end();
+			if (asset_it == cache.end() && !uncached_ui) {
+				continue;    // evicted since it was noticed, the next load reads the new file
 			}
-			it->second = mtime;
 
 			auto raw = readVirtualPath(info.path);
 			if (!raw) {
 				continue;
 			}
 
-			if (is_ui && asset_it == cache.end()) {
+			bool replaced = false;
+			if (uncached_ui) {
 				// .rcss files are reloaded directly through the VFS
 			} else if (type == "script") {
 				static_cast<Script*>(asset_it->second.get())->setData(std::move(*raw));
@@ -625,79 +677,90 @@ void AssetManager::pollModifiedAssets() {
 				static_cast<UIElement*>(asset_it->second.get())->setSource(std::move(*raw));
 			} else if (type == "ui_style") {
 				static_cast<UIStyle*>(asset_it->second.get())->setSource(std::move(*raw));
-			} else if (type == "color_scheme") {
-				try {
-					const std::string_view toml_str(reinterpret_cast<const char*>(raw->data()), raw->size());
-					static_cast<ColorScheme*>(asset_it->second.get())->reload(toml::parse(toml_str));
-				} catch (const toml::parse_error& err) {
-					TOAST_ERROR("AssetManager", "Hot reload parse error for {}: {}", info.path, err.description());
-					continue;
-				}
 			} else if (type == "localization") {
 				static_cast<Localization*>(asset_it->second.get())->reload(std::move(*raw));
 			} else if (type == "image_localization") {
 				static_cast<ImageLocalization*>(asset_it->second.get())->reload(std::move(*raw));
-			} else if (type == "voxel_palette") {
+			} else if (type == "voxel_model") {
+				static_cast<VoxelModel*>(asset_it->second.get())->reload(*raw);
+			} else if (isReplacedOnReload(type)) {
+				std::unique_ptr<Asset> fresh;
 				try {
-					const std::string_view toml_str(reinterpret_cast<const char*>(raw->data()), raw->size());
-					static_cast<VoxelPalette*>(asset_it->second.get())->reload(toml::parse(toml_str));
+					fresh = createAsset(info, *raw);
 				} catch (const std::exception& err) {
-					TOAST_ERROR("AssetManager", "Hot reload parse error for {}: {}", info.path, err.what());
+					TOAST_ERROR("AssetManager", "Hot reload failed for {}: {}", info.path, err.what());
 					continue;
 				}
-			} else if (type == "curve") {
-				try {
-					const std::string_view toml_str(reinterpret_cast<const char*>(raw->data()), raw->size());
-					static_cast<Curve*>(asset_it->second.get())->reload(toml::parse(toml_str));
-				} catch (const std::exception& err) {
-					TOAST_ERROR("AssetManager", "Hot reload parse error for {}: {}", info.path, err.what());
+				if (!fresh) {
 					continue;
 				}
+				// The old object stays alive for the handles that still point at it
+				retired_assets.push_back(std::move(asset_it->second));
+				asset_it->second = std::move(fresh);
+				replaced = true;
 			} else {
-				// Materials and Data assets re-parse their TOML in place so existing handles stay valid
 				try {
 					const std::string_view toml_str(reinterpret_cast<const char*>(raw->data()), raw->size());
 					const toml::table table = toml::parse(toml_str);
-					auto* data = static_cast<Data*>(asset_it->second.get());
-					if (type == "data" && !keepsSchema(*data, table)) {
-						TOAST_WARN(
-						    "AssetManager",
-						    "{} does not name the schema it was loaded with (half written file or a schema change), keeping the old values",
-						    info.path
-						);
+					if (type == "color_scheme") {
+						static_cast<ColorScheme*>(asset_it->second.get())->reload(table);
+					} else if (type == "voxel_palette") {
+						static_cast<VoxelPalette*>(asset_it->second.get())->reload(table);
+					} else if (type == "curve") {
+						static_cast<Curve*>(asset_it->second.get())->reload(table);
+					} else if (auto* data = dynamic_cast<Data*>(asset_it->second.get())) {
+						if (!keepsSchema(*data, table)) {
+							TOAST_WARN(
+							    "AssetManager",
+							    "{} does not name the schema it was loaded with (half written file or a schema change), keeping the old values",
+							    info.path
+							);
+							continue;
+						}
+						data->reload(table);
+					} else {
+						TOAST_WARN("AssetManager", "{} ({}) cannot be hot reloaded", info.path, type);
 						continue;
 					}
-					data->reload(table);
 				} catch (const toml::parse_error& err) {
 					TOAST_ERROR("AssetManager", "Hot reload parse error for {}: {}", info.path, err.description());
 					continue;
+				} catch (const std::exception& err) {
+					TOAST_ERROR("AssetManager", "Hot reload parse error for {}: {}", info.path, err.what());
+					continue;
 				}
 			}
-			changed.push_back(ChangedAsset {.uid = toast::UID(id), .type = type});
+			reloaded.push_back(ReloadedAsset {.uid = toast::UID(id), .type = type, .replaced = replaced});
 		}
 	}
 
-	for (const auto& [uid, type] : changed) {
-		TOAST_INFO("AssetManager", "Asset changed on disk, reloading: {} ({})", getURI(uid), type);
+	for (const ReloadedAsset& asset : reloaded) {
+		TOAST_INFO(
+		    "AssetManager",
+		    "Asset changed on disk, reloaded {}: {} ({})",
+		    asset.replaced ? "as a new object" : "in place",
+		    getURI(asset.uid),
+		    asset.type
+		);
+		const std::string& type = asset.type;
+		if (asset.replaced) {
+			event::send<event::AssetReplaced>(asset.uid, type);
+		}
 		if (type == "script") {
-			event::send<event::ScriptAssetReloaded>(uid);
+			event::send<event::ScriptAssetReloaded>(asset.uid);
 		} else if (type == "shader") {
-			event::send<event::ShaderAssetReloaded>(uid);
-		} else if (
-		    type == "ui_element" || type == "ui_style" || type == "color_scheme" || type == "localization" ||
-		    type == "image_localization"
-		) {
-			event::send<event::UIAssetReloaded>(uid, type);
+			event::send<event::ShaderAssetReloaded>(asset.uid);
+		} else if (isUiType(type) || type == "font" || type == "ui_image") {
+			event::send<event::UIAssetReloaded>(asset.uid, type);
 		} else if (type == "voxel_palette") {
-			event::send<event::VoxelPaletteAssetReloaded>(uid);
-		} else if (type == "data") {
-			event::send<event::DataAssetReloaded>(uid);
-		} else if (type == "curve") {
-			// no event, handles see the new points right away
-		} else {
-			event::send<event::MaterialAssetReloaded>(uid);
+			event::send<event::VoxelPaletteAssetReloaded>(asset.uid);
+		} else if (type == "material" || type == "material_instance") {
+			event::send<event::MaterialAssetReloaded>(asset.uid);
+		} else if (type == "data" || AssetRegistry::hasSchemaToml(type)) {
+			event::send<event::DataAssetReloaded>(asset.uid);
 		}
 	}
+	return reloaded;
 }
 
 // Public API Implementations

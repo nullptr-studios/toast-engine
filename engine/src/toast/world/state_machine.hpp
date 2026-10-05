@@ -48,12 +48,20 @@ public:
 		return current_state;
 	}
 
+protected:
+	/// The callbacks are Lua functions, so the machine runs together with the scripts that gave them to it
+	[[nodiscard]]
+	auto luaAffinity() const noexcept -> std::optional<size_t> override {
+		return m_lua_vm;
+	}
+
 private:
 	[[Reflect, ReadOnly]]
 	std::string current_state;
 
 	std::map<std::string, std::unique_ptr<State>> states;
 	State* cached_state = nullptr;
+	std::optional<size_t> m_lua_vm;    ///< the interpreter the callbacks of the states live on
 
 	void begin();
 	void end();

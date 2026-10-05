@@ -11,6 +11,8 @@
 #include "tick_scheduler.hpp"
 #include "workspace.hpp"
 
+#include <atomic>
+
 namespace toast {
 /**
  * @brief A Workspace that actually runs game logic
@@ -30,6 +32,7 @@ public:
 
 	void registerDependency(Node& from, Node& to) override;
 	void unregisterDependency(Node& from, Node& to) override;
+	void registerInteraction(Node& first, Node& second) override;
 
 	void tick() override;
 
@@ -47,7 +50,7 @@ private:
 	TickScheduler m_scheduler;
 	bool m_paused = false;
 	bool m_started = false;
-	bool m_schedule_dirty = true;
+	std::atomic<bool> m_schedule_dirty = true;    // scripts register dependencies from init(), possibly on a loader thread
 	void computeSchedule();
 };
 }
