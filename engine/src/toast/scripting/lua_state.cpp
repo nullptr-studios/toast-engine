@@ -1151,10 +1151,10 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    .addFunction(
 	        "drawBillboard",
 	        +[](glm::vec3 world_position,
-	            float size,
-	            assets::Handle<assets::Texture>
-	                texture,
-	            glm::vec4 tint = {1.0f, 1.0f, 1.0f, 1.0f}) { debug::drawBillboard(world_position, size, std::move(texture), tint); }
+					    float size,
+					    assets::Handle<assets::Texture>
+					        texture,
+					    glm::vec4 tint = {1.0f, 1.0f, 1.0f, 1.0f}) { debug::drawBillboard(world_position, size, std::move(texture), tint); }
 	    )
 	    .addFunction(
 	        "drawMesh",
@@ -1177,11 +1177,11 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    .addFunction(
 	        "drawCone",
 	        +[](glm::vec3 apex,
-	            glm::vec3 direction,
-	            float length,
-	            float half_angle_degrees,
-	            glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f},
-	            int segments = 24) { debug::drawCone(apex, direction, length, half_angle_degrees, color, segments); }
+					    glm::vec3 direction,
+					    float length,
+					    float half_angle_degrees,
+					    glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f},
+					    int segments = 24) { debug::drawCone(apex, direction, length, half_angle_degrees, color, segments); }
 	    )
 	    .addFunction(
 	        "drawFrustum",

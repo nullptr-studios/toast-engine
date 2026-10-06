@@ -20,10 +20,10 @@ inline void Signal<Args...>::connect(toast::Node& node, F&& cb) {
 	modify([&](ConnectionList& list) {
 		list.push_back(
 		    {.uid = node.uid(),
-		     .identifier = "Unnamed",
-		     .source = ConnectionSource::cpp,
-		     .node = toast::Box<toast::Node>(node),
-		     .cb = std::move(wrapper)}
+				 .identifier = "Unnamed",
+				 .source = ConnectionSource::cpp,
+				 .node = toast::Box<toast::Node>(node),
+				 .cb = std::move(wrapper)}
 		);
 	});
 }
@@ -51,11 +51,11 @@ inline void
 	modify([&](ConnectionList& list) {
 		list.push_back(
 		    {.uid = node.uid(),
-		     .identifier = std::string(identifier),
-		     .source = source,
-		     .forwards_args = forwards_args,
-		     .node = toast::Box<toast::Node>(node),
-		     .cb = std::move(wrapper)}
+				 .identifier = std::string(identifier),
+				 .source = source,
+				 .forwards_args = forwards_args,
+				 .node = toast::Box<toast::Node>(node),
+				 .cb = std::move(wrapper)}
 		);
 	});
 }

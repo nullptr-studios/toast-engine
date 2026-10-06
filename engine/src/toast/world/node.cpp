@@ -322,9 +322,9 @@ void Node::reloadScripts() noexcept {
 				if (connection.source == signals::ConnectionSource::editor) {
 					editor_signals.push_back(
 					    {.signal = signal_name,
-					     .target = connection.target,
-					     .function = connection.function,
-					     .forwards_args = connection.forwards_args}
+							 .target = connection.target,
+							 .function = connection.function,
+							 .forwards_args = connection.forwards_args}
 					);
 				}
 			}

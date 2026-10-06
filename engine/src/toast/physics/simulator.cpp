@@ -1823,8 +1823,9 @@ void Simulator::setShapeEnabled(ShapeID shape, bool enabled) {
 		if (value->enabled != enabled) {
 			if (enabled) {
 				wakeBody(value->owner);
-			} else if (const Body* owner = instance->tryGetBody(value->owner);
-			           owner != nullptr && owner->type != BodyType::dynamic_body) {
+			} else if (
+			    const Body* owner = instance->tryGetBody(value->owner); owner != nullptr && owner->type != BodyType::dynamic_body
+			) {
 				instance->wakeBodiesTouching(shape);
 			}
 			value->enabled = enabled;
@@ -1952,7 +1953,7 @@ void Simulator::publishVoxelRenderRecords() {
 		      .fragment_origin = data->fragment_origin,
 		      .awake = body->awake,
 		      .world_bounds = worldShapeBounds(*body, slot.shape),
-    }
+		}
 		);
 	}
 
@@ -2650,7 +2651,7 @@ void Simulator::updateCache(std::span<const Manifold> manifolds) {
 		const auto current =
 		    std::lower_bound(manifolds.begin(), manifolds.end(), key, [](const Manifold& manifold, CachedManifoldKey candidate) {
 			    return manifold.pair < candidate.pair ||
-			           (manifold.pair == candidate.pair && manifold.normal_index < candidate.normal_index);
+					       (manifold.pair == candidate.pair && manifold.normal_index < candidate.normal_index);
 		    });
 		const bool still_colliding =
 		    current != manifolds.end() && current->pair == cached.pair && current->normal_index == cached.normal_index;
@@ -4609,7 +4610,7 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 			islands.emplace_back(
 			    SimulationIsland {
 			      .sort_key = BodyID {.slot = static_cast<uint32_t>(root), .generation = root_slot.generation},
-      }
+			}
 			);
 		}
 
