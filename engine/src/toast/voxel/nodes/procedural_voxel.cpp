@@ -843,7 +843,9 @@ void ProceduralVoxel::applyComposed(ComposeOutput& output) {
 			if (!fits(target)) {
 				// Growing makes a new volume the renderer uploads whole
 				const glm::ivec3 slack =
-				    glm::max(glm::ivec3(2 * static_cast<int32_t>(voxel::k_brick_dim)), (wanted_max - wanted_min + 1) / 4);
+				    participatesIn(NodeOwnerParticipation::gameplay_tick)
+				        ? glm::ivec3(0)
+				        : glm::max(glm::ivec3(2 * static_cast<int32_t>(voxel::k_brick_dim)), (wanted_max - wanted_min + 1) / 4);
 				voxel::Volume* grown = replaceVolume({wanted_min - slack, wanted_max + slack});
 				if (grown == nullptr) {
 					grown = replaceVolume({wanted_min, wanted_max});

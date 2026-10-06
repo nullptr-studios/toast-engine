@@ -33,7 +33,6 @@ void {{ register_fn }}() {
 {% endfor %}
 	{{ '}}' }};
 	for (const auto* info : all_types) {
-    std::println("Registering Node: {}", info->type);
 		NodeRegistry::registerNode(info);
 	}
 	{% for event in events %}
