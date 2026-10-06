@@ -212,7 +212,6 @@ auto Simulator::overlapSphere(
 	return not contacts.empty();
 }
 
-
 auto Simulator::sweepCapsule(
     BodyID ignored, const CapsuleShape& capsule, const glm::quat& rotation, const glm::vec3& from, const glm::vec3& to, float skin
 ) const -> SweepHit {

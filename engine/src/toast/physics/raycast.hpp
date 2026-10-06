@@ -33,5 +33,4 @@ struct SphereHit {
 
 TOAST_API auto sphereOverlap(glm::vec3 position, float radius) -> std::optional<SphereHit>;
 
-
 }
