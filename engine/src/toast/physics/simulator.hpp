@@ -248,9 +248,6 @@ public:
 	auto overlapSphere(
 	    const SphereShape& sphere, const glm::vec3& position, float min_penetration, std::vector<QueryContact>& contacts
 	) const -> bool;
-	/// Tests a world-space axis-aligned box against enabled physics shapes.
-	[[nodiscard]]
-	auto overlapAABB(const AABB& bounds) const -> bool;
 	/// Moves a capsule until it would dig into something
 	[[nodiscard]]
 	auto sweepCapsule(
