@@ -198,7 +198,7 @@ return M
 	std::atomic<bool> release {false};
 	std::vector<std::future<void>> busy;
 	for (size_t i = 0; i < workers; ++i) {
-		busy.push_back(toast::ThreadPool::push([&started, &release] {
+		busy.push_back(toast::ThreadPool::push([&started, &release, busy_time] {
 			++started;
 			const auto deadline = std::chrono::steady_clock::now() + busy_time;
 			while (!release && std::chrono::steady_clock::now() < deadline) {
