@@ -32,6 +32,7 @@ public:
 
 	void registerDependency(Node& from, Node& to) override;
 	void unregisterDependency(Node& from, Node& to) override;
+	void registerInteraction(Node& first, Node& second) override;
 
 	void tick() override;
 

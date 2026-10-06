@@ -50,8 +50,9 @@ class Signal {
 	using ConnectionList = std::vector<Connection>;
 
 	/**
-	 * Copy on write: handlers run against a snapshot, so a handler (or another thread) that connects, disconnects or
-	 * fires the same signal never invalidates what is being iterated
+	 * Copy on write
+	 *
+	 * Hhandlers run against a snapshot so the same signal never invalidates what is being iterated
 	 */
 	mutable std::mutex m_mutex;
 	std::shared_ptr<const ConnectionList> m_connections = std::make_shared<const ConnectionList>();

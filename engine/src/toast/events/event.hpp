@@ -127,13 +127,12 @@ struct TOAST_API EventSystem {
 	/// Dispatch table keyed by event type; one entry per registered event type
 	static std::unordered_map<std::type_index, EventInfo> event_data;
 
-	/// Guards event_data and unsubscribe_map, which grow when a type is registered for the first time on any thread
+	/// Guards event_data and unsubscribe_map
 	static std::shared_mutex registration_mutex;
 
-	/// Unsubscribes a callback of the given event type through the type erased table
+	/// Unsubscribes a callback of the given type
 	static void unsubscribeAny(std::type_index type, const std::any& iterator);
 
-	/// The dispatch entry of an event type, looked up once per type because registering other types grows the table
 	template<typename T>
 	static auto info() noexcept -> EventInfo&;
 

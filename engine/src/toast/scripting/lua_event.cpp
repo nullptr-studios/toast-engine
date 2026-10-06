@@ -363,7 +363,12 @@ auto invoke(const std::weak_ptr<Subscription>& weak, const LuaEventBinding::Push
 	}
 
 	auto guard = LuaState::get().lock(sub->state_index);
-	if (!guard || !subscriptionUsable(*sub)) {
+	if (!guard) {
+		// This thread owns another interpreter and cannot wait for this one, and the event only exists during this call
+		TOAST_WARN("Lua", "Event '{}': its interpreter is busy; the call to '{}' was skipped", sub->event_name, sub->method);
+		return false;
+	}
+	if (!subscriptionUsable(*sub)) {
 		return false;
 	}
 	ScriptRuntime* runtime = sub->node->scriptRuntime();

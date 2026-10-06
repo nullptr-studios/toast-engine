@@ -24,6 +24,8 @@
 #include <mutex>
 #include <new>
 #include <optional>
+#include <set>
+#include <string>
 #include <toast/log.hpp>
 #include <toast/world/node.hpp>
 #include <tracy/Tracy.hpp>
@@ -38,8 +40,8 @@ namespace {
 auto isCallableProxyKey(std::string_view key, const toast::NodeInfo* info) noexcept -> bool {
 	// Builtin methods
 	if (key == "find" || key == "search" || key == "parent" || key == "root" || key == "searchType" || key == "getChildren" ||
-	    key == "create" || key == "exists" || key == "name" || key == "uid" || key == "addDependsOn" || key == "call" ||
-	    key == "enabled") {
+	    key == "create" || key == "exists" || key == "name" || key == "uid" || key == "addDependsOn" || key == "interactsWith" ||
+	    key == "call" || key == "enabled") {
 		return true;
 	}
 	return info != nullptr && info->getMethod(key) != nullptr;
@@ -63,7 +65,7 @@ void pushBinding(lua_State* l, const std::shared_ptr<ScriptBinding>& binding) {
 	lua_setmetatable(l, -2);
 }
 
-/// The binding stored in the userdata at `index`, or null when that is not a binding
+/// The binding stored in the userdata at index, or null when that is not a binding
 auto bindingAt(lua_State* l, int index) -> ScriptBinding* {
 	auto* handle = static_cast<std::shared_ptr<ScriptBinding>*>(lua_touserdata(l, index));
 	return handle != nullptr ? handle->get() : nullptr;
@@ -940,10 +942,56 @@ std::atomic<uint32_t> g_next_runtime_id {0};           // NOLINT(cppcoreguidelin
 auto& g_retired_runtimes_mutex = *new std::mutex();    // NOLINT
 auto& g_retired_runtimes = *new std::vector<std::unique_ptr<ScriptRuntime>>();    // NOLINT
 
+/// Takes the interpreter for a call that came from another node. Empty when the call has to be queued, because the
+/// interpreter is busy or because calls for it are already waiting and this one must not run before them
+auto lockForCall(size_t state_index) -> LuaState::Lock {
+	if (ScriptDispatch::mustQueue(state_index)) {
+		return {};
+	}
+	return LuaState::get().lock(state_index);
+}
+
+// Leaked on purpose, like the other globals that scripts reach during teardown
+auto& g_told_mutex = *new std::mutex();                                 // NOLINT
+auto& g_told_pairs = *new std::set<std::pair<uint64_t, uint64_t>>();    // NOLINT
+
+/// Said once for a pair of nodes: a script of one called the other while its interpreter was busy, which is what
+/// interactsWith() is for. Only the first few pairs are told, so a scene full of them does not flood the log
+void noteBusyTarget(const toast::Box<toast::Node>& target, std::string_view what) {
+	constexpr size_t k_most_pairs = 32;
+	const toast::Box<toast::Node> caller = currentScriptNode();
+	if (!caller.exists() || !target.exists() || caller.rid() == target.rid()) {
+		return;
+	}
+	std::scoped_lock lock(g_told_mutex);
+	if (g_told_pairs.size() >= k_most_pairs || !g_told_pairs.emplace(caller->uid().data(), target->uid().data()).second) {
+		return;
+	}
+	TOAST_INFO(
+	    "Lua",
+	    "{} ({}) {} {} ({}) while its interpreter was busy, so it waits for the end of the wave. If it has to run at once, "
+	    "declare it with interactsWith()",
+	    caller->name(),
+	    caller->uid(),
+	    what,
+	    target->name(),
+	    target->uid()
+	);
+}
+
+/// For the message of a failed read: who asked, when a script of another node did
+auto askedBy(const toast::Box<toast::Node>& target) -> std::string {
+	const toast::Box<toast::Node> caller = currentScriptNode();
+	if (!caller.exists() || !target.exists() || caller.rid() == target.rid()) {
+		return {};
+	}
+	return std::format(", asked by {} ({}); interactsWith() keeps this from failing", caller->name(), caller->uid());
+}
 }
 
 ScriptRuntime::ScriptRuntime(
-    toast::Box<toast::Node> node, const std::vector<assets::Handle<assets::Script>>& scripts, uint64_t group
+    toast::Box<toast::Node> node, const std::vector<assets::Handle<assets::Script>>& scripts, uint64_t group,
+    std::optional<size_t> placed
 )
     : m_node(std::move(node)) {
 	ZoneScoped;
@@ -956,12 +1004,10 @@ ScriptRuntime::ScriptRuntime(
 	m_token->id = m_schema_version;
 
 	LuaState& pool = LuaState::get();
-	m_state_index = group != 0 ? pool.indexForGroup(group) : pool.nextIndex();
-	if (const std::optional<size_t> owned = LuaState::lastOwnedIndex();
-	    owned.has_value() && !LuaState::ownedByCurrentThread(m_state_index)) {
-		// A thread that owns an interpreter cannot wait for another one, so the runtime is built on the one it has
-		m_state_index = *owned;
-	}
+	// A thread that owns an interpreter cannot wait for another one, so the runtime is built on the one it has
+	m_state_index = placed.has_value() ? *placed : pool.assign(group, LuaState::lastOwnedIndex());
+	m_group = group;
+	m_placed = true;
 	m_token->vm_index = m_state_index;
 
 	LuaState::Lock guard = pool.lock(m_state_index);
@@ -1006,6 +1052,9 @@ ScriptRuntime::~ScriptRuntime() {
 		m_token->alive.store(false, std::memory_order_release);
 	}
 	clearLuaEventSubscriptions(this);
+	if (m_placed && LuaState::exists()) {
+		LuaState::get().unassign(m_group, m_state_index);
+	}
 	if (m_instances.empty() || m_lua == nullptr) {
 		return;
 	}
@@ -1073,7 +1122,7 @@ auto ScriptRuntime::getVarByPath(size_t index, std::string_view path) const noex
 	}
 	LuaState::Lock guard = LuaState::get().lock(m_state_index);
 	if (!guard) {
-		TOAST_WARN("Lua", "Lua state #{} is busy; could not read '{}'", m_state_index, path);
+		TOAST_WARN("Lua", "Lua state #{} is busy; could not read '{}'{}", m_state_index, path, askedBy(m_node));
 		return {};
 	}
 	return m_instances[index]->getVarByPath(path);
@@ -1085,7 +1134,7 @@ auto ScriptRuntime::setVarByPath(size_t index, std::string_view path, const std:
 	}
 	LuaState::Lock guard = LuaState::get().lock(m_state_index);
 	if (!guard) {
-		TOAST_WARN("Lua", "Lua state #{} is busy; could not write '{}'", m_state_index, path);
+		TOAST_WARN("Lua", "Lua state #{} is busy; could not write '{}'{}", m_state_index, path, askedBy(m_node));
 		return false;
 	}
 	return m_instances[index]->setVarByPath(path, value);
@@ -1117,8 +1166,9 @@ void ScriptRuntime::call(std::string_view fn_name) noexcept {
 	if (m_instances.empty()) {
 		return;
 	}
-	LuaState::Lock guard = LuaState::get().lock(m_state_index);
+	LuaState::Lock guard = lockForCall(m_state_index);
 	if (!guard) {
+		noteBusyTarget(m_node, "called");
 		deferToDispatch([name = std::string(fn_name)](ScriptRuntime& runtime) { runtime.call(std::string_view(name)); });
 		return;
 	}
@@ -1222,9 +1272,10 @@ void ScriptRuntime::callWithAnyArgs(std::string_view name, std::span<const std::
 	if (m_instances.empty()) {
 		return;
 	}
-	LuaState::Lock guard = LuaState::get().lock(m_state_index);
+	LuaState::Lock guard = lockForCall(m_state_index);
 	if (!guard) {
 		// This thread owns another interpreter and cannot wait for this one, so the call is delivered later
+		noteBusyTarget(m_node, "called");
 		deferToDispatch([name = std::string(name), args = std::vector<std::any>(args.begin(), args.end())](ScriptRuntime& runtime) {
 			runtime.callWithAnyArgs(name, args);
 		});
@@ -1242,8 +1293,9 @@ void ScriptRuntime::setVar(std::string_view name, const std::any& value) noexcep
 	if (m_instances.empty()) {
 		return;
 	}
-	LuaState::Lock guard = LuaState::get().lock(m_state_index);
+	LuaState::Lock guard = lockForCall(m_state_index);
 	if (!guard) {
+		noteBusyTarget(m_node, "wrote a variable of");
 		deferToDispatch([name = std::string(name), value](ScriptRuntime& runtime) { runtime.setVar(name, value); });
 		return;
 	}
@@ -1261,7 +1313,7 @@ auto ScriptRuntime::getVar(std::string_view name) const noexcept -> std::any {
 	}
 	LuaState::Lock guard = LuaState::get().lock(m_state_index);
 	if (!guard) {
-		TOAST_WARN("Lua", "Lua state #{} is busy; could not read '{}'", m_state_index, name);
+		TOAST_WARN("Lua", "Lua state #{} is busy; could not read '{}'{}", m_state_index, name, askedBy(m_node));
 		return {};
 	}
 	for (const auto& inst : m_instances) {

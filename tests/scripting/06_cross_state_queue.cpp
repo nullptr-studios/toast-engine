@@ -12,41 +12,6 @@
 
 using namespace toast::tests::scripting_tests;
 
-namespace {
-
-/// Owns an interpreter on another thread until released, like a worker running a script on it
-class InterpreterHolder {
-public:
-	explicit InterpreterHolder(size_t index) {
-		m_thread = std::thread([this, index] {
-			auto guard = ::scripting::LuaState::get().lock(index);
-			m_held = true;
-			while (!m_release) {
-				std::this_thread::sleep_for(std::chrono::milliseconds(1));
-			}
-		});
-		while (!m_held) {
-			std::this_thread::yield();
-		}
-	}
-
-	void release() {
-		m_release = true;
-		if (m_thread.joinable()) {
-			m_thread.join();
-		}
-	}
-
-	~InterpreterHolder() { release(); }
-
-private:
-	std::atomic<bool> m_held {false};
-	std::atomic<bool> m_release {false};
-	std::thread m_thread;
-};
-
-}
-
 // A script calling into a node whose interpreter is busy on another thread must neither wait for it (it used to stall
 // for 500ms and then drop the call) nor lose the call: it is queued and delivered once nothing is executing
 TOAST_TEST_NAMED("Scripting", "scripting/06_cross_state_queue", test_scripting_06_cross_state_queue) {
@@ -90,7 +55,8 @@ return M
 	}
 
 	// Nothing owns an interpreter any more, so the queued call can be delivered
-	assert(::scripting::ScriptDispatch::deliver() == 1);
+	[[maybe_unused]] const size_t delivered = ::scripting::ScriptDispatch::deliver();    // outside the assert, which release builds drop
+	assert(delivered == 1);
 	assert(::scripting::ScriptDispatch::pending() == 0);
 	assert(std::any_cast<int>(target->scriptRuntime()->getVar("pings")) == 1);
 	assert(std::any_cast<int>(target->scriptRuntime()->getVar("last")) == 7);

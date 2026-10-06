@@ -33,7 +33,6 @@ public struct WorkspaceResult {
 	public nint Name;
 }
 
-/// A workspace the engine created; Uid == 0 means it failed
 public readonly record struct WorkspaceInfo(ulong Uid, string? Name);
 
 public partial class ToastEngine : IDisposable {
@@ -46,7 +45,7 @@ public partial class ToastEngine : IDisposable {
 	private readonly ManualResetEventSlim m_tickGate = new(true);
 	private readonly ManualResetEventSlim m_tickIdle = new(true);
 
-	// Work the engine only accepts from the thread that ticks it, see OnTickThread
+	// The engine only accepts works from the thread that ticks it
 	private readonly ConcurrentQueue<TickWork> m_tickQueue = new();
 	private static ToastEngine? s_instance;
 	private volatile bool m_ticking;
@@ -165,8 +164,6 @@ public partial class ToastEngine : IDisposable {
 		projectList.SaveList();
 	}
 
-	// Building a workspace instantiates nodes and runs their Lua scripts, so it happens on the tick thread. The name
-	// the engine returns points into thread local storage there, so it is copied out before the work item ends
 	private static WorkspaceInfo ToInfo(WorkspaceResult result) {
 		return new WorkspaceInfo(result.Uid, Marshal.PtrToStringUTF8(result.Name));
 	}
@@ -189,9 +186,7 @@ public partial class ToastEngine : IDisposable {
 		return OnTickThread(() => ToInfo(toast_play_workspace(sourceHandle)));
 	}
 
-	/// The engine's node trees and Lua interpreters belong to the thread that ticks it. Anything that builds or rebuilds
-	/// them (opening a workspace, playing, reloading the manifest) runs there, because doing it from the UI thread while
-	/// a tick is running races with the scripts being executed. Blocks the caller until the work finished
+	/// Do not use the UI thread to tick the workspace since it can lead to racist conditions with lua
 	public static T OnTickThread<T>(Func<T> work) {
 		var engine = s_instance;
 		if (engine is null || !engine.m_ticking || Environment.CurrentManagedThreadId == engine.m_tickThreadId) return work();
@@ -213,7 +208,8 @@ public partial class ToastEngine : IDisposable {
 				failure = new OperationCanceledException("The engine stopped before the work could run");
 				finished.Set();
 			}));
-		// The loop may have ended right before the enqueue, and then nobody is left to run it
+			
+		// The loop may have ended before the adding to the queue
 		if (!engine.m_ticking) engine.CancelPendingTickWork();
 		finished.Wait();
 		if (failure is not null) ExceptionDispatchInfo.Capture(failure).Throw();
@@ -319,7 +315,8 @@ public partial class ToastEngine : IDisposable {
 
 				m_tickIdle.Reset();
 				try {
-					// Work the UI asked for runs between two ticks, never inside one
+					// The stuff the UI changed gets changed between two frames
+					// Damn this is a good fix fucking clanker why didn't I think of it
 					DrainTickQueue();
 					toast_tick();
 				} finally {

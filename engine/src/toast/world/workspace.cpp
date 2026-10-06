@@ -4,6 +4,7 @@
 #include "camera.hpp"
 #include "node.hpp"
 #include "node_3d.hpp"
+#include "tree_lock.hpp"
 #include "workspace_events.hpp"
 
 #include <array>
@@ -994,6 +995,8 @@ auto Workspace::participatesIn(NodeOwnerParticipation use) const noexcept -> boo
 }
 
 auto Workspace::findFrom(const Node& origin, std::string_view query) -> Box<Node> {
+	// Scripts on other threads look things up while the tree changes, and nothing below asks for the lock again
+	const TreeReadLock lock(this);
 	const bool search_workspace_root = query.starts_with("root/");
 	const std::string_view target = search_workspace_root ? query.substr(5) : query;
 	auto search = [target](this auto&& self, const Node& node) -> Box<Node> {
@@ -1011,11 +1014,12 @@ auto Workspace::findFrom(const Node& origin, std::string_view query) -> Box<Node
 	if (not search_workspace_root) {
 		return search(origin);
 	}
-	Box<Node> root = m_root_node.exists() ? m_root_node : origin.root();
+	Box<Node> root = m_root_node.exists() ? m_root_node : origin.rootUnlocked();
 	return root.exists() ? search(*root) : Box<Node> {};
 }
 
 auto Workspace::findFrom(const Node& origin, const UID& uid) -> Box<Node> {
+	const TreeReadLock lock(this);
 	auto search = [target = uid.data()](this auto&& self, const Node& node) -> Box<Node> {
 		if (node.m_uid.data() == target) {
 			return node.box();

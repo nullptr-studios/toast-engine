@@ -4,6 +4,7 @@
 #include <luabridge3/LuaBridge/LuaBridge.h>
 #include <toast/log.hpp>
 #include <toast/scripting/lua_callback.hpp>
+#include <toast/scripting/lua_state.hpp>
 
 namespace toast {
 
@@ -161,6 +162,11 @@ void StateMachine::addState(const std::string& name, const luabridge::LuaRef& ta
 	if (!table.isTable()) {
 		TOAST_WARN("StateMachine", "addState('{}'): state must be a table", name);
 		return;
+	}
+
+	// The callbacks below are functions of the interpreter the table lives on, which is where this machine has to run
+	if (const auto interpreter = scripting::LuaState::indexOf(table.state()); interpreter.has_value()) {
+		m_lua_vm = interpreter;
 	}
 
 	State state;

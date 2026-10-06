@@ -1085,7 +1085,7 @@ auto NodeProxy::getChildren(lua_State* l) -> std::vector<NodeProxy> {
 		luaL_error(l, "getChildren: node reference is dead");
 		return {};
 	}
-	return toProxies(m_box->children());
+	return toProxies(m_box->childrenSnapshot());
 }
 
 auto NodeProxy::getChildren(const std::string& type, lua_State* l) -> std::vector<NodeProxy> {
@@ -1151,6 +1151,13 @@ void NodeProxy::addDependsOn(const NodeProxy& other) {
 	}
 	// first time every i actually had to use a const_cast
 	m_box->addDependsOn(const_cast<toast::Node&>(*other.m_box));
+}
+
+void NodeProxy::interactsWith(const NodeProxy& other) {
+	if (!m_box.exists() || !other.m_box.exists()) {
+		return;
+	}
+	m_box->interactsWith(const_cast<toast::Node&>(*other.m_box));
 }
 
 auto NodeProxy::hasField(std::string_view key) const noexcept -> bool {
@@ -1335,6 +1342,17 @@ auto nodeProxyDispatchMethod(NodeProxy& np, std::string_view name, lua_State* l,
 		auto other_result = luabridge::Stack<NodeProxy>::get(l, args_base);
 		if (other_result) {
 			np.addDependsOn(*other_result);
+		}
+		return 0;
+	}
+	if (name == "interactsWith") {
+		if (n_args < 1 || !lua_isuserdata(l, args_base)) {
+			luaL_error(l, "interactsWith: expected a Node argument");
+			return 0;
+		}
+		auto other_result = luabridge::Stack<NodeProxy>::get(l, args_base);
+		if (other_result) {
+			np.interactsWith(*other_result);
 		}
 		return 0;
 	}

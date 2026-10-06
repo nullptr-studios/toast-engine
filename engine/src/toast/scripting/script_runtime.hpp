@@ -6,7 +6,7 @@
  * @brief Per-node Lua script execution environment
  *
  * Everything in here that touches Lua happens while the calling thread owns the interpreter the runtime lives on
- * (see LuaState). Calls that arrive while it is busy on another thread are queued in ScriptDispatch
+ * Calls that arrive while it is busy on another thread are queued in ScriptDispatch
  */
 
 #pragma once
@@ -17,6 +17,7 @@
 #include <lua.hpp>
 #include <luabridge3/LuaBridge/LuaBridge.h>
 #include <memory>
+#include <optional>
 #include <set>
 #include <span>
 #include <string>
@@ -156,15 +157,22 @@ private:
 	auto pushByPath(std::string_view path) const noexcept -> bool;
 };
 
-/// The node a script's self table belongs to; empty when the table is not the self table of a live script instance
+/// The node a script self table belongs to; empty when the table is not the self table of a live script instance
 [[nodiscard]]
 auto nodeOfSelfTable(const luabridge::LuaRef& table) -> NodeProxy;
 
 // One per node
 class TOAST_API ScriptRuntime {
 public:
-	/// `group` places the runtime on the interpreter of its script group, 0 spreads runtimes round robin
-	ScriptRuntime(toast::Box<toast::Node> node, const std::vector<assets::Handle<assets::Script>>& scripts, uint64_t group = 0);
+	/**
+	 * @param group Places the runtime on the interpreter of its script group, 0 spreads runtimes round robin
+	 * @param placed An interpreter LuaState::assign() already picked for this runtime, which the runtime takes over and gives
+	 *        back when it goes. It lets the caller know where the runtime will live before it is built
+	 */
+	ScriptRuntime(
+	    toast::Box<toast::Node> node, const std::vector<assets::Handle<assets::Script>>& scripts, uint64_t group = 0,
+	    std::optional<size_t> placed = std::nullopt
+	);
 	~ScriptRuntime();
 
 	ScriptRuntime(const ScriptRuntime&) = delete;
@@ -271,6 +279,8 @@ public:
 private:
 	std::vector<std::unique_ptr<ScriptInstance>> m_instances;
 	size_t m_state_index = 0;
+	uint64_t m_group = 0;
+	bool m_placed = false;    ///< LuaState::assign() handed out m_state_index, and unassign() has to give it back
 	lua_State* m_lua = nullptr;
 	toast::Box<toast::Node> m_node;
 	std::shared_ptr<RuntimeToken> m_token;

@@ -1,11 +1,22 @@
 #include "tick_scheduler.hpp"
 
+#include "tree_lock.hpp"
+
+#include <algorithm>
+#include <atomic>
+#include <cstdlib>
 #include <functional>
 #include <future>
+#include <memory>
+#include <mutex>
+#include <optional>
 #include <queue>
 #include <stack>
+#include <thread>
 #include <toast/log.hpp>
+#include <toast/scripting/lua_state.hpp>
 #include <toast/scripting/script_dispatch.hpp>
+#include <toast/scripting/script_runtime.hpp>
 #include <toast/thread_pool.hpp>
 #include <unordered_set>
 
@@ -94,6 +105,141 @@ auto NodeCluster::hasLateTick() -> bool {
 
 #pragma endregion NODE_CLUSTER
 
+namespace _detail {
+
+namespace {
+
+/// Adds the interpreters an item runs Lua on while it executes `func`: the ones its own scripts use, and the ones of the
+/// nodes it declared an interaction with, where the calls it makes land
+void interpretersOf(
+    const std::variant<Box<Node>, NodeCluster>& item, TickFunctionList func, const Interactions* interactions,
+    std::vector<size_t>& out
+) {
+	auto add = [&](const Node& node) {
+		if (const auto interpreter = node.scriptVm(func)) {
+			out.push_back(*interpreter);
+		}
+		if (interactions == nullptr || interactions->empty()) {
+			return;
+		}
+		const auto partners = interactions->find(node.box());
+		if (partners == interactions->end()) {
+			return;
+		}
+		for (const Box<Node>& partner : partners->second) {
+			if (!partner.exists()) {
+				continue;
+			}
+			if (const auto interpreter = partner->scriptVmAny()) {
+				out.push_back(*interpreter);
+			}
+		}
+	};
+
+	if (const auto* node = std::get_if<Box<Node>>(&item)) {
+		add(**node);
+		return;
+	}
+	for (const auto& node : std::get<NodeCluster>(item).nodes) {
+		add(*node);
+	}
+}
+
+/// Union find over interpreter numbers, to tie together the ones a cluster runs on
+class InterpreterSets {
+public:
+	auto find(size_t interpreter) -> size_t {
+		size_t root = interpreter;
+		while (true) {
+			const auto [it, inserted] = m_parent.try_emplace(root, root);
+			if (it->second == root) {
+				break;
+			}
+			root = it->second;
+		}
+		// Point everything on the way at the root
+		while (interpreter != root) {
+			const size_t next = m_parent[interpreter];
+			m_parent[interpreter] = root;
+			interpreter = next;
+		}
+		return root;
+	}
+
+	void unite(size_t first, size_t second) { m_parent[find(first)] = find(second); }
+
+private:
+	std::unordered_map<size_t, size_t> m_parent;
+};
+
+/// True when every item of the wave still runs its Lua on the interpreters of the job the plan put it in
+auto planMatches(
+    const TickSchedule::Wave& wave, TickFunctionList func, const Interactions* interactions, const std::vector<WaveJob>& jobs
+) -> bool {
+	size_t items = 0;
+	std::vector<size_t> found;
+	for (const WaveJob& job : jobs) {
+		for (const size_t item : job.items) {
+			if (item >= wave.size()) {
+				return false;
+			}
+			found.clear();
+			interpretersOf(wave[item], func, interactions, found);
+			if (found.empty() != job.interpreters.empty()) {
+				return false;
+			}
+			for (const size_t interpreter : found) {
+				if (std::ranges::find(job.interpreters, interpreter) == job.interpreters.end()) {
+					return false;
+				}
+			}
+		}
+		items += job.items.size();
+	}
+	return items == wave.size();
+}
+}
+
+auto planWave(const TickSchedule::Wave& wave, TickFunctionList func, const Interactions* interactions) -> std::vector<WaveJob> {
+	std::vector<std::vector<size_t>> interpreters(wave.size());
+	InterpreterSets sets;
+	for (size_t i = 0; i < wave.size(); ++i) {
+		interpretersOf(wave[i], func, interactions, interpreters[i]);
+		for (size_t k = 1; k < interpreters[i].size(); ++k) {
+			sets.unite(interpreters[i][0], interpreters[i][k]);
+		}
+	}
+
+	std::vector<WaveJob> scripted;
+	std::vector<WaveJob> plain;
+	std::unordered_map<size_t, size_t> job_of_set;    // root interpreter of a set -> its job in `scripted`
+	for (size_t i = 0; i < wave.size(); ++i) {
+		if (interpreters[i].empty()) {
+			plain.push_back(WaveJob {.items = {i}, .interpreters = {}});
+			continue;
+		}
+		const auto [it, inserted] = job_of_set.try_emplace(sets.find(interpreters[i][0]), scripted.size());
+		if (inserted) {
+			scripted.emplace_back();
+		}
+		WaveJob& job = scripted[it->second];
+		job.items.push_back(i);
+		for (const size_t interpreter : interpreters[i]) {
+			if (std::ranges::find(job.interpreters, interpreter) == job.interpreters.end()) {
+				job.interpreters.push_back(interpreter);
+			}
+		}
+	}
+
+	// The biggest job first: it is the one that decides how long the wave takes
+	std::ranges::stable_sort(scripted, [](const WaveJob& lhs, const WaveJob& rhs) { return lhs.items.size() > rhs.items.size(); });
+
+	std::vector<WaveJob> jobs = std::move(scripted);
+	jobs.insert(jobs.end(), std::make_move_iterator(plain.begin()), std::make_move_iterator(plain.end()));
+	return jobs;
+}
+}
+
 auto TickScheduler::registerDependency(Node& from, Node& to) -> bool {
 	if (&from == &to) {
 		TOAST_WARN("World", "{} ({}) tried to register a dependency to itself", from.name(), from.uid());
@@ -111,6 +257,24 @@ auto TickScheduler::registerDependency(Node& from, Node& to) -> bool {
 	edges.emplace_back(to);
 	graph.inverse_connections[to].emplace_back(from);
 	TOAST_TRACE("World", "Added dependency from {} to {}", from.name(), from.uid());
+	return true;
+}
+
+auto TickScheduler::registerInteraction(Node& first, Node& second) -> bool {
+	if (&first == &second) {
+		return false;
+	}
+
+	std::scoped_lock lock(graph_mutex);
+	const Box<Node> first_box(first);
+	const Box<Node> second_box(second);
+	auto& partners = interactions[first_box];
+	if (std::ranges::contains(partners, second_box)) {
+		return false;
+	}
+	partners.emplace_back(second_box);
+	interactions[second_box].emplace_back(first_box);
+	TOAST_TRACE("World", "{} ({}) and {} ({}) interact", first.name(), first.uid(), second.name(), second.uid());
 	return true;
 }
 
@@ -161,6 +325,7 @@ void TickScheduler::compute(const std::vector<Box<Node>>& all_nodes) {
 	auto waves = assignWaves(result);
 	auto ts = optimizeWaves(waves);
 	schedule = std::move(ts);
+	m_plans.clear();
 	TOAST_TRACE(
 	    "World",
 	    "Dependency graph: early={} tick={} physics={} post_physics={} late={} waves",
@@ -172,43 +337,198 @@ void TickScheduler::compute(const std::vector<Box<Node>>& all_nodes) {
 	);
 }
 
+void TickScheduler::tickItem(const TickSchedule::Wave::value_type& item, TickFunctionList func) {
+	// A Box only hands out a mutable node to a handle that is not const
+	if (const auto* held = std::get_if<Box<Node>>(&item)) {
+		Box<Node> node = *held;
+		node->callTick(node->info(), func);
+		return;
+	}
+
+	// Clusters tick their nodes synchronously
+	for (auto node : std::get<NodeCluster>(item).nodes) {
+		node->callTick(node->info(), func);
+	}
+}
+
+auto TickScheduler::planFor(const TickSchedule::Wave& wave, TickFunctionList func) const -> const std::vector<WaveJob>& {
+	// Scripts declare interactions from init()
+	std::scoped_lock lock(graph_mutex);
+	CachedPlan& plan = m_plans[&wave];
+	if (plan.func != func || !planMatches(wave, func, &interactions, plan.jobs)) {
+		plan.jobs = planWave(wave, func, &interactions);
+		plan.func = func;
+	}
+	return plan.jobs;
+}
+
+void TickScheduler::runWave(const TickSchedule::Wave& wave, const std::vector<WaveJob>& jobs, TickFunctionList func, int number) {
+	ZoneScopedN("Wave");    // NOLINT
+	ZoneNameF("Wave #%i: %zu items in %zu jobs", number, wave.size(), jobs.size());
+
+	auto tick_item = [&wave, func](size_t item) { tickItem(wave[item], func); };
+	runJobs(jobs, wave.size(), tick_item);
+}
+
 void TickScheduler::runPhase(const std::vector<TickSchedule::Wave>& phase, TickFunctionList func, std::string_view name) const {
 	ZoneScoped;    // NOLINT
 	ZoneNameF("%s", name.data());
 
+	int number = 0;
 	for (const auto& wave : phase) {
-		std::vector<std::future<void>> futures;
-		futures.reserve(wave.size());
+		runWave(wave, planFor(wave, func), func, ++number);
 
-		int count = 1;
-		for (const auto& n : wave) {
-			ZoneScopedN("TickScheduler::runPhase::wave");    // NOLINT
-			ZoneNameF("Wave #%i", count++);
+		scripting::ScriptDispatch::deliver();
+	}
+}
 
-			futures.emplace_back(ThreadPool::push([n, func] {
-				if (std::holds_alternative<Box<Node>>(n)) {
-					auto node = std::get<Box<Node>>(n);
-					node->callTick(node->info(), func);
-					return;
-				}
+namespace {
 
-				// Clusters tick their nodes synchronously to avoid race conditions
-				auto cluster = std::get<NodeCluster>(n);
-				for (auto& node : cluster.nodes) {
-					node->callTick(node->info(), func);
-				}
-			}));
+constexpr size_t k_min_scripts_for_parallel_lifecycle = 16;
+
+// tf is this
+auto serialLifecycleRequested() -> bool {
+	static const bool requested = [] {
+#ifdef _WIN32
+		char* value = nullptr;
+		size_t size = 0;
+		const bool found = _dupenv_s(&value, &size, "TOAST_SERIAL_LIFECYCLE") == 0 && value != nullptr;
+		const bool on = found && value[0] != '\0' && value[0] != '0';
+		std::free(value);    // NOLINT(cppcoreguidelines-no-malloc,cppcoreguidelines-owning-memory)
+		return on;
+#else
+		const char* value = std::getenv("TOAST_SERIAL_LIFECYCLE");
+		return value != nullptr && value[0] != '\0' && value[0] != '0';
+#endif
+	}();
+	return requested;
+}
+}
+
+void TickScheduler::runLifecycle(Node& root, TickFunctionList stage) const {
+	ZoneScoped;
+	ZoneNameF("lifecycle(%s) %s", tickFunctionName(stage).data(), root.name().data());
+
+	const bool enabling = stage == TickFunctionList::on_enable;
+	auto one_node_at_a_time = [&] {
+		if (enabling) {
+			root.propagateEnable();
+		} else {
+			root.propagateCallTick(root.info(), stage);
 		}
+	};
 
+	// A thread that is a worker cannot wait for the pool
+	if (!scripting::LuaState::exists() || ThreadPool::workerCount() == 0 || ThreadPool::onWorkerThread() ||
+	    scripting::LuaState::ownsAnyState() || serialLifecycleRequested()) {
+		one_node_at_a_time();
+		return;
+	}
+
+	size_t scripted = 0;
+	std::vector<size_t> interpreters;
+	{
+		const TreeReadLock lock(root);
+		auto count = [&](this auto&& self, const Node& node) -> void {
+			if (node.m_script_runtime && node.m_script_runtime->hasTick(stage)) {
+				++scripted;
+				if (const size_t interpreter = node.m_script_runtime->stateIndex();
+				    std::ranges::find(interpreters, interpreter) == interpreters.end()) {
+					interpreters.push_back(interpreter);
+				}
+			}
+			for (const Box<Node>& child : node.m_children) {
+				if (child.exists()) {
+					self(*child);
+				}
+			}
+		};
+		count(root);
+	}
+	if (scripted < k_min_scripts_for_parallel_lifecycle || interpreters.size() < 2) {
+		one_node_at_a_time();
+		return;
+	}
+
+	// The C++ functions go first, then the lua scripts
+	auto run_level = [&](std::vector<Box<Node>>& level) {
 		{
-			ZoneScopedN("Thread Pool semaphore");    // NOLINT
-			for (auto& f : futures) {
-				f.get();
+			ZoneNamedN(native_zone, "C++ functions", true);    // NOLINT
+			for (Box<Node>& node : level) {
+				if (node.exists()) {
+					node->callTickNative(node->info(), stage);
+				}
 			}
 		}
 
-		// Script calls that had to wait because their interpreter was busy while the wave ran
+		TickSchedule::Wave wave;
+		for (Box<Node>& node : level) {
+			if (node.exists() && node->m_script_runtime && node->m_script_runtime->hasTick(stage)) {
+				wave.emplace_back(node);
+			}
+		}
+		if (wave.empty()) {
+			return;
+		}
+
+		std::vector<WaveJob> jobs;
+		{
+			std::scoped_lock lock(graph_mutex);
+			jobs = planWave(wave, stage, &interactions);
+		}
+		auto run_scripts = [&wave, stage](size_t item) {
+			Box<Node> node = std::get<Box<Node>>(wave[item]);
+			if (!node.exists()) {      // an earlier script of the level destroyed it
+				return;
+			}
+			ZoneScopedN("Scripts");    // NOLINT
+			ZoneNameF("%s callScripts(%s)", node->name().data(), tickFunctionName(stage).data());
+			node->callTickScripts(stage);
+		};
+		if (jobs.size() > 1) {
+			runJobs(jobs, wave.size(), run_scripts, {.non_blocking = false, .label = "Lifecycle worker"});
+		} else {
+			for (size_t item = 0; item < wave.size(); ++item) {
+				run_scripts(item);
+			}
+		}
+
+		// Calls between scripts that found their interpreter busy while the level ran
 		scripting::ScriptDispatch::deliver();
+	};
+
+	std::vector<Box<Node>> level;
+	if (!enabling || root.enabled()) {
+		level.push_back(root.box());
+	}
+	for (int depth = 0; !level.empty(); ++depth) {
+		ZoneScopedN("Level");    // NOLINT
+		ZoneNameF("Level %i: %zu nodes", depth, level.size());
+
+		std::vector<std::vector<Box<Node>>> below;
+		below.reserve(level.size());
+		for (Box<Node>& node : level) {
+			below.push_back(node.exists() ? node->childrenSnapshot() : std::vector<Box<Node>> {});
+		}
+
+		run_level(level);
+
+		std::vector<Box<Node>> next;
+		for (auto& children : below) {
+			for (Box<Node>& child : children) {
+				if (!child.exists()) {
+					continue;
+				}
+				if (enabling) {
+					child->m_inherited_enabled = true;
+					if (!child->enabled()) {
+						continue;
+					}
+				}
+				next.push_back(std::move(child));
+			}
+		}
+		level = std::move(next);
 	}
 }
 

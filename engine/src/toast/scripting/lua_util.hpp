@@ -17,8 +17,7 @@ auto pcallTraceback(lua_State* state, int nargs, int nresults) noexcept -> int;
 /**
  * @brief Counts nested script entries on the current thread
  *
- * Signals, calls and events can bounce between nodes, and every hop is a Lua call nested inside C++ frames.
- * Without a limit a loop between two scripts overflows the native stack, which no pcall can catch
+ * Signals, calls and events can bounce between nodes, and every hop is a Lua call nested inside C++ frames
  */
 class ScriptDepthGuard {
 public:

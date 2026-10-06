@@ -379,7 +379,7 @@ void AssetManager::clearUnusedAssets() {
 	std::lock_guard lock(mutex);
 	size_t initial_count = cache.size();
 	std::erase_if(cache, [](const auto& item) { return item.second->refCount() == 0; });
-	// Objects replaced by a hot reload go once their last handle did
+	// Objects replaced by a hot reload go once their last handle dies
 	std::erase_if(retired_assets, [](const auto& asset) { return asset->refCount() == 0; });
 	size_t cleared = initial_count - cache.size();
 	if (cleared > 0) {
@@ -589,7 +589,7 @@ auto isUiType(std::string_view type) -> bool {
 	       type == "image_localization";
 }
 
-/// Types that cannot be rebuilt in place: their object owns GPU or parsed resources other systems point at
+/// Types that cannot be rebuilt in place
 auto isReplacedOnReload(std::string_view type) -> bool {
 	return type == "mesh" || type == "texture" || type == "animation" || type == "schema" || type == "font" || type == "ui_image";
 }
@@ -692,7 +692,7 @@ auto AssetManager::applyPendingReloads() -> std::vector<ReloadedAsset> {
 					continue;
 				}
 				if (!fresh) {
-					continue;    // createAsset reported why; the old asset stays in place
+					continue;
 				}
 				// The old object stays alive for the handles that still point at it
 				retired_assets.push_back(std::move(asset_it->second));
@@ -709,7 +709,6 @@ auto AssetManager::applyPendingReloads() -> std::vector<ReloadedAsset> {
 					} else if (type == "curve") {
 						static_cast<Curve*>(asset_it->second.get())->reload(table);
 					} else if (auto* data = dynamic_cast<Data*>(asset_it->second.get())) {
-						// Materials, data and every other schema driven type re-parse their TOML in place so existing handles stay valid
 						if (!keepsSchema(*data, table)) {
 							TOAST_WARN(
 							    "AssetManager",
@@ -760,7 +759,6 @@ auto AssetManager::applyPendingReloads() -> std::vector<ReloadedAsset> {
 		} else if (type == "data" || AssetRegistry::hasSchemaToml(type)) {
 			event::send<event::DataAssetReloaded>(asset.uid);
 		}
-		// Curves are read through their handle every time, and meshes, textures... announce the replacement above
 	}
 	return reloaded;
 }

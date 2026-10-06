@@ -24,7 +24,8 @@ struct LuaCallback::Shared {
 
 	~Shared() {
 		if (ref) {
-			// May be the last copy dying on any thread; the registry reference has to be released by the owner
+			// May be the last copy dying on any thread
+			// retire or leak is crazy ngl
 			LuaState::retireOrLeak(vm_index, [moved = std::move(ref)]() mutable { moved.reset(); });
 		}
 	}
@@ -102,10 +103,15 @@ auto LuaCallback::execute(
 		return false;
 	}
 
-	LuaState::Lock guard = LuaState::get().lock(shared->vm_index);
+	// A call that needs no result and no argument can wait, so it also queues behind the calls already waiting for the interpreter
+	const bool can_queue = allow_queue && !want_result && push_argument == nullptr;
+	LuaState::Lock guard;
+	if (!can_queue || !ScriptDispatch::mustQueue(shared->vm_index)) {
+		guard = LuaState::get().lock(shared->vm_index);
+	}
 	if (!guard) {
-		// Another interpreter is owned by this thread and this one is busy: do it later, when nothing is owned
-		if (allow_queue && !want_result && push_argument == nullptr) {
+		// Another interpreter is owned by this thread and this one is busy or has calls waiting
+		if (can_queue) {
 			ScriptDispatch::enqueue(shared->vm_index, [shared] { (void)LuaCallback(shared).invoke(); });
 			return true;
 		}

@@ -2,6 +2,7 @@
 
 #include "camera.hpp"
 #include "toast/physics/simulator.hpp"
+#include "tree_lock.hpp"
 #include "workspace_events.hpp"
 #include "world_test_access.hpp"
 
@@ -11,6 +12,7 @@
 #include <toast/assets/assets.hpp>
 #include <toast/assets/types.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
+#include <toast/scripting/script_dispatch.hpp>
 #include <toast/scripting/script_runtime.hpp>
 #include <toast/thread_pool.hpp>
 #include <toast/uri_handler.hpp>
@@ -125,6 +127,10 @@ void World::unregisterDependency(Node& from, Node& to) {
 	instance->m_scheduler.unregisterDependency(from, to);
 }
 
+void World::registerInteraction(Node& first, Node& second) {
+	m_scheduler.registerInteraction(first, second);
+}
+
 void World::loadNode(UID uid) {
 	ZoneScoped;
 	ZoneNameF("World::loadNode(%s)", uid.get().c_str());
@@ -162,7 +168,7 @@ void World::loadNode(UID uid) {
 			return;
 		}
 
-		root->propagateCallTick(root->info(), TickFunctionList::init);
+		instance->m_scheduler.runLifecycle(*root, TickFunctionList::init);
 		TOAST_TRACE("World", "Node {} ({}) finished loading", root->name(), root->uid());
 
 		std::scoped_lock lock(instance->m.load_mutex);
@@ -205,7 +211,10 @@ void World::drainLoadQueue() {
 	for (auto& root : loaded) {
 		root->changeNodeState(NodeState::cached);
 		TOAST_TRACE("World", "Node {} ({}) moved to cache", root->name(), root->uid());
-		trees.cached.emplace_back(std::move(root));
+		{
+			const TreeWriteLock lock(this);
+			trees.cached.emplace_back(std::move(root));
+		}
 
 		if (not trees.root.exists()) {
 			TOAST_INFO("World", "Auto-activating first loaded scene {}", trees.cached.back()->uid());
@@ -242,7 +251,7 @@ void World::spawn(UID prefab, Node& parent) {
 		// spawned instances need a unique UID within the parent namespace
 		// even if two copies of the same prefab are spawned concurrently
 		generateUid(*root);
-		root->propagateCallTick(root->info(), TickFunctionList::init);
+		instance->m_scheduler.runLifecycle(*root, TickFunctionList::init);
 		root->changeNodeState(NodeState::cached);
 
 		std::scoped_lock lock(instance->m.load_mutex);
@@ -286,6 +295,7 @@ void World::drainSpawnQueue() {
 auto World::findNode(const UID& uid, Node* scope) -> Box<Node> {
 	ZoneScoped;
 
+	const TreeReadLock lock(instance);
 	Node* start = scope;
 	if (not start) {
 		if (not instance->trees.root.exists()) {
@@ -341,6 +351,7 @@ auto World::findNode(std::string_view path) -> Box<Node> {
 }
 
 auto World::uidPath(const Node& node) -> std::string {
+	const TreeReadLock lock(instance);
 	const Node* root = instance->trees.root.exists() ? &*instance->trees.root : nullptr;
 
 	std::vector<std::string> parts;
@@ -474,11 +485,14 @@ auto World::findFrom(const Node& origin, std::string_view query) -> Box<Node> {
 		return {};
 	}
 
+	// The whole walk sees the tree as it is at one moment, and nothing in it asks for the lock again
+	const TreeReadLock lock(this);
+
 	// Resolve the starting scope from the namespace keyword
 	std::vector<Node*> origins;
 	switch (pq.root) {
 		case QueryRoot::self: origins.push_back(const_cast<Node*>(&origin)); break;
-		case QueryRoot::prefab_root: origins.push_back(&*const_cast<Node&>(origin).root()); break;
+		case QueryRoot::prefab_root: origins.push_back(&*origin.rootUnlocked()); break;
 		case QueryRoot::world_root:
 			if (trees.root.exists()) {
 				origins.push_back(&*trees.root);
@@ -539,6 +553,9 @@ auto World::searchFrom(const Node& origin, std::string_view query) -> std::vecto
 
 	std::vector<Box<Node>> out;
 
+	// The whole walk sees the tree as it is at one moment, and nothing in it asks for the lock again
+	const TreeReadLock lock(this);
+
 	// "global" with no path lists the world global nodes
 	if (pq.root == QueryRoot::global && pq.segments.empty()) {
 		out.reserve(trees.global.size());
@@ -551,7 +568,7 @@ auto World::searchFrom(const Node& origin, std::string_view query) -> std::vecto
 	std::vector<Node*> origins;
 	switch (pq.root) {
 		case QueryRoot::self: origins.push_back(const_cast<Node*>(&origin)); break;
-		case QueryRoot::prefab_root: origins.push_back(&*const_cast<Node&>(origin).root()); break;
+		case QueryRoot::prefab_root: origins.push_back(&*origin.rootUnlocked()); break;
 		case QueryRoot::world_root:
 			if (trees.root.exists()) {
 				origins.push_back(&*trees.root);
@@ -601,6 +618,7 @@ auto World::cacheNode(Node& node) -> Box<Node> {
 auto World::findCached(std::string_view name) -> Box<Node> {
 	ZoneScoped;
 
+	const TreeReadLock lock(instance);
 	for (const auto& node : instance->trees.cached) {
 		if (node->name() == name) {
 			return node;
@@ -659,7 +677,10 @@ void World::destroyNode(Node& node) {
 		return;
 	}
 
-	std::erase(instance->trees.cached, node.box());
+	{
+		const TreeWriteLock lock(instance);
+		std::erase(instance->trees.cached, node.box());
+	}
 	node.changeNodeState(NodeState::destroy);
 	node.enabled(false);
 	node.propagateCallTick(node.info(), TickFunctionList::destroy);
@@ -702,12 +723,18 @@ void World::drainDestroyQueue() {
 			std::scoped_lock graph_lock(m_scheduler.graph_mutex);
 			scrub(m_scheduler.graph.connections);
 			scrub(m_scheduler.graph.inverse_connections);
+			scrub(m_scheduler.interactions);
 		}
 
 		// Detach the tree structure so no victim holds a Box to another
+		{
+			const TreeWriteLock lock(this);
+			for (Node* victim : victims) {
+				victim->m_parent = {};
+				victim->m_children.clear();
+			}
+		}
 		for (Node* victim : victims) {
-			victim->m_parent = {};
-			victim->m_children.clear();
 			victim->m_listener.reset();
 		}
 
@@ -777,20 +804,28 @@ auto World::swapRoot(Node& node) -> Box<Node> {
 			return {};
 		case NodeState::cached:
 			if (root_node.exists()) {
-				std::ranges::replace(trees.cached, node.box(), root_node);
+				{
+					const TreeWriteLock lock(this);
+					std::ranges::replace(trees.cached, node.box(), root_node);
+				}
 				root_node->m_type = NodeType::root;    // world_root only exists in root and global
 				root_node->changeNodeState(NodeState::cached);
 				root_node->propagateCallTick(root_node->info(), TickFunctionList::end);
 				root_node->enabled(false);
 			} else {
+				const TreeWriteLock lock(this);
 				std::erase(trees.cached, node.box());
 			}
 			break;
 		case NodeState::global:
 			if (root_node.exists()) {
-				std::ranges::replace(trees.global, node.box(), root_node);
+				{
+					const TreeWriteLock lock(this);
+					std::ranges::replace(trees.global, node.box(), root_node);
+				}
 				root_node->changeNodeState(NodeState::global);
 			} else {
+				const TreeWriteLock lock(this);
 				std::erase(trees.global, node.box());
 			}
 			break;
@@ -798,14 +833,17 @@ auto World::swapRoot(Node& node) -> Box<Node> {
 
 	node.m_type = NodeType::world_root;
 	node.changeNodeState(NodeState::root);
-	trees.root = node.box();
+	{
+		const TreeWriteLock lock(this);
+		trees.root = node.box();
+	}
 
 	computeDependencyGraph();
 
-	node.propagateCallTick(node.info(), TickFunctionList::begin);
+	m_scheduler.runLifecycle(node, TickFunctionList::begin);
 	// A freshly loaded tree arrives already flagged enabled, where enabled(true) is a no-op and onEnable never runs
 	if (node.m_local_enabled) {
-		node.propagateEnable();
+		m_scheduler.runLifecycle(node, TickFunctionList::on_enable);
 	} else {
 		node.enabled(true);
 	}
@@ -829,18 +867,18 @@ auto World::moveToCached(Node& node) -> Box<Node> {
 		case NodeState::root:
 			if (node.m_type == NodeType::world_root) {
 				// Caching the active root leaves the world empty
+				const TreeWriteLock lock(this);
 				trees.root = {};
 			} else {
-				std::erase(node.parent()->m_children, node.box());
-				node.m_parent = {};
+				detachFromParent(node);
 			}
 			break;
 		case NodeState::global:
 			if (node.m_type == NodeType::world_root) {
+				const TreeWriteLock lock(this);
 				std::erase(trees.global, node.box());
 			} else {
-				std::erase(node.parent()->m_children, node.box());
-				node.m_parent = {};
+				detachFromParent(node);
 			}
 			break;
 	}
@@ -855,7 +893,10 @@ auto World::moveToCached(Node& node) -> Box<Node> {
 		node.m_type = NodeType::root;
 	}
 
-	trees.cached.emplace_back(node.box());
+	{
+		const TreeWriteLock lock(this);
+		trees.cached.emplace_back(node.box());
+	}
 
 	computeDependencyGraph();
 	TOAST_TRACE("World", "Node {} ({}) moved to cache", node.name(), node.uid());
@@ -880,22 +921,36 @@ auto World::moveToGlobal(Node& node) -> Box<Node> {
 		return {};
 	}
 
-	std::erase(trees.cached, node.box());
+	{
+		const TreeWriteLock lock(this);
+		std::erase(trees.cached, node.box());
+	}
 
 	node.m_type = NodeType::world_root;
 	node.changeNodeState(NodeState::global);
 
 	computeDependencyGraph();
 
-	node.propagateCallTick(node.info(), TickFunctionList::begin);
+	m_scheduler.runLifecycle(node, TickFunctionList::begin);
 	if (node.m_local_enabled) {
-		node.propagateEnable();
+		m_scheduler.runLifecycle(node, TickFunctionList::on_enable);
 	} else {
 		node.enabled(true);
 	}
-	trees.global.emplace_back(node.box());
+	{
+		const TreeWriteLock lock(this);
+		trees.global.emplace_back(node.box());
+	}
 	TOAST_TRACE("World", "Node {} ({}) moved to global", node.name(), node.uid());
 	return node.box();
+}
+
+void World::detachFromParent(Node& node) {
+	const TreeWriteLock lock(this);
+	if (node.m_parent.exists()) {
+		std::erase(node.m_parent->m_children, node.box());
+	}
+	node.m_parent = {};
 }
 
 auto World::moveToChild(Node& node, Node& parent) -> Box<Node> {
@@ -921,29 +976,33 @@ auto World::moveToChild(Node& node, Node& parent) -> Box<Node> {
 		case NodeState::cached: break;
 	}
 
+	// Where the node comes from, looked at before the state below changes
+	const NodeState previous_state = node.m_state;
 	bool run_begin = false;
 
-	if (node.parent().exists()) {
-		std::erase(node.parent()->m_children, node.box());
-	} else {
-		if (node.m_state == NodeState::global) {
+	node.changeNodeState(parent.m_state);
+
+	// Leaving the old place and arriving in the new one is one step for whoever reads the tree meanwhile
+	{
+		const TreeWriteLock lock(this);
+		if (node.m_parent.exists()) {
+			std::erase(node.m_parent->m_children, node.box());
+		} else if (previous_state == NodeState::global) {
 			std::erase(trees.global, node.box());
-		} else if (node.m_state == NodeState::cached) {
+		} else if (previous_state == NodeState::cached) {
 			std::erase(trees.cached, node.box());
 			run_begin = true;
 		}
+		parent.m_children.emplace_back(node.box());
+		node.m_parent = parent;
 	}
-
-	node.changeNodeState(parent.m_state);
-	parent.m_children.emplace_back(node.box());
-	node.m_parent = parent;
 
 	computeDependencyGraph();
 
 	if (run_begin) {
-		node.propagateCallTick(node.info(), TickFunctionList::begin);
+		m_scheduler.runLifecycle(node, TickFunctionList::begin);
 		if (node.m_local_enabled) {
-			node.propagateEnable();
+			m_scheduler.runLifecycle(node, TickFunctionList::on_enable);
 		} else {
 			node.enabled(true);
 		}
@@ -1114,6 +1173,8 @@ void WorldTestAccess::WorldDeleter::operator()(World* world) const noexcept {
 }
 
 auto WorldTestAccess::createWorld() -> WorldPtr {
+	// Calls a test left waiting hold on to its nodes, which point into the infos cleared below
+	scripting::ScriptDispatch::clear();
 	testNodeInfos().clear();
 	return WorldPtr(new World());
 }
@@ -1128,6 +1189,7 @@ auto WorldTestAccess::hasActiveCamera(World& world) -> bool {
 
 auto WorldTestAccess::createNode(World& world, std::string_view name, NodeState state) -> Box<Node> {
 	auto node = world.nodeAllocation();
+	World::generateUid(*node);    // a node that lives in a tree has its own UID, lookups by UID need it
 	node->m_name = name;
 	node->m_state = state;
 	node->m_type = NodeType::child;
@@ -1178,9 +1240,48 @@ void WorldTestAccess::setEnableCallback(Node& node, void (*callback)(void*)) {
 	node.m_info = &info;
 }
 
+void WorldTestAccess::setTickCallback(Node& node, void (*callback)(void*)) {
+	NodeInfo& info = testNodeInfos()[&node];
+	info.type = "test::Node";
+	info.functions.list = info.functions.list | TickFunctionList::tick;
+	info.functions.tick = callback;
+	node.m_info = &info;
+}
+
+void WorldTestAccess::setStageCallback(Node& node, TickFunctionList stage, void (*callback)(void*)) {
+	NodeInfo& info = testNodeInfos()[&node];
+	info.type = "test::Node";
+	info.functions.list = info.functions.list | stage;
+	switch (stage) {
+		case TickFunctionList::init: info.functions.init = callback; break;
+		case TickFunctionList::begin: info.functions.begin = callback; break;
+		case TickFunctionList::on_enable: info.functions.on_enable = callback; break;
+		default: break;
+	}
+	node.m_info = &info;
+}
+
+void WorldTestAccess::runLifecycle(World& world, Node& root, TickFunctionList stage) {
+	world.m_scheduler.runLifecycle(root, stage);
+}
+
+void WorldTestAccess::markEnabled(Node& node) {
+	node.m_local_enabled = true;
+	node.m_inherited_enabled = true;
+}
+
+void WorldTestAccess::propagateCallTick(Node& node, TickFunctionList stage) {
+	node.propagateCallTick(node.info(), stage);
+}
+
 void WorldTestAccess::attachScript(Node& node, const assets::Handle<assets::Script>& script) {
 	node.m_scripts.push_back(script);
 	node.loadScripts();
+}
+
+void WorldTestAccess::attachScriptInGroup(Node& node, const assets::Handle<assets::Script>& script, uint64_t group) {
+	node.m_script_group = group;
+	attachScript(node, script);
 }
 
 void WorldTestAccess::applyLuaOverrides(
@@ -1255,6 +1356,10 @@ void WorldTestAccess::initThreadPool() {
 
 void WorldTestAccess::setWorldRoot(World& world, Node& node) {
 	world.trees.root = node.box();
+}
+
+auto WorldTestAccess::moveToChild(World& world, Node& node, Node& parent) -> Box<Node> {
+	return world.moveToChild(node, parent);
 }
 
 auto WorldTestAccess::activateLoadedRoot(World& world, Node& node) -> Box<Node> {

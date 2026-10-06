@@ -90,7 +90,7 @@ inline auto Signal<Args...>::connections() const -> std::vector<ConnectionInfo> 
 template<typename... Args>
 inline void Signal<Args...>::fire(const Args&... args) {
 	ZoneScoped;
-	// Handlers may connect, disconnect or fire this signal again, they work on their own snapshot
+	// Handlers may connect, disconnect or fire this signal again
 	const auto current = snapshot();
 	bool has_dead = false;
 	for (const auto& listener : *current) {

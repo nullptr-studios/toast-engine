@@ -113,8 +113,6 @@ struct DataAssetReloaded : public Event<DataAssetReloaded> {
 
 /**
  * @brief Fired when a reloaded asset was replaced by a new object instead of rebuilt in place
- *
- * Handles that pointed at the old object still do, anything that holds one has to ask for the asset again
  */
 struct AssetReplaced : public Event<AssetReplaced> {
 	toast::UID uid;

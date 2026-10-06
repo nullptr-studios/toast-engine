@@ -81,6 +81,7 @@ public:
 	auto getChildren(const TypeMarker& type, lua_State* l) -> std::vector<NodeProxy>;
 	auto create(const std::string& type, lua_State* l) -> luabridge::LuaRef;
 	void addDependsOn(const NodeProxy& other);
+	void interactsWith(const NodeProxy& other);
 
 	[[nodiscard]]
 	auto name() const -> std::string;

@@ -57,6 +57,7 @@ public:
 	 */
 	void registerDependency(Node& from, Node& to) override;
 	void unregisterDependency(Node& from, Node& to) override;
+	void registerInteraction(Node& first, Node& second) override;
 
 	/**
 	 * @brief Begins asynchronous loading of a prefab into the cache
@@ -153,6 +154,9 @@ private:
 
 	/// Reparents a node under parent; calls begin() and enabled(true) if it was previously cached
 	auto moveToChild(Node& node, Node& parent) -> Box<Node>;
+
+	/// Takes a node out of the children of its parent, so it is the root of a tree of its own
+	void detachFromParent(Node& node);
 
 	/// Moves async-loaded nodes from the thread-safe load queue into trees.cached
 	void drainLoadQueue();

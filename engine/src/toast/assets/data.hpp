@@ -63,7 +63,6 @@ public:
 	virtual void reload(const toml::table& table);
 
 protected:
-	/// Called once reload() has replaced the values, for classes that cache typed members parsed from m_root
 	virtual void onReloaded() { }
 
 	DataValue m_root;           ///< Object DataValue holding all fields

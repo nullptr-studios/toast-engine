@@ -6,13 +6,14 @@
  * @brief Pool of independent Lua interpreters
  *
  * A Lua interpreter is not thread safe, so every interpreter has exactly one owner thread at a time
- * and only the owner may touch its stack, its registry or any reference that lives inside it.
- * Ownership is taken through LuaState::lock() and is recursive for the owning thread
+ * and only the owner may touch its stack, its registry or any reference that lives inside it
  *
  * The rules that keep this deadlock free:
  *  - a thread waits for an interpreter only while it owns no other interpreter
  *  - a thread that owns one and finds another one busy gets an empty Lock and must hand the work
  *    to ScriptDispatch instead of waiting
+ *  - a worker of a tick wave never waits for an interpreter at all, see NonBlockingScope: the scheduler gives every
+ *    interpreter to one job of the wave, so a busy one means something outside the wave has it
  *  - nothing that runs while an interpreter is owned may wait for another thread (futures, joins)
  *  - Lua values are released through retire(), never from a destructor that may run on a thread
  *    that does not own the interpreter
@@ -31,6 +32,7 @@
 #include <toast/export.hpp>
 #include <toast/log.hpp>
 #include <toast/thread_pool.hpp>
+#include <unordered_map>
 #include <vector>
 
 struct lua_State;
@@ -89,8 +91,7 @@ public:
 	 * @brief Acquires the interpreter at `index` for the calling thread
 	 *
 	 * Waits for the interpreter only when the calling thread owns no other one. A thread that already owns
-	 * an interpreter never waits for a second one, because two threads holding them the other way round
-	 * would deadlock, so the result is empty when the interpreter is busy
+	 * an interpreter never waits for a second one
 	 */
 	[[nodiscard]]
 	auto lock(size_t index) noexcept -> Lock;
@@ -99,7 +100,6 @@ public:
 	[[nodiscard]]
 	auto tryLock(size_t index) noexcept -> Lock;
 
-	/// Index of the pooled interpreter a state belongs to; works on coroutines too
 	[[nodiscard]]
 	static auto indexOf(lua_State* state) noexcept -> std::optional<size_t>;
 
@@ -117,18 +117,30 @@ public:
 	[[nodiscard]]
 	static auto lastOwnedIndex() noexcept -> std::optional<size_t>;
 
-	/// Round robin interpreter assignment for a new script runtime
-	[[nodiscard]]
-	auto nextIndex() noexcept -> size_t;
+	/// How many runtimes of one script group share an interpreter before the next ones go to another
+	static constexpr uint32_t k_group_chunk = 8;
 
 	/**
-	 * @brief The interpreter a script group runs on
+	 * @brief Picks the interpreter for a new script runtime
 	 *
-	 * Every node of one prefab instance shares a group, so the calls between its scripts are plain re-entrant calls
-	 * that never wait for another thread. Groups are numbered in the order they are created, which spreads them evenly
+	 * The runtimes of one script group (the nodes of a prefab instance) are kept together, so the calls between their
+	 * scripts are plain calls that nothing else can be running at the same time. No interpreter hosts more than
+	 * k_group_chunk of one group though: a group with hundreds of scripts is spread over several, or those scripts could
+	 * only ever tick one after the other. Runtimes without a group, and every new chunk of a group, go to the least
+	 * loaded interpreter that has room for them
+	 *
+	 * @param forced Place the runtime there instead, for a thread that owns that interpreter and cannot wait for another
+	 * @note Every call has to be paired with unassign() once the runtime is gone
 	 */
 	[[nodiscard]]
-	auto indexForGroup(uint64_t group) const noexcept -> size_t;
+	auto assign(uint64_t group, std::optional<size_t> forced = std::nullopt) -> size_t;
+
+	/// Gives back what assign() handed out
+	void unassign(uint64_t group, size_t index) noexcept;
+
+	/// How many runtimes every interpreter hosts, for diagnostics and tests
+	[[nodiscard]]
+	auto loads() const -> std::vector<uint32_t>;
 
 	/// Allocates the number of a new script group, never zero
 	[[nodiscard]]
@@ -144,11 +156,9 @@ public:
 	auto mainState(size_t index) const noexcept -> lua_State*;
 
 	/**
-	 * @brief Runs `destroyer` while the interpreter `index` is owned
+	 * @brief Runs destroyer while the interpreter index is owned
 	 *
-	 * Used to release anything that holds a reference inside the interpreter (registry references,
-	 * userdata handles). Runs now when the interpreter is free or already owned by this thread,
-	 * otherwise the work waits in the interpreter's queue and the next owner runs it
+	 * Used to release anything that holds a reference inside the interpreter
 	 */
 	void retire(size_t index, std::move_only_function<void()> destroyer) noexcept;
 
@@ -161,10 +171,30 @@ public:
 		return m_contention.load(std::memory_order_relaxed);
 	}
 
+	/// How many times a thread had to wait for an interpreter that another thread owned
+	[[nodiscard]]
+	auto waitCount() const noexcept -> uint64_t {
+		return m_waits.load(std::memory_order_relaxed);
+	}
+
+	/**
+	 * @brief While one exists on a thread, lock() on that thread never waits
+	 */
+	class TOAST_API NonBlockingScope {
+	public:
+		NonBlockingScope() noexcept;
+		~NonBlockingScope();
+
+		NonBlockingScope(const NonBlockingScope&) = delete;
+		auto operator=(const NonBlockingScope&) -> NonBlockingScope& = delete;
+		NonBlockingScope(NonBlockingScope&&) = delete;
+		auto operator=(NonBlockingScope&&) -> NonBlockingScope& = delete;
+	};
+
 	/// @brief Runs a chunk on state 0; intended for debug/console use
 	auto runString(std::string_view lua_code) noexcept -> bool;
 
-	/// Runs a chunk on the given interpreter, `error` receives the message of a failure
+	/// Runs a chunk on the given interpreter
 	auto runStringOn(size_t index, std::string_view lua_code, std::string* error = nullptr) noexcept -> bool;
 
 	/// Re-registers the Node/Asset type-marker globals on every state
@@ -185,8 +215,21 @@ private:
 
 	size_t m_pool_size = 0;
 	std::vector<Entry> m_entries;
-	std::atomic<size_t> m_next_index = 0;
 	std::atomic<uint64_t> m_contention {0};
+	std::atomic<uint64_t> m_waits {0};
+
+	/// Where the runtimes of a script group are: how many on each interpreter
+	struct GroupPlacement {
+		std::vector<uint32_t> per_index;
+		size_t index = 0;
+		uint32_t members = 0;
+	};
+
+	// Guards the placement bookkeeping, which only changes while runtimes are created and destroyed
+	mutable std::mutex m_placement_mutex;
+	std::vector<uint32_t> m_loads;    ///< runtimes per interpreter
+	std::unordered_map<uint64_t, GroupPlacement> m_groups;
+	size_t m_next_tie = 0;
 
 	LuaState();
 
@@ -200,12 +243,21 @@ private:
 
 }
 
-/// Debug check that the calling thread owns the interpreter `state` belongs to
+/// Check that the calling thread owns the interpreter `state` belongs to. Debug builds assert it, and the builds that
+/// define TOAST_LUA_OWNERSHIP_CHECKS (RelWithDebInfo) abort with a message, since a violation is a corrupted heap
+/// waiting to happen and the abort points at where it started
 #ifdef _DEBUG
 #define TOAST_LUA_ASSERT_OWNED(state)                                                                                          \
 	TOAST_ASSERT(                                                                                                                \
 	    ::scripting::LuaState::ownedByCurrentThread(state), "Lua", "A Lua interpreter was used by a thread that does not own it" \
 	)
+#elif defined(TOAST_LUA_OWNERSHIP_CHECKS)
+#define TOAST_LUA_ASSERT_OWNED(state)                                                       \
+	do {                                                                                      \
+		if (!::scripting::LuaState::ownedByCurrentThread(state)) {                              \
+			TOAST_CRITICAL("Lua", "A Lua interpreter was used by a thread that does not own it"); \
+		}                                                                                       \
+	} while (0)
 #else
 #define TOAST_LUA_ASSERT_OWNED(state) ((void)(state))
 #endif

@@ -18,6 +18,7 @@
 
 #include <list>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <toast/assets/prefab.hpp>
@@ -210,6 +211,9 @@ public:
 		return m_children;
 	}
 
+	[[nodiscard]]
+	auto childrenSnapshot() const -> std::vector<Box<Node>>;
+
 	/**
 	 * @brief Creates a new child node of the given type and attaches it to this node
 	 * @param type Fully-qualified C++ class name, e.g. "toast::Node3D"; defaults to "toast::Node"
@@ -297,6 +301,11 @@ public:
 	void addDependsOn(Node& other);
 	void removeDependsOn(Node& other);
 
+	/**
+	 * @brief Declares that the scripts of this node and of `other` call each other
+	 */
+	void interactsWith(Node& other);
+
 	[[nodiscard]]
 	auto scriptRuntime() noexcept -> scripting::ScriptRuntime* {
 		return m_script_runtime.get();
@@ -307,6 +316,21 @@ public:
 	 */
 	[[nodiscard]]
 	auto hasTickFunction(TickFunctionList mask) const noexcept -> bool;
+
+	/**
+	 * @brief The interpreter this node runs Lua on while it executes `func`, empty when it runs none
+	 *
+	 * That is the interpreter of its own scripts when they define `func`, or, for a C++ node that calls functions a
+	 * script gave it, the one those functions live on, see luaAffinity()
+	 *
+	 * The scheduler keeps everything that shares an interpreter so two threads dont want the same interpreter
+	 */
+	[[nodiscard]]
+	auto scriptVm(TickFunctionList func) const noexcept -> std::optional<size_t>;
+
+	/// The interpreter the scripts of this node live on whatever phase they define
+	[[nodiscard]]
+	auto scriptVmAny() const noexcept -> std::optional<size_t>;
 
 	/// @returns true when a reflected C++ or Lua function exists
 	[[nodiscard]]
@@ -412,6 +436,11 @@ protected:
 	/** Runs right before the script runtime is torn down and built again */
 	virtual void onScriptsReloading() { }
 
+	[[nodiscard]]
+	virtual auto luaAffinity() const noexcept -> std::optional<size_t> {
+		return std::nullopt;
+	}
+
 	/** A script variable was edited from outside the script, path is "<instance>:<group/name>" */
 	virtual void onScriptVarChanged(std::string_view path) { }
 
@@ -476,10 +505,9 @@ private:
 	/// Per-node Lua script environment
 	std::unique_ptr<scripting::ScriptRuntime> m_script_runtime;
 
-	/// Nodes of one prefab instance share a group, and a group runs its scripts on one interpreter. 0 means no group
 	uint64_t m_script_group = 0;
+	std::optional<size_t> m_script_vm;
 
-	/// The lifecycle phases this node went through, so scripts that are rebuilt later can be brought to the same point
 	enum LifecycleBits : uint8_t {
 		lifecycle_loaded = 1 << 0,
 		lifecycle_initialized = 1 << 1,
@@ -494,11 +522,19 @@ private:
 		return m_parent;
 	}
 
+	[[nodiscard]]
+	auto rootUnlocked() const noexcept -> Box<Node>;
+
 	void inheritedEnabled(bool value) noexcept;
 	void changeNodeState(NodeState state) noexcept;
 
 	/// dispatches one lifecycle phase by walking the NodeInfo chain and calling the matching invoker
 	void callTick(const NodeInfo* info, TickFunctionList func_type) noexcept;
+
+	/// callTick() without the scripts
+	void callTickNative(const NodeInfo* info, TickFunctionList func_type) noexcept;
+
+	void callTickScripts(TickFunctionList func_type) noexcept;
 
 	/// calls callTick on this node then recurses into children
 	void propagateCallTick(const NodeInfo* info, TickFunctionList func_type) noexcept;

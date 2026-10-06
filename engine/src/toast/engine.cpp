@@ -123,7 +123,7 @@ struct EnginePimpl {
 	// owned by renderer's output target
 	renderer::SharedTextureOutputTarget* shared_target = nullptr;
 
-	/// Hash of the thread that last ran Engine::tick(), 0 until the first tick
+	/// Hash of the thread that ran tick() for the last time
 	std::atomic<size_t> tick_thread {0};
 
 	std::mutex owners_mutex;
@@ -273,7 +273,7 @@ void Engine::init() {
 		return false;
 	});
 
-	// An asset was reloaded as a new object: whatever pointed at the old one has to ask for it again
+	// Someone modified an assset, reload it
 	m->listener.subscribe<event::AssetReplaced>([this](const event::AssetReplaced& e) {
 		{
 			std::scoped_lock lock(m->owners_mutex);
@@ -305,7 +305,6 @@ Engine::~Engine() noexcept {
 			m->renderer->stop();
 		}
 
-		// Queued script calls hold node handles that must not outlive the nodes
 		scripting::ScriptDispatch::clear();
 		{
 			std::scoped_lock lock(m->owners_mutex);
@@ -352,7 +351,7 @@ void Engine::reloadSettings() {
 	}
 }
 
-/// True while a play session (or the game itself) exists
+/// True while a playWorkspace exists
 static auto gameIsRunning(EnginePimpl& pimpl) -> bool {
 	std::scoped_lock lock(pimpl.owners_mutex);
 	return std::ranges::any_of(pimpl.owners, [](const auto& entry) {
@@ -361,8 +360,6 @@ static auto gameIsRunning(EnginePimpl& pimpl) -> bool {
 	});
 }
 
-/// Everything that builds or rebuilds node trees, and so runs Lua, belongs to the thread that ticks the engine.
-/// Another thread doing it races with the tick; the editor marshals these calls onto the tick thread
 static void assertOnTickThread([[maybe_unused]] const std::atomic<size_t>& tick_thread, [[maybe_unused]] std::string_view what) {
 	TOAST_ASSERT(
 	    tick_thread.load() == 0 || tick_thread.load() == std::hash<std::thread::id> {}(std::this_thread::get_id()),
@@ -372,10 +369,15 @@ static void assertOnTickThread([[maybe_unused]] const std::atomic<size_t>& tick_
 	);
 }
 
+void Engine::requireTickThread(std::string_view what) const {
+	::toast::assertOnTickThread(m->tick_thread, what);
+}
+
 void Engine::tick() {
 	ZoneScoped;
 
 	m->tick_thread.store(std::hash<std::thread::id> {}(std::this_thread::get_id()));
+	physics::Simulator::bindToThisThread();
 	m->time.tick();
 
 	// Poll window events
@@ -385,7 +387,7 @@ void Engine::tick() {
 
 	event::pollEvents();
 
-	// Script calls that had to wait because their target's interpreter was busy
+	// Scripts that had to wait because their interpreter was busy
 	scripting::ScriptDispatch::deliver();
 
 	m->input_system->tick();
@@ -494,9 +496,8 @@ void Engine::tick() {
 		m->renderer->tick(Time::uptime());
 	}
 
-	// Files that changed on disk are noticed once a second. Rebuilding scripts and assets in place while the game runs
-	// would race with it, so the reloads are only applied in the editor while nothing is playing. What changed during
-	// play stays pending and is applied as soon as the play session ends
+	// Files that changed on disk are noticed once a second
+	// The reloads are only applied in the editor while nothing is playing
 	if (m->shared_target != nullptr && m->asset_manager) {
 		script_reload_timer += Time::delta();
 		if (script_reload_timer > 1.0) {
@@ -508,7 +509,7 @@ void Engine::tick() {
 		}
 	}
 
-	// Nothing is running scripts here, so runtimes that were replaced while executing can go
+	// Nothing is running scripts here so runtimes that were replaced while executing can go
 	scripting::ScriptRuntime::drainRetired();
 	INodeOwner::reapOrphanedControlBoxes();
 
@@ -1059,6 +1060,7 @@ void toast_rename_prefab_root(const char* path, const char* new_name) noexcept {
 }
 
 void toast_create_tnode(const char* path, const char* node_type) noexcept {
+	toast::Engine::get()->requireTickThread("createTNode");
 	const auto stem = std::filesystem::path(path).stem().string();
 
 	toast::Workspace temp_ws(node_type, toast::UID(static_cast<uint64_t>(-1ULL)));
@@ -1074,6 +1076,7 @@ void toast_create_tnode(const char* path, const char* node_type) noexcept {
 }
 
 void toast_reload_manifest() noexcept {
+	toast::Engine::get()->requireTickThread("reloadManifest");
 	auto& mgr = assets::AssetManager::get();
 	mgr.clearUnusedAssets();
 	mgr.reloadManifest();
