@@ -56,6 +56,10 @@ target_compile_options(my_game PRIVATE
         $<$<CXX_COMPILER_ID:MSVC>:/wd5030>
 )
 
+if (MSVC)
+  target_compile_options(my_game PRIVATE /MP)
+endif ()
+
 target_link_libraries(my_game PUBLIC toast_engine)
 target_compile_definitions(my_game PRIVATE GAME_EXPORT)
 
