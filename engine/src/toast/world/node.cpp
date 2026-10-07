@@ -200,6 +200,8 @@ void Node::removeDependsOn(Node& other) {
 auto Node::listener() noexcept -> event::Listener& {
 	if (not m_listener) {
 		m_listener = std::make_unique<event::Listener>();
+		// A silenced owner must not receive events from nodes created later
+		m_listener->enabled(m_owner == nullptr || m_owner->receivesEvents());
 		TOAST_TRACE("Node", "Created listener for {} ({})", name(), uid());
 	}
 

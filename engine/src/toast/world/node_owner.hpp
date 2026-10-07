@@ -50,6 +50,14 @@ public:
 	[[nodiscard]]
 	virtual auto participatesIn(NodeOwnerParticipation use) const noexcept -> bool = 0;
 
+	/// @returns false when silenced
+	[[nodiscard]]
+	virtual auto receivesEvents() const noexcept -> bool {
+		return true;
+	}
+
+	void syncListenerState() noexcept;
+
 	/// True for a Workspace open for editing: lifecycle callbacks still run there, but the game is not running
 	[[nodiscard]]
 	auto isEditing() noexcept -> bool;

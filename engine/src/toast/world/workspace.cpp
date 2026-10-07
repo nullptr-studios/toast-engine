@@ -4,6 +4,7 @@
 #include "camera.hpp"
 #include "node.hpp"
 #include "node_3d.hpp"
+#include "play_workspace.hpp"
 #include "tree_lock.hpp"
 #include "workspace_events.hpp"
 
@@ -992,6 +993,13 @@ auto Workspace::isActiveWorkspace() const noexcept -> bool {
 
 auto Workspace::participatesIn(NodeOwnerParticipation use) const noexcept -> bool {
 	return use == NodeOwnerParticipation::render && isActiveWorkspace();
+}
+
+auto Workspace::receivesEvents() const noexcept -> bool {
+	// only true when a play workspace doesnt exist
+	// this is still a bit iffy but it's the best fix i could think for
+	// the clanker wanted me to rewrite the entire backend for the events
+	return !PlayWorkspace::exists();
 }
 
 auto Workspace::findFrom(const Node& origin, std::string_view query) -> Box<Node> {

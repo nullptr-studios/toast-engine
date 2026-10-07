@@ -76,10 +76,14 @@ public:
 	/// No-op; Workspace has no tick scheduler and never registers dependencies
 	void registerDependency(Node& from, Node& to) override;
 	void unregisterDependency(Node& from, Node& to) override;
+
 	void nodeEnabledChanged() noexcept override { m_hierarchy_dirty.store(true, std::memory_order_relaxed); }
 
 	[[nodiscard]]
 	auto participatesIn(NodeOwnerParticipation use) const noexcept -> bool override;
+
+	[[nodiscard]]
+	auto receivesEvents() const noexcept -> bool override;
 
 	/// Name lookup over origin's subtree
 	auto findFrom(const Node& origin, std::string_view query) -> Box<Node> override;

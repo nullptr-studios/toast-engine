@@ -48,6 +48,16 @@ auto INodeOwner::isEditing() noexcept -> bool {
 	return workspace != nullptr && !workspace->isPlaying();
 }
 
+void INodeOwner::syncListenerState() noexcept {
+	const bool live = receivesEvents();
+	std::scoped_lock lock(nodes_mutex);
+	forEachNode([live](const _detail::ControlBox& control) {
+		if (control.node != nullptr && control.node->m_listener) {
+			control.node->m_listener->enabled(live);
+		}
+	});
+}
+
 void INodeOwner::activateCamera(Camera& camera) {
 	if (m_is_shutting_down || (camera.m_state != NodeState::root && camera.m_state != NodeState::global) || !camera.enabled()) {
 		return;

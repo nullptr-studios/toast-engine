@@ -79,6 +79,8 @@ public:
 	void startGame();
 
 private:
+	void syncOwnerListeners();
+
 	EnginePimpl* m;
 	static Engine* instance;
 };

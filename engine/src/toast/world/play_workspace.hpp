@@ -39,6 +39,18 @@ public:
 	[[nodiscard]]
 	auto participatesIn(NodeOwnerParticipation use) const noexcept -> bool override;
 
+	[[nodiscard]]
+	auto receivesEvents() const noexcept -> bool override {
+		// The play workspace is the one running so it always receives events
+		return true;
+	}
+
+	[[nodiscard]]
+	static auto exists() noexcept -> bool {
+			// True while any PlayWorkspace exists
+		return s_instances.load(std::memory_order_acquire) > 0;
+	}
+
 protected:
 	///@brief Playmode state
 	[[nodiscard]]
@@ -47,6 +59,8 @@ protected:
 	}
 
 private:
+	static inline std::atomic<int> s_instances = 0;
+
 	TickScheduler m_scheduler;
 	bool m_paused = false;
 	bool m_started = false;

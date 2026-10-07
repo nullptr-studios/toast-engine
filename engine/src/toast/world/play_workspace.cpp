@@ -13,6 +13,7 @@ namespace toast {
 PlayWorkspace::PlayWorkspace(UID handle, assets::Prefab& prefab) : Workspace(handle, EmptyTag {}) {
 	ZoneScoped;
 
+	s_instances.fetch_add(1, std::memory_order_release);
 	m_owned_source_prefab = std::make_unique<assets::Prefab>(prefab);
 	assets::Handle<assets::Prefab> file(m_owned_source_prefab.get(), handle, "");
 
@@ -54,6 +55,7 @@ PlayWorkspace::PlayWorkspace(UID handle, assets::Prefab& prefab) : Workspace(han
 }
 
 PlayWorkspace::~PlayWorkspace() {
+	s_instances.fetch_sub(1, std::memory_order_release);
 	if (not m_root_node.exists()) {
 		return;
 	}
