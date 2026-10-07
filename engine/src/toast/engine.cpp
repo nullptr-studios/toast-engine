@@ -312,6 +312,9 @@ Engine::~Engine() noexcept {
 		}
 		m->world.reset();
 		m->ui_system.reset();
+		m->input_system.reset();
+		m->physics_simulator.reset();
+		m->audio_system.reset();
 		m->renderer.reset();
 		m->asset_manager.reset();
 		m->vulkan_core.reset();

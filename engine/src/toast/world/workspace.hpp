@@ -15,6 +15,7 @@
 #include "node_owner.hpp"
 #include "workspace_history.hpp"
 
+#include <atomic>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <memory>
@@ -75,6 +76,7 @@ public:
 	/// No-op; Workspace has no tick scheduler and never registers dependencies
 	void registerDependency(Node& from, Node& to) override;
 	void unregisterDependency(Node& from, Node& to) override;
+	void nodeEnabledChanged() noexcept override { m_hierarchy_dirty.store(true, std::memory_order_relaxed); }
 
 	[[nodiscard]]
 	auto participatesIn(NodeOwnerParticipation use) const noexcept -> bool override;
@@ -132,6 +134,7 @@ protected:
 	std::unique_ptr<Camera> m_editor_camera;
 	EditorCameraController m_editor_camera_controller;    ///< drives m_editor_camera; ticked from tick() below
 	std::unique_ptr<WorkspaceHistory> m_history;
+	std::atomic<bool> m_hierarchy_dirty = false;
 
 	[[nodiscard]]
 	auto isActiveWorkspace() const noexcept -> bool;

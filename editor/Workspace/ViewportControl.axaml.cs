@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -52,11 +53,12 @@ public partial class ViewportControl : UserControl {
 
 	private bool m_captured;
 	private bool m_gameInput;
+	private readonly HashSet<int> m_heldButtons = [];
+	private readonly HashSet<Key> m_heldKeys = [];
 	private bool m_mouseLockRequested;
 	private Point m_lockPoint;
 	private Point m_lockVirtual;
 	private Point m_lastPointerPoint;
-	// last position the engine received in pixels
 	private Point? m_lastSentMouse;
 
 	private CancellationTokenSource? m_hintCts;
@@ -130,15 +132,40 @@ public partial class ViewportControl : UserControl {
 		if (change.Property != PlayModeProperty) return;
 
 		if (!change.GetNewValue<bool>()) {
+			ReleaseHeldInput();
 			m_gameInput = false;
 			m_mouseLockRequested = false;
+			UpdateCapture();
+		} else if (m_mouseLockRequested) {
+			// the game locks the mouse as it starts
+			// this is a problem because it can land before PlayMode flips
+			if (GameOwnsInput && IsEffectivelyVisible) m_gameInput = true;
 			UpdateCapture();
 		}
 	}
 
+	// sends a release for everything still held so the game never sees an action stuck down
+	// this is a bit hackky ngl
+	private void ReleaseHeldInput() {
+		if (m_engine is null) {
+			m_heldButtons.Clear();
+			m_heldKeys.Clear();
+			return;
+		}
+
+		foreach (var button in m_heldButtons)
+			Events.Send(new WindowMouseButton { Button = button, Action = ActionReleased, Mods = 0 });
+		m_heldButtons.Clear();
+
+		foreach (var key in m_heldKeys)
+			Events.Send(new WindowKey { Key = MapKey(key).key, Actions = ActionReleased, Mods = 0 });
+		m_heldKeys.Clear();
+	}
+
 	private void OnMouseLock(WindowMouseLock e) {
-		if (!PlayMode) return;
+		// remembered outside play mode too
 		m_mouseLockRequested = e.Locked;
+		if (!PlayMode) return;
 		if (e.Locked && GameOwnsInput && IsEffectivelyVisible) m_gameInput = true;
 		UpdateCapture();
 	}
@@ -238,6 +265,7 @@ public partial class ViewportControl : UserControl {
 		// capture auto-clears on every mouse-up and events outside our bounds never reach us
 		m_topLevel = TopLevel.GetTopLevel(this);
 		m_topLevel?.AddHandler(PointerMovedEvent, OnTopLevelPointerMoved, RoutingStrategies.Tunnel, true);
+		if (m_topLevel is Window window) window.Deactivated += OnWindowDeactivated;
 		if (OperatingSystem.IsWindows() && TrackpadBridge.Supported &&
 		    m_topLevel?.TryGetPlatformHandle() is { } platformHandle &&
 		    platformHandle.HandleDescriptor == "HWND")
@@ -267,12 +295,14 @@ public partial class ViewportControl : UserControl {
 	private void OnDetached(object? sender, VisualTreeAttachmentEventArgs e) {
 		if (m_editorFlyActive) EndEditorFly();
 		ReleaseFlyKeys();
+		ReleaseHeldInput();
 		m_gameInput = false;
 		UpdateCapture();
 		m_listener?.Dispose();
 		m_listener = null;
 
 		m_topLevel?.RemoveHandler(PointerMovedEvent, OnTopLevelPointerMoved);
+		if (m_topLevel is Window window) window.Deactivated -= OnWindowDeactivated;
 		if (m_trackpadHandle != 0) {
 			TrackpadBridge.Destroy(m_trackpadHandle);
 			m_trackpadHandle = 0;
@@ -281,6 +311,12 @@ public partial class ViewportControl : UserControl {
 
 		// Stops the callback re-arming; any already-queued one returns immediately
 		m_frameLoopActive = false;
+	}
+
+	private void OnWindowDeactivated(object? sender, EventArgs e) {
+		// alt-tabbing
+		ReleaseHeldInput();
+		ReleaseFlyKeys();
 	}
 
 	private void OnTopLevelPointerMoved(object? sender, PointerEventArgs e) {
@@ -449,7 +485,10 @@ public partial class ViewportControl : UserControl {
 			Dispatcher.UIThread.Post(() => {
 				if (MouseLocked) Focus();
 			});
-		else if (GameOwnsInput) m_gameInput = false;
+		else if (GameOwnsInput) {
+			ReleaseHeldInput();
+			m_gameInput = false;
+		}
 
 		if (m_editorFlyActive) EndEditorFly();
 		ReleaseFlyKeys();
@@ -575,12 +614,14 @@ public partial class ViewportControl : UserControl {
 		if (m_engine is null) return;
 
 		if (ShouldForwardPointer && !MouseLocked) SendMousePosition(e.GetPosition(this));
-		if (button != 0)
+		if (button != 0) {
+			m_heldButtons.Add(button);
 			Events.Send(new WindowMouseButton {
 				Button = button,
 				Action = ActionPressed,
 				Mods = SdlMods(e.KeyModifiers)
 			});
+		}
 	}
 
 	protected override void OnPointerReleased(PointerReleasedEventArgs e) {
@@ -594,7 +635,9 @@ public partial class ViewportControl : UserControl {
 			return;
 		}
 
-		if (!ShouldForward || m_engine is null) return;
+		var wasHeld = button != 0 && m_heldButtons.Remove(button);
+		RegrabPointerSoon();
+		if ((!wasHeld && !ShouldForward) || m_engine is null) return;
 
 		if (button != 0)
 			Events.Send(new WindowMouseButton {
@@ -602,6 +645,14 @@ public partial class ViewportControl : UserControl {
 				Action = ActionReleased,
 				Mods = SdlMods(e.KeyModifiers)
 			});
+	}
+
+	// Avalonia drops pointer capture after every mouse up 
+	private void RegrabPointerSoon() {
+		if (!m_captured) return;
+		Dispatcher.UIThread.Post(() => {
+			if (m_captured && m_pointer is { } pointer && pointer.Captured != Surface) pointer.Capture(Surface);
+		}, DispatcherPriority.Input);
 	}
 
 	protected override void OnPointerWheelChanged(PointerWheelEventArgs e) {
@@ -663,6 +714,7 @@ public partial class ViewportControl : UserControl {
 
 		// backtick frees the mouse during play; never forwarded to the game
 		if (PlayMode && e.Key == Key.OemTilde) {
+			ReleaseHeldInput();
 			m_gameInput = false;
 			UpdateCapture();
 			e.Handled = true;
@@ -710,7 +762,9 @@ public partial class ViewportControl : UserControl {
 	}
 
 	private bool SendKey(KeyEventArgs e, int action) {
-		if (!ShouldForward || m_engine is null) return false;
+		var wasHeld = action == ActionReleased && m_heldKeys.Remove(e.Key);
+		if ((!wasHeld && !ShouldForward) || m_engine is null) return false;
+		if (action == ActionPressed) m_heldKeys.Add(e.Key);
 
 		var (key, _) = MapKey(e.Key);
 		Events.Send(new WindowKey {

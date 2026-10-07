@@ -237,6 +237,13 @@ Simulator::Simulator() {
 	m_listener.subscribe<event::VoxelPaletteAssetReloaded>([this](event::VoxelPaletteAssetReloaded& e) {
 		refreshPalette(e.uid.data());
 	});
+	// Palettes copy materials into the shapes so editing a material asset has to refresh them
+	m_listener.subscribe<event::DataAssetReloaded>([this](event::DataAssetReloaded& e) {
+		const std::string type = assets::typeOf(e.uid);
+		if (type == "physics_material" || type == "destruction_material") {
+			refreshAllPalettes();
+		}
+	});
 }
 
 Simulator::~Simulator() {
@@ -821,6 +828,33 @@ void Simulator::rebuildFragmentIndex() {
 	m_fragment_index.reserve(m_fragments.size());
 	for (size_t i = 0; i < m_fragments.size(); ++i) {
 		m_fragment_index[m_fragments[i].body.slot] = i;
+	}
+}
+
+void Simulator::refreshAllPalettes() {
+	if (not mainThreadMutationAllowed()) {
+		return;
+	}
+
+	// refreshPalette takes the voxel lock itself
+	std::vector<uint64_t> palette_uids;
+	{
+		std::scoped_lock voxel_lock {voxelDataMutex()};
+		for (const ShapeSlot& slot : m_shapes) {
+			if (not slot.occupied || slot.shape.type != ShapeType::voxel) {
+				continue;
+			}
+			const VoxelShapeData* data = tryGetVoxelData(slot.shape.voxel.data);
+			if (data != nullptr && data->palette_uid != 0) {
+				palette_uids.push_back(data->palette_uid);
+			}
+		}
+	}
+	std::ranges::sort(palette_uids);
+	palette_uids.erase(std::ranges::unique(palette_uids).begin(), palette_uids.end());
+
+	for (const uint64_t uid : palette_uids) {
+		refreshPalette(uid);
 	}
 }
 

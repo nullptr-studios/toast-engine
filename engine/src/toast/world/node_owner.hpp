@@ -64,6 +64,8 @@ public:
 
 	virtual void registerInteraction(Node& /*first*/, Node& /*second*/) { }
 
+	virtual void nodeEnabledChanged() noexcept { }
+
 	virtual auto findFrom(const Node& origin, std::string_view query) -> Box<Node> = 0;
 	virtual auto findFrom(const Node& origin, const UID& uid) -> Box<Node> = 0;
 	virtual auto searchFrom(const Node& origin, std::string_view query) -> std::vector<Box<Node>> = 0;
