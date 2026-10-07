@@ -425,9 +425,9 @@ auto Simulator::raycast(glm::vec3 pos, glm::vec3 dir, float max_distance, int ma
 		}
 	}
 
-	if (results.empty()) {
-		debug::drawLine(pos, pos * dir * max_distance, {1, 0, 0, 1});
-	}
+	// if (results.empty()) {
+	// 	debug::drawLine(pos, pos * dir * max_distance, {1, 0, 0, 1});
+	// }
 
 	if (is_target_limited) {
 		results.reserve(nearest_hits.size());
