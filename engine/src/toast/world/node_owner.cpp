@@ -410,7 +410,8 @@ auto INodeOwner::requestRuntimeSpawn(Node& parent, UID uid) -> Box<Node> {
 		root->m_parent = parent;
 		parent.m_children.emplace_back(root);
 	}
-	root->m_state = parent.m_state;
+	// lmao
+	root->changeNodeState(parent.m_state);
 	root->m_type = NodeType::root;
 	root->m_inherited_enabled = parent.enabled();
 
