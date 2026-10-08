@@ -413,8 +413,6 @@ auto Simulator::raycast(glm::vec3 pos, glm::vec3 dir, float max_distance, int ma
 			}
 
 			debug::drawLine(pos, hit_pos, {0, 0, 1, 1});
-			debug::drawArrow(hit_pos, hit_pos + world_normal * 0.5f, {0, 1, 1, 1});
-			debug::drawSphere(hit_pos, .1, {0, 1, 1, 1});
 
 			results.emplace_back(
 			    RayHit {
