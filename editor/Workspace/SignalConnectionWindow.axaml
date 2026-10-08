@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:editor.Workspace"
+        xmlns:conv="using:editor.Components.Converters"
         x:Class="editor.Workspace.SignalConnectionWindow"
         x:DataType="vm:SignalConnectionDialogViewModel"
         Title="Add signal connection"
@@ -11,6 +12,10 @@
         WindowStartupLocation="CenterOwner"
         Padding="8"
         Background="{StaticResource Bg2}">
+	<Window.Resources>
+		<conv:ResourceBrushConverter x:Key="BrushFromKey" />
+	</Window.Resources>
+
 	<Window.Styles>
 		<Style Selector="TreeView.connection-workspace TreeViewItem">
 			<Setter Property="IsExpanded"
@@ -92,13 +97,17 @@
 					          ItemsSource="{Binding Nodes}"
 					          SelectedItem="{Binding SelectedNode, Mode=TwoWay}">
 						<TreeView.ItemTemplate>
-							<TreeDataTemplate ItemsSource="{Binding Children}"
+							<TreeDataTemplate ItemsSource="{Binding PickerChildren}"
 							                  x:DataType="vm:HierarchyElement">
 								<StackPanel Orientation="Horizontal"
 								            Spacing="6">
-									<Image Source="{Binding SmallIcon}"
-									       Width="16"
-									       Height="16" />
+									<Border Width="16"
+									        Height="16"
+									        Background="{Binding Color, Converter={StaticResource BrushFromKey}}">
+										<Border.OpacityMask>
+											<ImageBrush Source="{Binding SmallIcon}" />
+										</Border.OpacityMask>
+									</Border>
 									<TextBlock Text="{Binding Name}" />
 								</StackPanel>
 							</TreeDataTemplate>

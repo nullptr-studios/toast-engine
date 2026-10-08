@@ -78,6 +78,9 @@ public class HierarchyElement : INotifyPropertyChanged {
 	public ObservableCollection<HierarchyElement> Children { get; set; } = [];
 	public ObservableCollection<HierarchyElement> FilteredChildren { get; } = [];
 
+	// Pickers treat a prefab instance as a black box: its inner nodes are not offered
+	public IEnumerable<HierarchyElement> PickerChildren => IsPrefab ? [] : Children;
+
 	public HierarchyViewModel Owner { get; }
 	public HierarchyElement? Parent { get; }
 

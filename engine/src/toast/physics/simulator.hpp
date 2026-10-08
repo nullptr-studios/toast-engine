@@ -551,6 +551,7 @@ private:
 	void recheckNeighborsOf(BodyID id);
 	void rebuildFragmentIndex();
 	void refreshPalette(uint64_t palette_uid);
+	void refreshAllPalettes();
 	auto createVoxelShapeInternal(
 	    BodyID owner, const VoxelShape& shape, voxel::Volume* external, std::unique_ptr<voxel::Volume>& owned,
 	    const voxel::Palette& palette, const voxel::MaterialLibrary& materials, const voxel::MassMoments* known_moments = nullptr

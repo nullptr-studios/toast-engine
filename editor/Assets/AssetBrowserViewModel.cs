@@ -506,7 +506,7 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 
 		var metaPath = file.Filepath;
 		var oldAssetPath = metaPath[..^5];
-		var assetExt = AssetTypeRegistry.GetExtension(Path.GetFileNameWithoutExtension(oldAssetPath));
+		var assetExt = AssetTypeRegistry.GetExtension(Path.GetFileName(oldAssetPath));
 		var dir = Path.GetDirectoryName(oldAssetPath)!;
 		var newAssetPath = Path.Combine(dir, newName + assetExt);
 		var newMetaPath = newAssetPath + ".meta";

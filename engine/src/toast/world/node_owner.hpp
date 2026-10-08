@@ -50,6 +50,14 @@ public:
 	[[nodiscard]]
 	virtual auto participatesIn(NodeOwnerParticipation use) const noexcept -> bool = 0;
 
+	/// @returns false when silenced
+	[[nodiscard]]
+	virtual auto receivesEvents() const noexcept -> bool {
+		return true;
+	}
+
+	void syncListenerState() noexcept;
+
 	/// True for a Workspace open for editing: lifecycle callbacks still run there, but the game is not running
 	[[nodiscard]]
 	auto isEditing() noexcept -> bool;
@@ -63,6 +71,8 @@ public:
 	virtual void unregisterDependency(Node& from, Node& to) = 0;
 
 	virtual void registerInteraction(Node& /*first*/, Node& /*second*/) { }
+
+	virtual void nodeEnabledChanged() noexcept { }
 
 	virtual auto findFrom(const Node& origin, std::string_view query) -> Box<Node> = 0;
 	virtual auto findFrom(const Node& origin, const UID& uid) -> Box<Node> = 0;

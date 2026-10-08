@@ -312,6 +312,9 @@ Engine::~Engine() noexcept {
 		}
 		m->world.reset();
 		m->ui_system.reset();
+		m->input_system.reset();
+		m->physics_simulator.reset();
+		m->audio_system.reset();
 		m->renderer.reset();
 		m->asset_manager.reset();
 		m->vulkan_core.reset();
@@ -817,9 +820,11 @@ auto Engine::playWorkspace(UID source_handle) -> std::pair<UID, std::string> {
 	if (!play->isValid()) {
 		TOAST_ERROR("Engine", "Failed to clone workspace {} for play mode", source_handle);
 		m->owners.erase(it);
+		syncOwnerListeners();
 		return {};
 	}
 	play->inheritEditorCamera(*source);
+	syncOwnerListeners();    // Only the play workspace runs now
 
 	std::string name = it->second->name();
 	return {handle, name};
@@ -830,6 +835,13 @@ void Engine::destroyWorkspace(UID handle) {
 	m->owners.erase(handle);
 	if (m->active_workspace.data() == handle.data()) {
 		m->active_workspace = UID {0};
+	}
+	syncOwnerListeners();    // Unsilences previous workspaces
+}
+
+void Engine::syncOwnerListeners() {
+	for (const auto& [_, owner] : m->owners) {
+		owner->syncListenerState();
 	}
 }
 
