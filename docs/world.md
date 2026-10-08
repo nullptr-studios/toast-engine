@@ -116,6 +116,21 @@ The wave assignment algorithm:
 3. Wave index = `max(predecessor wave) + 1`; nodes with no predecessors land on wave 0
 4. Per-phase pruning discards nodes that don't implement the relevant lifecycle function
 
+The thread that runs the frame hands each wave to the pool and waits for it; it only works
+on the wave itself when the pool cannot take it. Nodes with scripts are grouped by the Lua
+interpreter they run on, one job per interpreter, so no worker waits for another, see
+[scripting](scripting.md#performance).
+
+## Lifecycle
+
+`init`, `begin` and `onEnable` run on a whole tree when a `PlayWorkspace` or a `World`
+brings it up. A node always comes after its parent. A tree with many scripts runs a level at
+a time: the C++ functions of the level one after the other on the calling thread, then the
+scripts of the level in parallel on the pool. Nothing else is promised about the order of two
+nodes that are not above one another. Smaller trees keep the order where each node is followed
+by everything below it. `TickScheduler::runLifecycle()` does this, and
+`TOAST_SERIAL_LIFECYCLE=1` turns the parallel version off.
+
 ## Workspace
 
 `Workspace` is a lightweight version of World used by the editor viewport. It owns nodes

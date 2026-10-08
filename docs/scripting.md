@@ -75,11 +75,14 @@ declares its element type the same way: `loot = { Asset }`.
 ### Talking to nodes
 
 `self` doubles as the node: `find`, `search`, `create`, `call`, `addDependsOn`,
-`enabled`, `name`, `uid` and `exists` are all available on it and on any node reference.
+`interactsWith`, `enabled`, `name`, `uid` and `exists` are all available on it and on any
+node reference.
 `find`/`search` accept the same name queries as C++ (bare name, slash path, `node://`
 URIs with the `root`/`world`/`global` keywords); UIDs are not valid strings
 `call` invokes a reflected C++ method base-to-derived and then any same-named function on
 the target's scripts.
+`interactsWith(other)` tells the scheduler that this node's scripts and `other`'s call each
+other, see [Performance](#performance).
 
 ### Hot reload
 
@@ -116,11 +119,75 @@ function). For finer detail scripts can open their own zones with `tracy.ZoneBeg
 
 ## Performance
 
-Lua execution serializes per interpreter, not globally. Nodes bound to different
-interpreters tick in parallel; a node calling into another node's scripts on a different
-interpreter blocks briefly on that interpreter's lock. Two nodes on different
-interpreters synchronously calling each other's scripts at the same time is detected and
-dropped with an error instead of deadlocking — don't build that cycle.
+Lua execution serializes per interpreter, not globally. A tick wave is split by
+interpreter: everything that runs Lua on one interpreter is one job, so nodes on different
+interpreters tick in parallel and no worker waits for an interpreter. The nodes of one
+prefab instance share an interpreter (a big instance is spread over a few), so the scripts
+of a prefab call each other directly.
+
+The thread that runs the frame hands every wave to the thread pool and waits for it, so
+scripts tick on the workers, like the C++ ticks. It only works on a wave itself when the pool
+cannot: when it is a worker itself, when no worker is free, or when none showed up within a
+couple of milliseconds. What stays on the frame thread is `physicsTick` (the physics step is
+bound to it) and the C++ functions of the lifecycle (see below). The calls that were queued for
+the end of a wave are delivered on the pool too, one job per interpreter, in the order they were
+made; a handful of them is not worth handing out and runs on the frame thread.
+
+### Physics from scripts
+
+The physics simulator belongs to the thread that ticks the engine. What a script on a worker
+asks of it, like creating a node with a rigidbody, enabling or removing one, moving it, setting
+its velocity or putting it to sleep, is kept and carried out by the simulator thread at the
+start of its next physics step, and once a frame after the ticks, in the order it was asked. So
+a body a script has just made exists after the next step and not before, and a velocity set on
+it right away is applied when it does. A call that has to answer, a raycast or an overlap, is
+answered at once from the state of the last step.
+
+### Building a prefab
+
+The scripts of a prefab are built in two steps. Allocating the nodes and applying their
+fields needs no interpreter and runs on every worker. The scripts are then placed in file
+order and built one interpreter per job, so the workers never wait for each other, and the
+placement does not depend on which worker got there first. A worker only waits for an
+interpreter when something outside the prefab, a tick wave of another world, has it. A prefab
+that is built from a pool worker or from a script builds its nodes where it is.
+
+### init, begin and onEnable
+
+A tree with many scripts that define the stage (16 or more, on at least two interpreters)
+runs `init`, `begin` and `onEnable` level by level, parents before their children. The C++
+functions of a level run one after the other on the calling thread, since they register with
+the renderer, the physics and the audio and were never written for several threads. Then the
+scripts of the level run on the pool, one job per interpreter, and the calls between scripts
+that found an interpreter busy are delivered once the level is done. The next level starts
+after that.
+
+What this promises is that a node comes after its parent. Two nodes that are not above one
+another can run in either order, and at the same time: a script that reads a variable of
+another node's script in `init` can find it busy, like in a tick wave. Declare it with
+`interactsWith` from the script that needs it, or move the read to `begin`, after `init`
+declared it. A smaller tree, or a thread that cannot wait for the pool, runs each node
+followed by everything below it, as it always did. Set the environment variable
+`TOAST_SERIAL_LIFECYCLE=1` to get that order always, which tells whether a problem comes from
+scripts running at the same time.
+
+A script that calls into a node on another interpreter finds that interpreter free, and the
+call runs at once, or finds another worker running it. A call that returns nothing (`call`,
+signal handlers) is then queued and runs at the end of the wave, in the order it was made.
+Reading another node's script variable cannot wait, so it comes back empty with a warning.
+When two nodes depend on calling each other right away, declare it from either of them, usually
+in `init`:
+
+```lua
+function node:init()
+	self:interactsWith(self.partner)
+end
+```
+
+The two nodes then always run in the same job, and the calls between them are always
+immediate. It costs parallelism, nodes that interact never run at the same time, so declare
+what the scripts really need. A call that had to be queued is logged once with the nodes
+involved, which is the hint that a declaration is missing.
 
 Phase dispatch is free for scripts that don't implement the phase: presence is cached in
 a bitmask at load, so a node whose script only defines `init` costs nothing per frame.
@@ -134,6 +201,6 @@ reporting. The reflection generator's stub emission is covered by its own cargo 
 ## Expansion
 
 Sending engine events from scripts (`toast.send`) is the next step once event reflection
-matures; the conversion layer it needs already exists. A per-wave "Lua lane" could
-recover the last bit of parallelism lost to interpreter locks if profiling ever shows
-contention.
+matures; the conversion layer it needs already exists. Calls into a busy interpreter that
+suspend the calling script and resume it with the result, instead of being queued or
+skipped, are the next step for the scheduler.

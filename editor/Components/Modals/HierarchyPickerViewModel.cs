@@ -30,7 +30,7 @@ public class HierarchyDisplayItem : SearchableTreeItem<HierarchyDisplayItem> {
 			Icon = new Bitmap(AssetLoader.Open(new Uri("avares://editor/Resources/node_icons/2x/Circle.png")));
 		}
 
-		AllChildren = element.Children.Select(c => new HierarchyDisplayItem(c, exclude, allowedType, IsExcluded))
+		AllChildren = element.PickerChildren.Select(c => new HierarchyDisplayItem(c, exclude, allowedType, IsExcluded))
 			.ToList();
 		foreach (var c in AllChildren) FilteredChildren.Add(c);
 		InitSegments();

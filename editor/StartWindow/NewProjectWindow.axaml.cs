@@ -45,7 +45,7 @@ public partial class NewProjectWindow : Window {
 		}
 
 		ProjectPath = Path.Combine(projectDirectory, formattedTitle + ".toast");
-		ProjectThumbnail = Path.Combine(projectDirectory, ".toast", "thumbnails", "project.png");
+		ProjectThumbnail = Path.Combine(projectDirectory, "thumbnail.png");
 	}
 
 	private void Name_OnTextChanged(object? sender, TextChangedEventArgs e) {

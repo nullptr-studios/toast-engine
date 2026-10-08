@@ -4,6 +4,8 @@
 #include "toast/scripting/node_proxy.hpp"
 
 #include <memory>
+#include <string>
+#include <vector>
 
 namespace scripting {
 
@@ -27,7 +29,14 @@ public:
 
 	void clear(signals::ConnectionSource source) { m_state->signal.clear(source); }
 
-	void fire() { m_state->signal.fire(); }
+	void fire(const signals::DynamicArgs& args = {}) { m_state->signal.fire(args); }
+
+	void argTypes(std::vector<std::string> types) { m_state->arg_types = std::move(types); }
+
+	[[nodiscard]]
+	auto argTypes() const -> const std::vector<std::string>& {
+		return m_state->arg_types;
+	}
 
 	[[nodiscard]]
 	auto connections() const -> std::vector<signals::ConnectionInfo> {
@@ -37,7 +46,8 @@ public:
 private:
 	struct State {
 		toast::Box<toast::Node> owner;
-		signals::Signal<> signal;
+		signals::Signal<signals::DynamicArgs> signal;
+		std::vector<std::string> arg_types;
 	};
 
 	std::shared_ptr<State> m_state;

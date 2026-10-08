@@ -1,4 +1,4 @@
-#include "DebugDraw.hpp"
+#include "debug_draw.hpp"
 #include "vulkan_renderer.hpp"
 
 #include <cmath>

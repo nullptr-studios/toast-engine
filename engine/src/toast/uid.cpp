@@ -100,8 +100,7 @@ void UID::generate() {
 	t = (t ^ (t >> 27)) * 0x94d049bb133111ebULL;
 	t = (t ^ (t >> 31));
 
-	value = t + offset;
-	offset++;
+	value = t + offset.fetch_add(1, std::memory_order_relaxed);
 }
 
 void UID::assign(std::string_view b64) {

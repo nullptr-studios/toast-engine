@@ -49,7 +49,12 @@ public:
 	[[nodiscard]]
 	auto burnRate() const noexcept -> float;
 
+protected:
+	void onReloaded() override;
+
 private:
+	void readFields();
+
 	float m_density = 1000.0f;
 	float m_toughness = 1000.0f;
 	float m_structural_strength = 1000.0f;

@@ -26,15 +26,14 @@ function NodeProxy:name() end
 ---@return integer [Stable unique identifier, assigned at construction or deserialization. Never changes]
 function NodeProxy:uid() end
 
----Finds the first descendant whose name or path matches `query`.
+---Finds the first descendant whose name or path matches `query`
 ---Searches Depth-first with the children of this node
----traversal stops at prefab-interface boundaries
 ---These prefixes will change the starting location of the find `root/`, `world/`, `global`
 ---@param query string
 ---@return Node? [The first match, or an empty box if nothing was found]
 function NodeProxy:find(query) end
 
----Finds the every descendant whose name or path matches `query`.
+---Finds the every descendant whose name or path matches `query`
 ---Searches Depth-first with the children of this node
 ---Unlike find(), search() crosses prefab-instance boundaries
 ---These prefixes will change the starting location of the find `root/`, `world/`, `global`
@@ -65,6 +64,11 @@ function NodeProxy:create(type) end
 --- probably shouldnt use in lua - dante
 ---@param other Node
 function NodeProxy:addDependsOn(other) end
+
+---Declares that the scripts of this node and of `other` call each others
+---A tick wave then runs the two nodes in one job, so calls between them always run at once
+---@param other Node
+function NodeProxy:interactsWith(other) end
 
 ---Invokes all C++ reflected implementations of function `name` (base→derived) and
 ---all same-named Lua functions across every attached script, forwarding `args`

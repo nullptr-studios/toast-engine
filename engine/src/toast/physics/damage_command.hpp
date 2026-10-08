@@ -11,8 +11,16 @@
 #include "shape.hpp"
 
 #include <glm/glm.hpp>
+#include <optional>
 
 namespace physics {
+
+struct FragmentPush {
+	std::optional<glm::vec3> point;
+	glm::vec3 direction {};
+	float speed = 0.0f;
+	float max_impulse = 0.0f;
+};
 
 struct DamageCommand {
 	ShapeID shape;
@@ -22,6 +30,14 @@ struct DamageCommand {
 	BodyID source;
 
 	float shell_voxels = tunables().fracture_shell_voxels;
+	std::optional<FragmentPush> push;
+};
+
+struct CapsuleSmash {
+	float energy = 0.0f;
+	glm::vec3 direction {};
+	float force = 0.0f;
+	float max_speed = 0.0f;
 };
 
 }

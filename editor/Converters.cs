@@ -7,9 +7,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using Avalonia;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 
 // ReSharper disable once CheckNamespace
@@ -215,6 +217,22 @@ public class DockContentCornerRadiusConverter : IMultiValueConverter {
 public class DockFocusBrushConverter : IValueConverter {
 	public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
 		return ConverterHelpers.GetBrush(value is true ? "Red" : "Bg5") ?? Brushes.Transparent;
+	}
+
+	public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) {
+		throw new NotSupportedException();
+	}
+}
+
+public class PathToBitmapConverter : IValueConverter {
+	public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
+		if (value is not string path || path.Length == 0 || !File.Exists(path)) return null;
+		try {
+			using var stream = File.OpenRead(path);
+			return Bitmap.DecodeToWidth(stream, 128);
+		} catch {
+			return null;
+		}
 	}
 
 	public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) {

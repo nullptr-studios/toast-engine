@@ -1,11 +1,13 @@
 #include "lua_state.hpp"
 
 #include "asset_proxy.hpp"
+#include "lua_callback.hpp"
 #include "lua_event.hpp"
 #include "lua_signal.hpp"
 #include "lua_types.hpp"
 #include "lua_util.hpp"
 #include "node_proxy.hpp"
+#include "script_runtime.hpp"
 #include "signal_proxy.hpp"
 #include "toast/physics/raycast.hpp"
 #include "ui_binds_proxy.hpp"
@@ -21,8 +23,11 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
+#include <iterator>
 #include <lua.hpp>
 #include <luabridge3/LuaBridge/LuaBridge.h>
+#include <memory>
+#include <optional>
 #include <toast/assets/asset_registry.hpp>
 #include <toast/assets/assets.hpp>
 #include <toast/assets/data_schema_codegen.hpp>
@@ -106,9 +111,11 @@ void luaToastError(const std::string& msg) {
 	TOAST_ERROR("Lua", "{}", msg);
 }
 
-thread_local std::vector<size_t> t_held_states;    // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
-
-constexpr auto k_cross_state_timeout = std::chrono::milliseconds(500);
+// Identity of the calling thread and the interpreters it owns right now, one entry per live Lock
+std::atomic<uint64_t> g_next_thread_token {1};                                                               // NOLINT
+thread_local const uint64_t t_thread_token = g_next_thread_token.fetch_add(1, std::memory_order_relaxed);    // NOLINT
+thread_local std::vector<size_t> t_owned_states;                                                             // NOLINT
+thread_local int t_non_blocking_depth = 0;                                                                   // NOLINT
 
 auto inputActionValue(const input::Action& action, lua_State* state) -> luabridge::LuaRef {
 	const input::Value& value = action.value();
@@ -134,36 +141,44 @@ auto inputActionBinds(const input::Action& action, lua_State* state) -> luabridg
 }
 }
 
-LuaState::Lock::Lock(std::unique_lock<std::recursive_timed_mutex> lock, lua_State* state, size_t index) noexcept
-    : m_lock(std::move(lock)),
-      m_state(state),
-      m_index(index) {
-	if (m_lock.owns_lock()) {
-		t_held_states.push_back(m_index);
-	}
-}
+LuaState::Lock::Lock(Entry* entry, lua_State* state, size_t index) noexcept : m_entry(entry), m_state(state), m_index(index) { }
 
-LuaState::Lock::Lock(Lock&& other) noexcept : m_lock(std::move(other.m_lock)), m_state(other.m_state), m_index(other.m_index) {
+LuaState::Lock::Lock(Lock&& other) noexcept : m_entry(other.m_entry), m_state(other.m_state), m_index(other.m_index) {
+	other.m_entry = nullptr;
 	other.m_state = nullptr;
 }
 
 auto LuaState::Lock::operator=(Lock&& other) noexcept -> Lock& {
 	if (this != &other) {
-		if (m_lock.owns_lock()) {
-			t_held_states.pop_back();
-		}
-		m_lock = std::move(other.m_lock);
+		unlock();
+		m_entry = other.m_entry;
 		m_state = other.m_state;
 		m_index = other.m_index;
+		other.m_entry = nullptr;
 		other.m_state = nullptr;
 	}
 	return *this;
 }
 
 LuaState::Lock::~Lock() {
-	if (m_lock.owns_lock()) {
-		t_held_states.pop_back();
+	unlock();
+}
+
+void LuaState::Lock::unlock() noexcept {
+	if (m_entry == nullptr) {
+		return;
 	}
+	LuaState::release(*m_entry, m_index);
+	m_entry = nullptr;
+	m_state = nullptr;
+}
+
+LuaState::NonBlockingScope::NonBlockingScope() noexcept {
+	++t_non_blocking_depth;
+}
+
+LuaState::NonBlockingScope::~NonBlockingScope() {
+	--t_non_blocking_depth;
 }
 
 auto LuaState::create() noexcept -> std::unique_ptr<LuaState> {
@@ -179,68 +194,261 @@ auto LuaState::get() noexcept -> LuaState& {
 	return *LuaState::instance;
 }
 
-auto LuaState::lock(size_t index) noexcept -> Lock {
+auto LuaState::acquire(size_t index, bool wait) noexcept -> Lock {
 	Entry& entry = m_entries[index];
-
-	std::unique_lock<std::recursive_timed_mutex> guard(entry.mutex, std::try_to_lock);
-	if (!guard.owns_lock()) {
+	if (!entry.mutex.try_lock()) {
+		if (!wait) {
+			return {};
+		}
+		m_waits.fetch_add(1, std::memory_order_relaxed);
 		ZoneScopedN("Lua lock wait");    // NOLINT
 		ZoneNameF("Lua lock wait #%d", static_cast<int>(index));
+		entry.mutex.lock();
+	}
 
-		const bool holds_other = !t_held_states.empty() && std::ranges::find(t_held_states, index) == t_held_states.end();
-		if (holds_other) {
-			if (!guard.try_lock_for(k_cross_state_timeout)) {
-				TOAST_ERROR(
-				    "Lua", "Cross-state call timed out acquiring Lua state #{}; skipping (possible call cycle between nodes)", index
-				);
-				return {};
-			}
-		} else {
-			guard.lock();
+	if (entry.depth++ == 0) {
+		entry.owner.store(t_thread_token, std::memory_order_release);
+	}
+	t_owned_states.push_back(index);
+	if (entry.depth == 1) {
+		drainPending(entry);
+	}
+	return Lock(&entry, entry.state, index);
+}
+
+void LuaState::release(Entry& entry, size_t index) noexcept {
+	if (entry.depth == 1) {
+		// Still the owner here, so whatever the destroyers touch is owned
+		drainPending(entry);
+	}
+	for (auto it = t_owned_states.rbegin(); it != t_owned_states.rend(); ++it) {
+		if (*it == index) {
+			t_owned_states.erase(std::next(it).base());
+			break;
 		}
 	}
-	return {std::move(guard), entry.state, index};
+	if (--entry.depth == 0) {
+		entry.owner.store(0, std::memory_order_release);
+	}
+	entry.mutex.unlock();
+}
+
+void LuaState::drainPending(Entry& entry) noexcept {
+	while (entry.pending_count.load(std::memory_order_acquire) != 0) {
+		std::vector<std::move_only_function<void()>> batch;
+		{
+			std::scoped_lock lock(entry.pending_mutex);
+			batch.swap(entry.pending);
+			entry.pending_count.store(0, std::memory_order_release);
+		}
+		for (auto& destroyer : batch) {
+			if (destroyer) {
+				destroyer();
+			}
+		}
+	}
+}
+
+auto LuaState::lock(size_t index) noexcept -> Lock {
+	if (index >= m_entries.size()) {
+		return {};
+	}
+	// Waiting is only safe for a thread that owns nothing, and recursion on an owned interpreter never waits
+	if ((t_owned_states.empty() && t_non_blocking_depth == 0) || ownedByCurrentThread(index)) {
+		return acquire(index, true);
+	}
+	Lock result = acquire(index, false);
+	if (!result) {
+		m_contention.fetch_add(1, std::memory_order_relaxed);
+	}
+	return result;
 }
 
 auto LuaState::tryLock(size_t index) noexcept -> Lock {
-	Entry& entry = m_entries[index];
-	std::unique_lock<std::recursive_timed_mutex> guard(entry.mutex, std::try_to_lock);
-	if (!guard.owns_lock()) {
+	if (index >= m_entries.size()) {
 		return {};
 	}
-	return {std::move(guard), entry.state, index};
+	return acquire(index, false);
 }
 
-auto LuaState::nextIndex() noexcept -> size_t {
-	return m_next_index.fetch_add(1, std::memory_order_relaxed) % m_pool_size;
+auto LuaState::indexOf(lua_State* state) noexcept -> std::optional<size_t> {
+	if (state == nullptr || !LuaState::exists()) {
+		return std::nullopt;
+	}
+	// The pool tags the main thread of every interpreter and new coroutines inherit the tag
+	const auto tag = *static_cast<const uintptr_t*>(lua_getextraspace(state));
+	if (tag == 0 || tag > instance->m_entries.size()) {
+		return std::nullopt;
+	}
+	return static_cast<size_t>(tag - 1);
+}
+
+auto LuaState::ownedByCurrentThread(size_t index) noexcept -> bool {
+	return std::ranges::find(t_owned_states, index) != t_owned_states.end();
+}
+
+auto LuaState::ownedByCurrentThread(lua_State* state) noexcept -> bool {
+	const auto index = indexOf(state);
+	return index.has_value() && ownedByCurrentThread(*index);
+}
+
+auto LuaState::ownsAnyState() noexcept -> bool {
+	return !t_owned_states.empty();
+}
+
+auto LuaState::lastOwnedIndex() noexcept -> std::optional<size_t> {
+	if (t_owned_states.empty()) {
+		return std::nullopt;
+	}
+	return t_owned_states.back();
+}
+
+auto LuaState::mainState(size_t index) const noexcept -> lua_State* {
+	return index < m_entries.size() ? m_entries[index].state : nullptr;
+}
+
+void LuaState::retire(size_t index, std::move_only_function<void()> destroyer) noexcept {
+	if (!destroyer || index >= m_entries.size()) {
+		return;
+	}
+	// Free, or already owned by this thread; either way it can run right here
+	if (Lock guard = acquire(index, false)) {
+		destroyer();
+		return;
+	}
+	Entry& entry = m_entries[index];
+	std::scoped_lock lock(entry.pending_mutex);
+	entry.pending.push_back(std::move(destroyer));
+	entry.pending_count.fetch_add(1, std::memory_order_release);
+}
+
+void LuaState::retireOrLeak(size_t index, std::move_only_function<void()> destroyer) noexcept {
+	if (LuaState::exists()) {
+		LuaState::get().retire(index, std::move(destroyer));
+		return;
+	}
+	// The interpreters are gone and whatever the destroyer holds points into them, so it must never run
+	new std::move_only_function<void()>(std::move(destroyer));    // NOLINT(cppcoreguidelines-owning-memory)
+}
+
+auto LuaState::assign(uint64_t group, std::optional<size_t> forced) -> size_t {
+	std::scoped_lock lock(m_placement_mutex);
+
+	// Equally loaded interpreters take turns, because the search starts at a different one every time
+	auto least_loaded = [this](auto&& has_room) {
+		auto search = [this](auto&& usable) {
+			std::optional<size_t> best;
+			for (size_t step = 0; step < m_pool_size; ++step) {
+				const size_t candidate = (m_next_tie + step) % m_pool_size;
+				if (usable(candidate) && (!best.has_value() || m_loads[candidate] < m_loads[*best])) {
+					best = candidate;
+				}
+			}
+			return best;
+		};
+		++m_next_tie;
+		if (const auto with_room = search(has_room)) {
+			return *with_room;
+		}
+		return *search([](size_t) { return true; });
+	};
+
+	GroupPlacement* placement = group != 0 ? &m_groups[group] : nullptr;
+	if (placement != nullptr && placement->per_index.empty()) {
+		placement->per_index.assign(m_pool_size, 0);
+	}
+
+	size_t index = 0;
+	if (forced.has_value() && *forced < m_pool_size) {
+		index = *forced;
+	} else if (placement == nullptr) {
+		index = least_loaded([](size_t) { return true; });
+	} else {
+		if (placement->members == 0 || placement->per_index[placement->index] >= k_group_chunk) {
+			placement->index = least_loaded([placement](size_t candidate) { return placement->per_index[candidate] < k_group_chunk; });
+		}
+		index = placement->index;
+	}
+	if (placement != nullptr) {
+		++placement->per_index[index];
+		++placement->members;
+	}
+	++m_loads[index];
+	return index;
+}
+
+auto LuaState::loads() const -> std::vector<uint32_t> {
+	std::scoped_lock lock(m_placement_mutex);
+	return m_loads;
+}
+
+void LuaState::unassign(uint64_t group, size_t index) noexcept {
+	std::scoped_lock lock(m_placement_mutex);
+	if (index < m_loads.size() && m_loads[index] > 0) {
+		--m_loads[index];
+	}
+	if (group == 0) {
+		return;
+	}
+	const auto found = m_groups.find(group);
+	if (found == m_groups.end()) {
+		return;
+	}
+	// A runtime that is rebuilt (a script reload) gives its place back, so its replacement lands next to the others
+	if (index < found->second.per_index.size() && found->second.per_index[index] > 0) {
+		--found->second.per_index[index];
+	}
+	if (found->second.members > 0 && --found->second.members == 0) {
+		m_groups.erase(found);
+	}
+}
+
+auto LuaState::newGroup() noexcept -> uint64_t {
+	static std::atomic<uint64_t> s_next_group {1};    // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
+	return s_next_group.fetch_add(1, std::memory_order_relaxed);
 }
 
 auto LuaState::runString(std::string_view lua_code) noexcept -> bool {
+	return runStringOn(0, lua_code, nullptr);
+}
+
+auto LuaState::runStringOn(size_t index, std::string_view lua_code, std::string* error) noexcept -> bool {
 	ZoneScoped;
-	Lock guard = lock(0);
+	Lock guard = lock(index);
 	if (!guard) {
+		if (error != nullptr) {
+			*error = "the interpreter is busy";
+		}
 		return false;
 	}
 	lua_State* state = guard.state();
+	const int top = lua_gettop(state);
 
 	int load_status = luaL_loadbufferx(state, lua_code.data(), lua_code.size(), "=runString", nullptr);
 	if (load_status != LUA_OK) {
 		TOAST_ERROR("Lua", "Failed to load Lua code: {}", lua_tostring(state, -1));
-		lua_pop(state, 1);
+		if (error != nullptr) {
+			*error = lua_tostring(state, -1);
+		}
+		lua_settop(state, top);
 		return false;
 	}
 
 	int pcall_status = pcallTraceback(state, 0, LUA_MULTRET);
 	if (pcall_status != LUA_OK) {
 		TOAST_ERROR("Lua", "Failed to execute Lua code: {}", lua_tostring(state, -1));
-		lua_pop(state, 1);
+		if (error != nullptr) {
+			*error = lua_tostring(state, -1);
+		}
+		lua_settop(state, top);
 		return false;
 	}
 
+	lua_settop(state, top);    // the chunk's results are not wanted, and they would pile up on the main stack
 	return true;
 }
 
-LuaState::LuaState() : m_pool_size(1 + toast::ThreadPool::workerCount()), m_entries(m_pool_size) {
+LuaState::LuaState() : m_pool_size(1 + toast::ThreadPool::workerCount()), m_entries(m_pool_size), m_loads(m_pool_size, 0) {
 	ZoneScoped;
 	LuaState::instance = this;
 
@@ -248,10 +456,14 @@ LuaState::LuaState() : m_pool_size(1 + toast::ThreadPool::workerCount()), m_entr
 		Entry& entry = m_entries[i];
 		entry.state = luaL_newstate();
 		TOAST_ASSERT(entry.state != nullptr, "Lua", "Failed to create Lua state");
+		// Every coroutine created later inherits this tag, which is how a thread is traced back to its interpreter
+		*static_cast<uintptr_t*>(lua_getextraspace(entry.state)) = static_cast<uintptr_t>(i + 1);
 		luaL_openlibs(entry.state);
 
 		lua_atpanic(entry.state, [](auto* state) -> int {
-			TOAST_ERROR("Lua", "Panic: {}", lua_tostring(state, -1));
+			const char* message = lua_tostring(state, -1);
+			luaL_traceback(state, state, message ? message : "(non-string error)", 0);
+			TOAST_ERROR("Lua", "Panic: {}\n{}", message ? message : "(non-string error)", lua_tostring(state, -1));
 			return 0;
 		});
 
@@ -269,8 +481,10 @@ LuaState::LuaState() : m_pool_size(1 + toast::ThreadPool::workerCount()), m_entr
 
 LuaState::~LuaState() noexcept {
 	clearAllLuaEventSubscriptions();
-	for (Entry& entry : m_entries) {
-		lua_close(entry.state);
+	for (size_t i = 0; i < m_entries.size(); ++i) {
+		// Destroyers queued by threads that never got the interpreter have to run while it still exists
+		{ Lock guard = acquire(i, true); }
+		lua_close(m_entries[i].state);
 	}
 	LuaState::instance = nullptr;
 	TOAST_INFO("Lua", "Destroyed lua state pool");
@@ -288,13 +502,13 @@ void LuaState::registerApi(lua_State* state) noexcept {
 			        luaL_error(state, "defer expects a function as its argument");
 			        return;
 		        }
-		        toast::defer([fn]() mutable {
-			        if (fn.isFunction()) {
-				        try {
-					        fn();
-				        } catch (const std::exception& e) { TOAST_ERROR("Lua", "Error inside deferred Lua function: {}", e.what()); }
-			        }
-		        });
+
+		        LuaCallback callback = LuaCallback::capture(fn, "deferred function");
+		        if (!callback) {
+			        luaL_error(state, "defer: the function does not belong to a script interpreter");
+			        return;
+		        }
+		        toast::defer([callback]() { (void)callback.invoke(); });
 	        }
 	    )
 	    .beginNamespace("toast")
@@ -720,6 +934,7 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    )
 	    .addFunction("create", &NodeProxy::create)
 	    .addFunction("addDependsOn", &NodeProxy::addDependsOn)
+	    .addFunction("interactsWith", &NodeProxy::interactsWith)
 	    .addFunction("call", &NodeProxy::call)
 	    .addIndexMetaMethod(nodeProxyIndex)
 	    .addNewIndexMetaMethod(nodeProxyNewindex)
@@ -754,11 +969,17 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	        ),
 	        overload<SignalProxy&, const luabridge::LuaRef&, const std::string&>(
 	            +[](SignalProxy& signal, const luabridge::LuaRef& target, const std::string& function) {
+		            if (const NodeProxy node = nodeOfSelfTable(target); node.exists()) {
+			            return signal.connect(node, function, signals::ConnectionSource::lua, true);
+		            }
 		            return target.isTable() && signal.connectSelf(function, signals::ConnectionSource::lua);
 	            }
 	        ),
 	        overload<SignalProxy&, const luabridge::LuaRef&, const std::string&, bool>(
 	            +[](SignalProxy& signal, const luabridge::LuaRef& target, const std::string& function, bool forwards_args) {
+		            if (const NodeProxy node = nodeOfSelfTable(target); node.exists()) {
+			            return signal.connect(node, function, signals::ConnectionSource::lua, forwards_args);
+		            }
 		            return target.isTable() && signal.connectSelf(function, signals::ConnectionSource::lua, forwards_args);
 	            }
 	        )
@@ -769,6 +990,9 @@ void LuaState::registerApi(lua_State* state) noexcept {
 		        return signal.disconnect(target, signals::ConnectionSource::lua, function);
 	        },
 	        [](SignalProxy& signal, const luabridge::LuaRef& target, const std::string& function) {
+		        if (const NodeProxy node = nodeOfSelfTable(target); node.exists()) {
+			        return signal.disconnect(node, signals::ConnectionSource::lua, function);
+		        }
 		        return target.isTable() && signal.disconnectSelf(signals::ConnectionSource::lua, function);
 	        }
 	    )
@@ -783,6 +1007,9 @@ void LuaState::registerApi(lua_State* state) noexcept {
 		        return signal.connect(target, function, signals::ConnectionSource::lua);
 	        },
 	        [](LuaSignal& signal, const luabridge::LuaRef& target, const std::string& function) {
+		        if (const NodeProxy node = nodeOfSelfTable(target); node.exists()) {
+			        return signal.connect(node, function, signals::ConnectionSource::lua);
+		        }
 		        return target.isTable() && signal.connectSelf(function, signals::ConnectionSource::lua);
 	        }
 	    )
@@ -792,16 +1019,41 @@ void LuaState::registerApi(lua_State* state) noexcept {
 		        return signal.disconnect(target, function, signals::ConnectionSource::lua);
 	        },
 	        [](LuaSignal& signal, const luabridge::LuaRef& target, const std::string& function) {
+		        if (const NodeProxy node = nodeOfSelfTable(target); node.exists()) {
+			        return signal.disconnect(node, function, signals::ConnectionSource::lua);
+		        }
 		        return target.isTable() && signal.disconnectSelf(function, signals::ConnectionSource::lua);
 	        }
 	    )
 	    .addFunction("clear", [](LuaSignal& signal) { signal.clear(signals::ConnectionSource::lua); })
-	    .addFunction("fire", &LuaSignal::fire)
+	    .addFunction(
+	        "fire",
+	        +[](LuaSignal& signal, lua_State* state) {
+		        signals::DynamicArgs args;
+		        const int top = lua_gettop(state);
+		        for (int i = 2; i <= top; ++i) {
+			        args.values.push_back(luaRefValueToAny(state, luabridge::LuaRef::fromStack(state, i)));
+		        }
+		        signal.fire(std::move(args));
+	        }
+	    )
 	    .endClass()
 
 	    .beginNamespace("Signal")
 	    .addFunction(
-	        "create", +[](const luabridge::LuaRef&) { return LuaSignal {}; }
+	        "create",
+	        +[](lua_State* state) {
+		        LuaSignal signal;
+		        std::vector<std::string> types;
+		        const int top = lua_gettop(state);
+		        for (int i = 1; i <= top; ++i) {
+			        if (lua_type(state, i) == LUA_TSTRING) {
+				        types.emplace_back(lua_tostring(state, i));
+			        }
+		        }
+		        signal.argTypes(std::move(types));
+		        return signal;
+	        }
 	    )
 	    .endNamespace()
 

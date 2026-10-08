@@ -2,7 +2,7 @@
 /// @author dario
 /// @date 10/2/2026.
 
-#include "DebugDraw.hpp"
+#include "debug_draw.hpp"
 
 #include "vulkan_renderer.hpp"
 
@@ -61,11 +61,20 @@ void roundedShape(const glm::mat4& transform, float radius, float shaft, glm::ve
 }
 }
 
-/*
+void drawOrientedBox(const glm::mat4& transform, const glm::vec3& extents, const glm::vec4& color) {
+	std::array<glm::vec3, 8> corners {};
+	for (size_t i = 0; i < corners.size(); ++i) {
+		const glm::vec3 sign {(i & 1u) != 0 ? 1.0f : -1.0f, (i & 2u) != 0 ? 1.0f : -1.0f, (i & 4u) != 0 ? 1.0f : -1.0f};
+		corners[i] = glm::vec3(transform * glm::vec4(sign * extents, 1.0f));
+	}
 
-
-
-*/
+	static constexpr std::array<std::pair<int, int>, 12> edges {
+	  {{0, 1}, {1, 3}, {3, 2}, {2, 0}, {4, 5}, {5, 7}, {7, 6}, {6, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7}}
+	};
+	for (const auto& [a, b] : edges) {
+		debug::drawLine(corners[a], corners[b], color);
+	}
+}
 
 void drawSolidSphere(glm::vec3 center, float radius, glm::vec4 color) {
 	ZoneScoped;
@@ -145,9 +154,11 @@ void drawBox(glm::vec3 min, glm::vec3 max, glm::vec4 color) {
 }
 
 void drawSphere(glm::vec3 center, float radius, glm::vec4 color, int segments) {
-	if (!renderer::VulkanRenderer::instance->debugDrawEnabled()) {
+	if (!std::isfinite(radius) || radius <= 0.0f || !std::isfinite(center.x) || !std::isfinite(center.y) ||
+	    !std::isfinite(center.z) || !renderer::VulkanRenderer::instance->debugDrawEnabled()) {
 		return;
 	}
+	segments = std::clamp(segments, 3, 128);
 	for (int axis = 0; axis < 3; ++axis) {
 		glm::vec3 prev {};
 		for (int i = 0; i <= segments; ++i) {
@@ -178,7 +189,7 @@ void drawBillboard(glm::vec3 world_position, float size, assets::Handle<assets::
 		return;
 	}
 	renderer::VulkanRenderer::instance->getCurrentFrameBuild().debug_billboards.push_back(
-	    renderer::VulkanRenderer::DebugBillboard {
+	    debug::Billboard {
 	      .position = world_position,
 	      .size = size,
 	      .tint = tint,
@@ -199,7 +210,7 @@ void drawMesh(const assets::Handle<assets::Mesh>& mesh, const glm::mat4& transfo
 		return;
 	}
 	renderer::VulkanRenderer::instance->getCurrentFrameBuild().debug_meshes.push_back(
-	    renderer::VulkanRenderer::DebugMesh {.model = transform, .tint = tint, .mesh = mesh}
+	    debug::Mesh {.model = transform, .tint = tint, .mesh = mesh}
 	);
 }
 

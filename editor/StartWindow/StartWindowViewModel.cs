@@ -147,9 +147,9 @@ public partial class StartWindowViewModel : ViewModelBase {
 			$"lib/ -B .toast/cmake_cache {cmakeGenerator} -DTOAST_PATH={ToastPath}"));
 		tasks.Add(LoaderTask.Run("cmake --build .toast/cmake_cache", "cmake",
 #if DEBUG
-			"--build .toast/cmake_cache --config Debug"));
+			"--build .toast/cmake_cache --config Debug --parallel"));
 #else
-			"--build .toast/cmake_cache --config Release"));
+			"--build .toast/cmake_cache --config Release --parallel"));
 #endif
 
 		var vm = new LoaderViewModel(tasks) {

@@ -21,6 +21,7 @@ message SignalStateEntry {
   string declaring_type = 1;
   string signal = 2;
   repeated SignalConnection connections = 3;
+  repeated string arguments = 4;
 }
 
 message RequestSignalState {

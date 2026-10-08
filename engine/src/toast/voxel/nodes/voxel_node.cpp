@@ -610,11 +610,29 @@ auto VoxelNode::voxelToWorld(glm::vec3 pos) -> glm::vec3 {
 }
 
 void VoxelNode::sleep() {
-	physics::Simulator::sleepBody(bodyID());
+	if (not physics::Simulator::onSimulatorThread()) {
+		physics::Simulator::request([self = box().as<VoxelNode>()]() mutable {
+			if (self.exists()) {
+				self->sleep();
+			}
+		});
+		return;
+	}
+	physics::Simulator::runPendingRequests();
+	physics::Simulator::requestSleep(bodyID());
 }
 
 void VoxelNode::wake() {
-	physics::Simulator::wakeBody(bodyID());
+	if (not physics::Simulator::onSimulatorThread()) {
+		physics::Simulator::request([self = box().as<VoxelNode>()]() mutable {
+			if (self.exists()) {
+				self->wake();
+			}
+		});
+		return;
+	}
+	physics::Simulator::runPendingRequests();
+	physics::Simulator::requestWake(bodyID());
 }
 
 void VoxelNode::publishPhysicsState(
@@ -644,6 +662,15 @@ void VoxelNode::applyPhysicsTransform(const glm::vec3& position, const glm::quat
 
 void VoxelNode::onEditorTransformChanged() {
 	syncTransform();
+	if (not physics::Simulator::onSimulatorThread()) {
+		physics::Simulator::request([self = box().as<VoxelNode>()]() mutable {
+			if (self.exists()) {
+				self->onEditorTransformChanged();
+			}
+		});
+		return;
+	}
+	physics::Simulator::runPendingRequests();
 	physics::Simulator::setBodyTransform(bodyID(), world_position, world_rotation);
 }
 

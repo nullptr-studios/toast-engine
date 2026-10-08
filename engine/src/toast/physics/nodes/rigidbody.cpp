@@ -141,6 +141,15 @@ void Rigidbody::applyPhysicsTransform(const glm::vec3& position, const glm::quat
 
 void Rigidbody::onEditorTransformChanged() {
 	syncTransform();
+	if (not Simulator::onSimulatorThread()) {
+		Simulator::request([self = box().as<Rigidbody>()]() mutable {
+			if (self.exists()) {
+				self->onEditorTransformChanged();
+			}
+		});
+		return;
+	}
+	Simulator::runPendingRequests();
 	Simulator::setBodyTransform(m_body, world_position, world_rotation);
 }
 

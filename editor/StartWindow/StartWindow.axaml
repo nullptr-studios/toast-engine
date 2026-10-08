@@ -115,10 +115,11 @@
 							        Width="64"
 							        Height="64"
 							        CornerRadius="8"
+							        ClipToBounds="True"
 							        Background="{StaticResource Bg2}">
 								<Image Width="64"
 								       Height="64"
-								       Source="{Binding ThumbnailPath}" />
+								       Source="{Binding ThumbnailPath, Converter={StaticResource PathToBitmapConverter}}" />
 							</Border>
 
 							<StackPanel Grid.Column="1"

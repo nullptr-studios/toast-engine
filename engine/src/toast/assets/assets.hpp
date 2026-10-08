@@ -112,6 +112,16 @@ struct DataAssetReloaded : public Event<DataAssetReloaded> {
 };
 
 /**
+ * @brief Fired when a reloaded asset was replaced by a new object instead of rebuilt in place
+ */
+struct AssetReplaced : public Event<AssetReplaced> {
+	toast::UID uid;
+	std::string type;
+
+	AssetReplaced(toast::UID uid, std::string type) : uid(uid), type(std::move(type)) { }
+};
+
+/**
  * @brief Fired after an RML document or RCSS stylesheet hot-reload
  */
 struct UIAssetReloaded : public Event<UIAssetReloaded> {

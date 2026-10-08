@@ -5,8 +5,6 @@
 #include "capsule_collider.hpp"
 #include "sphere_collider.hpp"
 
-#include <algorithm>
-
 namespace physics {
 
 namespace {
@@ -51,6 +49,14 @@ auto Trigger::isInside(const toast::Node3D& node) const -> bool {
 
 auto Trigger::empty() const -> bool {
 	return m_current.empty();
+}
+
+void Trigger::enableCollider(bool value) {
+	for (const auto& c : children()) {
+		if (auto shape = c.as<Collider>(); shape.exists()) {
+			shape->disabled = !value;
+		}
+	}
 }
 
 void Trigger::begin() {

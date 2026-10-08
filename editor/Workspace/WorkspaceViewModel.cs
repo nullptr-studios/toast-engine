@@ -551,7 +551,7 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 		if (res.Uid == 0) return null;
 		var ws = new WorkspaceViewModel(engine) {
 			Handle = res.Uid,
-			Title = Marshal.PtrToStringUTF8(res.Name) ?? "Unnamed Node",
+			Title = res.Name ?? "Unnamed Node",
 			Id = $"Workspace_{res.Uid}"
 		};
 		ws.InitializeHistory();
@@ -569,7 +569,7 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 		if (res.Uid == 0) return null;
 		var ws = new WorkspaceViewModel(engine) {
 			Handle = res.Uid,
-			Title = Marshal.PtrToStringUTF8(res.Name) ?? "Unnamed Node",
+			Title = res.Name ?? "Unnamed Node",
 			Id = $"Workspace_{res.Uid}"
 		};
 		ws.BindBackingFile(virtualPath, assetUid);

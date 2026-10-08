@@ -1,6 +1,7 @@
 #include "lua_event.hpp"
 
 #include "asset_proxy.hpp"
+#include "lua_callback.hpp"
 #include "lua_state.hpp"
 #include "lua_util.hpp"
 #include "node_proxy.hpp"
@@ -333,44 +334,50 @@ auto& g_bindings = *new std::unordered_map<std::string, std::shared_ptr<LuaEvent
 
 struct Subscription {
 	std::atomic<bool> live {true};
-	void* runtime = nullptr;
+	void* runtime = nullptr;                ///< key of the runtime that owns the listener node
+	std::shared_ptr<RuntimeToken> token;    ///< dies with that runtime
 	toast::Box<toast::Node> node;
-	size_t state_index = 0;
+	size_t state_index = 0;                 ///< interpreter of the runtime, where named methods live
 	std::string event_name;
 	std::string listener_name;
 	std::string method;
-	std::unique_ptr<luabridge::LuaRef> function;
+	LuaCallback function;    ///< closures carry their own interpreter, released through its retire queue
 };
 
 std::mutex g_subscription_mutex;
 std::unordered_map<void*, std::vector<std::shared_ptr<Subscription>>> g_subscriptions;
 std::atomic<uint64_t> g_next_subscription {0};
 
+auto subscriptionUsable(const Subscription& sub) -> bool {
+	return sub.live.load() && sub.node.exists() && (sub.token == nullptr || sub.token->alive.load(std::memory_order_acquire));
+}
+
 auto invoke(const std::weak_ptr<Subscription>& weak, const LuaEventBinding::Pusher& push) -> bool {
-	auto sub = weak.lock();
-	if (!sub || !sub->live.load() || !sub->node.exists() || sub->node->scriptRuntime() != sub->runtime) {
+	const auto sub = weak.lock();
+	if (!sub || !subscriptionUsable(*sub)) {
 		return false;
 	}
+	if (sub->function) {
+		// The closure owns its interpreter; the event only exists for the duration of this call
+		return sub->function.invokeWithArgument(push).value_or(false);
+	}
+
 	auto guard = LuaState::get().lock(sub->state_index);
-	if (!guard || !sub->live.load() || !sub->node.exists() || sub->node->scriptRuntime() != sub->runtime) {
+	if (!guard) {
+		// This thread owns another interpreter and cannot wait for this one, and the event only exists during this call
+		TOAST_WARN("Lua", "Event '{}': its interpreter is busy; the call to '{}' was skipped", sub->event_name, sub->method);
+		return false;
+	}
+	if (!subscriptionUsable(*sub)) {
+		return false;
+	}
+	ScriptRuntime* runtime = sub->node->scriptRuntime();
+	if (runtime == nullptr || runtime->token() != sub->token) {
 		return false;
 	}
 	lua_State* state = guard.state();
-	if (sub->function) {
-		sub->function->push(state);
-		push(state);
-		if (pcallTraceback(state, 1, 1) != LUA_OK) {
-			TOAST_ERROR("Lua", "Error in event callback: {}", lua_tostring(state, -1));
-			lua_pop(state, 1);
-			return false;
-		}
-		const bool consumed = lua_isboolean(state, -1) && lua_toboolean(state, -1) != 0;
-		lua_pop(state, 1);
-		return consumed;
-	}
 	push(state);
 	const int event_index = lua_gettop(state);
-	auto* runtime = static_cast<ScriptRuntime*>(sub->runtime);
 	const bool consumed = runtime->callEventMethod(sub->method, state, event_index);
 	lua_pop(state, 1);
 	return consumed;
@@ -457,6 +464,7 @@ void ListenerProxy::subscribe(const LuaEventDescriptor& descriptor, const luabri
 	auto* runtime = m_node->scriptRuntime();
 	auto sub = std::make_shared<Subscription>();
 	sub->runtime = runtime;
+	sub->token = runtime->token();
 	sub->node = m_node;
 	sub->state_index = runtime->stateIndex();
 	sub->event_name = descriptor.name;
@@ -464,7 +472,12 @@ void ListenerProxy::subscribe(const LuaEventDescriptor& descriptor, const luabri
 	if (callback.isString()) {
 		sub->method = callback.tostring();
 	} else {
-		sub->function = std::make_unique<luabridge::LuaRef>(callback);
+		// A closure lives on the interpreter of the script that wrote it, which is not necessarily the node's
+		sub->function = LuaCallback::capture(callback, "event callback");
+		if (!sub->function) {
+			luaL_error(state, "listener.subscribe: the callback does not belong to a script interpreter");
+			return;
+		}
 	}
 	{
 		std::scoped_lock lock(g_subscription_mutex);
@@ -498,6 +511,7 @@ void clearLuaEventSubscriptions(void* runtime) noexcept {
 		removed = std::move(found->second);
 		g_subscriptions.erase(found);
 	}
+	// Dropping the last reference releases the Lua function through the interpreter, whichever thread that is
 	for (auto& sub : removed) {
 		sub->live.store(false);
 		if (sub->node.exists()) {
@@ -518,14 +532,13 @@ void clearAllLuaEventSubscriptions() noexcept {
 		g_subscriptions.clear();
 	}
 	for (auto& sub : removed) {
-		auto guard = LuaState::get().lock(sub->state_index);
 		sub->live.store(false);
 		if (sub->node.exists()) {
 			if (auto binding = LuaEventRegistry::find(sub->event_name)) {
 				binding->unsubscribe(sub->node->listener(), sub->listener_name);
 			}
 		}
-		sub->function.reset();
+		sub->function = LuaCallback();
 	}
 }
 }

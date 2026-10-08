@@ -216,7 +216,7 @@ auto AABBTree::updateLeaf(TreeNodeID leaf_id, const AABB& tight_bounds) -> bool 
 	return true;
 }
 
-auto AABBTree::query(glm::vec3 pos, glm::vec3 inv_dir, ShapeID ignored_shape) const -> std::vector<ShapeID> {
+auto AABBTree::query(glm::vec3 pos, glm::vec3 inv_dir, float max_distance, ShapeID ignored_shape) const -> std::vector<ShapeID> {
 	ZoneScopedN("physics::AABBTree::Query(Ray)");
 	ZoneValue(static_cast<uint64_t>(ignored_shape.slot));
 
@@ -229,7 +229,12 @@ auto AABBTree::query(glm::vec3 pos, glm::vec3 inv_dir, ShapeID ignored_shape) co
 	while (not stack.empty()) {
 		auto node = m_nodes[stack.back()];
 		stack.pop_back();
-		if (not node.bounds.overlaps(pos, inv_dir)) {
+		if (max_distance >= 0.0f) {
+			const auto hit = node.bounds.intersectRay(pos, inv_dir);
+			if (not hit || hit->t_max < 0.0f || hit->t_min > max_distance) {
+				continue;
+			}
+		} else if (not node.bounds.overlaps(pos, inv_dir)) {
 			continue;
 		}
 		if (node.isLeaf()) {
@@ -242,9 +247,6 @@ auto AABBTree::query(glm::vec3 pos, glm::vec3 inv_dir, ShapeID ignored_shape) co
 		}
 	}
 
-	// :P
-	std::ranges::sort(result);
-	result.erase(std::unique(result.begin(), result.end()), result.end());
 	ZoneValue(static_cast<uint64_t>(result.size()));
 	return result;
 }

@@ -56,6 +56,8 @@ public:
 	auto playWorkspace(UID source_handle) -> std::pair<UID, std::string>;
 	void destroyWorkspace(UID handle);
 
+	void requireTickThread(std::string_view what) const;
+
 	auto activeWorkspace() -> UID;
 	void publishPrefab(UID uid, const assets::Prefab& prefab);
 
@@ -77,6 +79,8 @@ public:
 	void startGame();
 
 private:
+	void syncOwnerListeners();
+
 	EnginePimpl* m;
 	static Engine* instance;
 };

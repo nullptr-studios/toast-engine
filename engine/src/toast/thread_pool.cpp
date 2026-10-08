@@ -56,11 +56,24 @@ void ThreadPool::waitIdle() {
 	m.all_done.wait(lock, [this] { return m.jobs.empty() && m.active_jobs == 0; });
 }
 
+namespace {
+thread_local bool t_thread_pool_worker = false;
+}
+
+auto ThreadPool::onWorkerThread() noexcept -> bool {
+	return t_thread_pool_worker;
+}
+
 auto ThreadPool::workerCount() -> size_t {
 	return instance ? instance->m.workers.size() : 0;
 }
 
+auto ThreadPool::idleWorkers() noexcept -> size_t {
+	return instance ? static_cast<size_t>(std::max(0, instance->m.idle_workers.load(std::memory_order_acquire))) : 0;
+}
+
 void ThreadPool::threadLoop() {
+	t_thread_pool_worker = true;
 	static std::atomic<int> worker_id = 0;
 	thread_local static std::string name = std::format("ThreadPool::worker-{}", worker_id++);
 #ifdef TRACY_ENABLE
@@ -72,7 +85,10 @@ void ThreadPool::threadLoop() {
 
 		{
 			std::unique_lock<std::mutex> lock(m.queue_mutex);
+			// track idle workers
+			m.idle_workers.fetch_add(1, std::memory_order_release);
 			m.job_available.wait(lock, [this] { return !m.jobs.empty() || m.should_stop; });
+			m.idle_workers.fetch_sub(1, std::memory_order_release);
 			if (m.should_stop) {
 				return;
 			}

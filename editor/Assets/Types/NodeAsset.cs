@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Lucide.Avalonia;
 
 namespace editor.Assets.Types;
@@ -15,6 +16,7 @@ public sealed class NodeAsset : BaseAsset {
 	public override bool CanBeEdited => true;
 	public override string EditorTool => "NodeEditor";
 	public override string SchemaPath => "";
+	public override IReadOnlyList<string> CppTypeNames => ["Prefab", "Node"];
 
     // screenshoted from the viewport :3
 	public override void GenerateThumbnail(string realPath, string uid) { }

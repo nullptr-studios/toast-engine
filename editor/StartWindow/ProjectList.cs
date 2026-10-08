@@ -39,7 +39,9 @@ public class ProjectList {
 		var loaded = File.Exists(m_path) ? LoadFromJson() : new ProjectList();
 
 		// Sort by date (newest first)
-		var sorted = loaded.Projects.OrderByDescending(p => {
+		var refreshed = loaded.Projects.Select(p => p with { ThumbnailPath = FindThumbnail(p.Path) });
+
+		var sorted = refreshed.OrderByDescending(p => {
 			if (DateTime.TryParseExact(p.Date, "dd MMM yyyy HH:mm", null, DateTimeStyles.None, out var parsedDate))
 				return parsedDate;
 			return DateTime.MinValue;
@@ -73,9 +75,7 @@ public class ProjectList {
 	}
 
 	private static ProjectListItem ReadFromToastFile(string toastPath) {
-		var dir = Path.GetDirectoryName(toastPath) ?? "";
-		var thumbnailPath = Path.Combine(dir, ".toast", "thumbnails", "project.png");
-		var thumbnail = File.Exists(thumbnailPath) ? thumbnailPath : "";
+		var thumbnail = FindThumbnail(toastPath);
 		var date = DateTime.Now.ToString("dd MMM yyyy HH:mm");
 
 		try {
@@ -98,6 +98,12 @@ public class ProjectList {
 				ThumbnailPath = thumbnail
 			};
 		}
+	}
+
+	/// <summary>thumbnail.png next to the .toast file (not in .toast/ so it isn't gitignored), empty if there is none</summary>
+	private static string FindThumbnail(string toastPath) {
+		var path = Path.Combine(Path.GetDirectoryName(toastPath) ?? "", "thumbnail.png");
+		return File.Exists(path) ? path : "";
 	}
 
 	private static string ReadVersion(TomlTable? data) {

@@ -15,6 +15,7 @@
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <shared_mutex>
 #include <string_view>
 #include <toast/assets/prefab.hpp>
 #include <toast/export.hpp>
@@ -49,12 +50,29 @@ public:
 	[[nodiscard]]
 	virtual auto participatesIn(NodeOwnerParticipation use) const noexcept -> bool = 0;
 
+	/// @returns false when silenced
+	[[nodiscard]]
+	virtual auto receivesEvents() const noexcept -> bool {
+		return true;
+	}
+
+	void syncListenerState() noexcept;
+
 	/// True for a Workspace open for editing: lifecycle callbacks still run there, but the game is not running
 	[[nodiscard]]
 	auto isEditing() noexcept -> bool;
 
+	[[nodiscard]]
+	auto treeMutex() const noexcept -> std::shared_mutex& {
+		return m_tree_mutex;
+	}
+
 	virtual void registerDependency(Node& from, Node& to) = 0;
 	virtual void unregisterDependency(Node& from, Node& to) = 0;
+
+	virtual void registerInteraction(Node& /*first*/, Node& /*second*/) { }
+
+	virtual void nodeEnabledChanged() noexcept { }
 
 	virtual auto findFrom(const Node& origin, std::string_view query) -> Box<Node> = 0;
 	virtual auto findFrom(const Node& origin, const UID& uid) -> Box<Node> = 0;
@@ -73,10 +91,14 @@ public:
 
 	void reloadScriptsUsing(UID script_uid) noexcept;
 	void refreshNodeInfos() noexcept;
+	void rebindAssetHandles(UID asset_uid) noexcept;
+	static void reapOrphanedControlBoxes() noexcept;
 
 	struct InstantiateContext {
 		std::vector<uint64_t> asset_chain;    ///< UIDs of prefabs currently being instantiated; prevents infinite recursion
 		std::function<assets::Handle<assets::Prefab>(toast::UID)> resolver;    ///< injected loader so tests can swap in a fake
+		uint64_t script_group = 0;
+		bool nested = false;
 	};
 
 protected:
@@ -110,7 +132,13 @@ protected:
 	 * @param node_data The BasicNode entry from the prefab file
 	 * @return Owning Box<Node>; the node is in NodeState::null until explicitly placed in a tree
 	 */
-	auto nodeAllocation(const assets::Prefab::BasicNode& node_data) noexcept -> Box<Node>;
+	auto nodeAllocation(const assets::Prefab::BasicNode& node_data, uint64_t script_group = 0, bool build_scripts = true) noexcept
+	    -> Box<Node>;
+
+	void buildLeaves(
+	    const assets::Handle<assets::Prefab>& file, uint64_t group, const std::vector<size_t>& leaf_slots,
+	    std::vector<Box<Node>>& slots
+	);
 
 	/**
 	 * @brief Assembles a flat list of allocated nodes into a parent/child tree
@@ -174,6 +202,7 @@ protected:
 private:
 	friend class CameraController;
 
+	mutable std::shared_mutex m_tree_mutex;
 	std::unordered_set<_detail::ControlBox> nodes;
 
 	std::unique_ptr<Camera> m_fallback_camera;

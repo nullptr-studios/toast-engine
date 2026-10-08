@@ -42,6 +42,8 @@
 #include "renderer/vulkan_core.hpp"
 #include "renderer/vulkan_renderer.hpp"
 #include "scripting/lua_state.hpp"
+#include "scripting/script_dispatch.hpp"
+#include "scripting/script_runtime.hpp"
 #include "settings/settings.hpp"
 #include "thread_pool.hpp"
 #include "time.hpp"
@@ -59,6 +61,7 @@
 
 #include <SDL3/SDL.h>
 #include <algorithm>
+#include <atomic>
 #include <cassert>
 #include <cstdlib>
 #include <exception>
@@ -73,6 +76,7 @@
 #include <print>
 #include <span>
 #include <sstream>
+#include <thread>
 #include <tracy/Tracy.hpp>
 
 namespace toast {
@@ -85,6 +89,16 @@ double script_reload_timer = 0.0;
 }
 
 Engine* Engine::instance = nullptr;
+
+NodeRegistry* NodeRegistry::instance = nullptr;
+
+NodeRegistry::NodeRegistry() {
+	instance = this;
+}
+
+void NodeRegistry::registerNode(const NodeInfo* info) {
+	instance->types[info->type] = info;
+}
 
 struct EnginePimpl {
 	std::unique_ptr<ThreadPool> thread_pool = nullptr;
@@ -108,6 +122,9 @@ struct EnginePimpl {
 
 	// owned by renderer's output target
 	renderer::SharedTextureOutputTarget* shared_target = nullptr;
+
+	/// Hash of the thread that ran tick() for the last time
+	std::atomic<size_t> tick_thread {0};
 
 	std::mutex owners_mutex;
 	std::map<toast::UID, std::unique_ptr<INodeOwner>> owners;
@@ -256,6 +273,18 @@ void Engine::init() {
 		return false;
 	});
 
+	// Someone modified an assset, reload it
+	m->listener.subscribe<event::AssetReplaced>([this](const event::AssetReplaced& e) {
+		{
+			std::scoped_lock lock(m->owners_mutex);
+			for (const auto& [_, node_owner] : m->owners) {
+				node_owner->rebindAssetHandles(e.uid);
+			}
+		}
+		event::send<event::RequestHierarchyUpdate>();
+		return false;
+	});
+
 	m->listener.subscribe<_detail::Defer>([](_detail::Defer& e) { e.cb(); });
 
 	m->audio_system = std::make_unique<audio::AudioSystem>();
@@ -276,12 +305,16 @@ Engine::~Engine() noexcept {
 			m->renderer->stop();
 		}
 
+		scripting::ScriptDispatch::clear();
 		{
 			std::scoped_lock lock(m->owners_mutex);
 			m->owners.clear();
 		}
 		m->world.reset();
 		m->ui_system.reset();
+		m->input_system.reset();
+		m->physics_simulator.reset();
+		m->audio_system.reset();
 		m->renderer.reset();
 		m->asset_manager.reset();
 		m->vulkan_core.reset();
@@ -321,9 +354,33 @@ void Engine::reloadSettings() {
 	}
 }
 
+/// True while a playWorkspace exists
+static auto gameIsRunning(EnginePimpl& pimpl) -> bool {
+	std::scoped_lock lock(pimpl.owners_mutex);
+	return std::ranges::any_of(pimpl.owners, [](const auto& entry) {
+		return dynamic_cast<const PlayWorkspace*>(entry.second.get()) != nullptr ||
+		       dynamic_cast<const World*>(entry.second.get()) != nullptr;
+	});
+}
+
+static void assertOnTickThread([[maybe_unused]] const std::atomic<size_t>& tick_thread, [[maybe_unused]] std::string_view what) {
+	TOAST_ASSERT(
+	    tick_thread.load() == 0 || tick_thread.load() == std::hash<std::thread::id> {}(std::this_thread::get_id()),
+	    "Engine",
+	    "{} has to run on the thread that ticks the engine",
+	    what
+	);
+}
+
+void Engine::requireTickThread(std::string_view what) const {
+	::toast::assertOnTickThread(m->tick_thread, what);
+}
+
 void Engine::tick() {
 	ZoneScoped;
 
+	m->tick_thread.store(std::hash<std::thread::id> {}(std::this_thread::get_id()));
+	physics::Simulator::bindToThisThread();
 	m->time.tick();
 
 	// Poll window events
@@ -332,6 +389,9 @@ void Engine::tick() {
 	}
 
 	event::pollEvents();
+
+	// Scripts that had to wait because their interpreter was busy
+	scripting::ScriptDispatch::deliver();
 
 	m->input_system->tick();
 	m->haptics_system->tick();
@@ -342,6 +402,7 @@ void Engine::tick() {
 			node_owner->tick();
 		}
 	}
+	scripting::ScriptDispatch::deliver();
 
 	// Run application layer
 	if (active_application) {
@@ -438,20 +499,22 @@ void Engine::tick() {
 		m->renderer->tick(Time::uptime());
 	}
 
-#ifdef DEBUG
-	constexpr bool debug_build = true;
-#else
-	constexpr bool debug_build = false;
-#endif
-	if (debug_build || m->shared_target != nullptr) {
+	// Files that changed on disk are noticed once a second
+	// The reloads are only applied in the editor while nothing is playing
+	if (m->shared_target != nullptr && m->asset_manager) {
 		script_reload_timer += Time::delta();
 		if (script_reload_timer > 1.0) {
 			script_reload_timer = 0.0;
-			if (m->asset_manager) {
-				m->asset_manager->pollModifiedAssets();
-			}
+			m->asset_manager->pollModifiedAssets();
+		}
+		if (m->asset_manager->hasPendingReloads() && !gameIsRunning(*m)) {
+			m->asset_manager->applyPendingReloads();
 		}
 	}
+
+	// Nothing is running scripts here so runtimes that were replaced while executing can go
+	scripting::ScriptRuntime::drainRetired();
+	INodeOwner::reapOrphanedControlBoxes();
 
 	FrameMark;
 }
@@ -538,6 +601,10 @@ void Engine::createSDLWindow(const char* w_name) {
 	m->renderer->addPostProcessPass(std::make_unique<renderer::TonemapPass>(*m->vulkan_core, color_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::FxaaPass>(*m->vulkan_core, color_format, extent));
 
+	// always_on_top world panels, after the tonemap and under the screen-space UI
+	m->renderer->addRenderPass(
+	    std::make_unique<ui::WorldUIPass>(*m->vulkan_core, color_format, depth_format, extent, ui::WorldUIPass::Layer::overlay)
+	);
 	m->renderer->addRenderPass(std::make_unique<ui::UIPass>(*m->vulkan_core, color_format, depth_format, extent));
 	if (m->ui_system) {
 		m->ui_system->initializeRenderer(*m->vulkan_core);
@@ -631,6 +698,9 @@ void Engine::createAvaloniaWindow() {
 
 	// DebugPass is enabled on editor
 	m->renderer->setDebugDrawEnabled(true);
+	m->renderer->addRenderPass(
+	    std::make_unique<ui::WorldUIPass>(*m->vulkan_core, color_format, depth_format, extent, ui::WorldUIPass::Layer::overlay)
+	);
 	m->renderer->addRenderPass(std::make_unique<ui::UIPass>(*m->vulkan_core, color_format, depth_format, extent));
 	if (m->ui_system) {
 		m->ui_system->initializeRenderer(*m->vulkan_core);
@@ -670,6 +740,7 @@ void Engine::publishPrefab(UID uid, const assets::Prefab& prefab) {
 }
 
 auto Engine::createWorkspace(std::string_view type) -> std::pair<UID, std::string> {
+	assertOnTickThread(m->tick_thread, "createWorkspace");
 	UID uid;
 	uid.generate();
 	std::scoped_lock lock(m->owners_mutex);
@@ -680,6 +751,7 @@ auto Engine::createWorkspace(std::string_view type) -> std::pair<UID, std::strin
 
 auto Engine::openWorkspace(UID uid) -> std::pair<UID, std::string> {
 	ZoneScoped;
+	assertOnTickThread(m->tick_thread, "openWorkspace");
 	std::scoped_lock lock(m->owners_mutex);
 	if (m->owners.contains(uid)) {
 		TOAST_ERROR("Engine", "Trying to open workspace {} which is already open", uid);
@@ -701,6 +773,7 @@ auto Engine::openWorkspace(UID uid) -> std::pair<UID, std::string> {
 
 auto Engine::openWorkspace(UID uid, std::string_view source_uri) -> std::pair<UID, std::string> {
 	ZoneScoped;
+	assertOnTickThread(m->tick_thread, "openWorkspace");
 	std::scoped_lock lock(m->owners_mutex);
 	if (m->owners.contains(uid)) {
 		TOAST_ERROR("Engine", "Trying to open workspace {} which is already open", uid);
@@ -722,6 +795,7 @@ auto Engine::openWorkspace(UID uid, std::string_view source_uri) -> std::pair<UI
 
 auto Engine::playWorkspace(UID source_handle) -> std::pair<UID, std::string> {
 	ZoneScoped;
+	assertOnTickThread(m->tick_thread, "playWorkspace");
 	std::scoped_lock lock(m->owners_mutex);
 	auto source_it = m->owners.find(source_handle);
 	if (source_it == m->owners.end()) {
@@ -746,9 +820,11 @@ auto Engine::playWorkspace(UID source_handle) -> std::pair<UID, std::string> {
 	if (!play->isValid()) {
 		TOAST_ERROR("Engine", "Failed to clone workspace {} for play mode", source_handle);
 		m->owners.erase(it);
+		syncOwnerListeners();
 		return {};
 	}
 	play->inheritEditorCamera(*source);
+	syncOwnerListeners();    // Only the play workspace runs now
 
 	std::string name = it->second->name();
 	return {handle, name};
@@ -759,6 +835,13 @@ void Engine::destroyWorkspace(UID handle) {
 	m->owners.erase(handle);
 	if (m->active_workspace.data() == handle.data()) {
 		m->active_workspace = UID {0};
+	}
+	syncOwnerListeners();    // Unsilences previous workspaces
+}
+
+void Engine::syncOwnerListeners() {
+	for (const auto& [_, owner] : m->owners) {
+		owner->syncListenerState();
 	}
 }
 
@@ -989,6 +1072,7 @@ void toast_rename_prefab_root(const char* path, const char* new_name) noexcept {
 }
 
 void toast_create_tnode(const char* path, const char* node_type) noexcept {
+	toast::Engine::get()->requireTickThread("createTNode");
 	const auto stem = std::filesystem::path(path).stem().string();
 
 	toast::Workspace temp_ws(node_type, toast::UID(static_cast<uint64_t>(-1ULL)));
@@ -1004,6 +1088,7 @@ void toast_create_tnode(const char* path, const char* node_type) noexcept {
 }
 
 void toast_reload_manifest() noexcept {
+	toast::Engine::get()->requireTickThread("reloadManifest");
 	auto& mgr = assets::AssetManager::get();
 	mgr.clearUnusedAssets();
 	mgr.reloadManifest();
