@@ -24,6 +24,7 @@
 #include <atomic>
 #include <cstdint>
 #include <deque>
+#include <functional>
 #include <glm/glm.hpp>
 #include <optional>
 #include <span>
@@ -44,6 +45,7 @@ class Trigger;
 class Rigidbody;
 class DynamicRigidbody;
 class Collider;
+struct SmashVolume;
 
 }
 
@@ -80,7 +82,7 @@ public:
 	auto createBody(const BodyDescriptor& descriptor) -> BodyID;
 	void destroyBody(BodyID body);
 
-	static auto raycast(glm::vec3 pos, glm::vec3 dir) -> std::vector<RayHit>;
+	static auto raycast(glm::vec3 pos, glm::vec3 dir, float max_distance = -1.0f, int max_targets = 3) -> std::vector<RayHit>;
 
 	[[nodiscard]]
 	auto valid(BodyID body) const -> bool;
@@ -95,8 +97,19 @@ public:
 	void applyDamageCommand(const DamageCommand& c);
 	void applyExplosion(const glm::vec3& position, float radius, float energy);
 
-	auto shootVoxel(const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy, float min_radius = 0.0f)
-	    -> bool;
+	auto shootVoxel(
+	    const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy, float min_radius = 0.0f,
+	    const std::optional<FragmentPush>& push = std::nullopt
+	) -> bool;
+
+	auto smashCapsule(
+	    const CapsuleShape& capsule, const glm::vec3& position, const glm::quat& rotation, const glm::vec3& sweep,
+	    const CapsuleSmash& smash
+	) -> uint32_t;
+
+	/// Burns a thin tube into the first voxels along the ray right away, the radius ignores the material shatter radius
+	auto cutVoxel(const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy, float radius, float depth)
+	    -> uint32_t;
 
 	[[nodiscard]]
 	auto runConnectivityAnalysis() -> std::vector<ConnectivityResult>;
@@ -234,6 +247,24 @@ public:
 	static auto nodeFor(BodyID body) -> toast::Box<toast::Node>;
 
 	static void callTick();
+
+	static void bindToThisThread() noexcept;
+
+	[[nodiscard]]
+	static auto onSimulatorThread() noexcept -> bool;
+
+	/**
+	 * @brief How many requests from other threads are waiting for the simulator thread
+	 */
+	[[nodiscard]]
+	static auto pendingRequests() noexcept -> size_t;
+
+	/// Carries out the requests other threads made, on the simulator thread
+	static void runPendingRequests();
+
+	/// Puts a body to sleep or wakes it, from any thread
+	static void requestSleep(BodyID id);
+	static void requestWake(BodyID id);
 	static void registerRigidbody(Rigidbody& node);
 	static void unregisterRigidbody(Rigidbody& node);
 	static void registerVoxelNode(toast::VoxelNode& node);
@@ -246,6 +277,14 @@ public:
 	    BodyID ignored, const CapsuleShape& capsule, const glm::vec3& position, const glm::quat& rotation, float min_penetration,
 	    std::vector<QueryContact>& contacts
 	) const -> bool;
+	/// Tests a world-space sphere against enabled physics shapes.
+	[[nodiscard]]
+	auto overlapSphere(
+	    const SphereShape& sphere, const glm::vec3& position, float min_penetration, std::vector<QueryContact>& contacts
+	) const -> bool;
+	/// Tests a world-space axis-aligned box against enabled physics shapes.
+	[[nodiscard]]
+	auto overlapAABB(const AABB& bounds) const -> bool;
 	/// Moves a capsule until it would dig into something
 	[[nodiscard]]
 	auto sweepCapsule(
@@ -329,12 +368,25 @@ private:
 		ShapeID shape;
 		std::vector<DetachedComponent> components;
 		size_t cursor = 0;
+		std::optional<FragmentPush> push;
+	};
+
+	struct VoxelRayHit {
+		ShapeID shape;
+		float distance = 0.0f;
+		float shatter_radius = 0.0f;
 	};
 
 	[[nodiscard]]
 	static auto colliderFor(BodyID body, ShapeID shape) -> toast::Box<toast::Node>;
 	[[nodiscard]]
 	auto mainThreadMutationAllowed() const -> bool;
+
+	/// Keeps `work` for the simulator thread
+	static void request(std::move_only_function<void()> work);
+
+	void dropRigidbodyBinding(const toast::Box<Rigidbody>& node);
+	void dropVoxelBinding(const toast::Box<toast::VoxelNode>& node);
 
 	[[nodiscard]]
 	auto createSphere(BodyID owner, const SphereShape& sphere, PhysicsMaterial material) -> ShapeID;
@@ -369,6 +421,9 @@ public:
 	[[nodiscard]]
 	static auto tryGetVoxelData(VoxelDataID data) -> VoxelShapeData*;
 
+	[[nodiscard]]
+	static auto tryGetVoxelDataConst(VoxelDataID data) -> const VoxelShapeData*;
+
 private:
 	void destroyVoxelData(VoxelDataID data);
 
@@ -391,6 +446,9 @@ private:
 	[[nodiscard]]
 	auto queryCandidates(BodyID ignored, const AABB& bounds) const -> std::vector<ShapeID>;
 	void collideCapsuleProbe(
+	    const Body& probe_body, const Shape& probe_shape, std::span<const ShapeID> candidates, std::vector<QueryContact>& contacts
+	) const;
+	void collideSphereProbe(
 	    const Body& probe_body, const Shape& probe_shape, std::span<const ShapeID> candidates, std::vector<QueryContact>& contacts
 	) const;
 
@@ -469,7 +527,10 @@ private:
 	    const RemovedVoxels* already_removed = nullptr
 	);
 	[[nodiscard]]
-	auto spawnFragmentBody(ShapeID source_shape_id, const DetachedComponent& component) -> bool;
+	auto spawnFragmentBody(ShapeID source_shape_id, const DetachedComponent& component, const FragmentPush* push = nullptr) -> bool;
+	auto smashShape(ShapeID shape_id, const SmashVolume& volume, const CapsuleSmash& smash, bool chunks) -> uint32_t;
+	[[nodiscard]]
+	auto marchVoxelRay(const glm::vec3& origin, const glm::vec3& direction, float max_distance) -> std::optional<VoxelRayHit>;
 	[[nodiscard]]
 	auto spawnStaticSplitBody(ShapeID source_shape_id, const DetachedComponent& component) -> bool;
 	void despawnSettledFragments(float dt);
@@ -490,6 +551,7 @@ private:
 	void recheckNeighborsOf(BodyID id);
 	void rebuildFragmentIndex();
 	void refreshPalette(uint64_t palette_uid);
+	void refreshAllPalettes();
 	auto createVoxelShapeInternal(
 	    BodyID owner, const VoxelShape& shape, voxel::Volume* external, std::unique_ptr<voxel::Volume>& owned,
 	    const voxel::Palette& palette, const voxel::MaterialLibrary& materials, const voxel::MassMoments* known_moments = nullptr

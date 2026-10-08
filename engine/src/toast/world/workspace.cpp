@@ -4,6 +4,8 @@
 #include "camera.hpp"
 #include "node.hpp"
 #include "node_3d.hpp"
+#include "play_workspace.hpp"
+#include "tree_lock.hpp"
 #include "workspace_events.hpp"
 
 #include <array>
@@ -775,6 +777,7 @@ auto Workspace::retypeNode(Box<Node>& target, std::string_view type, bool keep_f
 	fresh->m_state = target->m_state;
 	fresh->m_type = target->m_type;
 	fresh->m_inherited_enabled = target->m_inherited_enabled;
+	fresh->m_script_group = target->m_script_group;
 
 	if (keep_fields) {
 		target->info()->forEachBaseType([&](const NodeInfo& level) {
@@ -992,7 +995,16 @@ auto Workspace::participatesIn(NodeOwnerParticipation use) const noexcept -> boo
 	return use == NodeOwnerParticipation::render && isActiveWorkspace();
 }
 
+auto Workspace::receivesEvents() const noexcept -> bool {
+	// only true when a play workspace doesnt exist
+	// this is still a bit iffy but it's the best fix i could think for
+	// the clanker wanted me to rewrite the entire backend for the events
+	return !PlayWorkspace::exists();
+}
+
 auto Workspace::findFrom(const Node& origin, std::string_view query) -> Box<Node> {
+	// Scripts on other threads look things up while the tree changes, and nothing below asks for the lock again
+	const TreeReadLock lock(this);
 	const bool search_workspace_root = query.starts_with("root/");
 	const std::string_view target = search_workspace_root ? query.substr(5) : query;
 	auto search = [target](this auto&& self, const Node& node) -> Box<Node> {
@@ -1010,11 +1022,12 @@ auto Workspace::findFrom(const Node& origin, std::string_view query) -> Box<Node
 	if (not search_workspace_root) {
 		return search(origin);
 	}
-	Box<Node> root = m_root_node.exists() ? m_root_node : origin.root();
+	Box<Node> root = m_root_node.exists() ? m_root_node : origin.rootUnlocked();
 	return root.exists() ? search(*root) : Box<Node> {};
 }
 
 auto Workspace::findFrom(const Node& origin, const UID& uid) -> Box<Node> {
+	const TreeReadLock lock(this);
 	auto search = [target = uid.data()](this auto&& self, const Node& node) -> Box<Node> {
 		if (node.m_uid.data() == target) {
 			return node.box();
@@ -1519,6 +1532,7 @@ void Workspace::eventSubscriptions() {
 				auto& entry = state.signals.emplace_back();
 				entry.declaring_type = "Lua";
 				entry.signal = signal;
+				entry.arguments = runtime->luaSignalArgTypes(signal);
 				for (const auto& connection : runtime->luaSignalConnections(signal)) {
 					auto target = findFrom(m_root_node, connection.target);
 					auto& item = entry.connections.emplace_back();
@@ -1562,6 +1576,8 @@ void Workspace::eventSubscriptions() {
 			return true;
 		}
 
+		const size_t lua_arg_count = is_lua_signal ? source_runtime->luaSignalArgTypes(e.signal).size() : 0;
+
 		std::unordered_map<std::string, size_t> by_name;
 		for (auto* info = target->info(); info != nullptr; info = info->base_type) {
 			for (const auto& method : info->methods) {
@@ -1599,10 +1615,11 @@ void Workspace::eventSubscriptions() {
 				auto& callable = response.callables.emplace_back();
 				callable.name = function.name;
 				callable.has_lua = true;
-				callable.compatible = is_lua_signal ? (function.parameters.empty() || function.is_vararg)
-				                                    : (function.parameters.empty() || function.parameters.size() == signal->args.size() ||
-				                                       (function.is_vararg && function.parameters.size() <= signal->args.size()));
-				callable.forwards_args = !is_lua_signal && (!function.parameters.empty() || function.is_vararg);
+				const size_t arg_count = is_lua_signal ? lua_arg_count : signal->args.size();
+				callable.compatible = function.parameters.empty() || function.parameters.size() == arg_count ||
+				                      (function.is_vararg && function.parameters.size() <= arg_count) ||
+				                      (is_lua_signal && function.is_vararg);
+				callable.forwards_args = (!is_lua_signal || lua_arg_count > 0) && (!function.parameters.empty() || function.is_vararg);
 				for (const auto& name : function.parameters) {
 					callable.parameters.push_back({name, "any"});
 				}
@@ -1638,21 +1655,32 @@ void Workspace::eventSubscriptions() {
 		}
 		auto [source, signal] = find_signal(e.source_node, e.declaring_type, e.signal);
 		auto target = findFrom(m_root_node, e.target_node);
-		if (e.declaring_type == "Lua" && source.exists() && source->scriptRuntime() && target.exists()) {
-			source->scriptRuntime()->connectLuaSignal(e.signal, *target, e.function, e.forwards_args);
-		} else if (source.exists() && signal && signal->connect && target.exists()) {
-			signal->connect(&*source, *target, e.function, signals::ConnectionSource::editor, e.forwards_args);
-		} else {
-			TOAST_WARN(
-			    "World",
-			    "Couldn't connect signal {}::{} on {} to {}:{}",
-			    e.declaring_type,
-			    e.signal,
-			    e.source_node,
-			    e.target_node,
-			    e.function
-			);
-		}
+		auto&& src = source;
+		auto&& sig = signal;
+		auto context = historyContext(
+		    event::HistoryOperation::change_value,
+		    src,
+		    std::format("Connected {}", e.signal),
+		    {},
+		    std::format("{}:{}", e.target_node, e.function)
+		);
+		recordHistory(std::move(context), [&] {
+			if (e.declaring_type == "Lua" && src.exists() && src->scriptRuntime() && target.exists()) {
+				src->scriptRuntime()->connectLuaSignal(e.signal, *target, e.function, e.forwards_args);
+			} else if (src.exists() && sig && sig->connect && target.exists()) {
+				sig->connect(&*src, *target, e.function, signals::ConnectionSource::editor, e.forwards_args);
+			} else {
+				TOAST_WARN(
+				    "World",
+				    "Couldn't connect signal {}::{} on {} to {}:{}",
+				    e.declaring_type,
+				    e.signal,
+				    e.source_node,
+				    e.target_node,
+				    e.function
+				);
+			}
+		});
 		send_signal_state(e.source_node);
 		return true;
 	});
@@ -1663,11 +1691,21 @@ void Workspace::eventSubscriptions() {
 		}
 		auto [source, signal] = find_signal(e.source_node, e.declaring_type, e.signal);
 		auto target = findFrom(m_root_node, e.target_node);
-		if (e.declaring_type == "Lua" && source.exists() && source->scriptRuntime() && target.exists()) {
-			source->scriptRuntime()->disconnectLuaSignal(e.signal, *target, e.function);
-		} else if (source.exists() && signal && signal->disconnect && target.exists()) {
-			signal->disconnect(&*source, *target, e.function, signals::ConnectionSource::editor);
-		}
+		auto&& src = source;
+		auto&& sig = signal;
+		auto context = historyContext(
+		    event::HistoryOperation::change_value,
+		    src,
+		    std::format("Disconnected {}", e.signal),
+		    std::format("{}:{}", e.target_node, e.function)
+		);
+		recordHistory(std::move(context), [&] {
+			if (e.declaring_type == "Lua" && src.exists() && src->scriptRuntime() && target.exists()) {
+				src->scriptRuntime()->disconnectLuaSignal(e.signal, *target, e.function);
+			} else if (src.exists() && sig && sig->disconnect && target.exists()) {
+				sig->disconnect(&*src, *target, e.function, signals::ConnectionSource::editor);
+			}
+		});
 		send_signal_state(e.source_node);
 		return true;
 	});
@@ -1677,11 +1715,16 @@ void Workspace::eventSubscriptions() {
 			return false;
 		}
 		auto [source, signal] = find_signal(e.source_node, e.declaring_type, e.signal);
-		if (e.declaring_type == "Lua" && source.exists() && source->scriptRuntime()) {
-			source->scriptRuntime()->clearLuaSignal(e.signal);
-		} else if (source.exists() && signal && signal->clear) {
-			signal->clear(&*source, signals::ConnectionSource::editor);
-		}
+		auto&& src = source;
+		auto&& sig = signal;
+		auto context = historyContext(event::HistoryOperation::change_value, src, std::format("Cleared {}", e.signal));
+		recordHistory(std::move(context), [&] {
+			if (e.declaring_type == "Lua" && src.exists() && src->scriptRuntime()) {
+				src->scriptRuntime()->clearLuaSignal(e.signal);
+			} else if (src.exists() && sig && sig->clear) {
+				sig->clear(&*src, signals::ConnectionSource::editor);
+			}
+		});
 		send_signal_state(e.source_node);
 		return true;
 	});
@@ -2530,6 +2573,11 @@ void Workspace::tick() {
 
 	if (m_root_node.exists()) {
 		INodeOwner::updateTransforms(*m_root_node);
+	}
+
+	// Enabled changed outside the inspectors
+	if (m_hierarchy_dirty.exchange(false, std::memory_order_relaxed) && isActiveWorkspace()) {
+		event::send<event::RequestHierarchyUpdate>();
 	}
 
 	// Only the active workspace streams inspector data, and only while a node is focused

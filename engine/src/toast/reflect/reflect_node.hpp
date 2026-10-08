@@ -77,6 +77,26 @@ constexpr auto hasFlag(TickFunctionList flags, TickFunctionList flag) -> bool {
 	return (flags & flag) == flag;
 }
 
+constexpr auto tickFunctionName(TickFunctionList func) -> std::string_view {
+	switch (func) {
+		case TickFunctionList::load: return "load";
+		case TickFunctionList::save: return "save";
+		case TickFunctionList::editor_tick: return "editor_tick";
+		case TickFunctionList::init: return "init";
+		case TickFunctionList::destroy: return "destroy";
+		case TickFunctionList::begin: return "begin";
+		case TickFunctionList::end: return "end";
+		case TickFunctionList::on_enable: return "on_enable";
+		case TickFunctionList::on_disable: return "on_disable";
+		case TickFunctionList::early_tick: return "early_tick";
+		case TickFunctionList::tick: return "tick";
+		case TickFunctionList::physics_tick: return "physics_tick";
+		case TickFunctionList::post_physics: return "post_physics";
+		case TickFunctionList::late_tick: return "late_tick";
+		default: return "none";
+	}
+}
+
 /**
  * @brief Set of lifecycle function pointers for one Node type
  *
@@ -471,10 +491,10 @@ auto callMethodChain(const NodeInfo* info, void* obj, std::string_view method_na
  */
 class TOAST_API NodeRegistry {
 public:
-	NodeRegistry() { instance = this; }
+	NodeRegistry();
 
 	/// Called by the generated registration function; inserts a type into the registry
-	static void registerNode(const NodeInfo* info) { (*instance).types[info->type] = info; }
+	static void registerNode(const NodeInfo* info);
 
 	/**
 	 * @brief Looks up a Node type by its fully-qualified C++ name
@@ -504,7 +524,7 @@ public:
 
 private:
 	std::unordered_map<std::string_view, const NodeInfo*> types;
-	static inline NodeRegistry* instance = nullptr;
+	static NodeRegistry* instance;
 };
 
 TOAST_API void registerEngineTypes();

@@ -4,6 +4,8 @@
 #include "camera_controller.hpp"
 #include "node.hpp"
 #include "node_3d.hpp"
+#include "tree_lock.hpp"
+#include "wave_executor.hpp"
 #include "workspace.hpp"
 
 #include <algorithm>
@@ -13,10 +15,12 @@
 #include <toast/assets/asset_manager.hpp>
 #include <toast/assets/assets.hpp>
 #include <toast/log.hpp>
+#include <toast/scripting/lua_state.hpp>
 #include <toast/scripting/script_runtime.hpp>
 #include <toast/thread_pool.hpp>
 #include <toast/world/workspace_events.hpp>
 #include <tracy/Tracy.hpp>
+#include <unordered_map>
 
 namespace toast {
 
@@ -42,6 +46,16 @@ void INodeOwner::updateTransforms(Node& root) {
 auto INodeOwner::isEditing() noexcept -> bool {
 	const Workspace* workspace = asWorkspace();
 	return workspace != nullptr && !workspace->isPlaying();
+}
+
+void INodeOwner::syncListenerState() noexcept {
+	const bool live = receivesEvents();
+	std::scoped_lock lock(nodes_mutex);
+	forEachNode([live](const _detail::ControlBox& control) {
+		if (control.node != nullptr && control.node->m_listener) {
+			control.node->m_listener->enabled(live);
+		}
+	});
 }
 
 void INodeOwner::activateCamera(Camera& camera) {
@@ -240,8 +254,36 @@ auto INodeOwner::activeCamera() noexcept -> Box<Camera>& {
 	return m_active_camera;
 }
 
+namespace {
+using ControlBoxSet = std::unordered_set<_detail::ControlBox>;
+
+// Leaked on purpose: Boxes held by queued work or Lua values can still be released during static teardown
+auto& g_orphaned_control_boxes_mutex = *new std::mutex();                         // NOLINT
+auto& g_orphaned_control_boxes = *new std::vector<ControlBoxSet::node_type>();    // NOLINT
+}
+
 INodeOwner::INodeOwner() = default;
-INodeOwner::~INodeOwner() = default;
+
+INodeOwner::~INodeOwner() {
+	// A Box dereferences its control block, and Lua values or C++ objects elsewhere can still hold Boxes to nodes of this
+	// owner. Their control blocks have to outlive the
+	// owner, so they move to a graveyard that keeps the memory until nobody references them
+	std::scoped_lock lock(g_orphaned_control_boxes_mutex);
+	for (auto it = nodes.begin(); it != nodes.end();) {
+		if (it->ref_count.load(std::memory_order_acquire) > 0) {
+			g_orphaned_control_boxes.push_back(nodes.extract(it++));
+		} else {
+			++it;
+		}
+	}
+}
+
+void INodeOwner::reapOrphanedControlBoxes() noexcept {
+	std::scoped_lock lock(g_orphaned_control_boxes_mutex);
+	std::erase_if(g_orphaned_control_boxes, [](const ControlBoxSet::node_type& handle) {
+		return handle.value().node == nullptr && handle.value().ref_count.load(std::memory_order_acquire) == 0;
+	});
+}
 
 auto INodeOwner::activeRenderCamera() noexcept -> Camera* {
 	if (m_has_camera_controller) {
@@ -308,10 +350,14 @@ auto INodeOwner::requestRuntimeCreate(Node& parent, std::string_view type) -> Bo
 	// Allocation
 	Box node = this->nodeAllocation(type);
 
-	// Data structure generation
+	// Data structure generation. Scripts create nodes on the threads that run them, so several can add children to one
+	// parent at once, and others read the children meanwhile
 	generateUid(node);
-	node->m_parent = parent;
-	parent.m_children.emplace_back(node);
+	{
+		const TreeWriteLock lock(this);
+		node->m_parent = parent;
+		parent.m_children.emplace_back(node);
+	}
 	node->m_state = parent.m_state;
 	node->m_type = NodeType::child;
 	node->m_inherited_enabled = parent.enabled();
@@ -359,9 +405,13 @@ auto INodeOwner::requestRuntimeSpawn(Node& parent, UID uid) -> Box<Node> {
 
 	// Data structure generation
 	root->m_uid.generate();
-	root->m_parent = parent;
-	parent.m_children.emplace_back(root);
-	root->m_state = parent.m_state;
+	{
+		const TreeWriteLock lock(this);
+		root->m_parent = parent;
+		parent.m_children.emplace_back(root);
+	}
+	// lmao
+	root->changeNodeState(parent.m_state);
 	root->m_type = NodeType::root;
 	root->m_inherited_enabled = parent.enabled();
 
@@ -396,6 +446,7 @@ auto INodeOwner::stripNamespace(std::string_view type) -> std::string_view {
 }
 
 auto INodeOwner::uniqueChildName(const Node& parent, std::string_view base) -> std::string {
+	const TreeReadLock lock(parent);
 	auto taken = [&](std::string_view candidate) {
 		return std::ranges::any_of(parent.children(), [&](const Box<Node>& c) { return c->name() == candidate; });
 	};
@@ -446,11 +497,15 @@ auto INodeOwner::nodeAllocation(std::string_view type) noexcept -> Box<Node> {
 	return raw_node->box();
 }
 
-auto INodeOwner::nodeAllocation(const assets::Prefab::BasicNode& node_data) noexcept -> Box<Node> {
+auto INodeOwner::nodeAllocation(const assets::Prefab::BasicNode& node_data, uint64_t script_group, bool build_scripts) noexcept
+    -> Box<Node> {
 	std::string type = node_data.type;
 	auto box = nodeAllocation(type);
 	applyFields(*box, node_data);
-	box->loadScripts();
+	box->m_script_group = script_group;
+	if (build_scripts) {
+		box->loadScripts();
+	}
 	return box;
 }
 
@@ -608,6 +663,27 @@ auto INodeOwner::buildTree(std::vector<Box<Node>>&& nodes, const assets::Handle<
 		for (const auto& signal_data : data.signals) {
 			const SignalInfo* signal = info->getSignal(signal_data.name);
 			if (!signal || !signal->connect) {
+				auto* runtime = node->scriptRuntime();
+				if (runtime) {
+					const auto lua_names = runtime->luaSignals();
+					if (std::ranges::find(lua_names, signal_data.name) != lua_names.end()) {
+						for (const auto& connection : signal_data.connections) {
+							auto target = uid_map.find(connection.target.data());
+							if (target == uid_map.end()) {
+								TOAST_WARN(
+								    "World",
+								    "Prefab signal '{}' on '{}' references missing UID {}",
+								    signal_data.name,
+								    node->name(),
+								    connection.target
+								);
+								continue;
+							}
+							(void)runtime->connectLuaSignal(signal_data.name, *target->second, connection.function, true);
+						}
+						continue;
+					}
+				}
 				TOAST_WARN("World", "Prefab signal '{}' is not available on node '{}'", signal_data.name, node->name());
 				continue;
 			}
@@ -651,11 +727,83 @@ void INodeOwner::seedPrefabContext(InstantiateContext& context, const Node* pare
 	if (owningPrefabUid().data() != 0) {
 		context.asset_chain.push_back(owningPrefabUid().data());
 	}
+	const TreeReadLock lock(parent != nullptr ? parent->owner() : nullptr);
 	for (const Node* n = parent; n; n = n->m_parent.exists() ? &*n->m_parent : nullptr) {
 		if (n->sourcePrefab().uid().data() != 0) {
 			context.asset_chain.push_back(n->sourcePrefab().uid().data());
 		}
 	}
+}
+
+void INodeOwner::buildLeaves(
+    const assets::Handle<assets::Prefab>& file, uint64_t group, const std::vector<size_t>& leaf_slots,
+    std::vector<Box<Node>>& slots
+) {
+	ZoneScoped;
+
+	if (leaf_slots.empty()) {
+		return;
+	}
+
+	// Whatever needs no interpreter goes to every worker. A node with scripts only gets its list here, its runtime is built
+	// below. Each leaf writes its own slot, so the workers never touch the same one
+	{
+		ZoneScopedN("Allocate leaves");    // NOLINT
+		std::vector<_detail::WaveJob> jobs(leaf_slots.size());
+		for (size_t k = 0; k < jobs.size(); ++k) {
+			jobs[k].items = {k};
+		}
+		auto allocate = [&](size_t k) {
+			const size_t slot = leaf_slots[k];
+			Box<Node> node = nodeAllocation(file->nodes[slot], group, false);
+			if (node->m_scripts.empty()) {
+				node->loadScripts();    // nothing to build, but the node hears about it like it always did
+				node->callTick(node->info(), TickFunctionList::load);
+				node->m_state = NodeState::loading;
+			}
+			slots[slot] = std::move(node);
+		};
+		_detail::runJobs(jobs, jobs.size(), allocate, {.non_blocking = false, .label = "Allocate leaves"});
+	}
+
+	// The scripts are placed in file order, so where they land does not depend on which worker got there first, and then
+	// every interpreter builds the ones that are on it, one after the other
+	std::vector<size_t> scripted;    // positions in leaf_slots
+	std::vector<_detail::WaveJob> jobs;
+	std::unordered_map<size_t, size_t> job_of_interpreter;
+	for (size_t k = 0; k < leaf_slots.size(); ++k) {
+		Node& node = *slots[leaf_slots[k]];
+		if (node.m_scripts.empty()) {
+			continue;
+		}
+		const size_t interpreter = scripting::LuaState::get().assign(group);
+		node.m_script_vm = interpreter;
+		const auto [job, inserted] = job_of_interpreter.try_emplace(interpreter, jobs.size());
+		if (inserted) {
+			jobs.push_back(_detail::WaveJob {.items = {}, .interpreters = {interpreter}});
+		}
+		jobs[job->second].items.push_back(scripted.size());
+		scripted.push_back(k);
+	}
+	if (scripted.empty()) {
+		return;
+	}
+
+	// The interpreter with the most nodes decides how long this takes, so it starts first
+	std::ranges::stable_sort(jobs, [](const _detail::WaveJob& lhs, const _detail::WaveJob& rhs) {
+		return lhs.items.size() > rhs.items.size();
+	});
+
+	ZoneNamedN(build_zone, "Build scripts", true);    // NOLINT
+	auto build = [&](size_t item) {
+		Node& node = *slots[leaf_slots[scripted[item]]];
+		node.loadScripts();
+		node.callTick(node.info(), TickFunctionList::load);
+		node.m_state = NodeState::loading;
+	};
+	// A script that cannot be skipped has to wait for an interpreter that something outside this prefab has, so these workers
+	// wait for it. They never wait for each other
+	_detail::runJobs(jobs, scripted.size(), build, {.non_blocking = false, .label = "Build scripts"});
 }
 
 auto INodeOwner::instantiate(const assets::Handle<assets::Prefab>& file, InstantiateContext& ctx) -> Box<Node> {
@@ -668,9 +816,14 @@ auto INodeOwner::instantiate(const assets::Handle<assets::Prefab>& file, Instant
 
 	ctx.asset_chain.push_back(file.uid().data());
 
+	// Every node of one prefab instance runs its scripts on the same interpreter. The file being instantiated is that
+	// instance, the instances nested directly in it get one of their own, and the ones nested deeper share their parent's
+	const bool top_level = !ctx.nested;
+	const uint64_t group = top_level ? scripting::LuaState::newGroup() : ctx.script_group;
+
 	// deserialize + run the pre-tick lifecycle, then mark as loading
-	auto alloc_leaf = [this](const assets::Prefab::BasicNode& chunk) -> Box<Node> {
-		Box<Node> node = nodeAllocation(chunk);
+	auto alloc_leaf = [this, group](const assets::Prefab::BasicNode& chunk) -> Box<Node> {
+		Box<Node> node = nodeAllocation(chunk, group);
 		node->callTick(node->info(), TickFunctionList::load);
 		node->m_state = NodeState::loading;
 		return node;
@@ -686,15 +839,22 @@ auto INodeOwner::instantiate(const assets::Handle<assets::Prefab>& file, Instant
 	};
 
 	std::vector<Box<Node>> slots(file->nodes.size());
-	std::vector<std::pair<size_t, std::future<Box<Node>>>> pending;
+	std::vector<size_t> leaf_slots;
+
+	// Leaves run Lua (loadScripts, load()). A thread that owns an interpreter must not wait for pool jobs that need
+	// one, and a pool worker that waits for other workers can starve the pool, so those threads build the leaves here
+	const bool build_inline = ThreadPool::onWorkerThread() || scripting::LuaState::ownsAnyState();
 
 	for (size_t i = 0; i < file->nodes.size(); ++i) {
 		const assets::Prefab::BasicNode* chunk = &file->nodes[i];
 		uint64_t ref_uid = referenceUid(*chunk);
 
 		if (ref_uid == 0) {
-			// allocate the leaf on the thread pool
-			pending.emplace_back(i, ThreadPool::push([&alloc_leaf, chunk]() { return alloc_leaf(*chunk); }));
+			if (build_inline) {
+				slots[i] = alloc_leaf(*chunk);
+			} else {
+				leaf_slots.push_back(i);    // built together on the thread pool once the nested instances are in
+			}
 			continue;
 		}
 
@@ -722,7 +882,13 @@ auto INodeOwner::instantiate(const assets::Handle<assets::Prefab>& file, Instant
 			continue;
 		}
 
+		const bool outer_nested = ctx.nested;
+		const uint64_t outer_group = ctx.script_group;
+		ctx.nested = true;
+		ctx.script_group = top_level ? scripting::LuaState::newGroup() : group;
 		Box<Node> sub_root = instantiate(sub, ctx);
+		ctx.nested = outer_nested;
+		ctx.script_group = outer_group;
 		if (not sub_root.exists()) {
 			slots[i] = make_unresolved(*chunk, ref_uid);
 			continue;
@@ -743,9 +909,7 @@ auto INodeOwner::instantiate(const assets::Handle<assets::Prefab>& file, Instant
 		slots[i] = sub_root;
 	}
 
-	for (auto& [index, fut] : pending) {
-		slots[index] = fut.get();
-	}
+	buildLeaves(file, group, leaf_slots, slots);
 
 	Box<Node> root = buildTree(std::move(slots), file);
 
@@ -774,18 +938,70 @@ void INodeOwner::reapTombstones() noexcept {
 
 void INodeOwner::reloadScriptsUsing(UID script_uid) noexcept {
 	ZoneScoped;
-	std::scoped_lock lock(nodes_mutex);
-	forEachNode([&](const _detail::ControlBox& control) {
-		if (control.node == nullptr) {
-			return;
-		}
-		const bool uses_script = std::ranges::any_of(control.node->m_scripts, [&](const auto& handle) {
-			return handle.uid().data() == script_uid.data();
+	// Rebuilding a script replays its lifecycle, which is only safe where the game is not running
+	if (!isEditing()) {
+		return;
+	}
+	std::vector<Box<Node>> affected;
+	{
+		std::scoped_lock lock(nodes_mutex);
+		forEachNode([&](const _detail::ControlBox& control) {
+			if (control.node == nullptr) {
+				return;
+			}
+			const bool uses_script = std::ranges::any_of(control.node->m_scripts, [&](const auto& handle) {
+				return handle.uid().data() == script_uid.data();
+			});
+			if (uses_script) {
+				affected.push_back(control.node->box());
+			}
 		});
-		if (uses_script) {
-			control.node->reloadScripts();
+	}
+	// Rebuilding a runtime runs Lua, and that can allocate nodes, which takes nodes_mutex again
+	for (Box<Node>& node : affected) {
+		if (node.exists()) {
+			node->reloadScripts();
 		}
-	});
+	}
+}
+
+void INodeOwner::rebindAssetHandles(UID asset_uid) noexcept {
+	ZoneScoped;
+	std::vector<Box<Node>> alive;
+	{
+		std::scoped_lock lock(nodes_mutex);
+		forEachNode([&](const _detail::ControlBox& control) {
+			if (control.node != nullptr) {
+				alive.push_back(control.node->box());
+			}
+		});
+	}
+
+	for (Box<Node>& node : alive) {
+		if (!node.exists() || node->info() == nullptr) {
+			continue;
+		}
+		node->info()->forEachBaseType([&](const NodeInfo& level) {
+			for (const FieldInfo& field : level.all_fields) {
+				if (field.value_type != FieldType::uid_t || !field.get || !field.set || !field.type.contains("Handle<")) {
+					continue;
+				}
+				const std::any value = field.get(&*node);
+				bool uses_asset = false;
+				if (!field.is_array) {
+					const auto* uid = std::any_cast<UID>(&value);
+					uses_asset = uid != nullptr && uid->data() == asset_uid.data();
+				} else if (const auto* uids = std::any_cast<std::vector<UID>>(&value)) {
+					uses_asset = std::ranges::any_of(*uids, [&](const UID& uid) { return uid.data() == asset_uid.data(); });
+				}
+				if (uses_asset) {
+					// Assigning the uid resolves it again, which picks up the object that replaced the old one
+					field.set(&*node, value);
+					node->onReflectedFieldChanged(field.name);
+				}
+			}
+		});
+	}
 }
 
 void INodeOwner::refreshNodeInfos() noexcept {

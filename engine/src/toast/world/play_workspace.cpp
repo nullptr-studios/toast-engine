@@ -13,6 +13,7 @@ namespace toast {
 PlayWorkspace::PlayWorkspace(UID handle, assets::Prefab& prefab) : Workspace(handle, EmptyTag {}) {
 	ZoneScoped;
 
+	s_instances.fetch_add(1, std::memory_order_release);
 	m_owned_source_prefab = std::make_unique<assets::Prefab>(prefab);
 	assets::Handle<assets::Prefab> file(m_owned_source_prefab.get(), handle, "");
 
@@ -30,7 +31,7 @@ PlayWorkspace::PlayWorkspace(UID handle, assets::Prefab& prefab) : Workspace(han
 	node->m_type = NodeType::world_root;
 	node->m_inherited_enabled = true;
 
-	node->propagateCallTick(node->info(), TickFunctionList::init);
+	m_scheduler.runLifecycle(*node, TickFunctionList::init);
 	node->m_local_enabled = true;
 
 	m_root_node = node;
@@ -54,6 +55,7 @@ PlayWorkspace::PlayWorkspace(UID handle, assets::Prefab& prefab) : Workspace(han
 }
 
 PlayWorkspace::~PlayWorkspace() {
+	s_instances.fetch_sub(1, std::memory_order_release);
 	if (not m_root_node.exists()) {
 		return;
 	}
@@ -77,13 +79,18 @@ void PlayWorkspace::unregisterDependency(Node& from, Node& to) {
 	}
 }
 
+void PlayWorkspace::registerInteraction(Node& first, Node& second) {
+	// Only which nodes of a wave share a job changes, and every wave is planned again when that does, so the schedule stays
+	m_scheduler.registerInteraction(first, second);
+}
+
 void PlayWorkspace::tick() {
 	ZoneScoped;
 
 	if (participatesIn(NodeOwnerParticipation::gameplay_tick) && m_root_node.exists()) {
 		if (!m_started) {
-			m_root_node->propagateCallTick(m_root_node->info(), TickFunctionList::begin);
-			m_root_node->propagateEnable();
+			m_scheduler.runLifecycle(*m_root_node, TickFunctionList::begin);
+			m_scheduler.runLifecycle(*m_root_node, TickFunctionList::on_enable);
 			m_started = true;
 		}
 

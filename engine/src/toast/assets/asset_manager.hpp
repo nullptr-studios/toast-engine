@@ -26,6 +26,8 @@
 #include <string>
 #include <toast/events/listener.hpp>
 #include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
 namespace assets {
 
@@ -191,10 +193,24 @@ public:
 	 */
 	static auto typeOf(toast::UID uid) -> std::string;
 
+	struct ReloadedAsset {
+		toast::UID uid;
+		std::string type;
+		bool replaced = false;
+	};
+
 	/**
-	 * @brief Re-reads hot-reloadable assets whose files changed on disk
+	 * @brief Searches what assets have been modified
 	 */
 	void pollModifiedAssets();
+
+	[[nodiscard]]
+	auto hasPendingReloads() const -> bool;
+
+	/**
+	 * @brief Reloads the assets pollModifiedAssets() changed
+	 */
+	auto applyPendingReloads() -> std::vector<ReloadedAsset>;
 
 	[[nodiscard]]
 	auto getCachePath() const -> const std::filesystem::path&;
@@ -226,10 +242,15 @@ private:
 	static inline std::unordered_map<std::string, std::unique_ptr<PackArchive>> mounts;
 
 	event::Listener listener;
-	std::mutex mutex;
+	mutable std::mutex mutex;
 	std::unordered_map<uint64_t, AssetInfo> manifest;
 	std::unordered_map<uint64_t, std::unique_ptr<Asset>> cache;
 	std::unordered_map<uint64_t, std::filesystem::file_time_type> asset_mtimes;
+	std::unordered_set<uint64_t> pending_reloads;
+	std::vector<std::unique_ptr<Asset>> retired_assets;
+
+	/// Builds an asset from the bytes of its file
+	auto createAsset(const AssetInfo& info, std::vector<uint8_t>& raw_data) -> std::unique_ptr<Asset>;
 
 	static inline std::unordered_map<std::string, std::filesystem::path> roots;
 

@@ -54,7 +54,12 @@ public:
 	[[nodiscard]]
 	auto accumulation() const noexcept -> AccumulationType;    ///< @returns How values from multiple binds are combined
 
+protected:
+	void onReloaded() override;
+
 private:
+	void readFields();
+
 	std::string m_name;
 	std::string m_function_name;
 	std::string m_description;

@@ -7,6 +7,7 @@
 #pragma once
 
 #include "toast/events/event.hpp"
+#include "toast/export.hpp"
 
 #include <functional>
 
@@ -14,7 +15,7 @@ namespace toast {
 
 namespace _detail {
 
-struct Defer : event::Event<Defer> {
+struct TOAST_API Defer : event::Event<Defer> {
 	std::function<void()> cb;
 
 	Defer(std::function<void()>&& fn) : cb(std::move(fn)) { }
@@ -22,7 +23,7 @@ struct Defer : event::Event<Defer> {
 
 }
 
-inline void defer(std::function<void()> fn) {
+inline TOAST_API void defer(std::function<void()> fn) {
 	event::send<_detail::Defer>(std::move(fn));
 }
 }

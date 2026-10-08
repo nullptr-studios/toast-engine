@@ -15,6 +15,7 @@
 #include "node_owner.hpp"
 #include "workspace_history.hpp"
 
+#include <atomic>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <memory>
@@ -76,8 +77,13 @@ public:
 	void registerDependency(Node& from, Node& to) override;
 	void unregisterDependency(Node& from, Node& to) override;
 
+	void nodeEnabledChanged() noexcept override { m_hierarchy_dirty.store(true, std::memory_order_relaxed); }
+
 	[[nodiscard]]
 	auto participatesIn(NodeOwnerParticipation use) const noexcept -> bool override;
+
+	[[nodiscard]]
+	auto receivesEvents() const noexcept -> bool override;
 
 	/// Name lookup over origin's subtree
 	auto findFrom(const Node& origin, std::string_view query) -> Box<Node> override;
@@ -132,6 +138,7 @@ protected:
 	std::unique_ptr<Camera> m_editor_camera;
 	EditorCameraController m_editor_camera_controller;    ///< drives m_editor_camera; ticked from tick() below
 	std::unique_ptr<WorkspaceHistory> m_history;
+	std::atomic<bool> m_hierarchy_dirty = false;
 
 	[[nodiscard]]
 	auto isActiveWorkspace() const noexcept -> bool;

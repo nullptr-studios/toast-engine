@@ -19,7 +19,7 @@ ThreadListener::ThreadListener(bool state) {
 ThreadListener::~ThreadListener() {
 	m.enabled->store(false);
 	for (auto& [type, iterator] : m.recievers) {
-		EventSystem::unsubscribe_map[type](iterator);
+		EventSystem::unsubscribeAny(type, iterator);
 	}
 	{
 		std::scoped_lock lock(m.queue_mutex);
@@ -37,7 +37,7 @@ ThreadListener::~ThreadListener() {
 void ThreadListener::clear() {
 	bool state = m.enabled->exchange(false);
 	for (auto& [type, iterator] : m.recievers) {
-		EventSystem::unsubscribe_map[type](iterator);
+		EventSystem::unsubscribeAny(type, iterator);
 	}
 	m.recievers.clear();
 	m.callbacks.clear();

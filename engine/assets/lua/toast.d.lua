@@ -166,3 +166,23 @@ AudioSnapshot = nil
 AudioVca = nil
 ---@type TypeMarker
 VoxelModel = nil
+---@type TypeMarker
+VoxelPalette = nil
+---@type TypeMarker
+MaterialInstance = nil
+---@type TypeMarker
+Shader = nil
+---@type TypeMarker
+UIElement = nil
+---@type TypeMarker
+UIStyle = nil
+---@type TypeMarker
+Font = nil
+---@type TypeMarker
+UIImage = nil
+---@type TypeMarker
+ColorScheme = nil
+---@type TypeMarker
+Localization = nil
+---@type TypeMarker
+ImageLocalization = nil

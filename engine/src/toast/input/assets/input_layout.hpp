@@ -67,7 +67,12 @@ public:
 	[[nodiscard]]
 	static auto isActiveForLayer(const Entry& entry, std::string_view layer) noexcept -> bool;
 
+protected:
+	void onReloaded() override;
+
 private:
+	void readFields();
+
 	std::string m_name;
 	std::vector<std::string> m_layers;
 	std::vector<Entry> m_entries;

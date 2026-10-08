@@ -22,6 +22,7 @@ struct SignalStateEntry {
 	std::string declaring_type;
 	std::string signal;
 	std::vector<SignalConnection> connections;
+	std::vector<std::string> arguments;
 };
 
 struct RequestSignalState : Event<RequestSignalState> {

@@ -42,7 +42,7 @@ struct FSOutput
 {
     float4 albedo : SV_Target0;
 
-    /// xyz world normal w roughness as SSR sees it
+    /// xyz world normal w roughness as SSR
     float4 normalRoughness : SV_Target1;
 
     float4 material : SV_Target2;
@@ -102,8 +102,8 @@ static const uint kOverlayVoxelGrid = 2u;
 static const uint kOverlayVoxelEdges = 4u;
 static const float3 kSelectionTint = float3(1.0, 0.366, 0.0);
 
-/// Voxel contour thing so it's easier to see 3D on the VoxelEditor
-float voxelEdgeCoverage(VolumeRecord record, RayHit hit, float3 cellPosition, float3 voxelsPerPixel, int3 outward)
+/// Voxel contour thing
+float voxelEdgeCoverage(uint recordIndex, RayHit hit, float3 cellPosition, float3 voxelsPerPixel, int3 outward)
 {
     const uint u = (uint(hit.axis) + 1u) % 3u;
     const uint v = (uint(hit.axis) + 2u) % 3u;
@@ -115,7 +115,7 @@ float voxelEdgeCoverage(VolumeRecord record, RayHit hit, float3 cellPosition, fl
         int3 step = int3(0, 0, 0);
         step[axis] = sign;
         const int3 neighbour = hit.voxel + step;
-        const bool edge = voxelMaterialAt(record, neighbour) == 0u || voxelMaterialAt(record, neighbour + outward) != 0u;
+        const bool edge = voxelMaterialAt(recordIndex, neighbour) == 0u || voxelMaterialAt(recordIndex, neighbour + outward) != 0u;
         if (!edge)
         {
             continue;
@@ -160,12 +160,12 @@ float3 applyEditorOverlays(float3 color, VoxelInstance instance, RayHit hit, flo
         {
             int3 outward = int3(0, 0, 0);
             outward[hit.axis] = direction[hit.axis] > 0.0 ? -1 : 1;
-            const float edge = voxelEdgeCoverage(gVolumeRecords[instance.recordIndex], hit, cellPosition, voxelsPerPixel, outward);
+            const float edge = voxelEdgeCoverage(instance.recordIndex, hit, cellPosition, voxelsPerPixel, outward);
             color = lerp(color, float3(0.01, 0.01, 0.01), 0.85 * edge);
         }
     }
 
-    if (instance.highlightRecord != 0u && voxelMaterialAt(gVolumeRecords[instance.highlightRecord - 1u], hit.voxel) != 0u)
+    if (instance.highlightRecord != 0u && voxelMaterialAt(instance.highlightRecord - 1u, hit.voxel) != 0u)
     {
         color = lerp(color, kSelectionTint, 0.55);
     }
@@ -209,9 +209,8 @@ bool shadeDebug(uint mode, VSOutput input, VoxelInstance instance, float3 origin
     }
     else if (mode == kRenderModeVoxelBricks)
     {
-        const VolumeRecord record = gVolumeRecords[instance.recordIndex];
         const int3 brick = hit.voxel / int(kBrickDim);
-        const uint tag = gridEntry(record, uint3(brick)) & 3u;
+        const uint tag = gridEntry(instance.recordIndex, uint3(brick)) & 3u;
         color = tag == kTagUniform ? kUniformBrickColor : (tag == kTagShared ? kSharedBrickColor : kOwnedBrickColor);
         color *= 0.7 + 0.3 * hash01(brick);
 
@@ -237,7 +236,7 @@ bool shadeDebug(uint mode, VSOutput input, VoxelInstance instance, float3 origin
     }
     else
     {
-        const PaletteSample palette = samplePalette(gVolumeRecords[instance.recordIndex], hit.material);
+        const PaletteSample palette = samplePalette(instance.recordIndex, hit.material);
         color = palette.material == 0u ? kDefaultMaterialColor * (stripe ? 1.0 : 0.3)
                                        : debugHue(frac(float(palette.material) * 0.618034 + 0.33));
     }
@@ -312,8 +311,7 @@ bool shade(VSOutput input, out FSOutput output, out float depth)
         return false;
     }
 
-    const VolumeRecord record = gVolumeRecords[instance.recordIndex];
-    const PaletteSample palette = samplePalette(record, hit.material);
+    const PaletteSample palette = samplePalette(instance.recordIndex, hit.material);
     const float roughness = clamp(palette.roughness, 0.045, 1.0);
 
     output.albedo = float4(applyEditorOverlays(palette.albedo, instance, hit, direction, cellPosition, voxelsPerPixel, hitWorld, worldPerPixel, normal), kGbufferLit);

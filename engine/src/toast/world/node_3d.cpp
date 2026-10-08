@@ -26,12 +26,12 @@ void decomposeTransform(const glm::mat4& transform, glm::vec3& position, glm::qu
 
 }
 
-auto Node3D::raycasts(glm::vec3 pos, glm::vec3 dir) const -> std::vector<physics::RayHit> {
-	return physics::Simulator::raycast(world_position + pos, world_rotation * dir);
+auto Node3D::raycasts(glm::vec3 pos, glm::vec3 dir, float max_distance, int max_targets) const -> std::vector<physics::RayHit> {
+	return physics::Simulator::raycast(world_position + pos, world_rotation * dir, max_distance, max_targets);
 }
 
-auto Node3D::raycast(glm::vec3 pos, glm::vec3 dir) const -> std::optional<physics::RayHit> {
-	auto hits = physics::Simulator::raycast(world_position + pos, world_rotation * dir);
+auto Node3D::raycast(glm::vec3 pos, glm::vec3 dir, float max_distance) const -> std::optional<physics::RayHit> {
+	auto hits = physics::Simulator::raycast(world_position + pos, world_rotation * dir, max_distance, 1);
 	if (hits.empty()) {
 		return std::nullopt;
 	}

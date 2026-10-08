@@ -767,9 +767,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			"cmake",
 			// the game shares std types with the engine so both must use the same CRT
 #if DEBUG
-			"--build .toast/cmake_cache --config Debug"
+			"--build .toast/cmake_cache --config Debug --parallel"
 #else
-			"--build .toast/cmake_cache --config Release"
+			"--build .toast/cmake_cache --config Release --parallel"
 #endif
 		));
 

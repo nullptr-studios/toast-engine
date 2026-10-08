@@ -15,6 +15,7 @@ using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Styling;
+using Avalonia.Threading;
 using editor.Assets;
 
 namespace editor.Components.Elements;
@@ -96,12 +97,17 @@ public abstract class ColorBoxBase : TemplatedControl {
 	private IBrush? m_mutedBrush;
 
 	private bool m_numbersVisible = true;
+	private int m_editChannel;
+	private bool m_editCancelled;
+	private TextBox? m_editBox;
+	private Flyout? m_editFlyout;
+
 	private Flyout? m_pickerFlyout;
 	private bool m_pickerSyncing;
 	private ColorView? m_pickerView;
 
 	// Template parts
-	private Control? m_root;
+	private Control? m_chip;
 	private Border? m_swatch;
 
 	private IBrush? m_swatchBrush;
@@ -212,15 +218,15 @@ public abstract class ColorBoxBase : TemplatedControl {
 
 	protected override void OnApplyTemplate(TemplateAppliedEventArgs e) {
 		base.OnApplyTemplate(e);
-		if (m_root != null) m_root.Tapped -= OnRootTapped;
+		if (m_chip != null) m_chip.Tapped -= OnChipTapped;
 
-		m_root = e.NameScope.Find<Control>("PART_Root");
+		m_chip = e.NameScope.Find<Control>("PART_Chip");
 		m_swatch = e.NameScope.Find<Border>("PART_Swatch");
 		m_checker = e.NameScope.Find<Border>("PART_Checker");
 		m_value = e.NameScope.Find<Panel>("PART_Value");
 
 		if (m_checker != null) m_checker.Background = CheckerBrush.Instance;
-		if (m_root != null) m_root.Tapped += OnRootTapped;
+		if (m_chip != null) m_chip.Tapped += OnChipTapped;
 
 		m_builtDecimals = -1; // force a rebuild against the new value panel
 		UpdateSwatch();
@@ -484,8 +490,57 @@ public abstract class ColorBoxBase : TemplatedControl {
 		if (!m_dragging) return;
 		m_dragging = false;
 		e.Pointer.Capture(null);
-		if (!m_dragMoved) OpenPicker();
+		if (!m_dragMoved && sender is Control zone) BeginEdit(zone, m_dragChannel);
 		e.Handled = true;
+	}
+
+	private void BeginEdit(Control anchor, int channel) {
+		if (!IsEnabled) return;
+		if (m_editFlyout == null) BuildEditor();
+
+		m_editChannel = channel;
+		m_editCancelled = false;
+		m_editBox!.Text = ((double)GetChannel(channel)).ToString("0.######", CultureInfo.InvariantCulture);
+		m_editFlyout!.ShowAt(anchor);
+	}
+
+	private void BuildEditor() {
+		var box = new TextBox {
+			MinWidth = 96,
+			FontFamily = FontFamily ?? Font,
+			FontSize = FontSize
+		};
+		m_editBox = box;
+		box.KeyDown += (_, e) => {
+			if (e.Key == Key.Enter) {
+				e.Handled = true;
+				m_editFlyout?.Hide();
+			} else if (e.Key == Key.Escape) {
+				e.Handled = true;
+				m_editCancelled = true;
+				m_editFlyout?.Hide();
+			}
+		};
+
+		m_editFlyout = new Flyout { Content = box, Placement = PlacementMode.Bottom };
+		// Focus after the popup is up
+		m_editFlyout.Opened += (_, _) => Dispatcher.UIThread.Post(() => {
+			box.Focus();
+			box.SelectAll();
+		});
+		// only Escape throws the text away
+		m_editFlyout.Closed += (_, _) => CommitEdit();
+	}
+
+	private void CommitEdit() {
+		if (m_editCancelled || m_editBox?.Text is not { } text) return;
+
+		// Accept both 0.5 and 0,5
+		if (!double.TryParse(text.Trim().Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture,
+			    out var value) || !double.IsFinite(value))
+			return;
+
+		SetChannel(m_editChannel, (float)ClampChannel(m_editChannel, value));
 	}
 
 	private void ScrollChannel(PointerWheelEventArgs e, int channel, bool fine) {
@@ -498,7 +553,7 @@ public abstract class ColorBoxBase : TemplatedControl {
 		e.Handled = true;
 	}
 
-	private void OnRootTapped(object? sender, TappedEventArgs e) {
+	private void OnChipTapped(object? sender, TappedEventArgs e) {
 		if (!IsEnabled) return;
 		OpenPicker();
 		e.Handled = true;
@@ -527,7 +582,8 @@ public abstract class ColorBoxBase : TemplatedControl {
 		m_pickerView = new ColorView {
 			IsAlphaEnabled = HasAlpha,
 			IsAlphaVisible = HasAlpha,
-			IsColorPaletteVisible = false,
+			Palette = EditorColorPalette.Instance,
+			IsColorPaletteVisible = true,
 			ColorSpectrumShape = ColorSpectrumShape.Ring
 		};
 		m_pickerView.ColorChanged += (_, _) => ApplyPickerColor();

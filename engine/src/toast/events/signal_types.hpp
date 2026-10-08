@@ -1,8 +1,10 @@
 #pragma once
 
+#include <any>
 #include <cstdint>
 #include <string>
 #include <toast/uid.hpp>
+#include <vector>
 
 namespace signals {
 
@@ -11,6 +13,10 @@ enum class ConnectionSource : uint8_t {
 	cpp,
 	lua,
 	editor,
+};
+
+struct DynamicArgs {
+	std::vector<std::any> values;
 };
 
 struct ConnectionInfo {

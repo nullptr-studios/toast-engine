@@ -14,13 +14,19 @@
 #include "physics_settings.hpp"
 #include "toast/physics/body.hpp"
 #include "voxel_data_lock.hpp"
+#include "voxel_smash.hpp"
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <cmath>
+#include <deque>
+#include <functional>
 #include <glm/gtc/matrix_transform.hpp>
 #include <limits>
+#include <mutex>
 #include <span>
+#include <thread>
 #include <toast/assets/assets.hpp>
 #include <toast/thread_pool.hpp>
 #include <toast/voxel/assets/voxel_model.hpp>
@@ -33,6 +39,7 @@ namespace physics {
 
 namespace {
 constexpr float unit_scale_tolerance = 1.0e-4f;
+constexpr float k_voxel_half_diagonal = 0.8660254f * voxel::k_voxel_size;
 
 struct CachedManifoldKey {
 	const BroadPhasePair& pair;
@@ -196,6 +203,23 @@ Simulator::PhaseScope::PhaseScope(Simulator& simulator, SimulationPhase expected
 	m_simulator.m_phase.store(next, std::memory_order_relaxed);
 }
 
+namespace {
+
+std::atomic<std::thread::id> g_simulator_thread {};    // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
+
+struct Requests {
+	std::mutex mutex;
+	std::deque<std::move_only_function<void()>> queue;
+	std::atomic<size_t> pending {0};    ///< queued, plus the one being carried out
+	bool running = false;               ///< only the simulator thread touches it
+};
+
+auto requests() -> Requests& {
+	static auto& value = *new Requests();    // NOLINT(cppcoreguidelines-owning-memory)
+	return value;
+}
+}
+
 Simulator::PhaseScope::~PhaseScope() {
 	TOAST_ASSERT(
 	    m_simulator.m_phase.load(std::memory_order_relaxed) == m_active,
@@ -213,17 +237,38 @@ Simulator::Simulator() {
 	m_listener.subscribe<event::VoxelPaletteAssetReloaded>([this](event::VoxelPaletteAssetReloaded& e) {
 		refreshPalette(e.uid.data());
 	});
+	// Palettes copy materials into the shapes so editing a material asset has to refresh them
+	m_listener.subscribe<event::DataAssetReloaded>([this](event::DataAssetReloaded& e) {
+		const std::string type = assets::typeOf(e.uid);
+		if (type == "physics_material" || type == "destruction_material") {
+			refreshAllPalettes();
+		}
+	});
 }
 
 Simulator::~Simulator() {
 	TOAST_INFO("Physics", "Simulator destroyed");
 	instance = nullptr;
+	// Finish all requests before destroying
+	Requests& all = requests();
+	std::scoped_lock lock(all.mutex);
+	all.queue.clear();
+	all.pending.store(0, std::memory_order_release);
 }
 
 void Simulator::registerRigidbody(Rigidbody& node) {
 	ZoneScopedN("physics::RegisterRigidbody");
 
 	TOAST_ASSERT(instance, "Physics", "Simulator instance is null; cannot register rigidbody");
+	if (not onSimulatorThread()) {
+		request([box = node.box().as<Rigidbody>()]() mutable {
+			if (box.exists()) {
+				registerRigidbody(*box);
+			}
+		});
+		return;
+	}
+	runPendingRequests();
 	if (not instance->mainThreadMutationAllowed()) {
 		return;
 	}
@@ -303,6 +348,17 @@ void Simulator::unregisterRigidbody(Rigidbody& node) {
 	if (!instance) {
 		return;
 	}
+	if (not onSimulatorThread()) {
+		request([box = node.box().as<Rigidbody>()]() mutable {
+			if (box.exists()) {
+				unregisterRigidbody(*box);
+			} else if (instance) {
+				instance->dropRigidbodyBinding(box);    // the node is gone by now but the body is not
+			}
+		});
+		return;
+	}
+	runPendingRequests();
 	if (not instance->mainThreadMutationAllowed()) {
 		return;
 	}
@@ -344,6 +400,15 @@ void Simulator::registerVoxelNode(toast::VoxelNode& node) {
 	if (not instance) {
 		return;
 	}
+	if (not onSimulatorThread()) {
+		request([box = node.box().as<toast::VoxelNode>()]() mutable {
+			if (box.exists()) {
+				registerVoxelNode(*box);
+			}
+		});
+		return;
+	}
+	runPendingRequests();
 	if (not instance->mainThreadMutationAllowed()) {
 		return;
 	}
@@ -404,6 +469,17 @@ void Simulator::unregisterVoxelNode(toast::VoxelNode& node) {
 	if (not instance) {
 		return;
 	}
+	if (not onSimulatorThread()) {
+		request([box = node.box().as<toast::VoxelNode>()]() mutable {
+			if (box.exists()) {
+				unregisterVoxelNode(*box);
+			} else if (instance) {
+				instance->dropVoxelBinding(box);
+			}
+		});
+		return;
+	}
+	runPendingRequests();
 	if (not instance->mainThreadMutationAllowed()) {
 		return;
 	}
@@ -428,6 +504,15 @@ void Simulator::registerTrigger(Trigger& node) {
 	ZoneScoped;
 	TOAST_ASSERT(instance, "Physics", "Tried to register a trigger without a physics system");
 
+	if (not onSimulatorThread()) {
+		request([box = node.box().as<Trigger>()]() mutable {
+			if (box.exists()) {
+				registerTrigger(*box);
+			}
+		});
+		return;
+	}
+	runPendingRequests();
 	if (not instance->mainThreadMutationAllowed()) {
 		return;
 	}
@@ -444,6 +529,15 @@ void Simulator::unregisterTrigger(Trigger& node) {
 		return;
 	}
 
+	if (not onSimulatorThread()) {
+		request([box = node.box().as<Trigger>()]() mutable {
+			if (instance) {
+				std::erase(instance->m_triggers, box);
+			}
+		});
+		return;
+	}
+	runPendingRequests();
 	if (not instance->mainThreadMutationAllowed()) {
 		return;
 	}
@@ -522,6 +616,7 @@ void Simulator::tick() {
 		return;
 	}
 	PhaseScope step_phase {*this, SimulationPhase::idle, SimulationPhase::mutation};
+	runPendingRequests();
 	m_profile = {};
 
 	const auto tick_start = std::chrono::steady_clock::now();
@@ -736,6 +831,33 @@ void Simulator::rebuildFragmentIndex() {
 	}
 }
 
+void Simulator::refreshAllPalettes() {
+	if (not mainThreadMutationAllowed()) {
+		return;
+	}
+
+	// refreshPalette takes the voxel lock itself
+	std::vector<uint64_t> palette_uids;
+	{
+		std::scoped_lock voxel_lock {voxelDataMutex()};
+		for (const ShapeSlot& slot : m_shapes) {
+			if (not slot.occupied || slot.shape.type != ShapeType::voxel) {
+				continue;
+			}
+			const VoxelShapeData* data = tryGetVoxelData(slot.shape.voxel.data);
+			if (data != nullptr && data->palette_uid != 0) {
+				palette_uids.push_back(data->palette_uid);
+			}
+		}
+	}
+	std::ranges::sort(palette_uids);
+	palette_uids.erase(std::ranges::unique(palette_uids).begin(), palette_uids.end());
+
+	for (const uint64_t uid : palette_uids) {
+		refreshPalette(uid);
+	}
+}
+
 void Simulator::refreshPalette(uint64_t palette_uid) {
 	ZoneScopedN("physics::RefreshPalette");
 
@@ -817,6 +939,8 @@ void Simulator::queuePendingFragments(std::span<const ConnectivityResult> result
 			continue;
 		}
 
+		const std::optional<FragmentPush> push = std::exchange(data->pending_push, std::nullopt);
+
 		const glm::uvec3 brick_dims = data->volume->brickDims();
 		const std::vector<ComponentClass> classes = classifyComponents(r.connectivity, brick_dims, data->anchor_mask);
 
@@ -886,10 +1010,10 @@ void Simulator::queuePendingFragments(std::span<const ConnectivityResult> result
 		}
 
 		if (existing != m_pending_fragments.end()) {
-			*existing = PendingFragments {.shape = r.shape, .components = std::move(components_to_spawn), .cursor = 0};
+			*existing = PendingFragments {.shape = r.shape, .components = std::move(components_to_spawn), .cursor = 0, .push = push};
 		} else {
 			m_pending_fragments.push_back(
-			    PendingFragments {.shape = r.shape, .components = std::move(components_to_spawn), .cursor = 0}
+			    PendingFragments {.shape = r.shape, .components = std::move(components_to_spawn), .cursor = 0, .push = push}
 			);
 		}
 	}
@@ -926,7 +1050,7 @@ void Simulator::spawnBudgetedFragments() {
 				continue;
 			}
 
-			if (not spawnFragmentBody(pending.shape, component)) {
+			if (not spawnFragmentBody(pending.shape, component, pending.push.has_value() ? &*pending.push : nullptr)) {
 				// false only means this component failed, not that the pool is full
 				if (voxel::runtimeBrickPool().freeCount() == 0) {
 					pool_full = true;
@@ -1090,7 +1214,7 @@ void Simulator::unlockSleep(BodyID id) {
 	m_fragments[it->second].sequence = m_next_fragment_sequence++;
 }
 
-auto Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedComponent& component) -> bool {
+auto Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedComponent& component, const FragmentPush* push) -> bool {
 	ZoneScopedN("physics::SpawnFragment");
 	ZoneValue(static_cast<uint64_t>(component.voxel_count));
 
@@ -1228,6 +1352,10 @@ auto Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedCompone
 		glm::vec3 frag_com_world = b->worldCenterOfMass();
 		glm::vec3 r = frag_com_world - world_com;
 		b->linear_velocity = linear_velocity + glm::cross(angular_velocity, r);
+	}
+
+	if (const Body* chunk = push != nullptr ? tryGetBody(frag_body) : nullptr) {
+		pushBody(frag_body, push->point.value_or(chunk->worldCenterOfMass()), push->direction, push->speed, push->max_impulse);
 	}
 
 	return true;
@@ -1667,6 +1795,11 @@ void Simulator::setBodyTransform(BodyID body, const glm::vec3& position, const g
 	if (instance == nullptr) {
 		return;
 	}
+	if (not onSimulatorThread()) {
+		request([body, position, rotation] { setBodyTransform(body, position, rotation); });
+		return;
+	}
+	runPendingRequests();
 	instance->setTransform(body, position, rotation);
 }
 
@@ -1674,6 +1807,11 @@ auto Simulator::setBodyLinearVelocity(BodyID body, const glm::vec3& velocity) ->
 	if (instance == nullptr) {
 		return false;
 	}
+	if (not onSimulatorThread()) {
+		request([body, velocity] { setBodyLinearVelocity(body, velocity); });
+		return true;
+	}
+	runPendingRequests();
 	return instance->setLinearVelocity(body, velocity);
 }
 
@@ -1684,6 +1822,11 @@ void Simulator::setBodyEnabled(BodyID body, bool enabled) {
 	if (not instance) {
 		return;
 	}
+	if (not onSimulatorThread()) {
+		request([body, enabled] { setBodyEnabled(body, enabled); });
+		return;
+	}
+	runPendingRequests();
 	if (not instance->mainThreadMutationAllowed()) {
 		return;
 	}
@@ -1702,6 +1845,11 @@ void Simulator::setShapeEnabled(ShapeID shape, bool enabled) {
 	if (not instance) {
 		return;
 	}
+	if (not onSimulatorThread()) {
+		request([shape, enabled] { setShapeEnabled(shape, enabled); });
+		return;
+	}
+	runPendingRequests();
 	if (not instance->mainThreadMutationAllowed()) {
 		return;
 	}
@@ -1906,6 +2054,7 @@ auto Simulator::renderPoseDeltaFor(uint64_t node_uid) -> glm::mat4 {
 
 void Simulator::syncRenderPoses() {
 	if (instance != nullptr) {
+		runPendingRequests();
 		instance->rebuildRenderPoseLookup();
 	}
 }
@@ -2682,6 +2831,97 @@ void Simulator::callTick() {
 	instance->tick();
 }
 
+void Simulator::bindToThisThread() noexcept {
+	const std::thread::id self = std::this_thread::get_id();
+	if (g_simulator_thread.load(std::memory_order_relaxed) != self) {
+		g_simulator_thread.store(self, std::memory_order_release);
+	}
+}
+
+auto Simulator::onSimulatorThread() noexcept -> bool {
+	const std::thread::id bound = g_simulator_thread.load(std::memory_order_acquire);
+	return bound == std::thread::id {} || bound == std::this_thread::get_id();
+}
+
+auto Simulator::pendingRequests() noexcept -> size_t {
+	return requests().pending.load(std::memory_order_acquire);
+}
+
+void Simulator::request(std::move_only_function<void()> work) {
+	Requests& all = requests();
+	std::scoped_lock lock(all.mutex);
+	all.queue.push_back(std::move(work));
+	all.pending.fetch_add(1, std::memory_order_release);
+}
+
+void Simulator::runPendingRequests() {
+	Requests& all = requests();
+	// A request that asks the simulator for something itself comes back here, and must not start over
+	if (all.pending.load(std::memory_order_acquire) == 0 || all.running || not onSimulatorThread()) {
+		return;
+	}
+
+	ZoneScopedN("physics::RunRequests");
+	all.running = true;
+	while (true) {
+		std::move_only_function<void()> work;
+		{
+			std::scoped_lock lock(all.mutex);
+			if (all.queue.empty()) {
+				break;
+			}
+			work = std::move(all.queue.front());
+			all.queue.pop_front();
+		}
+		work();
+		all.pending.fetch_sub(1, std::memory_order_release);
+	}
+	all.running = false;
+}
+
+void Simulator::requestSleep(BodyID id) {
+	if (not onSimulatorThread()) {
+		request([id] { sleepBody(id); });
+		return;
+	}
+	runPendingRequests();
+	sleepBody(id);
+}
+
+void Simulator::requestWake(BodyID id) {
+	if (not onSimulatorThread()) {
+		request([id] { wakeBody(id); });
+		return;
+	}
+	runPendingRequests();
+	wakeBody(id);
+}
+
+void Simulator::dropRigidbodyBinding(const toast::Box<Rigidbody>& node) {
+	for (NodeBinding& binding : m_node_bindings) {
+		if (binding.node != node) {
+			continue;
+		}
+		for (ColliderBinding& collider : binding.colliders) {
+			if (collider.node.exists()) {
+				collider.node->assignShape({});
+			}
+		}
+		destroyBody(binding.body);
+	}
+	std::erase_if(m_node_bindings, [&node](const NodeBinding& binding) { return binding.node == node; });
+}
+
+void Simulator::dropVoxelBinding(const toast::Box<toast::VoxelNode>& node) {
+	for (const VoxelNodeBinding& binding : m_voxel_bindings) {
+		if (binding.node == node) {
+			destroyFragmentsOf(binding.body);
+			destroyBody(binding.body);
+		}
+	}
+	std::erase_if(m_voxel_bindings, [&node](const VoxelNodeBinding& binding) { return binding.node == node; });
+}
+
 auto Simulator::createBody(const BodyDescriptor& descriptor) -> BodyID {
 	ZoneScopedN("physics::CreateBody");
 	if (not mainThreadMutationAllowed()) {
@@ -3204,6 +3444,10 @@ auto Simulator::tryGetVoxelData(VoxelDataID data) -> VoxelShapeData* {
 	return instance->valid(data) ? &*(instance->m_voxel_shapes)[data.slot].data : nullptr;
 }
 
+auto Simulator::tryGetVoxelDataConst(VoxelDataID data) -> const VoxelShapeData* {
+	return instance->valid(data) ? &*(instance->m_voxel_shapes)[data.slot].data : nullptr;
+}
+
 void Simulator::destroyVoxelData(VoxelDataID data) {
 	if (not mainThreadMutationAllowed()) {
 		return;
@@ -3657,6 +3901,11 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 	++data->surface_revision;
 	shape->voxel.local_bounds = computeOccupiedBounds(volume);
 
+	// A damage without a push leaves the one of an earlier damage waiting since both end up in the same result
+	if (c.push.has_value()) {
+		data->pending_push = c.push;
+	}
+
 	for (VoxelNodeBinding& binding : m_voxel_bindings) {
 		if (binding.shape != c.shape || not binding.node.exists()) {
 			continue;
@@ -3761,7 +4010,8 @@ void Simulator::applyExplosion(const glm::vec3& position, float radius, float en
 }
 
 auto Simulator::shootVoxel(
-    const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy, float min_radius
+    const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy, float min_radius,
+    const std::optional<FragmentPush>& push
 ) -> bool {
 	ZoneScopedN("physics::ShootVoxel");
 
@@ -3777,6 +4027,61 @@ auto Simulator::shootVoxel(
 		return false;
 	}
 	const glm::vec3 dir = direction / length;
+	const std::optional<VoxelRayHit> hit = marchVoxelRay(origin, dir, max_distance);
+	if (not hit.has_value()) {
+		return false;
+	}
+
+	const glm::vec3 hit_point = origin + dir * hit->distance;
+	const float final_radius = std::max({hit->shatter_radius, voxel::k_voxel_size, min_radius});
+
+	std::optional<FragmentPush> chunk_push = push;
+	if (chunk_push.has_value()) {
+		chunk_push->point = hit_point;
+	}
+
+	recordDamage(
+	    DamageCommand {
+	      .shape = hit->shape,
+	      .world_center = hit_point,
+	      .radius = final_radius,
+	      .energy = energy,
+	      .shell_voxels = 2.0f,
+	      .push = chunk_push,
+	    }
+	);
+	return true;
+}
+
+auto Simulator::cutVoxel(
+    const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy, float radius, float depth
+) -> uint32_t {
+	ZoneScopedN("physics::CutVoxel");
+
+	if (not mainThreadMutationAllowed()) {
+		return 0;
+	}
+	if (not std::isfinite(max_distance) || max_distance <= 0.0f || not std::isfinite(energy) || not std::isfinite(radius) ||
+	    radius < 0.0f || not std::isfinite(depth) || depth <= 0.0f) {
+		return 0;
+	}
+
+	const float length = glm::length(direction);
+	if (not std::isfinite(length) || length <= 1.0e-6f) {
+		return 0;
+	}
+	const glm::vec3 dir = direction / length;
+	const std::optional<VoxelRayHit> hit = marchVoxelRay(origin, dir, max_distance);
+	if (not hit.has_value()) {
+		return 0;
+	}
+
+	const glm::vec3 start = origin + dir * hit->distance;
+	const SmashVolume tube {.axis_start = start, .axis_end = start, .sweep = dir * depth, .reach = radius, .touching = true};
+	return smashShape(hit->shape, tube, CapsuleSmash {.energy = energy}, false);
+}
+
+auto Simulator::marchVoxelRay(const glm::vec3& origin, const glm::vec3& dir, float max_distance) -> std::optional<VoxelRayHit> {
 	const glm::vec3 inv_dir = 1.0f / dir;
 	const glm::vec3 end = origin + dir * max_distance;
 	const AABB sweep_bounds {.min = glm::min(origin, end), .max = glm::max(origin, end)};
@@ -3803,10 +4108,6 @@ auto Simulator::shootVoxel(
 			continue;
 		}
 		candidates.push_back(Candidate {.shape = shape_id, .t_min = hit->t_min, .t_max = hit->t_max});
-	}
-
-	if (candidates.empty()) {
-		return false;
 	}
 
 	std::ranges::sort(candidates, {}, &Candidate::t_min);
@@ -3847,25 +4148,139 @@ auto Simulator::shootVoxel(
 				continue;
 			}
 
-			const glm::vec3 hit_point = origin + dir * t;
 			const uint32_t material_index = voxel::resolveMaterialIndex(data->palette, data->materials, palette_index);
-			const voxel::PhysicalMaterial& material = data->materials.materials[material_index];
-			const float final_radius = std::max({material.shatter_radius, voxel::k_voxel_size, min_radius});
-
-			recordDamage(
-			    DamageCommand {
-			      .shape = candidate.shape,
-			      .world_center = hit_point,
-			      .radius = final_radius,
-			      .energy = energy,
-			      .shell_voxels = 2.0f,
-			    }
-			);
-			return true;
+			return VoxelRayHit {
+			  .shape = candidate.shape,
+			  .distance = t,
+			  .shatter_radius = data->materials.materials[material_index].shatter_radius,
+			};
 		}
 	}
 
-	return false;
+	return std::nullopt;
+}
+
+auto Simulator::smashCapsule(
+    const CapsuleShape& capsule, const glm::vec3& position, const glm::quat& rotation, const glm::vec3& sweep,
+    const CapsuleSmash& smash
+) -> uint32_t {
+	ZoneScopedN("physics::SmashCapsule");
+
+	if (not mainThreadMutationAllowed()) {
+		return 0;
+	}
+	const bool valid_capsule = std::isfinite(capsule.radius) && capsule.radius > 0.0f && std::isfinite(capsule.height) &&
+	                           capsule.height >= 2.0f * capsule.radius;
+	if (not valid_capsule || not std::isfinite(glm::length(sweep)) || not std::isfinite(smash.energy) ||
+	    not std::isfinite(smash.force)) {
+		return 0;
+	}
+
+	const Body probe {.type = BodyType::kinematic_body, .position = position, .rotation = rotation};
+	const _detail::WorldCapsule world = _detail::worldCapsule(probe, capsule);
+	glm::vec3 up = world.point_b - world.point_a;
+	const float up_length = glm::length(up);
+	up = up_length > 1.0e-6f ? up / up_length : rotation * glm::vec3 {0.0f, 0.0f, 1.0f};
+
+	const SmashVolume volume {
+	  .axis_start = world.point_a,
+	  .axis_end = world.point_b,
+	  .sweep = sweep,
+	  .reach = capsule.radius + k_voxel_half_diagonal,
+	  .up = up,
+	  .floor = std::min(glm::dot(world.point_a, up), glm::dot(world.point_a + sweep, up)) - capsule.radius,
+	};
+
+	const auto [low, high] = volume.bounds();
+	uint32_t moved = 0;
+	for (const ShapeID shape_id : m_broad_phase.queryBounds(AABB {.min = low, .max = high})) {
+		const Shape* shape = tryGetShape(shape_id);
+		if (shape == nullptr || shape->type != ShapeType::voxel || not shape->enabled) {
+			continue;
+		}
+		moved += smashShape(shape_id, volume, smash, true);
+	}
+	return moved;
+}
+
+auto Simulator::smashShape(ShapeID shape_id, const SmashVolume& volume, const CapsuleSmash& smash, bool chunks) -> uint32_t {
+	const Shape* shape = tryGetShape(shape_id);
+	VoxelShapeData* data = shape != nullptr ? tryGetVoxelData(shape->voxel.data) : nullptr;
+	const Body* body = shape != nullptr ? tryGetBody(shape->owner) : nullptr;
+	if (data == nullptr || data->volume == nullptr || body == nullptr) {
+		return 0;
+	}
+
+	// into the space of the volume
+	const glm::quat inverse_body = glm::inverse(body->rotation);
+	const glm::quat inverse_local = glm::inverse(shape->voxel.local_rotation);
+	const auto to_point = [&](const glm::vec3& world) {
+		return inverse_local * ((inverse_body * (world - body->position)) - shape->voxel.local_center);
+	};
+	const auto to_direction = [&](const glm::vec3& world) { return inverse_local * (inverse_body * world); };
+
+	SmashVolume local = volume;
+	local.axis_start = to_point(volume.axis_start);
+	local.axis_end = to_point(volume.axis_end);
+	local.sweep = to_direction(volume.sweep);
+	local.up = to_direction(volume.up);
+	local.floor = glm::dot(to_point(volume.up * volume.floor), local.up);
+
+	SmashPieces picked;
+	{
+		std::scoped_lock voxel_lock {voxelDataMutex()};
+		picked = collectSmashPieces(*data->volume, data->palette, data->materials, local, smash.energy);
+	}
+	if (picked.pieces.empty()) {
+		return 0;
+	}
+	const uint32_t solid_before = data->solid_voxel_count;
+
+	std::ranges::sort(picked.pieces, std::greater {}, &DetachedComponent::voxel_count);
+
+	const float direction_length = glm::length(smash.direction);
+	const float dt = static_cast<float>(Accumulator::fixedDelta());
+	size_t flown = 0;
+	for (const DetachedComponent& piece : picked.pieces) {
+		const bool may_fly =
+		    chunks && flown < tunables().max_fragment_spawns_per_step && piece.voxel_count >= tunables().min_fragment_voxels;
+		if (may_fly) {
+			const FragmentPush push {
+			  .direction = direction_length > 1.0e-6f ? smash.direction / direction_length : glm::vec3 {},
+			  .speed = smash.max_speed,
+			  .max_impulse = smash.force * dt * static_cast<float>(piece.voxel_count),
+			};
+			const size_t before = m_fragments.size();
+			if (spawnFragmentBody(shape_id, piece, direction_length > 1.0e-6f ? &push : nullptr) && m_fragments.size() > before) {
+				++flown;
+				continue;
+			}
+		}
+
+		shape = tryGetShape(shape_id);
+		data = shape != nullptr ? tryGetVoxelData(shape->voxel.data) : nullptr;
+		if (data != nullptr && data->volume != nullptr) {
+			clearFragmentFromSource(shape_id, *data, *data->volume, piece);
+		}
+	}
+
+	shape = tryGetShape(shape_id);
+	data = shape != nullptr ? tryGetVoxelData(shape->voxel.data) : nullptr;
+	if (data == nullptr) {
+		return 0;
+	}
+
+	data->connectivity_dirty = true;
+
+	const uint32_t moved = solid_before - std::min(solid_before, data->solid_voxel_count);
+	if (toast::VoxelNode* node = voxelNodeFor(shape_id); node != nullptr && moved > 0) {
+		node->recordDamage(moved, picked.index_sum);
+	}
+	unlockSleep(shape->owner);
+
+	const auto [low, high] = volume.bounds();
+	wakeBodiesInBounds(AABB {.min = low, .max = high});
+	return moved;
 }
 
 auto Simulator::runConnectivityAnalysis() -> std::vector<ConnectivityResult> {
