@@ -166,6 +166,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 	}
 
 	private void OnPlayModeChanged() {
+		var active = m_dockFactory.ActiveWorkspace;
+		m_activeWorkspaceHandle = active?.EffectiveHandle ?? 0;
+		m_dockFactory.History?.SetWorkspace(active is { PlayHandle: 0 } ? active.History : null);
+
 		SaveCurrentNodeCommand.NotifyCanExecuteChanged();
 		SaveCurrentNodeAsCommand.NotifyCanExecuteChanged();
 		SaveAllNodesCommand.NotifyCanExecuteChanged();
