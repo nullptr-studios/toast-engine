@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -295,7 +296,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 				SchemaEditorVisible = true;
 				break;
 			case "NodeEditor":
-				OpenWorkspaceFile(uid, virtualPath, recoverPath);
+				await OpenWorkspaceFile(uid, virtualPath, recoverPath);
 				break;
 			case "CurveEditor":
 				if (m_toastZoneFactory.CurveEditorVm is { } curveVm) {
@@ -328,11 +329,51 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		}
 	}
 
-	private void OpenWorkspaceFile(string uid, string virtualPath, string? recoverPath) {
+	private async Task OpenWorkspaceFile(string uid, string virtualPath, string? recoverPath) {
 		var recoverVirtual = recoverPath is null ? null : ProjectContext.ToVirtual(recoverPath);
-		if (WorkspaceViewModel.OpenFile(m_toast, uid, virtualPath, recoverVirtual) is not { } ws) return;
-		m_workspaces[ws.Handle] = m_dockFactory.AddWorkspace(ws);
-		SyncActiveWorkspace();
+
+		LoadingPopup? popup = null;
+		if (App.MainWindow is { } owner) {
+			popup = new LoadingPopup($"Loading {Path.GetFileName(virtualPath)}");
+			_ = popup.ShowDialog(owner);
+			await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() => { }, Avalonia.Threading.DispatcherPriority.Render);
+		}
+
+		try {
+			var ws = await WorkspaceViewModel.OpenFileAsync(m_toast, uid, virtualPath, recoverVirtual);
+			if (ws is null) return;
+			m_workspaces[ws.Handle] = m_dockFactory.AddWorkspace(ws);
+			SyncActiveWorkspace();
+			if (popup is not null) await WaitForEngineAsync(ws);
+		} finally {
+			popup?.Close();
+		}
+	}
+
+	private async Task WaitForEngineAsync(WorkspaceViewModel ws) {
+		const int smoothFrames = 30;
+		const long capMs = 90_000;
+		const long responsiveMs = 50;
+		const int responsiveRuns = 5;
+
+		var timer = System.Diagnostics.Stopwatch.StartNew();
+
+		// The engine answers SetActiveWorkspace with the hierarchy
+		while (m_dockFactory.Hierarchy is { HasCurrentHierarchy: false } && timer.ElapsedMilliseconds < capMs)
+			await Task.Delay(30);
+
+		await Task.Run(() => {
+			var responsive = 0;
+			while (responsive < responsiveRuns && timer.ElapsedMilliseconds < capMs && ToastEngine.IsEngineReady) {
+				var start = timer.ElapsedMilliseconds;
+				ToastEngine.OnTickThread(() => { });
+				responsive = timer.ElapsedMilliseconds - start <= responsiveMs ? responsive + 1 : 0;
+				Thread.Sleep(20);
+			}
+		});
+
+		while (ws.SmoothFrames < smoothFrames && timer.ElapsedMilliseconds < capMs && ToastEngine.IsEngineReady)
+			await Task.Delay(30);
 	}
 
 	private async Task OpenToastEditorAsync<T>(
@@ -651,7 +692,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		if (!AssetDatabase.TryResolve(uid, out var virtualPath, out _)) return;
 
 		var recoverPath = await AutosaveService.TryRecoverAsync(uid, virtualPath);
-		OpenWorkspaceFile(uid, virtualPath, recoverPath);
+		await OpenWorkspaceFile(uid, virtualPath, recoverPath);
 	}
 
 	[RelayCommand]
