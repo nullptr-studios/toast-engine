@@ -1103,6 +1103,10 @@ void toast_reload_project_settings() noexcept {
 	toast::Engine::get()->reloadSettings();
 }
 
+auto toast_get_max_tick_rate() noexcept -> uint32_t {
+	return toast::ProjectSettings::maxTickRate();
+}
+
 void toast_set_window_state(int focused, int minimized) noexcept {
 	auto* vk_renderer = renderer::VulkanRenderer::instance;
 	if (vk_renderer == nullptr) {

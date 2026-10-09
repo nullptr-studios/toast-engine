@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.ExceptionServices;
@@ -307,6 +308,8 @@ public partial class ToastEngine : IDisposable {
 	private void TickLoop(CancellationToken token) {
 		m_tickThreadId = Environment.CurrentManagedThreadId;
 		m_ticking = true;
+		var stopwatch = Stopwatch.StartNew();
+		var nextTick = stopwatch.Elapsed;
 		try {
 			while (!token.IsCancellationRequested && toast_should_close() != 1) {
 				// Wait until the gate is open
@@ -322,6 +325,8 @@ public partial class ToastEngine : IDisposable {
 				} finally {
 					m_tickIdle.Set();
 				}
+
+				PaceTick(stopwatch, ref nextTick, token);
 			}
 		} catch (OperationCanceledException) {
 			// Dispose() cancels the token while the loop is on m_tickGate
@@ -329,6 +334,28 @@ public partial class ToastEngine : IDisposable {
 			m_ticking = false;
 			CancelPendingTickWork();
 		}
+	}
+
+	// Max tick rate comes from the project settings, which only change on the tick thread
+	private static void PaceTick(Stopwatch stopwatch, ref TimeSpan nextTick, CancellationToken token) {
+		var maxRate = toast_get_max_tick_rate();
+		if (maxRate == 0) {
+			nextTick = stopwatch.Elapsed;
+			return;
+		}
+
+		var interval = TimeSpan.FromSeconds(1.0 / maxRate);
+		nextTick += interval;
+		var remaining = nextTick - stopwatch.Elapsed;
+		if (remaining <= TimeSpan.Zero) {
+			// fell behind, resync instead of bursting to catch up
+			nextTick = stopwatch.Elapsed;
+			return;
+		}
+
+		if (remaining > TimeSpan.FromMilliseconds(2))
+			token.WaitHandle.WaitOne(remaining - TimeSpan.FromMilliseconds(1));
+		while (stopwatch.Elapsed < nextTick && !token.IsCancellationRequested) Thread.SpinWait(50);
 	}
 
 	private void CreateMainWindow() {
@@ -486,6 +513,9 @@ public partial class ToastEngine : IDisposable {
 
 	[LibraryImport(EngineLib)]
 	private static partial void toast_reload_project_settings();
+
+	[LibraryImport(EngineLib)]
+	private static partial uint toast_get_max_tick_rate();
 
 	public static void ReloadProjectSettings() {
 		if (IsEngineReady) OnTickThread(toast_reload_project_settings);

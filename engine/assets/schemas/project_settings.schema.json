@@ -21,6 +21,13 @@
       "description": "Each entry X creates an X:// VFS scheme rooted at {ProjectPath}/X",
       "default": ["assets"]
     },
+    "max_tick_rate": {
+      "type": "integer",
+      "x-toast-type": "int",
+      "minimum": 0,
+      "description": "Maximum game ticks per second in the editor and the player; 0 is uncapped",
+      "default": 500
+    },
     "gameplay": {
       "x-toast-type": "gameplay",
       "description": "Gameplay entry-point settings"
