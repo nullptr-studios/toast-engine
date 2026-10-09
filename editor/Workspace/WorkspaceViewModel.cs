@@ -542,7 +542,7 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 	}
 
 	// the asset-uid autosave and the root-uid one a never-saved workspace may have left
-	private void DeleteAutosaves() {
+	public void DeleteAutosaves() {
 		AutosaveService.Delete(BackingAssetUid, ".tnode");
 		AutosaveService.Delete(RootUid, ".tnode");
 	}

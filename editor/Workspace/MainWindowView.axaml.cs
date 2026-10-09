@@ -33,6 +33,7 @@ public partial class MainWindowView : Window {
 	private double m_resizeStartH;
 	private double m_resizeStartY;
 	private bool m_returningToStart;
+	private bool m_closeConfirmed; // the unsaved changes were already dealt with, so closing goes straight through
 	private CancellationTokenSource? m_toastCts;
 	private IDisposable? m_activeWatch;
 	private IDisposable? m_stateWatch;
@@ -140,7 +141,21 @@ public partial class MainWindowView : Window {
 	protected override void OnClosing(WindowClosingEventArgs e) {
 		base.OnClosing(e);
 		if (e.Cancel) return;
+
+		/ The dialog is async, so this close is cancelled and repeated once the user has answered
+		if (!m_closeConfirmed && DataContext is MainWindowViewModel vm && vm.HasUnsavedWork()) {
+			e.Cancel = true;
+			_ = ConfirmThenCloseAsync(vm);
+			return;
+		}
+
 		(DataContext as MainWindowViewModel)?.SaveSessionLayout();
+	}
+
+	private async Task ConfirmThenCloseAsync(MainWindowViewModel vm) {
+		if (!await vm.ConfirmCloseAllAsync(this)) return;
+		m_closeConfirmed = true;
+		Close();
 	}
 
 	protected override void OnClosed(EventArgs e) {
@@ -286,8 +301,15 @@ public partial class MainWindowView : Window {
 		new AboutWindow().Show(this);
 	}
 
-	private void OnCloseProject(object? sender, RoutedEventArgs e) {
+	private async void OnCloseProject(object? sender, RoutedEventArgs e) {
 		if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
+
+		// Asked before the start window opens
+		if (DataContext is MainWindowViewModel vm) {
+			if (!await vm.ConfirmCloseAllAsync(this)) return;
+			m_closeConfirmed = true;
+		}
+
 		m_returningToStart = true;
 		var startWindow = new StartWindowNS.StartWindow { DataContext = new StartWindowNS.StartWindowViewModel() };
 		desktop.MainWindow = startWindow;
