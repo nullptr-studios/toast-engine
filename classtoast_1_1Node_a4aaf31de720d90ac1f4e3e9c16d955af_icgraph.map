@@ -1,5 +1,0 @@
-<map id="toast::Node::isInstanceRoot" name="toast::Node::isInstanceRoot">
-<area shape="rect" id="Node000001" title="Whether this node is the root of a prefab instance." alt="" coords="184,5,384,33"/>
-<area shape="rect" id="Node000002" href="$classtoast_1_1Node.html#a666186f691b352223f039060d7d1d2a9" title="The topmost ancestor that is not the world root." alt="" coords="5,5,136,33"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="166,19,136,22,136,17,171,19"/>
-</map>

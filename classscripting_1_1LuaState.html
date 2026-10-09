@@ -122,19 +122,44 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classscripting
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
 <tr class="memitem:Lock" id="r_Lock"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classscripting_1_1LuaState_1_1Lock.html">Lock</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Ownership of one interpreter for as long as the object lives.  <a href="classscripting_1_1LuaState_1_1Lock.html#details">More...</a><br /></td></tr>
+<tr class="memitem:NonBlockingScope" id="r_NonBlockingScope"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classscripting_1_1LuaState_1_1NonBlockingScope.html">NonBlockingScope</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">While one exists on a thread, <a class="el" href="#adb489e5f0ec325e9f2da46bc08c872f7" title="Acquires the interpreter at index for the calling thread.">lock()</a> on that thread never waits.  <a href="classscripting_1_1LuaState_1_1NonBlockingScope.html#details">More...</a><br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:adb489e5f0ec325e9f2da46bc08c872f7" id="r_adb489e5f0ec325e9f2da46bc08c872f7"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#adb489e5f0ec325e9f2da46bc08c872f7">lock</a> (size_t index) noexcept -&gt; <a class="el" href="classscripting_1_1LuaState_1_1Lock.html">Lock</a></td></tr>
-<tr class="memdesc:adb489e5f0ec325e9f2da46bc08c872f7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Acquires the state at <span class="tt">index</span> for the current thread.  <br /></td></tr>
+<tr class="memdesc:adb489e5f0ec325e9f2da46bc08c872f7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Acquires the interpreter at <span class="tt">index</span> for the calling thread.  <br /></td></tr>
 <tr class="memitem:ad40f362dfde9f50aa4ac0d57ab6a266e" id="r_ad40f362dfde9f50aa4ac0d57ab6a266e"><td class="memItemLeft"><a id="ad40f362dfde9f50aa4ac0d57ab6a266e" name="ad40f362dfde9f50aa4ac0d57ab6a266e"></a>
 auto&#160;</td><td class="memItemRight"><b>tryLock</b> (size_t index) noexcept -&gt; <a class="el" href="classscripting_1_1LuaState_1_1Lock.html">Lock</a></td></tr>
-<tr class="memdesc:ad40f362dfde9f50aa4ac0d57ab6a266e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Non-blocking variant of <a class="el" href="#adb489e5f0ec325e9f2da46bc08c872f7" title="Acquires the state at index for the current thread.">lock()</a>. <br /></td></tr>
-<tr class="memitem:a16ecc647a9809884069de92c12507319" id="r_a16ecc647a9809884069de92c12507319"><td class="memItemLeft"><a id="a16ecc647a9809884069de92c12507319" name="a16ecc647a9809884069de92c12507319"></a>
-auto&#160;</td><td class="memItemRight"><b>nextIndex</b> () noexcept -&gt; size_t</td></tr>
+<tr class="memdesc:ad40f362dfde9f50aa4ac0d57ab6a266e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Non-blocking variant of <a class="el" href="#adb489e5f0ec325e9f2da46bc08c872f7" title="Acquires the interpreter at index for the calling thread.">lock()</a>. <br /></td></tr>
+<tr class="memitem:a5aaac0680d5a557aee29b92bf9638942" id="r_a5aaac0680d5a557aee29b92bf9638942"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a5aaac0680d5a557aee29b92bf9638942">assign</a> (uint64_t group, std::optional&lt; size_t &gt; forced=std::nullopt) -&gt; size_t</td></tr>
+<tr class="memdesc:a5aaac0680d5a557aee29b92bf9638942"><td class="mdescLeft">&#160;</td><td class="mdescRight">Picks the interpreter for a new script runtime.  <br /></td></tr>
+<tr class="memitem:abe3578394422a750e3f0a36cadea336b" id="r_abe3578394422a750e3f0a36cadea336b"><td class="memItemLeft"><a id="abe3578394422a750e3f0a36cadea336b" name="abe3578394422a750e3f0a36cadea336b"></a>
+void&#160;</td><td class="memItemRight"><b>unassign</b> (uint64_t group, size_t index) noexcept</td></tr>
+<tr class="memdesc:abe3578394422a750e3f0a36cadea336b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gives back what <a class="el" href="#a5aaac0680d5a557aee29b92bf9638942" title="Picks the interpreter for a new script runtime.">assign()</a> handed out. <br /></td></tr>
+<tr class="memitem:ae7016f205604a7257c3f22dfa51531eb" id="r_ae7016f205604a7257c3f22dfa51531eb"><td class="memItemLeft"><a id="ae7016f205604a7257c3f22dfa51531eb" name="ae7016f205604a7257c3f22dfa51531eb"></a>
+auto&#160;</td><td class="memItemRight"><b>loads</b> () const -&gt; std::vector&lt; uint32_t &gt;</td></tr>
+<tr class="memdesc:ae7016f205604a7257c3f22dfa51531eb"><td class="mdescLeft">&#160;</td><td class="mdescRight">How many runtimes every interpreter hosts, for diagnostics and tests. <br /></td></tr>
+<tr class="memitem:af85d2572b52701636449696162474ad0" id="r_af85d2572b52701636449696162474ad0"><td class="memItemLeft"><a id="af85d2572b52701636449696162474ad0" name="af85d2572b52701636449696162474ad0"></a>
+auto&#160;</td><td class="memItemRight"><b>poolSize</b> () const noexcept -&gt; size_t</td></tr>
+<tr class="memitem:a702185da39122c156107583f69ff341b" id="r_a702185da39122c156107583f69ff341b"><td class="memItemLeft"><a id="a702185da39122c156107583f69ff341b" name="a702185da39122c156107583f69ff341b"></a>
+auto&#160;</td><td class="memItemRight"><b>mainState</b> (size_t index) const noexcept -&gt; lua_State *</td></tr>
+<tr class="memdesc:a702185da39122c156107583f69ff341b"><td class="mdescLeft">&#160;</td><td class="mdescRight">The main thread of an interpreter; only the owner may touch it. <br /></td></tr>
+<tr class="memitem:a4ee387f368d12075735e118286cce51e" id="r_a4ee387f368d12075735e118286cce51e"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a4ee387f368d12075735e118286cce51e">retire</a> (size_t index, std::move_only_function&lt; void()&gt; destroyer) noexcept</td></tr>
+<tr class="memdesc:a4ee387f368d12075735e118286cce51e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Runs destroyer while the interpreter index is owned.  <br /></td></tr>
+<tr class="memitem:aeb437ac19b4ab32a22d503a535e398ae" id="r_aeb437ac19b4ab32a22d503a535e398ae"><td class="memItemLeft"><a id="aeb437ac19b4ab32a22d503a535e398ae" name="aeb437ac19b4ab32a22d503a535e398ae"></a>
+auto&#160;</td><td class="memItemRight"><b>contentionCount</b> () const noexcept -&gt; uint64_t</td></tr>
+<tr class="memdesc:aeb437ac19b4ab32a22d503a535e398ae"><td class="mdescLeft">&#160;</td><td class="mdescRight">How many times a thread that owned an interpreter found another one busy; non zero means work was queued. <br /></td></tr>
+<tr class="memitem:a75ed29072e4fc919e512514d074c2822" id="r_a75ed29072e4fc919e512514d074c2822"><td class="memItemLeft"><a id="a75ed29072e4fc919e512514d074c2822" name="a75ed29072e4fc919e512514d074c2822"></a>
+auto&#160;</td><td class="memItemRight"><b>waitCount</b> () const noexcept -&gt; uint64_t</td></tr>
+<tr class="memdesc:a75ed29072e4fc919e512514d074c2822"><td class="mdescLeft">&#160;</td><td class="mdescRight">How many times a thread had to wait for an interpreter that another thread owned. <br /></td></tr>
 <tr class="memitem:adb7c5ed87bf47c6f6d74d050af0d1ffe" id="r_adb7c5ed87bf47c6f6d74d050af0d1ffe"><td class="memItemLeft"><a id="adb7c5ed87bf47c6f6d74d050af0d1ffe" name="adb7c5ed87bf47c6f6d74d050af0d1ffe"></a>
 auto&#160;</td><td class="memItemRight"><b>runString</b> (std::string_view lua_code) noexcept -&gt; bool</td></tr>
 <tr class="memdesc:adb7c5ed87bf47c6f6d74d050af0d1ffe"><td class="mdescLeft">&#160;</td><td class="mdescRight">Runs a chunk on state 0; intended for debug/console use. <br /></td></tr>
+<tr class="memitem:ace4f81c8d4b5947cbea8d3ff2b52d7ee" id="r_ace4f81c8d4b5947cbea8d3ff2b52d7ee"><td class="memItemLeft"><a id="ace4f81c8d4b5947cbea8d3ff2b52d7ee" name="ace4f81c8d4b5947cbea8d3ff2b52d7ee"></a>
+auto&#160;</td><td class="memItemRight"><b>runStringOn</b> (size_t index, std::string_view lua_code, std::string *error=nullptr) noexcept -&gt; bool</td></tr>
+<tr class="memdesc:ace4f81c8d4b5947cbea8d3ff2b52d7ee"><td class="mdescLeft">&#160;</td><td class="mdescRight">Runs a chunk on the given interpreter. <br /></td></tr>
 <tr class="memitem:a807b197acc8a7fe9cd79f5fcc20b57f7" id="r_a807b197acc8a7fe9cd79f5fcc20b57f7"><td class="memItemLeft"><a id="a807b197acc8a7fe9cd79f5fcc20b57f7" name="a807b197acc8a7fe9cd79f5fcc20b57f7"></a>
 void&#160;</td><td class="memItemRight"><b>refreshTypeMarkers</b> () noexcept</td></tr>
 <tr class="memdesc:a807b197acc8a7fe9cd79f5fcc20b57f7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Re-registers the Node/Asset type-marker globals on every state. <br /></td></tr>
@@ -147,8 +172,94 @@ static auto&#160;</td><td class="memItemRight"><b>create</b> () noexcept -&gt; s
 static auto&#160;</td><td class="memItemRight"><b>get</b> () noexcept -&gt; LuaState &amp;</td></tr>
 <tr class="memitem:a0c4eeafa98096994f00edc7333e064ef" id="r_a0c4eeafa98096994f00edc7333e064ef"><td class="memItemLeft"><a id="a0c4eeafa98096994f00edc7333e064ef" name="a0c4eeafa98096994f00edc7333e064ef"></a>
 static auto&#160;</td><td class="memItemRight"><b>exists</b> () noexcept -&gt; bool</td></tr>
+<tr class="memitem:a4bfdfe0b7f9275348a9a0e2f1573b849" id="r_a4bfdfe0b7f9275348a9a0e2f1573b849"><td class="memItemLeft"><a id="a4bfdfe0b7f9275348a9a0e2f1573b849" name="a4bfdfe0b7f9275348a9a0e2f1573b849"></a>
+static auto&#160;</td><td class="memItemRight"><b>indexOf</b> (lua_State *state) noexcept -&gt; std::optional&lt; size_t &gt;</td></tr>
+<tr class="memitem:a260d4a8fb297522466731928e32c5770" id="r_a260d4a8fb297522466731928e32c5770"><td class="memItemLeft"><a id="a260d4a8fb297522466731928e32c5770" name="a260d4a8fb297522466731928e32c5770"></a>
+static auto&#160;</td><td class="memItemRight"><b>ownedByCurrentThread</b> (size_t index) noexcept -&gt; bool</td></tr>
+<tr class="memdesc:a260d4a8fb297522466731928e32c5770"><td class="mdescLeft">&#160;</td><td class="mdescRight">True when the calling thread currently owns the interpreter. <br /></td></tr>
+<tr class="memitem:ad9003583bc66f2e4d060d535a3746ba4" id="r_ad9003583bc66f2e4d060d535a3746ba4"><td class="memItemLeft"><a id="ad9003583bc66f2e4d060d535a3746ba4" name="ad9003583bc66f2e4d060d535a3746ba4"></a>
+static auto&#160;</td><td class="memItemRight"><b>ownedByCurrentThread</b> (lua_State *state) noexcept -&gt; bool</td></tr>
+<tr class="memitem:af7235223c27b4015fd41c527c8b10fed" id="r_af7235223c27b4015fd41c527c8b10fed"><td class="memItemLeft"><a id="af7235223c27b4015fd41c527c8b10fed" name="af7235223c27b4015fd41c527c8b10fed"></a>
+static auto&#160;</td><td class="memItemRight"><b>ownsAnyState</b> () noexcept -&gt; bool</td></tr>
+<tr class="memdesc:af7235223c27b4015fd41c527c8b10fed"><td class="mdescLeft">&#160;</td><td class="mdescRight">True when the calling thread owns any interpreter. <br /></td></tr>
+<tr class="memitem:a66f2a35bfc2d0a917a7059814845bb8c" id="r_a66f2a35bfc2d0a917a7059814845bb8c"><td class="memItemLeft"><a id="a66f2a35bfc2d0a917a7059814845bb8c" name="a66f2a35bfc2d0a917a7059814845bb8c"></a>
+static auto&#160;</td><td class="memItemRight"><b>lastOwnedIndex</b> () noexcept -&gt; std::optional&lt; size_t &gt;</td></tr>
+<tr class="memdesc:a66f2a35bfc2d0a917a7059814845bb8c"><td class="mdescLeft">&#160;</td><td class="mdescRight">The interpreter this thread acquired last, if it owns any. <br /></td></tr>
+<tr class="memitem:a40eb081d8fed25da4654de654721fd8f" id="r_a40eb081d8fed25da4654de654721fd8f"><td class="memItemLeft"><a id="a40eb081d8fed25da4654de654721fd8f" name="a40eb081d8fed25da4654de654721fd8f"></a>
+static auto&#160;</td><td class="memItemRight"><b>newGroup</b> () noexcept -&gt; uint64_t</td></tr>
+<tr class="memdesc:a40eb081d8fed25da4654de654721fd8f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Allocates the number of a new script group, never zero. <br /></td></tr>
+<tr class="memitem:a6bdcd68db68d8e3a2aaceb14ad482b83" id="r_a6bdcd68db68d8e3a2aaceb14ad482b83"><td class="memItemLeft"><a id="a6bdcd68db68d8e3a2aaceb14ad482b83" name="a6bdcd68db68d8e3a2aaceb14ad482b83"></a>
+static void&#160;</td><td class="memItemRight"><b>retireOrLeak</b> (size_t index, std::move_only_function&lt; void()&gt; destroyer) noexcept</td></tr>
+<tr class="memdesc:a6bdcd68db68d8e3a2aaceb14ad482b83"><td class="mdescLeft">&#160;</td><td class="mdescRight">Like <a class="el" href="#a4ee387f368d12075735e118286cce51e" title="Runs destroyer while the interpreter index is owned.">retire()</a>, but once the pool is gone the destroyer is leaked instead of run, the interpreters no longer exist. <br /></td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-pub-static-attribs" class="groupheader"><a id="pub-static-attribs" name="pub-static-attribs"></a>
+Static Public Attributes</h2></td></tr>
+<tr class="memitem:afb31e424d7c4abbcfab445c8b21b1ad2" id="r_afb31e424d7c4abbcfab445c8b21b1ad2"><td class="memItemLeft"><a id="afb31e424d7c4abbcfab445c8b21b1ad2" name="afb31e424d7c4abbcfab445c8b21b1ad2"></a>
+static constexpr uint32_t&#160;</td><td class="memItemRight"><b>k_group_chunk</b> = 8</td></tr>
+<tr class="memdesc:afb31e424d7c4abbcfab445c8b21b1ad2"><td class="mdescLeft">&#160;</td><td class="mdescRight">How many runtimes of one script group share an interpreter before the next ones go to another. <br /></td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
+<a id="a5aaac0680d5a557aee29b92bf9638942" name="a5aaac0680d5a557aee29b92bf9638942"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5aaac0680d5a557aee29b92bf9638942">&#9670;&#160;</a></span>assign()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto scripting::LuaState::assign </td>
+          <td>(</td>
+          <td class="paramtype">uint64_t</td>          <td class="paramname"><span class="paramname"><em>group</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::optional&lt; size_t &gt;</td>          <td class="paramname"><span class="paramname"><em>forced</em></span><span class="paramdefsep"> = </span><span class="paramdefval">std::nullopt</span>&#160;) -&gt; size_t</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel nodiscard">nodiscard</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Picks the interpreter for a new script runtime. </p>
+<p>The runtimes of one script group (the nodes of a prefab instance) are kept together, so the calls between their scripts are plain calls that nothing else can be running at the same time. No interpreter hosts more than k_group_chunk of one group though: a group with hundreds of scripts is spread over several, or those scripts could only ever tick one after the other. Runtimes without a group, and every new chunk of a group, go to the least loaded interpreter that has room for them</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">forced</td><td>Place the runtime there instead, for a thread that owns that interpreter and cannot wait for another </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section note"><dt>Note</dt><dd>Every call has to be paired with <a class="el" href="#abe3578394422a750e3f0a36cadea336b" title="Gives back what assign() handed out.">unassign()</a> once the runtime is gone </dd></dl>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="classscripting_1_1LuaState_a5aaac0680d5a557aee29b92bf9638942_icgraph.png" border="0" usemap="#aclassscripting_1_1LuaState_a5aaac0680d5a557aee29b92bf9638942_icgraph" loading="lazy" alt=""/></div>
+<map name="aclassscripting_1_1LuaState_a5aaac0680d5a557aee29b92bf9638942_icgraph" id="aclassscripting_1_1LuaState_a5aaac0680d5a557aee29b92bf9638942_icgraph">
+<area shape="rect" title="Picks the interpreter for a new script runtime." alt="" coords="681,91,824,136"/>
+<area shape="rect" href="classscripting_1_1ScriptRuntime.html#a30872aaf265fa44761b060b683feedbb" title=" " alt="" coords="456,91,633,136"/>
+<area shape="poly" title=" " alt="" coords="663,114,634,116,634,111,669,113"/>
+<area shape="poly" title=" " alt="" coords="577,76,566,72,545,70,525,72,513,77,509,83,510,92,505,89,503,81,510,72,524,67,545,65,567,67,582,76"/>
+<area shape="rect" href="classscripting_1_1ScriptRuntime.html#a6e654ef65c2d5cf52e61fcc317a75c75" title="Call a named function on all instances." alt="" coords="5,15,183,60"/>
+<area shape="poly" title=" " alt="" coords="506,81,462,49,435,34,407,23,351,11,292,8,235,12,184,19,182,14,235,6,292,3,351,6,409,18,437,29,464,45,511,81"/>
+<area shape="rect" href="classscripting_1_1ScriptRuntime.html#ad638c7dd7e12427bd1ddf53ee0f545ca" title="Dispatch a TickFunctionList phase." alt="" coords="231,57,408,101"/>
+<area shape="poly" title=" " alt="" coords="438,98,409,95,408,90,443,97"/>
+<area shape="rect" href="classscripting_1_1ScriptRuntime.html#ae32366e45abd75badff314bcbe51e955" title="Ccall with args provided as std::any values." alt="" coords="231,126,408,171"/>
+<area shape="poly" title=" " alt="" coords="438,130,409,137,408,132,443,129"/>
+<area shape="rect" href="classscripting_1_1ScriptRuntime.html#ada7db9b5af14e687342683c436ff4a7a" title="Writes value to the variable named name." alt="" coords="231,219,408,264"/>
+<area shape="poly" title=" " alt="" coords="493,143,362,221,359,216,488,144"/>
+<area shape="poly" title=" " alt="" coords="213,61,184,57,183,51,218,59"/>
+<area shape="poly" title=" " alt="" coords="355,42,342,38,319,35,298,37,285,42,280,48,281,57,276,55,275,47,282,38,297,32,319,30,344,32,360,41"/>
+<area shape="poly" title=" " alt="" coords="355,204,342,200,319,198,298,200,285,205,280,211,281,220,277,217,275,209,282,200,297,195,319,193,344,195,360,204"/>
+</map>
+</div>
+
+</div>
+</div>
 <a id="adb489e5f0ec325e9f2da46bc08c872f7" name="adb489e5f0ec325e9f2da46bc08c872f7"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#adb489e5f0ec325e9f2da46bc08c872f7">&#9670;&#160;</a></span>lock()</h2>
 
@@ -172,20 +283,76 @@ static auto&#160;</td><td class="memItemRight"><b>exists</b> () noexcept -&gt; b
 </table>
 </div><div class="memdoc">
 
-<p>Acquires the state at <span class="tt">index</span> for the current thread. </p>
-<p>Blocks if the thread holds no other pooled state </p>
+<p>Acquires the interpreter at <span class="tt">index</span> for the calling thread. </p>
+<p>Waits for the interpreter only when the calling thread owns no other one. A thread that already owns an interpreter never waits for a second one </p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="classscripting_1_1LuaState_adb489e5f0ec325e9f2da46bc08c872f7_icgraph.png" border="0" usemap="#aclassscripting_1_1LuaState_adb489e5f0ec325e9f2da46bc08c872f7_icgraph" loading="lazy" alt=""/></div>
 <map name="aclassscripting_1_1LuaState_adb489e5f0ec325e9f2da46bc08c872f7_icgraph" id="aclassscripting_1_1LuaState_adb489e5f0ec325e9f2da46bc08c872f7_icgraph">
-<area shape="rect" title="Acquires the state at index for the current thread." alt="" coords="211,40,353,85"/>
-<area shape="rect" href="classscripting_1_1LuaState.html#a807b197acc8a7fe9cd79f5fcc20b57f7" title="Re&#45;registers the Node/Asset type&#45;marker globals on every state." alt="" coords="5,5,163,50"/>
-<area shape="poly" title=" " alt="" coords="192,48,163,44,163,39,198,47"/>
-<area shape="rect" href="classscripting_1_1LuaState.html#adb7c5ed87bf47c6f6d74d050af0d1ffe" title="Runs a chunk on state 0; intended for debug/console use." alt="" coords="13,75,155,119"/>
-<area shape="poly" title=" " alt="" coords="193,78,156,87,155,82,198,77"/>
+<area shape="rect" title="Acquires the interpreter at index for the calling thread." alt="" coords="887,265,1029,309"/>
+<area shape="rect" href="classscripting_1_1LuaState.html#a5aaac0680d5a557aee29b92bf9638942" title="Picks the interpreter for a new script runtime." alt="" coords="689,91,831,136"/>
+<area shape="poly" title=" " alt="" coords="931,251,890,201,865,174,837,150,820,139,820,134,840,146,868,170,894,198,936,252"/>
+<area shape="rect" href="classscripting_1_1LuaState.html#ae7016f205604a7257c3f22dfa51531eb" title="How many runtimes every interpreter hosts, for diagnostics and tests." alt="" coords="689,161,831,205"/>
+<area shape="poly" title=" " alt="" coords="904,256,837,220,814,209,815,203,840,215,910,256"/>
+<area shape="rect" href="classscripting_1_1LuaState.html#a807b197acc8a7fe9cd79f5fcc20b57f7" title="Re&#45;registers the Node/Asset type&#45;marker globals on every state." alt="" coords="681,230,839,275"/>
+<area shape="poly" title=" " alt="" coords="868,272,839,269,839,263,874,272"/>
+<area shape="rect" href="classscripting_1_1LuaState.html#a4ee387f368d12075735e118286cce51e" title="Runs destroyer while the interpreter index is owned." alt="" coords="689,299,831,344"/>
+<area shape="poly" title=" " alt="" coords="869,303,832,312,831,307,874,302"/>
+<area shape="rect" href="classscripting_1_1LuaState.html#ace4f81c8d4b5947cbea8d3ff2b52d7ee" title="Runs a chunk on the given interpreter." alt="" coords="689,369,831,413"/>
+<area shape="poly" title=" " alt="" coords="909,317,840,359,815,371,814,366,837,354,904,319"/>
+<area shape="rect" href="classscripting_1_1LuaState.html#abe3578394422a750e3f0a36cadea336b" title="Gives back what assign() handed out." alt="" coords="689,438,831,483"/>
+<area shape="poly" title=" " alt="" coords="936,321,894,376,868,404,840,428,821,440,819,435,837,423,865,400,890,373,931,324"/>
+<area shape="rect" href="classscripting_1_1ScriptRuntime.html#a30872aaf265fa44761b060b683feedbb" title=" " alt="" coords="456,91,633,136"/>
+<area shape="poly" title=" " alt="" coords="671,114,635,116,633,111,676,113"/>
+<area shape="poly" title=" " alt="" coords="578,76,567,72,545,70,525,72,512,77,507,83,508,92,503,90,502,81,509,72,523,67,545,65,568,67,583,76"/>
+<area shape="rect" href="classscripting_1_1ScriptRuntime.html#a6e654ef65c2d5cf52e61fcc317a75c75" title="Call a named function on all instances." alt="" coords="5,15,183,60"/>
+<area shape="poly" title=" " alt="" coords="506,81,462,49,435,34,407,23,351,11,292,8,235,12,185,19,182,14,235,6,292,3,351,6,409,18,437,29,464,45,511,80"/>
+<area shape="rect" href="classscripting_1_1ScriptRuntime.html#ad638c7dd7e12427bd1ddf53ee0f545ca" title="Dispatch a TickFunctionList phase." alt="" coords="231,57,408,101"/>
+<area shape="poly" title=" " alt="" coords="438,99,409,95,408,90,443,97"/>
+<area shape="rect" href="classscripting_1_1ScriptRuntime.html#ae32366e45abd75badff314bcbe51e955" title="Ccall with args provided as std::any values." alt="" coords="231,126,408,171"/>
+<area shape="poly" title=" " alt="" coords="438,131,410,137,407,132,443,128"/>
+<area shape="rect" href="classscripting_1_1ScriptRuntime.html#ada7db9b5af14e687342683c436ff4a7a" title="Writes value to the variable named name." alt="" coords="231,219,408,264"/>
+<area shape="poly" title=" " alt="" coords="488,145,362,221,359,216,493,142"/>
+<area shape="poly" title=" " alt="" coords="214,61,184,56,182,52,218,59"/>
+<area shape="poly" title=" " alt="" coords="355,42,342,38,319,35,298,37,285,42,280,48,281,57,276,56,275,47,282,38,297,32,319,30,344,32,360,41"/>
+<area shape="poly" title=" " alt="" coords="355,205,342,200,319,198,298,200,285,205,280,211,281,220,276,218,275,209,282,200,297,195,319,193,344,195,360,204"/>
+<area shape="rect" href="classscripting_1_1LuaState.html#adb7c5ed87bf47c6f6d74d050af0d1ffe" title="Runs a chunk on state 0; intended for debug/console use." alt="" coords="474,369,616,413"/>
+<area shape="poly" title=" " alt="" coords="671,391,616,394,616,388,676,391"/>
 </map>
 </div>
+
+</div>
+</div>
+<a id="a4ee387f368d12075735e118286cce51e" name="a4ee387f368d12075735e118286cce51e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4ee387f368d12075735e118286cce51e">&#9670;&#160;</a></span>retire()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void scripting::LuaState::retire </td>
+          <td>(</td>
+          <td class="paramtype">size_t</td>          <td class="paramname"><span class="paramname"><em>index</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::move_only_function&lt; void()&gt;</td>          <td class="paramname"><span class="paramname"><em>destroyer</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel noexcept">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Runs destroyer while the interpreter index is owned. </p>
+<p>Used to release anything that holds a reference inside the interpreter </p>
 
 </div>
 </div>

@@ -121,12 +121,15 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classscripting
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:adbf4049c78130e4d98d6124203dd5d43" id="r_adbf4049c78130e4d98d6124203dd5d43"><td class="memItemLeft"><a id="adbf4049c78130e4d98d6124203dd5d43" name="adbf4049c78130e4d98d6124203dd5d43"></a>
-&#160;</td><td class="memItemRight"><b>ScriptInstance</b> (lua_State *l, const <a class="el" href="classassets_1_1Handle.html">assets::Handle</a>&lt; <a class="el" href="classassets_1_1Script.html">assets::Script</a> &gt; &amp;script, <a class="el" href="classscripting_1_1NodeProxy.html">NodeProxy</a> proxy)</td></tr>
-<tr class="memitem:a18715c97a1bd842c03094ce570e827e3" id="r_a18715c97a1bd842c03094ce570e827e3"><td class="memItemLeft"><a id="a18715c97a1bd842c03094ce570e827e3" name="a18715c97a1bd842c03094ce570e827e3"></a>
-&#160;</td><td class="memItemRight"><b>ScriptInstance</b> (ScriptInstance &amp;&amp;)=default</td></tr>
-<tr class="memitem:a426f5d76dd00fb4fbf7cd94a13249cc7" id="r_a426f5d76dd00fb4fbf7cd94a13249cc7"><td class="memItemLeft"><a id="a426f5d76dd00fb4fbf7cd94a13249cc7" name="a426f5d76dd00fb4fbf7cd94a13249cc7"></a>
-auto&#160;</td><td class="memItemRight"><b>operator=</b> (ScriptInstance &amp;&amp;) -&gt; ScriptInstance &amp;=default</td></tr>
+<tr class="memitem:a121debff83aeee1d53bc1c9b514e4eb4" id="r_a121debff83aeee1d53bc1c9b514e4eb4"><td class="memItemLeft"><a id="a121debff83aeee1d53bc1c9b514e4eb4" name="a121debff83aeee1d53bc1c9b514e4eb4"></a>
+&#160;</td><td class="memItemRight"><b>ScriptInstance</b> (size_t vm_index, lua_State *l, const <a class="el" href="classassets_1_1Handle.html">assets::Handle</a>&lt; <a class="el" href="classassets_1_1Script.html">assets::Script</a> &gt; &amp;script, <a class="el" href="classscripting_1_1NodeProxy.html">NodeProxy</a> proxy, std::shared_ptr&lt; <a class="el" href="structscripting_1_1RuntimeToken.html">RuntimeToken</a> &gt; token)</td></tr>
+<tr class="memitem:ad5580f6b5cc1d57b8e3e5e047ae92da1" id="r_ad5580f6b5cc1d57b8e3e5e047ae92da1"><td class="memItemLeft"><a id="ad5580f6b5cc1d57b8e3e5e047ae92da1" name="ad5580f6b5cc1d57b8e3e5e047ae92da1"></a>
+&#160;</td><td class="memItemRight"><b>~ScriptInstance</b> ()</td></tr>
+<tr class="memdesc:ad5580f6b5cc1d57b8e3e5e047ae92da1"><td class="mdescLeft">&#160;</td><td class="mdescRight">The owner of the interpreter has to run this, it releases registry references. <br /></td></tr>
+<tr class="memitem:acf5d91f9c8bde723bc13bb92e9095f5b" id="r_acf5d91f9c8bde723bc13bb92e9095f5b"><td class="memItemLeft"><a id="acf5d91f9c8bde723bc13bb92e9095f5b" name="acf5d91f9c8bde723bc13bb92e9095f5b"></a>
+&#160;</td><td class="memItemRight"><b>ScriptInstance</b> (ScriptInstance &amp;&amp;)=delete</td></tr>
+<tr class="memitem:a8d9fdb8162d3d079715216e05898c3c1" id="r_a8d9fdb8162d3d079715216e05898c3c1"><td class="memItemLeft"><a id="a8d9fdb8162d3d079715216e05898c3c1" name="a8d9fdb8162d3d079715216e05898c3c1"></a>
+auto&#160;</td><td class="memItemRight"><b>operator=</b> (ScriptInstance &amp;&amp;) -&gt; ScriptInstance &amp;=delete</td></tr>
 <tr class="memitem:af43ce79a01e0e7647ce99709cdf405b6" id="r_af43ce79a01e0e7647ce99709cdf405b6"><td class="memItemLeft"><a id="af43ce79a01e0e7647ce99709cdf405b6" name="af43ce79a01e0e7647ce99709cdf405b6"></a>
 &#160;</td><td class="memItemRight"><b>ScriptInstance</b> (const ScriptInstance &amp;)=delete</td></tr>
 <tr class="memitem:a82d2cd379d50d6f37ff7c585dfbbab96" id="r_a82d2cd379d50d6f37ff7c585dfbbab96"><td class="memItemLeft"><a id="a82d2cd379d50d6f37ff7c585dfbbab96" name="a82d2cd379d50d6f37ff7c585dfbbab96"></a>
@@ -153,7 +156,10 @@ auto&#160;</td><td class="memItemRight"><b>getVarByPath</b> (std::string_view pa
 <tr class="memitem:ac648794a9e391f04fef47d3ca33342ed" id="r_ac648794a9e391f04fef47d3ca33342ed"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#ac648794a9e391f04fef47d3ca33342ed">setVarByPath</a> (std::string_view path, const std::any &amp;value) noexcept -&gt; bool</td></tr>
 <tr class="memitem:af7915a4069df20872bf19a18b91fe712" id="r_af7915a4069df20872bf19a18b91fe712"><td class="memItemLeft"><a id="af7915a4069df20872bf19a18b91fe712" name="af7915a4069df20872bf19a18b91fe712"></a>
 auto&#160;</td><td class="memItemRight"><b>hasFunction</b> (std::string_view fn_name) const noexcept -&gt; bool</td></tr>
-<tr class="memdesc:af7915a4069df20872bf19a18b91fe712"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if the self table has a callable field with this name. <br /></td></tr>
+<tr class="memdesc:af7915a4069df20872bf19a18b91fe712"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if the self table has a callable field with this name. Needs the interpreter. <br /></td></tr>
+<tr class="memitem:ac9fe8609020cd7e58f4a857b2dd1459e" id="r_ac9fe8609020cd7e58f4a857b2dd1459e"><td class="memItemLeft"><a id="ac9fe8609020cd7e58f4a857b2dd1459e" name="ac9fe8609020cd7e58f4a857b2dd1459e"></a>
+auto&#160;</td><td class="memItemRight"><b>knowsFunction</b> (std::string_view fn_name) const noexcept -&gt; bool</td></tr>
+<tr class="memdesc:ac9fe8609020cd7e58f4a857b2dd1459e"><td class="mdescLeft">&#160;</td><td class="mdescRight">True when the script defined a function with this name when it was loaded; touches no interpreter. <br /></td></tr>
 <tr class="memitem:aa92b0274a03d8204d088e694fb39e647" id="r_aa92b0274a03d8204d088e694fb39e647"><td class="memItemLeft"><a id="aa92b0274a03d8204d088e694fb39e647" name="aa92b0274a03d8204d088e694fb39e647"></a>
 auto&#160;</td><td class="memItemRight"><b>luaSignals</b> () const noexcept -&gt; const std::unordered_map&lt; std::string, <a class="el" href="classscripting_1_1LuaSignal.html">LuaSignal</a> &gt; &amp;</td></tr>
 <tr class="memitem:afa3a4275a7e77ecc625345d1b84d1f4e" id="r_afa3a4275a7e77ecc625345d1b84d1f4e"><td class="memItemLeft"><a id="afa3a4275a7e77ecc625345d1b84d1f4e" name="afa3a4275a7e77ecc625345d1b84d1f4e"></a>
@@ -162,6 +168,7 @@ auto&#160;</td><td class="memItemRight"><b>luaSignals</b> () noexcept -&gt; std:
 auto&#160;</td><td class="memItemRight"><b>schema</b> () const noexcept -&gt; const <a class="el" href="structscripting_1_1ScriptSchema.html">ScriptSchema</a> &amp;</td></tr>
 <tr class="memitem:a3285b3bf81439d8b3a6f8ced505b1d28" id="r_a3285b3bf81439d8b3a6f8ced505b1d28"><td class="memItemLeft"><a id="a3285b3bf81439d8b3a6f8ced505b1d28" name="a3285b3bf81439d8b3a6f8ced505b1d28"></a>
 auto&#160;</td><td class="memItemRight"><b>isValid</b> () const noexcept -&gt; bool</td></tr>
+<tr class="memdesc:a3285b3bf81439d8b3a6f8ced505b1d28"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cached at load, never touches the interpreter. <br /></td></tr>
 <tr class="memitem:a0ba822cb12d4ed02b150f475374ab813" id="r_a0ba822cb12d4ed02b150f475374ab813"><td class="memItemLeft"><a id="a0ba822cb12d4ed02b150f475374ab813" name="a0ba822cb12d4ed02b150f475374ab813"></a>
 auto&#160;</td><td class="memItemRight"><b>tickMask</b> () const noexcept -&gt; <a class="el" href="reflect__node_8hpp.html#ad08c233710fd0f56aefc18a7a9f1db5a">toast::TickFunctionList</a></td></tr>
 <tr class="memdesc:a0ba822cb12d4ed02b150f475374ab813"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tick phases this script defines. <br /></td></tr>

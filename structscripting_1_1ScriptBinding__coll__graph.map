@@ -1,0 +1,5 @@
+<map id="scripting::ScriptBinding" name="scripting::ScriptBinding">
+<area shape="rect" id="Node000001" title="Shared between a ScriptInstance and the closures installed in its self table; the closures never see ..." alt="" coords="5,106,177,134"/>
+<area shape="rect" id="Node000002" href="$classscripting_1_1NodeProxy.html" title=" " alt="" coords="13,5,169,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="93,47,94,106,88,105,89,50"/>
+</map>

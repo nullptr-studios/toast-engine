@@ -118,6 +118,11 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classscripting
   <div class="headertitle"><div class="title">scripting::LuaState::Lock Class Reference</div></div>
 </div><!--header-->
 <div class="contents">
+
+<p>Ownership of one interpreter for as long as the object lives.  
+ <a href="#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="lua__state_8hpp_source.html">lua_state.hpp</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -133,13 +138,20 @@ auto&#160;</td><td class="memItemRight"><b>operator=</b> (const Lock &amp;) -&gt
 &#160;</td><td class="memItemRight"><b>operator bool</b> () const noexcept</td></tr>
 <tr class="memitem:a6290bfa86aace0f2c704e649ffea0a0d" id="r_a6290bfa86aace0f2c704e649ffea0a0d"><td class="memItemLeft"><a id="a6290bfa86aace0f2c704e649ffea0a0d" name="a6290bfa86aace0f2c704e649ffea0a0d"></a>
 auto&#160;</td><td class="memItemRight"><b>state</b> () const noexcept -&gt; lua_State *</td></tr>
+<tr class="memitem:a7c5359d4b5a6feeaa2ce641bf413b62b" id="r_a7c5359d4b5a6feeaa2ce641bf413b62b"><td class="memItemLeft"><a id="a7c5359d4b5a6feeaa2ce641bf413b62b" name="a7c5359d4b5a6feeaa2ce641bf413b62b"></a>
+auto&#160;</td><td class="memItemRight"><b>index</b> () const noexcept -&gt; size_t</td></tr>
+<tr class="memitem:a60535b1bed88129410d66067c2209e3c" id="r_a60535b1bed88129410d66067c2209e3c"><td class="memItemLeft"><a id="a60535b1bed88129410d66067c2209e3c" name="a60535b1bed88129410d66067c2209e3c"></a>
+void&#160;</td><td class="memItemRight"><b>unlock</b> () noexcept</td></tr>
+<tr class="memdesc:a60535b1bed88129410d66067c2209e3c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gives the interpreter back before the end of the scope. <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-friends" class="groupheader"><a id="friends" name="friends"></a>
 Friends</h2></td></tr>
 <tr class="memitem:a9aa251d710bba4f257a519ebc5d01d51" id="r_a9aa251d710bba4f257a519ebc5d01d51"><td class="memItemLeft"><a id="a9aa251d710bba4f257a519ebc5d01d51" name="a9aa251d710bba4f257a519ebc5d01d51"></a>
 class&#160;</td><td class="memItemRight"><b>LuaState</b></td></tr>
 </table>
-<hr/>The documentation for this class was generated from the following files:<ul>
+<a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Ownership of one interpreter for as long as the object lives. </p>
+</div><hr/>The documentation for this class was generated from the following files:<ul>
 <li>engine/src/toast/scripting/<a class="el" href="lua__state_8hpp_source.html">lua_state.hpp</a></li>
 <li>engine/src/toast/scripting/<b>lua_state.cpp</b></li>
 </ul>

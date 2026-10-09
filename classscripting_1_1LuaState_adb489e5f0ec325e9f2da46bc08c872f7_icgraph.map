@@ -1,7 +1,31 @@
 <map id="scripting::LuaState::lock" name="scripting::LuaState::lock">
-<area shape="rect" id="Node000001" title="Acquires the state at index for the current thread." alt="" coords="211,40,353,85"/>
-<area shape="rect" id="Node000002" href="$classscripting_1_1LuaState.html#a807b197acc8a7fe9cd79f5fcc20b57f7" title="Re&#45;registers the Node/Asset type&#45;marker globals on every state." alt="" coords="5,5,163,50"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="192,48,163,44,163,39,198,47"/>
-<area shape="rect" id="Node000003" href="$classscripting_1_1LuaState.html#adb7c5ed87bf47c6f6d74d050af0d1ffe" title="Runs a chunk on state 0; intended for debug/console use." alt="" coords="13,75,155,119"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="193,78,156,87,155,82,198,77"/>
+<area shape="rect" id="Node000001" title="Acquires the interpreter at index for the calling thread." alt="" coords="887,265,1029,309"/>
+<area shape="rect" id="Node000002" href="$classscripting_1_1LuaState.html#a5aaac0680d5a557aee29b92bf9638942" title="Picks the interpreter for a new script runtime." alt="" coords="689,91,831,136"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="931,251,890,201,865,174,837,150,820,139,820,134,840,146,868,170,894,198,936,252"/>
+<area shape="rect" id="Node000008" href="$classscripting_1_1LuaState.html#ae7016f205604a7257c3f22dfa51531eb" title="How many runtimes every interpreter hosts, for diagnostics and tests." alt="" coords="689,161,831,205"/>
+<area shape="poly" id="edge11_Node000001_Node000008" title=" " alt="" coords="904,256,837,220,814,209,815,203,840,215,910,256"/>
+<area shape="rect" id="Node000009" href="$classscripting_1_1LuaState.html#a807b197acc8a7fe9cd79f5fcc20b57f7" title="Re&#45;registers the Node/Asset type&#45;marker globals on every state." alt="" coords="681,230,839,275"/>
+<area shape="poly" id="edge12_Node000001_Node000009" title=" " alt="" coords="868,272,839,269,839,263,874,272"/>
+<area shape="rect" id="Node000010" href="$classscripting_1_1LuaState.html#a4ee387f368d12075735e118286cce51e" title="Runs destroyer while the interpreter index is owned." alt="" coords="689,299,831,344"/>
+<area shape="poly" id="edge13_Node000001_Node000010" title=" " alt="" coords="869,303,832,312,831,307,874,302"/>
+<area shape="rect" id="Node000011" href="$classscripting_1_1LuaState.html#ace4f81c8d4b5947cbea8d3ff2b52d7ee" title="Runs a chunk on the given interpreter." alt="" coords="689,369,831,413"/>
+<area shape="poly" id="edge14_Node000001_Node000011" title=" " alt="" coords="909,317,840,359,815,371,814,366,837,354,904,319"/>
+<area shape="rect" id="Node000013" href="$classscripting_1_1LuaState.html#abe3578394422a750e3f0a36cadea336b" title="Gives back what assign() handed out." alt="" coords="689,438,831,483"/>
+<area shape="poly" id="edge16_Node000001_Node000013" title=" " alt="" coords="936,321,894,376,868,404,840,428,821,440,819,435,837,423,865,400,890,373,931,324"/>
+<area shape="rect" id="Node000003" href="$classscripting_1_1ScriptRuntime.html#a30872aaf265fa44761b060b683feedbb" title=" " alt="" coords="456,91,633,136"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="671,114,635,116,633,111,676,113"/>
+<area shape="poly" id="edge8_Node000003_Node000003" title=" " alt="" coords="578,76,567,72,545,70,525,72,512,77,507,83,508,92,503,90,502,81,509,72,523,67,545,65,568,67,583,76"/>
+<area shape="rect" id="Node000004" href="$classscripting_1_1ScriptRuntime.html#a6e654ef65c2d5cf52e61fcc317a75c75" title="Call a named function on all instances." alt="" coords="5,15,183,60"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="506,81,462,49,435,34,407,23,351,11,292,8,235,12,185,19,182,14,235,6,292,3,351,6,409,18,437,29,464,45,511,80"/>
+<area shape="rect" id="Node000005" href="$classscripting_1_1ScriptRuntime.html#ad638c7dd7e12427bd1ddf53ee0f545ca" title="Dispatch a TickFunctionList phase." alt="" coords="231,57,408,101"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="438,99,409,95,408,90,443,97"/>
+<area shape="rect" id="Node000006" href="$classscripting_1_1ScriptRuntime.html#ae32366e45abd75badff314bcbe51e955" title="Ccall with args provided as std::any values." alt="" coords="231,126,408,171"/>
+<area shape="poly" id="edge7_Node000003_Node000006" title=" " alt="" coords="438,131,410,137,407,132,443,128"/>
+<area shape="rect" id="Node000007" href="$classscripting_1_1ScriptRuntime.html#ada7db9b5af14e687342683c436ff4a7a" title="Writes value to the variable named name." alt="" coords="231,219,408,264"/>
+<area shape="poly" id="edge9_Node000003_Node000007" title=" " alt="" coords="488,145,362,221,359,216,493,142"/>
+<area shape="poly" id="edge5_Node000005_Node000004" title=" " alt="" coords="214,61,184,56,182,52,218,59"/>
+<area shape="poly" id="edge6_Node000005_Node000005" title=" " alt="" coords="355,42,342,38,319,35,298,37,285,42,280,48,281,57,276,56,275,47,282,38,297,32,319,30,344,32,360,41"/>
+<area shape="poly" id="edge10_Node000007_Node000007" title=" " alt="" coords="355,205,342,200,319,198,298,200,285,205,280,211,281,220,276,218,275,209,282,200,297,195,319,193,344,195,360,204"/>
+<area shape="rect" id="Node000012" href="$classscripting_1_1LuaState.html#adb7c5ed87bf47c6f6d74d050af0d1ffe" title="Runs a chunk on state 0; intended for debug/console use." alt="" coords="474,369,616,413"/>
+<area shape="poly" id="edge15_Node000011_Node000012" title=" " alt="" coords="671,391,616,394,616,388,676,391"/>
 </map>

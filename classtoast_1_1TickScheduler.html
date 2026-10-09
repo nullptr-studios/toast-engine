@@ -141,12 +141,17 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a3c6d0b89861cc7175da03b5f0845b968"><td class="mdescLeft">&#160;</td><td class="mdescRight">Records a tick ordering constraint between two nodes.  <br /></td></tr>
 <tr class="memitem:a49ec13293b46e563d42b1c8fc3c0fdcb" id="r_a49ec13293b46e563d42b1c8fc3c0fdcb"><td class="memItemLeft"><a id="a49ec13293b46e563d42b1c8fc3c0fdcb" name="a49ec13293b46e563d42b1c8fc3c0fdcb"></a>
 auto&#160;</td><td class="memItemRight"><b>unregisterDependency</b> (<a class="el" href="classtoast_1_1Node.html">Node</a> &amp;from, <a class="el" href="classtoast_1_1Node.html">Node</a> &amp;to) -&gt; bool</td></tr>
+<tr class="memitem:ac51a700a6f5a28f42c3643f9f747b9e5" id="r_ac51a700a6f5a28f42c3643f9f747b9e5"><td class="memItemLeft"><a id="ac51a700a6f5a28f42c3643f9f747b9e5" name="ac51a700a6f5a28f42c3643f9f747b9e5"></a>
+auto&#160;</td><td class="memItemRight"><b>registerInteraction</b> (<a class="el" href="classtoast_1_1Node.html">Node</a> &amp;first, <a class="el" href="classtoast_1_1Node.html">Node</a> &amp;second) -&gt; bool</td></tr>
+<tr class="memdesc:ac51a700a6f5a28f42c3643f9f747b9e5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Records that the scripts of two nodes call each other. <br /></td></tr>
 <tr class="memitem:ad1b4ad1c9667bcd0c4a6e82b6b455e47" id="r_ad1b4ad1c9667bcd0c4a6e82b6b455e47"><td class="memItemLeft"><a id="ad1b4ad1c9667bcd0c4a6e82b6b455e47" name="ad1b4ad1c9667bcd0c4a6e82b6b455e47"></a>
 void&#160;</td><td class="memItemRight"><b>compute</b> (const std::vector&lt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; <a class="el" href="classtoast_1_1Node.html">Node</a> &gt; &gt; &amp;all_nodes)</td></tr>
 <tr class="memdesc:ad1b4ad1c9667bcd0c4a6e82b6b455e47"><td class="mdescLeft">&#160;</td><td class="mdescRight">Rebuilds the tick schedule from the given node set. <br /></td></tr>
 <tr class="memitem:a002172089ec3f1e7d6d24789c4547bb4" id="r_a002172089ec3f1e7d6d24789c4547bb4"><td class="memItemLeft"><a id="a002172089ec3f1e7d6d24789c4547bb4" name="a002172089ec3f1e7d6d24789c4547bb4"></a>
 void&#160;</td><td class="memItemRight"><b>run</b> () const</td></tr>
 <tr class="memdesc:a002172089ec3f1e7d6d24789c4547bb4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Runs the four frame phases (early_tick → tick → post_physics → late_tick) of the schedule. <br /></td></tr>
+<tr class="memitem:aada3144d3daa1b70a00740d65f45a026" id="r_aada3144d3daa1b70a00740d65f45a026"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#aada3144d3daa1b70a00740d65f45a026">runLifecycle</a> (<a class="el" href="classtoast_1_1Node.html">Node</a> &amp;root, <a class="el" href="reflect__node_8hpp.html#ad08c233710fd0f56aefc18a7a9f1db5a">TickFunctionList</a> stage) const</td></tr>
+<tr class="memdesc:aada3144d3daa1b70a00740d65f45a026"><td class="mdescLeft">&#160;</td><td class="mdescRight">Runs a lifecycle stage on <span class="tt">root</span> and every node below it, parents before their children.  <br /></td></tr>
 <tr class="memitem:a5657cef238867dee9b7a96e7019b1ec2" id="r_a5657cef238867dee9b7a96e7019b1ec2"><td class="memItemLeft"><a id="a5657cef238867dee9b7a96e7019b1ec2" name="a5657cef238867dee9b7a96e7019b1ec2"></a>
 void&#160;</td><td class="memItemRight"><b>runPhaseSerial</b> (const std::vector&lt; _detail::TickSchedule::Wave &gt; &amp;phase, <a class="el" href="reflect__node_8hpp.html#ad08c233710fd0f56aefc18a7a9f1db5a">TickFunctionList</a> func, std::string_view name) const</td></tr>
 <tr class="memdesc:a5657cef238867dee9b7a96e7019b1ec2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Runs a phase wave by wave on the calling thread; for phases that touch thread-bound state like the physics simulator. <br /></td></tr>
@@ -156,10 +161,16 @@ void&#160;</td><td class="memItemRight"><b>runPhase</b> (const std::vector&lt; _
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-attribs" class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
+<tr class="memitem:ab1dde12ac0546a8318856e4bf763cd68" id="r_ab1dde12ac0546a8318856e4bf763cd68"><td class="memItemLeft"><a id="ab1dde12ac0546a8318856e4bf763cd68" name="ab1dde12ac0546a8318856e4bf763cd68"></a>
+std::mutex&#160;</td><td class="memItemRight"><b>graph_mutex</b></td></tr>
+<tr class="memdesc:ab1dde12ac0546a8318856e4bf763cd68"><td class="mdescLeft">&#160;</td><td class="mdescRight">Scripts register dependencies from init(). <br /></td></tr>
 <tr class="memitem:a4c1cb68827cc80c933642780de6f60fe" id="r_a4c1cb68827cc80c933642780de6f60fe"><td class="memItemLeft"><a id="a4c1cb68827cc80c933642780de6f60fe" name="a4c1cb68827cc80c933642780de6f60fe"></a>
 <a class="el" href="structtoast_1_1TickScheduler_1_1DependencyGraph.html">DependencyGraph</a>&#160;</td><td class="memItemRight"><b>graph</b></td></tr>
 <tr class="memitem:a4bd71c8922dcc1cf26fa58a957ed1efc" id="r_a4bd71c8922dcc1cf26fa58a957ed1efc"><td class="memItemLeft"><a id="a4bd71c8922dcc1cf26fa58a957ed1efc" name="a4bd71c8922dcc1cf26fa58a957ed1efc"></a>
 <a class="el" href="structtoast_1_1__detail_1_1TickSchedule.html">_detail::TickSchedule</a>&#160;</td><td class="memItemRight"><b>schedule</b></td></tr>
+<tr class="memitem:aee56e4dbd75e124042d0a53d1f4d99f4" id="r_aee56e4dbd75e124042d0a53d1f4d99f4"><td class="memItemLeft"><a id="aee56e4dbd75e124042d0a53d1f4d99f4" name="aee56e4dbd75e124042d0a53d1f4d99f4"></a>
+<a class="el" href="namespacetoast_1_1__detail.html#a4c5c71ac50f04645fca7f5003bf4bcd3">_detail::Interactions</a>&#160;</td><td class="memItemRight"><b>interactions</b></td></tr>
+<tr class="memdesc:aee56e4dbd75e124042d0a53d1f4d99f4"><td class="mdescLeft">&#160;</td><td class="mdescRight">The nodes that declared an interaction. <br /></td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="a3c6d0b89861cc7175da03b5f0845b968" name="a3c6d0b89861cc7175da03b5f0845b968"></a>
@@ -183,6 +194,35 @@ Public Attributes</h2></td></tr>
 
 <p>Records a tick ordering constraint between two nodes. </p>
 <dl class="section note"><dt>Note</dt><dd>The schedule is NOT rebuilt automatically; the owner calls <a class="el" href="#ad1b4ad1c9667bcd0c4a6e82b6b455e47" title="Rebuilds the tick schedule from the given node set.">compute()</a> when appropriate </dd></dl>
+
+</div>
+</div>
+<a id="aada3144d3daa1b70a00740d65f45a026" name="aada3144d3daa1b70a00740d65f45a026"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aada3144d3daa1b70a00740d65f45a026">&#9670;&#160;</a></span>runLifecycle()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void toast::TickScheduler::runLifecycle </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classtoast_1_1Node.html">Node</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>root</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="reflect__node_8hpp.html#ad08c233710fd0f56aefc18a7a9f1db5a">TickFunctionList</a></td>          <td class="paramname"><span class="paramname"><em>stage</em></span>&#160;) const</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Runs a lifecycle stage on <span class="tt">root</span> and every node below it, parents before their children. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">stage</td><td>init, begin or on_enable </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>

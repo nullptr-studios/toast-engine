@@ -4,7 +4,7 @@
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="887,86,858,89,858,84,893,86"/>
 <area shape="rect" id="Node000003" href="$classtoast_1_1INodeOwner.html#a355810be0f38823d417eb26cb8da1ff0" title="Allocates and initializes a full node tree from a prefab asset." alt="" coords="509,29,659,74"/>
 <area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="690,71,659,67,660,62,695,71"/>
-<area shape="rect" id="Node000007" href="$classtoast_1_1INodeOwner.html#a333c47f462b54397b66344b3cf90841b" title="Allocates a Node and initializes its name and type from a prefab data record." alt="" coords="509,99,659,143"/>
+<area shape="rect" id="Node000007" href="$classtoast_1_1INodeOwner.html#a7b0c253fbb6fc549c06b7aefe62ef058" title="Allocates a Node and initializes its name and type from a prefab data record." alt="" coords="509,99,659,143"/>
 <area shape="poly" id="edge7_Node000002_Node000007" title=" " alt="" coords="695,102,660,111,659,105,690,102"/>
 <area shape="poly" id="edge6_Node000003_Node000003" title=" " alt="" coords="614,13,604,10,584,8,566,10,555,15,550,21,551,30,546,27,545,19,551,10,564,5,584,3,605,5,620,14"/>
 <area shape="rect" id="Node000004" href="$classtoast_1_1Workspace.html#acecbe8833a3838a8a3fe77aa661b2d1d" title="instantiates the prefab and sets up the root node" alt="" coords="266,29,461,74"/>

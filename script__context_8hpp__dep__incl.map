@@ -1,0 +1,5 @@
+<map id="engine/src/toast/scripting/script_context.hpp" name="engine/src/toast/scripting/script_context.hpp">
+<area shape="rect" id="Node000001" title="Tracks the script that is executing on the current thread." alt="" coords="5,5,191,50"/>
+<area shape="rect" id="Node000002" href="$script__runtime_8hpp.html" title="Per&#45;node Lua script execution environment." alt="" coords="5,98,191,143"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="100,64,101,99,95,97,96,68"/>
+</map>

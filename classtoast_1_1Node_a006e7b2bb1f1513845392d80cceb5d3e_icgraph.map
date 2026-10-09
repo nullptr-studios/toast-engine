@@ -1,7 +1,8 @@
 <map id="toast::Node::type" name="toast::Node::type">
-<area shape="rect" id="Node000001" title=" " alt="" coords="238,32,371,60"/>
-<area shape="rect" id="Node000002" href="$classtoast_1_1Node.html#abbcbef4415d8020b76f761f1e1d4e4c8" title="Creates a new child node of the given type and attaches it to this node." alt="" coords="25,5,170,33"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="220,36,171,31,171,26,225,35"/>
-<area shape="rect" id="Node000003" href="$classtoast_1_1Light.html#a092ae45d0bfd128b22c8067cf7098ab1" title="Tags the concrete light kind; called once from each subclass&#39;s own constructor body." alt="" coords="5,57,190,85"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="219,56,190,62,190,57,225,56"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="238,56,371,84"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1Node.html#abbcbef4415d8020b76f761f1e1d4e4c8" title="Creates a new child node of the given type and attaches it to this node." alt="" coords="25,29,170,57"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="220,60,171,55,171,50,225,59"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1Light.html#a092ae45d0bfd128b22c8067cf7098ab1" title="Tags the concrete light kind; called once from each subclass&#39;s own constructor body." alt="" coords="5,81,190,109"/>
+<area shape="poly" id="edge3_Node000001_Node000003" title=" " alt="" coords="219,80,190,86,190,81,225,80"/>
+<area shape="poly" id="edge2_Node000002_Node000002" title=" " alt="" coords="131,14,120,10,97,8,76,10,64,15,61,20,67,29,62,29,56,20,61,11,75,5,98,3,122,5,137,14"/>
 </map>

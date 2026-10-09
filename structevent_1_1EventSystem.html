@@ -131,6 +131,12 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
+<tr class="memitem:ac53402317f859cecb1635d2eabc29d8f" id="r_ac53402317f859cecb1635d2eabc29d8f"><td class="memItemLeft"><a id="ac53402317f859cecb1635d2eabc29d8f" name="ac53402317f859cecb1635d2eabc29d8f"></a>
+static void&#160;</td><td class="memItemRight"><b>unsubscribeAny</b> (std::type_index type, const std::any &amp;iterator)</td></tr>
+<tr class="memdesc:ac53402317f859cecb1635d2eabc29d8f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unsubscribes a callback of the given type. <br /></td></tr>
+<tr class="memitem:ad37030949adb524d55a4b97c947575d2" id="r_ad37030949adb524d55a4b97c947575d2"><td class="memTemplParams" colspan="2"><a id="ad37030949adb524d55a4b97c947575d2" name="ad37030949adb524d55a4b97c947575d2"></a>
+template&lt;typename T&gt; </td></tr>
+<tr class="memitem:ad37030949adb524d55a4b97c947575d2 template"><td class="memItemLeft">static auto&#160;</td><td class="memItemRight"><b>info</b> () noexcept -&gt; <a class="el" href="structevent_1_1EventSystem_1_1EventInfo.html">EventInfo</a> &amp;</td></tr>
 <tr class="memitem:ae86095fa1ccb007d89159d085e5aec3b" id="r_ae86095fa1ccb007d89159d085e5aec3b"><td class="memTemplParams" colspan="2"><a id="ae86095fa1ccb007d89159d085e5aec3b" name="ae86095fa1ccb007d89159d085e5aec3b"></a>
 template&lt;typename T&gt; </td></tr>
 <tr class="memitem:ae86095fa1ccb007d89159d085e5aec3b template"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><b>registerEvent</b> ()</td></tr>
@@ -140,6 +146,9 @@ Static Public Attributes</h2></td></tr>
 <tr class="memitem:a5b84ac8da34c51e5f269534b30c556a2" id="r_a5b84ac8da34c51e5f269534b30c556a2"><td class="memItemLeft"><a id="a5b84ac8da34c51e5f269534b30c556a2" name="a5b84ac8da34c51e5f269534b30c556a2"></a>
 static std::unordered_map&lt; std::type_index, <a class="el" href="structevent_1_1EventSystem_1_1EventInfo.html">EventInfo</a> &gt;&#160;</td><td class="memItemRight"><b>event_data</b></td></tr>
 <tr class="memdesc:a5b84ac8da34c51e5f269534b30c556a2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dispatch table keyed by event type; one entry per registered event type. <br /></td></tr>
+<tr class="memitem:a55e8b36d74e452fb07bd6858f39089c5" id="r_a55e8b36d74e452fb07bd6858f39089c5"><td class="memItemLeft"><a id="a55e8b36d74e452fb07bd6858f39089c5" name="a55e8b36d74e452fb07bd6858f39089c5"></a>
+static std::shared_mutex&#160;</td><td class="memItemRight"><b>registration_mutex</b></td></tr>
+<tr class="memdesc:a55e8b36d74e452fb07bd6858f39089c5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Guards event_data and unsubscribe_map. <br /></td></tr>
 <tr class="memitem:a789a7c1d30adc5e1f8b752361185aebf" id="r_a789a7c1d30adc5e1f8b752361185aebf"><td class="memItemLeft"><a id="a789a7c1d30adc5e1f8b752361185aebf" name="a789a7c1d30adc5e1f8b752361185aebf"></a>
 static std::mutex&#160;</td><td class="memItemRight"><b>pool_mutex</b></td></tr>
 <tr class="memdesc:a789a7c1d30adc5e1f8b752361185aebf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Protects the event queue memory pool during concurrent sends. <br /></td></tr>
@@ -181,6 +190,7 @@ static std::mutex&#160;</td><td class="memItemRight"><b>deletion_mutex</b></td><
 <hr/>The documentation for this struct was generated from the following files:<ul>
 <li>engine/src/toast/events/<a class="el" href="event_8hpp_source.html">event.hpp</a></li>
 <li>engine/src/toast/events/<b>event.cpp</b></li>
+<li>engine/src/toast/events/<a class="el" href="event_8inl_source.html">event.inl</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

@@ -164,16 +164,21 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('input__layout_
 <div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  [[nodiscard]]</div>
 <div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  static auto isActiveForLayer(const Entry&amp; entry, std::string_view layer) noexcept -&gt; <span class="keywordtype">bool</span>;</div>
 <div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span> </div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>private:</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  std::<span class="keywordtype">string</span> m_name;</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  std::vector&lt;std::<span class="keywordtype">string</span>&gt; m_layers;</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  std::vector&lt;Entry&gt; m_entries;</div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>};</div>
-</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>protected:</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  <span class="keywordtype">void</span> onReloaded() override;</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span> </div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>private:</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  <span class="keywordtype">void</span> readFields();</div>
 <div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span> </div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>}</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  std::<span class="keywordtype">string</span> m_name;</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  std::vector&lt;std::<span class="keywordtype">string</span>&gt; m_layers;</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  std::vector&lt;Entry&gt; m_entries;</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>};</div>
+</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span> </div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>}</div>
 <div class="ttc" id="aclassassets_1_1Handle_html"><div class="ttname"><a href="classassets_1_1Handle.html">assets::Handle</a></div><div class="ttdoc">Type-safe smart pointer for assets.</div><div class="ttdef"><b>Definition</b> core_types.hpp:149</div></div>
-<div class="ttc" id="aclassassets_1_1InputLayout_html_a90d7b9c2ee954368f102172324da7a9c"><div class="ttname"><a href="classassets_1_1InputLayout.html#a90d7b9c2ee954368f102172324da7a9c">assets::InputLayout::InputLayout</a></div><div class="ttdeci">InputLayout(const toml::table &amp;table, Handle&lt; Schema &gt; schema={})</div><div class="ttdoc">Parses the layout from a TOML table, keeping all keys for round-trip serialization.</div><div class="ttdef"><b>Definition</b> input_assets.cpp:69</div></div>
+<div class="ttc" id="aclassassets_1_1InputLayout_html_a90d7b9c2ee954368f102172324da7a9c"><div class="ttname"><a href="classassets_1_1InputLayout.html#a90d7b9c2ee954368f102172324da7a9c">assets::InputLayout::InputLayout</a></div><div class="ttdeci">InputLayout(const toml::table &amp;table, Handle&lt; Schema &gt; schema={})</div><div class="ttdoc">Parses the layout from a TOML table, keeping all keys for round-trip serialization.</div><div class="ttdef"><b>Definition</b> input_assets.cpp:81</div></div>
 <div class="ttc" id="aclassassets_1_1InputLayout_html_ae7bba47e7ebb7923dd1d1b5af0212ef6"><div class="ttname"><a href="classassets_1_1InputLayout.html#ae7bba47e7ebb7923dd1d1b5af0212ef6">assets::InputLayout::default_layer</a></div><div class="ttdeci">static constexpr std::string_view default_layer</div><div class="ttdoc">Hidden layer that is always present in every layout.</div><div class="ttdef"><b>Definition</b> input_layout.hpp:22</div></div>
 <div class="ttc" id="adata_8hpp_html"><div class="ttname"><a href="data_8hpp.html">data.hpp</a></div><div class="ttdoc">Typed data asset backed by schema-driven TOML.</div></div>
 <div class="ttc" id="astructassets_1_1InputLayout_1_1Entry_html"><div class="ttname"><a href="structassets_1_1InputLayout_1_1Entry.html">assets::InputLayout::Entry</a></div><div class="ttdoc">One action reference inside a layout.</div><div class="ttdef"><b>Definition</b> input_layout.hpp:27</div></div>

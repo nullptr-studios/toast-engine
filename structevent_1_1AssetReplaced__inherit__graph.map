@@ -1,0 +1,10 @@
+<map id="event::AssetReplaced" name="event::AssetReplaced">
+<area shape="rect" id="Node000001" title="Fired when a reloaded asset was replaced by a new object instead of rebuilt in place." alt="" coords="39,260,201,288"/>
+<area shape="rect" id="Node000002" href="$structevent_1_1Event.html" title=" " alt="" coords="5,183,235,211"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="122,224,122,261,118,259,118,228"/>
+<area shape="rect" id="Node000003" href="$structevent_1_1__detail_1_1IEvent.html" title=" " alt="" coords="35,5,194,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="118,47,122,183,117,182,113,50"/>
+<area shape="rect" id="Node000004" href="$structevent_1_1Event.html" title="Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;." alt="" coords="136,82,277,110"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="143,40,193,81,188,83,142,46"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="187,120,134,184,130,181,183,123"/>
+</map>

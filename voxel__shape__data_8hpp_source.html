@@ -124,65 +124,68 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__shape__
 <div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span> </div>
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &quot;<a class="code" href="anchor__mask_8hpp.html">anchor_mask.hpp</a>&quot;</span></div>
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &quot;<a class="code" href="component__classification_8hpp.html">component_classification.hpp</a>&quot;</span></div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &quot;<a class="code" href="shape_8hpp.html">shape.hpp</a>&quot;</span></div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span> </div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &lt;cstdint&gt;</span></div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &lt;memory&gt;</span></div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &lt;optional&gt;</span></div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#include &lt;<a class="code" href="mass__accumulator_8hpp.html">toast/voxel/mass_accumulator.hpp</a>&gt;</span></div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="preprocessor">#include &lt;<a class="code" href="palette_8hpp.html">toast/voxel/palette.hpp</a>&gt;</span></div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="preprocessor">#include &lt;<a class="code" href="runtime__pool_8hpp.html">toast/voxel/runtime_pool.hpp</a>&gt;</span></div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="preprocessor">#include &lt;<a class="code" href="surface_8hpp.html">toast/voxel/surface.hpp</a>&gt;</span></div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="preprocessor">#include &lt;<a class="code" href="voxel__volume_8hpp.html">toast/voxel/voxel_volume.hpp</a>&gt;</span></div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="keyword">namespace </span>physics {</div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
-<div class="foldopen" id="foldopen00025" data-start="{" data-end="};">
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno"><a class="line" href="structphysics_1_1VoxelShapeData.html">   25</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structphysics_1_1VoxelShapeData.html">VoxelShapeData</a> {</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>  <a class="code hl_class" href="classvoxel_1_1Volume.html">voxel::Volume</a>* volume = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>  <a class="code hl_class" href="classvoxel_1_1VolumeSurface.html">voxel::VolumeSurface</a> surface;</div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>  <a class="code hl_struct" href="structvoxel_1_1MassMoments.html">voxel::MassMoments</a> moments;</div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>  <a class="code hl_struct" href="structvoxel_1_1Palette.html">voxel::Palette</a> palette;</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>  <a class="code hl_struct" href="structvoxel_1_1MaterialLibrary.html">voxel::MaterialLibrary</a> materials;</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno"><a class="line" href="structphysics_1_1VoxelShapeData.html#a3391c187fb9ac9b447d59a54be1a8fea">   32</a></span>  uint64_t <a class="code hl_variable" href="structphysics_1_1VoxelShapeData.html#a3391c187fb9ac9b447d59a54be1a8fea">palette_uid</a> = 0;</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>  uint32_t source_revision = 0;</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  uint32_t surface_revision = 1;</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  uint32_t solid_voxel_count = 0;</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>  AnchorMask anchor_mask = k_anchor_null;</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  <span class="keywordtype">bool</span> connectivity_dirty = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  std::vector&lt;DetachedComponent&gt; detached_components;</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  std::unique_ptr&lt;voxel::Volume&gt; owned_volume;</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  <a class="code hl_struct" href="structphysics_1_1BodyID.html">BodyID</a> fragment_origin;</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  uint64_t fragment_sequence = 0;</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  <span class="keywordtype">float</span> fragment_sleep_seconds = 0.0f;</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>};</div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &quot;<a class="code" href="damage__command_8hpp.html">damage_command.hpp</a>&quot;</span></div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &quot;<a class="code" href="shape_8hpp.html">shape.hpp</a>&quot;</span></div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span> </div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &lt;cstdint&gt;</span></div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &lt;memory&gt;</span></div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#include &lt;optional&gt;</span></div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="preprocessor">#include &lt;<a class="code" href="mass__accumulator_8hpp.html">toast/voxel/mass_accumulator.hpp</a>&gt;</span></div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="preprocessor">#include &lt;<a class="code" href="palette_8hpp.html">toast/voxel/palette.hpp</a>&gt;</span></div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="preprocessor">#include &lt;<a class="code" href="runtime__pool_8hpp.html">toast/voxel/runtime_pool.hpp</a>&gt;</span></div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="preprocessor">#include &lt;<a class="code" href="surface_8hpp.html">toast/voxel/surface.hpp</a>&gt;</span></div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#include &lt;<a class="code" href="voxel__volume_8hpp.html">toast/voxel/voxel_volume.hpp</a>&gt;</span></div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span> </div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="keyword">namespace </span>physics {</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span> </div>
+<div class="foldopen" id="foldopen00026" data-start="{" data-end="};">
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno"><a class="line" href="structphysics_1_1VoxelShapeData.html">   26</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structphysics_1_1VoxelShapeData.html">VoxelShapeData</a> {</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>  <a class="code hl_class" href="classvoxel_1_1Volume.html">voxel::Volume</a>* volume = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>  <a class="code hl_class" href="classvoxel_1_1VolumeSurface.html">voxel::VolumeSurface</a> surface;</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>  <a class="code hl_struct" href="structvoxel_1_1MassMoments.html">voxel::MassMoments</a> moments;</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>  <a class="code hl_struct" href="structvoxel_1_1Palette.html">voxel::Palette</a> palette;</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>  <a class="code hl_struct" href="structvoxel_1_1MaterialLibrary.html">voxel::MaterialLibrary</a> materials;</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno"><a class="line" href="structphysics_1_1VoxelShapeData.html#a3391c187fb9ac9b447d59a54be1a8fea">   33</a></span>  uint64_t <a class="code hl_variable" href="structphysics_1_1VoxelShapeData.html#a3391c187fb9ac9b447d59a54be1a8fea">palette_uid</a> = 0;</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  uint32_t source_revision = 0;</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  uint32_t surface_revision = 1;</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>  uint32_t solid_voxel_count = 0;</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  AnchorMask anchor_mask = k_anchor_null;</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  <span class="keywordtype">bool</span> connectivity_dirty = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  std::optional&lt;FragmentPush&gt; pending_push;</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  std::vector&lt;DetachedComponent&gt; detached_components;</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  std::unique_ptr&lt;voxel::Volume&gt; owned_volume;</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  <a class="code hl_struct" href="structphysics_1_1BodyID.html">BodyID</a> fragment_origin;</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  uint64_t fragment_sequence = 0;</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <span class="keywordtype">float</span> fragment_sleep_seconds = 0.0f;</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>};</div>
 </div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span> </div>
-<div class="foldopen" id="foldopen00045" data-start="{" data-end="};">
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno"><a class="line" href="structphysics_1_1VoxelShapeSlot.html">   45</a></span><span class="keyword">struct </span>VoxelShapeSlot {</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  VoxelShapeSlot() = <span class="keywordflow">default</span>;</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  VoxelShapeSlot(<span class="keyword">const</span> VoxelShapeSlot&amp;) = <span class="keyword">delete</span>;</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  <span class="keyword">auto</span> operator=(<span class="keyword">const</span> VoxelShapeSlot&amp;) -&gt; VoxelShapeSlot&amp; = <span class="keyword">delete</span>;</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  VoxelShapeSlot(VoxelShapeSlot&amp;&amp;) <span class="keyword">noexcept</span> = <span class="keywordflow">default</span>;</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  <span class="keyword">auto</span> operator=(VoxelShapeSlot&amp;&amp;) <span class="keyword">noexcept</span> -&gt; VoxelShapeSlot&amp; = <span class="keywordflow">default</span>;</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span> </div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  std::optional&lt;VoxelShapeData&gt; data;</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  uint32_t generation = 1;</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>};</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span> </div>
+<div class="foldopen" id="foldopen00047" data-start="{" data-end="};">
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno"><a class="line" href="structphysics_1_1VoxelShapeSlot.html">   47</a></span><span class="keyword">struct </span>VoxelShapeSlot {</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  VoxelShapeSlot() = <span class="keywordflow">default</span>;</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  VoxelShapeSlot(<span class="keyword">const</span> VoxelShapeSlot&amp;) = <span class="keyword">delete</span>;</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  <span class="keyword">auto</span> operator=(<span class="keyword">const</span> VoxelShapeSlot&amp;) -&gt; VoxelShapeSlot&amp; = <span class="keyword">delete</span>;</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  VoxelShapeSlot(VoxelShapeSlot&amp;&amp;) <span class="keyword">noexcept</span> = <span class="keywordflow">default</span>;</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  <span class="keyword">auto</span> operator=(VoxelShapeSlot&amp;&amp;) <span class="keyword">noexcept</span> -&gt; VoxelShapeSlot&amp; = <span class="keywordflow">default</span>;</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span> </div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  std::optional&lt;VoxelShapeData&gt; data;</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  uint32_t generation = 1;</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>};</div>
 </div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span> </div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>}</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>}</div>
 <div class="ttc" id="aanchor__mask_8hpp_html"><div class="ttname"><a href="anchor__mask_8hpp.html">anchor_mask.hpp</a></div><div class="ttdoc">TODO: Brief description of the file&#39;s purpose.</div></div>
 <div class="ttc" id="aclassvoxel_1_1VolumeSurface_html"><div class="ttname"><a href="classvoxel_1_1VolumeSurface.html">voxel::VolumeSurface</a></div><div class="ttdoc">Keyed by brick slot not pool id since uniform bricks have no pool id and shared bricks differ per ins...</div><div class="ttdef"><b>Definition</b> surface.hpp:174</div></div>
 <div class="ttc" id="aclassvoxel_1_1Volume_html"><div class="ttname"><a href="classvoxel_1_1Volume.html">voxel::Volume</a></div><div class="ttdef"><b>Definition</b> voxel_volume.hpp:21</div></div>
 <div class="ttc" id="acomponent__classification_8hpp_html"><div class="ttname"><a href="component__classification_8hpp.html">component_classification.hpp</a></div><div class="ttdoc">TODO: Brief description of the file&#39;s purpose.</div></div>
+<div class="ttc" id="adamage__command_8hpp_html"><div class="ttname"><a href="damage__command_8hpp.html">damage_command.hpp</a></div><div class="ttdoc">TODO: Add file description.</div></div>
 <div class="ttc" id="amass__accumulator_8hpp_html"><div class="ttname"><a href="mass__accumulator_8hpp.html">mass_accumulator.hpp</a></div></div>
 <div class="ttc" id="apalette_8hpp_html"><div class="ttname"><a href="palette_8hpp.html">palette.hpp</a></div></div>
 <div class="ttc" id="aruntime__pool_8hpp_html"><div class="ttname"><a href="runtime__pool_8hpp.html">runtime_pool.hpp</a></div></div>
 <div class="ttc" id="ashape_8hpp_html"><div class="ttname"><a href="shape_8hpp.html">shape.hpp</a></div><div class="ttdoc">Shape identifiers, geometry, and runtime records.</div></div>
 <div class="ttc" id="astructphysics_1_1BodyID_html"><div class="ttname"><a href="structphysics_1_1BodyID.html">physics::BodyID</a></div><div class="ttdef"><b>Definition</b> body.hpp:18</div></div>
-<div class="ttc" id="astructphysics_1_1VoxelShapeData_html"><div class="ttname"><a href="structphysics_1_1VoxelShapeData.html">physics::VoxelShapeData</a></div><div class="ttdef"><b>Definition</b> voxel_shape_data.hpp:25</div></div>
-<div class="ttc" id="astructphysics_1_1VoxelShapeData_html_a3391c187fb9ac9b447d59a54be1a8fea"><div class="ttname"><a href="structphysics_1_1VoxelShapeData.html#a3391c187fb9ac9b447d59a54be1a8fea">physics::VoxelShapeData::palette_uid</a></div><div class="ttdeci">uint64_t palette_uid</div><div class="ttdoc">Source palette uid so a hot reload can refresh the copies above.</div><div class="ttdef"><b>Definition</b> voxel_shape_data.hpp:32</div></div>
+<div class="ttc" id="astructphysics_1_1VoxelShapeData_html"><div class="ttname"><a href="structphysics_1_1VoxelShapeData.html">physics::VoxelShapeData</a></div><div class="ttdef"><b>Definition</b> voxel_shape_data.hpp:26</div></div>
+<div class="ttc" id="astructphysics_1_1VoxelShapeData_html_a3391c187fb9ac9b447d59a54be1a8fea"><div class="ttname"><a href="structphysics_1_1VoxelShapeData.html#a3391c187fb9ac9b447d59a54be1a8fea">physics::VoxelShapeData::palette_uid</a></div><div class="ttdeci">uint64_t palette_uid</div><div class="ttdoc">Source palette uid so a hot reload can refresh the copies above.</div><div class="ttdef"><b>Definition</b> voxel_shape_data.hpp:33</div></div>
 <div class="ttc" id="astructvoxel_1_1MassMoments_html"><div class="ttname"><a href="structvoxel_1_1MassMoments.html">voxel::MassMoments</a></div><div class="ttdef"><b>Definition</b> mass_accumulator.hpp:18</div></div>
 <div class="ttc" id="astructvoxel_1_1MaterialLibrary_html"><div class="ttname"><a href="structvoxel_1_1MaterialLibrary.html">voxel::MaterialLibrary</a></div><div class="ttdef"><b>Definition</b> palette.hpp:130</div></div>
 <div class="ttc" id="astructvoxel_1_1Palette_html"><div class="ttname"><a href="structvoxel_1_1Palette.html">voxel::Palette</a></div><div class="ttdoc">Entry 0 is the empty voxel and must stay all zero.</div><div class="ttdef"><b>Definition</b> palette.hpp:56</div></div>

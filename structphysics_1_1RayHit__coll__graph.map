@@ -1,7 +1,9 @@
 <map id="physics::RayHit" name="physics::RayHit">
-<area shape="rect" id="Node000001" title=" " alt="" coords="16,224,138,251"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="94,224,217,251"/>
 <area shape="rect" id="Node000002" href="$classtoast_1_1Box.html" title=" " alt="" coords="5,106,149,151"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="79,165,80,224,74,223,75,168"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="103,161,149,223,144,224,100,165"/>
 <area shape="rect" id="Node000003" href="$classtoast_1_1Box.html" title="Intrusive reference&#45;counted handle to a Node." alt="" coords="14,5,140,33"/>
 <area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="78,46,80,106,74,105,76,51"/>
+<area shape="rect" id="Node000004" href="$structphysics_1_1BodyID.html" title=" " alt="" coords="173,114,298,142"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="219,154,167,225,164,221,214,156"/>
 </map>

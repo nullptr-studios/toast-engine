@@ -4,7 +4,7 @@ var searchData=
   ['vcaasset_1',['VcaAsset',['../classeditor_1_1Assets_1_1Types_1_1VcaAsset.html',1,'editor::Assets::Types']]],
   ['vec3fieldproxy_2',['Vec3FieldProxy',['../classscripting_1_1Vec3FieldProxy.html',1,'scripting']]],
   ['vectorstreambuf_3',['VectorStreamBuf',['../structtoast_1_1VectorStreamBuf.html',1,'toast']]],
-  ['vertex_4',['Vertex',['../structrenderer_1_1Vertex.html',1,'renderer']]],
+  ['vertex_4',['Vertex',['../structdebug_1_1Vertex.html',1,'debug::Vertex'],['../structrenderer_1_1Vertex.html',1,'renderer::Vertex']]],
   ['viewlocator_5',['ViewLocator',['../classeditor_1_1ViewLocator.html',1,'editor']]],
   ['viewmodelbase_6',['ViewModelBase',['../classeditor_1_1ViewModelBase.html',1,'editor']]],
   ['viewportcontrol_7',['ViewportControl',['../classeditor_1_1Workspace_1_1ViewportControl.html',1,'editor::Workspace']]],

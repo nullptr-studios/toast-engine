@@ -204,12 +204,14 @@ auto&#160;</td><td class="memItemRight"><b>bodyID</b> () const noexcept -&gt; <a
 <tr class="inherit_header pro_methods_classtoast_1_1Node3D"><td colspan="2">Protected Member Functions inherited from <a class="el" href="classtoast_1_1Node3D.html">toast::Node3D</a></td></tr>
 <tr class="memitem:a497a95970b5ecf040765b59637507141 pro_methods_classtoast_1_1Node3D" id="r_a497a95970b5ecf040765b59637507141"><td class="memItemLeft">
 void&#160;</td><td class="memItemRight"><b>init</b> ()</td></tr>
+<tr class="memdesc:a497a95970b5ecf040765b59637507141 pro_methods_classtoast_1_1Node3D"><td class="mdescLeft">&#160;</td><td class="mdescRight">X axis. <br /></td></tr>
 <tr class="inherit_header pro_methods_classtoast_1_1Node"><td colspan="2">Protected Member Functions inherited from <a class="el" href="classtoast_1_1Node.html">toast::Node</a></td></tr>
 <tr class="memitem:a39b7866ed40d98d3880974739b5af413 pro_methods_classtoast_1_1Node" id="r_a39b7866ed40d98d3880974739b5af413"><td class="memItemLeft">
 virtual void&#160;</td><td class="memItemRight"><b>onReflectedFieldChanged</b> (std::string_view)</td></tr>
 <tr class="memitem:a57739ac795a4c1c53d4057ac0ecf02a4 pro_methods_classtoast_1_1Node" id="r_a57739ac795a4c1c53d4057ac0ecf02a4"><td class="memItemLeft">
 virtual void&#160;</td><td class="memItemRight"><b>onScriptsReloaded</b> ()</td></tr>
 <tr class="memitem:a04e96b6dfe562c1a432322121410255a pro_methods_classtoast_1_1Node" id="r_a04e96b6dfe562c1a432322121410255a"><td class="memItemLeft">virtual void&#160;</td><td class="memItemRight"><a class="el" href="classtoast_1_1Node.html#a04e96b6dfe562c1a432322121410255a">onScriptsReloading</a> ()</td></tr>
+<tr class="memitem:adfc97ff989a985fcec703d6f88a40fa8 pro_methods_classtoast_1_1Node" id="r_adfc97ff989a985fcec703d6f88a40fa8"><td class="memItemLeft">virtual auto&#160;</td><td class="memItemRight"><a class="el" href="classtoast_1_1Node.html#adfc97ff989a985fcec703d6f88a40fa8">luaAffinity</a> () const noexcept -&gt; std::optional&lt; size_t &gt;</td></tr>
 <tr class="memitem:ade869bb26a1120658cfe901bd324245b pro_methods_classtoast_1_1Node" id="r_ade869bb26a1120658cfe901bd324245b"><td class="memItemLeft">virtual void&#160;</td><td class="memItemRight"><a class="el" href="classtoast_1_1Node.html#ade869bb26a1120658cfe901bd324245b">onScriptVarChanged</a> (std::string_view path)</td></tr>
 <tr class="memitem:a3f5418e3ee4c9ab0524ce7b707952c64 pro_methods_classtoast_1_1Node" id="r_a3f5418e3ee4c9ab0524ce7b707952c64"><td class="memItemLeft">
 void&#160;</td><td class="memItemRight"><b>addInspectorMessage</b> (const <a class="el" href="structtoast_1_1NodeMessage.html">NodeMessage</a> &amp;message)</td></tr>
@@ -244,10 +246,10 @@ class&#160;</td><td class="memItemRight"><b>Simulator</b></td></tr>
 <tr class="heading"><td colspan="2"><h2 id="header-inherited" class="groupheader"><a id="inherited" name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
 <tr class="inherit_header pub_methods_classtoast_1_1Node3D"><td colspan="2">Public Member Functions inherited from <a class="el" href="classtoast_1_1Node3D.html">toast::Node3D</a></td></tr>
-<tr class="memitem:a6f715f9a846ac2db9f2e7b27a4700c78 pub_methods_classtoast_1_1Node3D" id="r_a6f715f9a846ac2db9f2e7b27a4700c78"><td class="memItemLeft">
-auto&#160;</td><td class="memItemRight"><b>raycasts</b> (glm::vec3 pos, glm::vec3 dir) const -&gt; std::vector&lt; <a class="el" href="structphysics_1_1RayHit.html">physics::RayHit</a> &gt;</td></tr>
-<tr class="memitem:a552080ee64851d7c3f2e1a7084d45bd1 pub_methods_classtoast_1_1Node3D" id="r_a552080ee64851d7c3f2e1a7084d45bd1"><td class="memItemLeft">
-auto&#160;</td><td class="memItemRight"><b>raycast</b> (glm::vec3 pos, glm::vec3 dir) const -&gt; std::optional&lt; <a class="el" href="structphysics_1_1RayHit.html">physics::RayHit</a> &gt;</td></tr>
+<tr class="memitem:a39965cea40f4940c66643731f28d9c4d pub_methods_classtoast_1_1Node3D" id="r_a39965cea40f4940c66643731f28d9c4d"><td class="memItemLeft">
+auto&#160;</td><td class="memItemRight"><b>raycasts</b> (glm::vec3 pos, glm::vec3 dir, float max_distance=-1.0f, int max_targets=3) const -&gt; std::vector&lt; <a class="el" href="structphysics_1_1RayHit.html">physics::RayHit</a> &gt;</td></tr>
+<tr class="memitem:ae992f803913a9dfcb71ac418ca860f25 pub_methods_classtoast_1_1Node3D" id="r_ae992f803913a9dfcb71ac418ca860f25"><td class="memItemLeft">
+auto&#160;</td><td class="memItemRight"><b>raycast</b> (glm::vec3 pos, glm::vec3 dir, float max_distance=-1.0f) const -&gt; std::optional&lt; <a class="el" href="structphysics_1_1RayHit.html">physics::RayHit</a> &gt;</td></tr>
 <tr class="memitem:adad24d149f2272f82a98518028bbece9 pub_methods_classtoast_1_1Node3D" id="r_adad24d149f2272f82a98518028bbece9"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="classtoast_1_1Node3D.html#adad24d149f2272f82a98518028bbece9">lookAt</a> (glm::vec3 target, glm::vec3 up={0.0f, 0.0f, 1.0f})</td></tr>
 <tr class="memdesc:adad24d149f2272f82a98518028bbece9 pub_methods_classtoast_1_1Node3D"><td class="mdescLeft">&#160;</td><td class="mdescRight">Orients the node so its forward axis points at a world-space target.  <br /></td></tr>
 <tr class="memitem:a683830b92106346ba6e3446ead55a23d pub_methods_classtoast_1_1Node3D" id="r_a683830b92106346ba6e3446ead55a23d"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="classtoast_1_1Node3D.html#a683830b92106346ba6e3446ead55a23d">lookAtZ</a> (glm::vec3 target)</td></tr>
@@ -300,6 +302,8 @@ auto&#160;</td><td class="memItemRight"><b>listener</b> () noexcept -&gt; <a cla
 <tr class="memdesc:aad1cba24836e1465fdab22b27e71bf27 pub_methods_classtoast_1_1Node"><td class="mdescLeft">&#160;</td><td class="mdescRight">The immediate parent of this node.  <br /></td></tr>
 <tr class="memitem:a2fcbe02f3e1937abf869fb537fa77988 pub_methods_classtoast_1_1Node" id="r_a2fcbe02f3e1937abf869fb537fa77988"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="classtoast_1_1Node.html#a2fcbe02f3e1937abf869fb537fa77988">children</a> () const noexcept -&gt; const std::vector&lt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; Node &gt; &gt; &amp;</td></tr>
 <tr class="memdesc:a2fcbe02f3e1937abf869fb537fa77988 pub_methods_classtoast_1_1Node"><td class="mdescLeft">&#160;</td><td class="mdescRight">The ordered list of direct children.  <br /></td></tr>
+<tr class="memitem:ac36bc21f37d1f46f50f0f24d725a51c5 pub_methods_classtoast_1_1Node" id="r_ac36bc21f37d1f46f50f0f24d725a51c5"><td class="memItemLeft">
+auto&#160;</td><td class="memItemRight"><b>childrenSnapshot</b> () const -&gt; std::vector&lt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; Node &gt; &gt;</td></tr>
 <tr class="memitem:abbcbef4415d8020b76f761f1e1d4e4c8 pub_methods_classtoast_1_1Node" id="r_abbcbef4415d8020b76f761f1e1d4e4c8"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="classtoast_1_1Node.html#abbcbef4415d8020b76f761f1e1d4e4c8">create</a> (std::string_view type=&quot;toast::Node&quot;) noexcept -&gt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; Node &gt;</td></tr>
 <tr class="memdesc:abbcbef4415d8020b76f761f1e1d4e4c8 pub_methods_classtoast_1_1Node"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a new child node of the given type and attaches it to this node.  <br /></td></tr>
 <tr class="memitem:a19495f7f11c522905fc0a1b5f853c009 pub_methods_classtoast_1_1Node" id="r_a19495f7f11c522905fc0a1b5f853c009"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="classtoast_1_1Node.html#a19495f7f11c522905fc0a1b5f853c009">spawn</a> (<a class="el" href="structtoast_1_1UID.html">UID</a> uid) noexcept -&gt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; Node &gt;</td></tr>
@@ -320,9 +324,17 @@ auto&#160;</td><td class="memItemRight"><b>searchType</b> (const <a class="el" h
 void&#160;</td><td class="memItemRight"><b>addDependsOn</b> (Node &amp;other)</td></tr>
 <tr class="memitem:ace86075240044e0fc28c8da7031077e1 pub_methods_classtoast_1_1Node" id="r_ace86075240044e0fc28c8da7031077e1"><td class="memItemLeft">
 void&#160;</td><td class="memItemRight"><b>removeDependsOn</b> (Node &amp;other)</td></tr>
+<tr class="memitem:ae37c89e7fd2eaeed46bea58784bb8ad5 pub_methods_classtoast_1_1Node" id="r_ae37c89e7fd2eaeed46bea58784bb8ad5"><td class="memItemLeft">
+void&#160;</td><td class="memItemRight"><b>interactsWith</b> (Node &amp;other)</td></tr>
+<tr class="memdesc:ae37c89e7fd2eaeed46bea58784bb8ad5 pub_methods_classtoast_1_1Node"><td class="mdescLeft">&#160;</td><td class="mdescRight">Declares that the scripts of this node and of <span class="tt">other</span> call each other. <br /></td></tr>
 <tr class="memitem:afbe29fa80d57b5c7c6a4bfa6c75fc6d0 pub_methods_classtoast_1_1Node" id="r_afbe29fa80d57b5c7c6a4bfa6c75fc6d0"><td class="memItemLeft">
 auto&#160;</td><td class="memItemRight"><b>scriptRuntime</b> () noexcept -&gt; <a class="el" href="classscripting_1_1ScriptRuntime.html">scripting::ScriptRuntime</a> *</td></tr>
 <tr class="memitem:a8a7a227e71c9efcae3df2ed20ff6a177 pub_methods_classtoast_1_1Node" id="r_a8a7a227e71c9efcae3df2ed20ff6a177"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="classtoast_1_1Node.html#a8a7a227e71c9efcae3df2ed20ff6a177">hasTickFunction</a> (<a class="el" href="reflect__node_8hpp.html#ad08c233710fd0f56aefc18a7a9f1db5a">TickFunctionList</a> mask) const noexcept -&gt; bool</td></tr>
+<tr class="memitem:ad8dccd6ed479d62e8f83c62855607940 pub_methods_classtoast_1_1Node" id="r_ad8dccd6ed479d62e8f83c62855607940"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="classtoast_1_1Node.html#ad8dccd6ed479d62e8f83c62855607940">scriptVm</a> (<a class="el" href="reflect__node_8hpp.html#ad08c233710fd0f56aefc18a7a9f1db5a">TickFunctionList</a> func) const noexcept -&gt; std::optional&lt; size_t &gt;</td></tr>
+<tr class="memdesc:ad8dccd6ed479d62e8f83c62855607940 pub_methods_classtoast_1_1Node"><td class="mdescLeft">&#160;</td><td class="mdescRight">The interpreter this node runs Lua on while it executes <span class="tt">func</span>, empty when it runs none.  <br /></td></tr>
+<tr class="memitem:ad12d625b02b7161fc8fa5d9937f56f26 pub_methods_classtoast_1_1Node" id="r_ad12d625b02b7161fc8fa5d9937f56f26"><td class="memItemLeft">
+auto&#160;</td><td class="memItemRight"><b>scriptVmAny</b> () const noexcept -&gt; std::optional&lt; size_t &gt;</td></tr>
+<tr class="memdesc:ad12d625b02b7161fc8fa5d9937f56f26 pub_methods_classtoast_1_1Node"><td class="mdescLeft">&#160;</td><td class="mdescRight">The interpreter the scripts of this node live on whatever phase they define. <br /></td></tr>
 <tr class="memitem:a25d28b613360ff4d7356599316440ec0 pub_methods_classtoast_1_1Node" id="r_a25d28b613360ff4d7356599316440ec0"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="classtoast_1_1Node.html#a25d28b613360ff4d7356599316440ec0">hasCallable</a> (std::string_view name) const noexcept -&gt; bool</td></tr>
 <tr class="memitem:a8ce8c9cb4ecb09ecac5364cddf3af491 pub_methods_classtoast_1_1Node" id="r_a8ce8c9cb4ecb09ecac5364cddf3af491"><td class="memItemLeft">
 void&#160;</td><td class="memItemRight"><b>reloadScripts</b> () noexcept</td></tr>
@@ -347,8 +359,10 @@ auto&#160;</td><td class="memItemRight"><b>isRecursivePrefab</b> () const noexce
 static const glm::vec3&#160;</td><td class="memItemRight"><b>world_up</b> = {0.0f, 0.0f, 1.0f}</td></tr>
 <tr class="memitem:a5e561b9e6b96f3843c722afe5484eb3e pub_static_attribs_classtoast_1_1Node3D" id="r_a5e561b9e6b96f3843c722afe5484eb3e"><td class="memItemLeft">
 static const glm::vec3&#160;</td><td class="memItemRight"><b>world_forward</b> = {0.0f, 1.0f, 0.0f}</td></tr>
+<tr class="memdesc:a5e561b9e6b96f3843c722afe5484eb3e pub_static_attribs_classtoast_1_1Node3D"><td class="mdescLeft">&#160;</td><td class="mdescRight">Z axis. <br /></td></tr>
 <tr class="memitem:a2d913a74b7475030c6188786d3d716dc pub_static_attribs_classtoast_1_1Node3D" id="r_a2d913a74b7475030c6188786d3d716dc"><td class="memItemLeft">
 static const glm::vec3&#160;</td><td class="memItemRight"><b>world_right</b> = {1.0f, 0.0f, 0.0f}</td></tr>
+<tr class="memdesc:a2d913a74b7475030c6188786d3d716dc pub_static_attribs_classtoast_1_1Node3D"><td class="mdescLeft">&#160;</td><td class="mdescRight">Y axis. <br /></td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>engine/src/toast/physics/nodes/<a class="el" href="rigidbody_8hpp_source.html">rigidbody.hpp</a></li>

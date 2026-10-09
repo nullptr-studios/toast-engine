@@ -1,5 +1,7 @@
 var classassets_1_1AssetManager =
 [
+    [ "ReloadedAsset", "structassets_1_1AssetManager_1_1ReloadedAsset.html", null ],
+    [ "applyPendingReloads", "classassets_1_1AssetManager.html#a50291c7e9e5ae099fcdca733b267659c", null ],
     [ "clearUnusedAssets", "classassets_1_1AssetManager.html#a5126d9072a6436bafaa12da75a140eb7", null ],
     [ "load", "classassets_1_1AssetManager.html#a6998c32f3ba1a397ffab6956b5c51728", null ],
     [ "load", "classassets_1_1AssetManager.html#afc51a03457051a48061100ea254bb4aa", null ],

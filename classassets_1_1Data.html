@@ -224,6 +224,16 @@ Static Public Attributes</h2></td></tr>
 <tr class="memitem:a8ec94e97704c485551b007f1ba050237" id="r_a8ec94e97704c485551b007f1ba050237"><td class="memItemLeft"><a id="a8ec94e97704c485551b007f1ba050237" name="a8ec94e97704c485551b007f1ba050237"></a>
 static constexpr <a class="el" href="structassets_1_1Data_1_1KeepAllKeysTag.html">KeepAllKeysTag</a>&#160;</td><td class="memItemRight"><b>keep_all_keys</b> {}</td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-pro-methods" class="groupheader"><a id="pro-methods" name="pro-methods"></a>
+Protected Member Functions</h2></td></tr>
+<tr class="memitem:afc3d5cbfcfa4b2cd4cc952e62b70c1af" id="r_afc3d5cbfcfa4b2cd4cc952e62b70c1af"><td class="memItemLeft"><a id="afc3d5cbfcfa4b2cd4cc952e62b70c1af" name="afc3d5cbfcfa4b2cd4cc952e62b70c1af"></a>
+virtual void&#160;</td><td class="memItemRight"><b>onReloaded</b> ()</td></tr>
+<tr class="inherit_header pro_methods_classassets_1_1Asset"><td colspan="2">Protected Member Functions inherited from <a class="el" href="classassets_1_1Asset.html">assets::Asset</a></td></tr>
+<tr class="memitem:adf4e469c6d8670f499fdd6146c7a4bff pro_methods_classassets_1_1Asset" id="r_adf4e469c6d8670f499fdd6146c7a4bff"><td class="memItemLeft">
+void&#160;</td><td class="memItemRight"><b>addRef</b> () noexcept</td></tr>
+<tr class="memitem:ac41a41e7fef77cf4dd08c6bb3c357a04 pro_methods_classassets_1_1Asset" id="r_ac41a41e7fef77cf4dd08c6bb3c357a04"><td class="memItemLeft">
+void&#160;</td><td class="memItemRight"><b>release</b> () noexcept</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pro-attribs" class="groupheader"><a id="pro-attribs" name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
 <tr class="memitem:acea6ae1d90d97a3167fe50cb2e3d140b" id="r_acea6ae1d90d97a3167fe50cb2e3d140b"><td class="memItemLeft"><a id="acea6ae1d90d97a3167fe50cb2e3d140b" name="acea6ae1d90d97a3167fe50cb2e3d140b"></a>
@@ -234,14 +244,6 @@ Protected Attributes</h2></td></tr>
 <tr class="memdesc:ae273d0bf02cd4a6f026ac923d0a23cd3"><td class="mdescLeft">&#160;</td><td class="mdescRight">optional <br /></td></tr>
 <tr class="memitem:a9d9c1922f17cb9a46af892b6eed2e0df" id="r_a9d9c1922f17cb9a46af892b6eed2e0df"><td class="memItemLeft"><a id="a9d9c1922f17cb9a46af892b6eed2e0df" name="a9d9c1922f17cb9a46af892b6eed2e0df"></a>
 bool&#160;</td><td class="memItemRight"><b>m_keep_all_keys</b> = false</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 id="header-inherited" class="groupheader"><a id="inherited" name="inherited"></a>
-Additional Inherited Members</h2></td></tr>
-<tr class="inherit_header pro_methods_classassets_1_1Asset"><td colspan="2">Protected Member Functions inherited from <a class="el" href="classassets_1_1Asset.html">assets::Asset</a></td></tr>
-<tr class="memitem:adf4e469c6d8670f499fdd6146c7a4bff pro_methods_classassets_1_1Asset" id="r_adf4e469c6d8670f499fdd6146c7a4bff"><td class="memItemLeft">
-void&#160;</td><td class="memItemRight"><b>addRef</b> () noexcept</td></tr>
-<tr class="memitem:ac41a41e7fef77cf4dd08c6bb3c357a04 pro_methods_classassets_1_1Asset" id="r_ac41a41e7fef77cf4dd08c6bb3c357a04"><td class="memItemLeft">
-void&#160;</td><td class="memItemRight"><b>release</b> () noexcept</td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="afdb3bd5e70372e700fa9774bb258bf6d" name="afdb3bd5e70372e700fa9774bb258bf6d"></a>
@@ -275,18 +277,17 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="classassets_1_1Data_afdb3bd5e70372e700fa9774bb258bf6d_icgraph.png" border="0" usemap="#aclassassets_1_1Data_afdb3bd5e70372e700fa9774bb258bf6d_icgraph" loading="lazy" alt=""/></div>
 <map name="aclassassets_1_1Data_afdb3bd5e70372e700fa9774bb258bf6d_icgraph" id="aclassassets_1_1Data_afdb3bd5e70372e700fa9774bb258bf6d_icgraph">
-<area shape="rect" title="Re&#45;parses the asset contents in place." alt="" coords="456,48,607,76"/>
-<area shape="rect" href="classassets_1_1AssetManager.html#a7e0436327b6bd73917135ac6d6b3f2c3" title="Re&#45;reads hot&#45;reloadable assets whose files changed on disk." alt="" coords="13,5,178,50"/>
-<area shape="poly" title=" " alt="" coords="473,44,408,30,348,24,287,22,178,24,177,19,287,17,348,19,408,25,478,43"/>
-<area shape="rect" href="classassets_1_1ColorScheme.html#a3c70f41d65503eb591b896e31c57cfe6" title="Re&#45;parses the asset contents in place." alt="" coords="242,40,400,85"/>
-<area shape="poly" title=" " alt="" coords="438,63,400,65,400,60,443,62"/>
-<area shape="rect" href="classassets_1_1Material.html#a5109cb872c434e6a7758ff4026fb1408" title="Re&#45;parses the asset contents in place." alt="" coords="234,132,408,160"/>
-<area shape="poly" title=" " alt="" coords="483,82,359,134,357,129,478,83"/>
-<area shape="poly" title=" " alt="" coords="224,49,178,43,178,38,229,47"/>
-<area shape="poly" title=" " alt="" coords="355,117,344,113,321,111,299,113,287,118,284,123,289,133,284,131,279,124,283,114,298,108,321,106,346,108,361,118"/>
-<area shape="rect" href="classassets_1_1MaterialInstance.html#a5588b1abd3bd689b51012ea197853095" title="Re&#45;parses the asset contents in place." alt="" coords="5,124,186,169"/>
-<area shape="poly" title=" " alt="" coords="216,147,186,149,186,144,221,146"/>
-<area shape="poly" title=" " alt="" coords="131,109,119,105,95,103,74,105,61,109,56,115,58,124,52,123,51,114,58,105,73,99,96,97,120,100,136,109"/>
+<area shape="rect" title="Re&#45;parses the asset contents in place." alt="" coords="456,62,607,90"/>
+<area shape="rect" href="classassets_1_1ColorScheme.html#a3c70f41d65503eb591b896e31c57cfe6" title="Re&#45;parses the asset contents in place." alt="" coords="242,8,400,53"/>
+<area shape="poly" title=" " alt="" coords="447,58,400,50,400,45,452,58"/>
+<area shape="rect" href="classassets_1_1Material.html#a5109cb872c434e6a7758ff4026fb1408" title="Re&#45;parses the asset contents in place." alt="" coords="234,103,408,131"/>
+<area shape="poly" title=" " alt="" coords="445,93,395,105,395,100,440,93"/>
+<area shape="rect" href="classassets_1_1AssetManager.html#a50291c7e9e5ae099fcdca733b267659c" title="Reloads the assets pollModifiedAssets() changed." alt="" coords="11,5,180,50"/>
+<area shape="poly" title=" " alt="" coords="224,30,181,31,180,26,229,28"/>
+<area shape="poly" title=" " alt="" coords="355,88,344,84,321,82,299,84,287,89,284,94,289,104,284,102,279,94,283,85,298,79,321,77,346,79,361,88"/>
+<area shape="rect" href="classassets_1_1MaterialInstance.html#a5588b1abd3bd689b51012ea197853095" title="Re&#45;parses the asset contents in place." alt="" coords="5,99,186,143"/>
+<area shape="poly" title=" " alt="" coords="216,119,186,122,186,117,221,119"/>
+<area shape="poly" title=" " alt="" coords="131,84,119,80,95,77,74,79,61,84,56,90,58,99,52,97,51,89,58,80,73,74,96,72,120,75,136,83"/>
 </map>
 </div>
 

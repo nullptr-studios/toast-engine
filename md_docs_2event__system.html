@@ -139,7 +139,7 @@ Event Definition</h2>
 <div class="line"> </div>
 <div class="line"><span class="comment">// Example: A simple event without data</span></div>
 <div class="line"><span class="keyword">struct </span>BasicEvent : <a class="code hl_class" href="structevent_1_1Event.html">event::Event</a>&lt;BasicEvent&gt; {};</div>
-<div class="ttc" id="astructevent_1_1Event_html"><div class="ttname"><a href="structevent_1_1Event.html">event::Event</a></div><div class="ttdoc">Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;.</div><div class="ttdef"><b>Definition</b> event.hpp:77</div></div>
+<div class="ttc" id="astructevent_1_1Event_html"><div class="ttname"><a href="structevent_1_1Event.html">event::Event</a></div><div class="ttdoc">Base class for all events. Derive your event type as struct Derived : Event&lt;Derived&gt;.</div><div class="ttdef"><b>Definition</b> event.hpp:78</div></div>
 </div><!-- fragment --><h2 class="doxsection"><a class="anchor" id="autotoc_md4"></a>
 Event Sending</h2>
 <p>Events are enqueued for dispatch using <span class="tt">event::send&lt;T&gt;(...)</span>. This function is thread-safe. Arguments provided are forwarded to your event type's constructor.</p>

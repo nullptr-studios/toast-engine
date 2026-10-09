@@ -145,103 +145,104 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('signals__event
 <div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>  std::string declaring_type;</div>
 <div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>  std::string signal;</div>
 <div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>  std::vector&lt;SignalConnection&gt; connections;</div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>};</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>  std::vector&lt;std::string&gt; arguments;</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>};</div>
 </div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span> </div>
-<div class="foldopen" id="foldopen00027" data-start="{" data-end="};">
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno"><a class="line" href="structevent_1_1RequestSignalState.html">   27</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1RequestSignalState.html">RequestSignalState</a> : Event&lt;RequestSignalState&gt; {</div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> node;</div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>};</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span> </div>
+<div class="foldopen" id="foldopen00028" data-start="{" data-end="};">
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno"><a class="line" href="structevent_1_1RequestSignalState.html">   28</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1RequestSignalState.html">RequestSignalState</a> : Event&lt;RequestSignalState&gt; {</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> node;</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>};</div>
 </div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span> </div>
-<div class="foldopen" id="foldopen00031" data-start="{" data-end="};">
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno"><a class="line" href="structevent_1_1SignalState.html">   31</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1SignalState.html">SignalState</a> : Event&lt;SignalState&gt; {</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> node;</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>  std::vector&lt;SignalStateEntry&gt; signals;</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  std::string error;</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>};</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span> </div>
+<div class="foldopen" id="foldopen00032" data-start="{" data-end="};">
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno"><a class="line" href="structevent_1_1SignalState.html">   32</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1SignalState.html">SignalState</a> : Event&lt;SignalState&gt; {</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> node;</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  std::vector&lt;SignalStateEntry&gt; signals;</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  std::string error;</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>};</div>
 </div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span> </div>
-<div class="foldopen" id="foldopen00037" data-start="{" data-end="};">
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno"><a class="line" href="structevent_1_1RequestSignalCallables.html">   37</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1RequestSignalCallables.html">RequestSignalCallables</a> : Event&lt;RequestSignalCallables&gt; {</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  uint64_t request = 0;</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> source_node;</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  std::string declaring_type;</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  std::string signal;</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> target_node;</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>};</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span> </div>
+<div class="foldopen" id="foldopen00038" data-start="{" data-end="};">
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno"><a class="line" href="structevent_1_1RequestSignalCallables.html">   38</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1RequestSignalCallables.html">RequestSignalCallables</a> : Event&lt;RequestSignalCallables&gt; {</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  uint64_t request = 0;</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> source_node;</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  std::string declaring_type;</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  std::string signal;</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> target_node;</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>};</div>
 </div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span> </div>
-<div class="foldopen" id="foldopen00045" data-start="{" data-end="};">
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno"><a class="line" href="structevent_1_1SignalParameter.html">   45</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1SignalParameter.html">SignalParameter</a> {</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  std::string name;</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  std::string type;</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>};</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
+<div class="foldopen" id="foldopen00046" data-start="{" data-end="};">
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno"><a class="line" href="structevent_1_1SignalParameter.html">   46</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1SignalParameter.html">SignalParameter</a> {</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  std::string name;</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  std::string type;</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>};</div>
 </div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span> </div>
-<div class="foldopen" id="foldopen00050" data-start="{" data-end="};">
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno"><a class="line" href="structevent_1_1SignalCallable.html">   50</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1SignalCallable.html">SignalCallable</a> {</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  std::string name;</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  std::vector&lt;SignalParameter&gt; parameters;</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  <span class="keywordtype">bool</span> has_cpp = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <span class="keywordtype">bool</span> has_lua = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  <span class="keywordtype">bool</span> compatible = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <span class="keywordtype">bool</span> already_connected = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <span class="keywordtype">bool</span> forwards_args = <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  std::string disabled_reason;</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>};</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span> </div>
+<div class="foldopen" id="foldopen00051" data-start="{" data-end="};">
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno"><a class="line" href="structevent_1_1SignalCallable.html">   51</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1SignalCallable.html">SignalCallable</a> {</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  std::string name;</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  std::vector&lt;SignalParameter&gt; parameters;</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <span class="keywordtype">bool</span> has_cpp = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  <span class="keywordtype">bool</span> has_lua = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <span class="keywordtype">bool</span> compatible = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <span class="keywordtype">bool</span> already_connected = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  <span class="keywordtype">bool</span> forwards_args = <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  std::string disabled_reason;</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>};</div>
 </div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span> </div>
-<div class="foldopen" id="foldopen00061" data-start="{" data-end="};">
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno"><a class="line" href="structevent_1_1SignalCallables.html">   61</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1SignalCallables.html">SignalCallables</a> : Event&lt;SignalCallables&gt; {</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  uint64_t request = 0;</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> target_node;</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  std::vector&lt;SignalCallable&gt; callables;</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  std::string error;</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>};</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span> </div>
+<div class="foldopen" id="foldopen00062" data-start="{" data-end="};">
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno"><a class="line" href="structevent_1_1SignalCallables.html">   62</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1SignalCallables.html">SignalCallables</a> : Event&lt;SignalCallables&gt; {</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  uint64_t request = 0;</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> target_node;</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  std::vector&lt;SignalCallable&gt; callables;</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  std::string error;</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>};</div>
 </div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span> </div>
-<div class="foldopen" id="foldopen00068" data-start="{" data-end="};">
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno"><a class="line" href="structevent_1_1AddSignalConnection.html">   68</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1AddSignalConnection.html">AddSignalConnection</a> : Event&lt;AddSignalConnection&gt; {</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> source_node;</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  std::string declaring_type;</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  std::string signal;</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> target_node;</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  std::string function;</div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  <span class="keywordtype">bool</span> forwards_args = <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>};</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span> </div>
+<div class="foldopen" id="foldopen00069" data-start="{" data-end="};">
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno"><a class="line" href="structevent_1_1AddSignalConnection.html">   69</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1AddSignalConnection.html">AddSignalConnection</a> : Event&lt;AddSignalConnection&gt; {</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> source_node;</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  std::string declaring_type;</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  std::string signal;</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> target_node;</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  std::string function;</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  <span class="keywordtype">bool</span> forwards_args = <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>};</div>
 </div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span> </div>
-<div class="foldopen" id="foldopen00077" data-start="{" data-end="};">
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno"><a class="line" href="structevent_1_1RemoveSignalConnection.html">   77</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1RemoveSignalConnection.html">RemoveSignalConnection</a> : Event&lt;RemoveSignalConnection&gt; {</div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> source_node;</div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  std::string declaring_type;</div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>  std::string signal;</div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> target_node;</div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  std::string function;</div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>};</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span> </div>
+<div class="foldopen" id="foldopen00078" data-start="{" data-end="};">
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno"><a class="line" href="structevent_1_1RemoveSignalConnection.html">   78</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1RemoveSignalConnection.html">RemoveSignalConnection</a> : Event&lt;RemoveSignalConnection&gt; {</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> source_node;</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>  std::string declaring_type;</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>  std::string signal;</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> target_node;</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  std::string function;</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>};</div>
 </div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span> </div>
-<div class="foldopen" id="foldopen00085" data-start="{" data-end="};">
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno"><a class="line" href="structevent_1_1ClearEditorSignalConnections.html">   85</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1ClearEditorSignalConnections.html">ClearEditorSignalConnections</a> : Event&lt;ClearEditorSignalConnections&gt; {</div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> source_node;</div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>  std::string declaring_type;</div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  std::string signal;</div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>};</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span> </div>
+<div class="foldopen" id="foldopen00086" data-start="{" data-end="};">
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno"><a class="line" href="structevent_1_1ClearEditorSignalConnections.html">   86</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1ClearEditorSignalConnections.html">ClearEditorSignalConnections</a> : Event&lt;ClearEditorSignalConnections&gt; {</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> source_node;</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  std::string declaring_type;</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  std::string signal;</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>};</div>
 </div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span> </div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>}</div>
-<div class="ttc" id="astructevent_1_1AddSignalConnection_html"><div class="ttname"><a href="structevent_1_1AddSignalConnection.html">event::AddSignalConnection</a></div><div class="ttdef"><b>Definition</b> signals_events.hpp:68</div></div>
-<div class="ttc" id="astructevent_1_1ClearEditorSignalConnections_html"><div class="ttname"><a href="structevent_1_1ClearEditorSignalConnections.html">event::ClearEditorSignalConnections</a></div><div class="ttdef"><b>Definition</b> signals_events.hpp:85</div></div>
-<div class="ttc" id="astructevent_1_1RemoveSignalConnection_html"><div class="ttname"><a href="structevent_1_1RemoveSignalConnection.html">event::RemoveSignalConnection</a></div><div class="ttdef"><b>Definition</b> signals_events.hpp:77</div></div>
-<div class="ttc" id="astructevent_1_1RequestSignalCallables_html"><div class="ttname"><a href="structevent_1_1RequestSignalCallables.html">event::RequestSignalCallables</a></div><div class="ttdef"><b>Definition</b> signals_events.hpp:37</div></div>
-<div class="ttc" id="astructevent_1_1RequestSignalState_html"><div class="ttname"><a href="structevent_1_1RequestSignalState.html">event::RequestSignalState</a></div><div class="ttdef"><b>Definition</b> signals_events.hpp:27</div></div>
-<div class="ttc" id="astructevent_1_1SignalCallable_html"><div class="ttname"><a href="structevent_1_1SignalCallable.html">event::SignalCallable</a></div><div class="ttdef"><b>Definition</b> signals_events.hpp:50</div></div>
-<div class="ttc" id="astructevent_1_1SignalCallables_html"><div class="ttname"><a href="structevent_1_1SignalCallables.html">event::SignalCallables</a></div><div class="ttdef"><b>Definition</b> signals_events.hpp:61</div></div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span> </div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>}</div>
+<div class="ttc" id="astructevent_1_1AddSignalConnection_html"><div class="ttname"><a href="structevent_1_1AddSignalConnection.html">event::AddSignalConnection</a></div><div class="ttdef"><b>Definition</b> signals_events.hpp:69</div></div>
+<div class="ttc" id="astructevent_1_1ClearEditorSignalConnections_html"><div class="ttname"><a href="structevent_1_1ClearEditorSignalConnections.html">event::ClearEditorSignalConnections</a></div><div class="ttdef"><b>Definition</b> signals_events.hpp:86</div></div>
+<div class="ttc" id="astructevent_1_1RemoveSignalConnection_html"><div class="ttname"><a href="structevent_1_1RemoveSignalConnection.html">event::RemoveSignalConnection</a></div><div class="ttdef"><b>Definition</b> signals_events.hpp:78</div></div>
+<div class="ttc" id="astructevent_1_1RequestSignalCallables_html"><div class="ttname"><a href="structevent_1_1RequestSignalCallables.html">event::RequestSignalCallables</a></div><div class="ttdef"><b>Definition</b> signals_events.hpp:38</div></div>
+<div class="ttc" id="astructevent_1_1RequestSignalState_html"><div class="ttname"><a href="structevent_1_1RequestSignalState.html">event::RequestSignalState</a></div><div class="ttdef"><b>Definition</b> signals_events.hpp:28</div></div>
+<div class="ttc" id="astructevent_1_1SignalCallable_html"><div class="ttname"><a href="structevent_1_1SignalCallable.html">event::SignalCallable</a></div><div class="ttdef"><b>Definition</b> signals_events.hpp:51</div></div>
+<div class="ttc" id="astructevent_1_1SignalCallables_html"><div class="ttname"><a href="structevent_1_1SignalCallables.html">event::SignalCallables</a></div><div class="ttdef"><b>Definition</b> signals_events.hpp:62</div></div>
 <div class="ttc" id="astructevent_1_1SignalConnection_html"><div class="ttname"><a href="structevent_1_1SignalConnection.html">event::SignalConnection</a></div><div class="ttdef"><b>Definition</b> signals_events.hpp:12</div></div>
-<div class="ttc" id="astructevent_1_1SignalParameter_html"><div class="ttname"><a href="structevent_1_1SignalParameter.html">event::SignalParameter</a></div><div class="ttdef"><b>Definition</b> signals_events.hpp:45</div></div>
+<div class="ttc" id="astructevent_1_1SignalParameter_html"><div class="ttname"><a href="structevent_1_1SignalParameter.html">event::SignalParameter</a></div><div class="ttdef"><b>Definition</b> signals_events.hpp:46</div></div>
 <div class="ttc" id="astructevent_1_1SignalStateEntry_html"><div class="ttname"><a href="structevent_1_1SignalStateEntry.html">event::SignalStateEntry</a></div><div class="ttdef"><b>Definition</b> signals_events.hpp:21</div></div>
-<div class="ttc" id="astructevent_1_1SignalState_html"><div class="ttname"><a href="structevent_1_1SignalState.html">event::SignalState</a></div><div class="ttdef"><b>Definition</b> signals_events.hpp:31</div></div>
+<div class="ttc" id="astructevent_1_1SignalState_html"><div class="ttname"><a href="structevent_1_1SignalState.html">event::SignalState</a></div><div class="ttdef"><b>Definition</b> signals_events.hpp:32</div></div>
 <div class="ttc" id="astructtoast_1_1UID_html"><div class="ttname"><a href="structtoast_1_1UID.html">toast::UID</a></div><div class="ttdef"><b>Definition</b> uid.hpp:20</div></div>
 <div class="ttc" id="auid_8hpp_html"><div class="ttname"><a href="uid_8hpp.html">uid.hpp</a></div><div class="ttdoc">Unique identifier for everything that exists in our engine.</div></div>
 </div><!-- fragment --></div><!-- contents -->

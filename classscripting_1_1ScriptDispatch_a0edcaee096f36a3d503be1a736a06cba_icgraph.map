@@ -1,0 +1,9 @@
+<map id="scripting::ScriptDispatch::deliver" name="scripting::ScriptDispatch::deliver">
+<area shape="rect" id="Node000001" title="Runs the queued work." alt="" coords="437,40,616,85"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1TickScheduler.html#aada3144d3daa1b70a00740d65f45a026" title="Runs a lifecycle stage on root and every node below it, parents before their children." alt="" coords="236,5,389,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="419,45,389,43,389,37,424,45"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1TickScheduler.html#a30cb7092b454ff283d6cd1568dac301c" title="Dispatches a single phase of the tick schedule." alt="" coords="236,75,389,119"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="424,79,389,87,389,82,419,80"/>
+<area shape="rect" id="Node000004" href="$classtoast_1_1TickScheduler.html#a002172089ec3f1e7d6d24789c4547bb4" title="Runs the four frame phases (early_tick → tick → post_physics → late_tick) of the schedule." alt="" coords="5,83,188,111"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="217,97,188,100,188,94,223,97"/>
+</map>

@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('broad__phase_8
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <span class="keyword">auto</span> queryBounds(<span class="keyword">const</span> <a class="code hl_struct" href="structphysics_1_1AABB.html">AABB</a>&amp; bounds) <span class="keyword">const</span> -&gt; std::vector&lt;ShapeID&gt;;</div>
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span> </div>
 <div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  <span class="keyword">auto</span> queryRay(glm::vec3 pos, glm::vec3 dir) <span class="keyword">const</span> -&gt; std::vector&lt;ShapeID&gt;;</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  <span class="keyword">auto</span> queryRay(glm::vec3 pos, glm::vec3 dir, <span class="keywordtype">float</span> max_distance = -1.0f) <span class="keyword">const</span> -&gt; std::vector&lt;ShapeID&gt;;</div>
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span> </div>
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  [[nodiscard]]</div>
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <span class="keyword">auto</span> debugNodes() <span class="keyword">const</span> -&gt; std::vector&lt;AABBTreeDebugNode&gt;;</div>

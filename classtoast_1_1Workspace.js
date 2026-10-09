@@ -16,6 +16,7 @@ var classtoast_1_1Workspace =
     [ "initFromPrefab", "classtoast_1_1Workspace.html#acecbe8833a3838a8a3fe77aa661b2d1d", null ],
     [ "isPlaying", "classtoast_1_1Workspace.html#a182ea711f9ed7f461af3c2dd896c7b69", null ],
     [ "participatesIn", "classtoast_1_1Workspace.html#a019039a1d2e69ae68dde78835aeaa578", null ],
+    [ "receivesEvents", "classtoast_1_1Workspace.html#ab88ef6fbaeb9bac655e12051fa5b7ab2", null ],
     [ "registerDependency", "classtoast_1_1Workspace.html#ae218edc42e8b257acf7122232e2c11e1", null ],
     [ "searchFrom", "classtoast_1_1Workspace.html#ade3242f28337152796732d05f4b11738", null ],
     [ "subscribeVoxelEditing", "classtoast_1_1Workspace.html#a6f6a5037a28d6a4d55fff3504e15095b", null ],

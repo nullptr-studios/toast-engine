@@ -25,13 +25,13 @@
 var NAVTREE =
 [
   [ "Toast Engine", "index.html", [
-    [ "Building", "index.html#autotoc_md96", [
-      [ "Prerequisites", "index.html#autotoc_md97", null ],
-      [ "Generation", "index.html#autotoc_md98", null ],
-      [ "Build", "index.html#autotoc_md99", null ],
-      [ "Tests", "index.html#autotoc_md100", null ]
+    [ "Building", "index.html#autotoc_md100", [
+      [ "Prerequisites", "index.html#autotoc_md101", null ],
+      [ "Generation", "index.html#autotoc_md102", null ],
+      [ "Build", "index.html#autotoc_md103", null ],
+      [ "Tests", "index.html#autotoc_md104", null ]
     ] ],
-    [ "Other tooling", "index.html#autotoc_md101", null ],
+    [ "Other tooling", "index.html#autotoc_md105", null ],
     [ "Asset types specs", "md_docs_2asset__specs.html", null ],
     [ "Event System", "md_docs_2event__system.html", [
       [ "Core Concepts", "md_docs_2event__system.html#autotoc_md2", [
@@ -118,40 +118,46 @@ var NAVTREE =
         [ "Editor completion", "md_docs_2scripting.html#autotoc_md69", null ],
         [ "Logging and profiling", "md_docs_2scripting.html#autotoc_md70", null ]
       ] ],
-      [ "Performance", "md_docs_2scripting.html#autotoc_md71", null ],
-      [ "Unit tests", "md_docs_2scripting.html#autotoc_md72", null ],
-      [ "Expansion", "md_docs_2scripting.html#autotoc_md73", null ]
+      [ "Performance", "md_docs_2scripting.html#autotoc_md71", [
+        [ "Physics from scripts", "md_docs_2scripting.html#autotoc_md72", null ],
+        [ "Building a prefab", "md_docs_2scripting.html#autotoc_md73", null ],
+        [ "init, begin and onEnable", "md_docs_2scripting.html#autotoc_md74", null ]
+      ] ],
+      [ "Unit tests", "md_docs_2scripting.html#autotoc_md75", null ],
+      [ "Expansion", "md_docs_2scripting.html#autotoc_md76", null ]
     ] ],
     [ "In-Game UI", "md_docs_2ui.html", [
-      [ "Motivation", "md_docs_2ui.html#autotoc_md75", null ],
-      [ "Uses", "md_docs_2ui.html#autotoc_md76", [
-        [ "Authoring documents", "md_docs_2ui.html#autotoc_md77", null ],
-        [ "Panels", "md_docs_2ui.html#autotoc_md78", null ],
-        [ "Lua events and binds", "md_docs_2ui.html#autotoc_md79", null ],
-        [ "Localization and <span class=\"tt\">${}</span> formatting", "md_docs_2ui.html#autotoc_md80", null ],
-        [ "Rendering effects", "md_docs_2ui.html#autotoc_md81", null ]
+      [ "Motivation", "md_docs_2ui.html#autotoc_md78", null ],
+      [ "Uses", "md_docs_2ui.html#autotoc_md79", [
+        [ "Authoring documents", "md_docs_2ui.html#autotoc_md80", null ],
+        [ "Panels", "md_docs_2ui.html#autotoc_md81", null ],
+        [ "Lua events and binds", "md_docs_2ui.html#autotoc_md82", null ],
+        [ "Localization and <span class=\"tt\">${}</span> formatting", "md_docs_2ui.html#autotoc_md83", null ],
+        [ "Rendering effects", "md_docs_2ui.html#autotoc_md84", null ]
       ] ],
-      [ "Performance", "md_docs_2ui.html#autotoc_md82", null ],
-      [ "Unit tests", "md_docs_2ui.html#autotoc_md83", null ],
-      [ "Expansion", "md_docs_2ui.html#autotoc_md84", null ],
-      [ "Changelog", "md_docs_2ui.html#autotoc_md85", null ]
+      [ "Performance", "md_docs_2ui.html#autotoc_md85", null ],
+      [ "Unit tests", "md_docs_2ui.html#autotoc_md86", null ],
+      [ "Expansion", "md_docs_2ui.html#autotoc_md87", null ],
+      [ "Changelog", "md_docs_2ui.html#autotoc_md88", null ]
     ] ],
     [ "World", "md_docs_2world.html", [
-      [ "Nodes and the scene graph", "md_docs_2world.html#autotoc_md87", [
-        [ "Node states", "md_docs_2world.html#autotoc_md88", null ],
-        [ "Node types", "md_docs_2world.html#autotoc_md89", null ]
+      [ "Nodes and the scene graph", "md_docs_2world.html#autotoc_md90", [
+        [ "Node states", "md_docs_2world.html#autotoc_md91", null ],
+        [ "Node types", "md_docs_2world.html#autotoc_md92", null ]
       ] ],
-      [ "Loading and switching scenes", "md_docs_2world.html#autotoc_md90", null ],
-      [ "Searching the tree", "md_docs_2world.html#autotoc_md91", null ],
-      [ "Dependency graph", "md_docs_2world.html#autotoc_md92", null ],
-      [ "Tick phases and wave execution", "md_docs_2world.html#autotoc_md93", null ],
-      [ "Workspace", "md_docs_2world.html#autotoc_md94", null ]
+      [ "Loading and switching scenes", "md_docs_2world.html#autotoc_md93", null ],
+      [ "Searching the tree", "md_docs_2world.html#autotoc_md94", null ],
+      [ "Dependency graph", "md_docs_2world.html#autotoc_md95", null ],
+      [ "Tick phases and wave execution", "md_docs_2world.html#autotoc_md96", null ],
+      [ "Lifecycle", "md_docs_2world.html#autotoc_md97", null ],
+      [ "Workspace", "md_docs_2world.html#autotoc_md98", null ]
     ] ],
     [ "Namespaces", "namespaces.html", [
       [ "Namespace List", "namespaces.html", "namespaces_dup" ],
       [ "Namespace Members", "namespacemembers.html", [
         [ "All", "namespacemembers.html", null ],
         [ "Functions", "namespacemembers_func.html", null ],
+        [ "Typedefs", "namespacemembers_type.html", null ],
         [ "Enumerations", "namespacemembers_enum.html", null ]
       ] ]
     ] ],
@@ -182,21 +188,22 @@ var NAVTREE =
 
 var NAVTREEINDEX =
 [
-"DebugDraw_8cpp.html",
-"classeditor_1_1Assets_1_1AssetFolder.html#aeceef5b050a627d1639598569eec1b05",
-"classeditor_1_1Components_1_1Elements_1_1Color4Box.html",
+"aabb_8hpp.html",
+"classeditor_1_1Assets_1_1AssetTag.html",
+"classeditor_1_1Components_1_1Elements_1_1ColorBoxBase.html",
 "classeditor_1_1Workspace_1_1GroupVM.html",
-"classrenderer_1_1MaterialPass.html",
-"classtoast_1_1Camera.html#a2f7dd23d2ef0791018fbcde9ae81f85b",
-"classtoast_1_1ReflectionProbe.html#a6cd487a53cd94da5b692c59b4f3a0dc2",
-"classtoast_1_1VoxelPiece.html#a775e11481562b88228e1dc743fdda7f0",
-"dir_2d42ade538ca05e4e813c85f6cb29851.html",
-"logger_8hpp_source.html",
-"raycast_8hpp.html",
-"structevent_1_1ProtoTraits_3_01InspectorLuaContent_1_1LuaGroup_01_4.html",
-"structphysics_1_1Meta.html#a95012a506797f5f863d116e0ae041fff",
-"structtoast_1_1MusicPlayer_1_1CallbackData.html",
-"structvoxel_1_1SurfaceVoxel.html#a6cf6b85a37b6422cf93cc5f0a927a95c"
+"classrenderer_1_1IPostProcessPass.html",
+"classtoast_1_1Box.html#a9588b0d4692fbb281f5fa355b64d1219",
+"classtoast_1_1ProceduralVoxel.html",
+"classtoast_1_1VoxelNode.html#ad2c8c15c4ec1de792c575b287fde5007",
+"component__classification_8hpp.html",
+"interfaceeditor_1_1Assets_1_1Importers_1_1IAssetImporter.html",
+"node_8hpp.html#aea15e3db2fb9b67d5f99b3436f6a73faa63a9f0ea7bb98050796b649e85481845",
+"structevent_1_1AddSignalConnection.html",
+"structevent_1_1WorkspaceMergeHistory.html",
+"structrenderer_1_1VulkanTexture_1_1Params.html",
+"structtoast_1_1__detail_1_1ControlBox.html",
+"voxel__palette_8hpp_source.html"
 ];
 
 const SYNCONMSG = 'click to disable panel synchronization';

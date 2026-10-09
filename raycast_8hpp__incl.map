@@ -1,37 +1,46 @@
 <map id="engine/src/toast/physics/raycast.hpp" name="engine/src/toast/physics/raycast.hpp">
-<area shape="rect" id="Node000001" title="Raycast Implmentation mostly from https://iquilezles.org/articles/intersectors/ and https://www...." alt="" coords="604,5,782,50"/>
-<area shape="rect" id="Node000002" href="$box_8hpp.html" title="pseudo shared pointer for Nodes" alt="" coords="543,98,694,126"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="676,49,642,88,639,84,671,52"/>
-<area shape="rect" id="Node000016" title=" " alt="" coords="718,98,821,126"/>
-<area shape="poly" id="edge19_Node000001_Node000016" title=" " alt="" coords="714,48,749,87,744,86,712,53"/>
-<area shape="rect" id="Node000003" href="$control__box_8hpp.html" title="Control block for the pseudo shared pointer Box&lt;Node&gt;." alt="" coords="229,249,354,277"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="593,126,335,245,333,240,587,127"/>
-<area shape="rect" id="Node000009" title=" " alt="" coords="551,325,616,353"/>
-<area shape="poly" id="edge8_Node000002_Node000009" title=" " alt="" coords="619,124,590,311,586,308,614,127"/>
-<area shape="rect" id="Node000010" href="$box_8inl_source.html" title=" " alt="" coords="622,174,687,201"/>
-<area shape="poly" id="edge9_Node000002_Node000010" title=" " alt="" coords="619,124,636,161,631,159,617,129"/>
-<area shape="rect" id="Node000004" title=" " alt="" coords="5,325,72,353"/>
-<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="247,280,87,326,86,321,246,275"/>
-<area shape="rect" id="Node000005" title=" " alt="" coords="95,325,174,353"/>
-<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="266,277,177,321,175,316,261,278"/>
-<area shape="rect" id="Node000006" title=" " alt="" coords="308,325,374,353"/>
-<area shape="poly" id="edge5_Node000003_Node000006" title=" " alt="" coords="302,275,326,313,321,311,299,280"/>
-<area shape="rect" id="Node000007" title=" " alt="" coords="198,325,284,353"/>
-<area shape="poly" id="edge6_Node000003_Node000007" title=" " alt="" coords="285,276,260,314,257,310,280,279"/>
-<area shape="rect" id="Node000008" href="$export_8hpp.html" title=" " alt="" coords="398,325,527,353"/>
-<area shape="poly" id="edge7_Node000003_Node000008" title=" " alt="" coords="323,275,421,318,416,319,322,280"/>
-<area shape="poly" id="edge10_Node000010_Node000002" title=" " alt="" coords="653,172,639,142,641,137,658,174"/>
-<area shape="rect" id="Node000011" href="$log_8hpp.html" title="Public logging interface for the engine." alt="" coords="628,249,734,277"/>
-<area shape="poly" id="edge11_Node000010_Node000011" title=" " alt="" coords="661,200,674,236,669,234,658,204"/>
-<area shape="poly" id="edge14_Node000011_Node000006" title=" " alt="" coords="630,274,389,327,388,322,625,274"/>
-<area shape="poly" id="edge12_Node000011_Node000008" title=" " alt="" coords="645,277,516,322,515,317,639,278"/>
-<area shape="poly" id="edge16_Node000011_Node000009" title=" " alt="" coords="666,277,614,318,612,313,661,278"/>
-<area shape="rect" id="Node000012" title=" " alt="" coords="904,325,973,353"/>
-<area shape="poly" id="edge13_Node000011_Node000012" title=" " alt="" coords="728,275,892,324,887,324,727,280"/>
-<area shape="rect" id="Node000013" title=" " alt="" coords="997,325,1061,353"/>
-<area shape="poly" id="edge15_Node000011_Node000013" title=" " alt="" coords="735,271,845,292,985,325,979,324,844,297,735,276"/>
-<area shape="rect" id="Node000014" title=" " alt="" coords="641,325,737,353"/>
-<area shape="poly" id="edge17_Node000011_Node000014" title=" " alt="" coords="684,276,688,311,684,308,681,280"/>
-<area shape="rect" id="Node000015" title=" " alt="" coords="762,325,880,353"/>
-<area shape="poly" id="edge18_Node000011_Node000015" title=" " alt="" coords="707,275,785,318,780,317,706,280"/>
+<area shape="rect" id="Node000001" title="Raycast Implmentation mostly from https://iquilezles.org/articles/intersectors/ and https://www...." alt="" coords="617,5,795,50"/>
+<area shape="rect" id="Node000002" href="$body_8hpp.html" title="Body identifiers, creation data, and copied runtime state." alt="" coords="897,98,976,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="767,48,888,92,883,93,767,53"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="654,174,758,201"/>
+<area shape="poly" id="edge25_Node000001_Node000005" title=" " alt="" coords="708,48,708,159,704,157,704,52"/>
+<area shape="rect" id="Node000008" href="$box_8hpp.html" title="pseudo shared pointer for Nodes" alt="" coords="392,98,542,126"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="640,52,521,95,519,90,645,50"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="908,249,986,277"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="977,121,1018,140,1036,154,1051,172,1055,184,1055,195,1044,215,1024,232,998,245,997,240,1021,227,1040,212,1050,194,1050,185,1046,175,1032,158,1015,144,976,126"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="692,325,757,353"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="977,119,1014,130,1048,147,1062,158,1071,171,1075,186,1072,202,1050,241,1018,272,979,296,937,314,892,326,849,334,773,340,773,335,848,329,891,321,935,309,977,291,1014,268,1045,238,1067,200,1070,186,1067,173,1058,162,1045,151,1012,135,977,124"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="899,125,762,171,761,166,894,127"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="781,174,953,201"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="926,125,891,164,889,160,922,127"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="978,174,1036,201"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="950,124,987,163,982,162,948,129"/>
+<area shape="rect" id="Node000009" href="$control__box_8hpp.html" title="Control block for the pseudo shared pointer Box&lt;Node&gt;." alt="" coords="504,174,630,201"/>
+<area shape="poly" id="edge8_Node000008_Node000009" title=" " alt="" coords="486,124,540,164,535,164,485,129"/>
+<area shape="rect" id="Node000013" title=" " alt="" coords="449,325,514,353"/>
+<area shape="poly" id="edge14_Node000008_Node000013" title=" " alt="" coords="470,124,482,310,478,308,466,128"/>
+<area shape="rect" id="Node000014" href="$box_8inl_source.html" title=" " alt="" coords="364,174,429,201"/>
+<area shape="poly" id="edge15_Node000008_Node000014" title=" " alt="" coords="450,125,413,164,410,160,445,128"/>
+<area shape="poly" id="edge10_Node000009_Node000003" title=" " alt="" coords="631,198,896,251,890,252,630,204"/>
+<area shape="poly" id="edge11_Node000009_Node000004" title=" " alt="" coords="582,199,703,315,697,314,579,204"/>
+<area shape="rect" id="Node000010" title=" " alt="" coords="715,249,782,277"/>
+<area shape="poly" id="edge9_Node000009_Node000010" title=" " alt="" coords="600,199,705,243,700,243,599,205"/>
+<area shape="rect" id="Node000011" title=" " alt="" coords="504,249,590,277"/>
+<area shape="poly" id="edge12_Node000009_Node000011" title=" " alt="" coords="566,200,557,236,553,233,562,204"/>
+<area shape="rect" id="Node000012" href="$export_8hpp.html" title=" " alt="" coords="539,325,667,353"/>
+<area shape="poly" id="edge13_Node000009_Node000012" title=" " alt="" coords="578,199,593,222,604,249,609,280,608,311,604,308,604,281,599,250,589,225,576,204"/>
+<area shape="poly" id="edge16_Node000014_Node000008" title=" " alt="" coords="415,171,450,139,454,136,418,175"/>
+<area shape="rect" id="Node000015" href="$log_8hpp.html" title="Public logging interface for the engine." alt="" coords="323,249,430,277"/>
+<area shape="poly" id="edge17_Node000014_Node000015" title=" " alt="" coords="395,200,386,236,382,233,391,204"/>
+<area shape="poly" id="edge20_Node000015_Node000004" title=" " alt="" coords="431,271,541,292,680,325,674,325,539,298,430,277"/>
+<area shape="poly" id="edge18_Node000015_Node000012" title=" " alt="" coords="417,275,551,320,546,320,417,280"/>
+<area shape="poly" id="edge22_Node000015_Node000013" title=" " alt="" coords="396,275,454,316,448,316,395,280"/>
+<area shape="rect" id="Node000016" title=" " alt="" coords="148,325,216,353"/>
+<area shape="poly" id="edge19_Node000015_Node000016" title=" " alt="" coords="344,277,231,322,230,317,339,278"/>
+<area shape="rect" id="Node000017" title=" " alt="" coords="240,325,305,353"/>
+<area shape="poly" id="edge21_Node000015_Node000017" title=" " alt="" coords="360,277,304,318,302,314,355,278"/>
+<area shape="rect" id="Node000018" title=" " alt="" coords="328,325,425,353"/>
+<area shape="poly" id="edge23_Node000015_Node000018" title=" " alt="" coords="378,276,379,311,374,308,375,279"/>
+<area shape="rect" id="Node000019" title=" " alt="" coords="5,325,124,353"/>
+<area shape="poly" id="edge24_Node000015_Node000019" title=" " alt="" coords="323,280,136,324,135,318,322,274"/>
 </map>

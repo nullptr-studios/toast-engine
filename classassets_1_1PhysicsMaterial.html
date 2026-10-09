@@ -201,16 +201,20 @@ auto&#160;</td><td class="memItemRight"><b>operator=</b> (const Asset &amp;) -&g
 <tr class="memitem:a79b3750427efd7140725c42efc80d296 pub_methods_classassets_1_1Asset" id="r_a79b3750427efd7140725c42efc80d296"><td class="memItemLeft">
 auto&#160;</td><td class="memItemRight"><b>refCount</b> () const noexcept -&gt; uint32_t</td></tr>
 </table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 id="header-inherited" class="groupheader"><a id="inherited" name="inherited"></a>
-Additional Inherited Members</h2></td></tr>
-<tr class="inherit_header pub_static_attribs_classassets_1_1Data"><td colspan="2">Static Public Attributes inherited from <a class="el" href="classassets_1_1Data.html">assets::Data</a></td></tr>
-<tr class="memitem:a8ec94e97704c485551b007f1ba050237 pub_static_attribs_classassets_1_1Data" id="r_a8ec94e97704c485551b007f1ba050237"><td class="memItemLeft">
-static constexpr <a class="el" href="structassets_1_1Data_1_1KeepAllKeysTag.html">KeepAllKeysTag</a>&#160;</td><td class="memItemRight"><b>keep_all_keys</b> {}</td></tr>
+<tr class="heading"><td colspan="2"><h2 id="header-pro-methods" class="groupheader"><a id="pro-methods" name="pro-methods"></a>
+Protected Member Functions</h2></td></tr>
+<tr class="memitem:ae18efbf924778a386ce4488bdec54b74" id="r_ae18efbf924778a386ce4488bdec54b74"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#ae18efbf924778a386ce4488bdec54b74">onReloaded</a> () override</td></tr>
 <tr class="inherit_header pro_methods_classassets_1_1Asset"><td colspan="2">Protected Member Functions inherited from <a class="el" href="classassets_1_1Asset.html">assets::Asset</a></td></tr>
 <tr class="memitem:adf4e469c6d8670f499fdd6146c7a4bff pro_methods_classassets_1_1Asset" id="r_adf4e469c6d8670f499fdd6146c7a4bff"><td class="memItemLeft">
 void&#160;</td><td class="memItemRight"><b>addRef</b> () noexcept</td></tr>
 <tr class="memitem:ac41a41e7fef77cf4dd08c6bb3c357a04 pro_methods_classassets_1_1Asset" id="r_ac41a41e7fef77cf4dd08c6bb3c357a04"><td class="memItemLeft">
 void&#160;</td><td class="memItemRight"><b>release</b> () noexcept</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-inherited" class="groupheader"><a id="inherited" name="inherited"></a>
+Additional Inherited Members</h2></td></tr>
+<tr class="inherit_header pub_static_attribs_classassets_1_1Data"><td colspan="2">Static Public Attributes inherited from <a class="el" href="classassets_1_1Data.html">assets::Data</a></td></tr>
+<tr class="memitem:a8ec94e97704c485551b007f1ba050237 pub_static_attribs_classassets_1_1Data" id="r_a8ec94e97704c485551b007f1ba050237"><td class="memItemLeft">
+static constexpr <a class="el" href="structassets_1_1Data_1_1KeepAllKeysTag.html">KeepAllKeysTag</a>&#160;</td><td class="memItemRight"><b>keep_all_keys</b> {}</td></tr>
 <tr class="inherit_header pro_attribs_classassets_1_1Data"><td colspan="2">Protected Attributes inherited from <a class="el" href="classassets_1_1Data.html">assets::Data</a></td></tr>
 <tr class="memitem:acea6ae1d90d97a3167fe50cb2e3d140b pro_attribs_classassets_1_1Data" id="r_acea6ae1d90d97a3167fe50cb2e3d140b"><td class="memItemLeft">
 <a class="el" href="classassets_1_1DataValue.html">DataValue</a>&#160;</td><td class="memItemRight"><b>m_root</b></td></tr>
@@ -222,6 +226,33 @@ void&#160;</td><td class="memItemRight"><b>release</b> () noexcept</td></tr>
 bool&#160;</td><td class="memItemRight"><b>m_keep_all_keys</b> = false</td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
+<a id="ae18efbf924778a386ce4488bdec54b74" name="ae18efbf924778a386ce4488bdec54b74"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae18efbf924778a386ce4488bdec54b74">&#9670;&#160;</a></span>onReloaded()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void assets::PhysicsMaterial::onReloaded </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel override">override</span><span class="mlabel protected">protected</span><span class="mlabel virtual">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Reimplemented from <a class="el" href="classassets_1_1Data.html">assets::Data</a>.</p>
+
+</div>
+</div>
 <a id="a5840ec2fe961b03446d08e5d82c2cc65" name="a5840ec2fe961b03446d08e5d82c2cc65"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a5840ec2fe961b03446d08e5d82c2cc65">&#9670;&#160;</a></span>type()</h2>
 

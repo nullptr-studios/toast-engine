@@ -1,0 +1,11 @@
+<map id="engine/src/toast/world/wave_executor.hpp" name="engine/src/toast/world/wave_executor.hpp">
+<area shape="rect" id="Node000001" title="Runs a plan of jobs on the thread pool, one interpreter per job." alt="" coords="100,5,265,50"/>
+<area shape="rect" id="Node000002" href="$tick__scheduler_8hpp.html" title="Dependency&#45;graph tick scheduling shared by World and PlayWorkspace." alt="" coords="100,98,265,143"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="184,63,185,99,180,97,182,68"/>
+<area shape="rect" id="Node000003" href="$play__workspace_8hpp.html" title="Ticking clone of a Workspace used by the editor&#39;s play mode." alt="" coords="5,191,171,235"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="148,155,112,192,108,189,151,151"/>
+<area shape="rect" id="Node000004" href="$world_8hpp_source.html" title=" " alt="" coords="195,191,360,235"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="217,151,258,190,252,191,215,156"/>
+<area shape="rect" id="Node000005" href="$world__test__access_8hpp_source.html" title=" " alt="" coords="191,283,364,328"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="279,249,280,285,275,282,275,253"/>
+</map>

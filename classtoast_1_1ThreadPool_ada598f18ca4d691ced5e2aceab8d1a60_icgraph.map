@@ -1,0 +1,14 @@
+<map id="toast::ThreadPool::idleWorkers" name="toast::ThreadPool::idleWorkers">
+<area shape="rect" id="Node000001" title=" " alt="" coords="875,36,1018,81"/>
+<area shape="rect" id="Node000002" href="$namespacetoast_1_1__detail.html#a1611d2383fe6b4b0f815c29dbe7d4095" title="Runs the jobs of a plan in parallel and returns once every item has run." alt="" coords="664,44,827,72"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="856,58,827,61,827,56,861,58"/>
+<area shape="rect" id="Node000003" href="$classscripting_1_1ScriptDispatch.html#a0edcaee096f36a3d503be1a736a06cba" title="Runs the queued work." alt="" coords="437,65,616,110"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="651,71,617,78,617,73,646,72"/>
+<area shape="rect" id="Node000004" href="$classtoast_1_1TickScheduler.html#aada3144d3daa1b70a00740d65f45a026" title="Runs a lifecycle stage on root and every node below it, parents before their children." alt="" coords="236,5,389,50"/>
+<area shape="poly" id="edge6_Node000002_Node000004" title=" " alt="" coords="646,52,389,36,389,30,651,51"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="427,61,389,52,390,47,433,61"/>
+<area shape="rect" id="Node000005" href="$classtoast_1_1TickScheduler.html#a30cb7092b454ff283d6cd1568dac301c" title="Dispatches a single phase of the tick schedule." alt="" coords="236,75,389,119"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="419,92,389,96,389,91,424,92"/>
+<area shape="rect" id="Node000006" href="$classtoast_1_1TickScheduler.html#a002172089ec3f1e7d6d24789c4547bb4" title="Runs the four frame phases (early_tick → tick → post_physics → late_tick) of the schedule." alt="" coords="5,83,188,111"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="217,97,188,100,188,94,223,97"/>
+</map>

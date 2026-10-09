@@ -127,155 +127,183 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('node__owner_8h
 <div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &lt;functional&gt;</span></div>
 <div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &lt;memory&gt;</span></div>
 <div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#include &lt;mutex&gt;</span></div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="preprocessor">#include &lt;string_view&gt;</span></div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="preprocessor">#include &lt;toast/assets/prefab.hpp&gt;</span></div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="preprocessor">#include &lt;<a class="code" href="export_8hpp.html">toast/export.hpp</a>&gt;</span></div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="preprocessor">#include &lt;toast/physics/accumulator.hpp&gt;</span></div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#include &lt;<a class="code" href="lua__value__codec_8hpp.html">toast/scripting/lua_value_codec.hpp</a>&gt;</span></div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#include &lt;<a class="code" href="uid_8hpp.html">toast/uid.hpp</a>&gt;</span></div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="preprocessor">#include &lt;unordered_set&gt;</span></div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#include &lt;vector&gt;</span></div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span> </div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="keyword">namespace </span>toast {</div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="keyword">class </span><a class="code hl_class" href="classtoast_1_1Workspace.html">Workspace</a>;</div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="keyword">class </span><a class="code hl_class" href="classtoast_1_1CameraController.html">CameraController</a>;</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="keyword">class </span><a class="code hl_class" href="classtoast_1_1Camera.html">Camera</a>;</div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="keyword">enum class</span> NodeOwnerParticipation : uint8_t {</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>  render,</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>  runtime_input,</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  gameplay_tick,</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>};</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span> </div>
-<div class="foldopen" id="foldopen00037" data-start="{" data-end="};">
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno"><a class="line" href="classtoast_1_1INodeOwner.html">   37</a></span><span class="keyword">class </span>TOAST_API INodeOwner {</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  INodeOwner();</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  <span class="keyword">virtual</span> ~INodeOwner();</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  <span class="keyword">virtual</span> <span class="keyword">auto</span> name() -&gt; std::string = 0;</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span> </div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span> tick() = 0;</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span></div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno"><a class="line" href="classtoast_1_1INodeOwner.html#a070a8aaa8d570cbf16c0c68b99ec58fd">   46</a></span>  <span class="keyword">virtual</span> <span class="keyword">auto</span> <a class="code hl_function" href="classtoast_1_1INodeOwner.html#a070a8aaa8d570cbf16c0c68b99ec58fd">asWorkspace</a>() -&gt; <a class="code hl_class" href="classtoast_1_1Workspace.html">Workspace</a>* { <span class="keywordflow">return</span> <span class="keyword">nullptr</span>; }</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span></div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno"><a class="line" href="classtoast_1_1INodeOwner.html#a58b28b0f5f24f971e81234d2d845068a">   50</a></span>  <span class="keyword">virtual</span> <span class="keyword">auto</span> <a class="code hl_function" href="classtoast_1_1INodeOwner.html#a58b28b0f5f24f971e81234d2d845068a">participatesIn</a>(NodeOwnerParticipation use) <span class="keyword">const</span> <span class="keyword">noexcept</span> -&gt; <span class="keywordtype">bool</span> = 0;</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span></div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <span class="keyword">auto</span> <a class="code hl_function" href="classtoast_1_1INodeOwner.html#a64b6034e9beabc313d99ca24a26e8cd4">isEditing</a>() noexcept -&gt; <span class="keywordtype">bool</span>;</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span> </div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  virtual <span class="keywordtype">void</span> registerDependency(<a class="code hl_class" href="classtoast_1_1Node.html">Node</a>&amp; from, <a class="code hl_class" href="classtoast_1_1Node.html">Node</a>&amp; to) = 0;</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  virtual <span class="keywordtype">void</span> unregisterDependency(<a class="code hl_class" href="classtoast_1_1Node.html">Node</a>&amp; from, <a class="code hl_class" href="classtoast_1_1Node.html">Node</a>&amp; to) = 0;</div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="preprocessor">#include &lt;shared_mutex&gt;</span></div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="preprocessor">#include &lt;string_view&gt;</span></div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="preprocessor">#include &lt;toast/assets/prefab.hpp&gt;</span></div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="preprocessor">#include &lt;<a class="code" href="export_8hpp.html">toast/export.hpp</a>&gt;</span></div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#include &lt;toast/physics/accumulator.hpp&gt;</span></div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#include &lt;<a class="code" href="lua__value__codec_8hpp.html">toast/scripting/lua_value_codec.hpp</a>&gt;</span></div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="preprocessor">#include &lt;<a class="code" href="uid_8hpp.html">toast/uid.hpp</a>&gt;</span></div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#include &lt;unordered_set&gt;</span></div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#include &lt;vector&gt;</span></div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span> </div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="keyword">namespace </span>toast {</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="keyword">class </span><a class="code hl_class" href="classtoast_1_1Workspace.html">Workspace</a>;</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="keyword">class </span><a class="code hl_class" href="classtoast_1_1CameraController.html">CameraController</a>;</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="keyword">class </span><a class="code hl_class" href="classtoast_1_1Camera.html">Camera</a>;</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="keyword">enum class</span> NodeOwnerParticipation : uint8_t {</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>  render,</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  runtime_input,</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  gameplay_tick,</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>};</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span> </div>
+<div class="foldopen" id="foldopen00038" data-start="{" data-end="};">
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno"><a class="line" href="classtoast_1_1INodeOwner.html">   38</a></span><span class="keyword">class </span>TOAST_API INodeOwner {</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  INodeOwner();</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  <span class="keyword">virtual</span> ~INodeOwner();</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  <span class="keyword">virtual</span> <span class="keyword">auto</span> name() -&gt; std::string = 0;</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span> tick() = 0;</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span></div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno"><a class="line" href="classtoast_1_1INodeOwner.html#a070a8aaa8d570cbf16c0c68b99ec58fd">   47</a></span>  <span class="keyword">virtual</span> <span class="keyword">auto</span> <a class="code hl_function" href="classtoast_1_1INodeOwner.html#a070a8aaa8d570cbf16c0c68b99ec58fd">asWorkspace</a>() -&gt; <a class="code hl_class" href="classtoast_1_1Workspace.html">Workspace</a>* { <span class="keywordflow">return</span> <span class="keyword">nullptr</span>; }</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span></div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno"><a class="line" href="classtoast_1_1INodeOwner.html#a58b28b0f5f24f971e81234d2d845068a">   51</a></span>  <span class="keyword">virtual</span> <span class="keyword">auto</span> <a class="code hl_function" href="classtoast_1_1INodeOwner.html#a58b28b0f5f24f971e81234d2d845068a">participatesIn</a>(NodeOwnerParticipation use) <span class="keyword">const</span> <span class="keyword">noexcept</span> -&gt; <span class="keywordtype">bool</span> = 0;</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span></div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  [[nodiscard]]</div>
+<div class="foldopen" id="foldopen00055" data-start="{" data-end="}">
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno"><a class="line" href="classtoast_1_1INodeOwner.html#a3a4daa20a490917a424910e3b9d1b297">   55</a></span>  <span class="keyword">virtual</span> <span class="keyword">auto</span> <a class="code hl_function" href="classtoast_1_1INodeOwner.html#a3a4daa20a490917a424910e3b9d1b297">receivesEvents</a>() const noexcept -&gt; <span class="keywordtype">bool</span> {</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  }</div>
+</div>
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span> </div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  virtual auto findFrom(const <a class="code hl_class" href="classtoast_1_1Node.html">Node</a>&amp; origin, std::string_view query) -&gt; <a class="code hl_class" href="classtoast_1_1Box.html">Box</a>&lt;<a class="code hl_class" href="classtoast_1_1Node.html">Node</a>&gt; = 0;</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  virtual auto findFrom(const <a class="code hl_class" href="classtoast_1_1Node.html">Node</a>&amp; origin, const <a class="code hl_struct" href="structtoast_1_1UID.html">UID</a>&amp; uid) -&gt; <a class="code hl_class" href="classtoast_1_1Box.html">Box</a>&lt;<a class="code hl_class" href="classtoast_1_1Node.html">Node</a>&gt; = 0;</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  virtual auto searchFrom(const <a class="code hl_class" href="classtoast_1_1Node.html">Node</a>&amp; origin, std::string_view query) -&gt; std::vector&lt;<a class="code hl_class" href="classtoast_1_1Box.html">Box</a>&lt;<a class="code hl_class" href="classtoast_1_1Node.html">Node</a>&gt;&gt; = 0;</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <span class="keywordtype">void</span> activateCamera(<a class="code hl_class" href="classtoast_1_1Camera.html">Camera</a>&amp; camera);</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classtoast_1_1INodeOwner.html#a6f5391e16c2c81dd8706ed39dacc63d3">setMainCamera</a>(<a class="code hl_class" href="classtoast_1_1Camera.html">Camera</a>&amp; camera);</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  <span class="keywordtype">void</span> deactivateCamera(<a class="code hl_class" href="classtoast_1_1Camera.html">Camera</a>&amp; camera);</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  <span class="keywordtype">void</span> activateCameraController(CameraController&amp; controller);</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  <span class="keywordtype">void</span> deactivateCameraController(CameraController&amp; controller);</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  <span class="keywordtype">void</span> syncListenerState() noexcept;</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span></div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  auto isEditing() noexcept -&gt; <span class="keywordtype">bool</span>;</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span> </div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  auto treeMutex() const noexcept -&gt; std::shared_mutex&amp; {</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>    <span class="keywordflow">return</span> m_tree_mutex;</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  }</div>
 <div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span> </div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  auto requestRuntimeCreate(<a class="code hl_class" href="classtoast_1_1Node.html">Node</a>&amp; parent, std::string_view type) -&gt; <a class="code hl_class" href="classtoast_1_1Box.html">Box</a>&lt;<a class="code hl_class" href="classtoast_1_1Node.html">Node</a>&gt;;</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  auto requestRuntimeSpawn(<a class="code hl_class" href="classtoast_1_1Node.html">Node</a>&amp; parent, <a class="code hl_struct" href="structtoast_1_1UID.html">UID</a> uid) -&gt; <a class="code hl_class" href="classtoast_1_1Box.html">Box</a>&lt;<a class="code hl_class" href="classtoast_1_1Node.html">Node</a>&gt;;</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  auto requestRuntimeSpawn(<a class="code hl_class" href="classtoast_1_1Node.html">Node</a>&amp; parent, std::string_view) -&gt; <a class="code hl_class" href="classtoast_1_1Box.html">Box</a>&lt;<a class="code hl_class" href="classtoast_1_1Node.html">Node</a>&gt;;</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span> </div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  <span class="keywordtype">void</span> reloadScriptsUsing(<a class="code hl_struct" href="structtoast_1_1UID.html">UID</a> script_uid) noexcept;</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  <span class="keywordtype">void</span> refreshNodeInfos() noexcept;</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span> registerDependency(Node&amp; from, Node&amp; to) = 0;</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span> unregisterDependency(Node&amp; from, Node&amp; to) = 0;</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span> </div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span> registerInteraction(Node&amp; <span class="comment">/*first*/</span>, Node&amp; <span class="comment">/*second*/</span>) { }</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span> </div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span> nodeEnabledChanged() noexcept { }</div>
 <div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span> </div>
-<div class="foldopen" id="foldopen00077" data-start="{" data-end="};">
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno"><a class="line" href="structtoast_1_1INodeOwner_1_1InstantiateContext.html">   77</a></span>  struct <a class="code hl_struct" href="structtoast_1_1INodeOwner_1_1InstantiateContext.html">InstantiateContext</a> {</div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno"><a class="line" href="structtoast_1_1INodeOwner_1_1InstantiateContext.html#a25c5204235f852cd42fe4f6012034fb3">   78</a></span>    std::vector&lt;uint64_t&gt; <a class="code hl_variable" href="structtoast_1_1INodeOwner_1_1InstantiateContext.html#a25c5204235f852cd42fe4f6012034fb3">asset_chain</a>;    </div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno"><a class="line" href="structtoast_1_1INodeOwner_1_1InstantiateContext.html#ab3bed19c66c10ead48e98e393d09efdf">   79</a></span>    std::function&lt;assets::Handle&lt;assets::Prefab&gt;(<a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a>)&gt; <a class="code hl_variable" href="structtoast_1_1INodeOwner_1_1InstantiateContext.html#ab3bed19c66c10ead48e98e393d09efdf">resolver</a>;    </div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>  };</div>
-</div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span> </div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span><span class="keyword">protected</span>:</div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  <span class="keyword">virtual</span> <span class="keyword">auto</span> owningPrefabUid() const -&gt; <a class="code hl_struct" href="structtoast_1_1UID.html">UID</a> {</div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>    <span class="keywordflow">return</span> {0};</div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  }</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  <span class="keyword">virtual</span> <span class="keyword">auto</span> findFrom(<span class="keyword">const</span> Node&amp; origin, std::string_view query) -&gt; Box&lt;Node&gt; = 0;</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  <span class="keyword">virtual</span> <span class="keyword">auto</span> findFrom(<span class="keyword">const</span> Node&amp; origin, <span class="keyword">const</span> UID&amp; uid) -&gt; Box&lt;Node&gt; = 0;</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  <span class="keyword">virtual</span> <span class="keyword">auto</span> searchFrom(<span class="keyword">const</span> Node&amp; origin, std::string_view query) -&gt; std::vector&lt;Box&lt;Node&gt;&gt; = 0;</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span> </div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>  <span class="keywordtype">void</span> activateCamera(Camera&amp; camera);</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  <span class="keywordtype">void</span> setMainCamera(Camera&amp; camera);</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  <span class="keywordtype">void</span> deactivateCamera(Camera&amp; camera);</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  <span class="keywordtype">void</span> activateCameraController(CameraController&amp; controller);</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  <span class="keywordtype">void</span> deactivateCameraController(CameraController&amp; controller);</div>
 <div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span> </div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  <span class="keywordtype">void</span> seedPrefabContext(InstantiateContext&amp; context, <span class="keyword">const</span> Node* parent = <span class="keyword">nullptr</span>) <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  <span class="keyword">static</span> <span class="keywordtype">void</span> updateTransforms(Node&amp; root);</div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span></div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  <span class="keyword">static</span> <span class="keywordtype">void</span> generateUid(Node&amp; node);</div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span></div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  <span class="keyword">static</span> <span class="keyword">auto</span> stripNamespace(std::string_view type) -&gt; std::string_view;</div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span></div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  <span class="keyword">static</span> <span class="keyword">auto</span> uniqueChildName(<span class="keyword">const</span> Node&amp; parent, std::string_view base) -&gt; std::string;</div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span></div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  <span class="keyword">auto</span> nodeAllocation(std::string_view type = <span class="stringliteral">&quot;toast::Node&quot;</span>) noexcept -&gt; Box&lt;Node&gt;;</div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span></div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  auto nodeAllocation(const assets::Prefab::BasicNode&amp; node_data) noexcept -&gt; Box&lt;Node&gt;;</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span></div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  auto buildTree(std::vector&lt;Box&lt;Node&gt;&gt;&amp;&amp; nodes, const assets::Handle&lt;assets::Prefab&gt;&amp; file) -&gt; Box&lt;Node&gt;;</div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span></div>
-<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>  auto instantiate(const assets::Handle&lt;assets::Prefab&gt;&amp; file, InstantiateContext&amp; ctx) -&gt; Box&lt;Node&gt;;</div>
-<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span></div>
-<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>  <span class="keywordtype">void</span> applyFields(Node&amp; node, const assets::Prefab::BasicNode&amp; data);</div>
-<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span></div>
-<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>  <span class="keywordtype">void</span> applyLuaOverrides(Node&amp; node, const assets::Prefab::BasicNode&amp; data, const scripting::NodeResolver&amp; find_node);</div>
-<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span></div>
-<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>  <span class="keywordtype">void</span> releaseNode(_detail::ControlBox&amp; control) noexcept;</div>
-<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span></div>
-<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>  <span class="keywordtype">void</span> reapTombstones() noexcept;</div>
-<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span> </div>
-<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>  <span class="keywordtype">void</span> findCamera();</div>
-<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>  <span class="keywordtype">void</span> findCameraController();</div>
-<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>  <span class="keywordtype">void</span> tickActiveCameraController();</div>
-<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>  <span class="keywordtype">void</span> beginCameraShutdown() noexcept;</div>
-<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span> </div>
-<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>  auto activeCamera() noexcept -&gt; Box&lt;Camera&gt;&amp;;</div>
-<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span> </div>
-<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>  auto activeRenderCamera() noexcept -&gt; Camera*;</div>
-<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>  virtual <span class="keywordtype">void</span> applyActiveCamera() = 0;</div>
-<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span> </div>
-<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>  template&lt;typename Fn&gt;</div>
-<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>  <span class="keywordtype">void</span> forEachNode(Fn&amp;&amp; fn)<span class="keyword"> const </span>{</div>
-<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>    <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; cb : nodes) {</div>
-<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>      fn(cb);</div>
-<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>    }</div>
-<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>  }</div>
-<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span> </div>
-<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>  std::mutex nodes_mutex;</div>
-<div class="line"><a id="l00170" name="l00170"></a><span class="lineno"><a class="line" href="classtoast_1_1INodeOwner.html#ad4b36f207ea9768d38e738634e89ef76">  170</a></span>  <span class="keywordtype">size_t</span> <a class="code hl_variable" href="classtoast_1_1INodeOwner.html#ad4b36f207ea9768d38e738634e89ef76">tombstones</a> = 0;    </div>
-<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span> </div>
-<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>  <a class="code hl_class" href="classphysics_1_1Accumulator.html">physics::Accumulator</a> m_accumulator;</div>
-<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span> </div>
-<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>  <span class="keyword">friend</span> <span class="keyword">class </span>CameraController;</div>
-<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span> </div>
-<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>  std::unordered_set&lt;_detail::ControlBox&gt; nodes;</div>
-<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span> </div>
-<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>  std::unique_ptr&lt;Camera&gt; m_fallback_camera;</div>
-<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>  <a class="code hl_class" href="classtoast_1_1Box.html">Box&lt;Camera&gt;</a> m_active_camera;</div>
-<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>  <a class="code hl_class" href="classtoast_1_1Box.html">Box&lt;CameraController&gt;</a> m_active_camera_controller;</div>
-<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>  <span class="keywordtype">bool</span> m_has_camera_controller = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>  <span class="keywordtype">bool</span> m_is_shutting_down = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>};</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  <span class="keyword">auto</span> requestRuntimeCreate(Node&amp; parent, std::string_view type) -&gt; Box&lt;Node&gt;;</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  <span class="keyword">auto</span> requestRuntimeSpawn(Node&amp; parent, UID uid) -&gt; Box&lt;Node&gt;;</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  <span class="keyword">auto</span> requestRuntimeSpawn(Node&amp; parent, std::string_view) -&gt; Box&lt;Node&gt;;</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span> </div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  <span class="keywordtype">void</span> reloadScriptsUsing(UID script_uid) <span class="keyword">noexcept</span>;</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>  <span class="keywordtype">void</span> refreshNodeInfos() noexcept;</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  <span class="keywordtype">void</span> rebindAssetHandles(UID asset_uid) noexcept;</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  static <span class="keywordtype">void</span> reapOrphanedControlBoxes() noexcept;</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span> </div>
+<div class="foldopen" id="foldopen00097" data-start="{" data-end="};">
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno"><a class="line" href="structtoast_1_1INodeOwner_1_1InstantiateContext.html">   97</a></span>  struct <a class="code hl_struct" href="structtoast_1_1INodeOwner_1_1InstantiateContext.html">InstantiateContext</a> {</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno"><a class="line" href="structtoast_1_1INodeOwner_1_1InstantiateContext.html#a25c5204235f852cd42fe4f6012034fb3">   98</a></span>    std::vector&lt;uint64_t&gt; <a class="code hl_variable" href="structtoast_1_1INodeOwner_1_1InstantiateContext.html#a25c5204235f852cd42fe4f6012034fb3">asset_chain</a>;    </div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno"><a class="line" href="structtoast_1_1INodeOwner_1_1InstantiateContext.html#ab3bed19c66c10ead48e98e393d09efdf">   99</a></span>    std::function&lt;assets::Handle&lt;assets::Prefab&gt;(<a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a>)&gt; <a class="code hl_variable" href="structtoast_1_1INodeOwner_1_1InstantiateContext.html#ab3bed19c66c10ead48e98e393d09efdf">resolver</a>;    </div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>    uint64_t script_group = 0;</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>    <span class="keywordtype">bool</span> nested = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>  };</div>
 </div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span> </div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span><span class="keyword">protected</span>:</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  <span class="keyword">virtual</span> <span class="keyword">auto</span> owningPrefabUid() const -&gt; <a class="code hl_struct" href="structtoast_1_1UID.html">UID</a> {</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>    <span class="keywordflow">return</span> {0};</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>  }</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span> </div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  <span class="keywordtype">void</span> seedPrefabContext(InstantiateContext&amp; context, <span class="keyword">const</span> Node* parent = <span class="keyword">nullptr</span>) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  <span class="keyword">static</span> <span class="keywordtype">void</span> updateTransforms(Node&amp; root);</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span></div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  <span class="keyword">static</span> <span class="keywordtype">void</span> generateUid(Node&amp; node);</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span></div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  <span class="keyword">static</span> <span class="keyword">auto</span> stripNamespace(std::string_view type) -&gt; std::string_view;</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span></div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  <span class="keyword">static</span> <span class="keyword">auto</span> uniqueChildName(<span class="keyword">const</span> Node&amp; parent, std::string_view base) -&gt; std::string;</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span></div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>  <span class="keyword">auto</span> nodeAllocation(std::string_view type = <span class="stringliteral">&quot;toast::Node&quot;</span>) noexcept -&gt; Box&lt;Node&gt;;</div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span></div>
+<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>  auto nodeAllocation(const assets::Prefab::BasicNode&amp; node_data, uint64_t script_group = 0, <span class="keywordtype">bool</span> build_scripts = true) noexcept</div>
+<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>      -&gt; Box&lt;Node&gt;;</div>
+<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span> </div>
+<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>  <span class="keywordtype">void</span> buildLeaves(</div>
+<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>      const assets::Handle&lt;assets::Prefab&gt;&amp; file, uint64_t group, const std::vector&lt;<span class="keywordtype">size_t</span>&gt;&amp; leaf_slots,</div>
+<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span>      std::vector&lt;Box&lt;Node&gt;&gt;&amp; slots</div>
+<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>  );</div>
+<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span></div>
+<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>  auto buildTree(std::vector&lt;Box&lt;Node&gt;&gt;&amp;&amp; nodes, const assets::Handle&lt;assets::Prefab&gt;&amp; file) -&gt; Box&lt;Node&gt;;</div>
+<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span></div>
+<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>  auto instantiate(const assets::Handle&lt;assets::Prefab&gt;&amp; file, InstantiateContext&amp; ctx) -&gt; Box&lt;Node&gt;;</div>
+<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span></div>
+<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>  <span class="keywordtype">void</span> applyFields(Node&amp; node, const assets::Prefab::BasicNode&amp; data);</div>
+<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span></div>
+<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>  <span class="keywordtype">void</span> applyLuaOverrides(Node&amp; node, const assets::Prefab::BasicNode&amp; data, const scripting::NodeResolver&amp; find_node);</div>
+<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span></div>
+<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>  <span class="keywordtype">void</span> releaseNode(_detail::ControlBox&amp; control) noexcept;</div>
+<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span></div>
+<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>  <span class="keywordtype">void</span> reapTombstones() noexcept;</div>
+<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span> </div>
+<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>  <span class="keywordtype">void</span> findCamera();</div>
+<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>  <span class="keywordtype">void</span> findCameraController();</div>
+<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>  <span class="keywordtype">void</span> tickActiveCameraController();</div>
+<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>  <span class="keywordtype">void</span> beginCameraShutdown() noexcept;</div>
+<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span> </div>
+<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>  auto activeCamera() noexcept -&gt; Box&lt;Camera&gt;&amp;;</div>
 <div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span> </div>
-<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>}</div>
+<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>  auto activeRenderCamera() noexcept -&gt; Camera*;</div>
+<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>  virtual <span class="keywordtype">void</span> applyActiveCamera() = 0;</div>
+<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span> </div>
+<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>  template&lt;typename Fn&gt;</div>
+<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>  <span class="keywordtype">void</span> forEachNode(Fn&amp;&amp; fn)<span class="keyword"> const </span>{</div>
+<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>    <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; cb : nodes) {</div>
+<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>      fn(cb);</div>
+<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>    }</div>
+<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>  }</div>
+<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span> </div>
+<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>  std::mutex nodes_mutex;</div>
+<div class="line"><a id="l00198" name="l00198"></a><span class="lineno"><a class="line" href="classtoast_1_1INodeOwner.html#ad4b36f207ea9768d38e738634e89ef76">  198</a></span>  <span class="keywordtype">size_t</span> <a class="code hl_variable" href="classtoast_1_1INodeOwner.html#ad4b36f207ea9768d38e738634e89ef76">tombstones</a> = 0;    </div>
+<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span> </div>
+<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>  <a class="code hl_class" href="classphysics_1_1Accumulator.html">physics::Accumulator</a> m_accumulator;</div>
+<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span> </div>
+<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>  <span class="keyword">friend</span> <span class="keyword">class </span>CameraController;</div>
+<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span> </div>
+<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>  <span class="keyword">mutable</span> std::shared_mutex m_tree_mutex;</div>
+<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>  std::unordered_set&lt;_detail::ControlBox&gt; nodes;</div>
+<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span> </div>
+<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span>  std::unique_ptr&lt;Camera&gt; m_fallback_camera;</div>
+<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>  <a class="code hl_class" href="classtoast_1_1Box.html">Box&lt;Camera&gt;</a> m_active_camera;</div>
+<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span>  <a class="code hl_class" href="classtoast_1_1Box.html">Box&lt;CameraController&gt;</a> m_active_camera_controller;</div>
+<div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span>  <span class="keywordtype">bool</span> m_has_camera_controller = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span>  <span class="keywordtype">bool</span> m_is_shutting_down = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>};</div>
+</div>
+<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span> </div>
+<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span>}</div>
 <div class="ttc" id="abox_8hpp_html"><div class="ttname"><a href="box_8hpp.html">box.hpp</a></div><div class="ttdoc">pseudo shared pointer for Nodes</div></div>
 <div class="ttc" id="aclassphysics_1_1Accumulator_html"><div class="ttname"><a href="classphysics_1_1Accumulator.html">physics::Accumulator</a></div><div class="ttdef"><b>Definition</b> accumulator.hpp:30</div></div>
 <div class="ttc" id="aclasstoast_1_1Box_html"><div class="ttname"><a href="classtoast_1_1Box.html">toast::Box</a></div><div class="ttdoc">Intrusive reference-counted handle to a Node.</div><div class="ttdef"><b>Definition</b> box.hpp:35</div></div>
 <div class="ttc" id="aclasstoast_1_1CameraController_html"><div class="ttname"><a href="classtoast_1_1CameraController.html">toast::CameraController</a></div><div class="ttdoc">Manages switching between different active cameras.</div><div class="ttdef"><b>Definition</b> camera_controller.hpp:39</div></div>
 <div class="ttc" id="aclasstoast_1_1Camera_html"><div class="ttname"><a href="classtoast_1_1Camera.html">toast::Camera</a></div><div class="ttdef"><b>Definition</b> camera.hpp:25</div></div>
-<div class="ttc" id="aclasstoast_1_1INodeOwner_html_a070a8aaa8d570cbf16c0c68b99ec58fd"><div class="ttname"><a href="classtoast_1_1INodeOwner.html#a070a8aaa8d570cbf16c0c68b99ec58fd">toast::INodeOwner::asWorkspace</a></div><div class="ttdeci">virtual auto asWorkspace() -&gt; Workspace *</div><div class="ttdoc">Downcast helper for owners that need Workspace-specific state.</div><div class="ttdef"><b>Definition</b> node_owner.hpp:46</div></div>
+<div class="ttc" id="aclasstoast_1_1INodeOwner_html_a070a8aaa8d570cbf16c0c68b99ec58fd"><div class="ttname"><a href="classtoast_1_1INodeOwner.html#a070a8aaa8d570cbf16c0c68b99ec58fd">toast::INodeOwner::asWorkspace</a></div><div class="ttdeci">virtual auto asWorkspace() -&gt; Workspace *</div><div class="ttdoc">Downcast helper for owners that need Workspace-specific state.</div><div class="ttdef"><b>Definition</b> node_owner.hpp:47</div></div>
+<div class="ttc" id="aclasstoast_1_1INodeOwner_html_a3a4daa20a490917a424910e3b9d1b297"><div class="ttname"><a href="classtoast_1_1INodeOwner.html#a3a4daa20a490917a424910e3b9d1b297">toast::INodeOwner::receivesEvents</a></div><div class="ttdeci">virtual auto receivesEvents() const noexcept -&gt; bool</div><div class="ttdef"><b>Definition</b> node_owner.hpp:55</div></div>
 <div class="ttc" id="aclasstoast_1_1INodeOwner_html_a58b28b0f5f24f971e81234d2d845068a"><div class="ttname"><a href="classtoast_1_1INodeOwner.html#a58b28b0f5f24f971e81234d2d845068a">toast::INodeOwner::participatesIn</a></div><div class="ttdeci">virtual auto participatesIn(NodeOwnerParticipation use) const noexcept -&gt; bool=0</div><div class="ttdoc">Determines if this owner is elegible for runtime systems.</div></div>
-<div class="ttc" id="aclasstoast_1_1INodeOwner_html_a64b6034e9beabc313d99ca24a26e8cd4"><div class="ttname"><a href="classtoast_1_1INodeOwner.html#a64b6034e9beabc313d99ca24a26e8cd4">toast::INodeOwner::isEditing</a></div><div class="ttdeci">auto isEditing() noexcept -&gt; bool</div><div class="ttdoc">True for a Workspace open for editing: lifecycle callbacks still run there, but the game is not runni...</div><div class="ttdef"><b>Definition</b> node_owner.cpp:42</div></div>
-<div class="ttc" id="aclasstoast_1_1INodeOwner_html_a6f5391e16c2c81dd8706ed39dacc63d3"><div class="ttname"><a href="classtoast_1_1INodeOwner.html#a6f5391e16c2c81dd8706ed39dacc63d3">toast::INodeOwner::setMainCamera</a></div><div class="ttdeci">void setMainCamera(Camera &amp;camera)</div><div class="ttdoc">Like activateCamera(), but replaces whatever camera is currently active.</div><div class="ttdef"><b>Definition</b> node_owner.cpp:67</div></div>
-<div class="ttc" id="aclasstoast_1_1INodeOwner_html_ad4b36f207ea9768d38e738634e89ef76"><div class="ttname"><a href="classtoast_1_1INodeOwner.html#ad4b36f207ea9768d38e738634e89ef76">toast::INodeOwner::tombstones</a></div><div class="ttdeci">size_t tombstones</div><div class="ttdoc">short-circuits the reap sweep when there&#39;s nothing to clean</div><div class="ttdef"><b>Definition</b> node_owner.hpp:170</div></div>
-<div class="ttc" id="aclasstoast_1_1Node_html"><div class="ttname"><a href="classtoast_1_1Node.html">toast::Node</a></div><div class="ttdef"><b>Definition</b> node.hpp:80</div></div>
-<div class="ttc" id="aclasstoast_1_1Workspace_html"><div class="ttname"><a href="classtoast_1_1Workspace.html">toast::Workspace</a></div><div class="ttdoc">Single-viewport node owner used by the editor.</div><div class="ttdef"><b>Definition</b> workspace.hpp:38</div></div>
+<div class="ttc" id="aclasstoast_1_1INodeOwner_html_ad4b36f207ea9768d38e738634e89ef76"><div class="ttname"><a href="classtoast_1_1INodeOwner.html#ad4b36f207ea9768d38e738634e89ef76">toast::INodeOwner::tombstones</a></div><div class="ttdeci">size_t tombstones</div><div class="ttdoc">short-circuits the reap sweep when there&#39;s nothing to clean</div><div class="ttdef"><b>Definition</b> node_owner.hpp:198</div></div>
+<div class="ttc" id="aclasstoast_1_1Workspace_html"><div class="ttname"><a href="classtoast_1_1Workspace.html">toast::Workspace</a></div><div class="ttdoc">Single-viewport node owner used by the editor.</div><div class="ttdef"><b>Definition</b> workspace.hpp:39</div></div>
 <div class="ttc" id="aexport_8hpp_html"><div class="ttname"><a href="export_8hpp.html">export.hpp</a></div></div>
 <div class="ttc" id="alua__value__codec_8hpp_html"><div class="ttname"><a href="lua__value__codec_8hpp.html">lua_value_codec.hpp</a></div><div class="ttdoc">Converts exported Lua script variable values to/from the engine&#39;s text encoding.</div></div>
-<div class="ttc" id="astructtoast_1_1INodeOwner_1_1InstantiateContext_html"><div class="ttname"><a href="structtoast_1_1INodeOwner_1_1InstantiateContext.html">toast::INodeOwner::InstantiateContext</a></div><div class="ttdef"><b>Definition</b> node_owner.hpp:77</div></div>
-<div class="ttc" id="astructtoast_1_1INodeOwner_1_1InstantiateContext_html_a25c5204235f852cd42fe4f6012034fb3"><div class="ttname"><a href="structtoast_1_1INodeOwner_1_1InstantiateContext.html#a25c5204235f852cd42fe4f6012034fb3">toast::INodeOwner::InstantiateContext::asset_chain</a></div><div class="ttdeci">std::vector&lt; uint64_t &gt; asset_chain</div><div class="ttdoc">UIDs of prefabs currently being instantiated; prevents infinite recursion.</div><div class="ttdef"><b>Definition</b> node_owner.hpp:78</div></div>
-<div class="ttc" id="astructtoast_1_1INodeOwner_1_1InstantiateContext_html_ab3bed19c66c10ead48e98e393d09efdf"><div class="ttname"><a href="structtoast_1_1INodeOwner_1_1InstantiateContext.html#ab3bed19c66c10ead48e98e393d09efdf">toast::INodeOwner::InstantiateContext::resolver</a></div><div class="ttdeci">std::function&lt; assets::Handle&lt; assets::Prefab &gt;(toast::UID)&gt; resolver</div><div class="ttdoc">injected loader so tests can swap in a fake</div><div class="ttdef"><b>Definition</b> node_owner.hpp:79</div></div>
+<div class="ttc" id="astructtoast_1_1INodeOwner_1_1InstantiateContext_html"><div class="ttname"><a href="structtoast_1_1INodeOwner_1_1InstantiateContext.html">toast::INodeOwner::InstantiateContext</a></div><div class="ttdef"><b>Definition</b> node_owner.hpp:97</div></div>
+<div class="ttc" id="astructtoast_1_1INodeOwner_1_1InstantiateContext_html_a25c5204235f852cd42fe4f6012034fb3"><div class="ttname"><a href="structtoast_1_1INodeOwner_1_1InstantiateContext.html#a25c5204235f852cd42fe4f6012034fb3">toast::INodeOwner::InstantiateContext::asset_chain</a></div><div class="ttdeci">std::vector&lt; uint64_t &gt; asset_chain</div><div class="ttdoc">UIDs of prefabs currently being instantiated; prevents infinite recursion.</div><div class="ttdef"><b>Definition</b> node_owner.hpp:98</div></div>
+<div class="ttc" id="astructtoast_1_1INodeOwner_1_1InstantiateContext_html_ab3bed19c66c10ead48e98e393d09efdf"><div class="ttname"><a href="structtoast_1_1INodeOwner_1_1InstantiateContext.html#ab3bed19c66c10ead48e98e393d09efdf">toast::INodeOwner::InstantiateContext::resolver</a></div><div class="ttdeci">std::function&lt; assets::Handle&lt; assets::Prefab &gt;(toast::UID)&gt; resolver</div><div class="ttdoc">injected loader so tests can swap in a fake</div><div class="ttdef"><b>Definition</b> node_owner.hpp:99</div></div>
 <div class="ttc" id="astructtoast_1_1UID_html"><div class="ttname"><a href="structtoast_1_1UID.html">toast::UID</a></div><div class="ttdef"><b>Definition</b> uid.hpp:20</div></div>
 <div class="ttc" id="auid_8hpp_html"><div class="ttname"><a href="uid_8hpp.html">uid.hpp</a></div><div class="ttdoc">Unique identifier for everything that exists in our engine.</div></div>
 </div><!-- fragment --></div><!-- contents -->

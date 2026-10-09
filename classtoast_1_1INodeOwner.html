@@ -156,12 +156,21 @@ virtual auto&#160;</td><td class="memItemRight"><b>name</b> () -&gt; std::string
 <tr class="memdesc:a070a8aaa8d570cbf16c0c68b99ec58fd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Downcast helper for owners that need Workspace-specific state.  <br /></td></tr>
 <tr class="memitem:a58b28b0f5f24f971e81234d2d845068a" id="r_a58b28b0f5f24f971e81234d2d845068a"><td class="memItemLeft">virtual auto&#160;</td><td class="memItemRight"><a class="el" href="#a58b28b0f5f24f971e81234d2d845068a">participatesIn</a> (NodeOwnerParticipation use) const noexcept -&gt; bool=0</td></tr>
 <tr class="memdesc:a58b28b0f5f24f971e81234d2d845068a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determines if this owner is elegible for runtime systems.  <br /></td></tr>
+<tr class="memitem:a3a4daa20a490917a424910e3b9d1b297" id="r_a3a4daa20a490917a424910e3b9d1b297"><td class="memItemLeft">virtual auto&#160;</td><td class="memItemRight"><a class="el" href="#a3a4daa20a490917a424910e3b9d1b297">receivesEvents</a> () const noexcept -&gt; bool</td></tr>
+<tr class="memitem:a7a821cf3a79743ca506cbdcadd728af4" id="r_a7a821cf3a79743ca506cbdcadd728af4"><td class="memItemLeft"><a id="a7a821cf3a79743ca506cbdcadd728af4" name="a7a821cf3a79743ca506cbdcadd728af4"></a>
+void&#160;</td><td class="memItemRight"><b>syncListenerState</b> () noexcept</td></tr>
 <tr class="memitem:a64b6034e9beabc313d99ca24a26e8cd4" id="r_a64b6034e9beabc313d99ca24a26e8cd4"><td class="memItemLeft"><a id="a64b6034e9beabc313d99ca24a26e8cd4" name="a64b6034e9beabc313d99ca24a26e8cd4"></a>
 auto&#160;</td><td class="memItemRight"><b>isEditing</b> () noexcept -&gt; bool</td></tr>
 <tr class="memdesc:a64b6034e9beabc313d99ca24a26e8cd4"><td class="mdescLeft">&#160;</td><td class="mdescRight">True for a <a class="el" href="classtoast_1_1Workspace.html" title="Single-viewport node owner used by the editor.">Workspace</a> open for editing: lifecycle callbacks still run there, but the game is not running. <br /></td></tr>
+<tr class="memitem:ab492d11ba06479f7444cff7829e5b60a" id="r_ab492d11ba06479f7444cff7829e5b60a"><td class="memItemLeft"><a id="ab492d11ba06479f7444cff7829e5b60a" name="ab492d11ba06479f7444cff7829e5b60a"></a>
+auto&#160;</td><td class="memItemRight"><b>treeMutex</b> () const noexcept -&gt; std::shared_mutex &amp;</td></tr>
 <tr class="memitem:aacdb77b9edd3de819c61c2502c088ff3" id="r_aacdb77b9edd3de819c61c2502c088ff3"><td class="memItemLeft">virtual void&#160;</td><td class="memItemRight"><a class="el" href="#aacdb77b9edd3de819c61c2502c088ff3">registerDependency</a> (<a class="el" href="classtoast_1_1Node.html">Node</a> &amp;from, <a class="el" href="classtoast_1_1Node.html">Node</a> &amp;to)=0</td></tr>
 <tr class="memitem:aa00ec1b9d313a259eee52f3117914ad0" id="r_aa00ec1b9d313a259eee52f3117914ad0"><td class="memItemLeft"><a id="aa00ec1b9d313a259eee52f3117914ad0" name="aa00ec1b9d313a259eee52f3117914ad0"></a>
 virtual void&#160;</td><td class="memItemRight"><b>unregisterDependency</b> (<a class="el" href="classtoast_1_1Node.html">Node</a> &amp;from, <a class="el" href="classtoast_1_1Node.html">Node</a> &amp;to)=0</td></tr>
+<tr class="memitem:a82c56c103f481edceb45a4716fd7f1a9" id="r_a82c56c103f481edceb45a4716fd7f1a9"><td class="memItemLeft"><a id="a82c56c103f481edceb45a4716fd7f1a9" name="a82c56c103f481edceb45a4716fd7f1a9"></a>
+virtual void&#160;</td><td class="memItemRight"><b>registerInteraction</b> (<a class="el" href="classtoast_1_1Node.html">Node</a> &amp;, <a class="el" href="classtoast_1_1Node.html">Node</a> &amp;)</td></tr>
+<tr class="memitem:abc34111c9ef34e0aa77f2daacbaba842" id="r_abc34111c9ef34e0aa77f2daacbaba842"><td class="memItemLeft"><a id="abc34111c9ef34e0aa77f2daacbaba842" name="abc34111c9ef34e0aa77f2daacbaba842"></a>
+virtual void&#160;</td><td class="memItemRight"><b>nodeEnabledChanged</b> () noexcept</td></tr>
 <tr class="memitem:a16d4ddaccd3bfe01d59baff85474ffbb" id="r_a16d4ddaccd3bfe01d59baff85474ffbb"><td class="memItemLeft">virtual auto&#160;</td><td class="memItemRight"><a class="el" href="#a16d4ddaccd3bfe01d59baff85474ffbb">findFrom</a> (const <a class="el" href="classtoast_1_1Node.html">Node</a> &amp;origin, std::string_view query) -&gt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; <a class="el" href="classtoast_1_1Node.html">Node</a> &gt;=0</td></tr>
 <tr class="memitem:accfe836c937f3ff7a494fb4c1676f6ab" id="r_accfe836c937f3ff7a494fb4c1676f6ab"><td class="memItemLeft">virtual auto&#160;</td><td class="memItemRight"><a class="el" href="#accfe836c937f3ff7a494fb4c1676f6ab">findFrom</a> (const <a class="el" href="classtoast_1_1Node.html">Node</a> &amp;origin, const <a class="el" href="structtoast_1_1UID.html">UID</a> &amp;uid) -&gt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; <a class="el" href="classtoast_1_1Node.html">Node</a> &gt;=0</td></tr>
 <tr class="memitem:aaf73ee5097e6c1ade0c35dfd8efd81e6" id="r_aaf73ee5097e6c1ade0c35dfd8efd81e6"><td class="memItemLeft">virtual auto&#160;</td><td class="memItemRight"><a class="el" href="#aaf73ee5097e6c1ade0c35dfd8efd81e6">searchFrom</a> (const <a class="el" href="classtoast_1_1Node.html">Node</a> &amp;origin, std::string_view query) -&gt; std::vector&lt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; <a class="el" href="classtoast_1_1Node.html">Node</a> &gt; &gt;=0</td></tr>
@@ -186,6 +195,13 @@ auto&#160;</td><td class="memItemRight"><b>requestRuntimeSpawn</b> (<a class="el
 void&#160;</td><td class="memItemRight"><b>reloadScriptsUsing</b> (<a class="el" href="structtoast_1_1UID.html">UID</a> script_uid) noexcept</td></tr>
 <tr class="memitem:aebd69c82c017e098c059ace8e6113fe0" id="r_aebd69c82c017e098c059ace8e6113fe0"><td class="memItemLeft"><a id="aebd69c82c017e098c059ace8e6113fe0" name="aebd69c82c017e098c059ace8e6113fe0"></a>
 void&#160;</td><td class="memItemRight"><b>refreshNodeInfos</b> () noexcept</td></tr>
+<tr class="memitem:ae9d1204844481bda3f86ff2fbec58444" id="r_ae9d1204844481bda3f86ff2fbec58444"><td class="memItemLeft"><a id="ae9d1204844481bda3f86ff2fbec58444" name="ae9d1204844481bda3f86ff2fbec58444"></a>
+void&#160;</td><td class="memItemRight"><b>rebindAssetHandles</b> (<a class="el" href="structtoast_1_1UID.html">UID</a> asset_uid) noexcept</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:ae22cef7cf8a15275bb41a26c670b6e4e" id="r_ae22cef7cf8a15275bb41a26c670b6e4e"><td class="memItemLeft"><a id="ae22cef7cf8a15275bb41a26c670b6e4e" name="ae22cef7cf8a15275bb41a26c670b6e4e"></a>
+static void&#160;</td><td class="memItemRight"><b>reapOrphanedControlBoxes</b> () noexcept</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pro-methods" class="groupheader"><a id="pro-methods" name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
@@ -195,8 +211,10 @@ virtual auto&#160;</td><td class="memItemRight"><b>owningPrefabUid</b> () const 
 void&#160;</td><td class="memItemRight"><b>seedPrefabContext</b> (<a class="el" href="structtoast_1_1INodeOwner_1_1InstantiateContext.html">InstantiateContext</a> &amp;context, const <a class="el" href="classtoast_1_1Node.html">Node</a> *parent=nullptr) const</td></tr>
 <tr class="memitem:a0647eb16371fc38e00edfb2c9ed41a69" id="r_a0647eb16371fc38e00edfb2c9ed41a69"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a0647eb16371fc38e00edfb2c9ed41a69">nodeAllocation</a> (std::string_view type=&quot;toast::Node&quot;) noexcept -&gt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; <a class="el" href="classtoast_1_1Node.html">Node</a> &gt;</td></tr>
 <tr class="memdesc:a0647eb16371fc38e00edfb2c9ed41a69"><td class="mdescLeft">&#160;</td><td class="mdescRight">Allocates a <a class="el" href="classtoast_1_1Node.html">Node</a> and its <a class="el" href="structtoast_1_1__detail_1_1ControlBox.html" title="Reference-count control block embedded inside the Node allocation.">ControlBox</a> in one contiguous block.  <br /></td></tr>
-<tr class="memitem:a333c47f462b54397b66344b3cf90841b" id="r_a333c47f462b54397b66344b3cf90841b"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a333c47f462b54397b66344b3cf90841b">nodeAllocation</a> (const <a class="el" href="structassets_1_1Prefab_1_1BasicNode.html">assets::Prefab::BasicNode</a> &amp;node_data) noexcept -&gt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; <a class="el" href="classtoast_1_1Node.html">Node</a> &gt;</td></tr>
-<tr class="memdesc:a333c47f462b54397b66344b3cf90841b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Allocates a <a class="el" href="classtoast_1_1Node.html">Node</a> and initializes its name and type from a prefab data record.  <br /></td></tr>
+<tr class="memitem:a7b0c253fbb6fc549c06b7aefe62ef058" id="r_a7b0c253fbb6fc549c06b7aefe62ef058"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a7b0c253fbb6fc549c06b7aefe62ef058">nodeAllocation</a> (const <a class="el" href="structassets_1_1Prefab_1_1BasicNode.html">assets::Prefab::BasicNode</a> &amp;node_data, uint64_t script_group=0, bool build_scripts=true) noexcept -&gt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; <a class="el" href="classtoast_1_1Node.html">Node</a> &gt;</td></tr>
+<tr class="memdesc:a7b0c253fbb6fc549c06b7aefe62ef058"><td class="mdescLeft">&#160;</td><td class="mdescRight">Allocates a <a class="el" href="classtoast_1_1Node.html">Node</a> and initializes its name and type from a prefab data record.  <br /></td></tr>
+<tr class="memitem:abcbe600bce72b24f6f15d6665d3f4398" id="r_abcbe600bce72b24f6f15d6665d3f4398"><td class="memItemLeft"><a id="abcbe600bce72b24f6f15d6665d3f4398" name="abcbe600bce72b24f6f15d6665d3f4398"></a>
+void&#160;</td><td class="memItemRight"><b>buildLeaves</b> (const <a class="el" href="classassets_1_1Handle.html">assets::Handle</a>&lt; <a class="el" href="classassets_1_1Prefab.html">assets::Prefab</a> &gt; &amp;file, uint64_t group, const std::vector&lt; size_t &gt; &amp;leaf_slots, std::vector&lt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; <a class="el" href="classtoast_1_1Node.html">Node</a> &gt; &gt; &amp;slots)</td></tr>
 <tr class="memitem:addb06c4741a900c39b5e745fd4538607" id="r_addb06c4741a900c39b5e745fd4538607"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#addb06c4741a900c39b5e745fd4538607">buildTree</a> (std::vector&lt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; <a class="el" href="classtoast_1_1Node.html">Node</a> &gt; &gt; &amp;&amp;nodes, const <a class="el" href="classassets_1_1Handle.html">assets::Handle</a>&lt; <a class="el" href="classassets_1_1Prefab.html">assets::Prefab</a> &gt; &amp;file) -&gt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; <a class="el" href="classtoast_1_1Node.html">Node</a> &gt;</td></tr>
 <tr class="memdesc:addb06c4741a900c39b5e745fd4538607"><td class="mdescLeft">&#160;</td><td class="mdescRight">Assembles a flat list of allocated nodes into a parent/child tree.  <br /></td></tr>
 <tr class="memitem:a355810be0f38823d417eb26cb8da1ff0" id="r_a355810be0f38823d417eb26cb8da1ff0"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a355810be0f38823d417eb26cb8da1ff0">instantiate</a> (const <a class="el" href="classassets_1_1Handle.html">assets::Handle</a>&lt; <a class="el" href="classassets_1_1Prefab.html">assets::Prefab</a> &gt; &amp;file, <a class="el" href="structtoast_1_1INodeOwner_1_1InstantiateContext.html">InstantiateContext</a> &amp;ctx) -&gt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; <a class="el" href="classtoast_1_1Node.html">Node</a> &gt;</td></tr>
@@ -292,10 +310,8 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="classtoast_1_1INodeOwner_a070a8aaa8d570cbf16c0c68b99ec58fd_icgraph.png" border="0" usemap="#aclasstoast_1_1INodeOwner_a070a8aaa8d570cbf16c0c68b99ec58fd_icgraph" loading="lazy" alt=""/></div>
 <map name="aclasstoast_1_1INodeOwner_a070a8aaa8d570cbf16c0c68b99ec58fd_icgraph" id="aclasstoast_1_1INodeOwner_a070a8aaa8d570cbf16c0c68b99ec58fd_icgraph">
-<area shape="rect" title="Downcast helper for owners that need Workspace&#45;specific state." alt="" coords="402,5,552,50"/>
-<area shape="rect" href="classtoast_1_1INodeOwner.html#a64b6034e9beabc313d99ca24a26e8cd4" title="True for a Workspace open for editing: lifecycle callbacks still run there, but the game is not runni..." alt="" coords="204,5,354,50"/>
-<area shape="poly" title=" " alt="" coords="384,28,354,30,354,25,389,28"/>
-<area shape="rect" href="classtoast_1_1INodeOwner.html#a58b28b0f5f24f971e81234d2d845068a" title="Determines if this owner is elegible for runtime systems." alt="" coords="5,5,156,50"/>
+<area shape="rect" title="Downcast helper for owners that need Workspace&#45;specific state." alt="" coords="204,5,354,50"/>
+<area shape="rect" href="classtoast_1_1INodeOwner.html#a64b6034e9beabc313d99ca24a26e8cd4" title="True for a Workspace open for editing: lifecycle callbacks still run there, but the game is not runni..." alt="" coords="5,5,156,50"/>
 <area shape="poly" title=" " alt="" coords="186,28,156,30,156,25,191,27"/>
 </map>
 </div>
@@ -475,8 +491,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a333c47f462b54397b66344b3cf90841b" name="a333c47f462b54397b66344b3cf90841b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a333c47f462b54397b66344b3cf90841b">&#9670;&#160;</a></span>nodeAllocation() <span class="overload">[1/2]</span></h2>
+<a id="a7b0c253fbb6fc549c06b7aefe62ef058" name="a7b0c253fbb6fc549c06b7aefe62ef058"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7b0c253fbb6fc549c06b7aefe62ef058">&#9670;&#160;</a></span>nodeAllocation() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -487,8 +503,17 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="memname">auto toast::INodeOwner::nodeAllocation </td>
           <td>(</td>
-          <td class="paramtype">const <a class="el" href="structassets_1_1Prefab_1_1BasicNode.html">assets::Prefab::BasicNode</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>node_data</em></span></td><td>)</td>
-          <td> -&gt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; <a class="el" href="classtoast_1_1Node.html">Node</a> &gt;</td>
+          <td class="paramtype">const <a class="el" href="structassets_1_1Prefab_1_1BasicNode.html">assets::Prefab::BasicNode</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>node_data</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint64_t</td>          <td class="paramname"><span class="paramname"><em>script_group</em></span><span class="paramdefsep"> = </span><span class="paramdefval">0</span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>build_scripts</em></span><span class="paramdefsep"> = </span><span class="paramdefval">true</span>&#160;) -&gt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; <a class="el" href="classtoast_1_1Node.html">Node</a> &gt;</td>
         </tr>
       </table>
   </td>
@@ -548,7 +573,7 @@ Here is the caller graph for this function:</div>
 <area shape="rect" title="Allocates a Node and its ControlBox in one contiguous block." alt="" coords="801,99,952,143"/>
 <area shape="rect" href="classtoast_1_1INodeOwner.html#a355810be0f38823d417eb26cb8da1ff0" title="Allocates and initializes a full node tree from a prefab asset." alt="" coords="572,29,722,74"/>
 <area shape="poly" title=" " alt="" coords="784,94,723,77,723,72,789,94"/>
-<area shape="rect" href="classtoast_1_1INodeOwner.html#a333c47f462b54397b66344b3cf90841b" title="Allocates a Node and initializes its name and type from a prefab data record." alt="" coords="572,99,722,143"/>
+<area shape="rect" href="classtoast_1_1INodeOwner.html#a7b0c253fbb6fc549c06b7aefe62ef058" title="Allocates a Node and initializes its name and type from a prefab data record." alt="" coords="572,99,722,143"/>
 <area shape="poly" title=" " alt="" coords="783,121,723,124,723,118,789,121"/>
 <area shape="rect" href="classtoast_1_1Workspace.html#ad87f633bb92169c991d17c94acca0d81" title="Creates a new workspace rooted at a single fresh node of the given type." alt="" coords="541,167,753,195"/>
 <area shape="poly" title=" " alt="" coords="789,146,754,158,711,169,710,164,753,153,784,147"/>
@@ -592,6 +617,34 @@ Here is the caller graph for this function:</div>
 <p>Determines if this owner is elegible for runtime systems. </p>
 
 <p>Implemented in <a class="el" href="classtoast_1_1PlayWorkspace.html#ae60fe1f0ded4d44aa38e14c882539a39">toast::PlayWorkspace</a>, <a class="el" href="classtoast_1_1Workspace.html#a019039a1d2e69ae68dde78835aeaa578">toast::Workspace</a>, and <a class="el" href="classtoast_1_1World.html#a10597cb128f2fd7c1415c2c58d5e62a0">toast::World</a>.</p>
+
+</div>
+</div>
+<a id="a3a4daa20a490917a424910e3b9d1b297" name="a3a4daa20a490917a424910e3b9d1b297"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3a4daa20a490917a424910e3b9d1b297">&#9670;&#160;</a></span>receivesEvents()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual auto toast::INodeOwner::receivesEvents </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td> const -&gt; bool</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel nodiscard">nodiscard</span><span class="mlabel virtual">virtual</span><span class="mlabel noexcept">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<dl class="section return"><dt>Returns</dt><dd>false when silenced </dd></dl>
+
+<p>Reimplemented in <a class="el" href="classtoast_1_1PlayWorkspace.html#a59cc1e1656925bf15d4e21a50cfa6b16">toast::PlayWorkspace</a>, and <a class="el" href="classtoast_1_1Workspace.html#ab88ef6fbaeb9bac655e12051fa5b7ab2">toast::Workspace</a>.</p>
 
 </div>
 </div>

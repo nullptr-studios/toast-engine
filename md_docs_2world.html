@@ -118,16 +118,16 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('md_docs_2world
   <div class="headertitle"><div class="title">World </div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p><a class="anchor" id="autotoc_md86"></a></p>
+<div class="textblock"><p><a class="anchor" id="autotoc_md89"></a></p>
 <blockquote class="doxtable">
 <p>Authors: Xein</p>
 <p>Created on: 18 Jun 2026 </p>
 </blockquote>
 <p>The World is the singleton that owns, ticks, and manages every Node that lives in the engine. It is the only object that holds nodes in memory and the only one allowed to create or destroy them.</p>
-<h1 class="doxsection"><a class="anchor" id="autotoc_md87"></a>
+<h1 class="doxsection"><a class="anchor" id="autotoc_md90"></a>
 Nodes and the scene graph</h1>
 <p>Every entity in the engine is a <span class="tt">Node</span>. Nodes form a tree: each node has one parent and any number of children. The root of the active tree is called the <em>world root</em>. Nodes outside the tree but still resident in memory are either <em>cached</em> (sleeping) or <em>global</em> (always awake, outside the main tree).</p>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md88"></a>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md91"></a>
 Node states</h2>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -145,7 +145,7 @@ Node states</h2>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><span class="tt">destroy</span>  </td><td class="markdownTableBodyNone">queued for destruction; drained at the start of the next tick  </td></tr>
 </table>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md89"></a>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md92"></a>
 Node types</h2>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -159,7 +159,7 @@ Node types</h2>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><span class="tt">world_root</span>  </td><td class="markdownTableBodyNone">the one root node currently active in the world  </td></tr>
 </table>
-<h1 class="doxsection"><a class="anchor" id="autotoc_md90"></a>
+<h1 class="doxsection"><a class="anchor" id="autotoc_md93"></a>
 Loading and switching scenes</h1>
 <div class="fragment"><div class="line"><span class="comment">// Load a prefab into memory (async); becomes a cached root node</span></div>
 <div class="line">World::loadNode(uid);</div>
@@ -174,7 +174,7 @@ Loading and switching scenes</h1>
 <div class="line"><span class="comment">// Schedule a cached node for destruction (happens next tick)</span></div>
 <div class="line">World::destroyNode(node);</div>
 </div><!-- fragment --><p><span class="tt">setRoot</span> swaps the world root in one atomic step so there is no frame where the world is empty (unless you cache the root yourself).</p>
-<h1 class="doxsection"><a class="anchor" id="autotoc_md91"></a>
+<h1 class="doxsection"><a class="anchor" id="autotoc_md94"></a>
 Searching the tree</h1>
 <div class="fragment"><div class="line"><span class="comment">// Single result; stops at prefab-instance boundaries</span></div>
 <div class="line">Box&lt;Node&gt; player = some_node-&gt;find(<span class="stringliteral">&quot;Player&quot;</span>);</div>
@@ -190,12 +190,12 @@ Searching the tree</h1>
 <p>String queries match names only. To look up a node by UID use the typed overload:</p>
 <div class="fragment"><div class="line">Box&lt;Node&gt; child = some_node-&gt;find(uid);</div>
 </div><!-- fragment --><p>It resolves within the caller's local root (the nearest instance-root ancestor), so UIDs only need to be unique inside one prefab instance. There is no UID form of <span class="tt">search</span>.</p>
-<h1 class="doxsection"><a class="anchor" id="autotoc_md92"></a>
+<h1 class="doxsection"><a class="anchor" id="autotoc_md95"></a>
 Dependency graph</h1>
 <p>By default nodes tick in an unspecified order. If you need node A to always tick before node B, register a dependency:</p>
 <div class="fragment"><div class="line">World::instance()-&gt;registerDependency(a, b);</div>
 </div><!-- fragment --><p>The World rebuilds the tick schedule whenever the dependency graph changes. Cycles are legal; the nodes in a cycle are bundled into a <span class="tt">NodeCluster</span> and ticked sequentially in declaration order within the cluster.</p>
-<h1 class="doxsection"><a class="anchor" id="autotoc_md93"></a>
+<h1 class="doxsection"><a class="anchor" id="autotoc_md96"></a>
 Tick phases and wave execution</h1>
 <p>Every frame the world runs four tick phases in order:</p>
 <ol type="1">
@@ -212,7 +212,11 @@ Tick phases and wave execution</h1>
 <li>Wave index = <span class="tt">max(predecessor wave) + 1</span>; nodes with no predecessors land on wave 0</li>
 <li>Per-phase pruning discards nodes that don't implement the relevant lifecycle function</li>
 </ol>
-<h1 class="doxsection"><a class="anchor" id="autotoc_md94"></a>
+<p>The thread that runs the frame hands each wave to the pool and waits for it; it only works on the wave itself when the pool cannot take it. Nodes with scripts are grouped by the Lua interpreter they run on, one job per interpreter, so no worker waits for another, see <a href="scripting.md#performance">scripting</a>.</p>
+<h1 class="doxsection"><a class="anchor" id="autotoc_md97"></a>
+Lifecycle</h1>
+<p><span class="tt">init</span>, <span class="tt">begin</span> and <span class="tt">onEnable</span> run on a whole tree when a <span class="tt">PlayWorkspace</span> or a <span class="tt">World</span> brings it up. A node always comes after its parent. A tree with many scripts runs a level at a time: the C++ functions of the level one after the other on the calling thread, then the scripts of the level in parallel on the pool. Nothing else is promised about the order of two nodes that are not above one another. Smaller trees keep the order where each node is followed by everything below it. <span class="tt">TickScheduler::runLifecycle()</span> does this, and <span class="tt">TOAST_SERIAL_LIFECYCLE=1</span> turns the parallel version off.</p>
+<h1 class="doxsection"><a class="anchor" id="autotoc_md98"></a>
 Workspace</h1>
 <p><span class="tt">Workspace</span> is a lightweight version of World used by the editor viewport. It owns nodes the same way but never ticks them and never builds a dependency graph. Use it whenever you need to display or edit a node tree without running game logic.</p>
 <div class="fragment"><div class="line">Workspace ws(<span class="stringliteral">&quot;toast::Node3D&quot;</span>, uid);</div>

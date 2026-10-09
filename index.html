@@ -128,9 +128,9 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('index.html',''
 <li>Alexey</li>
 <li>Akaansh</li>
 </ul>
-<h1 class="doxsection"><a class="anchor" id="autotoc_md96"></a>
+<h1 class="doxsection"><a class="anchor" id="autotoc_md100"></a>
 Building</h1>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md97"></a>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md101"></a>
 Prerequisites</h2>
 <ul>
 <li>CMake &gt;=3.24</li>
@@ -139,21 +139,21 @@ Prerequisites</h2>
 <li>C# .NET10 toolchain</li>
 <li>VCPKG with <span class="tt">VCPKG_ROOT</span> set up in PATH</li>
 </ul>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md98"></a>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md102"></a>
 Generation</h2>
 <p>Powershell </p><div class="fragment"><div class="line">cmake -B build/Debug -G &quot;Visual Studio 18 2026&quot; -DCMAKE_TOOLCHAIN_FILE=&quot;$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake&quot;</div>
 </div><!-- fragment --><p>Linux </p><div class="fragment"><div class="line">cmake -B build/Debug -G &quot;Visual Studio 18 2026&quot; -DCMAKE_TOOLCHAIN_FILE=&quot;$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake&quot;</div>
 </div><!-- fragment --><p>Or using the Nix flake </p><div class="fragment"><div class="line">nix develop</div>
 <div class="line">cmake-gen</div>
-</div><!-- fragment --><h2 class="doxsection"><a class="anchor" id="autotoc_md99"></a>
+</div><!-- fragment --><h2 class="doxsection"><a class="anchor" id="autotoc_md103"></a>
 Build</h2>
 <div class="fragment"><div class="line">cmake --build ./build/Debug</div>
 </div><!-- fragment --><div class="fragment"><div class="line">dotnet run --project editor</div>
 </div><!-- fragment --><p>Or using the Nix flake </p><div class="fragment"><div class="line">cmake-build</div>
-</div><!-- fragment --><h2 class="doxsection"><a class="anchor" id="autotoc_md100"></a>
+</div><!-- fragment --><h2 class="doxsection"><a class="anchor" id="autotoc_md104"></a>
 Tests</h2>
 <div class="fragment"><div class="line">ctest --test-dir build/Debug -C Debug</div>
-</div><!-- fragment --><h1 class="doxsection"><a class="anchor" id="autotoc_md101"></a>
+</div><!-- fragment --><h1 class="doxsection"><a class="anchor" id="autotoc_md105"></a>
 Other tooling</h1>
 <p>To properly install <span class="tt">kenzo</span> on release and be properly accessible through your entire computer run the following command:</p>
 <div class="fragment"><div class="line">cargo install --git https://github.com/nullptr-studios/toast-engine.git --branch main kenzo</div>

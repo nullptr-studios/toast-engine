@@ -272,6 +272,8 @@ auto&#160;</td><td class="memItemRight"><b>listener</b> () noexcept -&gt; <a cla
 <tr class="memdesc:aad1cba24836e1465fdab22b27e71bf27"><td class="mdescLeft">&#160;</td><td class="mdescRight">The immediate parent of this node.  <br /></td></tr>
 <tr class="memitem:a2fcbe02f3e1937abf869fb537fa77988" id="r_a2fcbe02f3e1937abf869fb537fa77988"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a2fcbe02f3e1937abf869fb537fa77988">children</a> () const noexcept -&gt; const std::vector&lt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; Node &gt; &gt; &amp;</td></tr>
 <tr class="memdesc:a2fcbe02f3e1937abf869fb537fa77988"><td class="mdescLeft">&#160;</td><td class="mdescRight">The ordered list of direct children.  <br /></td></tr>
+<tr class="memitem:ac36bc21f37d1f46f50f0f24d725a51c5" id="r_ac36bc21f37d1f46f50f0f24d725a51c5"><td class="memItemLeft"><a id="ac36bc21f37d1f46f50f0f24d725a51c5" name="ac36bc21f37d1f46f50f0f24d725a51c5"></a>
+auto&#160;</td><td class="memItemRight"><b>childrenSnapshot</b> () const -&gt; std::vector&lt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; Node &gt; &gt;</td></tr>
 <tr class="memitem:abbcbef4415d8020b76f761f1e1d4e4c8" id="r_abbcbef4415d8020b76f761f1e1d4e4c8"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#abbcbef4415d8020b76f761f1e1d4e4c8">create</a> (std::string_view type=&quot;toast::Node&quot;) noexcept -&gt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; Node &gt;</td></tr>
 <tr class="memdesc:abbcbef4415d8020b76f761f1e1d4e4c8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a new child node of the given type and attaches it to this node.  <br /></td></tr>
 <tr class="memitem:a19495f7f11c522905fc0a1b5f853c009" id="r_a19495f7f11c522905fc0a1b5f853c009"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a19495f7f11c522905fc0a1b5f853c009">spawn</a> (<a class="el" href="structtoast_1_1UID.html">UID</a> uid) noexcept -&gt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; Node &gt;</td></tr>
@@ -292,9 +294,17 @@ auto&#160;</td><td class="memItemRight"><b>searchType</b> (const <a class="el" h
 void&#160;</td><td class="memItemRight"><b>addDependsOn</b> (Node &amp;other)</td></tr>
 <tr class="memitem:ace86075240044e0fc28c8da7031077e1" id="r_ace86075240044e0fc28c8da7031077e1"><td class="memItemLeft"><a id="ace86075240044e0fc28c8da7031077e1" name="ace86075240044e0fc28c8da7031077e1"></a>
 void&#160;</td><td class="memItemRight"><b>removeDependsOn</b> (Node &amp;other)</td></tr>
+<tr class="memitem:ae37c89e7fd2eaeed46bea58784bb8ad5" id="r_ae37c89e7fd2eaeed46bea58784bb8ad5"><td class="memItemLeft"><a id="ae37c89e7fd2eaeed46bea58784bb8ad5" name="ae37c89e7fd2eaeed46bea58784bb8ad5"></a>
+void&#160;</td><td class="memItemRight"><b>interactsWith</b> (Node &amp;other)</td></tr>
+<tr class="memdesc:ae37c89e7fd2eaeed46bea58784bb8ad5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Declares that the scripts of this node and of <span class="tt">other</span> call each other. <br /></td></tr>
 <tr class="memitem:afbe29fa80d57b5c7c6a4bfa6c75fc6d0" id="r_afbe29fa80d57b5c7c6a4bfa6c75fc6d0"><td class="memItemLeft"><a id="afbe29fa80d57b5c7c6a4bfa6c75fc6d0" name="afbe29fa80d57b5c7c6a4bfa6c75fc6d0"></a>
 auto&#160;</td><td class="memItemRight"><b>scriptRuntime</b> () noexcept -&gt; <a class="el" href="classscripting_1_1ScriptRuntime.html">scripting::ScriptRuntime</a> *</td></tr>
 <tr class="memitem:a8a7a227e71c9efcae3df2ed20ff6a177" id="r_a8a7a227e71c9efcae3df2ed20ff6a177"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a8a7a227e71c9efcae3df2ed20ff6a177">hasTickFunction</a> (<a class="el" href="reflect__node_8hpp.html#ad08c233710fd0f56aefc18a7a9f1db5a">TickFunctionList</a> mask) const noexcept -&gt; bool</td></tr>
+<tr class="memitem:ad8dccd6ed479d62e8f83c62855607940" id="r_ad8dccd6ed479d62e8f83c62855607940"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#ad8dccd6ed479d62e8f83c62855607940">scriptVm</a> (<a class="el" href="reflect__node_8hpp.html#ad08c233710fd0f56aefc18a7a9f1db5a">TickFunctionList</a> func) const noexcept -&gt; std::optional&lt; size_t &gt;</td></tr>
+<tr class="memdesc:ad8dccd6ed479d62e8f83c62855607940"><td class="mdescLeft">&#160;</td><td class="mdescRight">The interpreter this node runs Lua on while it executes <span class="tt">func</span>, empty when it runs none.  <br /></td></tr>
+<tr class="memitem:ad12d625b02b7161fc8fa5d9937f56f26" id="r_ad12d625b02b7161fc8fa5d9937f56f26"><td class="memItemLeft"><a id="ad12d625b02b7161fc8fa5d9937f56f26" name="ad12d625b02b7161fc8fa5d9937f56f26"></a>
+auto&#160;</td><td class="memItemRight"><b>scriptVmAny</b> () const noexcept -&gt; std::optional&lt; size_t &gt;</td></tr>
+<tr class="memdesc:ad12d625b02b7161fc8fa5d9937f56f26"><td class="mdescLeft">&#160;</td><td class="mdescRight">The interpreter the scripts of this node live on whatever phase they define. <br /></td></tr>
 <tr class="memitem:a25d28b613360ff4d7356599316440ec0" id="r_a25d28b613360ff4d7356599316440ec0"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a25d28b613360ff4d7356599316440ec0">hasCallable</a> (std::string_view name) const noexcept -&gt; bool</td></tr>
 <tr class="memitem:a8ce8c9cb4ecb09ecac5364cddf3af491" id="r_a8ce8c9cb4ecb09ecac5364cddf3af491"><td class="memItemLeft"><a id="a8ce8c9cb4ecb09ecac5364cddf3af491" name="a8ce8c9cb4ecb09ecac5364cddf3af491"></a>
 void&#160;</td><td class="memItemRight"><b>reloadScripts</b> () noexcept</td></tr>
@@ -333,6 +343,7 @@ virtual void&#160;</td><td class="memItemRight"><b>onReflectedFieldChanged</b> (
 <tr class="memitem:a57739ac795a4c1c53d4057ac0ecf02a4" id="r_a57739ac795a4c1c53d4057ac0ecf02a4"><td class="memItemLeft"><a id="a57739ac795a4c1c53d4057ac0ecf02a4" name="a57739ac795a4c1c53d4057ac0ecf02a4"></a>
 virtual void&#160;</td><td class="memItemRight"><b>onScriptsReloaded</b> ()</td></tr>
 <tr class="memitem:a04e96b6dfe562c1a432322121410255a" id="r_a04e96b6dfe562c1a432322121410255a"><td class="memItemLeft">virtual void&#160;</td><td class="memItemRight"><a class="el" href="#a04e96b6dfe562c1a432322121410255a">onScriptsReloading</a> ()</td></tr>
+<tr class="memitem:adfc97ff989a985fcec703d6f88a40fa8" id="r_adfc97ff989a985fcec703d6f88a40fa8"><td class="memItemLeft">virtual auto&#160;</td><td class="memItemRight"><a class="el" href="#adfc97ff989a985fcec703d6f88a40fa8">luaAffinity</a> () const noexcept -&gt; std::optional&lt; size_t &gt;</td></tr>
 <tr class="memitem:ade869bb26a1120658cfe901bd324245b" id="r_ade869bb26a1120658cfe901bd324245b"><td class="memItemLeft">virtual void&#160;</td><td class="memItemRight"><a class="el" href="#ade869bb26a1120658cfe901bd324245b">onScriptVarChanged</a> (std::string_view path)</td></tr>
 <tr class="memitem:a3399768d006a3a4f9e4aba43d06bced0" id="r_a3399768d006a3a4f9e4aba43d06bced0"><td class="memItemLeft"><a id="a3399768d006a3a4f9e4aba43d06bced0" name="a3399768d006a3a4f9e4aba43d06bced0"></a>
 virtual void&#160;</td><td class="memItemRight"><b>updateInspectorMessages</b> ()</td></tr>
@@ -428,42 +439,42 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="classtoast_1_1Node_a2749148cdb0967f3d924dc376e2fc075_icgraph.png" border="0" usemap="#aclasstoast_1_1Node_a2749148cdb0967f3d924dc376e2fc075_icgraph" loading="lazy" alt=""/></div>
 <map name="aclasstoast_1_1Node_a2749148cdb0967f3d924dc376e2fc075_icgraph" id="aclasstoast_1_1Node_a2749148cdb0967f3d924dc376e2fc075_icgraph">
-<area shape="rect" title="Returns an owning handle to this node." alt="" coords="1027,291,1155,319"/>
+<area shape="rect" title="Returns an owning handle to this node." alt="" coords="1027,326,1155,354"/>
 <area shape="rect" href="classtoast_1_1CameraController.html#ab547ae869930f4f31f591fda4e0c0b61" title=" " alt="" coords="801,5,979,50"/>
-<area shape="poly" title=" " alt="" coords="1081,275,1069,231,1048,174,1018,115,999,88,977,64,963,53,963,48,980,60,1003,85,1022,113,1053,172,1074,229,1086,277"/>
+<area shape="poly" title=" " alt="" coords="1083,309,1072,259,1053,193,1022,124,1001,93,977,64,963,53,964,48,981,60,1005,89,1026,122,1058,191,1078,257,1088,312"/>
 <area shape="rect" href="classtoast_1_1ProceduralVoxel.html#aeb4814871ef8a2c2966314c7828c1cce" title=" " alt="" coords="807,75,973,119"/>
-<area shape="poly" title=" " alt="" coords="1076,276,1038,207,1010,168,977,134,961,122,961,117,980,130,1014,164,1043,204,1081,278"/>
+<area shape="poly" title=" " alt="" coords="1079,310,1065,272,1043,225,1014,176,977,134,962,123,962,117,980,130,1018,173,1048,222,1070,270,1084,312"/>
 <area shape="rect" href="classtoast_1_1ProceduralVoxel.html#ae8b05a05da166a8393b16be154efc1e0" title=" " alt="" coords="807,144,973,189"/>
-<area shape="poly" title=" " alt="" coords="1065,279,1027,242,977,203,957,192,957,187,980,199,1030,238,1070,280"/>
+<area shape="poly" title=" " alt="" coords="1071,312,1033,258,1006,229,977,203,959,192,960,187,980,199,1010,225,1037,255,1076,313"/>
 <area shape="rect" href="classtoast_1_1VoxelBucket.html#a86e57cb848041a13f4d071ce081d9045" title=" " alt="" coords="819,213,961,258"/>
-<area shape="poly" title=" " alt="" coords="1031,286,957,261,957,256,1037,286"/>
+<area shape="poly" title=" " alt="" coords="1054,317,977,273,953,261,953,256,980,268,1059,317"/>
 <area shape="rect" href="classtoast_1_1VoxelGroup.html#a38be7bf9df4f392ca272fb217a001147" title=" " alt="" coords="818,283,962,327"/>
-<area shape="poly" title=" " alt="" coords="1009,305,963,308,962,302,1014,305"/>
+<area shape="poly" title=" " alt="" coords="1009,326,963,320,962,315,1014,326"/>
 <area shape="rect" href="classtoast_1_1VoxelPiece.html#ad41eb49dae6338fd371b19ea1841da06" title=" " alt="" coords="820,352,960,397"/>
-<area shape="poly" title=" " alt="" coords="1037,324,958,354,956,349,1032,325"/>
+<area shape="poly" title=" " alt="" coords="1009,354,961,365,960,360,1014,353"/>
 <area shape="rect" href="classtoast_1_1INodeOwner.html#a0647eb16371fc38e00edfb2c9ed41a69" title="Allocates a Node and its ControlBox in one contiguous block." alt="" coords="815,421,965,466"/>
-<area shape="poly" title=" " alt="" coords="1070,329,1030,372,980,411,958,423,956,418,977,407,1027,368,1065,331"/>
-<area shape="rect" href="classtoast_1_1Node.html#a666186f691b352223f039060d7d1d2a9" title="The topmost ancestor that is not the world root." alt="" coords="825,490,955,518"/>
-<area shape="poly" title=" " alt="" coords="1081,332,1066,368,1044,407,1016,447,980,480,956,493,955,488,977,476,1012,443,1040,405,1061,366,1077,335"/>
-<area shape="rect" href="classtoast_1_1INodeOwner.html#a6f5391e16c2c81dd8706ed39dacc63d3" title="Like activateCamera(), but replaces whatever camera is currently active." alt="" coords="815,541,965,586"/>
-<area shape="poly" title=" " alt="" coords="1085,332,1072,377,1050,430,1020,484,980,531,964,543,962,538,977,527,1016,481,1046,427,1067,376,1080,336"/>
+<area shape="poly" title=" " alt="" coords="1059,362,980,411,954,423,952,418,977,407,1054,363"/>
+<area shape="rect" href="classtoast_1_1INodeOwner.html#a6f5391e16c2c81dd8706ed39dacc63d3" title="Like activateCamera(), but replaces whatever camera is currently active." alt="" coords="815,491,965,535"/>
+<area shape="poly" title=" " alt="" coords="1076,366,1037,424,1010,454,980,480,960,493,959,488,977,476,1006,450,1033,421,1072,368"/>
+<area shape="rect" href="classtoast_1_1VoxelNode.html#a1f864d85f7846196b863f801f7cedc11" title=" " alt="" coords="803,559,977,587"/>
+<area shape="poly" title=" " alt="" coords="1084,367,1071,410,1050,458,1020,508,980,550,962,561,960,556,977,546,1016,504,1045,456,1066,408,1080,370"/>
+<area shape="rect" href="classtoast_1_1VoxelNode.html#af48a4da383a9e05192be6b47602cc0db" title=" " alt="" coords="803,611,977,639"/>
+<area shape="poly" title=" " alt="" coords="1087,367,1077,419,1057,481,1026,545,1005,574,980,600,961,613,959,608,977,596,1001,571,1021,542,1052,479,1072,418,1083,371"/>
 <area shape="rect" href="classtoast_1_1INodeOwner.html#a355810be0f38823d417eb26cb8da1ff0" title="Allocates and initializes a full node tree from a prefab asset." alt="" coords="572,352,722,397"/>
 <area shape="poly" title=" " alt="" coords="797,418,723,398,723,393,803,418"/>
-<area shape="rect" href="classtoast_1_1INodeOwner.html#a333c47f462b54397b66344b3cf90841b" title="Allocates a Node and initializes its name and type from a prefab data record." alt="" coords="572,421,722,466"/>
+<area shape="rect" href="classtoast_1_1INodeOwner.html#a7b0c253fbb6fc549c06b7aefe62ef058" title="Allocates a Node and initializes its name and type from a prefab data record." alt="" coords="572,421,722,466"/>
 <area shape="poly" title=" " alt="" coords="797,444,723,446,722,441,802,443"/>
 <area shape="rect" href="classtoast_1_1Workspace.html#ad87f633bb92169c991d17c94acca0d81" title="Creates a new workspace rooted at a single fresh node of the given type." alt="" coords="541,490,753,518"/>
-<area shape="poly" title=" " alt="" coords="802,466,754,481,709,492,708,487,753,476,797,467"/>
+<area shape="poly" title=" " alt="" coords="802,466,754,481,710,492,708,487,753,476,797,467"/>
 <area shape="poly" title=" " alt="" coords="685,337,672,333,647,331,624,333,610,337,605,343,606,353,601,350,600,342,607,333,623,327,647,325,673,328,691,337"/>
 <area shape="rect" href="classtoast_1_1Workspace.html#acecbe8833a3838a8a3fe77aa661b2d1d" title="instantiates the prefab and sets up the root node" alt="" coords="282,352,477,397"/>
 <area shape="poly" title=" " alt="" coords="554,375,478,377,477,372,559,374"/>
 <area shape="rect" href="classtoast_1_1Workspace.html#a1a98997469f53cfc60df37bf5e43bce1" title="Opens an existing workspace by loading the prefab at the given UID." alt="" coords="5,335,218,363"/>
-<area shape="poly" title=" " alt="" coords="264,365,219,362,217,356,268,363"/>
+<area shape="poly" title=" " alt="" coords="264,365,219,362,217,357,268,362"/>
 <area shape="rect" href="classtoast_1_1Workspace.html#aee0cb0b76f3c488f5fdf9d674b8673d3" title="Opens a workspace bound to the given asset UID but loading its content from another file." alt="" coords="5,387,218,415"/>
 <area shape="poly" title=" " alt="" coords="264,387,219,393,217,388,268,384"/>
 <area shape="rect" href="classtoast_1_1Workspace.html#a3d51ba78b03318129802006b5267f5cc" title="Downcast helper for owners that need Workspace&#45;specific state." alt="" coords="266,490,493,518"/>
 <area shape="poly" title=" " alt="" coords="523,504,494,506,493,501,528,503"/>
-<area shape="rect" href="classtoast_1_1INodeOwner.html#a58b28b0f5f24f971e81234d2d845068a" title="Determines if this owner is elegible for runtime systems." alt="" coords="572,541,722,586"/>
-<area shape="poly" title=" " alt="" coords="797,564,723,566,723,561,802,564"/>
 </map>
 </div>
 
@@ -578,6 +589,15 @@ Here is the caller graph for this function:</div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>The new child node, or an empty box if the type is not registered </dd></dl>
 <dl class="section note"><dt>Note</dt><dd>Only valid on nodes in the root or global state; calls the child's init lifecycle </dd></dl>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="classtoast_1_1Node_abbcbef4415d8020b76f761f1e1d4e4c8_icgraph.png" border="0" usemap="#aclasstoast_1_1Node_abbcbef4415d8020b76f761f1e1d4e4c8_icgraph" loading="lazy" alt=""/></div>
+<map name="aclasstoast_1_1Node_abbcbef4415d8020b76f761f1e1d4e4c8_icgraph" id="aclasstoast_1_1Node_abbcbef4415d8020b76f761f1e1d4e4c8_icgraph">
+<area shape="rect" title="Creates a new child node of the given type and attaches it to this node." alt="" coords="5,29,151,57"/>
+<area shape="poly" title=" " alt="" coords="101,14,93,10,78,8,63,10,55,14,53,20,57,29,52,28,48,20,51,11,62,5,78,3,95,5,106,14"/>
+</map>
+</div>
 
 </div>
 </div>
@@ -611,11 +631,11 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="classtoast_1_1Node_acb8f86f0c18d3e148e39d24c5c577b24_icgraph.png" border="0" usemap="#aclasstoast_1_1Node_acb8f86f0c18d3e148e39d24c5c577b24_icgraph" loading="lazy" alt=""/></div>
 <map name="aclasstoast_1_1Node_acb8f86f0c18d3e148e39d24c5c577b24_icgraph" id="aclasstoast_1_1Node_acb8f86f0c18d3e148e39d24c5c577b24_icgraph">
-<area shape="rect" title="Whether this node is currently active." alt="" coords="402,14,558,42"/>
-<area shape="rect" href="classtoast_1_1INodeOwner.html#a6f5391e16c2c81dd8706ed39dacc63d3" title="Like activateCamera(), but replaces whatever camera is currently active." alt="" coords="204,5,354,50"/>
-<area shape="poly" title=" " alt="" coords="384,28,354,30,354,25,389,28"/>
-<area shape="rect" href="classtoast_1_1INodeOwner.html#a58b28b0f5f24f971e81234d2d845068a" title="Determines if this owner is elegible for runtime systems." alt="" coords="5,5,156,50"/>
-<area shape="poly" title=" " alt="" coords="186,28,156,30,156,25,191,27"/>
+<area shape="rect" title="Whether this node is currently active." alt="" coords="243,36,399,64"/>
+<area shape="rect" href="classtoast_1_1Node.html#a8ce8c9cb4ecb09ecac5364cddf3af491" title="Rebuilds the script runtime after a script asset changed (hot reload or attach)." alt="" coords="5,5,195,33"/>
+<area shape="poly" title=" " alt="" coords="225,37,195,35,195,30,230,37"/>
+<area shape="rect" href="classtoast_1_1INodeOwner.html#a6f5391e16c2c81dd8706ed39dacc63d3" title="Like activateCamera(), but replaces whatever camera is currently active." alt="" coords="25,57,175,102"/>
+<area shape="poly" title=" " alt="" coords="225,63,176,72,175,67,230,62"/>
 </map>
 </div>
 
@@ -722,6 +742,16 @@ Here is the caller graph for this function:</div>
 <dl class="section return"><dt>Returns</dt><dd>The first match, or an empty box if nothing was found </dd></dl>
 <dl class="section note"><dt>Note</dt><dd>Traversal stops at prefab-instance boundaries; interior nodes are opaque to <a class="el" href="#a9cbf76720f3b226d385712ae23727a81" title="Depth-first search for a single descendant.">find()</a> </dd></dl>
 <dl class="section see"><dt>See also</dt><dd><a class="el" href="#ab70caacc1806f4952c0480f7c7736570" title="Depth-first search for all matching descendants.">search()</a> </dd></dl>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="classtoast_1_1Node_a9cbf76720f3b226d385712ae23727a81_icgraph.png" border="0" usemap="#aclasstoast_1_1Node_a9cbf76720f3b226d385712ae23727a81_icgraph" loading="lazy" alt=""/></div>
+<map name="aclasstoast_1_1Node_a9cbf76720f3b226d385712ae23727a81_icgraph" id="aclasstoast_1_1Node_a9cbf76720f3b226d385712ae23727a81_icgraph">
+<area shape="rect" title="Depth&#45;first search for a single descendant." alt="" coords="243,5,371,33"/>
+<area shape="rect" href="classtoast_1_1Node.html#a8ce8c9cb4ecb09ecac5364cddf3af491" title="Rebuilds the script runtime after a script asset changed (hot reload or attach)." alt="" coords="5,5,195,33"/>
+<area shape="poly" title=" " alt="" coords="224,19,195,22,195,17,230,19"/>
+</map>
+</div>
 
 </div>
 </div>
@@ -862,16 +892,33 @@ template&lt;typename T&gt; </div>
 <p>Whether this node is the root of a prefab instance. </p>
 <dl class="section note"><dt>Note</dt><dd><a class="el" href="#a9cbf76720f3b226d385712ae23727a81" title="Depth-first search for a single descendant.">find()</a> stops traversal here so the outer tree cannot reach into a prefab's interior </dd></dl>
 <dl class="section see"><dt>See also</dt><dd><a class="el" href="#a9cbf76720f3b226d385712ae23727a81" title="Depth-first search for a single descendant.">find()</a> </dd></dl>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="classtoast_1_1Node_a4aaf31de720d90ac1f4e3e9c16d955af_icgraph.png" border="0" usemap="#aclasstoast_1_1Node_a4aaf31de720d90ac1f4e3e9c16d955af_icgraph" loading="lazy" alt=""/></div>
-<map name="aclasstoast_1_1Node_a4aaf31de720d90ac1f4e3e9c16d955af_icgraph" id="aclasstoast_1_1Node_a4aaf31de720d90ac1f4e3e9c16d955af_icgraph">
-<area shape="rect" title="Whether this node is the root of a prefab instance." alt="" coords="184,5,384,33"/>
-<area shape="rect" href="classtoast_1_1Node.html#a666186f691b352223f039060d7d1d2a9" title="The topmost ancestor that is not the world root." alt="" coords="5,5,136,33"/>
-<area shape="poly" title=" " alt="" coords="166,19,136,22,136,17,171,19"/>
-</map>
+
 </div>
+</div>
+<a id="adfc97ff989a985fcec703d6f88a40fa8" name="adfc97ff989a985fcec703d6f88a40fa8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adfc97ff989a985fcec703d6f88a40fa8">&#9670;&#160;</a></span>luaAffinity()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual auto toast::Node::luaAffinity </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td> const -&gt; std::optional&lt; size_t &gt;</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel nodiscard">nodiscard</span><span class="mlabel protected">protected</span><span class="mlabel virtual">virtual</span><span class="mlabel noexcept">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Reimplemented in <a class="el" href="classtoast_1_1StateMachine.html#a6b5f7bca15c70cc365971ed0d764868a">toast::StateMachine</a>.</p>
 
 </div>
 </div>
@@ -1101,6 +1148,35 @@ Here is the caller graph for this function:</div>
 <area shape="poly" title=" " alt="" coords="176,43,146,46,146,41,181,43"/>
 </map>
 </div>
+
+</div>
+</div>
+<a id="ad8dccd6ed479d62e8f83c62855607940" name="ad8dccd6ed479d62e8f83c62855607940"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad8dccd6ed479d62e8f83c62855607940">&#9670;&#160;</a></span>scriptVm()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto toast::Node::scriptVm </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="reflect__node_8hpp.html#ad08c233710fd0f56aefc18a7a9f1db5a">TickFunctionList</a></td>          <td class="paramname"><span class="paramname"><em>func</em></span></td><td>)</td>
+          <td> const -&gt; std::optional&lt; size_t &gt;</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel nodiscard">nodiscard</span><span class="mlabel noexcept">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>The interpreter this node runs Lua on while it executes <span class="tt">func</span>, empty when it runs none. </p>
+<p>That is the interpreter of its own scripts when they define <span class="tt">func</span>, or, for a C++ node that calls functions a script gave it, the one those functions live on, see luaAffinity()</p>
+<p>The scheduler keeps everything that shares an interpreter so two threads dont want the same interpreter </p>
 
 </div>
 </div>
@@ -1343,11 +1419,12 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="classtoast_1_1Node_a006e7b2bb1f1513845392d80cceb5d3e_icgraph.png" border="0" usemap="#aclasstoast_1_1Node_a006e7b2bb1f1513845392d80cceb5d3e_icgraph" loading="lazy" alt=""/></div>
 <map name="aclasstoast_1_1Node_a006e7b2bb1f1513845392d80cceb5d3e_icgraph" id="aclasstoast_1_1Node_a006e7b2bb1f1513845392d80cceb5d3e_icgraph">
-<area shape="rect" title=" " alt="" coords="238,32,371,60"/>
-<area shape="rect" href="classtoast_1_1Node.html#abbcbef4415d8020b76f761f1e1d4e4c8" title="Creates a new child node of the given type and attaches it to this node." alt="" coords="25,5,170,33"/>
-<area shape="poly" title=" " alt="" coords="220,36,171,31,171,26,225,35"/>
-<area shape="rect" href="classtoast_1_1Light.html#a092ae45d0bfd128b22c8067cf7098ab1" title="Tags the concrete light kind; called once from each subclass&#39;s own constructor body." alt="" coords="5,57,190,85"/>
-<area shape="poly" title=" " alt="" coords="219,56,190,62,190,57,225,56"/>
+<area shape="rect" title=" " alt="" coords="238,56,371,84"/>
+<area shape="rect" href="classtoast_1_1Node.html#abbcbef4415d8020b76f761f1e1d4e4c8" title="Creates a new child node of the given type and attaches it to this node." alt="" coords="25,29,170,57"/>
+<area shape="poly" title=" " alt="" coords="220,60,171,55,171,50,225,59"/>
+<area shape="rect" href="classtoast_1_1Light.html#a092ae45d0bfd128b22c8067cf7098ab1" title="Tags the concrete light kind; called once from each subclass&#39;s own constructor body." alt="" coords="5,81,190,109"/>
+<area shape="poly" title=" " alt="" coords="219,80,190,86,190,81,225,80"/>
+<area shape="poly" title=" " alt="" coords="131,14,120,10,97,8,76,10,64,15,61,20,67,29,62,29,56,20,61,11,75,5,98,3,122,5,137,14"/>
 </map>
 </div>
 

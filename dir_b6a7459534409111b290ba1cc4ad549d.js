@@ -27,5 +27,6 @@ var dir_b6a7459534409111b290ba1cc4ad549d =
     [ "voxel_data_lock.hpp", "voxel__data__lock_8hpp.html", null ],
     [ "voxel_query.hpp", "voxel__query_8hpp.html", "voxel__query_8hpp" ],
     [ "voxel_render.hpp", "voxel__render_8hpp.html", "voxel__render_8hpp" ],
-    [ "voxel_shape_data.hpp", "voxel__shape__data_8hpp.html", "voxel__shape__data_8hpp" ]
+    [ "voxel_shape_data.hpp", "voxel__shape__data_8hpp.html", "voxel__shape__data_8hpp" ],
+    [ "voxel_smash.hpp", "voxel__smash_8hpp.html", "voxel__smash_8hpp" ]
 ];

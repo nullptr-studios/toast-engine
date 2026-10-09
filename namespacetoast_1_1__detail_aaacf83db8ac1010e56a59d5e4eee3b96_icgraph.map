@@ -1,0 +1,5 @@
+<map id="toast::_detail::planWave" name="toast::_detail::planWave">
+<area shape="rect" id="Node000001" title="Splits a wave into the jobs that run it in parallel." alt="" coords="207,14,385,42"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1TickScheduler.html#aada3144d3daa1b70a00740d65f45a026" title="Runs a lifecycle stage on root and every node below it, parents before their children." alt="" coords="5,5,159,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="188,28,159,30,159,25,194,27"/>
+</map>

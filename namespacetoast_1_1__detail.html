@@ -128,10 +128,19 @@ Classes</h2></td></tr>
 <tr class="memitem:ControlBox" id="r_ControlBox"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structtoast_1_1__detail_1_1ControlBox.html">ControlBox</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reference-count control block embedded inside the <a class="el" href="classtoast_1_1Node.html">Node</a> allocation.  <a href="structtoast_1_1__detail_1_1ControlBox.html#details">More...</a><br /></td></tr>
 <tr class="memitem:Defer" id="r_Defer"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structtoast_1_1__detail_1_1Defer.html">Defer</a></td></tr>
+<tr class="memitem:ExecuteOptions" id="r_ExecuteOptions"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structtoast_1_1__detail_1_1ExecuteOptions.html">ExecuteOptions</a></td></tr>
+<tr class="memitem:ItemRunner" id="r_ItemRunner"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classtoast_1_1__detail_1_1ItemRunner.html">ItemRunner</a></td></tr>
 <tr class="memitem:NodeCluster" id="r_NodeCluster"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structtoast_1_1__detail_1_1NodeCluster.html">NodeCluster</a></td></tr>
 <tr class="memitem:Robber" id="r_Robber"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structtoast_1_1__detail_1_1Robber.html">Robber</a></td></tr>
 <tr class="memitem:TickSchedule" id="r_TickSchedule"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structtoast_1_1__detail_1_1TickSchedule.html">TickSchedule</a></td></tr>
+<tr class="memitem:WaveJob" id="r_WaveJob"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structtoast_1_1__detail_1_1WaveJob.html">WaveJob</a></td></tr>
 <tr class="memitem:WorldTestAccess" id="r_WorldTestAccess"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structtoast_1_1__detail_1_1WorldTestAccess.html">WorldTestAccess</a></td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-typedef-members" class="groupheader"><a id="typedef-members" name="typedef-members"></a>
+Typedefs</h2></td></tr>
+<tr class="memitem:a4c5c71ac50f04645fca7f5003bf4bcd3" id="r_a4c5c71ac50f04645fca7f5003bf4bcd3"><td class="memItemLeft"><a id="a4c5c71ac50f04645fca7f5003bf4bcd3" name="a4c5c71ac50f04645fca7f5003bf4bcd3"></a>
+using&#160;</td><td class="memItemRight"><b>Interactions</b> = std::unordered_map&lt;<a class="el" href="classtoast_1_1Box.html">Box</a>&lt;<a class="el" href="classtoast_1_1Node.html">Node</a>&gt;, std::vector&lt;<a class="el" href="classtoast_1_1Box.html">Box</a>&lt;<a class="el" href="classtoast_1_1Node.html">Node</a>&gt;&gt;&gt;</td></tr>
+<tr class="memdesc:a4c5c71ac50f04645fca7f5003bf4bcd3"><td class="mdescLeft">&#160;</td><td class="mdescRight">For a node, the nodes whose scripts it calls or is called by, see <a class="el" href="classtoast_1_1Node.html#ae37c89e7fd2eaeed46bea58784bb8ad5" title="Declares that the scripts of this node and of other call each other.">Node::interactsWith()</a>. <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-enum-members" class="groupheader"><a id="enum-members" name="enum-members"></a>
 Enumerations</h2></td></tr>
@@ -155,6 +164,10 @@ template&lt;typename R = void, typename... Args&gt; </td></tr>
 <tr class="memitem:abd4c87ee1ac1f3612fa45da796f48627" id="r_abd4c87ee1ac1f3612fa45da796f48627"><td class="memTemplParams" colspan="2">template&lt;typename T&gt; </td></tr>
 <tr class="memitem:abd4c87ee1ac1f3612fa45da796f48627 template"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#abd4c87ee1ac1f3612fa45da796f48627">assetOfType</a> (const <a class="el" href="classassets_1_1Handle.html">assets::Handle</a>&lt; T &gt; &amp;handle, std::string_view type) -&gt; const T *</td></tr>
 <tr class="memitem:af7826a7d2cd56a27060bb3b1742f4e13" id="r_af7826a7d2cd56a27060bb3b1742f4e13"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#af7826a7d2cd56a27060bb3b1742f4e13">instantiateModel</a> (const <a class="el" href="classassets_1_1VoxelModel.html">assets::VoxelModel</a> &amp;model) -&gt; std::unique_ptr&lt; <a class="el" href="classvoxel_1_1Volume.html">voxel::Volume</a> &gt;</td></tr>
+<tr class="memitem:aaacf83db8ac1010e56a59d5e4eee3b96" id="r_aaacf83db8ac1010e56a59d5e4eee3b96"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#aaacf83db8ac1010e56a59d5e4eee3b96">planWave</a> (const TickSchedule::Wave &amp;wave, <a class="el" href="reflect__node_8hpp.html#ad08c233710fd0f56aefc18a7a9f1db5a">TickFunctionList</a> func, const <a class="el" href="#a4c5c71ac50f04645fca7f5003bf4bcd3">Interactions</a> *interactions=nullptr) -&gt; std::vector&lt; <a class="el" href="structtoast_1_1__detail_1_1WaveJob.html">WaveJob</a> &gt;</td></tr>
+<tr class="memdesc:aaacf83db8ac1010e56a59d5e4eee3b96"><td class="mdescLeft">&#160;</td><td class="mdescRight">Splits a wave into the jobs that run it in parallel.  <br /></td></tr>
+<tr class="memitem:a1611d2383fe6b4b0f815c29dbe7d4095" id="r_a1611d2383fe6b4b0f815c29dbe7d4095"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a1611d2383fe6b4b0f815c29dbe7d4095">runJobs</a> (const std::vector&lt; <a class="el" href="structtoast_1_1__detail_1_1WaveJob.html">WaveJob</a> &gt; &amp;jobs, size_t item_count, <a class="el" href="classtoast_1_1__detail_1_1ItemRunner.html">ItemRunner</a> run_item, const <a class="el" href="structtoast_1_1__detail_1_1ExecuteOptions.html">ExecuteOptions</a> &amp;options={})</td></tr>
+<tr class="memdesc:a1611d2383fe6b4b0f815c29dbe7d4095"><td class="mdescLeft">&#160;</td><td class="mdescRight">Runs the jobs of a plan in parallel and returns once every item has run.  <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-var-members" class="groupheader"><a id="var-members" name="var-members"></a>
 Variables</h2></td></tr>
@@ -280,6 +293,102 @@ Here is the caller graph for this function:</div>
 <area shape="poly" title=" " alt="" coords="253,80,185,82,184,77,258,78"/>
 <area shape="rect" href="classtoast_1_1VoxelPiece.html#a52838ba051112268889a0f7f502d404b" title=" " alt="" coords="33,125,195,153"/>
 <area shape="poly" title=" " alt="" coords="258,105,223,116,178,127,177,122,222,111,253,106"/>
+</map>
+</div>
+
+</div>
+</div>
+<a id="aaacf83db8ac1010e56a59d5e4eee3b96" name="aaacf83db8ac1010e56a59d5e4eee3b96"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaacf83db8ac1010e56a59d5e4eee3b96">&#9670;&#160;</a></span>planWave()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">TOAST_API auto toast::_detail::planWave </td>
+          <td>(</td>
+          <td class="paramtype">const TickSchedule::Wave &amp;</td>          <td class="paramname"><span class="paramname"><em>wave</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="reflect__node_8hpp.html#ad08c233710fd0f56aefc18a7a9f1db5a">TickFunctionList</a></td>          <td class="paramname"><span class="paramname"><em>func</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="#a4c5c71ac50f04645fca7f5003bf4bcd3">Interactions</a> *</td>          <td class="paramname"><span class="paramname"><em>interactions</em></span><span class="paramdefsep"> = </span><span class="paramdefval">nullptr</span>&#160;) -&gt;  std::vector&lt; <a class="el" href="structtoast_1_1__detail_1_1WaveJob.html">WaveJob</a> &gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Splits a wave into the jobs that run it in parallel. </p>
+<p>Everything that runs Lua on the same interpreter ends up in one job</p>
+<p>A cluster that spans interpreters ties them together into one job </p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="namespacetoast_1_1__detail_aaacf83db8ac1010e56a59d5e4eee3b96_icgraph.png" border="0" usemap="#anamespacetoast_1_1__detail_aaacf83db8ac1010e56a59d5e4eee3b96_icgraph" loading="lazy" alt=""/></div>
+<map name="anamespacetoast_1_1__detail_aaacf83db8ac1010e56a59d5e4eee3b96_icgraph" id="anamespacetoast_1_1__detail_aaacf83db8ac1010e56a59d5e4eee3b96_icgraph">
+<area shape="rect" title="Splits a wave into the jobs that run it in parallel." alt="" coords="207,14,385,42"/>
+<area shape="rect" href="classtoast_1_1TickScheduler.html#aada3144d3daa1b70a00740d65f45a026" title="Runs a lifecycle stage on root and every node below it, parents before their children." alt="" coords="5,5,159,50"/>
+<area shape="poly" title=" " alt="" coords="188,28,159,30,159,25,194,27"/>
+</map>
+</div>
+
+</div>
+</div>
+<a id="a1611d2383fe6b4b0f815c29dbe7d4095" name="a1611d2383fe6b4b0f815c29dbe7d4095"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1611d2383fe6b4b0f815c29dbe7d4095">&#9670;&#160;</a></span>runJobs()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">TOAST_API void toast::_detail::runJobs </td>
+          <td>(</td>
+          <td class="paramtype">const std::vector&lt; <a class="el" href="structtoast_1_1__detail_1_1WaveJob.html">WaveJob</a> &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>jobs</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t</td>          <td class="paramname"><span class="paramname"><em>item_count</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classtoast_1_1__detail_1_1ItemRunner.html">ItemRunner</a></td>          <td class="paramname"><span class="paramname"><em>run_item</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structtoast_1_1__detail_1_1ExecuteOptions.html">ExecuteOptions</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>options</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Runs the jobs of a plan in parallel and returns once every item has run. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">item_count</td><td>How many items the plan has, every item in exactly one job </td></tr>
+  </table>
+  </dd>
+</dl>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="namespacetoast_1_1__detail_a1611d2383fe6b4b0f815c29dbe7d4095_icgraph.png" border="0" usemap="#anamespacetoast_1_1__detail_a1611d2383fe6b4b0f815c29dbe7d4095_icgraph" loading="lazy" alt=""/></div>
+<map name="anamespacetoast_1_1__detail_a1611d2383fe6b4b0f815c29dbe7d4095_icgraph" id="anamespacetoast_1_1__detail_a1611d2383fe6b4b0f815c29dbe7d4095_icgraph">
+<area shape="rect" title="Runs the jobs of a plan in parallel and returns once every item has run." alt="" coords="664,44,827,72"/>
+<area shape="rect" href="classscripting_1_1ScriptDispatch.html#a0edcaee096f36a3d503be1a736a06cba" title="Runs the queued work." alt="" coords="437,65,616,110"/>
+<area shape="poly" title=" " alt="" coords="651,71,617,78,617,73,646,72"/>
+<area shape="rect" href="classtoast_1_1TickScheduler.html#aada3144d3daa1b70a00740d65f45a026" title="Runs a lifecycle stage on root and every node below it, parents before their children." alt="" coords="236,5,389,50"/>
+<area shape="poly" title=" " alt="" coords="646,52,389,36,389,30,651,51"/>
+<area shape="poly" title=" " alt="" coords="427,61,389,52,390,47,433,61"/>
+<area shape="rect" href="classtoast_1_1TickScheduler.html#a30cb7092b454ff283d6cd1568dac301c" title="Dispatches a single phase of the tick schedule." alt="" coords="236,75,389,119"/>
+<area shape="poly" title=" " alt="" coords="419,92,389,96,389,91,424,92"/>
+<area shape="rect" href="classtoast_1_1TickScheduler.html#a002172089ec3f1e7d6d24789c4547bb4" title="Runs the four frame phases (early_tick → tick → post_physics → late_tick) of the schedule." alt="" coords="5,83,188,111"/>
+<area shape="poly" title=" " alt="" coords="217,97,188,100,188,94,223,97"/>
 </map>
 </div>
 

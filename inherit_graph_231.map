@@ -1,3 +1,5 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="Node000000" href="$classinput_1_1Bind.html" title="Binds a single keycode to its triggers and per&#45;bind modifiers." alt="" coords="5,5,97,33"/>
+<area shape="rect" id="Node000000" title=" " alt="" coords="5,5,122,33"/>
+<area shape="rect" id="Node000001" href="$classeditor_1_1ViewLocator.html" title="Given a view model, returns the corresponding view if possible." alt="" coords="170,5,312,33"/>
+<area shape="poly" id="edge491_Node000000_Node000001" title=" " alt="" coords="137,17,172,19,167,19,137,22"/>
 </map>

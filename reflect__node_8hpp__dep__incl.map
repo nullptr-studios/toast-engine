@@ -24,14 +24,14 @@
 <area shape="poly" id="edge17_Node000004_Node000014" title=" " alt="" coords="3579,135,3883,188,3897,193,3892,193,3882,193,3579,140"/>
 <area shape="rect" id="Node000016" href="$node__3d_8hpp.html" title="Node with 3D spatial transforms." alt="" coords="1697,191,1863,235"/>
 <area shape="poly" id="edge19_Node000004_Node000016" title=" " alt="" coords="3381,143,3236,160,3048,172,2607,192,1863,213,1863,207,2607,187,3048,167,3236,154,3386,143"/>
-<area shape="rect" id="Node000067" href="$state__machine_8hpp.html" title=" " alt="" coords="4084,191,4249,235"/>
-<area shape="poly" id="edge54_Node000004_Node000067" title=" " alt="" coords="3579,127,3805,151,4072,188,4086,193,4081,193,4072,193,3805,156,3579,133"/>
-<area shape="rect" id="Node000068" href="$tick__scheduler_8hpp.html" title="Dependency&#45;graph tick scheduling shared by World and PlayWorkspace." alt="" coords="4273,191,4439,235"/>
-<area shape="poly" id="edge55_Node000004_Node000068" title=" " alt="" coords="3579,124,3885,145,4073,163,4262,188,4276,193,4270,192,4261,193,4073,168,3884,150,3580,129"/>
-<area shape="rect" id="Node000069" href="$world_8hpp_source.html" title=" " alt="" coords="4393,283,4559,328"/>
-<area shape="poly" id="edge62_Node000004_Node000069" title=" " alt="" coords="3580,119,3805,123,4079,133,4208,142,4320,154,4405,169,4434,178,4452,189,4469,210,4477,235,4480,285,4476,281,4472,236,4464,212,4449,193,4432,183,4404,174,4320,159,4208,148,4078,139,3805,128,3580,125"/>
-<area shape="rect" id="Node000071" href="$workspace__events_8hpp.html" title=" " alt="" coords="3293,191,3467,235"/>
-<area shape="poly" id="edge59_Node000004_Node000071" title=" " alt="" coords="3449,152,3405,193,3403,188,3444,154"/>
+<area shape="rect" id="Node000066" href="$state__machine_8hpp.html" title=" " alt="" coords="4084,191,4249,235"/>
+<area shape="poly" id="edge54_Node000004_Node000066" title=" " alt="" coords="3579,127,3805,151,4072,188,4086,193,4081,193,4072,193,3805,156,3579,133"/>
+<area shape="rect" id="Node000067" href="$tick__scheduler_8hpp.html" title="Dependency&#45;graph tick scheduling shared by World and PlayWorkspace." alt="" coords="4273,191,4439,235"/>
+<area shape="poly" id="edge55_Node000004_Node000067" title=" " alt="" coords="3579,124,3885,145,4073,163,4262,188,4276,193,4270,192,4261,193,4073,168,3884,150,3580,129"/>
+<area shape="rect" id="Node000068" href="$world_8hpp_source.html" title=" " alt="" coords="4393,283,4559,328"/>
+<area shape="poly" id="edge62_Node000004_Node000068" title=" " alt="" coords="3580,119,3805,123,4079,133,4208,142,4320,154,4405,169,4434,178,4452,189,4469,210,4477,235,4480,285,4476,281,4472,236,4464,212,4449,193,4432,183,4404,174,4320,159,4208,148,4078,139,3805,128,3580,125"/>
+<area shape="rect" id="Node000070" href="$workspace__events_8hpp.html" title=" " alt="" coords="3293,191,3467,235"/>
+<area shape="poly" id="edge59_Node000004_Node000070" title=" " alt="" coords="3449,152,3405,193,3403,188,3444,154"/>
 <area shape="rect" id="Node000006" href="$nodes_8hpp.html" title="Wrapper file with all node files." alt="" coords="1049,469,1215,513"/>
 <area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="2934,247,2953,288,2965,334,2967,358,2964,382,2957,403,2943,423,2917,434,2864,444,2695,461,2460,473,2185,481,1622,490,1215,492,1215,487,1622,485,2185,476,2460,467,2695,455,2864,439,2915,429,2940,419,2952,401,2959,380,2961,358,2960,335,2948,289,2931,251"/>
 <area shape="poly" id="edge7_Node000007_Node000006" title=" " alt="" coords="3085,244,3045,285,3032,304,3024,323,3015,359,3003,393,2991,408,2972,423,2943,432,2888,440,2714,453,2474,465,2195,474,1626,486,1215,492,1215,486,1626,481,2195,468,2474,459,2714,448,2888,434,2942,427,2969,418,2987,405,2998,390,3010,358,3019,321,3027,302,3041,282,3080,246"/>
@@ -62,16 +62,16 @@
 <area shape="poly" id="edge45_Node000016_Node000047" title=" " alt="" coords="1878,214,2044,220,2262,232,2506,251,2752,281,2766,285,2760,285,2752,286,2506,257,2262,237,2044,225,1878,219"/>
 <area shape="rect" id="Node000048" href="$camera_8hpp.html" title="TODO: Brief description of the file&#39;s purpose." alt="" coords="3055,283,3220,328"/>
 <area shape="poly" id="edge46_Node000016_Node000048" title=" " alt="" coords="1878,216,2338,239,2638,258,2942,281,3057,295,3052,295,2941,286,2637,263,2337,245,1878,221"/>
-<area shape="rect" id="Node000054" href="$irradiance__volume_8hpp.html" title="A grid of baked irradiance probes; the diffuse half of global illumination." alt="" coords="833,283,1007,328"/>
-<area shape="poly" id="edge49_Node000016_Node000054" title=" " alt="" coords="1679,220,1385,244,1202,262,1019,286,1008,288,1007,283,1018,281,1201,257,1384,239,1685,219"/>
-<area shape="rect" id="Node000055" href="$light_8hpp.html" title="Base light node; registers with the renderer so it can be collected into the per&#45;frame light list." alt="" coords="1031,283,1196,328"/>
-<area shape="poly" id="edge50_Node000016_Node000055" title=" " alt="" coords="1679,224,1464,249,1208,286,1197,288,1196,283,1208,281,1463,244,1684,223"/>
-<area shape="rect" id="Node000060" href="$mesh__node_8hpp.html" title="Scene&#45;graph node that draws an assets::Mesh." alt="" coords="1220,283,1385,328"/>
-<area shape="poly" id="edge51_Node000016_Node000060" title=" " alt="" coords="1685,230,1398,286,1386,288,1385,283,1397,281,1679,231"/>
-<area shape="rect" id="Node000061" href="$reflection__probe_8hpp.html" title="Localised reflection volume; registers with the renderer so it can be collected per frame." alt="" coords="1409,283,1575,328"/>
-<area shape="poly" id="edge52_Node000016_Node000061" title=" " alt="" coords="1699,240,1562,285,1560,280,1694,241"/>
-<area shape="rect" id="Node000062" href="$volume_8hpp.html" title="Generic cubic volume." alt="" coords="1599,283,1764,328"/>
-<area shape="poly" id="edge53_Node000016_Node000062" title=" " alt="" coords="1748,245,1706,285,1704,280,1743,247"/>
+<area shape="rect" id="Node000053" href="$irradiance__volume_8hpp.html" title="A grid of baked irradiance probes; the diffuse half of global illumination." alt="" coords="833,283,1007,328"/>
+<area shape="poly" id="edge49_Node000016_Node000053" title=" " alt="" coords="1679,220,1385,244,1202,262,1019,286,1008,288,1007,283,1018,281,1201,257,1384,239,1685,219"/>
+<area shape="rect" id="Node000054" href="$light_8hpp.html" title="Base light node; registers with the renderer so it can be collected into the per&#45;frame light list." alt="" coords="1031,283,1196,328"/>
+<area shape="poly" id="edge50_Node000016_Node000054" title=" " alt="" coords="1679,224,1464,249,1208,286,1197,288,1196,283,1208,281,1463,244,1684,223"/>
+<area shape="rect" id="Node000059" href="$mesh__node_8hpp.html" title="Scene&#45;graph node that draws an assets::Mesh." alt="" coords="1220,283,1385,328"/>
+<area shape="poly" id="edge51_Node000016_Node000059" title=" " alt="" coords="1685,230,1398,286,1386,288,1385,283,1397,281,1679,231"/>
+<area shape="rect" id="Node000060" href="$reflection__probe_8hpp.html" title="Localised reflection volume; registers with the renderer so it can be collected per frame." alt="" coords="1409,283,1575,328"/>
+<area shape="poly" id="edge52_Node000016_Node000060" title=" " alt="" coords="1699,240,1562,285,1560,280,1694,241"/>
+<area shape="rect" id="Node000061" href="$volume_8hpp.html" title="Generic cubic volume." alt="" coords="1599,283,1764,328"/>
+<area shape="poly" id="edge53_Node000016_Node000061" title=" " alt="" coords="1748,245,1706,285,1704,280,1743,247"/>
 <area shape="rect" id="Node000018" href="$audio__box__emitter_8hpp.html" title="Box&#45;shaped 3D audio emitter." alt="" coords="643,376,861,421"/>
 <area shape="poly" id="edge21_Node000017_Node000018" title=" " alt="" coords="718,339,741,377,736,375,716,344"/>
 <area shape="rect" id="Node000019" href="$audio__capsule__emitter_8hpp.html" title="Capsule&#45;shaped 3D audio emitter." alt="" coords="885,376,1128,421"/>
@@ -101,14 +101,14 @@
 <area shape="rect" id="Node000035" href="$voxel__bucket_8hpp.html" title="A flood fill inside a ProceduralVoxel." alt="" coords="2748,376,2929,421"/>
 <area shape="poly" id="edge44_Node000034_Node000035" title=" " alt="" coords="2374,326,2476,341,2557,350,2636,359,2736,373,2750,378,2745,378,2736,379,2636,364,2556,355,2476,346,2373,331"/>
 <area shape="poly" id="edge47_Node000048_Node000013" title=" " alt="" coords="3140,342,3141,378,3137,374,3137,346"/>
-<area shape="rect" id="Node000051" href="$editor__camera_8hpp.html" title=" " alt="" coords="3249,376,3415,421"/>
-<area shape="poly" id="edge48_Node000048_Node000051" title=" " alt="" coords="3198,332,3288,376,3283,375,3197,338"/>
-<area shape="rect" id="Node000053" href="$play__workspace_8hpp.html" title="Ticking clone of a Workspace used by the editor&#39;s play mode." alt="" coords="4204,283,4369,328"/>
-<area shape="poly" id="edge56_Node000068_Node000053" title=" " alt="" coords="4333,246,4304,286,4302,281,4328,249"/>
-<area shape="poly" id="edge57_Node000068_Node000069" title=" " alt="" coords="4397,242,4450,284,4445,282,4396,247"/>
-<area shape="rect" id="Node000070" href="$world__test__access_8hpp_source.html" title=" " alt="" coords="4390,376,4562,421"/>
-<area shape="poly" id="edge58_Node000069_Node000070" title=" " alt="" coords="4478,342,4478,378,4474,374,4474,345"/>
-<area shape="poly" id="edge60_Node000071_Node000051" title=" " alt="" coords="3370,249,3360,284,3338,377,3334,373,3355,283,3365,252"/>
-<area shape="rect" id="Node000072" href="$workspace__history_8hpp_source.html" title=" " alt="" coords="3369,283,3543,328"/>
-<area shape="poly" id="edge61_Node000071_Node000072" title=" " alt="" coords="3409,245,3441,284,3436,282,3407,250"/>
+<area shape="rect" id="Node000050" href="$editor__camera_8hpp.html" title=" " alt="" coords="3249,376,3415,421"/>
+<area shape="poly" id="edge48_Node000048_Node000050" title=" " alt="" coords="3198,332,3288,376,3283,375,3197,338"/>
+<area shape="rect" id="Node000052" href="$play__workspace_8hpp.html" title="Ticking clone of a Workspace used by the editor&#39;s play mode." alt="" coords="4204,283,4369,328"/>
+<area shape="poly" id="edge56_Node000067_Node000052" title=" " alt="" coords="4333,246,4304,286,4302,281,4328,249"/>
+<area shape="poly" id="edge57_Node000067_Node000068" title=" " alt="" coords="4397,242,4450,284,4445,282,4396,247"/>
+<area shape="rect" id="Node000069" href="$world__test__access_8hpp_source.html" title=" " alt="" coords="4390,376,4562,421"/>
+<area shape="poly" id="edge58_Node000068_Node000069" title=" " alt="" coords="4478,342,4478,378,4474,374,4474,345"/>
+<area shape="poly" id="edge60_Node000070_Node000050" title=" " alt="" coords="3370,249,3360,284,3338,377,3334,373,3355,283,3365,252"/>
+<area shape="rect" id="Node000071" href="$workspace__history_8hpp_source.html" title=" " alt="" coords="3369,283,3543,328"/>
+<area shape="poly" id="edge61_Node000070_Node000071" title=" " alt="" coords="3409,245,3441,284,3436,282,3407,250"/>
 </map>

@@ -126,137 +126,148 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('event_8hpp_sou
 <div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &lt;map&gt;</span></div>
 <div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &lt;memory&gt;</span></div>
 <div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &lt;mutex&gt;</span></div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &lt;<a class="code" href="export_8hpp.html">toast/export.hpp</a>&gt;</span></div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#include &lt;<a class="code" href="log_8hpp.html">toast/log.hpp</a>&gt;</span></div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="preprocessor">#include &lt;type_traits&gt;</span></div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="preprocessor">#include &lt;typeindex&gt;</span></div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="preprocessor">#include &lt;vector&gt;</span></div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span> </div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="keyword">namespace </span>event {</div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span></div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="keywordtype">void</span> TOAST_API pollEvents() noexcept;</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span></div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>namespace _detail {</div>
-<div class="foldopen" id="foldopen00035" data-start="{" data-end="};">
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno"><a class="line" href="structevent_1_1__detail_1_1IEvent.html">   35</a></span><span class="keyword">struct </span>TOAST_API <a class="code hl_struct" href="structevent_1_1__detail_1_1IEvent.html">IEvent</a> {</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>  <span class="keyword">virtual</span> <a class="code hl_struct" href="structevent_1_1__detail_1_1IEvent.html">~IEvent</a>() = <span class="keywordflow">default</span>;</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span> </div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span><span class="preprocessor">#ifdef DEBUG</span></div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="comment">// std::stacktrace stacktrace;</span></div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span><span class="preprocessor">#endif</span></div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span> </div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  <span class="keyword">friend</span> <span class="keywordtype">void</span> TOAST_API event::pollEvents() <span class="keyword">noexcept</span>;</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span> notify() <span class="keyword">noexcept</span> = 0;</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>};</div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &lt;shared_mutex&gt;</span></div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#include &lt;<a class="code" href="export_8hpp.html">toast/export.hpp</a>&gt;</span></div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="preprocessor">#include &lt;<a class="code" href="log_8hpp.html">toast/log.hpp</a>&gt;</span></div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="preprocessor">#include &lt;type_traits&gt;</span></div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="preprocessor">#include &lt;typeindex&gt;</span></div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="preprocessor">#include &lt;vector&gt;</span></div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="keyword">namespace </span>event {</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span></div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="keywordtype">void</span> TOAST_API pollEvents() noexcept;</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span></div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>namespace _detail {</div>
+<div class="foldopen" id="foldopen00036" data-start="{" data-end="};">
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno"><a class="line" href="structevent_1_1__detail_1_1IEvent.html">   36</a></span><span class="keyword">struct </span>TOAST_API <a class="code hl_struct" href="structevent_1_1__detail_1_1IEvent.html">IEvent</a> {</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  <span class="keyword">virtual</span> <a class="code hl_struct" href="structevent_1_1__detail_1_1IEvent.html">~IEvent</a>() = <span class="keywordflow">default</span>;</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span> </div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span><span class="preprocessor">#ifdef DEBUG</span></div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  <span class="comment">// std::stacktrace stacktrace;</span></div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span> </div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <span class="keyword">friend</span> <span class="keywordtype">void</span> TOAST_API event::pollEvents() <span class="keyword">noexcept</span>;</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span> notify() <span class="keyword">noexcept</span> = 0;</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>};</div>
 </div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span></div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span><span class="keyword">auto</span> TOAST_API allocate(std::size_t size, std::size_t align) <span class="keyword">noexcept</span> -&gt; <span class="keywordtype">void</span>*;</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>}</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span></div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span>... Args&gt;</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  <span class="keyword">requires</span> std::is_base_of_v&lt;_detail::IEvent, T&gt;</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span><span class="keywordtype">void</span> send(Args&amp;&amp;... args) <span class="keyword">noexcept</span>;</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span></div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</div>
-<div class="foldopen" id="foldopen00077" data-start="{" data-end="};">
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno"><a class="line" href="structevent_1_1Event.html">   77</a></span><span class="keyword">struct </span>Event : <a class="code hl_struct" href="structevent_1_1__detail_1_1IEvent.html">_detail::IEvent</a> {</div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  <span class="keyword">friend</span> <span class="keyword">class </span>Listener;</div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  <span class="keyword">friend</span> <span class="keyword">class </span>ThreadListener;</div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>  <span class="keyword">friend</span> <span class="keyword">struct </span>EventSystem;</div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>  <span class="keyword">friend</span> T;</div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno"><a class="line" href="structevent_1_1Event.html#a001f7d0fce333a6cc043ae52e1d6ab54">   83</a></span>  <span class="keyword">using </span><a class="code hl_typedef" href="structevent_1_1Event.html#a001f7d0fce333a6cc043ae52e1d6ab54">callback_t</a> = std::move_only_function&lt;bool(T&amp;)&gt;;</div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  <span class="keyword">using </span>iterator_t = std::multimap&lt;char, void*, std::greater&lt;&gt;&gt;::iterator;</div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span> </div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>  Event() = <span class="keywordflow">default</span>;</div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span> </div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  <span class="keyword">static</span> <span class="keywordtype">void</span> ensureRegistered() noexcept;</div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span></div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  static auto subscribe(<span class="keywordtype">char</span> priority, <a class="code hl_typedef" href="structevent_1_1Event.html#a001f7d0fce333a6cc043ae52e1d6ab54">callback_t</a>&amp;&amp; callback) noexcept -&gt; iterator_t;</div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span></div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  static <span class="keywordtype">void</span> unsubscribe(iterator_t it) noexcept;</div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span></div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  <span class="keywordtype">void</span> notify() noexcept override;</div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>};</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span></div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span><span class="keyword">auto</span> TOAST_API allocate(std::size_t size, std::size_t align) <span class="keyword">noexcept</span> -&gt; <span class="keywordtype">void</span>*;</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>}</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span></div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span>... Args&gt;</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <span class="keyword">requires</span> std::is_base_of_v&lt;_detail::IEvent, T&gt;</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span><span class="keywordtype">void</span> send(Args&amp;&amp;... args) <span class="keyword">noexcept</span>;</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span></div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</div>
+<div class="foldopen" id="foldopen00078" data-start="{" data-end="};">
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno"><a class="line" href="structevent_1_1Event.html">   78</a></span><span class="keyword">struct </span>Event : <a class="code hl_struct" href="structevent_1_1__detail_1_1IEvent.html">_detail::IEvent</a> {</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  <span class="keyword">friend</span> <span class="keyword">class </span>Listener;</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>  <span class="keyword">friend</span> <span class="keyword">class </span>ThreadListener;</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>  <span class="keyword">friend</span> <span class="keyword">struct </span>EventSystem;</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  <span class="keyword">friend</span> T;</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno"><a class="line" href="structevent_1_1Event.html#a001f7d0fce333a6cc043ae52e1d6ab54">   84</a></span>  <span class="keyword">using </span><a class="code hl_typedef" href="structevent_1_1Event.html#a001f7d0fce333a6cc043ae52e1d6ab54">callback_t</a> = std::move_only_function&lt;bool(T&amp;)&gt;;</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  <span class="keyword">using </span>iterator_t = std::multimap&lt;char, void*, std::greater&lt;&gt;&gt;::iterator;</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span> </div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  Event() = <span class="keywordflow">default</span>;</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span> </div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  <span class="keyword">static</span> <span class="keywordtype">void</span> ensureRegistered() noexcept;</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span></div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  static auto subscribe(<span class="keywordtype">char</span> priority, <a class="code hl_typedef" href="structevent_1_1Event.html#a001f7d0fce333a6cc043ae52e1d6ab54">callback_t</a>&amp;&amp; callback) noexcept -&gt; iterator_t;</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span></div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>  static <span class="keywordtype">void</span> unsubscribe(iterator_t it) noexcept;</div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span></div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>  <span class="keywordtype">void</span> notify() noexcept override;</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>};</div>
 </div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span></div>
-<div class="foldopen" id="foldopen00110" data-start="{" data-end="};">
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno"><a class="line" href="structevent_1_1EventSystem.html">  110</a></span>struct TOAST_API <a class="code hl_struct" href="structevent_1_1EventSystem.html">EventSystem</a> {</div>
-<div class="foldopen" id="foldopen00119" data-start="{" data-end="};">
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno"><a class="line" href="structevent_1_1EventSystem_1_1EventInfo.html">  119</a></span>  <span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1EventSystem_1_1EventInfo.html">EventInfo</a> {</div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>    std::mutex mutex;</div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>    std::multimap&lt;char, void*, std::greater&lt;&gt;&gt; callbacks;</div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>    std::vector&lt;void*&gt; processing;</div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>    <span class="keywordtype">bool</span> cached = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>  };</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span></div>
+<div class="foldopen" id="foldopen00111" data-start="{" data-end="};">
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno"><a class="line" href="structevent_1_1EventSystem.html">  111</a></span>struct TOAST_API <a class="code hl_struct" href="structevent_1_1EventSystem.html">EventSystem</a> {</div>
+<div class="foldopen" id="foldopen00120" data-start="{" data-end="};">
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno"><a class="line" href="structevent_1_1EventSystem_1_1EventInfo.html">  120</a></span>  <span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1EventSystem_1_1EventInfo.html">EventInfo</a> {</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>    std::mutex mutex;</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>    std::multimap&lt;char, void*, std::greater&lt;&gt;&gt; callbacks;</div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>    std::vector&lt;void*&gt; processing;</div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>    <span class="keywordtype">bool</span> cached = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>  };</div>
 </div>
-<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span></div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno"><a class="line" href="structevent_1_1EventSystem.html#a5b84ac8da34c51e5f269534b30c556a2">  127</a></span>  <span class="keyword">static</span> std::unordered_map&lt;std::type_index, EventInfo&gt; <a class="code hl_variable" href="structevent_1_1EventSystem.html#a5b84ac8da34c51e5f269534b30c556a2">event_data</a>;</div>
-<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span></div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno"><a class="line" href="structevent_1_1EventSystem.html#a789a7c1d30adc5e1f8b752361185aebf">  130</a></span>  <span class="keyword">static</span> std::mutex <a class="code hl_variable" href="structevent_1_1EventSystem.html#a789a7c1d30adc5e1f8b752361185aebf">pool_mutex</a>;</div>
-<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span></div>
-<div class="line"><a id="l00133" name="l00133"></a><span class="lineno"><a class="line" href="structevent_1_1EventSystem.html#aa8de0d699e9b01d7a91ce34f5dba2019">  133</a></span>  <span class="keyword">static</span> std::unordered_map&lt;std::type_index, std::function&lt;void(std::any)&gt;&gt; <a class="code hl_variable" href="structevent_1_1EventSystem.html#aa8de0d699e9b01d7a91ce34f5dba2019">unsubscribe_map</a>;</div>
-<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span></div>
-<div class="line"><a id="l00137" name="l00137"></a><span class="lineno"><a class="line" href="structevent_1_1EventSystem.html#ab243df3d6617188e1fd9a00d39a27f58">  137</a></span>  <span class="keyword">static</span> std::vector&lt;std::unique_ptr&lt;void, void (*)(<span class="keywordtype">void</span>*)&gt;&gt; <a class="code hl_variable" href="structevent_1_1EventSystem.html#ab243df3d6617188e1fd9a00d39a27f58">deletion_queue</a>;</div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span></div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno"><a class="line" href="structevent_1_1EventSystem.html#a5b84ac8da34c51e5f269534b30c556a2">  128</a></span>  <span class="keyword">static</span> std::unordered_map&lt;std::type_index, EventInfo&gt; <a class="code hl_variable" href="structevent_1_1EventSystem.html#a5b84ac8da34c51e5f269534b30c556a2">event_data</a>;</div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span></div>
+<div class="line"><a id="l00131" name="l00131"></a><span class="lineno"><a class="line" href="structevent_1_1EventSystem.html#a55e8b36d74e452fb07bd6858f39089c5">  131</a></span>  <span class="keyword">static</span> std::shared_mutex <a class="code hl_variable" href="structevent_1_1EventSystem.html#a55e8b36d74e452fb07bd6858f39089c5">registration_mutex</a>;</div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span></div>
+<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>  <span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code hl_function" href="structevent_1_1EventSystem.html#ac53402317f859cecb1635d2eabc29d8f">unsubscribeAny</a>(std::type_index type, <span class="keyword">const</span> std::any&amp; iterator);</div>
+<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span> </div>
+<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>  <span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</div>
+<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>  <span class="keyword">static</span> <span class="keyword">auto</span> info() noexcept -&gt; <a class="code hl_struct" href="structevent_1_1EventSystem_1_1EventInfo.html">EventInfo</a>&amp;;</div>
 <div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span></div>
-<div class="line"><a id="l00140" name="l00140"></a><span class="lineno"><a class="line" href="structevent_1_1EventSystem.html#a047868d5ca8783bd21c2c1bc02a5d5db">  140</a></span>  <span class="keyword">static</span> std::mutex <a class="code hl_variable" href="structevent_1_1EventSystem.html#a047868d5ca8783bd21c2c1bc02a5d5db">deletion_mutex</a>;</div>
-<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span> </div>
-<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>  <span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</div>
-<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>  <span class="keyword">static</span> <span class="keywordtype">void</span> registerEvent() {</div>
-<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>    <span class="keyword">static_assert</span>(std::is_base_of_v&lt;Event&lt;T&gt;, T&gt;, <span class="stringliteral">&quot;CONTRACT VIOLATION: You Must Inhert as &#39;struct Derived : Event&lt;Derived&gt;&#39;&quot;</span>);</div>
-<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>    <span class="keywordflow">if</span> (<a class="code hl_variable" href="structevent_1_1EventSystem.html#a5b84ac8da34c51e5f269534b30c556a2">event_data</a>.contains(<span class="keyword">typeid</span>(T))) {</div>
-<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>      <span class="comment">// guard against cross-DLL double-registration; same type can be registered from multiple translation units on Windows</span></div>
-<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>      <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>    }</div>
-<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>    <a class="code hl_define" href="log_8hpp.html#a81f3c60aa916507adc3fe5b33dbad9a6">TOAST_INFO</a>(<span class="stringliteral">&quot;Events&quot;</span>, <span class="stringliteral">&quot;Registering Event Type: {}&quot;</span>, <span class="keyword">typeid</span>(T).name());</div>
-<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>    <a class="code hl_variable" href="structevent_1_1EventSystem.html#a5b84ac8da34c51e5f269534b30c556a2">event_data</a>.emplace( <span class="comment">// this is goofy because eventinfo has a mutex inside it</span></div>
-<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>        std::piecewise_construct,</div>
-<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>        std::forward_as_tuple(<span class="keyword">typeid</span>(T)),</div>
-<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>        std::forward_as_tuple()</div>
-<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>    );</div>
-<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span> </div>
-<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>    <a class="code hl_variable" href="structevent_1_1EventSystem.html#aa8de0d699e9b01d7a91ce34f5dba2019">EventSystem::unsubscribe_map</a>.emplace(<span class="keyword">typeid</span>(T), [](<span class="keyword">const</span> std::any&amp; iter) {</div>
-<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>      <span class="keyword">auto</span> it = std::any_cast&lt;typename Event&lt;T&gt;::iterator_t&gt;(iter);</div>
-<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>      Event&lt;T&gt;::unsubscribe(it);</div>
-<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>    });</div>
-<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>  }</div>
-<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>};</div>
+<div class="line"><a id="l00140" name="l00140"></a><span class="lineno"><a class="line" href="structevent_1_1EventSystem.html#a789a7c1d30adc5e1f8b752361185aebf">  140</a></span>  static std::mutex <a class="code hl_variable" href="structevent_1_1EventSystem.html#a789a7c1d30adc5e1f8b752361185aebf">pool_mutex</a>;</div>
+<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span></div>
+<div class="line"><a id="l00143" name="l00143"></a><span class="lineno"><a class="line" href="structevent_1_1EventSystem.html#aa8de0d699e9b01d7a91ce34f5dba2019">  143</a></span>  static std::unordered_map&lt;std::type_index, std::function&lt;<span class="keywordtype">void</span>(std::any)&gt;&gt; <a class="code hl_variable" href="structevent_1_1EventSystem.html#aa8de0d699e9b01d7a91ce34f5dba2019">unsubscribe_map</a>;</div>
+<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span></div>
+<div class="line"><a id="l00147" name="l00147"></a><span class="lineno"><a class="line" href="structevent_1_1EventSystem.html#ab243df3d6617188e1fd9a00d39a27f58">  147</a></span>  static std::vector&lt;std::unique_ptr&lt;<span class="keywordtype">void</span>, <span class="keywordtype">void</span> (*)(<span class="keywordtype">void</span>*)&gt;&gt; <a class="code hl_variable" href="structevent_1_1EventSystem.html#ab243df3d6617188e1fd9a00d39a27f58">deletion_queue</a>;</div>
+<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span></div>
+<div class="line"><a id="l00150" name="l00150"></a><span class="lineno"><a class="line" href="structevent_1_1EventSystem.html#a047868d5ca8783bd21c2c1bc02a5d5db">  150</a></span>  static std::mutex <a class="code hl_variable" href="structevent_1_1EventSystem.html#a047868d5ca8783bd21c2c1bc02a5d5db">deletion_mutex</a>;</div>
+<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span> </div>
+<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>  template&lt;typename T&gt;</div>
+<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>  static <span class="keywordtype">void</span> registerEvent() {</div>
+<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>    <span class="keyword">static_assert</span>(std::is_base_of_v&lt;Event&lt;T&gt;, T&gt;, <span class="stringliteral">&quot;CONTRACT VIOLATION: You Must Inhert as &#39;struct Derived : Event&lt;Derived&gt;&#39;&quot;</span>);</div>
+<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>    std::unique_lock registration_lock(<a class="code hl_variable" href="structevent_1_1EventSystem.html#a55e8b36d74e452fb07bd6858f39089c5">registration_mutex</a>);</div>
+<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>    <span class="keywordflow">if</span> (<a class="code hl_variable" href="structevent_1_1EventSystem.html#a5b84ac8da34c51e5f269534b30c556a2">event_data</a>.contains(<span class="keyword">typeid</span>(T))) {</div>
+<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>      <span class="comment">// guard against cross-DLL double-registration; same type can be registered from multiple translation units on Windows</span></div>
+<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>      <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>    }</div>
+<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>    <a class="code hl_define" href="log_8hpp.html#a81f3c60aa916507adc3fe5b33dbad9a6">TOAST_INFO</a>(<span class="stringliteral">&quot;Events&quot;</span>, <span class="stringliteral">&quot;Registering Event Type: {}&quot;</span>, <span class="keyword">typeid</span>(T).name());</div>
+<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>    <a class="code hl_variable" href="structevent_1_1EventSystem.html#a5b84ac8da34c51e5f269534b30c556a2">event_data</a>.emplace( <span class="comment">// this is goofy because eventinfo has a mutex inside it</span></div>
+<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>        std::piecewise_construct,</div>
+<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>        std::forward_as_tuple(<span class="keyword">typeid</span>(T)),</div>
+<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>        std::forward_as_tuple()</div>
+<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>    );</div>
+<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span> </div>
+<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>    <a class="code hl_variable" href="structevent_1_1EventSystem.html#aa8de0d699e9b01d7a91ce34f5dba2019">EventSystem::unsubscribe_map</a>.emplace(<span class="keyword">typeid</span>(T), [](<span class="keyword">const</span> std::any&amp; iter) {</div>
+<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>      <span class="keyword">auto</span> it = std::any_cast&lt;typename Event&lt;T&gt;::iterator_t&gt;(iter);</div>
+<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>      Event&lt;T&gt;::unsubscribe(it);</div>
+<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>    });</div>
+<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>  }</div>
+<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>};</div>
 </div>
-<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span></div>
-<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</div>
-<div class="line"><a id="l00177" name="l00177"></a><span class="lineno"><a class="line" href="structevent_1_1ProtoTraits.html">  177</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1ProtoTraits.html">ProtoTraits</a>;</div>
-<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span></div>
-<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</div>
-<div class="foldopen" id="foldopen00186" data-start="{" data-end="}">
-<div class="line"><a id="l00186" name="l00186"></a><span class="lineno"><a class="line" href="conceptevent_1_1ExposedEvent.html">  186</a></span><span class="keyword">concept </span><a class="code hl_concept" href="conceptevent_1_1ExposedEvent.html">ExposedEvent</a> = <span class="keyword">requires</span>(<span class="keyword">const</span> T&amp; e, <span class="keyword">const</span> <span class="keyword">typename</span> <a class="code hl_struct" href="structevent_1_1ProtoTraits.html">ProtoTraits&lt;T&gt;::Proto</a>&amp; p) {</div>
-<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>  <span class="keyword">typename</span> <a class="code hl_struct" href="structevent_1_1ProtoTraits.html">ProtoTraits&lt;T&gt;::Proto</a>;</div>
-<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>  <span class="keyword">typename</span> <a class="code hl_struct" href="structevent_1_1ProtoTraits.html">ProtoTraits&lt;T&gt;::Event</a>;</div>
-<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>  { <a class="code hl_struct" href="structevent_1_1ProtoTraits.html">ProtoTraits&lt;T&gt;::toProto</a>(e) } -&gt; std::same_as&lt;typename ProtoTraits&lt;T&gt;::Proto&gt;;</div>
-<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>  { <a class="code hl_struct" href="structevent_1_1ProtoTraits.html">ProtoTraits&lt;T&gt;::fromProto</a>(p) } -&gt; std::same_as&lt;typename ProtoTraits&lt;T&gt;::Event&gt;;</div>
-<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>};</div>
+<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span></div>
+<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</div>
+<div class="line"><a id="l00188" name="l00188"></a><span class="lineno"><a class="line" href="structevent_1_1ProtoTraits.html">  188</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1ProtoTraits.html">ProtoTraits</a>;</div>
+<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span></div>
+<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</div>
+<div class="foldopen" id="foldopen00197" data-start="{" data-end="}">
+<div class="line"><a id="l00197" name="l00197"></a><span class="lineno"><a class="line" href="conceptevent_1_1ExposedEvent.html">  197</a></span><span class="keyword">concept </span><a class="code hl_concept" href="conceptevent_1_1ExposedEvent.html">ExposedEvent</a> = <span class="keyword">requires</span>(<span class="keyword">const</span> T&amp; e, <span class="keyword">const</span> <span class="keyword">typename</span> <a class="code hl_struct" href="structevent_1_1ProtoTraits.html">ProtoTraits&lt;T&gt;::Proto</a>&amp; p) {</div>
+<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>  <span class="keyword">typename</span> <a class="code hl_struct" href="structevent_1_1ProtoTraits.html">ProtoTraits&lt;T&gt;::Proto</a>;</div>
+<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>  <span class="keyword">typename</span> <a class="code hl_struct" href="structevent_1_1ProtoTraits.html">ProtoTraits&lt;T&gt;::Event</a>;</div>
+<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>  { <a class="code hl_struct" href="structevent_1_1ProtoTraits.html">ProtoTraits&lt;T&gt;::toProto</a>(e) } -&gt; std::same_as&lt;typename ProtoTraits&lt;T&gt;::Proto&gt;;</div>
+<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>  { <a class="code hl_struct" href="structevent_1_1ProtoTraits.html">ProtoTraits&lt;T&gt;::fromProto</a>(p) } -&gt; std::same_as&lt;typename ProtoTraits&lt;T&gt;::Event&gt;;</div>
+<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>};</div>
 </div>
-<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span> </div>
-<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span><span class="comment">// register all exposed events into a registry</span></div>
-<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span><span class="keywordtype">void</span> registerProtoEvents();</div>
-<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span> </div>
-<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>}</div>
-<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span> </div>
-<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span><span class="preprocessor">#include &quot;event.inl&quot;</span></div>
-<div class="ttc" id="aconceptevent_1_1ExposedEvent_html"><div class="ttname"><a href="conceptevent_1_1ExposedEvent.html">event::ExposedEvent</a></div><div class="ttdoc">Satisfied when ProtoTraits&lt;T&gt; is fully specialized with both conversion functions.</div><div class="ttdef"><b>Definition</b> event.hpp:186</div></div>
+<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span> </div>
+<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span><span class="comment">// register all exposed events into a registry</span></div>
+<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span><span class="keywordtype">void</span> registerProtoEvents();</div>
+<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span> </div>
+<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>}</div>
+<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span> </div>
+<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span><span class="preprocessor">#include &quot;event.inl&quot;</span></div>
+<div class="ttc" id="aconceptevent_1_1ExposedEvent_html"><div class="ttname"><a href="conceptevent_1_1ExposedEvent.html">event::ExposedEvent</a></div><div class="ttdoc">Satisfied when ProtoTraits&lt;T&gt; is fully specialized with both conversion functions.</div><div class="ttdef"><b>Definition</b> event.hpp:197</div></div>
 <div class="ttc" id="aexport_8hpp_html"><div class="ttname"><a href="export_8hpp.html">export.hpp</a></div></div>
 <div class="ttc" id="alog_8hpp_html"><div class="ttname"><a href="log_8hpp.html">log.hpp</a></div><div class="ttdoc">Public logging interface for the engine.</div></div>
 <div class="ttc" id="alog_8hpp_html_a81f3c60aa916507adc3fe5b33dbad9a6"><div class="ttname"><a href="log_8hpp.html#a81f3c60aa916507adc3fe5b33dbad9a6">TOAST_INFO</a></div><div class="ttdeci">#define TOAST_INFO(sink,...)</div><div class="ttdoc">logs an information message</div><div class="ttdef"><b>Definition</b> log.hpp:83</div></div>
-<div class="ttc" id="astructevent_1_1EventSystem_1_1EventInfo_html"><div class="ttname"><a href="structevent_1_1EventSystem_1_1EventInfo.html">event::EventSystem::EventInfo</a></div><div class="ttdoc">Per-type callback registry.</div><div class="ttdef"><b>Definition</b> event.hpp:119</div></div>
-<div class="ttc" id="astructevent_1_1EventSystem_html"><div class="ttname"><a href="structevent_1_1EventSystem.html">event::EventSystem</a></div><div class="ttdoc">Internal dispatch table for the event system.</div><div class="ttdef"><b>Definition</b> event.hpp:110</div></div>
-<div class="ttc" id="astructevent_1_1EventSystem_html_a047868d5ca8783bd21c2c1bc02a5d5db"><div class="ttname"><a href="structevent_1_1EventSystem.html#a047868d5ca8783bd21c2c1bc02a5d5db">event::EventSystem::deletion_mutex</a></div><div class="ttdeci">static std::mutex deletion_mutex</div><div class="ttdoc">Protects the event queue memory pool during concurrent sends.</div><div class="ttdef"><b>Definition</b> event.hpp:140</div></div>
-<div class="ttc" id="astructevent_1_1EventSystem_html_a5b84ac8da34c51e5f269534b30c556a2"><div class="ttname"><a href="structevent_1_1EventSystem.html#a5b84ac8da34c51e5f269534b30c556a2">event::EventSystem::event_data</a></div><div class="ttdeci">static std::unordered_map&lt; std::type_index, EventInfo &gt; event_data</div><div class="ttdoc">Dispatch table keyed by event type; one entry per registered event type.</div><div class="ttdef"><b>Definition</b> event.hpp:127</div></div>
-<div class="ttc" id="astructevent_1_1EventSystem_html_a789a7c1d30adc5e1f8b752361185aebf"><div class="ttname"><a href="structevent_1_1EventSystem.html#a789a7c1d30adc5e1f8b752361185aebf">event::EventSystem::pool_mutex</a></div><div class="ttdeci">static std::mutex pool_mutex</div><div class="ttdoc">Protects the event queue memory pool during concurrent sends.</div><div class="ttdef"><b>Definition</b> event.hpp:130</div></div>
-<div class="ttc" id="astructevent_1_1EventSystem_html_aa8de0d699e9b01d7a91ce34f5dba2019"><div class="ttname"><a href="structevent_1_1EventSystem.html#aa8de0d699e9b01d7a91ce34f5dba2019">event::EventSystem::unsubscribe_map</a></div><div class="ttdeci">static std::unordered_map&lt; std::type_index, std::function&lt; void(std::any)&gt; &gt; unsubscribe_map</div><div class="ttdoc">Type-erased unsubscribe functions keyed by event type; used by Listener to erase iterators without th...</div><div class="ttdef"><b>Definition</b> event.hpp:133</div></div>
-<div class="ttc" id="astructevent_1_1EventSystem_html_ab243df3d6617188e1fd9a00d39a27f58"><div class="ttname"><a href="structevent_1_1EventSystem.html#ab243df3d6617188e1fd9a00d39a27f58">event::EventSystem::deletion_queue</a></div><div class="ttdeci">static std::vector&lt; std::unique_ptr&lt; void, void(*)(void *)&gt; &gt; deletion_queue</div><div class="ttdef"><b>Definition</b> event.hpp:137</div></div>
-<div class="ttc" id="astructevent_1_1Event_html_a001f7d0fce333a6cc043ae52e1d6ab54"><div class="ttname"><a href="structevent_1_1Event.html#a001f7d0fce333a6cc043ae52e1d6ab54">event::Event::callback_t</a></div><div class="ttdeci">std::move_only_function&lt; bool(T &amp;)&gt; callback_t</div><div class="ttdoc">callbacks that return &#39;true&#39; are consumed and do not propogate</div><div class="ttdef"><b>Definition</b> event.hpp:83</div></div>
-<div class="ttc" id="astructevent_1_1ProtoTraits_html"><div class="ttname"><a href="structevent_1_1ProtoTraits.html">event::ProtoTraits</a></div><div class="ttdoc">Specialization point that exposes a C++ event type over the C# FFI via protobuf.</div><div class="ttdef"><b>Definition</b> event.hpp:177</div></div>
-<div class="ttc" id="astructevent_1_1__detail_1_1IEvent_html"><div class="ttname"><a href="structevent_1_1__detail_1_1IEvent.html">event::_detail::IEvent</a></div><div class="ttdef"><b>Definition</b> event.hpp:35</div></div>
+<div class="ttc" id="astructevent_1_1EventSystem_1_1EventInfo_html"><div class="ttname"><a href="structevent_1_1EventSystem_1_1EventInfo.html">event::EventSystem::EventInfo</a></div><div class="ttdoc">Per-type callback registry.</div><div class="ttdef"><b>Definition</b> event.hpp:120</div></div>
+<div class="ttc" id="astructevent_1_1EventSystem_html"><div class="ttname"><a href="structevent_1_1EventSystem.html">event::EventSystem</a></div><div class="ttdoc">Internal dispatch table for the event system.</div><div class="ttdef"><b>Definition</b> event.hpp:111</div></div>
+<div class="ttc" id="astructevent_1_1EventSystem_html_a047868d5ca8783bd21c2c1bc02a5d5db"><div class="ttname"><a href="structevent_1_1EventSystem.html#a047868d5ca8783bd21c2c1bc02a5d5db">event::EventSystem::deletion_mutex</a></div><div class="ttdeci">static std::mutex deletion_mutex</div><div class="ttdoc">Protects the event queue memory pool during concurrent sends.</div><div class="ttdef"><b>Definition</b> event.hpp:150</div></div>
+<div class="ttc" id="astructevent_1_1EventSystem_html_a55e8b36d74e452fb07bd6858f39089c5"><div class="ttname"><a href="structevent_1_1EventSystem.html#a55e8b36d74e452fb07bd6858f39089c5">event::EventSystem::registration_mutex</a></div><div class="ttdeci">static std::shared_mutex registration_mutex</div><div class="ttdoc">Guards event_data and unsubscribe_map.</div><div class="ttdef"><b>Definition</b> event.hpp:131</div></div>
+<div class="ttc" id="astructevent_1_1EventSystem_html_a5b84ac8da34c51e5f269534b30c556a2"><div class="ttname"><a href="structevent_1_1EventSystem.html#a5b84ac8da34c51e5f269534b30c556a2">event::EventSystem::event_data</a></div><div class="ttdeci">static std::unordered_map&lt; std::type_index, EventInfo &gt; event_data</div><div class="ttdoc">Dispatch table keyed by event type; one entry per registered event type.</div><div class="ttdef"><b>Definition</b> event.hpp:128</div></div>
+<div class="ttc" id="astructevent_1_1EventSystem_html_a789a7c1d30adc5e1f8b752361185aebf"><div class="ttname"><a href="structevent_1_1EventSystem.html#a789a7c1d30adc5e1f8b752361185aebf">event::EventSystem::pool_mutex</a></div><div class="ttdeci">static std::mutex pool_mutex</div><div class="ttdoc">Protects the event queue memory pool during concurrent sends.</div><div class="ttdef"><b>Definition</b> event.hpp:140</div></div>
+<div class="ttc" id="astructevent_1_1EventSystem_html_aa8de0d699e9b01d7a91ce34f5dba2019"><div class="ttname"><a href="structevent_1_1EventSystem.html#aa8de0d699e9b01d7a91ce34f5dba2019">event::EventSystem::unsubscribe_map</a></div><div class="ttdeci">static std::unordered_map&lt; std::type_index, std::function&lt; void(std::any)&gt; &gt; unsubscribe_map</div><div class="ttdoc">Type-erased unsubscribe functions keyed by event type; used by Listener to erase iterators without th...</div><div class="ttdef"><b>Definition</b> event.hpp:143</div></div>
+<div class="ttc" id="astructevent_1_1EventSystem_html_ab243df3d6617188e1fd9a00d39a27f58"><div class="ttname"><a href="structevent_1_1EventSystem.html#ab243df3d6617188e1fd9a00d39a27f58">event::EventSystem::deletion_queue</a></div><div class="ttdeci">static std::vector&lt; std::unique_ptr&lt; void, void(*)(void *)&gt; &gt; deletion_queue</div><div class="ttdef"><b>Definition</b> event.hpp:147</div></div>
+<div class="ttc" id="astructevent_1_1EventSystem_html_ac53402317f859cecb1635d2eabc29d8f"><div class="ttname"><a href="structevent_1_1EventSystem.html#ac53402317f859cecb1635d2eabc29d8f">event::EventSystem::unsubscribeAny</a></div><div class="ttdeci">static void unsubscribeAny(std::type_index type, const std::any &amp;iterator)</div><div class="ttdoc">Unsubscribes a callback of the given type.</div><div class="ttdef"><b>Definition</b> event.cpp:51</div></div>
+<div class="ttc" id="astructevent_1_1Event_html_a001f7d0fce333a6cc043ae52e1d6ab54"><div class="ttname"><a href="structevent_1_1Event.html#a001f7d0fce333a6cc043ae52e1d6ab54">event::Event::callback_t</a></div><div class="ttdeci">std::move_only_function&lt; bool(T &amp;)&gt; callback_t</div><div class="ttdoc">callbacks that return &#39;true&#39; are consumed and do not propogate</div><div class="ttdef"><b>Definition</b> event.hpp:84</div></div>
+<div class="ttc" id="astructevent_1_1ProtoTraits_html"><div class="ttname"><a href="structevent_1_1ProtoTraits.html">event::ProtoTraits</a></div><div class="ttdoc">Specialization point that exposes a C++ event type over the C# FFI via protobuf.</div><div class="ttdef"><b>Definition</b> event.hpp:188</div></div>
+<div class="ttc" id="astructevent_1_1__detail_1_1IEvent_html"><div class="ttname"><a href="structevent_1_1__detail_1_1IEvent.html">event::_detail::IEvent</a></div><div class="ttdef"><b>Definition</b> event.hpp:36</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

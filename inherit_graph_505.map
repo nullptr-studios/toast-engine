@@ -1,3 +1,5 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="Node000000" href="$structtoast_1_1ProceduralVoxel_1_1Composed.html" title=" " alt="" coords="5,5,172,50"/>
+<area shape="rect" id="Node000000" href="$classtoast_1_1IBaseWindow.html" title=" " alt="" coords="5,5,156,33"/>
+<area shape="rect" id="Node000001" href="$classtoast_1_1SDLWindow.html" title=" " alt="" coords="204,5,342,33"/>
+<area shape="poly" id="edge572_Node000000_Node000001" title=" " alt="" coords="171,17,206,19,201,19,171,22"/>
 </map>

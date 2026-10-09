@@ -121,12 +121,11 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classscripting
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ac227d362731cd84e5c77a7f10a43f9b4" id="r_ac227d362731cd84e5c77a7f10a43f9b4"><td class="memItemLeft"><a id="ac227d362731cd84e5c77a7f10a43f9b4" name="ac227d362731cd84e5c77a7f10a43f9b4"></a>
-&#160;</td><td class="memItemRight"><b>ScriptRuntime</b> (<a class="el" href="classtoast_1_1Box.html">toast::Box</a>&lt; <a class="el" href="classtoast_1_1Node.html">toast::Node</a> &gt; node, const std::vector&lt; <a class="el" href="classassets_1_1Handle.html">assets::Handle</a>&lt; <a class="el" href="classassets_1_1Script.html">assets::Script</a> &gt; &gt; &amp;scripts)</td></tr>
+<tr class="memitem:a30872aaf265fa44761b060b683feedbb" id="r_a30872aaf265fa44761b060b683feedbb"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a30872aaf265fa44761b060b683feedbb">ScriptRuntime</a> (<a class="el" href="classtoast_1_1Box.html">toast::Box</a>&lt; <a class="el" href="classtoast_1_1Node.html">toast::Node</a> &gt; node, const std::vector&lt; <a class="el" href="classassets_1_1Handle.html">assets::Handle</a>&lt; <a class="el" href="classassets_1_1Script.html">assets::Script</a> &gt; &gt; &amp;scripts, uint64_t group=0, std::optional&lt; size_t &gt; placed=std::nullopt)</td></tr>
 <tr class="memitem:a7eeb7bf9b76e0ff10a38e7f4bb5b9977" id="r_a7eeb7bf9b76e0ff10a38e7f4bb5b9977"><td class="memItemLeft"><a id="a7eeb7bf9b76e0ff10a38e7f4bb5b9977" name="a7eeb7bf9b76e0ff10a38e7f4bb5b9977"></a>
 &#160;</td><td class="memItemRight"><b>ScriptRuntime</b> (const ScriptRuntime &amp;)=delete</td></tr>
 <tr class="memitem:a167c2cd32b4cc951e5caf171cb3f5394" id="r_a167c2cd32b4cc951e5caf171cb3f5394"><td class="memItemLeft"><a id="a167c2cd32b4cc951e5caf171cb3f5394" name="a167c2cd32b4cc951e5caf171cb3f5394"></a>
-auto&#160;</td><td class="memItemRight"><b>operator=</b> (const ScriptRuntime &amp;) -&gt; ScriptRuntime &amp;=delete</td></tr>
+auto&#160;</td><td class="memItemRight"><b>operator=</b> (const <a class="el" href="#a30872aaf265fa44761b060b683feedbb">ScriptRuntime</a> &amp;) -&gt; <a class="el" href="#a30872aaf265fa44761b060b683feedbb">ScriptRuntime</a> &amp;=delete</td></tr>
 <tr class="memitem:ad638c7dd7e12427bd1ddf53ee0f545ca" id="r_ad638c7dd7e12427bd1ddf53ee0f545ca"><td class="memItemLeft"><a id="ad638c7dd7e12427bd1ddf53ee0f545ca" name="ad638c7dd7e12427bd1ddf53ee0f545ca"></a>
 void&#160;</td><td class="memItemRight"><b>call</b> (<a class="el" href="reflect__node_8hpp.html#ad08c233710fd0f56aefc18a7a9f1db5a">toast::TickFunctionList</a> phase) noexcept</td></tr>
 <tr class="memdesc:ad638c7dd7e12427bd1ddf53ee0f545ca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dispatch a TickFunctionList phase. <br /></td></tr>
@@ -155,6 +154,8 @@ auto&#160;</td><td class="memItemRight"><b>getVar</b> (std::string_view name) co
 auto&#160;</td><td class="memItemRight"><b>luaSignals</b> () const -&gt; std::vector&lt; std::string &gt;</td></tr>
 <tr class="memitem:a9a83472b42e30d35ae19a66be8fd656b" id="r_a9a83472b42e30d35ae19a66be8fd656b"><td class="memItemLeft"><a id="a9a83472b42e30d35ae19a66be8fd656b" name="a9a83472b42e30d35ae19a66be8fd656b"></a>
 auto&#160;</td><td class="memItemRight"><b>luaSignalConnections</b> (std::string_view name) const -&gt; std::vector&lt; <a class="el" href="structsignals_1_1ConnectionInfo.html">signals::ConnectionInfo</a> &gt;</td></tr>
+<tr class="memitem:a58e2d3fa881dbe9741f0ce6ba74edf34" id="r_a58e2d3fa881dbe9741f0ce6ba74edf34"><td class="memItemLeft"><a id="a58e2d3fa881dbe9741f0ce6ba74edf34" name="a58e2d3fa881dbe9741f0ce6ba74edf34"></a>
+auto&#160;</td><td class="memItemRight"><b>luaSignalArgTypes</b> (std::string_view name) const -&gt; std::vector&lt; std::string &gt;</td></tr>
 <tr class="memitem:a3d899011a0c58615aeaf5d83a821da81" id="r_a3d899011a0c58615aeaf5d83a821da81"><td class="memItemLeft"><a id="a3d899011a0c58615aeaf5d83a821da81" name="a3d899011a0c58615aeaf5d83a821da81"></a>
 auto&#160;</td><td class="memItemRight"><b>connectLuaSignal</b> (std::string_view name, <a class="el" href="classtoast_1_1Node.html">toast::Node</a> &amp;target, std::string_view function, bool forwards_args) -&gt; bool</td></tr>
 <tr class="memitem:a91f536f03e96de361badc8ecd947d54c" id="r_a91f536f03e96de361badc8ecd947d54c"><td class="memItemLeft"><a id="a91f536f03e96de361badc8ecd947d54c" name="a91f536f03e96de361badc8ecd947d54c"></a>
@@ -178,14 +179,116 @@ auto&#160;</td><td class="memItemRight"><b>setVarByPath</b> (size_t index, std::
 <tr class="memdesc:aa6eb5e254cfb5e68dac8620116c46a7d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes a variable of one instance through its schema path. <br /></td></tr>
 <tr class="memitem:a044dceb38e3f0940fa8c271718d4aafe" id="r_a044dceb38e3f0940fa8c271718d4aafe"><td class="memItemLeft"><a id="a044dceb38e3f0940fa8c271718d4aafe" name="a044dceb38e3f0940fa8c271718d4aafe"></a>
 auto&#160;</td><td class="memItemRight"><b>schemaVersion</b> () const noexcept -&gt; uint32_t</td></tr>
-<tr class="memdesc:a044dceb38e3f0940fa8c271718d4aafe"><td class="mdescLeft">&#160;</td><td class="mdescRight">Changes whenever the runtime is rebuilt. <br /></td></tr>
+<tr class="memdesc:a044dceb38e3f0940fa8c271718d4aafe"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unique for every runtime that was ever built, so it also tells a rebuilt runtime from the one it replaced. <br /></td></tr>
 <tr class="memitem:ab43c9f0e424c28c71d82a447b8f0f6ca" id="r_ab43c9f0e424c28c71d82a447b8f0f6ca"><td class="memItemLeft"><a id="ab43c9f0e424c28c71d82a447b8f0f6ca" name="ab43c9f0e424c28c71d82a447b8f0f6ca"></a>
 auto&#160;</td><td class="memItemRight"><b>hasTick</b> (<a class="el" href="reflect__node_8hpp.html#ad08c233710fd0f56aefc18a7a9f1db5a">toast::TickFunctionList</a> mask=toast::TickFunctionList::tick_mask) const noexcept -&gt; bool</td></tr>
 <tr class="memdesc:ab43c9f0e424c28c71d82a447b8f0f6ca"><td class="mdescLeft">&#160;</td><td class="mdescRight">True if any instance defines a function matching the given phases. <br /></td></tr>
 <tr class="memitem:a36916cbb5ddb096519546b9bd2baff00" id="r_a36916cbb5ddb096519546b9bd2baff00"><td class="memItemLeft"><a id="a36916cbb5ddb096519546b9bd2baff00" name="a36916cbb5ddb096519546b9bd2baff00"></a>
 auto&#160;</td><td class="memItemRight"><b>stateIndex</b> () const noexcept -&gt; size_t</td></tr>
 <tr class="memdesc:a36916cbb5ddb096519546b9bd2baff00"><td class="mdescLeft">&#160;</td><td class="mdescRight">Index of the pooled Lua state this runtime is bound to. <br /></td></tr>
+<tr class="memitem:a9648119f8ed290554dc765f083ef2a4b" id="r_a9648119f8ed290554dc765f083ef2a4b"><td class="memItemLeft"><a id="a9648119f8ed290554dc765f083ef2a4b" name="a9648119f8ed290554dc765f083ef2a4b"></a>
+auto&#160;</td><td class="memItemRight"><b>token</b> () const noexcept -&gt; const std::shared_ptr&lt; <a class="el" href="structscripting_1_1RuntimeToken.html">RuntimeToken</a> &gt; &amp;</td></tr>
+<tr class="memdesc:a9648119f8ed290554dc765f083ef2a4b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flips to dead as the runtime is torn down. Everything that calls into the scripts later holds it. <br /></td></tr>
+<tr class="memitem:ab80a25f929826e8a65ab7ebe31f2d5a8" id="r_ab80a25f929826e8a65ab7ebe31f2d5a8"><td class="memItemLeft"><a id="ab80a25f929826e8a65ab7ebe31f2d5a8" name="ab80a25f929826e8a65ab7ebe31f2d5a8"></a>
+auto&#160;</td><td class="memItemRight"><b>executing</b> () const noexcept -&gt; bool</td></tr>
+<tr class="memdesc:ab80a25f929826e8a65ab7ebe31f2d5a8"><td class="mdescLeft">&#160;</td><td class="mdescRight">True while a call into this runtime is on some thread's stack. <br /></td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:a24a2e427ccab3a90b5066f1fdd854973" id="r_a24a2e427ccab3a90b5066f1fdd854973"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a24a2e427ccab3a90b5066f1fdd854973">retire</a> (std::unique_ptr&lt; <a class="el" href="#a30872aaf265fa44761b060b683feedbb">ScriptRuntime</a> &gt; runtime) noexcept</td></tr>
+<tr class="memdesc:a24a2e427ccab3a90b5066f1fdd854973"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroys a runtime that may still be executing.  <br /></td></tr>
+<tr class="memitem:a29b1970abbbc5df0fa75656a7a406069" id="r_a29b1970abbbc5df0fa75656a7a406069"><td class="memItemLeft"><a id="a29b1970abbbc5df0fa75656a7a406069" name="a29b1970abbbc5df0fa75656a7a406069"></a>
+static void&#160;</td><td class="memItemRight"><b>drainRetired</b> () noexcept</td></tr>
+<tr class="memdesc:a29b1970abbbc5df0fa75656a7a406069"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroys retired runtimes that finished executing; call from the main thread when no script is running. <br /></td></tr>
 </table>
+<a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="a30872aaf265fa44761b060b683feedbb" name="a30872aaf265fa44761b060b683feedbb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a30872aaf265fa44761b060b683feedbb">&#9670;&#160;</a></span>ScriptRuntime()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">scripting::ScriptRuntime::ScriptRuntime </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classtoast_1_1Box.html">toast::Box</a>&lt; <a class="el" href="classtoast_1_1Node.html">toast::Node</a> &gt;</td>          <td class="paramname"><span class="paramname"><em>node</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::vector&lt; <a class="el" href="classassets_1_1Handle.html">assets::Handle</a>&lt; <a class="el" href="classassets_1_1Script.html">assets::Script</a> &gt; &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>scripts</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint64_t</td>          <td class="paramname"><span class="paramname"><em>group</em></span><span class="paramdefsep"> = </span><span class="paramdefval">0</span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::optional&lt; size_t &gt;</td>          <td class="paramname"><span class="paramname"><em>placed</em></span><span class="paramdefsep"> = </span><span class="paramdefval">std::nullopt</span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">group</td><td>Places the runtime on the interpreter of its script group, 0 spreads runtimes round robin </td></tr>
+    <tr><td class="paramname">placed</td><td>An interpreter <a class="el" href="classscripting_1_1LuaState.html#a5aaac0680d5a557aee29b92bf9638942" title="Picks the interpreter for a new script runtime.">LuaState::assign()</a> already picked for this runtime, which the runtime takes over and gives back when it goes. It lets the caller know where the runtime will live before it is built </td></tr>
+  </table>
+  </dd>
+</dl>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="classscripting_1_1ScriptRuntime_a30872aaf265fa44761b060b683feedbb_icgraph.png" border="0" usemap="#aclassscripting_1_1ScriptRuntime_a30872aaf265fa44761b060b683feedbb_icgraph" loading="lazy" alt=""/></div>
+<map name="aclassscripting_1_1ScriptRuntime_a30872aaf265fa44761b060b683feedbb_icgraph" id="aclassscripting_1_1ScriptRuntime_a30872aaf265fa44761b060b683feedbb_icgraph">
+<area shape="rect" title=" " alt="" coords="456,91,633,136"/>
+<area shape="poly" title=" " alt="" coords="580,76,568,72,545,70,524,72,511,77,505,83,506,92,502,89,500,81,508,72,522,67,545,65,569,67,585,76"/>
+<area shape="rect" href="classscripting_1_1ScriptRuntime.html#a6e654ef65c2d5cf52e61fcc317a75c75" title="Call a named function on all instances." alt="" coords="5,15,183,60"/>
+<area shape="poly" title=" " alt="" coords="506,81,462,49,435,34,407,23,351,11,292,8,235,12,184,19,182,14,235,6,292,3,351,6,409,18,437,29,464,45,511,81"/>
+<area shape="rect" href="classscripting_1_1ScriptRuntime.html#ad638c7dd7e12427bd1ddf53ee0f545ca" title="Dispatch a TickFunctionList phase." alt="" coords="231,57,408,101"/>
+<area shape="poly" title=" " alt="" coords="438,98,409,95,408,90,443,97"/>
+<area shape="rect" href="classscripting_1_1ScriptRuntime.html#ae32366e45abd75badff314bcbe51e955" title="Ccall with args provided as std::any values." alt="" coords="231,126,408,171"/>
+<area shape="poly" title=" " alt="" coords="438,130,409,137,408,132,443,129"/>
+<area shape="rect" href="classscripting_1_1ScriptRuntime.html#ada7db9b5af14e687342683c436ff4a7a" title="Writes value to the variable named name." alt="" coords="231,219,408,264"/>
+<area shape="poly" title=" " alt="" coords="493,143,362,221,359,216,488,144"/>
+<area shape="poly" title=" " alt="" coords="213,61,184,57,183,51,218,59"/>
+<area shape="poly" title=" " alt="" coords="355,42,342,38,319,35,298,37,285,42,280,48,281,57,276,55,275,47,282,38,297,32,319,30,344,32,360,41"/>
+<area shape="poly" title=" " alt="" coords="355,204,342,200,319,198,298,200,285,205,280,211,281,220,277,217,275,209,282,200,297,195,319,193,344,195,360,204"/>
+</map>
+</div>
+
+</div>
+</div>
+<a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
+<a id="a24a2e427ccab3a90b5066f1fdd854973" name="a24a2e427ccab3a90b5066f1fdd854973"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a24a2e427ccab3a90b5066f1fdd854973">&#9670;&#160;</a></span>retire()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void scripting::ScriptRuntime::retire </td>
+          <td>(</td>
+          <td class="paramtype">std::unique_ptr&lt; <a class="el" href="#a30872aaf265fa44761b060b683feedbb">ScriptRuntime</a> &gt;</td>          <td class="paramname"><span class="paramname"><em>runtime</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span><span class="mlabel noexcept">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Destroys a runtime that may still be executing. </p>
+<p>A runtime replaced from inside one of its own calls would be freed under its own stack frames. It waits in a list instead, and <a class="el" href="#a29b1970abbbc5df0fa75656a7a406069" title="Destroys retired runtimes that finished executing; call from the main thread when no script is runnin...">drainRetired()</a> destroys it once nothing runs in it any more </p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>engine/src/toast/scripting/<a class="el" href="script__runtime_8hpp_source.html">script_runtime.hpp</a></li>
 <li>engine/src/toast/scripting/<b>script_runtime.cpp</b></li>

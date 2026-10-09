@@ -1,7 +1,6 @@
 <map id="toast::Workspace::isPlaying" name="toast::Workspace::isPlaying">
-<area shape="rect" id="Node000001" title="True for PlayWorkspace, gates gizmo interaction off so it can never run against a live game." alt="" coords="402,14,602,42"/>
-<area shape="rect" id="Node000002" href="$classtoast_1_1INodeOwner.html#a64b6034e9beabc313d99ca24a26e8cd4" title="True for a Workspace open for editing: lifecycle callbacks still run there, but the game is not runni..." alt="" coords="204,5,354,50"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="384,28,355,30,354,25,389,28"/>
-<area shape="rect" id="Node000003" href="$classtoast_1_1INodeOwner.html#a58b28b0f5f24f971e81234d2d845068a" title="Determines if this owner is elegible for runtime systems." alt="" coords="5,5,156,50"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="186,28,156,30,156,25,191,27"/>
+<area shape="rect" id="Node000001" title="True for PlayWorkspace, gates gizmo interaction off so it can never run against a live game." alt="" coords="204,29,404,57"/>
+<area shape="poly" id="edge2_Node000001_Node000001" title=" " alt="" coords="340,14,329,10,304,8,281,10,268,15,265,20,270,30,265,28,259,20,264,11,279,5,304,3,330,5,346,14"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1INodeOwner.html#a64b6034e9beabc313d99ca24a26e8cd4" title="True for a Workspace open for editing: lifecycle callbacks still run there, but the game is not runni..." alt="" coords="5,21,156,66"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="185,43,156,46,156,41,191,43"/>
 </map>

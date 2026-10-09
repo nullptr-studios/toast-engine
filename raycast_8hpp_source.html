@@ -122,25 +122,45 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('raycast_8hpp_s
 <div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span> </div>
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#pragma once</span></div>
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span> </div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &quot;<a class="code" href="box_8hpp.html">toast/world/box.hpp</a>&quot;</span></div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span> </div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &lt;glm/glm.hpp&gt;</span></div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span> </div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="keyword">namespace </span>physics {</div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span> </div>
-<div class="foldopen" id="foldopen00018" data-start="{" data-end="};">
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno"><a class="line" href="structphysics_1_1RayHit.html">   18</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structphysics_1_1RayHit.html">RayHit</a> {</div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>  <a class="code hl_class" href="classtoast_1_1Box.html">toast::Box&lt;toast::Node&gt;</a> node;</div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>  glm::vec3 position;</div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>  glm::vec3 normal;</div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>  <span class="keywordtype">float</span> distance;</div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>};</div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &quot;<a class="code" href="body_8hpp.html">body.hpp</a>&quot;</span></div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &quot;<a class="code" href="box_8hpp.html">toast/world/box.hpp</a>&quot;</span></div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span> </div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &lt;glm/glm.hpp&gt;</span></div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span> </div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="keyword">namespace </span>physics {</div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span> </div>
+<div class="foldopen" id="foldopen00019" data-start="{" data-end="};">
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno"><a class="line" href="structphysics_1_1RayHit.html">   19</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structphysics_1_1RayHit.html">RayHit</a> {</div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>  <a class="code hl_class" href="classtoast_1_1Box.html">toast::Box&lt;toast::Node&gt;</a> node;</div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>  glm::vec3 position;</div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>  glm::vec3 normal;</div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>  <span class="keywordtype">float</span> distance;</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>  <a class="code hl_struct" href="structphysics_1_1BodyID.html">BodyID</a> body;</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>};</div>
 </div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>}</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span> </div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>TOAST_API <span class="keyword">auto</span> raycast(glm::vec3 pos, glm::vec3 dir, <span class="keywordtype">float</span> max_distance = -1.0f, <span class="keywordtype">int</span> max_targets = 3) -&gt; std::vector&lt;RayHit&gt;;</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span> </div>
+<div class="foldopen" id="foldopen00029" data-start="{" data-end="};">
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno"><a class="line" href="structphysics_1_1SphereHit.html">   29</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structphysics_1_1SphereHit.html">SphereHit</a> {</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>  <a class="code hl_class" href="classtoast_1_1Box.html">toast::Box&lt;toast::Node&gt;</a> node;</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>  glm::vec3 position;</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>  glm::vec3 normal;</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>  <span class="keywordtype">float</span> penetration;</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>};</div>
+</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span> </div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>TOAST_API <span class="keyword">auto</span> sphereOverlap(glm::vec3 position, <span class="keywordtype">float</span> radius) -&gt; std::optional&lt;SphereHit&gt;;</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span></div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>TOAST_API <span class="keyword">auto</span> overlapAABB(glm::vec3 min, glm::vec3 max) -&gt; bool;</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span> </div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>}</div>
+<div class="ttc" id="abody_8hpp_html"><div class="ttname"><a href="body_8hpp.html">body.hpp</a></div><div class="ttdoc">Body identifiers, creation data, and copied runtime state.</div></div>
 <div class="ttc" id="abox_8hpp_html"><div class="ttname"><a href="box_8hpp.html">box.hpp</a></div><div class="ttdoc">pseudo shared pointer for Nodes</div></div>
 <div class="ttc" id="aclasstoast_1_1Box_html"><div class="ttname"><a href="classtoast_1_1Box.html">toast::Box</a></div><div class="ttdoc">Intrusive reference-counted handle to a Node.</div><div class="ttdef"><b>Definition</b> box.hpp:35</div></div>
-<div class="ttc" id="astructphysics_1_1RayHit_html"><div class="ttname"><a href="structphysics_1_1RayHit.html">physics::RayHit</a></div><div class="ttdef"><b>Definition</b> raycast.hpp:18</div></div>
+<div class="ttc" id="astructphysics_1_1BodyID_html"><div class="ttname"><a href="structphysics_1_1BodyID.html">physics::BodyID</a></div><div class="ttdef"><b>Definition</b> body.hpp:18</div></div>
+<div class="ttc" id="astructphysics_1_1RayHit_html"><div class="ttname"><a href="structphysics_1_1RayHit.html">physics::RayHit</a></div><div class="ttdef"><b>Definition</b> raycast.hpp:19</div></div>
+<div class="ttc" id="astructphysics_1_1SphereHit_html"><div class="ttname"><a href="structphysics_1_1SphereHit.html">physics::SphereHit</a></div><div class="ttdef"><b>Definition</b> raycast.hpp:29</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

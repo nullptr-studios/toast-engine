@@ -189,6 +189,8 @@ auto&#160;</td><td class="memItemRight"><b>listener</b> () noexcept -&gt; <a cla
 <tr class="memdesc:aad1cba24836e1465fdab22b27e71bf27 pub_methods_classtoast_1_1Node"><td class="mdescLeft">&#160;</td><td class="mdescRight">The immediate parent of this node.  <br /></td></tr>
 <tr class="memitem:a2fcbe02f3e1937abf869fb537fa77988 pub_methods_classtoast_1_1Node" id="r_a2fcbe02f3e1937abf869fb537fa77988"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="classtoast_1_1Node.html#a2fcbe02f3e1937abf869fb537fa77988">children</a> () const noexcept -&gt; const std::vector&lt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; Node &gt; &gt; &amp;</td></tr>
 <tr class="memdesc:a2fcbe02f3e1937abf869fb537fa77988 pub_methods_classtoast_1_1Node"><td class="mdescLeft">&#160;</td><td class="mdescRight">The ordered list of direct children.  <br /></td></tr>
+<tr class="memitem:ac36bc21f37d1f46f50f0f24d725a51c5 pub_methods_classtoast_1_1Node" id="r_ac36bc21f37d1f46f50f0f24d725a51c5"><td class="memItemLeft">
+auto&#160;</td><td class="memItemRight"><b>childrenSnapshot</b> () const -&gt; std::vector&lt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; Node &gt; &gt;</td></tr>
 <tr class="memitem:abbcbef4415d8020b76f761f1e1d4e4c8 pub_methods_classtoast_1_1Node" id="r_abbcbef4415d8020b76f761f1e1d4e4c8"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="classtoast_1_1Node.html#abbcbef4415d8020b76f761f1e1d4e4c8">create</a> (std::string_view type=&quot;toast::Node&quot;) noexcept -&gt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; Node &gt;</td></tr>
 <tr class="memdesc:abbcbef4415d8020b76f761f1e1d4e4c8 pub_methods_classtoast_1_1Node"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a new child node of the given type and attaches it to this node.  <br /></td></tr>
 <tr class="memitem:a19495f7f11c522905fc0a1b5f853c009 pub_methods_classtoast_1_1Node" id="r_a19495f7f11c522905fc0a1b5f853c009"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="classtoast_1_1Node.html#a19495f7f11c522905fc0a1b5f853c009">spawn</a> (<a class="el" href="structtoast_1_1UID.html">UID</a> uid) noexcept -&gt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; Node &gt;</td></tr>
@@ -209,9 +211,17 @@ auto&#160;</td><td class="memItemRight"><b>searchType</b> (const <a class="el" h
 void&#160;</td><td class="memItemRight"><b>addDependsOn</b> (Node &amp;other)</td></tr>
 <tr class="memitem:ace86075240044e0fc28c8da7031077e1 pub_methods_classtoast_1_1Node" id="r_ace86075240044e0fc28c8da7031077e1"><td class="memItemLeft">
 void&#160;</td><td class="memItemRight"><b>removeDependsOn</b> (Node &amp;other)</td></tr>
+<tr class="memitem:ae37c89e7fd2eaeed46bea58784bb8ad5 pub_methods_classtoast_1_1Node" id="r_ae37c89e7fd2eaeed46bea58784bb8ad5"><td class="memItemLeft">
+void&#160;</td><td class="memItemRight"><b>interactsWith</b> (Node &amp;other)</td></tr>
+<tr class="memdesc:ae37c89e7fd2eaeed46bea58784bb8ad5 pub_methods_classtoast_1_1Node"><td class="mdescLeft">&#160;</td><td class="mdescRight">Declares that the scripts of this node and of <span class="tt">other</span> call each other. <br /></td></tr>
 <tr class="memitem:afbe29fa80d57b5c7c6a4bfa6c75fc6d0 pub_methods_classtoast_1_1Node" id="r_afbe29fa80d57b5c7c6a4bfa6c75fc6d0"><td class="memItemLeft">
 auto&#160;</td><td class="memItemRight"><b>scriptRuntime</b> () noexcept -&gt; <a class="el" href="classscripting_1_1ScriptRuntime.html">scripting::ScriptRuntime</a> *</td></tr>
 <tr class="memitem:a8a7a227e71c9efcae3df2ed20ff6a177 pub_methods_classtoast_1_1Node" id="r_a8a7a227e71c9efcae3df2ed20ff6a177"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="classtoast_1_1Node.html#a8a7a227e71c9efcae3df2ed20ff6a177">hasTickFunction</a> (<a class="el" href="reflect__node_8hpp.html#ad08c233710fd0f56aefc18a7a9f1db5a">TickFunctionList</a> mask) const noexcept -&gt; bool</td></tr>
+<tr class="memitem:ad8dccd6ed479d62e8f83c62855607940 pub_methods_classtoast_1_1Node" id="r_ad8dccd6ed479d62e8f83c62855607940"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="classtoast_1_1Node.html#ad8dccd6ed479d62e8f83c62855607940">scriptVm</a> (<a class="el" href="reflect__node_8hpp.html#ad08c233710fd0f56aefc18a7a9f1db5a">TickFunctionList</a> func) const noexcept -&gt; std::optional&lt; size_t &gt;</td></tr>
+<tr class="memdesc:ad8dccd6ed479d62e8f83c62855607940 pub_methods_classtoast_1_1Node"><td class="mdescLeft">&#160;</td><td class="mdescRight">The interpreter this node runs Lua on while it executes <span class="tt">func</span>, empty when it runs none.  <br /></td></tr>
+<tr class="memitem:ad12d625b02b7161fc8fa5d9937f56f26 pub_methods_classtoast_1_1Node" id="r_ad12d625b02b7161fc8fa5d9937f56f26"><td class="memItemLeft">
+auto&#160;</td><td class="memItemRight"><b>scriptVmAny</b> () const noexcept -&gt; std::optional&lt; size_t &gt;</td></tr>
+<tr class="memdesc:ad12d625b02b7161fc8fa5d9937f56f26 pub_methods_classtoast_1_1Node"><td class="mdescLeft">&#160;</td><td class="mdescRight">The interpreter the scripts of this node live on whatever phase they define. <br /></td></tr>
 <tr class="memitem:a25d28b613360ff4d7356599316440ec0 pub_methods_classtoast_1_1Node" id="r_a25d28b613360ff4d7356599316440ec0"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="classtoast_1_1Node.html#a25d28b613360ff4d7356599316440ec0">hasCallable</a> (std::string_view name) const noexcept -&gt; bool</td></tr>
 <tr class="memitem:a8ce8c9cb4ecb09ecac5364cddf3af491 pub_methods_classtoast_1_1Node" id="r_a8ce8c9cb4ecb09ecac5364cddf3af491"><td class="memItemLeft">
 void&#160;</td><td class="memItemRight"><b>reloadScripts</b> () noexcept</td></tr>
@@ -232,17 +242,10 @@ template&lt;typename T&gt; </td></tr>
 <tr class="memitem:aa4743424f6e3a548f5dbb5ac8415ee4a pub_methods_classtoast_1_1Node" id="r_aa4743424f6e3a548f5dbb5ac8415ee4a"><td class="memItemLeft">
 auto&#160;</td><td class="memItemRight"><b>isRecursivePrefab</b> () const noexcept -&gt; bool</td></tr>
 </table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 id="header-inherited" class="groupheader"><a id="inherited" name="inherited"></a>
-Additional Inherited Members</h2></td></tr>
-<tr class="inherit_header pub_attribs_classtoast_1_1Node"><td colspan="2">Public Attributes inherited from <a class="el" href="classtoast_1_1Node.html">toast::Node</a></td></tr>
-<tr class="memitem:a4d176b011c5049e236c2fe74ee254f73 pub_attribs_classtoast_1_1Node" id="r_a4d176b011c5049e236c2fe74ee254f73"><td class="memItemLeft">
-signals::Signal&lt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; Node &gt; &gt;&#160;</td><td class="memItemRight"><b>on_enable</b></td></tr>
-<tr class="memitem:a5d1f1cdc5aad186c471a94048bcd63f1 pub_attribs_classtoast_1_1Node" id="r_a5d1f1cdc5aad186c471a94048bcd63f1"><td class="memItemLeft">
-signals::Signal&lt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; Node &gt; &gt;&#160;</td><td class="memItemRight"><b>on_disable</b></td></tr>
-<tr class="memitem:afeb47786ac6136812a0ac44a5267a6e2 pub_attribs_classtoast_1_1Node" id="r_afeb47786ac6136812a0ac44a5267a6e2"><td class="memItemLeft">
-signals::Signal&lt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; Node &gt; &gt;&#160;</td><td class="memItemRight"><b>on_begin</b></td></tr>
-<tr class="memitem:af146b8716d71e6bcb8fab868c18f7fc1 pub_attribs_classtoast_1_1Node" id="r_af146b8716d71e6bcb8fab868c18f7fc1"><td class="memItemLeft">
-signals::Signal&lt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; Node &gt; &gt;&#160;</td><td class="memItemRight"><b>on_end</b></td></tr>
+<tr class="heading"><td colspan="2"><h2 id="header-pro-methods" class="groupheader"><a id="pro-methods" name="pro-methods"></a>
+Protected Member Functions</h2></td></tr>
+<tr class="memitem:a6b5f7bca15c70cc365971ed0d764868a" id="r_a6b5f7bca15c70cc365971ed0d764868a"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a6b5f7bca15c70cc365971ed0d764868a">luaAffinity</a> () const noexcept -&gt; std::optional&lt; size_t &gt; override</td></tr>
+<tr class="memdesc:a6b5f7bca15c70cc365971ed0d764868a"><td class="mdescLeft">&#160;</td><td class="mdescRight">The callbacks are Lua functions, so the machine runs together with the scripts that gave them to it.  <br /></td></tr>
 <tr class="inherit_header pro_methods_classtoast_1_1Node"><td colspan="2">Protected Member Functions inherited from <a class="el" href="classtoast_1_1Node.html">toast::Node</a></td></tr>
 <tr class="memitem:a39b7866ed40d98d3880974739b5af413 pro_methods_classtoast_1_1Node" id="r_a39b7866ed40d98d3880974739b5af413"><td class="memItemLeft">
 virtual void&#160;</td><td class="memItemRight"><b>onReflectedFieldChanged</b> (std::string_view)</td></tr>
@@ -256,10 +259,52 @@ virtual void&#160;</td><td class="memItemRight"><b>updateInspectorMessages</b> (
 void&#160;</td><td class="memItemRight"><b>addInspectorMessage</b> (const <a class="el" href="structtoast_1_1NodeMessage.html">NodeMessage</a> &amp;message)</td></tr>
 <tr class="memitem:afe05752a3572bacbdf0284462d3c2373 pro_methods_classtoast_1_1Node" id="r_afe05752a3572bacbdf0284462d3c2373"><td class="memItemLeft">
 void&#160;</td><td class="memItemRight"><b>removeInspectorMessage</b> (const <a class="el" href="structtoast_1_1NodeMessage.html">NodeMessage</a> &amp;message)</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-inherited" class="groupheader"><a id="inherited" name="inherited"></a>
+Additional Inherited Members</h2></td></tr>
+<tr class="inherit_header pub_attribs_classtoast_1_1Node"><td colspan="2">Public Attributes inherited from <a class="el" href="classtoast_1_1Node.html">toast::Node</a></td></tr>
+<tr class="memitem:a4d176b011c5049e236c2fe74ee254f73 pub_attribs_classtoast_1_1Node" id="r_a4d176b011c5049e236c2fe74ee254f73"><td class="memItemLeft">
+signals::Signal&lt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; Node &gt; &gt;&#160;</td><td class="memItemRight"><b>on_enable</b></td></tr>
+<tr class="memitem:a5d1f1cdc5aad186c471a94048bcd63f1 pub_attribs_classtoast_1_1Node" id="r_a5d1f1cdc5aad186c471a94048bcd63f1"><td class="memItemLeft">
+signals::Signal&lt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; Node &gt; &gt;&#160;</td><td class="memItemRight"><b>on_disable</b></td></tr>
+<tr class="memitem:afeb47786ac6136812a0ac44a5267a6e2 pub_attribs_classtoast_1_1Node" id="r_afeb47786ac6136812a0ac44a5267a6e2"><td class="memItemLeft">
+signals::Signal&lt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; Node &gt; &gt;&#160;</td><td class="memItemRight"><b>on_begin</b></td></tr>
+<tr class="memitem:af146b8716d71e6bcb8fab868c18f7fc1 pub_attribs_classtoast_1_1Node" id="r_af146b8716d71e6bcb8fab868c18f7fc1"><td class="memItemLeft">
+signals::Signal&lt; <a class="el" href="classtoast_1_1Box.html">Box</a>&lt; Node &gt; &gt;&#160;</td><td class="memItemRight"><b>on_end</b></td></tr>
 <tr class="inherit_header pro_attribs_classtoast_1_1Node"><td colspan="2">Protected Attributes inherited from <a class="el" href="classtoast_1_1Node.html">toast::Node</a></td></tr>
 <tr class="memitem:a26e484e37e5925e472f7b414a78b3a43 pro_attribs_classtoast_1_1Node" id="r_a26e484e37e5925e472f7b414a78b3a43"><td class="memItemLeft">
 INodeOwner *&#160;</td><td class="memItemRight"><b>m_owner</b> = nullptr</td></tr>
 </table>
+<a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
+<a id="a6b5f7bca15c70cc365971ed0d764868a" name="a6b5f7bca15c70cc365971ed0d764868a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6b5f7bca15c70cc365971ed0d764868a">&#9670;&#160;</a></span>luaAffinity()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto toast::StateMachine::luaAffinity </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td> const -&gt; std::optional&lt; size_t &gt;</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel nodiscard">nodiscard</span><span class="mlabel override">override</span><span class="mlabel protected">protected</span><span class="mlabel virtual">virtual</span><span class="mlabel noexcept">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>The callbacks are Lua functions, so the machine runs together with the scripts that gave them to it. </p>
+
+<p>Reimplemented from <a class="el" href="classtoast_1_1Node.html">toast::Node</a>.</p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>engine/src/toast/world/<a class="el" href="state__machine_8hpp_source.html">state_machine.hpp</a></li>
 <li>engine/src/toast/world/<b>state_machine.cpp</b></li>

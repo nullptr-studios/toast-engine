@@ -3,12 +3,11 @@
 <area shape="rect" id="Node000002" href="$classinput_1_1ScaleByDeltaTimeModifier.html#a1addee43bd36c165a5213d6e0c316b46" title="Transforms a value in place." alt="" coords="5,5,241,50"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="313,131,281,97,239,65,217,53,217,48,242,60,285,93,318,131"/>
 <area shape="rect" id="Node000003" href="$classinput_1_1SmoothModifier.html#abafb6240a222fa026dd5181f7fec1d04" title="Transforms a value in place." alt="" coords="40,75,206,119"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="271,141,205,123,205,117,276,139"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="271,140,205,123,205,117,276,139"/>
 <area shape="rect" id="Node000004" href="$classTime.html#aea39c77ca74baa43defc8bb0b8a18684" title="Sets the maximum delta the simulation will report." alt="" coords="50,143,196,171"/>
 <area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="271,158,197,160,196,154,275,156"/>
 <area shape="rect" id="Node000005" href="$classtoast_1_1AnimationPlayer.html#aeafe193a19e0f45137932a4b728d636b" title="Advances playback by one frame and writes the sampled pose onto its target nodes." alt="" coords="38,195,208,239"/>
-<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="271,176,206,197,204,192,276,173"/>
-<area shape="rect" id="Node000006" href="$classtoast_1_1Workspace.html#a580beb85b06c63ceee52c4df9f101969" title="Editor&#45;only per&#45;frame work: camera preview, animation preview, editorTick lifecycle,..." alt="" coords="40,287,206,315"/>
-<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="316,182,283,220,242,254,206,274,170,289,169,284,204,269,239,249,280,216,312,184"/>
-<area shape="poly" id="edge6_Node000006_Node000006" title=" " alt="" coords="158,272,147,268,123,266,101,268,89,273,86,278,91,287,86,286,80,278,85,269,100,263,123,261,148,263,163,272"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="271,175,206,197,204,192,276,173"/>
+<area shape="rect" id="Node000006" href="$classtoast_1_1Workspace.html#a580beb85b06c63ceee52c4df9f101969" title="Editor&#45;only per&#45;frame work: camera preview, animation preview, editorTick lifecycle,..." alt="" coords="40,263,206,291"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="318,182,285,221,242,254,207,268,205,263,239,249,282,217,314,184"/>
 </map>

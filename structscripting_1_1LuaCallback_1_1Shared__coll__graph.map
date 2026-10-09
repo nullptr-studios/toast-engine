@@ -1,0 +1,7 @@
+<map id="scripting::LuaCallback::Shared" name="scripting::LuaCallback::Shared">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,224,170,268"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1Box.html" title=" " alt="" coords="16,106,159,151"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="90,165,90,224,85,223,85,168"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1Box.html" title="Intrusive reference&#45;counted handle to a Node." alt="" coords="25,5,150,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="88,46,90,106,85,105,87,51"/>
+</map>

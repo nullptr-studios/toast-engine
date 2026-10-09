@@ -160,14 +160,25 @@ void&#160;</td><td class="memItemRight"><b>applyDamageCommands</b> ()</td></tr>
 void&#160;</td><td class="memItemRight"><b>applyDamageCommand</b> (const <a class="el" href="structphysics_1_1DamageCommand.html">DamageCommand</a> &amp;c)</td></tr>
 <tr class="memitem:a4ba1b5fd04f239ca773941173d5bbc7d" id="r_a4ba1b5fd04f239ca773941173d5bbc7d"><td class="memItemLeft"><a id="a4ba1b5fd04f239ca773941173d5bbc7d" name="a4ba1b5fd04f239ca773941173d5bbc7d"></a>
 void&#160;</td><td class="memItemRight"><b>applyExplosion</b> (const glm::vec3 &amp;position, float radius, float energy)</td></tr>
-<tr class="memitem:a103d4eab10a458de983aa2b89f7e47b3" id="r_a103d4eab10a458de983aa2b89f7e47b3"><td class="memItemLeft"><a id="a103d4eab10a458de983aa2b89f7e47b3" name="a103d4eab10a458de983aa2b89f7e47b3"></a>
-auto&#160;</td><td class="memItemRight"><b>shootVoxel</b> (const glm::vec3 &amp;origin, const glm::vec3 &amp;direction, float max_distance, float energy, float min_radius=0.0f) -&gt; bool</td></tr>
+<tr class="memitem:a3964b85be7b02aeaadbfccc9ee363c9c" id="r_a3964b85be7b02aeaadbfccc9ee363c9c"><td class="memItemLeft"><a id="a3964b85be7b02aeaadbfccc9ee363c9c" name="a3964b85be7b02aeaadbfccc9ee363c9c"></a>
+auto&#160;</td><td class="memItemRight"><b>shootVoxel</b> (const glm::vec3 &amp;origin, const glm::vec3 &amp;direction, float max_distance, float energy, float min_radius=0.0f, const std::optional&lt; <a class="el" href="structphysics_1_1FragmentPush.html">FragmentPush</a> &gt; &amp;push=std::nullopt) -&gt; bool</td></tr>
+<tr class="memitem:ae2f0bd6ce42b051c5419ed6a5e752167" id="r_ae2f0bd6ce42b051c5419ed6a5e752167"><td class="memItemLeft"><a id="ae2f0bd6ce42b051c5419ed6a5e752167" name="ae2f0bd6ce42b051c5419ed6a5e752167"></a>
+auto&#160;</td><td class="memItemRight"><b>smashCapsule</b> (const <a class="el" href="structphysics_1_1CapsuleShape.html">CapsuleShape</a> &amp;capsule, const glm::vec3 &amp;position, const glm::quat &amp;rotation, const glm::vec3 &amp;sweep, const <a class="el" href="structphysics_1_1CapsuleSmash.html">CapsuleSmash</a> &amp;smash) -&gt; uint32_t</td></tr>
+<tr class="memitem:a578933594e1387b33960d89e79118ed3" id="r_a578933594e1387b33960d89e79118ed3"><td class="memItemLeft"><a id="a578933594e1387b33960d89e79118ed3" name="a578933594e1387b33960d89e79118ed3"></a>
+auto&#160;</td><td class="memItemRight"><b>cutVoxel</b> (const glm::vec3 &amp;origin, const glm::vec3 &amp;direction, float max_distance, float energy, float radius, float depth) -&gt; uint32_t</td></tr>
+<tr class="memdesc:a578933594e1387b33960d89e79118ed3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Burns a thin tube into the first voxels along the ray right away, the radius ignores the material shatter radius. <br /></td></tr>
 <tr class="memitem:a33966482d1a6206418ae6d1744238540" id="r_a33966482d1a6206418ae6d1744238540"><td class="memItemLeft"><a id="a33966482d1a6206418ae6d1744238540" name="a33966482d1a6206418ae6d1744238540"></a>
 auto&#160;</td><td class="memItemRight"><b>runConnectivityAnalysis</b> () -&gt; std::vector&lt; <a class="el" href="structphysics_1_1Simulator_1_1ConnectivityResult.html">ConnectivityResult</a> &gt;</td></tr>
 <tr class="memitem:a5b7f6e3384f3544139596da067f557c3" id="r_a5b7f6e3384f3544139596da067f557c3"><td class="memItemLeft"><a id="a5b7f6e3384f3544139596da067f557c3" name="a5b7f6e3384f3544139596da067f557c3"></a>
 auto&#160;</td><td class="memItemRight"><b>debugDirtyBricks</b> () const -&gt; std::span&lt; const <a class="el" href="structphysics_1_1Simulator_1_1DebugDirtyBrick.html">DebugDirtyBrick</a> &gt;</td></tr>
 <tr class="memitem:ab81586bb5e2282e56a3183a8a76cc9b3" id="r_ab81586bb5e2282e56a3183a8a76cc9b3"><td class="memItemLeft"><a id="ab81586bb5e2282e56a3183a8a76cc9b3" name="ab81586bb5e2282e56a3183a8a76cc9b3"></a>
 auto&#160;</td><td class="memItemRight"><b>overlapCapsule</b> (<a class="el" href="structphysics_1_1BodyID.html">BodyID</a> ignored, const <a class="el" href="structphysics_1_1CapsuleShape.html">CapsuleShape</a> &amp;capsule, const glm::vec3 &amp;position, const glm::quat &amp;rotation, float min_penetration, std::vector&lt; <a class="el" href="structphysics_1_1QueryContact.html">QueryContact</a> &gt; &amp;contacts) const -&gt; bool</td></tr>
+<tr class="memitem:a76257a62313d7c1837dbb6a4508f16d9" id="r_a76257a62313d7c1837dbb6a4508f16d9"><td class="memItemLeft"><a id="a76257a62313d7c1837dbb6a4508f16d9" name="a76257a62313d7c1837dbb6a4508f16d9"></a>
+auto&#160;</td><td class="memItemRight"><b>overlapSphere</b> (const <a class="el" href="structphysics_1_1SphereShape.html">SphereShape</a> &amp;sphere, const glm::vec3 &amp;position, float min_penetration, std::vector&lt; <a class="el" href="structphysics_1_1QueryContact.html">QueryContact</a> &gt; &amp;contacts) const -&gt; bool</td></tr>
+<tr class="memdesc:a76257a62313d7c1837dbb6a4508f16d9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tests a world-space sphere against enabled physics shapes. <br /></td></tr>
+<tr class="memitem:a58ecc4c481defa350979f678e52204a7" id="r_a58ecc4c481defa350979f678e52204a7"><td class="memItemLeft"><a id="a58ecc4c481defa350979f678e52204a7" name="a58ecc4c481defa350979f678e52204a7"></a>
+auto&#160;</td><td class="memItemRight"><b>overlapAABB</b> (const <a class="el" href="structphysics_1_1AABB.html">AABB</a> &amp;bounds) const -&gt; bool</td></tr>
+<tr class="memdesc:a58ecc4c481defa350979f678e52204a7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tests a world-space axis-aligned box against enabled physics shapes. <br /></td></tr>
 <tr class="memitem:a799ba28e4e2e3c7debde2fe63d84d9fd" id="r_a799ba28e4e2e3c7debde2fe63d84d9fd"><td class="memItemLeft"><a id="a799ba28e4e2e3c7debde2fe63d84d9fd" name="a799ba28e4e2e3c7debde2fe63d84d9fd"></a>
 auto&#160;</td><td class="memItemRight"><b>sweepCapsule</b> (<a class="el" href="structphysics_1_1BodyID.html">BodyID</a> ignored, const <a class="el" href="structphysics_1_1CapsuleShape.html">CapsuleShape</a> &amp;capsule, const glm::quat &amp;rotation, const glm::vec3 &amp;from, const glm::vec3 &amp;to, float skin) const -&gt; <a class="el" href="structphysics_1_1SweepHit.html">SweepHit</a></td></tr>
 <tr class="memdesc:a799ba28e4e2e3c7debde2fe63d84d9fd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Moves a capsule until it would dig into something. <br /></td></tr>
@@ -182,7 +193,7 @@ void&#160;</td><td class="memItemRight"><b>pushBody</b> (<a class="el" href="str
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
-<tr class="memitem:ae00ca8f76649eb8e374ae87a7f0e647e" id="r_ae00ca8f76649eb8e374ae87a7f0e647e"><td class="memItemLeft">static auto&#160;</td><td class="memItemRight"><a class="el" href="#ae00ca8f76649eb8e374ae87a7f0e647e">raycast</a> (glm::vec3 pos, glm::vec3 dir) -&gt; std::vector&lt; <a class="el" href="structphysics_1_1RayHit.html">RayHit</a> &gt;</td></tr>
+<tr class="memitem:aa501aec8f6568bb8b645f26e787d00cd" id="r_aa501aec8f6568bb8b645f26e787d00cd"><td class="memItemLeft">static auto&#160;</td><td class="memItemRight"><a class="el" href="#aa501aec8f6568bb8b645f26e787d00cd">raycast</a> (glm::vec3 pos, glm::vec3 dir, float max_distance=-1.0f, int max_targets=3) -&gt; std::vector&lt; <a class="el" href="structphysics_1_1RayHit.html">RayHit</a> &gt;</td></tr>
 <tr class="memitem:a7503203a2459c8c1398ba2c67bd6f7b4" id="r_a7503203a2459c8c1398ba2c67bd6f7b4"><td class="memItemLeft"><a id="a7503203a2459c8c1398ba2c67bd6f7b4" name="a7503203a2459c8c1398ba2c67bd6f7b4"></a>
 static auto&#160;</td><td class="memItemRight"><b>stepProfile</b> () -&gt; const <a class="el" href="structphysics_1_1Simulator_1_1PhysicsStepProfile.html">PhysicsStepProfile</a> &amp;</td></tr>
 <tr class="memdesc:a7503203a2459c8c1398ba2c67bd6f7b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">The last tick profile is safe to read from another thread between ticks. <br /></td></tr>
@@ -212,6 +223,21 @@ static auto&#160;</td><td class="memItemRight"><b>nodeFor</b> (<a class="el" hre
 <tr class="memdesc:a693bce2aa13423da515dc12c352c8a8c"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classphysics_1_1Rigidbody.html">Rigidbody</a> or VoxelNode that owns <code>body</code>. <br /></td></tr>
 <tr class="memitem:a5babd552dc6498e3a644cc7731a4c4d2" id="r_a5babd552dc6498e3a644cc7731a4c4d2"><td class="memItemLeft"><a id="a5babd552dc6498e3a644cc7731a4c4d2" name="a5babd552dc6498e3a644cc7731a4c4d2"></a>
 static void&#160;</td><td class="memItemRight"><b>callTick</b> ()</td></tr>
+<tr class="memitem:a9e73310d13ea8c2bcb60ab1bd1884949" id="r_a9e73310d13ea8c2bcb60ab1bd1884949"><td class="memItemLeft"><a id="a9e73310d13ea8c2bcb60ab1bd1884949" name="a9e73310d13ea8c2bcb60ab1bd1884949"></a>
+static void&#160;</td><td class="memItemRight"><b>bindToThisThread</b> () noexcept</td></tr>
+<tr class="memitem:a2cfd3592b8a0299cde8d59c3cad01d2d" id="r_a2cfd3592b8a0299cde8d59c3cad01d2d"><td class="memItemLeft"><a id="a2cfd3592b8a0299cde8d59c3cad01d2d" name="a2cfd3592b8a0299cde8d59c3cad01d2d"></a>
+static auto&#160;</td><td class="memItemRight"><b>onSimulatorThread</b> () noexcept -&gt; bool</td></tr>
+<tr class="memitem:a4152ebccb4094621ad7e8282a5c0f389" id="r_a4152ebccb4094621ad7e8282a5c0f389"><td class="memItemLeft"><a id="a4152ebccb4094621ad7e8282a5c0f389" name="a4152ebccb4094621ad7e8282a5c0f389"></a>
+static auto&#160;</td><td class="memItemRight"><b>pendingRequests</b> () noexcept -&gt; size_t</td></tr>
+<tr class="memdesc:a4152ebccb4094621ad7e8282a5c0f389"><td class="mdescLeft">&#160;</td><td class="mdescRight">How many requests from other threads are waiting for the simulator thread. <br /></td></tr>
+<tr class="memitem:a19969d1bde287a2e90b03d1e15c77b43" id="r_a19969d1bde287a2e90b03d1e15c77b43"><td class="memItemLeft"><a id="a19969d1bde287a2e90b03d1e15c77b43" name="a19969d1bde287a2e90b03d1e15c77b43"></a>
+static void&#160;</td><td class="memItemRight"><b>runPendingRequests</b> ()</td></tr>
+<tr class="memdesc:a19969d1bde287a2e90b03d1e15c77b43"><td class="mdescLeft">&#160;</td><td class="mdescRight">Carries out the requests other threads made, on the simulator thread. <br /></td></tr>
+<tr class="memitem:ac374a05d874373705d01f5d18e95ab90" id="r_ac374a05d874373705d01f5d18e95ab90"><td class="memItemLeft"><a id="ac374a05d874373705d01f5d18e95ab90" name="ac374a05d874373705d01f5d18e95ab90"></a>
+static void&#160;</td><td class="memItemRight"><b>requestSleep</b> (<a class="el" href="structphysics_1_1BodyID.html">BodyID</a> id)</td></tr>
+<tr class="memdesc:ac374a05d874373705d01f5d18e95ab90"><td class="mdescLeft">&#160;</td><td class="mdescRight">Puts a body to sleep or wakes it, from any thread. <br /></td></tr>
+<tr class="memitem:a0921bdb467745e837e6fdeab1b5912c7" id="r_a0921bdb467745e837e6fdeab1b5912c7"><td class="memItemLeft"><a id="a0921bdb467745e837e6fdeab1b5912c7" name="a0921bdb467745e837e6fdeab1b5912c7"></a>
+static void&#160;</td><td class="memItemRight"><b>requestWake</b> (<a class="el" href="structphysics_1_1BodyID.html">BodyID</a> id)</td></tr>
 <tr class="memitem:a0822cf03e81e7df18fc1b1276da399fa" id="r_a0822cf03e81e7df18fc1b1276da399fa"><td class="memItemLeft"><a id="a0822cf03e81e7df18fc1b1276da399fa" name="a0822cf03e81e7df18fc1b1276da399fa"></a>
 static void&#160;</td><td class="memItemRight"><b>registerRigidbody</b> (Rigidbody &amp;node)</td></tr>
 <tr class="memitem:abfe2127d4012fe6f8bacf93caeab3a66" id="r_abfe2127d4012fe6f8bacf93caeab3a66"><td class="memItemLeft"><a id="abfe2127d4012fe6f8bacf93caeab3a66" name="abfe2127d4012fe6f8bacf93caeab3a66"></a>
@@ -231,6 +257,8 @@ static auto&#160;</td><td class="memItemRight"><b>current</b> () -&gt; Simulator
 static auto&#160;</td><td class="memItemRight"><b>voxelFragmentRecords</b> () -&gt; std::span&lt; const <a class="el" href="structphysics_1_1VoxelRenderRecord.html">VoxelRenderRecord</a> &gt;</td></tr>
 <tr class="memitem:a41916f63569622ba846619c3d3eac000" id="r_a41916f63569622ba846619c3d3eac000"><td class="memItemLeft"><a id="a41916f63569622ba846619c3d3eac000" name="a41916f63569622ba846619c3d3eac000"></a>
 static auto&#160;</td><td class="memItemRight"><b>tryGetVoxelData</b> (<a class="el" href="structphysics_1_1VoxelDataID.html">VoxelDataID</a> data) -&gt; <a class="el" href="structphysics_1_1VoxelShapeData.html">VoxelShapeData</a> *</td></tr>
+<tr class="memitem:af24048de8141c5b2c64bd8410490b443" id="r_af24048de8141c5b2c64bd8410490b443"><td class="memItemLeft"><a id="af24048de8141c5b2c64bd8410490b443" name="af24048de8141c5b2c64bd8410490b443"></a>
+static auto&#160;</td><td class="memItemRight"><b>tryGetVoxelDataConst</b> (<a class="el" href="structphysics_1_1VoxelDataID.html">VoxelDataID</a> data) -&gt; const <a class="el" href="structphysics_1_1VoxelShapeData.html">VoxelShapeData</a> *</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-friends" class="groupheader"><a id="friends" name="friends"></a>
 Friends</h2></td></tr>
@@ -244,8 +272,8 @@ class&#160;</td><td class="memItemRight"><b>DynamicRigidbody</b></td></tr>
 class&#160;</td><td class="memItemRight"><b>toast::VoxelNode</b></td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
-<a id="ae00ca8f76649eb8e374ae87a7f0e647e" name="ae00ca8f76649eb8e374ae87a7f0e647e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae00ca8f76649eb8e374ae87a7f0e647e">&#9670;&#160;</a></span>raycast()</h2>
+<a id="aa501aec8f6568bb8b645f26e787d00cd" name="aa501aec8f6568bb8b645f26e787d00cd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa501aec8f6568bb8b645f26e787d00cd">&#9670;&#160;</a></span>raycast()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -261,7 +289,17 @@ class&#160;</td><td class="memItemRight"><b>toast::VoxelNode</b></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">glm::vec3</td>          <td class="paramname"><span class="paramname"><em>dir</em></span>&#160;) -&gt; std::vector&lt; <a class="el" href="structphysics_1_1RayHit.html">RayHit</a> &gt;</td>
+          <td class="paramtype">glm::vec3</td>          <td class="paramname"><span class="paramname"><em>dir</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float</td>          <td class="paramname"><span class="paramname"><em>max_distance</em></span><span class="paramdefsep"> = </span><span class="paramdefval">-1.0f</span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int</td>          <td class="paramname"><span class="paramname"><em>max_targets</em></span><span class="paramdefsep"> = </span><span class="paramdefval">3</span>&#160;) -&gt; std::vector&lt; <a class="el" href="structphysics_1_1RayHit.html">RayHit</a> &gt;</td>
         </tr>
       </table>
   </td>

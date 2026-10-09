@@ -80,6 +80,11 @@ var annotated_dup =
     [ "audio", null, [
       [ "AudioSystem", "classaudio_1_1AudioSystem.html", null ]
     ] ],
+    [ "debug", null, [
+      [ "Billboard", "structdebug_1_1Billboard.html", null ],
+      [ "Vertex", "structdebug_1_1Vertex.html", null ],
+      [ "Mesh", "structdebug_1_1Mesh.html", null ]
+    ] ],
     [ "editor", "namespaceeditor.html", [
       [ "Assets", "namespaceeditor_1_1Assets.html", [
         [ "Importers", "namespaceeditor_1_1Assets_1_1Importers.html", [
@@ -243,7 +248,8 @@ var annotated_dup =
         [ "EnumEqualsConverter", "classeditor_1_1Converters_1_1EnumEqualsConverter.html", null ],
         [ "SnapValueConverter", "classeditor_1_1Converters_1_1SnapValueConverter.html", null ],
         [ "DockContentCornerRadiusConverter", "classeditor_1_1Converters_1_1DockContentCornerRadiusConverter.html", null ],
-        [ "DockFocusBrushConverter", "classeditor_1_1Converters_1_1DockFocusBrushConverter.html", null ]
+        [ "DockFocusBrushConverter", "classeditor_1_1Converters_1_1DockFocusBrushConverter.html", null ],
+        [ "PathToBitmapConverter", "classeditor_1_1Converters_1_1PathToBitmapConverter.html", null ]
       ] ],
       [ "Editors", "namespaceeditor_1_1Editors.html", [
         [ "CurvePointVM", "classeditor_1_1Editors_1_1CurvePointVM.html", null ],
@@ -378,6 +384,7 @@ var annotated_dup =
         [ "ProtoEntry", "structevent_1_1__detail_1_1ProtoEntry.html", "structevent_1_1__detail_1_1ProtoEntry" ]
       ] ],
       [ "AddSignalConnection", "structevent_1_1AddSignalConnection.html", null ],
+      [ "AssetReplaced", "structevent_1_1AssetReplaced.html", null ],
       [ "AttachNode", "structevent_1_1AttachNode.html", null ],
       [ "CacheNode", "structevent_1_1CacheNode.html", null ],
       [ "CaptureFrame", "structevent_1_1CaptureFrame.html", null ],
@@ -689,6 +696,7 @@ var annotated_dup =
       [ "CachedManifold", "structphysics_1_1CachedManifold.html", "structphysics_1_1CachedManifold" ],
       [ "CapsuleCollider", "classphysics_1_1CapsuleCollider.html", null ],
       [ "CapsuleShape", "structphysics_1_1CapsuleShape.html", null ],
+      [ "CapsuleSmash", "structphysics_1_1CapsuleSmash.html", null ],
       [ "Collider", "classphysics_1_1Collider.html", null ],
       [ "CollisionElement", "structphysics_1_1CollisionElement.html", null ],
       [ "CollisionWorldView", "structphysics_1_1CollisionWorldView.html", null ],
@@ -700,6 +708,7 @@ var annotated_dup =
       [ "DetachedComponent", "structphysics_1_1DetachedComponent.html", null ],
       [ "DynamicRigidbody", "classphysics_1_1DynamicRigidbody.html", null ],
       [ "ExtractedFragment", "structphysics_1_1ExtractedFragment.html", "structphysics_1_1ExtractedFragment" ],
+      [ "FragmentPush", "structphysics_1_1FragmentPush.html", null ],
       [ "KinematicRigidbody", "classphysics_1_1KinematicRigidbody.html", null ],
       [ "Manifold", "structphysics_1_1Manifold.html", null ],
       [ "ManifoldQueue", "structphysics_1_1ManifoldQueue.html", null ],
@@ -715,7 +724,10 @@ var annotated_dup =
       [ "ShapeID", "structphysics_1_1ShapeID.html", null ],
       [ "ShapeSlot", "structphysics_1_1ShapeSlot.html", null ],
       [ "Simulator", "classphysics_1_1Simulator.html", "classphysics_1_1Simulator" ],
+      [ "SmashPieces", "structphysics_1_1SmashPieces.html", null ],
+      [ "SmashVolume", "structphysics_1_1SmashVolume.html", null ],
       [ "SphereCollider", "classphysics_1_1SphereCollider.html", null ],
+      [ "SphereHit", "structphysics_1_1SphereHit.html", null ],
       [ "SphereShape", "structphysics_1_1SphereShape.html", null ],
       [ "StaticRigidbody", "classphysics_1_1StaticRigidbody.html", null ],
       [ "StepResult", "structphysics_1_1StepResult.html", "structphysics_1_1StepResult" ],
@@ -834,6 +846,7 @@ var annotated_dup =
       [ "Color3", "structscripting_1_1Color3.html", null ],
       [ "Color4", "structscripting_1_1Color4.html", null ],
       [ "ListenerProxy", "classscripting_1_1ListenerProxy.html", null ],
+      [ "LuaCallback", "classscripting_1_1LuaCallback.html", "classscripting_1_1LuaCallback" ],
       [ "LuaEventBinding", "structscripting_1_1LuaEventBinding.html", null ],
       [ "LuaEventDescriptor", "structscripting_1_1LuaEventDescriptor.html", null ],
       [ "LuaEventField", "structscripting_1_1LuaEventField.html", null ],
@@ -845,6 +858,11 @@ var annotated_dup =
       [ "LuaSubgroup", "structscripting_1_1LuaSubgroup.html", null ],
       [ "LuaVarDesc", "structscripting_1_1LuaVarDesc.html", null ],
       [ "NodeProxy", "classscripting_1_1NodeProxy.html", "classscripting_1_1NodeProxy" ],
+      [ "RuntimeToken", "structscripting_1_1RuntimeToken.html", null ],
+      [ "ScriptBinding", "structscripting_1_1ScriptBinding.html", "structscripting_1_1ScriptBinding" ],
+      [ "ScriptContext", "structscripting_1_1ScriptContext.html", null ],
+      [ "ScriptDepthGuard", "classscripting_1_1ScriptDepthGuard.html", "classscripting_1_1ScriptDepthGuard" ],
+      [ "ScriptDispatch", "classscripting_1_1ScriptDispatch.html", null ],
       [ "ScriptInstance", "classscripting_1_1ScriptInstance.html", "classscripting_1_1ScriptInstance" ],
       [ "ScriptNodeContextScope", "classscripting_1_1ScriptNodeContextScope.html", null ],
       [ "ScriptRuntime", "classscripting_1_1ScriptRuntime.html", "classscripting_1_1ScriptRuntime" ],
@@ -855,6 +873,7 @@ var annotated_dup =
       [ "Vec3FieldProxy", "classscripting_1_1Vec3FieldProxy.html", null ]
     ] ],
     [ "signals", null, [
+      [ "DynamicArgs", "structsignals_1_1DynamicArgs.html", null ],
       [ "ConnectionInfo", "structsignals_1_1ConnectionInfo.html", null ]
     ] ],
     [ "std", null, [
@@ -868,9 +887,12 @@ var annotated_dup =
         [ "Accessor", "structtoast_1_1__detail_1_1Accessor.html", null ],
         [ "ControlBox", "structtoast_1_1__detail_1_1ControlBox.html", "structtoast_1_1__detail_1_1ControlBox" ],
         [ "Defer", "structtoast_1_1__detail_1_1Defer.html", null ],
+        [ "ExecuteOptions", "structtoast_1_1__detail_1_1ExecuteOptions.html", null ],
+        [ "ItemRunner", "classtoast_1_1__detail_1_1ItemRunner.html", null ],
         [ "NodeCluster", "structtoast_1_1__detail_1_1NodeCluster.html", null ],
         [ "Robber", "structtoast_1_1__detail_1_1Robber.html", null ],
         [ "TickSchedule", "structtoast_1_1__detail_1_1TickSchedule.html", null ],
+        [ "WaveJob", "structtoast_1_1__detail_1_1WaveJob.html", null ],
         [ "WorldTestAccess", "structtoast_1_1__detail_1_1WorldTestAccess.html", "structtoast_1_1__detail_1_1WorldTestAccess" ]
       ] ],
       [ "input", null, [
@@ -905,7 +927,7 @@ var annotated_dup =
       [ "DirectionalLight", "classtoast_1_1DirectionalLight.html", null ],
       [ "EditorCameraController", "classtoast_1_1EditorCameraController.html", "classtoast_1_1EditorCameraController" ],
       [ "Engine", "classtoast_1_1Engine.html", "classtoast_1_1Engine" ],
-      [ "EnginePimpl", "structtoast_1_1EnginePimpl.html", null ],
+      [ "EnginePimpl", "structtoast_1_1EnginePimpl.html", "structtoast_1_1EnginePimpl" ],
       [ "EnumFieldAccess", "structtoast_1_1EnumFieldAccess.html", null ],
       [ "EventInfo", "structtoast_1_1EventInfo.html", null ],
       [ "EventRegistry", "classtoast_1_1EventRegistry.html", null ],
@@ -951,7 +973,7 @@ var annotated_dup =
       [ "SnapshotVolume", "classtoast_1_1SnapshotVolume.html", "classtoast_1_1SnapshotVolume" ],
       [ "Spotlight", "classtoast_1_1Spotlight.html", null ],
       [ "State", "structtoast_1_1State.html", null ],
-      [ "StateMachine", "classtoast_1_1StateMachine.html", null ],
+      [ "StateMachine", "classtoast_1_1StateMachine.html", "classtoast_1_1StateMachine" ],
       [ "SubgroupInfo", "structtoast_1_1SubgroupInfo.html", "structtoast_1_1SubgroupInfo" ],
       [ "TestNode1", "classtoast_1_1TestNode1.html", null ],
       [ "TestNode2", "classtoast_1_1TestNode2.html", null ],
@@ -959,6 +981,8 @@ var annotated_dup =
       [ "TickFunctions", "structtoast_1_1TickFunctions.html", "structtoast_1_1TickFunctions" ],
       [ "TickScheduler", "classtoast_1_1TickScheduler.html", "classtoast_1_1TickScheduler" ],
       [ "Transition", "structtoast_1_1Transition.html", null ],
+      [ "TreeReadLock", "classtoast_1_1TreeReadLock.html", null ],
+      [ "TreeWriteLock", "classtoast_1_1TreeWriteLock.html", null ],
       [ "UID", "structtoast_1_1UID.html", "structtoast_1_1UID" ],
       [ "UISettings", "classtoast_1_1UISettings.html", "classtoast_1_1UISettings" ],
       [ "VectorStreamBuf", "structtoast_1_1VectorStreamBuf.html", null ],

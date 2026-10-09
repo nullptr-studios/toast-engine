@@ -1,3 +1,17 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="Node000000" href="$structinput_1_1Value.html" title="A tagged value that may represent a bool, a float or a glm::vec2." alt="" coords="5,5,104,33"/>
+<area shape="rect" id="Node000000" href="$classinput_1_1ITrigger.html" title="Polymorphic base for all triggers." alt="" coords="5,161,116,189"/>
+<area shape="rect" id="Node000001" href="$classinput_1_1Axis1DTrigger.html" title="Continuous 1D axis input." alt="" coords="167,5,319,33"/>
+<area shape="poly" id="edge504_Node000000_Node000001" title=" " alt="" coords="75,146,110,94,135,67,162,44,188,32,185,36,165,48,138,71,115,98,79,149"/>
+<area shape="rect" id="Node000002" href="$classinput_1_1Axis2DTrigger.html" title="Continuous 2D axis input." alt="" coords="167,57,319,85"/>
+<area shape="poly" id="edge505_Node000000_Node000002" title=" " alt="" coords="86,149,122,122,162,95,193,84,190,87,165,100,125,126,90,153"/>
+<area shape="rect" id="Node000003" href="$classinput_1_1CursorTrigger.html" title="Mouse cursor position or delta." alt="" coords="169,109,317,137"/>
+<area shape="poly" id="edge506_Node000000_Node000003" title=" " alt="" coords="125,154,194,136,190,139,128,159"/>
+<area shape="rect" id="Node000004" href="$classinput_1_1HoldTrigger.html" title="Reports a hold every frame while the input is on." alt="" coords="175,161,311,189"/>
+<area shape="poly" id="edge507_Node000000_Node000004" title=" " alt="" coords="130,173,177,174,172,177,132,178"/>
+<area shape="rect" id="Node000005" href="$classinput_1_1PulseTrigger.html" title="Like a hold, but reports a hold once every rate seconds instead of every frame." alt="" coords="172,213,314,241"/>
+<area shape="poly" id="edge508_Node000000_Node000005" title=" " alt="" coords="126,191,194,212,189,214,127,197"/>
+<area shape="rect" id="Node000006" href="$classinput_1_1ReleaseTrigger.html" title="Fires once when the input goes from on to off." alt="" coords="164,265,322,293"/>
+<area shape="poly" id="edge509_Node000000_Node000006" title=" " alt="" coords="89,196,125,224,165,250,194,264,189,265,162,255,122,229,88,202"/>
+<area shape="rect" id="Node000007" href="$classinput_1_1StartTrigger.html" title="Fires once when the input goes from off to on." alt="" coords="174,317,312,345"/>
+<area shape="poly" id="edge510_Node000000_Node000007" title=" " alt="" coords="78,200,115,253,138,279,165,302,189,317,184,317,162,307,135,283,110,256,76,205"/>
 </map>

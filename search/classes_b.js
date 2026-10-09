@@ -17,7 +17,7 @@ var searchData=
   ['materialrange_14',['MaterialRange',['../structrenderer_1_1VulkanRenderer_1_1RenderFrame_1_1MaterialRange.html',1,'renderer::VulkanRenderer::RenderFrame']]],
   ['materialruntime_15',['MaterialRuntime',['../classrenderer_1_1MaterialRuntime.html',1,'renderer']]],
   ['materialsettings_16',['MaterialSettings',['../structassets_1_1MaterialSettings.html',1,'assets']]],
-  ['mesh_17',['Mesh',['../classassets_1_1Mesh.html',1,'assets']]],
+  ['mesh_17',['Mesh',['../classassets_1_1Mesh.html',1,'assets::Mesh'],['../structdebug_1_1Mesh.html',1,'debug::Mesh']]],
   ['meshasset_18',['MeshAsset',['../classeditor_1_1Assets_1_1Types_1_1MeshAsset.html',1,'editor::Assets::Types']]],
   ['meshfileheader_19',['MeshFileHeader',['../structassets_1_1__detail_1_1MeshFileHeader.html',1,'assets::_detail']]],
   ['meshinstanceproxy_20',['MeshInstanceProxy',['../structrenderer_1_1VulkanRenderer_1_1MeshInstanceProxy.html',1,'renderer::VulkanRenderer']]],

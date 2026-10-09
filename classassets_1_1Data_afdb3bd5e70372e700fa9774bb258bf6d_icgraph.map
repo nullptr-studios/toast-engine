@@ -1,14 +1,13 @@
 <map id="assets::Data::reload" name="assets::Data::reload">
-<area shape="rect" id="Node000001" title="Re&#45;parses the asset contents in place." alt="" coords="456,48,607,76"/>
-<area shape="rect" id="Node000002" href="$classassets_1_1AssetManager.html#a7e0436327b6bd73917135ac6d6b3f2c3" title="Re&#45;reads hot&#45;reloadable assets whose files changed on disk." alt="" coords="13,5,178,50"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="473,44,408,30,348,24,287,22,178,24,177,19,287,17,348,19,408,25,478,43"/>
-<area shape="rect" id="Node000003" href="$classassets_1_1ColorScheme.html#a3c70f41d65503eb591b896e31c57cfe6" title="Re&#45;parses the asset contents in place." alt="" coords="242,40,400,85"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="438,63,400,65,400,60,443,62"/>
-<area shape="rect" id="Node000004" href="$classassets_1_1Material.html#a5109cb872c434e6a7758ff4026fb1408" title="Re&#45;parses the asset contents in place." alt="" coords="234,132,408,160"/>
-<area shape="poly" id="edge4_Node000001_Node000004" title=" " alt="" coords="483,82,359,134,357,129,478,83"/>
-<area shape="poly" id="edge3_Node000003_Node000002" title=" " alt="" coords="224,49,178,43,178,38,229,47"/>
-<area shape="poly" id="edge5_Node000004_Node000004" title=" " alt="" coords="355,117,344,113,321,111,299,113,287,118,284,123,289,133,284,131,279,124,283,114,298,108,321,106,346,108,361,118"/>
-<area shape="rect" id="Node000005" href="$classassets_1_1MaterialInstance.html#a5588b1abd3bd689b51012ea197853095" title="Re&#45;parses the asset contents in place." alt="" coords="5,124,186,169"/>
-<area shape="poly" id="edge6_Node000004_Node000005" title=" " alt="" coords="216,147,186,149,186,144,221,146"/>
-<area shape="poly" id="edge7_Node000005_Node000005" title=" " alt="" coords="131,109,119,105,95,103,74,105,61,109,56,115,58,124,52,123,51,114,58,105,73,99,96,97,120,100,136,109"/>
+<area shape="rect" id="Node000001" title="Re&#45;parses the asset contents in place." alt="" coords="456,62,607,90"/>
+<area shape="rect" id="Node000002" href="$classassets_1_1ColorScheme.html#a3c70f41d65503eb591b896e31c57cfe6" title="Re&#45;parses the asset contents in place." alt="" coords="242,8,400,53"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="447,58,400,50,400,45,452,58"/>
+<area shape="rect" id="Node000004" href="$classassets_1_1Material.html#a5109cb872c434e6a7758ff4026fb1408" title="Re&#45;parses the asset contents in place." alt="" coords="234,103,408,131"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="445,93,395,105,395,100,440,93"/>
+<area shape="rect" id="Node000003" href="$classassets_1_1AssetManager.html#a50291c7e9e5ae099fcdca733b267659c" title="Reloads the assets pollModifiedAssets() changed." alt="" coords="11,5,180,50"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="224,30,181,31,180,26,229,28"/>
+<area shape="poly" id="edge4_Node000004_Node000004" title=" " alt="" coords="355,88,344,84,321,82,299,84,287,89,284,94,289,104,284,102,279,94,283,85,298,79,321,77,346,79,361,88"/>
+<area shape="rect" id="Node000005" href="$classassets_1_1MaterialInstance.html#a5588b1abd3bd689b51012ea197853095" title="Re&#45;parses the asset contents in place." alt="" coords="5,99,186,143"/>
+<area shape="poly" id="edge5_Node000004_Node000005" title=" " alt="" coords="216,119,186,122,186,117,221,119"/>
+<area shape="poly" id="edge6_Node000005_Node000005" title=" " alt="" coords="131,84,119,80,95,77,74,79,61,84,56,90,58,99,52,97,51,89,58,80,73,74,96,72,120,75,136,83"/>
 </map>
