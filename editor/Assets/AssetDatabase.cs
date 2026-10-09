@@ -192,6 +192,9 @@ public static class AssetDatabase {
 
 		var changed = false;
 		var discardAll = false;
+
+		var current = ScanCurrentAssets();
+
 		foreach (var (type, collectionNode) in db.ToList()) {
 			if (type is "version" or "generated_at") continue;
 			if (collectionNode is not JsonObject collection) continue;
@@ -201,6 +204,13 @@ public static class AssetDatabase {
 
 				var realPath = ProjectContext.Resolve(virtualPath);
 				if (File.Exists(realPath)) continue;
+
+				if (current.TryGetValue(uid, out var moved) && moved != virtualPath &&
+				    File.Exists(ProjectContext.Resolve(moved))) {
+					log($"Moved file: {virtualPath} -> {moved}");
+					changed = true; // rebuild rewrites the database
+					continue;
+				}
 
 				log($"Missing file: {virtualPath}");
 
@@ -412,6 +422,22 @@ public static class AssetDatabase {
 			if (MetaFile.UpdateSource(metaPath, newSource))
 				log($"Repointed {ProjectContext.ToVirtual(metaPath[..^5]) ?? metaPath}");
 		}
+	}
+
+	private static Dictionary<string, string> ScanCurrentAssets() {
+		var scanned = new JsonObject();
+		foreach (var db in ProjectContext.Databases)
+			ScanDirectory(Path.Combine(ProjectContext.ProjectPath, db), scanned);
+		ScanDirectory(ProjectContext.CorePath, scanned);
+
+		var current = new Dictionary<string, string>();
+		foreach (var (_, collectionNode) in scanned)
+			if (collectionNode is JsonObject collection)
+				foreach (var (uid, pathNode) in collection)
+					if (pathNode?.GetValue<string>() is { } path)
+						current[uid] = path;
+
+		return current;
 	}
 
 	// collections are created on demand
