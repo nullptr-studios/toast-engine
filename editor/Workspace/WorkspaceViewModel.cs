@@ -174,6 +174,7 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 	}
 
 	public override bool OnClose() {
+		if (!IsModified) DeleteAutosaves();
 		Dispose();
 		Events.Send(new SetFocusedNode { Node = "" });
 		Events.Send(new WorkspaceDestroy { Handle = Handle });
@@ -429,7 +430,7 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 		if (Engine is null) return;
 
 		// keep an autosave before going into game mode
-		if (AutosaveFileName is { } name) {
+		if (IsAutosaveDirty && AutosaveFileName is { } name) {
 			var virtualPath = AutosaveService.VirtualPath(name);
 			Directory.CreateDirectory(Path.GetDirectoryName(ProjectContext.Resolve(virtualPath))!);
 			await WriteAutosaveAsync(virtualPath);
