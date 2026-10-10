@@ -18,12 +18,7 @@ public class NodeDisplayItem : SearchableTreeItem<NodeDisplayItem> {
 		IsHidden = HasAttr(item.Info.Attributes, "Hidden");
 		Color = ReflectionDatabase.ResolveColor(item.Info.Name);
 		var iconName = ReflectionDatabase.ResolveIcon(item.Info.Name);
-		try {
-			Icon = new Bitmap(AssetLoader.Open(new Uri($"avares://editor/Resources/node_icons/2x/{iconName}.png")));
-		} catch (Exception ex) {
-			Log.Warn($"Failed to load icon for node {item.Info.Name}: {ex.Message}");
-			Icon = new Bitmap(AssetLoader.Open(new Uri("avares://editor/Resources/node_icons/2x/Circle.png")));
-		}
+		Icon = NodeIconCache.Get(iconName);
 
 		var children = item.Children.Select(c => new NodeDisplayItem(c));
 		AllChildren = PickerOrdering.ByName(children, child => child.Name).ToList();
@@ -38,7 +33,6 @@ public class NodeDisplayItem : SearchableTreeItem<NodeDisplayItem> {
 	public FontStyle FontStyle => IsGame ? FontStyle.Italic : FontStyle.Normal;
 	public double Opacity => IsHidden ? 0.4 : 1.0;
 	public IBrush TextColor { get; } = Brushes.White;
-	public bool IsExpanded { get; set; } = true;
 
 	private static bool HasAttr(JsonElement attrs, string attrName) {
 		return attrs.ValueKind switch {

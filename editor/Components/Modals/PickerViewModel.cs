@@ -15,6 +15,8 @@ public abstract class PickerViewModel {
 	// null = no extra button
 	public virtual string? ExtraButtonLabel => null;
 	public virtual LucideIconKind ExtraIconKind => LucideIconKind.Plus;
+	public virtual bool HasViewToggle => false;
+	public virtual bool IsTreeMode { get; set; }
 
 	public abstract void UpdateFilter(string query, bool caseSensitive);
 
