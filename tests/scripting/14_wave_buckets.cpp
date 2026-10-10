@@ -64,7 +64,7 @@ private:
 
 // A tick wave hands every interpreter to exactly one job, so no worker ever has to wait for another one. Nodes that share
 // an interpreter used to each get their own job, and the workers queued up behind each other
-TOAST_TEST_NAMED("Scripting", "scripting/14_a_wave_never_waits_for_an_interpreter", test_scripting_14_a_wave_never_waits_for_an_interpreter) {
+TOAST_TEST_NAMED("Scripting", "scripting/14_wave_buckets", test_scripting_14_a_wave_never_waits_for_an_interpreter) {
 	luaState();
 	auto world_owner = toast::_detail::WorldTestAccess::createWorld();
 	toast::World& world = *world_owner;

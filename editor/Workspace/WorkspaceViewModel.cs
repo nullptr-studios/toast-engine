@@ -114,6 +114,19 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 	public bool CanPause => PlayState != PlayState.Stopped;
 	public bool IsOrbitCamera => CameraMode == CameraMode.Orbit;
 
+	private const double HitchSeconds = 0.05;
+	private long m_lastFrameTimestamp;
+	public int SmoothFrames { get; private set; }
+
+	public void NotePresentedFrame() {
+		var now = System.Diagnostics.Stopwatch.GetTimestamp();
+		var gap = m_lastFrameTimestamp == 0
+			? double.MaxValue
+			: (now - m_lastFrameTimestamp) / (double)System.Diagnostics.Stopwatch.Frequency;
+		m_lastFrameTimestamp = now;
+		SmoothFrames = gap <= HitchSeconds ? SmoothFrames + 1 : 0;
+	}
+
 	public bool IsAutosaveDirty => IsModified;
 
 	// saved workspaces autosave under the asset uid
@@ -174,6 +187,7 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 	}
 
 	public override bool OnClose() {
+		if (!IsModified) DeleteAutosaves();
 		Dispose();
 		Events.Send(new SetFocusedNode { Node = "" });
 		Events.Send(new WorkspaceDestroy { Handle = Handle });
@@ -429,7 +443,7 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 		if (Engine is null) return;
 
 		// keep an autosave before going into game mode
-		if (AutosaveFileName is { } name) {
+		if (IsAutosaveDirty && AutosaveFileName is { } name) {
 			var virtualPath = AutosaveService.VirtualPath(name);
 			Directory.CreateDirectory(Path.GetDirectoryName(ProjectContext.Resolve(virtualPath))!);
 			await WriteAutosaveAsync(virtualPath);
@@ -541,7 +555,7 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 	}
 
 	// the asset-uid autosave and the root-uid one a never-saved workspace may have left
-	private void DeleteAutosaves() {
+	public void DeleteAutosaves() {
 		AutosaveService.Delete(BackingAssetUid, ".tnode");
 		AutosaveService.Delete(RootUid, ".tnode");
 	}
@@ -563,9 +577,23 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 	// recoverVirtualPath makes the engine load the content from an autosave
 	public static WorkspaceViewModel? OpenFile(
 		ToastEngine engine, string assetUid, string virtualPath, string? recoverVirtualPath = null) {
-		var res = recoverVirtualPath is null
+		return Create(engine, RequestOpen(engine, assetUid, recoverVirtualPath), assetUid, virtualPath, recoverVirtualPath);
+	}
+
+	public static async Task<WorkspaceViewModel?> OpenFileAsync(
+		ToastEngine engine, string assetUid, string virtualPath, string? recoverVirtualPath = null) {
+		var res = await Task.Run(() => RequestOpen(engine, assetUid, recoverVirtualPath));
+		return Create(engine, res, assetUid, virtualPath, recoverVirtualPath);
+	}
+
+	private static WorkspaceInfo RequestOpen(ToastEngine engine, string assetUid, string? recoverVirtualPath) {
+		return recoverVirtualPath is null
 			? engine.OpenWorkspace(assetUid)
 			: engine.OpenWorkspaceFrom(assetUid, recoverVirtualPath);
+	}
+
+	private static WorkspaceViewModel? Create(
+		ToastEngine engine, WorkspaceInfo res, string assetUid, string virtualPath, string? recoverVirtualPath) {
 		if (res.Uid == 0) return null;
 		var ws = new WorkspaceViewModel(engine) {
 			Handle = res.Uid,
