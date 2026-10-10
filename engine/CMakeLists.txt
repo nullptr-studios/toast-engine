@@ -218,7 +218,7 @@ get_target_property(_tinyspline_include_list tinysplinecxx::tinysplinecxx INTERF
 list(GET _tinyspline_include_list 0 _tinyspline_include)
 
 add_custom_command(TARGET toast_engine POST_BUILD
-        # Headers
+        COMMAND ${CMAKE_COMMAND} -E rm -rf "${TOAST_ENGINE_OUTPUT_ROOT}/include" "${TOAST_ENGINE_OUTPUT_ROOT}/ffi"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/include" "${TOAST_ENGINE_OUTPUT_ROOT}/include"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/ffi" "${TOAST_ENGINE_OUTPUT_ROOT}/ffi"
         # Generated reflection headers
