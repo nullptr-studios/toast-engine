@@ -187,35 +187,26 @@ void TextureUpload::record(vk::CommandBuffer cmd) {
 		return;
 	}
 
-	vk::Image image_handle = m_texture->getImage();
+	const vk::Image image_handle = m_texture->getImage();
+	const vk::ImageSubresourceRange range(vk::ImageAspectFlagBits::eColor, 0, m_tex_params.mip_levels, 0, m_tex_params.layer_count);
 
-	vk::ImageMemoryBarrier barrier {};
-	barrier.oldLayout = vk::ImageLayout::eUndefined;
-	barrier.newLayout = vk::ImageLayout::eTransferDstOptimal;
-	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.image = image_handle;
-	barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-	barrier.subresourceRange.baseMipLevel = 0;
-	barrier.subresourceRange.levelCount = m_tex_params.mip_levels;
-	barrier.subresourceRange.baseArrayLayer = 0;
-	barrier.subresourceRange.layerCount = m_tex_params.layer_count;
-	barrier.srcAccessMask = {};
-	barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
-
-	cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer, {}, nullptr, nullptr, barrier);
+	sync::BarrierBatch barriers;
+	barriers.image(image_handle, range, sync::Usage::none, sync::Usage::transfer_dst);
+	barriers.flush(cmd);
 
 	cmd.copyBufferToImage(*m_staging_buffer, image_handle, vk::ImageLayout::eTransferDstOptimal, m_copy_regions);
 
-	barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
-	barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-	barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
-	// Transfer queue barrier since that queue has no fragment shader stage
-	barrier.dstAccessMask = {};
+	barriers.release(image_handle, range, sync::Usage::transfer_dst, sync::Usage::shader_sampled, m_handoff);
+	barriers.flush(cmd);
+	m_released = true;
+}
 
-	cmd.pipelineBarrier(
-	    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eBottomOfPipe, {}, nullptr, nullptr, barrier
-	);
+void TextureUpload::recordAcquire(sync::BarrierBatch& batch) {
+	if (!m_released || m_texture->hasFailed()) {
+		return;
+	}
+	const vk::ImageSubresourceRange range(vk::ImageAspectFlagBits::eColor, 0, m_tex_params.mip_levels, 0, m_tex_params.layer_count);
+	batch.acquire(m_texture->getImage(), range, sync::Usage::transfer_dst, sync::Usage::shader_sampled, m_handoff);
 }
 
 void RawTextureUpload::build(const VulkanCore& core) {
@@ -257,21 +248,9 @@ void RawTextureUpload::record(vk::CommandBuffer cmd) {
 	ZoneScoped;
 	const vk::Image image = m_texture->getImage();
 
-	vk::ImageMemoryBarrier barrier {};
-	barrier.oldLayout = vk::ImageLayout::eUndefined;
-	barrier.newLayout = vk::ImageLayout::eTransferDstOptimal;
-	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.image = image;
-	barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-	barrier.subresourceRange.baseMipLevel = 0;
-	barrier.subresourceRange.levelCount = 1;
-	barrier.subresourceRange.baseArrayLayer = 0;
-	barrier.subresourceRange.layerCount = 1;
-	barrier.srcAccessMask = {};
-	barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
-
-	cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer, {}, nullptr, nullptr, barrier);
+	sync::BarrierBatch barriers;
+	barriers.image(image, colorSubresourceRange(), sync::Usage::none, sync::Usage::transfer_dst);
+	barriers.flush(cmd);
 
 	vk::BufferImageCopy region {};
 	region.bufferOffset = 0;
@@ -283,14 +262,17 @@ void RawTextureUpload::record(vk::CommandBuffer cmd) {
 
 	cmd.copyBufferToImage(*m_staging_buffer, image, vk::ImageLayout::eTransferDstOptimal, region);
 
-	barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
-	barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-	barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+	barriers.release(image, colorSubresourceRange(), sync::Usage::transfer_dst, sync::Usage::shader_sampled, m_handoff);
+	barriers.flush(cmd);
+	m_released = true;
+}
 
-	barrier.dstAccessMask = {};
-
-	cmd.pipelineBarrier(
-	    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eBottomOfPipe, {}, nullptr, nullptr, barrier
+void RawTextureUpload::recordAcquire(sync::BarrierBatch& batch) {
+	if (!m_released || m_texture->hasFailed()) {
+		return;
+	}
+	batch.acquire(
+	    m_texture->getImage(), colorSubresourceRange(), sync::Usage::transfer_dst, sync::Usage::shader_sampled, m_handoff
 	);
 }
 
@@ -315,7 +297,16 @@ auto uploadTextureSync(const VulkanCore& core, VulkanTexture& texture, std::vect
 
 	const vk::raii::Fence fence(device, vk::FenceCreateInfo {});
 	const vk::CommandBuffer raw_cmd = *cmd;
-	core.getGraphicsQueue().submit(vk::SubmitInfo(0, nullptr, nullptr, 1, &raw_cmd), *fence);
+	{
+		std::scoped_lock queue_lock(core.graphicsSubmitMutex());
+		sync::submit(
+		    core.getGraphicsQueue(),
+		    {
+		      .commands = {&raw_cmd, 1},
+            .fence = *fence
+		}
+		);
+	}
 	if (device.waitForFences(*fence, vk::True, std::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess) {
 		texture.markFailed(IVulkanResource::UploadState::failed_gpu);
 		return false;

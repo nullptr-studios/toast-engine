@@ -1,6 +1,7 @@
 import voxel_dda;
 import voxel_gbuffer;
 import lighting;
+import depth_convention;
 
 struct PushConstants
 {
@@ -261,10 +262,10 @@ bool shade(VSOutput input, out FSOutput output, out float depth)
     const float3 origin = mul(instance.worldToVoxel, float4(camera, 1.0)).xyz;
     const float3 direction = mul(instance.worldToVoxel, float4(worldDirection, 0.0)).xyz;
 
-    // Vulkan clips at z = 0 so never hit in front of the near plane
-    const float clipOriginZ = mul(gCamera.viewProjection, float4(camera, 1.0)).z;
-    const float clipStepZ = mul(gCamera.viewProjection, float4(worldDirection, 0.0)).z;
-    const float tMin = clipStepZ > 0.0 ? max(0.0, -clipOriginZ / clipStepZ) : 0.0;
+    // Never hit in front of the near plane whose clip distance is linear along the ray in either convention
+    const float nearOrigin = clipNearDistance(mul(gCamera.viewProjection, float4(camera, 1.0)));
+    const float nearStep = clipNearDistance(mul(gCamera.viewProjection, float4(worldDirection, 0.0)));
+    const float tMin = nearStep > 0.0 ? max(0.0, -nearOrigin / nearStep) : 0.0;
 
     const RayHit hit = marchRay(instance.recordIndex, origin, direction, tMin, kFloatMax);
 
@@ -322,8 +323,13 @@ bool shade(VSOutput input, out FSOutput output, out float depth)
     return true;
 }
 
+// The DDA hit is never closer than the rasterized face which keeps early depth testing on
 [shader("fragment")]
+#if TOAST_REVERSED_Z
+FSOutput fragmentOutside(VSOutput input, out float depth : SV_DepthLessEqual)
+#else
 FSOutput fragmentOutside(VSOutput input, out float depth : SV_DepthGreaterEqual)
+#endif
 {
     FSOutput output;
     if (!shade(input, output, depth))
@@ -332,7 +338,7 @@ FSOutput fragmentOutside(VSOutput input, out float depth : SV_DepthGreaterEqual)
     }
 
     // Slab entry can land a hair in front of the face
-    depth = max(depth, input.position.z);
+    depth = fartherDepth(depth, input.position.z);
     return output;
 }
 

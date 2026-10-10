@@ -22,10 +22,10 @@ public:
 	    vk::ImageUsageFlags extra_usage = {}, bool with_face_views = true
 	);
 
-	void
-	    transition(vk::CommandBuffer cmd, vk::ImageLayout new_layout, vk::AccessFlags dst_access, vk::PipelineStageFlags dst_stage);
+	void transition(vk::CommandBuffer cmd, sync::Usage next);
 
-	void setLayout(vk::ImageLayout layout) noexcept;
+	/// For code that transitioned the whole image itself like the vulkan_common upload helpers
+	void setUsage(sync::Usage usage) noexcept { m_state.usage = usage; }
 
 	[[nodiscard]]
 	auto faceView(uint32_t mip, uint32_t face) const -> vk::ImageView;
@@ -56,8 +56,8 @@ public:
 	}
 
 	[[nodiscard]]
-	auto layout() const noexcept -> vk::ImageLayout {
-		return m_layout;
+	auto usage() const noexcept -> sync::Usage {
+		return m_state.usage;
 	}
 
 	[[nodiscard]]
@@ -75,7 +75,7 @@ private:
 
 	uint32_t m_size = 0;
 	uint32_t m_mip_levels = 1;
-	vk::ImageLayout m_layout = vk::ImageLayout::eUndefined;
+	sync::ImageState m_state;
 };
 
 }

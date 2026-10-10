@@ -7,8 +7,11 @@
 #include "shader_compiler.hpp"
 
 #include <algorithm>
+#include <cstring>
 #include <format>
 #include <limits>
+#include <span>
+#include <toast/assets/asset_manager.hpp>
 #include <toast/log.hpp>
 #include <toast/logger.hpp>
 
@@ -16,9 +19,11 @@
 #include <dlfcn.h>
 #endif
 #include <array>
+#include <mutex>
 #include <stdexcept>
 #include <string>
 #include <tracy/Tracy.hpp>
+#include <unordered_map>
 #include <vector>
 
 #if defined(_WIN32)
@@ -29,19 +34,72 @@
 namespace renderer {
 
 namespace {
+
+/// One file per GPU model
+auto vulkanCorePipelineCacheUri(const vk::PhysicalDeviceProperties& props) -> std::string {
+	return std::format("cache://pipelines/{:04x}-{:04x}.bin", props.vendorID, props.deviceID);
+}
+
+/// Some drivers crash on cache data from another driver instead of rejecting it
+auto vulkanCorePipelineCacheMatches(std::span<const uint8_t> data, const vk::PhysicalDeviceProperties& props) -> bool {
+	VkPipelineCacheHeaderVersionOne header {};
+	if (data.size() < sizeof(header)) {
+		return false;
+	}
+	std::memcpy(&header, data.data(), sizeof(header));
+	return header.headerSize >= sizeof(header) && header.headerVersion == VK_PIPELINE_CACHE_HEADER_VERSION_ONE &&
+	       header.vendorID == props.vendorID && header.deviceID == props.deviceID &&
+	       std::memcmp(header.pipelineCacheUUID, props.pipelineCacheUUID.data(), VK_UUID_SIZE) == 0;
+}
+
 constexpr std::size_t k_gigabyte_bytes = 1024ull * 1024ull * 1024ull;
 constexpr uint32_t k_invalid_queue_family = std::numeric_limits<uint32_t>::max();
 
 #ifdef TRACY_ENABLE
-// Tracy keys memory pools by name address and MSVC Debug does not pool string literals
 constexpr auto k_tracy_vram_pool = std::to_array("VRAM");
+constexpr auto k_tracy_plot_used = std::to_array("VRAM used (MiB)");
+constexpr auto k_tracy_plot_budget = std::to_array("VRAM budget (MiB)");
+constexpr auto k_tracy_plot_allocations = std::to_array("VRAM engine allocations (MiB)");
+constexpr auto k_tracy_plot_blocks = std::to_array("VRAM engine blocks (MiB)");
+
+struct TracyVramTracker {
+	struct Block {
+		VkDeviceSize size = 0;
+		bool reported = false;
+	};
+
+	std::mutex mutex;
+	std::unordered_map<VkDeviceMemory, Block> blocks;
+	/// True once this connection has seen every live block
+	bool session_synced = false;
+};
+
+auto tracyVramTracker() -> TracyVramTracker& {
+	static TracyVramTracker tracker;
+	return tracker;
+}
 
 void tracyVmaAllocate(VmaAllocator, uint32_t, VkDeviceMemory memory, VkDeviceSize size, void*) {
-	TracyAllocN(reinterpret_cast<void*>(memory), size, k_tracy_vram_pool.data());
+	auto& tracker = tracyVramTracker();
+	std::scoped_lock lock(tracker.mutex);
+	const bool report = tracker.session_synced && TracyIsConnected;
+	tracker.blocks[memory] = {.size = size, .reported = report};
+	if (report) {
+		TracyAllocN(reinterpret_cast<void*>(memory), size, k_tracy_vram_pool.data());
+	}
 }
 
 void tracyVmaFree(VmaAllocator, uint32_t, VkDeviceMemory memory, VkDeviceSize, void*) {
-	TracyFreeN(reinterpret_cast<void*>(memory), k_tracy_vram_pool.data());
+	auto& tracker = tracyVramTracker();
+	std::scoped_lock lock(tracker.mutex);
+	const auto it = tracker.blocks.find(memory);
+	if (it == tracker.blocks.end()) {
+		return;
+	}
+	if (it->second.reported && TracyIsConnected) {
+		TracyFreeN(reinterpret_cast<void*>(memory), k_tracy_vram_pool.data());
+	}
+	tracker.blocks.erase(it);
 }
 #endif
 
@@ -278,6 +336,18 @@ VulkanCore::VulkanCore(
 	TOAST_INFO("Render", "Debug object names: {}", m_debug_utils_enabled ? "enabled" : "disabled");
 
 	vk::InstanceCreateInfo instance_ci({}, &app_info, layers, extensions);
+
+#ifdef TOAST_SYNC_VALIDATION
+	// Only ever defined in Debug
+	const std::array enabled_validation_features {vk::ValidationFeatureEnableEXT::eSynchronizationValidation};
+	vk::ValidationFeaturesEXT validation_features {};
+	validation_features.setEnabledValidationFeatures(enabled_validation_features);
+	if (m_validation_enabled) {
+		instance_ci.pNext = &validation_features;
+	}
+	TOAST_INFO("Render", "Synchronization validation: {}", m_validation_enabled ? "enabled" : "disabled");
+#endif
+
 	m_instance = vk::raii::Instance(m_context, instance_ci);
 
 	if (m_validation_enabled && m_debug_utils_enabled) {
@@ -294,6 +364,7 @@ VulkanCore::VulkanCore(
 
 	pickPhysicalDevice(required_device_extensions);
 	createLogicalDeviceAndAllocator(required_device_extensions);
+	m_pipeline_cache = vk::raii::PipelineCache(m_device, vk::PipelineCacheCreateInfo {});
 
 #if defined(_WIN32)
 	if (HMODULE mod = GetModuleHandleA("renderdoc.dll")) {
@@ -529,11 +600,17 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 		}
 	}
 
-	float queue_priority = 1.0f;
+	// A second queue when transfer falls back to the compute family so uploads never share a VkQueue with AsyncCompute
+	const bool transfer_in_compute_family = m_transfer_queue_family_index == m_compute_queue_family_index;
+	m_transfer_queue_index =
+	    transfer_in_compute_family && queue_family_properties[m_compute_queue_family_index].queueCount >= 2 ? 1u : 0u;
+
+	const std::array queue_priorities {1.0f, 1.0f};
 	std::vector<vk::DeviceQueueCreateInfo> queue_create_infos;
 	queue_create_infos.reserve(unique_queue_families.size());
 	for (auto family_index : unique_queue_families) {
-		queue_create_infos.emplace_back(vk::DeviceQueueCreateInfo({}, family_index, 1, &queue_priority));
+		const uint32_t count = family_index == m_compute_queue_family_index ? m_transfer_queue_index + 1 : 1;
+		queue_create_infos.emplace_back(vk::DeviceQueueCreateInfo({}, family_index, count, queue_priorities.data()));
 	}
 
 	const auto device_features = m_physical_device.getFeatures();
@@ -573,6 +650,10 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	    "Vulkan 1.2 descriptorBindingVariableDescriptorCount"
 	);
 	require_feature(supported_vulkan12.bufferDeviceAddress == VK_TRUE, "Vulkan 1.2 bufferDeviceAddress");
+	// eDepthAttachmentOptimal and eDepthReadOnlyOptimal are only legal with this enabled
+	require_feature(supported_vulkan12.separateDepthStencilLayouts == VK_TRUE, "Vulkan 1.2 separateDepthStencilLayouts");
+	// AsyncCompute tickets are timeline values
+	require_feature(supported_vulkan12.timelineSemaphore == VK_TRUE, "Vulkan 1.2 timelineSemaphore");
 	require_feature(supported_vulkan11.shaderDrawParameters == VK_TRUE, "Vulkan 1.1 shaderDrawParameters");
 	require_feature(supported_vulkan11.multiview == VK_TRUE, "Vulkan 1.1 multiview");
 	require_feature(device_features.independentBlend == VK_TRUE, "independentBlend");
@@ -584,6 +665,14 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 		m_frame_boundary_supported = std::ranges::any_of(available, [](const vk::ExtensionProperties& ext) {
 			return std::string_view(ext.extensionName.data()) == VK_EXT_FRAME_BOUNDARY_EXTENSION_NAME;
 		});
+
+		// VMA only estimates heap usage and budget without it
+		m_memory_budget_supported = std::ranges::any_of(available, [](const vk::ExtensionProperties& ext) {
+			return std::string_view(ext.extensionName.data()) == VK_EXT_MEMORY_BUDGET_EXTENSION_NAME;
+		});
+		if (m_memory_budget_supported) {
+			device_extensions.push_back(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
+		}
 
 		if (m_frame_boundary_supported) {
 			device_extensions.push_back(VK_EXT_FRAME_BOUNDARY_EXTENSION_NAME);
@@ -671,6 +760,8 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	vulkan12_features.descriptorBindingPartiallyBound = VK_TRUE;
 	vulkan12_features.descriptorBindingVariableDescriptorCount = VK_TRUE;
 	vulkan12_features.bufferDeviceAddress = VK_TRUE;
+	vulkan12_features.separateDepthStencilLayouts = VK_TRUE;
+	vulkan12_features.timelineSemaphore = VK_TRUE;
 	vulkan11_features.shaderDrawParameters = VK_TRUE;
 	vulkan11_features.multiview = VK_TRUE;
 
@@ -691,7 +782,19 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 
 	m_graphics_queue = m_device.getQueue(m_graphics_queue_family_index, 0);
 	m_compute_queue = m_device.getQueue(m_compute_queue_family_index, 0);
-	m_transfer_queue = m_device.getQueue(m_transfer_queue_family_index, 0);
+	m_transfer_queue = m_device.getQueue(m_transfer_queue_family_index, m_transfer_queue_index);
+	if (m_transfer_queue == m_compute_queue) {
+		TOAST_WARN(
+		    "Render", "Transfer and compute share one queue on this device; uploads and async compute serialize on a shared lock"
+		);
+	}
+
+	m_async_compute = std::make_unique<AsyncCompute>(
+	    m_device,
+	    m_compute_queue_family_index,
+	    m_compute_queue,
+	    m_transfer_queue == m_compute_queue ? &m_transfer_submit_mutex : nullptr
+	);
 
 	vma::AllocatorCreateInfo allocator_ci {};
 	allocator_ci.vulkanApiVersion = VK_API_VERSION_1_4;
@@ -699,6 +802,9 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 
 	// VMA asserts without eBufferDeviceAddress
 	allocator_ci.flags = vma::AllocatorCreateFlagBits::eBufferDeviceAddress;
+	if (m_memory_budget_supported) {
+		allocator_ci.flags |= vma::AllocatorCreateFlagBits::eExtMemoryBudget;
+	}
 
 #ifdef TRACY_ENABLE
 	static constexpr vma::DeviceMemoryCallbacks tracy_memory_callbacks {&tracyVmaAllocate, &tracyVmaFree, nullptr};
@@ -872,6 +978,12 @@ auto VulkanCore::calculateDeviceScore(const vk::PhysicalDevice& device, std::spa
 		extension_score += 75;
 	}
 
+	const bool supports_separate_depth_stencil_layouts =
+	    props.apiVersion >= VK_API_VERSION_1_2 && vulkan12_features.separateDepthStencilLayouts == VK_TRUE;
+	if (!supports_separate_depth_stencil_layouts) {
+		required_missing_names.emplace_back("Vulkan 1.2 separate depth stencil layouts");
+	}
+
 	const bool supports_shader_draw_parameters =
 	    props.apiVersion >= VK_API_VERSION_1_1 && vulkan11_features.shaderDrawParameters == VK_TRUE;
 	if (!supports_shader_draw_parameters) {
@@ -992,5 +1104,102 @@ auto VulkanCore::checkValidationLayerSupport() -> bool {
 			       return std::string(layer.layerName) == "VK_LAYER_KHRONOS_validation";
 		       }) != available_layers.end();
 	}
+}
+
+void VulkanCore::loadPipelineCache() const {
+	ZoneScoped;
+	if (!assets::AssetManager::isInitialized()) {
+		return;
+	}
+
+	const vk::PhysicalDeviceProperties props = m_physical_device.getProperties();
+	const std::string uri = vulkanCorePipelineCacheUri(props);
+	const auto bytes = assets::AssetManager::get().tryLoadBytes(uri);
+	if (!bytes.has_value()) {
+		TOAST_INFO("Render", "No pipeline cache at {}; pipelines compile from scratch this run", uri);
+		return;
+	}
+	if (!vulkanCorePipelineCacheMatches(*bytes, props)) {
+		TOAST_INFO("Render", "Pipeline cache {} is from another GPU or driver; ignoring it", uri);
+		return;
+	}
+
+	try {
+		const vk::raii::PipelineCache loaded(m_device, vk::PipelineCacheCreateInfo({}, bytes->size(), bytes->data()));
+		m_pipeline_cache.merge(*loaded);
+		TOAST_INFO("Render", "Loaded pipeline cache {} ({} KiB)", uri, bytes->size() / 1024);
+	} catch (const std::exception& e) { TOAST_WARN("Render", "Pipeline cache {} could not be loaded: {}", uri, e.what()); }
+}
+
+void VulkanCore::savePipelineCache() const {
+	ZoneScoped;
+	if (!assets::AssetManager::isInitialized() || !*m_pipeline_cache) {
+		return;
+	}
+
+	const std::string uri = vulkanCorePipelineCacheUri(m_physical_device.getProperties());
+	try {
+		const std::vector<uint8_t> data = m_pipeline_cache.getData();
+		if (data.empty()) {
+			return;
+		}
+		if (!assets::AssetManager::get().saveBytes(uri, data)) {
+			TOAST_WARN("Render", "Pipeline cache could not be written to {}", uri);
+			return;
+		}
+		TOAST_INFO("Render", "Saved pipeline cache {} ({} KiB)", uri, data.size() / 1024);
+	} catch (const std::exception& e) { TOAST_WARN("Render", "Pipeline cache data could not be read: {}", e.what()); }
+}
+
+void VulkanCore::updateTracyMemory() const {
+#ifdef TRACY_ENABLE
+	ZoneScoped;
+	auto& tracker = tracyVramTracker();
+	{
+		std::scoped_lock lock(tracker.mutex);
+		if (!TracyIsConnected) {
+			// The next connection is a new session that has seen nothing
+			tracker.session_synced = false;
+			for (auto& [memory, block] : tracker.blocks) {
+				block.reported = false;
+			}
+			return;
+		}
+		if (!tracker.session_synced) {
+			// Sent per connection since on demand Tracy dropped any earlier config
+			TracyPlotConfig(k_tracy_plot_used.data(), tracy::PlotFormatType::Number, false, true, 0);
+			TracyPlotConfig(k_tracy_plot_budget.data(), tracy::PlotFormatType::Number, false, false, 0);
+			TracyPlotConfig(k_tracy_plot_allocations.data(), tracy::PlotFormatType::Number, false, true, 0);
+			TracyPlotConfig(k_tracy_plot_blocks.data(), tracy::PlotFormatType::Number, false, false, 0);
+			for (auto& [memory, block] : tracker.blocks) {
+				TracyAllocN(reinterpret_cast<void*>(memory), block.size, k_tracy_vram_pool.data());
+				block.reported = true;
+			}
+			tracker.session_synced = true;
+		}
+	}
+
+	// Same VMA budgets as the performance window so both tools agree
+	const auto budgets = m_allocator->getHeapBudgets();
+	const auto properties = m_physical_device.getMemoryProperties();
+	VkDeviceSize used = 0;
+	VkDeviceSize budget = 0;
+	VkDeviceSize allocations = 0;
+	VkDeviceSize blocks = 0;
+	for (uint32_t heap = 0; heap < properties.memoryHeapCount && heap < budgets.size(); ++heap) {
+		if ((properties.memoryHeaps[heap].flags & vk::MemoryHeapFlagBits::eDeviceLocal) == vk::MemoryHeapFlags {}) {
+			continue;
+		}
+		used += budgets[heap].usage;
+		budget += budgets[heap].budget;
+		allocations += budgets[heap].statistics.allocationBytes;
+		blocks += budgets[heap].statistics.blockBytes;
+	}
+	constexpr double k_mib = 1024.0 * 1024.0;
+	TracyPlot(k_tracy_plot_used.data(), static_cast<double>(used) / k_mib);
+	TracyPlot(k_tracy_plot_budget.data(), static_cast<double>(budget) / k_mib);
+	TracyPlot(k_tracy_plot_allocations.data(), static_cast<double>(allocations) / k_mib);
+	TracyPlot(k_tracy_plot_blocks.data(), static_cast<double>(blocks) / k_mib);
+#endif
 }
 }

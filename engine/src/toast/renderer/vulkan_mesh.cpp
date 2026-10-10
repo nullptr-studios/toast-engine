@@ -343,43 +343,37 @@ void MeshUpload::record(vk::CommandBuffer cmd) {
 
 	mesh->recordUpload(cmd, *vertex_staging, 0, vertex_size, vertex_size + index_size);
 
-	std::vector<vk::BufferMemoryBarrier> barriers = {
-	  vk::BufferMemoryBarrier(
-	      vk::AccessFlagBits::eTransferWrite,
-	      vk::AccessFlags {},
-	      VK_QUEUE_FAMILY_IGNORED,
-	      VK_QUEUE_FAMILY_IGNORED,
-	      mesh->m_vertex_buffer.value(),
-	      0,
-	      vertex_size
-	  ),
-	  vk::BufferMemoryBarrier(
-	      vk::AccessFlagBits::eTransferWrite,
-	      vk::AccessFlags {},
-	      VK_QUEUE_FAMILY_IGNORED,
-	      VK_QUEUE_FAMILY_IGNORED,
-	      mesh->m_index_buffer.value(),
-	      0,
-	      mesh->m_index_size
-	  )
-	};
-
-	if (mesh->m_skin_vertex_buffer.has_value()) {
-		barriers.emplace_back(
-		    vk::AccessFlagBits::eTransferWrite,
-		    vk::AccessFlags {},
-		    VK_QUEUE_FAMILY_IGNORED,
-		    VK_QUEUE_FAMILY_IGNORED,
-		    mesh->m_skin_vertex_buffer.value(),
-		    0,
-		    mesh->m_skin_vertex_size
-		);
+	// General since vertex input skinning and BLAS builds read these. eConcurrent so the hand off is visibility only
+	sync::QueueHandoff handoff = m_handoff;
+	handoff.exclusive = false;
+	sync::BarrierBatch barriers;
+	for (const auto& [buffer, size] : uploadedBuffers()) {
+		barriers.release(buffer, sync::Usage::transfer_dst, sync::Usage::general, handoff, 0, size);
 	}
+	barriers.flush(cmd);
+	m_released = true;
+}
 
-	// No BLAS build here since transfer only families cannot build acceleration structures
-	cmd.pipelineBarrier(
-	    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eBottomOfPipe, {}, nullptr, barriers, nullptr
-	);
+auto MeshUpload::uploadedBuffers() const -> std::array<std::pair<vk::Buffer, vk::DeviceSize>, 3> {
+	const auto handle = [](const std::optional<vma::raii::Buffer>& buffer) {
+		return buffer.has_value() ? **buffer : vk::Buffer {};
+	};
+	return {
+	  std::pair {     handle(mesh->m_vertex_buffer),      mesh->m_vertex_size},
+	  std::pair {      handle(mesh->m_index_buffer),       mesh->m_index_size},
+	  std::pair {handle(mesh->m_skin_vertex_buffer), mesh->m_skin_vertex_size},
+	};
+}
+
+void MeshUpload::recordAcquire(sync::BarrierBatch& batch) {
+	if (!m_released || mesh->hasFailed()) {
+		return;
+	}
+	sync::QueueHandoff handoff = m_handoff;
+	handoff.exclusive = false;
+	for (const auto& [buffer, size] : uploadedBuffers()) {
+		batch.acquire(buffer, sync::Usage::general, handoff, 0, size);
+	}
 }
 
 }

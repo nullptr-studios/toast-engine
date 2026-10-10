@@ -46,17 +46,13 @@ private:
 		std::optional<vma::raii::Image> image;
 		std::optional<vk::raii::ImageView> view;
 		vk::Extent2D extent;
-		vk::ImageLayout layout = vk::ImageLayout::eUndefined;
+		sync::ImageState state;
 	};
 
 	void createTargets(const VulkanCore& core, vk::Extent2D extent);
 	void createPipelines(const VulkanCore& core);
 
 	void writeDescriptor(vk::DescriptorSet set, vk::ImageView source, vk::ImageView scene);
-
-	void transition(
-	    vk::CommandBuffer cmd, Mip& mip, vk::ImageLayout new_layout, vk::AccessFlags dst_access, vk::PipelineStageFlags dst_stage
-	);
 
 	void drawInto(
 	    vk::CommandBuffer cmd, const VulkanPipeline& pipeline, vk::DescriptorSet set, const Mip& target, const Params& params,
@@ -78,11 +74,15 @@ private:
 
 	Mip m_composite;
 
-	std::vector<vk::raii::DescriptorSet> m_downsample_sets;
-	std::vector<vk::raii::DescriptorSet> m_upsample_sets;
-	vk::raii::DescriptorSet m_composite_set = nullptr;
+	/// Per frame in flight since the TAA ping pong source changes and a pending frame still binds the old sets
+	struct FrameSets {
+		std::vector<vk::raii::DescriptorSet> downsample;
+		std::vector<vk::raii::DescriptorSet> upsample;
+		vk::raii::DescriptorSet composite = nullptr;
+		vk::ImageView bound_source = nullptr;
+	};
 
-	vk::ImageView m_bound_source = nullptr;
+	std::vector<FrameSets> m_frame_sets;
 };
 
 }

@@ -4,6 +4,7 @@
 
 #include "shader_compiler.hpp"
 
+#include "depth_convention.hpp"
 #include "slang_vfs.hpp"
 
 #include <algorithm>
@@ -46,7 +47,9 @@ auto ShaderCompiler::featureHash() -> uint64_t {
 #else
 	constexpr uint64_t k_build_profile = 0xd3b09c0de5a11e01ull;
 #endif
-	return (ray_query_available ? 0x9e3779b97f4a7c15ull : 0x0ull) ^ k_build_profile;
+	// TOAST_REVERSED_Z changes the SPIR-V so the other convention must read as stale
+	constexpr uint64_t k_depth_convention = depth::k_reversed_z ? 0x5eed2e7e45edull : 0x0ull;
+	return (ray_query_available ? 0x9e3779b97f4a7c15ull : 0x0ull) ^ k_build_profile ^ k_depth_convention;
 }
 
 static auto createSession() -> Slang::ComPtr<slang::ISession> {
@@ -93,6 +96,14 @@ static auto createSession() -> Slang::ComPtr<slang::ISession> {
 	ray_query_entry.value.stringValue0 = "TOAST_RAY_QUERY";
 	ray_query_entry.value.stringValue1 = ray_query_available ? "1" : "0";
 	compiler_options.push_back(ray_query_entry);
+
+	// Always defined to 0 or 1
+	slang::CompilerOptionEntry reversed_z_entry {};
+	reversed_z_entry.name = slang::CompilerOptionName::MacroDefine;
+	reversed_z_entry.value.kind = slang::CompilerOptionValueKind::String;
+	reversed_z_entry.value.stringValue0 = "TOAST_REVERSED_Z";
+	reversed_z_entry.value.stringValue1 = depth::k_reversed_z ? "1" : "0";
+	compiler_options.push_back(reversed_z_entry);
 
 	slang::SessionDesc session_desc {};
 	session_desc.targets = slang_targets.data();

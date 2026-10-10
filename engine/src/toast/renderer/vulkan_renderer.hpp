@@ -6,6 +6,8 @@
 
 #include "compute_pass_base.hpp"
 #include "debug_draw.hpp"
+#include "depth_convention.hpp"
+#include "gpu_sync.hpp"
 #include "gpu_timer.hpp"
 #include "output_target_base.hpp"
 #include "post_process_pass_base.hpp"
@@ -93,11 +95,8 @@ public:
 
 	struct FrameContext {
 		vk::raii::CommandBuffer command_buffer = nullptr;
-		vk::raii::CommandBuffer compute_command_buffer = nullptr;
 		vk::raii::Semaphore image_available = nullptr;
-		vk::raii::Semaphore compute_to_graphics = nullptr;
 		vk::raii::Fence in_flight = nullptr;
-		vk::raii::Fence compute_in_flight = nullptr;
 		uint32_t last_image_index = 0;
 		bool has_submitted = false;
 		bool was_probe_capture = false;
@@ -468,8 +467,7 @@ public:
 
 	void submitFrame() noexcept;
 
-	/// Queues a debug line for the current render frame, or for the next one when
-	/// called from gameplay code before frame construction begins.
+	/// For the next frame when called before frame construction begins
 	void queueDebugLine(glm::vec3 a, glm::vec3 b, glm::vec4 color);
 
 	void tick(float time) noexcept;
@@ -901,6 +899,19 @@ public:
 		};
 	}
 
+	struct UploadStats {
+		uint32_t slots_in_flight = 0;
+		uint32_t slot_count = 0;
+		size_t waiting_jobs = 0;
+		size_t batches_in_flight = 0;
+		vk::DeviceSize host_bytes = 0;
+		vk::DeviceSize host_budget = 0;
+	};
+
+	/// @note Render thread only
+	[[nodiscard]]
+	auto uploadStats() -> UploadStats;
+
 	/// @note Render thread only
 	[[nodiscard]]
 	auto gpuTimer() const noexcept -> const GpuTimer* {
@@ -1010,17 +1021,17 @@ private:
 	struct DepthResources {
 		std::optional<vma::raii::Image> image;
 		std::optional<vk::raii::ImageView> view;
+		sync::ImageState state;
 	};
 
 	struct SceneColorResources {
 		std::optional<vma::raii::Image> image;
 		std::optional<vk::raii::ImageView> view;
-		vk::ImageLayout layout = vk::ImageLayout::eUndefined;
+		sync::ImageState state;
 	};
 
 	void createGraphicsCommandPool();
 	void createTransferCommandPool();
-	void createComputeCommandPool();
 	void createFrameContexts();
 
 	void createPerImageSync();
@@ -1086,7 +1097,6 @@ private:
 
 	vk::raii::CommandPool m_command_pool = nullptr;
 	vk::raii::CommandPool m_transfer_command_pool = nullptr;
-	vk::raii::CommandPool m_compute_command_pool = nullptr;
 	vk::raii::DescriptorPool m_descriptor_pool = nullptr;
 
 	std::vector<UploadSlot> m_upload_slots;
@@ -1184,7 +1194,6 @@ private:
 	vk::raii::Sampler m_present_sampler = nullptr;
 	std::vector<vk::raii::DescriptorSet> m_present_sets;
 	std::vector<vk::ImageView> m_present_bound_views;
-	vk::ImageLayout m_depth_layout = vk::ImageLayout::eUndefined;
 
 	TracyVkCtx m_tracy_vk_ctx = nullptr;
 	std::unique_ptr<GpuTimer> m_gpu_timer;
@@ -1192,7 +1201,10 @@ private:
 	std::vector<FrameContext> m_frames;
 	std::vector<vk::raii::Semaphore> m_render_finished_per_image;
 	std::vector<vk::Fence> m_images_in_flight;
-	std::vector<vk::ImageLayout> m_output_image_layouts;
+	std::vector<sync::Usage> m_output_image_usage;
+
+	/// Acquire halves of finished uploads flushed at the start of the next frame
+	sync::BarrierBatch m_pending_acquires;
 	uint32_t m_current_frame = 0;
 
 	toast::Camera* m_camera = nullptr;
@@ -1205,6 +1217,8 @@ private:
 	PostProcessSettings m_post_process_settings;
 
 	std::atomic_bool m_traced_shadows_enabled {false};
+	/// Logs once each time the fallback starts
+	bool m_traced_shadows_voxel_fallback_logged = false;
 
 	std::atomic_bool m_taa_enabled {true};
 	std::atomic<float> m_taa_history_weight {0.9f};

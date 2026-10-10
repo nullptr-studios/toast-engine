@@ -154,7 +154,7 @@ void MaterialPass::rebuildPipeline() {
 	config.depth_write = settings.depth_write;
 
 	// eLessOrEqual since the prepass writes the exact same depth
-	config.depth_compare = vk::CompareOp::eLessOrEqual;
+	config.depth_compare = depth::k_closer_or_equal;
 	config.cull_mode = toCullMode(settings.cull_mode);
 	config.blend_preset = toBlendPreset(settings.blend_mode);
 	config.extra_color_formats = worldStageExtraColorFormats();

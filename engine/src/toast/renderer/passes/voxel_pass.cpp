@@ -274,6 +274,12 @@ auto VoxelPass::prepare(uint32_t frame_index) -> bool {
 			continue;
 		}
 		if (m_draws.size() >= k_max_instances) {
+			const auto now = std::chrono::steady_clock::now();
+			if (now - m_last_limit_warning > std::chrono::seconds(5)) {
+				m_last_limit_warning = now;
+				const auto visible = std::ranges::count_if(frame->voxel_instances, [](const auto& p) { return p.visible; });
+				TOAST_WARN("Render", "VoxelPass: {} visible volumes, only the first {} are drawn", visible, k_max_instances);
+			}
 			break;
 		}
 

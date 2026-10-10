@@ -20,6 +20,8 @@ namespace renderer {
 class VulkanCore;
 class ClusterLightingPass;
 
+class PerfWindow;
+
 namespace voxel_debug {
 class Monitor;
 }
@@ -131,12 +133,9 @@ private:
 	bool m_imgui_ready = false;
 	bool m_editor_panels = true;
 
-	struct PerfOverlay;
-	std::unique_ptr<PerfOverlay> m_perf;
+	std::unique_ptr<PerfWindow> m_perf;
 
 	std::unique_ptr<voxel_debug::Monitor> m_voxels;
-
-	void drawPerformanceWindow();
 
 	const ClusterLightingPass* m_cluster_lighting_pass = nullptr;
 

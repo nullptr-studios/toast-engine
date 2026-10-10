@@ -14,6 +14,7 @@
 #include "../vulkan_pipeline.hpp"
 
 #include <array>
+#include <chrono>
 #include <glm/glm.hpp>
 #include <memory>
 #include <optional>
@@ -102,6 +103,8 @@ private:
 	};
 
 	static constexpr uint32_t k_max_voxel_casters = 4096;
+	/// Throttles the over limit warning
+	std::chrono::steady_clock::time_point m_last_caster_limit_warning {};
 
 	struct LayerGroup {
 		uint32_t base_layer = 0;
@@ -124,7 +127,7 @@ private:
 		std::optional<vma::raii::Image> image;
 		std::optional<vk::raii::ImageView> array_view;
 		std::vector<LayerGroup> groups;
-		vk::ImageLayout layout = vk::ImageLayout::eUndefined;
+		sync::ImageState state;
 		uint32_t resolution = 0;
 		uint32_t layer_count = 0;
 	};

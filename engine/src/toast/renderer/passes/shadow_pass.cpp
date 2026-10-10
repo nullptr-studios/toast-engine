@@ -122,6 +122,8 @@ ShadowPass::ShadowPass(const VulkanCore& core) : m_core(&core) {
 	config.vertex_attributes = {vertexAttributeDescriptions()[0]};
 	config.depth_test = true;
 	config.depth_write = true;
+	// Shadow maps keep standard depth whatever the scene convention
+	config.depth_compare = vk::CompareOp::eLess;
 	config.depth_bias_constant = 1.5f;
 	config.depth_bias_slope = 3.0f;
 	config.cull_mode = vk::CullModeFlagBits::eNone;
@@ -187,7 +189,6 @@ void ShadowPass::createShadowMap(
 
 	map.resolution = resolution;
 	map.layer_count = layer_count;
-	map.layout = vk::ImageLayout::eUndefined;
 
 	vk::ImageCreateInfo image_ci {};
 	image_ci.imageType = vk::ImageType::e2D;
@@ -206,6 +207,7 @@ void ShadowPass::createShadowMap(
 
 	map.image.emplace(core.getAllocator().createImage(image_ci, allocation_ci));
 	setDebugName(core, **map.image, std::string(debug_name));
+	map.state.reset(**map.image, shadowLayerRange(0, layer_count));
 
 	vk::ImageViewCreateInfo array_view_ci {};
 	array_view_ci.image = **map.image;
@@ -352,6 +354,8 @@ void ShadowPass::createVoxelResources(const VulkanCore& core) {
 	config.topology = vk::PrimitiveTopology::eTriangleList;
 	config.depth_test = true;
 	config.depth_write = true;
+	// Shadow maps keep standard depth whatever the scene convention
+	config.depth_compare = vk::CompareOp::eLess;
 
 	for (size_t mask_index = 0; mask_index < m_voxel_pipeline_sets.size(); ++mask_index) {
 		VoxelPipelineSet& set = m_voxel_pipeline_sets[mask_index];
@@ -465,6 +469,18 @@ auto ShadowPass::prepareVoxels(uint32_t frame_index) -> uint32_t {
 
 	// Every proxy not only camera visible ones since an off screen volume still casts into view
 	const auto count = static_cast<uint32_t>(std::min<size_t>(frame->voxel_instances.size(), k_max_voxel_casters));
+	if (frame->voxel_instances.size() > k_max_voxel_casters) {
+		const auto now = std::chrono::steady_clock::now();
+		if (now - m_last_caster_limit_warning > std::chrono::seconds(5)) {
+			m_last_caster_limit_warning = now;
+			TOAST_WARN(
+			    "Render",
+			    "ShadowPass: {} voxel casters, only the first {} cast shadows",
+			    frame->voxel_instances.size(),
+			    k_max_voxel_casters
+			);
+		}
+	}
 	for (uint32_t i = 0; i < count; ++i) {
 		const auto& proxy = frame->voxel_instances[i];
 		// Shadows never sample motion so whether a real previous transform exists does not matter here
@@ -508,7 +524,7 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, uint32_t frame
 	}
 
 	// MaterialPass still binds these and an eUndefined image is invalid even unread
-	if (frame->frame_data.traced_shadow_params.x >= 0.5f && map.layout == vk::ImageLayout::eShaderReadOnlyOptimal) {
+	if (frame->frame_data.traced_shadow_params.x >= 0.5f && map.state.usage == sync::Usage::fragment_sampled) {
 		return;
 	}
 
@@ -659,27 +675,8 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, uint32_t frame
 		return;
 	}
 
-	// From the tracked layout so skipped groups keep their depth
-	const vk::ImageMemoryBarrier to_attachment(
-	    map.layout == vk::ImageLayout::eShaderReadOnlyOptimal ? vk::AccessFlagBits::eShaderRead : vk::AccessFlags {},
-	    vk::AccessFlagBits::eDepthStencilAttachmentWrite,
-	    map.layout,
-	    vk::ImageLayout::eDepthAttachmentOptimal,
-	    VK_QUEUE_FAMILY_IGNORED,
-	    VK_QUEUE_FAMILY_IGNORED,
-	    **map.image,
-	    shadowLayerRange(0, map.layer_count)
-	);
-	cmd.pipelineBarrier(
-	    map.layout == vk::ImageLayout::eShaderReadOnlyOptimal ? vk::PipelineStageFlagBits::eFragmentShader
-			                                                      : vk::PipelineStageFlagBits::eTopOfPipe,
-	    vk::PipelineStageFlagBits::eEarlyFragmentTests,
-	    {},
-	    nullptr,
-	    nullptr,
-	    to_attachment
-	);
-	map.layout = vk::ImageLayout::eDepthAttachmentOptimal;
+	// From the tracked usage so skipped groups keep their depth
+	sync::transition(cmd, map.state, sync::Usage::depth_attachment);
 
 	const vk::Rect2D layer_area({0, 0}, vk::Extent2D {map.resolution, map.resolution});
 
@@ -844,20 +841,8 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, uint32_t frame
 		cmd.endRendering();
 	}
 
-	const vk::ImageMemoryBarrier to_sampled(
-	    vk::AccessFlagBits::eDepthStencilAttachmentWrite,
-	    vk::AccessFlagBits::eShaderRead,
-	    vk::ImageLayout::eDepthAttachmentOptimal,
-	    vk::ImageLayout::eShaderReadOnlyOptimal,
-	    VK_QUEUE_FAMILY_IGNORED,
-	    VK_QUEUE_FAMILY_IGNORED,
-	    **map.image,
-	    shadowLayerRange(0, map.layer_count)
-	);
-	cmd.pipelineBarrier(
-	    vk::PipelineStageFlagBits::eLateFragmentTests, vk::PipelineStageFlagBits::eFragmentShader, {}, nullptr, nullptr, to_sampled
-	);
-	map.layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+	// Bound in eShaderReadOnlyOptimal by the lighting descriptors
+	sync::transition(cmd, map.state, sync::Usage::fragment_sampled);
 }
 
 void ShadowPass::recordPre(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) {

@@ -30,6 +30,73 @@
 #define RMLUI_VK_ASSERTMSG(statement, msg) static_cast<void>(statement)
 #endif
 
+namespace rmlui_vk_sync {
+
+struct LayoutScope {
+	VkPipelineStageFlags2 stages;
+	VkAccessFlags2 access;
+};
+
+inline constexpr VkAccessFlags2 kWriteAccess = VK_ACCESS_2_SHADER_WRITE_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT |
+                                               VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT |
+                                               VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT |
+                                               VK_ACCESS_2_HOST_WRITE_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
+
+inline LayoutScope ScopeForLayout(VkImageLayout layout) {
+	switch (layout) {
+		case VK_IMAGE_LAYOUT_UNDEFINED: return {VK_PIPELINE_STAGE_2_NONE, VK_ACCESS_2_NONE};
+		case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+			return {
+			  VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+			  VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT
+			};
+		case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+			return {
+			  VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+			  VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
+			};
+		case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+			return {VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT};
+		case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+			return {VK_PIPELINE_STAGE_2_COPY_BIT | VK_PIPELINE_STAGE_2_BLIT_BIT, VK_ACCESS_2_TRANSFER_READ_BIT};
+		case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+			return {
+			  VK_PIPELINE_STAGE_2_COPY_BIT | VK_PIPELINE_STAGE_2_BLIT_BIT | VK_PIPELINE_STAGE_2_CLEAR_BIT,
+			  VK_ACCESS_2_TRANSFER_WRITE_BIT
+			};
+		default: return {VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT};
+	}
+}
+
+/// Only source writes are made available since reads need the execution dependency alone
+inline void TransitionImage(
+    VkCommandBuffer cmd, VkImage image, const VkImageSubresourceRange& range, VkImageLayout old_layout, VkImageLayout new_layout
+) {
+	const LayoutScope src = ScopeForLayout(old_layout);
+	const LayoutScope dst = ScopeForLayout(new_layout);
+
+	VkImageMemoryBarrier2 barrier = {};
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+	barrier.srcStageMask = src.stages;
+	barrier.srcAccessMask = src.access & kWriteAccess;
+	barrier.dstStageMask = dst.stages;
+	barrier.dstAccessMask = dst.access;
+	barrier.oldLayout = old_layout;
+	barrier.newLayout = new_layout;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.image = image;
+	barrier.subresourceRange = range;
+
+	VkDependencyInfo dependency = {};
+	dependency.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+	dependency.imageMemoryBarrierCount = 1;
+	dependency.pImageMemoryBarriers = &barrier;
+	vkCmdPipelineBarrier2(cmd, &dependency);
+}
+
+}    // namespace rmlui_vk_sync
+
 class RenderInterface_VK : public Rml::RenderInterface {
 public:
 	// Matches the engine renderer's frames-in-flight; per-frame resources cycle on this
@@ -46,9 +113,11 @@ public:
 
 	/// Borrows the engine's Vulkan handles; the backend owns only its own resources.
 	/// @param submit_mutex guards graphics queue submission shared with the render thread
+	/// @param pipeline_cache shared with the engine so UI pipelines are cached across runs
 	bool Initialize(
 	    VkInstance instance, VkPhysicalDevice physical_device, VkDevice device, uint32_t queue_family_index, VkQueue queue,
-	    VkFormat color_format, VkFormat depth_stencil_format, std::mutex* submit_mutex
+	    VkFormat color_format, VkFormat depth_stencil_format, std::mutex* submit_mutex,
+	    VkPipelineCache pipeline_cache = VK_NULL_HANDLE
 	);
 	void Shutdown();
 
@@ -321,17 +390,14 @@ private:
 		}
 
 		void Submit() noexcept {
-			VkSubmitInfo info = {};
+			VkCommandBufferSubmitInfo command_info = {};
+			command_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
+			command_info.commandBuffer = m_p_command_buffer;
 
-			info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-			info.pNext = nullptr;
-			info.waitSemaphoreCount = 0;
-			info.signalSemaphoreCount = 0;
-			info.pSignalSemaphores = nullptr;
-			info.pWaitSemaphores = nullptr;
-			info.pWaitDstStageMask = nullptr;
-			info.pCommandBuffers = &m_p_command_buffer;
-			info.commandBufferCount = 1;
+			VkSubmitInfo2 info = {};
+			info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
+			info.commandBufferInfoCount = 1;
+			info.pCommandBufferInfos = &command_info;
 
 			// The render thread submits on the same queue; queues need external synchronization
 			std::unique_lock<std::mutex> lock;
@@ -339,9 +405,9 @@ private:
 				lock = std::unique_lock<std::mutex>(*m_p_submit_mutex);
 			}
 
-			auto status = vkQueueSubmit(m_p_graphics_queue, 1, &info, m_p_fence);
+			auto status = vkQueueSubmit2(m_p_graphics_queue, 1, &info, m_p_fence);
 
-			RMLUI_VK_ASSERTMSG(status == VkResult::VK_SUCCESS, "failed to vkQueueSubmit");
+			RMLUI_VK_ASSERTMSG(status == VkResult::VK_SUCCESS, "failed to vkQueueSubmit2");
 		}
 
 	private:
@@ -645,6 +711,7 @@ private:
 
 	VkInstance m_p_instance;
 	VkDevice m_p_device;
+	VkPipelineCache m_p_pipeline_cache = VK_NULL_HANDLE;
 	VkPhysicalDevice m_p_physical_device;
 	VmaAllocator m_p_allocator;
 	// @ the secondary command buffer between BeginRecording/EndRecording
