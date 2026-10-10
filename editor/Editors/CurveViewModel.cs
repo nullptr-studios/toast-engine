@@ -86,6 +86,7 @@ public partial class CurveViewModel : Tool, IToastZoneEditor, IAutosavable {
 	}
 
 	public async Task<bool> ConfirmCloseCurrentAsync() {
+		if (!IsDirty && HasContent) AutosaveService.Delete(CurrentUid, AssetTypeRegistry.GetExtension(CurrentPath));
 		if (!IsDirty || !HasContent) return true;
 		if (App.MainWindow is not { } owner) return true;
 		var result = await new MessageModal(new ModalConfig(

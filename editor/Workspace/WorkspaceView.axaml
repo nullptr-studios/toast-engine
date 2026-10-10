@@ -392,6 +392,9 @@
 							          Command="{Binding SetRenderModeCommand}"
 							          CommandParameter="VoxelMaterials"
 							          ToolTip.Tip="One hue per physical material id. Magenta stripes are material 0, the default that every palette entry authored without a material silently falls back to" />
+							<MenuItem Header="Voxel Palette ID"
+							          Command="{Binding SetRenderModeCommand}"
+							          CommandParameter="VoxelPaletteId"/>
 							<Separator />
 							<MenuItem Header="Motion Vectors"
 							          Command="{Binding SetRenderModeCommand}"
@@ -609,7 +612,6 @@
 			<vm:ViewportControl x:Name="Viewport"
 			                    PlayMode="{Binding IsPlayingInViewport}"
 			                    IsVisible="{Binding !IsPlayingExternal}" />
-			<!-- while playing on the external window the tab viewport is blacked out -->
 			<Border CornerRadius="8"
 			        Background="{StaticResource Bg1}"
 			        IsVisible="{Binding IsPlayingExternal}">

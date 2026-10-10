@@ -383,8 +383,10 @@ public partial class ViewportControl : UserControl {
 			}
 		}
 
-		if (result == 1 && changed)
+		if (result == 1 && changed) {
 			Surface.InvalidateVisual();
+			(DataContext as WorkspaceViewModel)?.NotePresentedFrame();
+		}
 	}
 
 	private bool CanControlEditorCamera => DataContext is WorkspaceViewModel { GameCamera: false };

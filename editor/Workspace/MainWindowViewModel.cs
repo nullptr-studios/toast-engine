@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -191,6 +192,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 	}
 
 	private void OnPlayModeChanged() {
+		var active = m_dockFactory.ActiveWorkspace;
+		m_activeWorkspaceHandle = active?.EffectiveHandle ?? 0;
+		m_dockFactory.History?.SetWorkspace(active is { PlayHandle: 0 } ? active.History : null);
+
 		SaveCurrentNodeCommand.NotifyCanExecuteChanged();
 		SaveCurrentNodeAsCommand.NotifyCanExecuteChanged();
 		SaveAllNodesCommand.NotifyCanExecuteChanged();
@@ -408,7 +413,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 				SchemaEditorVisible = true;
 				break;
 			case "NodeEditor":
-				OpenWorkspaceFile(uid, virtualPath, recoverPath);
+				await OpenWorkspaceFile(uid, virtualPath, recoverPath);
 				break;
 			case "CurveEditor":
 				if (m_toastZoneFactory.CurveEditorVm is { } curveVm) {
@@ -441,11 +446,51 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		}
 	}
 
-	private void OpenWorkspaceFile(string uid, string virtualPath, string? recoverPath) {
+	private async Task OpenWorkspaceFile(string uid, string virtualPath, string? recoverPath) {
 		var recoverVirtual = recoverPath is null ? null : ProjectContext.ToVirtual(recoverPath);
-		if (WorkspaceViewModel.OpenFile(m_toast, uid, virtualPath, recoverVirtual) is not { } ws) return;
-		m_workspaces[ws.Handle] = m_dockFactory.AddWorkspace(ws);
-		SyncActiveWorkspace();
+
+		LoadingPopup? popup = null;
+		if (App.MainWindow is { } owner) {
+			popup = new LoadingPopup($"Loading {Path.GetFileName(virtualPath)}");
+			_ = popup.ShowDialog(owner);
+			await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() => { }, Avalonia.Threading.DispatcherPriority.Render);
+		}
+
+		try {
+			var ws = await WorkspaceViewModel.OpenFileAsync(m_toast, uid, virtualPath, recoverVirtual);
+			if (ws is null) return;
+			m_workspaces[ws.Handle] = m_dockFactory.AddWorkspace(ws);
+			SyncActiveWorkspace();
+			if (popup is not null) await WaitForEngineAsync(ws);
+		} finally {
+			popup?.Close();
+		}
+	}
+
+	private async Task WaitForEngineAsync(WorkspaceViewModel ws) {
+		const int smoothFrames = 30;
+		const long capMs = 90_000;
+		const long responsiveMs = 50;
+		const int responsiveRuns = 5;
+
+		var timer = System.Diagnostics.Stopwatch.StartNew();
+
+		// The engine answers SetActiveWorkspace with the hierarchy
+		while (m_dockFactory.Hierarchy is { HasCurrentHierarchy: false } && timer.ElapsedMilliseconds < capMs)
+			await Task.Delay(30);
+
+		await Task.Run(() => {
+			var responsive = 0;
+			while (responsive < responsiveRuns && timer.ElapsedMilliseconds < capMs && ToastEngine.IsEngineReady) {
+				var start = timer.ElapsedMilliseconds;
+				ToastEngine.OnTickThread(() => { });
+				responsive = timer.ElapsedMilliseconds - start <= responsiveMs ? responsive + 1 : 0;
+				Thread.Sleep(20);
+			}
+		});
+
+		while (ws.SmoothFrames < smoothFrames && timer.ElapsedMilliseconds < capMs && ToastEngine.IsEngineReady)
+			await Task.Delay(30);
 	}
 
 	private async Task OpenToastEditorAsync<T>(
@@ -560,6 +605,67 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		if (m_toastZoneFactory.TableEditorVm is { IsDirty: true }) dirty.Add("Table");
 		if (m_toastZoneFactory.PaletteEditorVm is { IsDirty: true }) dirty.Add("Palette");
 		return dirty;
+	}
+
+	private List<UnsavedItem> CollectUnsavedItems() {
+		var items = new List<UnsavedItem>();
+
+		foreach (var ws in m_workspaces.Values.Where(ws => ws.IsModified))
+			items.Add(new UnsavedItem("Node", ws.Title ?? "Unnamed Node",
+				async () => await ws.Save() && !ws.IsModified,
+				ws.DeleteAutosaves));
+
+		void AddEditor(string kind, bool dirty, string path, string uid, IAsyncRelayCommand save, Func<bool> stillDirty) {
+			if (!dirty || string.IsNullOrEmpty(path)) return;
+			items.Add(new UnsavedItem(kind, Path.GetFileName(path),
+				async () => {
+					await save.ExecuteAsync(null);
+					return !stillDirty();
+				},
+				() => AutosaveService.Delete(uid, AssetTypeRegistry.GetExtension(path))));
+		}
+
+		if (m_dockFactory.GenericEditorVm is { } generic)
+			AddEditor("Data", generic.IsDirty, generic.CurrentPath, generic.CurrentUid, generic.SaveCommand,
+				() => generic.IsDirty);
+		if (m_dockFactory.SchemaEditorVm is { } schema)
+			AddEditor("Schema", schema.IsDirty, schema.CurrentPath, schema.CurrentUid, schema.SaveCommand,
+				() => schema.IsDirty);
+		if (m_toastZoneFactory.CurveEditorVm is { } curve)
+			AddEditor("Curve", curve.IsDirty, curve.CurrentPath, curve.CurrentUid, curve.SaveCommand, () => curve.IsDirty);
+		if (m_toastZoneFactory.HapticsEditorVm is { } haptics)
+			AddEditor("Haptics", haptics.IsDirty, haptics.CurrentPath, haptics.CurrentUid, haptics.SaveCommand,
+				() => haptics.IsDirty);
+		if (m_toastZoneFactory.TableEditorVm is { } table)
+			AddEditor("Table", table.IsDirty, table.CurrentPath, table.CurrentUid, table.SaveCommand, () => table.IsDirty);
+		if (m_toastZoneFactory.PaletteEditorVm is { } palette)
+			AddEditor("Palette", palette.IsDirty, palette.CurrentPath, palette.CurrentUid, palette.SaveCommand,
+				() => palette.IsDirty);
+
+		return items;
+	}
+
+	public bool HasUnsavedWork() {
+		return CollectUnsavedItems().Count > 0;
+	}
+
+	public async Task<bool> ConfirmCloseAllAsync(Avalonia.Controls.Window owner) {
+		var items = CollectUnsavedItems();
+		if (items.Count == 0) return true;
+
+		switch (await new UnsavedChangesModal(items).ShowDialog<UnsavedChangesResult>(owner)) {
+			case UnsavedChangesResult.SaveAll:
+				// cancelling keeps the editor open
+				foreach (var item in items)
+					if (!await item.Save())
+						return false;
+				return true;
+			case UnsavedChangesResult.DiscardAll:
+				foreach (var item in items) item.Discard();
+				return true;
+			default:
+				return false;
+		}
 	}
 
 	private void RestoreTool(string id) {
@@ -706,7 +812,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 
 		await GitLockGuard.LockOnOpenAsync(ProjectContext.Resolve(virtualPath));
 		var recoverPath = await AutosaveService.TryRecoverAsync(uid, virtualPath);
-		OpenWorkspaceFile(uid, virtualPath, recoverPath);
+		await OpenWorkspaceFile(uid, virtualPath, recoverPath);
 	}
 
 	public void ReopenWorkspaceFromDisk(WorkspaceViewModel workspace) {

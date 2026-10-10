@@ -176,7 +176,7 @@ void runStageTest(Stage stage, const char* function_name) {
 
 // A tree with many scripts has them run their init on the pool, a job per interpreter, with a node's script always after the
 // one of its parent. The C++ functions of the nodes stay on the thread that asked, one after the other
-TOAST_TEST_NAMED("Scripting", "scripting/20_init_of_a_tree_runs_scripts_in_parallel", test_scripting_20_init_of_a_tree_runs_scripts_in_parallel) {
+TOAST_TEST_NAMED("Scripting", "scripting/20_lifecycle_of_a_tree", test_scripting_20_init_of_a_tree_runs_scripts_in_parallel) {
 	runStageTest(Stage::init, "init");
 }
 

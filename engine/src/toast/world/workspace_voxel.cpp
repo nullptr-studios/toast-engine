@@ -694,6 +694,19 @@ auto Workspace::voxelToolMouseButton(uint32_t button, bool pressed, int mods) ->
 void Workspace::subscribeVoxelEditing() {
 	const auto active = [this] { return m_handle.data() == Engine::get()->activeWorkspace().data(); };
 
+	// same as picking the volume with the Select tool
+	const auto select_created = [this](const Box<Node>& node) {
+		if (!node.exists() || voxelPieceOf(node) == nullptr) {
+			return;
+		}
+		m_focused_node = node;
+		renderer::editorOverlays().selected = node->uid();
+		event::NodePicked picked;
+		picked.workspace_handle = m_handle.data();
+		picked.node = node->uid();
+		event::send<event::NodePicked>(picked);
+	};
+
 	m_listener.subscribe<event::SetVoxelTool>([this, active](const auto& e) {
 		if (!active()) {
 			return false;
@@ -774,7 +787,7 @@ void Workspace::subscribeVoxelEditing() {
 		return true;
 	});
 
-	m_listener.subscribe<event::VoxelCreatePiece>([this, active](const auto& e) {
+	m_listener.subscribe<event::VoxelCreatePiece>([this, active, select_created](const auto& e) {
 		if (!active()) {
 			return false;
 		}
@@ -789,8 +802,8 @@ void Workspace::subscribeVoxelEditing() {
 			}
 		}
 
+		Box<Node> made;
 		recordHistory(voxelHistory(event::HistoryOperation::create, source, "Volume added"), [&] {
-			Box<Node> made;
 			voxel::LatticeOrientation orientation;
 			if (VoxelPiece* from = voxelPieceOf(source)) {
 				// Extrude copies everything from the source and sits right after it
@@ -811,12 +824,13 @@ void Workspace::subscribeVoxelEditing() {
 				}
 			}
 		});
+		select_created(made);
 		event::send<event::RequestHierarchyUpdate>();
 		return true;
 	});
 
 	// Blender style extrude of part of a face
-	m_listener.subscribe<event::VoxelExtrude>([this, active](const auto& e) {
+	m_listener.subscribe<event::VoxelExtrude>([this, active, select_created](const auto& e) {
 		if (!active()) {
 			return false;
 		}
@@ -827,6 +841,7 @@ void Workspace::subscribeVoxelEditing() {
 			return true;
 		}
 
+		Box<Node> extruded;
 		recordHistory(voxelHistory(event::HistoryOperation::create, source, e.inward ? "Extruded in" : "Extruded"), [&] {
 			// Extruding again from an extrusion keeps adding to the same group
 			Box<Node> parent = source->parentInternal();
@@ -835,6 +850,7 @@ void Workspace::subscribeVoxelEditing() {
 			                      : voxelWrapInGroup(source, std::string(source->name()) + " extrusion");
 
 			Box<Node> made = requestRuntimeCreate(group, e.inward ? "toast::CarveVolume" : "toast::FillVolume");
+			extruded = made;
 			if (auto* volume = made.exists() ? reflect_cast<VoxelVolume>(&*made) : nullptr) {
 				volume->name(e.inward ? "Extruded in" : "Extruded");
 				if (m_voxel_tool.default_script.data() != 0) {
@@ -848,6 +864,7 @@ void Workspace::subscribeVoxelEditing() {
 				placePiece(*volume, {}, e.min, e.max);
 			}
 		});
+		select_created(extruded);
 		event::send<event::RequestHierarchyUpdate>();
 		return true;
 	});

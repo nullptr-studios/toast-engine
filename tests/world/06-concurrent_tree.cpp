@@ -44,7 +44,7 @@ struct Scene {
 
 // The scripts of a wave or of a loader read the node tree while the thread that owns it changes it. Moving a node is one
 // step for them: they find it under the parent it had or under the one it moves to, never in neither
-TOAST_TEST_NAMED("world", "world/06-concurrent_tree_reads", test_world_06) {
+TOAST_TEST_NAMED("world", "world/06-concurrent_tree", test_world_06) {
 	WorldTestAccess::initThreadPool();
 	Scene scene;
 	const UID uid = scene.traveller->uid();

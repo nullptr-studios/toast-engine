@@ -3609,7 +3609,8 @@ void VulkanRenderer::tick(float time) noexcept {
 				const glm::vec3 world_pos = point->world_position;
 				const glm::vec3 view_pos = glm::vec3(frame_view * glm::vec4(world_pos, 1.0f));
 
-				debug::drawSphere(world_pos, point->attenuation(), glm::vec4(point->color(), 1.0f));
+				// FIXME MOVE ELSEWHERE
+				// debug::drawSphere(world_pos, point->attenuation(), glm::vec4(point->color(), 1.0f));
 
 				submit_punctual(
 				    PunctualSubmit {
