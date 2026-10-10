@@ -114,7 +114,7 @@ void luaToastError(const std::string& msg) {
 // Identity of the calling thread and the interpreters it owns right now, one entry per live Lock
 std::atomic<uint64_t> g_next_thread_token {1};                                                               // NOLINT
 thread_local const uint64_t t_thread_token = g_next_thread_token.fetch_add(1, std::memory_order_relaxed);    // NOLINT
-thread_local std::vector<size_t> t_owned_states;                                                             // NOLINT
+thread_local std::vector<size_t>& t_owned_states = *new std::vector<size_t>();                               // NOLINT
 thread_local int t_non_blocking_depth = 0;                                                                   // NOLINT
 
 auto inputActionValue(const input::Action& action, lua_State* state) -> luabridge::LuaRef {
