@@ -36,7 +36,7 @@ auto place(toast::World& world, std::vector<toast::Box<toast::Node>>& keep, int 
 
 // The scripts of one prefab instance call each other all the time, so they share an interpreter: those calls are then
 // plain calls that nothing else can be running at the same time
-TOAST_TEST_NAMED("Scripting", "scripting/13_a_small_group_shares_an_interpreter", test_scripting_13_a_small_group_shares_an_interpreter) {
+TOAST_TEST_NAMED("Scripting", "scripting/13_script_placement", test_scripting_13_a_small_group_shares_an_interpreter) {
 	luaState();
 	auto world_owner = toast::_detail::WorldTestAccess::createWorld();
 	std::vector<toast::Box<toast::Node>> keep;

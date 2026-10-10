@@ -213,7 +213,7 @@ auto LuaState::acquire(size_t index, bool wait) noexcept -> Lock {
 	if (entry.depth == 1) {
 		drainPending(entry);
 	}
-	return Lock(&entry, entry.state, index);
+	return {&entry, entry.state, index};
 }
 
 void LuaState::release(Entry& entry, size_t index) noexcept {
@@ -1034,7 +1034,7 @@ void LuaState::registerApi(lua_State* state) noexcept {
 		        for (int i = 2; i <= top; ++i) {
 			        args.values.push_back(luaRefValueToAny(state, luabridge::LuaRef::fromStack(state, i)));
 		        }
-		        signal.fire(std::move(args));
+		        signal.fire(args);
 	        }
 	    )
 	    .endClass()

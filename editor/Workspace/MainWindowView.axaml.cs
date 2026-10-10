@@ -142,7 +142,6 @@ public partial class MainWindowView : Window {
 		base.OnClosing(e);
 		if (e.Cancel) return;
 
-		/ The dialog is async, so this close is cancelled and repeated once the user has answered
 		if (!m_closeConfirmed && DataContext is MainWindowViewModel vm && vm.HasUnsavedWork()) {
 			e.Cancel = true;
 			_ = ConfirmThenCloseAsync(vm);

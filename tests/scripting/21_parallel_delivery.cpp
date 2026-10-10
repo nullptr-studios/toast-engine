@@ -33,7 +33,7 @@ void spinFor(std::chrono::microseconds time) {
 // The calls that had to wait for a busy interpreter are delivered one job per interpreter on the pool. The calls into one
 // interpreter keep the order they were made in, the ones into different interpreters run at the same time, and the thread
 // that delivers does not run them itself
-TOAST_TEST_NAMED("Scripting", "scripting/21_queued_calls_are_delivered_in_parallel", test_scripting_21_queued_calls_are_delivered_in_parallel) {
+TOAST_TEST_NAMED("Scripting", "scripting/21_parallel_delivery", test_scripting_21_queued_calls_are_delivered_in_parallel) {
 	luaState();
 	toast::_detail::WorldTestAccess::initThreadPool();
 	::scripting::ScriptDispatch::clear();

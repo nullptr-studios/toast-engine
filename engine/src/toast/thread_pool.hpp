@@ -13,6 +13,7 @@
 #include <memory>
 #include <queue>
 #include <thread>
+#include <toast/export.hpp>
 #include <type_traits>
 #include <utility>
 #include <vector>

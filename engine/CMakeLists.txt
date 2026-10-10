@@ -148,6 +148,9 @@ target_compile_definitions(toast_engine PUBLIC
         GLM_FORCE_INTRINSICS
 )
 
+# Baseline ISA of Release builds on x86_64 GCC/Clang. CI runs on virtual machines whose CPU has no AVX2, so it passes a lower one
+set(TOAST_X86_MARCH "x86-64-v3" CACHE STRING "-march of Release builds on x86_64 (GCC and Clang)")
+
 if (MSVC)
     string(REGEX REPLACE "/EH[a-z-]+" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
     target_compile_options(toast_engine PUBLIC $<$<CONFIG:Release>:/arch:AVX2>)
@@ -160,7 +163,7 @@ if (MSVC)
     target_link_options(toast_engine PRIVATE $<$<CONFIG:Release>:/LTCG;/OPT:REF;/OPT:ICF>)
 else ()
     if (ARCH STREQUAL "x86_64")
-        target_compile_options(toast_engine PUBLIC $<$<CONFIG:Release>:-march=x86-64-v3>)
+        target_compile_options(toast_engine PUBLIC $<$<CONFIG:Release>:-march=${TOAST_X86_MARCH}>)
     endif ()
     target_compile_options(toast_engine PRIVATE
             $<$<CONFIG:Release>:-O3;-flto;-fno-math-errno;-fassociative-math;-freciprocal-math;-fno-signed-zeros;-fno-trapping-math;-funroll-loops;-ffunction-sections;-fdata-sections>
