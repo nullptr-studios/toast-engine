@@ -20,7 +20,7 @@ namespace {
 
 // Prefixed since unity builds merge this with the other passes
 
-constexpr ImU32 perfColor(int r, int g, int b, int a = 255) {
+constexpr auto perfColor(int r, int g, int b, int a = 255) -> ImU32 {
 	return IM_COL32(r, g, b, a);
 }
 
@@ -31,6 +31,47 @@ const ImVec4 k_perf_bad(1.0f, 0.38f, 0.38f, 1.0f);
 constexpr ImU32 k_perf_bar_good = perfColor(92, 184, 92);
 constexpr ImU32 k_perf_bar_warn = perfColor(230, 170, 60);
 constexpr ImU32 k_perf_bar_bad = perfColor(220, 80, 80);
+
+enum class PerfLevel : uint8_t { good, warn, bad };
+
+/// Good up to @p warn_from and bad past @p bad_from
+auto perfLevel(float value, float warn_from, float bad_from) -> PerfLevel {
+	if (value > bad_from) {
+		return PerfLevel::bad;
+	}
+	if (value > warn_from) {
+		return PerfLevel::warn;
+	}
+	return PerfLevel::good;
+}
+
+auto perfLevel(bool bad, bool warn) -> PerfLevel {
+	if (bad) {
+		return PerfLevel::bad;
+	}
+	if (warn) {
+		return PerfLevel::warn;
+	}
+	return PerfLevel::good;
+}
+
+auto perfTextColor(PerfLevel level) -> ImVec4 {
+	switch (level) {
+		case PerfLevel::bad: return k_perf_bad;
+		case PerfLevel::warn: return k_perf_warn;
+		case PerfLevel::good: break;
+	}
+	return k_perf_good;
+}
+
+auto perfBarColor(PerfLevel level) -> ImU32 {
+	switch (level) {
+		case PerfLevel::bad: return k_perf_bar_bad;
+		case PerfLevel::warn: return k_perf_bar_warn;
+		case PerfLevel::good: break;
+	}
+	return k_perf_bar_good;
+}
 constexpr ImU32 k_perf_gpu_line = perfColor(110, 170, 255);
 constexpr ImU32 k_perf_budget_line = perfColor(255, 255, 255, 110);
 constexpr ImU32 k_perf_graph_bg = perfColor(0, 0, 0, 90);
@@ -349,8 +390,7 @@ void PerfWindow::drawFrameGraph(float width, float height) {
 		const size_t index = static_cast<size_t>((offset + i) % static_cast<int>(k_history));
 		const float ms = m_interval_history[index];
 		const float x0 = first_x + (bar_width * static_cast<float>(i));
-		const ImU32 color =
-		    ms <= m_budget_ms * 1.05f ? k_perf_bar_good : (ms <= m_budget_ms * 1.5f ? k_perf_bar_warn : k_perf_bar_bad);
+		const ImU32 color = perfBarColor(perfLevel(ms, m_budget_ms * 1.05f, m_budget_ms * 1.5f));
 		draw->AddRectFilled(ImVec2(x0, y_of(ms)), ImVec2(x0 + std::max(bar_width - 0.5f, 1.0f), end.y), color);
 		gpu_points[static_cast<size_t>(i)] = ImVec2(x0 + (bar_width * 0.5f), y_of(m_gpu_history[index]));
 
@@ -391,10 +431,7 @@ void PerfWindow::drawSummary(bool has_gpu) {
 	auto* renderer = VulkanRenderer::instance;
 	const auto cap = static_cast<float>(renderer->effectiveFrameRateLimit());
 
-	// NOLINTNEXTLINE(readability-avoid-nested-conditional-operator)
-	const ImVec4 fps_color = m_interval_ms <= m_budget_ms * 1.05f  ? k_perf_good
-	                         : m_interval_ms <= m_budget_ms * 1.5f ? k_perf_warn
-	                                                               : k_perf_bad;
+	const ImVec4 fps_color = perfTextColor(perfLevel(m_interval_ms, m_budget_ms * 1.05f, m_budget_ms * 1.5f));
 	ImGui::TextColored(fps_color, "%5.1f fps", s.render_fps);
 	ImGui::SameLine();
 	ImGui::Text("%6.2f ms", m_interval_ms);
@@ -422,13 +459,9 @@ void PerfWindow::drawSummary(bool has_gpu) {
 	drawPhaseBar(width, ImGui::GetFontSize() * 0.6f);
 
 	const Verdict render = renderVerdict(has_gpu);
-	perfVerdictText(
-	    "Render", render.bad ? k_perf_bad : (render.warn ? k_perf_warn : k_perf_good), render.label, render.detail
-	);    // NOLINT(readability-avoid-nested-conditional-operator)
+	perfVerdictText("Render", perfTextColor(perfLevel(render.bad, render.warn)), render.label, render.detail);
 	const Verdict game = gameVerdict();
-	perfVerdictText(
-	    "Game  ", game.bad ? k_perf_bad : (game.warn ? k_perf_warn : k_perf_good), game.label, game.detail
-	);    // NOLINT(readability-avoid-nested-conditional-operator)
+	perfVerdictText("Game  ", perfTextColor(perfLevel(game.bad, game.warn)), game.label, game.detail);
 }
 
 void PerfWindow::drawFrameTab() {
@@ -717,9 +750,7 @@ void PerfWindow::drawMemoryTab() {
 		ImGui::TextDisabled("%.0f MiB total", perfMiB(properties.memoryHeaps[heap].size));
 
 		const std::string label = std::format("{:.0f} / {:.0f} MiB", perfMiB(budget.usage), perfMiB(budget.budget));
-		ImGui::PushStyleColor(
-		    ImGuiCol_PlotHistogram, fraction < 0.75f ? k_perf_good : (fraction < 0.9f ? k_perf_warn : k_perf_bad)
-		);    // NOLINT(readability-avoid-nested-conditional-operator)
+		ImGui::PushStyleColor(ImGuiCol_PlotHistogram, perfTextColor(perfLevel(fraction, 0.75f, 0.9f)));
 		ImGui::ProgressBar(fraction, ImVec2(ImGui::GetFontSize() * 30.0f, 0.0f), label.c_str());
 		ImGui::PopStyleColor();
 
