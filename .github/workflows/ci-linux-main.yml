@@ -61,6 +61,7 @@ jobs:
             -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
             -DCMAKE_CXX_COMPILER=${{ matrix.cxx_compiler }}
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+            -DTOAST_X86_MARCH=x86-64
             -DCMAKE_TOOLCHAIN_FILE=\$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake
             -DCMAKE_C_COMPILER_LAUNCHER=ccache
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache &&

@@ -42,7 +42,7 @@ return M
 
 // The thread that runs a frame hands the waves to the pool and waits for them, so scripts tick on the workers, like the
 // C++ ticks always did. It only steps in when the pool cannot take the work, see 14g
-TOAST_TEST_NAMED("Scripting", "scripting/18_scripted_ticks_run_on_pool_workers", test_scripting_18_scripted_ticks_run_on_pool_workers) {
+TOAST_TEST_NAMED("Scripting", "scripting/18_ticks_run_on_pool_workers", test_scripting_18_scripted_ticks_run_on_pool_workers) {
 	luaState();
 	auto world_owner = toast::_detail::WorldTestAccess::createWorld();
 	toast::World& world = *world_owner;

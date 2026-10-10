@@ -175,6 +175,8 @@ public partial class HierarchyViewModel : Tool, IDisposable {
 	private HashSet<string>? m_rowUidsSnapshot;
 	private bool m_disposed;
 	private ulong m_hierarchyHandle;
+
+	private ulong m_followSelectionHandle;
 	private readonly Func<WorkspaceViewModel?>? m_workspaceProvider;
 
 	[ObservableProperty] private HierarchyElement? m_selectedNode;
@@ -214,7 +216,10 @@ public partial class HierarchyViewModel : Tool, IDisposable {
 					ClearState();
 					return;
 				}
-				if (m_hierarchyHandle != e.WorkspaceHandle) ClearState();
+				var followed = m_followSelectionHandle == e.WorkspaceHandle ? SelectedNode : null;
+				var followedPath = followed is null ? null : PathOf(followed);
+				m_followSelectionHandle = 0;
+				if (m_hierarchyHandle != e.WorkspaceHandle) ClearState(followed is not null);
 				m_hierarchyHandle = e.WorkspaceHandle;
 				var prevUid = SelectedNode?.Uid;
 				Root.Clear();
@@ -224,7 +229,7 @@ public partial class HierarchyViewModel : Tool, IDisposable {
 				}
 
 				// restore selection after the tree rebuilds so editing a node doesnt lose focus
-				SelectedNode = prevUid is null ? null : Find(Root, prevUid);
+				SelectedNode = prevUid is null ? null : Find(Root, prevUid) ?? FindByPath(followedPath);
 				if (Root.Count > 0 && e.WorkspaceHandle == workspace.Handle) workspace.SetRootNode(Root[0].Uid, Root[0].Type);
 				ApplyFilterToRoot();
 				RebuildRows();
@@ -285,6 +290,7 @@ public partial class HierarchyViewModel : Tool, IDisposable {
 	}
 
 	private void OnPlayModeChanged() {
+		m_followSelectionHandle = SelectedNode is null ? 0 : ActiveWorkspaceHandle;
 		SaveCommand.NotifyCanExecuteChanged();
 		SaveAsCommand.NotifyCanExecuteChanged();
 	}
@@ -403,18 +409,37 @@ public partial class HierarchyViewModel : Tool, IDisposable {
 
 	public void Clear() {
 		if (Dispatcher.UIThread.CheckAccess()) ClearState();
-		else Dispatcher.UIThread.Post(ClearState);
+		else Dispatcher.UIThread.Post(() => ClearState());
 	}
 
-	private void ClearState() {
+	// keepSelection leaves the selected element in place until the next tree replaces it
+	private void ClearState(bool keepSelection = false) {
 		Root.Clear();
 		Rows.Clear();
-		SelectedNode = null;
+		if (!keepSelection) SelectedNode = null;
 		m_hierState = null;
 		m_hierarchyHandle = 0;
 		m_pendingRenameAfterUpdate = false;
 		m_rowUidsSnapshot = null;
 		HierarchyChanged?.Invoke();
+	}
+
+	private static List<string> PathOf(HierarchyElement node) {
+		var path = new List<string>();
+		for (var current = node; current.Parent is not null; current = current.Parent) path.Add(current.Name);
+		path.Reverse();
+		return path;
+	}
+
+	private HierarchyElement? FindByPath(List<string>? path) {
+		if (path is null || Root.Count == 0) return null;
+		var current = Root[0];
+		foreach (var name in path) {
+			current = current.Children.FirstOrDefault(c => c.Name == name);
+			if (current is null) return null;
+		}
+
+		return current;
 	}
 
 	public HierarchyElement? Find(string uid) {
