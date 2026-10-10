@@ -173,7 +173,10 @@ void AsyncComputeTask::writeDescriptors(uint32_t slot) {
 	writes.reserve(m_bindings.size());
 	for (const Binding& binding : m_bindings) {
 		const Buffer& buffer = m_buffers[binding.id];
-		const uint32_t copy = !buffer.ring ? 0 : (binding.copy == Copy::current ? slot : previous);
+		const uint32_t copy =
+		    !buffer.ring
+		        ? 0
+		        : (binding.copy == Copy::current ? slot : previous);    // NOLINT(readability-avoid-nested-conditional-operator)
 		infos.emplace_back(*buffer.copies[copy], 0, buffer.size);
 		writes.emplace_back(*m_slots[slot].set, binding.binding, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &infos.back());
 	}

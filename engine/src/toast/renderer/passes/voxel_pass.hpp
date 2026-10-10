@@ -54,7 +54,7 @@ public:
 
 private:
 	/// Throttles the over limit warning
-	std::chrono::steady_clock::time_point m_last_limit_warning {};
+	std::chrono::steady_clock::time_point m_last_limit_warning;
 
 	/// Mirrors voxel.slang PushConstants
 	struct PushConstants {

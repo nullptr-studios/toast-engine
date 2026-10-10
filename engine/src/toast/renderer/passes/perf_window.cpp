@@ -329,7 +329,7 @@ void PerfWindow::drawFrameGraph(float width, float height) {
 
 	// Budget and the recent worst case stay on screen
 	const float target = std::max({m_sample.p99_interval_ms * 1.2f, m_budget_ms * 1.5f, m_gpu_ms * 1.5f, 1.0f});
-	m_graph_scale_ms = m_graph_scale_ms <= 0.0f ? target : m_graph_scale_ms + (target - m_graph_scale_ms) * 0.05f;
+	m_graph_scale_ms = m_graph_scale_ms <= 0.0f ? target : m_graph_scale_ms + ((target - m_graph_scale_ms) * 0.05f);
 	const float scale = m_graph_scale_ms;
 
 	ImDrawList* draw = ImGui::GetWindowDrawList();
@@ -337,22 +337,22 @@ void PerfWindow::drawFrameGraph(float width, float height) {
 	draw->AddRectFilled(origin, end, k_perf_graph_bg, 3.0f);
 
 	const float bar_width = width / static_cast<float>(k_history);
-	const auto y_of = [&](float ms) { return end.y - std::clamp(ms / scale, 0.0f, 1.0f) * height; };
+	const auto y_of = [&](float ms) { return end.y - (std::clamp(ms / scale, 0.0f, 1.0f) * height); };
 	const int offset = historyOffset();
 	const auto count = static_cast<int>(m_filled);
 	// Newest frame at the right edge
-	const float first_x = end.x - bar_width * static_cast<float>(count);
+	const float first_x = end.x - (bar_width * static_cast<float>(count));
 
 	std::array<ImVec2, k_history> gpu_points {};
 	int hovered_index = -1;
 	for (int i = 0; i < count; ++i) {
 		const size_t index = static_cast<size_t>((offset + i) % static_cast<int>(k_history));
 		const float ms = m_interval_history[index];
-		const float x0 = first_x + bar_width * static_cast<float>(i);
+		const float x0 = first_x + (bar_width * static_cast<float>(i));
 		const ImU32 color =
 		    ms <= m_budget_ms * 1.05f ? k_perf_bar_good : (ms <= m_budget_ms * 1.5f ? k_perf_bar_warn : k_perf_bar_bad);
 		draw->AddRectFilled(ImVec2(x0, y_of(ms)), ImVec2(x0 + std::max(bar_width - 0.5f, 1.0f), end.y), color);
-		gpu_points[static_cast<size_t>(i)] = ImVec2(x0 + bar_width * 0.5f, y_of(m_gpu_history[index]));
+		gpu_points[static_cast<size_t>(i)] = ImVec2(x0 + (bar_width * 0.5f), y_of(m_gpu_history[index]));
 
 		if (hovered && ImGui::GetIO().MousePos.x >= x0 && ImGui::GetIO().MousePos.x < x0 + bar_width) {
 			hovered_index = static_cast<int>(index);
@@ -391,6 +391,7 @@ void PerfWindow::drawSummary(bool has_gpu) {
 	auto* renderer = VulkanRenderer::instance;
 	const auto cap = static_cast<float>(renderer->effectiveFrameRateLimit());
 
+	// NOLINTNEXTLINE(readability-avoid-nested-conditional-operator)
 	const ImVec4 fps_color = m_interval_ms <= m_budget_ms * 1.05f  ? k_perf_good
 	                         : m_interval_ms <= m_budget_ms * 1.5f ? k_perf_warn
 	                                                               : k_perf_bad;
@@ -421,9 +422,13 @@ void PerfWindow::drawSummary(bool has_gpu) {
 	drawPhaseBar(width, ImGui::GetFontSize() * 0.6f);
 
 	const Verdict render = renderVerdict(has_gpu);
-	perfVerdictText("Render", render.bad ? k_perf_bad : (render.warn ? k_perf_warn : k_perf_good), render.label, render.detail);
+	perfVerdictText(
+	    "Render", render.bad ? k_perf_bad : (render.warn ? k_perf_warn : k_perf_good), render.label, render.detail
+	);    // NOLINT(readability-avoid-nested-conditional-operator)
 	const Verdict game = gameVerdict();
-	perfVerdictText("Game  ", game.bad ? k_perf_bad : (game.warn ? k_perf_warn : k_perf_good), game.label, game.detail);
+	perfVerdictText(
+	    "Game  ", game.bad ? k_perf_bad : (game.warn ? k_perf_warn : k_perf_good), game.label, game.detail
+	);    // NOLINT(readability-avoid-nested-conditional-operator)
 }
 
 void PerfWindow::drawFrameTab() {
@@ -712,7 +717,9 @@ void PerfWindow::drawMemoryTab() {
 		ImGui::TextDisabled("%.0f MiB total", perfMiB(properties.memoryHeaps[heap].size));
 
 		const std::string label = std::format("{:.0f} / {:.0f} MiB", perfMiB(budget.usage), perfMiB(budget.budget));
-		ImGui::PushStyleColor(ImGuiCol_PlotHistogram, fraction < 0.75f ? k_perf_good : (fraction < 0.9f ? k_perf_warn : k_perf_bad));
+		ImGui::PushStyleColor(
+		    ImGuiCol_PlotHistogram, fraction < 0.75f ? k_perf_good : (fraction < 0.9f ? k_perf_warn : k_perf_bad)
+		);    // NOLINT(readability-avoid-nested-conditional-operator)
 		ImGui::ProgressBar(fraction, ImVec2(ImGui::GetFontSize() * 30.0f, 0.0f), label.c_str());
 		ImGui::PopStyleColor();
 

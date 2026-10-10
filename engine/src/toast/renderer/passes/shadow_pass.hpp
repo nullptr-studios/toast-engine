@@ -104,7 +104,7 @@ private:
 
 	static constexpr uint32_t k_max_voxel_casters = 4096;
 	/// Throttles the over limit warning
-	std::chrono::steady_clock::time_point m_last_caster_limit_warning {};
+	std::chrono::steady_clock::time_point m_last_caster_limit_warning;
 
 	struct LayerGroup {
 		uint32_t base_layer = 0;
