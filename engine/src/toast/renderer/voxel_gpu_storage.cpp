@@ -174,6 +174,33 @@ void VoxelSceneUpload::build(const VulkanCore& core) {
 	m_packed.reset();
 }
 
+namespace {
+
+/// eConcurrent sections so the hand off is visibility only. General since shaders copies and patches all read them
+auto voxelHandoff(sync::QueueHandoff handoff) -> sync::QueueHandoff {
+	handoff.exclusive = false;
+	return handoff;
+}
+
+void releaseSections(sync::BarrierBatch& batch, const VoxelGpuStorage& storage, const sync::QueueHandoff& handoff) {
+	for (size_t i = 0; i < VoxelGpuStorage::k_section_count; ++i) {
+		batch.release(
+		    storage.buffer(static_cast<VoxelGpuStorage::Section>(i)),
+		    sync::Usage::transfer_dst,
+		    sync::Usage::general,
+		    voxelHandoff(handoff)
+		);
+	}
+}
+
+void acquireSections(sync::BarrierBatch& batch, const VoxelGpuStorage& storage, const sync::QueueHandoff& handoff) {
+	for (size_t i = 0; i < VoxelGpuStorage::k_section_count; ++i) {
+		batch.acquire(storage.buffer(static_cast<VoxelGpuStorage::Section>(i)), sync::Usage::general, voxelHandoff(handoff));
+	}
+}
+
+}
+
 void VoxelSceneUpload::record(vk::CommandBuffer cmd) {
 	ZoneScoped;
 	if (m_storage->hasFailed()) {
@@ -186,7 +213,18 @@ void VoxelSceneUpload::record(vk::CommandBuffer cmd) {
 		}
 		cmd.copyBuffer(*m_staging, **m_storage->m_buffers[i], vk::BufferCopy(m_offsets[i], 0, m_bytes[i]));
 	}
+
+	sync::BarrierBatch barriers;
+	releaseSections(barriers, *m_storage, m_handoff);
+	barriers.flush(cmd);
+	m_released = true;
 	m_storage->markRecorded();
+}
+
+void VoxelSceneUpload::recordAcquire(sync::BarrierBatch& batch) {
+	if (m_released && !m_storage->hasFailed()) {
+		acquireSections(batch, *m_storage, m_handoff);
+	}
 }
 
 VoxelScenePatchUpload::VoxelScenePatchUpload(
@@ -260,10 +298,9 @@ void VoxelScenePatchUpload::record(vk::CommandBuffer cmd) {
 	};
 
 	// The copies that filled the source may still be running and these read it
-	const vk::MemoryBarrier source_ready(vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eTransferRead);
-	cmd.pipelineBarrier(
-	    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eTransfer, {}, source_ready, nullptr, nullptr
-	);
+	sync::BarrierBatch barriers;
+	barriers.memory(sync::Usage::transfer_dst, sync::Usage::transfer_src);
+	barriers.flush(cmd);
 
 	for (const Section section : k_sections) {
 		const vk::DeviceSize bytes = std::min(m_source->size(section), m_storage->size(section));
@@ -273,10 +310,8 @@ void VoxelScenePatchUpload::record(vk::CommandBuffer cmd) {
 	}
 
 	// The patch overwrites what was just carried over
-	const vk::MemoryBarrier carried_over(vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eTransferWrite);
-	cmd.pipelineBarrier(
-	    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eTransfer, {}, carried_over, nullptr, nullptr
-	);
+	barriers.memory(sync::Usage::transfer_dst, sync::Usage::transfer_dst);
+	barriers.flush(cmd);
 
 	const std::array<const voxel::gpu::PatchSection*, k_patched_sections> patched {
 	  &m_patch.materials, &m_patch.occupancy, &m_patch.grids, &m_patch.coarse
@@ -297,7 +332,16 @@ void VoxelScenePatchUpload::record(vk::CommandBuffer cmd) {
 		}
 		cmd.copyBuffer(*m_staging, m_storage->buffer(k_sections[i]), regions);
 	}
+	releaseSections(barriers, *m_storage, m_handoff);
+	barriers.flush(cmd);
+	m_released = true;
 	m_storage->markRecorded();
+}
+
+void VoxelScenePatchUpload::recordAcquire(sync::BarrierBatch& batch) {
+	if (m_released && !m_storage->hasFailed()) {
+		acquireSections(batch, *m_storage, m_handoff);
+	}
 }
 
 void VoxelScenePatchUpload::finished() {

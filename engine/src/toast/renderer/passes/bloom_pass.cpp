@@ -96,7 +96,6 @@ void BloomPass::createTargets(const VulkanCore& core, vk::Extent2D extent) {
 
 	const auto make_target = [&](Mip& mip, vk::Extent2D size, std::string_view debug_name) {
 		mip.extent = size;
-		mip.layout = vk::ImageLayout::eUndefined;
 
 		const auto image_ci = colorTargetImageInfo(size, m_format);
 
@@ -105,6 +104,7 @@ void BloomPass::createTargets(const VulkanCore& core, vk::Extent2D extent) {
 
 		mip.image.emplace(core.getAllocator().createImage(image_ci, allocation_ci));
 		setDebugName(core, **mip.image, std::string(debug_name));
+		mip.state.reset(**mip.image, colorSubresourceRange());
 
 		vk::ImageViewCreateInfo view_ci {};
 		view_ci.image = **mip.image;
@@ -142,17 +142,21 @@ void BloomPass::createTargets(const VulkanCore& core, vk::Extent2D extent) {
 		return std::move(allocated[0]);
 	};
 
-	m_downsample_sets.clear();
-	m_upsample_sets.clear();
-	for (size_t i = 0; i < m_mips.size(); ++i) {
-		m_downsample_sets.push_back(allocate());
+	m_frame_sets.clear();
+	m_frame_sets.resize(VulkanRenderer::k_frames_in_flight);
+	for (size_t frame = 0; frame < m_frame_sets.size(); ++frame) {
+		FrameSets& sets = m_frame_sets[frame];
+		for (size_t i = 0; i < m_mips.size(); ++i) {
+			sets.downsample.push_back(allocate());
+			setDebugName(core, *sets.downsample.back(), std::format("BloomPass Downsample[{}][{}]", frame, i));
+		}
+		for (size_t i = 0; i + 1 < m_mips.size(); ++i) {
+			sets.upsample.push_back(allocate());
+			setDebugName(core, *sets.upsample.back(), std::format("BloomPass Upsample[{}][{}]", frame, i));
+		}
+		sets.composite = allocate();
+		setDebugName(core, *sets.composite, std::format("BloomPass Composite[{}]", frame));
 	}
-	for (size_t i = 0; i + 1 < m_mips.size(); ++i) {
-		m_upsample_sets.push_back(allocate());
-	}
-	m_composite_set = allocate();
-
-	m_bound_source = nullptr;
 
 	TOAST_TRACE("Render", "BloomPass targets created: {} mips from {}x{}", m_mips.size(), extent.width, extent.height);
 }
@@ -172,35 +176,6 @@ void BloomPass::writeDescriptor(vk::DescriptorSet set, vk::ImageView source, vk:
 	  vk::WriteDescriptorSet(set, 1, 0, 1, vk::DescriptorType::eCombinedImageSampler, &image_infos[1]),
 	};
 	m_core->getDevice().updateDescriptorSets(writes, {});
-}
-
-void BloomPass::transition(
-    vk::CommandBuffer cmd, Mip& mip, vk::ImageLayout new_layout, vk::AccessFlags dst_access, vk::PipelineStageFlags dst_stage
-) {
-	if (!mip.image.has_value() || mip.layout == new_layout) {
-		return;
-	}
-
-	const bool was_attachment = mip.layout == vk::ImageLayout::eColorAttachmentOptimal;
-	const vk::ImageMemoryBarrier barrier(
-	    was_attachment ? vk::AccessFlagBits::eColorAttachmentWrite : vk::AccessFlags {},
-	    dst_access,
-	    mip.layout,
-	    new_layout,
-	    VK_QUEUE_FAMILY_IGNORED,
-	    VK_QUEUE_FAMILY_IGNORED,
-	    **mip.image,
-	    vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1)
-	);
-	cmd.pipelineBarrier(
-	    was_attachment ? vk::PipelineStageFlagBits::eColorAttachmentOutput : vk::PipelineStageFlagBits::eTopOfPipe,
-	    dst_stage,
-	    {},
-	    nullptr,
-	    nullptr,
-	    barrier
-	);
-	mip.layout = new_layout;
 }
 
 void BloomPass::drawInto(
@@ -239,23 +214,24 @@ void BloomPass::drawInto(
 
 auto BloomPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView source_view) -> vk::ImageView {
 	ZoneScoped;
-	(void)frame_index;
-
-	if (m_mips.empty() || !m_composite.view.has_value() || !m_composite_pipeline.isReady() || !source_view) {
+	if (m_mips.empty() || !m_composite.view.has_value() || !m_composite_pipeline.isReady() || !source_view ||
+	    frame_index >= m_frame_sets.size()) {
 		return source_view;
 	}
 
-	if (m_bound_source != source_view) {
-		writeDescriptor(*m_downsample_sets[0], source_view, source_view);
+	// Safe since the fence of this slot was waited on
+	FrameSets& sets = m_frame_sets[frame_index];
+	if (sets.bound_source != source_view) {
+		writeDescriptor(*sets.downsample[0], source_view, source_view);
 		for (size_t i = 1; i < m_mips.size(); ++i) {
-			writeDescriptor(*m_downsample_sets[i], **m_mips[i - 1].view, source_view);
+			writeDescriptor(*sets.downsample[i], **m_mips[i - 1].view, source_view);
 		}
 		for (size_t i = 0; i + 1 < m_mips.size(); ++i) {
 			const size_t from = m_mips.size() - 1 - i;
-			writeDescriptor(*m_upsample_sets[i], **m_mips[from].view, source_view);
+			writeDescriptor(*sets.upsample[i], **m_mips[from].view, source_view);
 		}
-		writeDescriptor(*m_composite_set, **m_mips[0].view, source_view);
-		m_bound_source = source_view;
+		writeDescriptor(*sets.composite, **m_mips[0].view, source_view);
+		sets.bound_source = source_view;
 	}
 
 	const auto* frame = VulkanRenderer::instance->renderingFrame();
@@ -273,23 +249,11 @@ auto BloomPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageVie
 		params.inverse_source_size =
 		    glm::vec2(1.0f / static_cast<float>(source_size.width), 1.0f / static_cast<float>(source_size.height));
 
-		transition(
-		    cmd,
-		    m_mips[i],
-		    vk::ImageLayout::eColorAttachmentOptimal,
-		    vk::AccessFlagBits::eColorAttachmentWrite,
-		    vk::PipelineStageFlagBits::eColorAttachmentOutput
-		);
+		sync::transition(cmd, m_mips[i].state, sync::Usage::color_attachment);
 
-		drawInto(cmd, i == 0 ? m_downsample_first_pipeline : m_downsample_pipeline, *m_downsample_sets[i], m_mips[i], params, false);
+		drawInto(cmd, i == 0 ? m_downsample_first_pipeline : m_downsample_pipeline, *sets.downsample[i], m_mips[i], params, false);
 
-		transition(
-		    cmd,
-		    m_mips[i],
-		    vk::ImageLayout::eShaderReadOnlyOptimal,
-		    vk::AccessFlagBits::eShaderRead,
-		    vk::PipelineStageFlagBits::eFragmentShader
-		);
+		sync::transition(cmd, m_mips[i].state, sync::Usage::fragment_sampled);
 	}
 
 	for (size_t i = 0; i + 1 < m_mips.size(); ++i) {
@@ -299,40 +263,16 @@ auto BloomPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageVie
 		params.inverse_source_size =
 		    glm::vec2(1.0f / static_cast<float>(m_mips[from].extent.width), 1.0f / static_cast<float>(m_mips[from].extent.height));
 
-		transition(
-		    cmd,
-		    m_mips[to],
-		    vk::ImageLayout::eColorAttachmentOptimal,
-		    vk::AccessFlagBits::eColorAttachmentWrite,
-		    vk::PipelineStageFlagBits::eColorAttachmentOutput
-		);
+		sync::transition(cmd, m_mips[to].state, sync::Usage::color_attachment);
 
-		drawInto(cmd, m_upsample_pipeline, *m_upsample_sets[i], m_mips[to], params, true);
+		drawInto(cmd, m_upsample_pipeline, *sets.upsample[i], m_mips[to], params, true);
 
-		transition(
-		    cmd,
-		    m_mips[to],
-		    vk::ImageLayout::eShaderReadOnlyOptimal,
-		    vk::AccessFlagBits::eShaderRead,
-		    vk::PipelineStageFlagBits::eFragmentShader
-		);
+		sync::transition(cmd, m_mips[to].state, sync::Usage::fragment_sampled);
 	}
 
-	transition(
-	    cmd,
-	    m_composite,
-	    vk::ImageLayout::eColorAttachmentOptimal,
-	    vk::AccessFlagBits::eColorAttachmentWrite,
-	    vk::PipelineStageFlagBits::eColorAttachmentOutput
-	);
-	drawInto(cmd, m_composite_pipeline, *m_composite_set, m_composite, params, false);
-	transition(
-	    cmd,
-	    m_composite,
-	    vk::ImageLayout::eShaderReadOnlyOptimal,
-	    vk::AccessFlagBits::eShaderRead,
-	    vk::PipelineStageFlagBits::eFragmentShader
-	);
+	sync::transition(cmd, m_composite.state, sync::Usage::color_attachment);
+	drawInto(cmd, m_composite_pipeline, *sets.composite, m_composite, params, false);
+	sync::transition(cmd, m_composite.state, sync::Usage::shader_sampled);
 
 	return **m_composite.view;
 }

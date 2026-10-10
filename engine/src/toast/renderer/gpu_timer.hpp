@@ -75,6 +75,12 @@ public:
 		return m_frame;
 	}
 
+	/// Tells a fresh last() from a repeat
+	[[nodiscard]]
+	auto frameSerial() const noexcept -> uint64_t {
+		return m_serial;
+	}
+
 	[[nodiscard]]
 	auto smoothed() const noexcept -> const Timings& {
 		return m_smoothed;
@@ -114,6 +120,7 @@ private:
 	bool m_supported = false;
 	bool m_compute_supported = false;
 	bool m_reported_unavailable = false;
+	uint64_t m_serial = 0;
 
 	Timings m_frame;
 	Timings m_smoothed;

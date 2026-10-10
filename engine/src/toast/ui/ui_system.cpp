@@ -79,7 +79,8 @@ void UISystem::initializeRenderer(const renderer::VulkanCore& core) {
 	    static_cast<VkQueue>(core.getGraphicsQueue()),
 	    static_cast<VkFormat>(UIPass::k_color_format),
 	    static_cast<VkFormat>(stencil_format),
-	    &core.graphicsSubmitMutex()
+	    &core.graphicsSubmitMutex(),
+	    static_cast<VkPipelineCache>(*core.getPipelineCache())
 	);
 
 	if (!ok) {
@@ -186,8 +187,7 @@ void UISystem::tick() noexcept {
 	if (m_documents_reload_pending) {
 		m_documents_reload_pending = false;
 		if (m_stylesheet_cache_dirty) {
-			// RmlUi caches parsed external stylesheets by URI. Rebuilding a document
-			// alone would otherwise link the old parsed RCSS again.
+			// RmlUi caches parsed stylesheets by URI so a rebuild alone would link the old RCSS again
 			Rml::Factory::ClearStyleSheetCache();
 			m_stylesheet_cache_dirty = false;
 		}
@@ -339,7 +339,7 @@ auto UISystem::colorFromSchemes(std::string_view name) const -> std::optional<gl
 		}
 	}
 
-	// Last resort: the project settings scheme
+	// Last resort the project settings scheme
 	if (toast::ProjectSettings::get() != nullptr) {
 		auto project_scheme = toast::ProjectSettings::uiSettings().colorScheme();
 		if (!project_scheme.hasValue() && !project_scheme.path().empty()) {

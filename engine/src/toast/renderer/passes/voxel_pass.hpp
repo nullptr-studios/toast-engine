@@ -5,12 +5,14 @@
  */
 
 #pragma once
+
 #include "../render_pass_base.hpp"
 #include "../scene_descriptor_set.hpp"
 #include "../shader_layout.hpp"
 #include "../vulkan_pipeline.hpp"
 
 #include <array>
+#include <chrono>
 #include <glm/glm.hpp>
 #include <memory>
 #include <string_view>
@@ -51,6 +53,9 @@ public:
 	static constexpr uint32_t k_max_instances = 4096;
 
 private:
+	/// Throttles the over limit warning
+	std::chrono::steady_clock::time_point m_last_limit_warning;
+
 	/// Mirrors voxel.slang PushConstants
 	struct PushConstants {
 		uint32_t instance_index = 0;

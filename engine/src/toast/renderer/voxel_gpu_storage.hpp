@@ -175,12 +175,16 @@ public:
 
 	void record(vk::CommandBuffer cmd) override;
 
+	void recordAcquire(sync::BarrierBatch& batch) override;
+
 	auto resource() -> IVulkanResource* override { return m_storage.get(); }
 
 private:
 	std::shared_ptr<VoxelGpuStorage> m_storage;
 
 	std::shared_ptr<const VoxelPackedScene> m_packed;
+
+	bool m_released = false;
 
 	vma::raii::Buffer m_staging = nullptr;
 	std::array<vk::DeviceSize, VoxelGpuStorage::k_section_count> m_offsets {};
@@ -208,10 +212,14 @@ public:
 
 	void finished() override;
 
+	void recordAcquire(sync::BarrierBatch& batch) override;
+
 	auto resource() -> IVulkanResource* override { return m_storage.get(); }
 
 private:
 	static constexpr size_t k_patched_sections = 4;
+
+	bool m_released = false;
 
 	std::shared_ptr<VoxelGpuStorage> m_storage;
 	std::shared_ptr<VoxelGpuStorage> m_source;

@@ -203,7 +203,7 @@ auto createGraphicsPipelineImpl(
 	pipeline_ci.layout = pipeline_layout;
 	pipeline_ci.renderPass = nullptr;
 
-	auto pipelines = device.createGraphicsPipelines(nullptr, pipeline_ci);
+	auto pipelines = device.createGraphicsPipelines(core.getPipelineCache(), pipeline_ci);
 	return std::move(pipelines[0]);
 }
 
@@ -220,7 +220,7 @@ auto createComputePipelineImpl(
 	);
 
 	const vk::ComputePipelineCreateInfo pipeline_ci({}, shader_stage_ci, pipeline_layout);
-	auto pipelines = device.createComputePipelines(nullptr, pipeline_ci);
+	auto pipelines = device.createComputePipelines(core.getPipelineCache(), pipeline_ci);
 	return std::move(pipelines[0]);
 }
 }

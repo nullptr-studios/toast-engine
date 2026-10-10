@@ -112,6 +112,9 @@ TOAST_C_API int toast_viewport_get_frame(void* dst, uint32_t dst_capacity, toast
 
 TOAST_C_API void toast_reload_project_settings(void) NOEXCEPT;
 
+/// @return Maximum ticks per second from the project settings, 0 is uncapped
+TOAST_C_API uint32_t toast_get_max_tick_rate(void) NOEXCEPT;
+
 /// @brief Tells the renderer whether the host application is focused and whether it is minimized
 /// @param focused 0 holds rendering at 30 fps (or the configured cap when lower), 1 restores the configured cap
 /// @param minimized 1 stops rendering entirely until called again with 0

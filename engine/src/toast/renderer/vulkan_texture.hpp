@@ -63,6 +63,7 @@ public:
 
 	void build(const VulkanCore& core) override;
 	void record(vk::CommandBuffer cmd) override;
+	void recordAcquire(sync::BarrierBatch& batch) override;
 
 	auto resource() -> IVulkanResource* override { return m_texture; }
 
@@ -75,6 +76,8 @@ private:
 	vma::raii::Buffer m_staging_buffer = nullptr;
 	std::vector<vk::BufferImageCopy> m_copy_regions;
 	VulkanTexture::Params m_tex_params {};
+	/// So recordAcquire() has a release to match
+	bool m_released = false;
 };
 
 class RawTextureUpload : public PendingResourceUpload {
@@ -92,6 +95,7 @@ public:
 
 	void build(const VulkanCore& core) override;
 	void record(vk::CommandBuffer cmd) override;
+	void recordAcquire(sync::BarrierBatch& batch) override;
 
 	auto resource() -> IVulkanResource* override { return m_texture; }
 
@@ -103,6 +107,7 @@ private:
 	vk::Format m_format = vk::Format::eUndefined;
 	std::string m_debug_name;
 	vma::raii::Buffer m_staging_buffer = nullptr;
+	bool m_released = false;
 };
 
 auto uploadTextureSync(const VulkanCore& core, VulkanTexture& texture, std::vector<uint8_t> data, std::string_view debug_name)

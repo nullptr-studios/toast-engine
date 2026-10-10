@@ -140,8 +140,12 @@ if (TOAST_UNITY_BUILD)
     set_target_properties(toast_engine PROPERTIES UNITY_BUILD ON UNITY_BUILD_BATCH_SIZE 8)
 endif ()
 
+# Vulkan synchronization validation
+option(TOAST_SYNC_VALIDATION "Enable Vulkan synchronization validation in Debug builds" ON)
+
 target_compile_definitions(toast_engine PUBLIC
         $<$<CONFIG:Debug>:DEBUG>
+        $<$<AND:$<CONFIG:Debug>,$<BOOL:${TOAST_SYNC_VALIDATION}>>:TOAST_SYNC_VALIDATION>
         $<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>>:NDEBUG>
         $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:TRACY_ENABLE>
         $<$<CONFIG:RelWithDebInfo>:TOAST_LUA_OWNERSHIP_CHECKS>

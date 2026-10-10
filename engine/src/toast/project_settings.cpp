@@ -38,6 +38,9 @@ ProjectSettings::ProjectSettings(const std::filesystem::path& path) {
 			m_databases.emplace_back("assets");
 		}
 
+		m_max_tick_rate =
+		    static_cast<unsigned>(std::max<int64_t>(0, table["max_tick_rate"].value_or<int64_t>(k_default_max_tick_rate)));
+
 		if (auto* gameplay = table["gameplay"].as_table()) {
 			auto make_handle = [](std::string_view uri) -> assets::Handle<assets::Prefab> {
 				return {nullptr, toast::UID::make(), uri};

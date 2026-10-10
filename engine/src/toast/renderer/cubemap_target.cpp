@@ -28,7 +28,7 @@ void CubemapTarget::create(
 
 	m_size = size;
 	m_mip_levels = std::max(mip_levels, 1u);
-	m_layout = vk::ImageLayout::eUndefined;
+	m_state = {};
 
 	vk::ImageCreateInfo image_ci {};
 	// imageCubeArray is not enabled on this device
@@ -49,6 +49,7 @@ void CubemapTarget::create(
 
 	m_image.emplace(core.getAllocator().createImage(image_ci, allocation_ci));
 	setDebugName(core, **m_image, std::string(debug_name));
+	m_state.reset(**m_image, vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, m_mip_levels, 0, k_faces));
 
 	vk::ImageViewCreateInfo cube_view_ci {};
 	cube_view_ci.image = **m_image;
@@ -76,47 +77,8 @@ void CubemapTarget::create(
 	}
 }
 
-void CubemapTarget::transition(
-    vk::CommandBuffer cmd, vk::ImageLayout new_layout, vk::AccessFlags dst_access, vk::PipelineStageFlags dst_stage
-) {
-	if (!m_image.has_value() || m_layout == new_layout) {
-		return;
-	}
-
-	vk::PipelineStageFlags src_stage = vk::PipelineStageFlagBits::eTopOfPipe;
-	vk::AccessFlags src_access {};
-	switch (m_layout) {
-		case vk::ImageLayout::eColorAttachmentOptimal:
-			src_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-			src_access = vk::AccessFlagBits::eColorAttachmentWrite;
-			break;
-		case vk::ImageLayout::eTransferDstOptimal:
-			src_stage = vk::PipelineStageFlagBits::eTransfer;
-			src_access = vk::AccessFlagBits::eTransferWrite;
-			break;
-		case vk::ImageLayout::eShaderReadOnlyOptimal:
-			src_stage = vk::PipelineStageFlagBits::eFragmentShader;
-			src_access = vk::AccessFlagBits::eShaderRead;
-			break;
-		default: break;
-	}
-
-	const vk::ImageMemoryBarrier barrier(
-	    src_access,
-	    dst_access,
-	    m_layout,
-	    new_layout,
-	    VK_QUEUE_FAMILY_IGNORED,
-	    VK_QUEUE_FAMILY_IGNORED,
-	    **m_image,
-	    vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, m_mip_levels, 0, k_faces)
-	);
-	cmd.pipelineBarrier(src_stage, dst_stage, {}, nullptr, nullptr, barrier);
-	m_layout = new_layout;
-}
-
-void CubemapTarget::setLayout(vk::ImageLayout layout) noexcept {
-	m_layout = layout;
+void CubemapTarget::transition(vk::CommandBuffer cmd, sync::Usage next) {
+	sync::transition(cmd, m_state, next);
 }
 
 auto CubemapTarget::faceView(uint32_t mip, uint32_t face) const -> vk::ImageView {
