@@ -32,7 +32,11 @@ constexpr ImU32 k_perf_bar_good = perfColor(92, 184, 92);
 constexpr ImU32 k_perf_bar_warn = perfColor(230, 170, 60);
 constexpr ImU32 k_perf_bar_bad = perfColor(220, 80, 80);
 
-enum class PerfLevel : uint8_t { good, warn, bad };
+enum class PerfLevel : uint8_t {
+	good,
+	warn,
+	bad
+};
 
 /// Good up to @p warn_from and bad past @p bad_from
 auto perfLevel(float value, float warn_from, float bad_from) -> PerfLevel {
@@ -72,6 +76,7 @@ auto perfBarColor(PerfLevel level) -> ImU32 {
 	}
 	return k_perf_bar_good;
 }
+
 constexpr ImU32 k_perf_gpu_line = perfColor(110, 170, 255);
 constexpr ImU32 k_perf_budget_line = perfColor(255, 255, 255, 110);
 constexpr ImU32 k_perf_graph_bg = perfColor(0, 0, 0, 90);
