@@ -18,6 +18,7 @@ using editor.Assets.Types;
 using editor.Components.Modals;
 using editor.Editors;
 using editor.Engine;
+using editor.Git;
 using Lucide.Avalonia;
 using Proto.Events;
 
@@ -33,6 +34,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 	private readonly ToastEngine m_toast;
 	private readonly ToastZoneFactory m_toastZoneFactory;
 	private ProjectSettingsWindow? m_projectSettingsWindow;
+	private CommitWindow? m_commitWindow;
+	private LockArtworkWindow? m_lockArtworkWindow;
+	private bool m_gitBusy;
 
 	private readonly Dictionary<ulong, WorkspaceViewModel> m_workspaces = [];
 	[ObservableProperty] private string m_activeLayoutName = LayoutStore.DefaultName;
@@ -45,6 +49,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 
 	[ObservableProperty] private bool m_hierarchyVisible = true;
 	[ObservableProperty] private bool m_historyVisible;
+	[ObservableProperty] private bool m_locksVisible;
 	[ObservableProperty] private bool m_inspectorVisible = true;
 	[ObservableProperty] private bool m_signalsVisible = true;
 	[ObservableProperty] private bool m_logsVisible = true;
@@ -61,6 +66,15 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		Current = this;
 		m_toast = toast;
 		VoxelEditor.VoxelEditorActions.Register();
+
+		GitState = new GitViewModel(GitService.Start(ProjectContext.ProjectPath));
+		GitState.PropertyChanged += (_, e) => {
+			if (e.PropertyName != nameof(GitViewModel.IsAvailable)) return;
+			LockArtworkCommand.NotifyCanExecuteChanged();
+			OpenCommitCommand.NotifyCanExecuteChanged();
+			PullCommand.NotifyCanExecuteChanged();
+			PushCommand.NotifyCanExecuteChanged();
+		};
 
 		m_dockFactory = new DockFactory();
 		MainLayout = m_dockFactory.CreateLayout();
@@ -81,6 +95,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			if (e.Dockable is WorkspaceViewModel ws) m_workspaces.Remove(ws.Handle);
 			if (e.Dockable == m_dockFactory.Hierarchy) m_hierarchyVisible = false;
 			if (e.Dockable == m_dockFactory.History) m_historyVisible = false;
+			if (e.Dockable == m_dockFactory.Locks) m_locksVisible = false;
 			if (e.Dockable == m_dockFactory.Inspector) m_inspectorVisible = false;
 			if (e.Dockable == m_dockFactory.Signals) m_signalsVisible = false;
 			if (e.Dockable == m_dockFactory.GenericEditorVm) m_genericEditorVisible = false;
@@ -88,6 +103,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 
 			OnPropertyChanged(nameof(HierarchyVisible));
 			OnPropertyChanged(nameof(HistoryVisible));
+			OnPropertyChanged(nameof(LocksVisible));
 			OnPropertyChanged(nameof(InspectorVisible));
 			OnPropertyChanged(nameof(SignalsVisible));
 			OnPropertyChanged(nameof(GenericEditorVisible));
@@ -138,6 +154,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 	public HierarchyViewModel? Hierarchy => m_dockFactory.Hierarchy;
 	public HistoryViewModel? History => m_dockFactory.History;
 
+	public GitViewModel GitState { get; }
+
 	public IReadOnlyList<string> LayoutNames => LayoutStore.EnumerateNames();
 
 	public bool CanModifyActiveLayout => !LayoutStore.IsBuiltin(ActiveLayoutName);
@@ -147,6 +165,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		m_autosave.Stop();
 		m_projectSettingsWindow?.Close();
 		m_projectSettingsWindow = null;
+		m_commitWindow?.Close();
+		m_commitWindow = null;
+		m_lockArtworkWindow?.Close();
+		m_lockArtworkWindow = null;
 		EditorManager.OpenRequested -= OnEditorOpenRequested;
 		WorkspaceViewModel.PlayModeChanged -= OnPlayModeChanged;
 		if (m_dockFactory.SchemaEditorVm is { } schema) schema.SchemaSaved -= OnSchemaSaved;
@@ -155,8 +177,11 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		m_dockFactory.Inspector?.Dispose();
 		m_dockFactory.Signals?.Dispose();
 		m_dockFactory.History?.Dispose();
+		m_dockFactory.Locks?.Dispose();
 		m_toastZoneFactory.AssetBrowserVm?.Dispose();
 		m_toastZoneFactory.TableEditorVm?.Dispose();
+		GitState.Dispose();
+		GitService.Current?.Dispose();
 		GC.SuppressFinalize(this);
 	}
 
@@ -228,6 +253,95 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		ToggleMainTool("History", value);
 	}
 
+	partial void OnLocksVisibleChanged(bool value) {
+		ToggleMainTool("Locks", value);
+	}
+
+	private bool CanUseGit() {
+		return GitState.IsAvailable;
+	}
+
+	[RelayCommand(CanExecute = nameof(CanUseGit))]
+	private void OpenCommit() {
+		if (m_commitWindow is { } existing) {
+			if (existing.WindowState == WindowState.Minimized) existing.WindowState = WindowState.Normal;
+			existing.Activate();
+			return;
+		}
+
+		var window = new CommitWindow(new CommitViewModel(GitState.Service));
+		m_commitWindow = window;
+		window.Closed += (_, _) => m_commitWindow = null;
+
+		if (App.MainWindow is { } owner) window.Show(owner);
+		else window.Show();
+	}
+
+	[RelayCommand(CanExecute = nameof(CanUseGit))]
+	private Task Pull() {
+		return RunGitOperation("Pull", GitState.Service.PullAsync, true);
+	}
+
+	[RelayCommand(CanExecute = nameof(CanUseGit))]
+	private Task Push() {
+		return RunGitOperation("Push", GitState.Service.PushAsync, false);
+	}
+
+	// Opens the picker for the lockable files in artwork://
+	[RelayCommand(CanExecute = nameof(CanUseGit))]
+	private async Task LockArtwork() {
+		if (m_lockArtworkWindow is { } existing) {
+			existing.Activate();
+			return;
+		}
+
+		if (!GitState.Service.HasLfs) {
+			await App.Modals.ShowError("Lock artwork", "git-lfs is not installed, so files can't be locked.");
+			return;
+		}
+
+		var window = new LockArtworkWindow(new LockArtworkViewModel(GitState.Service));
+		m_lockArtworkWindow = window;
+		window.Closed += (_, _) => m_lockArtworkWindow = null;
+
+		if (App.MainWindow is { } owner) window.Show(owner);
+		else window.Show();
+	}
+
+	private async Task RunGitOperation(string label, Func<Task<GitResult>> operation, bool assetsMayChange) {
+		if (m_gitBusy || App.MainWindow is not { } owner) return;
+		m_gitBusy = true;
+		try {
+			var output = "";
+			var task = LoaderTask.Do(label, async log => {
+				var result = await operation();
+				output = result.Message;
+				foreach (var line in result.Message.Split('\n', StringSplitOptions.RemoveEmptyEntries)) log(line.TrimEnd());
+				if (!result.Ok) throw new InvalidOperationException(DescribeFailure(label, result.Message));
+			});
+
+			var vm = new LoaderViewModel([task]) {
+				OnComplete = async () => {
+					// A pull that brought nothing new leaves the database alone
+					if (assetsMayChange && !output.Contains("Already up to date", StringComparison.OrdinalIgnoreCase))
+						AssetDatabase.RebuildAssetDatabase();
+					await Task.CompletedTask;
+				}
+			};
+
+			await new SimpleLoaderWindow(vm).ShowDialog(owner);
+		} finally {
+			m_gitBusy = false;
+		}
+	}
+
+	private static string DescribeFailure(string label, string message) {
+		if (label == "Pull" && message.Contains("fast-forward", StringComparison.OrdinalIgnoreCase))
+			return "Your branch and the remote have diverged, so it can't be fast-forwarded.\n" +
+			       "Push your commits or resolve this outside the editor.\n\n" + message;
+		return message;
+	}
+
 	partial void OnInspectorVisibleChanged(bool value) {
 		ToggleMainTool("Inspector", value);
 	}
@@ -278,6 +392,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		if (file.Definition is not { CanBeEdited: true } def) return;
 		if (file.Uid is not { } uid) return;
 		if (!AssetDatabase.TryResolve(uid, out var virtualPath, out _)) return;
+
+		// Opening a lockable asset nobody holds takes its lock
+		if (def is not ProjectSettingsAsset) await GitLockGuard.LockOnOpenAsync(ProjectContext.Resolve(virtualPath));
 
 		var recoverPath = await AutosaveService.TryRecoverAsync(uid, virtualPath);
 
@@ -460,6 +577,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 	private void SyncVisibilityFromDocks() {
 		m_hierarchyVisible = m_dockFactory.IsToolVisible("Hierarchy");
 		m_historyVisible = m_dockFactory.IsToolVisible("History");
+		m_locksVisible = m_dockFactory.IsToolVisible("Locks");
 		m_inspectorVisible = m_dockFactory.IsToolVisible("Inspector");
 		m_signalsVisible = m_dockFactory.IsToolVisible("Signals");
 		m_genericEditorVisible = m_dockFactory.IsToolVisible("GenericEditor");
@@ -472,6 +590,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 
 		OnPropertyChanged(nameof(HierarchyVisible));
 		OnPropertyChanged(nameof(HistoryVisible));
+		OnPropertyChanged(nameof(LocksVisible));
 		OnPropertyChanged(nameof(InspectorVisible));
 		OnPropertyChanged(nameof(SignalsVisible));
 		OnPropertyChanged(nameof(GenericEditorVisible));
@@ -585,8 +704,21 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 
 		if (!AssetDatabase.TryResolve(uid, out var virtualPath, out _)) return;
 
+		await GitLockGuard.LockOnOpenAsync(ProjectContext.Resolve(virtualPath));
 		var recoverPath = await AutosaveService.TryRecoverAsync(uid, virtualPath);
 		OpenWorkspaceFile(uid, virtualPath, recoverPath);
+	}
+
+	public void ReopenWorkspaceFromDisk(WorkspaceViewModel workspace) {
+		var uid = workspace.BackingAssetUid;
+		var virtualPath = workspace.BackingUri;
+		if (uid is null || virtualPath is null) return;
+
+		Avalonia.Threading.Dispatcher.UIThread.Post(() => {
+			workspace.PendingClose = true; // skip the unsaved changes prompt
+			m_dockFactory.CloseDockable(workspace);
+			OpenWorkspaceFile(uid, virtualPath, null);
+		});
 	}
 
 	[RelayCommand]

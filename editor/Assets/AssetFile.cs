@@ -13,6 +13,8 @@ using Avalonia.Styling;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
 using editor.Assets.Types;
+using editor.Git;
+using ImageMagick;
 using Lucide.Avalonia;
 
 namespace editor.Assets;
@@ -30,6 +32,8 @@ public class AssetFile : INotifyPropertyChanged {
 
 	private Bitmap? m_thumbnail;
 	private bool m_thumbnailChecked;
+	private Bitmap? m_grayThumbnail;
+	private bool m_grayRequested;
 
 	public AssetFile(string path) {
 		Filepath = Path.GetFullPath(path);
@@ -73,9 +77,69 @@ public class AssetFile : INotifyPropertyChanged {
 	public bool CanModify =>
 		ProjectContext.IsInitialized &&
 		!ProjectContext.IsUnderCore(Filepath) &&
-		ProjectContext.IsUnderContentDatabase(Filepath);
+		ProjectContext.IsUnderContentDatabase(Filepath) &&
+		!IsLockedByOthers;
 
 	public bool CanTag => !IsRaw && CanModify;
+
+	public string AssetPath => IsRaw ? Filepath : Filepath[..^".meta".Length];
+
+	public GitFileStatus GitStatus => GitService.Current?.GetAssetStatus(AssetPath) ?? GitFileStatus.None;
+
+	public GitLock? LockInfo => GitService.Current?.GetLock(AssetPath);
+	public bool IsLockedByMe => LockInfo is { OwnedByMe: true };
+	public bool IsLockedByOthers => LockInfo is { OwnedByMe: false };
+	public bool IsLockable => GitService.Current?.IsLockable(AssetPath) == true;
+	public bool CanLock => !IsRaw && LockInfo is null && IsLockable;
+	public bool CanUnlock => IsLockedByMe;
+
+	// A file someone else holds the lock on shows a lock instead of its type icon, and a grayscale preview
+	public LucideIconKind DisplayIcon => IsLockedByOthers ? LucideIconKind.Lock : Icon;
+	public IBrush DisplayIconBrush => IsLockedByOthers ? GitStatusStyle.Orange : TypeColor;
+	public bool ShowLockOverlay => IsLockedByOthers && HasThumbnail;
+	public Bitmap? DisplayThumbnail => IsLockedByOthers && m_grayThumbnail is not null ? m_grayThumbnail : Thumbnail;
+
+	public void NotifyGitChanged() {
+		Notify(nameof(GitStatus));
+		Notify(nameof(LockInfo));
+		Notify(nameof(IsLockedByMe));
+		Notify(nameof(IsLockedByOthers));
+		Notify(nameof(IsLockable));
+		Notify(nameof(CanLock));
+		Notify(nameof(CanUnlock));
+		Notify(nameof(DisplayIcon));
+		Notify(nameof(DisplayIconBrush));
+		Notify(nameof(ShowLockOverlay));
+		Notify(nameof(DisplayThumbnail));
+		Notify(nameof(CanModify));
+		Notify(nameof(CanTag));
+		if (IsLockedByOthers) LoadGrayThumbnail();
+	}
+
+	private void LoadGrayThumbnail() {
+		if (m_grayRequested || IsRaw || Definition?.HasThumbnail != true || !ProjectContext.IsInitialized) return;
+		m_grayRequested = true;
+
+		var filepath = Filepath;
+		Task.Run(() => {
+			var header = ReadHeaderCached(filepath);
+			if (header is null) return;
+			var thumbPath = Path.Combine(ProjectContext.CachePath, "thumbnails", header.Uid + ".png");
+			if (!File.Exists(thumbPath)) return;
+			try {
+				using var image = new MagickImage(thumbPath);
+				image.Grayscale();
+				using var stream = new MemoryStream(image.ToByteArray(MagickFormat.Png));
+				var bmp = new Bitmap(stream);
+				Dispatcher.UIThread.Post(() => {
+					m_grayThumbnail = bmp;
+					Notify(nameof(DisplayThumbnail));
+				});
+			} catch {
+				/* ignore */
+			}
+		});
+	}
 
 	public bool IsSelected {
 		get => m_isSelected;
@@ -122,6 +186,8 @@ public class AssetFile : INotifyPropertyChanged {
 						m_thumbnail = bmp;
 						Notify();
 						Notify(nameof(HasThumbnail));
+						Notify(nameof(DisplayThumbnail));
+						Notify(nameof(ShowLockOverlay));
 					});
 				} catch {
 					/* ignore */
@@ -137,8 +203,12 @@ public class AssetFile : INotifyPropertyChanged {
 	public void RefreshThumbnail() {
 		m_thumbnailChecked = false;
 		m_thumbnail = null;
+		m_grayThumbnail = null;
+		m_grayRequested = false;
 		Notify(nameof(Thumbnail));
 		Notify(nameof(HasThumbnail));
+		Notify(nameof(DisplayThumbnail));
+		if (IsLockedByOthers) LoadGrayThumbnail();
 	}
 
 	public IBrush TypeColor {

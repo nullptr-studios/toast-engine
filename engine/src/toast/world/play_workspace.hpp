@@ -47,7 +47,7 @@ public:
 
 	[[nodiscard]]
 	static auto exists() noexcept -> bool {
-			// True while any PlayWorkspace exists
+		// True while any PlayWorkspace exists
 		return s_instances.load(std::memory_order_acquire) > 0;
 	}
 

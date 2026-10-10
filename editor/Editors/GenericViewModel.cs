@@ -13,6 +13,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Dock.Model.Mvvm.Controls;
 using editor.Assets;
+using editor.Git;
 using editor.Assets.Types;
 using editor.Components.Modals;
 using editor.Engine;
@@ -464,8 +465,12 @@ public partial class GenericViewModel : Tool, IAutosavable {
 			OkLabel: "Save"
 		)).ShowDialog<bool?>(owner);
 		if (result is null) return false;
-		if (result is true) await Save();
-		else AutosaveService.Delete(CurrentUid, AssetTypeRegistry.GetExtension(CurrentPath));
+		if (result is true) {
+			await Save();
+			return !IsDirty;
+		}
+
+		AutosaveService.Delete(CurrentUid, AssetTypeRegistry.GetExtension(CurrentPath));
 		return true;
 	}
 
@@ -642,17 +647,18 @@ public partial class GenericViewModel : Tool, IAutosavable {
 	private async Task Save() {
 		if (string.IsNullOrEmpty(CurrentPath)) return;
 
-		var realPath = ProjectContext.Resolve(CurrentPath);
-		await File.WriteAllTextAsync(realPath, SerializeDocument());
-
 		if (Definition is ProjectSettingsAsset) {
+			await File.WriteAllTextAsync(ProjectContext.Resolve(CurrentPath), SerializeDocument());
 			ProjectContext.ReloadProjectSettings();
-		} else {
-			MetaFile.Touch(CurrentPath);
-			AutosaveService.Delete(CurrentUid, AssetTypeRegistry.GetExtension(CurrentPath));
+			IsDirty = false;
+			return;
 		}
 
-		IsDirty = false;
+		var text = SerializeDocument();
+		var definition = Definition;
+		if (await GitLockGuard.SaveAsync(CurrentUid, CurrentPath, path => File.WriteAllTextAsync(path, text),
+			    (uid, virtualPath) => OpenFile(uid, virtualPath, GitLockGuard.DefinitionOf(virtualPath) ?? definition!)))
+			IsDirty = false;
 	}
 
 	private string SerializeDocument() {
