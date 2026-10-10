@@ -121,6 +121,12 @@ public partial class ViewportControl : UserControl {
 		}
 	}
 
+	private static readonly HashSet<ViewportControl> s_attached = [];
+
+	public static bool AnyGameInput => s_attached.Any(v => v.HoldsGameInput);
+
+	private bool HoldsGameInput => GameOwnsInput && m_gameInput;
+
 	public bool IsEditorFlying => m_editorFlyActive;
 	public static bool AnyEditorFlying => s_attached.Any(v => v.m_editorFlyActive);
 	private bool GameOwnsInput => PlayMode && !CanControlEditorCamera; 
@@ -258,6 +264,7 @@ public partial class ViewportControl : UserControl {
 	}
 
 	private void OnAttached(object? sender, VisualTreeAttachmentEventArgs e) {
+		s_attached.Add(this);
 		m_engine ??= (DataContext as WorkspaceViewModel)?.Engine;
 
 		m_listener ??= new Listener();
@@ -294,6 +301,7 @@ public partial class ViewportControl : UserControl {
 	}
 
 	private void OnDetached(object? sender, VisualTreeAttachmentEventArgs e) {
+		s_attached.Remove(this);
 		if (m_editorFlyActive) EndEditorFly();
 		ReleaseFlyKeys();
 		ReleaseHeldInput();
@@ -347,6 +355,7 @@ public partial class ViewportControl : UserControl {
 			m_surfaceH = 0;
 		}
 
+		s_attached.Add(this);
 		m_engine ??= (DataContext as WorkspaceViewModel)?.Engine;
 		if (m_engine is null)
 			return;
@@ -699,7 +708,7 @@ public partial class ViewportControl : UserControl {
 
 	// Ctrl/Meta combos in edit mode are editor shortcuts
 	private bool IsEditorShortcut(KeyEventArgs e) {
-		return !PlayMode && (e.KeyModifiers.HasFlag(KeyModifiers.Control) || e.KeyModifiers.HasFlag(KeyModifiers.Meta));
+		return !HoldsGameInput && (e.KeyModifiers.HasFlag(KeyModifiers.Control) || e.KeyModifiers.HasFlag(KeyModifiers.Meta));
 	}
 
 	protected override void OnKeyDown(KeyEventArgs e) {

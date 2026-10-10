@@ -348,7 +348,7 @@ public partial class MainWindowView : Window {
 
 		// during play the game owns the keyboard
 		// Space must reach the viewport, not the toast zone
-		if (e.Key != Key.Space || IsTextInputFocused() || WorkspaceViewModel.AnyPlayActive) return;
+		if (e.Key != Key.Space || IsTextInputFocused() || PlayModeShortcuts.Blocked) return;
 		e.Handled = true;
 
 		if (e.KeyModifiers.HasFlag(KeyModifiers.Control))
@@ -371,7 +371,7 @@ public partial class MainWindowView : Window {
 	}
 
 	private void OnKeyUp(object? sender, KeyEventArgs e) {
-		if (e.Key != Key.Space || IsTextInputFocused() || WorkspaceViewModel.AnyPlayActive) return;
+		if (e.Key != Key.Space || IsTextInputFocused() || PlayModeShortcuts.Blocked) return;
 		e.Handled = true;
 
 		if (!e.KeyModifiers.HasFlag(KeyModifiers.Control))
