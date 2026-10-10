@@ -122,6 +122,7 @@ public partial class ViewportControl : UserControl {
 	}
 
 	public bool IsEditorFlying => m_editorFlyActive;
+	public static bool AnyEditorFlying => s_attached.Any(v => v.m_editorFlyActive);
 	private bool GameOwnsInput => PlayMode && !CanControlEditorCamera; 
 	private bool ShouldForward => GameOwnsInput ? m_gameInput : IsFocused;
 	private bool ShouldForwardPointer => !GameOwnsInput || m_gameInput;

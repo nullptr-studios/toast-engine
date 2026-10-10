@@ -11,6 +11,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Styling;
+using Avalonia.VisualTree;
 using editor.Assets.Importers;
 using editor.Assets.Types;
 using editor.Components.Elements;
@@ -23,7 +24,10 @@ public partial class AssetBrowserView : UserControl {
 	private const double DragThreshold = 4;
 	private PointerPressedEventArgs? m_pressArgs;
 
-	private AssetFile? m_pressFile;
+	private object? m_pressItem;
+	private bool m_marquee;
+	private Point m_marqueeStart;
+	private IReadOnlyCollection<object>? m_marqueeKeep;
 	private Point m_pressPoint;
 
 	public AssetBrowserView() {
@@ -33,6 +37,9 @@ public partial class AssetBrowserView : UserControl {
 		AssetRepeater.AddHandler(PointerMovedEvent, OnCardPointerMoved, RoutingStrategies.Tunnel);
 		AssetRepeater.AddHandler(PointerReleasedEvent, OnCardPointerReleased, RoutingStrategies.Tunnel);
 		AddHandler(KeyDownEvent, OnShortcut, RoutingStrategies.Tunnel);
+		AssetScroll.PointerMoved += OnAssetAreaPointerMoved;
+		AssetScroll.PointerReleased += OnAssetAreaPointerReleased;
+		AssetScroll.PointerCaptureLost += (_, _) => EndMarquee();
 
 		var bg = this.FindControl<Border>("AssetViewBackground");
 		if (bg?.ContextMenu is { } menu) menu.Opening += (_, _) => RebuildContextMenu(menu);
@@ -66,47 +73,51 @@ public partial class AssetBrowserView : UserControl {
 		if (item is null) return;
 		Vm.SelectItem(item, e.KeyModifiers);
 		Focus();
-		if (item is AssetFile file) {
-			m_pressFile = file;
-			m_pressArgs = e;
-			m_pressPoint = e.GetPosition(this);
-		}
+		m_pressItem = item;
+		m_pressArgs = e;
+		m_pressPoint = e.GetPosition(this);
 
 		e.Handled = true;
 	}
 
 	private async void OnCardPointerMoved(object? sender, PointerEventArgs e) {
-		if (m_pressFile is null || m_pressArgs is null || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+		if (m_pressItem is null || m_pressArgs is null || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
 		var delta = e.GetPosition(this) - m_pressPoint;
 		if (delta.X * delta.X + delta.Y * delta.Y < DragThreshold * DragThreshold) return;
 
-		var file = m_pressFile;
+		var pressed = m_pressItem;
 		var args = m_pressArgs;
-		m_pressFile = null;
+		m_pressItem = null;
 		m_pressArgs = null;
 
-		if (file.Uid is not { } uid) return;
+		var paths = Vm.DragPaths(pressed);
+		if (paths.Count == 0) return;
 
 		var data = new DataTransfer();
-		data.Add(DataTransferItem.Create(AssetDragData.Format,
-			new AssetDragRef(uid, file.Definition?.Type ?? "", file.Name)));
+		data.Add(DataTransferItem.Create(AssetDragData.ItemsFormat, paths));
 
-		var selectedFiles = Vm.SelectedItems
-			.OfType<AssetFile>()
-			.Where(f => f.Uid is not null)
-			.ToList();
-		if (selectedFiles is { Count: > 1 } && selectedFiles.Any(f => f.Uid == uid)) {
-			var refs = selectedFiles
-				.Select(f => new AssetDragRef(f.Uid!, f.Definition?.Type ?? "", f.Name))
+		// other editors only understand asset refs
+		if (pressed is AssetFile { Uid: { } uid } file) {
+			data.Add(DataTransferItem.Create(AssetDragData.Format,
+				new AssetDragRef(uid, file.Definition?.Type ?? "", file.Name)));
+
+			var selectedFiles = Vm.SelectedItems
+				.OfType<AssetFile>()
+				.Where(f => f.Uid is not null)
 				.ToList();
-			data.Add(DataTransferItem.Create(AssetDragData.MultiFormat, refs));
+			if (selectedFiles is { Count: > 1 } && selectedFiles.Any(f => f.Uid == uid)) {
+				var refs = selectedFiles
+					.Select(f => new AssetDragRef(f.Uid!, f.Definition?.Type ?? "", f.Name))
+					.ToList();
+				data.Add(DataTransferItem.Create(AssetDragData.MultiFormat, refs));
+			}
 		}
 
 		await DragDrop.DoDragDropAsync(args, data, DragDropEffects.Copy | DragDropEffects.Move);
 	}
 
 	private void OnCardPointerReleased(object? sender, PointerReleasedEventArgs e) {
-		m_pressFile = null;
+		m_pressItem = null;
 		m_pressArgs = null;
 	}
 
@@ -126,34 +137,60 @@ public partial class AssetBrowserView : UserControl {
 	}
 
 	private void OnCardDragOver(object? sender, DragEventArgs e) {
-		if (GetCardItem(e.Source) is not AssetFolder target) {
-			e.DragEffects = DragDropEffects.None;
-			e.Handled = true;
-			return;
-		}
-
-		var canMove = e.DataTransfer.TryGetValue(AssetDragData.MultiFormat) is { } refs
-			? refs.Count > 0 && refs.All(r => Vm.CanMoveAsset(r.Uid, target))
-			: e.DataTransfer.TryGetValue(AssetDragData.Format) is { } dragRef && Vm.CanMoveAsset(dragRef.Uid, target);
-		e.DragEffects = canMove ? DragDropEffects.Move : DragDropEffects.None;
-		e.Handled = true;
+		OnFolderDragOver(GetCardItem(e.Source) as AssetFolder, e);
 	}
 
 	private void OnCardDrop(object? sender, DragEventArgs e) {
-		if (GetCardItem(e.Source) is not AssetFolder target) return;
+		OnFolderDrop(GetCardItem(e.Source) as AssetFolder, e);
+	}
 
-		if (e.DataTransfer.TryGetValue(AssetDragData.MultiFormat) is { } refs) {
-			if (refs.Count == 0 || refs.Any(r => !Vm.CanMoveAsset(r.Uid, target))) return;
-			foreach (var r in refs)
-				Vm.MoveAsset(r.Uid, target);
+	// folders in the left panel and the breadcrumbs take drops the same way the folder cards do
+	private void OnFolderTargetDragOver(object? sender, DragEventArgs e) {
+		OnFolderDragOver(GetDropFolder(e.Source, sender), e);
+	}
+
+	private void OnFolderTargetDrop(object? sender, DragEventArgs e) {
+		OnFolderDrop(GetDropFolder(e.Source, sender), e);
+	}
+
+	private static AssetFolder? GetDropFolder(object? source, object? root) {
+		for (var ctrl = source as Control; ctrl is not null && !ReferenceEquals(ctrl, root); ctrl = ctrl.Parent as Control) {
+			switch (ctrl.DataContext) {
+				case AssetFolder folder: return folder;
+				case BreadcrumbItem { Folder: { } folder }: return folder;
+			}
+		}
+
+		return null;
+	}
+
+	private void OnFolderDragOver(AssetFolder? target, DragEventArgs e) {
+		e.Handled = true;
+		e.DragEffects = DragDropEffects.None;
+		if (target is null) return;
+
+		if (e.DataTransfer.TryGetValue(AssetDragData.ItemsFormat) is { } paths) {
+			if (Vm.CanMoveItems(paths, target)) e.DragEffects = DragDropEffects.Move;
+		} else if (e.DataTransfer.Contains(DataFormat.File) && Vm.CanWriteToFolder(target)) {
+			e.DragEffects = DragDropEffects.Copy;
+		}
+	}
+
+	private async void OnFolderDrop(AssetFolder? target, DragEventArgs e) {
+		if (target is null) return;
+
+		if (e.DataTransfer.TryGetValue(AssetDragData.ItemsFormat) is { } paths) {
+			if (!Vm.CanMoveItems(paths, target)) return;
+			Vm.MoveItems(paths, target);
 			e.Handled = true;
 			return;
 		}
 
-		if (e.DataTransfer.TryGetValue(AssetDragData.Format) is not { } dragRef) return;
-		if (!Vm.CanMoveAsset(dragRef.Uid, target)) return;
-		Vm.MoveAsset(dragRef.Uid, target);
+		if (!e.DataTransfer.Contains(DataFormat.File) || !Vm.CanWriteToFolder(target)) return;
+		var local = e.DataTransfer.TryGetFiles()?.Select(i => i.TryGetLocalPath()).OfType<string>().ToList();
+		if (local is not { Count: > 0 }) return;
 		e.Handled = true;
+		await Vm.HandleDroppedFilesAsync(local, target);
 	}
 
 	private static bool IsTagRemoveButton(object? source) {
@@ -261,10 +298,54 @@ public partial class AssetBrowserView : UserControl {
 	}
 
 	private void OnAssetAreaPointerPressed(object? sender, PointerPressedEventArgs e) {
-		if (!e.Handled) {
-			Vm.ClearSelection();
-			Focus();
-		}
+		if (e.Handled) return;
+
+		var additive = e.KeyModifiers.HasFlag(KeyModifiers.Control);
+		if (!additive) Vm.ClearSelection();
+		Focus();
+
+		var onScrollBar = (e.Source as Visual)?.FindAncestorOfType<Avalonia.Controls.Primitives.ScrollBar>() is not null;
+		if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed || onScrollBar) return;
+
+		m_marquee = true;
+		m_marqueeStart = e.GetPosition(AssetRepeater);
+		m_marqueeKeep = additive ? Vm.SelectedItems.ToList() : null;
+		e.Pointer.Capture(AssetScroll);
+	}
+
+	private void OnAssetAreaPointerMoved(object? sender, PointerEventArgs e) {
+		if (!m_marquee) return;
+
+		var now = e.GetPosition(AssetRepeater);
+		var rect = new Rect(
+			new Point(Math.Min(now.X, m_marqueeStart.X), Math.Min(now.Y, m_marqueeStart.Y)),
+			new Point(Math.Max(now.X, m_marqueeStart.X), Math.Max(now.Y, m_marqueeStart.Y)));
+
+		// small movements are still a click on the background
+		if (!MarqueeRect.IsVisible && rect.Width < DragThreshold && rect.Height < DragThreshold) return;
+
+		var inScroll = AssetRepeater.TranslatePoint(rect.TopLeft, AssetScroll) ?? rect.TopLeft;
+		MarqueeRect.Margin = new Thickness(inScroll.X, inScroll.Y, 0, 0);
+		MarqueeRect.Width = rect.Width;
+		MarqueeRect.Height = rect.Height;
+		MarqueeRect.IsVisible = true;
+
+		var hit = new List<object>();
+		foreach (var child in AssetRepeater.Children)
+			if (child.DataContext is AssetFile or AssetFolder && child.Bounds.Intersects(rect))
+				hit.Add(child.DataContext);
+		Vm.SetSelection(hit, m_marqueeKeep);
+	}
+
+	private void OnAssetAreaPointerReleased(object? sender, PointerReleasedEventArgs e) {
+		EndMarquee();
+		if (e.Pointer.Captured == AssetScroll) e.Pointer.Capture(null);
+	}
+
+	private void EndMarquee() {
+		m_marquee = false;
+		m_marqueeKeep = null;
+		MarqueeRect.IsVisible = false;
 	}
 
 	private void OnNewButtonClick(object? sender, RoutedEventArgs e) {
@@ -317,6 +398,12 @@ public partial class AssetBrowserView : UserControl {
 
 	private void OnShortcut(object? sender, KeyEventArgs e) {
 		if (e.Source is TextBox || PlayModeShortcuts.Blocked) return;
+
+		if (e.Key == Key.A && e.KeyModifiers == KeyModifiers.Control) {
+			Vm.SelectAll();
+			e.Handled = true;
+			return;
+		}
 
 		var command = (e.Key, e.KeyModifiers) switch {
 			(Key.F2, KeyModifiers.None) => Vm.RenameCommand,

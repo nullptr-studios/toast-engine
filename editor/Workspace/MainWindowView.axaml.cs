@@ -49,6 +49,7 @@ public partial class MainWindowView : Window {
 	public MainWindowView(ToastEngine toast) {
 		InitializeComponent();
 		m_toast = toast;
+		Focusable = true; // gives focus somewhere to go when it has to leave the dock content
 		m_toastBorder = this.FindControl<Border>("ToastZoneBorder");
 		WireResizeHandle();
 		WireWindowMenu();
@@ -106,6 +107,9 @@ public partial class MainWindowView : Window {
 	private async void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e) {
 		if (e.PropertyName != nameof(MainWindowViewModel.ToastZoneActive)) return;
 		var active = (DataContext as MainWindowViewModel)?.ToastZoneActive ?? false;
+
+		// the toast zone takes the keyboard
+		if (active) Focus();
 		await AnimateToastZone(active);
 	}
 
@@ -339,7 +343,7 @@ public partial class MainWindowView : Window {
 				return;
 			}
 
-			if (RunEditShortcut(e)) return;
+			if (RunEditShortcut(e) || RunToolShortcut(e)) return;
 		}
 
 		// during play the game owns the keyboard
@@ -353,8 +357,16 @@ public partial class MainWindowView : Window {
 			(DataContext as MainWindowViewModel)?.ShowToastZone(true);
 	}
 
+	private bool RunToolShortcut(KeyEventArgs e) {
+		if (DataContext is not MainWindowViewModel { ToastZoneActive: false, Hierarchy.ActiveWorkspace: { } workspace }) return false;
+		return ToolShortcuts.Run(e, workspace);
+	}
+
 	private bool RunEditShortcut(KeyEventArgs e) {
 		if (DataContext is not MainWindowViewModel vm) return false;
+		if (vm.ToastZoneActive || !ShortcutScope.TargetsWorkspace(FocusManager?.GetFocusedElement()))
+			return false;
+
 		return EditShortcuts.Run(e, vm.History?.UndoCommand, vm.History?.RedoCommand, vm.Hierarchy);
 	}
 
