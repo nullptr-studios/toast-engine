@@ -1,0 +1,55 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="editor.Components.Modals.LoadingPopup"
+        SizeToContent="Height"
+        Width="360"
+        CanResize="False"
+        CanMaximize="False"
+        CanMinimize="False"
+        WindowStartupLocation="CenterScreen"
+        ShowInTaskbar="False"
+        Background="{StaticResource Bg3}"
+        Title="Loading">
+
+	<Window.Styles>
+		<Style Selector="Border.pingpong">
+			<Style.Animations>
+				<Animation Duration="0:0:1.1"
+				           IterationCount="INFINITE"
+				           PlaybackDirection="Alternate"
+				           Easing="CubicEaseInOut">
+					<KeyFrame Cue="0%">
+						<Setter Property="TranslateTransform.X"
+						        Value="0" />
+					</KeyFrame>
+					<KeyFrame Cue="100%">
+						<Setter Property="TranslateTransform.X"
+						        Value="250" />
+					</KeyFrame>
+				</Animation>
+			</Style.Animations>
+		</Style>
+	</Window.Styles>
+
+	<StackPanel Margin="8"
+	            Spacing="8">
+		<TextBlock x:Name="Message"
+		           FontWeight="SemiBold"
+		           HorizontalAlignment="Center"
+		           TextTrimming="CharacterEllipsis" />
+		<Border Background="{StaticResource Bg1}"
+		        CornerRadius="6"
+		        Height="18"
+		        ClipToBounds="True">
+			<Border Classes="pingpong"
+			        Width="96"
+			        HorizontalAlignment="Left"
+			        CornerRadius="6"
+			        Background="{StaticResource Red}">
+				<Border.RenderTransform>
+					<TranslateTransform />
+				</Border.RenderTransform>
+			</Border>
+		</Border>
+	</StackPanel>
+</Window>

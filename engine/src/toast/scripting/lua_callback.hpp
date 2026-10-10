@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <functional>
 #include <lua.hpp>
 #include <luabridge3/LuaBridge/LuaBridge.h>
@@ -42,6 +43,7 @@ public:
 	 *
 	 * When the interpreter is busy on another thread while this one owns a different one
 	 */
+	[[nodiscard]]
 	auto invoke() const noexcept -> bool;
 
 	/// Calls the function and expects a boolean back

@@ -164,7 +164,48 @@ public partial class VoxelEditorViewModel : ObservableObject, IDisposable {
 	// A layout can arrive before the hierarchy says which root is ours so the latest one waits for it
 	private ProceduralVoxelLayout? m_unmatchedLayout;
 
+	private HashSet<string>? m_knownUids;
+	private DateTime m_selectCreatedUntil;
+
+	private void SelectNextCreated() {
+		var known = new HashSet<string>();
+		void Collect(IEnumerable<HierarchyElement> elements) {
+			foreach (var element in elements) {
+				known.Add(element.Uid);
+				Collect(element.Children);
+			}
+		}
+
+		Collect(Hierarchy.Root);
+		m_knownUids = known;
+		m_selectCreatedUntil = DateTime.UtcNow.AddSeconds(3);
+	}
+
+	private void SelectCreatedNode() {
+		if (m_knownUids is not { } known) return;
+		if (DateTime.UtcNow > m_selectCreatedUntil) {
+			m_knownUids = null;
+			return;
+		}
+
+		HierarchyElement? Find(IEnumerable<HierarchyElement> elements) {
+			foreach (var element in elements) {
+				if (!known.Contains(element.Uid)) return element;
+				if (Find(element.Children) is { } found) return found;
+			}
+
+			return null;
+		}
+
+		if (Find(Hierarchy.Root) is not { } created) return;
+		m_knownUids = null;
+		for (var parent = created.Parent; parent is not null; parent = parent.Parent) parent.IsExpanded = true;
+		Hierarchy.SelectedNode = created;
+	}
+
 	private void OnHierarchyChanged() {
+		SelectCreatedNode();
+		SelectPickedNode();
 		if (m_unmatchedLayout is { } waiting && waiting.RootUid == Workspace.RootUid) {
 			m_unmatchedLayout = null;
 			OnLayout(waiting);
@@ -216,7 +257,27 @@ public partial class VoxelEditorViewModel : ObservableObject, IDisposable {
 
 	private void OnNodePicked(NodePicked e) {
 		if (m_disposed || e.WorkspaceHandle != Workspace.EffectiveHandle) return;
-		Select(string.IsNullOrEmpty(e.Node) ? null : e.Node);
+		var uid = string.IsNullOrEmpty(e.Node) ? null : e.Node;
+		// The tools announce a piece they just made before the hierarchy knows it, so wait for it
+		m_pickedUid = uid is not null && Hierarchy.Find(uid) is null ? uid : null;
+		if (m_pickedUid is not null) m_pickedUntil = DateTime.UtcNow.AddSeconds(3);
+		Select(uid);
+	}
+
+	private string? m_pickedUid;
+	private DateTime m_pickedUntil;
+
+	private void SelectPickedNode() {
+		if (m_pickedUid is not { } uid) return;
+		if (DateTime.UtcNow > m_pickedUntil) {
+			m_pickedUid = null;
+			return;
+		}
+
+		if (Hierarchy.Find(uid) is not { } picked) return;
+		m_pickedUid = null;
+		for (var parent = picked.Parent; parent is not null; parent = parent.Parent) parent.IsExpanded = true;
+		Hierarchy.SelectedNode = picked;
 	}
 
 	private void OnSelectionChanged() {
@@ -307,6 +368,7 @@ public partial class VoxelEditorViewModel : ObservableObject, IDisposable {
 			VoxelTool.Paint => "toast::PaintVolume",
 			_ => "toast::FillVolume"
 		};
+		// The engine selects the new volume itself (NodePicked)
 		Events.Send(new VoxelCreatePiece {
 			Parent = CreationParent(), Type = type, Min = Int3(min), Max = Int3(max), Script = DefaultScript ?? "",
 			Mode = tool == VoxelTool.Buildup ? DefaultFillMode : 0u
@@ -316,12 +378,14 @@ public partial class VoxelEditorViewModel : ObservableObject, IDisposable {
 	[RelayCommand]
 	private void AddMesh() {
 		EnsureEngine();
+		SelectNextCreated();
 		Events.Send(new WorkspaceCreateNode { Parent = CreationParent(), Type = "toast::VoxelMesh" });
 	}
 
 	[RelayCommand]
 	private void AddGroup() {
 		EnsureEngine();
+		SelectNextCreated();
 		Events.Send(new WorkspaceCreateNode { Parent = CreationParent(), Type = "toast::VoxelGroup" });
 	}
 

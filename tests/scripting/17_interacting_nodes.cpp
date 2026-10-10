@@ -25,7 +25,7 @@ auto hasInterpreter(const toast::_detail::WaveJob& job, size_t interpreter) -> b
 
 // Nodes whose scripts call each other are declared with interactsWith(). A tick wave runs them in one job, so a call from
 // one to the other finds the interpreter free and never has to wait for the end of the wave
-TOAST_TEST_NAMED("Scripting", "scripting/17_interacting_nodes_run_in_one_job", test_scripting_17_interacting_nodes_run_in_one_job) {
+TOAST_TEST_NAMED("Scripting", "scripting/17_interacting_nodes", test_scripting_17_interacting_nodes_run_in_one_job) {
 	luaState();
 	auto world_owner = toast::_detail::WorldTestAccess::createWorld();
 	toast::World& world = *world_owner;

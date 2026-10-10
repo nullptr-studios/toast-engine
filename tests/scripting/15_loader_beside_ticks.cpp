@@ -18,7 +18,7 @@ using namespace toast::tests::scripting_tests;
 // init (which calls into nodes that are ticking) and lets the older ones go, on the same interpreters the ticks use.
 // Nothing may touch an interpreter its thread does not own (the debug ownership assertions abort the process if one
 // does), nothing may hang, and every call has to arrive exactly once
-TOAST_TEST_NAMED("Scripting", "scripting/15_a_loader_thread_beside_ticking_nodes", test_scripting_15_a_loader_thread_beside_ticking_nodes) {
+TOAST_TEST_NAMED("Scripting", "scripting/15_loader_beside_ticks", test_scripting_15_a_loader_thread_beside_ticking_nodes) {
 	luaState();
 	auto world_owner = toast::_detail::WorldTestAccess::createWorld();
 	toast::World& world = *world_owner;

@@ -139,6 +139,7 @@ jobs:
           cmake -B build/windows-test-release `
             -G Ninja `
             -DCMAKE_BUILD_TYPE=Release `
+            -DTOAST_MSVC_ARCH= `
             -DCMAKE_C_COMPILER=cl `
             -DCMAKE_CXX_COMPILER=cl `
             -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}" `
