@@ -12,6 +12,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Dock.Model.Mvvm.Controls;
 using editor.Assets;
+using editor.Git;
 using editor.Assets.Types;
 using editor.Components.Modals;
 using editor.Workspace;
@@ -316,12 +317,13 @@ public partial class SchemaViewModel : Tool, IAutosavable {
 	private async Task Save() {
 		if (string.IsNullOrEmpty(CurrentPath)) return;
 
-		var realPath = ProjectContext.Resolve(CurrentPath);
-		await File.WriteAllTextAsync(realPath, SerializeDocument());
-		MetaFile.Touch(CurrentPath);
-		AutosaveService.Delete(CurrentUid, AssetTypeRegistry.GetExtension(CurrentPath));
+		var text = SerializeDocument();
+		if (!await GitLockGuard.SaveAsync(CurrentUid, CurrentPath, path => File.WriteAllTextAsync(path, text),
+			    (uid, virtualPath) => OpenFile(uid, virtualPath)))
+			return;
+
 		IsDirty = false;
-		SchemaSaved?.Invoke(realPath);
+		SchemaSaved?.Invoke(ProjectContext.Resolve(CurrentPath));
 	}
 
 	private string SerializeDocument() {
@@ -367,8 +369,12 @@ public partial class SchemaViewModel : Tool, IAutosavable {
 			OkLabel: "Save"
 		)).ShowDialog<bool?>(owner);
 		if (result is null) return false;
-		if (result is true) await Save();
-		else AutosaveService.Delete(CurrentUid, AssetTypeRegistry.GetExtension(CurrentPath));
+		if (result is true) {
+			await Save();
+			return !IsDirty;
+		}
+
+		AutosaveService.Delete(CurrentUid, AssetTypeRegistry.GetExtension(CurrentPath));
 		return true;
 	}
 

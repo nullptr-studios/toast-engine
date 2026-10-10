@@ -20,6 +20,7 @@ using editor.Assets.Importers;
 using editor.Assets.Types;
 using editor.Components.Modals;
 using editor.Engine;
+using editor.Git;
 using editor.Workspace;
 using Lucide.Avalonia;
 
@@ -68,6 +69,7 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 	private readonly HashSet<object> m_selectedItems = [];
 
 	private readonly AssetTypeFilter m_unknownFilter;
+	private readonly GitService? m_git;
 	private ClipMode m_clipMode;
 	private List<string> m_clipPaths = []; // real paths
 	private string? m_preSearchFolderPath;
@@ -126,6 +128,8 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 		NewAssetCommand = Track(new AsyncRelayCommand<object>(o => CreateNewAsset(o as BaseAsset),
 			o => o is BaseAsset && CanWriteToSelectedFolder));
 		ReimportCommand = Track(new AsyncRelayCommand<object>(ReimportAsync, CanReimport));
+		LockCommand = Track(new AsyncRelayCommand<object>(LockAsync, p => GetFileTargets(p).Any(f => f.CanLock)));
+		UnlockCommand = Track(new AsyncRelayCommand<object>(UnlockAsync, p => GetFileTargets(p).Any(f => f.CanUnlock)));
 		SyncTagFilters();
 		CaptureFolderSettings();
 		LoadFolders();
@@ -133,6 +137,12 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 		// auto-reload whenever the asset database changes
 		AssetDatabase.ReloadedDatabase += OnDatabaseReloaded;
 		AssetBrowserSettings.Changed += OnSettingsChanged;
+
+		m_git = GitService.Current;
+		if (m_git is not null) {
+			m_git.StatusChanged += OnGitChanged;
+			m_git.LocksChanged += OnGitChanged;
+		}
 	}
 
 	public static AssetBrowserViewModel? Current { get; private set; }
@@ -289,6 +299,8 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 	public ICommand NewNodeGenericCommand { get; }
 	public ICommand NewAssetCommand { get; }
 	public ICommand ReimportCommand { get; }
+	public ICommand LockCommand { get; }
+	public ICommand UnlockCommand { get; }
 
 	public ICommand ManageTagsCommand { get; } = new RelayCommand(() =>
 		MainWindowViewModel.Current?.OpenProjectSettingsAt(SettingsTab.Editor,
@@ -299,6 +311,10 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 		ThumbnailService.Updated -= OnThumbnailUpdated;
 		AssetDatabase.ReloadedDatabase -= OnDatabaseReloaded;
 		AssetBrowserSettings.Changed -= OnSettingsChanged;
+		if (m_git is not null) {
+			m_git.StatusChanged -= OnGitChanged;
+			m_git.LocksChanged -= OnGitChanged;
+		}
 		foreach (var filter in Filters) filter.PropertyChanged -= OnFilterChanged;
 		foreach (var filter in TagFilters) {
 			filter.PropertyChanged -= OnTagFilterChanged;
@@ -864,7 +880,42 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 	}
 
 	private static bool IsEditable(AssetFile file) {
-		return IsEditablePath(file.Filepath);
+		return IsEditablePath(file.Filepath) && !file.IsLockedByOthers;
+	}
+
+	private void OnGitChanged() {
+		foreach (var root in Folders) NotifyGitChanged(root);
+		NotifyActionStateChanged();
+	}
+
+	private static void NotifyGitChanged(AssetFolder folder) {
+		folder.NotifyGitChanged();
+		foreach (var file in folder.Files) file.NotifyGitChanged();
+		foreach (var sub in folder.SubFolders) NotifyGitChanged(sub);
+	}
+
+	private List<AssetFile> GetFileTargets(object? param) {
+		return GetTargets(param).OfType<AssetFile>().ToList();
+	}
+
+	private async Task LockAsync(object? param) {
+		if (m_git is null) return;
+		foreach (var file in GetFileTargets(param).Where(f => f.CanLock)) {
+			var result = await m_git.LockAsync(file.AssetPath);
+			if (result.Ok) continue;
+			await App.Modals.ShowError("Cannot lock " + file.Name, result.Message);
+			break;
+		}
+	}
+
+	private async Task UnlockAsync(object? param) {
+		if (m_git is null) return;
+		foreach (var file in GetFileTargets(param).Where(f => f.CanUnlock)) {
+			var result = await m_git.UnlockAsync(file.AssetPath, false);
+			if (result.Ok) continue;
+			await App.Modals.ShowError("Cannot unlock " + file.Name, result.Message);
+			break;
+		}
 	}
 
 	private static bool IsEditable(AssetFolder folder) {

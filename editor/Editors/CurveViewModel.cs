@@ -13,6 +13,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Dock.Model.Mvvm.Controls;
 using editor.Assets;
+using editor.Git;
 using editor.Assets.Types;
 using editor.Components.CurveCanvas;
 using editor.Components.Modals;
@@ -95,8 +96,12 @@ public partial class CurveViewModel : Tool, IToastZoneEditor, IAutosavable {
 			OkLabel: "Save"
 		)).ShowDialog<bool?>(owner);
 		if (result is null) return false;
-		if (result is true) await Save();
-		else AutosaveService.Delete(CurrentUid, AssetTypeRegistry.GetExtension(CurrentPath));
+		if (result is true) {
+			await Save();
+			return !IsDirty;
+		}
+
+		AutosaveService.Delete(CurrentUid, AssetTypeRegistry.GetExtension(CurrentPath));
 		return true;
 	}
 
@@ -154,11 +159,13 @@ public partial class CurveViewModel : Tool, IToastZoneEditor, IAutosavable {
 	[RelayCommand]
 	private async Task Save() {
 		if (m_curve is null || string.IsNullOrEmpty(CurrentPath)) return;
-		var realPath = ProjectContext.Resolve(CurrentPath);
-		await Task.Run(() => m_curve.Save(realPath));
-		MetaFile.Touch(CurrentPath);
-		AutosaveService.Delete(CurrentUid, AssetTypeRegistry.GetExtension(CurrentPath));
-		IsDirty = false;
+		var curve = m_curve;
+		if (await GitLockGuard.SaveAsync(CurrentUid, CurrentPath, path => Task.Run(() => curve.Save(path)), ReopenFile))
+			IsDirty = false;
+	}
+
+	private void ReopenFile(string uid, string virtualPath) {
+		OpenFile(uid, virtualPath, GitLockGuard.DefinitionOf(virtualPath)!);
 	}
 
 	[RelayCommand]

@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using editor.Git;
 
 namespace editor.Assets;
 
@@ -66,6 +67,12 @@ public class AssetFolder : INotifyPropertyChanged {
 		!ProjectContext.IsUnderCore(Filepath) &&
 		ProjectContext.IsUnderContentDatabase(Filepath) &&
 		!ProjectContext.IsDatabaseRoot(Filepath);
+
+	public GitFileStatus GitStatus => GitService.Current?.GetFolderStatus(Filepath) ?? GitFileStatus.None;
+
+	public void NotifyGitChanged() {
+		Notify(nameof(GitStatus));
+	}
 
 	public bool IsExpanded {
 		get => m_isExpanded;

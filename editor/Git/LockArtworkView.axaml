@@ -1,0 +1,167 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:git="using:editor.Git"
+             mc:Ignorable="d"
+             x:Class="editor.Git.LockArtworkView"
+             x:DataType="git:LockArtworkViewModel"
+             d:DesignWidth="450"
+             d:DesignHeight="600">
+	<Border Background="{StaticResource Bg2}"
+	        Padding="8">
+		<Grid RowDefinitions="Auto,*,Auto"
+		      RowSpacing="8">
+			<Border Grid.Row="0"
+			        Background="{StaticResource Bg3}"
+			        CornerRadius="8"
+			        Padding="8">
+				<Grid ColumnDefinitions="*,Auto,Auto"
+				      ColumnSpacing="6">
+					<TextBox Grid.Column="0"
+					         Text="{Binding SearchText}"
+					         PlaceholderText="Search artwork://"
+					         CornerRadius="8"
+					         BorderThickness="0"
+					         Background="{StaticResource Bg1}"/>
+					<Button Grid.Column="1"
+					        Command="{Binding ExpandAllCommand}"
+					        ToolTip.Tip="Expand all"
+					        Background="{StaticResource Bg4}"
+					        CornerRadius="6">
+						<LucideIcon Kind="ChevronsUpDown"
+						            Size="18"
+						            StrokeWidth="2.5" />
+					</Button>
+					<Button Grid.Column="2"
+					        Command="{Binding CollapseAllCommand}"
+					        ToolTip.Tip="Collapse all but the selected"
+					        Background="{StaticResource Bg4}"
+					        CornerRadius="6">
+						<LucideIcon Kind="ChevronsDownUp"
+						            Size="18"
+						            StrokeWidth="2.5" />
+					</Button>
+				</Grid>
+			</Border>
+
+			<!-- The files -->
+			<Border Grid.Row="1">
+				<Grid>
+					<TextBlock Text="There are no lockable files left in artwork://"
+					           Foreground="{StaticResource TextMuted}"
+					           HorizontalAlignment="Center"
+					           VerticalAlignment="Center"
+					           IsVisible="{Binding IsEmpty}" />
+					<TreeView ItemsSource="{Binding Roots}"
+					          SelectedItem="{Binding SelectedNode, Mode=TwoWay}"
+					          Background="Transparent">
+						<TreeView.Styles>
+							<Style Selector="TreeViewItem">
+								<Setter Property="IsExpanded"
+								        Value="{ReflectionBinding IsExpanded, Mode=TwoWay}" />
+							</Style>
+							<!-- Same rows as the commit window: rounded, Bg5 under the pointer, Bg4 when selected -->
+							<Style Selector="TreeViewItem /template/ Border#PART_LayoutRoot">
+								<Setter Property="CornerRadius"
+								        Value="8" />
+							</Style>
+							<Style Selector="TreeViewItem /template/ Border#PART_LayoutRoot:pointerover">
+								<Setter Property="Background"
+								        Value="{StaticResource Bg5}" />
+							</Style>
+							<Style Selector="TreeViewItem:selected /template/ Border#PART_LayoutRoot">
+								<Setter Property="Background"
+								        Value="{StaticResource Bg4}" />
+							</Style>
+							<Style Selector="TreeViewItem:selected /template/ Border#PART_LayoutRoot:pointerover">
+								<Setter Property="Background"
+								        Value="{StaticResource Bg4}" />
+							</Style>
+						</TreeView.Styles>
+						<TreeView.DataTemplates>
+							<TreeDataTemplate DataType="git:ArtworkFolder"
+							                  ItemsSource="{Binding Children}">
+								<CheckBox IsChecked="{Binding IsChecked}">
+									<StackPanel Orientation="Horizontal"
+									            Spacing="6">
+										<LucideIcon Kind="Folder"
+										            Size="16"
+										            StrokeWidth="2.5" />
+										<TextBlock Text="{Binding Name}"
+										           FontWeight="SemiBold"
+										           VerticalAlignment="Center" />
+										<TextBlock Text="{Binding Count}"
+										           Foreground="{StaticResource TextMuted}"
+										           FontSize="11"
+										           VerticalAlignment="Center" />
+									</StackPanel>
+								</CheckBox>
+							</TreeDataTemplate>
+							<DataTemplate DataType="git:ArtworkRow">
+								<CheckBox IsChecked="{Binding IsChecked}">
+									<StackPanel Orientation="Horizontal"
+									            Spacing="6">
+										<Border VerticalAlignment="Center"
+										        Background="{Binding TypeBrush}"
+										        CornerRadius="4"
+										        Padding="6,2">
+											<TextBlock Text="{Binding TypeLabel}"
+											           FontSize="10"
+											           FontWeight="Bold"
+											           Foreground="{StaticResource Bg1}" />
+										</Border>
+										<TextBlock Text="{Binding Name}"
+										           FontWeight="SemiBold"
+										           VerticalAlignment="Center" />
+									</StackPanel>
+								</CheckBox>
+							</DataTemplate>
+						</TreeView.DataTemplates>
+					</TreeView>
+				</Grid>
+			</Border>
+
+			<!-- Lock -->
+			<Border Grid.Row="2"
+			        Background="{StaticResource Bg3}"
+			        CornerRadius="8"
+			        Padding="8">
+				<Grid RowDefinitions="Auto,Auto,Auto"
+				      RowSpacing="6">
+					<TextBlock Grid.Row="0"
+					           Text="{Binding Error}"
+					           Foreground="{StaticResource Red}"
+					           TextWrapping="Wrap"
+					           MaxLines="5"
+					           Margin="0, 0, 0,6"
+					           IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+					<ProgressBar Grid.Row="1"
+					             Value="{Binding Progress}"
+					             Maximum="100"
+					             Height="24"
+					             CornerRadius="6"
+					             Margin="0, -6, 0, 6"
+					             IsVisible="{Binding IsBusy}" />
+					<Button Grid.Row="2"
+					        Command="{Binding LockSelectedCommand}"
+					        HorizontalAlignment="Stretch"
+					        HorizontalContentAlignment="Center"
+					        Background="{StaticResource Red}"
+					        Foreground="Black"
+					        Margin="0, -6, 0, 0"
+					        CornerRadius="6">
+						<StackPanel Orientation="Horizontal"
+						            Spacing="8">
+							<LucideIcon Kind="Lock"
+							            Size="16"
+							            StrokeWidth="2.5" />
+							<TextBlock Text="{Binding LockLabel}"
+							           FontWeight="Bold" />
+						</StackPanel>
+					</Button>
+				</Grid>
+			</Border>
+		</Grid>
+	</Border>
+</UserControl>

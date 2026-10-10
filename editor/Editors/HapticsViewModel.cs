@@ -14,6 +14,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Dock.Model.Mvvm.Controls;
 using editor.Assets;
+using editor.Git;
 using editor.Assets.Types;
 using editor.Components.CurveCanvas;
 using editor.Components.Modals;
@@ -119,8 +120,12 @@ public partial class HapticsViewModel : Tool, IToastZoneEditor, IAutosavable {
 			OkLabel: "Save"
 		)).ShowDialog<bool?>(owner);
 		if (result is null) return false;
-		if (result is true) await Save();
-		else AutosaveService.Delete(CurrentUid, AssetTypeRegistry.GetExtension(CurrentPath));
+		if (result is true) {
+			await Save();
+			return !IsDirty;
+		}
+
+		AutosaveService.Delete(CurrentUid, AssetTypeRegistry.GetExtension(CurrentPath));
 		return true;
 	}
 
@@ -182,11 +187,12 @@ public partial class HapticsViewModel : Tool, IToastZoneEditor, IAutosavable {
 	private async Task Save() {
 		if (m_haptic is null || string.IsNullOrEmpty(CurrentPath)) return;
 		var haptic = m_haptic;
-		var realPath = ProjectContext.Resolve(CurrentPath);
-		await Task.Run(() => haptic.Save(realPath));
-		MetaFile.Touch(CurrentPath);
-		AutosaveService.Delete(CurrentUid, AssetTypeRegistry.GetExtension(CurrentPath));
-		IsDirty = false;
+		if (await GitLockGuard.SaveAsync(CurrentUid, CurrentPath, path => Task.Run(() => haptic.Save(path)), ReopenFile))
+			IsDirty = false;
+	}
+
+	private void ReopenFile(string uid, string virtualPath) {
+		OpenFile(uid, virtualPath, GitLockGuard.DefinitionOf(virtualPath)!);
 	}
 
 	[RelayCommand]
