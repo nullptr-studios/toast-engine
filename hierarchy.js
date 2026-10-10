@@ -1388,6 +1388,7 @@ var hierarchy =
     [ "toast::UISettings", "classtoast_1_1UISettings.html", null ],
     [ "ui::UISystem", "classui_1_1UISystem.html", null ],
     [ "renderer::VulkanRenderer::UIWorldPanelProxy", "structrenderer_1_1VulkanRenderer_1_1UIWorldPanelProxy.html", null ],
+    [ "editor.Components.Modals.UnsavedChangesViewModel", "classeditor_1_1Components_1_1Modals_1_1UnsavedChangesViewModel.html", null ],
     [ "renderer::VulkanMesh::UploadData", "structrenderer_1_1VulkanMesh_1_1UploadData.html", null ],
     [ "UserControl", null, [
       [ "editor.Assets.AssetBrowserView", "classeditor_1_1Assets_1_1AssetBrowserView.html", null ],
@@ -1473,6 +1474,7 @@ var hierarchy =
       [ "editor.Assets.Importers.CompactImportWindow", "classeditor_1_1Assets_1_1Importers_1_1CompactImportWindow.html", null ],
       [ "editor.Assets.Importers.ImportWindow", "classeditor_1_1Assets_1_1Importers_1_1ImportWindow.html", null ],
       [ "editor.Components.Modals.AboutWindow", "classeditor_1_1Components_1_1Modals_1_1AboutWindow.html", null ],
+      [ "editor.Components.Modals.LoadingPopup", "classeditor_1_1Components_1_1Modals_1_1LoadingPopup.html", null ],
       [ "editor.Components.Modals.MessageModal", "classeditor_1_1Components_1_1Modals_1_1MessageModal.html", null ],
       [ "editor.Components.Modals.NewFolderModal", "classeditor_1_1Components_1_1Modals_1_1NewFolderModal.html", null ],
       [ "editor.Components.Modals.PickerWindow", "classeditor_1_1Components_1_1Modals_1_1PickerWindow.html", [
@@ -1486,6 +1488,7 @@ var hierarchy =
       [ "editor.Components.Modals.SaveFileModal", "classeditor_1_1Components_1_1Modals_1_1SaveFileModal.html", null ],
       [ "editor.Components.Modals.SimpleLoaderWindow", "classeditor_1_1Components_1_1Modals_1_1SimpleLoaderWindow.html", null ],
       [ "editor.Components.Modals.SplashLoaderWindow", "classeditor_1_1Components_1_1Modals_1_1SplashLoaderWindow.html", null ],
+      [ "editor.Components.Modals.UnsavedChangesModal", "classeditor_1_1Components_1_1Modals_1_1UnsavedChangesModal.html", null ],
       [ "editor.Logger.LogDetailWindow", "classeditor_1_1Logger_1_1LogDetailWindow.html", null ],
       [ "editor.StartWindow.NewProjectWindow", "classeditor_1_1StartWindow_1_1NewProjectWindow.html", null ],
       [ "editor.StartWindow.StartWindow", "classeditor_1_1StartWindow_1_1StartWindow.html", null ],

@@ -1,5 +1,11 @@
 var NAVTREEINDEX12 =
 {
+"structevent_1_1WorkspaceHistoryCommitted.html":[14,0,4,223],
+"structevent_1_1WorkspaceHistoryConflicts.html":[14,0,4,224],
+"structevent_1_1WorkspaceHistoryInitialSnapshot.html":[14,0,4,225],
+"structevent_1_1WorkspaceHistoryMergePrepared.html":[14,0,4,226],
+"structevent_1_1WorkspaceHistorySnapshotApplied.html":[14,0,4,227],
+"structevent_1_1WorkspaceHistoryTransaction.html":[14,0,4,228],
 "structevent_1_1WorkspaceMergeHistory.html":[14,0,4,229],
 "structevent_1_1WorkspaceMoveNodeTo.html":[14,0,4,230],
 "structevent_1_1WorkspacePasteNode.html":[14,0,4,231],
@@ -243,11 +249,5 @@ var NAVTREEINDEX12 =
 "structrenderer_1_1VulkanRenderer_1_1RenderFrame.html#a9d1a05bb91d7d7aa5dd3830dc26806b8":[14,0,8,76,18,1],
 "structrenderer_1_1VulkanRenderer_1_1RenderFrame_1_1MaterialRange.html":[14,0,8,76,18,0],
 "structrenderer_1_1VulkanRenderer_1_1ShadowFrame.html":[14,0,8,76,8],
-"structrenderer_1_1VulkanRenderer_1_1ShadowFrame.html#a59bf9fa21c485d7c1280183bb30ea177":[14,0,8,76,8,0],
-"structrenderer_1_1VulkanRenderer_1_1ShadowView.html":[14,0,8,76,7],
-"structrenderer_1_1VulkanRenderer_1_1SizeHandleDraw.html":[14,0,8,76,12],
-"structrenderer_1_1VulkanRenderer_1_1TransformGizmoDraw.html":[14,0,8,76,13],
-"structrenderer_1_1VulkanRenderer_1_1UIWorldPanelProxy.html":[14,0,8,76,11],
-"structrenderer_1_1VulkanRenderer_1_1VoxelVolumeProxy.html":[14,0,8,76,10],
-"structrenderer_1_1VulkanRenderer_1_1VoxelVolumeProxy.html#a5d23f18de4bcffc71b6a21e6ea1e9e71":[14,0,8,76,10,0]
+"structrenderer_1_1VulkanRenderer_1_1ShadowFrame.html#a59bf9fa21c485d7c1280183bb30ea177":[14,0,8,76,8,0]
 };

@@ -1,5 +1,11 @@
 var NAVTREEINDEX13 =
 {
+"structrenderer_1_1VulkanRenderer_1_1ShadowView.html":[14,0,8,76,7],
+"structrenderer_1_1VulkanRenderer_1_1SizeHandleDraw.html":[14,0,8,76,12],
+"structrenderer_1_1VulkanRenderer_1_1TransformGizmoDraw.html":[14,0,8,76,13],
+"structrenderer_1_1VulkanRenderer_1_1UIWorldPanelProxy.html":[14,0,8,76,11],
+"structrenderer_1_1VulkanRenderer_1_1VoxelVolumeProxy.html":[14,0,8,76,10],
+"structrenderer_1_1VulkanRenderer_1_1VoxelVolumeProxy.html#a5d23f18de4bcffc71b6a21e6ea1e9e71":[14,0,8,76,10,0],
 "structrenderer_1_1VulkanTexture_1_1Params.html":[14,0,8,79,0],
 "structrenderer_1_1light__culling_1_1DepthRange.html":[14,0,8,0,1],
 "structrenderer_1_1light__culling_1_1Sphere.html":[14,0,8,0,0],
@@ -243,11 +249,5 @@ var NAVTREEINDEX13 =
 "structtoast_1_1Workspace_1_1VoxelToolState.html#aa6f1a1b1805efb90aee908f5589d926a":[14,0,12,92,3,4],
 "structtoast_1_1Workspace_1_1VoxelToolState.html#aaa650efc6d6b59311b2686f0a09fd897":[12,0,1,90,3,6],
 "structtoast_1_1Workspace_1_1VoxelToolState.html#aaa650efc6d6b59311b2686f0a09fd897":[14,0,12,92,3,6],
-"structtoast_1_1Workspace_1_1VoxelToolState.html#ac4850018bbc150b5b3e9d5643b2cf375":[12,0,1,90,3,9],
-"structtoast_1_1Workspace_1_1VoxelToolState.html#ac4850018bbc150b5b3e9d5643b2cf375":[14,0,12,92,3,9],
-"structtoast_1_1Workspace_1_1VoxelToolState.html#ad714faf7ad12d0a90c78e7543a29244f":[12,0,1,90,3,1],
-"structtoast_1_1Workspace_1_1VoxelToolState.html#ad714faf7ad12d0a90c78e7543a29244f":[14,0,12,92,3,1],
-"structtoast_1_1__detail_1_1Accessor.html":[12,0,1,0,0],
-"structtoast_1_1__detail_1_1Accessor.html":[14,0,12,0,0],
-"structtoast_1_1__detail_1_1ControlBox.html":[12,0,1,0,1]
+"structtoast_1_1Workspace_1_1VoxelToolState.html#ac4850018bbc150b5b3e9d5643b2cf375":[12,0,1,90,3,9]
 };

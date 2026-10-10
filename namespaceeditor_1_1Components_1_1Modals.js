@@ -16,6 +16,7 @@ var namespaceeditor_1_1Components_1_1Modals =
     [ "IModalService", "interfaceeditor_1_1Components_1_1Modals_1_1IModalService.html", null ],
     [ "LoaderTaskException", "classeditor_1_1Components_1_1Modals_1_1LoaderTaskException.html", null ],
     [ "LoaderViewModel", "classeditor_1_1Components_1_1Modals_1_1LoaderViewModel.html", null ],
+    [ "LoadingPopup", "classeditor_1_1Components_1_1Modals_1_1LoadingPopup.html", null ],
     [ "MessageModal", "classeditor_1_1Components_1_1Modals_1_1MessageModal.html", "classeditor_1_1Components_1_1Modals_1_1MessageModal" ],
     [ "MessageModalViewModel", "classeditor_1_1Components_1_1Modals_1_1MessageModalViewModel.html", null ],
     [ "ModalService", "classeditor_1_1Components_1_1Modals_1_1ModalService.html", null ],
@@ -30,5 +31,7 @@ var namespaceeditor_1_1Components_1_1Modals =
     [ "SaveFileViewModel", "classeditor_1_1Components_1_1Modals_1_1SaveFileViewModel.html", null ],
     [ "SimpleLoaderWindow", "classeditor_1_1Components_1_1Modals_1_1SimpleLoaderWindow.html", null ],
     [ "SplashLoaderWindow", "classeditor_1_1Components_1_1Modals_1_1SplashLoaderWindow.html", null ],
+    [ "UnsavedChangesModal", "classeditor_1_1Components_1_1Modals_1_1UnsavedChangesModal.html", null ],
+    [ "UnsavedChangesViewModel", "classeditor_1_1Components_1_1Modals_1_1UnsavedChangesViewModel.html", null ],
     [ "LoaderTask", "namespaceeditor_1_1Components_1_1Modals.html#a817ca0ba18f03cdf3bfd8ba0ef347981", null ]
 ];

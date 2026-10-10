@@ -1,5 +1,11 @@
 var NAVTREEINDEX14 =
 {
+"structtoast_1_1Workspace_1_1VoxelToolState.html#ac4850018bbc150b5b3e9d5643b2cf375":[14,0,12,92,3,9],
+"structtoast_1_1Workspace_1_1VoxelToolState.html#ad714faf7ad12d0a90c78e7543a29244f":[12,0,1,90,3,1],
+"structtoast_1_1Workspace_1_1VoxelToolState.html#ad714faf7ad12d0a90c78e7543a29244f":[14,0,12,92,3,1],
+"structtoast_1_1__detail_1_1Accessor.html":[12,0,1,0,0],
+"structtoast_1_1__detail_1_1Accessor.html":[14,0,12,0,0],
+"structtoast_1_1__detail_1_1ControlBox.html":[12,0,1,0,1],
 "structtoast_1_1__detail_1_1ControlBox.html":[14,0,12,0,1],
 "structtoast_1_1__detail_1_1ControlBox.html#a69973b450519128b4152c9e590b25798":[12,0,1,0,1,2],
 "structtoast_1_1__detail_1_1ControlBox.html#a69973b450519128b4152c9e590b25798":[14,0,12,0,1,2],
@@ -243,11 +249,5 @@ var NAVTREEINDEX14 =
 "voxel__node_8hpp.html#a8f40d229f09435be04fad19608753e64a3802c2b14860b60e9acb8d1910285d92":[12,0,1,99,0],
 "voxel__node_8hpp.html#a8f40d229f09435be04fad19608753e64a3802c2b14860b60e9acb8d1910285d92":[15,0,1,0,0,10,1,8,3,0],
 "voxel__node_8hpp.html#a8f40d229f09435be04fad19608753e64a82221355e8922f4e93a2455d99c04aa2":[12,0,1,99,1],
-"voxel__node_8hpp.html#a8f40d229f09435be04fad19608753e64a82221355e8922f4e93a2455d99c04aa2":[15,0,1,0,0,10,1,8,3,1],
-"voxel__node_8hpp.html#a8f40d229f09435be04fad19608753e64ab72f3bd391ba731a35708bfd8cd8a68f":[12,0,1,99,2],
-"voxel__node_8hpp.html#a8f40d229f09435be04fad19608753e64ab72f3bd391ba731a35708bfd8cd8a68f":[15,0,1,0,0,10,1,8,3,2],
-"voxel__node_8hpp_source.html":[15,0,1,0,0,10,1,8],
-"voxel__node__utils_8hpp.html":[15,0,1,0,0,10,1,9],
-"voxel__node__utils_8hpp_source.html":[15,0,1,0,0,10,1,9],
-"voxel__palette_8hpp.html":[15,0,1,0,0,10,0,3]
+"voxel__node_8hpp.html#a8f40d229f09435be04fad19608753e64a82221355e8922f4e93a2455d99c04aa2":[15,0,1,0,0,10,1,8,3,1]
 };

@@ -191,19 +191,19 @@ var NAVTREEINDEX =
 "aabb_8hpp.html",
 "classeditor_1_1Assets_1_1AssetTag.html",
 "classeditor_1_1Components_1_1Elements_1_1ColorBoxBase.html",
-"classeditor_1_1Workspace_1_1GroupVM.html",
-"classrenderer_1_1IPostProcessPass.html",
-"classtoast_1_1Box.html#a9588b0d4692fbb281f5fa355b64d1219",
-"classtoast_1_1ProceduralVoxel.html",
-"classtoast_1_1VoxelNode.html#ad2c8c15c4ec1de792c575b287fde5007",
-"component__classification_8hpp.html",
-"interfaceeditor_1_1Assets_1_1Importers_1_1IAssetImporter.html",
-"node_8hpp.html#aea15e3db2fb9b67d5f99b3436f6a73faa63a9f0ea7bb98050796b649e85481845",
-"structevent_1_1AddSignalConnection.html",
-"structevent_1_1WorkspaceMergeHistory.html",
-"structrenderer_1_1VulkanTexture_1_1Params.html",
-"structtoast_1_1__detail_1_1ControlBox.html",
-"voxel__palette_8hpp_source.html"
+"classeditor_1_1Workspace_1_1FieldVM.html",
+"classrenderer_1_1FxaaPass.html#acce0272d3bb18d2806aeb4c498f40be0",
+"classtoast_1_1Box.html#a0cdd08d1fa97b7873b07312c0d3ae012",
+"classtoast_1_1PostProcessVolume.html#ab8caf59b731c0b2f03f8badac43dd053",
+"classtoast_1_1VoxelNode.html#ac3363843d3580277d2556b202f496a57",
+"collision_8hpp.html",
+"input__settings_8hpp_source.html",
+"node_8hpp.html#aea15e3db2fb9b67d5f99b3436f6a73fa",
+"structeditor_1_1Engine_1_1ToastViewportFrame.html",
+"structevent_1_1WorkspaceHistoryCommitted.html",
+"structrenderer_1_1VulkanRenderer_1_1ShadowView.html",
+"structtoast_1_1Workspace_1_1VoxelToolState.html#ac4850018bbc150b5b3e9d5643b2cf375",
+"voxel__node_8hpp.html#a8f40d229f09435be04fad19608753e64ab72f3bd391ba731a35708bfd8cd8a68f"
 ];
 
 const SYNCONMSG = 'click to disable panel synchronization';

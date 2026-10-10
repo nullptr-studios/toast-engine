@@ -1,5 +1,5 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="Node000000" href="$classIComputePass.html" title=" " alt="" coords="5,5,119,33"/>
-<area shape="rect" id="Node000001" href="$classrenderer_1_1ClusterLightingPass.html" title=" " alt="" coords="167,5,378,33"/>
-<area shape="poly" id="edge490_Node000000_Node000001" title=" " alt="" coords="134,17,169,19,164,19,134,22"/>
+<area shape="rect" id="Node000000" title=" " alt="" coords="5,14,98,42"/>
+<area shape="rect" id="Node000001" href="$interfaceeditor_1_1Components_1_1Elements_1_1IAsyncCanExecuteCommand.html" title=" " alt="" coords="146,5,359,50"/>
+<area shape="poly" id="edge489_Node000000_Node000001" title=" " alt="" coords="113,25,148,27,143,28,114,30"/>
 </map>

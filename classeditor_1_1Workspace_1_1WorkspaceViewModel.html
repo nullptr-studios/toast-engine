@@ -149,6 +149,8 @@ Collaboration diagram for editor.Workspace.WorkspaceViewModel:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:ab5a23bf965bae79d74f9d274520e5142" id="r_ab5a23bf965bae79d74f9d274520e5142"><td class="memItemLeft"><a id="ab5a23bf965bae79d74f9d274520e5142" name="ab5a23bf965bae79d74f9d274520e5142"></a>
+void&#160;</td><td class="memItemRight"><b>NotePresentedFrame</b> ()</td></tr>
 <tr class="memitem:a71fb99131975523d9c18f73a14826569" id="r_a71fb99131975523d9c18f73a14826569"><td class="memItemLeft">Task&#160;</td><td class="memItemRight"><a class="el" href="#a71fb99131975523d9c18f73a14826569">WriteAutosaveAsync</a> (string virtualPath)</td></tr>
 <tr class="memitem:a1124c3be2750ca6de97bbfa2a9c43573" id="r_a1124c3be2750ca6de97bbfa2a9c43573"><td class="memItemLeft"><a id="a1124c3be2750ca6de97bbfa2a9c43573" name="a1124c3be2750ca6de97bbfa2a9c43573"></a>
 void&#160;</td><td class="memItemRight"><b>Dispose</b> ()</td></tr>
@@ -170,6 +172,8 @@ async Task&lt; bool &gt;&#160;</td><td class="memItemRight"><b>ConfirmCloseAsync
 async Task&lt; bool &gt;&#160;</td><td class="memItemRight"><b>Save</b> ()</td></tr>
 <tr class="memitem:a4951e7db642edecb42af897d45bd7043" id="r_a4951e7db642edecb42af897d45bd7043"><td class="memItemLeft"><a id="a4951e7db642edecb42af897d45bd7043" name="a4951e7db642edecb42af897d45bd7043"></a>
 async Task&lt; bool &gt;&#160;</td><td class="memItemRight"><b>SaveAs</b> ()</td></tr>
+<tr class="memitem:adcf34b280b892b6428a9f1a6c6d7e6d6" id="r_adcf34b280b892b6428a9f1a6c6d7e6d6"><td class="memItemLeft"><a id="adcf34b280b892b6428a9f1a6c6d7e6d6" name="adcf34b280b892b6428a9f1a6c6d7e6d6"></a>
+void&#160;</td><td class="memItemRight"><b>DeleteAutosaves</b> ()</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -177,6 +181,8 @@ Static Public Member Functions</h2></td></tr>
 static ? WorkspaceViewModel&#160;</td><td class="memItemRight"><b>CreateNew</b> (<a class="el" href="classeditor_1_1Engine_1_1ToastEngine.html">ToastEngine</a> engine, string nodeType)</td></tr>
 <tr class="memitem:ab68e43ffe42892ef1d9731914f3921f1" id="r_ab68e43ffe42892ef1d9731914f3921f1"><td class="memItemLeft"><a id="ab68e43ffe42892ef1d9731914f3921f1" name="ab68e43ffe42892ef1d9731914f3921f1"></a>
 static ? WorkspaceViewModel&#160;</td><td class="memItemRight"><b>OpenFile</b> (<a class="el" href="classeditor_1_1Engine_1_1ToastEngine.html">ToastEngine</a> engine, string assetUid, string virtualPath, string? recoverVirtualPath=null)</td></tr>
+<tr class="memitem:ad9c6946c624b34d6be570a42d60bb913" id="r_ad9c6946c624b34d6be570a42d60bb913"><td class="memItemLeft"><a id="ad9c6946c624b34d6be570a42d60bb913" name="ad9c6946c624b34d6be570a42d60bb913"></a>
+static async Task&lt; WorkspaceViewModel?&gt;&#160;</td><td class="memItemRight"><b>OpenFileAsync</b> (<a class="el" href="classeditor_1_1Engine_1_1ToastEngine.html">ToastEngine</a> engine, string assetUid, string virtualPath, string? recoverVirtualPath=null)</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-properties" class="groupheader"><a id="properties" name="properties"></a>
 Properties</h2></td></tr>
@@ -224,6 +230,8 @@ bool&#160;</td><td class="memItemRight"><b>IsPlayModeActive</b><code> [get]</cod
 bool&#160;</td><td class="memItemRight"><b>CanPause</b><code> [get]</code></td></tr>
 <tr class="memitem:a015564da2a96704aee83c64d86117b9a" id="r_a015564da2a96704aee83c64d86117b9a"><td class="memItemLeft"><a id="a015564da2a96704aee83c64d86117b9a" name="a015564da2a96704aee83c64d86117b9a"></a>
 bool&#160;</td><td class="memItemRight"><b>IsOrbitCamera</b><code> [get]</code></td></tr>
+<tr class="memitem:af1041a5987aa2999cb0a63b6882e42d5" id="r_af1041a5987aa2999cb0a63b6882e42d5"><td class="memItemLeft"><a id="af1041a5987aa2999cb0a63b6882e42d5" name="af1041a5987aa2999cb0a63b6882e42d5"></a>
+int&#160;</td><td class="memItemRight"><b>SmoothFrames</b><code> [get]</code></td></tr>
 <tr class="memitem:aa0dbd079cef9549494a4a01b4fcca695" id="r_aa0dbd079cef9549494a4a01b4fcca695"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#aa0dbd079cef9549494a4a01b4fcca695">IsAutosaveDirty</a><code> [get]</code></td></tr>
 <tr class="memitem:a032e8e7a42a181238140b3c5075a7a85" id="r_a032e8e7a42a181238140b3c5075a7a85"><td class="memItemLeft">string?&#160;</td><td class="memItemRight"><a class="el" href="#a032e8e7a42a181238140b3c5075a7a85">AutosaveFileName</a><code> [get]</code></td></tr>
 </table><table class="memberdecls">

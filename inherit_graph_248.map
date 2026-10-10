@@ -1,5 +1,21 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="Node000000" title=" " alt="" coords="5,5,139,33"/>
-<area shape="rect" id="Node000001" href="$classrenderer_1_1SlangVfs.html" title=" " alt="" coords="187,5,328,33"/>
-<area shape="poly" id="edge520_Node000000_Node000001" title=" " alt="" coords="154,17,189,19,184,19,154,22"/>
+<area shape="rect" id="Node000000" href="$classIRenderPass.html" title=" " alt="" coords="5,213,106,241"/>
+<area shape="rect" id="Node000001" href="$classrenderer_1_1DebugPass.html" title=" " alt="" coords="184,5,339,33"/>
+<area shape="poly" id="edge511_Node000000_Node000001" title=" " alt="" coords="62,197,74,162,92,120,118,79,152,44,185,28,181,32,155,48,122,82,97,123,79,164,67,199"/>
+<area shape="rect" id="Node000002" href="$classrenderer_1_1EnvironmentPass.html" title=" " alt="" coords="163,57,360,85"/>
+<area shape="poly" id="edge512_Node000000_Node000002" title=" " alt="" coords="68,198,101,146,125,118,152,96,180,84,176,88,155,100,128,122,106,149,73,201"/>
+<area shape="rect" id="Node000003" href="$classrenderer_1_1GridPass.html" title=" " alt="" coords="191,109,332,137"/>
+<area shape="poly" id="edge513_Node000000_Node000003" title=" " alt="" coords="79,201,113,173,152,147,193,134,189,138,155,152,116,177,84,204"/>
+<area shape="rect" id="Node000004" href="$classrenderer_1_1MaterialPass.html" title=" " alt="" coords="178,161,345,189"/>
+<area shape="poly" id="edge514_Node000000_Node000004" title=" " alt="" coords="119,208,153,199,204,188,200,191,154,204,122,213"/>
+<area shape="rect" id="Node000005" href="$classrenderer_1_1ReflectionProbePass.html" title=" " alt="" coords="154,213,369,241"/>
+<area shape="poly" id="edge515_Node000000_Node000005" title=" " alt="" coords="120,225,155,226,151,229,122,230"/>
+<area shape="rect" id="Node000006" href="$classrenderer_1_1ShadowPass.html" title=" " alt="" coords="179,265,344,293"/>
+<area shape="poly" id="edge516_Node000000_Node000006" title=" " alt="" coords="120,241,154,250,204,264,200,266,153,255,121,247"/>
+<area shape="rect" id="Node000007" href="$classrenderer_1_1VoxelPass.html" title="Deferred so lighting runs once per visible voxel pixel not once per march." alt="" coords="187,317,336,345"/>
+<area shape="poly" id="edge517_Node000000_Node000007" title=" " alt="" coords="81,249,116,277,155,302,190,317,184,318,152,307,113,282,82,254"/>
+<area shape="rect" id="Node000008" href="$classui_1_1UIPass.html" title=" " alt="" coords="219,369,304,397"/>
+<area shape="poly" id="edge518_Node000000_Node000008" title=" " alt="" coords="71,252,106,306,128,332,155,354,187,369,222,379,216,380,185,374,152,359,125,336,101,309,70,257"/>
+<area shape="rect" id="Node000009" href="$classui_1_1WorldUIPass.html" title=" " alt="" coords="201,421,322,449"/>
+<area shape="poly" id="edge519_Node000000_Node000009" title=" " alt="" coords="65,254,79,291,97,332,122,372,155,406,177,419,203,429,198,429,175,424,152,411,118,376,92,334,74,293,64,259"/>
 </map>

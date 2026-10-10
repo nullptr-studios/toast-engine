@@ -138,6 +138,7 @@ Classes</h2></td></tr>
 <tr class="memitem:IModalService" id="r_IModalService"><td class="memItemLeft">interface &#160;</td><td class="memItemRight"><a class="el" href="interfaceeditor_1_1Components_1_1Modals_1_1IModalService.html">IModalService</a></td></tr>
 <tr class="memitem:LoaderTaskException" id="r_LoaderTaskException"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classeditor_1_1Components_1_1Modals_1_1LoaderTaskException.html">LoaderTaskException</a></td></tr>
 <tr class="memitem:LoaderViewModel" id="r_LoaderViewModel"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classeditor_1_1Components_1_1Modals_1_1LoaderViewModel.html">LoaderViewModel</a></td></tr>
+<tr class="memitem:LoadingPopup" id="r_LoadingPopup"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classeditor_1_1Components_1_1Modals_1_1LoadingPopup.html">LoadingPopup</a></td></tr>
 <tr class="memitem:MessageModal" id="r_MessageModal"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classeditor_1_1Components_1_1Modals_1_1MessageModal.html">MessageModal</a></td></tr>
 <tr class="memitem:MessageModalViewModel" id="r_MessageModalViewModel"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classeditor_1_1Components_1_1Modals_1_1MessageModalViewModel.html">MessageModalViewModel</a></td></tr>
 <tr class="memitem:ModalService" id="r_ModalService"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classeditor_1_1Components_1_1Modals_1_1ModalService.html">ModalService</a></td></tr>
@@ -153,6 +154,8 @@ Classes</h2></td></tr>
 <tr class="memitem:SaveFileViewModel" id="r_SaveFileViewModel"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classeditor_1_1Components_1_1Modals_1_1SaveFileViewModel.html">SaveFileViewModel</a></td></tr>
 <tr class="memitem:SimpleLoaderWindow" id="r_SimpleLoaderWindow"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classeditor_1_1Components_1_1Modals_1_1SimpleLoaderWindow.html">SimpleLoaderWindow</a></td></tr>
 <tr class="memitem:SplashLoaderWindow" id="r_SplashLoaderWindow"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classeditor_1_1Components_1_1Modals_1_1SplashLoaderWindow.html">SplashLoaderWindow</a></td></tr>
+<tr class="memitem:UnsavedChangesModal" id="r_UnsavedChangesModal"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classeditor_1_1Components_1_1Modals_1_1UnsavedChangesModal.html">UnsavedChangesModal</a></td></tr>
+<tr class="memitem:UnsavedChangesViewModel" id="r_UnsavedChangesViewModel"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classeditor_1_1Components_1_1Modals_1_1UnsavedChangesViewModel.html">UnsavedChangesViewModel</a></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-enum-members" class="groupheader"><a id="enum-members" name="enum-members"></a>
 Enumerations</h2></td></tr>
@@ -164,6 +167,10 @@ Enumerations</h2></td></tr>
 , <b>OkCancel</b>
 , <b>OkNoCancel</b>
  }</td></tr>
+<tr class="memitem:ac118a1772ec4d1f1872fcaaca6202d67" id="r_ac118a1772ec4d1f1872fcaaca6202d67"><td class="memItemLeft"><a id="ac118a1772ec4d1f1872fcaaca6202d67" name="ac118a1772ec4d1f1872fcaaca6202d67"></a>enum &#160;</td><td class="memItemRight"><b>UnsavedChangesResult</b> { <b>Cancel</b>
+, <b>DiscardAll</b>
+, <b>SaveAll</b>
+ }</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
@@ -171,6 +178,10 @@ Functions</h2></td></tr>
 <tr class="memdesc:a817ca0ba18f03cdf3bfd8ba0ef347981"><td class="mdescLeft">&#160;</td><td class="mdescRight">A step shown in the loading screen.  <br /></td></tr>
 <tr class="memitem:aacde81d57cf1eb67be4494cb332d47e0" id="r_aacde81d57cf1eb67be4494cb332d47e0"><td class="memItemLeft"><a id="aacde81d57cf1eb67be4494cb332d47e0" name="aacde81d57cf1eb67be4494cb332d47e0"></a>
 record&#160;</td><td class="memItemRight"><b>ModalConfig</b> (string Title, string Message, ModalButtons Buttons=ModalButtons.OkOnly, LucideIconKind? Icon=null, IBrush? IconColor=null, string OkLabel=&quot;OK&quot;, string NoLabel=&quot;Don't Save&quot;, string CancelLabel=&quot;Cancel&quot;, LucideIconKind? OkIcon=null, LucideIconKind? NoIcon=null, LucideIconKind? CancelIcon=null, string? NoAllLabel=null, LucideIconKind? NoAllIcon=null)</td></tr>
+<tr class="memitem:a797748730f1fd5be77114a8447ddab47" id="r_a797748730f1fd5be77114a8447ddab47"><td class="memItemLeft"><a id="a797748730f1fd5be77114a8447ddab47" name="a797748730f1fd5be77114a8447ddab47"></a>
+record&#160;</td><td class="memItemRight"><b>UnsavedItem</b> (string Kind, string Name, Func&lt; Task&lt; bool &gt; &gt; Save, Action Discard)</td></tr>
+<tr class="memitem:aba3cb1457094486d012fd49e93cf858b" id="r_aba3cb1457094486d012fd49e93cf858b"><td class="memItemLeft"><a id="aba3cb1457094486d012fd49e93cf858b" name="aba3cb1457094486d012fd49e93cf858b"></a>
+record&#160;</td><td class="memItemRight"><b>UnsavedChangesRow</b> (string Name, string Kind)</td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
 <a id="a817ca0ba18f03cdf3bfd8ba0ef347981" name="a817ca0ba18f03cdf3bfd8ba0ef347981"></a>

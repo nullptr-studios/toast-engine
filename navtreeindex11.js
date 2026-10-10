@@ -1,5 +1,11 @@
 var NAVTREEINDEX11 =
 {
+"structeditor_1_1Engine_1_1ToastViewportFrame.html":[12,0,0,4,4],
+"structeditor_1_1Engine_1_1ToastViewportFrame.html":[14,0,3,4,4],
+"structeditor_1_1Engine_1_1WorkspaceResult.html":[12,0,0,4,5],
+"structeditor_1_1Engine_1_1WorkspaceResult.html":[14,0,3,4,5],
+"structeditor_1_1StartWindow_1_1ProjectListItem.html":[12,0,0,6,2],
+"structeditor_1_1StartWindow_1_1ProjectListItem.html":[14,0,3,6,2],
 "structevent_1_1AddSignalConnection.html":[14,0,4,1],
 "structevent_1_1AssetReplaced.html":[14,0,4,2],
 "structevent_1_1AttachNode.html":[14,0,4,3],
@@ -243,11 +249,5 @@ var NAVTREEINDEX11 =
 "structevent_1_1WorkspaceCreate.html":[14,0,4,219],
 "structevent_1_1WorkspaceCreateNode.html":[14,0,4,220],
 "structevent_1_1WorkspaceDestroy.html":[14,0,4,221],
-"structevent_1_1WorkspaceDuplicateNode.html":[14,0,4,222],
-"structevent_1_1WorkspaceHistoryCommitted.html":[14,0,4,223],
-"structevent_1_1WorkspaceHistoryConflicts.html":[14,0,4,224],
-"structevent_1_1WorkspaceHistoryInitialSnapshot.html":[14,0,4,225],
-"structevent_1_1WorkspaceHistoryMergePrepared.html":[14,0,4,226],
-"structevent_1_1WorkspaceHistorySnapshotApplied.html":[14,0,4,227],
-"structevent_1_1WorkspaceHistoryTransaction.html":[14,0,4,228]
+"structevent_1_1WorkspaceDuplicateNode.html":[14,0,4,222]
 };

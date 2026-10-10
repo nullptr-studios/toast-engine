@@ -1,7 +1,3 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="Node000000" href="$classrenderer_1_1IOutputTarget.html" title=" " alt="" coords="5,36,178,64"/>
-<area shape="rect" id="Node000001" href="$classrenderer_1_1SDLOutputTarget.html" title=" " alt="" coords="240,5,433,33"/>
-<area shape="poly" id="edge536_Node000000_Node000001" title=" " alt="" coords="193,35,242,31,237,32,194,40"/>
-<area shape="rect" id="Node000002" href="$classrenderer_1_1SharedTextureOutputTarget.html" title=" " alt="" coords="226,57,447,102"/>
-<area shape="poly" id="edge537_Node000000_Node000002" title=" " alt="" coords="193,59,228,66,223,66,193,65"/>
+<area shape="rect" id="Node000000" href="$structrenderer_1_1GpuTimer_1_1Timings.html" title=" " alt="" coords="5,5,154,50"/>
 </map>

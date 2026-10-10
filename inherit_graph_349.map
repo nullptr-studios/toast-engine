@@ -1,17 +1,7 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="Node000000" href="$classrenderer_1_1IPostProcessPass.html" title=" " alt="" coords="5,161,201,189"/>
-<area shape="rect" id="Node000001" href="$classrenderer_1_1BloomPass.html" title=" " alt="" coords="274,5,430,33"/>
-<area shape="poly" id="edge538_Node000000_Node000001" title=" " alt="" coords="124,148,177,95,211,67,247,43,280,32,276,35,250,48,214,71,180,99,128,151"/>
-<area shape="rect" id="Node000002" href="$classrenderer_1_1FxaaPass.html" title=" " alt="" coords="279,57,424,85"/>
-<area shape="poly" id="edge539_Node000000_Node000002" title=" " alt="" coords="138,151,189,122,248,95,288,84,284,87,250,100,192,127,142,155"/>
-<area shape="rect" id="Node000003" href="$classrenderer_1_1SsaoPass.html" title=" " alt="" coords="280,109,424,137"/>
-<area shape="poly" id="edge540_Node000000_Node000003" title=" " alt="" coords="187,155,284,136,280,139,189,160"/>
-<area shape="rect" id="Node000004" href="$classrenderer_1_1SsrPass.html" title=" " alt="" coords="285,161,418,189"/>
-<area shape="poly" id="edge541_Node000000_Node000004" title=" " alt="" coords="216,173,287,174,282,176,217,178"/>
-<area shape="rect" id="Node000005" href="$classrenderer_1_1TaaPass.html" title=" " alt="" coords="284,213,420,241"/>
-<area shape="poly" id="edge542_Node000000_Node000005" title=" " alt="" coords="188,190,286,212,281,214,188,195"/>
-<area shape="rect" id="Node000006" href="$classrenderer_1_1TonemapPass.html" title=" " alt="" coords="266,265,438,293"/>
-<area shape="poly" id="edge543_Node000000_Node000006" title=" " alt="" coords="140,195,192,223,250,250,289,265,284,265,248,255,189,228,140,200"/>
-<area shape="rect" id="Node000007" href="$classrenderer_1_1TracedShadowPass.html" title=" " alt="" coords="249,317,455,345"/>
-<area shape="poly" id="edge544_Node000000_Node000007" title=" " alt="" coords="127,198,180,252,214,279,250,302,281,317,276,317,247,307,211,283,177,256,125,204"/>
+<area shape="rect" id="Node000000" href="$classrenderer_1_1IOutputTarget.html" title=" " alt="" coords="5,36,178,64"/>
+<area shape="rect" id="Node000001" href="$classrenderer_1_1SDLOutputTarget.html" title=" " alt="" coords="240,5,433,33"/>
+<area shape="poly" id="edge536_Node000000_Node000001" title=" " alt="" coords="193,35,242,31,237,32,194,40"/>
+<area shape="rect" id="Node000002" href="$classrenderer_1_1SharedTextureOutputTarget.html" title=" " alt="" coords="226,57,447,102"/>
+<area shape="poly" id="edge537_Node000000_Node000002" title=" " alt="" coords="193,59,228,66,223,66,193,65"/>
 </map>
