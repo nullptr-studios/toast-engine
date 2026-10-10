@@ -1,5 +1,7 @@
 #include "physics_material.hpp"
 
+#include <algorithm>
+
 namespace physics { }
 
 assets::PhysicsMaterial::PhysicsMaterial(const toml::table& table, Handle<Schema> schema)
@@ -25,6 +27,8 @@ void assets::PhysicsMaterial::readFields() {
 	if (d.contains("dynamic_friction")) {
 		m_dynamic_friction = d["dynamic_friction"].as<double>();
 	}
+	// sliding should never be higher than static friction
+	m_dynamic_friction = std::min(m_dynamic_friction, m_static_friction);
 }
 
 auto assets::PhysicsMaterial::get() const -> toml::table {

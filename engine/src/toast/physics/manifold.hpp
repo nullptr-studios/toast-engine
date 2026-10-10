@@ -24,7 +24,7 @@ namespace physics {
 struct ContactMaterial {
 	float restitution = 0.0f;
 	float static_friction = 0.6f;
-	float dynamic_friction = 0.4f;
+	float dynamic_friction = 0.5f;
 };
 
 struct ContactPoint {

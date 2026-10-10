@@ -2154,35 +2154,39 @@ auto Simulator::solveNormal(Constraint& constraint, Body& body_a, Body& body_b) 
 }
 
 auto Simulator::solveFriction(Constraint& constraint, Body& body_a, Body& body_b) -> bool {
-	if (constraint.tangent_mass <= 0.0f) {
+	if (constraint.tangent_mass_1 <= 0.0f && constraint.tangent_mass_2 <= 0.0f) {
 		return true;
 	}
 
 	// recalcualte because the normal impulse changed velocity
-	glm::vec3 relative_velocity = velocityAtPoint(body_b, constraint.r_b) - velocityAtPoint(body_a, constraint.r_a);
-	float tangent_speed = glm::dot(relative_velocity, constraint.tangent);
-	if (not std::isfinite(tangent_speed)) {
+	const glm::vec3 relative_velocity = velocityAtPoint(body_b, constraint.r_b) - velocityAtPoint(body_a, constraint.r_a);
+	const float speed_1 = glm::dot(relative_velocity, constraint.tangent_1);
+	const float speed_2 = glm::dot(relative_velocity, constraint.tangent_2);
+	if (not std::isfinite(speed_1) || not std::isfinite(speed_2)) {
 		return false;
 	}
 
-	float impulse_delta = -tangent_speed * constraint.tangent_mass;
-	float old_impulse = constraint.accumulated_tangent_impulse;
-	float propsed_impulse = old_impulse + impulse_delta;
-	float static_limit = constraint.static_friction * constraint.accumulated_normal_impulse;
-	float new_impulse = 0.0f;
+	const glm::vec2 old_impulse = constraint.accumulated_tangent_impulse;
+	glm::vec2 proposed_impulse =
+	    old_impulse + glm::vec2 {-speed_1 * constraint.tangent_mass_1, -speed_2 * constraint.tangent_mass_2};
 
-	if (std::abs(propsed_impulse) <= static_limit) {
-		// no slipping
-		new_impulse = propsed_impulse;
-	} else {
-		// slipping
-		float dynamic_limit = constraint.dynamic_friction * constraint.accumulated_normal_impulse;
-		new_impulse = std::clamp(propsed_impulse, -dynamic_limit, dynamic_limit);
+	const float static_limit = constraint.static_friction * constraint.accumulated_normal_impulse;
+	const float length_sq = glm::dot(proposed_impulse, proposed_impulse);
+	if (length_sq > static_limit * static_limit) {
+		// slipping keeps the direction but drops to kinetic
+		const float dynamic_limit = constraint.dynamic_friction * constraint.accumulated_normal_impulse;
+		proposed_impulse *= dynamic_limit / std::sqrt(length_sq);
 	}
 
-	constraint.accumulated_tangent_impulse = new_impulse;
-	float applied_impulse = new_impulse - old_impulse;
-	applyImpulse(body_a, body_b, constraint.r_a, constraint.r_b, constraint.tangent * applied_impulse);
+	constraint.accumulated_tangent_impulse = proposed_impulse;
+	const glm::vec2 applied_impulse = proposed_impulse - old_impulse;
+	applyImpulse(
+	    body_a,
+	    body_b,
+	    constraint.r_a,
+	    constraint.r_b,
+	    constraint.tangent_1 * applied_impulse.x + constraint.tangent_2 * applied_impulse.y
+	);
 
 	return true;
 }
@@ -4571,7 +4575,8 @@ auto Simulator::prepareConstraints(const std::vector<Manifold>& manifolds) -> st
 	m_profile.constraints = constraints.size();
 	m_profile.rejected_constraints = rejected_contact_count;
 	m_profile.warm_started_constraints = std::ranges::count_if(constraints, [](const Constraint& constraint) {
-		return constraint.accumulated_normal_impulse > 0.0f || constraint.accumulated_tangent_impulse != 0.0f;
+		return constraint.accumulated_normal_impulse > 0.0f ||
+		       glm::dot(constraint.accumulated_tangent_impulse, constraint.accumulated_tangent_impulse) != 0.0f;
 	});
 
 	ZoneValue(static_cast<uint64_t>(constraints.size()));
@@ -4809,38 +4814,33 @@ auto Simulator::prepareConstraint(const Manifold& manifold, const ContactPoint& 
 
 	const glm::vec3 tangent_velocity = relative_velocity - manifold.normal * initial_normal_speed;
 	const float tangent_length_sq = glm::dot(tangent_velocity, tangent_velocity);
-	glm::vec3 tangent = {};
-	float tangent_mass = 0.0f;
+	// a body resting without any slip still gets grip aligned with the slip
+	const glm::vec3 tangent_1 =
+	    tangent_length_sq > 1.0e-10f ? tangent_velocity / std::sqrt(tangent_length_sq) : _detail::perpendicularTo(manifold.normal);
+	const glm::vec3 tangent_2 = glm::cross(manifold.normal, tangent_1);
+	const float tangent_mass_1 = effectiveMassAlong(*body_a, *body_b, r_a, r_b, tangent_1).value_or(0.0f);
+	const float tangent_mass_2 = effectiveMassAlong(*body_a, *body_b, r_a, r_b, tangent_2).value_or(0.0f);
 
-	if (tangent_length_sq > 1.0e-10f) {
-		tangent = tangent_velocity / std::sqrt(tangent_length_sq);
-	} else if (cached_contact) {
-		const glm::vec3 projected_tangent =
-		    cached_contact->tangent_impulse - manifold.normal * glm::dot(cached_contact->tangent_impulse, manifold.normal);
-		const float projected_length_sq = glm::dot(projected_tangent, projected_tangent);
-		if (projected_length_sq > 1.0e-10f && std::isfinite(projected_length_sq)) {
-			tangent = projected_tangent / std::sqrt(projected_length_sq);
-		}
-	}
-
-	if (glm::dot(tangent, tangent) > 0.0f) {
-		const auto calculated_tangent_mass = effectiveMassAlong(*body_a, *body_b, r_a, r_b, tangent);
-		if (calculated_tangent_mass.has_value()) {
-			tangent_mass = calculated_tangent_mass.value();
-		}
-	}
+	// kinetic friction cannot be higher than static
+	const float static_friction = contact.material.static_friction;
+	const float dynamic_friction = std::min(contact.material.dynamic_friction, static_friction);
 
 	float accumulated_normal_impulse = 0.0f;
-	float accumulated_tangent_impulse = 0.0f;
+	glm::vec2 accumulated_tangent_impulse = {};
 	if (cached_contact && std::isfinite(cached_contact->normal_impulse)) {
 		accumulated_normal_impulse = std::max(cached_contact->normal_impulse, 0.0f);
 		const bool tangent_impulse_is_finite = std::isfinite(cached_contact->tangent_impulse.x) &&
 		                                       std::isfinite(cached_contact->tangent_impulse.y) &&
 		                                       std::isfinite(cached_contact->tangent_impulse.z);
-		if (tangent_mass > 0.0f && tangent_impulse_is_finite) {
-			accumulated_tangent_impulse = glm::dot(cached_contact->tangent_impulse, tangent);
-			const float static_limit = contact.material.static_friction * accumulated_normal_impulse;
-			accumulated_tangent_impulse = std::clamp(accumulated_tangent_impulse, -static_limit, static_limit);
+		if (tangent_impulse_is_finite) {
+			accumulated_tangent_impulse = {
+			  glm::dot(cached_contact->tangent_impulse, tangent_1), glm::dot(cached_contact->tangent_impulse, tangent_2)
+			};
+			const float static_limit = static_friction * accumulated_normal_impulse;
+			const float length = glm::length(accumulated_tangent_impulse);
+			if (length > static_limit) {
+				accumulated_tangent_impulse *= static_limit / length;
+			}
 		}
 	}
 
@@ -4853,15 +4853,17 @@ auto Simulator::prepareConstraint(const Manifold& manifold, const ContactPoint& 
 	  .body_b = manifold.pair.b.body,
 	  .contact_point = contact.position,
 	  .normal = manifold.normal,
-	  .tangent = tangent,
+	  .tangent_1 = tangent_1,
+	  .tangent_2 = tangent_2,
 	  .r_a = r_a,
 	  .r_b = r_b,
 	  .penetration = contact.penetration,
 	  .normal_mass = normal_mass.value_or(0.0f),
-	  .tangent_mass = tangent_mass,
+	  .tangent_mass_1 = tangent_mass_1,
+	  .tangent_mass_2 = tangent_mass_2,
 	  .restitution_bias = restitution_bias,
-	  .static_friction = contact.material.static_friction,
-	  .dynamic_friction = contact.material.dynamic_friction,
+	  .static_friction = static_friction,
+	  .dynamic_friction = dynamic_friction,
 	  .accumulated_normal_impulse = accumulated_normal_impulse,
 	  .accumulated_tangent_impulse = accumulated_tangent_impulse,
 	};
@@ -4877,8 +4879,9 @@ void Simulator::warmStartConstraints(std::span<Constraint> constraints) {
 			continue;
 		}
 
-		const glm::vec3 impulse =
-		    constraint.normal * constraint.accumulated_normal_impulse + constraint.tangent * constraint.accumulated_tangent_impulse;
+		const glm::vec3 impulse = constraint.normal * constraint.accumulated_normal_impulse +
+		                          constraint.tangent_1 * constraint.accumulated_tangent_impulse.x +
+		                          constraint.tangent_2 * constraint.accumulated_tangent_impulse.y;
 		const bool impulse_is_finite = std::isfinite(impulse.x) && std::isfinite(impulse.y) && std::isfinite(impulse.z);
 		if (impulse_is_finite) {
 			applyImpulse(*body_a, *body_b, constraint.r_a, constraint.r_b, impulse);
@@ -4897,7 +4900,8 @@ void Simulator::storeConstraintImpulses(std::span<const Constraint> constraints)
 		}
 
 		cached->normal_impulse = constraint.accumulated_normal_impulse;
-		cached->tangent_impulse = constraint.tangent * constraint.accumulated_tangent_impulse;
+		cached->tangent_impulse = constraint.tangent_1 * constraint.accumulated_tangent_impulse.x +
+		                          constraint.tangent_2 * constraint.accumulated_tangent_impulse.y;
 	}
 }
 
