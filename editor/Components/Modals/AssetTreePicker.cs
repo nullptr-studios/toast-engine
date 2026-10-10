@@ -18,7 +18,7 @@ public static class AssetTreePicker {
 	}
 
 	public static Task<string?> PickAsset(Window owner, string? assetType = null, string? title = null) {
-		var window = new AssetTree(assetType);
+		var window = new AssetList(assetType);
 		if (title is not null) window.Title = title;
 		return window.ShowDialog<string?>(owner);
 	}

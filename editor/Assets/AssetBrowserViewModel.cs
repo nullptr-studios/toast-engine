@@ -26,12 +26,14 @@ using Lucide.Avalonia;
 namespace editor.Assets;
 
 public sealed class BreadcrumbItem {
-	public BreadcrumbItem(string label, Action navigate, bool isLast) {
+	public BreadcrumbItem(string label, Action navigate, bool isLast, AssetFolder? folder = null) {
+		Folder = folder;
 		Label = label;
 		IsLast = isLast;
 		Navigate = new RelayCommand(navigate);
 	}
 
+	public AssetFolder? Folder { get; }
 	public string Label { get; }
 	public bool IsLast { get; }
 	public ICommand Navigate { get; }
@@ -74,6 +76,7 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 	private string? m_refreshTargetPath;
 	private string m_searchText = "";
 	private int m_selectedCount;
+	private object? m_anchor;
 	private AssetFolder? m_selectedFolder;
 
 	private IReadOnlyList<string> m_loadedHiddenPatterns = [];
@@ -265,7 +268,8 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 			return chain.Select((f, i) => new BreadcrumbItem(
 				f.Name,
 				() => SelectedFolder = f,
-				i == chain.Count - 1
+				i == chain.Count - 1,
+				f
 			)).ToList();
 		}
 	}
@@ -329,33 +333,132 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 	}
 
 	public void SelectItem(object item, KeyModifiers modifiers) {
-		if (modifiers.HasFlag(KeyModifiers.Control)) {
+		var range = modifiers.HasFlag(KeyModifiers.Shift) && m_anchor is not null;
+		var anchorIndex = range ? CurrentItems.IndexOf(m_anchor!) : -1;
+		var itemIndex = CurrentItems.IndexOf(item);
+
+		if (anchorIndex >= 0 && itemIndex >= 0) {
+			if (!modifiers.HasFlag(KeyModifiers.Control)) ClearSelectionState();
+			var (from, to) = (Math.Min(anchorIndex, itemIndex), Math.Max(anchorIndex, itemIndex));
+			for (var i = from; i <= to; i++)
+				if (m_selectedItems.Add(CurrentItems[i])) SetIsSelected(CurrentItems[i], true);
+		} else if (modifiers.HasFlag(KeyModifiers.Control)) {
 			if (m_selectedItems.Remove(item)) {
 				SetIsSelected(item, false);
 			} else {
 				m_selectedItems.Add(item);
 				SetIsSelected(item, true);
 			}
+
+			m_anchor = item;
 		} else {
-			foreach (var prev in m_selectedItems)
-				SetIsSelected(prev, false);
-			m_selectedItems.Clear();
+			ClearSelectionState();
 			m_selectedItems.Add(item);
 			SetIsSelected(item, true);
+			m_anchor = item;
 		}
 
+		SelectionChanged();
+	}
+
+	public void SelectAll() {
+		foreach (var item in CurrentItems)
+			if (m_selectedItems.Add(item)) SetIsSelected(item, true);
+		SelectionChanged();
+	}
+
+	// replaces the selection
+	public void SetSelection(IReadOnlyCollection<object> items, IReadOnlyCollection<object>? keep = null) {
+		foreach (var prev in m_selectedItems.ToList()) {
+			if (items.Contains(prev) || keep?.Contains(prev) == true) continue;
+			m_selectedItems.Remove(prev);
+			SetIsSelected(prev, false);
+		}
+
+		foreach (var item in items)
+			if (m_selectedItems.Add(item)) SetIsSelected(item, true);
+		SelectionChanged();
+	}
+
+	public void ClearSelection() {
+		ClearSelectionState();
+		m_anchor = null;
+		SelectionChanged();
+	}
+
+	private void ClearSelectionState() {
+		foreach (var item in m_selectedItems)
+			SetIsSelected(item, false);
+		m_selectedItems.Clear();
+	}
+
+	private void SelectionChanged() {
 		m_selectedCount = m_selectedItems.Count;
 		Notify(nameof(ItemCount));
 		NotifyActionStateChanged();
 	}
 
-	public void ClearSelection() {
-		foreach (var item in m_selectedItems)
-			SetIsSelected(item, false);
-		m_selectedItems.Clear();
-		m_selectedCount = 0;
-		Notify(nameof(ItemCount));
-		NotifyActionStateChanged();
+	// what is carried on a drag
+	public IReadOnlyList<string> DragPaths(object pressed) {
+		var items = m_selectedItems.Contains(pressed) ? m_selectedItems.ToList() : [pressed];
+		return items.Select(i => i switch {
+			AssetFile f => f.Filepath,
+			AssetFolder d => d.Filepath,
+			_ => null
+		}).OfType<string>().ToList();
+	}
+
+	public bool CanMoveItems(IReadOnlyCollection<string> paths, AssetFolder target) {
+		if (paths.Count == 0 || !CanWriteToFolder(target)) return false;
+		var targetDir = Path.GetFullPath(target.Filepath).TrimEnd(Path.DirectorySeparatorChar);
+		var anyMoves = false;
+
+		foreach (var path in paths) {
+			var full = Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar);
+			if (!IsEditablePath(full)) return false;
+
+			if (Directory.Exists(full)) {
+				if (ProjectContext.IsDatabaseRoot(full)) return false;
+				// a folder can't go into itself or anything below it
+				if (targetDir.Equals(full, StringComparison.OrdinalIgnoreCase) ||
+				    targetDir.StartsWith(full + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+					return false;
+			} else if (!File.Exists(full)) {
+				return false;
+			}
+
+			var parent = Path.GetDirectoryName(full);
+			if (!string.Equals(parent, targetDir, StringComparison.OrdinalIgnoreCase)) anyMoves = true;
+		}
+
+		return anyMoves;
+	}
+
+	public void MoveItems(IReadOnlyCollection<string> paths, AssetFolder target) {
+		if (!CanMoveItems(paths, target)) return;
+		var targetDir = Path.GetFullPath(target.Filepath);
+
+		foreach (var path in paths) {
+			var full = Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar);
+			var dest = Path.Combine(targetDir, Path.GetFileName(full));
+			if (string.Equals(full, dest, StringComparison.OrdinalIgnoreCase)) continue;
+			if (File.Exists(dest) || Directory.Exists(dest)) continue; // never overwrite
+
+			try {
+				if (Directory.Exists(full)) {
+					Directory.Move(full, dest);
+				} else {
+					File.Move(full, dest, false);
+					if (File.Exists(full + ".meta")) File.Move(full + ".meta", dest + ".meta", false);
+				}
+			} catch {
+				/* leave it silently :) */
+			}
+		}
+
+		ClearSelection();
+		AssetDatabase.RebuildAssetDatabase();
+		Refresh();
 	}
 
 	public IReadOnlyList<AssetFile> TagTargets(AssetFile clicked) {
@@ -429,7 +532,8 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 		await new SimpleLoaderWindow(vm).ShowDialog(owner);
 	}
 
-	public async Task HandleDroppedFilesAsync(IReadOnlyList<string> paths) {
+	public async Task HandleDroppedFilesAsync(IReadOnlyList<string> paths, AssetFolder? target = null) {
+		if (target is not null && CanWriteToFolder(target)) SelectedFolder = target;
 		if (!ProjectContext.IsInitialized || !CanWriteToSelectedFolder) return;
 
 		var artworkFiles = new List<string>();
