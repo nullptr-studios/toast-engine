@@ -150,10 +150,14 @@ target_compile_definitions(toast_engine PUBLIC
 
 # Baseline ISA of Release builds on x86_64 GCC/Clang. CI runs on virtual machines whose CPU has no AVX2, so it passes a lower one
 set(TOAST_X86_MARCH "x86-64-v3" CACHE STRING "-march of Release builds on x86_64 (GCC and Clang)")
+# Same for MSVC: the instruction set Release builds assume (empty for the compiler default), CI machines without AVX2 pass none
+set(TOAST_MSVC_ARCH "AVX2" CACHE STRING "/arch of Release builds with MSVC, empty for the default")
 
 if (MSVC)
     string(REGEX REPLACE "/EH[a-z-]+" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-    target_compile_options(toast_engine PUBLIC $<$<CONFIG:Release>:/arch:AVX2>)
+    if (TOAST_MSVC_ARCH)
+        target_compile_options(toast_engine PUBLIC $<$<CONFIG:Release>:/arch:${TOAST_MSVC_ARCH}>)
+    endif ()
     target_compile_options(toast_engine PRIVATE
             /bigobj
             /EHs /EHc-
