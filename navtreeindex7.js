@@ -1,7 +1,5 @@
 var NAVTREEINDEX7 =
 {
-"classtoast_1_1VoxelNode.html#ac3363843d3580277d2556b202f496a57":[12,0,1,87,19],
-"classtoast_1_1VoxelNode.html#ac3363843d3580277d2556b202f496a57":[14,0,12,89,19],
 "classtoast_1_1VoxelNode.html#acdaf573974faf85d4db966810c1a2dcc":[12,0,1,87,4],
 "classtoast_1_1VoxelNode.html#acdaf573974faf85d4db966810c1a2dcc":[14,0,12,89,4],
 "classtoast_1_1VoxelNode.html#aceac34cb206dd5db05f1c0549d2a6ac3":[12,0,1,87,44],
@@ -249,5 +247,7 @@ var NAVTREEINDEX7 =
 "cluster__lighting__pass_8hpp_source.html":[15,0,1,0,0,6,0,3],
 "clustered__lighting__constants_8hpp.html":[15,0,1,0,0,6,1],
 "clustered__lighting__constants_8hpp_source.html":[15,0,1,0,0,6,1],
-"collider_8hpp_source.html":[15,0,1,0,0,4,0,2]
+"collider_8hpp_source.html":[15,0,1,0,0,4,0,2],
+"collision_8hpp.html":[15,0,1,0,0,4,8],
+"collision_8hpp_source.html":[15,0,1,0,0,4,8]
 };

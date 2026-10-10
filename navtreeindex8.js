@@ -1,7 +1,5 @@
 var NAVTREEINDEX8 =
 {
-"collision_8hpp.html":[15,0,1,0,0,4,8],
-"collision_8hpp_source.html":[15,0,1,0,0,4,8],
 "collision__world_8hpp.html":[15,0,1,0,0,4,9],
 "collision__world_8hpp_source.html":[15,0,1,0,0,4,9],
 "color__scheme_8hpp.html":[15,0,1,0,0,9,0,0],
@@ -249,5 +247,7 @@ var NAVTREEINDEX8 =
 "input__events_8hpp_source.html":[15,0,1,0,0,3,5],
 "input__layout_8hpp.html":[15,0,1,0,0,3,0,2],
 "input__layout_8hpp_source.html":[15,0,1,0,0,3,0,2],
-"input__settings_8hpp.html":[15,0,1,0,0,3,0,3]
+"input__settings_8hpp.html":[15,0,1,0,0,3,0,3],
+"input__settings_8hpp_source.html":[15,0,1,0,0,3,0,3],
+"input__system_8cpp.html":[15,0,1,0,0,3,6]
 };

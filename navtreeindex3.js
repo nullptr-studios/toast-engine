@@ -1,7 +1,5 @@
 var NAVTREEINDEX3 =
 {
-"classeditor_1_1Workspace_1_1FieldVM.html":[14,0,3,8,8],
-"classeditor_1_1Workspace_1_1FloatSettingRow.html":[12,0,0,8,9],
 "classeditor_1_1Workspace_1_1FloatSettingRow.html":[14,0,3,8,9],
 "classeditor_1_1Workspace_1_1FloatSettingRow.html#af57b27d4b815f84ca8e39ed92f703bff":[12,0,0,8,9,0],
 "classeditor_1_1Workspace_1_1FloatSettingRow.html#af57b27d4b815f84ca8e39ed92f703bff":[14,0,3,8,9,0],
@@ -249,5 +247,7 @@ var NAVTREEINDEX3 =
 "classrenderer_1_1DescriptorWriter.html":[14,0,8,12],
 "classrenderer_1_1EnvironmentPass.html":[14,0,8,15],
 "classrenderer_1_1EnvironmentPass.html#a1f635f9cad3d80c00763a6c2b16872c9":[14,0,8,15,0],
-"classrenderer_1_1FxaaPass.html":[14,0,8,16]
+"classrenderer_1_1FxaaPass.html":[14,0,8,16],
+"classrenderer_1_1FxaaPass.html#acce0272d3bb18d2806aeb4c498f40be0":[14,0,8,16,0],
+"classrenderer_1_1GpuScope.html":[14,0,8,17]
 };

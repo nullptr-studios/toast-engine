@@ -1,5 +1,7 @@
 <map id="editor.Workspace.HistoryView" name="editor.Workspace.HistoryView">
-<area shape="rect" id="Node000001" title=" " alt="" coords="5,81,222,109"/>
-<area shape="rect" id="Node000002" title=" " alt="" coords="64,5,163,33"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="115,47,116,82,111,79,112,51"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="30,81,247,109"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,5,104,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="82,41,126,80,121,81,80,46"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="127,5,318,33"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="199,43,155,83,152,78,193,44"/>
 </map>

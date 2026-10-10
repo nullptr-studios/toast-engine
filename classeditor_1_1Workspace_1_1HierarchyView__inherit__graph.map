@@ -1,5 +1,7 @@
 <map id="editor.Workspace.HierarchyView" name="editor.Workspace.HierarchyView">
-<area shape="rect" id="Node000001" title=" " alt="" coords="5,81,238,109"/>
-<area shape="rect" id="Node000002" title=" " alt="" coords="72,5,171,33"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="123,47,124,82,119,79,120,51"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="22,81,255,109"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,5,104,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="82,41,126,80,121,81,80,46"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="127,5,318,33"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="199,43,155,83,152,78,193,44"/>
 </map>

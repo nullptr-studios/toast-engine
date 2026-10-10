@@ -1,9 +1,7 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="Node000000" title=" " alt="" coords="74,5,123,33"/>
-<area shape="rect" id="Node000001" href="$classeditor_1_1Logger_1_1ReverseLogList.html" title=" " alt="" coords="240,57,448,85"/>
-<area shape="poly" id="edge492_Node000000_Node000001" title=" " alt="" coords="138,25,277,55,273,58,138,30"/>
-<area shape="rect" id="Node000002" title=" " alt="" coords="5,57,192,85"/>
-<area shape="poly" id="edge493_Node000002_Node000001" title=" " alt="" coords="207,69,242,71,237,72,208,74"/>
-<area shape="rect" id="Node000003" title=" " alt="" coords="43,109,154,137"/>
-<area shape="poly" id="edge494_Node000003_Node000001" title=" " alt="" coords="169,106,273,86,278,85,170,111"/>
+<area shape="rect" id="Node000000" title=" " alt="" coords="5,48,164,76"/>
+<area shape="rect" id="Node000001" href="$classeditor_1_1Converters_1_1DockContentCornerRadiusConverter.html" title=" " alt="" coords="212,5,433,50"/>
+<area shape="poly" id="edge497_Node000000_Node000001" title=" " alt="" coords="179,46,214,43,209,45,180,51"/>
+<area shape="rect" id="Node000002" href="$classeditor_1_1Converters_1_1SeverityFillConverter.html" title=" " alt="" coords="227,75,418,119"/>
+<area shape="poly" id="edge498_Node000000_Node000002" title=" " alt="" coords="179,73,229,83,224,83,179,79"/>
 </map>

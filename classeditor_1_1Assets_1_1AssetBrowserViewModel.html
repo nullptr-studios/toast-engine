@@ -155,14 +155,24 @@ void&#160;</td><td class="memItemRight"><b>Dispose</b> ()</td></tr>
 void&#160;</td><td class="memItemRight"><b>RevealAsset</b> (string uid)</td></tr>
 <tr class="memitem:ada26452962c69b5b15d9ea02ed31debe" id="r_ada26452962c69b5b15d9ea02ed31debe"><td class="memItemLeft"><a id="ada26452962c69b5b15d9ea02ed31debe" name="ada26452962c69b5b15d9ea02ed31debe"></a>
 void&#160;</td><td class="memItemRight"><b>SelectItem</b> (object item, KeyModifiers modifiers)</td></tr>
+<tr class="memitem:ac7737b5434a57559900bdca88a31adee" id="r_ac7737b5434a57559900bdca88a31adee"><td class="memItemLeft"><a id="ac7737b5434a57559900bdca88a31adee" name="ac7737b5434a57559900bdca88a31adee"></a>
+void&#160;</td><td class="memItemRight"><b>SelectAll</b> ()</td></tr>
+<tr class="memitem:a56643826182cf18e031b55869ff4f78b" id="r_a56643826182cf18e031b55869ff4f78b"><td class="memItemLeft"><a id="a56643826182cf18e031b55869ff4f78b" name="a56643826182cf18e031b55869ff4f78b"></a>
+void&#160;</td><td class="memItemRight"><b>SetSelection</b> (IReadOnlyCollection&lt; object &gt; items, IReadOnlyCollection&lt; object &gt;? keep=null)</td></tr>
 <tr class="memitem:a7dc405550b1515fb7d3d44695ce4e8f5" id="r_a7dc405550b1515fb7d3d44695ce4e8f5"><td class="memItemLeft"><a id="a7dc405550b1515fb7d3d44695ce4e8f5" name="a7dc405550b1515fb7d3d44695ce4e8f5"></a>
 void&#160;</td><td class="memItemRight"><b>ClearSelection</b> ()</td></tr>
+<tr class="memitem:aa4e7aba72887989ce84af3c284065a74" id="r_aa4e7aba72887989ce84af3c284065a74"><td class="memItemLeft"><a id="aa4e7aba72887989ce84af3c284065a74" name="aa4e7aba72887989ce84af3c284065a74"></a>
+IReadOnlyList&lt; string &gt;&#160;</td><td class="memItemRight"><b>DragPaths</b> (object pressed)</td></tr>
+<tr class="memitem:a588de2a5588ea0dcc6105b6a528945f4" id="r_a588de2a5588ea0dcc6105b6a528945f4"><td class="memItemLeft"><a id="a588de2a5588ea0dcc6105b6a528945f4" name="a588de2a5588ea0dcc6105b6a528945f4"></a>
+bool&#160;</td><td class="memItemRight"><b>CanMoveItems</b> (IReadOnlyCollection&lt; string &gt; paths, <a class="el" href="classeditor_1_1Assets_1_1AssetFolder.html">AssetFolder</a> target)</td></tr>
+<tr class="memitem:a9bf40c5b09aba803369ee5be38c572db" id="r_a9bf40c5b09aba803369ee5be38c572db"><td class="memItemLeft"><a id="a9bf40c5b09aba803369ee5be38c572db" name="a9bf40c5b09aba803369ee5be38c572db"></a>
+void&#160;</td><td class="memItemRight"><b>MoveItems</b> (IReadOnlyCollection&lt; string &gt; paths, <a class="el" href="classeditor_1_1Assets_1_1AssetFolder.html">AssetFolder</a> target)</td></tr>
 <tr class="memitem:a896e32e989a1605dd30aa770eb25364a" id="r_a896e32e989a1605dd30aa770eb25364a"><td class="memItemLeft"><a id="a896e32e989a1605dd30aa770eb25364a" name="a896e32e989a1605dd30aa770eb25364a"></a>
 IReadOnlyList&lt; <a class="el" href="classeditor_1_1Assets_1_1AssetFile.html">AssetFile</a> &gt;&#160;</td><td class="memItemRight"><b>TagTargets</b> (<a class="el" href="classeditor_1_1Assets_1_1AssetFile.html">AssetFile</a> clicked)</td></tr>
 <tr class="memitem:ae776876d4976410a040b69276663f7ab" id="r_ae776876d4976410a040b69276663f7ab"><td class="memItemLeft"><a id="ae776876d4976410a040b69276663f7ab" name="ae776876d4976410a040b69276663f7ab"></a>
 void&#160;</td><td class="memItemRight"><b>SetTag</b> (IReadOnlyCollection&lt; <a class="el" href="classeditor_1_1Assets_1_1AssetFile.html">AssetFile</a> &gt; files, <a class="el" href="classeditor_1_1Assets_1_1AssetTag.html">AssetTag</a> tag, bool enabled)</td></tr>
-<tr class="memitem:a9b8bc5103d1bc71000fdbde595916bdf" id="r_a9b8bc5103d1bc71000fdbde595916bdf"><td class="memItemLeft"><a id="a9b8bc5103d1bc71000fdbde595916bdf" name="a9b8bc5103d1bc71000fdbde595916bdf"></a>
-async Task&#160;</td><td class="memItemRight"><b>HandleDroppedFilesAsync</b> (IReadOnlyList&lt; string &gt; paths)</td></tr>
+<tr class="memitem:a13f9b13889f21bf8edc693e6f6e8e5b4" id="r_a13f9b13889f21bf8edc693e6f6e8e5b4"><td class="memItemLeft"><a id="a13f9b13889f21bf8edc693e6f6e8e5b4" name="a13f9b13889f21bf8edc693e6f6e8e5b4"></a>
+async Task&#160;</td><td class="memItemRight"><b>HandleDroppedFilesAsync</b> (IReadOnlyList&lt; string &gt; paths, <a class="el" href="classeditor_1_1Assets_1_1AssetFolder.html">AssetFolder</a>? target=null)</td></tr>
 <tr class="memitem:a85c3639601a06454ca43a9dc49d3362a" id="r_a85c3639601a06454ca43a9dc49d3362a"><td class="memItemLeft"><a id="a85c3639601a06454ca43a9dc49d3362a" name="a85c3639601a06454ca43a9dc49d3362a"></a>
 void&#160;</td><td class="memItemRight"><b>MoveAsset</b> (string uid, <a class="el" href="classeditor_1_1Assets_1_1AssetFolder.html">AssetFolder</a> target)</td></tr>
 <tr class="memitem:aea3e54beff15e61a075034021dc40f16" id="r_aea3e54beff15e61a075034021dc40f16"><td class="memItemLeft"><a id="aea3e54beff15e61a075034021dc40f16" name="aea3e54beff15e61a075034021dc40f16"></a>

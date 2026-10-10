@@ -1,5 +1,11 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="Node000000" href="$interfaceeditor_1_1Components_1_1Modals_1_1IModalService.html" title=" " alt="" coords="5,5,205,50"/>
-<area shape="rect" id="Node000001" href="$classeditor_1_1Components_1_1Modals_1_1ModalService.html" title=" " alt="" coords="253,5,452,50"/>
-<area shape="poly" id="edge216_Node000000_Node000001" title=" " alt="" coords="220,25,255,28,250,28,220,30"/>
+<area shape="rect" id="Node000000" href="$classeditor_1_1Components_1_1Modals_1_1PickerViewModel.html" title=" " alt="" coords="5,109,205,154"/>
+<area shape="rect" id="Node000001" href="$classeditor_1_1Components_1_1Modals_1_1AssetFolderTreeViewModel.html" title=" " alt="" coords="253,5,452,50"/>
+<area shape="poly" id="edge220_Node000000_Node000001" title=" " alt="" coords="164,100,252,60,285,49,281,52,254,65,166,104"/>
+<area shape="rect" id="Node000002" href="$classeditor_1_1Components_1_1Modals_1_1AssetPickerViewModel.html" title=" " alt="" coords="253,75,452,119"/>
+<area shape="poly" id="edge221_Node000000_Node000002" title=" " alt="" coords="219,113,255,110,250,112,221,118"/>
+<area shape="rect" id="Node000003" href="$classeditor_1_1Components_1_1Modals_1_1HierarchyPickerViewModel.html" title=" " alt="" coords="253,144,452,189"/>
+<area shape="poly" id="edge222_Node000000_Node000003" title=" " alt="" coords="220,145,255,152,250,153,220,150"/>
+<area shape="rect" id="Node000004" href="$classeditor_1_1Components_1_1Modals_1_1NodeTypePickerViewModel.html" title=" " alt="" coords="253,213,452,258"/>
+<area shape="poly" id="edge223_Node000000_Node000004" title=" " alt="" coords="165,159,254,199,286,213,280,213,252,203,164,164"/>
 </map>

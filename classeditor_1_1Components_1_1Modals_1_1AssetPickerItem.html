@@ -118,11 +118,31 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classeditor_1_
   <div class="headertitle"><div class="title">editor.Components.Modals.AssetPickerItem Class Reference</div></div>
 </div><!--header-->
 <div class="contents">
+<div class="dynheader">
+Inheritance diagram for editor.Components.Modals.AssetPickerItem:</div>
+<div class="dyncontent">
+<div class="center"><img src="classeditor_1_1Components_1_1Modals_1_1AssetPickerItem__inherit__graph.png" border="0" usemap="#aeditor_8Components_8Modals_8AssetPickerItem_inherit__map" loading="lazy" alt="Inheritance graph"/></div>
+<map name="aeditor_8Components_8Modals_8AssetPickerItem_inherit__map" id="aeditor_8Components_8Modals_8AssetPickerItem_inherit__map">
+<area shape="rect" title=" " alt="" coords="5,98,205,143"/>
+<area shape="rect" href="interfaceeditor_1_1Components_1_1Modals_1_1IPickerNode.html" title=" " alt="" coords="5,5,205,50"/>
+<area shape="poly" title=" " alt="" coords="107,64,107,99,103,97,103,68"/>
+</map>
+<center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
+<div class="dynheader">
+Collaboration diagram for editor.Components.Modals.AssetPickerItem:</div>
+<div class="dyncontent">
+<div class="center"><img src="classeditor_1_1Components_1_1Modals_1_1AssetPickerItem__coll__graph.png" border="0" usemap="#aeditor_8Components_8Modals_8AssetPickerItem_coll__map" loading="lazy" alt="Collaboration graph"/></div>
+<map name="aeditor_8Components_8Modals_8AssetPickerItem_coll__map" id="aeditor_8Components_8Modals_8AssetPickerItem_coll__map">
+<area shape="rect" title=" " alt="" coords="5,98,205,143"/>
+<area shape="rect" href="interfaceeditor_1_1Components_1_1Modals_1_1IPickerNode.html" title=" " alt="" coords="5,5,205,50"/>
+<area shape="poly" title=" " alt="" coords="107,64,107,99,103,97,103,68"/>
+</map>
+<center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a58508448e5b502709e10d818c7579ada" id="r_a58508448e5b502709e10d818c7579ada"><td class="memItemLeft"><a id="a58508448e5b502709e10d818c7579ada" name="a58508448e5b502709e10d818c7579ada"></a>
-&#160;</td><td class="memItemRight"><b>AssetPickerItem</b> (string uid, string name, string path, IBrush typeColor, string typeLabel)</td></tr>
+<tr class="memitem:ac660f29323f3516b33c811d1ec4ce48d" id="r_ac660f29323f3516b33c811d1ec4ce48d"><td class="memItemLeft"><a id="ac660f29323f3516b33c811d1ec4ce48d" name="ac660f29323f3516b33c811d1ec4ce48d"></a>
+&#160;</td><td class="memItemRight"><b>AssetPickerItem</b> (string uid, string name, string path, IBrush typeColor, string typeLabel, bool hasThumbnail, bool showPath=true)</td></tr>
 <tr class="memitem:a6c1a530fc139ebbe1ecdc3114c9941d8" id="r_a6c1a530fc139ebbe1ecdc3114c9941d8"><td class="memItemLeft"><a id="a6c1a530fc139ebbe1ecdc3114c9941d8" name="a6c1a530fc139ebbe1ecdc3114c9941d8"></a>
 bool&#160;</td><td class="memItemRight"><b>UpdateSegments</b> (string query, bool caseSensitive)</td></tr>
 </table><table class="memberdecls">
@@ -138,13 +158,44 @@ string&#160;</td><td class="memItemRight"><b>Path</b><code> [get]</code></td></t
 IBrush&#160;</td><td class="memItemRight"><b>TypeColor</b><code> [get]</code></td></tr>
 <tr class="memitem:a4d43006c118a1ad321f519b6a3c12f8d" id="r_a4d43006c118a1ad321f519b6a3c12f8d"><td class="memItemLeft"><a id="a4d43006c118a1ad321f519b6a3c12f8d" name="a4d43006c118a1ad321f519b6a3c12f8d"></a>
 string&#160;</td><td class="memItemRight"><b>TypeLabel</b><code> [get]</code></td></tr>
-<tr class="memitem:a6e9dfd1acd68aa8e7bd5c682aff4b73f" id="r_a6e9dfd1acd68aa8e7bd5c682aff4b73f"><td class="memItemLeft"><a id="a6e9dfd1acd68aa8e7bd5c682aff4b73f" name="a6e9dfd1acd68aa8e7bd5c682aff4b73f"></a>
-bool&#160;</td><td class="memItemRight"><b>IsExpanded</b> = true<code> [get, set]</code></td></tr>
-<tr class="memitem:a11e8fd0da160504adc558b4c2e97b28a" id="r_a11e8fd0da160504adc558b4c2e97b28a"><td class="memItemLeft"><a id="a11e8fd0da160504adc558b4c2e97b28a" name="a11e8fd0da160504adc558b4c2e97b28a"></a>
-ObservableCollection&lt; TextSegment &gt;&#160;</td><td class="memItemRight"><b>Segments</b> = []<code> [get]</code></td></tr>
+<tr class="memitem:aa1de32bde5b2ba4e6856ed4cb70afb54" id="r_aa1de32bde5b2ba4e6856ed4cb70afb54"><td class="memItemLeft"><a id="aa1de32bde5b2ba4e6856ed4cb70afb54" name="aa1de32bde5b2ba4e6856ed4cb70afb54"></a>
+bool&#160;</td><td class="memItemRight"><b>HasThumbnail</b><code> [get]</code></td></tr>
+<tr class="memitem:ab92626beab3a03089feb5c3765e3e305" id="r_ab92626beab3a03089feb5c3765e3e305"><td class="memItemLeft"><a id="ab92626beab3a03089feb5c3765e3e305" name="ab92626beab3a03089feb5c3765e3e305"></a>
+bool&#160;</td><td class="memItemRight"><b>ShowPath</b><code> [get]</code></td></tr>
+<tr class="memitem:a058c64c05458475ece52d83907706ec5" id="r_a058c64c05458475ece52d83907706ec5"><td class="memItemLeft"><a id="a058c64c05458475ece52d83907706ec5" name="a058c64c05458475ece52d83907706ec5"></a>
+IReadOnlyList&lt; TextSegment &gt;&#160;</td><td class="memItemRight"><b>Segments</b><code> [get]</code></td></tr>
+<tr class="memitem:a6e9dfd1acd68aa8e7bd5c682aff4b73f" id="r_a6e9dfd1acd68aa8e7bd5c682aff4b73f"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a6e9dfd1acd68aa8e7bd5c682aff4b73f">IsExpanded</a><code> [get, set]</code></td></tr>
+<tr class="inherit_header properties_interfaceeditor_1_1Components_1_1Modals_1_1IPickerNode"><td colspan="2">Properties inherited from <a class="el" href="interfaceeditor_1_1Components_1_1Modals_1_1IPickerNode.html">editor.Components.Modals.IPickerNode</a></td></tr>
+<tr class="memitem:aeafa3c86d150cb471cc6fef4caf8f7fc properties_interfaceeditor_1_1Components_1_1Modals_1_1IPickerNode" id="r_aeafa3c86d150cb471cc6fef4caf8f7fc"><td class="memItemLeft">
+bool&#160;</td><td class="memItemRight"><b>IsFolder</b><code> [get]</code></td></tr>
 </table>
+<a name="doc-property-members" id="doc-property-members"></a><h2 id="header-doc-property-members" class="groupheader">Property Documentation</h2>
+<a id="a6e9dfd1acd68aa8e7bd5c682aff4b73f" name="a6e9dfd1acd68aa8e7bd5c682aff4b73f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6e9dfd1acd68aa8e7bd5c682aff4b73f">&#9670;&#160;</a></span>IsExpanded</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool editor.Components.Modals.AssetPickerItem.IsExpanded</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel get">get</span><span class="mlabel set">set</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="interfaceeditor_1_1Components_1_1Modals_1_1IPickerNode.html">editor.Components.Modals.IPickerNode</a>.</p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>editor/Components/Modals/<b>AssetListPickerViewModel.cs</b></li>
+<li>editor/Components/Modals/<b>AssetPickerViewModel.cs</b></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

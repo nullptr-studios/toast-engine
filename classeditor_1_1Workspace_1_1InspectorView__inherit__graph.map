@@ -1,5 +1,7 @@
 <map id="editor.Workspace.InspectorView" name="editor.Workspace.InspectorView">
-<area shape="rect" id="Node000001" title=" " alt="" coords="5,81,235,109"/>
-<area shape="rect" id="Node000002" title=" " alt="" coords="71,5,169,33"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="122,47,122,82,118,79,118,51"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="24,81,253,109"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,5,104,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="82,41,126,80,121,81,80,46"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="127,5,318,33"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="199,43,155,83,152,78,193,44"/>
 </map>

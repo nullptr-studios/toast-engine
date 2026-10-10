@@ -57,7 +57,6 @@ var hierarchy =
     [ "toast::AssetFieldAccess&lt; Class, Handle, Tag &gt;", "structtoast_1_1AssetFieldAccess.html", null ],
     [ "assets::AssetInfo", "structassets_1_1AssetInfo.html", null ],
     [ "assets::AssetManager", "classassets_1_1AssetManager.html", null ],
-    [ "editor.Components.Modals.AssetPickerItem", "classeditor_1_1Components_1_1Modals_1_1AssetPickerItem.html", null ],
     [ "scripting::AssetProxy", "classscripting_1_1AssetProxy.html", null ],
     [ "assets::AssetRegistry", "classassets_1_1AssetRegistry.html", null ],
     [ "audio::AudioSystem", "classaudio_1_1AudioSystem.html", null ],
@@ -780,6 +779,15 @@ var hierarchy =
       [ "renderer::SDLOutputTarget", "classrenderer_1_1SDLOutputTarget.html", null ],
       [ "renderer::SharedTextureOutputTarget", "classrenderer_1_1SharedTextureOutputTarget.html", null ]
     ] ],
+    [ "editor.Components.Modals.IPickerNode", "interfaceeditor_1_1Components_1_1Modals_1_1IPickerNode.html", [
+      [ "editor.Components.Elements.SearchableTreeItem< T >", "classeditor_1_1Components_1_1Elements_1_1SearchableTreeItem-1-g.html", [
+        [ "editor.Components.Modals.HierarchyDisplayItem", "classeditor_1_1Components_1_1Modals_1_1HierarchyDisplayItem.html", null ],
+        [ "editor.Components.Modals.NodeDisplayItem", "classeditor_1_1Components_1_1Modals_1_1NodeDisplayItem.html", null ]
+      ] ],
+      [ "editor.Components.Modals.AssetFolderNode", "classeditor_1_1Components_1_1Modals_1_1AssetFolderNode.html", null ],
+      [ "editor.Components.Modals.AssetPickerItem", "classeditor_1_1Components_1_1Modals_1_1AssetPickerItem.html", null ],
+      [ "editor.Components.Modals.AssetTreeNode", "classeditor_1_1Components_1_1Modals_1_1AssetTreeNode.html", null ]
+    ] ],
     [ "renderer::IPostProcessPass", "classrenderer_1_1IPostProcessPass.html", [
       [ "renderer::BloomPass", "classrenderer_1_1BloomPass.html", null ],
       [ "renderer::FxaaPass", "classrenderer_1_1FxaaPass.html", null ],
@@ -861,6 +869,12 @@ var hierarchy =
       [ "renderer::VoxelGpuStorage", "classrenderer_1_1VoxelGpuStorage.html", null ],
       [ "renderer::VulkanMesh", "classrenderer_1_1VulkanMesh.html", null ],
       [ "renderer::VulkanTexture", "classrenderer_1_1VulkanTexture.html", null ]
+    ] ],
+    [ "IWorkspaceShortcutTarget", null, [
+      [ "editor.Workspace.HierarchyView", "classeditor_1_1Workspace_1_1HierarchyView.html", null ],
+      [ "editor.Workspace.HistoryView", "classeditor_1_1Workspace_1_1HistoryView.html", null ],
+      [ "editor.Workspace.InspectorView", "classeditor_1_1Workspace_1_1InspectorView.html", null ],
+      [ "editor.Workspace.WorkspaceView", "classeditor_1_1Workspace_1_1WorkspaceView.html", null ]
     ] ],
     [ "assets::Data::KeepAllKeysTag", "structassets_1_1Data_1_1KeepAllKeysTag.html", null ],
     [ "input::KeyCode", "structinput_1_1KeyCode.html", null ],
@@ -1005,7 +1019,6 @@ var hierarchy =
       [ "editor.Assets.Importers.VoxImporter.Settings", "classeditor_1_1Assets_1_1Importers_1_1VoxImporter_1_1Settings.html", null ],
       [ "editor.Components.CurveCanvas.CurveCanvasItem", "classeditor_1_1Components_1_1CurveCanvas_1_1CurveCanvasItem.html", null ],
       [ "editor.Components.Modals.AssetFolderNode", "classeditor_1_1Components_1_1Modals_1_1AssetFolderNode.html", null ],
-      [ "editor.Components.Modals.AssetTreeNode", "classeditor_1_1Components_1_1Modals_1_1AssetTreeNode.html", null ],
       [ "editor.Components.Modals.MessageModalViewModel", "classeditor_1_1Components_1_1Modals_1_1MessageModalViewModel.html", null ],
       [ "editor.Components.Modals.SaveFileViewModel", "classeditor_1_1Components_1_1Modals_1_1SaveFileViewModel.html", null ],
       [ "editor.Editors.CurvePointVM", "classeditor_1_1Editors_1_1CurvePointVM.html", null ],
@@ -1089,10 +1102,10 @@ var hierarchy =
     [ "physics::PhysicsMaterial", "structphysics_1_1PhysicsMaterial.html", null ],
     [ "toast::PhysicsSettings", "classtoast_1_1PhysicsSettings.html", null ],
     [ "physics::Simulator::PhysicsStepProfile", "structphysics_1_1Simulator_1_1PhysicsStepProfile.html", null ],
+    [ "editor.Components.Modals.PickerRow", "classeditor_1_1Components_1_1Modals_1_1PickerRow.html", null ],
     [ "editor.Components.Modals.PickerViewModel", "classeditor_1_1Components_1_1Modals_1_1PickerViewModel.html", [
       [ "editor.Components.Modals.AssetFolderTreeViewModel", "classeditor_1_1Components_1_1Modals_1_1AssetFolderTreeViewModel.html", null ],
-      [ "editor.Components.Modals.AssetListPickerViewModel", "classeditor_1_1Components_1_1Modals_1_1AssetListPickerViewModel.html", null ],
-      [ "editor.Components.Modals.AssetTreeViewModel", "classeditor_1_1Components_1_1Modals_1_1AssetTreeViewModel.html", null ],
+      [ "editor.Components.Modals.AssetPickerViewModel", "classeditor_1_1Components_1_1Modals_1_1AssetPickerViewModel.html", null ],
       [ "editor.Components.Modals.HierarchyPickerViewModel", "classeditor_1_1Components_1_1Modals_1_1HierarchyPickerViewModel.html", null ],
       [ "editor.Components.Modals.NodeTypePickerViewModel", "classeditor_1_1Components_1_1Modals_1_1NodeTypePickerViewModel.html", null ]
     ] ],
@@ -1248,10 +1261,6 @@ var hierarchy =
     [ "scripting::ScriptNodeContextScope", "classscripting_1_1ScriptNodeContextScope.html", null ],
     [ "scripting::ScriptRuntime", "classscripting_1_1ScriptRuntime.html", null ],
     [ "scripting::ScriptSchema", "structscripting_1_1ScriptSchema.html", null ],
-    [ "editor.Components.Elements.SearchableTreeItem&lt; T &gt;", "classeditor_1_1Components_1_1Elements_1_1SearchableTreeItem-1-g.html", [
-      [ "editor.Components.Modals.HierarchyDisplayItem", "classeditor_1_1Components_1_1Modals_1_1HierarchyDisplayItem.html", null ],
-      [ "editor.Components.Modals.NodeDisplayItem", "classeditor_1_1Components_1_1Modals_1_1NodeDisplayItem.html", null ]
-    ] ],
     [ "physics::_detail::SegmentBoxClosestPoints", "structphysics_1_1__detail_1_1SegmentBoxClosestPoints.html", null ],
     [ "physics::_detail::SegmentClosestPoint", "structphysics_1_1__detail_1_1SegmentClosestPoint.html", null ],
     [ "physics::_detail::SegmentClosestPoints", "structphysics_1_1__detail_1_1SegmentClosestPoints.html", null ],
@@ -1480,7 +1489,6 @@ var hierarchy =
       [ "editor.Components.Modals.PickerWindow", "classeditor_1_1Components_1_1Modals_1_1PickerWindow.html", [
         [ "editor.Components.Modals.AssetFolderTree", "classeditor_1_1Components_1_1Modals_1_1AssetFolderTree.html", null ],
         [ "editor.Components.Modals.AssetList", "classeditor_1_1Components_1_1Modals_1_1AssetList.html", null ],
-        [ "editor.Components.Modals.AssetTree", "classeditor_1_1Components_1_1Modals_1_1AssetTree.html", null ],
         [ "editor.Components.Modals.HierarchyTree", "classeditor_1_1Components_1_1Modals_1_1HierarchyTree.html", null ],
         [ "editor.Components.Modals.NodeTypeTree", "classeditor_1_1Components_1_1Modals_1_1NodeTypeTree.html", null ]
       ] ],

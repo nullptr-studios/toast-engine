@@ -1,9 +1,9 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
 <area shape="rect" id="Node000000" href="$classrenderer_1_1IVulkanResource.html" title=" " alt="" coords="5,57,197,85"/>
 <area shape="rect" id="Node000001" href="$classrenderer_1_1VoxelGpuStorage.html" title=" " alt="" coords="245,5,440,33"/>
-<area shape="poly" id="edge545_Node000000_Node000001" title=" " alt="" coords="183,51,277,33,272,35,184,56"/>
+<area shape="poly" id="edge569_Node000000_Node000001" title=" " alt="" coords="183,51,277,33,272,35,184,56"/>
 <area shape="rect" id="Node000002" href="$classrenderer_1_1VulkanMesh.html" title=" " alt="" coords="261,57,424,85"/>
-<area shape="poly" id="edge546_Node000000_Node000002" title=" " alt="" coords="212,69,263,71,258,72,212,74"/>
+<area shape="poly" id="edge570_Node000000_Node000002" title=" " alt="" coords="212,69,263,71,258,72,212,74"/>
 <area shape="rect" id="Node000003" href="$classrenderer_1_1VulkanTexture.html" title=" " alt="" coords="255,109,430,137"/>
-<area shape="poly" id="edge547_Node000000_Node000003" title=" " alt="" coords="184,86,277,108,272,109,183,92"/>
+<area shape="poly" id="edge571_Node000000_Node000003" title=" " alt="" coords="184,86,277,108,272,109,183,92"/>
 </map>

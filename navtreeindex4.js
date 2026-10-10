@@ -1,7 +1,5 @@
 var NAVTREEINDEX4 =
 {
-"classrenderer_1_1FxaaPass.html#acce0272d3bb18d2806aeb4c498f40be0":[14,0,8,16,0],
-"classrenderer_1_1GpuScope.html":[14,0,8,17],
 "classrenderer_1_1GpuTimer.html":[14,0,8,18],
 "classrenderer_1_1GpuTimer.html#a08e6c108214de1492154f7a3ee3a640d":[14,0,8,18,3],
 "classrenderer_1_1GridPass.html":[14,0,8,19],
@@ -249,5 +247,7 @@ var NAVTREEINDEX4 =
 "classtoast_1_1Box.html":[12,0,1,15],
 "classtoast_1_1Box.html":[14,0,12,17],
 "classtoast_1_1Box.html#a0c509f642cbe06ec70397e72bef81c6a":[12,0,1,15,14],
-"classtoast_1_1Box.html#a0c509f642cbe06ec70397e72bef81c6a":[14,0,12,17,14]
+"classtoast_1_1Box.html#a0c509f642cbe06ec70397e72bef81c6a":[14,0,12,17,14],
+"classtoast_1_1Box.html#a0cdd08d1fa97b7873b07312c0d3ae012":[12,0,1,15,7],
+"classtoast_1_1Box.html#a0cdd08d1fa97b7873b07312c0d3ae012":[14,0,12,17,7]
 };

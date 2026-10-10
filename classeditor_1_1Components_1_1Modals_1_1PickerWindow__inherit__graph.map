@@ -1,15 +1,13 @@
 <map id="editor.Components.Modals.PickerWindow" name="editor.Components.Modals.PickerWindow">
-<area shape="rect" id="Node000001" title=" " alt="" coords="127,144,326,189"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="127,109,326,154"/>
 <area shape="rect" id="Node000003" href="$classeditor_1_1Components_1_1Modals_1_1AssetFolderTree.html" title=" " alt="" coords="374,5,573,50"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="265,132,315,95,373,60,402,49,398,52,375,65,318,100,268,136"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="285,100,373,60,407,50,402,52,375,65,287,105"/>
 <area shape="rect" id="Node000004" href="$classeditor_1_1Components_1_1Modals_1_1AssetList.html" title=" " alt="" coords="374,75,573,119"/>
-<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="322,137,394,119,389,121,324,142"/>
-<area shape="rect" id="Node000005" href="$classeditor_1_1Components_1_1Modals_1_1AssetTree.html" title=" " alt="" coords="374,144,573,189"/>
-<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="341,164,376,166,371,167,342,169"/>
-<area shape="rect" id="Node000006" href="$classeditor_1_1Components_1_1Modals_1_1HierarchyTree.html" title=" " alt="" coords="374,213,573,258"/>
-<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="323,191,394,212,389,213,323,196"/>
-<area shape="rect" id="Node000007" href="$classeditor_1_1Components_1_1Modals_1_1NodeTypeTree.html" title=" " alt="" coords="374,283,573,327"/>
-<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="267,196,318,233,375,268,403,282,397,282,373,273,315,237,266,201"/>
-<area shape="rect" id="Node000002" title=" " alt="" coords="5,152,79,180"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="93,164,128,165,124,168,95,169"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="341,113,376,110,371,112,342,118"/>
+<area shape="rect" id="Node000005" href="$classeditor_1_1Components_1_1Modals_1_1HierarchyTree.html" title=" " alt="" coords="374,144,573,189"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="341,145,376,152,371,153,342,150"/>
+<area shape="rect" id="Node000006" href="$classeditor_1_1Components_1_1Modals_1_1NodeTypeTree.html" title=" " alt="" coords="374,213,573,258"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="287,159,375,199,407,213,402,212,373,203,286,164"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,118,79,146"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="93,129,128,130,124,133,95,134"/>
 </map>

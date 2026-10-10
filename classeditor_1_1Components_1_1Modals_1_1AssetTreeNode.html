@@ -123,9 +123,9 @@ Inheritance diagram for editor.Components.Modals.AssetTreeNode:</div>
 <div class="dyncontent">
 <div class="center"><img src="classeditor_1_1Components_1_1Modals_1_1AssetTreeNode__inherit__graph.png" border="0" usemap="#aeditor_8Components_8Modals_8AssetTreeNode_inherit__map" loading="lazy" alt="Inheritance graph"/></div>
 <map name="aeditor_8Components_8Modals_8AssetTreeNode_inherit__map" id="aeditor_8Components_8Modals_8AssetTreeNode_inherit__map">
-<area shape="rect" title=" " alt="" coords="5,81,205,126"/>
-<area shape="rect" title=" " alt="" coords="36,5,174,33"/>
-<area shape="poly" title=" " alt="" coords="107,47,107,81,103,79,103,51"/>
+<area shape="rect" title=" " alt="" coords="5,98,205,143"/>
+<area shape="rect" href="interfaceeditor_1_1Components_1_1Modals_1_1IPickerNode.html" title=" " alt="" coords="5,5,205,50"/>
+<area shape="poly" title=" " alt="" coords="107,64,107,99,103,97,103,68"/>
 </map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
@@ -133,44 +133,83 @@ Collaboration diagram for editor.Components.Modals.AssetTreeNode:</div>
 <div class="dyncontent">
 <div class="center"><img src="classeditor_1_1Components_1_1Modals_1_1AssetTreeNode__coll__graph.png" border="0" usemap="#aeditor_8Components_8Modals_8AssetTreeNode_coll__map" loading="lazy" alt="Collaboration graph"/></div>
 <map name="aeditor_8Components_8Modals_8AssetTreeNode_coll__map" id="aeditor_8Components_8Modals_8AssetTreeNode_coll__map">
-<area shape="rect" title=" " alt="" coords="5,81,205,126"/>
-<area shape="rect" title=" " alt="" coords="36,5,174,33"/>
-<area shape="poly" title=" " alt="" coords="107,47,107,81,103,79,103,51"/>
+<area shape="rect" title=" " alt="" coords="5,98,205,143"/>
+<area shape="rect" href="interfaceeditor_1_1Components_1_1Modals_1_1IPickerNode.html" title=" " alt="" coords="5,5,205,50"/>
+<area shape="poly" title=" " alt="" coords="107,64,107,99,103,97,103,68"/>
 </map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a1f3882a10ad6d9b8c7e9f2c390fb6afe" id="r_a1f3882a10ad6d9b8c7e9f2c390fb6afe"><td class="memItemLeft"><a id="a1f3882a10ad6d9b8c7e9f2c390fb6afe" name="a1f3882a10ad6d9b8c7e9f2c390fb6afe"></a>
-&#160;</td><td class="memItemRight"><b>AssetTreeNode</b> (string realPath, string? typeFilter)</td></tr>
-<tr class="memitem:a06547d49289367172f4c0528ac37fd31" id="r_a06547d49289367172f4c0528ac37fd31"><td class="memItemLeft"><a id="a06547d49289367172f4c0528ac37fd31" name="a06547d49289367172f4c0528ac37fd31"></a>
-&#160;</td><td class="memItemRight"><b>AssetTreeNode</b> (<a class="el" href="classeditor_1_1Assets_1_1AssetFile.html">AssetFile</a> file)</td></tr>
 <tr class="memitem:abef3c98816a96a4a6f6e5b4c06fdca5b" id="r_abef3c98816a96a4a6f6e5b4c06fdca5b"><td class="memItemLeft"><a id="abef3c98816a96a4a6f6e5b4c06fdca5b" name="abef3c98816a96a4a6f6e5b4c06fdca5b"></a>
 bool&#160;</td><td class="memItemRight"><b>UpdateFilter</b> (string query, bool caseSensitive)</td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:a7be702d5d103602cef6a345b9a4fe5c5" id="r_a7be702d5d103602cef6a345b9a4fe5c5"><td class="memItemLeft"><a id="a7be702d5d103602cef6a345b9a4fe5c5" name="a7be702d5d103602cef6a345b9a4fe5c5"></a>
+static ? AssetTreeNode&#160;</td><td class="memItemRight"><b>Build</b> (string name, <a class="el" href="classeditor_1_1Assets_1_1AssetFolder.html">AssetFolder</a> folder, Func&lt; <a class="el" href="classeditor_1_1Assets_1_1AssetFile.html">AssetFile</a>, bool &gt; accept)</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-properties" class="groupheader"><a id="properties" name="properties"></a>
 Properties</h2></td></tr>
-<tr class="memitem:ae4db7b316bcf939b6cdfb7ff14aad0fd" id="r_ae4db7b316bcf939b6cdfb7ff14aad0fd"><td class="memItemLeft"><a id="ae4db7b316bcf939b6cdfb7ff14aad0fd" name="ae4db7b316bcf939b6cdfb7ff14aad0fd"></a>
-bool&#160;</td><td class="memItemRight"><b>IsFolder</b><code> [get]</code></td></tr>
-<tr class="memitem:acbe6562f81ac1ae89aadcbebca95db9c" id="r_acbe6562f81ac1ae89aadcbebca95db9c"><td class="memItemLeft"><a id="acbe6562f81ac1ae89aadcbebca95db9c" name="acbe6562f81ac1ae89aadcbebca95db9c"></a>
-bool&#160;</td><td class="memItemRight"><b>IsAsset</b><code> [get]</code></td></tr>
 <tr class="memitem:a3b0904dad8a687862b0bfcebdc5e8fb8" id="r_a3b0904dad8a687862b0bfcebdc5e8fb8"><td class="memItemLeft"><a id="a3b0904dad8a687862b0bfcebdc5e8fb8" name="a3b0904dad8a687862b0bfcebdc5e8fb8"></a>
 string&#160;</td><td class="memItemRight"><b>Name</b><code> [get]</code></td></tr>
-<tr class="memitem:aa36323d1966c08db15ec68d0159539d6" id="r_aa36323d1966c08db15ec68d0159539d6"><td class="memItemLeft"><a id="aa36323d1966c08db15ec68d0159539d6" name="aa36323d1966c08db15ec68d0159539d6"></a>
-string&#160;</td><td class="memItemRight"><b>RealPath</b><code> [get]</code></td></tr>
-<tr class="memitem:a251ace1ddfa04de7678b72ebf406082c" id="r_a251ace1ddfa04de7678b72ebf406082c"><td class="memItemLeft"><a id="a251ace1ddfa04de7678b72ebf406082c" name="a251ace1ddfa04de7678b72ebf406082c"></a>
-string?&#160;</td><td class="memItemRight"><b>Uid</b><code> [get]</code></td></tr>
-<tr class="memitem:ae0a356634214302c41f935ae6c52fe2b" id="r_ae0a356634214302c41f935ae6c52fe2b"><td class="memItemLeft"><a id="ae0a356634214302c41f935ae6c52fe2b" name="ae0a356634214302c41f935ae6c52fe2b"></a>
-IBrush&#160;</td><td class="memItemRight"><b>TypeColor</b><code> [get]</code></td></tr>
-<tr class="memitem:a4311a281bec592e219e4c6f1ed861f07" id="r_a4311a281bec592e219e4c6f1ed861f07"><td class="memItemLeft"><a id="a4311a281bec592e219e4c6f1ed861f07" name="a4311a281bec592e219e4c6f1ed861f07"></a>
-string&#160;</td><td class="memItemRight"><b>TypeLabel</b><code> [get]</code></td></tr>
-<tr class="memitem:af29d411abe4ce73212c64ce505da6798" id="r_af29d411abe4ce73212c64ce505da6798"><td class="memItemLeft"><a id="af29d411abe4ce73212c64ce505da6798" name="af29d411abe4ce73212c64ce505da6798"></a>
-ObservableCollection&lt; AssetTreeNode &gt;&#160;</td><td class="memItemRight"><b>Children</b> = []<code> [get]</code></td></tr>
-<tr class="memitem:a5ee67ffd371b684228bc90bd66407d05" id="r_a5ee67ffd371b684228bc90bd66407d05"><td class="memItemLeft"><a id="a5ee67ffd371b684228bc90bd66407d05" name="a5ee67ffd371b684228bc90bd66407d05"></a>
-ObservableCollection&lt; AssetTreeNode &gt;&#160;</td><td class="memItemRight"><b>FilteredChildren</b> = []<code> [get]</code></td></tr>
+<tr class="memitem:a518df32a0c42476102f0db621f755ad9" id="r_a518df32a0c42476102f0db621f755ad9"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a518df32a0c42476102f0db621f755ad9">IsExpanded</a> = true<code> [get, set]</code></td></tr>
+<tr class="memitem:ae4db7b316bcf939b6cdfb7ff14aad0fd" id="r_ae4db7b316bcf939b6cdfb7ff14aad0fd"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#ae4db7b316bcf939b6cdfb7ff14aad0fd">IsFolder</a><code> [get]</code></td></tr>
+<tr class="inherit_header properties_interfaceeditor_1_1Components_1_1Modals_1_1IPickerNode"><td colspan="2">Properties inherited from <a class="el" href="interfaceeditor_1_1Components_1_1Modals_1_1IPickerNode.html">editor.Components.Modals.IPickerNode</a></td></tr>
+<tr class="memitem:ad7e23dba552017c125f37ad2395c0a81 properties_interfaceeditor_1_1Components_1_1Modals_1_1IPickerNode" id="r_ad7e23dba552017c125f37ad2395c0a81"><td class="memItemLeft">
+string?&#160;</td><td class="memItemRight"><b>ThumbnailUid</b><code> [get]</code></td></tr>
 </table>
+<a name="doc-property-members" id="doc-property-members"></a><h2 id="header-doc-property-members" class="groupheader">Property Documentation</h2>
+<a id="a518df32a0c42476102f0db621f755ad9" name="a518df32a0c42476102f0db621f755ad9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a518df32a0c42476102f0db621f755ad9">&#9670;&#160;</a></span>IsExpanded</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool editor.Components.Modals.AssetTreeNode.IsExpanded = true</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel get">get</span><span class="mlabel set">set</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="interfaceeditor_1_1Components_1_1Modals_1_1IPickerNode.html">editor.Components.Modals.IPickerNode</a>.</p>
+
+</div>
+</div>
+<a id="ae4db7b316bcf939b6cdfb7ff14aad0fd" name="ae4db7b316bcf939b6cdfb7ff14aad0fd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae4db7b316bcf939b6cdfb7ff14aad0fd">&#9670;&#160;</a></span>IsFolder</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool editor.Components.Modals.AssetTreeNode.IsFolder</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel get">get</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="interfaceeditor_1_1Components_1_1Modals_1_1IPickerNode.html">editor.Components.Modals.IPickerNode</a>.</p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>editor/Components/Modals/<b>AssetTreeViewModel.cs</b></li>
+<li>editor/Components/Modals/<b>AssetPickerViewModel.cs</b></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
