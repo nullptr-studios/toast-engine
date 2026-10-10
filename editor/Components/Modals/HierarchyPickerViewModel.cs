@@ -23,12 +23,7 @@ public class HierarchyDisplayItem : SearchableTreeItem<HierarchyDisplayItem> {
 
 		Color = ReflectionDatabase.ResolveColor(element.Type);
 		var iconName = ReflectionDatabase.ResolveIcon(element.Type);
-		try {
-			Icon = new Bitmap(AssetLoader.Open(new Uri($"avares://editor/Resources/node_icons/2x/{iconName}.png")));
-		} catch (Exception ex) {
-			Log.Warn($"Failed to load icon for node type {element.Type}: {ex.Message}");
-			Icon = new Bitmap(AssetLoader.Open(new Uri("avares://editor/Resources/node_icons/2x/Circle.png")));
-		}
+		Icon = NodeIconCache.Get(iconName);
 
 		AllChildren = element.PickerChildren.Select(c => new HierarchyDisplayItem(c, exclude, allowedType, IsExcluded))
 			.ToList();
@@ -44,7 +39,6 @@ public class HierarchyDisplayItem : SearchableTreeItem<HierarchyDisplayItem> {
 	public bool IsTypeAllowed { get; }
 	public bool IsSelectable => !IsExcluded && IsTypeAllowed;
 	public double Opacity => IsSelectable ? 1.0 : 0.4;
-	public bool IsExpanded { get; set; } = true;
 }
 
 public class HierarchyPickerViewModel : PickerViewModel {

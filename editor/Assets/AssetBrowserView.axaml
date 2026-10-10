@@ -158,6 +158,9 @@
 				              Padding="6"
 				              HorizontalScrollBarVisibility="Disabled">
 					<TreeView ItemsSource="{Binding Folders}"
+					          DragDrop.AllowDrop="True"
+					          DragDrop.DragOver="OnFolderTargetDragOver"
+					          DragDrop.Drop="OnFolderTargetDrop"
 					          SelectedItem="{Binding SelectedFolder, Mode=TwoWay}"
 					          SelectionMode="Single"
 					          Margin="8"
@@ -299,7 +302,10 @@
 					              HorizontalScrollBarVisibility="Auto"
 					              VerticalScrollBarVisibility="Disabled"
 					              VerticalAlignment="Center">
-						<ItemsControl ItemsSource="{Binding BreadcrumbItems}">
+						<ItemsControl ItemsSource="{Binding BreadcrumbItems}"
+						              DragDrop.AllowDrop="True"
+						              DragDrop.DragOver="OnFolderTargetDragOver"
+						              DragDrop.Drop="OnFolderTargetDrop">
 							<ItemsControl.ItemsPanel>
 								<ItemsPanelTemplate>
 									<StackPanel Orientation="Horizontal" />
@@ -497,8 +503,11 @@
 					           FontSize="11" />
 
 					<!-- Asset grid -->
-					<ScrollViewer HorizontalScrollBarVisibility="Disabled"
-					              PointerPressed="OnAssetAreaPointerPressed">
+					<Grid>
+						<ScrollViewer x:Name="AssetScroll"
+						              Background="Transparent"
+						              HorizontalScrollBarVisibility="Disabled"
+						              PointerPressed="OnAssetAreaPointerPressed">
 						<ItemsRepeater x:Name="AssetRepeater"
 						               ItemsSource="{Binding CurrentItems}"
 						               Margin="4"
@@ -792,6 +801,15 @@
 							</ItemsRepeater.Layout>
 						</ItemsRepeater>
 					</ScrollViewer>
+						<Border x:Name="MarqueeRect"
+						        IsVisible="False"
+						        IsHitTestVisible="False"
+						        HorizontalAlignment="Left"
+						        VerticalAlignment="Top"
+						        Background="#33FFFFFF"
+						        BorderBrush="#99FFFFFF"
+						        BorderThickness="1" />
+					</Grid>
 				</DockPanel>
 			</Border>
 		</DockPanel>
