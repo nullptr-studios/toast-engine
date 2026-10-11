@@ -287,10 +287,11 @@ public:
 	[[nodiscard]]
 	auto overlapAABB(const AABB& bounds) const -> bool;
 	/// Moves a capsule until it would dig into something
+	/// @param refine false stops at first iteration, only position is not accurate
 	[[nodiscard]]
 	auto sweepCapsule(
 	    BodyID ignored, const CapsuleShape& capsule, const glm::quat& rotation, const glm::vec3& from, const glm::vec3& to,
-	    float skin
+	    float skin, bool refine = true
 	) const -> SweepHit;
 	/// Resizes the capsule collider of a body
 	auto setCapsuleShape(BodyID body, const CapsuleShape& capsule) -> bool;

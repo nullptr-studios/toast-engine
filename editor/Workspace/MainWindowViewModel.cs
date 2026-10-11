@@ -872,8 +872,11 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			"cmake build",
 			"cmake",
 			// the game shares std types with the engine so both must use the same CRT
+			// RelWithDebInfo keeps game PDB and ttracy
 #if DEBUG
 			"--build .toast/cmake_cache --config Debug --parallel"
+#elif RELWITHDEBINFO
+			"--build .toast/cmake_cache --config RelWithDebInfo --parallel"
 #else
 			"--build .toast/cmake_cache --config Release --parallel"
 #endif

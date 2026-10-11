@@ -227,6 +227,8 @@ add_custom_command(TARGET toast_engine POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${_nlohmann_include}/nlohmann" "${TOAST_ENGINE_OUTPUT_ROOT}/include/nlohmann"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${_tracy_include}/tracy" "${TOAST_ENGINE_OUTPUT_ROOT}/include/tracy"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${_tracy_include}/common" "${TOAST_ENGINE_OUTPUT_ROOT}/include/common"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${_tracy_include}/client" "${TOAST_ENGINE_OUTPUT_ROOT}/include/client"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_LINKER_FILE:Tracy::TracyClient>" "${TOAST_ENGINE_OUTPUT_ROOT}/lib"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${_toml_include}/toml++" "${TOAST_ENGINE_OUTPUT_ROOT}/include/toml++"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${_glm_include}/glm" "${TOAST_ENGINE_OUTPUT_ROOT}/include/glm"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${LUA_INCLUDE_DIR}" "${TOAST_ENGINE_OUTPUT_ROOT}/include"

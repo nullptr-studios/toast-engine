@@ -183,40 +183,78 @@ auto closestPointOnBox(const glm::vec3& point, const WorldBox& box) -> glm::vec3
 	return box.center + box.rotation * local_closest;
 }
 
-auto closestPointsSegmentBox(const glm::vec3& segment_a, const glm::vec3& segment_b, const WorldBox& box)
-    -> SegmentBoxClosestPoints {
-	const glm::mat3 inverse_rotation = glm::transpose(box.rotation);
-	const glm::vec3 local_a = inverse_rotation * (segment_a - box.center);
-	const glm::vec3 local_b = inverse_rotation * (segment_b - box.center);
+auto closestPointsSegmentAabb(const glm::vec3& local_a, const glm::vec3& local_b, const glm::vec3& half_extents)
+    -> SegmentAabbClosestPoints {
 	const glm::vec3 direction = local_b - local_a;
+	const float axis_epsilon = std::sqrt(direction_epsilon_sq);
 
-	std::vector<float> interval_ends {0.0f, 1.0f};
-	interval_ends.reserve(8);
-	for (uint8_t axis = 0; axis < 3; ++axis) {
-		if (std::abs(direction[axis]) <= std::sqrt(direction_epsilon_sq)) {
+	int moving_axis = 0;
+	int moving_axes = 0;
+	for (int axis = 0; axis < 3; ++axis) {
+		if (std::abs(direction[axis]) > axis_epsilon) {
+			moving_axis = axis;
+			++moving_axes;
+		}
+	}
+
+	// a segment along one axis or point needs no intervals
+	if (moving_axes <= 1) {
+		float parameter = 0.0f;
+		if (moving_axes == 1) {
+			const float start = local_a[moving_axis];
+			const float step = direction[moving_axis];
+			const float extent = half_extents[moving_axis];
+			if (start < -extent && step > 0.0f) {
+				parameter = std::min((-extent - start) / step, 1.0f);
+			} else if (start > extent && step < 0.0f) {
+				parameter = std::min((extent - start) / step, 1.0f);
+			}
+		}
+		const glm::vec3 segment_point = local_a + direction * parameter;
+		return {
+		  .segment_point = segment_point,
+		  .box_point = glm::clamp(segment_point, -half_extents, half_extents),
+		  .segment_parameter = parameter,
+		};
+	}
+
+	// 0, 1 and two crossings per axis
+	std::array<float, 8> interval_ends {0.0f, 1.0f};
+	size_t end_count = 2;
+	for (int axis = 0; axis < 3; ++axis) {
+		if (std::abs(direction[axis]) <= axis_epsilon) {
 			continue;
 		}
-		for (const float side : std::array {-box.half_extents[axis], box.half_extents[axis]}) {
+		for (const float side : {-half_extents[axis], half_extents[axis]}) {
 			const float parameter = (side - local_a[axis]) / direction[axis];
 			if (parameter > 0.0f && parameter < 1.0f) {
-				interval_ends.emplace_back(parameter);
+				interval_ends[end_count++] = parameter;
 			}
 		}
 	}
-	std::ranges::sort(interval_ends);
-	const auto unique_end = std::ranges::unique(interval_ends, [](float lhs, float rhs) {
-		                        return std::abs(lhs - rhs) <= std::numeric_limits<float>::epsilon();
-	                        }).begin();
-	interval_ends.erase(unique_end, interval_ends.end());
+	for (size_t i = 1; i < end_count; ++i) {
+		const float value = interval_ends[i];
+		size_t j = i;
+		for (; j > 0 && interval_ends[j - 1] > value; --j) {
+			interval_ends[j] = interval_ends[j - 1];
+		}
+		interval_ends[j] = value;
+	}
+	size_t unique_count = 1;
+	for (size_t i = 1; i < end_count; ++i) {
+		if (std::abs(interval_ends[i] - interval_ends[unique_count - 1]) > std::numeric_limits<float>::epsilon()) {
+			interval_ends[unique_count++] = interval_ends[i];
+		}
+	}
 
 	float best_parameter = 0.0f;
 	float best_distance_squared = std::numeric_limits<float>::infinity();
 	glm::vec3 best_segment_point = local_a;
-	glm::vec3 best_box_point = glm::clamp(local_a, -box.half_extents, box.half_extents);
+	glm::vec3 best_box_point = glm::clamp(local_a, -half_extents, half_extents);
 
 	const auto test_parameter = [&](float parameter) {
 		const glm::vec3 segment_point = local_a + direction * parameter;
-		const glm::vec3 box_point = glm::clamp(segment_point, -box.half_extents, box.half_extents);
+		const glm::vec3 box_point = glm::clamp(segment_point, -half_extents, half_extents);
 		const glm::vec3 delta = box_point - segment_point;
 		const float distance_squared = glm::dot(delta, delta);
 		if (distance_squared < best_distance_squared || (distance_squared == best_distance_squared && parameter < best_parameter)) {
@@ -227,20 +265,20 @@ auto closestPointsSegmentBox(const glm::vec3& segment_a, const glm::vec3& segmen
 		}
 	};
 
-	for (size_t interval = 0; interval + 1 < interval_ends.size(); ++interval) {
+	for (size_t interval = 0; interval + 1 < unique_count; ++interval) {
 		const float interval_start = interval_ends[interval];
 		const float interval_end = interval_ends[interval + 1];
 		const float midpoint = 0.5f * (interval_start + interval_end);
 		float numerator = 0.0f;
 		float denominator = 0.0f;
 
-		for (uint8_t axis = 0; axis < 3; ++axis) {
+		for (int axis = 0; axis < 3; ++axis) {
 			const float midpoint_coordinate = local_a[axis] + (direction[axis] * midpoint);
 			float offset = 0.0f;
-			if (midpoint_coordinate < -box.half_extents[axis]) {
-				offset = local_a[axis] + box.half_extents[axis];
-			} else if (midpoint_coordinate > box.half_extents[axis]) {
-				offset = local_a[axis] - box.half_extents[axis];
+			if (midpoint_coordinate < -half_extents[axis]) {
+				offset = local_a[axis] + half_extents[axis];
+			} else if (midpoint_coordinate > half_extents[axis]) {
+				offset = local_a[axis] - half_extents[axis];
 			} else {
 				continue;
 			}
@@ -255,12 +293,53 @@ auto closestPointsSegmentBox(const glm::vec3& segment_a, const glm::vec3& segmen
 		}
 	}
 
+	return {.segment_point = best_segment_point, .box_point = best_box_point, .segment_parameter = best_parameter};
+}
+
+auto closestPointsSegmentBox(const glm::vec3& segment_a, const glm::vec3& segment_b, const WorldBox& box)
+    -> SegmentBoxClosestPoints {
+	const glm::mat3 inverse_rotation = glm::transpose(box.rotation);
+	const SegmentAabbClosestPoints local = closestPointsSegmentAabb(
+	    inverse_rotation * (segment_a - box.center), inverse_rotation * (segment_b - box.center), box.half_extents
+	);
+
 	return {
-	  .segment_point = box.center + box.rotation * best_segment_point,
-	  .box_point = box.center + box.rotation * best_box_point,
-	  .segment_parameter = best_parameter,
-	  .box_feature = boxFeature(best_box_point, box.half_extents),
+	  .segment_point = box.center + box.rotation * local.segment_point,
+	  .box_point = box.center + box.rotation * local.box_point,
+	  .segment_parameter = local.segment_parameter,
+	  .box_feature = boxFeature(local.box_point, box.half_extents),
 	};
+}
+
+auto capsuleVoxelContact(
+    const glm::vec3& segment_a, const glm::vec3& segment_b, float radius, const glm::vec3& voxel_min, uint8_t normal_index
+) -> std::optional<CapsuleVoxelContact> {
+	const glm::vec3 half_extents {voxel::k_voxel_size * 0.5f};
+	const glm::vec3 center = voxel_min + half_extents;
+	const SegmentAabbClosestPoints closest = closestPointsSegmentAabb(segment_a - center, segment_b - center, half_extents);
+	const glm::vec3 delta = closest.box_point - closest.segment_point;
+	const float distance_sq = glm::dot(delta, delta);
+	if (not std::isfinite(distance_sq) || distance_sq > radius * radius) {
+		return std::nullopt;
+	}
+
+	const glm::vec3 segment_point = closest.segment_point + center;
+	CapsuleVoxelContact contact {
+	  .local_point = closest.box_point + center,
+	  .segment_parameter = closest.segment_parameter,
+	};
+	if (distance_sq <= direction_epsilon_sq) {
+		// axis nside the voxel
+		contact.local_normal = -glm::vec3(voxel::normalDirection(normal_index));
+		contact.local_surface = segment_point - contact.local_normal * radius;
+		contact.penetration = radius;
+	} else {
+		const float distance = std::sqrt(distance_sq);
+		contact.local_normal = delta / distance;
+		contact.local_surface = segment_point + contact.local_normal * radius;
+		contact.penetration = radius - distance;
+	}
+	return contact;
 }
 
 auto perpendicularTo(const glm::vec3& segment) -> glm::vec3 {
@@ -2156,46 +2235,25 @@ void collideCapsuleVoxel(
 				return;
 			}
 
-			const _detail::WorldBox voxel_box {
-			  .center = (candidate.min + candidate.max) * 0.5f,
-			  .rotation = glm::mat3(1.0f),
-			  .half_extents = (candidate.max - candidate.min) * 0.5f,
-			};
-
-			const _detail::SegmentBoxClosestPoints closest = _detail::closestPointsSegmentBox(local_a, local_b, voxel_box);
-			const glm::vec3 delta = closest.box_point - closest.segment_point;
-			const float distance_sq = glm::dot(delta, delta);
-			if (not std::isfinite(distance_sq) || distance_sq > radius * radius) {
+			const std::optional<_detail::CapsuleVoxelContact> contact =
+			    _detail::capsuleVoxelContact(local_a, local_b, radius, candidate.min, candidate.normal_index);
+			if (not contact.has_value()) {
 				return;
 			}
 
-			glm::vec3 local_normal;
-			glm::vec3 local_surface;
-			float penetration;
-			if (distance_sq <= _detail::direction_epsilon_sq) {
-				local_normal = -glm::vec3(voxel::normalDirection(candidate.normal_index));
-				local_surface = closest.segment_point - local_normal * radius;
-				penetration = radius;
-			} else {
-				const float distance = std::sqrt(distance_sq);
-				local_normal = delta / distance;
-				local_surface = closest.segment_point + local_normal * radius;
-				penetration = radius - distance;
-			}
-
 			std::optional<BestContact>& slot = best_per_normal[candidate.normal_index];
-			if (slot.has_value() && slot->penetration >= penetration) {
+			if (slot.has_value() && slot->penetration >= contact->penetration) {
 				return;
 			}
 
 			const FeatureType type =
 			    candidate.classification == voxel::VoxelClass::edge ? FeatureType::voxel_edge : FeatureType::voxel_face;
 			slot = BestContact {
-			  .local_normal = local_normal,
-			  .local_point = closest.box_point,
-			  .local_surface = local_surface,
-			  .penetration = penetration,
-			  .segment_parameter = closest.segment_parameter,
+			  .local_normal = contact->local_normal,
+			  .local_point = contact->local_point,
+			  .local_surface = contact->local_surface,
+			  .penetration = contact->penetration,
+			  .segment_parameter = contact->segment_parameter,
 			  .voxel_feature = voxelFeature(type, candidate.brick_slot, candidate.local_index, candidate.normal_index),
 			  .material = _detail::combineMaterials(
 			      caps_shape.material,

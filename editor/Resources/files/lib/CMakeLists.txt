@@ -43,6 +43,16 @@ elseif (CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$")
   target_compile_options(toast_engine INTERFACE $<$<CONFIG:Release>:-march=x86-64-v3>)
 endif ()
 
+if (WIN32)
+  set(_toast_profiled "$<CONFIG:Debug,RelWithDebInfo>")
+  target_compile_definitions(toast_engine INTERFACE
+          $<${_toast_profiled}:TRACY_ENABLE>
+          $<${_toast_profiled}:TRACY_ON_DEMAND>
+          $<${_toast_profiled}:TRACY_IMPORTS>
+  )
+  target_link_libraries(toast_engine INTERFACE $<${_toast_profiled}:${TOAST_PATH}/lib/TracyClient.lib>)
+endif ()
+
 file(GLOB_RECURSE SOURCE "src/*.cpp" "generated/*.cpp")
 add_library(my_game SHARED ${SOURCE})
 target_include_directories(my_game PUBLIC
