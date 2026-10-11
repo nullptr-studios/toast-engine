@@ -15,6 +15,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Dock.Model.Mvvm.Controls;
 using editor.Assets;
+using editor.Git;
 using editor.Assets.Types;
 using editor.Components.Modals;
 using editor.Engine;
@@ -96,8 +97,12 @@ public partial class TableViewModel : Tool, IToastZoneEditor, IAutosavable, IDis
 			OkLabel: "Save"
 		)).ShowDialog<bool?>(owner);
 		if (result is null) return false;
-		if (result is true) await Save();
-		else AutosaveService.Delete(CurrentUid, AssetTypeRegistry.GetExtension(CurrentPath));
+		if (result is true) {
+			await Save();
+			return !IsDirty;
+		}
+
+		AutosaveService.Delete(CurrentUid, AssetTypeRegistry.GetExtension(CurrentPath));
 		return true;
 	}
 
@@ -237,11 +242,13 @@ public partial class TableViewModel : Tool, IToastZoneEditor, IAutosavable, IDis
 	private async Task Save() {
 		if (!HasContent || string.IsNullOrEmpty(CurrentPath)) return;
 		var csv = Serialize();
-		var realPath = ProjectContext.Resolve(CurrentPath);
-		await Task.Run(() => File.WriteAllText(realPath, csv));
-		MetaFile.Touch(CurrentPath);
-		AutosaveService.Delete(CurrentUid, AssetTypeRegistry.GetExtension(CurrentPath));
-		IsDirty = false;
+		if (await GitLockGuard.SaveAsync(CurrentUid, CurrentPath, path => Task.Run(() => File.WriteAllText(path, csv)),
+			    ReopenFile))
+			IsDirty = false;
+	}
+
+	private void ReopenFile(string uid, string virtualPath) {
+		OpenFile(uid, virtualPath, GitLockGuard.DefinitionOf(virtualPath)!);
 	}
 
 	[RelayCommand]

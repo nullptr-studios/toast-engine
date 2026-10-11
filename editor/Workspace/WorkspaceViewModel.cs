@@ -10,6 +10,7 @@ using CommunityToolkit.Mvvm.Input;
 using Dock.Model.Mvvm.Controls;
 using editor.Assets;
 using editor.Assets.Types;
+using editor.Git;
 using editor.Components.Modals;
 using editor.Engine;
 using Proto.Events;
@@ -507,17 +508,30 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 			case SaveChangesResult.Cancel:
 				return false;
 			case SaveChangesResult.Save:
-				return await Save();
+				return await Save(closing: true);
 			default:
 				DeleteAutosaves(); // discarded changes -> the autosave is unwanted too
 				return true;
 		}
 	}
 
-	public async Task<bool> Save() {
+	public async Task<bool> Save(bool closing = false) {
 		if (RootUid is null) return false;
 
 		if (BackingUri is null) return await SaveAs(); // no path yet -> prompt the user
+
+		// Takes the lock on a lockable file or stops when someone else holds it
+		switch (await GitLockGuard.CheckSaveAsync(ProjectContext.Resolve(BackingUri))) {
+			case LockedSaveChoice.Cancel:
+				return false;
+			case LockedSaveChoice.SaveAs:
+				return await SaveAs();
+			case LockedSaveChoice.Discard:
+				DeleteAutosaves();
+				// When the tab is being closed anyway there is nothing to reload
+				if (!closing) MainWindowViewModel.Current?.ReopenWorkspaceFromDisk(this);
+				return true;
+		}
 
 		Events.Send(new NodeChangeName { Node = RootUid, Name = Path.GetFileNameWithoutExtension(BackingUri) });
 		if (!await SaveNativeAsync(RootUid, BackingUri)) return false;
@@ -551,6 +565,7 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 		BackingAssetUid = uid;
 		DeleteAutosaves();
 		ProjectContext.RaiseAssetsChanged();
+		await GitLockGuard.LockOnOpenAsync(realPath); // Saving takes the lock
 		return true;
 	}
 
