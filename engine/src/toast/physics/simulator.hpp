@@ -26,6 +26,7 @@
 #include <deque>
 #include <functional>
 #include <glm/glm.hpp>
+#include <mutex>
 #include <optional>
 #include <span>
 #include <thread>
@@ -304,6 +305,11 @@ public:
 	[[nodiscard]]
 	static auto voxelFragmentRecords() -> std::span<const VoxelRenderRecord>;
 
+	static void setWind(const glm::vec3& wind);
+	[[nodiscard]]
+	static auto wind() -> glm::vec3;
+	static void resetWind();
+
 private:
 	enum class SimulationPhase : uint8_t {
 		idle,
@@ -563,6 +569,9 @@ private:
 	) const;
 
 	inline static Simulator* instance = nullptr;
+
+	std::mutex m_wind_mutex;
+	std::optional<glm::vec3> m_level_wind;
 
 	mutable std::thread::id m_owner_thread;
 	std::atomic<SimulationPhase> m_phase = SimulationPhase::idle;

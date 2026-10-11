@@ -32,6 +32,7 @@
 #include <toast/voxel/assets/voxel_model.hpp>
 #include <toast/voxel/mass_accumulator.hpp>
 #include <toast/voxel/nodes/voxel_node.hpp>
+#include <toast/world/world_events.hpp>
 #include <tracy/Tracy.hpp>
 #include <unordered_set>
 
@@ -244,6 +245,36 @@ Simulator::Simulator() {
 			refreshAllPalettes();
 		}
 	});
+	// A new level starts with the settings wind
+	m_listener.subscribe<event::SetWorldRoot>([](event::SetWorldRoot&) { resetWind(); }, 10);
+}
+
+void Simulator::setWind(const glm::vec3& wind) {
+	if (not instance) {
+		return;
+	}
+	if (not std::isfinite(wind.x) || not std::isfinite(wind.y) || not std::isfinite(wind.z)) {
+		TOAST_WARN("Physics", "Ignored a non-finite wind");
+		return;
+	}
+	std::scoped_lock lock(instance->m_wind_mutex);
+	instance->m_level_wind = wind;
+}
+
+auto Simulator::wind() -> glm::vec3 {
+	if (not instance) {
+		return tunables().wind;
+	}
+	std::scoped_lock lock(instance->m_wind_mutex);
+	return instance->m_level_wind.value_or(tunables().wind);
+}
+
+void Simulator::resetWind() {
+	if (not instance) {
+		return;
+	}
+	std::scoped_lock lock(instance->m_wind_mutex);
+	instance->m_level_wind.reset();
 }
 
 Simulator::~Simulator() {
@@ -2734,7 +2765,7 @@ void Simulator::integrate(float dt) {
 	}
 
 	const glm::vec3 gravity = tunables().gravity;
-	const glm::vec3 wind = tunables().wind;
+	const glm::vec3 wind = Simulator::wind();
 	const float air_density = tunables().air_density;
 	const auto integrate_range = [this, gravity, wind, air_density, dt](size_t begin, size_t end) {
 		for (size_t index = begin; index < end; ++index) {
