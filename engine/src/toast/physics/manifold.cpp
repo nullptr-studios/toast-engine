@@ -373,6 +373,18 @@ auto combineMaterials(const PhysicsMaterial& a, const PhysicsMaterial& b) -> Con
 	  .restitution = std::max(a.restitution, b.restitution),
 	  .static_friction = std::sqrt(std::max(a.static_friction * b.static_friction, 0.0f)),
 	  .dynamic_friction = std::sqrt(std::max(a.dynamic_friction * b.dynamic_friction, 0.0f)),
+	  .rolling_friction = std::max(a.rolling_friction, b.rolling_friction),
+	  .spin_friction = std::max(a.spin_friction, b.spin_friction),
+	};
+}
+
+auto surfaceMaterial(const voxel::PhysicalMaterial& material) -> PhysicsMaterial {
+	return {
+	  .restitution = material.restitution,
+	  .static_friction = material.static_friction,
+	  .dynamic_friction = material.dynamic_friction,
+	  .rolling_friction = material.rolling_friction,
+	  .spin_friction = material.spin_friction,
 	};
 }
 
@@ -1418,14 +1430,7 @@ void collideSphereVoxel(
 			  .local_surface = local_surface,
 			  .penetration = penetration,
 			  .voxel_feature = voxelFeature(type, candidate.brick_slot, candidate.local_index, candidate.normal_index),
-			  .material = _detail::combineMaterials(
-			      sph_shape.material,
-			      PhysicsMaterial {
-			        .restitution = candidate.material->restitution,
-			        .static_friction = candidate.material->static_friction,
-			        .dynamic_friction = candidate.material->dynamic_friction,
-			      }
-			  ),
+			  .material = _detail::combineMaterials(sph_shape.material, _detail::surfaceMaterial(*candidate.material)),
 			};
 		});
 	}
@@ -1889,18 +1894,8 @@ auto collideVoxelVoxelRegion(const VoxelVoxelPairView& view, const AABB& probe_r
 			if (not partial.group_started[group]) {
 				partial.group_started[group] = true;
 				partial.normal_per_group[group] = sat->normal;
-				partial.material_per_group[group] = _detail::combineMaterials(
-				    PhysicsMaterial {
-				      .restitution = probe_c.material->restitution,
-				      .static_friction = probe_c.material->static_friction,
-				      .dynamic_friction = probe_c.material->dynamic_friction,
-				    },
-				    PhysicsMaterial {
-				      .restitution = ref_c.material->restitution,
-				      .static_friction = ref_c.material->static_friction,
-				      .dynamic_friction = ref_c.material->dynamic_friction,
-				    }
-				);
+				partial.material_per_group[group] =
+				    _detail::combineMaterials(_detail::surfaceMaterial(*probe_c.material), _detail::surfaceMaterial(*ref_c.material));
 			}
 
 			// Same reasoning as collideBoxVoxel bounds one region bucket to a batch at a time
@@ -2120,16 +2115,7 @@ void collideVoxelVoxel(
 				group_started[group] = true;
 				normal_per_group[group] = sat->normal;
 				material_per_group[group] = _detail::combineMaterials(
-					PhysicsMaterial {
-						.restitution = probe_c.material->restitution,
-						.static_friction = probe_c.material->static_friction,
-						.dynamic_friction = probe_c.material->dynamic_friction
-					},
-					PhysicsMaterial {
-						.restitution = ref_c.material->restitution,
-						.static_friction = ref_c.material->static_friction,
-						.dynamic_friction = ref_c.material->dynamic_friction
-					}
+					_detail::surfaceMaterial(*probe_c.material), _detail::surfaceMaterial(*ref_c.material)
 				);
 			}
 				// clang-format on
@@ -2255,14 +2241,7 @@ void collideCapsuleVoxel(
 			  .penetration = contact->penetration,
 			  .segment_parameter = contact->segment_parameter,
 			  .voxel_feature = voxelFeature(type, candidate.brick_slot, candidate.local_index, candidate.normal_index),
-			  .material = _detail::combineMaterials(
-			      caps_shape.material,
-			      PhysicsMaterial {
-			        .restitution = candidate.material->restitution,
-			        .static_friction = candidate.material->static_friction,
-			        .dynamic_friction = candidate.material->dynamic_friction,
-			      }
-			  ),
+			  .material = _detail::combineMaterials(caps_shape.material, _detail::surfaceMaterial(*candidate.material)),
 			};
 		});
 	}
@@ -2464,14 +2443,8 @@ auto collideBoxVoxelRegion(const BoxVoxelPairView& view, const AABB& region) -> 
 		if (not partial.group_started[group]) {
 			partial.group_started[group] = true;
 			partial.normal_per_group[group] = sat->normal;
-			partial.material_per_group[group] = _detail::combineMaterials(
-			    view.box.shape.material,
-			    PhysicsMaterial {
-			      .restitution = candidate.material->restitution,
-			      .static_friction = candidate.material->static_friction,
-			      .dynamic_friction = candidate.material->dynamic_friction,
-			    }
-			);
+			partial.material_per_group[group] =
+			    _detail::combineMaterials(view.box.shape.material, _detail::surfaceMaterial(*candidate.material));
 		}
 
 		// Same reasoning as collideBoxVoxel bounds one region bucket to a batch at a time
@@ -2628,14 +2601,7 @@ void collideBoxVoxel(
 			if (not group_started[group]) {
 				group_started[group] = true;
 				normal_per_group[group] = sat->normal;
-				material_per_group[group] = _detail::combineMaterials(
-				    box_shape.material,
-				    PhysicsMaterial {
-				      .restitution = candidate.material->restitution,
-				      .static_friction = candidate.material->static_friction,
-				      .dynamic_friction = candidate.material->dynamic_friction,
-				    }
-				);
+				material_per_group[group] = _detail::combineMaterials(box_shape.material, _detail::surfaceMaterial(*candidate.material));
 			}
 
 			// Bounds this to a batch worth of candidates at a time survivors compete again next batch

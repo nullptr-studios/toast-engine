@@ -312,6 +312,8 @@ void Simulator::registerRigidbody(Rigidbody& node) {
 		material.restitution = node.material->restitution();
 		material.static_friction = node.material->staticFriction();
 		material.dynamic_friction = node.material->dynamicFriction();
+		material.rolling_friction = node.material->rollingFriction();
+		material.spin_friction = node.material->spinFriction();
 	}
 
 	const BodyID body = instance->createBody(node.descriptor());
@@ -2220,6 +2222,64 @@ auto Simulator::solveFriction(Constraint& constraint, Body& body_a, Body& body_b
 	    constraint.r_a,
 	    constraint.r_b,
 	    constraint.tangent_1 * applied_impulse.x + constraint.tangent_2 * applied_impulse.y
+	);
+
+	return true;
+}
+
+auto Simulator::angularMassAround(const Body& body_a, const Body& body_b, const glm::vec3& axis) -> float {
+	float inverse_mass = 0.0f;
+	if (movable(body_a)) {
+		inverse_mass += glm::dot(axis, body_a.inverse_inertia_world * axis);
+	}
+	if (movable(body_b)) {
+		inverse_mass += glm::dot(axis, body_b.inverse_inertia_world * axis);
+	}
+	return std::isfinite(inverse_mass) && inverse_mass > 1.0e-8f ? 1.0f / inverse_mass : 0.0f;
+}
+
+void Simulator::applyAngularImpulse(Body& body_a, Body& body_b, const glm::vec3& impulse) {
+	if (movable(body_a)) {
+		body_a.angular_velocity -= body_a.inverse_inertia_world * impulse;
+	}
+	if (movable(body_b)) {
+		body_b.angular_velocity += body_b.inverse_inertia_world * impulse;
+	}
+}
+
+auto Simulator::solveRolling(Constraint& constraint, Body& body_a, Body& body_b) -> bool {
+	// only turning matters here and a body that cannot move does not turn either
+	const glm::vec3 angular_a = movable(body_a) ? body_a.angular_velocity : glm::vec3 {0.0f};
+	const glm::vec3 angular_b = movable(body_b) ? body_b.angular_velocity : glm::vec3 {0.0f};
+	const glm::vec3 relative = angular_b - angular_a;
+	const float roll_1 = glm::dot(relative, constraint.tangent_1);
+	const float roll_2 = glm::dot(relative, constraint.tangent_2);
+	const float spin = glm::dot(relative, constraint.normal);
+	if (not std::isfinite(roll_1) || not std::isfinite(roll_2) || not std::isfinite(spin)) {
+		return false;
+	}
+
+	// rolling is limited to a disc like friction so it resists every rolling direction the same
+	const glm::vec2 old_roll = constraint.accumulated_rolling_impulse;
+	glm::vec2 roll = old_roll + glm::vec2 {-roll_1 * constraint.rolling_mass_1, -roll_2 * constraint.rolling_mass_2};
+	const float roll_limit = constraint.rolling_friction * constraint.accumulated_normal_impulse;
+	const float roll_length_sq = glm::dot(roll, roll);
+	if (roll_length_sq > roll_limit * roll_limit) {
+		roll *= roll_limit / std::sqrt(roll_length_sq);
+	}
+	constraint.accumulated_rolling_impulse = roll;
+	const glm::vec2 applied_roll = roll - old_roll;
+
+	// spin is a single axis so a segment is enough
+	const float old_spin = constraint.accumulated_spin_impulse;
+	const float spin_limit = constraint.spin_friction * constraint.accumulated_normal_impulse;
+	const float new_spin = std::clamp(old_spin - spin * constraint.spin_mass, -spin_limit, spin_limit);
+	constraint.accumulated_spin_impulse = new_spin;
+
+	applyAngularImpulse(
+	    body_a,
+	    body_b,
+	    constraint.tangent_1 * applied_roll.x + constraint.tangent_2 * applied_roll.y + constraint.normal * (new_spin - old_spin)
 	);
 
 	return true;
@@ -4924,6 +4984,20 @@ auto Simulator::prepareConstraint(const Manifold& manifold, const ContactPoint& 
 	const float static_friction = contact.material.static_friction;
 	const float dynamic_friction = std::min(contact.material.dynamic_friction, static_friction);
 
+	// the comparison is false for NaN so a bad material counts as none, and most contacts skip the masses entirely
+	const float rolling_friction = contact.material.rolling_friction > 0.0f ? contact.material.rolling_friction : 0.0f;
+	const float spin_friction = contact.material.spin_friction > 0.0f ? contact.material.spin_friction : 0.0f;
+	float rolling_mass_1 = 0.0f;
+	float rolling_mass_2 = 0.0f;
+	float spin_mass = 0.0f;
+	if (rolling_friction > 0.0f) {
+		rolling_mass_1 = angularMassAround(*body_a, *body_b, tangent_1);
+		rolling_mass_2 = angularMassAround(*body_a, *body_b, tangent_2);
+	}
+	if (spin_friction > 0.0f) {
+		spin_mass = angularMassAround(*body_a, *body_b, manifold.normal);
+	}
+
 	float accumulated_normal_impulse = 0.0f;
 	glm::vec2 accumulated_tangent_impulse = {};
 	if (cached_contact && std::isfinite(cached_contact->normal_impulse)) {
@@ -4965,6 +5039,11 @@ auto Simulator::prepareConstraint(const Manifold& manifold, const ContactPoint& 
 	  .dynamic_friction = dynamic_friction,
 	  .accumulated_normal_impulse = accumulated_normal_impulse,
 	  .accumulated_tangent_impulse = accumulated_tangent_impulse,
+	  .rolling_friction = rolling_friction,
+	  .spin_friction = spin_friction,
+	  .rolling_mass_1 = rolling_mass_1,
+	  .rolling_mass_2 = rolling_mass_2,
+	  .spin_mass = spin_mass,
 	};
 }
 
@@ -5141,7 +5220,15 @@ auto Simulator::solveConstraint(Constraint& constraint) -> bool {
 		return false;
 	}
 
-	return solveFriction(constraint, *body_a, *body_b);
+	if (!solveFriction(constraint, *body_a, *body_b)) {
+		return false;
+	}
+
+	// most materials leave both at zero and skip this
+	if (constraint.rolling_friction > 0.0f || constraint.spin_friction > 0.0f) {
+		return solveRolling(constraint, *body_a, *body_b);
+	}
+	return true;
 }
 
 }

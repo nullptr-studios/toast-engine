@@ -8,6 +8,7 @@
 #pragma once
 
 #include "collision.hpp"
+#include "material_defaults.hpp"
 
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
@@ -34,10 +35,17 @@ struct Constraint {
 	float tangent_mass_2 = 0.0f;
 	float restitution_bias = 0.0f;
 
-	float static_friction = 0.6f;
-	float dynamic_friction = 0.5f;
+	float static_friction = material_defaults::k_static_friction;
+	float dynamic_friction = material_defaults::k_dynamic_friction;
 	float accumulated_normal_impulse = 0.0f;
 	glm::vec2 accumulated_tangent_impulse = {};
+	float rolling_friction = 0.0f;
+	float spin_friction = 0.0f;
+	float rolling_mass_1 = 0.0f;
+	float rolling_mass_2 = 0.0f;
+	float spin_mass = 0.0f;
+	glm::vec2 accumulated_rolling_impulse = {};
+	float accumulated_spin_impulse = 0.0f;
 };
 
 }

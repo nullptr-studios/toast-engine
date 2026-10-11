@@ -9,6 +9,7 @@
 
 #include <array>
 #include <cstdint>
+#include <toast/physics/material_defaults.hpp>
 #include <vector>
 
 namespace voxel {
@@ -90,20 +91,22 @@ inline constexpr uint8_t k_material_flammable = 1u << 2;
 
 struct PhysicalMaterial {
 	/// kg/m³ never zero and integer so MassMoments stays exact
-	uint16_t density = 1000;
+	uint16_t density = static_cast<uint16_t>(physics::material_defaults::k_density);
 
 	uint8_t flags = 0;
 
-	/// Uncalibrated joules so only ordering matters
-	float toughness = 1000.0f;
+	/// Impulse in N*s one contact has to carry to break a voxel
+	float toughness = physics::material_defaults::k_toughness;
 
-	float structural_strength = 1000.0f;
+	float structural_strength = physics::material_defaults::k_structural_strength;
 
-	float shatter_radius = 0.5f;
+	float shatter_radius = physics::material_defaults::k_shatter_radius;
 
-	float static_friction = 0.6f;
-	float dynamic_friction = 0.5f;
-	float restitution = 0.1f;
+	float static_friction = physics::material_defaults::k_static_friction;
+	float dynamic_friction = physics::material_defaults::k_dynamic_friction;
+	float restitution = physics::material_defaults::k_restitution;
+	float rolling_friction = physics::material_defaults::k_rolling_friction;
+	float spin_friction = physics::material_defaults::k_spin_friction;
 
 	float ignition_energy = 0.0f;
 	float burn_rate = 0.0f;
@@ -192,8 +195,8 @@ inline auto validateLibrary(const MaterialLibrary& library) -> std::vector<Table
 			out.push_back({TableIssue::zero_density, i});
 		}
 		if (negative(m.toughness) || negative(m.structural_strength) || negative(m.shatter_radius) || negative(m.static_friction) ||
-		    negative(m.dynamic_friction) || negative(m.restitution) || m.restitution > 1.0f || negative(m.ignition_energy) ||
-		    negative(m.burn_rate) || negative(m.fuel)) {
+		    negative(m.dynamic_friction) || negative(m.rolling_friction) || negative(m.spin_friction) || negative(m.restitution) ||
+		    m.restitution > 1.0f || negative(m.ignition_energy) || negative(m.burn_rate) || negative(m.fuel)) {
 			out.push_back({TableIssue::out_of_range, i});
 		}
 	}

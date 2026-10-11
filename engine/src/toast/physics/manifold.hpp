@@ -9,6 +9,7 @@
 #pragma once
 #include "collision.hpp"
 #include "collision_world.hpp"
+#include "material_defaults.hpp"
 #include "voxel_shape_data.hpp"
 
 #include <array>
@@ -22,9 +23,11 @@
 namespace physics {
 
 struct ContactMaterial {
-	float restitution = 0.0f;
-	float static_friction = 0.6f;
-	float dynamic_friction = 0.5f;
+	float restitution = material_defaults::k_restitution;
+	float static_friction = material_defaults::k_static_friction;
+	float dynamic_friction = material_defaults::k_dynamic_friction;
+	float rolling_friction = material_defaults::k_rolling_friction;
+	float spin_friction = material_defaults::k_spin_friction;
 };
 
 struct ContactPoint {
@@ -200,6 +203,8 @@ auto capsuleVoxelContact(
 auto perpendicularTo(const glm::vec3& segment) -> glm::vec3;
 [[nodiscard]]
 auto combineMaterials(const PhysicsMaterial& a, const PhysicsMaterial& b) -> ContactMaterial;
+[[nodiscard]]
+auto surfaceMaterial(const voxel::PhysicalMaterial& material) -> PhysicsMaterial;
 
 }
 

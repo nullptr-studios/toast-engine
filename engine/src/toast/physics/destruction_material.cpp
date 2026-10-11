@@ -1,5 +1,7 @@
 #include "destruction_material.hpp"
 
+#include "material_defaults.hpp"
+
 assets::DestructionMaterial::DestructionMaterial(const toml::table& table, Handle<Schema> schema)
     : Data(table, std::move(schema), Data::keep_all_keys) {
 	readFields();
@@ -10,10 +12,10 @@ void assets::DestructionMaterial::onReloaded() {
 }
 
 void assets::DestructionMaterial::readFields() {
-	m_density = 1000.0f;
-	m_toughness = 1000.0f;
-	m_structural_strength = 1000.0f;
-	m_shatter_radius = 0.5f;
+	m_density = physics::material_defaults::k_density;
+	m_toughness = physics::material_defaults::k_toughness;
+	m_structural_strength = physics::material_defaults::k_structural_strength;
+	m_shatter_radius = physics::material_defaults::k_shatter_radius;
 	m_destructible = true;
 	m_flammable = false;
 	m_burn_rate = 0.0f;

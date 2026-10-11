@@ -522,9 +522,12 @@ private:
 	static auto effectiveMassAlong(
 	    const Body& body_a, const Body& body_b, const glm::vec3& r_a, const glm::vec3& r_b, const glm::vec3& direction
 	) -> std::optional<float>;
+	static auto angularMassAround(const Body& body_a, const Body& body_b, const glm::vec3& axis) -> float;
 	static void applyImpulse(Body& body_a, Body& body_b, const glm::vec3& r_a, const glm::vec3& r_b, const glm::vec3& impulse);
+	static void applyAngularImpulse(Body& body_a, Body& body_b, const glm::vec3& impulse);
 	static auto solveNormal(Constraint& constraint, Body& body_a, Body& body_b) -> bool;
 	static auto solveFriction(Constraint& constraint, Body& body_a, Body& body_b) -> bool;
+	static auto solveRolling(Constraint& constraint, Body& body_a, Body& body_b) -> bool;
 	[[nodiscard]]
 	auto correctPositions(std::span<const size_t> manifold_indices) -> size_t;
 	void publishProfile(std::span<const SimulationIsland> islands);

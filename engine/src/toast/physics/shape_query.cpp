@@ -66,7 +66,7 @@ struct SweepScratch {
 };
 
 auto sweepScratch() -> SweepScratch& {
-	thread_local SweepScratch scratch; // reuse instead of reallocate new vector
+	thread_local SweepScratch scratch;    // reuse instead of reallocate new vector
 	return scratch;
 }
 
@@ -552,7 +552,7 @@ auto Simulator::sweepCapsule(
 			}
 			scratch.targets.push_back(target);
 		}
-		ZoneValueV(gather_zone, scratch.voxels.size()); // number of surface voxel the sweep tests
+		ZoneValueV(gather_zone, scratch.voxels.size());    // number of surface voxel the sweep tests
 	}
 
 	const auto contacts_at = [&](float t) -> std::span<const QueryContact> {
@@ -574,9 +574,9 @@ auto Simulator::sweepCapsule(
 
 	struct Sample {
 		float t = 0.0f;
-		std::optional<QueryContact> blocking; // deepest contact
-		std::optional<QueryContact> touching; // closest to blocking
-		float newton = std::numeric_limits<float>::quiet_NaN(); // guess for where the contacts reach target_depth
+		std::optional<QueryContact> blocking;                      // deepest contact
+		std::optional<QueryContact> touching;                      // closest to blocking
+		float newton = std::numeric_limits<float>::quiet_NaN();    // guess for where the contacts reach target_depth
 	};
 
 	const auto sample = [&](float t) -> Sample {
