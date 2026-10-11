@@ -43,17 +43,15 @@ struct Tunables {
 	uint32_t min_shapes_per_query_job = 16;
 	uint32_t min_bodies_per_job = 64;
 	uint32_t min_wave_constraints_for_dispatch = 512;
-	/// Deliberately very high right now to disable splitting until box_voxel_max_estimated_voxels gives a real number
 	uint32_t box_voxel_split_min_voxels = 500000;
-	/// Same off-until-measured reasoning as box_voxel_split_min_voxels
 	uint32_t voxel_voxel_split_min_voxels = 250000;
 	uint32_t voxel_pair_split_regions = 8;
-	/// Bisection steps a sweep refines by once it finds a blocking contact a clear sweep never pays this
 	uint32_t sweep_refine_iterations = 6;
 	uint32_t position_iterations = 3;
-	/// Which body types a trigger reports, static bodies never count
 	bool trigger_check_dynamic = true;
 	bool trigger_check_kinematic = true;
+	float air_density = 1.225f;
+	glm::vec3 wind = {0.0f, 0.0f, 0.0f};
 
 	[[nodiscard]]
 	auto fixedDelta() const noexcept -> double {

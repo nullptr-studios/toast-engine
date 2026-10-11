@@ -497,6 +497,13 @@ protected:
 	[[Reflect, Group("Physics"), Unit("kg•m²"), ReadOnly("auto_mass_center")]]
 	glm::vec3 inertia = {};
 
+	[[Reflect, Group("Physics"), Subgroup("Drag"), Unit("1/s")]]
+	float linear_damping = 0.0f;
+	[[Reflect, Group("Physics"), Subgroup("Drag"), Unit("1/s")]]
+	float angular_damping = 0.0f;
+	[[Reflect, Group("Physics"), Subgroup("Drag")]]
+	float drag_scale = 1.0f;
+
 	[[Reflect, Group("Physics"), Subgroup("Velocities"), Unit("m/s"), ReadOnly]]
 	glm::vec3 linear_velocity = {};
 	[[Reflect, Group("Physics"), Subgroup("Velocities"), Unit("rad/s"), ReadOnly]]

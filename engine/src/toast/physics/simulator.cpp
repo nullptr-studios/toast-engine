@@ -429,8 +429,11 @@ void Simulator::registerVoxelNode(toast::VoxelNode& node) {
 	      .allow_sleep = node.allow_sleep,
 	      .position = node.world_position,
 	      .rotation = node.world_rotation,
-	      .mass = 1.0f,
+	      .mass = 1.0f,    // calculated later
 	      .gravity_scale = node.gravity_scale,
+	      .linear_damping = node.linear_damping,
+	      .angular_damping = node.angular_damping,
+	      .drag_scale = node.drag_scale,
 	    }
 	);
 	if (not instance->valid(body)) {
@@ -2731,13 +2734,16 @@ void Simulator::integrate(float dt) {
 	}
 
 	const glm::vec3 gravity = tunables().gravity;
-	const auto integrate_range = [this, gravity, dt](size_t begin, size_t end) {
+	const glm::vec3 wind = tunables().wind;
+	const float air_density = tunables().air_density;
+	const auto integrate_range = [this, gravity, wind, air_density, dt](size_t begin, size_t end) {
 		for (size_t index = begin; index < end; ++index) {
 			BodySlot& slot = m_bodies[index];
 			if (not slot.occupied) {
 				continue;
 			}
-			integrateBody(BodyID {.slot = static_cast<uint32_t>(index), .generation = slot.generation}, slot.body, gravity, dt);
+			auto body_id = BodyID {.slot = static_cast<uint32_t>(index), .generation = slot.generation};
+			integrateBody(body_id, slot.body, gravity, air_density, wind, dt);
 		}
 	};
 
@@ -2770,7 +2776,9 @@ void Simulator::integrate(float dt) {
 	}
 }
 
-void Simulator::integrateBody(BodyID id, Body& body, const glm::vec3& gravity, float dt) {
+void Simulator::integrateBody(
+    BodyID id, Body& body, const glm::vec3& gravity, float air_density, const glm::vec3& wind, float dt
+) {
 	ZoneScopedN("physics::IntegrateBody");
 	ZoneValue(static_cast<uint64_t>(id.slot));
 	if (not body.enabled) {
@@ -2793,6 +2801,33 @@ void Simulator::integrateBody(BodyID id, Body& body, const glm::vec3& gravity, f
 
 	// linear integration
 	body.linear_velocity += gravity * body.gravity_scale * dt;
+
+	// drag
+	if (air_density > 0.0f && body.drag_coefficient > 0.0f) {
+		glm::vec3 rel_wind = body.linear_velocity - wind;
+		float speed = glm::length(rel_wind);
+		if (speed > 1.0e-6) {
+			glm::vec3 local_dir = glm::conjugate(body.rotation) * (rel_wind / speed);
+			float area = body.drag_area_base + glm::dot(body.drag_area_axis, glm::abs(local_dir));
+			float k = 0.5f * air_density * body.drag_coefficient * area * body.inverse_mass;
+			body.linear_velocity = wind + rel_wind / (1.0f + (k * speed * dt));
+		}
+
+		float spin = glm::length(body.angular_velocity);
+		if (spin > 1.0e-6) {
+			glm::vec3 axis = body.angular_velocity / spin;
+			float inverse_inertia_about_axis = glm::dot(axis, body.inverse_inertia_world * axis);
+			float area = body.drag_area_base + ((body.drag_area_axis.x + body.drag_area_axis.y + body.drag_area_axis.z) / 3.0f);
+			float r3 = body.extent_radius * body.extent_radius * body.extent_radius;
+			float k_spin = 0.5f * air_density * body.drag_coefficient * 0.4f * area * r3 * inverse_inertia_about_axis;
+			body.angular_velocity /= (1.0f + (k_spin * spin * dt));
+		}
+	}
+
+	body.linear_velocity *= std::exp(-body.linear_damping * dt);
+	body.angular_velocity *= std::exp(-body.angular_damping * dt);
+
+	// locks
 	if (body.lock_position.x) {
 		body.linear_velocity.x = 0.0f;
 	}
@@ -2804,7 +2839,6 @@ void Simulator::integrateBody(BodyID id, Body& body, const glm::vec3& gravity, f
 	}
 	const glm::vec3 center_of_mass = body.worldCenterOfMass() + body.linear_velocity * dt;
 
-	// angular integration
 	if (body.lock_rotation.x) {
 		body.angular_velocity.x = 0.0f;
 	}
@@ -2951,6 +2985,9 @@ auto Simulator::createBody(const BodyDescriptor& descriptor) -> BodyID {
 	const glm::quat rotation = glm::normalize(descriptor.rotation);
 	const float inverse_mass = descriptor.type == BodyType::dynamic_body ? 1.0f / descriptor.mass : 0.0f;
 
+	// a negative damping would add energy every tick
+	const auto clamped_damping = [](float damping) { return std::isfinite(damping) ? std::max(damping, 0.0f) : 0.0f; };
+
 	Body body {
 	  .type = descriptor.type,
 	  .allow_sleep = descriptor.type == BodyType::dynamic_body && descriptor.allow_sleep,
@@ -2963,7 +3000,10 @@ auto Simulator::createBody(const BodyDescriptor& descriptor) -> BodyID {
 	  .inverse_mass = inverse_mass,
 	  .gravity_scale = descriptor.gravity_scale,
 	  .lock_position = descriptor.lock_position,
-	  .lock_rotation = descriptor.lock_rotation
+	  .lock_rotation = descriptor.lock_rotation,
+	  .linear_damping = clamped_damping(descriptor.linear_damping),
+	  .angular_damping = clamped_damping(descriptor.angular_damping),
+	  .drag_scale = descriptor.drag_scale,
 	};
 
 	if (not m_free_body_slots.empty()) {
@@ -3470,6 +3510,14 @@ void Simulator::destroyVoxelData(VoxelDataID data) {
 	m_free_voxel_shape_slots.emplace_back(data.slot);
 }
 
+namespace {
+
+auto dragBoxAreaAxis(const glm::vec3& h) -> glm::vec3 {
+	return 4.0f * glm::vec3 {h.y * h.z, h.x * h.z, h.x * h.y};
+}
+
+}
+
 void Simulator::rebuildMassProperties(BodyID id) {
 	ZoneScopedN("physics::RebuildMassProperties");
 	ZoneValue(static_cast<uint64_t>(id.slot));
@@ -3483,6 +3531,9 @@ void Simulator::rebuildMassProperties(BodyID id) {
 	const glm::vec3 previous_center_of_mass = body->local_center_of_mass;
 	body->inverse_inertia_local = {0.0f};
 	body->inverse_inertia_world = {0.0f};
+	body->drag_area_base = 0;
+	body->drag_area_axis = {};
+	body->drag_coefficient = 0.0f;
 	body->local_center_of_mass = {};
 	if (body->inverse_mass == 0.0f) {
 		// static and kinematic bodies we just set inertia to 0
@@ -3533,6 +3584,13 @@ void Simulator::rebuildMassProperties(BodyID id) {
 			body->inverse_inertia_local = {inverse_inertia};
 			glm::mat3 rotation = glm::mat3_cast(body->rotation);
 			body->inverse_inertia_world = rotation * body->inverse_inertia_local * glm::transpose(rotation);
+
+			body->extent_radius = glm::length(shape->sphere.local_center) + shape->sphere.radius;
+
+			// drag
+			body->drag_area_base = glm::pi<float>() * radius_sq;
+			body->drag_coefficient = 0.47f;
+
 			break;
 		}
 		case ShapeType::box: {
@@ -3566,6 +3624,13 @@ void Simulator::rebuildMassProperties(BodyID id) {
 			body->inverse_inertia_local = local_rotation * inverse_inertia * glm::transpose(local_rotation);
 			glm::mat3 rotation = glm::mat3_cast(body->rotation);
 			body->inverse_inertia_world = rotation * body->inverse_inertia_local * glm::transpose(rotation);
+
+			body->extent_radius = glm::length(shape->box.local_center) + (0.5f * glm::length(shape->box.size));
+
+			// Drag
+			body->drag_area_axis = dragBoxAreaAxis(shape->box.size * 0.5f);
+			body->drag_coefficient = 1.05f;
+
 			break;
 		}
 		case ShapeType::voxel: {
@@ -3601,6 +3666,27 @@ void Simulator::rebuildMassProperties(BodyID id) {
 			body->inverse_inertia_local = inverse_inertia;
 			const glm::mat3 rotation = glm::mat3_cast(body->rotation);
 			body->inverse_inertia_world = rotation * body->inverse_inertia_local * glm::transpose(rotation);
+
+			using namespace glm;
+			const vec3 center = inverse(shape->voxel.local_rotation) * (body->local_center_of_mass - shape->voxel.local_center);
+			const AABB& bounds = shape->voxel.local_bounds;
+			float farthest_squared = 0.0f;
+			for (int corner = 0; corner < 8; ++corner) {
+				const glm::vec3 point {
+				  (corner & 1) != 0 ? bounds.max.x : bounds.min.x,
+				  (corner & 2) != 0 ? bounds.max.y : bounds.min.y,
+				  (corner & 4) != 0 ? bounds.max.z : bounds.min.z,
+				};
+				const vec3 offset = point - center;
+				farthest_squared = std::max(farthest_squared, glm::dot(offset, offset));
+			}
+			body->extent_radius = std::sqrt(farthest_squared);
+
+			// Drag
+			// the value from the AABB is good enough
+			body->drag_area_axis = dragBoxAreaAxis((bounds.max - bounds.min) * 0.5f);
+			body->drag_coefficient = 1.05f;
+
 			break;
 		}
 		case ShapeType::capsule: {
@@ -3634,6 +3720,14 @@ void Simulator::rebuildMassProperties(BodyID id) {
 			body->inverse_inertia_local = local_rotation * inverse_inertia * glm::transpose(local_rotation);
 			glm::mat3 rotation = glm::mat3_cast(body->rotation);
 			body->inverse_inertia_world = rotation * body->inverse_inertia_local * glm::transpose(rotation);
+
+			body->extent_radius = glm::length(shape->capsule.local_center) + (0.5f * shape->capsule.height) + shape->capsule.radius;
+
+			// Drag
+			// just treat like a box ngl
+			body->drag_area_axis = dragBoxAreaAxis({shape->capsule.radius, shape->capsule.radius, 0.5f * shape->capsule.height});
+			body->drag_coefficient = 0.82;
+
 			break;
 		}
 		default: {
@@ -3642,35 +3736,9 @@ void Simulator::rebuildMassProperties(BodyID id) {
 		}
 	}
 
-	switch (shape->type) {
-		case ShapeType::sphere: body->extent_radius = glm::length(shape->sphere.local_center) + shape->sphere.radius; break;
-		case ShapeType::box:
-			body->extent_radius = glm::length(shape->box.local_center) + (0.5f * glm::length(shape->box.size));
-			break;
-		case ShapeType::capsule:
-			body->extent_radius = glm::length(shape->capsule.local_center) + (0.5f * shape->capsule.height) + shape->capsule.radius;
-			break;
-		case ShapeType::voxel: {
-			const glm::vec3 center =
-			    glm::inverse(shape->voxel.local_rotation) * (body->local_center_of_mass - shape->voxel.local_center);
-			const AABB& bounds = shape->voxel.local_bounds;
-			float farthest_squared = 0.0f;
-			for (int corner = 0; corner < 8; ++corner) {
-				const glm::vec3 point {
-				  (corner & 1) != 0 ? bounds.max.x : bounds.min.x,
-				  (corner & 2) != 0 ? bounds.max.y : bounds.min.y,
-				  (corner & 4) != 0 ? bounds.max.z : bounds.min.z,
-				};
-				const glm::vec3 offset = point - center;
-				farthest_squared = std::max(farthest_squared, glm::dot(offset, offset));
-			}
-			body->extent_radius = std::sqrt(farthest_squared);
-			break;
-		}
-	}
-
 	const glm::vec3 center_shift = body->rotation * (body->local_center_of_mass - previous_center_of_mass);
 	body->linear_velocity += glm::cross(body->angular_velocity, center_shift);
+	body->drag_coefficient *= body->drag_scale;
 }
 
 auto Simulator::valid(BodyID body) const -> bool {

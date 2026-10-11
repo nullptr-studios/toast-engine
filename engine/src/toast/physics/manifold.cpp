@@ -291,10 +291,10 @@ auto perpendicularTo(const glm::vec3& segment) -> glm::vec3 {
 auto combineMaterials(const PhysicsMaterial& a, const PhysicsMaterial& b) -> ContactMaterial {
 	// geometric mean
 	return {
-	  .restitution = (a.restitution + b.restitution) * 0.5f,
-	  .static_friction = std::sqrt(std::max(a.static_friction * b.static_friction, 0.0f)),
-	  .dynamic_friction = std::sqrt(std::max(a.dynamic_friction * b.dynamic_friction, 0.0f)),
-	};
+		.restitution = std::max(a.restitution, b.restitution),
+		.static_friction = std::sqrt(std::max(a.static_friction * b.static_friction, 0.0f)),
+		.dynamic_friction = std::sqrt(std::max(a.dynamic_friction * b.dynamic_friction, 0.0f)),
+	}
 }
 
 auto canonicalPairAxis(const BroadPhasePair& pair) -> glm::vec3 {

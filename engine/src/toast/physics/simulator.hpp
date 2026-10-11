@@ -434,7 +434,7 @@ private:
 	[[nodiscard]]
 	auto tryGetBody(BodyID body) const -> const Body*;
 
-	static void integrateBody(BodyID id, Body& body, const glm::vec3& gravity, float dt);
+	static void integrateBody(BodyID id, Body& body, const glm::vec3& gravity, float air_density, const glm::vec3& wind, float dt);
 	static void setBodyEnabled(BodyID body, bool enabled);
 
 	static void setBodyTransform(BodyID body, const glm::vec3& position, const glm::quat& rotation);

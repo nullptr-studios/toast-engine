@@ -46,6 +46,21 @@ void registerPhysicsSettings() {
 	gravity_axis("physics.world.gravity_y", "Gravity Y", 0.0, 1);
 	gravity_axis("physics.world.gravity_z", "Gravity Z", -9.8, 2);
 
+	flt("physics.world.air_density",
+	    1.225f,
+	    {.label = "Air density", .category = "World", .min = 0.0f, .step = 0.1f},
+	    &Tunables::air_density);
+
+	const auto wind_axis = [](std::string_view key, std::string_view label, double value, int axis) {
+		toast::settings::declareFloat(
+		    key, value, {.label = std::string {label}, .category = "World", .min = -1000.0, .max = 1000.0, .step = 0.1}
+		)
+		    .onChange([axis](double v) { g_tunables.wind[axis] = static_cast<float>(v); });
+	};
+	wind_axis("physics.world.wind_x", "Wind X", 0.0f, 0);
+	wind_axis("physics.world.wind_y", "Wind Y", 0.0f, 1);
+	wind_axis("physics.world.wind_z", "Wind Z", 0.0f, 2);
+
 	uint_setting(
 	    "physics.solver.iterations",
 	    8,
