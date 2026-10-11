@@ -305,13 +305,18 @@ void submit(vk::Queue queue, const SubmitDesc& desc) {
 	std::vector<vk::SemaphoreSubmitInfo> waits;
 	waits.reserve(desc.waits.size());
 	for (const auto& wait : desc.waits) {
-		waits.push_back(vk::SemaphoreSubmitInfo {}.setSemaphore(wait.semaphore).setStageMask(wait.stages));
+		waits.push_back(vk::SemaphoreSubmitInfo {}.setSemaphore(wait.semaphore).setValue(wait.value).setStageMask(wait.stages));
 	}
 
 	std::vector<vk::SemaphoreSubmitInfo> signals;
 	signals.reserve(desc.signals.size());
-	for (const vk::Semaphore semaphore : desc.signals) {
-		signals.push_back(vk::SemaphoreSubmitInfo {}.setSemaphore(semaphore).setStageMask(vk::PipelineStageFlagBits2::eAllCommands));
+	for (const SemaphoreSignal& signal : desc.signals) {
+		signals.push_back(
+		    vk::SemaphoreSubmitInfo {}
+		        .setSemaphore(signal.semaphore)
+		        .setValue(signal.value)
+		        .setStageMask(vk::PipelineStageFlagBits2::eAllCommands)
+		);
 	}
 
 	std::vector<vk::CommandBufferSubmitInfo> commands;

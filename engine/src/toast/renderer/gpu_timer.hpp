@@ -43,7 +43,6 @@ public:
 	struct Timings {
 		bool valid = false;
 		double graphics_ms = 0.0;
-		double compute_ms = 0.0;
 		std::vector<ScopeTiming> scopes;
 	};
 
@@ -54,20 +53,13 @@ public:
 		return m_supported;
 	}
 
-	[[nodiscard]]
-	auto computeSupported() const noexcept -> bool {
-		return m_compute_supported;
-	}
-
 	void beginGraphics(uint32_t slot, vk::CommandBuffer cmd);
 	void endGraphics(uint32_t slot, vk::CommandBuffer cmd);
-	void beginCompute(uint32_t slot, vk::CommandBuffer cmd);
-	void endCompute(uint32_t slot, vk::CommandBuffer cmd);
 
 	auto beginScope(uint32_t slot, vk::CommandBuffer cmd, std::string_view name) -> uint32_t;
 	void endScope(uint32_t slot, vk::CommandBuffer cmd, uint32_t scope);
 
-	/// @note Only once the graphics and compute fences of the slot have signalled
+	/// @note Only once the frame fence of the slot has signalled
 	void collect(uint32_t slot);
 
 	[[nodiscard]]
@@ -98,11 +90,10 @@ private:
 		std::vector<PendingScope> scopes;
 		uint32_t depth = 0;
 		bool graphics_written = false;
-		bool compute_written = false;
 	};
 
-	/// graphics begin and end then a pair per scope then compute begin and end
-	static constexpr uint32_t k_queries_per_slot = 2 + (2 * k_max_scopes) + 2;
+	/// Graphics begin and end then a pair per scope
+	static constexpr uint32_t k_queries_per_slot = 2 + (2 * k_max_scopes);
 
 	[[nodiscard]]
 	static auto base(uint32_t slot) noexcept -> uint32_t {
@@ -116,9 +107,7 @@ private:
 	std::vector<Slot> m_slots;
 	double m_ns_per_tick = 1.0;
 	uint64_t m_graphics_mask = ~uint64_t {0};
-	uint64_t m_compute_mask = ~uint64_t {0};
 	bool m_supported = false;
-	bool m_compute_supported = false;
 	bool m_reported_unavailable = false;
 	uint64_t m_serial = 0;
 

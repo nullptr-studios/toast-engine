@@ -15,6 +15,7 @@
 #include <chrono>
 #include <glm/glm.hpp>
 #include <memory>
+#include <optional>
 #include <string_view>
 #include <vector>
 
@@ -35,6 +36,9 @@ public:
 	/// @returns false when nothing draws so the caller skips both voxel scopes
 	[[nodiscard]]
 	auto prepare(uint32_t frame_index) -> bool;
+
+	/// Outside any rendering scope after prepare() and before record()
+	void recordCellCull(vk::CommandBuffer cmd, uint32_t frame_index);
 
 	/// Inside the voxel G-buffer scope after prepare()
 	void record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) override;
@@ -59,9 +63,40 @@ private:
 	/// Mirrors voxel.slang PushConstants
 	struct PushConstants {
 		uint32_t instance_index = 0;
+		uint32_t bucket = 0;
+		uint32_t mode = 0;
 		uint32_t pad0 = 0;
-		uint32_t pad1 = 0;
-		uint32_t pad2 = 0;
+	};
+
+	/// Mirrors voxel.slang kDrawVolume and kDrawCells
+	static constexpr uint32_t k_draw_volume = 0;
+	static constexpr uint32_t k_draw_cells = 1;
+
+	/// Mirrors voxel_cells.slang CellCullPush
+	struct CellCullPush {
+		glm::mat4 view_projection {1.0f};
+		glm::vec4 camera_near {0.0f};
+		uint32_t total_cells = 0;
+		uint32_t instance_count = 0;
+		uint32_t phase = 0;
+		uint32_t pad0 = 0;
+	};
+
+	/// Mirrors voxel_dda.slang kCellBucketCount and the word layout after it
+	static constexpr uint32_t k_cell_bucket_count = 17;
+	static constexpr uint32_t k_cell_cursors_word = k_cell_bucket_count * 5;
+	static constexpr uint32_t k_cell_args_words = k_cell_bucket_count * 6;
+	/// Ten bits per axis in voxel_dda.slang packCell
+	static constexpr uint32_t k_max_coarse_dim = 1024;
+	static constexpr uint32_t k_min_cell_capacity = 4096;
+
+	/// Per frame in flight
+	struct CellBuffers {
+		/// Instance index and packed cell per surviving cell
+		std::optional<vma::raii::Buffer> cells;
+		/// Indirect commands then bucket offsets then cursors
+		std::optional<vma::raii::Buffer> args;
+		uint32_t capacity = 0;
 	};
 
 	/// Mirrors voxel_lighting.slang LightingPushConstants
@@ -75,6 +110,11 @@ private:
 		glm::vec4 camera_radius {0.0f};
 		glm::vec4 viewport {0.0f};
 	};
+
+	void createCells(const VulkanCore& core);
+	void ensureCellCapacity(uint32_t frame_index, uint32_t cells);
+	void writeCellDescriptors(uint32_t frame_index);
+	void recordCellDraws(vk::CommandBuffer cmd, uint32_t frame_index);
 
 	enum class Cull : uint8_t {
 		back,
@@ -116,6 +156,14 @@ private:
 	std::vector<std::shared_ptr<const VoxelGpuStorage>> m_bound_storage;
 
 	std::vector<Draw> m_draws;
+
+	ShaderLayout m_cell_layout;
+	VulkanPipeline m_cell_pipeline;
+	std::vector<vk::raii::DescriptorSet> m_cell_sets;
+	std::vector<CellBuffers> m_cell_buffers;
+
+	bool m_cells_active = false;
+	uint32_t m_total_cells = 0;
 
 	ShaderLayout m_lighting_layout;
 	VulkanPipeline m_lighting_pipeline;

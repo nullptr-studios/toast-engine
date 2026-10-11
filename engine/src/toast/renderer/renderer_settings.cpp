@@ -171,6 +171,16 @@ void registerVoxels(VulkanRenderer& renderer) {
 			 .step = 0.05}
 	)
 	    .onChange([&renderer](double v) { renderer.setVoxelNormalRounding(static_cast<float>(v)); });
+
+	toast::settings::declareBool(
+	    "renderer.voxels.cell_boxes",
+	    true,
+	    {.label = "Cell boxes",
+			 .category = "Voxels",
+			 .description = "On draws one box per non-empty 32 voxel cell front to back and marches only inside it. Off "
+			                "draws one box per volume and marches the whole volume, kept to compare the two."}
+	)
+	    .onChange([&renderer](bool enabled) { renderer.setVoxelCellBoxes(enabled); });
 }
 
 void registerEnvironment(VulkanRenderer& renderer) {

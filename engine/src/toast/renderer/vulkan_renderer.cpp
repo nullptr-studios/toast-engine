@@ -654,6 +654,9 @@ void VulkanRenderer::stop() {
 		} catch (const std::exception& e) {
 			TOAST_ERROR("Render", "Device wait failed during shutdown, tearing down anyway: {}", e.what());
 		}
+		for (auto& frame : m_frames) {
+			frame.retired.clear();
+		}
 		m_core->savePipelineCache();
 	}
 
@@ -814,10 +817,15 @@ auto VulkanRenderer::createUploadRing() -> void {
 
 	for (uint32_t i = 0; i < k_upload_slots; ++i) {
 		m_upload_slots[i].command_buffer = std::move(buffers[i]);
-		m_upload_slots[i].fence = vk::raii::Fence(m_core->getDevice(), vk::FenceCreateInfo {});
 		setDebugName(*m_core, *m_upload_slots[i].command_buffer, std::format("VulkanRenderer Upload[{}] CommandBuffer", i));
-		setDebugName(*m_core, *m_upload_slots[i].fence, std::format("VulkanRenderer Upload[{}] Fence", i));
 	}
+
+	vk::SemaphoreTypeCreateInfo timeline_ci(vk::SemaphoreType::eTimeline, 0);
+	m_upload_timeline = vk::raii::Semaphore(m_core->getDevice(), vk::SemaphoreCreateInfo({}, &timeline_ci));
+	setDebugName(*m_core, *m_upload_timeline, "VulkanRenderer UploadTimeline");
+	m_upload_timeline_value = 0;
+	m_upload_acquired_value = 0;
+	m_upload_waited_value = 0;
 
 	TOAST_TRACE("VulkanRenderer", "Upload command buffer ring created: {} slots", k_upload_slots);
 }
@@ -1442,6 +1450,11 @@ auto VulkanRenderer::recordVoxelScopes(
 	}
 
 	const vk::CommandBuffer cmd = *frame.command_buffer;
+	{
+		TracyVkZone(m_tracy_vk_ctx, cmd, "VoxelCells");
+		const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Voxel cells");
+		m_voxel_pass->recordCellCull(cmd, m_current_frame);
+	}
 	sync::BarrierBatch barriers;
 
 	const auto attachment = [](const SceneColorResources& target, vk::AttachmentLoadOp load, const vk::ClearValue& clear) {
@@ -1571,6 +1584,15 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	}
 
 	m_pending_acquires.flush(*frame.command_buffer);
+
+	// Small carves patch the voxel sections in place before anything this frame reads them
+	if (const auto* rendering = renderingFrame(); rendering != nullptr && rendering->voxel_storage != nullptr) {
+		std::vector<std::shared_ptr<void>> staging;
+		rendering->voxel_storage->recordPendingPatches(*frame.command_buffer, staging);
+		for (auto& buffer : staging) {
+			retire(std::move(buffer));
+		}
+	}
 
 	// Graphics queue since this frame reads it and the compute queue belongs to AsyncCompute
 	if (!m_compute_passes.empty()) {
@@ -1904,13 +1926,14 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 void VulkanRenderer::ensureMaterialPasses(RenderFrame& frame_data) {
 	ZoneScoped;
 
+	std::lock_guard lock(m_pass_mutex);
 	if (m_pending_material_pass_clear.exchange(false, std::memory_order_acq_rel)) {
-		m_core->getDevice().waitIdle();
-		std::lock_guard lock(m_pass_mutex);
+		for (auto& [material, pass] : m_material_passes) {
+			retire(std::shared_ptr<MaterialPass>(std::move(pass)));
+		}
 		m_material_passes.clear();
 	}
 
-	std::lock_guard lock(m_pass_mutex);
 	for (const auto& proxy : frame_data.mesh_instances) {
 		if (proxy.root_material == nullptr || m_material_passes.contains(proxy.root_material)) {
 			continue;
@@ -1920,6 +1943,33 @@ void VulkanRenderer::ensureMaterialPasses(RenderFrame& frame_data) {
 		);
 		TOAST_INFO("Render", "Created material pass '{}'", pass->name());
 		m_material_passes.emplace(proxy.root_material, std::move(pass));
+	}
+
+	// A baked probe must not miss a material that is still building
+	if (frame_data.probe_capture_index >= 0 || frame_data.irradiance_capture_index >= 0) {
+		for (auto& [material, pass] : m_material_passes) {
+			pass->finishPendingBuild();
+		}
+	}
+}
+
+void VulkanRenderer::hideInstancesWithoutPipeline(RenderFrame& frame_data) {
+	ZoneScoped;
+	std::lock_guard lock(m_pass_mutex);
+	for (auto& proxy : frame_data.mesh_instances) {
+		if (!proxy.visible || proxy.root_material == nullptr) {
+			continue;
+		}
+		const auto it = m_material_passes.find(proxy.root_material);
+		if (it == m_material_passes.end() || !it->second->isValid()) {
+			proxy.visible = false;
+		}
+	}
+}
+
+void VulkanRenderer::retire(std::shared_ptr<void> object) {
+	if (object != nullptr) {
+		m_frames[m_current_frame].retired.push_back(std::move(object));
 	}
 }
 
@@ -2032,6 +2082,7 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 	auto& frame = m_frames[m_current_frame];
 	std::ignore = m_core->getDevice().waitForFences(*frame.in_flight, true, std::numeric_limits<uint64_t>::max());
 	end_phase(m_perf_gpu_wait_ns);
+	frame.retired.clear();
 	publishCompletedFrames();
 	m_core->updateTracyMemory();
 
@@ -2069,10 +2120,12 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 	ensureMaterialPasses(frame_data);
 
 	// TODO move outside the render loop
+	bool any_unbuilt_material = false;
 	{
 		std::lock_guard lock(m_pass_mutex);
 		for (auto& [material, pass] : m_material_passes) {
 			pass->update(m_current_frame, Time::renderDelta());
+			any_unbuilt_material = any_unbuilt_material || !pass->isValid();
 		}
 		for (auto& pass : m_render_passes) {
 			pass->update(m_current_frame, Time::renderDelta());
@@ -2081,6 +2134,10 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 		for (auto& pass : m_compute_passes) {
 			pass->update(m_current_frame, Time::renderDelta());
 		}
+	}
+	// Only while a first build runs so the steady state skips the walk
+	if (any_unbuilt_material) {
+		hideInstancesWithoutPipeline(frame_data);
 	}
 
 	if (const auto* rendering = renderingFrame(); rendering != nullptr) {
@@ -2099,13 +2156,23 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 	const vk::Semaphore wait_semaphore = *frame.image_available;
 
 	// AsyncCompute work never synchronises with a frame on the GPU
-	const sync::SemaphoreWait image_wait {wait_semaphore, vk::PipelineStageFlagBits2::eColorAttachmentOutput};
+	std::array<sync::SemaphoreWait, 2> waits {};
+	uint32_t wait_count = 0;
+	if (present_sync) {
+		waits[wait_count++] = {wait_semaphore, vk::PipelineStageFlagBits2::eColorAttachmentOutput};
+	}
+	// Already reached but makes the release to acquire order explicit for validation
+	if (m_upload_acquired_value > m_upload_waited_value) {
+		waits[wait_count++] = {*m_upload_timeline, vk::PipelineStageFlagBits2::eAllCommands, m_upload_acquired_value};
+		m_upload_waited_value = m_upload_acquired_value;
+	}
+	const sync::SemaphoreSignal present_signal {signal_semaphore};
 
 	sync::SubmitDesc submit {};
 	submit.commands = {&command_buffer, 1};
+	submit.waits = std::span(waits).first(wait_count);
 	if (present_sync) {
-		submit.waits = {&image_wait, 1};
-		submit.signals = {&signal_semaphore, 1};
+		submit.signals = {&present_signal, 1};
 	}
 	submit.fence = *frame.in_flight;
 
@@ -3495,6 +3562,7 @@ void VulkanRenderer::tick(float time) noexcept {
 
 		const glm::vec3 eye = frame.frame_data.camera_position;
 		const float near_plane = m_camera->near_plane;
+		frame.near_plane = near_plane;
 		for (auto& proxy : frame.voxel_instances) {
 			proxy.camera_inside = voxel::containsPoint(proxy.inverse_model, proxy.brick_dims, eye, near_plane);
 			proxy.visible = proxy.camera_inside || sphereInFrustum(planes, proxy.bounds_center, proxy.bounds_radius);
@@ -3682,7 +3750,6 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 			}
 			m_voxel_storage_pending.reset();
 			m_voxel_patcher.reset();
-			m_voxel_latest_storage.reset();
 		}
 	}
 
@@ -3819,7 +3886,6 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 			m_voxel_storage_pending.reset();
 			m_voxel_change_tracker.reset();
 			m_voxel_patcher.reset();
-			m_voxel_latest_storage.reset();
 		} else {
 			std::vector<voxel::gpu::SceneVolume> scene_volumes;
 			std::vector<uint64_t> node_uids;
@@ -3841,16 +3907,21 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 				return std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - pack_start).count();
 			};
 
+			// Small carves patch the shared buffers in place and only a grown pool or a new layout uploads everything
 			std::optional<voxel::gpu::ScenePatch> patch;
-			if (!keep_mirror && m_voxel_latest_storage != nullptr && !m_voxel_latest_storage->hasFailed()) {
+			if (!keep_mirror && m_voxel_storage != nullptr && m_voxel_storage->isReady()) {
 				patch = m_voxel_patcher.tryPatch(voxel::runtimeBrickPool(), scene_volumes, node_uids, deltas);
 			}
-
+			std::optional<uint64_t> patch_sequence;
 			if (patch.has_value()) {
+				patch_sequence = m_voxel_storage->queuePatch(*m_core, *patch);
+			}
+
+			if (patch_sequence.has_value()) {
 				debug.pack_ms = elapsed_ms();
 				voxel_lock.unlock();
 
-				const VoxelStorageDebugInfo& previous = m_voxel_latest_storage->debugInfo();
+				const VoxelStorageDebugInfo& previous = m_voxel_storage->debugInfo();
 				debug.sequence = ++m_voxel_upload_sequence;
 				debug.packed_slots = patch->pool_slots;
 				debug.packed_palettes = previous.packed_palettes;
@@ -3870,24 +3941,12 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 				    })
 				);
 
-				const voxel::gpu::PackedScene& retained = m_voxel_patcher.scene();
-				const VoxelScenePatchUpload::SectionBytes section_bytes {
-				  static_cast<vk::DeviceSize>(patch->pool_slots) * voxel::gpu::k_material_words_per_brick * sizeof(uint32_t),
-				  static_cast<vk::DeviceSize>(patch->pool_slots) * voxel::gpu::k_occupancy_words_per_brick * sizeof(uint32_t),
-				  retained.grids.size() * sizeof(uint32_t),
-				  retained.coarse.size() * sizeof(uint32_t),
-				  retained.palettes.size() * sizeof(uint32_t),
-				  retained.records.size() * sizeof(voxel::gpu::VolumeRecord),
-				};
-
-				auto storage = std::make_shared<VoxelGpuStorage>(std::move(node_uids), std::move(brick_dims));
+				auto storage =
+				    std::make_shared<VoxelGpuStorage>(std::move(node_uids), std::move(brick_dims), *m_voxel_storage, *patch_sequence);
 				storage->setDebugInfo(std::move(debug));
 				storage->setChangeHistory(m_voxel_change_tracker.packed(storage->generation()));
-				queueResourceUpload(
-				    std::make_unique<VoxelScenePatchUpload>(storage, m_voxel_latest_storage, std::move(*patch), section_bytes)
-				);
-				m_voxel_storage_pending = storage;
-				m_voxel_latest_storage = std::move(storage);
+				m_voxel_storage = std::move(storage);
+				m_voxel_change_tracker.published();
 			} else {
 				auto packed = std::make_shared<VoxelPackedScene>(VoxelPackedScene {
 				  .pool = voxel::gpu::packPool(voxel::runtimeBrickPool()), .scene = voxel::gpu::packScene(scene_volumes)
@@ -3922,8 +3981,7 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 				storage->setDebugInfo(std::move(debug));
 				storage->setChangeHistory(m_voxel_change_tracker.packed(storage->generation()));
 				queueResourceUpload(std::make_unique<VoxelSceneUpload>(storage, std::move(packed)));
-				m_voxel_storage_pending = storage;
-				m_voxel_latest_storage = std::move(storage);
+				m_voxel_storage_pending = std::move(storage);
 			}
 		}
 	}
@@ -4235,19 +4293,19 @@ auto VulkanRenderer::uploadStats() -> UploadStats {
 
 void VulkanRenderer::processPendingUploads() {
 	ZoneScoped;
-	const auto& device = m_core->getDevice();
+	const uint64_t completed = m_pending_uploads.empty() ? 0 : m_upload_timeline.getCounterValue();
 
 	while (!m_pending_uploads.empty()) {
 		auto& oldest_batch = m_pending_uploads.front();
 		auto& slot = m_upload_slots[oldest_batch.slot];
 
-		if (vkGetFenceStatus(*device, *slot.fence) != VkResult::VK_SUCCESS) {
+		if (slot.timeline_value > completed) {
 			break;
 		}
 
 		vk::DeviceSize reclaimed = 0;
 		for (auto& job : oldest_batch.jobs) {
-			// The fence wait above orders this after the upload release
+			// The timeline check above orders this after the upload release
 			job->recordAcquire(m_pending_acquires);
 			job->finished();
 			reclaimed += job->host_bytes;
@@ -4255,6 +4313,7 @@ void VulkanRenderer::processPendingUploads() {
 		m_upload_host_bytes.fetch_sub(reclaimed, std::memory_order_acq_rel);
 
 		slot.in_flight = false;
+		m_upload_acquired_value = std::max(m_upload_acquired_value, slot.timeline_value);
 		m_pending_uploads.pop();
 	}
 
@@ -4297,9 +4356,6 @@ void VulkanRenderer::flushResourceUploads() {
 		return;
 	}
 
-	const auto& device = m_core->getDevice();
-
-	device.resetFences(*slot.fence);
 	slot.command_buffer.reset();
 	slot.command_buffer.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
 
@@ -4328,6 +4384,8 @@ void VulkanRenderer::flushResourceUploads() {
 	batch.jobs = std::move(recorded);
 
 	const vk::CommandBuffer raw_transfer_cmd = *slot.command_buffer;
+	slot.timeline_value = ++m_upload_timeline_value;
+	const sync::SemaphoreSignal done {*m_upload_timeline, slot.timeline_value};
 	{
 		// Only contended when AsyncCompute shares the transfer queue
 		std::scoped_lock transfer_lock(m_core->transferSubmitMutex());
@@ -4335,7 +4393,7 @@ void VulkanRenderer::flushResourceUploads() {
 		    m_core->getTransferQueue(),
 		    {
 		      .commands = {&raw_transfer_cmd, 1},
-            .fence = *slot.fence
+            .signals = {            &done, 1}
 		}
 		);
 	}

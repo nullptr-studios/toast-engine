@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cstring>
 #include <format>
 #include <mutex>
@@ -20,6 +21,7 @@
 #include <string>
 #include <toast/assets/texture.hpp>
 #include <toast/log.hpp>
+#include <toast/thread_pool.hpp>
 #include <tracy/Tracy.hpp>
 #include <unordered_set>
 
@@ -86,13 +88,15 @@ MaterialPass::MaterialPass(
       m_name(root_material != nullptr ? root_material->name() : "Material"),
       m_color_format(color_format),
       m_depth_format(depth_format),
-      m_extent(extent),
-      m_root_runtime(core, root_material) {
-	rebuildPipeline();
+      m_extent(extent) {
+	startBuild();
 }
 
-auto MaterialPass::resolvedAlphaCutoff() -> float {
-	return resolvedAlphaCutoffOf(m_root_runtime);
+MaterialPass::~MaterialPass() {
+	// The job owns copies of its inputs but must not outlive the core
+	if (m_pending_build.valid()) {
+		m_pending_build.wait();
+	}
 }
 
 auto MaterialPass::resolvedAlphaCutoffOf(MaterialRuntime& runtime) -> float {
@@ -119,61 +123,61 @@ auto MaterialPass::resolvedAlphaCutoffOf(MaterialRuntime& runtime) -> float {
 	return 0.0f;
 }
 
-void MaterialPass::rebuildPipeline() {
-	ZoneScoped;
-	m_instances.clear();
+auto MaterialPass::build(const BuildInputs& inputs) -> std::shared_ptr<Built> {
+	ZoneScopedN("MaterialPass build");
+	try {
+		auto built = std::make_shared<Built>(*inputs.core, inputs.root_material);
+		const auto& entries = built->runtime.shaderEntries();
+		if (entries.empty()) {
+			TOAST_WARN("Render", "MaterialPass '{}' has no compiled shaders, nothing will be drawn", inputs.name);
+			return nullptr;
+		}
+		if (entries.size() > 1) {
+			TOAST_WARN(
+			    "Render", "MaterialPass '{}': multiple shader modules per material not supported yet, using the first", inputs.name
+			);
+		}
 
-	m_pipeline.reset();
+		built->layout.rebuild(*inputs.core, built->runtime.reflection(), inputs.name);
 
-	m_root_runtime.rebuild();
-	const auto& entries = m_root_runtime.shaderEntries();
-	if (entries.empty()) {
-		TOAST_WARN("Render", "MaterialPass '{}' has no compiled shaders, nothing will be drawn", m_name);
-		return;
-	}
-	if (entries.size() > 1) {
-		TOAST_WARN("Render", "MaterialPass '{}': multiple shader modules per material not supported yet, using the first", m_name);
-	}
+		const assets::MaterialSettings settings = inputs.root_material->settings();
 
-	m_layout.rebuild(*m_core, m_root_runtime.reflection(), m_name);
+		VulkanPipeline::Config config;
+		config.pipeline_type = VulkanPipeline::PipelineType::graphics;
+		config.debug_name = std::format("MaterialPass ({})", inputs.name);
+		config.color_format = inputs.color_format;
+		config.depth_format = inputs.depth_format;
+		config.extent = inputs.extent;
+		config.shader_spirv = entries.front()->spirv;
+		config.pipeline_layout = *built->layout.getPipelineLayout();
+		config.vertex_bindings = {vertexBindingDescription()};
+		const auto vertex_attributes = vertexAttributeDescriptions();
+		config.vertex_attributes.assign(vertex_attributes.begin(), vertex_attributes.end());
+		config.depth_test = settings.depth_test;
+		config.depth_write = settings.depth_write;
 
-	const assets::MaterialSettings settings = m_root_material->settings();
+		// Or equal since the prepass writes the exact same depth
+		config.depth_compare = depth::k_closer_or_equal;
+		config.cull_mode = toCullMode(settings.cull_mode);
+		config.blend_preset = toBlendPreset(settings.blend_mode);
+		config.extra_color_formats = worldStageExtraColorFormats();
 
-	VulkanPipeline::Config config;
-	config.pipeline_type = VulkanPipeline::PipelineType::graphics;
-	config.debug_name = std::format("MaterialPass ({})", m_name);
-	config.color_format = m_color_format;
-	config.depth_format = m_depth_format;
-	config.extent = m_extent;
-	config.shader_spirv = entries.front()->spirv;
-	config.pipeline_layout = *m_layout.getPipelineLayout();
-	config.vertex_bindings = {vertexBindingDescription()};
-	const auto vertex_attributes = vertexAttributeDescriptions();
-	config.vertex_attributes.assign(vertex_attributes.begin(), vertex_attributes.end());
-	config.depth_test = settings.depth_test;
-	config.depth_write = settings.depth_write;
+		// The cutout entry point discards which costs early Z
+		built->uses_cutout = resolvedAlphaCutoffOf(built->runtime) > 0.0f;
+		if (built->uses_cutout) {
+			config.fragment_entry = "fragmentMainCutout";
+		}
 
-	// eLessOrEqual since the prepass writes the exact same depth
-	config.depth_compare = depth::k_closer_or_equal;
-	config.cull_mode = toCullMode(settings.cull_mode);
-	config.blend_preset = toBlendPreset(settings.blend_mode);
-	config.extra_color_formats = worldStageExtraColorFormats();
+		config.write_extra_color = config.blend_preset == VulkanPipeline::BlendPreset::none;
 
-	// The cutout entry point discards which costs early Z
-	m_uses_cutout = resolvedAlphaCutoff() > 0.0f;
-	if (m_uses_cutout) {
-		config.fragment_entry = "fragmentMainCutout";
-	}
+		built->pipeline.rebuild(*inputs.core, config);
+		if (!built->pipeline.isReady()) {
+			TOAST_ERROR("Render", "MaterialPass '{}' pipeline failed to build", inputs.name);
+			return nullptr;
+		}
 
-	config.write_extra_color = config.blend_preset == VulkanPipeline::BlendPreset::none;
-
-	m_pipeline.rebuild(*m_core, config);
-
-	TOAST_INFO("Render", "MaterialPass '{}' pipeline ready: {}", m_name, m_pipeline.isReady());
-
-	{
-		const auto& blobs = m_root_runtime.uniformBlobs();
-		for (const auto& binding : m_root_runtime.reflection().bindings) {
+		const auto& blobs = built->runtime.uniformBlobs();
+		for (const auto& binding : built->runtime.reflection().bindings) {
 			if (binding.kind != ShaderBindingKind::uniform_buffer || !binding.engine_semantic.empty()) {
 				continue;
 			}
@@ -194,20 +198,87 @@ void MaterialPass::rebuildPipeline() {
 				values += std::format("{}{}={:.3f}", values.empty() ? "" : ", ", member.name, value);
 			}
 			if (!values.empty()) {
-				TOAST_TRACE("Render", "MaterialPass '{}' resolved scalars: {}", m_name, values);
+				TOAST_TRACE("Render", "MaterialPass '{}' resolved scalars: {}", inputs.name, values);
 			}
 		}
-	}
 
-	const auto& set_layouts = m_layout.getDescriptorSetLayouts();
-	if (!set_layouts.empty()) {
-		m_scene_sets.create(*m_core, m_root_runtime.reflection(), *set_layouts[0], m_name);
+		return built;
+	} catch (const std::exception& e) {
+		TOAST_ERROR("Render", "MaterialPass '{}' build threw: {}", inputs.name, e.what());
+		return nullptr;
 	}
 }
 
-auto MaterialPass::ensureInstanceResources(assets::Material* material) -> InstanceResources* {
+void MaterialPass::startBuild() {
+	m_rebuild_pending.store(false, std::memory_order_release);
+	BuildInputs inputs {
+	  .core = m_core,
+	  .root_material = m_root_material,
+	  .name = m_name,
+	  .color_format = m_color_format,
+	  .depth_format = m_depth_format,
+	  .extent = m_extent,
+	};
+	m_pending_build = toast::ThreadPool::push([inputs = std::move(inputs)] { return build(inputs); });
+}
+
+void MaterialPass::adopt(std::shared_ptr<Built> built) {
 	ZoneScoped;
-	auto [it, inserted] = m_instances.try_emplace(material);
+	if (built == nullptr) {
+		if (m_built != nullptr) {
+			TOAST_WARN("Render", "MaterialPass '{}' rebuild failed, keeping the previous pipeline", m_name);
+		}
+		return;
+	}
+
+	const auto& set_layouts = built->layout.getDescriptorSetLayouts();
+	if (!set_layouts.empty()) {
+		built->scene_sets.create(*m_core, built->runtime.reflection(), *set_layouts[0], m_name);
+	}
+
+	// Frames in flight may still bind the old pipeline and its sets
+	if (m_built != nullptr) {
+		VulkanRenderer::instance->retire(std::move(m_built));
+	}
+	m_built = std::move(built);
+	TOAST_INFO("Render", "MaterialPass '{}' pipeline ready", m_name);
+}
+
+void MaterialPass::update(uint32_t frame_index, float dt) {
+	(void)frame_index;
+	(void)dt;
+
+	if (m_pending_build.valid() && m_pending_build.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+		adopt(m_pending_build.get());
+	}
+
+	if (m_pending_build.valid()) {
+		return;
+	}
+
+	if (m_rebuild_pending.load(std::memory_order_acquire)) {
+		startBuild();
+		return;
+	}
+
+	// Kept while a build runs since that build may have baked the values before they changed
+	if (m_built != nullptr && m_values_dirty.exchange(false, std::memory_order_acq_rel)) {
+		for (auto& [material, res] : m_built->instances) {
+			res.runtime->markValuesDirty();
+		}
+	}
+}
+
+void MaterialPass::finishPendingBuild() {
+	if (m_pending_build.valid()) {
+		ZoneScopedN("MaterialPass wait for build");
+		adopt(m_pending_build.get());
+	}
+}
+
+auto MaterialPass::ensureInstanceResources(Built& built, assets::Material* material) -> InstanceResources* {
+	ZoneScoped;
+	auto [it, inserted] = built.instances.try_emplace(material);
 	InstanceResources& res = it->second;
 	if (!inserted) {
 		return &res;
@@ -216,7 +287,7 @@ auto MaterialPass::ensureInstanceResources(assets::Material* material) -> Instan
 	res.runtime = std::make_unique<MaterialRuntime>(*m_core, material);
 
 	// The variant comes from the root material but alphaCutoff is per instance
-	if (!m_uses_cutout && resolvedAlphaCutoffOf(*res.runtime) > 0.0f) {
+	if (!built.uses_cutout && resolvedAlphaCutoffOf(*res.runtime) > 0.0f) {
 		TOAST_WARN(
 		    "Render",
 		    "Material instance '{}' sets alphaCutoff but its root material '{}' does not, so this pass built the "
@@ -226,7 +297,7 @@ auto MaterialPass::ensureInstanceResources(assets::Material* material) -> Instan
 		);
 	}
 
-	const auto& layouts = m_layout.getDescriptorSetLayouts();
+	const auto& layouts = built.layout.getDescriptorSetLayouts();
 	if (layouts.size() < 2) {
 		return &res;
 	}
@@ -357,33 +428,23 @@ void MaterialPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t 
 	ZoneScoped;
 	(void)image_index;
 
-	if (m_rebuild_pending.exchange(false, std::memory_order_acq_rel)) {
-		m_core->getDevice().waitIdle();
-		rebuildPipeline();
-	}
-
-	if (m_values_dirty.exchange(false, std::memory_order_acq_rel)) {
-		for (auto& [material, res] : m_instances) {
-			res.runtime->markValuesDirty();
-		}
-	}
-
-	if (!m_pipeline.isReady() || !m_scene_sets.get(frame_index)) {
+	if (m_built == nullptr || !m_built->scene_sets.get(frame_index)) {
 		return;
 	}
+	Built& built = *m_built;
 
 	const auto* frame = VulkanRenderer::instance->renderingFrame();
 	if (frame == nullptr) {
 		return;
 	}
 
-	m_scene_sets.updateTlas(frame_index);
+	built.scene_sets.updateTlas(frame_index);
 
 	cmd.bindDescriptorSets(
 	    vk::PipelineBindPoint::eGraphics,
-	    *m_layout.getPipelineLayout(),
+	    *built.layout.getPipelineLayout(),
 	    0,
-	    std::array<vk::DescriptorSet, 1> {m_scene_sets.get(frame_index)},
+	    std::array<vk::DescriptorSet, 1> {built.scene_sets.get(frame_index)},
 	    {}
 	);
 
@@ -395,7 +456,7 @@ void MaterialPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t 
 	};
 
 	const auto draw_instance = [&](const VulkanRenderer::MeshInstanceProxy& proxy, uint32_t instance_count = 1) {
-		drawInstance(cmd, frame_index, proxy, posed_vertices, posed_offset_of(proxy), &bound_material, instance_count);
+		drawInstance(built, cmd, frame_index, proxy, posed_vertices, posed_offset_of(proxy), &bound_material, instance_count);
 	};
 
 	const auto range =
@@ -426,9 +487,9 @@ void MaterialPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t 
 		std::ranges::sort(order, [&](uint32_t a, uint32_t b) { return distance_squared(a) > distance_squared(b); });
 	}
 
-	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline.getPipeline());
+	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, built.pipeline.getPipeline());
 
-	const bool allow_batching = !isBlended() && m_root_runtime.instanceBaseOffset().has_value();
+	const bool allow_batching = !isBlended() && built.runtime.instanceBaseOffset().has_value();
 
 	for (size_t i = 0; i < order.size();) {
 		const auto& proxy = frame->mesh_instances[order[i]];
@@ -458,10 +519,10 @@ void MaterialPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t 
 }
 
 void MaterialPass::drawInstance(
-    vk::CommandBuffer cmd, uint32_t frame_index, const VulkanRenderer::MeshInstanceProxy& proxy, vk::Buffer posed_vertices,
-    uint32_t posed_vertex_offset, assets::Material** bound_material, uint32_t instance_count
+    Built& built, vk::CommandBuffer cmd, uint32_t frame_index, const VulkanRenderer::MeshInstanceProxy& proxy,
+    vk::Buffer posed_vertices, uint32_t posed_vertex_offset, assets::Material** bound_material, uint32_t instance_count
 ) {
-	InstanceResources* res = ensureInstanceResources(proxy.material != nullptr ? proxy.material : m_root_material);
+	InstanceResources* res = ensureInstanceResources(built, proxy.material != nullptr ? proxy.material : m_root_material);
 	if (res == nullptr || res->runtime == nullptr) {
 		return;
 	}
@@ -475,7 +536,7 @@ void MaterialPass::drawInstance(
 			for (const auto& set : res->sets[frame_index]) {
 				raw_sets.push_back(*set);
 			}
-			cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *m_layout.getPipelineLayout(), 1, raw_sets, {});
+			cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *built.layout.getPipelineLayout(), 1, raw_sets, {});
 		}
 		if (bound_material != nullptr) {
 			*bound_material = res->runtime->material();
@@ -500,7 +561,11 @@ void MaterialPass::drawInstance(
 			std::memcpy(push_data.data() + *joint_offset_offset, &proxy.joint_offset, sizeof(uint32_t));
 		}
 		cmd.pushConstants(
-		    *m_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eAll, 0, static_cast<uint32_t>(push_data.size()), push_data.data()
+		    *built.layout.getPipelineLayout(),
+		    vk::ShaderStageFlagBits::eAll,
+		    0,
+		    static_cast<uint32_t>(push_data.size()),
+		    push_data.data()
 		);
 	}
 
@@ -513,23 +578,24 @@ void MaterialPass::drawInstance(
 }
 
 void MaterialPass::recordInstance(vk::CommandBuffer cmd, uint32_t frame_index, const VulkanRenderer::MeshInstanceProxy& proxy) {
-	if (!m_pipeline.isReady() || !m_scene_sets.get(frame_index) || proxy.mesh == nullptr || !proxy.mesh->isReady()) {
+	if (m_built == nullptr || !m_built->scene_sets.get(frame_index) || proxy.mesh == nullptr || !proxy.mesh->isReady()) {
 		return;
 	}
+	Built& built = *m_built;
 
-	m_scene_sets.updateTlas(frame_index);
+	built.scene_sets.updateTlas(frame_index);
 
-	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline.getPipeline());
+	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, built.pipeline.getPipeline());
 	cmd.bindDescriptorSets(
 	    vk::PipelineBindPoint::eGraphics,
-	    *m_layout.getPipelineLayout(),
+	    *built.layout.getPipelineLayout(),
 	    0,
-	    std::array<vk::DescriptorSet, 1> {m_scene_sets.get(frame_index)},
+	    std::array<vk::DescriptorSet, 1> {built.scene_sets.get(frame_index)},
 	    {}
 	);
 
 	const vk::Buffer posed_vertices = VulkanRenderer::instance->getPosedVertexBuffer(frame_index);
-	drawInstance(cmd, frame_index, proxy, posed_vertices, proxy.posed_vertex_offset, nullptr);
+	drawInstance(built, cmd, frame_index, proxy, posed_vertices, proxy.posed_vertex_offset, nullptr);
 }
 
 }

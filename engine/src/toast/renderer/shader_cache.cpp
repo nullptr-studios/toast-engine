@@ -8,6 +8,7 @@
 #include <toast/assets/asset_manager.hpp>
 #include <toast/assets/assets.hpp>
 #include <toast/log.hpp>
+#include <toast/thread_pool.hpp>
 #include <tracy/Tracy.hpp>
 
 namespace renderer {
@@ -101,20 +102,34 @@ auto ShaderCache::sourceHandleLocked(toast::UID uid) -> assets::Handle<assets::S
 	return it->second;
 }
 
-auto ShaderCache::isDiskCacheFreshLocked(toast::UID uid, uint64_t source_hash) -> bool {
-	loadHashIndexLocked();
+auto ShaderCache::sourceOf(toast::UID uid) -> std::optional<std::string> {
+	const std::lock_guard lock(m_mutex);
+	auto& handle = sourceHandleLocked(uid);
+	if (!handle.hasValue()) {
+		return std::nullopt;
+	}
+	return handle->source();
+}
 
-	const auto& shaders = m_hash_index["shaders"];
-	if (!shaders.is_object() || !shaders.contains(uid.get())) {
-		return false;
+auto ShaderCache::isDiskCacheFresh(toast::UID uid, uint64_t source_hash) -> bool {
+	nlohmann::json deps;
+	{
+		const std::lock_guard lock(m_mutex);
+		loadHashIndexLocked();
+
+		const auto& shaders = m_hash_index["shaders"];
+		if (!shaders.is_object() || !shaders.contains(uid.get())) {
+			return false;
+		}
+
+		const auto& entry = shaders[uid.get()];
+		if (entry.value("hash", "") != hashToHex(source_hash)) {
+			return false;
+		}
+		deps = entry.value("deps", nlohmann::json::object());
 	}
 
-	const auto& entry = shaders[uid.get()];
-	if (entry.value("hash", "") != hashToHex(source_hash)) {
-		return false;
-	}
-
-	for (const auto& [dep_uri, dep_hash] : entry.value("deps", nlohmann::json::object()).items()) {
+	for (const auto& [dep_uri, dep_hash] : deps.items()) {
 		auto dep_bytes = assets::AssetManager::get().tryLoadBytes(dep_uri);
 		if (!dep_bytes || hashToHex(fnv1a(dep_bytes->data(), dep_bytes->size())) != dep_hash.get<std::string>()) {
 			return false;
@@ -124,7 +139,7 @@ auto ShaderCache::isDiskCacheFreshLocked(toast::UID uid, uint64_t source_hash) -
 	return true;
 }
 
-auto ShaderCache::loadFromDiskLocked(toast::UID uid) -> std::shared_ptr<const Entry> {
+auto ShaderCache::loadFromDisk(toast::UID uid) -> EntryPtr {
 	ZoneScoped;
 	auto& manager = assets::AssetManager::get();
 
@@ -155,16 +170,9 @@ auto ShaderCache::loadFromDiskLocked(toast::UID uid) -> std::shared_ptr<const En
 	return entry;
 }
 
-auto ShaderCache::compileLocked(toast::UID uid) -> std::shared_ptr<const Entry> {
+auto ShaderCache::compile(toast::UID uid, const std::string& source) -> EntryPtr {
 	ZoneScoped;
-	auto& source_handle = sourceHandleLocked(uid);
-	if (!source_handle.hasValue()) {
-		TOAST_ERROR("Render", "Cannot compile shader {}: asset not found", uid.get());
-		return nullptr;
-	}
-
 	const std::string source_uri = assets::AssetManager::getURI(uid);
-	const std::string& source = source_handle->source();
 
 	auto compiled = ShaderCompiler::compile(uid, source, source_uri);
 	if (compiled.spirv.empty()) {
@@ -187,8 +195,7 @@ auto ShaderCache::compileLocked(toast::UID uid) -> std::shared_ptr<const Entry> 
 		TOAST_ERROR("Render", "Failed to write {}", spirvUri(uid));
 	}
 
-	nlohmann::json deps_json = nlohmann::json::object();
-	nlohmann::json cache_json {
+	const nlohmann::json cache_json {
 	  {      "format",             k_cache_format},
 	  {      "shader",                  uid.get()},
 	  {      "source",          entry->source_uri},
@@ -201,21 +208,28 @@ auto ShaderCache::compileLocked(toast::UID uid) -> std::shared_ptr<const Entry> 
 		TOAST_ERROR("Render", "Failed to write {}", reflectionUri(uid));
 	}
 
-	loadHashIndexLocked();
+	nlohmann::json deps_json = nlohmann::json::object();
+	std::vector<uint64_t> dep_uids;
 	for (const auto& dep_uri : entry->dependencies) {
 		if (auto dep_bytes = manager.tryLoadBytes(dep_uri)) {
 			deps_json[dep_uri] = hashToHex(fnv1a(dep_bytes->data(), dep_bytes->size()));
 		}
-	}
-	m_hash_index["shaders"][uid.get()] = {
-	  {"hash", hashToHex(entry->hash)},
-	  {"deps",              deps_json},
-	};
-	saveHashIndexLocked();
-
-	for (const auto& dep_uri : entry->dependencies) {
 		if (auto dep_uid = assets::AssetManager::resolveURI(dep_uri)) {
-			m_reverse_deps[dep_uid->data()].insert(uid.data());
+			dep_uids.push_back(dep_uid->data());
+		}
+	}
+
+	{
+		const std::lock_guard lock(m_mutex);
+		loadHashIndexLocked();
+		m_hash_index["shaders"][uid.get()] = {
+		  {"hash", hashToHex(entry->hash)},
+		  {"deps",              deps_json},
+		};
+		saveHashIndexLocked();
+
+		for (const uint64_t dep_uid : dep_uids) {
+			m_reverse_deps[dep_uid].insert(uid.data());
 		}
 	}
 
@@ -224,60 +238,82 @@ auto ShaderCache::compileLocked(toast::UID uid) -> std::shared_ptr<const Entry> 
 	return entry;
 }
 
-auto ShaderCache::loadOrCompileLocked(toast::UID uid) -> std::shared_ptr<const Entry> {
+auto ShaderCache::loadOrCompile(toast::UID uid) -> EntryPtr {
 	ZoneScoped;
-	auto& source_handle = sourceHandleLocked(uid);
-	if (!source_handle.hasValue()) {
+	const auto source = sourceOf(uid);
+	if (!source) {
 		TOAST_ERROR("Render", "Unknown shader asset {}", uid.get());
 		return nullptr;
 	}
 
-	const std::string& source = source_handle->source();
-	const uint64_t source_hash = sourceHash(source);
-
-	if (isDiskCacheFreshLocked(uid, source_hash)) {
-		if (auto entry = loadFromDiskLocked(uid)) {
+	if (isDiskCacheFresh(uid, sourceHash(*source))) {
+		if (auto entry = loadFromDisk(uid)) {
 			TOAST_TRACE("Render", "Recovered shader {} from disk cache", uid.get());
 			return entry;
 		}
 	}
 
-	return compileLocked(uid);
+	return compile(uid, *source);
 }
 
 void ShaderCache::compileAllAtStartup() {
 	ZoneScoped;
 	const auto shader_uids = assets::listByType("shader");
 
-	std::lock_guard lock(m_mutex);
-	size_t compiled = 0;
+	std::vector<std::future<bool>> jobs;
+	jobs.reserve(shader_uids.size());
 	for (const auto uid : shader_uids) {
-		if (m_entries.contains(uid.data())) {
-			continue;
-		}
-		if (auto entry = loadOrCompileLocked(uid)) {
-			m_entries[uid.data()] = std::move(entry);
-			++compiled;
-		} else {
+		jobs.push_back(toast::ThreadPool::push([this, uid] {
+			if (acquire(uid) != nullptr) {
+				return true;
+			}
 			TOAST_ERROR("Render", "Failed to load or compile shader {}", uid.get());
-		}
+			return false;
+		}));
 	}
 
-	TOAST_INFO("Render", "Shader cache ready: {}/{} shaders loaded", compiled, shader_uids.size());
+	size_t loaded = 0;
+	for (auto& job : jobs) {
+		loaded += job.get() ? 1 : 0;
+	}
+
+	TOAST_INFO("Render", "Shader cache ready: {}/{} shaders loaded", loaded, shader_uids.size());
 }
 
-auto ShaderCache::acquire(toast::UID uid) -> std::shared_ptr<const Entry> {
+auto ShaderCache::acquire(toast::UID uid) -> EntryPtr {
 	ZoneScoped;
-	std::lock_guard lock(m_mutex);
-
-	if (const auto it = m_entries.find(uid.data()); it != m_entries.end()) {
-		return it->second;
+	std::promise<EntryPtr> promise;
+	std::shared_future<EntryPtr> running;
+	{
+		const std::lock_guard lock(m_mutex);
+		if (const auto it = m_entries.find(uid.data()); it != m_entries.end()) {
+			return it->second;
+		}
+		if (const auto it = m_in_flight.find(uid.data()); it != m_in_flight.end()) {
+			running = it->second;
+		} else {
+			m_in_flight.emplace(uid.data(), promise.get_future().share());
+		}
+	}
+	// The owner compiles inline rather than queueing so waiting here cannot starve the pool
+	if (running.valid()) {
+		return running.get();
 	}
 
-	auto entry = loadOrCompileLocked(uid);
-	if (entry) {
-		m_entries[uid.data()] = entry;
+	EntryPtr entry;
+	try {
+		entry = loadOrCompile(uid);
+	} catch (const std::exception& e) { TOAST_ERROR("Render", "Shader {} threw while compiling: {}", uid.get(), e.what()); }
+
+	{
+		const std::lock_guard lock(m_mutex);
+		// A hot reload that landed meanwhile is newer
+		if (entry != nullptr) {
+			entry = m_entries.try_emplace(uid.data(), entry).first->second;
+		}
+		m_in_flight.erase(uid.data());
 	}
+	promise.set_value(entry);
 	return entry;
 }
 
@@ -287,27 +323,36 @@ auto ShaderCache::ensureCompiled(toast::UID uid) -> bool {
 
 auto ShaderCache::onShaderSourceReloaded(toast::UID uid) -> bool {
 	ZoneScoped;
-	std::lock_guard lock(m_mutex);
 
-	auto entry = compileLocked(uid);
-	if (!entry) {
+	const auto recompile = [this](toast::UID target) -> bool {
+		const auto source = sourceOf(target);
+		auto entry = source ? compile(target, *source) : nullptr;
+		if (!entry) {
+			return false;
+		}
+		{
+			const std::lock_guard lock(m_mutex);
+			m_entries[target.data()] = std::move(entry);
+		}
+		event::send<event::ShaderRecompiled>(target);
+		return true;
+	};
+
+	if (!recompile(uid)) {
 		TOAST_WARN("Render", "Hot reload of shader {} failed, keeping previous SPIR-V", uid.get());
 		return false;
 	}
 
-	m_entries[uid.data()] = std::move(entry);
-	event::send<event::ShaderRecompiled>(uid);
-
-	const auto it = m_reverse_deps.find(uid.data());
-	if (it != m_reverse_deps.end()) {
-		for (const auto dep_hash : it->second) {
-			auto dep_entry = compileLocked(toast::UID(dep_hash));
-			if (dep_entry) {
-				m_entries[dep_hash] = std::move(dep_entry);
-				event::send<event::ShaderRecompiled>(toast::UID(dep_hash));
-			} else {
-				TOAST_WARN("Render", "Hot reload of dependent shader (of {}) failed, keeping previous SPIR-V", uid.get());
-			}
+	std::vector<uint64_t> dependents;
+	{
+		const std::lock_guard lock(m_mutex);
+		if (const auto it = m_reverse_deps.find(uid.data()); it != m_reverse_deps.end()) {
+			dependents.assign(it->second.begin(), it->second.end());
+		}
+	}
+	for (const uint64_t dependent : dependents) {
+		if (!recompile(toast::UID(dependent))) {
+			TOAST_WARN("Render", "Hot reload of dependent shader (of {}) failed, keeping previous SPIR-V", uid.get());
 		}
 	}
 

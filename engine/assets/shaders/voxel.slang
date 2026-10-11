@@ -3,16 +3,25 @@ import voxel_gbuffer;
 import lighting;
 import depth_convention;
 
+/// Mirrors renderer::VoxelPass::PushConstants
 struct PushConstants
 {
     uint instanceIndex;
+    uint bucket;
+    uint mode;
     uint pad0;
-    uint pad1;
-    uint pad2;
 };
 
 [[vk::push_constant]]
 PushConstants gPush;
+
+static const uint kDrawVolume = 0u;
+static const uint kDrawCells = 1u;
+
+[[vk::binding(7, 1)]]
+StructuredBuffer<uint2> gVoxelCells;
+[[vk::binding(8, 1)]]
+StructuredBuffer<uint> gVoxelCellArgs;
 
 struct VSOutput
 {
@@ -20,21 +29,57 @@ struct VSOutput
 
     [[vk::location(0)]]
     float3 worldPosition : TEXCOORD0;
+
+    [[vk::location(1)]]
+    nointerpolation uint instanceIndex : TEXCOORD1;
+
+    [[vk::location(2)]]
+    nointerpolation int3 boxMin : TEXCOORD2;
+
+    [[vk::location(3)]]
+    nointerpolation int3 boxMax : TEXCOORD3;
 };
 
 [shader("vertex")]
-VSOutput vertexMain(uint vertexId : SV_VertexID)
+VSOutput vertexMain(uint vertexId : SV_VertexID, uint instanceId : SV_InstanceID)
 {
-    const VoxelInstance instance = gVoxelInstances[gPush.instanceIndex];
-    const VolumeRecord record = gVolumeRecords[instance.recordIndex];
-    const float3 voxels = float3(record.brickDimsX, record.brickDimsY, record.brickDimsZ) * 8.0;
+    uint instanceIndex = gPush.instanceIndex;
+    uint packedCell = 0u;
+    if (gPush.mode == kDrawCells)
+    {
+        const uint2 cell = gVoxelCells[gVoxelCellArgs[kCellOffsetsWord + gPush.bucket] + instanceId];
+        instanceIndex = cell.x;
+        packedCell = cell.y;
+    }
 
-    const float3 local = kBoxCorners[kBoxIndices[vertexId]] * voxels;
+    const VoxelInstance instance = gVoxelInstances[instanceIndex];
+    const VolumeRecord record = gVolumeRecords[instance.recordIndex];
+    const int3 dims = int3(record.brickDimsX, record.brickDimsY, record.brickDimsZ) * int(kBrickDim);
+
+    int3 boxMin = int3(0, 0, 0);
+    int3 boxMax = dims;
+    if (gPush.mode == kDrawCells)
+    {
+        boxMin = int3(unpackCell(packedCell)) * kCoarseVoxels;
+        boxMax = min(boxMin + kCoarseVoxels, dims);
+    }
+
+    // A mirrored transform flips winding so swap two corners of each triangle to keep one cull mode
+    uint corner = vertexId % 3u;
+    if ((instance.flags & kInstanceMirrored) != 0u && corner != 0u)
+    {
+        corner = 3u - corner;
+    }
+    const float3 unit = kBoxCorners[kBoxIndices[vertexId - (vertexId % 3u) + corner]];
+    const float3 local = float3(boxMin) + unit * float3(boxMax - boxMin);
     const float4 world = mul(instance.voxelToWorld, float4(local, 1.0));
 
     VSOutput output;
     output.worldPosition = world.xyz;
     output.position = mul(gCamera.jitteredViewProjection, world);
+    output.instanceIndex = instanceIndex;
+    output.boxMin = boxMin;
+    output.boxMax = boxMax;
     return output;
 }
 
@@ -254,7 +299,7 @@ bool shade(VSOutput input, out FSOutput output, out float depth)
     output.motion = float4(0.0, 0.0, 0.0, 0.0);
     depth = input.position.z;
 
-    const VoxelInstance instance = gVoxelInstances[gPush.instanceIndex];
+    const VoxelInstance instance = gVoxelInstances[input.instanceIndex];
     const float3 camera = gCamera.position;
 
     // t = 1 is the box surface
@@ -267,7 +312,7 @@ bool shade(VSOutput input, out FSOutput output, out float depth)
     const float nearStep = clipNearDistance(mul(gCamera.viewProjection, float4(worldDirection, 0.0)));
     const float tMin = nearStep > 0.0 ? max(0.0, -nearOrigin / nearStep) : 0.0;
 
-    const RayHit hit = marchRay(instance.recordIndex, origin, direction, tMin, kFloatMax);
+    const RayHit hit = marchRayBox(instance.recordIndex, origin, direction, tMin, kFloatMax, input.boxMin, input.boxMax);
 
     const float3 hitWorld = camera + worldDirection * hit.t;
 
@@ -304,6 +349,11 @@ bool shade(VSOutput input, out FSOutput output, out float depth)
     const uint renderMode = gCamera.renderModePad.x;
     if (isVoxelDebugMode(renderMode))
     {
+        // A miss drawn by a debug view sits on the far plane so a box behind it still wins the depth test
+        if (!hit.hit)
+        {
+            depth = kFarDepth;
+        }
         return shadeDebug(renderMode, input, instance, origin, direction, hit, normal, toCamera, output);
     }
 

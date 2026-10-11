@@ -9,7 +9,6 @@
 #include "vulkan_resource_base.hpp"
 
 #include <array>
-#include <atomic>
 #include <cstdint>
 #include <glm/glm.hpp>
 #include <memory>
@@ -49,6 +48,9 @@ struct VoxelStorageDebugInfo {
 	std::shared_ptr<const VoxelPackedScene> mirror;
 };
 
+class VoxelGpuSections;
+
+/// Immutable scene version and versions from small carves share buffers patched in place
 class VoxelGpuStorage : public IVulkanResource {
 public:
 	/// In voxel_dda.slang binding order
@@ -63,7 +65,14 @@ public:
 
 	static constexpr size_t k_section_count = 6;
 
+	/// New section buffers that a VoxelSceneUpload fills
 	VoxelGpuStorage(std::vector<uint64_t> node_uids, std::vector<glm::uvec3> brick_dims);
+
+	/// Ready at once over the buffers of @p previous and needs every patch up to @p patch_sequence applied
+	VoxelGpuStorage(
+	    std::vector<uint64_t> node_uids, std::vector<glm::uvec3> brick_dims, const VoxelGpuStorage& previous,
+	    uint64_t patch_sequence
+	);
 
 	/// Unique per storage so a cache keyed on it notices every upload
 	[[nodiscard]]
@@ -88,9 +97,14 @@ public:
 	auto buffer(Section section) const -> vk::Buffer;
 
 	[[nodiscard]]
-	auto size(Section section) const -> vk::DeviceSize {
-		return m_sizes[static_cast<size_t>(section)];
-	}
+	auto size(Section section) const -> vk::DeviceSize;
+
+	/// Tick thread on a ready storage and nullopt when the pool outgrew the buffers or staging failed
+	[[nodiscard]]
+	auto queuePatch(const VulkanCore& core, const voxel::gpu::ScenePatch& patch) const -> std::optional<uint64_t>;
+
+	/// Render thread before anything reads the sections and @p retired must outlive the frame
+	void recordPendingPatches(vk::CommandBuffer cmd, std::vector<std::shared_ptr<void>>& retired) const;
 
 	[[nodiscard]]
 	auto nodeUid(uint32_t index) const -> uint64_t {
@@ -108,14 +122,6 @@ public:
 	/// @note Main thread only and before the upload is queued
 	void setChangeHistory(VoxelChangeHistory history) { m_history = std::move(history); }
 
-	/// Set once the copies that fill it are recorded so a patch may read from it
-	void markRecorded() noexcept { m_recorded.store(true, std::memory_order_release); }
-
-	[[nodiscard]]
-	auto isRecorded() const noexcept -> bool {
-		return m_recorded.load(std::memory_order_acquire);
-	}
-
 	[[nodiscard]]
 	auto changeHistory() const -> const VoxelChangeHistory& {
 		return m_history;
@@ -123,21 +129,20 @@ public:
 
 private:
 	friend class VoxelSceneUpload;
-	friend class VoxelScenePatchUpload;
 
 	std::vector<uint64_t> m_node_uids;
 	std::vector<glm::uvec3> m_brick_dims;
 
-	std::array<std::optional<vma::raii::Buffer>, k_section_count> m_buffers;
-	std::array<vk::DeviceSize, k_section_count> m_sizes {};
+	std::shared_ptr<VoxelGpuSections> m_sections;
+
+	/// Last in place patch this version needs and 0 for none
+	uint64_t m_patch_sequence = 0;
 
 	uint64_t m_generation = 0;
 
 	VoxelStorageDebugInfo m_debug;
 
 	VoxelChangeHistory m_history;
-
-	std::atomic<bool> m_recorded {false};
 };
 
 /// Mirrors voxel_dda.slang VoxelInstance
@@ -148,13 +153,17 @@ struct VoxelInstanceGpu {
 	uint32_t record_index = 0;
 	uint32_t pad0 = 0;
 	uint32_t flags = 0;
-	uint32_t pad2 = 0;
+	/// First global coarse cell of this instance in the VoxelPass cell cull
+	uint32_t cell_base = 0;
 };
 
 static_assert(sizeof(VoxelInstanceGpu) == 208, "VoxelInstanceGpu is mirrored by voxel_dda.slang VoxelInstance");
 
 /// Bit 0 of VoxelInstanceGpu::flags with the meaning of VulkanRenderer::k_instance_no_motion
 inline constexpr uint32_t k_voxel_instance_no_motion = 1u << 0;
+
+/// Bit 1 of VoxelInstanceGpu::flags so voxel.slang flips the box winding
+inline constexpr uint32_t k_voxel_instance_mirrored = 1u << 1;
 
 /// Voxel (x y z) occupies [x x + 1] in the space the instance maps from
 [[nodiscard]]
@@ -190,46 +199,6 @@ private:
 	std::array<vk::DeviceSize, VoxelGpuStorage::k_section_count> m_offsets {};
 
 	std::array<vk::DeviceSize, VoxelGpuStorage::k_section_count> m_bytes {};
-};
-
-/// Copies the previous storage and overwrites what changed so a carve does not pack or send the whole scene
-class VoxelScenePatchUpload : public PendingResourceUpload {
-public:
-	using SectionBytes = std::array<vk::DeviceSize, VoxelGpuStorage::k_section_count>;
-
-	VoxelScenePatchUpload(
-	    std::shared_ptr<VoxelGpuStorage> storage, std::shared_ptr<VoxelGpuStorage> source, voxel::gpu::ScenePatch patch,
-	    SectionBytes section_bytes
-	);
-
-	void build(const VulkanCore& core) override;
-
-	void record(vk::CommandBuffer cmd) override;
-
-	/// The copies read the source so they wait until its own copies are recorded
-	[[nodiscard]]
-	auto canRecord() const -> bool override;
-
-	void finished() override;
-
-	void recordAcquire(sync::BarrierBatch& batch) override;
-
-	auto resource() -> IVulkanResource* override { return m_storage.get(); }
-
-private:
-	static constexpr size_t k_patched_sections = 4;
-
-	bool m_released = false;
-
-	std::shared_ptr<VoxelGpuStorage> m_storage;
-	std::shared_ptr<VoxelGpuStorage> m_source;
-	voxel::gpu::ScenePatch m_patch;
-	SectionBytes m_section_bytes {};
-
-	vma::raii::Buffer m_staging = nullptr;
-
-	/// Materials then occupancy then grids then coarse
-	std::array<vk::DeviceSize, k_patched_sections> m_staging_offsets {};
 };
 
 }

@@ -164,13 +164,20 @@ TOAST_API void transition(vk::CommandBuffer cmd, ImageState& state, Usage next);
 struct SemaphoreWait {
 	vk::Semaphore semaphore;
 	vk::PipelineStageFlags2 stages;
+	/// Timeline value and ignored for binary semaphores
+	uint64_t value = 0;
 };
 
-/// Signals fire once every command in the submit completes
+struct SemaphoreSignal {
+	vk::Semaphore semaphore;
+	/// Timeline value and ignored for binary semaphores
+	uint64_t value = 0;
+};
+
 struct SubmitDesc {
 	std::span<const vk::CommandBuffer> commands;
 	std::span<const SemaphoreWait> waits;
-	std::span<const vk::Semaphore> signals;
+	std::span<const SemaphoreSignal> signals;
 	vk::Fence fence;
 	/// Chained to SubmitInfo2 such as a FrameBoundaryEXT
 	const void* next = nullptr;

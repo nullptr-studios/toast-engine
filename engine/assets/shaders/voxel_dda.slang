@@ -24,10 +24,14 @@ struct VoxelInstance
     float4x4 previousVoxelToWorld;
     uint recordIndex;
     uint highlightRecord; /// this is for selection tint
-    /// Bit 0 set means previousVoxelToWorld is not a real previous frame
+    /// Bit 0 no real previous frame and bit 1 a mirrored transform
     uint flags;
-    uint pad2;
+    /// First global coarse cell of this instance in the cell cull dispatch
+    uint cellBase;
 };
+
+static const uint kInstanceNoMotion = 1u;
+static const uint kInstanceMirrored = 2u;
 
 [[vk::binding(0, 1)]]
 StructuredBuffer<uint> gBrickMaterials;
@@ -66,6 +70,23 @@ static const uint kBoxIndices[36] = {
     0, 4, 7, 0, 7, 3,    // -X
     1, 2, 6, 1, 6, 5,    // +X
 };
+
+/// Cell args word layout mirrored by renderer::VoxelPass with bucket 0 holding the camera
+static const uint kCellBucketCount = 17;
+static const uint kCellOffsetsWord = kCellBucketCount * 4;
+static const uint kCellCursorsWord = kCellBucketCount * 5;
+static const uint kCellArgsWords = kCellBucketCount * 6;
+
+/// Ten bits per axis
+uint packCell(uint3 cell)
+{
+    return cell.x | (cell.y << 10) | (cell.z << 20);
+}
+
+uint3 unpackCell(uint packed)
+{
+    return uint3(packed & 0x3FFu, (packed >> 10) & 0x3FFu, packed >> 20);
+}
 
 static const uint kTagEmpty = 0;
 static const uint kTagUniform = 1;
@@ -179,8 +200,15 @@ void leaveCell(float3 origin, float3 inverse, float3 stepSign, int3 cellMin, int
     axis = nextAxis;
 }
 
-/// Cells are chosen by integer index not float position since nudging positions skips voxels under grazing rays
 RayHit marchRay(uint volume, float3 origin, float3 direction, float tMin, float tMax)
+{
+    const int3 dims = int3(gVolumeRecords[volume].brickDimsX, gVolumeRecords[volume].brickDimsY, gVolumeRecords[volume].brickDimsZ) * int(kBrickDim);
+    return marchRayBox(volume, origin, direction, tMin, tMax, int3(0, 0, 0), dims);
+}
+
+/// The box must lie inside the volume
+/// Cells are chosen by integer index not float position since nudging positions skips voxels under grazing rays
+RayHit marchRayBox(uint volume, float3 origin, float3 direction, float tMin, float tMax, int3 boxMin, int3 boxMax)
 {
     RayHit result;
     result.hit = false;
@@ -192,12 +220,6 @@ RayHit marchRay(uint volume, float3 origin, float3 direction, float tMin, float 
     result.coarseSteps = 0;
     result.brickSteps = 0;
 
-    // Read ONLY the extents to avoid keeping a full struct alive
-    const uint dimsX = gVolumeRecords[volume].brickDimsX;
-    const uint dimsY = gVolumeRecords[volume].brickDimsY;
-    const uint dimsZ = gVolumeRecords[volume].brickDimsZ;
-    const int3 dims = int3(dimsX, dimsY, dimsZ) * int(kBrickDim);
-
     float tExit = kFloatMax;
     float3 entryTimes = float3(-kFloatMax, -kFloatMax, -kFloatMax);
     float3 inverse = float3(0.0, 0.0, 0.0);
@@ -207,7 +229,7 @@ RayHit marchRay(uint volume, float3 origin, float3 direction, float tMin, float 
     {
         if (direction[a] == 0.0)
         {
-            if (origin[a] < 0.0 || origin[a] > float(dims[a]))
+            if (origin[a] < float(boxMin[a]) || origin[a] > float(boxMax[a]))
             {
                 return result;
             }
@@ -217,8 +239,8 @@ RayHit marchRay(uint volume, float3 origin, float3 direction, float tMin, float 
         inverse[a] = 1.0 / direction[a];
         stepSign[a] = direction[a] > 0.0 ? 1.0 : -1.0;
 
-        const float t0 = (0.0 - origin[a]) * inverse[a];
-        const float t1 = (float(dims[a]) - origin[a]) * inverse[a];
+        const float t0 = (float(boxMin[a]) - origin[a]) * inverse[a];
+        const float t1 = (float(boxMax[a]) - origin[a]) * inverse[a];
         entryTimes[a] = min(t0, t1);
         tExit = min(tExit, max(t0, t1));
     }
@@ -270,7 +292,7 @@ RayHit marchRay(uint volume, float3 origin, float3 direction, float tMin, float 
         if ((crossed & 2u) != 0) voxel.y = int(round(position.y)) - (stepSign.y < 0.0 ? 1 : 0);
         if ((crossed & 4u) != 0) voxel.z = int(round(position.z)) - (stepSign.z < 0.0 ? 1 : 0);
 
-        if (any(uint3(voxel) >= uint3(dims))) return result;
+        if (any(voxel < boxMin) || any(voxel >= boxMax)) return result;
 
         const int3 coarse = voxel >> 5; 
         if (!coarseSolid(volume, coarse))
