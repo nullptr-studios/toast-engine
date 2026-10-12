@@ -2300,7 +2300,7 @@ auto Simulator::solveRolling(Constraint& constraint, Body& body_a, Body& body_b)
 	// spin is a single axis so a segment is enough
 	const float old_spin = constraint.accumulated_spin_impulse;
 	const float spin_limit = constraint.spin_friction * constraint.accumulated_normal_impulse;
-	const float new_spin = std::clamp(old_spin - spin * constraint.spin_mass, -spin_limit, spin_limit);
+	const float new_spin = std::clamp(old_spin - (spin * constraint.spin_mass), -spin_limit, spin_limit);
 	constraint.accumulated_spin_impulse = new_spin;
 
 	applyAngularImpulse(

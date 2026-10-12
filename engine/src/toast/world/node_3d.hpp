@@ -46,7 +46,7 @@ public:
 	[[Reflect]]
 	auto raycast(
 	    glm::vec3 dir, glm::vec3 offset = glm::vec3(0.0f), float max_distance = -1.0f, bool ignore_self = true,
-	    std::vector<int> layers = std::vector<int> {}
+	    const std::vector<int>& layers = std::vector<int> {}
 	) const -> std::optional<physics::RayHit>;
 
 	/**
@@ -56,7 +56,7 @@ public:
 	[[Reflect]]
 	auto raymulticast(
 	    glm::vec3 dir, glm::vec3 offset = glm::vec3(0.0f), float max_distance = -1.0f, int max_hits = -1, bool ignore_self = true,
-	    std::vector<int> layers = std::vector<int> {}
+	    const std::vector<int>& layers = std::vector<int> {}
 	) const -> std::vector<physics::RayHit>;
 
 	/**
@@ -67,7 +67,8 @@ public:
 	 */
 	[[Reflect]]
 	auto linecast(
-	    glm::vec3 from, glm::vec3 to, int max_hits = -1, bool ignore_self = true, std::vector<int> layers = std::vector<int> {}
+	    glm::vec3 from, glm::vec3 to, int max_hits = -1, bool ignore_self = true,
+	    const std::vector<int>& layers = std::vector<int> {}
 	) const -> std::vector<physics::RayHit>;
 
 	/**

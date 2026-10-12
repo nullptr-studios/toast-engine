@@ -193,7 +193,7 @@ auto closestPointOnBox(const glm::vec3& point, const WorldBox& box) -> glm::vec3
 auto closestPointsSegmentBox(const glm::vec3& segment_a, const glm::vec3& segment_b, const WorldBox& box)
     -> SegmentBoxClosestPoints;
 [[nodiscard]]
-auto closestPointsSegmentAabb(const glm::vec3& segment_a, const glm::vec3& segment_b, const glm::vec3& half_extents)
+auto closestPointsSegmentAabb(const glm::vec3& local_a, const glm::vec3& local_b, const glm::vec3& half_extents)
     -> SegmentAabbClosestPoints;
 [[nodiscard]]
 auto capsuleVoxelContact(

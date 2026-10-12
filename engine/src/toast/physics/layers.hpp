@@ -18,7 +18,7 @@ inline constexpr int k_layer_count = 32;
 inline constexpr uint32_t k_all_layers = 0xFFFF'FFFFu;
 inline constexpr size_t k_layer_abbreviation_length = 3;
 
-enum BuiltinLayer : int {
+enum BuiltinLayer : uint8_t {
 	default_layer = 0,
 	trigger_layer,
 	characters_layer,

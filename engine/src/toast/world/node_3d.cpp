@@ -26,7 +26,7 @@ void decomposeTransform(const glm::mat4& transform, glm::vec3& position, glm::qu
 
 }
 
-auto Node3D::raycast(glm::vec3 dir, glm::vec3 offset, float max_distance, bool ignore_self, std::vector<int> layers) const
+auto Node3D::raycast(glm::vec3 dir, glm::vec3 offset, float max_distance, bool ignore_self, const std::vector<int>& layers) const
     -> std::optional<physics::RayHit> {
 	return physics::Simulator::raycast(
 	    world_position + offset,
@@ -38,7 +38,7 @@ auto Node3D::raycast(glm::vec3 dir, glm::vec3 offset, float max_distance, bool i
 }
 
 auto Node3D::raymulticast(
-    glm::vec3 dir, glm::vec3 offset, float max_distance, int max_hits, bool ignore_self, std::vector<int> layers
+    glm::vec3 dir, glm::vec3 offset, float max_distance, int max_hits, bool ignore_self, const std::vector<int>& layers
 ) const -> std::vector<physics::RayHit> {
 	return physics::Simulator::raymulticast(
 	    world_position + offset,
@@ -50,7 +50,7 @@ auto Node3D::raymulticast(
 	);
 }
 
-auto Node3D::linecast(glm::vec3 from, glm::vec3 to, int max_hits, bool ignore_self, std::vector<int> layers) const
+auto Node3D::linecast(glm::vec3 from, glm::vec3 to, int max_hits, bool ignore_self, const std::vector<int>& layers) const
     -> std::vector<physics::RayHit> {
 	return physics::Simulator::linecast(
 	    from, to, max_hits, ignore_self ? physics::Simulator::bodyFor(*this) : physics::BodyID {}, physics::layerMask(layers)
