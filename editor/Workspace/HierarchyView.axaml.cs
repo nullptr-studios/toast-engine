@@ -18,7 +18,7 @@ using Proto.Events;
 
 namespace editor.Workspace;
 
-public partial class HierarchyView : UserControl {
+public partial class HierarchyView : UserControl, IWorkspaceShortcutTarget {
 	private const double DragThreshold = 4;
 
 	private static readonly HashSet<string> s_reservedNames = ["root", "world", "global"];
