@@ -27,3 +27,8 @@ function Physics.wind() end
 
 ---Goes back to the wind of the physics settings
 function Physics.resetWind() end
+
+---Index of the physics layer with this name
+---@param name string
+---@return integer
+function Physics.getLayer(name) end

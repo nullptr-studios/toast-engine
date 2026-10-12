@@ -145,7 +145,8 @@ auto Simulator::current() -> Simulator* {
 	return instance;
 }
 
-auto Simulator::queryCandidates(BodyID ignored, const AABB& bounds) const -> std::vector<ShapeID> {
+auto Simulator::queryCandidates(BodyID ignored, const AABB& bounds, std::optional<LayerFilter> layers) const
+    -> std::vector<ShapeID> {
 	std::vector<ShapeID> result;
 	// the tree is refit once per step so bodies may have drifted up to one margin since
 	for (const ShapeID shape_id : m_broad_phase.queryBounds(bounds.expanded(tunables().broadphase_fat_margin))) {
@@ -157,9 +158,17 @@ auto Simulator::queryCandidates(BodyID ignored, const AABB& bounds) const -> std
 		if (body == nullptr || not body->enabled) {
 			continue;
 		}
+		if (layers.has_value() && not layersCollide(*layers, body->layers)) {
+			continue;
+		}
 		result.push_back(shape_id);
 	}
 	return result;
+}
+
+auto Simulator::layersOf(BodyID body) const -> std::optional<LayerFilter> {
+	const Body* stored = tryGetBody(body);
+	return stored != nullptr ? std::optional {stored->layers} : std::nullopt;
 }
 
 void Simulator::collideCapsuleProbe(
@@ -226,31 +235,20 @@ void Simulator::collideCapsuleProbe(
 }
 
 void Simulator::overlapShape(
-    BodyID ignored, const Shape& probe_shape, const glm::vec3& position, const glm::quat& rotation, std::vector<BodyID>& bodies
+    BodyID ignored, LayerFilter layers, const Shape& probe_shape, const glm::vec3& position, const glm::quat& rotation,
+    std::vector<BodyID>& bodies
 ) const {
 	ZoneScopedN("physics::OverlapShape");
 
 	bodies.clear();
-	const Tunables& settings = tunables();
 	const Body probe_body = probeBody(position, rotation);
 	const CollisionElement probe {probe_shape, probe_body};
 
 	std::vector<Manifold> manifolds;
-	for (const ShapeID shape_id : queryCandidates(ignored, worldShapeBounds(probe_body, probe_shape))) {
+	for (const ShapeID shape_id : queryCandidates(ignored, worldShapeBounds(probe_body, probe_shape), layers)) {
 		const Shape* shape = tryGetShape(shape_id);
 		const Body* body = shape != nullptr ? tryGetBody(shape->owner) : nullptr;
 		if (body == nullptr || std::ranges::find(bodies, shape->owner) != bodies.end()) {
-			continue;
-		}
-
-		bool checked = false;
-		switch (body->type) {
-			case BodyType::dynamic_body: checked = settings.trigger_check_dynamic; break;
-			case BodyType::kinematic_body: checked = settings.trigger_check_kinematic; break;
-			default: checked = false; break;
-		}
-
-		if (not checked) {
 			continue;
 		}
 
@@ -383,7 +381,7 @@ auto Simulator::overlapCapsule(
 	contacts.clear();
 	const Shape probe_shape = capsuleProbe(ignored, capsule);
 	const Body probe_body = probeBody(position, rotation);
-	const std::vector<ShapeID> candidates = queryCandidates(ignored, worldShapeBounds(probe_body, probe_shape));
+	const std::vector<ShapeID> candidates = queryCandidates(ignored, worldShapeBounds(probe_body, probe_shape), layersOf(ignored));
 	collideCapsuleProbe(probe_body, probe_shape, candidates, contacts);
 	std::erase_if(contacts, [min_penetration](const QueryContact& contact) { return contact.penetration <= min_penetration; });
 	return not contacts.empty();
@@ -491,7 +489,7 @@ auto Simulator::sweepCapsule(
 	const AABB start_bounds = worldShapeBounds(probe_body, probe_shape);
 	const AABB end_bounds = worldShapeBounds(probeBody(to, rotation), probe_shape);
 	const AABB swept_bounds = combine(start_bounds, end_bounds);
-	const std::vector<ShapeID> candidates = queryCandidates(ignored, swept_bounds);
+	const std::vector<ShapeID> candidates = queryCandidates(ignored, swept_bounds, layersOf(ignored));
 	if (candidates.empty()) {
 		return result;
 	}

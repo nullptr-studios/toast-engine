@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -11,6 +12,7 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Dock.Model.Mvvm.Controls;
+using editor.Components.Elements;
 using editor.Engine;
 using Proto.Events;
 
@@ -520,8 +522,35 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 		var vm = new FieldVM(info);
 		vm.AttachClipboardHost(this);
 		vm.Edited += OnFieldEdited;
-		target.Add(vm);
 		m_fieldByParam[vm.ParameterName] = vm;
+
+		if (vm.IsLayers) {
+			LinkLayerFields(vm);
+			if (vm.IsLayersPartner) return; // the excluded mask receives engine values
+			var rowsKey = $"layers:{info.Name}";
+			vm.LayerRows = m_state!.GetInt(rowsKey, vm.LayerRows);
+			vm.PropertyChanged += (_, e) => {
+				if (e.PropertyName == nameof(FieldVM.LayerRows)) m_state?.SetInt(rowsKey, vm.LayerRows);
+			};
+			vm.LayersEdited += OnLayersEdited;
+		}
+
+		target.Add(vm);
+	}
+
+	private void LinkLayerFields(FieldVM field) {
+		foreach (var candidate in m_fieldByParam.Values) {
+			if (!candidate.IsLayers || ReferenceEquals(candidate, field)) continue;
+			if (field.IsLayersPartner && candidate.LayersPartnerName == field.ParameterName) candidate.LayersPartner = field;
+			else if (candidate.IsLayersPartner && field.LayersPartnerName == candidate.ParameterName) field.LayersPartner = candidate;
+		}
+	}
+
+	private void OnLayersEdited(FieldVM field, LayerMasks masks) {
+		var edits = new List<(FieldVM, string)> { (field, unchecked((int)masks.Included).ToString(CultureInfo.InvariantCulture)) };
+		if (field.LayersPartner is { } partner)
+			edits.Add((partner, unchecked((int)masks.Excluded).ToString(CultureInfo.InvariantCulture)));
+		ApplyPasteBatch(edits, $"{field.DisplayName} changed");
 	}
 
 	private void OnFieldEdited(FieldVM field, string value) {

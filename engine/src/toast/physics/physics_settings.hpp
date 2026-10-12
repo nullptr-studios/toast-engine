@@ -32,6 +32,7 @@ struct Tunables {
 	uint32_t fragment_pool_headroom = 4096;
 	uint32_t min_fragment_voxels = 4;
 	uint32_t fragment_despawn_max_voxels = 16;
+	uint32_t large_debris_min_voxels = 16;
 	float fragment_despawn_settle_seconds = 3.0f;
 	float force_sleep_slack = 4.0f;
 	float fragment_sleep_scale = 3.0f;
@@ -48,8 +49,6 @@ struct Tunables {
 	uint32_t voxel_pair_split_regions = 8;
 	uint32_t sweep_refine_iterations = 6;
 	uint32_t position_iterations = 3;
-	bool trigger_check_dynamic = true;
-	bool trigger_check_kinematic = true;
 	float air_density = 1.225f;
 	glm::vec3 wind = {0.0f, 0.0f, 0.0f};
 

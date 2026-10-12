@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include "layers.hpp"
+
 #include <compare>
 #include <cstdint>
 #include <glm/glm.hpp>
@@ -41,6 +43,7 @@ struct BodyDescriptor {
 	float linear_damping = 0.0f;
 	float angular_damping = 0.0f;
 	float drag_scale = 1.0f;
+	LayerFilter layers;
 };
 
 struct BodyState {
@@ -81,6 +84,7 @@ struct Body {
 	float linear_damping = 0.0f;
 	float angular_damping = 0.0f;
 	float drag_scale = 1.0f;
+	LayerFilter layers;
 	float drag_coefficient = 0.0f;
 	float drag_area_base = 0.0f;
 	glm::vec3 drag_area_axis = {};

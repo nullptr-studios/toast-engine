@@ -31,23 +31,27 @@ struct RayHit {
 /**
  * The nearest thing a ray hits
  * @param ignored Shapes of this body are not hit
+ * @param layers Indices of the layers a body must include one of to be hit, every layer when empty
  */
-TOAST_API auto raycast(glm::vec3 origin, glm::vec3 direction, float max_distance = -1.0f, BodyID ignored = {})
-    -> std::optional<RayHit>;
+TOAST_API auto raycast(
+    glm::vec3 origin, glm::vec3 direction, float max_distance = -1.0f, BodyID ignored = {}, const std::vector<int>& layers = {}
+) -> std::optional<RayHit>;
 
 /**
  * Up to @p max_hits things a ray hits
- * 
+ *
  * Adds a hit per time a ray enters a body
  */
-TOAST_API auto
-    raymulticast(glm::vec3 origin, glm::vec3 direction, float max_distance = -1.0f, int max_hits = -1, BodyID ignored = {})
-        -> std::vector<RayHit>;
+TOAST_API auto raymulticast(
+    glm::vec3 origin, glm::vec3 direction, float max_distance = -1.0f, int max_hits = -1, BodyID ignored = {},
+    const std::vector<int>& layers = {}
+) -> std::vector<RayHit>;
 
 /**
  * Like @c raymulticast from @p from until @p to
  */
-TOAST_API auto linecast(glm::vec3 from, glm::vec3 to, int max_hits = -1, BodyID ignored = {}) -> std::vector<RayHit>;
+TOAST_API auto linecast(glm::vec3 from, glm::vec3 to, int max_hits = -1, BodyID ignored = {}, const std::vector<int>& layers = {})
+    -> std::vector<RayHit>;
 
 struct SphereHit {
 	toast::Box<toast::Node> node;

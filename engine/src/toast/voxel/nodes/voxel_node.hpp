@@ -219,6 +219,15 @@ public:
 	[[Reflect]]
 	void carveSphere(glm::vec3 center, float radius);
 
+	[[Reflect]]
+	void setLayers(int included_layers, int excluded_layers);
+
+	[[Reflect]]
+	void includeLayer(int layer, bool value = true);
+
+	[[Reflect]]
+	void excludeLayer(int layer, bool value = true);
+
 	/** Empties a flat ended cylinder from a to b */
 	[[Reflect]]
 	void carveCylinder(glm::vec3 a, glm::vec3 b, float radius);
@@ -477,6 +486,12 @@ protected:
 	/// Read when the game starts
 	[[Reflect, Group("Physics")]]
 	bool render_only = false;
+
+	[[Reflect, Group("Physics"), Layers("excluded"), Name("Layers")]]
+	uint32_t included = 1;    // Default
+
+	[[Reflect, Group("Physics"), LayersExcluded]]
+	uint32_t excluded = 0;
 
 	[[Reflect, Group("Physics")]]
 	bool allow_sleep = true;

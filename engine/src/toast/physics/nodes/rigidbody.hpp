@@ -26,6 +26,21 @@ public:
 	signals::Signal<toast::Box<toast::Node>> contact_begin;
 	signals::Signal<toast::Box<toast::Node>> contact_end;
 
+	[[Reflect, Layers("excluded"), Name("Layers")]]
+	uint32_t included = 1;    // Default
+
+	[[Reflect, LayersExcluded]]
+	uint32_t excluded = 0;
+
+	[[Reflect]]
+	void setLayers(int included_layers, int excluded_layers);
+
+	[[Reflect]]
+	void includeLayer(int layer, bool value = true);
+
+	[[Reflect]]
+	void excludeLayer(int layer, bool value = true);
+
 protected:
 	explicit Rigidbody(BodyType type) : m_body_type(type) { }
 

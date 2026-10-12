@@ -9,6 +9,7 @@
 #include "node_proxy.hpp"
 #include "script_runtime.hpp"
 #include "signal_proxy.hpp"
+#include "toast/physics/layers.hpp"
 #include "toast/physics/raycast.hpp"
 #include "toast/physics/simulator.hpp"
 #include "ui_binds_proxy.hpp"
@@ -1129,6 +1130,9 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    )
 	    .addFunction(
 	        "resetWind", +[]() { physics::Simulator::resetWind(); }
+	    )
+	    .addFunction(
+	        "getLayer", +[](const std::string& name) -> int { return physics::getLayer(name); }
 	    )
 	    .addFunction(
 	        "shootVoxel",

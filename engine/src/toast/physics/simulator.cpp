@@ -462,12 +462,13 @@ void Simulator::registerVoxelNode(toast::VoxelNode& node) {
 	      .allow_sleep = node.allow_sleep,
 	      .position = node.world_position,
 	      .rotation = node.world_rotation,
-	      .mass = 1.0f,    // calculated later
+	      .mass = 1.0f, // calculated later
 	      .gravity_scale = node.gravity_scale,
 	      .linear_damping = node.linear_damping,
 	      .angular_damping = node.angular_damping,
 	      .drag_scale = node.drag_scale,
-	    }
+	      .layers = {.included = node.included, .excluded = node.excluded},
+	}
 	);
 	if (not instance->valid(body)) {
 		return;
@@ -1305,12 +1306,14 @@ auto Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedCompone
 	glm::vec3 origin_local = glm::vec3(extracted.offset) * static_cast<float>(voxel::k_brick_dim) * voxel::k_voxel_size;
 	glm::quat frag_rotation = glm::normalize(rotation * local_rotation);
 	glm::vec3 frag_pos = position + rotation * (local_center + local_rotation * origin_local);
+	const int debris_layer = component.voxel_count >= tunables().large_debris_min_voxels ? large_debris_layer : small_debris_layer;
 	// clang-format off
 	auto frag_body = createBody(BodyDescriptor {
 		.type = BodyType::dynamic_body,
 		.position = frag_pos,
 		.rotation = frag_rotation,
 		.angular_velocity = angular_velocity,
+		.layers = {.included = layerBit(default_layer) | layerBit(debris_layer), .excluded = 0},
 	});
 	// clang-format on
 
@@ -1445,12 +1448,14 @@ auto Simulator::spawnStaticSplitBody(ShapeID source_shape_id, const DetachedComp
 	const glm::vec3 origin_local = glm::vec3(extracted.offset) * static_cast<float>(voxel::k_brick_dim) * voxel::k_voxel_size;
 	const glm::quat piece_rotation = glm::normalize(rotation * local_rotation);
 	const glm::vec3 piece_pos = position + rotation * (local_center + local_rotation * origin_local);
+	const LayerFilter source_layers = body->layers;
 
 	// clang-format off
 	auto split_body = createBody(BodyDescriptor {
 		.type = BodyType::static_body,
 		.position = piece_pos,
 		.rotation = piece_rotation,
+		.layers = source_layers,
 	});
 	// clang-format on
 	// A failed spawn gives the bricks back
@@ -1837,6 +1842,28 @@ void Simulator::setBodyTransform(BodyID body, const glm::vec3& position, const g
 	}
 	runPendingRequests();
 	instance->setTransform(body, position, rotation);
+}
+
+void Simulator::setBodyLayers(BodyID body, LayerFilter layers) {
+	if (instance == nullptr) {
+		return;
+	}
+	if (not onSimulatorThread()) {
+		request([body, layers] { setBodyLayers(body, layers); });
+		return;
+	}
+	runPendingRequests();
+	if (not instance->mainThreadMutationAllowed()) {
+		return;
+	}
+	Body* stored = instance->tryGetBody(body);
+	if (stored == nullptr) {
+		return;
+	}
+	stored->layers = layers;
+	// something it ignored until now may be resting on it
+	wakeBody(body);
+	instance->wakeBodiesTouching(body);
 }
 
 auto Simulator::setBodyLinearVelocity(BodyID body, const glm::vec3& velocity) -> bool {
@@ -3095,6 +3122,7 @@ auto Simulator::createBody(const BodyDescriptor& descriptor) -> BodyID {
 	  .linear_damping = clamped_damping(descriptor.linear_damping),
 	  .angular_damping = clamped_damping(descriptor.angular_damping),
 	  .drag_scale = descriptor.drag_scale,
+	  .layers = descriptor.layers,
 	};
 
 	if (not m_free_body_slots.empty()) {
@@ -3455,7 +3483,8 @@ void Simulator::checkTriggers() {
 			if (const auto body = trigger->parent().as<Rigidbody>(); body.exists()) {
 				ignored = body->bodyID();
 			}
-			overlapShape(ignored, *probe, trigger->world_position, trigger->world_rotation, overlapping);
+			const LayerFilter layers {.included = trigger->included, .excluded = trigger->excluded};
+			overlapShape(ignored, layers, *probe, trigger->world_position, trigger->world_rotation, overlapping);
 		}
 		trigger->updateOverlaps(overlapping);
 	}

@@ -1,5 +1,7 @@
 #include "physics_settings.hpp"
 
+#include "layers.hpp"
+
 #include <algorithm>
 #include <string>
 #include <toast/settings/settings.hpp>
@@ -18,6 +20,8 @@ auto tunables() -> const Tunables& {
 }
 
 void registerPhysicsSettings() {
+	registerLayerSettings();
+
 	const auto flt = [](std::string_view key, double value, Meta meta, float Tunables::* field) {
 		toast::settings::declareFloat(key, value, std::move(meta)).onChange([field](double v) {
 			g_tunables.*field = static_cast<float>(v);
@@ -262,6 +266,17 @@ void registerPhysicsSettings() {
 			 .step = 1.0},
 	    &Tunables::fragment_despawn_max_voxels
 	);
+	uint_setting(
+	    "physics.fracture.large_debris_min_voxels",
+	    16,
+	    {.label = "Large debris min voxels",
+			 .category = "Fracture",
+			 .description = "Fragments with at least this many voxels go on the Large debris layer instead of Small debris",
+			 .min = 1.0,
+			 .max = 4096.0,
+			 .step = 1.0},
+	    &Tunables::large_debris_min_voxels
+	);
 	flt("physics.fracture.despawn_settle_seconds",
 	    3.0,
 	    {.label = "Despawn settle time",
@@ -420,23 +435,6 @@ void registerPhysicsSettings() {
 			 .step = 1.0},
 	    &Tunables::sweep_refine_iterations
 	);
-
-	toast::settings::declareBool(
-	    "physics.triggers.check_dynamic",
-	    true,
-	    {.label = "Check for Dynamic",
-			 .category = "Triggers",
-			 .description = "Triggers report dynamic bodies entering and leaving them"}
-	)
-	    .onChange([](bool v) { g_tunables.trigger_check_dynamic = v; });
-	toast::settings::declareBool(
-	    "physics.triggers.check_kinematic",
-	    true,
-	    {.label = "Check for Kinematic",
-			 .category = "Triggers",
-			 .description = "Triggers report kinematic bodies entering and leaving them"}
-	)
-	    .onChange([](bool v) { g_tunables.trigger_check_kinematic = v; });
 }
 
 }

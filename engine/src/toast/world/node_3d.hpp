@@ -44,8 +44,10 @@ public:
 	 * @param ignore_self Ignores colision from this node or a children
 	 */
 	[[Reflect]]
-	auto raycast(glm::vec3 dir, glm::vec3 offset = glm::vec3(0.0f), float max_distance = -1.0f, bool ignore_self = true) const
-	    -> std::optional<physics::RayHit>;
+	auto raycast(
+	    glm::vec3 dir, glm::vec3 offset = glm::vec3(0.0f), float max_distance = -1.0f, bool ignore_self = true,
+	    std::vector<int> layers = std::vector<int> {}
+	) const -> std::optional<physics::RayHit>;
 
 	/**
 	 * @brief Up to @p max_hits things collisions
@@ -53,7 +55,8 @@ public:
 	 */
 	[[Reflect]]
 	auto raymulticast(
-	    glm::vec3 dir, glm::vec3 offset = glm::vec3(0.0f), float max_distance = -1.0f, int max_hits = -1, bool ignore_self = true
+	    glm::vec3 dir, glm::vec3 offset = glm::vec3(0.0f), float max_distance = -1.0f, int max_hits = -1, bool ignore_self = true,
+	    std::vector<int> layers = std::vector<int> {}
 	) const -> std::vector<physics::RayHit>;
 
 	/**
@@ -63,7 +66,9 @@ public:
 	 * @param max_hits How many to look for
 	 */
 	[[Reflect]]
-	auto linecast(glm::vec3 from, glm::vec3 to, int max_hits = -1, bool ignore_self = true) const -> std::vector<physics::RayHit>;
+	auto linecast(
+	    glm::vec3 from, glm::vec3 to, int max_hits = -1, bool ignore_self = true, std::vector<int> layers = std::vector<int> {}
+	) const -> std::vector<physics::RayHit>;
 
 	/**
 	 * @brief Orients the node so its forward axis points at a world-space target

@@ -185,7 +185,7 @@ auto Simulator::castRay(const RayQuery& query, OnContact&& on_contact) const -> 
 			return clip;
 		}
 		const Body* body = tryGetBody(shape->owner);
-		if (body == nullptr || not body->enabled) {
+		if (body == nullptr || not body->enabled || (body->layers.included & query.layers) == 0) {
 			return clip;
 		}
 		++tested;
@@ -247,7 +247,7 @@ auto Simulator::castRay(const RayQuery& query, OnContact&& on_contact) const -> 
 	return tested;
 }
 
-auto Simulator::makeRayQuery(glm::vec3 origin, glm::vec3 direction, float max_distance, BodyID ignored)
+auto Simulator::makeRayQuery(glm::vec3 origin, glm::vec3 direction, float max_distance, BodyID ignored, uint32_t layers)
     -> std::optional<RayQuery> {
 	const bool finite_origin = std::isfinite(origin.x) && std::isfinite(origin.y) && std::isfinite(origin.z);
 	const float length = glm::length(direction);
@@ -260,6 +260,7 @@ auto Simulator::makeRayQuery(glm::vec3 origin, glm::vec3 direction, float max_di
 	  .direction = direction / length,
 	  .max_distance = max_distance < 0.0f ? k_no_end : max_distance,
 	  .ignored = ignored,
+	  .layers = layers,
 	};
 }
 
@@ -274,22 +275,25 @@ auto Simulator::makeRayHit(const RayQuery& query, const RayContact& contact, toa
 	};
 }
 
-auto raycast(glm::vec3 origin, glm::vec3 direction, float max_distance, BodyID ignored) -> std::optional<RayHit> {
-	return Simulator::raycast(origin, direction, max_distance, ignored);
+auto raycast(glm::vec3 origin, glm::vec3 direction, float max_distance, BodyID ignored, const std::vector<int>& layers)
+    -> std::optional<RayHit> {
+	return Simulator::raycast(origin, direction, max_distance, ignored, layerMask(layers));
 }
 
-auto raymulticast(glm::vec3 origin, glm::vec3 direction, float max_distance, int max_hits, BodyID ignored)
-    -> std::vector<RayHit> {
-	return Simulator::raymulticast(origin, direction, max_distance, max_hits, ignored);
+auto raymulticast(
+    glm::vec3 origin, glm::vec3 direction, float max_distance, int max_hits, BodyID ignored, const std::vector<int>& layers
+) -> std::vector<RayHit> {
+	return Simulator::raymulticast(origin, direction, max_distance, max_hits, ignored, layerMask(layers));
 }
 
-auto linecast(glm::vec3 from, glm::vec3 to, int max_hits, BodyID ignored) -> std::vector<RayHit> {
-	return Simulator::linecast(from, to, max_hits, ignored);
+auto linecast(glm::vec3 from, glm::vec3 to, int max_hits, BodyID ignored, const std::vector<int>& layers) -> std::vector<RayHit> {
+	return Simulator::linecast(from, to, max_hits, ignored, layerMask(layers));
 }
 
-auto Simulator::raycast(glm::vec3 origin, glm::vec3 direction, float max_distance, BodyID ignored) -> std::optional<RayHit> {
+auto Simulator::raycast(glm::vec3 origin, glm::vec3 direction, float max_distance, BodyID ignored, uint32_t layers)
+    -> std::optional<RayHit> {
 	ZoneScopedN("physics::Raycast");
-	const std::optional<RayQuery> query = makeRayQuery(origin, direction, max_distance, ignored);
+	const std::optional<RayQuery> query = makeRayQuery(origin, direction, max_distance, ignored, layers);
 	if (instance == nullptr || not query) {
 		return std::nullopt;
 	}
@@ -310,17 +314,18 @@ auto Simulator::raycast(glm::vec3 origin, glm::vec3 direction, float max_distanc
 	return makeRayHit(*query, *nearest, colliderFor(nearest->body, nearest->shape));
 }
 
-auto Simulator::linecast(glm::vec3 from, glm::vec3 to, int max_hits, BodyID ignored) -> std::vector<RayHit> {
+auto Simulator::linecast(glm::vec3 from, glm::vec3 to, int max_hits, BodyID ignored, uint32_t layers) -> std::vector<RayHit> {
 	ZoneScopedN("physics::Linecast");
 	// A segment is a ray that ends at the second point, a degenerate or non finite one is not a ray and finds nothing
 	const glm::vec3 delta = to - from;
-	return raymulticast(from, delta, glm::length(delta), max_hits, ignored);
+	return raymulticast(from, delta, glm::length(delta), max_hits, ignored, layers);
 }
 
-auto Simulator::raymulticast(glm::vec3 origin, glm::vec3 direction, float max_distance, int max_hits, BodyID ignored)
-    -> std::vector<RayHit> {
+auto Simulator::raymulticast(
+    glm::vec3 origin, glm::vec3 direction, float max_distance, int max_hits, BodyID ignored, uint32_t layers
+) -> std::vector<RayHit> {
 	ZoneScopedN("physics::RayMulticast");
-	const std::optional<RayQuery> query = makeRayQuery(origin, direction, max_distance, ignored);
+	const std::optional<RayQuery> query = makeRayQuery(origin, direction, max_distance, ignored, layers);
 	if (instance == nullptr || not query || max_hits == 0) {
 		return {};
 	}
