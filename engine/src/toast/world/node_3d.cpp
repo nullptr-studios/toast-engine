@@ -26,16 +26,31 @@ void decomposeTransform(const glm::mat4& transform, glm::vec3& position, glm::qu
 
 }
 
-auto Node3D::raycasts(glm::vec3 pos, glm::vec3 dir, float max_distance, int max_targets) const -> std::vector<physics::RayHit> {
-	return physics::Simulator::raycast(world_position + pos, world_rotation * dir, max_distance, max_targets);
+auto Node3D::raycast(glm::vec3 dir, glm::vec3 offset, float max_distance, bool ignore_self) const
+    -> std::optional<physics::RayHit> {
+	return physics::Simulator::raycast(
+	    world_position + offset,
+	    world_rotation * dir,
+	    max_distance,
+	    ignore_self ? physics::Simulator::bodyFor(*this) : physics::BodyID {}
+	);
 }
 
-auto Node3D::raycast(glm::vec3 pos, glm::vec3 dir, float max_distance) const -> std::optional<physics::RayHit> {
-	auto hits = physics::Simulator::raycast(world_position + pos, world_rotation * dir, max_distance, 1);
-	if (hits.empty()) {
-		return std::nullopt;
-	}
-	return hits[0];
+auto Node3D::raymulticast(glm::vec3 dir, glm::vec3 offset, float max_distance, int max_hits, bool ignore_self) const
+    -> std::vector<physics::RayHit> {
+	return physics::Simulator::raymulticast(
+	    world_position + offset,
+	    world_rotation * dir,
+	    max_distance,
+	    max_hits,
+	    ignore_self ? physics::Simulator::bodyFor(*this) : physics::BodyID {}
+	);
+}
+
+auto Node3D::linecast(glm::vec3 from, glm::vec3 to, int max_hits, bool ignore_self) const -> std::vector<physics::RayHit> {
+	return physics::Simulator::linecast(
+	    from, to, max_hits, ignore_self ? physics::Simulator::bodyFor(*this) : physics::BodyID {}
+	);
 }
 
 void Node3D::lookAt(glm::vec3 target, glm::vec3 up) {

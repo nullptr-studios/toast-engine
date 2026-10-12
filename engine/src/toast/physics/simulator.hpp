@@ -83,7 +83,15 @@ public:
 	auto createBody(const BodyDescriptor& descriptor) -> BodyID;
 	void destroyBody(BodyID body);
 
-	static auto raycast(glm::vec3 pos, glm::vec3 dir, float max_distance = -1.0f, int max_targets = 3) -> std::vector<RayHit>;
+	static auto raycast(glm::vec3 origin, glm::vec3 direction, float max_distance = -1.0f, BodyID ignored = {})
+	    -> std::optional<RayHit>;
+	static auto
+	    raymulticast(glm::vec3 origin, glm::vec3 direction, float max_distance = -1.0f, int max_hits = -1, BodyID ignored = {})
+	        -> std::vector<RayHit>;
+	static auto linecast(glm::vec3 from, glm::vec3 to, int max_hits = -1, BodyID ignored = {}) -> std::vector<RayHit>;
+
+	[[nodiscard]]
+	static auto bodyFor(const toast::Node& node) -> BodyID;
 
 	[[nodiscard]]
 	auto valid(BodyID body) const -> bool;
@@ -377,6 +385,32 @@ private:
 		size_t cursor = 0;
 		std::optional<FragmentPush> push;
 	};
+
+	struct RayQuery {
+		glm::vec3 origin = {};
+		glm::vec3 direction = {};    // normalized
+		float max_distance = std::numeric_limits<float>::infinity();    // inf for no end
+		BodyID ignored;
+		bool voxels_only = false;
+		bool hit_passable = false;    // passable materials count as solid
+	};
+
+	struct RayContact {
+		ShapeID shape;
+		BodyID body;
+		float distance = 0.0f;
+		glm::vec3 normal = {};
+		uint8_t palette_index = 0;
+	};
+
+	template<typename OnContact>
+	auto castRay(const RayQuery& query, OnContact&& on_contact) const -> uint32_t;
+
+	[[nodiscard]]
+	static auto makeRayQuery(glm::vec3 origin, glm::vec3 direction, float max_distance, BodyID ignored) -> std::optional<RayQuery>;
+
+	[[nodiscard]]
+	static auto makeRayHit(const RayQuery& query, const RayContact& contact, toast::Box<toast::Node> node) -> RayHit;
 
 	struct VoxelRayHit {
 		ShapeID shape;

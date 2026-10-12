@@ -258,11 +258,6 @@ auto BroadPhase::findPairs(CollisionWorldView world) -> std::vector<BroadPhasePa
 	return pairs;
 }
 
-auto BroadPhase::queryRay(glm::vec3 pos, glm::vec3 dir, float max_distance) const -> std::vector<ShapeID> {
-	ZoneScopedN("physics::QueryRay");
-	return m_tree.query(pos, dir, max_distance);
-}
-
 auto BroadPhase::queryBounds(const AABB& bounds) const -> std::vector<ShapeID> {
 	ZoneScopedN("physics::QueryBounds");
 	return m_tree.query(bounds);
