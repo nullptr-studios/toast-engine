@@ -380,6 +380,16 @@ void registerPhysicsSettings() {
 			 .step = 1.0},
 	    &Tunables::impact_max_hardness
 	);
+	flt("physics.fracture.bond_cost",
+	    1.0,
+	    {.label = "Bond cost", .category = "Fracture", .min = 0.0, .max = 16.0, .step = 0.1},
+	    &Tunables::fracture_bond_cost);
+	uint_setting(
+	    "physics.fracture.max_unglue_voxels",
+	    4096,
+	    {.label = "Max unglue voxels", .category = "Fracture", .min = 0.0, .max = 1000000.0, .step = 64.0},
+	    &Tunables::fracture_max_unglue_voxels
+	);
 
 	uint_setting(
 	    "physics.jobs.min_bounds_per_job",

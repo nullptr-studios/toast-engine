@@ -11,6 +11,7 @@
 #include "physics_settings.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <glm/glm.hpp>
@@ -21,6 +22,7 @@
 #include <toast/voxel/palette.hpp>
 #include <toast/voxel/voxel_constants.hpp>
 #include <toast/voxel/voxel_volume.hpp>
+#include <unordered_set>
 #include <vector>
 
 namespace physics {
@@ -43,6 +45,27 @@ struct FractureRequest {
 	float depth_share = tunables().fracture_depth_share;
 	float max_depth = tunables().fracture_max_depth;
 	float max_overshoot = tunables().fracture_max_overshoot;
+	float bond_cost = tunables().fracture_bond_cost;
+	uint32_t max_unglue_voxels = tunables().fracture_max_unglue_voxels;
+};
+
+inline constexpr uint32_t k_unglue_neighbor_count = 6;
+
+[[nodiscard]]
+constexpr auto voxelKey(const glm::ivec3& v) -> uint64_t {
+	return (static_cast<uint64_t>(v.x) << 42) | (static_cast<uint64_t>(v.y) << 21) | static_cast<uint64_t>(v.z);
+}
+
+struct UnglueRegion {
+	std::unordered_set<uint64_t> keys;
+	glm::vec3 low {std::numeric_limits<float>::max()};
+	glm::vec3 high {std::numeric_limits<float>::lowest()};
+	float cost = 0.0f;
+
+	[[nodiscard]]
+	auto empty() const -> bool {
+		return keys.empty();
+	}
 };
 
 struct Crater {
@@ -50,6 +73,7 @@ struct Crater {
 	glm::vec3 end {};
 	float radius = 0.0f;
 	bool breaks = false;
+	UnglueRegion unglue;
 };
 
 struct FractureCandidate {
@@ -219,6 +243,12 @@ inline auto penetrationDepth(std::span<const FractureCandidate> candidates, floa
 }
 
 [[nodiscard]]
+constexpr auto capsuleVolume(float radius, float length) -> float {
+	return (std::numbers::pi_v<float> * radius * radius * length) +
+	       ((4.0f / 3.0f) * std::numbers::pi_v<float> * radius * radius * radius);
+}
+
+[[nodiscard]]
 inline auto overshootRadius(float energy_left, float toughness, float radius, float length, float max_overshoot) -> float {
 	const float cap = std::max(max_overshoot, 0.0f) * radius;
 	if (not(energy_left > 0.0f) || not(toughness > 0.0f) || not(cap > 0.0f)) {
@@ -226,9 +256,7 @@ inline auto overshootRadius(float energy_left, float toughness, float radius, fl
 	}
 
 	const float affordable = energy_left / toughness;
-	const auto capsule_volume = [length](float r) {
-		return (std::numbers::pi_v<float> * r * r * length) + ((4.0f / 3.0f) * std::numbers::pi_v<float> * r * r * r);
-	};
+	const auto capsule_volume = [length](float r) { return capsuleVolume(r, length); };
 	const float base = capsule_volume(radius);
 	if (capsule_volume(radius + cap) - base <= affordable) {
 		return cap;
@@ -246,6 +274,12 @@ inline auto overshootRadius(float energy_left, float toughness, float radius, fl
 	}
 	return low;
 }
+
+[[nodiscard]]
+inline auto planUnglue(
+    const voxel::Volume& volume, const voxel::Palette& palette, const voxel::MaterialLibrary& materials, const glm::vec3& start,
+    const glm::vec3& end, float radius, Hardness max_hardness, float energy, float bond_cost, uint32_t max_voxels
+) -> UnglueRegion;
 
 [[nodiscard]]
 inline auto planCrater(
@@ -314,8 +348,123 @@ inline auto planCrater(
 		paid += dig.voxels;
 	}
 
+	out.unglue = planUnglue(
+	    volume,
+	    palette,
+	    materials,
+	    out.start,
+	    out.end,
+	    request.radius,
+	    request.max_hardness,
+	    left,
+	    request.bond_cost,
+	    request.max_unglue_voxels
+	);
+	left -= out.unglue.cost;
+
 	const float toughness = paid > 0 ? paid_cost / (static_cast<float>(paid) * k_voxel_volume) : hit->toughness;
 	out.radius += overshootRadius(left, toughness, request.radius, glm::length(out.end - out.start), request.max_overshoot);
+	return out;
+}
+
+[[nodiscard]]
+inline auto planUnglue(
+    const voxel::Volume& volume, const voxel::Palette& palette, const voxel::MaterialLibrary& materials, const glm::vec3& start,
+    const glm::vec3& end, float radius, Hardness max_hardness, float energy, float bond_cost, uint32_t max_voxels
+) -> UnglueRegion {
+	UnglueRegion out;
+	if (not(energy > 0.0f) || not(bond_cost > 0.0f) || materials.materials.empty()) {
+		return out;
+	}
+
+	const glm::ivec3 dims = glm::ivec3(volume.voxelDims());
+	const auto inside = [&](const glm::ivec3& v) {
+		return glm::all(glm::greaterThanEqual(v, glm::ivec3(0))) && glm::all(glm::lessThan(v, dims));
+	};
+	const auto material_at = [&](const glm::ivec3& v) -> const voxel::PhysicalMaterial* {
+		if (not inside(v)) {
+			return nullptr;
+		}
+		const uint8_t index = volume.materialAt(v);
+		if (index == voxel::k_empty_palette_index) {
+			return nullptr;
+		}
+		return &materials.materials[voxel::resolveMaterialIndex(palette, materials, index)];
+	};
+
+	const std::array<glm::ivec3, k_unglue_neighbor_count> k_faces {
+	  glm::ivec3 { 1,  0,  0},
+	  glm::ivec3 {-1,  0,  0},
+	  glm::ivec3 { 0,  1,  0},
+	  glm::ivec3 { 0, -1,  0},
+	  glm::ivec3 { 0,  0,  1},
+	  glm::ivec3 { 0,  0, -1}
+	};
+
+	// breakable voxels at the crater wall that touch something this hit cannot break
+	std::vector<glm::ivec3> frontier;
+	const float reach = radius + (1.5f * voxel::k_voxel_size);
+	const glm::vec3 low = glm::min(start, end) - glm::vec3(reach);
+	const glm::vec3 high = glm::max(start, end) + glm::vec3(reach);
+	forEachSolidVoxel(volume, low, high, [&](glm::ivec3 v, glm::vec3 center, uint8_t) {
+		if (pointSegmentDistanceSquared(center, start, end) > reach * reach) {
+			return;
+		}
+		const voxel::PhysicalMaterial* self = material_at(v);
+		if (self == nullptr || not self->breakableBy(max_hardness)) {
+			return;
+		}
+		for (const glm::ivec3& face : k_faces) {
+			const voxel::PhysicalMaterial* other = material_at(v + face);
+			if (other != nullptr && not other->breakableBy(max_hardness)) {
+				frontier.push_back(v);
+				return;
+			}
+		}
+	});
+	if (frontier.empty()) {
+		return out;
+	}
+
+	// everything breakable that hangs together with them
+	std::vector<glm::ivec3> stack;
+	const auto visit = [&](const glm::ivec3& v) {
+		if (out.keys.insert(voxelKey(v)).second) {
+			stack.push_back(v);
+		}
+	};
+	for (const glm::ivec3& v : frontier) {
+		visit(v);
+	}
+
+	float cost = 0.0f;
+	while (not stack.empty()) {
+		const glm::ivec3 v = stack.back();
+		stack.pop_back();
+		if (out.keys.size() > max_voxels) {
+			return {};
+		}
+
+		const voxel::PhysicalMaterial* self = material_at(v);
+		for (const glm::ivec3& face : k_faces) {
+			const glm::ivec3 next = v + face;
+			const voxel::PhysicalMaterial* other = material_at(next);
+			if (other == nullptr) {
+				continue;
+			}
+			if (other->breakableBy(max_hardness)) {
+				visit(next);
+			} else {
+				cost += bond_cost * voxelBreakEnergy(*self);
+			}
+		}
+		if (cost > energy) {
+			return {};
+		}
+		out.low = glm::min(out.low, glm::vec3(v) * voxel::k_voxel_size);
+		out.high = glm::max(out.high, (glm::vec3(v) + 1.0f) * voxel::k_voxel_size);
+	}
+	out.cost = cost;
 	return out;
 }
 

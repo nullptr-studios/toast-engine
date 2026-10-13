@@ -41,6 +41,8 @@ struct Tunables {
 	float fracture_depth_share = 0.5f;
 	float fracture_max_depth = 2.0f;
 	float fracture_max_overshoot = 2.0f;
+	float fracture_bond_cost = 1.0f;
+	uint32_t fracture_max_unglue_voxels = 4096;
 	float explosion_max_radius = 8.0f;
 	float explosion_falloff = 2.0f;
 	uint32_t impact_max_hardness = 1;

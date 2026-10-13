@@ -4006,6 +4006,7 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 	uint32_t removed = 0;
 	glm::vec3 removed_sum {0.0f};
 	Crater crater;
+	SmashPieces unglued;
 
 	{
 		std::scoped_lock voxel_lock {voxelDataMutex()};
@@ -4107,6 +4108,21 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 		for (const glm::ivec3& brick : dirty_bricks) {
 			m_debug_dirty_bricks.push_back({.shape = c.shape, .brick = brick});
 		}
+
+		// whatever the hit can break that was stuck to what it cannot comes off whole
+		const UnglueRegion& region = crater.unglue;
+		if (not region.empty()) {
+			unglued = collectBrokenPieces(
+			    volume,
+			    data->palette,
+			    data->materials,
+			    region.low,
+			    region.high,
+			    [&](const glm::vec3& center, const voxel::PhysicalMaterial&) {
+				    return region.keys.contains(voxelKey(glm::ivec3(glm::floor(center / voxel::k_voxel_size))));
+			    }
+			);
+		}
 	}
 
 	ZoneValue(static_cast<uint64_t>(dirty_bricks.size()));
@@ -4147,12 +4163,17 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 
 	// crater in world space
 	const float reach = crater.radius + glm::length(crater.end - crater.start);
-	wakeBodiesInBounds(
-	    AABB {
-	      .min = c.world_center - glm::vec3(reach),
-	      .max = c.world_center + glm::vec3(reach),
-	    }
-	);
+	const AABB crater_bounds {
+	  .min = c.world_center - glm::vec3(reach),
+	  .max = c.world_center + glm::vec3(reach),
+	};
+	wakeBodiesInBounds(crater_bounds);
+
+	if (not unglued.pieces.empty()) {
+		breakPieces(
+		    c.shape, unglued, true, [&](const DetachedComponent&) -> std::optional<FragmentPush> { return c.push; }, crater_bounds
+		);
+	}
 }
 
 void Simulator::wakeBodiesInBounds(const AABB& bounds) {
