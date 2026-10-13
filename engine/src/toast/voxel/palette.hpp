@@ -9,12 +9,13 @@
 
 #include <array>
 #include <cstdint>
+#include <toast/physics/hardness.hpp>
 #include <toast/physics/material_defaults.hpp>
 #include <vector>
 
 namespace voxel {
 
-inline constexpr uint32_t k_max_physical_materials = 32;
+inline constexpr uint32_t k_max_physical_materials = 256;
 
 inline constexpr uint8_t k_default_material = 0;
 
@@ -95,12 +96,13 @@ struct PhysicalMaterial {
 
 	uint8_t flags = 0;
 
-	/// Impulse in N*s one contact has to carry to break a voxel
+	/// Damage that breaks only softer tiers never breaks this material
+	physics::Hardness hardness = physics::material_defaults::k_hardness;
+
+	/// kJ/m³ it takes to break per m3
 	float toughness = physics::material_defaults::k_toughness;
 
 	float structural_strength = physics::material_defaults::k_structural_strength;
-
-	float shatter_radius = physics::material_defaults::k_shatter_radius;
 
 	float static_friction = physics::material_defaults::k_static_friction;
 	float dynamic_friction = physics::material_defaults::k_dynamic_friction;
@@ -115,6 +117,11 @@ struct PhysicalMaterial {
 	[[nodiscard]]
 	constexpr auto isIndestructible() const noexcept -> bool {
 		return (flags & k_material_indestructible) != 0;
+	}
+
+	[[nodiscard]]
+	constexpr auto breakableBy(physics::Hardness max_hardness) const noexcept -> bool {
+		return not isIndestructible() && physics::canBreak(max_hardness, hardness);
 	}
 
 	[[nodiscard]]
@@ -194,9 +201,9 @@ inline auto validateLibrary(const MaterialLibrary& library) -> std::vector<Table
 		if (m.density == 0) {
 			out.push_back({TableIssue::zero_density, i});
 		}
-		if (negative(m.toughness) || negative(m.structural_strength) || negative(m.shatter_radius) || negative(m.static_friction) ||
-		    negative(m.dynamic_friction) || negative(m.rolling_friction) || negative(m.spin_friction) || negative(m.restitution) ||
-		    m.restitution > 1.0f || negative(m.ignition_energy) || negative(m.burn_rate) || negative(m.fuel)) {
+		if (negative(m.toughness) || negative(m.structural_strength) || negative(m.static_friction) || negative(m.dynamic_friction) ||
+		    negative(m.rolling_friction) || negative(m.spin_friction) || negative(m.restitution) || m.restitution > 1.0f ||
+		    negative(m.ignition_energy) || negative(m.burn_rate) || negative(m.fuel)) {
 			out.push_back({TableIssue::out_of_range, i});
 		}
 	}

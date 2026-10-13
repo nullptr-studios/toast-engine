@@ -2,6 +2,10 @@
 
 #include "material_defaults.hpp"
 
+#include <optional>
+#include <string>
+#include <toast/log.hpp>
+
 assets::DestructionMaterial::DestructionMaterial(const toml::table& table, Handle<Schema> schema)
     : Data(table, std::move(schema), Data::keep_all_keys) {
 	readFields();
@@ -14,8 +18,8 @@ void assets::DestructionMaterial::onReloaded() {
 void assets::DestructionMaterial::readFields() {
 	m_density = physics::material_defaults::k_density;
 	m_toughness = physics::material_defaults::k_toughness;
+	m_hardness = physics::material_defaults::k_hardness;
 	m_structural_strength = physics::material_defaults::k_structural_strength;
-	m_shatter_radius = physics::material_defaults::k_shatter_radius;
 	m_destructible = true;
 	m_flammable = false;
 	m_burn_rate = 0.0f;
@@ -26,11 +30,16 @@ void assets::DestructionMaterial::readFields() {
 	if (d.contains("toughness")) {
 		m_toughness = d["toughness"].as<float>();
 	}
+	if (d.contains("hardness")) {
+		const std::string name = d["hardness"].as<std::string>();
+		if (const std::optional<physics::Hardness> hardness = physics::hardnessFromName(name)) {
+			m_hardness = *hardness;
+		} else {
+			TOAST_WARN("DestructionMaterial", "Unknown hardness '{}', using '{}'", name, physics::hardnessName(m_hardness));
+		}
+	}
 	if (d.contains("structural_strength")) {
 		m_structural_strength = d["structural_strength"].as<float>();
-	}
-	if (d.contains("shatter_radius")) {
-		m_shatter_radius = d["shatter_radius"].as<float>();
 	}
 	if (d.contains("destructible")) {
 		m_destructible = d["destructible"].as<bool>();
@@ -55,12 +64,12 @@ auto assets::DestructionMaterial::toughness() const noexcept -> float {
 	return m_toughness;
 }
 
-auto assets::DestructionMaterial::structuralStrength() const noexcept -> float {
-	return m_structural_strength;
+auto assets::DestructionMaterial::hardness() const noexcept -> physics::Hardness {
+	return m_hardness;
 }
 
-auto assets::DestructionMaterial::shatterRadius() const noexcept -> float {
-	return m_shatter_radius;
+auto assets::DestructionMaterial::structuralStrength() const noexcept -> float {
+	return m_structural_strength;
 }
 
 auto assets::DestructionMaterial::destructible() const noexcept -> bool {
