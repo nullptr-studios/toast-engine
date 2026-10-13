@@ -42,9 +42,7 @@ GpuTimer::GpuTimer(const VulkanCore& core, uint32_t frame_slots) {
 	const auto families = physical_device.getQueueFamilyProperties();
 
 	const uint32_t graphics_family = core.getGraphicsQueueFamilyIndex();
-	const uint32_t compute_family = core.getComputeQueueFamilyIndex();
 	const uint32_t graphics_bits = graphics_family < families.size() ? families[graphics_family].timestampValidBits : 0;
-	const uint32_t compute_bits = compute_family < families.size() ? families[compute_family].timestampValidBits : 0;
 
 	if (period <= 0.0f || graphics_bits == 0) {
 		TOAST_INFO("Render", "No GPU timestamp queries on this device; the performance overlay shows CPU timings only");
@@ -63,9 +61,7 @@ GpuTimer::GpuTimer(const VulkanCore& core, uint32_t frame_slots) {
 
 	m_ns_per_tick = static_cast<double>(period);
 	m_graphics_mask = validBitsMask(graphics_bits);
-	m_compute_mask = validBitsMask(compute_bits);
 	m_supported = true;
-	m_compute_supported = compute_bits > 0;
 }
 
 void GpuTimer::beginGraphics(uint32_t slot, vk::CommandBuffer cmd) {
@@ -77,36 +73,16 @@ void GpuTimer::beginGraphics(uint32_t slot, vk::CommandBuffer cmd) {
 	state.depth = 0;
 	state.graphics_written = false;
 
-	// The compute pair is reset by the compute command buffer
-	cmd.resetQueryPool(*m_pool, base(slot), k_queries_per_slot - 2);
-	cmd.writeTimestamp(vk::PipelineStageFlagBits::eTopOfPipe, *m_pool, base(slot));
+	cmd.resetQueryPool(*m_pool, base(slot), k_queries_per_slot);
+	cmd.writeTimestamp2(vk::PipelineStageFlagBits2::eNone, *m_pool, base(slot));
 }
 
 void GpuTimer::endGraphics(uint32_t slot, vk::CommandBuffer cmd) {
 	if (!m_supported || slot >= m_slots.size()) {
 		return;
 	}
-	cmd.writeTimestamp(vk::PipelineStageFlagBits::eBottomOfPipe, *m_pool, base(slot) + 1);
+	cmd.writeTimestamp2(vk::PipelineStageFlagBits2::eAllCommands, *m_pool, base(slot) + 1);
 	m_slots[slot].graphics_written = true;
-}
-
-void GpuTimer::beginCompute(uint32_t slot, vk::CommandBuffer cmd) {
-	if (!m_compute_supported || slot >= m_slots.size()) {
-		return;
-	}
-	m_slots[slot].compute_written = false;
-
-	const uint32_t first = base(slot) + k_queries_per_slot - 2;
-	cmd.resetQueryPool(*m_pool, first, 2);
-	cmd.writeTimestamp(vk::PipelineStageFlagBits::eTopOfPipe, *m_pool, first);
-}
-
-void GpuTimer::endCompute(uint32_t slot, vk::CommandBuffer cmd) {
-	if (!m_compute_supported || slot >= m_slots.size()) {
-		return;
-	}
-	cmd.writeTimestamp(vk::PipelineStageFlagBits::eBottomOfPipe, *m_pool, base(slot) + k_queries_per_slot - 1);
-	m_slots[slot].compute_written = true;
 }
 
 auto GpuTimer::beginScope(uint32_t slot, vk::CommandBuffer cmd, std::string_view name) -> uint32_t {
@@ -121,7 +97,7 @@ auto GpuTimer::beginScope(uint32_t slot, vk::CommandBuffer cmd, std::string_view
 	const auto index = static_cast<uint32_t>(state.scopes.size());
 	state.scopes.push_back({.name = ScopeName(name), .depth = state.depth, .cpu_start = std::chrono::steady_clock::now()});
 	++state.depth;
-	cmd.writeTimestamp(vk::PipelineStageFlagBits::eTopOfPipe, *m_pool, base(slot) + 2 + (2 * index));
+	cmd.writeTimestamp2(vk::PipelineStageFlagBits2::eNone, *m_pool, base(slot) + 2 + (2 * index));
 	return index;
 }
 
@@ -137,7 +113,7 @@ void GpuTimer::endScope(uint32_t slot, vk::CommandBuffer cmd, uint32_t scope) {
 	PendingScope& pending = state.scopes[scope];
 	pending.cpu_ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - pending.cpu_start).count();
 	state.depth = pending.depth;
-	cmd.writeTimestamp(vk::PipelineStageFlagBits::eBottomOfPipe, *m_pool, base(slot) + 3 + (2 * scope));
+	cmd.writeTimestamp2(vk::PipelineStageFlagBits2::eAllCommands, *m_pool, base(slot) + 3 + (2 * scope));
 }
 
 auto GpuTimer::ticksToMs(uint64_t begin, uint64_t end, uint64_t mask) const noexcept -> double {
@@ -170,8 +146,8 @@ void GpuTimer::collect(uint32_t slot) {
 	const std::vector<uint64_t>& ticks = graphics.value;
 
 	m_frame.valid = true;
+	++m_serial;
 	m_frame.graphics_ms = ticksToMs(ticks[0], ticks[1], m_graphics_mask);
-	m_frame.compute_ms = 0.0;
 	m_frame.scopes.clear();
 	for (uint32_t i = 0; i < scope_count; ++i) {
 		const PendingScope& pending = state.scopes[i];
@@ -191,20 +167,9 @@ void GpuTimer::collect(uint32_t slot) {
 		}
 	}
 
-	if (m_compute_supported && state.compute_written) {
-		state.compute_written = false;
-		const uint32_t first = base(slot) + k_queries_per_slot - 2;
-		const auto compute =
-		    m_pool.getResults<uint64_t>(first, 2, 2 * sizeof(uint64_t), sizeof(uint64_t), vk::QueryResultFlagBits::e64);
-		if (compute.result == vk::Result::eSuccess) {
-			m_frame.compute_ms = ticksToMs(compute.value[0], compute.value[1], m_compute_mask);
-		}
-	}
-
 	const bool first_frame = !m_smoothed.valid;
 	m_scratch.valid = true;
 	m_scratch.graphics_ms = smooth(m_smoothed.graphics_ms, m_frame.graphics_ms, first_frame);
-	m_scratch.compute_ms = smooth(m_smoothed.compute_ms, m_frame.compute_ms, first_frame);
 	m_scratch.scopes.clear();
 	for (const ScopeTiming& sample : m_frame.scopes) {
 		const auto previous = std::ranges::find_if(m_smoothed.scopes, [&sample](const ScopeTiming& timing) {

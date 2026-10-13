@@ -23,6 +23,7 @@ struct CompiledShaderCode {
 
 class ShaderCompiler {
 public:
+	/// Thread safe
 	static auto compile(toast::UID uid, std::string_view source, std::string_view source_uri) -> CompiledShaderCode;
 
 	/// @note Call before any compilation

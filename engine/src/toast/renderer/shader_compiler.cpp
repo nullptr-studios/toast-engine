@@ -4,39 +4,101 @@
 
 #include "shader_compiler.hpp"
 
+#include "depth_convention.hpp"
 #include "slang_vfs.hpp"
 
 #include <algorithm>
 #include <array>
+#include <atomic>
+#include <condition_variable>
+#include <mutex>
 #include <slang-com-ptr.h>
 #include <slang.h>
+#include <thread>
 #include <toast/log.hpp>
 #include <tracy/Tracy.hpp>
+#include <vector>
 
 namespace renderer {
 
-static Slang::ComPtr<slang::IGlobalSession> slang_global_session;
+namespace {
 
-static void ensureSlangGlobalSession() {
-	if (slang_global_session) {
-		return;
+/// Global sessions are not thread safe so compiles lease one and the cap bounds core modules in memory
+class SlangGlobalSessionPool {
+public:
+	class Lease {
+	public:
+		Lease() : m_session(SlangGlobalSessionPool::get().acquire()) { }
+
+		~Lease() { SlangGlobalSessionPool::get().release(std::move(m_session)); }
+
+		Lease(const Lease&) = delete;
+		auto operator=(const Lease&) -> Lease& = delete;
+		Lease(Lease&&) = delete;
+		auto operator=(Lease&&) -> Lease& = delete;
+
+		[[nodiscard]]
+		auto get() const -> slang::IGlobalSession* {
+			return m_session.get();
+		}
+
+	private:
+		Slang::ComPtr<slang::IGlobalSession> m_session;
+	};
+
+	static auto get() -> SlangGlobalSessionPool& {
+		static SlangGlobalSessionPool pool;
+		return pool;
 	}
-	Slang::ComPtr<slang::IGlobalSession> session;
-	SlangResult res = slang::createGlobalSession(session.writeRef());
-	if (SLANG_FAILED(res)) {
-		TOAST_CRITICAL("Render", "Failed to create Slang global session");
+
+	auto acquire() -> Slang::ComPtr<slang::IGlobalSession> {
+		{
+			std::unique_lock lock(m_mutex);
+			m_available.wait(lock, [this] { return !m_free.empty() || m_created < m_limit; });
+			if (!m_free.empty()) {
+				auto session = std::move(m_free.back());
+				m_free.pop_back();
+				return session;
+			}
+			++m_created;
+		}
+
+		ZoneScopedN("Create Slang global session");
+		Slang::ComPtr<slang::IGlobalSession> session;
+		if (SLANG_FAILED(slang::createGlobalSession(session.writeRef())) || !session) {
+			TOAST_CRITICAL("Render", "Failed to create Slang global session");
+		}
+		return session;
 	}
-	slang_global_session = session;
+
+	void release(Slang::ComPtr<slang::IGlobalSession> session) {
+		{
+			const std::lock_guard lock(m_mutex);
+			m_free.push_back(std::move(session));
+		}
+		m_available.notify_one();
+	}
+
+private:
+	SlangGlobalSessionPool() : m_limit(std::clamp<size_t>(std::thread::hardware_concurrency() / 2, 1, 4)) { }
+
+	std::mutex m_mutex;
+	std::condition_variable m_available;
+	std::vector<Slang::ComPtr<slang::IGlobalSession>> m_free;
+	size_t m_created = 0;
+	size_t m_limit;
+};
+
+std::atomic_bool ray_query_available = false;
+
 }
 
-static bool ray_query_available = false;
-
 void ShaderCompiler::setRayQueryAvailable(bool available) {
-	ray_query_available = available;
+	ray_query_available.store(available, std::memory_order_relaxed);
 }
 
 auto ShaderCompiler::isRayQueryAvailable() -> bool {
-	return ray_query_available;
+	return ray_query_available.load(std::memory_order_relaxed);
 }
 
 auto ShaderCompiler::featureHash() -> uint64_t {
@@ -46,16 +108,17 @@ auto ShaderCompiler::featureHash() -> uint64_t {
 #else
 	constexpr uint64_t k_build_profile = 0xd3b09c0de5a11e01ull;
 #endif
-	return (ray_query_available ? 0x9e3779b97f4a7c15ull : 0x0ull) ^ k_build_profile;
+	// TOAST_REVERSED_Z changes the SPIR-V so the other convention must read as stale
+	constexpr uint64_t k_depth_convention = depth::k_reversed_z ? 0x5eed2e7e45edull : 0x0ull;
+	return (ShaderCompiler::isRayQueryAvailable() ? 0x9e3779b97f4a7c15ull : 0x0ull) ^ k_build_profile ^ k_depth_convention;
 }
 
-static auto createSession() -> Slang::ComPtr<slang::ISession> {
+static auto createSession(slang::IGlobalSession* global_session) -> Slang::ComPtr<slang::ISession> {
 	ZoneScoped;
-	ensureSlangGlobalSession();
 
 	slang::TargetDesc target {};
 	target.format = SLANG_SPIRV;
-	target.profile = slang_global_session->findProfile("spirv_1_6");
+	target.profile = global_session->findProfile("spirv_1_6");
 	std::array<slang::TargetDesc, 1> slang_targets {target};
 
 	std::vector<slang::CompilerOptionEntry> compiler_options;
@@ -91,8 +154,16 @@ static auto createSession() -> Slang::ComPtr<slang::ISession> {
 	ray_query_entry.name = slang::CompilerOptionName::MacroDefine;
 	ray_query_entry.value.kind = slang::CompilerOptionValueKind::String;
 	ray_query_entry.value.stringValue0 = "TOAST_RAY_QUERY";
-	ray_query_entry.value.stringValue1 = ray_query_available ? "1" : "0";
+	ray_query_entry.value.stringValue1 = ShaderCompiler::isRayQueryAvailable() ? "1" : "0";
 	compiler_options.push_back(ray_query_entry);
+
+	// Always defined to 0 or 1
+	slang::CompilerOptionEntry reversed_z_entry {};
+	reversed_z_entry.name = slang::CompilerOptionName::MacroDefine;
+	reversed_z_entry.value.kind = slang::CompilerOptionValueKind::String;
+	reversed_z_entry.value.stringValue0 = "TOAST_REVERSED_Z";
+	reversed_z_entry.value.stringValue1 = depth::k_reversed_z ? "1" : "0";
+	compiler_options.push_back(reversed_z_entry);
 
 	slang::SessionDesc session_desc {};
 	session_desc.targets = slang_targets.data();
@@ -114,7 +185,7 @@ static auto createSession() -> Slang::ComPtr<slang::ISession> {
 	session_desc.compilerOptionEntryCount = SlangInt(compiler_options.size());
 
 	Slang::ComPtr<slang::ISession> session;
-	SlangResult r = slang_global_session->createSession(session_desc, session.writeRef());
+	SlangResult r = global_session->createSession(session_desc, session.writeRef());
 	if (SLANG_FAILED(r) || !session) {
 		TOAST_CRITICAL("Render", "Failed to create Slang compilation session");
 	}
@@ -138,7 +209,8 @@ void logDiagnostics(const Slang::ComPtr<slang::IBlob>& diagnostics, std::string_
 
 auto compileModule(std::string_view module_name, std::string_view source_path, std::string_view source) -> CompiledShaderCode {
 	ZoneScoped;
-	auto slang_session = createSession();
+	const SlangGlobalSessionPool::Lease global_session;
+	auto slang_session = createSession(global_session.get());
 
 	Slang::ComPtr<slang::IModule> slang_module;
 	Slang::ComPtr<slang::IBlob> slang_diagnostics;

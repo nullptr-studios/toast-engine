@@ -32,6 +32,8 @@ public class ToastEngine : IDisposable {
 		toast_tick(m_handle);
 	}
 
+	public uint MaxTickRate => toast_get_max_tick_rate();
+
 	public bool ShouldClose() {
 		return toast_should_close(m_handle) != 0;
 	}
@@ -72,6 +74,9 @@ public class ToastEngine : IDisposable {
 
 	[DllImport("__ENGINE_LIB__", CallingConvention = CallingConvention.Cdecl)]
 	private static extern int toast_should_close(IntPtr engine);
+
+	[DllImport("__ENGINE_LIB__", CallingConvention = CallingConvention.Cdecl)]
+	private static extern uint toast_get_max_tick_rate();
 
 	[DllImport("__ENGINE_LIB__", CallingConvention = CallingConvention.Cdecl)]
 	private static extern void toast_destroy(IntPtr engine);

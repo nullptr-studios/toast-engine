@@ -290,7 +290,7 @@ void RenderInterface_VK::CreateEffectResources() noexcept {
 		info.layout = m_p_pipeline_layout_effects;
 
 		VkPipeline p_pipeline = nullptr;
-		VkResult status = vkCreateGraphicsPipelines(m_p_device, nullptr, 1, &info, nullptr, &p_pipeline);
+		VkResult status = vkCreateGraphicsPipelines(m_p_device, m_p_pipeline_cache, 1, &info, nullptr, &p_pipeline);
 		RMLUI_VK_ASSERTMSG(status == VK_SUCCESS, "failed to vkCreateGraphicsPipelines (effects)");
 		return p_pipeline;
 	};
@@ -410,7 +410,7 @@ void RenderInterface_VK::CreateEffectResources() noexcept {
 		info.layout = m_p_pipeline_layout_gradient;
 
 		VkPipeline p_pipeline = nullptr;
-		VkResult status = vkCreateGraphicsPipelines(m_p_device, nullptr, 1, &info, nullptr, &p_pipeline);
+		VkResult status = vkCreateGraphicsPipelines(m_p_device, m_p_pipeline_cache, 1, &info, nullptr, &p_pipeline);
 		RMLUI_VK_ASSERTMSG(status == VK_SUCCESS, "failed to vkCreateGraphicsPipelines (gradient)");
 		return p_pipeline;
 	};
@@ -665,35 +665,17 @@ void RenderInterface_VK::TransitionEffectImage(effect_image_t& image, VkImageLay
 
 	const bool is_stencil = image.m_p_image == m_p_current_pool->m_stencil.m_p_image;
 
-	VkImageMemoryBarrier barrier = {};
-	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	barrier.oldLayout = image.m_layout;
-	barrier.newLayout = new_layout;
-	barrier.image = image.m_p_image;
-	barrier.subresourceRange.baseMipLevel = 0;
-	barrier.subresourceRange.levelCount = 1;
-	barrier.subresourceRange.baseArrayLayer = 0;
-	barrier.subresourceRange.layerCount = 1;
-	barrier.subresourceRange.aspectMask = is_stencil ? (m_depth_stencil_attachment_format == VK_FORMAT_S8_UINT
-	                                                        ? VK_IMAGE_ASPECT_STENCIL_BIT
-	                                                        : (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))
-	                                                 : VK_IMAGE_ASPECT_COLOR_BIT;
-	barrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
-	barrier.dstAccessMask = VK_ACCESS_MEMORY_WRITE_BIT | VK_ACCESS_MEMORY_READ_BIT;
+	VkImageSubresourceRange range = {};
+	range.baseMipLevel = 0;
+	range.levelCount = 1;
+	range.baseArrayLayer = 0;
+	range.layerCount = 1;
+	range.aspectMask = is_stencil ? (m_depth_stencil_attachment_format == VK_FORMAT_S8_UINT
+	                                     ? VK_IMAGE_ASPECT_STENCIL_BIT
+	                                     : (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))
+	                              : VK_IMAGE_ASPECT_COLOR_BIT;
 
-	// All-stage barrier
-	vkCmdPipelineBarrier(
-	    m_p_current_command_buffer,
-	    VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-	    VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-	    0,
-	    0,
-	    nullptr,
-	    0,
-	    nullptr,
-	    1,
-	    &barrier
-	);
+	rmlui_vk_sync::TransitionImage(m_p_current_command_buffer, image.m_p_image, range, image.m_layout, new_layout);
 
 	image.m_layout = new_layout;
 }
@@ -1105,25 +1087,8 @@ Rml::TextureHandle RenderInterface_VK::SaveLayerAsTexture() {
 	range.levelCount = 1;
 	range.layerCount = 1;
 
-	VkImageMemoryBarrier to_dst = {};
-	to_dst.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	to_dst.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	to_dst.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-	to_dst.image = p_texture->m_p_vk_image;
-	to_dst.subresourceRange = range;
-	to_dst.srcAccessMask = 0;
-	to_dst.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-	vkCmdPipelineBarrier(
-	    m_p_current_command_buffer,
-	    VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-	    VK_PIPELINE_STAGE_TRANSFER_BIT,
-	    0,
-	    0,
-	    nullptr,
-	    0,
-	    nullptr,
-	    1,
-	    &to_dst
+	rmlui_vk_sync::TransitionImage(
+	    m_p_current_command_buffer, p_texture->m_p_vk_image, range, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 	);
 
 	VkImageCopy region = {};
@@ -1141,25 +1106,12 @@ Rml::TextureHandle RenderInterface_VK::SaveLayerAsTexture() {
 	    &region
 	);
 
-	VkImageMemoryBarrier to_read = {};
-	to_read.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	to_read.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-	to_read.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	to_read.image = p_texture->m_p_vk_image;
-	to_read.subresourceRange = range;
-	to_read.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-	to_read.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-	vkCmdPipelineBarrier(
+	rmlui_vk_sync::TransitionImage(
 	    m_p_current_command_buffer,
-	    VK_PIPELINE_STAGE_TRANSFER_BIT,
-	    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-	    0,
-	    0,
-	    nullptr,
-	    0,
-	    nullptr,
-	    1,
-	    &to_read
+	    p_texture->m_p_vk_image,
+	    range,
+	    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+	    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
 	);
 
 	VkImageViewCreateInfo info_view = {};

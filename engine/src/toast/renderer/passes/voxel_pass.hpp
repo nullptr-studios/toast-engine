@@ -5,14 +5,17 @@
  */
 
 #pragma once
+
 #include "../render_pass_base.hpp"
 #include "../scene_descriptor_set.hpp"
 #include "../shader_layout.hpp"
 #include "../vulkan_pipeline.hpp"
 
 #include <array>
+#include <chrono>
 #include <glm/glm.hpp>
 #include <memory>
+#include <optional>
 #include <string_view>
 #include <vector>
 
@@ -34,6 +37,9 @@ public:
 	[[nodiscard]]
 	auto prepare(uint32_t frame_index) -> bool;
 
+	/// Outside any rendering scope after prepare() and before record()
+	void recordCellCull(vk::CommandBuffer cmd, uint32_t frame_index);
+
 	/// Inside the voxel G-buffer scope after prepare()
 	void record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) override;
 
@@ -43,6 +49,9 @@ public:
 	/// Writes scene colour and indirect while reading the G-buffer and depth
 	void recordLighting(vk::CommandBuffer cmd, uint32_t frame_index);
 
+	/// After the G-buffer and depth targets are recreated since a new view can reuse a destroyed handle value
+	void onTargetsRecreated();
+
 	[[nodiscard]]
 	auto name() const -> std::string_view override {
 		return "Voxels";
@@ -51,12 +60,60 @@ public:
 	static constexpr uint32_t k_max_instances = 4096;
 
 private:
+	/// Throttles the over limit warning
+	std::chrono::steady_clock::time_point m_last_limit_warning;
+
 	/// Mirrors voxel.slang PushConstants
 	struct PushConstants {
 		uint32_t instance_index = 0;
+		uint32_t bucket = 0;
+		uint32_t mode = 0;
+		uint32_t quad_capacity = 0;
+	};
+
+	/// Mirrors voxel.slang kDrawVolume and kDrawCells
+	static constexpr uint32_t k_draw_volume = 0;
+	static constexpr uint32_t k_draw_cells = 1;
+
+	/// Mirrors voxel_cells.slang CellCullPush
+	struct CellCullPush {
+		glm::mat4 view_projection {1.0f};
+		glm::vec4 camera_near {0.0f};
+		uint32_t total_cells = 0;
+		uint32_t instance_count = 0;
+		uint32_t phase = 0;
+		uint32_t quad_capacity = 0;
+		float near_voxels = 0.0f;
 		uint32_t pad0 = 0;
 		uint32_t pad1 = 0;
 		uint32_t pad2 = 0;
+	};
+
+	/// Mirrors voxel_dda.slang kCellBucketCount and the word layout after it
+	static constexpr uint32_t k_cell_bucket_count = 17;
+	static constexpr uint32_t k_cell_list_count = k_cell_bucket_count + 1;
+	static constexpr uint32_t k_cell_offsets_word = k_cell_bucket_count * 4;
+	static constexpr uint32_t k_cell_cursors_word = k_cell_offsets_word + k_cell_list_count;
+	static constexpr uint32_t k_near_dispatch_word = k_cell_cursors_word + k_cell_list_count;
+	static constexpr uint32_t k_quad_draw_word = k_near_dispatch_word + 3;
+	static constexpr uint32_t k_cell_args_words = k_quad_draw_word + 4;
+	static constexpr uint32_t k_min_quad_capacity = 65536;
+	/// Ten bits per axis in voxel_dda.slang packCell
+	static constexpr uint32_t k_max_coarse_dim = 1024;
+	static constexpr uint32_t k_min_cell_capacity = 4096;
+
+	/// Per frame in flight
+	struct CellBuffers {
+		/// Instance index and packed cell per surviving cell
+		std::optional<vma::raii::Buffer> cells;
+		/// Indirect commands then list offsets and cursors then the mesh dispatch and the quad draw
+		std::optional<vma::raii::Buffer> args;
+		uint32_t capacity = 0;
+		/// Cell entry index and packed quad per meshed face run
+		std::optional<vma::raii::Buffer> quads;
+		uint32_t quad_capacity = 0;
+		/// Quad draw vertex count copied back for growing the quad buffer
+		std::optional<vma::raii::Buffer> readback;
 	};
 
 	/// Mirrors voxel_lighting.slang LightingPushConstants
@@ -70,6 +127,12 @@ private:
 		glm::vec4 camera_radius {0.0f};
 		glm::vec4 viewport {0.0f};
 	};
+
+	void createCells(const VulkanCore& core);
+	void ensureCellCapacity(uint32_t frame_index, uint32_t cells);
+	void ensureQuadCapacity(uint32_t frame_index, uint32_t quads);
+	void writeCellDescriptors(uint32_t frame_index);
+	void recordCellDraws(vk::CommandBuffer cmd, uint32_t frame_index);
 
 	enum class Cull : uint8_t {
 		back,
@@ -111,6 +174,18 @@ private:
 	std::vector<std::shared_ptr<const VoxelGpuStorage>> m_bound_storage;
 
 	std::vector<Draw> m_draws;
+
+	ShaderLayout m_cell_layout;
+	VulkanPipeline m_cell_pipeline;
+	VulkanPipeline m_mesh_pipeline;
+	VulkanPipeline m_quad_pipeline;
+	std::vector<vk::raii::DescriptorSet> m_cell_sets;
+	std::vector<CellBuffers> m_cell_buffers;
+
+	bool m_cells_active = false;
+	uint32_t m_total_cells = 0;
+	/// Cells closer than this many voxels are meshed this frame and 0 marches all of them
+	float m_near_voxels = 0.0f;
 
 	ShaderLayout m_lighting_layout;
 	VulkanPipeline m_lighting_pipeline;

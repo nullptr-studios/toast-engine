@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "depth_convention.hpp"
 #include "vulkan_common.hpp"
 
 #include <cstddef>
@@ -71,8 +72,8 @@ public:
 
 		bool depth_test = true;
 		bool depth_write = true;
-		/// Far plane draws like the skybox need eLessOrEqual
-		vk::CompareOp depth_compare = vk::CompareOp::eLess;
+		/// Scene convention. Shadow maps set eLess and far plane draws need depth::k_closer_or_equal
+		vk::CompareOp depth_compare = depth::k_closer;
 
 		float depth_bias_constant = 0.0f;
 		float depth_bias_slope = 0.0f;

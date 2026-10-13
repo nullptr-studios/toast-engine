@@ -106,7 +106,7 @@ void EnvironmentPass::createPipelines(const VulkanCore& core) {
 	config.depth_format = m_depth_format;
 	config.depth_test = true;
 	config.depth_write = false;
-	config.depth_compare = vk::CompareOp::eLessOrEqual;
+	config.depth_compare = depth::k_closer_or_equal;
 	config.extra_color_formats = worldStageExtraColorFormats();
 	m_skybox_pipeline.rebuild(core, config);
 }
@@ -204,7 +204,7 @@ auto EnvironmentPass::uploadEquirect(const assets::HdrImage& image) -> bool {
 
 	cmd.end();
 
-	submitAndWait(device, m_core->getGraphicsQueue(), *cmd);
+	submitAndWait(device, m_core->getGraphicsQueue(), m_core->graphicsSubmitMutex(), *cmd);
 
 	vk::ImageViewCreateInfo view_ci {};
 	view_ci.image = **m_equirect_image;
@@ -372,12 +372,7 @@ void EnvironmentPass::recordPre(vk::CommandBuffer cmd, uint32_t frame_index, uin
 		return params;
 	};
 
-	m_sky.transition(
-	    cmd,
-	    vk::ImageLayout::eColorAttachmentOptimal,
-	    vk::AccessFlagBits::eColorAttachmentWrite,
-	    vk::PipelineStageFlagBits::eColorAttachmentOutput
-	);
+	m_sky.transition(cmd, sync::Usage::color_attachment);
 	const bool use_equirect = m_has_equirect && m_equirect_pipeline.isReady() && *m_equirect_set != VK_NULL_HANDLE;
 	for (uint32_t face = 0; face < 6; ++face) {
 		if (use_equirect) {
@@ -386,29 +381,15 @@ void EnvironmentPass::recordPre(vk::CommandBuffer cmd, uint32_t frame_index, uin
 			renderFace(cmd, m_sky_pipeline, nullptr, m_sky, 0, face, make_params(face, 0.0f));
 		}
 	}
-	m_sky.transition(
-	    cmd, vk::ImageLayout::eShaderReadOnlyOptimal, vk::AccessFlagBits::eShaderRead, vk::PipelineStageFlagBits::eFragmentShader
-	);
+	m_sky.transition(cmd, sync::Usage::fragment_sampled);
 
-	m_irradiance.transition(
-	    cmd,
-	    vk::ImageLayout::eColorAttachmentOptimal,
-	    vk::AccessFlagBits::eColorAttachmentWrite,
-	    vk::PipelineStageFlagBits::eColorAttachmentOutput
-	);
+	m_irradiance.transition(cmd, sync::Usage::color_attachment);
 	for (uint32_t face = 0; face < 6; ++face) {
 		renderFace(cmd, m_irradiance_pipeline, *m_sky_source_set, m_irradiance, 0, face, make_params(face, 0.0f));
 	}
-	m_irradiance.transition(
-	    cmd, vk::ImageLayout::eShaderReadOnlyOptimal, vk::AccessFlagBits::eShaderRead, vk::PipelineStageFlagBits::eFragmentShader
-	);
+	m_irradiance.transition(cmd, sync::Usage::fragment_sampled);
 
-	m_prefiltered.transition(
-	    cmd,
-	    vk::ImageLayout::eColorAttachmentOptimal,
-	    vk::AccessFlagBits::eColorAttachmentWrite,
-	    vk::PipelineStageFlagBits::eColorAttachmentOutput
-	);
+	m_prefiltered.transition(cmd, sync::Usage::color_attachment);
 	for (uint32_t mip = 0; mip < m_prefiltered.mipLevels(); ++mip) {
 		const float roughness =
 		    m_prefiltered.mipLevels() > 1 ? static_cast<float>(mip) / static_cast<float>(m_prefiltered.mipLevels() - 1) : 0.0f;
@@ -416,9 +397,7 @@ void EnvironmentPass::recordPre(vk::CommandBuffer cmd, uint32_t frame_index, uin
 			renderFace(cmd, m_prefilter_pipeline, *m_sky_source_set, m_prefiltered, mip, face, make_params(face, roughness));
 		}
 	}
-	m_prefiltered.transition(
-	    cmd, vk::ImageLayout::eShaderReadOnlyOptimal, vk::AccessFlagBits::eShaderRead, vk::PipelineStageFlagBits::eFragmentShader
-	);
+	m_prefiltered.transition(cmd, sync::Usage::fragment_sampled);
 
 	TOAST_INFO(
 	    "Render",

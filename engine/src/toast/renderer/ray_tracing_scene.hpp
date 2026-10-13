@@ -37,6 +37,12 @@ public:
 	[[nodiscard]]
 	auto getAccelerationStructure(uint32_t frame_index) const -> vk::AccelerationStructureKHR;
 
+	/// Bumped whenever the structure of @p frame_index is recreated since the new one can reuse the old handle value
+	[[nodiscard]]
+	auto getAccelerationStructureGeneration(uint32_t frame_index) const -> uint64_t {
+		return frame_index < m_frames.size() ? m_frames[frame_index].tlas_generation : 0;
+	}
+
 	[[nodiscard]]
 	auto getInstanceCount() const noexcept -> uint32_t {
 		return static_cast<uint32_t>(m_instances.size());
@@ -52,6 +58,7 @@ private:
 		std::optional<vma::raii::Buffer> tlas_buffer;
 		std::optional<vma::raii::Buffer> scratch;
 		vk::raii::AccelerationStructureKHR tlas = nullptr;
+		uint64_t tlas_generation = 0;
 		uint32_t built_instances = 0;
 
 		std::vector<Instance> built;

@@ -31,7 +31,7 @@ public:
 
 	/**
 	 * @brief Records every URI resolved while alive. Slang getDependencyFileCount() is empty for modules loaded from source
-	 * @note Not thread safe
+	 * @note Per thread so compiles on different threads each record their own imports
 	 */
 	class Recorder {
 	public:
@@ -57,7 +57,7 @@ public:
 	};
 
 private:
-	static inline Recorder* s_recorder = nullptr;
+	static inline thread_local Recorder* s_recorder = nullptr;
 };
 
 }

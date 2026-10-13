@@ -117,10 +117,19 @@ struct ScenePatch {
 	/// Slots the pool sections hold afterwards and they only ever grow
 	uint32_t pool_slots = 0;
 
+	/// Section sizes afterwards in words or records
+	uint32_t grid_words = 0;
+	uint32_t coarse_words = 0;
+	uint32_t palette_words = 0;
+	uint32_t record_count = 0;
+
 	PatchSection materials;
 	PatchSection occupancy;
 	PatchSection grids;
 	PatchSection coarse;
+	PatchSection palettes;
+	/// VolumeRecord words
+	PatchSection records;
 
 	/// Per scene volume
 	std::vector<TagDelta> tags;
@@ -156,11 +165,13 @@ TOAST_API auto packLayout(std::span<const SceneVolume> volumes) -> SceneLayout;
 [[nodiscard]]
 TOAST_API auto layoutMatches(const PackedScene& retained, const SceneLayout& layout) -> bool;
 
-/// @pre layoutMatches and leaves retained grids and coarse as the GPU holds them after the patch
+/// Leaves retained as the GPU holds it afterwards
+/// @p appended records are already in retained with zeroed grid and coarse ranges and palette words from
+/// @p first_new_palette_word on are new
 [[nodiscard]]
 TOAST_API auto computePatch(
     PackedScene& retained, uint32_t retained_pool_slots, const BrickPool& pool, std::span<const SceneVolume> volumes,
-    std::span<const VolumeDirty> dirty
+    std::span<const VolumeDirty> dirty, std::span<const uint32_t> appended = {}, uint32_t first_new_palette_word = UINT32_MAX
 ) -> ScenePatch;
 
 /// Applies a patch the way the GPU copies do

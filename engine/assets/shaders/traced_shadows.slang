@@ -1,4 +1,5 @@
 import fullscreen;
+import depth_convention;
 
 struct TracedShadowParams
 {
@@ -48,7 +49,7 @@ float4 fragmentMain(VSOutput input) : SV_Target0
     float4 normalRoughness = gNormalRoughness.Sample(input.uv);
     float depth = gDepth.Sample(input.uv).r;
 
-    if (dot(normalRoughness.xyz, normalRoughness.xyz) < 1e-4 || depth >= 1.0)
+    if (dot(normalRoughness.xyz, normalRoughness.xyz) < 1e-4 || isFarDepth(depth))
     {
         return float4(applied ? sceneColor : float3(1.0, 1.0, 1.0), 1.0);
     }

@@ -52,6 +52,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 	[ObservableProperty] private bool m_historyVisible;
 	[ObservableProperty] private bool m_locksVisible;
 	[ObservableProperty] private bool m_inspectorVisible = true;
+	[ObservableProperty] private bool m_showDebugWindows = true;
 	[ObservableProperty] private bool m_signalsVisible = true;
 	[ObservableProperty] private bool m_logsVisible = true;
 	[ObservableProperty] private IRootDock m_mainLayout;
@@ -373,6 +374,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 
 	partial void OnCurveEditorVisibleChanged(bool value) {
 		ToggleToastTool("Curve", value);
+	}
+
+	partial void OnShowDebugWindowsChanged(bool value) {
+		ToastEngine.SetShowDebugWindows(value);
 	}
 
 	partial void OnTableEditorVisibleChanged(bool value) {

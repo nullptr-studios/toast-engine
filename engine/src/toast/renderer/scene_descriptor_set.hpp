@@ -13,6 +13,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace renderer {
@@ -43,7 +44,8 @@ private:
 
 	std::optional<uint32_t> m_scene_binding;
 
-	std::vector<vk::AccelerationStructureKHR> m_bound_tlas;
+	/// Handle plus generation since a recreated structure can reuse a destroyed handle value
+	std::vector<std::pair<vk::AccelerationStructureKHR, uint64_t>> m_bound_tlas;
 };
 
 }

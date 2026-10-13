@@ -520,18 +520,7 @@ Rml::TextureHandle
 		range.levelCount = 1;
 		range.layerCount = 1;
 
-		VkImageMemoryBarrier info_barrier = {};
-		info_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-		info_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		info_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-		info_barrier.image = p_image;
-		info_barrier.subresourceRange = range;
-		info_barrier.srcAccessMask = 0;
-		info_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
-		vkCmdPipelineBarrier(
-		    p_cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &info_barrier
-		);
+		rmlui_vk_sync::TransitionImage(p_cmd, p_image, range, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
 		VkBufferImageCopy region = {};
 		region.bufferOffset = 0;
@@ -546,27 +535,8 @@ Rml::TextureHandle
 
 		vkCmdCopyBufferToImage(p_cmd, cpu_buffer.m_p_vk_buffer, p_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
-		VkImageMemoryBarrier info_barrier_shader_read = {};
-		info_barrier_shader_read.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-		info_barrier_shader_read.pNext = nullptr;
-		info_barrier_shader_read.image = p_image;
-		info_barrier_shader_read.subresourceRange = range;
-		info_barrier_shader_read.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-		info_barrier_shader_read.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		info_barrier_shader_read.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-		info_barrier_shader_read.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-		vkCmdPipelineBarrier(
-		    p_cmd,
-		    VK_PIPELINE_STAGE_TRANSFER_BIT,
-		    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-		    0,
-		    0,
-		    nullptr,
-		    0,
-		    nullptr,
-		    1,
-		    &info_barrier_shader_read
+		rmlui_vk_sync::TransitionImage(
+		    p_cmd, p_image, range, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
 		);
 	});
 
@@ -785,7 +755,7 @@ void RenderInterface_VK::SetViewport(int width, int height) {
 
 bool RenderInterface_VK::Initialize(
     VkInstance instance, VkPhysicalDevice physical_device, VkDevice device, uint32_t queue_family_index, VkQueue queue,
-    VkFormat color_format, VkFormat depth_stencil_format, std::mutex* submit_mutex
+    VkFormat color_format, VkFormat depth_stencil_format, std::mutex* submit_mutex, VkPipelineCache pipeline_cache
 ) {
 	RMLUI_ZoneScopedN("Vulkan - Initialize");
 	RMLUI_VK_ASSERTMSG(instance && physical_device && device && queue, "you must pass valid Vulkan handles from the engine");
@@ -797,6 +767,7 @@ bool RenderInterface_VK::Initialize(
 	m_color_attachment_format = color_format;
 	m_depth_stencil_attachment_format = depth_stencil_format;
 	m_p_submit_mutex = submit_mutex;
+	m_p_pipeline_cache = pipeline_cache;
 
 	VmaVulkanFunctions vulkan_functions = {};
 	vulkan_functions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
@@ -1161,7 +1132,7 @@ void RenderInterface_VK::Create_Pipelines() noexcept {
 	info.renderPass = VK_NULL_HANDLE;
 	info.subpass = 0;
 
-	auto status = vkCreateGraphicsPipelines(m_p_device, nullptr, 1, &info, nullptr, &m_p_pipeline_with_textures);
+	auto status = vkCreateGraphicsPipelines(m_p_device, m_p_pipeline_cache, 1, &info, nullptr, &m_p_pipeline_with_textures);
 	RMLUI_VK_ASSERTMSG(status == VkResult::VK_SUCCESS, "failed to vkCreateGraphicsPipelines");
 
 	info_depth.back.passOp = VK_STENCIL_OP_KEEP;
@@ -1174,7 +1145,12 @@ void RenderInterface_VK::Create_Pipelines() noexcept {
 	info_depth.front = info_depth.back;
 
 	status = vkCreateGraphicsPipelines(
-	    m_p_device, nullptr, 1, &info, nullptr, &m_p_pipeline_stencil_for_regular_geometry_that_applied_to_region_with_textures
+	    m_p_device,
+	    m_p_pipeline_cache,
+	    1,
+	    &info,
+	    nullptr,
+	    &m_p_pipeline_stencil_for_regular_geometry_that_applied_to_region_with_textures
 	);
 	RMLUI_VK_ASSERTMSG(status == VkResult::VK_SUCCESS, "failed to vkCreateGraphicsPipelines");
 
@@ -1189,7 +1165,7 @@ void RenderInterface_VK::Create_Pipelines() noexcept {
 	info_depth.back.reference = 1;
 	info_depth.front = info_depth.back;
 
-	status = vkCreateGraphicsPipelines(m_p_device, nullptr, 1, &info, nullptr, &m_p_pipeline_without_textures);
+	status = vkCreateGraphicsPipelines(m_p_device, m_p_pipeline_cache, 1, &info, nullptr, &m_p_pipeline_without_textures);
 	RMLUI_VK_ASSERTMSG(status == VkResult::VK_SUCCESS, "failed to vkCreateGraphicsPipelines");
 
 	info_depth.back.passOp = VK_STENCIL_OP_KEEP;
@@ -1202,7 +1178,12 @@ void RenderInterface_VK::Create_Pipelines() noexcept {
 	info_depth.front = info_depth.back;
 
 	status = vkCreateGraphicsPipelines(
-	    m_p_device, nullptr, 1, &info, nullptr, &m_p_pipeline_stencil_for_regular_geometry_that_applied_to_region_without_textures
+	    m_p_device,
+	    m_p_pipeline_cache,
+	    1,
+	    &info,
+	    nullptr,
+	    &m_p_pipeline_stencil_for_regular_geometry_that_applied_to_region_without_textures
 	);
 	RMLUI_VK_ASSERTMSG(status == VkResult::VK_SUCCESS, "failed to vkCreateGraphicsPipelines");
 
@@ -1217,7 +1198,7 @@ void RenderInterface_VK::Create_Pipelines() noexcept {
 	info_depth.front = info_depth.back;
 
 	status = vkCreateGraphicsPipelines(
-	    m_p_device, nullptr, 1, &info, nullptr, &m_p_pipeline_stencil_for_region_where_geometry_will_be_drawn
+	    m_p_device, m_p_pipeline_cache, 1, &info, nullptr, &m_p_pipeline_stencil_for_region_where_geometry_will_be_drawn
 	);
 	RMLUI_VK_ASSERTMSG(status == VkResult::VK_SUCCESS, "failed to vkCreateGraphicsPipelines");
 
@@ -1225,7 +1206,7 @@ void RenderInterface_VK::Create_Pipelines() noexcept {
 	info_depth.back.passOp = VK_STENCIL_OP_INCREMENT_AND_CLAMP;
 	info_depth.front = info_depth.back;
 
-	status = vkCreateGraphicsPipelines(m_p_device, nullptr, 1, &info, nullptr, &m_p_pipeline_clip_write_incr);
+	status = vkCreateGraphicsPipelines(m_p_device, m_p_pipeline_cache, 1, &info, nullptr, &m_p_pipeline_clip_write_incr);
 	RMLUI_VK_ASSERTMSG(status == VkResult::VK_SUCCESS, "failed to vkCreateGraphicsPipelines");
 }
 

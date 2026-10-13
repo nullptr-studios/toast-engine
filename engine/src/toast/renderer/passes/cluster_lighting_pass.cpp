@@ -25,22 +25,11 @@ namespace renderer {
 auto ClusterLightingPass::createBuffer(
     const renderer::VulkanCore& core, vk::DeviceSize size, vk::BufferUsageFlags usage, HostAccess access
 ) -> vma::raii::Buffer {
-	const uint32_t graphics_family = core.getGraphicsQueueFamilyIndex();
-	const uint32_t compute_family = core.getComputeQueueFamilyIndex();
-	const bool use_concurrent_sharing = graphics_family != compute_family;
-
+	// Graphics queue only since light culling runs in the frame command buffer
 	vk::BufferCreateInfo buffer_ci {};
 	buffer_ci.size = size;
 	buffer_ci.usage = usage;
-
-	std::array<uint32_t, 2> family_indices {graphics_family, compute_family};
-	if (use_concurrent_sharing) {
-		buffer_ci.sharingMode = vk::SharingMode::eConcurrent;
-		buffer_ci.queueFamilyIndexCount = 2;
-		buffer_ci.pQueueFamilyIndices = family_indices.data();
-	} else {
-		buffer_ci.sharingMode = vk::SharingMode::eExclusive;
-	}
+	buffer_ci.sharingMode = vk::SharingMode::eExclusive;
 
 	vma::AllocationCreateInfo alloc_ci {};
 	switch (access) {
@@ -235,18 +224,9 @@ void ClusterLightingPass::dispatch(vk::CommandBuffer cmd, uint32_t frame_index) 
 
 	// Same command buffer does not order shader memory access so this needs its own barrier
 	auto& fb = m_frame_buffers[frame_index];
-	const vk::BufferMemoryBarrier barrier(
-	    vk::AccessFlagBits::eShaderWrite,
-	    vk::AccessFlagBits::eShaderRead,
-	    VK_QUEUE_FAMILY_IGNORED,
-	    VK_QUEUE_FAMILY_IGNORED,
-	    **fb.cluster_aabb.gpu_buffer,
-	    0,
-	    VK_WHOLE_SIZE
-	);
-	cmd.pipelineBarrier(
-	    vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {}, nullptr, barrier, nullptr
-	);
+	sync::BarrierBatch barriers;
+	barriers.buffer(**fb.cluster_aabb.gpu_buffer, sync::Usage::compute_storage_write, sync::Usage::compute_storage_read);
+	barriers.flush(cmd);
 
 	cmd.bindPipeline(vk::PipelineBindPoint::eCompute, m_cull_lights_pipeline.getPipeline());
 	cmd.dispatch(group_count, 1, 1);
@@ -256,22 +236,16 @@ void ClusterLightingPass::dispatch(vk::CommandBuffer cmd, uint32_t frame_index) 
 	if (fb.readback_valid) {
 		m_readback_hold.fetch_sub(1, std::memory_order_relaxed);
 
-		const vk::BufferMemoryBarrier to_transfer(
-		    vk::AccessFlagBits::eShaderWrite,
-		    vk::AccessFlagBits::eTransferRead,
-		    VK_QUEUE_FAMILY_IGNORED,
-		    VK_QUEUE_FAMILY_IGNORED,
-		    **fb.cluster_light_grid.gpu_buffer,
-		    0,
-		    VK_WHOLE_SIZE
-		);
-		cmd.pipelineBarrier(
-		    vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eTransfer, {}, nullptr, to_transfer, nullptr
-		);
+		barriers.buffer(**fb.cluster_light_grid.gpu_buffer, sync::Usage::compute_storage_write, sync::Usage::transfer_src);
+		barriers.flush(cmd);
 
 		constexpr vk::DeviceSize k_grid_size = sizeof(uint32_t) * k_cluster_count;
 		const vk::BufferCopy region(0, 0, k_grid_size);
 		cmd.copyBuffer(**fb.cluster_light_grid.gpu_buffer, **fb.cluster_light_grid_readback.gpu_buffer, region);
+
+		// A fence wait alone does not make the copy visible to the host
+		barriers.buffer(**fb.cluster_light_grid_readback.gpu_buffer, sync::Usage::transfer_dst, sync::Usage::host_read);
+		barriers.flush(cmd);
 	}
 }
 

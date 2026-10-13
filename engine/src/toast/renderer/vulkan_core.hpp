@@ -4,11 +4,13 @@
 
 #pragma once
 
+#include "async_compute.hpp"
 #include "vulkan_common.hpp"
 
 #include <algorithm>
 #include <external/inc/renderdoc/renderdoc_app.h>
 #include <limits>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <span>
@@ -93,6 +95,7 @@ public:
 		return m_graphics_queue;
 	}
 
+	/// Only AsyncCompute submits to it
 	[[nodiscard]]
 	auto getComputeQueue() const noexcept -> vk::Queue {
 		return m_compute_queue;
@@ -133,6 +136,11 @@ public:
 	}
 
 	[[nodiscard]]
+	auto isMemoryBudgetSupported() const noexcept -> bool {
+		return m_memory_budget_supported;
+	}
+
+	[[nodiscard]]
 	auto isFrameBoundarySupported() const noexcept -> bool {
 		return m_frame_boundary_supported;
 	}
@@ -165,6 +173,32 @@ public:
 	[[nodiscard]]
 	auto maxSamplerAnisotropy() const noexcept -> float {
 		return m_max_sampler_anisotropy;
+	}
+
+	/// Usable from any thread
+	[[nodiscard]]
+	auto getPipelineCache() const noexcept -> const vk::raii::PipelineCache& {
+		return m_pipeline_cache;
+	}
+
+	/// Before creating pipelines. Missing or stale files are ignored
+	void loadPipelineCache() const;
+
+	void savePipelineCache() const;
+
+	/// Replays live VRAM blocks to a newly connected Tracy and plots heap usage
+	void updateTracyMemory() const;
+
+	/// The only way to submit compute work outside a frame
+	[[nodiscard]]
+	auto asyncCompute() const noexcept -> AsyncCompute& {
+		return *m_async_compute;
+	}
+
+	/// Only contended when AsyncCompute shares the transfer queue
+	[[nodiscard]]
+	auto transferSubmitMutex() const noexcept -> std::mutex& {
+		return m_transfer_submit_mutex;
 	}
 
 	// TODO UI system should submit on the render thread
@@ -202,6 +236,10 @@ private:
 
 	vk::raii::PhysicalDevice m_physical_device = nullptr;
 	vk::raii::Device m_device = nullptr;
+	/// Declared after m_device so it is destroyed first
+	vk::raii::PipelineCache m_pipeline_cache = nullptr;
+	/// After m_device for the same reason
+	std::unique_ptr<AsyncCompute> m_async_compute;
 
 	std::optional<vma::raii::Allocator> m_allocator;
 
@@ -216,12 +254,15 @@ private:
 	float m_max_sampler_anisotropy = 1.0f;
 
 	mutable std::mutex m_graphics_submit_mutex;
+	mutable std::mutex m_transfer_submit_mutex;
+	uint32_t m_transfer_queue_index = 0;
 
 	RENDERDOC_API_1_6_0* rdoc_api = nullptr;
 
 	mutable NsightMode m_nsight_mode = NsightMode::none;
 
 	bool m_frame_boundary_supported = false;
+	bool m_memory_budget_supported = false;
 
 	bool m_ray_tracing_supported = false;
 

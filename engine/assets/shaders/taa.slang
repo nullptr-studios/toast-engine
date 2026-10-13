@@ -1,4 +1,5 @@
 import fullscreen;
+import depth_convention;
 
 struct TaaParams
 {
@@ -116,7 +117,7 @@ float4 fragmentMain(VSOutput input) : SV_Target0
     float3 center = float3(0.0, 0.0, 0.0);
     float3 moment1 = float3(0.0, 0.0, 0.0);
     float3 moment2 = float3(0.0, 0.0, 0.0);
-    float closestDepth = 1.0;
+    float closestDepth = kFarDepth;
     float2 closestUv = uv;
 
     for (int y = -1; y <= 1; ++y)
@@ -134,7 +135,7 @@ float4 fragmentMain(VSOutput input) : SV_Target0
 
             // Keeps a moving edge from trailing the background
             float depth = gDepth.SampleLevel(sampleUv, 0.0).r;
-            if (depth < closestDepth)
+            if (isCloserDepth(depth, closestDepth))
             {
                 closestDepth = depth;
                 closestUv = sampleUv;

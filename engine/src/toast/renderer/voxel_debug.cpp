@@ -1,5 +1,6 @@
 #include "voxel_debug.hpp"
 
+#include "depth_convention.hpp"
 #include "passes/voxel_pass.hpp"
 #include "voxel_gpu_storage.hpp"
 
@@ -278,7 +279,7 @@ auto probe(const VulkanRenderer::RenderFrame& frame, glm::vec2 cursor) -> std::o
 		const glm::vec4 point = inverse_view_projection * glm::vec4(ndc, depth, 1.0f);
 		return glm::vec3(point) / point.w;
 	};
-	const glm::vec3 near_point = unproject(0.0f);
+	const glm::vec3 near_point = unproject(depth::k_near);
 
 	// Half depth since an infinite projection puts the far plane at w = 0
 	const glm::vec3 direction = unproject(0.5f) - near_point;

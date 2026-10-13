@@ -1,4 +1,5 @@
 import fullscreen;
+import depth_convention;
 
 struct SsaoParams
 {
@@ -75,7 +76,7 @@ float4 aoMain(VSOutput input) : SV_Target0
     }
 
     float depth = gDepth.Sample(input.uv).r;
-    if (depth >= 1.0)
+    if (isFarDepth(depth))
     {
         return float4(1.0, kNoSurfaceDistance, 0.0, 1.0);
     }
@@ -119,7 +120,7 @@ float4 aoMain(VSOutput input) : SV_Target0
         }
 
         float sceneDepth = gDepth.SampleLevel(sampleUv, 0.0).r;
-        if (sceneDepth >= 1.0)
+        if (isFarDepth(sceneDepth))
         {
             validSamples += 1.0;
             continue;
@@ -212,7 +213,7 @@ float4 compositeMain(VSOutput input) : SV_Target0
         return float4(aoOnly ? float3(1.0, 1.0, 1.0) : sceneColor, 1.0);
     }
 
-    if (depth >= 1.0)
+    if (isFarDepth(depth))
     {
         return float4(aoOnly ? float3(1.0, 1.0, 1.0) : sceneColor, 1.0);
     }

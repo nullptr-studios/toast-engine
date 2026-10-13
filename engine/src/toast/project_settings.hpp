@@ -77,13 +77,18 @@ public:
 
 	static auto uiSettings() -> const UISettings& { return instance->m_ui_settings; }
 
+	/// 0 is uncapped
+	static auto maxTickRate() -> unsigned { return instance != nullptr ? instance->m_max_tick_rate : k_default_max_tick_rate; }
+
 private:
+	static constexpr unsigned k_default_max_tick_rate = 500;
 	static inline ProjectSettings* instance = nullptr;
 	std::string m_name;
 	std::array<unsigned, 3> m_version {1, 0, 0};
 	std::vector<std::string> m_databases;
 	GameplaySettings m_gameplay_settings;
 	UISettings m_ui_settings;
+	unsigned m_max_tick_rate = k_default_max_tick_rate;
 };
 
 }

@@ -4,6 +4,8 @@
 
 #include "sdl_output_target.hpp"
 
+#include "vulkan_common.hpp"
+
 #include <stdexcept>
 #include <toast/log.hpp>
 #include <tracy/Tracy.hpp>
@@ -100,18 +102,13 @@ auto SDLOutputTarget::present(uint32_t image_index, vk::Semaphore render_finishe
 
 auto SDLOutputTarget::recordFinalize(vk::CommandBuffer command_buffer, uint32_t image_index) -> void {
 	ZoneScoped;
-	const vk::ImageMemoryBarrier barrier(
-	    vk::AccessFlagBits::eColorAttachmentWrite,
-	    vk::AccessFlags {},
-	    vk::ImageLayout::eColorAttachmentOptimal,
-	    vk::ImageLayout::ePresentSrcKHR,
-	    VK_QUEUE_FAMILY_IGNORED,
-	    VK_QUEUE_FAMILY_IGNORED,
+	// VulkanRenderer records this image as sync::Usage::present afterwards
+	sync::transition(
+	    command_buffer,
 	    m_swapchain->getImage(image_index),
-	    vk::ImageSubresourceRange {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}
-	);
-	command_buffer.pipelineBarrier(
-	    vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::PipelineStageFlagBits::eBottomOfPipe, {}, {}, {}, barrier
+	    colorSubresourceRange(),
+	    sync::Usage::color_attachment,
+	    sync::Usage::present
 	);
 }
 

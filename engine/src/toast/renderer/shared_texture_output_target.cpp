@@ -4,6 +4,7 @@
 
 #include "shared_texture_output_target.hpp"
 
+#include "vulkan_common.hpp"
 #include "vulkan_core.hpp"
 #include "vulkan_debug.hpp"
 
@@ -121,19 +122,8 @@ void SharedTextureOutputTarget::recordFinalize(vk::CommandBuffer command_buffer,
 	const vk::Image image = **shared.image;
 	const vk::Buffer staging = **shared.staging;
 
-	const vk::ImageMemoryBarrier to_transfer(
-	    vk::AccessFlagBits::eColorAttachmentWrite,
-	    vk::AccessFlagBits::eTransferRead,
-	    vk::ImageLayout::eColorAttachmentOptimal,
-	    vk::ImageLayout::eTransferSrcOptimal,
-	    VK_QUEUE_FAMILY_IGNORED,
-	    VK_QUEUE_FAMILY_IGNORED,
-	    image,
-	    colorSubresourceRange()
-	);
-	command_buffer.pipelineBarrier(
-	    vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::PipelineStageFlagBits::eTransfer, {}, {}, {}, to_transfer
-	);
+	// VulkanRenderer records this image as sync::Usage::transfer_src afterwards
+	sync::transition(command_buffer, image, colorSubresourceRange(), sync::Usage::color_attachment, sync::Usage::transfer_src);
 
 	const vk::BufferImageCopy region(
 	    0,
@@ -145,16 +135,9 @@ void SharedTextureOutputTarget::recordFinalize(vk::CommandBuffer command_buffer,
 	);
 	command_buffer.copyImageToBuffer(image, vk::ImageLayout::eTransferSrcOptimal, staging, region);
 
-	const vk::BufferMemoryBarrier to_host(
-	    vk::AccessFlagBits::eTransferWrite,
-	    vk::AccessFlagBits::eHostRead,
-	    VK_QUEUE_FAMILY_IGNORED,
-	    VK_QUEUE_FAMILY_IGNORED,
-	    staging,
-	    0,
-	    VK_WHOLE_SIZE
-	);
-	command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eHost, {}, {}, to_host, {});
+	sync::BarrierBatch to_host;
+	to_host.buffer(staging, sync::Usage::transfer_dst, sync::Usage::host_read);
+	to_host.flush(command_buffer);
 }
 
 void SharedTextureOutputTarget::onImageRenderComplete(uint32_t image_index) {
