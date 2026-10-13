@@ -141,6 +141,48 @@ auto inputActionBinds(const input::Action& action, lua_State* state) -> luabridg
 	}
 	return luabridge::LuaRef::fromStack(state);
 }
+
+auto luaHardness(std::string_view name) -> std::optional<physics::Hardness> {
+	if (name.empty()) {
+		return physics::k_hardest;
+	}
+	const std::optional<physics::Hardness> hardness = physics::hardnessFromName(name);
+	if (not hardness.has_value()) {
+		TOAST_WARN("Lua", "Unknown hardness '{}', use soft, medium or hard", name);
+	}
+	return hardness;
+}
+
+void luaDamageArea(
+    const glm::vec3& point, float radius, float energy_density, const glm::vec3& direction, std::string_view hardness
+) {
+	physics::Simulator* simulator = physics::Simulator::current();
+	const std::optional<physics::Hardness> max_hardness = luaHardness(hardness);
+	if (simulator == nullptr || not max_hardness.has_value()) {
+		return;
+	}
+	const float length = glm::length(direction);
+	simulator->damageArea(
+	    physics::AreaDamage {
+	      .point = point,
+	      .fracture_radius = radius,
+	      .energy_density = energy_density,
+	      .direction = length > 1.0e-6f ? direction / length : glm::vec3 {0.0f},
+	      .max_hardness = *max_hardness,
+	    }
+	);
+}
+
+auto luaExplode(const glm::vec3& point, float force, float falloff, std::string_view hardness) -> int {
+	physics::Simulator* simulator = physics::Simulator::current();
+	const std::optional<physics::Hardness> max_hardness = luaHardness(hardness);
+	if (simulator == nullptr || not max_hardness.has_value()) {
+		return 0;
+	}
+	return static_cast<int>(simulator->explode(
+	    physics::ExplosionDamage {.point = point, .force = force, .falloff = falloff, .max_hardness = *max_hardness}
+	));
+}
 }
 
 LuaState::Lock::Lock(Entry* entry, lua_State* state, size_t index) noexcept : m_entry(entry), m_state(state), m_index(index) { }
@@ -1136,9 +1178,46 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    )
 	    .addFunction(
 	        "shootVoxel",
-	        +[](const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy, float min_radius) -> bool {
-		        return toast::Engine::get() && toast::Engine::get()->shootVoxel(origin, direction, max_distance, energy, min_radius);
+	        +[](const glm::vec3& origin,
+					    const glm::vec3& direction,
+					    float max_distance,
+					    float energy_density,
+					    float fracture_radius) -> bool {
+		        return toast::Engine::get() &&
+						       toast::Engine::get()->shootVoxel(origin, direction, max_distance, energy_density, fracture_radius);
 	        }
+	    )
+	    .addFunction(
+	        "damageArea",
+	        overload<const glm::vec3&, float, float>(+[](const glm::vec3& point, float radius, float energy_density) {
+		        luaDamageArea(point, radius, energy_density, glm::vec3 {0.0f}, {});
+	        }),
+	        overload<const glm::vec3&, float, float, const glm::vec3&>(
+	            +[](const glm::vec3& point, float radius, float energy_density, const glm::vec3& direction) {
+		            luaDamageArea(point, radius, energy_density, direction, {});
+	            }
+	        ),
+	        overload<const glm::vec3&, float, float, const glm::vec3&, const std::string&>(+[](const glm::vec3& point,
+					                                                                                   float radius,
+					                                                                                   float energy_density,
+					                                                                                   const glm::vec3& direction,
+					                                                                                   const std::string& hardness) {
+		        luaDamageArea(point, radius, energy_density, direction, hardness);
+	        })
+	    )
+	    .addFunction(
+	        "explode",
+	        overload<const glm::vec3&, float>(+[](const glm::vec3& point, float force) -> int {
+		        return luaExplode(point, force, physics::tunables().explosion_falloff, {});
+	        }),
+	        overload<const glm::vec3&, float, float>(+[](const glm::vec3& point, float force, float falloff) -> int {
+		        return luaExplode(point, force, falloff, {});
+	        }),
+	        overload<const glm::vec3&, float, float, const std::string&>(
+	            +[](const glm::vec3& point, float force, float falloff, const std::string& hardness) -> int {
+		            return luaExplode(point, force, falloff, hardness);
+	            }
+	        )
 	    )
 	    .endNamespace()
 
