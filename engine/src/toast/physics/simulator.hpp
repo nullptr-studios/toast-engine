@@ -47,6 +47,7 @@ class Rigidbody;
 class DynamicRigidbody;
 class Collider;
 struct SmashVolume;
+struct SmashPieces;
 
 }
 
@@ -108,11 +109,12 @@ public:
 	void recordDamage(DamageCommand&& command);
 	void applyDamageCommands();
 	void applyDamageCommand(const DamageCommand& c);
-	void applyExplosion(const glm::vec3& position, float radius, float energy);
+	void damageArea(const AreaDamage& damage);
+	auto explode(const ExplosionDamage& explosion) -> uint32_t;
 
 	auto shootVoxel(
-	    const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy, float min_radius = 0.0f,
-	    const std::optional<FragmentPush>& push = std::nullopt
+	    const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy_density, float fracture_radius,
+	    const std::optional<FragmentPush>& push = std::nullopt, Hardness max_hardness = k_hardest
 	) -> bool;
 
 	auto smashCapsule(
@@ -120,9 +122,10 @@ public:
 	    const CapsuleSmash& smash
 	) -> uint32_t;
 
-	/// Burns a thin tube into the first voxels along the ray right away, the radius ignores the material shatter radius
-	auto cutVoxel(const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy, float radius, float depth)
-	    -> uint32_t;
+	auto cutVoxel(
+	    const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy_density, float radius, float depth,
+	    Hardness max_hardness = k_hardest
+	) -> uint32_t;
 
 	[[nodiscard]]
 	auto runConnectivityAnalysis() -> std::vector<ConnectivityResult>;
@@ -421,7 +424,6 @@ private:
 	struct VoxelRayHit {
 		ShapeID shape;
 		float distance = 0.0f;
-		float shatter_radius = 0.0f;
 	};
 
 	[[nodiscard]]
@@ -583,6 +585,11 @@ private:
 	[[nodiscard]]
 	auto spawnFragmentBody(ShapeID source_shape_id, const DetachedComponent& component, const FragmentPush* push = nullptr) -> bool;
 	auto smashShape(ShapeID shape_id, const SmashVolume& volume, const CapsuleSmash& smash, bool chunks) -> uint32_t;
+	auto explodeShape(ShapeID shape_id, const ExplosionDamage& explosion) -> uint32_t;
+	auto breakPieces(
+	    ShapeID shape_id, SmashPieces& picked, bool chunks,
+	    const std::function<std::optional<FragmentPush>(const DetachedComponent&)>& push_for, const AABB& wake_bounds
+	) -> uint32_t;
 	[[nodiscard]]
 	auto marchVoxelRay(const glm::vec3& origin, const glm::vec3& direction, float max_distance) -> std::optional<VoxelRayHit>;
 	[[nodiscard]]

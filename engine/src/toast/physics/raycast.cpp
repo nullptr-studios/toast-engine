@@ -403,11 +403,9 @@ auto Simulator::marchVoxelRay(const glm::vec3& origin, const glm::vec3& dir, flo
 		return std::nullopt;
 	}
 
-	const uint32_t material_index = voxel::resolveMaterialIndex(data->palette, data->materials, nearest->palette_index);
 	return VoxelRayHit {
 	  .shape = nearest->shape,
 	  .distance = nearest->distance,
-	  .shatter_radius = data->materials.materials[material_index].shatter_radius,
 	};
 }
 
