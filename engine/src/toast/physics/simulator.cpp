@@ -3,6 +3,7 @@
 #include "accumulator.hpp"
 #include "anchor_mask.hpp"
 #include "contact_events.hpp"
+#include "fracture.hpp"
 #include "fragment_extraction.hpp"
 #include "nodes/box_collider.hpp"
 #include "nodes/capsule_collider.hpp"
@@ -3981,7 +3982,7 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 	if (not mainThreadMutationAllowed()) {
 		return;
 	}
-	if (not std::isfinite(c.radius) || c.radius <= 0.0f) {
+	if (not std::isfinite(c.fracture_radius) || c.fracture_radius <= 0.0f || not std::isfinite(c.energy_density)) {
 		return;
 	}
 
@@ -4000,34 +4001,59 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 
 	// we get the position in volume space
 	glm::vec3 in_body_frame = glm::inverse(body->rotation) * (c.world_center - body->position);
-	glm::vec3 local_center = glm::inverse(shape->voxel.local_rotation) * (in_body_frame - shape->voxel.local_center);
-
-	const float shell = glm::max(c.shell_voxels, 0.0f) * voxel::k_voxel_size;
-	const float inner_radius = shell > 0.0f ? glm::max(c.radius - shell, 0.0f) : 0.0f;
-	const float outer_squared = c.radius * c.radius;
-	const float inner_squared = inner_radius * inner_radius;
+	const glm::quat inverse_local = glm::inverse(shape->voxel.local_rotation);
+	glm::vec3 local_center = inverse_local * (in_body_frame - shape->voxel.local_center);
+	const float direction_length = glm::length(c.direction);
+	const glm::vec3 local_direction = std::isfinite(direction_length) && direction_length > 1.0e-6f
+	                                      ? inverse_local * (glm::inverse(body->rotation) * (c.direction / direction_length))
+	                                      : glm::vec3 {0.0f};
 
 	voxel::Volume& volume = *data->volume;
-	const glm::ivec3 voxel_dims = glm::ivec3(volume.voxelDims());
-
-	glm::ivec3 first = glm::ivec3(glm::floor((local_center - glm::vec3(c.radius)) / voxel::k_voxel_size));
-	glm::ivec3 last = glm::ivec3(glm::ceil((local_center + glm::vec3(c.radius)) / voxel::k_voxel_size)) - 1;
-	first = glm::clamp(first, glm::ivec3(0), voxel_dims - 1);
-	last = glm::clamp(last, glm::ivec3(0), voxel_dims - 1);
-	if (first.x > last.x || first.y > last.y || first.z > last.z) {
-		return;
-	}
-
-	const auto brick_dim = static_cast<int32_t>(voxel::k_brick_dim);
-	const glm::ivec3 first_brick = first / brick_dim;
-	const glm::ivec3 last_brick = last / brick_dim;
 
 	std::vector<glm::ivec3> dirty_bricks;
 	uint32_t removed = 0;
 	glm::vec3 removed_sum {0.0f};
+	Crater crater;
+	SmashPieces unglued;
 
 	{
 		std::scoped_lock voxel_lock {voxelDataMutex()};
+
+		crater = planCrater(
+		    volume,
+		    data->palette,
+		    data->materials,
+		    FractureRequest {
+		      .point = local_center,
+		      .direction = local_direction,
+		      .radius = c.fracture_radius,
+		      .energy_density = c.energy_density,
+		      .max_hardness = c.max_hardness
+		    }
+		);
+		if (not crater.breaks) {
+			return;
+		}
+
+		const float shell = glm::max(c.shell_voxels, 0.0f) * voxel::k_voxel_size;
+		const float inner_radius = shell > 0.0f ? glm::max(crater.radius - shell, 0.0f) : 0.0f;
+		const float outer_squared = crater.radius * crater.radius;
+		const float inner_squared = inner_radius * inner_radius;
+
+		const glm::ivec3 voxel_dims = glm::ivec3(volume.voxelDims());
+		glm::ivec3 first =
+		    glm::ivec3(glm::floor((glm::min(crater.start, crater.end) - glm::vec3(crater.radius)) / voxel::k_voxel_size));
+		glm::ivec3 last =
+		    glm::ivec3(glm::ceil((glm::max(crater.start, crater.end) + glm::vec3(crater.radius)) / voxel::k_voxel_size)) - 1;
+		first = glm::clamp(first, glm::ivec3(0), voxel_dims - 1);
+		last = glm::clamp(last, glm::ivec3(0), voxel_dims - 1);
+		if (first.x > last.x || first.y > last.y || first.z > last.z) {
+			return;
+		}
+
+		const auto brick_dim = static_cast<int32_t>(voxel::k_brick_dim);
+		const glm::ivec3 first_brick = first / brick_dim;
+		const glm::ivec3 last_brick = last / brick_dim;
 
 		for (int32_t bz = first_brick.z; bz <= last_brick.z; ++bz) {
 			for (int32_t by = first_brick.y; by <= last_brick.y; ++by) {
@@ -4051,15 +4077,14 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 								}
 
 								const glm::vec3 voxel_center = (glm::vec3 {v} + 0.5f) * voxel::k_voxel_size;
-								const glm::vec3 offset = voxel_center - local_center;
-								const float distance_squared = glm::dot(offset, offset);
+								const float distance_squared = pointSegmentDistanceSquared(voxel_center, crater.start, crater.end);
 								if (distance_squared > outer_squared || distance_squared < inner_squared) {
 									continue;
 								}
 
 								const uint32_t material_index = voxel::resolveMaterialIndex(data->palette, data->materials, palette_index);
 								const voxel::PhysicalMaterial& material = data->materials.materials[material_index];
-								if (material.isIndestructible() || material.toughness > c.energy) {
+								if (not material.breakableBy(c.max_hardness)) {
 									continue;
 								}
 
@@ -4090,6 +4115,21 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 		data->surface.repairBricks(volume, dirty_bricks);
 		for (const glm::ivec3& brick : dirty_bricks) {
 			m_debug_dirty_bricks.push_back({.shape = c.shape, .brick = brick});
+		}
+
+		// whatever the hit can break that was stuck to what it cannot comes off whole
+		const UnglueRegion& region = crater.unglue;
+		if (not region.empty()) {
+			unglued = collectBrokenPieces(
+			    volume,
+			    data->palette,
+			    data->materials,
+			    region.low,
+			    region.high,
+			    [&](const glm::vec3& center, const voxel::PhysicalMaterial&) {
+				    return region.keys.contains(voxelKey(glm::ivec3(glm::floor(center / voxel::k_voxel_size))));
+			    }
+			);
 		}
 	}
 
@@ -4129,12 +4169,19 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 
 	unlockSleep(shape->owner);
 
-	wakeBodiesInBounds(
-	    AABB {
-	      .min = c.world_center - glm::vec3(c.radius),
-	      .max = c.world_center + glm::vec3(c.radius),
-	    }
-	);
+	// crater in world space
+	const float reach = crater.radius + glm::length(crater.end - crater.start);
+	const AABB crater_bounds {
+	  .min = c.world_center - glm::vec3(reach),
+	  .max = c.world_center + glm::vec3(reach),
+	};
+	wakeBodiesInBounds(crater_bounds);
+
+	if (not unglued.pieces.empty()) {
+		breakPieces(
+		    c.shape, unglued, true, [&](const DetachedComponent&) -> std::optional<FragmentPush> { return c.push; }, crater_bounds
+		);
+	}
 }
 
 void Simulator::wakeBodiesInBounds(const AABB& bounds) {
@@ -4181,44 +4228,102 @@ void Simulator::recheckNeighborsOf(BodyID id) {
 	}
 }
 
-void Simulator::applyExplosion(const glm::vec3& position, float radius, float energy) {
-	ZoneScopedN("physics::ApplyExplosion");
+void Simulator::damageArea(const AreaDamage& damage) {
+	ZoneScopedN("physics::DamageArea");
 
 	if (not mainThreadMutationAllowed()) {
 		return;
 	}
-	if (not std::isfinite(radius) || radius <= 0.0f || not std::isfinite(energy)) {
+	if (not std::isfinite(damage.fracture_radius) || damage.fracture_radius <= 0.0f || not std::isfinite(damage.energy_density) ||
+	    damage.energy_density <= 0.0f) {
 		return;
 	}
 
-	const AABB bounds {.min = position - glm::vec3(radius), .max = position + glm::vec3(radius)};
+	const AABB bounds {
+	  .min = damage.point - glm::vec3(damage.fracture_radius), .max = damage.point + glm::vec3(damage.fracture_radius)
+	};
 	for (const ShapeID shape_id : m_broad_phase.queryBounds(bounds)) {
 		const Shape* shape = tryGetShape(shape_id);
 		if (shape == nullptr || shape->type != ShapeType::voxel || not shape->enabled) {
 			continue;
 		}
 
+		std::optional<FragmentPush> push = damage.push;
+		if (push.has_value() && not push->point.has_value()) {
+			push->point = damage.point;
+		}
 		recordDamage(
 		    DamageCommand {
 		      .shape = shape_id,
-		      .world_center = position,
-		      .radius = radius,
-		      .energy = energy,
+		      .world_center = damage.point,
+		      .fracture_radius = damage.fracture_radius,
+		      .energy_density = damage.energy_density,
+		      .direction = damage.direction,
+		      .max_hardness = damage.max_hardness,
+		      .push = push,
 		    }
 		);
 	}
 }
 
+auto Simulator::explode(const ExplosionDamage& explosion) -> uint32_t {
+	ZoneScopedN("physics::Explode");
+
+	if (not mainThreadMutationAllowed()) {
+		return 0;
+	}
+	if (not std::isfinite(explosion.force) || explosion.force <= 0.0f || not std::isfinite(glm::length(explosion.point))) {
+		return 0;
+	}
+
+	const float max_radius = tunables().explosion_max_radius;
+	const AABB bounds {.min = explosion.point - glm::vec3(max_radius), .max = explosion.point + glm::vec3(max_radius)};
+
+	uint32_t moved = 0;
+	std::vector<BodyID> pushed;
+	for (const ShapeID shape_id : m_broad_phase.queryBounds(bounds)) {
+		const Shape* shape = tryGetShape(shape_id);
+		if (shape == nullptr || not shape->enabled) {
+			continue;
+		}
+		if (shape->type == ShapeType::voxel) {
+			moved += explodeShape(shape_id, explosion);
+			continue;
+		}
+
+		const BodyID owner = shape->owner;
+		const Body* body = tryGetBody(owner);
+		if (body == nullptr || body->type != BodyType::dynamic_body || std::ranges::find(pushed, owner) != pushed.end()) {
+			continue;
+		}
+		const glm::vec3 offset = body->worldCenterOfMass() - explosion.point;
+		const float distance = glm::length(offset);
+		if (distance > max_radius) {
+			continue;
+		}
+		pushed.push_back(owner);
+		const glm::vec3 away = distance > 1.0e-4f ? offset / distance : glm::vec3 {0.0f, 0.0f, 1.0f};
+		// pressure on the average side of the shape for one step
+		const glm::vec3 size = glm::max(worldShapeBounds(*body, *shape).max - worldShapeBounds(*body, *shape).min, glm::vec3(0.0f));
+		const float area = ((size.x * size.y) + (size.y * size.z) + (size.z * size.x)) / 3.0f;
+		const float pressure =
+		    k_joules_per_kilojoule * explosionDensityAt(explosion.force, std::max(distance, 0.5f), explosion.falloff);
+		const float impulse = pressure * area * static_cast<float>(Accumulator::fixedDelta());
+		pushBody(owner, body->worldCenterOfMass(), away, std::numeric_limits<float>::infinity(), impulse);
+	}
+	return moved;
+}
+
 auto Simulator::shootVoxel(
-    const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy, float min_radius,
-    const std::optional<FragmentPush>& push
+    const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy_density, float fracture_radius,
+    const std::optional<FragmentPush>& push, Hardness max_hardness
 ) -> bool {
 	ZoneScopedN("physics::ShootVoxel");
 
 	if (not mainThreadMutationAllowed()) {
 		return false;
 	}
-	if (not std::isfinite(max_distance) || max_distance <= 0.0f || not std::isfinite(energy)) {
+	if (not std::isfinite(max_distance) || max_distance <= 0.0f || not std::isfinite(energy_density)) {
 		return false;
 	}
 
@@ -4233,7 +4338,9 @@ auto Simulator::shootVoxel(
 	}
 
 	const glm::vec3 hit_point = origin + dir * hit->distance;
-	const float final_radius = std::max({hit->shatter_radius, voxel::k_voxel_size, min_radius});
+	// at least the voxel it lands on
+	const float final_radius =
+	    std::isfinite(fracture_radius) ? std::max(fracture_radius, 0.5f * voxel::k_voxel_size) : 0.5f * voxel::k_voxel_size;
 
 	std::optional<FragmentPush> chunk_push = push;
 	if (chunk_push.has_value()) {
@@ -4244,9 +4351,10 @@ auto Simulator::shootVoxel(
 	    DamageCommand {
 	      .shape = hit->shape,
 	      .world_center = hit_point,
-	      .radius = final_radius,
-	      .energy = energy,
-	      .shell_voxels = 2.0f,
+	      .fracture_radius = final_radius,
+	      .energy_density = energy_density,
+	      .direction = dir,
+	      .max_hardness = max_hardness,
 	      .push = chunk_push,
 	    }
 	);
@@ -4254,14 +4362,15 @@ auto Simulator::shootVoxel(
 }
 
 auto Simulator::cutVoxel(
-    const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy, float radius, float depth
+    const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy_density, float radius, float depth,
+    Hardness max_hardness
 ) -> uint32_t {
 	ZoneScopedN("physics::CutVoxel");
 
 	if (not mainThreadMutationAllowed()) {
 		return 0;
 	}
-	if (not std::isfinite(max_distance) || max_distance <= 0.0f || not std::isfinite(energy) || not std::isfinite(radius) ||
+	if (not std::isfinite(max_distance) || max_distance <= 0.0f || not std::isfinite(energy_density) || not std::isfinite(radius) ||
 	    radius < 0.0f || not std::isfinite(depth) || depth <= 0.0f) {
 		return 0;
 	}
@@ -4278,7 +4387,7 @@ auto Simulator::cutVoxel(
 
 	const glm::vec3 start = origin + dir * hit->distance;
 	const SmashVolume tube {.axis_start = start, .axis_end = start, .sweep = dir * depth, .reach = radius, .touching = true};
-	return smashShape(hit->shape, tube, CapsuleSmash {.energy = energy}, false);
+	return smashShape(hit->shape, tube, CapsuleSmash {.energy_density = energy_density, .max_hardness = max_hardness}, false);
 }
 
 auto Simulator::smashCapsule(
@@ -4292,7 +4401,7 @@ auto Simulator::smashCapsule(
 	}
 	const bool valid_capsule = std::isfinite(capsule.radius) && capsule.radius > 0.0f && std::isfinite(capsule.height) &&
 	                           capsule.height >= 2.0f * capsule.radius;
-	if (not valid_capsule || not std::isfinite(glm::length(sweep)) || not std::isfinite(smash.energy) ||
+	if (not valid_capsule || not std::isfinite(glm::length(sweep)) || not std::isfinite(smash.energy_density) ||
 	    not std::isfinite(smash.force)) {
 		return 0;
 	}
@@ -4350,29 +4459,134 @@ auto Simulator::smashShape(ShapeID shape_id, const SmashVolume& volume, const Ca
 	SmashPieces picked;
 	{
 		std::scoped_lock voxel_lock {voxelDataMutex()};
-		picked = collectSmashPieces(*data->volume, data->palette, data->materials, local, smash.energy);
+		picked = collectSmashPieces(*data->volume, data->palette, data->materials, local, smash.energy_density, smash.max_hardness);
 	}
-	if (picked.pieces.empty()) {
+
+	const float direction_length = glm::length(smash.direction);
+	const float dt = static_cast<float>(Accumulator::fixedDelta());
+	const auto [low, high] = volume.bounds();
+	return breakPieces(
+	    shape_id,
+	    picked,
+	    chunks,
+	    [&](const DetachedComponent& piece) -> std::optional<FragmentPush> {
+		    if (not(direction_length > 1.0e-6f)) {
+			    return std::nullopt;
+		    }
+		    return FragmentPush {
+		      .direction = smash.direction / direction_length,
+		      .speed = smash.max_speed,
+		      .max_impulse = smash.force * dt * static_cast<float>(piece.voxel_count),
+		    };
+	    },
+	    AABB {.min = low, .max = high}
+	);
+}
+
+auto Simulator::explodeShape(ShapeID shape_id, const ExplosionDamage& explosion) -> uint32_t {
+	const Shape* shape = tryGetShape(shape_id);
+	VoxelShapeData* data = shape != nullptr ? tryGetVoxelData(shape->voxel.data) : nullptr;
+	const Body* body = shape != nullptr ? tryGetBody(shape->owner) : nullptr;
+	if (data == nullptr || data->volume == nullptr || body == nullptr) {
+		return 0;
+	}
+
+	const glm::quat to_volume = glm::inverse(shape->voxel.local_rotation) * glm::inverse(body->rotation);
+	const glm::vec3 local_point = glm::inverse(shape->voxel.local_rotation) *
+	                              ((glm::inverse(body->rotation) * (explosion.point - body->position)) - shape->voxel.local_center);
+	const glm::quat to_world = glm::inverse(to_volume);
+
+	SmashPieces picked;
+	float reach = 0.0f;
+	{
+		std::scoped_lock voxel_lock {voxelDataMutex()};
+		reach = explosionReach(
+		    explosion.force,
+		    explosion.falloff,
+		    weakestToughness(data->materials, explosion.max_hardness),
+		    tunables().explosion_max_radius
+		);
+		if (not(reach > 0.0f)) {
+			return 0;
+		}
+		picked = collectBrokenPieces(
+		    *data->volume,
+		    data->palette,
+		    data->materials,
+		    local_point - glm::vec3(reach),
+		    local_point + glm::vec3(reach),
+		    [&](const glm::vec3& center, const voxel::PhysicalMaterial& material) {
+			    const float distance = glm::length(center - local_point);
+			    return distance <= reach &&
+					       hitBreaks(material, explosionDensityAt(explosion.force, distance, explosion.falloff), explosion.max_hardness);
+		    }
+		);
+	}
+
+	// every piece flies straight away from the blast
+	const glm::vec3 lattice_origin = body->position + (body->rotation * shape->voxel.local_center);
+	const float dt = static_cast<float>(Accumulator::fixedDelta());
+	return breakPieces(
+	    shape_id,
+	    picked,
+	    true,
+	    [&](const DetachedComponent& piece) -> std::optional<FragmentPush> {
+		    glm::vec3 index_sum {0.0f};
+		    uint32_t count = 0;
+		    for (const voxel::BrickPiece& brick_piece : piece.pieces) {
+			    const glm::ivec3 base = brick_piece.brick * static_cast<int32_t>(voxel::k_brick_dim);
+			    for (uint32_t i = 0; i < voxel::k_brick_voxel_count; ++i) {
+				    const voxel::BrickCoord coord = voxel::localFromIndex(i);
+				    if (voxel::isSolid(brick_piece.voxels, coord.x, coord.y, coord.z)) {
+					    index_sum += glm::vec3(base) + glm::vec3(coord.x, coord.y, coord.z);
+					    ++count;
+				    }
+			    }
+		    }
+		    if (count == 0) {
+			    return std::nullopt;
+		    }
+		    const glm::vec3 local_center = ((index_sum / static_cast<float>(count)) + 0.5f) * voxel::k_voxel_size;
+		    const glm::vec3 world_center = lattice_origin + (to_world * local_center);
+		    const glm::vec3 offset = world_center - explosion.point;
+		    const float distance = glm::length(offset);
+
+		    // pressure on the side of the piece facing the blast
+		    const float area = std::pow(static_cast<float>(count), 2.0f / 3.0f) * voxel::k_voxel_size * voxel::k_voxel_size;
+		    const float pressure =
+		        k_joules_per_kilojoule * explosionDensityAt(explosion.force, std::max(distance, 0.5f), explosion.falloff);
+		    return FragmentPush {
+		      .point = explosion.point,
+		      .direction = distance > 1.0e-4f ? offset / distance : glm::vec3 {0.0f, 0.0f, 1.0f},
+		      .speed = std::numeric_limits<float>::infinity(),
+		      .max_impulse = pressure * area * dt,
+		    };
+	    },
+	    AABB {.min = explosion.point - glm::vec3(reach), .max = explosion.point + glm::vec3(reach)}
+	);
+}
+
+auto Simulator::breakPieces(
+    ShapeID shape_id, SmashPieces& picked, bool chunks,
+    const std::function<std::optional<FragmentPush>(const DetachedComponent&)>& push_for, const AABB& wake_bounds
+) -> uint32_t {
+	const Shape* shape = tryGetShape(shape_id);
+	VoxelShapeData* data = shape != nullptr ? tryGetVoxelData(shape->voxel.data) : nullptr;
+	if (data == nullptr || picked.pieces.empty()) {
 		return 0;
 	}
 	const uint32_t solid_before = data->solid_voxel_count;
 
 	std::ranges::sort(picked.pieces, std::greater {}, &DetachedComponent::voxel_count);
 
-	const float direction_length = glm::length(smash.direction);
-	const float dt = static_cast<float>(Accumulator::fixedDelta());
 	size_t flown = 0;
 	for (const DetachedComponent& piece : picked.pieces) {
 		const bool may_fly =
 		    chunks && flown < tunables().max_fragment_spawns_per_step && piece.voxel_count >= tunables().min_fragment_voxels;
 		if (may_fly) {
-			const FragmentPush push {
-			  .direction = direction_length > 1.0e-6f ? smash.direction / direction_length : glm::vec3 {},
-			  .speed = smash.max_speed,
-			  .max_impulse = smash.force * dt * static_cast<float>(piece.voxel_count),
-			};
+			const std::optional<FragmentPush> push = push_for(piece);
 			const size_t before = m_fragments.size();
-			if (spawnFragmentBody(shape_id, piece, direction_length > 1.0e-6f ? &push : nullptr) && m_fragments.size() > before) {
+			if (spawnFragmentBody(shape_id, piece, push.has_value() ? &*push : nullptr) && m_fragments.size() > before) {
 				++flown;
 				continue;
 			}
@@ -4399,8 +4613,7 @@ auto Simulator::smashShape(ShapeID shape_id, const SmashVolume& volume, const Ca
 	}
 	unlockSleep(shape->owner);
 
-	const auto [low, high] = volume.bounds();
-	wakeBodiesInBounds(AABB {.min = low, .max = high});
+	wakeBodiesInBounds(wake_bounds);
 	return moved;
 }
 
@@ -4493,12 +4706,29 @@ auto Simulator::runConnectivityAnalysis() -> std::vector<ConnectivityResult> {
 void Simulator::convertImpulsesToDamage(std::span<const SimulationIsland> islands) {
 	ZoneScopedN("physics::ConvertImpulsesToDamage");
 
+	// one patch per manifold
+	struct ImpactPatch {
+		BroadPhasePair pair;
+		uint8_t normal_index = 0;
+		ShapeID shape;
+		BodyID source;
+		glm::vec3 direction {};
+		std::array<glm::vec3, 4> points {};
+		uint8_t point_count = 0;
+		float energy = 0.0f;
+		float toughness = std::numeric_limits<float>::infinity();
+	};
+
+	std::vector<ImpactPatch> patches;
+	const auto impact_hardness = static_cast<Hardness>(std::min(tunables().impact_max_hardness, static_cast<uint32_t>(k_hardest)));
+
 	std::scoped_lock voxel_lock {voxelDataMutex()};
 
 	for (const SimulationIsland& island : islands) {
+		patches.clear();
 		for (const Constraint& constraint : island.constraints) {
 			const float impulse = constraint.accumulated_normal_impulse;
-			if (not std::isfinite(impulse) || impulse <= 0.0f) {
+			if (not std::isfinite(impulse) || impulse <= 0.0f || not(constraint.normal_mass > 0.0f)) {
 				continue;
 			}
 
@@ -4548,17 +4778,65 @@ void Simulator::convertImpulsesToDamage(std::span<const SimulationIsland> island
 
 			const uint32_t material_index = voxel::resolveMaterialIndex(data->palette, data->materials, palette_index);
 			const voxel::PhysicalMaterial& material = data->materials.materials[material_index];
-			if (material.isIndestructible() || material.shatter_radius <= 0.0f || impulse <= material.toughness) {
+			if (not material.breakableBy(impact_hardness)) {
+				continue;
+			}
+
+			auto patch = std::ranges::find_if(patches, [&](const ImpactPatch& p) {
+				return p.pair == constraint.pair && p.normal_index == constraint.normal_index;
+			});
+			if (patch == patches.end()) {
+				patches.push_back(
+				    ImpactPatch {
+				      .pair = constraint.pair,
+				      .normal_index = constraint.normal_index,
+				      .shape = voxel_is_a ? constraint.pair.a.shape : constraint.pair.b.shape,
+				      .source = voxel_is_a ? constraint.body_b : constraint.body_a,
+				      // the normal points from a to b
+				      .direction = voxel_is_a ? -constraint.normal : constraint.normal,
+				    }
+				);
+				patch = std::prev(patches.end());
+			}
+			if (patch->point_count < patch->points.size()) {
+				patch->points[patch->point_count++] = constraint.contact_point;
+			}
+			// kinetic energy the contact took out along its normal
+			patch->energy += (impulse * impulse) / (2.0f * constraint.normal_mass);
+			patch->toughness = std::min(patch->toughness, material.toughness);
+		}
+
+		for (const ImpactPatch& patch : patches) {
+			if (patch.point_count == 0 || not std::isfinite(patch.energy)) {
+				continue;
+			}
+
+			glm::vec3 centroid {0.0f};
+			for (uint8_t i = 0; i < patch.point_count; ++i) {
+				centroid += patch.points[i];
+			}
+			centroid /= static_cast<float>(patch.point_count);
+			float spread = 0.0f;
+			for (uint8_t i = 0; i < patch.point_count; ++i) {
+				spread = std::max(spread, glm::length(patch.points[i] - centroid));
+			}
+
+			// the energy spreads into the material under the patch
+			const float radius = std::max(spread, voxel::k_voxel_size);
+			const float density = impactDensity(patch.energy, radius);
+			if (density < patch.toughness) {
 				continue;
 			}
 
 			recordDamage(
 			    DamageCommand {
-			      .shape = voxel_is_a ? constraint.pair.a.shape : constraint.pair.b.shape,
-			      .world_center = constraint.contact_point,
-			      .radius = material.shatter_radius,
-			      .energy = impulse,
-			      .source = voxel_is_a ? constraint.body_b : constraint.body_a,
+			      .shape = patch.shape,
+			      .world_center = centroid,
+			      .fracture_radius = radius,
+			      .energy_density = density,
+			      .direction = patch.direction,
+			      .max_hardness = impact_hardness,
+			      .source = patch.source,
 			    }
 			);
 		}

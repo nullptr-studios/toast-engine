@@ -19,7 +19,7 @@ namespace assets {
 class PhysicsMaterial;
 class DestructionMaterial;
 
-inline constexpr uint32_t k_palette_material_slots = 8;
+inline constexpr uint32_t k_palette_material_slots = voxel::k_max_physical_materials;
 
 struct VoxelMaterialSlot {
 	std::string name;

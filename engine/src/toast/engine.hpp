@@ -44,8 +44,9 @@ public:
 	void createSDLWindow(const char*);
 	void createAvaloniaWindow();
 
-	auto shootVoxel(const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy, float min_radius = 0.0f)
-	    -> bool;
+	auto shootVoxel(
+	    const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy_density, float fracture_radius
+	) -> bool;
 
 	// nodes
 	auto createWorkspace(std::string_view type) -> std::pair<UID, std::string>;
