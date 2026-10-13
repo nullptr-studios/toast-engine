@@ -9,6 +9,7 @@
 #include <toast/assets/assets.hpp>
 #include <toast/log.hpp>
 #include <toast/physics/assets.hpp>
+#include <toast/physics/material_defaults.hpp>
 #include <toast/uid.hpp>
 #include <tracy/Tracy.hpp>
 #include <utility>
@@ -39,6 +40,8 @@ auto VoxelPalette::materialLibrary() const -> const voxel::MaterialLibrary& {
 			if (m_physics[i].hasValue()) {
 				out.static_friction = m_physics[i]->staticFriction();
 				out.dynamic_friction = m_physics[i]->dynamicFriction();
+				out.rolling_friction = m_physics[i]->rollingFriction();
+				out.spin_friction = m_physics[i]->spinFriction();
 				out.restitution = m_physics[i]->restitution();
 			}
 		}
@@ -65,7 +68,7 @@ auto VoxelPalette::materialLibrary() const -> const voxel::MaterialLibrary& {
 		}
 
 		if (out.density == 0) {
-			out.density = 1000;
+			out.density = static_cast<uint16_t>(physics::material_defaults::k_density);
 		}
 	}
 

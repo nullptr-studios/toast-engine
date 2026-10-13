@@ -59,6 +59,20 @@ void Trigger::enableCollider(bool value) {
 	}
 }
 
+void Trigger::includeLayer(int layer, bool value) {
+	LayerFilter layers {.included = included, .excluded = excluded};
+	physics::includeLayer(layers, layer, value);
+	included = layers.included;
+	excluded = layers.excluded;
+}
+
+void Trigger::excludeLayer(int layer, bool value) {
+	LayerFilter layers {.included = included, .excluded = excluded};
+	physics::excludeLayer(layers, layer, value);
+	included = layers.included;
+	excluded = layers.excluded;
+}
+
 void Trigger::begin() {
 	if (participatesIn(toast::NodeOwnerParticipation::gameplay_tick)) {
 		Simulator::registerTrigger(*this);

@@ -10,6 +10,7 @@
 #include "collision_world.hpp"
 
 #include <optional>
+#include <utility>
 #include <vector>
 
 namespace physics {
@@ -39,6 +40,7 @@ struct BroadPhaseStats {
 	size_t rejected_same_body = 0;
 	size_t rejected_invalid_bodies = 0;
 	size_t rejected_immovable_bodies = 0;
+	size_t rejected_layers = 0;
 	size_t tree_nodes = 0;
 };
 
@@ -56,8 +58,10 @@ public:
 	[[nodiscard]]
 	auto queryBounds(const AABB& bounds) const -> std::vector<ShapeID>;
 
-	[[nodiscard]]
-	auto queryRay(glm::vec3 pos, glm::vec3 dir, float max_distance = -1.0f) const -> std::vector<ShapeID>;
+	template<typename Visit>
+	void raycast(glm::vec3 origin, glm::vec3 inv_dir, float max_distance, Visit&& visit) const {
+		m_tree.raycast(origin, inv_dir, max_distance, std::forward<Visit>(visit));
+	}
 
 	[[nodiscard]]
 	auto debugNodes() const -> std::vector<AABBTreeDebugNode>;

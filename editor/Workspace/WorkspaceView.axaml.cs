@@ -5,16 +5,21 @@ using Avalonia.Interactivity;
 namespace editor.Workspace;
 
 // viewport rendering and input forwarding live in ViewportControl; toolbar state in WorkspaceViewModel
-public partial class WorkspaceView : UserControl {
+public partial class WorkspaceView : UserControl, IWorkspaceShortcutTarget {
 	public WorkspaceView() {
 		InitializeComponent();
 		AddHandler(KeyDownEvent, OnShortcut, RoutingStrategies.Tunnel);
 	}
 
 	private void OnShortcut(object? sender, KeyEventArgs e) {
-		if (DataContext is not WorkspaceViewModel vm) return;
+		if (DataContext is WorkspaceViewModel vm) ToolShortcuts.Run(e, vm);
+	}
+}
 
-		if (PlayModeShortcuts.Blocked || Viewport.IsEditorFlying) return;
+// gizmo tool, space and snap shortcuts; the main window runs them for the active workspace so they work wherever focus is
+public static class ToolShortcuts {
+	public static bool Run(KeyEventArgs e, WorkspaceViewModel vm) {
+		if (e.Handled || PlayModeShortcuts.Blocked || ViewportControl.AnyEditorFlying) return false;
 
 		var mods = e.KeyModifiers;
 
@@ -47,9 +52,10 @@ public partial class WorkspaceView : UserControl {
 				vm.TranslateSnapEnabled = !vm.TranslateSnapEnabled;
 				break;
 			default:
-				return;
+				return false;
 		}
 
 		e.Handled = true;
+		return true;
 	}
 }

@@ -30,7 +30,8 @@ public enum WidgetKind {
 	ReadOnly,
 	Color3,
 	Color4,
-	Array
+	Array,
+	Layers
 }
 
 public static class InspectorFormat {
@@ -133,6 +134,16 @@ public static class InspectorFormat {
 		return int.TryParse(s.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out v);
 	}
 
+	// layer masks are uint32
+	// honestly i have no clue if ill receive them as -1 or 4294967295
+	public static bool TryMask(string s, out uint v) {
+		v = 0;
+		if (!long.TryParse(s.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var wide) ||
+		    wide < int.MinValue || wide > uint.MaxValue) return false;
+		v = unchecked((uint)wide);
+		return true;
+	}
+
 	public static float[] Floats(string s) {
 		var cleaned = s.Replace('[', ' ').Replace(']', ' ').Replace(',', ' ').Replace(';', ' ');
 		return cleaned.Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
@@ -168,6 +179,7 @@ public static class InspectorFormat {
 		switch (kind) {
 			case WidgetKind.Float:
 			case WidgetKind.Int:
+			case WidgetKind.Layers:
 			case WidgetKind.Enum: {
 				var m = NumberToken.Match(raw);
 				return m.Success ? m.Value : null;
@@ -233,7 +245,7 @@ public static class InspectorFormat {
 
 	public static string? TypeZero(WidgetKind kind) {
 		return kind switch {
-			WidgetKind.Float or WidgetKind.Int => "0",
+			WidgetKind.Float or WidgetKind.Int or WidgetKind.Layers => "0",
 			WidgetKind.Bool => "false",
 			WidgetKind.String => "",
 			WidgetKind.Vec2 => "0 0",
@@ -271,6 +283,8 @@ public static class InspectorFormat {
 			}
 			case WidgetKind.Array:
 				return string.Equals(a.Trim(), b.Trim(), StringComparison.Ordinal);
+			case WidgetKind.Layers:
+				return TryMask(a, out var ma) && TryMask(b, out var mb) ? ma == mb : string.Equals(a.Trim(), b.Trim(), StringComparison.Ordinal);
 			default:
 				return string.Equals(a.Trim(), b.Trim(), StringComparison.Ordinal);
 		}
@@ -292,6 +306,10 @@ public partial class FieldVM : ObservableObject {
 
 	[ObservableProperty] private float m_float;
 	[ObservableProperty] private int m_int;
+	[ObservableProperty] private uint m_mask;
+	[ObservableProperty] private int m_layerRows = 2;
+	[ObservableProperty] private FieldVM? m_layersPartner;
+	private FieldVM? m_layersOwner;
 
 	[ObservableProperty] private bool m_isDefault = true;
 	[ObservableProperty] private string m_readOnlyText = "";
@@ -322,6 +340,16 @@ public partial class FieldVM : ObservableObject {
 		if (isColor && !info.IsArray) {
 			if (info.FieldType == "vec3_t") Kind = WidgetKind.Color3;
 			else if (info.FieldType == "vec4_t") Kind = WidgetKind.Color4;
+		}
+
+		if (!info.IsArray && info.FieldType == "int_t") {
+			if (ReflectionDatabase.HasAttr(info.Attributes, "Layers")) {
+				Kind = WidgetKind.Layers;
+				LayersPartnerName = ReflectionDatabase.GetAttr(info.Attributes, "Layers");
+			} else if (ReflectionDatabase.HasAttr(info.Attributes, "LayersExcluded")) {
+				Kind = WidgetKind.Layers;
+				IsLayersPartner = true;
+			}
 		}
 
 		var nameOverride = ReflectionDatabase.GetAttr(info.Attributes, "Name");
@@ -405,7 +433,7 @@ public partial class FieldVM : ObservableObject {
 
 	public DateTime LastEdit { get; private set; } = DateTime.MinValue;
 
-	public bool ShowReset => Editable && !IsDefault;
+	public bool ShowReset => Editable && !(IsDefault && (LayersPartner?.IsDefault ?? true));
 
 	public ObservableCollection<TextSegment> Segments { get; } = [];
 
@@ -424,7 +452,14 @@ public partial class FieldVM : ObservableObject {
 	public bool IsAssetRef => Kind == WidgetKind.AssetRef;
 	public bool IsNodeRef => Kind == WidgetKind.NodeRef;
 	public bool IsReadOnlyText => Kind == WidgetKind.ReadOnly;
-	public bool IsVectorLayout => Kind is WidgetKind.Vec2 or WidgetKind.Vec3 or WidgetKind.Vec4;
+	public bool IsLayers => Kind == WidgetKind.Layers;
+	public bool IsVectorLayout => Kind is WidgetKind.Vec2 or WidgetKind.Vec3 or WidgetKind.Vec4 or WidgetKind.Layers;
+	public string? LayersPartnerName { get; }
+	public bool IsLayersPartner { get; }
+
+	public event Action<FieldVM, LayerMasks>? LayersEdited;
+
+	internal string? DefaultEngineValue => m_default;
 
 	public bool Editable => !ReadOnly && Kind != WidgetKind.ReadOnly;
 
@@ -454,6 +489,23 @@ public partial class FieldVM : ObservableObject {
 
 	partial void OnIsDefaultChanged(bool value) {
 		OnPropertyChanged(nameof(ShowReset));
+		m_layersOwner?.OnPropertyChanged(nameof(ShowReset));
+	}
+
+	partial void OnLayersPartnerChanged(FieldVM? oldValue, FieldVM? newValue) {
+		if (oldValue != null) oldValue.m_layersOwner = null;
+		if (newValue != null) newValue.m_layersOwner = this;
+		OnPropertyChanged(nameof(ShowReset));
+	}
+
+	partial void OnMaskChanged(uint value) {
+		OnUserEdited();
+	}
+
+	[RelayCommand]
+	private void SetLayers(LayerMasks masks) {
+		if (!Editable) return;
+		LayersEdited?.Invoke(this, masks);
 	}
 
 	partial void OnFloatChanged(float value) {
@@ -631,6 +683,8 @@ public partial class FieldVM : ObservableObject {
 		return Kind switch {
 			WidgetKind.Float => InspectorFormat.Float(Float),
 			WidgetKind.Int => Int.ToString(CultureInfo.InvariantCulture),
+			// the prefab keeps the mask as an int
+			WidgetKind.Layers => unchecked((int)Mask).ToString(CultureInfo.InvariantCulture),
 			WidgetKind.Enum => EnumValue is not null && m_enumLabelToValue.TryGetValue(EnumValue, out var enumValue)
 				? enumValue
 				: EnumValue ?? "",
@@ -656,6 +710,9 @@ public partial class FieldVM : ObservableObject {
 					break;
 				case WidgetKind.Int:
 					if (InspectorFormat.TryInt(s, out var i)) Int = i;
+					break;
+				case WidgetKind.Layers:
+					if (InspectorFormat.TryMask(s, out var mask)) Mask = mask;
 					break;
 				case WidgetKind.Enum: {
 					var value = s.Trim();
@@ -779,6 +836,13 @@ public partial class FieldVM : ObservableObject {
 	[RelayCommand]
 	private void Reset() {
 		if (m_default is null) return;
+		if (Kind == WidgetKind.Layers && LayersPartner is { } partner) {
+			InspectorFormat.TryMask(m_default, out var included);
+			InspectorFormat.TryMask(partner.m_default ?? "0", out var excluded);
+			LayersEdited?.Invoke(this, new LayerMasks(included, excluded));
+			return;
+		}
+
 		Edited?.Invoke(this, m_default);
 		ApplyEngineString(m_default);
 	}

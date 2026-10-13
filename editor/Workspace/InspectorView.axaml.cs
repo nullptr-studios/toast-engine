@@ -13,7 +13,7 @@ using editor.Components.Elements;
 
 namespace editor.Workspace;
 
-public partial class InspectorView : UserControl {
+public partial class InspectorView : UserControl, IWorkspaceShortcutTarget {
 	private InspectorViewModel? m_vm;
 
 	public InspectorView() {

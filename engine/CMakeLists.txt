@@ -19,6 +19,14 @@ endif ()
 find_package(asio CONFIG REQUIRED)
 find_package(SDL3 CONFIG REQUIRED)
 find_package(Tracy CONFIG REQUIRED)
+get_target_property(_tracy_definitions Tracy::TracyClient INTERFACE_COMPILE_DEFINITIONS)
+if (_tracy_definitions)
+    set(_tracy_profiled_definitions)
+    foreach (_definition IN LISTS _tracy_definitions)
+        list(APPEND _tracy_profiled_definitions "$<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:${_definition}>")
+    endforeach ()
+    set_property(TARGET Tracy::TracyClient PROPERTY INTERFACE_COMPILE_DEFINITIONS "${_tracy_profiled_definitions}")
+endif ()
 find_package(glm CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(Vulkan REQUIRED)
@@ -227,6 +235,8 @@ add_custom_command(TARGET toast_engine POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${_nlohmann_include}/nlohmann" "${TOAST_ENGINE_OUTPUT_ROOT}/include/nlohmann"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${_tracy_include}/tracy" "${TOAST_ENGINE_OUTPUT_ROOT}/include/tracy"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${_tracy_include}/common" "${TOAST_ENGINE_OUTPUT_ROOT}/include/common"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${_tracy_include}/client" "${TOAST_ENGINE_OUTPUT_ROOT}/include/client"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_LINKER_FILE:Tracy::TracyClient>" "${TOAST_ENGINE_OUTPUT_ROOT}/lib"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${_toml_include}/toml++" "${TOAST_ENGINE_OUTPUT_ROOT}/include/toml++"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${_glm_include}/glm" "${TOAST_ENGINE_OUTPUT_ROOT}/include/glm"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${LUA_INCLUDE_DIR}" "${TOAST_ENGINE_OUTPUT_ROOT}/include"

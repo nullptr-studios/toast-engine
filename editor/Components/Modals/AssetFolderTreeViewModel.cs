@@ -11,7 +11,7 @@ using Lucide.Avalonia;
 
 namespace editor.Components.Modals;
 
-public partial class AssetFolderNode : ObservableObject {
+public partial class AssetFolderNode : ObservableObject, IPickerNode {
 	[ObservableProperty] private bool m_isExpanded = true;
 
 	public AssetFolderNode(string realPath) {
@@ -28,6 +28,8 @@ public partial class AssetFolderNode : ObservableObject {
 	public string RealPath { get; }
 	public ObservableCollection<AssetFolderNode> Children { get; } = [];
 	public ObservableCollection<AssetFolderNode> FilteredChildren { get; } = [];
+	public bool IsFolder => true;
+	System.Collections.IEnumerable IPickerNode.VisibleChildren => FilteredChildren;
 
 	public bool UpdateFilter(string query, bool caseSensitive) {
 		if (string.IsNullOrEmpty(query)) {

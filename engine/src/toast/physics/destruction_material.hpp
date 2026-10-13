@@ -55,10 +55,10 @@ protected:
 private:
 	void readFields();
 
-	float m_density = 1000.0f;
-	float m_toughness = 1000.0f;
-	float m_structural_strength = 1000.0f;
-	float m_shatter_radius = 0.5f;
+	float m_density = 0.0f;
+	float m_toughness = 0.0f;
+	float m_structural_strength = 0.0f;
+	float m_shatter_radius = 0.0f;
 	bool m_destructible = true;
 	bool m_flammable = false;
 	float m_burn_rate = 0.0f;

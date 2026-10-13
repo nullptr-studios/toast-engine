@@ -1,0 +1,121 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:elements="clr-namespace:editor.Components.Elements">
+	<Design.PreviewWith>
+		<Border Padding="8"
+		        Background="{StaticResource Bg3}"
+		        Width="256">
+			<StackPanel Spacing="8">
+				<TextBlock Text="Layers: "
+				           Foreground="{StaticResource TextMuted}" />
+				<!-- 0 and 1 included, 4 and 6 excluded -->
+				<elements:LayerTagBox Included="3"
+				                      Excluded="80" />
+			</StackPanel>
+		</Border>
+	</Design.PreviewWith>
+
+	<ControlTheme x:Key="{x:Type elements:LayerTagBox}"
+	              TargetType="elements:LayerTagBox">
+		<Setter Property="HorizontalAlignment"
+		        Value="Stretch" />
+
+		<Setter Property="Template">
+			<ControlTemplate>
+				<!-- This is the tag box -->
+				<Border Background="{StaticResource Bg1}"
+				        CornerRadius="8"
+				        Padding="8">
+					<StackPanel>
+						<ItemsControl x:Name="PART_Cells"
+						              ItemsSource="{Binding VisibleCells, RelativeSource={RelativeSource TemplatedParent}}">
+							<ItemsControl.ItemsPanel>
+								<ItemsPanelTemplate>
+									<UniformGrid Columns="4"
+									             ColumnSpacing="4"
+									             RowSpacing="4" />
+								</ItemsPanelTemplate>
+							</ItemsControl.ItemsPanel>
+							<ItemsControl.ItemTemplate>
+								<DataTemplate x:DataType="elements:LayerCell">
+									<Border Classes="cell"
+									        Classes.included="{Binding IsIncluded}"
+									        Classes.excluded="{Binding IsExcluded}"
+									        ToolTip.Tip="{Binding Tooltip}">
+										<Border.Styles>
+											<!-- Inactive -->
+											<Style Selector="Border.cell">
+												<Setter Property="CornerRadius"
+												        Value="8" />
+												<Setter Property="Height"
+												        Value="32" />
+												<Setter Property="Cursor"
+												        Value="Hand" />
+												<Setter Property="Background"
+												        Value="{StaticResource Bg3}" />
+												<Setter Property="BorderThickness"
+												        Value="0" />
+											</Style>
+											<Style Selector="Border.cell > TextBlock">
+												<Setter Property="FontWeight"
+												        Value="Bold" />
+												<Setter Property="Foreground"
+												        Value="{StaticResource TextMuted}" />
+												<Setter Property="VerticalAlignment"
+												        Value="Center" />
+												<Setter Property="HorizontalAlignment"
+												        Value="Center" />
+											</Style>
+
+											<!-- Active -->
+											<Style Selector="Border.cell.included">
+												<Setter Property="Background"
+												        Value="{StaticResource Blue}" />
+											</Style>
+											<Style Selector="Border.cell.included > TextBlock">
+												<Setter Property="Foreground"
+												        Value="{StaticResource Bg1}" />
+											</Style>
+
+											<!-- Excluded -->
+											<Style Selector="Border.cell.excluded">
+												<Setter Property="Background"
+												        Value="{StaticResource DarkRed}" />
+												<Setter Property="BorderBrush"
+												        Value="{StaticResource Red}" />
+												<Setter Property="BorderThickness"
+												        Value="4" />
+											</Style>
+											<Style Selector="Border.cell.excluded > TextBlock">
+												<Setter Property="Foreground"
+												        Value="{StaticResource Red}" />
+											</Style>
+											<Style Selector="Border.cell:disabled">
+												<Setter Property="Opacity"
+												        Value="0.5" />
+											</Style>
+										</Border.Styles>
+										<TextBlock Text="{Binding Text}" />
+									</Border>
+								</DataTemplate>
+							</ItemsControl.ItemTemplate>
+						</ItemsControl>
+						<!-- Drag to hide or show more rows, line by line -->
+						<Panel x:Name="PART_Handle"
+						       Background="Transparent"
+						       Cursor="SizeNorthSouth"
+						       Margin="80,2,80,0"
+						       Height="9"
+						       ToolTip.Tip="Drag to show more or fewer layers">
+							<Border Height="3"
+							        VerticalAlignment="Bottom"
+							        Background="{StaticResource Bg4}"
+							        CornerRadius="100" />
+						</Panel>
+					</StackPanel>
+				</Border>
+			</ControlTemplate>
+		</Setter>
+
+	</ControlTheme>
+</ResourceDictionary>

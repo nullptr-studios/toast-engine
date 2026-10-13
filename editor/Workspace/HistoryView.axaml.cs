@@ -3,7 +3,7 @@ using Avalonia.Input;
 
 namespace editor.Workspace;
 
-public partial class HistoryView : UserControl {
+public partial class HistoryView : UserControl, IWorkspaceShortcutTarget {
 	public HistoryView() {
 		InitializeComponent();
 	}

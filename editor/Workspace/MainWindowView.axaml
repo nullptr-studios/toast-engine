@@ -41,6 +41,10 @@
 		            Command="{Binding CompileGameReleaseCommand}" />
 		<KeyBinding Gesture="F1"
 		            Command="{Binding OpenDocumentationCommand}" />
+		<KeyBinding Gesture="Ctrl+P"
+		            Command="{Binding PullCommand}" />
+		<KeyBinding Gesture="Ctrl+Shift+P"
+		            Command="{Binding PushCommand}" />
 	</Window.KeyBindings>
 
 	<Grid RowDefinitions="Auto,*">
@@ -50,6 +54,45 @@
 			<!-- Window buttons -->
 			<StackPanel DockPanel.Dock="Right"
 			            Orientation="Horizontal">
+				<!-- Git status -->
+				<Button Command="{Binding OpenCommitCommand}"
+				        IsVisible="{Binding GitState.IsAvailable}"
+				        ToolTip.Tip="{Binding GitState.ToolTip}"
+				        Height="30"
+				        Padding="10,0"
+				        Background="Transparent"
+				        VerticalContentAlignment="Center">
+					<StackPanel Orientation="Horizontal"
+					            Spacing="6"
+					            VerticalAlignment="Center">
+						<LucideIcon Kind="GitBranch"
+						            Size="14"
+						            StrokeWidth="2.5" />
+						<TextBlock Text="{Binding GitState.BranchName}"
+						           FontSize="12"
+						           VerticalAlignment="Center" />
+						<StackPanel Orientation="Horizontal"
+						            Spacing="2"
+						            IsVisible="{Binding GitState.HasAhead}">
+							<LucideIcon Kind="ArrowUp"
+							            Size="12"
+							            StrokeWidth="3" />
+							<TextBlock Text="{Binding GitState.Ahead}"
+							           FontSize="12"
+							           VerticalAlignment="Center" />
+						</StackPanel>
+						<StackPanel Orientation="Horizontal"
+						            Spacing="2"
+						            IsVisible="{Binding GitState.HasBehind}">
+							<LucideIcon Kind="ArrowDown"
+							            Size="12"
+							            StrokeWidth="3" />
+							<TextBlock Text="{Binding GitState.Behind}"
+							           FontSize="12"
+							           VerticalAlignment="Center" />
+						</StackPanel>
+					</StackPanel>
+				</Button>
 				<Button Click="OnMinimize"
 				        Width="40"
 				        Height="30"
@@ -245,6 +288,22 @@
 					          Command="{Binding CleanBakedLightingCacheCommand}"
 					          ToolTip.Tip="Deletes cached reflection probe and irradiance volume bakes whose node no longer exists in this project" />
 				</MenuItem>
+				<MenuItem Header="_Git"
+				          IsEnabled="{Binding GitState.IsAvailable}">
+					<MenuItem Header="_Commit..."
+					          Command="{Binding OpenCommitCommand}" />
+					<Separator />
+					<MenuItem Header="_Pull"
+					          InputGesture="Ctrl+P"
+					          Command="{Binding PullCommand}" />
+					<MenuItem Header="P_ush"
+					          InputGesture="Ctrl+Shift+P"
+					          Command="{Binding PushCommand}" />
+					<Separator />
+					<MenuItem Header="Lock _Artwork..."
+					          Command="{Binding LockArtworkCommand}"
+					          ToolTip.Tip="Choose which lockable files in artwork:// to lock while you work on the assets" />
+				</MenuItem>
 				<MenuItem Header="_Tools">
 					<MenuItem Header="_Hierarchy"
 					          ToggleType="CheckBox"
@@ -262,6 +321,10 @@
 					          ToggleType="CheckBox"
 					          IsChecked="{Binding HistoryVisible, Mode=TwoWay}"
 					          InputGesture="Alt+D7" />
+					<MenuItem Header="Loc_ks"
+					          ToggleType="CheckBox"
+					          IsEnabled="{Binding GitState.IsAvailable}"
+					          IsChecked="{Binding LocksVisible, Mode=TwoWay}" />
 					<MenuItem Header="_Data Editor"
 					          ToggleType="CheckBox"
 					          IsChecked="{Binding GenericEditorVisible, Mode=TwoWay}"

@@ -5,7 +5,7 @@
         x:Class="editor.Components.Modals.MessageModal"
         x:DataType="local:MessageModalViewModel"
         SizeToContent="Height"
-        Width="420"
+        Width="480"
         MinWidth="320"
         MaxWidth="600"
         CanResize="False"
@@ -59,7 +59,9 @@
 			        MinWidth="80"
 			        IsVisible="{Binding ShowCancel}"
 			        Click="OnCancel"
-			        HorizontalContentAlignment="Center">
+			        HorizontalContentAlignment="Center"
+			        CornerRadius="6"
+			        Background="{StaticResource Bg4}">
 				<StackPanel Orientation="Horizontal">
 					<LucideIcon Size="16"
 					            StrokeWidth="2.5"
@@ -73,7 +75,9 @@
 			        TabIndex="1"
 			        IsVisible="{Binding ShowNoAll}"
 			        Click="OnNoAll"
-			        HorizontalContentAlignment="Center">
+			        HorizontalContentAlignment="Center"
+			        CornerRadius="6"
+			        Background="{StaticResource Bg4}">
 				<StackPanel Orientation="Horizontal">
 					<LucideIcon Size="16"
 					            StrokeWidth="2.5"
@@ -87,7 +91,9 @@
 			        TabIndex="2"
 			        IsVisible="{Binding ShowNo}"
 			        Click="OnNo"
-			        HorizontalContentAlignment="Center">
+			        HorizontalContentAlignment="Center"
+			        CornerRadius="6"
+			        Background="{StaticResource Bg4}">
 				<StackPanel Orientation="Horizontal">
 					<LucideIcon Size="16"
 					            StrokeWidth="2.5"
@@ -103,14 +109,16 @@
 			        IsDefault="True"
 			        Classes="primary"
 			        Click="OnOk"
-			        HorizontalContentAlignment="Center">
+			        HorizontalContentAlignment="Center"
+			        CornerRadius="6">
 				<StackPanel Orientation="Horizontal">
 					<LucideIcon Size="16"
-					            StrokeWidth="2.5"
+					            StrokeWidth="3"
 					            Margin="0,0,4,0"
 					            IsVisible="{Binding HasOkIcon}"
 					            Kind="{Binding OkIcon}" />
-					<TextBlock Text="{Binding OkLabel}" />
+					<TextBlock Text="{Binding OkLabel}"
+					           FontWeight="Bold"/>
 				</StackPanel>
 			</Button>
 		</Grid>
