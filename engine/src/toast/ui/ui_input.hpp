@@ -8,6 +8,7 @@
 
 #pragma once
 #include <toast/events/listener.hpp>
+#include <unordered_set>
 
 namespace ui {
 
@@ -22,6 +23,10 @@ public:
 
 private:
 	event::Listener m_listener;
+
+	/// Presses the UI took so only their releases are consumed and gameplay never misses a release
+	std::unordered_set<int> m_ui_buttons;
+	std::unordered_set<int> m_ui_keys;
 
 	float m_dp_ratio = 1.0f;
 	int m_mods = 0;
