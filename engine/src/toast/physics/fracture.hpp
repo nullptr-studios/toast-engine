@@ -27,7 +27,7 @@ namespace physics {
 
 inline constexpr float k_voxel_volume = voxel::k_voxel_size * voxel::k_voxel_size * voxel::k_voxel_size;
 
-inline constexpr float k_joules_per_kilojoule = 1000.0f; // we use kJ to not have values in the millions
+inline constexpr float k_joules_per_kilojoule = 1000.0f;    // we use kJ to not have values in the millions
 
 [[nodiscard]]
 constexpr auto voxelBreakEnergy(const voxel::PhysicalMaterial& material) -> float {
@@ -158,7 +158,7 @@ inline auto fractureCandidates(
 	const glm::vec3 far = request.point + (digs ? request.direction * request.max_depth : glm::vec3 {0.0f});
 	const glm::vec3 low = glm::min(request.point, far) - glm::vec3(radius);
 	const glm::vec3 high = glm::max(request.point, far) + glm::vec3(radius);
-	const float axis_reach = 0.5f * std::sqrt(3.0f) * voxel::k_voxel_size; 	// half the diagonal of a voxel
+	const float axis_reach = 0.5f * std::sqrt(3.0f) * voxel::k_voxel_size;    // half the diagonal of a voxel
 
 	forEachSolidVoxel(volume, low, high, [&](glm::ivec3, glm::vec3 center, uint8_t index) {
 		const glm::vec3 offset = center - request.point;
@@ -167,7 +167,7 @@ inline auto fractureCandidates(
 		FractureCandidate candidate {
 		  .distance = distance,
 		  .cost = voxelBreakEnergy(material),
-		  .breakable = hitBreaks(material, request.energy_density, request.max_hardness),
+		  .breakable = material.breakableBy(request.max_hardness),
 		};
 
 		if (distance <= radius) {
@@ -259,10 +259,9 @@ inline auto planCrater(
 
 	// a hit never breaks anything of if the voxel is too tough or too hard
 	const std::optional<voxel::PhysicalMaterial> hit = hitMaterial(volume, palette, materials, request.point, request.radius);
-	if (not hit.has_value() || not hitBreaks(*hit, request.energy_density, request.max_hardness)) {
+	if (not hit.has_value() || not hit->breakableBy(request.max_hardness)) {
 		return out;
 	}
-	out.breaks = true;
 
 	std::vector<FractureCandidate> candidates = fractureCandidates(volume, palette, materials, request);
 	const auto deeper = std::ranges::partition(candidates, [](const FractureCandidate& c) { return c.depth <= 0.0f; });
@@ -295,6 +294,10 @@ inline auto planCrater(
 		++paid;
 		reached = candidate.distance;
 	}
+	if (paid == 0) {
+		return out;    // not even the nearest voxel is affordable
+	}
+	out.breaks = true;
 	if (short_of_energy) {
 		out.radius = std::max(reached, 0.5f * voxel::k_voxel_size);
 		return out;

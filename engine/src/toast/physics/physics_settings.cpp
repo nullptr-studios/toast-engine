@@ -364,8 +364,7 @@ void registerPhysicsSettings() {
 	    2.0,
 	    {.label = "Explosion falloff",
 	     .category = "Fracture",
-	     .description =
-	         "2 is the inverse square",
+	     .description = "2 is the inverse square",
 	     .min = 0.5,
 	     .max = 8.0,
 	     .step = 0.25},

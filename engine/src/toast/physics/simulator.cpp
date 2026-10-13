@@ -4075,7 +4075,7 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 
 								const uint32_t material_index = voxel::resolveMaterialIndex(data->palette, data->materials, palette_index);
 								const voxel::PhysicalMaterial& material = data->materials.materials[material_index];
-								if (not hitBreaks(material, c.energy_density, c.max_hardness)) {
+								if (not material.breakableBy(c.max_hardness)) {
 									continue;
 								}
 
