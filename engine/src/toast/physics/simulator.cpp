@@ -2854,16 +2854,24 @@ void Simulator::integrate(float dt) {
 	const glm::vec3 gravity = tunables().gravity;
 	const glm::vec3 wind = Simulator::wind();
 	const float air_density = tunables().air_density;
-	const auto integrate_range = [this, gravity, wind, air_density, dt](size_t begin, size_t end) {
-		for (size_t index = begin; index < end; ++index) {
-			BodySlot& slot = m_bodies[index];
-			if (not slot.occupied) {
-				continue;
-			}
-			auto body_id = BodyID {.slot = static_cast<uint32_t>(index), .generation = slot.generation};
-			integrateBody(body_id, slot.body, gravity, air_density, wind, dt);
-		}
-	};
+	const float shelter_distance = tunables().wind_shelter_distance;
+	const bool shelter_checks = shelter_distance > 0.0f && air_density > 0.0f && glm::dot(wind, wind) > 1.0e-12f;
+	const glm::vec3 upwind = shelter_checks ? -glm::normalize(wind) : glm::vec3 {0.0f};
+	const auto integrate_range =
+	    [this, gravity, wind, air_density, shelter_checks, shelter_distance, upwind, dt](size_t begin, size_t end) {
+		    for (size_t index = begin; index < end; ++index) {
+			    BodySlot& slot = m_bodies[index];
+			    if (not slot.occupied) {
+				    continue;
+			    }
+			    auto body_id = BodyID {.slot = static_cast<uint32_t>(index), .generation = slot.generation};
+			    // Anything with solid geometry nearby stops the wind
+			    const bool sheltered = shelter_checks && slot.body.type == BodyType::dynamic_body && slot.body.awake &&
+					                       slot.body.drag_coefficient > 0.0f &&
+					                       windBlocked(slot.body.worldCenterOfMass(), upwind, shelter_distance, body_id);
+			    integrateBody(body_id, slot.body, gravity, air_density, sheltered ? glm::vec3 {0.0f} : wind, dt);
+		    }
+	    };
 
 	const size_t minimum_bodies_per_job = tunables().min_bodies_per_job;
 	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), static_cast<size_t>(1));

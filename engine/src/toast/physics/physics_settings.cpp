@@ -65,6 +65,15 @@ void registerPhysicsSettings() {
 	wind_axis("physics.world.wind_y", "Wind Y", 0.0f, 1);
 	wind_axis("physics.world.wind_z", "Wind Z", 0.0f, 2);
 
+	flt("physics.world.wind_shelter_distance",
+	    64.0f,
+	    {.label = "Wind shelter distance",
+	     .category = "World",
+	     .description = "A body with solid geometry this far upwind of it, like the wall of a building, feels no wind. 0 disables.",
+	     .min = 0.0f,
+	     .step = 1.0f},
+	    &Tunables::wind_shelter_distance);
+
 	uint_setting(
 	    "physics.solver.iterations",
 	    8,

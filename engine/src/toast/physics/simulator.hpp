@@ -411,6 +411,10 @@ private:
 	template<typename OnContact>
 	auto castRay(const RayQuery& query, OnContact&& on_contact) const -> uint32_t;
 
+	/// @returns true if a static body is within @p distance of @p position along @p toward
+	[[nodiscard]]
+	auto windBlocked(const glm::vec3& position, const glm::vec3& toward, float distance, BodyID ignored) const -> bool;
+
 	[[nodiscard]]
 	static auto makeRayQuery(glm::vec3 origin, glm::vec3 direction, float max_distance, BodyID ignored, uint32_t layers)
 	    -> std::optional<RayQuery>;

@@ -51,6 +51,7 @@ struct Tunables {
 	uint32_t position_iterations = 3;
 	float air_density = 1.225f;
 	glm::vec3 wind = {0.0f, 0.0f, 0.0f};
+	float wind_shelter_distance = 64.0f;
 
 	[[nodiscard]]
 	auto fixedDelta() const noexcept -> double {

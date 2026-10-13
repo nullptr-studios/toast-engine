@@ -247,6 +247,25 @@ auto Simulator::castRay(const RayQuery& query, OnContact&& on_contact) const -> 
 	return tested;
 }
 
+auto Simulator::windBlocked(const glm::vec3& position, const glm::vec3& toward, float distance, BodyID ignored) const -> bool {
+	const std::optional<RayQuery> query = makeRayQuery(position, toward, distance, ignored, k_all_layers);
+	if (not query) {
+		return false;
+	}
+
+	bool blocked = false;
+	castRay(*query, [&](const RayContact& contact) {
+		const Body* body = tryGetBody(contact.body);
+		if (body == nullptr || body->type == BodyType::dynamic_body) {
+			// Loose bodies don't shelter anything
+			return query->max_distance;
+		}
+		blocked = true;
+		return 0.0f;    // Nothing close
+	});
+	return blocked;
+}
+
 auto Simulator::makeRayQuery(glm::vec3 origin, glm::vec3 direction, float max_distance, BodyID ignored, uint32_t layers)
     -> std::optional<RayQuery> {
 	const bool finite_origin = std::isfinite(origin.x) && std::isfinite(origin.y) && std::isfinite(origin.z);
