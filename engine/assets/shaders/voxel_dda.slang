@@ -50,6 +50,7 @@ StructuredBuffer<VoxelInstance> gVoxelInstances;
 
 static const uint kBrickDim = 8;
 static const int kCoarseVoxels = 32;    // gpu::k_coarse_bricks * k_brick_dim
+static const uint kCoarseBricks = 4u;    // gpu::k_coarse_bricks
 static const uint kMaterialWordsPerBrick = 128;
 static const uint kOccupancyWordsPerBrick = 16;
 static const uint kMaxMarchSteps = 1024;
@@ -71,11 +72,34 @@ static const uint kBoxIndices[36] = {
     1, 2, 6, 1, 6, 5,    // +X
 };
 
-/// Cell args word layout mirrored by renderer::VoxelPass with bucket 0 holding the camera
+/// Cell args word layout mirrored by renderer::VoxelPass
+/// Draw commands per box bucket with bucket 0 holding the camera then offsets and cursors per list with the near cells last
+/// then the mesh dispatch and the quad draw
 static const uint kCellBucketCount = 17;
+static const uint kNearList = kCellBucketCount;
+static const uint kCellListCount = kCellBucketCount + 1;
 static const uint kCellOffsetsWord = kCellBucketCount * 4;
-static const uint kCellCursorsWord = kCellBucketCount * 5;
-static const uint kCellArgsWords = kCellBucketCount * 6;
+static const uint kCellCursorsWord = kCellOffsetsWord + kCellListCount;
+static const uint kNearDispatchWord = kCellCursorsWord + kCellListCount;
+static const uint kQuadDrawWord = kNearDispatchWord + 3;
+static const uint kCellArgsWords = kQuadDrawWord + 4;
+
+/// Bits are direction 3 slice 3 u 3 v 3 width-1 3 height-1 3 and brick in cell 6
+uint packQuad(uint direction, uint slice, uint u, uint v, uint width, uint height, uint brickInCell)
+{
+    return direction | (slice << 3) | (u << 6) | (v << 9) | ((width - 1u) << 12) | ((height - 1u) << 15) | (brickInCell << 18);
+}
+
+/// Face plane axes per normal axis as rows over v with bits over u
+uint quadAxisU(uint axis)
+{
+    return axis == 0u ? 1u : 0u;
+}
+
+uint quadAxisV(uint axis)
+{
+    return axis == 2u ? 1u : 2u;
+}
 
 /// Ten bits per axis
 uint packCell(uint3 cell)

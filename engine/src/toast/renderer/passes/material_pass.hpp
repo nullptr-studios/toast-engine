@@ -93,7 +93,16 @@ private:
 
 		std::vector<UboBuffer> ubo_buffers;
 		std::vector<std::vector<vk::raii::DescriptorSet>> sets;
-		std::vector<std::vector<vk::ImageView>> bound_views;
+
+		/// View plus texture generation since a recreated view can reuse a destroyed handle value
+		struct BoundView {
+			vk::ImageView view;
+			uint64_t generation = 0;
+
+			auto operator==(const BoundView&) const -> bool = default;
+		};
+
+		std::vector<std::vector<BoundView>> bound_views;
 	};
 
 	struct Built {

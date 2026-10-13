@@ -128,6 +128,12 @@ public partial class ToastEngine : IDisposable {
 		toast_set_window_state(focused ? 1 : 0, minimized ? 1 : 0);
 	}
 
+	/// The ImGui overlays drawn over the viewport, such as the performance window
+	public static void SetShowDebugWindows(bool visible) {
+		if (!IsEngineReady) return;
+		toast_set_show_debug_windows(visible ? 1 : 0);
+	}
+
 	public string ProjectPath { get; }
 	public string CorePath { get; }
 
@@ -516,6 +522,9 @@ public partial class ToastEngine : IDisposable {
 
 	[LibraryImport(EngineLib)]
 	private static partial uint toast_get_max_tick_rate();
+
+	[LibraryImport(EngineLib)]
+	private static partial void toast_set_show_debug_windows(int visible);
 
 	public static void ReloadProjectSettings() {
 		if (IsEngineReady) OnTickThread(toast_reload_project_settings);

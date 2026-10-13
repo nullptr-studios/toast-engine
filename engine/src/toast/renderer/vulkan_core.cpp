@@ -20,8 +20,10 @@
 #endif
 #include <array>
 #include <mutex>
+#include <optional>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <tracy/Tracy.hpp>
 #include <unordered_map>
 #include <vector>
@@ -50,6 +52,25 @@ auto vulkanCorePipelineCacheMatches(std::span<const uint8_t> data, const vk::Phy
 	return header.headerSize >= sizeof(header) && header.headerVersion == VK_PIPELINE_CACHE_HEADER_VERSION_ONE &&
 	       header.vendorID == props.vendorID && header.deviceID == props.deviceID &&
 	       std::memcmp(header.pipelineCacheUUID, props.pipelineCacheUUID.data(), VK_UUID_SIZE) == 0;
+}
+
+/// Injected before main so it is known before the instance exists
+auto vulkanCoreAttachedGraphicsDebugger() -> std::optional<std::string_view> {
+#if defined(_WIN32)
+	if (GetModuleHandleA("renderdoc.dll") != nullptr) {
+		return "RenderDoc";
+	}
+	if (GetModuleHandleW(NGFX_GRAPHICS_CAPTURE_INJECTION_LIB_NAME) != nullptr ||
+	    GetModuleHandleW(NGFX_GPU_TRACE_INJECTION_LIB_NAME) != nullptr) {
+		return "Nsight Graphics";
+	}
+#elif defined(__linux__)
+	if (void* mod = dlopen("librenderdoc.so", RTLD_NOLOAD | RTLD_LAZY); mod != nullptr) {
+		dlclose(mod);
+		return "RenderDoc";
+	}
+#endif
+	return std::nullopt;
 }
 
 constexpr std::size_t k_gigabyte_bytes = 1024ull * 1024ull * 1024ull;
@@ -313,13 +334,19 @@ VulkanCore::VulkanCore(
 	m_validation_enabled = false;
 #endif
 
-	TOAST_INFO("Render", "Validation layers: {}", m_validation_enabled ? "enabled" : "disabled");
-	TOAST_TRACE("Render", "Required instance extensions: {}", joinRequiredExtensions(required_instance_extensions));
-	TOAST_TRACE("Render", "Required device extensions: {}", joinRequiredExtensions(required_device_extensions));
-
 #if defined(_WIN32)
 	initializeNsightActivity();
 #endif
+
+	// Capture tools record the instance and crash capturing or replaying it with validation chained in
+	if (const auto debugger = vulkanCoreAttachedGraphicsDebugger(); debugger.has_value() && m_validation_enabled) {
+		m_validation_enabled = false;
+		TOAST_WARN("Render", "{} is attached so validation layers stay off", *debugger);
+	}
+
+	TOAST_INFO("Render", "Validation layers: {}", m_validation_enabled ? "enabled" : "disabled");
+	TOAST_TRACE("Render", "Required instance extensions: {}", joinRequiredExtensions(required_instance_extensions));
+	TOAST_TRACE("Render", "Required device extensions: {}", joinRequiredExtensions(required_device_extensions));
 
 	vk::ApplicationInfo app_info("SUPER DUPER TOASTY GAME", 1, "TOAST ENGINE", 1, VK_API_VERSION_1_4);
 
@@ -797,7 +824,11 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	);
 
 	vma::AllocatorCreateInfo allocator_ci {};
-	allocator_ci.vulkanApiVersion = VK_API_VERSION_1_4;
+	// Never above the device or VMA calls entry points that capture tools capping the version lack
+	const uint32_t device_version = m_physical_device.getProperties().apiVersion;
+	allocator_ci.vulkanApiVersion = std::min<uint32_t>(
+	    VK_API_VERSION_1_4, VK_MAKE_API_VERSION(0, VK_API_VERSION_MAJOR(device_version), VK_API_VERSION_MINOR(device_version), 0)
+	);
 	allocator_ci.physicalDevice = *m_physical_device;
 
 	// VMA asserts without eBufferDeviceAddress

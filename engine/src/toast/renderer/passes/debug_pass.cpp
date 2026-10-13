@@ -423,17 +423,21 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 		ImGui_ImplVulkan_NewFrame();
 		ImGui::NewFrame();
 
-		if (!m_perf) {
-			m_perf = std::make_unique<PerfWindow>();
+		const bool show_windows = VulkanRenderer::instance->debugWindowsVisible();
+		if (show_windows) {
+			if (!m_perf) {
+				m_perf = std::make_unique<PerfWindow>();
+			}
+			m_perf->draw();
 		}
-		m_perf->draw();
 
 		if (!m_voxels) {
 			m_voxels = std::make_unique<voxel_debug::Monitor>();
 		}
 		m_voxels->update(*frame);
 
-		if (m_editor_panels && ImGui::Begin("Toast Debug")) {
+		const bool editor_panels = m_editor_panels && show_windows;
+		if (editor_panels && ImGui::Begin("Toast Debug")) {
 			{
 				const uint32_t dropped = VulkanRenderer::instance->getDroppedFrameCount();
 				const uint32_t out_of_order = VulkanRenderer::instance->getOutOfOrderFrameCount();
@@ -845,11 +849,13 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 				ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "Red = 8+ lights/cluster");
 			}
 		}
-		if (m_editor_panels) {
+		if (editor_panels) {
 			ImGui::End();
 		}
 
-		m_voxels->drawOverlay(*frame);
+		if (show_windows) {
+			m_voxels->drawOverlay(*frame);
+		}
 
 		if (frame->render_mode == 1 && m_cluster_lighting_pass != nullptr) {
 			m_cluster_lighting_pass->requestGridReadback();

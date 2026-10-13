@@ -9,7 +9,7 @@ struct PushConstants
     uint instanceIndex;
     uint bucket;
     uint mode;
-    uint pad0;
+    uint quadCapacity;
 };
 
 [[vk::push_constant]]
@@ -219,7 +219,7 @@ float3 applyEditorOverlays(float3 color, VoxelInstance instance, RayHit hit, flo
 }
 
 /// False discards
-bool shadeDebug(uint mode, VSOutput input, VoxelInstance instance, float3 origin, float3 direction, RayHit hit, float3 normal, float3 toCamera, inout FSOutput output)
+bool shadeDebug(uint mode, float4 pixel, VoxelInstance instance, float3 origin, float3 direction, RayHit hit, float3 normal, float3 toCamera, inout FSOutput output)
 {
     // Before any branch on the hit since derivatives need uniform control flow
     const float3 cellPosition = origin + direction * hit.t;
@@ -234,7 +234,7 @@ bool shadeDebug(uint mode, VSOutput input, VoxelInstance instance, float3 origin
         return false;
     }
 
-    const bool stripe = ((uint(input.position.x) + uint(input.position.y)) / 4u) % 2u == 0u;
+    const bool stripe = ((uint(pixel.x) + uint(pixel.y)) / 4u) % 2u == 0u;
     const float light = hit.hit ? 0.55 + 0.45 * saturate(dot(normal, toCamera)) : (stripe ? 0.5 : 0.2);
 
     float3 color = float3(0.0, 0.0, 0.0);
@@ -291,29 +291,16 @@ bool shadeDebug(uint mode, VSOutput input, VoxelInstance instance, float3 origin
     return true;
 }
 
-bool shade(VSOutput input, out FSOutput output, out float depth)
+/// Shared by the march and the quads so both write the same G-buffer
+bool shadeHit(float4 pixel, VoxelInstance instance, float3 origin, float3 direction, float3 worldDirection, RayHit hit,
+              out FSOutput output, inout float depth)
 {
     output.albedo = float4(0.0, 0.0, 0.0, 0.0);
     output.normalRoughness = float4(0.0, 0.0, 1.0, 1.0);
     output.material = float4(0.0, 0.0, 0.0, 0.0);
     output.motion = float4(0.0, 0.0, 0.0, 0.0);
-    depth = input.position.z;
 
-    const VoxelInstance instance = gVoxelInstances[input.instanceIndex];
     const float3 camera = gCamera.position;
-
-    // t = 1 is the box surface
-    const float3 worldDirection = input.worldPosition - camera;
-    const float3 origin = mul(instance.worldToVoxel, float4(camera, 1.0)).xyz;
-    const float3 direction = mul(instance.worldToVoxel, float4(worldDirection, 0.0)).xyz;
-
-    // Never hit in front of the near plane whose clip distance is linear along the ray in either convention
-    const float nearOrigin = clipNearDistance(mul(gCamera.viewProjection, float4(camera, 1.0)));
-    const float nearStep = clipNearDistance(mul(gCamera.viewProjection, float4(worldDirection, 0.0)));
-    const float tMin = nearStep > 0.0 ? max(0.0, -nearOrigin / nearStep) : 0.0;
-
-    const RayHit hit = marchRayBox(instance.recordIndex, origin, direction, tMin, kFloatMax, input.boxMin, input.boxMax);
-
     const float3 hitWorld = camera + worldDirection * hit.t;
 
     const float3 cellPosition = origin + direction * hit.t;
@@ -354,7 +341,7 @@ bool shade(VSOutput input, out FSOutput output, out float depth)
         {
             depth = kFarDepth;
         }
-        return shadeDebug(renderMode, input, instance, origin, direction, hit, normal, toCamera, output);
+        return shadeDebug(renderMode, pixel, instance, origin, direction, hit, normal, toCamera, output);
     }
 
     if (!hit.hit)
@@ -371,6 +358,27 @@ bool shade(VSOutput input, out FSOutput output, out float depth)
     output.normalRoughness = float4(normal, lerp(1.0, roughness, palette.reflectivity));
     output.material = float4(palette.metallic, palette.reflectivity, roughness, encodeEmissive(palette.emissive));
     return true;
+}
+
+bool shade(VSOutput input, out FSOutput output, out float depth)
+{
+    depth = input.position.z;
+
+    const VoxelInstance instance = gVoxelInstances[input.instanceIndex];
+    const float3 camera = gCamera.position;
+
+    // t = 1 is the box surface
+    const float3 worldDirection = input.worldPosition - camera;
+    const float3 origin = mul(instance.worldToVoxel, float4(camera, 1.0)).xyz;
+    const float3 direction = mul(instance.worldToVoxel, float4(worldDirection, 0.0)).xyz;
+
+    // Never hit in front of the near plane whose clip distance is linear along the ray in either convention
+    const float nearOrigin = clipNearDistance(mul(gCamera.viewProjection, float4(camera, 1.0)));
+    const float nearStep = clipNearDistance(mul(gCamera.viewProjection, float4(worldDirection, 0.0)));
+    const float tMin = nearStep > 0.0 ? max(0.0, -nearOrigin / nearStep) : 0.0;
+
+    const RayHit hit = marchRayBox(instance.recordIndex, origin, direction, tMin, kFloatMax, input.boxMin, input.boxMax);
+    return shadeHit(input.position, instance, origin, direction, worldDirection, hit, output, depth);
 }
 
 // The DDA hit is never closer than the rasterized face which keeps early depth testing on
@@ -397,6 +405,116 @@ FSOutput fragmentInside(VSOutput input, out float depth : SV_Depth)
 {
     FSOutput output;
     if (!shade(input, output, depth))
+    {
+        discard;
+    }
+    return output;
+}
+
+[[vk::binding(9, 1)]]
+StructuredBuffer<uint2> gVoxelQuads;
+
+struct QuadVSOutput
+{
+    float4 position : SV_Position;
+
+    [[vk::location(0)]]
+    float3 worldPosition : TEXCOORD0;
+
+    [[vk::location(1)]]
+    nointerpolation uint instanceIndex : TEXCOORD1;
+
+    [[vk::location(2)]]
+    nointerpolation uint direction : TEXCOORD2;
+};
+
+/// Counter clockwise from outside when the plane axes u and v cross to the face normal
+static const uint kQuadCorners[6] = { 0, 1, 2, 0, 2, 3 };
+static const uint kQuadCornersFlipped[6] = { 0, 2, 1, 0, 3, 2 };
+
+[shader("vertex")]
+QuadVSOutput quadVertexMain(uint vertexId : SV_VertexID)
+{
+    QuadVSOutput output;
+    output.position = float4(0.0, 0.0, 0.0, 1.0);
+    output.worldPosition = float3(0.0, 0.0, 0.0);
+    output.instanceIndex = 0u;
+    output.direction = 0u;
+
+    // The mesh pass dropped quads past capacity
+    const uint quadIndex = vertexId / 6u;
+    if (quadIndex >= gPush.quadCapacity)
+    {
+        return output;
+    }
+
+    const uint2 quad = gVoxelQuads[quadIndex];
+    const uint2 cell = gVoxelCells[quad.x];
+    const VoxelInstance instance = gVoxelInstances[cell.x];
+
+    const uint direction = quad.y & 7u;
+    const uint slice = (quad.y >> 3) & 7u;
+    const uint u0 = (quad.y >> 6) & 7u;
+    const uint v0 = (quad.y >> 9) & 7u;
+    const uint width = ((quad.y >> 12) & 7u) + 1u;
+    const uint height = ((quad.y >> 15) & 7u) + 1u;
+    const uint brickInCell = (quad.y >> 18) & 63u;
+
+    const uint axis = direction >> 1;
+    const bool positive = (direction & 1u) == 0u;
+    const uint3 brick = unpackCell(cell.y) * kCoarseBricks + uint3(brickInCell & 3u, (brickInCell >> 2) & 3u, brickInCell >> 4);
+    const float3 brickMin = float3(brick * kBrickDim);
+
+    // u cross v is +x for X faces and -y for Y faces and +z for Z faces
+    bool flipped = positive == (axis == 1u);
+    if ((instance.flags & kInstanceMirrored) != 0u)
+    {
+        flipped = !flipped;
+    }
+    const uint corner = flipped ? kQuadCornersFlipped[vertexId % 6u] : kQuadCorners[vertexId % 6u];
+    const float cornerU = (corner == 1u || corner == 2u) ? float(width) : 0.0;
+    const float cornerV = corner >= 2u ? float(height) : 0.0;
+
+    float3 local = brickMin;
+    local[axis] += float(slice) + (positive ? 1.0 : 0.0);
+    local[quadAxisU(axis)] += float(u0) + cornerU;
+    local[quadAxisV(axis)] += float(v0) + cornerV;
+    const float4 world = mul(instance.voxelToWorld, float4(local, 1.0));
+
+    output.position = mul(gCamera.jitteredViewProjection, world);
+    output.worldPosition = world.xyz;
+    output.instanceIndex = cell.x;
+    output.direction = direction;
+    return output;
+}
+
+[shader("fragment")]
+FSOutput quadFragmentMain(QuadVSOutput input)
+{
+    const VoxelInstance instance = gVoxelInstances[input.instanceIndex];
+    const float3 camera = gCamera.position;
+    const float3 worldDirection = input.worldPosition - camera;
+    const float3 origin = mul(instance.worldToVoxel, float4(camera, 1.0)).xyz;
+    const float3 direction = mul(instance.worldToVoxel, float4(worldDirection, 0.0)).xyz;
+
+    const uint axis = input.direction >> 1;
+    float3 inward = float3(0.0, 0.0, 0.0);
+    inward[axis] = (input.direction & 1u) == 0u ? -0.5 : 0.5;
+
+    // Greedy quads span materials so the voxel behind the pixel picks its own
+    RayHit hit;
+    hit.t = 1.0;
+    hit.voxel = int3(floor(origin + direction + inward));
+    hit.axis = int(axis);
+    hit.material = voxelMaterialAt(instance.recordIndex, hit.voxel);
+    hit.hit = hit.material != 0u;
+    hit.steps = 0u;
+    hit.coarseSteps = 0u;
+    hit.brickSteps = 0u;
+
+    FSOutput output;
+    float depth = input.position.z;
+    if (!shadeHit(input.position, instance, origin, direction, worldDirection, hit, output, depth))
     {
         discard;
     }

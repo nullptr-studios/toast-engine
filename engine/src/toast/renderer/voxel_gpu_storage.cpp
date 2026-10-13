@@ -31,6 +31,9 @@ constexpr vk::DeviceSize k_min_section_bytes = sizeof(uint32_t);
 constexpr uint32_t k_slot_headroom_divisor = 4;
 constexpr uint32_t k_min_slot_headroom = 256;
 
+/// Spare bytes past the packed grids coarse palettes and records for volumes that spawn later
+constexpr std::array<vk::DeviceSize, 4> k_min_append_headroom {64 * 1024, 4 * 1024, 64 * 1024, 16 * 1024};
+
 auto createSectionBuffer(const VulkanCore& core, vk::DeviceSize size, std::string_view name) -> vma::raii::Buffer {
 	const bool concurrent = core.getGraphicsQueueFamilyIndex() != core.getTransferQueueFamilyIndex();
 	const std::array family_indices {core.getGraphicsQueueFamilyIndex(), core.getTransferQueueFamilyIndex()};
@@ -83,8 +86,8 @@ public:
 	void recordPending(vk::CommandBuffer cmd, uint64_t up_to, std::vector<std::shared_ptr<void>>& retired);
 
 private:
-	/// Materials then occupancy then grids then coarse
-	static constexpr size_t k_patched_sections = 4;
+	/// Every section in VoxelGpuStorage::Section order
+	static constexpr size_t k_patched_sections = VoxelGpuStorage::k_section_count;
 
 	struct Patch {
 		uint64_t sequence = 0;
@@ -99,12 +102,17 @@ private:
 
 auto VoxelGpuSections::queuePatch(const VulkanCore& core, const voxel::gpu::ScenePatch& patch) -> std::optional<uint64_t> {
 	ZoneScoped;
-	if (patch.pool_slots > slot_capacity) {
+	using Section = VoxelGpuStorage::Section;
+	const auto fits = [this](Section section, vk::DeviceSize bytes) { return bytes <= sizes[static_cast<size_t>(section)]; };
+	if (patch.pool_slots > slot_capacity || !fits(Section::grids, vk::DeviceSize {patch.grid_words} * sizeof(uint32_t)) ||
+	    !fits(Section::coarse, vk::DeviceSize {patch.coarse_words} * sizeof(uint32_t)) ||
+	    !fits(Section::palettes, vk::DeviceSize {patch.palette_words} * sizeof(uint32_t)) ||
+	    !fits(Section::records, vk::DeviceSize {patch.record_count} * sizeof(voxel::gpu::VolumeRecord))) {
 		return std::nullopt;
 	}
 
 	const std::array<const voxel::gpu::PatchSection*, k_patched_sections> sections {
-	  &patch.materials, &patch.occupancy, &patch.grids, &patch.coarse
+	  &patch.materials, &patch.occupancy, &patch.grids, &patch.coarse, &patch.palettes, &patch.records
 	};
 
 	Patch staged;
@@ -161,18 +169,13 @@ void VoxelGpuSections::recordPending(vk::CommandBuffer cmd, uint64_t up_to, std:
 	}
 	ZoneScoped;
 
-	using Section = VoxelGpuStorage::Section;
-	constexpr std::array<Section, k_patched_sections> k_targets {
-	  Section::materials, Section::occupancy, Section::grids, Section::coarse
-	};
-
 	// Frames already submitted may still read the sections and later patches may rewrite the same words
 	sync::BarrierBatch barriers;
 	for (const Patch& patch : ready) {
 		barriers.memory(sync::Usage::general, sync::Usage::transfer_dst);
 		barriers.flush(cmd);
 		for (size_t i = 0; i < k_patched_sections; ++i) {
-			const auto& target = buffers[static_cast<size_t>(k_targets[i])];
+			const auto& target = buffers[i];
 			if (patch.staging != nullptr && !patch.regions[i].empty() && target.has_value()) {
 				cmd.copyBuffer(**patch.staging, **target, patch.regions[i]);
 			}
@@ -283,16 +286,16 @@ void VoxelSceneUpload::build(const VulkanCore& core) {
 
 	VoxelGpuSections& sections = *m_storage->m_sections;
 
-	// Spare slots so later carves patch in place
+	// Spare room so later carves and spawns patch in place
 	const auto slots = static_cast<uint32_t>(pool.materials.size() / voxel::gpu::k_material_words_per_brick);
 	sections.slot_capacity = slots + std::max(slots / k_slot_headroom_divisor, k_min_slot_headroom);
 	const std::array<vk::DeviceSize, VoxelGpuStorage::k_section_count> capacities {
 	  vk::DeviceSize {sections.slot_capacity} * voxel::gpu::k_material_words_per_brick * sizeof(uint32_t),
 	  vk::DeviceSize {sections.slot_capacity} * voxel::gpu::k_occupancy_words_per_brick * sizeof(uint32_t),
-	  sources[2].second,
-	  sources[3].second,
-	  sources[4].second,
-	  sources[5].second,
+	  sources[2].second + std::max(sources[2].second / k_slot_headroom_divisor, k_min_append_headroom[0]),
+	  sources[3].second + std::max(sources[3].second / k_slot_headroom_divisor, k_min_append_headroom[1]),
+	  sources[4].second + std::max(sources[4].second / k_slot_headroom_divisor, k_min_append_headroom[2]),
+	  sources[5].second + std::max(sources[5].second / k_slot_headroom_divisor, k_min_append_headroom[3]),
 	};
 
 	try {

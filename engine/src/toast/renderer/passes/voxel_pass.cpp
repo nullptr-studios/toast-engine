@@ -29,6 +29,8 @@ constexpr uint32_t k_storage_set = 1;
 constexpr uint32_t k_instance_binding = 6;
 constexpr uint32_t k_cells_binding = 7;
 constexpr uint32_t k_cell_args_binding = 8;
+constexpr uint32_t k_quads_binding = 9;
+constexpr uint32_t k_vertices_per_quad = 6;
 
 constexpr uint32_t k_cell_phase_count = 0;
 constexpr uint32_t k_cell_phase_allocate = 1;
@@ -49,7 +51,7 @@ VoxelPass::VoxelPass(const VulkanCore& core, vk::Format scene_format, vk::Format
     : m_core(&core) {
 	ZoneScoped;
 	static_assert(sizeof(PushConstants) == 16, "PushConstants is mirrored by voxel.slang");
-	static_assert(sizeof(CellCullPush) == 96, "CellCullPush is mirrored by voxel_cells.slang");
+	static_assert(sizeof(CellCullPush) == 112, "CellCullPush is mirrored by voxel_cells.slang");
 
 	const auto uid = assets::resolveURI("core://shaders/voxel.slang");
 	const auto shader = uid.has_value() ? ShaderCache::get().acquire(*uid) : nullptr;
@@ -88,6 +90,13 @@ VoxelPass::VoxelPass(const VulkanCore& core, vk::Format scene_format, vk::Format
 		}
 	}
 
+	// No SV_Depth so near quads keep early depth testing
+	config.cull_mode = vk::CullModeFlagBits::eBack;
+	config.vertex_entry = "quadVertexMain";
+	config.fragment_entry = "quadFragmentMain";
+	config.debug_name = "VoxelPass Quads";
+	m_quad_pipeline.rebuild(core, config);
+
 	createInstanceBuffers(core);
 	createDescriptors(core, shader->reflection);
 	createCells(core);
@@ -121,6 +130,10 @@ void VoxelPass::createCells(const VulkanCore& core) {
 			config.pipeline_layout = *m_cell_layout.getPipelineLayout();
 			m_cell_pipeline.rebuild(core, config);
 
+			config.debug_name = "VoxelMesh";
+			config.compute_entry = "meshMain";
+			m_mesh_pipeline.rebuild(core, config);
+
 			const vk::DescriptorSetLayout set_layout = *layouts[k_storage_set];
 			for (uint32_t i = 0; i < m_storage_sets.size(); ++i) {
 				auto allocated = core.getDevice().allocateDescriptorSets(vk::DescriptorSetAllocateInfo(pool, 1, &set_layout));
@@ -143,7 +156,47 @@ void VoxelPass::createCells(const VulkanCore& core) {
 	// The G-buffer set declares the cell bindings either way so they always hold a buffer
 	for (uint32_t i = 0; i < m_cell_buffers.size(); ++i) {
 		ensureCellCapacity(i, k_min_cell_capacity);
+		ensureQuadCapacity(i, k_min_quad_capacity);
 	}
+}
+
+void VoxelPass::ensureQuadCapacity(uint32_t frame_index, uint32_t quads) {
+	CellBuffers& buffers = m_cell_buffers[frame_index];
+	if (buffers.quads.has_value() && buffers.quad_capacity >= quads) {
+		return;
+	}
+	ZoneScoped;
+
+	const uint32_t capacity = std::max({quads + (quads / 4), k_min_quad_capacity, buffers.quad_capacity});
+
+	vma::AllocationCreateInfo alloc_ci {};
+	alloc_ci.usage = vma::MemoryUsage::eAutoPreferDevice;
+
+	// Safe to replace since the fence of this slot was waited on
+	vk::BufferCreateInfo quads_ci {};
+	quads_ci.size = vk::DeviceSize {capacity} * sizeof(glm::uvec2);
+	quads_ci.usage = vk::BufferUsageFlagBits::eStorageBuffer;
+	buffers.quads.emplace(m_core->getAllocator().createBuffer(quads_ci, alloc_ci));
+	setDebugName(*m_core, **buffers.quads, std::format("VoxelPass Quads[{}]", frame_index));
+	buffers.quad_capacity = capacity;
+
+	if (!buffers.readback.has_value()) {
+		vk::BufferCreateInfo readback_ci {};
+		readback_ci.size = sizeof(uint32_t);
+		readback_ci.usage = vk::BufferUsageFlagBits::eTransferDst;
+
+		vma::AllocationCreateInfo readback_alloc {};
+		readback_alloc.usage = vma::MemoryUsage::eAuto;
+		readback_alloc.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessRandom;
+		buffers.readback.emplace(m_core->getAllocator().createBuffer(readback_ci, readback_alloc));
+		setDebugName(*m_core, **buffers.readback, std::format("VoxelPass QuadReadback[{}]", frame_index));
+		if (auto* mapped = static_cast<uint32_t*>(buffers.readback->getAllocation().getInfo().pMappedData); mapped != nullptr) {
+			*mapped = 0;
+			buffers.readback->getAllocation().flush(0, sizeof(uint32_t));
+		}
+	}
+
+	writeCellDescriptors(frame_index);
 }
 
 void VoxelPass::ensureCellCapacity(uint32_t frame_index, uint32_t cells) {
@@ -181,12 +234,20 @@ void VoxelPass::ensureCellCapacity(uint32_t frame_index, uint32_t cells) {
 
 void VoxelPass::writeCellDescriptors(uint32_t frame_index) {
 	const CellBuffers& buffers = m_cell_buffers[frame_index];
+	// The cell and quad buffers come up one after the other at creation
+	if (!buffers.cells.has_value() || !buffers.quads.has_value()) {
+		return;
+	}
+
 	DescriptorWriter writer;
-	writer.buffer(*m_storage_sets[frame_index], k_cells_binding, vk::DescriptorType::eStorageBuffer, **buffers.cells);
-	writer.buffer(*m_storage_sets[frame_index], k_cell_args_binding, vk::DescriptorType::eStorageBuffer, **buffers.args);
+	const auto write = [&](vk::DescriptorSet set) {
+		writer.buffer(set, k_cells_binding, vk::DescriptorType::eStorageBuffer, **buffers.cells);
+		writer.buffer(set, k_cell_args_binding, vk::DescriptorType::eStorageBuffer, **buffers.args);
+		writer.buffer(set, k_quads_binding, vk::DescriptorType::eStorageBuffer, **buffers.quads);
+	};
+	write(*m_storage_sets[frame_index]);
 	if (frame_index < m_cell_sets.size()) {
-		writer.buffer(*m_cell_sets[frame_index], k_cells_binding, vk::DescriptorType::eStorageBuffer, **buffers.cells);
-		writer.buffer(*m_cell_sets[frame_index], k_cell_args_binding, vk::DescriptorType::eStorageBuffer, **buffers.args);
+		write(*m_cell_sets[frame_index]);
 	}
 	writer.flush(m_core->getDevice());
 }
@@ -359,6 +420,7 @@ auto VoxelPass::prepare(uint32_t frame_index) -> bool {
 	m_draws.clear();
 	m_cells_active = false;
 	m_total_cells = 0;
+	m_near_voxels = 0.0f;
 
 	if (frame_index >= m_storage_sets.size() || frame_index >= m_instance_buffers.size() || !m_scene_sets.get(frame_index) ||
 	    !m_lighting_pipeline.isReady() || !m_blur_pipeline.isReady()) {
@@ -427,6 +489,21 @@ auto VoxelPass::prepare(uint32_t frame_index) -> bool {
 		if (cells_fit) {
 			ensureCellCapacity(frame_index, m_total_cells);
 			m_cells_active = true;
+
+			// Grows from what this slot meshed last time so a spike costs at most one frame of missing quads
+			CellBuffers& buffers = m_cell_buffers[frame_index];
+			const auto& readback = buffers.readback->getAllocation();
+			readback.invalidate(0, sizeof(uint32_t));
+			if (const auto* vertices = static_cast<const uint32_t*>(readback.getInfo().pMappedData); vertices != nullptr) {
+				ensureQuadCapacity(frame_index, *vertices / k_vertices_per_quad);
+			}
+
+			// A voxel covers at least this many pixels closer than near_voxels voxels whatever the volume scale
+			const float raster_pixels = VulkanRenderer::instance->voxelRasterPixels();
+			const float height = static_cast<float>(VulkanRenderer::instance->getOutputTarget().getExtent().height);
+			m_near_voxels = raster_pixels > 0.0f && m_mesh_pipeline.isReady() && m_quad_pipeline.isReady()
+			                    ? std::abs(frame->frame_data.projection[1][1]) * height / (2.0f * raster_pixels)
+			                    : 0.0f;
 		} else if (const auto now = std::chrono::steady_clock::now(); now - m_last_limit_warning > std::chrono::seconds(5)) {
 			m_last_limit_warning = now;
 			TOAST_WARN(
@@ -454,7 +531,7 @@ void VoxelPass::recordCellCull(vk::CommandBuffer cmd, uint32_t frame_index) {
 
 	// The count phase accumulates into the cursors
 	cmd.fillBuffer(
-	    args, vk::DeviceSize {k_cell_cursors_word} * sizeof(uint32_t), vk::DeviceSize {k_cell_bucket_count} * sizeof(uint32_t), 0
+	    args, vk::DeviceSize {k_cell_cursors_word} * sizeof(uint32_t), vk::DeviceSize {k_cell_list_count} * sizeof(uint32_t), 0
 	);
 
 	sync::BarrierBatch barriers;
@@ -472,6 +549,8 @@ void VoxelPass::recordCellCull(vk::CommandBuffer cmd, uint32_t frame_index) {
 	  .camera_near = glm::vec4(frame->frame_data.camera_position, frame->near_plane),
 	  .total_cells = m_total_cells,
 	  .instance_count = static_cast<uint32_t>(m_draws.size()),
+	  .quad_capacity = buffers.quad_capacity,
+	  .near_voxels = m_near_voxels,
 	};
 	const uint32_t groups = (m_total_cells + k_cell_group_size - 1) / k_cell_group_size;
 
@@ -485,9 +564,29 @@ void VoxelPass::recordCellCull(vk::CommandBuffer cmd, uint32_t frame_index) {
 		}
 	}
 
+	const vk::Buffer quads = **buffers.quads;
+	if (m_near_voxels > 0.0f) {
+		barriers.buffer(args, sync::Usage::compute_storage_write, sync::Usage::indirect_read);
+		barriers.buffer(args, sync::Usage::compute_storage_write, sync::Usage::compute_storage_write);
+		barriers.buffer(cells, sync::Usage::compute_storage_write, sync::Usage::compute_storage_read);
+		barriers.flush(cmd);
+
+		cmd.bindPipeline(vk::PipelineBindPoint::eCompute, m_mesh_pipeline.getPipeline());
+		cmd.pushConstants(layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(CellCullPush), &push);
+		cmd.dispatchIndirect(args, vk::DeviceSize {k_near_dispatch_word} * sizeof(uint32_t));
+
+		barriers.buffer(args, sync::Usage::compute_storage_write, sync::Usage::transfer_src);
+		barriers.flush(cmd);
+		cmd.copyBuffer(
+		    args, **buffers.readback, vk::BufferCopy(vk::DeviceSize {k_quad_draw_word} * sizeof(uint32_t), 0, sizeof(uint32_t))
+		);
+		barriers.buffer(**buffers.readback, sync::Usage::transfer_dst, sync::Usage::host_read);
+	}
+
 	barriers.buffer(args, sync::Usage::compute_storage_write, sync::Usage::indirect_read);
 	barriers.buffer(args, sync::Usage::compute_storage_write, sync::Usage::vertex_storage_read);
 	barriers.buffer(cells, sync::Usage::compute_storage_write, sync::Usage::vertex_storage_read);
+	barriers.buffer(quads, sync::Usage::compute_storage_write, sync::Usage::vertex_storage_read);
 	barriers.flush(cmd);
 }
 
@@ -515,6 +614,14 @@ void VoxelPass::recordCellDraws(vk::CommandBuffer cmd, uint32_t frame_index) {
 		cmd.pushConstants(layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(PushConstants), &push);
 		cmd.drawIndirect(args, vk::DeviceSize {bucket} * k_command_stride, 1, k_command_stride);
 	};
+
+	// Near quads first so their depth rejects the far boxes behind them before they march
+	if (m_near_voxels > 0.0f) {
+		bind(m_quad_pipeline);
+		const PushConstants push {.mode = k_draw_cells, .quad_capacity = m_cell_buffers[frame_index].quad_capacity};
+		cmd.pushConstants(layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(PushConstants), &push);
+		cmd.drawIndirect(args, vk::DeviceSize {k_quad_draw_word} * sizeof(uint32_t), 1, k_command_stride);
+	}
 
 	// Cells holding the camera are nearest so they go first and seed depth for the rest
 	const VulkanPipeline& inside = m_pipelines[static_cast<size_t>(Cull::front)][static_cast<size_t>(Depth::exact)];
@@ -629,6 +736,11 @@ void VoxelPass::recordLighting(vk::CommandBuffer cmd, uint32_t frame_index) {
 	);
 	cmd.pushConstants(layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(LightingPushConstants), &push);
 	cmd.draw(3, 1, 0, 0);
+}
+
+void VoxelPass::onTargetsRecreated() {
+	std::ranges::fill(m_bound_gbuffer, std::array<vk::ImageView, 5> {});
+	std::ranges::fill(m_bound_blur, std::array<vk::ImageView, 3> {});
 }
 
 void VoxelPass::recordNormalBlur(vk::CommandBuffer cmd, uint32_t frame_index, vk::Extent2D viewport) {

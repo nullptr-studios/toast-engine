@@ -141,6 +141,12 @@ private:
 	float m_gpu_ms = 0.0f;
 
 	bool m_expanded = false;
+	/// Applied once when the details open so the window can be resized after that
+	bool m_apply_expanded_size = false;
+	float m_expanded_width = 0.0f;
+	float m_expanded_height = 0.0f;
+	float m_window_x = 0.0f;
+	float m_window_y = 0.0f;
 	bool m_hide_idle_passes = true;
 	bool m_has_gpu = false;
 };

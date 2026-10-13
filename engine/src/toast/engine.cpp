@@ -1107,6 +1107,12 @@ auto toast_get_max_tick_rate() noexcept -> uint32_t {
 	return toast::ProjectSettings::maxTickRate();
 }
 
+void toast_set_show_debug_windows(int visible) noexcept {
+	if (auto* vk_renderer = renderer::VulkanRenderer::instance; vk_renderer != nullptr) {
+		vk_renderer->setDebugWindowsVisible(visible != 0);
+	}
+}
+
 void toast_set_window_state(int focused, int minimized) noexcept {
 	auto* vk_renderer = renderer::VulkanRenderer::instance;
 	if (vk_renderer == nullptr) {

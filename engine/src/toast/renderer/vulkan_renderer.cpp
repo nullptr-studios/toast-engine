@@ -1191,7 +1191,8 @@ void VulkanRenderer::createDefaultShadowMap() {
 
 	recordUndefinedToTransferDst(cmd, **m_default_shadow_image, range);
 
-	constexpr vk::ClearDepthStencilValue clear_value(depth::k_clear, 0);
+	// Shadow maps keep standard depth so 1 is the far plane and every less-or-equal compare reads as lit
+	constexpr vk::ClearDepthStencilValue clear_value(1.0f, 0);
 	cmd.clearDepthStencilImage(**m_default_shadow_image, vk::ImageLayout::eTransferDstOptimal, clear_value, range);
 
 	recordTransferDstToShaderRead(cmd, **m_default_shadow_image, range);
@@ -3907,32 +3908,47 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 				return std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - pack_start).count();
 			};
 
-			// Small carves patch the shared buffers in place and only a grown pool or a new layout uploads everything
-			std::optional<voxel::gpu::ScenePatch> patch;
+			// Carves spawns and despawns patch the shared buffers in place and only running out of spare room uploads
+			// everything again
+			std::optional<VoxelScenePatcher::Patched> patched;
 			if (!keep_mirror && m_voxel_storage != nullptr && m_voxel_storage->isReady()) {
-				patch = m_voxel_patcher.tryPatch(voxel::runtimeBrickPool(), scene_volumes, node_uids, deltas);
+				patched = m_voxel_patcher.tryPatch(voxel::runtimeBrickPool(), scene_volumes, node_uids, deltas);
 			}
 			std::optional<uint64_t> patch_sequence;
-			if (patch.has_value()) {
-				patch_sequence = m_voxel_storage->queuePatch(*m_core, *patch);
+			if (patched.has_value()) {
+				patch_sequence = m_voxel_storage->queuePatch(*m_core, patched->patch);
 			}
 
 			if (patch_sequence.has_value()) {
 				debug.pack_ms = elapsed_ms();
 				voxel_lock.unlock();
 
+				const voxel::gpu::ScenePatch& patch = patched->patch;
 				const VoxelStorageDebugInfo& previous = m_voxel_storage->debugInfo();
 				debug.sequence = ++m_voxel_upload_sequence;
-				debug.packed_slots = patch->pool_slots;
-				debug.packed_palettes = previous.packed_palettes;
+				debug.packed_slots = patch.pool_slots;
+				debug.packed_palettes = patch.palette_words / voxel::gpu::k_palette_words;
+
+				// Debug rows follow records and a dead record keeps an empty name
+				std::unordered_map<uint64_t, std::string> names;
+				for (size_t i = 0; i < node_uids.size(); ++i) {
+					names.emplace(node_uids[i], std::move(debug.node_names[i]));
+				}
+				debug.node_names.assign(patched->record_uids.size(), std::string {});
+				for (size_t i = 0; i < patched->record_uids.size(); ++i) {
+					if (const auto name = names.find(patched->record_uids[i]); name != names.end()) {
+						debug.node_names[i] = std::move(name->second);
+					}
+				}
 				debug.bricks = previous.bricks;
-				for (size_t i = 0; i < debug.bricks.size() && i < patch->tags.size(); ++i) {
+				debug.bricks.resize(patched->record_uids.size());
+				for (size_t i = 0; i < debug.bricks.size() && i < patch.tags.size(); ++i) {
 					const auto apply = [](uint32_t count, int32_t delta) {
 						return static_cast<uint32_t>(static_cast<int64_t>(count) + delta);
 					};
-					debug.bricks[i].uniform = apply(debug.bricks[i].uniform, patch->tags[i].uniform);
-					debug.bricks[i].shared = apply(debug.bricks[i].shared, patch->tags[i].shared);
-					debug.bricks[i].owned = apply(debug.bricks[i].owned, patch->tags[i].owned);
+					debug.bricks[i].uniform = apply(debug.bricks[i].uniform, patch.tags[i].uniform);
+					debug.bricks[i].shared = apply(debug.bricks[i].shared, patch.tags[i].shared);
+					debug.bricks[i].owned = apply(debug.bricks[i].owned, patch.tags[i].owned);
 				}
 				debug.patched = true;
 				debug.patched_bricks = static_cast<uint32_t>(
@@ -3941,8 +3957,9 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 				    })
 				);
 
-				auto storage =
-				    std::make_shared<VoxelGpuStorage>(std::move(node_uids), std::move(brick_dims), *m_voxel_storage, *patch_sequence);
+				auto storage = std::make_shared<VoxelGpuStorage>(
+				    std::move(patched->record_uids), std::move(patched->record_dims), *m_voxel_storage, *patch_sequence
+				);
 				storage->setDebugInfo(std::move(debug));
 				storage->setChangeHistory(m_voxel_change_tracker.packed(storage->generation()));
 				m_voxel_storage = std::move(storage);
@@ -4222,6 +4239,9 @@ auto VulkanRenderer::applyResizeInternal(vk::Extent2D extent) -> void {
 			for (auto& pass : m_post_process_passes) {
 				pass->onResize(actual_extent);
 			}
+		}
+		if (m_voxel_pass != nullptr) {
+			m_voxel_pass->onTargetsRecreated();
 		}
 		std::ranges::fill(m_present_bound_views, vk::ImageView {});
 		m_current_frame = 0;

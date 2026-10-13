@@ -6,6 +6,7 @@
 
 #include "vulkan_debug.hpp"
 
+#include <atomic>
 #include <cstring>
 #include <format>
 #include <limits>
@@ -70,6 +71,9 @@ void VulkanTexture::create(const VulkanCore& core, Params params, std::string_vi
 
 	m_image_view = vk::raii::ImageView(core.getDevice(), view_ci);
 	setDebugName(core, *m_image_view, name + " View");
+
+	static std::atomic<uint64_t> next_generation {0};
+	m_generation = next_generation.fetch_add(1, std::memory_order_relaxed) + 1;
 }
 
 void VulkanTexture::destroy() {

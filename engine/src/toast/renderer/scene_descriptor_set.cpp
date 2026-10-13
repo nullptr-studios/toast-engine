@@ -31,7 +31,7 @@ void SceneDescriptorSets::create(
 	m_sets.clear();
 	m_sets.reserve(VulkanRenderer::k_frames_in_flight);
 	m_scene_binding.reset();
-	m_bound_tlas.assign(VulkanRenderer::k_frames_in_flight, vk::AccelerationStructureKHR {});
+	m_bound_tlas.assign(VulkanRenderer::k_frames_in_flight, {});
 
 	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
 		const vk::DescriptorSetAllocateInfo alloc_info(pool, 1, &layout);
@@ -179,9 +179,10 @@ void SceneDescriptorSets::updateTlas(uint32_t frame_index) {
 
 	const auto* scene = VulkanRenderer::instance->getRayTracingScene();
 	const vk::AccelerationStructureKHR tlas = scene != nullptr ? scene->getAccelerationStructure(frame_index) : nullptr;
+	const std::pair bound {tlas, scene != nullptr ? scene->getAccelerationStructureGeneration(frame_index) : 0};
 
 	// A descriptor cannot be written with a null structure
-	if (!tlas || tlas == m_bound_tlas[frame_index]) {
+	if (!tlas || bound == m_bound_tlas[frame_index]) {
 		return;
 	}
 
@@ -189,7 +190,7 @@ void SceneDescriptorSets::updateTlas(uint32_t frame_index) {
 	writer.accelerationStructure(*m_sets[frame_index], *m_scene_binding, tlas);
 	writer.flush(m_core->getDevice());
 
-	m_bound_tlas[frame_index] = tlas;
+	m_bound_tlas[frame_index] = bound;
 }
 
 }

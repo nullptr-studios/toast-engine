@@ -342,7 +342,7 @@ auto MaterialPass::ensureInstanceResources(Built& built, assets::Material* mater
 			    std::format("{} MaterialSet{} frame{} ({})", m_name, set_index, frame, material->name())
 			);
 		}
-		res.bound_views[frame].assign(res.runtime->textureSlots().size(), vk::ImageView {});
+		res.bound_views[frame].assign(res.runtime->textureSlots().size(), InstanceResources::BoundView {});
 
 		DescriptorWriter writer;
 		for (const auto& ubo : res.ubo_buffers) {
@@ -376,7 +376,7 @@ void MaterialPass::updateInstanceDescriptors(InstanceResources& res, uint32_t fr
 
 	const auto& slots = res.runtime->textureSlots();
 	if (res.bound_views[frame_index].size() != slots.size()) {
-		res.bound_views[frame_index].assign(slots.size(), vk::ImageView {});
+		res.bound_views[frame_index].assign(slots.size(), InstanceResources::BoundView {});
 	}
 
 	for (size_t i = 0; i < slots.size(); ++i) {
@@ -396,8 +396,10 @@ void MaterialPass::updateInstanceDescriptors(InstanceResources& res, uint32_t fr
 		vk::Sampler sampler = slot.sampler ? slot.sampler : VulkanRenderer::instance->getDefaultSampler();
 
 		const VulkanTexture* gpu_texture = slot.texture.hasValue() ? &slot.texture->gpuTexture() : nullptr;
+		uint64_t generation = 0;
 		if (gpu_texture != nullptr && gpu_texture->isReady() && gpu_texture->getView()) {
 			view = gpu_texture->getView();
+			generation = gpu_texture->generation();
 			warnIfWrongColorSpace(slot, *gpu_texture);
 		} else if (
 		    const vk::ImageView failsafe =
@@ -407,7 +409,8 @@ void MaterialPass::updateInstanceDescriptors(InstanceResources& res, uint32_t fr
 			sampler = VulkanRenderer::instance->getFailsafeSampler();
 		}
 
-		if (res.bound_views[frame_index][i] == view) {
+		const InstanceResources::BoundView bound {.view = view, .generation = generation};
+		if (res.bound_views[frame_index][i] == bound) {
 			continue;
 		}
 
@@ -420,7 +423,7 @@ void MaterialPass::updateInstanceDescriptors(InstanceResources& res, uint32_t fr
 		    *res.sets[frame_index][slot.set - 1], slot.binding, 0, 1, vk::DescriptorType::eCombinedImageSampler, &image_info
 		);
 		device.updateDescriptorSets(write, {});
-		res.bound_views[frame_index][i] = view;
+		res.bound_views[frame_index][i] = bound;
 	}
 }
 

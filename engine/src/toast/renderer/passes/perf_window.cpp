@@ -459,7 +459,8 @@ void PerfWindow::drawSummary(bool has_gpu) {
 		ImGui::TextDisabled("(uncapped)");
 	}
 
-	const float width = ImGui::GetFontSize() * 30.0f;
+	const float width =
+	    m_expanded ? std::max(ImGui::GetContentRegionAvail().x, ImGui::GetFontSize() * 20.0f) : ImGui::GetFontSize() * 30.0f;
 	drawFrameGraph(width, ImGui::GetFontSize() * 4.0f);
 	drawPhaseBar(width, ImGui::GetFontSize() * 0.6f);
 
@@ -521,7 +522,7 @@ void PerfWindow::drawGpuTab() {
 	}
 
 	const bool has_baseline = m_graphics_baseline >= 0.0f;
-	const float width = ImGui::GetFontSize() * 36.0f;
+	const float width = std::max(ImGui::GetContentRegionAvail().x, ImGui::GetFontSize() * 20.0f);
 
 	ImGui::Text("Graphics queue %.2f ms/frame", m_graphics_avg);
 	if (has_baseline) {
@@ -562,16 +563,23 @@ void PerfWindow::drawGpuTab() {
 	  perfColor(230, 210, 80),
 	  perfColor(200, 120, 170),
 	};
+	constexpr ImU32 k_unscoped_color = perfColor(70, 70, 70);
 	std::vector<PerfSegment> segments;
+	// Nested passes share the color of the top level pass they run under
+	std::vector<ImU32> row_colors(m_passes.size(), k_unscoped_color);
+	ImU32 scope_color = k_unscoped_color;
 	float scoped_ms = 0.0f;
-	for (const PassStats& pass : m_passes) {
+	for (size_t i = 0; i < m_passes.size(); ++i) {
+		const PassStats& pass = m_passes[i];
 		if (pass.depth == 0) {
-			segments.push_back({pass.name, pass.perFrame(), k_pass_colors[segments.size() % k_pass_colors.size()]});
+			scope_color = k_pass_colors[segments.size() % k_pass_colors.size()];
+			segments.push_back({pass.name, pass.perFrame(), scope_color});
 			scoped_ms += pass.perFrame();
 		}
+		row_colors[i] = scope_color;
 	}
 	const float unscoped_ms = std::max(0.0f, m_graphics_avg - scoped_ms);
-	segments.push_back({"Unscoped", unscoped_ms, perfColor(70, 70, 70)});
+	segments.push_back({"Unscoped", unscoped_ms, k_unscoped_color});
 	perfStackedBar("##perf_gpu_bar", width, ImGui::GetFontSize() * 0.9f, m_graphics_avg, segments);
 
 	ImGui::Checkbox("Hide idle passes", &m_hide_idle_passes);
@@ -590,8 +598,8 @@ void PerfWindow::drawGpuTab() {
 	constexpr ImGuiTableFlags k_flags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoHostExtendX | ImGuiTableFlags_RowBg |
 	                                    ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_Sortable | ImGuiTableFlags_SortTristate |
 	                                    ImGuiTableFlags_ScrollY;
-	// Fixed sizes so the auto sized window does not jitter as rows and digits change
-	const ImVec2 outer(width, ImGui::GetTextLineHeightWithSpacing() * 18.0f);
+	// Takes the height the window has left so resizing it shows more rows
+	const ImVec2 outer(0.0f, std::max(ImGui::GetContentRegionAvail().y, ImGui::GetTextLineHeightWithSpacing() * 8.0f));
 	const int column_count = has_baseline ? 6 : 5;
 	if (!ImGui::BeginTable("##perf_gpu_passes", column_count, k_flags, outer)) {
 		return;
@@ -657,6 +665,7 @@ void PerfWindow::drawGpuTab() {
 		ImGui::PushID(static_cast<int>(i));
 
 		ImGui::TableNextColumn();
+		perfSwatch(row_colors[i]);
 		const int indent = sorted ? 0 : static_cast<int>(pass.depth * 2);
 		if (is_idle || absent) {
 			ImGui::TextDisabled("%*s%s", indent, "", pass.name.c_str());
@@ -724,6 +733,7 @@ void PerfWindow::drawGpuTab() {
 	if (!sorted && unscoped_ms >= 0.01f) {
 		ImGui::TableNextRow();
 		ImGui::TableNextColumn();
+		perfSwatch(k_unscoped_color);
 		ImGui::TextDisabled("Unscoped");
 		ImGui::TableNextColumn();
 		ImGui::TextDisabled("%5.2f", unscoped_ms);
@@ -842,10 +852,42 @@ void PerfWindow::draw() {
 	const ImGuiIO& io = ImGui::GetIO();
 	ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 12.0f, 12.0f), ImGuiCond_FirstUseEver, ImVec2(1.0f, 0.0f));
 	ImGui::SetNextWindowBgAlpha(0.88f);
-	constexpr ImGuiWindowFlags k_flags =
-	    ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
 
-	const bool open = ImGui::Begin("Performance", nullptr, k_flags);
+	// Fits its content collapsed and the user sizes it with the details open
+	ImGuiWindowFlags flags = ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
+	if (!m_expanded) {
+		flags |= ImGuiWindowFlags_AlwaysAutoResize;
+	} else {
+		const float font = ImGui::GetFontSize();
+		ImGui::SetNextWindowSizeConstraints(ImVec2(font * 24.0f, font * 12.0f), ImVec2(io.DisplaySize.x, io.DisplaySize.y));
+		if (m_apply_expanded_size) {
+			m_apply_expanded_size = false;
+			const float width = std::min(m_expanded_width > 0.0f ? m_expanded_width : font * 38.0f, io.DisplaySize.x);
+			const float height = std::min(m_expanded_height > 0.0f ? m_expanded_height : font * 34.0f, io.DisplaySize.y);
+			ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
+			ImGui::SetNextWindowPos(
+			    ImVec2(
+			        std::clamp(m_window_x, 0.0f, std::max(0.0f, io.DisplaySize.x - width)),
+			        std::clamp(m_window_y, 0.0f, std::max(0.0f, io.DisplaySize.y - height))
+			    ),
+			    ImGuiCond_Always
+			);
+			m_expanded_width = width;
+			m_expanded_height = height;
+		}
+	}
+
+	const bool open = ImGui::Begin("Performance", nullptr, flags);
+	if (open) {
+		const ImVec2 pos = ImGui::GetWindowPos();
+		m_window_x = pos.x;
+		m_window_y = pos.y;
+		if (m_expanded) {
+			const ImVec2 size = ImGui::GetWindowSize();
+			m_expanded_width = size.x;
+			m_expanded_height = size.y;
+		}
+	}
 	if (!open || !m_has_sample) {
 		if (open) {
 			ImGui::TextDisabled("Sampling...");
@@ -858,6 +900,7 @@ void PerfWindow::draw() {
 
 	if (ImGui::SmallButton(m_expanded ? "Hide details" : "Details")) {
 		m_expanded = !m_expanded;
+		m_apply_expanded_size = m_expanded;
 	}
 
 	if (m_expanded && ImGui::BeginTabBar("##perf_tabs")) {

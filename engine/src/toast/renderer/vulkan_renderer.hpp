@@ -530,6 +530,13 @@ public:
 		return m_clamp_to_simulation.load(std::memory_order_relaxed);
 	}
 
+	void setDebugWindowsVisible(bool visible) noexcept { m_debug_windows_visible.store(visible, std::memory_order_relaxed); }
+
+	[[nodiscard]]
+	auto debugWindowsVisible() const noexcept -> bool {
+		return m_debug_windows_visible.load(std::memory_order_relaxed);
+	}
+
 	void setApplicationFocused(bool focused) noexcept { m_application_focused.store(focused, std::memory_order_relaxed); }
 
 	[[nodiscard]]
@@ -612,6 +619,16 @@ public:
 
 	/// Edge rounding radius in voxels where 0 keeps the flat face normals
 	void setVoxelCellBoxes(bool enabled) noexcept { m_voxel_cell_boxes.store(enabled, std::memory_order_relaxed); }
+
+	/// Smallest on screen voxel size in pixels that is rasterized instead of marched and 0 marches everything
+	void setVoxelRasterPixels(float pixels) noexcept {
+		m_voxel_raster_pixels.store(std::max(pixels, 0.0f), std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto voxelRasterPixels() const noexcept -> float {
+		return m_voxel_raster_pixels.load(std::memory_order_relaxed);
+	}
 
 	[[nodiscard]]
 	auto voxelCellBoxes() const noexcept -> bool {
@@ -1226,6 +1243,7 @@ private:
 
 	std::atomic<float> m_voxel_normal_rounding {0.3f};
 	std::atomic_bool m_voxel_cell_boxes {true};
+	std::atomic<float> m_voxel_raster_pixels {4.0f};
 
 	ShaderLayout m_present_layout;
 	VulkanPipeline m_present_pipeline;
@@ -1472,6 +1490,7 @@ private:
 
 	std::atomic<double> m_frame_rate_limit_hz {0.0};
 	std::atomic_bool m_application_focused {true};
+	std::atomic_bool m_debug_windows_visible {true};
 	std::atomic_bool m_rendering_paused {false};
 	std::atomic_bool m_clamp_to_simulation {true};
 };

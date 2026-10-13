@@ -187,6 +187,7 @@ void RayTracingScene::build(vk::CommandBuffer cmd, uint32_t frame_index, bool tr
 			as_ci.size = sizes.accelerationStructureSize;
 			as_ci.type = vk::AccelerationStructureTypeKHR::eTopLevel;
 			frame.tlas = vk::raii::AccelerationStructureKHR(device, as_ci);
+			++frame.tlas_generation;
 		}
 	}
 
