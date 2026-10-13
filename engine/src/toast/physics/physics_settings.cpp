@@ -1,5 +1,7 @@
 #include "physics_settings.hpp"
 
+#include "layers.hpp"
+
 #include <algorithm>
 #include <string>
 #include <toast/settings/settings.hpp>
@@ -18,6 +20,8 @@ auto tunables() -> const Tunables& {
 }
 
 void registerPhysicsSettings() {
+	registerLayerSettings();
+
 	const auto flt = [](std::string_view key, double value, Meta meta, float Tunables::* field) {
 		toast::settings::declareFloat(key, value, std::move(meta)).onChange([field](double v) {
 			g_tunables.*field = static_cast<float>(v);
@@ -45,6 +49,30 @@ void registerPhysicsSettings() {
 	gravity_axis("physics.world.gravity_x", "Gravity X", 0.0, 0);
 	gravity_axis("physics.world.gravity_y", "Gravity Y", 0.0, 1);
 	gravity_axis("physics.world.gravity_z", "Gravity Z", -9.8, 2);
+
+	flt("physics.world.air_density",
+	    1.225f,
+	    {.label = "Air density", .category = "World", .min = 0.0f, .step = 0.1f},
+	    &Tunables::air_density);
+
+	const auto wind_axis = [](std::string_view key, std::string_view label, double value, int axis) {
+		toast::settings::declareFloat(
+		    key, value, {.label = std::string {label}, .category = "World", .min = -1000.0, .max = 1000.0, .step = 0.1}
+		)
+		    .onChange([axis](double v) { g_tunables.wind[axis] = static_cast<float>(v); });
+	};
+	wind_axis("physics.world.wind_x", "Wind X", 0.0f, 0);
+	wind_axis("physics.world.wind_y", "Wind Y", 0.0f, 1);
+	wind_axis("physics.world.wind_z", "Wind Z", 0.0f, 2);
+
+	flt("physics.world.wind_shelter_distance",
+	    64.0f,
+	    {.label = "Wind shelter distance",
+	     .category = "World",
+	     .description = "A body with solid geometry this far upwind of it, like the wall of a building, feels no wind. 0 disables.",
+	     .min = 0.0f,
+	     .step = 1.0f},
+	    &Tunables::wind_shelter_distance);
 
 	uint_setting(
 	    "physics.solver.iterations",
@@ -247,6 +275,17 @@ void registerPhysicsSettings() {
 			 .step = 1.0},
 	    &Tunables::fragment_despawn_max_voxels
 	);
+	uint_setting(
+	    "physics.fracture.large_debris_min_voxels",
+	    16,
+	    {.label = "Large debris min voxels",
+			 .category = "Fracture",
+			 .description = "Fragments with at least this many voxels go on the Large debris layer instead of Small debris",
+			 .min = 1.0,
+			 .max = 4096.0,
+			 .step = 1.0},
+	    &Tunables::large_debris_min_voxels
+	);
 	flt("physics.fracture.despawn_settle_seconds",
 	    3.0,
 	    {.label = "Despawn settle time",
@@ -405,23 +444,6 @@ void registerPhysicsSettings() {
 			 .step = 1.0},
 	    &Tunables::sweep_refine_iterations
 	);
-
-	toast::settings::declareBool(
-	    "physics.triggers.check_dynamic",
-	    true,
-	    {.label = "Check for Dynamic",
-			 .category = "Triggers",
-			 .description = "Triggers report dynamic bodies entering and leaving them"}
-	)
-	    .onChange([](bool v) { g_tunables.trigger_check_dynamic = v; });
-	toast::settings::declareBool(
-	    "physics.triggers.check_kinematic",
-	    true,
-	    {.label = "Check for Kinematic",
-			 .category = "Triggers",
-			 .description = "Triggers report kinematic bodies entering and leaving them"}
-	)
-	    .onChange([](bool v) { g_tunables.trigger_check_kinematic = v; });
 }
 
 }

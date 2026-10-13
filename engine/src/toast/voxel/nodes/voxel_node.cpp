@@ -435,6 +435,24 @@ void VoxelNode::carveBox(glm::vec3 min, glm::vec3 max) {
 	fillBox(min, max, voxel::k_empty_palette_index);
 }
 
+void VoxelNode::setLayers(int included_layers, int excluded_layers) {
+	included = static_cast<uint32_t>(included_layers);
+	excluded = static_cast<uint32_t>(excluded_layers);
+	physics::Simulator::setBodyLayers(m_body, {.included = included, .excluded = excluded});
+}
+
+void VoxelNode::includeLayer(int layer, bool value) {
+	physics::LayerFilter layers {.included = included, .excluded = excluded};
+	physics::includeLayer(layers, layer, value);
+	setLayers(static_cast<int>(layers.included), static_cast<int>(layers.excluded));
+}
+
+void VoxelNode::excludeLayer(int layer, bool value) {
+	physics::LayerFilter layers {.included = included, .excluded = excluded};
+	physics::excludeLayer(layers, layer, value);
+	setLayers(static_cast<int>(layers.included), static_cast<int>(layers.excluded));
+}
+
 void VoxelNode::carveSphere(glm::vec3 center, float radius) {
 	fillSphere(center, radius, voxel::k_empty_palette_index);
 }

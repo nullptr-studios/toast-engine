@@ -113,6 +113,24 @@ void Rigidbody::handleContactEnd(const BroadPhasePair& pair) {
 	contact_end.fire(other_node);
 }
 
+void Rigidbody::setLayers(int included_layers, int excluded_layers) {
+	included = static_cast<uint32_t>(included_layers);
+	excluded = static_cast<uint32_t>(excluded_layers);
+	Simulator::setBodyLayers(m_body, {.included = included, .excluded = excluded});
+}
+
+void Rigidbody::includeLayer(int layer, bool value) {
+	LayerFilter layers {.included = included, .excluded = excluded};
+	physics::includeLayer(layers, layer, value);
+	setLayers(static_cast<int>(layers.included), static_cast<int>(layers.excluded));
+}
+
+void Rigidbody::excludeLayer(int layer, bool value) {
+	LayerFilter layers {.included = included, .excluded = excluded};
+	physics::excludeLayer(layers, layer, value);
+	setLayers(static_cast<int>(layers.included), static_cast<int>(layers.excluded));
+}
+
 void Rigidbody::onEnable() {
 	Simulator::setBodyEnabled(m_body, true);
 }
@@ -129,6 +147,7 @@ auto Rigidbody::descriptor() const -> BodyDescriptor {
 	result.rotation = world_rotation;
 	result.lock_position = {lock_pos_x, lock_pos_y, lock_pos_z};
 	result.lock_rotation = {lock_rot_x, lock_rot_y, lock_rot_z};
+	result.layers = {.included = included, .excluded = excluded};
 	configureBodyDescriptor(result);
 	return result;
 }

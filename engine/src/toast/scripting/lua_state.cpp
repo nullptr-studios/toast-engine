@@ -9,7 +9,9 @@
 #include "node_proxy.hpp"
 #include "script_runtime.hpp"
 #include "signal_proxy.hpp"
+#include "toast/physics/layers.hpp"
 #include "toast/physics/raycast.hpp"
+#include "toast/physics/simulator.hpp"
 #include "ui_binds_proxy.hpp"
 
 #include <algorithm>
@@ -1120,6 +1122,18 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    .endNamespace()
 
 	    .beginNamespace("Physics")
+	    .addFunction(
+	        "setWind", +[](const glm::vec3& wind) { physics::Simulator::setWind(wind); }
+	    )
+	    .addFunction(
+	        "wind", +[]() -> glm::vec3 { return physics::Simulator::wind(); }
+	    )
+	    .addFunction(
+	        "resetWind", +[]() { physics::Simulator::resetWind(); }
+	    )
+	    .addFunction(
+	        "getLayer", +[](const std::string& name) -> int { return physics::getLayer(name); }
+	    )
 	    .addFunction(
 	        "shootVoxel",
 	        +[](const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy, float min_radius) -> bool {

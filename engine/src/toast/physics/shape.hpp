@@ -9,6 +9,7 @@
 
 #include "aabb.hpp"
 #include "body.hpp"
+#include "material_defaults.hpp"
 
 #include <compare>
 #include <cstdint>
@@ -18,9 +19,11 @@
 namespace physics {
 
 struct PhysicsMaterial {
-	float restitution = 0.0f;
-	float static_friction = 0.6f;
-	float dynamic_friction = 0.4f;
+	float restitution = material_defaults::k_restitution;
+	float static_friction = material_defaults::k_static_friction;
+	float dynamic_friction = material_defaults::k_dynamic_friction;
+	float rolling_friction = material_defaults::k_rolling_friction;
+	float spin_friction = material_defaults::k_spin_friction;
 };
 
 struct ShapeID {

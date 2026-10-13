@@ -32,6 +32,7 @@
 #include <toast/voxel/assets/voxel_model.hpp>
 #include <toast/voxel/mass_accumulator.hpp>
 #include <toast/voxel/nodes/voxel_node.hpp>
+#include <toast/world/world_events.hpp>
 #include <tracy/Tracy.hpp>
 #include <unordered_set>
 
@@ -244,6 +245,36 @@ Simulator::Simulator() {
 			refreshAllPalettes();
 		}
 	});
+	// A new level starts with the settings wind
+	m_listener.subscribe<event::SetWorldRoot>([](event::SetWorldRoot&) { resetWind(); }, 10);
+}
+
+void Simulator::setWind(const glm::vec3& wind) {
+	if (not instance) {
+		return;
+	}
+	if (not std::isfinite(wind.x) || not std::isfinite(wind.y) || not std::isfinite(wind.z)) {
+		TOAST_WARN("Physics", "Ignored a non-finite wind");
+		return;
+	}
+	std::scoped_lock lock(instance->m_wind_mutex);
+	instance->m_level_wind = wind;
+}
+
+auto Simulator::wind() -> glm::vec3 {
+	if (not instance) {
+		return tunables().wind;
+	}
+	std::scoped_lock lock(instance->m_wind_mutex);
+	return instance->m_level_wind.value_or(tunables().wind);
+}
+
+void Simulator::resetWind() {
+	if (not instance) {
+		return;
+	}
+	std::scoped_lock lock(instance->m_wind_mutex);
+	instance->m_level_wind.reset();
 }
 
 Simulator::~Simulator() {
@@ -281,6 +312,8 @@ void Simulator::registerRigidbody(Rigidbody& node) {
 		material.restitution = node.material->restitution();
 		material.static_friction = node.material->staticFriction();
 		material.dynamic_friction = node.material->dynamicFriction();
+		material.rolling_friction = node.material->rollingFriction();
+		material.spin_friction = node.material->spinFriction();
 	}
 
 	const BodyID body = instance->createBody(node.descriptor());
@@ -429,9 +462,13 @@ void Simulator::registerVoxelNode(toast::VoxelNode& node) {
 	      .allow_sleep = node.allow_sleep,
 	      .position = node.world_position,
 	      .rotation = node.world_rotation,
-	      .mass = 1.0f,
+	      .mass = 1.0f, // calculated later
 	      .gravity_scale = node.gravity_scale,
-	    }
+	      .linear_damping = node.linear_damping,
+	      .angular_damping = node.angular_damping,
+	      .drag_scale = node.drag_scale,
+	      .layers = {.included = node.included, .excluded = node.excluded},
+	}
 	);
 	if (not instance->valid(body)) {
 		return;
@@ -1269,12 +1306,14 @@ auto Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedCompone
 	glm::vec3 origin_local = glm::vec3(extracted.offset) * static_cast<float>(voxel::k_brick_dim) * voxel::k_voxel_size;
 	glm::quat frag_rotation = glm::normalize(rotation * local_rotation);
 	glm::vec3 frag_pos = position + rotation * (local_center + local_rotation * origin_local);
+	const int debris_layer = component.voxel_count >= tunables().large_debris_min_voxels ? large_debris_layer : small_debris_layer;
 	// clang-format off
 	auto frag_body = createBody(BodyDescriptor {
 		.type = BodyType::dynamic_body,
 		.position = frag_pos,
 		.rotation = frag_rotation,
 		.angular_velocity = angular_velocity,
+		.layers = {.included = layerBit(default_layer) | layerBit(debris_layer), .excluded = 0},
 	});
 	// clang-format on
 
@@ -1409,12 +1448,14 @@ auto Simulator::spawnStaticSplitBody(ShapeID source_shape_id, const DetachedComp
 	const glm::vec3 origin_local = glm::vec3(extracted.offset) * static_cast<float>(voxel::k_brick_dim) * voxel::k_voxel_size;
 	const glm::quat piece_rotation = glm::normalize(rotation * local_rotation);
 	const glm::vec3 piece_pos = position + rotation * (local_center + local_rotation * origin_local);
+	const LayerFilter source_layers = body->layers;
 
 	// clang-format off
 	auto split_body = createBody(BodyDescriptor {
 		.type = BodyType::static_body,
 		.position = piece_pos,
 		.rotation = piece_rotation,
+		.layers = source_layers,
 	});
 	// clang-format on
 	// A failed spawn gives the bricks back
@@ -1803,6 +1844,28 @@ void Simulator::setBodyTransform(BodyID body, const glm::vec3& position, const g
 	instance->setTransform(body, position, rotation);
 }
 
+void Simulator::setBodyLayers(BodyID body, LayerFilter layers) {
+	if (instance == nullptr) {
+		return;
+	}
+	if (not onSimulatorThread()) {
+		request([body, layers] { setBodyLayers(body, layers); });
+		return;
+	}
+	runPendingRequests();
+	if (not instance->mainThreadMutationAllowed()) {
+		return;
+	}
+	Body* stored = instance->tryGetBody(body);
+	if (stored == nullptr) {
+		return;
+	}
+	stored->layers = layers;
+	// something it ignored until now may be resting on it
+	wakeBody(body);
+	instance->wakeBodiesTouching(body);
+}
+
 auto Simulator::setBodyLinearVelocity(BodyID body, const glm::vec3& velocity) -> bool {
 	if (instance == nullptr) {
 		return false;
@@ -2154,35 +2217,97 @@ auto Simulator::solveNormal(Constraint& constraint, Body& body_a, Body& body_b) 
 }
 
 auto Simulator::solveFriction(Constraint& constraint, Body& body_a, Body& body_b) -> bool {
-	if (constraint.tangent_mass <= 0.0f) {
+	if (constraint.tangent_mass_1 <= 0.0f && constraint.tangent_mass_2 <= 0.0f) {
 		return true;
 	}
 
 	// recalcualte because the normal impulse changed velocity
-	glm::vec3 relative_velocity = velocityAtPoint(body_b, constraint.r_b) - velocityAtPoint(body_a, constraint.r_a);
-	float tangent_speed = glm::dot(relative_velocity, constraint.tangent);
-	if (not std::isfinite(tangent_speed)) {
+	const glm::vec3 relative_velocity = velocityAtPoint(body_b, constraint.r_b) - velocityAtPoint(body_a, constraint.r_a);
+	const float speed_1 = glm::dot(relative_velocity, constraint.tangent_1);
+	const float speed_2 = glm::dot(relative_velocity, constraint.tangent_2);
+	if (not std::isfinite(speed_1) || not std::isfinite(speed_2)) {
 		return false;
 	}
 
-	float impulse_delta = -tangent_speed * constraint.tangent_mass;
-	float old_impulse = constraint.accumulated_tangent_impulse;
-	float propsed_impulse = old_impulse + impulse_delta;
-	float static_limit = constraint.static_friction * constraint.accumulated_normal_impulse;
-	float new_impulse = 0.0f;
+	const glm::vec2 old_impulse = constraint.accumulated_tangent_impulse;
+	glm::vec2 proposed_impulse =
+	    old_impulse + glm::vec2 {-speed_1 * constraint.tangent_mass_1, -speed_2 * constraint.tangent_mass_2};
 
-	if (std::abs(propsed_impulse) <= static_limit) {
-		// no slipping
-		new_impulse = propsed_impulse;
-	} else {
-		// slipping
-		float dynamic_limit = constraint.dynamic_friction * constraint.accumulated_normal_impulse;
-		new_impulse = std::clamp(propsed_impulse, -dynamic_limit, dynamic_limit);
+	const float static_limit = constraint.static_friction * constraint.accumulated_normal_impulse;
+	const float length_sq = glm::dot(proposed_impulse, proposed_impulse);
+	if (length_sq > static_limit * static_limit) {
+		// slipping keeps the direction but drops to kinetic
+		const float dynamic_limit = constraint.dynamic_friction * constraint.accumulated_normal_impulse;
+		proposed_impulse *= dynamic_limit / std::sqrt(length_sq);
 	}
 
-	constraint.accumulated_tangent_impulse = new_impulse;
-	float applied_impulse = new_impulse - old_impulse;
-	applyImpulse(body_a, body_b, constraint.r_a, constraint.r_b, constraint.tangent * applied_impulse);
+	constraint.accumulated_tangent_impulse = proposed_impulse;
+	const glm::vec2 applied_impulse = proposed_impulse - old_impulse;
+	applyImpulse(
+	    body_a,
+	    body_b,
+	    constraint.r_a,
+	    constraint.r_b,
+	    constraint.tangent_1 * applied_impulse.x + constraint.tangent_2 * applied_impulse.y
+	);
+
+	return true;
+}
+
+auto Simulator::angularMassAround(const Body& body_a, const Body& body_b, const glm::vec3& axis) -> float {
+	float inverse_mass = 0.0f;
+	if (movable(body_a)) {
+		inverse_mass += glm::dot(axis, body_a.inverse_inertia_world * axis);
+	}
+	if (movable(body_b)) {
+		inverse_mass += glm::dot(axis, body_b.inverse_inertia_world * axis);
+	}
+	return std::isfinite(inverse_mass) && inverse_mass > 1.0e-8f ? 1.0f / inverse_mass : 0.0f;
+}
+
+void Simulator::applyAngularImpulse(Body& body_a, Body& body_b, const glm::vec3& impulse) {
+	if (movable(body_a)) {
+		body_a.angular_velocity -= body_a.inverse_inertia_world * impulse;
+	}
+	if (movable(body_b)) {
+		body_b.angular_velocity += body_b.inverse_inertia_world * impulse;
+	}
+}
+
+auto Simulator::solveRolling(Constraint& constraint, Body& body_a, Body& body_b) -> bool {
+	// only turning matters here and a body that cannot move does not turn either
+	const glm::vec3 angular_a = movable(body_a) ? body_a.angular_velocity : glm::vec3 {0.0f};
+	const glm::vec3 angular_b = movable(body_b) ? body_b.angular_velocity : glm::vec3 {0.0f};
+	const glm::vec3 relative = angular_b - angular_a;
+	const float roll_1 = glm::dot(relative, constraint.tangent_1);
+	const float roll_2 = glm::dot(relative, constraint.tangent_2);
+	const float spin = glm::dot(relative, constraint.normal);
+	if (not std::isfinite(roll_1) || not std::isfinite(roll_2) || not std::isfinite(spin)) {
+		return false;
+	}
+
+	// rolling is limited to a disc like friction so it resists every rolling direction the same
+	const glm::vec2 old_roll = constraint.accumulated_rolling_impulse;
+	glm::vec2 roll = old_roll + glm::vec2 {-roll_1 * constraint.rolling_mass_1, -roll_2 * constraint.rolling_mass_2};
+	const float roll_limit = constraint.rolling_friction * constraint.accumulated_normal_impulse;
+	const float roll_length_sq = glm::dot(roll, roll);
+	if (roll_length_sq > roll_limit * roll_limit) {
+		roll *= roll_limit / std::sqrt(roll_length_sq);
+	}
+	constraint.accumulated_rolling_impulse = roll;
+	const glm::vec2 applied_roll = roll - old_roll;
+
+	// spin is a single axis so a segment is enough
+	const float old_spin = constraint.accumulated_spin_impulse;
+	const float spin_limit = constraint.spin_friction * constraint.accumulated_normal_impulse;
+	const float new_spin = std::clamp(old_spin - (spin * constraint.spin_mass), -spin_limit, spin_limit);
+	constraint.accumulated_spin_impulse = new_spin;
+
+	applyAngularImpulse(
+	    body_a,
+	    body_b,
+	    constraint.tangent_1 * applied_roll.x + constraint.tangent_2 * applied_roll.y + constraint.normal * (new_spin - old_spin)
+	);
 
 	return true;
 }
@@ -2727,15 +2852,26 @@ void Simulator::integrate(float dt) {
 	}
 
 	const glm::vec3 gravity = tunables().gravity;
-	const auto integrate_range = [this, gravity, dt](size_t begin, size_t end) {
-		for (size_t index = begin; index < end; ++index) {
-			BodySlot& slot = m_bodies[index];
-			if (not slot.occupied) {
-				continue;
-			}
-			integrateBody(BodyID {.slot = static_cast<uint32_t>(index), .generation = slot.generation}, slot.body, gravity, dt);
-		}
-	};
+	const glm::vec3 wind = Simulator::wind();
+	const float air_density = tunables().air_density;
+	const float shelter_distance = tunables().wind_shelter_distance;
+	const bool shelter_checks = shelter_distance > 0.0f && air_density > 0.0f && glm::dot(wind, wind) > 1.0e-12f;
+	const glm::vec3 upwind = shelter_checks ? -glm::normalize(wind) : glm::vec3 {0.0f};
+	const auto integrate_range =
+	    [this, gravity, wind, air_density, shelter_checks, shelter_distance, upwind, dt](size_t begin, size_t end) {
+		    for (size_t index = begin; index < end; ++index) {
+			    BodySlot& slot = m_bodies[index];
+			    if (not slot.occupied) {
+				    continue;
+			    }
+			    auto body_id = BodyID {.slot = static_cast<uint32_t>(index), .generation = slot.generation};
+			    // Anything with solid geometry nearby stops the wind
+			    const bool sheltered = shelter_checks && slot.body.type == BodyType::dynamic_body && slot.body.awake &&
+					                       slot.body.drag_coefficient > 0.0f &&
+					                       windBlocked(slot.body.worldCenterOfMass(), upwind, shelter_distance, body_id);
+			    integrateBody(body_id, slot.body, gravity, air_density, sheltered ? glm::vec3 {0.0f} : wind, dt);
+		    }
+	    };
 
 	const size_t minimum_bodies_per_job = tunables().min_bodies_per_job;
 	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), static_cast<size_t>(1));
@@ -2766,7 +2902,9 @@ void Simulator::integrate(float dt) {
 	}
 }
 
-void Simulator::integrateBody(BodyID id, Body& body, const glm::vec3& gravity, float dt) {
+void Simulator::integrateBody(
+    BodyID id, Body& body, const glm::vec3& gravity, float air_density, const glm::vec3& wind, float dt
+) {
 	ZoneScopedN("physics::IntegrateBody");
 	ZoneValue(static_cast<uint64_t>(id.slot));
 	if (not body.enabled) {
@@ -2789,6 +2927,33 @@ void Simulator::integrateBody(BodyID id, Body& body, const glm::vec3& gravity, f
 
 	// linear integration
 	body.linear_velocity += gravity * body.gravity_scale * dt;
+
+	// drag
+	if (air_density > 0.0f && body.drag_coefficient > 0.0f) {
+		glm::vec3 rel_wind = body.linear_velocity - wind;
+		float speed = glm::length(rel_wind);
+		if (speed > 1.0e-6) {
+			glm::vec3 local_dir = glm::conjugate(body.rotation) * (rel_wind / speed);
+			float area = body.drag_area_base + glm::dot(body.drag_area_axis, glm::abs(local_dir));
+			float k = 0.5f * air_density * body.drag_coefficient * area * body.inverse_mass;
+			body.linear_velocity = wind + rel_wind / (1.0f + (k * speed * dt));
+		}
+
+		float spin = glm::length(body.angular_velocity);
+		if (spin > 1.0e-6) {
+			glm::vec3 axis = body.angular_velocity / spin;
+			float inverse_inertia_about_axis = glm::dot(axis, body.inverse_inertia_world * axis);
+			float area = body.drag_area_base + ((body.drag_area_axis.x + body.drag_area_axis.y + body.drag_area_axis.z) / 3.0f);
+			float r3 = body.extent_radius * body.extent_radius * body.extent_radius;
+			float k_spin = 0.5f * air_density * body.drag_coefficient * 0.4f * area * r3 * inverse_inertia_about_axis;
+			body.angular_velocity /= (1.0f + (k_spin * spin * dt));
+		}
+	}
+
+	body.linear_velocity *= std::exp(-body.linear_damping * dt);
+	body.angular_velocity *= std::exp(-body.angular_damping * dt);
+
+	// locks
 	if (body.lock_position.x) {
 		body.linear_velocity.x = 0.0f;
 	}
@@ -2800,7 +2965,6 @@ void Simulator::integrateBody(BodyID id, Body& body, const glm::vec3& gravity, f
 	}
 	const glm::vec3 center_of_mass = body.worldCenterOfMass() + body.linear_velocity * dt;
 
-	// angular integration
 	if (body.lock_rotation.x) {
 		body.angular_velocity.x = 0.0f;
 	}
@@ -2947,6 +3111,9 @@ auto Simulator::createBody(const BodyDescriptor& descriptor) -> BodyID {
 	const glm::quat rotation = glm::normalize(descriptor.rotation);
 	const float inverse_mass = descriptor.type == BodyType::dynamic_body ? 1.0f / descriptor.mass : 0.0f;
 
+	// a negative damping would add energy every tick
+	const auto clamped_damping = [](float damping) { return std::isfinite(damping) ? std::max(damping, 0.0f) : 0.0f; };
+
 	Body body {
 	  .type = descriptor.type,
 	  .allow_sleep = descriptor.type == BodyType::dynamic_body && descriptor.allow_sleep,
@@ -2959,7 +3126,11 @@ auto Simulator::createBody(const BodyDescriptor& descriptor) -> BodyID {
 	  .inverse_mass = inverse_mass,
 	  .gravity_scale = descriptor.gravity_scale,
 	  .lock_position = descriptor.lock_position,
-	  .lock_rotation = descriptor.lock_rotation
+	  .lock_rotation = descriptor.lock_rotation,
+	  .linear_damping = clamped_damping(descriptor.linear_damping),
+	  .angular_damping = clamped_damping(descriptor.angular_damping),
+	  .drag_scale = descriptor.drag_scale,
+	  .layers = descriptor.layers,
 	};
 
 	if (not m_free_body_slots.empty()) {
@@ -3320,7 +3491,8 @@ void Simulator::checkTriggers() {
 			if (const auto body = trigger->parent().as<Rigidbody>(); body.exists()) {
 				ignored = body->bodyID();
 			}
-			overlapShape(ignored, *probe, trigger->world_position, trigger->world_rotation, overlapping);
+			const LayerFilter layers {.included = trigger->included, .excluded = trigger->excluded};
+			overlapShape(ignored, layers, *probe, trigger->world_position, trigger->world_rotation, overlapping);
 		}
 		trigger->updateOverlaps(overlapping);
 	}
@@ -3466,6 +3638,14 @@ void Simulator::destroyVoxelData(VoxelDataID data) {
 	m_free_voxel_shape_slots.emplace_back(data.slot);
 }
 
+namespace {
+
+auto dragBoxAreaAxis(const glm::vec3& h) -> glm::vec3 {
+	return 4.0f * glm::vec3 {h.y * h.z, h.x * h.z, h.x * h.y};
+}
+
+}
+
 void Simulator::rebuildMassProperties(BodyID id) {
 	ZoneScopedN("physics::RebuildMassProperties");
 	ZoneValue(static_cast<uint64_t>(id.slot));
@@ -3479,6 +3659,9 @@ void Simulator::rebuildMassProperties(BodyID id) {
 	const glm::vec3 previous_center_of_mass = body->local_center_of_mass;
 	body->inverse_inertia_local = {0.0f};
 	body->inverse_inertia_world = {0.0f};
+	body->drag_area_base = 0;
+	body->drag_area_axis = {};
+	body->drag_coefficient = 0.0f;
 	body->local_center_of_mass = {};
 	if (body->inverse_mass == 0.0f) {
 		// static and kinematic bodies we just set inertia to 0
@@ -3529,6 +3712,13 @@ void Simulator::rebuildMassProperties(BodyID id) {
 			body->inverse_inertia_local = {inverse_inertia};
 			glm::mat3 rotation = glm::mat3_cast(body->rotation);
 			body->inverse_inertia_world = rotation * body->inverse_inertia_local * glm::transpose(rotation);
+
+			body->extent_radius = glm::length(shape->sphere.local_center) + shape->sphere.radius;
+
+			// drag
+			body->drag_area_base = glm::pi<float>() * radius_sq;
+			body->drag_coefficient = 0.47f;
+
 			break;
 		}
 		case ShapeType::box: {
@@ -3562,6 +3752,13 @@ void Simulator::rebuildMassProperties(BodyID id) {
 			body->inverse_inertia_local = local_rotation * inverse_inertia * glm::transpose(local_rotation);
 			glm::mat3 rotation = glm::mat3_cast(body->rotation);
 			body->inverse_inertia_world = rotation * body->inverse_inertia_local * glm::transpose(rotation);
+
+			body->extent_radius = glm::length(shape->box.local_center) + (0.5f * glm::length(shape->box.size));
+
+			// Drag
+			body->drag_area_axis = dragBoxAreaAxis(shape->box.size * 0.5f);
+			body->drag_coefficient = 1.05f;
+
 			break;
 		}
 		case ShapeType::voxel: {
@@ -3597,6 +3794,27 @@ void Simulator::rebuildMassProperties(BodyID id) {
 			body->inverse_inertia_local = inverse_inertia;
 			const glm::mat3 rotation = glm::mat3_cast(body->rotation);
 			body->inverse_inertia_world = rotation * body->inverse_inertia_local * glm::transpose(rotation);
+
+			using namespace glm;
+			const vec3 center = inverse(shape->voxel.local_rotation) * (body->local_center_of_mass - shape->voxel.local_center);
+			const AABB& bounds = shape->voxel.local_bounds;
+			float farthest_squared = 0.0f;
+			for (int corner = 0; corner < 8; ++corner) {
+				const glm::vec3 point {
+				  (corner & 1) != 0 ? bounds.max.x : bounds.min.x,
+				  (corner & 2) != 0 ? bounds.max.y : bounds.min.y,
+				  (corner & 4) != 0 ? bounds.max.z : bounds.min.z,
+				};
+				const vec3 offset = point - center;
+				farthest_squared = std::max(farthest_squared, glm::dot(offset, offset));
+			}
+			body->extent_radius = std::sqrt(farthest_squared);
+
+			// Drag
+			// the value from the AABB is good enough
+			body->drag_area_axis = dragBoxAreaAxis((bounds.max - bounds.min) * 0.5f);
+			body->drag_coefficient = 1.05f;
+
 			break;
 		}
 		case ShapeType::capsule: {
@@ -3630,6 +3848,14 @@ void Simulator::rebuildMassProperties(BodyID id) {
 			body->inverse_inertia_local = local_rotation * inverse_inertia * glm::transpose(local_rotation);
 			glm::mat3 rotation = glm::mat3_cast(body->rotation);
 			body->inverse_inertia_world = rotation * body->inverse_inertia_local * glm::transpose(rotation);
+
+			body->extent_radius = glm::length(shape->capsule.local_center) + (0.5f * shape->capsule.height) + shape->capsule.radius;
+
+			// Drag
+			// just treat like a box ngl
+			body->drag_area_axis = dragBoxAreaAxis({shape->capsule.radius, shape->capsule.radius, 0.5f * shape->capsule.height});
+			body->drag_coefficient = 0.82;
+
 			break;
 		}
 		default: {
@@ -3638,35 +3864,9 @@ void Simulator::rebuildMassProperties(BodyID id) {
 		}
 	}
 
-	switch (shape->type) {
-		case ShapeType::sphere: body->extent_radius = glm::length(shape->sphere.local_center) + shape->sphere.radius; break;
-		case ShapeType::box:
-			body->extent_radius = glm::length(shape->box.local_center) + (0.5f * glm::length(shape->box.size));
-			break;
-		case ShapeType::capsule:
-			body->extent_radius = glm::length(shape->capsule.local_center) + (0.5f * shape->capsule.height) + shape->capsule.radius;
-			break;
-		case ShapeType::voxel: {
-			const glm::vec3 center =
-			    glm::inverse(shape->voxel.local_rotation) * (body->local_center_of_mass - shape->voxel.local_center);
-			const AABB& bounds = shape->voxel.local_bounds;
-			float farthest_squared = 0.0f;
-			for (int corner = 0; corner < 8; ++corner) {
-				const glm::vec3 point {
-				  (corner & 1) != 0 ? bounds.max.x : bounds.min.x,
-				  (corner & 2) != 0 ? bounds.max.y : bounds.min.y,
-				  (corner & 4) != 0 ? bounds.max.z : bounds.min.z,
-				};
-				const glm::vec3 offset = point - center;
-				farthest_squared = std::max(farthest_squared, glm::dot(offset, offset));
-			}
-			body->extent_radius = std::sqrt(farthest_squared);
-			break;
-		}
-	}
-
 	const glm::vec3 center_shift = body->rotation * (body->local_center_of_mass - previous_center_of_mass);
 	body->linear_velocity += glm::cross(body->angular_velocity, center_shift);
+	body->drag_coefficient *= body->drag_scale;
 }
 
 auto Simulator::valid(BodyID body) const -> bool {
@@ -4081,85 +4281,6 @@ auto Simulator::cutVoxel(
 	return smashShape(hit->shape, tube, CapsuleSmash {.energy = energy}, false);
 }
 
-auto Simulator::marchVoxelRay(const glm::vec3& origin, const glm::vec3& dir, float max_distance) -> std::optional<VoxelRayHit> {
-	const glm::vec3 inv_dir = 1.0f / dir;
-	const glm::vec3 end = origin + dir * max_distance;
-	const AABB sweep_bounds {.min = glm::min(origin, end), .max = glm::max(origin, end)};
-
-	struct Candidate {
-		ShapeID shape;
-		float t_min;
-		float t_max;
-	};
-
-	std::vector<Candidate> candidates;
-
-	for (const ShapeID shape_id : m_broad_phase.queryBounds(sweep_bounds)) {
-		const Shape* shape = tryGetShape(shape_id);
-		if (shape == nullptr || shape->type != ShapeType::voxel || not shape->enabled) {
-			continue;
-		}
-		const Body* body = tryGetBody(shape->owner);
-		if (body == nullptr) {
-			continue;
-		}
-		const std::optional<AABB::RayHit> hit = worldShapeBounds(*body, *shape).intersectRay(origin, inv_dir);
-		if (not hit) {
-			continue;
-		}
-		candidates.push_back(Candidate {.shape = shape_id, .t_min = hit->t_min, .t_max = hit->t_max});
-	}
-
-	std::ranges::sort(candidates, {}, &Candidate::t_min);
-
-	const float march_step = voxel::k_voxel_size * 0.25f;
-
-	for (const Candidate& candidate : candidates) {
-		const Shape* shape = tryGetShape(candidate.shape);
-		if (shape == nullptr) {
-			continue;
-		}
-		VoxelShapeData* data = tryGetVoxelData(shape->voxel.data);
-		if (data == nullptr || data->volume == nullptr) {
-			continue;
-		}
-		const Body* body = tryGetBody(shape->owner);
-		if (body == nullptr) {
-			continue;
-		}
-
-		const glm::quat inv_body_rotation = glm::inverse(body->rotation);
-		const glm::quat inv_local_rotation = glm::inverse(shape->voxel.local_rotation);
-		const glm::vec3 origin_local =
-		    inv_local_rotation * (inv_body_rotation * (origin - body->position) - shape->voxel.local_center);
-		const glm::vec3 dir_local = inv_local_rotation * (inv_body_rotation * dir);
-
-		const glm::ivec3 voxel_dims = glm::ivec3(data->volume->voxelDims());
-		const float t_end = std::min(candidate.t_max, max_distance);
-
-		for (float t = std::max(candidate.t_min, 0.0f); t <= t_end; t += march_step) {
-			const glm::vec3 local_point = origin_local + dir_local * t;
-			const glm::ivec3 voxel_coord = glm::ivec3(glm::floor(local_point / voxel::k_voxel_size));
-			if (glm::any(glm::lessThan(voxel_coord, glm::ivec3(0))) || glm::any(glm::greaterThanEqual(voxel_coord, voxel_dims))) {
-				continue;
-			}
-			const uint8_t palette_index = data->volume->materialAt(voxel_coord);
-			if (palette_index == voxel::k_empty_palette_index) {
-				continue;
-			}
-
-			const uint32_t material_index = voxel::resolveMaterialIndex(data->palette, data->materials, palette_index);
-			return VoxelRayHit {
-			  .shape = candidate.shape,
-			  .distance = t,
-			  .shatter_radius = data->materials.materials[material_index].shatter_radius,
-			};
-		}
-	}
-
-	return std::nullopt;
-}
-
 auto Simulator::smashCapsule(
     const CapsuleShape& capsule, const glm::vec3& position, const glm::quat& rotation, const glm::vec3& sweep,
     const CapsuleSmash& smash
@@ -4571,7 +4692,8 @@ auto Simulator::prepareConstraints(const std::vector<Manifold>& manifolds) -> st
 	m_profile.constraints = constraints.size();
 	m_profile.rejected_constraints = rejected_contact_count;
 	m_profile.warm_started_constraints = std::ranges::count_if(constraints, [](const Constraint& constraint) {
-		return constraint.accumulated_normal_impulse > 0.0f || constraint.accumulated_tangent_impulse != 0.0f;
+		return constraint.accumulated_normal_impulse > 0.0f ||
+		       glm::dot(constraint.accumulated_tangent_impulse, constraint.accumulated_tangent_impulse) != 0.0f;
 	});
 
 	ZoneValue(static_cast<uint64_t>(constraints.size()));
@@ -4809,38 +4931,47 @@ auto Simulator::prepareConstraint(const Manifold& manifold, const ContactPoint& 
 
 	const glm::vec3 tangent_velocity = relative_velocity - manifold.normal * initial_normal_speed;
 	const float tangent_length_sq = glm::dot(tangent_velocity, tangent_velocity);
-	glm::vec3 tangent = {};
-	float tangent_mass = 0.0f;
+	// a body resting without any slip still gets grip aligned with the slip
+	const glm::vec3 tangent_1 =
+	    tangent_length_sq > 1.0e-10f ? tangent_velocity / std::sqrt(tangent_length_sq) : _detail::perpendicularTo(manifold.normal);
+	const glm::vec3 tangent_2 = glm::cross(manifold.normal, tangent_1);
+	const float tangent_mass_1 = effectiveMassAlong(*body_a, *body_b, r_a, r_b, tangent_1).value_or(0.0f);
+	const float tangent_mass_2 = effectiveMassAlong(*body_a, *body_b, r_a, r_b, tangent_2).value_or(0.0f);
 
-	if (tangent_length_sq > 1.0e-10f) {
-		tangent = tangent_velocity / std::sqrt(tangent_length_sq);
-	} else if (cached_contact) {
-		const glm::vec3 projected_tangent =
-		    cached_contact->tangent_impulse - manifold.normal * glm::dot(cached_contact->tangent_impulse, manifold.normal);
-		const float projected_length_sq = glm::dot(projected_tangent, projected_tangent);
-		if (projected_length_sq > 1.0e-10f && std::isfinite(projected_length_sq)) {
-			tangent = projected_tangent / std::sqrt(projected_length_sq);
-		}
+	// kinetic friction cannot be higher than static
+	const float static_friction = contact.material.static_friction;
+	const float dynamic_friction = std::min(contact.material.dynamic_friction, static_friction);
+
+	// the comparison is false for NaN so a bad material counts as none, and most contacts skip the masses entirely
+	const float rolling_friction = contact.material.rolling_friction > 0.0f ? contact.material.rolling_friction : 0.0f;
+	const float spin_friction = contact.material.spin_friction > 0.0f ? contact.material.spin_friction : 0.0f;
+	float rolling_mass_1 = 0.0f;
+	float rolling_mass_2 = 0.0f;
+	float spin_mass = 0.0f;
+	if (rolling_friction > 0.0f) {
+		rolling_mass_1 = angularMassAround(*body_a, *body_b, tangent_1);
+		rolling_mass_2 = angularMassAround(*body_a, *body_b, tangent_2);
 	}
-
-	if (glm::dot(tangent, tangent) > 0.0f) {
-		const auto calculated_tangent_mass = effectiveMassAlong(*body_a, *body_b, r_a, r_b, tangent);
-		if (calculated_tangent_mass.has_value()) {
-			tangent_mass = calculated_tangent_mass.value();
-		}
+	if (spin_friction > 0.0f) {
+		spin_mass = angularMassAround(*body_a, *body_b, manifold.normal);
 	}
 
 	float accumulated_normal_impulse = 0.0f;
-	float accumulated_tangent_impulse = 0.0f;
+	glm::vec2 accumulated_tangent_impulse = {};
 	if (cached_contact && std::isfinite(cached_contact->normal_impulse)) {
 		accumulated_normal_impulse = std::max(cached_contact->normal_impulse, 0.0f);
 		const bool tangent_impulse_is_finite = std::isfinite(cached_contact->tangent_impulse.x) &&
 		                                       std::isfinite(cached_contact->tangent_impulse.y) &&
 		                                       std::isfinite(cached_contact->tangent_impulse.z);
-		if (tangent_mass > 0.0f && tangent_impulse_is_finite) {
-			accumulated_tangent_impulse = glm::dot(cached_contact->tangent_impulse, tangent);
-			const float static_limit = contact.material.static_friction * accumulated_normal_impulse;
-			accumulated_tangent_impulse = std::clamp(accumulated_tangent_impulse, -static_limit, static_limit);
+		if (tangent_impulse_is_finite) {
+			accumulated_tangent_impulse = {
+			  glm::dot(cached_contact->tangent_impulse, tangent_1), glm::dot(cached_contact->tangent_impulse, tangent_2)
+			};
+			const float static_limit = static_friction * accumulated_normal_impulse;
+			const float length = glm::length(accumulated_tangent_impulse);
+			if (length > static_limit) {
+				accumulated_tangent_impulse *= static_limit / length;
+			}
 		}
 	}
 
@@ -4853,17 +4984,24 @@ auto Simulator::prepareConstraint(const Manifold& manifold, const ContactPoint& 
 	  .body_b = manifold.pair.b.body,
 	  .contact_point = contact.position,
 	  .normal = manifold.normal,
-	  .tangent = tangent,
+	  .tangent_1 = tangent_1,
+	  .tangent_2 = tangent_2,
 	  .r_a = r_a,
 	  .r_b = r_b,
 	  .penetration = contact.penetration,
 	  .normal_mass = normal_mass.value_or(0.0f),
-	  .tangent_mass = tangent_mass,
+	  .tangent_mass_1 = tangent_mass_1,
+	  .tangent_mass_2 = tangent_mass_2,
 	  .restitution_bias = restitution_bias,
-	  .static_friction = contact.material.static_friction,
-	  .dynamic_friction = contact.material.dynamic_friction,
+	  .static_friction = static_friction,
+	  .dynamic_friction = dynamic_friction,
 	  .accumulated_normal_impulse = accumulated_normal_impulse,
 	  .accumulated_tangent_impulse = accumulated_tangent_impulse,
+	  .rolling_friction = rolling_friction,
+	  .spin_friction = spin_friction,
+	  .rolling_mass_1 = rolling_mass_1,
+	  .rolling_mass_2 = rolling_mass_2,
+	  .spin_mass = spin_mass,
 	};
 }
 
@@ -4877,8 +5015,9 @@ void Simulator::warmStartConstraints(std::span<Constraint> constraints) {
 			continue;
 		}
 
-		const glm::vec3 impulse =
-		    constraint.normal * constraint.accumulated_normal_impulse + constraint.tangent * constraint.accumulated_tangent_impulse;
+		const glm::vec3 impulse = constraint.normal * constraint.accumulated_normal_impulse +
+		                          constraint.tangent_1 * constraint.accumulated_tangent_impulse.x +
+		                          constraint.tangent_2 * constraint.accumulated_tangent_impulse.y;
 		const bool impulse_is_finite = std::isfinite(impulse.x) && std::isfinite(impulse.y) && std::isfinite(impulse.z);
 		if (impulse_is_finite) {
 			applyImpulse(*body_a, *body_b, constraint.r_a, constraint.r_b, impulse);
@@ -4897,7 +5036,8 @@ void Simulator::storeConstraintImpulses(std::span<const Constraint> constraints)
 		}
 
 		cached->normal_impulse = constraint.accumulated_normal_impulse;
-		cached->tangent_impulse = constraint.tangent * constraint.accumulated_tangent_impulse;
+		cached->tangent_impulse = constraint.tangent_1 * constraint.accumulated_tangent_impulse.x +
+		                          constraint.tangent_2 * constraint.accumulated_tangent_impulse.y;
 	}
 }
 
@@ -5038,7 +5178,15 @@ auto Simulator::solveConstraint(Constraint& constraint) -> bool {
 		return false;
 	}
 
-	return solveFriction(constraint, *body_a, *body_b);
+	if (!solveFriction(constraint, *body_a, *body_b)) {
+		return false;
+	}
+
+	// most materials leave both at zero and skip this
+	if (constraint.rolling_friction > 0.0f || constraint.spin_friction > 0.0f) {
+		return solveRolling(constraint, *body_a, *body_b);
+	}
+	return true;
 }
 
 }
