@@ -469,7 +469,7 @@ void Simulator::registerVoxelNode(toast::VoxelNode& node) {
 	      .angular_damping = node.angular_damping,
 	      .drag_scale = node.drag_scale,
 	      .layers = {.included = node.included, .excluded = node.excluded},
-	}
+  }
 	);
 	if (not instance->valid(body)) {
 		return;
@@ -663,6 +663,7 @@ void Simulator::tick() {
 	};
 
 	const float dt = static_cast<float>(Accumulator::fixedDelta());
+
 	reapFragments();
 	syncEnabledState();
 	applyDamageCommands();
@@ -1921,9 +1922,8 @@ void Simulator::setShapeEnabled(ShapeID shape, bool enabled) {
 		if (value->enabled != enabled) {
 			if (enabled) {
 				wakeBody(value->owner);
-			} else if (
-			    const Body* owner = instance->tryGetBody(value->owner); owner != nullptr && owner->type != BodyType::dynamic_body
-			) {
+			} else if (const Body* owner = instance->tryGetBody(value->owner);
+			           owner != nullptr && owner->type != BodyType::dynamic_body) {
 				instance->wakeBodiesTouching(shape);
 			}
 			value->enabled = enabled;
@@ -2051,7 +2051,7 @@ void Simulator::publishVoxelRenderRecords() {
 		      .fragment_origin = data->fragment_origin,
 		      .awake = body->awake,
 		      .world_bounds = worldShapeBounds(*body, slot.shape),
-		}
+    }
 		);
 	}
 
@@ -2811,7 +2811,7 @@ void Simulator::updateCache(std::span<const Manifold> manifolds) {
 		const auto current =
 		    std::lower_bound(manifolds.begin(), manifolds.end(), key, [](const Manifold& manifold, CachedManifoldKey candidate) {
 			    return manifold.pair < candidate.pair ||
-					       (manifold.pair == candidate.pair && manifold.normal_index < candidate.normal_index);
+			           (manifold.pair == candidate.pair && manifold.normal_index < candidate.normal_index);
 		    });
 		const bool still_colliding =
 		    current != manifolds.end() && current->pair == cached.pair && current->normal_index == cached.normal_index;
@@ -2868,8 +2868,8 @@ void Simulator::integrate(float dt) {
 			    auto body_id = BodyID {.slot = static_cast<uint32_t>(index), .generation = slot.generation};
 			    // Anything with solid geometry nearby stops the wind
 			    const bool sheltered = shelter_checks && slot.body.type == BodyType::dynamic_body && slot.body.awake &&
-					                       slot.body.drag_coefficient > 0.0f &&
-					                       windBlocked(slot.body.worldCenterOfMass(), upwind, shelter_distance, body_id);
+			                           slot.body.drag_coefficient > 0.0f &&
+			                           windBlocked(slot.body.worldCenterOfMass(), upwind, shelter_distance, body_id);
 			    integrateBody(body_id, slot.body, gravity, air_density, sheltered ? glm::vec3 {0.0f} : wind, dt);
 		    }
 	    };
@@ -4055,6 +4055,15 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 		const glm::ivec3 first_brick = first / brick_dim;
 		const glm::ivec3 last_brick = last / brick_dim;
 
+		struct Doomed {
+			// we 100% need to remove this voxels
+			glm::ivec3 voxel;
+			glm::ivec3 brick;
+			uint16_t density;
+		};
+
+		std::vector<Doomed> doomed;
+
 		for (int32_t bz = first_brick.z; bz <= last_brick.z; ++bz) {
 			for (int32_t by = first_brick.y; by <= last_brick.y; ++by) {
 				for (int32_t bx = first_brick.x; bx <= last_brick.x; ++bx) {
@@ -4063,7 +4072,6 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 						continue;
 					}
 
-					bool brick_dirty = false;
 					const glm::ivec3 brick_first = glm::max(first, brick * brick_dim);
 					const glm::ivec3 brick_last = glm::min(last, brick * brick_dim + (brick_dim - 1));
 					for (int32_t z = brick_first.z; z <= brick_last.z; ++z) {
@@ -4081,8 +4089,8 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 								if (distance_squared > outer_squared || distance_squared < inner_squared) {
 									continue;
 								}
-								if (not reachesThroughMaterial(
-								        volume, closestPointOnSegment(voxel_center, crater.start, crater.end), voxel_center
+								if (not damageReaches(
+								        crater.reachable, volume, v, closestPointOnSegment(voxel_center, crater.start, crater.end), voxel_center
 								    )) {
 									continue;
 								}
@@ -4093,23 +4101,26 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 									continue;
 								}
 
-								voxel::Volume::VoxelWrite write = volume.setVoxel(v, voxel::k_empty_palette_index);
-								if (write.changed) {
-									data->moments.remove(v.x, v.y, v.z, material.density);
-									data->solid_voxel_count -= data->solid_voxel_count > 0 ? 1u : 0u;
-									brick_dirty = true;
-									data->connectivity_dirty = true;
-									++removed;
-									removed_sum += glm::vec3(v);
-								}
+								doomed.push_back({.voxel = v, .brick = brick, .density = material.density});
 							}
 						}
 					}
-
-					if (brick_dirty) {
-						dirty_bricks.push_back(brick);
-					}
 				}
+			}
+		}
+
+		for (const Doomed& d : doomed) {
+			const voxel::Volume::VoxelWrite write = volume.setVoxel(d.voxel, voxel::k_empty_palette_index);
+			if (not write.changed) {
+				continue;
+			}
+			data->moments.remove(d.voxel.x, d.voxel.y, d.voxel.z, d.density);
+			data->solid_voxel_count -= data->solid_voxel_count > 0 ? 1u : 0u;
+			data->connectivity_dirty = true;
+			++removed;
+			removed_sum += glm::vec3(d.voxel);
+			if (dirty_bricks.empty() || dirty_bricks.back() != d.brick) {
+				dirty_bricks.push_back(d.brick);
 			}
 		}
 
@@ -4523,7 +4534,7 @@ auto Simulator::explodeShape(ShapeID shape_id, const ExplosionDamage& explosion)
 		    [&](const glm::vec3& center, const voxel::PhysicalMaterial& material) {
 			    const float distance = glm::length(center - local_point);
 			    return distance <= reach &&
-					       hitBreaks(material, explosionDensityAt(explosion.force, distance, explosion.falloff), explosion.max_hardness);
+			           hitBreaks(material, explosionDensityAt(explosion.force, distance, explosion.falloff), explosion.max_hardness);
 		    }
 		);
 	}
@@ -5049,7 +5060,7 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 			islands.emplace_back(
 			    SimulationIsland {
 			      .sort_key = BodyID {.slot = static_cast<uint32_t>(root), .generation = root_slot.generation},
-			}
+      }
 			);
 		}
 

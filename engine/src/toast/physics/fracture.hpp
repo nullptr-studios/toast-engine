@@ -74,6 +74,7 @@ struct Crater {
 	float radius = 0.0f;
 	bool breaks = false;
 	UnglueRegion unglue;
+	std::unordered_set<uint64_t> reachable;
 };
 
 struct FractureCandidate {
@@ -178,6 +179,62 @@ inline auto reachesThroughMaterial(const voxel::Volume& volume, const glm::vec3&
 }
 
 [[nodiscard]]
+inline auto reachableMaterial(const voxel::Volume& volume, const glm::vec3& start, const glm::vec3& end, float radius)
+    -> std::unordered_set<uint64_t> {
+	std::unordered_set<uint64_t> out;
+
+	// voxel closest to the hit
+	std::optional<glm::ivec3> seed;
+	float closest = radius * radius;
+	forEachSolidVoxel(volume, start - glm::vec3(radius), start + glm::vec3(radius), [&](glm::ivec3 v, glm::vec3 center, uint8_t) {
+		const glm::vec3 offset = center - start;
+		const float distance_squared = glm::dot(offset, offset);
+		if (distance_squared <= closest) {
+			closest = distance_squared;
+			seed = v;
+		}
+	});
+	if (not seed.has_value()) {
+		return out;
+	}
+
+	const glm::ivec3 dims = glm::ivec3(volume.voxelDims());
+	std::vector<glm::ivec3> stack {*seed};
+	out.insert(voxelKey(*seed));
+	while (not stack.empty()) {
+		const glm::ivec3 v = stack.back();
+		stack.pop_back();
+		for (int32_t z = -1; z <= 1; ++z) {
+			for (int32_t y = -1; y <= 1; ++y) {
+				for (int32_t x = -1; x <= 1; ++x) {
+					const glm::ivec3 next = v + glm::ivec3 {x, y, z};
+					if (next == v || glm::any(glm::lessThan(next, glm::ivec3(0))) || glm::any(glm::greaterThanEqual(next, dims)) ||
+					    volume.materialAt(next) == voxel::k_empty_palette_index) {
+						continue;
+					}
+					const glm::vec3 center = (glm::vec3 {next} + 0.5f) * voxel::k_voxel_size;
+					if (pointSegmentDistanceSquared(center, start, end) > radius * radius) {
+						continue;
+					}
+					if (out.insert(voxelKey(next)).second) {
+						stack.push_back(next);
+					}
+				}
+			}
+		}
+	}
+	return out;
+}
+
+[[nodiscard]]
+inline auto damageReaches(
+    const std::unordered_set<uint64_t>& reachable, const voxel::Volume& volume, const glm::ivec3& voxel, const glm::vec3& from,
+    const glm::vec3& center
+) -> bool {
+	return reachable.contains(voxelKey(voxel)) || reachesThroughMaterial(volume, from, center);
+}
+
+[[nodiscard]]
 constexpr auto hitBreaks(const voxel::PhysicalMaterial& material, float energy_density, Hardness max_hardness) -> bool {
 	return material.breakableBy(max_hardness) && material.toughness <= energy_density;
 }
@@ -207,7 +264,7 @@ inline auto hitMaterial(
 [[nodiscard]]
 inline auto fractureCandidates(
     const voxel::Volume& volume, const voxel::Palette& palette, const voxel::MaterialLibrary& materials,
-    const FractureRequest& request
+    const FractureRequest& request, const std::unordered_set<uint64_t>& reachable
 ) -> std::vector<FractureCandidate> {
 	std::vector<FractureCandidate> out;
 	if (materials.materials.empty() || not(request.radius > 0.0f)) {
@@ -221,7 +278,7 @@ inline auto fractureCandidates(
 	const glm::vec3 high = glm::max(request.point, far) + glm::vec3(radius);
 	const float axis_reach = 0.5f * std::sqrt(3.0f) * voxel::k_voxel_size;    // half the diagonal of a voxel
 
-	forEachSolidVoxel(volume, low, high, [&](glm::ivec3, glm::vec3 center, uint8_t index) {
+	forEachSolidVoxel(volume, low, high, [&](glm::ivec3 voxel, glm::vec3 center, uint8_t index) {
 		const glm::vec3 offset = center - request.point;
 		const float distance = glm::length(offset);
 		const voxel::PhysicalMaterial& material = materials.materials[voxel::resolveMaterialIndex(palette, materials, index)];
@@ -232,7 +289,7 @@ inline auto fractureCandidates(
 		};
 
 		if (distance <= radius) {
-			if (reachesThroughMaterial(volume, request.point, center)) {
+			if (damageReaches(reachable, volume, voxel, request.point, center)) {
 				out.push_back(candidate);
 			}
 			return;
@@ -253,7 +310,7 @@ inline auto fractureCandidates(
 			return;
 		}
 		candidate.on_axis = lateral_squared <= axis_reach * axis_reach;
-		if (reachesThroughMaterial(volume, request.point + (request.direction * along), center)) {
+		if (damageReaches(reachable, volume, voxel, request.point + (request.direction * along), center)) {
 			out.push_back(candidate);
 		}
 	});
@@ -342,7 +399,11 @@ inline auto planCrater(
 		return out;
 	}
 
-	std::vector<FractureCandidate> candidates = fractureCandidates(volume, palette, materials, request);
+	// as far as the crater can grow
+	const bool digs = glm::dot(request.direction, request.direction) > 0.0f && request.max_depth > 0.0f;
+	const glm::vec3 far = digs ? request.point + (request.direction * request.max_depth) : request.point;
+	out.reachable = reachableMaterial(volume, request.point, far, request.radius * (1.0f + std::max(request.max_overshoot, 0.0f)));
+	std::vector<FractureCandidate> candidates = fractureCandidates(volume, palette, materials, request, out.reachable);
 	const auto deeper = std::ranges::partition(candidates, [](const FractureCandidate& c) { return c.depth <= 0.0f; });
 	const std::span<FractureCandidate> inside(candidates.begin(), deeper.begin());
 	const std::span<FractureCandidate> beyond(deeper.begin(), deeper.end());
