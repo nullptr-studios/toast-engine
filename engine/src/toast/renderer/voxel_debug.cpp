@@ -127,7 +127,7 @@ auto voxelDebugHue(float hue) -> Rgb {
 	const auto channel = [hue](float offset) {
 		const float shifted = hue + offset;
 		const float fraction = shifted - std::floor(shifted);
-		return std::clamp(std::abs(fraction * 6.0f - 3.0f) - 1.0f, 0.0f, 1.0f);
+		return std::clamp(std::abs((fraction * 6.0f) - 3.0f) - 1.0f, 0.0f, 1.0f);
 	};
 	return {channel(0.0f), channel(2.0f / 3.0f), channel(1.0f / 3.0f)};
 }
@@ -137,7 +137,7 @@ auto voxelDebugMaterialColor(uint32_t material) -> Rgb {
 	if (material == voxel::k_default_material) {
 		return k_default_material_color;
 	}
-	const float hue = static_cast<float>(material) * 0.618034f + 0.33f;
+	const float hue = (static_cast<float>(material) * 0.618034f) + 0.33f;
 	return voxelDebugHue(hue - std::floor(hue));
 }
 
@@ -165,7 +165,7 @@ auto voxelDebugMaterialsDrawn(const VulkanRenderer::RenderFrame& frame) -> std::
 
 		const size_t base = static_cast<size_t>(scene.records[proxy.record_index].palette_offset) * 4;
 		for (uint32_t index = 1; index < voxel::k_palette_size; ++index) {
-			const size_t word = base + static_cast<size_t>(index) * 4;
+			const size_t word = base + (static_cast<size_t>(index) * 4);
 			if (word + 4 > scene.palettes.size()) {
 				break;
 			}

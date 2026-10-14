@@ -141,6 +141,43 @@ inline auto pointSegmentDistanceSquared(const glm::vec3& point, const glm::vec3&
 }
 
 [[nodiscard]]
+inline auto closestPointOnSegment(const glm::vec3& point, const glm::vec3& start, const glm::vec3& end) -> glm::vec3 {
+	const glm::vec3 axis = end - start;
+	const float axis_squared = glm::dot(axis, axis);
+	const float along = axis_squared > 0.0f ? glm::clamp(glm::dot(point - start, axis) / axis_squared, 0.0f, 1.0f) : 0.0f;
+	return start + (axis * along);
+}
+
+[[nodiscard]]
+inline auto reachesThroughMaterial(const voxel::Volume& volume, const glm::vec3& from, const glm::vec3& to) -> bool {
+	// damage travels through material
+	const glm::ivec3 dims = glm::ivec3(volume.voxelDims());
+	const float max_air = 1.5f * voxel::k_voxel_size;
+	const glm::vec3 span = to - from;
+	const float length = glm::length(span);
+	const auto steps = static_cast<int32_t>(std::ceil(length / (0.5f * voxel::k_voxel_size)));
+	if (steps <= 0) {
+		return true;
+	}
+
+	const float step_length = length / static_cast<float>(steps);
+	float air = 0.0f;
+	for (int32_t i = 1; i < steps; ++i) {
+		const glm::vec3 sample = from + (span * (static_cast<float>(i) / static_cast<float>(steps)));
+		const glm::ivec3 v = glm::ivec3(glm::floor(sample / voxel::k_voxel_size));
+		const bool solid = glm::all(glm::greaterThanEqual(v, glm::ivec3(0))) && glm::all(glm::lessThan(v, dims)) &&
+		                   volume.materialAt(v) != voxel::k_empty_palette_index;
+		if (not solid) {
+			air += step_length;
+			if (air > max_air) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+[[nodiscard]]
 constexpr auto hitBreaks(const voxel::PhysicalMaterial& material, float energy_density, Hardness max_hardness) -> bool {
 	return material.breakableBy(max_hardness) && material.toughness <= energy_density;
 }
@@ -195,7 +232,9 @@ inline auto fractureCandidates(
 		};
 
 		if (distance <= radius) {
-			out.push_back(candidate);
+			if (reachesThroughMaterial(volume, request.point, center)) {
+				out.push_back(candidate);
+			}
 			return;
 		}
 		if (not digs) {
@@ -214,7 +253,9 @@ inline auto fractureCandidates(
 			return;
 		}
 		candidate.on_axis = lateral_squared <= axis_reach * axis_reach;
-		out.push_back(candidate);
+		if (reachesThroughMaterial(volume, request.point + (request.direction * along), center)) {
+			out.push_back(candidate);
+		}
 	});
 	return out;
 }
@@ -222,10 +263,14 @@ inline auto fractureCandidates(
 [[nodiscard]]
 inline auto penetrationDepth(std::span<const FractureCandidate> candidates, float energy, float max_depth) -> Penetration {
 	Penetration out;
+	// air between the hit and something else stops it
+	const float max_gap = 1.5f * voxel::k_voxel_size;
+	float reached = 0.0f;
 	for (const FractureCandidate& candidate : candidates) {
-		if (candidate.depth > max_depth) {
+		if (candidate.depth > max_depth || candidate.depth - reached > max_gap) {
 			break;
 		}
+		reached = std::max(reached, candidate.depth);
 		if (not candidate.breakable) {
 			if (candidate.on_axis) {
 				break;
