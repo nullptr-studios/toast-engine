@@ -5,6 +5,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using Tomlyn;
 using Tomlyn.Model;
 
@@ -31,6 +32,17 @@ public sealed class VoxelPaletteEntry {
 
 	public int TransformsTo { get; set; }
 	public bool Transparent { get; set; }
+
+	public void Clear() {
+		InUse = false;
+		HasMaterial = false;
+		Material = 0;
+		R = G = B = 0;
+		Roughness = Metallic = Reflectivity = Emissive = 0f;
+		Alpha = 1f;
+		TransformsTo = 0;
+		Transparent = false;
+	}
 }
 
 public sealed class VoxelMaterialSlot {
@@ -45,14 +57,16 @@ public sealed class VoxelMaterialSlot {
 	public string Tag { get; set; } = "";
 
 	public bool IsEmpty =>
-		Name.Length == 0 && PhysicsUid.Length == 0 && DestructionUid.Length == 0;
+		Name.Length == 0 && PhysicsUid.Length == 0 && DestructionUid.Length == 0
+		&& ImpactSoundUid.Length == 0 && Tag.Length == 0
+		&& DustColour is [128, 128, 128];
 }
 
 /// <summary>Mirrors the assets::VoxelPalette TOML shape</summary>
 public sealed class VoxelPaletteFile {
 	public const int Size = 256;
 
-	public const int SlotCount = 8;
+	public const int SlotCount = 256;
 
 	public float MaxEmissive { get; set; } = 1f;
 
@@ -138,8 +152,12 @@ public sealed class VoxelPaletteFile {
 			["max_emissive"] = (double)MaxEmissive
 		};
 
+		// Trailing slots nobody authored are left out
+		var slotCount = Slots.Length;
+		while (slotCount > 0 && Slots[slotCount - 1].IsEmpty) slotCount--;
+
 		var slots = new TomlTableArray();
-		foreach (var slot in Slots) {
+		foreach (var slot in Slots.Take(slotCount)) {
 			var table = new TomlTable { ["name"] = slot.Name };
 			if (slot.PhysicsUid.Length > 0) table["physics"] = slot.PhysicsUid;
 			if (slot.DestructionUid.Length > 0) table["destruction"] = slot.DestructionUid;

@@ -523,9 +523,11 @@ auto Engine::shouldClose() -> bool {
 	return m->window ? m->window->shouldClose() : false;
 }
 
-auto Engine::shootVoxel(const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy, float min_radius)
-    -> bool {
-	return m->physics_simulator && m->physics_simulator->shootVoxel(origin, direction, max_distance, energy, min_radius);
+auto Engine::shootVoxel(
+    const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy_density, float fracture_radius
+) -> bool {
+	return m->physics_simulator &&
+	       m->physics_simulator->shootVoxel(origin, direction, max_distance, energy_density, fracture_radius);
 }
 
 void Engine::createSDLWindow(const char* w_name) {

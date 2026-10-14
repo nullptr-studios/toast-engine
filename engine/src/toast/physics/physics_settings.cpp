@@ -325,7 +325,7 @@ void registerPhysicsSettings() {
 	)
 	    .onChange([](int64_t v) { g_tunables.max_fragment_extent_bricks = static_cast<int32_t>(std::max<int64_t>(v, 1)); });
 	flt("physics.fracture.shell_voxels",
-	    2.0,
+	    1.0,
 	    {.label = "Fracture shell voxels",
 	     .category = "Fracture",
 	     .description = "Thickness in voxels of the shell a fracture carves around an impact",
@@ -333,6 +333,72 @@ void registerPhysicsSettings() {
 	     .max = 16.0,
 	     .step = 0.5},
 	    &Tunables::fracture_shell_voxels);
+	flt("physics.fracture.depth_share",
+	    0.5,
+	    {.label = "Depth share",
+	     .category = "Fracture",
+	     .description = "Energy left after the fracture pokes through",
+	     .min = 0.0,
+	     .max = 1.0,
+	     .step = 0.05},
+	    &Tunables::fracture_depth_share);
+	flt("physics.fracture.max_depth",
+	    2.0,
+	    {.label = "Max depth",
+	     .category = "Fracture",
+	     .description = "Meters a single hit can dig past its fracture radius",
+	     .min = 0.0,
+	     .max = 16.0,
+	     .step = 0.1},
+	    &Tunables::fracture_max_depth);
+	flt("physics.fracture.max_overshoot",
+	    2.0,
+	    {.label = "Max overshoot",
+	     .category = "Fracture",
+	     .description = "Most a hit can widen past its fracture radius",
+	     .min = 0.0,
+	     .max = 16.0,
+	     .step = 0.1},
+	    &Tunables::fracture_max_overshoot);
+	flt("physics.fracture.explosion_max_radius",
+	    8.0,
+	    {.label = "Explosion max radius",
+	     .category = "Fracture",
+	     .description = "Meters an explosion can break or push things at",
+	     .min = 0.0,
+	     .max = 64.0,
+	     .step = 0.5},
+	    &Tunables::explosion_max_radius);
+	flt("physics.fracture.explosion_falloff",
+	    2.0,
+	    {.label = "Explosion falloff",
+	     .category = "Fracture",
+	     .description = "2 is the inverse square",
+	     .min = 0.5,
+	     .max = 8.0,
+	     .step = 0.25},
+	    &Tunables::explosion_falloff);
+	uint_setting(
+	    "physics.fracture.impact_max_hardness",
+	    1,
+	    {.label = "Impact max hardness",
+			 .category = "Fracture",
+			 .description = "Hardest material collisions between bodies can break",
+			 .min = 0.0,
+			 .max = 2.0,
+			 .step = 1.0},
+	    &Tunables::impact_max_hardness
+	);
+	flt("physics.fracture.bond_cost",
+	    1.0,
+	    {.label = "Bond cost", .category = "Fracture", .min = 0.0, .max = 16.0, .step = 0.1},
+	    &Tunables::fracture_bond_cost);
+	uint_setting(
+	    "physics.fracture.max_unglue_voxels",
+	    4096,
+	    {.label = "Max unglue voxels", .category = "Fracture", .min = 0.0, .max = 1000000.0, .step = 64.0},
+	    &Tunables::fracture_max_unglue_voxels
+	);
 
 	uint_setting(
 	    "physics.jobs.min_bounds_per_job",

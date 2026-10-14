@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include "hardness.hpp"
+
 namespace physics::material_defaults {
 
 inline constexpr float k_restitution = 0.1f;
@@ -19,11 +21,10 @@ inline constexpr float k_spin_friction = 0.005f;
 
 /// between wood at 600 and stone at 2600
 inline constexpr float k_density = 2000.0f;
-inline constexpr float k_toughness = 2000.0f;
+inline constexpr float k_toughness = 100.0f;
+inline constexpr Hardness k_hardness = Hardness::medium;
 
 /// weak bricks
 inline constexpr float k_structural_strength = 1.0e6f;
-
-inline constexpr float k_shatter_radius = 0.3f;
 
 }

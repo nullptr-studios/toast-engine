@@ -37,7 +37,15 @@ struct Tunables {
 	float force_sleep_slack = 4.0f;
 	float fragment_sleep_scale = 3.0f;
 	int32_t max_fragment_extent_bricks = 1;
-	float fracture_shell_voxels = 2.0f;
+	float fracture_shell_voxels = 1.0f;
+	float fracture_depth_share = 0.5f;
+	float fracture_max_depth = 2.0f;
+	float fracture_max_overshoot = 2.0f;
+	float fracture_bond_cost = 1.0f;
+	uint32_t fracture_max_unglue_voxels = 4096;
+	float explosion_max_radius = 8.0f;
+	float explosion_falloff = 2.0f;
+	uint32_t impact_max_hardness = 1;
 	uint32_t min_bounds_per_job = 32;
 	uint32_t min_candidates_per_job = 2;
 	uint32_t min_manifolds_per_job = 4;
