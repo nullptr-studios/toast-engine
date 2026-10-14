@@ -1396,7 +1396,24 @@ auto Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedCompone
 	}
 
 	if (const Body* chunk = push != nullptr ? tryGetBody(frag_body) : nullptr) {
-		pushBody(frag_body, push->point.value_or(chunk->worldCenterOfMass()), push->direction, push->speed, push->max_impulse);
+		constexpr uint32_t k_push_min_voxels = 2;
+		const float mass_share =
+		    static_cast<float>(std::min(component.voxel_count, k_push_min_voxels)) / static_cast<float>(k_push_min_voxels);
+
+		const glm::vec3 linear_before = chunk->linear_velocity;
+		const glm::vec3 angular_before = chunk->angular_velocity;
+		pushBody(
+		    frag_body, push->point.value_or(chunk->worldCenterOfMass()), push->direction, push->speed, push->max_impulse * mass_share
+		);
+
+		if (Body* pushed = tryGetBody(frag_body); pushed != nullptr && pushed->extent_radius > 1.0e-3f) {
+			const glm::vec3 spin_gain = pushed->angular_velocity - angular_before;
+			const float spin = glm::length(spin_gain);
+			const float spin_limit = glm::length(pushed->linear_velocity - linear_before) / pushed->extent_radius;
+			if (spin > spin_limit) {
+				pushed->angular_velocity = angular_before + (spin_gain * (spin_limit / spin));
+			}
+		}
 	}
 
 	return true;
