@@ -4073,6 +4073,11 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 								if (distance_squared > outer_squared || distance_squared < inner_squared) {
 									continue;
 								}
+								if (not reachesThroughMaterial(
+								        volume, closestPointOnSegment(voxel_center, crater.start, crater.end), voxel_center
+								    )) {
+									continue;
+								}
 
 								const uint32_t material_index = voxel::resolveMaterialIndex(data->palette, data->materials, palette_index);
 								const voxel::PhysicalMaterial& material = data->materials.materials[material_index];
