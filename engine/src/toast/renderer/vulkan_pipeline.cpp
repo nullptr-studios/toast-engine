@@ -36,14 +36,24 @@ auto createShaderModule(const vk::raii::Device& device, std::span<const std::byt
 
 auto createGraphicsPipelineImpl(
     const VulkanCore& core, const VulkanPipeline::Config& config, const vk::raii::ShaderModule& shader_module,
-    const vk::PipelineLayout& pipeline_layout
+    const vk::raii::ShaderModule* task_module, const vk::PipelineLayout& pipeline_layout
 ) -> vk::raii::Pipeline {
 	ZoneScoped;
 	const auto& device = core.getDevice();
 
 	// The create infos point into these strings
+	const bool mesh = !config.mesh_entry.empty();
 	const std::string vertex_entry =
-	    spirv::resolveEntryPoint(config.shader_spirv, spirv::ExecutionModel::vertex, config.vertex_entry, config.debug_name);
+	    mesh ? std::string {}
+			     : spirv::resolveEntryPoint(config.shader_spirv, spirv::ExecutionModel::vertex, config.vertex_entry, config.debug_name);
+	const std::span<const std::byte> task_spirv = config.task_spirv.empty() ? config.shader_spirv : config.task_spirv;
+	const std::string task_entry =
+	    mesh && !config.task_entry.empty()
+	        ? spirv::resolveEntryPoint(task_spirv, spirv::ExecutionModel::task, config.task_entry, config.debug_name)
+	        : std::string {};
+	const std::string mesh_entry =
+	    mesh ? spirv::resolveEntryPoint(config.shader_spirv, spirv::ExecutionModel::mesh, config.mesh_entry, config.debug_name)
+			     : std::string {};
 	const bool has_fragment_stage = !config.depth_only || config.depth_fragment;
 	const std::string fragment_entry =
 	    has_fragment_stage ? spirv::resolveEntryPoint(
@@ -51,11 +61,29 @@ auto createGraphicsPipelineImpl(
 	                         )
 			                   : config.fragment_entry;
 
-	const std::array shader_stages = {
-	  vk::PipelineShaderStageCreateInfo({}, vk::ShaderStageFlagBits::eVertex, *shader_module, vertex_entry.c_str()),
-	  vk::PipelineShaderStageCreateInfo({}, vk::ShaderStageFlagBits::eFragment, *shader_module, fragment_entry.c_str())
-	};
-	const uint32_t stage_count = has_fragment_stage ? static_cast<uint32_t>(shader_stages.size()) : 1u;
+	std::vector<vk::PipelineShaderStageCreateInfo> shader_stages;
+	if (mesh) {
+		if (!task_entry.empty()) {
+			shader_stages.emplace_back(
+			    vk::PipelineShaderStageCreateFlags {},
+			    vk::ShaderStageFlagBits::eTaskEXT,
+			    task_module != nullptr ? **task_module : *shader_module,
+			    task_entry.c_str()
+			);
+		}
+		shader_stages.emplace_back(
+		    vk::PipelineShaderStageCreateFlags {}, vk::ShaderStageFlagBits::eMeshEXT, *shader_module, mesh_entry.c_str()
+		);
+	} else {
+		shader_stages.emplace_back(
+		    vk::PipelineShaderStageCreateFlags {}, vk::ShaderStageFlagBits::eVertex, *shader_module, vertex_entry.c_str()
+		);
+	}
+	if (has_fragment_stage) {
+		shader_stages.emplace_back(
+		    vk::PipelineShaderStageCreateFlags {}, vk::ShaderStageFlagBits::eFragment, *shader_module, fragment_entry.c_str()
+		);
+	}
 
 	std::vector<vk::Format> color_attachment_formats {config.color_format};
 	color_attachment_formats.insert(
@@ -188,10 +216,11 @@ auto createGraphicsPipelineImpl(
 
 	vk::GraphicsPipelineCreateInfo pipeline_ci {};
 	pipeline_ci.pNext = &rendering_ci;
-	pipeline_ci.stageCount = stage_count;
+	pipeline_ci.stageCount = static_cast<uint32_t>(shader_stages.size());
 	pipeline_ci.pStages = shader_stages.data();
-	pipeline_ci.pVertexInputState = &vertex_input_ci;
-	pipeline_ci.pInputAssemblyState = &input_assembly_ci;
+	// Mesh pipelines must leave both null
+	pipeline_ci.pVertexInputState = mesh ? nullptr : &vertex_input_ci;
+	pipeline_ci.pInputAssemblyState = mesh ? nullptr : &input_assembly_ci;
 	pipeline_ci.pViewportState = &viewport_state_ci;
 	pipeline_ci.pRasterizationState = &rasterization_state_ci;
 	pipeline_ci.pMultisampleState = &multisample_state_ci;
@@ -254,9 +283,14 @@ auto VulkanPipeline::rebuild(const VulkanCore& core, const Config& config) -> vo
 
 	const auto& device = core.getDevice();
 	m_shader_module.emplace(createShaderModule(device, config.shader_spirv));
+	if (!config.task_spirv.empty()) {
+		m_task_module.emplace(createShaderModule(device, config.task_spirv));
+	}
 
 	if (config.pipeline_type == PipelineType::graphics) {
-		m_pipeline = createGraphicsPipelineImpl(core, config, *m_shader_module, config.pipeline_layout);
+		m_pipeline = createGraphicsPipelineImpl(
+		    core, config, *m_shader_module, m_task_module.has_value() ? &*m_task_module : nullptr, config.pipeline_layout
+		);
 	} else {
 		m_pipeline = createComputePipelineImpl(core, config, *m_shader_module, config.pipeline_layout);
 	}
@@ -269,6 +303,7 @@ auto VulkanPipeline::rebuild(const VulkanCore& core, const Config& config) -> vo
 
 auto VulkanPipeline::reset() -> void {
 	m_shader_module.reset();
+	m_task_module.reset();
 	m_pipeline = nullptr;
 }
 }

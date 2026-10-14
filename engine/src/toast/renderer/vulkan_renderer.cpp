@@ -964,7 +964,9 @@ void VulkanRenderer::createDescriptorPool() {
 
 	  vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, 32768),
 
-	  vk::DescriptorPoolSize(vk::DescriptorType::eStorageBuffer, 8192)
+	  vk::DescriptorPoolSize(vk::DescriptorType::eStorageBuffer, 8192),
+
+	  vk::DescriptorPoolSize(vk::DescriptorType::eStorageImage, 256)
 	};
 
 	if (m_core->isRayTracingSupported()) {
@@ -1454,7 +1456,7 @@ auto VulkanRenderer::recordVoxelScopes(
 	{
 		TracyVkZone(m_tracy_vk_ctx, cmd, "VoxelCells");
 		const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Voxel cells");
-		m_voxel_pass->recordCellCull(cmd, m_current_frame);
+		m_voxel_pass->recordCellCull(cmd, m_current_frame, scissor.extent);
 	}
 	sync::BarrierBatch barriers;
 
@@ -1481,7 +1483,7 @@ auto VulkanRenderer::recordVoxelScopes(
 	barriers.flush(cmd);
 
 	// Order matches voxel.slang FSOutput
-	const std::array gbuffer_attachments {
+	std::array gbuffer_attachments {
 	  attachment(m_voxel_albedo, vk::AttachmentLoadOp::eClear, clear_zero),
 	  attachment(m_voxel_face_normal, vk::AttachmentLoadOp::eClear, clear_zero),
 	  attachment(m_voxel_material, vk::AttachmentLoadOp::eClear, clear_zero),
@@ -1494,6 +1496,32 @@ auto VulkanRenderer::recordVoxelScopes(
 	depth_attachment.loadOp = depth_loaded ? vk::AttachmentLoadOp::eLoad : vk::AttachmentLoadOp::eClear;
 	depth_attachment.storeOp = vk::AttachmentStoreOp::eStore;
 	depth_attachment.clearValue = vk::ClearDepthStencilValue {depth::k_clear, 0};
+
+	// Near quads lay depth first so the G-buffer scope shades one quad fragment per pixel
+	const auto record_quad_depth = [&](bool late) {
+		if (!m_voxel_pass->nearQuadDepthPass()) {
+			return;
+		}
+		vk::RenderingInfo depth_info {};
+		depth_info.renderArea = scissor;
+		depth_info.layerCount = 1;
+		depth_info.pDepthAttachment = &depth_attachment;
+
+		cmd.beginRendering(depth_info);
+		cmd.setViewport(0, std::array {viewport});
+		cmd.setScissor(0, std::array {scissor});
+		{
+			TracyVkZone(m_tracy_vk_ctx, cmd, "VoxelQuadDepth");
+			const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, late ? "Voxel late quad depth" : "Voxel quad depth");
+			m_voxel_pass->recordQuadDepth(cmd, m_current_frame, late);
+		}
+		cmd.endRendering();
+
+		depth_attachment.loadOp = vk::AttachmentLoadOp::eLoad;
+		barriers.image(m_depth_resources.state, sync::Usage::depth_attachment);
+		barriers.flush(cmd);
+	};
+	record_quad_depth(false);
 
 	vk::RenderingInfo gbuffer_info {};
 	gbuffer_info.renderArea = scissor;
@@ -1511,6 +1539,40 @@ auto VulkanRenderer::recordVoxelScopes(
 		m_voxel_pass->record(cmd, m_current_frame, 0);
 	}
 	cmd.endRendering();
+
+	if (m_voxel_pass->occlusionActive()) {
+		barriers.image(m_depth_resources.state, sync::Usage::depth_sampled);
+		barriers.flush(cmd);
+		{
+			TracyVkZone(m_tracy_vk_ctx, cmd, "VoxelOcclusion");
+			const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Voxel occlusion");
+			m_voxel_pass->recordOcclusion(cmd, m_current_frame, scissor.extent);
+		}
+
+		// The late scope loads what the early one stored
+		barriers.image(m_depth_resources.state, sync::Usage::depth_attachment);
+		barriers.image(m_voxel_albedo.state, sync::Usage::color_attachment);
+		barriers.image(m_voxel_face_normal.state, sync::Usage::color_attachment);
+		barriers.image(m_voxel_material.state, sync::Usage::color_attachment);
+		barriers.image(m_scene_motion.state, sync::Usage::color_attachment);
+		barriers.flush(cmd);
+
+		for (auto& gbuffer_attachment : gbuffer_attachments) {
+			gbuffer_attachment.loadOp = vk::AttachmentLoadOp::eLoad;
+		}
+		depth_attachment.loadOp = vk::AttachmentLoadOp::eLoad;
+		record_quad_depth(true);
+
+		cmd.beginRendering(gbuffer_info);
+		cmd.setViewport(0, std::array {viewport});
+		cmd.setScissor(0, std::array {scissor});
+		{
+			TracyVkZone(m_tracy_vk_ctx, cmd, "VoxelLateGbuffer");
+			const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Voxel late G-buffer");
+			m_voxel_pass->recordLate(cmd, m_current_frame);
+		}
+		cmd.endRendering();
+	}
 
 	barriers.image(m_voxel_albedo.state, sync::Usage::fragment_sampled);
 	barriers.image(m_voxel_face_normal.state, sync::Usage::fragment_sampled);

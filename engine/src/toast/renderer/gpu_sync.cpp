@@ -78,7 +78,8 @@ auto info(Usage usage) -> UsageInfo {
 			  Access::eDepthStencilAttachmentRead | Access::eDepthStencilAttachmentWrite,
 			  Layout::eDepthAttachmentOptimal,
 			};
-		case Usage::depth_sampled: return {Stage::eFragmentShader, Access::eShaderSampledRead, Layout::eDepthReadOnlyOptimal};
+		case Usage::depth_sampled:
+			return {Stage::eFragmentShader | Stage::eComputeShader, Access::eShaderSampledRead, Layout::eDepthReadOnlyOptimal};
 
 		case Usage::fragment_sampled: return {Stage::eFragmentShader, Access::eShaderSampledRead, Layout::eShaderReadOnlyOptimal};
 		case Usage::compute_sampled: return {Stage::eComputeShader, Access::eShaderSampledRead, Layout::eShaderReadOnlyOptimal};
@@ -93,6 +94,8 @@ auto info(Usage usage) -> UsageInfo {
 		case Usage::compute_storage_write:
 			return {Stage::eComputeShader, Access::eShaderStorageRead | Access::eShaderStorageWrite, Layout::eGeneral};
 		case Usage::vertex_storage_read: return {Stage::eVertexShader, Access::eShaderStorageRead, Layout::eGeneral};
+		case Usage::mesh_storage_read:
+			return {Stage::eTaskShaderEXT | Stage::eMeshShaderEXT, Access::eShaderStorageRead, Layout::eGeneral};
 		case Usage::fragment_storage_read: return {Stage::eFragmentShader, Access::eShaderStorageRead, Layout::eGeneral};
 		case Usage::uniform_read:
 			return {

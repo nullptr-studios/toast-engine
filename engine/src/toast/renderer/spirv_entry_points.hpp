@@ -16,10 +16,12 @@
 
 namespace renderer::spirv {
 
-enum class ExecutionModel : uint8_t {
+enum class ExecutionModel : uint32_t {
 	vertex = 0,
 	fragment = 4,
 	compute = 5,
+	task = 5364,
+	mesh = 5365,
 };
 
 [[nodiscard]]

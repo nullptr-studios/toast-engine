@@ -44,12 +44,11 @@ struct VSOutput
 VSOutput vertexMain(uint vertexId : SV_VertexID, uint instanceId : SV_InstanceID)
 {
     uint instanceIndex = gPush.instanceIndex;
-    uint packedCell = 0u;
+    uint2 cell = uint2(0u, 0u);
     if (gPush.mode == kDrawCells)
     {
-        const uint2 cell = gVoxelCells[gVoxelCellArgs[kCellOffsetsWord + gPush.bucket] + instanceId];
-        instanceIndex = cell.x;
-        packedCell = cell.y;
+        cell = gVoxelCells[gVoxelCellArgs[kCellOffsetsWord + gPush.bucket] + instanceId];
+        instanceIndex = cellEntryInstance(cell.x);
     }
 
     const VoxelInstance instance = gVoxelInstances[instanceIndex];
@@ -60,8 +59,7 @@ VSOutput vertexMain(uint vertexId : SV_VertexID, uint instanceId : SV_InstanceID
     int3 boxMax = dims;
     if (gPush.mode == kDrawCells)
     {
-        boxMin = int3(unpackCell(packedCell)) * kCoarseVoxels;
-        boxMax = min(boxMin + kCoarseVoxels, dims);
+        cellEntryBox(cell.x, unpackCell(cell.y), dims, boxMin, boxMax);
     }
 
     // A mirrored transform flips winding so swap two corners of each triangle to keep one cull mode
@@ -432,6 +430,57 @@ struct QuadVSOutput
 static const uint kQuadCorners[6] = { 0, 1, 2, 0, 2, 3 };
 static const uint kQuadCornersFlipped[6] = { 0, 2, 1, 0, 3, 2 };
 
+/// The mirrored or u cross v sense of a quad that decides which corner order faces out
+bool quadFlipped(VoxelInstance instance, uint packedQuad)
+{
+    const uint direction = packedQuad & 7u;
+    const uint axis = direction >> 1;
+    const bool positive = (direction & 1u) == 0u;
+
+    // u cross v is +x for X faces and -y for Y faces and +z for Z faces
+    bool flipped = positive == (axis == 1u);
+    if ((instance.flags & kInstanceMirrored) != 0u)
+    {
+        flipped = !flipped;
+    }
+    return flipped;
+}
+
+/// Corner 0 to 3 of a packQuad quad going round its plane
+QuadVSOutput quadCorner(uint2 cell, uint packedQuad, uint corner)
+{
+    const uint instanceIndex = cellEntryInstance(cell.x);
+    const VoxelInstance instance = gVoxelInstances[instanceIndex];
+
+    const uint direction = packedQuad & 7u;
+    const uint slice = (packedQuad >> 3) & 7u;
+    const uint u0 = (packedQuad >> 6) & 7u;
+    const uint v0 = (packedQuad >> 9) & 7u;
+    const uint width = ((packedQuad >> 12) & 7u) + 1u;
+    const uint height = ((packedQuad >> 15) & 7u) + 1u;
+    const uint brickInCell = (packedQuad >> 18) & 63u;
+
+    const uint axis = direction >> 1;
+    const bool positive = (direction & 1u) == 0u;
+    const uint3 brick = unpackCell(cell.y) * kCoarseBricks + uint3(brickInCell & 3u, (brickInCell >> 2) & 3u, brickInCell >> 4);
+
+    const float cornerU = (corner == 1u || corner == 2u) ? float(width) : 0.0;
+    const float cornerV = corner >= 2u ? float(height) : 0.0;
+
+    float3 local = float3(brick * kBrickDim);
+    local[axis] += float(slice) + (positive ? 1.0 : 0.0);
+    local[quadAxisU(axis)] += float(u0) + cornerU;
+    local[quadAxisV(axis)] += float(v0) + cornerV;
+    const float4 world = mul(instance.voxelToWorld, float4(local, 1.0));
+
+    QuadVSOutput output;
+    output.position = mul(gCamera.jitteredViewProjection, world);
+    output.worldPosition = world.xyz;
+    output.instanceIndex = instanceIndex;
+    output.direction = direction;
+    return output;
+}
+
 [shader("vertex")]
 QuadVSOutput quadVertexMain(uint vertexId : SV_VertexID)
 {
@@ -450,46 +499,12 @@ QuadVSOutput quadVertexMain(uint vertexId : SV_VertexID)
 
     const uint2 quad = gVoxelQuads[quadIndex];
     const uint2 cell = gVoxelCells[quad.x];
-    const VoxelInstance instance = gVoxelInstances[cell.x];
-
-    const uint direction = quad.y & 7u;
-    const uint slice = (quad.y >> 3) & 7u;
-    const uint u0 = (quad.y >> 6) & 7u;
-    const uint v0 = (quad.y >> 9) & 7u;
-    const uint width = ((quad.y >> 12) & 7u) + 1u;
-    const uint height = ((quad.y >> 15) & 7u) + 1u;
-    const uint brickInCell = (quad.y >> 18) & 63u;
-
-    const uint axis = direction >> 1;
-    const bool positive = (direction & 1u) == 0u;
-    const uint3 brick = unpackCell(cell.y) * kCoarseBricks + uint3(brickInCell & 3u, (brickInCell >> 2) & 3u, brickInCell >> 4);
-    const float3 brickMin = float3(brick * kBrickDim);
-
-    // u cross v is +x for X faces and -y for Y faces and +z for Z faces
-    bool flipped = positive == (axis == 1u);
-    if ((instance.flags & kInstanceMirrored) != 0u)
-    {
-        flipped = !flipped;
-    }
-    const uint corner = flipped ? kQuadCornersFlipped[vertexId % 6u] : kQuadCorners[vertexId % 6u];
-    const float cornerU = (corner == 1u || corner == 2u) ? float(width) : 0.0;
-    const float cornerV = corner >= 2u ? float(height) : 0.0;
-
-    float3 local = brickMin;
-    local[axis] += float(slice) + (positive ? 1.0 : 0.0);
-    local[quadAxisU(axis)] += float(u0) + cornerU;
-    local[quadAxisV(axis)] += float(v0) + cornerV;
-    const float4 world = mul(instance.voxelToWorld, float4(local, 1.0));
-
-    output.position = mul(gCamera.jitteredViewProjection, world);
-    output.worldPosition = world.xyz;
-    output.instanceIndex = cell.x;
-    output.direction = direction;
-    return output;
+    const bool flipped = quadFlipped(gVoxelInstances[cellEntryInstance(cell.x)], quad.y);
+    return quadCorner(cell, quad.y, flipped ? kQuadCornersFlipped[vertexId % 6u] : kQuadCorners[vertexId % 6u]);
 }
 
-[shader("fragment")]
-FSOutput quadFragmentMain(QuadVSOutput input)
+/// Shared by the vertex pulled and mesh shader quads
+bool shadeQuad(QuadVSOutput input, out FSOutput output)
 {
     const VoxelInstance instance = gVoxelInstances[input.instanceIndex];
     const float3 camera = gCamera.position;
@@ -512,9 +527,15 @@ FSOutput quadFragmentMain(QuadVSOutput input)
     hit.coarseSteps = 0u;
     hit.brickSteps = 0u;
 
-    FSOutput output;
     float depth = input.position.z;
-    if (!shadeHit(input.position, instance, origin, direction, worldDirection, hit, output, depth))
+    return shadeHit(input.position, instance, origin, direction, worldDirection, hit, output, depth);
+}
+
+[shader("fragment")]
+FSOutput quadFragmentMain(QuadVSOutput input)
+{
+    FSOutput output;
+    if (!shadeQuad(input, output))
     {
         discard;
     }

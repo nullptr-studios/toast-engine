@@ -116,6 +116,12 @@ public:
 		return m_ray_tracing_supported;
 	}
 
+	/// VK_EXT_mesh_shader with task shaders and the output limits the voxel meshlets need
+	[[nodiscard]]
+	auto isMeshShaderSupported() const noexcept -> bool {
+		return m_mesh_shader_supported;
+	}
+
 	[[nodiscard]]
 	auto getBufferAddress(vk::Buffer buffer) const -> vk::DeviceAddress {
 		vk::BufferDeviceAddressInfo info {};
@@ -265,6 +271,7 @@ private:
 	bool m_memory_budget_supported = false;
 
 	bool m_ray_tracing_supported = false;
+	bool m_mesh_shader_supported = false;
 
 	uint32_t m_as_scratch_alignment = 0;
 	mutable bool m_nsight_gputrace_activated = false;

@@ -620,6 +620,20 @@ public:
 	/// Edge rounding radius in voxels where 0 keeps the flat face normals
 	void setVoxelCellBoxes(bool enabled) noexcept { m_voxel_cell_boxes.store(enabled, std::memory_order_relaxed); }
 
+	void setVoxelOcclusion(bool enabled) noexcept { m_voxel_occlusion.store(enabled, std::memory_order_relaxed); }
+
+	void setVoxelMeshShaders(bool enabled) noexcept { m_voxel_mesh_shaders.store(enabled, std::memory_order_relaxed); }
+
+	[[nodiscard]]
+	auto voxelMeshShaders() const noexcept -> bool {
+		return m_voxel_mesh_shaders.load(std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto voxelOcclusion() const noexcept -> bool {
+		return m_voxel_occlusion.load(std::memory_order_relaxed);
+	}
+
 	/// Smallest on screen voxel size in pixels that is rasterized instead of marched and 0 marches everything
 	void setVoxelRasterPixels(float pixels) noexcept {
 		m_voxel_raster_pixels.store(std::max(pixels, 0.0f), std::memory_order_relaxed);
@@ -1243,6 +1257,8 @@ private:
 
 	std::atomic<float> m_voxel_normal_rounding {0.3f};
 	std::atomic_bool m_voxel_cell_boxes {true};
+	std::atomic_bool m_voxel_occlusion {true};
+	std::atomic_bool m_voxel_mesh_shaders {true};
 	std::atomic<float> m_voxel_raster_pixels {4.0f};
 
 	ShaderLayout m_present_layout;
