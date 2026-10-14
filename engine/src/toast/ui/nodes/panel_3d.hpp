@@ -64,11 +64,14 @@ private:
 	void onReflectedFieldChanged(std::string_view field_name) override;
 	void updateInspectorMessages() override;
 	void init();
+	void begin();
 	void destroy();
 	void onEnable();
 	void onDisable();
 	void tick();
 
+	/// Fonts, context and document, only on the UI thread since RmlUi is not thread safe
+	void setup();
 	void loadDocument();
 	void unloadDocument();
 

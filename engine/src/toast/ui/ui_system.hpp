@@ -10,8 +10,10 @@
 #include "assets.hpp"
 
 #include <cstdint>
+#include <functional>
 #include <glm/glm.hpp>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -112,6 +114,17 @@ public:
 	[[nodiscard]]
 	auto localizedImage(std::string_view id) const -> std::string;
 
+	/// RmlUi is not thread safe and World::loadNode and World::spawn run init() on a std::async worker, so a panel that
+	/// comes up off the engine tick thread defers its RmlUi setup to runDeferredSetup() from its begin() or the next tick()
+	void deferSetup(toast::Node* owner, std::function<void()> setup);
+	/// Runs the setup deferred for @p owner when called on the tick thread
+	void runDeferredSetup(toast::Node* owner);
+	void cancelDeferredSetup(toast::Node* owner);
+
+	/// True where RmlUi may be used, the engine tick thread
+	[[nodiscard]]
+	static auto onUIThread() -> bool;
+
 	// Panels register themselves on init
 	void registerPanel(toast::Panel* panel);
 	void unregisterPanel(toast::Panel* panel);
@@ -178,6 +191,10 @@ private:
 
 	bool m_documents_reload_pending = false;
 	bool m_stylesheet_cache_dirty = false;
+
+	/// Held while a deferred setup runs so its owner cannot be cancelled and destroyed halfway through
+	std::mutex m_deferred_mutex;
+	std::vector<std::pair<toast::Node*, std::function<void()>>> m_deferred_setups;
 };
 
 }

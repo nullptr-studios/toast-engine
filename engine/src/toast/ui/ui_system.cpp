@@ -17,6 +17,7 @@
 #include <cctype>
 #include <toast/assets/asset_manager.hpp>
 #include <toast/assets/assets.hpp>
+#include <toast/engine.hpp>
 #include <toast/log.hpp>
 #include <toast/project_settings.hpp>
 #include <toast/renderer/vulkan_core.hpp>
@@ -184,6 +185,14 @@ auto UISystem::exists() noexcept -> bool {
 
 void UISystem::tick() noexcept {
 	ZoneScoped;
+	{
+		std::scoped_lock lock(m_deferred_mutex);
+		for (auto& [_, setup] : m_deferred_setups) {
+			setup();
+		}
+		m_deferred_setups.clear();
+	}
+
 	if (m_documents_reload_pending) {
 		m_documents_reload_pending = false;
 		if (m_stylesheet_cache_dirty) {
@@ -593,6 +602,35 @@ auto UISystem::localizedImage(std::string_view id) const -> std::string {
 		}
 	}
 	return {};
+}
+
+void UISystem::deferSetup(toast::Node* owner, std::function<void()> setup) {
+	std::scoped_lock lock(m_deferred_mutex);
+	m_deferred_setups.emplace_back(owner, std::move(setup));
+}
+
+void UISystem::runDeferredSetup(toast::Node* owner) {
+	if (!onUIThread()) {
+		return;
+	}
+	std::scoped_lock lock(m_deferred_mutex);
+	const auto it = std::ranges::find(m_deferred_setups, owner, &std::pair<toast::Node*, std::function<void()>>::first);
+	if (it == m_deferred_setups.end()) {
+		return;
+	}
+	const std::function<void()> setup = std::move(it->second);
+	m_deferred_setups.erase(it);
+	setup();
+}
+
+void UISystem::cancelDeferredSetup(toast::Node* owner) {
+	std::scoped_lock lock(m_deferred_mutex);
+	std::erase_if(m_deferred_setups, [owner](const auto& entry) { return entry.first == owner; });
+}
+
+auto UISystem::onUIThread() -> bool {
+	const toast::Engine* engine = toast::Engine::get();
+	return engine == nullptr || engine->onTickThread();
 }
 
 void UISystem::registerPanel(toast::Panel* panel) {

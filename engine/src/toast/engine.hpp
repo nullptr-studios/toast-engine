@@ -58,6 +58,9 @@ public:
 	void destroyWorkspace(UID handle);
 
 	void requireTickThread(std::string_view what) const;
+	/// True on the thread that ticks the engine, or before the first tick on the one that created it
+	[[nodiscard]]
+	auto onTickThread() const -> bool;
 
 	auto activeWorkspace() -> UID;
 	void publishPrefab(UID uid, const assets::Prefab& prefab);
