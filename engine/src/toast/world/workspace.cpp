@@ -436,7 +436,9 @@ void Workspace::initFromPrefab(const assets::Handle<assets::Prefab>& file) {
 	// node->propagateCallTick(node->info(), TickFunctionList::load);
 
 	// Data structure generation
-	generateUid(node);
+	if (node->uid().data() == 0) {
+		generateUid(node);
+	}
 	node->m_parent = {};
 	node->changeNodeState(NodeState::root);
 	node->m_type = NodeType::world_root;

@@ -1,8 +1,10 @@
 #include "prefab.hpp"
 
+#include <algorithm>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <istream>
+#include <iterator>
 #include <sstream>
 #include <toast/assets/assets.hpp>
 #include <toast/log.hpp>
@@ -1541,6 +1543,22 @@ void Prefab::serializeNode(const toast::Node& node, bool is_root) {
 			}
 		}
 	});
+
+	// skip empty groupds or subgroups
+	for (Group& group : out.groups) {
+		for (Subgroup& subgroup : group.subgroups) {
+			if (subgroup.name.empty()) {
+				std::ranges::move(subgroup.fields, std::back_inserter(group.fields));
+				subgroup.fields.clear();
+			}
+		}
+		std::erase_if(group.subgroups, [](const Subgroup& subgroup) { return subgroup.fields.empty(); });
+		if (group.name.empty() && group.subgroups.empty()) {
+			std::ranges::move(group.fields, std::back_inserter(out.fields));
+			group.fields.clear();
+		}
+	}
+	std::erase_if(out.groups, [](const Group& group) { return group.fields.empty() && group.subgroups.empty(); });
 
 	if (auto* rt = const_cast<toast::Node&>(node).scriptRuntime()) {
 		for (size_t i = 0; i < rt->instanceCount(); ++i) {
