@@ -23,13 +23,13 @@ public:
 	void beginFrame();
 
 	auto recordFor(
-	    vk::CommandBuffer cmd, uint64_t node_uid, const VulkanMesh& mesh, vk::Buffer posed_vertices, uint32_t posed_vertex_offset
+	    vk::CommandBuffer cmd, uint64_t node_rid, const VulkanMesh& mesh, vk::Buffer posed_vertices, uint32_t posed_vertex_offset
 	) -> vk::DeviceAddress;
 
 	void endFrame();
 
 	[[nodiscard]]
-	auto addressFor(uint64_t node_uid) const -> vk::DeviceAddress;
+	auto addressFor(uint64_t node_rid) const -> vk::DeviceAddress;
 
 	[[nodiscard]]
 	auto getRecordedCount() const noexcept -> uint32_t {
@@ -54,7 +54,7 @@ private:
 		uint64_t last_used_frame = 0;
 	};
 
-	auto ensureEntry(uint64_t node_uid, const VulkanMesh& mesh) -> Entry*;
+	auto ensureEntry(uint64_t node_rid, const VulkanMesh& mesh) -> Entry*;
 
 	const VulkanCore* m_core = nullptr;
 	std::unordered_map<uint64_t, Entry> m_entries;

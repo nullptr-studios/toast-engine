@@ -46,6 +46,11 @@ public:
 	}
 
 	[[nodiscard]]
+	auto paused() const noexcept -> bool {
+		return m_paused.load(std::memory_order_acquire);
+	}
+
+	[[nodiscard]]
 	static auto exists() noexcept -> bool {
 		// True while any PlayWorkspace exists
 		return s_instances.load(std::memory_order_acquire) > 0;
@@ -62,7 +67,7 @@ private:
 	static inline std::atomic<int> s_instances = 0;
 
 	TickScheduler m_scheduler;
-	bool m_paused = false;
+	std::atomic<bool> m_paused = false;
 	bool m_started = false;
 	std::atomic<bool> m_schedule_dirty = true;    // scripts register dependencies from init(), possibly on a loader thread
 	void computeSchedule();

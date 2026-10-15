@@ -18,7 +18,7 @@ public sealed class CurveAsset : BaseAsset {
 	public override string SchemaPath => "core://schemas/curve.schema.json";
 
 	public override Task CreateAsync(string path) {
-		new Curve([0f, 0f, 1f, 1f], CurveDimension.D2, SplineType.Linear).Save(path);
+		new CurveFile([new Curve([0f, 0f, 1f, 1f], SplineType.Linear)], SplineType.Linear).Save(path);
 		return Task.CompletedTask;
 	}
 }

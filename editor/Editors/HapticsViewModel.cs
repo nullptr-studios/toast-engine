@@ -128,7 +128,7 @@ public partial class HapticsViewModel : Tool, IToastZoneEditor, IAutosavable {
 		var haptic = new Haptic {
 			Mode = HapticMode.Curve,
 			DurationMs = 350,
-			Curve = new Curve([0f, 0f, 0.35f, 1f, 1f, 0f], CurveDimension.D2, SplineType.CatmullRom)
+			Curve = new Curve([0f, 0f, 0.35f, 1f, 1f, 0f], SplineType.CatmullRom)
 		};
 		LoadHaptic(haptic, "sample.thaptic");
 	}
@@ -248,7 +248,7 @@ public partial class HapticsViewModel : Tool, IToastZoneEditor, IAutosavable {
 	}
 
 	private static CurveCanvasItem MakePreviewItem(float intensity, Color color, string label) {
-		return new CurveCanvasItem(new Curve([0f, intensity, 1f, intensity], CurveDimension.D2, SplineType.Linear), color,
+		return new CurveCanvasItem(new Curve([0f, intensity, 1f, intensity], SplineType.Linear), color,
 			label) {
 			IsEditable = false
 		};
@@ -340,7 +340,7 @@ public partial class HapticsViewModel : Tool, IToastZoneEditor, IAutosavable {
 		m_haptic.Mode = mode;
 		// first switch into curve mode: start with a classic pulse envelope
 		if (mode == HapticMode.Curve)
-			m_haptic.Curve ??= new Curve([0f, 0f, 0.5f, 1f, 1f, 0f], CurveDimension.D2, SplineType.CatmullRom);
+			m_haptic.Curve ??= new Curve([0f, 0f, 0.5f, 1f, 1f, 0f], SplineType.CatmullRom);
 
 		RebuildCanvas();
 		NotifyModeFlags();

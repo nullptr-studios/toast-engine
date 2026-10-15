@@ -108,7 +108,49 @@ typedef struct {
 
 /// @brief Copies the latest finished pixels into @p dst
 /// @return 1 copied, 0 none available yet, -1 dst too small
+/// @note While frames are shared as textures they are only read back after toast_viewport_request_readback()
 TOAST_C_API int toast_viewport_get_frame(void* dst, uint32_t dst_capacity, toast_viewport_frame_t* out) NOEXCEPT;
+
+/// @brief Reads the next frame back for toast_viewport_get_frame()
+TOAST_C_API void toast_viewport_request_readback(void) NOEXCEPT;
+
+typedef struct {
+	uint32_t width;
+	uint32_t height;
+	uint64_t frame_id;
+	uint64_t generation;
+	uint64_t memory_size;
+	uint32_t slot;
+	uint32_t slot_count;
+} toast_viewport_shared_frame_t;
+
+/// @brief Native handles of one shared slot
+/// Windows: image is a D3D11 texture NT handle with a keyed mutex
+/// Linux: image, ready and done are new opaque fds the caller owns
+typedef struct {
+	intptr_t image;
+	intptr_t ready;
+	intptr_t done;
+} toast_viewport_shared_handles_t;
+
+/// @brief Starts sharing viewport frames as textures instead of reading every one back
+/// @param adapter_luid The compositor's adapter LUID (Windows)
+/// @param adapter_uuid The compositor's device UUID (Linux)
+TOAST_C_API int toast_viewport_enable_shared(uint64_t adapter_luid, const uint8_t* adapter_uuid) NOEXCEPT;
+
+/// @brief Goes back to reading every frame back
+TOAST_C_API void toast_viewport_disable_shared(void) NOEXCEPT;
+
+TOAST_C_API int toast_viewport_get_shared_frame(toast_viewport_shared_frame_t* out) NOEXCEPT;
+
+TOAST_C_API int
+    toast_viewport_export_shared_slot(uint64_t generation, uint32_t slot, toast_viewport_shared_handles_t* out) NOEXCEPT;
+
+/// @brief Keeps the renderer from writing @p slot while the compositor reads it
+TOAST_C_API int toast_viewport_hold_shared_slot(uint64_t generation, uint32_t slot) NOEXCEPT;
+
+/// @param consumed 1 when the compositor waited for ready and signalled done
+TOAST_C_API void toast_viewport_release_shared_slot(uint64_t generation, uint32_t slot, int consumed) NOEXCEPT;
 
 TOAST_C_API void toast_reload_project_settings(void) NOEXCEPT;
 

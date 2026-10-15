@@ -277,7 +277,7 @@ public:
 
 		uint32_t posed_vertex_offset = k_no_posed_vertices;
 
-		uint64_t node_uid = 0;
+		uint64_t node_rid = 0;
 	};
 
 	struct VoxelVolumeProxy {
@@ -304,7 +304,7 @@ public:
 
 		bool visible = true;
 
-		uint64_t node_uid = 0;
+		uint64_t node_rid = 0;
 		uint32_t highlight_record = 0;
 	};
 
@@ -1268,7 +1268,7 @@ private:
 	std::shared_ptr<VoxelGpuStorage> m_voxel_storage_pending;
 
 	struct VoxelSceneKey {
-		uint64_t node_uid = 0;
+		uint64_t node_rid = 0;
 		uint32_t revision = 0;
 		uint32_t content = 0;
 		const voxel::Palette* palette = nullptr;

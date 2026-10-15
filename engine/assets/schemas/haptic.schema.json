@@ -25,7 +25,7 @@
       "additionalProperties": false,
       "properties": {
         "spline_type": { "enum": ["linear", "catmull_rom", "bspline", "bezier"], "x-toast-type": "enum",  "description": "Interpolation type." },
-        "dimension":   { "enum": ["2d", "3d"],                                   "x-toast-type": "enum",  "description": "Curve dimensionality; use 2d for haptics" },
+        "dimension":   { "enum": ["1d", "2d"],                                   "x-toast-type": "enum",  "description": "Always a 1d value over time; older files call it 2d" },
         "t_scale":     { "type": "number", "x-toast-type": "float", "default": 1.0, "exclusiveMinimum": 0, "description": "Time axis scale factor" },
         "points":      { "type": "array",  "x-toast-type": "point[]", "minItems": 2, "description": "Control points" }
       }
@@ -37,7 +37,7 @@
       "properties": {
         "x": { "type": "number", "x-toast-type": "float", "description": "Normalized time [0, 1]" },
         "y": { "type": "number", "x-toast-type": "float", "description": "Motor intensity [0, 1]" },
-        "z": { "type": "number", "x-toast-type": "float", "description": "Z component (3D curves only)" }
+        "z": { "type": "number", "x-toast-type": "float", "description": "Unused, older files may have it" }
       }
     }
   }

@@ -28,7 +28,10 @@ public partial class CurveViewModel : Tool, IToastZoneEditor, IAutosavable {
 
 	[ObservableProperty] private string m_currentUid = "";
 
-	private Curve? m_curve;
+	private CurveFile? m_curve;
+	private readonly List<CurveCanvasItem> m_items = [];
+	[ObservableProperty] private int m_activeCurveIndex;
+	[ObservableProperty] private string m_dimensionName = "1D";
 	[ObservableProperty] private string m_displayTitle = BaseTitle;
 	[ObservableProperty] private string m_fileName = "";
 	[ObservableProperty] private bool m_isDirty;
@@ -46,6 +49,12 @@ public partial class CurveViewModel : Tool, IToastZoneEditor, IAutosavable {
 
 	public static IReadOnlyList<string> SplineTypeNames { get; } =
 		["Linear", "Catmull-Rom", "B-Spline", "Bezier"];
+
+	public static IReadOnlyList<string> DimensionNames { get; } = ["1D", "2D", "3D"];
+	public ObservableCollection<ChannelOption> Channels { get; } = [];
+	public bool HasChannels => m_curve is { Dimension: not CurveDimension.D1 };
+	private static readonly string[] AxisNames = ["X", "Y", "Z"];
+	private static readonly (string Key, string Fallback)[] AxisColors = [("Red", "#ff1659"), ("Green", "#3ddc84"), ("Blue", "#4d8bff")];
 
 	public ObservableCollection<CurveCanvasItem> CanvasItems { get; } = [];
 	public ObservableCollection<CurvePointVM> PointRows { get; } = [];
@@ -70,7 +79,7 @@ public partial class CurveViewModel : Tool, IToastZoneEditor, IAutosavable {
 		m_loading = true;
 		var recovered = contentSourceRealPath != null;
 		try {
-			var curve = Curve.FromFile(contentSourceRealPath ?? ProjectContext.Resolve(virtualPath));
+			var curve = CurveFile.FromFile(contentSourceRealPath ?? ProjectContext.Resolve(virtualPath));
 			CurrentUid = uid;
 			CurrentPath = virtualPath;
 			LoadCurve(curve, virtualPath);
@@ -101,42 +110,106 @@ public partial class CurveViewModel : Tool, IToastZoneEditor, IAutosavable {
 	}
 
 	private void InitDesignData() {
-		var curve = new Curve(
-			[0f, 0f, 0.3f, 0.9f, 0.65f, 0.35f, 1f, 1f],
-			CurveDimension.D2, SplineType.CatmullRom);
+		var curve = new CurveFile(
+			[new Curve([0f, 0f, 0.3f, 0.9f, 0.65f, 0.35f, 1f, 1f], SplineType.CatmullRom)], SplineType.CatmullRom);
 		LoadCurve(curve, "sample.tcurve");
 	}
 
-	private void LoadCurve(Curve curve, string virtualPath) {
+	private void LoadCurve(CurveFile curve, string virtualPath) {
 		m_loading = true;
-
-		if (m_item is not null) m_item.Changed -= OnCurveChanged;
 
 		m_curve = curve;
 		FileName = Path.GetFileName(virtualPath);
-		IsReadOnly = curve.Dimension == CurveDimension.D3;
+		IsReadOnly = false;
 
-		m_item = new CurveCanvasItem(curve, CurveCanvas.ResolveColor("Red", "#ff1659")) {
-			IsEditable = !IsReadOnly
-		};
-		m_item.Changed += OnCurveChanged;
-
-		CanvasItems.Clear();
-		CanvasItems.Add(m_item);
-
+		RebuildItems();
+		DimensionName = DimensionNames[(int)curve.Dimension - 1];
 		SplineTypeName = ToName(curve.SplineType);
 		TScale = curve.TScale;
-		SelectedPointIndex = -1;
-		SyncRows();
-		UpdateBezierHint();
 		UpdateTitle();
 		OnPropertyChanged(nameof(HasContent));
 
 		m_loading = false;
 	}
 
+	private void RebuildItems() {
+		foreach (var item in m_items) item.Changed -= OnCurveChanged;
+		m_items.Clear();
+		CanvasItems.Clear();
+		if (m_curve is null) return;
+
+		for (var i = 0; i < m_curve.Channels.Count; i++) {
+			var (key, fallback) = AxisColors[i];
+			var item = new CurveCanvasItem(m_curve.Channels[i], CurveCanvas.ResolveColor(key, fallback),
+				m_curve.Dimension == CurveDimension.D1 ? "" : AxisNames[i]);
+			item.Changed += OnCurveChanged;
+			m_items.Add(item);
+			CanvasItems.Add(item);
+		}
+
+		Channels.Clear();
+		for (var i = 0; i < m_items.Count; i++)
+			Channels.Add(new ChannelOption(i, AxisNames[i], m_items.Count));
+		OnPropertyChanged(nameof(HasChannels));
+		SelectChannel(Math.Clamp(ActiveCurveIndex, 0, m_items.Count - 1));
+	}
+
+	[RelayCommand]
+	private void PickChannel(ChannelOption? channel) {
+		if (channel is null || channel.Index >= m_items.Count) return;
+		// disable toggling on the button lol
+		if (channel.Index == ActiveCurveIndex) {
+			channel.IsActive = false;
+			channel.IsActive = true;
+			return;
+		}
+
+		SelectChannel(channel.Index);
+	}
+
+	private void SelectChannel(int index) {
+		ActiveCurveIndex = index;
+		foreach (var channel in Channels) channel.IsActive = channel.Index == index;
+		m_item = m_items.Count > index ? m_items[index] : null;
+		SelectedPointIndex = -1;
+		PointRows.Clear();
+		SyncRows();
+		UpdateBezierHint();
+	}
+
+	partial void OnDimensionNameChanged(string value) {
+		if (m_loading || m_curve is null) return;
+		var dimension = value switch { "2D" => CurveDimension.D2, "3D" => CurveDimension.D3, _ => CurveDimension.D1 };
+		if (dimension == m_curve.Dimension) return;
+		_ = ChangeDimensionAsync(dimension);
+	}
+
+	private async Task ChangeDimensionAsync(CurveDimension dimension) {
+		if (m_curve is null) return;
+		if (dimension < m_curve.Dimension && App.MainWindow is { } owner) {
+			var dropped = AxisNames[(int)dimension..m_curve.Channels.Count];
+			var confirmed = await new MessageModal(new ModalConfig(
+				"Change Dimension",
+				$"Going to {DimensionName} deletes the {string.Join(" and ", dropped)} {(dropped.Length > 1 ? "channels" : "channel")}. Continue?",
+				ModalButtons.OkCancel,
+				OkLabel: "Delete"
+			)).ShowDialog<bool?>(owner);
+			if (confirmed is not true) {
+				m_loading = true;
+				DimensionName = DimensionNames[(int)m_curve.Dimension - 1];
+				m_loading = false;
+				return;
+			}
+		}
+
+		m_curve.SetDimension(dimension);
+		RebuildItems();
+		IsDirty = true;
+	}
+
 	private void CloseCurrent() {
-		if (m_item is not null) m_item.Changed -= OnCurveChanged;
+		foreach (var item in m_items) item.Changed -= OnCurveChanged;
+		m_items.Clear();
 		m_item = null;
 		m_curve = null;
 		CurrentUid = "";
@@ -165,12 +238,21 @@ public partial class CurveViewModel : Tool, IToastZoneEditor, IAutosavable {
 	private void AddPoint() {
 		if (m_item is null || IsReadOnly) return;
 
+		// Splits the widest gap between keys
 		var n = m_item.NumPoints;
-		var (lastX, lastY) = m_item.GetPoint(n - 1);
-		var (firstX, _) = m_item.GetPoint(0);
-		var dx = n > 1 ? Math.Max((lastX - firstX) / (n - 1), 1e-3f) : 0.25f;
+		var step = m_item.Curve.SplineType == SplineType.Bezier && (n - 1) % 3 == 0 ? 3 : 1;
+		var widest = 0;
+		var gap = -1f;
+		for (var i = 0; i + step < n; i += step) {
+			var g = m_item.GetPoint(i + step).X - m_item.GetPoint(i).X;
+			if (g <= gap) continue;
+			gap = g;
+			widest = i;
+		}
 
-		SelectedPointIndex = m_item.InsertPoint(lastX + dx, lastY);
+		var (ax, ay) = m_item.GetPoint(widest);
+		var (bx, by) = m_item.GetPoint(widest + step);
+		SelectedPointIndex = m_item.InsertPoint((ax + bx) / 2f, (ay + by) / 2f);
 	}
 
 	[RelayCommand]
@@ -222,7 +304,7 @@ public partial class CurveViewModel : Tool, IToastZoneEditor, IAutosavable {
 
 	private void UpdateBezierHint() {
 		var hint = "";
-		if (m_curve is { SplineType: SplineType.Bezier } c && (c.NumPoints - 1) % 3 != 0)
+		if (m_item?.Curve is { SplineType: SplineType.Bezier } c && (c.NumPoints - 1) % 3 != 0)
 			hint = $"Bezier needs 3k+1 points (has {c.NumPoints}) — rendering as B-Spline";
 		BezierHint = hint;
 		OnPropertyChanged(nameof(HasBezierHint));
@@ -249,7 +331,7 @@ public partial class CurveViewModel : Tool, IToastZoneEditor, IAutosavable {
 		var type = FromName(value);
 		if (type == m_curve.SplineType) return;
 		m_curve.SetSplineType(type);
-		m_item?.NotifyStructureChanged();
+		foreach (var item in m_items) item.NotifyStructureChanged();
 	}
 
 	partial void OnTScaleChanged(float value) {
@@ -286,11 +368,12 @@ public sealed partial class CurvePointVM : ObservableObject {
 	[ObservableProperty] private float m_x;
 	[ObservableProperty] private float m_y;
 
-	public CurvePointVM(Action<int, float, float> commit, int index, float x, float y, bool isHandle) {
+	public CurvePointVM(Action<int, float, float> commit, int index, float x, float y, bool isHandle, bool lockX = false) {
 		m_commit = commit;
 		Index = index;
 		Label = index.ToString();
 		IsHandle = isHandle;
+		LockX = lockX;
 		m_x = x;
 		m_y = y;
 	}
@@ -298,6 +381,8 @@ public sealed partial class CurvePointVM : ObservableObject {
 	public int Index { get; }
 	public string Label { get; }
 	public bool IsHandle { get; }
+	public bool LockX { get; }
+	public bool CanEditX => !LockX;
 
 	partial void OnXChanged(float value) {
 		m_commit(Index, value, Y);
@@ -306,4 +391,21 @@ public sealed partial class CurvePointVM : ObservableObject {
 	partial void OnYChanged(float value) {
 		m_commit(Index, X, value);
 	}
+}
+
+public sealed partial class ChannelOption : ObservableObject {
+	[ObservableProperty] private bool m_isActive;
+
+	public ChannelOption(int index, string name, int count) {
+		Index = index;
+		Name = name;
+		Corners = new Avalonia.CornerRadius(index == 0 ? 6 : 0, index == count - 1 ? 6 : 0, index == count - 1 ? 6 : 0, index == 0 ? 6 : 0);
+	}
+
+	public int Index { get; }
+	public string Name { get; }
+	public Avalonia.CornerRadius Corners { get; }
+	public bool IsX => Index == 0;
+	public bool IsY => Index == 1;
+	public bool IsZ => Index == 2;
 }

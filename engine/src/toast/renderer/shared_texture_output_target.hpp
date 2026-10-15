@@ -6,7 +6,10 @@
 
 #include "output_target_base.hpp"
 
+#include <array>
 #include <atomic>
+#include <condition_variable>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <vector>
@@ -22,10 +25,26 @@ struct ViewportFrameDesc {
 	uint64_t frame_id = 0;
 };
 
+struct ViewportSharedFrameDesc {
+	uint32_t width = 0;
+	uint32_t height = 0;
+	uint64_t frame_id = 0;
+	uint64_t generation = 0;
+	uint64_t memory_size = 0;
+	uint32_t slot = 0;
+	uint32_t slot_count = 0;
+};
+
+struct ViewportSharedHandles {
+	intptr_t image = 0;
+	intptr_t ready = 0;
+	intptr_t done = 0;
+};
+
 class SharedTextureOutputTarget final : public IOutputTarget {
 public:
 	SharedTextureOutputTarget(const VulkanCore& core, vk::Extent2D preferred_extent, uint32_t image_count = 3);
-	~SharedTextureOutputTarget() override = default;
+	~SharedTextureOutputTarget() override;
 
 	SharedTextureOutputTarget(const SharedTextureOutputTarget&) = delete;
 	auto operator=(const SharedTextureOutputTarget&) -> SharedTextureOutputTarget& = delete;
@@ -64,6 +83,8 @@ public:
 
 	void recordFinalize(vk::CommandBuffer command_buffer, uint32_t image_index) override;
 	void onImageRenderComplete(uint32_t image_index) override;
+	[[nodiscard]]
+	auto submitSync(uint32_t image_index) -> OutputSubmitSync override;
 
 	void recreate(vk::Extent2D extent) override;
 
@@ -71,15 +92,51 @@ public:
 	[[nodiscard]]
 	auto copyLatestFrame(void* dst, uint32_t dst_capacity, ViewportFrameDesc* out) -> int;
 
+	/// Reads the next frame back to the CPU even while textures are shared
+	void requestReadback();
+
+	/**
+	 * @brief Hands frames over as shared textures from the next acquired image on, and stops reading every frame back
+	 * @param adapter_luid The compositor's adapter LUID, 0 when it has none (checked on Windows)
+	 * @param adapter_uuid The compositor's device UUID, null when it has none (checked elsewhere)
+	 * @return false when this device cannot share textures with that adapter
+	 */
+	auto enableSharedTextures(uint64_t adapter_luid, const uint8_t* adapter_uuid) -> bool;
+
+	void disableSharedTextures();
+
+	[[nodiscard]]
+	auto sharedFrame(ViewportSharedFrameDesc* out) -> int;
+
+	[[nodiscard]]
+	auto exportSharedSlot(uint64_t generation, uint32_t slot, ViewportSharedHandles* out) -> bool;
+
+	[[nodiscard]]
+	auto holdSharedSlot(uint64_t generation, uint32_t slot) -> bool;
+
+	void releaseSharedSlot(uint64_t generation, uint32_t slot, bool consumed);
+
 private:
 	struct SharedImage {
 		std::optional<vma::raii::Image> image;
 		std::optional<vk::raii::ImageView> view;
 		std::optional<vma::raii::Buffer> staging;
 		void* mapped = nullptr;
+		bool read_back = false;
+		bool shared = false;
+	};
+
+	struct Interop;
+
+	enum class SharingState : uint8_t {
+		off,
+		requested,
+		active,
+		failed,
 	};
 
 	void allocateResources(vk::Extent2D extent);
+	void createInterop();
 
 	[[nodiscard]]
 	auto imageByteSize() const -> vk::DeviceSize {
@@ -95,7 +152,13 @@ private:
 	uint32_t m_next_acquire_index = 0;
 
 	std::atomic<int32_t> m_latest_ready {-1};
+	std::atomic<int32_t> m_latest_readback {-1};
+	int32_t m_reading = -1;
+	std::condition_variable m_reading_done;
 	std::atomic<uint64_t> m_frame_counter {0};
+	std::unique_ptr<Interop> m_interop;
+	std::atomic<SharingState> m_sharing {SharingState::off};
+	std::atomic<bool> m_readback_requested {false};
 };
 
 }

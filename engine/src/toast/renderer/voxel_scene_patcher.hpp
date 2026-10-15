@@ -19,12 +19,12 @@ namespace renderer {
 class VoxelScenePatcher {
 public:
 	/// A full pack is what the GPU will hold so later patches build on it
-	void adopt(const voxel::gpu::PackedScene& scene, uint32_t pool_slots, std::vector<uint64_t> node_uids);
+	void adopt(const voxel::gpu::PackedScene& scene, uint32_t pool_slots, std::vector<uint64_t> node_rids);
 
 	/// @returns nullopt when only a full pack can describe the change
 	[[nodiscard]]
 	auto tryPatch(
-	    const voxel::BrickPool& pool, std::span<const voxel::gpu::SceneVolume> volumes, std::span<const uint64_t> node_uids,
+	    const voxel::BrickPool& pool, std::span<const voxel::gpu::SceneVolume> volumes, std::span<const uint64_t> node_rids,
 	    std::span<const VolumeDelta> deltas
 	) -> std::optional<voxel::gpu::ScenePatch>;
 
@@ -48,7 +48,7 @@ public:
 private:
 	voxel::gpu::PackedScene m_scene;
 	uint32_t m_pool_slots = 0;
-	std::vector<uint64_t> m_node_uids;
+	std::vector<uint64_t> m_node_rids;
 	bool m_valid = false;
 };
 

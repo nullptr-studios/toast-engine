@@ -68,8 +68,8 @@ auto createStagingBuffer(const VulkanCore& core, vk::DeviceSize size) -> vma::ra
 
 }
 
-VoxelGpuStorage::VoxelGpuStorage(std::vector<uint64_t> node_uids, std::vector<glm::uvec3> brick_dims)
-    : m_node_uids(std::move(node_uids)),
+VoxelGpuStorage::VoxelGpuStorage(std::vector<uint64_t> node_rids, std::vector<glm::uvec3> brick_dims)
+    : m_node_rids(std::move(node_rids)),
       m_brick_dims(std::move(brick_dims)),
       m_generation(g_voxel_storage_generation.fetch_add(1, std::memory_order_relaxed) + 1) { }
 
@@ -104,12 +104,12 @@ void writeVoxelStorageDescriptors(const vk::raii::Device& device, vk::Descriptor
 	device.updateDescriptorSets(writes, {});
 }
 
-auto VoxelGpuStorage::recordIndexOf(uint64_t node_uid) const -> std::optional<uint32_t> {
-	const auto found = std::ranges::find(m_node_uids, node_uid);
-	if (found == m_node_uids.end()) {
+auto VoxelGpuStorage::recordIndexOf(uint64_t node_rid) const -> std::optional<uint32_t> {
+	const auto found = std::ranges::find(m_node_rids, node_rid);
+	if (found == m_node_rids.end()) {
 		return std::nullopt;
 	}
-	return static_cast<uint32_t>(found - m_node_uids.begin());
+	return static_cast<uint32_t>(found - m_node_rids.begin());
 }
 
 auto VoxelGpuStorage::buffer(Section section) const -> vk::Buffer {

@@ -63,7 +63,7 @@ public:
 
 	static constexpr size_t k_section_count = 6;
 
-	VoxelGpuStorage(std::vector<uint64_t> node_uids, std::vector<glm::uvec3> brick_dims);
+	VoxelGpuStorage(std::vector<uint64_t> node_rids, std::vector<glm::uvec3> brick_dims);
 
 	/// Unique per storage so a cache keyed on it notices every upload
 	[[nodiscard]]
@@ -72,7 +72,7 @@ public:
 	}
 
 	[[nodiscard]]
-	auto recordIndexOf(uint64_t node_uid) const -> std::optional<uint32_t>;
+	auto recordIndexOf(uint64_t node_rid) const -> std::optional<uint32_t>;
 
 	[[nodiscard]]
 	auto recordBrickDims(uint32_t index) const -> glm::uvec3 {
@@ -81,7 +81,7 @@ public:
 
 	[[nodiscard]]
 	auto recordCount() const noexcept -> uint32_t {
-		return static_cast<uint32_t>(m_node_uids.size());
+		return static_cast<uint32_t>(m_node_rids.size());
 	}
 
 	[[nodiscard]]
@@ -93,8 +93,8 @@ public:
 	}
 
 	[[nodiscard]]
-	auto nodeUid(uint32_t index) const -> uint64_t {
-		return index < m_node_uids.size() ? m_node_uids[index] : 0;
+	auto nodeRid(uint32_t index) const -> uint64_t {
+		return index < m_node_rids.size() ? m_node_rids[index] : 0;
 	}
 
 	/// @note Main thread only and before the upload is queued
@@ -125,7 +125,7 @@ private:
 	friend class VoxelSceneUpload;
 	friend class VoxelScenePatchUpload;
 
-	std::vector<uint64_t> m_node_uids;
+	std::vector<uint64_t> m_node_rids;
 	std::vector<glm::uvec3> m_brick_dims;
 
 	std::array<std::optional<vma::raii::Buffer>, k_section_count> m_buffers;
