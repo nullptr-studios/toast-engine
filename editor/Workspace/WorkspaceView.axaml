@@ -473,7 +473,6 @@
 									              CornerRadius="6, 0, 0, 6"
 									              HorizontalAlignment="Stretch"
 									              HorizontalContentAlignment="Left"
-									              ToolTip.Tip="Fly camera: hold RMB to look, WASD to move"
 									              Command="{Binding SetEditorCameraModeCommand}"
 									              CommandParameter="Free"
 									              IsChecked="{Binding CameraMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Free, Mode=OneWay}">
@@ -490,7 +489,6 @@
 									              CornerRadius="0, 6, 6, 0"
 									              HorizontalAlignment="Stretch"
 									              HorizontalContentAlignment="Left"
-									              ToolTip.Tip="Orbit the world origin: two-finger drag to swing, pinch to zoom"
 									              Command="{Binding SetEditorCameraModeCommand}"
 									              CommandParameter="Orbit"
 									              IsChecked="{Binding CameraMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Orbit, Mode=OneWay}">

@@ -24,7 +24,7 @@ void AssetManager::replacePrefab(toast::UID uid, const Prefab& prefab) {
 		cache.emplace(uid.data(), std::make_unique<Prefab>(prefab));
 	}
 
-	// editor saved this file 
+	// editor saved this file
 	// we shouldn't reload it again
 	pending_reloads.erase(uid.data());
 	if (auto info = manifest.find(uid.data()); info != manifest.end()) {

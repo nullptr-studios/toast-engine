@@ -289,12 +289,9 @@ public sealed class CurveCanvas : Control {
 		var geometry = new StreamGeometry();
 		using (var g = geometry.Open()) {
 			var tScale = item.Curve.TScale;
-			var is3D = item.Curve.Dimension == CurveDimension.D3;
 			for (var i = 0; i <= SampleSteps; i++) {
 				var t = (float)(i / SampleSteps) * tScale;
-				float x, y;
-				if (is3D) (x, y, _) = item.Curve.Eval3D(t);
-				else (x, y) = item.Curve.Eval2D(t);
+				var (x, y) = item.Curve.Eval2D(t);
 
 				var p = ToPixel(x, y);
 				if (i == 0) g.BeginFigure(p, false);

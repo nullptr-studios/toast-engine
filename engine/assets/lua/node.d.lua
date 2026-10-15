@@ -95,3 +95,28 @@ function AssetProxy:hasValue() end
 
 ---@return string
 function AssetProxy:type() end
+
+---A curve asset, which is what an exported variable typed `Curve` holds
+---@class Curve : Asset
+local CurveProxy = {}
+
+---The value at t: a number, vec2 or vec3 by the dimension of the curve
+---@param t number
+---@return number|vec2|vec3
+function CurveProxy:eval(t) end
+
+---@param t number
+---@return number
+function CurveProxy:eval1D(t) end
+
+---@param t number
+---@return vec2
+function CurveProxy:eval2D(t) end
+
+---@param t number
+---@return vec3
+function CurveProxy:eval3D(t) end
+
+---1, 2 or 3
+---@return integer
+function CurveProxy:dimension() end

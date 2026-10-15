@@ -9,6 +9,7 @@
 #include <lua.hpp>
 #include <luabridge3/LuaBridge/LuaBridge.h>
 #include <toast/assets/assets.hpp>
+#include <toast/assets/curve.hpp>
 #include <toast/assets/data.hpp>
 #include <toast/log.hpp>
 #include <toast/world/node.hpp>
@@ -173,9 +174,76 @@ auto AssetProxy::get(const std::string& name, lua_State* l) const -> luabridge::
 	return dataFieldOrNil(*this, name, l);
 }
 
+namespace {
+
+auto curveOf(const AssetProxy& proxy, lua_State* l) -> const assets::Curve& {
+	if (proxy.type() != "curve" || !proxy.hasValue()) {
+		luaL_error(l, "Asset '%s' (%s) is not a curve", proxy.path().c_str(), proxy.type().c_str());
+	}
+	return static_cast<const assets::Curve&>(proxy.handle().get());
+}
+
+}
+
+// Methods only a curve asset has, found through __index like the fields of a data asset
+// Any other asset gives nil for them
+template<int Method>
+int curveMethod(lua_State* l) {
+	const auto self = luabridge::Stack<AssetProxy>::get(l, 1);
+	if (!self) {
+		return luaL_error(l, "call it on a curve with a colon: curve:eval1D(t)");
+	}
+	const assets::Curve& curve = curveOf(*self, l);
+	if constexpr (Method == 4) {
+		lua_pushinteger(l, static_cast<lua_Integer>(curve.dimension()));
+		return 1;
+	}
+	const auto t = static_cast<float>(luaL_checknumber(l, 2));
+	if constexpr (Method == 0) {
+		switch (curve.dimension()) {
+			case assets::CurveDimension::d2: return luabridge::push(l, curve.eval2D(t)) ? 1 : 0;
+			case assets::CurveDimension::d3: return luabridge::push(l, curve.eval3D(t)) ? 1 : 0;
+			default: lua_pushnumber(l, curve.eval1D(t)); return 1;
+		}
+	} else if constexpr (Method == 1) {
+		lua_pushnumber(l, curve.eval1D(t));
+		return 1;
+	} else if constexpr (Method == 2) {
+		return luabridge::push(l, curve.eval2D(t)) ? 1 : 0;
+	} else {
+		return luabridge::push(l, curve.eval3D(t)) ? 1 : 0;
+	}
+}
+
+auto curveMethodOrNil(const AssetProxy& proxy, const std::string& name, lua_State* l) -> luabridge::LuaRef {
+	if (proxy.type() != "curve") {
+		return {l};
+	}
+	lua_CFunction function = nullptr;
+	if (name == "eval") {
+		function = curveMethod<0>;
+	} else if (name == "eval1D") {
+		function = curveMethod<1>;
+	} else if (name == "eval2D") {
+		function = curveMethod<2>;
+	} else if (name == "eval3D") {
+		function = curveMethod<3>;
+	} else if (name == "dimension") {
+		function = curveMethod<4>;
+	}
+	if (function == nullptr) {
+		return {l};
+	}
+	lua_pushcfunction(l, function);
+	return luabridge::LuaRef::fromStack(l);
+}
+
 auto assetProxyIndex(AssetProxy& proxy, const luabridge::LuaRef& key, lua_State* l) -> luabridge::LuaRef {
 	if (!key.isString()) {
 		return {l};
+	}
+	if (auto method = curveMethodOrNil(proxy, key.tostring(), l); !method.isNil()) {
+		return method;
 	}
 	return dataFieldOrNil(proxy, key.tostring(), l);
 }
