@@ -590,10 +590,10 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, uint32_t frame
 				continue;
 			}
 			ShadowSignature caster;
-			caster.add(voxel_proxies[index].node_uid);
+			caster.add(voxel_proxies[index].node_rid);
 			caster.add(voxel_proxies[index].model);
 			voxel_casters += caster.value;
-			eligible_voxels.push_back({.node_uid = voxel_proxies[index].node_uid, .model = voxel_proxies[index].model});
+			eligible_voxels.push_back({.node_rid = voxel_proxies[index].node_rid, .model = voxel_proxies[index].model});
 		}
 		if (!eligible_voxels.empty()) {
 			signature.add(voxel_casters);

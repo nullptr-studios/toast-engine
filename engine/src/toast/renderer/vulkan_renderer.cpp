@@ -1378,7 +1378,7 @@ void VulkanRenderer::recordAccelerationStructureBuilds(FrameContext& frame) {
 			    proxy.posed_vertex_offset == MeshInstanceProxy::k_no_posed_vertices) {
 				continue;
 			}
-			if (m_skinned_blas_pool->recordFor(*frame.command_buffer, proxy.node_uid, *proxy.mesh, posed, proxy.posed_vertex_offset) !=
+			if (m_skinned_blas_pool->recordFor(*frame.command_buffer, proxy.node_rid, *proxy.mesh, posed, proxy.posed_vertex_offset) !=
 			    0) {
 				++skinned_recorded;
 			}
@@ -1414,7 +1414,7 @@ void VulkanRenderer::recordAccelerationStructureBuilds(FrameContext& frame) {
 			if (!posed) {
 				blas_address = proxy.mesh->getAccelerationStructureAddress();
 			} else if (m_skinned_blas_pool != nullptr) {
-				blas_address = m_skinned_blas_pool->addressFor(proxy.node_uid);
+				blas_address = m_skinned_blas_pool->addressFor(proxy.node_rid);
 			}
 			if (blas_address == 0) {
 				continue;
@@ -3126,8 +3126,7 @@ void VulkanRenderer::tick(float time) noexcept {
 		}
 
 		// Skinned vertices are posed from joint matrices at the tick pose so they keep it
-		const glm::mat4 pose_delta =
-		    gpu_mesh.isSkinned() ? glm::mat4(1.0f) : physics::Simulator::renderPoseDeltaFor(node->uid().data());
+		const glm::mat4 pose_delta = gpu_mesh.isSkinned() ? glm::mat4(1.0f) : physics::Simulator::renderPoseDeltaFor(*node);
 		const auto world_transform = *owner_transform * pose_delta * node->worldTransformForRender();
 
 		uint32_t joint_offset = 0;
@@ -3173,7 +3172,7 @@ void VulkanRenderer::tick(float time) noexcept {
 		      .joint_count = joint_count,
 		      .bounds_center = world_center,
 		      .bounds_radius = world_radius,
-		      .node_uid = node->uid().data(),
+		      .node_rid = node->rid(),
 		    }
 		);
 	}
@@ -3194,7 +3193,7 @@ void VulkanRenderer::tick(float time) noexcept {
 	    extent.height > 0 ? static_cast<float>(extent.width) / static_cast<float>(extent.height) : (1080.0f / 720.0f);
 
 	// A camera below a physics body follows the same blended pose as the meshes around it
-	const glm::mat4 camera_pose_delta = physics::Simulator::renderPoseDeltaFor(m_camera->uid().data());
+	const glm::mat4 camera_pose_delta = physics::Simulator::renderPoseDeltaFor(*m_camera);
 	const glm::mat4 camera_view = m_camera->getView() * glm::inverse(camera_pose_delta);
 	const glm::mat4 camera_projection = m_camera->getProjection(aspect);
 
@@ -3570,7 +3569,7 @@ void VulkanRenderer::tick(float time) noexcept {
 			continue;
 		}
 
-		const uint64_t light_key = light->uid().data() != 0 ? light->uid().data() : reinterpret_cast<std::uintptr_t>(light);
+		const uint64_t light_key = light->rid();
 		const bool holds_slot = shadow_slots::owns(m_spot_slots, light_key) || shadow_slots::owns(m_point_slots, light_key);
 		const float shadow_limit = light->shadowDistance() * (holds_slot ? shadow_slots::k_distance_slack : 1.0f);
 
@@ -3914,8 +3913,8 @@ void VulkanRenderer::tick(float time) noexcept {
 			// Posed vertices have no previous pose so TAA reprojects them from depth
 			const bool posed = proxy.posed_vertex_offset != MeshInstanceProxy::k_no_posed_vertices;
 			const glm::mat4 model = instance_model_of(proxy);
-			const auto previous = m_mesh_previous_models.find(proxy.node_uid);
-			const bool has_previous = !posed && proxy.node_uid != 0 && previous != m_mesh_previous_models.end();
+			const auto previous = m_mesh_previous_models.find(proxy.node_rid);
+			const bool has_previous = !posed && proxy.node_rid != 0 && previous != m_mesh_previous_models.end();
 
 			proxy.instance_index = static_cast<uint32_t>(frame.instance_data.size());
 			frame.instance_data.push_back(
@@ -3926,8 +3925,8 @@ void VulkanRenderer::tick(float time) noexcept {
 			      .flags = posed ? k_instance_no_motion : 0u,
 			    }
 			);
-			if (!posed && proxy.node_uid != 0) {
-				drawn_mesh_models.insert_or_assign(proxy.node_uid, model);
+			if (!posed && proxy.node_rid != 0) {
+				drawn_mesh_models.insert_or_assign(proxy.node_rid, model);
 			}
 		}
 		if (!is_capture) {
@@ -4062,7 +4061,7 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 
 		// clang-format off
 		gathered.push_back(Gathered {
-			.id = node->uid().data(),
+			.id = node->rid(),
 			.volume = volume,
 			.palette = palette,
 			.model = *owner_transform * physics::Simulator::renderPoseDelta(*node) * node->getWorldTransform() * node->volumeLocalTransform(),
@@ -4070,7 +4069,7 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 			.node = node
 		});
 		key.push_back({
-			.node_uid = node->uid().data(),
+			.node_rid = node->rid(),
 			.revision = node->revision(),
 			.content = volume->revision(),
 			.palette = palette,
@@ -4099,7 +4098,7 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 			  .data_only = true,
 			});
 			key.push_back(
-			    {.node_uid = id,
+			    {.node_rid = id,
 					 .revision = 0,
 					 .content = it->second->revision(),
 					 .palette = gathered[i].palette,
@@ -4118,7 +4117,7 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		const glm::mat4 drawn_transform = physics::Simulator::renderPoseDelta(record.body) * record.transform;
 		gathered.push_back({id, record.volume, palette, drawn_transform, "Voxel fragment " + std::to_string(record.shape.slot)});
 		key.push_back(
-		    {.node_uid = id,
+		    {.node_rid = id,
 				 .revision = record.revision,
 				 .content = record.volume->revision(),
 				 .palette = palette,
@@ -4133,13 +4132,13 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		std::vector<TrackedVolume> tracked;
 		tracked.reserve(gathered.size());
 		for (const Gathered& entry : gathered) {
-			tracked.push_back({.node_uid = entry.id, .volume = entry.volume});
+			tracked.push_back({.node_rid = entry.id, .volume = entry.volume});
 		}
 		std::vector<VolumeDelta> deltas;
 		m_voxel_change_tracker.observe(
 		    tracked,
-		    [this](uint64_t node_uid) -> std::optional<glm::uvec3> {
-			    const auto record = m_voxel_storage ? m_voxel_storage->recordIndexOf(node_uid) : std::nullopt;
+		    [this](uint64_t node_rid) -> std::optional<glm::uvec3> {
+			    const auto record = m_voxel_storage ? m_voxel_storage->recordIndexOf(node_rid) : std::nullopt;
 			    return record.has_value() ? std::optional {m_voxel_storage->recordBrickDims(*record)} : std::nullopt;
 		    },
 		    &deltas
@@ -4157,16 +4156,16 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 			m_voxel_latest_storage.reset();
 		} else {
 			std::vector<voxel::gpu::SceneVolume> scene_volumes;
-			std::vector<uint64_t> node_uids;
+			std::vector<uint64_t> node_rids;
 			std::vector<glm::uvec3> brick_dims;
 			VoxelStorageDebugInfo debug;
 			scene_volumes.reserve(gathered.size());
-			node_uids.reserve(gathered.size());
+			node_rids.reserve(gathered.size());
 			brick_dims.reserve(gathered.size());
 			debug.node_names.reserve(gathered.size());
 			for (const Gathered& entry : gathered) {
 				scene_volumes.push_back({.volume = entry.volume, .palette = entry.palette});
-				node_uids.push_back(entry.id);
+				node_rids.push_back(entry.id);
 				brick_dims.push_back(entry.volume->brickDims());
 				debug.node_names.emplace_back(entry.debug_name);
 			}
@@ -4178,7 +4177,7 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 
 			std::optional<voxel::gpu::ScenePatch> patch;
 			if (!keep_mirror && m_voxel_latest_storage != nullptr && !m_voxel_latest_storage->hasFailed()) {
-				patch = m_voxel_patcher.tryPatch(voxel::runtimeBrickPool(), scene_volumes, node_uids, deltas);
+				patch = m_voxel_patcher.tryPatch(voxel::runtimeBrickPool(), scene_volumes, node_rids, deltas);
 			}
 
 			if (patch.has_value()) {
@@ -4215,7 +4214,7 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 				  retained.records.size() * sizeof(voxel::gpu::VolumeRecord),
 				};
 
-				auto storage = std::make_shared<VoxelGpuStorage>(std::move(node_uids), std::move(brick_dims));
+				auto storage = std::make_shared<VoxelGpuStorage>(std::move(node_rids), std::move(brick_dims));
 				storage->setDebugInfo(std::move(debug));
 				storage->setChangeHistory(m_voxel_change_tracker.packed(storage->generation()));
 				queueResourceUpload(
@@ -4251,9 +4250,9 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 					debug.mirror = packed;
 				}
 
-				m_voxel_patcher.adopt(packed->scene, debug.packed_slots, node_uids);
+				m_voxel_patcher.adopt(packed->scene, debug.packed_slots, node_rids);
 
-				auto storage = std::make_shared<VoxelGpuStorage>(std::move(node_uids), std::move(brick_dims));
+				auto storage = std::make_shared<VoxelGpuStorage>(std::move(node_rids), std::move(brick_dims));
 				storage->setDebugInfo(std::move(debug));
 				storage->setChangeHistory(m_voxel_change_tracker.packed(storage->generation()));
 				queueResourceUpload(std::make_unique<VoxelSceneUpload>(storage, std::move(packed)));
@@ -4285,11 +4284,11 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 	frame.voxel_instances.reserve(gathered.size());
 
 	for (const Gathered& entry : gathered) {
-		const uint64_t node_uid = entry.id;
+		const uint64_t node_rid = entry.id;
 		if (entry.data_only) {
 			continue;
 		}
-		const std::optional<uint32_t> record = m_voxel_storage->recordIndexOf(node_uid);
+		const std::optional<uint32_t> record = m_voxel_storage->recordIndexOf(node_rid);
 		if (!record.has_value()) {
 			continue;
 		}
@@ -4297,7 +4296,7 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		const glm::uvec3 dims = m_voxel_storage->recordBrickDims(*record);
 		const glm::mat4 model = entry.model;
 		const glm::vec4 sphere = voxel::worldBoundingSphere(model, dims);
-		const auto previous = m_voxel_previous_models.find(node_uid);
+		const auto previous = m_voxel_previous_models.find(node_rid);
 		const bool has_previous = previous != m_voxel_previous_models.end();
 
 		frame.voxel_instances.push_back(
@@ -4311,11 +4310,11 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		      .bounds_center = glm::vec3(sphere),
 		      .bounds_radius = sphere.w,
 		      .mirrored = glm::determinant(model) < 0.0f,
-		      .node_uid = node_uid,
+		      .node_rid = node_rid,
 		      .highlight_record = highlight_record_of(entry.highlight_id),
 		    }
 		);
-		drawn_models.insert_or_assign(node_uid, model);
+		drawn_models.insert_or_assign(node_rid, model);
 	}
 
 	m_voxel_drawn_models = std::move(drawn_models);

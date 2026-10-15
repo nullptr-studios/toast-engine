@@ -508,7 +508,11 @@ void Engine::tick() {
 			m->asset_manager->pollModifiedAssets();
 		}
 		if (m->asset_manager->hasPendingReloads() && !gameIsRunning(*m)) {
-			m->asset_manager->applyPendingReloads();
+			for (const auto& reloaded : m->asset_manager->applyPendingReloads()) {
+				if (reloaded.prefab) {
+					publishPrefab(reloaded.uid, *reloaded.prefab);
+				}
+			}
 		}
 	}
 

@@ -9,21 +9,21 @@
 
 namespace renderer {
 
-void VoxelScenePatcher::adopt(const voxel::gpu::PackedScene& scene, uint32_t pool_slots, std::vector<uint64_t> node_uids) {
+void VoxelScenePatcher::adopt(const voxel::gpu::PackedScene& scene, uint32_t pool_slots, std::vector<uint64_t> node_rids) {
 	m_scene = scene;
 	m_pool_slots = pool_slots;
-	m_node_uids = std::move(node_uids);
+	m_node_rids = std::move(node_rids);
 	m_valid = true;
 }
 
 auto VoxelScenePatcher::tryPatch(
-    const voxel::BrickPool& pool, std::span<const voxel::gpu::SceneVolume> volumes, std::span<const uint64_t> node_uids,
+    const voxel::BrickPool& pool, std::span<const voxel::gpu::SceneVolume> volumes, std::span<const uint64_t> node_rids,
     std::span<const VolumeDelta> deltas
 ) -> std::optional<voxel::gpu::ScenePatch> {
 	using namespace voxel::gpu;
 
 	// Same volumes in the same order since a record is found by its index
-	if (!m_valid || deltas.size() != volumes.size() || !std::ranges::equal(node_uids, m_node_uids)) {
+	if (!m_valid || deltas.size() != volumes.size() || !std::ranges::equal(node_rids, m_node_rids)) {
 		return std::nullopt;
 	}
 
@@ -62,7 +62,7 @@ auto VoxelScenePatcher::tryPatch(
 void VoxelScenePatcher::reset() {
 	m_scene = {};
 	m_pool_slots = 0;
-	m_node_uids.clear();
+	m_node_rids.clear();
 	m_valid = false;
 }
 

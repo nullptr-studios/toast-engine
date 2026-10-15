@@ -38,6 +38,10 @@ auto Node::uid() const noexcept -> const UID& {
 	return m_uid;
 }
 
+auto Node::rid() const noexcept -> std::uintptr_t {
+	return m_box.rid();
+}
+
 auto Node::name() const noexcept -> std::string_view {
 	return m_name;
 }

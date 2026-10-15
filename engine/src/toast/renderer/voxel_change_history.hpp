@@ -21,7 +21,7 @@ namespace renderer {
 
 /// A box that changed in the voxel space of one volume
 struct VoxelRegion {
-	uint64_t node_uid = 0;
+	uint64_t node_rid = 0;
 	glm::vec3 min {0.0f};
 	glm::vec3 max {0.0f};
 };
@@ -60,7 +60,7 @@ private:
 };
 
 struct TrackedVolume {
-	uint64_t node_uid = 0;
+	uint64_t node_rid = 0;
 	const voxel::Volume* volume = nullptr;
 };
 
@@ -69,7 +69,7 @@ using PublishedDims = std::function<std::optional<glm::uvec3>(uint64_t)>;
 
 /// What one volume changed since the observe before
 struct VolumeDelta {
-	uint64_t node_uid = 0;
+	uint64_t node_rid = 0;
 
 	/// New or replaced or its history was discarded so only a full pack describes it
 	bool unknown = false;
@@ -96,7 +96,7 @@ public:
 
 private:
 	struct Seen {
-		uint64_t node_uid = 0;
+		uint64_t node_rid = 0;
 		uint64_t volume_id = 0;
 		uint32_t content = 0;
 	};
@@ -109,7 +109,7 @@ private:
 };
 
 struct VoxelCaster {
-	uint64_t node_uid = 0;
+	uint64_t node_rid = 0;
 	glm::mat4 model {1.0f};
 };
 
