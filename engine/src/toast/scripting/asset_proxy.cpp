@@ -188,7 +188,7 @@ auto curveOf(const AssetProxy& proxy, lua_State* l) -> const assets::Curve& {
 // Methods only a curve asset has, found through __index like the fields of a data asset
 // Any other asset gives nil for them
 template<int Method>
-int curveMethod(lua_State* l) {
+auto curveMethod(lua_State* l) -> int {
 	const auto self = luabridge::Stack<AssetProxy>::get(l, 1);
 	if (!self) {
 		return luaL_error(l, "call it on a curve with a colon: curve:eval1D(t)");

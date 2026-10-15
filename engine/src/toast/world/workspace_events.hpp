@@ -37,8 +37,8 @@ struct UpdateHierarchyData : Event<UpdateHierarchyData> {
 
 	UpdateHierarchyData(const toast::Box<toast::Node>& node, uint64_t handle);
 
-	UpdateHierarchyData(const HierarchyElement& h, bool is_empty, uint64_t handle)
-	    : root(h),
+	UpdateHierarchyData(HierarchyElement h, bool is_empty, uint64_t handle)
+	    : root(std::move(h)),
 	      is_empty(is_empty),
 	      workspace_handle(handle) { }
 };

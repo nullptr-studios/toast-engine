@@ -13,7 +13,7 @@ namespace renderer {
 struct OutputSubmitSync {
 	const void* chain = nullptr;
 	vk::Semaphore wait = nullptr;
-	vk::PipelineStageFlags wait_stage {};
+	vk::PipelineStageFlags wait_stage;
 	vk::Semaphore signal = nullptr;
 };
 
