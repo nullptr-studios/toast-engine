@@ -1,5 +1,11 @@
 var NAVTREEINDEX8 =
 {
+"cluster__lighting__pass_8hpp_source.html":[15,0,1,0,0,6,0,3],
+"clustered__lighting__constants_8hpp.html":[15,0,1,0,0,6,1],
+"clustered__lighting__constants_8hpp_source.html":[15,0,1,0,0,6,1],
+"collider_8hpp_source.html":[15,0,1,0,0,4,0,2],
+"collision_8hpp.html":[15,0,1,0,0,4,8],
+"collision_8hpp_source.html":[15,0,1,0,0,4,8],
 "collision__world_8hpp.html":[15,0,1,0,0,4,9],
 "collision__world_8hpp_source.html":[15,0,1,0,0,4,9],
 "color__scheme_8hpp.html":[15,0,1,0,0,9,0,0],
@@ -153,8 +159,7 @@ var NAVTREEINDEX8 =
 "functions_func_u.html":[14,3,1,20],
 "functions_func_v.html":[14,3,1,21],
 "functions_func_w.html":[14,3,1,22],
-"functions_func_x.html":[14,3,1,23],
-"functions_func_~.html":[14,3,1,24],
+"functions_func_~.html":[14,3,1,23],
 "functions_g.html":[14,3,0,6],
 "functions_h.html":[14,3,0,7],
 "functions_i.html":[14,3,0,8],
@@ -198,8 +203,7 @@ var NAVTREEINDEX8 =
 "functions_vars_v.html":[14,3,2,21],
 "functions_vars_w.html":[14,3,2,22],
 "functions_w.html":[14,3,0,22],
-"functions_x.html":[14,3,0,23],
-"functions_~.html":[14,3,0,24],
+"functions_~.html":[14,3,0,23],
 "fxaa__pass_8cpp.html":[15,0,1,0,0,6,0,10],
 "fxaa__pass_8hpp.html":[15,0,1,0,0,6,0,11],
 "fxaa__pass_8hpp_source.html":[15,0,1,0,0,6,0,11],
@@ -245,9 +249,5 @@ var NAVTREEINDEX8 =
 "input__action_8hpp_source.html":[15,0,1,0,0,3,0,1],
 "input__events_8hpp.html":[15,0,1,0,0,3,5],
 "input__events_8hpp_source.html":[15,0,1,0,0,3,5],
-"input__layout_8hpp.html":[15,0,1,0,0,3,0,2],
-"input__layout_8hpp_source.html":[15,0,1,0,0,3,0,2],
-"input__settings_8hpp.html":[15,0,1,0,0,3,0,3],
-"input__settings_8hpp_source.html":[15,0,1,0,0,3,0,3],
-"input__system_8cpp.html":[15,0,1,0,0,3,6]
+"input__layout_8hpp.html":[15,0,1,0,0,3,0,2]
 };

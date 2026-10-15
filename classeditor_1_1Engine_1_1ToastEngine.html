@@ -157,6 +157,20 @@ WorkspaceInfo&#160;</td><td class="memItemRight"><b>PlayWorkspace</b> (ulong sou
 <tr class="memdesc:a177a7f91cebf748bc947db5d0142f0cb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clones the given workspace's live tree into a new ticking PlayWorkspace. <br /></td></tr>
 <tr class="memitem:a2bdb5d439cb4a1ab73bd260364517a0a" id="r_a2bdb5d439cb4a1ab73bd260364517a0a"><td class="memItemLeft"><a id="a2bdb5d439cb4a1ab73bd260364517a0a" name="a2bdb5d439cb4a1ab73bd260364517a0a"></a>
 int&#160;</td><td class="memItemRight"><b>TryGetViewportFrame</b> (IntPtr dst, uint capacity, out <a class="el" href="structeditor_1_1Engine_1_1ToastViewportFrame.html">ToastViewportFrame</a> frame)</td></tr>
+<tr class="memitem:a80fff80d192a0154ed30c99c87278618" id="r_a80fff80d192a0154ed30c99c87278618"><td class="memItemLeft"><a id="a80fff80d192a0154ed30c99c87278618" name="a80fff80d192a0154ed30c99c87278618"></a>
+void&#160;</td><td class="memItemRight"><b>RequestViewportReadback</b> ()</td></tr>
+<tr class="memitem:aaa6cdf1ed7ea4e27b6a17019c4afb7a8" id="r_aaa6cdf1ed7ea4e27b6a17019c4afb7a8"><td class="memItemLeft"><a id="aaa6cdf1ed7ea4e27b6a17019c4afb7a8" name="aaa6cdf1ed7ea4e27b6a17019c4afb7a8"></a>
+bool&#160;</td><td class="memItemRight"><b>EnableSharedViewport</b> (ulong adapterLuid, byte[]? adapterUuid)</td></tr>
+<tr class="memitem:a81a93d168b9e9e689588877c59bd95c5" id="r_a81a93d168b9e9e689588877c59bd95c5"><td class="memItemLeft"><a id="a81a93d168b9e9e689588877c59bd95c5" name="a81a93d168b9e9e689588877c59bd95c5"></a>
+void&#160;</td><td class="memItemRight"><b>DisableSharedViewport</b> ()</td></tr>
+<tr class="memitem:a2a2a0bf24ad68fcbf88323d5456c6636" id="r_a2a2a0bf24ad68fcbf88323d5456c6636"><td class="memItemLeft"><a id="a2a2a0bf24ad68fcbf88323d5456c6636" name="a2a2a0bf24ad68fcbf88323d5456c6636"></a>
+int&#160;</td><td class="memItemRight"><b>TryGetSharedViewportFrame</b> (out <a class="el" href="structeditor_1_1Engine_1_1ToastViewportSharedFrame.html">ToastViewportSharedFrame</a> frame)</td></tr>
+<tr class="memitem:aa40f9ed2720c0f8688326c0006583cbc" id="r_aa40f9ed2720c0f8688326c0006583cbc"><td class="memItemLeft"><a id="aa40f9ed2720c0f8688326c0006583cbc" name="aa40f9ed2720c0f8688326c0006583cbc"></a>
+bool&#160;</td><td class="memItemRight"><b>ExportSharedViewportSlot</b> (ulong generation, uint slot, out <a class="el" href="structeditor_1_1Engine_1_1ToastViewportSharedHandles.html">ToastViewportSharedHandles</a> handles)</td></tr>
+<tr class="memitem:abf5f7e2e903278427b7aaab0f91034f9" id="r_abf5f7e2e903278427b7aaab0f91034f9"><td class="memItemLeft"><a id="abf5f7e2e903278427b7aaab0f91034f9" name="abf5f7e2e903278427b7aaab0f91034f9"></a>
+bool&#160;</td><td class="memItemRight"><b>HoldSharedViewportSlot</b> (ulong generation, uint slot)</td></tr>
+<tr class="memitem:a9b7ca0191f2205bd740e3052c1b4909a" id="r_a9b7ca0191f2205bd740e3052c1b4909a"><td class="memItemLeft"><a id="a9b7ca0191f2205bd740e3052c1b4909a" name="a9b7ca0191f2205bd740e3052c1b4909a"></a>
+void&#160;</td><td class="memItemRight"><b>ReleaseSharedViewportSlot</b> (ulong generation, uint slot, bool consumed)</td></tr>
 <tr class="memitem:abd250853d2e0369d98cfa4986ddc7c5a" id="r_abd250853d2e0369d98cfa4986ddc7c5a"><td class="memItemLeft"><a id="abd250853d2e0369d98cfa4986ddc7c5a" name="abd250853d2e0369d98cfa4986ddc7c5a"></a>
 void&#160;</td><td class="memItemRight"><b>SignalClose</b> ()</td></tr>
 <tr class="memitem:a32dd378e30162cab851d51efe1495d53" id="r_a32dd378e30162cab851d51efe1495d53"><td class="memItemLeft"><a id="a32dd378e30162cab851d51efe1495d53" name="a32dd378e30162cab851d51efe1495d53"></a>

@@ -121,16 +121,12 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classeditor_1_
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a572caa65ea021077afd0ec57562b6e7b" id="r_a572caa65ea021077afd0ec57562b6e7b"><td class="memItemLeft"><a id="a572caa65ea021077afd0ec57562b6e7b" name="a572caa65ea021077afd0ec57562b6e7b"></a>
-&#160;</td><td class="memItemRight"><b>Curve</b> (IReadOnlyList&lt; float &gt; points, CurveDimension dim, SplineType type, float tScale=1f)</td></tr>
-<tr class="memitem:a57bbcfa9ed9d2dc2a0174efd1378ce62" id="r_a57bbcfa9ed9d2dc2a0174efd1378ce62"><td class="memItemLeft"><a id="a57bbcfa9ed9d2dc2a0174efd1378ce62" name="a57bbcfa9ed9d2dc2a0174efd1378ce62"></a>
-void&#160;</td><td class="memItemRight"><b>Save</b> (string path)</td></tr>
-<tr class="memitem:acf0f255f5a63597837494ba97a5d5562" id="r_acf0f255f5a63597837494ba97a5d5562"><td class="memItemLeft"><a id="acf0f255f5a63597837494ba97a5d5562" name="acf0f255f5a63597837494ba97a5d5562"></a>
-string&#160;</td><td class="memItemRight"><b>Serialize</b> ()</td></tr>
+<tr class="memitem:a844de942e39680aae0d1c1cf6ee2cc2f" id="r_a844de942e39680aae0d1c1cf6ee2cc2f"><td class="memItemLeft"><a id="a844de942e39680aae0d1c1cf6ee2cc2f" name="a844de942e39680aae0d1c1cf6ee2cc2f"></a>
+&#160;</td><td class="memItemRight"><b>Curve</b> (IReadOnlyList&lt; float &gt; points, SplineType type, float tScale=1f)</td></tr>
 <tr class="memitem:a6a2aa9a534ee99567128229eecab4514" id="r_a6a2aa9a534ee99567128229eecab4514"><td class="memItemLeft"><a id="a6a2aa9a534ee99567128229eecab4514" name="a6a2aa9a534ee99567128229eecab4514"></a>
 float float y&#160;</td><td class="memItemRight"><b>Eval2D</b> (float t)</td></tr>
-<tr class="memitem:a41d612d6b7cefd19a5c8ee135be83e79" id="r_a41d612d6b7cefd19a5c8ee135be83e79"><td class="memItemLeft"><a id="a41d612d6b7cefd19a5c8ee135be83e79" name="a41d612d6b7cefd19a5c8ee135be83e79"></a>
-float float float z&#160;</td><td class="memItemRight"><b>Eval3D</b> (float t)</td></tr>
+<tr class="memitem:a75d89582ac759d5b15ed3e3e2b866254" id="r_a75d89582ac759d5b15ed3e3e2b866254"><td class="memItemLeft"><a id="a75d89582ac759d5b15ed3e3e2b866254" name="a75d89582ac759d5b15ed3e3e2b866254"></a>
+float&#160;</td><td class="memItemRight"><b>EvalAtX</b> (float x)</td></tr>
 <tr class="memitem:a84383e2ce58b7ffbf8b404672fe8ba0e" id="r_a84383e2ce58b7ffbf8b404672fe8ba0e"><td class="memItemLeft"><a id="a84383e2ce58b7ffbf8b404672fe8ba0e" name="a84383e2ce58b7ffbf8b404672fe8ba0e"></a>
 void&#160;</td><td class="memItemRight"><b>SetPoints</b> (IReadOnlyList&lt; float &gt; points)</td></tr>
 <tr class="memitem:ae847a5e6aa41d46da27429f4a0a5d303" id="r_ae847a5e6aa41d46da27429f4a0a5d303"><td class="memItemLeft"><a id="ae847a5e6aa41d46da27429f4a0a5d303" name="ae847a5e6aa41d46da27429f4a0a5d303"></a>
@@ -144,24 +140,16 @@ TomlTable&#160;</td><td class="memItemRight"><b>ToToml</b> ()</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
-<tr class="memitem:a461b3659e3279413b66ddedaca34e5cd" id="r_a461b3659e3279413b66ddedaca34e5cd"><td class="memItemLeft"><a id="a461b3659e3279413b66ddedaca34e5cd" name="a461b3659e3279413b66ddedaca34e5cd"></a>
-static Curve&#160;</td><td class="memItemRight"><b>FromFile</b> (string path)</td></tr>
-<tr class="memitem:a28f5d5f9b279bd8781de74ada7bc62ba" id="r_a28f5d5f9b279bd8781de74ada7bc62ba"><td class="memItemLeft"><a id="a28f5d5f9b279bd8781de74ada7bc62ba" name="a28f5d5f9b279bd8781de74ada7bc62ba"></a>
-static Curve&#160;</td><td class="memItemRight"><b>FromString</b> (string toml)</td></tr>
 <tr class="memitem:a4a1b1e677c612456a736f456b3a0a4db" id="r_a4a1b1e677c612456a736f456b3a0a4db"><td class="memItemLeft"><a id="a4a1b1e677c612456a736f456b3a0a4db" name="a4a1b1e677c612456a736f456b3a0a4db"></a>
 static Curve&#160;</td><td class="memItemRight"><b>FromToml</b> (TomlTable table)</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-attribs" class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a74aceb8261ab98995a3a8095a0ea498c" id="r_a74aceb8261ab98995a3a8095a0ea498c"><td class="memItemLeft"><a id="a74aceb8261ab98995a3a8095a0ea498c" name="a74aceb8261ab98995a3a8095a0ea498c"></a>
+<tr class="memitem:acfc01247aa0fc0fe97dcf3c4bf23b1d2" id="r_acfc01247aa0fc0fe97dcf3c4bf23b1d2"><td class="memItemLeft"><a id="acfc01247aa0fc0fe97dcf3c4bf23b1d2" name="acfc01247aa0fc0fe97dcf3c4bf23b1d2"></a>
 float&#160;</td><td class="memItemRight"><b>x</b></td></tr>
-<tr class="memitem:a78d6e099dab987e7fc74c5fe37edac2f" id="r_a78d6e099dab987e7fc74c5fe37edac2f"><td class="memItemLeft"><a id="a78d6e099dab987e7fc74c5fe37edac2f" name="a78d6e099dab987e7fc74c5fe37edac2f"></a>
-float float&#160;</td><td class="memItemRight"><b>y</b></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-properties" class="groupheader"><a id="properties" name="properties"></a>
 Properties</h2></td></tr>
-<tr class="memitem:ab70f5159d67fd4c78c8f0d7a31e04b60" id="r_ab70f5159d67fd4c78c8f0d7a31e04b60"><td class="memItemLeft"><a id="ab70f5159d67fd4c78c8f0d7a31e04b60" name="ab70f5159d67fd4c78c8f0d7a31e04b60"></a>
-CurveDimension&#160;</td><td class="memItemRight"><b>Dimension</b><code> [get]</code></td></tr>
 <tr class="memitem:a933a0b6a54522ec339f7e2c60e064cfb" id="r_a933a0b6a54522ec339f7e2c60e064cfb"><td class="memItemLeft"><a id="a933a0b6a54522ec339f7e2c60e064cfb" name="a933a0b6a54522ec339f7e2c60e064cfb"></a>
 SplineType&#160;</td><td class="memItemRight"><b>SplineType</b><code> [get]</code></td></tr>
 <tr class="memitem:ad611163f1896c8bd10ad65105e124d2b" id="r_ad611163f1896c8bd10ad65105e124d2b"><td class="memItemLeft"><a id="ad611163f1896c8bd10ad65105e124d2b" name="ad611163f1896c8bd10ad65105e124d2b"></a>

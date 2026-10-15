@@ -1,17 +1,17 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="Node000000" href="$classinput_1_1ITrigger.html" title="Polymorphic base for all triggers." alt="" coords="5,161,116,189"/>
-<area shape="rect" id="Node000001" href="$classinput_1_1Axis1DTrigger.html" title="Continuous 1D axis input." alt="" coords="167,5,319,33"/>
-<area shape="poly" id="edge506_Node000000_Node000001" title=" " alt="" coords="75,146,110,94,135,67,162,44,188,32,185,36,165,48,138,71,115,98,79,149"/>
-<area shape="rect" id="Node000002" href="$classinput_1_1Axis2DTrigger.html" title="Continuous 2D axis input." alt="" coords="167,57,319,85"/>
-<area shape="poly" id="edge507_Node000000_Node000002" title=" " alt="" coords="86,149,122,122,162,95,193,84,190,87,165,100,125,126,90,153"/>
-<area shape="rect" id="Node000003" href="$classinput_1_1CursorTrigger.html" title="Mouse cursor position or delta." alt="" coords="169,109,317,137"/>
-<area shape="poly" id="edge508_Node000000_Node000003" title=" " alt="" coords="125,154,194,136,190,139,128,159"/>
-<area shape="rect" id="Node000004" href="$classinput_1_1HoldTrigger.html" title="Reports a hold every frame while the input is on." alt="" coords="175,161,311,189"/>
-<area shape="poly" id="edge509_Node000000_Node000004" title=" " alt="" coords="130,173,177,174,172,177,132,178"/>
-<area shape="rect" id="Node000005" href="$classinput_1_1PulseTrigger.html" title="Like a hold, but reports a hold once every rate seconds instead of every frame." alt="" coords="172,213,314,241"/>
-<area shape="poly" id="edge510_Node000000_Node000005" title=" " alt="" coords="126,191,194,212,189,214,127,197"/>
-<area shape="rect" id="Node000006" href="$classinput_1_1ReleaseTrigger.html" title="Fires once when the input goes from on to off." alt="" coords="164,265,322,293"/>
-<area shape="poly" id="edge511_Node000000_Node000006" title=" " alt="" coords="89,196,125,224,165,250,194,264,189,265,162,255,122,229,88,202"/>
-<area shape="rect" id="Node000007" href="$classinput_1_1StartTrigger.html" title="Fires once when the input goes from off to on." alt="" coords="174,317,312,345"/>
-<area shape="poly" id="edge512_Node000000_Node000007" title=" " alt="" coords="78,200,115,253,138,279,165,302,189,317,184,317,162,307,135,283,110,256,76,205"/>
+<area shape="rect" id="Node000000" href="$classinput_1_1IModifier.html" title="Polymorphic base for all modifiers." alt="" coords="5,161,125,189"/>
+<area shape="rect" id="Node000001" href="$classinput_1_1DeadzoneModifier.html" title="Zeroes input below a lower threshold and remaps the rest to [0, 1]." alt="" coords="200,5,380,33"/>
+<area shape="poly" id="edge502_Node000000_Node000001" title=" " alt="" coords="79,146,116,93,142,66,171,44,201,31,198,35,174,48,145,70,120,97,84,149"/>
+<area shape="rect" id="Node000002" href="$classinput_1_1ExponentialModifier.html" title="Converts a linear value to an exponential curve, preserving sign." alt="" coords="194,57,386,85"/>
+<area shape="poly" id="edge503_Node000000_Node000002" title=" " alt="" coords="91,149,128,121,172,95,209,84,205,87,174,100,131,125,95,153"/>
+<area shape="rect" id="Node000003" href="$classinput_1_1InvertModifier.html" title="Negates the configured axes." alt="" coords="214,109,367,137"/>
+<area shape="poly" id="edge504_Node000000_Node000003" title=" " alt="" coords="138,155,172,147,228,136,223,139,173,152,141,160"/>
+<area shape="rect" id="Node000004" href="$classinput_1_1KeyModifier.html" title="Zeroes it unless every required keyboard modifier is held." alt="" coords="221,161,360,189"/>
+<area shape="poly" id="edge505_Node000000_Node000004" title=" " alt="" coords="139,173,222,174,218,177,141,178"/>
+<area shape="rect" id="Node000005" href="$classinput_1_1ScaleByDeltaTimeModifier.html" title="Multiplies each axis by the frame delta time." alt="" coords="173,213,408,241"/>
+<area shape="poly" id="edge506_Node000000_Node000005" title=" " alt="" coords="139,190,173,198,228,212,223,214,172,203,140,195"/>
+<area shape="rect" id="Node000006" href="$classinput_1_1ScaleModifier.html" title="Multiplies each axis by a constant." alt="" coords="215,265,366,293"/>
+<area shape="poly" id="edge507_Node000000_Node000006" title=" " alt="" coords="93,197,131,225,174,250,218,266,212,267,172,255,128,230,93,202"/>
+<area shape="rect" id="Node000007" href="$classinput_1_1SmoothModifier.html" title="Smooths each axis toward its target with a lerp." alt="" coords="208,317,373,345"/>
+<area shape="poly" id="edge508_Node000000_Node000007" title=" " alt="" coords="82,200,120,254,145,280,174,302,210,320,205,320,171,307,142,284,116,257,80,205"/>
 </map>

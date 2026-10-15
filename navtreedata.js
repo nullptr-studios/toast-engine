@@ -189,21 +189,21 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "aabb_8hpp.html",
-"classeditor_1_1Assets_1_1AssetTag.html",
-"classeditor_1_1Components_1_1Elements_1_1ColorBoxBase.html",
-"classeditor_1_1Workspace_1_1FloatSettingRow.html",
-"classrenderer_1_1GpuTimer.html",
-"classtoast_1_1Box.html#a227e7be62219b91e7e6a244856d7375d",
-"classtoast_1_1PostProcessVolume.html#aeef18f09babe2f5dc01b695d071dff99",
-"classtoast_1_1VoxelNode.html#acdaf573974faf85d4db966810c1a2dcc",
-"collision__world_8hpp.html",
-"input__system_8hpp.html",
-"node_8hpp.html#aea15e3db2fb9b67d5f99b3436f6a73fa",
-"structeditor_1_1Engine_1_1ToastViewportFrame.html",
-"structevent_1_1WorkspaceHistoryCommitted.html",
-"structrenderer_1_1VulkanRenderer_1_1ShadowView.html",
-"structtoast_1_1Workspace_1_1VoxelToolState.html#ac4850018bbc150b5b3e9d5643b2cf375",
-"voxel__node_8hpp.html#a8f40d229f09435be04fad19608753e64ab72f3bd391ba731a35708bfd8cd8a68f"
+"classeditor_1_1Assets_1_1AssetTagFilter.html",
+"classeditor_1_1Components_1_1Elements_1_1DragIntBox.html",
+"classeditor_1_1Workspace_1_1FloatSettingRow.html#af57b27d4b815f84ca8e39ed92f703bff",
+"classrenderer_1_1GpuTimer.html#a08e6c108214de1492154f7a3ee3a640d",
+"classtoast_1_1Box.html#a0cdd08d1fa97b7873b07312c0d3ae012",
+"classtoast_1_1PostProcessVolume.html#a747269caa20f50df14f8dd42a828eb63",
+"classtoast_1_1VoxelNode.html#aab9c8ab5715183f0eea2b6e96da9251e",
+"cluster__lighting__pass_8hpp_source.html",
+"input__layout_8hpp_source.html",
+"node_8hpp.html#a98d11435d9b92e9901a40a71793fd680aa14fa2166ed698f3d04061f57e5ab9b9",
+"structassets_1_1__detail_1_1VoxelFileHeader.html",
+"structevent_1_1WindowResize.html",
+"structrenderer_1_1VulkanRenderer_1_1IrradianceVolumeData.html#ab86bd2cf8622d190a3e6a6008fd8b700",
+"structtoast_1_1Workspace_1_1VoxelToolState.html#a9a4ac7d1868da1be2ab383525d812de4ab435e227d5dd201e1768b2bcb2e0aa81",
+"voxel__edit_8hpp.html#a3a10676b93e60b0d61c36d3f686535ebae3cc92c14a5e6dd1a7d94b6ff634d7fc"
 ];
 
 const SYNCONMSG = 'click to disable panel synchronization';

@@ -161,13 +161,13 @@ Public Types</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a5ea3a379975d0aa9b39c80c8bdbd941e" id="r_a5ea3a379975d0aa9b39c80c8bdbd941e"><td class="memItemLeft"><a id="a5ea3a379975d0aa9b39c80c8bdbd941e" name="a5ea3a379975d0aa9b39c80c8bdbd941e"></a>
-&#160;</td><td class="memItemRight"><b>VoxelGpuStorage</b> (std::vector&lt; uint64_t &gt; node_uids, std::vector&lt; glm::uvec3 &gt; brick_dims)</td></tr>
+<tr class="memitem:af1b9c9628b0877276ed3ea99f18434a3" id="r_af1b9c9628b0877276ed3ea99f18434a3"><td class="memItemLeft"><a id="af1b9c9628b0877276ed3ea99f18434a3" name="af1b9c9628b0877276ed3ea99f18434a3"></a>
+&#160;</td><td class="memItemRight"><b>VoxelGpuStorage</b> (std::vector&lt; uint64_t &gt; node_rids, std::vector&lt; glm::uvec3 &gt; brick_dims)</td></tr>
 <tr class="memitem:a7690653126bfda1a5aa85f2243f81009" id="r_a7690653126bfda1a5aa85f2243f81009"><td class="memItemLeft"><a id="a7690653126bfda1a5aa85f2243f81009" name="a7690653126bfda1a5aa85f2243f81009"></a>
 auto&#160;</td><td class="memItemRight"><b>generation</b> () const noexcept -&gt; uint64_t</td></tr>
 <tr class="memdesc:a7690653126bfda1a5aa85f2243f81009"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unique per storage so a cache keyed on it notices every upload. <br /></td></tr>
-<tr class="memitem:a14c025681b77d8a6ab5896a347b3286f" id="r_a14c025681b77d8a6ab5896a347b3286f"><td class="memItemLeft"><a id="a14c025681b77d8a6ab5896a347b3286f" name="a14c025681b77d8a6ab5896a347b3286f"></a>
-auto&#160;</td><td class="memItemRight"><b>recordIndexOf</b> (uint64_t node_uid) const -&gt; std::optional&lt; uint32_t &gt;</td></tr>
+<tr class="memitem:ae4eba1593499250b75b103b044cbba0b" id="r_ae4eba1593499250b75b103b044cbba0b"><td class="memItemLeft"><a id="ae4eba1593499250b75b103b044cbba0b" name="ae4eba1593499250b75b103b044cbba0b"></a>
+auto&#160;</td><td class="memItemRight"><b>recordIndexOf</b> (uint64_t node_rid) const -&gt; std::optional&lt; uint32_t &gt;</td></tr>
 <tr class="memitem:a221c3b18e164e102254c4e96e092178f" id="r_a221c3b18e164e102254c4e96e092178f"><td class="memItemLeft"><a id="a221c3b18e164e102254c4e96e092178f" name="a221c3b18e164e102254c4e96e092178f"></a>
 auto&#160;</td><td class="memItemRight"><b>recordBrickDims</b> (uint32_t index) const -&gt; glm::uvec3</td></tr>
 <tr class="memitem:aaf8cd76aa1a6f7c7983763a52139015e" id="r_aaf8cd76aa1a6f7c7983763a52139015e"><td class="memItemLeft"><a id="aaf8cd76aa1a6f7c7983763a52139015e" name="aaf8cd76aa1a6f7c7983763a52139015e"></a>
@@ -176,8 +176,8 @@ auto&#160;</td><td class="memItemRight"><b>recordCount</b> () const noexcept -&g
 auto&#160;</td><td class="memItemRight"><b>buffer</b> (<a class="el" href="#a258a8f2a679aaf82db1e0ed7bc482c5a">Section</a> section) const -&gt; vk::Buffer</td></tr>
 <tr class="memitem:a916ce8a34af7eda2d58e95914c6922ff" id="r_a916ce8a34af7eda2d58e95914c6922ff"><td class="memItemLeft"><a id="a916ce8a34af7eda2d58e95914c6922ff" name="a916ce8a34af7eda2d58e95914c6922ff"></a>
 auto&#160;</td><td class="memItemRight"><b>size</b> (<a class="el" href="#a258a8f2a679aaf82db1e0ed7bc482c5a">Section</a> section) const -&gt; vk::DeviceSize</td></tr>
-<tr class="memitem:a65e35fa1cc42f5cac4122cff3a2e77be" id="r_a65e35fa1cc42f5cac4122cff3a2e77be"><td class="memItemLeft"><a id="a65e35fa1cc42f5cac4122cff3a2e77be" name="a65e35fa1cc42f5cac4122cff3a2e77be"></a>
-auto&#160;</td><td class="memItemRight"><b>nodeUid</b> (uint32_t index) const -&gt; uint64_t</td></tr>
+<tr class="memitem:ad801f7fe6a5afface571497270a7871d" id="r_ad801f7fe6a5afface571497270a7871d"><td class="memItemLeft"><a id="ad801f7fe6a5afface571497270a7871d" name="ad801f7fe6a5afface571497270a7871d"></a>
+auto&#160;</td><td class="memItemRight"><b>nodeRid</b> (uint32_t index) const -&gt; uint64_t</td></tr>
 <tr class="memitem:a39e05aa060ef85f3199e7194557ba83c" id="r_a39e05aa060ef85f3199e7194557ba83c"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a39e05aa060ef85f3199e7194557ba83c">setDebugInfo</a> (<a class="el" href="structrenderer_1_1VoxelStorageDebugInfo.html">VoxelStorageDebugInfo</a> info)</td></tr>
 <tr class="memitem:a0c4359868fce20191140c80de295b613" id="r_a0c4359868fce20191140c80de295b613"><td class="memItemLeft"><a id="a0c4359868fce20191140c80de295b613" name="a0c4359868fce20191140c80de295b613"></a>
 auto&#160;</td><td class="memItemRight"><b>debugInfo</b> () const -&gt; const <a class="el" href="structrenderer_1_1VoxelStorageDebugInfo.html">VoxelStorageDebugInfo</a> &amp;</td></tr>

@@ -8,7 +8,7 @@ var searchData=
   ['addclipplane_5',['addClipPlane',['../classtoast_1_1VoxelPiece.html#a07d521b47dad6d8abc74c73a56018973',1,'toast::VoxelPiece']]],
   ['addpostprocesspass_6',['addPostProcessPass',['../classrenderer_1_1VulkanRenderer.html#abb888b7f0d33fd8f18e2e67c0cb9333b',1,'renderer::VulkanRenderer']]],
   ['addscript_7',['addScript',['../classtoast_1_1Node.html#aa86c1033316ca79b0a43b72cfa775157',1,'toast::Node']]],
-  ['adopt_8',['adopt',['../classrenderer_1_1VoxelScenePatcher.html#acd7e576b40afb44dec2184b980e9d9e5',1,'renderer::VoxelScenePatcher']]],
+  ['adopt_8',['adopt',['../classrenderer_1_1VoxelScenePatcher.html#a52b73e1b802fbe8a9b8f7cfbf90aa2eb',1,'renderer::VoxelScenePatcher']]],
   ['adoptbrick_9',['adoptBrick',['../classvoxel_1_1Volume.html#a326d054c55c465d0dcbe5b8789054457',1,'voxel::Volume::adoptBrick()'],['../classassets_1_1Volume.html#a326d054c55c465d0dcbe5b8789054457',1,'assets::Volume::adoptBrick()']]],
   ['alive_10',['alive',['../classscripting_1_1LuaCallback.html#aa097b3efcd12f544b10b7989efe6bd62',1,'scripting::LuaCallback']]],
   ['allocate_11',['allocate',['../classvoxel_1_1BrickPool.html#a82e0e02cf564f507f804eb5874fe5a45',1,'voxel::BrickPool::allocate()'],['../classassets_1_1BrickPool.html#a82e0e02cf564f507f804eb5874fe5a45',1,'assets::BrickPool::allocate()']]],

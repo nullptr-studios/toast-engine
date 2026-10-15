@@ -21,7 +21,7 @@ var searchData=
   ['transformbox_18',['transformBox',['../frustum_8hpp.html#a5e47b990ea02d05556b9e90fb536f79d',1,'renderer']]],
   ['tryloadbytes_19',['tryLoadBytes',['../classassets_1_1AssetManager.html#a19fa1f7a6f0e50004241282848a9bcee',1,'assets::AssetManager']]],
   ['trylock_20',['tryLock',['../classscripting_1_1LuaState.html#ad40f362dfde9f50aa4ac0d57ab6a266e',1,'scripting::LuaState']]],
-  ['trypatch_21',['tryPatch',['../classrenderer_1_1VoxelScenePatcher.html#a41790d88d658cf9891ca5af8667b6e03',1,'renderer::VoxelScenePatcher']]],
+  ['trypatch_21',['tryPatch',['../classrenderer_1_1VoxelScenePatcher.html#a1be42ce1a2d3cbeeb211e0a3db689ec5',1,'renderer::VoxelScenePatcher']]],
   ['type_22',['type',['../classtoast_1_1Node.html#a006e7b2bb1f1513845392d80cceb5d3e',1,'toast::Node']]],
   ['typeof_23',['typeOf',['../classassets_1_1AssetManager.html#a267fe0e35247451a287e7a2313365fc4',1,'assets::AssetManager']]]
 ];

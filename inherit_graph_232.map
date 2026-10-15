@@ -1,9 +1,5 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="Node000000" title=" " alt="" coords="74,5,123,33"/>
-<area shape="rect" id="Node000001" href="$classeditor_1_1Logger_1_1ReverseLogList.html" title=" " alt="" coords="240,57,448,85"/>
-<area shape="poly" id="edge494_Node000000_Node000001" title=" " alt="" coords="138,25,277,55,273,58,138,30"/>
-<area shape="rect" id="Node000002" title=" " alt="" coords="5,57,192,85"/>
-<area shape="poly" id="edge495_Node000002_Node000001" title=" " alt="" coords="207,69,242,71,237,72,208,74"/>
-<area shape="rect" id="Node000003" title=" " alt="" coords="43,109,154,137"/>
-<area shape="poly" id="edge496_Node000003_Node000001" title=" " alt="" coords="169,106,273,86,278,85,170,111"/>
+<area shape="rect" id="Node000000" title=" " alt="" coords="5,14,98,42"/>
+<area shape="rect" id="Node000001" href="$interfaceeditor_1_1Components_1_1Elements_1_1IAsyncCanExecuteCommand.html" title=" " alt="" coords="146,5,359,50"/>
+<area shape="poly" id="edge494_Node000000_Node000001" title=" " alt="" coords="113,25,148,27,143,28,114,30"/>
 </map>

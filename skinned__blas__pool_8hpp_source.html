@@ -140,13 +140,13 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('skinned__blas_
 <div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>  <span class="keywordtype">void</span> beginFrame();</div>
 <div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
 <div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>  <span class="keyword">auto</span> recordFor(</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>      vk::CommandBuffer cmd, uint64_t node_uid, <span class="keyword">const</span> <a class="code hl_class" href="classrenderer_1_1VulkanMesh.html">VulkanMesh</a>&amp; mesh, vk::Buffer posed_vertices, uint32_t posed_vertex_offset</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>      vk::CommandBuffer cmd, uint64_t node_rid, <span class="keyword">const</span> <a class="code hl_class" href="classrenderer_1_1VulkanMesh.html">VulkanMesh</a>&amp; mesh, vk::Buffer posed_vertices, uint32_t posed_vertex_offset</div>
 <div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>  ) -&gt; vk::DeviceAddress;</div>
 <div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span> </div>
 <div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>  <span class="keywordtype">void</span> endFrame();</div>
 <div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span> </div>
 <div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>  <span class="keyword">auto</span> addressFor(uint64_t node_uid) <span class="keyword">const</span> -&gt; vk::DeviceAddress;</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>  <span class="keyword">auto</span> addressFor(uint64_t node_rid) <span class="keyword">const</span> -&gt; vk::DeviceAddress;</div>
 <div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span> </div>
 <div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  [[nodiscard]]</div>
 <div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  <span class="keyword">auto</span> getRecordedCount() <span class="keyword">const</span> <span class="keyword">noexcept</span> -&gt; uint32_t {</div>
@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('skinned__blas_
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>    uint64_t last_used_frame = 0;</div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  };</div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span> </div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <span class="keyword">auto</span> ensureEntry(uint64_t node_uid, <span class="keyword">const</span> <a class="code hl_class" href="classrenderer_1_1VulkanMesh.html">VulkanMesh</a>&amp; mesh) -&gt; Entry*;</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <span class="keyword">auto</span> ensureEntry(uint64_t node_rid, <span class="keyword">const</span> <a class="code hl_class" href="classrenderer_1_1VulkanMesh.html">VulkanMesh</a>&amp; mesh) -&gt; Entry*;</div>
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span> </div>
 <div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  <span class="keyword">const</span> <a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>* m_core = <span class="keyword">nullptr</span>;</div>
 <div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  std::unordered_map&lt;uint64_t, Entry&gt; m_entries;</div>

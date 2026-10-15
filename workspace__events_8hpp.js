@@ -3,6 +3,8 @@ var workspace__events_8hpp =
     [ "event::UpdateHierarchyData", "structevent_1_1UpdateHierarchyData.html", "structevent_1_1UpdateHierarchyData" ],
     [ "event::UpdateHierarchyData::HierarchyElement", "structevent_1_1UpdateHierarchyData_1_1HierarchyElement.html", null ],
     [ "event::RequestHierarchyUpdate", "structevent_1_1RequestHierarchyUpdate.html", null ],
+    [ "event::HierarchyNodesEnabled", "structevent_1_1HierarchyNodesEnabled.html", "structevent_1_1HierarchyNodesEnabled" ],
+    [ "event::HierarchyNodesEnabled::Entry", "structevent_1_1HierarchyNodesEnabled_1_1Entry.html", null ],
     [ "event::WorkspaceCreate", "structevent_1_1WorkspaceCreate.html", null ],
     [ "event::WorkspaceSpawn", "structevent_1_1WorkspaceSpawn.html", null ],
     [ "event::WorkspaceRemove", "structevent_1_1WorkspaceRemove.html", null ],

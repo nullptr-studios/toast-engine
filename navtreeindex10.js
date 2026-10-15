@@ -1,5 +1,9 @@
 var NAVTREEINDEX10 =
 {
+"node_8hpp.html#a98d11435d9b92e9901a40a71793fd680aa14fa2166ed698f3d04061f57e5ab9b9":[12,0,1,96,3],
+"node_8hpp.html#a98d11435d9b92e9901a40a71793fd680aa14fa2166ed698f3d04061f57e5ab9b9":[15,0,1,0,0,12,16,2,3],
+"node_8hpp.html#a98d11435d9b92e9901a40a71793fd680afb14982288108e1fbd6207ef55f05027":[12,0,1,96,4],
+"node_8hpp.html#a98d11435d9b92e9901a40a71793fd680afb14982288108e1fbd6207ef55f05027":[15,0,1,0,0,12,16,2,4],
 "node_8hpp.html#aea15e3db2fb9b67d5f99b3436f6a73fa":[12,0,1,97],
 "node_8hpp.html#aea15e3db2fb9b67d5f99b3436f6a73faa139ff2c4fb5263e1ab4247457c03400e":[12,0,1,97,2],
 "node_8hpp.html#aea15e3db2fb9b67d5f99b3436f6a73faa139ff2c4fb5263e1ab4247457c03400e":[15,0,1,0,0,12,16,3,2],
@@ -245,9 +249,5 @@ var NAVTREEINDEX10 =
 "structassets_1_1VoxVoxel.html#aa5166ed1997fa1cb625d19539cde8016":[14,0,0,70,0],
 "structassets_1_1VoxelMaterialSlot.html":[14,0,0,60],
 "structassets_1_1__detail_1_1MeshFileHeader.html":[14,0,0,0,0],
-"structassets_1_1__detail_1_1NodeFileBinaryHeader.html":[14,0,0,0,1],
-"structassets_1_1__detail_1_1VoxelFileHeader.html":[14,0,0,0,2],
-"structdebug_1_1Billboard.html":[14,0,2,0],
-"structdebug_1_1Mesh.html":[14,0,2,2],
-"structdebug_1_1Vertex.html":[14,0,2,1]
+"structassets_1_1__detail_1_1NodeFileBinaryHeader.html":[14,0,0,0,1]
 };

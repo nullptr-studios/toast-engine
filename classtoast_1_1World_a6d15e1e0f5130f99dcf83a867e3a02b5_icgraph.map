@@ -1,7 +1,8 @@
 <map id="toast::World::loadNode" name="toast::World::loadNode">
-<area shape="rect" id="Node000001" title="Begins asynchronous loading of a prefab into the cache." alt="" coords="237,32,406,60"/>
+<area shape="rect" id="Node000001" title="Begins asynchronous loading of a prefab into the cache." alt="" coords="237,44,406,72"/>
 <area shape="rect" id="Node000002" href="$classtoast_1_1World.html#ac27d4d5140a79069209fe3fb86fe0fac" title="Begins asynchronous loading of a prefab into the cache." alt="" coords="12,5,182,33"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="218,34,182,32,182,27,224,34"/>
-<area shape="rect" id="Node000003" href="$classtoast_1_1Engine.html#a6422840e9cb030d171f3126b67c50b57" title="Creates the World, then loads and activates the init_scene from project settings." alt="" coords="5,57,189,85"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="219,57,190,63,189,58,224,57"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="220,41,181,36,181,31,225,40"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1Engine.html#a6422840e9cb030d171f3126b67c50b57" title="Creates the World, then loads and activates the init_scene from project settings." alt="" coords="5,81,189,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="224,74,185,83,184,78,219,75"/>
+<area shape="poly" id="edge3_Node000003_Node000003" title=" " alt="" coords="134,66,122,62,97,60,74,62,61,67,58,72,64,81,58,81,52,72,57,63,72,57,97,55,123,57,139,66"/>
 </map>

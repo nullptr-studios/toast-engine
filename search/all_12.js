@@ -238,7 +238,7 @@ var searchData=
   ['sleep_235',['sleep',['../classtoast_1_1VoxelNode.html#a1f864d85f7846196b863f801f7cedc11',1,'toast::VoxelNode']]],
   ['sleep_5fanchor_5fcenter_236',['sleep_anchor_center',['../structphysics_1_1Body.html#a1c6f750c86e895fbc612fb978521f77d',1,'physics::Body']]],
   ['slice_237',['slice',['../classtoast_1_1VoxelNode.html#aceac34cb206dd5db05f1c0549d2a6ac3',1,'toast::VoxelNode']]],
-  ['slot_238',['Slot',['../structrenderer_1_1shadow__slots_1_1Slot.html',1,'renderer::shadow_slots']]],
+  ['slot_238',['Slot',['../structrenderer_1_1shadow__slots_1_1Slot.html',1,'renderer::shadow_slots::Slot'],['../structrenderer_1_1SharedTextureOutputTarget_1_1Interop_1_1Slot.html',1,'renderer::SharedTextureOutputTarget::Interop::Slot']]],
   ['slots_239',['Slots',['../classeditor_1_1Editors_1_1PaletteViewModel.html#abd15fb42bea87de5436ad3b2be454593',1,'editor::Editors::PaletteViewModel']]],
   ['smashpieces_240',['SmashPieces',['../structphysics_1_1SmashPieces.html',1,'physics']]],
   ['smashvolume_241',['SmashVolume',['../structphysics_1_1SmashVolume.html',1,'physics']]],

@@ -406,7 +406,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('vulkan__render
 <div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span> </div>
 <div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span>    uint32_t posed_vertex_offset = k_no_posed_vertices;</div>
 <div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span> </div>
-<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span>    uint64_t node_uid = 0;</div>
+<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span>    uint64_t node_rid = 0;</div>
 <div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span>  };</div>
 </div>
 <div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span> </div>
@@ -434,7 +434,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('vulkan__render
 <div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span> </div>
 <div class="line"><a id="l00305" name="l00305"></a><span class="lineno">  305</span>    <span class="keywordtype">bool</span> visible = <span class="keyword">true</span>;</div>
 <div class="line"><a id="l00306" name="l00306"></a><span class="lineno">  306</span> </div>
-<div class="line"><a id="l00307" name="l00307"></a><span class="lineno">  307</span>    uint64_t node_uid = 0;</div>
+<div class="line"><a id="l00307" name="l00307"></a><span class="lineno">  307</span>    uint64_t node_rid = 0;</div>
 <div class="line"><a id="l00308" name="l00308"></a><span class="lineno">  308</span>    uint32_t highlight_record = 0;</div>
 <div class="line"><a id="l00309" name="l00309"></a><span class="lineno">  309</span>  };</div>
 </div>
@@ -1409,7 +1409,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('vulkan__render
 <div class="line"><a id="l01268" name="l01268"></a><span class="lineno"> 1268</span>  std::shared_ptr&lt;VoxelGpuStorage&gt; m_voxel_storage_pending;</div>
 <div class="line"><a id="l01269" name="l01269"></a><span class="lineno"> 1269</span> </div>
 <div class="line"><a id="l01270" name="l01270"></a><span class="lineno"> 1270</span>  <span class="keyword">struct </span>VoxelSceneKey {</div>
-<div class="line"><a id="l01271" name="l01271"></a><span class="lineno"> 1271</span>    uint64_t node_uid = 0;</div>
+<div class="line"><a id="l01271" name="l01271"></a><span class="lineno"> 1271</span>    uint64_t node_rid = 0;</div>
 <div class="line"><a id="l01272" name="l01272"></a><span class="lineno"> 1272</span>    uint32_t revision = 0;</div>
 <div class="line"><a id="l01273" name="l01273"></a><span class="lineno"> 1273</span>    uint32_t content = 0;</div>
 <div class="line"><a id="l01274" name="l01274"></a><span class="lineno"> 1274</span>    <span class="keyword">const</span> voxel::Palette* palette = <span class="keyword">nullptr</span>;</div>
@@ -1692,7 +1692,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('vulkan__render
 <div class="ttc" id="aclassrenderer_1_1DepthPrepass_html"><div class="ttname"><a href="classrenderer_1_1DepthPrepass.html">renderer::DepthPrepass</a></div><div class="ttdef"><b>Definition</b> depth_prepass.hpp:21</div></div>
 <div class="ttc" id="aclassrenderer_1_1EnvironmentPass_html"><div class="ttname"><a href="classrenderer_1_1EnvironmentPass.html">renderer::EnvironmentPass</a></div><div class="ttdef"><b>Definition</b> environment_pass.hpp:25</div></div>
 <div class="ttc" id="aclassrenderer_1_1GpuTimer_html"><div class="ttname"><a href="classrenderer_1_1GpuTimer.html">renderer::GpuTimer</a></div><div class="ttdef"><b>Definition</b> gpu_timer.hpp:16</div></div>
-<div class="ttc" id="aclassrenderer_1_1IOutputTarget_html"><div class="ttname"><a href="classrenderer_1_1IOutputTarget.html">renderer::IOutputTarget</a></div><div class="ttdef"><b>Definition</b> output_target_base.hpp:13</div></div>
+<div class="ttc" id="aclassrenderer_1_1IOutputTarget_html"><div class="ttname"><a href="classrenderer_1_1IOutputTarget.html">renderer::IOutputTarget</a></div><div class="ttdef"><b>Definition</b> output_target_base.hpp:20</div></div>
 <div class="ttc" id="aclassrenderer_1_1MaterialPass_html"><div class="ttname"><a href="classrenderer_1_1MaterialPass.html">renderer::MaterialPass</a></div><div class="ttdef"><b>Definition</b> material_pass.hpp:27</div></div>
 <div class="ttc" id="aclassrenderer_1_1RayTracingScene_html"><div class="ttname"><a href="classrenderer_1_1RayTracingScene.html">renderer::RayTracingScene</a></div><div class="ttdef"><b>Definition</b> ray_tracing_scene.hpp:19</div></div>
 <div class="ttc" id="aclassrenderer_1_1ReflectionProbePass_html"><div class="ttname"><a href="classrenderer_1_1ReflectionProbePass.html">renderer::ReflectionProbePass</a></div><div class="ttdef"><b>Definition</b> reflection_probe_pass.hpp:26</div></div>
@@ -1712,7 +1712,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('vulkan__render
 <div class="ttc" id="aclassrenderer_1_1VulkanRenderer_html_a7eecd740bee399682e7462ec13d15382"><div class="ttname"><a href="classrenderer_1_1VulkanRenderer.html#a7eecd740bee399682e7462ec13d15382">renderer::VulkanRenderer::setVoxelNormalRounding</a></div><div class="ttdeci">void setVoxelNormalRounding(float voxels) noexcept</div><div class="ttdoc">Edge rounding radius in voxels where 0 keeps the flat face normals.</div><div class="ttdef"><b>Definition</b> vulkan_renderer.hpp:610</div></div>
 <div class="ttc" id="aclassrenderer_1_1VulkanRenderer_html_a9a5185a0cb7cab573e5863e86bdd4420"><div class="ttname"><a href="classrenderer_1_1VulkanRenderer.html#a9a5185a0cb7cab573e5863e86bdd4420">renderer::VulkanRenderer::setFrameRateLimit</a></div><div class="ttdeci">void setFrameRateLimit(double max_fps) noexcept</div><div class="ttdoc">0 or negative is uncapped</div><div class="ttdef"><b>Definition</b> vulkan_renderer.hpp:512</div></div>
 <div class="ttc" id="aclassrenderer_1_1VulkanRenderer_html_ab68b60d1454b0e6196089c80015764d2"><div class="ttname"><a href="classrenderer_1_1VulkanRenderer.html#ab68b60d1454b0e6196089c80015764d2">renderer::VulkanRenderer::requestPostProcessSettings</a></div><div class="ttdeci">void requestPostProcessSettings(const PostProcessSettings &amp;settings)</div><div class="ttdoc">Safe from any thread.</div><div class="ttdef"><b>Definition</b> vulkan_renderer.hpp:939</div></div>
-<div class="ttc" id="aclassrenderer_1_1VulkanRenderer_html_abb888b7f0d33fd8f18e2e67c0cb9333b"><div class="ttname"><a href="classrenderer_1_1VulkanRenderer.html#abb888b7f0d33fd8f18e2e67c0cb9333b">renderer::VulkanRenderer::addPostProcessPass</a></div><div class="ttdeci">void addPostProcessPass(std::unique_ptr&lt; IPostProcessPass &gt; pass)</div><div class="ttdoc">Runs in registration order.</div><div class="ttdef"><b>Definition</b> vulkan_renderer.cpp:4512</div></div>
+<div class="ttc" id="aclassrenderer_1_1VulkanRenderer_html_abb888b7f0d33fd8f18e2e67c0cb9333b"><div class="ttname"><a href="classrenderer_1_1VulkanRenderer.html#abb888b7f0d33fd8f18e2e67c0cb9333b">renderer::VulkanRenderer::addPostProcessPass</a></div><div class="ttdeci">void addPostProcessPass(std::unique_ptr&lt; IPostProcessPass &gt; pass)</div><div class="ttdoc">Runs in registration order.</div><div class="ttdef"><b>Definition</b> vulkan_renderer.cpp:4526</div></div>
 <div class="ttc" id="aclassrenderer_1_1VulkanRenderer_html_ac31919952a1835944a10c95c6fefffa7"><div class="ttname"><a href="classrenderer_1_1VulkanRenderer.html#ac31919952a1835944a10c95c6fefffa7">renderer::VulkanRenderer::gpuTimer</a></div><div class="ttdeci">auto gpuTimer() const noexcept -&gt; const GpuTimer *</div><div class="ttdef"><b>Definition</b> vulkan_renderer.hpp:906</div></div>
 <div class="ttc" id="aclassrenderer_1_1VulkanRenderer_html_ad77342b9a4c0d30b1633f814ec950493"><div class="ttname"><a href="classrenderer_1_1VulkanRenderer.html#ad77342b9a4c0d30b1633f814ec950493">renderer::VulkanRenderer::getVoxelFaceNormalView</a></div><div class="ttdeci">auto getVoxelFaceNormalView() const noexcept -&gt; vk::ImageView</div><div class="ttdoc">Holds flat face normals not the rounded scene normal ones.</div><div class="ttdef"><b>Definition</b> vulkan_renderer.hpp:605</div></div>
 <div class="ttc" id="aclassrenderer_1_1VulkanRenderer_html_aecfbe1f225ae22e09404b5dd473efff6"><div class="ttname"><a href="classrenderer_1_1VulkanRenderer.html#aecfbe1f225ae22e09404b5dd473efff6">renderer::VulkanRenderer::getSceneNormalView</a></div><div class="ttdeci">auto getSceneNormalView() const noexcept -&gt; vk::ImageView</div><div class="ttdoc">xyz world normal w roughness</div><div class="ttdef"><b>Definition</b> vulkan_renderer.hpp:579</div></div>

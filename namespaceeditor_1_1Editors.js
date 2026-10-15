@@ -1,5 +1,6 @@
 var namespaceeditor_1_1Editors =
 [
+    [ "ChannelOption", "classeditor_1_1Editors_1_1ChannelOption.html", null ],
     [ "CurvePointVM", "classeditor_1_1Editors_1_1CurvePointVM.html", null ],
     [ "CurveView", "classeditor_1_1Editors_1_1CurveView.html", null ],
     [ "CurveViewModel", "classeditor_1_1Editors_1_1CurveViewModel.html", null ],

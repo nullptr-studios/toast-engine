@@ -143,31 +143,39 @@ Collaboration diagram for assets::Curve:</div>
 </map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-pub-types" class="groupheader"><a id="pub-types" name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:aaefc1062175ee22ce7034913d96e3d33" id="r_aaefc1062175ee22ce7034913d96e3d33"><td class="memItemLeft"><a id="aaefc1062175ee22ce7034913d96e3d33" name="aaefc1062175ee22ce7034913d96e3d33"></a>
+using&#160;</td><td class="memItemRight"><b>Points</b> = std::vector&lt;float&gt;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a522c76ff3cf6a552261911243c590c5f" id="r_a522c76ff3cf6a552261911243c590c5f"><td class="memItemLeft"><a id="a522c76ff3cf6a552261911243c590c5f" name="a522c76ff3cf6a552261911243c590c5f"></a>
-&#160;</td><td class="memItemRight"><b>Curve</b> (std::vector&lt; float &gt; points, CurveDimension dim, <a class="el" href="curve_8hpp.html#a3d8ff072f435446fc44dadcede9acd36">SplineType</a> type, float t_scale=1.0f)</td></tr>
+<tr class="memitem:ad81559014f7ef2beeb038e53f66097ab" id="r_ad81559014f7ef2beeb038e53f66097ab"><td class="memItemLeft"><a id="ad81559014f7ef2beeb038e53f66097ab" name="ad81559014f7ef2beeb038e53f66097ab"></a>
+&#160;</td><td class="memItemRight"><b>Curve</b> (std::vector&lt; Points &gt; channels, <a class="el" href="curve_8hpp.html#a3d8ff072f435446fc44dadcede9acd36">SplineType</a> type, float t_scale=1.0f)</td></tr>
 <tr class="memitem:aa40f65298683b31a07647019ad6d52b2" id="r_aa40f65298683b31a07647019ad6d52b2"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#aa40f65298683b31a07647019ad6d52b2">type</a> () const -&gt; std::string_view override</td></tr>
 <tr class="memitem:aeab1e507f68dfc2c605583d94d37c07b" id="r_aeab1e507f68dfc2c605583d94d37c07b"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#aeab1e507f68dfc2c605583d94d37c07b">serialize</a> (<a class="el" href="core__types_8hpp.html#a644eabc35efa6c659ae7a9162cb7eb52">SaveMode</a> mode) const -&gt; std::vector&lt; uint8_t &gt; override</td></tr>
+<tr class="memitem:aa5eeacc6e199da171dcd2b6b0b2802ec" id="r_aa5eeacc6e199da171dcd2b6b0b2802ec"><td class="memItemLeft"><a id="aa5eeacc6e199da171dcd2b6b0b2802ec" name="aa5eeacc6e199da171dcd2b6b0b2802ec"></a>
+auto&#160;</td><td class="memItemRight"><b>eval1D</b> (float t) const -&gt; float</td></tr>
 <tr class="memitem:ae40f3e4ca748f022a2041f021135836e" id="r_ae40f3e4ca748f022a2041f021135836e"><td class="memItemLeft"><a id="ae40f3e4ca748f022a2041f021135836e" name="ae40f3e4ca748f022a2041f021135836e"></a>
 auto&#160;</td><td class="memItemRight"><b>eval2D</b> (float t) const -&gt; glm::vec2</td></tr>
 <tr class="memitem:a267153d066f2eb59e6fcb882d7556b05" id="r_a267153d066f2eb59e6fcb882d7556b05"><td class="memItemLeft"><a id="a267153d066f2eb59e6fcb882d7556b05" name="a267153d066f2eb59e6fcb882d7556b05"></a>
 auto&#160;</td><td class="memItemRight"><b>eval3D</b> (float t) const -&gt; glm::vec3</td></tr>
+<tr class="memitem:a38762e151108b18bfd94c20d56f3b170" id="r_a38762e151108b18bfd94c20d56f3b170"><td class="memItemLeft"><a id="a38762e151108b18bfd94c20d56f3b170" name="a38762e151108b18bfd94c20d56f3b170"></a>
+auto&#160;</td><td class="memItemRight"><b>evalChannel</b> (size_t channel, float t) const -&gt; float</td></tr>
 <tr class="memitem:a841d7d22c87cd55975355af8b94d6ef7" id="r_a841d7d22c87cd55975355af8b94d6ef7"><td class="memItemLeft"><a id="a841d7d22c87cd55975355af8b94d6ef7" name="a841d7d22c87cd55975355af8b94d6ef7"></a>
 auto&#160;</td><td class="memItemRight"><b>evalAtX</b> (float x) const -&gt; float</td></tr>
 <tr class="memitem:a29db93787f134077b1192fbfd9cbcde9" id="r_a29db93787f134077b1192fbfd9cbcde9"><td class="memItemLeft"><a id="a29db93787f134077b1192fbfd9cbcde9" name="a29db93787f134077b1192fbfd9cbcde9"></a>
 auto&#160;</td><td class="memItemRight"><b>xRange</b> () const noexcept -&gt; glm::vec2</td></tr>
-<tr class="memdesc:a29db93787f134077b1192fbfd9cbcde9"><td class="mdescLeft">&#160;</td><td class="mdescRight">evalAtX gives the value of the nearest end outside of this range <br /></td></tr>
 <tr class="memitem:a5d72e02af08530186e2c0bf566f104e1" id="r_a5d72e02af08530186e2c0bf566f104e1"><td class="memItemLeft"><a id="a5d72e02af08530186e2c0bf566f104e1" name="a5d72e02af08530186e2c0bf566f104e1"></a>
 auto&#160;</td><td class="memItemRight"><b>dimension</b> () const noexcept -&gt; CurveDimension</td></tr>
 <tr class="memitem:aa57988fea865309b9eeca35b01f8df23" id="r_aa57988fea865309b9eeca35b01f8df23"><td class="memItemLeft"><a id="aa57988fea865309b9eeca35b01f8df23" name="aa57988fea865309b9eeca35b01f8df23"></a>
 auto&#160;</td><td class="memItemRight"><b>splineType</b> () const noexcept -&gt; <a class="el" href="curve_8hpp.html#a3d8ff072f435446fc44dadcede9acd36">SplineType</a></td></tr>
 <tr class="memitem:a95a5687aa05044287f22651cad20a1e7" id="r_a95a5687aa05044287f22651cad20a1e7"><td class="memItemLeft"><a id="a95a5687aa05044287f22651cad20a1e7" name="a95a5687aa05044287f22651cad20a1e7"></a>
 auto&#160;</td><td class="memItemRight"><b>tScale</b> () const noexcept -&gt; float</td></tr>
-<tr class="memitem:ad0c7087039fca8dd2b3bc50e558337fa" id="r_ad0c7087039fca8dd2b3bc50e558337fa"><td class="memItemLeft"><a id="ad0c7087039fca8dd2b3bc50e558337fa" name="ad0c7087039fca8dd2b3bc50e558337fa"></a>
-auto&#160;</td><td class="memItemRight"><b>numPoints</b> () const noexcept -&gt; size_t</td></tr>
-<tr class="memitem:ad27a928996f2ccddd4d2f1a434bf9a8c" id="r_ad27a928996f2ccddd4d2f1a434bf9a8c"><td class="memItemLeft"><a id="ad27a928996f2ccddd4d2f1a434bf9a8c" name="ad27a928996f2ccddd4d2f1a434bf9a8c"></a>
-void&#160;</td><td class="memItemRight"><b>setPoints</b> (std::vector&lt; float &gt; points)</td></tr>
+<tr class="memitem:a366444e3b265858dda2a8c61d9735c11" id="r_a366444e3b265858dda2a8c61d9735c11"><td class="memItemLeft"><a id="a366444e3b265858dda2a8c61d9735c11" name="a366444e3b265858dda2a8c61d9735c11"></a>
+auto&#160;</td><td class="memItemRight"><b>numPoints</b> (size_t channel=0) const noexcept -&gt; size_t</td></tr>
+<tr class="memitem:a98c4fda177d2dea4485d3a0b39179543" id="r_a98c4fda177d2dea4485d3a0b39179543"><td class="memItemLeft"><a id="a98c4fda177d2dea4485d3a0b39179543" name="a98c4fda177d2dea4485d3a0b39179543"></a>
+void&#160;</td><td class="memItemRight"><b>setPoints</b> (size_t channel, Points points)</td></tr>
 <tr class="memitem:a35ab0281e598ebb60b6e97976e8adad2" id="r_a35ab0281e598ebb60b6e97976e8adad2"><td class="memItemLeft"><a id="a35ab0281e598ebb60b6e97976e8adad2" name="a35ab0281e598ebb60b6e97976e8adad2"></a>
 void&#160;</td><td class="memItemRight"><b>reload</b> (const toml::table &amp;tbl)</td></tr>
 <tr class="memdesc:a35ab0281e598ebb60b6e97976e8adad2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Throws and keeps the old curve when the table is not a curve, nothing may sample it while this runs. <br /></td></tr>

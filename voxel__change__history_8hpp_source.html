@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__change_
 <div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span></div>
 <div class="foldopen" id="foldopen00023" data-start="{" data-end="};">
 <div class="line"><a id="l00023" name="l00023"></a><span class="lineno"><a class="line" href="structrenderer_1_1VoxelRegion.html">   23</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1VoxelRegion.html">VoxelRegion</a> {</div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>  uint64_t node_uid = 0;</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>  uint64_t node_rid = 0;</div>
 <div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>  glm::vec3 min {0.0f};</div>
 <div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>  glm::vec3 max {0.0f};</div>
 <div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>};</div>
@@ -184,7 +184,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__change_
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span> </div>
 <div class="foldopen" id="foldopen00062" data-start="{" data-end="};">
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno"><a class="line" href="structrenderer_1_1TrackedVolume.html">   62</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1TrackedVolume.html">TrackedVolume</a> {</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  uint64_t node_uid = 0;</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  uint64_t node_rid = 0;</div>
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  <span class="keyword">const</span> <a class="code hl_class" href="classvoxel_1_1Volume.html">voxel::Volume</a>* volume = <span class="keyword">nullptr</span>;</div>
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>};</div>
 </div>
@@ -193,7 +193,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__change_
 <div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span></div>
 <div class="foldopen" id="foldopen00071" data-start="{" data-end="};">
 <div class="line"><a id="l00071" name="l00071"></a><span class="lineno"><a class="line" href="structrenderer_1_1VolumeDelta.html">   71</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1VolumeDelta.html">VolumeDelta</a> {</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  uint64_t node_uid = 0;</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  uint64_t node_rid = 0;</div>
 <div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span></div>
 <div class="line"><a id="l00075" name="l00075"></a><span class="lineno"><a class="line" href="structrenderer_1_1VolumeDelta.html#ac7f249d0400fd522e6f4f72d9c70dce4">   75</a></span>  <span class="keywordtype">bool</span> <a class="code hl_variable" href="structrenderer_1_1VolumeDelta.html#ac7f249d0400fd522e6f4f72d9c70dce4">unknown</a> = <span class="keyword">false</span>;</div>
 <div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span></div>
@@ -216,7 +216,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__change_
 <div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span> </div>
 <div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span><span class="keyword">private</span>:</div>
 <div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  <span class="keyword">struct </span>Seen {</div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>    uint64_t node_uid = 0;</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>    uint64_t node_rid = 0;</div>
 <div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>    uint64_t volume_id = 0;</div>
 <div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>    uint32_t content = 0;</div>
 <div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>  };</div>
@@ -231,7 +231,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__change_
 <div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span> </div>
 <div class="foldopen" id="foldopen00111" data-start="{" data-end="};">
 <div class="line"><a id="l00111" name="l00111"></a><span class="lineno"><a class="line" href="structrenderer_1_1VoxelCaster.html">  111</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1VoxelCaster.html">VoxelCaster</a> {</div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  uint64_t node_uid = 0;</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  uint64_t node_rid = 0;</div>
 <div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  glm::mat4 model {1.0f};</div>
 <div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>};</div>
 </div>

@@ -1,5 +1,5 @@
 var classrenderer_1_1VoxelScenePatcher =
 [
-    [ "adopt", "classrenderer_1_1VoxelScenePatcher.html#acd7e576b40afb44dec2184b980e9d9e5", null ],
-    [ "tryPatch", "classrenderer_1_1VoxelScenePatcher.html#a41790d88d658cf9891ca5af8667b6e03", null ]
+    [ "adopt", "classrenderer_1_1VoxelScenePatcher.html#a52b73e1b802fbe8a9b8f7cfbf90aa2eb", null ],
+    [ "tryPatch", "classrenderer_1_1VoxelScenePatcher.html#a1be42ce1a2d3cbeeb211e0a3db689ec5", null ]
 ];

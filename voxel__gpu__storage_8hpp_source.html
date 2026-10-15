@@ -184,7 +184,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__gpu__st
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span> </div>
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> <span class="keywordtype">size_t</span> k_section_count = 6;</div>
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span> </div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  <a class="code hl_class" href="classrenderer_1_1VoxelGpuStorage.html">VoxelGpuStorage</a>(std::vector&lt;uint64_t&gt; node_uids, std::vector&lt;glm::uvec3&gt; brick_dims);</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  <a class="code hl_class" href="classrenderer_1_1VoxelGpuStorage.html">VoxelGpuStorage</a>(std::vector&lt;uint64_t&gt; node_rids, std::vector&lt;glm::uvec3&gt; brick_dims);</div>
 <div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span></div>
 <div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  [[nodiscard]]</div>
 <div class="foldopen" id="foldopen00070" data-start="{" data-end="}">
@@ -194,7 +194,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__gpu__st
 </div>
 <div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span> </div>
 <div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  <span class="keyword">auto</span> recordIndexOf(uint64_t node_uid) <span class="keyword">const</span> -&gt; std::optional&lt;uint32_t&gt;;</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  <span class="keyword">auto</span> recordIndexOf(uint64_t node_rid) <span class="keyword">const</span> -&gt; std::optional&lt;uint32_t&gt;;</div>
 <div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span> </div>
 <div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  [[nodiscard]]</div>
 <div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  <span class="keyword">auto</span> recordBrickDims(uint32_t index) <span class="keyword">const</span> -&gt; glm::uvec3 {</div>
@@ -203,7 +203,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__gpu__st
 <div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span> </div>
 <div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  [[nodiscard]]</div>
 <div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  <span class="keyword">auto</span> recordCount() const noexcept -&gt; uint32_t {</div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>    <span class="keywordflow">return</span> <span class="keyword">static_cast&lt;</span>uint32_t<span class="keyword">&gt;</span>(m_node_uids.size());</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>    <span class="keywordflow">return</span> <span class="keyword">static_cast&lt;</span>uint32_t<span class="keyword">&gt;</span>(m_node_rids.size());</div>
 <div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  }</div>
 <div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span> </div>
 <div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>  [[nodiscard]]</div>
@@ -215,8 +215,8 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__gpu__st
 <div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>  }</div>
 <div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span> </div>
 <div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>  <span class="keyword">auto</span> nodeUid(uint32_t index) <span class="keyword">const</span> -&gt; uint64_t {</div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>    <span class="keywordflow">return</span> index &lt; m_node_uids.size() ? m_node_uids[index] : 0;</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>  <span class="keyword">auto</span> nodeRid(uint32_t index) <span class="keyword">const</span> -&gt; uint64_t {</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>    <span class="keywordflow">return</span> index &lt; m_node_rids.size() ? m_node_rids[index] : 0;</div>
 <div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  }</div>
 <div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span></div>
 <div class="line"><a id="l00101" name="l00101"></a><span class="lineno"><a class="line" href="classrenderer_1_1VoxelGpuStorage.html#a39e05aa060ef85f3199e7194557ba83c">  101</a></span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classrenderer_1_1VoxelGpuStorage.html#a39e05aa060ef85f3199e7194557ba83c">setDebugInfo</a>(<a class="code hl_struct" href="structrenderer_1_1VoxelStorageDebugInfo.html">VoxelStorageDebugInfo</a> info) { m_debug = std::move(info); }</div>
@@ -244,7 +244,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__gpu__st
 <div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>  <span class="keyword">friend</span> <span class="keyword">class </span>VoxelSceneUpload;</div>
 <div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>  <span class="keyword">friend</span> <span class="keyword">class </span>VoxelScenePatchUpload;</div>
 <div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span> </div>
-<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>  std::vector&lt;uint64_t&gt; m_node_uids;</div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>  std::vector&lt;uint64_t&gt; m_node_rids;</div>
 <div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>  std::vector&lt;glm::uvec3&gt; m_brick_dims;</div>
 <div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span> </div>
 <div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>  std::array&lt;std::optional&lt;vma::raii::Buffer&gt;, k_section_count&gt; m_buffers;</div>

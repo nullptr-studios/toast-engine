@@ -139,6 +139,10 @@ Collaboration diagram for renderer::SharedTextureOutputTarget:</div>
 </map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:Interop" id="r_Interop"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structrenderer_1_1SharedTextureOutputTarget_1_1Interop.html">Interop</a></td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a421ed4511238c1f8b508001ef485e629" id="r_a421ed4511238c1f8b508001ef485e629"><td class="memItemLeft"><a id="a421ed4511238c1f8b508001ef485e629" name="a421ed4511238c1f8b508001ef485e629"></a>
@@ -161,8 +165,24 @@ auto&#160;</td><td class="memItemRight"><b>operator=</b> (SharedTextureOutputTar
 <tr class="memitem:a531f5248f7334f2564fa6f3b78372dcb" id="r_a531f5248f7334f2564fa6f3b78372dcb"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a531f5248f7334f2564fa6f3b78372dcb">usesAcquirePresentSemaphores</a> () const -&gt; bool override</td></tr>
 <tr class="memitem:ac3e75fa619d7ff541da0f9689b154772" id="r_ac3e75fa619d7ff541da0f9689b154772"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#ac3e75fa619d7ff541da0f9689b154772">recordFinalize</a> (vk::CommandBuffer command_buffer, uint32_t image_index) override</td></tr>
 <tr class="memitem:a728db7a3306d6165068cf038e3f5de11" id="r_a728db7a3306d6165068cf038e3f5de11"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a728db7a3306d6165068cf038e3f5de11">onImageRenderComplete</a> (uint32_t image_index) override</td></tr>
+<tr class="memitem:a4cfea64358a17c1657caf6670c068801" id="r_a4cfea64358a17c1657caf6670c068801"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a4cfea64358a17c1657caf6670c068801">submitSync</a> (uint32_t image_index) -&gt; <a class="el" href="structrenderer_1_1OutputSubmitSync.html">OutputSubmitSync</a> override</td></tr>
 <tr class="memitem:a1cb0676258f71e9049ec35eae727407f" id="r_a1cb0676258f71e9049ec35eae727407f"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a1cb0676258f71e9049ec35eae727407f">recreate</a> (vk::Extent2D extent) override</td></tr>
 <tr class="memitem:a8a4a570122e4555d233ca4b1c59d9d4d" id="r_a8a4a570122e4555d233ca4b1c59d9d4d"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a8a4a570122e4555d233ca4b1c59d9d4d">copyLatestFrame</a> (void *dst, uint32_t dst_capacity, <a class="el" href="structrenderer_1_1ViewportFrameDesc.html">ViewportFrameDesc</a> *out) -&gt; int</td></tr>
+<tr class="memitem:a840fe0d190342e4879b08dbd069dfa28" id="r_a840fe0d190342e4879b08dbd069dfa28"><td class="memItemLeft"><a id="a840fe0d190342e4879b08dbd069dfa28" name="a840fe0d190342e4879b08dbd069dfa28"></a>
+void&#160;</td><td class="memItemRight"><b>requestReadback</b> ()</td></tr>
+<tr class="memdesc:a840fe0d190342e4879b08dbd069dfa28"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reads the next frame back to the CPU even while textures are shared. <br /></td></tr>
+<tr class="memitem:a75c8dcebbe1769bdd1c455b604de67a7" id="r_a75c8dcebbe1769bdd1c455b604de67a7"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a75c8dcebbe1769bdd1c455b604de67a7">enableSharedTextures</a> (uint64_t adapter_luid, const uint8_t *adapter_uuid) -&gt; bool</td></tr>
+<tr class="memdesc:a75c8dcebbe1769bdd1c455b604de67a7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Hands frames over as shared textures from the next acquired image on, and stops reading every frame back.  <br /></td></tr>
+<tr class="memitem:a30e10ea4d21905a371a2ae974c0562ae" id="r_a30e10ea4d21905a371a2ae974c0562ae"><td class="memItemLeft"><a id="a30e10ea4d21905a371a2ae974c0562ae" name="a30e10ea4d21905a371a2ae974c0562ae"></a>
+void&#160;</td><td class="memItemRight"><b>disableSharedTextures</b> ()</td></tr>
+<tr class="memitem:a40f2a89421e41f4cca45783375e5dd49" id="r_a40f2a89421e41f4cca45783375e5dd49"><td class="memItemLeft"><a id="a40f2a89421e41f4cca45783375e5dd49" name="a40f2a89421e41f4cca45783375e5dd49"></a>
+auto&#160;</td><td class="memItemRight"><b>sharedFrame</b> (<a class="el" href="structrenderer_1_1ViewportSharedFrameDesc.html">ViewportSharedFrameDesc</a> *out) -&gt; int</td></tr>
+<tr class="memitem:a7c27cdc5f64584f3ed3f0478f54954a0" id="r_a7c27cdc5f64584f3ed3f0478f54954a0"><td class="memItemLeft"><a id="a7c27cdc5f64584f3ed3f0478f54954a0" name="a7c27cdc5f64584f3ed3f0478f54954a0"></a>
+auto&#160;</td><td class="memItemRight"><b>exportSharedSlot</b> (uint64_t generation, uint32_t slot, <a class="el" href="structrenderer_1_1ViewportSharedHandles.html">ViewportSharedHandles</a> *out) -&gt; bool</td></tr>
+<tr class="memitem:aaba04fcd2f8c69ce07dd98fcc91aebfe" id="r_aaba04fcd2f8c69ce07dd98fcc91aebfe"><td class="memItemLeft"><a id="aaba04fcd2f8c69ce07dd98fcc91aebfe" name="aaba04fcd2f8c69ce07dd98fcc91aebfe"></a>
+auto&#160;</td><td class="memItemRight"><b>holdSharedSlot</b> (uint64_t generation, uint32_t slot) -&gt; bool</td></tr>
+<tr class="memitem:afc25a26cdc808151a535226bceff83f1" id="r_afc25a26cdc808151a535226bceff83f1"><td class="memItemLeft"><a id="afc25a26cdc808151a535226bceff83f1" name="afc25a26cdc808151a535226bceff83f1"></a>
+void&#160;</td><td class="memItemRight"><b>releaseSharedSlot</b> (uint64_t generation, uint32_t slot, bool consumed)</td></tr>
 <tr class="inherit_header pub_methods_classrenderer_1_1IOutputTarget"><td colspan="2">Public Member Functions inherited from <a class="el" href="classrenderer_1_1IOutputTarget.html">renderer::IOutputTarget</a></td></tr>
 <tr class="memitem:a33c3c3c484bf6ee06cd9e35fb68adef4 pub_methods_classrenderer_1_1IOutputTarget" id="r_a33c3c3c484bf6ee06cd9e35fb68adef4"><td class="memItemLeft">
 virtual auto&#160;</td><td class="memItemRight"><b>isPresentable</b> () const -&gt; bool</td></tr>
@@ -236,15 +256,37 @@ virtual auto&#160;</td><td class="memItemRight"><b>isPresentable</b> () const -&
 </table>
 </div><div class="memdoc">
 <dl class="section return"><dt>Returns</dt><dd>1 when copied 0 when no frame is ready -1 when <code class="param">dst_capacity</code> is too small </dd></dl>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="classrenderer_1_1SharedTextureOutputTarget_a8a4a570122e4555d233ca4b1c59d9d4d_icgraph.png" border="0" usemap="#aclassrenderer_1_1SharedTextureOutputTarget_a8a4a570122e4555d233ca4b1c59d9d4d_icgraph" loading="lazy" alt=""/></div>
-<map name="aclassrenderer_1_1SharedTextureOutputTarget_a8a4a570122e4555d233ca4b1c59d9d4d_icgraph" id="aclassrenderer_1_1SharedTextureOutputTarget_a8a4a570122e4555d233ca4b1c59d9d4d_icgraph">
-<area shape="rect" title=" " alt="" coords="5,29,227,74"/>
-<area shape="poly" title=" " alt="" coords="151,14,139,10,116,8,95,10,83,15,77,21,79,30,74,28,72,19,80,10,94,5,116,3,140,5,156,14"/>
-</map>
+
 </div>
+</div>
+<a id="a75c8dcebbe1769bdd1c455b604de67a7" name="a75c8dcebbe1769bdd1c455b604de67a7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a75c8dcebbe1769bdd1c455b604de67a7">&#9670;&#160;</a></span>enableSharedTextures()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto renderer::SharedTextureOutputTarget::enableSharedTextures </td>
+          <td>(</td>
+          <td class="paramtype">uint64_t</td>          <td class="paramname"><span class="paramname"><em>adapter_luid</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const uint8_t *</td>          <td class="paramname"><span class="paramname"><em>adapter_uuid</em></span>&#160;) -&gt; bool</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Hands frames over as shared textures from the next acquired image on, and stops reading every frame back. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">adapter_luid</td><td>The compositor's adapter LUID, 0 when it has none (checked on Windows) </td></tr>
+    <tr><td class="paramname">adapter_uuid</td><td>The compositor's device UUID, null when it has none (checked elsewhere) </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>false when this device cannot share textures with that adapter </dd></dl>
 
 </div>
 </div>
@@ -496,6 +538,33 @@ Here is the caller graph for this function:</div>
 </div><div class="memdoc">
 
 <p>Implements <a class="el" href="classrenderer_1_1IOutputTarget.html">renderer::IOutputTarget</a>.</p>
+
+</div>
+</div>
+<a id="a4cfea64358a17c1657caf6670c068801" name="a4cfea64358a17c1657caf6670c068801"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4cfea64358a17c1657caf6670c068801">&#9670;&#160;</a></span>submitSync()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto renderer::SharedTextureOutputTarget::submitSync </td>
+          <td>(</td>
+          <td class="paramtype">uint32_t</td>          <td class="paramname"><span class="paramname"><em>image_index</em></span></td><td>)</td>
+          <td> -&gt; <a class="el" href="structrenderer_1_1OutputSubmitSync.html">OutputSubmitSync</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel nodiscard">nodiscard</span><span class="mlabel override">override</span><span class="mlabel virtual">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Reimplemented from <a class="el" href="classrenderer_1_1IOutputTarget.html">renderer::IOutputTarget</a>.</p>
 
 </div>
 </div>

@@ -5,6 +5,8 @@ var namespaceeditor_1_1Engine =
     [ "SettingDescriptor", "classeditor_1_1Engine_1_1SettingDescriptor.html", "classeditor_1_1Engine_1_1SettingDescriptor" ],
     [ "ToastEngine", "classeditor_1_1Engine_1_1ToastEngine.html", "classeditor_1_1Engine_1_1ToastEngine" ],
     [ "ToastViewportFrame", "structeditor_1_1Engine_1_1ToastViewportFrame.html", null ],
+    [ "ToastViewportSharedFrame", "structeditor_1_1Engine_1_1ToastViewportSharedFrame.html", null ],
+    [ "ToastViewportSharedHandles", "structeditor_1_1Engine_1_1ToastViewportSharedHandles.html", null ],
     [ "WorkspaceResult", "structeditor_1_1Engine_1_1WorkspaceResult.html", null ],
     [ "SettingType", "namespaceeditor_1_1Engine.html#a816e3f8b78ffd7fd2e0beafc6fd99f78", null ]
 ];
