@@ -69,6 +69,10 @@ public:
 	/// @return 1 copied, 0 none available, -1 destination too small
 	auto getViewportFrame(void* dst, uint32_t dst_capacity, renderer::ViewportFrameDesc* out) -> int;
 
+	/// @brief Editor viewport
+	[[nodiscard]]
+	auto viewportTarget() -> renderer::SharedTextureOutputTarget*;
+
 	/// @brief Calls begin() on the currently registered application layer (if any)
 	void beginApplication();
 

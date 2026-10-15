@@ -355,11 +355,13 @@ void Engine::reloadSettings() {
 }
 
 /// True while a playWorkspace exists
-static auto gameIsRunning(EnginePimpl& pimpl) -> bool {
+static auto gameIsAdvancing(EnginePimpl& pimpl) -> bool {
 	std::scoped_lock lock(pimpl.owners_mutex);
 	return std::ranges::any_of(pimpl.owners, [](const auto& entry) {
-		return dynamic_cast<const PlayWorkspace*>(entry.second.get()) != nullptr ||
-		       dynamic_cast<const World*>(entry.second.get()) != nullptr;
+		if (const auto* play = dynamic_cast<const PlayWorkspace*>(entry.second.get())) {
+			return !play->paused();
+		}
+		return dynamic_cast<const World*>(entry.second.get()) != nullptr;
 	});
 }
 
@@ -501,14 +503,18 @@ void Engine::tick() {
 
 	// Files that changed on disk are noticed once a second
 	// The reloads are only applied in the editor while nothing is playing
-	if (m->shared_target != nullptr && m->asset_manager) {
+	if (m->shared_target != nullptr && m->asset_manager && !gameIsAdvancing(*m)) {
 		script_reload_timer += Time::delta();
 		if (script_reload_timer > 1.0) {
 			script_reload_timer = 0.0;
 			m->asset_manager->pollModifiedAssets();
 		}
-		if (m->asset_manager->hasPendingReloads() && !gameIsRunning(*m)) {
-			m->asset_manager->applyPendingReloads();
+		if (m->asset_manager->hasPendingReloads()) {
+			for (const auto& reloaded : m->asset_manager->applyPendingReloads()) {
+				if (reloaded.prefab) {
+					publishPrefab(reloaded.uid, *reloaded.prefab);
+				}
+			}
 		}
 	}
 
@@ -865,6 +871,10 @@ auto Engine::getViewportFrame(void* dst, uint32_t dst_capacity, renderer::Viewpo
 	return m->shared_target->copyLatestFrame(dst, dst_capacity, out);
 }
 
+auto Engine::viewportTarget() -> renderer::SharedTextureOutputTarget* {
+	return m->shared_target;
+}
+
 void pushApplicationLayer(IApplication* app) {
 	if (active_application && active_application != app) {
 		active_application->destroy();
@@ -996,6 +1006,65 @@ auto toast_viewport_get_frame(void* dst, uint32_t dst_capacity, toast_viewport_f
 		out->frame_id = desc.frame_id;
 	}
 	return result;
+}
+
+void toast_viewport_request_readback() noexcept {
+	if (auto* target = toast::Engine::get()->viewportTarget()) {
+		target->requestReadback();
+	}
+}
+
+auto toast_viewport_enable_shared(uint64_t adapter_luid, const uint8_t* adapter_uuid) noexcept -> int {
+	auto* target = toast::Engine::get()->viewportTarget();
+	return target != nullptr && target->enableSharedTextures(adapter_luid, adapter_uuid) ? 1 : 0;
+}
+
+void toast_viewport_disable_shared() noexcept {
+	if (auto* target = toast::Engine::get()->viewportTarget()) {
+		target->disableSharedTextures();
+	}
+}
+
+auto toast_viewport_get_shared_frame(toast_viewport_shared_frame_t* out) noexcept -> int {
+	auto* target = toast::Engine::get()->viewportTarget();
+	if (target == nullptr) {
+		return -1;
+	}
+	renderer::ViewportSharedFrameDesc desc {};
+	const int result = target->sharedFrame(&desc);
+	if (out != nullptr && result == 1) {
+		out->width = desc.width;
+		out->height = desc.height;
+		out->frame_id = desc.frame_id;
+		out->generation = desc.generation;
+		out->memory_size = desc.memory_size;
+		out->slot = desc.slot;
+		out->slot_count = desc.slot_count;
+	}
+	return result;
+}
+
+auto toast_viewport_export_shared_slot(uint64_t generation, uint32_t slot, toast_viewport_shared_handles_t* out) noexcept -> int {
+	auto* target = toast::Engine::get()->viewportTarget();
+	renderer::ViewportSharedHandles handles {};
+	if (target == nullptr || out == nullptr || !target->exportSharedSlot(generation, slot, &handles)) {
+		return 0;
+	}
+	out->image = handles.image;
+	out->ready = handles.ready;
+	out->done = handles.done;
+	return 1;
+}
+
+auto toast_viewport_hold_shared_slot(uint64_t generation, uint32_t slot) noexcept -> int {
+	auto* target = toast::Engine::get()->viewportTarget();
+	return target != nullptr && target->holdSharedSlot(generation, slot) ? 1 : 0;
+}
+
+void toast_viewport_release_shared_slot(uint64_t generation, uint32_t slot, int consumed) noexcept {
+	if (auto* target = toast::Engine::get()->viewportTarget()) {
+		target->releaseSharedSlot(generation, slot, consumed != 0);
+	}
 }
 
 auto toast_create_workspace(const char* type) noexcept -> workspace_result {

@@ -48,6 +48,7 @@ public partial class ViewportControl : UserControl {
 	private int m_trackpadX = int.MinValue, m_trackpadY, m_trackpadW, m_trackpadH;
 
 	private WriteableBitmap? m_bitmap;
+	private SharedViewportPresenter? m_shared;
 	private ToastEngine? m_engine;
 	private Listener? m_listener;
 
@@ -320,6 +321,9 @@ public partial class ViewportControl : UserControl {
 
 		// Stops the callback re-arming; any already-queued one returns immediately
 		m_frameLoopActive = false;
+
+		m_shared?.Dispose();
+		m_shared = null;
 	}
 
 	private void OnWindowDeactivated(object? sender, EventArgs e) {
@@ -369,7 +373,23 @@ public partial class ViewportControl : UserControl {
 
 		SendResizeIfChanged();
 
-		var peek = m_engine.TryGetViewportFrame(IntPtr.Zero, 0, out var dims);
+		if (m_shared is null) {
+			m_shared = new SharedViewportPresenter(SurfaceHost, m_engine);
+			m_shared.Start();
+		}
+		if (!m_shared.Failed) {
+			if (!m_shared.Active) return;
+			if (Surface.IsVisible) {
+				Surface.IsVisible = false;
+				Surface.Source = null;
+				m_bitmap = null;
+			}
+			if (m_shared.Tick()) (DataContext as WorkspaceViewModel)?.NotePresentedFrame();
+			return;
+		}
+		Surface.IsVisible = true;
+
+		var peek =m_engine.TryGetViewportFrame(IntPtr.Zero, 0, out var dims);
 		if (peek == 0 || dims.width == 0 || dims.height == 0)
 			return;
 

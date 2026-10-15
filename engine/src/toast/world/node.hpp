@@ -99,6 +99,10 @@ public:
 	[[nodiscard]]
 	auto uid() const noexcept -> const UID&;
 
+	/// @brief Runtime identifier for this node, guaranteed to be unique but changes every time
+	[[nodiscard]]
+	auto rid() const noexcept -> std::uintptr_t;
+
 	/// @brief Display name. Siblings may share one - this is not an identifier
 	[[nodiscard]]
 	auto name() const noexcept -> std::string_view;

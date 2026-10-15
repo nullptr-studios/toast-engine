@@ -197,6 +197,7 @@ public:
 		toast::UID uid;
 		std::string type;
 		bool replaced = false;
+		std::shared_ptr<const Prefab> prefab;
 	};
 
 	/**

@@ -25,10 +25,10 @@ auto voxelPatchGridWords(const voxel::gpu::VolumeRecord& record) -> uint64_t {
 
 }
 
-void VoxelScenePatcher::adopt(const voxel::gpu::PackedScene& scene, uint32_t pool_slots, std::vector<uint64_t> node_uids) {
+void VoxelScenePatcher::adopt(const voxel::gpu::PackedScene& scene, uint32_t pool_slots, std::vector<uint64_t> node_rids) {
 	m_scene = scene;
 	m_pool_slots = pool_slots;
-	m_node_uids = std::move(node_uids);
+	m_node_rids = std::move(node_rids);
 	m_dead_grid_words = 0;
 	m_valid = true;
 }
@@ -53,32 +53,32 @@ auto VoxelScenePatcher::findOrAppendPalette(const voxel::Palette& palette) -> ui
 }
 
 auto VoxelScenePatcher::tryPatch(
-    const voxel::BrickPool& pool, std::span<const voxel::gpu::SceneVolume> volumes, std::span<const uint64_t> node_uids,
+    const voxel::BrickPool& pool, std::span<const voxel::gpu::SceneVolume> volumes, std::span<const uint64_t> node_rids,
     std::span<const VolumeDelta> deltas
 ) -> std::optional<Patched> {
 	using namespace voxel::gpu;
 	ZoneScoped;
 
-	if (!m_valid || deltas.size() != volumes.size() || node_uids.size() != volumes.size()) {
+	if (!m_valid || deltas.size() != volumes.size() || node_rids.size() != volumes.size()) {
 		return std::nullopt;
 	}
 
 	std::unordered_map<uint64_t, uint32_t> live_record;
-	for (uint32_t record = 0; record < m_node_uids.size(); ++record) {
-		if (m_node_uids[record] != 0) {
-			live_record.emplace(m_node_uids[record], record);
+	for (uint32_t record = 0; record < m_node_rids.size(); ++record) {
+		if (m_node_rids[record] != 0) {
+			live_record.emplace(m_node_rids[record], record);
 		}
 	}
 
 	// Decide before touching the retained copy so a bail out leaves it as the GPU holds it
 	std::vector<std::optional<uint32_t>> kept_record(volumes.size());
-	std::vector<bool> record_kept(m_node_uids.size(), false);
+	std::vector<bool> record_kept(m_node_rids.size(), false);
 	uint64_t dirty_bricks = 0;
 	uint64_t appended_grid_words = 0;
 	for (size_t i = 0; i < volumes.size(); ++i) {
 		const glm::uvec3 dims = volumes[i].volume->brickDims();
 		const uint64_t bricks = uint64_t {dims.x} * dims.y * dims.z;
-		const auto found = live_record.find(node_uids[i]);
+		const auto found = live_record.find(node_rids[i]);
 		if (found != live_record.end()) {
 			const VolumeRecord& record = m_scene.records[found->second];
 			if (voxelPatchRecordDims(record) == dims && paletteMatches(record, *volumes[i].palette)) {
@@ -93,8 +93,8 @@ auto VoxelScenePatcher::tryPatch(
 	}
 
 	uint64_t dead_grid_words = m_dead_grid_words;
-	for (uint32_t record = 0; record < m_node_uids.size(); ++record) {
-		if (m_node_uids[record] != 0 && !record_kept[record]) {
+	for (uint32_t record = 0; record < m_node_rids.size(); ++record) {
+		if (m_node_rids[record] != 0 && !record_kept[record]) {
 			dead_grid_words += voxelPatchGridWords(m_scene.records[record]);
 		}
 	}
@@ -112,9 +112,9 @@ auto VoxelScenePatcher::tryPatch(
 		return std::nullopt;
 	}
 
-	for (uint32_t record = 0; record < m_node_uids.size(); ++record) {
+	for (uint32_t record = 0; record < m_node_rids.size(); ++record) {
 		if (!record_kept[record]) {
-			m_node_uids[record] = 0;
+			m_node_rids[record] = 0;
 		}
 	}
 	m_dead_grid_words = dead_grid_words;
@@ -158,14 +158,14 @@ auto VoxelScenePatcher::tryPatch(
 		m_scene.coarse.resize(m_scene.coarse.size() + (((coarse.x * coarse.y * coarse.z) + 31u) / 32u), 0u);
 		appended.push_back(static_cast<uint32_t>(m_scene.records.size()));
 		m_scene.records.push_back(record);
-		m_node_uids.push_back(node_uids[i]);
+		m_node_rids.push_back(node_rids[i]);
 		by_record.push_back(volumes[i]);
 	}
 
 	Patched out;
 	out.patch = computePatch(m_scene, m_pool_slots, pool, by_record, dirty, appended, first_new_palette_word);
 	m_pool_slots = out.patch.pool_slots;
-	out.record_uids = m_node_uids;
+	out.record_rids = m_node_rids;
 	out.record_dims.reserve(m_scene.records.size());
 	for (const VolumeRecord& record : m_scene.records) {
 		out.record_dims.push_back(voxelPatchRecordDims(record));
@@ -176,7 +176,7 @@ auto VoxelScenePatcher::tryPatch(
 void VoxelScenePatcher::reset() {
 	m_scene = {};
 	m_pool_slots = 0;
-	m_node_uids.clear();
+	m_node_rids.clear();
 	m_dead_grid_words = 0;
 	m_valid = false;
 }
