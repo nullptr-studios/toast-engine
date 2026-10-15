@@ -295,6 +295,11 @@
 						              DragDrop.AllowDrop="True"
 						              HorizontalAlignment="Stretch"
 						              ItemsSource="{Binding Rows}">
+							<ItemsControl.ItemsPanel>
+								<ItemsPanelTemplate>
+									<VirtualizingStackPanel />
+								</ItemsPanelTemplate>
+							</ItemsControl.ItemsPanel>
 							<ItemsControl.ItemTemplate>
 								<DataTemplate x:DataType="vm:HierarchyElement">
 									<Border Height="28"

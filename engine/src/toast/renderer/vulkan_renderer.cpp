@@ -2441,27 +2441,42 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 	const vk::Semaphore signal_semaphore = *m_render_finished_per_image.at(image_index);
 	const vk::Semaphore wait_semaphore = *frame.image_available;
 
-	std::array<vk::Semaphore, 2> wait_semaphores {compute_to_graphics_semaphore, wait_semaphore};
-	std::array<vk::PipelineStageFlags, 2> wait_stages {
+	std::array<vk::Semaphore, 3> wait_semaphores {compute_to_graphics_semaphore, wait_semaphore};
+	std::array<vk::PipelineStageFlags, 3> wait_stages {
 	  vk::PipelineStageFlagBits::eFragmentShader, vk::PipelineStageFlagBits::eColorAttachmentOutput
 	};
-	const uint32_t wait_semaphore_count = present_sync ? 2 : 1;
+	uint32_t wait_semaphore_count = present_sync ? 2 : 1;
+	std::array<vk::Semaphore, 2> signal_semaphores {};
+	uint32_t signal_semaphore_count = 0;
+	if (present_sync) {
+		signal_semaphores[signal_semaphore_count++] = signal_semaphore;
+	}
+
+	const OutputSubmitSync output_sync = m_output_target->submitSync(image_index);
+	if (output_sync.wait) {
+		wait_semaphores[wait_semaphore_count] = output_sync.wait;
+		wait_stages[wait_semaphore_count] = output_sync.wait_stage;
+		++wait_semaphore_count;
+	}
+	if (output_sync.signal) {
+		signal_semaphores[signal_semaphore_count++] = output_sync.signal;
+	}
 
 	vk::SubmitInfo submit_info {};
 	submit_info.waitSemaphoreCount = wait_semaphore_count;
 	submit_info.pWaitSemaphores = wait_semaphores.data();
 	submit_info.pWaitDstStageMask = wait_stages.data();
-	if (present_sync) {
-		submit_info.signalSemaphoreCount = 1;
-		submit_info.pSignalSemaphores = &signal_semaphore;
-	}
+	submit_info.signalSemaphoreCount = signal_semaphore_count;
+	submit_info.pSignalSemaphores = signal_semaphores.data();
 	submit_info.commandBufferCount = 1;
 	submit_info.pCommandBuffers = &command_buffer;
+	submit_info.pNext = output_sync.chain;
 
 	vk::FrameBoundaryEXT frame_boundary {};
 	if (m_core->isFrameBoundarySupported()) {
 		frame_boundary.flags = vk::FrameBoundaryFlagBitsEXT::eFrameEnd;
 		frame_boundary.frameID = m_frame_boundary_counter++;
+		frame_boundary.pNext = output_sync.chain;
 		submit_info.pNext = &frame_boundary;
 	}
 

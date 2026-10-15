@@ -138,6 +138,11 @@ public:
 	}
 
 	[[nodiscard]]
+	auto isTextureSharingSupported() const noexcept -> bool {
+		return m_texture_sharing_supported;
+	}
+
+	[[nodiscard]]
 	auto getNsightMode() const noexcept -> NsightMode {
 		return m_nsight_mode;
 	}
@@ -222,6 +227,8 @@ private:
 	mutable NsightMode m_nsight_mode = NsightMode::none;
 
 	bool m_frame_boundary_supported = false;
+
+	bool m_texture_sharing_supported = false;
 
 	bool m_ray_tracing_supported = false;
 

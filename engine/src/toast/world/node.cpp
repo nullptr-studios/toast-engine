@@ -66,7 +66,7 @@ void Node::enabled(bool value) noexcept {
 	m_local_enabled = value;
 	TOAST_TRACE("Node", "{} ({}) {}", name(), uid(), value ? "enabled" : "disabled");
 	if (m_owner != nullptr) {
-		m_owner->nodeEnabledChanged();
+		m_owner->nodeEnabledChanged(*this);
 	}
 
 	if (value) {

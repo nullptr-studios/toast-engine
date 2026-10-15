@@ -77,7 +77,7 @@ public:
 	void registerDependency(Node& from, Node& to) override;
 	void unregisterDependency(Node& from, Node& to) override;
 
-	void nodeEnabledChanged() noexcept override { m_hierarchy_dirty.store(true, std::memory_order_relaxed); }
+	void nodeEnabledChanged(Node& node) noexcept override;
 
 	[[nodiscard]]
 	auto participatesIn(NodeOwnerParticipation use) const noexcept -> bool override;
@@ -138,7 +138,10 @@ protected:
 	std::unique_ptr<Camera> m_editor_camera;
 	EditorCameraController m_editor_camera_controller;    ///< drives m_editor_camera; ticked from tick() below
 	std::unique_ptr<WorkspaceHistory> m_history;
-	std::atomic<bool> m_hierarchy_dirty = false;
+	std::mutex m_enabled_changes_mutex;
+	std::vector<Box<Node>> m_enabled_changes;
+
+	void sendEnabledChanges();
 
 	[[nodiscard]]
 	auto isActiveWorkspace() const noexcept -> bool;

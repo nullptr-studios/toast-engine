@@ -31,46 +31,102 @@ public class HierarchyElement : INotifyPropertyChanged {
 
 	private bool m_isSelected;
 
+	private string m_name = "";
+
+	private bool m_enabled;
+
+	private bool m_isPrefab;
+
+	private int m_depth;
+
 	public HierarchyElement(
 		Proto.Events.HierarchyElement e, HierarchyViewModel owner, HierarchyElement? parent = null, bool isRoot = false) {
 		Owner = owner;
 		Parent = parent;
-		Name = e.Name;
 		Uid = e.Uid;
-		Type = e.Type;
+		IsRoot = isRoot;
+		m_isExpanded = !owner.IsCollapsed(StateKey); // restore persisted fold state
+		Update(e);
+	}
+
+	private static readonly Dictionary<string, (Bitmap? Icon, Bitmap? Small, Bitmap? Large)> s_icons = [];
+
+	private static (Bitmap? Icon, Bitmap? Small, Bitmap? Large) IconsFor(string type) {
+		var iconName = ReflectionDatabase.ResolveIcon(type);
+		if (s_icons.TryGetValue(iconName, out var icons)) return icons;
+		try {
+			icons = (
+				new Bitmap(AssetLoader.Open(new Uri($"avares://editor/Resources/node_icons/1.5x/{iconName}.png"))),
+				new Bitmap(AssetLoader.Open(new Uri($"avares://editor/Resources/node_icons/1x/{iconName}.png"))),
+				new Bitmap(AssetLoader.Open(new Uri($"avares://editor/Resources/node_icons/2x/{iconName}.png"))));
+		} catch (Exception ex) {
+			Log.Warn($"Failed to open icon for {type}: {ex.Message}");
+		}
+		s_icons[iconName] = icons;
+		return icons;
+	}
+
+	internal void Update(Proto.Events.HierarchyElement e) {
+		Name = e.Name;
+		if (Type != e.Type) {
+			Type = e.Type;
+			Color = ReflectionDatabase.ResolveColor(e.Type);
+			(Icon, SmallIcon, LargeIcon) = IconsFor(e.Type);
+			Notify(nameof(Color));
+			Notify(nameof(Icon));
+			Notify(nameof(SmallIcon));
+			Notify(nameof(LargeIcon));
+		}
 		IsPrefab = e.IsPrefab;
 		PrefabUid = e.PrefabUid;
 		Enabled = e.Enabled;
-		IsRoot = isRoot;
-		m_isExpanded = !owner.IsCollapsed(StateKey); // restore persisted fold state
-		Color = ReflectionDatabase.ResolveColor(e.Type);
+
+		var existing = new Dictionary<string, Queue<HierarchyElement>>();
+		foreach (var child in Children) {
+			if (!existing.TryGetValue(child.Uid, out var same)) existing[child.Uid] = same = new Queue<HierarchyElement>();
+			same.Enqueue(child);
+		}
+
+		var children = new List<HierarchyElement>(e.Children.Count);
 		foreach (var c in e.Children) {
 			if (c is null) continue;
-			Children.Add(new HierarchyElement(c, owner, this));
+			if (existing.TryGetValue(c.Uid, out var same) && same.TryDequeue(out var kept)) {
+				kept.Update(c);
+				children.Add(kept);
+			} else {
+				children.Add(new HierarchyElement(c, Owner, this));
+			}
 		}
 
-		try {
-			var iconName = ReflectionDatabase.ResolveIcon(e.Type);
-			Icon = new Bitmap(AssetLoader.Open(new Uri($"avares://editor/Resources/node_icons/1.5x/{iconName}.png")));
-			SmallIcon = new Bitmap(AssetLoader.Open(new Uri($"avares://editor/Resources/node_icons/1x/{iconName}.png")));
-			LargeIcon = new Bitmap(AssetLoader.Open(new Uri($"avares://editor/Resources/node_icons/2x/{iconName}.png")));
-		} catch (Exception ex) {
-			Log.Warn($"Failed to open icon for {e.Type}: {ex.Message}");
+		if (!Children.SequenceEqual(children)) {
+			Children.Clear();
+			foreach (var child in children) Children.Add(child);
 		}
-
-		foreach (var child in Children) FilteredChildren.Add(child);
 	}
 
-	public string Name { get; set; }
-	public string Uid { get; set; }
-	public string Type { get; set; }
-	public bool Enabled { get; set; }
-	public Bitmap? Icon { get; set; }      // On avares://editor/Resources/node_icons/1.5x/<Icon Attribute>.png
-	public Bitmap? SmallIcon { get; set; } // On avares://editor/Resources/node_icons/1x/<Icon Attribute>.png
-	public Bitmap? LargeIcon { get; set; } // On avares://editor/Resources/node_icons/2x/<Icon Attribute>.png
-	public string? Color { get; set; }
+	public string Name {
+		get => m_name;
+		set => SetField(ref m_name, value);
+	}
+
+	public string Uid { get; }
+	public string Type { get; private set; } = "";
+
+	public bool Enabled {
+		get => m_enabled;
+		set => SetField(ref m_enabled, value);
+	}
+
+	public Bitmap? Icon { get; private set; }      // On avares://editor/Resources/node_icons/1.5x/<Icon Attribute>.png
+	public Bitmap? SmallIcon { get; private set; } // On avares://editor/Resources/node_icons/1x/<Icon Attribute>.png
+	public Bitmap? LargeIcon { get; private set; } // On avares://editor/Resources/node_icons/2x/<Icon Attribute>.png
+	public string? Color { get; private set; }
 	public bool IsRoot { get; private set; }
-	public bool IsPrefab { get; set; }
+
+	public bool IsPrefab {
+		get => m_isPrefab;
+		set => SetField(ref m_isPrefab, value);
+	}
 
 	public string PrefabUid { get; set; } = "";
 
@@ -88,7 +144,16 @@ public class HierarchyElement : INotifyPropertyChanged {
 	public bool CanAddChildren => !IsPrefab && !IsInsidePrefab;
 	public bool CanContextBake => Owner.CanContextBake?.Invoke(this) == true;
 
-	public int Depth { get; set; }
+	public int Depth {
+		get => m_depth;
+		set {
+			if (m_depth == value) return;
+			m_depth = value;
+			Notify(nameof(Depth));
+			Notify(nameof(ContentMargin));
+		}
+	}
+
 	public int Index { get; set; }
 
 	public Thickness ContentMargin =>
@@ -132,8 +197,12 @@ public class HierarchyElement : INotifyPropertyChanged {
 
 	public event PropertyChangedEventHandler? PropertyChanged;
 
-	private void SetField(ref bool field, bool value, [CallerMemberName] string? name = null) {
-		if (field == value) return;
+	private void Notify(string name) {
+		PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+	}
+
+	private void SetField<T>(ref T field, T value, [CallerMemberName] string? name = null) {
+		if (EqualityComparer<T>.Default.Equals(field, value)) return;
 		field = value;
 		PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 	}
@@ -170,6 +239,7 @@ public partial class HierarchyViewModel : Tool, IDisposable {
 	[ObservableProperty] private string m_filterText = "";
 
 	private HierarchyState? m_hierState;
+	private string? m_hierStateKey;
 
 	private bool m_pendingRenameAfterUpdate;
 	private HashSet<string>? m_rowUidsSnapshot;
@@ -209,6 +279,15 @@ public partial class HierarchyViewModel : Tool, IDisposable {
 			});
 		});
 
+		m_listener.Subscribe<HierarchyNodesEnabled>(e => {
+			Dispatcher.UIThread.Post(() => {
+				if (m_disposed || e.WorkspaceHandle != m_hierarchyHandle || Root.Count == 0) return;
+				foreach (var node in e.Nodes) {
+					if (FindByUidPath(node.Path) is { } element) element.Enabled = node.Enabled;
+				}
+			});
+		});
+
 		m_listener.Subscribe<UpdateHierarchyData>(e => {
 			Dispatcher.UIThread.Post(() => {
 				if (m_disposed || ActiveWorkspace is not { } workspace || e.WorkspaceHandle != workspace.EffectiveHandle) return;
@@ -219,17 +298,31 @@ public partial class HierarchyViewModel : Tool, IDisposable {
 				var followed = m_followSelectionHandle == e.WorkspaceHandle ? SelectedNode : null;
 				var followedPath = followed is null ? null : PathOf(followed);
 				m_followSelectionHandle = 0;
-				if (m_hierarchyHandle != e.WorkspaceHandle) ClearState(followed is not null);
+				var otherWorkspace = m_hierarchyHandle != e.WorkspaceHandle;
+				if (otherWorkspace) {
+					m_pendingRenameAfterUpdate = false;
+					m_rowUidsSnapshot = null;
+					if (followed is null) SelectedNode = null;
+				}
 				m_hierarchyHandle = e.WorkspaceHandle;
 				var prevUid = SelectedNode?.Uid;
-				Root.Clear();
-				if (!e.IsEmpty) {
-					m_hierState = HierarchyState.Load(workspace.BackingAssetUid ?? e.Root.Uid);
+
+				var stateKey = workspace.BackingAssetUid ?? e.Root.Uid;
+				if (m_hierStateKey != stateKey) {
+					m_hierState = HierarchyState.Load(stateKey);
+					m_hierStateKey = stateKey;
+				}
+				if (Root.Count == 1 && Root[0].Uid == e.Root.Uid) {
+					Root[0].Update(e.Root);
+				} else {
+					Root.Clear();
 					Root.Add(new HierarchyElement(e.Root, this, isRoot: true));
 				}
 
-				// restore selection after the tree rebuilds so editing a node doesnt lose focus
-				SelectedNode = prevUid is null ? null : Find(Root, prevUid) ?? FindByPath(followedPath);
+				// restore selection after the tree updates so editing a node doesnt lose focus
+				var restored = prevUid is null ? null : Find(Root, prevUid) ?? FindByPath(followedPath);
+				if (!ReferenceEquals(restored, SelectedNode)) SelectedNode = restored;
+				else if (otherWorkspace && restored is not null) Events.Send(new SetFocusedNode { Node = restored.Uid });
 				if (Root.Count > 0 && e.WorkspaceHandle == workspace.Handle) workspace.SetRootNode(Root[0].Uid, Root[0].Type);
 				ApplyFilterToRoot();
 				RebuildRows();
@@ -322,19 +415,36 @@ public partial class HierarchyViewModel : Tool, IDisposable {
 	}
 
 	public void RebuildRows() {
-		Rows.Clear();
+		var rows = new List<HierarchyElement>(Rows.Count);
 		var filtering = !string.IsNullOrEmpty(FilterText);
-		foreach (var root in Root) Flatten(root, 0, filtering);
+		foreach (var root in Root) Flatten(root, 0, filtering, rows);
+
+		var keep = new HashSet<HierarchyElement>(rows);
+		for (var i = Rows.Count - 1; i >= 0; i--)
+			if (!keep.Contains(Rows[i]))
+				Rows.RemoveAt(i);
+
+		for (var i = 0; i < rows.Count; i++) {
+			if (i < Rows.Count && ReferenceEquals(Rows[i], rows[i])) continue;
+			var at = -1;
+			for (var j = i + 1; j < Rows.Count; j++) {
+				if (!ReferenceEquals(Rows[j], rows[i])) continue;
+				at = j;
+				break;
+			}
+			if (at >= 0) Rows.Move(at, i);
+			else Rows.Insert(i, rows[i]);
+		}
 	}
 
-	private void Flatten(HierarchyElement node, int depth, bool filtering) {
+	private void Flatten(HierarchyElement node, int depth, bool filtering, List<HierarchyElement> rows) {
 		node.Depth = depth;
-		node.Index = Rows.Count;
-		Rows.Add(node);
+		node.Index = rows.Count;
+		rows.Add(node);
 		// stop recursing into prefab children unless the toggle is on
 		if (node.IsPrefab && !ShowPrefabChildren) return;
 		if (!filtering && !node.IsExpanded) return;
-		foreach (var child in node.FilteredChildren) Flatten(child, depth + 1, filtering);
+		foreach (var child in node.FilteredChildren) Flatten(child, depth + 1, filtering, rows);
 	}
 
 	public void ToggleExpand(HierarchyElement node) {
@@ -418,6 +528,7 @@ public partial class HierarchyViewModel : Tool, IDisposable {
 		Rows.Clear();
 		if (!keepSelection) SelectedNode = null;
 		m_hierState = null;
+		m_hierStateKey = null;
 		m_hierarchyHandle = 0;
 		m_pendingRenameAfterUpdate = false;
 		m_rowUidsSnapshot = null;
@@ -439,6 +550,21 @@ public partial class HierarchyViewModel : Tool, IDisposable {
 			if (current is null) return null;
 		}
 
+		return current;
+	}
+
+	private HierarchyElement? FindByUidPath(IReadOnlyList<string> path) {
+		if (path.Count == 0 || Root.Count == 0 || Root[0].Uid != path[0]) return null;
+		var current = Root[0];
+		for (var i = 1; i < path.Count && current is not null; i++) {
+			HierarchyElement? next = null;
+			foreach (var child in current.Children) {
+				if (child.Uid != path[i]) continue;
+				next = child;
+				break;
+			}
+			current = next;
+		}
 		return current;
 	}
 

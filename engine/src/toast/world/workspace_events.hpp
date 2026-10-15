@@ -29,8 +29,6 @@ struct UpdateHierarchyData : Event<UpdateHierarchyData> {
 		HierarchyElement(const toast::Box<toast::Node>& node);
 
 		HierarchyElement() = default;
-
-		HierarchyElement(const HierarchyElement& other);
 	};
 
 	HierarchyElement root;
@@ -46,6 +44,20 @@ struct UpdateHierarchyData : Event<UpdateHierarchyData> {
 };
 
 struct RequestHierarchyUpdate : Event<RequestHierarchyUpdate> { };
+
+struct HierarchyNodesEnabled : Event<HierarchyNodesEnabled> {
+	struct Entry {
+		std::vector<toast::UID> path;
+		bool enabled = false;
+	};
+
+	std::vector<Entry> nodes;
+	uint64_t workspace_handle = 0;
+
+	HierarchyNodesEnabled() = default;
+
+	HierarchyNodesEnabled(std::vector<Entry> nodes, uint64_t handle) : nodes(std::move(nodes)), workspace_handle(handle) { }
+};
 
 struct WorkspaceCreate : Event<WorkspaceCreate> {
 	toast::UID parent;

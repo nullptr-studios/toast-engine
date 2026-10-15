@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Avalonia.Threading;
 using editor.Engine;
 using ImageMagick;
 
@@ -13,10 +14,22 @@ public static class NodeThumbnails {
 
 	public static event Action<string>? Updated;
 
-	// Copies the latest viewport frame
+	private const int ReadbackAttempts = 60;
+
+	// Asks for a viewport frame on the CPU not a shared GPU texture
 	public static void Capture(ToastEngine? engine, string? uid) {
 		if (engine is null || string.IsNullOrEmpty(uid)) return;
 
+		engine.RequestViewportReadback();
+		var attempts = 0;
+		var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
+		timer.Tick += (_, _) => {
+			if (TryCapture(engine, uid) || ++attempts >= ReadbackAttempts) timer.Stop();
+		};
+		timer.Start();
+	}
+
+	private static bool TryCapture(ToastEngine engine, string uid) {
 		var result = engine.TryGetViewportFrame(IntPtr.Zero, 0, out var frame);
 		if (result == -1) {
 			var bytes = (int)(frame.row_pitch * frame.height);
@@ -25,7 +38,7 @@ public static class NodeThumbnails {
 				fixed (byte* dst = s_buffer) result = engine.TryGetViewportFrame((IntPtr)dst, (uint)s_buffer.Length, out frame);
 			}
 		}
-		if (result != 1 || frame.width == 0 || frame.height == 0) return;
+		if (result != 1 || frame.width == 0 || frame.height == 0) return false;
 
 		try {
 			Write(uid, s_buffer, (int)frame.width, (int)frame.height, (int)frame.row_pitch);
@@ -33,6 +46,7 @@ public static class NodeThumbnails {
 		} catch (Exception e) {
 			Log.Warn($"Could not write the thumbnail of {uid}: {e.Message}");
 		}
+		return true;
 	}
 
 	private static void Write(string uid, byte[] bgra, int width, int height, int pitch) {

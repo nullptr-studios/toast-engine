@@ -8,6 +8,7 @@
 #include "tree_lock.hpp"
 #include "workspace_events.hpp"
 
+#include <algorithm>
 #include <array>
 #include <charconv>
 #include <cmath>
@@ -50,6 +51,7 @@
 #include <tracy/Tracy.hpp>
 #include <tuple>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace toast {
 
@@ -2207,7 +2209,6 @@ void Workspace::eventSubscriptions() {
 		    e.enabled ? "Enabled" : "Disabled"
 		);
 		recordHistory(std::move(context), [&] { node->enabled(e.enabled); });
-		event::send<event::RequestHierarchyUpdate>();
 		return true;
 	});
 
@@ -2551,6 +2552,50 @@ void Workspace::tickAnimationPreviews(const Node& node) {
 	}
 }
 
+void Workspace::nodeEnabledChanged(Node& node) noexcept {
+	std::scoped_lock lock(m_enabled_changes_mutex);
+	m_enabled_changes.push_back(node.box());
+}
+
+void Workspace::sendEnabledChanges() {
+	std::vector<Box<Node>> changed;
+	{
+		std::scoped_lock lock(m_enabled_changes_mutex);
+		changed.swap(m_enabled_changes);
+	}
+	// The editor gets the whole tree ONLY when this workspace becomes the active one
+	if (changed.empty() || !isActiveWorkspace() || not m_root_node.exists()) {
+		return;
+	}
+
+	std::vector<event::HierarchyNodesEnabled::Entry> entries;
+	std::unordered_set<std::uintptr_t> seen;
+	const TreeReadLock lock(this);
+	for (const Box<Node>& node : changed) {
+		if (!node.exists() || !seen.insert(node->rid()).second) {
+			continue;
+		}
+		std::vector<UID> path;
+		for (const Node* n = &*node; n != nullptr; n = n->m_parent.exists() ? &*n->m_parent : nullptr) {
+			path.push_back(n->uid());
+		}
+		std::ranges::reverse(path);
+
+		const auto visit = [&](this auto&& self, const Node& current) -> void {
+			entries.push_back({.path = path, .enabled = current.enabled()});
+			for (const Box<Node>& child : current.children()) {
+				if (child.exists()) {
+					path.push_back(child->uid());
+					self(*child);
+					path.pop_back();
+				}
+			}
+		};
+		visit(*node);
+	}
+	event::send<event::HierarchyNodesEnabled>(std::move(entries), m_handle.data());
+}
+
 void Workspace::tick() {
 	ZoneScoped;
 
@@ -2577,10 +2622,7 @@ void Workspace::tick() {
 		INodeOwner::updateTransforms(*m_root_node);
 	}
 
-	// Enabled changed outside the inspectors
-	if (m_hierarchy_dirty.exchange(false, std::memory_order_relaxed) && isActiveWorkspace()) {
-		event::send<event::RequestHierarchyUpdate>();
-	}
+	sendEnabledChanges();
 
 	// Only the active workspace streams inspector data, and only while a node is focused
 	if (m_handle.data() != Engine::get()->activeWorkspace().data() || not m_focused_node.exists()) {

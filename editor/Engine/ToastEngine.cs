@@ -25,6 +25,24 @@ public struct ToastViewportFrame {
 	public ulong frame_id;
 }
 
+[StructLayout(LayoutKind.Sequential)]
+public struct ToastViewportSharedFrame {
+	public uint width;
+	public uint height;
+	public ulong frame_id;
+	public ulong generation;
+	public ulong memory_size;
+	public uint slot;
+	public uint slot_count;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public struct ToastViewportSharedHandles {
+	public IntPtr image;
+	public IntPtr ready;
+	public IntPtr done;
+}
+
 // returned by create/open workspace calls
 // Uid == 0 means it failed, Name points into engine memory
 [StructLayout(LayoutKind.Sequential)]
@@ -242,6 +260,40 @@ public partial class ToastEngine : IDisposable {
 		return toast_viewport_get_frame(dst, capacity, out frame);
 	}
 
+	public void RequestViewportReadback() {
+		if (IsEngineReady) toast_viewport_request_readback();
+	}
+
+	public bool EnableSharedViewport(ulong adapterLuid, byte[]? adapterUuid) {
+		// asks the renderer to share frames with the compositor's device
+		if (!IsEngineReady) return false;
+		var uuid = adapterUuid is { Length: 16 } ? adapterUuid : null;
+		return toast_viewport_enable_shared(adapterLuid, uuid) == 1;
+	}
+
+	public void DisableSharedViewport() {
+		if (IsEngineReady) toast_viewport_disable_shared();
+	}
+
+	public int TryGetSharedViewportFrame(out ToastViewportSharedFrame frame) {
+		// 1 = frame, 0 = none yetd
+		frame = default;
+		if (!IsEngineReady) return 0;
+		return toast_viewport_get_shared_frame(out frame);
+	}
+
+	public bool ExportSharedViewportSlot(ulong generation, uint slot, out ToastViewportSharedHandles handles) {
+		handles = default;
+		return IsEngineReady && toast_viewport_export_shared_slot(generation, slot, out handles) == 1;
+	}
+
+	public bool HoldSharedViewportSlot(ulong generation, uint slot) =>
+		IsEngineReady && toast_viewport_hold_shared_slot(generation, slot) == 1;
+
+	public void ReleaseSharedViewportSlot(ulong generation, uint slot, bool consumed) {
+		if (IsEngineReady) toast_viewport_release_shared_slot(generation, slot, consumed ? 1 : 0);
+	}
+
 	// guards against sending close twice
 	public void SignalClose() {
 		if (m_closeEventSent) return;
@@ -450,6 +502,28 @@ public partial class ToastEngine : IDisposable {
 
 	[LibraryImport(EngineLib)]
 	private static partial int toast_viewport_get_frame(IntPtr dst, uint dstCapacity, out ToastViewportFrame outFrame);
+
+	[LibraryImport(EngineLib)]
+	private static partial void toast_viewport_request_readback();
+
+	[LibraryImport(EngineLib)]
+	private static partial int toast_viewport_enable_shared(ulong adapterLuid, byte[]? adapterUuid);
+
+	[LibraryImport(EngineLib)]
+	private static partial void toast_viewport_disable_shared();
+
+	[LibraryImport(EngineLib)]
+	private static partial int toast_viewport_get_shared_frame(out ToastViewportSharedFrame outFrame);
+
+	[LibraryImport(EngineLib)]
+	private static partial int toast_viewport_export_shared_slot(
+		ulong generation, uint slot, out ToastViewportSharedHandles outHandles);
+
+	[LibraryImport(EngineLib)]
+	private static partial int toast_viewport_hold_shared_slot(ulong generation, uint slot);
+
+	[LibraryImport(EngineLib)]
+	private static partial void toast_viewport_release_shared_slot(ulong generation, uint slot, int consumed);
 
 	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
 	private static partial WorkspaceResult toast_create_workspace(string type);
