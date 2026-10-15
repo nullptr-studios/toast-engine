@@ -1410,6 +1410,16 @@ private:
 	std::array<shadow_slots::Slot, shadows::k_max_spot_shadows> m_spot_slots {};
 	std::array<shadow_slots::Slot, shadows::k_max_point_shadows> m_point_slots {};
 	uint64_t m_shadow_displaced_total = 0;
+
+	/// Padded sphere a cascade keeps until the camera slice leaves it
+	struct CascadeAnchor {
+		glm::vec3 center {0.0f};
+		float radius = 0.0f;
+		glm::vec3 light_direction {0.0f};
+		uint32_t resolution = 0;
+	};
+
+	std::array<CascadeAnchor, shadows::k_cascade_count> m_cascade_anchors {};
 	std::vector<shadow_slots::Candidate> m_tick_slot_candidates;
 	std::vector<int32_t> m_tick_slot_of;
 

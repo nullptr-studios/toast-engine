@@ -99,6 +99,8 @@ public:
 		std::function<assets::Handle<assets::Prefab>(toast::UID)> resolver;    ///< injected loader so tests can swap in a fake
 		uint64_t script_group = 0;
 		bool nested = false;
+		/// Nonzero becomes the file root UID and seeds every other UID so prefab instances never share one
+		uint64_t uid_seed = 0;
 	};
 
 protected:
@@ -146,7 +148,7 @@ protected:
 	 * @param file The source prefab, kept alive until all Handle fields are resolved
 	 * @return The root Box<Node>
 	 */
-	auto buildTree(std::vector<Box<Node>>&& nodes, const assets::Handle<assets::Prefab>& file) -> Box<Node>;
+	auto buildTree(std::vector<Box<Node>>&& nodes, const assets::Handle<assets::Prefab>& file, uint64_t uid_seed) -> Box<Node>;
 
 	/**
 	 * @brief Allocates and initializes a full node tree from a prefab asset

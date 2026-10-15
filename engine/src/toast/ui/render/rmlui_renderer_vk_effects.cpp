@@ -868,6 +868,20 @@ void RenderInterface_VK::EnableClipMask(bool enable) {
 	m_is_apply_to_regular_geometry_stencil = enable;
 }
 
+void RenderInterface_VK::ClearClipStencil(uint32_t value) {
+	const VkRect2D scissor = CurrentScissor();
+	if (scissor.extent.width == 0 || scissor.extent.height == 0) {
+		return;
+	}
+	VkClearAttachment clear = {};
+	clear.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+	clear.clearValue.depthStencil = {1.f, value};
+	VkClearRect rect = {};
+	rect.layerCount = 1;
+	rect.rect = scissor;
+	vkCmdClearAttachments(m_p_current_command_buffer, 1, &clear, 1, &rect);
+}
+
 void RenderInterface_VK::RenderToClipMask(
     Rml::ClipMaskOperation operation, Rml::CompiledGeometryHandle geometry, Rml::Vector2f translation
 ) {
@@ -881,32 +895,14 @@ void RenderInterface_VK::RenderToClipMask(
 
 	switch (operation) {
 		case ClipMaskOperation::Set: {
-			VkClearAttachment clear = {};
-			clear.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-			clear.clearValue.depthStencil = {1.f, 0};
-			VkClearRect rect = {};
-			rect.layerCount = 1;
-			rect.rect = {
-			  {                0,                  0},
-        {uint32_t(m_width), uint32_t(m_height)}
-			};
-			vkCmdClearAttachments(m_p_current_command_buffer, 1, &clear, 1, &rect);
+			ClearClipStencil(0);
 
 			m_clip_incr = false;
 			m_clip_write_value = 1;
 			stencil_test_value = 1;
 		} break;
 		case ClipMaskOperation::SetInverse: {
-			VkClearAttachment clear = {};
-			clear.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-			clear.clearValue.depthStencil = {1.f, 1};
-			VkClearRect rect = {};
-			rect.layerCount = 1;
-			rect.rect = {
-			  {                0,                  0},
-        {uint32_t(m_width), uint32_t(m_height)}
-			};
-			vkCmdClearAttachments(m_p_current_command_buffer, 1, &clear, 1, &rect);
+			ClearClipStencil(1);
 
 			m_clip_incr = false;
 			m_clip_write_value = 0;
@@ -1664,6 +1660,10 @@ void RenderInterface_VK::RenderShader(
 
 	const CompiledShader& compiled_shader = *reinterpret_cast<CompiledShader*>(shader);
 	geometry_handle_t* p_geometry = reinterpret_cast<geometry_handle_t*>(geometry);
+	// Gradients are multiplied by the vertex colour
+	if (p_geometry->m_transparent) {
+		return;
+	}
 	if (!RetainResource(reinterpret_cast<const void*>(shader)) || !RetainResource(p_geometry) ||
 	    (texture && !RetainResource(reinterpret_cast<const void*>(texture)))) {
 		return;

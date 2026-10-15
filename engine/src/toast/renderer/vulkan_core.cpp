@@ -786,10 +786,10 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 			props.pNext = &mesh_props;
 			(*m_physical_device).getProperties2(&props);
 
-			// Mirrors voxel_mesh_common.slang with 64 quads a meshlet and up to 1536 meshlets of 8 bytes a payload
+			// Mirrors voxel_mesh_common.slang with 64 quads a mesh group and a payload of 3 words and 768 slice entries
 			usable = mesh_probe.taskShader == VK_TRUE && mesh_probe.meshShader == VK_TRUE && mesh_props.maxMeshOutputVertices >= 256 &&
 			         mesh_props.maxMeshOutputPrimitives >= 128 && mesh_props.maxMeshWorkGroupInvocations >= 64 &&
-			         mesh_props.maxTaskWorkGroupInvocations >= 64 && mesh_props.maxTaskPayloadSize >= 12292;
+			         mesh_props.maxTaskWorkGroupInvocations >= 64 && mesh_props.maxTaskPayloadSize >= 3084;
 		}
 
 		m_mesh_shader_supported = usable;

@@ -173,6 +173,8 @@ private:
 
 	std::vector<toast::Panel*> m_panels;
 	std::vector<toast::Panel3D*> m_world_panels;
+	/// Screen panels sharing one layer this frame
+	std::vector<Rml::Context*> m_screen_contexts;
 	std::unordered_map<Rml::Context*, toast::Node*> m_context_owners;
 	std::unordered_set<Rml::Context*> m_display_density_contexts;
 

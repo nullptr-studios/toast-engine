@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cctype>
+#include <span>
 #include <toast/assets/asset_manager.hpp>
 #include <toast/assets/assets.hpp>
 #include <toast/engine.hpp>
@@ -124,16 +125,18 @@ void UISystem::buildDrawFrame(renderer::VulkanRenderer::RenderFrame& frame) {
 
 	frame.ui_slot_guard = m_render_interface->OnFrameBegin(static_cast<uint32_t>(m_frame_counter++));
 
-	auto record_context = [&](Rml::Context* context) -> VkImageView {
-		ZoneScopedN("UI record context");
-		const Rml::Vector2i dims = context->GetDimensions();
+	auto record_contexts = [&](std::span<Rml::Context* const> contexts) -> VkImageView {
+		ZoneScopedN("UI record contexts");
+		const Rml::Vector2i dims = contexts.front()->GetDimensions();
 		if (dims.x <= 0 || dims.y <= 0) {
 			return nullptr;
 		}
 		if (!m_render_interface->BeginRecording({static_cast<uint32_t>(dims.x), static_cast<uint32_t>(dims.y)})) {
 			return nullptr;
 		}
-		context->Render();
+		for (Rml::Context* context : contexts) {
+			context->Render();
+		}
 		if (VkCommandBuffer command = m_render_interface->EndRecording()) {
 			frame.ui_command_buffers.emplace_back(command);
 		} else {
@@ -142,7 +145,8 @@ void UISystem::buildDrawFrame(renderer::VulkanRenderer::RenderFrame& frame) {
 		return m_render_interface->GetLastOutputView();
 	};
 
-	// Panels are in registration order
+	// Screen panels of one size draw in registration order into one layer so the overlay composites it once
+	m_screen_contexts.clear();
 	for (toast::Panel* panel : m_panels) {
 		Rml::Context* context = panel->rmlContext();
 		if (!panel->enabled() || !panel->participatesIn(toast::NodeOwnerParticipation::render) || context == nullptr) {
@@ -153,7 +157,16 @@ void UISystem::buildDrawFrame(renderer::VulkanRenderer::RenderFrame& frame) {
 			context->SetDimensions(viewport_dims);
 		}
 
-		if (const VkImageView view = record_context(context)) {
+		if (!m_screen_contexts.empty() && m_screen_contexts.front()->GetDimensions() != context->GetDimensions()) {
+			if (const VkImageView view = record_contexts(m_screen_contexts)) {
+				frame.ui_output_views.emplace_back(view);
+			}
+			m_screen_contexts.clear();
+		}
+		m_screen_contexts.push_back(context);
+	}
+	if (!m_screen_contexts.empty()) {
+		if (const VkImageView view = record_contexts(m_screen_contexts)) {
 			frame.ui_output_views.emplace_back(view);
 		}
 	}
@@ -166,7 +179,7 @@ void UISystem::buildDrawFrame(renderer::VulkanRenderer::RenderFrame& frame) {
 		}
 		panel->syncContextDimensions();
 
-		if (const VkImageView view = record_context(context)) {
+		if (const VkImageView view = record_contexts(std::span {&context, 1})) {
 			frame.ui_world_panels.push_back(
 			    {.view = vk::ImageView(view), .model = panel->worldTransformForRender(), .always_on_top = panel->alwaysOnTop()}
 			);

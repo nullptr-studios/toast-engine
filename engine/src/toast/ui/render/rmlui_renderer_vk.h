@@ -206,6 +206,9 @@ private:
 	struct geometry_handle_t {
 		int m_num_indices;
 
+		/// Every vertex alpha is 0 so colour draws skip it
+		bool m_transparent = false;
+
 		VkDescriptorBufferInfo m_p_vertex;
 		VkDescriptorBufferInfo m_p_index;
 
@@ -696,6 +699,8 @@ private:
 	void RenderBlur(float sigma, LayerPool& pool, int source_destination, int temp);
 
 	VkRect2D CurrentScissor() const;
+	/// Only the current scissor since every masked draw stays inside it
+	void ClearClipStencil(uint32_t value);
 	VkDescriptorSet GetEffectDescriptorSet(effect_image_t& image) noexcept;
 
 private:

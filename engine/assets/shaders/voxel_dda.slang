@@ -81,9 +81,11 @@ static const uint kCellBucketCount = 17;
 static const uint kLateList = kCellBucketCount;
 /// Lists with a draw command at word list * 4
 static const uint kCellDrawCount = kCellBucketCount + 1;
+/// Adjacent distance bands so the near region reads front to back
 static const uint kNearList = kCellDrawCount;
+static const uint kNearBandCount = 4;
 /// Cells behind the previous pyramid that the late phase tests again
-static const uint kRetestList = kNearList + 1;
+static const uint kRetestList = kNearList + kNearBandCount;
 /// Late near survivors filling down from the end of the late region so both share the retest count
 static const uint kLateNearList = kRetestList + 1;
 static const uint kCellListCount = kLateNearList + 1;

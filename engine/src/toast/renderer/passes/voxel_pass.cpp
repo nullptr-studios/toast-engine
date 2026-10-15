@@ -33,6 +33,7 @@ constexpr uint32_t k_cell_args_binding = 8;
 constexpr uint32_t k_quads_binding = 9;
 constexpr uint32_t k_hiz_binding = 10;
 constexpr uint32_t k_hiz_view_binding = 11;
+constexpr uint32_t k_cell_class_binding = 12;
 constexpr uint32_t k_vertices_per_quad = 6;
 
 /// Readback words after the quad vertex count
@@ -48,12 +49,12 @@ constexpr uint32_t k_cell_phase_write = 2;
 constexpr uint32_t k_cell_phase_late = 3;
 constexpr uint32_t k_cell_group_size = 64;
 
-/// Albedo normal material depth face normal at bindings 0 to 4 of voxel_lighting.slang
+/// Albedo face normal material and depth at bindings 0 to 3 of voxel_lighting.slang
 constexpr uint32_t k_gbuffer_set = 1;
 
 constexpr uint32_t k_depth_binding = 3;
 
-/// Turns the blur rotation each frame for TAA to average
+/// Turns the rounding spiral each frame for TAA to average
 constexpr float k_golden_ratio_conjugate = 0.61803398875f;
 
 }
@@ -152,7 +153,6 @@ VoxelPass::VoxelPass(const VulkanCore& core, vk::Format scene_format, vk::Format
 		writeHizDescriptors();
 	}
 	createLighting(core, scene_format, extent);
-	createNormalBlur(core, extent);
 	TOAST_INFO(
 	    "Render",
 	    "VoxelPass ready: DDA into a G-buffer, up to {} volumes a frame, cell boxes {}",
@@ -298,6 +298,8 @@ void VoxelPass::ensureCellCapacity(uint32_t frame_index, uint32_t cells) {
 	cells_ci.usage = vk::BufferUsageFlagBits::eStorageBuffer;
 	buffers.cells.emplace(m_core->getAllocator().createBuffer(cells_ci, alloc_ci));
 	setDebugName(*m_core, **buffers.cells, std::format("VoxelPass Cells[{}]", frame_index));
+	buffers.classes.emplace(m_core->getAllocator().createBuffer(cells_ci, alloc_ci));
+	setDebugName(*m_core, **buffers.classes, std::format("VoxelPass CellClasses[{}]", frame_index));
 	buffers.capacity = capacity;
 
 	if (!buffers.args.has_value()) {
@@ -328,52 +330,9 @@ void VoxelPass::writeCellDescriptors(uint32_t frame_index) {
 	write(*m_storage_sets[frame_index]);
 	if (frame_index < m_cell_sets.size()) {
 		write(*m_cell_sets[frame_index]);
+		writer.buffer(*m_cell_sets[frame_index], k_cell_class_binding, vk::DescriptorType::eStorageBuffer, **buffers.classes);
 	}
 	writer.flush(m_core->getDevice());
-}
-
-void VoxelPass::createNormalBlur(const VulkanCore& core, vk::Extent2D extent) {
-	ZoneScoped;
-	const auto uid = assets::resolveURI("core://shaders/voxel_normal_blur.slang");
-	const auto shader = uid.has_value() ? ShaderCache::get().acquire(*uid) : nullptr;
-	if (!shader) {
-		TOAST_ERROR("Render", "VoxelPass shader core://shaders/voxel_normal_blur.slang unavailable; voxel volumes will not draw");
-		setEnabled(false);
-		return;
-	}
-
-	m_blur_layout.rebuild(core, shader->reflection, "VoxelNormalBlur");
-	const auto& layouts = m_blur_layout.getDescriptorSetLayouts();
-	if (layouts.empty()) {
-		TOAST_ERROR("Render", "VoxelNormalBlur shader layout has no descriptor sets");
-		setEnabled(false);
-		return;
-	}
-
-	VulkanPipeline::Config config;
-	config.pipeline_type = VulkanPipeline::PipelineType::graphics;
-	config.debug_name = "VoxelNormalBlur";
-	config.color_format = k_scene_normal_format;
-	config.write_color_alpha = true;
-	config.extent = extent;
-	config.shader_spirv = shader->spirv;
-	config.pipeline_layout = *m_blur_layout.getPipelineLayout();
-	config.vertex_bindings = {};
-	config.vertex_attributes = {};
-	config.cull_mode = vk::CullModeFlagBits::eNone;
-	config.depth_test = false;
-	config.depth_write = false;
-	m_blur_pipeline.rebuild(core, config);
-
-	const vk::DescriptorPool pool = VulkanRenderer::instance->getDescriptorPoolHandle();
-	const vk::DescriptorSetLayout set_layout = *layouts[0];
-	m_blur_sets.clear();
-	m_bound_blur.assign(VulkanRenderer::k_frames_in_flight, {});
-	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
-		auto allocated = core.getDevice().allocateDescriptorSets(vk::DescriptorSetAllocateInfo(pool, 1, &set_layout));
-		m_blur_sets.push_back(std::move(allocated[0]));
-		setDebugName(core, *m_blur_sets.back(), std::format("VoxelNormalBlur Set[{}]", i));
-	}
 }
 
 void VoxelPass::createLighting(const VulkanCore& core, vk::Format scene_format, vk::Extent2D extent) {
@@ -402,7 +361,7 @@ void VoxelPass::createLighting(const VulkanCore& core, vk::Format scene_format, 
 	config.pipeline_type = VulkanPipeline::PipelineType::graphics;
 	config.debug_name = "VoxelLighting";
 	config.color_format = scene_format;
-	config.extra_color_formats = {k_scene_indirect_format};
+	config.extra_color_formats = {k_scene_indirect_format, k_scene_normal_format};
 	config.write_extra_color = true;
 	config.extent = extent;
 	config.shader_spirv = shader->spirv;
@@ -506,7 +465,7 @@ auto VoxelPass::prepare(uint32_t frame_index) -> bool {
 	m_mesh_shading = false;
 
 	if (frame_index >= m_storage_sets.size() || frame_index >= m_instance_buffers.size() || !m_scene_sets.get(frame_index) ||
-	    !m_lighting_pipeline.isReady() || !m_blur_pipeline.isReady()) {
+	    !m_lighting_pipeline.isReady()) {
 		return false;
 	}
 
@@ -680,6 +639,7 @@ void VoxelPass::recordCellCull(vk::CommandBuffer cmd, uint32_t frame_index, vk::
 		cmd.dispatch(phase == k_cell_phase_allocate ? 1 : groups, 1, 1);
 		if (phase != k_cell_phase_write) {
 			barriers.buffer(args, sync::Usage::compute_storage_write, sync::Usage::compute_storage_write);
+			barriers.buffer(**buffers.classes, sync::Usage::compute_storage_write, sync::Usage::compute_storage_read);
 			barriers.flush(cmd);
 		}
 	}
@@ -956,7 +916,7 @@ void VoxelPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t ima
 	}
 }
 
-void VoxelPass::recordLighting(vk::CommandBuffer cmd, uint32_t frame_index) {
+void VoxelPass::recordLighting(vk::CommandBuffer cmd, uint32_t frame_index, vk::Extent2D viewport) {
 	ZoneScoped;
 	if (!m_lighting_pipeline.isReady() || frame_index >= m_gbuffer_sets.size() || !m_lighting_scene_sets.get(frame_index)) {
 		return;
@@ -968,12 +928,11 @@ void VoxelPass::recordLighting(vk::CommandBuffer cmd, uint32_t frame_index) {
 		return;
 	}
 
-	const std::array<vk::ImageView, 5> views {
+	const std::array<vk::ImageView, 4> views {
 	  instance->getVoxelAlbedoView(),
-	  instance->getSceneNormalView(),
+	  instance->getVoxelFaceNormalView(),
 	  instance->getVoxelMaterialView(),
 	  instance->getDepthView(),
-	  instance->getVoxelFaceNormalView(),
 	};
 	if (std::ranges::any_of(views, [](vk::ImageView view) { return !view; })) {
 		return;
@@ -998,7 +957,16 @@ void VoxelPass::recordLighting(vk::CommandBuffer cmd, uint32_t frame_index) {
 
 	m_lighting_scene_sets.updateTlas(frame_index);
 
-	const LightingPushConstants push {.inverse_view_projection = glm::inverse(frame->frame_data.jittered_view_projection)};
+	const auto height = static_cast<float>(viewport.height);
+	const float rotation =
+	    frame->taa_active ? std::fmod(static_cast<float>(frame->sequence % 4096) * k_golden_ratio_conjugate, 1.0f) : 0.0f;
+	const LightingPushConstants push {
+	  .inverse_view_projection = glm::inverse(frame->frame_data.jittered_view_projection),
+	  .camera_radius = glm::vec4(frame->frame_data.camera_position, instance->voxelNormalRounding() * voxel::k_voxel_size),
+	  .viewport = glm::vec4(
+	      static_cast<float>(viewport.width), height, 0.5f * height * std::abs(frame->frame_data.projection[1][1]), rotation
+	  ),
+	};
 	const vk::PipelineLayout layout = *m_lighting_layout.getPipelineLayout();
 	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_lighting_pipeline.getPipeline());
 	cmd.bindDescriptorSets(
@@ -1013,71 +981,13 @@ void VoxelPass::recordLighting(vk::CommandBuffer cmd, uint32_t frame_index) {
 }
 
 void VoxelPass::onTargetsRecreated() {
-	std::ranges::fill(m_bound_gbuffer, std::array<vk::ImageView, 5> {});
-	std::ranges::fill(m_bound_blur, std::array<vk::ImageView, 3> {});
+	std::ranges::fill(m_bound_gbuffer, std::array<vk::ImageView, 4> {});
 
 	if (!m_cell_sets.empty()) {
 		const auto* renderer = VulkanRenderer::instance;
 		m_hiz.create(*m_core, renderer->getDepthView(), renderer->getOutputTarget().getExtent());
 		writeHizDescriptors();
 	}
-}
-
-void VoxelPass::recordNormalBlur(vk::CommandBuffer cmd, uint32_t frame_index, vk::Extent2D viewport) {
-	ZoneScoped;
-	if (!m_blur_pipeline.isReady() || frame_index >= m_blur_sets.size()) {
-		return;
-	}
-
-	const auto* instance = VulkanRenderer::instance;
-	const auto* frame = instance->renderingFrame();
-	if (frame == nullptr) {
-		return;
-	}
-
-	const std::array<vk::ImageView, 3> views {
-	  instance->getVoxelAlbedoView(), instance->getVoxelFaceNormalView(), instance->getDepthView()
-	};
-	if (std::ranges::any_of(views, [](vk::ImageView view) { return !view; })) {
-		return;
-	}
-
-	// Safe since the fence of this slot was waited on
-	if (m_bound_blur[frame_index] != views) {
-		DescriptorWriter writer;
-		for (uint32_t binding = 0; binding < views.size(); ++binding) {
-			const bool depth = binding == views.size() - 1;
-			writer.image(
-			    *m_blur_sets[frame_index],
-			    binding,
-			    vk::DescriptorType::eCombinedImageSampler,
-			    *m_point_sampler,
-			    views[binding],
-			    depth ? vk::ImageLayout::eDepthReadOnlyOptimal : vk::ImageLayout::eShaderReadOnlyOptimal
-			);
-		}
-		writer.flush(m_core->getDevice());
-		m_bound_blur[frame_index] = views;
-	}
-
-	const auto height = static_cast<float>(viewport.height);
-	const float rotation =
-	    frame->taa_active ? std::fmod(static_cast<float>(frame->sequence % 4096) * k_golden_ratio_conjugate, 1.0f) : 0.0f;
-	const NormalBlurParams params {
-	  .inverse_view_projection = glm::inverse(frame->frame_data.jittered_view_projection),
-	  .camera_radius = glm::vec4(frame->frame_data.camera_position, instance->voxelNormalRounding() * voxel::k_voxel_size),
-	  .viewport = glm::vec4(
-	      static_cast<float>(viewport.width), height, 0.5f * height * std::abs(frame->frame_data.projection[1][1]), rotation
-	  ),
-	};
-
-	const vk::PipelineLayout layout = *m_blur_layout.getPipelineLayout();
-	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_blur_pipeline.getPipeline());
-	cmd.bindDescriptorSets(
-	    vk::PipelineBindPoint::eGraphics, layout, 0, std::array<vk::DescriptorSet, 1> {*m_blur_sets[frame_index]}, {}
-	);
-	cmd.pushConstants(layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(NormalBlurParams), &params);
-	cmd.draw(3, 1, 0, 0);
 }
 
 }

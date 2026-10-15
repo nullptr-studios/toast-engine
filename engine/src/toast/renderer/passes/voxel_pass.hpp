@@ -66,11 +66,8 @@ public:
 	/// Inside a depth only scope before the G-buffer scope that shades the same quads
 	void recordQuadDepth(vk::CommandBuffer cmd, uint32_t frame_index, bool late);
 
-	/// Writes scene normal while reading face normals and depth
-	void recordNormalBlur(vk::CommandBuffer cmd, uint32_t frame_index, vk::Extent2D viewport);
-
-	/// Writes scene colour and indirect while reading the G-buffer and depth
-	void recordLighting(vk::CommandBuffer cmd, uint32_t frame_index);
+	/// Writes scene colour indirect and rounded normal while reading the G-buffer and depth
+	void recordLighting(vk::CommandBuffer cmd, uint32_t frame_index, vk::Extent2D viewport);
 
 	/// After the G-buffer and depth targets are recreated since a new view can reuse a destroyed handle value
 	void onTargetsRecreated();
@@ -122,7 +119,8 @@ private:
 	static constexpr uint32_t k_late_list = k_cell_bucket_count;
 	static constexpr uint32_t k_cell_draw_count = k_cell_bucket_count + 1;
 	static constexpr uint32_t k_near_list = k_cell_draw_count;
-	static constexpr uint32_t k_retest_list = k_near_list + 1;
+	static constexpr uint32_t k_near_band_count = 4;
+	static constexpr uint32_t k_retest_list = k_near_list + k_near_band_count;
 	static constexpr uint32_t k_late_near_list = k_retest_list + 1;
 	static constexpr uint32_t k_cell_list_count = k_late_near_list + 1;
 	static constexpr uint32_t k_cell_offsets_word = k_cell_draw_count * 4;
@@ -145,6 +143,8 @@ private:
 	struct CellBuffers {
 		/// Instance index and packed cell per surviving cell
 		std::optional<vma::raii::Buffer> cells;
+		/// Count phase result per cell of the dispatch
+		std::optional<vma::raii::Buffer> classes;
 		/// Indirect commands then list offsets and cursors then the mesh dispatch and the quad draw
 		std::optional<vma::raii::Buffer> args;
 		uint32_t capacity = 0;
@@ -161,11 +161,6 @@ private:
 
 	/// Mirrors voxel_lighting.slang LightingPushConstants
 	struct LightingPushConstants {
-		glm::mat4 inverse_view_projection {1.0f};
-	};
-
-	/// Mirrors voxel_normal_blur.slang NormalBlurParams
-	struct NormalBlurParams {
 		glm::mat4 inverse_view_projection {1.0f};
 		glm::vec4 camera_radius {0.0f};
 		glm::vec4 viewport {0.0f};
@@ -208,7 +203,6 @@ private:
 	void createInstanceBuffers(const VulkanCore& core);
 	void createDescriptors(const VulkanCore& core, const ShaderReflection& reflection);
 	void createLighting(const VulkanCore& core, vk::Format scene_format, vk::Extent2D extent);
-	void createNormalBlur(const VulkanCore& core, vk::Extent2D extent);
 
 	void bindStorage(uint32_t frame_index, const std::shared_ptr<const VoxelGpuStorage>& storage);
 
@@ -271,15 +265,8 @@ private:
 	vk::raii::Sampler m_point_sampler = nullptr;
 	std::vector<vk::raii::DescriptorSet> m_gbuffer_sets;
 
-	/// Albedo normal material depth and face normal last written into each set
-	std::vector<std::array<vk::ImageView, 5>> m_bound_gbuffer;
-
-	ShaderLayout m_blur_layout;
-	VulkanPipeline m_blur_pipeline;
-	std::vector<vk::raii::DescriptorSet> m_blur_sets;
-
-	/// Albedo face normal and depth last written into each set
-	std::vector<std::array<vk::ImageView, 3>> m_bound_blur;
+	/// Albedo face normal material and depth last written into each set
+	std::vector<std::array<vk::ImageView, 4>> m_bound_gbuffer;
 };
 
 }

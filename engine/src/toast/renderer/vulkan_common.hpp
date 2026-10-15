@@ -38,6 +38,9 @@ inline constexpr vk::Format k_voxel_albedo_format = vk::Format::eR8G8B8A8Srgb;
 /// r metallic g reflectivity b roughness a log encoded emissive
 inline constexpr vk::Format k_voxel_material_format = vk::Format::eR8G8B8A8Unorm;
 
+/// xyz voxel face normal * 0.5 + 0.5
+inline constexpr vk::Format k_voxel_face_normal_format = vk::Format::eA2B10G10R10UnormPack32;
+
 /// @warning RenderStage::world only since the overlay scope has one attachment
 [[nodiscard]]
 inline auto worldStageExtraColorFormats() -> std::vector<vk::Format> {
@@ -47,7 +50,7 @@ inline auto worldStageExtraColorFormats() -> std::vector<vk::Format> {
 /// After k_voxel_albedo_format in the voxel G-buffer scope
 [[nodiscard]]
 inline auto voxelGbufferExtraColorFormats() -> std::vector<vk::Format> {
-	return {k_scene_normal_format, k_voxel_material_format, k_scene_motion_format};
+	return {k_voxel_face_normal_format, k_voxel_material_format, k_scene_motion_format};
 }
 
 [[nodiscard]]

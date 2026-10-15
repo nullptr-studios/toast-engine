@@ -1,19 +1,21 @@
 // Task stage of the near cell mesh shader backend
-// kTaskGroupsPerCell groups per near cell and one thread per brick pack the visible exposed slices of every side of a brick
-// into meshlets of at most 64 exposed faces
+// kTaskGroupsPerCell groups per near cell and one thread per brick greedy count the camera facing slices of every brick so
+// each mesh group gets a full window of kMeshletQuads quads across bricks
 import voxel;
 import voxel_dda;
 import voxel_mesh_common;
 import lighting;
 
 groupshared QuadTaskPayload sPayload;
-groupshared uint sMeshletCount;
+/// Each thread lists its slices here before the scan gives them their place in the payload
+groupshared uint sStaged[kMaxEntries];
+groupshared uint sEntryBase[kTaskBricks];
+groupshared uint sQuadBase[kTaskBricks];
 
-void appendMeshlet(uint brickInCell, uint2 mask)
+struct CountSink : IQuadSink
 {
-    uint index;
-    InterlockedAdd(sMeshletCount, 1u, index);
-    sPayload.meshlets[index] = uint2(brickInCell | (mask.y << 6), mask.x);
+    [mutating]
+    void quad(uint packedQuad) { }
 }
 
 [shader("amplification")]
@@ -25,12 +27,6 @@ void quadTaskMain(uint3 group : SV_GroupID, uint thread : SV_GroupIndex)
     const uint entryIndex = (gPush.bucket == kMeshEarly ? gVoxelCellArgs[kCellOffsetsWord + kNearList]
                                                          : gVoxelCellArgs[kCellCursorsWord + kLateNearList]) +
                             group.x;
-    if (thread == 0u)
-    {
-        sMeshletCount = 0u;
-        sPayload.entryIndex = entryIndex;
-    }
-    GroupMemoryBarrierWithGroupSync();
 
     const uint2 cell = gVoxelCells[entryIndex];
     const VoxelInstance instance = gVoxelInstances[cellEntryInstance(cell.x)];
@@ -41,6 +37,10 @@ void quadTaskMain(uint3 group : SV_GroupID, uint thread : SV_GroupIndex)
     const float3 brickLow = float3(brickMin);
     const bool visible = (brickEntry & 3u) != kTagEmpty &&
                          !outsideFrustum(mul(gCamera.viewProjection, instance.voxelToWorld), brickLow, brickLow + float(kBrickDim));
+
+    const uint staged = thread * kBrickEntries;
+    uint entries = 0u;
+    uint quads = 0u;
     if (visible)
     {
         uint occupancy[16];
@@ -50,9 +50,7 @@ void quadTaskMain(uint3 group : SV_GroupID, uint thread : SV_GroupIndex)
         }
         const float3 camera = mul(instance.worldToVoxel, float4(gCamera.position, 1.0)).xyz;
 
-        // Greedy quads never outnumber exposed faces so slices of every side pack while their faces fit one meshlet
-        uint2 mask = uint2(0u, 0u);
-        uint faces = 0u;
+        CountSink sink;
         for (uint direction = 0u; direction < 6u; ++direction)
         {
             const uint axis = direction >> 1;
@@ -69,44 +67,57 @@ void quadTaskMain(uint3 group : SV_GroupID, uint thread : SV_GroupIndex)
                 neighbour[word] = occupancyWord(neighbourEntry, word);
             }
 
-            uint sideFaces[16];
-            exposedFaces(occupancy, neighbour, direction, sideFaces);
+            uint faces[16];
+            exposedFaces(occupancy, neighbour, direction, faces);
             for (uint slice = 0u; slice < 8u; ++slice)
             {
                 if (!sliceFacesCamera(camera, brickMin, axis, positive, slice))
                 {
                     continue;
                 }
-                const uint exposed = sliceFaceCount(sideFaces, axis, slice);
-                if (exposed == 0u)
+                uint rows[8];
+                sliceRows(faces, axis, slice, rows);
+                const uint count = greedySlice(rows, direction, slice, brickInCell, sink);
+                if (count != 0u)
                 {
-                    continue;
+                    sStaged[staged + entries] = (direction * 8u + slice) | (count << 6);
+                    ++entries;
+                    quads += count;
                 }
-
-                if (faces + exposed > kMeshletQuads)
-                {
-                    appendMeshlet(brickInCell, mask);
-                    mask = uint2(0u, 0u);
-                    faces = 0u;
-                }
-                const uint bit = direction * 8u + slice;
-                if (bit < 32u)
-                {
-                    mask.x |= 1u << bit;
-                }
-                else
-                {
-                    mask.y |= 1u << (bit - 32u);
-                }
-                faces += exposed;
             }
         }
-        if (faces > 0u)
-        {
-            appendMeshlet(brickInCell, mask);
-        }
     }
-
+    sEntryBase[thread] = entries;
+    sQuadBase[thread] = quads;
     GroupMemoryBarrierWithGroupSync();
-    DispatchMesh(sMeshletCount, 1u, 1u, sPayload);
+
+    if (thread == 0u)
+    {
+        uint entryTotal = 0u;
+        uint quadTotal = 0u;
+        for (uint i = 0u; i < kTaskBricks; ++i)
+        {
+            const uint threadEntries = sEntryBase[i];
+            const uint threadQuads = sQuadBase[i];
+            sEntryBase[i] = entryTotal;
+            sQuadBase[i] = quadTotal;
+            entryTotal += threadEntries;
+            quadTotal += threadQuads;
+        }
+        sPayload.entryIndex = entryIndex;
+        sPayload.entryCount = entryTotal;
+        sPayload.quadCount = quadTotal;
+    }
+    GroupMemoryBarrierWithGroupSync();
+
+    uint firstQuad = sQuadBase[thread];
+    for (uint i = 0u; i < entries; ++i)
+    {
+        const uint slice = sStaged[staged + i];
+        sPayload.entries[sEntryBase[thread] + i] = brickInCell | ((slice & 63u) << 6) | (firstQuad << 12);
+        firstQuad += slice >> 6;
+    }
+    GroupMemoryBarrierWithGroupSync();
+
+    DispatchMesh((sPayload.quadCount + kMeshletQuads - 1u) / kMeshletQuads, 1u, 1u, sPayload);
 }

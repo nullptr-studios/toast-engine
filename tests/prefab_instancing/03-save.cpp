@@ -56,6 +56,7 @@ TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/03-save", test_prefab_i
 
 	Box<Node> root = WorldTestAccess::instantiate(*world, store.handle(A_ASSET), ctx);
 	assert(root.exists());
+	const uint64_t interior_uid = WorldTestAccess::childrenOf(*WorldTestAccess::childrenOf(*root)[0])[0]->uid().data();
 
 	// --- Save as a definition of A: the instance is written as a reference, NOT inlined ---------
 	{
@@ -99,7 +100,7 @@ TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/03-save", test_prefab_i
 		assert(kids[0]->sourcePrefab().uid().data() == uidOf(B_ASSET));
 		// B's interior is grafted back in from prefab B.
 		assert(WorldTestAccess::childrenOf(*kids[0]).size() == 1);
-		assert(WorldTestAccess::childrenOf(*kids[0])[0]->uid().data() == uidOf("bCHILDnode0"));
+		assert(WorldTestAccess::childrenOf(*kids[0])[0]->uid().data() == interior_uid);
 	}
 
 	// --- Save as a VARIANT (different self_uid): the root becomes a reference to A, no recursion --

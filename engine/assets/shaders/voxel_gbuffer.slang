@@ -24,3 +24,14 @@ public float decodeEmissive(float encoded)
 {
     return exp2(encoded * kEmissiveStops) - 1.0;
 }
+
+/// Face normals live in a unorm 10 10 10 2 target
+public float4 encodeFaceNormal(float3 normal)
+{
+    return float4(normal * 0.5 + 0.5, 1.0);
+}
+
+public float3 decodeFaceNormal(float4 encoded)
+{
+    return normalize(encoded.xyz * 2.0 - 1.0);
+}

@@ -4,21 +4,38 @@ import voxel;
 import voxel_dda;
 
 static const uint kTaskBricks = 64u / kTaskGroupsPerCell;
-/// Bit direction * 8 + slice of a meshlet face mask
-static const uint kBrickSlices = 6u * 8u;
-/// One meshlet per exposed slice of every brick side when no two fit together
-static const uint kMaxMeshlets = kTaskBricks * kBrickSlices;
+/// Camera facing sides of a brick are at most 3 so its slices are at most 24
+static const uint kBrickEntries = 3u * 8u;
+static const uint kMaxEntries = kTaskBricks * kBrickEntries;
 static const uint kMeshletQuads = 64u;
 
 /// gPush.bucket picks the list since the near and late near lists share these entry points
 static const uint kMeshEarly = 0u;
 
+/// Mesh group m takes quads m * kMeshletQuads onward of the task group in entry order
 struct QuadTaskPayload
 {
     uint entryIndex;
-    /// x brickInCell in 6 bits then face mask bits 32 to 47 and y face mask bits 0 to 31
-    uint2 meshlets[kMaxMeshlets];
+    uint entryCount;
+    uint quadCount;
+    /// brickInCell 6 bits then direction * 8 + slice 6 bits then the first quad of the slice 16 bits
+    uint entries[kMaxEntries];
 };
+
+uint entryBrick(uint entry)
+{
+    return entry & 63u;
+}
+
+uint entrySlice(uint entry)
+{
+    return (entry >> 6) & 63u;
+}
+
+uint entryFirstQuad(uint entry)
+{
+    return entry >> 12;
+}
 
 uint3 brickOfCell(uint2 cell, uint brickInCell)
 {
@@ -65,29 +82,6 @@ void exposedFaces(uint occupancy[16], uint neighbour[16], uint direction, out ui
     }
 }
 
-uint sliceFaceCount(uint faces[16], uint axis, uint slice)
-{
-    uint count = 0u;
-    for (uint word = 0u; word < 16u; ++word)
-    {
-        uint mask;
-        if (axis == 0u)
-        {
-            mask = 0x01010101u << slice;
-        }
-        else if (axis == 1u)
-        {
-            mask = (word & 1u) == (slice >> 2) ? 0xFFu << ((slice & 3u) * 8u) : 0u;
-        }
-        else
-        {
-            mask = (word >> 1) == slice ? 0xFFFFFFFFu : 0u;
-        }
-        count += countbits(faces[word] & mask);
-    }
-    return count;
-}
-
 /// One slice of exposedFaces as the rows over v with bits over u that exposedRows gives
 void sliceRows(uint faces[16], uint axis, uint slice, out uint rows[8])
 {
@@ -117,4 +111,35 @@ bool sliceFacesCamera(float3 camera, int3 brickMin, uint axis, bool positive, ui
 {
     const float plane = float(brickMin[axis] + int(slice)) + (positive ? 1.0 : 0.0);
     return positive ? camera[axis] > plane : camera[axis] < plane;
+}
+
+interface IQuadSink
+{
+    [mutating]
+    void quad(uint packedQuad);
+}
+
+/// Task and mesh stages must see the same quads in the same order
+uint greedySlice<Sink : IQuadSink>(uint rows[8], uint direction, uint slice, uint brickInCell, inout Sink sink)
+{
+    uint count = 0u;
+    for (uint v = 0u; v < 8u; ++v)
+    {
+        while (rows[v] != 0u)
+        {
+            const uint u = firstbitlow(rows[v]);
+            const uint width = firstbitlow(~(rows[v] >> u));
+            const uint run = ((1u << width) - 1u) << u;
+            uint height = 1u;
+            while (v + height < 8u && (rows[v + height] & run) == run)
+            {
+                rows[v + height] &= ~run;
+                ++height;
+            }
+            rows[v] &= ~run;
+            sink.quad(packQuad(direction, slice, u, v, width, height, brickInCell));
+            ++count;
+        }
+    }
+    return count;
 }

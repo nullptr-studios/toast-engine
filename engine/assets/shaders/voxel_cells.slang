@@ -1,6 +1,6 @@
-//   count     each surviving cell adds one to its list
+//   count     each cell is classified once and a surviving cell takes the next slot of its list
 //   allocate  one thread turns the counts into offsets and indirect commands
-//   write     each surviving cell takes a slot in its list
+//   write     each surviving cell stores itself at its list offset plus slot
 //   mesh      one group per near cell turns the exposed faces of its bricks into greedy quads
 //   late      one thread per retest cell against the new pyramid then the late near cells mesh
 // Early phases test the previous pyramid with the previous camera and transforms so a wrong guess only costs a late test
@@ -50,6 +50,11 @@ struct HizView
 
 [[vk::binding(11, 1)]]
 ConstantBuffer<HizView> gHizView;
+
+/// Per global cell the count phase result as the cell entry then list | slot << kClassSlotShift or kNoBucket
+[[vk::binding(12, 1)]]
+RWStructuredBuffer<uint2> gCellClass;
+static const uint kClassSlotShift = 5u;
 
 static const uint kPhaseCount = 0u;
 static const uint kPhaseAllocate = 1u;
@@ -152,34 +157,41 @@ bool insideBox(float3 camera, float guard, float3 boxMin, float3 boxMax)
 }
 
 
-bool isNearCell(float3 camera, float3 boxMin, float3 boxMax)
+float nearDistance(float3 camera, float3 boxMin, float3 boxMax)
 {
-    return length(camera - clamp(camera, boxMin, boxMax)) < gCull.nearVoxels;
+    return length(camera - clamp(camera, boxMin, boxMax));
 }
 
-/// Near cells go to kNearList and camera cells to bucket 0 and cells behind the previous pyramid to kRetestList while the
-/// rest step by sqrt 2 in distance
-uint classifyCell(uint globalCell, out uint entry, out uint packed)
+bool isNearCell(float3 camera, float3 boxMin, float3 boxMax)
+{
+    return nearDistance(camera, boxMin, boxMax) < gCull.nearVoxels;
+}
+
+uint3 coarseCellOf(VolumeRecord record, uint local)
+{
+    return uint3(local % record.coarseDimsX, (local / record.coarseDimsX) % record.coarseDimsY,
+                 local / (record.coarseDimsX * record.coarseDimsY));
+}
+
+/// A near band or bucket 0 for the camera or the retest list or a distance bucket stepping by sqrt 2
+uint classifyCell(uint globalCell, out uint entry)
 {
     const uint instanceIndex = instanceOfCell(globalCell);
     entry = instanceIndex;
-    packed = 0u;
 
     const VoxelInstance instance = gVoxelInstances[instanceIndex];
     const VolumeRecord record = gVolumeRecords[instance.recordIndex];
     const uint local = globalCell - instance.cellBase;
-    const uint3 coarseDims = uint3(record.coarseDimsX, record.coarseDimsY, record.coarseDimsZ);
-    if (local >= coarseDims.x * coarseDims.y * coarseDims.z)
+    if (local >= record.coarseDimsX * record.coarseDimsY * record.coarseDimsZ)
     {
         return kNoBucket;
     }
 
-    const uint3 cell = uint3(local % coarseDims.x, (local / coarseDims.x) % coarseDims.y, local / (coarseDims.x * coarseDims.y));
+    const uint3 cell = coarseCellOf(record, local);
     if (!coarseSolid(instance.recordIndex, int3(cell)))
     {
         return kNoBucket;
     }
-    packed = packCell(cell);
 
     const int3 dims = int3(record.brickDimsX, record.brickDimsY, record.brickDimsZ) * int(kBrickDim);
     const float4x4 voxelToClip = mul(gCull.viewProjection, instance.voxelToWorld);
@@ -227,9 +239,10 @@ uint classifyCell(uint globalCell, out uint entry, out uint packed)
     {
         return kRetestList;
     }
-    if (isNearCell(camera, boxMin, boxMax))
+    const float near = nearDistance(camera, boxMin, boxMax);
+    if (near < gCull.nearVoxels)
     {
-        return kNearList;
+        return kNearList + min(uint(near / gCull.nearVoxels * float(kNearBandCount)), kNearBandCount - 1u);
     }
     if (inside)
     {
@@ -242,8 +255,12 @@ uint classifyCell(uint globalCell, out uint entry, out uint packed)
 
 void allocateLists()
 {
-    // Read before the loop turns the cursors into offsets
-    const uint nearCells = gCellArgsOut[kCellCursorsWord + kNearList];
+    // Read before the loop turns the counts into list ends
+    uint nearCells = 0u;
+    for (uint band = 0u; band < kNearBandCount; ++band)
+    {
+        nearCells += gCellArgsOut[kCellCursorsWord + kNearList + band];
+    }
 
     const uint retestCells = gCellArgsOut[kCellCursorsWord + kRetestList];
 
@@ -264,8 +281,8 @@ void allocateLists()
             gCellArgsOut[list * 4u + 3u] = 0u;
         }
         gCellArgsOut[kCellOffsetsWord + list] = offset;
-        gCellArgsOut[kCellCursorsWord + list] = offset;
         offset += count;
+        gCellArgsOut[kCellCursorsWord + list] = offset;
     }
 
     gCellArgsOut[kLateList * 4u + 0u] = 36u;
@@ -377,20 +394,28 @@ void computeMain(uint3 thread : SV_DispatchThreadID)
         return;
     }
 
-    uint entry;
-    uint packed;
-    const uint list = classifyCell(thread.x, entry, packed);
-    if (list == kNoBucket)
+    if (gCull.phase == kPhaseWrite)
     {
+        const uint2 classified = gCellClass[thread.x];
+        if (classified.y == kNoBucket)
+        {
+            return;
+        }
+        const uint list = classified.y & ((1u << kClassSlotShift) - 1u);
+        const VoxelInstance instance = gVoxelInstances[cellEntryInstance(classified.x)];
+        const uint3 cell = coarseCellOf(gVolumeRecords[instance.recordIndex], thread.x - instance.cellBase);
+        gCellsOut[gCellArgsOut[kCellOffsetsWord + list] + (classified.y >> kClassSlotShift)] = uint2(classified.x, packCell(cell));
         return;
     }
 
-    uint slot;
-    InterlockedAdd(gCellArgsOut[kCellCursorsWord + list], 1u, slot);
-    if (gCull.phase == kPhaseWrite)
+    uint entry;
+    const uint list = classifyCell(thread.x, entry);
+    uint slot = 0u;
+    if (list != kNoBucket)
     {
-        gCellsOut[slot] = uint2(entry, packed);
+        InterlockedAdd(gCellArgsOut[kCellCursorsWord + list], 1u, slot);
     }
+    gCellClass[thread.x] = uint2(entry, list == kNoBucket ? kNoBucket : list | (slot << kClassSlotShift));
 }
 
 /// Counts the quads when @p base is kNoBucket and writes them from @p base otherwise

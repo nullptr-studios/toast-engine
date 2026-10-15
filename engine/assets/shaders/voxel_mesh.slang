@@ -1,97 +1,92 @@
 // Mesh stage of the near cell mesh shader backend kept out of voxel.slang since its SPIR-V declares mesh shading
-// One group per meshlet greedy merges the masked slices of one brick into at most 64 quads
+// One group per window of kMeshletQuads quads and one thread per slice of the window greedy merges its 8x8 faces again
 import voxel;
 import voxel_dda;
 import voxel_mesh_common;
 import lighting;
 
-groupshared uint sOccupancy[16];
-/// 16 words per direction loaded only for the sides the mask touches
-groupshared uint sNeighbours[6 * 16];
+groupshared uint sFirstEntry;
 groupshared uint sQuads[kMeshletQuads];
-groupshared uint sQuadCount;
+
+/// next is the global index of the next quad of the slice
+struct WindowSink : IQuadSink
+{
+    uint next;
+    uint windowStart;
+
+    [mutating]
+    void quad(uint packedQuad)
+    {
+        if (next - windowStart < kMeshletQuads)
+        {
+            sQuads[next - windowStart] = packedQuad;
+        }
+        ++next;
+    }
+}
 
 [shader("mesh")]
 [outputtopology("triangle")]
-[numthreads(64, 1, 1)]
+[numthreads(kMeshletQuads, 1, 1)]
 void quadMeshMain(uint3 group : SV_GroupID, uint thread : SV_GroupIndex, in payload QuadTaskPayload payload,
                   OutputVertices<QuadVSOutput, kMeshletQuads * 4> vertices, OutputIndices<uint3, kMeshletQuads * 2> triangles)
 {
-    const uint2 meshlet = payload.meshlets[group.x];
-    const uint brickInCell = meshlet.x & 63u;
-    const uint2 mask = uint2(meshlet.y, meshlet.x >> 6);
+    const uint windowStart = group.x * kMeshletQuads;
+    const uint quads = min(payload.quadCount - windowStart, kMeshletQuads);
 
-    const uint2 cell = gVoxelCells[payload.entryIndex];
-    const VoxelInstance instance = gVoxelInstances[cellEntryInstance(cell.x)];
-    const int3 brick = int3(brickOfCell(cell, brickInCell));
-
-    // Words 0 to 15 are the brick and the rest the neighbour of each masked side
-    for (uint index = thread; index < 16u * 7u; index += 64u)
-    {
-        if (index < 16u)
-        {
-            sOccupancy[index] = occupancyWord(brickEntryAt(instance.recordIndex, brick), index);
-            continue;
-        }
-        const uint direction = (index - 16u) >> 4;
-        const uint bits = direction < 4u ? (mask.x >> (direction * 8u)) & 0xFFu : (mask.y >> ((direction - 4u) * 8u)) & 0xFFu;
-        if (bits != 0u)
-        {
-            const uint neighbourEntry = brickEntryAt(instance.recordIndex, brick + directionStep(direction));
-            sNeighbours[index - 16u] = occupancyWord(neighbourEntry, (index - 16u) & 15u);
-        }
-    }
+    // Last slice starting at or before the window so a slice split across two windows meshes in both
     if (thread == 0u)
     {
-        sQuadCount = 0u;
+        uint low = 0u;
+        uint high = payload.entryCount;
+        while (high - low > 1u)
+        {
+            const uint middle = (low + high) / 2u;
+            if (entryFirstQuad(payload.entries[middle]) <= windowStart)
+            {
+                low = middle;
+            }
+            else
+            {
+                high = middle;
+            }
+        }
+        sFirstEntry = low;
     }
     GroupMemoryBarrierWithGroupSync();
 
-    // One thread per masked slice greedy merges its 8x8 faces
-    const bool masked = thread < kBrickSlices && ((thread < 32u ? mask.x >> thread : mask.y >> (thread - 32u)) & 1u) != 0u;
-    if (masked)
-    {
-        const uint direction = thread >> 3;
-        const uint slice = thread & 7u;
-        const uint axis = direction >> 1;
-        const bool positive = (direction & 1u) == 0u;
+    const uint2 cell = gVoxelCells[payload.entryIndex];
+    const VoxelInstance instance = gVoxelInstances[cellEntryInstance(cell.x)];
 
+    // Every slice holds a quad so a window spans at most kMeshletQuads slices
+    const uint index = sFirstEntry + thread;
+    const uint entry = index < payload.entryCount ? payload.entries[index] : 0u;
+    if (index < payload.entryCount && entryFirstQuad(entry) < windowStart + kMeshletQuads)
+    {
+        const uint brickInCell = entryBrick(entry);
+        const uint direction = entrySlice(entry) >> 3;
+        const uint slice = entrySlice(entry) & 7u;
+        const int3 brick = int3(brickOfCell(cell, brickInCell));
+
+        const uint brickEntry = brickEntryAt(instance.recordIndex, brick);
+        const uint neighbourEntry = brickEntryAt(instance.recordIndex, brick + directionStep(direction));
         uint occupancy[16];
         uint neighbour[16];
         for (uint word = 0u; word < 16u; ++word)
         {
-            occupancy[word] = sOccupancy[word];
-            neighbour[word] = sNeighbours[direction * 16u + word];
+            occupancy[word] = occupancyWord(brickEntry, word);
+            neighbour[word] = occupancyWord(neighbourEntry, word);
         }
 
         uint faces[16];
         exposedFaces(occupancy, neighbour, direction, faces);
         uint rows[8];
-        sliceRows(faces, axis, slice, rows);
-        for (uint v = 0u; v < 8u; ++v)
-        {
-            while (rows[v] != 0u)
-            {
-                const uint u = firstbitlow(rows[v]);
-                const uint width = firstbitlow(~(rows[v] >> u));
-                const uint run = ((1u << width) - 1u) << u;
-                uint height = 1u;
-                while (v + height < 8u && (rows[v + height] & run) == run)
-                {
-                    rows[v + height] &= ~run;
-                    ++height;
-                }
-                rows[v] &= ~run;
-
-                uint index;
-                InterlockedAdd(sQuadCount, 1u, index);
-                sQuads[index] = packQuad(direction, slice, u, v, width, height, brickInCell);
-            }
-        }
+        sliceRows(faces, direction >> 1, slice, rows);
+        WindowSink sink = { entryFirstQuad(entry), windowStart };
+        greedySlice(rows, direction, slice, brickInCell, sink);
     }
     GroupMemoryBarrierWithGroupSync();
 
-    const uint quads = sQuadCount;
     SetMeshOutputCounts(quads * 4u, quads * 2u);
     if (thread < quads)
     {
@@ -115,12 +110,8 @@ void quadMeshMain(uint3 group : SV_GroupID, uint thread : SV_GroupIndex, in payl
 }
 
 [shader("fragment")]
+[earlydepthstencil]
 FSOutput meshQuadFragmentMain(QuadVSOutput input)
 {
-    FSOutput output;
-    if (!shadeQuad(input, output))
-    {
-        discard;
-    }
-    return output;
+    return shadeQuad(input);
 }

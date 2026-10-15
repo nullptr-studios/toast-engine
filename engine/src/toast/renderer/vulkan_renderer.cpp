@@ -99,11 +99,15 @@ struct DirectionalCascadeFit {
 
 constexpr float k_caster_back_off = 100.0f;
 
-auto fitDirectionalCascade(
-    const toast::Camera& camera, float aspect, glm::vec3 light_direction, float split_near, float split_far, uint32_t resolution
-) -> DirectionalCascadeFit {
-	constexpr float k_world_depth_bias = 0.01f;
+/// Share of the slice radius a cascade covers beyond its slice so small camera moves reuse its cached map
+constexpr float k_cascade_padding = 0.15f;
 
+struct BoundingSphere {
+	glm::vec3 center {0.0f};
+	float radius = 0.0f;
+};
+
+auto frustumSliceSphere(const toast::Camera& camera, float aspect, float split_near, float split_far) -> BoundingSphere {
 	const float tan_half_fov = std::tan(glm::radians(camera.fov) * 0.5f);
 	const glm::mat4 inverse_view = glm::inverse(camera.getView());
 
@@ -129,8 +133,14 @@ auto fitDirectionalCascade(
 	for (const auto& corner : corners) {
 		radius = std::max(radius, glm::distance(center, corner));
 	}
-	radius = std::ceil(radius * 16.0f) / 16.0f;
-	radius = std::max(radius, 0.001f);
+	return {.center = center, .radius = radius};
+}
+
+auto fitDirectionalCascade(glm::vec3 center, float radius, glm::vec3 light_direction, uint32_t resolution)
+    -> DirectionalCascadeFit {
+	constexpr float k_world_depth_bias = 0.01f;
+
+	radius = std::max(std::ceil(radius * 16.0f) / 16.0f, 0.001f);
 
 	const glm::vec3 direction = glm::normalize(light_direction);
 	const glm::vec3 up =
@@ -955,7 +965,7 @@ void VulkanRenderer::createSceneColorResources() {
 	create(m_scene_motion, m_scene_motion_format, "SceneMotion");
 	create(m_voxel_albedo, k_voxel_albedo_format, "VoxelAlbedo");
 	create(m_voxel_material, k_voxel_material_format, "VoxelMaterial");
-	create(m_voxel_face_normal, k_scene_normal_format, "VoxelFaceNormal");
+	create(m_voxel_face_normal, k_voxel_face_normal_format, "VoxelFaceNormal");
 }
 
 void VulkanRenderer::createDescriptorPool() {
@@ -1578,37 +1588,16 @@ auto VulkanRenderer::recordVoxelScopes(
 	barriers.image(m_voxel_face_normal.state, sync::Usage::fragment_sampled);
 	barriers.image(m_voxel_material.state, sync::Usage::fragment_sampled);
 	barriers.image(m_depth_resources.state, sync::Usage::depth_sampled);
-	// Rounded normals land in the shared target other passes already read
-	barriers.image(m_scene_normal.state, sync::Usage::color_attachment);
-	barriers.flush(cmd);
-
-	const std::array blur_attachments {attachment(m_scene_normal, vk::AttachmentLoadOp::eClear, clear_zero)};
-
-	vk::RenderingInfo blur_info {};
-	blur_info.renderArea = scissor;
-	blur_info.layerCount = 1;
-	blur_info.colorAttachmentCount = static_cast<uint32_t>(blur_attachments.size());
-	blur_info.pColorAttachments = blur_attachments.data();
-
-	cmd.beginRendering(blur_info);
-	cmd.setViewport(0, std::array {viewport});
-	cmd.setScissor(0, std::array {scissor});
-	{
-		TracyVkZone(m_tracy_vk_ctx, cmd, "VoxelNormalBlur");
-		const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Voxel normal blur");
-		m_voxel_pass->recordNormalBlur(cmd, m_current_frame, scissor.extent);
-	}
-	cmd.endRendering();
-
-	barriers.image(m_scene_normal.state, sync::Usage::fragment_sampled);
 	barriers.image(m_scene_color.state, sync::Usage::color_attachment);
 	barriers.image(m_scene_indirect.state, sync::Usage::color_attachment);
+	barriers.image(m_scene_normal.state, sync::Usage::color_attachment);
 	barriers.flush(cmd);
 
 	// Clears what no voxel covers since the world scope now loads instead
 	const std::array lighting_attachments {
 	  attachment(m_scene_color, vk::AttachmentLoadOp::eClear, clear_scene),
 	  attachment(m_scene_indirect, vk::AttachmentLoadOp::eClear, clear_zero),
+	  attachment(m_scene_normal, vk::AttachmentLoadOp::eClear, clear_zero),
 	};
 
 	vk::RenderingInfo lighting_info {};
@@ -1623,7 +1612,7 @@ auto VulkanRenderer::recordVoxelScopes(
 	{
 		TracyVkZone(m_tracy_vk_ctx, cmd, "VoxelLighting");
 		const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Voxel lighting");
-		m_voxel_pass->recordLighting(cmd, m_current_frame);
+		m_voxel_pass->recordLighting(cmd, m_current_frame, scissor.extent);
 	}
 	cmd.endRendering();
 
@@ -2562,11 +2551,26 @@ void VulkanRenderer::fitShadowViews(
 		const float shadow_far = std::min(m_camera->far_plane, shadows::shadowDistance());
 		const auto splits = computeCascadeSplits(m_camera->near_plane, shadow_far);
 
+		const glm::vec3 light_direction = glm::normalize(shadow_caster_direction);
+		const uint32_t resolution = shadows::cascadeResolution();
 		float split_near = m_camera->near_plane;
 		for (uint32_t cascade = 0; cascade < shadows::k_cascade_count; ++cascade) {
-			const auto fit = fitDirectionalCascade(
-			    *m_camera, aspect, shadow_caster_direction, split_near, splits[cascade], shadows::cascadeResolution()
-			);
+			const BoundingSphere slice = frustumSliceSphere(*m_camera, aspect, split_near, splits[cascade]);
+
+			// A zoom that leaves the padding far too large refits too
+			CascadeAnchor& anchor = m_cascade_anchors[cascade];
+			const bool holds = anchor.resolution == resolution && glm::dot(anchor.light_direction, light_direction) > 0.99999f &&
+			                   glm::distance(anchor.center, slice.center) + slice.radius <= anchor.radius &&
+			                   slice.radius * (1.0f + (2.0f * k_cascade_padding)) >= anchor.radius;
+			if (!holds) {
+				anchor = CascadeAnchor {
+				  .center = slice.center,
+				  .radius = slice.radius * (1.0f + k_cascade_padding),
+				  .light_direction = light_direction,
+				  .resolution = resolution,
+				};
+			}
+			const auto fit = fitDirectionalCascade(anchor.center, anchor.radius, light_direction, resolution);
 
 			frame.frame_data.cascade_view_projection[cascade] = fit.view_projection;
 			frame.frame_data.cascade_splits[static_cast<int>(cascade)] = splits[cascade];
