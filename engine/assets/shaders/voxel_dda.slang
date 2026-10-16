@@ -73,16 +73,38 @@ static const uint kBoxIndices[36] = {
 };
 
 /// Cell args word layout mirrored by renderer::VoxelPass
-/// Draw commands per box bucket with bucket 0 holding the camera then offsets and cursors per list with the near cells last
-/// then the mesh dispatch and the quad draw
+/// Draw commands per box bucket with bucket 0 holding the camera and then the late list, offsets and cursors per list,
+/// the mesh dispatch, the late cull dispatch, the late mesh dispatch, the quad draw, the late quad draw and the occlusion
+/// stats
 static const uint kCellBucketCount = 17;
-static const uint kNearList = kCellBucketCount;
-static const uint kCellListCount = kCellBucketCount + 1;
-static const uint kCellOffsetsWord = kCellBucketCount * 4;
+/// Late occlusion survivors stored after every other list
+static const uint kLateList = kCellBucketCount;
+/// Lists with a draw command at word list * 4
+static const uint kCellDrawCount = kCellBucketCount + 1;
+/// Adjacent distance bands so the near region reads front to back
+static const uint kNearList = kCellDrawCount;
+static const uint kNearBandCount = 4;
+/// Cells behind the previous pyramid that the late phase tests again
+static const uint kRetestList = kNearList + kNearBandCount;
+/// Late near survivors filling down from the end of the late region so both share the retest count
+static const uint kLateNearList = kRetestList + 1;
+static const uint kCellListCount = kLateNearList + 1;
+static const uint kCellOffsetsWord = kCellDrawCount * 4;
 static const uint kCellCursorsWord = kCellOffsetsWord + kCellListCount;
 static const uint kNearDispatchWord = kCellCursorsWord + kCellListCount;
-static const uint kQuadDrawWord = kNearDispatchWord + 3;
-static const uint kCellArgsWords = kQuadDrawWord + 4;
+static const uint kRetestDispatchWord = kNearDispatchWord + 3;
+static const uint kLateMeshDispatchWord = kRetestDispatchWord + 3;
+static const uint kQuadDrawWord = kLateMeshDispatchWord + 3;
+/// First vertex is where the early quads end
+static const uint kLateQuadDrawWord = kQuadDrawWord + 4;
+/// Task dispatches of the near and late near lists with one group per cell in x and kTaskGroupsPerCell in y
+static const uint kNearTaskWord = kLateQuadDrawWord + 4;
+static const uint kLateTaskWord = kNearTaskWord + 3;
+/// Splits a cell over task groups so a task payload stays small
+static const uint kTaskGroupsPerCell = 2u;
+/// Retest cells then every listed cell read back to tell whether occlusion culling pays
+static const uint kOcclusionStatsWord = kLateTaskWord + 3;
+static const uint kCellArgsWords = kOcclusionStatsWord + 2;
 
 /// Bits are direction 3 slice 3 u 3 v 3 width-1 3 height-1 3 and brick in cell 6
 uint packQuad(uint direction, uint slice, uint u, uint v, uint width, uint height, uint brickInCell)
@@ -112,6 +134,33 @@ uint3 unpackCell(uint packed)
     return uint3(packed & 0x3FFu, (packed >> 10) & 0x3FFu, packed >> 20);
 }
 
+/// First cell entry word with the instance in the low 20 bits and above it the occupied brick range as low xyz then high xyz
+/// at 2 bits each
+static const uint kCellInstanceBits = 20u;
+
+uint packCellEntry(uint instanceIndex, uint3 brickLow, uint3 brickHigh)
+{
+    const uint bricks = brickLow.x | (brickLow.y << 2) | (brickLow.z << 4) | (brickHigh.x << 6) | (brickHigh.y << 8) |
+                        (brickHigh.z << 10);
+    return instanceIndex | (bricks << kCellInstanceBits);
+}
+
+uint cellEntryInstance(uint word)
+{
+    return word & ((1u << kCellInstanceBits) - 1u);
+}
+
+/// Voxel bounds of the occupied bricks of a cell clipped to the volume
+void cellEntryBox(uint word, uint3 cell, int3 dims, out int3 boxMin, out int3 boxMax)
+{
+    const uint bricks = word >> kCellInstanceBits;
+    const int3 low = int3(int(bricks & 3u), int((bricks >> 2) & 3u), int((bricks >> 4) & 3u));
+    const int3 high = int3(int((bricks >> 6) & 3u), int((bricks >> 8) & 3u), int((bricks >> 10) & 3u));
+    const int3 origin = int3(cell) * kCoarseVoxels;
+    boxMin = origin + low * int(kBrickDim);
+    boxMax = min(origin + (high + 1) * int(kBrickDim), dims);
+}
+
 static const uint kTagEmpty = 0;
 static const uint kTagUniform = 1;
 static const uint kTagShared = 2;
@@ -130,9 +179,10 @@ struct RayHit
     uint material;
     uint steps;
 
-    /// Steps that skipped a whole coarse cell or brick so the rest are single voxels
+    /// Steps that skipped a whole coarse cell brick or 4x4x4 or 2x2x2 sub-brick so the rest are single voxels
     uint coarseSteps;
     uint brickSteps;
+    uint subSteps;
 };
 
 uint gridEntry(uint volume, uint3 brick)
@@ -151,14 +201,6 @@ bool coarseSolid(uint volume, int3 cell)
     
     const uint index = uint(cell.x) + uint(cell.y) * dimsX + uint(cell.z) * (dimsX * dimsY);
     return ((gVolumeCoarse[gVolumeRecords[volume].coarseOffset + (index >> 5)] >> (index & 31u)) & 1u) != 0;
-}
-
-bool pooledSolid(uint slot, uint3 local)
-{
-    // wordIdx decouples from local.x, bitIdx decouples from local.z
-    const uint wordIdx = (slot << 4) + (local.z << 1) + (local.y >> 2);
-    const uint bitIdx = ((local.y & 3u) << 3) | local.x;
-    return ((gBrickOccupancy[wordIdx] >> bitIdx) & 1u) != 0;
 }
 
 uint pooledMaterial(uint slot, uint3 local)
@@ -243,6 +285,7 @@ RayHit marchRayBox(uint volume, float3 origin, float3 direction, float tMin, flo
     result.steps = 0;
     result.coarseSteps = 0;
     result.brickSteps = 0;
+    result.subSteps = 0;
 
     float tExit = kFloatMax;
     float3 entryTimes = float3(-kFloatMax, -kFloatMax, -kFloatMax);
@@ -347,10 +390,29 @@ RayHit marchRayBox(uint volume, float3 origin, float3 direction, float tMin, flo
             return result;
         }
     
+        // Pool words are 4x4x4 sub-bricks as gpu::packOccupancyWords lays them out
         const uint slot = entry >> 2;
-        const uint3 local = uint3(voxel & 7u); 
-        
-        if (pooledSolid(slot, local))
+        const uint3 local = uint3(voxel & 7u);
+        const uint subBase = (slot << 4) + (((local.x >> 2) | ((local.y >> 2) << 1) | ((local.z >> 2) << 2)) << 1);
+        const uint subLow = gBrickOccupancy[subBase];
+        const uint subHigh = gBrickOccupancy[subBase + 1u];
+        if ((subLow | subHigh) == 0u)
+        {
+            ++result.subSteps;
+            leaveCell(origin, inverse, stepSign, voxel & int3(~3, ~3, ~3), 4, t, axis, crossed);
+            continue;
+        }
+
+        // A 2x2x2 block never straddles the low and high word
+        const uint subWord = (local.z & 2u) != 0u ? subHigh : subLow;
+        if (((subWord >> ((local.x & 2u) | ((local.y & 2u) << 2))) & 0x00330033u) == 0u)
+        {
+            ++result.subSteps;
+            leaveCell(origin, inverse, stepSign, voxel & int3(~1, ~1, ~1), 2, t, axis, crossed);
+            continue;
+        }
+
+        if (((subWord >> ((local.x & 3u) | ((local.y & 3u) << 2) | ((local.z & 1u) << 4))) & 1u) != 0u)
         {
             result.hit = true;
             result.t = t;
@@ -407,4 +469,142 @@ PaletteSample samplePalette(uint volume, uint index)
     sample.material = word1 >> 24;
     sample.alpha = float((word2 >> 16) & 0xFFu) / 255.0;
     return sample;
+}
+
+/// Meshing helpers shared by the compute mesher in voxel_cells.slang and the mesh shader in voxel_mesh.slang
+
+/// Grid entry with the empty tag outside the volume
+uint brickEntryAt(uint volume, int3 brick)
+{
+    const int3 dims = int3(gVolumeRecords[volume].brickDimsX, gVolumeRecords[volume].brickDimsY, gVolumeRecords[volume].brickDimsZ);
+    if (any(brick < 0) || any(brick >= dims))
+    {
+        return kTagEmpty;
+    }
+    return gridEntry(volume, uint3(brick));
+}
+
+/// Occupancy word in the pooled layout so uniform bricks read as solid
+uint occupancyWord(uint entry, uint word)
+{
+    const uint tag = entry & 3u;
+    if (tag == kTagEmpty)
+    {
+        return 0u;
+    }
+    if (tag == kTagUniform)
+    {
+        return 0xFFFFFFFFu;
+    }
+    return gBrickOccupancy[((entry >> 2) << 4) + word];
+}
+
+/// Pool words are 4x4x4 sub-bricks so the meshers regather them as z-slices with bit x of byte y & 3 in word z * 2 + (y >> 2)
+void loadBrickSlices(uint entry, out uint slices[16])
+{
+    uint sub[16];
+    [ForceUnroll]
+    for (uint word = 0u; word < 16u; ++word)
+    {
+        sub[word] = occupancyWord(entry, word);
+    }
+
+    [ForceUnroll]
+    for (uint z = 0u; z < 8u; ++z)
+    {
+        [ForceUnroll]
+        for (uint half = 0u; half < 2u; ++half)
+        {
+            // x 0-3 sub-brick then x 4-7 sub-brick two words on
+            const uint low = (((half << 1) | ((z >> 2) << 2)) << 1) + ((z & 2u) >> 1);
+            const uint high = low + 2u;
+            uint slice = 0u;
+            [ForceUnroll]
+            for (uint y = 0u; y < 4u; ++y)
+            {
+                const uint shift = 4u * y + 16u * (z & 1u);
+                slice |= (((sub[low] >> shift) & 0xFu) | (((sub[high] >> shift) & 0xFu) << 4)) << (8u * y);
+            }
+            slices[z * 2u + half] = slice;
+        }
+    }
+}
+
+/// Eight x bits of row y in slice z
+uint occupancyRow(uint occupancy[16], uint z, uint y)
+{
+    return (occupancy[(z << 1) + (y >> 2)] >> ((y & 3u) << 3)) & 0xFFu;
+}
+
+/// Exposed faces of one slice as rows over v with bits over u
+void exposedRows(uint occupancy[16], uint neighbour[16], uint axis, bool positive, uint slice, out uint rows[8])
+{
+    for (uint v = 0u; v < 8u; ++v)
+    {
+        uint mask = 0u;
+        if (axis == 2u)
+        {
+            const uint current = occupancyRow(occupancy, slice, v);
+            uint other;
+            if (positive)
+            {
+                other = slice < 7u ? occupancyRow(occupancy, slice + 1u, v) : occupancyRow(neighbour, 0u, v);
+            }
+            else
+            {
+                other = slice > 0u ? occupancyRow(occupancy, slice - 1u, v) : occupancyRow(neighbour, 7u, v);
+            }
+            mask = current & ~other;
+        }
+        else if (axis == 1u)
+        {
+            const uint current = occupancyRow(occupancy, v, slice);
+            uint other;
+            if (positive)
+            {
+                other = slice < 7u ? occupancyRow(occupancy, v, slice + 1u) : occupancyRow(neighbour, v, 0u);
+            }
+            else
+            {
+                other = slice > 0u ? occupancyRow(occupancy, v, slice - 1u) : occupancyRow(neighbour, v, 7u);
+            }
+            mask = current & ~other;
+        }
+        else
+        {
+            for (uint y = 0u; y < 8u; ++y)
+            {
+                const uint row = occupancyRow(occupancy, v, y);
+                uint other;
+                if (positive)
+                {
+                    other = slice < 7u ? row >> (slice + 1u) : occupancyRow(neighbour, v, y);
+                }
+                else
+                {
+                    other = slice > 0u ? row >> (slice - 1u) : occupancyRow(neighbour, v, y) >> 7u;
+                }
+                mask |= (((row >> slice) & ~other) & 1u) << y;
+            }
+        }
+        rows[v] = mask & 0xFFu;
+    }
+}
+
+bool outsideFrustum(float4x4 voxelToClip, float3 boxMin, float3 boxMax)
+{
+    uint outside = 0x1Fu;
+    for (uint i = 0u; i < 8u; ++i)
+    {
+        const float3 corner = lerp(boxMin, boxMax, kBoxCorners[i]);
+        const float4 clip = mul(voxelToClip, float4(corner, 1.0));
+        uint flags = 0u;
+        flags |= clip.x < -clip.w ? 1u : 0u;
+        flags |= clip.x > clip.w ? 2u : 0u;
+        flags |= clip.y < -clip.w ? 4u : 0u;
+        flags |= clip.y > clip.w ? 8u : 0u;
+        flags |= clip.w <= 0.0 ? 16u : 0u;
+        outside &= flags;
+    }
+    return outside != 0u;
 }

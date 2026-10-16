@@ -57,6 +57,13 @@ public:
 		// TODO move into its own shader class
 		std::vector<std::byte> shader_spirv;
 		std::string vertex_entry = "vertexMain";
+		/// Set for a task and mesh pipeline which has no vertex stage or vertex input
+		std::string mesh_entry;
+		/// Only with mesh_entry
+		std::string task_entry;
+		/// Task stage module since Slang gives task and mesh entry points of one module separate payload variables that
+		/// NVIDIA drivers mishandle (shader-slang/slang#10123)
+		std::vector<std::byte> task_spirv;
 		std::string fragment_entry = "fragmentMain";
 		std::string compute_entry = "computeMain";
 
@@ -105,6 +112,7 @@ public:
 
 private:
 	std::optional<vk::raii::ShaderModule> m_shader_module;
+	std::optional<vk::raii::ShaderModule> m_task_module;
 	vk::raii::Pipeline m_pipeline = nullptr;
 };
 

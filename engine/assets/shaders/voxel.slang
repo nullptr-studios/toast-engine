@@ -44,12 +44,11 @@ struct VSOutput
 VSOutput vertexMain(uint vertexId : SV_VertexID, uint instanceId : SV_InstanceID)
 {
     uint instanceIndex = gPush.instanceIndex;
-    uint packedCell = 0u;
+    uint2 cell = uint2(0u, 0u);
     if (gPush.mode == kDrawCells)
     {
-        const uint2 cell = gVoxelCells[gVoxelCellArgs[kCellOffsetsWord + gPush.bucket] + instanceId];
-        instanceIndex = cell.x;
-        packedCell = cell.y;
+        cell = gVoxelCells[gVoxelCellArgs[kCellOffsetsWord + gPush.bucket] + instanceId];
+        instanceIndex = cellEntryInstance(cell.x);
     }
 
     const VoxelInstance instance = gVoxelInstances[instanceIndex];
@@ -60,8 +59,7 @@ VSOutput vertexMain(uint vertexId : SV_VertexID, uint instanceId : SV_InstanceID
     int3 boxMax = dims;
     if (gPush.mode == kDrawCells)
     {
-        boxMin = int3(unpackCell(packedCell)) * kCoarseVoxels;
-        boxMax = min(boxMin + kCoarseVoxels, dims);
+        cellEntryBox(cell.x, unpackCell(cell.y), dims, boxMin, boxMax);
     }
 
     // A mirrored transform flips winding so swap two corners of each triangle to keep one cull mode
@@ -88,8 +86,8 @@ struct FSOutput
 {
     float4 albedo : SV_Target0;
 
-    /// xyz world normal w roughness as SSR
-    float4 normalRoughness : SV_Target1;
+    /// encodeFaceNormal
+    float4 faceNormal : SV_Target1;
 
     float4 material : SV_Target2;
 
@@ -225,9 +223,6 @@ bool shadeDebug(uint mode, float4 pixel, VoxelInstance instance, float3 origin, 
     const float3 cellPosition = origin + direction * hit.t;
     const float3 voxelsPerPixel = fwidth(cellPosition);
 
-    // Zero normal so SSAO and SSR pass the colour through
-    output.normalRoughness = float4(0.0, 0.0, 0.0, 0.0);
-
     const bool showsMisses = mode == kRenderModeVoxelSteps || mode == kRenderModeVoxelTraversal || mode == kRenderModeVoxelVolumes;
     if (!hit.hit && !showsMisses)
     {
@@ -246,7 +241,9 @@ bool shadeDebug(uint mode, float4 pixel, VoxelInstance instance, float3 origin, 
     else if (mode == kRenderModeVoxelTraversal)
     {
         // Red single voxel steps green brick skips blue coarse skips
-        const float3 share = float3(float(hit.steps - hit.coarseSteps - hit.brickSteps), float(hit.brickSteps), float(hit.coarseSteps));
+        // Sub-brick skips count with brick skips
+        const float3 share = float3(float(hit.steps - hit.coarseSteps - hit.brickSteps - hit.subSteps), float(hit.brickSteps + hit.subSteps),
+                                    float(hit.coarseSteps));
         color = share / max(max(share.x, max(share.y, share.z)), 1.0);
     }
     else if (mode == kRenderModeVoxelVolumes)
@@ -296,7 +293,7 @@ bool shadeHit(float4 pixel, VoxelInstance instance, float3 origin, float3 direct
               out FSOutput output, inout float depth)
 {
     output.albedo = float4(0.0, 0.0, 0.0, 0.0);
-    output.normalRoughness = float4(0.0, 0.0, 1.0, 1.0);
+    output.faceNormal = float4(0.0, 0.0, 0.0, 0.0);
     output.material = float4(0.0, 0.0, 0.0, 0.0);
     output.motion = float4(0.0, 0.0, 0.0, 0.0);
 
@@ -353,9 +350,7 @@ bool shadeHit(float4 pixel, VoxelInstance instance, float3 origin, float3 direct
     const float roughness = clamp(palette.roughness, 0.045, 1.0);
 
     output.albedo = float4(applyEditorOverlays(palette.albedo, instance, hit, direction, cellPosition, voxelsPerPixel, hitWorld, worldPerPixel, normal), kGbufferLit);
-
-    // SSR only reads roughness so zero reflectivity must look fully rough
-    output.normalRoughness = float4(normal, lerp(1.0, roughness, palette.reflectivity));
+    output.faceNormal = encodeFaceNormal(normal);
     output.material = float4(palette.metallic, palette.reflectivity, roughness, encodeEmissive(palette.emissive));
     return true;
 }
@@ -418,8 +413,9 @@ struct QuadVSOutput
 {
     float4 position : SV_Position;
 
+    /// Voxel space inset by kQuadInset so every covered pixel samples a voxel of the quad
     [[vk::location(0)]]
-    float3 worldPosition : TEXCOORD0;
+    float3 local : TEXCOORD0;
 
     [[vk::location(1)]]
     nointerpolation uint instanceIndex : TEXCOORD1;
@@ -430,14 +426,70 @@ struct QuadVSOutput
 
 /// Counter clockwise from outside when the plane axes u and v cross to the face normal
 static const uint kQuadCorners[6] = { 0, 1, 2, 0, 2, 3 };
+
+/// Above the interpolation error of voxel coordinates in the thousands
+static const float kQuadInset = 1.0 / 32.0;
 static const uint kQuadCornersFlipped[6] = { 0, 2, 1, 0, 3, 2 };
+
+/// Whether the corner order must flip to face out
+bool quadFlipped(VoxelInstance instance, uint packedQuad)
+{
+    const uint direction = packedQuad & 7u;
+    const uint axis = direction >> 1;
+    const bool positive = (direction & 1u) == 0u;
+
+    // u cross v is +x for X faces and -y for Y faces and +z for Z faces
+    bool flipped = positive == (axis == 1u);
+    if ((instance.flags & kInstanceMirrored) != 0u)
+    {
+        flipped = !flipped;
+    }
+    return flipped;
+}
+
+/// Corner 0 to 3 of a packQuad quad going round its plane
+QuadVSOutput quadCorner(uint2 cell, uint packedQuad, uint corner)
+{
+    const uint instanceIndex = cellEntryInstance(cell.x);
+    const VoxelInstance instance = gVoxelInstances[instanceIndex];
+
+    const uint direction = packedQuad & 7u;
+    const uint slice = (packedQuad >> 3) & 7u;
+    const uint u0 = (packedQuad >> 6) & 7u;
+    const uint v0 = (packedQuad >> 9) & 7u;
+    const uint width = ((packedQuad >> 12) & 7u) + 1u;
+    const uint height = ((packedQuad >> 15) & 7u) + 1u;
+    const uint brickInCell = (packedQuad >> 18) & 63u;
+
+    const uint axis = direction >> 1;
+    const bool positive = (direction & 1u) == 0u;
+    const uint3 brick = unpackCell(cell.y) * kCoarseBricks + uint3(brickInCell & 3u, (brickInCell >> 2) & 3u, brickInCell >> 4);
+
+    const float cornerU = (corner == 1u || corner == 2u) ? float(width) : 0.0;
+    const float cornerV = corner >= 2u ? float(height) : 0.0;
+
+    float3 local = float3(brick * kBrickDim);
+    local[axis] += float(slice) + (positive ? 1.0 : 0.0);
+    local[quadAxisU(axis)] += float(u0) + cornerU;
+    local[quadAxisV(axis)] += float(v0) + cornerV;
+    const float4 world = mul(instance.voxelToWorld, float4(local, 1.0));
+
+    QuadVSOutput output;
+    output.position = mul(gCamera.jitteredViewProjection, world);
+    output.local = local;
+    output.local[quadAxisU(axis)] += cornerU > 0.0 ? -kQuadInset : kQuadInset;
+    output.local[quadAxisV(axis)] += cornerV > 0.0 ? -kQuadInset : kQuadInset;
+    output.instanceIndex = instanceIndex;
+    output.direction = direction;
+    return output;
+}
 
 [shader("vertex")]
 QuadVSOutput quadVertexMain(uint vertexId : SV_VertexID)
 {
     QuadVSOutput output;
     output.position = float4(0.0, 0.0, 0.0, 1.0);
-    output.worldPosition = float3(0.0, 0.0, 0.0);
+    output.local = float3(0.0, 0.0, 0.0);
     output.instanceIndex = 0u;
     output.direction = 0u;
 
@@ -450,52 +502,17 @@ QuadVSOutput quadVertexMain(uint vertexId : SV_VertexID)
 
     const uint2 quad = gVoxelQuads[quadIndex];
     const uint2 cell = gVoxelCells[quad.x];
-    const VoxelInstance instance = gVoxelInstances[cell.x];
-
-    const uint direction = quad.y & 7u;
-    const uint slice = (quad.y >> 3) & 7u;
-    const uint u0 = (quad.y >> 6) & 7u;
-    const uint v0 = (quad.y >> 9) & 7u;
-    const uint width = ((quad.y >> 12) & 7u) + 1u;
-    const uint height = ((quad.y >> 15) & 7u) + 1u;
-    const uint brickInCell = (quad.y >> 18) & 63u;
-
-    const uint axis = direction >> 1;
-    const bool positive = (direction & 1u) == 0u;
-    const uint3 brick = unpackCell(cell.y) * kCoarseBricks + uint3(brickInCell & 3u, (brickInCell >> 2) & 3u, brickInCell >> 4);
-    const float3 brickMin = float3(brick * kBrickDim);
-
-    // u cross v is +x for X faces and -y for Y faces and +z for Z faces
-    bool flipped = positive == (axis == 1u);
-    if ((instance.flags & kInstanceMirrored) != 0u)
-    {
-        flipped = !flipped;
-    }
-    const uint corner = flipped ? kQuadCornersFlipped[vertexId % 6u] : kQuadCorners[vertexId % 6u];
-    const float cornerU = (corner == 1u || corner == 2u) ? float(width) : 0.0;
-    const float cornerV = corner >= 2u ? float(height) : 0.0;
-
-    float3 local = brickMin;
-    local[axis] += float(slice) + (positive ? 1.0 : 0.0);
-    local[quadAxisU(axis)] += float(u0) + cornerU;
-    local[quadAxisV(axis)] += float(v0) + cornerV;
-    const float4 world = mul(instance.voxelToWorld, float4(local, 1.0));
-
-    output.position = mul(gCamera.jitteredViewProjection, world);
-    output.worldPosition = world.xyz;
-    output.instanceIndex = cell.x;
-    output.direction = direction;
-    return output;
+    const bool flipped = quadFlipped(gVoxelInstances[cellEntryInstance(cell.x)], quad.y);
+    return quadCorner(cell, quad.y, flipped ? kQuadCornersFlipped[vertexId % 6u] : kQuadCorners[vertexId % 6u]);
 }
 
-[shader("fragment")]
-FSOutput quadFragmentMain(QuadVSOutput input)
+/// Never misses so quad fragments keep early depth
+FSOutput shadeQuad(QuadVSOutput input)
 {
     const VoxelInstance instance = gVoxelInstances[input.instanceIndex];
     const float3 camera = gCamera.position;
-    const float3 worldDirection = input.worldPosition - camera;
+    const float3 worldDirection = mul(instance.voxelToWorld, float4(input.local, 1.0)).xyz - camera;
     const float3 origin = mul(instance.worldToVoxel, float4(camera, 1.0)).xyz;
-    const float3 direction = mul(instance.worldToVoxel, float4(worldDirection, 0.0)).xyz;
 
     const uint axis = input.direction >> 1;
     float3 inward = float3(0.0, 0.0, 0.0);
@@ -503,20 +520,25 @@ FSOutput quadFragmentMain(QuadVSOutput input)
 
     // Greedy quads span materials so the voxel behind the pixel picks its own
     RayHit hit;
+    hit.hit = true;
     hit.t = 1.0;
-    hit.voxel = int3(floor(origin + direction + inward));
+    hit.voxel = int3(floor(input.local + inward));
     hit.axis = int(axis);
     hit.material = voxelMaterialAt(instance.recordIndex, hit.voxel);
-    hit.hit = hit.material != 0u;
     hit.steps = 0u;
     hit.coarseSteps = 0u;
     hit.brickSteps = 0u;
+    hit.subSteps = 0u;
 
     FSOutput output;
     float depth = input.position.z;
-    if (!shadeHit(input.position, instance, origin, direction, worldDirection, hit, output, depth))
-    {
-        discard;
-    }
+    shadeHit(input.position, instance, origin, input.local - origin, worldDirection, hit, output, depth);
     return output;
+}
+
+[shader("fragment")]
+[earlydepthstencil]
+FSOutput quadFragmentMain(QuadVSOutput input)
+{
+    return shadeQuad(input);
 }

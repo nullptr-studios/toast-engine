@@ -30,6 +30,11 @@ namespace renderer {
 
 namespace {
 
+/// A moving volume would invalidate every resting voxel caster each frame so it draws with the meshes instead
+auto isMovingVolume(const VulkanRenderer::VoxelVolumeProxy& proxy) -> bool {
+	return !proxy.has_previous || proxy.previous_model != proxy.model;
+}
+
 auto shadowLayerRange(uint32_t base_layer, uint32_t layer_count) -> vk::ImageSubresourceRange {
 	return {vk::ImageAspectFlagBits::eDepth, 0, 1, base_layer, layer_count};
 }
@@ -131,7 +136,6 @@ ShadowPass::ShadowPass(const VulkanCore& core) : m_core(&core) {
 	// Single view is 0x1 not 0 since 0 disables multiview and leaves SV_ViewID undefined
 	constexpr std::array view_masks {
 	  1u,
-	  (1u << shadows::k_cascade_count) - 1u,
 	  (1u << shadows::k_cube_faces) - 1u,
 	};
 
@@ -177,7 +181,7 @@ auto ShadowPass::pipelineSetFor(uint32_t view_mask) const -> const PipelineSet* 
 
 void ShadowPass::createShadowMap(
     const VulkanCore& core, ShadowMap& map, uint32_t resolution, std::span<const uint32_t> group_layers,
-    std::string_view debug_name
+    vk::ImageUsageFlags usage, std::string_view debug_name
 ) {
 	ZoneScoped;
 	const auto& device = core.getDevice();
@@ -198,7 +202,7 @@ void ShadowPass::createShadowMap(
 	image_ci.arrayLayers = layer_count;
 	image_ci.samples = vk::SampleCountFlagBits::e1;
 	image_ci.tiling = vk::ImageTiling::eOptimal;
-	image_ci.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled;
+	image_ci.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment | usage;
 	image_ci.sharingMode = vk::SharingMode::eExclusive;
 	image_ci.initialLayout = vk::ImageLayout::eUndefined;
 
@@ -268,18 +272,38 @@ void ShadowPass::createResources(const VulkanCore& core) {
 	m_descriptor_sets.clear();
 	m_descriptor_sets.reserve(VulkanRenderer::k_frames_in_flight);
 
+	// One group per cascade so a refit of one cascade leaves the cached others alone
+	const std::vector<uint32_t> cascade_groups(shadows::k_cascade_count, 1u);
+	std::vector<uint32_t> punctual_groups(shadows::k_max_spot_shadows, 1u);
+	punctual_groups.insert(punctual_groups.end(), shadows::k_max_point_shadows, shadows::k_cube_faces);
+
+	constexpr auto k_static_usage = vk::ImageUsageFlagBits::eTransferSrc;
+	createShadowMap(
+	    core, m_static.cascades, shadows::cascadeResolution(), cascade_groups, k_static_usage, "ShadowPass StaticCascades"
+	);
+	createShadowMap(
+	    core, m_static.punctual, shadows::punctualResolution(), punctual_groups, k_static_usage, "ShadowPass StaticPunctual"
+	);
+
+	constexpr auto k_slot_usage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst;
 	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
 		auto& target = m_targets[i];
 
-		const std::array cascade_groups {shadows::k_cascade_count};
 		createShadowMap(
-		    core, target.cascades, shadows::cascadeResolution(), cascade_groups, std::format("ShadowPass Cascades[{}]", i)
+		    core,
+		    target.cascades,
+		    shadows::cascadeResolution(),
+		    cascade_groups,
+		    k_slot_usage,
+		    std::format("ShadowPass Cascades[{}]", i)
 		);
-
-		std::vector<uint32_t> punctual_groups(shadows::k_max_spot_shadows, 1u);
-		punctual_groups.insert(punctual_groups.end(), shadows::k_max_point_shadows, shadows::k_cube_faces);
 		createShadowMap(
-		    core, target.punctual, shadows::punctualResolution(), punctual_groups, std::format("ShadowPass Punctual[{}]", i)
+		    core,
+		    target.punctual,
+		    shadows::punctualResolution(),
+		    punctual_groups,
+		    k_slot_usage,
+		    std::format("ShadowPass Punctual[{}]", i)
 		);
 
 		vk::BufferCreateInfo buffer_ci {};
@@ -516,10 +540,10 @@ auto ShadowPass::getPunctualMapView(uint32_t frame_index) const -> vk::ImageView
 	return **m_targets[frame_index].punctual.array_view;
 }
 
-void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, uint32_t frame_index, bool directional) {
+void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, ShadowMap& static_map, uint32_t frame_index, bool directional) {
 	ZoneScoped;
 	const auto* frame = VulkanRenderer::instance->renderingFrame();
-	if (frame == nullptr || !map.image.has_value()) {
+	if (frame == nullptr || !map.image.has_value() || !static_map.image.has_value()) {
 		return;
 	}
 
@@ -580,13 +604,42 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, uint32_t frame
 		return reaches(group, voxel_proxies[index].bounds_center, voxel_proxies[index].bounds_radius);
 	};
 
-	const auto signature_of = [&](const LayerGroup& group, std::vector<VoxelCaster>& eligible_voxels) -> std::optional<uint64_t> {
+	const auto voxel_moving = [&](size_t index) { return isMovingVolume(voxel_proxies[index]); };
+
+	// Summed since voxel proxies are sorted by camera distance and a static light must not re-render as the camera moves
+	const auto voxel_signature = [&](const LayerGroup& group, bool moving, std::vector<VoxelCaster>* casters) -> uint64_t {
+		uint64_t sum = 0;
+		for (size_t index = 0; index < m_voxel_instance_count; ++index) {
+			if (voxel_moving(index) != moving || !voxel_eligible(group, index)) {
+				continue;
+			}
+			ShadowSignature caster;
+			caster.add(voxel_proxies[index].node_rid);
+			caster.add(voxel_proxies[index].model);
+			sum += caster.value;
+			if (casters != nullptr) {
+				casters->push_back({.node_rid = voxel_proxies[index].node_rid, .model = voxel_proxies[index].model});
+			}
+		}
+		return sum;
+	};
+
+	const auto view_signature_of = [&](const LayerGroup& group) -> uint64_t {
 		ShadowSignature signature;
 		for (uint32_t i = 0; i < group.layer_count; ++i) {
 			const auto* member = layer_views[group.base_layer + i];
 			signature.add(member->view_projection);
 			signature.add(member->resolution);
 		}
+		return signature.value;
+	};
+
+	/// Empty while a posed mesh is eligible since its pose changes without its transform
+	const auto moving_signature_of = [&](const LayerGroup& group, const LayerGroup& static_group) -> std::optional<uint64_t> {
+		ShadowSignature signature;
+		signature.add(*static_group.signature);
+		signature.add(*static_group.caster_signature);
+		signature.add(static_group.revision);
 		for (size_t index = 0; index < proxies.size() && index < instance_count; ++index) {
 			if (!eligible(group, index)) {
 				continue;
@@ -599,7 +652,6 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, uint32_t frame
 			signature.add(proxy.model);
 		}
 
-		// Summed since voxel proxies are sorted by camera distance and a static light must not re-render as the camera moves
 		uint64_t voxel_casters = 0;
 		for (size_t index = 0; index < m_voxel_instance_count; ++index) {
 			if (!voxel_eligible(group, index)) {
@@ -609,9 +661,9 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, uint32_t frame
 			caster.add(voxel_proxies[index].node_rid);
 			caster.add(voxel_proxies[index].model);
 			voxel_casters += caster.value;
-			eligible_voxels.push_back({.node_rid = voxel_proxies[index].node_rid, .model = voxel_proxies[index].model});
+			m_voxel_eligible.push_back({.node_rid = voxel_proxies[index].node_rid, .model = voxel_proxies[index].model});
 		}
-		if (!eligible_voxels.empty()) {
+		if (!m_voxel_eligible.empty()) {
 			signature.add(voxel_casters);
 		}
 		return signature.value;
@@ -644,43 +696,261 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, uint32_t frame
 	enum class GroupWork : uint8_t {
 		skip,
 		clear,
-		render
+		/// Static copy then the moving casters
+		compose,
 	};
 
 	std::vector<GroupWork> group_work(map.groups.size(), GroupWork::skip);
 	std::vector<std::optional<uint64_t>> group_signatures(map.groups.size());
-	bool any_layer_recorded = false;
+	std::vector<bool> static_render(map.groups.size(), false);
+	bool any_static_render = false;
+	bool any_slot_work = false;
+	for (size_t g = 0; g < map.groups.size(); ++g) {
+		auto& group = map.groups[g];
+		auto& static_group = static_map.groups[g];
+		if (!occupied(group)) {
+			group_work[g] = group.dirty ? GroupWork::clear : GroupWork::skip;
+			any_slot_work = any_slot_work || group.dirty;
+			continue;
+		}
+
+		m_voxel_eligible.clear();
+		const uint64_t view_signature = view_signature_of(group);
+		const uint64_t caster_signature = voxel_signature(group, false, &m_voxel_eligible);
+		const bool has_voxels = !m_voxel_eligible.empty();
+		if (static_group.signature != view_signature) {
+			++m_stats.static_views;
+		} else if (static_group.caster_signature != caster_signature) {
+			++m_stats.static_casters;
+		} else if (has_voxels && voxel_changed(static_group)) {
+			++m_stats.static_edits;
+		} else {
+			if (has_voxels && static_group.voxel_generation != voxel_generation) {
+				++m_stats.spared;
+			}
+			static_group.voxel_generation = voxel_generation;
+			continue;
+		}
+		static_render[g] = true;
+		any_static_render = true;
+		static_group.signature = view_signature;
+		static_group.caster_signature = caster_signature;
+		static_group.voxel_generation = voxel_generation;
+		++static_group.revision;
+	}
 	for (size_t g = 0; g < map.groups.size(); ++g) {
 		auto& group = map.groups[g];
 		if (!occupied(group)) {
-			group_work[g] = group.dirty ? GroupWork::clear : GroupWork::skip;
-		} else {
-			m_voxel_eligible.clear();
-			group_signatures[g] = signature_of(group, m_voxel_eligible);
-			const bool has_voxels = !m_voxel_eligible.empty();
-			const bool matches = group_signatures[g].has_value() && group.signature == group_signatures[g];
-			if (matches && !(has_voxels && voxel_changed(group))) {
-				++m_cached_count;
-				if (has_voxels && group.voxel_generation != voxel_generation) {
-					++m_voxel_spared_count;
-				}
-				group.voxel_generation = voxel_generation;
-			} else {
-				group_work[g] = GroupWork::render;
-			}
+			continue;
 		}
-		any_layer_recorded = any_layer_recorded || group_work[g] != GroupWork::skip;
+		group_signatures[g] = moving_signature_of(group, static_map.groups[g]);
+		if (group_signatures[g].has_value() && group.signature == group_signatures[g]) {
+			++m_stats.cached;
+		} else {
+			++m_stats.composed;
+			group_work[g] = GroupWork::compose;
+			any_slot_work = true;
+		}
 	}
-	if (!any_layer_recorded) {
+	if (!any_static_render && !any_slot_work) {
 		return;
+	}
+
+	const auto bind_viewport = [&](const VulkanRenderer::ShadowView& view, uint32_t resolution) {
+		const uint32_t view_resolution = std::clamp(view.resolution, 1u, resolution);
+		const vk::Viewport viewport(0.0f, 0.0f, static_cast<float>(view_resolution), static_cast<float>(view_resolution), 0.0f, 1.0f);
+		cmd.setViewport(0, std::array {viewport});
+		cmd.setScissor(0, std::array {vk::Rect2D({0, 0}, vk::Extent2D {view_resolution, view_resolution})});
+	};
+
+	const auto begin_group = [&](const ShadowMap& target, const LayerGroup& group, vk::AttachmentLoadOp load) {
+		vk::RenderingAttachmentInfo depth_attachment {};
+		depth_attachment.imageView = **group.view;
+		depth_attachment.imageLayout = vk::ImageLayout::eDepthAttachmentOptimal;
+		depth_attachment.loadOp = load;
+		depth_attachment.storeOp = vk::AttachmentStoreOp::eStore;
+		depth_attachment.clearValue = vk::ClearValue(vk::ClearDepthStencilValue {1.0f, 0});
+
+		vk::RenderingInfo rendering_info {};
+		rendering_info.renderArea = vk::Rect2D({0, 0}, vk::Extent2D {target.resolution, target.resolution});
+		// Ignored when viewMask is non zero
+		rendering_info.layerCount = 1;
+		rendering_info.viewMask = group.view_mask;
+		rendering_info.pDepthAttachment = &depth_attachment;
+		cmd.beginRendering(rendering_info);
+		++m_stats.scopes;
+	};
+
+	const auto draw_meshes = [&](const LayerGroup& group, uint32_t view_index) {
+		const PipelineSet* pipelines = pipelineSetFor(group.view_mask);
+		if (pipelines == nullptr || !pipelines->pipeline.isReady()) {
+			return;
+		}
+		cmd.bindDescriptorSets(
+		    vk::PipelineBindPoint::eGraphics,
+		    *m_shader_layout.getPipelineLayout(),
+		    0,
+		    std::array<vk::DescriptorSet, 1> {*m_descriptor_sets[frame_index]},
+		    {}
+		);
+		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelines->pipeline.getPipeline());
+
+		constexpr uint32_t k_push_size = 2 * sizeof(uint32_t);
+		for (size_t i = 0; i < proxies.size() && i < instance_count;) {
+			if (!eligible(group, i)) {
+				++i;
+				continue;
+			}
+
+			const uint32_t posed_offset = posed_offset_of(proxies[i]);
+			const bool posed = posed_offset != VulkanRenderer::MeshInstanceProxy::k_no_posed_vertices;
+
+			size_t run = 1;
+			if (!posed) {
+				while (i + run < proxies.size() && i + run < instance_count && eligible(group, i + run) &&
+				       proxies[i + run].mesh == proxies[i].mesh &&
+				       posed_offset_of(proxies[i + run]) == VulkanRenderer::MeshInstanceProxy::k_no_posed_vertices) {
+					++run;
+				}
+			}
+
+			const ShadowPushConstants push {
+			  .instance_base = static_cast<uint32_t>(i),
+			  .view_index = view_index,
+			};
+			cmd.pushConstants(*m_shader_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eAll, 0, k_push_size, &push);
+
+			if (posed) {
+				proxies[i].mesh->bindPosed(cmd, posed_vertices, posed_offset);
+			} else {
+				proxies[i].mesh->bind(cmd);
+			}
+			proxies[i].mesh->draw(cmd, static_cast<uint32_t>(run));
+			++m_stats.draws;
+
+			i += run;
+		}
+	};
+
+	const auto draw_voxels =
+	    [&](const LayerGroup& group, const VulkanRenderer::ShadowView& view, uint32_t view_index, bool moving) {
+		    const VoxelPipelineSet* voxel_pipelines = voxelPipelineSetFor(group.view_mask);
+		    if (voxel_pipelines == nullptr || m_voxel_instance_count == 0) {
+			    return;
+		    }
+		    const vk::PipelineLayout voxel_layout = *m_voxel_layout.getPipelineLayout();
+
+		    m_voxel_draw_order.clear();
+		    for (uint32_t index = 0; index < m_voxel_instance_count; ++index) {
+			    if (voxel_moving(index) == moving && voxel_eligible(group, index)) {
+				    m_voxel_draw_order.push_back(index);
+			    }
+		    }
+		    if (m_voxel_draw_order.empty()) {
+			    return;
+		    }
+
+		    // Nearest to the light first by clip z which grows with distance under both projections
+		    std::ranges::sort(m_voxel_draw_order, {}, [&](uint32_t index) {
+			    return (view.view_projection * glm::vec4(voxel_proxies[index].bounds_center, 1.0f)).z;
+		    });
+
+		    // A corner in front of any near plane clips the front faces so only exact back faces are safe
+		    const auto crosses_near_plane = [&](const VulkanRenderer::VoxelVolumeProxy& proxy) {
+			    const glm::vec3 extent = glm::vec3(proxy.brick_dims) * voxel::k_brick_size;
+			    for (uint32_t i = 0; i < group.layer_count; ++i) {
+				    const auto* member = layer_views[group.base_layer + i];
+				    if (member == nullptr) {
+					    continue;
+				    }
+				    const glm::mat4 to_clip = member->view_projection * proxy.model;
+				    for (uint32_t corner = 0; corner < 8; ++corner) {
+					    const glm::vec3 local(
+					        (corner & 1u) != 0 ? extent.x : 0.0f, (corner & 2u) != 0 ? extent.y : 0.0f, (corner & 4u) != 0 ? extent.z : 0.0f
+					    );
+					    if ((to_clip * glm::vec4(local, 1.0f)).z < 0.0f) {
+						    return true;
+					    }
+				    }
+			    }
+			    return false;
+		    };
+
+		    cmd.bindDescriptorSets(
+		        vk::PipelineBindPoint::eGraphics,
+		        voxel_layout,
+		        0,
+		        std::array<vk::DescriptorSet, 2> {*m_voxel_shadow_sets[frame_index], *m_voxel_storage_sets[frame_index]},
+		        {}
+		    );
+		    const VulkanPipeline* bound = nullptr;
+		    for (const uint32_t index : m_voxel_draw_order) {
+			    const auto& proxy = voxel_proxies[index];
+			    const bool inside = crosses_near_plane(proxy);
+			    const bool cull_front = inside != proxy.mirrored;
+			    const VulkanPipeline& pipeline = voxel_pipelines->pipelines[cull_front ? 1 : 0][inside ? 1 : 0];
+			    if (bound != &pipeline) {
+				    cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.getPipeline());
+				    bound = &pipeline;
+			    }
+
+			    const VoxelShadowPush push {
+			      .instance_index = index,
+			      .view_index = view_index,
+			      .constant_bias = m_voxel_constant_bias,
+			    };
+			    cmd.pushConstants(voxel_layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(VoxelShadowPush), &push);
+			    cmd.draw(36, 1, 0, 0);
+			    ++m_stats.draws;
+		    }
+	    };
+
+	if (any_static_render) {
+		sync::transition(cmd, static_map.state, sync::Usage::depth_attachment);
+		for (size_t g = 0; g < static_map.groups.size(); ++g) {
+			if (!static_render[g]) {
+				continue;
+			}
+			const auto& group = static_map.groups[g];
+			const auto& view = *layer_views[group.base_layer];
+			begin_group(static_map, group, vk::AttachmentLoadOp::eClear);
+			bind_viewport(view, static_map.resolution);
+			draw_voxels(group, view, layer_view_indices[group.base_layer], false);
+			cmd.endRendering();
+		}
+	}
+
+	if (!any_slot_work) {
+		return;
+	}
+
+	m_static_copies.clear();
+	for (size_t g = 0; g < map.groups.size(); ++g) {
+		if (group_work[g] != GroupWork::compose) {
+			continue;
+		}
+		const auto& group = map.groups[g];
+		const vk::ImageSubresourceLayers layers(vk::ImageAspectFlagBits::eDepth, 0, group.base_layer, group.layer_count);
+		m_static_copies.emplace_back(
+		    layers, vk::Offset3D {}, layers, vk::Offset3D {}, vk::Extent3D {map.resolution, map.resolution, 1}
+		);
+	}
+	if (!m_static_copies.empty()) {
+		sync::BarrierBatch barriers;
+		barriers.image(static_map.state, sync::Usage::transfer_src);
+		barriers.image(map.state, sync::Usage::transfer_dst);
+		barriers.flush(cmd);
+		cmd.copyImage(
+		    **static_map.image,
+		    vk::ImageLayout::eTransferSrcOptimal,
+		    **map.image,
+		    vk::ImageLayout::eTransferDstOptimal,
+		    m_static_copies
+		);
 	}
 
 	// From the tracked usage so skipped groups keep their depth
 	sync::transition(cmd, map.state, sync::Usage::depth_attachment);
-
-	const vk::Rect2D layer_area({0, 0}, vk::Extent2D {map.resolution, map.resolution});
-
-	constexpr uint32_t k_push_size = 2 * sizeof(uint32_t);
 
 	for (size_t g = 0; g < map.groups.size(); ++g) {
 		if (group_work[g] == GroupWork::skip) {
@@ -688,156 +958,18 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, uint32_t frame
 		}
 
 		auto& group = map.groups[g];
-		const bool render = group_work[g] == GroupWork::render;
-		group.dirty = render;
-		group.signature = render ? group_signatures[g] : std::nullopt;
-		group.voxel_generation = render ? voxel_generation : std::nullopt;
+		const bool compose = group_work[g] == GroupWork::compose;
+		group.dirty = compose;
+		group.signature = compose ? group_signatures[g] : std::nullopt;
 
-		const VulkanRenderer::ShadowView* view = render ? layer_views[group.base_layer] : nullptr;
-		const uint32_t view_index = layer_view_indices[group.base_layer];
-
-		vk::RenderingAttachmentInfo depth_attachment {};
-		depth_attachment.imageView = **group.view;
-		depth_attachment.imageLayout = vk::ImageLayout::eDepthAttachmentOptimal;
-		depth_attachment.loadOp = vk::AttachmentLoadOp::eClear;
-		depth_attachment.storeOp = vk::AttachmentStoreOp::eStore;
-		depth_attachment.clearValue = vk::ClearValue(vk::ClearDepthStencilValue {1.0f, 0});
-
-		vk::RenderingInfo rendering_info {};
-		rendering_info.renderArea = layer_area;
-		// Ignored when viewMask is non zero
-		rendering_info.layerCount = 1;
-		rendering_info.viewMask = group.view_mask;
-		rendering_info.colorAttachmentCount = 0;
-		rendering_info.pDepthAttachment = &depth_attachment;
-
-		cmd.beginRendering(rendering_info);
-		++m_pass_count;
-
-		const PipelineSet* pipelines = pipelineSetFor(group.view_mask);
-		if (view != nullptr && pipelines != nullptr && pipelines->pipeline.isReady()) {
-			const uint32_t view_resolution = std::clamp(view->resolution, 1u, map.resolution);
-			const vk::Viewport viewport(
-			    0.0f, 0.0f, static_cast<float>(view_resolution), static_cast<float>(view_resolution), 0.0f, 1.0f
-			);
-			const vk::Rect2D scissor({0, 0}, vk::Extent2D {view_resolution, view_resolution});
-
-			cmd.setViewport(0, std::array {viewport});
-			cmd.setScissor(0, std::array {scissor});
-			cmd.bindDescriptorSets(
-			    vk::PipelineBindPoint::eGraphics,
-			    *m_shader_layout.getPipelineLayout(),
-			    0,
-			    std::array<vk::DescriptorSet, 1> {*m_descriptor_sets[frame_index]},
-			    {}
-			);
-
-			cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelines->pipeline.getPipeline());
-
-			for (size_t i = 0; i < proxies.size() && i < instance_count;) {
-				if (!eligible(group, i)) {
-					++i;
-					continue;
-				}
-
-				const uint32_t posed_offset = posed_offset_of(proxies[i]);
-				const bool posed = posed_offset != VulkanRenderer::MeshInstanceProxy::k_no_posed_vertices;
-
-				size_t run = 1;
-				if (!posed) {
-					while (i + run < proxies.size() && i + run < instance_count && eligible(group, i + run) &&
-					       proxies[i + run].mesh == proxies[i].mesh &&
-					       posed_offset_of(proxies[i + run]) == VulkanRenderer::MeshInstanceProxy::k_no_posed_vertices) {
-						++run;
-					}
-				}
-
-				const ShadowPushConstants push {
-				  .instance_base = static_cast<uint32_t>(i),
-				  .view_index = view_index,
-				};
-				cmd.pushConstants(*m_shader_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eAll, 0, k_push_size, &push);
-
-				if (posed) {
-					proxies[i].mesh->bindPosed(cmd, posed_vertices, posed_offset);
-				} else {
-					proxies[i].mesh->bind(cmd);
-				}
-				proxies[i].mesh->draw(cmd, static_cast<uint32_t>(run));
-				++m_draw_count;
-
-				i += run;
-			}
-
-			if (const VoxelPipelineSet* voxel_pipelines = voxelPipelineSetFor(group.view_mask);
-			    voxel_pipelines != nullptr && m_voxel_instance_count > 0) {
-				const vk::PipelineLayout voxel_layout = *m_voxel_layout.getPipelineLayout();
-
-				m_voxel_draw_order.clear();
-				for (uint32_t index = 0; index < m_voxel_instance_count; ++index) {
-					if (voxel_eligible(group, index)) {
-						m_voxel_draw_order.push_back(index);
-					}
-				}
-
-				// Nearest to the light first by clip z which grows with distance under both projections
-				std::ranges::sort(m_voxel_draw_order, {}, [&](uint32_t index) {
-					return (view->view_projection * glm::vec4(voxel_proxies[index].bounds_center, 1.0f)).z;
-				});
-
-				// A corner in front of any near plane clips the front faces so only exact back faces are safe
-				const auto crosses_near_plane = [&](const VulkanRenderer::VoxelVolumeProxy& proxy) {
-					const glm::vec3 extent = glm::vec3(proxy.brick_dims) * voxel::k_brick_size;
-					for (uint32_t i = 0; i < group.layer_count; ++i) {
-						const auto* member = layer_views[group.base_layer + i];
-						if (member == nullptr) {
-							continue;
-						}
-						const glm::mat4 to_clip = member->view_projection * proxy.model;
-						for (uint32_t corner = 0; corner < 8; ++corner) {
-							const glm::vec3 local(
-							    (corner & 1u) != 0 ? extent.x : 0.0f, (corner & 2u) != 0 ? extent.y : 0.0f, (corner & 4u) != 0 ? extent.z : 0.0f
-							);
-							if ((to_clip * glm::vec4(local, 1.0f)).z < 0.0f) {
-								return true;
-							}
-						}
-					}
-					return false;
-				};
-
-				const VulkanPipeline* bound = nullptr;
-				for (const uint32_t index : m_voxel_draw_order) {
-					const auto& proxy = voxel_proxies[index];
-					const bool inside = crosses_near_plane(proxy);
-					const bool cull_front = inside != proxy.mirrored;
-					const VulkanPipeline& pipeline = voxel_pipelines->pipelines[cull_front ? 1 : 0][inside ? 1 : 0];
-					if (bound == nullptr) {
-						cmd.bindDescriptorSets(
-						    vk::PipelineBindPoint::eGraphics,
-						    voxel_layout,
-						    0,
-						    std::array<vk::DescriptorSet, 2> {*m_voxel_shadow_sets[frame_index], *m_voxel_storage_sets[frame_index]},
-						    {}
-						);
-					}
-					if (bound != &pipeline) {
-						cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.getPipeline());
-						bound = &pipeline;
-					}
-
-					const VoxelShadowPush push {
-					  .instance_index = index,
-					  .view_index = view_index,
-					  .constant_bias = m_voxel_constant_bias,
-					};
-					cmd.pushConstants(voxel_layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(VoxelShadowPush), &push);
-					cmd.draw(36, 1, 0, 0);
-					++m_draw_count;
-				}
-			}
+		begin_group(map, group, compose ? vk::AttachmentLoadOp::eLoad : vk::AttachmentLoadOp::eClear);
+		if (compose) {
+			const auto& view = *layer_views[group.base_layer];
+			const uint32_t view_index = layer_view_indices[group.base_layer];
+			bind_viewport(view, map.resolution);
+			draw_meshes(group, view_index);
+			draw_voxels(group, view, view_index, true);
 		}
-
 		cmd.endRendering();
 	}
 
@@ -863,10 +995,7 @@ void ShadowPass::recordPre(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t
 
 	auto& target = m_targets[frame_index];
 
-	m_draw_count = 0;
-	m_pass_count = 0;
-	m_cached_count = 0;
-	m_voxel_spared_count = 0;
+	m_stats = {};
 
 	if (target.ubo.gpu_buffer.has_value()) {
 		ShadowUBO ubo {};
@@ -884,9 +1013,12 @@ void ShadowPass::recordPre(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t
 	}
 
 	m_voxel_instance_count = prepareVoxels(frame_index);
+	for (uint32_t index = 0; index < m_voxel_instance_count; ++index) {
+		m_stats.moving_volumes += isMovingVolume(frame->voxel_instances[index]) ? 1u : 0u;
+	}
 
-	recordMap(cmd, target.cascades, frame_index, true);
-	recordMap(cmd, target.punctual, frame_index, false);
+	recordMap(cmd, target.cascades, m_static.cascades, frame_index, true);
+	recordMap(cmd, target.punctual, m_static.punctual, frame_index, false);
 }
 
 }

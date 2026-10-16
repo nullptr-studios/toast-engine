@@ -20,7 +20,7 @@ enum class Usage : uint8_t {
 	color_attachment,
 	/// eDepthAttachmentOptimal including load and store ops
 	depth_attachment,
-	/// eDepthReadOnlyOptimal sampled by fragment shaders
+	/// eDepthReadOnlyOptimal sampled by fragment and compute shaders
 	depth_sampled,
 
 	fragment_sampled,
@@ -32,6 +32,8 @@ enum class Usage : uint8_t {
 	compute_storage_write,
 	/// Vertex pulling
 	vertex_storage_read,
+	/// Task and mesh shaders on devices with VK_EXT_mesh_shader only
+	mesh_storage_read,
 	fragment_storage_read,
 	/// Any shader stage
 	uniform_read,

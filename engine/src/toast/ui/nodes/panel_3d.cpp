@@ -19,7 +19,11 @@ Panel3D::Panel3D() {
 	m_color_scheme.onChangeCallback([this] { reloadDocument(); });
 }
 
-Panel3D::~Panel3D() = default;
+Panel3D::~Panel3D() {
+	if (ui::UISystem::exists()) {
+		ui::UISystem::get().cancelDeferredSetup(this);
+	}
+}
 
 void Panel3D::updateInspectorMessages() {
 	static const NodeMessage document_message {
@@ -89,6 +93,22 @@ void Panel3D::init() {
 	if (!ui::UISystem::exists()) {
 		return;
 	}
+	// World::loadNode and World::spawn init on a std::async worker
+	if (!ui::UISystem::onUIThread()) {
+		ui::UISystem::get().deferSetup(this, [this] { setup(); });
+		return;
+	}
+	setup();
+}
+
+void Panel3D::begin() {
+	if (ui::UISystem::exists()) {
+		ui::UISystem::get().runDeferredSetup(this);
+	}
+}
+
+void Panel3D::setup() {
+	ZoneScoped;
 	auto& ui = ui::UISystem::get();
 
 	for (const auto& font : m_fonts) {
@@ -111,6 +131,7 @@ void Panel3D::destroy() {
 	}
 	auto& ui = ui::UISystem::get();
 
+	ui.cancelDeferredSetup(this);
 	ui.unregisterWorldPanel(this);
 	unloadDocument();
 

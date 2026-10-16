@@ -126,6 +126,8 @@ struct EnginePimpl {
 
 	/// Hash of the thread that ran tick() for the last time
 	std::atomic<size_t> tick_thread {0};
+	/// Stands in for tick_thread until the first tick
+	size_t creator_thread = std::hash<std::thread::id> {}(std::this_thread::get_id());
 
 	std::mutex owners_mutex;
 	std::map<toast::UID, std::unique_ptr<INodeOwner>> owners;
@@ -400,6 +402,11 @@ static void assertOnTickThread([[maybe_unused]] const std::atomic<size_t>& tick_
 
 void Engine::requireTickThread(std::string_view what) const {
 	::toast::assertOnTickThread(m->tick_thread, what);
+}
+
+auto Engine::onTickThread() const -> bool {
+	const size_t tick_thread = m->tick_thread.load();
+	return (tick_thread != 0 ? tick_thread : m->creator_thread) == std::hash<std::thread::id> {}(std::this_thread::get_id());
 }
 
 void Engine::tick() {

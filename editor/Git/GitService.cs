@@ -412,6 +412,7 @@ public sealed class GitService : IDisposable {
 	}
 
 	public async Task<GitResult> PullAsync() {
+		GitAskpass.AllowDeclinedPrompts();
 		var result = await RunAsync(["pull", "--ff-only"], timeout: TimeSpan.FromMinutes(30));
 		if (result.Ok) LastFetch = DateTime.Now;
 		await RefreshStatusAsync();
@@ -420,6 +421,7 @@ public sealed class GitService : IDisposable {
 	}
 
 	public async Task<GitResult> PushAsync() {
+		GitAskpass.AllowDeclinedPrompts();
 		var result = await RunAsync(["push"], timeout: TimeSpan.FromMinutes(30));
 		if (!result.Ok && !Branch.HasUpstream && Branch.Name.Length > 0 && !Branch.Name.StartsWith("HEAD"))
 			result = await RunAsync(["push", "--set-upstream", "origin", Branch.Name], timeout: TimeSpan.FromMinutes(30));
@@ -478,6 +480,7 @@ public sealed class GitService : IDisposable {
 	}
 
 	public async Task<GitResult> LockAsync(string absolutePath) {
+		GitAskpass.AllowDeclinedPrompts();
 		var result = await RunAsync(["lfs", "lock", "--", GitParsers.Rel(RepoRoot, absolutePath)], serialize: false,
 			timeout: TimeSpan.FromSeconds(60));
 		await RefreshLocksAsync();
@@ -498,6 +501,7 @@ public sealed class GitService : IDisposable {
 	}
 
 	public async Task<LockManyResult> LockManyAsync(IReadOnlyList<string> absolutePaths, Action<int, int>? progress = null) {
+		GitAskpass.AllowDeclinedPrompts();
 		var locked = 0;
 		var failed = 0;
 		var done = 0;
@@ -526,6 +530,7 @@ public sealed class GitService : IDisposable {
 	}
 
 	public async Task<LockManyResult> UnlockManyAsync(IReadOnlyList<GitLock> locks) {
+		GitAskpass.AllowDeclinedPrompts();
 		var unlocked = 0;
 		var failed = 0;
 		string? firstError = null;
@@ -555,6 +560,7 @@ public sealed class GitService : IDisposable {
 	}
 
 	public async Task<GitResult> UnlockAsync(string absolutePath, bool force) {
+		GitAskpass.AllowDeclinedPrompts();
 		var existing = GetLock(absolutePath);
 		var args = new List<string> { "lfs", "unlock" };
 		if (force) args.Add("--force");

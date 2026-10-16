@@ -44,45 +44,49 @@ public static class GitRunner {
 		if (stdin is not null) psi.StandardInputEncoding = new UTF8Encoding(false);
 		foreach (var arg in args) psi.ArgumentList.Add(arg);
 
-		// Background calls must never block on a credential prompt
+		// Credential prompts go to the editor through askpass and never to a terminal
 		psi.Environment["GIT_TERMINAL_PROMPT"] = "0";
 		psi.Environment["GCM_INTERACTIVE"] = "never";
 		psi.Environment["GIT_OPTIONAL_LOCKS"] = "0";
 		psi.Environment["GIT_LFS_FORCE_PROGRESS"] = "0";
 
-		Process process;
+		using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+		cts.CancelAfter(timeout);
+		var askpass = GitAskpass.BeginRun(psi, cts, timeout);
 		try {
-			process = Process.Start(psi) ?? throw new InvalidOperationException("git did not start");
-		} catch (Exception e) {
-			return new GitResult(-1, "", e.Message);
-		}
-
-		using (process) {
-			using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-			cts.CancelAfter(timeout);
-
+			Process process;
 			try {
-				if (stdin is not null) {
-					await process.StandardInput.WriteAsync(stdin).ConfigureAwait(false);
-					process.StandardInput.Close();
-				}
-
-				var stdout = process.StandardOutput.ReadToEndAsync(cts.Token);
-				var stderr = process.StandardError.ReadToEndAsync(cts.Token);
-				await process.WaitForExitAsync(cts.Token).ConfigureAwait(false);
-				return new GitResult(process.ExitCode, await stdout.ConfigureAwait(false),
-					await stderr.ConfigureAwait(false));
-			} catch (OperationCanceledException) {
-				try {
-					process.Kill(true);
-				} catch {
-					// already gone
-				}
-
-				return new GitResult(-1, "", ct.IsCancellationRequested ? "cancelled" : "git timed out");
+				process = Process.Start(psi) ?? throw new InvalidOperationException("git did not start");
 			} catch (Exception e) {
 				return new GitResult(-1, "", e.Message);
 			}
+
+			using (process) {
+				try {
+					if (stdin is not null) {
+						await process.StandardInput.WriteAsync(stdin).ConfigureAwait(false);
+						process.StandardInput.Close();
+					}
+
+					var stdout = process.StandardOutput.ReadToEndAsync(cts.Token);
+					var stderr = process.StandardError.ReadToEndAsync(cts.Token);
+					await process.WaitForExitAsync(cts.Token).ConfigureAwait(false);
+					return new GitResult(process.ExitCode, await stdout.ConfigureAwait(false),
+						await stderr.ConfigureAwait(false));
+				} catch (OperationCanceledException) {
+					try {
+						process.Kill(true);
+					} catch {
+						// already gone
+					}
+
+					return new GitResult(-1, "", ct.IsCancellationRequested ? "cancelled" : "git timed out");
+				} catch (Exception e) {
+					return new GitResult(-1, "", e.Message);
+				}
+			}
+		} finally {
+			GitAskpass.EndRun(askpass);
 		}
 	}
 }

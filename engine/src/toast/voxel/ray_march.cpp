@@ -149,7 +149,20 @@ auto marchRay(
 			return out;
 		}
 
-		if (gpu::sampleSolid(pool, scene, volume, voxel)) {
+		const glm::uvec3 local = glm::uvec3(voxel) & 7u;
+		const uint64_t sub = gpu::pooledSubBrick(pool, entry >> k_brick_tag_bits, local);
+		if (sub == 0) {
+			++out.sub_steps;
+			leave(voxel & glm::ivec3(~3), 4);
+			continue;
+		}
+		if (((sub >> gpu::subBlockShift(local)) & gpu::k_sub_block_mask) == 0) {
+			++out.sub_steps;
+			leave(voxel & glm::ivec3(~1), 2);
+			continue;
+		}
+
+		if (((sub >> gpu::subBrickBit(local)) & 1ull) != 0) {
 			out.hit = true;
 			out.t = t;
 			out.voxel = voxel;
