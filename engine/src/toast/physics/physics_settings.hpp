@@ -45,6 +45,13 @@ struct Tunables {
 	uint32_t fracture_max_unglue_voxels = 4096;
 	float fracture_edge_noise = 0.25f;
 	float fracture_edge_noise_scale = 4.0f;
+	float fracture_edge_lobes = 0.35f;
+	float fracture_debris_share = 0.2f;
+	float fracture_shatter_share = 0.5f;
+	float fracture_shatter_max_band = 6.0f;
+	uint32_t fracture_shatter_max_cells = 12;
+	float fracture_shatter_cell_cost = 4.0f;
+	float fracture_crack_half_width = 0.9f;
 	float explosion_max_radius = 8.0f;
 	float explosion_falloff = 2.0f;
 	uint32_t impact_max_hardness = 1;

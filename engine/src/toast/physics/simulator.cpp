@@ -4083,6 +4083,27 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 
 		std::vector<Doomed> doomed;
 
+		const float seal_floor = glm::max(craterMinRadius(crater) - voxel::k_voxel_size, 0.0f);
+		const float seal_floor_squared = seal_floor * seal_floor;
+		const std::array<glm::ivec3, 6> k_face_offsets {
+		  glm::ivec3 { 1,  0,  0},
+		  glm::ivec3 {-1,  0,  0},
+		  glm::ivec3 { 0,  1,  0},
+		  glm::ivec3 { 0, -1,  0},
+		  glm::ivec3 { 0,  0,  1},
+		  glm::ivec3 { 0,  0, -1},
+		};
+		const auto touches_outside = [&](const glm::ivec3& v) {
+			for (const glm::ivec3& offset : k_face_offsets) {
+				const glm::vec3 center = (glm::vec3 {v + offset} + 0.5f) * voxel::k_voxel_size;
+				const float radius = craterRadiusAt(crater, center);
+				if (pointSegmentDistanceSquared(center, crater.start, crater.end) > radius * radius) {
+					return true;
+				}
+			}
+			return false;
+		};
+
 		for (int32_t bz = first_brick.z; bz <= last_brick.z; ++bz) {
 			for (int32_t by = first_brick.y; by <= last_brick.y; ++by) {
 				for (int32_t bx = first_brick.x; bx <= last_brick.x; ++bx) {
@@ -4111,7 +4132,10 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 								}
 								const float outer = craterRadiusAt(crater, voxel_center);
 								const float inner = shell > 0.0f ? glm::max(outer - shell, 0.0f) : 0.0f;
-								if (distance_squared > outer * outer || distance_squared < inner * inner) {
+								if (distance_squared > outer * outer) {
+									continue;
+								}
+								if (distance_squared < inner * inner && not(distance_squared >= seal_floor_squared && touches_outside(v))) {
 									continue;
 								}
 								if (not damageReaches(
@@ -4211,7 +4235,7 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 	unlockSleep(shape->owner);
 
 	// crater in world space
-	const float reach = crater.radius + glm::length(crater.end - crater.start);
+	const float reach = craterMaxRadius(crater) + glm::length(crater.end - crater.start);
 	const AABB crater_bounds {
 	  .min = c.world_center - glm::vec3(reach),
 	  .max = c.world_center + glm::vec3(reach),

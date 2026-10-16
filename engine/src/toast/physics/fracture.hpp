@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "fracture_pattern.hpp"
 #include "fracture_random.hpp"
 #include "hardness.hpp"
 #include "physics_settings.hpp"
@@ -51,6 +52,9 @@ struct FractureRequest {
 	uint32_t max_unglue_voxels = tunables().fracture_max_unglue_voxels;
 	float edge_noise = tunables().fracture_edge_noise;
 	float edge_noise_scale = tunables().fracture_edge_noise_scale;
+	float edge_lobes = tunables().fracture_edge_lobes;
+	float debris_share = tunables().fracture_debris_share;
+	float shatter_share = tunables().fracture_shatter_share;
 };
 
 inline constexpr uint32_t k_unglue_neighbor_count = 6;
@@ -82,22 +86,38 @@ struct Crater {
 	uint64_t seed = 0;
 	float edge_noise = 0.0f;
 	float edge_noise_scale = 0.0f;
+	float edge_lobes = 0.0f;
+	FracturePattern pattern = FracturePattern::brittle;
+	float shatter_energy = 0.0f;
+	float debris_energy = 0.0f;
 };
 
 inline constexpr float k_max_edge_noise = 0.9f;
+inline constexpr float k_min_radius_factor = 0.15f;
 
 [[nodiscard]]
 inline auto craterRadiusAt(const Crater& crater, const glm::vec3& point) -> float {
-	if (not(crater.edge_noise > 0.0f) || not(crater.edge_noise_scale > 0.0f)) {
-		return crater.radius;
+	float factor = 1.0f;
+	if (crater.edge_lobes > 0.0f && crater.radius > 0.0f) {
+		const float lobes = valueNoise3(streamSeed(crater.seed, FractureStream::edge_lobes), point / crater.radius);
+		factor += crater.edge_lobes * ((lobes * 2.0f) - 1.0f);
 	}
-	const float noise = valueNoise3(streamSeed(crater.seed, FractureStream::edge_noise), point / crater.edge_noise_scale);
-	return crater.radius * (1.0f + crater.edge_noise * (noise * 2.0f - 1.0f));
+	if (crater.edge_noise > 0.0f && crater.edge_noise_scale > 0.0f) {
+		const float noise = valueNoise3(streamSeed(crater.seed, FractureStream::edge_noise), point / crater.edge_noise_scale);
+		factor += crater.edge_noise * ((noise * 2.0f) - 1.0f);
+	}
+	return crater.radius * std::max(factor, k_min_radius_factor);
 }
 
 [[nodiscard]]
 constexpr auto craterMaxRadius(const Crater& crater) -> float {
-	return crater.radius * (1.0f + std::max(crater.edge_noise, 0.0f));
+	return crater.radius * (1.0f + std::max(crater.edge_noise, 0.0f) + std::max(crater.edge_lobes, 0.0f));
+}
+
+[[nodiscard]]
+constexpr auto craterMinRadius(const Crater& crater) -> float {
+	return crater.radius *
+	       std::max(1.0f - std::max(crater.edge_noise, 0.0f) - std::max(crater.edge_lobes, 0.0f), k_min_radius_factor);
 }
 
 struct FractureCandidate {
@@ -400,6 +420,33 @@ inline auto overshootRadius(float energy_left, float toughness, float radius, fl
 	return low;
 }
 
+struct EnergySplit {
+	float debris = 0.0f;
+	float shatter = 0.0f;
+	float overshoot = 0.0f;
+};
+
+[[nodiscard]]
+inline auto splitLeftoverEnergy(float left, float debris_share, float shatter_share, FracturePattern pattern) -> EnergySplit {
+	if (not std::isfinite(left) || left <= 0.0f) {
+		return {};
+	}
+
+	auto sanitize = [](float share) { return std::isfinite(share) ? std::clamp(share, 0.0f, 1.0f) : 0.0f; };
+	float debris = sanitize(debris_share);
+	float shatter = pattern == FracturePattern::ductile ? 0.0f : sanitize(shatter_share);
+	if (float total = debris + shatter; total > 1.0f) {
+		debris /= total;
+		shatter /= total;
+	}
+
+	return {
+	  .debris = left * debris,
+	  .shatter = left * shatter,
+	  .overshoot = std::max(left - (left * debris) - (left * shatter), 0.0f),
+	};
+}
+
 [[nodiscard]]
 inline auto planUnglue(
     const voxel::Volume& volume, const voxel::Palette& palette, const voxel::MaterialLibrary& materials, const glm::vec3& start,
@@ -417,6 +464,7 @@ inline auto planCrater(
 	  .seed = request.seed,
 	  .edge_noise = std::isfinite(request.edge_noise) ? std::clamp(request.edge_noise, 0.0f, k_max_edge_noise) : 0.0f,
 	  .edge_noise_scale = std::max(request.edge_noise_scale, 0.0f) * voxel::k_voxel_size,
+	  .edge_lobes = std::isfinite(request.edge_lobes) ? std::clamp(request.edge_lobes, 0.0f, k_max_edge_noise) : 0.0f,
 	};
 	if (not std::isfinite(request.energy_density) || not(request.energy_density > 0.0f) || not(request.radius > 0.0f)) {
 		return out;
@@ -427,6 +475,8 @@ inline auto planCrater(
 	if (not hit.has_value() || not hit->breakableBy(request.max_hardness)) {
 		return out;
 	}
+
+	out.pattern = hit->fracture_pattern;
 
 	// as far as the crater can grow
 	const bool digs = glm::dot(request.direction, request.direction) > 0.0f && request.max_depth > 0.0f;
@@ -497,8 +547,12 @@ inline auto planCrater(
 	);
 	left -= out.unglue.cost;
 
+	auto split = splitLeftoverEnergy(left, request.debris_share, request.shatter_share, out.pattern);
+	out.debris_energy = split.debris;
+	out.shatter_energy = split.shatter;
 	const float toughness = paid > 0 ? paid_cost / (static_cast<float>(paid) * k_voxel_volume) : hit->toughness;
-	out.radius += overshootRadius(left, toughness, request.radius, glm::length(out.end - out.start), request.max_overshoot);
+	out.radius +=
+	    overshootRadius(split.overshoot, toughness, request.radius, glm::length(out.end - out.start), request.max_overshoot);
 	return out;
 }
 
