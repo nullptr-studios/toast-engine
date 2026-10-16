@@ -250,12 +250,12 @@ void projectShape(
 		// exposed[axis][0] has a voxel when the one before it on axis is empty
 		const std::array<std::array<voxel::BrickOccupancy, 2>, 3> exposed {
 		  {
-       {occupancy & ~voxel::neighboursNegX(occupancy, around.neg_x),
-		     occupancy & ~voxel::neighboursPosX(occupancy, around.pos_x)},
-       {occupancy & ~voxel::neighboursNegY(occupancy, around.neg_y),
-		     occupancy & ~voxel::neighboursPosY(occupancy, around.pos_y)},
-       {occupancy & ~voxel::neighboursNegZ(occupancy, around.neg_z),
-		     occupancy & ~voxel::neighboursPosZ(occupancy, around.pos_z)},
+		   {occupancy & ~voxel::neighboursNegX(occupancy, around.neg_x),
+			   occupancy & ~voxel::neighboursPosX(occupancy, around.pos_x)},
+		   {occupancy & ~voxel::neighboursNegY(occupancy, around.neg_y),
+			   occupancy & ~voxel::neighboursPosY(occupancy, around.pos_y)},
+		   {occupancy & ~voxel::neighboursNegZ(occupancy, around.neg_z),
+			   occupancy & ~voxel::neighboursPosZ(occupancy, around.pos_z)},
 		   }
 		};
 		const bool uniform = entry.tag() == voxel::BrickTag::uniform;

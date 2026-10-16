@@ -399,6 +399,20 @@ void registerPhysicsSettings() {
 	    {.label = "Max unglue voxels", .category = "Fracture", .min = 0.0, .max = 1000000.0, .step = 64.0},
 	    &Tunables::fracture_max_unglue_voxels
 	);
+	flt("physics.fracture.edge_noise",
+	    0.25,
+	    {
+	      .label = "Edge noise",
+	      .category = "Fracture",
+	      .min = 0.0f,
+	      .max = 0.9f,
+	      .step = 0.05f,
+	    },
+	    &Tunables::fracture_edge_noise);
+	flt("physics.fracture.edge_noise_scale",
+	    4.0,
+	    {.label = "Edge noise scale", .category = "Fracture", .min = 0.0f, .max = 64.0f, .step = 0.5f},
+	    &Tunables::fracture_edge_noise_scale);
 
 	uint_setting(
 	    "physics.jobs.min_bounds_per_job",

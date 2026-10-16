@@ -38,6 +38,19 @@ void assets::DestructionMaterial::readFields() {
 			TOAST_WARN("DestructionMaterial", "Unknown hardness '{}', using '{}'", name, physics::hardnessName(m_hardness));
 		}
 	}
+	if (d.contains("fracture_pattern")) {
+		const std::string name = d["fracture_pattern"].as<std::string>();
+		if (std::optional<physics::FracturePattern> fracture_pattern = physics::fracturePatternFromName(name)) {
+			m_fracture_pattern = *fracture_pattern;
+		} else {
+			TOAST_WARN(
+			    "DestructionMaterial",
+			    "Unknown fracture pattern '{}', using '{}'",
+			    name,
+			    physics::fracturePatternName(m_fracture_pattern)
+			);
+		}
+	}
 	if (d.contains("structural_strength")) {
 		m_structural_strength = d["structural_strength"].as<float>();
 	}
@@ -66,6 +79,10 @@ auto assets::DestructionMaterial::toughness() const noexcept -> float {
 
 auto assets::DestructionMaterial::hardness() const noexcept -> physics::Hardness {
 	return m_hardness;
+}
+
+auto assets::DestructionMaterial::fracturePatterh() const noexcept -> physics::FracturePattern {
+	return m_fracture_pattern;
 }
 
 auto assets::DestructionMaterial::structuralStrength() const noexcept -> float {

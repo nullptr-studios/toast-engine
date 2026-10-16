@@ -98,6 +98,7 @@ struct PhysicalMaterial {
 
 	/// Damage that breaks only softer tiers never breaks this material
 	physics::Hardness hardness = physics::material_defaults::k_hardness;
+	physics::FracturePattern fracture_pattern = physics::material_defaults::k_fracture_pattern;
 
 	/// kJ/m³ it takes to break per m3
 	float toughness = physics::material_defaults::k_toughness;

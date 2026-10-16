@@ -18,13 +18,13 @@ constexpr auto splitmix64(uint64_t value) noexcept -> uint64_t {
 	return value ^ (value >> 31);
 }
 
-constexpr void hashCombine(unit64_t& seed, unit64_t value) noexcept {
+constexpr void hashCombine(uint64_t& seed, uint64_t value) noexcept {
 	seed = splitmix64(value + k_golden_gamma + seed);
 }
 
 constexpr void hashFloats(uint64_t& seed, const float* data, size_t count) noexcept {
 	for (size_t i = 0; i < count; ++i) {
-		hashCombine(seed, std::bit_cast<uint64_t>(data[i]));
+		hashCombine(seed, std::bit_cast<uint32_t>(data[i]));
 	}
 }
 

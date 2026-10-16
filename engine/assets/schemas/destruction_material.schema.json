@@ -1,53 +1,70 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id" : "core://schemas/destruction_material.schema.json",
+  "$id": "core://schemas/destruction_material.schema.json",
   "title": "Destruction Material (.tdm)",
   "type": "object",
-  "required" : ["density", "toughness"],
+  "required": [
+    "density",
+    "toughness"
+  ],
   "properties": {
     "density": {
       "type": "number",
-      "x-toast-type" : "float",
-      "x-toast-unit" : "kg/m^3",
-      "default" : 2000.0,
-      "minimum" : 1,
-      "maximum" : 65535
+      "x-toast-type": "float",
+      "x-toast-unit": "kg/m^3",
+      "default": 2000.0,
+      "minimum": 1,
+      "maximum": 65535
     },
     "toughness": {
       "type": "number",
-      "x-toast-type" : "float",
-      "x-toast-unit" : "kJ/m^3",
-      "default" : 100.0,
-      "minimum" : 0
+      "x-toast-type": "float",
+      "x-toast-unit": "kJ/m^3",
+      "default": 100.0,
+      "minimum": 0
     },
     "hardness": {
-      "enum" : ["soft", "medium", "hard"],
-      "x-toast-type" : "enum",
-      "default" : "medium"
+      "enum": [
+        "soft",
+        "medium",
+        "hard"
+      ],
+      "x-toast-type": "enum",
+      "default": "medium"
+    },
+    "fracture_pattern": {
+      "enum": [
+        "brittle",
+        "granular",
+        "fibrous",
+        "ductile"
+      ],
+      "x-toast-type": "enum",
+      "default": "brittle"
     },
     "structural_strength": {
       "type": "number",
-      "x-toast-type" : "float",
-      "x-toast-unit" : "Pa",
-      "default" : 1000000.0,
-      "minimum" : 0
+      "x-toast-type": "float",
+      "x-toast-unit": "Pa",
+      "default": 1000000.0,
+      "minimum": 0
     },
     "destructible": {
       "type": "bool",
-      "x-toast-type" : "bool",
-      "default" : true
+      "x-toast-type": "bool",
+      "default": true
     },
     "flammable": {
       "type": "bool",
-		  "x-toast-type" : "bool",
-      "default" : false
+      "x-toast-type": "bool",
+      "default": false
     },
     "burn_rate": {
       "type": "number",
-      "x-toast-type" : "float",
-      "x-toast-unit" : "s/m",
-      "default" : 0.0,
-      "minimum" : 0
+      "x-toast-type": "float",
+      "x-toast-unit": "s/m",
+      "default": 0.0,
+      "minimum": 0
     }
   }
 }

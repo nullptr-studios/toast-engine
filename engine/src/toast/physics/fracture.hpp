@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "fracture_random.hpp"
 #include "hardness.hpp"
 #include "physics_settings.hpp"
 
@@ -42,11 +43,14 @@ struct FractureRequest {
 	float radius = 0.0f;
 	float energy_density = 0.0f;
 	Hardness max_hardness = k_hardest;
+	uint64_t seed = 0;
 	float depth_share = tunables().fracture_depth_share;
 	float max_depth = tunables().fracture_max_depth;
 	float max_overshoot = tunables().fracture_max_overshoot;
 	float bond_cost = tunables().fracture_bond_cost;
 	uint32_t max_unglue_voxels = tunables().fracture_max_unglue_voxels;
+	float edge_noise = tunables().fracture_edge_noise;
+	float edge_noise_scale = tunables().fracture_edge_noise_scale;
 };
 
 inline constexpr uint32_t k_unglue_neighbor_count = 6;
@@ -75,7 +79,26 @@ struct Crater {
 	bool breaks = false;
 	UnglueRegion unglue;
 	std::unordered_set<uint64_t> reachable;
+	uint64_t seed = 0;
+	float edge_noise = 0.0f;
+	float edge_noise_scale = 0.0f;
 };
+
+inline constexpr float k_max_edge_noise = 0.9f;
+
+[[nodiscard]]
+inline auto craterRadiusAt(const Crater& crater, const glm::vec3& point) -> float {
+	if (not(crater.edge_noise > 0.0f) || not(crater.edge_noise_scale > 0.0f)) {
+		return crater.radius;
+	}
+	const float noise = valueNoise3(streamSeed(crater.seed, FractureStream::edge_noise), point / crater.edge_noise_scale);
+	return crater.radius * (1.0f + crater.edge_noise * (noise * 2.0f - 1.0f));
+}
+
+[[nodiscard]]
+constexpr auto craterMaxRadius(const Crater& crater) -> float {
+	return crater.radius * (1.0f + std::max(crater.edge_noise, 0.0f));
+}
 
 struct FractureCandidate {
 	float depth = 0.0f;
@@ -388,7 +411,13 @@ inline auto planCrater(
     const voxel::Volume& volume, const voxel::Palette& palette, const voxel::MaterialLibrary& materials,
     const FractureRequest& request
 ) -> Crater {
-	Crater out {.start = request.point, .end = request.point};
+	Crater out {
+	  .start = request.point,
+	  .end = request.point,
+	  .seed = request.seed,
+	  .edge_noise = std::isfinite(request.edge_noise) ? std::clamp(request.edge_noise, 0.0f, k_max_edge_noise) : 0.0f,
+	  .edge_noise_scale = std::max(request.edge_noise_scale, 0.0f) * voxel::k_voxel_size,
+	};
 	if (not std::isfinite(request.energy_density) || not(request.energy_density > 0.0f) || not(request.radius > 0.0f)) {
 		return out;
 	}
