@@ -137,6 +137,7 @@ Rml::CompiledGeometryHandle
 	m_memory_pool.Flush(geometry->m_p_index);
 
 	geometry->m_num_indices = (int)indices.size();
+	geometry->m_transparent = std::ranges::all_of(vertices, [](const Rml::Vertex& vertex) { return vertex.colour.alpha == 0; });
 
 	auto owner = std::shared_ptr<geometry_handle_t>(geometry.release(), [this](geometry_handle_t* resource) {
 		m_memory_pool.Free_GeometryHandle(resource);
@@ -158,7 +159,7 @@ void RenderInterface_VK::RenderGeometry(
 
 	texture_data_t* p_texture = reinterpret_cast<texture_data_t*>(texture);
 	geometry_handle_t* p_casted_compiled_geometry = reinterpret_cast<geometry_handle_t*>(geometry);
-	if (!p_casted_compiled_geometry) {
+	if (!p_casted_compiled_geometry || (p_casted_compiled_geometry->m_transparent && !m_is_use_stencil_pipeline)) {
 		return;
 	}
 

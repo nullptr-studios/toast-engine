@@ -1,6 +1,7 @@
 #include "gpu_layout.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <cstring>
 #include <tracy/Tracy.hpp>
@@ -80,6 +81,23 @@ void sortUnique(std::vector<uint32_t>& values) {
 
 }
 
+void packOccupancyWords(const BrickOccupancy& occupancy, uint32_t* out) {
+	std::array<uint64_t, 8> sub {};
+	for (uint32_t z = 0; z < k_brick_dim; ++z) {
+		for (uint32_t y = 0; y < k_brick_dim; ++y) {
+			const uint64_t row = (occupancy[z] >> (y * k_brick_dim)) & 0xFFull;
+			const uint32_t s = ((y >> 2u) << 1u) | ((z >> 2u) << 2u);
+			const uint32_t shift = (4u * (y & 3u)) + (16u * (z & 3u));
+			sub[s] |= (row & 0xFull) << shift;
+			sub[s | 1u] |= (row >> 4u) << shift;
+		}
+	}
+	for (uint32_t s = 0; s < 8; ++s) {
+		out[s * 2] = static_cast<uint32_t>(sub[s]);
+		out[(s * 2) + 1] = static_cast<uint32_t>(sub[s] >> 32u);
+	}
+}
+
 auto packPool(const BrickPool& pool) -> PackedPool {
 	ZoneScoped;
 
@@ -96,12 +114,7 @@ auto packPool(const BrickPool& pool) -> PackedPool {
 		    out.materials.data() + (static_cast<size_t>(id) * k_material_words_per_brick), bytes.data(), k_brick_material_bytes
 		);
 
-		const BrickOccupancy& occupancy = pool.occupancy(id);
-		const size_t base = static_cast<size_t>(id) * k_occupancy_words_per_brick;
-		for (uint32_t slice = 0; slice < k_brick_dim; ++slice) {
-			out.occupancy[base + (slice * 2)] = static_cast<uint32_t>(occupancy.slices[slice]);
-			out.occupancy[base + (slice * 2) + 1] = static_cast<uint32_t>(occupancy.slices[slice] >> 32u);
-		}
+		packOccupancyWords(pool.occupancy(id), out.occupancy.data() + (static_cast<size_t>(id) * k_occupancy_words_per_brick));
 	}
 	return out;
 }
@@ -320,11 +333,7 @@ auto computePatch(
 	});
 	appendSlots(patch.occupancy, slots, k_occupancy_words_per_brick, [&pool](uint32_t slot, uint32_t* out) {
 		assert(pool.isValid(slot));
-		const BrickOccupancy& occupancy = pool.occupancy(slot);
-		for (uint32_t slice = 0; slice < k_brick_dim; ++slice) {
-			out[slice * 2] = static_cast<uint32_t>(occupancy.slices[slice]);
-			out[(slice * 2) + 1] = static_cast<uint32_t>(occupancy.slices[slice] >> 32u);
-		}
+		packOccupancyWords(pool.occupancy(slot), out);
 	});
 	return patch;
 }
@@ -407,11 +416,13 @@ auto sampleSolid(const PackedPool& pool, const PackedScene& scene, uint32_t volu
 		return true;    // uniform is full
 	}
 
-	// The low word holds rows y < 4
-	const uint32_t bit = (local.y * k_brick_dim) + local.x;
-	const size_t word_index =
-	    (static_cast<size_t>(value >> k_brick_tag_bits) * k_occupancy_words_per_brick) + (local.z * 2u) + (bit / 32u);
-	return ((pool.occupancy[word_index] >> (bit % 32u)) & 1u) != 0;
+	return ((pooledSubBrick(pool, value >> k_brick_tag_bits, local) >> subBrickBit(local)) & 1ull) != 0;
+}
+
+auto pooledSubBrick(const PackedPool& pool, uint32_t slot, glm::uvec3 local) -> uint64_t {
+	const uint32_t sub = (local.x >> 2u) | ((local.y >> 2u) << 1u) | ((local.z >> 2u) << 2u);
+	const size_t base = (static_cast<size_t>(slot) * k_occupancy_words_per_brick) + (sub * 2u);
+	return static_cast<uint64_t>(pool.occupancy[base]) | (static_cast<uint64_t>(pool.occupancy[base + 1]) << 32u);
 }
 
 auto sampleCoarse(const PackedScene& scene, uint32_t volume, glm::ivec3 cell) -> bool {

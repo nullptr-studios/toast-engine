@@ -15,8 +15,10 @@
 #include <algorithm>
 #include <cassert>
 #include <cctype>
+#include <span>
 #include <toast/assets/asset_manager.hpp>
 #include <toast/assets/assets.hpp>
+#include <toast/engine.hpp>
 #include <toast/log.hpp>
 #include <toast/project_settings.hpp>
 #include <toast/renderer/vulkan_core.hpp>
@@ -123,16 +125,18 @@ void UISystem::buildDrawFrame(renderer::VulkanRenderer::RenderFrame& frame) {
 
 	frame.ui_slot_guard = m_render_interface->OnFrameBegin(static_cast<uint32_t>(m_frame_counter++));
 
-	auto record_context = [&](Rml::Context* context) -> VkImageView {
-		ZoneScopedN("UI record context");
-		const Rml::Vector2i dims = context->GetDimensions();
+	auto record_contexts = [&](std::span<Rml::Context* const> contexts) -> VkImageView {
+		ZoneScopedN("UI record contexts");
+		const Rml::Vector2i dims = contexts.front()->GetDimensions();
 		if (dims.x <= 0 || dims.y <= 0) {
 			return nullptr;
 		}
 		if (!m_render_interface->BeginRecording({static_cast<uint32_t>(dims.x), static_cast<uint32_t>(dims.y)})) {
 			return nullptr;
 		}
-		context->Render();
+		for (Rml::Context* context : contexts) {
+			context->Render();
+		}
 		if (VkCommandBuffer command = m_render_interface->EndRecording()) {
 			frame.ui_command_buffers.emplace_back(command);
 		} else {
@@ -141,7 +145,8 @@ void UISystem::buildDrawFrame(renderer::VulkanRenderer::RenderFrame& frame) {
 		return m_render_interface->GetLastOutputView();
 	};
 
-	// Panels are in registration order
+	// Screen panels of one size draw in registration order into one layer so the overlay composites it once
+	m_screen_contexts.clear();
 	for (toast::Panel* panel : m_panels) {
 		Rml::Context* context = panel->rmlContext();
 		if (!panel->enabled() || !panel->participatesIn(toast::NodeOwnerParticipation::render) || context == nullptr) {
@@ -152,7 +157,16 @@ void UISystem::buildDrawFrame(renderer::VulkanRenderer::RenderFrame& frame) {
 			context->SetDimensions(viewport_dims);
 		}
 
-		if (const VkImageView view = record_context(context)) {
+		if (!m_screen_contexts.empty() && m_screen_contexts.front()->GetDimensions() != context->GetDimensions()) {
+			if (const VkImageView view = record_contexts(m_screen_contexts)) {
+				frame.ui_output_views.emplace_back(view);
+			}
+			m_screen_contexts.clear();
+		}
+		m_screen_contexts.push_back(context);
+	}
+	if (!m_screen_contexts.empty()) {
+		if (const VkImageView view = record_contexts(m_screen_contexts)) {
 			frame.ui_output_views.emplace_back(view);
 		}
 	}
@@ -165,7 +179,7 @@ void UISystem::buildDrawFrame(renderer::VulkanRenderer::RenderFrame& frame) {
 		}
 		panel->syncContextDimensions();
 
-		if (const VkImageView view = record_context(context)) {
+		if (const VkImageView view = record_contexts(std::span {&context, 1})) {
 			frame.ui_world_panels.push_back(
 			    {.view = vk::ImageView(view), .model = panel->worldTransformForRender(), .always_on_top = panel->alwaysOnTop()}
 			);
@@ -184,6 +198,14 @@ auto UISystem::exists() noexcept -> bool {
 
 void UISystem::tick() noexcept {
 	ZoneScoped;
+	{
+		std::scoped_lock lock(m_deferred_mutex);
+		for (auto& [_, setup] : m_deferred_setups) {
+			setup();
+		}
+		m_deferred_setups.clear();
+	}
+
 	if (m_documents_reload_pending) {
 		m_documents_reload_pending = false;
 		if (m_stylesheet_cache_dirty) {
@@ -593,6 +615,35 @@ auto UISystem::localizedImage(std::string_view id) const -> std::string {
 		}
 	}
 	return {};
+}
+
+void UISystem::deferSetup(toast::Node* owner, std::function<void()> setup) {
+	std::scoped_lock lock(m_deferred_mutex);
+	m_deferred_setups.emplace_back(owner, std::move(setup));
+}
+
+void UISystem::runDeferredSetup(toast::Node* owner) {
+	if (!onUIThread()) {
+		return;
+	}
+	std::scoped_lock lock(m_deferred_mutex);
+	const auto it = std::ranges::find(m_deferred_setups, owner, &std::pair<toast::Node*, std::function<void()>>::first);
+	if (it == m_deferred_setups.end()) {
+		return;
+	}
+	const std::function<void()> setup = std::move(it->second);
+	m_deferred_setups.erase(it);
+	setup();
+}
+
+void UISystem::cancelDeferredSetup(toast::Node* owner) {
+	std::scoped_lock lock(m_deferred_mutex);
+	std::erase_if(m_deferred_setups, [owner](const auto& entry) { return entry.first == owner; });
+}
+
+auto UISystem::onUIThread() -> bool {
+	const toast::Engine* engine = toast::Engine::get();
+	return engine == nullptr || engine->onTickThread();
 }
 
 void UISystem::registerPanel(toast::Panel* panel) {

@@ -461,12 +461,21 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 			ImGui::TextDisabled("Depth prepass: %u instances", VulkanRenderer::instance->getPrepassDrawnCount());
 
 			if (const auto* shadows = VulkanRenderer::instance->getShadowPass(); shadows != nullptr) {
+				const auto& shadow_stats = shadows->getStats();
 				ImGui::TextDisabled(
-				    "Shadow pass: %u draws, %u scopes, %u cached, %u spared",
-				    shadows->getDrawCount(),
-				    shadows->getPassCount(),
-				    shadows->getCachedCount(),
-				    shadows->getVoxelSparedCount()
+				    "Shadow pass: %u draws, %u scopes, %u cached, %u composed, %u moving volumes",
+				    shadow_stats.draws,
+				    shadow_stats.scopes,
+				    shadow_stats.cached,
+				    shadow_stats.composed,
+				    shadow_stats.moving_volumes
+				);
+				ImGui::TextDisabled(
+				    "Shadow voxel renders: %u views, %u casters, %u edits, %u spared",
+				    shadow_stats.static_views,
+				    shadow_stats.static_casters,
+				    shadow_stats.static_edits,
+				    shadow_stats.spared
 				);
 
 				if (const auto* frame = VulkanRenderer::instance->renderingFrame(); frame != nullptr) {

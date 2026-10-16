@@ -294,12 +294,13 @@ void voxelDebugProbeText(const VulkanRenderer::RenderFrame& frame, const std::op
 		    (entry.flags & voxel::k_entry_transparent) != 0 ? "  transparent" : ""
 		);
 
-		const uint32_t voxel_steps = probe.hit.steps - probe.hit.coarse_steps - probe.hit.brick_steps;
+		const uint32_t voxel_steps = probe.hit.steps - probe.hit.coarse_steps - probe.hit.brick_steps - probe.hit.sub_steps;
 		ImGui::Text(
-		    "%u steps: %u coarse skips, %u brick skips, %u voxel",
+		    "%u steps: %u coarse skips, %u brick skips, %u sub-brick skips, %u voxel",
 		    probe.hit.steps,
 		    probe.hit.coarse_steps,
 		    probe.hit.brick_steps,
+		    probe.hit.sub_steps,
 		    voxel_steps
 		);
 
@@ -323,12 +324,13 @@ void voxelDebugProbeText(const VulkanRenderer::RenderFrame& frame, const std::op
 		const MissProbe& miss = *result->miss;
 		const std::string_view name = voxelDebugNodeName(frame, miss.proxy.record_index);
 		ImGui::TextDisabled(
-		    "Missed '%.*s' after %u steps (%u coarse, %u brick)",
+		    "Missed '%.*s' after %u steps (%u coarse, %u brick, %u sub-brick)",
 		    static_cast<int>(name.size()),
 		    name.data(),
 		    miss.hit.steps,
 		    miss.hit.coarse_steps,
-		    miss.hit.brick_steps
+		    miss.hit.brick_steps,
+		    miss.hit.sub_steps
 		);
 	}
 }

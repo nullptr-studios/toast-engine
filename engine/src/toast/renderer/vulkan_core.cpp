@@ -649,6 +649,8 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	enabled_features.samplerAnisotropy = m_sampler_anisotropy_supported ? VK_TRUE : VK_FALSE;
 
 	enabled_features.independentBlend = VK_TRUE;
+	// HiZPyramid picks its level image by a loop index
+	enabled_features.shaderStorageImageArrayDynamicIndexing = VK_TRUE;
 
 	vk::PhysicalDeviceFeatures2 supported_features {};
 	vk::PhysicalDeviceVulkan12Features supported_vulkan12 {};
@@ -684,6 +686,7 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	require_feature(supported_vulkan11.shaderDrawParameters == VK_TRUE, "Vulkan 1.1 shaderDrawParameters");
 	require_feature(supported_vulkan11.multiview == VK_TRUE, "Vulkan 1.1 multiview");
 	require_feature(device_features.independentBlend == VK_TRUE, "independentBlend");
+	require_feature(device_features.shaderStorageImageArrayDynamicIndexing == VK_TRUE, "shaderStorageImageArrayDynamicIndexing");
 
 	std::vector<const char*> device_extensions(required_device_extensions.begin(), required_device_extensions.end());
 
@@ -781,7 +784,44 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 		}
 	}
 
+	{
+		const auto available = m_physical_device.enumerateDeviceExtensionProperties();
+		const bool extension_present = std::ranges::any_of(available, [](const vk::ExtensionProperties& ext) {
+			return std::string_view(ext.extensionName.data()) == VK_EXT_MESH_SHADER_EXTENSION_NAME;
+		});
+
+		bool usable = false;
+		if (extension_present) {
+			vk::PhysicalDeviceFeatures2 probe {};
+			vk::PhysicalDeviceMeshShaderFeaturesEXT mesh_probe {};
+			probe.pNext = &mesh_probe;
+			(*m_physical_device).getFeatures2(&probe);
+
+			vk::PhysicalDeviceProperties2 props {};
+			vk::PhysicalDeviceMeshShaderPropertiesEXT mesh_props {};
+			props.pNext = &mesh_props;
+			(*m_physical_device).getProperties2(&props);
+
+			// Mirrors voxel_mesh_common.slang with 64 quads a mesh group and a payload of 3 words and 768 slice entries
+			usable = mesh_probe.taskShader == VK_TRUE && mesh_probe.meshShader == VK_TRUE && mesh_props.maxMeshOutputVertices >= 256 &&
+			         mesh_props.maxMeshOutputPrimitives >= 128 && mesh_props.maxMeshWorkGroupInvocations >= 64 &&
+			         mesh_props.maxTaskWorkGroupInvocations >= 64 && mesh_props.maxTaskPayloadSize >= 3084;
+		}
+
+		m_mesh_shader_supported = usable;
+		if (m_mesh_shader_supported) {
+			device_extensions.push_back(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+			TOAST_INFO("Render", "VK_EXT_mesh_shader available; near voxels can mesh in task and mesh shaders");
+		} else {
+			TOAST_INFO("Render", "Mesh shaders unavailable (extension={}); near voxels mesh in compute", extension_present);
+		}
+	}
+
 	vk::DeviceCreateInfo device_ci({}, queue_create_infos, {}, device_extensions, &enabled_features);
+
+	vk::PhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features {};
+	mesh_shader_features.taskShader = VK_TRUE;
+	mesh_shader_features.meshShader = VK_TRUE;
 
 	vk::PhysicalDeviceAccelerationStructureFeaturesKHR acceleration_structure_features {};
 	acceleration_structure_features.accelerationStructure = VK_TRUE;
@@ -813,6 +853,10 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	if (m_frame_boundary_supported) {
 		*chain_tail = &frame_boundary_features;
 		chain_tail = &frame_boundary_features.pNext;
+	}
+	if (m_mesh_shader_supported) {
+		*chain_tail = &mesh_shader_features;
+		chain_tail = &mesh_shader_features.pNext;
 	}
 	if (m_ray_tracing_supported) {
 		*chain_tail = &acceleration_structure_features;

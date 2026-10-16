@@ -10,8 +10,10 @@
 #include "assets.hpp"
 
 #include <cstdint>
+#include <functional>
 #include <glm/glm.hpp>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -112,6 +114,16 @@ public:
 	[[nodiscard]]
 	auto localizedImage(std::string_view id) const -> std::string;
 
+	/// For panels initialized on a World::loadNode or World::spawn worker since RmlUi is not thread safe
+	void deferSetup(toast::Node* owner, std::function<void()> setup);
+	/// Runs the setup deferred for @p owner when called on the tick thread
+	void runDeferredSetup(toast::Node* owner);
+	void cancelDeferredSetup(toast::Node* owner);
+
+	/// The engine tick thread where RmlUi may be used
+	[[nodiscard]]
+	static auto onUIThread() -> bool;
+
 	// Panels register themselves on init
 	void registerPanel(toast::Panel* panel);
 	void unregisterPanel(toast::Panel* panel);
@@ -160,6 +172,8 @@ private:
 
 	std::vector<toast::Panel*> m_panels;
 	std::vector<toast::Panel3D*> m_world_panels;
+	/// Screen panels sharing one layer this frame
+	std::vector<Rml::Context*> m_screen_contexts;
 	std::unordered_map<Rml::Context*, toast::Node*> m_context_owners;
 	std::unordered_set<Rml::Context*> m_display_density_contexts;
 
@@ -178,6 +192,10 @@ private:
 
 	bool m_documents_reload_pending = false;
 	bool m_stylesheet_cache_dirty = false;
+
+	/// Held while a deferred setup runs so its owner cannot be cancelled and destroyed halfway through
+	std::mutex m_deferred_mutex;
+	std::vector<std::pair<toast::Node*, std::function<void()>>> m_deferred_setups;
 };
 
 }
