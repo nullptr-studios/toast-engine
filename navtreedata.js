@@ -195,15 +195,15 @@ var NAVTREEINDEX =
 "classrenderer_1_1GpuTimer.html#a08e6c108214de1492154f7a3ee3a640d",
 "classtoast_1_1Box.html#a0cdd08d1fa97b7873b07312c0d3ae012",
 "classtoast_1_1PostProcessVolume.html#a747269caa20f50df14f8dd42a828eb63",
-"classtoast_1_1VoxelNode.html#aab9c8ab5715183f0eea2b6e96da9251e",
-"cluster__lighting__pass_8hpp_source.html",
-"input__layout_8hpp_source.html",
-"node_8hpp.html#a98d11435d9b92e9901a40a71793fd680aa14fa2166ed698f3d04061f57e5ab9b9",
-"structassets_1_1__detail_1_1VoxelFileHeader.html",
-"structevent_1_1WindowResize.html",
-"structrenderer_1_1VulkanRenderer_1_1IrradianceVolumeData.html#ab86bd2cf8622d190a3e6a6008fd8b700",
-"structtoast_1_1Workspace_1_1VoxelToolState.html#a9a4ac7d1868da1be2ab383525d812de4ab435e227d5dd201e1768b2bcb2e0aa81",
-"voxel__edit_8hpp.html#a3a10676b93e60b0d61c36d3f686535ebae3cc92c14a5e6dd1a7d94b6ff634d7fc"
+"classtoast_1_1VoxelNode.html#aaa6425b6ec4518b26a7947af57df1d55",
+"cluster__lighting__pass_8cpp.html",
+"input__events_8hpp_source.html",
+"node_8hpp.html#a98d11435d9b92e9901a40a71793fd680a9c70933aff6b2a6d08c687a6cbb6b765",
+"structassets_1_1VoxVoxel.html#aa5166ed1997fa1cb625d19539cde8016",
+"structevent_1_1WindowMouseButton.html",
+"structrenderer_1_1VulkanRenderer_1_1ImGuiInputSnapshot.html",
+"structtoast_1_1Workspace_1_1VoxelToolState.html#a9a4ac7d1868da1be2ab383525d812de4a34be958a921e43d813a2075297d8e862",
+"voxel__edit_8hpp.html"
 ];
 
 const SYNCONMSG = 'click to disable panel synchronization';

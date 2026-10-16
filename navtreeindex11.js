@@ -1,5 +1,9 @@
 var NAVTREEINDEX11 =
 {
+"structassets_1_1VoxVoxel.html#aa5166ed1997fa1cb625d19539cde8016":[14,0,0,70,0],
+"structassets_1_1VoxelMaterialSlot.html":[14,0,0,60],
+"structassets_1_1__detail_1_1MeshFileHeader.html":[14,0,0,0,0],
+"structassets_1_1__detail_1_1NodeFileBinaryHeader.html":[14,0,0,0,1],
 "structassets_1_1__detail_1_1VoxelFileHeader.html":[14,0,0,0,2],
 "structdebug_1_1Billboard.html":[14,0,2,0],
 "structdebug_1_1Mesh.html":[14,0,2,2],
@@ -245,9 +249,5 @@ var NAVTREEINDEX11 =
 "structevent_1_1WindowKey.html#a5fa9c79e37cee35bf43d9609f364bfd6":[14,0,4,209,1],
 "structevent_1_1WindowKey.html#a8899cb21d771b3ed66266341879dd928":[14,0,4,209,0],
 "structevent_1_1WindowKey.html#ac554eccafd186e5087055544c006efd2":[14,0,4,209,2],
-"structevent_1_1WindowKey.html#adc44e4d75fb177e8cb854c7ae0f2cd8a":[14,0,4,209,3],
-"structevent_1_1WindowMouseButton.html":[14,0,4,210],
-"structevent_1_1WindowMouseLock.html":[14,0,4,211],
-"structevent_1_1WindowMousePosition.html":[14,0,4,212],
-"structevent_1_1WindowMouseScroll.html":[14,0,4,213]
+"structevent_1_1WindowKey.html#adc44e4d75fb177e8cb854c7ae0f2cd8a":[14,0,4,209,3]
 };

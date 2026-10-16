@@ -1,0 +1,9 @@
+<map id="engine/src/toast/profiler_sections.hpp" name="engine/src/toast/profiler_sections.hpp">
+<area shape="rect" id="Node000001" title="Tracy sections marking whether the engine is in the editor, playing or simulating." alt="" coords="36,5,211,50"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,98,71,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="103,49,65,89,61,85,99,52"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="94,98,152,126"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="125,48,126,83,121,81,122,52"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="176,98,273,126"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="151,48,199,88,194,88,149,53"/>
+</map>

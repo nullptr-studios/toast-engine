@@ -21,6 +21,7 @@ var searchData=
   ['post_5fprocess_5fvolume_2ehpp_18',['post_process_volume.hpp',['../post__process__volume_8hpp.html',1,'']]],
   ['procedural_5fpool_2ehpp_19',['procedural_pool.hpp',['../procedural__pool_8hpp.html',1,'']]],
   ['procedural_5fvoxel_2ehpp_20',['procedural_voxel.hpp',['../procedural__voxel_8hpp.html',1,'']]],
-  ['project_5fsettings_2ehpp_21',['project_settings.hpp',['../project__settings_8hpp.html',1,'']]],
-  ['proto_5fevent_2ehpp_22',['proto_event.hpp',['../proto__event_8hpp.html',1,'']]]
+  ['profiler_5fsections_2ehpp_21',['profiler_sections.hpp',['../profiler__sections_8hpp.html',1,'']]],
+  ['project_5fsettings_2ehpp_22',['project_settings.hpp',['../project__settings_8hpp.html',1,'']]],
+  ['proto_5fevent_2ehpp_23',['proto_event.hpp',['../proto__event_8hpp.html',1,'']]]
 ];

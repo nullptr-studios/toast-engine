@@ -60,6 +60,7 @@ var namespaces_dup =
       [ "PostProcessVolume", "classtoast_1_1PostProcessVolume.html", "classtoast_1_1PostProcessVolume" ],
       [ "PrintTextNode", "classtoast_1_1PrintTextNode.html", null ],
       [ "ProceduralVoxel", "classtoast_1_1ProceduralVoxel.html", "classtoast_1_1ProceduralVoxel" ],
+      [ "ProfilerSections", "classtoast_1_1ProfilerSections.html", null ],
       [ "ProjectSettings", "classtoast_1_1ProjectSettings.html", null ],
       [ "Ray", "structtoast_1_1Ray.html", null ],
       [ "Reflect", "classtoast_1_1Reflect.html", null ],

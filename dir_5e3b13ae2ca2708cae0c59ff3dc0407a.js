@@ -20,6 +20,7 @@ var dir_5e3b13ae2ca2708cae0c59ff3dc0407a =
     [ "export.hpp", "export_8hpp.html", null ],
     [ "log.hpp", "log_8hpp.html", "log_8hpp" ],
     [ "logger.hpp", "logger_8hpp.html", "logger_8hpp" ],
+    [ "profiler_sections.hpp", "profiler__sections_8hpp.html", "profiler__sections_8hpp" ],
     [ "project_settings.hpp", "project__settings_8hpp.html", "project__settings_8hpp" ],
     [ "test_nodes.hpp", "test__nodes_8hpp_source.html", null ],
     [ "thread_pool.hpp", "thread__pool_8hpp.html", "thread__pool_8hpp" ],

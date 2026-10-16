@@ -1,5 +1,7 @@
 var NAVTREEINDEX8 =
 {
+"cluster__lighting__pass_8cpp.html":[15,0,1,0,0,6,0,2],
+"cluster__lighting__pass_8hpp.html":[15,0,1,0,0,6,0,3],
 "cluster__lighting__pass_8hpp_source.html":[15,0,1,0,0,6,0,3],
 "clustered__lighting__constants_8hpp.html":[15,0,1,0,0,6,1],
 "clustered__lighting__constants_8hpp_source.html":[15,0,1,0,0,6,1],
@@ -209,8 +211,8 @@ var NAVTREEINDEX8 =
 "fxaa__pass_8hpp_source.html":[15,0,1,0,0,6,0,11],
 "game_8h_source.html":[15,0,0,0,0,0,0,0,0],
 "gizmo__layout_8hpp.html":[15,0,1,0,0,12,11],
-"gizmo__layout_8hpp.html#a26ba0ceff8dbf69c21a2df47c1941d16":[12,0,1,94],
-"gizmo__layout_8hpp.html#a97503304f8d31e85c7550dbe2d54ef47":[12,0,1,93],
+"gizmo__layout_8hpp.html#a26ba0ceff8dbf69c21a2df47c1941d16":[12,0,1,95],
+"gizmo__layout_8hpp.html#a97503304f8d31e85c7550dbe2d54ef47":[12,0,1,94],
 "gizmo__layout_8hpp_source.html":[15,0,1,0,0,12,11],
 "globals.html":[15,1,0],
 "globals_defs.html":[15,1,2],
@@ -247,7 +249,5 @@ var NAVTREEINDEX8 =
 "input_2trigger_8hpp_source.html":[15,0,1,0,0,3,13],
 "input__action_8hpp.html":[15,0,1,0,0,3,0,1],
 "input__action_8hpp_source.html":[15,0,1,0,0,3,0,1],
-"input__events_8hpp.html":[15,0,1,0,0,3,5],
-"input__events_8hpp_source.html":[15,0,1,0,0,3,5],
-"input__layout_8hpp.html":[15,0,1,0,0,3,0,2]
+"input__events_8hpp.html":[15,0,1,0,0,3,5]
 };

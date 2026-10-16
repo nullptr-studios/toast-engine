@@ -1123,6 +1123,7 @@ var hierarchy =
     [ "toast::ProceduralVoxel::ComposeInput::Preview", "structtoast_1_1ProceduralVoxel_1_1ComposeInput_1_1Preview.html", null ],
     [ "renderer::voxel_debug::Probe", "structrenderer_1_1voxel__debug_1_1Probe.html", null ],
     [ "renderer::voxel_debug::ProbeResult", "structrenderer_1_1voxel__debug_1_1ProbeResult.html", null ],
+    [ "toast::ProfilerSections", "classtoast_1_1ProfilerSections.html", null ],
     [ "editor.StartWindow.ProjectList", "classeditor_1_1StartWindow_1_1ProjectList.html", null ],
     [ "editor.StartWindow.ProjectListItem", "structeditor_1_1StartWindow_1_1ProjectListItem.html", null ],
     [ "toast::ProjectSettings", "classtoast_1_1ProjectSettings.html", null ],

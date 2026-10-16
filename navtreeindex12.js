@@ -1,5 +1,9 @@
 var NAVTREEINDEX12 =
 {
+"structevent_1_1WindowMouseButton.html":[14,0,4,210],
+"structevent_1_1WindowMouseLock.html":[14,0,4,211],
+"structevent_1_1WindowMousePosition.html":[14,0,4,212],
+"structevent_1_1WindowMouseScroll.html":[14,0,4,213],
 "structevent_1_1WindowResize.html":[14,0,4,214],
 "structevent_1_1WorkspaceApplyHistorySnapshot.html":[14,0,4,215],
 "structevent_1_1WorkspaceAutosave.html":[14,0,4,216],
@@ -245,9 +249,5 @@ var NAVTREEINDEX12 =
 "structrenderer_1_1VulkanRenderer_1_1FrameUBO.html#a26245e99772d3f6d681ba03d3bea117e":[14,0,8,79,5,0],
 "structrenderer_1_1VulkanRenderer_1_1FrameUBO.html#a4b517ea4cd85dcde178151dca9e3744f":[14,0,8,79,5,1],
 "structrenderer_1_1VulkanRenderer_1_1GizmoState.html":[14,0,8,79,14],
-"structrenderer_1_1VulkanRenderer_1_1GpuLight.html":[14,0,8,79,6],
-"structrenderer_1_1VulkanRenderer_1_1ImGuiInputSnapshot.html":[14,0,8,79,16],
-"structrenderer_1_1VulkanRenderer_1_1ImGuiKeyEvent.html":[14,0,8,79,15],
-"structrenderer_1_1VulkanRenderer_1_1InstanceData.html":[14,0,8,79,1],
-"structrenderer_1_1VulkanRenderer_1_1IrradianceVolumeData.html":[14,0,8,79,4]
+"structrenderer_1_1VulkanRenderer_1_1GpuLight.html":[14,0,8,79,6]
 };
