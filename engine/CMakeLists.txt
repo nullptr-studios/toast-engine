@@ -129,13 +129,14 @@ target_compile_definitions(toast_engine PRIVATE TOAST_EXPORT)
 # windows.h min and max macros break std::numeric_limits<T>::max() in whatever unity TU they land in
 if (WIN32)
     target_compile_definitions(toast_engine PRIVATE NOMINMAX)
-    target_link_libraries(toast_engine PRIVATE ole32 uuid comctl32)
+    target_link_libraries(toast_engine PRIVATE ole32 uuid comctl32 d3d11 dxgi)
 endif ()
 target_precompile_headers(toast_engine PRIVATE pch.h)
 # Defines VMA_IMPLEMENTATION so it must not use the PCH
 set_source_files_properties(src/toast/renderer/vma.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON SKIP_UNITY_BUILD_INCLUSION ON)
 # Defines STB_IMAGE_IMPLEMENTATION
 set_source_files_properties(src/toast/assets/hdr_image.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON SKIP_UNITY_BUILD_INCLUSION ON)
+set_source_files_properties(src/toast/renderer/shared_texture_output_target.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 set_source_files_properties(src/toast/input/trackpad.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON SKIP_UNITY_BUILD_INCLUSION ON)
 set_source_files_properties(src/toast/crash_handler.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 

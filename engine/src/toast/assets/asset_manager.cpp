@@ -23,6 +23,19 @@ void AssetManager::replacePrefab(toast::UID uid, const Prefab& prefab) {
 	} else {
 		cache.emplace(uid.data(), std::make_unique<Prefab>(prefab));
 	}
+
+	// editor saved this file
+	// we shouldn't reload it again
+	pending_reloads.erase(uid.data());
+	if (auto info = manifest.find(uid.data()); info != manifest.end()) {
+		if (auto real_path = resolveVirtualPath(info->second.path)) {
+			std::error_code ec;
+			const auto mtime = std::filesystem::last_write_time(*real_path, ec);
+			if (!ec) {
+				asset_mtimes.insert_or_assign(uid.data(), mtime);
+			}
+		}
+	}
 }
 
 void AssetManager::setLoadMode(SaveMode mode) {
@@ -596,7 +609,7 @@ auto isReplacedOnReload(std::string_view type) -> bool {
 
 auto isWatchedType(std::string_view type) -> bool {
 	return type == "script" || type == "shader" || type == "voxel_palette" || type == "curve" || type == "voxel_model" ||
-	       isUiType(type) || isReplacedOnReload(type) || AssetRegistry::hasSchemaToml(type);
+	       type == "node" || isUiType(type) || isReplacedOnReload(type) || AssetRegistry::hasSchemaToml(type);
 }
 
 }
@@ -667,8 +680,24 @@ auto AssetManager::applyPendingReloads() -> std::vector<ReloadedAsset> {
 			}
 
 			bool replaced = false;
+			std::shared_ptr<const Prefab> prefab;
 			if (uncached_ui) {
 				// .rcss files are reloaded directly through the VFS
+			} else if (type == "node") {
+				// not here
+				try {
+					std::unique_ptr<Asset> fresh = createAsset(info, *raw);
+					if (auto* parsed = dynamic_cast<Prefab*>(fresh.get())) {
+						fresh.release();
+						prefab.reset(parsed);
+					}
+				} catch (const std::exception& err) {
+					TOAST_ERROR("AssetManager", "Hot reload failed for {}: {}", info.path, err.what());
+					continue;
+				}
+				if (!prefab) {
+					continue;
+				}
 			} else if (type == "script") {
 				static_cast<Script*>(asset_it->second.get())->setData(std::move(*raw));
 			} else if (type == "shader") {
@@ -730,7 +759,7 @@ auto AssetManager::applyPendingReloads() -> std::vector<ReloadedAsset> {
 					continue;
 				}
 			}
-			reloaded.push_back(ReloadedAsset {.uid = toast::UID(id), .type = type, .replaced = replaced});
+			reloaded.push_back(ReloadedAsset {.uid = toast::UID(id), .type = type, .replaced = replaced, .prefab = std::move(prefab)});
 		}
 	}
 

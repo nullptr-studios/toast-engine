@@ -27,9 +27,9 @@ void SkinnedBlasPool::beginFrame() {
 	m_recorded = 0;
 }
 
-auto SkinnedBlasPool::ensureEntry(uint64_t node_uid, const VulkanMesh& mesh) -> Entry* {
+auto SkinnedBlasPool::ensureEntry(uint64_t node_rid, const VulkanMesh& mesh) -> Entry* {
 	ZoneScoped;
-	auto& entry = m_entries[node_uid];
+	auto& entry = m_entries[node_rid];
 	entry.last_used_frame = m_frame;
 
 	const uint32_t vertex_count = mesh.getVertexCount();
@@ -79,7 +79,7 @@ auto SkinnedBlasPool::ensureEntry(uint64_t node_uid, const VulkanMesh& mesh) -> 
 
 	entry.blas = nullptr;
 	entry.blas_buffer.emplace(m_core->getAllocator().createBuffer(blas_ci, blas_alloc));
-	setDebugName(*m_core, **entry.blas_buffer, std::format("SkinnedBlas[{:016x}]", node_uid));
+	setDebugName(*m_core, **entry.blas_buffer, std::format("SkinnedBlas[{:016x}]", node_rid));
 
 	vk::AccelerationStructureCreateInfoKHR as_ci {};
 	as_ci.buffer = **entry.blas_buffer;
@@ -115,14 +115,14 @@ auto SkinnedBlasPool::ensureEntry(uint64_t node_uid, const VulkanMesh& mesh) -> 
 }
 
 auto SkinnedBlasPool::recordFor(
-    vk::CommandBuffer cmd, uint64_t node_uid, const VulkanMesh& mesh, vk::Buffer posed_vertices, uint32_t posed_vertex_offset
+    vk::CommandBuffer cmd, uint64_t node_rid, const VulkanMesh& mesh, vk::Buffer posed_vertices, uint32_t posed_vertex_offset
 ) -> vk::DeviceAddress {
 	ZoneScoped;
 	if (m_core == nullptr || m_build_acceleration_structures == nullptr || !posed_vertices) {
 		return 0;
 	}
 
-	Entry* entry = ensureEntry(node_uid, mesh);
+	Entry* entry = ensureEntry(node_rid, mesh);
 	if (entry == nullptr || *entry->blas == VK_NULL_HANDLE) {
 		return 0;
 	}
@@ -173,8 +173,8 @@ auto SkinnedBlasPool::recordFor(
 	return entry->address;
 }
 
-auto SkinnedBlasPool::addressFor(uint64_t node_uid) const -> vk::DeviceAddress {
-	const auto it = m_entries.find(node_uid);
+auto SkinnedBlasPool::addressFor(uint64_t node_rid) const -> vk::DeviceAddress {
+	const auto it = m_entries.find(node_rid);
 	// Unbuilt entries point at an uninitialised structure
 	if (it == m_entries.end() || !it->second.built || it->second.last_used_frame != m_frame) {
 		return 0;

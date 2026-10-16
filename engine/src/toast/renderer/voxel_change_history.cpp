@@ -18,11 +18,11 @@ constexpr int k_cell_bricks = 2;
 constexpr size_t k_max_regions_per_volume = 128;
 
 void mergePerVolume(std::vector<VoxelRegion>& regions) {
-	std::ranges::sort(regions, {}, &VoxelRegion::node_uid);
+	std::ranges::sort(regions, {}, &VoxelRegion::node_rid);
 
 	size_t merged = 0;
 	for (size_t i = 0; i < regions.size(); ++i) {
-		if (merged > 0 && regions[merged - 1].node_uid == regions[i].node_uid) {
+		if (merged > 0 && regions[merged - 1].node_rid == regions[i].node_rid) {
 			regions[merged - 1].min = glm::min(regions[merged - 1].min, regions[i].min);
 			regions[merged - 1].max = glm::max(regions[merged - 1].max, regions[i].max);
 		} else {
@@ -34,7 +34,7 @@ void mergePerVolume(std::vector<VoxelRegion>& regions) {
 
 /// One box per cell of bricks and bigger cells for a large blast
 void appendBrickRegions(
-    std::vector<VoxelRegion>& out, uint64_t node_uid, const voxel::Volume& volume, std::span<const uint32_t> bricks
+    std::vector<VoxelRegion>& out, uint64_t node_rid, const voxel::Volume& volume, std::span<const uint32_t> bricks
 ) {
 	struct Item {
 		uint64_t cell = 0;
@@ -73,7 +73,7 @@ void appendBrickRegions(
 			high = glm::max(high, items[last].brick);
 		}
 		out.push_back(
-		    {.node_uid = node_uid, .min = glm::vec3(low) * voxel::k_brick_size, .max = glm::vec3(high + 1) * voxel::k_brick_size}
+		    {.node_rid = node_rid, .min = glm::vec3(low) * voxel::k_brick_size, .max = glm::vec3(high + 1) * voxel::k_brick_size}
 		);
 		first = last;
 	}
@@ -106,14 +106,14 @@ void VoxelChangeTracker::observe(
 		const TrackedVolume& tracked = volumes[index];
 		VolumeDelta scratch;
 		VolumeDelta& delta = deltas != nullptr ? (*deltas)[index] : scratch;
-		delta.node_uid = tracked.node_uid;
+		delta.node_rid = tracked.node_rid;
 
 		const voxel::Volume& volume = *tracked.volume;
-		const Seen current {.node_uid = tracked.node_uid, .volume_id = volume.id(), .content = volume.revision()};
+		const Seen current {.node_rid = tracked.node_rid, .volume_id = volume.id(), .content = volume.revision()};
 		now.push_back(current);
 
 		// New volumes are covered by the caster set of each group
-		const auto previous = std::ranges::find(m_seen, tracked.node_uid, &Seen::node_uid);
+		const auto previous = std::ranges::find(m_seen, tracked.node_rid, &Seen::node_rid);
 		delta.unknown = previous == m_seen.end();
 		if (previous != m_seen.end()) {
 			const bool content_changed = previous->content != current.content;
@@ -127,12 +127,12 @@ void VoxelChangeTracker::observe(
 
 				// The old shape may reach further than the new one
 				glm::uvec3 dims = volume.brickDims();
-				if (const auto old_dims = published_dims ? published_dims(tracked.node_uid) : std::nullopt) {
+				if (const auto old_dims = published_dims ? published_dims(tracked.node_rid) : std::nullopt) {
 					dims = glm::max(dims, *old_dims);
 				}
-				m_unpublished.push_back({.node_uid = tracked.node_uid, .min = glm::vec3(0.0f), .max = voxel::localExtent(dims)});
+				m_unpublished.push_back({.node_rid = tracked.node_rid, .min = glm::vec3(0.0f), .max = voxel::localExtent(dims)});
 			} else if (dirty.has_value() && !dirty->empty()) {
-				appendBrickRegions(m_unpublished, tracked.node_uid, volume, *dirty);
+				appendBrickRegions(m_unpublished, tracked.node_rid, volume, *dirty);
 				delta.bricks.assign(dirty->begin(), dirty->end());
 			}
 		}
@@ -179,7 +179,7 @@ auto regionsReach(
 			if (reached) {
 				return;
 			}
-			if (caster.node_uid != region.node_uid) {
+			if (caster.node_rid != region.node_rid) {
 				continue;
 			}
 			const Box world = transformBox(caster.model, region.min, region.max);

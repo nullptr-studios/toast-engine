@@ -25,16 +25,6 @@ UpdateHierarchyData::HierarchyElement::HierarchyElement(const toast::Box<toast::
 	}
 }
 
-UpdateHierarchyData::HierarchyElement::HierarchyElement(const HierarchyElement& other) {
-	uid = other.uid;
-	name = other.name;
-	type = other.type;
-	enabled = other.enabled;
-	children = other.children;
-	is_prefab = other.is_prefab;
-	prefab_uid = other.prefab_uid;
-}
-
 UpdateHierarchyData::UpdateHierarchyData(const toast::Box<toast::Node>& node, uint64_t handle) : workspace_handle(handle) {
 	if (node.exists()) {
 		root = HierarchyElement(node);
@@ -50,6 +40,11 @@ struct ProtoTraits<UpdateHierarchyData::HierarchyElement> {
 
 	static auto toProto(const Event& e) -> Proto {
 		Proto p;
+		write(e, p);
+		return p;
+	}
+
+	static void write(const Event& e, Proto& p) {
 		p.set_uid(e.uid);
 		p.set_name(e.name);
 		p.set_type(e.type);
@@ -58,11 +53,10 @@ struct ProtoTraits<UpdateHierarchyData::HierarchyElement> {
 		if (e.prefab_uid.data() != 0) {
 			p.set_prefab_uid(e.prefab_uid);
 		}
+		p.mutable_children()->Reserve(static_cast<int>(e.children.size()));
 		for (const auto& c : e.children) {
-			auto* element = p.add_children();
-			*element = toProto(c);
+			write(c, *p.add_children());
 		}
-		return p;
 	}
 
 	static auto fromProto(const Proto& p) -> Event {
@@ -90,7 +84,7 @@ struct ProtoTraits<UpdateHierarchyData> {
 		Proto p;
 		p.set_is_empty(e.is_empty);
 		p.set_workspace_handle(e.workspace_handle);
-		*p.mutable_root() = ProtoTraits<UpdateHierarchyData::HierarchyElement>::toProto(e.root);
+		ProtoTraits<UpdateHierarchyData::HierarchyElement>::write(e.root, *p.mutable_root());
 		return p;
 	}
 
@@ -112,6 +106,42 @@ struct ProtoTraits<RequestHierarchyUpdate> {
 };
 
 TOAST_PROTO_EVENT(RequestHierarchyUpdate);
+
+template<>
+struct ProtoTraits<HierarchyNodesEnabled> {
+	using Proto = proto::events::HierarchyNodesEnabled;
+	using Event = HierarchyNodesEnabled;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_workspace_handle(e.workspace_handle);
+		p.mutable_nodes()->Reserve(static_cast<int>(e.nodes.size()));
+		for (const auto& entry : e.nodes) {
+			auto* node = p.add_nodes();
+			node->set_enabled(entry.enabled);
+			for (const auto& uid : entry.path) {
+				node->add_path(static_cast<std::string>(uid));
+			}
+		}
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		std::vector<Event::Entry> nodes;
+		nodes.reserve(p.nodes_size());
+		for (const auto& node : p.nodes()) {
+			Event::Entry entry {.path = {}, .enabled = node.enabled()};
+			entry.path.reserve(node.path_size());
+			for (const auto& uid : node.path()) {
+				entry.path.emplace_back(toast::UID::fromString(uid));
+			}
+			nodes.push_back(std::move(entry));
+		}
+		return {std::move(nodes), p.workspace_handle()};
+	}
+};
+
+TOAST_PROTO_EVENT(HierarchyNodesEnabled);
 
 template<>
 struct ProtoTraits<ReloadAssetsManifest> {

@@ -38,6 +38,10 @@ auto Node::uid() const noexcept -> const UID& {
 	return m_uid;
 }
 
+auto Node::rid() const noexcept -> std::uintptr_t {
+	return m_box.rid();
+}
+
 auto Node::name() const noexcept -> std::string_view {
 	return m_name;
 }
@@ -62,7 +66,7 @@ void Node::enabled(bool value) noexcept {
 	m_local_enabled = value;
 	TOAST_TRACE("Node", "{} ({}) {}", name(), uid(), value ? "enabled" : "disabled");
 	if (m_owner != nullptr) {
-		m_owner->nodeEnabledChanged();
+		m_owner->nodeEnabledChanged(*this);
 	}
 
 	if (value) {

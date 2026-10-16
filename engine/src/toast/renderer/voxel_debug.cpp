@@ -254,11 +254,11 @@ void voxelDebugProbeText(const VulkanRenderer::RenderFrame& frame, const std::op
 		const voxel::PaletteEntry& entry = probe.palette_entry;
 
 		ImGui::Text(
-		    "'%.*s'  record %u  uid %016llx",
+		    "'%.*s'  record %u  rid %016llx",
 		    static_cast<int>(name.size()),
 		    name.data(),
 		    probe.proxy.record_index,
-		    static_cast<unsigned long long>(probe.proxy.node_uid)
+		    static_cast<unsigned long long>(probe.proxy.node_rid)
 		);
 		ImGui::Text(
 		    "voxel (%d, %d, %d)  brick (%d, %d, %d)  local (%d, %d, %d)  coarse (%d, %d, %d)",

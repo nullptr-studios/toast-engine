@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <glm/glm.hpp>
 #include <string>
 #include <toast/assets/core_types.hpp>
 #include <toast/uid.hpp>
@@ -45,6 +46,7 @@ public:
 	[[nodiscard]]
 	auto get(const std::string& name, lua_State* l) const -> luabridge::LuaRef;
 
+	/// Curve assets: the value at @p t, a number for a 1D curve, a vec2 for a 2D one and a vec3 for a 3D one
 	[[nodiscard]]
 	auto handle() const noexcept -> const assets::HandleBase& {
 		return m_handle;

@@ -20,6 +20,29 @@
 	</UserControl.KeyBindings>
 
 	<UserControl.Styles>
+		<StyleInclude Source="avares://editor/Resources/ToolbarStyles.axaml" />
+		<Style Selector="ToggleButton.axis">
+			<Setter Property="Height"
+			        Value="32" />
+			<Setter Property="MinHeight"
+			        Value="32" />
+			<Setter Property="VerticalContentAlignment"
+			        Value="Center" />
+			<Setter Property="HorizontalContentAlignment"
+			        Value="Center" />
+			<Setter Property="FontWeight"
+			        Value="Bold" />
+			<Setter Property="Padding"
+			        Value="6,0" />
+		</Style>
+		<Style Selector="ToggleButton.axis:not(:checked) /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg1}" />
+		</Style>
+		<Style Selector="ToggleButton.axis:checked /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="TextElement.Foreground"
+			        Value="{StaticResource Bg1}" />
+		</Style>
 		<Style Selector="TextBlock.lbl">
 			<Setter Property="Foreground"
 			        Value="{StaticResource TextMuted}" />
@@ -120,39 +143,62 @@
 						</StackPanel>
 					</DockPanel>
 
-					<!-- Read-only banner -->
-					<Border DockPanel.Dock="Top"
-					        Background="{StaticResource DarkYellow}"
-					        CornerRadius="6"
-					        Padding="8,6"
-					        IsVisible="{Binding IsReadOnly}">
-						<StackPanel Orientation="Horizontal"
-						            Spacing="6">
-							<lucide:LucideIcon Kind="Lock"
-							                   Size="13"
-							                   StrokeWidth="2.5" />
-							<TextBlock Text="3D curve — read-only"
-							           FontSize="13"
-							           VerticalAlignment="Center" />
-						</StackPanel>
-					</Border>
-
 					<!-- Curve properties -->
 					<Grid DockPanel.Dock="Top"
 					      ColumnDefinitions="80,*"
-					      RowDefinitions="Auto,Auto"
+					      RowDefinitions="Auto,Auto,Auto,Auto"
 					      RowSpacing="6"
 					      ColumnSpacing="8"
 					      IsEnabled="{Binding !IsReadOnly}">
 						<TextBlock Classes="lbl"
-						           Text="Spline" />
+						           Text="Dimension" />
 						<elements:EnumBox Grid.Column="1"
-						                  Value="{Binding SplineTypeName, Mode=TwoWay}"
-						                  Options="{x:Static vm:CurveViewModel.SplineTypeNames}" />
+						                  Value="{Binding DimensionName, Mode=TwoWay}"
+						                  Options="{x:Static vm:CurveViewModel.DimensionNames}" />
 						<TextBlock Grid.Row="1"
 						           Classes="lbl"
+						           Text="Channel"
+						           IsVisible="{Binding HasChannels}"
+						           Margin="0, 0, 0 8"/>
+						<ItemsControl Grid.Row="1"
+						              Grid.Column="1"
+						              ItemsSource="{Binding Channels}"
+						              IsVisible="{Binding HasChannels}"
+						              Margin="0, 0, 0, 8">
+							<ItemsControl.ItemsPanel>
+								<ItemsPanelTemplate>
+									<UniformGrid Rows="1" />
+								</ItemsPanelTemplate>
+							</ItemsControl.ItemsPanel>
+							<ItemsControl.ItemTemplate>
+								<DataTemplate x:DataType="vm:ChannelOption">
+									<ToggleButton Classes="tool camMode axis"
+									              Classes.red="{Binding IsX}"
+									              Classes.green="{Binding IsY}"
+									              Classes.blue="{Binding IsZ}"
+									              CornerRadius="{Binding Corners}"
+									              HorizontalAlignment="Stretch"
+									              HorizontalContentAlignment="Center"
+									              Content="{Binding Name}"
+									              IsChecked="{Binding IsActive, Mode=OneWay}"
+									              Command="{Binding $parent[ItemsControl].((vm:CurveViewModel)DataContext).PickChannelCommand}"
+									        CommandParameter="{Binding}" />
+								</DataTemplate>
+							</ItemsControl.ItemTemplate>
+						</ItemsControl>
+						<TextBlock Grid.Row="2"
+						           Classes="lbl"
+						           Text="Spline"
+						           Margin="0, -8,0, 0"/>
+						<elements:EnumBox Grid.Row="2"
+						                  Grid.Column="1"
+						                  Value="{Binding SplineTypeName, Mode=TwoWay}"
+						                  Options="{x:Static vm:CurveViewModel.SplineTypeNames}"
+						                  Margin="0, -8, 0, 0"/>
+						<TextBlock Grid.Row="3"
+						           Classes="lbl"
 						           Text="T Scale" />
-						<elements:DragFloatBox Grid.Row="1"
+						<elements:DragFloatBox Grid.Row="3"
 						                       Grid.Column="1"
 						                       Value="{Binding TScale, Mode=TwoWay}"
 						                       Minimum="0.0001" />
@@ -203,7 +249,8 @@
 											           FontSize="12"
 											           HorizontalAlignment="Center" />
 											<elements:DragFloatBox Grid.Column="1"
-											                       Value="{Binding X, Mode=TwoWay}" />
+											                       Value="{Binding X, Mode=TwoWay}"
+											                       IsEnabled="{Binding CanEditX}" />
 											<elements:DragFloatBox Grid.Column="2"
 											                       Value="{Binding Y, Mode=TwoWay}" />
 											<Button Grid.Column="3"
@@ -233,7 +280,10 @@
 
 			<!-- Canvas -->
 			<cc:CurveCanvas Grid.Column="2"
+				                XMin="0"
+				                XMax="1"
 			                Curves="{Binding CanvasItems}"
+			                ActiveCurveIndex="{Binding ActiveCurveIndex}"
 			                SelectedPointIndex="{Binding SelectedPointIndex, Mode=TwoWay}"
 			                IsReadOnly="{Binding IsReadOnly}" />
 		</Grid>
