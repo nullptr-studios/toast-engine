@@ -100,6 +100,11 @@ public:
 		return false;
 	}
 
+	[[nodiscard]]
+	auto usesGameCamera() const noexcept -> bool {
+		return m_game_camera;
+	}
+
 	void inheritEditorCamera(const Workspace& source);
 	void preparePrefabReload(UID uid);
 	void finishPrefabReload();
