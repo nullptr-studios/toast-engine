@@ -614,11 +614,11 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, ShadowMap& sta
 				continue;
 			}
 			ShadowSignature caster;
-			caster.add(voxel_proxies[index].node_uid);
+			caster.add(voxel_proxies[index].node_rid);
 			caster.add(voxel_proxies[index].model);
 			sum += caster.value;
 			if (casters != nullptr) {
-				casters->push_back({.node_uid = voxel_proxies[index].node_uid, .model = voxel_proxies[index].model});
+				casters->push_back({.node_rid = voxel_proxies[index].node_rid, .model = voxel_proxies[index].model});
 			}
 		}
 		return sum;
@@ -652,7 +652,6 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, ShadowMap& sta
 			signature.add(proxy.model);
 		}
 
-		// Summed since voxel proxies are sorted by camera distance and a static light must not re-render as the camera moves
 		uint64_t voxel_casters = 0;
 		for (size_t index = 0; index < m_voxel_instance_count; ++index) {
 			if (!voxel_eligible(group, index)) {
@@ -662,9 +661,9 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, ShadowMap& sta
 			caster.add(voxel_proxies[index].node_rid);
 			caster.add(voxel_proxies[index].model);
 			voxel_casters += caster.value;
-			eligible_voxels.push_back({.node_rid = voxel_proxies[index].node_rid, .model = voxel_proxies[index].model});
+			m_voxel_eligible.push_back({.node_rid = voxel_proxies[index].node_rid, .model = voxel_proxies[index].model});
 		}
-		if (!eligible_voxels.empty()) {
+		if (!m_voxel_eligible.empty()) {
 			signature.add(voxel_casters);
 		}
 		return signature.value;
