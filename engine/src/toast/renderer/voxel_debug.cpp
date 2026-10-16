@@ -1,9 +1,12 @@
 #include "voxel_debug.hpp"
 
+#include "depth_convention.hpp"
 #include "passes/voxel_pass.hpp"
 #include "voxel_gpu_storage.hpp"
 
 #include <algorithm>
+#include <bitset>
+#include <cmath>
 #include <cstring>
 #include <format>
 #include <glm/gtc/matrix_transform.hpp>
@@ -119,7 +122,64 @@ void voxelDebugOutline(
 	}
 }
 
-void voxelDebugLegend(View view) {
+[[nodiscard]]
+auto voxelDebugHue(float hue) -> Rgb {
+	const auto channel = [hue](float offset) {
+		const float shifted = hue + offset;
+		const float fraction = shifted - std::floor(shifted);
+		return std::clamp(std::abs((fraction * 6.0f) - 3.0f) - 1.0f, 0.0f, 1.0f);
+	};
+	return {channel(0.0f), channel(2.0f / 3.0f), channel(1.0f / 3.0f)};
+}
+
+[[nodiscard]]
+auto voxelDebugMaterialColor(uint32_t material) -> Rgb {
+	if (material == voxel::k_default_material) {
+		return k_default_material_color;
+	}
+	const float hue = (static_cast<float>(material) * 0.618034f) + 0.33f;
+	return voxelDebugHue(hue - std::floor(hue));
+}
+
+[[nodiscard]]
+auto voxelDebugMaterialsDrawn(const VulkanRenderer::RenderFrame& frame) -> std::bitset<voxel::k_max_physical_materials> {
+	std::bitset<voxel::k_max_physical_materials> used;
+	used.set(voxel::k_default_material);
+
+	if (!frame.voxel_storage || !frame.voxel_storage->debugInfo().mirror) {
+		return used;
+	}
+	const voxel::gpu::PackedScene& scene = frame.voxel_storage->debugInfo().mirror->scene;
+
+	uint32_t drawn = 0;
+	for (const Proxy& proxy : frame.voxel_instances) {
+		if (!proxy.visible) {
+			continue;
+		}
+		if (drawn++ >= VoxelPass::k_max_instances) {
+			break;
+		}
+		if (proxy.record_index >= scene.records.size()) {
+			continue;
+		}
+
+		const size_t base = static_cast<size_t>(scene.records[proxy.record_index].palette_offset) * 4;
+		for (uint32_t index = 1; index < voxel::k_palette_size; ++index) {
+			const size_t word = base + (static_cast<size_t>(index) * 4);
+			if (word + 4 > scene.palettes.size()) {
+				break;
+			}
+			voxel::PaletteEntry entry;
+			std::memcpy(&entry, scene.palettes.data() + word, sizeof(voxel::PaletteEntry));
+			if (!(entry == voxel::PaletteEntry {})) {
+				used.set(entry.material);
+			}
+		}
+	}
+	return used;
+}
+
+void voxelDebugLegend(View view, const VulkanRenderer::RenderFrame& frame) {
 	switch (view) {
 		case View::steps: {
 			for (size_t i = 0; i < k_step_band_colors.size(); ++i) {
@@ -144,10 +204,28 @@ void voxelDebugLegend(View view) {
 			voxelDebugSwatch(k_owned_brick_color, "owned");
 			break;
 		case View::volumes: ImGui::TextDisabled("Hatched: ray misses"); break;
-		case View::materials:
-			voxelDebugSwatch(k_default_material_color, "material 0: default");
+		case View::materials: {
+			constexpr size_t k_listed = 24;
+			const auto used = voxelDebugMaterialsDrawn(frame);
+
+			size_t listed = 0;
+			for (uint32_t material = 0; material < used.size(); ++material) {
+				if (!used.test(material)) {
+					continue;
+				}
+				if (listed++ >= k_listed) {
+					continue;
+				}
+				const std::string label =
+				    material == voxel::k_default_material ? "material 0: default" : std::format("material {}", material);
+				voxelDebugSwatch(voxelDebugMaterialColor(material), label.c_str());
+			}
+			if (listed > k_listed) {
+				ImGui::TextDisabled("and %zu more", listed - k_listed);
+			}
 			ImGui::TextDisabled("One hue per physics material id");
 			break;
+		}
 		case View::palette_id: ImGui::TextDisabled("One hue per palette id"); break;
 	}
 }
@@ -216,12 +294,13 @@ void voxelDebugProbeText(const VulkanRenderer::RenderFrame& frame, const std::op
 		    (entry.flags & voxel::k_entry_transparent) != 0 ? "  transparent" : ""
 		);
 
-		const uint32_t voxel_steps = probe.hit.steps - probe.hit.coarse_steps - probe.hit.brick_steps;
+		const uint32_t voxel_steps = probe.hit.steps - probe.hit.coarse_steps - probe.hit.brick_steps - probe.hit.sub_steps;
 		ImGui::Text(
-		    "%u steps: %u coarse skips, %u brick skips, %u voxel",
+		    "%u steps: %u coarse skips, %u brick skips, %u sub-brick skips, %u voxel",
 		    probe.hit.steps,
 		    probe.hit.coarse_steps,
 		    probe.hit.brick_steps,
+		    probe.hit.sub_steps,
 		    voxel_steps
 		);
 
@@ -245,12 +324,13 @@ void voxelDebugProbeText(const VulkanRenderer::RenderFrame& frame, const std::op
 		const MissProbe& miss = *result->miss;
 		const std::string_view name = voxelDebugNodeName(frame, miss.proxy.record_index);
 		ImGui::TextDisabled(
-		    "Missed '%.*s' after %u steps (%u coarse, %u brick)",
+		    "Missed '%.*s' after %u steps (%u coarse, %u brick, %u sub-brick)",
 		    static_cast<int>(name.size()),
 		    name.data(),
 		    miss.hit.steps,
 		    miss.hit.coarse_steps,
-		    miss.hit.brick_steps
+		    miss.hit.brick_steps,
+		    miss.hit.sub_steps
 		);
 	}
 }
@@ -278,7 +358,7 @@ auto probe(const VulkanRenderer::RenderFrame& frame, glm::vec2 cursor) -> std::o
 		const glm::vec4 point = inverse_view_projection * glm::vec4(ndc, depth, 1.0f);
 		return glm::vec3(point) / point.w;
 	};
-	const glm::vec3 near_point = unproject(0.0f);
+	const glm::vec3 near_point = unproject(depth::k_near);
 
 	// Half depth since an infinite projection puts the far plane at w = 0
 	const glm::vec3 direction = unproject(0.5f) - near_point;
@@ -403,7 +483,7 @@ void Monitor::drawOverlay(const VulkanRenderer::RenderFrame& frame) const {
 	                                     ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoInputs;
 	if (ImGui::Begin("##voxel_debug_overlay", nullptr, k_flags)) {
 		ImGui::Text("Voxels: %s", voxelDebugViewName(view));
-		voxelDebugLegend(view);
+		voxelDebugLegend(view, frame);
 
 		ImGui::Separator();
 		voxelDebugProbeText(frame, m_probe);

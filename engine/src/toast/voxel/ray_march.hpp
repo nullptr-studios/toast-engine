@@ -33,9 +33,10 @@ struct RayHit {
 
 	uint32_t steps = 0;
 
-	/// Steps that skipped a whole coarse cell or brick so the rest are single voxels
+	/// Steps that skipped a whole coarse cell brick or 4x4x4 or 2x2x2 sub-brick so the rest are single voxels
 	uint32_t coarse_steps = 0;
 	uint32_t brick_steps = 0;
+	uint32_t sub_steps = 0;
 };
 
 /// @brief CPU twin of voxel_dda.slang marchRay so change both together

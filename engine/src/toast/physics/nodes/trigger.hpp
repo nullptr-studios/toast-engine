@@ -37,6 +37,18 @@ public:
 	[[Reflect]]
 	void enableCollider(bool value);
 
+	[[Reflect]]
+	void includeLayer(int layer, bool value = true);
+
+	[[Reflect]]
+	void excludeLayer(int layer, bool value = true);
+
+	[[Reflect, Layers("excluded"), Name("Layers")]]
+	uint32_t included = 2;    // Trigger
+
+	[[Reflect, LayersExcluded]]
+	uint32_t excluded = 0;
+
 	/// Color of the collider while something is inside
 	[[Reflect, Color]]
 	glm::vec4 debug_color = glm::vec4(0.0f, 1.0f, 0.251f, 0.5f);

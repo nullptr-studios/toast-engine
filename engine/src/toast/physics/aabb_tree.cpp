@@ -216,41 +216,6 @@ auto AABBTree::updateLeaf(TreeNodeID leaf_id, const AABB& tight_bounds) -> bool 
 	return true;
 }
 
-auto AABBTree::query(glm::vec3 pos, glm::vec3 inv_dir, float max_distance, ShapeID ignored_shape) const -> std::vector<ShapeID> {
-	ZoneScopedN("physics::AABBTree::Query(Ray)");
-	ZoneValue(static_cast<uint64_t>(ignored_shape.slot));
-
-	std::vector<ShapeID> result;
-	if (m_root == null_node) {
-		return result;
-	}
-
-	std::vector<TreeNodeID> stack {m_root};
-	while (not stack.empty()) {
-		auto node = m_nodes[stack.back()];
-		stack.pop_back();
-		if (max_distance >= 0.0f) {
-			const auto hit = node.bounds.intersectRay(pos, inv_dir);
-			if (not hit || hit->t_max < 0.0f || hit->t_min > max_distance) {
-				continue;
-			}
-		} else if (not node.bounds.overlaps(pos, inv_dir)) {
-			continue;
-		}
-		if (node.isLeaf()) {
-			if (node.shape != ignored_shape) {
-				result.emplace_back(node.shape);
-			}
-		} else {
-			stack.emplace_back(node.left);
-			stack.emplace_back(node.right);
-		}
-	}
-
-	ZoneValue(static_cast<uint64_t>(result.size()));
-	return result;
-}
-
 auto AABBTree::query(const AABB& bounds, ShapeID ignored_shape) const -> std::vector<ShapeID> {
 	// Removed due to bloating tracy shi
 	// ZoneScopedN("physics::AABBTree::Query");
@@ -517,33 +482,6 @@ auto AABBTree::validate() const -> bool {
 	}
 
 	return true;
-}
-
-auto AABB::overlaps(const glm::vec3& origin, const glm::vec3& inv_dir) const -> bool {
-	float t_entry = -std::numeric_limits<float>::infinity();
-	float t_exit = std::numeric_limits<float>::infinity();
-
-	for (int axis = 0; axis < 3; ++axis) {
-		if (std::isinf(inv_dir[axis])) {
-			if (origin[axis] < min[axis] || origin[axis] > max[axis]) {
-				return false;
-			}
-			continue;
-		}
-
-		float t1 = (min[axis] - origin[axis]) * inv_dir[axis];
-		float t2 = (max[axis] - origin[axis]) * inv_dir[axis];
-		if (t1 > t2) {
-			std::swap(t1, t2);
-		}
-		t_entry = std::max(t_entry, t1);
-		t_exit = std::min(t_exit, t2);
-		if (t_entry > t_exit) {
-			return false;
-		}
-	}
-
-	return t_exit >= 0.0f;
 }
 
 auto AABB::overlaps(const AABB& other) const -> bool {

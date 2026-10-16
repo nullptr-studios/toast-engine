@@ -41,6 +41,7 @@ public partial class ProjectSettingsViewModel : Tool {
 	private const string RendererPrefix = "renderer.";
 	private const string PhysicsPrefix = "physics.";
 	public const string AssetBrowserCategory = "Asset Browser";
+	public const string PhysicsTagsCategory = "Tags";
 
 	private readonly DispatcherTimer m_statusTimer;
 
@@ -69,6 +70,8 @@ public partial class ProjectSettingsViewModel : Tool {
 
 	public AssetBrowserSettingsViewModel AssetBrowser { get; } = new();
 
+	public PhysicsLayersViewModel PhysicsLayers { get; } = new();
+
 	public ObservableCollection<SettingsSection> Sections { get; }
 
 	public ObservableCollection<SettingCategory> VisibleCategories { get; }
@@ -78,8 +81,10 @@ public partial class ProjectSettingsViewModel : Tool {
 	public bool IsGeneral => ActiveTab == SettingsTab.General;
 	public bool IsRendering => ActiveTab == SettingsTab.Rendering;
 	public bool IsPhysics => ActiveTab == SettingsTab.Physics;
+	public bool IsPhysicsTags => IsPhysics && SelectedSection?.Category == PhysicsTagsCategory;
 	public bool IsEditor => ActiveTab == SettingsTab.Editor;
-    public bool IsEngineTab => IsRendering || IsPhysics;
+	public bool IsEngineTab => IsRendering || IsPhysics;
+	public bool IsSettingList => IsEngineTab && !IsPhysicsTags;
 
 	public bool HasStaleReflectionProbes => StaleReflectionProbes > 0;
 	public bool HasStaleIrradianceVolumes => StaleIrradianceVolumes > 0;
@@ -90,9 +95,13 @@ public partial class ProjectSettingsViewModel : Tool {
 		Sections.Clear();
 		Sections.Add(BuildRoot("General", SettingsTab.General, []));
 		Sections.Add(BuildRoot("Rendering", SettingsTab.Rendering, SettingRowFactory.BuildCategories(RendererPrefix)));
-		Sections.Add(BuildRoot("Physics", SettingsTab.Physics, SettingRowFactory.BuildCategories(PhysicsPrefix)));
+		var physics = BuildRoot("Physics", SettingsTab.Physics, SettingRowFactory.BuildCategories(PhysicsPrefix));
+		physics.Children.Add(new SettingsSection
+			{ Name = PhysicsTagsCategory, Tab = SettingsTab.Physics, Category = PhysicsTagsCategory });
+		Sections.Add(physics);
 		Sections.Add(BuildEditorRoot());
 
+		PhysicsLayers.Reload();
 		SavePath = ToastSettings.ActivePath;
 		RayTracingSupported = ToastRenderer.SupportsRayTracing;
 		RefreshStatus();
@@ -176,6 +185,8 @@ public partial class ProjectSettingsViewModel : Tool {
 		OnPropertyChanged(nameof(IsPhysics));
 		OnPropertyChanged(nameof(IsEditor));
 		OnPropertyChanged(nameof(IsEngineTab));
+		OnPropertyChanged(nameof(IsPhysicsTags));
+		OnPropertyChanged(nameof(IsSettingList));
 	}
 
 	private void RefreshStatus() {
@@ -198,6 +209,7 @@ public partial class ProjectSettingsViewModel : Tool {
 		foreach (var category in VisibleCategories)
 		foreach (var row in category.Rows)
 			row.Reload();
+		PhysicsLayers.Reload();
 
 		StatusMessage = "Reset to defaults";
 	}

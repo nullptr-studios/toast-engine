@@ -8,7 +8,11 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
+#include <cmath>
+#include <cstdint>
 #include <glm/glm.hpp>
+#include <limits>
 #include <span>
 #include <toast/physics/aabb.hpp>
 #include <toast/voxel/palette.hpp>
@@ -192,6 +196,197 @@ void queryVoxelSurface(const VoxelQueryContext& context, const AABB& aabb, Callb
 					process_brick({x, y, z});
 				}
 			}
+		}
+	}
+}
+
+struct VoxelRayEntry {
+	float distance = 0.0f;
+	glm::vec3 normal = {};
+	glm::ivec3 voxel = {};
+	uint8_t palette_index = voxel::k_empty_palette_index;
+};
+
+namespace _detail {
+
+inline constexpr float k_ray_tie_epsilon = 1.0e-6f;
+
+[[nodiscard]]
+inline auto rayTieSlack(float t) -> float {
+	return k_ray_tie_epsilon * std::max(1.0f, std::abs(t));
+}
+
+}
+
+/**
+ * @param bounds Where the voxels are
+ * @param hit_passable whether voxels of passable materials count as solid
+ * @param on_entry is given each @c VoxelRayEntry and returns how far the walk may go on in metres
+ */
+template<typename OnEntry>
+void queryVoxelRay(
+    const VoxelQueryContext& context, const AABB& bounds, glm::vec3 origin, glm::vec3 direction, float max_distance,
+    bool hit_passable, OnEntry&& on_entry
+) {
+	constexpr float k_infinity = std::numeric_limits<float>::infinity();
+	constexpr auto k_brick = static_cast<int32_t>(voxel::k_brick_dim);
+	constexpr float k_voxel = voxel::k_voxel_size;
+
+	const voxel::Volume& volume = context.volume;
+	const glm::ivec3 dims = glm::ivec3(volume.voxelDims());
+
+	// from here everything is in voxel size
+	const glm::vec3 start = origin / k_voxel;
+	const glm::vec3 box_min = glm::max(glm::floor(bounds.min / k_voxel - 1.0e-3f), glm::vec3(0.0f));
+	const glm::vec3 box_max = glm::min(glm::ceil(bounds.max / k_voxel + 1.0e-3f), glm::vec3(dims));
+	float limit = max_distance / k_voxel;
+
+	std::array<float, 3> entry_times {-k_infinity, -k_infinity, -k_infinity};
+	glm::vec3 inverse(0.0f);
+	glm::vec3 sign(0.0f);
+	float t_exit = k_infinity;
+
+	for (int axis = 0; axis < 3; ++axis) {
+		if (direction[axis] == 0.0f) {
+			if (start[axis] < box_min[axis] || start[axis] > box_max[axis]) {
+				return;
+			}
+			continue;
+		}
+
+		inverse[axis] = 1.0f / direction[axis];
+		sign[axis] = direction[axis] > 0.0f ? 1.0f : -1.0f;
+		const float t0 = (box_min[axis] - start[axis]) * inverse[axis];
+		const float t1 = (box_max[axis] - start[axis]) * inverse[axis];
+		entry_times[axis] = std::min(t0, t1);
+		t_exit = std::min(t_exit, std::max(t0, t1));
+	}
+
+	// the face it enters the box through
+	float t = -k_infinity;
+	int axis = -1;
+	for (int candidate = 0; candidate < 3; ++candidate) {
+		if (entry_times[candidate] > t) {
+			t = entry_times[candidate];
+			axis = candidate;
+		}
+	}
+
+	// axes the ray crosses a plane of at t
+	uint32_t crossed = 0;
+	if (t < 0.0f) {
+		t = 0.0f;
+		axis = -1;
+	} else {
+		for (int candidate = 0; candidate < 3; ++candidate) {
+			if (sign[candidate] != 0.0f && entry_times[candidate] >= t - _detail::rayTieSlack(t)) {
+				crossed |= 1u << candidate;
+			}
+		}
+	}
+
+	// moves t to where the ray leaves the cell
+	const auto leave = [&](glm::ivec3 cell_min, int32_t size) -> bool {
+		std::array<float, 3> plane_times {k_infinity, k_infinity, k_infinity};
+		float next = k_infinity;
+		int next_axis = axis;
+		for (int candidate = 0; candidate < 3; ++candidate) {
+			if (sign[candidate] == 0.0f) {
+				continue;
+			}
+			const float plane = static_cast<float>(sign[candidate] > 0.0f ? cell_min[candidate] + size : cell_min[candidate]);
+			plane_times[candidate] = (plane - start[candidate]) * inverse[candidate];
+			if (plane_times[candidate] < next) {
+				next = plane_times[candidate];
+				next_axis = candidate;
+			}
+		}
+		if (!std::isfinite(next)) {
+			return false;
+		}
+
+		crossed = 0;
+		for (int candidate = 0; candidate < 3; ++candidate) {
+			if (plane_times[candidate] <= next + _detail::rayTieSlack(next)) {
+				crossed |= 1u << candidate;
+			}
+		}
+		t = std::max(next, t);
+		axis = next_axis;
+		return true;
+	};
+
+	const auto collides = [&](uint8_t palette_index) {
+		const uint32_t material = voxel::resolveMaterialIndex(context.palette, context.materials, palette_index);
+		return context.materials.materials[material].collides();
+	};
+
+	// whatever happens a ray cannot cross more cells than these
+	const int32_t max_steps = (3 * (dims.x + dims.y + dims.z)) + 16;
+	bool in_solid = false;
+
+	for (int32_t step = 0; step < max_steps; ++step) {
+		if (t > std::min(t_exit, limit)) {
+			return;
+		}
+
+		const glm::vec3 position = start + (direction * t);
+		glm::ivec3 cell;
+		for (int candidate = 0; candidate < 3; ++candidate) {
+			if ((crossed & (1u << candidate)) != 0) {
+				const auto plane = static_cast<int32_t>(std::lround(position[candidate]));
+				cell[candidate] = sign[candidate] > 0.0f ? plane : plane - 1;
+			} else if (sign[candidate] < 0.0f) {
+				// a ray that is going down is in the cell below it
+				cell[candidate] = static_cast<int32_t>(std::ceil(position[candidate])) - 1;
+			} else {
+				cell[candidate] = static_cast<int32_t>(std::floor(position[candidate]));
+			}
+		}
+		if (glm::any(glm::lessThan(cell, glm::ivec3(0))) || glm::any(glm::greaterThanEqual(cell, dims))) {
+			return;
+		}
+
+		const glm::ivec3 brick = cell >> 3;
+		const glm::ivec3 brick_min = brick * k_brick;
+		const voxel::BrickEntry entry = volume.entryAt(brick);
+
+		if (entry.tag() == voxel::BrickTag::empty) {
+			in_solid = false;
+			if (!leave(brick_min, k_brick)) {
+				return;
+			}
+			continue;
+		}
+
+		// A uniform brick is one material all through
+		const bool uniform = entry.tag() == voxel::BrickTag::uniform;
+		uint8_t palette_index = voxel::k_empty_palette_index;
+		if (uniform) {
+			palette_index = static_cast<uint8_t>(entry.payload());
+		} else {
+			const voxel::BrickOccupancy* occupancy = volume.occupancyPointer(brick);
+			const glm::uvec3 local = glm::uvec3(cell - brick_min);
+			if (occupancy != nullptr && voxel::isSolid(*occupancy, local.x, local.y, local.z)) {
+				palette_index = volume.materialAt(cell);
+			}
+		}
+
+		const bool solid = palette_index != voxel::k_empty_palette_index && (hit_passable || collides(palette_index));
+		if (solid && !in_solid) {
+			glm::vec3 normal = -direction;
+			if (axis >= 0) {
+				normal = glm::vec3(0.0f);
+				normal[axis] = -sign[axis];
+			}
+			const float reach =
+			    on_entry(VoxelRayEntry {.distance = t * k_voxel, .normal = normal, .voxel = cell, .palette_index = palette_index});
+			limit = std::min(limit, reach / k_voxel);
+		}
+		in_solid = solid;
+
+		if (!(uniform ? leave(brick_min, k_brick) : leave(cell, 1))) {
+			return;
 		}
 	}
 }

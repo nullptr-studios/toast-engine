@@ -67,7 +67,16 @@ public:
 		}
 	}
 
+	/// Before record(). The default keeps one queue and record() ends in a plain barrier
+	void setQueueHandoff(const sync::QueueHandoff& handoff) noexcept { m_handoff = handoff; }
+
+	/// On the consuming queue after the upload fence signalled. No op for an upload that stayed on one queue
+	virtual void recordAcquire(sync::BarrierBatch& batch) { (void)batch; }
+
 	vk::DeviceSize host_bytes = 0;
+
+protected:
+	sync::QueueHandoff m_handoff;
 };
 
 }

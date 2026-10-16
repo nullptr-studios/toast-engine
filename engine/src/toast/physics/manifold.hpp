@@ -9,6 +9,7 @@
 #pragma once
 #include "collision.hpp"
 #include "collision_world.hpp"
+#include "material_defaults.hpp"
 #include "voxel_shape_data.hpp"
 
 #include <array>
@@ -22,9 +23,11 @@
 namespace physics {
 
 struct ContactMaterial {
-	float restitution = 0.0f;
-	float static_friction = 0.6f;
-	float dynamic_friction = 0.4f;
+	float restitution = material_defaults::k_restitution;
+	float static_friction = material_defaults::k_static_friction;
+	float dynamic_friction = material_defaults::k_dynamic_friction;
+	float rolling_friction = material_defaults::k_rolling_friction;
+	float spin_friction = material_defaults::k_spin_friction;
 };
 
 struct ContactPoint {
@@ -148,6 +151,20 @@ struct SegmentBoxClosestPoints {
 	BoxFeature box_feature;
 };
 
+struct SegmentAabbClosestPoints {
+	glm::vec3 segment_point;
+	glm::vec3 box_point;
+	float segment_parameter;
+};
+
+struct CapsuleVoxelContact {
+	glm::vec3 local_normal;
+	glm::vec3 local_point;
+	glm::vec3 local_surface;
+	float penetration;
+	float segment_parameter;
+};
+
 struct ContactCandidate {
 	glm::vec3 position {};
 	float penetration = 0.0f;
@@ -176,9 +193,18 @@ auto closestPointOnBox(const glm::vec3& point, const WorldBox& box) -> glm::vec3
 auto closestPointsSegmentBox(const glm::vec3& segment_a, const glm::vec3& segment_b, const WorldBox& box)
     -> SegmentBoxClosestPoints;
 [[nodiscard]]
+auto closestPointsSegmentAabb(const glm::vec3& local_a, const glm::vec3& local_b, const glm::vec3& half_extents)
+    -> SegmentAabbClosestPoints;
+[[nodiscard]]
+auto capsuleVoxelContact(
+    const glm::vec3& segment_a, const glm::vec3& segment_b, float radius, const glm::vec3& voxel_min, uint8_t normal_index
+) -> std::optional<CapsuleVoxelContact>;
+[[nodiscard]]
 auto perpendicularTo(const glm::vec3& segment) -> glm::vec3;
 [[nodiscard]]
 auto combineMaterials(const PhysicsMaterial& a, const PhysicsMaterial& b) -> ContactMaterial;
+[[nodiscard]]
+auto surfaceMaterial(const voxel::PhysicalMaterial& material) -> PhysicsMaterial;
 
 }
 

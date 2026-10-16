@@ -29,6 +29,7 @@
         <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
         <Optimize>true</Optimize>
         <TieredPGO>true</TieredPGO>
+        <DefineConstants>$(DefineConstants);RELWITHDEBINFO</DefineConstants>
     </PropertyGroup>
 
     <ItemGroup>

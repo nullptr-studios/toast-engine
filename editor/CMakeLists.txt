@@ -3,7 +3,7 @@ project(editor NONE)
 set(CSHARP_PROJECT "${CMAKE_CURRENT_SOURCE_DIR}/editor.csproj")
 set(CSHARP_ASSEMBLY_NAME "editor")
 
-set(DOTNET_CONFIG "$<IF:$<CONFIG:Debug>,Debug,Release>")
+set(DOTNET_CONFIG "$<IF:$<CONFIG:Debug>,Debug,$<IF:$<CONFIG:RelWithDebInfo>,RelWithDebInfo,Release>>")
 
 find_program(DOTNET_EXECUTABLE dotnet REQUIRED)
 message(STATUS "Found dotnet: ${DOTNET_EXECUTABLE}")

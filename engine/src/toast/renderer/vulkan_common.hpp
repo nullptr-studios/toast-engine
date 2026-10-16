@@ -1,6 +1,10 @@
 #pragma once
 
+#include "gpu_sync.hpp"
+
 #include <glm/glm.hpp>
+#include <mutex>
+#include <optional>
 #include <vector>
 #include <vulkan-memory-allocator-hpp/vk_mem_alloc_raii.hpp>
 #include <vulkan/vulkan.h>
@@ -34,6 +38,9 @@ inline constexpr vk::Format k_voxel_albedo_format = vk::Format::eR8G8B8A8Srgb;
 /// r metallic g reflectivity b roughness a log encoded emissive
 inline constexpr vk::Format k_voxel_material_format = vk::Format::eR8G8B8A8Unorm;
 
+/// xyz voxel face normal * 0.5 + 0.5
+inline constexpr vk::Format k_voxel_face_normal_format = vk::Format::eA2B10G10R10UnormPack32;
+
 /// @warning RenderStage::world only since the overlay scope has one attachment
 [[nodiscard]]
 inline auto worldStageExtraColorFormats() -> std::vector<vk::Format> {
@@ -43,7 +50,7 @@ inline auto worldStageExtraColorFormats() -> std::vector<vk::Format> {
 /// After k_voxel_albedo_format in the voxel G-buffer scope
 [[nodiscard]]
 inline auto voxelGbufferExtraColorFormats() -> std::vector<vk::Format> {
-	return {k_scene_normal_format, k_voxel_material_format, k_scene_motion_format};
+	return {k_voxel_face_normal_format, k_voxel_material_format, k_scene_motion_format};
 }
 
 [[nodiscard]]
@@ -51,42 +58,30 @@ inline auto colorSubresourceRange() -> vk::ImageSubresourceRange {
 	return {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1};
 }
 
-inline void submitAndWait(const vk::raii::Device& device, vk::Queue queue, vk::CommandBuffer cmd) {
+/// @p queue_mutex guards against the UI thread submitting uploads to the same queue
+inline void submitAndWait(const vk::raii::Device& device, vk::Queue queue, std::mutex& queue_mutex, vk::CommandBuffer cmd) {
 	const vk::raii::Fence fence(device, vk::FenceCreateInfo {});
 
-	vk::SubmitInfo submit {};
-	submit.commandBufferCount = 1;
-	submit.pCommandBuffers = &cmd;
-	queue.submit(submit, *fence);
+	{
+		std::scoped_lock queue_lock(queue_mutex);
+		sync::submit(
+		    queue,
+		    {
+		      .commands = {&cmd, 1},
+            .fence = *fence
+		}
+		);
+	}
 
 	std::ignore = device.waitForFences(*fence, VK_TRUE, std::numeric_limits<uint64_t>::max());
 }
 
 inline void recordUndefinedToTransferDst(vk::CommandBuffer cmd, vk::Image image, const vk::ImageSubresourceRange& range) {
-	vk::ImageMemoryBarrier to_dst {};
-	to_dst.oldLayout = vk::ImageLayout::eUndefined;
-	to_dst.newLayout = vk::ImageLayout::eTransferDstOptimal;
-	to_dst.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	to_dst.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	to_dst.image = image;
-	to_dst.subresourceRange = range;
-	to_dst.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
-	cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer, {}, nullptr, nullptr, to_dst);
+	sync::transition(cmd, image, range, sync::Usage::none, sync::Usage::transfer_dst);
 }
 
 inline void recordTransferDstToShaderRead(vk::CommandBuffer cmd, vk::Image image, const vk::ImageSubresourceRange& range) {
-	vk::ImageMemoryBarrier to_read {};
-	to_read.oldLayout = vk::ImageLayout::eTransferDstOptimal;
-	to_read.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-	to_read.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	to_read.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	to_read.image = image;
-	to_read.subresourceRange = range;
-	to_read.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
-	to_read.dstAccessMask = vk::AccessFlagBits::eShaderRead;
-	cmd.pipelineBarrier(
-	    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader, {}, nullptr, nullptr, to_read
-	);
+	sync::transition(cmd, image, range, sync::Usage::transfer_dst, sync::Usage::shader_sampled);
 }
 
 [[nodiscard]]

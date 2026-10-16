@@ -9,6 +9,7 @@
 #include <toast/assets/assets.hpp>
 #include <toast/log.hpp>
 #include <toast/physics/assets.hpp>
+#include <toast/physics/material_defaults.hpp>
 #include <toast/uid.hpp>
 #include <tracy/Tracy.hpp>
 #include <utility>
@@ -39,6 +40,8 @@ auto VoxelPalette::materialLibrary() const -> const voxel::MaterialLibrary& {
 			if (m_physics[i].hasValue()) {
 				out.static_friction = m_physics[i]->staticFriction();
 				out.dynamic_friction = m_physics[i]->dynamicFriction();
+				out.rolling_friction = m_physics[i]->rollingFriction();
+				out.spin_friction = m_physics[i]->spinFriction();
 				out.restitution = m_physics[i]->restitution();
 			}
 		}
@@ -52,8 +55,8 @@ auto VoxelPalette::materialLibrary() const -> const voxel::MaterialLibrary& {
 				const double density = std::clamp(static_cast<double>(d.density()), 1.0, 65535.0);
 				out.density = static_cast<uint16_t>(std::lround(density));
 				out.toughness = d.toughness();
+				out.hardness = d.hardness();
 				out.structural_strength = d.structuralStrength();
-				out.shatter_radius = d.shatterRadius();
 				out.burn_rate = d.burnRate();
 				if (not d.destructible()) {
 					out.flags |= voxel::k_material_indestructible;
@@ -65,7 +68,7 @@ auto VoxelPalette::materialLibrary() const -> const voxel::MaterialLibrary& {
 		}
 
 		if (out.density == 0) {
-			out.density = 1000;
+			out.density = static_cast<uint16_t>(physics::material_defaults::k_density);
 		}
 	}
 
@@ -277,8 +280,15 @@ auto VoxelPalette::serialize(SaveMode /*mode*/) const -> std::vector<uint8_t> {
 	toml::table root;
 	root.insert("max_emissive", static_cast<double>(m_palette.max_emissive));
 
+	// Trailing slots dong et serialized
+	size_t slot_count = m_slots.size();
+	while (slot_count > 0 && m_slots[slot_count - 1] == VoxelMaterialSlot {}) {
+		--slot_count;
+	}
+
 	toml::array materials;
-	for (const VoxelMaterialSlot& slot : m_slots) {
+	for (size_t slot_index = 0; slot_index < slot_count; ++slot_index) {
+		const VoxelMaterialSlot& slot = m_slots[slot_index];
 		toml::table entry;
 		entry.insert("name", slot.name);
 		if (slot.physics_uid != 0) {

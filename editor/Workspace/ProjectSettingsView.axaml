@@ -90,6 +90,12 @@
 			                       Maximum="{Binding Maximum}" />
 		</DataTemplate>
 
+		<DataTemplate DataType="vm:Vec3SettingRow">
+			<elements:DragVec3Box X="{Binding X, Mode=TwoWay}"
+			                      Y="{Binding Y, Mode=TwoWay}"
+			                      Z="{Binding Z, Mode=TwoWay}" />
+		</DataTemplate>
+
 		<DataTemplate DataType="vm:StringSettingRow">
 			<elements:StringBox Value="{Binding Value, Mode=TwoWay}"
 			                    Wrap="False" />
@@ -245,9 +251,56 @@
 								</ItemsControl.ItemTemplate>
 							</ItemsControl>
 
-							<TextBlock Classes="hint"
-							           Text="Nothing declared under this prefix yet - open a workspace so the system starts."
-							           IsVisible="{Binding !VisibleCategories.Count}" />
+							<Panel IsVisible="{Binding IsSettingList}">
+								<TextBlock Classes="hint"
+								           Text="Nothing declared under this prefix yet - open a workspace so the system starts."
+								           IsVisible="{Binding !VisibleCategories.Count}" />
+							</Panel>
+
+							<!-- Physics > Tags -->
+							<Border Classes="card"
+							        IsVisible="{Binding IsPhysicsTags}">
+								<StackPanel Spacing="6">
+									<StackPanel>
+										<TextBlock Text="Layers"
+										           Classes="category" />
+									</StackPanel>
+
+									<ItemsControl ItemsSource="{Binding PhysicsLayers.Layers}">
+										<ItemsControl.ItemTemplate>
+											<DataTemplate x:DataType="vm:PhysicsLayerRow">
+												<Grid ColumnDefinitions="32,72,*"
+												      ColumnSpacing="6"
+												      Margin="0,0,0,4">
+													<TextBlock Grid.Column="0"
+													           Text="{Binding Index}"
+													           Classes="lbl"
+													           HorizontalAlignment="Right" />
+													<TextBox Grid.Column="1"
+													         Text="{Binding Abbreviation, Mode=TwoWay}"
+													         MaxLength="3"
+													         IsEnabled="{Binding Editable}"
+													         PlaceholderText="Abbr"
+													         FontWeight="Bold"
+													         HorizontalContentAlignment="Center"
+													         VerticalContentAlignment="Center"
+													         CornerRadius="6"
+													         BorderThickness="0"
+													         Background="{StaticResource Bg1}" />
+													<TextBox Grid.Column="2"
+													         Text="{Binding Name, Mode=TwoWay}"
+													         IsEnabled="{Binding Editable}"
+													         PlaceholderText="Layer name"
+													         VerticalContentAlignment="Center"
+													         CornerRadius="6"
+													         BorderThickness="0"
+													         Background="{StaticResource Bg1}" />
+												</Grid>
+											</DataTemplate>
+										</ItemsControl.ItemTemplate>
+									</ItemsControl>
+								</StackPanel>
+							</Border>
 						</StackPanel>
 					</ScrollViewer>
 

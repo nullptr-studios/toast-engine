@@ -1,6 +1,7 @@
 #include "gpu_layout.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <cstring>
 #include <tracy/Tracy.hpp>
@@ -80,6 +81,23 @@ void sortUnique(std::vector<uint32_t>& values) {
 
 }
 
+void packOccupancyWords(const BrickOccupancy& occupancy, uint32_t* out) {
+	std::array<uint64_t, 8> sub {};
+	for (uint32_t z = 0; z < k_brick_dim; ++z) {
+		for (uint32_t y = 0; y < k_brick_dim; ++y) {
+			const uint64_t row = (occupancy[z] >> (y * k_brick_dim)) & 0xFFull;
+			const uint32_t s = ((y >> 2u) << 1u) | ((z >> 2u) << 2u);
+			const uint32_t shift = (4u * (y & 3u)) + (16u * (z & 3u));
+			sub[s] |= (row & 0xFull) << shift;
+			sub[s | 1u] |= (row >> 4u) << shift;
+		}
+	}
+	for (uint32_t s = 0; s < 8; ++s) {
+		out[s * 2] = static_cast<uint32_t>(sub[s]);
+		out[(s * 2) + 1] = static_cast<uint32_t>(sub[s] >> 32u);
+	}
+}
+
 auto packPool(const BrickPool& pool) -> PackedPool {
 	ZoneScoped;
 
@@ -96,12 +114,7 @@ auto packPool(const BrickPool& pool) -> PackedPool {
 		    out.materials.data() + (static_cast<size_t>(id) * k_material_words_per_brick), bytes.data(), k_brick_material_bytes
 		);
 
-		const BrickOccupancy& occupancy = pool.occupancy(id);
-		const size_t base = static_cast<size_t>(id) * k_occupancy_words_per_brick;
-		for (uint32_t slice = 0; slice < k_brick_dim; ++slice) {
-			out.occupancy[base + (slice * 2)] = static_cast<uint32_t>(occupancy.slices[slice]);
-			out.occupancy[base + (slice * 2) + 1] = static_cast<uint32_t>(occupancy.slices[slice] >> 32u);
-		}
+		packOccupancyWords(pool.occupancy(id), out.occupancy.data() + (static_cast<size_t>(id) * k_occupancy_words_per_brick));
 	}
 	return out;
 }
@@ -193,7 +206,7 @@ auto layoutMatches(const PackedScene& retained, const SceneLayout& layout) -> bo
 
 auto computePatch(
     PackedScene& retained, uint32_t retained_pool_slots, const BrickPool& pool, std::span<const SceneVolume> volumes,
-    std::span<const VolumeDirty> dirty
+    std::span<const VolumeDirty> dirty, std::span<const uint32_t> appended, uint32_t first_new_palette_word
 ) -> ScenePatch {
 	ZoneScoped;
 
@@ -205,6 +218,41 @@ auto computePatch(
 	std::vector<uint32_t> grid_words;
 	std::vector<uint32_t> coarse_words;
 	std::vector<uint32_t> cells;
+	std::vector<uint32_t> record_words;
+
+	// The GPU holds nothing for these yet so every word is written including empty ones
+	for (const uint32_t index : appended) {
+		const Volume& volume = *volumes[index].volume;
+		const VolumeRecord& record = retained.records[index];
+		const glm::uvec3 dims(record.brick_dims_x, record.brick_dims_y, record.brick_dims_z);
+		const glm::uvec3 coarse(record.coarse_dims_x, record.coarse_dims_y, record.coarse_dims_z);
+		TagDelta& tags = patch.tags[index];
+
+		const uint32_t bricks = dims.x * dims.y * dims.z;
+		for (uint32_t i = 0; i < bricks; ++i) {
+			const BrickEntry entry = volume.entryAt(glm::ivec3(brickOfIndex(dims, i)));
+			retained.grids[record.grid_offset + i] = entry.value;
+			grid_words.push_back(record.grid_offset + i);
+			bump(tags, entry.tag(), 1);
+			if (entry.isPooled()) {
+				slots.push_back(entry.payload());
+			}
+			if (entry.tag() != BrickTag::empty) {
+				const uint32_t cell = gridIndex(coarse, brickOfIndex(dims, i) / k_coarse_bricks);
+				retained.coarse[record.coarse_offset + (cell / 32u)] |= 1u << (cell % 32u);
+			}
+		}
+
+		const uint32_t coarse_count = ((coarse.x * coarse.y * coarse.z) + 31u) / 32u;
+		for (uint32_t i = 0; i < coarse_count; ++i) {
+			coarse_words.push_back(record.coarse_offset + i);
+		}
+
+		constexpr uint32_t k_record_words = sizeof(VolumeRecord) / sizeof(uint32_t);
+		for (uint32_t i = 0; i < k_record_words; ++i) {
+			record_words.push_back((index * k_record_words) + i);
+		}
+	}
 
 	for (const VolumeDirty& entry : dirty) {
 		const Volume& volume = *volumes[entry.volume].volume;
@@ -262,17 +310,30 @@ auto computePatch(
 	appendWords(patch.grids, grid_words, retained.grids);
 	appendWords(patch.coarse, coarse_words, retained.coarse);
 
+	if (!record_words.empty()) {
+		std::vector<uint32_t> records(retained.records.size() * (sizeof(VolumeRecord) / sizeof(uint32_t)));
+		std::memcpy(records.data(), retained.records.data(), records.size() * sizeof(uint32_t));
+		appendWords(patch.records, record_words, records);
+	}
+
+	std::vector<uint32_t> palette_words;
+	for (uint32_t i = first_new_palette_word; i < retained.palettes.size(); ++i) {
+		palette_words.push_back(i);
+	}
+	appendWords(patch.palettes, palette_words, retained.palettes);
+
+	patch.grid_words = static_cast<uint32_t>(retained.grids.size());
+	patch.coarse_words = static_cast<uint32_t>(retained.coarse.size());
+	patch.palette_words = static_cast<uint32_t>(retained.palettes.size());
+	patch.record_count = static_cast<uint32_t>(retained.records.size());
+
 	appendSlots(patch.materials, slots, k_material_words_per_brick, [&pool](uint32_t slot, uint32_t* out) {
 		assert(pool.isValid(slot));
 		std::memcpy(out, pool.material(slot).data(), k_brick_material_bytes);
 	});
 	appendSlots(patch.occupancy, slots, k_occupancy_words_per_brick, [&pool](uint32_t slot, uint32_t* out) {
 		assert(pool.isValid(slot));
-		const BrickOccupancy& occupancy = pool.occupancy(slot);
-		for (uint32_t slice = 0; slice < k_brick_dim; ++slice) {
-			out[slice * 2] = static_cast<uint32_t>(occupancy.slices[slice]);
-			out[(slice * 2) + 1] = static_cast<uint32_t>(occupancy.slices[slice] >> 32u);
-		}
+		packOccupancyWords(pool.occupancy(slot), out);
 	});
 	return patch;
 }
@@ -287,14 +348,26 @@ void applyPatch(PackedPool& pool, PackedScene& scene, const ScenePatch& patch) {
 			std::copy_n(section.words.begin() + run.src, run.count, destination.begin() + run.dst);
 		}
 	};
+	scene.grids.resize(std::max<size_t>(scene.grids.size(), patch.grid_words), 0u);
+	scene.coarse.resize(std::max<size_t>(scene.coarse.size(), patch.coarse_words), 0u);
+	scene.palettes.resize(std::max<size_t>(scene.palettes.size(), patch.palette_words), 0u);
+	scene.records.resize(std::max<size_t>(scene.records.size(), patch.record_count));
+
 	apply(pool.materials, patch.materials);
 	apply(pool.occupancy, patch.occupancy);
 	apply(scene.grids, patch.grids);
 	apply(scene.coarse, patch.coarse);
+	apply(scene.palettes, patch.palettes);
+
+	std::vector<uint32_t> records(scene.records.size() * (sizeof(VolumeRecord) / sizeof(uint32_t)));
+	std::memcpy(records.data(), scene.records.data(), records.size() * sizeof(uint32_t));
+	apply(records, patch.records);
+	std::memcpy(scene.records.data(), records.data(), records.size() * sizeof(uint32_t));
 }
 
 auto patchWords(const ScenePatch& patch) -> size_t {
-	return patch.materials.words.size() + patch.occupancy.words.size() + patch.grids.words.size() + patch.coarse.words.size();
+	return patch.materials.words.size() + patch.occupancy.words.size() + patch.grids.words.size() + patch.coarse.words.size() +
+	       patch.palettes.words.size() + patch.records.words.size();
 }
 
 auto sampleMaterial(const PackedPool& pool, const PackedScene& scene, uint32_t volume, glm::ivec3 voxel) -> uint8_t {
@@ -343,11 +416,13 @@ auto sampleSolid(const PackedPool& pool, const PackedScene& scene, uint32_t volu
 		return true;    // uniform is full
 	}
 
-	// The low word holds rows y < 4
-	const uint32_t bit = (local.y * k_brick_dim) + local.x;
-	const size_t word_index =
-	    (static_cast<size_t>(value >> k_brick_tag_bits) * k_occupancy_words_per_brick) + (local.z * 2u) + (bit / 32u);
-	return ((pool.occupancy[word_index] >> (bit % 32u)) & 1u) != 0;
+	return ((pooledSubBrick(pool, value >> k_brick_tag_bits, local) >> subBrickBit(local)) & 1ull) != 0;
+}
+
+auto pooledSubBrick(const PackedPool& pool, uint32_t slot, glm::uvec3 local) -> uint64_t {
+	const uint32_t sub = (local.x >> 2u) | ((local.y >> 2u) << 1u) | ((local.z >> 2u) << 2u);
+	const size_t base = (static_cast<size_t>(slot) * k_occupancy_words_per_brick) + (sub * 2u);
+	return static_cast<uint64_t>(pool.occupancy[base]) | (static_cast<uint64_t>(pool.occupancy[base + 1]) << 32u);
 }
 
 auto sampleCoarse(const PackedScene& scene, uint32_t volume, glm::ivec3 cell) -> bool {

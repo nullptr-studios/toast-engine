@@ -36,11 +36,40 @@ public:
 	[[Reflect, NoSerialize, Group("World Transform")]]            alignas(16) mutable glm::vec3 world_scale = glm::vec3(1.0f);
 	// clang-format on
 
+	/**
+	 * @brief The nearest thing a ray from this node hits
+	 * @param dir Where the ray goes
+	 * @param offset Where the ray starts
+	 * @param max_distance How far the ray goes
+	 * @param ignore_self Ignores colision from this node or a children
+	 */
 	[[Reflect]]
-	auto raycasts(glm::vec3 pos, glm::vec3 dir, float max_distance = -1.0f, int max_targets = 3) const
-	    -> std::vector<physics::RayHit>;
+	auto raycast(
+	    glm::vec3 dir, glm::vec3 offset = glm::vec3(0.0f), float max_distance = -1.0f, bool ignore_self = true,
+	    const std::vector<int>& layers = std::vector<int> {}
+	) const -> std::optional<physics::RayHit>;
+
+	/**
+	 * @brief Up to @p max_hits things collisions
+	 * @see raycast for the other arguments
+	 */
 	[[Reflect]]
-	auto raycast(glm::vec3 pos, glm::vec3 dir, float max_distance = -1.0f) const -> std::optional<physics::RayHit>;
+	auto raymulticast(
+	    glm::vec3 dir, glm::vec3 offset = glm::vec3(0.0f), float max_distance = -1.0f, int max_hits = -1, bool ignore_self = true,
+	    const std::vector<int>& layers = std::vector<int> {}
+	) const -> std::vector<physics::RayHit>;
+
+	/**
+	 * @brief Everything on the line between two points, nearest to @p from first
+	 * @param from Start of the line in world space
+	 * @param to End of the line in world space
+	 * @param max_hits How many to look for
+	 */
+	[[Reflect]]
+	auto linecast(
+	    glm::vec3 from, glm::vec3 to, int max_hits = -1, bool ignore_self = true,
+	    const std::vector<int>& layers = std::vector<int> {}
+	) const -> std::vector<physics::RayHit>;
 
 	/**
 	 * @brief Orients the node so its forward axis points at a world-space target

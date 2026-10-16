@@ -6,6 +6,8 @@
 
 #include "compute_pass_base.hpp"
 #include "debug_draw.hpp"
+#include "depth_convention.hpp"
+#include "gpu_sync.hpp"
 #include "gpu_timer.hpp"
 #include "output_target_base.hpp"
 #include "post_process_pass_base.hpp"
@@ -93,16 +95,16 @@ public:
 
 	struct FrameContext {
 		vk::raii::CommandBuffer command_buffer = nullptr;
-		vk::raii::CommandBuffer compute_command_buffer = nullptr;
 		vk::raii::Semaphore image_available = nullptr;
-		vk::raii::Semaphore compute_to_graphics = nullptr;
 		vk::raii::Fence in_flight = nullptr;
-		vk::raii::Fence compute_in_flight = nullptr;
 		uint32_t last_image_index = 0;
 		bool has_submitted = false;
 		bool was_probe_capture = false;
 
 		std::vector<vma::raii::Buffer> blas_scratch;
+
+		/// Released once this frame fence was waited on again
+		std::vector<std::shared_ptr<void>> retired;
 	};
 
 	static constexpr uint32_t k_max_directional_lights = 4;
@@ -381,6 +383,9 @@ public:
 
 		std::shared_ptr<const VoxelGpuStorage> voxel_storage;
 
+		/// Camera near plane distance so voxel cells it clips draw with the camera inside variant
+		float near_plane = 0.0f;
+
 		std::vector<assets::HandleBase> asset_refs;
 
 		std::vector<GpuLight> lights;
@@ -468,8 +473,7 @@ public:
 
 	void submitFrame() noexcept;
 
-	/// Queues a debug line for the current render frame, or for the next one when
-	/// called from gameplay code before frame construction begins.
+	/// For the next frame when called before frame construction begins
 	void queueDebugLine(glm::vec3 a, glm::vec3 b, glm::vec4 color);
 
 	void tick(float time) noexcept;
@@ -524,6 +528,13 @@ public:
 	[[nodiscard]]
 	auto clampToSimulation() const noexcept -> bool {
 		return m_clamp_to_simulation.load(std::memory_order_relaxed);
+	}
+
+	void setDebugWindowsVisible(bool visible) noexcept { m_debug_windows_visible.store(visible, std::memory_order_relaxed); }
+
+	[[nodiscard]]
+	auto debugWindowsVisible() const noexcept -> bool {
+		return m_debug_windows_visible.load(std::memory_order_relaxed);
 	}
 
 	void setApplicationFocused(bool focused) noexcept { m_application_focused.store(focused, std::memory_order_relaxed); }
@@ -607,6 +618,37 @@ public:
 	}
 
 	/// Edge rounding radius in voxels where 0 keeps the flat face normals
+	void setVoxelCellBoxes(bool enabled) noexcept { m_voxel_cell_boxes.store(enabled, std::memory_order_relaxed); }
+
+	void setVoxelOcclusion(bool enabled) noexcept { m_voxel_occlusion.store(enabled, std::memory_order_relaxed); }
+
+	void setVoxelMeshShaders(bool enabled) noexcept { m_voxel_mesh_shaders.store(enabled, std::memory_order_relaxed); }
+
+	[[nodiscard]]
+	auto voxelMeshShaders() const noexcept -> bool {
+		return m_voxel_mesh_shaders.load(std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto voxelOcclusion() const noexcept -> bool {
+		return m_voxel_occlusion.load(std::memory_order_relaxed);
+	}
+
+	/// Smallest on screen voxel size in pixels that is rasterized instead of marched and 0 marches everything
+	void setVoxelRasterPixels(float pixels) noexcept {
+		m_voxel_raster_pixels.store(std::max(pixels, 0.0f), std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto voxelRasterPixels() const noexcept -> float {
+		return m_voxel_raster_pixels.load(std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto voxelCellBoxes() const noexcept -> bool {
+		return m_voxel_cell_boxes.load(std::memory_order_relaxed);
+	}
+
 	void setVoxelNormalRounding(float voxels) noexcept {
 		m_voxel_normal_rounding.store(std::max(voxels, 0.0f), std::memory_order_relaxed);
 	}
@@ -901,6 +943,34 @@ public:
 		};
 	}
 
+	struct UploadStats {
+		uint32_t slots_in_flight = 0;
+		uint32_t slot_count = 0;
+		size_t waiting_jobs = 0;
+		size_t batches_in_flight = 0;
+		vk::DeviceSize host_bytes = 0;
+		vk::DeviceSize host_budget = 0;
+	};
+
+	/// @note Render thread only
+	[[nodiscard]]
+	auto uploadStats() -> UploadStats;
+
+	/// Signalled by every transfer submit so a submit needing an upload waits on its value
+	[[nodiscard]]
+	auto uploadTimeline() const noexcept -> vk::Semaphore {
+		return *m_upload_timeline;
+	}
+
+	/// Render thread only
+	[[nodiscard]]
+	auto uploadTimelineValue() const noexcept -> uint64_t {
+		return m_upload_timeline_value;
+	}
+
+	/// Render thread and frees @p object once the frame being recorded finished on the GPU
+	void retire(std::shared_ptr<void> object);
+
 	/// @note Render thread only
 	[[nodiscard]]
 	auto gpuTimer() const noexcept -> const GpuTimer* {
@@ -1010,17 +1080,17 @@ private:
 	struct DepthResources {
 		std::optional<vma::raii::Image> image;
 		std::optional<vk::raii::ImageView> view;
+		sync::ImageState state;
 	};
 
 	struct SceneColorResources {
 		std::optional<vma::raii::Image> image;
 		std::optional<vk::raii::ImageView> view;
-		vk::ImageLayout layout = vk::ImageLayout::eUndefined;
+		sync::ImageState state;
 	};
 
 	void createGraphicsCommandPool();
 	void createTransferCommandPool();
-	void createComputeCommandPool();
 	void createFrameContexts();
 
 	void createPerImageSync();
@@ -1043,6 +1113,8 @@ private:
 	void createDefaultCubemap();
 
 	void ensureMaterialPasses(RenderFrame& frame_data);
+	/// After the pass updates so the prepass never writes depth the color pass leaves empty
+	void hideInstancesWithoutPipeline(RenderFrame& frame_data);
 
 	void recordFrame(FrameContext& frame, uint32_t image_index) noexcept;
 
@@ -1073,7 +1145,8 @@ private:
 
 	struct UploadSlot {
 		vk::raii::CommandBuffer command_buffer = nullptr;
-		vk::raii::Fence fence = nullptr;
+		/// m_upload_timeline reaches it once the batch completed
+		uint64_t timeline_value = 0;
 		bool in_flight = false;
 	};
 
@@ -1086,11 +1159,16 @@ private:
 
 	vk::raii::CommandPool m_command_pool = nullptr;
 	vk::raii::CommandPool m_transfer_command_pool = nullptr;
-	vk::raii::CommandPool m_compute_command_pool = nullptr;
 	vk::raii::DescriptorPool m_descriptor_pool = nullptr;
 
 	std::vector<UploadSlot> m_upload_slots;
 	uint32_t m_next_upload_slot = 0;
+
+	vk::raii::Semaphore m_upload_timeline = nullptr;
+	uint64_t m_upload_timeline_value = 0;
+	/// Newest value whose acquires are recorded and newest a graphics submit waited on
+	uint64_t m_upload_acquired_value = 0;
+	uint64_t m_upload_waited_value = 0;
 
 	static constexpr vk::DeviceSize k_upload_host_budget = 256ull << 20;
 
@@ -1178,13 +1256,16 @@ private:
 	SceneColorResources m_voxel_face_normal;
 
 	std::atomic<float> m_voxel_normal_rounding {0.3f};
+	std::atomic_bool m_voxel_cell_boxes {true};
+	std::atomic_bool m_voxel_occlusion {true};
+	std::atomic_bool m_voxel_mesh_shaders {true};
+	std::atomic<float> m_voxel_raster_pixels {4.0f};
 
 	ShaderLayout m_present_layout;
 	VulkanPipeline m_present_pipeline;
 	vk::raii::Sampler m_present_sampler = nullptr;
 	std::vector<vk::raii::DescriptorSet> m_present_sets;
 	std::vector<vk::ImageView> m_present_bound_views;
-	vk::ImageLayout m_depth_layout = vk::ImageLayout::eUndefined;
 
 	TracyVkCtx m_tracy_vk_ctx = nullptr;
 	std::unique_ptr<GpuTimer> m_gpu_timer;
@@ -1192,7 +1273,10 @@ private:
 	std::vector<FrameContext> m_frames;
 	std::vector<vk::raii::Semaphore> m_render_finished_per_image;
 	std::vector<vk::Fence> m_images_in_flight;
-	std::vector<vk::ImageLayout> m_output_image_layouts;
+	std::vector<sync::Usage> m_output_image_usage;
+
+	/// Acquire halves of finished uploads flushed at the start of the next frame
+	sync::BarrierBatch m_pending_acquires;
 	uint32_t m_current_frame = 0;
 
 	toast::Camera* m_camera = nullptr;
@@ -1205,6 +1289,8 @@ private:
 	PostProcessSettings m_post_process_settings;
 
 	std::atomic_bool m_traced_shadows_enabled {false};
+	/// Logs once each time the fallback starts
+	bool m_traced_shadows_voxel_fallback_logged = false;
 
 	std::atomic_bool m_taa_enabled {true};
 	std::atomic<float> m_taa_history_weight {0.9f};
@@ -1285,7 +1371,6 @@ private:
 
 	/// Describes the newest storage whether published or pending so a patch starts from it
 	VoxelScenePatcher m_voxel_patcher;
-	std::shared_ptr<VoxelGpuStorage> m_voxel_latest_storage;
 
 	std::unordered_map<uint64_t, glm::mat4> m_voxel_previous_models;
 
@@ -1325,6 +1410,16 @@ private:
 	std::array<shadow_slots::Slot, shadows::k_max_spot_shadows> m_spot_slots {};
 	std::array<shadow_slots::Slot, shadows::k_max_point_shadows> m_point_slots {};
 	uint64_t m_shadow_displaced_total = 0;
+
+	/// Padded sphere a cascade keeps until the camera slice leaves it
+	struct CascadeAnchor {
+		glm::vec3 center {0.0f};
+		float radius = 0.0f;
+		glm::vec3 light_direction {0.0f};
+		uint32_t resolution = 0;
+	};
+
+	std::array<CascadeAnchor, shadows::k_cascade_count> m_cascade_anchors {};
 	std::vector<shadow_slots::Candidate> m_tick_slot_candidates;
 	std::vector<int32_t> m_tick_slot_of;
 
@@ -1421,6 +1516,7 @@ private:
 
 	std::atomic<double> m_frame_rate_limit_hz {0.0};
 	std::atomic_bool m_application_focused {true};
+	std::atomic_bool m_debug_windows_visible {true};
 	std::atomic_bool m_rendering_paused {false};
 	std::atomic_bool m_clamp_to_simulation {true};
 };

@@ -44,8 +44,9 @@ public:
 	void createSDLWindow(const char*);
 	void createAvaloniaWindow();
 
-	auto shootVoxel(const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy, float min_radius = 0.0f)
-	    -> bool;
+	auto shootVoxel(
+	    const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy_density, float fracture_radius
+	) -> bool;
 
 	// nodes
 	auto createWorkspace(std::string_view type) -> std::pair<UID, std::string>;
@@ -57,6 +58,9 @@ public:
 	void destroyWorkspace(UID handle);
 
 	void requireTickThread(std::string_view what) const;
+	/// Before the first tick the thread that created the engine counts
+	[[nodiscard]]
+	auto onTickThread() const -> bool;
 
 	auto activeWorkspace() -> UID;
 	void publishPrefab(UID uid, const assets::Prefab& prefab);

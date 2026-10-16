@@ -101,17 +101,17 @@ struct SmashPieces {
 	glm::vec3 index_sum {0.0f};
 };
 
+template<typename Breaks>
 [[nodiscard]]
-inline auto collectSmashPieces(
-    const voxel::Volume& volume, const voxel::Palette& palette, const voxel::MaterialLibrary& materials, const SmashVolume& smash,
-    float energy
+auto collectBrokenPieces(
+    const voxel::Volume& volume, const voxel::Palette& palette, const voxel::MaterialLibrary& materials, const glm::vec3& low,
+    const glm::vec3& high, Breaks&& breaks
 ) -> SmashPieces {
 	SmashPieces out;
 	if (materials.materials.empty()) {
 		return out;
 	}
 
-	const auto [low, high] = smash.bounds();
 	const glm::ivec3 voxel_dims = glm::ivec3(volume.voxelDims());
 	glm::ivec3 first = glm::ivec3(glm::floor(low / voxel::k_voxel_size));
 	glm::ivec3 last = glm::ivec3(glm::ceil(high / voxel::k_voxel_size)) - 1;
@@ -124,7 +124,6 @@ inline auto collectSmashPieces(
 	const auto brick_dim = static_cast<int32_t>(voxel::k_brick_dim);
 	const glm::ivec3 first_brick = first / brick_dim;
 	const glm::ivec3 last_brick = last / brick_dim;
-	const int poses = smash.poseCount();
 
 	for (int32_t bz = first_brick.z; bz <= last_brick.z; ++bz) {
 		for (int32_t by = first_brick.y; by <= last_brick.y; ++by) {
@@ -150,14 +149,10 @@ inline auto collectSmashPieces(
 							}
 
 							const glm::vec3 center = (glm::vec3 {voxel} + 0.5f) * voxel::k_voxel_size;
-							if (not smash.contains(center, poses)) {
-								continue;
-							}
-
 							const uint8_t palette_index = volume.materialAt(voxel);
 							const voxel::PhysicalMaterial& material =
 							    materials.materials[voxel::resolveMaterialIndex(palette, materials, palette_index)];
-							if (material.isIndestructible() || material.toughness > energy) {
+							if (material.isIndestructible() || not breaks(center, material)) {
 								continue;
 							}
 
@@ -185,6 +180,20 @@ inline auto collectSmashPieces(
 	}
 
 	return out;
+}
+
+[[nodiscard]]
+inline auto collectSmashPieces(
+    const voxel::Volume& volume, const voxel::Palette& palette, const voxel::MaterialLibrary& materials, const SmashVolume& smash,
+    float energy_density, Hardness max_hardness = k_hardest
+) -> SmashPieces {
+	const auto [low, high] = smash.bounds();
+	const int poses = smash.poseCount();
+	return collectBrokenPieces(
+	    volume, palette, materials, low, high, [&](const glm::vec3& center, const voxel::PhysicalMaterial& material) {
+		    return material.breakableBy(max_hardness) && material.toughness <= energy_density && smash.contains(center, poses);
+	    }
+	);
 }
 
 }

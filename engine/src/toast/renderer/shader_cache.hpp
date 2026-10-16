@@ -9,8 +9,10 @@
 #include "shader_reflection.hpp"
 
 #include <cstddef>
+#include <future>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <toast/assets/core_types.hpp>
 #include <toast/assets/shader.hpp>
@@ -47,6 +49,7 @@ public:
 
 	void compileAllAtStartup();
 
+	/// Thread safe and concurrent calls for one shader share a compile
 	auto acquire(toast::UID uid) -> std::shared_ptr<const Entry>;
 
 	auto ensureCompiled(toast::UID uid) -> bool;
@@ -56,18 +59,26 @@ public:
 	static auto fnv1a(const void* data, size_t size) -> uint64_t;
 
 private:
+	using EntryPtr = std::shared_ptr<const Entry>;
+
 	ShaderCache();
 
-	auto loadOrCompileLocked(toast::UID uid) -> std::shared_ptr<const Entry>;
-	auto compileLocked(toast::UID uid) -> std::shared_ptr<const Entry>;
-	auto loadFromDiskLocked(toast::UID uid) -> std::shared_ptr<const Entry>;
-	auto isDiskCacheFreshLocked(toast::UID uid, uint64_t source_hash) -> bool;
+	/// Everything below runs without m_mutex held unless named Locked
+	auto loadOrCompile(toast::UID uid) -> EntryPtr;
+	auto compile(toast::UID uid, const std::string& source) -> EntryPtr;
+	static auto loadFromDisk(toast::UID uid) -> EntryPtr;
+	auto isDiskCacheFresh(toast::UID uid, uint64_t source_hash) -> bool;
+	/// Copy since a hot reload may replace the asset while a worker compiles
+	auto sourceOf(toast::UID uid) -> std::optional<std::string>;
+
 	void loadHashIndexLocked();
 	void saveHashIndexLocked();
 	auto sourceHandleLocked(toast::UID uid) -> assets::Handle<assets::Shader>&;
 
+	/// Guards every member below and is never held while compiling
 	std::mutex m_mutex;
-	std::unordered_map<uint64_t, std::shared_ptr<const Entry>> m_entries;
+	std::unordered_map<uint64_t, EntryPtr> m_entries;
+	std::unordered_map<uint64_t, std::shared_future<EntryPtr>> m_in_flight;
 	std::unordered_map<uint64_t, assets::Handle<assets::Shader>> m_sources;
 	std::unordered_map<uint64_t, std::unordered_set<uint64_t>> m_reverse_deps;
 	nlohmann::json m_hash_index;

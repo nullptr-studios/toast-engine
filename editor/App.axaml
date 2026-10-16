@@ -20,6 +20,7 @@
 				<ResourceInclude Source="avares://editor/Resources/AssetBox.axaml" />
 				<ResourceInclude Source="avares://editor/Resources/ArrayBox.axaml" />
 				<ResourceInclude Source="avares://editor/Resources/EnumBox.axaml" />
+				<ResourceInclude Source="avares://editor/Resources/TagBox.axaml" />
 			</ResourceDictionary.MergedDictionaries>
 			<conv:PathToBitmapConverter x:Key="PathToBitmapConverter" />
 			<conv:SeverityToColorConverter x:Key="SeverityToColorConverter" />

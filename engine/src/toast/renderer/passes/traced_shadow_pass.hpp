@@ -14,6 +14,7 @@
 
 #include <glm/glm.hpp>
 #include <optional>
+#include <utility>
 #include <vector>
 
 namespace renderer {
@@ -55,7 +56,8 @@ private:
 
 	std::vector<vk::raii::DescriptorSet> m_descriptor_sets;
 	std::vector<vk::ImageView> m_bound_views;
-	std::vector<vk::AccelerationStructureKHR> m_bound_acceleration_structures;
+	/// Handle plus generation since a recreated structure can reuse a destroyed handle value
+	std::vector<std::pair<vk::AccelerationStructureKHR, uint64_t>> m_bound_acceleration_structures;
 
 	PostProcessTarget m_target;
 };

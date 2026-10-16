@@ -3,26 +3,36 @@ using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Controls.Shapes;
 using Avalonia.Data;
+using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using CommunityToolkit.Mvvm.ComponentModel;
 using editor.Assets;
 using editor.Components.Elements;
 using editor.Engine;
+using Lucide.Avalonia;
 
 namespace editor.VoxelEditor;
 
 public partial class PaletteEntryVM : ObservableObject {
 	private readonly Action m_changed;
 	private readonly VoxelPaletteEntry m_entry;
+	private readonly VoxelPaletteFile m_palette;
 
-	public PaletteEntryVM(VoxelPaletteEntry entry, Action changed) {
-		m_entry = entry;
+	public PaletteEntryVM(VoxelPaletteFile palette, int id, Action changed) {
+		m_palette = palette;
+		m_entry = palette.Entries[id];
 		m_changed = changed;
 	}
+
+	public bool IsEmpty => !m_entry.InUse;
+
+	public bool InUse => m_entry.InUse;
 
 	public float AlbedoR {
 		get => m_entry.R / 255f;
@@ -59,6 +69,15 @@ public partial class PaletteEntryVM : ObservableObject {
 		set => Set(() => m_entry.Emissive = value);
 	}
 
+	public float MaxEmissive {
+		get => m_palette.MaxEmissive;
+		set {
+			m_palette.MaxEmissive = Math.Max(value, 0f);
+			OnPropertyChanged(string.Empty);
+			m_changed();
+		}
+	}
+
 	public bool Transparent {
 		get => m_entry.Transparent;
 		set => Set(() => m_entry.Transparent = value);
@@ -90,6 +109,7 @@ public sealed class VoxelPalettePicker : UserControl {
 	private readonly Flyout m_flyout = new() { Placement = PlacementMode.BottomEdgeAlignedLeft };
 
 	private VoxelEditorViewModel? m_editor;
+	private UniformGrid? m_grid;
 	private VoxelPaletteFile? m_palette;
 	private string? m_palettePath;
 	private DispatcherTimer? m_saveTimer;
@@ -141,48 +161,126 @@ public sealed class VoxelPalettePicker : UserControl {
 		}
 	}
 
-	private Color ColorOf(int id) {
-		if (m_palette is null) return Color.FromArgb(255, 160, 160, 160);    // the engine default palette
+	private static IBrush Resource(string key) {
+		return Application.Current?.Resources.TryGetResource(key, ThemeVariant.Dark, out var found) == true && found is IBrush brush
+			? brush
+			: Brushes.Gray;
+	}
+
+	private IBrush BrushOf(int id) {
+		if (m_palette is null) return new SolidColorBrush(Color.FromRgb(160, 160, 160));    // the engine default palette
+
 		var entry = m_palette.Entries[id];
-		return Color.FromArgb((byte)Math.Clamp((int)Math.Round(entry.Alpha * 255), 0, 255), entry.R, entry.G, entry.B);
+		if (!entry.InUse) return Resource("Bg2");
+
+		return new SolidColorBrush(Color.FromRgb(entry.R, entry.G, entry.B), entry.Transparent ? Math.Clamp(entry.Alpha, 0f, 1f) : 1.0);
 	}
 
 	private void Refresh() {
 		var id = m_editor?.PaletteId ?? 1;
-		m_swatch.Background = new SolidColorBrush(ColorOf(id));
+		m_swatch.Background = BrushOf(id);
 		m_label.Text = id.ToString();
+	}
+
+	private Control BuildCell(int id) {
+		var entry = m_palette?.Entries[id];
+		var empty = entry is { InUse: false };
+		var selected = id == m_editor?.PaletteId;
+
+		var cell = new Button {
+			Width = CellSize - 2,
+			Height = CellSize - 2,
+			Padding = new Thickness(0),
+			Margin = new Thickness(1),
+			CornerRadius = new CornerRadius(3),
+			BorderThickness = new Thickness(selected ? 2 : 0),
+			BorderBrush = Brushes.White,
+			Background = BrushOf(id)
+		};
+		ToolTip.SetTip(cell, BuildTip(id));
+		cell.Click += (_, _) => {
+			if (m_editor is not null) m_editor.PaletteId = id;
+			m_flyout.Content = BuildPopup();
+		};
+
+		var panel = new Panel();
+
+		// behind the translucent brush so alpha reads against it
+		if (entry is { InUse: true, Transparent: true })
+			panel.Children.Add(new Border {
+				Width = CellSize - 2,
+				Height = CellSize - 2,
+				Margin = new Thickness(1),
+				CornerRadius = new CornerRadius(3),
+				IsHitTestVisible = false,
+				Background = CheckerBrush.Instance
+			});
+
+		panel.Children.Add(cell);
+
+		// marks an id as empty
+		if (empty)
+			panel.Children.Add(new Path {
+				Data = Geometry.Parse("M0,0.5 L1,0.5 M0.5,0 L0.5,1"),
+				Stretch = Stretch.Fill,
+				Width = 8,
+				Height = 8,
+				HorizontalAlignment = HorizontalAlignment.Center,
+				VerticalAlignment = VerticalAlignment.Center,
+				Stroke = Resource("Bg3"),
+				StrokeThickness = 2,
+				IsHitTestVisible = false
+			});
+
+		return panel;
+	}
+
+	private object BuildTip(int id) {
+		if (m_palette is null) return id.ToString();
+
+		var tip = VoxelPaletteTip.Describe(id, m_palette);
+		var panel = new StackPanel { Spacing = 4 };
+		panel.Children.Add(new TextBlock { Text = tip.Title, FontWeight = FontWeight.SemiBold });
+		if (!tip.InUse) return panel;
+
+		panel.Children.Add(TipRow(tip.Albedo, tip.AlbedoText));
+		panel.Children.Add(TipRow(tip.Rms, tip.RmsText));
+		panel.Children.Add(new TextBlock { Text = tip.EmissiveText });
+		panel.Children.Add(new TextBlock { Text = tip.AlphaText });
+		return panel;
+	}
+
+	private static Control TipRow(Color dot, string text) {
+		var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+		row.Children.Add(new Ellipse {
+			Width = 10, Height = 10, VerticalAlignment = VerticalAlignment.Center, Fill = new SolidColorBrush(dot)
+		});
+		row.Children.Add(new TextBlock { Text = text });
+		return row;
+	}
+
+	private void RefreshCell(int id) {
+		if (m_grid is null || id < 1 || id > m_grid.Children.Count) return;
+		m_grid.Children[id - 1] = BuildCell(id);
 	}
 
 	private Control BuildPopup() {
 		var grid = new UniformGrid { Columns = Columns, Width = Columns * CellSize };
-		for (var id = 0; id < VoxelPaletteFile.Size; ++id) {
-			if (id == 0) {
-				// 0 is empty and never pickable
-				grid.Children.Add(new Border());
-				continue;
-			}
-			var chosen = id;
-			var cell = new Button {
-				Width = CellSize - 2,
-				Height = CellSize - 2,
-				Padding = new Thickness(0),
-				Margin = new Thickness(1),
-				CornerRadius = new CornerRadius(3),
-				BorderThickness = new Thickness(chosen == m_editor?.PaletteId ? 2 : 0),
-				BorderBrush = Brushes.White,
-				Background = new SolidColorBrush(ColorOf(chosen))
-			};
-			ToolTip.SetTip(cell, chosen.ToString());
-			cell.Click += (_, _) => {
-				if (m_editor is not null) m_editor.PaletteId = chosen;
-				m_flyout.Content = BuildPopup();
-			};
-			grid.Children.Add(cell);
-		}
+		m_grid = grid;
+
+		// 1 to 255 since 0 is empty
+		for (var id = 1; id < VoxelPaletteFile.Size; ++id) grid.Children.Add(BuildCell(id));
 
 		var properties = new StackPanel { Spacing = 8, Width = 320 };
 		var selected = m_editor?.PaletteId ?? 1;
-		properties.Children.Add(new TextBlock { Text = $"Palette ID {selected}", FontWeight = FontWeight.SemiBold });
+
+		var header = new DockPanel();
+		var title = new TextBlock {
+			Text = $"Palette ID {selected}", FontWeight = FontWeight.SemiBold, VerticalAlignment = VerticalAlignment.Center
+		};
+		header.Children.Add(title);
+		properties.Children.Add(header);
+
 		if (m_palette is null) {
 			properties.Children.Add(new TextBlock {
 				Text = "The shape uses the default palette. Set a Palette Override on it to edit the colours",
@@ -190,7 +288,30 @@ public sealed class VoxelPalettePicker : UserControl {
 				Foreground = Brushes.Gray
 			});
 		} else {
-			properties.DataContext = new PaletteEntryVM(m_palette.Entries[selected], QueueSave);
+			var entry = new PaletteEntryVM(m_palette, selected, QueueSave);
+			properties.DataContext = entry;
+
+			var clear = new Button {
+				Content = new LucideIcon { Kind = LucideIconKind.Trash2, Size = 16, StrokeWidth = 2.5 },
+				Background = Brushes.Transparent,
+				BorderThickness = new Thickness(0),
+				Padding = new Thickness(5),
+				CornerRadius = new CornerRadius(6),
+				Cursor = new Cursor(StandardCursorType.Hand),
+				VerticalAlignment = VerticalAlignment.Center
+			};
+			ToolTip.SetTip(clear, "Remove this entry from the palette");
+			clear.Bind(IsEnabledProperty, new Binding(nameof(PaletteEntryVM.InUse)));
+			clear.Click += (_, _) => {
+				m_palette.Entries[selected].Clear();
+				m_flyout.Content = BuildPopup();
+				QueueSave();
+			};
+			DockPanel.SetDock(clear, Avalonia.Controls.Dock.Right);
+			header.Children.Insert(0, clear);
+
+			properties.Children.Add(EmptyBanner());
+
 			var albedo = new Color3Box();
 			albedo.Bind(ColorBoxBase.RProperty, new Binding(nameof(PaletteEntryVM.AlbedoR)) { Mode = BindingMode.TwoWay });
 			albedo.Bind(ColorBoxBase.GProperty, new Binding(nameof(PaletteEntryVM.AlbedoG)) { Mode = BindingMode.TwoWay });
@@ -200,6 +321,7 @@ public sealed class VoxelPalettePicker : UserControl {
 			properties.Children.Add(Row("Metallic", Number(nameof(PaletteEntryVM.Metallic))));
 			properties.Children.Add(Row("Reflectivity", Number(nameof(PaletteEntryVM.Reflectivity))));
 			properties.Children.Add(Row("Emissive", Number(nameof(PaletteEntryVM.Emissive))));
+			properties.Children.Add(Row("Max emissive", Number(nameof(PaletteEntryVM.MaxEmissive), false)));
 			var transparent = new BoolBox();
 			transparent.Bind(BoolBox.ValueProperty, new Binding(nameof(PaletteEntryVM.Transparent)) { Mode = BindingMode.TwoWay });
 			properties.Children.Add(Row("Transparent", transparent));
@@ -222,8 +344,30 @@ public sealed class VoxelPalettePicker : UserControl {
 		return content;
 	}
 
-	private static DragFloatBox Number(string property) {
-		var box = new DragFloatBox { Minimum = 0, Maximum = 1 };
+	private static Control EmptyBanner() {
+		var banner = new Border {
+			Background = Resource("Orange"),
+			Padding = new Thickness(4),
+			CornerRadius = new CornerRadius(8),
+			Child = new StackPanel {
+				Orientation = Orientation.Horizontal,
+				Spacing = 4,
+				HorizontalAlignment = HorizontalAlignment.Center,
+				Children = {
+					new LucideIcon {
+						Kind = LucideIconKind.SquareDashedMousePointer, Size = 18, StrokeWidth = 2.5, Foreground = Resource("Bg1")
+					},
+					new TextBlock { Text = "This ID is empty", FontWeight = FontWeight.Bold, Foreground = Resource("Bg1") }
+				}
+			}
+		};
+		banner.Bind(IsVisibleProperty, new Binding(nameof(PaletteEntryVM.IsEmpty)));
+		return banner;
+	}
+
+	private static DragFloatBox Number(string property, bool unit = true) {
+		var box = new DragFloatBox { Minimum = 0 };
+		if (unit) box.Maximum = 1;
 		box.Bind(DragFloatBox.ValueProperty, new Binding(property) { Mode = BindingMode.TwoWay });
 		return box;
 	}
@@ -244,6 +388,7 @@ public sealed class VoxelPalettePicker : UserControl {
 		m_saveTimer.Stop();
 		m_saveTimer.Start();
 		Refresh();
+		RefreshCell(m_editor?.PaletteId ?? 1);
 	}
 
 	private void OnSaveTick(object? sender, EventArgs e) {

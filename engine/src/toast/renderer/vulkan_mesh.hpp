@@ -9,10 +9,12 @@
 #include "vulkan_common.hpp"
 #include "vulkan_resource_base.hpp"
 
+#include <array>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <toast/assets/core_types.hpp>
+#include <utility>
 
 namespace renderer {
 class VulkanCore;
@@ -136,7 +138,16 @@ public:
 
 	void record(vk::CommandBuffer cmd) override;
 
+	void recordAcquire(sync::BarrierBatch& batch) override;
+
 	auto resource() -> IVulkanResource* override { return mesh; }
+
+private:
+	/// Same order in record() and recordAcquire()
+	[[nodiscard]]
+	auto uploadedBuffers() const -> std::array<std::pair<vk::Buffer, vk::DeviceSize>, 3>;
+
+	bool m_released = false;
 };
 
 }

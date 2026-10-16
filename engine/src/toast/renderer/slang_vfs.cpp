@@ -156,7 +156,7 @@ auto SlangVfs::loadFile(const char* path, ISlangBlob** out_blob) -> SlangResult 
 }
 
 SlangVfs::Recorder::Recorder() {
-	TOAST_ASSERT(s_recorder == nullptr, "Render", "A SlangVfs::Recorder is already active; shader compiles must not overlap");
+	TOAST_ASSERT(s_recorder == nullptr, "Render", "A SlangVfs::Recorder is already active on this thread");
 	s_recorder = this;
 }
 

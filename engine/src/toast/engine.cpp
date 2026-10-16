@@ -126,6 +126,8 @@ struct EnginePimpl {
 
 	/// Hash of the thread that ran tick() for the last time
 	std::atomic<size_t> tick_thread {0};
+	/// Stands in for tick_thread until the first tick
+	size_t creator_thread = std::hash<std::thread::id> {}(std::this_thread::get_id());
 
 	std::mutex owners_mutex;
 	std::map<toast::UID, std::unique_ptr<INodeOwner>> owners;
@@ -402,6 +404,11 @@ void Engine::requireTickThread(std::string_view what) const {
 	::toast::assertOnTickThread(m->tick_thread, what);
 }
 
+auto Engine::onTickThread() const -> bool {
+	const size_t tick_thread = m->tick_thread.load();
+	return (tick_thread != 0 ? tick_thread : m->creator_thread) == std::hash<std::thread::id> {}(std::this_thread::get_id());
+}
+
 void Engine::tick() {
 	ZoneScoped;
 
@@ -555,9 +562,11 @@ auto Engine::shouldClose() -> bool {
 	return m->window ? m->window->shouldClose() : false;
 }
 
-auto Engine::shootVoxel(const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy, float min_radius)
-    -> bool {
-	return m->physics_simulator && m->physics_simulator->shootVoxel(origin, direction, max_distance, energy, min_radius);
+auto Engine::shootVoxel(
+    const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy_density, float fracture_radius
+) -> bool {
+	return m->physics_simulator &&
+	       m->physics_simulator->shootVoxel(origin, direction, max_distance, energy_density, fracture_radius);
 }
 
 void Engine::createSDLWindow(const char* w_name) {
@@ -1196,6 +1205,16 @@ void toast_reload_manifest() noexcept {
 
 void toast_reload_project_settings() noexcept {
 	toast::Engine::get()->reloadSettings();
+}
+
+auto toast_get_max_tick_rate() noexcept -> uint32_t {
+	return toast::ProjectSettings::maxTickRate();
+}
+
+void toast_set_show_debug_windows(int visible) noexcept {
+	if (auto* vk_renderer = renderer::VulkanRenderer::instance; vk_renderer != nullptr) {
+		vk_renderer->setDebugWindowsVisible(visible != 0);
+	}
 }
 
 void toast_set_window_state(int focused, int minimized) noexcept {

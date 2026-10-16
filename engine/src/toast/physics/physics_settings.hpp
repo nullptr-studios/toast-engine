@@ -32,28 +32,34 @@ struct Tunables {
 	uint32_t fragment_pool_headroom = 4096;
 	uint32_t min_fragment_voxels = 4;
 	uint32_t fragment_despawn_max_voxels = 16;
+	uint32_t large_debris_min_voxels = 16;
 	float fragment_despawn_settle_seconds = 3.0f;
 	float force_sleep_slack = 4.0f;
 	float fragment_sleep_scale = 3.0f;
 	int32_t max_fragment_extent_bricks = 1;
-	float fracture_shell_voxels = 2.0f;
+	float fracture_shell_voxels = 1.0f;
+	float fracture_depth_share = 0.5f;
+	float fracture_max_depth = 2.0f;
+	float fracture_max_overshoot = 2.0f;
+	float fracture_bond_cost = 1.0f;
+	uint32_t fracture_max_unglue_voxels = 4096;
+	float explosion_max_radius = 8.0f;
+	float explosion_falloff = 2.0f;
+	uint32_t impact_max_hardness = 1;
 	uint32_t min_bounds_per_job = 32;
 	uint32_t min_candidates_per_job = 2;
 	uint32_t min_manifolds_per_job = 4;
 	uint32_t min_shapes_per_query_job = 16;
 	uint32_t min_bodies_per_job = 64;
 	uint32_t min_wave_constraints_for_dispatch = 512;
-	/// Deliberately very high right now to disable splitting until box_voxel_max_estimated_voxels gives a real number
 	uint32_t box_voxel_split_min_voxels = 500000;
-	/// Same off-until-measured reasoning as box_voxel_split_min_voxels
 	uint32_t voxel_voxel_split_min_voxels = 250000;
 	uint32_t voxel_pair_split_regions = 8;
-	/// Bisection steps a sweep refines by once it finds a blocking contact a clear sweep never pays this
 	uint32_t sweep_refine_iterations = 6;
 	uint32_t position_iterations = 3;
-	/// Which body types a trigger reports, static bodies never count
-	bool trigger_check_dynamic = true;
-	bool trigger_check_kinematic = true;
+	float air_density = 1.225f;
+	glm::vec3 wind = {0.0f, 0.0f, 0.0f};
+	float wind_shelter_distance = 64.0f;
 
 	[[nodiscard]]
 	auto fixedDelta() const noexcept -> double {

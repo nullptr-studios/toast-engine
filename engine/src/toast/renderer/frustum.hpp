@@ -7,6 +7,7 @@
 #include <array>
 #include <glm/glm.hpp>
 #include <limits>
+#include <utility>
 
 namespace renderer {
 
@@ -17,9 +18,10 @@ struct Box {
 	glm::vec3 max {0.0f};
 };
 
-/// Inward normalized planes and with 0 to 1 clip depth near is row 2 alone
+/// Inward normalized planes ordered left right bottom top near far
+/// @p reversed_depth is depth::k_reversed_z for a scene camera and false for shadow views
 [[nodiscard]]
-inline auto extractFrustumPlanes(const glm::mat4& view_projection) -> FrustumPlanes {
+inline auto extractFrustumPlanes(const glm::mat4& view_projection, bool reversed_depth = false) -> FrustumPlanes {
 	const auto& m = view_projection;
 	// glm is column major
 	const glm::vec4 row0(m[0][0], m[1][0], m[2][0], m[3][0]);
@@ -28,6 +30,9 @@ inline auto extractFrustumPlanes(const glm::mat4& view_projection) -> FrustumPla
 	const glm::vec4 row3(m[0][3], m[1][3], m[2][3], m[3][3]);
 
 	FrustumPlanes planes {row3 + row0, row3 - row0, row3 + row1, row3 - row1, row2, row3 - row2};
+	if (reversed_depth) {
+		std::swap(planes[4], planes[5]);
+	}
 
 	for (auto& plane : planes) {
 		const float length = glm::length(glm::vec3(plane));

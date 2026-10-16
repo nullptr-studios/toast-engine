@@ -21,6 +21,18 @@
       "type": "number",
       "x-toast-type" : "float",
       "default" : 0.5
+    },
+    "rolling_friction": {
+      "type": "number",
+      "x-toast-type" : "float",
+      "default" : 0.01,
+      "minimum" : 0
+    },
+    "spin_friction": {
+      "type": "number",
+      "x-toast-type" : "float",
+      "default" : 0.005,
+      "minimum" : 0
     }
   }
 }

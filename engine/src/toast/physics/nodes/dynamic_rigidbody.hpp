@@ -40,6 +40,13 @@ public:
 	[[Reflect, ReadOnly]]
 	bool awake = true;
 
+	[[Reflect, Group("Drag"), Unit("1/s")]]
+	float linear_damping = 0.0f;
+	[[Reflect, Group("Drag"), Unit("1/s")]]
+	float angular_damping = 0.0f;
+	[[Reflect, Group("Drag")]]
+	float drag_scale = 1.0f;
+
 	// TODO:
 
 	[[Reflect, Group("Mass Distribution"), Unit("m"), ReadOnly]]
@@ -64,6 +71,9 @@ private:
 		descriptor.mass = mass;
 		descriptor.gravity_scale = gravity_scale;
 		descriptor.allow_sleep = allow_sleep;
+		descriptor.linear_damping = linear_damping;
+		descriptor.angular_damping = angular_damping;
+		descriptor.drag_scale = drag_scale;
 	}
 };
 

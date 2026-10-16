@@ -9,29 +9,27 @@
       "type": "number",
       "x-toast-type" : "float",
       "x-toast-unit" : "kg/m^3",
-      "default" : 1000.0,
+      "default" : 2000.0,
       "minimum" : 1,
       "maximum" : 65535
     },
     "toughness": {
       "type": "number",
       "x-toast-type" : "float",
-      "x-toast-unit" : "J",
-      "default" : 1000.0,
+      "x-toast-unit" : "kJ/m^3",
+      "default" : 100.0,
       "minimum" : 0
+    },
+    "hardness": {
+      "enum" : ["soft", "medium", "hard"],
+      "x-toast-type" : "enum",
+      "default" : "medium"
     },
     "structural_strength": {
       "type": "number",
       "x-toast-type" : "float",
       "x-toast-unit" : "Pa",
-      "default" : 1000.0,
-      "minimum" : 0
-    },
-    "shatter_radius": {
-      "type": "number",
-      "x-toast-type" : "float",
-      "x-toast-unit" : "m",
-      "default" : 0.5,
+      "default" : 1000000.0,
       "minimum" : 0
     },
     "destructible": {
