@@ -240,16 +240,17 @@ void World::spawn(UID prefab, Node& parent) {
 			return;
 		}
 
-		// Spawned instances need their own UIDs even if two copies of the same prefab are spawned concurrently
 		INodeOwner::InstantiateContext ctx;
 		ctx.resolver = [](toast::UID id) { return assets::load<assets::Prefab>(id); };
-		ctx.uid_seed = UID::make().data();
 		Box<Node> root = instance->instantiate(file, ctx);
 		if (not root.exists()) {
 			TOAST_ERROR("World", "Failed to instantiate prefab {} to spawn", prefab);
 			return;
 		}
 
+		// spawned instances need a unique UID within the parent namespace
+		// even if two copies of the same prefab are spawned concurrently
+		generateUid(*root);
 		instance->m_scheduler.runLifecycle(*root, TickFunctionList::init);
 		root->changeNodeState(NodeState::cached);
 
@@ -1405,11 +1406,11 @@ void WorldTestAccess::drainLoadQueue(World& world) {
 auto WorldTestAccess::spawnSync(
     World& world, const assets::Handle<assets::Prefab>& file, Node& parent, INodeOwner::InstantiateContext& ctx
 ) -> Box<Node> {
-	ctx.uid_seed = UID::make().data();
 	Box<Node> root = world.instantiate(file, ctx);
 	if (not root.exists()) {
 		return {};
 	}
+	World::generateUid(*root);
 	root->changeNodeState(NodeState::cached);
 	while (World::findNode(root->uid(), &parent).exists()) {
 		World::generateUid(*root);

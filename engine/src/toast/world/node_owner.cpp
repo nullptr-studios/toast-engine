@@ -311,24 +311,13 @@ auto INodeOwner::activeRenderCamera() noexcept -> Camera* {
 }
 
 namespace {
-auto chunkUid(const assets::Prefab::BasicNode& chunk, std::string_view field_name) -> uint64_t {
-	if (auto field = chunk.find(field_name)) {
+auto referenceUid(const assets::Prefab::BasicNode& chunk) -> uint64_t {
+	if (auto field = chunk.find("m_source_prefab")) {
 		try {
 			return field->as<toast::UID>().data();
 		} catch (const std::bad_any_cast& e) { TOAST_ERROR("World", "Bad cast at {}: {}", chunk.name, e.what()); }
 	}
 	return 0;
-}
-
-auto derivedUid(uint64_t seed, uint64_t file_uid) -> uint64_t {
-	if (seed == 0) {
-		return file_uid;
-	}
-	uint64_t mixed = seed ^ (file_uid * 0x9E3779B97F4A7C15ull);
-	mixed = (mixed ^ (mixed >> 30)) * 0xBF58476D1CE4E5B9ull;
-	mixed = (mixed ^ (mixed >> 27)) * 0x94D049BB133111EBull;
-	mixed ^= mixed >> 31;
-	return mixed != 0 ? mixed : 1;
 }
 
 auto snakeToNormalCase(const std::string& text) -> std::string {
@@ -398,7 +387,6 @@ auto INodeOwner::requestRuntimeSpawn(Node& parent, UID uid) -> Box<Node> {
 	// Allocation
 	INodeOwner::InstantiateContext ctx;
 	ctx.resolver = [](UID id) { return assets::load<assets::Prefab>(id); };
-	ctx.uid_seed = UID::make().data();
 	seedPrefabContext(ctx, &parent);
 	assets::Prefab wrapper;
 	assets::Prefab::BasicNode reference = file->nodes.empty() ? assets::Prefab::BasicNode {} : file->nodes.front();
@@ -416,6 +404,7 @@ auto INodeOwner::requestRuntimeSpawn(Node& parent, UID uid) -> Box<Node> {
 	}
 
 	// Data structure generation
+	root->m_uid.generate();
 	{
 		const TreeWriteLock lock(this);
 		root->m_parent = parent;
@@ -592,8 +581,7 @@ void INodeOwner::applyLuaOverrides(Node& node, const assets::Prefab::BasicNode& 
 	}
 }
 
-auto INodeOwner::buildTree(std::vector<Box<Node>>&& nodes, const assets::Handle<assets::Prefab>& file, uint64_t uid_seed)
-    -> Box<Node> {
+auto INodeOwner::buildTree(std::vector<Box<Node>>&& nodes, const assets::Handle<assets::Prefab>& file) -> Box<Node> {
 	ZoneScoped;
 
 	std::unordered_map<uint64_t, Box<Node>> uid_map;
@@ -659,14 +647,6 @@ auto INodeOwner::buildTree(std::vector<Box<Node>>&& nodes, const assets::Handle<
 			}
 #endif
 			root = node;
-		}
-	}
-
-	// uid_map keeps the file UIDs the file refers to while the nodes take theirs before any signal records a target
-	if (uid_seed != 0) {
-		const Node* root_node = root.exists() ? &*root : nullptr;
-		for (auto& node : nodes) {
-			node->m_uid = UID(&*node == root_node ? uid_seed : derivedUid(uid_seed, node->m_uid.data()));
 		}
 	}
 
@@ -835,7 +815,6 @@ auto INodeOwner::instantiate(const assets::Handle<assets::Prefab>& file, Instant
 	}
 
 	ctx.asset_chain.push_back(file.uid().data());
-	const uint64_t uid_seed = ctx.uid_seed;
 
 	// Every node of one prefab instance runs its scripts on the same interpreter. The file being instantiated is that
 	// instance, the instances nested directly in it get one of their own, and the ones nested deeper share their parent's
@@ -868,7 +847,7 @@ auto INodeOwner::instantiate(const assets::Handle<assets::Prefab>& file, Instant
 
 	for (size_t i = 0; i < file->nodes.size(); ++i) {
 		const assets::Prefab::BasicNode* chunk = &file->nodes[i];
-		uint64_t ref_uid = chunkUid(*chunk, "m_source_prefab");
+		uint64_t ref_uid = referenceUid(*chunk);
 
 		if (ref_uid == 0) {
 			if (build_inline) {
@@ -903,18 +882,13 @@ auto INodeOwner::instantiate(const assets::Handle<assets::Prefab>& file, Instant
 			continue;
 		}
 
-		// The instance seeds its interior with the UID buildTree gives its root below
-		const bool file_root = !chunk->find("m_parent").has_value();
-		const uint64_t chunk_uid = chunkUid(*chunk, "m_uid");
 		const bool outer_nested = ctx.nested;
 		const uint64_t outer_group = ctx.script_group;
 		ctx.nested = true;
 		ctx.script_group = top_level ? scripting::LuaState::newGroup() : group;
-		ctx.uid_seed = file_root && uid_seed != 0 ? uid_seed : derivedUid(uid_seed, chunk_uid);
 		Box<Node> sub_root = instantiate(sub, ctx);
 		ctx.nested = outer_nested;
 		ctx.script_group = outer_group;
-		ctx.uid_seed = uid_seed;
 		if (not sub_root.exists()) {
 			slots[i] = make_unresolved(*chunk, ref_uid);
 			continue;
@@ -937,7 +911,7 @@ auto INodeOwner::instantiate(const assets::Handle<assets::Prefab>& file, Instant
 
 	buildLeaves(file, group, leaf_slots, slots);
 
-	Box<Node> root = buildTree(std::move(slots), file, uid_seed);
+	Box<Node> root = buildTree(std::move(slots), file);
 
 	if (root.exists() && root->m_source_prefab.uid().data() == 0 && file.uid().data() != 0) {
 		root->m_source_prefab = file;

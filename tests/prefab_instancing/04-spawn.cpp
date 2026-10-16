@@ -67,29 +67,27 @@ TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/04-spawn", test_prefab_
 		Box<Node> a_inst = WorldTestAccess::childrenOf(*root)[0];
 		Box<Node> b_inst = WorldTestAccess::childrenOf(*a_inst)[0];
 		assert(a_inst->uid().data() == uidOf("placeAinS00"));
-		// Interior to the A instance so it derives its UID from the A placement
-		const UID b_uid = b_inst->uid();
-		assert(b_uid.data() != uidOf("placeBinA00"));
+		assert(b_inst->uid().data() == uidOf("placeBinA00"));
 		assert(a_inst->isInstanceRoot() && b_inst->isInstanceRoot());
 
 		// World scope sees the top-level instance but NOT the interior of a nested one.
 		assert(WorldTestAccess::findNode(UID(uidOf("placeAinS00"))).rid() == a_inst.rid());
-		assert(not WorldTestAccess::findNode(b_uid).exists());
+		assert(not WorldTestAccess::findNode(UID(uidOf("placeBinA00"))).exists());
 
 		// Scoped to the instance root, the interior instance is reachable (one boundary crossed).
-		assert(WorldTestAccess::findNode(b_uid, &*a_inst).rid() == b_inst.rid());
+		assert(WorldTestAccess::findNode(UID(uidOf("placeBinA00")), &*a_inst).rid() == b_inst.rid());
 
 		// The public Node::find mirrors the same opacity: from the scene root the top instance is
 		// visible but the nested interior is not, while scoping to the instance root reveals it.
 		assert(root->find(UID(uidOf("placeAinS00"))).rid() == a_inst.rid());
-		assert(not root->find(b_uid).exists());
-		assert(a_inst->find(b_uid).rid() == b_inst.rid());
+		assert(not root->find(UID(uidOf("placeBinA00"))).exists());
+		assert(a_inst->find(UID(uidOf("placeBinA00"))).rid() == b_inst.rid());
 
 		// find(UID) scopes to the local root, not the caller's subtree
 		// an interior node can find its own instance root even though it is not a descendant
 		Box<Node> b_child = WorldTestAccess::childrenOf(*b_inst)[0];
-		assert(b_child->uid().data() != uidOf("bCHILDnode0"));
-		assert(b_child->find(b_uid).rid() == b_inst.rid());
+		assert(b_child->uid().data() == uidOf("bCHILDnode0"));
+		assert(b_child->find(UID(uidOf("placeBinA00"))).rid() == b_inst.rid());
 
 		// uidPath / findNode(path) are mutual inverses across two boundaries.
 		std::string path = WorldTestAccess::uidPath(*b_inst);
@@ -123,9 +121,6 @@ TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/04-spawn", test_prefab_
 		assert(first->uid().data() != second->uid().data());
 		assert(first->isInstanceRoot() && second->isInstanceRoot());
 		assert(first->sourcePrefab().uid().data() == uidOf("AssetP00000"));
-		assert(
-		    WorldTestAccess::childrenOf(*first)[0]->uid().data() != WorldTestAccess::childrenOf(*second)[0]->uid().data()
-		);
 
 		// Give both spawned roots a tick function so the scheduler includes them,
 		// then recompute so the new stages are reflected in the schedule.
