@@ -16,6 +16,7 @@
 #include "logger.hpp"
 #include "physics/physics_settings.hpp"
 #include "physics/simulator.hpp"
+#include "profiler_sections.hpp"
 #include "project_settings.hpp"
 #include "reflect/reflect.hpp"
 #include "renderer/passes/bloom_pass.hpp"
@@ -129,6 +130,7 @@ struct EnginePimpl {
 	std::mutex owners_mutex;
 	std::map<toast::UID, std::unique_ptr<INodeOwner>> owners;
 	toast::UID active_workspace {0};
+	ProfilerSections profiler_sections;
 	event::SetShowOthers show_others;
 	bool show_others_warned = false;
 };
@@ -365,6 +367,28 @@ static auto gameIsAdvancing(EnginePimpl& pimpl) -> bool {
 	});
 }
 
+static void updateProfilerSections(EnginePimpl& pimpl) {
+	ProfilerSections::Mode mode = ProfilerSections::Mode::none;
+	std::string world;
+
+	std::scoped_lock lock(pimpl.owners_mutex);
+	for (const auto& [handle, owner] : pimpl.owners) {
+		if (auto* play = dynamic_cast<PlayWorkspace*>(owner.get())) {
+			const bool active = handle.data() == pimpl.active_workspace.data();
+			if (mode == ProfilerSections::Mode::play || mode == ProfilerSections::Mode::simulate) {
+				if (!active) {
+					continue;
+				}
+			}
+			mode = play->usesGameCamera() ? ProfilerSections::Mode::play : ProfilerSections::Mode::simulate;
+			world = play->name();
+		} else if (mode == ProfilerSections::Mode::none && dynamic_cast<Workspace*>(owner.get())) {
+			mode = ProfilerSections::Mode::editor;
+		}
+	}
+	pimpl.profiler_sections.update(mode, world);
+}
+
 static void assertOnTickThread([[maybe_unused]] const std::atomic<size_t>& tick_thread, [[maybe_unused]] std::string_view what) {
 	TOAST_ASSERT(
 	    tick_thread.load() == 0 || tick_thread.load() == std::hash<std::thread::id> {}(std::this_thread::get_id()),
@@ -521,6 +545,8 @@ void Engine::tick() {
 	// Nothing is running scripts here so runtimes that were replaced while executing can go
 	scripting::ScriptRuntime::drainRetired();
 	INodeOwner::reapOrphanedControlBoxes();
+
+	updateProfilerSections(*m);
 
 	FrameMark;
 }
