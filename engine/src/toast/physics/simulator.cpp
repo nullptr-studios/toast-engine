@@ -656,6 +656,7 @@ void Simulator::tick() {
 	PhaseScope step_phase {*this, SimulationPhase::idle, SimulationPhase::mutation};
 	runPendingRequests();
 	m_profile = {};
+	++m_tick_index;
 
 	const auto tick_start = std::chrono::steady_clock::now();
 	const auto elapsed_ms = [](std::chrono::steady_clock::time_point from, std::chrono::steady_clock::time_point to) {
@@ -663,6 +664,7 @@ void Simulator::tick() {
 	};
 
 	const float dt = static_cast<float>(Accumulator::fixedDelta());
+
 	reapFragments();
 	syncEnabledState();
 	applyDamageCommands();
@@ -1395,7 +1397,24 @@ auto Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedCompone
 	}
 
 	if (const Body* chunk = push != nullptr ? tryGetBody(frag_body) : nullptr) {
-		pushBody(frag_body, push->point.value_or(chunk->worldCenterOfMass()), push->direction, push->speed, push->max_impulse);
+		constexpr uint32_t k_push_min_voxels = 2;
+		const float mass_share =
+		    static_cast<float>(std::min(component.voxel_count, k_push_min_voxels)) / static_cast<float>(k_push_min_voxels);
+
+		const glm::vec3 linear_before = chunk->linear_velocity;
+		const glm::vec3 angular_before = chunk->angular_velocity;
+		pushBody(
+		    frag_body, push->point.value_or(chunk->worldCenterOfMass()), push->direction, push->speed, push->max_impulse * mass_share
+		);
+
+		if (Body* pushed = tryGetBody(frag_body); pushed != nullptr && pushed->extent_radius > 1.0e-3f) {
+			const glm::vec3 spin_gain = pushed->angular_velocity - angular_before;
+			const float spin = glm::length(spin_gain);
+			const float spin_limit = glm::length(pushed->linear_velocity - linear_before) / pushed->extent_radius;
+			if (spin > spin_limit) {
+				pushed->angular_velocity = angular_before + (spin_gain * (spin_limit / spin));
+			}
+		}
 	}
 
 	return true;
@@ -4019,6 +4038,8 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 	{
 		std::scoped_lock voxel_lock {voxelDataMutex()};
 
+		const uint64_t seed = c.seed != 0 ? c.seed : fractureSeed(c.source, c.shape, local_center, m_tick_index);
+
 		crater = planCrater(
 		    volume,
 		    data->palette,
@@ -4028,7 +4049,8 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 		      .direction = local_direction,
 		      .radius = c.fracture_radius,
 		      .energy_density = c.energy_density,
-		      .max_hardness = c.max_hardness
+		      .max_hardness = c.max_hardness,
+		      .seed = seed,
 		    }
 		);
 		if (not crater.breaks) {
@@ -4036,15 +4058,12 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 		}
 
 		const float shell = glm::max(c.shell_voxels, 0.0f) * voxel::k_voxel_size;
-		const float inner_radius = shell > 0.0f ? glm::max(crater.radius - shell, 0.0f) : 0.0f;
-		const float outer_squared = crater.radius * crater.radius;
-		const float inner_squared = inner_radius * inner_radius;
+		const float reach = craterMaxRadius(crater);
+		const float reach_squared = reach * reach;
 
 		const glm::ivec3 voxel_dims = glm::ivec3(volume.voxelDims());
-		glm::ivec3 first =
-		    glm::ivec3(glm::floor((glm::min(crater.start, crater.end) - glm::vec3(crater.radius)) / voxel::k_voxel_size));
-		glm::ivec3 last =
-		    glm::ivec3(glm::ceil((glm::max(crater.start, crater.end) + glm::vec3(crater.radius)) / voxel::k_voxel_size)) - 1;
+		glm::ivec3 first = glm::ivec3(glm::floor((glm::min(crater.start, crater.end) - glm::vec3(reach)) / voxel::k_voxel_size));
+		glm::ivec3 last = glm::ivec3(glm::ceil((glm::max(crater.start, crater.end) + glm::vec3(reach)) / voxel::k_voxel_size)) - 1;
 		first = glm::clamp(first, glm::ivec3(0), voxel_dims - 1);
 		last = glm::clamp(last, glm::ivec3(0), voxel_dims - 1);
 		if (first.x > last.x || first.y > last.y || first.z > last.z) {
@@ -4055,6 +4074,36 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 		const glm::ivec3 first_brick = first / brick_dim;
 		const glm::ivec3 last_brick = last / brick_dim;
 
+		struct Doomed {
+			// we 100% need to remove this voxels
+			glm::ivec3 voxel;
+			glm::ivec3 brick;
+			uint16_t density;
+		};
+
+		std::vector<Doomed> doomed;
+
+		const float seal_floor = glm::max(craterMinRadius(crater) - voxel::k_voxel_size, 0.0f);
+		const float seal_floor_squared = seal_floor * seal_floor;
+		const std::array<glm::ivec3, 6> k_face_offsets {
+		  glm::ivec3 { 1,  0,  0},
+		  glm::ivec3 {-1,  0,  0},
+		  glm::ivec3 { 0,  1,  0},
+		  glm::ivec3 { 0, -1,  0},
+		  glm::ivec3 { 0,  0,  1},
+		  glm::ivec3 { 0,  0, -1},
+		};
+		const auto touches_outside = [&](const glm::ivec3& v) {
+			for (const glm::ivec3& offset : k_face_offsets) {
+				const glm::vec3 center = (glm::vec3 {v + offset} + 0.5f) * voxel::k_voxel_size;
+				const float radius = craterRadiusAt(crater, center);
+				if (pointSegmentDistanceSquared(center, crater.start, crater.end) > radius * radius) {
+					return true;
+				}
+			}
+			return false;
+		};
+
 		for (int32_t bz = first_brick.z; bz <= last_brick.z; ++bz) {
 			for (int32_t by = first_brick.y; by <= last_brick.y; ++by) {
 				for (int32_t bx = first_brick.x; bx <= last_brick.x; ++bx) {
@@ -4063,7 +4112,6 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 						continue;
 					}
 
-					bool brick_dirty = false;
 					const glm::ivec3 brick_first = glm::max(first, brick * brick_dim);
 					const glm::ivec3 brick_last = glm::min(last, brick * brick_dim + (brick_dim - 1));
 					for (int32_t z = brick_first.z; z <= brick_last.z; ++z) {
@@ -4078,11 +4126,20 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 
 								const glm::vec3 voxel_center = (glm::vec3 {v} + 0.5f) * voxel::k_voxel_size;
 								const float distance_squared = pointSegmentDistanceSquared(voxel_center, crater.start, crater.end);
-								if (distance_squared > outer_squared || distance_squared < inner_squared) {
+								// cheap reject before paying for 8 noise taps
+								if (distance_squared > reach_squared) {
 									continue;
 								}
-								if (not reachesThroughMaterial(
-								        volume, closestPointOnSegment(voxel_center, crater.start, crater.end), voxel_center
+								const float outer = craterRadiusAt(crater, voxel_center);
+								const float inner = shell > 0.0f ? glm::max(outer - shell, 0.0f) : 0.0f;
+								if (distance_squared > outer * outer) {
+									continue;
+								}
+								if (distance_squared < inner * inner && not(distance_squared >= seal_floor_squared && touches_outside(v))) {
+									continue;
+								}
+								if (not damageReaches(
+								        crater.reachable, volume, v, closestPointOnSegment(voxel_center, crater.start, crater.end), voxel_center
 								    )) {
 									continue;
 								}
@@ -4093,23 +4150,26 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 									continue;
 								}
 
-								voxel::Volume::VoxelWrite write = volume.setVoxel(v, voxel::k_empty_palette_index);
-								if (write.changed) {
-									data->moments.remove(v.x, v.y, v.z, material.density);
-									data->solid_voxel_count -= data->solid_voxel_count > 0 ? 1u : 0u;
-									brick_dirty = true;
-									data->connectivity_dirty = true;
-									++removed;
-									removed_sum += glm::vec3(v);
-								}
+								doomed.push_back({.voxel = v, .brick = brick, .density = material.density});
 							}
 						}
 					}
-
-					if (brick_dirty) {
-						dirty_bricks.push_back(brick);
-					}
 				}
+			}
+		}
+
+		for (const Doomed& d : doomed) {
+			const voxel::Volume::VoxelWrite write = volume.setVoxel(d.voxel, voxel::k_empty_palette_index);
+			if (not write.changed) {
+				continue;
+			}
+			data->moments.remove(d.voxel.x, d.voxel.y, d.voxel.z, d.density);
+			data->solid_voxel_count -= data->solid_voxel_count > 0 ? 1u : 0u;
+			data->connectivity_dirty = true;
+			++removed;
+			removed_sum += glm::vec3(d.voxel);
+			if (dirty_bricks.empty() || dirty_bricks.back() != d.brick) {
+				dirty_bricks.push_back(d.brick);
 			}
 		}
 
@@ -4175,7 +4235,7 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 	unlockSleep(shape->owner);
 
 	// crater in world space
-	const float reach = crater.radius + glm::length(crater.end - crater.start);
+	const float reach = craterMaxRadius(crater) + glm::length(crater.end - crater.start);
 	const AABB crater_bounds {
 	  .min = c.world_center - glm::vec3(reach),
 	  .max = c.world_center + glm::vec3(reach),

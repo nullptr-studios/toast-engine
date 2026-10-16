@@ -670,7 +670,6 @@ private:
 	NarrowPhase m_narrow_phase;
 	std::vector<Manifold> m_manifolds;
 	std::vector<CachedManifold> m_cached_manifolds;
-	/// mutable so const query methods (overlapCapsule/sweepCapsule) can still count how often they run
 	mutable PhysicsStepProfile m_profile;
 	PhysicsStepProfile m_published_profile;
 
@@ -683,8 +682,8 @@ private:
 	std::vector<DebugDirtyBrick> m_debug_dirty_bricks;
 
 	uint64_t m_next_fragment_sequence = 1;
+	uint64_t m_tick_index = 0;
 	std::vector<FragmentRecord> m_fragments;
-	/// body slot -> index in m_fragments rebuilt whenever an erase shifts indices
 	std::unordered_map<uint32_t, size_t> m_fragment_index;
 	std::vector<PendingFragments> m_pending_fragments;
 	std::vector<BodyID> m_doomed_fragments;

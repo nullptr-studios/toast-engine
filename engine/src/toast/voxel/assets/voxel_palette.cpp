@@ -56,6 +56,7 @@ auto VoxelPalette::materialLibrary() const -> const voxel::MaterialLibrary& {
 				out.density = static_cast<uint16_t>(std::lround(density));
 				out.toughness = d.toughness();
 				out.hardness = d.hardness();
+				out.fracture_pattern = d.fracturePatterh();
 				out.structural_strength = d.structuralStrength();
 				out.burn_rate = d.burnRate();
 				if (not d.destructible()) {

@@ -29,6 +29,7 @@ public class DestructionMaterialAsset : BaseAsset {
 			$"density = 2000.0\n" +
 			$"toughness = 100.0\n" +
 			$"hardness = \"medium\"\n" +
+			$"fracture_pattern = \"brittle\"\n" +
 			$"structural_strength = 1000000.0\n" +
 			$"destructible = true\n" +
 			$"flammable = false\n" +

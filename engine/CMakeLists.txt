@@ -61,7 +61,8 @@ endif ()
 
 # CONFIGURE_DEPENDS since run_codegen() regenerates engine/generated and a stale glob drops the .pb.cc files
 file(GLOB_RECURSE SOURCE CONFIGURE_DEPENDS "src/*.cpp" "generated/*.cpp" "generated/*.cc")
-add_library(toast_engine SHARED ${SOURCE})
+add_library(toast_engine SHARED ${SOURCE}
+        src/toast/physics/fracture_pattern.hpp)
 
 file(GLOB_RECURSE TOAST_REFLECTED_HEADERS CONFIGURE_DEPENDS "src/toast/*.hpp" "src/toast/*.h")
 file(GLOB_RECURSE TOAST_REFLECTION_GENERATOR_SOURCES CONFIGURE_DEPENDS

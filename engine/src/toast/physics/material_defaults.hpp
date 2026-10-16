@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "fracture_pattern.hpp"
 #include "hardness.hpp"
 
 namespace physics::material_defaults {
@@ -23,6 +24,7 @@ inline constexpr float k_spin_friction = 0.005f;
 inline constexpr float k_density = 2000.0f;
 inline constexpr float k_toughness = 100.0f;
 inline constexpr Hardness k_hardness = Hardness::medium;
+inline constexpr FracturePattern k_fracture_pattern = FracturePattern::brittle;
 
 /// weak bricks
 inline constexpr float k_structural_strength = 1.0e6f;
