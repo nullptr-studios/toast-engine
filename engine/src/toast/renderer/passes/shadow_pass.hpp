@@ -152,7 +152,7 @@ private:
 		FrameResources ubo;
 	};
 
-	/// Static voxel casters per map layout rendered only when they change and copied under the moving casters of a slot
+	/// Resting voxel casters copied under the moving casters of each slot
 	struct StaticMaps {
 		ShadowMap cascades;
 		ShadowMap punctual;

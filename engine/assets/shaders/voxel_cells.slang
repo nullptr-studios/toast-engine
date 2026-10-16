@@ -3,7 +3,7 @@
 //   write     each surviving cell stores itself at its list offset plus slot
 //   mesh      one group per near cell turns the exposed faces of its bricks into greedy quads
 //   late      one thread per retest cell against the new pyramid then the late near cells mesh
-// Early phases test the previous pyramid with the previous camera and transforms so a wrong guess only costs a late test
+// Early phases test the previous pyramid with the previous camera and transforms
 import voxel_dda;
 import depth_convention;
 
@@ -90,7 +90,6 @@ float worldToVoxelScale(float4x4 worldToVoxel)
                length(mul(worldToVoxel, float4(0.0, 0.0, 1.0, 0.0)).xyz));
 }
 
-/// True when the box lies behind the farthest depth the pyramid holds over its screen rect
 bool occludedByHiz(float4x4 voxelToClip, float3 boxMin, float3 boxMax)
 {
     const float2 size = float2(float(gCull.hizWidth), float(gCull.hizHeight));
@@ -328,7 +327,6 @@ void allocateLists()
     gCellArgsOut[kLateQuadDrawWord + 3u] = 0u;
 }
 
-/// Moves a retest cell into the late list when the pyramid of this frame does not hide it
 void retestCell(uint index)
 {
     // The early mesh pass is done and the late one has not started so the quad count is where late quads begin

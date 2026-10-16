@@ -431,7 +431,7 @@ static const uint kQuadCorners[6] = { 0, 1, 2, 0, 2, 3 };
 static const float kQuadInset = 1.0 / 32.0;
 static const uint kQuadCornersFlipped[6] = { 0, 2, 1, 0, 3, 2 };
 
-/// The mirrored or u cross v sense of a quad that decides which corner order faces out
+/// Whether the corner order must flip to face out
 bool quadFlipped(VoxelInstance instance, uint packedQuad)
 {
     const uint direction = packedQuad & 7u;

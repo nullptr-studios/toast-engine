@@ -114,14 +114,13 @@ public:
 	[[nodiscard]]
 	auto localizedImage(std::string_view id) const -> std::string;
 
-	/// RmlUi is not thread safe and World::loadNode and World::spawn run init() on a std::async worker, so a panel that
-	/// comes up off the engine tick thread defers its RmlUi setup to runDeferredSetup() from its begin() or the next tick()
+	/// For panels initialized on a World::loadNode or World::spawn worker since RmlUi is not thread safe
 	void deferSetup(toast::Node* owner, std::function<void()> setup);
 	/// Runs the setup deferred for @p owner when called on the tick thread
 	void runDeferredSetup(toast::Node* owner);
 	void cancelDeferredSetup(toast::Node* owner);
 
-	/// True where RmlUi may be used, the engine tick thread
+	/// The engine tick thread where RmlUi may be used
 	[[nodiscard]]
 	static auto onUIThread() -> bool;
 

@@ -1,6 +1,5 @@
 // Task stage of the near cell mesh shader backend
-// kTaskGroupsPerCell groups per near cell and one thread per brick greedy count the camera facing slices of every brick so
-// each mesh group gets a full window of kMeshletQuads quads across bricks
+// One thread per brick counts the quads of its camera facing slices so every mesh group gets kMeshletQuads of them
 import voxel;
 import voxel_dda;
 import voxel_mesh_common;

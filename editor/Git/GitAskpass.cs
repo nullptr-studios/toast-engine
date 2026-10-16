@@ -12,8 +12,7 @@ using Avalonia.Threading;
 namespace editor.Git;
 
 /// <summary>
-/// Answers git and ssh credential prompts with an editor modal. The editor executable doubles as the askpass
-/// program and forwards each prompt to the running editor over a per session named pipe
+/// Editor modal for git and ssh prompts with the editor executable as the askpass program over a named pipe
 /// </summary>
 public static class GitAskpass {
 	private const string k_pipeVariable = "TOAST_ASKPASS_PIPE";
@@ -49,7 +48,7 @@ public static class GitAskpass {
 	public static bool IsHelperInvocation => Environment.GetEnvironmentVariable(k_pipeVariable) is { Length: > 0 };
 
 	/// <summary>
-	/// Wires askpass into a git process and returns the run id to hand back to EndRun, null when unavailable
+	/// The run id for EndRun or null when askpass is unavailable
 	/// </summary>
 	public static string? BeginRun(ProcessStartInfo psi, CancellationTokenSource timeout, TimeSpan duration) {
 		if (s_helper.Value is not { } helper) return null;
@@ -79,8 +78,7 @@ public static class GitAskpass {
 	}
 
 	/// <summary>
-	/// Lets prompts the user cancelled show again. Called by user initiated operations so background refreshes
-	/// never nag after a cancel
+	/// User initiated operations only so background refreshes never nag after a cancel
 	/// </summary>
 	public static void AllowDeclinedPrompts() {
 		lock (s_lock) s_declined.Clear();
@@ -114,8 +112,7 @@ public static class GitAskpass {
 		}
 	}
 
-	// ssh retries a rejected passphrase from the same process. MSYS ssh forks before launching askpass so the
-	// fork sits between us and the ssh that owns the connection
+	// MSYS ssh forks before launching askpass so the ssh owning the connection is one process further up
 	private static int FindSshProcess() {
 		try {
 			var tree = OperatingSystem.IsWindows() ? WindowsProcessTree() : ProcProcessTree();
@@ -280,8 +277,7 @@ public static class GitAskpass {
 				run.Asked[key] = asked + 1;
 			}
 
-			// The same ssh process asking again means the previous answer was rejected while one git call
-			// may open several ssh connections that each ask once
+			// Per ssh process since one git call may open several connections that each ask once
 			var rejected = asked > 0;
 			if (rejected) s_answers.Remove(prompt);
 			else if (s_answers.TryGetValue(prompt, out var cached)) return cached;

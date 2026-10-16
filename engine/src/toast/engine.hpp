@@ -58,7 +58,7 @@ public:
 	void destroyWorkspace(UID handle);
 
 	void requireTickThread(std::string_view what) const;
-	/// True on the thread that ticks the engine, or before the first tick on the one that created it
+	/// Before the first tick the thread that created the engine counts
 	[[nodiscard]]
 	auto onTickThread() const -> bool;
 

@@ -16,7 +16,7 @@
 
 namespace renderer::spirv {
 
-enum class ExecutionModel : uint32_t {
+enum class ExecutionModel : uint16_t {
 	vertex = 0,
 	fragment = 4,
 	compute = 5,

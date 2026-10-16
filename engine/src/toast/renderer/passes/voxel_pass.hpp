@@ -56,8 +56,7 @@ public:
 	/// Inside a G-buffer scope that loads the early draws
 	void recordLate(vk::CommandBuffer cmd, uint32_t frame_index);
 
-	/// The renderer then opens a depth only scope for recordQuadDepth() ahead of each G-buffer scope while the mesh shader
-	/// path draws once with depth writes
+	/// A depth only scope for recordQuadDepth() precedes each G-buffer scope except on the mesh shader path
 	[[nodiscard]]
 	auto nearQuadDepthPass() const -> bool {
 		return m_near_voxels > 0.0f && !m_mesh_shading;

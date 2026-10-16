@@ -55,7 +55,7 @@ private:
 	void onEnable();
 	void onDisable();
 
-	/// Fonts, context and document, only on the UI thread since RmlUi is not thread safe
+	/// UI thread only since RmlUi is not thread safe
 	void setup();
 	void loadDocument();
 	void unloadDocument();

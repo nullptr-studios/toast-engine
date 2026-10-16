@@ -50,7 +50,6 @@ int3 directionStep(uint direction)
 }
 
 /// Exposed faces of one brick side in the occupancy layout with bit x of byte y & 3 of word z * 2 + (y >> 2)
-/// Matches exposedRows slice by slice at a few operations per word
 void exposedFaces(uint occupancy[16], uint neighbour[16], uint direction, out uint faces[16])
 {
     for (uint word = 0u; word < 16u; ++word)

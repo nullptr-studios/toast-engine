@@ -548,9 +548,11 @@ auto VoxelPass::prepare(uint32_t frame_index) -> bool {
 			if (!wanted) {
 				m_occlusion_mode = OcclusionMode::engaged;
 				m_occlusion_low_frames = 0;
-			} else if (m_occlusion_mode == OcclusionMode::idle && m_occlusion_idle_frames-- == 0) {
-				m_occlusion_mode = OcclusionMode::engaged;
-				m_occlusion_low_frames = 0;
+			} else {
+				if (m_occlusion_mode == OcclusionMode::idle && m_occlusion_idle_frames-- == 0) {
+					m_occlusion_mode = OcclusionMode::engaged;
+					m_occlusion_low_frames = 0;
+				}
 			}
 
 			// Late survivors go after every other list and are at most the retest cells
