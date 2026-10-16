@@ -711,6 +711,22 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 			    "boundaries, since the editor never presents"
 			);
 		}
+
+#if defined(_WIN32)
+		const std::array<const char*, 2> sharing_extensions {"VK_KHR_external_memory_win32", "VK_KHR_win32_keyed_mutex"};
+#else
+		const std::array<const char*, 2> sharing_extensions {"VK_KHR_external_memory_fd", "VK_KHR_external_semaphore_fd"};
+#endif
+		m_texture_sharing_supported = std::ranges::all_of(sharing_extensions, [&available](std::string_view name) {
+			return std::ranges::any_of(available, [name](const vk::ExtensionProperties& ext) {
+				return std::string_view(ext.extensionName.data()) == name;
+			});
+		});
+		if (m_texture_sharing_supported) {
+			device_extensions.insert(device_extensions.end(), sharing_extensions.begin(), sharing_extensions.end());
+		} else {
+			TOAST_INFO("Render", "Texture sharing extensions unsupported; the editor viewport reads frames back on the CPU");
+		}
 	}
 
 	{

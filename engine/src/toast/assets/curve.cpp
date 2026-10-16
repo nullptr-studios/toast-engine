@@ -1,6 +1,7 @@
 #include "curve.hpp"
 
 #include <algorithm>
+#include <array>
 #include <sstream>
 #include <stdexcept>
 #include <string_view>
@@ -10,6 +11,8 @@
 namespace assets {
 
 namespace {
+
+constexpr std::array<std::string_view, 3> k_channel_names {"x", "y", "z"};
 
 auto splineTypeToString(SplineType t) -> std::string_view {
 	switch (t) {
@@ -35,105 +38,167 @@ auto splineTypeFromString(std::string_view s) -> SplineType {
 }
 
 auto dimToString(CurveDimension d) -> std::string_view {
-	return d == CurveDimension::d2 ? "2d" : "3d";
+	switch (d) {
+		case CurveDimension::d2: return "2d";
+		case CurveDimension::d3: return "3d";
+		default: return "1d";
+	}
 }
 
 struct ParsedCurve {
-	std::vector<float> points;
-	CurveDimension dim = CurveDimension::d2;
+	std::vector<Curve::Points> channels;
 	SplineType type = SplineType::linear;
 	float t_scale = 1.0f;
 };
 
-auto parseCurve(const toml::table& tbl) -> ParsedCurve {
-	auto spline_type_str = tbl["spline_type"].value<std::string>().value_or("linear");
-	auto dimension_str = tbl["dimension"].value<std::string>().value_or("2d");
+auto number(const toml::node* node) -> float {
+	return node != nullptr ? static_cast<float>(node->value<double>().value_or(0.0)) : 0.0f;
+}
 
-	ParsedCurve parsed;
-	parsed.t_scale = (float)tbl["t_scale"].value<double>().value_or(1.0);
-	parsed.dim = (dimension_str == "3d") ? CurveDimension::d3 : CurveDimension::d2;
-	parsed.type = splineTypeFromString(spline_type_str);
-	size_t n_components = (parsed.dim == CurveDimension::d2) ? 2 : 3;
-
-	const auto* points_arr = tbl["points"].as_array();
-	if (!points_arr) {
-		throw std::runtime_error("Curve: missing 'points' array");
-	}
-
-	parsed.points.reserve(points_arr->size() * n_components);
-
-	for (const auto& entry : *points_arr) {
-		const auto* pt = entry.as_table();
-		if (!pt) {
+auto parsePoints(const toml::array& points) -> Curve::Points {
+	Curve::Points parsed;
+	parsed.reserve(points.size() * 2);
+	for (const auto& entry : points) {
+		const auto* point = entry.as_table();
+		if (point == nullptr) {
 			throw std::runtime_error("Curve: points entry is not a table");
 		}
-
-		const auto* x = pt->get("x");
-		const auto* y = pt->get("y");
-		if (!x || !y) {
+		if (point->get("x") == nullptr || point->get("y") == nullptr) {
 			throw std::runtime_error("Curve: point missing x or y");
 		}
+		parsed.push_back(number(point->get("x")));
+		parsed.push_back(number(point->get("y")));
+	}
+	return parsed;
+}
 
-		parsed.points.push_back((float)x->value<double>().value_or(0.0));
-		parsed.points.push_back((float)y->value<double>().value_or(0.0));
-
-		if (parsed.dim == CurveDimension::d3) {
-			const auto* z = pt->get("z");
-			parsed.points.push_back(z ? (float)z->value<double>().value_or(0.0) : 0.0f);
+auto legacyPath(const toml::array& points) -> std::vector<Curve::Points> {
+	std::vector<Curve::Points> channels(3);
+	const size_t count = points.size();
+	for (size_t i = 0; i < count; ++i) {
+		const auto* point = points[i].as_table();
+		if (point == nullptr) {
+			throw std::runtime_error("Curve: points entry is not a table");
+		}
+		const float t = count > 1 ? static_cast<float>(i) / static_cast<float>(count - 1) : 0.0f;
+		for (size_t axis = 0; axis < 3; ++axis) {
+			channels[axis].push_back(t);
+			channels[axis].push_back(number(point->get(k_channel_names[axis])));
 		}
 	}
+	TOAST_WARN("Curve", "Converted an old 3D path curve to x, y and z channels; save it to keep them");
+	return channels;
+}
 
+auto normalizeX(Curve::Points& points) -> float {
+	if (points.size() < 4) {
+		return 1.0f;
+	}
+	const float first = points.front();
+	const float range = points[points.size() - 2] - first;
+	if (range <= 1.0e-6f) {
+		return 1.0f;
+	}
+	float previous = 0.0f;
+	for (size_t i = 0; i + 1 < points.size(); i += 2) {
+		points[i] = previous = std::clamp((points[i] - first) / range, previous, 1.0f);
+	}
+	points[points.size() - 2] = 1.0f;
+	return range;
+}
+
+auto parseCurve(const toml::table& tbl) -> ParsedCurve {
+	ParsedCurve parsed;
+	parsed.type = splineTypeFromString(tbl["spline_type"].value<std::string>().value_or("linear"));
+	parsed.t_scale = static_cast<float>(tbl["t_scale"].value<double>().value_or(1.0));
+	const auto dimension = tbl["dimension"].value<std::string>().value_or("1d");
+
+	if (const auto* channels = tbl["channels"].as_array()) {
+		for (const auto& entry : *channels) {
+			const auto* channel = entry.as_table();
+			const auto* points = channel != nullptr ? channel->get_as<toml::array>("points") : nullptr;
+			if (points == nullptr) {
+				throw std::runtime_error("Curve: channel without a 'points' array");
+			}
+			Curve::Points keys = parsePoints(*points);
+			normalizeX(keys);
+			parsed.channels.push_back(std::move(keys));
+		}
+		if (parsed.channels.empty() || parsed.channels.size() > 3) {
+			throw std::runtime_error("Curve: needs 1 to 3 channels");
+		}
+		return parsed;
+	}
+
+	const auto* points = tbl["points"].as_array();
+	if (points == nullptr) {
+		throw std::runtime_error("Curve: missing 'points' array");
+	}
+	if (dimension == "3d") {
+		parsed.channels = legacyPath(*points);
+	} else {
+		Curve::Points keys = parsePoints(*points);
+		parsed.t_scale *= normalizeX(keys);
+		parsed.channels.push_back(std::move(keys));
+	}
 	return parsed;
 }
 
 }
 
-Curve::Curve(std::vector<float> points, CurveDimension dim, SplineType type, float t_scale)
-    : m_points(std::move(points)),
-      m_dim(dim),
-      m_spline_type(type),
-      m_t_scale(t_scale) {
-	rebuildSpline();
+Curve::Curve(std::vector<Points> channels, SplineType type, float t_scale) : m_spline_type(type), m_t_scale(t_scale) {
+	m_channels.reserve(channels.size());
+	for (Points& points : channels) {
+		Channel& channel = m_channels.emplace_back(Channel {.points = std::move(points), .spline = {}});
+		rebuildSpline(channel);
+	}
 }
 
 auto Curve::fromToml(const toml::table& tbl) -> std::unique_ptr<Curve> {
 	ZoneScoped;
 	ParsedCurve parsed = parseCurve(tbl);
-	return std::make_unique<Curve>(std::move(parsed.points), parsed.dim, parsed.type, parsed.t_scale);
+	return std::make_unique<Curve>(std::move(parsed.channels), parsed.type, parsed.t_scale);
 }
 
 void Curve::reload(const toml::table& tbl) {
 	ZoneScoped;
 	ParsedCurve parsed = parseCurve(tbl);
-
-	const size_t n_components = (parsed.dim == CurveDimension::d2) ? 2 : 3;
-	if (parsed.points.size() / n_components < 2) {
-		throw std::runtime_error("Curve: needs at least 2 points");
+	for (const Points& points : parsed.channels) {
+		if (points.size() / 2 < 2) {
+			throw std::runtime_error("Curve: needs at least 2 points per channel");
+		}
 	}
 
-	m_points = std::move(parsed.points);
-	m_dim = parsed.dim;
 	m_spline_type = parsed.type;
 	m_t_scale = parsed.t_scale;
-	rebuildSpline();
+	m_channels.clear();
+	for (Points& points : parsed.channels) {
+		Channel& channel = m_channels.emplace_back(Channel {.points = std::move(points), .spline = {}});
+		rebuildSpline(channel);
+	}
 }
 
 auto Curve::serialize(SaveMode /*mode*/) const -> std::vector<uint8_t> {
 	ZoneScoped;
 	std::ostringstream ss;
 	ss << "spline_type = \"" << splineTypeToString(m_spline_type) << "\"\n";
-	ss << "dimension   = \"" << dimToString(m_dim) << "\"\n";
+	ss << "dimension   = \"" << dimToString(dimension()) << "\"\n";
 	ss << "t_scale     = " << m_t_scale << "\n";
 
-	size_t dim = dimCount();
-	size_t n = m_points.size() / dim;
+	const auto write_points = [&ss](const Points& points, std::string_view table) {
+		for (size_t i = 0; i + 1 < points.size(); i += 2) {
+			ss << "\n[[" << table << "]]\n";
+			ss << "x = " << points[i] << "\n";
+			ss << "y = " << points[i + 1] << "\n";
+		}
+	};
 
-	for (size_t i = 0; i < n; ++i) {
-		ss << "\n[[points]]\n";
-		ss << "x = " << m_points[(i * dim) + 0] << "\n";
-		ss << "y = " << m_points[(i * dim) + 1] << "\n";
-		if (dim == 3) {
-			ss << "z = " << m_points[(i * dim) + 2] << "\n";
+	if (dimension() == CurveDimension::d1) {
+		write_points(m_channels.front().points, "points");
+	} else {
+		for (size_t i = 0; i < m_channels.size(); ++i) {
+			ss << "\n[[channels]]\nname = \"" << k_channel_names[i] << "\"\n";
+			write_points(m_channels[i].points, "channels.points");
 		}
 	}
 
@@ -141,56 +206,85 @@ auto Curve::serialize(SaveMode /*mode*/) const -> std::vector<uint8_t> {
 	return {str.begin(), str.end()};
 }
 
-auto Curve::eval2D(float t) const -> glm::vec2 {
-	double u = std::clamp((double)(t / m_t_scale), 0.0, 1.0);
-	auto v = m_spline.eval(u).resultVec2();
-	return {(float)v.x(), (float)v.y()};
+auto Curve::evalChannel(size_t channel_index, float t) const -> float {
+	return sampleChannel(channel_index, t / std::max(m_t_scale, 1.0e-4f));
 }
 
-auto Curve::eval3D(float t) const -> glm::vec3 {
-	double u = std::clamp((double)(t / m_t_scale), 0.0, 1.0);
-	auto v = m_spline.eval(u).resultVec3();
-	return {(float)v.x(), (float)v.y(), (float)v.z()};
-}
-
-auto Curve::evalAtX(float x) const -> float {
+auto Curve::sampleChannel(size_t channel_index, float x) const -> float {
+	if (channel_index >= m_channels.size()) {
+		return 0.0f;
+	}
+	const Channel& channel = m_channels[channel_index];
+	if (channel.points.size() < 4) {
+		return channel.points.size() >= 2 ? channel.points[1] : 0.0f;
+	}
 	try {
-		auto v = m_spline.bisect((double)x).resultVec2();
-		return (float)v.y();
+		return static_cast<float>(channel.spline.bisect(static_cast<double>(std::clamp(x, 0.0f, 1.0f))).resultVec2().y());
 	} catch (const std::exception& e) {
 		TOAST_WARN("Curve", "bisect failed at x = {}: {}; falling back to parametric eval", x, e.what());
-		return eval2D(x * m_t_scale).y;
+		const double u = std::clamp(static_cast<double>(x), 0.0, 1.0);
+		return static_cast<float>(channel.spline.eval(u).resultVec2().y());
 	}
 }
 
-void Curve::setPoints(std::vector<float> points) {
-	m_points = std::move(points);
-	rebuildSpline();
+auto Curve::eval1D(float t) const -> float {
+	return evalChannel(0, t);
 }
 
-void Curve::rebuildSpline() {
+auto Curve::eval2D(float t) const -> glm::vec2 {
+	if (dimension() == CurveDimension::d1) {
+		return glm::vec2(eval1D(t));
+	}
+	return {evalChannel(0, t), evalChannel(1, t)};
+}
+
+auto Curve::eval3D(float t) const -> glm::vec3 {
+	if (dimension() == CurveDimension::d1) {
+		return glm::vec3(eval1D(t));
+	}
+	return {evalChannel(0, t), evalChannel(1, t), evalChannel(2, t)};
+}
+
+auto Curve::xRange() const noexcept -> glm::vec2 {
+	if (m_channels.empty() || m_channels.front().points.size() < 2) {
+		return glm::vec2 {0.0f};
+	}
+	const Points& points = m_channels.front().points;
+	return {points.front(), points[points.size() - 2]};
+}
+
+void Curve::setPoints(size_t channel, Points points) {
+	if (channel >= m_channels.size()) {
+		return;
+	}
+	m_channels[channel].points = std::move(points);
+	rebuildSpline(m_channels[channel]);
+}
+
+void Curve::rebuildSpline(Channel& channel) const {
 	ZoneScoped;
-	size_t dim = dimCount();
-	size_t n = m_points.size() / dim;
+	constexpr size_t dim = 2;
+	const size_t n = channel.points.size() / dim;
 
 	if (n < 2) {
 		TOAST_WARN("Curve", "Need at least 2 control points; got {}", n);
 		return;
 	}
 
-	std::vector<double> pts(m_points.begin(), m_points.end());
+	const std::vector<double> pts(channel.points.begin(), channel.points.end());
+	tinyspline::BSpline& spline = channel.spline;
 
 	try {
 		switch (m_spline_type) {
 			case SplineType::linear:
-				m_spline = tinyspline::BSpline(n, dim, 1, tinyspline::BSpline::Type::Clamped);
-				m_spline.setControlPoints(pts);
+				spline = tinyspline::BSpline(n, dim, 1, tinyspline::BSpline::Type::Clamped);
+				spline.setControlPoints(pts);
 				break;
 
 			case SplineType::bspline: {
 				size_t degree = std::min<size_t>(3, n - 1);
-				m_spline = tinyspline::BSpline(n, dim, degree, tinyspline::BSpline::Type::Clamped);
-				m_spline.setControlPoints(pts);
+				spline = tinyspline::BSpline(n, dim, degree, tinyspline::BSpline::Type::Clamped);
+				spline.setControlPoints(pts);
 				break;
 			}
 
@@ -198,8 +292,8 @@ void Curve::rebuildSpline() {
 				if ((n - 1) % 3 != 0 || n < 4) {
 					TOAST_WARN("Curve", "Bezier requires 3k+1 control points; got {}. Falling back to bspline.", n);
 					size_t degree = std::min<size_t>(3, n - 1);
-					m_spline = tinyspline::BSpline(n, dim, degree, tinyspline::BSpline::Type::Clamped);
-					m_spline.setControlPoints(pts);
+					spline = tinyspline::BSpline(n, dim, degree, tinyspline::BSpline::Type::Clamped);
+					spline.setControlPoints(pts);
 				} else {
 					size_t segments = (n - 1) / 3;
 					std::vector<double> expanded;
@@ -211,13 +305,13 @@ void Curve::rebuildSpline() {
 							}
 						}
 					}
-					m_spline = tinyspline::BSpline(segments * 4, dim, 3, tinyspline::BSpline::Type::Beziers);
-					m_spline.setControlPoints(expanded);
+					spline = tinyspline::BSpline(segments * 4, dim, 3, tinyspline::BSpline::Type::Beziers);
+					spline.setControlPoints(expanded);
 				}
 				break;
 			}
 
-			case SplineType::catmull_rom: m_spline = tinyspline::BSpline::interpolateCatmullRom(pts, dim); break;
+			case SplineType::catmull_rom: spline = tinyspline::BSpline::interpolateCatmullRom(pts, dim); break;
 		}
 	} catch (const std::exception& e) { TOAST_ERROR("Curve", "Failed to build spline: {}", e.what()); }
 }

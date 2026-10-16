@@ -22,17 +22,17 @@ public:
 	struct Patched {
 		voxel::gpu::ScenePatch patch;
 		/// Per record and 0 for a dead one
-		std::vector<uint64_t> record_uids;
+		std::vector<uint64_t> record_rids;
 		std::vector<glm::uvec3> record_dims;
 	};
 
 	/// A full pack is what the GPU will hold so later patches build on it
-	void adopt(const voxel::gpu::PackedScene& scene, uint32_t pool_slots, std::vector<uint64_t> node_uids);
+	void adopt(const voxel::gpu::PackedScene& scene, uint32_t pool_slots, std::vector<uint64_t> node_rids);
 
 	/// @returns nullopt when only a full pack is worth it
 	[[nodiscard]]
 	auto tryPatch(
-	    const voxel::BrickPool& pool, std::span<const voxel::gpu::SceneVolume> volumes, std::span<const uint64_t> node_uids,
+	    const voxel::BrickPool& pool, std::span<const voxel::gpu::SceneVolume> volumes, std::span<const uint64_t> node_rids,
 	    std::span<const VolumeDelta> deltas
 	) -> std::optional<Patched>;
 
@@ -62,7 +62,7 @@ private:
 
 	voxel::gpu::PackedScene m_scene;
 	uint32_t m_pool_slots = 0;
-	std::vector<uint64_t> m_node_uids;
+	std::vector<uint64_t> m_node_rids;
 	/// Grid words of dead records so enough of them makes a full pack compact the sections
 	uint64_t m_dead_grid_words = 0;
 	bool m_valid = false;

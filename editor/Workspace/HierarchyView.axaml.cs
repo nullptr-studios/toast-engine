@@ -139,6 +139,7 @@ public partial class HierarchyView : UserControl, IWorkspaceShortcutTarget {
 	}
 
 	private void OnRenameStarted(HierarchyElement element) {
+		Rows.ScrollIntoView(element);
 		// delay one render frame so the TextBox is visible before we try to focus it
 		Dispatcher.UIThread.Post(() => {
 			if (Rows.ItemsPanelRoot is not Panel panel) return;

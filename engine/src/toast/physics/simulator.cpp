@@ -2125,11 +2125,11 @@ auto Simulator::renderPoseDelta(const toast::VoxelNode& node) -> glm::mat4 {
 	return renderPoseDelta(node.bodyID());
 }
 
-auto Simulator::renderPoseDeltaFor(uint64_t node_uid) -> glm::mat4 {
+auto Simulator::renderPoseDeltaFor(const toast::Node& node) -> glm::mat4 {
 	if (instance == nullptr) {
 		return {1.0f};
 	}
-	const auto follows = instance->m_render_body_of_node.find(node_uid);
+	const auto follows = instance->m_render_body_of_node.find(node.rid());
 	return follows != instance->m_render_body_of_node.end() ? renderPoseDelta(follows->second) : glm::mat4(1.0f);
 }
 
@@ -2146,12 +2146,12 @@ void Simulator::rebuildRenderPoseLookup() {
 	m_render_body_of_node.clear();
 
 	std::vector<std::pair<const toast::Node*, BodyID>> drivers;
-	std::unordered_set<uint64_t> driver_uids;
+	std::unordered_set<uint64_t> driver_rids;
 	const auto add_driver = [&](const toast::Node& node, BodyID id) {
 		const Body* body = tryGetBody(id);
 		if (body != nullptr && body->type == BodyType::dynamic_body) {
 			drivers.emplace_back(&node, id);
-			driver_uids.insert(node.uid().data());
+			driver_rids.insert(node.rid());
 		}
 	};
 	for (const NodeBinding& binding : m_node_bindings) {
@@ -2168,13 +2168,13 @@ void Simulator::rebuildRenderPoseLookup() {
 	// Parents sync before children and a nested driver keeps its own subtree
 	const std::function<void(const toast::Node&, BodyID)> follow = [&](const toast::Node& parent, BodyID id) -> void {
 		for (const toast::Box<toast::Node>& child : parent.children()) {
-			if (not child.exists() || driver_uids.contains(child->uid().data())) {
+			if (not child.exists() || driver_rids.contains(child->rid())) {
 				continue;
 			}
 			if (const auto child_3d = child.as<toast::Node3D>(); child_3d.exists()) {
 				child_3d->syncTransform();
 			}
-			m_render_body_of_node.insert_or_assign(child->uid().data(), id);
+			m_render_body_of_node.insert_or_assign(child->rid(), id);
 			follow(*child, id);
 		}
 	};

@@ -3,7 +3,8 @@
              x:Class="editor.Workspace.ViewportControl"
              Focusable="True">
 	<Panel>
-		<Border CornerRadius="8"
+		<Border Name="SurfaceHost"
+		        CornerRadius="8"
 		        ClipToBounds="True"
 		        Background="{StaticResource Bg1}">
 			<Image Name="Surface"

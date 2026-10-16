@@ -66,11 +66,11 @@ public:
 	static constexpr size_t k_section_count = 6;
 
 	/// New section buffers that a VoxelSceneUpload fills
-	VoxelGpuStorage(std::vector<uint64_t> node_uids, std::vector<glm::uvec3> brick_dims);
+	VoxelGpuStorage(std::vector<uint64_t> node_rids, std::vector<glm::uvec3> brick_dims);
 
 	/// Ready at once over the buffers of @p previous and needs every patch up to @p patch_sequence applied
 	VoxelGpuStorage(
-	    std::vector<uint64_t> node_uids, std::vector<glm::uvec3> brick_dims, const VoxelGpuStorage& previous,
+	    std::vector<uint64_t> node_rids, std::vector<glm::uvec3> brick_dims, const VoxelGpuStorage& previous,
 	    uint64_t patch_sequence
 	);
 
@@ -81,7 +81,7 @@ public:
 	}
 
 	[[nodiscard]]
-	auto recordIndexOf(uint64_t node_uid) const -> std::optional<uint32_t>;
+	auto recordIndexOf(uint64_t node_rid) const -> std::optional<uint32_t>;
 
 	[[nodiscard]]
 	auto recordBrickDims(uint32_t index) const -> glm::uvec3 {
@@ -90,7 +90,7 @@ public:
 
 	[[nodiscard]]
 	auto recordCount() const noexcept -> uint32_t {
-		return static_cast<uint32_t>(m_node_uids.size());
+		return static_cast<uint32_t>(m_node_rids.size());
 	}
 
 	[[nodiscard]]
@@ -107,8 +107,8 @@ public:
 	void recordPendingPatches(vk::CommandBuffer cmd, std::vector<std::shared_ptr<void>>& retired) const;
 
 	[[nodiscard]]
-	auto nodeUid(uint32_t index) const -> uint64_t {
-		return index < m_node_uids.size() ? m_node_uids[index] : 0;
+	auto nodeRid(uint32_t index) const -> uint64_t {
+		return index < m_node_rids.size() ? m_node_rids[index] : 0;
 	}
 
 	/// @note Main thread only and before the upload is queued
@@ -130,7 +130,7 @@ public:
 private:
 	friend class VoxelSceneUpload;
 
-	std::vector<uint64_t> m_node_uids;
+	std::vector<uint64_t> m_node_rids;
 	std::vector<glm::uvec3> m_brick_dims;
 
 	std::shared_ptr<VoxelGpuSections> m_sections;

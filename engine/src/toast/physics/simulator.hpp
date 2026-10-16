@@ -250,7 +250,7 @@ public:
 
 	/// Delta of the dynamic body a node sits below and identity when it follows none
 	[[nodiscard]]
-	static auto renderPoseDeltaFor(uint64_t node_uid) -> glm::mat4;
+	static auto renderPoseDeltaFor(const toast::Node& node) -> glm::mat4;
 
 	/// Once per frame after the ticks so nodes below driven bodies match the tick pose the delta starts from
 	static void syncRenderPoses();

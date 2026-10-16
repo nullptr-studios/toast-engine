@@ -10,6 +10,13 @@
 
 namespace renderer {
 
+struct OutputSubmitSync {
+	const void* chain = nullptr;
+	vk::Semaphore wait = nullptr;
+	vk::PipelineStageFlags wait_stage;
+	vk::Semaphore signal = nullptr;
+};
+
 class IOutputTarget {
 public:
 	virtual ~IOutputTarget() = default;
@@ -42,6 +49,12 @@ public:
 	virtual void recordFinalize(vk::CommandBuffer command_buffer, uint32_t image_index) = 0;
 
 	virtual void onImageRenderComplete(uint32_t image_index) { (void)image_index; }
+
+	[[nodiscard]]
+	virtual auto submitSync(uint32_t image_index) -> OutputSubmitSync {
+		(void)image_index;
+		return {};
+	}
 
 	virtual void recreate(vk::Extent2D extent) = 0;
 

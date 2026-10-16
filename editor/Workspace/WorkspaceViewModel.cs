@@ -27,6 +27,7 @@ public enum PlayState { Stopped, Playing, Simulating, PlayingExternal }
 
 public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 	private static int s_playingCount;
+	private static int s_advancingCount;
 
 	private static readonly double[] s_linearSnapSteps = [0.01, 0.05, 0.10, 0.25, 0.50, 1.0, 2.0, 5.0, 10.0];
 	private static readonly double[] s_rotateSnapSteps = [1, 2, 5, 15, 30, 45, 90];
@@ -36,6 +37,7 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 	private readonly Listener m_renderListener = new();
 
 	private bool m_countedPlaying;
+	private bool m_countedAdvancing;
 	private bool m_disposed;
 	[ObservableProperty] private bool m_gameCamera;
 	[ObservableProperty] private CameraMode m_cameraMode;
@@ -102,6 +104,30 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 	public bool WorldSpace { get; private set; }
 
 	public static bool AnyPlayActive { get; private set; }
+
+	public static bool AnyPlayAdvancing => s_advancingCount > 0;
+
+	public static event Action? PlayAdvancingChanged;
+
+	public static Task WaitUntilPlayHoldsAsync() {
+		if (!AnyPlayAdvancing) return Task.CompletedTask;
+		var done = new TaskCompletionSource();
+		void Check() {
+			if (AnyPlayAdvancing) return;
+			PlayAdvancingChanged -= Check;
+			done.TrySetResult();
+		}
+		PlayAdvancingChanged += Check;
+		return done.Task;
+	}
+
+	private void UpdateAdvancing() {
+		var advancing = PlayState != PlayState.Stopped && !IsPaused;
+		if (advancing == m_countedAdvancing) return;
+		m_countedAdvancing = advancing;
+		s_advancingCount += advancing ? 1 : -1;
+		PlayAdvancingChanged?.Invoke();
+	}
 
 	public ulong PlayHandle { get; private set; }
 
@@ -391,6 +417,8 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 		ToggleSimulateCommand.NotifyCanExecuteChanged();
 		TogglePlayExternalCommand.NotifyCanExecuteChanged();
 
+		UpdateAdvancing();
+
 		var playing = value != PlayState.Stopped;
 		if (playing == m_countedPlaying) return;
 		m_countedPlaying = playing;
@@ -400,6 +428,7 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 	}
 
 	partial void OnIsPausedChanged(bool value) {
+		UpdateAdvancing();
 		if (PlayHandle != 0) Events.Send(new WorkspacePause { Handle = PlayHandle, Paused = value });
 		TogglePlayCommand.NotifyCanExecuteChanged();
 		ToggleSimulateCommand.NotifyCanExecuteChanged();

@@ -10,6 +10,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Media;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Dock.Model.Controls;
@@ -1020,8 +1021,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		));
 
 		tasks.Add(LoaderTask.Do("Reload game", async log => {
+			if (WorkspaceViewModel.AnyPlayAdvancing) log("Waiting for the game to be paused or stopped");
+			await Dispatcher.UIThread.InvokeAsync(WorkspaceViewModel.WaitUntilPlayHoldsAsync);
 			m_toast.ReloadGame();
-			await Task.CompletedTask;
 		}));
 
 		var vm = new LoaderViewModel(tasks) {

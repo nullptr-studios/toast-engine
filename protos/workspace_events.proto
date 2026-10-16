@@ -17,6 +17,16 @@ message UpdateHierarchyData {
   uint64 workspace_handle = 3;
 }
 
+message HierarchyNodeEnabled {
+  repeated string path = 1;
+  bool enabled = 2;
+}
+
+message HierarchyNodesEnabled {
+  repeated HierarchyNodeEnabled nodes = 1;
+  uint64 workspace_handle = 2;
+}
+
 message RequestHierarchyUpdate {}
 
 message ReloadAssetsManifest {}

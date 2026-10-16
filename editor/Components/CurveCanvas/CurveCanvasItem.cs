@@ -33,7 +33,7 @@ public sealed partial class CurveCanvasItem : ObservableObject {
 
 	public int NumPoints => Curve.NumPoints;
 	public int MinPoints => Curve.SplineType == SplineType.Bezier ? 4 : 2;
-	private int Dim => Curve.Dimension == CurveDimension.D2 ? 2 : 3;
+	private const int Dim = 2;
 
 	public event Action? Changed;
 
@@ -50,23 +50,48 @@ public sealed partial class CurveCanvasItem : ObservableObject {
 		return (Curve.Points[index * Dim], Curve.Points[index * Dim + 1]);
 	}
 
+	private const float MinGap = 1e-4f;
+
 	public void MovePoint(int index, float x, float y) {
 		if (index < 0 || index >= NumPoints) return;
 		var dim = Dim;
+		var n = NumPoints;
 		var pts = Curve.Points.ToArray();
+		var anchor = Curve.SplineType == SplineType.Bezier && (n - 1) % 3 == 0 && index % 3 == 0;
+
+		if (index == 0) {
+			x = 0f;
+		} else if (index == n - 1) {
+			x = 1f;
+		} else {
+			float lo, hi;
+			if (anchor) {
+				// points must stay in order
+				var left = pts[(index - 1) * dim] - pts[index * dim];
+				var right = pts[(index + 1) * dim] - pts[index * dim];
+				lo = pts[(index - 2) * dim] - left;
+				hi = pts[(index + 2) * dim] - right;
+			} else {
+				lo = pts[(index - 1) * dim];
+				hi = pts[(index + 1) * dim];
+			}
+
+			x = lo + MinGap <= hi - MinGap ? Math.Clamp(x, lo + MinGap, hi - MinGap) : (lo + hi) / 2f;
+		}
+
 		var dx = x - pts[index * dim + 0];
 		var dy = y - pts[index * dim + 1];
 		pts[index * dim + 0] = x;
 		pts[index * dim + 1] = y;
 
 		// Bezier anchors carry their tangent handles along, like any bezier editor
-		if (Curve.SplineType == SplineType.Bezier && (NumPoints - 1) % 3 == 0 && index % 3 == 0) {
+		if (anchor) {
 			if (index - 1 >= 0) {
 				pts[(index - 1) * dim + 0] += dx;
 				pts[(index - 1) * dim + 1] += dy;
 			}
 
-			if (index + 1 < NumPoints) {
+			if (index + 1 < n) {
 				pts[(index + 1) * dim + 0] += dx;
 				pts[(index + 1) * dim + 1] += dy;
 			}
@@ -78,6 +103,7 @@ public sealed partial class CurveCanvasItem : ObservableObject {
 
 	// Inserts at the X-sorted position and returns the new point's index
 	public int InsertPoint(float x, float y) {
+		x = Math.Clamp(x, MinGap, 1f - MinGap);
 		var inserted = Curve.SplineType == SplineType.Bezier
 			? InsertBezierAnchor(x, y)
 			: InsertPlain(x, y);
@@ -107,7 +133,6 @@ public sealed partial class CurveCanvasItem : ObservableObject {
 		var index = FindXOrderIndex(x);
 
 		var comps = new List<float> { x, y };
-		if (dim == 3) comps.Add(0f);
 		pts.InsertRange(index * dim, comps);
 
 		Curve.SetPoints(pts);
@@ -212,7 +237,6 @@ public sealed partial class CurveCanvasItem : ObservableObject {
 		var dim = Dim;
 		var index = FindXOrderIndex(x);
 		var comps = new List<float> { x, y };
-		if (dim == 3) comps.Add(0f);
 		pts.InsertRange(index * dim, comps);
 		Curve.SetPoints(pts);
 		return index;
@@ -230,7 +254,6 @@ public sealed partial class CurveCanvasItem : ObservableObject {
 		for (var i = 0; i < xy.Length; i += 2) {
 			comps.Add(xy[i]);
 			comps.Add(xy[i + 1]);
-			if (dim == 3) comps.Add(0f);
 		}
 
 		pts.InsertRange(pointIndex * dim, comps);

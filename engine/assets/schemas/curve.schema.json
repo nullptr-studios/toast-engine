@@ -3,7 +3,7 @@
   "$id": "core://schemas/curve.schema.json",
   "title": "Toast Curve (.tcurve)",
   "type": "object",
-  "required": ["spline_type", "dimension", "points"],
+  "required": ["spline_type", "dimension"],
   "additionalProperties": false,
   "properties": {
     "spline_type": {
@@ -12,7 +12,7 @@
       "description": "linear: piecewise straight lines, catmull_rom: smooth interpolation through all points, bspline: smooth cubic approximation, bezier: compound cubic with explicit tangent handles"
     },
     "dimension": {
-      "enum": ["2d", "3d"],
+      "enum": ["1d", "2d", "3d"],
       "x-toast-type": "enum"
     },
     "t_scale": {
@@ -26,6 +26,12 @@
       "x-toast-type": "point[]",
       "minItems": 2,
       "items": { "$ref": "#/definitions/point" }
+    },
+    "channels": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 3,
+      "items": { "$ref": "#/definitions/channel" }
     }
   },
   "definitions": {
@@ -36,7 +42,20 @@
       "properties": {
         "x": { "type": "number", "x-toast-type": "float" },
         "y": { "type": "number", "x-toast-type": "float" },
-        "z": { "type": "number", "x-toast-type": "float", "description": "Required when dimension is \"3d\"" }
+        "z": { "type": "number", "x-toast-type": "float", "description": "Only in old \"3d\" path curves" }
+      }
+    },
+    "channel": {
+      "type": "object",
+      "required": ["points"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "enum": ["x", "y", "z"] },
+        "points": {
+          "type": "array",
+          "minItems": 2,
+          "items": { "$ref": "#/definitions/point" }
+        }
       }
     }
   }
