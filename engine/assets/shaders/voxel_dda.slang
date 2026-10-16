@@ -179,9 +179,10 @@ struct RayHit
     uint material;
     uint steps;
 
-    /// Steps that skipped a whole coarse cell or brick so the rest are single voxels
+    /// Steps that skipped a whole coarse cell brick or 4x4x4 or 2x2x2 sub-brick so the rest are single voxels
     uint coarseSteps;
     uint brickSteps;
+    uint subSteps;
 };
 
 uint gridEntry(uint volume, uint3 brick)
@@ -200,14 +201,6 @@ bool coarseSolid(uint volume, int3 cell)
     
     const uint index = uint(cell.x) + uint(cell.y) * dimsX + uint(cell.z) * (dimsX * dimsY);
     return ((gVolumeCoarse[gVolumeRecords[volume].coarseOffset + (index >> 5)] >> (index & 31u)) & 1u) != 0;
-}
-
-bool pooledSolid(uint slot, uint3 local)
-{
-    // wordIdx decouples from local.x, bitIdx decouples from local.z
-    const uint wordIdx = (slot << 4) + (local.z << 1) + (local.y >> 2);
-    const uint bitIdx = ((local.y & 3u) << 3) | local.x;
-    return ((gBrickOccupancy[wordIdx] >> bitIdx) & 1u) != 0;
 }
 
 uint pooledMaterial(uint slot, uint3 local)
@@ -292,6 +285,7 @@ RayHit marchRayBox(uint volume, float3 origin, float3 direction, float tMin, flo
     result.steps = 0;
     result.coarseSteps = 0;
     result.brickSteps = 0;
+    result.subSteps = 0;
 
     float tExit = kFloatMax;
     float3 entryTimes = float3(-kFloatMax, -kFloatMax, -kFloatMax);
@@ -396,10 +390,29 @@ RayHit marchRayBox(uint volume, float3 origin, float3 direction, float tMin, flo
             return result;
         }
     
+        // Pool words are 4x4x4 sub-bricks as gpu::packOccupancyWords lays them out
         const uint slot = entry >> 2;
-        const uint3 local = uint3(voxel & 7u); 
-        
-        if (pooledSolid(slot, local))
+        const uint3 local = uint3(voxel & 7u);
+        const uint subBase = (slot << 4) + (((local.x >> 2) | ((local.y >> 2) << 1) | ((local.z >> 2) << 2)) << 1);
+        const uint subLow = gBrickOccupancy[subBase];
+        const uint subHigh = gBrickOccupancy[subBase + 1u];
+        if ((subLow | subHigh) == 0u)
+        {
+            ++result.subSteps;
+            leaveCell(origin, inverse, stepSign, voxel & int3(~3, ~3, ~3), 4, t, axis, crossed);
+            continue;
+        }
+
+        // A 2x2x2 block never straddles the low and high word
+        const uint subWord = (local.z & 2u) != 0u ? subHigh : subLow;
+        if (((subWord >> ((local.x & 2u) | ((local.y & 2u) << 2))) & 0x00330033u) == 0u)
+        {
+            ++result.subSteps;
+            leaveCell(origin, inverse, stepSign, voxel & int3(~1, ~1, ~1), 2, t, axis, crossed);
+            continue;
+        }
+
+        if (((subWord >> ((local.x & 3u) | ((local.y & 3u) << 2) | ((local.z & 1u) << 4))) & 1u) != 0u)
         {
             result.hit = true;
             result.t = t;
@@ -484,6 +497,37 @@ uint occupancyWord(uint entry, uint word)
         return 0xFFFFFFFFu;
     }
     return gBrickOccupancy[((entry >> 2) << 4) + word];
+}
+
+/// Pool words are 4x4x4 sub-bricks so the meshers regather them as z-slices with bit x of byte y & 3 in word z * 2 + (y >> 2)
+void loadBrickSlices(uint entry, out uint slices[16])
+{
+    uint sub[16];
+    [ForceUnroll]
+    for (uint word = 0u; word < 16u; ++word)
+    {
+        sub[word] = occupancyWord(entry, word);
+    }
+
+    [ForceUnroll]
+    for (uint z = 0u; z < 8u; ++z)
+    {
+        [ForceUnroll]
+        for (uint half = 0u; half < 2u; ++half)
+        {
+            // x 0-3 sub-brick then x 4-7 sub-brick two words on
+            const uint low = (((half << 1) | ((z >> 2) << 2)) << 1) + ((z & 2u) >> 1);
+            const uint high = low + 2u;
+            uint slice = 0u;
+            [ForceUnroll]
+            for (uint y = 0u; y < 4u; ++y)
+            {
+                const uint shift = 4u * y + 16u * (z & 1u);
+                slice |= (((sub[low] >> shift) & 0xFu) | (((sub[high] >> shift) & 0xFu) << 4)) << (8u * y);
+            }
+            slices[z * 2u + half] = slice;
+        }
+    }
 }
 
 /// Eight x bits of row y in slice z

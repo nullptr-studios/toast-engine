@@ -440,10 +440,7 @@ uint meshBrick(uint volume, int3 brick, float3 camera, uint occupancy[16], uint 
         step[axis] = positive ? 1 : -1;
         const uint neighbourEntry = brickEntryAt(volume, brick + step);
         uint neighbour[16];
-        for (uint word = 0u; word < 16u; ++word)
-        {
-            neighbour[word] = occupancyWord(neighbourEntry, word);
-        }
+        loadBrickSlices(neighbourEntry, neighbour);
 
         for (uint slice = 0u; slice < 8u; ++slice)
         {
@@ -517,10 +514,7 @@ void meshMain(uint3 group : SV_GroupID, uint3 local : SV_GroupThreadID)
     }
 
     uint occupancy[16];
-    for (uint word = 0u; word < 16u; ++word)
-    {
-        occupancy[word] = occupancyWord(brickEntry, word);
-    }
+    loadBrickSlices(brickEntry, occupancy);
 
     const float3 camera = mul(instance.worldToVoxel, float4(gCull.cameraNear.xyz, 1.0)).xyz;
     const uint count = meshBrick(instance.recordIndex, brick, camera, occupancy, entryIndex, brickInCell, kNoBucket);

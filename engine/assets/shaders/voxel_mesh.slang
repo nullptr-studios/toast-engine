@@ -72,11 +72,8 @@ void quadMeshMain(uint3 group : SV_GroupID, uint thread : SV_GroupIndex, in payl
         const uint neighbourEntry = brickEntryAt(instance.recordIndex, brick + directionStep(direction));
         uint occupancy[16];
         uint neighbour[16];
-        for (uint word = 0u; word < 16u; ++word)
-        {
-            occupancy[word] = occupancyWord(brickEntry, word);
-            neighbour[word] = occupancyWord(neighbourEntry, word);
-        }
+        loadBrickSlices(brickEntry, occupancy);
+        loadBrickSlices(neighbourEntry, neighbour);
 
         uint faces[16];
         exposedFaces(occupancy, neighbour, direction, faces);

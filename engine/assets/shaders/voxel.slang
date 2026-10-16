@@ -241,7 +241,9 @@ bool shadeDebug(uint mode, float4 pixel, VoxelInstance instance, float3 origin, 
     else if (mode == kRenderModeVoxelTraversal)
     {
         // Red single voxel steps green brick skips blue coarse skips
-        const float3 share = float3(float(hit.steps - hit.coarseSteps - hit.brickSteps), float(hit.brickSteps), float(hit.coarseSteps));
+        // Sub-brick skips count with brick skips
+        const float3 share = float3(float(hit.steps - hit.coarseSteps - hit.brickSteps - hit.subSteps), float(hit.brickSteps + hit.subSteps),
+                                    float(hit.coarseSteps));
         color = share / max(max(share.x, max(share.y, share.z)), 1.0);
     }
     else if (mode == kRenderModeVoxelVolumes)
@@ -526,6 +528,7 @@ FSOutput shadeQuad(QuadVSOutput input)
     hit.steps = 0u;
     hit.coarseSteps = 0u;
     hit.brickSteps = 0u;
+    hit.subSteps = 0u;
 
     FSOutput output;
     float depth = input.position.z;
