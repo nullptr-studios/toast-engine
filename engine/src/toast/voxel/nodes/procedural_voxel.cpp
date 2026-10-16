@@ -13,6 +13,7 @@
 #include <limits>
 #include <ranges>
 #include <toast/assets/asset_manager.hpp>
+#include <toast/hash.hpp>
 #include <toast/log.hpp>
 #include <toast/renderer/editor_overlays.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
@@ -29,21 +30,22 @@ namespace {
 
 using _detail::assetOfType;
 
-void hashCombine(uint64_t& seed, uint64_t value) noexcept {
-	// splitmix64 finaliser
-	value += 0x9e3779b97f4a7c15ull + seed;
-	value = (value ^ (value >> 30)) * 0xbf58476d1ce4e5b9ull;
-	value = (value ^ (value >> 27)) * 0x94d049bb133111ebull;
-	seed = value ^ (value >> 31);
-}
-
-void hashFloats(uint64_t& seed, const float* data, size_t count) noexcept {
-	for (size_t i = 0; i < count; ++i) {
-		uint32_t bits = 0;
-		std::memcpy(&bits, &data[i], sizeof(bits));
-		hashCombine(seed, bits);
-	}
-}
+// moved to hash.hpp 16 Oct
+// void hashCombine(uint64_t& seed, uint64_t value) noexcept {
+// 	// splitmix64 finaliser
+// 	value += 0x9e3779b97f4a7c15ull + seed;
+// 	value = (value ^ (value >> 30)) * 0xbf58476d1ce4e5b9ull;
+// 	value = (value ^ (value >> 27)) * 0x94d049bb133111ebull;
+// 	seed = value ^ (value >> 31);
+// }
+//
+// void hashFloats(uint64_t& seed, const float* data, size_t count) noexcept {
+// 	for (size_t i = 0; i < count; ++i) {
+// 		uint32_t bits = 0;
+// 		std::memcpy(&bits, &data[i], sizeof(bits));
+// 		hashCombine(seed, bits);
+// 	}
+// }
 
 [[nodiscard]]
 auto paletteAsset(uint64_t uid) -> const voxel::Palette* {
@@ -248,12 +250,12 @@ void projectShape(
 		// exposed[axis][0] has a voxel when the one before it on axis is empty
 		const std::array<std::array<voxel::BrickOccupancy, 2>, 3> exposed {
 		  {
-		   {occupancy & ~voxel::neighboursNegX(occupancy, around.neg_x),
-			   occupancy & ~voxel::neighboursPosX(occupancy, around.pos_x)},
-		   {occupancy & ~voxel::neighboursNegY(occupancy, around.neg_y),
-			   occupancy & ~voxel::neighboursPosY(occupancy, around.pos_y)},
-		   {occupancy & ~voxel::neighboursNegZ(occupancy, around.neg_z),
-			   occupancy & ~voxel::neighboursPosZ(occupancy, around.pos_z)},
+       {occupancy & ~voxel::neighboursNegX(occupancy, around.neg_x),
+		     occupancy & ~voxel::neighboursPosX(occupancy, around.pos_x)},
+       {occupancy & ~voxel::neighboursNegY(occupancy, around.neg_y),
+		     occupancy & ~voxel::neighboursPosY(occupancy, around.pos_y)},
+       {occupancy & ~voxel::neighboursNegZ(occupancy, around.neg_z),
+		     occupancy & ~voxel::neighboursPosZ(occupancy, around.pos_z)},
 		   }
 		};
 		const bool uniform = entry.tag() == voxel::BrickTag::uniform;
@@ -444,20 +446,20 @@ auto ProceduralVoxel::toolPiece() -> VoxelPiece* {
 
 auto ProceduralVoxel::keyOf(const std::vector<Collected>& pieces) -> uint64_t {
 	uint64_t key = 0x70726f63u;
-	hashCombine(key, paletteUid());
+	toast::hashCombine(key, paletteUid());
 	for (const Collected& entry : pieces) {
-		hashCombine(key, entry.piece->uid().data());
-		hashCombine(key, reinterpret_cast<uintptr_t>(entry.piece->info()));
-		hashCombine(key, entry.piece->inputRevision());
+		toast::hashCombine(key, entry.piece->uid().data());
+		toast::hashCombine(key, reinterpret_cast<uintptr_t>(entry.piece->info()));
+		toast::hashCombine(key, entry.piece->inputRevision());
 		hashFloats(key, &entry.to_root[0][0], 16);
 	}
 
 	std::vector<BucketFill> buckets;
 	collectBuckets(*this, glm::mat4(1.0f), buckets);
 	for (const BucketFill& fill : buckets) {
-		hashCombine(key, fill.bucket->uid().data());
-		hashCombine(key, fill.bucket->colorId());
-		hashCombine(
+		toast::hashCombine(key, fill.bucket->uid().data());
+		toast::hashCombine(key, fill.bucket->colorId());
+		toast::hashCombine(
 		    key,
 		    static_cast<uint64_t>(static_cast<uint32_t>(fill.seed.x)) ^
 		        (static_cast<uint64_t>(static_cast<uint32_t>(fill.seed.y)) << 21) ^
@@ -469,8 +471,8 @@ auto ProceduralVoxel::keyOf(const std::vector<Collected>& pieces) -> uint64_t {
 	if (!participatesIn(NodeOwnerParticipation::gameplay_tick)) {
 		const renderer::EditorOverlays& overlays = renderer::editorOverlays();
 		if (VoxelPiece* tool = toolPiece()) {
-			hashCombine(key, overlays.tool_box_kind);
-			hashCombine(key, tool->inputRevision());
+			toast::hashCombine(key, overlays.tool_box_kind);
+			toast::hashCombine(key, tool->inputRevision());
 			const std::array<glm::vec3, 2> corners = {glm::vec3(overlays.tool_box_min), glm::vec3(overlays.tool_box_max)};
 			hashFloats(key, &corners[0].x, 6);
 		}
