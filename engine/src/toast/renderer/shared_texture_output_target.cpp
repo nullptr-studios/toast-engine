@@ -36,6 +36,19 @@ constexpr vk::ExternalMemoryHandleTypeFlagBits k_memory_handle_type = vk::Extern
 constexpr vk::ExternalMemoryHandleTypeFlagBits k_memory_handle_type = vk::ExternalMemoryHandleTypeFlagBits::eOpaqueFd;
 #endif
 
+#if defined(_WIN32)
+constexpr vk::ImageUsageFlags k_shared_usage = vk::ImageUsageFlagBits::eTransferDst;
+#else
+constexpr vk::ImageUsageFlags k_shared_usage =
+    vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled;
+#endif
+
+#if defined(_WIN32)
+constexpr vk::ImageLayout k_shared_release_layout = vk::ImageLayout::eGeneral;
+#else
+constexpr vk::ImageLayout k_shared_release_layout = vk::ImageLayout::eColorAttachmentOptimal;
+#endif
+
 [[nodiscard]]
 auto findMemoryType(const vk::raii::PhysicalDevice& physical, uint32_t type_bits) -> std::optional<uint32_t> {
 	const auto properties = physical.getMemoryProperties();
@@ -57,7 +70,7 @@ auto findMemoryType(const vk::raii::PhysicalDevice& physical, uint32_t type_bits
 auto canShareImages(const vk::raii::PhysicalDevice& physical, vk::Format format) -> bool {
 	vk::PhysicalDeviceExternalImageFormatInfo external_info(k_memory_handle_type);
 	vk::PhysicalDeviceImageFormatInfo2 info(
-	    format, vk::ImageType::e2D, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eTransferDst, {}, &external_info
+	    format, vk::ImageType::e2D, vk::ImageTiling::eOptimal, k_shared_usage, {}, &external_info
 	);
 	try {
 		const auto chain = physical.getImageFormatProperties2<vk::ImageFormatProperties2, vk::ExternalImageFormatProperties>(info);
@@ -133,7 +146,7 @@ struct SharedTextureOutputTarget::Interop {
 			image_ci.arrayLayers = 1;
 			image_ci.samples = vk::SampleCountFlagBits::e1;
 			image_ci.tiling = vk::ImageTiling::eOptimal;
-			image_ci.usage = vk::ImageUsageFlagBits::eTransferDst;
+			image_ci.usage = k_shared_usage;
 			image_ci.sharingMode = vk::SharingMode::eExclusive;
 			image_ci.initialLayout = vk::ImageLayout::eUndefined;
 			slot.image = vk::raii::Image(device, image_ci);
@@ -440,7 +453,7 @@ void SharedTextureOutputTarget::recordFinalize(vk::CommandBuffer command_buffer,
 		    vk::AccessFlagBits::eTransferWrite,
 		    {},
 		    vk::ImageLayout::eTransferDstOptimal,
-		    vk::ImageLayout::eGeneral,
+		    k_shared_release_layout,
 		    graphics_family,
 		    VK_QUEUE_FAMILY_EXTERNAL,
 		    target,
