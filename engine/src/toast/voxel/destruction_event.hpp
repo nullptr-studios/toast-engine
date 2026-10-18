@@ -7,12 +7,14 @@
 
 #pragma once
 
+#include "toast/export.hpp"
+
 #include <glm/vec3.hpp>
 #include <toast/events/event.hpp>
 
 namespace event {
 
-struct DestructionEvent : public Event<DestructionEvent> {
+struct TOAST_API DestructionEvent : public Event<DestructionEvent> {
 	glm::vec3 position;
 	int voxel_count;
 

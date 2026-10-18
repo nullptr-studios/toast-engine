@@ -4,10 +4,12 @@
 
 #include <algorithm>
 #include <cmath>
+#include <tracy/Tracy.hpp>
 
 namespace physics {
 
 auto sphereOverlap(glm::vec3 position, float radius) -> std::optional<SphereHit> {
+	ZoneScoped;
 	Simulator* simulator = Simulator::current();
 	if (simulator == nullptr || !std::isfinite(radius) || radius <= 0.0f || !std::isfinite(position.x) ||
 	    !std::isfinite(position.y) || !std::isfinite(position.z)) {

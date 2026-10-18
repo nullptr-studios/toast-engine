@@ -162,7 +162,7 @@
 				# Tracy's rpmalloc client uses initial-exec TLS. The editor loads the
 				# engine after .NET has started, so reserve space for its 3744-byte
 				# TLS block (plus the loader's alignment overhead).
-				export GLIBC_TUNABLES="glibc.rtld.optional_static_tls=4096''${GLIBC_TUNABLES:+:$GLIBC_TUNABLES}";
+				export GLIBC_TUNABLES="glibc.rtld.optional_static_tls=10240''${GLIBC_TUNABLES:+:$GLIBC_TUNABLES}";
 				export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1;
 				export CMAKE_C_COMPILER_LAUNCHER=ccache;
 				export CMAKE_CXX_COMPILER_LAUNCHER=ccache;
