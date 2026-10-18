@@ -601,11 +601,13 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 #else
 		const std::array<const char*, 2> sharing_extensions {"VK_KHR_external_memory_fd", "VK_KHR_external_semaphore_fd"};
 #endif
-		m_texture_sharing_supported = std::ranges::all_of(sharing_extensions, [&available](std::string_view name) {
-			return std::ranges::any_of(available, [name](const vk::ExtensionProperties& ext) {
-				return std::string_view(ext.extensionName.data()) == name;
-			});
-		});
+		const bool debugger_attached = m_nsight_mode != NsightMode::none || rdoc_api != nullptr;
+		m_texture_sharing_supported =
+		    !debugger_attached && std::ranges::all_of(sharing_extensions, [&available](std::string_view name) {
+			    return std::ranges::any_of(available, [name](const vk::ExtensionProperties& ext) {
+				    return std::string_view(ext.extensionName.data()) == name;
+			    });
+		    });
 		if (m_texture_sharing_supported) {
 			device_extensions.insert(device_extensions.end(), sharing_extensions.begin(), sharing_extensions.end());
 		} else {

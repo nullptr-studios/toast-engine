@@ -373,11 +373,12 @@ public partial class ViewportControl : UserControl {
 
 		SendResizeIfChanged();
 
-		if (m_shared is null) {
-			m_shared = new SharedViewportPresenter(SurfaceHost, m_engine);
+		if (m_shared is null && !GraphicsDebuggerDetector.IsAttached) {
+			m_shared = new SharedViewportPresenter(
+				SurfaceHost, m_engine, () => (DataContext as WorkspaceViewModel)?.NotePresentedFrame());
 			m_shared.Start();
 		}
-		if (!m_shared.Failed) {
+		if (m_shared is { Failed: false }) {
 			if (!m_shared.Active) return;
 			if (Surface.IsVisible) {
 				Surface.IsVisible = false;

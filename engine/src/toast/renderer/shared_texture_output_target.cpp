@@ -95,6 +95,7 @@ struct SharedTextureOutputTarget::Interop {
 	std::vector<Slot> slots;
 	vk::DeviceSize memory_size = 0;
 	uint64_t generation = 0;
+	int32_t displayed = -1;
 	uint64_t adapter_luid = 0;
 	std::array<uint8_t, VK_UUID_SIZE> adapter_uuid {};
 #if defined(_WIN32)
@@ -115,6 +116,7 @@ struct SharedTextureOutputTarget::Interop {
 	void createSlots(const VulkanCore& core, vk::Extent2D extent, vk::Format format, size_t count) {
 		const auto& device = core.getDevice();
 		slots.clear();
+		displayed = -1;
 		slots.resize(count);
 		++generation;
 
@@ -363,7 +365,8 @@ auto SharedTextureOutputTarget::acquireNextImage(uint64_t, vk::Semaphore, vk::Fe
 	const int32_t published = m_latest_ready.load(std::memory_order_acquire);
 	const auto busy = [&](uint32_t index) {
 		return std::cmp_equal(index, published) || std::cmp_equal(index, m_reading) ||
-		       (m_interop && index < m_interop->slots.size() && m_interop->slots[index].held);
+		       (m_interop && index < m_interop->slots.size() &&
+		        (m_interop->slots[index].held || std::cmp_equal(index, m_interop->displayed)));
 	};
 
 	uint32_t image_index = m_next_acquire_index;
@@ -563,6 +566,10 @@ void SharedTextureOutputTarget::disableSharedTextures() {
 }
 
 auto SharedTextureOutputTarget::enableSharedTextures(uint64_t adapter_luid, const uint8_t* adapter_uuid) -> bool {
+	if (m_core->getNsightMode() != NsightMode::none || m_core->getRenderDocAPI() != nullptr) {
+		TOAST_INFO("Render", "A graphics debugger is attached; the viewport reads frames back instead of sharing textures");
+		return false;
+	}
 	if (!m_core->isTextureSharingSupported() || !canShareImages(m_core->getPhysicalDevice(), m_color_format)) {
 		return false;
 	}
@@ -662,6 +669,9 @@ void SharedTextureOutputTarget::releaseSharedSlot(uint64_t generation, uint32_t 
 	}
 	auto& shared = m_interop->slots[slot];
 	shared.held = false;
+	if (consumed) {
+		m_interop->displayed = static_cast<int32_t>(slot);
+	}
 #if !defined(_WIN32)
 	if (consumed) {
 		shared.ready_signaled = false;
