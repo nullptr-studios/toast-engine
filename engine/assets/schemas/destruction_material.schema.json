@@ -65,6 +65,135 @@
       "x-toast-unit": "s/m",
       "default": 0.0,
       "minimum": 0
+    },
+    "energy": {
+      "x-toast-type": "energy"
+    },
+    "fragment": {
+      "x-toast-type": "fragment"
+    },
+    "shatter": {
+      "x-toast-type": "shatter"
+    },
+    "edge": {
+      "x-toast-type": "edge"
+    }
+  },
+  "definitions": {
+    "energy": {
+      "type": "object",
+      "properties": {
+        "debris_share": {
+          "type": "number",
+          "x-toast-type": "float",
+          "default": 0.2,
+          "minimum": 0,
+          "maximum": 1
+        },
+        "fragment_share": {
+          "type": "number",
+          "x-toast-type": "float",
+          "default": 0.5,
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "fragment": {
+      "type": "object",
+      "properties": {
+        "threshold": {
+          "type": "number",
+          "x-toast-type": "float",
+          "x-toast-unit": "x toughness",
+          "default": 0.3,
+          "minimum": 0.001,
+          "maximum": 65
+        },
+        "max_parts": {
+          "type": "integer",
+          "x-toast-type": "int",
+          "default": 4,
+          "minimum": 2,
+          "maximum": 32
+        }
+      }
+    },
+    "shatter": {
+      "type": "object",
+      "properties": {
+        "threshold": {
+          "type": "number",
+          "x-toast-type": "float",
+          "x-toast-unit": "x toughness",
+          "default": 0.1,
+          "minimum": 0.001,
+          "maximum": 65
+        },
+        "cell_size": {
+          "type": "number",
+          "x-toast-type": "float",
+          "x-toast-unit": "m",
+          "default": 0.5,
+          "minimum": 0.05,
+          "maximum": 2.5
+        },
+        "crack_cost": {
+          "type": "number",
+          "x-toast-type": "float",
+          "default": 1.0,
+          "minimum": 0,
+          "maximum": 3.9
+        },
+        "release": {
+          "type": "number",
+          "x-toast-type": "float",
+          "default": 0.3,
+          "minimum": 0,
+          "maximum": 1
+        },
+        "stretch": {
+          "type": "number",
+          "x-toast-type": "float",
+          "default": 3.0,
+          "minimum": 1,
+          "maximum": 15.9
+        },
+        "crumble": {
+          "type": "number",
+          "x-toast-type": "float",
+          "default": 0.5,
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "properties": {
+        "noise": {
+          "type": "number",
+          "x-toast-type": "float",
+          "default": 0.25,
+          "minimum": 0,
+          "maximum": 0.9
+        },
+        "lobes": {
+          "type": "number",
+          "x-toast-type": "float",
+          "default": 0.35,
+          "minimum": 0,
+          "maximum": 0.9
+        },
+        "noise_scale": {
+          "type": "number",
+          "x-toast-type": "float",
+          "x-toast-unit": "voxels",
+          "default": 4.0,
+          "minimum": 0,
+          "maximum": 63
+        }
+      }
     }
   }
 }

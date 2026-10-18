@@ -8,6 +8,7 @@
 #pragma once
 
 #include "fracture_pattern.hpp"
+#include "fracture_profile.hpp"
 #include "fracture_random.hpp"
 #include "hardness.hpp"
 #include "physics_settings.hpp"
@@ -50,11 +51,6 @@ struct FractureRequest {
 	float max_overshoot = tunables().fracture_max_overshoot;
 	float bond_cost = tunables().fracture_bond_cost;
 	uint32_t max_unglue_voxels = tunables().fracture_max_unglue_voxels;
-	float edge_noise = tunables().fracture_edge_noise;
-	float edge_noise_scale = tunables().fracture_edge_noise_scale;
-	float edge_lobes = tunables().fracture_edge_lobes;
-	float debris_share = tunables().fracture_debris_share;
-	float shatter_share = tunables().fracture_shatter_share;
 };
 
 inline constexpr uint32_t k_unglue_neighbor_count = 6;
@@ -88,6 +84,9 @@ struct Crater {
 	float edge_noise_scale = 0.0f;
 	float edge_lobes = 0.0f;
 	FracturePattern pattern = FracturePattern::brittle;
+	FractureValues profile;
+	float toughness = 0.0f;
+	float fragment_energy = 0.0f;
 	float shatter_energy = 0.0f;
 	float debris_energy = 0.0f;
 };
@@ -422,29 +421,33 @@ inline auto overshootRadius(float energy_left, float toughness, float radius, fl
 
 struct EnergySplit {
 	float debris = 0.0f;
+	float fragment = 0.0f;
 	float shatter = 0.0f;
 	float overshoot = 0.0f;
 };
 
 [[nodiscard]]
-inline auto splitLeftoverEnergy(float left, float debris_share, float shatter_share, FracturePattern pattern) -> EnergySplit {
+inline auto splitLeftoverEnergy(float left, float debris_share, float fragment_share, FracturePattern pattern) -> EnergySplit {
 	if (not std::isfinite(left) || left <= 0.0f) {
 		return {};
 	}
 
 	auto sanitize = [](float share) { return std::isfinite(share) ? std::clamp(share, 0.0f, 1.0f) : 0.0f; };
 	float debris = sanitize(debris_share);
-	float shatter = pattern == FracturePattern::ductile ? 0.0f : sanitize(shatter_share);
-	if (float total = debris + shatter; total > 1.0f) {
+	float fragment = sanitize(fragment_share);
+	if (float total = debris + fragment; total > 1.0f) {
 		debris /= total;
-		shatter /= total;
+		fragment /= total;
 	}
 
-	return {
-	  .debris = left * debris,
-	  .shatter = left * shatter,
-	  .overshoot = std::max(left - (left * debris) - (left * shatter), 0.0f),
-	};
+	EnergySplit out {.debris = left * debris, .fragment = left * fragment};
+	const float rest = std::max(left - out.debris - out.fragment, 0.0f);
+	if (pattern == FracturePattern::ductile) {
+		out.overshoot = rest;
+	} else {
+		out.shatter = rest;
+	}
+	return out;
 }
 
 [[nodiscard]]
@@ -462,9 +465,6 @@ inline auto planCrater(
 	  .start = request.point,
 	  .end = request.point,
 	  .seed = request.seed,
-	  .edge_noise = std::isfinite(request.edge_noise) ? std::clamp(request.edge_noise, 0.0f, k_max_edge_noise) : 0.0f,
-	  .edge_noise_scale = std::max(request.edge_noise_scale, 0.0f) * voxel::k_voxel_size,
-	  .edge_lobes = std::isfinite(request.edge_lobes) ? std::clamp(request.edge_lobes, 0.0f, k_max_edge_noise) : 0.0f,
 	};
 	if (not std::isfinite(request.energy_density) || not(request.energy_density > 0.0f) || not(request.radius > 0.0f)) {
 		return out;
@@ -477,6 +477,11 @@ inline auto planCrater(
 	}
 
 	out.pattern = hit->fracture_pattern;
+	out.profile = hit->fracture_profile.unpack();
+	out.toughness = hit->toughness;
+	out.edge_noise = std::clamp(out.profile.edge_noise, 0.0f, k_max_edge_noise);
+	out.edge_noise_scale = std::max(out.profile.edge_noise_scale, 0.0f) * voxel::k_voxel_size;
+	out.edge_lobes = std::clamp(out.profile.edge_lobes, 0.0f, k_max_edge_noise);
 
 	// as far as the crater can grow
 	const bool digs = glm::dot(request.direction, request.direction) > 0.0f && request.max_depth > 0.0f;
@@ -547,8 +552,9 @@ inline auto planCrater(
 	);
 	left -= out.unglue.cost;
 
-	auto split = splitLeftoverEnergy(left, request.debris_share, request.shatter_share, out.pattern);
+	auto split = splitLeftoverEnergy(left, out.profile.debris_share, out.profile.fragment_share, out.pattern);
 	out.debris_energy = split.debris;
+	out.fragment_energy = split.fragment;
 	out.shatter_energy = split.shatter;
 	const float toughness = paid > 0 ? paid_cost / (static_cast<float>(paid) * k_voxel_volume) : hit->toughness;
 	out.radius +=

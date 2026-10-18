@@ -13,6 +13,7 @@
 #include "nodes/sphere_collider.hpp"
 #include "nodes/trigger.hpp"
 #include "physics_settings.hpp"
+#include "shatter.hpp"
 #include "toast/physics/body.hpp"
 #include "voxel_data_lock.hpp"
 #include "voxel_smash.hpp"
@@ -800,6 +801,149 @@ void Simulator::clearFragmentFromSource(
 	rebuildMassProperties(shape->owner);
 }
 
+void Simulator::emitDebris(
+    ShapeID shape_id, std::span<const DebrisVoxel> voxels, const DebrisBlast* blast, const FragmentPush* push, uint64_t seed
+) {
+	ZoneScopedN("physics::EmitDebris");
+
+	const size_t cap = tunables().debris_max_spawns_per_step;
+	if (voxels.empty() || m_debris_spawns.size() >= cap) {
+		return;
+	}
+	const Shape* shape = tryGetShape(shape_id);
+	if (shape == nullptr || shape->type != ShapeType::voxel) {
+		return;
+	}
+	const VoxelShapeData* data = tryGetVoxelData(shape->voxel.data);
+	const Body* body = tryGetBody(shape->owner);
+	if (data == nullptr || body == nullptr) {
+		return;
+	}
+
+	Rng rng {streamSeed(seed, FractureStream::debris)};
+	const glm::ivec3 jitter {
+	  static_cast<int32_t>(rng.below(2)), static_cast<int32_t>(rng.below(2)), static_cast<int32_t>(rng.below(2))
+	};
+	std::vector<DebrisCluster> clusters = clusterDebris(voxels, jitter, rng, tunables().fracture_debris_split_chance);
+
+	// past the cap a random subset is kept and the rest is deleted
+	const size_t room = cap - m_debris_spawns.size();
+	if (clusters.size() > room) {
+		for (size_t i = 0; i < room; ++i) {
+			std::swap(clusters[i], clusters[i + rng.below(static_cast<uint32_t>(clusters.size() - i))]);
+		}
+		clusters.resize(room);
+	}
+	if (clusters.empty()) {
+		return;
+	}
+
+	const glm::quat lattice_rotation = body->rotation * shape->voxel.local_rotation;
+	const glm::vec3 world_com = body->worldCenterOfMass();
+	const float energy_each =
+	    blast != nullptr ? blast->energy * k_joules_per_kilojoule / static_cast<float>(clusters.size()) : 0.0f;
+	const float speed_scale = tunables().debris_speed_scale;
+	const glm::vec3 push_direction = push != nullptr ? push->direction : glm::vec3 {0.0f};
+	const float push_length = glm::length(push_direction);
+
+	m_debris_spawns.reserve(m_debris_spawns.size() + clusters.size());
+	for (const DebrisCluster& cluster : clusters) {
+		// the block is 2 voxels wide
+		const glm::vec3 local = (glm::vec3(cluster.origin) + 1.0f) * voxel::k_voxel_size;
+		const glm::vec3 position =
+		    body->position + (body->rotation * (shape->voxel.local_center + (shape->voxel.local_rotation * local)));
+
+		const uint32_t material_index = voxel::resolveMaterialIndex(data->palette, data->materials, cluster.material);
+		const float mass = static_cast<float>(std::popcount(cluster.mask)) *
+		                   static_cast<float>(data->materials.materials[material_index].density) * k_voxel_volume;
+
+		// starts with the speed of the point it broke off from
+		glm::vec3 velocity = body->linear_velocity + glm::cross(body->angular_velocity, position - world_com);
+
+		if (blast != nullptr) {
+			// thrown outward from the crater axis inside a cone
+			const glm::vec3 outward = local - closestPointOnSegment(local, blast->start, blast->end);
+			const float outward_length = glm::length(outward);
+			const glm::vec3 axis_local = outward_length > 1.0e-4f ? outward / outward_length : rng.direction();
+			const glm::vec3 axis = body->rotation * (shape->voxel.local_rotation * axis_local);
+			velocity += debrisConeDirection(axis, rng, k_debris_cone_spread) * debrisSpeed(energy_each, mass, speed_scale);
+		}
+		if (push != nullptr && push_length > 1.0e-6f && mass > 0.0f) {
+			const float speed = std::min(std::min(push->speed, push->max_impulse / mass), k_max_debris_speed);
+			if (std::isfinite(speed) && speed > 0.0f) {
+				velocity += (push_direction / push_length) * speed;
+			}
+		}
+
+		m_debris_spawns.push_back(
+		    DebrisSpawn {
+		      .position = position,
+		      .rotation = lattice_rotation,
+		      .velocity = velocity,
+		      .angular_velocity = rng.direction() * rng.range(0.0f, k_debris_max_spin),
+		      .mask = cluster.mask,
+		      .material = cluster.material,
+		    }
+		);
+	}
+}
+
+void Simulator::emitComponentDebris(ShapeID shape_id, const DetachedComponent& component, const FragmentPush* push) {
+	const Shape* shape = tryGetShape(shape_id);
+	const VoxelShapeData* data = shape != nullptr && shape->type == ShapeType::voxel ? tryGetVoxelData(shape->voxel.data) : nullptr;
+	if (data == nullptr || data->volume == nullptr) {
+		return;
+	}
+
+	std::vector<DebrisVoxel> voxels;
+	voxels.reserve(component.voxel_count);
+	for (const voxel::BrickPiece& piece : component.pieces) {
+		const voxel::BrickOccupancy* occupancy = data->volume->occupancyPointer(piece.brick);
+		if (occupancy == nullptr) {
+			continue;
+		}
+		const voxel::BrickOccupancy mask = piece.voxels & *occupancy;
+		const glm::ivec3 base = piece.brick * static_cast<int32_t>(voxel::k_brick_dim);
+		for (uint32_t z = 0; z < voxel::k_brick_dim; ++z) {
+			uint64_t word = mask[z];
+			while (word != 0ull) {
+				const auto bit = static_cast<uint32_t>(std::countr_zero(word));
+				word &= word - 1ull;
+				const glm::ivec3 v =
+				    base + glm::ivec3(static_cast<int32_t>(bit & 7u), static_cast<int32_t>(bit >> 3u), static_cast<int32_t>(z));
+				voxels.push_back({.voxel = v, .material = data->volume->materialAt(v)});
+			}
+		}
+	}
+	if (voxels.empty()) {
+		return;
+	}
+
+	const uint64_t seed = fractureSeed(shape->owner, shape_id, glm::vec3(voxels.front().voxel) * voxel::k_voxel_size, m_tick_index);
+	emitDebris(shape_id, voxels, nullptr, push, seed);
+}
+
+auto Simulator::takeDebrisSpawns() -> std::vector<DebrisSpawn> {
+	return std::exchange(m_debris_spawns, {});
+}
+
+auto Simulator::debrisVolumes() const -> std::vector<DebrisVolume> {
+	std::vector<DebrisVolume> out;
+	out.reserve(m_voxel_render_records.size());
+	const glm::mat4 to_voxel_units = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f / voxel::k_voxel_size));
+	for (const auto& [index, record] : m_voxel_render_records | std::views::enumerate) {
+		out.push_back(
+		    DebrisVolume {
+		      .record_index = static_cast<uint32_t>(index),
+		      .world_to_voxel = to_voxel_units * glm::inverse(record.transform),
+		      .aabb_min = record.world_bounds.min,
+		      .aabb_max = record.world_bounds.max,
+		    }
+		);
+	}
+	return out;
+}
+
 auto Simulator::voxelNodeFor(ShapeID shape) -> toast::VoxelNode* {
 	const auto binding = std::ranges::find(m_voxel_bindings, shape, &VoxelNodeBinding::shape);
 	return binding != m_voxel_bindings.end() && binding->node.exists() ? &*binding->node : nullptr;
@@ -1030,6 +1174,7 @@ void Simulator::queuePendingFragments(std::span<const ConnectivityResult> result
 		components_to_spawn.reserve(data->detached_components.size());
 		for (const DetachedComponent& component : data->detached_components) {
 			if (component.voxel_count < tunables().min_fragment_voxels) {
+				emitComponentDebris(r.shape, component, push.has_value() ? &*push : nullptr);
 				clearFragmentFromSource(r.shape, *data, *data->volume, component);
 				continue;
 			}
@@ -4034,6 +4179,7 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 	glm::vec3 removed_sum {0.0f};
 	Crater crater;
 	SmashPieces unglued;
+	std::vector<DebrisVoxel> debris_voxels;
 
 	{
 		std::scoped_lock voxel_lock {voxelDataMutex()};
@@ -4079,9 +4225,29 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 			glm::ivec3 voxel;
 			glm::ivec3 brick;
 			uint16_t density;
+			uint8_t material;
 		};
 
 		std::vector<Doomed> doomed;
+		std::vector<CoreVoxel> core;
+
+		// cracks in the band around the crater
+		const ShatterPlan shatter = planShatter(volume, data->palette, data->materials, crater, c.max_hardness);
+		TOAST_INFO(
+		    "Physics",
+		    "Shatter: pattern {} shatter_energy {:.3f} kJ density {:.2f} kJ/m3 radius {:.3f} m band_voxels {} width {:.3f} m cells "
+		    "{} cracks {} | stop: "
+		    "{}",
+		    fracturePatternName(crater.pattern),
+		    crater.shatter_energy,
+		    shatter.density,
+		    crater.radius,
+		    shatter.band_voxels,
+		    shatter.width,
+		    shatter.cells,
+		    shatter.crack.size(),
+		    shatter.stop
+		);
 
 		const float seal_floor = glm::max(craterMinRadius(crater) - voxel::k_voxel_size, 0.0f);
 		const float seal_floor_squared = seal_floor * seal_floor;
@@ -4135,9 +4301,8 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 								if (distance_squared > outer * outer) {
 									continue;
 								}
-								if (distance_squared < inner * inner && not(distance_squared >= seal_floor_squared && touches_outside(v))) {
-									continue;
-								}
+								const bool in_core =
+								    distance_squared < inner * inner && not(distance_squared >= seal_floor_squared && touches_outside(v));
 								if (not damageReaches(
 								        crater.reachable, volume, v, closestPointOnSegment(voxel_center, crater.start, crater.end), voxel_center
 								    )) {
@@ -4150,7 +4315,12 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 									continue;
 								}
 
-								doomed.push_back({.voxel = v, .brick = brick, .density = material.density});
+								if (in_core) {
+									// stays in the wall for now
+									core.push_back({.voxel = v, .center = voxel_center});
+									continue;
+								}
+								doomed.push_back({.voxel = v, .brick = brick, .density = material.density, .material = palette_index});
 							}
 						}
 					}
@@ -4158,19 +4328,55 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 			}
 		}
 
-		for (const Doomed& d : doomed) {
-			const voxel::Volume::VoxelWrite write = volume.setVoxel(d.voxel, voxel::k_empty_palette_index);
+		// crater voxels and crack voxels go through the same write path
+		std::unordered_set<uint64_t> dirty_seen;
+		const auto carve = [&](const glm::ivec3& v, uint8_t palette_index, uint16_t density) {
+			const voxel::Volume::VoxelWrite write = volume.setVoxel(v, voxel::k_empty_palette_index);
 			if (not write.changed) {
-				continue;
+				return;
 			}
-			data->moments.remove(d.voxel.x, d.voxel.y, d.voxel.z, d.density);
+			data->moments.remove(v.x, v.y, v.z, density);
 			data->solid_voxel_count -= data->solid_voxel_count > 0 ? 1u : 0u;
 			data->connectivity_dirty = true;
 			++removed;
-			removed_sum += glm::vec3(d.voxel);
-			if (dirty_bricks.empty() || dirty_bricks.back() != d.brick) {
-				dirty_bricks.push_back(d.brick);
+			removed_sum += glm::vec3(v);
+			const glm::ivec3 brick = v / brick_dim;
+			if (dirty_seen.insert(voxelKey(brick)).second) {
+				dirty_bricks.push_back(brick);
 			}
+			debris_voxels.push_back({.voxel = v, .material = palette_index});
+		};
+		for (const Doomed& d : doomed) {
+			carve(d.voxel, d.material, d.density);
+		}
+
+		// fragmenting
+		const CoreSplit core_split = planCoreSplit(core, crater);
+		TOAST_INFO(
+		    "Physics",
+		    "Fragment: energy {:.3f} kJ density {:.2f} kJ/m3 core_voxels {} parts {} cracks {}",
+		    crater.fragment_energy,
+		    core_split.density,
+		    core.size(),
+		    core_split.parts,
+		    core_split.crack.size()
+		);
+		for (const glm::ivec3& v : core_split.crack) {
+			const uint8_t palette_index = volume.materialAt(v);
+			if (palette_index == voxel::k_empty_palette_index) {
+				continue;
+			}
+			const uint32_t material_index = voxel::resolveMaterialIndex(data->palette, data->materials, palette_index);
+			carve(v, palette_index, data->materials.materials[material_index].density);
+		}
+
+		for (const glm::ivec3& v : shatter.crack) {
+			const uint8_t palette_index = volume.materialAt(v);
+			if (palette_index == voxel::k_empty_palette_index) {
+				continue;
+			}
+			const uint32_t material_index = voxel::resolveMaterialIndex(data->palette, data->materials, palette_index);
+			carve(v, palette_index, data->materials.materials[material_index].density);
 		}
 
 		if (dirty_bricks.empty()) {
@@ -4196,6 +4402,11 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 			    }
 			);
 		}
+	}
+
+	if (not debris_voxels.empty()) {
+		const DebrisBlast blast {.start = crater.start, .end = crater.end, .energy = crater.debris_energy};
+		emitDebris(c.shape, debris_voxels, &blast, c.push.has_value() ? &*c.push : nullptr, crater.seed);
 	}
 
 	ZoneValue(static_cast<uint64_t>(dirty_bricks.size()));
@@ -4655,6 +4866,11 @@ auto Simulator::breakPieces(
 				++flown;
 				continue;
 			}
+		}
+
+		if (piece.voxel_count < tunables().min_fragment_voxels) {
+			const std::optional<FragmentPush> debris_push = push_for(piece);
+			emitComponentDebris(shape_id, piece, debris_push.has_value() ? &*debris_push : nullptr);
 		}
 
 		shape = tryGetShape(shape_id);

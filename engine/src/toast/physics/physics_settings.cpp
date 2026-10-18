@@ -399,50 +399,30 @@ void registerPhysicsSettings() {
 	    {.label = "Max unglue voxels", .category = "Fracture", .min = 0.0, .max = 1000000.0, .step = 64.0},
 	    &Tunables::fracture_max_unglue_voxels
 	);
-	flt("physics.fracture.edge_noise",
-	    0.25,
-	    {
-	      .label = "Edge noise",
-	      .category = "Fracture",
-	      .min = 0.0f,
-	      .max = 0.9f,
-	      .step = 0.05f,
-	    },
-	    &Tunables::fracture_edge_noise);
-	flt("physics.fracture.edge_noise_scale",
-	    4.0,
-	    {.label = "Edge noise scale", .category = "Fracture", .min = 0.0f, .max = 64.0f, .step = 0.5f},
-	    &Tunables::fracture_edge_noise_scale);
-	flt("physics.fracture.edge_lobes",
+	flt("physics.fracture.debris_split_chance",
 	    0.35,
-	    {.label = "Edge lobes", .category = "Fracture", .min = 0.0f, .max = 0.9f, .step = 0.05f},
-	    &Tunables::fracture_edge_lobes);
-	flt("physics.fracture.debris_share",
-	    0.2,
-	    {.label = "Debris share", .category = "Shatter", .min = 0.0f, .max = 1.0f, .step = 0.05f},
-	    &Tunables::fracture_debris_share);
-	flt("physics.fracture.shatter_share",
-	    0.5,
-	    {.label = "Shatter share", .category = "Shatter", .min = 0.0f, .max = 1.0f, .step = 0.05f},
-	    &Tunables::fracture_shatter_share);
-	flt("physics.fracture.shatter_max_band",
-	    6.0,
-	    {.label = "Max band", .category = "Shatter", .min = 0.0f, .max = 32.0f, .step = 0.5f},
-	    &Tunables::fracture_shatter_max_band);
+	    {.label = "Debris split chance", .category = "Shatter", .min = 0.0f, .max = 1.0f, .step = 0.05f},
+	    &Tunables::fracture_debris_split_chance);
 	uint_setting(
-	    "physics.fracture.shatter_max_cells",
-	    12,
-	    {.label = "Max cells", .category = "Shatter", .min = 2.0, .max = 64.0, .step = 1.0},
-	    &Tunables::fracture_shatter_max_cells
+	    "physics.fracture.max_shatter_cells",
+	    128,
+	    {.label = "Max shatter cells", .category = "Shatter", .min = 2.0, .max = 1024.0, .step = 8.0},
+	    &Tunables::fracture_max_shatter_cells
 	);
-	flt("physics.fracture.shatter_cell_cost",
-	    4.0,
-	    {.label = "Cell cost", .category = "Shatter", .min = 0.01f, .max = 1000.0f, .step = 0.25f},
-	    &Tunables::fracture_shatter_cell_cost);
-	flt("physics.fracture.crack_half_width",
-	    0.9,
-	    {.label = "Crack half width", .category = "Shatter", .min = 0.5f, .max = 4.0f, .step = 0.1f},
-	    &Tunables::fracture_crack_half_width);
+	flt("physics.fracture.max_shatter_distance",
+	    8.0,
+	    {.label = "Max shatter distance", .category = "Shatter", .min = 0.1f, .max = 64.0f, .step = 0.5f},
+	    &Tunables::fracture_max_shatter_distance);
+	uint_setting(
+	    "physics.debris.max_spawns_per_step",
+	    512,
+	    {.label = "Max spawns per step", .category = "Debris", .min = 0.0, .max = 16384.0, .step = 16.0},
+	    &Tunables::debris_max_spawns_per_step
+	);
+	flt("physics.debris.speed_scale",
+	    1.0,
+	    {.label = "Speed scale", .category = "Debris", .min = 0.0f, .max = 8.0f, .step = 0.1f},
+	    &Tunables::debris_speed_scale);
 
 	uint_setting(
 	    "physics.jobs.min_bounds_per_job",

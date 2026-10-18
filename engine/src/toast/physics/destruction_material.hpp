@@ -8,6 +8,7 @@
 
 #pragma once
 #include "fracture_pattern.hpp"
+#include "fracture_profile.hpp"
 
 #include <toast/assets/data.hpp>
 #include <toast/physics/hardness.hpp>
@@ -41,6 +42,9 @@ public:
 	[[nodiscard]]
 	auto fracturePatterh() const noexcept -> physics::FracturePattern;
 
+	[[nodiscard]]
+	auto fractureProfile() const noexcept -> physics::PackedFractureProfile;
+
 	/// @brief Pascals
 	[[nodiscard]]
 	auto structuralStrength() const noexcept -> float;
@@ -65,6 +69,7 @@ private:
 	float m_toughness = 0.0f;
 	physics::Hardness m_hardness = physics::Hardness::medium;
 	physics::FracturePattern m_fracture_pattern = physics::FracturePattern::brittle;
+	physics::FractureValues m_fracture_values;
 	float m_structural_strength = 0.0f;
 	bool m_destructible = true;
 	bool m_flammable = false;
