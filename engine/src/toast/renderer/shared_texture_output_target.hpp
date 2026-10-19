@@ -43,7 +43,7 @@ struct ViewportSharedHandles {
 
 class SharedTextureOutputTarget final : public IOutputTarget {
 public:
-	SharedTextureOutputTarget(const VulkanCore& core, vk::Extent2D preferred_extent, uint32_t image_count = 3);
+	SharedTextureOutputTarget(const VulkanCore& core, vk::Extent2D preferred_extent, uint32_t image_count = 4);
 	~SharedTextureOutputTarget() override;
 
 	SharedTextureOutputTarget(const SharedTextureOutputTarget&) = delete;

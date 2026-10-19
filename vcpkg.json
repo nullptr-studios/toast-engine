@@ -1,7 +1,7 @@
 {
   "name": "engine",
   "version-string": "1.0.0",
-  "builtin-baseline": "f781d9387e4684783e69e136e2e124ff4660bffc",
+  "builtin-baseline": "e06564091c10e0b042900800c9fd48aad7f00643",
   "dependencies": [
     {
       "name": "asio",
@@ -105,12 +105,14 @@
       "version>=": "5.5.0#1"
     },
     {
-      "name" : "imgui",
-      "default-features" : false,
-      "features" : [ {
-        "name" : "vulkan-binding"
-      } ],
-      "version>=" : "1.92.7"
+      "name": "imgui",
+      "default-features": false,
+      "features": [
+        {
+          "name": "vulkan-binding"
+        }
+      ],
+      "version>=": "1.92.7"
     },
     {
       "name": "rmlui",
@@ -120,7 +122,8 @@
   "overrides": [
     {
       "name": "tracy",
-      "version": "0.13.1"
+      "version": "0.14.1",
+      "port-version": 1
     },
     {
       "name": "lua",
@@ -129,6 +132,11 @@
     {
       "name": "vulkan-memory-allocator",
       "version": "3.3.0"
+    },
+    {
+      "name": "vulkan-memory-allocator-hpp",
+      "version": "3.3.0",
+      "port-version": 1
     }
   ]
 }

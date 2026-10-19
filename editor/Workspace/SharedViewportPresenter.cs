@@ -33,9 +33,12 @@ internal sealed class SharedViewportPresenter : IDisposable {
 		public ICompositionImportedGpuSemaphore? Done;
 	}
 
-	public SharedViewportPresenter(Visual host, ToastEngine engine) {
+	private readonly Action? m_onPresented;
+
+	public SharedViewportPresenter(Visual host, ToastEngine engine, Action? onPresented = null) {
 		m_host = host;
 		m_engine = engine;
+		m_onPresented = onPresented;
 	}
 
 	public bool Failed { get; private set; }
@@ -107,6 +110,11 @@ internal sealed class SharedViewportPresenter : IDisposable {
 		}
 
 		Layout();
+		return TryPresentLatest();
+	}
+
+	private bool TryPresentLatest() {
+		if (!Active || m_surface is null) return false;
 
 		var result = m_engine.TryGetSharedViewportFrame(out var frame);
 		if (result < 0) {
@@ -141,6 +149,7 @@ internal sealed class SharedViewportPresenter : IDisposable {
 		}
 		m_engine.ReleaseSharedViewportSlot(generation, index, true);
 		m_updating = false;
+		if (TryPresentLatest()) m_onPresented?.Invoke();
 	}
 
 	private bool Import(ToastViewportSharedFrame frame) {

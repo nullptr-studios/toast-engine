@@ -37,6 +37,19 @@ constexpr vk::ExternalMemoryHandleTypeFlagBits k_memory_handle_type = vk::Extern
 constexpr vk::ExternalMemoryHandleTypeFlagBits k_memory_handle_type = vk::ExternalMemoryHandleTypeFlagBits::eOpaqueFd;
 #endif
 
+#if defined(_WIN32)
+constexpr vk::ImageUsageFlags k_shared_usage = vk::ImageUsageFlagBits::eTransferDst;
+#else
+constexpr vk::ImageUsageFlags k_shared_usage =
+    vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled;
+#endif
+
+#if defined(_WIN32)
+constexpr vk::ImageLayout k_shared_release_layout = vk::ImageLayout::eGeneral;
+#else
+constexpr vk::ImageLayout k_shared_release_layout = vk::ImageLayout::eColorAttachmentOptimal;
+#endif
+
 [[nodiscard]]
 auto findMemoryType(const vk::raii::PhysicalDevice& physical, uint32_t type_bits) -> std::optional<uint32_t> {
 	const auto properties = physical.getMemoryProperties();
@@ -58,7 +71,7 @@ auto findMemoryType(const vk::raii::PhysicalDevice& physical, uint32_t type_bits
 auto canShareImages(const vk::raii::PhysicalDevice& physical, vk::Format format) -> bool {
 	vk::PhysicalDeviceExternalImageFormatInfo external_info(k_memory_handle_type);
 	vk::PhysicalDeviceImageFormatInfo2 info(
-	    format, vk::ImageType::e2D, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eTransferDst, {}, &external_info
+	    format, vk::ImageType::e2D, vk::ImageTiling::eOptimal, k_shared_usage, {}, &external_info
 	);
 	try {
 		const auto chain = physical.getImageFormatProperties2<vk::ImageFormatProperties2, vk::ExternalImageFormatProperties>(info);
@@ -96,6 +109,7 @@ struct SharedTextureOutputTarget::Interop {
 	std::vector<Slot> slots;
 	vk::DeviceSize memory_size = 0;
 	uint64_t generation = 0;
+	int32_t displayed = -1;
 	uint64_t adapter_luid = 0;
 	std::array<uint8_t, VK_UUID_SIZE> adapter_uuid {};
 #if defined(_WIN32)
@@ -116,6 +130,7 @@ struct SharedTextureOutputTarget::Interop {
 	void createSlots(const VulkanCore& core, vk::Extent2D extent, vk::Format format, size_t count) {
 		const auto& device = core.getDevice();
 		slots.clear();
+		displayed = -1;
 		slots.resize(count);
 		++generation;
 
@@ -132,7 +147,7 @@ struct SharedTextureOutputTarget::Interop {
 			image_ci.arrayLayers = 1;
 			image_ci.samples = vk::SampleCountFlagBits::e1;
 			image_ci.tiling = vk::ImageTiling::eOptimal;
-			image_ci.usage = vk::ImageUsageFlagBits::eTransferDst;
+			image_ci.usage = k_shared_usage;
 			image_ci.sharingMode = vk::SharingMode::eExclusive;
 			image_ci.initialLayout = vk::ImageLayout::eUndefined;
 			slot.image = vk::raii::Image(device, image_ci);
@@ -364,7 +379,8 @@ auto SharedTextureOutputTarget::acquireNextImage(uint64_t, vk::Semaphore, vk::Fe
 	const int32_t published = m_latest_ready.load(std::memory_order_acquire);
 	const auto busy = [&](uint32_t index) {
 		return std::cmp_equal(index, published) || std::cmp_equal(index, m_reading) ||
-		       (m_interop && index < m_interop->slots.size() && m_interop->slots[index].held);
+		       (m_interop && index < m_interop->slots.size() &&
+		        (m_interop->slots[index].held || std::cmp_equal(index, m_interop->displayed)));
 	};
 
 	uint32_t image_index = m_next_acquire_index;
@@ -427,7 +443,7 @@ void SharedTextureOutputTarget::recordFinalize(vk::CommandBuffer command_buffer,
 		    vk::AccessFlagBits::eTransferWrite,
 		    {},
 		    vk::ImageLayout::eTransferDstOptimal,
-		    vk::ImageLayout::eGeneral,
+		    k_shared_release_layout,
 		    graphics_family,
 		    VK_QUEUE_FAMILY_EXTERNAL,
 		    target,
@@ -546,6 +562,10 @@ void SharedTextureOutputTarget::disableSharedTextures() {
 }
 
 auto SharedTextureOutputTarget::enableSharedTextures(uint64_t adapter_luid, const uint8_t* adapter_uuid) -> bool {
+	if (m_core->getNsightMode() != NsightMode::none || m_core->getRenderDocAPI() != nullptr) {
+		TOAST_INFO("Render", "A graphics debugger is attached; the viewport reads frames back instead of sharing textures");
+		return false;
+	}
 	if (!m_core->isTextureSharingSupported() || !canShareImages(m_core->getPhysicalDevice(), m_color_format)) {
 		return false;
 	}
@@ -645,6 +665,9 @@ void SharedTextureOutputTarget::releaseSharedSlot(uint64_t generation, uint32_t 
 	}
 	auto& shared = m_interop->slots[slot];
 	shared.held = false;
+	if (consumed) {
+		m_interop->displayed = static_cast<int32_t>(slot);
+	}
 #if !defined(_WIN32)
 	if (consumed) {
 		shared.ready_signaled = false;
