@@ -18,6 +18,14 @@ public:
 
 	~DirectionalLight() override = default;
 
+	[[nodiscard]]
+	auto angularDiameter() const -> float {
+		return m_angular_diameter;
+	}
+
 private:
+	/// Marched voxel shadow penumbra width where the sun is about 0.53
+	[[Reflect, Name("Angular Diameter"), Unit("deg"), Range(0.0, 10.0), Group("Area")]]
+	float m_angular_diameter = 0.53f;
 };
 }

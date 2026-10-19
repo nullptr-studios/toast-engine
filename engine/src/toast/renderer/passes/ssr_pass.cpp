@@ -54,6 +54,8 @@ SsrPass::SsrPass(const VulkanCore& core, vk::Format scene_format, vk::Extent2D e
 		    config.pipeline_type = VulkanPipeline::PipelineType::graphics;
 		    config.debug_name = debug_name;
 		    config.color_format = format;
+		    // Confidence lives in alpha
+		    config.write_color_alpha = true;
 		    config.extent = target_extent;
 		    config.shader_spirv = shader->spirv;
 		    config.fragment_entry = entry;
@@ -65,12 +67,15 @@ SsrPass::SsrPass(const VulkanCore& core, vk::Format scene_format, vk::Extent2D e
 		    config.depth_write = false;
 		    pipeline.rebuild(core, config);
 	    };
-	build_pipeline(m_trace_pipeline, k_reflection_format, PostProcessTarget::halfExtent(extent), "traceMain", "SsrPass Trace");
+	const vk::Extent2D half = PostProcessTarget::halfExtent(extent);
+	build_pipeline(m_trace_pipeline, k_hit_format, half, "traceMain", "SsrPass Trace");
+	build_pipeline(m_resolve_pipeline, k_reflection_format, half, "resolveMain", "SsrPass Resolve");
+	build_pipeline(m_temporal_pipeline, k_reflection_format, half, "temporalMain", "SsrPass Temporal");
 	build_pipeline(m_composite_pipeline, scene_format, extent, "compositeMain", "SsrPass Composite");
 
 	createResources(core);
 	createTargets(core, extent);
-	TOAST_INFO("Render", "SsrPass ready ({}, marched at half resolution)", vk::to_string(scene_format));
+	TOAST_INFO("Render", "SsrPass ready ({}, GGX rays traced at half resolution)", vk::to_string(scene_format));
 }
 
 void SsrPass::createResources(const VulkanCore& core) {
@@ -95,8 +100,8 @@ void SsrPass::createResources(const VulkanCore& core) {
 	const vk::DescriptorPool pool = VulkanRenderer::instance->getDescriptorPoolHandle();
 
 	m_descriptor_sets.clear();
-	m_bound_views.assign(VulkanRenderer::k_frames_in_flight, vk::ImageView {});
-	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
+	m_bound_views.assign(VulkanRenderer::k_frames_in_flight * 2, vk::ImageView {});
+	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight * 2; ++i) {
 		const vk::DescriptorSetAllocateInfo alloc_info(pool, 1, &set_layout);
 		auto allocated = device.allocateDescriptorSets(alloc_info);
 		m_descriptor_sets.push_back(std::move(allocated[0]));
@@ -105,9 +110,14 @@ void SsrPass::createResources(const VulkanCore& core) {
 }
 
 void SsrPass::createTargets(const VulkanCore& core, vk::Extent2D extent) {
+	const vk::Extent2D half = PostProcessTarget::halfExtent(extent);
 	m_target.create(core, extent, m_scene_format, "SsrPass");
-	m_reflection_target.create(core, PostProcessTarget::halfExtent(extent), k_reflection_format, "SsrPass Reflection");
+	m_hit_target.create(core, half, k_hit_format, "SsrPass Hits");
+	m_resolve_target.create(core, half, k_reflection_format, "SsrPass Resolve");
+	m_history[0].create(core, half, k_reflection_format, "SsrPass History0");
+	m_history[1].create(core, half, k_reflection_format, "SsrPass History1");
 	std::ranges::fill(m_bound_views, vk::ImageView {});
+	m_history_valid = false;
 }
 
 void SsrPass::onResize(vk::Extent2D extent) {
@@ -118,38 +128,56 @@ void SsrPass::onResize(vk::Extent2D extent) {
 
 auto SsrPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView source_view) -> vk::ImageView {
 	ZoneScoped;
-	if (!m_trace_pipeline.isReady() || !m_composite_pipeline.isReady() || frame_index >= m_descriptor_sets.size() || !source_view ||
-	    !m_target.isReady() || !m_reflection_target.isReady()) {
+	const bool pipelines_ready = m_trace_pipeline.isReady() && m_resolve_pipeline.isReady() && m_temporal_pipeline.isReady() &&
+	                             m_composite_pipeline.isReady();
+	const bool targets_ready = m_target.isReady() && m_hit_target.isReady() && m_resolve_target.isReady() &&
+	                           m_history[0].isReady() && m_history[1].isReady();
+	if (!pipelines_ready || !targets_ready || frame_index * 2 + 1 >= m_descriptor_sets.size() || !source_view) {
 		return source_view;
 	}
 
 	const vk::ImageView depth_view = VulkanRenderer::instance->getDepthView();
 	const vk::ImageView normal_view = VulkanRenderer::instance->getSceneNormalView();
-	if (!depth_view || !normal_view) {
+	const vk::ImageView motion_view = VulkanRenderer::instance->getSceneMotionView();
+	if (!depth_view || !normal_view || !motion_view) {
 		return source_view;
 	}
 
-	if (m_bound_views[frame_index] != source_view) {
-		const std::array image_infos {
+	const PostProcessTarget& history_write = m_history[m_parity];
+	const PostProcessTarget& history_read = m_history[1 - m_parity];
+	const uint32_t set_index = (frame_index * 2) + m_parity;
+	const vk::DescriptorSet set = *m_descriptor_sets[set_index];
+
+	if (m_bound_views[set_index] != source_view) {
+		// Point sampled except the colours since interpolated depth or normals invent surfaces
+		const std::array<vk::DescriptorImageInfo, k_binding_count> image_infos {
 		  vk::DescriptorImageInfo(*m_sampler, source_view, vk::ImageLayout::eShaderReadOnlyOptimal),
 		  // Depth stays eDepthReadOnlyOptimal for the overlay stage
 		  vk::DescriptorImageInfo(*m_point_sampler, depth_view, vk::ImageLayout::eDepthReadOnlyOptimal),
 		  vk::DescriptorImageInfo(*m_point_sampler, normal_view, vk::ImageLayout::eShaderReadOnlyOptimal),
+		  vk::DescriptorImageInfo(*m_point_sampler, m_hit_target.view(), vk::ImageLayout::eShaderReadOnlyOptimal),
+		  vk::DescriptorImageInfo(*m_point_sampler, m_resolve_target.view(), vk::ImageLayout::eShaderReadOnlyOptimal),
+		  vk::DescriptorImageInfo(*m_sampler, history_read.view(), vk::ImageLayout::eShaderReadOnlyOptimal),
+		  vk::DescriptorImageInfo(*m_point_sampler, motion_view, vk::ImageLayout::eShaderReadOnlyOptimal),
 		  // Point sampled since the upsample picks its own texels
-		  vk::DescriptorImageInfo(*m_point_sampler, m_reflection_target.view(), vk::ImageLayout::eShaderReadOnlyOptimal)
+		  vk::DescriptorImageInfo(*m_point_sampler, history_write.view(), vk::ImageLayout::eShaderReadOnlyOptimal),
 		};
 
-		std::array<vk::WriteDescriptorSet, 4> writes {};
+		std::array<vk::WriteDescriptorSet, k_binding_count> writes {};
 		for (uint32_t binding = 0; binding < writes.size(); ++binding) {
-			writes[binding] = vk::WriteDescriptorSet(
-			    *m_descriptor_sets[frame_index], binding, 0, 1, vk::DescriptorType::eCombinedImageSampler, &image_infos[binding]
-			);
+			writes[binding] =
+			    vk::WriteDescriptorSet(set, binding, 0, 1, vk::DescriptorType::eCombinedImageSampler, &image_infos[binding]);
 		}
 		m_core->getDevice().updateDescriptorSets(writes, {});
-		m_bound_views[frame_index] = source_view;
+		m_bound_views[set_index] = source_view;
 	}
 
 	const auto* frame = VulkanRenderer::instance->renderingFrame();
+	const uint64_t sequence = frame != nullptr ? frame->sequence : 0;
+	const bool history_valid = m_history_valid && sequence == m_last_sequence + 1;
+	if (!history_valid) {
+		history_read.makeSampleable(cmd);
+	}
 	const auto settings = frame != nullptr ? frame->post_process.ssr : VulkanRenderer::PostProcessSettings::Ssr {};
 
 	const glm::mat4 view_projection = frame != nullptr ? frame->frame_data.view_projection : glm::mat4(1.0f);
@@ -157,29 +185,36 @@ auto SsrPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView 
 	Params params {};
 	params.view_projection = view_projection;
 	params.inverse_view_projection = glm::inverse(view_projection);
-	params.camera_position = glm::vec4(frame != nullptr ? frame->frame_data.camera_position : glm::vec3(0.0f), 1.0f);
+	params.camera_position =
+	    glm::vec4(frame != nullptr ? frame->frame_data.camera_position : glm::vec3(0.0f), static_cast<float>(sequence % 4096));
 	params.tuning =
 	    glm::vec4(settings.intensity, settings.max_roughness, settings.thickness, static_cast<float>(settings.max_steps));
-	params.marching = glm::vec4(settings.stride, static_cast<float>(frame != nullptr ? frame->render_mode : 0u), 0.0f, 0.0f);
+	params.marching = glm::vec4(
+	    settings.stride * static_cast<float>(settings.max_steps),
+	    static_cast<float>(frame != nullptr ? frame->render_mode : 0u),
+	    history_valid ? 1.0f : 0.0f,
+	    0.0f
+	);
 
 	const auto draw = [&](const PostProcessTarget& target, const VulkanPipeline& pipeline) {
 		target.beginScope(cmd);
 		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.getPipeline());
 		cmd.bindDescriptorSets(
-		    vk::PipelineBindPoint::eGraphics,
-		    *m_shader_layout.getPipelineLayout(),
-		    0,
-		    std::array<vk::DescriptorSet, 1> {*m_descriptor_sets[frame_index]},
-		    {}
+		    vk::PipelineBindPoint::eGraphics, *m_shader_layout.getPipelineLayout(), 0, std::array<vk::DescriptorSet, 1> {set}, {}
 		);
 		cmd.pushConstants(*m_shader_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eAll, 0, sizeof(Params), &params);
 		cmd.draw(3, 1, 0, 0);
 		target.endScope(cmd);
 	};
 
-	draw(m_reflection_target, m_trace_pipeline);
+	draw(m_hit_target, m_trace_pipeline);
+	draw(m_resolve_target, m_resolve_pipeline);
+	draw(history_write, m_temporal_pipeline);
 	draw(m_target, m_composite_pipeline);
 
+	m_parity = 1 - m_parity;
+	m_history_valid = true;
+	m_last_sequence = sequence;
 	return m_target.view();
 }
 

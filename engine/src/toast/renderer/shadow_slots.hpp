@@ -50,6 +50,6 @@ void setGraceFrames(uint32_t frames);
 
 /// Keeps the current tier until the camera distance leaves its band
 [[nodiscard]]
-auto stableResolution(uint32_t current, float camera_distance, float resolution_scale) -> uint32_t;
+auto stableResolution(uint32_t current, float camera_distance, float light_range, float resolution_scale) -> uint32_t;
 
 }

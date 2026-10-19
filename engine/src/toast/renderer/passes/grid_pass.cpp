@@ -45,6 +45,9 @@ GridPass::GridPass(const renderer::VulkanCore& core, vk::Format color_format, vk
 	config.cull_mode = vk::CullModeFlagBits::eNone;
 	config.depth_test = true;
 	config.depth_write = false;
+	// Toward the camera so a coplanar floor rasterized with the TAA jitter never wins half the pixels
+	config.depth_bias_constant = depth::k_reversed_z ? 8.0f : -8.0f;
+	config.depth_bias_slope = depth::k_reversed_z ? 1.5f : -1.5f;
 	config.blend_enable = true;
 	m_pipeline.rebuild(core, config);
 

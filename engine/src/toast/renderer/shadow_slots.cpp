@@ -15,7 +15,8 @@ namespace renderer::shadow_slots {
 
 namespace {
 
-constexpr size_t k_max_slots = 8;
+constexpr size_t k_max_slots = 32;
+static_assert(k_max_slots >= shadows::k_max_spot_shadows && k_max_slots >= shadows::k_max_point_shadows);
 
 std::atomic<float> g_retention {k_default_retention};
 std::atomic<uint32_t> g_grace_frames {k_default_grace_frames};
@@ -126,12 +127,14 @@ void setGraceFrames(uint32_t frames) {
 	g_grace_frames.store(frames, std::memory_order_relaxed);
 }
 
-auto stableResolution(uint32_t current, float camera_distance, float resolution_scale) -> uint32_t {
+auto stableResolution(uint32_t current, float camera_distance, float light_range, float resolution_scale) -> uint32_t {
 	if (current == 0) {
-		return shadows::punctualShadowResolution(camera_distance, resolution_scale);
+		return shadows::punctualShadowResolution(camera_distance, light_range, resolution_scale);
 	}
-	const uint32_t nearer = shadows::punctualShadowResolution(camera_distance * (1.0f - k_resolution_band), resolution_scale);
-	const uint32_t farther = shadows::punctualShadowResolution(camera_distance * (1.0f + k_resolution_band), resolution_scale);
+	const uint32_t nearer =
+	    shadows::punctualShadowResolution(camera_distance * (1.0f - k_resolution_band), light_range, resolution_scale);
+	const uint32_t farther =
+	    shadows::punctualShadowResolution(camera_distance * (1.0f + k_resolution_band), light_range, resolution_scale);
 	return std::clamp(current, farther, nearer);
 }
 

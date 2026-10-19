@@ -26,6 +26,10 @@ auto spotBounds(const glm::vec3& position, const glm::vec3& direction, float ran
 [[nodiscard]]
 auto importance(const glm::vec3& color, float intensity, float range, float camera_distance, float cone_fraction) -> float;
 
+/// Ranks lights for shadow slots by nearness
+[[nodiscard]]
+auto shadowPriority(const glm::vec3& color, float intensity, float camera_distance, float cone_fraction) -> float;
+
 /// Ends at the farthest visible light so slices are not spent on empty depth
 [[nodiscard]]
 auto clusterDepthRange(float camera_near, float camera_far, float light_reach) -> DepthRange;

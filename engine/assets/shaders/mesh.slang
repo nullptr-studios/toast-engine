@@ -1,6 +1,7 @@
 import toast;
 
 import lighting;
+import scene_normal;
 
 struct MaterialUBO
 {
@@ -248,11 +249,12 @@ float4 shadeSurface(VSOutput input, inout float4 outNormalRoughness, inout float
     float3 tangentNormal = gNormal.Sample(input.uv).rgb * 2.0 - 1.0;
     N = normalize(T * tangentNormal.x + B * tangentNormal.y + N * tangentNormal.z);
 
-    outNormalRoughness = float4(N, roughness);
+    outNormalRoughness = encodeSceneNormal(N, roughness, specularF0(albedo, metallic));
 
     float3 V = normalize(gCamera.position - input.worldPosition);
 
     Surface surface;
+    surface.marchedShadows = false;
     surface.worldPosition = input.worldPosition;
     surface.normal = N;
     surface.geometricNormal = geometricNormal;

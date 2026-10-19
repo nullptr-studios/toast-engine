@@ -54,6 +54,12 @@ struct PaletteEntry {
 
 static_assert(sizeof(PaletteEntry) == 16, "a palette entry must be sixteen bytes - the shader indexes it that way");
 
+/// Mirrors voxel_dda.slang glassEntry
+[[nodiscard]]
+constexpr auto isGlass(const PaletteEntry& entry) noexcept -> bool {
+	return (entry.flags & k_entry_transparent) != 0 && entry.alpha < 255;
+}
+
 /// @brief Entry 0 is the empty voxel and must stay all zero
 struct Palette {
 	std::array<PaletteEntry, k_palette_size> entries {};

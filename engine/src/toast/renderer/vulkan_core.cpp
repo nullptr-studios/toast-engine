@@ -649,6 +649,10 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	enabled_features.samplerAnisotropy = m_sampler_anisotropy_supported ? VK_TRUE : VK_FALSE;
 
 	enabled_features.independentBlend = VK_TRUE;
+	m_depth_clamp_supported = device_features.depthClamp == VK_TRUE;
+	enabled_features.depthClamp = m_depth_clamp_supported ? VK_TRUE : VK_FALSE;
+	m_dual_source_blend_supported = device_features.dualSrcBlend == VK_TRUE;
+	enabled_features.dualSrcBlend = m_dual_source_blend_supported ? VK_TRUE : VK_FALSE;
 	// HiZPyramid picks its level image by a loop index
 	enabled_features.shaderStorageImageArrayDynamicIndexing = VK_TRUE;
 
@@ -808,6 +812,7 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 			usable = mesh_probe.taskShader == VK_TRUE && mesh_probe.meshShader == VK_TRUE && mesh_props.maxMeshOutputVertices >= 256 &&
 			         mesh_props.maxMeshOutputPrimitives >= 128 && mesh_props.maxMeshWorkGroupInvocations >= 64 &&
 			         mesh_props.maxTaskWorkGroupInvocations >= 64 && mesh_props.maxTaskPayloadSize >= 3084;
+			m_mesh_multiview_views = usable && mesh_probe.multiviewMeshShader == VK_TRUE ? mesh_props.maxMeshMultiviewViewCount : 0u;
 		}
 
 		m_mesh_shader_supported = usable;
@@ -824,6 +829,7 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	vk::PhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features {};
 	mesh_shader_features.taskShader = VK_TRUE;
 	mesh_shader_features.meshShader = VK_TRUE;
+	mesh_shader_features.multiviewMeshShader = m_mesh_multiview_views > 0 ? VK_TRUE : VK_FALSE;
 
 	vk::PhysicalDeviceAccelerationStructureFeaturesKHR acceleration_structure_features {};
 	acceleration_structure_features.accelerationStructure = VK_TRUE;

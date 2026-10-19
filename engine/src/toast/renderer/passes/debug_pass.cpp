@@ -477,15 +477,19 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 				    shadow_stats.static_edits,
 				    shadow_stats.spared
 				);
+				ImGui::TextDisabled(
+				    "Shadow voxel draws: %u meshed, %u marched", shadow_stats.meshed_volumes, shadow_stats.marched_volumes
+				);
 
 				if (const auto* frame = VulkanRenderer::instance->renderingFrame(); frame != nullptr) {
 					const auto& stats = frame->light_stats;
 					ImGui::TextDisabled(
-					    "Shadow slots: %u of %u spot, %u of %u point, %llu displaced",
+					    "Shadow slots: %u of %u spot, %u of %u point, %u without shadow, %llu displaced",
 					    stats.spot_shadows,
-					    renderer::shadows::k_max_spot_shadows,
+					    renderer::shadows::spotShadowBudget(),
 					    stats.point_shadows,
-					    renderer::shadows::k_max_point_shadows,
+					    renderer::shadows::pointShadowBudget(),
+					    stats.spot_denied + stats.point_denied,
 					    static_cast<unsigned long long>(stats.shadow_displaced)
 					);
 				}

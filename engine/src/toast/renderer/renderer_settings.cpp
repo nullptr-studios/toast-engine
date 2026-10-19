@@ -157,9 +157,206 @@ void registerShadows() {
 			 .step = 1.0}
 	)
 	    .onChange([](int64_t frames) { shadow_slots::setGraceFrames(static_cast<uint32_t>(std::max<int64_t>(frames, 0))); });
+
+	toast::settings::declareInt(
+	    "renderer.shadows.spot_slots",
+	    shadows::k_default_spot_shadows,
+	    {.label = "Spot shadow slots",
+			 .category = "Shadows",
+			 .description = "Spot lights that can hold a shadow. Each slot is one punctual layer in every copy of the map, "
+			                "about 3 MB at 512",
+			 .min = 0.0,
+			 .max = static_cast<double>(shadows::k_max_spot_shadows),
+			 .step = 1.0,
+			 .requires_restart = true}
+	)
+	    .onChange([](int64_t slots) { shadows::setSpotShadowSlots(static_cast<uint32_t>(std::max<int64_t>(slots, 0))); });
+
+	toast::settings::declareInt(
+	    "renderer.shadows.point_slots",
+	    shadows::k_default_point_shadows,
+	    {.label = "Point shadow slots",
+			 .category = "Shadows",
+			 .description = "Point lights that can hold a shadow. Each slot is six punctual layers in every copy of the map, "
+			                "about 18 MB at 512",
+			 .min = 0.0,
+			 .max = static_cast<double>(shadows::k_max_point_shadows),
+			 .step = 1.0,
+			 .requires_restart = true}
+	)
+	    .onChange([](int64_t slots) { shadows::setPointShadowSlots(static_cast<uint32_t>(std::max<int64_t>(slots, 0))); });
+
+	toast::settings::declareInt(
+	    "renderer.shadows.spot_budget",
+	    shadows::k_max_spot_shadows,
+	    {.label = "Spot lights casting",
+			 .category = "Shadows",
+			 .description = "Of the spot shadow slots how many may be used at once, nearest lights first. Lowers live "
+			                "without a restart to compare costs",
+			 .min = 0.0,
+			 .max = static_cast<double>(shadows::k_max_spot_shadows),
+			 .step = 1.0}
+	)
+	    .onChange([](int64_t lights) { shadows::setSpotShadowBudget(static_cast<uint32_t>(std::max<int64_t>(lights, 0))); });
+
+	toast::settings::declareInt(
+	    "renderer.shadows.point_budget",
+	    shadows::k_max_point_shadows,
+	    {.label = "Point lights casting",
+			 .category = "Shadows",
+			 .description = "Of the point shadow slots how many may be used at once, nearest lights first. Each costs six "
+			                "shadow faces whenever its casters change",
+			 .min = 0.0,
+			 .max = static_cast<double>(shadows::k_max_point_shadows),
+			 .step = 1.0}
+	)
+	    .onChange([](int64_t lights) { shadows::setPointShadowBudget(static_cast<uint32_t>(std::max<int64_t>(lights, 0))); });
+
+	toast::settings::declareFloat(
+	    "renderer.shadows.full_resolution_ranges",
+	    shadows::k_punctual_full_resolution_ranges,
+	    {.label = "Full resolution reach",
+			 .category = "Shadows",
+			 .description = "Camera distance in light ranges within which a spot or point shadow keeps its full "
+			                "resolution. Past it each doubling of the distance halves the shadow map",
+			 .min = 0.5,
+			 .max = 16.0,
+			 .step = 0.5}
+	)
+	    .onChange([](double ranges) { shadows::setPunctualFullResolutionRanges(static_cast<float>(ranges)); });
+
+	toast::settings::declareFloat(
+	    "renderer.shadows.cascade_split_lambda",
+	    shadows::k_cascade_split_lambda,
+	    {.label = "Cascade split",
+			 .category = "Shadows",
+			 .description = "0 spaces the cascades evenly and 1 logarithmically. Higher keeps more resolution near the "
+			                "camera",
+			 .min = 0.0,
+			 .max = 1.0,
+			 .step = 0.05}
+	)
+	    .onChange([](double lambda) { shadows::setCascadeSplitLambda(static_cast<float>(lambda)); });
+
+	toast::settings::declareFloat(
+	    "renderer.shadows.cascade_padding",
+	    shadows::k_cascade_padding,
+	    {.label = "Cascade padding",
+			 .category = "Shadows",
+			 .description = "Extra share of its slice each cascade covers so it keeps its cached shadow map while the "
+			                "camera moves inside it. Higher re-renders less and blurs a little more",
+			 .min = 0.0,
+			 .max = 0.5,
+			 .step = 0.01}
+	)
+	    .onChange([](double padding) { shadows::setCascadePadding(static_cast<float>(padding)); });
+
+	toast::settings::declareFloat(
+	    "renderer.shadows.cascade_receiver_depth",
+	    shadows::k_cascade_receiver_depth_radii,
+	    {.label = "Cascade receiver depth",
+			 .category = "Shadows",
+			 .description = "How far along the light each cascade reaches in cascade radii. Lower draws fewer casters "
+			                "and loses shadows on surfaces far down the light",
+			 .min = 1.0,
+			 .max = 16.0,
+			 .step = 0.5}
+	)
+	    .onChange([](double radii) { shadows::setCascadeReceiverDepthRadii(static_cast<float>(radii)); });
+
+	toast::settings::declareBool(
+	    "renderer.shadows.static_cache",
+	    true,
+	    {.label = "Static caster cache",
+			 .category = "Shadows",
+			 .description = "Resting voxel volumes render into a cached map that each shadow copies under the moving "
+			                "casters. Off draws every voxel caster whenever anything in that shadow changes"}
+	)
+	    .onChange([](bool enabled) { shadows::setStaticCasterCache(enabled); });
+
+	toast::settings::declareFloat(
+	    "renderer.shadows.caster_tolerance",
+	    shadows::k_caster_tolerance,
+	    {.label = "Caster tolerance",
+			 .category = "Shadows",
+			 .description = "Meters a voxel volume may drift before its shadow follows. Higher keeps jittering bodies "
+			                "in the static cache, lower makes slow shadows step less",
+			 .min = 0.0,
+			 .max = 0.1,
+			 .step = 0.005}
+	)
+	    .onChange([](double meters) { shadows::setCasterTolerance(static_cast<float>(meters)); });
+
+	toast::settings::declareBool(
+	    "renderer.shadows.voxel_mesh_shaders",
+	    true,
+	    {.label = "Mesh shader voxel casters",
+			 .category = "Shadows",
+			 .description = "Voxel casters rasterize task and mesh shader quads on GPUs that have them. Off marches "
+			                "every voxel caster per shadow texel"}
+	)
+	    .onChange([](bool enabled) { shadows::setVoxelMeshShadows(enabled); });
 }
 
 void registerVoxels(VulkanRenderer& renderer) {
+	toast::settings::declareInt(
+	    "renderer.voxels.light_candidates",
+	    8,
+	    {.label = "Light candidates",
+			 .category = "Voxels",
+			 .description = "Lights in Sampled voxel shadow mode share one marched ray per pixel chosen among this many "
+			                "candidates from the froxel. More is less noise and more shading work",
+			 .min = 1.0,
+			 .max = 32.0}
+	)
+	    .onChange([&renderer](int64_t v) { renderer.setVoxelLightCandidates(static_cast<uint32_t>(std::max<int64_t>(v, 1))); });
+
+	toast::settings::declareBool(
+	    "renderer.voxels.ambient_rays",
+	    true,
+	    {.label = "Ambient rays",
+			 .category = "Voxels",
+			 .description = "Two super-sparse rays per voxel pixel occlude ambient light by how far they get, in place of "
+			                "SSAO. Off keeps SSAO on voxels"}
+	)
+	    .onChange([&renderer](bool enabled) { renderer.setVoxelAmbientRays(enabled); });
+
+	toast::settings::declareFloat(
+	    "renderer.voxels.ambient_reach",
+	    2.4,
+	    {.label = "Ambient reach",
+			 .category = "Voxels",
+			 .description = "Meters an ambient ray travels before it counts as open sky. Teardown clamps at 24 voxels",
+			 .min = 0.2,
+			 .max = 20.0,
+			 .step = 0.1}
+	)
+	    .onChange([&renderer](double v) { renderer.setVoxelAmbientReach(static_cast<float>(v)); });
+
+	toast::settings::declareInt(
+	    "renderer.voxels.sun_reach",
+	    200,
+	    {.label = "Sun ray reach",
+			 .category = "Voxels",
+			 .description = "Meters a marched sun shadow ray travels through voxels. Longer finds distant occluders and "
+			                "costs more on open ground",
+			 .min = 10.0,
+			 .max = 2000.0}
+	)
+	    .onChange([&renderer](int64_t v) { renderer.setVoxelSunReach(static_cast<uint32_t>(std::max<int64_t>(v, 1))); });
+
+	toast::settings::declareInt(
+	    "renderer.voxels.shadow_instances",
+	    256,
+	    {.label = "Shadow ray instances",
+			 .category = "Voxels",
+			 .description = "Nearest drawn voxel volumes a marched shadow ray tests against. Farther volumes cast no "
+			                "marched shadow",
+			 .min = 1.0,
+			 .max = 4096.0}
+	)
+	    .onChange([&renderer](int64_t v) { renderer.setVoxelShadowInstances(static_cast<uint32_t>(std::max<int64_t>(v, 1))); });
+
 	toast::settings::declareFloat(
 	    "renderer.voxels.edge_rounding",
 	    0.3,
@@ -212,6 +409,33 @@ void registerVoxels(VulkanRenderer& renderer) {
 			 .step = 0.5}
 	)
 	    .onChange([&renderer](double pixels) { renderer.setVoxelRasterPixels(static_cast<float>(pixels)); });
+
+	toast::settings::declareFloat(
+	    "renderer.voxels.occlusion_min_hidden",
+	    0.05,
+	    {.label = "Occlusion idle below",
+			 .category = "Voxels",
+			 .description = "Share of cells occlusion culling must hide to keep running. Below it for a few frames it "
+			                "pauses since it costs more than it saves. 0 never pauses it",
+			 .min = 0.0,
+			 .max = 0.5,
+			 .step = 0.01}
+	)
+	    .onChange([&renderer](double share) { renderer.setVoxelOcclusionMinHidden(static_cast<float>(share)); });
+
+	toast::settings::declareInt(
+	    "renderer.voxels.occlusion_idle_frames",
+	    120,
+	    {.label = "Occlusion idle frames",
+			 .category = "Voxels",
+			 .description = "Frames occlusion culling stays paused before it measures again",
+			 .min = 0.0,
+			 .max = 600.0,
+			 .step = 1.0}
+	)
+	    .onChange([&renderer](int64_t frames) {
+		    renderer.setVoxelOcclusionIdleFrames(static_cast<uint32_t>(std::max<int64_t>(frames, 0)));
+	    });
 }
 
 void registerEnvironment(VulkanRenderer& renderer) {

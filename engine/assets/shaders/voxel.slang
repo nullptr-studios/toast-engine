@@ -20,6 +20,27 @@ static const uint kDrawCells = 1u;
 
 [[vk::binding(7, 1)]]
 StructuredBuffer<uint2> gVoxelCells;
+
+/// x of entry 0 is the count then per region min xyz with w the record and max xyz
+/// Voxel space boxes the storage published this frame changed
+[[vk::binding(13, 1)]]
+StructuredBuffer<float4> gFreshRegions;
+
+/// Near a box carved this frame
+bool freshlyChanged(uint recordIndex, int3 voxel)
+{
+    const uint count = uint(gFreshRegions[0].x);
+    for (uint i = 0u; i < count; ++i)
+    {
+        const float4 low = gFreshRegions[1u + i * 2u];
+        const float4 high = gFreshRegions[2u + i * 2u];
+        if (uint(low.w) == recordIndex && all(float3(voxel) >= low.xyz - 1.0) && all(float3(voxel) <= high.xyz + 1.0))
+        {
+            return true;
+        }
+    }
+    return false;
+}
 [[vk::binding(8, 1)]]
 StructuredBuffer<uint> gVoxelCellArgs;
 
@@ -321,6 +342,10 @@ bool shadeHit(float4 pixel, VoxelInstance instance, float3 origin, float3 direct
             const float4 previousClip = mul(gCamera.previousViewProjection, previousWorld);
             output.motion = float4((clip.xy / clip.w - previousClip.xy / previousClip.w) * 0.5, 0.0, 1.0);
         }
+        if (freshlyChanged(instance.recordIndex, hit.voxel))
+        {
+            output.motion.z = 1.0;
+        }
 
         if (hit.axis >= 0)
         {
@@ -454,31 +479,15 @@ QuadVSOutput quadCorner(uint2 cell, uint packedQuad, uint corner)
     const VoxelInstance instance = gVoxelInstances[instanceIndex];
 
     const uint direction = packedQuad & 7u;
-    const uint slice = (packedQuad >> 3) & 7u;
-    const uint u0 = (packedQuad >> 6) & 7u;
-    const uint v0 = (packedQuad >> 9) & 7u;
-    const uint width = ((packedQuad >> 12) & 7u) + 1u;
-    const uint height = ((packedQuad >> 15) & 7u) + 1u;
-    const uint brickInCell = (packedQuad >> 18) & 63u;
-
     const uint axis = direction >> 1;
-    const bool positive = (direction & 1u) == 0u;
-    const uint3 brick = unpackCell(cell.y) * kCoarseBricks + uint3(brickInCell & 3u, (brickInCell >> 2) & 3u, brickInCell >> 4);
-
-    const float cornerU = (corner == 1u || corner == 2u) ? float(width) : 0.0;
-    const float cornerV = corner >= 2u ? float(height) : 0.0;
-
-    float3 local = float3(brick * kBrickDim);
-    local[axis] += float(slice) + (positive ? 1.0 : 0.0);
-    local[quadAxisU(axis)] += float(u0) + cornerU;
-    local[quadAxisV(axis)] += float(v0) + cornerV;
+    const float3 local = quadCornerLocal(unpackCell(cell.y), packedQuad, corner);
     const float4 world = mul(instance.voxelToWorld, float4(local, 1.0));
 
     QuadVSOutput output;
     output.position = mul(gCamera.jitteredViewProjection, world);
     output.local = local;
-    output.local[quadAxisU(axis)] += cornerU > 0.0 ? -kQuadInset : kQuadInset;
-    output.local[quadAxisV(axis)] += cornerV > 0.0 ? -kQuadInset : kQuadInset;
+    output.local[quadAxisU(axis)] += (corner == 1u || corner == 2u) ? -kQuadInset : kQuadInset;
+    output.local[quadAxisV(axis)] += corner >= 2u ? -kQuadInset : kQuadInset;
     output.instanceIndex = instanceIndex;
     output.direction = direction;
     return output;
@@ -529,6 +538,7 @@ FSOutput shadeQuad(QuadVSOutput input)
     hit.coarseSteps = 0u;
     hit.brickSteps = 0u;
     hit.subSteps = 0u;
+    hit.level = 0u;
 
     FSOutput output;
     float depth = input.position.z;

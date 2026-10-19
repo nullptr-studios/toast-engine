@@ -19,6 +19,7 @@
 #include <memory>
 #include <optional>
 #include <span>
+#include <unordered_map>
 #include <vector>
 
 namespace renderer {
@@ -70,6 +71,10 @@ public:
 		uint32_t moving_volumes = 0;
 		/// Cached static groups that a voxel edit elsewhere would have re-rendered
 		uint32_t spared = 0;
+		/// Voxel volume draws rasterized from task and mesh shader quads
+		uint32_t meshed_volumes = 0;
+		/// Voxel volume draws marched per texel
+		uint32_t marched_volumes = 0;
 	};
 
 	[[nodiscard]]
@@ -95,7 +100,8 @@ private:
 		uint32_t instance_index = 0;
 		uint32_t view_index = 0;
 		float constant_bias = 0.0f;
-		uint32_t pad0 = 0;
+		/// Nonzero for cascades whose rays march from behind the near plane
+		uint32_t directional = 0;
 	};
 
 	struct VoxelPipelineSet {
@@ -103,6 +109,14 @@ private:
 
 		/// Indexed [cull front][exact depth] since mirroring flips the winding
 		std::array<std::array<VulkanPipeline, 2>, 2> pipelines;
+	};
+
+	/// Mirrors voxel_shadow_mesh_common.slang ShadowMeshPush
+	struct VoxelMeshShadowPush {
+		uint32_t instance_index = 0;
+		uint32_t view_index = 0;
+		uint32_t view_count = 1;
+		uint32_t directional = 0;
 	};
 
 	static constexpr uint32_t k_max_voxel_casters = 4096;
@@ -177,6 +191,12 @@ private:
 	[[nodiscard]]
 	auto voxelPipelineSetFor(uint32_t view_mask) const -> const VoxelPipelineSet*;
 
+	/// Task and mesh shader voxel casters which share the voxel shadow descriptor sets
+	void createVoxelMeshResources(const VulkanCore& core);
+
+	[[nodiscard]]
+	auto voxelMeshPipelineFor(uint32_t view_mask) const -> const VulkanPipeline*;
+
 	void recordMap(vk::CommandBuffer cmd, ShadowMap& map, ShadowMap& static_map, uint32_t frame_index, bool directional);
 
 	[[nodiscard]]
@@ -211,7 +231,26 @@ private:
 
 	uint32_t m_voxel_instance_count = 0;
 
+	struct SettledCaster {
+		glm::mat4 model {1.0f};
+		glm::mat4 inverse_model {1.0f};
+		uint64_t moved_frame = 0;
+		uint64_t seen_frame = 0;
+	};
+
+	std::unordered_map<uint64_t, SettledCaster> m_settled_casters;
+	uint64_t m_caster_frame = 0;
+	std::vector<glm::mat4> m_caster_models;
+	std::vector<uint8_t> m_caster_moving;
+
 	std::vector<uint32_t> m_voxel_draw_order;
+
+	ShaderLayout m_voxel_mesh_layout;
+	/// Matches m_voxel_pipeline_sets by index
+	std::array<VulkanPipeline, 2> m_voxel_mesh_pipelines;
+	PFN_vkCmdDrawMeshTasksEXT m_draw_mesh_tasks = nullptr;
+	std::array<uint32_t, 3> m_max_task_groups {};
+	uint32_t m_max_task_group_total = 0;
 
 	std::vector<vk::ImageCopy> m_static_copies;
 };

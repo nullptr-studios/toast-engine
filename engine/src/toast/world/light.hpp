@@ -22,6 +22,27 @@ enum class LightType : uint8_t {
 	ambient,
 };
 
+/// Mirrors lighting.slang kLightShape
+enum class LightShape : uint8_t {
+	point,
+	sphere,
+	/// Along the node forward axis
+	capsule,
+	/// Facing the node forward axis
+	disc,
+	/// Facing forward with its width along the node right axis
+	rect,
+};
+
+/// Mirrors lighting.slang kShadowMode and only affects voxel pixels
+enum class LightShadowMode : uint8_t {
+	shadow_map,
+	/// One marched ray to a point on the shape per pixel
+	marched,
+	/// Shares one marched ray with every sampled light of the froxel
+	sampled,
+};
+
 class [[ToastNode, Hidden, Icon("PointLight")]] TOAST_API Light : public Node3D {
 public:
 	Light() = default;
@@ -65,6 +86,31 @@ public:
 		return m_cull_distance;
 	}
 
+	[[nodiscard]]
+	auto shape() const -> LightShape {
+		return m_shape;
+	}
+
+	[[nodiscard]]
+	auto sourceRadius() const -> float {
+		return m_source_radius;
+	}
+
+	[[nodiscard]]
+	auto sourceLength() const -> float {
+		return m_source_length;
+	}
+
+	[[nodiscard]]
+	auto sourceWidth() const -> float {
+		return m_source_width;
+	}
+
+	[[nodiscard]]
+	auto shadowMode() const -> LightShadowMode {
+		return m_shadow_mode;
+	}
+
 protected:
 	/// @brief Tags the concrete light kind; called once from each subclass's own constructor body
 	void setLightType(LightType type) { m_light_type = type; }
@@ -91,7 +137,7 @@ private:
 	float m_shadow_resolution_scale = 1.0f;
 
 	/// Camera-to-light distance past which this light stops casting shadows, though it still lights the
-	/// scene. Shadow slots are scarce (renderer::shadows::k_max_spot_shadows / k_max_point_shadows) and
+	/// scene. Shadow slots are scarce (renderer.shadows.spot_slots / point_slots) and
 	/// this is what hands one back to a nearer light. 0 means no limit
 	[[Reflect, Name("Shadow Distance"), Unit("m"), Group("Optimization")]]
 	float m_shadow_distance = 60.0f;
@@ -101,6 +147,24 @@ private:
 	/// popping out is far more visible than one costing a few cycles
 	[[Reflect, Name("Cull Distance"), Unit("m"), Group("Optimization")]]
 	float m_cull_distance = 0.0f;
+
+	[[Reflect, Name("Shape"), Enum("Point", "Sphere", "Capsule", "Disc", "Rect"), Group("Area")]]
+	LightShape m_shape = LightShape::point;
+
+	/// Sphere capsule and disc radius
+	[[Reflect, Name("Source Radius"), Unit("m"), Range(0.0, 10.0), Group("Area")]]
+	float m_source_radius = 0.1f;
+
+	/// Capsule length or rect height
+	[[Reflect, Name("Source Length"), Unit("m"), Range(0.0, 20.0), Group("Area")]]
+	float m_source_length = 0.5f;
+
+	[[Reflect, Name("Source Width"), Unit("m"), Range(0.0, 20.0), Group("Area")]]
+	float m_source_width = 0.5f;
+
+	/// Marched and sampled soften voxel shadows by the shape but meshes stop shadowing voxels for this light
+	[[Reflect, Name("Voxel Shadows"), Enum("Shadow Map", "Marched", "Sampled"), Group("Area")]]
+	LightShadowMode m_shadow_mode = LightShadowMode::shadow_map;
 
 	// Deliberately not [[Reflect]] - applyFields() only ever touches reflected fields during prefab
 	// deserialization, so this constructor-set value can never be clobbered

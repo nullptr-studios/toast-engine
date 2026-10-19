@@ -526,6 +526,17 @@ void Engine::tick() {
 				m->renderer->setGizmoState(gizmo_state);
 			}
 		}
+
+		if (m->renderer) {
+			std::vector<uint64_t> outlined;
+			if (it != m->owners.end()) {
+				// A live game shows no editor selection
+				if (const Workspace* ws = it->second->asWorkspace(); ws != nullptr && !ws->isPlaying()) {
+					ws->collectOutlinedRids(outlined);
+				}
+			}
+			m->renderer->setOutlinedNodes(std::move(outlined));
+		}
 	}
 
 	if (m->renderer) {

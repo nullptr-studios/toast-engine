@@ -3,27 +3,8 @@
 import voxel;
 import voxel_dda;
 import voxel_mesh_common;
+import voxel_mesh_window;
 import lighting;
-
-groupshared uint sFirstEntry;
-groupshared uint sQuads[kMeshletQuads];
-
-/// next is the global index of the next quad of the slice
-struct WindowSink : IQuadSink
-{
-    uint next;
-    uint windowStart;
-
-    [mutating]
-    void quad(uint packedQuad)
-    {
-        if (next - windowStart < kMeshletQuads)
-        {
-            sQuads[next - windowStart] = packedQuad;
-        }
-        ++next;
-    }
-}
 
 [shader("mesh")]
 [outputtopology("triangle")]
@@ -55,7 +36,7 @@ void quadMeshMain(uint3 group : SV_GroupID, uint thread : SV_GroupIndex, in payl
     }
     GroupMemoryBarrierWithGroupSync();
 
-    const uint2 cell = gVoxelCells[payload.entryIndex];
+    const uint2 cell = gVoxelCells[payload.cell];
     const VoxelInstance instance = gVoxelInstances[cellEntryInstance(cell.x)];
 
     // Every slice holds a quad so a window spans at most kMeshletQuads slices
@@ -63,31 +44,15 @@ void quadMeshMain(uint3 group : SV_GroupID, uint thread : SV_GroupIndex, in payl
     const uint entry = index < payload.entryCount ? payload.entries[index] : 0u;
     if (index < payload.entryCount && entryFirstQuad(entry) < windowStart + kMeshletQuads)
     {
-        const uint brickInCell = entryBrick(entry);
-        const uint direction = entrySlice(entry) >> 3;
-        const uint slice = entrySlice(entry) & 7u;
-        const int3 brick = int3(brickOfCell(cell, brickInCell));
-
-        const uint brickEntry = brickEntryAt(instance.recordIndex, brick);
-        const uint neighbourEntry = brickEntryAt(instance.recordIndex, brick + directionStep(direction));
-        uint occupancy[16];
-        uint neighbour[16];
-        loadBrickSlices(brickEntry, occupancy);
-        loadBrickSlices(neighbourEntry, neighbour);
-
-        uint faces[16];
-        exposedFaces(occupancy, neighbour, direction, faces);
-        uint rows[8];
-        sliceRows(faces, direction >> 1, slice, rows);
         WindowSink sink = { entryFirstQuad(entry), windowStart };
-        greedySlice(rows, direction, slice, brickInCell, sink);
+        meshEntry(entry, instance.recordIndex, unpackCell(cell.y), sink);
     }
     GroupMemoryBarrierWithGroupSync();
 
     SetMeshOutputCounts(quads * 4u, quads * 2u);
     if (thread < quads)
     {
-        const uint packedQuad = sQuads[thread];
+        const uint packedQuad = windowQuad(thread);
         const uint first = thread * 4u;
         for (uint corner = 0u; corner < 4u; ++corner)
         {

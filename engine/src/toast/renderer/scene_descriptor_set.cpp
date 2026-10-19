@@ -101,6 +101,23 @@ void SceneDescriptorSets::create(
 				continue;
 			}
 
+			if (binding.name == "gPunctualShadowDepths") {
+				if (!*m_shadow_depth_sampler) {
+					m_shadow_depth_sampler = vk::raii::Sampler(device, nearestClampSamplerInfo());
+				}
+				const auto* shadow_pass = VulkanRenderer::instance->getShadowPass();
+				const vk::ImageView view = shadow_pass != nullptr ? shadow_pass->getPunctualMapView(i) : vk::ImageView {};
+				writer.image(
+				    *m_sets[i],
+				    binding.binding,
+				    vk::DescriptorType::eCombinedImageSampler,
+				    *m_shadow_depth_sampler,
+				    view ? view : VulkanRenderer::instance->getDefaultShadowMapView(),
+				    vk::ImageLayout::eShaderReadOnlyOptimal
+				);
+				continue;
+			}
+
 			const bool is_cascade_map = binding.name == "gShadowMap";
 			if (is_cascade_map || binding.name == "gPunctualShadowMaps") {
 				const auto* shadow_pass = VulkanRenderer::instance->getShadowPass();
@@ -153,6 +170,9 @@ void SceneDescriptorSets::create(
 			} else if (binding.name == "gInstances") {
 				buffer = VulkanRenderer::instance->getInstanceBuffer(i);
 				size = sizeof(VulkanRenderer::InstanceData) * VulkanRenderer::k_max_instances;
+				descriptor_type = vk::DescriptorType::eStorageBuffer;
+			} else if (binding.name == "gBlueNoise") {
+				buffer = VulkanRenderer::instance->getBlueNoiseBuffer();
 				descriptor_type = vk::DescriptorType::eStorageBuffer;
 			} else if (binding.name == "gIrradianceSH") {
 				if (auto* probes = VulkanRenderer::instance->getReflectionProbePassMutable(); probes != nullptr) {
