@@ -287,8 +287,8 @@ public partial class ToastEngine : IDisposable {
 		return IsEngineReady && toast_viewport_export_shared_slot(generation, slot, out handles) == 1;
 	}
 
-	public bool HoldSharedViewportSlot(ulong generation, uint slot) =>
-		IsEngineReady && toast_viewport_hold_shared_slot(generation, slot) == 1;
+	public bool HoldSharedViewportSlot(ulong generation, uint slot, ulong frameId) =>
+		IsEngineReady && toast_viewport_hold_shared_slot(generation, slot, frameId) == 1;
 
 	public void ReleaseSharedViewportSlot(ulong generation, uint slot, bool consumed) {
 		if (IsEngineReady) toast_viewport_release_shared_slot(generation, slot, consumed ? 1 : 0);
@@ -520,7 +520,7 @@ public partial class ToastEngine : IDisposable {
 		ulong generation, uint slot, out ToastViewportSharedHandles outHandles);
 
 	[LibraryImport(EngineLib)]
-	private static partial int toast_viewport_hold_shared_slot(ulong generation, uint slot);
+	private static partial int toast_viewport_hold_shared_slot(ulong generation, uint slot, ulong frameId);
 
 	[LibraryImport(EngineLib)]
 	private static partial void toast_viewport_release_shared_slot(ulong generation, uint slot, int consumed);

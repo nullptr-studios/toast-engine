@@ -1321,9 +1321,7 @@ void VulkanRenderer::publishCompletedFrames() {
 			break;
 		}
 
-		if (!pending.was_probe_capture) {
-			m_output_target->onImageRenderComplete(pending.last_image_index);
-		}
+		m_output_target->onImageRenderComplete(pending.last_image_index, !pending.was_probe_capture);
 
 		pending.has_submitted = false;
 		m_pending_publish.pop_front();
@@ -2371,6 +2369,9 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 	if (acquired.result == vk::Result::eErrorOutOfDateKHR) {
 		TOAST_WARN("Render", "Swapchain out of date on acquire; recreating");
 		applyResize(m_output_target->getExtent());
+		return;
+	}
+	if (acquired.result == vk::Result::eNotReady) {
 		return;
 	}
 	if (acquired.result != vk::Result::eSuccess && acquired.result != vk::Result::eSuboptimalKHR) {

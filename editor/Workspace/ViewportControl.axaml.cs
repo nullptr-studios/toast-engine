@@ -30,6 +30,8 @@ public partial class ViewportControl : UserControl {
 	private const double PanScale = 40.0;
 	private const float PinchZoomScale = 100f;
 	private const float WheelZoomScale = 20f;
+	private static readonly bool s_forceViewportReadback =
+		Environment.GetEnvironmentVariable("TOAST_VIEWPORT_READBACK") == "1";
 
 	public static readonly StyledProperty<bool> PlayModeProperty =
 		AvaloniaProperty.Register<ViewportControl, bool>(nameof(PlayMode));
@@ -373,9 +375,8 @@ public partial class ViewportControl : UserControl {
 
 		SendResizeIfChanged();
 
-		if (m_shared is null && !GraphicsDebuggerDetector.IsAttached) {
-			m_shared = new SharedViewportPresenter(
-				SurfaceHost, m_engine, () => (DataContext as WorkspaceViewModel)?.NotePresentedFrame());
+		if (m_shared is null && !GraphicsDebuggerDetector.IsAttached && !s_forceViewportReadback) {
+			m_shared = new SharedViewportPresenter(SurfaceHost, m_engine);
 			m_shared.Start();
 		}
 		if (m_shared is { Failed: false }) {

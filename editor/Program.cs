@@ -24,6 +24,15 @@ internal sealed class Program {
 #endif
 			.WithInterFont();
 
+		if (OperatingSystem.IsLinux()) {
+			// GLX intermittently imports shared Vulkan frames as transparent black on
+			// NVIDIA. EGL passes the same interop path; if it is unavailable, use the
+			// software compositor so the viewport automatically uses readback.
+			builder = builder.With(new X11PlatformOptions {
+				RenderingMode = [ X11RenderingMode.Egl, X11RenderingMode.Software ]
+			});
+		}
+
 		// Force software when renderdoc
 		if (GraphicsDebuggerDetector.IsAttached) {
 			builder = builder

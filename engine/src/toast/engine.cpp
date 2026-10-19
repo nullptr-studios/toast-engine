@@ -1080,9 +1080,9 @@ auto toast_viewport_export_shared_slot(uint64_t generation, uint32_t slot, toast
 	return 1;
 }
 
-auto toast_viewport_hold_shared_slot(uint64_t generation, uint32_t slot) noexcept -> int {
+auto toast_viewport_hold_shared_slot(uint64_t generation, uint32_t slot, uint64_t frame_id) noexcept -> int {
 	auto* target = toast::Engine::get()->viewportTarget();
-	return target != nullptr && target->holdSharedSlot(generation, slot) ? 1 : 0;
+	return target != nullptr && target->holdSharedSlot(generation, slot, frame_id) ? 1 : 0;
 }
 
 void toast_viewport_release_shared_slot(uint64_t generation, uint32_t slot, int consumed) noexcept {
