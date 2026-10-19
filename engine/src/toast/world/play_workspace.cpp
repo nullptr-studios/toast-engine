@@ -56,6 +56,7 @@ PlayWorkspace::PlayWorkspace(UID handle, assets::Prefab& prefab) : Workspace(han
 
 PlayWorkspace::~PlayWorkspace() {
 	s_instances.fetch_sub(1, std::memory_order_release);
+	physics::clearDebris();    // need to clear when paused
 	if (not m_root_node.exists()) {
 		return;
 	}
@@ -113,6 +114,7 @@ void PlayWorkspace::tick() {
 			physics::Simulator::recordTickBurst(step_result.steps, step_result.time_budget_reached);
 			physics::Simulator::recordInterpolationAlpha(step_result.alpha);
 			physics::Simulator::syncRenderPoses();
+			physics::stepDebris(step_result.steps);
 			m_scheduler.runPhase(m_scheduler.schedule.post_physics, TickFunctionList::post_physics, "post_physics");
 
 			m_scheduler.runPhase(m_scheduler.schedule.late_tick, TickFunctionList::late_tick, "late_tick");

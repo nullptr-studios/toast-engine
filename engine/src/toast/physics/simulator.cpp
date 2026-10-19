@@ -281,6 +281,7 @@ void Simulator::resetWind() {
 
 Simulator::~Simulator() {
 	TOAST_INFO("Physics", "Simulator destroyed");
+	clearDebris();
 	instance = nullptr;
 	// Finish all requests before destroying
 	Requests& all = requests();
@@ -854,6 +855,7 @@ void Simulator::emitDebris(
 		    body->position + (body->rotation * (shape->voxel.local_center + (shape->voxel.local_rotation * local)));
 
 		const uint32_t material_index = voxel::resolveMaterialIndex(data->palette, data->materials, cluster.material);
+		const voxel::PaletteEntry& look = data->palette.entries[cluster.material];
 		const float mass = static_cast<float>(std::popcount(cluster.mask)) *
 		                   static_cast<float>(data->materials.materials[material_index].density) * k_voxel_volume;
 
@@ -883,6 +885,10 @@ void Simulator::emitDebris(
 		      .angular_velocity = rng.direction() * rng.range(0.0f, k_debris_max_spin),
 		      .mask = cluster.mask,
 		      .material = cluster.material,
+		      .albedo_roughness = static_cast<uint32_t>(look.albedo_r) | (static_cast<uint32_t>(look.albedo_g) << 8u) |
+					                    (static_cast<uint32_t>(look.albedo_b) << 16u) | (static_cast<uint32_t>(look.roughness) << 24u),
+		      .metallic = look.metallic,
+		      .reflectivity = look.reflectivity,
 		    }
 		);
 	}
@@ -925,23 +931,6 @@ void Simulator::emitComponentDebris(ShapeID shape_id, const DetachedComponent& c
 
 auto Simulator::takeDebrisSpawns() -> std::vector<DebrisSpawn> {
 	return std::exchange(m_debris_spawns, {});
-}
-
-auto Simulator::debrisVolumes() const -> std::vector<DebrisVolume> {
-	std::vector<DebrisVolume> out;
-	out.reserve(m_voxel_render_records.size());
-	const glm::mat4 to_voxel_units = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f / voxel::k_voxel_size));
-	for (const auto& [index, record] : m_voxel_render_records | std::views::enumerate) {
-		out.push_back(
-		    DebrisVolume {
-		      .record_index = static_cast<uint32_t>(index),
-		      .world_to_voxel = to_voxel_units * glm::inverse(record.transform),
-		      .aabb_min = record.world_bounds.min,
-		      .aabb_max = record.world_bounds.max,
-		    }
-		);
-	}
-	return out;
 }
 
 auto Simulator::voxelNodeFor(ShapeID shape) -> toast::VoxelNode* {

@@ -318,9 +318,6 @@ public:
 	[[nodiscard]]
 	auto takeDebrisSpawns() -> std::vector<DebrisSpawn>;
 
-	[[nodiscard]]
-	auto debrisVolumes() const -> std::vector<DebrisVolume>;
-
 	/// Simulator running the current step, null outside a play session
 	[[nodiscard]]
 	static auto current() -> Simulator*;

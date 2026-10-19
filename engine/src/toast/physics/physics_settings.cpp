@@ -423,6 +423,24 @@ void registerPhysicsSettings() {
 	    1.0,
 	    {.label = "Speed scale", .category = "Debris", .min = 0.0f, .max = 8.0f, .step = 0.1f},
 	    &Tunables::debris_speed_scale);
+	flt("physics.debris.lifetime",
+	    60.0,
+	    {.label = "Lifetime", .category = "Debris", .min = 0.5, .max = 600.0, .step = 0.5},
+	    &Tunables::debris_lifetime);
+	uint_setting(
+	    "physics.debris.max_particles",
+	    16384,
+	    {.label = "Max particles", .category = "Debris", .min = 256.0, .max = 262144.0, .step = 1024.0, .requires_restart = true},
+	    &Tunables::debris_max_particles
+	);
+	flt("physics.debris.restitution",
+	    0.3,
+	    {.label = "Restitution", .category = "Debris", .min = 0.0, .max = 1.0, .step = 0.05},
+	    &Tunables::debris_restitution);
+	flt("physics.debris.friction",
+	    0.6,
+	    {.label = "Friction", .category = "Debris", .min = 0.0, .max = 1.0, .step = 0.05},
+	    &Tunables::debris_friction);
 
 	uint_setting(
 	    "physics.jobs.min_bounds_per_job",

@@ -13,11 +13,13 @@
 #include <array>
 #include <bit>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/mat4x4.hpp>
 #include <span>
+#include <toast/export.hpp>
 #include <vector>
 
 namespace physics {
@@ -40,13 +42,9 @@ struct DebrisSpawn {
 	glm::vec3 angular_velocity {};
 	uint8_t mask = 0;
 	uint8_t material = 0;
-};
-
-struct DebrisVolume {
-	uint32_t record_index = 0;
-	glm::mat4 world_to_voxel {1.0f};
-	glm::vec3 aabb_min {};
-	glm::vec3 aabb_max {};
+	uint32_t albedo_roughness = 0;
+	uint8_t metallic = 0;
+	uint8_t reflectivity = 0;
 };
 
 struct DebrisBlast {
@@ -164,5 +162,9 @@ inline auto debrisConeDirection(const glm::vec3& axis, Rng& rng, float spread) -
 	const float length = glm::length(tilted);
 	return length > 1.0e-4f ? tilted / length : axis;
 }
+
+TOAST_API void stepDebris(size_t steps);
+
+TOAST_API void clearDebris();
 
 }

@@ -9,6 +9,7 @@
 #include "editor_overlays.hpp"
 #include "frustum.hpp"
 #include "light_culling.hpp"
+#include "passes/debris_pass.hpp"
 #include "passes/depth_prepass.hpp"
 #include "passes/environment_pass.hpp"
 #include "passes/material_pass.hpp"
@@ -1468,6 +1469,9 @@ auto VulkanRenderer::recordVoxelScopes(
 		const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Voxel cells");
 		m_voxel_pass->recordCellCull(cmd, m_current_frame, scissor.extent);
 	}
+
+	const bool debris_drawn =
+	    m_debris_pass != nullptr && m_debris_pass->isEnabled() && m_debris_pass->prepare(cmd, m_current_frame);
 	sync::BarrierBatch barriers;
 
 	const auto attachment = [](const SceneColorResources& target, vk::AttachmentLoadOp load, const vk::ClearValue& clear) {
@@ -1547,6 +1551,11 @@ auto VulkanRenderer::recordVoxelScopes(
 		TracyVkZone(m_tracy_vk_ctx, cmd, "VoxelGbuffer");
 		const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Voxel G-buffer");
 		m_voxel_pass->record(cmd, m_current_frame, 0);
+	}
+	if (debris_drawn) {
+		TracyVkZone(m_tracy_vk_ctx, cmd, "Debris");
+		const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Debris");
+		m_debris_pass->record(cmd, m_current_frame, 0);
 	}
 	cmd.endRendering();
 
@@ -3808,6 +3817,13 @@ void VulkanRenderer::tick(float time) noexcept {
 	submitFrame();
 }
 
+auto VulkanRenderer::voxelCollisionWorld() const -> std::shared_ptr<const VoxelCollisionWorld> {
+	// i need a way of getting this on the physics thread without the engine exploding so just lock it for a sec
+	// i don't think this is that bad of an idea but maybe it's like bad idk
+	std::scoped_lock lock(m_voxel_collision_mutex);
+	return m_voxel_collision_world;
+}
+
 void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 	ZoneScoped;
 
@@ -4089,6 +4105,8 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 	if (!m_voxel_storage) {
 		m_voxel_previous_models.clear();
 		m_voxel_drawn_models.clear();
+		std::scoped_lock lock(m_voxel_collision_mutex);
+		m_voxel_collision_world.reset();
 		return;
 	}
 
@@ -4134,6 +4152,25 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		    }
 		);
 		drawn_models.insert_or_assign(node_rid, model);
+	}
+
+	auto collision = std::make_shared<VoxelCollisionWorld>();
+	collision->storage = m_voxel_storage;
+	collision->volumes.reserve(frame.voxel_instances.size());
+	const glm::mat4 to_voxel_units = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f / voxel::k_voxel_size));
+	for (const VoxelVolumeProxy& proxy : frame.voxel_instances) {
+		collision->volumes.push_back(
+		    VoxelCollisionWorld::Volume {
+		      .world_to_voxel = to_voxel_units * proxy.inverse_model,
+		      .bounds_center = proxy.bounds_center,
+		      .bounds_radius = proxy.bounds_radius,
+		      .record_index = proxy.record_index,
+		    }
+		);
+	}
+	{
+		std::scoped_lock lock(m_voxel_collision_mutex);
+		m_voxel_collision_world = std::move(collision);
 	}
 
 	m_voxel_drawn_models = std::move(drawn_models);
