@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Platform;
 using Avalonia.Rendering.Composition;
+using Avalonia.Threading;
 using editor.Engine;
 
 namespace editor.Workspace;
@@ -12,6 +13,8 @@ namespace editor.Workspace;
 internal sealed class SharedViewportPresenter : IDisposable {
 	private readonly Visual m_host;
 	private readonly ToastEngine m_engine;
+	private readonly Action m_onPresented;
+	private readonly Func<bool> m_canPresent;
 
 	private Compositor? m_compositor;
 	private ICompositionGpuInterop? m_interop;
@@ -33,9 +36,11 @@ internal sealed class SharedViewportPresenter : IDisposable {
 		public ICompositionImportedGpuSemaphore? Done;
 	}
 
-	public SharedViewportPresenter(Visual host, ToastEngine engine) {
+	public SharedViewportPresenter(Visual host, ToastEngine engine, Action onPresented, Func<bool> canPresent) {
 		m_host = host;
 		m_engine = engine;
+		m_onPresented = onPresented;
+		m_canPresent = canPresent;
 	}
 
 	public bool Failed { get; private set; }
@@ -68,6 +73,7 @@ internal sealed class SharedViewportPresenter : IDisposable {
 			m_visual.Surface = m_surface;
 			ElementComposition.SetElementChildVisual(m_host, m_visual);
 			Active = true;
+			Console.Error.WriteLine("[viewport] GPU-shared compositor textures active");
 		} catch (Exception e) {
 			Fail(e.Message);
 		} finally {
@@ -92,6 +98,7 @@ internal sealed class SharedViewportPresenter : IDisposable {
 
 	private void Fail(string reason) {
 		Log.Warn($"Viewport falls back to reading frames back: {reason}");
+		Console.Error.WriteLine($"[viewport] CPU readback fallback: {reason}");
 		if (m_engineSharing) m_engine.DisableSharedViewport();
 		m_engineSharing = false;
 		Failed = true;
@@ -146,8 +153,11 @@ internal sealed class SharedViewportPresenter : IDisposable {
 		}
 		m_engine.ReleaseSharedViewportSlot(generation, index, true);
 		m_updating = false;
-		// The animation-frame callback picks up the next frame. Chaining updates here
-		// can keep the dispatcher busy with viewport work while input waits.
+		// The compositor has finished the snapshot. Pick up a newer frame without
+		// waiting another animation tick, but let input run ahead of viewport work.
+		Dispatcher.UIThread.Post(() => {
+			if (Active && m_canPresent() && TryPresentLatest()) m_onPresented();
+		}, DispatcherPriority.Background);
 	}
 
 	private bool Import(ToastViewportSharedFrame frame) {

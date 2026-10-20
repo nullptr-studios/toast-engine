@@ -81,7 +81,9 @@ auto canShareImages(const vk::raii::PhysicalDevice& physical, vk::Format format)
 #if defined(_WIN32)
 		return static_cast<bool>(features & vk::ExternalMemoryFeatureFlagBits::eImportable);
 #else
-		return static_cast<bool>(features & vk::ExternalMemoryFeatureFlagBits::eExportable);
+		// Avalonia's GL importer does not set GL_DEDICATED_MEMORY_OBJECT_EXT.
+		return static_cast<bool>(features & vk::ExternalMemoryFeatureFlagBits::eExportable) &&
+		       !static_cast<bool>(features & vk::ExternalMemoryFeatureFlagBits::eDedicatedOnly);
 #endif
 	} catch (const vk::SystemError&) { return false; }
 }
@@ -156,10 +158,10 @@ struct SharedTextureOutputTarget::Interop {
 			setDebugName(core, *slot.image, std::format("SharedTextureOutput Shared[{}]", index));
 
 			const vk::MemoryRequirements requirements = slot.image.getMemoryRequirements();
-			vk::MemoryDedicatedAllocateInfo dedicated(*slot.image);
 			vk::MemoryAllocateInfo allocate_info(requirements.size, 0);
 
 #if defined(_WIN32)
+			vk::MemoryDedicatedAllocateInfo dedicated(*slot.image);
 			D3D11_TEXTURE2D_DESC desc {};
 			desc.Width = extent.width;
 			desc.Height = extent.height;
@@ -200,7 +202,10 @@ struct SharedTextureOutputTarget::Interop {
 			allocate_info.pNext = &import_info;
 #else
 			const uint32_t type_bits = requirements.memoryTypeBits;
-			vk::ExportMemoryAllocateInfo export_info(k_memory_handle_type, &dedicated);
+			// Match Avalonia's non-dedicated GL memory-object import. A Vulkan
+			// dedicated allocation needs GL_DEDICATED_MEMORY_OBJECT_EXT on import,
+			// which its OpenGL backend currently does not set.
+			vk::ExportMemoryAllocateInfo export_info(k_memory_handle_type);
 			allocate_info.pNext = &export_info;
 #endif
 			const auto type_index = findMemoryType(core.getPhysicalDevice(), type_bits);
