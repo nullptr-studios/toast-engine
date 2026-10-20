@@ -48,7 +48,11 @@ public:
 
 	virtual void recordFinalize(vk::CommandBuffer command_buffer, uint32_t image_index) = 0;
 
-	virtual void onImageRenderComplete(uint32_t image_index) { (void)image_index; }
+	// Always release the acquisition, including probe captures that must not be published.
+	virtual void onImageRenderComplete(uint32_t image_index, bool publish = true) {
+		(void)image_index;
+		(void)publish;
+	}
 
 	[[nodiscard]]
 	virtual auto submitSync(uint32_t image_index) -> OutputSubmitSync {

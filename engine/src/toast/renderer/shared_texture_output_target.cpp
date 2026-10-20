@@ -40,14 +40,17 @@ constexpr vk::ExternalMemoryHandleTypeFlagBits k_memory_handle_type = vk::Extern
 #if defined(_WIN32)
 constexpr vk::ImageUsageFlags k_shared_usage = vk::ImageUsageFlagBits::eTransferDst;
 #else
-constexpr vk::ImageUsageFlags k_shared_usage =
-    vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled;
+constexpr vk::ImageUsageFlags k_shared_usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc |
+                                               vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled;
 #endif
 
 #if defined(_WIN32)
 constexpr vk::ImageLayout k_shared_release_layout = vk::ImageLayout::eGeneral;
+constexpr vk::Format k_shared_format = vk::Format::eB8G8R8A8Unorm;
 #else
-constexpr vk::ImageLayout k_shared_release_layout = vk::ImageLayout::eColorAttachmentOptimal;
+// Avalonia's GL importer uses GL_RGBA8 and waits with GL_LAYOUT_TRANSFER_SRC_EXT.
+constexpr vk::ImageLayout k_shared_release_layout = vk::ImageLayout::eTransferSrcOptimal;
+constexpr vk::Format k_shared_format = vk::Format::eR8G8B8A8Unorm;
 #endif
 
 [[nodiscard]]
@@ -79,7 +82,9 @@ auto canShareImages(const vk::raii::PhysicalDevice& physical, vk::Format format)
 #if defined(_WIN32)
 		return static_cast<bool>(features & vk::ExternalMemoryFeatureFlagBits::eImportable);
 #else
-		return static_cast<bool>(features & vk::ExternalMemoryFeatureFlagBits::eExportable);
+		// Avalonia's GL importer does not set GL_DEDICATED_MEMORY_OBJECT_EXT.
+		return static_cast<bool>(features & vk::ExternalMemoryFeatureFlagBits::eExportable) &&
+		       !static_cast<bool>(features & vk::ExternalMemoryFeatureFlagBits::eDedicatedOnly);
 #endif
 	} catch (const vk::SystemError&) { return false; }
 }
@@ -154,10 +159,10 @@ struct SharedTextureOutputTarget::Interop {
 			setDebugName(core, *slot.image, std::format("SharedTextureOutput Shared[{}]", index));
 
 			const vk::MemoryRequirements requirements = slot.image.getMemoryRequirements();
-			vk::MemoryDedicatedAllocateInfo dedicated(*slot.image);
 			vk::MemoryAllocateInfo allocate_info(requirements.size, 0);
 
 #if defined(_WIN32)
+			vk::MemoryDedicatedAllocateInfo dedicated(*slot.image);
 			D3D11_TEXTURE2D_DESC desc {};
 			desc.Width = extent.width;
 			desc.Height = extent.height;
@@ -198,7 +203,10 @@ struct SharedTextureOutputTarget::Interop {
 			allocate_info.pNext = &import_info;
 #else
 			const uint32_t type_bits = requirements.memoryTypeBits;
-			vk::ExportMemoryAllocateInfo export_info(k_memory_handle_type, &dedicated);
+			// Match Avalonia's non-dedicated GL memory-object import. A Vulkan
+			// dedicated allocation needs GL_DEDICATED_MEMORY_OBJECT_EXT on import,
+			// which its OpenGL backend currently does not set.
+			vk::ExportMemoryAllocateInfo export_info(k_memory_handle_type);
 			allocate_info.pNext = &export_info;
 #endif
 			const auto type_index = findMemoryType(core.getPhysicalDevice(), type_bits);
@@ -256,6 +264,7 @@ void SharedTextureOutputTarget::allocateResources(vk::Extent2D extent) {
 		shared.mapped = nullptr;
 		shared.read_back = false;
 		shared.shared = false;
+		shared.in_flight = false;
 		shared.view.reset();
 		shared.staging.reset();
 		shared.image.reset();
@@ -305,7 +314,7 @@ void SharedTextureOutputTarget::allocateResources(vk::Extent2D extent) {
 	}
 	if (m_interop) {
 		try {
-			m_interop->createSlots(*m_core, m_extent, m_color_format, m_images.size());
+			m_interop->createSlots(*m_core, m_extent, k_shared_format, m_images.size());
 		} catch (const std::exception& error) {
 			TOAST_WARN("Render", "Could not recreate the shared viewport textures ({}); reading frames back instead", error.what());
 			m_interop.reset();
@@ -345,7 +354,7 @@ void SharedTextureOutputTarget::createInterop() {
 			throw std::runtime_error("D3D11CreateDevice failed");
 		}
 #endif
-		interop->createSlots(*m_core, m_extent, m_color_format, m_images.size());
+		interop->createSlots(*m_core, m_extent, k_shared_format, m_images.size());
 	} catch (const std::exception& error) {
 		TOAST_WARN("Render", "Could not share the viewport textures ({}); reading frames back instead", error.what());
 		m_sharing.store(SharingState::failed, std::memory_order_release);
@@ -378,22 +387,22 @@ auto SharedTextureOutputTarget::acquireNextImage(uint64_t, vk::Semaphore, vk::Fe
 	const uint32_t count = getImageCount();
 	const int32_t published = m_latest_ready.load(std::memory_order_acquire);
 	const auto busy = [&](uint32_t index) {
-		return std::cmp_equal(index, published) || std::cmp_equal(index, m_reading) ||
+		return m_images[index].in_flight || std::cmp_equal(index, published) || std::cmp_equal(index, m_reading) ||
 		       (m_interop && index < m_interop->slots.size() &&
 		        (m_interop->slots[index].held || std::cmp_equal(index, m_interop->displayed)));
 	};
 
-	uint32_t image_index = m_next_acquire_index;
 	for (uint32_t step = 0; step < count; ++step) {
 		const uint32_t candidate = (m_next_acquire_index + step) % count;
 		if (!busy(candidate)) {
-			image_index = candidate;
-			break;
+			m_images[candidate].in_flight = true;
+			m_images[candidate].shared = false;
+			m_next_acquire_index = (candidate + 1) % count;
+			return {vk::Result::eSuccess, uint32_t(candidate)};
 		}
 	}
-	m_next_acquire_index = (image_index + 1) % count;
-
-	return {vk::Result::eSuccess, image_index};
+	// Backpressure must never overwrite a frame held by the compositor.
+	return {vk::Result::eNotReady, 0};
 }
 
 auto SharedTextureOutputTarget::present(uint32_t, vk::Semaphore) -> vk::Result {
@@ -430,14 +439,19 @@ void SharedTextureOutputTarget::recordFinalize(vk::CommandBuffer command_buffer,
 		    vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer, {}, {}, {}, acquire
 		);
 
-		const vk::ImageCopy copy(
-		    vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1),
-		    vk::Offset3D {0, 0, 0},
-		    vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1),
-		    vk::Offset3D {0, 0, 0},
-		    vk::Extent3D {m_extent.width, m_extent.height, 1}
-		);
-		command_buffer.copyImage(image, vk::ImageLayout::eTransferSrcOptimal, target, vk::ImageLayout::eTransferDstOptimal, copy);
+		const vk::ImageSubresourceLayers layers(vk::ImageAspectFlagBits::eColor, 0, 0, 1);
+		if (m_color_format == k_shared_format) {
+			const vk::ImageCopy copy(layers, {}, layers, {}, {m_extent.width, m_extent.height, 1});
+			command_buffer.copyImage(image, vk::ImageLayout::eTransferSrcOptimal, target, vk::ImageLayout::eTransferDstOptimal, copy);
+		} else {
+			// Convert BGRA rendering/readback into RGBA for Linux GL interop.
+			const vk::Offset3D end(static_cast<int32_t>(m_extent.width), static_cast<int32_t>(m_extent.height), 1);
+			const std::array<vk::Offset3D, 2> offsets {vk::Offset3D {}, end};
+			const vk::ImageBlit blit(layers, offsets, layers, offsets);
+			command_buffer.blitImage(
+			    image, vk::ImageLayout::eTransferSrcOptimal, target, vk::ImageLayout::eTransferDstOptimal, blit, vk::Filter::eNearest
+			);
+		}
 
 		const vk::ImageMemoryBarrier release(
 		    vk::AccessFlagBits::eTransferWrite,
@@ -487,16 +501,19 @@ auto SharedTextureOutputTarget::submitSync(uint32_t image_index) -> OutputSubmit
 		sync.wait = *slot.done;
 		sync.wait_stage = vk::PipelineStageFlagBits::eTransfer;
 		slot.done_pending = false;
+	} else if (slot.ready_signaled) {
+		// A dropped frame still has an unconsumed binary signal. Drain it before
+		// signalling readiness for the new contents of this slot.
+		sync.wait = *slot.ready;
+		sync.wait_stage = vk::PipelineStageFlagBits::eTransfer;
 	}
-	if (!slot.ready_signaled) {
-		sync.signal = *slot.ready;
-		slot.ready_signaled = true;
-	}
+	sync.signal = *slot.ready;
+	slot.ready_signaled = true;
 #endif
 	return sync;
 }
 
-void SharedTextureOutputTarget::onImageRenderComplete(uint32_t image_index) {
+void SharedTextureOutputTarget::onImageRenderComplete(uint32_t image_index, bool publish) {
 	ZoneScoped;
 	if (image_index >= m_images.size()) {
 		return;
@@ -505,6 +522,10 @@ void SharedTextureOutputTarget::onImageRenderComplete(uint32_t image_index) {
 	const std::scoped_lock lock(m_frame_mutex);
 
 	auto& shared = m_images[image_index];
+	shared.in_flight = false;
+	if (!publish) {
+		return;
+	}
 	if (shared.read_back && shared.staging.has_value()) {
 		shared.staging->getAllocation().invalidate(0, imageByteSize());
 		m_latest_readback.store(static_cast<int32_t>(image_index), std::memory_order_release);
@@ -566,8 +587,15 @@ auto SharedTextureOutputTarget::enableSharedTextures(uint64_t adapter_luid, cons
 		TOAST_INFO("Render", "A graphics debugger is attached; the viewport reads frames back instead of sharing textures");
 		return false;
 	}
-	if (!m_core->isTextureSharingSupported() || !canShareImages(m_core->getPhysicalDevice(), m_color_format)) {
+	if (!m_core->isTextureSharingSupported() || !canShareImages(m_core->getPhysicalDevice(), k_shared_format)) {
 		return false;
+	}
+	if (m_color_format != k_shared_format) {
+		const auto source = m_core->getPhysicalDevice().getFormatProperties(m_color_format).optimalTilingFeatures;
+		const auto destination = m_core->getPhysicalDevice().getFormatProperties(k_shared_format).optimalTilingFeatures;
+		if (!(source & vk::FormatFeatureFlagBits::eBlitSrc) || !(destination & vk::FormatFeatureFlagBits::eBlitDst)) {
+			return false;
+		}
 	}
 	const auto ids = m_core->getPhysicalDevice().getProperties2<vk::PhysicalDeviceProperties2, vk::PhysicalDeviceIDProperties>();
 	const auto& id = ids.get<vk::PhysicalDeviceIDProperties>();
@@ -649,9 +677,14 @@ auto SharedTextureOutputTarget::exportSharedSlot(uint64_t generation, uint32_t s
 	return true;
 }
 
-auto SharedTextureOutputTarget::holdSharedSlot(uint64_t generation, uint32_t slot) -> bool {
+auto SharedTextureOutputTarget::holdSharedSlot(uint64_t generation, uint32_t slot, uint64_t frame_id) -> bool {
 	std::scoped_lock lock(m_frame_mutex);
 	if (!m_interop || m_interop->generation != generation || slot >= m_interop->slots.size()) {
+		return false;
+	}
+	if (m_images[slot].in_flight || m_interop->slots[slot].held || std::cmp_equal(slot, m_interop->displayed) ||
+	    !std::cmp_equal(slot, m_latest_ready.load(std::memory_order_acquire)) ||
+	    frame_id != m_frame_counter.load(std::memory_order_acquire)) {
 		return false;
 	}
 	m_interop->slots[slot].held = true;

@@ -82,7 +82,7 @@ public:
 	}
 
 	void recordFinalize(vk::CommandBuffer command_buffer, uint32_t image_index) override;
-	void onImageRenderComplete(uint32_t image_index) override;
+	void onImageRenderComplete(uint32_t image_index, bool publish = true) override;
 	[[nodiscard]]
 	auto submitSync(uint32_t image_index) -> OutputSubmitSync override;
 
@@ -112,7 +112,7 @@ public:
 	auto exportSharedSlot(uint64_t generation, uint32_t slot, ViewportSharedHandles* out) -> bool;
 
 	[[nodiscard]]
-	auto holdSharedSlot(uint64_t generation, uint32_t slot) -> bool;
+	auto holdSharedSlot(uint64_t generation, uint32_t slot, uint64_t frame_id) -> bool;
 
 	void releaseSharedSlot(uint64_t generation, uint32_t slot, bool consumed);
 
@@ -124,6 +124,7 @@ private:
 		void* mapped = nullptr;
 		bool read_back = false;
 		bool shared = false;
+		bool in_flight = false;
 	};
 
 	struct Interop;

@@ -147,7 +147,8 @@ TOAST_C_API int
     toast_viewport_export_shared_slot(uint64_t generation, uint32_t slot, toast_viewport_shared_handles_t* out) NOEXCEPT;
 
 /// @brief Keeps the renderer from writing @p slot while the compositor reads it
-TOAST_C_API int toast_viewport_hold_shared_slot(uint64_t generation, uint32_t slot) NOEXCEPT;
+/// @return 0 if the generation or frame_id is stale, or the slot is already in use
+TOAST_C_API int toast_viewport_hold_shared_slot(uint64_t generation, uint32_t slot, uint64_t frame_id) NOEXCEPT;
 
 /// @param consumed 1 when the compositor waited for ready and signalled done
 TOAST_C_API void toast_viewport_release_shared_slot(uint64_t generation, uint32_t slot, int consumed) NOEXCEPT;

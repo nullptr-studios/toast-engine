@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Platform;
 using Avalonia.Rendering.Composition;
+using Avalonia.Threading;
 using editor.Engine;
 
 namespace editor.Workspace;
@@ -12,6 +13,8 @@ namespace editor.Workspace;
 internal sealed class SharedViewportPresenter : IDisposable {
 	private readonly Visual m_host;
 	private readonly ToastEngine m_engine;
+	private readonly Action m_onPresented;
+	private readonly Func<bool> m_canPresent;
 
 	private Compositor? m_compositor;
 	private ICompositionGpuInterop? m_interop;
@@ -33,12 +36,11 @@ internal sealed class SharedViewportPresenter : IDisposable {
 		public ICompositionImportedGpuSemaphore? Done;
 	}
 
-	private readonly Action? m_onPresented;
-
-	public SharedViewportPresenter(Visual host, ToastEngine engine, Action? onPresented = null) {
+	public SharedViewportPresenter(Visual host, ToastEngine engine, Action onPresented, Func<bool> canPresent) {
 		m_host = host;
 		m_engine = engine;
 		m_onPresented = onPresented;
+		m_canPresent = canPresent;
 	}
 
 	public bool Failed { get; private set; }
@@ -71,6 +73,7 @@ internal sealed class SharedViewportPresenter : IDisposable {
 			m_visual.Surface = m_surface;
 			ElementComposition.SetElementChildVisual(m_host, m_visual);
 			Active = true;
+			Console.Error.WriteLine("[viewport] GPU-shared compositor textures active");
 		} catch (Exception e) {
 			Fail(e.Message);
 		} finally {
@@ -95,6 +98,7 @@ internal sealed class SharedViewportPresenter : IDisposable {
 
 	private void Fail(string reason) {
 		Log.Warn($"Viewport falls back to reading frames back: {reason}");
+		Console.Error.WriteLine($"[viewport] CPU readback fallback: {reason}");
 		if (m_engineSharing) m_engine.DisableSharedViewport();
 		m_engineSharing = false;
 		Failed = true;
@@ -114,7 +118,7 @@ internal sealed class SharedViewportPresenter : IDisposable {
 	}
 
 	private bool TryPresentLatest() {
-		if (!Active || m_surface is null) return false;
+		if (!Active || m_surface is null || m_updating) return false;
 
 		var result = m_engine.TryGetSharedViewportFrame(out var frame);
 		if (result < 0) {
@@ -126,7 +130,7 @@ internal sealed class SharedViewportPresenter : IDisposable {
 		if (frame.generation != m_generation && !Import(frame)) return false;
 
 		var slot = m_slots[frame.slot];
-		if (slot.Image is null || !m_engine.HoldSharedViewportSlot(m_generation, frame.slot)) return false;
+		if (slot.Image is null || !m_engine.HoldSharedViewportSlot(m_generation, frame.slot, frame.frame_id)) return false;
 
 		m_lastFrameId = frame.frame_id;
 		m_updating = true;
@@ -149,7 +153,11 @@ internal sealed class SharedViewportPresenter : IDisposable {
 		}
 		m_engine.ReleaseSharedViewportSlot(generation, index, true);
 		m_updating = false;
-		if (TryPresentLatest()) m_onPresented?.Invoke();
+		// The compositor has finished the snapshot. Pick up a newer frame without
+		// waiting another animation tick, but let input run ahead of viewport work.
+		Dispatcher.UIThread.Post(() => {
+			if (Active && m_canPresent() && TryPresentLatest()) m_onPresented();
+		}, DispatcherPriority.Background);
 	}
 
 	private bool Import(ToastViewportSharedFrame frame) {
@@ -161,7 +169,8 @@ internal sealed class SharedViewportPresenter : IDisposable {
 			var properties = new PlatformGraphicsExternalImageProperties {
 				Width = (int)frame.width,
 				Height = (int)frame.height,
-				Format = PlatformGraphicsExternalImageFormat.B8G8R8A8UNorm,
+				Format = UsesKeyedMutex ? PlatformGraphicsExternalImageFormat.B8G8R8A8UNorm
+					: PlatformGraphicsExternalImageFormat.R8G8B8A8UNorm,
 				MemorySize = frame.memory_size,
 				TopLeftOrigin = true,
 			};
@@ -189,8 +198,9 @@ internal sealed class SharedViewportPresenter : IDisposable {
 		var scale = Math.Min(bounds.Width / m_width, bounds.Height / m_height);
 		if (!double.IsFinite(scale) || scale <= 0) return;
 		var size = new Vector2((float)(m_width * scale), (float)(m_height * scale));
-		m_visual.Size = size;
-		m_visual.Offset = new Vector3((float)((bounds.Width - size.X) / 2), (float)((bounds.Height - size.Y) / 2), 0);
+		var offset = new Vector3((float)((bounds.Width - size.X) / 2), (float)((bounds.Height - size.Y) / 2), 0);
+		if (m_visual.Size != size) m_visual.Size = size;
+		if (m_visual.Offset != offset) m_visual.Offset = offset;
 	}
 
 	private void DisposeSlots() {

@@ -30,6 +30,8 @@ public partial class ViewportControl : UserControl {
 	private const double PanScale = 40.0;
 	private const float PinchZoomScale = 100f;
 	private const float WheelZoomScale = 20f;
+	private static readonly bool s_forceViewportReadback =
+		Environment.GetEnvironmentVariable("TOAST_VIEWPORT_READBACK") == "1";
 
 	public static readonly StyledProperty<bool> PlayModeProperty =
 		AvaloniaProperty.Register<ViewportControl, bool>(nameof(PlayMode));
@@ -373,9 +375,12 @@ public partial class ViewportControl : UserControl {
 
 		SendResizeIfChanged();
 
-		if (m_shared is null && !GraphicsDebuggerDetector.IsAttached) {
+		if (m_shared is null && !GraphicsDebuggerDetector.IsAttached && !s_forceViewportReadback) {
 			m_shared = new SharedViewportPresenter(
-				SurfaceHost, m_engine, () => (DataContext as WorkspaceViewModel)?.NotePresentedFrame());
+				SurfaceHost, m_engine,
+				() => (DataContext as WorkspaceViewModel)?.NotePresentedFrame(),
+				() => m_frameLoopActive && IsEffectivelyVisible && OwnsEngineFrame
+			);
 			m_shared.Start();
 		}
 		if (m_shared is { Failed: false }) {
@@ -390,8 +395,10 @@ public partial class ViewportControl : UserControl {
 		}
 		Surface.IsVisible = true;
 
-		var peek =m_engine.TryGetViewportFrame(IntPtr.Zero, 0, out var dims);
+		var peek = m_engine.TryGetViewportFrame(IntPtr.Zero, 0, out var dims);
 		if (peek == 0 || dims.width == 0 || dims.height == 0)
+			return;
+		if (m_bitmap is not null && dims.frame_id == m_lastFrameId)
 			return;
 
 		if (m_bitmap is null
