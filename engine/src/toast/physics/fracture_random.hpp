@@ -84,16 +84,16 @@ inline auto valueNoise3(uint64_t seed, glm::vec3 p) noexcept -> float {
 	glm::vec3 t = p - base;
 	glm::vec3 w = t * t * (3.0f - (2.0f * t));
 
-#define larp(a, b, c) std::lerp(a, b, c)
+#define LARP(a, b, c) std::lerp(a, b, c)
 
 	auto at = [&](int x, int y, int z) { return hash01(seed, cell + glm::ivec3 {x, y, z}); };
-	float x00 = larp(at(0, 0, 0), at(1, 0, 0), w.x);
-	float x01 = larp(at(0, 1, 0), at(1, 1, 0), w.x);
-	float x10 = larp(at(0, 0, 1), at(1, 0, 1), w.x);
-	float x11 = larp(at(0, 1, 1), at(1, 1, 1), w.x);
-	return larp(larp(x00, x10, w.y), larp(x01, x11, w.y), w.z);
+	float x00 = LARP(at(0, 0, 0), at(1, 0, 0), w.x);
+	float x01 = LARP(at(0, 1, 0), at(1, 1, 0), w.x);
+	float x10 = LARP(at(0, 0, 1), at(1, 0, 1), w.x);
+	float x11 = LARP(at(0, 1, 1), at(1, 1, 1), w.x);
+	return LARP(LARP(x00, x10, w.y), LARP(x01, x11, w.y), w.z);
 
-#undef larp
+#undef LARP
 }
 
 struct Rng {

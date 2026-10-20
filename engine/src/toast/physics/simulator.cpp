@@ -871,7 +871,7 @@ void Simulator::emitDebris(
 			velocity += debrisConeDirection(axis, rng, k_debris_cone_spread) * debrisSpeed(energy_each, mass, speed_scale);
 		}
 		if (push != nullptr && push_length > 1.0e-6f && mass > 0.0f) {
-			const float speed = std::min(std::min(push->speed, push->max_impulse / mass), k_max_debris_speed);
+			const float speed = std::min({push->speed, push->max_impulse / mass, k_max_debris_speed});
 			if (std::isfinite(speed) && speed > 0.0f) {
 				velocity += (push_direction / push_length) * speed;
 			}

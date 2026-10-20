@@ -38,7 +38,7 @@ public:
 		glm::vec3 angular_velocity {0.0f};
 		float age = 0.0f;
 		uint32_t rest_steps = 0;
-		uint32_t pad[3] {};
+		std::array<uint32_t, 3> pad {};
 	};
 
 	struct GpuSpawn {
@@ -55,7 +55,7 @@ public:
 		glm::mat4 world_to_voxel {1.0f};
 		glm::vec4 bounds {0.0f};
 		uint32_t record_index = 0;
-		uint32_t pad[3] {};
+		std::array<uint32_t, 3> pad {};
 	};
 
 	// just in case somebody touches this
@@ -125,7 +125,7 @@ private:
 		uint32_t volume_count = 0;
 		uint32_t substeps = 1;
 		uint32_t clear = 0;
-		uint32_t pad[3] {};
+		std::array<uint32_t, 3> pad {};
 	};
 
 	static_assert(sizeof(Params) == 64, "Params is mirrored by debris.slang");

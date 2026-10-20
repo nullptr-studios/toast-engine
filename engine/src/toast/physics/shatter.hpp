@@ -169,7 +169,11 @@ inline auto planShatter(
 	const bool fibrous = crater.pattern == FracturePattern::fibrous;
 	const glm::uvec3 dims = volume.voxelDims();
 	glm::vec3 grain {0.0f};
-	grain[dims.x >= dims.y && dims.x >= dims.z ? 0 : (dims.y >= dims.z ? 1 : 2)] = 1.0f;
+	if (dims.x >= dims.y && dims.x >= dims.z) {
+		grain[0] = 1.0f;
+	} else {
+		grain[(dims.y >= dims.z ? 1 : 2)] = 1.0f;
+	}
 	const auto metric = [&](const glm::vec3& offset) {
 		if (not fibrous) {
 			return glm::length(offset);
