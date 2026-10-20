@@ -19,11 +19,13 @@
 #include "passes/skinning_pass.hpp"
 #include "passes/voxel_pass.hpp"
 #include "ray_tracing_scene.hpp"
+#include "renderer_settings.hpp"
 #include "shadow_slots.hpp"
 #include "skinned_blas_pool.hpp"
 #include "voxel_debug.hpp"
 #include "vulkan_debug.hpp"
 
+#include <SDL3/SDL_keycode.h>
 #include <algorithm>
 #include <array>
 #include <bit>
@@ -46,6 +48,7 @@
 #include <toast/assets/material.hpp>
 #include <toast/log.hpp>
 #include <toast/physics/simulator.hpp>
+#include <toast/settings/settings.hpp>
 #include <toast/thread_pool.hpp>
 #include <toast/time.hpp>
 #include <toast/voxel/nodes/voxel_node.hpp>
@@ -801,6 +804,9 @@ VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTa
 	});
 	m_imgui_input_listener.subscribe<event::WindowKey>([this](const auto& e) {
 		m_imgui_key_events_accum.push_back({e.key, e.action != 0});
+		if (e.key == SDLK_F3 && e.action == event::window_input_pressed && m_game_view.load(std::memory_order_relaxed)) {
+			toast::settings::Settings::get().setValue(k_debug_overlay_in_game, toast::settings::Value {!debugOverlayInGame()});
+		}
 		return false;
 	});
 	m_imgui_input_listener.subscribe<event::WindowChar>([this](const auto& e) {
@@ -2388,15 +2394,15 @@ void VulkanRenderer::updateFrameResources(uint32_t frame_index, RenderFrame& fra
 	upload_instances(m_shadow_instance_res, frame_index, frame_data.shadow_instance_data);
 }
 
-auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
+auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> bool {
 	ZoneScoped;
 	if (m_frames.empty()) {
-		return;
+		return false;
 	}
 
 	if (!m_output_target->isPresentable()) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
-		return;
+		return false;
 	}
 
 	using clock = std::chrono::steady_clock;
@@ -2434,10 +2440,12 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 	if (acquired.result == vk::Result::eErrorOutOfDateKHR) {
 		TOAST_WARN("Render", "Swapchain out of date on acquire; recreating");
 		applyResize(m_output_target->getExtent());
-		return;
+		return false;
 	}
 	if (acquired.result == vk::Result::eNotReady) {
-		return;
+		waitForOutputImage();
+		end_phase(m_perf_acquire_ns);
+		return false;
 	}
 	if (acquired.result != vk::Result::eSuccess && acquired.result != vk::Result::eSuboptimalKHR) {
 		TOAST_CRITICAL("Render", "Toast Engine Error: Failed to acquire the next output image!");
@@ -2567,13 +2575,36 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 		TOAST_WARN("Render", "Swapchain out of date or suboptimal on present; recreating");
 		m_rendering_frame = nullptr;
 		applyResize(m_output_target->getExtent());
-		return;
+		return true;
 	}
 	if (present_result != vk::Result::eSuccess) {
 		TOAST_CRITICAL("Render", "Toast Engine Error: Failed to present the current output image!");
 	}
 
 	m_rendering_frame = nullptr;
+	return true;
+}
+
+void VulkanRenderer::waitForOutputImage() {
+	ZoneScoped;
+	using clock = std::chrono::steady_clock;
+	constexpr auto k_budget = std::chrono::milliseconds(8);
+	constexpr auto k_step = std::chrono::milliseconds(1);
+	const auto deadline = clock::now() + k_budget;
+	while (clock::now() < deadline) {
+		// An image the GPU still renders only frees once this thread publishes it
+		publishCompletedFrames();
+		if (!m_pending_publish.empty()) {
+			const auto& oldest = m_frames[m_pending_publish.front()];
+			std::ignore = m_core->getDevice().waitForFences(
+			    *oldest.in_flight, true, static_cast<uint64_t>(std::chrono::nanoseconds(k_step).count())
+			);
+			publishCompletedFrames();
+		}
+		if (m_output_target->waitForFreeImage(k_step)) {
+			return;
+		}
+	}
 }
 
 void VulkanRenderer::mainRenderThread() {
@@ -2700,30 +2731,6 @@ void VulkanRenderer::mainRenderThread() {
 
 		Time::get().renderTick();
 
-		{
-			static constexpr size_t k_window = 60;
-			const auto now = clock::now();
-			if (last_frame_time.time_since_epoch().count() != 0) {
-				const auto interval_ms = std::chrono::duration<float, std::milli>(now - last_frame_time).count();
-				frame_time_window[frame_time_cursor % k_window] = interval_ms;
-				++frame_time_cursor;
-
-				const size_t filled = std::min<size_t>(frame_time_cursor, k_window);
-				float sum = 0.0f;
-				float lowest = std::numeric_limits<float>::max();
-				float highest = 0.0f;
-				for (size_t i = 0; i < filled; ++i) {
-					sum += frame_time_window[i];
-					lowest = std::min(lowest, frame_time_window[i]);
-					highest = std::max(highest, frame_time_window[i]);
-				}
-				m_frame_time_avg_ms.store(sum / static_cast<float>(filled), std::memory_order_relaxed);
-				m_frame_time_min_ms.store(lowest, std::memory_order_relaxed);
-				m_frame_time_max_ms.store(highest, std::memory_order_relaxed);
-			}
-			last_frame_time = now;
-		}
-
 		const bool do_capture = m_capture_frame_requested.exchange(false, std::memory_order_acq_rel);
 		const auto* rdoc_api = m_core->getRenderDocAPI();
 		const auto nsight_mode = m_core->getNsightMode();
@@ -2751,14 +2758,40 @@ void VulkanRenderer::mainRenderThread() {
 #endif
 
 		const auto draw_start = clock::now();
-		drawFrame(frame_to_draw);
-		m_perf_draw_work_ns.fetch_add(
-		    static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(clock::now() - draw_start).count()),
-		    std::memory_order_relaxed
-		);
-		m_perf_draws.fetch_add(1, std::memory_order_relaxed);
-		if (!consumed_queued_frame) {
-			m_perf_repeated_draws.fetch_add(1, std::memory_order_relaxed);
+		// A pass with no free output image rendered nothing
+		if (drawFrame(frame_to_draw)) {
+			m_perf_draw_work_ns.fetch_add(
+			    static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(clock::now() - draw_start).count()),
+			    std::memory_order_relaxed
+			);
+			m_perf_draws.fetch_add(1, std::memory_order_relaxed);
+			if (!consumed_queued_frame) {
+				m_perf_repeated_draws.fetch_add(1, std::memory_order_relaxed);
+			}
+
+			{
+				static constexpr size_t k_window = 60;
+				const auto now = clock::now();
+				if (last_frame_time.time_since_epoch().count() != 0) {
+					const auto interval_ms = std::chrono::duration<float, std::milli>(now - last_frame_time).count();
+					frame_time_window[frame_time_cursor % k_window] = interval_ms;
+					++frame_time_cursor;
+
+					const size_t filled = std::min<size_t>(frame_time_cursor, k_window);
+					float sum = 0.0f;
+					float lowest = std::numeric_limits<float>::max();
+					float highest = 0.0f;
+					for (size_t i = 0; i < filled; ++i) {
+						sum += frame_time_window[i];
+						lowest = std::min(lowest, frame_time_window[i]);
+						highest = std::max(highest, frame_time_window[i]);
+					}
+					m_frame_time_avg_ms.store(sum / static_cast<float>(filled), std::memory_order_relaxed);
+					m_frame_time_min_ms.store(lowest, std::memory_order_relaxed);
+					m_frame_time_max_ms.store(highest, std::memory_order_relaxed);
+				}
+				last_frame_time = now;
+			}
 		}
 
 		if (do_capture && rdoc_api != nullptr) {
@@ -2821,6 +2854,16 @@ void VulkanRenderer::setRenderingPaused(bool paused) noexcept {
 		m_rendering_paused.store(paused, std::memory_order_release);
 	}
 	m_frame_cv.notify_all();
+}
+
+void VulkanRenderer::setGameView(bool game_view) {
+	m_game_view.store(game_view, std::memory_order_relaxed);
+	const bool owns = game_view && debugWindowsVisible() && debugOverlayInGame();
+	if (owns != m_debug_overlay_owns_cursor.load(std::memory_order_relaxed)) {
+		// Queued first so whatever the editor sends after polling the flag lands behind it
+		event::send<event::DebugOverlayCursor>(owns);
+		m_debug_overlay_owns_cursor.store(owns, std::memory_order_release);
+	}
 }
 
 void VulkanRenderer::submitFrame() noexcept {

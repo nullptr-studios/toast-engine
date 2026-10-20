@@ -537,6 +537,17 @@ void Engine::tick() {
 			}
 			m->renderer->setOutlinedNodes(std::move(outlined));
 		}
+
+		if (m->renderer) {
+			// The standalone player is always the game
+			bool game_view = m->shared_target == nullptr;
+			if (it != m->owners.end()) {
+				if (const Workspace* ws = it->second->asWorkspace(); ws != nullptr) {
+					game_view = ws->isPlaying() && ws->usesGameCamera();
+				}
+			}
+			m->renderer->setGameView(game_view);
+		}
 	}
 
 	if (m->renderer) {
@@ -665,7 +676,7 @@ void Engine::createSDLWindow(const char* w_name) {
 		});
 	}
 
-	// Players get the performance overlay on top of the game's UI, in every build for now
+	// Players get the overlay above the game UI and hidden until F3
 	auto debug_pass =
 	    std::make_unique<renderer::DebugPass>(*m->vulkan_core, color_format, depth_format, extent, &cluster_lighting_pass_ref);
 	debug_pass->setEditorPanelsEnabled(false);
@@ -1226,6 +1237,11 @@ void toast_set_show_debug_windows(int visible) noexcept {
 	if (auto* vk_renderer = renderer::VulkanRenderer::instance; vk_renderer != nullptr) {
 		vk_renderer->setDebugWindowsVisible(visible != 0);
 	}
+}
+
+auto toast_debug_overlay_owns_cursor() noexcept -> int {
+	const auto* vk_renderer = renderer::VulkanRenderer::instance;
+	return vk_renderer != nullptr && vk_renderer->debugOverlayOwnsCursor() ? 1 : 0;
 }
 
 void toast_set_window_state(int focused, int minimized) noexcept {

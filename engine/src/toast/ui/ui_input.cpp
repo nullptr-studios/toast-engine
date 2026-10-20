@@ -105,6 +105,11 @@ UIInputRouter::UIInputRouter() {
 		    }
 
 		    if (e.action == event::window_input_pressed) {
+			    // A press ImGui wants skips the panels under it and still reaches the input system
+			    if (m_overlay_mouse) {
+				    m_ui_buttons.erase(e.button);
+				    return false;
+			    }
 			    const bool consumed =
 			        dispatchToPanels([&](Rml::Context* context) { return context->ProcessMouseButtonDown(button, m_mods); });
 			    if (consumed) {
@@ -124,9 +129,20 @@ UIInputRouter::UIInputRouter() {
 
 	m_listener.subscribe<event::WindowMouseScroll>(
 	    [this](event::WindowMouseScroll& e) {
+		    if (m_overlay_mouse) {
+			    return false;
+		    }
 		    return dispatchToPanels([&](Rml::Context* context) {
 			    return context->ProcessMouseWheel(Rml::Vector2f(-e.x, -e.y), m_mods);
 		    });
+	    },
+	    k_ui_input_priority
+	);
+
+	m_listener.subscribe<event::DebugOverlayCapture>(
+	    [this](event::DebugOverlayCapture& e) {
+		    m_overlay_mouse = e.mouse;
+		    return false;
 	    },
 	    k_ui_input_priority
 	);

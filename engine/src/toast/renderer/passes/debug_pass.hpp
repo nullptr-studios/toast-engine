@@ -133,6 +133,10 @@ private:
 	bool m_imgui_ready = false;
 	bool m_editor_panels = true;
 
+	/// Last io.WantCapture* sent to the input system
+	bool m_capture_mouse = false;
+	bool m_capture_keyboard = false;
+
 	std::unique_ptr<PerfWindow> m_perf;
 
 	std::unique_ptr<voxel_debug::Monitor> m_voxels;

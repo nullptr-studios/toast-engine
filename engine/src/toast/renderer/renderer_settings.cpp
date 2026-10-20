@@ -541,6 +541,18 @@ void registerEnvironment(VulkanRenderer& renderer) {
 	    });
 }
 
+void registerDebug(VulkanRenderer& renderer) {
+	toast::settings::declareBool(
+	    k_debug_overlay_in_game,
+	    false,
+	    {.label = "Debug overlay in game",
+			 .category = "Debug",
+			 .description = "Draws the ImGui debug windows while a game camera is live and frees the cursor to use them. "
+			                "Off hides them in game and brings them back as they were in the editor. F3 in game flips it."}
+	)
+	    .onChange([&renderer](bool visible) { renderer.setDebugOverlayInGame(visible); });
+}
+
 }
 
 void registerRendererStartupSettings() {
@@ -552,6 +564,7 @@ void registerRendererSettings(VulkanRenderer& renderer) {
 	registerQuality(renderer);
 	registerVoxels(renderer);
 	registerEnvironment(renderer);
+	registerDebug(renderer);
 }
 
 }

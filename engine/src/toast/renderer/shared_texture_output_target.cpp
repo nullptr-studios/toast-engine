@@ -385,16 +385,9 @@ auto SharedTextureOutputTarget::acquireNextImage(uint64_t, vk::Semaphore, vk::Fe
 	const std::scoped_lock lock(m_frame_mutex);
 
 	const uint32_t count = getImageCount();
-	const int32_t published = m_latest_ready.load(std::memory_order_acquire);
-	const auto busy = [&](uint32_t index) {
-		return m_images[index].in_flight || std::cmp_equal(index, published) || std::cmp_equal(index, m_reading) ||
-		       (m_interop && index < m_interop->slots.size() &&
-		        (m_interop->slots[index].held || std::cmp_equal(index, m_interop->displayed)));
-	};
-
 	for (uint32_t step = 0; step < count; ++step) {
 		const uint32_t candidate = (m_next_acquire_index + step) % count;
-		if (!busy(candidate)) {
+		if (!imageBusy(candidate)) {
 			m_images[candidate].in_flight = true;
 			m_images[candidate].shared = false;
 			m_next_acquire_index = (candidate + 1) % count;
@@ -403,6 +396,25 @@ auto SharedTextureOutputTarget::acquireNextImage(uint64_t, vk::Semaphore, vk::Fe
 	}
 	// Backpressure must never overwrite a frame held by the compositor.
 	return {vk::Result::eNotReady, 0};
+}
+
+auto SharedTextureOutputTarget::imageBusy(uint32_t index) const -> bool {
+	return m_images[index].in_flight || std::cmp_equal(index, m_latest_ready.load(std::memory_order_acquire)) ||
+	       std::cmp_equal(index, m_reading) ||
+	       (m_interop && index < m_interop->slots.size() &&
+	        (m_interop->slots[index].held || std::cmp_equal(index, m_interop->displayed)));
+}
+
+auto SharedTextureOutputTarget::waitForFreeImage(std::chrono::nanoseconds timeout) -> bool {
+	std::unique_lock lock(m_frame_mutex);
+	return m_slot_freed.wait_for(lock, timeout, [this] {
+		for (uint32_t index = 0; index < m_images.size(); ++index) {
+			if (!imageBusy(index)) {
+				return true;
+			}
+		}
+		return false;
+	});
 }
 
 auto SharedTextureOutputTarget::present(uint32_t, vk::Semaphore) -> vk::Result {
@@ -567,6 +579,7 @@ auto SharedTextureOutputTarget::copyLatestFrame(void* dst, uint32_t dst_capacity
 		m_reading = -1;
 	}
 	m_reading_done.notify_all();
+	m_slot_freed.notify_all();
 	return 1;
 }
 
@@ -696,6 +709,8 @@ void SharedTextureOutputTarget::releaseSharedSlot(uint64_t generation, uint32_t 
 	if (!m_interop || m_interop->generation != generation || slot >= m_interop->slots.size()) {
 		return;
 	}
+	// Under the lock so the render thread cannot check and then sleep through it
+	m_slot_freed.notify_all();
 	auto& shared = m_interop->slots[slot];
 	shared.held = false;
 	if (consumed) {

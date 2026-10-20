@@ -73,7 +73,6 @@ internal sealed class SharedViewportPresenter : IDisposable {
 			m_visual.Surface = m_surface;
 			ElementComposition.SetElementChildVisual(m_host, m_visual);
 			Active = true;
-			Console.Error.WriteLine("[viewport] GPU-shared compositor textures active");
 		} catch (Exception e) {
 			Fail(e.Message);
 		} finally {
@@ -98,7 +97,6 @@ internal sealed class SharedViewportPresenter : IDisposable {
 
 	private void Fail(string reason) {
 		Log.Warn($"Viewport falls back to reading frames back: {reason}");
-		Console.Error.WriteLine($"[viewport] CPU readback fallback: {reason}");
 		if (m_engineSharing) m_engine.DisableSharedViewport();
 		m_engineSharing = false;
 		Failed = true;

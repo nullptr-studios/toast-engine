@@ -6,6 +6,7 @@
 
 #include "vulkan_common.hpp"
 
+#include <chrono>
 #include <cstdint>
 
 namespace renderer {
@@ -52,6 +53,12 @@ public:
 	virtual void onImageRenderComplete(uint32_t image_index, bool publish = true) {
 		(void)image_index;
 		(void)publish;
+	}
+
+	/// After acquireNextImage returned eNotReady and false when none freed within @p timeout
+	virtual auto waitForFreeImage(std::chrono::nanoseconds timeout) -> bool {
+		(void)timeout;
+		return true;
 	}
 
 	[[nodiscard]]

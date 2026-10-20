@@ -559,6 +559,27 @@ public:
 		return m_debug_windows_visible.load(std::memory_order_relaxed);
 	}
 
+	void setDebugOverlayInGame(bool visible) noexcept { m_debug_overlay_in_game.store(visible, std::memory_order_relaxed); }
+
+	[[nodiscard]]
+	auto debugOverlayInGame() const noexcept -> bool {
+		return m_debug_overlay_in_game.load(std::memory_order_relaxed);
+	}
+
+	/// Main thread only, once per tick
+	void setGameView(bool game_view);
+
+	/// ImGui draws nothing while a game camera is live unless shown in game
+	[[nodiscard]]
+	auto debugOverlayHidden() const noexcept -> bool {
+		return m_game_view.load(std::memory_order_relaxed) && !debugOverlayInGame();
+	}
+
+	[[nodiscard]]
+	auto debugOverlayOwnsCursor() const noexcept -> bool {
+		return m_debug_overlay_owns_cursor.load(std::memory_order_acquire);
+	}
+
 	void setApplicationFocused(bool focused) noexcept { m_application_focused.store(focused, std::memory_order_relaxed); }
 
 	[[nodiscard]]
@@ -1251,7 +1272,9 @@ public:
 	static VulkanRenderer* instance;
 
 private:
-	void drawFrame(RenderFrame& frame_data);
+	/// False when nothing was rendered
+	auto drawFrame(RenderFrame& frame_data) -> bool;
+	void waitForOutputImage();
 
 	void mainRenderThread();
 
@@ -1756,6 +1779,9 @@ private:
 	std::atomic<double> m_frame_rate_limit_hz {0.0};
 	std::atomic_bool m_application_focused {true};
 	std::atomic_bool m_debug_windows_visible {true};
+	std::atomic_bool m_debug_overlay_in_game {false};
+	std::atomic_bool m_game_view {false};
+	std::atomic_bool m_debug_overlay_owns_cursor {false};
 	std::atomic_bool m_rendering_paused {false};
 	std::atomic_bool m_clamp_to_simulation {true};
 };

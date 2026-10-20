@@ -160,6 +160,9 @@ TOAST_C_API uint32_t toast_get_max_tick_rate(void) NOEXCEPT;
 
 TOAST_C_API void toast_set_show_debug_windows(int visible) NOEXCEPT;
 
+/// @return 1 while the debug overlay is up in game view and the cursor must stay free
+TOAST_C_API int toast_debug_overlay_owns_cursor(void) NOEXCEPT;
+
 /// @brief Tells the renderer whether the host application is focused and whether it is minimized
 /// @param focused 0 holds rendering at 30 fps (or the configured cap when lower), 1 restores the configured cap
 /// @param minimized 1 stops rendering entirely until called again with 0
