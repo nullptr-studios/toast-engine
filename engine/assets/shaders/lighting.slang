@@ -412,10 +412,18 @@ LightTerms shadeLightTerms(float3 N, float3 V, float3 L, float3 radiance, float3
     return terms;
 }
 
-float3 shadeLight(float3 N, float3 V, float3 L, float3 radiance, float3 albedo, float metallic, float roughness, float reflectivity)
+float3 shadeLight(float3 N, float3 V, float3 L, float3 radiance, float3 albedo, float metallic, float roughness, float reflectivity,
+                  out float3 specular)
 {
     const LightTerms terms = shadeLightTerms(N, V, L, radiance, albedo, metallic, roughness, reflectivity);
+    specular = terms.specular;
     return terms.diffuse * albedo + terms.specular;
+}
+
+float3 shadeLight(float3 N, float3 V, float3 L, float3 radiance, float3 albedo, float metallic, float roughness, float reflectivity)
+{
+    float3 specular;
+    return shadeLight(N, V, L, radiance, albedo, metallic, roughness, reflectivity, specular);
 }
 
 float attenuateRange(float dist, float range)
@@ -532,12 +540,13 @@ float3 analyticLightPoint(GpuLight light, float3 position)
 /// Karis 2013 representative points
 /// Disc and rect use the sphere of equal area
 float3 shadeAnalyticLight(GpuLight light, float3 position, float3 N, float3 V, float3 L, float3 radiance, float3 albedo, float metallic,
-                          float roughness, float reflectivity)
+                          float roughness, float reflectivity, out float3 specularPart)
 {
+    specularPart = float3(0.0, 0.0, 0.0);
     const uint shape = uint(light.shape.x + 0.5);
     if (shape == kLightShapePoint || light.shape.y + light.shape.z <= 0.0)
     {
-        return shadeLight(N, V, L, radiance, albedo, metallic, roughness, reflectivity);
+        return shadeLight(N, V, L, radiance, albedo, metallic, roughness, reflectivity, specularPart);
     }
 
     const float3 axis = light.directionPad.xyz;
@@ -581,7 +590,15 @@ float3 shadeAnalyticLight(GpuLight light, float3 position, float3 N, float3 V, f
 
     const LightTerms diffuse = shadeLightTerms(N, V, L, radiance, albedo, metallic, roughness, reflectivity);
     const LightTerms specular = shadeLightTerms(N, V, direction, radiance, albedo, metallic, roughness, reflectivity);
-    return diffuse.diffuse * albedo + specular.specular * normalization;
+    specularPart = specular.specular * normalization;
+    return diffuse.diffuse * albedo + specularPart;
+}
+
+float3 shadeAnalyticLight(GpuLight light, float3 position, float3 N, float3 V, float3 L, float3 radiance, float3 albedo, float metallic,
+                          float roughness, float reflectivity)
+{
+    float3 specularPart;
+    return shadeAnalyticLight(light, position, N, V, L, radiance, albedo, metallic, roughness, reflectivity, specularPart);
 }
 
 static const float kShadowFilterRadiusTexels = 2.5;
@@ -604,11 +621,14 @@ float shadowNormalOffset(float texelWorldSize, float NdotL)
     return offset;
 }
 
+/// The first kShadowProbeTaps form a cross
 static const float2 kPoissonDisk[12] = {
-    float2(-0.326, -0.406), float2(-0.840, -0.074), float2(-0.696,  0.457), float2(-0.203,  0.621),
-    float2( 0.962, -0.195), float2( 0.473, -0.480), float2( 0.519,  0.767), float2( 0.185, -0.893),
+    float2(-0.840, -0.074), float2( 0.962, -0.195), float2(-0.203,  0.621), float2( 0.185, -0.893),
+    float2(-0.326, -0.406), float2(-0.696,  0.457), float2( 0.473, -0.480), float2( 0.519,  0.767),
     float2( 0.507,  0.064), float2( 0.896,  0.412), float2(-0.322, -0.933), float2(-0.792, -0.598),
 };
+
+static const uint kShadowProbeTaps = 4u;
 
 float interleavedGradientNoise(float2 pixel)
 {
@@ -663,20 +683,32 @@ float pcfShadowRadius(
     float2 rotation = float2(cos(angle), sin(angle));
     float radius = texelSize * radiusTexels;
 
+    // LevelZero since implicit derivatives are undefined under per pixel branches
+    // Centre and cross agreeing skips the rest
     float sum = 0.0;
-    for (int i = 0; i < 12; ++i)
+    float probe = shadowMaps.SampleCmpLevelZero(float3(uv, layer), compareDepth);
+    [unroll]
+    for (uint i = 0u; i < kShadowProbeTaps; ++i)
     {
-        float2 tap = kPoissonDisk[i];
-        float2 offset = float2(
-            tap.x * rotation.x - tap.y * rotation.y,
-            tap.x * rotation.y + tap.y * rotation.x) * radius;
-
-        float tapDepth = compareDepth + clamp(dot(gradient, offset), -maxGradientAdjust, maxGradientAdjust);
-
-        // LevelZero since implicit derivatives are undefined under per pixel branches
+        const float2 tap = kPoissonDisk[i];
+        const float2 offset = float2(tap.x * rotation.x - tap.y * rotation.y, tap.x * rotation.y + tap.y * rotation.x) * radius;
+        const float tapDepth = compareDepth + clamp(dot(gradient, offset), -maxGradientAdjust, maxGradientAdjust);
         sum += shadowMaps.SampleCmpLevelZero(float3(uv + offset, layer), tapDepth);
     }
+    probe += sum;
+    if (probe < 1e-3 || probe > float(kShadowProbeTaps + 1u) - 1e-3)
+    {
+        return probe / float(kShadowProbeTaps + 1u);
+    }
 
+    [unroll]
+    for (uint i = kShadowProbeTaps; i < 12u; ++i)
+    {
+        const float2 tap = kPoissonDisk[i];
+        const float2 offset = float2(tap.x * rotation.x - tap.y * rotation.y, tap.x * rotation.y + tap.y * rotation.x) * radius;
+        const float tapDepth = compareDepth + clamp(dot(gradient, offset), -maxGradientAdjust, maxGradientAdjust);
+        sum += shadowMaps.SampleCmpLevelZero(float3(uv + offset, layer), tapDepth);
+    }
     return sum / 12.0;
 }
 
@@ -928,41 +960,50 @@ uint pointFace(float3 direction)
     return direction.z > 0.0 ? 4u : 5u;
 }
 
-/// Shadow layer uv then depth of a direction from the light on one cube face
-float3 pointUvDepth(GpuLight light, float3 direction, uint face)
+struct PointFaceFrame
 {
-    // Must agree with cubeFaceBasis() or shadows tear at face seams
-    const float majorAxis = max(abs(direction[face >> 1]), 1e-4);
-    float2 ndc;
-    switch (face)
-    {
-    case 0u:
-        ndc = float2(-direction.y, direction.z);
-        break;
-    case 1u:
-        ndc = float2(direction.y, direction.z);
-        break;
-    case 2u:
-        ndc = float2(direction.x, direction.z);
-        break;
-    case 3u:
-        ndc = float2(-direction.x, direction.z);
-        break;
-    case 4u:
-        ndc = float2(-direction.x, direction.y);
-        break;
-    default:
-        ndc = float2(direction.x, direction.y);
-        break;
-    }
-    ndc *= light.shadowAtlas.y / majorAxis;
+    float3 u;
+    float3 v;
+    float3 major;
+    /// shadowAtlas.y and shadowAtlas.x
+    float ndcScale;
+    float atlas;
+    /// perspectiveRH_ZO depth is depthNear - depthFar / majorAxis
+    float depthNear;
+    float depthFar;
+};
 
-    // perspectiveRH_ZO depth at majorAxis is z = f/(f-n) - f*n/((f-n)*majorAxis)
+/// Must agree with cubeFaceBasis() or shadows tear at face seams
+PointFaceFrame pointFaceFrame(GpuLight light, uint face)
+{
+    PointFaceFrame frame;
+    const uint axis = face >> 1;
+    frame.major = float3(0.0, 0.0, 0.0);
+    frame.major[axis] = 1.0;
+    const bool zFace = axis == 2u;
+    frame.v = zFace ? float3(0.0, 1.0, 0.0) : float3(0.0, 0.0, 1.0);
+    const float uSign = (face == 0u || face == 3u || face == 4u) ? -1.0 : 1.0;
+    frame.u = axis == 0u ? float3(0.0, uSign, 0.0) : float3(uSign, 0.0, 0.0);
+    frame.ndcScale = light.shadowAtlas.y;
+    frame.atlas = light.shadowAtlas.x;
     const float nearPlane = light.coneAngles.z;
     const float farPlane = light.coneAngles.w;
     const float range = max(farPlane - nearPlane, 0.0001);
-    const float depth = (farPlane / range) - ((farPlane * nearPlane) / (range * majorAxis));
-    return float3((ndc * 0.5 + 0.5) * light.shadowAtlas.x, depth);
+    frame.depthNear = farPlane / range;
+    frame.depthFar = farPlane * nearPlane / range;
+    return frame;
+}
+
+float3 pointFaceUvDepth(PointFaceFrame frame, float3 direction)
+{
+    const float majorAxis = max(abs(dot(direction, frame.major)), 1e-4);
+    const float2 ndc = float2(dot(direction, frame.u), dot(direction, frame.v)) * (frame.ndcScale / majorAxis);
+    return float3((ndc * 0.5 + 0.5) * frame.atlas, frame.depthNear - frame.depthFar / majorAxis);
+}
+
+float pointFaceDepth(PointFaceFrame frame, float3 direction)
+{
+    return frame.depthNear - frame.depthFar / max(abs(dot(direction, frame.major)), 1e-4);
 }
 
 float samplePointShadow(GpuLight light, float3 worldPosition, float3 N, float3 L, float2 pixel)
@@ -988,17 +1029,20 @@ float samplePointShadow(GpuLight light, float3 worldPosition, float3 N, float3 L
     }
 
     const uint face = pointFace(direction);
-    const float3 center = pointUvDepth(light, direction, face);
+    const PointFaceFrame frame = pointFaceFrame(light, face);
+    const float3 center = pointFaceUvDepth(frame, direction);
     const float biasWorld = kPunctualBiasMeters + kPunctualBiasTexels * texelWorldSize;
-    const float compareDepth = pointUvDepth(light, direction + L * biasWorld, face).z;
+    const float compareDepth = pointFaceDepth(frame, direction + L * biasWorld);
 
     float3 tangent;
     float3 bitangent;
     tangentBasis(N, tangent, bitangent);
-    const float2 gradient = planeDepthGradient(center, pointUvDepth(light, direction + tangent * texelWorldSize, face),
-                                               pointUvDepth(light, direction + bitangent * texelWorldSize, face));
+    const float2 gradient = planeDepthGradient(center, pointFaceUvDepth(frame, direction + tangent * texelWorldSize),
+                                               pointFaceUvDepth(frame, direction + bitangent * texelWorldSize));
 
-    const float depthPerMeter = abs(center.z - pointUvDepth(light, direction + L * kDepthProbeMeters, face).z) / kDepthProbeMeters;
+    // d depth / d majorAxis is depthFar / majorAxis squared
+    const float majorAxis = max(abs(dot(direction, frame.major)), 1e-4);
+    const float depthPerMeter = frame.depthFar * abs(dot(L, frame.major)) / (majorAxis * majorAxis);
     const float adjustLimit = receiverAdjustLimit(depthPerMeter, texelWorldSize);
     float radiusTexels = kShadowFilterRadiusTexels;
     if (emitterRadius(light) > 0.0)
@@ -1060,6 +1104,9 @@ struct Surface
 struct ShadingResult
 {
     float3 color;
+
+    /// Specular share of color
+    float3 specular;
 
     float3 indirectDiffuse;
 
@@ -1261,7 +1308,22 @@ float4 evaluateDebugView(Surface surface, ClusterCell cluster)
     return float4(0.0, 0.0, 0.0, 0.0);
 }
 
-ShadingResult evaluateLighting(Surface surface, ClusterCell cluster)
+/// Colour a shadow map cannot hold such as voxel glass
+interface IShadowFilter
+{
+    /// @p distance is negative for a directional light
+    float3 filter(float3 L, float distance);
+}
+
+struct NoShadowFilter : IShadowFilter
+{
+    float3 filter(float3 L, float distance)
+    {
+        return float3(1.0, 1.0, 1.0);
+    }
+}
+
+ShadingResult evaluateLighting<Filter : IShadowFilter>(Surface surface, ClusterCell cluster, Filter shadowFilter)
 {
     float3 N = surface.normal;
     float3 V = surface.viewDirection;
@@ -1279,9 +1341,11 @@ ShadingResult evaluateLighting(Surface surface, ClusterCell cluster)
 
     ShadingResult result;
     result.indirectDiffuse = float3(0.0, 0.0, 0.0);
+    result.specular = float3(0.0, 0.0, 0.0);
     result.isDebugView = false;
 
     float3 outIndirectDiffuse = float3(0.0, 0.0, 0.0);
+    float3 specular = float3(0.0, 0.0, 0.0);
 
     float3 color = float3(0.0, 0.0, 0.0);
 
@@ -1320,7 +1384,11 @@ ShadingResult evaluateLighting(Surface surface, ClusterCell cluster)
             debugMinShadow = min(debugMinShadow, shadow);
         }
 
-        color += shadeLight(N, V, L, radiance, albedo, metallic, roughness, reflectivity) * shadow;
+        const float3 tint = shadow > 0.0 ? shadowFilter.filter(L, -1.0) : float3(0.0, 0.0, 0.0);
+        const float3 weight = shadow * tint;
+        float3 lightSpecular;
+        color += shadeLight(N, V, L, radiance, albedo, metallic, roughness, reflectivity, lightSpecular) * weight;
+        specular += lightSpecular * weight;
     }
 
     if (clusterIndex < clusterCount)
@@ -1329,11 +1397,23 @@ ShadingResult evaluateLighting(Surface surface, ClusterCell cluster)
 
         for (uint li = 0; li < lightCountInCluster; ++li)
         {
-            GpuLight light = gLights[gLightIndexList[indexBase + li]];
-            if (surface.marchedShadows && lightShadowMode(light) != kShadowModeMap)
+            const uint lightIndex = gLightIndexList[indexBase + li];
+            // Rejected from two float4 before the full load
+            // A capsule core lies within shape.z of the centre and every other shape lights from the centre
+            const float4 positionRange = gLights[lightIndex].worldPosRange;
+            const float4 shapeParams = gLights[lightIndex].shape;
+            if (surface.marchedShadows && uint(shapeParams.w + 0.5) != kShadowModeMap)
             {
                 continue;
             }
+            const float3 toCenter = positionRange.xyz - surface.worldPosition;
+            const float reach = positionRange.w + shapeParams.z;
+            if (!shadowDebugView && (dot(toCenter, toCenter) >= reach * reach || dot(N, toCenter) + shapeParams.z <= 0.0))
+            {
+                continue;
+            }
+
+            GpuLight light = gLights[lightIndex];
 
             float3 toLight = analyticLightPoint(light, surface.worldPosition) - surface.worldPosition;
             float lightDist = length(toLight);
@@ -1372,7 +1452,12 @@ ShadingResult evaluateLighting(Surface surface, ClusterCell cluster)
 
             float3 radiance = light.colorIntensity.rgb * light.colorIntensity.a * atten;
 
-            color += shadeAnalyticLight(light, surface.worldPosition, N, V, L, radiance, albedo, metallic, roughness, reflectivity) * shadow;
+            const float3 tint = shadow > 0.0 ? shadowFilter.filter(L, lightDist) : float3(0.0, 0.0, 0.0);
+            const float3 weight = shadow * tint;
+            float3 lightSpecular;
+            color += shadeAnalyticLight(light, surface.worldPosition, N, V, L, radiance, albedo, metallic, roughness, reflectivity,
+                                        lightSpecular) * weight;
+            specular += lightSpecular * weight;
         }
     }
 
@@ -1468,15 +1553,17 @@ ShadingResult evaluateLighting(Surface surface, ClusterCell cluster)
     float3 ambientSpecular = prefiltered * (specularFresnel * envBrdf.x + envBrdf.y) * reflectivity;
 
     color += (ambientDiffuse + ambientSpecular) * occlusion;
+    specular += ambientSpecular * occlusion;
 
     outIndirectDiffuse = ambientDiffuse * occlusion;
 
     result.color = color;
+    result.specular = specular;
     result.indirectDiffuse = outIndirectDiffuse;
     return result;
 }
 
-ShadingResult shadeSurfaceLighting(Surface surface)
+ShadingResult shadeSurfaceLighting<Filter : IShadowFilter>(Surface surface, Filter shadowFilter)
 {
     ClusterCell cluster = clusterCellAt(surface.viewSpaceZ, surface.pixel);
 
@@ -1485,10 +1572,17 @@ ShadingResult shadeSurfaceLighting(Surface surface)
     {
         ShadingResult result;
         result.color = debug.rgb;
+        result.specular = float3(0.0, 0.0, 0.0);
         result.indirectDiffuse = float3(0.0, 0.0, 0.0);
         result.isDebugView = true;
         return result;
     }
 
-    return evaluateLighting(surface, cluster);
+    return evaluateLighting(surface, cluster, shadowFilter);
+}
+
+ShadingResult shadeSurfaceLighting(Surface surface)
+{
+    NoShadowFilter none;
+    return shadeSurfaceLighting(surface, none);
 }

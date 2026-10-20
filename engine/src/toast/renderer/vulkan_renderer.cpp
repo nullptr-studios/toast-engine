@@ -946,12 +946,28 @@ auto VulkanRenderer::createDepthResources() -> void {
 	image_ci.arrayLayers = 1;
 	image_ci.samples = vk::SampleCountFlagBits::e1;
 	image_ci.tiling = vk::ImageTiling::eOptimal;
-	image_ci.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled;
+	image_ci.usage =
+	    vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferSrc;
 	image_ci.sharingMode = vk::SharingMode::eExclusive;
 	image_ci.initialLayout = vk::ImageLayout::eUndefined;
 
 	vma::AllocationCreateInfo allocation_ci {};
 	allocation_ci.usage = vma::MemoryUsage::eAutoPreferDevice;
+
+	m_glass_backdrop_depth.view.reset();
+	m_glass_backdrop_depth.image.reset();
+	vk::ImageCreateInfo backdrop_ci = image_ci;
+	backdrop_ci.usage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst;
+	m_glass_backdrop_depth.image.emplace(m_core->getAllocator().createImage(backdrop_ci, allocation_ci));
+	setDebugName(*m_core, **m_glass_backdrop_depth.image, "VulkanRenderer GlassBackdropDepthImage");
+	vk::ImageViewCreateInfo backdrop_view_ci {};
+	backdrop_view_ci.image = **m_glass_backdrop_depth.image;
+	backdrop_view_ci.viewType = vk::ImageViewType::e2D;
+	backdrop_view_ci.format = m_depth_format;
+	backdrop_view_ci.subresourceRange = vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1);
+	m_glass_backdrop_depth.view.emplace(m_core->getDevice(), backdrop_view_ci);
+	setDebugName(*m_core, **m_glass_backdrop_depth.view, "VulkanRenderer GlassBackdropDepthView");
+	m_glass_backdrop_depth.state.reset(**m_glass_backdrop_depth.image, depthAttachmentRange(m_depth_format));
 
 	auto depth_image = m_core->getAllocator().createImage(image_ci, allocation_ci);
 	m_depth_resources.image.emplace(std::move(depth_image));
@@ -978,11 +994,13 @@ void VulkanRenderer::createSceneColorResources() {
 		TOAST_CRITICAL("Render", "Toast Engine Error: VulkanRenderer requires a non-zero output extent for the scene target!");
 	}
 
-	const auto create = [&](SceneColorResources& target, vk::Format format, std::string_view label) {
+	const auto create = [&](
+	                        SceneColorResources& target, vk::Format format, std::string_view label, vk::ImageUsageFlags usage = {}
+	                    ) {
 		target.view.reset();
 		target.image.reset();
 
-		const auto image_ci = colorTargetImageInfo(extent, format);
+		const auto image_ci = colorTargetImageInfo(extent, format, usage);
 
 		vma::AllocationCreateInfo allocation_ci {};
 		allocation_ci.usage = vma::MemoryUsage::eAutoPreferDevice;
@@ -1002,7 +1020,8 @@ void VulkanRenderer::createSceneColorResources() {
 		TOAST_TRACE("Render", "{} target created at {}x{} with format {}", label, extent.width, extent.height, vk::to_string(format));
 	};
 
-	create(m_scene_color, m_scene_color_format, "SceneColor");
+	create(m_scene_color, m_scene_color_format, "SceneColor", vk::ImageUsageFlagBits::eTransferSrc);
+	create(m_glass_backdrop, m_scene_color_format, "GlassBackdrop", vk::ImageUsageFlagBits::eTransferDst);
 	create(m_scene_normal, m_scene_normal_format, "SceneNormal");
 	create(m_scene_indirect, m_scene_indirect_format, "SceneIndirect");
 	create(m_scene_motion, m_scene_motion_format, "SceneMotion");
@@ -1461,7 +1480,9 @@ void VulkanRenderer::recordAccelerationStructureBuilds(FrameContext& frame) {
 	}
 }
 
-void VulkanRenderer::recordMeshScene(vk::CommandBuffer cmd, uint32_t image_index, bool voxel_glass) {
+void VulkanRenderer::recordMeshScene(
+    vk::CommandBuffer cmd, uint32_t image_index, bool voxel_glass, const std::function<void()>& capture_backdrop
+) {
 	// Opaque first since m_material_passes is unordered
 	{
 		const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Opaque materials");
@@ -1479,6 +1500,17 @@ void VulkanRenderer::recordMeshScene(vk::CommandBuffer cmd, uint32_t image_index
 		TracyVkZone(m_tracy_vk_ctx, cmd, "WorldPass");
 		const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, m_environment_pass->name());
 		m_environment_pass->record(cmd, m_current_frame, image_index);
+	}
+
+	// Before anything blended so the backdrop holds only opaque and sky
+	const bool refract = voxel_glass && m_voxel_pass != nullptr && !m_voxel_pass->glassDraws().empty() &&
+	                     m_voxel_pass->refractsGlass() && capture_backdrop;
+	if (refract) {
+		const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Glass backdrop");
+		capture_backdrop();
+	}
+	if (m_voxel_pass != nullptr) {
+		m_voxel_pass->setBackdropCaptured(refract);
 	}
 
 	{
@@ -1883,6 +1915,11 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	barriers.image(m_scene_indirect.state, sync::Usage::color_attachment);
 	barriers.image(m_scene_motion.state, sync::Usage::color_attachment);
 	barriers.image(m_depth_resources.state, sync::Usage::depth_attachment);
+	// Glass binds the backdrop every frame whether or not it was captured
+	if (m_glass_backdrop.image && m_glass_backdrop_depth.image) {
+		barriers.image(m_glass_backdrop.state, sync::Usage::fragment_sampled);
+		barriers.image(m_glass_backdrop_depth.state, sync::Usage::depth_sampled);
+	}
 	barriers.flush(*frame.command_buffer);
 
 	const vk::ClearValue clear_color(vk::ClearColorValue(std::array {0.0f, 0.0f, 0.0f, 1.0f}));
@@ -1979,6 +2016,62 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	frame.command_buffer.setViewport(0, std::array {scene_viewport});
 	frame.command_buffer.setScissor(0, std::array {scene_scissor});
 
+	const auto capture_glass_backdrop = [&] {
+		if (!m_glass_backdrop.image || !m_glass_backdrop_depth.image || scene_image == VK_NULL_HANDLE || !m_depth_resources.image) {
+			return;
+		}
+		const vk::CommandBuffer cmd = *frame.command_buffer;
+		cmd.endRendering();
+
+		sync::BarrierBatch to_copy;
+		to_copy.image(m_scene_color.state, sync::Usage::transfer_src);
+		to_copy.image(m_depth_resources.state, sync::Usage::transfer_src);
+		to_copy.image(m_glass_backdrop.state, sync::Usage::transfer_dst);
+		to_copy.image(m_glass_backdrop_depth.state, sync::Usage::transfer_dst);
+		to_copy.flush(cmd);
+
+		const vk::Extent2D target_extent = m_output_target->getExtent();
+		const vk::Extent3D copy_extent {target_extent.width, target_extent.height, 1};
+		const vk::ImageSubresourceLayers color_layers(vk::ImageAspectFlagBits::eColor, 0, 0, 1);
+		const vk::ImageSubresourceLayers depth_layers(vk::ImageAspectFlagBits::eDepth, 0, 0, 1);
+		cmd.copyImage(
+		    scene_image,
+		    vk::ImageLayout::eTransferSrcOptimal,
+		    **m_glass_backdrop.image,
+		    vk::ImageLayout::eTransferDstOptimal,
+		    vk::ImageCopy(color_layers, {}, color_layers, {}, copy_extent)
+		);
+		cmd.copyImage(
+		    **m_depth_resources.image,
+		    vk::ImageLayout::eTransferSrcOptimal,
+		    **m_glass_backdrop_depth.image,
+		    vk::ImageLayout::eTransferDstOptimal,
+		    vk::ImageCopy(depth_layers, {}, depth_layers, {}, copy_extent)
+		);
+
+		sync::BarrierBatch resume;
+		resume.image(m_scene_color.state, sync::Usage::color_attachment);
+		resume.image(m_depth_resources.state, sync::Usage::depth_attachment);
+		resume.image(m_glass_backdrop.state, sync::Usage::fragment_sampled);
+		resume.image(m_glass_backdrop_depth.state, sync::Usage::depth_sampled);
+		resume.flush(cmd);
+
+		std::array resume_colors = scene_color_attachments;
+		for (auto& attachment : resume_colors) {
+			attachment.loadOp = vk::AttachmentLoadOp::eLoad;
+		}
+		vk::RenderingAttachmentInfo resume_depth = depth_attachment_info;
+		resume_depth.loadOp = vk::AttachmentLoadOp::eLoad;
+		vk::RenderingInfo resume_info = scene_rendering_info;
+		resume_info.pColorAttachments = resume_colors.data();
+		if (m_depth_resources.view.has_value()) {
+			resume_info.pDepthAttachment = &resume_depth;
+		}
+		cmd.beginRendering(resume_info);
+		cmd.setViewport(0, std::array {scene_viewport});
+		cmd.setScissor(0, std::array {scene_scissor});
+	};
+
 	{
 		TracyVkZone(m_tracy_vk_ctx, *frame.command_buffer, "Scene");
 		const GpuScope scene_scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, "Scene");
@@ -1996,7 +2089,7 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 			}
 		};
 
-		recordMeshScene(*frame.command_buffer, image_index, voxels_drawn);
+		recordMeshScene(*frame.command_buffer, image_index, voxels_drawn, capture_glass_backdrop);
 		record_stage(RenderStage::world);
 	}
 

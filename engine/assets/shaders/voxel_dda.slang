@@ -245,20 +245,9 @@ uint pooledMaterial(uint slot, uint3 local)
     return (word >> ((index & 3u) << 3)) & 0xFFu;
 }
 
-/// Get the palette ID for a voxel
-uint voxelMaterialAt(uint volume, int3 voxel)
+/// Palette index of a voxel inside the brick behind @p entry
+uint brickMaterialAt(uint entry, int3 voxel)
 {
-    const uint dimsX = gVolumeRecords[volume].brickDimsX;
-    const uint dimsY = gVolumeRecords[volume].brickDimsY;
-    const uint dimsZ = gVolumeRecords[volume].brickDimsZ;
-
-    if (any(voxel < 0) || voxel.x >= int(dimsX * kBrickDim) || voxel.y >= int(dimsY * kBrickDim) || voxel.z >= int(dimsZ * kBrickDim))
-    {
-        return 0u;
-    }
-    
-    // Shifts/masks instead of modulo arithmetic
-    const uint entry = gridEntry(volume, uint3(voxel) >> 3);
     const uint tag = entry & 3u;
     if (tag == kTagEmpty)
     {
@@ -269,6 +258,21 @@ uint voxelMaterialAt(uint volume, int3 voxel)
         return entry >> 2;
     }
     return pooledMaterial(entry >> 2, uint3(voxel) & 7u);
+}
+
+uint voxelMaterialAt(VolumeRecord record, int3 voxel)
+{
+    if (any(voxel < 0) || voxel.x >= int(record.brickDimsX * kBrickDim) || voxel.y >= int(record.brickDimsY * kBrickDim) ||
+        voxel.z >= int(record.brickDimsZ * kBrickDim))
+    {
+        return 0u;
+    }
+    return brickMaterialAt(gridEntry(record, uint3(voxel) >> 3), voxel);
+}
+
+uint voxelMaterialAt(uint volume, int3 voxel)
+{
+    return voxelMaterialAt(gVolumeRecords[volume], voxel);
 }
 
 bool volumeHasGlass(uint volume)
@@ -288,16 +292,102 @@ bool glassEntry(uint volume, uint index)
     return glassEntry(gVolumeRecords[volume], index);
 }
 
-bool glassBrick(uint volume, int3 brick)
+float3 srgbToLinear(float3 value)
 {
-    const uint glassOffset = gVolumeRecords[volume].glassOffset;
-    const uint3 dims = uint3(gVolumeRecords[volume].brickDimsX, gVolumeRecords[volume].brickDimsY, gVolumeRecords[volume].brickDimsZ);
-    if (glassOffset == kNoGlass || any(brick < 0) || any(uint3(brick) >= dims))
+    return lerp(pow((value + 0.055) / 1.055, 2.4), value / 12.92, step(value, float3(0.04045, 0.04045, 0.04045)));
+}
+
+/// Below this a filtered ray counts as blocked
+static const float kTintedOpaque = 0.01;
+
+/// Voxels of alpha 1 glass that let exactly its albedo through
+static const float kGlassTintVoxels = 4.0;
+
+/// Beer Lambert through @p voxels of glass
+float3 glassPathFilter(float3 albedo, float alpha, float voxels)
+{
+    return pow(max(albedo, float3(0.01, 0.01, 0.01)), alpha * max(voxels, 0.0) / kGlassTintVoxels);
+}
+
+/// Diffuse share of an entered surface
+float glassScatter(float alpha, float roughness)
+{
+    return alpha * roughness;
+}
+
+bool glassBrick(VolumeRecord record, int3 brick)
+{
+    const uint3 dims = uint3(record.brickDimsX, record.brickDimsY, record.brickDimsZ);
+    if (record.glassOffset == kNoGlass || any(brick < 0) || any(uint3(brick) >= dims))
     {
         return false;
     }
     const uint index = uint(brick.x) + uint(brick.y) * dims.x + uint(brick.z) * (dims.x * dims.y);
-    return ((gVolumeCoarse[glassOffset + (index >> 5)] >> (index & 31u)) & 1u) != 0u;
+    return ((gVolumeCoarse[record.glassOffset + (index >> 5)] >> (index & 31u)) & 1u) != 0u;
+}
+
+bool glassBrick(uint volume, int3 brick)
+{
+    return glassBrick(gVolumeRecords[volume], brick);
+}
+
+interface IGlassPass
+{
+    /// False once no light passes
+    [mutating]
+    bool pass(VolumeRecord record, uint material, float tEnter, float tExit, float voxelsPerT);
+
+    /// Coarse floors would take glass as opaque
+    bool filters();
+}
+
+struct SkipGlass : IGlassPass
+{
+    [mutating]
+    bool pass(VolumeRecord record, uint material, float tEnter, float tExit, float voxelsPerT)
+    {
+        return true;
+    }
+
+    bool filters()
+    {
+        return false;
+    }
+}
+
+/// Mirrors compositeGlass in voxel_glass.slang at head on Fresnel
+struct TintGlass : IGlassPass
+{
+    float3 transmittance;
+    /// End of the last entry so a contiguous one joins its run
+    float runEnd;
+
+    [mutating]
+    bool pass(VolumeRecord record, uint material, float tEnter, float tExit, float voxelsPerT)
+    {
+        const uint base = (record.paletteOffset + material) * 4u;
+        const uint word0 = gPalettes[base];
+        const uint word2 = gPalettes[base + 2u];
+        const float alpha = float((word2 >> 16) & 0xFFu) / 255.0;
+        const float roughness = float(word0 >> 24) / 255.0;
+        const float3 albedo = srgbToLinear(float3(word0 & 0xFFu, (word0 >> 8) & 0xFFu, (word0 >> 16) & 0xFFu) / 255.0);
+        transmittance *= glassPathFilter(albedo, alpha, (tExit - tEnter) * voxelsPerT);
+
+        // voxel::iorOf
+        const uint iorByte = word2 >> 24;
+        const float f0 = iorF0(iorByte == 0u ? kDefaultIor : 1.0 + float(iorByte) / 100.0);
+        if (abs(tEnter - runEnd) * voxelsPerT > 1e-3)
+        {
+            transmittance *= (1.0 - f0) * (1.0 - glassScatter(alpha, roughness));
+        }
+        runEnd = tExit;
+        return max(transmittance.x, max(transmittance.y, transmittance.z)) > kTintedOpaque;
+    }
+
+    bool filters()
+    {
+        return true;
+    }
 }
 
 float marchTieSlack(float t)
@@ -312,20 +402,20 @@ void leaveCell(float3 origin, float3 inverse, float3 stepSign, int3 cellMin, int
     plane.x = float(cellMin.x) + (stepSign.x > 0.0 ? float(size) : 0.0);
     plane.y = float(cellMin.y) + (stepSign.y > 0.0 ? float(size) : 0.0);
     plane.z = float(cellMin.z) + (stepSign.z > 0.0 ? float(size) : 0.0);
-    
+
     float3 planeTimes;
     planeTimes.x = stepSign.x != 0.0 ? (plane.x - origin.x) * inverse.x : kFloatMax;
     planeTimes.y = stepSign.y != 0.0 ? (plane.y - origin.y) * inverse.y : kFloatMax;
     planeTimes.z = stepSign.z != 0.0 ? (plane.z - origin.z) * inverse.z : kFloatMax;
-    
+
     float next = min(min(planeTimes.x, planeTimes.y), planeTimes.z);
     int nextAxis = planeTimes.x == next ? 0 : (planeTimes.y == next ? 1 : 2);
-    
+
     float slackNext = next + marchTieSlack(next);
     crossed = (uint(planeTimes.x <= slackNext)) 
             | (uint(planeTimes.y <= slackNext) << 1) 
             | (uint(planeTimes.z <= slackNext) << 2);
-    
+
     // A plane at or behind t stalls the ray until kMaxMarchSteps
     t = next > t ? next : t + marchTieSlack(t);
     axis = nextAxis;
@@ -458,11 +548,14 @@ struct ConeFloor : IHitFloor
 /// The box must lie inside the volume
 /// Integer cell index since nudged positions skip voxels under grazing rays
 /// Passes through glass unlike toast/voxel/ray_march.cpp
-RayHit marchCore<Floor : IHitFloor>(uint volume, float3 origin, float3 direction, float tMin, float tMax, int3 boxMin, int3 boxMax,
-                                    bool throughGlass, Floor hitFloor)
+RayHit marchCore<Floor : IHitFloor, Glass : IGlassPass>(uint volume, float3 origin, float3 direction, float tMin, float tMax,
+                                                       int3 boxMin, int3 boxMax, bool throughGlass, Floor hitFloor,
+                                                       inout Glass glass)
 {
     const VolumeRecord record = gVolumeRecords[volume];
     const bool skipGlass = throughGlass && record.glassOffset != kNoGlass;
+    const bool filterGlass = skipGlass && glass.filters();
+    const float voxelsPerT = length(direction);
 
     RayHit result;
     result.hit = false;
@@ -492,7 +585,11 @@ RayHit marchCore<Floor : IHitFloor>(uint volume, float3 origin, float3 direction
         const int3 voxel = marchVoxel(origin, direction, march);
         if (any(voxel < boxMin) || any(voxel >= boxMax)) return result;
 
-        const uint floorLevel = hitFloor.level(march.t);
+        uint floorLevel = hitFloor.level(march.t);
+        if (filterGlass)
+        {
+            floorLevel = min(floorLevel, 3u);
+        }
 
         const int3 coarse = voxel >> 5;
         if (!coarseSolid(record, coarse))
@@ -528,8 +625,17 @@ RayHit marchCore<Floor : IHitFloor>(uint volume, float3 origin, float3 direction
             if (skipGlass && glassEntry(record, entry >> 2))
             {
                 ++result.brickSteps;
+                const float entered = march.t;
                 marchLeave(origin, march, brick << 3, int(kBrickDim));
-                continue;
+                if (glass.pass(record, entry >> 2, entered, min(march.t, march.tExit), voxelsPerT))
+                {
+                    continue;
+                }
+                result.hit = true;
+                result.t = entered;
+                result.voxel = voxel;
+                result.material = entry >> 2;
+                return result;
             }
             result.hit = true;
             result.t = march.t;
@@ -537,6 +643,10 @@ RayHit marchCore<Floor : IHitFloor>(uint volume, float3 origin, float3 direction
             result.axis = march.axis;
             result.material = entry >> 2;
             return result;
+        }
+        if (filterGlass && floorLevel > 0u && glassBrick(record, brick))
+        {
+            floorLevel = 0u;
         }
         if (floorLevel >= 3u)
         {
@@ -591,15 +701,23 @@ RayHit marchCore<Floor : IHitFloor>(uint volume, float3 origin, float3 direction
         if (((subWord >> ((local.x & 3u) | ((local.y & 3u) << 2) | ((local.z & 1u) << 4))) & 1u) != 0u)
         {
             const uint material = pooledMaterial(slot, local);
-            if (!skipGlass || !glassEntry(record, material))
+            const float entered = march.t;
+            const int enteredAxis = march.axis;
+            const bool opaque = !skipGlass || !glassEntry(record, material);
+            if (!opaque)
+            {
+                marchLeave(origin, march, voxel, 1);
+            }
+            if (opaque || !glass.pass(record, material, entered, min(march.t, march.tExit), voxelsPerT))
             {
                 result.hit = true;
-                result.t = march.t;
+                result.t = entered;
                 result.voxel = voxel;
-                result.axis = march.axis;
+                result.axis = enteredAxis;
                 result.material = material;
                 return result;
             }
+            continue;
         }
 
         marchLeave(origin, march, voxel, 1);
@@ -612,7 +730,8 @@ RayHit marchCore<Floor : IHitFloor>(uint volume, float3 origin, float3 direction
 RayHit marchRayBox(uint volume, float3 origin, float3 direction, float tMin, float tMax, int3 boxMin, int3 boxMax, bool throughGlass = true)
 {
     ExactFloor exact;
-    return marchCore(volume, origin, direction, tMin, tMax, boxMin, boxMax, throughGlass, exact);
+    SkipGlass skip;
+    return marchCore(volume, origin, direction, tMin, tMax, boxMin, boxMax, throughGlass, exact, skip);
 }
 
 /// Sparse tier for light visibility and specular rays
@@ -624,7 +743,24 @@ RayHit marchSparse(uint volume, float3 origin, float3 direction, float tMin, flo
     ConeFloor cone;
     cone.tMin = tMin;
     cone.slope = coneSlope * length(direction);
-    return marchCore(volume, origin, direction, tMin, tMax, int3(0, 0, 0), dims, throughGlass, cone);
+    SkipGlass skip;
+    return marchCore(volume, origin, direction, tMin, tMax, int3(0, 0, 0), dims, throughGlass, cone, skip);
+}
+
+/// marchSparse filtering by glass colour
+RayHit marchSparseTinted(uint volume, float3 origin, float3 direction, float tMin, float tMax, float coneSlope,
+                         inout float3 transmittance)
+{
+    const int3 dims = int3(gVolumeRecords[volume].brickDimsX, gVolumeRecords[volume].brickDimsY, gVolumeRecords[volume].brickDimsZ) * int(kBrickDim);
+    ConeFloor cone;
+    cone.tMin = tMin;
+    cone.slope = coneSlope * length(direction);
+    TintGlass tint;
+    tint.transmittance = transmittance;
+    tint.runEnd = -kFloatMax;
+    const RayHit hit = marchCore(volume, origin, direction, tMin, tMax, int3(0, 0, 0), dims, true, cone, tint);
+    transmittance = tint.transmittance;
+    return hit;
 }
 
 /// Levels of the occupancy pyramid the super-sparse tier samples
@@ -763,21 +899,28 @@ struct PaletteSample
 
     float alpha;
 
+    float ior;
+
     /// Physical material id where 0 also covers entries authored without one
     uint material;
 };
 
-float3 srgbToLinear(float3 value)
+/// Mirrors voxel::k_default_ior
+static const float kDefaultIor = 1.5;
+
+/// Head on reflectance of a dielectric against air
+float iorF0(float ior)
 {
-    return lerp(pow((value + 0.055) / 1.055, 2.4), value / 12.92, step(value, float3(0.04045, 0.04045, 0.04045)));
+    const float r = (ior - 1.0) / (ior + 1.0);
+    return r * r;
 }
 
 /// Word 0 bytes albedo rgb roughness and word 1 bytes metallic reflectivity emissive material
-PaletteSample samplePalette(uint volume, uint index)
+PaletteSample samplePalette(VolumeRecord record, uint index)
 {
-    const uint paletteOffset = gVolumeRecords[volume].paletteOffset;
-    const float maxEmissive = gVolumeRecords[volume].maxEmissive;
-    
+    const uint paletteOffset = record.paletteOffset;
+    const float maxEmissive = record.maxEmissive;
+
     const uint base = (paletteOffset + index) * 4;
     const uint word0 = gPalettes[base];
     const uint word1 = gPalettes[base + 1];
@@ -791,7 +934,15 @@ PaletteSample samplePalette(uint volume, uint index)
     sample.emissive = float((word1 >> 16) & 0xFFu) / 255.0 * maxEmissive;
     sample.material = word1 >> 24;
     sample.alpha = float((word2 >> 16) & 0xFFu) / 255.0;
+    // voxel::iorOf
+    const uint iorByte = word2 >> 24;
+    sample.ior = iorByte == 0u ? kDefaultIor : 1.0 + float(iorByte) / 100.0;
     return sample;
+}
+
+PaletteSample samplePalette(uint volume, uint index)
+{
+    return samplePalette(gVolumeRecords[volume], index);
 }
 
 /// Meshing helpers shared by the compute mesher in voxel_cells.slang and the mesh shader in voxel_mesh.slang

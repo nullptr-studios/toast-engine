@@ -88,6 +88,11 @@ public partial class PaletteEntryVM : ObservableObject {
 		set => Set(() => m_entry.Alpha = value);
 	}
 
+	public float Ior {
+		get => m_entry.Ior;
+		set => Set(() => m_entry.Ior = Math.Clamp(value, 1f, VoxelPaletteEntry.MaxIor));
+	}
+
 	private static byte ToByte(float value) {
 		return (byte)Math.Clamp((int)Math.Round(value * 255f), 0, 255);
 	}
@@ -326,6 +331,10 @@ public sealed class VoxelPalettePicker : UserControl {
 			transparent.Bind(BoolBox.ValueProperty, new Binding(nameof(PaletteEntryVM.Transparent)) { Mode = BindingMode.TwoWay });
 			properties.Children.Add(Row("Transparent", transparent));
 			properties.Children.Add(Row("Alpha", Number(nameof(PaletteEntryVM.Alpha))));
+			var ior = Number(nameof(PaletteEntryVM.Ior), false);
+			ior.Minimum = 1;
+			ior.Maximum = VoxelPaletteEntry.MaxIor;
+			properties.Children.Add(Row("IOR", ior));
 		}
 
 		var content = new StackPanel {

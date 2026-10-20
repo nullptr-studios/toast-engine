@@ -90,6 +90,12 @@ public:
 	/// After every blended draw
 	void recordGlassSurfaces(vk::CommandBuffer cmd, uint32_t frame_index);
 
+	/// Whether the backdrop must be copied before glass draws
+	[[nodiscard]]
+	auto refractsGlass() const -> bool;
+
+	void setBackdropCaptured(bool captured) noexcept { m_backdrop_captured = captured; }
+
 	/// After prepare() whether the lighting scope writes denoised terms
 	[[nodiscard]]
 	auto denoiseActive() const -> bool {
@@ -334,6 +340,13 @@ private:
 	std::vector<std::array<vk::ImageView, 8>> m_bound_gbuffer;
 	VulkanPipeline m_spatial_pipeline;
 	bool m_spatial_active = false;
+	bool m_scene_glass = false;
+	bool m_backdrop_captured = false;
+	bool m_glass_dual_source = false;
+	vk::raii::Sampler m_backdrop_sampler = nullptr;
+	vk::raii::Sampler m_backdrop_depth_sampler = nullptr;
+	/// Backdrop colour and depth each glass set was written with
+	std::vector<std::array<vk::ImageView, 2>> m_bound_backdrop;
 	/// The push the lighting draw used so the spatial draw matches it
 	LightingPushConstants m_lighting_push;
 
@@ -383,8 +396,14 @@ private:
 	bool m_denoise_active = false;
 
 	/// Mirrors voxel_glass.slang GlassPush
+	/// Mirrors voxel_glass.slang GlassPush
 	struct GlassPush {
 		uint32_t first = 0;
+		/// 0 leaves the backdrop unread
+		float refraction = 0.0f;
+		float refraction_distance = 0.0f;
+		uint32_t refraction_voxels = 0;
+		uint32_t lit_surfaces = 0;
 	};
 
 	ShaderLayout m_glass_layout;

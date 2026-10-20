@@ -135,6 +135,7 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 	[ObservableProperty] private float m_roughness;
 	[ObservableProperty] private int m_selectedIndex = 1;
 	[ObservableProperty] private float m_alpha = 1f;
+	[ObservableProperty] private float m_ior = VoxelPaletteEntry.DefaultIor;
 	[ObservableProperty] private PaletteSlotVM? m_selectedSlot;
 	[ObservableProperty] private int m_transformsTo;
 	[ObservableProperty] private bool m_transparent;
@@ -421,6 +422,7 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 		Reflectivity = entry.Reflectivity;
 		Emissive = entry.Emissive;
 		Alpha = entry.Alpha;
+		Ior = entry.Ior;
 		TransformsTo = entry.TransformsTo;
 		Transparent = entry.Transparent;
 		LoadSelectedMaterial();
@@ -587,6 +589,12 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 	partial void OnAlphaChanged(float value) {
 		if (Ignore || Selected is not { } entry) return;
 		entry.Alpha = Math.Clamp(value, 0f, 1f);
+		TouchEntry();
+	}
+
+	partial void OnIorChanged(float value) {
+		if (Ignore || Selected is not { } entry) return;
+		entry.Ior = Math.Clamp(value, 1f, VoxelPaletteEntry.MaxIor);
 		TouchEntry();
 	}
 

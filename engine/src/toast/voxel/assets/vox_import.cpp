@@ -279,6 +279,8 @@ struct VoxMaterial {
 	float reflectivity = 0.0f;
 	float emission = 0.0f;
 	float opacity = 1.0f;
+	/// 0 leaves the palette default
+	float ior = 0.0f;
 	bool transparent = false;
 };
 
@@ -440,6 +442,12 @@ auto importVox(std::span<const uint8_t> data) -> VoxScene {
 					material.opacity = voxDictFloat(attributes, "_alpha", 1.0f);
 				}
 				material.transparent = type == "_glass" || material.opacity < 1.0f;
+				// _ri is the index itself and _ior what older files wrote as the index minus one
+				if (attributes.contains("_ri")) {
+					material.ior = voxDictFloat(attributes, "_ri", 0.0f);
+				} else if (attributes.contains("_ior")) {
+					material.ior = 1.0f + voxDictFloat(attributes, "_ior", 0.0f);
+				}
 				materials.insert_or_assign(static_cast<uint32_t>(index), material);
 			}
 		} else if (is("nTRN")) {
@@ -576,6 +584,9 @@ auto importVox(std::span<const uint8_t> data) -> VoxScene {
 		if (material.transparent) {
 			entry.flags |= voxel::k_entry_transparent;
 			entry.alpha = std::min(entry.alpha, voxByteFromUnit(material.opacity));
+		}
+		if (material.ior > 1.0f) {
+			entry.ior = voxel::iorByte(material.ior);
 		}
 	}
 

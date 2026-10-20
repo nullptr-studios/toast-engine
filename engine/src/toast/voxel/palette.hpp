@@ -7,7 +7,9 @@
 #pragma once
 #include "voxel_constants.hpp"
 
+#include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <toast/physics/hardness.hpp>
 #include <toast/physics/material_defaults.hpp>
@@ -46,7 +48,10 @@ struct PaletteEntry {
 
 	uint8_t alpha = 255;
 
-	std::array<uint8_t, 5> reserved {};
+	/// 0 for k_default_ior and otherwise 1 + ior / 100
+	uint8_t ior = 0;
+
+	std::array<uint8_t, 4> reserved {};
 
 	[[nodiscard]]
 	constexpr auto operator==(const PaletteEntry&) const noexcept -> bool = default;
@@ -58,6 +63,20 @@ static_assert(sizeof(PaletteEntry) == 16, "a palette entry must be sixteen bytes
 [[nodiscard]]
 constexpr auto isGlass(const PaletteEntry& entry) noexcept -> bool {
 	return (entry.flags & k_entry_transparent) != 0 && entry.alpha < 255;
+}
+
+/// Window glass and the IOR of an entry without one
+inline constexpr float k_default_ior = 1.5f;
+inline constexpr float k_max_ior = 1.0f + (255.0f / 100.0f);
+
+[[nodiscard]]
+constexpr auto iorOf(const PaletteEntry& entry) noexcept -> float {
+	return entry.ior == 0 ? k_default_ior : 1.0f + (static_cast<float>(entry.ior) / 100.0f);
+}
+
+[[nodiscard]]
+inline auto iorByte(float ior) noexcept -> uint8_t {
+	return static_cast<uint8_t>(std::clamp(std::lround((ior - 1.0f) * 100.0f), 1L, 255L));
 }
 
 /// @brief Entry 0 is the empty voxel and must stay all zero

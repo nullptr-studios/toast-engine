@@ -744,6 +744,77 @@ public:
 		return m_voxel_ambient_reach.load(std::memory_order_relaxed);
 	}
 
+	/// 1 is Snell and 0 turns refraction off
+	void setVoxelGlassRefraction(float strength) noexcept {
+		m_voxel_glass_refraction.store(std::max(strength, 0.0f), std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto voxelGlassRefraction() const noexcept -> float {
+		return m_voxel_glass_refraction_enabled.load(std::memory_order_relaxed)
+		           ? m_voxel_glass_refraction.load(std::memory_order_relaxed)
+							 : 0.0f;
+	}
+
+	/// Off skips the backdrop copy and the volume march of every glass pixel
+	void setVoxelGlassRefractionEnabled(bool enabled) noexcept {
+		m_voxel_glass_refraction_enabled.store(enabled, std::memory_order_relaxed);
+	}
+
+	void setVoxelGlassRefractionDistance(float meters) noexcept {
+		m_voxel_glass_refraction_distance.store(std::max(meters, 0.0f), std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto voxelGlassRefractionDistance() const noexcept -> float {
+		return m_voxel_glass_refraction_distance.load(std::memory_order_relaxed);
+	}
+
+	void setVoxelGlassRefractionVoxels(uint32_t voxels) noexcept {
+		m_voxel_glass_refraction_voxels.store(std::max(voxels, 1u), std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto voxelGlassRefractionVoxels() const noexcept -> uint32_t {
+		return m_voxel_glass_refraction_voxels.load(std::memory_order_relaxed);
+	}
+
+	void setVoxelGlassLitSurfaces(uint32_t surfaces) noexcept {
+		m_voxel_glass_lit_surfaces.store(surfaces, std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto voxelGlassLitSurfaces() const noexcept -> uint32_t {
+		return m_voxel_glass_lit_surfaces.load(std::memory_order_relaxed);
+	}
+
+	void setVoxelGlassShadows(bool enabled) noexcept { m_voxel_glass_shadows.store(enabled, std::memory_order_relaxed); }
+
+	[[nodiscard]]
+	auto voxelGlassShadows() const noexcept -> bool {
+		return m_voxel_glass_shadows.load(std::memory_order_relaxed);
+	}
+
+	void setVoxelGlassShadowReach(uint32_t meters) noexcept {
+		m_voxel_glass_shadow_reach.store(std::max(meters, 1u), std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto voxelGlassShadowReach() const noexcept -> uint32_t {
+		return m_voxel_glass_shadow_reach.load(std::memory_order_relaxed);
+	}
+
+	/// Scene colour and depth copied after the sky for glass to refract
+	[[nodiscard]]
+	auto getGlassBackdropView() const noexcept -> vk::ImageView {
+		return m_glass_backdrop.view ? **m_glass_backdrop.view : vk::ImageView {};
+	}
+
+	[[nodiscard]]
+	auto getGlassBackdropDepthView() const noexcept -> vk::ImageView {
+		return m_glass_backdrop_depth.view ? **m_glass_backdrop_depth.view : vk::ImageView {};
+	}
+
 	/// Meters a marched sun ray travels before it counts as lit
 	void setVoxelSunReach(uint32_t meters) noexcept { m_voxel_sun_reach.store(meters, std::memory_order_relaxed); }
 
@@ -1243,7 +1314,10 @@ private:
 
 	/// @note Expects an open rendering scope with m_pass_mutex held
 	/// Opaque meshes then the sky then blended meshes and voxel glass far to near
-	void recordMeshScene(vk::CommandBuffer cmd, uint32_t image_index, bool voxel_glass);
+	/// @p capture_backdrop ends the world scope copies the scene for refracting glass and resumes it
+	void recordMeshScene(
+	    vk::CommandBuffer cmd, uint32_t image_index, bool voxel_glass, const std::function<void()>& capture_backdrop
+	);
 
 	struct PunctualShadowCandidate {
 		size_t light_index = 0;
@@ -1364,9 +1438,11 @@ private:
 	bool m_probe_auto_baked = false;
 	vk::Format m_depth_format = vk::Format::eUndefined;
 	DepthResources m_depth_resources;
+	DepthResources m_glass_backdrop_depth;
 
 	static constexpr vk::Format m_scene_color_format = vk::Format::eR16G16B16A16Sfloat;
 	SceneColorResources m_scene_color;
+	SceneColorResources m_glass_backdrop;
 
 	static constexpr vk::Format m_scene_normal_format = renderer::k_scene_normal_format;
 	SceneColorResources m_scene_normal;
@@ -1397,6 +1473,13 @@ private:
 	std::atomic<uint32_t> m_voxel_sun_reach {200};
 	std::atomic<bool> m_voxel_ambient_rays {true};
 	std::atomic<float> m_voxel_ambient_reach {2.4f};
+	std::atomic<float> m_voxel_glass_refraction {1.0f};
+	std::atomic_bool m_voxel_glass_refraction_enabled {true};
+	std::atomic<float> m_voxel_glass_refraction_distance {60.0f};
+	std::atomic<uint32_t> m_voxel_glass_refraction_voxels {32};
+	std::atomic<uint32_t> m_voxel_glass_lit_surfaces {4};
+	std::atomic_bool m_voxel_glass_shadows {true};
+	std::atomic<uint32_t> m_voxel_glass_shadow_reach {50};
 	std::atomic_bool m_voxel_cell_boxes {true};
 	std::atomic_bool m_voxel_occlusion {true};
 	std::atomic_bool m_voxel_mesh_shaders {true};

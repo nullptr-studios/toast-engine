@@ -333,6 +333,91 @@ void registerVoxels(VulkanRenderer& renderer) {
 	)
 	    .onChange([&renderer](double v) { renderer.setVoxelAmbientReach(static_cast<float>(v)); });
 
+	toast::settings::declareBool(
+	    "renderer.voxels.glass_refraction_enabled",
+	    true,
+	    {.label = "Glass refraction",
+			 .category = "Voxels",
+			 .description = "Glass bends what is behind it by its IOR. Costs a copy of the scene colour and depth plus a "
+			                "march through the volume for every glass pixel. Off draws glass straight through"}
+	)
+	    .onChange([&renderer](bool enabled) { renderer.setVoxelGlassRefractionEnabled(enabled); });
+
+	toast::settings::declareFloat(
+	    "renderer.voxels.glass_refraction",
+	    1.0,
+	    {.label = "Glass refraction strength",
+			 .category = "Voxels",
+			 .description = "How far glass bends what is behind it. 1 follows the IOR and higher exaggerates it",
+			 .min = 0.0,
+			 .max = 4.0,
+			 .step = 0.05}
+	)
+	    .onChange([&renderer](double v) { renderer.setVoxelGlassRefraction(static_cast<float>(v)); });
+
+	toast::settings::declareFloat(
+	    "renderer.voxels.glass_refraction_distance",
+	    60.0,
+	    {.label = "Glass refraction distance",
+			 .category = "Voxels",
+			 .description = "Meters from the camera past which glass draws straight through. Far glass bends too little to "
+			                "see and the scene copy is skipped when every glass brick is past it",
+			 .min = 1.0,
+			 .max = 500.0,
+			 .step = 1.0}
+	)
+	    .onChange([&renderer](double v) { renderer.setVoxelGlassRefractionDistance(static_cast<float>(v)); });
+
+	toast::settings::declareInt(
+	    "renderer.voxels.glass_refraction_depth",
+	    32,
+	    {.label = "Glass refraction depth",
+			 .category = "Voxels",
+			 .description = "Voxels refraction follows through thick glass to find its far side. Past it the far side "
+			                "counts as parallel to the near one",
+			 .min = 1.0,
+			 .max = 96.0}
+	)
+	    .onChange([&renderer](int64_t v) {
+		    renderer.setVoxelGlassRefractionVoxels(static_cast<uint32_t>(std::clamp<int64_t>(v, 1, 96)));
+	    });
+
+	toast::settings::declareInt(
+	    "renderer.voxels.glass_lit_surfaces",
+	    4,
+	    {.label = "Glass lit surfaces",
+			 .category = "Voxels",
+			 .description = "Glass surfaces per brick and pixel that get full lighting and reflections. Layers past it "
+			                "only tint what is behind them",
+			 .min = 1.0,
+			 .max = 4.0}
+	)
+	    .onChange([&renderer](int64_t v) {
+		    renderer.setVoxelGlassLitSurfaces(static_cast<uint32_t>(std::clamp<int64_t>(v, 1, 4)));
+	    });
+
+	toast::settings::declareBool(
+	    "renderer.voxels.glass_shadows",
+	    true,
+	    {.label = "Glass shadows",
+			 .category = "Voxels",
+			 .description = "Glass tints the light that reaches voxels behind it in every light mode. Off makes glass cast "
+			                "no shadow and lets marched shadow rays take coarse steps through it"}
+	)
+	    .onChange([&renderer](bool enabled) { renderer.setVoxelGlassShadows(enabled); });
+
+	toast::settings::declareInt(
+	    "renderer.voxels.glass_shadow_reach",
+	    50,
+	    {.label = "Glass shadow reach",
+			 .category = "Voxels",
+			 .description = "Meters a sun looks for glass between a voxel and the sky when its shadow comes from the "
+			                "shadow map",
+			 .min = 1.0,
+			 .max = 2000.0}
+	)
+	    .onChange([&renderer](int64_t v) { renderer.setVoxelGlassShadowReach(static_cast<uint32_t>(std::max<int64_t>(v, 1))); });
+
 	toast::settings::declareInt(
 	    "renderer.voxels.sun_reach",
 	    200,

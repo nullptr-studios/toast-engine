@@ -683,6 +683,11 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	    "Vulkan 1.2 descriptorBindingVariableDescriptorCount"
 	);
 	require_feature(supported_vulkan12.bufferDeviceAddress == VK_TRUE, "Vulkan 1.2 bufferDeviceAddress");
+	// lighting.slang picks reflection probe cubemaps per pixel with NonUniformResourceIndex
+	require_feature(
+	    supported_vulkan12.shaderSampledImageArrayNonUniformIndexing == VK_TRUE,
+	    "Vulkan 1.2 shaderSampledImageArrayNonUniformIndexing"
+	);
 	// eDepthAttachmentOptimal and eDepthReadOnlyOptimal are only legal with this enabled
 	require_feature(supported_vulkan12.separateDepthStencilLayouts == VK_TRUE, "Vulkan 1.2 separateDepthStencilLayouts");
 	// AsyncCompute tickets are timeline values
@@ -851,6 +856,7 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	vulkan12_features.descriptorBindingPartiallyBound = VK_TRUE;
 	vulkan12_features.descriptorBindingVariableDescriptorCount = VK_TRUE;
 	vulkan12_features.bufferDeviceAddress = VK_TRUE;
+	vulkan12_features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
 	vulkan12_features.separateDepthStencilLayouts = VK_TRUE;
 	vulkan12_features.timelineSemaphore = VK_TRUE;
 	vulkan11_features.shaderDrawParameters = VK_TRUE;
