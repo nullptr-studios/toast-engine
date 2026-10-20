@@ -399,6 +399,48 @@ void registerPhysicsSettings() {
 	    {.label = "Max unglue voxels", .category = "Fracture", .min = 0.0, .max = 1000000.0, .step = 64.0},
 	    &Tunables::fracture_max_unglue_voxels
 	);
+	flt("physics.fracture.debris_split_chance",
+	    0.35,
+	    {.label = "Debris split chance", .category = "Shatter", .min = 0.0f, .max = 1.0f, .step = 0.05f},
+	    &Tunables::fracture_debris_split_chance);
+	uint_setting(
+	    "physics.fracture.max_shatter_cells",
+	    128,
+	    {.label = "Max shatter cells", .category = "Shatter", .min = 2.0, .max = 1024.0, .step = 8.0},
+	    &Tunables::fracture_max_shatter_cells
+	);
+	flt("physics.fracture.max_shatter_distance",
+	    8.0,
+	    {.label = "Max shatter distance", .category = "Shatter", .min = 0.1f, .max = 64.0f, .step = 0.5f},
+	    &Tunables::fracture_max_shatter_distance);
+	uint_setting(
+	    "physics.debris.max_spawns_per_step",
+	    512,
+	    {.label = "Max spawns per step", .category = "Debris", .min = 0.0, .max = 16384.0, .step = 16.0},
+	    &Tunables::debris_max_spawns_per_step
+	);
+	flt("physics.debris.speed_scale",
+	    1.0,
+	    {.label = "Speed scale", .category = "Debris", .min = 0.0f, .max = 8.0f, .step = 0.1f},
+	    &Tunables::debris_speed_scale);
+	flt("physics.debris.lifetime",
+	    60.0,
+	    {.label = "Lifetime", .category = "Debris", .min = 0.5, .max = 600.0, .step = 0.5},
+	    &Tunables::debris_lifetime);
+	uint_setting(
+	    "physics.debris.max_particles",
+	    16384,
+	    {.label = "Max particles", .category = "Debris", .min = 256.0, .max = 262144.0, .step = 1024.0, .requires_restart = true},
+	    &Tunables::debris_max_particles
+	);
+	flt("physics.debris.restitution",
+	    0.3,
+	    {.label = "Restitution", .category = "Debris", .min = 0.0, .max = 1.0, .step = 0.05},
+	    &Tunables::debris_restitution);
+	flt("physics.debris.friction",
+	    0.6,
+	    {.label = "Friction", .category = "Debris", .min = 0.0, .max = 1.0, .step = 0.05},
+	    &Tunables::debris_friction);
 
 	uint_setting(
 	    "physics.jobs.min_bounds_per_job",

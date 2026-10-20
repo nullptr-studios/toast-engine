@@ -29,10 +29,28 @@ public class DestructionMaterialAsset : BaseAsset {
 			$"density = 2000.0\n" +
 			$"toughness = 100.0\n" +
 			$"hardness = \"medium\"\n" +
+			$"fracture_pattern = \"brittle\"\n" +
 			$"structural_strength = 1000000.0\n" +
 			$"destructible = true\n" +
 			$"flammable = false\n" +
-			$"burn_rate = 0.0\n");
+			$"burn_rate = 0.0\n" +
+			$"\n[energy]\n" +
+			$"debris_share = 0.2\n" +
+			$"fragment_share = 0.5\n" +
+			$"\n[fragment]\n" +
+			$"threshold = 0.3\n" +
+			$"max_parts = 4\n" +
+			$"\n[shatter]\n" +
+			$"threshold = 0.1\n" +
+			$"cell_size = 0.5\n" +
+			$"crack_cost = 1.0\n" +
+			$"release = 0.3\n" +
+			$"stretch = 3.0\n" +
+			$"crumble = 0.5\n" +
+			$"\n[edge]\n" +
+			$"noise = 0.25\n" +
+			$"lobes = 0.35\n" +
+			$"noise_scale = 4.0\n");
 		return Task.CompletedTask;
 	}
 }

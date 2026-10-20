@@ -11,6 +11,7 @@
 #include "broad_phase.hpp"
 #include "constraint.hpp"
 #include "damage_command.hpp"
+#include "debris.hpp"
 #include "fragment_extraction.hpp"
 #include "manifold.hpp"
 #include "narrow_phase.hpp"
@@ -314,6 +315,9 @@ public:
 	/// Raises the velocity of a dynamic body along direction
 	void pushBody(BodyID id, const glm::vec3& point, const glm::vec3& direction, float speed, float max_impulse);
 
+	[[nodiscard]]
+	auto takeDebrisSpawns() -> std::vector<DebrisSpawn>;
+
 	/// Simulator running the current step, null outside a play session
 	[[nodiscard]]
 	static auto current() -> Simulator*;
@@ -586,6 +590,13 @@ private:
 	    ShapeID shape_id, VoxelShapeData& data, voxel::Volume& source, const DetachedComponent& component,
 	    const RemovedVoxels* already_removed = nullptr
 	);
+
+	void emitDebris(
+	    ShapeID shape_id, std::span<const DebrisVoxel> voxels, const DebrisBlast* blast, const FragmentPush* push, uint64_t seed
+	);
+
+	void emitComponentDebris(ShapeID shape_id, const DetachedComponent& component, const FragmentPush* push);
+
 	[[nodiscard]]
 	auto spawnFragmentBody(ShapeID source_shape_id, const DetachedComponent& component, const FragmentPush* push = nullptr) -> bool;
 	auto smashShape(ShapeID shape_id, const SmashVolume& volume, const CapsuleSmash& smash, bool chunks) -> uint32_t;
@@ -670,21 +681,21 @@ private:
 	NarrowPhase m_narrow_phase;
 	std::vector<Manifold> m_manifolds;
 	std::vector<CachedManifold> m_cached_manifolds;
-	/// mutable so const query methods (overlapCapsule/sweepCapsule) can still count how often they run
 	mutable PhysicsStepProfile m_profile;
 	PhysicsStepProfile m_published_profile;
 
 	std::vector<VoxelShapeSlot> m_voxel_shapes;
 	std::deque<uint32_t> m_free_voxel_shape_slots;
 	std::vector<VoxelRenderRecord> m_voxel_render_records;
+	std::vector<DebrisSpawn> m_debris_spawns;
 
 	std::mutex m_damage_mutex;
 	std::vector<DamageCommand> m_damage_commands;
 	std::vector<DebugDirtyBrick> m_debug_dirty_bricks;
 
 	uint64_t m_next_fragment_sequence = 1;
+	uint64_t m_tick_index = 0;
 	std::vector<FragmentRecord> m_fragments;
-	/// body slot -> index in m_fragments rebuilt whenever an erase shifts indices
 	std::unordered_map<uint32_t, size_t> m_fragment_index;
 	std::vector<PendingFragments> m_pending_fragments;
 	std::vector<BodyID> m_doomed_fragments;

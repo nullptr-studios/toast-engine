@@ -145,6 +145,18 @@ private:
 	VoxelChangeHistory m_history;
 };
 
+struct VoxelCollisionWorld {
+	struct Volume {
+		glm::mat4 world_to_voxel {1.0f};
+		glm::vec3 bounds_center {0.0f};
+		float bounds_radius = 0.0f;
+		uint32_t record_index = 0;
+	};
+
+	std::shared_ptr<const VoxelGpuStorage> storage;
+	std::vector<Volume> volumes;
+};
+
 /// Mirrors voxel_dda.slang VoxelInstance
 struct VoxelInstanceGpu {
 	glm::mat4 voxel_to_world {1.0f};

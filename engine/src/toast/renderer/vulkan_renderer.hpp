@@ -81,6 +81,7 @@ class ReflectionProbePass;
 class DepthPrepass;
 class SkinningPass;
 class VoxelPass;
+class DebrisPass;
 class RayTracingScene;
 class SkinnedBlasPool;
 
@@ -776,6 +777,11 @@ public:
 	/// Still registered with addRenderPass so it lists and toggles like any pass
 	void setVoxelPass(VoxelPass* pass) noexcept { m_voxel_pass = pass; }
 
+	void setDebrisPass(DebrisPass* pass) noexcept { m_debris_pass = pass; }
+
+	[[nodiscard]]
+	auto voxelCollisionWorld() const -> std::shared_ptr<const VoxelCollisionWorld>;
+
 	void setReflectionProbePass(ReflectionProbePass* pass) noexcept { m_reflection_probe_pass = pass; }
 
 	[[nodiscard]]
@@ -1231,6 +1237,8 @@ private:
 
 	VoxelPass* m_voxel_pass = nullptr;
 
+	DebrisPass* m_debris_pass = nullptr;
+
 	std::atomic_bool m_probe_bake_requested {false};
 	std::atomic<uint32_t> m_probe_stale_count {0};
 	/// probe = cursor / 6 and face = cursor % 6 or -1 when idle
@@ -1352,6 +1360,9 @@ private:
 
 	std::shared_ptr<VoxelGpuStorage> m_voxel_storage;
 	std::shared_ptr<VoxelGpuStorage> m_voxel_storage_pending;
+
+	mutable std::mutex m_voxel_collision_mutex;
+	std::shared_ptr<const VoxelCollisionWorld> m_voxel_collision_world;
 
 	struct VoxelSceneKey {
 		uint64_t node_rid = 0;
