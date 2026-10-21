@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cassert>
 #include <cstring>
 #include <tracy/Tracy.hpp>
@@ -79,6 +80,64 @@ void sortUnique(std::vector<uint32_t>& values) {
 	values.erase(std::ranges::unique(values).begin(), values.end());
 }
 
+using GlassTable = std::array<bool, k_palette_size>;
+
+[[nodiscard]]
+auto glassTable(const Palette& palette) -> GlassTable {
+	GlassTable out {};
+	for (uint32_t i = 1; i < k_palette_size; ++i) {
+		out[i] = isGlass(palette.entries[i]);
+	}
+	return out;
+}
+
+[[nodiscard]]
+auto brickHoldsGlass(const BrickPool& pool, BrickEntry entry, const GlassTable& glass) -> bool {
+	if (entry.tag() == BrickTag::uniform) {
+		return glass[entry.payload() & 0xFFu];
+	}
+	if (!entry.isPooled()) {
+		return false;
+	}
+	const std::span<const uint8_t, k_brick_material_bytes> bytes = pool.material(entry.payload());
+	return std::ranges::any_of(bytes, [&glass](uint8_t index) { return glass[index]; });
+}
+
+void setGlassBit(std::vector<uint32_t>& coarse, uint32_t glass_offset, uint32_t index, bool glass) {
+	const uint32_t bit = 1u << (index % 32u);
+	uint32_t& word = coarse[glass_offset + (index / 32u)];
+	word = glass ? (word | bit) : (word & ~bit);
+}
+
+}
+
+auto paletteHasGlass(const Palette& palette) -> bool {
+	return std::ranges::any_of(palette.entries, [](const PaletteEntry& entry) { return isGlass(entry); });
+}
+
+auto brickHasGlass(const BrickPool& pool, BrickEntry entry, const Palette& palette) -> bool {
+	return brickHoldsGlass(pool, entry, glassTable(palette));
+}
+
+auto glassBricks(const PackedScene& scene, uint32_t record) -> std::vector<uint32_t> {
+	std::vector<uint32_t> out;
+	const VolumeRecord& volume = scene.records[record];
+	if (volume.glass_offset == k_no_glass) {
+		return out;
+	}
+	const uint32_t bricks = volume.brick_dims_x * volume.brick_dims_y * volume.brick_dims_z;
+	const uint32_t words = glassWords(glm::uvec3(volume.brick_dims_x, volume.brick_dims_y, volume.brick_dims_z));
+	for (uint32_t w = 0; w < words; ++w) {
+		uint32_t bits = scene.coarse[volume.glass_offset + w];
+		while (bits != 0) {
+			const uint32_t index = (w * 32u) + static_cast<uint32_t>(std::countr_zero(bits));
+			if (index < bricks) {
+				out.push_back(index);
+			}
+			bits &= bits - 1u;
+		}
+	}
+	return out;
 }
 
 void packOccupancyWords(const BrickOccupancy& occupancy, uint32_t* out) {
@@ -143,6 +202,10 @@ auto packLayout(std::span<const SceneVolume> volumes) -> SceneLayout {
 
 		out.grid_words += dims.x * dims.y * dims.z;
 		out.coarse_words += ((coarse.x * coarse.y * coarse.z) + 31u) / 32u;
+		if (paletteHasGlass(*entry.palette)) {
+			record.glass_offset = out.coarse_words;
+			out.coarse_words += glassWords(dims);
+		}
 
 		const auto found = std::find(packed_palettes.begin(), packed_palettes.end(), entry.palette);
 		if (found != packed_palettes.end()) {
@@ -177,14 +240,20 @@ auto packScene(std::span<const SceneVolume> volumes) -> PackedScene {
 		const VolumeRecord& record = out.records[i];
 		const glm::uvec3 dims = volume.brickDims();
 		const glm::uvec3 coarse = coarseDims(dims);
+		const bool has_glass = record.glass_offset != k_no_glass && volume.pool() != nullptr;
+		const GlassTable glass = has_glass ? glassTable(*volumes[i].palette) : GlassTable {};
 
 		for (uint32_t z = 0; z < dims.z; ++z) {
 			for (uint32_t y = 0; y < dims.y; ++y) {
 				for (uint32_t x = 0; x < dims.x; ++x) {
 					const BrickEntry brick_entry = volume.entryAt(glm::ivec3(x, y, z));
-					out.grids[record.grid_offset + gridIndex(dims, glm::uvec3(x, y, z))] = brick_entry.value;
+					const uint32_t index = gridIndex(dims, glm::uvec3(x, y, z));
+					out.grids[record.grid_offset + index] = brick_entry.value;
 					if (brick_entry.tag() == BrickTag::empty) {
 						continue;
+					}
+					if (has_glass && brickHoldsGlass(*volume.pool(), brick_entry, glass)) {
+						setGlassBit(out.coarse, record.glass_offset, index, true);
 					}
 
 					// Volume frees emptied bricks so any non empty tag means something solid
@@ -227,6 +296,8 @@ auto computePatch(
 		const glm::uvec3 dims(record.brick_dims_x, record.brick_dims_y, record.brick_dims_z);
 		const glm::uvec3 coarse(record.coarse_dims_x, record.coarse_dims_y, record.coarse_dims_z);
 		TagDelta& tags = patch.tags[index];
+		const bool has_glass = record.glass_offset != k_no_glass;
+		const GlassTable glass = has_glass ? glassTable(*volumes[index].palette) : GlassTable {};
 
 		const uint32_t bricks = dims.x * dims.y * dims.z;
 		for (uint32_t i = 0; i < bricks; ++i) {
@@ -241,11 +312,19 @@ auto computePatch(
 				const uint32_t cell = gridIndex(coarse, brickOfIndex(dims, i) / k_coarse_bricks);
 				retained.coarse[record.coarse_offset + (cell / 32u)] |= 1u << (cell % 32u);
 			}
+			if (has_glass) {
+				setGlassBit(retained.coarse, record.glass_offset, i, brickHoldsGlass(pool, entry, glass));
+			}
 		}
 
 		const uint32_t coarse_count = ((coarse.x * coarse.y * coarse.z) + 31u) / 32u;
 		for (uint32_t i = 0; i < coarse_count; ++i) {
 			coarse_words.push_back(record.coarse_offset + i);
+		}
+		if (has_glass) {
+			for (uint32_t i = 0; i < glassWords(dims); ++i) {
+				coarse_words.push_back(record.glass_offset + i);
+			}
 		}
 
 		constexpr uint32_t k_record_words = sizeof(VolumeRecord) / sizeof(uint32_t);
@@ -260,11 +339,22 @@ auto computePatch(
 		const glm::uvec3 dims(record.brick_dims_x, record.brick_dims_y, record.brick_dims_z);
 		const glm::uvec3 coarse(record.coarse_dims_x, record.coarse_dims_y, record.coarse_dims_z);
 		TagDelta& tags = patch.tags[entry.volume];
+		const bool has_glass = record.glass_offset != k_no_glass;
+		const GlassTable glass = has_glass ? glassTable(*volumes[entry.volume].palette) : GlassTable {};
 
 		cells.clear();
 		for (const uint32_t index : entry.bricks) {
 			const glm::uvec3 brick = brickOfIndex(dims, index);
 			const BrickEntry now = volume.entryAt(glm::ivec3(brick));
+
+			if (has_glass) {
+				const uint32_t word_index = record.glass_offset + (index / 32u);
+				const uint32_t before = retained.coarse[word_index];
+				setGlassBit(retained.coarse, record.glass_offset, index, brickHoldsGlass(pool, now, glass));
+				if (retained.coarse[word_index] != before) {
+					coarse_words.push_back(word_index);
+				}
+			}
 
 			uint32_t& word = retained.grids[record.grid_offset + index];
 			if (word != now.value) {

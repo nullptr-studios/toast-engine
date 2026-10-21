@@ -526,6 +526,28 @@ void Engine::tick() {
 				m->renderer->setGizmoState(gizmo_state);
 			}
 		}
+
+		if (m->renderer) {
+			std::vector<uint64_t> outlined;
+			if (it != m->owners.end()) {
+				// A live game shows no editor selection
+				if (const Workspace* ws = it->second->asWorkspace(); ws != nullptr && !ws->isPlaying()) {
+					ws->collectOutlinedRids(outlined);
+				}
+			}
+			m->renderer->setOutlinedNodes(std::move(outlined));
+		}
+
+		if (m->renderer) {
+			// The standalone player is always the game
+			bool game_view = m->shared_target == nullptr;
+			if (it != m->owners.end()) {
+				if (const Workspace* ws = it->second->asWorkspace(); ws != nullptr) {
+					game_view = ws->isPlaying() && ws->usesGameCamera();
+				}
+			}
+			m->renderer->setGameView(game_view);
+		}
 	}
 
 	if (m->renderer) {
@@ -654,7 +676,7 @@ void Engine::createSDLWindow(const char* w_name) {
 		});
 	}
 
-	// Players get the performance overlay on top of the game's UI, in every build for now
+	// Players get the overlay above the game UI and hidden until F3
 	auto debug_pass =
 	    std::make_unique<renderer::DebugPass>(*m->vulkan_core, color_format, depth_format, extent, &cluster_lighting_pass_ref);
 	debug_pass->setEditorPanelsEnabled(false);
@@ -1089,9 +1111,9 @@ auto toast_viewport_export_shared_slot(uint64_t generation, uint32_t slot, toast
 	return 1;
 }
 
-auto toast_viewport_hold_shared_slot(uint64_t generation, uint32_t slot) noexcept -> int {
+auto toast_viewport_hold_shared_slot(uint64_t generation, uint32_t slot, uint64_t frame_id) noexcept -> int {
 	auto* target = toast::Engine::get()->viewportTarget();
-	return target != nullptr && target->holdSharedSlot(generation, slot) ? 1 : 0;
+	return target != nullptr && target->holdSharedSlot(generation, slot, frame_id) ? 1 : 0;
 }
 
 void toast_viewport_release_shared_slot(uint64_t generation, uint32_t slot, int consumed) noexcept {
@@ -1215,6 +1237,11 @@ void toast_set_show_debug_windows(int visible) noexcept {
 	if (auto* vk_renderer = renderer::VulkanRenderer::instance; vk_renderer != nullptr) {
 		vk_renderer->setDebugWindowsVisible(visible != 0);
 	}
+}
+
+auto toast_debug_overlay_owns_cursor() noexcept -> int {
+	const auto* vk_renderer = renderer::VulkanRenderer::instance;
+	return vk_renderer != nullptr && vk_renderer->debugOverlayOwnsCursor() ? 1 : 0;
 }
 
 void toast_set_window_state(int focused, int minimized) noexcept {

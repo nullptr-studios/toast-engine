@@ -43,7 +43,7 @@ struct ViewportSharedHandles {
 
 class SharedTextureOutputTarget final : public IOutputTarget {
 public:
-	SharedTextureOutputTarget(const VulkanCore& core, vk::Extent2D preferred_extent, uint32_t image_count = 3);
+	SharedTextureOutputTarget(const VulkanCore& core, vk::Extent2D preferred_extent, uint32_t image_count = 4);
 	~SharedTextureOutputTarget() override;
 
 	SharedTextureOutputTarget(const SharedTextureOutputTarget&) = delete;
@@ -82,7 +82,9 @@ public:
 	}
 
 	void recordFinalize(vk::CommandBuffer command_buffer, uint32_t image_index) override;
-	void onImageRenderComplete(uint32_t image_index) override;
+	void onImageRenderComplete(uint32_t image_index, bool publish = true) override;
+	[[nodiscard]]
+	auto waitForFreeImage(std::chrono::nanoseconds timeout) -> bool override;
 	[[nodiscard]]
 	auto submitSync(uint32_t image_index) -> OutputSubmitSync override;
 
@@ -112,7 +114,7 @@ public:
 	auto exportSharedSlot(uint64_t generation, uint32_t slot, ViewportSharedHandles* out) -> bool;
 
 	[[nodiscard]]
-	auto holdSharedSlot(uint64_t generation, uint32_t slot) -> bool;
+	auto holdSharedSlot(uint64_t generation, uint32_t slot, uint64_t frame_id) -> bool;
 
 	void releaseSharedSlot(uint64_t generation, uint32_t slot, bool consumed);
 
@@ -124,9 +126,14 @@ private:
 		void* mapped = nullptr;
 		bool read_back = false;
 		bool shared = false;
+		bool in_flight = false;
 	};
 
 	struct Interop;
+
+	/// m_frame_mutex held
+	[[nodiscard]]
+	auto imageBusy(uint32_t index) const -> bool;
 
 	enum class SharingState : uint8_t {
 		off,
@@ -155,6 +162,8 @@ private:
 	std::atomic<int32_t> m_latest_readback {-1};
 	int32_t m_reading = -1;
 	std::condition_variable m_reading_done;
+	/// Woken when the editor gives a slot back
+	std::condition_variable m_slot_freed;
 	std::atomic<uint64_t> m_frame_counter {0};
 	std::unique_ptr<Interop> m_interop;
 	std::atomic<SharingState> m_sharing {SharingState::off};

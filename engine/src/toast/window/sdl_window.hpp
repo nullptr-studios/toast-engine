@@ -42,6 +42,8 @@ private:
 		event::Listener event_listener;
 		bool should_close = false;
 		bool cursor_locked = false;
+		bool lock_requested = false;
+		bool overlay_cursor = false;
 		glm::vec2 virtual_mouse_position {0.0f};
 	} m;
 };

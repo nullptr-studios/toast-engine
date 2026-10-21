@@ -2738,6 +2738,25 @@ void Workspace::tick() {
 	event::send<event::InspectorLuaContent>(m_focused_node->uid().get(), lua_schema_version, std::move(cards));
 }
 
+void Workspace::collectOutlinedRids(std::vector<uint64_t>& rids) const {
+	rids.clear();
+	if (!m_focused_node.exists()) {
+		return;
+	}
+	std::vector<Box<Node>> pending {m_focused_node};
+	while (!pending.empty()) {
+		const Box<Node> node = std::move(pending.back());
+		pending.pop_back();
+		if (!node.exists()) {
+			continue;
+		}
+		rids.push_back(node->rid());
+		for (Box<Node>& child : node->childrenSnapshot()) {
+			pending.push_back(std::move(child));
+		}
+	}
+}
+
 auto Workspace::gizmoRenderState() const -> GizmoRenderState {
 	GizmoRenderState state;
 	const bool has_node = m_focused_node.as<Node3D>().exists();

@@ -1,21 +1,18 @@
-// Shared by voxel_mesh_task.slang and voxel_mesh.slang which compile apart since Slang gives task and mesh entry points of
-// one module separate payload variables that NVIDIA drivers mishandle (shader-slang/slang#10123)
-import voxel;
+// Shared by the camera and shadow task and mesh stages which compile apart since Slang gives task and mesh entry points of one
+// module separate payload variables that NVIDIA drivers mishandle (shader-slang/slang#10123)
 import voxel_dda;
 
 static const uint kTaskBricks = 64u / kTaskGroupsPerCell;
-/// Camera facing sides of a brick are at most 3 so its slices are at most 24
+/// Eye facing sides of a brick are at most 3 so its slices are at most 24
 static const uint kBrickEntries = 3u * 8u;
 static const uint kMaxEntries = kTaskBricks * kBrickEntries;
 static const uint kMeshletQuads = 64u;
 
-/// gPush.bucket picks the list since the near and late near lists share these entry points
-static const uint kMeshEarly = 0u;
-
 /// Mesh group m takes quads m * kMeshletQuads onward of the task group in entry order
 struct QuadTaskPayload
 {
-    uint entryIndex;
+    /// The camera cell list entry or the packCell coordinates of a shadow cell
+    uint cell;
     uint entryCount;
     uint quadCount;
     /// brickInCell 6 bits then direction * 8 + slice 6 bits then the first quad of the slice 16 bits
@@ -37,9 +34,9 @@ uint entryFirstQuad(uint entry)
     return entry >> 12;
 }
 
-uint3 brickOfCell(uint2 cell, uint brickInCell)
+uint3 brickOfCell(uint3 cell, uint brickInCell)
 {
-    return unpackCell(cell.y) * kCoarseBricks + uint3(brickInCell & 3u, (brickInCell >> 2) & 3u, brickInCell >> 4);
+    return cell * kCoarseBricks + uint3(brickInCell & 3u, (brickInCell >> 2) & 3u, brickInCell >> 4);
 }
 
 int3 directionStep(uint direction)
@@ -105,11 +102,12 @@ void sliceRows(uint faces[16], uint axis, uint slice, out uint rows[8])
     }
 }
 
-/// Mirrors the slice tests of meshBrick in voxel_cells.slang
-bool sliceFacesCamera(float3 camera, int3 brickMin, uint axis, bool positive, uint slice)
+/// Mirrors the slice tests of meshBrick in voxel_cells.slang with w 1 for a point eye and 0 for a direction toward it
+bool sliceFacesEye(float4 eye, int3 brickMin, uint axis, bool positive, uint slice)
 {
     const float plane = float(brickMin[axis] + int(slice)) + (positive ? 1.0 : 0.0);
-    return positive ? camera[axis] > plane : camera[axis] < plane;
+    const float side = eye[axis] - plane * eye.w;
+    return positive ? side > 0.0 : side < 0.0;
 }
 
 interface IQuadSink
@@ -141,4 +139,78 @@ uint greedySlice<Sink : IQuadSink>(uint rows[8], uint direction, uint slice, uin
         }
     }
     return count;
+}
+
+struct CountSink : IQuadSink
+{
+    [mutating]
+    void quad(uint packedQuad) { }
+}
+
+interface ISliceSink
+{
+    /// directionSlice is direction * 8 + slice
+    [mutating]
+    void slice(uint directionSlice, uint quads);
+}
+
+/// Greedy counts the quads of every eye facing slice of a brick that is not empty
+void countBrickSlices<Sink : ISliceSink>(uint recordIndex, int3 brick, uint brickEntry, uint brickInCell, float4 eye, inout Sink sink)
+{
+    const int3 brickMin = brick * int(kBrickDim);
+    uint occupancy[16];
+    loadSolidSlices(recordIndex, brick, brickEntry, occupancy);
+
+    CountSink counter;
+    for (uint direction = 0u; direction < 6u; ++direction)
+    {
+        const uint axis = direction >> 1;
+        const bool positive = (direction & 1u) == 0u;
+        if (!sliceFacesEye(eye, brickMin, axis, positive, positive ? 0u : 7u))
+        {
+            continue;
+        }
+
+        const int3 neighbourBrick = brick + directionStep(direction);
+        uint neighbour[16];
+        loadSolidSlices(recordIndex, neighbourBrick, brickEntryAt(recordIndex, neighbourBrick), neighbour);
+
+        uint faces[16];
+        exposedFaces(occupancy, neighbour, direction, faces);
+        for (uint slice = 0u; slice < 8u; ++slice)
+        {
+            if (!sliceFacesEye(eye, brickMin, axis, positive, slice))
+            {
+                continue;
+            }
+            uint rows[8];
+            sliceRows(faces, axis, slice, rows);
+            const uint count = greedySlice(rows, direction, slice, brickInCell, counter);
+            if (count != 0u)
+            {
+                sink.slice(direction * 8u + slice, count);
+            }
+        }
+    }
+}
+
+/// Quads of one payload entry again in the countBrickSlices order
+void meshEntry<Sink : IQuadSink>(uint entry, uint recordIndex, uint3 cell, inout Sink sink)
+{
+    const uint brickInCell = entryBrick(entry);
+    const uint direction = entrySlice(entry) >> 3;
+    const uint slice = entrySlice(entry) & 7u;
+    const int3 brick = int3(brickOfCell(cell, brickInCell));
+
+    uint occupancy[16];
+    uint neighbour[16];
+    const int3 neighbourBrick = brick + directionStep(direction);
+    loadSolidSlices(recordIndex, brick, brickEntryAt(recordIndex, brick), occupancy);
+    loadSolidSlices(recordIndex, neighbourBrick, brickEntryAt(recordIndex, neighbourBrick), neighbour);
+
+    uint faces[16];
+    exposedFaces(occupancy, neighbour, direction, faces);
+    uint rows[8];
+    sliceRows(faces, direction >> 1, slice, rows);
+    greedySlice(rows, direction, slice, brickInCell, sink);
 }

@@ -41,6 +41,12 @@ inline constexpr vk::Format k_voxel_material_format = vk::Format::eR8G8B8A8Unorm
 /// xyz voxel face normal * 0.5 + 0.5
 inline constexpr vk::Format k_voxel_face_normal_format = vk::Format::eA2B10G10R10UnormPack32;
 
+/// Marched and sampled light terms before voxel_denoise.slang and never negative
+inline constexpr vk::Format k_voxel_noisy_format = vk::Format::eB10G11R11UfloatPack32;
+
+/// voxel_lighting.slang packReservoir
+inline constexpr vk::Format k_voxel_reservoir_format = vk::Format::eR32G32B32A32Uint;
+
 /// @warning RenderStage::world only since the overlay scope has one attachment
 [[nodiscard]]
 inline auto worldStageExtraColorFormats() -> std::vector<vk::Format> {

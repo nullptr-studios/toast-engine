@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <format>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -235,6 +236,14 @@ auto VoxelPalette::parseToml(const toml::table& table) -> Parsed {
 
 			out.alpha = unit_or("alpha", 255);
 
+			if (const toml::node* ior = entry->get("ior")) {
+				const std::optional<double> value = ior->is_number() ? ior->value<double>() : std::nullopt;
+				if (!value || !(*value >= 1.0 && *value <= voxel::k_max_ior)) {
+					throw fail(std::format("ior must be a number from 1 to {:.2f}", voxel::k_max_ior));
+				}
+				out.ior = voxel::iorByte(static_cast<float>(*value));
+			}
+
 			if (const std::optional<int64_t> material = whole("material", 0, 255)) {
 				out.material = static_cast<uint8_t>(*material);
 			} else {
@@ -338,6 +347,9 @@ auto VoxelPalette::serialize(SaveMode /*mode*/) const -> std::vector<uint8_t> {
 		entry.insert("reflectivity", as_unit(e.reflectivity));
 		entry.insert("emissive", as_unit(e.emissive));
 		entry.insert("alpha", as_unit(e.alpha));
+		if (e.ior != 0) {
+			entry.insert("ior", static_cast<double>(voxel::iorOf(e)));
+		}
 		if (!is_defaulted) {
 			entry.insert("material", static_cast<int64_t>(e.material));
 		}

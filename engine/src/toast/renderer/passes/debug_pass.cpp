@@ -36,6 +36,7 @@
 #include <toast/physics/narrow_phase.hpp>
 #include <toast/physics/physics_settings.hpp>
 #include <toast/physics/simulator.hpp>
+#include <toast/window/window_events.hpp>
 #include <tracy/Tracy.hpp>
 
 namespace renderer {
@@ -423,7 +424,18 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 		ImGui_ImplVulkan_NewFrame();
 		ImGui::NewFrame();
 
-		const bool show_windows = VulkanRenderer::instance->debugWindowsVisible();
+		// Hidden only skips submitting so every window comes back with the state it had
+		const bool hidden = VulkanRenderer::instance->debugOverlayHidden();
+		const bool show_windows = !hidden && VulkanRenderer::instance->debugWindowsVisible();
+
+		const bool capture_mouse = show_windows && io.WantCaptureMouse;
+		const bool capture_keyboard = show_windows && io.WantCaptureKeyboard;
+		if (capture_mouse != m_capture_mouse || capture_keyboard != m_capture_keyboard) {
+			m_capture_mouse = capture_mouse;
+			m_capture_keyboard = capture_keyboard;
+			event::send<event::DebugOverlayCapture>(capture_mouse, capture_keyboard);
+		}
+
 		if (show_windows) {
 			if (!m_perf) {
 				m_perf = std::make_unique<PerfWindow>();
@@ -477,15 +489,19 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 				    shadow_stats.static_edits,
 				    shadow_stats.spared
 				);
+				ImGui::TextDisabled(
+				    "Shadow voxel draws: %u meshed, %u marched", shadow_stats.meshed_volumes, shadow_stats.marched_volumes
+				);
 
 				if (const auto* frame = VulkanRenderer::instance->renderingFrame(); frame != nullptr) {
 					const auto& stats = frame->light_stats;
 					ImGui::TextDisabled(
-					    "Shadow slots: %u of %u spot, %u of %u point, %llu displaced",
+					    "Shadow slots: %u of %u spot, %u of %u point, %u without shadow, %llu displaced",
 					    stats.spot_shadows,
-					    renderer::shadows::k_max_spot_shadows,
+					    renderer::shadows::spotShadowBudget(),
 					    stats.point_shadows,
-					    renderer::shadows::k_max_point_shadows,
+					    renderer::shadows::pointShadowBudget(),
+					    stats.spot_denied + stats.point_denied,
 					    static_cast<unsigned long long>(stats.shadow_displaced)
 					);
 				}
@@ -866,7 +882,7 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 			m_voxels->drawOverlay(*frame);
 		}
 
-		if (frame->render_mode == 1 && m_cluster_lighting_pass != nullptr) {
+		if (!hidden && frame->render_mode == 1 && m_cluster_lighting_pass != nullptr) {
 			m_cluster_lighting_pass->requestGridReadback();
 
 			const auto counts = m_cluster_lighting_pass->getClusterLightGridCounts(frame_index);

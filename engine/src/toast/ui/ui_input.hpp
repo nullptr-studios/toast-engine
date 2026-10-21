@@ -30,6 +30,7 @@ private:
 
 	float m_dp_ratio = 1.0f;
 	int m_mods = 0;
+	bool m_overlay_mouse = false;
 };
 
 }

@@ -78,4 +78,10 @@ void PostProcessTarget::endScope(vk::CommandBuffer cmd) const {
 	sync::transition(cmd, m_state, sync::Usage::shader_sampled);
 }
 
+void PostProcessTarget::makeSampleable(vk::CommandBuffer cmd) const {
+	if (isReady()) {
+		sync::transition(cmd, m_state, sync::Usage::shader_sampled);
+	}
+}
+
 }

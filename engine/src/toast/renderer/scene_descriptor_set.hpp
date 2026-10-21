@@ -42,6 +42,9 @@ private:
 
 	std::vector<vk::raii::DescriptorSet> m_sets;
 
+	/// Reads gPunctualShadowDepths without the comparison the shadow sampler does
+	vk::raii::Sampler m_shadow_depth_sampler = nullptr;
+
 	std::optional<uint32_t> m_scene_binding;
 
 	/// Handle plus generation since a recreated structure can reuse a destroyed handle value

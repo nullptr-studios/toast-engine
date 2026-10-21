@@ -12,6 +12,7 @@
 #include "../vulkan_common.hpp"
 #include "../vulkan_pipeline.hpp"
 
+#include <array>
 #include <glm/glm.hpp>
 #include <optional>
 #include <vector>
@@ -19,6 +20,7 @@
 namespace renderer {
 class VulkanCore;
 
+/// Half resolution stochastic SSR
 class SsrPass : public IPostProcessPass {
 public:
 	SsrPass(const VulkanCore& core, vk::Format scene_format, vk::Extent2D extent);
@@ -37,15 +39,21 @@ private:
 	struct Params {
 		glm::mat4 view_projection {1.0f};
 		glm::mat4 inverse_view_projection {1.0f};
+		/// w frame index for the noise
 		glm::vec4 camera_position {0.0f};
 		/// x intensity y max roughness z thickness w step count
 		glm::vec4 tuning {0.0f};
-		/// x stride y render mode
+		/// x reach in meters y render mode z 1 with a valid history
 		glm::vec4 marching {0.0f};
 	};
 
-	/// rgb reflection a camera distance
+	/// xy hit uv z pdf w confidence in 32 bit since 16 bit cannot address wide screens
+	static constexpr vk::Format k_hit_format = vk::Format::eR32G32B32A32Sfloat;
+	/// rgb reflection a confidence
 	static constexpr vk::Format k_reflection_format = vk::Format::eR16G16B16A16Sfloat;
+
+	/// Bindings of ssr.slang in order
+	static constexpr uint32_t k_binding_count = 8;
 
 	void createResources(const VulkanCore& core);
 	void createTargets(const VulkanCore& core, vk::Extent2D extent);
@@ -55,16 +63,28 @@ private:
 
 	ShaderLayout m_shader_layout;
 	VulkanPipeline m_trace_pipeline;
+	VulkanPipeline m_resolve_pipeline;
+	VulkanPipeline m_temporal_pipeline;
 	VulkanPipeline m_composite_pipeline;
 
 	vk::raii::Sampler m_sampler = nullptr;
 	vk::raii::Sampler m_point_sampler = nullptr;
 
+	/// Per frame in flight then per history parity
 	std::vector<vk::raii::DescriptorSet> m_descriptor_sets;
 	std::vector<vk::ImageView> m_bound_views;
 
-	PostProcessTarget m_reflection_target;
+	PostProcessTarget m_hit_target;
+	PostProcessTarget m_resolve_target;
+	/// The temporal pass reads one and writes the other
+	std::array<PostProcessTarget, 2> m_history;
 	PostProcessTarget m_target;
+
+	/// Which history the temporal pass writes this frame
+	uint32_t m_parity = 0;
+	bool m_history_valid = false;
+	/// A gap in frames or a recreated target restarts the history
+	uint64_t m_last_sequence = 0;
 };
 
 }

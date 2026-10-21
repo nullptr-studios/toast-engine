@@ -32,6 +32,9 @@ public:
 
 	void endScope(vk::CommandBuffer cmd) const;
 
+	/// Makes a never drawn target sampleable for descriptors
+	void makeSampleable(vk::CommandBuffer cmd) const;
+
 	[[nodiscard]]
 	auto view() const -> vk::ImageView {
 		return m_view.has_value() ? **m_view : vk::ImageView {};

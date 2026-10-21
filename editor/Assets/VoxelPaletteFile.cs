@@ -25,6 +25,12 @@ public sealed class VoxelPaletteEntry {
 
 	public float Alpha { get; set; } = 1f;
 
+	/// <summary>Mirrors voxel::k_default_ior</summary>
+	public const float DefaultIor = 1.5f;
+	public const float MaxIor = 3.55f;
+
+	public float Ior { get; set; } = DefaultIor;
+
 	public int Material { get; set; }
 
 	/// <summary>Authored without a material which differs from material 0</summary>
@@ -40,6 +46,7 @@ public sealed class VoxelPaletteEntry {
 		R = G = B = 0;
 		Roughness = Metallic = Reflectivity = Emissive = 0f;
 		Alpha = 1f;
+		Ior = DefaultIor;
 		TransformsTo = 0;
 		Transparent = false;
 	}
@@ -132,6 +139,7 @@ public sealed class VoxelPaletteFile {
 			target.Reflectivity = GetFloat(entry, "reflectivity", 0f);
 			target.Emissive = GetFloat(entry, "emissive", 0f);
 			target.Alpha = GetFloat(entry, "alpha", 1f);
+			target.Ior = GetFloat(entry, "ior", VoxelPaletteEntry.DefaultIor);
 
 			target.HasMaterial = entry.ContainsKey("material");
 			target.Material = GetInt(entry, "material", 0);
@@ -185,6 +193,8 @@ public sealed class VoxelPaletteFile {
 				["emissive"] = (double)Clamp01(entry.Emissive),
 				["alpha"] = (double)Clamp01(entry.Alpha)
 			};
+			if (Math.Abs(entry.Ior - VoxelPaletteEntry.DefaultIor) > 0.005f)
+				table["ior"] = Math.Round((double)Math.Clamp(entry.Ior, 1f, VoxelPaletteEntry.MaxIor), 2);
 			if (entry.HasMaterial) table["material"] = (long)Math.Clamp(entry.Material, 0, SlotCount - 1);
 			table["transforms_to"] = (long)Math.Clamp(entry.TransformsTo, 0, 255);
 			table["transparent"] = entry.Transparent;

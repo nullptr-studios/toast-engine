@@ -13,6 +13,7 @@
 #include <glm/glm.hpp>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <toast/voxel/gpu_layout.hpp>
 #include <vector>
@@ -127,6 +128,15 @@ public:
 		return m_history;
 	}
 
+	/// Per record grid indices of its glass bricks
+	/// @note Main thread only and before the upload is queued
+	void setGlassBricks(std::vector<std::vector<uint32_t>> bricks) { m_glass_bricks = std::move(bricks); }
+
+	[[nodiscard]]
+	auto glassBricks(uint32_t record) const -> std::span<const uint32_t> {
+		return record < m_glass_bricks.size() ? std::span<const uint32_t>(m_glass_bricks[record]) : std::span<const uint32_t> {};
+	}
+
 private:
 	friend class VoxelSceneUpload;
 
@@ -143,6 +153,8 @@ private:
 	VoxelStorageDebugInfo m_debug;
 
 	VoxelChangeHistory m_history;
+
+	std::vector<std::vector<uint32_t>> m_glass_bricks;
 };
 
 /// Mirrors voxel_dda.slang VoxelInstance

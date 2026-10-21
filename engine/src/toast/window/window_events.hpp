@@ -107,4 +107,20 @@ struct WindowFocus : Event<WindowFocus> {
 	explicit WindowFocus(bool focused) : focused(focused) { }
 };
 
+/// @brief The debug overlay is up in game view and needs a free cursor
+/// @note Queued before the state the editor polls flips so input it sends after reacting lands behind it
+struct DebugOverlayCursor : Event<DebugOverlayCursor> {
+	bool owned;
+
+	explicit DebugOverlayCursor(bool owned) : owned(owned) { }
+};
+
+/// @brief ImGui io.WantCaptureMouse and io.WantCaptureKeyboard, sent from the render thread when either changes
+struct DebugOverlayCapture : Event<DebugOverlayCapture> {
+	bool mouse;
+	bool keyboard;
+
+	DebugOverlayCapture(bool mouse, bool keyboard) : mouse(mouse), keyboard(keyboard) { }
+};
+
 }
