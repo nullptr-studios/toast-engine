@@ -5,6 +5,7 @@
 #pragma once
 
 #include <array>
+#include <atomic>
 #include <cstdint>
 #include <functional>
 #include <limits>
@@ -40,7 +41,7 @@ public:
 	[[nodiscard]]
 	auto isComplete(Ticket ticket) const -> bool;
 
-	/// @return false on timeout
+	/// @return false on timeout or a lost device
 	auto wait(Ticket ticket, uint64_t timeout_ns = std::numeric_limits<uint64_t>::max()) const -> bool;
 
 	[[nodiscard]]
@@ -80,12 +81,19 @@ private:
 	void reclaimLocked();
 	auto acquireSlot() -> Slot;
 
+	/// Timeline value, or the last one we read when the device is gone
+	/// Never throws, since the tick that reaches this is noexcept and would abort instead
+	[[nodiscard]]
+	auto counterValue() const -> Ticket;
+
 	const vk::raii::Device* m_device = nullptr;
 	uint32_t m_queue_family_index = 0;
 	vk::Queue m_queue = nullptr;
 	std::mutex* m_queue_mutex = nullptr;
 
 	vk::raii::Semaphore m_timeline = nullptr;
+
+	mutable std::atomic<Ticket> m_last_completed {k_no_ticket};
 
 	mutable std::mutex m_mutex;
 	Ticket m_last_submitted = k_no_ticket;

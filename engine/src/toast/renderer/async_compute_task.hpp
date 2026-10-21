@@ -206,7 +206,8 @@ private:
 
 	void createDescriptors();
 	void writeDescriptors(uint32_t slot);
-	auto claimFreeSlot() -> uint32_t;
+	/// Empty while every slot is still busy, so the owner thread drops the step instead of blocking on the GPU
+	auto claimFreeSlot() -> std::optional<uint32_t>;
 	void publish(uint32_t slot, AsyncCompute::Ticket ticket);
 	/// Caller holds m_mutex
 	auto newestFinishedLocked() const -> int32_t;
@@ -228,6 +229,8 @@ private:
 	std::array<Slot, k_slot_count> m_slots;
 	uint64_t m_step_counter = 0;
 	int32_t m_last_written = -1;
+	/// Owner thread, steps dropped because the GPU was still behind
+	uint64_t m_dropped_steps = 0;
 
 	/// Render thread only
 	std::array<int32_t, VulkanRenderer::k_frames_in_flight> m_frame_slot {};

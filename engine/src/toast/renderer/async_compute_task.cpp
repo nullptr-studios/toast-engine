@@ -11,7 +11,6 @@
 #include <algorithm>
 #include <cstring>
 #include <format>
-#include <thread>
 #include <toast/assets/assets.hpp>
 #include <toast/log.hpp>
 #include <tracy/Tracy.hpp>
@@ -25,6 +24,9 @@ constexpr vk::BufferUsageFlags k_task_buffer_usage =
     vk::BufferUsageFlagBits::eIndirectBuffer;
 
 constexpr vk::DeviceSize k_placeholder_bytes = 16;
+
+/// A behind queue drops many steps in a row, so log the first of every batch instead of all of them
+constexpr uint64_t k_dropped_step_warn_interval = 120;
 
 }
 
@@ -312,49 +314,67 @@ auto AsyncComputeTask::step(
 	}
 	createDescriptors();
 
-	const uint32_t slot = claimFreeSlot();
+	const std::optional<uint32_t> claimed = claimFreeSlot();
+	if (!claimed.has_value()) {
+		// Dropping a step keeps the tick running; the caller keeps whatever it meant to feed this one
+		++m_dropped_steps;
+		if (m_dropped_steps % k_dropped_step_warn_interval == 1) {
+			TOAST_WARN(
+			    "Render", "{} dropped {} steps so far because the compute queue is behind", m_config.debug_name, m_dropped_steps
+			);
+		}
+		return 0;
+	}
+	const uint32_t slot = *claimed;
 	m_slots[slot].keep_alive = std::move(keep_alive);
 	writeDescriptors(slot);
 
-	const AsyncCompute::Ticket ticket = m_core->asyncCompute().submit(
-	    [&](vk::CommandBuffer cmd) {
-		    // Submits on one queue may overlap so the previous step and any upload must land first
-		    sync::BarrierBatch barriers;
-		    barriers.memory(sync::Usage::compute_storage_write, sync::Usage::compute_storage_write);
-		    barriers.memory(sync::Usage::transfer_dst, sync::Usage::compute_storage_write);
-		    barriers.flush(cmd);
+	AsyncCompute::Ticket ticket = AsyncCompute::k_no_ticket;
+	try {
+		ticket = m_core->asyncCompute().submit(
+		    [&](vk::CommandBuffer cmd) {
+			    // Submits on one queue may overlap so the previous step and any upload must land first
+			    sync::BarrierBatch barriers;
+			    barriers.memory(sync::Usage::compute_storage_write, sync::Usage::compute_storage_write);
+			    barriers.memory(sync::Usage::transfer_dst, sync::Usage::compute_storage_write);
+			    barriers.flush(cmd);
 
-		    StepContext context(*this, cmd, slot);
-		    record(context);
+			    StepContext context(*this, cmd, slot);
+			    record(context);
 
-		    for (const Buffer& buffer : m_buffers) {
-			    if (buffer.host) {
-				    buffer.copies[slot].getAllocation().flush(0, buffer.size);
+			    for (const Buffer& buffer : m_buffers) {
+				    if (buffer.host) {
+					    buffer.copies[slot].getAllocation().flush(0, buffer.size);
+				    }
 			    }
-		    }
 
-		    // CPU copies of this step for read()
-		    bool any_readback = false;
-		    for (const Buffer& buffer : m_buffers) {
-			    if (buffer.cpu_readback) {
-				    barriers.buffer(*buffer.copies[slot], sync::Usage::compute_storage_write, sync::Usage::transfer_src);
-				    any_readback = true;
+			    // CPU copies of this step for read()
+			    bool any_readback = false;
+			    for (const Buffer& buffer : m_buffers) {
+				    if (buffer.cpu_readback) {
+					    barriers.buffer(*buffer.copies[slot], sync::Usage::compute_storage_write, sync::Usage::transfer_src);
+					    any_readback = true;
+				    }
 			    }
-		    }
-		    if (!any_readback) {
-			    return;
-		    }
-		    barriers.flush(cmd);
-		    for (const Buffer& buffer : m_buffers) {
-			    if (buffer.cpu_readback) {
-				    cmd.copyBuffer(*buffer.copies[slot], *buffer.readbacks[slot], vk::BufferCopy(0, 0, buffer.size));
-				    barriers.buffer(*buffer.readbacks[slot], sync::Usage::transfer_dst, sync::Usage::host_read);
+			    if (!any_readback) {
+				    return;
 			    }
-		    }
-		    barriers.flush(cmd);
-	    },
-	    debug_name.empty() ? std::string_view(m_config.debug_name) : debug_name
-	);
+			    barriers.flush(cmd);
+			    for (const Buffer& buffer : m_buffers) {
+				    if (buffer.cpu_readback) {
+					    cmd.copyBuffer(*buffer.copies[slot], *buffer.readbacks[slot], vk::BufferCopy(0, 0, buffer.size));
+					    barriers.buffer(*buffer.readbacks[slot], sync::Usage::transfer_dst, sync::Usage::host_read);
+				    }
+			    }
+			    barriers.flush(cmd);
+		    },
+		    debug_name.empty() ? std::string_view(m_config.debug_name) : debug_name
+		);
+	} catch (const vk::SystemError& error) {
+		// The slot keeps its old ticket, so a later step reclaims it once the queue reports complete again
+		TOAST_ERROR("Render", "{} step submit failed, dropping the step: {}", m_config.debug_name, error.what());
+		return 0;
+	}
 
 	publish(slot, ticket);
 	return m_slots[slot].step;
@@ -431,29 +451,22 @@ auto AsyncComputeTask::finishedStep() const -> uint64_t {
 	return newest < 0 ? 0 : m_slots[static_cast<size_t>(newest)].step;
 }
 
-auto AsyncComputeTask::claimFreeSlot() -> uint32_t {
+auto AsyncComputeTask::claimFreeSlot() -> std::optional<uint32_t> {
 	const AsyncCompute& compute = m_core->asyncCompute();
-	while (true) {
-		{
-			std::scoped_lock lock(m_mutex);
-			// Never the next step input, the result the renderer shows next or a slot a frame still binds
-			const int32_t newest = newestFinishedLocked();
-			for (uint32_t i = 0; i < k_slot_count; ++i) {
-				Slot& slot = m_slots[i];
-				const auto index = static_cast<int32_t>(i);
-				if (index != m_last_written && index != newest && slot.pins == 0 && compute.isComplete(slot.ticket)) {
-					slot.step = 0;
-					return i;
-				}
-			}
-		}
-		// Every slot busy means the GPU is behind or frames still bind them, thats bad
-		if (compute.completedTicket() < compute.lastSubmittedTicket()) {
-			auto unused = compute.wait(compute.completedTicket() + 1);
-		} else {
-			std::this_thread::yield();
+	std::scoped_lock lock(m_mutex);
+	// Never the next step input, the result the renderer shows next or a slot a frame still binds
+	const int32_t newest = newestFinishedLocked();
+	for (uint32_t i = 0; i < k_slot_count; ++i) {
+		Slot& slot = m_slots[i];
+		const auto index = static_cast<int32_t>(i);
+		if (index != m_last_written && index != newest && slot.pins == 0 && compute.isComplete(slot.ticket)) {
+			slot.step = 0;
+			return i;
 		}
 	}
+	// Every slot busy means the GPU is behind. Waiting here would park the owner thread on the GPU, and the owner thread
+	// is the engine tick, so with renderer.display.clamp_to_simulation on the renderer stops getting frames to present
+	return std::nullopt;
 }
 
 void AsyncComputeTask::publish(uint32_t slot, AsyncCompute::Ticket ticket) {

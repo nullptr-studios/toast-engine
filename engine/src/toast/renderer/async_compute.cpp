@@ -37,8 +37,21 @@ AsyncCompute::~AsyncCompute() {
 	}
 }
 
+auto AsyncCompute::counterValue() const -> Ticket {
+	try {
+		const Ticket completed = m_timeline.getCounterValue();
+		m_last_completed.store(completed, std::memory_order_relaxed);
+		return completed;
+	} catch (const vk::SystemError& error) {
+		// A lost device would otherwise throw through the noexcept engine tick and abort the process
+		const Ticket last = m_last_completed.load(std::memory_order_relaxed);
+		TOAST_ERROR("Render", "Async compute timeline unreadable, treating ticket {} as the newest: {}", last, error.what());
+		return last;
+	}
+}
+
 void AsyncCompute::reclaimLocked() {
-	const Ticket completed = m_timeline.getCounterValue();
+	const Ticket completed = counterValue();
 	for (auto it = m_in_flight.begin(); it != m_in_flight.end();) {
 		if (it->ticket <= completed) {
 			m_free.push_back(std::move(*it));
@@ -120,7 +133,7 @@ auto AsyncCompute::submit(const std::function<void(vk::CommandBuffer)>& record, 
 }
 
 auto AsyncCompute::isComplete(Ticket ticket) const -> bool {
-	return ticket == k_no_ticket || m_timeline.getCounterValue() >= ticket;
+	return ticket == k_no_ticket || counterValue() >= ticket;
 }
 
 auto AsyncCompute::wait(Ticket ticket, uint64_t timeout_ns) const -> bool {
@@ -129,11 +142,17 @@ auto AsyncCompute::wait(Ticket ticket, uint64_t timeout_ns) const -> bool {
 	}
 	const vk::Semaphore semaphore = *m_timeline;
 	const vk::SemaphoreWaitInfo wait_info({}, semaphore, ticket);
-	return m_device->waitSemaphores(wait_info, timeout_ns) == vk::Result::eSuccess;
+	try {
+		return m_device->waitSemaphores(wait_info, timeout_ns) == vk::Result::eSuccess;
+	} catch (const vk::SystemError& error) {
+		// Same reason as counterValue, a throw from here reaches toast_tick and aborts instead of reporting
+		TOAST_ERROR("Render", "Async compute wait for ticket {} failed: {}", ticket, error.what());
+		return false;
+	}
 }
 
 auto AsyncCompute::completedTicket() const -> Ticket {
-	return m_timeline.getCounterValue();
+	return counterValue();
 }
 
 auto AsyncCompute::lastSubmittedTicket() const -> Ticket {
