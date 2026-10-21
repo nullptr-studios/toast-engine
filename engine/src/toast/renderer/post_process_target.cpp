@@ -21,7 +21,7 @@ void PostProcessTarget::create(const VulkanCore& core, vk::Extent2D extent, vk::
 	m_view.reset();
 	m_image.reset();
 	m_extent = extent;
-	m_layout = vk::ImageLayout::eUndefined;
+	m_state = {};
 
 	const auto image_ci = colorTargetImageInfo(extent, format);
 
@@ -30,6 +30,7 @@ void PostProcessTarget::create(const VulkanCore& core, vk::Extent2D extent, vk::
 
 	m_image.emplace(core.getAllocator().createImage(image_ci, allocation_ci));
 	setDebugName(core, **m_image, std::format("{} Target", debug_name));
+	m_state.reset(**m_image, colorSubresourceRange());
 
 	vk::ImageViewCreateInfo view_ci {};
 	view_ci.image = **m_image;
@@ -45,27 +46,7 @@ void PostProcessTarget::beginScope(vk::CommandBuffer cmd) const {
 		return;
 	}
 
-	const bool was_sampled = m_layout == vk::ImageLayout::eShaderReadOnlyOptimal;
-
-	const vk::ImageMemoryBarrier to_attachment(
-	    was_sampled ? vk::AccessFlagBits::eShaderRead : vk::AccessFlags {},
-	    vk::AccessFlagBits::eColorAttachmentWrite,
-	    m_layout,
-	    vk::ImageLayout::eColorAttachmentOptimal,
-	    VK_QUEUE_FAMILY_IGNORED,
-	    VK_QUEUE_FAMILY_IGNORED,
-	    **m_image,
-	    colorSubresourceRange()
-	);
-	cmd.pipelineBarrier(
-	    was_sampled ? vk::PipelineStageFlagBits::eFragmentShader : vk::PipelineStageFlagBits::eTopOfPipe,
-	    vk::PipelineStageFlagBits::eColorAttachmentOutput,
-	    {},
-	    nullptr,
-	    nullptr,
-	    to_attachment
-	);
-	m_layout = vk::ImageLayout::eColorAttachmentOptimal;
+	sync::transition(cmd, m_state, sync::Usage::color_attachment);
 
 	vk::RenderingAttachmentInfo attachment {};
 	attachment.imageView = **m_view;
@@ -93,25 +74,8 @@ void PostProcessTarget::endScope(vk::CommandBuffer cmd) const {
 
 	cmd.endRendering();
 
-	const vk::ImageMemoryBarrier to_sampled(
-	    vk::AccessFlagBits::eColorAttachmentWrite,
-	    vk::AccessFlagBits::eShaderRead,
-	    vk::ImageLayout::eColorAttachmentOptimal,
-	    vk::ImageLayout::eShaderReadOnlyOptimal,
-	    VK_QUEUE_FAMILY_IGNORED,
-	    VK_QUEUE_FAMILY_IGNORED,
-	    **m_image,
-	    colorSubresourceRange()
-	);
-	cmd.pipelineBarrier(
-	    vk::PipelineStageFlagBits::eColorAttachmentOutput,
-	    vk::PipelineStageFlagBits::eFragmentShader,
-	    {},
-	    nullptr,
-	    nullptr,
-	    to_sampled
-	);
-	m_layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+	// Auto exposure reads it from compute too
+	sync::transition(cmd, m_state, sync::Usage::shader_sampled);
 }
 
 }

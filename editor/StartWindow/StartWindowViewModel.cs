@@ -148,6 +148,8 @@ public partial class StartWindowViewModel : ViewModelBase {
 		tasks.Add(LoaderTask.Run("cmake --build .toast/cmake_cache", "cmake",
 #if DEBUG
 			"--build .toast/cmake_cache --config Debug --parallel"));
+#elif RELWITHDEBINFO
+			"--build .toast/cmake_cache --config RelWithDebInfo --parallel"));
 #else
 			"--build .toast/cmake_cache --config Release --parallel"));
 #endif

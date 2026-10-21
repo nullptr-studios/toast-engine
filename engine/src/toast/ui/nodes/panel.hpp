@@ -50,10 +50,13 @@ private:
 	void onReflectedFieldChanged(std::string_view field_name) override;
 	void updateInspectorMessages() override;
 	void init();
+	void begin();
 	void destroy();
 	void onEnable();
 	void onDisable();
 
+	/// UI thread only since RmlUi is not thread safe
+	void setup();
 	void loadDocument();
 	void unloadDocument();
 

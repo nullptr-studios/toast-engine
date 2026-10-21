@@ -1,5 +1,7 @@
 #include "physics_settings.hpp"
 
+#include "layers.hpp"
+
 #include <algorithm>
 #include <string>
 #include <toast/settings/settings.hpp>
@@ -18,6 +20,8 @@ auto tunables() -> const Tunables& {
 }
 
 void registerPhysicsSettings() {
+	registerLayerSettings();
+
 	const auto flt = [](std::string_view key, double value, Meta meta, float Tunables::* field) {
 		toast::settings::declareFloat(key, value, std::move(meta)).onChange([field](double v) {
 			g_tunables.*field = static_cast<float>(v);
@@ -45,6 +49,30 @@ void registerPhysicsSettings() {
 	gravity_axis("physics.world.gravity_x", "Gravity X", 0.0, 0);
 	gravity_axis("physics.world.gravity_y", "Gravity Y", 0.0, 1);
 	gravity_axis("physics.world.gravity_z", "Gravity Z", -9.8, 2);
+
+	flt("physics.world.air_density",
+	    1.225f,
+	    {.label = "Air density", .category = "World", .min = 0.0f, .step = 0.1f},
+	    &Tunables::air_density);
+
+	const auto wind_axis = [](std::string_view key, std::string_view label, double value, int axis) {
+		toast::settings::declareFloat(
+		    key, value, {.label = std::string {label}, .category = "World", .min = -1000.0, .max = 1000.0, .step = 0.1}
+		)
+		    .onChange([axis](double v) { g_tunables.wind[axis] = static_cast<float>(v); });
+	};
+	wind_axis("physics.world.wind_x", "Wind X", 0.0f, 0);
+	wind_axis("physics.world.wind_y", "Wind Y", 0.0f, 1);
+	wind_axis("physics.world.wind_z", "Wind Z", 0.0f, 2);
+
+	flt("physics.world.wind_shelter_distance",
+	    64.0f,
+	    {.label = "Wind shelter distance",
+	     .category = "World",
+	     .description = "A body with solid geometry this far upwind of it, like the wall of a building, feels no wind. 0 disables.",
+	     .min = 0.0f,
+	     .step = 1.0f},
+	    &Tunables::wind_shelter_distance);
 
 	uint_setting(
 	    "physics.solver.iterations",
@@ -247,6 +275,17 @@ void registerPhysicsSettings() {
 			 .step = 1.0},
 	    &Tunables::fragment_despawn_max_voxels
 	);
+	uint_setting(
+	    "physics.fracture.large_debris_min_voxels",
+	    16,
+	    {.label = "Large debris min voxels",
+			 .category = "Fracture",
+			 .description = "Fragments with at least this many voxels go on the Large debris layer instead of Small debris",
+			 .min = 1.0,
+			 .max = 4096.0,
+			 .step = 1.0},
+	    &Tunables::large_debris_min_voxels
+	);
 	flt("physics.fracture.despawn_settle_seconds",
 	    3.0,
 	    {.label = "Despawn settle time",
@@ -286,7 +325,7 @@ void registerPhysicsSettings() {
 	)
 	    .onChange([](int64_t v) { g_tunables.max_fragment_extent_bricks = static_cast<int32_t>(std::max<int64_t>(v, 1)); });
 	flt("physics.fracture.shell_voxels",
-	    2.0,
+	    1.0,
 	    {.label = "Fracture shell voxels",
 	     .category = "Fracture",
 	     .description = "Thickness in voxels of the shell a fracture carves around an impact",
@@ -294,6 +333,114 @@ void registerPhysicsSettings() {
 	     .max = 16.0,
 	     .step = 0.5},
 	    &Tunables::fracture_shell_voxels);
+	flt("physics.fracture.depth_share",
+	    0.5,
+	    {.label = "Depth share",
+	     .category = "Fracture",
+	     .description = "Energy left after the fracture pokes through",
+	     .min = 0.0,
+	     .max = 1.0,
+	     .step = 0.05},
+	    &Tunables::fracture_depth_share);
+	flt("physics.fracture.max_depth",
+	    2.0,
+	    {.label = "Max depth",
+	     .category = "Fracture",
+	     .description = "Meters a single hit can dig past its fracture radius",
+	     .min = 0.0,
+	     .max = 16.0,
+	     .step = 0.1},
+	    &Tunables::fracture_max_depth);
+	flt("physics.fracture.max_overshoot",
+	    2.0,
+	    {.label = "Max overshoot",
+	     .category = "Fracture",
+	     .description = "Most a hit can widen past its fracture radius",
+	     .min = 0.0,
+	     .max = 16.0,
+	     .step = 0.1},
+	    &Tunables::fracture_max_overshoot);
+	flt("physics.fracture.explosion_max_radius",
+	    8.0,
+	    {.label = "Explosion max radius",
+	     .category = "Fracture",
+	     .description = "Meters an explosion can break or push things at",
+	     .min = 0.0,
+	     .max = 64.0,
+	     .step = 0.5},
+	    &Tunables::explosion_max_radius);
+	flt("physics.fracture.explosion_falloff",
+	    2.0,
+	    {.label = "Explosion falloff",
+	     .category = "Fracture",
+	     .description = "2 is the inverse square",
+	     .min = 0.5,
+	     .max = 8.0,
+	     .step = 0.25},
+	    &Tunables::explosion_falloff);
+	uint_setting(
+	    "physics.fracture.impact_max_hardness",
+	    1,
+	    {.label = "Impact max hardness",
+			 .category = "Fracture",
+			 .description = "Hardest material collisions between bodies can break",
+			 .min = 0.0,
+			 .max = 2.0,
+			 .step = 1.0},
+	    &Tunables::impact_max_hardness
+	);
+	flt("physics.fracture.bond_cost",
+	    1.0,
+	    {.label = "Bond cost", .category = "Fracture", .min = 0.0, .max = 16.0, .step = 0.1},
+	    &Tunables::fracture_bond_cost);
+	uint_setting(
+	    "physics.fracture.max_unglue_voxels",
+	    4096,
+	    {.label = "Max unglue voxels", .category = "Fracture", .min = 0.0, .max = 1000000.0, .step = 64.0},
+	    &Tunables::fracture_max_unglue_voxels
+	);
+	flt("physics.fracture.debris_split_chance",
+	    0.35,
+	    {.label = "Debris split chance", .category = "Shatter", .min = 0.0f, .max = 1.0f, .step = 0.05f},
+	    &Tunables::fracture_debris_split_chance);
+	uint_setting(
+	    "physics.fracture.max_shatter_cells",
+	    128,
+	    {.label = "Max shatter cells", .category = "Shatter", .min = 2.0, .max = 1024.0, .step = 8.0},
+	    &Tunables::fracture_max_shatter_cells
+	);
+	flt("physics.fracture.max_shatter_distance",
+	    8.0,
+	    {.label = "Max shatter distance", .category = "Shatter", .min = 0.1f, .max = 64.0f, .step = 0.5f},
+	    &Tunables::fracture_max_shatter_distance);
+	uint_setting(
+	    "physics.debris.max_spawns_per_step",
+	    512,
+	    {.label = "Max spawns per step", .category = "Debris", .min = 0.0, .max = 16384.0, .step = 16.0},
+	    &Tunables::debris_max_spawns_per_step
+	);
+	flt("physics.debris.speed_scale",
+	    1.0,
+	    {.label = "Speed scale", .category = "Debris", .min = 0.0f, .max = 8.0f, .step = 0.1f},
+	    &Tunables::debris_speed_scale);
+	flt("physics.debris.lifetime",
+	    60.0,
+	    {.label = "Lifetime", .category = "Debris", .min = 0.5, .max = 600.0, .step = 0.5},
+	    &Tunables::debris_lifetime);
+	uint_setting(
+	    "physics.debris.max_particles",
+	    16384,
+	    {.label = "Max particles", .category = "Debris", .min = 256.0, .max = 262144.0, .step = 1024.0, .requires_restart = true},
+	    &Tunables::debris_max_particles
+	);
+	flt("physics.debris.restitution",
+	    0.3,
+	    {.label = "Restitution", .category = "Debris", .min = 0.0, .max = 1.0, .step = 0.05},
+	    &Tunables::debris_restitution);
+	flt("physics.debris.friction",
+	    0.6,
+	    {.label = "Friction", .category = "Debris", .min = 0.0, .max = 1.0, .step = 0.05},
+	    &Tunables::debris_friction);
 
 	uint_setting(
 	    "physics.jobs.min_bounds_per_job",
@@ -405,23 +552,6 @@ void registerPhysicsSettings() {
 			 .step = 1.0},
 	    &Tunables::sweep_refine_iterations
 	);
-
-	toast::settings::declareBool(
-	    "physics.triggers.check_dynamic",
-	    true,
-	    {.label = "Check for Dynamic",
-			 .category = "Triggers",
-			 .description = "Triggers report dynamic bodies entering and leaving them"}
-	)
-	    .onChange([](bool v) { g_tunables.trigger_check_dynamic = v; });
-	toast::settings::declareBool(
-	    "physics.triggers.check_kinematic",
-	    true,
-	    {.label = "Check for Kinematic",
-			 .category = "Triggers",
-			 .description = "Triggers report kinematic bodies entering and leaving them"}
-	)
-	    .onChange([](bool v) { g_tunables.trigger_check_kinematic = v; });
 }
 
 }

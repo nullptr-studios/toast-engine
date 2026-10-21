@@ -211,9 +211,7 @@ void ReflectionProbePass::captureFace(
 		return;
 	}
 
-	m_staging.cube.transition(
-	    cmd, vk::ImageLayout::eTransferDstOptimal, vk::AccessFlagBits::eTransferWrite, vk::PipelineStageFlagBits::eTransfer
-	);
+	m_staging.cube.transition(cmd, sync::Usage::transfer_dst);
 
 	vk::ImageBlit blit {};
 	blit.srcSubresource = vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1);
@@ -246,9 +244,7 @@ void ReflectionProbePass::captureIrradianceFace(
 		return;
 	}
 
-	m_staging.cube.transition(
-	    cmd, vk::ImageLayout::eTransferDstOptimal, vk::AccessFlagBits::eTransferWrite, vk::PipelineStageFlagBits::eTransfer
-	);
+	m_staging.cube.transition(cmd, sync::Usage::transfer_dst);
 
 	vk::ImageBlit blit {};
 	blit.srcSubresource = vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1);
@@ -273,9 +269,7 @@ void ReflectionProbePass::projectStagingToSh(vk::CommandBuffer cmd, uint32_t pro
 		return;
 	}
 
-	m_staging.cube.transition(
-	    cmd, vk::ImageLayout::eShaderReadOnlyOptimal, vk::AccessFlagBits::eShaderRead, vk::PipelineStageFlagBits::eComputeShader
-	);
+	m_staging.cube.transition(cmd, sync::Usage::compute_sampled);
 
 	struct ShParams {
 		glm::uvec4 config {0};
@@ -290,18 +284,9 @@ void ReflectionProbePass::projectStagingToSh(vk::CommandBuffer cmd, uint32_t pro
 	cmd.pushConstants(*m_sh_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eAll, 0, sizeof(ShParams), &params);
 	cmd.dispatch(1, 1, 1);
 
-	const vk::BufferMemoryBarrier barrier(
-	    vk::AccessFlagBits::eShaderWrite,
-	    vk::AccessFlagBits::eShaderRead,
-	    VK_QUEUE_FAMILY_IGNORED,
-	    VK_QUEUE_FAMILY_IGNORED,
-	    **m_sh_buffer,
-	    0,
-	    VK_WHOLE_SIZE
-	);
-	cmd.pipelineBarrier(
-	    vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eFragmentShader, {}, nullptr, barrier, nullptr
-	);
+	sync::BarrierBatch barriers;
+	barriers.buffer(**m_sh_buffer, sync::Usage::compute_storage_write, sync::Usage::fragment_storage_read);
+	barriers.flush(cmd);
 }
 
 auto ReflectionProbePass::getShBuffer() const -> vk::Buffer {
@@ -400,9 +385,12 @@ auto ReflectionProbePass::loadShRange(uint32_t base, uint32_t count, std::string
 	cmd.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
 	const vk::BufferCopy copy(0, static_cast<vk::DeviceSize>(base) * 4 * sizeof(glm::vec4), coefficient_bytes);
 	cmd.copyBuffer(*staging, **m_sh_buffer, copy);
+	sync::BarrierBatch barriers;
+	barriers.buffer(**m_sh_buffer, sync::Usage::transfer_dst, sync::Usage::fragment_storage_read);
+	barriers.flush(*cmd);
 	cmd.end();
 
-	submitAndWait(device, m_core->getGraphicsQueue(), *cmd);
+	submitAndWait(device, m_core->getGraphicsQueue(), m_core->graphicsSubmitMutex(), *cmd);
 
 	TOAST_INFO("Render", "Loaded {} irradiance probe(s) from {}", count, uri);
 	return true;
@@ -518,15 +506,8 @@ void ReflectionProbePass::prefilterInto(vk::CommandBuffer cmd, uint32_t probe) {
 		return;
 	}
 
-	m_staging.cube.transition(
-	    cmd, vk::ImageLayout::eShaderReadOnlyOptimal, vk::AccessFlagBits::eShaderRead, vk::PipelineStageFlagBits::eFragmentShader
-	);
-	cube.cube.transition(
-	    cmd,
-	    vk::ImageLayout::eColorAttachmentOptimal,
-	    vk::AccessFlagBits::eColorAttachmentWrite,
-	    vk::PipelineStageFlagBits::eColorAttachmentOutput
-	);
+	m_staging.cube.transition(cmd, sync::Usage::fragment_sampled);
+	cube.cube.transition(cmd, sync::Usage::color_attachment);
 
 	for (uint32_t mip = 0; mip < m_mip_levels; ++mip) {
 		const uint32_t mip_size = std::max(cube.cube.size() >> mip, 1U);
@@ -536,9 +517,7 @@ void ReflectionProbePass::prefilterInto(vk::CommandBuffer cmd, uint32_t probe) {
 		}
 	}
 
-	cube.cube.transition(
-	    cmd, vk::ImageLayout::eShaderReadOnlyOptimal, vk::AccessFlagBits::eShaderRead, vk::PipelineStageFlagBits::eFragmentShader
-	);
+	cube.cube.transition(cmd, sync::Usage::fragment_sampled);
 	cube.baked = true;
 	TOAST_INFO("Render", "Probe {} baked", probe);
 }
@@ -550,20 +529,13 @@ void ReflectionProbePass::convolveIrradianceInto(vk::CommandBuffer cmd, uint32_t
 		return;
 	}
 
-	cube.cube.transition(
-	    cmd,
-	    vk::ImageLayout::eColorAttachmentOptimal,
-	    vk::AccessFlagBits::eColorAttachmentWrite,
-	    vk::PipelineStageFlagBits::eColorAttachmentOutput
-	);
+	cube.cube.transition(cmd, sync::Usage::color_attachment);
 
 	for (uint32_t face = 0; face < 6; ++face) {
 		renderFace(cmd, m_irradiance_pipeline, cube, k_irradiance_size, 0, face, 0.0f);
 	}
 
-	cube.cube.transition(
-	    cmd, vk::ImageLayout::eShaderReadOnlyOptimal, vk::AccessFlagBits::eShaderRead, vk::PipelineStageFlagBits::eFragmentShader
-	);
+	cube.cube.transition(cmd, sync::Usage::fragment_sampled);
 	cube.baked = true;
 }
 
@@ -670,19 +642,7 @@ auto ReflectionProbePass::readbackCube(ProbeCube& cube, std::vector<uint8_t>& ou
 
 	cmd.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
 
-	const vk::ImageSubresourceRange range(vk::ImageAspectFlagBits::eColor, 0, cube.cube.mipLevels(), 0, 6);
-	vk::ImageMemoryBarrier to_src {};
-	to_src.oldLayout = cube.cube.layout();
-	to_src.newLayout = vk::ImageLayout::eTransferSrcOptimal;
-	to_src.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	to_src.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	to_src.image = cube.cube.image();
-	to_src.subresourceRange = range;
-	to_src.srcAccessMask = vk::AccessFlagBits::eShaderRead;
-	to_src.dstAccessMask = vk::AccessFlagBits::eTransferRead;
-	cmd.pipelineBarrier(
-	    vk::PipelineStageFlagBits::eFragmentShader, vk::PipelineStageFlagBits::eTransfer, {}, nullptr, nullptr, to_src
-	);
+	cube.cube.transition(*cmd, sync::Usage::transfer_src);
 
 	std::vector<vk::BufferImageCopy> regions;
 	regions.reserve(cube.cube.mipLevels());
@@ -698,19 +658,15 @@ auto ReflectionProbePass::readbackCube(ProbeCube& cube, std::vector<uint8_t>& ou
 	}
 	cmd.copyImageToBuffer(cube.cube.image(), vk::ImageLayout::eTransferSrcOptimal, *staging, regions);
 
-	vk::ImageMemoryBarrier back = to_src;
-	back.oldLayout = vk::ImageLayout::eTransferSrcOptimal;
-	back.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-	back.srcAccessMask = vk::AccessFlagBits::eTransferRead;
-	back.dstAccessMask = vk::AccessFlagBits::eShaderRead;
-	cmd.pipelineBarrier(
-	    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader, {}, nullptr, nullptr, back
-	);
-	cube.cube.setLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+	// A fence wait alone does not make device writes visible to the host
+	sync::BarrierBatch barriers;
+	barriers.buffer(*staging, sync::Usage::transfer_dst, sync::Usage::host_read);
+	barriers.flush(*cmd);
+	cube.cube.transition(*cmd, sync::Usage::fragment_sampled);
 
 	cmd.end();
 
-	submitAndWait(device, m_core->getGraphicsQueue(), *cmd);
+	submitAndWait(device, m_core->getGraphicsQueue(), m_core->graphicsSubmitMutex(), *cmd);
 
 	staging.getAllocation().invalidate(0, bytes);
 	const auto* mapped = static_cast<const uint8_t*>(staging.getAllocation().getInfo().pMappedData);
@@ -776,11 +732,11 @@ auto ReflectionProbePass::uploadCube(ProbeCube& cube, const std::vector<uint8_t>
 	cmd.copyBufferToImage(*staging, cube.cube.image(), vk::ImageLayout::eTransferDstOptimal, regions);
 
 	recordTransferDstToShaderRead(cmd, cube.cube.image(), range);
-	cube.cube.setLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+	cube.cube.setUsage(sync::Usage::shader_sampled);
 
 	cmd.end();
 
-	submitAndWait(device, m_core->getGraphicsQueue(), *cmd);
+	submitAndWait(device, m_core->getGraphicsQueue(), m_core->graphicsSubmitMutex(), *cmd);
 	return true;
 }
 
@@ -799,28 +755,16 @@ void ReflectionProbePass::recordPre(vk::CommandBuffer cmd, uint32_t frame_index,
 	// Bound cubemaps must not be eUndefined even when unbaked
 	for (auto& probe : m_probes) {
 		if (probe.cube.isReady()) {
-			probe.cube.transition(
-			    cmd,
-			    vk::ImageLayout::eShaderReadOnlyOptimal,
-			    vk::AccessFlagBits::eShaderRead,
-			    vk::PipelineStageFlagBits::eFragmentShader
-			);
+			probe.cube.transition(cmd, sync::Usage::fragment_sampled);
 		}
 	}
 	for (auto& irradiance : m_probe_irradiance) {
 		if (irradiance.cube.isReady()) {
-			irradiance.cube.transition(
-			    cmd,
-			    vk::ImageLayout::eShaderReadOnlyOptimal,
-			    vk::AccessFlagBits::eShaderRead,
-			    vk::PipelineStageFlagBits::eFragmentShader
-			);
+			irradiance.cube.transition(cmd, sync::Usage::fragment_sampled);
 		}
 	}
 	if (m_staging.cube.isReady()) {
-		m_staging.cube.transition(
-		    cmd, vk::ImageLayout::eShaderReadOnlyOptimal, vk::AccessFlagBits::eShaderRead, vk::PipelineStageFlagBits::eFragmentShader
-		);
+		m_staging.cube.transition(cmd, sync::Usage::fragment_sampled);
 	}
 
 	if ((m_pending_saves.empty() && m_pending_sh_saves.empty()) || m_core == nullptr) {
@@ -886,10 +830,16 @@ void ReflectionProbePass::recordPre(vk::CommandBuffer cmd, uint32_t frame_index,
 
 		readback.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
 		const vk::BufferCopy copy(static_cast<vk::DeviceSize>(save.base) * 4 * sizeof(glm::vec4), 0, coefficient_bytes);
+		sync::BarrierBatch barriers;
+		barriers.buffer(**m_sh_buffer, sync::Usage::compute_storage_write, sync::Usage::transfer_src);
+		barriers.flush(*readback);
 		readback.copyBuffer(**m_sh_buffer, *staging, copy);
+		// A fence wait alone does not make device writes visible to the host
+		barriers.buffer(*staging, sync::Usage::transfer_dst, sync::Usage::host_read);
+		barriers.flush(*readback);
 		readback.end();
 
-		submitAndWait(device, m_core->getGraphicsQueue(), *readback);
+		submitAndWait(device, m_core->getGraphicsQueue(), m_core->graphicsSubmitMutex(), *readback);
 		staging.getAllocation().invalidate(0, coefficient_bytes);
 
 		ShFileHeader header {};

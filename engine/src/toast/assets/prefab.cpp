@@ -787,6 +787,10 @@ auto Prefab::valueFromString(FieldType type, bool is_array, std::string_view val
 				if (auto b = getValue<int>(token)) {
 					return std::any {b.value()};
 				}
+				// uint32_t fields such as layer masks stringify above INT_MAX, keep their bits
+				if (auto wide = getValue<uint32_t>(token)) {
+					return std::any {static_cast<int>(wide.value())};
+				}
 				return std::nullopt;
 			case FieldType::float_t:
 				if (auto b = getValue<float>(token)) {

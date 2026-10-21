@@ -219,6 +219,15 @@ public:
 	[[Reflect]]
 	void carveSphere(glm::vec3 center, float radius);
 
+	[[Reflect]]
+	void setLayers(int included_layers, int excluded_layers);
+
+	[[Reflect]]
+	void includeLayer(int layer, bool value = true);
+
+	[[Reflect]]
+	void excludeLayer(int layer, bool value = true);
+
 	/** Empties a flat ended cylinder from a to b */
 	[[Reflect]]
 	void carveCylinder(glm::vec3 a, glm::vec3 b, float radius);
@@ -478,6 +487,12 @@ protected:
 	[[Reflect, Group("Physics")]]
 	bool render_only = false;
 
+	[[Reflect, Group("Physics"), Layers("excluded"), Name("Layers")]]
+	uint32_t included = 1;    // Default
+
+	[[Reflect, Group("Physics"), LayersExcluded]]
+	uint32_t excluded = 0;
+
 	[[Reflect, Group("Physics")]]
 	bool allow_sleep = true;
 
@@ -496,6 +511,13 @@ protected:
 
 	[[Reflect, Group("Physics"), Unit("kg•m²"), ReadOnly("auto_mass_center")]]
 	glm::vec3 inertia = {};
+
+	[[Reflect, Group("Physics"), Subgroup("Drag"), Unit("1/s")]]
+	float linear_damping = 0.0f;
+	[[Reflect, Group("Physics"), Subgroup("Drag"), Unit("1/s")]]
+	float angular_damping = 0.0f;
+	[[Reflect, Group("Physics"), Subgroup("Drag")]]
+	float drag_scale = 1.0f;
 
 	[[Reflect, Group("Physics"), Subgroup("Velocities"), Unit("m/s"), ReadOnly]]
 	glm::vec3 linear_velocity = {};

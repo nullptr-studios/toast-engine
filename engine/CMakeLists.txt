@@ -19,6 +19,14 @@ endif ()
 find_package(asio CONFIG REQUIRED)
 find_package(SDL3 CONFIG REQUIRED)
 find_package(Tracy CONFIG REQUIRED)
+get_target_property(_tracy_definitions Tracy::TracyClient INTERFACE_COMPILE_DEFINITIONS)
+if (_tracy_definitions)
+    set(_tracy_profiled_definitions)
+    foreach (_definition IN LISTS _tracy_definitions)
+        list(APPEND _tracy_profiled_definitions "$<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:${_definition}>")
+    endforeach ()
+    set_property(TARGET Tracy::TracyClient PROPERTY INTERFACE_COMPILE_DEFINITIONS "${_tracy_profiled_definitions}")
+endif ()
 find_package(glm CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(Vulkan REQUIRED)
@@ -141,8 +149,12 @@ if (TOAST_UNITY_BUILD)
     set_target_properties(toast_engine PROPERTIES UNITY_BUILD ON UNITY_BUILD_BATCH_SIZE 8)
 endif ()
 
+# Vulkan synchronization validation
+option(TOAST_SYNC_VALIDATION "Enable Vulkan synchronization validation in Debug builds" ON)
+
 target_compile_definitions(toast_engine PUBLIC
         $<$<CONFIG:Debug>:DEBUG>
+        $<$<AND:$<CONFIG:Debug>,$<BOOL:${TOAST_SYNC_VALIDATION}>>:TOAST_SYNC_VALIDATION>
         $<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>>:NDEBUG>
         $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:TRACY_ENABLE>
         $<$<CONFIG:RelWithDebInfo>:TOAST_LUA_OWNERSHIP_CHECKS>
@@ -219,7 +231,7 @@ get_target_property(_tinyspline_include_list tinysplinecxx::tinysplinecxx INTERF
 list(GET _tinyspline_include_list 0 _tinyspline_include)
 
 add_custom_command(TARGET toast_engine POST_BUILD
-        # Headers
+        COMMAND ${CMAKE_COMMAND} -E rm -rf "${TOAST_ENGINE_OUTPUT_ROOT}/include" "${TOAST_ENGINE_OUTPUT_ROOT}/ffi"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/include" "${TOAST_ENGINE_OUTPUT_ROOT}/include"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/ffi" "${TOAST_ENGINE_OUTPUT_ROOT}/ffi"
         # Generated reflection headers
@@ -228,6 +240,8 @@ add_custom_command(TARGET toast_engine POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${_nlohmann_include}/nlohmann" "${TOAST_ENGINE_OUTPUT_ROOT}/include/nlohmann"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${_tracy_include}/tracy" "${TOAST_ENGINE_OUTPUT_ROOT}/include/tracy"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${_tracy_include}/common" "${TOAST_ENGINE_OUTPUT_ROOT}/include/common"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${_tracy_include}/client" "${TOAST_ENGINE_OUTPUT_ROOT}/include/client"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_LINKER_FILE:Tracy::TracyClient>" "${TOAST_ENGINE_OUTPUT_ROOT}/lib"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${_toml_include}/toml++" "${TOAST_ENGINE_OUTPUT_ROOT}/include/toml++"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${_glm_include}/glm" "${TOAST_ENGINE_OUTPUT_ROOT}/include/glm"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${LUA_INCLUDE_DIR}" "${TOAST_ENGINE_OUTPUT_ROOT}/include"

@@ -25,7 +25,7 @@ using StartWindowNS = editor.StartWindow;
 namespace editor.Workspace;
 
 public partial class MainWindowView : Window {
-	private const int StaticWindowMenuItems = 4;
+	private const int StaticWindowMenuItems = 6;
 	private readonly ToastEngine? m_toast;
 	private readonly Border? m_toastBorder;
 

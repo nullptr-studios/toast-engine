@@ -7,7 +7,11 @@
  */
 
 #pragma once
+#include "fracture_pattern.hpp"
+#include "fracture_profile.hpp"
+
 #include <toast/assets/data.hpp>
+#include <toast/physics/hardness.hpp>
 
 namespace assets {
 
@@ -27,17 +31,23 @@ public:
 	[[nodiscard]]
 	auto density() const noexcept -> float;
 
-	/// @brief Joules of impulse energy a voxel absorbs before it breaks
+	/// @brief kJ/m3 it takes to break the material
 	[[nodiscard]]
 	auto toughness() const noexcept -> float;
+
+	/// @brief Damage that breaks only softer tiers never breaks this material
+	[[nodiscard]]
+	auto hardness() const noexcept -> physics::Hardness;
+
+	[[nodiscard]]
+	auto fracturePatterh() const noexcept -> physics::FracturePattern;
+
+	[[nodiscard]]
+	auto fractureProfile() const noexcept -> physics::PackedFractureProfile;
 
 	/// @brief Pascals
 	[[nodiscard]]
 	auto structuralStrength() const noexcept -> float;
-
-	/// @brief Metres of damage radius when a break does happen
-	[[nodiscard]]
-	auto shatterRadius() const noexcept -> float;
 
 	/// @brief False means voxels of this material never break, whatever hits them
 	[[nodiscard]]
@@ -55,10 +65,12 @@ protected:
 private:
 	void readFields();
 
-	float m_density = 1000.0f;
-	float m_toughness = 1000.0f;
-	float m_structural_strength = 1000.0f;
-	float m_shatter_radius = 0.5f;
+	float m_density = 0.0f;
+	float m_toughness = 0.0f;
+	physics::Hardness m_hardness = physics::Hardness::medium;
+	physics::FracturePattern m_fracture_pattern = physics::FracturePattern::brittle;
+	physics::FractureValues m_fracture_values;
+	float m_structural_strength = 0.0f;
 	bool m_destructible = true;
 	bool m_flammable = false;
 	float m_burn_rate = 0.0f;

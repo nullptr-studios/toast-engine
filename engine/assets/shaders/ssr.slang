@@ -1,4 +1,5 @@
 import fullscreen;
+import depth_convention;
 
 struct SsrParams
 {
@@ -84,7 +85,7 @@ float4 traceMain(VSOutput input) : SV_Target0
     }
 
     float depth = gDepth.Sample(input.uv).r;
-    if (depth >= 1.0)
+    if (isFarDepth(depth))
     {
         return float4(0.0, 0.0, 0.0, kNoSurfaceDistance);
     }
@@ -128,7 +129,7 @@ float4 traceMain(VSOutput input) : SV_Target0
         }
 
         float sceneDepth = gDepth.SampleLevel(sampleUv, 0.0).r;
-        if (sceneDepth >= 1.0)
+        if (isFarDepth(sceneDepth))
         {
             previousPosition = rayPosition;
             continue;
@@ -221,7 +222,7 @@ bool resolveHit(float2 uv, float3 worldPosition, float3 N, float3 R, float pixel
             }
 
             float sceneDepth = gDepth.SampleLevel(candidateUv, 0.0).r;
-            if (sceneDepth >= 1.0)
+            if (isFarDepth(sceneDepth))
             {
                 continue;
             }
@@ -282,7 +283,7 @@ float4 compositeMain(VSOutput input) : SV_Target0
     bool ssrOnly = (renderMode == 14);
     float3 passthrough = ssrOnly ? float3(0.0, 0.0, 0.0) : sceneColor;
 
-    if (dot(normalRoughness.xyz, normalRoughness.xyz) < 1e-4 || depth >= 1.0)
+    if (dot(normalRoughness.xyz, normalRoughness.xyz) < 1e-4 || isFarDepth(depth))
     {
         return float4(passthrough, 1.0);
     }

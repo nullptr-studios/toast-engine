@@ -63,7 +63,7 @@ struct PackedPool {
 	/// 512 palette bytes per slot little endian
 	std::vector<uint32_t> materials;
 
-	/// Eight 64-bit z-slices per slot low word first
+	/// Eight 4x4x4 sub-bricks per slot in the packOccupancyWords layout
 	std::vector<uint32_t> occupancy;
 };
 
@@ -117,10 +117,19 @@ struct ScenePatch {
 	/// Slots the pool sections hold afterwards and they only ever grow
 	uint32_t pool_slots = 0;
 
+	/// Section sizes afterwards in words or records
+	uint32_t grid_words = 0;
+	uint32_t coarse_words = 0;
+	uint32_t palette_words = 0;
+	uint32_t record_count = 0;
+
 	PatchSection materials;
 	PatchSection occupancy;
 	PatchSection grids;
 	PatchSection coarse;
+	PatchSection palettes;
+	/// VolumeRecord words
+	PatchSection records;
 
 	/// Per scene volume
 	std::vector<TagDelta> tags;
@@ -146,6 +155,24 @@ constexpr auto coarseDims(glm::uvec3 brick_dims) noexcept -> glm::uvec3 {
 [[nodiscard]]
 TOAST_API auto packPool(const BrickPool& pool) -> PackedPool;
 
+/// Eight 4x4x4 sub-bricks x fastest each a low then high word with bit x + 4y + 16z
+/// @note voxel_dda.slang reads this layout and regathers it as z-slices for the meshers
+TOAST_API void packOccupancyWords(const BrickOccupancy& occupancy, uint32_t* out);
+
+/// Bit of @p local in its sub-brick
+[[nodiscard]]
+constexpr auto subBrickBit(glm::uvec3 local) noexcept -> uint32_t {
+	return (local.x & 3u) | ((local.y & 3u) << 2u) | ((local.z & 3u) << 4u);
+}
+
+/// k_sub_block_mask shifted by this covers the 2x2x2 block holding @p local
+[[nodiscard]]
+constexpr auto subBlockShift(glm::uvec3 local) noexcept -> uint32_t {
+	return (local.x & 2u) | ((local.y & 2u) << 2u) | ((local.z & 2u) << 4u);
+}
+
+inline constexpr uint64_t k_sub_block_mask = 0x0033'0033ull;
+
 [[nodiscard]]
 TOAST_API auto packScene(std::span<const SceneVolume> volumes) -> PackedScene;
 
@@ -156,11 +183,13 @@ TOAST_API auto packLayout(std::span<const SceneVolume> volumes) -> SceneLayout;
 [[nodiscard]]
 TOAST_API auto layoutMatches(const PackedScene& retained, const SceneLayout& layout) -> bool;
 
-/// @pre layoutMatches and leaves retained grids and coarse as the GPU holds them after the patch
+/// Leaves retained as the GPU holds it afterwards
+/// @p appended records are already in retained with zeroed grid and coarse ranges and palette words from
+/// @p first_new_palette_word on are new
 [[nodiscard]]
 TOAST_API auto computePatch(
     PackedScene& retained, uint32_t retained_pool_slots, const BrickPool& pool, std::span<const SceneVolume> volumes,
-    std::span<const VolumeDirty> dirty
+    std::span<const VolumeDirty> dirty, std::span<const uint32_t> appended = {}, uint32_t first_new_palette_word = UINT32_MAX
 ) -> ScenePatch;
 
 /// Applies a patch the way the GPU copies do
@@ -175,6 +204,10 @@ TOAST_API auto sampleMaterial(const PackedPool& pool, const PackedScene& scene, 
 
 [[nodiscard]]
 TOAST_API auto sampleSolid(const PackedPool& pool, const PackedScene& scene, uint32_t volume, glm::ivec3 voxel) -> bool;
+
+/// Sub-brick of pooled @p slot holding @p local with bit subBrickBit
+[[nodiscard]]
+TOAST_API auto pooledSubBrick(const PackedPool& pool, uint32_t slot, glm::uvec3 local) -> uint64_t;
 
 [[nodiscard]]
 TOAST_API auto sampleCoarse(const PackedScene& scene, uint32_t volume, glm::ivec3 cell) -> bool;

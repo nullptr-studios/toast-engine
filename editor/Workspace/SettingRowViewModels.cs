@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using editor.Engine;
@@ -36,7 +37,7 @@ public abstract partial class SettingRow : ObservableObject {
 	public SettingDescriptor Descriptor { get; }
 
 	public string Key => Descriptor.Key;
-	public string Label => Descriptor.Label;
+	public virtual string Label => Descriptor.Label;
 	public string Description => Descriptor.Description;
 	public bool HasDescription => !string.IsNullOrWhiteSpace(Descriptor.Description);
 	public bool RequiresRestart => Descriptor.RequiresRestart;
@@ -44,8 +45,12 @@ public abstract partial class SettingRow : ObservableObject {
 	/// <summary>Drops the active layer's override, then shows whatever was underneath it</summary>
 	[RelayCommand]
 	private void Reset() {
-		ToastSettings.Reset(Key);
+		ResetValue();
 		Reload();
+	}
+
+	protected virtual void ResetValue() {
+		ToastSettings.Reset(Key);
 	}
 
 	/// <summary>Re-reads the engine's value without writing anything back</summary>
@@ -189,6 +194,58 @@ public sealed partial class StringSettingRow : SettingRow {
 	}
 }
 
+public sealed partial class Vec3SettingRow : SettingRow {
+	private readonly SettingDescriptor[] m_axes;
+	[ObservableProperty] private float m_x;
+	[ObservableProperty] private float m_y;
+	[ObservableProperty] private float m_z;
+
+	public Vec3SettingRow(SettingDescriptor x, SettingDescriptor y, SettingDescriptor z) : base(x) {
+		m_axes = [x, y, z];
+		m_x = (float)ToastSettings.GetFloat(x.Key);
+		m_y = (float)ToastSettings.GetFloat(y.Key);
+		m_z = (float)ToastSettings.GetFloat(z.Key);
+		Label = StripAxis(x.Label);
+	}
+
+	public override string Label { get; }
+
+	partial void OnXChanged(float value) => Write(0, value);
+	partial void OnYChanged(float value) => Write(1, value);
+	partial void OnZChanged(float value) => Write(2, value);
+
+	private void Write(int axis, float value) {
+		if (SuppressWrite) return;
+		ToastSettings.SetFloat(m_axes[axis].Key, value);
+	}
+
+	protected override void ResetValue() {
+		foreach (var axis in m_axes) ToastSettings.Reset(axis.Key);
+	}
+
+	public override void Reload() {
+		SuppressWrite = true;
+		X = (float)ToastSettings.GetFloat(m_axes[0].Key);
+		Y = (float)ToastSettings.GetFloat(m_axes[1].Key);
+		Z = (float)ToastSettings.GetFloat(m_axes[2].Key);
+		SuppressWrite = false;
+	}
+
+	/// "Gravity X" -> "Gravity"
+	private static string StripAxis(string label) {
+		return label.EndsWith(" X", StringComparison.Ordinal) ? label[..^2] : label;
+	}
+
+	/// The key without its _x suffix when @p x, @p y and @p z are the three axes of one vector
+	public static string? StemOf(SettingDescriptor x, SettingDescriptor y, SettingDescriptor z) {
+		if (x.Type != SettingType.Float || y.Type != SettingType.Float || z.Type != SettingType.Float) return null;
+		if (x.Category != y.Category || x.Category != z.Category) return null;
+		if (!x.Key.EndsWith("_x", StringComparison.Ordinal)) return null;
+		var stem = x.Key[..^2];
+		return y.Key == stem + "_y" && z.Key == stem + "_z" ? stem : null;
+	}
+}
+
 /// <summary>One collapsible group of rows, named by the engine's Meta::category</summary>
 public sealed class SettingCategory {
 	public required string Name { get; init; }
@@ -202,12 +259,20 @@ public static class SettingRowFactory {
 		var byCategory = new Dictionary<string, List<SettingRow>>();
 		var order = new List<string>();
 
-		foreach (var descriptor in ToastSettings.Enumerate()) {
-			if (descriptor.Hidden) continue;
-			if (!string.IsNullOrEmpty(keyPrefix) && !descriptor.Key.StartsWith(keyPrefix, StringComparison.Ordinal))
-				continue;
+		var descriptors = ToastSettings.Enumerate()
+			.Where(d => !d.Hidden &&
+			            (string.IsNullOrEmpty(keyPrefix) || d.Key.StartsWith(keyPrefix, StringComparison.Ordinal)))
+			.ToList();
 
-			SettingRow row = descriptor switch {
+		for (var i = 0; i < descriptors.Count; i++) {
+			var descriptor = descriptors[i];
+
+			SettingRow row;
+			if (i + 2 < descriptors.Count &&
+			    Vec3SettingRow.StemOf(descriptor, descriptors[i + 1], descriptors[i + 2]) is not null) {
+				row = new Vec3SettingRow(descriptor, descriptors[i + 1], descriptors[i + 2]);
+				i += 2;
+			} else row = descriptor switch {
 				{ IsEnum: true } => new EnumSettingRow(descriptor),
 				{ Type: SettingType.Bool } => new BoolSettingRow(descriptor),
 				{ Type: SettingType.Int } => new IntSettingRow(descriptor),

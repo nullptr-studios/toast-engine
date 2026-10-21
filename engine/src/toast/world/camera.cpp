@@ -5,6 +5,7 @@
 #include "camera.hpp"
 
 #include <cmath>
+#include <toast/renderer/depth_convention.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
 
 namespace toast {
@@ -88,7 +89,7 @@ auto Camera::getView() const -> glm::mat4 {
 }
 
 auto Camera::getProjection(float aspect) const -> glm::mat4 {
-	glm::mat4 proj = glm::perspectiveRH_ZO(glm::radians(fov), aspect, near_plane, far_plane);
+	glm::mat4 proj = renderer::depth::perspective(glm::radians(fov), aspect, near_plane, far_plane);
 
 	proj[1][1] *= -1.0f;
 
@@ -112,8 +113,8 @@ auto Camera::screenPointToRay(glm::vec2 screen_px, glm::vec2 viewport_size) cons
 
 	const glm::mat4 inv_view_proj = glm::inverse(getProjection(aspect) * getView());
 
-	glm::vec4 near_point = inv_view_proj * glm::vec4(ndc.x, ndc.y, 0.0f, 1.0f);
-	glm::vec4 far_point = inv_view_proj * glm::vec4(ndc.x, ndc.y, 1.0f, 1.0f);
+	glm::vec4 near_point = inv_view_proj * glm::vec4(ndc.x, ndc.y, renderer::depth::k_near, 1.0f);
+	glm::vec4 far_point = inv_view_proj * glm::vec4(ndc.x, ndc.y, renderer::depth::k_far, 1.0f);
 	near_point /= near_point.w;
 	far_point /= far_point.w;
 

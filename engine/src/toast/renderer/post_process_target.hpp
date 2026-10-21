@@ -52,7 +52,7 @@ private:
 	std::optional<vk::raii::ImageView> m_view;
 	vk::Extent2D m_extent {};
 
-	mutable vk::ImageLayout m_layout = vk::ImageLayout::eUndefined;
+	mutable sync::ImageState m_state;
 };
 
 }

@@ -14,6 +14,7 @@
 #include "../vulkan_pipeline.hpp"
 
 #include <array>
+#include <chrono>
 #include <glm/glm.hpp>
 #include <memory>
 #include <optional>
@@ -52,25 +53,28 @@ public:
 		return *m_sampler;
 	}
 
-	[[nodiscard]]
-	auto getDrawCount() const noexcept -> uint32_t {
-		return m_draw_count;
-	}
+	/// Per frame and per layer group unless noted
+	struct Stats {
+		uint32_t draws = 0;
+		uint32_t scopes = 0;
+		/// Slot groups left as they were
+		uint32_t cached = 0;
+		/// Slot groups rebuilt from their static copy and the moving casters
+		uint32_t composed = 0;
+		/// Static renders whose views moved
+		uint32_t static_views = 0;
+		/// Static renders whose resting voxel casters changed
+		uint32_t static_casters = 0;
+		/// Static renders for a voxel edit reaching them
+		uint32_t static_edits = 0;
+		uint32_t moving_volumes = 0;
+		/// Cached static groups that a voxel edit elsewhere would have re-rendered
+		uint32_t spared = 0;
+	};
 
 	[[nodiscard]]
-	auto getPassCount() const noexcept -> uint32_t {
-		return m_pass_count;
-	}
-
-	[[nodiscard]]
-	auto getCachedCount() const noexcept -> uint32_t {
-		return m_cached_count;
-	}
-
-	/// Cached groups that a voxel edit elsewhere would have re-rendered
-	[[nodiscard]]
-	auto getVoxelSparedCount() const noexcept -> uint32_t {
-		return m_voxel_spared_count;
+	auto getStats() const noexcept -> const Stats& {
+		return m_stats;
 	}
 
 private:
@@ -102,6 +106,8 @@ private:
 	};
 
 	static constexpr uint32_t k_max_voxel_casters = 4096;
+	/// Throttles the over limit warning
+	std::chrono::steady_clock::time_point m_last_caster_limit_warning;
 
 	struct LayerGroup {
 		uint32_t base_layer = 0;
@@ -116,15 +122,21 @@ private:
 
 		std::optional<uint64_t> signature;
 
-		/// Voxel storage this group last matched
+		/// Resting voxel casters of the static group while signature holds its views
+		std::optional<uint64_t> caster_signature;
+
+		/// Voxel storage the static group last matched
 		std::optional<uint64_t> voxel_generation;
+
+		/// Static renders so slot signatures tell the copies apart
+		uint64_t revision = 0;
 	};
 
 	struct ShadowMap {
 		std::optional<vma::raii::Image> image;
 		std::optional<vk::raii::ImageView> array_view;
 		std::vector<LayerGroup> groups;
-		vk::ImageLayout layout = vk::ImageLayout::eUndefined;
+		sync::ImageState state;
 		uint32_t resolution = 0;
 		uint32_t layer_count = 0;
 	};
@@ -140,11 +152,17 @@ private:
 		FrameResources ubo;
 	};
 
+	/// Resting voxel casters copied under the moving casters of each slot
+	struct StaticMaps {
+		ShadowMap cascades;
+		ShadowMap punctual;
+	};
+
 	void createResources(const VulkanCore& core);
 
 	void createShadowMap(
 	    const VulkanCore& core, ShadowMap& map, uint32_t resolution, std::span<const uint32_t> group_layers,
-	    std::string_view debug_name
+	    vk::ImageUsageFlags usage, std::string_view debug_name
 	);
 
 	[[nodiscard]]
@@ -159,7 +177,7 @@ private:
 	[[nodiscard]]
 	auto voxelPipelineSetFor(uint32_t view_mask) const -> const VoxelPipelineSet*;
 
-	void recordMap(vk::CommandBuffer cmd, ShadowMap& map, uint32_t frame_index, bool directional);
+	void recordMap(vk::CommandBuffer cmd, ShadowMap& map, ShadowMap& static_map, uint32_t frame_index, bool directional);
 
 	[[nodiscard]]
 	static auto selectShadowFormat(const VulkanCore& core) -> vk::Format;
@@ -170,20 +188,18 @@ private:
 	ShaderLayout m_shader_layout;
 
 	/// VulkanPipeline is not movable
-	std::array<PipelineSet, 3> m_pipeline_sets;
+	std::array<PipelineSet, 2> m_pipeline_sets;
 
-	uint32_t m_draw_count = 0;
-	uint32_t m_pass_count = 0;
-	uint32_t m_cached_count = 0;
-	uint32_t m_voxel_spared_count = 0;
+	Stats m_stats;
 	std::vector<VoxelCaster> m_voxel_eligible;
 
 	vk::raii::Sampler m_sampler = nullptr;
 	std::vector<vk::raii::DescriptorSet> m_descriptor_sets;
 	std::vector<FrameTarget> m_targets;
+	StaticMaps m_static;
 
 	ShaderLayout m_voxel_layout;
-	std::array<VoxelPipelineSet, 3> m_voxel_pipeline_sets;
+	std::array<VoxelPipelineSet, 2> m_voxel_pipeline_sets;
 	std::vector<vk::raii::DescriptorSet> m_voxel_shadow_sets;
 	std::vector<vk::raii::DescriptorSet> m_voxel_storage_sets;
 	std::vector<vma::raii::Buffer> m_voxel_instance_buffers;
@@ -196,6 +212,8 @@ private:
 	uint32_t m_voxel_instance_count = 0;
 
 	std::vector<uint32_t> m_voxel_draw_order;
+
+	std::vector<vk::ImageCopy> m_static_copies;
 };
 
 }

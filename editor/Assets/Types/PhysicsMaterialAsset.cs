@@ -28,7 +28,9 @@ public class PhysicsMaterialAsset : BaseAsset {
 			$"schema = \"{schemaUid}\"\n" +
 			$"restitution = 0.1\n" +
 			$"static_friction = 0.6\n" +
-			$"dynamic_friction = 0.5\n");
+			$"dynamic_friction = 0.5\n" +
+			$"rolling_friction = 0.01\n" +
+			$"spin_friction = 0.005\n");
 		return Task.CompletedTask;
 	}
 }

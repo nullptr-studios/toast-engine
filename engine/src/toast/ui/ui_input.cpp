@@ -51,9 +51,19 @@ UIInputRouter::UIInputRouter() {
 		    }
 
 		    if (e.action == event::window_input_released) {
-			    return dispatchToPanels([&](Rml::Context* context) { return context->ProcessKeyUp(key, m_mods); });
+			    dispatchToPanels([&](Rml::Context* context) { return context->ProcessKeyUp(key, m_mods); });
+			    return m_ui_keys.erase(e.key) > 0;
 		    }
-		    return dispatchToPanels([&](Rml::Context* context) { return context->ProcessKeyDown(key, m_mods); });
+		    const bool consumed = dispatchToPanels([&](Rml::Context* context) { return context->ProcessKeyDown(key, m_mods); });
+		    // Repeats keep whoever took the first press
+		    if (e.action == event::window_input_pressed) {
+			    if (consumed) {
+				    m_ui_keys.insert(e.key);
+			    } else {
+				    m_ui_keys.erase(e.key);
+			    }
+		    }
+		    return consumed;
 	    },
 	    k_ui_input_priority
 	);
@@ -95,9 +105,19 @@ UIInputRouter::UIInputRouter() {
 		    }
 
 		    if (e.action == event::window_input_pressed) {
-			    return dispatchToPanels([&](Rml::Context* context) { return context->ProcessMouseButtonDown(button, m_mods); });
+			    const bool consumed =
+			        dispatchToPanels([&](Rml::Context* context) { return context->ProcessMouseButtonDown(button, m_mods); });
+			    if (consumed) {
+				    m_ui_buttons.insert(e.button);
+			    } else {
+				    m_ui_buttons.erase(e.button);
+			    }
+			    return consumed;
 		    }
-		    return dispatchToPanels([&](Rml::Context* context) { return context->ProcessMouseButtonUp(button, m_mods); });
+
+		    // Rml always sees the release but only a press it took keeps the release from gameplay
+		    dispatchToPanels([&](Rml::Context* context) { return context->ProcessMouseButtonUp(button, m_mods); });
+		    return m_ui_buttons.erase(e.button) > 0;
 	    },
 	    k_ui_input_priority
 	);

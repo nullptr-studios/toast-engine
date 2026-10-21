@@ -477,6 +477,12 @@
 						                      PasteCommand="{Binding PasteCommand}"
 						                      IsEnabled="{Binding Editable}"
 						                      IsVisible="{Binding IsVec4}" />
+						<elements:LayerTagBox Included="{Binding Mask}"
+						                      Excluded="{Binding LayersPartner.Mask, FallbackValue=0}"
+						                      Rows="{Binding LayerRows, Mode=TwoWay}"
+						                      Command="{Binding SetLayersCommand}"
+						                      IsEnabled="{Binding Editable}"
+						                      IsVisible="{Binding IsLayers}" />
 					</Panel>
 				</StackPanel>
 			</Panel>

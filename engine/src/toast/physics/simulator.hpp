@@ -11,6 +11,7 @@
 #include "broad_phase.hpp"
 #include "constraint.hpp"
 #include "damage_command.hpp"
+#include "debris.hpp"
 #include "fragment_extraction.hpp"
 #include "manifold.hpp"
 #include "narrow_phase.hpp"
@@ -26,6 +27,7 @@
 #include <deque>
 #include <functional>
 #include <glm/glm.hpp>
+#include <mutex>
 #include <optional>
 #include <span>
 #include <thread>
@@ -46,6 +48,7 @@ class Rigidbody;
 class DynamicRigidbody;
 class Collider;
 struct SmashVolume;
+struct SmashPieces;
 
 }
 
@@ -82,7 +85,19 @@ public:
 	auto createBody(const BodyDescriptor& descriptor) -> BodyID;
 	void destroyBody(BodyID body);
 
-	static auto raycast(glm::vec3 pos, glm::vec3 dir, float max_distance = -1.0f, int max_targets = 3) -> std::vector<RayHit>;
+	/// @param layers Only bodies including one of these layers are hit
+	static auto raycast(
+	    glm::vec3 origin, glm::vec3 direction, float max_distance = -1.0f, BodyID ignored = {}, uint32_t layers = k_all_layers
+	) -> std::optional<RayHit>;
+	static auto raymulticast(
+	    glm::vec3 origin, glm::vec3 direction, float max_distance = -1.0f, int max_hits = -1, BodyID ignored = {},
+	    uint32_t layers = k_all_layers
+	) -> std::vector<RayHit>;
+	static auto linecast(glm::vec3 from, glm::vec3 to, int max_hits = -1, BodyID ignored = {}, uint32_t layers = k_all_layers)
+	    -> std::vector<RayHit>;
+
+	[[nodiscard]]
+	static auto bodyFor(const toast::Node& node) -> BodyID;
 
 	[[nodiscard]]
 	auto valid(BodyID body) const -> bool;
@@ -95,11 +110,12 @@ public:
 	void recordDamage(DamageCommand&& command);
 	void applyDamageCommands();
 	void applyDamageCommand(const DamageCommand& c);
-	void applyExplosion(const glm::vec3& position, float radius, float energy);
+	void damageArea(const AreaDamage& damage);
+	auto explode(const ExplosionDamage& explosion) -> uint32_t;
 
 	auto shootVoxel(
-	    const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy, float min_radius = 0.0f,
-	    const std::optional<FragmentPush>& push = std::nullopt
+	    const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy_density, float fracture_radius,
+	    const std::optional<FragmentPush>& push = std::nullopt, Hardness max_hardness = k_hardest
 	) -> bool;
 
 	auto smashCapsule(
@@ -107,9 +123,10 @@ public:
 	    const CapsuleSmash& smash
 	) -> uint32_t;
 
-	/// Burns a thin tube into the first voxels along the ray right away, the radius ignores the material shatter radius
-	auto cutVoxel(const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy, float radius, float depth)
-	    -> uint32_t;
+	auto cutVoxel(
+	    const glm::vec3& origin, const glm::vec3& direction, float max_distance, float energy_density, float radius, float depth,
+	    Hardness max_hardness = k_hardest
+	) -> uint32_t;
 
 	[[nodiscard]]
 	auto runConnectivityAnalysis() -> std::vector<ConnectivityResult>;
@@ -286,10 +303,11 @@ public:
 	[[nodiscard]]
 	auto overlapAABB(const AABB& bounds) const -> bool;
 	/// Moves a capsule until it would dig into something
+	/// @param refine false stops at first iteration, only position is not accurate
 	[[nodiscard]]
 	auto sweepCapsule(
 	    BodyID ignored, const CapsuleShape& capsule, const glm::quat& rotation, const glm::vec3& from, const glm::vec3& to,
-	    float skin
+	    float skin, bool refine = true
 	) const -> SweepHit;
 	/// Resizes the capsule collider of a body
 	auto setCapsuleShape(BodyID body, const CapsuleShape& capsule) -> bool;
@@ -297,12 +315,20 @@ public:
 	/// Raises the velocity of a dynamic body along direction
 	void pushBody(BodyID id, const glm::vec3& point, const glm::vec3& direction, float speed, float max_impulse);
 
+	[[nodiscard]]
+	auto takeDebrisSpawns() -> std::vector<DebrisSpawn>;
+
 	/// Simulator running the current step, null outside a play session
 	[[nodiscard]]
 	static auto current() -> Simulator*;
 
 	[[nodiscard]]
 	static auto voxelFragmentRecords() -> std::span<const VoxelRenderRecord>;
+
+	static void setWind(const glm::vec3& wind);
+	[[nodiscard]]
+	static auto wind() -> glm::vec3;
+	static void resetWind();
 
 private:
 	enum class SimulationPhase : uint8_t {
@@ -371,10 +397,41 @@ private:
 		std::optional<FragmentPush> push;
 	};
 
+	struct RayQuery {
+		glm::vec3 origin = {};
+		glm::vec3 direction = {};                                       // normalized
+		float max_distance = std::numeric_limits<float>::infinity();    // inf for no end
+		BodyID ignored;
+		uint32_t layers = k_all_layers;                                 // bodies including none of these are not hit
+		bool voxels_only = false;
+		bool hit_passable = false;                                      // passable materials count as solid
+	};
+
+	struct RayContact {
+		ShapeID shape;
+		BodyID body;
+		float distance = 0.0f;
+		glm::vec3 normal = {};
+		uint8_t palette_index = 0;
+	};
+
+	template<typename OnContact>
+	auto castRay(const RayQuery& query, OnContact&& on_contact) const -> uint32_t;
+
+	/// @returns true if a static body is within @p distance of @p position along @p toward
+	[[nodiscard]]
+	auto windBlocked(const glm::vec3& position, const glm::vec3& toward, float distance, BodyID ignored) const -> bool;
+
+	[[nodiscard]]
+	static auto makeRayQuery(glm::vec3 origin, glm::vec3 direction, float max_distance, BodyID ignored, uint32_t layers)
+	    -> std::optional<RayQuery>;
+
+	[[nodiscard]]
+	static auto makeRayHit(const RayQuery& query, const RayContact& contact, toast::Box<toast::Node> node) -> RayHit;
+
 	struct VoxelRayHit {
 		ShapeID shape;
 		float distance = 0.0f;
-		float shatter_radius = 0.0f;
 	};
 
 	[[nodiscard]]
@@ -434,17 +491,21 @@ private:
 	[[nodiscard]]
 	auto tryGetBody(BodyID body) const -> const Body*;
 
-	static void integrateBody(BodyID id, Body& body, const glm::vec3& gravity, float dt);
+	static void integrateBody(BodyID id, Body& body, const glm::vec3& gravity, float air_density, const glm::vec3& wind, float dt);
 	static void setBodyEnabled(BodyID body, bool enabled);
 
 	static void setBodyTransform(BodyID body, const glm::vec3& position, const glm::quat& rotation);
+	static void setBodyLayers(BodyID body, LayerFilter layers);
 	static auto setBodyLinearVelocity(BodyID body, const glm::vec3& velocity) -> bool;
 
 	static void setShapeEnabled(ShapeID shape, bool enabled);
 	void syncEnabledState();
 
 	[[nodiscard]]
-	auto queryCandidates(BodyID ignored, const AABB& bounds) const -> std::vector<ShapeID>;
+	auto queryCandidates(BodyID ignored, const AABB& bounds, std::optional<LayerFilter> layers = std::nullopt) const
+	    -> std::vector<ShapeID>;
+	[[nodiscard]]
+	auto layersOf(BodyID body) const -> std::optional<LayerFilter>;
 	void collideCapsuleProbe(
 	    const Body& probe_body, const Shape& probe_shape, std::span<const ShapeID> candidates, std::vector<QueryContact>& contacts
 	) const;
@@ -515,9 +576,12 @@ private:
 	static auto effectiveMassAlong(
 	    const Body& body_a, const Body& body_b, const glm::vec3& r_a, const glm::vec3& r_b, const glm::vec3& direction
 	) -> std::optional<float>;
+	static auto angularMassAround(const Body& body_a, const Body& body_b, const glm::vec3& axis) -> float;
 	static void applyImpulse(Body& body_a, Body& body_b, const glm::vec3& r_a, const glm::vec3& r_b, const glm::vec3& impulse);
+	static void applyAngularImpulse(Body& body_a, Body& body_b, const glm::vec3& impulse);
 	static auto solveNormal(Constraint& constraint, Body& body_a, Body& body_b) -> bool;
 	static auto solveFriction(Constraint& constraint, Body& body_a, Body& body_b) -> bool;
+	static auto solveRolling(Constraint& constraint, Body& body_a, Body& body_b) -> bool;
 	[[nodiscard]]
 	auto correctPositions(std::span<const size_t> manifold_indices) -> size_t;
 	void publishProfile(std::span<const SimulationIsland> islands);
@@ -526,9 +590,21 @@ private:
 	    ShapeID shape_id, VoxelShapeData& data, voxel::Volume& source, const DetachedComponent& component,
 	    const RemovedVoxels* already_removed = nullptr
 	);
+
+	void emitDebris(
+	    ShapeID shape_id, std::span<const DebrisVoxel> voxels, const DebrisBlast* blast, const FragmentPush* push, uint64_t seed
+	);
+
+	void emitComponentDebris(ShapeID shape_id, const DetachedComponent& component, const FragmentPush* push);
+
 	[[nodiscard]]
 	auto spawnFragmentBody(ShapeID source_shape_id, const DetachedComponent& component, const FragmentPush* push = nullptr) -> bool;
 	auto smashShape(ShapeID shape_id, const SmashVolume& volume, const CapsuleSmash& smash, bool chunks) -> uint32_t;
+	auto explodeShape(ShapeID shape_id, const ExplosionDamage& explosion) -> uint32_t;
+	auto breakPieces(
+	    ShapeID shape_id, SmashPieces& picked, bool chunks,
+	    const std::function<std::optional<FragmentPush>(const DetachedComponent&)>& push_for, const AABB& wake_bounds
+	) -> uint32_t;
 	[[nodiscard]]
 	auto marchVoxelRay(const glm::vec3& origin, const glm::vec3& direction, float max_distance) -> std::optional<VoxelRayHit>;
 	[[nodiscard]]
@@ -559,10 +635,14 @@ private:
 
 	void checkTriggers();
 	void overlapShape(
-	    BodyID ignored, const Shape& probe, const glm::vec3& position, const glm::quat& rotation, std::vector<BodyID>& bodies
+	    BodyID ignored, LayerFilter layers, const Shape& probe, const glm::vec3& position, const glm::quat& rotation,
+	    std::vector<BodyID>& bodies
 	) const;
 
 	inline static Simulator* instance = nullptr;
+
+	std::mutex m_wind_mutex;
+	std::optional<glm::vec3> m_level_wind;
 
 	mutable std::thread::id m_owner_thread;
 	std::atomic<SimulationPhase> m_phase = SimulationPhase::idle;
@@ -601,21 +681,21 @@ private:
 	NarrowPhase m_narrow_phase;
 	std::vector<Manifold> m_manifolds;
 	std::vector<CachedManifold> m_cached_manifolds;
-	/// mutable so const query methods (overlapCapsule/sweepCapsule) can still count how often they run
 	mutable PhysicsStepProfile m_profile;
 	PhysicsStepProfile m_published_profile;
 
 	std::vector<VoxelShapeSlot> m_voxel_shapes;
 	std::deque<uint32_t> m_free_voxel_shape_slots;
 	std::vector<VoxelRenderRecord> m_voxel_render_records;
+	std::vector<DebrisSpawn> m_debris_spawns;
 
 	std::mutex m_damage_mutex;
 	std::vector<DamageCommand> m_damage_commands;
 	std::vector<DebugDirtyBrick> m_debug_dirty_bricks;
 
 	uint64_t m_next_fragment_sequence = 1;
+	uint64_t m_tick_index = 0;
 	std::vector<FragmentRecord> m_fragments;
-	/// body slot -> index in m_fragments rebuilt whenever an erase shifts indices
 	std::unordered_map<uint32_t, size_t> m_fragment_index;
 	std::vector<PendingFragments> m_pending_fragments;
 	std::vector<BodyID> m_doomed_fragments;

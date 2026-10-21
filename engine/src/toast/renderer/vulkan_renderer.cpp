@@ -9,6 +9,7 @@
 #include "editor_overlays.hpp"
 #include "frustum.hpp"
 #include "light_culling.hpp"
+#include "passes/debris_pass.hpp"
 #include "passes/depth_prepass.hpp"
 #include "passes/environment_pass.hpp"
 #include "passes/material_pass.hpp"
@@ -90,24 +91,6 @@ auto depthAttachmentRange(vk::Format format) -> vk::ImageSubresourceRange {
 	return {aspect, 0, 1, 0, 1};
 }
 
-auto transitionImageLayout(
-    vk::CommandBuffer command_buffer, vk::Image image, vk::ImageLayout old_layout, vk::ImageLayout new_layout,
-    vk::AccessFlags src_access_mask, vk::AccessFlags dst_access_mask, vk::PipelineStageFlags src_stage_mask,
-    vk::PipelineStageFlags dst_stage_mask, vk::ImageSubresourceRange subresource_range
-) -> void {
-	const vk::ImageMemoryBarrier barrier(
-	    src_access_mask,
-	    dst_access_mask,
-	    old_layout,
-	    new_layout,
-	    VK_QUEUE_FAMILY_IGNORED,
-	    VK_QUEUE_FAMILY_IGNORED,
-	    image,
-	    subresource_range
-	);
-	command_buffer.pipelineBarrier(src_stage_mask, dst_stage_mask, {}, {}, {}, barrier);
-}
-
 struct DirectionalCascadeFit {
 	glm::mat4 view_projection {1.0f};
 	glm::vec4 cull_sphere {0.0f};
@@ -117,11 +100,15 @@ struct DirectionalCascadeFit {
 
 constexpr float k_caster_back_off = 100.0f;
 
-auto fitDirectionalCascade(
-    const toast::Camera& camera, float aspect, glm::vec3 light_direction, float split_near, float split_far, uint32_t resolution
-) -> DirectionalCascadeFit {
-	constexpr float k_world_depth_bias = 0.01f;
+/// Share of the slice radius a cascade covers beyond its slice so small camera moves reuse its cached map
+constexpr float k_cascade_padding = 0.15f;
 
+struct BoundingSphere {
+	glm::vec3 center {0.0f};
+	float radius = 0.0f;
+};
+
+auto frustumSliceSphere(const toast::Camera& camera, float aspect, float split_near, float split_far) -> BoundingSphere {
 	const float tan_half_fov = std::tan(glm::radians(camera.fov) * 0.5f);
 	const glm::mat4 inverse_view = glm::inverse(camera.getView());
 
@@ -147,8 +134,14 @@ auto fitDirectionalCascade(
 	for (const auto& corner : corners) {
 		radius = std::max(radius, glm::distance(center, corner));
 	}
-	radius = std::ceil(radius * 16.0f) / 16.0f;
-	radius = std::max(radius, 0.001f);
+	return {.center = center, .radius = radius};
+}
+
+auto fitDirectionalCascade(glm::vec3 center, float radius, glm::vec3 light_direction, uint32_t resolution)
+    -> DirectionalCascadeFit {
+	constexpr float k_world_depth_bias = 0.01f;
+
+	radius = std::max(std::ceil(radius * 16.0f) / 16.0f, 0.001f);
 
 	const glm::vec3 direction = glm::normalize(light_direction);
 	const glm::vec3 up =
@@ -430,7 +423,7 @@ void uploadSinglePixelTexture(
 
 	cmd.end();
 
-	submitAndWait(device, core.getGraphicsQueue(), *cmd);
+	submitAndWait(device, core.getGraphicsQueue(), core.graphicsSubmitMutex(), *cmd);
 
 	texture.markReady();
 }
@@ -672,6 +665,10 @@ void VulkanRenderer::stop() {
 		} catch (const std::exception& e) {
 			TOAST_ERROR("Render", "Device wait failed during shutdown, tearing down anyway: {}", e.what());
 		}
+		for (auto& frame : m_frames) {
+			frame.retired.clear();
+		}
+		m_core->savePipelineCache();
 	}
 
 	m_gpu_timer.reset();
@@ -702,11 +699,12 @@ VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTa
 	}
 
 	TOAST_TRACE("Render", "Creating renderer with {} frame(s) in flight", k_frames_in_flight);
+	// Before any pipeline is created
+	core.loadPipelineCache();
 	m_depth_format = selectDepthFormat(core);
 
 	createGraphicsCommandPool();
 	createTransferCommandPool();
-	createComputeCommandPool();
 
 	createUploadRing();
 	createFrameContexts();
@@ -715,7 +713,7 @@ VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTa
 	createSceneColorResources();
 	const auto output_image_count = m_output_target->getImageCount();
 	m_images_in_flight.assign(output_image_count, vk::Fence {});
-	m_output_image_layouts.assign(output_image_count, vk::ImageLayout::eUndefined);
+	m_output_image_usage.assign(output_image_count, sync::Usage::none);
 
 	createDescriptorPool();
 
@@ -820,15 +818,6 @@ auto VulkanRenderer::createTransferCommandPool() -> void {
 	TOAST_TRACE("Render", "Transfer command pool created (transfer family {})", m_core->getTransferQueueFamilyIndex());
 }
 
-auto VulkanRenderer::createComputeCommandPool() -> void {
-	const vk::CommandPoolCreateInfo pool_ci(
-	    vk::CommandPoolCreateFlagBits::eResetCommandBuffer, m_core->getComputeQueueFamilyIndex()
-	);
-	m_compute_command_pool = vk::raii::CommandPool(m_core->getDevice(), pool_ci);
-	setDebugName(*m_core, *m_compute_command_pool, "VulkanRenderer ComputeCommandPool");
-	TOAST_TRACE("VulkanRenderer", "Compute command pool created (compute family {})", m_core->getComputeQueueFamilyIndex());
-}
-
 auto VulkanRenderer::createUploadRing() -> void {
 	m_upload_slots.clear();
 	m_upload_slots.resize(k_upload_slots);
@@ -839,10 +828,15 @@ auto VulkanRenderer::createUploadRing() -> void {
 
 	for (uint32_t i = 0; i < k_upload_slots; ++i) {
 		m_upload_slots[i].command_buffer = std::move(buffers[i]);
-		m_upload_slots[i].fence = vk::raii::Fence(m_core->getDevice(), vk::FenceCreateInfo {});
 		setDebugName(*m_core, *m_upload_slots[i].command_buffer, std::format("VulkanRenderer Upload[{}] CommandBuffer", i));
-		setDebugName(*m_core, *m_upload_slots[i].fence, std::format("VulkanRenderer Upload[{}] Fence", i));
 	}
+
+	vk::SemaphoreTypeCreateInfo timeline_ci(vk::SemaphoreType::eTimeline, 0);
+	m_upload_timeline = vk::raii::Semaphore(m_core->getDevice(), vk::SemaphoreCreateInfo({}, &timeline_ci));
+	setDebugName(*m_core, *m_upload_timeline, "VulkanRenderer UploadTimeline");
+	m_upload_timeline_value = 0;
+	m_upload_acquired_value = 0;
+	m_upload_waited_value = 0;
 
 	TOAST_TRACE("VulkanRenderer", "Upload command buffer ring created: {} slots", k_upload_slots);
 }
@@ -855,42 +849,20 @@ auto VulkanRenderer::createFrameContexts() -> void {
 	const vk::SemaphoreCreateInfo semaphore_ci {};
 	const vk::FenceCreateInfo fence_ci(vk::FenceCreateFlagBits::eSignaled);
 	const vk::CommandBufferAllocateInfo command_buffer_ci(*m_command_pool, vk::CommandBufferLevel::ePrimary, k_frames_in_flight);
-	const vk::CommandBufferAllocateInfo compute_command_buffer_ci(
-	    *m_compute_command_pool, vk::CommandBufferLevel::ePrimary, k_frames_in_flight
-	);
 	auto allocated_command_buffers = m_core->getDevice().allocateCommandBuffers(command_buffer_ci);
-	auto allocated_compute_command_buffers = m_core->getDevice().allocateCommandBuffers(compute_command_buffer_ci);
 
 	for (uint32_t frame_index = 0; frame_index < k_frames_in_flight; ++frame_index) {
 		m_frames[frame_index].command_buffer = std::move(allocated_command_buffers[frame_index]);
-		m_frames[frame_index].compute_command_buffer = std::move(allocated_compute_command_buffers[frame_index]);
 		m_frames[frame_index].image_available = vk::raii::Semaphore(m_core->getDevice(), semaphore_ci);
-		m_frames[frame_index].compute_to_graphics = vk::raii::Semaphore(m_core->getDevice(), semaphore_ci);
 		m_frames[frame_index].in_flight = vk::raii::Fence(m_core->getDevice(), fence_ci);
-		m_frames[frame_index].compute_in_flight = vk::raii::Fence(m_core->getDevice(), fence_ci);
 
 		setDebugName(
 		    *m_core, *m_frames[frame_index].command_buffer, std::format("VulkanRenderer Frame[{}] CommandBuffer", frame_index)
 		);
 		setDebugName(
-		    *m_core,
-		    *m_frames[frame_index].compute_command_buffer,
-		    std::format("VulkanRenderer Frame[{}] ComputeCommandBuffer", frame_index)
-		);
-		setDebugName(
 		    *m_core, *m_frames[frame_index].image_available, std::format("VulkanRenderer Frame[{}] ImageAvailable", frame_index)
 		);
-		setDebugName(
-		    *m_core,
-		    *m_frames[frame_index].compute_to_graphics,
-		    std::format("VulkanRenderer Frame[{}] ComputeToGraphics", frame_index)
-		);
 		setDebugName(*m_core, *m_frames[frame_index].in_flight, std::format("VulkanRenderer Frame[{}] InFlightFence", frame_index));
-		setDebugName(
-		    *m_core,
-		    *m_frames[frame_index].compute_in_flight,
-		    std::format("VulkanRenderer Frame[{}] ComputeInFlightFence", frame_index)
-		);
 	}
 
 	TOAST_TRACE("Render", "Frame command buffers created: {}", k_frames_in_flight);
@@ -951,7 +923,7 @@ auto VulkanRenderer::createDepthResources() -> void {
 	m_depth_resources.view.emplace(m_core->getDevice(), view_ci);
 	setDebugName(*m_core, **m_depth_resources.view, "VulkanRenderer DepthImageView");
 
-	m_depth_layout = vk::ImageLayout::eUndefined;
+	m_depth_resources.state.reset(**m_depth_resources.image, depthAttachmentRange(m_depth_format));
 	TOAST_TRACE(
 	    "Render", "Depth resources created at {}x{} with format {}", extent.width, extent.height, vk::to_string(m_depth_format)
 	);
@@ -984,7 +956,7 @@ void VulkanRenderer::createSceneColorResources() {
 		target.view.emplace(m_core->getDevice(), view_ci);
 		setDebugName(*m_core, **target.view, std::format("VulkanRenderer {}View", label));
 
-		target.layout = vk::ImageLayout::eUndefined;
+		target.state.reset(**target.image, colorSubresourceRange());
 		TOAST_TRACE("Render", "{} target created at {}x{} with format {}", label, extent.width, extent.height, vk::to_string(format));
 	};
 
@@ -994,7 +966,7 @@ void VulkanRenderer::createSceneColorResources() {
 	create(m_scene_motion, m_scene_motion_format, "SceneMotion");
 	create(m_voxel_albedo, k_voxel_albedo_format, "VoxelAlbedo");
 	create(m_voxel_material, k_voxel_material_format, "VoxelMaterial");
-	create(m_voxel_face_normal, k_scene_normal_format, "VoxelFaceNormal");
+	create(m_voxel_face_normal, k_voxel_face_normal_format, "VoxelFaceNormal");
 }
 
 void VulkanRenderer::createDescriptorPool() {
@@ -1003,7 +975,9 @@ void VulkanRenderer::createDescriptorPool() {
 
 	  vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, 32768),
 
-	  vk::DescriptorPoolSize(vk::DescriptorType::eStorageBuffer, 8192)
+	  vk::DescriptorPoolSize(vk::DescriptorType::eStorageBuffer, 8192),
+
+	  vk::DescriptorPoolSize(vk::DescriptorType::eStorageImage, 256)
 	};
 
 	if (m_core->isRayTracingSupported()) {
@@ -1046,7 +1020,7 @@ void VulkanRenderer::createDefaultTexture() {
 }
 
 auto VulkanRenderer::selectDepthFormat(const VulkanCore& core) -> vk::Format {
-	const std::array candidates {
+	constexpr std::array candidates {
 	  vk::Format::eD32Sfloat, vk::Format::eD24UnormS8Uint, vk::Format::eD32SfloatS8Uint, vk::Format::eD16Unorm
 	};
 
@@ -1230,14 +1204,15 @@ void VulkanRenderer::createDefaultShadowMap() {
 
 	recordUndefinedToTransferDst(cmd, **m_default_shadow_image, range);
 
-	const vk::ClearDepthStencilValue clear_value(1.0f, 0);
+	// Shadow maps keep standard depth so 1 is the far plane and every less-or-equal compare reads as lit
+	constexpr vk::ClearDepthStencilValue clear_value(1.0f, 0);
 	cmd.clearDepthStencilImage(**m_default_shadow_image, vk::ImageLayout::eTransferDstOptimal, clear_value, range);
 
 	recordTransferDstToShaderRead(cmd, **m_default_shadow_image, range);
 
 	cmd.end();
 
-	submitAndWait(device, m_core->getGraphicsQueue(), *cmd);
+	submitAndWait(device, m_core->getGraphicsQueue(), m_core->graphicsSubmitMutex(), *cmd);
 
 	// Sampler2DArrayShadow needs an array view
 	vk::ImageViewCreateInfo view_ci {};
@@ -1286,14 +1261,14 @@ void VulkanRenderer::createDefaultCubemap() {
 
 	recordUndefinedToTransferDst(cmd, **m_default_cube_image, range);
 
-	const vk::ClearColorValue clear_value(std::array {0.0f, 0.0f, 0.0f, 1.0f});
+	constexpr vk::ClearColorValue clear_value(std::array {0.0f, 0.0f, 0.0f, 1.0f});
 	cmd.clearColorImage(**m_default_cube_image, vk::ImageLayout::eTransferDstOptimal, clear_value, range);
 
 	recordTransferDstToShaderRead(cmd, **m_default_cube_image, range);
 
 	cmd.end();
 
-	submitAndWait(device, m_core->getGraphicsQueue(), *cmd);
+	submitAndWait(device, m_core->getGraphicsQueue(), m_core->graphicsSubmitMutex(), *cmd);
 
 	vk::ImageViewCreateInfo view_ci {};
 	view_ci.image = **m_default_cube_image;
@@ -1388,18 +1363,11 @@ void VulkanRenderer::recordAccelerationStructureBuilds(FrameContext& frame) {
 	}
 
 	if (built > 0 || skinned_recorded > 0) {
-		vk::MemoryBarrier barrier {};
-		barrier.srcAccessMask = vk::AccessFlagBits::eAccelerationStructureWriteKHR;
-		barrier.dstAccessMask = vk::AccessFlagBits::eAccelerationStructureReadKHR;
-
-		frame.command_buffer.pipelineBarrier(
-		    vk::PipelineStageFlagBits::eAccelerationStructureBuildKHR,
-		    vk::PipelineStageFlagBits::eAccelerationStructureBuildKHR | vk::PipelineStageFlagBits::eFragmentShader,
-		    {},
-		    barrier,
-		    nullptr,
-		    nullptr
-		);
+		// BLAS builds before the TLAS build that references them and before any fragment ray query
+		sync::BarrierBatch barriers;
+		barriers.memory(sync::Usage::acceleration_build, sync::Usage::acceleration_build);
+		barriers.memory(sync::Usage::acceleration_build, sync::Usage::acceleration_trace_fragment);
+		barriers.flush(*frame.command_buffer);
 	}
 
 	if (m_ray_tracing_scene != nullptr) {
@@ -1491,58 +1459,20 @@ auto VulkanRenderer::recordVoxelScopes(
 	                           m_scene_color.view.has_value() && m_scene_normal.view.has_value() &&
 	                           m_scene_indirect.view.has_value() && m_scene_motion.view.has_value();
 	if (m_voxel_pass == nullptr || !m_voxel_pass->isEnabled() || !targets_ready ||
-	    m_depth_layout != vk::ImageLayout::eDepthAttachmentOptimal || !m_voxel_pass->prepare(m_current_frame)) {
+	    m_depth_resources.state.usage != sync::Usage::depth_attachment || !m_voxel_pass->prepare(m_current_frame)) {
 		return false;
 	}
 
 	const vk::CommandBuffer cmd = *frame.command_buffer;
+	{
+		TracyVkZone(m_tracy_vk_ctx, cmd, "VoxelCells");
+		const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Voxel cells");
+		m_voxel_pass->recordCellCull(cmd, m_current_frame, scissor.extent);
+	}
 
-	const auto to_layout = [cmd](SceneColorResources& target, vk::ImageLayout layout) {
-		if (target.layout == layout) {
-			return;
-		}
-		vk::AccessFlags src_access {};
-		vk::PipelineStageFlags src_stage = vk::PipelineStageFlagBits::eTopOfPipe;
-		if (target.layout == vk::ImageLayout::eColorAttachmentOptimal) {
-			src_access = vk::AccessFlagBits::eColorAttachmentWrite;
-			src_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-		} else if (target.layout == vk::ImageLayout::eShaderReadOnlyOptimal) {
-			src_access = vk::AccessFlagBits::eShaderRead;
-			src_stage = vk::PipelineStageFlagBits::eFragmentShader;
-		}
-		const bool sampled = layout == vk::ImageLayout::eShaderReadOnlyOptimal;
-		transitionImageLayout(
-		    cmd,
-		    **target.image,
-		    target.layout,
-		    layout,
-		    src_access,
-		    sampled ? vk::AccessFlags(vk::AccessFlagBits::eShaderRead)
-				        : vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite,
-		    src_stage,
-		    sampled ? vk::PipelineStageFlagBits::eFragmentShader : vk::PipelineStageFlagBits::eColorAttachmentOutput,
-		    colorSubresourceRange()
-		);
-		target.layout = layout;
-	};
-
-	// Scopes give no ordering between a write and the next load
-	const auto attachment_barrier = [cmd]() {
-		const vk::MemoryBarrier barrier(
-		    vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite,
-		    vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite |
-		        vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite
-		);
-		cmd.pipelineBarrier(
-		    vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eLateFragmentTests,
-		    vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests |
-		        vk::PipelineStageFlagBits::eLateFragmentTests,
-		    {},
-		    barrier,
-		    nullptr,
-		    nullptr
-		);
-	};
+	const bool debris_drawn =
+	    m_debris_pass != nullptr && m_debris_pass->isEnabled() && m_debris_pass->prepare(cmd, m_current_frame);
+	sync::BarrierBatch barriers;
 
 	const auto attachment = [](const SceneColorResources& target, vk::AttachmentLoadOp load, const vk::ClearValue& clear) {
 		vk::RenderingAttachmentInfo info {};
@@ -1557,16 +1487,17 @@ auto VulkanRenderer::recordVoxelScopes(
 
 	const vk::ClearValue clear_zero(vk::ClearColorValue(std::array {0.0f, 0.0f, 0.0f, 0.0f}));
 	const vk::ClearValue clear_scene(vk::ClearColorValue(std::array {0.0f, 0.0f, 0.0f, 1.0f}));
-	const auto depth_range = depthAttachmentRange(m_depth_format);
 
-	attachment_barrier();
-	to_layout(m_voxel_albedo, vk::ImageLayout::eColorAttachmentOptimal);
-	to_layout(m_voxel_face_normal, vk::ImageLayout::eColorAttachmentOptimal);
-	to_layout(m_voxel_material, vk::ImageLayout::eColorAttachmentOptimal);
-	to_layout(m_scene_motion, vk::ImageLayout::eColorAttachmentOptimal);
+	// Depth stays an attachment but the prepass writes must land before this scope loads them
+	barriers.image(m_depth_resources.state, sync::Usage::depth_attachment);
+	barriers.image(m_voxel_albedo.state, sync::Usage::color_attachment);
+	barriers.image(m_voxel_face_normal.state, sync::Usage::color_attachment);
+	barriers.image(m_voxel_material.state, sync::Usage::color_attachment);
+	barriers.image(m_scene_motion.state, sync::Usage::color_attachment);
+	barriers.flush(cmd);
 
 	// Order matches voxel.slang FSOutput
-	const std::array gbuffer_attachments {
+	std::array gbuffer_attachments {
 	  attachment(m_voxel_albedo, vk::AttachmentLoadOp::eClear, clear_zero),
 	  attachment(m_voxel_face_normal, vk::AttachmentLoadOp::eClear, clear_zero),
 	  attachment(m_voxel_material, vk::AttachmentLoadOp::eClear, clear_zero),
@@ -1578,7 +1509,33 @@ auto VulkanRenderer::recordVoxelScopes(
 	depth_attachment.imageLayout = vk::ImageLayout::eDepthAttachmentOptimal;
 	depth_attachment.loadOp = depth_loaded ? vk::AttachmentLoadOp::eLoad : vk::AttachmentLoadOp::eClear;
 	depth_attachment.storeOp = vk::AttachmentStoreOp::eStore;
-	depth_attachment.clearValue = vk::ClearDepthStencilValue {1.0f, 0};
+	depth_attachment.clearValue = vk::ClearDepthStencilValue {depth::k_clear, 0};
+
+	// Near quads lay depth first so the G-buffer scope shades one quad fragment per pixel
+	const auto record_quad_depth = [&](bool late) {
+		if (!m_voxel_pass->nearQuadDepthPass()) {
+			return;
+		}
+		vk::RenderingInfo depth_info {};
+		depth_info.renderArea = scissor;
+		depth_info.layerCount = 1;
+		depth_info.pDepthAttachment = &depth_attachment;
+
+		cmd.beginRendering(depth_info);
+		cmd.setViewport(0, std::array {viewport});
+		cmd.setScissor(0, std::array {scissor});
+		{
+			TracyVkZone(m_tracy_vk_ctx, cmd, "VoxelQuadDepth");
+			const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, late ? "Voxel late quad depth" : "Voxel quad depth");
+			m_voxel_pass->recordQuadDepth(cmd, m_current_frame, late);
+		}
+		cmd.endRendering();
+
+		depth_attachment.loadOp = vk::AttachmentLoadOp::eLoad;
+		barriers.image(m_depth_resources.state, sync::Usage::depth_attachment);
+		barriers.flush(cmd);
+	};
+	record_quad_depth(false);
 
 	vk::RenderingInfo gbuffer_info {};
 	gbuffer_info.renderArea = scissor;
@@ -1595,52 +1552,61 @@ auto VulkanRenderer::recordVoxelScopes(
 		const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Voxel G-buffer");
 		m_voxel_pass->record(cmd, m_current_frame, 0);
 	}
-	cmd.endRendering();
-
-	to_layout(m_voxel_albedo, vk::ImageLayout::eShaderReadOnlyOptimal);
-	to_layout(m_voxel_face_normal, vk::ImageLayout::eShaderReadOnlyOptimal);
-	to_layout(m_voxel_material, vk::ImageLayout::eShaderReadOnlyOptimal);
-	transitionImageLayout(
-	    cmd,
-	    **m_depth_resources.image,
-	    vk::ImageLayout::eDepthAttachmentOptimal,
-	    vk::ImageLayout::eDepthReadOnlyOptimal,
-	    vk::AccessFlagBits::eDepthStencilAttachmentWrite,
-	    vk::AccessFlagBits::eShaderRead,
-	    vk::PipelineStageFlagBits::eLateFragmentTests,
-	    vk::PipelineStageFlagBits::eFragmentShader,
-	    depth_range
-	);
-	m_depth_layout = vk::ImageLayout::eDepthReadOnlyOptimal;
-
-	// Rounded normals land in the shared target other passes already read
-	to_layout(m_scene_normal, vk::ImageLayout::eColorAttachmentOptimal);
-	const std::array blur_attachments {attachment(m_scene_normal, vk::AttachmentLoadOp::eClear, clear_zero)};
-
-	vk::RenderingInfo blur_info {};
-	blur_info.renderArea = scissor;
-	blur_info.layerCount = 1;
-	blur_info.colorAttachmentCount = static_cast<uint32_t>(blur_attachments.size());
-	blur_info.pColorAttachments = blur_attachments.data();
-
-	cmd.beginRendering(blur_info);
-	cmd.setViewport(0, std::array {viewport});
-	cmd.setScissor(0, std::array {scissor});
-	{
-		TracyVkZone(m_tracy_vk_ctx, cmd, "VoxelNormalBlur");
-		const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Voxel normal blur");
-		m_voxel_pass->recordNormalBlur(cmd, m_current_frame, scissor.extent);
+	if (debris_drawn) {
+		TracyVkZone(m_tracy_vk_ctx, cmd, "Debris");
+		const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Debris");
+		m_debris_pass->record(cmd, m_current_frame, 0);
 	}
 	cmd.endRendering();
-	to_layout(m_scene_normal, vk::ImageLayout::eShaderReadOnlyOptimal);
 
-	to_layout(m_scene_color, vk::ImageLayout::eColorAttachmentOptimal);
-	to_layout(m_scene_indirect, vk::ImageLayout::eColorAttachmentOptimal);
+	if (m_voxel_pass->occlusionActive()) {
+		barriers.image(m_depth_resources.state, sync::Usage::depth_sampled);
+		barriers.flush(cmd);
+		{
+			TracyVkZone(m_tracy_vk_ctx, cmd, "VoxelOcclusion");
+			const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Voxel occlusion");
+			m_voxel_pass->recordOcclusion(cmd, m_current_frame, scissor.extent);
+		}
+
+		// The late scope loads what the early one stored
+		barriers.image(m_depth_resources.state, sync::Usage::depth_attachment);
+		barriers.image(m_voxel_albedo.state, sync::Usage::color_attachment);
+		barriers.image(m_voxel_face_normal.state, sync::Usage::color_attachment);
+		barriers.image(m_voxel_material.state, sync::Usage::color_attachment);
+		barriers.image(m_scene_motion.state, sync::Usage::color_attachment);
+		barriers.flush(cmd);
+
+		for (auto& gbuffer_attachment : gbuffer_attachments) {
+			gbuffer_attachment.loadOp = vk::AttachmentLoadOp::eLoad;
+		}
+		depth_attachment.loadOp = vk::AttachmentLoadOp::eLoad;
+		record_quad_depth(true);
+
+		cmd.beginRendering(gbuffer_info);
+		cmd.setViewport(0, std::array {viewport});
+		cmd.setScissor(0, std::array {scissor});
+		{
+			TracyVkZone(m_tracy_vk_ctx, cmd, "VoxelLateGbuffer");
+			const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Voxel late G-buffer");
+			m_voxel_pass->recordLate(cmd, m_current_frame);
+		}
+		cmd.endRendering();
+	}
+
+	barriers.image(m_voxel_albedo.state, sync::Usage::fragment_sampled);
+	barriers.image(m_voxel_face_normal.state, sync::Usage::fragment_sampled);
+	barriers.image(m_voxel_material.state, sync::Usage::fragment_sampled);
+	barriers.image(m_depth_resources.state, sync::Usage::depth_sampled);
+	barriers.image(m_scene_color.state, sync::Usage::color_attachment);
+	barriers.image(m_scene_indirect.state, sync::Usage::color_attachment);
+	barriers.image(m_scene_normal.state, sync::Usage::color_attachment);
+	barriers.flush(cmd);
 
 	// Clears what no voxel covers since the world scope now loads instead
 	const std::array lighting_attachments {
 	  attachment(m_scene_color, vk::AttachmentLoadOp::eClear, clear_scene),
 	  attachment(m_scene_indirect, vk::AttachmentLoadOp::eClear, clear_zero),
+	  attachment(m_scene_normal, vk::AttachmentLoadOp::eClear, clear_zero),
 	};
 
 	vk::RenderingInfo lighting_info {};
@@ -1655,24 +1621,17 @@ auto VulkanRenderer::recordVoxelScopes(
 	{
 		TracyVkZone(m_tracy_vk_ctx, cmd, "VoxelLighting");
 		const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Voxel lighting");
-		m_voxel_pass->recordLighting(cmd, m_current_frame);
+		m_voxel_pass->recordLighting(cmd, m_current_frame, scissor.extent);
 	}
 	cmd.endRendering();
 
-	to_layout(m_scene_normal, vk::ImageLayout::eColorAttachmentOptimal);
-	transitionImageLayout(
-	    cmd,
-	    **m_depth_resources.image,
-	    vk::ImageLayout::eDepthReadOnlyOptimal,
-	    vk::ImageLayout::eDepthAttachmentOptimal,
-	    vk::AccessFlagBits::eShaderRead,
-	    vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite,
-	    vk::PipelineStageFlagBits::eFragmentShader,
-	    vk::PipelineStageFlagBits::eEarlyFragmentTests | vk::PipelineStageFlagBits::eLateFragmentTests,
-	    depth_range
-	);
-	m_depth_layout = vk::ImageLayout::eDepthAttachmentOptimal;
-	attachment_barrier();
+	// The world scope loads all of these so writes above must land first
+	barriers.image(m_scene_normal.state, sync::Usage::color_attachment);
+	barriers.image(m_scene_color.state, sync::Usage::color_attachment);
+	barriers.image(m_scene_indirect.state, sync::Usage::color_attachment);
+	barriers.image(m_scene_motion.state, sync::Usage::color_attachment);
+	barriers.image(m_depth_resources.state, sync::Usage::depth_attachment);
+	barriers.flush(cmd);
 	return true;
 }
 
@@ -1683,6 +1642,28 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	frame.command_buffer.begin(begin_info);
 	if (m_gpu_timer != nullptr) {
 		m_gpu_timer->beginGraphics(m_current_frame, *frame.command_buffer);
+	}
+
+	m_pending_acquires.flush(*frame.command_buffer);
+
+	// Small carves patch the voxel sections in place before anything this frame reads them
+	if (const auto* rendering = renderingFrame(); rendering != nullptr && rendering->voxel_storage != nullptr) {
+		std::vector<std::shared_ptr<void>> staging;
+		rendering->voxel_storage->recordPendingPatches(*frame.command_buffer, staging);
+		for (auto& buffer : staging) {
+			retire(std::move(buffer));
+		}
+	}
+
+	// Graphics queue since this frame reads it and the compute queue belongs to AsyncCompute
+	if (!m_compute_passes.empty()) {
+		const GpuScope scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, "Light culling");
+		for (auto& pass : m_compute_passes) {
+			pass->dispatch(*frame.command_buffer, m_current_frame);
+		}
+		sync::BarrierBatch compute_done;
+		compute_done.memory(sync::Usage::compute_storage_write, sync::Usage::fragment_storage_read);
+		compute_done.flush(*frame.command_buffer);
 	}
 
 	// Before the AS builds which read its output
@@ -1718,91 +1699,21 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	const vk::Rect2D scene_scissor({0, 0}, scene_extent);
 
 	const vk::Image scene_image = m_scene_color.image ? **m_scene_color.image : VK_NULL_HANDLE;
-	if (scene_image != VK_NULL_HANDLE) {
-		const bool was_sampled = m_scene_color.layout == vk::ImageLayout::eShaderReadOnlyOptimal;
-		transitionImageLayout(
-		    frame.command_buffer,
-		    scene_image,
-		    m_scene_color.layout,
-		    vk::ImageLayout::eColorAttachmentOptimal,
-		    was_sampled ? vk::AccessFlagBits::eShaderRead : vk::AccessFlags {},
-		    vk::AccessFlagBits::eColorAttachmentWrite,
-		    was_sampled ? vk::PipelineStageFlagBits::eFragmentShader : vk::PipelineStageFlagBits::eTopOfPipe,
-		    vk::PipelineStageFlagBits::eColorAttachmentOutput,
-		    colorSubresourceRange()
-		);
-		m_scene_color.layout = vk::ImageLayout::eColorAttachmentOptimal;
-	}
-
 	const vk::Image normal_image = m_scene_normal.image ? **m_scene_normal.image : VK_NULL_HANDLE;
-	if (normal_image != VK_NULL_HANDLE && m_scene_normal.layout != vk::ImageLayout::eColorAttachmentOptimal) {
-		const bool normal_was_sampled = m_scene_normal.layout == vk::ImageLayout::eShaderReadOnlyOptimal;
-		transitionImageLayout(
-		    frame.command_buffer,
-		    normal_image,
-		    m_scene_normal.layout,
-		    vk::ImageLayout::eColorAttachmentOptimal,
-		    normal_was_sampled ? vk::AccessFlagBits::eShaderRead : vk::AccessFlags {},
-		    vk::AccessFlagBits::eColorAttachmentWrite,
-		    normal_was_sampled ? vk::PipelineStageFlagBits::eFragmentShader : vk::PipelineStageFlagBits::eTopOfPipe,
-		    vk::PipelineStageFlagBits::eColorAttachmentOutput,
-		    colorSubresourceRange()
-		);
-		m_scene_normal.layout = vk::ImageLayout::eColorAttachmentOptimal;
-	}
-
 	const vk::Image indirect_image = m_scene_indirect.image ? **m_scene_indirect.image : VK_NULL_HANDLE;
-	if (indirect_image != VK_NULL_HANDLE && m_scene_indirect.layout != vk::ImageLayout::eColorAttachmentOptimal) {
-		const bool indirect_was_sampled = m_scene_indirect.layout == vk::ImageLayout::eShaderReadOnlyOptimal;
-		transitionImageLayout(
-		    frame.command_buffer,
-		    indirect_image,
-		    m_scene_indirect.layout,
-		    vk::ImageLayout::eColorAttachmentOptimal,
-		    indirect_was_sampled ? vk::AccessFlagBits::eShaderRead : vk::AccessFlags {},
-		    vk::AccessFlagBits::eColorAttachmentWrite,
-		    indirect_was_sampled ? vk::PipelineStageFlagBits::eFragmentShader : vk::PipelineStageFlagBits::eTopOfPipe,
-		    vk::PipelineStageFlagBits::eColorAttachmentOutput,
-		    colorSubresourceRange()
-		);
-		m_scene_indirect.layout = vk::ImageLayout::eColorAttachmentOptimal;
-	}
-
 	const vk::Image motion_image = m_scene_motion.image ? **m_scene_motion.image : VK_NULL_HANDLE;
-	if (motion_image != VK_NULL_HANDLE && m_scene_motion.layout != vk::ImageLayout::eColorAttachmentOptimal) {
-		const bool motion_was_sampled = m_scene_motion.layout == vk::ImageLayout::eShaderReadOnlyOptimal;
-		transitionImageLayout(
-		    frame.command_buffer,
-		    motion_image,
-		    m_scene_motion.layout,
-		    vk::ImageLayout::eColorAttachmentOptimal,
-		    motion_was_sampled ? vk::AccessFlagBits::eShaderRead : vk::AccessFlags {},
-		    vk::AccessFlagBits::eColorAttachmentWrite,
-		    motion_was_sampled ? vk::PipelineStageFlagBits::eFragmentShader : vk::PipelineStageFlagBits::eTopOfPipe,
-		    vk::PipelineStageFlagBits::eColorAttachmentOutput,
-		    colorSubresourceRange()
-		);
-		m_scene_motion.layout = vk::ImageLayout::eColorAttachmentOptimal;
-	}
 
-	const vk::Image depth_image = m_depth_resources.image ? **m_depth_resources.image : VK_NULL_HANDLE;
-	if (depth_image != VK_NULL_HANDLE && m_depth_layout != vk::ImageLayout::eDepthAttachmentOptimal) {
-		transitionImageLayout(
-		    frame.command_buffer,
-		    depth_image,
-		    m_depth_layout,
-		    vk::ImageLayout::eDepthAttachmentOptimal,
-		    vk::AccessFlags {},
-		    vk::AccessFlagBits::eDepthStencilAttachmentWrite,
-		    vk::PipelineStageFlagBits::eTopOfPipe,
-		    vk::PipelineStageFlagBits::eEarlyFragmentTests | vk::PipelineStageFlagBits::eLateFragmentTests,
-		    depthAttachmentRange(m_depth_format)
-		);
-		m_depth_layout = vk::ImageLayout::eDepthAttachmentOptimal;
-	}
+	// Last frame sampled these and its overlay scope stored depth
+	sync::BarrierBatch barriers;
+	barriers.image(m_scene_color.state, sync::Usage::color_attachment);
+	barriers.image(m_scene_normal.state, sync::Usage::color_attachment);
+	barriers.image(m_scene_indirect.state, sync::Usage::color_attachment);
+	barriers.image(m_scene_motion.state, sync::Usage::color_attachment);
+	barriers.image(m_depth_resources.state, sync::Usage::depth_attachment);
+	barriers.flush(*frame.command_buffer);
 
 	const vk::ClearValue clear_color(vk::ClearColorValue(std::array {0.0f, 0.0f, 0.0f, 1.0f}));
-	const vk::ClearValue clear_depth(vk::ClearDepthStencilValue {1.0f, 0});
+	const vk::ClearValue clear_depth(vk::ClearDepthStencilValue {depth::k_clear, 0});
 
 	vk::RenderingAttachmentInfo scene_attachment_info {};
 	scene_attachment_info.imageView = scene_image != VK_NULL_HANDLE ? **m_scene_color.view : nullptr;
@@ -1917,19 +1828,11 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 
 	frame.command_buffer.endRendering();
 
+	// PROBE and Iradiance capture
+
 	if (const auto* capture_frame = renderingFrame(); capture_frame != nullptr && capture_frame->probe_capture_index >= 0 &&
 	                                                  m_reflection_probe_pass != nullptr && scene_image != VK_NULL_HANDLE) {
-		transitionImageLayout(
-		    frame.command_buffer,
-		    scene_image,
-		    vk::ImageLayout::eColorAttachmentOptimal,
-		    vk::ImageLayout::eTransferSrcOptimal,
-		    vk::AccessFlagBits::eColorAttachmentWrite,
-		    vk::AccessFlagBits::eTransferRead,
-		    vk::PipelineStageFlagBits::eColorAttachmentOutput,
-		    vk::PipelineStageFlagBits::eTransfer,
-		    colorSubresourceRange()
-		);
+		sync::transition(*frame.command_buffer, m_scene_color.state, sync::Usage::transfer_src);
 
 		m_reflection_probe_pass->captureFace(
 		    *frame.command_buffer,
@@ -1939,48 +1842,18 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 		    capture_frame->probe_capture_face
 		);
 
-		transitionImageLayout(
-		    frame.command_buffer,
-		    scene_image,
-		    vk::ImageLayout::eTransferSrcOptimal,
-		    vk::ImageLayout::eColorAttachmentOptimal,
-		    vk::AccessFlagBits::eTransferRead,
-		    vk::AccessFlagBits::eColorAttachmentWrite,
-		    vk::PipelineStageFlagBits::eTransfer,
-		    vk::PipelineStageFlagBits::eColorAttachmentOutput,
-		    colorSubresourceRange()
-		);
+		sync::transition(*frame.command_buffer, m_scene_color.state, sync::Usage::color_attachment);
 	}
 
 	if (const auto* capture_frame = renderingFrame(); capture_frame != nullptr && capture_frame->irradiance_capture_index >= 0 &&
 	                                                  m_reflection_probe_pass != nullptr && scene_image != VK_NULL_HANDLE) {
-		transitionImageLayout(
-		    frame.command_buffer,
-		    scene_image,
-		    vk::ImageLayout::eColorAttachmentOptimal,
-		    vk::ImageLayout::eTransferSrcOptimal,
-		    vk::AccessFlagBits::eColorAttachmentWrite,
-		    vk::AccessFlagBits::eTransferRead,
-		    vk::PipelineStageFlagBits::eColorAttachmentOutput,
-		    vk::PipelineStageFlagBits::eTransfer,
-		    colorSubresourceRange()
-		);
+		sync::transition(*frame.command_buffer, m_scene_color.state, sync::Usage::transfer_src);
 
 		m_reflection_probe_pass->captureIrradianceFace(
 		    *frame.command_buffer, scene_image, scene_extent, capture_frame->irradiance_capture_face
 		);
 
-		transitionImageLayout(
-		    frame.command_buffer,
-		    scene_image,
-		    vk::ImageLayout::eTransferSrcOptimal,
-		    vk::ImageLayout::eColorAttachmentOptimal,
-		    vk::AccessFlagBits::eTransferRead,
-		    vk::AccessFlagBits::eColorAttachmentWrite,
-		    vk::PipelineStageFlagBits::eTransfer,
-		    vk::PipelineStageFlagBits::eColorAttachmentOutput,
-		    colorSubresourceRange()
-		);
+		sync::transition(*frame.command_buffer, m_scene_color.state, sync::Usage::color_attachment);
 
 		if (capture_frame->irradiance_capture_face == 5) {
 			m_reflection_probe_pass->projectStagingToSh(
@@ -1989,80 +1862,13 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 		}
 	}
 
-	if (scene_image != VK_NULL_HANDLE) {
-		transitionImageLayout(
-		    frame.command_buffer,
-		    scene_image,
-		    vk::ImageLayout::eColorAttachmentOptimal,
-		    vk::ImageLayout::eShaderReadOnlyOptimal,
-		    vk::AccessFlagBits::eColorAttachmentWrite,
-		    vk::AccessFlagBits::eShaderRead,
-		    vk::PipelineStageFlagBits::eColorAttachmentOutput,
-		    vk::PipelineStageFlagBits::eFragmentShader,
-		    colorSubresourceRange()
-		);
-		m_scene_color.layout = vk::ImageLayout::eShaderReadOnlyOptimal;
-	}
-
-	if (normal_image != VK_NULL_HANDLE && m_scene_normal.layout != vk::ImageLayout::eShaderReadOnlyOptimal) {
-		transitionImageLayout(
-		    frame.command_buffer,
-		    normal_image,
-		    m_scene_normal.layout,
-		    vk::ImageLayout::eShaderReadOnlyOptimal,
-		    vk::AccessFlagBits::eColorAttachmentWrite,
-		    vk::AccessFlagBits::eShaderRead,
-		    vk::PipelineStageFlagBits::eColorAttachmentOutput,
-		    vk::PipelineStageFlagBits::eFragmentShader,
-		    colorSubresourceRange()
-		);
-		m_scene_normal.layout = vk::ImageLayout::eShaderReadOnlyOptimal;
-	}
-
-	if (indirect_image != VK_NULL_HANDLE && m_scene_indirect.layout != vk::ImageLayout::eShaderReadOnlyOptimal) {
-		transitionImageLayout(
-		    frame.command_buffer,
-		    indirect_image,
-		    m_scene_indirect.layout,
-		    vk::ImageLayout::eShaderReadOnlyOptimal,
-		    vk::AccessFlagBits::eColorAttachmentWrite,
-		    vk::AccessFlagBits::eShaderRead,
-		    vk::PipelineStageFlagBits::eColorAttachmentOutput,
-		    vk::PipelineStageFlagBits::eFragmentShader,
-		    colorSubresourceRange()
-		);
-		m_scene_indirect.layout = vk::ImageLayout::eShaderReadOnlyOptimal;
-	}
-
-	if (motion_image != VK_NULL_HANDLE && m_scene_motion.layout != vk::ImageLayout::eShaderReadOnlyOptimal) {
-		transitionImageLayout(
-		    frame.command_buffer,
-		    motion_image,
-		    m_scene_motion.layout,
-		    vk::ImageLayout::eShaderReadOnlyOptimal,
-		    vk::AccessFlagBits::eColorAttachmentWrite,
-		    vk::AccessFlagBits::eShaderRead,
-		    vk::PipelineStageFlagBits::eColorAttachmentOutput,
-		    vk::PipelineStageFlagBits::eFragmentShader,
-		    colorSubresourceRange()
-		);
-		m_scene_motion.layout = vk::ImageLayout::eShaderReadOnlyOptimal;
-	}
-
-	if (depth_image != VK_NULL_HANDLE && m_depth_layout != vk::ImageLayout::eDepthReadOnlyOptimal) {
-		transitionImageLayout(
-		    frame.command_buffer,
-		    depth_image,
-		    m_depth_layout,
-		    vk::ImageLayout::eDepthReadOnlyOptimal,
-		    vk::AccessFlagBits::eDepthStencilAttachmentWrite,
-		    vk::AccessFlagBits::eShaderRead,
-		    vk::PipelineStageFlagBits::eLateFragmentTests,
-		    vk::PipelineStageFlagBits::eFragmentShader,
-		    depthAttachmentRange(m_depth_format)
-		);
-		m_depth_layout = vk::ImageLayout::eDepthReadOnlyOptimal;
-	}
+	// Auto exposure reads these from compute too
+	barriers.image(m_scene_color.state, sync::Usage::shader_sampled);
+	barriers.image(m_scene_normal.state, sync::Usage::shader_sampled);
+	barriers.image(m_scene_indirect.state, sync::Usage::shader_sampled);
+	barriers.image(m_scene_motion.state, sync::Usage::shader_sampled);
+	barriers.image(m_depth_resources.state, sync::Usage::depth_sampled);
+	barriers.flush(*frame.command_buffer);
 
 	const auto* capture_check = renderingFrame();
 	const bool capture_frame =
@@ -2081,61 +1887,14 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 		}
 	}
 
-	if (depth_image != VK_NULL_HANDLE && m_depth_layout != vk::ImageLayout::eDepthAttachmentOptimal) {
-		transitionImageLayout(
-		    frame.command_buffer,
-		    depth_image,
-		    m_depth_layout,
-		    vk::ImageLayout::eDepthAttachmentOptimal,
-		    vk::AccessFlagBits::eShaderRead,
-		    vk::AccessFlagBits::eDepthStencilAttachmentRead,
-		    vk::PipelineStageFlagBits::eFragmentShader,
-		    vk::PipelineStageFlagBits::eEarlyFragmentTests,
-		    depthAttachmentRange(m_depth_format)
-		);
-		m_depth_layout = vk::ImageLayout::eDepthAttachmentOptimal;
-	}
+	// The overlay scope depth tests against the scene and its DontCare store counts as a write
+	barriers.image(m_depth_resources.state, sync::Usage::depth_attachment);
 
 	const vk::Image image = m_output_target->getColorImage(image_index);
-	const vk::ImageLayout previous_layout = m_output_image_layouts.at(image_index);
-
-	vk::AccessFlags src_access_mask {};
-	vk::PipelineStageFlags src_stage_mask = vk::PipelineStageFlagBits::eTopOfPipe;
-
-	switch (previous_layout) {
-		case vk::ImageLayout::eUndefined:
-			src_access_mask = vk::AccessFlags {};
-			src_stage_mask = vk::PipelineStageFlagBits::eTopOfPipe;
-			break;
-		case vk::ImageLayout::ePresentSrcKHR:
-			src_access_mask = vk::AccessFlags {};
-			src_stage_mask = vk::PipelineStageFlagBits::eBottomOfPipe;
-			break;
-		case vk::ImageLayout::eTransferSrcOptimal:
-			src_access_mask = vk::AccessFlagBits::eTransferRead;
-			src_stage_mask = vk::PipelineStageFlagBits::eTransfer;
-			break;
-		case vk::ImageLayout::eColorAttachmentOptimal:
-			src_access_mask = vk::AccessFlagBits::eColorAttachmentWrite;
-			src_stage_mask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-			break;
-		default:
-			src_access_mask = vk::AccessFlags {};
-			src_stage_mask = vk::PipelineStageFlagBits::eTopOfPipe;
-			break;
-	}
-
-	transitionImageLayout(
-	    frame.command_buffer,
-	    image,
-	    previous_layout,
-	    vk::ImageLayout::eColorAttachmentOptimal,
-	    src_access_mask,
-	    vk::AccessFlagBits::eColorAttachmentWrite,
-	    src_stage_mask,
-	    vk::PipelineStageFlagBits::eColorAttachmentOutput,
-	    colorSubresourceRange()
-	);
+	sync::Usage& output_usage = m_output_image_usage.at(image_index);
+	barriers.image(image, colorSubresourceRange(), output_usage, sync::Usage::color_attachment);
+	output_usage = sync::Usage::color_attachment;
+	barriers.flush(*frame.command_buffer);
 
 	vk::RenderingAttachmentInfo output_attachment_info {};
 	output_attachment_info.imageView = *m_output_target->getColorAttachment(image_index);
@@ -2214,8 +1973,8 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 		const GpuScope scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, "Output finalize");
 		m_output_target->recordFinalize(frame.command_buffer, image_index);
 	}
-	m_output_image_layouts.at(image_index) =
-	    m_output_target->usesAcquirePresentSemaphores() ? vk::ImageLayout::ePresentSrcKHR : vk::ImageLayout::eTransferSrcOptimal;
+	// Must match the last transition IOutputTarget::recordFinalize records
+	output_usage = m_output_target->usesAcquirePresentSemaphores() ? sync::Usage::present : sync::Usage::transfer_src;
 
 	TracyVkCollect(m_tracy_vk_ctx, *frame.command_buffer);
 
@@ -2228,13 +1987,14 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 void VulkanRenderer::ensureMaterialPasses(RenderFrame& frame_data) {
 	ZoneScoped;
 
+	std::lock_guard lock(m_pass_mutex);
 	if (m_pending_material_pass_clear.exchange(false, std::memory_order_acq_rel)) {
-		m_core->getDevice().waitIdle();
-		std::lock_guard lock(m_pass_mutex);
+		for (auto& [material, pass] : m_material_passes) {
+			retire(std::shared_ptr<MaterialPass>(std::move(pass)));
+		}
 		m_material_passes.clear();
 	}
 
-	std::lock_guard lock(m_pass_mutex);
 	for (const auto& proxy : frame_data.mesh_instances) {
 		if (proxy.root_material == nullptr || m_material_passes.contains(proxy.root_material)) {
 			continue;
@@ -2244,6 +2004,33 @@ void VulkanRenderer::ensureMaterialPasses(RenderFrame& frame_data) {
 		);
 		TOAST_INFO("Render", "Created material pass '{}'", pass->name());
 		m_material_passes.emplace(proxy.root_material, std::move(pass));
+	}
+
+	// A baked probe must not miss a material that is still building
+	if (frame_data.probe_capture_index >= 0 || frame_data.irradiance_capture_index >= 0) {
+		for (auto& [material, pass] : m_material_passes) {
+			pass->finishPendingBuild();
+		}
+	}
+}
+
+void VulkanRenderer::hideInstancesWithoutPipeline(RenderFrame& frame_data) {
+	ZoneScoped;
+	std::lock_guard lock(m_pass_mutex);
+	for (auto& proxy : frame_data.mesh_instances) {
+		if (!proxy.visible || proxy.root_material == nullptr) {
+			continue;
+		}
+		const auto it = m_material_passes.find(proxy.root_material);
+		if (it == m_material_passes.end() || !it->second->isValid()) {
+			proxy.visible = false;
+		}
+	}
+}
+
+void VulkanRenderer::retire(std::shared_ptr<void> object) {
+	if (object != nullptr) {
+		m_frames[m_current_frame].retired.push_back(std::move(object));
 	}
 }
 
@@ -2355,9 +2142,10 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 
 	auto& frame = m_frames[m_current_frame];
 	std::ignore = m_core->getDevice().waitForFences(*frame.in_flight, true, std::numeric_limits<uint64_t>::max());
-	std::ignore = m_core->getDevice().waitForFences(*frame.compute_in_flight, true, std::numeric_limits<uint64_t>::max());
 	end_phase(m_perf_gpu_wait_ns);
+	frame.retired.clear();
 	publishCompletedFrames();
+	m_core->updateTracyMemory();
 
 	if (m_gpu_timer != nullptr && !frame.was_probe_capture) {
 		m_gpu_timer->collect(m_current_frame);
@@ -2393,14 +2181,24 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 	ensureMaterialPasses(frame_data);
 
 	// TODO move outside the render loop
+	bool any_unbuilt_material = false;
 	{
 		std::lock_guard lock(m_pass_mutex);
 		for (auto& [material, pass] : m_material_passes) {
 			pass->update(m_current_frame, Time::renderDelta());
+			any_unbuilt_material = any_unbuilt_material || !pass->isValid();
 		}
 		for (auto& pass : m_render_passes) {
 			pass->update(m_current_frame, Time::renderDelta());
 		}
+		// Before recordFrame dispatches them
+		for (auto& pass : m_compute_passes) {
+			pass->update(m_current_frame, Time::renderDelta());
+		}
+	}
+	// Only while a first build runs so the steady state skips the walk
+	if (any_unbuilt_material) {
+		hideInstancesWithoutPipeline(frame_data);
 	}
 
 	if (const auto* rendering = renderingFrame(); rendering != nullptr) {
@@ -2410,30 +2208,7 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 	}
 
 	recordFrame(frame, image_index);
-
-	// Never conditional since the graphics submit waits on its semaphore
-	m_core->getDevice().resetFences(*frame.compute_in_flight);
-
-	const vk::CommandBuffer compute_command_buffer = *frame.compute_command_buffer;
-	compute_command_buffer.reset();
-	constexpr vk::CommandBufferBeginInfo compute_begin_info {};
-	compute_command_buffer.begin(compute_begin_info);
-	if (m_gpu_timer != nullptr) {
-		m_gpu_timer->beginCompute(m_current_frame, compute_command_buffer);
-	}
-	for (auto& pass : m_compute_passes) {
-		pass->update(m_current_frame, Time::renderDelta());
-		pass->dispatch(compute_command_buffer, m_current_frame);
-	}
-	if (m_gpu_timer != nullptr) {
-		m_gpu_timer->endCompute(m_current_frame, compute_command_buffer);
-	}
-	compute_command_buffer.end();
 	end_phase(m_perf_record_ns);
-
-	const vk::Semaphore compute_to_graphics_semaphore = *frame.compute_to_graphics;
-	const vk::SubmitInfo compute_submit_info(0, nullptr, nullptr, 1, &compute_command_buffer, 1, &compute_to_graphics_semaphore);
-	m_core->getComputeQueue().submit(compute_submit_info, *frame.compute_in_flight);
 
 	const bool present_sync = m_output_target->usesAcquirePresentSemaphores();
 
@@ -2441,48 +2216,50 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 	const vk::Semaphore signal_semaphore = *m_render_finished_per_image.at(image_index);
 	const vk::Semaphore wait_semaphore = *frame.image_available;
 
-	std::array<vk::Semaphore, 3> wait_semaphores {compute_to_graphics_semaphore, wait_semaphore};
-	std::array<vk::PipelineStageFlags, 3> wait_stages {
-	  vk::PipelineStageFlagBits::eFragmentShader, vk::PipelineStageFlagBits::eColorAttachmentOutput
-	};
-	uint32_t wait_semaphore_count = present_sync ? 2 : 1;
-	std::array<vk::Semaphore, 2> signal_semaphores {};
-	uint32_t signal_semaphore_count = 0;
+	// AsyncCompute work never synchronises with a frame on the GPU
+	std::array<sync::SemaphoreWait, 3> waits {};
+	uint32_t wait_count = 0;
 	if (present_sync) {
-		signal_semaphores[signal_semaphore_count++] = signal_semaphore;
+		waits[wait_count++] = {wait_semaphore, vk::PipelineStageFlagBits2::eColorAttachmentOutput};
 	}
+	// Already reached but makes the release to acquire order explicit for validation
+	if (m_upload_acquired_value > m_upload_waited_value) {
+		waits[wait_count++] = {*m_upload_timeline, vk::PipelineStageFlagBits2::eAllCommands, m_upload_acquired_value};
+		m_upload_waited_value = m_upload_acquired_value;
+	}
+	const sync::SemaphoreSignal present_signal {signal_semaphore};
 
 	const OutputSubmitSync output_sync = m_output_target->submitSync(image_index);
 	if (output_sync.wait) {
-		wait_semaphores[wait_semaphore_count] = output_sync.wait;
-		wait_stages[wait_semaphore_count] = output_sync.wait_stage;
-		++wait_semaphore_count;
+		waits[wait_count++] = {output_sync.wait, vk::PipelineStageFlags2(static_cast<VkPipelineStageFlags>(output_sync.wait_stage))};
+	}
+	std::array<sync::SemaphoreSignal, 2> signals {};
+	uint32_t signal_count = 0;
+	if (present_sync) {
+		signals[signal_count++] = present_signal;
 	}
 	if (output_sync.signal) {
-		signal_semaphores[signal_semaphore_count++] = output_sync.signal;
+		signals[signal_count++] = {output_sync.signal};
 	}
 
-	vk::SubmitInfo submit_info {};
-	submit_info.waitSemaphoreCount = wait_semaphore_count;
-	submit_info.pWaitSemaphores = wait_semaphores.data();
-	submit_info.pWaitDstStageMask = wait_stages.data();
-	submit_info.signalSemaphoreCount = signal_semaphore_count;
-	submit_info.pSignalSemaphores = signal_semaphores.data();
-	submit_info.commandBufferCount = 1;
-	submit_info.pCommandBuffers = &command_buffer;
-	submit_info.pNext = output_sync.chain;
+	sync::SubmitDesc submit {};
+	submit.commands = {&command_buffer, 1};
+	submit.waits = std::span(waits).first(wait_count);
+	submit.signals = std::span(signals).first(signal_count);
+	submit.next = output_sync.chain;
+	submit.fence = *frame.in_flight;
 
 	vk::FrameBoundaryEXT frame_boundary {};
 	if (m_core->isFrameBoundarySupported()) {
 		frame_boundary.flags = vk::FrameBoundaryFlagBitsEXT::eFrameEnd;
 		frame_boundary.frameID = m_frame_boundary_counter++;
 		frame_boundary.pNext = output_sync.chain;
-		submit_info.pNext = &frame_boundary;
+		submit.next = &frame_boundary;
 	}
 
 	{
 		std::scoped_lock submit_lock(m_core->graphicsSubmitMutex());
-		m_core->getGraphicsQueue().submit(submit_info, *frame.in_flight);
+		sync::submit(m_core->getGraphicsQueue(), submit);
 	}
 	end_phase(m_perf_submit_ns);
 
@@ -2796,11 +2573,26 @@ void VulkanRenderer::fitShadowViews(
 		const float shadow_far = std::min(m_camera->far_plane, shadows::shadowDistance());
 		const auto splits = computeCascadeSplits(m_camera->near_plane, shadow_far);
 
+		const glm::vec3 light_direction = glm::normalize(shadow_caster_direction);
+		const uint32_t resolution = shadows::cascadeResolution();
 		float split_near = m_camera->near_plane;
 		for (uint32_t cascade = 0; cascade < shadows::k_cascade_count; ++cascade) {
-			const auto fit = fitDirectionalCascade(
-			    *m_camera, aspect, shadow_caster_direction, split_near, splits[cascade], shadows::cascadeResolution()
-			);
+			const BoundingSphere slice = frustumSliceSphere(*m_camera, aspect, split_near, splits[cascade]);
+
+			// A zoom that leaves the padding far too large refits too
+			CascadeAnchor& anchor = m_cascade_anchors[cascade];
+			const bool holds = anchor.resolution == resolution && glm::dot(anchor.light_direction, light_direction) > 0.99999f &&
+			                   glm::distance(anchor.center, slice.center) + slice.radius <= anchor.radius &&
+			                   slice.radius * (1.0f + (2.0f * k_cascade_padding)) >= anchor.radius;
+			if (!holds) {
+				anchor = CascadeAnchor {
+				  .center = slice.center,
+				  .radius = slice.radius * (1.0f + k_cascade_padding),
+				  .light_direction = light_direction,
+				  .resolution = resolution,
+				};
+			}
+			const auto fit = fitDirectionalCascade(anchor.center, anchor.radius, light_direction, resolution);
 
 			frame.frame_data.cascade_view_projection[cascade] = fit.view_projection;
 			frame.frame_data.cascade_splits[static_cast<int>(cascade)] = splits[cascade];
@@ -2923,7 +2715,6 @@ void VulkanRenderer::fitShadowViews(
 
 void VulkanRenderer::finalizeLights(RenderFrame& frame) {
 	ZoneScoped;
-	using namespace clustered_lighting;
 
 	auto& lights = frame.lights;
 	auto& meta = m_tick_light_meta;
@@ -2946,13 +2737,13 @@ void VulkanRenderer::finalizeLights(RenderFrame& frame) {
 	meta.resize(kept);
 
 	float light_reach = 0.0f;
-	if (kept > k_max_lights_per_cluster) {
+	if (kept > clustered_lighting::k_max_lights_per_cluster) {
 		auto& order = m_tick_light_order;
 		order.resize(kept);
 		std::iota(order.begin(), order.end(), 0U);
 		std::ranges::stable_sort(order, [&meta](uint32_t a, uint32_t b) { return meta[a].importance > meta[b].importance; });
 
-		const size_t final_count = std::min<size_t>(kept, k_max_lights);
+		const size_t final_count = std::min<size_t>(kept, clustered_lighting::k_max_lights);
 		frame.light_stats.truncated = static_cast<uint32_t>(kept - final_count);
 
 		auto& scratch = m_tick_light_scratch;
@@ -3227,6 +3018,7 @@ void VulkanRenderer::tick(float time) noexcept {
 		    (overlays.surface_unit_grid ? 1u : 0u) | (overlays.surface_voxel_grid ? 2u : 0u) | (overlays.voxel_edges ? 4u : 0u);
 	}
 
+	// PROBES SHIT
 	{
 		std::scoped_lock lock(m_reflection_probe_mutex);
 		const auto probe_count = static_cast<int32_t>(std::min<size_t>(m_reflection_probe_nodes.size(), k_max_reflection_probes));
@@ -3284,7 +3076,7 @@ void VulkanRenderer::tick(float time) noexcept {
 
 				// Not Y flipped unlike Camera::getProjection()
 				const glm::mat4 capture_projection =
-				    glm::perspectiveRH_ZO(glm::radians(90.0f), 1.0f, m_camera->near_plane, m_camera->far_plane);
+				    depth::perspective(glm::radians(90.0f), 1.0f, m_camera->near_plane, m_camera->far_plane);
 
 				frame.frame_data.view = capture_view;
 				frame.frame_data.projection = capture_projection;
@@ -3456,7 +3248,7 @@ void VulkanRenderer::tick(float time) noexcept {
 
 				const auto basis = cubeFaceBasis(face);
 				frame.frame_data.view = glm::lookAt(probe_position, probe_position + basis.forward, basis.up);
-				frame.frame_data.projection = glm::perspectiveRH_ZO(glm::radians(90.0f), 1.0f, m_camera->near_plane, m_camera->far_plane);
+				frame.frame_data.projection = depth::perspective(glm::radians(90.0f), 1.0f, m_camera->near_plane, m_camera->far_plane);
 				frame.frame_data.view_projection = frame.frame_data.projection * frame.frame_data.view;
 				frame.frame_data.camera_position = probe_position;
 				frame.irradiance_capture_index = probe_index;
@@ -3480,6 +3272,7 @@ void VulkanRenderer::tick(float time) noexcept {
 	frame.camera_near = m_camera->near_plane;
 	frame.camera_far = m_camera->far_plane;
 
+	// Cameras debug draws
 	{
 		auto& camera_nodes_snapshot = m_tick_camera_nodes;
 		{
@@ -3498,11 +3291,14 @@ void VulkanRenderer::tick(float time) noexcept {
 			debug::drawMesh(cameraGizmoMesh(), camera->getWorldTransform());
 
 			constexpr float k_camera_frustum_length = 3.0f;
-			const auto extent = m_output_target->getExtent();
-			const float aspect = extent.height > 0 ? static_cast<float>(extent.width) / static_cast<float>(extent.height) : 1.0f;
-			debug::drawFrustum(*camera, aspect, glm::vec4(1.0f, 1.0f, 0.2f, 1.0f), k_camera_frustum_length);
+			const auto camera_extent = m_output_target->getExtent();    // TODO this might not always be the case
+			const float camera_aspect =
+			    camera_extent.height > 0 ? static_cast<float>(camera_extent.width) / static_cast<float>(camera_extent.height) : 1.0f;
+			debug::drawFrustum(*camera, camera_aspect, glm::vec4(1.0f, 1.0f, 0.2f, 1.0f), k_camera_frustum_length);
 		}
 	}
+
+	// Lights shit
 
 	glm::vec3 ambient_sum(0.0f);
 	uint32_t directional_count = 0;
@@ -3518,7 +3314,7 @@ void VulkanRenderer::tick(float time) noexcept {
 	m_tick_light_meta.clear();
 
 	const glm::mat4& frame_view = frame.frame_data.view;
-	const auto frustum = extractFrustumPlanes(frame.frame_data.view_projection);
+	const auto frustum = extractFrustumPlanes(frame.frame_data.view_projection, depth::k_reversed_z);
 
 	struct PunctualSubmit {
 		GpuLight gpu;
@@ -3602,6 +3398,7 @@ void VulkanRenderer::tick(float time) noexcept {
 				break;
 			}
 			case toast::LightType::directional: {
+				// FIXME
 				debug::drawArrow(light->world_position, light->world_position + light->forward() * 2.0f, glm::vec4(light->color(), 1.0f));
 
 				if (directional_count >= k_max_directional_lights) {
@@ -3623,7 +3420,7 @@ void VulkanRenderer::tick(float time) noexcept {
 				const glm::vec3 world_pos = point->world_position;
 				const glm::vec3 view_pos = glm::vec3(frame_view * glm::vec4(world_pos, 1.0f));
 
-				// FIXME MOVE ELSEWHERE
+				// FIXME
 				// debug::drawSphere(world_pos, point->attenuation(), glm::vec4(point->color(), 1.0f));
 
 				submit_punctual(
@@ -3657,6 +3454,7 @@ void VulkanRenderer::tick(float time) noexcept {
 				const float outer = glm::radians(spot->outerRadius());
 				const float inner = std::min(glm::radians(spot->innerRadius()), outer);
 
+				// FIXME
 				debug::drawCone(world_pos, forward, spot->attenuation(), spot->outerRadius(), glm::vec4(spot->color(), 1.0f));
 
 				submit_punctual(
@@ -3770,7 +3568,7 @@ void VulkanRenderer::tick(float time) noexcept {
 		static std::optional<decltype(state)> last_state;
 		if (!last_state.has_value() || *last_state != state) {
 			last_state = state;
-			TOAST_INFO(
+			TOAST_TRACE(
 			    "Render",
 			    "Lighting inputs: ambient=({:.3f}, {:.3f}, {:.3f}), {} directional, {} punctual, environment={}, "
 			    "{} mesh instances, render mode {}, exposure {:.3f}, {} probes (baked mask {:#x}),",
@@ -3789,8 +3587,15 @@ void VulkanRenderer::tick(float time) noexcept {
 		}
 	}
 
-	const bool trace_shadows =
-	    m_core->isRayTracingSupported() && tracedShadowsEnabled() && std::ranges::any_of(frame.mesh_instances, isTraceable);
+	// Voxels are not in the TLAS so tracing would erase their shadows
+	// TODO remove once voxel visibility can be traced
+	const bool voxels_block_tracing = !frame.voxel_instances.empty();
+	const bool trace_shadows = m_core->isRayTracingSupported() && tracedShadowsEnabled() && !voxels_block_tracing &&
+	                           std::ranges::any_of(frame.mesh_instances, isTraceable);
+	if (tracedShadowsEnabled() && voxels_block_tracing && !m_traced_shadows_voxel_fallback_logged) {
+		TOAST_WARN("Render", "Traced shadows fall back to shadow maps while voxel volumes are drawn");
+	}
+	m_traced_shadows_voxel_fallback_logged = tracedShadowsEnabled() && voxels_block_tracing;
 	frame.frame_data.traced_shadow_params.x = trace_shadows ? 1.0f : 0.0f;
 
 	if (!trace_shadows) {
@@ -3834,7 +3639,7 @@ void VulkanRenderer::tick(float time) noexcept {
 		}
 
 		const glm::mat4 cull_view_projection = freeze ? m_frozen_cull_view_projection : frame.frame_data.view_projection;
-		const auto planes = extractFrustumPlanes(cull_view_projection);
+		const auto planes = extractFrustumPlanes(cull_view_projection, depth::k_reversed_z);
 
 		uint32_t visible = 0;
 		for (auto& proxy : frame.mesh_instances) {
@@ -3845,6 +3650,7 @@ void VulkanRenderer::tick(float time) noexcept {
 
 		const glm::vec3 eye = frame.frame_data.camera_position;
 		const float near_plane = m_camera->near_plane;
+		frame.near_plane = near_plane;
 		for (auto& proxy : frame.voxel_instances) {
 			proxy.camera_inside = voxel::containsPoint(proxy.inverse_model, proxy.brick_dims, eye, near_plane);
 			proxy.visible = proxy.camera_inside || sphereInFrustum(planes, proxy.bounds_center, proxy.bounds_radius);
@@ -3967,6 +3773,7 @@ void VulkanRenderer::tick(float time) noexcept {
 		}
 	}
 
+	// ANTIALIASING
 	{
 		const bool is_capture = frame.probe_capture_index >= 0 || frame.irradiance_capture_index >= 0;
 		const bool taa = taaEnabled() && !is_capture && frame.render_mode == 0;
@@ -4010,6 +3817,13 @@ void VulkanRenderer::tick(float time) noexcept {
 	submitFrame();
 }
 
+auto VulkanRenderer::voxelCollisionWorld() const -> std::shared_ptr<const VoxelCollisionWorld> {
+	// i need a way of getting this on the physics thread without the engine exploding so just lock it for a sec
+	// i don't think this is that bad of an idea but maybe it's like bad idk
+	std::scoped_lock lock(m_voxel_collision_mutex);
+	return m_voxel_collision_world;
+}
+
 void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 	ZoneScoped;
 
@@ -4031,7 +3845,6 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 			}
 			m_voxel_storage_pending.reset();
 			m_voxel_patcher.reset();
-			m_voxel_latest_storage.reset();
 		}
 	}
 
@@ -4168,7 +3981,6 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 			m_voxel_storage_pending.reset();
 			m_voxel_change_tracker.reset();
 			m_voxel_patcher.reset();
-			m_voxel_latest_storage.reset();
 		} else {
 			std::vector<voxel::gpu::SceneVolume> scene_volumes;
 			std::vector<uint64_t> node_rids;
@@ -4190,27 +4002,47 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 				return std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - pack_start).count();
 			};
 
-			std::optional<voxel::gpu::ScenePatch> patch;
-			if (!keep_mirror && m_voxel_latest_storage != nullptr && !m_voxel_latest_storage->hasFailed()) {
-				patch = m_voxel_patcher.tryPatch(voxel::runtimeBrickPool(), scene_volumes, node_rids, deltas);
+			// Carves spawns and despawns patch the shared buffers in place and only running out of spare room uploads
+			// everything again
+			std::optional<VoxelScenePatcher::Patched> patched;
+			if (!keep_mirror && m_voxel_storage != nullptr && m_voxel_storage->isReady()) {
+				patched = m_voxel_patcher.tryPatch(voxel::runtimeBrickPool(), scene_volumes, node_rids, deltas);
+			}
+			std::optional<uint64_t> patch_sequence;
+			if (patched.has_value()) {
+				patch_sequence = m_voxel_storage->queuePatch(*m_core, patched->patch);
 			}
 
-			if (patch.has_value()) {
+			if (patch_sequence.has_value()) {
 				debug.pack_ms = elapsed_ms();
 				voxel_lock.unlock();
 
-				const VoxelStorageDebugInfo& previous = m_voxel_latest_storage->debugInfo();
+				const voxel::gpu::ScenePatch& patch = patched->patch;
+				const VoxelStorageDebugInfo& previous = m_voxel_storage->debugInfo();
 				debug.sequence = ++m_voxel_upload_sequence;
-				debug.packed_slots = patch->pool_slots;
-				debug.packed_palettes = previous.packed_palettes;
+				debug.packed_slots = patch.pool_slots;
+				debug.packed_palettes = patch.palette_words / voxel::gpu::k_palette_words;
+
+				// Debug rows follow records and a dead record keeps an empty name
+				std::unordered_map<uint64_t, std::string> names;
+				for (size_t i = 0; i < node_rids.size(); ++i) {
+					names.emplace(node_rids[i], std::move(debug.node_names[i]));
+				}
+				debug.node_names.assign(patched->record_rids.size(), std::string {});
+				for (size_t i = 0; i < patched->record_rids.size(); ++i) {
+					if (const auto name = names.find(patched->record_rids[i]); name != names.end()) {
+						debug.node_names[i] = std::move(name->second);
+					}
+				}
 				debug.bricks = previous.bricks;
-				for (size_t i = 0; i < debug.bricks.size() && i < patch->tags.size(); ++i) {
+				debug.bricks.resize(patched->record_rids.size());
+				for (size_t i = 0; i < debug.bricks.size() && i < patch.tags.size(); ++i) {
 					const auto apply = [](uint32_t count, int32_t delta) {
 						return static_cast<uint32_t>(static_cast<int64_t>(count) + delta);
 					};
-					debug.bricks[i].uniform = apply(debug.bricks[i].uniform, patch->tags[i].uniform);
-					debug.bricks[i].shared = apply(debug.bricks[i].shared, patch->tags[i].shared);
-					debug.bricks[i].owned = apply(debug.bricks[i].owned, patch->tags[i].owned);
+					debug.bricks[i].uniform = apply(debug.bricks[i].uniform, patch.tags[i].uniform);
+					debug.bricks[i].shared = apply(debug.bricks[i].shared, patch.tags[i].shared);
+					debug.bricks[i].owned = apply(debug.bricks[i].owned, patch.tags[i].owned);
 				}
 				debug.patched = true;
 				debug.patched_bricks = static_cast<uint32_t>(
@@ -4219,24 +4051,13 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 				    })
 				);
 
-				const voxel::gpu::PackedScene& retained = m_voxel_patcher.scene();
-				const VoxelScenePatchUpload::SectionBytes section_bytes {
-				  static_cast<vk::DeviceSize>(patch->pool_slots) * voxel::gpu::k_material_words_per_brick * sizeof(uint32_t),
-				  static_cast<vk::DeviceSize>(patch->pool_slots) * voxel::gpu::k_occupancy_words_per_brick * sizeof(uint32_t),
-				  retained.grids.size() * sizeof(uint32_t),
-				  retained.coarse.size() * sizeof(uint32_t),
-				  retained.palettes.size() * sizeof(uint32_t),
-				  retained.records.size() * sizeof(voxel::gpu::VolumeRecord),
-				};
-
-				auto storage = std::make_shared<VoxelGpuStorage>(std::move(node_rids), std::move(brick_dims));
+				auto storage = std::make_shared<VoxelGpuStorage>(
+				    std::move(patched->record_rids), std::move(patched->record_dims), *m_voxel_storage, *patch_sequence
+				);
 				storage->setDebugInfo(std::move(debug));
 				storage->setChangeHistory(m_voxel_change_tracker.packed(storage->generation()));
-				queueResourceUpload(
-				    std::make_unique<VoxelScenePatchUpload>(storage, m_voxel_latest_storage, std::move(*patch), section_bytes)
-				);
-				m_voxel_storage_pending = storage;
-				m_voxel_latest_storage = std::move(storage);
+				m_voxel_storage = std::move(storage);
+				m_voxel_change_tracker.published();
 			} else {
 				auto packed = std::make_shared<VoxelPackedScene>(VoxelPackedScene {
 				  .pool = voxel::gpu::packPool(voxel::runtimeBrickPool()), .scene = voxel::gpu::packScene(scene_volumes)
@@ -4271,8 +4092,7 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 				storage->setDebugInfo(std::move(debug));
 				storage->setChangeHistory(m_voxel_change_tracker.packed(storage->generation()));
 				queueResourceUpload(std::make_unique<VoxelSceneUpload>(storage, std::move(packed)));
-				m_voxel_storage_pending = storage;
-				m_voxel_latest_storage = std::move(storage);
+				m_voxel_storage_pending = std::move(storage);
 			}
 		}
 	}
@@ -4285,6 +4105,8 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 	if (!m_voxel_storage) {
 		m_voxel_previous_models.clear();
 		m_voxel_drawn_models.clear();
+		std::scoped_lock lock(m_voxel_collision_mutex);
+		m_voxel_collision_world.reset();
 		return;
 	}
 
@@ -4330,6 +4152,25 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		    }
 		);
 		drawn_models.insert_or_assign(node_rid, model);
+	}
+
+	auto collision = std::make_shared<VoxelCollisionWorld>();
+	collision->storage = m_voxel_storage;
+	collision->volumes.reserve(frame.voxel_instances.size());
+	const glm::mat4 to_voxel_units = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f / voxel::k_voxel_size));
+	for (const VoxelVolumeProxy& proxy : frame.voxel_instances) {
+		collision->volumes.push_back(
+		    VoxelCollisionWorld::Volume {
+		      .world_to_voxel = to_voxel_units * proxy.inverse_model,
+		      .bounds_center = proxy.bounds_center,
+		      .bounds_radius = proxy.bounds_radius,
+		      .record_index = proxy.record_index,
+		    }
+		);
+	}
+	{
+		std::scoped_lock lock(m_voxel_collision_mutex);
+		m_voxel_collision_world = std::move(collision);
 	}
 
 	m_voxel_drawn_models = std::move(drawn_models);
@@ -4503,7 +4344,7 @@ auto VulkanRenderer::applyResizeInternal(vk::Extent2D extent) -> void {
 		const vk::Extent2D actual_extent = m_output_target->getExtent();
 		const auto image_count = m_output_target->getImageCount();
 		m_images_in_flight.assign(image_count, vk::Fence {});
-		m_output_image_layouts.assign(image_count, vk::ImageLayout::eUndefined);
+		m_output_image_usage.assign(image_count, sync::Usage::none);
 		createPerImageSync();
 		createDepthResources();
 		createSceneColorResources();
@@ -4513,6 +4354,9 @@ auto VulkanRenderer::applyResizeInternal(vk::Extent2D extent) -> void {
 			for (auto& pass : m_post_process_passes) {
 				pass->onResize(actual_extent);
 			}
+		}
+		if (m_voxel_pass != nullptr) {
+			m_voxel_pass->onTargetsRecreated();
 		}
 		std::ranges::fill(m_present_bound_views, vk::ImageView {});
 		m_current_frame = 0;
@@ -4567,26 +4411,44 @@ void VulkanRenderer::pumpUploadQueue() {
 	}
 }
 
+auto VulkanRenderer::uploadStats() -> UploadStats {
+	UploadStats stats {};
+	stats.slot_count = static_cast<uint32_t>(m_upload_slots.size());
+	stats.slots_in_flight =
+	    static_cast<uint32_t>(std::ranges::count_if(m_upload_slots, [](const UploadSlot& slot) { return slot.in_flight; }));
+	stats.batches_in_flight = m_pending_uploads.size();
+	stats.host_bytes = m_upload_host_bytes.load(std::memory_order_relaxed);
+	stats.host_budget = k_upload_host_budget;
+	{
+		std::scoped_lock lock(m_upload_mutex);
+		stats.waiting_jobs = m_upload_waiting.size();
+	}
+	return stats;
+}
+
 void VulkanRenderer::processPendingUploads() {
 	ZoneScoped;
-	const auto& device = m_core->getDevice();
+	const uint64_t completed = m_pending_uploads.empty() ? 0 : m_upload_timeline.getCounterValue();
 
 	while (!m_pending_uploads.empty()) {
 		auto& oldest_batch = m_pending_uploads.front();
 		auto& slot = m_upload_slots[oldest_batch.slot];
 
-		if (vkGetFenceStatus(*device, *slot.fence) != VkResult::VK_SUCCESS) {
+		if (slot.timeline_value > completed) {
 			break;
 		}
 
 		vk::DeviceSize reclaimed = 0;
 		for (auto& job : oldest_batch.jobs) {
+			// The timeline check above orders this after the upload release
+			job->recordAcquire(m_pending_acquires);
 			job->finished();
 			reclaimed += job->host_bytes;
 		}
 		m_upload_host_bytes.fetch_sub(reclaimed, std::memory_order_acq_rel);
 
 		slot.in_flight = false;
+		m_upload_acquired_value = std::max(m_upload_acquired_value, slot.timeline_value);
 		m_pending_uploads.pop();
 	}
 
@@ -4629,9 +4491,6 @@ void VulkanRenderer::flushResourceUploads() {
 		return;
 	}
 
-	const auto& device = m_core->getDevice();
-
-	device.resetFences(*slot.fence);
 	slot.command_buffer.reset();
 	slot.command_buffer.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
 
@@ -4644,6 +4503,7 @@ void VulkanRenderer::flushResourceUploads() {
 				++job;
 				continue;
 			}
+			(*job)->setQueueHandoff({m_core->getTransferQueueFamilyIndex(), m_core->getGraphicsQueueFamilyIndex()});
 			(*job)->record(*slot.command_buffer);
 			recorded.push_back(std::move(*job));
 			job = jobs_to_flush.erase(job);
@@ -4659,8 +4519,19 @@ void VulkanRenderer::flushResourceUploads() {
 	batch.jobs = std::move(recorded);
 
 	const vk::CommandBuffer raw_transfer_cmd = *slot.command_buffer;
-	const vk::SubmitInfo submit_info(0, nullptr, nullptr, 1, &raw_transfer_cmd);
-	m_core->getTransferQueue().submit(submit_info, *slot.fence);
+	slot.timeline_value = ++m_upload_timeline_value;
+	const sync::SemaphoreSignal done {*m_upload_timeline, slot.timeline_value};
+	{
+		// Only contended when AsyncCompute shares the transfer queue
+		std::scoped_lock transfer_lock(m_core->transferSubmitMutex());
+		sync::submit(
+		    m_core->getTransferQueue(),
+		    {
+		      .commands = {&raw_transfer_cmd, 1},
+            .signals = {            &done, 1}
+		}
+		);
+	}
 
 	slot.in_flight = true;
 	m_next_upload_slot = (m_next_upload_slot + 1) % k_upload_slots;

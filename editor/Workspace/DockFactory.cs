@@ -8,6 +8,7 @@ using Dock.Model.Mvvm;
 using Dock.Model.Mvvm.Controls;
 using editor.Assets.Types;
 using editor.Editors;
+using editor.Git;
 
 namespace editor.Workspace;
 
@@ -23,6 +24,7 @@ public class DockFactory : Factory {
 
 	public HierarchyViewModel? Hierarchy { get; private set; }
 	public HistoryViewModel? History { get; private set; }
+	public LocksViewModel? Locks { get; private set; }
 	public InspectorViewModel? Inspector { get; private set; }
 	public ProjectSettingsViewModel? ProjectSettingsVm { get; private set; }
 	public SignalsViewModel? Signals { get; private set; }
@@ -34,6 +36,7 @@ public class DockFactory : Factory {
 	public override IRootDock CreateLayout() {
 		var hierarchy = new HierarchyViewModel { Id = "Hierarchy", Title = "Hierarchy" };
 		var history = new HistoryViewModel { Id = "History", Title = "History" };
+		var locks = new LocksViewModel { Id = "Locks", Title = "Locks" };
 		var inspector = new InspectorViewModel { Id = "Inspector", Title = "Inspector" };
 		var signals = new SignalsViewModel { Id = "Signals", Title = "Signals" };
 		var generic = new GenericViewModel { Id = "GenericEditor", Title = "Data Editor" };
@@ -44,6 +47,7 @@ public class DockFactory : Factory {
 
 		Hierarchy = hierarchy;
 		History = history;
+		Locks = locks;
 		Inspector = inspector;
 		ProjectSettingsVm = projectSettings;
 		Signals = signals;
@@ -122,6 +126,7 @@ public class DockFactory : Factory {
 			["Workspace"] = () => layout,
 			["Hierarchy"] = () => layout,
 			["History"] = () => layout,
+			["Locks"] = () => layout,
 			["Inspector"] = () => layout,
 			["Signals"] = () => layout,
 			["GenericEditor"] = () => layout,
@@ -132,6 +137,7 @@ public class DockFactory : Factory {
 			["Root"] = () => m_rootDock,
 			["Documents"] = () => m_documentDock,
 			["History"] = () => History,
+			["Locks"] = () => Locks,
 			["GenericEditor"] = () => GenericEditorVm,
 			["SchemaEditor"] = () => SchemaEditorVm,
 			["ProjectSettings"] = () => ProjectSettingsVm
@@ -295,6 +301,7 @@ public class DockFactory : Factory {
 		return id switch {
 			"Hierarchy" => Hierarchy,
 			"History" => History,
+			"Locks" => Locks,
 			"Inspector" => Inspector,
 			"Signals" => Signals,
 			"GenericEditor" => GenericEditorVm,
@@ -307,6 +314,7 @@ public class DockFactory : Factory {
 	private IEnumerable<Tool?> AllTools() {
 		yield return Hierarchy;
 		yield return History;
+		yield return Locks;
 		yield return Inspector;
 		yield return Signals;
 		yield return GenericEditorVm;
@@ -315,7 +323,9 @@ public class DockFactory : Factory {
 	}
 
 	private IToolDock? PreferredDockFor(Tool tool) {
-		return ReferenceEquals(tool, Hierarchy) || ReferenceEquals(tool, History) ? m_leftToolDock : m_rightToolDock;
+		return ReferenceEquals(tool, Hierarchy) || ReferenceEquals(tool, History) || ReferenceEquals(tool, Locks)
+			? m_leftToolDock
+			: m_rightToolDock;
 	}
 
 	private void ShowTool(Tool tool, IToolDock? preferred) {

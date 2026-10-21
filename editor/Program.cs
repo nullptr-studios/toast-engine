@@ -6,13 +6,17 @@
 using System;
 using Avalonia;
 using editor.Engine;
+using editor.Git;
 
 namespace editor;
 
 internal sealed class Program {
 	[STAThread]
-	public static void Main(string[] args) {
-		BuildAvaloniaApp()
+	public static int Main(string[] args) {
+		// Launched by git or ssh as the askpass program
+		if (GitAskpass.IsHelperInvocation) return GitAskpass.RunHelper(args);
+
+		return BuildAvaloniaApp()
 			.StartWithClassicDesktopLifetime(args);
 	}
 

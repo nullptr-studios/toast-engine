@@ -1,3 +1,5 @@
+import depth_convention;
+
 struct EnvironmentParams
 {
     float4 faceRight;
@@ -80,13 +82,13 @@ float4 fragmentEquirect(VSOutput input) : SV_Target0
     return float4(gEquirectangular.SampleLevel(uv, 0.0).rgb * gParams.intensity, 1.0);
 }
 
-// Far plane so it needs a less or equal depth test
+// Far plane so it needs a closer or equal depth test
 [shader("vertex")]
 VSOutput vertexSkybox(uint vertexId : SV_VertexID)
 {
     VSOutput output;
     output.uv = float2((vertexId << 1) & 2, vertexId & 2);
-    output.position = float4(output.uv * 2.0 - 1.0, 1.0, 1.0);
+    output.position = float4(output.uv * 2.0 - 1.0, kFarDepth, 1.0);
     return output;
 }
 

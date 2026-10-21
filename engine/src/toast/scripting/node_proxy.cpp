@@ -89,6 +89,27 @@ auto luaArgToAny(lua_State* l, const luabridge::LuaRef& v, std::string_view cpp_
 		return std::any {std::in_place_type<luabridge::LuaRef>, v};
 	}
 
+	if (cpp_type.contains("vector<int>")) {
+		std::vector<int> values;
+		if (v.isNumber()) {
+			values.push_back(static_cast<int>(v.unsafe_cast<lua_Integer>()));
+			return values;
+		}
+		if (!v.isTable()) {
+			luaL_error(l, "argument '%s': expected an array of integers", param_name);
+		}
+		const int length = v.length();
+		values.reserve(static_cast<size_t>(length));
+		for (int i = 1; i <= length; ++i) {
+			const luabridge::LuaRef element = v[i];
+			if (!element.isNumber()) {
+				luaL_error(l, "argument '%s': element %d is not an integer", param_name, i);
+			}
+			values.push_back(static_cast<int>(element.unsafe_cast<lua_Integer>()));
+		}
+		return values;
+	}
+
 	const bool is_input_action_event = cpp_type.contains("input::ActionEvent");
 	const bool is_input_action = !is_input_action_event && cpp_type.contains("input::Action");
 	const bool is_input_bind = cpp_type.contains("input::Bind");

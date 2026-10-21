@@ -240,6 +240,7 @@ auto BroadPhase::findPairs(CollisionWorldView world) -> std::vector<BroadPhasePa
 			m_stats.rejected_same_body += chunk.stats.rejected_same_body;
 			m_stats.rejected_invalid_bodies += chunk.stats.rejected_invalid_bodies;
 			m_stats.rejected_immovable_bodies += chunk.stats.rejected_immovable_bodies;
+			m_stats.rejected_layers += chunk.stats.rejected_layers;
 			pairs.insert_range(pairs.end(), std::move(chunk.pairs));
 		}
 	}
@@ -256,11 +257,6 @@ auto BroadPhase::findPairs(CollisionWorldView world) -> std::vector<BroadPhasePa
 	m_stats.tree_nodes = m_tree.size();
 	// ZoneValue(static_cast<uint64_t>(pairs.size()));
 	return pairs;
-}
-
-auto BroadPhase::queryRay(glm::vec3 pos, glm::vec3 dir, float max_distance) const -> std::vector<ShapeID> {
-	ZoneScopedN("physics::QueryRay");
-	return m_tree.query(pos, dir, max_distance);
 }
 
 auto BroadPhase::queryBounds(const AABB& bounds) const -> std::vector<ShapeID> {
@@ -306,6 +302,11 @@ auto BroadPhase::testPair(CollisionWorldView world, ShapeID shape_a_id, ShapeID 
 
 	if (body_a->inverse_mass == 0.0f && body_b->inverse_mass == 0.0f) {
 		++stats.rejected_immovable_bodies;
+		return std::nullopt;
+	}
+
+	if (not layersCollide(body_a->layers, body_b->layers)) {
+		++stats.rejected_layers;
 		return std::nullopt;
 	}
 

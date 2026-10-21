@@ -171,6 +171,47 @@ void registerVoxels(VulkanRenderer& renderer) {
 			 .step = 0.05}
 	)
 	    .onChange([&renderer](double v) { renderer.setVoxelNormalRounding(static_cast<float>(v)); });
+
+	toast::settings::declareBool(
+	    "renderer.voxels.cell_boxes",
+	    true,
+	    {.label = "Cell boxes",
+			 .category = "Voxels",
+			 .description = "On draws one box per non-empty 32 voxel cell front to back and marches only inside it. Off "
+			                "draws one box per volume and marches the whole volume, kept to compare the two."}
+	)
+	    .onChange([&renderer](bool enabled) { renderer.setVoxelCellBoxes(enabled); });
+
+	toast::settings::declareBool(
+	    "renderer.voxels.occlusion",
+	    true,
+	    {.label = "Occlusion culling",
+			 .category = "Voxels",
+			 .description = "Skips cells hidden behind closer geometry using a depth pyramid. Needs cell boxes"}
+	)
+	    .onChange([&renderer](bool enabled) { renderer.setVoxelOcclusion(enabled); });
+
+	toast::settings::declareBool(
+	    "renderer.voxels.mesh_shaders",
+	    true,
+	    {.label = "Mesh shaders",
+			 .category = "Voxels",
+			 .description = "Meshes near voxels in task and mesh shaders on GPUs that have them. Off uses the compute mesher, "
+			                "which every GPU runs"}
+	)
+	    .onChange([&renderer](bool enabled) { renderer.setVoxelMeshShaders(enabled); });
+
+	toast::settings::declareFloat(
+	    "renderer.voxels.raster_pixels",
+	    4.0,
+	    {.label = "Raster voxel size",
+			 .category = "Voxels",
+			 .description = "Cells whose voxels cover at least this many pixels are meshed into quads and rasterized",
+			 .min = 0.0,
+			 .max = 32.0,
+			 .step = 0.5}
+	)
+	    .onChange([&renderer](double pixels) { renderer.setVoxelRasterPixels(static_cast<float>(pixels)); });
 }
 
 void registerEnvironment(VulkanRenderer& renderer) {
