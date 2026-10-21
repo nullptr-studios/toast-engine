@@ -1,53 +1,199 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id" : "core://schemas/destruction_material.schema.json",
+  "$id": "core://schemas/destruction_material.schema.json",
   "title": "Destruction Material (.tdm)",
   "type": "object",
-  "required" : ["density", "toughness"],
+  "required": [
+    "density",
+    "toughness"
+  ],
   "properties": {
     "density": {
       "type": "number",
-      "x-toast-type" : "float",
-      "x-toast-unit" : "kg/m^3",
-      "default" : 2000.0,
-      "minimum" : 1,
-      "maximum" : 65535
+      "x-toast-type": "float",
+      "x-toast-unit": "kg/m^3",
+      "default": 2000.0,
+      "minimum": 1,
+      "maximum": 65535
     },
     "toughness": {
       "type": "number",
-      "x-toast-type" : "float",
-      "x-toast-unit" : "kJ/m^3",
-      "default" : 100.0,
-      "minimum" : 0
+      "x-toast-type": "float",
+      "x-toast-unit": "kJ/m^3",
+      "default": 100.0,
+      "minimum": 0
     },
     "hardness": {
-      "enum" : ["soft", "medium", "hard"],
-      "x-toast-type" : "enum",
-      "default" : "medium"
+      "enum": [
+        "soft",
+        "medium",
+        "hard"
+      ],
+      "x-toast-type": "enum",
+      "default": "medium"
+    },
+    "fracture_pattern": {
+      "enum": [
+        "brittle",
+        "granular",
+        "fibrous",
+        "ductile"
+      ],
+      "x-toast-type": "enum",
+      "default": "brittle"
     },
     "structural_strength": {
       "type": "number",
-      "x-toast-type" : "float",
-      "x-toast-unit" : "Pa",
-      "default" : 1000000.0,
-      "minimum" : 0
+      "x-toast-type": "float",
+      "x-toast-unit": "Pa",
+      "default": 1000000.0,
+      "minimum": 0
     },
     "destructible": {
       "type": "bool",
-      "x-toast-type" : "bool",
-      "default" : true
+      "x-toast-type": "bool",
+      "default": true
     },
     "flammable": {
       "type": "bool",
-		  "x-toast-type" : "bool",
-      "default" : false
+      "x-toast-type": "bool",
+      "default": false
     },
     "burn_rate": {
       "type": "number",
-      "x-toast-type" : "float",
-      "x-toast-unit" : "s/m",
-      "default" : 0.0,
-      "minimum" : 0
+      "x-toast-type": "float",
+      "x-toast-unit": "s/m",
+      "default": 0.0,
+      "minimum": 0
+    },
+    "energy": {
+      "x-toast-type": "energy"
+    },
+    "fragment": {
+      "x-toast-type": "fragment"
+    },
+    "shatter": {
+      "x-toast-type": "shatter"
+    },
+    "edge": {
+      "x-toast-type": "edge"
+    }
+  },
+  "definitions": {
+    "energy": {
+      "type": "object",
+      "properties": {
+        "debris_share": {
+          "type": "number",
+          "x-toast-type": "float",
+          "default": 0.2,
+          "minimum": 0,
+          "maximum": 1
+        },
+        "fragment_share": {
+          "type": "number",
+          "x-toast-type": "float",
+          "default": 0.5,
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "fragment": {
+      "type": "object",
+      "properties": {
+        "threshold": {
+          "type": "number",
+          "x-toast-type": "float",
+          "x-toast-unit": "x toughness",
+          "default": 0.3,
+          "minimum": 0.001,
+          "maximum": 65
+        },
+        "max_parts": {
+          "type": "integer",
+          "x-toast-type": "int",
+          "default": 4,
+          "minimum": 2,
+          "maximum": 32
+        }
+      }
+    },
+    "shatter": {
+      "type": "object",
+      "properties": {
+        "threshold": {
+          "type": "number",
+          "x-toast-type": "float",
+          "x-toast-unit": "x toughness",
+          "default": 0.1,
+          "minimum": 0.001,
+          "maximum": 65
+        },
+        "cell_size": {
+          "type": "number",
+          "x-toast-type": "float",
+          "x-toast-unit": "m",
+          "default": 0.5,
+          "minimum": 0.05,
+          "maximum": 2.5
+        },
+        "crack_cost": {
+          "type": "number",
+          "x-toast-type": "float",
+          "default": 1.0,
+          "minimum": 0,
+          "maximum": 3.9
+        },
+        "release": {
+          "type": "number",
+          "x-toast-type": "float",
+          "default": 0.3,
+          "minimum": 0,
+          "maximum": 1
+        },
+        "stretch": {
+          "type": "number",
+          "x-toast-type": "float",
+          "default": 3.0,
+          "minimum": 1,
+          "maximum": 15.9
+        },
+        "crumble": {
+          "type": "number",
+          "x-toast-type": "float",
+          "default": 0.5,
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "properties": {
+        "noise": {
+          "type": "number",
+          "x-toast-type": "float",
+          "default": 0.25,
+          "minimum": 0,
+          "maximum": 0.9
+        },
+        "lobes": {
+          "type": "number",
+          "x-toast-type": "float",
+          "default": 0.35,
+          "minimum": 0,
+          "maximum": 0.9
+        },
+        "noise_scale": {
+          "type": "number",
+          "x-toast-type": "float",
+          "x-toast-unit": "voxels",
+          "default": 4.0,
+          "minimum": 0,
+          "maximum": 63
+        }
+      }
     }
   }
 }

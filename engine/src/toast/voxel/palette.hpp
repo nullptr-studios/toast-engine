@@ -11,6 +11,7 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <toast/physics/fracture_profile.hpp>
 #include <toast/physics/hardness.hpp>
 #include <toast/physics/material_defaults.hpp>
 #include <vector>
@@ -123,6 +124,8 @@ struct PhysicalMaterial {
 
 	/// Damage that breaks only softer tiers never breaks this material
 	physics::Hardness hardness = physics::material_defaults::k_hardness;
+	physics::FracturePattern fracture_pattern = physics::material_defaults::k_fracture_pattern;
+	physics::PackedFractureProfile fracture_profile = physics::material_defaults::k_fracture_profile;
 
 	/// kJ/m³ it takes to break per m3
 	float toughness = physics::material_defaults::k_toughness;

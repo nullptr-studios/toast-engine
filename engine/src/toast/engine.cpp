@@ -14,6 +14,7 @@
 #include "input/input_events.hpp"
 #include "input/input_system.hpp"
 #include "logger.hpp"
+#include "physics/debris_simulation.hpp"
 #include "physics/physics_settings.hpp"
 #include "physics/simulator.hpp"
 #include "profiler_sections.hpp"
@@ -21,6 +22,7 @@
 #include "reflect/reflect.hpp"
 #include "renderer/passes/bloom_pass.hpp"
 #include "renderer/passes/cluster_lighting_pass.hpp"
+#include "renderer/passes/debris_pass.hpp"
 #include "renderer/passes/debug_pass.hpp"
 #include "renderer/passes/environment_pass.hpp"
 #include "renderer/passes/fxaa_pass.hpp"
@@ -87,6 +89,15 @@ IApplication* active_application = nullptr;
 double clear_assets_timer = 0.0;
 
 double script_reload_timer = 0.0;
+
+void addDebrisPass(
+    const renderer::VulkanCore& core, renderer::VulkanRenderer& renderer, vk::Format depth_format, vk::Extent2D extent
+) {
+	auto debris = std::make_shared<physics::DebrisSimulation>(physics::tunables().debris_max_particles);
+	auto debris_pass = std::make_unique<renderer::DebrisPass>(core, depth_format, extent, std::move(debris));
+	renderer.setDebrisPass(debris_pass.get());
+	renderer.addRenderPass(std::move(debris_pass));
+}
 }
 
 Engine* Engine::instance = nullptr;
@@ -648,6 +659,7 @@ void Engine::createSDLWindow(const char* w_name) {
 	auto voxel_pass = std::make_unique<renderer::VoxelPass>(*m->vulkan_core, scene_format, depth_format, extent);
 	m->renderer->setVoxelPass(voxel_pass.get());
 	m->renderer->addRenderPass(std::move(voxel_pass));
+	addDebrisPass(*m->vulkan_core, *m->renderer, depth_format, extent);
 
 	// World-space UI panels are scene content and get exposed with it, the screen-space UI does not
 	m->renderer->addRenderPass(std::make_unique<ui::WorldUIPass>(*m->vulkan_core, scene_format, depth_format, extent));
@@ -737,6 +749,7 @@ void Engine::createAvaloniaWindow() {
 	auto voxel_pass = std::make_unique<renderer::VoxelPass>(*m->vulkan_core, scene_format, depth_format, extent);
 	m->renderer->setVoxelPass(voxel_pass.get());
 	m->renderer->addRenderPass(std::move(voxel_pass));
+	addDebrisPass(*m->vulkan_core, *m->renderer, depth_format, extent);
 
 	// World-space UI panels are scene content
 	m->renderer->addRenderPass(std::make_unique<ui::WorldUIPass>(*m->vulkan_core, scene_format, depth_format, extent));

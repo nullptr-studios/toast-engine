@@ -47,6 +47,7 @@ struct DamageCommand {
 	glm::vec3 direction {};
 	Hardness max_hardness = k_hardest;
 	BodyID source;
+	uint64_t seed = 0;
 
 	float shell_voxels = tunables().fracture_shell_voxels;
 	std::optional<FragmentPush> push;
