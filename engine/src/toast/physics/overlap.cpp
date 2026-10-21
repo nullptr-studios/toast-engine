@@ -8,7 +8,7 @@
 
 namespace physics {
 
-auto sphereOverlap(glm::vec3 position, float radius) -> std::optional<SphereHit> {
+auto sphereOverlap(glm::vec3 position, float radius, std::optional<LayerFilter> layers) -> std::optional<SphereHit> {
 	ZoneScoped;
 	Simulator* simulator = Simulator::current();
 	if (simulator == nullptr || !std::isfinite(radius) || radius <= 0.0f || !std::isfinite(position.x) ||
@@ -17,7 +17,7 @@ auto sphereOverlap(glm::vec3 position, float radius) -> std::optional<SphereHit>
 	}
 
 	std::vector<QueryContact> contacts;
-	if (!simulator->overlapSphere(SphereShape {.radius = radius}, position, 0.0f, contacts)) {
+	if (!simulator->overlapSphere(SphereShape {.radius = radius}, position, 0.0f, contacts, layers)) {
 		return std::nullopt;
 	}
 
