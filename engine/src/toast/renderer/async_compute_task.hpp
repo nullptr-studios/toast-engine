@@ -48,7 +48,7 @@ public:
 		std::string debug_name = "AsyncComputeTask";
 	};
 
-	/// Handed to the step callback. Barriers between dispatches of one step are inserted for you
+	/// Handed to the step callback with barriers between its dispatches already inserted
 	class TOAST_API StepContext {
 	public:
 		template<typename Push>
@@ -206,7 +206,7 @@ private:
 
 	void createDescriptors();
 	void writeDescriptors(uint32_t slot);
-	/// Empty while every slot is still busy, so the owner thread drops the step instead of blocking on the GPU
+	/// Empty while every slot is busy so the owner thread drops the step instead of blocking on the GPU
 	auto claimFreeSlot() -> std::optional<uint32_t>;
 	void publish(uint32_t slot, AsyncCompute::Ticket ticket);
 	/// Caller holds m_mutex
@@ -229,7 +229,7 @@ private:
 	std::array<Slot, k_slot_count> m_slots;
 	uint64_t m_step_counter = 0;
 	int32_t m_last_written = -1;
-	/// Owner thread, steps dropped because the GPU was still behind
+	/// Owner thread
 	uint64_t m_dropped_steps = 0;
 
 	/// Render thread only

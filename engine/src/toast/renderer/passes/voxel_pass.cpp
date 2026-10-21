@@ -65,6 +65,8 @@ constexpr uint32_t k_instance_bounds_binding = 7;
 
 /// voxel_lighting.slang gAmbientGrid
 constexpr uint32_t k_ambient_grid_binding = 8;
+/// Count then instance indices of the shadow casters holding glass
+constexpr uint32_t k_glass_casters_binding = 9;
 /// Mirrored by voxel_lighting.slang
 constexpr uint32_t k_ambient_grid_buckets = 4096;
 constexpr uint32_t k_ambient_grid_header = 4;
@@ -437,13 +439,15 @@ void VoxelPass::createLighting(const VulkanCore& core, vk::Format scene_format, 
 	const vk::DescriptorSetLayout storage_layout = *layouts[k_storage_set];
 	m_lighting_storage_sets.clear();
 	m_instance_bounds.clear();
+	m_glass_casters.clear();
 	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
 		vk::BufferCreateInfo bounds_ci {};
 		bounds_ci.size = sizeof(glm::vec4) * k_max_instances;
 		bounds_ci.usage = vk::BufferUsageFlagBits::eStorageBuffer;
 
+		// Every lit pixel reads these so device local host visible beats host memory over PCIe
 		vma::AllocationCreateInfo bounds_alloc {};
-		bounds_alloc.usage = vma::MemoryUsage::eAutoPreferHost;
+		bounds_alloc.usage = vma::MemoryUsage::eAuto;
 		bounds_alloc.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
 		m_instance_bounds.push_back(core.getAllocator().createBuffer(bounds_ci, bounds_alloc));
 		setDebugName(core, *m_instance_bounds.back(), std::format("VoxelLighting InstanceBounds[{}]", i));
@@ -456,6 +460,16 @@ void VoxelPass::createLighting(const VulkanCore& core, vk::Format scene_format, 
 		if (auto* words = static_cast<uint32_t*>(m_ambient_grids.back().getAllocation().getInfo().pMappedData)) {
 			std::fill_n(words, k_ambient_grid_header + (2 * k_ambient_grid_buckets), 0u);
 			m_ambient_grids.back().getAllocation().flush(0, vk::WholeSize);
+		}
+
+		vk::BufferCreateInfo casters_ci {};
+		casters_ci.size = sizeof(uint32_t) * (1 + k_max_instances);
+		casters_ci.usage = vk::BufferUsageFlagBits::eStorageBuffer;
+		m_glass_casters.push_back(core.getAllocator().createBuffer(casters_ci, bounds_alloc));
+		setDebugName(core, *m_glass_casters.back(), std::format("VoxelLighting GlassCasters[{}]", i));
+		if (auto* words = static_cast<uint32_t*>(m_glass_casters.back().getAllocation().getInfo().pMappedData)) {
+			words[0] = 0;
+			m_glass_casters.back().getAllocation().flush(0, sizeof(uint32_t));
 		}
 
 		auto allocated = core.getDevice().allocateDescriptorSets(
@@ -473,6 +487,9 @@ void VoxelPass::createLighting(const VulkanCore& core, vk::Format scene_format, 
 		);
 		writer.buffer(
 		    *m_lighting_storage_sets.back(), k_ambient_grid_binding, vk::DescriptorType::eStorageBuffer, *m_ambient_grids.back()
+		);
+		writer.buffer(
+		    *m_lighting_storage_sets.back(), k_glass_casters_binding, vk::DescriptorType::eStorageBuffer, *m_glass_casters.back()
 		);
 		writer.flush(core.getDevice());
 	}
@@ -587,8 +604,9 @@ void VoxelPass::createInstanceBuffers(const VulkanCore& core) {
 		buffer_ci.size = sizeof(VoxelInstanceGpu) * k_max_instances;
 		buffer_ci.usage = vk::BufferUsageFlagBits::eStorageBuffer;
 
+		// Read by every voxel draw and shadow ray so device local host visible when the device has it
 		vma::AllocationCreateInfo alloc_ci {};
-		alloc_ci.usage = vma::MemoryUsage::eAutoPreferHost;
+		alloc_ci.usage = vma::MemoryUsage::eAuto;
 		alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
 
 		m_instance_buffers.push_back(core.getAllocator().createBuffer(buffer_ci, alloc_ci));
@@ -665,6 +683,29 @@ void VoxelPass::bindStorage(uint32_t frame_index, const std::shared_ptr<const Vo
 		writeVoxelStorageDescriptors(m_core->getDevice(), *m_lighting_storage_sets[frame_index], *storage);
 	}
 	m_bound_storage[frame_index] = storage;
+}
+
+void VoxelPass::writeGlassCasters(
+    uint32_t frame_index, const VoxelGpuStorage& storage, std::span<const VoxelInstanceGpu> casters
+) {
+	ZoneScoped;
+	if (frame_index >= m_glass_casters.size()) {
+		return;
+	}
+	auto* words = static_cast<uint32_t*>(m_glass_casters[frame_index].getAllocation().getInfo().pMappedData);
+	if (words == nullptr) {
+		return;
+	}
+	// Same cut as the shadow instance count the shader loops over
+	const size_t limit = std::min<size_t>(casters.size(), VulkanRenderer::instance->voxelShadowInstances());
+	uint32_t count = 0;
+	for (size_t i = 0; i < limit && count < k_max_instances; ++i) {
+		if (!storage.glassBricks(casters[i].record_index).empty()) {
+			words[1 + count++] = static_cast<uint32_t>(i);
+		}
+	}
+	words[0] = count;
+	m_glass_casters[frame_index].getAllocation().flush(0, sizeof(uint32_t) * (1 + count));
 }
 
 void VoxelPass::writeAmbientGrid(uint32_t frame_index, std::span<const glm::vec4> bounds) {
@@ -861,6 +902,7 @@ auto VoxelPass::prepare(uint32_t frame_index) -> bool {
 	}
 
 	allocation.flush(0, sizeof(VoxelInstanceGpu) * m_shadow_instance_count);
+	writeGlassCasters(frame_index, *frame->voxel_storage, std::span<const VoxelInstanceGpu>(instances, m_shadow_instance_count));
 	if (bounds != nullptr) {
 		m_instance_bounds[frame_index].getAllocation().flush(0, sizeof(glm::vec4) * m_shadow_instance_count);
 		if (m_ambient_rays) {

@@ -25,7 +25,7 @@ constexpr vk::BufferUsageFlags k_task_buffer_usage =
 
 constexpr vk::DeviceSize k_placeholder_bytes = 16;
 
-/// A behind queue drops many steps in a row, so log the first of every batch instead of all of them
+/// A queue that falls behind drops many steps in a row so only the first of every batch logs
 constexpr uint64_t k_dropped_step_warn_interval = 120;
 
 }
@@ -104,11 +104,11 @@ AsyncComputeTask::AsyncComputeTask(Config config) : m_config(std::move(config)),
 
 AsyncComputeTask::~AsyncComputeTask() {
 	// Buffers and sets must outlive every job that uses them
-	const AsyncCompute& compute = m_core->asyncCompute();
+	AsyncCompute& compute = m_core->asyncCompute();
 	auto unused = compute.wait(compute.lastSubmittedTicket());
 }
 
-/// This is superturbobad do not overuse  it
+/// One copy per slot so keep ring buffers few and small
 auto AsyncComputeTask::addRingBuffer(vk::DeviceSize size, bool cpu_readback) -> BufferId {
 	const auto shared = m_core->asyncCompute().sharedFamilies(m_core->getGraphicsQueueFamilyIndex());
 	vk::BufferCreateInfo buffer_ci({}, size, k_task_buffer_usage);
@@ -157,8 +157,9 @@ auto AsyncComputeTask::addPersistentBuffer(vk::DeviceSize size) -> BufferId {
 
 auto AsyncComputeTask::addHostBuffer(vk::DeviceSize size) -> BufferId {
 	const vk::BufferCreateInfo buffer_ci({}, size, vk::BufferUsageFlagBits::eStorageBuffer);
+	// eAuto lands in device local host visible memory when there is any so shaders do not read over PCIe
 	vma::AllocationCreateInfo host_alloc {};
-	host_alloc.usage = vma::MemoryUsage::eAutoPreferHost;
+	host_alloc.usage = vma::MemoryUsage::eAuto;
 	host_alloc.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
 
 	const auto id = static_cast<BufferId>(m_buffers.size());
@@ -316,7 +317,7 @@ auto AsyncComputeTask::step(
 
 	const std::optional<uint32_t> claimed = claimFreeSlot();
 	if (!claimed.has_value()) {
-		// Dropping a step keeps the tick running; the caller keeps whatever it meant to feed this one
+		// Dropping a step keeps the tick running and the caller keeps what it meant to feed this one
 		++m_dropped_steps;
 		if (m_dropped_steps % k_dropped_step_warn_interval == 1) {
 			TOAST_WARN(
@@ -368,10 +369,12 @@ auto AsyncComputeTask::step(
 			    }
 			    barriers.flush(cmd);
 		    },
-		    debug_name.empty() ? std::string_view(m_config.debug_name) : debug_name
+		    debug_name.empty() ? std::string_view(m_config.debug_name) : debug_name,
+		    // Submitted mid tick it finishes before the frame graphics even reach the GPU so nothing overlaps
+		    AsyncCompute::Timing::after_frame
 		);
 	} catch (const vk::SystemError& error) {
-		// The slot keeps its old ticket, so a later step reclaims it once the queue reports complete again
+		// The slot keeps its old ticket so a later step reclaims it once the queue catches up
 		TOAST_ERROR("Render", "{} step submit failed, dropping the step: {}", m_config.debug_name, error.what());
 		return 0;
 	}
@@ -454,7 +457,7 @@ auto AsyncComputeTask::finishedStep() const -> uint64_t {
 auto AsyncComputeTask::claimFreeSlot() -> std::optional<uint32_t> {
 	const AsyncCompute& compute = m_core->asyncCompute();
 	std::scoped_lock lock(m_mutex);
-	// Never the next step input, the result the renderer shows next or a slot a frame still binds
+	// Never the next step input or the result the renderer shows next or a slot a frame still binds
 	const int32_t newest = newestFinishedLocked();
 	for (uint32_t i = 0; i < k_slot_count; ++i) {
 		Slot& slot = m_slots[i];
@@ -464,8 +467,7 @@ auto AsyncComputeTask::claimFreeSlot() -> std::optional<uint32_t> {
 			return i;
 		}
 	}
-	// Every slot busy means the GPU is behind. Waiting here would park the owner thread on the GPU, and the owner thread
-	// is the engine tick, so with renderer.display.clamp_to_simulation on the renderer stops getting frames to present
+	// Every slot busy means the GPU is behind and waiting would park the engine tick on the GPU
 	return std::nullopt;
 }
 

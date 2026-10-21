@@ -495,6 +495,27 @@ auto Prefab::parseNodeChunk(std::span<const std::string> lines) -> std::optional
 				node.lua_vars.push_back(std::move(*lua_var));
 			}
 			i++;
+		} else if (current.starts_with("~override ")) {
+			// ~override <target uid> <field line>
+			std::string_view rest = std::string_view(current).substr(std::string_view("~override ").size());
+			const size_t uid_end = rest.find(' ');
+			bool is_array = false;
+			const auto target =
+			    uid_end != std::string_view::npos ? valueFromString(FieldType::uid_t, is_array, rest.substr(0, uid_end)) : std::nullopt;
+			auto field = target.has_value() ? parseField(std::string(rest.substr(uid_end + 1))) : std::nullopt;
+			if (field) {
+				const UID target_uid = std::any_cast<UID>(*target);
+				auto existing =
+				    std::ranges::find_if(node.interior, [&](const InteriorOverride& o) { return o.target.data() == target_uid.data(); });
+				if (existing == node.interior.end()) {
+					node.interior.push_back({.target = target_uid});
+					existing = std::prev(node.interior.end());
+				}
+				existing->fields.push_back(std::move(*field));
+			} else {
+				TOAST_WARN("ResourceManager", "Malformed interior override in node {}: {}", node.name, current);
+			}
+			i++;
 		} else if (
 		    const size_t name_end = current.find(' ');
 		    name_end != std::string::npos && std::string_view(current).substr(name_end + 1).starts_with("@signal ")
@@ -776,7 +797,6 @@ auto Prefab::parseValue(FieldType type, std::string_view value, bool& is_array) 
 auto Prefab::valueFromString(FieldType type, bool is_array, std::string_view value) -> std::optional<std::any> {
 	auto parse_single = [](FieldType type, std::string_view token) -> std::optional<std::any> {
 		switch (type) {
-			// holy boilerplate lil bro
 			case FieldType::string_t: return std::any {unescapeString(token)};
 			case FieldType::bool_t:
 				if (auto b = getValue<bool>(token)) {
@@ -948,6 +968,14 @@ void Prefab::writeNode(const BasicNode& node, std::stringstream& ss) const {
 
 	for (const auto& signal : node.signals) {
 		writeSignal(signal, ss);
+	}
+
+	for (const auto& entry : node.interior) {
+		for (const auto& field : entry.fields) {
+			std::stringstream line;
+			writeField(field, line);
+			ss << std::format("~override {} ", entry.target) << line.str();
+		}
 	}
 
 	for (const auto& group : node.groups) {
@@ -1204,6 +1232,15 @@ auto Prefab::toBinary() const -> std::vector<uint8_t> {
 			}
 		}
 
+		writeValue(buffer, static_cast<uint32_t>(node.interior.size()));
+		for (const auto& entry : node.interior) {
+			writeValue(buffer, entry.target.data());
+			writeValue(buffer, static_cast<uint32_t>(entry.fields.size()));
+			for (const auto& field : entry.fields) {
+				write_field(field);
+			}
+		}
+
 		writeValue(buffer, static_cast<uint32_t>(node.groups.size()));
 		for (const auto& group : node.groups) {
 			writeString(buffer, group.name);
@@ -1344,6 +1381,19 @@ Prefab::Prefab(std::span<const uint8_t> bytes) {
 					signal.connections.push_back({.target = target, .function = reader.readString()});
 				}
 				node.signals.push_back(std::move(signal));
+			}
+		}
+
+		if (header.version >= 5) {
+			uint32_t interior_count = reader.readValue<uint32_t>();
+			for (uint32_t j = 0; j < interior_count; ++j) {
+				InteriorOverride entry;
+				entry.target.value = reader.readValue<uint64_t>();
+				uint32_t override_field_count = reader.readValue<uint32_t>();
+				for (uint32_t k = 0; k < override_field_count; ++k) {
+					entry.fields.push_back(read_field());
+				}
+				node.interior.push_back(std::move(entry));
 			}
 		}
 
@@ -1658,6 +1708,11 @@ void Prefab::serializeNode(const toast::Node& node, bool is_root) {
 		}
 	}
 
+	// Interior nodes are not written as chunks so edits made on them travel as overrides
+	if (is_reference) {
+		collectInteriorOverrides(node, out);
+	}
+
 	nodes.push_back(std::move(out));
 
 	// we do not go inside prefabs, no need to serialize its children
@@ -1786,6 +1841,118 @@ auto Prefab::flattenedRootFields(const Handle<Prefab>& source) const -> std::opt
 	}
 
 	return flat;
+}
+
+auto Prefab::interiorBase(const toast::Node& node) const -> std::optional<BasicNode> {
+	// The nearest instance root above holds the file this node was written in
+	const toast::Node* owner = node.m_parent.exists() ? &*node.m_parent : nullptr;
+	while (owner != nullptr && !owner->isInstanceRoot()) {
+		owner = owner->m_parent.exists() ? &*owner->m_parent : nullptr;
+	}
+	if (owner == nullptr || !owner->m_source_prefab.hasValue()) {
+		return std::nullopt;
+	}
+
+	const Prefab& file = owner->m_source_prefab.get();
+	const uint64_t uid = node.uid().data();
+	const auto chunk = std::ranges::find_if(file.nodes, [uid](const BasicNode& candidate) {
+		const auto field = candidate.find("m_uid");
+		if (!field) {
+			return false;
+		}
+		try {
+			return field->as<UID>().data() == uid;
+		} catch (const std::bad_any_cast&) { return false; }
+	});
+	if (chunk == file.nodes.end()) {
+		return std::nullopt;
+	}
+
+	BasicNode base = *chunk;
+	// A nested instance chunk only holds its diffs so the rest comes from its own prefab root
+	if (node.isInstanceRoot()) {
+		if (auto flat = flattenedRootFields(node.m_source_prefab)) {
+			for (const Field& field : flat->fields) {
+				if (!base.find(field.name)) {
+					base.fields.push_back(field);
+				}
+			}
+			for (const Group& group : flat->groups) {
+				for (const Field& field : group.fields) {
+					if (!base.find(field.name)) {
+						base.fields.push_back(field);
+					}
+				}
+				for (const Subgroup& subgroup : group.subgroups) {
+					for (const Field& field : subgroup.fields) {
+						if (!base.find(field.name)) {
+							base.fields.push_back(field);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// Overrides the owning file already puts on this node where top level fields win over groups in find
+	for (const BasicNode& candidate : file.nodes) {
+		for (const InteriorOverride& entry : candidate.interior) {
+			if (entry.target.data() != uid) {
+				continue;
+			}
+			for (const Field& field : entry.fields) {
+				std::erase_if(base.fields, [&](const Field& existing) { return existing.name == field.name; });
+				base.fields.push_back(field);
+			}
+		}
+	}
+	return base;
+}
+
+void Prefab::collectInteriorOverrides(const toast::Node& instance, BasicNode& out) const {
+	ZoneScoped;
+	auto visit = [&](this auto&& self, const toast::Node& node) -> void {
+		for (const auto& child : node.m_children) {
+			// Raw data of an unresolved reference is not ours to diff
+			if (child->m_unresolved_chunk) {
+				continue;
+			}
+			const NodeInfo* info = child->info();
+			const std::optional<BasicNode> base = info != nullptr ? interiorBase(*child) : std::nullopt;
+			if (base) {
+				InteriorOverride entry {.target = child->uid()};
+				info->forEachBaseType([&](const NodeInfo& level) {
+					for (const FieldInfo& field : level.all_fields) {
+						if (field.name == "m_uid" || field.name == "m_parent" || field.name == "m_source_prefab" || !field.get ||
+						    field.hasAttribute("ReadOnly") || field.hasAttribute("NoSerialize")) {
+							continue;
+						}
+						std::any value = field.get(const_cast<toast::Node*>(&*child));
+						if (auto* box = std::any_cast<Box<toast::Node>>(&value)) {
+							if (!box->exists()) {
+								continue;
+							}
+							value = (*box)->uid();
+						}
+						const auto base_field = base->find(field.name);
+						if (base_field && fieldEquals(field.value_type, field.is_array, value, base_field->value)) {
+							continue;
+						}
+						entry.fields.push_back(
+						    Field {
+						      .name = std::string(field.name), .type = field.value_type, .is_array = field.is_array, .value = std::move(value)
+						    }
+						);
+					}
+				});
+				if (!entry.fields.empty()) {
+					out.interior.push_back(std::move(entry));
+				}
+			}
+			self(*child);
+		}
+	};
+	visit(instance);
 }
 
 auto Prefab::validate() const -> bool {

@@ -94,7 +94,8 @@ void addDebrisPass(
     const renderer::VulkanCore& core, renderer::VulkanRenderer& renderer, vk::Format depth_format, vk::Extent2D extent
 ) {
 	auto debris = std::make_shared<physics::DebrisSimulation>(physics::tunables().debris_max_particles);
-	auto debris_pass = std::make_unique<renderer::DebrisPass>(core, depth_format, extent, std::move(debris));
+	auto debris_pass =
+	    std::make_unique<renderer::DebrisPass>(core, renderer.getSceneColorFormat(), depth_format, extent, std::move(debris));
 	renderer.setDebrisPass(debris_pass.get());
 	renderer.addRenderPass(std::move(debris_pass));
 }

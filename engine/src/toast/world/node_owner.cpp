@@ -514,7 +514,38 @@ void INodeOwner::applyFields(Node& node, const assets::Prefab::BasicNode& data) 
 
 	std::string proper_name = snakeToNormalCase(data.name);
 	node.name(proper_name);
+	applyFieldValues(node, data);
+}
 
+void INodeOwner::applyInteriorOverrides(Node& instance_root, const assets::Prefab::BasicNode& chunk) {
+	ZoneScoped;
+	for (const auto& entry : chunk.interior) {
+		Node* target = nullptr;
+		auto find = [&](this auto&& self, Node& node) -> void {
+			for (auto& child : node.m_children) {
+				if (target != nullptr) {
+					return;
+				}
+				if (child->uid().data() == entry.target.data()) {
+					target = &*child;
+					return;
+				}
+				self(*child);
+			}
+		};
+		find(instance_root);
+		// The inner prefab dropped that node since this file was saved
+		if (target == nullptr) {
+			continue;
+		}
+		assets::Prefab::BasicNode values;
+		values.fields = entry.fields;
+		applyFieldValues(*target, values);
+	}
+}
+
+void INodeOwner::applyFieldValues(Node& node, const assets::Prefab::BasicNode& data) {
+	ZoneScoped;
 	const NodeInfo* info = node.info();
 	if (not info) {
 		return;
@@ -895,6 +926,7 @@ auto INodeOwner::instantiate(const assets::Handle<assets::Prefab>& file, Instant
 		}
 
 		applyFields(*sub_root, *chunk);
+		applyInteriorOverrides(*sub_root, *chunk);
 		sub_root->m_source_prefab = sub;
 
 		// Everything below an instance root is interior to that instance

@@ -1575,6 +1575,11 @@ void VulkanRenderer::recordMeshScene(
 			}
 			record_glass_until(-1.0f);
 
+			// One run after voxel glass since the pieces are small and mostly in front of it
+			if (m_debris_pass != nullptr && m_debris_pass->isEnabled()) {
+				m_debris_pass->recordGlass(cmd, m_current_frame);
+			}
+
 			// Last so the glass depth it writes never rejects a blended draw behind the glass
 			if (!glass.empty()) {
 				m_voxel_pass->recordGlassSurfaces(cmd, m_current_frame);
@@ -2556,6 +2561,8 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> bool {
 		std::scoped_lock submit_lock(m_core->graphicsSubmitMutex());
 		sync::submit(m_core->getGraphicsQueue(), submit);
 	}
+	// Steps the tick queued run on the compute queue while this frame renders
+	m_core->asyncCompute().flushDeferred();
 	end_phase(m_perf_submit_ns);
 
 #if defined(_WIN32)
@@ -2616,7 +2623,7 @@ void VulkanRenderer::waitForOutputImage() {
 	}
 }
 
-void VulkanRenderer::mainRenderThread() {
+void VulkanRenderer::mainRenderThread() try {
 	tracy::SetThreadName("Renderer Thread");
 
 #ifdef TRACY_ENABLE
@@ -2846,6 +2853,11 @@ void VulkanRenderer::mainRenderThread() {
 
 		FrameMarkNamed("RenderFrame");
 	}
+} catch (const vk::DeviceLostError& error) {
+	// Nothing recovers a lost device and the abort would otherwise drop the queued logs
+	TOAST_CRITICAL("Render", "GPU device lost on the render thread, shutting down: {}", error.what());
+	logging::flush();
+	std::abort();
 }
 
 void VulkanRenderer::start() noexcept {
@@ -3680,13 +3692,15 @@ void VulkanRenderer::tick(float time) noexcept {
 		float resolution_scale = 1.0f;
 		float shadow_distance = 0.0f;
 		bool casts_shadows = false;
+		/// Marched and sampled lights shadow voxels by marching so they never take a shadow map slot
+		bool shadow_map = false;
 	};
 
 	const auto submit_punctual = [&](const PunctualSubmit& submit, std::vector<PunctualShadowCandidate>& candidates) {
 		++frame.light_stats.submitted;
 
-		const bool visible = sphereInFrustum(frustum, submit.bounds.center, submit.bounds.radius);
-		if (!visible && !submit.casts_shadows) {
+		// Its whole range is off screen so it neither lights nor shadows a visible pixel
+		if (!sphereInFrustum(frustum, submit.bounds.center, submit.bounds.radius)) {
 			++frame.light_stats.offscreen;
 			return;
 		}
@@ -3696,14 +3710,14 @@ void VulkanRenderer::tick(float time) noexcept {
 		    glm::vec3(gpu.color_intensity), gpu.color_intensity.w, gpu.world_pos_range.w, submit.camera_distance, submit.cone_fraction
 		);
 
-		if (submit.casts_shadows) {
+		if (submit.shadow_map) {
 			candidates.push_back(
 			    PunctualShadowCandidate {
 			      .light_index = frame.lights.size(),
 			      .distance_squared = submit.camera_distance * submit.camera_distance,
 			      .resolution_scale = submit.resolution_scale,
 			      .shadow_distance = submit.shadow_distance,
-			      .visible = visible,
+			      .visible = true,
 			      .key = submit.key,
 			      .importance = light_culling::shadowPriority(
 			          glm::vec3(gpu.color_intensity), gpu.color_intensity.w, submit.camera_distance, submit.cone_fraction
@@ -3716,7 +3730,7 @@ void VulkanRenderer::tick(float time) noexcept {
 		    LightMeta {
 		      .importance = importance,
 		      .depth_reach = -(frame_view * glm::vec4(submit.bounds.center, 1.0f)).z + submit.bounds.radius,
-		      .visible = visible,
+		      .visible = true,
 		    }
 		);
 		frame.lights.push_back(gpu);
@@ -3761,6 +3775,7 @@ void VulkanRenderer::tick(float time) noexcept {
 
 		const bool casts_shadows =
 		    light->castsShadows() && (!positional || light->shadowDistance() <= 0.0f || camera_distance <= shadow_limit);
+		const bool shadow_map = casts_shadows && light->shadowMode() == toast::LightShadowMode::shadow_map;
 
 		constexpr float k_light_icon_size = 0.5f;
 		debug::drawBillboard(
@@ -3785,7 +3800,7 @@ void VulkanRenderer::tick(float time) noexcept {
 				  .direction = glm::vec4(light->forward(), marched_sun ? std::max(angular_radius, 1e-6f) : 0.0f),
 				  .color_intensity = glm::vec4(light->color(), light->intensity()),
 				};
-				if (shadow_caster_index < 0 && casts_shadows) {
+				if (shadow_caster_index < 0 && shadow_map) {
 					shadow_caster_index = static_cast<int32_t>(directional_count);
 					shadow_caster_direction = light->forward();
 				}
@@ -3820,6 +3835,7 @@ void VulkanRenderer::tick(float time) noexcept {
 				      .resolution_scale = point->shadowResolutionScale(),
 				      .shadow_distance = light->shadowDistance(),
 				      .casts_shadows = casts_shadows,
+				      .shadow_map = shadow_map,
 				},
 				    point_candidates
 				);
@@ -3862,6 +3878,7 @@ void VulkanRenderer::tick(float time) noexcept {
 				      .resolution_scale = spot->shadowResolutionScale(),
 				      .shadow_distance = light->shadowDistance(),
 				      .casts_shadows = casts_shadows,
+				      .shadow_map = shadow_map,
 				},
 				    spot_candidates
 				);
