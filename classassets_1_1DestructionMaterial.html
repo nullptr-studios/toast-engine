@@ -173,13 +173,17 @@ auto&#160;</td><td class="memItemRight"><b>density</b> () const noexcept -&gt; f
 <tr class="memdesc:a1e9b7f31e763350676f33525b9b84dd5"><td class="mdescLeft">&#160;</td><td class="mdescRight">kg/m3; drives voxel mass through massPerVoxel() <br /></td></tr>
 <tr class="memitem:a90dfdf43b2bc37914f28da03fc59d529" id="r_a90dfdf43b2bc37914f28da03fc59d529"><td class="memItemLeft"><a id="a90dfdf43b2bc37914f28da03fc59d529" name="a90dfdf43b2bc37914f28da03fc59d529"></a>
 auto&#160;</td><td class="memItemRight"><b>toughness</b> () const noexcept -&gt; float</td></tr>
-<tr class="memdesc:a90dfdf43b2bc37914f28da03fc59d529"><td class="mdescLeft">&#160;</td><td class="mdescRight">Joules of impulse energy a voxel absorbs before it breaks. <br /></td></tr>
+<tr class="memdesc:a90dfdf43b2bc37914f28da03fc59d529"><td class="mdescLeft">&#160;</td><td class="mdescRight">kJ/m3 it takes to break the material <br /></td></tr>
+<tr class="memitem:a0b3f9c20c1f3e5d4ec309e32b75ab919" id="r_a0b3f9c20c1f3e5d4ec309e32b75ab919"><td class="memItemLeft"><a id="a0b3f9c20c1f3e5d4ec309e32b75ab919" name="a0b3f9c20c1f3e5d4ec309e32b75ab919"></a>
+auto&#160;</td><td class="memItemRight"><b>hardness</b> () const noexcept -&gt; physics::Hardness</td></tr>
+<tr class="memdesc:a0b3f9c20c1f3e5d4ec309e32b75ab919"><td class="mdescLeft">&#160;</td><td class="mdescRight">Damage that breaks only softer tiers never breaks this material. <br /></td></tr>
+<tr class="memitem:a3f8e2b3964484afef05add5869528202" id="r_a3f8e2b3964484afef05add5869528202"><td class="memItemLeft"><a id="a3f8e2b3964484afef05add5869528202" name="a3f8e2b3964484afef05add5869528202"></a>
+auto&#160;</td><td class="memItemRight"><b>fracturePatterh</b> () const noexcept -&gt; physics::FracturePattern</td></tr>
+<tr class="memitem:ac38e051dbfdf258dfa216a48c5c88ecb" id="r_ac38e051dbfdf258dfa216a48c5c88ecb"><td class="memItemLeft"><a id="ac38e051dbfdf258dfa216a48c5c88ecb" name="ac38e051dbfdf258dfa216a48c5c88ecb"></a>
+auto&#160;</td><td class="memItemRight"><b>fractureProfile</b> () const noexcept -&gt; <a class="el" href="structphysics_1_1PackedFractureProfile.html">physics::PackedFractureProfile</a></td></tr>
 <tr class="memitem:a7a76488e478d9d6dc2fa87e873ac2939" id="r_a7a76488e478d9d6dc2fa87e873ac2939"><td class="memItemLeft"><a id="a7a76488e478d9d6dc2fa87e873ac2939" name="a7a76488e478d9d6dc2fa87e873ac2939"></a>
 auto&#160;</td><td class="memItemRight"><b>structuralStrength</b> () const noexcept -&gt; float</td></tr>
 <tr class="memdesc:a7a76488e478d9d6dc2fa87e873ac2939"><td class="mdescLeft">&#160;</td><td class="mdescRight">Pascals. <br /></td></tr>
-<tr class="memitem:ad69799011693a4591648d37942a0f9d8" id="r_ad69799011693a4591648d37942a0f9d8"><td class="memItemLeft"><a id="ad69799011693a4591648d37942a0f9d8" name="ad69799011693a4591648d37942a0f9d8"></a>
-auto&#160;</td><td class="memItemRight"><b>shatterRadius</b> () const noexcept -&gt; float</td></tr>
-<tr class="memdesc:ad69799011693a4591648d37942a0f9d8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Metres of damage radius when a break does happen. <br /></td></tr>
 <tr class="memitem:a71eca1f16c176e732b9a40a3a6bf8466" id="r_a71eca1f16c176e732b9a40a3a6bf8466"><td class="memItemLeft"><a id="a71eca1f16c176e732b9a40a3a6bf8466" name="a71eca1f16c176e732b9a40a3a6bf8466"></a>
 auto&#160;</td><td class="memItemRight"><b>destructible</b> () const noexcept -&gt; bool</td></tr>
 <tr class="memdesc:a71eca1f16c176e732b9a40a3a6bf8466"><td class="mdescLeft">&#160;</td><td class="mdescRight">False means voxels of this material never break, whatever hits them. <br /></td></tr>

@@ -254,7 +254,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('settings_8hpp_
 <div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>  std::deque&lt;Entry&gt; m_entries;</div>
 <div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>  std::unordered_map&lt;std::string, Entry*, TransparentHash, std::equal_to&lt;&gt;&gt; m_by_key;</div>
 <div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span></div>
-<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>  std::array&lt;std::unordered_map&lt;std::string, Value&gt;, <a class="code hl_variable" href="settings_8hpp.html#ac40602ec224c0ef845ade6257b429702">k_layer_count</a>&gt; m_pending;</div>
+<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>  std::array&lt;std::unordered_map&lt;std::string, Value&gt;, k_layer_count&gt; m_pending;</div>
 <div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span> </div>
 <div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>  std::filesystem::path m_project_path;</div>
 <div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>  std::filesystem::path m_user_path;</div>

@@ -9,12 +9,14 @@ var searchData=
   ['signals_6',['signals',['../structassets_1_1Prefab_1_1BasicNode.html#accdcefb05db648f49de736e2dc19c5ff',1,'assets::Prefab::BasicNode::signals'],['../structinput_1_1ITrigger_1_1Result.html#a7d07416ce1ee3ffab0efe6b316d2a2d9',1,'input::ITrigger::Result::signals']]],
   ['simulation_5ftype_7',['simulation_type',['../classtoast_1_1VoxelNode.html#a97a85c25927ece8f3541460ffedf53ea',1,'toast::VoxelNode']]],
   ['skeleton_5froot_8',['skeleton_root',['../structassets_1_1Skin.html#a60097c3e68e77fdf05ca2cbd0b018dee',1,'assets::Skin']]],
-  ['sleep_5fanchor_5fcenter_9',['sleep_anchor_center',['../structphysics_1_1Body.html#a1c6f750c86e895fbc612fb978521f77d',1,'physics::Body']]],
-  ['step_10',['step',['../structtoast_1_1settings_1_1Meta.html#a0763ae167e255b7f448ef9a97656cd93',1,'toast::settings::Meta::step'],['../structphysics_1_1Meta.html#a0763ae167e255b7f448ef9a97656cd93',1,'physics::Meta::step'],['../structrenderer_1_1Meta.html#a0763ae167e255b7f448ef9a97656cd93',1,'renderer::Meta::step']]],
-  ['subscribe_11',['subscribe',['../structevent_1_1__detail_1_1ProtoEntry.html#ae2a87396c71ed4fde3a74b8981583ec9',1,'event::_detail::ProtoEntry']]],
-  ['suppresswrite_12',['SuppressWrite',['../classeditor_1_1Workspace_1_1SettingRow.html#af651c31eb563c019179dda4f7a636c25',1,'editor::Workspace::SettingRow']]],
-  ['surface_13',['surface',['../structtoast_1_1Workspace_1_1VoxelToolState.html#a717f78818a38a493bac9509f3194515e',1,'toast::Workspace::VoxelToolState']]],
-  ['surface_5funit_5fgrid_14',['surface_unit_grid',['../structrenderer_1_1EditorOverlays.html#a4a5c8d25fefa559012ec542f0f552bd9',1,'renderer::EditorOverlays']]],
-  ['surface_5fvoxel_5fgrid_15',['surface_voxel_grid',['../structrenderer_1_1EditorOverlays.html#a53a60027f013866d75e4b1df33a649a0',1,'renderer::EditorOverlays']]],
-  ['sweep_5frefine_5fiterations_16',['sweep_refine_iterations',['../structphysics_1_1Tunables.html#a32bcf2b4c962baee596720e64905c6a8',1,'physics::Tunables']]]
+  ['spared_9',['spared',['../structrenderer_1_1ShadowPass_1_1Stats.html#a679de004537493db73eeb9dd765a5eef',1,'renderer::ShadowPass::Stats']]],
+  ['static_5fcasters_10',['static_casters',['../structrenderer_1_1ShadowPass_1_1Stats.html#aad410bcc182b63b4f2a890ff85e6a7f8',1,'renderer::ShadowPass::Stats']]],
+  ['static_5fedits_11',['static_edits',['../structrenderer_1_1ShadowPass_1_1Stats.html#a87c04c48842a588df76510c38a881b30',1,'renderer::ShadowPass::Stats']]],
+  ['static_5fviews_12',['static_views',['../structrenderer_1_1ShadowPass_1_1Stats.html#a46c019468ac3fa946b577a64fe7ece96',1,'renderer::ShadowPass::Stats']]],
+  ['step_13',['step',['../structtoast_1_1settings_1_1Meta.html#a0763ae167e255b7f448ef9a97656cd93',1,'toast::settings::Meta::step'],['../structphysics_1_1Meta.html#a0763ae167e255b7f448ef9a97656cd93',1,'physics::Meta::step'],['../structrenderer_1_1Meta.html#a0763ae167e255b7f448ef9a97656cd93',1,'renderer::Meta::step']]],
+  ['subscribe_14',['subscribe',['../structevent_1_1__detail_1_1ProtoEntry.html#ae2a87396c71ed4fde3a74b8981583ec9',1,'event::_detail::ProtoEntry']]],
+  ['suppresswrite_15',['SuppressWrite',['../classeditor_1_1Workspace_1_1SettingRow.html#af651c31eb563c019179dda4f7a636c25',1,'editor::Workspace::SettingRow']]],
+  ['surface_16',['surface',['../structtoast_1_1Workspace_1_1VoxelToolState.html#a717f78818a38a493bac9509f3194515e',1,'toast::Workspace::VoxelToolState']]],
+  ['surface_5funit_5fgrid_17',['surface_unit_grid',['../structrenderer_1_1EditorOverlays.html#a4a5c8d25fefa559012ec542f0f552bd9',1,'renderer::EditorOverlays']]],
+  ['surface_5fvoxel_5fgrid_18',['surface_voxel_grid',['../structrenderer_1_1EditorOverlays.html#a53a60027f013866d75e4b1df33a649a0',1,'renderer::EditorOverlays']]]
 ];

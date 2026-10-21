@@ -1,6 +1,6 @@
 var classrenderer_1_1VulkanRenderer =
 [
-    [ "FrameContext", "structrenderer_1_1VulkanRenderer_1_1FrameContext.html", null ],
+    [ "FrameContext", "structrenderer_1_1VulkanRenderer_1_1FrameContext.html", "structrenderer_1_1VulkanRenderer_1_1FrameContext" ],
     [ "InstanceData", "structrenderer_1_1VulkanRenderer_1_1InstanceData.html", null ],
     [ "DirectionalLightData", "structrenderer_1_1VulkanRenderer_1_1DirectionalLightData.html", null ],
     [ "ReflectionProbeData", "structrenderer_1_1VulkanRenderer_1_1ReflectionProbeData.html", null ],
@@ -21,6 +21,7 @@ var classrenderer_1_1VulkanRenderer =
     [ "RenderFrame", "structrenderer_1_1VulkanRenderer_1_1RenderFrame.html", "structrenderer_1_1VulkanRenderer_1_1RenderFrame" ],
     [ "PassInfo", "structrenderer_1_1VulkanRenderer_1_1PassInfo.html", null ],
     [ "PerfCounters", "structrenderer_1_1VulkanRenderer_1_1PerfCounters.html", null ],
+    [ "UploadStats", "structrenderer_1_1VulkanRenderer_1_1UploadStats.html", null ],
     [ "addPostProcessPass", "classrenderer_1_1VulkanRenderer.html#abb888b7f0d33fd8f18e2e67c0cb9333b", null ],
     [ "getDepthView", "classrenderer_1_1VulkanRenderer.html#a1b77b7999b5d36c2198343748f1a47bd", null ],
     [ "getEnvironmentPassMutable", "classrenderer_1_1VulkanRenderer.html#a7d823d3d74dae4e9167e5c7631df4205", null ],
@@ -29,10 +30,15 @@ var classrenderer_1_1VulkanRenderer =
     [ "gpuTimer", "classrenderer_1_1VulkanRenderer.html#ac31919952a1835944a10c95c6fefffa7", null ],
     [ "queueDebugLine", "classrenderer_1_1VulkanRenderer.html#a64451eb0105c628add467b121e7527fe", null ],
     [ "requestPostProcessSettings", "classrenderer_1_1VulkanRenderer.html#ab68b60d1454b0e6196089c80015764d2", null ],
+    [ "retire", "classrenderer_1_1VulkanRenderer.html#abc729851d3ef66cc2bc15686d6dfc1a0", null ],
     [ "setClampToSimulation", "classrenderer_1_1VulkanRenderer.html#a2145059581fd6f688e3c2b0a8fb8f047", null ],
     [ "setFrameRateLimit", "classrenderer_1_1VulkanRenderer.html#a9a5185a0cb7cab573e5863e86bdd4420", null ],
     [ "setRenderOwnerFilter", "classrenderer_1_1VulkanRenderer.html#a31165884aa4a043743e459d974eabbc4", null ],
+    [ "setVoxelCellBoxes", "classrenderer_1_1VulkanRenderer.html#ac52de4fe63aa84d00caca0e78c8b0a9f", null ],
     [ "setVoxelHighlight", "classrenderer_1_1VulkanRenderer.html#a3e0fa0039ad273616e5259ebf4706f06", null ],
-    [ "setVoxelNormalRounding", "classrenderer_1_1VulkanRenderer.html#a7eecd740bee399682e7462ec13d15382", null ],
-    [ "setVoxelPass", "classrenderer_1_1VulkanRenderer.html#af99a4f011583d98972c29370251f71a6", null ]
+    [ "setVoxelPass", "classrenderer_1_1VulkanRenderer.html#af99a4f011583d98972c29370251f71a6", null ],
+    [ "setVoxelRasterPixels", "classrenderer_1_1VulkanRenderer.html#ad2c6893cc4c56768febb3982c5422c43", null ],
+    [ "uploadStats", "classrenderer_1_1VulkanRenderer.html#a598581b9421635962e600c6dd77cf9fd", null ],
+    [ "uploadTimeline", "classrenderer_1_1VulkanRenderer.html#a1d74e649188a1b8615e656b2222bef3b", null ],
+    [ "uploadTimelineValue", "classrenderer_1_1VulkanRenderer.html#a3741ea1e8fae2e1475b3ef101041d1bd", null ]
 ];

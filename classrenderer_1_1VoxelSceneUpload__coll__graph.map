@@ -1,5 +1,7 @@
 <map id="renderer::VoxelSceneUpload" name="renderer::VoxelSceneUpload">
-<area shape="rect" id="Node000001" title=" " alt="" coords="5,98,210,126"/>
-<area shape="rect" id="Node000002" href="$classrenderer_1_1PendingResourceUpload.html" title=" " alt="" coords="9,5,206,50"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="109,64,110,98,105,96,106,68"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="11,200,215,228"/>
+<area shape="rect" id="Node000002" href="$classrenderer_1_1PendingResourceUpload.html" title=" " alt="" coords="15,106,211,151"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="115,164,115,201,111,198,111,168"/>
+<area shape="rect" id="Node000003" href="$structrenderer_1_1sync_1_1QueueHandoff.html" title=" " alt="" coords="5,5,221,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="114,46,116,106,110,105,112,51"/>
 </map>

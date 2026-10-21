@@ -132,21 +132,23 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('spirv__entry__
 <div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span> </div>
 <div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="keyword">namespace </span>renderer::spirv {</div>
 <div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span> </div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="keyword">enum class</span> ExecutionModel : uint8_t {</div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="keyword">enum class</span> ExecutionModel : uint16_t {</div>
 <div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>  vertex = 0,</div>
 <div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>  fragment = 4,</div>
 <div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>  compute = 5,</div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>};</div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>[[nodiscard]]</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="keyword">auto</span> TOAST_API entryPointNames(std::span&lt;const std::byte&gt; spirv, ExecutionModel model) -&gt; std::vector&lt;std::string&gt;;</div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span></div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>[[nodiscard]]</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="keyword">auto</span> TOAST_API <a class="code hl_function" href="spirv__entry__points_8cpp.html#a8e6f1813c10fdddc75f4532cb6420b76">resolveEntryPoint</a>(</div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>    std::span&lt;const std::byte&gt; spirv, ExecutionModel model, <span class="keyword">const</span> std::string&amp; requested, std::string_view debug_name</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>) -&gt; std::string;</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span> </div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>}</div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>  task = 5364,</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>  mesh = 5365,</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>};</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span> </div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>[[nodiscard]]</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="keyword">auto</span> TOAST_API entryPointNames(std::span&lt;const std::byte&gt; spirv, ExecutionModel model) -&gt; std::vector&lt;std::string&gt;;</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span></div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>[[nodiscard]]</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="keyword">auto</span> TOAST_API <a class="code hl_function" href="spirv__entry__points_8cpp.html#a8e6f1813c10fdddc75f4532cb6420b76">resolveEntryPoint</a>(</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>    std::span&lt;const std::byte&gt; spirv, ExecutionModel model, <span class="keyword">const</span> std::string&amp; requested, std::string_view debug_name</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>) -&gt; std::string;</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span> </div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>}</div>
 <div class="ttc" id="aexport_8hpp_html"><div class="ttname"><a href="export_8hpp.html">export.hpp</a></div></div>
 <div class="ttc" id="aspirv__entry__points_8cpp_html_a8e6f1813c10fdddc75f4532cb6420b76"><div class="ttname"><a href="spirv__entry__points_8cpp.html#a8e6f1813c10fdddc75f4532cb6420b76">renderer::spirv::resolveEntryPoint</a></div><div class="ttdeci">auto resolveEntryPoint(std::span&lt; const std::byte &gt; spirv, ExecutionModel model, const std::string &amp;requested, std::string_view debug_name) -&gt; std::string</div><div class="ttdoc">Slang renames the only entry point of a module to main.</div><div class="ttdef"><b>Definition</b> spirv_entry_points.cpp:60</div></div>
 </div><!-- fragment --></div><!-- contents -->

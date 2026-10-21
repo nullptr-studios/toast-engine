@@ -121,18 +121,21 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('frustum_8hpp.h
 <div class="textblock"><code>#include &lt;array&gt;</code><br />
 <code>#include &lt;glm/glm.hpp&gt;</code><br />
 <code>#include &lt;limits&gt;</code><br />
+<code>#include &lt;utility&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for frustum.hpp:</div>
 <div class="dyncontent">
 <div class="center"><img src="frustum_8hpp__incl.png" border="0" usemap="#aengine_2src_2toast_2renderer_2frustum_8hpp" loading="lazy" alt=""/></div>
 <map name="aengine_2src_2toast_2renderer_2frustum_8hpp" id="aengine_2src_2toast_2renderer_2frustum_8hpp">
-<area shape="rect" title=" " alt="" coords="45,5,229,50"/>
+<area shape="rect" title=" " alt="" coords="97,5,281,50"/>
 <area shape="rect" title=" " alt="" coords="5,98,61,126"/>
-<area shape="poly" title=" " alt="" coords="112,50,63,90,60,86,107,51"/>
+<area shape="poly" title=" " alt="" coords="149,53,73,93,70,88,146,48"/>
 <area shape="rect" title=" " alt="" coords="85,98,189,126"/>
-<area shape="poly" title=" " alt="" coords="139,48,139,84,135,81,135,52"/>
+<area shape="poly" title=" " alt="" coords="178,49,155,87,152,83,173,52"/>
 <area shape="rect" title=" " alt="" coords="213,98,272,126"/>
-<area shape="poly" title=" " alt="" coords="166,48,216,88,211,88,164,53"/>
+<area shape="poly" title=" " alt="" coords="204,48,228,85,223,84,202,53"/>
+<area shape="rect" title=" " alt="" coords="295,98,355,126"/>
+<area shape="poly" title=" " alt="" coords="226,48,293,90,288,90,224,53"/>
 </map>
 </div>
 </div><div class="textblock"><div class="dynheader">
@@ -140,63 +143,78 @@ This graph shows which files directly or indirectly include this file:</div>
 <div class="dyncontent">
 <div class="center"><img src="frustum_8hpp__dep__incl.png" border="0" usemap="#aengine_2src_2toast_2renderer_2frustum_8hppdep" loading="lazy" alt=""/></div>
 <map name="aengine_2src_2toast_2renderer_2frustum_8hppdep" id="aengine_2src_2toast_2renderer_2frustum_8hppdep">
-<area shape="rect" title=" " alt="" coords="3395,5,3579,50"/>
-<area shape="rect" href="shadow__pass_8cpp.html" title=" " alt="" coords="3461,384,3649,429"/>
-<area shape="poly" title=" " alt="" coords="3508,61,3557,159,3580,220,3597,283,3601,306,3597,329,3586,359,3571,386,3568,382,3581,357,3592,327,3595,306,3592,284,3575,221,3552,161,3505,66"/>
-<area shape="rect" href="voxel__change__history_8hpp.html" title=" " alt="" coords="3259,98,3451,143"/>
-<area shape="poly" title=" " alt="" coords="3445,58,3387,100,3385,95,3440,60"/>
-<area shape="rect" href="shadow__pass_8hpp.html" title=" " alt="" coords="3394,283,3583,328"/>
-<area shape="poly" title=" " alt="" coords="3419,148,3444,166,3465,189,3477,212,3485,237,3490,284,3486,281,3480,238,3472,214,3461,192,3441,170,3417,153"/>
-<area shape="rect" href="voxel__change__history_8cpp.html" title=" " alt="" coords="3259,191,3450,235"/>
-<area shape="poly" title=" " alt="" coords="3357,156,3357,192,3353,189,3353,160"/>
-<area shape="rect" href="voxel__gpu__storage_8hpp.html" title=" " alt="" coords="3051,191,3235,235"/>
-<area shape="poly" title=" " alt="" coords="3293,148,3194,193,3193,188,3288,150"/>
-<area shape="rect" href="voxel__scene__patcher_8hpp.html" title=" " alt="" coords="2051,191,2240,235"/>
-<area shape="poly" title=" " alt="" coords="3241,130,2240,207,2240,202,3246,130"/>
-<area shape="poly" title=" " alt="" coords="3512,338,3543,385,3538,383,3510,343"/>
-<area shape="rect" href="debug__pass_8cpp.html" title=" " alt="" coords="3252,486,3436,530"/>
-<area shape="poly" title=" " alt="" coords="3598,326,3635,346,3664,374,3673,391,3676,407,3673,423,3664,439,3649,452,3627,463,3571,481,3504,493,3437,502,3437,497,3503,488,3569,475,3625,458,3646,448,3659,436,3668,421,3671,407,3668,393,3659,378,3632,350,3597,331"/>
-<area shape="poly" title=" " alt="" coords="3201,240,3383,326,3508,384,3503,383,3380,330,3200,245"/>
-<area shape="rect" href="vulkan__renderer_8hpp_source.html" title=" " alt="" coords="2053,283,2238,328"/>
-<area shape="poly" title=" " alt="" coords="3033,224,2239,299,2238,293,3038,224"/>
-<area shape="poly" title=" " alt="" coords="2253,307,2866,329,3203,348,3342,360,3449,373,3488,384,3483,384,3448,379,3342,365,3202,354,2866,334,2253,312"/>
-<area shape="poly" title=" " alt="" coords="2253,307,2494,314,2785,327,3044,346,3137,359,3191,374,3209,387,3219,403,3228,419,3242,436,3275,461,3309,486,3304,484,3271,466,3238,440,3223,422,3215,405,3205,391,3188,378,3136,364,3044,351,2784,332,2494,319,2253,312"/>
-<area shape="rect" href="bloom__pass_8cpp.html" title=" " alt="" coords="5,384,190,429"/>
-<area shape="poly" title=" " alt="" coords="2036,328,1893,345,1759,354,1522,359,1312,353,1117,342,922,333,713,332,600,336,478,345,346,359,202,379,165,386,163,382,201,373,345,354,478,340,600,331,713,327,922,328,1117,337,1312,348,1522,354,1759,348,1892,340,2041,328"/>
-<area shape="rect" href="cluster__lighting__pass_8cpp.html" title=" " alt="" coords="213,376,398,438"/>
-<area shape="poly" title=" " alt="" coords="2036,328,1791,352,1580,357,1394,352,1221,344,1048,337,863,336,655,348,538,361,410,379,399,381,398,375,409,373,537,356,654,343,863,331,1048,331,1221,338,1394,347,1580,352,1791,346,2041,328"/>
-<area shape="rect" href="depth__prepass_8cpp.html" title=" " alt="" coords="422,384,618,429"/>
-<area shape="poly" title=" " alt="" coords="2036,328,1825,350,1642,355,1482,353,1332,347,1183,342,1023,343,843,353,631,379,592,387,591,381,630,373,842,348,1023,337,1183,337,1332,342,1482,348,1642,350,1824,344,2041,328"/>
-<area shape="rect" href="environment__pass_8cpp.html" title=" " alt="" coords="643,384,864,429"/>
-<area shape="poly" title=" " alt="" coords="2036,328,1862,347,1711,354,1579,354,1455,351,1332,348,1200,350,1051,359,877,379,834,387,833,381,876,373,1051,353,1200,344,1332,343,1455,345,1579,348,1711,348,1861,342,2041,328"/>
-<area shape="rect" href="fxaa__pass_8cpp.html" title=" " alt="" coords="888,384,1072,429"/>
-<area shape="poly" title=" " alt="" coords="2035,329,1893,345,1769,350,1559,348,1457,347,1349,350,1227,359,1085,379,1048,387,1047,381,1084,373,1227,354,1349,344,1457,342,1559,343,1769,345,1893,339,2041,328"/>
-<area shape="rect" href="material__pass_8hpp.html" title=" " alt="" coords="1096,384,1291,429"/>
-<area shape="poly" title=" " alt="" coords="2041,328,1926,343,1831,348,1668,351,1507,355,1413,363,1303,379,1266,387,1265,381,1302,373,1413,358,1507,349,1668,345,1831,343,1926,337,2035,329"/>
-<area shape="rect" href="reflection__probe__pass_8cpp.html" title=" " alt="" coords="1315,376,1499,438"/>
-<area shape="poly" title=" " alt="" coords="2041,328,1889,346,1773,351,1657,358,1511,379,1500,381,1499,376,1510,373,1656,353,1772,346,1889,341,2036,329"/>
-<area shape="rect" href="skinning__pass_8cpp.html" title=" " alt="" coords="1524,384,1717,429"/>
-<area shape="poly" title=" " alt="" coords="2041,328,1882,353,1815,363,1730,379,1696,387,1695,381,1729,373,1814,357,1882,348,2035,329"/>
-<area shape="rect" href="ssao__pass_8cpp.html" title=" " alt="" coords="1741,384,1926,429"/>
-<area shape="poly" title=" " alt="" coords="2065,333,1902,387,1901,381,2060,334"/>
-<area shape="rect" href="ssr__pass_8cpp.html" title=" " alt="" coords="1949,384,2134,429"/>
-<area shape="poly" title=" " alt="" coords="2115,338,2065,387,2063,382,2110,340"/>
-<area shape="rect" href="taa__pass_8cpp.html" title=" " alt="" coords="2157,384,2342,429"/>
-<area shape="poly" title=" " alt="" coords="2180,336,2230,385,2224,383,2178,341"/>
-<area shape="rect" href="tonemap__pass_8cpp.html" title=" " alt="" coords="2366,384,2562,429"/>
-<area shape="poly" title=" " alt="" coords="2230,330,2397,384,2392,384,2229,336"/>
-<area shape="rect" href="traced__shadow__pass_8cpp.html" title=" " alt="" coords="2586,384,2822,429"/>
-<area shape="poly" title=" " alt="" coords="2253,320,2406,343,2575,373,2615,384,2610,384,2574,379,2405,349,2253,325"/>
-<area shape="rect" href="voxel__debug_8hpp.html" title=" " alt="" coords="3252,384,3436,429"/>
-<area shape="poly" title=" " alt="" coords="2253,304,2439,307,2684,317,2958,338,3098,354,3234,373,3274,384,3269,384,3233,379,3097,359,2958,344,2683,323,2439,313,2253,309"/>
-<area shape="rect" href="ui__system_8hpp.html" title="Singleton owning the RmlUi library." alt="" coords="2847,384,2988,429"/>
-<area shape="poly" title=" " alt="" coords="2253,307,2374,313,2520,325,2678,345,2835,373,2866,384,2860,384,2834,379,2677,350,2519,330,2373,319,2253,312"/>
-<area shape="rect" href="camera_8cpp.html" title=" " alt="" coords="3012,384,3178,429"/>
-<area shape="poly" title=" " alt="" coords="2253,305,2402,310,2589,321,2795,342,3001,373,3035,384,3030,384,3000,379,2794,347,2588,327,2401,316,2253,311"/>
-<area shape="poly" title=" " alt="" coords="3346,443,3346,487,3342,483,3342,447"/>
-<area shape="poly" title=" " alt="" coords="2147,249,2148,285,2143,281,2144,253"/>
-<area shape="rect" href="voxel__scene__patcher_8cpp.html" title=" " alt="" coords="1842,283,2030,328"/>
-<area shape="poly" title=" " alt="" coords="2084,241,1987,285,1986,280,2079,243"/>
+<area shape="rect" title=" " alt="" coords="164,5,349,50"/>
+<area shape="rect" href="shadow__pass_8cpp.html" title=" " alt="" coords="30,384,219,429"/>
+<area shape="poly" title=" " alt="" coords="238,66,198,162,152,284,139,338,130,385,125,383,134,337,147,283,193,160,240,61"/>
+<area shape="rect" href="voxel__change__history_8hpp.html" title=" " alt="" coords="695,98,887,143"/>
+<area shape="poly" title=" " alt="" coords="364,44,697,101,692,104,365,50"/>
+<area shape="rect" href="shadow__pass_8hpp.html" title=" " alt="" coords="162,283,351,328"/>
+<area shape="poly" title=" " alt="" coords="713,151,321,285,319,280,715,146"/>
+<area shape="rect" href="voxel__change__history_8cpp.html" title=" " alt="" coords="1657,191,1848,235"/>
+<area shape="poly" title=" " alt="" coords="902,124,1236,145,1441,164,1646,188,1659,192,1654,192,1646,193,1441,169,1236,151,903,129"/>
+<area shape="rect" href="voxel__gpu__storage_8hpp.html" title=" " alt="" coords="699,191,883,235"/>
+<area shape="poly" title=" " alt="" coords="793,156,794,192,789,189,790,161"/>
+<area shape="rect" href="voxel__scene__patcher_8hpp.html" title=" " alt="" coords="1445,191,1633,235"/>
+<area shape="poly" title=" " alt="" coords="903,132,1447,199,1442,201,903,138"/>
+<area shape="poly" title=" " alt="" coords="214,339,155,386,151,382,218,335"/>
+<area shape="rect" href="debug__pass_8cpp.html" title=" " alt="" coords="218,486,402,530"/>
+<area shape="poly" title=" " alt="" coords="145,328,69,350,39,363,20,378,11,393,8,407,11,421,20,436,32,447,50,456,99,473,158,486,220,496,215,498,157,491,98,478,48,461,29,451,16,439,6,423,3,407,6,391,16,374,36,358,67,345,148,323"/>
+<area shape="poly" title=" " alt="" coords="702,243,201,386,199,381,702,237"/>
+<area shape="rect" href="vulkan__renderer_8hpp_source.html" title=" " alt="" coords="1582,283,1766,328"/>
+<area shape="poly" title=" " alt="" coords="899,223,1584,294,1579,296,899,228"/>
+<area shape="poly" title=" " alt="" coords="1564,310,1274,320,890,333,513,353,357,365,238,379,200,386,197,382,238,373,356,360,513,347,890,328,1273,314,1569,309"/>
+<area shape="poly" title=" " alt="" coords="1563,309,1237,317,821,329,624,338,456,349,337,363,301,370,284,378,276,389,272,402,274,430,284,459,298,486,293,484,279,461,269,431,267,401,271,387,280,374,299,365,336,357,456,344,623,333,821,324,1237,312,1569,308"/>
+<area shape="rect" href="async__compute__task_8hpp.html" title=" " alt="" coords="711,384,901,429"/>
+<area shape="poly" title=" " alt="" coords="1564,311,1271,333,1092,352,914,379,879,386,878,381,913,373,1092,347,1271,328,1569,310"/>
+<area shape="rect" href="bloom__pass_8cpp.html" title=" " alt="" coords="926,384,1110,429"/>
+<area shape="poly" title=" " alt="" coords="1564,316,1360,341,1241,357,1122,379,1089,386,1088,381,1121,373,1240,352,1359,335,1569,315"/>
+<area shape="rect" href="cluster__lighting__pass_8cpp.html" title=" " alt="" coords="1134,376,1318,438"/>
+<area shape="poly" title=" " alt="" coords="1569,326,1331,379,1319,382,1318,376,1329,373,1563,327"/>
+<area shape="rect" href="depth__prepass_8cpp.html" title=" " alt="" coords="1342,384,1539,429"/>
+<area shape="poly" title=" " alt="" coords="1612,334,1492,386,1491,381,1606,335"/>
+<area shape="rect" href="environment__pass_8cpp.html" title=" " alt="" coords="1563,384,1785,429"/>
+<area shape="poly" title=" " alt="" coords="1676,342,1676,386,1672,382,1672,346"/>
+<area shape="rect" href="fxaa__pass_8cpp.html" title=" " alt="" coords="1808,384,1993,429"/>
+<area shape="poly" title=" " alt="" coords="1738,332,1854,384,1848,384,1737,337"/>
+<area shape="rect" href="material__pass_8hpp.html" title=" " alt="" coords="2017,384,2211,429"/>
+<area shape="poly" title=" " alt="" coords="1781,326,2005,373,2038,384,2033,384,2004,379,1781,331"/>
+<area shape="rect" href="perf__window_8hpp.html" title=" " alt="" coords="502,384,686,429"/>
+<area shape="poly" title=" " alt="" coords="1563,308,1398,314,1182,325,941,346,819,360,700,379,664,387,662,381,699,373,818,355,940,340,1181,320,1398,309,1568,307"/>
+<area shape="rect" href="reflection__probe__pass_8cpp.html" title=" " alt="" coords="2235,376,2419,438"/>
+<area shape="poly" title=" " alt="" coords="1781,326,1906,340,2004,347,2102,354,2224,373,2237,378,2232,378,2223,379,2101,360,2004,352,1906,346,1781,331"/>
+<area shape="rect" href="skinning__pass_8cpp.html" title=" " alt="" coords="2444,384,2637,429"/>
+<area shape="poly" title=" " alt="" coords="1781,326,1881,337,1965,342,2109,346,2251,351,2334,359,2432,373,2471,384,2465,384,2431,379,2334,364,2251,356,2108,351,1965,348,1880,342,1781,331"/>
+<area shape="rect" href="ssao__pass_8cpp.html" title=" " alt="" coords="2662,384,2846,429"/>
+<area shape="poly" title=" " alt="" coords="1781,326,1914,339,2026,344,2218,344,2310,343,2409,346,2520,355,2650,373,2689,384,2684,384,2649,379,2520,360,2409,351,2310,348,2218,349,2026,349,1913,344,1781,331"/>
+<area shape="rect" href="ssr__pass_8cpp.html" title=" " alt="" coords="2870,384,3054,429"/>
+<area shape="poly" title=" " alt="" coords="1781,326,1945,341,2084,346,2322,342,2437,340,2559,342,2697,352,2858,373,2897,384,2892,384,2857,379,2696,357,2558,347,2437,345,2322,347,2084,351,1945,346,1781,331"/>
+<area shape="rect" href="taa__pass_8cpp.html" title=" " alt="" coords="3078,384,3262,429"/>
+<area shape="poly" title=" " alt="" coords="1781,326,1977,343,2143,348,2290,346,2426,341,2563,337,2709,338,2873,349,3066,373,3105,384,3100,384,3065,379,2873,354,2708,343,2563,342,2426,346,2290,351,2143,353,1977,348,1781,331"/>
+<area shape="rect" href="tonemap__pass_8cpp.html" title=" " alt="" coords="3286,384,3483,429"/>
+<area shape="poly" title=" " alt="" coords="1781,326,2008,345,2201,351,2371,348,2530,341,2689,336,2858,336,3050,347,3274,373,3316,384,3310,384,3273,379,3049,352,2858,341,2689,341,2530,347,2372,353,2201,356,2008,350,1781,331"/>
+<area shape="rect" href="traced__shadow__pass_8cpp.html" title=" " alt="" coords="3506,384,3743,429"/>
+<area shape="poly" title=" " alt="" coords="1781,326,2042,348,2263,355,2458,353,2640,345,2822,339,3017,338,3237,347,3496,373,3543,384,3538,384,3495,379,3236,353,3017,343,2822,344,2640,351,2458,358,2263,361,2042,353,1781,331"/>
+<area shape="rect" href="voxel__debug_8hpp.html" title=" " alt="" coords="294,384,478,429"/>
+<area shape="poly" title=" " alt="" coords="1563,311,1011,336,709,355,585,366,490,379,455,386,453,381,489,373,584,361,709,350,1010,331,1569,310"/>
+<area shape="rect" href="ui__system_8hpp.html" title="Singleton owning the RmlUi library." alt="" coords="3767,384,3909,429"/>
+<area shape="poly" title=" " alt="" coords="1781,325,1980,338,2223,342,2780,337,3064,336,3331,339,3567,350,3668,360,3756,373,3788,384,3783,384,3755,379,3667,366,3566,356,3331,344,3064,341,2780,343,2223,347,1980,343,1781,331"/>
+<area shape="rect" href="camera_8cpp.html" title=" " alt="" coords="3933,384,4098,429"/>
+<area shape="poly" title=" " alt="" coords="1781,325,1996,339,2259,344,2862,340,3170,338,3460,341,3716,352,3826,361,3921,373,3957,384,3952,384,3920,379,3825,366,3715,357,3460,346,3170,343,2862,345,2259,349,1996,344,1781,331"/>
+<area shape="rect" href="docs_2examples_2async__compute_2debris__simulation_8hpp.html" title=" " alt="" coords="661,486,895,530"/>
+<area shape="poly" title=" " alt="" coords="798,442,786,487,782,483,794,446"/>
+<area shape="rect" href="engine_2src_2toast_2physics_2debris__simulation_8hpp.html" title="Small voxel debris." alt="" coords="918,486,1096,530"/>
+<area shape="poly" title=" " alt="" coords="864,434,966,485,961,485,863,439"/>
+<area shape="rect" href="async__compute__task_8cpp.html" title=" " alt="" coords="1121,486,1310,530"/>
+<area shape="poly" title=" " alt="" coords="899,431,915,435,1123,486,1117,486,913,440,898,436"/>
+<area shape="rect" href="docs_2examples_2async__compute_2debris__simulation_8cpp.html" title=" " alt="" coords="662,578,894,623"/>
+<area shape="poly" title=" " alt="" coords="780,544,780,580,776,576,776,548"/>
+<area shape="poly" title=" " alt="" coords="515,436,373,488,371,483,520,434"/>
+<area shape="rect" href="perf__window_8cpp.html" title=" " alt="" coords="452,486,637,530"/>
+<area shape="poly" title=" " alt="" coords="579,441,557,487,553,483,574,445"/>
+<area shape="poly" title=" " alt="" coords="362,440,328,487,325,483,358,443"/>
+<area shape="poly" title=" " alt="" coords="1585,242,1645,283,1639,283,1584,247"/>
+<area shape="rect" href="voxel__scene__patcher_8cpp.html" title=" " alt="" coords="1790,283,1977,328"/>
+<area shape="poly" title=" " alt="" coords="1636,237,1804,283,1798,283,1636,242"/>
 </map>
 </div>
 </div>
@@ -213,9 +231,7 @@ using&#160;</td><td class="memItemRight"><b>renderer::FrustumPlanes</b> = std::a
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:aff8d7ec170b167ef6a67c2ace24a2ed6" id="r_aff8d7ec170b167ef6a67c2ace24a2ed6"><td class="memItemLeft"><a id="aff8d7ec170b167ef6a67c2ace24a2ed6" name="aff8d7ec170b167ef6a67c2ace24a2ed6"></a>
-auto&#160;</td><td class="memItemRight"><b>renderer::extractFrustumPlanes</b> (const glm::mat4 &amp;view_projection) -&gt; FrustumPlanes</td></tr>
-<tr class="memdesc:aff8d7ec170b167ef6a67c2ace24a2ed6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Inward normalized planes and with 0 to 1 clip depth near is row 2 alone. <br /></td></tr>
+<tr class="memitem:ae7245d18ea027857716d5c9b6e6f9ead" id="r_ae7245d18ea027857716d5c9b6e6f9ead"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#ae7245d18ea027857716d5c9b6e6f9ead">renderer::extractFrustumPlanes</a> (const glm::mat4 &amp;view_projection, bool reversed_depth=false) -&gt; FrustumPlanes</td></tr>
 <tr class="memitem:a4e6850405425c7d267b37acd8489f24c" id="r_a4e6850405425c7d267b37acd8489f24c"><td class="memItemLeft"><a id="a4e6850405425c7d267b37acd8489f24c" name="a4e6850405425c7d267b37acd8489f24c"></a>
 auto&#160;</td><td class="memItemRight"><b>renderer::sphereInFrustum</b> (const FrustumPlanes &amp;planes, const glm::vec3 &amp;center, float radius) -&gt; bool</td></tr>
 <tr class="memitem:a5e47b990ea02d05556b9e90fb536f79d" id="r_a5e47b990ea02d05556b9e90fb536f79d"><td class="memItemLeft"><a id="a5e47b990ea02d05556b9e90fb536f79d" name="a5e47b990ea02d05556b9e90fb536f79d"></a>
@@ -228,7 +244,38 @@ auto&#160;</td><td class="memItemRight"><b>renderer::boxTouchesLateralFrustum</b
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><dl class="section author"><dt>Author</dt><dd>dario </dd></dl>
 <dl class="section date"><dt>Date</dt><dd>21/09/2026 </dd></dl>
-</div></div><!-- contents -->
+</div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
+<a id="ae7245d18ea027857716d5c9b6e6f9ead" name="ae7245d18ea027857716d5c9b6e6f9ead"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae7245d18ea027857716d5c9b6e6f9ead">&#9670;&#160;</a></span>extractFrustumPlanes()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto renderer::extractFrustumPlanes </td>
+          <td>(</td>
+          <td class="paramtype">const glm::mat4 &amp;</td>          <td class="paramname"><span class="paramname"><em>view_projection</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>reversed_depth</em></span><span class="paramdefsep"> = </span><span class="paramdefval">false</span>&#160;) -&gt; FrustumPlanes</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel nodiscard">nodiscard</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Inward normalized planes ordered left right bottom top near far <code class="param">reversed_depth</code> is depth::k_reversed_z for a scene camera and false for shadow views </p>
+
+</div>
+</div>
+</div><!-- contents -->
 </div><!-- doc-content -->
 <div id="page-nav" class="page-nav-panel">
 <div id="page-nav-resize-handle"></div>

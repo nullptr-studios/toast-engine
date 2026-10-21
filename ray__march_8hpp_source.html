@@ -149,23 +149,24 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('ray__march_8hp
 <div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span></div>
 <div class="line"><a id="l00037" name="l00037"></a><span class="lineno"><a class="line" href="structvoxel_1_1RayHit.html#af8d51dea89a31a54ec73d07727d5d761">   37</a></span>  uint32_t <a class="code hl_variable" href="structvoxel_1_1RayHit.html#af8d51dea89a31a54ec73d07727d5d761">coarse_steps</a> = 0;</div>
 <div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  uint32_t brick_steps = 0;</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>};</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  uint32_t sub_steps = 0;</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>};</div>
 </div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span></div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>[[nodiscard]]</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>TOAST_API <span class="keyword">auto</span> marchRay(</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>    <span class="keyword">const</span> <a class="code hl_struct" href="structvoxel_1_1gpu_1_1PackedPool.html">gpu::PackedPool</a>&amp; pool, <span class="keyword">const</span> <a class="code hl_struct" href="structvoxel_1_1gpu_1_1PackedScene.html">gpu::PackedScene</a>&amp; scene, uint32_t volume, glm::vec3 origin, glm::vec3 direction,</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>    <span class="keywordtype">float</span> t_min, <span class="keywordtype">float</span> t_max, uint32_t max_steps = k_max_march_steps</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>) -&gt; <a class="code hl_struct" href="structvoxel_1_1RayHit.html">RayHit</a>;</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span> </div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>}</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span></div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>[[nodiscard]]</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>TOAST_API <span class="keyword">auto</span> marchRay(</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>    <span class="keyword">const</span> <a class="code hl_struct" href="structvoxel_1_1gpu_1_1PackedPool.html">gpu::PackedPool</a>&amp; pool, <span class="keyword">const</span> <a class="code hl_struct" href="structvoxel_1_1gpu_1_1PackedScene.html">gpu::PackedScene</a>&amp; scene, uint32_t volume, glm::vec3 origin, glm::vec3 direction,</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>    <span class="keywordtype">float</span> t_min, <span class="keywordtype">float</span> t_max, uint32_t max_steps = k_max_march_steps</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>) -&gt; <a class="code hl_struct" href="structvoxel_1_1RayHit.html">RayHit</a>;</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span> </div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>}</div>
 <div class="ttc" id="aexport_8hpp_html"><div class="ttname"><a href="export_8hpp.html">export.hpp</a></div></div>
 <div class="ttc" id="agpu__layout_8hpp_html"><div class="ttname"><a href="gpu__layout_8hpp.html">gpu_layout.hpp</a></div></div>
 <div class="ttc" id="aray__march_8hpp_html_a4b52665227efdfd2cc795fc90e07ff36"><div class="ttname"><a href="ray__march_8hpp.html#a4b52665227efdfd2cc795fc90e07ff36">voxel::k_march_tie_epsilon</a></div><div class="ttdeci">constexpr float k_march_tie_epsilon</div><div class="ttdoc">Relative to t.</div><div class="ttdef"><b>Definition</b> ray_march.hpp:19</div></div>
 <div class="ttc" id="astructvoxel_1_1RayHit_html"><div class="ttname"><a href="structvoxel_1_1RayHit.html">voxel::RayHit</a></div><div class="ttdef"><b>Definition</b> ray_march.hpp:21</div></div>
 <div class="ttc" id="astructvoxel_1_1RayHit_html_a029bea206490e4af7c8e03a6db964040"><div class="ttname"><a href="structvoxel_1_1RayHit.html#a029bea206490e4af7c8e03a6db964040">voxel::RayHit::t</a></div><div class="ttdeci">float t</div><div class="ttdoc">t_min when the ray started inside a voxel</div><div class="ttdef"><b>Definition</b> ray_march.hpp:25</div></div>
 <div class="ttc" id="astructvoxel_1_1RayHit_html_a789991f715f4cbcce0486c4d0931f853"><div class="ttname"><a href="structvoxel_1_1RayHit.html#a789991f715f4cbcce0486c4d0931f853">voxel::RayHit::axis</a></div><div class="ttdeci">int32_t axis</div><div class="ttdoc">-1 when the ray started inside a solid voxel</div><div class="ttdef"><b>Definition</b> ray_march.hpp:30</div></div>
-<div class="ttc" id="astructvoxel_1_1RayHit_html_af8d51dea89a31a54ec73d07727d5d761"><div class="ttname"><a href="structvoxel_1_1RayHit.html#af8d51dea89a31a54ec73d07727d5d761">voxel::RayHit::coarse_steps</a></div><div class="ttdeci">uint32_t coarse_steps</div><div class="ttdoc">Steps that skipped a whole coarse cell or brick so the rest are single voxels.</div><div class="ttdef"><b>Definition</b> ray_march.hpp:37</div></div>
+<div class="ttc" id="astructvoxel_1_1RayHit_html_af8d51dea89a31a54ec73d07727d5d761"><div class="ttname"><a href="structvoxel_1_1RayHit.html#af8d51dea89a31a54ec73d07727d5d761">voxel::RayHit::coarse_steps</a></div><div class="ttdeci">uint32_t coarse_steps</div><div class="ttdoc">Steps that skipped a whole coarse cell brick or 4x4x4 or 2x2x2 sub-brick so the rest are single voxel...</div><div class="ttdef"><b>Definition</b> ray_march.hpp:37</div></div>
 <div class="ttc" id="astructvoxel_1_1gpu_1_1PackedPool_html"><div class="ttname"><a href="structvoxel_1_1gpu_1_1PackedPool.html">voxel::gpu::PackedPool</a></div><div class="ttdef"><b>Definition</b> gpu_layout.hpp:62</div></div>
 <div class="ttc" id="astructvoxel_1_1gpu_1_1PackedScene_html"><div class="ttname"><a href="structvoxel_1_1gpu_1_1PackedScene.html">voxel::gpu::PackedScene</a></div><div class="ttdef"><b>Definition</b> gpu_layout.hpp:76</div></div>
 </div><!-- fragment --></div><!-- contents -->

@@ -22,5 +22,6 @@ var namespaceeditor_1_1Assets =
     [ "VoxelMaterialSlot", "classeditor_1_1Assets_1_1VoxelMaterialSlot.html", null ],
     [ "VoxelPaletteEntry", "classeditor_1_1Assets_1_1VoxelPaletteEntry.html", "classeditor_1_1Assets_1_1VoxelPaletteEntry" ],
     [ "VoxelPaletteFile", "classeditor_1_1Assets_1_1VoxelPaletteFile.html", null ],
-    [ "VoxSectionDto", "classeditor_1_1Assets_1_1VoxSectionDto.html", null ]
+    [ "VoxSectionDto", "classeditor_1_1Assets_1_1VoxSectionDto.html", null ],
+    [ "VoxelPaletteTip", "namespaceeditor_1_1Assets.html#a3a0e444f62cea4a39d6194a655f56012", null ]
 ];

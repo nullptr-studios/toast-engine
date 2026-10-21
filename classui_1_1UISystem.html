@@ -176,6 +176,14 @@ auto&#160;</td><td class="memItemRight"><b>translate</b> (std::string_view input
 auto&#160;</td><td class="memItemRight"><b>lookupLocalizationRaw</b> (std::string_view id) const -&gt; std::optional&lt; std::string &gt;</td></tr>
 <tr class="memitem:a86ba58cb880d6f50753dccc6c45aa607" id="r_a86ba58cb880d6f50753dccc6c45aa607"><td class="memItemLeft"><a id="a86ba58cb880d6f50753dccc6c45aa607" name="a86ba58cb880d6f50753dccc6c45aa607"></a>
 auto&#160;</td><td class="memItemRight"><b>localizedImage</b> (std::string_view id) const -&gt; std::string</td></tr>
+<tr class="memitem:aa7975241ddc1d8be3fe47b573b6dfeb2" id="r_aa7975241ddc1d8be3fe47b573b6dfeb2"><td class="memItemLeft"><a id="aa7975241ddc1d8be3fe47b573b6dfeb2" name="aa7975241ddc1d8be3fe47b573b6dfeb2"></a>
+void&#160;</td><td class="memItemRight"><b>deferSetup</b> (<a class="el" href="classtoast_1_1Node.html">toast::Node</a> *owner, std::function&lt; void()&gt; setup)</td></tr>
+<tr class="memdesc:aa7975241ddc1d8be3fe47b573b6dfeb2"><td class="mdescLeft">&#160;</td><td class="mdescRight">For panels initialized on a World::loadNode or World::spawn worker since RmlUi is not thread safe. <br /></td></tr>
+<tr class="memitem:a2d1c1530bae539ffca459ec0861d952a" id="r_a2d1c1530bae539ffca459ec0861d952a"><td class="memItemLeft"><a id="a2d1c1530bae539ffca459ec0861d952a" name="a2d1c1530bae539ffca459ec0861d952a"></a>
+void&#160;</td><td class="memItemRight"><b>runDeferredSetup</b> (<a class="el" href="classtoast_1_1Node.html">toast::Node</a> *owner)</td></tr>
+<tr class="memdesc:a2d1c1530bae539ffca459ec0861d952a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Runs the setup deferred for <code class="param">owner</code> when called on the tick thread. <br /></td></tr>
+<tr class="memitem:a5dabd91c6fffe836fce4182f91817294" id="r_a5dabd91c6fffe836fce4182f91817294"><td class="memItemLeft"><a id="a5dabd91c6fffe836fce4182f91817294" name="a5dabd91c6fffe836fce4182f91817294"></a>
+void&#160;</td><td class="memItemRight"><b>cancelDeferredSetup</b> (<a class="el" href="classtoast_1_1Node.html">toast::Node</a> *owner)</td></tr>
 <tr class="memitem:aa4f97e199a0cad0b38bf2d831a5cff55" id="r_aa4f97e199a0cad0b38bf2d831a5cff55"><td class="memItemLeft"><a id="aa4f97e199a0cad0b38bf2d831a5cff55" name="aa4f97e199a0cad0b38bf2d831a5cff55"></a>
 void&#160;</td><td class="memItemRight"><b>registerPanel</b> (<a class="el" href="classtoast_1_1Panel.html">toast::Panel</a> *panel)</td></tr>
 <tr class="memitem:a1e5d2321a5c4b4eca185bbc49663045e" id="r_a1e5d2321a5c4b4eca185bbc49663045e"><td class="memItemLeft"><a id="a1e5d2321a5c4b4eca185bbc49663045e" name="a1e5d2321a5c4b4eca185bbc49663045e"></a>
@@ -207,6 +215,9 @@ Static Public Member Functions</h2></td></tr>
 static auto&#160;</td><td class="memItemRight"><b>get</b> () noexcept -&gt; UISystem &amp;</td></tr>
 <tr class="memitem:a58c535c816ddb7a71b4caf48ce2a998c" id="r_a58c535c816ddb7a71b4caf48ce2a998c"><td class="memItemLeft"><a id="a58c535c816ddb7a71b4caf48ce2a998c" name="a58c535c816ddb7a71b4caf48ce2a998c"></a>
 static auto&#160;</td><td class="memItemRight"><b>exists</b> () noexcept -&gt; bool</td></tr>
+<tr class="memitem:afef77a605228a8536b53a38ea1616707" id="r_afef77a605228a8536b53a38ea1616707"><td class="memItemLeft"><a id="afef77a605228a8536b53a38ea1616707" name="afef77a605228a8536b53a38ea1616707"></a>
+static auto&#160;</td><td class="memItemRight"><b>onUIThread</b> () -&gt; bool</td></tr>
+<tr class="memdesc:afef77a605228a8536b53a38ea1616707"><td class="mdescLeft">&#160;</td><td class="mdescRight">The engine tick thread where RmlUi may be used. <br /></td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="a518e3472f515af3ee4ea3a8f0cbae6dc" name="a518e3472f515af3ee4ea3a8f0cbae6dc"></a>

@@ -192,6 +192,9 @@ std::unique_ptr&lt; <a class="el" href="classphysics_1_1Simulator.html">physics:
 <tr class="memitem:a002326385f28ddad8618046cebb8d654" id="r_a002326385f28ddad8618046cebb8d654"><td class="memItemLeft"><a id="a002326385f28ddad8618046cebb8d654" name="a002326385f28ddad8618046cebb8d654"></a>
 std::atomic&lt; size_t &gt;&#160;</td><td class="memItemRight"><b>tick_thread</b> {0}</td></tr>
 <tr class="memdesc:a002326385f28ddad8618046cebb8d654"><td class="mdescLeft">&#160;</td><td class="mdescRight">Hash of the thread that ran tick() for the last time. <br /></td></tr>
+<tr class="memitem:a47a58b73f96f11ceb2b67eccdaeb097a" id="r_a47a58b73f96f11ceb2b67eccdaeb097a"><td class="memItemLeft"><a id="a47a58b73f96f11ceb2b67eccdaeb097a" name="a47a58b73f96f11ceb2b67eccdaeb097a"></a>
+size_t&#160;</td><td class="memItemRight"><b>creator_thread</b> = std::hash&lt;std::thread::id&gt; {}(std::this_thread::get_id())</td></tr>
+<tr class="memdesc:a47a58b73f96f11ceb2b67eccdaeb097a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Stands in for tick_thread until the first tick. <br /></td></tr>
 <tr class="memitem:afdec6c4d1fae90b88a70896d8dfde93d" id="r_afdec6c4d1fae90b88a70896d8dfde93d"><td class="memItemLeft"><a id="afdec6c4d1fae90b88a70896d8dfde93d" name="afdec6c4d1fae90b88a70896d8dfde93d"></a>
 std::mutex&#160;</td><td class="memItemRight"><b>owners_mutex</b></td></tr>
 <tr class="memitem:a5ede26ed9141eafb6dbb045c9ecafa67" id="r_a5ede26ed9141eafb6dbb045c9ecafa67"><td class="memItemLeft"><a id="a5ede26ed9141eafb6dbb045c9ecafa67" name="a5ede26ed9141eafb6dbb045c9ecafa67"></a>

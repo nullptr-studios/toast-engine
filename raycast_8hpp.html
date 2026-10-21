@@ -122,57 +122,101 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('raycast_8hpp.h
 <p>Raycast Implmentation mostly from <a href="https://iquilezles.org/articles/intersectors/">https://iquilezles.org/articles/intersectors/</a> and <a href="https://www.realtimerendering.com/intersections.html">https://www.realtimerendering.com/intersections.html</a>.  
 <a href="#details">More...</a></p>
 <div class="textblock"><code>#include &quot;<a class="el" href="body_8hpp_source.html">body.hpp</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="shape_8hpp_source.html">shape.hpp</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="box_8hpp_source.html">toast/world/box.hpp</a>&quot;</code><br />
 <code>#include &lt;glm/glm.hpp&gt;</code><br />
+<code>#include &lt;optional&gt;</code><br />
+<code>#include &lt;vector&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for raycast.hpp:</div>
 <div class="dyncontent">
 <div class="center"><img src="raycast_8hpp__incl.png" border="0" usemap="#aengine_2src_2toast_2physics_2raycast_8hpp" loading="lazy" alt=""/></div>
 <map name="aengine_2src_2toast_2physics_2raycast_8hpp" id="aengine_2src_2toast_2physics_2raycast_8hpp">
-<area shape="rect" title="Raycast Implmentation mostly from https://iquilezles.org/articles/intersectors/ and https://www...." alt="" coords="617,5,795,50"/>
-<area shape="rect" href="body_8hpp.html" title="Body identifiers, creation data, and copied runtime state." alt="" coords="897,98,976,126"/>
-<area shape="poly" title=" " alt="" coords="767,48,888,92,883,93,767,53"/>
-<area shape="rect" title=" " alt="" coords="654,174,758,201"/>
-<area shape="poly" title=" " alt="" coords="708,48,708,159,704,157,704,52"/>
-<area shape="rect" href="box_8hpp.html" title="pseudo shared pointer for Nodes" alt="" coords="392,98,542,126"/>
-<area shape="poly" title=" " alt="" coords="640,52,521,95,519,90,645,50"/>
-<area shape="rect" title=" " alt="" coords="908,249,986,277"/>
-<area shape="poly" title=" " alt="" coords="977,121,1018,140,1036,154,1051,172,1055,184,1055,195,1044,215,1024,232,998,245,997,240,1021,227,1040,212,1050,194,1050,185,1046,175,1032,158,1015,144,976,126"/>
-<area shape="rect" title=" " alt="" coords="692,325,757,353"/>
-<area shape="poly" title=" " alt="" coords="977,119,1014,130,1048,147,1062,158,1071,171,1075,186,1072,202,1050,241,1018,272,979,296,937,314,892,326,849,334,773,340,773,335,848,329,891,321,935,309,977,291,1014,268,1045,238,1067,200,1070,186,1067,173,1058,162,1045,151,1012,135,977,124"/>
-<area shape="poly" title=" " alt="" coords="899,125,762,171,761,166,894,127"/>
-<area shape="rect" title=" " alt="" coords="781,174,953,201"/>
-<area shape="poly" title=" " alt="" coords="926,125,891,164,889,160,922,127"/>
-<area shape="rect" title=" " alt="" coords="978,174,1036,201"/>
-<area shape="poly" title=" " alt="" coords="950,124,987,163,982,162,948,129"/>
-<area shape="rect" href="control__box_8hpp.html" title="Control block for the pseudo shared pointer Box&lt;Node&gt;." alt="" coords="504,174,630,201"/>
-<area shape="poly" title=" " alt="" coords="486,124,540,164,535,164,485,129"/>
-<area shape="rect" title=" " alt="" coords="449,325,514,353"/>
-<area shape="poly" title=" " alt="" coords="470,124,482,310,478,308,466,128"/>
-<area shape="rect" href="box_8inl_source.html" title=" " alt="" coords="364,174,429,201"/>
-<area shape="poly" title=" " alt="" coords="450,125,413,164,410,160,445,128"/>
-<area shape="poly" title=" " alt="" coords="631,198,896,251,890,252,630,204"/>
-<area shape="poly" title=" " alt="" coords="582,199,703,315,697,314,579,204"/>
-<area shape="rect" title=" " alt="" coords="715,249,782,277"/>
-<area shape="poly" title=" " alt="" coords="600,199,705,243,700,243,599,205"/>
-<area shape="rect" title=" " alt="" coords="504,249,590,277"/>
-<area shape="poly" title=" " alt="" coords="566,200,557,236,553,233,562,204"/>
-<area shape="rect" href="export_8hpp.html" title=" " alt="" coords="539,325,667,353"/>
-<area shape="poly" title=" " alt="" coords="578,199,593,222,604,249,609,280,608,311,604,308,604,281,599,250,589,225,576,204"/>
-<area shape="poly" title=" " alt="" coords="415,171,450,139,454,136,418,175"/>
-<area shape="rect" href="log_8hpp.html" title="Public logging interface for the engine." alt="" coords="323,249,430,277"/>
-<area shape="poly" title=" " alt="" coords="395,200,386,236,382,233,391,204"/>
-<area shape="poly" title=" " alt="" coords="431,271,541,292,680,325,674,325,539,298,430,277"/>
-<area shape="poly" title=" " alt="" coords="417,275,551,320,546,320,417,280"/>
-<area shape="poly" title=" " alt="" coords="396,275,454,316,448,316,395,280"/>
-<area shape="rect" title=" " alt="" coords="148,325,216,353"/>
-<area shape="poly" title=" " alt="" coords="344,277,231,322,230,317,339,278"/>
-<area shape="rect" title=" " alt="" coords="240,325,305,353"/>
-<area shape="poly" title=" " alt="" coords="360,277,304,318,302,314,355,278"/>
-<area shape="rect" title=" " alt="" coords="328,325,425,353"/>
-<area shape="poly" title=" " alt="" coords="378,276,379,311,374,308,375,279"/>
-<area shape="rect" title=" " alt="" coords="5,325,124,353"/>
-<area shape="poly" title=" " alt="" coords="323,280,136,324,135,318,322,274"/>
+<area shape="rect" title="Raycast Implmentation mostly from https://iquilezles.org/articles/intersectors/ and https://www...." alt="" coords="475,5,653,50"/>
+<area shape="rect" href="body_8hpp.html" title="Body identifiers, creation data, and copied runtime state." alt="" coords="438,174,517,201"/>
+<area shape="poly" title=" " alt="" coords="555,49,494,162,490,158,550,52"/>
+<area shape="rect" title=" " alt="" coords="17,325,79,353"/>
+<area shape="poly" title=" " alt="" coords="473,36,363,54,299,70,234,91,170,119,110,154,57,198,13,251,8,265,11,281,28,313,23,314,6,283,3,265,9,248,53,194,107,150,167,114,232,86,298,64,362,49,477,33"/>
+<area shape="rect" title=" " alt="" coords="23,249,127,277"/>
+<area shape="poly" title=" " alt="" coords="520,53,117,245,115,240,518,48"/>
+<area shape="rect" href="shape_8hpp.html" title="Shape identifiers, geometry, and runtime records." alt="" coords="561,98,650,126"/>
+<area shape="poly" title=" " alt="" coords="576,48,595,85,590,83,574,53"/>
+<area shape="rect" title=" " alt="" coords="1060,325,1135,353"/>
+<area shape="poly" title=" " alt="" coords="654,30,773,45,841,59,911,80,980,109,1045,145,1102,191,1127,218,1149,248,1155,266,1150,284,1140,301,1126,317,1124,312,1136,298,1146,282,1149,266,1145,251,1123,222,1098,195,1042,150,978,113,909,85,840,65,772,50,654,35"/>
+<area shape="rect" href="box_8hpp.html" title="pseudo shared pointer for Nodes" alt="" coords="1472,98,1622,126"/>
+<area shape="poly" title=" " alt="" coords="654,34,1458,101,1455,105,654,39"/>
+<area shape="rect" href="layers_8hpp.html" title="Collision layers." alt="" coords="150,249,240,277"/>
+<area shape="poly" title=" " alt="" coords="435,200,256,249,254,244,440,198"/>
+<area shape="rect" title=" " alt="" coords="758,325,824,353"/>
+<area shape="poly" title=" " alt="" coords="478,200,483,239,489,258,501,275,517,286,542,296,607,313,679,324,745,334,740,334,678,329,606,318,540,301,515,291,497,279,484,261,477,240,475,204"/>
+<area shape="rect" title=" " alt="" coords="593,249,671,277"/>
+<area shape="poly" title=" " alt="" coords="506,199,594,242,588,242,505,205"/>
+<area shape="poly" title=" " alt="" coords="437,198,142,251,141,246,438,193"/>
+<area shape="rect" title=" " alt="" coords="263,249,436,277"/>
+<area shape="poly" title=" " alt="" coords="457,201,386,244,384,239,452,203"/>
+<area shape="rect" title=" " alt="" coords="511,249,569,277"/>
+<area shape="poly" title=" " alt="" coords="490,199,522,238,517,237,488,204"/>
+<area shape="poly" title=" " alt="" coords="240,272,251,274,391,295,529,311,745,334,740,334,529,317,390,300,250,280,240,278"/>
+<area shape="rect" title=" " alt="" coords="166,325,224,353"/>
+<area shape="poly" title=" " alt="" coords="197,276,197,311,193,308,193,279"/>
+<area shape="rect" title=" " alt="" coords="940,325,1036,353"/>
+<area shape="poly" title=" " alt="" coords="240,273,251,274,352,287,438,294,586,299,735,304,823,310,928,325,922,325,822,316,735,309,586,305,438,300,352,292,251,280,240,278"/>
+<area shape="rect" href="export_8hpp.html" title=" " alt="" coords="1292,325,1420,353"/>
+<area shape="poly" title=" " alt="" coords="240,273,251,274,405,292,537,301,653,304,762,303,988,304,1120,309,1279,325,1274,325,1120,315,988,309,762,309,653,309,537,306,405,297,251,280,240,278"/>
+<area shape="poly" title=" " alt="" coords="171,279,89,320,87,315,166,276"/>
+<area shape="poly" title=" " alt="" coords="585,125,514,168,512,163,580,127"/>
+<area shape="poly" title=" " alt="" coords="617,124,773,313,768,313,615,128"/>
+<area shape="poly" title=" " alt="" coords="610,124,630,235,625,233,606,128"/>
+<area shape="poly" title=" " alt="" coords="561,128,137,247,135,242,560,123"/>
+<area shape="poly" title=" " alt="" coords="602,124,554,237,550,233,598,127"/>
+<area shape="rect" href="aabb_8hpp.html" title="Axis&#45;aligned bounds node." alt="" coords="1210,249,1292,277"/>
+<area shape="poly" title=" " alt="" coords="650,116,794,137,972,171,1096,206,1203,244,1198,244,1095,211,970,176,793,142,651,121"/>
+<area shape="rect" href="material__defaults_8hpp.html" title="The values a material has when nothing sets them." alt="" coords="794,174,958,201"/>
+<area shape="poly" title=" " alt="" coords="650,123,816,169,811,170,650,128"/>
+<area shape="poly" title=" " alt="" coords="1271,275,1328,317,1323,315,1269,280"/>
+<area shape="rect" title=" " alt="" coords="1159,325,1268,353"/>
+<area shape="poly" title=" " alt="" coords="1247,276,1229,313,1226,309,1242,279"/>
+<area shape="poly" title=" " alt="" coords="1226,277,1139,321,1138,315,1221,278"/>
+<area shape="poly" title=" " alt="" coords="848,201,817,223,803,236,793,250,786,280,787,312,783,308,781,279,789,248,799,232,813,219,843,203"/>
+<area shape="rect" href="fracture__pattern_8hpp_source.html" title=" " alt="" coords="847,249,1001,277"/>
+<area shape="poly" title=" " alt="" coords="886,199,910,237,905,235,884,204"/>
+<area shape="rect" href="hardness_8hpp.html" title="Tiers of how hard a material is to break." alt="" coords="1026,249,1134,277"/>
+<area shape="poly" title=" " alt="" coords="913,199,1032,244,1027,244,912,205"/>
+<area shape="poly" title=" " alt="" coords="903,277,828,320,827,315,898,278"/>
+<area shape="poly" title=" " alt="" coords="937,275,969,314,964,312,935,280"/>
+<area shape="poly" title=" " alt="" coords="956,275,1056,319,1050,318,955,280"/>
+<area shape="rect" title=" " alt="" coords="861,325,916,353"/>
+<area shape="poly" title=" " alt="" coords="920,276,903,313,900,309,916,279"/>
+<area shape="poly" title=" " alt="" coords="1031,277,839,328,838,323,1026,278"/>
+<area shape="poly" title=" " alt="" coords="1066,277,1017,318,1015,313,1061,278"/>
+<area shape="poly" title=" " alt="" coords="1085,275,1093,311,1089,308,1082,280"/>
+<area shape="poly" title=" " alt="" coords="1049,277,931,324,929,319,1043,278"/>
+<area shape="rect" href="control__box_8hpp.html" title="Control block for the pseudo shared pointer Box&lt;Node&gt;." alt="" coords="1279,174,1404,201"/>
+<area shape="poly" title=" " alt="" coords="1513,126,1393,171,1392,165,1508,127"/>
+<area shape="rect" title=" " alt="" coords="1769,325,1834,353"/>
+<area shape="poly" title=" " alt="" coords="1563,124,1778,315,1773,314,1561,129"/>
+<area shape="rect" href="box_8inl_source.html" title=" " alt="" coords="1514,174,1580,201"/>
+<area shape="poly" title=" " alt="" coords="1542,124,1540,160,1536,156,1538,128"/>
+<area shape="poly" title=" " alt="" coords="1276,189,1169,195,1038,204,918,222,870,235,836,252,823,264,813,279,799,312,795,308,808,276,819,260,833,247,868,230,916,217,1038,199,1168,190,1281,189"/>
+<area shape="poly" title=" " alt="" coords="1345,200,1356,311,1351,308,1341,203"/>
+<area shape="poly" title=" " alt="" coords="1276,196,687,259,687,254,1281,195"/>
+<area shape="rect" title=" " alt="" coords="1367,249,1433,277"/>
+<area shape="poly" title=" " alt="" coords="1353,199,1383,238,1378,236,1351,204"/>
+<area shape="rect" title=" " alt="" coords="1457,249,1543,277"/>
+<area shape="poly" title=" " alt="" coords="1370,199,1461,243,1456,242,1369,205"/>
+<area shape="poly" title=" " alt="" coords="1552,171,1554,143,1558,139,1556,175"/>
+<area shape="rect" href="log_8hpp.html" title="Public logging interface for the engine." alt="" coords="1567,249,1673,277"/>
+<area shape="poly" title=" " alt="" coords="1561,199,1599,239,1594,237,1559,204"/>
+<area shape="poly" title=" " alt="" coords="1569,275,1555,280,1448,291,1357,298,1201,302,1046,307,956,315,849,328,839,329,839,324,848,322,955,309,1046,302,1201,297,1357,293,1447,286,1555,274,1564,276"/>
+<area shape="poly" title=" " alt="" coords="1569,275,1555,280,1415,296,1305,303,1194,310,1052,327,1051,322,1193,305,1305,298,1415,290,1555,274,1564,275"/>
+<area shape="poly" title=" " alt="" coords="1576,277,1419,323,1418,318,1570,278"/>
+<area shape="poly" title=" " alt="" coords="1653,275,1758,319,1753,319,1652,280"/>
+<area shape="rect" title=" " alt="" coords="1445,325,1513,353"/>
+<area shape="poly" title=" " alt="" coords="1598,277,1518,320,1517,315,1592,278"/>
+<area shape="rect" title=" " alt="" coords="1537,325,1602,353"/>
+<area shape="poly" title=" " alt="" coords="1614,276,1589,314,1586,310,1609,279"/>
+<area shape="rect" title=" " alt="" coords="1626,325,1745,353"/>
+<area shape="poly" title=" " alt="" coords="1633,275,1667,314,1662,312,1631,280"/>
 </map>
 </div>
 </div><div class="textblock"><div class="dynheader">
@@ -302,8 +346,9 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:acd4fb6fd33c0cb6de818ae1ef0c21867" id="r_acd4fb6fd33c0cb6de818ae1ef0c21867"><td class="memItemLeft"><a id="acd4fb6fd33c0cb6de818ae1ef0c21867" name="acd4fb6fd33c0cb6de818ae1ef0c21867"></a>
-auto&#160;</td><td class="memItemRight"><b>physics::raycast</b> (glm::vec3 pos, glm::vec3 dir, float max_distance, int max_targets) -&gt; std::vector&lt; <a class="el" href="structphysics_1_1RayHit.html">RayHit</a> &gt;</td></tr>
+<tr class="memitem:a848130384ab2f735ba0ff038efa5480c" id="r_a848130384ab2f735ba0ff038efa5480c"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="raycast_8cpp.html#a848130384ab2f735ba0ff038efa5480c">physics::raycast</a> (glm::vec3 origin, glm::vec3 direction, float max_distance, <a class="el" href="structphysics_1_1BodyID.html">BodyID</a> ignored, const std::vector&lt; int &gt; &amp;layers) -&gt; std::optional&lt; <a class="el" href="structphysics_1_1RayHit.html">RayHit</a> &gt;</td></tr>
+<tr class="memitem:a01ed3d1cb103996dc6b8ce5f695952b3" id="r_a01ed3d1cb103996dc6b8ce5f695952b3"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="raycast_8cpp.html#a01ed3d1cb103996dc6b8ce5f695952b3">physics::raymulticast</a> (glm::vec3 origin, glm::vec3 direction, float max_distance, int max_hits, <a class="el" href="structphysics_1_1BodyID.html">BodyID</a> ignored, const std::vector&lt; int &gt; &amp;layers) -&gt; std::vector&lt; <a class="el" href="structphysics_1_1RayHit.html">RayHit</a> &gt;</td></tr>
+<tr class="memitem:a544a8c1a7031964b50ddc008228c4b18" id="r_a544a8c1a7031964b50ddc008228c4b18"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="raycast_8cpp.html#a544a8c1a7031964b50ddc008228c4b18">physics::linecast</a> (glm::vec3 from, glm::vec3 to, int max_hits, <a class="el" href="structphysics_1_1BodyID.html">BodyID</a> ignored, const std::vector&lt; int &gt; &amp;layers) -&gt; std::vector&lt; <a class="el" href="structphysics_1_1RayHit.html">RayHit</a> &gt;</td></tr>
 <tr class="memitem:a1f7507aafa4a4f4ad38cb4958d5ec371" id="r_a1f7507aafa4a4f4ad38cb4958d5ec371"><td class="memItemLeft"><a id="a1f7507aafa4a4f4ad38cb4958d5ec371" name="a1f7507aafa4a4f4ad38cb4958d5ec371"></a>
 auto&#160;</td><td class="memItemRight"><b>physics::sphereOverlap</b> (glm::vec3 position, float radius) -&gt; std::optional&lt; <a class="el" href="structphysics_1_1SphereHit.html">SphereHit</a> &gt;</td></tr>
 <tr class="memitem:aefb0acb4a92869206fd2c4ba2c6310b9" id="r_aefb0acb4a92869206fd2c4ba2c6310b9"><td class="memItemLeft"><a id="aefb0acb4a92869206fd2c4ba2c6310b9" name="aefb0acb4a92869206fd2c4ba2c6310b9"></a>
@@ -314,7 +359,131 @@ auto&#160;</td><td class="memItemRight"><b>physics::overlapAABB</b> (glm::vec3 m
 <div class="textblock"><p>Raycast Implmentation mostly from <a href="https://iquilezles.org/articles/intersectors/">https://iquilezles.org/articles/intersectors/</a> and <a href="https://www.realtimerendering.com/intersections.html">https://www.realtimerendering.com/intersections.html</a>. </p>
 <dl class="section author"><dt>Author</dt><dd>Dante Harper </dd></dl>
 <dl class="section date"><dt>Date</dt><dd>25 Sep 26 </dd></dl>
-</div></div><!-- contents -->
+</div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
+<a id="a544a8c1a7031964b50ddc008228c4b18" name="a544a8c1a7031964b50ddc008228c4b18"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a544a8c1a7031964b50ddc008228c4b18">&#9670;&#160;</a></span>linecast()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">TOAST_API auto physics::linecast </td>
+          <td>(</td>
+          <td class="paramtype">glm::vec3</td>          <td class="paramname"><span class="paramname"><em>from</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">glm::vec3</td>          <td class="paramname"><span class="paramname"><em>to</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int</td>          <td class="paramname"><span class="paramname"><em>max_hits</em></span><span class="paramdefsep"> = </span><span class="paramdefval">-1</span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structphysics_1_1BodyID.html">BodyID</a></td>          <td class="paramname"><span class="paramname"><em>ignored</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::vector&lt; int &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>layers</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;) -&gt;  std::vector&lt; <a class="el" href="structphysics_1_1RayHit.html">RayHit</a> &gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Like <code>raymulticast</code> from <code class="param">from</code> until <code class="param">to</code> </p>
+
+</div>
+</div>
+<a id="a848130384ab2f735ba0ff038efa5480c" name="a848130384ab2f735ba0ff038efa5480c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a848130384ab2f735ba0ff038efa5480c">&#9670;&#160;</a></span>raycast()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">TOAST_API auto physics::raycast </td>
+          <td>(</td>
+          <td class="paramtype">glm::vec3</td>          <td class="paramname"><span class="paramname"><em>origin</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">glm::vec3</td>          <td class="paramname"><span class="paramname"><em>direction</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float</td>          <td class="paramname"><span class="paramname"><em>max_distance</em></span><span class="paramdefsep"> = </span><span class="paramdefval">-1.0f</span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structphysics_1_1BodyID.html">BodyID</a></td>          <td class="paramname"><span class="paramname"><em>ignored</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::vector&lt; int &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>layers</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;) -&gt;  std::optional&lt; <a class="el" href="structphysics_1_1RayHit.html">RayHit</a> &gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>The nearest thing a ray hits </p><dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">ignored</td><td>Shapes of this body are not hit </td></tr>
+    <tr><td class="paramname">layers</td><td>Indices of the layers a body must include one of to be hit, every layer when empty </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a01ed3d1cb103996dc6b8ce5f695952b3" name="a01ed3d1cb103996dc6b8ce5f695952b3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a01ed3d1cb103996dc6b8ce5f695952b3">&#9670;&#160;</a></span>raymulticast()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">TOAST_API auto physics::raymulticast </td>
+          <td>(</td>
+          <td class="paramtype">glm::vec3</td>          <td class="paramname"><span class="paramname"><em>origin</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">glm::vec3</td>          <td class="paramname"><span class="paramname"><em>direction</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float</td>          <td class="paramname"><span class="paramname"><em>max_distance</em></span><span class="paramdefsep"> = </span><span class="paramdefval">-1.0f</span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int</td>          <td class="paramname"><span class="paramname"><em>max_hits</em></span><span class="paramdefsep"> = </span><span class="paramdefval">-1</span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structphysics_1_1BodyID.html">BodyID</a></td>          <td class="paramname"><span class="paramname"><em>ignored</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::vector&lt; int &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>layers</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;) -&gt;  std::vector&lt; <a class="el" href="structphysics_1_1RayHit.html">RayHit</a> &gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Up to <code class="param">max_hits</code> things a ray hits</p>
+<p>Adds a hit per time a ray enters a body </p>
+
+</div>
+</div>
+</div><!-- contents -->
 </div><!-- doc-content -->
 <div id="page-nav" class="page-nav-panel">
 <div id="page-nav-resize-handle"></div>

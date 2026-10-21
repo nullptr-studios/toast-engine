@@ -45,5 +45,6 @@ var searchData=
   ['historyrowviewmodel_42',['HistoryRowViewModel',['../classeditor_1_1Workspace_1_1HistoryRowViewModel.html',1,'editor::Workspace']]],
   ['historyview_43',['HistoryView',['../classeditor_1_1Workspace_1_1HistoryView.html',1,'editor::Workspace']]],
   ['historyviewmodel_44',['HistoryViewModel',['../classeditor_1_1Workspace_1_1HistoryViewModel.html',1,'editor::Workspace']]],
-  ['holdtrigger_45',['HoldTrigger',['../classinput_1_1HoldTrigger.html',1,'input']]]
+  ['hizpyramid_45',['HiZPyramid',['../classrenderer_1_1HiZPyramid.html',1,'renderer']]],
+  ['holdtrigger_46',['HoldTrigger',['../classinput_1_1HoldTrigger.html',1,'input']]]
 ];

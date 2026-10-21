@@ -1,3 +1,7 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="Node000000" href="$structrenderer_1_1PostProcessSettings_1_1Ssr.html" title=" " alt="" coords="5,5,249,33"/>
+<area shape="rect" id="Node000000" href="$classrenderer_1_1AsyncComputeTask.html" title=" " alt="" coords="5,32,217,60"/>
+<area shape="rect" id="Node000001" href="$classexample_1_1DebrisSimulation.html" title="Debris particles integrated on the async compute queue." alt="" coords="265,5,463,33"/>
+<area shape="poly" id="edge583_Node000000_Node000001" title=" " alt="" coords="232,30,267,29,262,30,233,36"/>
+<area shape="rect" id="Node000002" href="$classphysics_1_1DebrisSimulation.html" title=" " alt="" coords="269,57,459,85"/>
+<area shape="poly" id="edge584_Node000000_Node000002" title=" " alt="" coords="232,55,271,62,266,62,232,61"/>
 </map>

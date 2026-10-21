@@ -169,14 +169,14 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('post__process_
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  std::optional&lt;vk::raii::ImageView&gt; m_view;</div>
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  vk::Extent2D m_extent {};</div>
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span> </div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  <span class="keyword">mutable</span> vk::ImageLayout m_layout = vk::ImageLayout::eUndefined;</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  <span class="keyword">mutable</span> sync::ImageState m_state;</div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>};</div>
 </div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>}</div>
 <div class="ttc" id="aclassrenderer_1_1PostProcessTarget_html"><div class="ttname"><a href="classrenderer_1_1PostProcessTarget.html">renderer::PostProcessTarget</a></div><div class="ttdef"><b>Definition</b> post_process_target.hpp:19</div></div>
 <div class="ttc" id="aclassrenderer_1_1PostProcessTarget_html_ad9ecb2faf6692fe1d878d801f196cfd0"><div class="ttname"><a href="classrenderer_1_1PostProcessTarget.html#ad9ecb2faf6692fe1d878d801f196cfd0">renderer::PostProcessTarget::halfExtent</a></div><div class="ttdeci">static auto halfExtent(vk::Extent2D extent) noexcept -&gt; vk::Extent2D</div><div class="ttdoc">Rounded up so odd sizes cover the last row. Here because file local copies collide in the unity build...</div><div class="ttdef"><b>Definition</b> post_process_target.hpp:23</div></div>
-<div class="ttc" id="aclassrenderer_1_1VulkanCore_html"><div class="ttname"><a href="classrenderer_1_1VulkanCore.html">renderer::VulkanCore</a></div><div class="ttdef"><b>Definition</b> vulkan_core.hpp:46</div></div>
+<div class="ttc" id="aclassrenderer_1_1VulkanCore_html"><div class="ttname"><a href="classrenderer_1_1VulkanCore.html">renderer::VulkanCore</a></div><div class="ttdef"><b>Definition</b> vulkan_core.hpp:48</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

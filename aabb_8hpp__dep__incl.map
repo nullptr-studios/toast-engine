@@ -1,74 +1,125 @@
 <map id="engine/src/toast/physics/aabb.hpp" name="engine/src/toast/physics/aabb.hpp">
-<area shape="rect" id="Node000001" title="Axis&#45;aligned bounds node." alt="" coords="1264,5,1442,50"/>
-<area shape="rect" id="Node000002" href="$aabb__tree_8hpp.html" title="TODO: Brief description of the file&#39;s purpose." alt="" coords="1567,191,1745,235"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1353,63,1361,105,1369,124,1380,141,1404,152,1450,165,1569,194,1564,195,1448,170,1402,157,1377,145,1364,127,1356,107,1351,68"/>
-<area shape="rect" id="Node000006" href="$shape_8hpp.html" title="Shape identifiers, geometry, and runtime records." alt="" coords="836,98,1014,143"/>
-<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="1246,52,1016,103,1014,98,1251,50"/>
-<area shape="rect" id="Node000027" href="$voxel__query_8hpp.html" title="TODO: Brief description of the file&#39;s purpose." alt="" coords="1391,98,1569,143"/>
-<area shape="poly" id="edge45_Node000001_Node000027" title=" " alt="" coords="1396,56,1452,98,1447,97,1395,62"/>
-<area shape="rect" id="Node000003" href="$broad__phase_8hpp.html" title="Generates potentially colliding shape pairs." alt="" coords="1565,469,1744,513"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="1657,249,1657,470,1652,467,1654,253"/>
-<area shape="rect" id="Node000004" href="$simulator_8hpp.html" title="This class simulates all of the physics of the project." alt="" coords="1185,654,1364,699"/>
-<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="1641,526,1615,571,1598,591,1577,608,1526,636,1471,655,1416,667,1364,674,1364,669,1415,662,1470,650,1524,631,1574,604,1594,587,1611,568,1637,529"/>
-<area shape="rect" id="Node000005" href="$debug__pass_8cpp.html" title=" " alt="" coords="1245,747,1429,791"/>
-<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="1299,709,1325,748,1320,745,1297,714"/>
-<area shape="poly" id="edge6_Node000006_Node000002" title=" " alt="" coords="1029,128,1268,152,1548,188,1569,193,1564,194,1547,193,1267,157,1030,133"/>
-<area shape="poly" id="edge41_Node000006_Node000004" title=" " alt="" coords="818,135,698,158,646,174,612,193,585,223,571,254,571,288,584,327,609,374,636,409,666,436,698,457,770,499,810,525,854,559,877,584,888,594,904,604,974,631,1049,650,1121,663,1188,672,1182,672,1120,668,1048,656,973,636,901,608,885,598,874,588,850,563,807,529,767,503,695,462,663,440,633,413,605,377,579,329,566,289,566,253,581,220,609,189,644,169,697,153,823,132"/>
-<area shape="rect" id="Node000007" href="$collision_8hpp.html" title="Canonical collision&#45;pair records shared by broad and narrow phases." alt="" coords="961,376,1140,421"/>
-<area shape="poly" id="edge7_Node000006_Node000007" title=" " alt="" coords="818,147,727,178,682,197,642,219,611,243,593,269,590,282,591,296,596,311,607,326,630,344,664,358,707,369,756,378,863,389,963,396,958,397,862,394,756,383,706,374,662,363,627,348,603,330,592,313,586,297,585,282,588,267,607,239,639,214,679,192,725,173,823,144"/>
-<area shape="rect" id="Node000012" href="$rigidbody_8hpp_source.html" title=" " alt="" coords="391,469,569,513"/>
-<area shape="poly" id="edge38_Node000006_Node000012" title=" " alt="" coords="818,126,732,134,640,146,562,165,532,178,512,193,490,224,475,260,466,299,463,338,467,412,477,469,472,467,462,413,458,338,461,298,470,258,485,221,509,189,530,173,560,160,639,141,731,129,822,124"/>
-<area shape="rect" id="Node000018" href="$collision__world_8hpp.html" title="Read&#45;only access to physics data used by collision detection." alt="" coords="1440,376,1618,421"/>
-<area shape="poly" id="edge24_Node000006_Node000018" title=" " alt="" coords="1030,126,1241,149,1339,166,1379,177,1409,188,1443,207,1467,225,1486,249,1506,282,1517,306,1524,331,1530,377,1526,374,1519,332,1512,308,1501,285,1482,252,1463,229,1440,211,1407,193,1377,182,1338,172,1240,154,1031,132"/>
-<area shape="rect" id="Node000019" href="$damage__command_8hpp.html" title="TODO: Add file description." alt="" coords="1187,191,1365,235"/>
-<area shape="poly" id="edge28_Node000006_Node000019" title=" " alt="" coords="1024,144,1195,190,1189,191,1024,150"/>
-<area shape="rect" id="Node000020" href="$voxel__shape__data_8hpp.html" title="Voxel data structures for physics system." alt="" coords="1313,283,1492,328"/>
-<area shape="poly" id="edge44_Node000006_Node000020" title=" " alt="" coords="1029,122,1127,128,1230,140,1320,159,1354,173,1379,189,1395,210,1403,235,1407,284,1402,281,1398,236,1390,213,1375,193,1352,177,1318,164,1229,145,1126,133,1030,127"/>
-<area shape="rect" id="Node000021" href="$collider_8hpp_source.html" title=" " alt="" coords="836,191,1014,235"/>
-<area shape="poly" id="edge34_Node000006_Node000021" title=" " alt="" coords="926,156,928,192,923,189,924,161"/>
-<area shape="rect" id="Node000025" href="$shape__query_8hpp.html" title=" " alt="" coords="5,376,184,421"/>
-<area shape="poly" id="edge39_Node000006_Node000025" title=" " alt="" coords="818,123,730,130,625,141,515,161,407,193,320,235,238,286,170,337,121,377,116,374,166,332,235,281,317,230,406,188,513,156,625,136,730,124,823,121"/>
-<area shape="rect" id="Node000026" href="$voxel__render_8hpp.html" title="Read&#45;only voxel render records." alt="" coords="244,376,422,421"/>
-<area shape="poly" id="edge42_Node000006_Node000026" title=" " alt="" coords="818,128,723,137,618,150,524,168,488,180,461,193,437,212,416,234,382,285,357,336,342,377,337,374,352,334,377,283,412,231,434,208,458,188,486,175,523,163,617,145,722,132,823,126"/>
-<area shape="poly" id="edge8_Node000007_Node000003" title=" " alt="" coords="1155,409,1342,434,1554,466,1568,471,1562,471,1553,471,1341,439,1156,415"/>
-<area shape="rect" id="Node000008" href="$constraint_8hpp.html" title="TODO: Brief description of the file&#39;s purpose." alt="" coords="1059,469,1237,513"/>
-<area shape="poly" id="edge9_Node000007_Node000008" title=" " alt="" coords="1085,429,1127,469,1122,468,1084,434"/>
-<area shape="rect" id="Node000009" href="$manifold_8hpp.html" title="TODO: Brief description of the file&#39;s purpose." alt="" coords="1363,469,1541,513"/>
-<area shape="poly" id="edge11_Node000007_Node000009" title=" " alt="" coords="1155,420,1365,469,1360,470,1155,426"/>
-<area shape="poly" id="edge17_Node000007_Node000012" title=" " alt="" coords="944,418,570,478,569,473,948,415"/>
-<area shape="rect" id="Node000016" href="$voxel__node_8hpp.html" title="Frontend for a Voxel node." alt="" coords="864,469,1034,513"/>
-<area shape="poly" id="edge21_Node000007_Node000016" title=" " alt="" coords="1018,430,975,470,972,466,1013,432"/>
-<area shape="poly" id="edge10_Node000008_Node000004" title=" " alt="" coords="1172,523,1262,655,1257,653,1170,528"/>
-<area shape="poly" id="edge16_Node000009_Node000004" title=" " alt="" coords="1516,519,1539,538,1556,560,1564,584,1562,596,1555,608,1543,619,1525,629,1478,645,1422,658,1365,667,1364,662,1421,653,1476,640,1523,624,1540,614,1551,604,1557,594,1559,585,1551,563,1535,541,1515,524"/>
-<area shape="rect" id="Node000010" href="$contact__events_8hpp.html" title="Physics contact lifecycle events." alt="" coords="1363,561,1541,606"/>
-<area shape="poly" id="edge12_Node000009_Node000010" title=" " alt="" coords="1454,527,1454,563,1450,559,1450,531"/>
-<area shape="rect" id="Node000011" href="$narrow__phase_8hpp.html" title="Generates contact manifolds for potentially colliding pairs." alt="" coords="1667,561,1845,606"/>
-<area shape="poly" id="edge13_Node000009_Node000011" title=" " alt="" coords="1539,516,1686,561,1680,561,1539,521"/>
-<area shape="poly" id="edge14_Node000011_Node000004" title=" " alt="" coords="1654,605,1648,609,1365,661,1364,656,1647,603,1649,606"/>
-<area shape="poly" id="edge15_Node000011_Node000005" title=" " alt="" coords="1695,612,1387,749,1385,744,1690,613"/>
-<area shape="rect" id="Node000013" href="$dynamic__rigidbody_8hpp_source.html" title=" " alt="" coords="371,561,589,606"/>
-<area shape="poly" id="edge18_Node000012_Node000013" title=" " alt="" coords="481,527,482,562,478,560,478,531"/>
-<area shape="rect" id="Node000014" href="$kinematic__rigidbody_8hpp_source.html" title=" " alt="" coords="613,561,840,606"/>
-<area shape="poly" id="edge19_Node000012_Node000014" title=" " alt="" coords="553,516,670,560,665,561,553,522"/>
-<area shape="rect" id="Node000015" href="$static__rigidbody_8hpp_source.html" title=" " alt="" coords="149,561,347,606"/>
-<area shape="poly" id="edge20_Node000012_Node000015" title=" " alt="" coords="408,521,305,563,302,558,412,518"/>
-<area shape="poly" id="edge22_Node000016_Node000004" title=" " alt="" coords="1038,516,1088,535,1136,559,1251,654,1246,653,1133,564,1086,540,1038,521"/>
-<area shape="rect" id="Node000017" href="$procedural__voxel_8hpp.html" title="Voxel shapes built from an ordered list of volumes." alt="" coords="915,561,1122,606"/>
-<area shape="poly" id="edge23_Node000016_Node000017" title=" " alt="" coords="976,523,1005,562,1000,560,974,528"/>
-<area shape="poly" id="edge25_Node000018_Node000003" title=" " alt="" coords="1572,427,1627,469,1622,468,1571,432"/>
-<area shape="poly" id="edge26_Node000018_Node000009" title=" " alt="" coords="1503,431,1471,471,1469,466,1499,434"/>
-<area shape="poly" id="edge27_Node000018_Node000011" title=" " alt="" coords="1634,402,1669,410,1702,423,1733,442,1758,467,1769,490,1772,515,1765,563,1761,559,1767,515,1764,492,1754,470,1730,446,1700,428,1667,415,1634,407"/>
-<area shape="poly" id="edge29_Node000019_Node000004" title=" " alt="" coords="1278,249,1277,655,1272,652,1274,252"/>
-<area shape="poly" id="edge30_Node000019_Node000020" title=" " alt="" coords="1319,242,1375,283,1370,283,1318,247"/>
-<area shape="poly" id="edge33_Node000020_Node000004" title=" " alt="" coords="1392,341,1284,655,1280,652,1388,344"/>
-<area shape="poly" id="edge32_Node000020_Node000009" title=" " alt="" coords="1411,341,1430,420,1446,469,1441,467,1425,421,1408,346"/>
-<area shape="poly" id="edge31_Node000020_Node000018" title=" " alt="" coords="1445,334,1502,376,1496,375,1444,340"/>
-<area shape="rect" id="Node000022" href="$box__collider_8hpp_source.html" title=" " alt="" coords="836,283,1014,328"/>
-<area shape="poly" id="edge35_Node000021_Node000022" title=" " alt="" coords="927,249,927,284,923,282,924,253"/>
-<area shape="rect" id="Node000023" href="$capsule__collider_8hpp_source.html" title=" " alt="" coords="1038,283,1239,328"/>
-<area shape="poly" id="edge36_Node000021_Node000023" title=" " alt="" coords="990,239,1090,283,1085,283,990,244"/>
-<area shape="rect" id="Node000024" href="$sphere__collider_8hpp_source.html" title=" " alt="" coords="617,283,812,328"/>
-<area shape="poly" id="edge37_Node000021_Node000024" title=" " alt="" coords="859,243,766,285,764,280,863,240"/>
-<area shape="poly" id="edge40_Node000025_Node000004" title=" " alt="" coords="86,433,83,476,83,522,93,567,103,587,117,604,132,610,162,617,262,628,566,648,912,662,1188,673,1182,673,912,667,565,653,262,634,162,622,130,615,114,608,99,590,88,569,78,522,78,476,85,439"/>
-<area shape="poly" id="edge43_Node000026_Node000004" title=" " alt="" coords="270,430,211,466,181,487,155,510,135,534,125,557,125,581,139,604,153,610,182,617,279,629,576,649,915,662,1187,673,1182,673,915,668,576,654,279,634,181,622,151,615,135,608,120,582,119,556,131,531,151,506,178,483,208,461,274,426"/>
+<area shape="rect" id="Node000001" title="Axis&#45;aligned bounds node." alt="" coords="1461,5,1640,50"/>
+<area shape="rect" id="Node000002" href="$aabb__tree_8hpp.html" title="TODO: Brief description of the file&#39;s purpose." alt="" coords="1551,191,1729,235"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1555,63,1564,103,1578,141,1596,167,1617,191,1612,190,1592,170,1573,144,1559,104,1552,68"/>
+<area shape="rect" id="Node000006" href="$shape_8hpp.html" title="Shape identifiers, geometry, and runtime records." alt="" coords="1247,98,1425,143"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="1483,58,1388,100,1386,95,1488,55"/>
+<area shape="rect" id="Node000074" href="$voxel__query_8hpp.html" title="TODO: Brief description of the file&#39;s purpose." alt="" coords="1588,98,1766,143"/>
+<area shape="poly" id="edge73_Node000001_Node000074" title=" " alt="" coords="1593,56,1650,98,1644,97,1593,62"/>
+<area shape="rect" id="Node000003" href="$broad__phase_8hpp.html" title="Generates potentially colliding shape pairs." alt="" coords="1120,469,1298,513"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="1596,243,1244,471,1242,466,1591,245"/>
+<area shape="rect" id="Node000004" href="$simulator_8hpp.html" title="This class simulates all of the physics of the project." alt="" coords="943,654,1121,699"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="1243,523,1257,543,1267,565,1270,587,1262,607,1233,636,1198,655,1160,668,1122,675,1121,670,1159,663,1196,650,1230,631,1258,605,1265,586,1262,566,1253,546,1240,528"/>
+<area shape="rect" id="Node000005" href="$debug__pass_8cpp.html" title=" " alt="" coords="876,747,1060,791"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="1010,710,984,749,982,744,1006,712"/>
+<area shape="poly" id="edge6_Node000006_Node000002" title=" " alt="" coords="1423,145,1570,190,1564,190,1423,150"/>
+<area shape="poly" id="edge69_Node000006_Node000004" title=" " alt="" coords="1440,129,1576,140,2143,146,2651,150,3219,160,3779,177,4034,189,4262,204,4455,223,4603,245,4657,258,4698,271,4724,287,4733,304,4733,492,4736,557,4728,583,4706,608,4665,614,4564,620,4209,631,3109,651,1121,677,1121,671,3109,646,4209,625,4564,614,4665,609,4704,604,4724,580,4730,556,4728,492,4728,305,4720,290,4696,276,4656,263,4602,250,4454,228,4262,209,4034,194,3778,182,3219,165,2651,156,2143,151,1576,145,1441,134"/>
+<area shape="rect" id="Node000007" href="$collision_8hpp.html" title="Canonical collision&#45;pair records shared by broad and narrow phases." alt="" coords="1120,376,1298,421"/>
+<area shape="poly" id="edge7_Node000006_Node000007" title=" " alt="" coords="1277,150,1254,171,1237,192,1217,240,1208,291,1207,339,1209,377,1204,374,1201,339,1203,290,1212,238,1232,189,1250,167,1272,153"/>
+<area shape="rect" id="Node000012" href="$rigidbody_8hpp_source.html" title=" " alt="" coords="1517,469,1696,513"/>
+<area shape="poly" id="edge44_Node000006_Node000012" title=" " alt="" coords="1389,148,1416,167,1439,189,1496,263,1543,342,1579,414,1601,470,1596,467,1574,417,1539,345,1492,266,1435,192,1412,171,1388,154"/>
+<area shape="rect" id="Node000018" href="$collision__world_8hpp.html" title="Read&#45;only access to physics data used by collision detection." alt="" coords="816,376,994,421"/>
+<area shape="poly" id="edge24_Node000006_Node000018" title=" " alt="" coords="1233,149,1175,172,1108,202,1042,239,983,285,945,332,918,378,914,374,940,329,979,281,1039,235,1105,197,1173,167,1238,147"/>
+<area shape="rect" id="Node000019" href="$damage__command_8hpp.html" title="The kinds of damage that break voxels." alt="" coords="689,191,868,235"/>
+<area shape="poly" id="edge28_Node000006_Node000019" title=" " alt="" coords="1229,138,887,193,869,196,867,192,886,188,1234,135"/>
+<area shape="rect" id="Node000020" href="$voxel__shape__data_8hpp.html" title="Voxel data structures for physics system." alt="" coords="689,283,868,328"/>
+<area shape="poly" id="edge72_Node000006_Node000020" title=" " alt="" coords="1229,127,1164,136,1089,148,1012,166,938,193,921,203,909,213,881,237,813,285,810,281,878,233,905,209,918,198,936,188,1010,161,1088,142,1163,130,1234,125"/>
+<area shape="rect" id="Node000021" href="$fracture__random_8hpp.html" title="Deterministic randomness for destruction." alt="" coords="247,191,425,235"/>
+<area shape="poly" id="edge34_Node000006_Node000021" title=" " alt="" coords="1230,134,426,206,425,201,1232,129"/>
+<area shape="rect" id="Node000026" href="$collider_8hpp_source.html" title=" " alt="" coords="4504,469,4682,513"/>
+<area shape="poly" id="edge40_Node000006_Node000026" title=" " alt="" coords="1440,129,2032,188,2916,279,3825,379,4205,426,4492,466,4506,471,4501,471,4491,471,4205,431,3824,384,2915,284,2032,193,1441,134"/>
+<area shape="rect" id="Node000030" href="$raycast_8hpp.html" title="Raycast Implmentation mostly from https://iquilezles.org/articles/intersectors/ and https://www...." alt="" coords="1832,283,2010,328"/>
+<area shape="poly" id="edge45_Node000006_Node000030" title=" " alt="" coords="1402,147,1483,188,1511,212,1523,223,1540,233,1614,260,1691,279,1766,291,1834,300,1829,301,1765,296,1690,284,1612,265,1537,238,1519,227,1507,216,1480,193,1402,152"/>
+<area shape="rect" id="Node000072" href="$shape__query_8hpp.html" title=" " alt="" coords="993,283,1172,328"/>
+<area shape="poly" id="edge67_Node000006_Node000072" title=" " alt="" coords="1262,150,1228,170,1192,193,1140,239,1101,285,1097,281,1136,236,1189,189,1225,166,1267,148"/>
+<area shape="rect" id="Node000073" href="$voxel__render_8hpp.html" title="Read&#45;only voxel render records." alt="" coords="1247,191,1425,235"/>
+<area shape="poly" id="edge70_Node000006_Node000073" title=" " alt="" coords="1337,156,1338,192,1334,189,1334,160"/>
+<area shape="poly" id="edge8_Node000007_Node000003" title=" " alt="" coords="1211,434,1211,470,1207,467,1208,438"/>
+<area shape="rect" id="Node000008" href="$constraint_8hpp.html" title="TODO: Brief description of the file&#39;s purpose." alt="" coords="1069,561,1248,606"/>
+<area shape="poly" id="edge9_Node000007_Node000008" title=" " alt="" coords="1148,428,1126,449,1110,470,1105,493,1111,517,1124,540,1140,562,1135,560,1119,543,1106,519,1100,493,1105,468,1122,445,1143,430"/>
+<area shape="rect" id="Node000009" href="$manifold_8hpp.html" title="TODO: Brief description of the file&#39;s purpose." alt="" coords="689,469,868,513"/>
+<area shape="poly" id="edge11_Node000007_Node000009" title=" " alt="" coords="1102,422,869,474,867,468,1107,421"/>
+<area shape="poly" id="edge17_Node000007_Node000012" title=" " alt="" coords="1314,421,1519,469,1514,470,1314,426"/>
+<area shape="rect" id="Node000016" href="$voxel__node_8hpp.html" title="Frontend for a Voxel node." alt="" coords="2881,561,3052,606"/>
+<area shape="poly" id="edge21_Node000007_Node000016" title=" " alt="" coords="1314,410,1498,435,1708,466,1827,490,1879,501,1947,511,2087,524,2206,531,2409,532,2612,535,2731,543,2871,559,2883,563,2878,563,2870,564,2730,548,2612,540,2409,538,2206,536,2087,530,1946,516,1879,506,1826,495,1707,471,1498,440,1314,415"/>
+<area shape="poly" id="edge10_Node000008_Node000004" title=" " alt="" coords="1119,614,1063,656,1061,651,1114,616"/>
+<area shape="poly" id="edge16_Node000009_Node000004" title=" " alt="" coords="680,518,639,538,608,557,599,568,594,579,595,591,603,604,625,621,658,635,699,646,746,655,847,666,945,674,940,674,847,671,745,660,698,651,656,640,622,626,599,608,590,593,589,579,594,565,604,553,636,533,675,520"/>
+<area shape="rect" id="Node000010" href="$contact__events_8hpp.html" title="Physics contact lifecycle events." alt="" coords="613,561,792,606"/>
+<area shape="poly" id="edge12_Node000009_Node000010" title=" " alt="" coords="753,524,722,563,719,559,749,527"/>
+<area shape="rect" id="Node000011" href="$narrow__phase_8hpp.html" title="Generates contact manifolds for potentially colliding pairs." alt="" coords="816,561,994,606"/>
+<area shape="poly" id="edge13_Node000009_Node000011" title=" " alt="" coords="821,520,878,561,872,561,820,525"/>
+<area shape="poly" id="edge14_Node000011_Node000004" title=" " alt="" coords="948,613,1004,654,999,653,947,618"/>
+<area shape="poly" id="edge15_Node000011_Node000005" title=" " alt="" coords="912,619,921,659,933,698,956,747,952,745,928,700,916,660,909,624"/>
+<area shape="rect" id="Node000013" href="$dynamic__rigidbody_8hpp_source.html" title=" " alt="" coords="1373,561,1592,606"/>
+<area shape="poly" id="edge18_Node000012_Node000013" title=" " alt="" coords="1567,521,1513,563,1511,558,1563,523"/>
+<area shape="rect" id="Node000014" href="$kinematic__rigidbody_8hpp_source.html" title=" " alt="" coords="1616,561,1843,606"/>
+<area shape="poly" id="edge19_Node000012_Node000014" title=" " alt="" coords="1648,520,1702,561,1697,560,1647,525"/>
+<area shape="rect" id="Node000015" href="$static__rigidbody_8hpp_source.html" title=" " alt="" coords="1867,561,2066,606"/>
+<area shape="poly" id="edge20_Node000012_Node000015" title=" " alt="" coords="1708,515,1883,561,1878,561,1707,520"/>
+<area shape="poly" id="edge22_Node000016_Node000004" title=" " alt="" coords="2869,606,2698,624,2482,637,1973,657,1475,670,1121,676,1121,671,1475,665,1973,652,2482,632,2698,619,2863,607"/>
+<area shape="rect" id="Node000017" href="$procedural__voxel_8hpp.html" title="Voxel shapes built from an ordered list of volumes." alt="" coords="2863,654,3070,699"/>
+<area shape="poly" id="edge23_Node000016_Node000017" title=" " alt="" coords="2968,620,2968,656,2965,652,2965,624"/>
+<area shape="poly" id="edge25_Node000018_Node000003" title=" " alt="" coords="993,423,1139,468,1134,468,992,428"/>
+<area shape="poly" id="edge26_Node000018_Node000009" title=" " alt="" coords="865,429,810,470,807,466,860,431"/>
+<area shape="poly" id="edge27_Node000018_Node000011" title=" " alt="" coords="907,434,907,563,903,560,903,438"/>
+<area shape="poly" id="edge29_Node000019_Node000004" title=" " alt="" coords="672,234,607,257,574,271,543,289,516,311,496,335,482,364,477,397,477,492,483,531,499,559,526,581,562,604,592,617,631,628,731,646,842,659,945,670,939,670,841,664,730,651,630,633,590,622,560,608,523,586,495,563,478,533,472,493,472,397,477,363,491,333,513,307,540,285,571,267,605,252,677,231"/>
+<area shape="poly" id="edge30_Node000019_Node000020" title=" " alt="" coords="780,249,781,284,776,282,777,253"/>
+<area shape="poly" id="edge33_Node000020_Node000004" title=" " alt="" coords="736,336,669,392,635,425,604,460,581,497,569,534,567,553,570,570,577,588,588,604,611,622,645,636,689,647,738,656,844,667,945,674,940,674,844,672,737,661,687,652,644,641,609,626,585,608,572,590,565,572,562,553,563,533,576,495,600,457,631,421,665,388,732,339"/>
+<area shape="poly" id="edge32_Node000020_Node000009" title=" " alt="" coords="780,341,781,470,776,467,777,346"/>
+<area shape="poly" id="edge31_Node000020_Node000018" title=" " alt="" coords="821,334,878,376,872,375,821,340"/>
+<area shape="rect" id="Node000022" href="$debris_8hpp.html" title="Small voxel debris clusters." alt="" coords="247,283,425,328"/>
+<area shape="poly" id="edge35_Node000021_Node000022" title=" " alt="" coords="337,248,338,284,333,282,335,253"/>
+<area shape="rect" id="Node000024" href="$fracture_8hpp.html" title="How much of a voxel volume a hit breaks." alt="" coords="19,283,197,328"/>
+<area shape="poly" id="edge38_Node000021_Node000024" title=" " alt="" coords="266,244,164,285,161,281,269,239"/>
+<area shape="poly" id="edge37_Node000022_Node000004" title=" " alt="" coords="279,339,263,357,249,377,243,398,249,420,287,489,307,514,329,535,384,569,457,604,496,617,549,628,679,647,820,660,945,671,940,671,819,665,678,652,548,634,495,622,455,608,381,574,326,539,303,517,283,492,244,422,237,398,244,375,259,353,282,335"/>
+<area shape="rect" id="Node000023" href="$engine_2src_2toast_2physics_2debris__simulation_8hpp.html" title="Small voxel debris." alt="" coords="259,376,437,421"/>
+<area shape="poly" id="edge36_Node000022_Node000023" title=" " alt="" coords="341,341,348,376,342,375,340,346"/>
+<area shape="rect" id="Node000025" href="$shatter_8hpp.html" title="Voronoi cracks." alt="" coords="5,376,184,421"/>
+<area shape="poly" id="edge39_Node000024_Node000025" title=" " alt="" coords="103,341,100,376,95,375,102,346"/>
+<area shape="rect" id="Node000027" href="$box__collider_8hpp_source.html" title=" " alt="" coords="4291,561,4469,606"/>
+<area shape="poly" id="edge41_Node000026_Node000027" title=" " alt="" coords="4531,519,4432,563,4430,558,4526,520"/>
+<area shape="rect" id="Node000028" href="$capsule__collider_8hpp_source.html" title=" " alt="" coords="4493,561,4693,606"/>
+<area shape="poly" id="edge42_Node000026_Node000028" title=" " alt="" coords="4595,527,4595,563,4591,559,4591,531"/>
+<area shape="rect" id="Node000029" href="$sphere__collider_8hpp_source.html" title=" " alt="" coords="4072,561,4266,606"/>
+<area shape="poly" id="edge43_Node000026_Node000029" title=" " alt="" coords="4491,514,4267,564,4267,559,4486,515"/>
+<area shape="poly" id="edge46_Node000030_Node000004" title=" " alt="" coords="1917,341,1915,382,1917,427,1927,472,1936,493,1949,512,1963,525,1979,532,2013,534,2048,537,2065,545,2079,560,2089,584,2087,596,2079,608,2060,621,2028,631,1935,649,1810,662,1666,670,1364,678,1122,679,1121,673,1364,673,1665,665,1810,656,1934,644,2027,626,2057,616,2075,604,2082,594,2084,585,2075,563,2061,549,2047,542,2013,539,1978,537,1960,529,1944,515,1932,495,1922,473,1912,427,1910,382,1913,345"/>
+<area shape="rect" id="Node000031" href="$node__3d_8hpp.html" title="Node with 3D spatial transforms." alt="" coords="3085,376,3250,421"/>
+<area shape="poly" id="edge47_Node000030_Node000031" title=" " alt="" coords="2026,312,3087,390,3082,392,2026,317"/>
+<area shape="poly" id="edge54_Node000031_Node000012" title=" " alt="" coords="3067,406,1947,471,1697,487,1696,481,1946,466,3072,405"/>
+<area shape="poly" id="edge53_Node000031_Node000026" title=" " alt="" coords="3266,397,3487,400,3791,410,4139,431,4318,446,4492,466,4506,470,4501,470,4491,471,4317,452,4139,436,3791,415,3487,405,3267,402"/>
+<area shape="rect" id="Node000032" href="$audio__emitter__base_8hpp.html" title="Abstract base for all spatialized 3D audio emitters." alt="" coords="2148,469,2374,513"/>
+<area shape="poly" id="edge48_Node000031_Node000032" title=" " alt="" coords="3067,406,2765,432,2576,450,2387,471,2375,473,2374,468,2386,466,2575,444,2764,427,3072,406"/>
+<area shape="rect" id="Node000038" href="$audio__listener_8hpp.html" title="A node that can listen to all the audio events." alt="" coords="2588,469,2775,513"/>
+<area shape="poly" id="edge52_Node000031_Node000038" title=" " alt="" coords="3072,417,2787,471,2776,473,2775,468,2786,466,3067,417"/>
+<area shape="rect" id="Node000039" href="$physics_2nodes_2trigger_8hpp.html" title="Overlap volume that reports bodies entering and leaving it." alt="" coords="2799,469,2977,513"/>
+<area shape="poly" id="edge55_Node000031_Node000039" title=" " alt="" coords="3089,425,2955,471,2954,466,3084,426"/>
+<area shape="rect" id="Node000040" href="$test__nodes_8hpp_source.html" title=" " alt="" coords="3001,469,3156,513"/>
+<area shape="poly" id="edge56_Node000031_Node000040" title=" " alt="" coords="3138,431,3101,471,3098,466,3134,433"/>
+<area shape="rect" id="Node000041" href="$panel__3d_8hpp.html" title="World&#45;space UI panel." alt="" coords="3180,469,3335,513"/>
+<area shape="poly" id="edge57_Node000031_Node000041" title=" " alt="" coords="3201,429,3239,469,3234,468,3199,434"/>
+<area shape="rect" id="Node000043" href="$voxel_8hpp.html" title="Common base of every voxel node." alt="" coords="4315,469,4479,513"/>
+<area shape="poly" id="edge58_Node000031_Node000043" title=" " alt="" coords="3266,398,3457,402,3715,413,4008,433,4157,448,4303,466,4317,471,4312,470,4302,471,4156,453,4007,438,3715,418,3457,407,3266,403"/>
+<area shape="rect" id="Node000052" href="$animation__player_8hpp.html" title="Plays a clip from a .tanim asset onto the nodes it targets." alt="" coords="3359,469,3526,513"/>
+<area shape="poly" id="edge60_Node000031_Node000052" title=" " alt="" coords="3248,423,3379,468,3374,468,3247,428"/>
+<area shape="rect" id="Node000053" href="$camera_8hpp.html" title="TODO: Brief description of the file&#39;s purpose." alt="" coords="3549,469,3714,513"/>
+<area shape="poly" id="edge61_Node000031_Node000053" title=" " alt="" coords="3266,414,3538,466,3551,471,3546,471,3537,471,3266,420"/>
+<area shape="rect" id="Node000059" href="$irradiance__volume_8hpp.html" title="A grid of baked irradiance probes; the diffuse half of global illumination." alt="" coords="3738,469,3912,513"/>
+<area shape="poly" id="edge62_Node000031_Node000059" title=" " alt="" coords="3266,407,3478,430,3727,466,3740,471,3735,470,3726,471,3478,436,3266,412"/>
+<area shape="rect" id="Node000060" href="$light_8hpp.html" title="Base light node; registers with the renderer so it can be collected into the per&#45;frame light list." alt="" coords="3936,469,4101,513"/>
+<area shape="poly" id="edge63_Node000031_Node000060" title=" " alt="" coords="3266,402,3562,423,3743,442,3924,466,3938,471,3933,471,3923,471,3742,447,3561,429,3266,407"/>
+<area shape="rect" id="Node000065" href="$mesh__node_8hpp.html" title="Scene&#45;graph node that draws an assets::Mesh." alt="" coords="4125,469,4290,513"/>
+<area shape="poly" id="edge64_Node000031_Node000065" title=" " alt="" coords="3266,399,3428,406,3639,418,3876,437,4114,466,4128,471,4122,470,4113,471,3875,443,3639,423,3428,411,3266,405"/>
+<area shape="rect" id="Node000066" href="$reflection__probe_8hpp.html" title="Localised reflection volume; registers with the renderer so it can be collected per frame." alt="" coords="1958,469,2124,513"/>
+<area shape="poly" id="edge65_Node000031_Node000066" title=" " alt="" coords="3067,402,2894,410,2662,421,2401,441,2138,471,2125,473,2124,468,2137,466,2400,436,2662,416,2894,404,3072,401"/>
+<area shape="rect" id="Node000067" href="$volume_8hpp.html" title="Generic cubic volume." alt="" coords="2398,469,2564,513"/>
+<area shape="poly" id="edge66_Node000031_Node000067" title=" " alt="" coords="3067,408,2844,434,2576,471,2565,473,2564,468,2575,466,2843,429,3072,408"/>
+<area shape="rect" id="Node000033" href="$audio__box__emitter_8hpp.html" title="Box&#45;shaped 3D audio emitter." alt="" coords="2640,561,2858,606"/>
+<area shape="poly" id="edge49_Node000032_Node000033" title=" " alt="" coords="2389,513,2643,562,2637,562,2389,519"/>
+<area shape="rect" id="Node000035" href="$audio__capsule__emitter_8hpp.html" title="Capsule&#45;shaped 3D audio emitter." alt="" coords="2140,561,2383,606"/>
+<area shape="poly" id="edge50_Node000032_Node000035" title=" " alt="" coords="2263,527,2263,563,2259,559,2259,531"/>
+<area shape="rect" id="Node000036" href="$audio__emitter__3d_8hpp.html" title="Point&#45;source 3D emitter, positioned at the node&#39;s world origin." alt="" coords="2407,561,2617,606"/>
+<area shape="poly" id="edge51_Node000032_Node000036" title=" " alt="" coords="2336,516,2455,561,2449,561,2335,522"/>
+<area shape="poly" id="edge59_Node000043_Node000016" title=" " alt="" coords="4302,513,4118,537,3933,554,3576,575,3269,584,3052,586,3052,580,3269,578,3575,569,3932,549,4117,532,4297,514"/>
+<area shape="poly" id="edge68_Node000072_Node000004" title=" " alt="" coords="1080,342,1037,655,1033,652,1075,345"/>
+<area shape="poly" id="edge71_Node000073_Node000004" title=" " alt="" coords="1338,249,1338,397,1338,492,1336,529,1328,558,1311,583,1284,608,1247,633,1206,651,1163,664,1122,671,1121,666,1162,658,1204,646,1244,628,1281,604,1307,579,1323,555,1331,528,1333,492,1333,397,1334,253"/>
 </map>

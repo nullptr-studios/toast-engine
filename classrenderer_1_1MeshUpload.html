@@ -133,21 +133,23 @@ Collaboration diagram for renderer::MeshUpload:</div>
 <div class="dyncontent">
 <div class="center"><img src="classrenderer_1_1MeshUpload__coll__graph.png" border="0" usemap="#arenderer_1_1MeshUpload_coll__map" loading="lazy" alt="Collaboration graph"/></div>
 <map name="arenderer_1_1MeshUpload_coll__map" id="arenderer_1_1MeshUpload_coll__map">
-<area shape="rect" title=" " alt="" coords="603,104,768,132"/>
-<area shape="rect" href="classrenderer_1_1PendingResourceUpload.html" title=" " alt="" coords="308,5,504,50"/>
-<area shape="poly" title=" " alt="" coords="519,50,580,68,659,104,654,104,578,73,519,55"/>
-<area shape="rect" href="classrenderer_1_1VulkanMesh.html" title=" " alt="" coords="325,74,487,102"/>
-<area shape="poly" title=" " alt="" coords="502,96,605,109,600,110,503,101"/>
-<area shape="rect" href="classrenderer_1_1IVulkanResource.html" title=" " alt="" coords="5,74,197,102"/>
-<area shape="poly" title=" " alt="" coords="212,85,327,86,322,89,213,90"/>
-<area shape="rect" href="structrenderer_1_1VulkanMesh_1_1UploadData.html" title=" " alt="" coords="325,125,487,170"/>
-<area shape="poly" title=" " alt="" coords="502,146,579,141,630,133,635,132,579,146,503,151"/>
-<area shape="rect" href="classassets_1_1HandleBase.html" title="Base class for type&#45;erased asset handles." alt="" coords="331,194,480,222"/>
-<area shape="poly" title=" " alt="" coords="495,196,537,187,578,176,624,154,661,134,666,132,627,159,580,180,538,193,496,201"/>
-<area shape="rect" href="classassets_1_1Asset.html" title="Base class for all engine assets." alt="" coords="47,166,155,194"/>
-<area shape="poly" title=" " alt="" coords="170,183,333,199,329,203,170,189"/>
-<area shape="rect" href="structtoast_1_1UID.html" title=" " alt="" coords="58,222,144,250"/>
-<area shape="poly" title=" " alt="" coords="159,231,283,223,328,220,333,220,284,229,160,237"/>
+<area shape="rect" title=" " alt="" coords="641,108,806,136"/>
+<area shape="rect" href="classrenderer_1_1PendingResourceUpload.html" title=" " alt="" coords="346,8,542,53"/>
+<area shape="poly" title=" " alt="" coords="557,53,618,72,697,108,692,108,616,77,557,59"/>
+<area shape="rect" href="structrenderer_1_1sync_1_1QueueHandoff.html" title=" " alt="" coords="5,16,221,44"/>
+<area shape="poly" title=" " alt="" coords="236,28,347,29,343,32,237,33"/>
+<area shape="rect" href="classrenderer_1_1VulkanMesh.html" title=" " alt="" coords="363,76,525,104"/>
+<area shape="poly" title=" " alt="" coords="540,99,643,113,638,113,541,104"/>
+<area shape="rect" href="classrenderer_1_1IVulkanResource.html" title=" " alt="" coords="17,76,209,104"/>
+<area shape="poly" title=" " alt="" coords="224,88,364,89,360,92,225,93"/>
+<area shape="rect" href="structrenderer_1_1VulkanMesh_1_1UploadData.html" title=" " alt="" coords="363,128,525,173"/>
+<area shape="poly" title=" " alt="" coords="540,150,617,145,669,137,674,136,617,150,541,155"/>
+<area shape="rect" href="classassets_1_1HandleBase.html" title="Base class for type&#45;erased asset handles." alt="" coords="369,196,518,224"/>
+<area shape="poly" title=" " alt="" coords="533,199,575,191,616,180,662,158,699,138,705,136,665,163,618,184,576,196,534,204"/>
+<area shape="rect" href="classassets_1_1Asset.html" title="Base class for all engine assets." alt="" coords="59,168,167,196"/>
+<area shape="poly" title=" " alt="" coords="182,185,370,202,367,206,182,191"/>
+<area shape="rect" href="structtoast_1_1UID.html" title=" " alt="" coords="70,224,156,252"/>
+<area shape="poly" title=" " alt="" coords="172,235,321,227,366,224,371,224,322,233,172,241"/>
 </map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -157,12 +159,18 @@ Public Member Functions</h2></td></tr>
 &#160;</td><td class="memItemRight"><b>MeshUpload</b> (<a class="el" href="classrenderer_1_1VulkanMesh.html">VulkanMesh</a> &amp;mesh, <a class="el" href="structrenderer_1_1VulkanMesh_1_1UploadData.html">VulkanMesh::UploadData</a> data, <a class="el" href="classassets_1_1HandleBase.html">assets::HandleBase</a> source, std::string_view debug_name={})</td></tr>
 <tr class="memitem:ae389313df7eb82a80debcc3d8b7cbcc6" id="r_ae389313df7eb82a80debcc3d8b7cbcc6"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#ae389313df7eb82a80debcc3d8b7cbcc6">build</a> (const <a class="el" href="classrenderer_1_1VulkanCore.html">VulkanCore</a> &amp;core) override</td></tr>
 <tr class="memitem:aea598cf03738fad9fe5baa08531d10b6" id="r_aea598cf03738fad9fe5baa08531d10b6"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#aea598cf03738fad9fe5baa08531d10b6">record</a> (vk::CommandBuffer cmd) override</td></tr>
+<tr class="memitem:a9da96586bb3bc40e4316e5759702492e" id="r_a9da96586bb3bc40e4316e5759702492e"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a9da96586bb3bc40e4316e5759702492e">recordAcquire</a> (<a class="el" href="classrenderer_1_1sync_1_1BarrierBatch.html">sync::BarrierBatch</a> &amp;batch) override</td></tr>
+<tr class="memdesc:a9da96586bb3bc40e4316e5759702492e"><td class="mdescLeft">&#160;</td><td class="mdescRight">On the consuming queue after the upload fence signalled. No op for an upload that stayed on one queue.  <br /></td></tr>
 <tr class="memitem:a591c7fa54eba691412b84f735599ff28" id="r_a591c7fa54eba691412b84f735599ff28"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a591c7fa54eba691412b84f735599ff28">resource</a> () -&gt; <a class="el" href="classrenderer_1_1IVulkanResource.html">IVulkanResource</a> *override</td></tr>
 <tr class="inherit_header pub_methods_classrenderer_1_1PendingResourceUpload"><td colspan="2">Public Member Functions inherited from <a class="el" href="classrenderer_1_1PendingResourceUpload.html">renderer::PendingResourceUpload</a></td></tr>
-<tr class="memitem:a0ee4c4bc526d431bdf38aea606e87a1c pub_methods_classrenderer_1_1PendingResourceUpload" id="r_a0ee4c4bc526d431bdf38aea606e87a1c"><td class="memItemLeft">virtual auto&#160;</td><td class="memItemRight"><a class="el" href="classrenderer_1_1PendingResourceUpload.html#a0ee4c4bc526d431bdf38aea606e87a1c">canRecord</a> () const -&gt; bool</td></tr>
-<tr class="memdesc:a0ee4c4bc526d431bdf38aea606e87a1c pub_methods_classrenderer_1_1PendingResourceUpload"><td class="mdescLeft">&#160;</td><td class="mdescRight">False while another upload has to be recorded first.  <br /></td></tr>
+<tr class="memitem:a0ee4c4bc526d431bdf38aea606e87a1c pub_methods_classrenderer_1_1PendingResourceUpload" id="r_a0ee4c4bc526d431bdf38aea606e87a1c"><td class="memItemLeft">
+virtual auto&#160;</td><td class="memItemRight"><b>canRecord</b> () const -&gt; bool</td></tr>
+<tr class="memdesc:a0ee4c4bc526d431bdf38aea606e87a1c pub_methods_classrenderer_1_1PendingResourceUpload"><td class="mdescLeft">&#160;</td><td class="mdescRight">False while another upload has to be recorded first. <br /></td></tr>
 <tr class="memitem:a8ddeaa1281ed524649f2f4962e5db77f pub_methods_classrenderer_1_1PendingResourceUpload" id="r_a8ddeaa1281ed524649f2f4962e5db77f"><td class="memItemLeft">
 virtual void&#160;</td><td class="memItemRight"><b>finished</b> ()</td></tr>
+<tr class="memitem:a7aa0dbd10f56905ae03215d0e3a31608 pub_methods_classrenderer_1_1PendingResourceUpload" id="r_a7aa0dbd10f56905ae03215d0e3a31608"><td class="memItemLeft">
+void&#160;</td><td class="memItemRight"><b>setQueueHandoff</b> (const <a class="el" href="structrenderer_1_1sync_1_1QueueHandoff.html">sync::QueueHandoff</a> &amp;handoff) noexcept</td></tr>
+<tr class="memdesc:a7aa0dbd10f56905ae03215d0e3a31608 pub_methods_classrenderer_1_1PendingResourceUpload"><td class="mdescLeft">&#160;</td><td class="mdescRight">Before record(). The default keeps one queue and record() ends in a plain barrier. <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-attribs" class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -179,6 +187,12 @@ vma::raii::Buffer&#160;</td><td class="memItemRight"><b>vertex_staging</b> = nul
 <tr class="inherit_header pub_attribs_classrenderer_1_1PendingResourceUpload"><td colspan="2">Public Attributes inherited from <a class="el" href="classrenderer_1_1PendingResourceUpload.html">renderer::PendingResourceUpload</a></td></tr>
 <tr class="memitem:a3a01c58b91f4b5285d1c698cedc66585 pub_attribs_classrenderer_1_1PendingResourceUpload" id="r_a3a01c58b91f4b5285d1c698cedc66585"><td class="memItemLeft">
 vk::DeviceSize&#160;</td><td class="memItemRight"><b>host_bytes</b> = 0</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-inherited" class="groupheader"><a id="inherited" name="inherited"></a>
+Additional Inherited Members</h2></td></tr>
+<tr class="inherit_header pro_attribs_classrenderer_1_1PendingResourceUpload"><td colspan="2">Protected Attributes inherited from <a class="el" href="classrenderer_1_1PendingResourceUpload.html">renderer::PendingResourceUpload</a></td></tr>
+<tr class="memitem:a8ad8d2a783c1365b50dbe8814eb430cc pro_attribs_classrenderer_1_1PendingResourceUpload" id="r_a8ad8d2a783c1365b50dbe8814eb430cc"><td class="memItemLeft">
+<a class="el" href="structrenderer_1_1sync_1_1QueueHandoff.html">sync::QueueHandoff</a>&#160;</td><td class="memItemRight"><b>m_handoff</b></td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="ae389313df7eb82a80debcc3d8b7cbcc6" name="ae389313df7eb82a80debcc3d8b7cbcc6"></a>
@@ -232,6 +246,35 @@ vk::DeviceSize&#160;</td><td class="memItemRight"><b>host_bytes</b> = 0</td></tr
 </div><div class="memdoc">
 
 <p>Implements <a class="el" href="classrenderer_1_1PendingResourceUpload.html">renderer::PendingResourceUpload</a>.</p>
+
+</div>
+</div>
+<a id="a9da96586bb3bc40e4316e5759702492e" name="a9da96586bb3bc40e4316e5759702492e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9da96586bb3bc40e4316e5759702492e">&#9670;&#160;</a></span>recordAcquire()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void renderer::MeshUpload::recordAcquire </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classrenderer_1_1sync_1_1BarrierBatch.html">sync::BarrierBatch</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>batch</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel override">override</span><span class="mlabel virtual">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>On the consuming queue after the upload fence signalled. No op for an upload that stayed on one queue. </p>
+
+<p>Reimplemented from <a class="el" href="classrenderer_1_1PendingResourceUpload.html#a6277995cabc9a39aa2e5440fe53fb5ff">renderer::PendingResourceUpload</a>.</p>
 
 </div>
 </div>

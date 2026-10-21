@@ -1,0 +1,11 @@
+<map id="renderer::sync::BarrierBatch::acquire" name="renderer::sync::BarrierBatch::acquire">
+<area shape="rect" id="Node000001" title=" " alt="" coords="265,109,468,154"/>
+<area shape="rect" id="Node000002" href="$classrenderer_1_1AsyncComputeTask.html#a63d71d31f077ee5a7580b0591f75991c" title=" " alt="" coords="5,5,217,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="303,103,216,65,186,53,185,48,218,60,308,101"/>
+<area shape="rect" id="Node000003" href="$classrenderer_1_1MeshUpload.html#a9da96586bb3bc40e4316e5759702492e" title="On the consuming queue after the upload fence signalled. No op for an upload that stayed on one queue..." alt="" coords="28,75,194,119"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="247,117,194,111,194,106,252,115"/>
+<area shape="rect" id="Node000004" href="$classrenderer_1_1RawTextureUpload.html#a5f0308f49ef1b79fa3ab09135de1fb59" title="On the consuming queue after the upload fence signalled. No op for an upload that stayed on one queue..." alt="" coords="8,144,214,189"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="247,148,215,155,214,150,252,147"/>
+<area shape="rect" id="Node000005" href="$classrenderer_1_1TextureUpload.html#ad2843abde7c3d4e9957fc05a95da468d" title="On the consuming queue after the upload fence signalled. No op for an upload that stayed on one queue..." alt="" coords="22,213,200,258"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="309,160,218,203,186,215,184,210,216,199,303,162"/>
+</map>

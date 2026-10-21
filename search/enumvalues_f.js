@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['uniform_0',['uniform',['../voxel__constants_8hpp.html#a53636f3d2d504c6fbbdd527cc3c2c557aa489ffed938ef1b9e86889bc413501ee',1,'voxel']]]
+  ['tries_0',['tries',['../value_8hpp.html#ac5785785e54554eac750134f65f12b3ca1a86493fd40f54214c8481d8228993e9',1,'input']]]
 ];

@@ -153,6 +153,7 @@ Classes</h2></td></tr>
 <tr class="memitem:RenderFrame" id="r_RenderFrame"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structrenderer_1_1VulkanRenderer_1_1RenderFrame.html">RenderFrame</a></td></tr>
 <tr class="memitem:PassInfo" id="r_PassInfo"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structrenderer_1_1VulkanRenderer_1_1PassInfo.html">PassInfo</a></td></tr>
 <tr class="memitem:PerfCounters" id="r_PerfCounters"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structrenderer_1_1VulkanRenderer_1_1PerfCounters.html">PerfCounters</a></td></tr>
+<tr class="memitem:UploadStats" id="r_UploadStats"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structrenderer_1_1VulkanRenderer_1_1UploadStats.html">UploadStats</a></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-types" class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
@@ -181,7 +182,9 @@ void&#160;</td><td class="memItemRight"><b>start</b> () noexcept</td></tr>
 auto&#160;</td><td class="memItemRight"><b>getCurrentFrameBuild</b> () noexcept -&gt; <a class="el" href="structrenderer_1_1VulkanRenderer_1_1RenderFrame.html">RenderFrame</a> &amp;</td></tr>
 <tr class="memitem:a61322bd6c4cdb2629b9788485468b14d" id="r_a61322bd6c4cdb2629b9788485468b14d"><td class="memItemLeft"><a id="a61322bd6c4cdb2629b9788485468b14d" name="a61322bd6c4cdb2629b9788485468b14d"></a>
 void&#160;</td><td class="memItemRight"><b>submitFrame</b> () noexcept</td></tr>
-<tr class="memitem:a64451eb0105c628add467b121e7527fe" id="r_a64451eb0105c628add467b121e7527fe"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a64451eb0105c628add467b121e7527fe">queueDebugLine</a> (glm::vec3 a, glm::vec3 b, glm::vec4 color)</td></tr>
+<tr class="memitem:a64451eb0105c628add467b121e7527fe" id="r_a64451eb0105c628add467b121e7527fe"><td class="memItemLeft"><a id="a64451eb0105c628add467b121e7527fe" name="a64451eb0105c628add467b121e7527fe"></a>
+void&#160;</td><td class="memItemRight"><b>queueDebugLine</b> (glm::vec3 a, glm::vec3 b, glm::vec4 color)</td></tr>
+<tr class="memdesc:a64451eb0105c628add467b121e7527fe"><td class="mdescLeft">&#160;</td><td class="mdescRight">For the next frame when called before frame construction begins. <br /></td></tr>
 <tr class="memitem:a44d0829ba7e4cbd83f99cfa6fd242cde" id="r_a44d0829ba7e4cbd83f99cfa6fd242cde"><td class="memItemLeft"><a id="a44d0829ba7e4cbd83f99cfa6fd242cde" name="a44d0829ba7e4cbd83f99cfa6fd242cde"></a>
 void&#160;</td><td class="memItemRight"><b>tick</b> (float time) noexcept</td></tr>
 <tr class="memitem:ac1fd964be73e25a30deda7e5a76228cf" id="r_ac1fd964be73e25a30deda7e5a76228cf"><td class="memItemLeft"><a id="ac1fd964be73e25a30deda7e5a76228cf" name="ac1fd964be73e25a30deda7e5a76228cf"></a>
@@ -226,6 +229,10 @@ void&#160;</td><td class="memItemRight"><b>setClampToSimulation</b> (bool clamp)
 <tr class="memdesc:a2145059581fd6f688e3c2b0a8fb8f047"><td class="mdescLeft">&#160;</td><td class="mdescRight">False repeats the last frame instead of waiting for a new one. <br /></td></tr>
 <tr class="memitem:ab19399c7d089b14a181b288e0950dba9" id="r_ab19399c7d089b14a181b288e0950dba9"><td class="memItemLeft"><a id="ab19399c7d089b14a181b288e0950dba9" name="ab19399c7d089b14a181b288e0950dba9"></a>
 auto&#160;</td><td class="memItemRight"><b>clampToSimulation</b> () const noexcept -&gt; bool</td></tr>
+<tr class="memitem:aadc90ff113b1888e66f0c18a84269127" id="r_aadc90ff113b1888e66f0c18a84269127"><td class="memItemLeft"><a id="aadc90ff113b1888e66f0c18a84269127" name="aadc90ff113b1888e66f0c18a84269127"></a>
+void&#160;</td><td class="memItemRight"><b>setDebugWindowsVisible</b> (bool visible) noexcept</td></tr>
+<tr class="memitem:af2193426a51bef83b7f545a6557928fc" id="r_af2193426a51bef83b7f545a6557928fc"><td class="memItemLeft"><a id="af2193426a51bef83b7f545a6557928fc" name="af2193426a51bef83b7f545a6557928fc"></a>
+auto&#160;</td><td class="memItemRight"><b>debugWindowsVisible</b> () const noexcept -&gt; bool</td></tr>
 <tr class="memitem:a998ba4ece9fb77c68d048b21d2deb56f" id="r_a998ba4ece9fb77c68d048b21d2deb56f"><td class="memItemLeft"><a id="a998ba4ece9fb77c68d048b21d2deb56f" name="a998ba4ece9fb77c68d048b21d2deb56f"></a>
 void&#160;</td><td class="memItemRight"><b>setApplicationFocused</b> (bool focused) noexcept</td></tr>
 <tr class="memitem:a3697bc9031a12f5a18b401abe6180ff8" id="r_a3697bc9031a12f5a18b401abe6180ff8"><td class="memItemLeft"><a id="a3697bc9031a12f5a18b401abe6180ff8" name="a3697bc9031a12f5a18b401abe6180ff8"></a>
@@ -267,9 +274,26 @@ auto&#160;</td><td class="memItemRight"><b>getVoxelMaterialView</b> () const noe
 <tr class="memitem:ad77342b9a4c0d30b1633f814ec950493" id="r_ad77342b9a4c0d30b1633f814ec950493"><td class="memItemLeft"><a id="ad77342b9a4c0d30b1633f814ec950493" name="ad77342b9a4c0d30b1633f814ec950493"></a>
 auto&#160;</td><td class="memItemRight"><b>getVoxelFaceNormalView</b> () const noexcept -&gt; vk::ImageView</td></tr>
 <tr class="memdesc:ad77342b9a4c0d30b1633f814ec950493"><td class="mdescLeft">&#160;</td><td class="mdescRight">Holds flat face normals not the rounded scene normal ones. <br /></td></tr>
+<tr class="memitem:ac52de4fe63aa84d00caca0e78c8b0a9f" id="r_ac52de4fe63aa84d00caca0e78c8b0a9f"><td class="memItemLeft"><a id="ac52de4fe63aa84d00caca0e78c8b0a9f" name="ac52de4fe63aa84d00caca0e78c8b0a9f"></a>
+void&#160;</td><td class="memItemRight"><b>setVoxelCellBoxes</b> (bool enabled) noexcept</td></tr>
+<tr class="memdesc:ac52de4fe63aa84d00caca0e78c8b0a9f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Edge rounding radius in voxels where 0 keeps the flat face normals. <br /></td></tr>
+<tr class="memitem:a2b33867e8fa49147f91bf8b842dd2044" id="r_a2b33867e8fa49147f91bf8b842dd2044"><td class="memItemLeft"><a id="a2b33867e8fa49147f91bf8b842dd2044" name="a2b33867e8fa49147f91bf8b842dd2044"></a>
+void&#160;</td><td class="memItemRight"><b>setVoxelOcclusion</b> (bool enabled) noexcept</td></tr>
+<tr class="memitem:ad2410e886bed4e22498a06fdcd13ca54" id="r_ad2410e886bed4e22498a06fdcd13ca54"><td class="memItemLeft"><a id="ad2410e886bed4e22498a06fdcd13ca54" name="ad2410e886bed4e22498a06fdcd13ca54"></a>
+void&#160;</td><td class="memItemRight"><b>setVoxelMeshShaders</b> (bool enabled) noexcept</td></tr>
+<tr class="memitem:a9ebf675400e27e4e0317e3326d07d830" id="r_a9ebf675400e27e4e0317e3326d07d830"><td class="memItemLeft"><a id="a9ebf675400e27e4e0317e3326d07d830" name="a9ebf675400e27e4e0317e3326d07d830"></a>
+auto&#160;</td><td class="memItemRight"><b>voxelMeshShaders</b> () const noexcept -&gt; bool</td></tr>
+<tr class="memitem:a63753a53b9d11c0d3a23db9b87973f66" id="r_a63753a53b9d11c0d3a23db9b87973f66"><td class="memItemLeft"><a id="a63753a53b9d11c0d3a23db9b87973f66" name="a63753a53b9d11c0d3a23db9b87973f66"></a>
+auto&#160;</td><td class="memItemRight"><b>voxelOcclusion</b> () const noexcept -&gt; bool</td></tr>
+<tr class="memitem:ad2c6893cc4c56768febb3982c5422c43" id="r_ad2c6893cc4c56768febb3982c5422c43"><td class="memItemLeft"><a id="ad2c6893cc4c56768febb3982c5422c43" name="ad2c6893cc4c56768febb3982c5422c43"></a>
+void&#160;</td><td class="memItemRight"><b>setVoxelRasterPixels</b> (float pixels) noexcept</td></tr>
+<tr class="memdesc:ad2c6893cc4c56768febb3982c5422c43"><td class="mdescLeft">&#160;</td><td class="mdescRight">Smallest on screen voxel size in pixels that is rasterized instead of marched and 0 marches everything. <br /></td></tr>
+<tr class="memitem:aff8dbed44f4043cf241dcf91cf009ac1" id="r_aff8dbed44f4043cf241dcf91cf009ac1"><td class="memItemLeft"><a id="aff8dbed44f4043cf241dcf91cf009ac1" name="aff8dbed44f4043cf241dcf91cf009ac1"></a>
+auto&#160;</td><td class="memItemRight"><b>voxelRasterPixels</b> () const noexcept -&gt; float</td></tr>
+<tr class="memitem:ab38084db3fe00b82410228caab531524" id="r_ab38084db3fe00b82410228caab531524"><td class="memItemLeft"><a id="ab38084db3fe00b82410228caab531524" name="ab38084db3fe00b82410228caab531524"></a>
+auto&#160;</td><td class="memItemRight"><b>voxelCellBoxes</b> () const noexcept -&gt; bool</td></tr>
 <tr class="memitem:a7eecd740bee399682e7462ec13d15382" id="r_a7eecd740bee399682e7462ec13d15382"><td class="memItemLeft"><a id="a7eecd740bee399682e7462ec13d15382" name="a7eecd740bee399682e7462ec13d15382"></a>
 void&#160;</td><td class="memItemRight"><b>setVoxelNormalRounding</b> (float voxels) noexcept</td></tr>
-<tr class="memdesc:a7eecd740bee399682e7462ec13d15382"><td class="mdescLeft">&#160;</td><td class="mdescRight">Edge rounding radius in voxels where 0 keeps the flat face normals. <br /></td></tr>
 <tr class="memitem:afa282a022a880d94f34e14f0d976a0d0" id="r_afa282a022a880d94f34e14f0d976a0d0"><td class="memItemLeft"><a id="afa282a022a880d94f34e14f0d976a0d0" name="afa282a022a880d94f34e14f0d976a0d0"></a>
 auto&#160;</td><td class="memItemRight"><b>voxelNormalRounding</b> () const noexcept -&gt; float</td></tr>
 <tr class="memitem:a1b77b7999b5d36c2198343748f1a47bd" id="r_a1b77b7999b5d36c2198343748f1a47bd"><td class="memItemLeft"><a id="a1b77b7999b5d36c2198343748f1a47bd" name="a1b77b7999b5d36c2198343748f1a47bd"></a>
@@ -326,6 +350,10 @@ auto&#160;</td><td class="memItemRight"><b>getEnvironmentPass</b> () const noexc
 <tr class="memitem:af99a4f011583d98972c29370251f71a6" id="r_af99a4f011583d98972c29370251f71a6"><td class="memItemLeft"><a id="af99a4f011583d98972c29370251f71a6" name="af99a4f011583d98972c29370251f71a6"></a>
 void&#160;</td><td class="memItemRight"><b>setVoxelPass</b> (<a class="el" href="classrenderer_1_1VoxelPass.html">VoxelPass</a> *pass) noexcept</td></tr>
 <tr class="memdesc:af99a4f011583d98972c29370251f71a6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Still registered with addRenderPass so it lists and toggles like any pass. <br /></td></tr>
+<tr class="memitem:aa688b4a6c5eb38f3efb0da44cd71aa2b" id="r_aa688b4a6c5eb38f3efb0da44cd71aa2b"><td class="memItemLeft"><a id="aa688b4a6c5eb38f3efb0da44cd71aa2b" name="aa688b4a6c5eb38f3efb0da44cd71aa2b"></a>
+void&#160;</td><td class="memItemRight"><b>setDebrisPass</b> (<a class="el" href="classrenderer_1_1DebrisPass.html">DebrisPass</a> *pass) noexcept</td></tr>
+<tr class="memitem:aab1f074d44d93a530211f0f48d6faf4b" id="r_aab1f074d44d93a530211f0f48d6faf4b"><td class="memItemLeft"><a id="aab1f074d44d93a530211f0f48d6faf4b" name="aab1f074d44d93a530211f0f48d6faf4b"></a>
+auto&#160;</td><td class="memItemRight"><b>voxelCollisionWorld</b> () const -&gt; std::shared_ptr&lt; const <a class="el" href="structrenderer_1_1VoxelCollisionWorld.html">VoxelCollisionWorld</a> &gt;</td></tr>
 <tr class="memitem:aadf7fa18b75d98191db7d5a8a0440991" id="r_aadf7fa18b75d98191db7d5a8a0440991"><td class="memItemLeft"><a id="aadf7fa18b75d98191db7d5a8a0440991" name="aadf7fa18b75d98191db7d5a8a0440991"></a>
 void&#160;</td><td class="memItemRight"><b>setReflectionProbePass</b> (<a class="el" href="classrenderer_1_1ReflectionProbePass.html">ReflectionProbePass</a> *pass) noexcept</td></tr>
 <tr class="memitem:a22084882ef28650c8d644da5b73659d1" id="r_a22084882ef28650c8d644da5b73659d1"><td class="memItemLeft"><a id="a22084882ef28650c8d644da5b73659d1" name="a22084882ef28650c8d644da5b73659d1"></a>
@@ -391,6 +419,16 @@ void&#160;</td><td class="memItemRight"><b>setDebugDrawEnabled</b> (bool enabled
 auto&#160;</td><td class="memItemRight"><b>debugDrawEnabled</b> () const noexcept -&gt; bool</td></tr>
 <tr class="memitem:a502881d42669e309a1d32b626f3d014a" id="r_a502881d42669e309a1d32b626f3d014a"><td class="memItemLeft"><a id="a502881d42669e309a1d32b626f3d014a" name="a502881d42669e309a1d32b626f3d014a"></a>
 auto&#160;</td><td class="memItemRight"><b>perfCounters</b> () const noexcept -&gt; <a class="el" href="structrenderer_1_1VulkanRenderer_1_1PerfCounters.html">PerfCounters</a></td></tr>
+<tr class="memitem:a598581b9421635962e600c6dd77cf9fd" id="r_a598581b9421635962e600c6dd77cf9fd"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a598581b9421635962e600c6dd77cf9fd">uploadStats</a> () -&gt; <a class="el" href="structrenderer_1_1VulkanRenderer_1_1UploadStats.html">UploadStats</a></td></tr>
+<tr class="memitem:a1d74e649188a1b8615e656b2222bef3b" id="r_a1d74e649188a1b8615e656b2222bef3b"><td class="memItemLeft"><a id="a1d74e649188a1b8615e656b2222bef3b" name="a1d74e649188a1b8615e656b2222bef3b"></a>
+auto&#160;</td><td class="memItemRight"><b>uploadTimeline</b> () const noexcept -&gt; vk::Semaphore</td></tr>
+<tr class="memdesc:a1d74e649188a1b8615e656b2222bef3b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Signalled by every transfer submit so a submit needing an upload waits on its value. <br /></td></tr>
+<tr class="memitem:a3741ea1e8fae2e1475b3ef101041d1bd" id="r_a3741ea1e8fae2e1475b3ef101041d1bd"><td class="memItemLeft"><a id="a3741ea1e8fae2e1475b3ef101041d1bd" name="a3741ea1e8fae2e1475b3ef101041d1bd"></a>
+auto&#160;</td><td class="memItemRight"><b>uploadTimelineValue</b> () const noexcept -&gt; uint64_t</td></tr>
+<tr class="memdesc:a3741ea1e8fae2e1475b3ef101041d1bd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Render thread only. <br /></td></tr>
+<tr class="memitem:abc729851d3ef66cc2bc15686d6dfc1a0" id="r_abc729851d3ef66cc2bc15686d6dfc1a0"><td class="memItemLeft"><a id="abc729851d3ef66cc2bc15686d6dfc1a0" name="abc729851d3ef66cc2bc15686d6dfc1a0"></a>
+void&#160;</td><td class="memItemRight"><b>retire</b> (std::shared_ptr&lt; void &gt; object)</td></tr>
+<tr class="memdesc:abc729851d3ef66cc2bc15686d6dfc1a0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Render thread and frees <code class="param">object</code> once the frame being recorded finished on the GPU. <br /></td></tr>
 <tr class="memitem:ac31919952a1835944a10c95c6fefffa7" id="r_ac31919952a1835944a10c95c6fefffa7"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#ac31919952a1835944a10c95c6fefffa7">gpuTimer</a> () const noexcept -&gt; const <a class="el" href="classrenderer_1_1GpuTimer.html">GpuTimer</a> *</td></tr>
 <tr class="memitem:a7830c1335f9a749a5ba0cbe2c64939b4" id="r_a7830c1335f9a749a5ba0cbe2c64939b4"><td class="memItemLeft"><a id="a7830c1335f9a749a5ba0cbe2c64939b4" name="a7830c1335f9a749a5ba0cbe2c64939b4"></a>
 void&#160;</td><td class="memItemRight"><b>setTracedShadowsEnabled</b> (bool enabled) noexcept</td></tr>
@@ -511,33 +549,6 @@ static VulkanRenderer *&#160;</td><td class="memItemRight"><b>instance</b> = nul
 
 </div>
 </div>
-<a id="a64451eb0105c628add467b121e7527fe" name="a64451eb0105c628add467b121e7527fe"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a64451eb0105c628add467b121e7527fe">&#9670;&#160;</a></span>queueDebugLine()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void renderer::VulkanRenderer::queueDebugLine </td>
-          <td>(</td>
-          <td class="paramtype">glm::vec3</td>          <td class="paramname"><span class="paramname"><em>a</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">glm::vec3</td>          <td class="paramname"><span class="paramname"><em>b</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">glm::vec4</td>          <td class="paramname"><span class="paramname"><em>color</em></span>&#160;)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>Queues a debug line for the current render frame, or for the next one when called from gameplay code before frame construction begins. </p>
-
-</div>
-</div>
 <a id="a3e0fa0039ad273616e5259ebf4706f06" name="a3e0fa0039ad273616e5259ebf4706f06"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3e0fa0039ad273616e5259ebf4706f06">&#9670;&#160;</a></span>setVoxelHighlight()</h2>
 
@@ -565,6 +576,41 @@ static VulkanRenderer *&#160;</td><td class="memItemRight"><b>instance</b> = nul
 </table>
 </div><div class="memdoc">
 <p>Tints the voxels of node that are solid in highlight </p><dl class="section note"><dt>Note</dt><dd>nullptr clears it </dd></dl>
+
+</div>
+</div>
+<a id="a598581b9421635962e600c6dd77cf9fd" name="a598581b9421635962e600c6dd77cf9fd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a598581b9421635962e600c6dd77cf9fd">&#9670;&#160;</a></span>uploadStats()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto renderer::VulkanRenderer::uploadStats </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td> -&gt; <a class="el" href="structrenderer_1_1VulkanRenderer_1_1UploadStats.html">UploadStats</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel nodiscard">nodiscard</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<dl class="section note"><dt>Note</dt><dd>Render thread only </dd></dl>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="classrenderer_1_1VulkanRenderer_a598581b9421635962e600c6dd77cf9fd_icgraph.png" border="0" usemap="#aclassrenderer_1_1VulkanRenderer_a598581b9421635962e600c6dd77cf9fd_icgraph" loading="lazy" alt=""/></div>
+<map name="aclassrenderer_1_1VulkanRenderer_a598581b9421635962e600c6dd77cf9fd_icgraph" id="aclassrenderer_1_1VulkanRenderer_a598581b9421635962e600c6dd77cf9fd_icgraph">
+<area shape="rect" title=" " alt="" coords="5,29,192,74"/>
+<area shape="poly" title=" " alt="" coords="127,14,117,10,98,8,81,10,71,15,66,21,68,30,62,28,61,19,67,10,80,5,99,3,118,5,132,14"/>
+</map>
+</div>
 
 </div>
 </div>

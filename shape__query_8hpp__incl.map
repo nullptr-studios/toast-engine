@@ -1,31 +1,57 @@
 <map id="engine/src/toast/physics/shape_query.hpp" name="engine/src/toast/physics/shape_query.hpp">
-<area shape="rect" id="Node000001" title=" " alt="" coords="237,5,416,50"/>
-<area shape="rect" id="Node000002" href="$body_8hpp.html" title="Body identifiers, creation data, and copied runtime state." alt="" coords="289,174,369,201"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="329,48,331,159,326,157,325,52"/>
-<area shape="rect" id="Node000005" title=" " alt="" coords="5,249,109,277"/>
-<area shape="poly" id="edge17_Node000001_Node000005" title=" " alt="" coords="303,52,85,241,81,237,300,49"/>
-<area shape="rect" id="Node000008" href="$shape_8hpp.html" title="Shape identifiers, geometry, and runtime records." alt="" coords="364,98,452,126"/>
-<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="348,48,387,87,381,87,347,53"/>
-<area shape="rect" id="Node000003" title=" " alt="" coords="418,249,496,277"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="353,199,424,242,419,241,351,204"/>
-<area shape="rect" id="Node000004" title=" " alt="" coords="328,249,394,277"/>
-<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="336,200,352,236,347,234,333,204"/>
-<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="290,202,122,247,120,242,288,197"/>
-<area shape="rect" id="Node000006" title=" " alt="" coords="132,249,304,277"/>
-<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="312,201,251,243,249,238,307,203"/>
-<area shape="rect" id="Node000007" title=" " alt="" coords="520,249,578,277"/>
-<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="369,199,508,247,502,247,368,205"/>
-<area shape="poly" id="edge12_Node000008_Node000002" title=" " alt="" coords="396,125,356,165,353,161,391,127"/>
-<area shape="poly" id="edge13_Node000008_Node000003" title=" " alt="" coords="414,124,450,235,445,233,410,128"/>
-<area shape="poly" id="edge14_Node000008_Node000004" title=" " alt="" coords="406,124,384,202,372,237,368,233,378,201,402,127"/>
-<area shape="poly" id="edge15_Node000008_Node000005" title=" " alt="" coords="378,129,103,245,101,240,376,124"/>
-<area shape="poly" id="edge16_Node000008_Node000007" title=" " alt="" coords="421,123,529,238,523,238,419,128"/>
-<area shape="rect" id="Node000009" href="$aabb_8hpp.html" title="Axis&#45;aligned bounds node." alt="" coords="674,174,755,201"/>
-<area shape="poly" id="edge8_Node000008_Node000009" title=" " alt="" coords="452,121,661,172,656,173,452,126"/>
-<area shape="rect" id="Node000010" title=" " alt="" coords="602,249,712,277"/>
-<area shape="poly" id="edge9_Node000009_Node000010" title=" " alt="" coords="706,201,678,239,675,235,702,203"/>
-<area shape="rect" id="Node000011" title=" " alt="" coords="736,249,810,277"/>
-<area shape="poly" id="edge10_Node000009_Node000011" title=" " alt="" coords="726,199,756,238,751,236,724,204"/>
-<area shape="rect" id="Node000012" href="$export_8hpp.html" title=" " alt="" coords="834,249,962,277"/>
-<area shape="poly" id="edge11_Node000009_Node000012" title=" " alt="" coords="748,199,854,244,849,243,747,205"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="666,5,844,50"/>
+<area shape="rect" id="Node000002" href="$body_8hpp.html" title="Body identifiers, creation data, and copied runtime state." alt="" coords="634,174,713,201"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="736,49,718,74,701,99,689,130,681,161,677,157,684,128,697,97,713,71,732,52"/>
+<area shape="rect" id="Node000010" title=" " alt="" coords="801,249,904,277"/>
+<area shape="poly" id="edge35_Node000001_Node000010" title=" " alt="" coords="777,48,797,71,813,97,828,132,839,169,851,235,847,233,834,171,823,134,809,99,793,74,776,53"/>
+<area shape="rect" id="Node000013" href="$shape_8hpp.html" title="Shape identifiers, geometry, and runtime records." alt="" coords="711,98,799,126"/>
+<area shape="poly" id="edge13_Node000001_Node000013" title=" " alt="" coords="757,48,757,84,753,81,753,53"/>
+<area shape="rect" id="Node000003" href="$layers_8hpp.html" title="Collision layers." alt="" coords="389,249,478,277"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="636,200,492,247,490,242,631,202"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="24,325,89,353"/>
+<area shape="poly" id="edge9_Node000002_Node000004" title=" " alt="" coords="631,191,496,198,317,209,154,226,97,238,67,251,59,264,54,278,54,310,48,309,49,278,54,261,64,247,96,233,153,221,316,203,496,193,636,189"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="699,249,777,277"/>
+<area shape="poly" id="edge8_Node000002_Node000009" title=" " alt="" coords="686,199,719,238,714,237,684,204"/>
+<area shape="poly" id="edge10_Node000002_Node000010" title=" " alt="" coords="706,199,809,243,804,243,705,205"/>
+<area shape="rect" id="Node000011" title=" " alt="" coords="502,249,675,277"/>
+<area shape="poly" id="edge11_Node000002_Node000011" title=" " alt="" coords="661,201,616,241,614,237,656,203"/>
+<area shape="rect" id="Node000012" title=" " alt="" coords="929,249,987,277"/>
+<area shape="poly" id="edge12_Node000002_Node000012" title=" " alt="" coords="714,196,916,248,911,249,714,201"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="391,274,378,280,241,303,105,328,105,328,103,323,104,322,240,298,377,274,386,275"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="415,325,474,353"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="437,276,443,311,438,308,434,280"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="196,325,293,353"/>
+<area shape="poly" id="edge5_Node000003_Node000006" title=" " alt="" coords="403,277,293,322,291,317,397,278"/>
+<area shape="rect" id="Node000007" href="$export_8hpp.html" title=" " alt="" coords="710,325,838,353"/>
+<area shape="poly" id="edge6_Node000003_Node000007" title=" " alt="" coords="479,272,490,274,699,321,694,321,489,280,479,277"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="497,325,560,353"/>
+<area shape="poly" id="edge7_Node000003_Node000008" title=" " alt="" coords="452,275,502,316,497,315,450,280"/>
+<area shape="poly" id="edge18_Node000013_Node000002" title=" " alt="" coords="743,125,701,166,698,161,738,127"/>
+<area shape="poly" id="edge32_Node000013_Node000004" title=" " alt="" coords="708,116,418,136,255,153,189,164,138,176,64,200,37,218,12,250,8,266,12,282,33,313,28,315,7,284,3,266,7,248,33,214,61,195,137,171,187,159,255,148,418,131,713,114"/>
+<area shape="poly" id="edge31_Node000013_Node000009" title=" " alt="" coords="756,124,743,235,739,232,752,128"/>
+<area shape="poly" id="edge33_Node000013_Node000010" title=" " alt="" coords="765,123,838,237,833,235,762,128"/>
+<area shape="poly" id="edge34_Node000013_Node000012" title=" " alt="" coords="774,124,931,240,925,240,772,129"/>
+<area shape="rect" id="Node000014" href="$aabb_8hpp.html" title="Axis&#45;aligned bounds node." alt="" coords="1010,249,1092,277"/>
+<area shape="poly" id="edge14_Node000013_Node000014" title=" " alt="" coords="781,124,1014,242,1009,242,780,129"/>
+<area shape="rect" id="Node000017" href="$material__defaults_8hpp.html" title="The values a material has when nothing sets them." alt="" coords="150,174,315,201"/>
+<area shape="poly" id="edge19_Node000013_Node000017" title=" " alt="" coords="709,122,330,175,329,170,712,117"/>
+<area shape="poly" id="edge17_Node000014_Node000007" title=" " alt="" coords="1013,275,839,323,838,318,1007,276"/>
+<area shape="rect" id="Node000015" title=" " alt="" coords="996,325,1106,353"/>
+<area shape="poly" id="edge15_Node000014_Node000015" title=" " alt="" coords="1053,276,1053,311,1049,308,1049,279"/>
+<area shape="rect" id="Node000016" title=" " alt="" coords="317,325,391,353"/>
+<area shape="poly" id="edge16_Node000014_Node000016" title=" " alt="" coords="1012,275,999,280,911,292,835,299,704,303,573,308,497,315,407,327,406,322,496,310,573,303,704,298,834,293,910,286,999,274,1007,275"/>
+<area shape="poly" id="edge30_Node000017_Node000004" title=" " alt="" coords="149,204,73,224,43,237,24,251,18,265,20,280,37,312,32,313,15,282,13,264,20,248,40,232,72,219,152,200"/>
+<area shape="rect" id="Node000018" href="$fracture__pattern_8hpp_source.html" title=" " alt="" coords="78,249,232,277"/>
+<area shape="poly" id="edge20_Node000017_Node000018" title=" " alt="" coords="221,200,181,241,178,237,216,203"/>
+<area shape="rect" id="Node000020" href="$hardness_8hpp.html" title="Tiers of how hard a material is to break." alt="" coords="257,249,365,277"/>
+<area shape="poly" id="edge25_Node000017_Node000020" title=" " alt="" coords="247,199,289,239,283,239,246,204"/>
+<area shape="poly" id="edge22_Node000018_Node000004" title=" " alt="" coords="140,277,87,318,84,314,135,278"/>
+<area shape="poly" id="edge24_Node000018_Node000006" title=" " alt="" coords="172,275,220,315,214,315,170,280"/>
+<area shape="poly" id="edge23_Node000018_Node000016" title=" " alt="" coords="191,275,306,318,301,320,190,280"/>
+<area shape="rect" id="Node000019" title=" " alt="" coords="117,325,172,353"/>
+<area shape="poly" id="edge21_Node000018_Node000019" title=" " alt="" coords="155,276,151,311,146,308,151,279"/>
+<area shape="poly" id="edge27_Node000020_Node000004" title=" " alt="" coords="266,280,105,326,103,321,265,275"/>
+<area shape="poly" id="edge29_Node000020_Node000006" title=" " alt="" coords="302,276,268,316,265,311,297,279"/>
+<area shape="poly" id="edge28_Node000020_Node000016" title=" " alt="" coords="320,275,341,313,336,311,317,280"/>
+<area shape="poly" id="edge26_Node000020_Node000019" title=" " alt="" coords="284,277,187,322,185,317,279,278"/>
 </map>

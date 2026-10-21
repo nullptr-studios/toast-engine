@@ -135,6 +135,9 @@ void&#160;</td><td class="memItemRight"><b>addInstance</b> (const <a class="el" 
 void&#160;</td><td class="memItemRight"><b>build</b> (vk::CommandBuffer cmd, uint32_t frame_index, bool tracing)</td></tr>
 <tr class="memitem:a936020d66e03555d222e35574453c25c" id="r_a936020d66e03555d222e35574453c25c"><td class="memItemLeft"><a id="a936020d66e03555d222e35574453c25c" name="a936020d66e03555d222e35574453c25c"></a>
 auto&#160;</td><td class="memItemRight"><b>getAccelerationStructure</b> (uint32_t frame_index) const -&gt; vk::AccelerationStructureKHR</td></tr>
+<tr class="memitem:ad79e0b5212e744de921e8e69629ad385" id="r_ad79e0b5212e744de921e8e69629ad385"><td class="memItemLeft"><a id="ad79e0b5212e744de921e8e69629ad385" name="ad79e0b5212e744de921e8e69629ad385"></a>
+auto&#160;</td><td class="memItemRight"><b>getAccelerationStructureGeneration</b> (uint32_t frame_index) const -&gt; uint64_t</td></tr>
+<tr class="memdesc:ad79e0b5212e744de921e8e69629ad385"><td class="mdescLeft">&#160;</td><td class="mdescRight">Bumped whenever the structure of <code class="param">frame_index</code> is recreated since the new one can reuse the old handle value. <br /></td></tr>
 <tr class="memitem:a6a5b11b7e644a3ab2a5488c3adce2a2e" id="r_a6a5b11b7e644a3ab2a5488c3adce2a2e"><td class="memItemLeft"><a id="a6a5b11b7e644a3ab2a5488c3adce2a2e" name="a6a5b11b7e644a3ab2a5488c3adce2a2e"></a>
 auto&#160;</td><td class="memItemRight"><b>getInstanceCount</b> () const noexcept -&gt; uint32_t</td></tr>
 </table><table class="memberdecls">

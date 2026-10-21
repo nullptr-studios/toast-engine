@@ -122,8 +122,7 @@ var menudata={children:[
 {text:"h",url:"functions_prop.html#index_h"},
 {text:"i",url:"functions_prop.html#index_i"},
 {text:"o",url:"functions_prop.html#index_o"},
-{text:"p",url:"functions_prop.html#index_p"},
-{text:"s",url:"functions_prop.html#index_s"}]}]}]},
+{text:"p",url:"functions_prop.html#index_p"}]}]}]},
 {text:"Files",url:"files.html",children:[
 {text:"File List",url:"files.html"},
 {text:"File Members",url:"globals.html",children:[

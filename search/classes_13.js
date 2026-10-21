@@ -21,9 +21,12 @@ var searchData=
   ['uisystem_18',['UISystem',['../classui_1_1UISystem.html',1,'ui']]],
   ['uisysteminterface_19',['UISystemInterface',['../classui_1_1UISystemInterface.html',1,'ui']]],
   ['uiworldpanelproxy_20',['UIWorldPanelProxy',['../structrenderer_1_1VulkanRenderer_1_1UIWorldPanelProxy.html',1,'renderer::VulkanRenderer']]],
-  ['unsavedchangesmodal_21',['UnsavedChangesModal',['../classeditor_1_1Components_1_1Modals_1_1UnsavedChangesModal.html',1,'editor::Components::Modals']]],
-  ['unsavedchangesviewmodel_22',['UnsavedChangesViewModel',['../classeditor_1_1Components_1_1Modals_1_1UnsavedChangesViewModel.html',1,'editor::Components::Modals']]],
-  ['updatehierarchydata_23',['UpdateHierarchyData',['../structevent_1_1UpdateHierarchyData.html',1,'event']]],
-  ['updateworkspacehistory_24',['UpdateWorkspaceHistory',['../structevent_1_1UpdateWorkspaceHistory.html',1,'event']]],
-  ['uploaddata_25',['UploadData',['../structrenderer_1_1VulkanMesh_1_1UploadData.html',1,'renderer::VulkanMesh']]]
+  ['unglueregion_21',['UnglueRegion',['../structphysics_1_1UnglueRegion.html',1,'physics']]],
+  ['unsavedchangesmodal_22',['UnsavedChangesModal',['../classeditor_1_1Components_1_1Modals_1_1UnsavedChangesModal.html',1,'editor::Components::Modals']]],
+  ['unsavedchangesviewmodel_23',['UnsavedChangesViewModel',['../classeditor_1_1Components_1_1Modals_1_1UnsavedChangesViewModel.html',1,'editor::Components::Modals']]],
+  ['updatehierarchydata_24',['UpdateHierarchyData',['../structevent_1_1UpdateHierarchyData.html',1,'event']]],
+  ['updateworkspacehistory_25',['UpdateWorkspaceHistory',['../structevent_1_1UpdateWorkspaceHistory.html',1,'event']]],
+  ['uploaddata_26',['UploadData',['../structrenderer_1_1VulkanMesh_1_1UploadData.html',1,'renderer::VulkanMesh']]],
+  ['uploadstats_27',['UploadStats',['../structrenderer_1_1VulkanRenderer_1_1UploadStats.html',1,'renderer::VulkanRenderer']]],
+  ['usageinfo_28',['UsageInfo',['../structrenderer_1_1sync_1_1UsageInfo.html',1,'renderer::sync']]]
 ];

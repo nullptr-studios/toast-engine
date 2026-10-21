@@ -127,8 +127,9 @@ auto&#160;</td><td class="memItemRight"><b>calculateBounds</b> (<a class="el" hr
 auto&#160;</td><td class="memItemRight"><b>findPairs</b> (<a class="el" href="structphysics_1_1CollisionWorldView.html">CollisionWorldView</a> world) -&gt; std::vector&lt; <a class="el" href="structphysics_1_1BroadPhasePair.html">BroadPhasePair</a> &gt;</td></tr>
 <tr class="memitem:aae6d7fcdeac84736b7e21b889d518b65" id="r_aae6d7fcdeac84736b7e21b889d518b65"><td class="memItemLeft"><a id="aae6d7fcdeac84736b7e21b889d518b65" name="aae6d7fcdeac84736b7e21b889d518b65"></a>
 auto&#160;</td><td class="memItemRight"><b>queryBounds</b> (const <a class="el" href="structphysics_1_1AABB.html">AABB</a> &amp;bounds) const -&gt; std::vector&lt; <a class="el" href="structphysics_1_1ShapeID.html">ShapeID</a> &gt;</td></tr>
-<tr class="memitem:a95bdb66386a1321ced003a88075ab12d" id="r_a95bdb66386a1321ced003a88075ab12d"><td class="memItemLeft"><a id="a95bdb66386a1321ced003a88075ab12d" name="a95bdb66386a1321ced003a88075ab12d"></a>
-auto&#160;</td><td class="memItemRight"><b>queryRay</b> (glm::vec3 pos, glm::vec3 dir, float max_distance=-1.0f) const -&gt; std::vector&lt; <a class="el" href="structphysics_1_1ShapeID.html">ShapeID</a> &gt;</td></tr>
+<tr class="memitem:a0dd179ce7784e223abbe6f7911670412" id="r_a0dd179ce7784e223abbe6f7911670412"><td class="memTemplParams" colspan="2"><a id="a0dd179ce7784e223abbe6f7911670412" name="a0dd179ce7784e223abbe6f7911670412"></a>
+template&lt;typename Visit&gt; </td></tr>
+<tr class="memitem:a0dd179ce7784e223abbe6f7911670412 template"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><b>raycast</b> (glm::vec3 origin, glm::vec3 inv_dir, float max_distance, Visit &amp;&amp;visit) const</td></tr>
 <tr class="memitem:a9a17dc4f8e73c70c163d8a016c4e50d1" id="r_a9a17dc4f8e73c70c163d8a016c4e50d1"><td class="memItemLeft"><a id="a9a17dc4f8e73c70c163d8a016c4e50d1" name="a9a17dc4f8e73c70c163d8a016c4e50d1"></a>
 auto&#160;</td><td class="memItemRight"><b>debugNodes</b> () const -&gt; std::vector&lt; <a class="el" href="structphysics_1_1AABBTreeDebugNode.html">AABBTreeDebugNode</a> &gt;</td></tr>
 <tr class="memitem:ad8857d130a26e3c4dc7f41be300e0d8b" id="r_ad8857d130a26e3c4dc7f41be300e0d8b"><td class="memItemLeft"><a id="ad8857d130a26e3c4dc7f41be300e0d8b" name="ad8857d130a26e3c4dc7f41be300e0d8b"></a>

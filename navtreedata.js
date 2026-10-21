@@ -189,21 +189,22 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "aabb_8hpp.html",
-"classeditor_1_1Assets_1_1AssetTagFilter.html",
-"classeditor_1_1Components_1_1Elements_1_1DragIntBox.html",
-"classeditor_1_1Workspace_1_1FloatSettingRow.html#af57b27d4b815f84ca8e39ed92f703bff",
-"classrenderer_1_1GpuTimer.html#a08e6c108214de1492154f7a3ee3a640d",
-"classtoast_1_1Box.html#a0cdd08d1fa97b7873b07312c0d3ae012",
-"classtoast_1_1PostProcessVolume.html#a747269caa20f50df14f8dd42a828eb63",
-"classtoast_1_1VoxelNode.html#aaa6425b6ec4518b26a7947af57df1d55",
-"cluster__lighting__pass_8cpp.html",
-"input__events_8hpp_source.html",
-"node_8hpp.html#a98d11435d9b92e9901a40a71793fd680a9c70933aff6b2a6d08c687a6cbb6b765",
-"structassets_1_1VoxVoxel.html#aa5166ed1997fa1cb625d19539cde8016",
-"structevent_1_1WindowMouseButton.html",
-"structrenderer_1_1VulkanRenderer_1_1ImGuiInputSnapshot.html",
-"structtoast_1_1Workspace_1_1VoxelToolState.html#a9a4ac7d1868da1be2ab383525d812de4a34be958a921e43d813a2075297d8e862",
-"voxel__edit_8hpp.html"
+"classeditor_1_1Assets_1_1AssetFolder.html",
+"classeditor_1_1Components_1_1Elements_1_1Color4Box.html",
+"classeditor_1_1StartWindow_1_1ProjectList.html",
+"classinput_1_1SmoothModifier.html#abafb6240a222fa026dd5181f7fec1d04",
+"classscripting_1_1ScriptDispatch.html",
+"classtoast_1_1Light.html#aee016056b026692627964ea16220ba44",
+"classtoast_1_1UISettings.html",
+"classtoast_1_1VoxelVolume.html#a4407f16475a01b2944528f08e16b630b",
+"editor__camera_8hpp.html",
+"lua__event_8hpp.html",
+"prefab_8hpp_source.html",
+"structevent_1_1MusicBeat.html#aeab60462b28b9a09be241dd5c7942b40",
+"structphysics_1_1Body.html",
+"structrenderer_1_1VulkanRenderer_1_1UploadStats.html",
+"structtoast_1_1Workspace_1_1VoxelToolState.html#a9a4ac7d1868da1be2ab383525d812de4afe47aa7c733c490d36e80508d5dc4019",
+"voxel__gpu__storage_8hpp.html"
 ];
 
 const SYNCONMSG = 'click to disable panel synchronization';

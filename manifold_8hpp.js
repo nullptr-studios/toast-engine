@@ -12,6 +12,8 @@ var manifold_8hpp =
     [ "physics::_detail::SegmentClosestPoints", "structphysics_1_1__detail_1_1SegmentClosestPoints.html", null ],
     [ "physics::_detail::BoxFeature", "structphysics_1_1__detail_1_1BoxFeature.html", null ],
     [ "physics::_detail::SegmentBoxClosestPoints", "structphysics_1_1__detail_1_1SegmentBoxClosestPoints.html", null ],
+    [ "physics::_detail::SegmentAabbClosestPoints", "structphysics_1_1__detail_1_1SegmentAabbClosestPoints.html", null ],
+    [ "physics::_detail::CapsuleVoxelContact", "structphysics_1_1__detail_1_1CapsuleVoxelContact.html", null ],
     [ "physics::_detail::ContactCandidate", "structphysics_1_1__detail_1_1ContactCandidate.html", null ],
     [ "physics::CollisionElement", "structphysics_1_1CollisionElement.html", null ],
     [ "physics::BoxVoxelPairView", "structphysics_1_1BoxVoxelPairView.html", null ],

@@ -155,39 +155,48 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('ray__tracing__
 <div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span> </div>
 <div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  [[nodiscard]]</div>
 <div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  <span class="keyword">auto</span> getAccelerationStructure(uint32_t frame_index) <span class="keyword">const</span> -&gt; vk::AccelerationStructureKHR;</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span> </div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  <span class="keyword">auto</span> getInstanceCount() const noexcept -&gt; uint32_t {</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>    <span class="keywordflow">return</span> <span class="keyword">static_cast&lt;</span>uint32_t<span class="keyword">&gt;</span>(m_instances.size());</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  }</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span> </div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_max_instances = 8192;</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span> </div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_max_refits_before_rebuild = 240;</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span> </div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  <span class="keyword">struct </span><a class="code hl_struct" href="structFrameResources.html">FrameResources</a> {</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    std::optional&lt;vma::raii::Buffer&gt; instance_buffer;</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    std::optional&lt;vma::raii::Buffer&gt; tlas_buffer;</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    std::optional&lt;vma::raii::Buffer&gt; scratch;</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>    vk::raii::AccelerationStructureKHR tlas = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>    uint32_t built_instances = 0;</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span> </div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>    std::vector&lt;Instance&gt; built;</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    uint32_t refits_since_build = 0;</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  };</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span> </div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <span class="keyword">const</span> VulkanCore* m_core = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  std::vector&lt;FrameResources&gt; m_frames;</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  std::vector&lt;Instance&gt; m_instances;</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span></div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  PFN_vkCmdBuildAccelerationStructuresKHR m_build_acceleration_structures = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>};</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span></div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  [[nodiscard]]</div>
+<div class="foldopen" id="foldopen00042" data-start="{" data-end="}">
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno"><a class="line" href="classrenderer_1_1RayTracingScene.html#ad79e0b5212e744de921e8e69629ad385">   42</a></span>  <span class="keyword">auto</span> <a class="code hl_function" href="classrenderer_1_1RayTracingScene.html#ad79e0b5212e744de921e8e69629ad385">getAccelerationStructureGeneration</a>(uint32_t frame_index) <span class="keyword">const</span> -&gt; uint64_t {</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>    <span class="keywordflow">return</span> frame_index &lt; m_frames.size() ? m_frames[frame_index].tlas_generation : 0;</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  }</div>
 </div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span> </div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>}</div>
-<div class="ttc" id="aclassrenderer_1_1VulkanCore_html"><div class="ttname"><a href="classrenderer_1_1VulkanCore.html">renderer::VulkanCore</a></div><div class="ttdef"><b>Definition</b> vulkan_core.hpp:46</div></div>
-<div class="ttc" id="astructFrameResources_html"><div class="ttname"><a href="structFrameResources.html">FrameResources</a></div><div class="ttdef"><b>Definition</b> vulkan_common.hpp:9</div></div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  <span class="keyword">auto</span> getInstanceCount() const noexcept -&gt; uint32_t {</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>    <span class="keywordflow">return</span> <span class="keyword">static_cast&lt;</span>uint32_t<span class="keyword">&gt;</span>(m_instances.size());</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  }</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span> </div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_max_instances = 8192;</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span> </div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_max_refits_before_rebuild = 240;</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span> </div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <span class="keyword">struct </span><a class="code hl_struct" href="structFrameResources.html">FrameResources</a> {</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>    std::optional&lt;vma::raii::Buffer&gt; instance_buffer;</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    std::optional&lt;vma::raii::Buffer&gt; tlas_buffer;</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    std::optional&lt;vma::raii::Buffer&gt; scratch;</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>    vk::raii::AccelerationStructureKHR tlas = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>    uint64_t tlas_generation = 0;</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    uint32_t built_instances = 0;</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span> </div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    std::vector&lt;Instance&gt; built;</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>    uint32_t refits_since_build = 0;</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  };</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span> </div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  <span class="keyword">const</span> VulkanCore* m_core = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  std::vector&lt;FrameResources&gt; m_frames;</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  std::vector&lt;Instance&gt; m_instances;</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span></div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  PFN_vkCmdBuildAccelerationStructuresKHR m_build_acceleration_structures = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>};</div>
+</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span> </div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>}</div>
+<div class="ttc" id="aclassrenderer_1_1RayTracingScene_html_ad79e0b5212e744de921e8e69629ad385"><div class="ttname"><a href="classrenderer_1_1RayTracingScene.html#ad79e0b5212e744de921e8e69629ad385">renderer::RayTracingScene::getAccelerationStructureGeneration</a></div><div class="ttdeci">auto getAccelerationStructureGeneration(uint32_t frame_index) const -&gt; uint64_t</div><div class="ttdoc">Bumped whenever the structure of frame_index is recreated since the new one can reuse the old handle ...</div><div class="ttdef"><b>Definition</b> ray_tracing_scene.hpp:42</div></div>
+<div class="ttc" id="aclassrenderer_1_1VulkanCore_html"><div class="ttname"><a href="classrenderer_1_1VulkanCore.html">renderer::VulkanCore</a></div><div class="ttdef"><b>Definition</b> vulkan_core.hpp:48</div></div>
+<div class="ttc" id="astructFrameResources_html"><div class="ttname"><a href="structFrameResources.html">FrameResources</a></div><div class="ttdef"><b>Definition</b> vulkan_common.hpp:13</div></div>
 <div class="ttc" id="astructrenderer_1_1RayTracingScene_1_1Instance_html"><div class="ttname"><a href="structrenderer_1_1RayTracingScene_1_1Instance.html">renderer::RayTracingScene::Instance</a></div><div class="ttdef"><b>Definition</b> ray_tracing_scene.hpp:21</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->

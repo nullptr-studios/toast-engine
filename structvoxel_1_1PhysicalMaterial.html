@@ -118,11 +118,23 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('structvoxel_1_
   <div class="headertitle"><div class="title">voxel::PhysicalMaterial Struct Reference</div></div>
 </div><!--header-->
 <div class="contents">
+<div class="dynheader">
+Collaboration diagram for voxel::PhysicalMaterial:</div>
+<div class="dyncontent">
+<div class="center"><img src="structvoxel_1_1PhysicalMaterial__coll__graph.png" border="0" usemap="#avoxel_1_1PhysicalMaterial_coll__map" loading="lazy" alt="Collaboration graph"/></div>
+<map name="avoxel_1_1PhysicalMaterial_coll__map" id="avoxel_1_1PhysicalMaterial_coll__map">
+<area shape="rect" title=" " alt="" coords="28,106,200,134"/>
+<area shape="rect" href="structphysics_1_1PackedFractureProfile.html" title=" " alt="" coords="5,5,223,33"/>
+<area shape="poly" title=" " alt="" coords="116,47,117,106,111,105,112,50"/>
+</map>
+<center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:ac6944f701b93d61932d92044c363fdb7" id="r_ac6944f701b93d61932d92044c363fdb7"><td class="memItemLeft"><a id="ac6944f701b93d61932d92044c363fdb7" name="ac6944f701b93d61932d92044c363fdb7"></a>
 constexpr auto&#160;</td><td class="memItemRight"><b>isIndestructible</b> () const noexcept -&gt; bool</td></tr>
+<tr class="memitem:a2cb3cdb73e0e7f40172a92502d99a28d" id="r_a2cb3cdb73e0e7f40172a92502d99a28d"><td class="memItemLeft"><a id="a2cb3cdb73e0e7f40172a92502d99a28d" name="a2cb3cdb73e0e7f40172a92502d99a28d"></a>
+constexpr auto&#160;</td><td class="memItemRight"><b>breakableBy</b> (physics::Hardness max_hardness) const noexcept -&gt; bool</td></tr>
 <tr class="memitem:a48b9292100b693ffa978dbfdec102148" id="r_a48b9292100b693ffa978dbfdec102148"><td class="memItemLeft"><a id="a48b9292100b693ffa978dbfdec102148" name="a48b9292100b693ffa978dbfdec102148"></a>
 constexpr auto&#160;</td><td class="memItemRight"><b>collides</b> () const noexcept -&gt; bool</td></tr>
 <tr class="memitem:a0a556e87b62da3973344d4a55d079640" id="r_a0a556e87b62da3973344d4a55d079640"><td class="memItemLeft"><a id="a0a556e87b62da3973344d4a55d079640" name="a0a556e87b62da3973344d4a55d079640"></a>
@@ -131,23 +143,32 @@ constexpr auto&#160;</td><td class="memItemRight"><b>isFlammable</b> () const no
 <tr class="heading"><td colspan="2"><h2 id="header-pub-attribs" class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
 <tr class="memitem:a37636098c5585e2fa4027eb2c755f149" id="r_a37636098c5585e2fa4027eb2c755f149"><td class="memItemLeft"><a id="a37636098c5585e2fa4027eb2c755f149" name="a37636098c5585e2fa4027eb2c755f149"></a>
-uint16_t&#160;</td><td class="memItemRight"><b>density</b> = 1000</td></tr>
+uint16_t&#160;</td><td class="memItemRight"><b>density</b> = static_cast&lt;uint16_t&gt;(<a class="el" href="material__defaults_8hpp.html#a7fa36cbbc49c6377d7476af8a990497d">physics::material_defaults::k_density</a>)</td></tr>
 <tr class="memdesc:a37636098c5585e2fa4027eb2c755f149"><td class="mdescLeft">&#160;</td><td class="mdescRight">kg/m³ never zero and integer so <a class="el" href="structvoxel_1_1MassMoments.html">MassMoments</a> stays exact <br /></td></tr>
 <tr class="memitem:adc68efa27b11b64387b69130e6d615cf" id="r_adc68efa27b11b64387b69130e6d615cf"><td class="memItemLeft"><a id="adc68efa27b11b64387b69130e6d615cf" name="adc68efa27b11b64387b69130e6d615cf"></a>
 uint8_t&#160;</td><td class="memItemRight"><b>flags</b> = 0</td></tr>
+<tr class="memitem:a01316e9aec529466becf56bb00324553" id="r_a01316e9aec529466becf56bb00324553"><td class="memItemLeft"><a id="a01316e9aec529466becf56bb00324553" name="a01316e9aec529466becf56bb00324553"></a>
+physics::Hardness&#160;</td><td class="memItemRight"><b>hardness</b> = physics::material_defaults::k_hardness</td></tr>
+<tr class="memdesc:a01316e9aec529466becf56bb00324553"><td class="mdescLeft">&#160;</td><td class="mdescRight">Damage that breaks only softer tiers never breaks this material. <br /></td></tr>
+<tr class="memitem:a0b95f7e1a57e21f27f47d5256dc15b08" id="r_a0b95f7e1a57e21f27f47d5256dc15b08"><td class="memItemLeft"><a id="a0b95f7e1a57e21f27f47d5256dc15b08" name="a0b95f7e1a57e21f27f47d5256dc15b08"></a>
+physics::FracturePattern&#160;</td><td class="memItemRight"><b>fracture_pattern</b> = physics::material_defaults::k_fracture_pattern</td></tr>
+<tr class="memitem:a0119c16c0933aa2f9325629436edc639" id="r_a0119c16c0933aa2f9325629436edc639"><td class="memItemLeft"><a id="a0119c16c0933aa2f9325629436edc639" name="a0119c16c0933aa2f9325629436edc639"></a>
+<a class="el" href="structphysics_1_1PackedFractureProfile.html">physics::PackedFractureProfile</a>&#160;</td><td class="memItemRight"><b>fracture_profile</b> = physics::material_defaults::k_fracture_profile</td></tr>
 <tr class="memitem:a4de68ddf70a8e0af9e4a51ee5d6b8aff" id="r_a4de68ddf70a8e0af9e4a51ee5d6b8aff"><td class="memItemLeft"><a id="a4de68ddf70a8e0af9e4a51ee5d6b8aff" name="a4de68ddf70a8e0af9e4a51ee5d6b8aff"></a>
-float&#160;</td><td class="memItemRight"><b>toughness</b> = 1000.0f</td></tr>
-<tr class="memdesc:a4de68ddf70a8e0af9e4a51ee5d6b8aff"><td class="mdescLeft">&#160;</td><td class="mdescRight">Uncalibrated joules so only ordering matters. <br /></td></tr>
+float&#160;</td><td class="memItemRight"><b>toughness</b> = physics::material_defaults::k_toughness</td></tr>
+<tr class="memdesc:a4de68ddf70a8e0af9e4a51ee5d6b8aff"><td class="mdescLeft">&#160;</td><td class="mdescRight">kJ/m³ it takes to break per m3 <br /></td></tr>
 <tr class="memitem:aae0bb739e3fc21b02df15ac5c0fbef90" id="r_aae0bb739e3fc21b02df15ac5c0fbef90"><td class="memItemLeft"><a id="aae0bb739e3fc21b02df15ac5c0fbef90" name="aae0bb739e3fc21b02df15ac5c0fbef90"></a>
-float&#160;</td><td class="memItemRight"><b>structural_strength</b> = 1000.0f</td></tr>
-<tr class="memitem:aacfe9de216ceced9fa02aa0400059266" id="r_aacfe9de216ceced9fa02aa0400059266"><td class="memItemLeft"><a id="aacfe9de216ceced9fa02aa0400059266" name="aacfe9de216ceced9fa02aa0400059266"></a>
-float&#160;</td><td class="memItemRight"><b>shatter_radius</b> = 0.5f</td></tr>
+float&#160;</td><td class="memItemRight"><b>structural_strength</b> = <a class="el" href="material__defaults_8hpp.html#a56b5cb66a8576999fae88fc02c162e15">physics::material_defaults::k_structural_strength</a></td></tr>
 <tr class="memitem:a17d1d49ac9eaf68ab2459e2294fa6e14" id="r_a17d1d49ac9eaf68ab2459e2294fa6e14"><td class="memItemLeft"><a id="a17d1d49ac9eaf68ab2459e2294fa6e14" name="a17d1d49ac9eaf68ab2459e2294fa6e14"></a>
-float&#160;</td><td class="memItemRight"><b>static_friction</b> = 0.6f</td></tr>
+float&#160;</td><td class="memItemRight"><b>static_friction</b> = physics::material_defaults::k_static_friction</td></tr>
 <tr class="memitem:a51b0849170195db041dc14c28be04511" id="r_a51b0849170195db041dc14c28be04511"><td class="memItemLeft"><a id="a51b0849170195db041dc14c28be04511" name="a51b0849170195db041dc14c28be04511"></a>
-float&#160;</td><td class="memItemRight"><b>dynamic_friction</b> = 0.5f</td></tr>
+float&#160;</td><td class="memItemRight"><b>dynamic_friction</b> = physics::material_defaults::k_dynamic_friction</td></tr>
 <tr class="memitem:afaa237e474a084b7cba498db3651c9bf" id="r_afaa237e474a084b7cba498db3651c9bf"><td class="memItemLeft"><a id="afaa237e474a084b7cba498db3651c9bf" name="afaa237e474a084b7cba498db3651c9bf"></a>
-float&#160;</td><td class="memItemRight"><b>restitution</b> = 0.1f</td></tr>
+float&#160;</td><td class="memItemRight"><b>restitution</b> = physics::material_defaults::k_restitution</td></tr>
+<tr class="memitem:aad3db6001af0e0097de85906781564d6" id="r_aad3db6001af0e0097de85906781564d6"><td class="memItemLeft"><a id="aad3db6001af0e0097de85906781564d6" name="aad3db6001af0e0097de85906781564d6"></a>
+float&#160;</td><td class="memItemRight"><b>rolling_friction</b> = <a class="el" href="material__defaults_8hpp.html#a813486f2b937bb990749cf854296e956">physics::material_defaults::k_rolling_friction</a></td></tr>
+<tr class="memitem:a7e3f5bd6e7003466086b1268845274df" id="r_a7e3f5bd6e7003466086b1268845274df"><td class="memItemLeft"><a id="a7e3f5bd6e7003466086b1268845274df" name="a7e3f5bd6e7003466086b1268845274df"></a>
+float&#160;</td><td class="memItemRight"><b>spin_friction</b> = physics::material_defaults::k_spin_friction</td></tr>
 <tr class="memitem:a00546bf60f54e62363d4a331aedf9601" id="r_a00546bf60f54e62363d4a331aedf9601"><td class="memItemLeft"><a id="a00546bf60f54e62363d4a331aedf9601" name="a00546bf60f54e62363d4a331aedf9601"></a>
 float&#160;</td><td class="memItemRight"><b>ignition_energy</b> = 0.0f</td></tr>
 <tr class="memitem:a979b6db30acbabd190bf2d459fcd34d1" id="r_a979b6db30acbabd190bf2d459fcd34d1"><td class="memItemLeft"><a id="a979b6db30acbabd190bf2d459fcd34d1" name="a979b6db30acbabd190bf2d459fcd34d1"></a>

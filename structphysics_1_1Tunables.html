@@ -166,6 +166,8 @@ uint32_t&#160;</td><td class="memItemRight"><b>fragment_pool_headroom</b> = 4096
 uint32_t&#160;</td><td class="memItemRight"><b>min_fragment_voxels</b> = 4</td></tr>
 <tr class="memitem:aa713abe356f0336570371618c86d0fdd" id="r_aa713abe356f0336570371618c86d0fdd"><td class="memItemLeft"><a id="aa713abe356f0336570371618c86d0fdd" name="aa713abe356f0336570371618c86d0fdd"></a>
 uint32_t&#160;</td><td class="memItemRight"><b>fragment_despawn_max_voxels</b> = 16</td></tr>
+<tr class="memitem:a1893b18c6469f106a42701f03a5220f3" id="r_a1893b18c6469f106a42701f03a5220f3"><td class="memItemLeft"><a id="a1893b18c6469f106a42701f03a5220f3" name="a1893b18c6469f106a42701f03a5220f3"></a>
+uint32_t&#160;</td><td class="memItemRight"><b>large_debris_min_voxels</b> = 16</td></tr>
 <tr class="memitem:aa8b73ac1c346c4181cf2f44560c2aa10" id="r_aa8b73ac1c346c4181cf2f44560c2aa10"><td class="memItemLeft"><a id="aa8b73ac1c346c4181cf2f44560c2aa10" name="aa8b73ac1c346c4181cf2f44560c2aa10"></a>
 float&#160;</td><td class="memItemRight"><b>fragment_despawn_settle_seconds</b> = 3.0f</td></tr>
 <tr class="memitem:a3aa9bae0df84723636b6facc82fd7031" id="r_a3aa9bae0df84723636b6facc82fd7031"><td class="memItemLeft"><a id="a3aa9bae0df84723636b6facc82fd7031" name="a3aa9bae0df84723636b6facc82fd7031"></a>
@@ -175,7 +177,41 @@ float&#160;</td><td class="memItemRight"><b>fragment_sleep_scale</b> = 3.0f</td>
 <tr class="memitem:a1bbe4054a621b5084f7f1c9bc5fa58ed" id="r_a1bbe4054a621b5084f7f1c9bc5fa58ed"><td class="memItemLeft"><a id="a1bbe4054a621b5084f7f1c9bc5fa58ed" name="a1bbe4054a621b5084f7f1c9bc5fa58ed"></a>
 int32_t&#160;</td><td class="memItemRight"><b>max_fragment_extent_bricks</b> = 1</td></tr>
 <tr class="memitem:a7dbec84f45b62564ffda8e7af8be3952" id="r_a7dbec84f45b62564ffda8e7af8be3952"><td class="memItemLeft"><a id="a7dbec84f45b62564ffda8e7af8be3952" name="a7dbec84f45b62564ffda8e7af8be3952"></a>
-float&#160;</td><td class="memItemRight"><b>fracture_shell_voxels</b> = 2.0f</td></tr>
+float&#160;</td><td class="memItemRight"><b>fracture_shell_voxels</b> = 1.0f</td></tr>
+<tr class="memitem:abe40d84cd58bbfbef5e1ec34ddc68da8" id="r_abe40d84cd58bbfbef5e1ec34ddc68da8"><td class="memItemLeft"><a id="abe40d84cd58bbfbef5e1ec34ddc68da8" name="abe40d84cd58bbfbef5e1ec34ddc68da8"></a>
+float&#160;</td><td class="memItemRight"><b>fracture_depth_share</b> = 0.5f</td></tr>
+<tr class="memitem:aeaba060beb1ca39b932ae7d66d6f3c3e" id="r_aeaba060beb1ca39b932ae7d66d6f3c3e"><td class="memItemLeft"><a id="aeaba060beb1ca39b932ae7d66d6f3c3e" name="aeaba060beb1ca39b932ae7d66d6f3c3e"></a>
+float&#160;</td><td class="memItemRight"><b>fracture_max_depth</b> = 2.0f</td></tr>
+<tr class="memitem:a870f753b237b2fdc0ba0c7aadc6f14d8" id="r_a870f753b237b2fdc0ba0c7aadc6f14d8"><td class="memItemLeft"><a id="a870f753b237b2fdc0ba0c7aadc6f14d8" name="a870f753b237b2fdc0ba0c7aadc6f14d8"></a>
+float&#160;</td><td class="memItemRight"><b>fracture_max_overshoot</b> = 2.0f</td></tr>
+<tr class="memitem:ab1c46bf08b019d089fc92cabb35ebdf3" id="r_ab1c46bf08b019d089fc92cabb35ebdf3"><td class="memItemLeft"><a id="ab1c46bf08b019d089fc92cabb35ebdf3" name="ab1c46bf08b019d089fc92cabb35ebdf3"></a>
+float&#160;</td><td class="memItemRight"><b>fracture_bond_cost</b> = 1.0f</td></tr>
+<tr class="memitem:af68e61326e20313f6bc14523b0b07949" id="r_af68e61326e20313f6bc14523b0b07949"><td class="memItemLeft"><a id="af68e61326e20313f6bc14523b0b07949" name="af68e61326e20313f6bc14523b0b07949"></a>
+uint32_t&#160;</td><td class="memItemRight"><b>fracture_max_unglue_voxels</b> = 4096</td></tr>
+<tr class="memitem:a407ca92d6440e19559e9058f2a3c4a2d" id="r_a407ca92d6440e19559e9058f2a3c4a2d"><td class="memItemLeft"><a id="a407ca92d6440e19559e9058f2a3c4a2d" name="a407ca92d6440e19559e9058f2a3c4a2d"></a>
+float&#160;</td><td class="memItemRight"><b>fracture_debris_split_chance</b> = 0.35f</td></tr>
+<tr class="memitem:af54e8fc5bf6a504052e6c98d14892e6b" id="r_af54e8fc5bf6a504052e6c98d14892e6b"><td class="memItemLeft"><a id="af54e8fc5bf6a504052e6c98d14892e6b" name="af54e8fc5bf6a504052e6c98d14892e6b"></a>
+uint32_t&#160;</td><td class="memItemRight"><b>fracture_max_shatter_cells</b> = 128</td></tr>
+<tr class="memitem:a63686023075d222edba0ce8430cb30cf" id="r_a63686023075d222edba0ce8430cb30cf"><td class="memItemLeft"><a id="a63686023075d222edba0ce8430cb30cf" name="a63686023075d222edba0ce8430cb30cf"></a>
+float&#160;</td><td class="memItemRight"><b>fracture_max_shatter_distance</b> = 8.0f</td></tr>
+<tr class="memitem:a206873695e38f75654944c004b07a2fb" id="r_a206873695e38f75654944c004b07a2fb"><td class="memItemLeft"><a id="a206873695e38f75654944c004b07a2fb" name="a206873695e38f75654944c004b07a2fb"></a>
+uint32_t&#160;</td><td class="memItemRight"><b>debris_max_spawns_per_step</b> = 512</td></tr>
+<tr class="memitem:aeccaccd7dacdaa780fa06a379833b46a" id="r_aeccaccd7dacdaa780fa06a379833b46a"><td class="memItemLeft"><a id="aeccaccd7dacdaa780fa06a379833b46a" name="aeccaccd7dacdaa780fa06a379833b46a"></a>
+float&#160;</td><td class="memItemRight"><b>debris_speed_scale</b> = 1.0f</td></tr>
+<tr class="memitem:a4cfa06df8e208e70b9aef7aa86fcef1d" id="r_a4cfa06df8e208e70b9aef7aa86fcef1d"><td class="memItemLeft"><a id="a4cfa06df8e208e70b9aef7aa86fcef1d" name="a4cfa06df8e208e70b9aef7aa86fcef1d"></a>
+float&#160;</td><td class="memItemRight"><b>debris_lifetime</b> = 60.0f</td></tr>
+<tr class="memitem:a0a874bd96333dd3ab18669524c318b4d" id="r_a0a874bd96333dd3ab18669524c318b4d"><td class="memItemLeft"><a id="a0a874bd96333dd3ab18669524c318b4d" name="a0a874bd96333dd3ab18669524c318b4d"></a>
+uint32_t&#160;</td><td class="memItemRight"><b>debris_max_particles</b> = 16384</td></tr>
+<tr class="memitem:aa1fabd19c335820cdd6aaad9b0b10acf" id="r_aa1fabd19c335820cdd6aaad9b0b10acf"><td class="memItemLeft"><a id="aa1fabd19c335820cdd6aaad9b0b10acf" name="aa1fabd19c335820cdd6aaad9b0b10acf"></a>
+float&#160;</td><td class="memItemRight"><b>debris_restitution</b> = 0.3f</td></tr>
+<tr class="memitem:afbb888e6bcb510ad255b5503a08aaddb" id="r_afbb888e6bcb510ad255b5503a08aaddb"><td class="memItemLeft"><a id="afbb888e6bcb510ad255b5503a08aaddb" name="afbb888e6bcb510ad255b5503a08aaddb"></a>
+float&#160;</td><td class="memItemRight"><b>debris_friction</b> = 0.6f</td></tr>
+<tr class="memitem:a494c847fdd238e144cc6b6f3f3b887a6" id="r_a494c847fdd238e144cc6b6f3f3b887a6"><td class="memItemLeft"><a id="a494c847fdd238e144cc6b6f3f3b887a6" name="a494c847fdd238e144cc6b6f3f3b887a6"></a>
+float&#160;</td><td class="memItemRight"><b>explosion_max_radius</b> = 8.0f</td></tr>
+<tr class="memitem:acf12397521edf1eaa81a031839f80ce0" id="r_acf12397521edf1eaa81a031839f80ce0"><td class="memItemLeft"><a id="acf12397521edf1eaa81a031839f80ce0" name="acf12397521edf1eaa81a031839f80ce0"></a>
+float&#160;</td><td class="memItemRight"><b>explosion_falloff</b> = 2.0f</td></tr>
+<tr class="memitem:a684a72248b545852547239dc7b410bf0" id="r_a684a72248b545852547239dc7b410bf0"><td class="memItemLeft"><a id="a684a72248b545852547239dc7b410bf0" name="a684a72248b545852547239dc7b410bf0"></a>
+uint32_t&#160;</td><td class="memItemRight"><b>impact_max_hardness</b> = 1</td></tr>
 <tr class="memitem:aa9cfaf69cce27a1e9a2970227b6ef4b5" id="r_aa9cfaf69cce27a1e9a2970227b6ef4b5"><td class="memItemLeft"><a id="aa9cfaf69cce27a1e9a2970227b6ef4b5" name="aa9cfaf69cce27a1e9a2970227b6ef4b5"></a>
 uint32_t&#160;</td><td class="memItemRight"><b>min_bounds_per_job</b> = 32</td></tr>
 <tr class="memitem:ab6b89b6e513b90fb8042066c78a33611" id="r_ab6b89b6e513b90fb8042066c78a33611"><td class="memItemLeft"><a id="ab6b89b6e513b90fb8042066c78a33611" name="ab6b89b6e513b90fb8042066c78a33611"></a>
@@ -190,22 +226,20 @@ uint32_t&#160;</td><td class="memItemRight"><b>min_bodies_per_job</b> = 64</td><
 uint32_t&#160;</td><td class="memItemRight"><b>min_wave_constraints_for_dispatch</b> = 512</td></tr>
 <tr class="memitem:a33f6465adbedd8995759ec3373b6a1da" id="r_a33f6465adbedd8995759ec3373b6a1da"><td class="memItemLeft"><a id="a33f6465adbedd8995759ec3373b6a1da" name="a33f6465adbedd8995759ec3373b6a1da"></a>
 uint32_t&#160;</td><td class="memItemRight"><b>box_voxel_split_min_voxels</b> = 500000</td></tr>
-<tr class="memdesc:a33f6465adbedd8995759ec3373b6a1da"><td class="mdescLeft">&#160;</td><td class="mdescRight">Deliberately very high right now to disable splitting until box_voxel_max_estimated_voxels gives a real number. <br /></td></tr>
 <tr class="memitem:a19fc474a17993c8ae85865d32a505395" id="r_a19fc474a17993c8ae85865d32a505395"><td class="memItemLeft"><a id="a19fc474a17993c8ae85865d32a505395" name="a19fc474a17993c8ae85865d32a505395"></a>
 uint32_t&#160;</td><td class="memItemRight"><b>voxel_voxel_split_min_voxels</b> = 250000</td></tr>
-<tr class="memdesc:a19fc474a17993c8ae85865d32a505395"><td class="mdescLeft">&#160;</td><td class="mdescRight">Same off-until-measured reasoning as box_voxel_split_min_voxels. <br /></td></tr>
 <tr class="memitem:a52fb5aa5c92bd8f3ef3f2849e38c46a2" id="r_a52fb5aa5c92bd8f3ef3f2849e38c46a2"><td class="memItemLeft"><a id="a52fb5aa5c92bd8f3ef3f2849e38c46a2" name="a52fb5aa5c92bd8f3ef3f2849e38c46a2"></a>
 uint32_t&#160;</td><td class="memItemRight"><b>voxel_pair_split_regions</b> = 8</td></tr>
 <tr class="memitem:a32bcf2b4c962baee596720e64905c6a8" id="r_a32bcf2b4c962baee596720e64905c6a8"><td class="memItemLeft"><a id="a32bcf2b4c962baee596720e64905c6a8" name="a32bcf2b4c962baee596720e64905c6a8"></a>
 uint32_t&#160;</td><td class="memItemRight"><b>sweep_refine_iterations</b> = 6</td></tr>
-<tr class="memdesc:a32bcf2b4c962baee596720e64905c6a8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Bisection steps a sweep refines by once it finds a blocking contact a clear sweep never pays this. <br /></td></tr>
 <tr class="memitem:aa2e6682468a9b15124fc50a440bbd296" id="r_aa2e6682468a9b15124fc50a440bbd296"><td class="memItemLeft"><a id="aa2e6682468a9b15124fc50a440bbd296" name="aa2e6682468a9b15124fc50a440bbd296"></a>
 uint32_t&#160;</td><td class="memItemRight"><b>position_iterations</b> = 3</td></tr>
-<tr class="memitem:ad9e969f83cc2619dcd4d4d59140aec90" id="r_ad9e969f83cc2619dcd4d4d59140aec90"><td class="memItemLeft"><a id="ad9e969f83cc2619dcd4d4d59140aec90" name="ad9e969f83cc2619dcd4d4d59140aec90"></a>
-bool&#160;</td><td class="memItemRight"><b>trigger_check_dynamic</b> = true</td></tr>
-<tr class="memdesc:ad9e969f83cc2619dcd4d4d59140aec90"><td class="mdescLeft">&#160;</td><td class="mdescRight">Which body types a trigger reports, static bodies never count. <br /></td></tr>
-<tr class="memitem:a9673afe4234693081100d7cf2af35d80" id="r_a9673afe4234693081100d7cf2af35d80"><td class="memItemLeft"><a id="a9673afe4234693081100d7cf2af35d80" name="a9673afe4234693081100d7cf2af35d80"></a>
-bool&#160;</td><td class="memItemRight"><b>trigger_check_kinematic</b> = true</td></tr>
+<tr class="memitem:a1542d314d9fdf2a247df948b9345c7fb" id="r_a1542d314d9fdf2a247df948b9345c7fb"><td class="memItemLeft"><a id="a1542d314d9fdf2a247df948b9345c7fb" name="a1542d314d9fdf2a247df948b9345c7fb"></a>
+float&#160;</td><td class="memItemRight"><b>air_density</b> = 1.225f</td></tr>
+<tr class="memitem:a66360b5864fb1a91e6026c1439ef4c9e" id="r_a66360b5864fb1a91e6026c1439ef4c9e"><td class="memItemLeft"><a id="a66360b5864fb1a91e6026c1439ef4c9e" name="a66360b5864fb1a91e6026c1439ef4c9e"></a>
+glm::vec3&#160;</td><td class="memItemRight"><b>wind</b> = {0.0f, 0.0f, 0.0f}</td></tr>
+<tr class="memitem:af8feb3b7ba81512eb90dbc57485ad5d9" id="r_af8feb3b7ba81512eb90dbc57485ad5d9"><td class="memItemLeft"><a id="af8feb3b7ba81512eb90dbc57485ad5d9" name="af8feb3b7ba81512eb90dbc57485ad5d9"></a>
+float&#160;</td><td class="memItemRight"><b>wind_shelter_distance</b> = 64.0f</td></tr>
 </table>
 <hr/>The documentation for this struct was generated from the following file:<ul>
 <li>engine/src/toast/physics/<a class="el" href="physics__settings_8hpp_source.html">physics_settings.hpp</a></li>

@@ -156,8 +156,10 @@ uint8_t&#160;</td><td class="memItemRight"><b>normal_index</b> = k_primitive_man
 glm::vec3&#160;</td><td class="memItemRight"><b>contact_point</b> = {}</td></tr>
 <tr class="memitem:a3d4d828bac0f910982701301e8fe6b0e" id="r_a3d4d828bac0f910982701301e8fe6b0e"><td class="memItemLeft"><a id="a3d4d828bac0f910982701301e8fe6b0e" name="a3d4d828bac0f910982701301e8fe6b0e"></a>
 glm::vec3&#160;</td><td class="memItemRight"><b>normal</b> = {}</td></tr>
-<tr class="memitem:ac246ab2661b16b4e3bee34ef7f63bb4c" id="r_ac246ab2661b16b4e3bee34ef7f63bb4c"><td class="memItemLeft"><a id="ac246ab2661b16b4e3bee34ef7f63bb4c" name="ac246ab2661b16b4e3bee34ef7f63bb4c"></a>
-glm::vec3&#160;</td><td class="memItemRight"><b>tangent</b> = {}</td></tr>
+<tr class="memitem:abe564017db0f2403cb9e557438608f23" id="r_abe564017db0f2403cb9e557438608f23"><td class="memItemLeft"><a id="abe564017db0f2403cb9e557438608f23" name="abe564017db0f2403cb9e557438608f23"></a>
+glm::vec3&#160;</td><td class="memItemRight"><b>tangent_1</b> = {}</td></tr>
+<tr class="memitem:a30de178a2a45729abdd58a30e2c64130" id="r_a30de178a2a45729abdd58a30e2c64130"><td class="memItemLeft"><a id="a30de178a2a45729abdd58a30e2c64130" name="a30de178a2a45729abdd58a30e2c64130"></a>
+glm::vec3&#160;</td><td class="memItemRight"><b>tangent_2</b> = {}</td></tr>
 <tr class="memitem:a85a31c0ca04c431ae24fc75caa0b6df1" id="r_a85a31c0ca04c431ae24fc75caa0b6df1"><td class="memItemLeft"><a id="a85a31c0ca04c431ae24fc75caa0b6df1" name="a85a31c0ca04c431ae24fc75caa0b6df1"></a>
 glm::vec3&#160;</td><td class="memItemRight"><b>r_a</b> = {}</td></tr>
 <tr class="memitem:a182f4f7451af5aa123fe5076d4268a0e" id="r_a182f4f7451af5aa123fe5076d4268a0e"><td class="memItemLeft"><a id="a182f4f7451af5aa123fe5076d4268a0e" name="a182f4f7451af5aa123fe5076d4268a0e"></a>
@@ -166,18 +168,34 @@ glm::vec3&#160;</td><td class="memItemRight"><b>r_b</b> = {}</td></tr>
 float&#160;</td><td class="memItemRight"><b>penetration</b> = 0.0f</td></tr>
 <tr class="memitem:a2f81925fd71057bce121ecd22f87fe94" id="r_a2f81925fd71057bce121ecd22f87fe94"><td class="memItemLeft"><a id="a2f81925fd71057bce121ecd22f87fe94" name="a2f81925fd71057bce121ecd22f87fe94"></a>
 float&#160;</td><td class="memItemRight"><b>normal_mass</b> = 0.0f</td></tr>
-<tr class="memitem:ab12bf4077dac3b4b843590abe4a9ca24" id="r_ab12bf4077dac3b4b843590abe4a9ca24"><td class="memItemLeft"><a id="ab12bf4077dac3b4b843590abe4a9ca24" name="ab12bf4077dac3b4b843590abe4a9ca24"></a>
-float&#160;</td><td class="memItemRight"><b>tangent_mass</b> = 0.0f</td></tr>
+<tr class="memitem:aace4936850e03185548cfaaa9fc98c0f" id="r_aace4936850e03185548cfaaa9fc98c0f"><td class="memItemLeft"><a id="aace4936850e03185548cfaaa9fc98c0f" name="aace4936850e03185548cfaaa9fc98c0f"></a>
+float&#160;</td><td class="memItemRight"><b>tangent_mass_1</b> = 0.0f</td></tr>
+<tr class="memitem:ac0e7e8c484e70be7c92661675f4a9ca3" id="r_ac0e7e8c484e70be7c92661675f4a9ca3"><td class="memItemLeft"><a id="ac0e7e8c484e70be7c92661675f4a9ca3" name="ac0e7e8c484e70be7c92661675f4a9ca3"></a>
+float&#160;</td><td class="memItemRight"><b>tangent_mass_2</b> = 0.0f</td></tr>
 <tr class="memitem:ae308128534cbf1b0a5e26bdff3d09e73" id="r_ae308128534cbf1b0a5e26bdff3d09e73"><td class="memItemLeft"><a id="ae308128534cbf1b0a5e26bdff3d09e73" name="ae308128534cbf1b0a5e26bdff3d09e73"></a>
 float&#160;</td><td class="memItemRight"><b>restitution_bias</b> = 0.0f</td></tr>
 <tr class="memitem:aab6bf684b1668b804bd7194e13e3b176" id="r_aab6bf684b1668b804bd7194e13e3b176"><td class="memItemLeft"><a id="aab6bf684b1668b804bd7194e13e3b176" name="aab6bf684b1668b804bd7194e13e3b176"></a>
-float&#160;</td><td class="memItemRight"><b>static_friction</b> = 0.6f</td></tr>
+float&#160;</td><td class="memItemRight"><b>static_friction</b> = material_defaults::k_static_friction</td></tr>
 <tr class="memitem:ac0d251ed3890e448d92e659b646411a8" id="r_ac0d251ed3890e448d92e659b646411a8"><td class="memItemLeft"><a id="ac0d251ed3890e448d92e659b646411a8" name="ac0d251ed3890e448d92e659b646411a8"></a>
-float&#160;</td><td class="memItemRight"><b>dynamic_friction</b> = 0.4f</td></tr>
+float&#160;</td><td class="memItemRight"><b>dynamic_friction</b> = material_defaults::k_dynamic_friction</td></tr>
 <tr class="memitem:a187180788f96c07f78cc4984e10e393b" id="r_a187180788f96c07f78cc4984e10e393b"><td class="memItemLeft"><a id="a187180788f96c07f78cc4984e10e393b" name="a187180788f96c07f78cc4984e10e393b"></a>
 float&#160;</td><td class="memItemRight"><b>accumulated_normal_impulse</b> = 0.0f</td></tr>
-<tr class="memitem:a84406b5c3c8f54e0d196fa95dc23adee" id="r_a84406b5c3c8f54e0d196fa95dc23adee"><td class="memItemLeft"><a id="a84406b5c3c8f54e0d196fa95dc23adee" name="a84406b5c3c8f54e0d196fa95dc23adee"></a>
-float&#160;</td><td class="memItemRight"><b>accumulated_tangent_impulse</b> = 0.0f</td></tr>
+<tr class="memitem:a5840fe49a817a877f72293e700d03b55" id="r_a5840fe49a817a877f72293e700d03b55"><td class="memItemLeft"><a id="a5840fe49a817a877f72293e700d03b55" name="a5840fe49a817a877f72293e700d03b55"></a>
+glm::vec2&#160;</td><td class="memItemRight"><b>accumulated_tangent_impulse</b> = {}</td></tr>
+<tr class="memitem:a9966c15d2e2cd1be49a5504b9d20f29b" id="r_a9966c15d2e2cd1be49a5504b9d20f29b"><td class="memItemLeft"><a id="a9966c15d2e2cd1be49a5504b9d20f29b" name="a9966c15d2e2cd1be49a5504b9d20f29b"></a>
+float&#160;</td><td class="memItemRight"><b>rolling_friction</b> = 0.0f</td></tr>
+<tr class="memitem:ad5e3fd7b7b54f0322815545ef563e2cc" id="r_ad5e3fd7b7b54f0322815545ef563e2cc"><td class="memItemLeft"><a id="ad5e3fd7b7b54f0322815545ef563e2cc" name="ad5e3fd7b7b54f0322815545ef563e2cc"></a>
+float&#160;</td><td class="memItemRight"><b>spin_friction</b> = 0.0f</td></tr>
+<tr class="memitem:a6d1001c45e49c96b5bb972d8a19a0377" id="r_a6d1001c45e49c96b5bb972d8a19a0377"><td class="memItemLeft"><a id="a6d1001c45e49c96b5bb972d8a19a0377" name="a6d1001c45e49c96b5bb972d8a19a0377"></a>
+float&#160;</td><td class="memItemRight"><b>rolling_mass_1</b> = 0.0f</td></tr>
+<tr class="memitem:af9bffee347dd1224ee49e4a8012aea21" id="r_af9bffee347dd1224ee49e4a8012aea21"><td class="memItemLeft"><a id="af9bffee347dd1224ee49e4a8012aea21" name="af9bffee347dd1224ee49e4a8012aea21"></a>
+float&#160;</td><td class="memItemRight"><b>rolling_mass_2</b> = 0.0f</td></tr>
+<tr class="memitem:ada8deec3d3d29001ce7fca1e2a92eb3a" id="r_ada8deec3d3d29001ce7fca1e2a92eb3a"><td class="memItemLeft"><a id="ada8deec3d3d29001ce7fca1e2a92eb3a" name="ada8deec3d3d29001ce7fca1e2a92eb3a"></a>
+float&#160;</td><td class="memItemRight"><b>spin_mass</b> = 0.0f</td></tr>
+<tr class="memitem:ab225353ed4d32a0f3fbbbda401e6257f" id="r_ab225353ed4d32a0f3fbbbda401e6257f"><td class="memItemLeft"><a id="ab225353ed4d32a0f3fbbbda401e6257f" name="ab225353ed4d32a0f3fbbbda401e6257f"></a>
+glm::vec2&#160;</td><td class="memItemRight"><b>accumulated_rolling_impulse</b> = {}</td></tr>
+<tr class="memitem:a4945e613ec6f31424a60b08591539807" id="r_a4945e613ec6f31424a60b08591539807"><td class="memItemLeft"><a id="a4945e613ec6f31424a60b08591539807" name="a4945e613ec6f31424a60b08591539807"></a>
+float&#160;</td><td class="memItemRight"><b>accumulated_spin_impulse</b> = 0.0f</td></tr>
 </table>
 <hr/>The documentation for this struct was generated from the following file:<ul>
 <li>engine/src/toast/physics/<a class="el" href="constraint_8hpp_source.html">constraint.hpp</a></li>

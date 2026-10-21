@@ -134,16 +134,10 @@ Public Member Functions</h2></td></tr>
 &#160;</td><td class="memItemRight"><b>GpuTimer</b> (const <a class="el" href="classrenderer_1_1VulkanCore.html">VulkanCore</a> &amp;core, uint32_t frame_slots)</td></tr>
 <tr class="memitem:a88e981dce2d17e150d072ca939291f45" id="r_a88e981dce2d17e150d072ca939291f45"><td class="memItemLeft"><a id="a88e981dce2d17e150d072ca939291f45" name="a88e981dce2d17e150d072ca939291f45"></a>
 auto&#160;</td><td class="memItemRight"><b>supported</b> () const noexcept -&gt; bool</td></tr>
-<tr class="memitem:ad7e10702639116f1442eeed426292050" id="r_ad7e10702639116f1442eeed426292050"><td class="memItemLeft"><a id="ad7e10702639116f1442eeed426292050" name="ad7e10702639116f1442eeed426292050"></a>
-auto&#160;</td><td class="memItemRight"><b>computeSupported</b> () const noexcept -&gt; bool</td></tr>
 <tr class="memitem:a57973f0eeb9dcdabad5cdb1605872e0e" id="r_a57973f0eeb9dcdabad5cdb1605872e0e"><td class="memItemLeft"><a id="a57973f0eeb9dcdabad5cdb1605872e0e" name="a57973f0eeb9dcdabad5cdb1605872e0e"></a>
 void&#160;</td><td class="memItemRight"><b>beginGraphics</b> (uint32_t slot, vk::CommandBuffer cmd)</td></tr>
 <tr class="memitem:a315b3470520881862c4d60d12924e21b" id="r_a315b3470520881862c4d60d12924e21b"><td class="memItemLeft"><a id="a315b3470520881862c4d60d12924e21b" name="a315b3470520881862c4d60d12924e21b"></a>
 void&#160;</td><td class="memItemRight"><b>endGraphics</b> (uint32_t slot, vk::CommandBuffer cmd)</td></tr>
-<tr class="memitem:a0f6469b07b395115c4ddd6df7ac29e0f" id="r_a0f6469b07b395115c4ddd6df7ac29e0f"><td class="memItemLeft"><a id="a0f6469b07b395115c4ddd6df7ac29e0f" name="a0f6469b07b395115c4ddd6df7ac29e0f"></a>
-void&#160;</td><td class="memItemRight"><b>beginCompute</b> (uint32_t slot, vk::CommandBuffer cmd)</td></tr>
-<tr class="memitem:afcb05ad65fe07a15927e9cb76d87b651" id="r_afcb05ad65fe07a15927e9cb76d87b651"><td class="memItemLeft"><a id="afcb05ad65fe07a15927e9cb76d87b651" name="afcb05ad65fe07a15927e9cb76d87b651"></a>
-void&#160;</td><td class="memItemRight"><b>endCompute</b> (uint32_t slot, vk::CommandBuffer cmd)</td></tr>
 <tr class="memitem:aaecf6081eb476daaf3002586dbdeac04" id="r_aaecf6081eb476daaf3002586dbdeac04"><td class="memItemLeft"><a id="aaecf6081eb476daaf3002586dbdeac04" name="aaecf6081eb476daaf3002586dbdeac04"></a>
 auto&#160;</td><td class="memItemRight"><b>beginScope</b> (uint32_t slot, vk::CommandBuffer cmd, std::string_view name) -&gt; uint32_t</td></tr>
 <tr class="memitem:ab94da62264dc6a6abcc6124831425e02" id="r_ab94da62264dc6a6abcc6124831425e02"><td class="memItemLeft"><a id="ab94da62264dc6a6abcc6124831425e02" name="ab94da62264dc6a6abcc6124831425e02"></a>
@@ -151,6 +145,9 @@ void&#160;</td><td class="memItemRight"><b>endScope</b> (uint32_t slot, vk::Comm
 <tr class="memitem:a08e6c108214de1492154f7a3ee3a640d" id="r_a08e6c108214de1492154f7a3ee3a640d"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a08e6c108214de1492154f7a3ee3a640d">collect</a> (uint32_t slot)</td></tr>
 <tr class="memitem:a6e583058c6ec2de594b18c29460d8a63" id="r_a6e583058c6ec2de594b18c29460d8a63"><td class="memItemLeft"><a id="a6e583058c6ec2de594b18c29460d8a63" name="a6e583058c6ec2de594b18c29460d8a63"></a>
 auto&#160;</td><td class="memItemRight"><b>last</b> () const noexcept -&gt; const <a class="el" href="structrenderer_1_1GpuTimer_1_1Timings.html">Timings</a> &amp;</td></tr>
+<tr class="memitem:a720ce0f97e4ee61c9b9a7bd2a367a195" id="r_a720ce0f97e4ee61c9b9a7bd2a367a195"><td class="memItemLeft"><a id="a720ce0f97e4ee61c9b9a7bd2a367a195" name="a720ce0f97e4ee61c9b9a7bd2a367a195"></a>
+auto&#160;</td><td class="memItemRight"><b>frameSerial</b> () const noexcept -&gt; uint64_t</td></tr>
+<tr class="memdesc:a720ce0f97e4ee61c9b9a7bd2a367a195"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tells a fresh last() from a repeat. <br /></td></tr>
 <tr class="memitem:a56249abe9f5b440fdde1010e44143829" id="r_a56249abe9f5b440fdde1010e44143829"><td class="memItemLeft"><a id="a56249abe9f5b440fdde1010e44143829" name="a56249abe9f5b440fdde1010e44143829"></a>
 auto&#160;</td><td class="memItemRight"><b>smoothed</b> () const noexcept -&gt; const <a class="el" href="structrenderer_1_1GpuTimer_1_1Timings.html">Timings</a> &amp;</td></tr>
 </table><table class="memberdecls">
@@ -178,7 +175,7 @@ static constexpr uint32_t&#160;</td><td class="memItemRight"><b>k_no_scope</b> =
         </tr>
       </table>
 </div><div class="memdoc">
-<dl class="section note"><dt>Note</dt><dd>Only once the graphics and compute fences of the slot have signalled </dd></dl>
+<dl class="section note"><dt>Note</dt><dd>Only once the frame fence of the slot has signalled </dd></dl>
 
 </div>
 </div>

@@ -155,37 +155,47 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('dynamic__rigid
 <div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  [[Reflect, ReadOnly]]</div>
 <div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  <span class="keywordtype">bool</span> awake = <span class="keyword">true</span>;</div>
 <div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span> </div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  <span class="comment">// TODO:</span></div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span> </div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  [[Reflect, Group(<span class="stringliteral">&quot;Mass Distribution&quot;</span>), Unit(<span class="stringliteral">&quot;m&quot;</span>), ReadOnly]]</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  glm::vec3 center_of_mass = {};</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  [[Reflect, Group(<span class="stringliteral">&quot;Mass Distribution&quot;</span>), Unit(<span class="stringliteral">&quot;kg•m²&quot;</span>), ReadOnly]]</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  glm::vec3 inertia = {};</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  [[Reflect, Group(<span class="stringliteral">&quot;Drag&quot;</span>), Unit(<span class="stringliteral">&quot;1/s&quot;</span>)]]</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <span class="keywordtype">float</span> linear_damping = 0.0f;</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  [[Reflect, Group(<span class="stringliteral">&quot;Drag&quot;</span>), Unit(<span class="stringliteral">&quot;1/s&quot;</span>)]]</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  <span class="keywordtype">float</span> angular_damping = 0.0f;</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  [[Reflect, Group(<span class="stringliteral">&quot;Drag&quot;</span>)]]</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  <span class="keywordtype">float</span> drag_scale = 1.0f;</div>
 <div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span> </div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  [[Reflect, Group(<span class="stringliteral">&quot;Velocities&quot;</span>), Unit(<span class="stringliteral">&quot;m/s&quot;</span>), ReadOnly]]</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  glm::vec3 linear_velocity = {};</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  [[Reflect, Group(<span class="stringliteral">&quot;Velocities&quot;</span>), Unit(<span class="stringliteral">&quot;rad/s&quot;</span>), ReadOnly]]</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  glm::vec3 angular_velocity = {};</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span> </div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  [[Reflect, Group(<span class="stringliteral">&quot;Constant Forces&quot;</span>), Unit(<span class="stringliteral">&quot;N&quot;</span>), ReadOnly]]</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  glm::vec3 constant_force = {};</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  [[Reflect, Group(<span class="stringliteral">&quot;Constant Forces&quot;</span>), Unit(<span class="stringliteral">&quot;N•m&quot;</span>), ReadOnly]]</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  glm::vec3 constant_torque = {};</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span> </div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <span class="keywordtype">void</span> publishPhysicsState(<span class="keywordtype">bool</span> is_awake, <span class="keyword">const</span> glm::vec3&amp; current_linear_velocity, <span class="keyword">const</span> glm::vec3&amp; current_angular_velocity);</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <span class="keywordtype">void</span> configureBodyDescriptor(<a class="code hl_struct" href="structphysics_1_1BodyDescriptor.html">BodyDescriptor</a>&amp; descriptor)<span class="keyword"> const override </span>{</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    descriptor.mass = mass;</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>    descriptor.gravity_scale = gravity_scale;</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>    descriptor.allow_sleep = allow_sleep;</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  }</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>};</div>
-</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  <span class="comment">// TODO:</span></div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span> </div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  [[Reflect, Group(<span class="stringliteral">&quot;Mass Distribution&quot;</span>), Unit(<span class="stringliteral">&quot;m&quot;</span>), ReadOnly]]</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  glm::vec3 center_of_mass = {};</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  [[Reflect, Group(<span class="stringliteral">&quot;Mass Distribution&quot;</span>), Unit(<span class="stringliteral">&quot;kg•m²&quot;</span>), ReadOnly]]</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  glm::vec3 inertia = {};</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span> </div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  [[Reflect, Group(<span class="stringliteral">&quot;Velocities&quot;</span>), Unit(<span class="stringliteral">&quot;m/s&quot;</span>), ReadOnly]]</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  glm::vec3 linear_velocity = {};</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  [[Reflect, Group(<span class="stringliteral">&quot;Velocities&quot;</span>), Unit(<span class="stringliteral">&quot;rad/s&quot;</span>), ReadOnly]]</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  glm::vec3 angular_velocity = {};</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span> </div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  [[Reflect, Group(<span class="stringliteral">&quot;Constant Forces&quot;</span>), Unit(<span class="stringliteral">&quot;N&quot;</span>), ReadOnly]]</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  glm::vec3 constant_force = {};</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  [[Reflect, Group(<span class="stringliteral">&quot;Constant Forces&quot;</span>), Unit(<span class="stringliteral">&quot;N•m&quot;</span>), ReadOnly]]</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  glm::vec3 constant_torque = {};</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span> </div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  <span class="keywordtype">void</span> publishPhysicsState(<span class="keywordtype">bool</span> is_awake, <span class="keyword">const</span> glm::vec3&amp; current_linear_velocity, <span class="keyword">const</span> glm::vec3&amp; current_angular_velocity);</div>
 <div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span> </div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>}</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  <span class="keywordtype">void</span> configureBodyDescriptor(<a class="code hl_struct" href="structphysics_1_1BodyDescriptor.html">BodyDescriptor</a>&amp; descriptor)<span class="keyword"> const override </span>{</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>    descriptor.mass = mass;</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>    descriptor.gravity_scale = gravity_scale;</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>    descriptor.allow_sleep = allow_sleep;</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>    descriptor.linear_damping = linear_damping;</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>    descriptor.angular_damping = angular_damping;</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>    descriptor.drag_scale = drag_scale;</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  }</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>};</div>
+</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span> </div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>}</div>
 <div class="ttc" id="aclassphysics_1_1Rigidbody_html"><div class="ttname"><a href="classphysics_1_1Rigidbody.html">physics::Rigidbody</a></div><div class="ttdef"><b>Definition</b> rigidbody.hpp:22</div></div>
-<div class="ttc" id="astructphysics_1_1BodyDescriptor_html"><div class="ttname"><a href="structphysics_1_1BodyDescriptor.html">physics::BodyDescriptor</a></div><div class="ttdef"><b>Definition</b> body.hpp:30</div></div>
+<div class="ttc" id="astructphysics_1_1BodyDescriptor_html"><div class="ttname"><a href="structphysics_1_1BodyDescriptor.html">physics::BodyDescriptor</a></div><div class="ttdef"><b>Definition</b> body.hpp:32</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

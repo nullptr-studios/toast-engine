@@ -143,8 +143,8 @@ void&#160;</td><td class="memItemRight"><b>reloadSettings</b> ()</td></tr>
 void&#160;</td><td class="memItemRight"><b>createSDLWindow</b> (const char *)</td></tr>
 <tr class="memitem:a763a2d4bf70622cfdd10776c9968830f" id="r_a763a2d4bf70622cfdd10776c9968830f"><td class="memItemLeft"><a id="a763a2d4bf70622cfdd10776c9968830f" name="a763a2d4bf70622cfdd10776c9968830f"></a>
 void&#160;</td><td class="memItemRight"><b>createAvaloniaWindow</b> ()</td></tr>
-<tr class="memitem:a614b230e24f8bde495cf056b05e9db79" id="r_a614b230e24f8bde495cf056b05e9db79"><td class="memItemLeft"><a id="a614b230e24f8bde495cf056b05e9db79" name="a614b230e24f8bde495cf056b05e9db79"></a>
-auto&#160;</td><td class="memItemRight"><b>shootVoxel</b> (const glm::vec3 &amp;origin, const glm::vec3 &amp;direction, float max_distance, float energy, float min_radius=0.0f) -&gt; bool</td></tr>
+<tr class="memitem:a36561fa825c6eb16070b36ec97090127" id="r_a36561fa825c6eb16070b36ec97090127"><td class="memItemLeft"><a id="a36561fa825c6eb16070b36ec97090127" name="a36561fa825c6eb16070b36ec97090127"></a>
+auto&#160;</td><td class="memItemRight"><b>shootVoxel</b> (const glm::vec3 &amp;origin, const glm::vec3 &amp;direction, float max_distance, float energy_density, float fracture_radius) -&gt; bool</td></tr>
 <tr class="memitem:ae968c183bcac6eb2694dacf0b6fbaa03" id="r_ae968c183bcac6eb2694dacf0b6fbaa03"><td class="memItemLeft"><a id="ae968c183bcac6eb2694dacf0b6fbaa03" name="ae968c183bcac6eb2694dacf0b6fbaa03"></a>
 auto&#160;</td><td class="memItemRight"><b>createWorkspace</b> (std::string_view type) -&gt; std::pair&lt; <a class="el" href="structtoast_1_1UID.html">UID</a>, std::string &gt;</td></tr>
 <tr class="memitem:aec720395032bacf9ebe1e0bb8d2d9698" id="r_aec720395032bacf9ebe1e0bb8d2d9698"><td class="memItemLeft"><a id="aec720395032bacf9ebe1e0bb8d2d9698" name="aec720395032bacf9ebe1e0bb8d2d9698"></a>
@@ -159,6 +159,9 @@ auto&#160;</td><td class="memItemRight"><b>playWorkspace</b> (<a class="el" href
 void&#160;</td><td class="memItemRight"><b>destroyWorkspace</b> (<a class="el" href="structtoast_1_1UID.html">UID</a> handle)</td></tr>
 <tr class="memitem:a539556fdd59e343fb5df1adeb4d90bb8" id="r_a539556fdd59e343fb5df1adeb4d90bb8"><td class="memItemLeft"><a id="a539556fdd59e343fb5df1adeb4d90bb8" name="a539556fdd59e343fb5df1adeb4d90bb8"></a>
 void&#160;</td><td class="memItemRight"><b>requireTickThread</b> (std::string_view what) const</td></tr>
+<tr class="memitem:a94ca6f9d331ea5e93ae36ed6c7a3ac51" id="r_a94ca6f9d331ea5e93ae36ed6c7a3ac51"><td class="memItemLeft"><a id="a94ca6f9d331ea5e93ae36ed6c7a3ac51" name="a94ca6f9d331ea5e93ae36ed6c7a3ac51"></a>
+auto&#160;</td><td class="memItemRight"><b>onTickThread</b> () const -&gt; bool</td></tr>
+<tr class="memdesc:a94ca6f9d331ea5e93ae36ed6c7a3ac51"><td class="mdescLeft">&#160;</td><td class="mdescRight">Before the first tick the thread that created the engine counts. <br /></td></tr>
 <tr class="memitem:a2a84c1d9d3a9900309a712146aed3099" id="r_a2a84c1d9d3a9900309a712146aed3099"><td class="memItemLeft"><a id="a2a84c1d9d3a9900309a712146aed3099" name="a2a84c1d9d3a9900309a712146aed3099"></a>
 auto&#160;</td><td class="memItemRight"><b>activeWorkspace</b> () -&gt; <a class="el" href="structtoast_1_1UID.html">UID</a></td></tr>
 <tr class="memitem:a14a31a478ba35830bcd4defcd5515b69" id="r_a14a31a478ba35830bcd4defcd5515b69"><td class="memItemLeft"><a id="a14a31a478ba35830bcd4defcd5515b69" name="a14a31a478ba35830bcd4defcd5515b69"></a>

@@ -150,14 +150,32 @@ Public Member Functions</h2></td></tr>
 &#160;</td><td class="memItemRight"><b>VoxelPass</b> (const <a class="el" href="classrenderer_1_1VulkanCore.html">VulkanCore</a> &amp;core, vk::Format scene_format, vk::Format depth_format, vk::Extent2D extent)</td></tr>
 <tr class="memitem:afc995f767019de6b11ff6d093e28bb8d" id="r_afc995f767019de6b11ff6d093e28bb8d"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#afc995f767019de6b11ff6d093e28bb8d">stage</a> () const -&gt; RenderStage override</td></tr>
 <tr class="memitem:a4ac25edb357683e5154b03bb0e6e1f1f" id="r_a4ac25edb357683e5154b03bb0e6e1f1f"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a4ac25edb357683e5154b03bb0e6e1f1f">prepare</a> (uint32_t frame_index) -&gt; bool</td></tr>
+<tr class="memitem:aabd5d8148fa70a3911baa330b2453cf5" id="r_aabd5d8148fa70a3911baa330b2453cf5"><td class="memItemLeft"><a id="aabd5d8148fa70a3911baa330b2453cf5" name="aabd5d8148fa70a3911baa330b2453cf5"></a>
+void&#160;</td><td class="memItemRight"><b>recordCellCull</b> (vk::CommandBuffer cmd, uint32_t frame_index, vk::Extent2D scene_extent)</td></tr>
+<tr class="memdesc:aabd5d8148fa70a3911baa330b2453cf5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Outside any rendering scope after <a class="el" href="#a4ac25edb357683e5154b03bb0e6e1f1f">prepare()</a> and before <a class="el" href="#a6498df8bfa9f8fbb4aa5873184708fe4" title="Inside the voxel G-buffer scope after prepare() for everything the previous pyramid did not hide.">record()</a>. <br /></td></tr>
 <tr class="memitem:a6498df8bfa9f8fbb4aa5873184708fe4" id="r_a6498df8bfa9f8fbb4aa5873184708fe4"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a6498df8bfa9f8fbb4aa5873184708fe4">record</a> (vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) override</td></tr>
-<tr class="memdesc:a6498df8bfa9f8fbb4aa5873184708fe4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Inside the voxel G-buffer scope after <a class="el" href="#a4ac25edb357683e5154b03bb0e6e1f1f">prepare()</a>.  <br /></td></tr>
-<tr class="memitem:a0aff2d9d5683fedc02cd6d5a467f23f8" id="r_a0aff2d9d5683fedc02cd6d5a467f23f8"><td class="memItemLeft"><a id="a0aff2d9d5683fedc02cd6d5a467f23f8" name="a0aff2d9d5683fedc02cd6d5a467f23f8"></a>
-void&#160;</td><td class="memItemRight"><b>recordNormalBlur</b> (vk::CommandBuffer cmd, uint32_t frame_index, vk::Extent2D viewport)</td></tr>
-<tr class="memdesc:a0aff2d9d5683fedc02cd6d5a467f23f8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes scene normal while reading face normals and depth. <br /></td></tr>
-<tr class="memitem:a32c665f0f408ca38004ae11e783a4f8d" id="r_a32c665f0f408ca38004ae11e783a4f8d"><td class="memItemLeft"><a id="a32c665f0f408ca38004ae11e783a4f8d" name="a32c665f0f408ca38004ae11e783a4f8d"></a>
-void&#160;</td><td class="memItemRight"><b>recordLighting</b> (vk::CommandBuffer cmd, uint32_t frame_index)</td></tr>
-<tr class="memdesc:a32c665f0f408ca38004ae11e783a4f8d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes scene colour and indirect while reading the G-buffer and depth. <br /></td></tr>
+<tr class="memdesc:a6498df8bfa9f8fbb4aa5873184708fe4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Inside the voxel G-buffer scope after <a class="el" href="#a4ac25edb357683e5154b03bb0e6e1f1f">prepare()</a> for everything the previous pyramid did not hide.  <br /></td></tr>
+<tr class="memitem:a9c87ad8986736b4b204cff7aaf00eb29" id="r_a9c87ad8986736b4b204cff7aaf00eb29"><td class="memItemLeft"><a id="a9c87ad8986736b4b204cff7aaf00eb29" name="a9c87ad8986736b4b204cff7aaf00eb29"></a>
+auto&#160;</td><td class="memItemRight"><b>occlusionActive</b> () const -&gt; bool</td></tr>
+<tr class="memdesc:a9c87ad8986736b4b204cff7aaf00eb29"><td class="mdescLeft">&#160;</td><td class="mdescRight">The renderer then runs <a class="el" href="#ad2f1969c323e30dea17c0c2e4f866d1c" title="Outside any rendering scope with depth in depth_sampled.">recordOcclusion()</a> and a second G-buffer scope for <a class="el" href="#ab15c0b117d48dd90b296066c9a4798e5" title="Inside a G-buffer scope that loads the early draws.">recordLate()</a>. <br /></td></tr>
+<tr class="memitem:ad2f1969c323e30dea17c0c2e4f866d1c" id="r_ad2f1969c323e30dea17c0c2e4f866d1c"><td class="memItemLeft"><a id="ad2f1969c323e30dea17c0c2e4f866d1c" name="ad2f1969c323e30dea17c0c2e4f866d1c"></a>
+void&#160;</td><td class="memItemRight"><b>recordOcclusion</b> (vk::CommandBuffer cmd, uint32_t frame_index, vk::Extent2D scene_extent)</td></tr>
+<tr class="memdesc:ad2f1969c323e30dea17c0c2e4f866d1c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Outside any rendering scope with depth in depth_sampled. <br /></td></tr>
+<tr class="memitem:ab15c0b117d48dd90b296066c9a4798e5" id="r_ab15c0b117d48dd90b296066c9a4798e5"><td class="memItemLeft"><a id="ab15c0b117d48dd90b296066c9a4798e5" name="ab15c0b117d48dd90b296066c9a4798e5"></a>
+void&#160;</td><td class="memItemRight"><b>recordLate</b> (vk::CommandBuffer cmd, uint32_t frame_index)</td></tr>
+<tr class="memdesc:ab15c0b117d48dd90b296066c9a4798e5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Inside a G-buffer scope that loads the early draws. <br /></td></tr>
+<tr class="memitem:a162084a9ddffcd5c6f9394aed579bcb4" id="r_a162084a9ddffcd5c6f9394aed579bcb4"><td class="memItemLeft"><a id="a162084a9ddffcd5c6f9394aed579bcb4" name="a162084a9ddffcd5c6f9394aed579bcb4"></a>
+auto&#160;</td><td class="memItemRight"><b>nearQuadDepthPass</b> () const -&gt; bool</td></tr>
+<tr class="memdesc:a162084a9ddffcd5c6f9394aed579bcb4"><td class="mdescLeft">&#160;</td><td class="mdescRight">A depth only scope for <a class="el" href="#acf15185b20303261cf938694283ac3cf" title="Inside a depth only scope before the G-buffer scope that shades the same quads.">recordQuadDepth()</a> precedes each G-buffer scope except on the mesh shader path. <br /></td></tr>
+<tr class="memitem:acf15185b20303261cf938694283ac3cf" id="r_acf15185b20303261cf938694283ac3cf"><td class="memItemLeft"><a id="acf15185b20303261cf938694283ac3cf" name="acf15185b20303261cf938694283ac3cf"></a>
+void&#160;</td><td class="memItemRight"><b>recordQuadDepth</b> (vk::CommandBuffer cmd, uint32_t frame_index, bool late)</td></tr>
+<tr class="memdesc:acf15185b20303261cf938694283ac3cf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Inside a depth only scope before the G-buffer scope that shades the same quads. <br /></td></tr>
+<tr class="memitem:aea5a161a0a8f33026be60c85428e3b53" id="r_aea5a161a0a8f33026be60c85428e3b53"><td class="memItemLeft"><a id="aea5a161a0a8f33026be60c85428e3b53" name="aea5a161a0a8f33026be60c85428e3b53"></a>
+void&#160;</td><td class="memItemRight"><b>recordLighting</b> (vk::CommandBuffer cmd, uint32_t frame_index, vk::Extent2D viewport)</td></tr>
+<tr class="memdesc:aea5a161a0a8f33026be60c85428e3b53"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes scene colour indirect and rounded normal while reading the G-buffer and depth. <br /></td></tr>
+<tr class="memitem:a86cfe941b78bf7fabbd28ea1e822c90f" id="r_a86cfe941b78bf7fabbd28ea1e822c90f"><td class="memItemLeft"><a id="a86cfe941b78bf7fabbd28ea1e822c90f" name="a86cfe941b78bf7fabbd28ea1e822c90f"></a>
+void&#160;</td><td class="memItemRight"><b>onTargetsRecreated</b> ()</td></tr>
+<tr class="memdesc:a86cfe941b78bf7fabbd28ea1e822c90f"><td class="mdescLeft">&#160;</td><td class="mdescRight">After the G-buffer and depth targets are recreated since a new view can reuse a destroyed handle value. <br /></td></tr>
 <tr class="memitem:af415ddd981f8906d204913662be55db4" id="r_af415ddd981f8906d204913662be55db4"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#af415ddd981f8906d204913662be55db4">name</a> () const -&gt; std::string_view override</td></tr>
 <tr class="inherit_header pub_methods_classIRenderPass"><td colspan="2">Public Member Functions inherited from <a class="el" href="classIRenderPass.html">IRenderPass</a></td></tr>
 <tr class="memitem:a37aa8b6af93965bee7b343c6cfa68128 pub_methods_classIRenderPass" id="r_a37aa8b6af93965bee7b343c6cfa68128"><td class="memItemLeft">
@@ -271,7 +289,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p>Inside the voxel G-buffer scope after <a class="el" href="#a4ac25edb357683e5154b03bb0e6e1f1f">prepare()</a>. </p>
+<p>Inside the voxel G-buffer scope after <a class="el" href="#a4ac25edb357683e5154b03bb0e6e1f1f">prepare()</a> for everything the previous pyramid did not hide. </p>
 
 <p>Implements <a class="el" href="classIRenderPass.html">IRenderPass</a>.</p>
 <div class="dynheader">
@@ -279,7 +297,7 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="classrenderer_1_1VoxelPass_a6498df8bfa9f8fbb4aa5873184708fe4_icgraph.png" border="0" usemap="#aclassrenderer_1_1VoxelPass_a6498df8bfa9f8fbb4aa5873184708fe4_icgraph" loading="lazy" alt=""/></div>
 <map name="aclassrenderer_1_1VoxelPass_a6498df8bfa9f8fbb4aa5873184708fe4_icgraph" id="aclassrenderer_1_1VoxelPass_a6498df8bfa9f8fbb4aa5873184708fe4_icgraph">
-<area shape="rect" title="Inside the voxel G&#45;buffer scope after prepare()." alt="" coords="5,29,154,74"/>
+<area shape="rect" title="Inside the voxel G&#45;buffer scope after prepare() for everything the previous pyramid did not hide." alt="" coords="5,29,154,74"/>
 <area shape="poly" title=" " alt="" coords="101,14,94,10,79,8,66,10,58,14,55,20,55,29,50,28,49,19,54,11,64,5,80,3,96,5,107,14"/>
 </map>
 </div>

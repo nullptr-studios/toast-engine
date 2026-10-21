@@ -150,6 +150,13 @@ uint32_t&#160;</td><td class="memItemRight"><b>view_mask</b> = 0</td></tr>
 std::vector&lt; std::byte &gt;&#160;</td><td class="memItemRight"><b>shader_spirv</b></td></tr>
 <tr class="memitem:a0f9a3e557ce3767d3e2bd3aa97fc7097" id="r_a0f9a3e557ce3767d3e2bd3aa97fc7097"><td class="memItemLeft"><a id="a0f9a3e557ce3767d3e2bd3aa97fc7097" name="a0f9a3e557ce3767d3e2bd3aa97fc7097"></a>
 std::string&#160;</td><td class="memItemRight"><b>vertex_entry</b> = &quot;vertexMain&quot;</td></tr>
+<tr class="memitem:a885cd3ffc0e9a9bf141f4ff62f9533a4" id="r_a885cd3ffc0e9a9bf141f4ff62f9533a4"><td class="memItemLeft"><a id="a885cd3ffc0e9a9bf141f4ff62f9533a4" name="a885cd3ffc0e9a9bf141f4ff62f9533a4"></a>
+std::string&#160;</td><td class="memItemRight"><b>mesh_entry</b></td></tr>
+<tr class="memdesc:a885cd3ffc0e9a9bf141f4ff62f9533a4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set for a task and mesh pipeline which has no vertex stage or vertex input. <br /></td></tr>
+<tr class="memitem:a103d6fb26672a92e19a048a441740f80" id="r_a103d6fb26672a92e19a048a441740f80"><td class="memItemLeft"><a id="a103d6fb26672a92e19a048a441740f80" name="a103d6fb26672a92e19a048a441740f80"></a>
+std::string&#160;</td><td class="memItemRight"><b>task_entry</b></td></tr>
+<tr class="memdesc:a103d6fb26672a92e19a048a441740f80"><td class="mdescLeft">&#160;</td><td class="mdescRight">Only with mesh_entry. <br /></td></tr>
+<tr class="memitem:a25ecb19e8e5f4ef83c86f19a846ff0c1" id="r_a25ecb19e8e5f4ef83c86f19a846ff0c1"><td class="memItemLeft">std::vector&lt; std::byte &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a25ecb19e8e5f4ef83c86f19a846ff0c1">task_spirv</a></td></tr>
 <tr class="memitem:a350bb5881f0c533f6be514814a7a8e8a" id="r_a350bb5881f0c533f6be514814a7a8e8a"><td class="memItemLeft"><a id="a350bb5881f0c533f6be514814a7a8e8a" name="a350bb5881f0c533f6be514814a7a8e8a"></a>
 std::string&#160;</td><td class="memItemRight"><b>fragment_entry</b> = &quot;fragmentMain&quot;</td></tr>
 <tr class="memitem:a06f35b2195a06fe2f2f4b14e4917fb4e" id="r_a06f35b2195a06fe2f2f4b14e4917fb4e"><td class="memItemLeft"><a id="a06f35b2195a06fe2f2f4b14e4917fb4e" name="a06f35b2195a06fe2f2f4b14e4917fb4e"></a>
@@ -171,8 +178,8 @@ bool&#160;</td><td class="memItemRight"><b>depth_test</b> = true</td></tr>
 <tr class="memitem:ab9dd54fb4ea7cf89f05e9f80cb9792be" id="r_ab9dd54fb4ea7cf89f05e9f80cb9792be"><td class="memItemLeft"><a id="ab9dd54fb4ea7cf89f05e9f80cb9792be" name="ab9dd54fb4ea7cf89f05e9f80cb9792be"></a>
 bool&#160;</td><td class="memItemRight"><b>depth_write</b> = true</td></tr>
 <tr class="memitem:aa7a6f1fb7e799b910e4faab4602e791c" id="r_aa7a6f1fb7e799b910e4faab4602e791c"><td class="memItemLeft"><a id="aa7a6f1fb7e799b910e4faab4602e791c" name="aa7a6f1fb7e799b910e4faab4602e791c"></a>
-vk::CompareOp&#160;</td><td class="memItemRight"><b>depth_compare</b> = vk::CompareOp::eLess</td></tr>
-<tr class="memdesc:aa7a6f1fb7e799b910e4faab4602e791c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Far plane draws like the skybox need eLessOrEqual. <br /></td></tr>
+vk::CompareOp&#160;</td><td class="memItemRight"><b>depth_compare</b> = depth::k_closer</td></tr>
+<tr class="memdesc:aa7a6f1fb7e799b910e4faab4602e791c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Scene convention. Shadow maps set eLess and far plane draws need <a class="el" href="depth__convention_8hpp.html#a3853f0fd41e419ba2b6f3b5cd8963a93" title="Drawing over a depth prepass and far plane draws such as the skybox.">depth::k_closer_or_equal</a>. <br /></td></tr>
 <tr class="memitem:aeb12968c2da7210374042a493c7d6181" id="r_aeb12968c2da7210374042a493c7d6181"><td class="memItemLeft"><a id="aeb12968c2da7210374042a493c7d6181" name="aeb12968c2da7210374042a493c7d6181"></a>
 float&#160;</td><td class="memItemRight"><b>depth_bias_constant</b> = 0.0f</td></tr>
 <tr class="memitem:a449c8ce5529b90b076f13b4053b934fd" id="r_a449c8ce5529b90b076f13b4053b934fd"><td class="memItemLeft"><a id="a449c8ce5529b90b076f13b4053b934fd" name="a449c8ce5529b90b076f13b4053b934fd"></a>
@@ -182,6 +189,22 @@ bool&#160;</td><td class="memItemRight"><b>blend_enable</b> = false</td></tr>
 <tr class="memitem:a7b998b150c87939422cb1eb3deb814a5" id="r_a7b998b150c87939422cb1eb3deb814a5"><td class="memItemLeft"><a id="a7b998b150c87939422cb1eb3deb814a5" name="a7b998b150c87939422cb1eb3deb814a5"></a>
 BlendPreset&#160;</td><td class="memItemRight"><b>blend_preset</b> = BlendPreset::none</td></tr>
 </table>
+<a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
+<a id="a25ecb19e8e5f4ef83c86f19a846ff0c1" name="a25ecb19e8e5f4ef83c86f19a846ff0c1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a25ecb19e8e5f4ef83c86f19a846ff0c1">&#9670;&#160;</a></span>task_spirv</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt;std::byte&gt; renderer::VulkanPipeline::Config::task_spirv</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Task stage module since Slang gives task and mesh entry points of one module separate payload variables that NVIDIA drivers mishandle (shader-slang/slang#10123) </p>
+
+</div>
+</div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
 <li>engine/src/toast/renderer/<a class="el" href="vulkan__pipeline_8hpp_source.html">vulkan_pipeline.hpp</a></li>
 </ul>

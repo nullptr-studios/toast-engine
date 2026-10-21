@@ -143,6 +143,8 @@ Collaboration diagram for editor.Assets.AssetFile:</div>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a605534861c0258c208f5c7a0dac1a3c2" id="r_a605534861c0258c208f5c7a0dac1a3c2"><td class="memItemLeft"><a id="a605534861c0258c208f5c7a0dac1a3c2" name="a605534861c0258c208f5c7a0dac1a3c2"></a>
 &#160;</td><td class="memItemRight"><b>AssetFile</b> (string path)</td></tr>
+<tr class="memitem:a4cfd57c058fa366812c1fd5dc6c646a5" id="r_a4cfd57c058fa366812c1fd5dc6c646a5"><td class="memItemLeft"><a id="a4cfd57c058fa366812c1fd5dc6c646a5" name="a4cfd57c058fa366812c1fd5dc6c646a5"></a>
+void&#160;</td><td class="memItemRight"><b>NotifyGitChanged</b> ()</td></tr>
 <tr class="memitem:ab4435285bb4a6c82a58be762ab414312" id="r_ab4435285bb4a6c82a58be762ab414312"><td class="memItemLeft"><a id="ab4435285bb4a6c82a58be762ab414312" name="ab4435285bb4a6c82a58be762ab414312"></a>
 void&#160;</td><td class="memItemRight"><b>RefreshThumbnail</b> ()</td></tr>
 <tr class="memitem:af7e94e01f4cb61ebb810c31ea0a26069" id="r_af7e94e01f4cb61ebb810c31ea0a26069"><td class="memItemLeft"><a id="af7e94e01f4cb61ebb810c31ea0a26069" name="af7e94e01f4cb61ebb810c31ea0a26069"></a>
@@ -175,6 +177,30 @@ string&#160;</td><td class="memItemRight"><b>TypeLabel</b><code> [get]</code></t
 bool&#160;</td><td class="memItemRight"><b>CanModify</b><code> [get]</code></td></tr>
 <tr class="memitem:a27eff16f072c22f5d54a101ee1d830ea" id="r_a27eff16f072c22f5d54a101ee1d830ea"><td class="memItemLeft"><a id="a27eff16f072c22f5d54a101ee1d830ea" name="a27eff16f072c22f5d54a101ee1d830ea"></a>
 bool&#160;</td><td class="memItemRight"><b>CanTag</b><code> [get]</code></td></tr>
+<tr class="memitem:adede56ea2ab6d55d4f03fb64be48335b" id="r_adede56ea2ab6d55d4f03fb64be48335b"><td class="memItemLeft"><a id="adede56ea2ab6d55d4f03fb64be48335b" name="adede56ea2ab6d55d4f03fb64be48335b"></a>
+string&#160;</td><td class="memItemRight"><b>AssetPath</b><code> [get]</code></td></tr>
+<tr class="memitem:ae2037949b04d85c0448e4392d5fe6daa" id="r_ae2037949b04d85c0448e4392d5fe6daa"><td class="memItemLeft"><a id="ae2037949b04d85c0448e4392d5fe6daa" name="ae2037949b04d85c0448e4392d5fe6daa"></a>
+GitFileStatus&#160;</td><td class="memItemRight"><b>GitStatus</b><code> [get]</code></td></tr>
+<tr class="memitem:aba39566e1a2ba23e9e142ef6ceda9bbf" id="r_aba39566e1a2ba23e9e142ef6ceda9bbf"><td class="memItemLeft"><a id="aba39566e1a2ba23e9e142ef6ceda9bbf" name="aba39566e1a2ba23e9e142ef6ceda9bbf"></a>
+GitLock?&#160;</td><td class="memItemRight"><b>LockInfo</b><code> [get]</code></td></tr>
+<tr class="memitem:ad8d871435a69521339712fb9c67897dd" id="r_ad8d871435a69521339712fb9c67897dd"><td class="memItemLeft"><a id="ad8d871435a69521339712fb9c67897dd" name="ad8d871435a69521339712fb9c67897dd"></a>
+bool&#160;</td><td class="memItemRight"><b>IsLockedByMe</b><code> [get]</code></td></tr>
+<tr class="memitem:a02caa3d3f20457adad88339a424e53a8" id="r_a02caa3d3f20457adad88339a424e53a8"><td class="memItemLeft"><a id="a02caa3d3f20457adad88339a424e53a8" name="a02caa3d3f20457adad88339a424e53a8"></a>
+bool&#160;</td><td class="memItemRight"><b>IsLockedByOthers</b><code> [get]</code></td></tr>
+<tr class="memitem:a9986497d48cb4eec0d05bbabdc533027" id="r_a9986497d48cb4eec0d05bbabdc533027"><td class="memItemLeft"><a id="a9986497d48cb4eec0d05bbabdc533027" name="a9986497d48cb4eec0d05bbabdc533027"></a>
+bool&#160;</td><td class="memItemRight"><b>IsLockable</b><code> [get]</code></td></tr>
+<tr class="memitem:a7bdcc7502784a499f853a3aab8c4c15a" id="r_a7bdcc7502784a499f853a3aab8c4c15a"><td class="memItemLeft"><a id="a7bdcc7502784a499f853a3aab8c4c15a" name="a7bdcc7502784a499f853a3aab8c4c15a"></a>
+bool&#160;</td><td class="memItemRight"><b>CanLock</b><code> [get]</code></td></tr>
+<tr class="memitem:abf033206ca3252814bc0a97b2b520e3f" id="r_abf033206ca3252814bc0a97b2b520e3f"><td class="memItemLeft"><a id="abf033206ca3252814bc0a97b2b520e3f" name="abf033206ca3252814bc0a97b2b520e3f"></a>
+bool&#160;</td><td class="memItemRight"><b>CanUnlock</b><code> [get]</code></td></tr>
+<tr class="memitem:aee94ad1edb5cdc698de3ebd6526bc7c3" id="r_aee94ad1edb5cdc698de3ebd6526bc7c3"><td class="memItemLeft"><a id="aee94ad1edb5cdc698de3ebd6526bc7c3" name="aee94ad1edb5cdc698de3ebd6526bc7c3"></a>
+LucideIconKind&#160;</td><td class="memItemRight"><b>DisplayIcon</b><code> [get]</code></td></tr>
+<tr class="memitem:a04b3d0f50173f730dda89739ed546136" id="r_a04b3d0f50173f730dda89739ed546136"><td class="memItemLeft"><a id="a04b3d0f50173f730dda89739ed546136" name="a04b3d0f50173f730dda89739ed546136"></a>
+IBrush&#160;</td><td class="memItemRight"><b>DisplayIconBrush</b><code> [get]</code></td></tr>
+<tr class="memitem:a12b9763a3e1b68eb137af443b8a3dbb7" id="r_a12b9763a3e1b68eb137af443b8a3dbb7"><td class="memItemLeft"><a id="a12b9763a3e1b68eb137af443b8a3dbb7" name="a12b9763a3e1b68eb137af443b8a3dbb7"></a>
+bool&#160;</td><td class="memItemRight"><b>ShowLockOverlay</b><code> [get]</code></td></tr>
+<tr class="memitem:a8ede2a8f883b2ef3d25c59703ee2bd5d" id="r_a8ede2a8f883b2ef3d25c59703ee2bd5d"><td class="memItemLeft"><a id="a8ede2a8f883b2ef3d25c59703ee2bd5d" name="a8ede2a8f883b2ef3d25c59703ee2bd5d"></a>
+Bitmap?&#160;</td><td class="memItemRight"><b>DisplayThumbnail</b><code> [get]</code></td></tr>
 <tr class="memitem:a9941ba0495a185c64015abac183266cd" id="r_a9941ba0495a185c64015abac183266cd"><td class="memItemLeft"><a id="a9941ba0495a185c64015abac183266cd" name="a9941ba0495a185c64015abac183266cd"></a>
 bool&#160;</td><td class="memItemRight"><b>IsSelected</b><code> [get, set]</code></td></tr>
 <tr class="memitem:a6f60d7404f976fc3c3a923f7bdfdbe03" id="r_a6f60d7404f976fc3c3a923f7bdfdbe03"><td class="memItemLeft"><a id="a6f60d7404f976fc3c3a923f7bdfdbe03" name="a6f60d7404f976fc3c3a923f7bdfdbe03"></a>

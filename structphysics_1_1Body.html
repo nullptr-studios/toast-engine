@@ -118,6 +118,16 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('structphysics_
   <div class="headertitle"><div class="title">physics::Body Struct Reference</div></div>
 </div><!--header-->
 <div class="contents">
+<div class="dynheader">
+Collaboration diagram for physics::Body:</div>
+<div class="dyncontent">
+<div class="center"><img src="structphysics_1_1Body__coll__graph.png" border="0" usemap="#aphysics_1_1Body_coll__map" loading="lazy" alt="Collaboration graph"/></div>
+<map name="aphysics_1_1Body_coll__map" id="aphysics_1_1Body_coll__map">
+<area shape="rect" title=" " alt="" coords="23,106,135,134"/>
+<area shape="rect" href="structphysics_1_1LayerFilter.html" title=" " alt="" coords="5,5,153,33"/>
+<area shape="poly" title=" " alt="" coords="81,47,82,106,76,105,77,50"/>
+</map>
+<center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -142,7 +152,6 @@ float&#160;</td><td class="memItemRight"><b>sleep_timer</b> = 0.0f</td></tr>
 float&#160;</td><td class="memItemRight"><b>asleep_seconds</b> = 0.0f</td></tr>
 <tr class="memitem:a1c6f750c86e895fbc612fb978521f77d" id="r_a1c6f750c86e895fbc612fb978521f77d"><td class="memItemLeft"><a id="a1c6f750c86e895fbc612fb978521f77d" name="a1c6f750c86e895fbc612fb978521f77d"></a>
 glm::vec3&#160;</td><td class="memItemRight"><b>sleep_anchor_center</b> = {}</td></tr>
-<tr class="memdesc:a1c6f750c86e895fbc612fb978521f77d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Pose the still window opened at. <br /></td></tr>
 <tr class="memitem:ac3608aef3b6302b9b8d266440bc3cf98" id="r_ac3608aef3b6302b9b8d266440bc3cf98"><td class="memItemLeft"><a id="ac3608aef3b6302b9b8d266440bc3cf98" name="ac3608aef3b6302b9b8d266440bc3cf98"></a>
 glm::quat&#160;</td><td class="memItemRight"><b>sleep_anchor_rotation</b> = glm::quat(1.0f, 0.0f, 0.0f, 0.0f)</td></tr>
 <tr class="memitem:a09133208e022fc3be67771c986e4ef4b" id="r_a09133208e022fc3be67771c986e4ef4b"><td class="memItemLeft"><a id="a09133208e022fc3be67771c986e4ef4b" name="a09133208e022fc3be67771c986e4ef4b"></a>
@@ -169,11 +178,25 @@ glm::mat3&#160;</td><td class="memItemRight"><b>inverse_inertia_world</b> = {0.0
 glm::vec3&#160;</td><td class="memItemRight"><b>local_center_of_mass</b> = {}</td></tr>
 <tr class="memitem:ad9f69ed05409c934d796f2b08267514d" id="r_ad9f69ed05409c934d796f2b08267514d"><td class="memItemLeft"><a id="ad9f69ed05409c934d796f2b08267514d" name="ad9f69ed05409c934d796f2b08267514d"></a>
 float&#160;</td><td class="memItemRight"><b>extent_radius</b> = 0.0f</td></tr>
-<tr class="memdesc:ad9f69ed05409c934d796f2b08267514d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Distance from the center of mass to the farthest point of the shape. <br /></td></tr>
 <tr class="memitem:a9598aa0f938fb8e3cac2759d325bffa4" id="r_a9598aa0f938fb8e3cac2759d325bffa4"><td class="memItemLeft"><a id="a9598aa0f938fb8e3cac2759d325bffa4" name="a9598aa0f938fb8e3cac2759d325bffa4"></a>
 glm::bvec3&#160;</td><td class="memItemRight"><b>lock_position</b> = glm::bvec3(false)</td></tr>
+<tr class="memdesc:a9598aa0f938fb8e3cac2759d325bffa4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Distance to the center of mass. <br /></td></tr>
 <tr class="memitem:aa09a672c58031ca61547d53a2fb65c30" id="r_aa09a672c58031ca61547d53a2fb65c30"><td class="memItemLeft"><a id="aa09a672c58031ca61547d53a2fb65c30" name="aa09a672c58031ca61547d53a2fb65c30"></a>
 glm::bvec3&#160;</td><td class="memItemRight"><b>lock_rotation</b> = glm::bvec3(false)</td></tr>
+<tr class="memitem:afb7130db816db4b2c15481b7b4c46997" id="r_afb7130db816db4b2c15481b7b4c46997"><td class="memItemLeft"><a id="afb7130db816db4b2c15481b7b4c46997" name="afb7130db816db4b2c15481b7b4c46997"></a>
+float&#160;</td><td class="memItemRight"><b>linear_damping</b> = 0.0f</td></tr>
+<tr class="memitem:af2a99c2fc19a68ddef2de27a4264e8b6" id="r_af2a99c2fc19a68ddef2de27a4264e8b6"><td class="memItemLeft"><a id="af2a99c2fc19a68ddef2de27a4264e8b6" name="af2a99c2fc19a68ddef2de27a4264e8b6"></a>
+float&#160;</td><td class="memItemRight"><b>angular_damping</b> = 0.0f</td></tr>
+<tr class="memitem:a1f72979db0625bf66e7a8f7a0884157b" id="r_a1f72979db0625bf66e7a8f7a0884157b"><td class="memItemLeft"><a id="a1f72979db0625bf66e7a8f7a0884157b" name="a1f72979db0625bf66e7a8f7a0884157b"></a>
+float&#160;</td><td class="memItemRight"><b>drag_scale</b> = 1.0f</td></tr>
+<tr class="memitem:a53b5697ebc833d805000aebcc1b7f846" id="r_a53b5697ebc833d805000aebcc1b7f846"><td class="memItemLeft"><a id="a53b5697ebc833d805000aebcc1b7f846" name="a53b5697ebc833d805000aebcc1b7f846"></a>
+<a class="el" href="structphysics_1_1LayerFilter.html">LayerFilter</a>&#160;</td><td class="memItemRight"><b>layers</b></td></tr>
+<tr class="memitem:a1924ef406dcaf315a4ec431137ecf1c3" id="r_a1924ef406dcaf315a4ec431137ecf1c3"><td class="memItemLeft"><a id="a1924ef406dcaf315a4ec431137ecf1c3" name="a1924ef406dcaf315a4ec431137ecf1c3"></a>
+float&#160;</td><td class="memItemRight"><b>drag_coefficient</b> = 0.0f</td></tr>
+<tr class="memitem:afc9f2b632943fd7a1221c0ac03497212" id="r_afc9f2b632943fd7a1221c0ac03497212"><td class="memItemLeft"><a id="afc9f2b632943fd7a1221c0ac03497212" name="afc9f2b632943fd7a1221c0ac03497212"></a>
+float&#160;</td><td class="memItemRight"><b>drag_area_base</b> = 0.0f</td></tr>
+<tr class="memitem:a5a835240e03d23d40732c9d1bf90b406" id="r_a5a835240e03d23d40732c9d1bf90b406"><td class="memItemLeft"><a id="a5a835240e03d23d40732c9d1bf90b406" name="a5a835240e03d23d40732c9d1bf90b406"></a>
+glm::vec3&#160;</td><td class="memItemRight"><b>drag_area_axis</b> = {}</td></tr>
 </table>
 <hr/>The documentation for this struct was generated from the following file:<ul>
 <li>engine/src/toast/physics/<a class="el" href="body_8hpp_source.html">body.hpp</a></li>

@@ -127,94 +127,98 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('broad__phase_8
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &quot;<a class="code" href="collision__world_8hpp.html">collision_world.hpp</a>&quot;</span></div>
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span> </div>
 <div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &lt;optional&gt;</span></div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &lt;vector&gt;</span></div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span> </div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="keyword">namespace </span>physics {</div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span> </div>
-<div class="foldopen" id="foldopen00017" data-start="{" data-end="};">
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno"><a class="line" href="structphysics_1_1ShapeBoundsUpdate.html">   17</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structphysics_1_1ShapeBoundsUpdate.html">ShapeBoundsUpdate</a> {</div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>  <a class="code hl_struct" href="structphysics_1_1ShapeID.html">ShapeID</a> shape;</div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>  <a class="code hl_struct" href="structphysics_1_1AABB.html">AABB</a> bounds;</div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>  <span class="keywordtype">bool</span> active = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>};</div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &lt;utility&gt;</span></div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &lt;vector&gt;</span></div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span> </div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="keyword">namespace </span>physics {</div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span> </div>
+<div class="foldopen" id="foldopen00018" data-start="{" data-end="};">
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno"><a class="line" href="structphysics_1_1ShapeBoundsUpdate.html">   18</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structphysics_1_1ShapeBoundsUpdate.html">ShapeBoundsUpdate</a> {</div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>  <a class="code hl_struct" href="structphysics_1_1ShapeID.html">ShapeID</a> shape;</div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>  <a class="code hl_struct" href="structphysics_1_1AABB.html">AABB</a> bounds;</div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>  <span class="keywordtype">bool</span> active = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>};</div>
 </div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
-<div class="foldopen" id="foldopen00023" data-start="{" data-end="};">
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno"><a class="line" href="structphysics_1_1BroadPhaseStats.html">   23</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structphysics_1_1BroadPhaseStats.html">BroadPhaseStats</a> {</div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>  <span class="keywordtype">size_t</span> input_shapes = 0;</div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>  <span class="keywordtype">size_t</span> active_shapes = 0;</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>  <span class="keywordtype">size_t</span> bounds_jobs = 0;</div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>  <span class="keywordtype">size_t</span> inserted_leaves = 0;</div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>  <span class="keywordtype">size_t</span> reinserted_leaves = 0;</div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>  <span class="keywordtype">size_t</span> removed_leaves = 0;</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>  <span class="keywordtype">size_t</span> skipped_refits = 0;</div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>  <span class="keywordtype">size_t</span> skipped_self_queries = 0;</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>  <span class="keywordtype">size_t</span> queries = 0;</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>  <span class="keywordtype">size_t</span> query_hits = 0;</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  <span class="keywordtype">size_t</span> pair_records = 0;</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  <span class="keywordtype">size_t</span> candidate_pairs = 0;</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>  <span class="keywordtype">size_t</span> duplicate_pairs = 0;</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  <span class="keywordtype">size_t</span> rejected_invalid_shapes = 0;</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  <span class="keywordtype">size_t</span> rejected_disabled_shapes = 0;</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="keywordtype">size_t</span> rejected_same_body = 0;</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  <span class="keywordtype">size_t</span> rejected_invalid_bodies = 0;</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  <span class="keywordtype">size_t</span> rejected_immovable_bodies = 0;</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  <span class="keywordtype">size_t</span> tree_nodes = 0;</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>};</div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span> </div>
+<div class="foldopen" id="foldopen00024" data-start="{" data-end="};">
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno"><a class="line" href="structphysics_1_1BroadPhaseStats.html">   24</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structphysics_1_1BroadPhaseStats.html">BroadPhaseStats</a> {</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>  <span class="keywordtype">size_t</span> input_shapes = 0;</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>  <span class="keywordtype">size_t</span> active_shapes = 0;</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>  <span class="keywordtype">size_t</span> bounds_jobs = 0;</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>  <span class="keywordtype">size_t</span> inserted_leaves = 0;</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>  <span class="keywordtype">size_t</span> reinserted_leaves = 0;</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>  <span class="keywordtype">size_t</span> removed_leaves = 0;</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>  <span class="keywordtype">size_t</span> skipped_refits = 0;</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>  <span class="keywordtype">size_t</span> skipped_self_queries = 0;</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>  <span class="keywordtype">size_t</span> queries = 0;</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  <span class="keywordtype">size_t</span> query_hits = 0;</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  <span class="keywordtype">size_t</span> pair_records = 0;</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>  <span class="keywordtype">size_t</span> candidate_pairs = 0;</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  <span class="keywordtype">size_t</span> duplicate_pairs = 0;</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  <span class="keywordtype">size_t</span> rejected_invalid_shapes = 0;</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="keywordtype">size_t</span> rejected_disabled_shapes = 0;</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  <span class="keywordtype">size_t</span> rejected_same_body = 0;</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  <span class="keywordtype">size_t</span> rejected_invalid_bodies = 0;</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  <span class="keywordtype">size_t</span> rejected_immovable_bodies = 0;</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  <span class="keywordtype">size_t</span> rejected_layers = 0;</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <span class="keywordtype">size_t</span> tree_nodes = 0;</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>};</div>
 </div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span> </div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>[[nodiscard]]</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span><span class="keyword">auto</span> worldShapeBounds(<span class="keyword">const</span> <a class="code hl_struct" href="structphysics_1_1Body.html">Body</a>&amp; body, <span class="keyword">const</span> <a class="code hl_struct" href="structphysics_1_1Shape.html">Shape</a>&amp; shape) -&gt; <a class="code hl_struct" href="structphysics_1_1AABB.html">AABB</a>;</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span> </div>
-<div class="foldopen" id="foldopen00048" data-start="{" data-end="};">
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno"><a class="line" href="classphysics_1_1BroadPhase.html">   48</a></span><span class="keyword">class </span><a class="code hl_class" href="classphysics_1_1BroadPhase.html">BroadPhase</a> {</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  <span class="keyword">auto</span> calculateBounds(<a class="code hl_struct" href="structphysics_1_1CollisionWorldView.html">CollisionWorldView</a> world, <span class="keywordtype">size_t</span> begin, <span class="keywordtype">size_t</span> end) <span class="keyword">const</span> -&gt; std::vector&lt;ShapeBoundsUpdate&gt;;</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span> </div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <span class="keyword">auto</span> findPairs(<a class="code hl_struct" href="structphysics_1_1CollisionWorldView.html">CollisionWorldView</a> world) -&gt; std::vector&lt;BroadPhasePair&gt;;</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span> </div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <span class="keyword">auto</span> queryBounds(<span class="keyword">const</span> <a class="code hl_struct" href="structphysics_1_1AABB.html">AABB</a>&amp; bounds) <span class="keyword">const</span> -&gt; std::vector&lt;ShapeID&gt;;</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span> </div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  <span class="keyword">auto</span> queryRay(glm::vec3 pos, glm::vec3 dir, <span class="keywordtype">float</span> max_distance = -1.0f) <span class="keyword">const</span> -&gt; std::vector&lt;ShapeID&gt;;</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span> </div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <span class="keyword">auto</span> debugNodes() <span class="keyword">const</span> -&gt; std::vector&lt;AABBTreeDebugNode&gt;;</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  <span class="keyword">auto</span> stats() <span class="keyword">const</span> -&gt; <span class="keyword">const</span> <a class="code hl_struct" href="structphysics_1_1BroadPhaseStats.html">BroadPhaseStats</a>&amp;;</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span> </div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  <span class="keyword">struct </span>ShapeLeaf {</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>    TreeNodeID node = null_node;</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>    uint32_t generation = 0;</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  };</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span></div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  <span class="keyword">auto</span> testPair(<a class="code hl_struct" href="structphysics_1_1CollisionWorldView.html">CollisionWorldView</a> world, <a class="code hl_struct" href="structphysics_1_1ShapeID.html">ShapeID</a> shape_a, <a class="code hl_struct" href="structphysics_1_1ShapeID.html">ShapeID</a> shape_b, <a class="code hl_struct" href="structphysics_1_1BroadPhaseStats.html">BroadPhaseStats</a>&amp; stats)</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>      -&gt; std::optional&lt;BroadPhasePair&gt;;</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span> </div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  <a class="code hl_class" href="classphysics_1_1AABBTree.html">AABBTree</a> m_tree;</div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  std::vector&lt;ShapeLeaf&gt; m_shape_leaves;</div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>  <a class="code hl_struct" href="structphysics_1_1BroadPhaseStats.html">BroadPhaseStats</a> m_stats;</div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>};</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span> </div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>[[nodiscard]]</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span><span class="keyword">auto</span> worldShapeBounds(<span class="keyword">const</span> <a class="code hl_struct" href="structphysics_1_1Body.html">Body</a>&amp; body, <span class="keyword">const</span> <a class="code hl_struct" href="structphysics_1_1Shape.html">Shape</a>&amp; shape) -&gt; <a class="code hl_struct" href="structphysics_1_1AABB.html">AABB</a>;</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span> </div>
+<div class="foldopen" id="foldopen00050" data-start="{" data-end="};">
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno"><a class="line" href="classphysics_1_1BroadPhase.html">   50</a></span><span class="keyword">class </span><a class="code hl_class" href="classphysics_1_1BroadPhase.html">BroadPhase</a> {</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  <span class="keyword">auto</span> calculateBounds(<a class="code hl_struct" href="structphysics_1_1CollisionWorldView.html">CollisionWorldView</a> world, <span class="keywordtype">size_t</span> begin, <span class="keywordtype">size_t</span> end) <span class="keyword">const</span> -&gt; std::vector&lt;ShapeBoundsUpdate&gt;;</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span> </div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <span class="keyword">auto</span> findPairs(<a class="code hl_struct" href="structphysics_1_1CollisionWorldView.html">CollisionWorldView</a> world) -&gt; std::vector&lt;BroadPhasePair&gt;;</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  <span class="keyword">auto</span> queryBounds(<span class="keyword">const</span> <a class="code hl_struct" href="structphysics_1_1AABB.html">AABB</a>&amp; bounds) <span class="keyword">const</span> -&gt; std::vector&lt;ShapeID&gt;;</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span> </div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <span class="keyword">template</span>&lt;<span class="keyword">typename</span> Visit&gt;</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  <span class="keywordtype">void</span> raycast(glm::vec3 origin, glm::vec3 inv_dir, <span class="keywordtype">float</span> max_distance, Visit&amp;&amp; visit)<span class="keyword"> const </span>{</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    m_tree.raycast(origin, inv_dir, max_distance, std::forward&lt;Visit&gt;(visit));</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  }</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span> </div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  <span class="keyword">auto</span> debugNodes() <span class="keyword">const</span> -&gt; std::vector&lt;AABBTreeDebugNode&gt;;</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  <span class="keyword">auto</span> stats() <span class="keyword">const</span> -&gt; <span class="keyword">const</span> <a class="code hl_struct" href="structphysics_1_1BroadPhaseStats.html">BroadPhaseStats</a>&amp;;</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span> </div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  <span class="keyword">struct </span>ShapeLeaf {</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>    TreeNodeID node = null_node;</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>    uint32_t generation = 0;</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  };</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span></div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  <span class="keyword">auto</span> testPair(<a class="code hl_struct" href="structphysics_1_1CollisionWorldView.html">CollisionWorldView</a> world, <a class="code hl_struct" href="structphysics_1_1ShapeID.html">ShapeID</a> shape_a, <a class="code hl_struct" href="structphysics_1_1ShapeID.html">ShapeID</a> shape_b, <a class="code hl_struct" href="structphysics_1_1BroadPhaseStats.html">BroadPhaseStats</a>&amp; stats)</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>      -&gt; std::optional&lt;BroadPhasePair&gt;;</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span> </div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  <a class="code hl_class" href="classphysics_1_1AABBTree.html">AABBTree</a> m_tree;</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  std::vector&lt;ShapeLeaf&gt; m_shape_leaves;</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  <a class="code hl_struct" href="structphysics_1_1BroadPhaseStats.html">BroadPhaseStats</a> m_stats;</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>};</div>
 </div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span> </div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>}</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span> </div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>}</div>
 <div class="ttc" id="aaabb__tree_8hpp_html"><div class="ttname"><a href="aabb__tree_8hpp.html">aabb_tree.hpp</a></div><div class="ttdoc">TODO: Brief description of the file&#39;s purpose.</div></div>
-<div class="ttc" id="aclassphysics_1_1AABBTree_html"><div class="ttname"><a href="classphysics_1_1AABBTree.html">physics::AABBTree</a></div><div class="ttdef"><b>Definition</b> aabb_tree.hpp:48</div></div>
-<div class="ttc" id="aclassphysics_1_1BroadPhase_html"><div class="ttname"><a href="classphysics_1_1BroadPhase.html">physics::BroadPhase</a></div><div class="ttdef"><b>Definition</b> broad_phase.hpp:48</div></div>
+<div class="ttc" id="aclassphysics_1_1AABBTree_html"><div class="ttname"><a href="classphysics_1_1AABBTree.html">physics::AABBTree</a></div><div class="ttdef"><b>Definition</b> aabb_tree.hpp:52</div></div>
+<div class="ttc" id="aclassphysics_1_1BroadPhase_html"><div class="ttname"><a href="classphysics_1_1BroadPhase.html">physics::BroadPhase</a></div><div class="ttdef"><b>Definition</b> broad_phase.hpp:50</div></div>
 <div class="ttc" id="acollision_8hpp_html"><div class="ttname"><a href="collision_8hpp.html">collision.hpp</a></div><div class="ttdoc">Canonical collision-pair records shared by broad and narrow phases.</div></div>
 <div class="ttc" id="acollision__world_8hpp_html"><div class="ttname"><a href="collision__world_8hpp.html">collision_world.hpp</a></div><div class="ttdoc">Read-only access to physics data used by collision detection.</div></div>
 <div class="ttc" id="astructphysics_1_1AABB_html"><div class="ttname"><a href="structphysics_1_1AABB.html">physics::AABB</a></div><div class="ttdef"><b>Definition</b> aabb.hpp:16</div></div>
-<div class="ttc" id="astructphysics_1_1Body_html"><div class="ttname"><a href="structphysics_1_1Body.html">physics::Body</a></div><div class="ttdef"><b>Definition</b> body.hpp:54</div></div>
-<div class="ttc" id="astructphysics_1_1BroadPhaseStats_html"><div class="ttname"><a href="structphysics_1_1BroadPhaseStats.html">physics::BroadPhaseStats</a></div><div class="ttdef"><b>Definition</b> broad_phase.hpp:23</div></div>
+<div class="ttc" id="astructphysics_1_1Body_html"><div class="ttname"><a href="structphysics_1_1Body.html">physics::Body</a></div><div class="ttdef"><b>Definition</b> body.hpp:60</div></div>
+<div class="ttc" id="astructphysics_1_1BroadPhaseStats_html"><div class="ttname"><a href="structphysics_1_1BroadPhaseStats.html">physics::BroadPhaseStats</a></div><div class="ttdef"><b>Definition</b> broad_phase.hpp:24</div></div>
 <div class="ttc" id="astructphysics_1_1CollisionWorldView_html"><div class="ttname"><a href="structphysics_1_1CollisionWorldView.html">physics::CollisionWorldView</a></div><div class="ttdef"><b>Definition</b> collision_world.hpp:16</div></div>
-<div class="ttc" id="astructphysics_1_1ShapeBoundsUpdate_html"><div class="ttname"><a href="structphysics_1_1ShapeBoundsUpdate.html">physics::ShapeBoundsUpdate</a></div><div class="ttdef"><b>Definition</b> broad_phase.hpp:17</div></div>
-<div class="ttc" id="astructphysics_1_1ShapeID_html"><div class="ttname"><a href="structphysics_1_1ShapeID.html">physics::ShapeID</a></div><div class="ttdef"><b>Definition</b> shape.hpp:26</div></div>
-<div class="ttc" id="astructphysics_1_1Shape_html"><div class="ttname"><a href="structphysics_1_1Shape.html">physics::Shape</a></div><div class="ttdef"><b>Definition</b> shape.hpp:158</div></div>
+<div class="ttc" id="astructphysics_1_1ShapeBoundsUpdate_html"><div class="ttname"><a href="structphysics_1_1ShapeBoundsUpdate.html">physics::ShapeBoundsUpdate</a></div><div class="ttdef"><b>Definition</b> broad_phase.hpp:18</div></div>
+<div class="ttc" id="astructphysics_1_1ShapeID_html"><div class="ttname"><a href="structphysics_1_1ShapeID.html">physics::ShapeID</a></div><div class="ttdef"><b>Definition</b> shape.hpp:29</div></div>
+<div class="ttc" id="astructphysics_1_1Shape_html"><div class="ttname"><a href="structphysics_1_1Shape.html">physics::Shape</a></div><div class="ttdef"><b>Definition</b> shape.hpp:161</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

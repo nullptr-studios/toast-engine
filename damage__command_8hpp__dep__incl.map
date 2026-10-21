@@ -1,5 +1,5 @@
 <map id="engine/src/toast/physics/damage_command.hpp" name="engine/src/toast/physics/damage_command.hpp">
-<area shape="rect" id="Node000001" title="TODO: Add file description." alt="" coords="5,5,184,50"/>
+<area shape="rect" id="Node000001" title="The kinds of damage that break voxels." alt="" coords="5,5,184,50"/>
 <area shape="rect" id="Node000002" href="$simulator_8hpp.html" title="This class simulates all of the physics of the project." alt="" coords="272,469,450,513"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="74,66,49,132,39,171,34,212,34,307,36,343,44,370,59,394,84,419,127,447,175,466,225,478,274,487,269,488,224,483,174,471,125,451,81,423,55,397,39,372,31,344,29,307,29,212,33,170,44,130,76,61"/>
 <area shape="rect" id="Node000004" href="$voxel__shape__data_8hpp.html" title="Voxel data structures for physics system." alt="" coords="95,98,273,143"/>

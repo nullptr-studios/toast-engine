@@ -1,0 +1,13 @@
+<map id="engine/src/toast/physics/layers.hpp" name="engine/src/toast/physics/layers.hpp">
+<area shape="rect" id="Node000001" title="Collision layers." alt="" coords="136,5,314,50"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,98,71,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="176,53,83,94,81,89,174,48"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="94,98,152,126"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="201,50,153,90,150,86,196,51"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="176,98,273,126"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="227,48,227,84,222,81,223,52"/>
+<area shape="rect" id="Node000005" href="$export_8hpp.html" title=" " alt="" coords="296,98,425,126"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="261,48,329,90,323,90,260,53"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="450,98,512,126"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="293,48,437,95,432,96,292,53"/>
+</map>

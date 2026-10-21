@@ -5,6 +5,7 @@ var namespaceeditor =
     [ "Converters", "namespaceeditor_1_1Converters.html", "namespaceeditor_1_1Converters" ],
     [ "Editors", "namespaceeditor_1_1Editors.html", "namespaceeditor_1_1Editors" ],
     [ "Engine", "namespaceeditor_1_1Engine.html", "namespaceeditor_1_1Engine" ],
+    [ "Git", "namespaceeditor_1_1Git.html", "namespaceeditor_1_1Git" ],
     [ "Logger", "namespaceeditor_1_1Logger.html", "namespaceeditor_1_1Logger" ],
     [ "StartWindow", "namespaceeditor_1_1StartWindow.html", "namespaceeditor_1_1StartWindow" ],
     [ "VoxelEditor", "namespaceeditor_1_1VoxelEditor.html", "namespaceeditor_1_1VoxelEditor" ],

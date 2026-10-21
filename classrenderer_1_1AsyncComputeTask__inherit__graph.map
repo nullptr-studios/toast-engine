@@ -1,0 +1,7 @@
+<map id="renderer::AsyncComputeTask" name="renderer::AsyncComputeTask">
+<area shape="rect" id="Node000001" title=" " alt="" coords="108,5,320,33"/>
+<area shape="rect" id="Node000002" href="$classexample_1_1DebrisSimulation.html" title="Debris particles integrated on the async compute queue." alt="" coords="5,81,204,109"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="184,41,125,83,123,78,179,43"/>
+<area shape="rect" id="Node000003" href="$classphysics_1_1DebrisSimulation.html" title=" " alt="" coords="228,81,418,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="247,40,306,81,301,80,245,45"/>
+</map>

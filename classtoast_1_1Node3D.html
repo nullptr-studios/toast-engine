@@ -231,10 +231,12 @@ Collaboration diagram for toast::Node3D:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a39965cea40f4940c66643731f28d9c4d" id="r_a39965cea40f4940c66643731f28d9c4d"><td class="memItemLeft"><a id="a39965cea40f4940c66643731f28d9c4d" name="a39965cea40f4940c66643731f28d9c4d"></a>
-auto&#160;</td><td class="memItemRight"><b>raycasts</b> (glm::vec3 pos, glm::vec3 dir, float max_distance=-1.0f, int max_targets=3) const -&gt; std::vector&lt; <a class="el" href="structphysics_1_1RayHit.html">physics::RayHit</a> &gt;</td></tr>
-<tr class="memitem:ae992f803913a9dfcb71ac418ca860f25" id="r_ae992f803913a9dfcb71ac418ca860f25"><td class="memItemLeft"><a id="ae992f803913a9dfcb71ac418ca860f25" name="ae992f803913a9dfcb71ac418ca860f25"></a>
-auto&#160;</td><td class="memItemRight"><b>raycast</b> (glm::vec3 pos, glm::vec3 dir, float max_distance=-1.0f) const -&gt; std::optional&lt; <a class="el" href="structphysics_1_1RayHit.html">physics::RayHit</a> &gt;</td></tr>
+<tr class="memitem:a05006fca9cef778de10d69c4c99f2144" id="r_a05006fca9cef778de10d69c4c99f2144"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a05006fca9cef778de10d69c4c99f2144">raycast</a> (glm::vec3 dir, glm::vec3 offset=glm::vec3(0.0f), float max_distance=-1.0f, bool ignore_self=true, const std::vector&lt; int &gt; &amp;layers=std::vector&lt; int &gt; {}) const -&gt; std::optional&lt; <a class="el" href="structphysics_1_1RayHit.html">physics::RayHit</a> &gt;</td></tr>
+<tr class="memdesc:a05006fca9cef778de10d69c4c99f2144"><td class="mdescLeft">&#160;</td><td class="mdescRight">The nearest thing a ray from this node hits.  <br /></td></tr>
+<tr class="memitem:ac4822bb7142b5ac24c14a231652da487" id="r_ac4822bb7142b5ac24c14a231652da487"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#ac4822bb7142b5ac24c14a231652da487">raymulticast</a> (glm::vec3 dir, glm::vec3 offset=glm::vec3(0.0f), float max_distance=-1.0f, int max_hits=-1, bool ignore_self=true, const std::vector&lt; int &gt; &amp;layers=std::vector&lt; int &gt; {}) const -&gt; std::vector&lt; <a class="el" href="structphysics_1_1RayHit.html">physics::RayHit</a> &gt;</td></tr>
+<tr class="memdesc:ac4822bb7142b5ac24c14a231652da487"><td class="mdescLeft">&#160;</td><td class="mdescRight">Up to <code class="param">max_hits</code> things collisions.  <br /></td></tr>
+<tr class="memitem:ae7ff4677e5eda696b65c5b835512fa1d" id="r_ae7ff4677e5eda696b65c5b835512fa1d"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#ae7ff4677e5eda696b65c5b835512fa1d">linecast</a> (glm::vec3 from, glm::vec3 to, int max_hits=-1, bool ignore_self=true, const std::vector&lt; int &gt; &amp;layers=std::vector&lt; int &gt; {}) const -&gt; std::vector&lt; <a class="el" href="structphysics_1_1RayHit.html">physics::RayHit</a> &gt;</td></tr>
+<tr class="memdesc:ae7ff4677e5eda696b65c5b835512fa1d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Everything on the line between two points, nearest to <code class="param">from</code> first.  <br /></td></tr>
 <tr class="memitem:adad24d149f2272f82a98518028bbece9" id="r_adad24d149f2272f82a98518028bbece9"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#adad24d149f2272f82a98518028bbece9">lookAt</a> (glm::vec3 target, glm::vec3 up={0.0f, 0.0f, 1.0f})</td></tr>
 <tr class="memdesc:adad24d149f2272f82a98518028bbece9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Orients the node so its forward axis points at a world-space target.  <br /></td></tr>
 <tr class="memitem:a683830b92106346ba6e3446ead55a23d" id="r_a683830b92106346ba6e3446ead55a23d"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a683830b92106346ba6e3446ead55a23d">lookAtZ</a> (glm::vec3 target)</td></tr>
@@ -454,6 +456,52 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
+<a id="ae7ff4677e5eda696b65c5b835512fa1d" name="ae7ff4677e5eda696b65c5b835512fa1d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae7ff4677e5eda696b65c5b835512fa1d">&#9670;&#160;</a></span>linecast()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto toast::Node3D::linecast </td>
+          <td>(</td>
+          <td class="paramtype">glm::vec3</td>          <td class="paramname"><span class="paramname"><em>from</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">glm::vec3</td>          <td class="paramname"><span class="paramname"><em>to</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int</td>          <td class="paramname"><span class="paramname"><em>max_hits</em></span><span class="paramdefsep"> = </span><span class="paramdefval">-1</span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>ignore_self</em></span><span class="paramdefsep"> = </span><span class="paramdefval">true</span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::vector&lt; int &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>layers</em></span><span class="paramdefsep"> = </span><span class="paramdefval">std::vector&lt;int&gt;&#160;{}</span>&#160;) const -&gt; std::vector&lt; <a class="el" href="structphysics_1_1RayHit.html">physics::RayHit</a> &gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Everything on the line between two points, nearest to <code class="param">from</code> first. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">from</td><td>Start of the line in world space </td></tr>
+    <tr><td class="paramname">to</td><td>End of the line in world space </td></tr>
+    <tr><td class="paramname">max_hits</td><td>How many to look for </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <a id="adad24d149f2272f82a98518028bbece9" name="adad24d149f2272f82a98518028bbece9"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#adad24d149f2272f82a98518028bbece9">&#9670;&#160;</a></span>lookAt()</h2>
 
@@ -506,6 +554,97 @@ Here is the caller graph for this function:</div>
   </table>
   </dd>
 </dl>
+
+</div>
+</div>
+<a id="a05006fca9cef778de10d69c4c99f2144" name="a05006fca9cef778de10d69c4c99f2144"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a05006fca9cef778de10d69c4c99f2144">&#9670;&#160;</a></span>raycast()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto toast::Node3D::raycast </td>
+          <td>(</td>
+          <td class="paramtype">glm::vec3</td>          <td class="paramname"><span class="paramname"><em>dir</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">glm::vec3</td>          <td class="paramname"><span class="paramname"><em>offset</em></span><span class="paramdefsep"> = </span><span class="paramdefval">glm::vec3(0.0f)</span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float</td>          <td class="paramname"><span class="paramname"><em>max_distance</em></span><span class="paramdefsep"> = </span><span class="paramdefval">-1.0f</span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>ignore_self</em></span><span class="paramdefsep"> = </span><span class="paramdefval">true</span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::vector&lt; int &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>layers</em></span><span class="paramdefsep"> = </span><span class="paramdefval">std::vector&lt;int&gt;&#160;{}</span>&#160;) const -&gt; std::optional&lt; <a class="el" href="structphysics_1_1RayHit.html">physics::RayHit</a> &gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>The nearest thing a ray from this node hits. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">dir</td><td>Where the ray goes </td></tr>
+    <tr><td class="paramname">offset</td><td>Where the ray starts </td></tr>
+    <tr><td class="paramname">max_distance</td><td>How far the ray goes </td></tr>
+    <tr><td class="paramname">ignore_self</td><td>Ignores colision from this node or a children </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="ac4822bb7142b5ac24c14a231652da487" name="ac4822bb7142b5ac24c14a231652da487"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac4822bb7142b5ac24c14a231652da487">&#9670;&#160;</a></span>raymulticast()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto toast::Node3D::raymulticast </td>
+          <td>(</td>
+          <td class="paramtype">glm::vec3</td>          <td class="paramname"><span class="paramname"><em>dir</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">glm::vec3</td>          <td class="paramname"><span class="paramname"><em>offset</em></span><span class="paramdefsep"> = </span><span class="paramdefval">glm::vec3(0.0f)</span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float</td>          <td class="paramname"><span class="paramname"><em>max_distance</em></span><span class="paramdefsep"> = </span><span class="paramdefval">-1.0f</span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int</td>          <td class="paramname"><span class="paramname"><em>max_hits</em></span><span class="paramdefsep"> = </span><span class="paramdefval">-1</span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>ignore_self</em></span><span class="paramdefsep"> = </span><span class="paramdefval">true</span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::vector&lt; int &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>layers</em></span><span class="paramdefsep"> = </span><span class="paramdefval">std::vector&lt;int&gt;&#160;{}</span>&#160;) const -&gt; std::vector&lt; <a class="el" href="structphysics_1_1RayHit.html">physics::RayHit</a> &gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Up to <code class="param">max_hits</code> things collisions. </p>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="#a05006fca9cef778de10d69c4c99f2144" title="The nearest thing a ray from this node hits.">raycast</a> for the other arguments </dd></dl>
 
 </div>
 </div>

@@ -123,9 +123,9 @@ Collaboration diagram for voxel::gpu::ScenePatch:</div>
 <div class="dyncontent">
 <div class="center"><img src="structvoxel_1_1gpu_1_1ScenePatch__coll__graph.png" border="0" usemap="#avoxel_1_1gpu_1_1ScenePatch_coll__map" loading="lazy" alt="Collaboration graph"/></div>
 <map name="avoxel_1_1gpu_1_1ScenePatch_coll__map" id="avoxel_1_1gpu_1_1ScenePatch_coll__map">
-<area shape="rect" title=" " alt="" coords="10,173,180,201"/>
+<area shape="rect" title=" " alt="" coords="10,218,180,245"/>
 <area shape="rect" href="structvoxel_1_1gpu_1_1PatchSection.html" title=" " alt="" coords="5,5,185,33"/>
-<area shape="poly" title=" " alt="" coords="97,48,98,173,92,172,93,49"/>
+<area shape="poly" title=" " alt="" coords="98,48,98,217,92,217,92,50"/>
 </map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -134,6 +134,15 @@ Public Attributes</h2></td></tr>
 <tr class="memitem:ab6ae4ac56d7057b4d0fab6701be72dba" id="r_ab6ae4ac56d7057b4d0fab6701be72dba"><td class="memItemLeft"><a id="ab6ae4ac56d7057b4d0fab6701be72dba" name="ab6ae4ac56d7057b4d0fab6701be72dba"></a>
 uint32_t&#160;</td><td class="memItemRight"><b>pool_slots</b> = 0</td></tr>
 <tr class="memdesc:ab6ae4ac56d7057b4d0fab6701be72dba"><td class="mdescLeft">&#160;</td><td class="mdescRight">Slots the pool sections hold afterwards and they only ever grow. <br /></td></tr>
+<tr class="memitem:ac1bd4716dfa317f704163ddf1bb7ce1e" id="r_ac1bd4716dfa317f704163ddf1bb7ce1e"><td class="memItemLeft"><a id="ac1bd4716dfa317f704163ddf1bb7ce1e" name="ac1bd4716dfa317f704163ddf1bb7ce1e"></a>
+uint32_t&#160;</td><td class="memItemRight"><b>grid_words</b> = 0</td></tr>
+<tr class="memdesc:ac1bd4716dfa317f704163ddf1bb7ce1e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Section sizes afterwards in words or records. <br /></td></tr>
+<tr class="memitem:a0b8eea206ea793f4349f88af8e1794bd" id="r_a0b8eea206ea793f4349f88af8e1794bd"><td class="memItemLeft"><a id="a0b8eea206ea793f4349f88af8e1794bd" name="a0b8eea206ea793f4349f88af8e1794bd"></a>
+uint32_t&#160;</td><td class="memItemRight"><b>coarse_words</b> = 0</td></tr>
+<tr class="memitem:ad5b41d0d6aa7c98bde09708b128c4b62" id="r_ad5b41d0d6aa7c98bde09708b128c4b62"><td class="memItemLeft"><a id="ad5b41d0d6aa7c98bde09708b128c4b62" name="ad5b41d0d6aa7c98bde09708b128c4b62"></a>
+uint32_t&#160;</td><td class="memItemRight"><b>palette_words</b> = 0</td></tr>
+<tr class="memitem:a4c17198d134476d67c853e93515f7d84" id="r_a4c17198d134476d67c853e93515f7d84"><td class="memItemLeft"><a id="a4c17198d134476d67c853e93515f7d84" name="a4c17198d134476d67c853e93515f7d84"></a>
+uint32_t&#160;</td><td class="memItemRight"><b>record_count</b> = 0</td></tr>
 <tr class="memitem:a124906abcd9609928755156ad3e23afd" id="r_a124906abcd9609928755156ad3e23afd"><td class="memItemLeft"><a id="a124906abcd9609928755156ad3e23afd" name="a124906abcd9609928755156ad3e23afd"></a>
 <a class="el" href="structvoxel_1_1gpu_1_1PatchSection.html">PatchSection</a>&#160;</td><td class="memItemRight"><b>materials</b></td></tr>
 <tr class="memitem:a8c282de11cbe9b6f4935d18663ea2b0e" id="r_a8c282de11cbe9b6f4935d18663ea2b0e"><td class="memItemLeft"><a id="a8c282de11cbe9b6f4935d18663ea2b0e" name="a8c282de11cbe9b6f4935d18663ea2b0e"></a>
@@ -142,6 +151,11 @@ uint32_t&#160;</td><td class="memItemRight"><b>pool_slots</b> = 0</td></tr>
 <a class="el" href="structvoxel_1_1gpu_1_1PatchSection.html">PatchSection</a>&#160;</td><td class="memItemRight"><b>grids</b></td></tr>
 <tr class="memitem:a743f88c5de495f0ec98b764abaca0ed1" id="r_a743f88c5de495f0ec98b764abaca0ed1"><td class="memItemLeft"><a id="a743f88c5de495f0ec98b764abaca0ed1" name="a743f88c5de495f0ec98b764abaca0ed1"></a>
 <a class="el" href="structvoxel_1_1gpu_1_1PatchSection.html">PatchSection</a>&#160;</td><td class="memItemRight"><b>coarse</b></td></tr>
+<tr class="memitem:a55f2865e4799797fd5a85eb40c491833" id="r_a55f2865e4799797fd5a85eb40c491833"><td class="memItemLeft"><a id="a55f2865e4799797fd5a85eb40c491833" name="a55f2865e4799797fd5a85eb40c491833"></a>
+<a class="el" href="structvoxel_1_1gpu_1_1PatchSection.html">PatchSection</a>&#160;</td><td class="memItemRight"><b>palettes</b></td></tr>
+<tr class="memitem:ac406081f37d62f7473a2b01f2b1b6c2c" id="r_ac406081f37d62f7473a2b01f2b1b6c2c"><td class="memItemLeft"><a id="ac406081f37d62f7473a2b01f2b1b6c2c" name="ac406081f37d62f7473a2b01f2b1b6c2c"></a>
+<a class="el" href="structvoxel_1_1gpu_1_1PatchSection.html">PatchSection</a>&#160;</td><td class="memItemRight"><b>records</b></td></tr>
+<tr class="memdesc:ac406081f37d62f7473a2b01f2b1b6c2c"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="structvoxel_1_1gpu_1_1VolumeRecord.html" title="Mirrored member for member by voxel_dda.slang so only 4-byte scalars.">VolumeRecord</a> words. <br /></td></tr>
 <tr class="memitem:a4120ee5fccb075c83b44ebf5e9bd1601" id="r_a4120ee5fccb075c83b44ebf5e9bd1601"><td class="memItemLeft"><a id="a4120ee5fccb075c83b44ebf5e9bd1601" name="a4120ee5fccb075c83b44ebf5e9bd1601"></a>
 std::vector&lt; <a class="el" href="structvoxel_1_1gpu_1_1TagDelta.html">TagDelta</a> &gt;&#160;</td><td class="memItemRight"><b>tags</b></td></tr>
 <tr class="memdesc:a4120ee5fccb075c83b44ebf5e9bd1601"><td class="mdescLeft">&#160;</td><td class="mdescRight">Per scene volume. <br /></td></tr>

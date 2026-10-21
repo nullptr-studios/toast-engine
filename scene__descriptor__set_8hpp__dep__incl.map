@@ -1,7 +1,9 @@
 <map id="engine/src/toast/renderer/scene_descriptor_set.hpp" name="engine/src/toast/renderer/scene_descriptor_set.hpp">
-<area shape="rect" id="Node000001" title=" " alt="" coords="114,5,304,50"/>
-<area shape="rect" id="Node000002" href="$material__pass_8hpp.html" title=" " alt="" coords="5,98,200,143"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="175,59,129,100,126,95,170,61"/>
-<area shape="rect" id="Node000003" href="$voxel__pass_8hpp.html" title=" " alt="" coords="224,98,408,143"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="247,58,293,98,288,97,245,63"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="216,5,406,50"/>
+<area shape="rect" id="Node000002" href="$debris__pass_8hpp.html" title=" " alt="" coords="5,98,190,143"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="248,56,150,100,148,95,243,57"/>
+<area shape="rect" id="Node000003" href="$material__pass_8hpp.html" title=" " alt="" coords="214,98,408,143"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="313,64,313,99,309,96,309,68"/>
+<area shape="rect" id="Node000004" href="$voxel__pass_8hpp.html" title=" " alt="" coords="432,98,616,143"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="376,54,476,97,470,98,375,59"/>
 </map>

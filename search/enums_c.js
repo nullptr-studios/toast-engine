@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['writemode_0',['WriteMode',['../voxel__edit_8hpp.html#a3a10676b93e60b0d61c36d3f686535eb',1,'voxel']]]
+  ['usage_0',['Usage',['../gpu__sync_8hpp.html#aafc90ea87b17d3cde4a806db138fc1f5',1,'renderer::sync']]]
 ];

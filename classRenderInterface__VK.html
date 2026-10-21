@@ -146,7 +146,7 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a9700f3e3681cdfaec9fd89b8bf1aba5c" id="r_a9700f3e3681cdfaec9fd89b8bf1aba5c"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a9700f3e3681cdfaec9fd89b8bf1aba5c">Initialize</a> (VkInstance instance, VkPhysicalDevice physical_device, VkDevice device, uint32_t queue_family_index, VkQueue queue, VkFormat color_format, VkFormat depth_stencil_format, std::mutex *submit_mutex)</td></tr>
+<tr class="memitem:aab4e09b1b3f21df772df6babcbee741f" id="r_aab4e09b1b3f21df772df6babcbee741f"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#aab4e09b1b3f21df772df6babcbee741f">Initialize</a> (VkInstance instance, VkPhysicalDevice physical_device, VkDevice device, uint32_t queue_family_index, VkQueue queue, VkFormat color_format, VkFormat depth_stencil_format, std::mutex *submit_mutex, VkPipelineCache pipeline_cache=VK_NULL_HANDLE)</td></tr>
 <tr class="memitem:ad9997316820b2eee1e207d6c5075d242" id="r_ad9997316820b2eee1e207d6c5075d242"><td class="memItemLeft"><a id="ad9997316820b2eee1e207d6c5075d242" name="ad9997316820b2eee1e207d6c5075d242"></a>
 void&#160;</td><td class="memItemRight"><b>Shutdown</b> ()</td></tr>
 <tr class="memitem:aac70a74eebd89a5710c0ab037e329751" id="r_aac70a74eebd89a5710c0ab037e329751"><td class="memItemLeft">std::shared_ptr&lt; const void &gt;&#160;</td><td class="memItemRight"><a class="el" href="#aac70a74eebd89a5710c0ab037e329751">OnFrameBegin</a> (uint32_t frame_index)</td></tr>
@@ -212,8 +212,8 @@ static constexpr uint32_t&#160;</td><td class="memItemRight"><b>kFramesInFlight<
 static constexpr VkDeviceSize&#160;</td><td class="memItemRight"><b>kVideoMemoryForAllocation</b> = 64 * 1024 * 1024</td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
-<a id="a9700f3e3681cdfaec9fd89b8bf1aba5c" name="a9700f3e3681cdfaec9fd89b8bf1aba5c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9700f3e3681cdfaec9fd89b8bf1aba5c">&#9670;&#160;</a></span>Initialize()</h2>
+<a id="aab4e09b1b3f21df772df6babcbee741f" name="aab4e09b1b3f21df772df6babcbee741f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aab4e09b1b3f21df772df6babcbee741f">&#9670;&#160;</a></span>Initialize()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -256,13 +256,19 @@ static constexpr VkDeviceSize&#160;</td><td class="memItemRight"><b>kVideoMemory
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">std::mutex *</td>          <td class="paramname"><span class="paramname"><em>submit_mutex</em></span>&#160;)</td>
+          <td class="paramtype">std::mutex *</td>          <td class="paramname"><span class="paramname"><em>submit_mutex</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">VkPipelineCache</td>          <td class="paramname"><span class="paramname"><em>pipeline_cache</em></span><span class="paramdefsep"> = </span><span class="paramdefval">VK_NULL_HANDLE</span>&#160;)</td>
         </tr>
       </table>
 </div><div class="memdoc">
 <p>Borrows the engine's Vulkan handles; the backend owns only its own resources. </p><dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">submit_mutex</td><td>guards graphics queue submission shared with the render thread </td></tr>
+    <tr><td class="paramname">pipeline_cache</td><td>shared with the engine so UI pipelines are cached across runs </td></tr>
   </table>
   </dd>
 </dl>

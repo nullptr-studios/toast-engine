@@ -123,10 +123,11 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classrenderer_
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a606801df04be621104390fabe741b142" id="r_a606801df04be621104390fabe741b142"><td class="memItemLeft"><a id="a606801df04be621104390fabe741b142" name="a606801df04be621104390fabe741b142"></a>
 void&#160;</td><td class="memItemRight"><b>create</b> (const <a class="el" href="classrenderer_1_1VulkanCore.html">VulkanCore</a> &amp;core, vk::Format format, uint32_t size, uint32_t mip_levels, std::string_view debug_name, vk::ImageUsageFlags extra_usage={}, bool with_face_views=true)</td></tr>
-<tr class="memitem:a4a3ee825f06ae5e4782eea4dd0aa9868" id="r_a4a3ee825f06ae5e4782eea4dd0aa9868"><td class="memItemLeft"><a id="a4a3ee825f06ae5e4782eea4dd0aa9868" name="a4a3ee825f06ae5e4782eea4dd0aa9868"></a>
-void&#160;</td><td class="memItemRight"><b>transition</b> (vk::CommandBuffer cmd, vk::ImageLayout new_layout, vk::AccessFlags dst_access, vk::PipelineStageFlags dst_stage)</td></tr>
-<tr class="memitem:aa5bd81bc7f25bd0fcbacd6b7b0779b26" id="r_aa5bd81bc7f25bd0fcbacd6b7b0779b26"><td class="memItemLeft"><a id="aa5bd81bc7f25bd0fcbacd6b7b0779b26" name="aa5bd81bc7f25bd0fcbacd6b7b0779b26"></a>
-void&#160;</td><td class="memItemRight"><b>setLayout</b> (vk::ImageLayout layout) noexcept</td></tr>
+<tr class="memitem:ad6c5a4eb00453198b6cc320e174f1f7b" id="r_ad6c5a4eb00453198b6cc320e174f1f7b"><td class="memItemLeft"><a id="ad6c5a4eb00453198b6cc320e174f1f7b" name="ad6c5a4eb00453198b6cc320e174f1f7b"></a>
+void&#160;</td><td class="memItemRight"><b>transition</b> (vk::CommandBuffer cmd, <a class="el" href="gpu__sync_8hpp.html#aafc90ea87b17d3cde4a806db138fc1f5">sync::Usage</a> next)</td></tr>
+<tr class="memitem:a1fc4d5ad706de9d0f023c87cd00c8cab" id="r_a1fc4d5ad706de9d0f023c87cd00c8cab"><td class="memItemLeft"><a id="a1fc4d5ad706de9d0f023c87cd00c8cab" name="a1fc4d5ad706de9d0f023c87cd00c8cab"></a>
+void&#160;</td><td class="memItemRight"><b>setUsage</b> (<a class="el" href="gpu__sync_8hpp.html#aafc90ea87b17d3cde4a806db138fc1f5">sync::Usage</a> usage) noexcept</td></tr>
+<tr class="memdesc:a1fc4d5ad706de9d0f023c87cd00c8cab"><td class="mdescLeft">&#160;</td><td class="mdescRight">For code that transitioned the whole image itself like the vulkan_common upload helpers. <br /></td></tr>
 <tr class="memitem:a98de4145e328985e7ce4ad72ecabc11b" id="r_a98de4145e328985e7ce4ad72ecabc11b"><td class="memItemLeft"><a id="a98de4145e328985e7ce4ad72ecabc11b" name="a98de4145e328985e7ce4ad72ecabc11b"></a>
 auto&#160;</td><td class="memItemRight"><b>faceView</b> (uint32_t mip, uint32_t face) const -&gt; vk::ImageView</td></tr>
 <tr class="memitem:aabe71b57e3a137e35a775b0258ddb9e9" id="r_aabe71b57e3a137e35a775b0258ddb9e9"><td class="memItemLeft"><a id="aabe71b57e3a137e35a775b0258ddb9e9" name="aabe71b57e3a137e35a775b0258ddb9e9"></a>
@@ -139,8 +140,8 @@ auto&#160;</td><td class="memItemRight"><b>size</b> () const noexcept -&gt; uint
 auto&#160;</td><td class="memItemRight"><b>mipSize</b> (uint32_t mip) const noexcept -&gt; uint32_t</td></tr>
 <tr class="memitem:a8010e24a2a1a2f750899d943a941d7d1" id="r_a8010e24a2a1a2f750899d943a941d7d1"><td class="memItemLeft"><a id="a8010e24a2a1a2f750899d943a941d7d1" name="a8010e24a2a1a2f750899d943a941d7d1"></a>
 auto&#160;</td><td class="memItemRight"><b>mipLevels</b> () const noexcept -&gt; uint32_t</td></tr>
-<tr class="memitem:aa3789868190e33de658c8602f2b73eb7" id="r_aa3789868190e33de658c8602f2b73eb7"><td class="memItemLeft"><a id="aa3789868190e33de658c8602f2b73eb7" name="aa3789868190e33de658c8602f2b73eb7"></a>
-auto&#160;</td><td class="memItemRight"><b>layout</b> () const noexcept -&gt; vk::ImageLayout</td></tr>
+<tr class="memitem:a2b32d801e8155fee2734876e51d3b734" id="r_a2b32d801e8155fee2734876e51d3b734"><td class="memItemLeft"><a id="a2b32d801e8155fee2734876e51d3b734" name="a2b32d801e8155fee2734876e51d3b734"></a>
+auto&#160;</td><td class="memItemRight"><b>usage</b> () const noexcept -&gt; <a class="el" href="gpu__sync_8hpp.html#aafc90ea87b17d3cde4a806db138fc1f5">sync::Usage</a></td></tr>
 <tr class="memitem:ac1d5969d665f0245243773ff628310a6" id="r_ac1d5969d665f0245243773ff628310a6"><td class="memItemLeft"><a id="ac1d5969d665f0245243773ff628310a6" name="ac1d5969d665f0245243773ff628310a6"></a>
 auto&#160;</td><td class="memItemRight"><b>isReady</b> () const noexcept -&gt; bool</td></tr>
 </table><table class="memberdecls">

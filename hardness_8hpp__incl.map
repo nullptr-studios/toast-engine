@@ -1,0 +1,11 @@
+<map id="engine/src/toast/physics/hardness.hpp" name="engine/src/toast/physics/hardness.hpp">
+<area shape="rect" id="Node000001" title="Tiers of how hard a material is to break." alt="" coords="74,5,253,50"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,98,61,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="131,52,68,92,65,87,127,49"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="84,98,150,126"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="154,49,134,86,130,82,149,52"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="173,98,248,126"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="177,48,198,85,193,84,175,53"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="272,98,368,126"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="206,48,284,90,279,91,204,53"/>
+</map>

@@ -126,19 +126,21 @@ Inheritance diagram for editor.Workspace.SettingRow:</div>
 <div class="dyncontent">
 <div class="center"><img src="classeditor_1_1Workspace_1_1SettingRow__inherit__graph.png" border="0" usemap="#aeditor_8Workspace_8SettingRow_inherit__map" loading="lazy" alt="Inheritance graph"/></div>
 <map name="aeditor_8Workspace_8SettingRow_inherit__map" id="aeditor_8Workspace_8SettingRow_inherit__map">
-<area shape="rect" title="Base for one editable row in a settings panel." alt="" coords="191,109,402,137"/>
+<area shape="rect" title="Base for one editable row in a settings panel." alt="" coords="191,136,402,164"/>
 <area shape="rect" href="classeditor_1_1Workspace_1_1BoolSettingRow.html" title=" " alt="" coords="454,5,695,33"/>
-<area shape="poly" title=" " alt="" coords="333,99,387,70,449,43,495,33,490,35,451,48,389,75,335,104"/>
+<area shape="poly" title=" " alt="" coords="324,124,379,82,413,61,449,43,489,32,484,35,451,48,416,66,382,87,327,128"/>
 <area shape="rect" href="classeditor_1_1Workspace_1_1EnumSettingRow.html" title="An integer setting the engine gave a name list, shown as a combo box over that list." alt="" coords="450,57,699,85"/>
-<area shape="poly" title=" " alt="" coords="389,103,499,85,494,86,390,108"/>
+<area shape="poly" title=" " alt="" coords="349,128,449,95,502,85,497,86,451,100,350,133"/>
 <area shape="rect" href="classeditor_1_1Workspace_1_1FloatSettingRow.html" title=" " alt="" coords="452,109,697,137"/>
-<area shape="poly" title=" " alt="" coords="417,121,455,123,450,124,418,126"/>
+<area shape="poly" title=" " alt="" coords="417,136,455,134,450,136,418,141"/>
 <area shape="rect" href="classeditor_1_1Workspace_1_1IntSettingRow.html" title=" " alt="" coords="460,161,689,189"/>
-<area shape="poly" title=" " alt="" coords="390,138,499,160,494,161,389,143"/>
+<area shape="poly" title=" " alt="" coords="417,158,463,164,457,165,418,164"/>
 <area shape="rect" href="classeditor_1_1Workspace_1_1StringSettingRow.html" title=" " alt="" coords="450,213,699,241"/>
-<area shape="poly" title=" " alt="" coords="335,143,389,171,451,198,495,213,490,213,449,203,387,176,334,148"/>
-<area shape="rect" title=" " alt="" coords="5,109,143,137"/>
-<area shape="poly" title=" " alt="" coords="157,121,193,122,188,124,159,126"/>
+<area shape="poly" title=" " alt="" coords="351,167,451,198,503,213,497,213,449,203,351,172"/>
+<area shape="rect" href="classeditor_1_1Workspace_1_1Vec3SettingRow.html" title=" " alt="" coords="454,265,696,293"/>
+<area shape="poly" title=" " alt="" coords="327,171,383,212,451,250,489,265,484,264,449,255,380,217,325,176"/>
+<area shape="rect" title=" " alt="" coords="5,136,143,164"/>
+<area shape="poly" title=" " alt="" coords="157,147,193,149,188,151,159,152"/>
 </map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
@@ -162,6 +164,8 @@ void&#160;</td><td class="memItemRight"><b>Reload</b> ()</td></tr>
 Protected Member Functions</h2></td></tr>
 <tr class="memitem:a29f658ab4cb7abde3bec09bed8a6637c" id="r_a29f658ab4cb7abde3bec09bed8a6637c"><td class="memItemLeft"><a id="a29f658ab4cb7abde3bec09bed8a6637c" name="a29f658ab4cb7abde3bec09bed8a6637c"></a>
 &#160;</td><td class="memItemRight"><b>SettingRow</b> (<a class="el" href="classeditor_1_1Engine_1_1SettingDescriptor.html">SettingDescriptor</a> descriptor)</td></tr>
+<tr class="memitem:a12079453bf6e4cbc99622044027cb036" id="r_a12079453bf6e4cbc99622044027cb036"><td class="memItemLeft"><a id="a12079453bf6e4cbc99622044027cb036" name="a12079453bf6e4cbc99622044027cb036"></a>
+virtual void&#160;</td><td class="memItemRight"><b>ResetValue</b> ()</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pro-attribs" class="groupheader"><a id="pro-attribs" name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
@@ -174,8 +178,8 @@ Properties</h2></td></tr>
 <a class="el" href="classeditor_1_1Engine_1_1SettingDescriptor.html">SettingDescriptor</a>&#160;</td><td class="memItemRight"><b>Descriptor</b><code> [get]</code></td></tr>
 <tr class="memitem:af3f4e18e915175ab10dc99cabf97da90" id="r_af3f4e18e915175ab10dc99cabf97da90"><td class="memItemLeft"><a id="af3f4e18e915175ab10dc99cabf97da90" name="af3f4e18e915175ab10dc99cabf97da90"></a>
 string&#160;</td><td class="memItemRight"><b>Key</b><code> [get]</code></td></tr>
-<tr class="memitem:adb50d8b6c5f35929975a321b9c9704ce" id="r_adb50d8b6c5f35929975a321b9c9704ce"><td class="memItemLeft"><a id="adb50d8b6c5f35929975a321b9c9704ce" name="adb50d8b6c5f35929975a321b9c9704ce"></a>
-string&#160;</td><td class="memItemRight"><b>Label</b><code> [get]</code></td></tr>
+<tr class="memitem:a83e18c97b2bef67935f98ebc8e358320" id="r_a83e18c97b2bef67935f98ebc8e358320"><td class="memItemLeft"><a id="a83e18c97b2bef67935f98ebc8e358320" name="a83e18c97b2bef67935f98ebc8e358320"></a>
+virtual string&#160;</td><td class="memItemRight"><b>Label</b><code> [get]</code></td></tr>
 <tr class="memitem:a754924fc42edc9f2a9f31034eaf0f181" id="r_a754924fc42edc9f2a9f31034eaf0f181"><td class="memItemLeft"><a id="a754924fc42edc9f2a9f31034eaf0f181" name="a754924fc42edc9f2a9f31034eaf0f181"></a>
 string&#160;</td><td class="memItemRight"><b>Description</b><code> [get]</code></td></tr>
 <tr class="memitem:a6afef20605259275e411c83ae66e1cec" id="r_a6afef20605259275e411c83ae66e1cec"><td class="memItemLeft"><a id="a6afef20605259275e411c83ae66e1cec" name="a6afef20605259275e411c83ae66e1cec"></a>

@@ -1,8 +1,8 @@
 var searchData=
 [
-  ['tableissue_0',['TableIssue',['../palette_8hpp.html#af9f8e6a0cbafde5f2251b00edad6d6b7',1,'voxel']]],
-  ['texturecolorspace_1',['TextureColorSpace',['../namespaceeditor_1_1Assets_1_1Importers.html#a71e6d49782ff0e98832446f15f2a0f47',1,'editor::Assets::Importers']]],
-  ['tickfunctionlist_2',['TickFunctionList',['../reflect__node_8hpp.html#ad08c233710fd0f56aefc18a7a9f1db5a',1,'toast']]],
-  ['tracktarget_3',['TrackTarget',['../animation_8hpp.html#ac39997bae30628e4ca487f3accf73bbf',1,'assets']]],
-  ['type_4',['Type',['../settings_8hpp.html#a2ebbf71176e134b71a40d159b04f46d7',1,'toast::settings']]]
+  ['savemode_0',['SaveMode',['../core__types_8hpp.html#a644eabc35efa6c659ae7a9162cb7eb52',1,'assets']]],
+  ['section_1',['Section',['../classrenderer_1_1VoxelGpuStorage.html#a258a8f2a679aaf82db1e0ed7bc482c5a',1,'renderer::VoxelGpuStorage']]],
+  ['settingtype_2',['SettingType',['../namespaceeditor_1_1Engine.html#a816e3f8b78ffd7fd2e0beafc6fd99f78',1,'editor::Engine']]],
+  ['simulationtype_3',['SimulationType',['../voxel__node_8hpp.html#a8f40d229f09435be04fad19608753e64',1,'toast']]],
+  ['splinetype_4',['SplineType',['../curve_8hpp.html#a3d8ff072f435446fc44dadcede9acd36',1,'assets']]]
 ];

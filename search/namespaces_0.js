@@ -13,8 +13,9 @@ var searchData=
   ['editor_3a_3aconverters_10',['Converters',['../namespaceeditor_1_1Converters.html',1,'editor']]],
   ['editor_3a_3aeditors_11',['Editors',['../namespaceeditor_1_1Editors.html',1,'editor']]],
   ['editor_3a_3aengine_12',['Engine',['../namespaceeditor_1_1Engine.html',1,'editor']]],
-  ['editor_3a_3alogger_13',['Logger',['../namespaceeditor_1_1Logger.html',1,'editor']]],
-  ['editor_3a_3astartwindow_14',['StartWindow',['../namespaceeditor_1_1StartWindow.html',1,'editor']]],
-  ['editor_3a_3avoxeleditor_15',['VoxelEditor',['../namespaceeditor_1_1VoxelEditor.html',1,'editor']]],
-  ['editor_3a_3aworkspace_16',['Workspace',['../namespaceeditor_1_1Workspace.html',1,'editor']]]
+  ['editor_3a_3agit_13',['Git',['../namespaceeditor_1_1Git.html',1,'editor']]],
+  ['editor_3a_3alogger_14',['Logger',['../namespaceeditor_1_1Logger.html',1,'editor']]],
+  ['editor_3a_3astartwindow_15',['StartWindow',['../namespaceeditor_1_1StartWindow.html',1,'editor']]],
+  ['editor_3a_3avoxeleditor_16',['VoxelEditor',['../namespaceeditor_1_1VoxelEditor.html',1,'editor']]],
+  ['editor_3a_3aworkspace_17',['Workspace',['../namespaceeditor_1_1Workspace.html',1,'editor']]]
 ];

@@ -1,4 +1,4 @@
 var cubemap__target_8hpp =
 [
-    [ "renderer::CubemapTarget", "classrenderer_1_1CubemapTarget.html", null ]
+    [ "renderer::CubemapTarget", "classrenderer_1_1CubemapTarget.html", "classrenderer_1_1CubemapTarget" ]
 ];

@@ -125,58 +125,76 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__scene__
 <div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span><span class="preprocessor">#include &quot;<a class="code" href="voxel__change__history_8hpp.html">voxel_change_history.hpp</a>&quot;</span></div>
 <div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span> </div>
 <div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="preprocessor">#include &lt;cstdint&gt;</span></div>
-<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &lt;optional&gt;</span></div>
-<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &lt;span&gt;</span></div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &lt;<a class="code" href="brick__pool_8hpp.html">toast/voxel/brick_pool.hpp</a>&gt;</span></div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &lt;<a class="code" href="gpu__layout_8hpp.html">toast/voxel/gpu_layout.hpp</a>&gt;</span></div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &lt;vector&gt;</span></div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span> </div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="keyword">namespace </span>renderer {</div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span></div>
-<div class="foldopen" id="foldopen00019" data-start="{" data-end="};">
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno"><a class="line" href="classrenderer_1_1VoxelScenePatcher.html">   19</a></span><span class="keyword">class </span><a class="code hl_class" href="classrenderer_1_1VoxelScenePatcher.html">VoxelScenePatcher</a> {</div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classrenderer_1_1VoxelScenePatcher.html#a52b73e1b802fbe8a9b8f7cfbf90aa2eb">adopt</a>(<span class="keyword">const</span> <a class="code hl_struct" href="structvoxel_1_1gpu_1_1PackedScene.html">voxel::gpu::PackedScene</a>&amp; scene, uint32_t pool_slots, std::vector&lt;uint64_t&gt; node_rids);</div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span></div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>  <span class="keyword">auto</span> <a class="code hl_function" href="classrenderer_1_1VoxelScenePatcher.html#a1be42ce1a2d3cbeeb211e0a3db689ec5">tryPatch</a>(</div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>      <span class="keyword">const</span> <a class="code hl_class" href="classvoxel_1_1BrickPool.html">voxel::BrickPool</a>&amp; pool, std::span&lt;const voxel::gpu::SceneVolume&gt; volumes, std::span&lt;const uint64_t&gt; node_rids,</div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>      std::span&lt;const VolumeDelta&gt; deltas</div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>  ) -&gt; std::optional&lt;voxel::gpu::ScenePatch&gt;;</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span> </div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>  <span class="keywordtype">void</span> reset();</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span> </div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  <span class="keyword">auto</span> valid() <span class="keyword">const</span> <span class="keyword">noexcept</span> -&gt; <span class="keywordtype">bool</span> {</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>    <span class="keywordflow">return</span> m_valid;</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>  }</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span> </div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="keyword">auto</span> scene() <span class="keyword">const</span> <span class="keyword">noexcept</span> -&gt; <span class="keyword">const</span> <a class="code hl_struct" href="structvoxel_1_1gpu_1_1PackedScene.html">voxel::gpu::PackedScene</a>&amp; {</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>    <span class="keywordflow">return</span> m_scene;</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  }</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span> </div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <span class="keyword">auto</span> poolSlots() <span class="keyword">const</span> <span class="keyword">noexcept</span> -&gt; uint32_t {</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>    <span class="keywordflow">return</span> m_pool_slots;</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  }</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span> </div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  <a class="code hl_struct" href="structvoxel_1_1gpu_1_1PackedScene.html">voxel::gpu::PackedScene</a> m_scene;</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  uint32_t m_pool_slots = 0;</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  std::vector&lt;uint64_t&gt; m_node_rids;</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  <span class="keywordtype">bool</span> m_valid = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>};</div>
+<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &lt;glm/glm.hpp&gt;</span></div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &lt;optional&gt;</span></div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &lt;span&gt;</span></div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &lt;<a class="code" href="brick__pool_8hpp.html">toast/voxel/brick_pool.hpp</a>&gt;</span></div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &lt;<a class="code" href="gpu__layout_8hpp.html">toast/voxel/gpu_layout.hpp</a>&gt;</span></div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &lt;vector&gt;</span></div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span> </div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="keyword">namespace </span>renderer {</div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span></div>
+<div class="foldopen" id="foldopen00020" data-start="{" data-end="};">
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno"><a class="line" href="classrenderer_1_1VoxelScenePatcher.html">   20</a></span><span class="keyword">class </span><a class="code hl_class" href="classrenderer_1_1VoxelScenePatcher.html">VoxelScenePatcher</a> {</div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="keyword">public</span>:</div>
+<div class="foldopen" id="foldopen00022" data-start="{" data-end="};">
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno"><a class="line" href="structrenderer_1_1VoxelScenePatcher_1_1Patched.html">   22</a></span>  <span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1VoxelScenePatcher_1_1Patched.html">Patched</a> {</div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>    <a class="code hl_struct" href="structvoxel_1_1gpu_1_1ScenePatch.html">voxel::gpu::ScenePatch</a> patch;</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno"><a class="line" href="structrenderer_1_1VoxelScenePatcher_1_1Patched.html#a235eef6a6d1a0be638597deaf6e9aece">   25</a></span>    std::vector&lt;uint64_t&gt; <a class="code hl_variable" href="structrenderer_1_1VoxelScenePatcher_1_1Patched.html#a235eef6a6d1a0be638597deaf6e9aece">record_rids</a>;</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>    std::vector&lt;glm::uvec3&gt; record_dims;</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>  };</div>
 </div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span> </div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>}</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span></div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classrenderer_1_1VoxelScenePatcher.html#a52b73e1b802fbe8a9b8f7cfbf90aa2eb">adopt</a>(<span class="keyword">const</span> <a class="code hl_struct" href="structvoxel_1_1gpu_1_1PackedScene.html">voxel::gpu::PackedScene</a>&amp; scene, uint32_t pool_slots, std::vector&lt;uint64_t&gt; node_rids);</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span></div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  <span class="keyword">auto</span> <a class="code hl_function" href="classrenderer_1_1VoxelScenePatcher.html#a889af568c956d7353c6dd04bae3b8130">tryPatch</a>(</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>      <span class="keyword">const</span> <a class="code hl_class" href="classvoxel_1_1BrickPool.html">voxel::BrickPool</a>&amp; pool, std::span&lt;const voxel::gpu::SceneVolume&gt; volumes, std::span&lt;const uint64_t&gt; node_rids,</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>      std::span&lt;const VolumeDelta&gt; deltas</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  ) -&gt; std::optional&lt;Patched&gt;;</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span> </div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="keywordtype">void</span> reset();</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span> </div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  <span class="keyword">auto</span> valid() const noexcept -&gt; <span class="keywordtype">bool</span> {</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>    <span class="keywordflow">return</span> m_valid;</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  }</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  <span class="keyword">auto</span> scene() const noexcept -&gt; const voxel::gpu::PackedScene&amp; {</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>    <span class="keywordflow">return</span> m_scene;</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  }</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span> </div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  <span class="keyword">auto</span> poolSlots() const noexcept -&gt; uint32_t {</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    <span class="keywordflow">return</span> m_pool_slots;</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  }</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span> </div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  <span class="keyword">auto</span> paletteMatches(<span class="keyword">const</span> voxel::gpu::VolumeRecord&amp; record, <span class="keyword">const</span> voxel::Palette&amp; palette) <span class="keyword">const</span> -&gt; bool;</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span></div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <span class="keyword">auto</span> findOrAppendPalette(<span class="keyword">const</span> voxel::Palette&amp; palette) -&gt; uint32_t;</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  voxel::gpu::PackedScene m_scene;</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  uint32_t m_pool_slots = 0;</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  std::vector&lt;uint64_t&gt; m_node_rids;</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  uint64_t m_dead_grid_words = 0;</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  <span class="keywordtype">bool</span> m_valid = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>};</div>
+</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span> </div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>}</div>
 <div class="ttc" id="abrick__pool_8hpp_html"><div class="ttname"><a href="brick__pool_8hpp.html">brick_pool.hpp</a></div></div>
-<div class="ttc" id="aclassrenderer_1_1VoxelScenePatcher_html"><div class="ttname"><a href="classrenderer_1_1VoxelScenePatcher.html">renderer::VoxelScenePatcher</a></div><div class="ttdoc">Remembers what the GPU copy of the voxel scene holds and turns small changes into patches of it.</div><div class="ttdef"><b>Definition</b> voxel_scene_patcher.hpp:19</div></div>
-<div class="ttc" id="aclassrenderer_1_1VoxelScenePatcher_html_a1be42ce1a2d3cbeeb211e0a3db689ec5"><div class="ttname"><a href="classrenderer_1_1VoxelScenePatcher.html#a1be42ce1a2d3cbeeb211e0a3db689ec5">renderer::VoxelScenePatcher::tryPatch</a></div><div class="ttdeci">auto tryPatch(const voxel::BrickPool &amp;pool, std::span&lt; const voxel::gpu::SceneVolume &gt; volumes, std::span&lt; const uint64_t &gt; node_rids, std::span&lt; const VolumeDelta &gt; deltas) -&gt; std::optional&lt; voxel::gpu::ScenePatch &gt;</div><div class="ttdef"><b>Definition</b> voxel_scene_patcher.cpp:19</div></div>
-<div class="ttc" id="aclassrenderer_1_1VoxelScenePatcher_html_a52b73e1b802fbe8a9b8f7cfbf90aa2eb"><div class="ttname"><a href="classrenderer_1_1VoxelScenePatcher.html#a52b73e1b802fbe8a9b8f7cfbf90aa2eb">renderer::VoxelScenePatcher::adopt</a></div><div class="ttdeci">void adopt(const voxel::gpu::PackedScene &amp;scene, uint32_t pool_slots, std::vector&lt; uint64_t &gt; node_rids)</div><div class="ttdoc">A full pack is what the GPU will hold so later patches build on it.</div><div class="ttdef"><b>Definition</b> voxel_scene_patcher.cpp:12</div></div>
+<div class="ttc" id="aclassrenderer_1_1VoxelScenePatcher_html"><div class="ttname"><a href="classrenderer_1_1VoxelScenePatcher.html">renderer::VoxelScenePatcher</a></div><div class="ttdoc">Records stay in place so a removed volume leaves a dead record and a new one is appended.</div><div class="ttdef"><b>Definition</b> voxel_scene_patcher.hpp:20</div></div>
+<div class="ttc" id="aclassrenderer_1_1VoxelScenePatcher_html_a52b73e1b802fbe8a9b8f7cfbf90aa2eb"><div class="ttname"><a href="classrenderer_1_1VoxelScenePatcher.html#a52b73e1b802fbe8a9b8f7cfbf90aa2eb">renderer::VoxelScenePatcher::adopt</a></div><div class="ttdeci">void adopt(const voxel::gpu::PackedScene &amp;scene, uint32_t pool_slots, std::vector&lt; uint64_t &gt; node_rids)</div><div class="ttdoc">A full pack is what the GPU will hold so later patches build on it.</div><div class="ttdef"><b>Definition</b> voxel_scene_patcher.cpp:28</div></div>
+<div class="ttc" id="aclassrenderer_1_1VoxelScenePatcher_html_a889af568c956d7353c6dd04bae3b8130"><div class="ttname"><a href="classrenderer_1_1VoxelScenePatcher.html#a889af568c956d7353c6dd04bae3b8130">renderer::VoxelScenePatcher::tryPatch</a></div><div class="ttdeci">auto tryPatch(const voxel::BrickPool &amp;pool, std::span&lt; const voxel::gpu::SceneVolume &gt; volumes, std::span&lt; const uint64_t &gt; node_rids, std::span&lt; const VolumeDelta &gt; deltas) -&gt; std::optional&lt; Patched &gt;</div><div class="ttdef"><b>Definition</b> voxel_scene_patcher.cpp:55</div></div>
 <div class="ttc" id="aclassvoxel_1_1BrickPool_html"><div class="ttname"><a href="classvoxel_1_1BrickPool.html">voxel::BrickPool</a></div><div class="ttdef"><b>Definition</b> brick_pool.hpp:26</div></div>
 <div class="ttc" id="agpu__layout_8hpp_html"><div class="ttname"><a href="gpu__layout_8hpp.html">gpu_layout.hpp</a></div></div>
+<div class="ttc" id="astructrenderer_1_1VoxelScenePatcher_1_1Patched_html"><div class="ttname"><a href="structrenderer_1_1VoxelScenePatcher_1_1Patched.html">renderer::VoxelScenePatcher::Patched</a></div><div class="ttdef"><b>Definition</b> voxel_scene_patcher.hpp:22</div></div>
+<div class="ttc" id="astructrenderer_1_1VoxelScenePatcher_1_1Patched_html_a235eef6a6d1a0be638597deaf6e9aece"><div class="ttname"><a href="structrenderer_1_1VoxelScenePatcher_1_1Patched.html#a235eef6a6d1a0be638597deaf6e9aece">renderer::VoxelScenePatcher::Patched::record_rids</a></div><div class="ttdeci">std::vector&lt; uint64_t &gt; record_rids</div><div class="ttdoc">Per record and 0 for a dead one.</div><div class="ttdef"><b>Definition</b> voxel_scene_patcher.hpp:25</div></div>
 <div class="ttc" id="astructvoxel_1_1gpu_1_1PackedScene_html"><div class="ttname"><a href="structvoxel_1_1gpu_1_1PackedScene.html">voxel::gpu::PackedScene</a></div><div class="ttdef"><b>Definition</b> gpu_layout.hpp:76</div></div>
+<div class="ttc" id="astructvoxel_1_1gpu_1_1ScenePatch_html"><div class="ttname"><a href="structvoxel_1_1gpu_1_1ScenePatch.html">voxel::gpu::ScenePatch</a></div><div class="ttdef"><b>Definition</b> gpu_layout.hpp:116</div></div>
 <div class="ttc" id="avoxel__change__history_8hpp_html"><div class="ttname"><a href="voxel__change__history_8hpp.html">voxel_change_history.hpp</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->

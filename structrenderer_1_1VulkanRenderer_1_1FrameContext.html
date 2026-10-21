@@ -123,16 +123,10 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('structrenderer
 Public Attributes</h2></td></tr>
 <tr class="memitem:a5abfd0e2bec2e7429ec3d719d68d2586" id="r_a5abfd0e2bec2e7429ec3d719d68d2586"><td class="memItemLeft"><a id="a5abfd0e2bec2e7429ec3d719d68d2586" name="a5abfd0e2bec2e7429ec3d719d68d2586"></a>
 vk::raii::CommandBuffer&#160;</td><td class="memItemRight"><b>command_buffer</b> = nullptr</td></tr>
-<tr class="memitem:a7a3d6d57cf8384a77e2d899c039d327c" id="r_a7a3d6d57cf8384a77e2d899c039d327c"><td class="memItemLeft"><a id="a7a3d6d57cf8384a77e2d899c039d327c" name="a7a3d6d57cf8384a77e2d899c039d327c"></a>
-vk::raii::CommandBuffer&#160;</td><td class="memItemRight"><b>compute_command_buffer</b> = nullptr</td></tr>
 <tr class="memitem:abdb3a5032f1f23ca79ec465ad58feee2" id="r_abdb3a5032f1f23ca79ec465ad58feee2"><td class="memItemLeft"><a id="abdb3a5032f1f23ca79ec465ad58feee2" name="abdb3a5032f1f23ca79ec465ad58feee2"></a>
 vk::raii::Semaphore&#160;</td><td class="memItemRight"><b>image_available</b> = nullptr</td></tr>
-<tr class="memitem:a29542d6d04eb1b644ecc3eff8896426d" id="r_a29542d6d04eb1b644ecc3eff8896426d"><td class="memItemLeft"><a id="a29542d6d04eb1b644ecc3eff8896426d" name="a29542d6d04eb1b644ecc3eff8896426d"></a>
-vk::raii::Semaphore&#160;</td><td class="memItemRight"><b>compute_to_graphics</b> = nullptr</td></tr>
 <tr class="memitem:aec4a233052c6a60f6285acefecf14514" id="r_aec4a233052c6a60f6285acefecf14514"><td class="memItemLeft"><a id="aec4a233052c6a60f6285acefecf14514" name="aec4a233052c6a60f6285acefecf14514"></a>
 vk::raii::Fence&#160;</td><td class="memItemRight"><b>in_flight</b> = nullptr</td></tr>
-<tr class="memitem:a14a4e9875d23b8a90fb3f20a731550c2" id="r_a14a4e9875d23b8a90fb3f20a731550c2"><td class="memItemLeft"><a id="a14a4e9875d23b8a90fb3f20a731550c2" name="a14a4e9875d23b8a90fb3f20a731550c2"></a>
-vk::raii::Fence&#160;</td><td class="memItemRight"><b>compute_in_flight</b> = nullptr</td></tr>
 <tr class="memitem:a7f6ae3fc5ebb684781d005aa16e543b0" id="r_a7f6ae3fc5ebb684781d005aa16e543b0"><td class="memItemLeft"><a id="a7f6ae3fc5ebb684781d005aa16e543b0" name="a7f6ae3fc5ebb684781d005aa16e543b0"></a>
 uint32_t&#160;</td><td class="memItemRight"><b>last_image_index</b> = 0</td></tr>
 <tr class="memitem:a957503ed5e5264ff7877f07057dbb17a" id="r_a957503ed5e5264ff7877f07057dbb17a"><td class="memItemLeft"><a id="a957503ed5e5264ff7877f07057dbb17a" name="a957503ed5e5264ff7877f07057dbb17a"></a>
@@ -141,6 +135,9 @@ bool&#160;</td><td class="memItemRight"><b>has_submitted</b> = false</td></tr>
 bool&#160;</td><td class="memItemRight"><b>was_probe_capture</b> = false</td></tr>
 <tr class="memitem:ae5a74d6275894d931cfe736e3172d29d" id="r_ae5a74d6275894d931cfe736e3172d29d"><td class="memItemLeft"><a id="ae5a74d6275894d931cfe736e3172d29d" name="ae5a74d6275894d931cfe736e3172d29d"></a>
 std::vector&lt; vma::raii::Buffer &gt;&#160;</td><td class="memItemRight"><b>blas_scratch</b></td></tr>
+<tr class="memitem:a6c6cb32ea4e797cb3de94bc5fe2df65e" id="r_a6c6cb32ea4e797cb3de94bc5fe2df65e"><td class="memItemLeft"><a id="a6c6cb32ea4e797cb3de94bc5fe2df65e" name="a6c6cb32ea4e797cb3de94bc5fe2df65e"></a>
+std::vector&lt; std::shared_ptr&lt; void &gt; &gt;&#160;</td><td class="memItemRight"><b>retired</b></td></tr>
+<tr class="memdesc:a6c6cb32ea4e797cb3de94bc5fe2df65e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Released once this frame fence was waited on again. <br /></td></tr>
 </table>
 <hr/>The documentation for this struct was generated from the following file:<ul>
 <li>engine/src/toast/renderer/<a class="el" href="vulkan__renderer_8hpp_source.html">vulkan_renderer.hpp</a></li>

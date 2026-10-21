@@ -145,12 +145,16 @@ auto&#160;</td><td class="memItemRight"><b>getTransferQueueFamilyIndex</b> () co
 auto&#160;</td><td class="memItemRight"><b>getGraphicsQueue</b> () const noexcept -&gt; vk::Queue</td></tr>
 <tr class="memitem:a6da949ca8a17d1180638b2266fe7d360" id="r_a6da949ca8a17d1180638b2266fe7d360"><td class="memItemLeft"><a id="a6da949ca8a17d1180638b2266fe7d360" name="a6da949ca8a17d1180638b2266fe7d360"></a>
 auto&#160;</td><td class="memItemRight"><b>getComputeQueue</b> () const noexcept -&gt; vk::Queue</td></tr>
+<tr class="memdesc:a6da949ca8a17d1180638b2266fe7d360"><td class="mdescLeft">&#160;</td><td class="mdescRight">Only <a class="el" href="classrenderer_1_1AsyncCompute.html">AsyncCompute</a> submits to it. <br /></td></tr>
 <tr class="memitem:a16d9f497b1693918c6e26c6778341427" id="r_a16d9f497b1693918c6e26c6778341427"><td class="memItemLeft"><a id="a16d9f497b1693918c6e26c6778341427" name="a16d9f497b1693918c6e26c6778341427"></a>
 auto&#160;</td><td class="memItemRight"><b>getTransferQueue</b> () const noexcept -&gt; vk::Queue</td></tr>
 <tr class="memitem:a8f48c6c3136d035ecf4d8f50b0bd55c0" id="r_a8f48c6c3136d035ecf4d8f50b0bd55c0"><td class="memItemLeft"><a id="a8f48c6c3136d035ecf4d8f50b0bd55c0" name="a8f48c6c3136d035ecf4d8f50b0bd55c0"></a>
 auto&#160;</td><td class="memItemRight"><b>getRenderDocAPI</b> () const noexcept -&gt; const RENDERDOC_API_1_6_0 *</td></tr>
 <tr class="memitem:adc057d6a72bfa870d46d4da4c14997a9" id="r_adc057d6a72bfa870d46d4da4c14997a9"><td class="memItemLeft"><a id="adc057d6a72bfa870d46d4da4c14997a9" name="adc057d6a72bfa870d46d4da4c14997a9"></a>
 auto&#160;</td><td class="memItemRight"><b>isRayTracingSupported</b> () const noexcept -&gt; bool</td></tr>
+<tr class="memitem:ad8e87601f3cd69b85c8af0702e5ec35e" id="r_ad8e87601f3cd69b85c8af0702e5ec35e"><td class="memItemLeft"><a id="ad8e87601f3cd69b85c8af0702e5ec35e" name="ad8e87601f3cd69b85c8af0702e5ec35e"></a>
+auto&#160;</td><td class="memItemRight"><b>isMeshShaderSupported</b> () const noexcept -&gt; bool</td></tr>
+<tr class="memdesc:ad8e87601f3cd69b85c8af0702e5ec35e"><td class="mdescLeft">&#160;</td><td class="mdescRight">VK_EXT_mesh_shader with task shaders and the output limits the voxel meshlets need. <br /></td></tr>
 <tr class="memitem:af63109ae70a5e87a144dd3ef9871bd04" id="r_af63109ae70a5e87a144dd3ef9871bd04"><td class="memItemLeft"><a id="af63109ae70a5e87a144dd3ef9871bd04" name="af63109ae70a5e87a144dd3ef9871bd04"></a>
 auto&#160;</td><td class="memItemRight"><b>getBufferAddress</b> (vk::Buffer buffer) const -&gt; vk::DeviceAddress</td></tr>
 <tr class="memitem:a6902d8d814fc7c812e0d65f45ce41e9f" id="r_a6902d8d814fc7c812e0d65f45ce41e9f"><td class="memItemLeft"><a id="a6902d8d814fc7c812e0d65f45ce41e9f" name="a6902d8d814fc7c812e0d65f45ce41e9f"></a>
@@ -158,6 +162,8 @@ auto&#160;</td><td class="memItemRight"><b>getScratchAllocationSize</b> (vk::Dev
 <tr class="memitem:a450bb1e0462bc345add949a516af99f5" id="r_a450bb1e0462bc345add949a516af99f5"><td class="memItemLeft"><a id="a450bb1e0462bc345add949a516af99f5" name="a450bb1e0462bc345add949a516af99f5"></a>
 auto&#160;</td><td class="memItemRight"><b>getAlignedScratchAddress</b> (vk::Buffer buffer) const -&gt; vk::DeviceAddress</td></tr>
 <tr class="memdesc:a450bb1e0462bc345add949a516af99f5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Pair with getScratchAllocationSize(). <br /></td></tr>
+<tr class="memitem:a11a95f5c7cd992be5a28da1c33f9e56d" id="r_a11a95f5c7cd992be5a28da1c33f9e56d"><td class="memItemLeft"><a id="a11a95f5c7cd992be5a28da1c33f9e56d" name="a11a95f5c7cd992be5a28da1c33f9e56d"></a>
+auto&#160;</td><td class="memItemRight"><b>isMemoryBudgetSupported</b> () const noexcept -&gt; bool</td></tr>
 <tr class="memitem:a3b00774d68802c67514c3fbe08a1b325" id="r_a3b00774d68802c67514c3fbe08a1b325"><td class="memItemLeft"><a id="a3b00774d68802c67514c3fbe08a1b325" name="a3b00774d68802c67514c3fbe08a1b325"></a>
 auto&#160;</td><td class="memItemRight"><b>isFrameBoundarySupported</b> () const noexcept -&gt; bool</td></tr>
 <tr class="memitem:a5f0a4db10f4c86da428ab773b70b0ba6" id="r_a5f0a4db10f4c86da428ab773b70b0ba6"><td class="memItemLeft"><a id="a5f0a4db10f4c86da428ab773b70b0ba6" name="a5f0a4db10f4c86da428ab773b70b0ba6"></a>
@@ -172,6 +178,23 @@ auto&#160;</td><td class="memItemRight"><b>debugUtilsEnabled</b> () const noexce
 auto&#160;</td><td class="memItemRight"><b>supportsSamplerAnisotropy</b> () const noexcept -&gt; bool</td></tr>
 <tr class="memitem:a9147ea56e18c9d3b42c50b7a06185a01" id="r_a9147ea56e18c9d3b42c50b7a06185a01"><td class="memItemLeft"><a id="a9147ea56e18c9d3b42c50b7a06185a01" name="a9147ea56e18c9d3b42c50b7a06185a01"></a>
 auto&#160;</td><td class="memItemRight"><b>maxSamplerAnisotropy</b> () const noexcept -&gt; float</td></tr>
+<tr class="memitem:ac3ead9ae912f90a07b4f43eee2ae169d" id="r_ac3ead9ae912f90a07b4f43eee2ae169d"><td class="memItemLeft"><a id="ac3ead9ae912f90a07b4f43eee2ae169d" name="ac3ead9ae912f90a07b4f43eee2ae169d"></a>
+auto&#160;</td><td class="memItemRight"><b>getPipelineCache</b> () const noexcept -&gt; const vk::raii::PipelineCache &amp;</td></tr>
+<tr class="memdesc:ac3ead9ae912f90a07b4f43eee2ae169d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Usable from any thread. <br /></td></tr>
+<tr class="memitem:ab7f4f70b1227b97b13e01c654e1695fd" id="r_ab7f4f70b1227b97b13e01c654e1695fd"><td class="memItemLeft"><a id="ab7f4f70b1227b97b13e01c654e1695fd" name="ab7f4f70b1227b97b13e01c654e1695fd"></a>
+void&#160;</td><td class="memItemRight"><b>loadPipelineCache</b> () const</td></tr>
+<tr class="memdesc:ab7f4f70b1227b97b13e01c654e1695fd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Before creating pipelines. Missing or stale files are ignored. <br /></td></tr>
+<tr class="memitem:ac74cb98945adef1f9532e4972d208d17" id="r_ac74cb98945adef1f9532e4972d208d17"><td class="memItemLeft"><a id="ac74cb98945adef1f9532e4972d208d17" name="ac74cb98945adef1f9532e4972d208d17"></a>
+void&#160;</td><td class="memItemRight"><b>savePipelineCache</b> () const</td></tr>
+<tr class="memitem:a212e2a92f2003f248f3e4b52a3500f08" id="r_a212e2a92f2003f248f3e4b52a3500f08"><td class="memItemLeft"><a id="a212e2a92f2003f248f3e4b52a3500f08" name="a212e2a92f2003f248f3e4b52a3500f08"></a>
+void&#160;</td><td class="memItemRight"><b>updateTracyMemory</b> () const</td></tr>
+<tr class="memdesc:a212e2a92f2003f248f3e4b52a3500f08"><td class="mdescLeft">&#160;</td><td class="mdescRight">Replays live VRAM blocks to a newly connected Tracy and plots heap usage. <br /></td></tr>
+<tr class="memitem:ab24eb6b60c88d405eb8696ce5993fcae" id="r_ab24eb6b60c88d405eb8696ce5993fcae"><td class="memItemLeft"><a id="ab24eb6b60c88d405eb8696ce5993fcae" name="ab24eb6b60c88d405eb8696ce5993fcae"></a>
+auto&#160;</td><td class="memItemRight"><b>asyncCompute</b> () const noexcept -&gt; <a class="el" href="classrenderer_1_1AsyncCompute.html">AsyncCompute</a> &amp;</td></tr>
+<tr class="memdesc:ab24eb6b60c88d405eb8696ce5993fcae"><td class="mdescLeft">&#160;</td><td class="mdescRight">The only way to submit compute work outside a frame. <br /></td></tr>
+<tr class="memitem:ac2c43d541c8e0493c65dcb5b36b851b6" id="r_ac2c43d541c8e0493c65dcb5b36b851b6"><td class="memItemLeft"><a id="ac2c43d541c8e0493c65dcb5b36b851b6" name="ac2c43d541c8e0493c65dcb5b36b851b6"></a>
+auto&#160;</td><td class="memItemRight"><b>transferSubmitMutex</b> () const noexcept -&gt; std::mutex &amp;</td></tr>
+<tr class="memdesc:ac2c43d541c8e0493c65dcb5b36b851b6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Only contended when <a class="el" href="classrenderer_1_1AsyncCompute.html">AsyncCompute</a> shares the transfer queue. <br /></td></tr>
 <tr class="memitem:ab1aa6a824b9d2847fa36a5b9a09ea34e" id="r_ab1aa6a824b9d2847fa36a5b9a09ea34e"><td class="memItemLeft"><a id="ab1aa6a824b9d2847fa36a5b9a09ea34e" name="ab1aa6a824b9d2847fa36a5b9a09ea34e"></a>
 auto&#160;</td><td class="memItemRight"><b>graphicsSubmitMutex</b> () const noexcept -&gt; std::mutex &amp;</td></tr>
 </table>

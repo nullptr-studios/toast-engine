@@ -1,0 +1,25 @@
+<map id="engine/src/toast/physics/fracture_profile.hpp" name="engine/src/toast/physics/fracture_profile.hpp">
+<area shape="rect" id="Node000001" title="How a material breaks: how the energy of a hit is spent and how coarse its cracks are." alt="" coords="305,5,484,50"/>
+<area shape="rect" id="Node000002" href="$material__defaults_8hpp.html" title="The values a material has when nothing sets them." alt="" coords="170,98,334,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="354,52,289,92,286,88,359,49"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="308,249,374,277"/>
+<area shape="poly" id="edge14_Node000001_Node000005" title=" " alt="" coords="392,49,350,236,345,233,387,52"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="432,98,516,126"/>
+<area shape="poly" id="edge13_Node000001_Node000009" title=" " alt="" coords="416,48,453,87,448,86,415,53"/>
+<area shape="rect" id="Node000003" href="$fracture__pattern_8hpp_source.html" title=" " alt="" coords="152,174,306,201"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="249,124,240,160,235,157,246,128"/>
+<area shape="poly" id="edge12_Node000002_Node000005" title=" " alt="" coords="272,124,298,145,321,172,334,203,340,235,336,233,329,205,316,175,294,149,271,129"/>
+<area shape="rect" id="Node000008" href="$hardness_8hpp.html" title="Tiers of how hard a material is to break." alt="" coords="19,174,127,201"/>
+<area shape="poly" id="edge7_Node000002_Node000008" title=" " alt="" coords="218,128,120,170,118,165,221,124"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="5,249,61,277"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="195,204,76,249,74,244,193,199"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="250,199,311,241,306,241,248,204"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="85,249,160,277"/>
+<area shape="poly" id="edge5_Node000003_Node000006" title=" " alt="" coords="212,201,155,243,152,238,207,203"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="184,249,280,277"/>
+<area shape="poly" id="edge6_Node000003_Node000007" title=" " alt="" coords="231,200,233,235,228,232,228,204"/>
+<area shape="poly" id="edge8_Node000008_Node000004" title=" " alt="" coords="68,200,50,237,45,234,64,204"/>
+<area shape="poly" id="edge9_Node000008_Node000005" title=" " alt="" coords="121,199,295,247,291,251,121,205"/>
+<area shape="poly" id="edge10_Node000008_Node000006" title=" " alt="" coords="83,199,108,236,102,237,81,204"/>
+<area shape="poly" id="edge11_Node000008_Node000007" title=" " alt="" coords="102,199,192,241,187,244,101,204"/>
+</map>

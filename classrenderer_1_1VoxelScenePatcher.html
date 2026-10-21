@@ -119,17 +119,21 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classrenderer_
 </div><!--header-->
 <div class="contents">
 
-<p>Remembers what the GPU copy of the voxel scene holds and turns small changes into patches of it.  
+<p>Records stay in place so a removed volume leaves a dead record and a new one is appended.  
  <a href="#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="voxel__scene__patcher_8hpp_source.html">voxel_scene_patcher.hpp</a>&gt;</code></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:Patched" id="r_Patched"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structrenderer_1_1VoxelScenePatcher_1_1Patched.html">Patched</a></td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a52b73e1b802fbe8a9b8f7cfbf90aa2eb" id="r_a52b73e1b802fbe8a9b8f7cfbf90aa2eb"><td class="memItemLeft"><a id="a52b73e1b802fbe8a9b8f7cfbf90aa2eb" name="a52b73e1b802fbe8a9b8f7cfbf90aa2eb"></a>
 void&#160;</td><td class="memItemRight"><b>adopt</b> (const <a class="el" href="structvoxel_1_1gpu_1_1PackedScene.html">voxel::gpu::PackedScene</a> &amp;scene, uint32_t pool_slots, std::vector&lt; uint64_t &gt; node_rids)</td></tr>
 <tr class="memdesc:a52b73e1b802fbe8a9b8f7cfbf90aa2eb"><td class="mdescLeft">&#160;</td><td class="mdescRight">A full pack is what the GPU will hold so later patches build on it. <br /></td></tr>
-<tr class="memitem:a1be42ce1a2d3cbeeb211e0a3db689ec5" id="r_a1be42ce1a2d3cbeeb211e0a3db689ec5"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a1be42ce1a2d3cbeeb211e0a3db689ec5">tryPatch</a> (const <a class="el" href="classvoxel_1_1BrickPool.html">voxel::BrickPool</a> &amp;pool, std::span&lt; const <a class="el" href="structvoxel_1_1gpu_1_1SceneVolume.html">voxel::gpu::SceneVolume</a> &gt; volumes, std::span&lt; const uint64_t &gt; node_rids, std::span&lt; const <a class="el" href="structrenderer_1_1VolumeDelta.html">VolumeDelta</a> &gt; deltas) -&gt; std::optional&lt; <a class="el" href="structvoxel_1_1gpu_1_1ScenePatch.html">voxel::gpu::ScenePatch</a> &gt;</td></tr>
+<tr class="memitem:a889af568c956d7353c6dd04bae3b8130" id="r_a889af568c956d7353c6dd04bae3b8130"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a889af568c956d7353c6dd04bae3b8130">tryPatch</a> (const <a class="el" href="classvoxel_1_1BrickPool.html">voxel::BrickPool</a> &amp;pool, std::span&lt; const <a class="el" href="structvoxel_1_1gpu_1_1SceneVolume.html">voxel::gpu::SceneVolume</a> &gt; volumes, std::span&lt; const uint64_t &gt; node_rids, std::span&lt; const <a class="el" href="structrenderer_1_1VolumeDelta.html">VolumeDelta</a> &gt; deltas) -&gt; std::optional&lt; <a class="el" href="structrenderer_1_1VoxelScenePatcher_1_1Patched.html">Patched</a> &gt;</td></tr>
 <tr class="memitem:ab595566e1bb0e07c43c1a10fbfa14b2a" id="r_ab595566e1bb0e07c43c1a10fbfa14b2a"><td class="memItemLeft"><a id="ab595566e1bb0e07c43c1a10fbfa14b2a" name="ab595566e1bb0e07c43c1a10fbfa14b2a"></a>
 void&#160;</td><td class="memItemRight"><b>reset</b> ()</td></tr>
 <tr class="memitem:a46da74fd519e094971563b20b36295b3" id="r_a46da74fd519e094971563b20b36295b3"><td class="memItemLeft"><a id="a46da74fd519e094971563b20b36295b3" name="a46da74fd519e094971563b20b36295b3"></a>
@@ -140,10 +144,10 @@ auto&#160;</td><td class="memItemRight"><b>scene</b> () const noexcept -&gt; con
 auto&#160;</td><td class="memItemRight"><b>poolSlots</b> () const noexcept -&gt; uint32_t</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Remembers what the GPU copy of the voxel scene holds and turns small changes into patches of it. </p>
+<div class="textblock"><p>Records stay in place so a removed volume leaves a dead record and a new one is appended. </p>
 </div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
-<a id="a1be42ce1a2d3cbeeb211e0a3db689ec5" name="a1be42ce1a2d3cbeeb211e0a3db689ec5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1be42ce1a2d3cbeeb211e0a3db689ec5">&#9670;&#160;</a></span>tryPatch()</h2>
+<a id="a889af568c956d7353c6dd04bae3b8130" name="a889af568c956d7353c6dd04bae3b8130"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a889af568c956d7353c6dd04bae3b8130">&#9670;&#160;</a></span>tryPatch()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -169,7 +173,7 @@ auto&#160;</td><td class="memItemRight"><b>poolSlots</b> () const noexcept -&gt;
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">std::span&lt; const <a class="el" href="structrenderer_1_1VolumeDelta.html">VolumeDelta</a> &gt;</td>          <td class="paramname"><span class="paramname"><em>deltas</em></span>&#160;) -&gt; std::optional&lt; <a class="el" href="structvoxel_1_1gpu_1_1ScenePatch.html">voxel::gpu::ScenePatch</a> &gt;</td>
+          <td class="paramtype">std::span&lt; const <a class="el" href="structrenderer_1_1VolumeDelta.html">VolumeDelta</a> &gt;</td>          <td class="paramname"><span class="paramname"><em>deltas</em></span>&#160;) -&gt; std::optional&lt; <a class="el" href="structrenderer_1_1VoxelScenePatcher_1_1Patched.html">Patched</a> &gt;</td>
         </tr>
       </table>
   </td>
@@ -178,7 +182,7 @@ auto&#160;</td><td class="memItemRight"><b>poolSlots</b> () const noexcept -&gt;
   </tr>
 </table>
 </div><div class="memdoc">
-<dl class="section return"><dt>Returns</dt><dd>nullopt when only a full pack can describe the change </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>nullopt when only a full pack is worth it </dd></dl>
 
 </div>
 </div>

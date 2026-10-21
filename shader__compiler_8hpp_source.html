@@ -144,21 +144,22 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('shader__compil
 <div class="foldopen" id="foldopen00024" data-start="{" data-end="};">
 <div class="line"><a id="l00024" name="l00024"></a><span class="lineno"><a class="line" href="classrenderer_1_1ShaderCompiler.html">   24</a></span><span class="keyword">class </span><a class="code hl_class" href="classrenderer_1_1ShaderCompiler.html">ShaderCompiler</a> {</div>
 <div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>  <span class="keyword">static</span> <span class="keyword">auto</span> compile(<a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> uid, std::string_view source, std::string_view source_uri) -&gt; <a class="code hl_struct" href="structrenderer_1_1CompiledShaderCode.html">CompiledShaderCode</a>;</div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span></div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>  <span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code hl_function" href="classrenderer_1_1ShaderCompiler.html#a2de2bedb44ce8305ff285edbce394d43">setRayQueryAvailable</a>(<span class="keywordtype">bool</span> available);</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span> </div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>  <span class="keyword">static</span> <span class="keyword">auto</span> isRayQueryAvailable() -&gt; bool;</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span> </div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  <span class="keyword">static</span> <span class="keyword">auto</span> featureHash() -&gt; uint64_t;</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>};</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>  <span class="keyword">static</span> <span class="keyword">auto</span> <a class="code hl_function" href="classrenderer_1_1ShaderCompiler.html#af520dff8be32100c153c1fccbb5cc014">compile</a>(<a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> uid, std::string_view source, std::string_view source_uri) -&gt; <a class="code hl_struct" href="structrenderer_1_1CompiledShaderCode.html">CompiledShaderCode</a>;</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span></div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>  <span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code hl_function" href="classrenderer_1_1ShaderCompiler.html#a2de2bedb44ce8305ff285edbce394d43">setRayQueryAvailable</a>(<span class="keywordtype">bool</span> available);</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span> </div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>  <span class="keyword">static</span> <span class="keyword">auto</span> isRayQueryAvailable() -&gt; bool;</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span> </div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>  <span class="keyword">static</span> <span class="keyword">auto</span> featureHash() -&gt; uint64_t;</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>};</div>
 </div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span> </div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>}</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span> </div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>}</div>
 <div class="ttc" id="aclassrenderer_1_1ShaderCompiler_html"><div class="ttname"><a href="classrenderer_1_1ShaderCompiler.html">renderer::ShaderCompiler</a></div><div class="ttdef"><b>Definition</b> shader_compiler.hpp:24</div></div>
-<div class="ttc" id="aclassrenderer_1_1ShaderCompiler_html_a2de2bedb44ce8305ff285edbce394d43"><div class="ttname"><a href="classrenderer_1_1ShaderCompiler.html#a2de2bedb44ce8305ff285edbce394d43">renderer::ShaderCompiler::setRayQueryAvailable</a></div><div class="ttdeci">static void setRayQueryAvailable(bool available)</div><div class="ttdef"><b>Definition</b> shader_compiler.cpp:34</div></div>
+<div class="ttc" id="aclassrenderer_1_1ShaderCompiler_html_a2de2bedb44ce8305ff285edbce394d43"><div class="ttname"><a href="classrenderer_1_1ShaderCompiler.html#a2de2bedb44ce8305ff285edbce394d43">renderer::ShaderCompiler::setRayQueryAvailable</a></div><div class="ttdeci">static void setRayQueryAvailable(bool available)</div><div class="ttdef"><b>Definition</b> shader_compiler.cpp:96</div></div>
+<div class="ttc" id="aclassrenderer_1_1ShaderCompiler_html_af520dff8be32100c153c1fccbb5cc014"><div class="ttname"><a href="classrenderer_1_1ShaderCompiler.html#af520dff8be32100c153c1fccbb5cc014">renderer::ShaderCompiler::compile</a></div><div class="ttdeci">static auto compile(toast::UID uid, std::string_view source, std::string_view source_uri) -&gt; CompiledShaderCode</div><div class="ttdoc">Thread safe.</div><div class="ttdef"><b>Definition</b> shader_compiler.cpp:293</div></div>
 <div class="ttc" id="ashader__reflection_8hpp_html"><div class="ttname"><a href="shader__reflection_8hpp.html">shader_reflection.hpp</a></div></div>
 <div class="ttc" id="astructrenderer_1_1CompiledShaderCode_html"><div class="ttname"><a href="structrenderer_1_1CompiledShaderCode.html">renderer::CompiledShaderCode</a></div><div class="ttdef"><b>Definition</b> shader_compiler.hpp:18</div></div>
 <div class="ttc" id="astructrenderer_1_1ShaderReflection_html"><div class="ttname"><a href="structrenderer_1_1ShaderReflection.html">renderer::ShaderReflection</a></div><div class="ttdef"><b>Definition</b> shader_reflection.hpp:87</div></div>

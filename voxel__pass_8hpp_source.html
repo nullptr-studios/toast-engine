@@ -121,133 +121,247 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__pass_8h
 <a href="voxel__pass_8hpp.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a id="l00001" name="l00001"></a><span class="lineno">    1</span></div>
 <div class="line"><a id="l00006" name="l00006"></a><span class="lineno">    6</span> </div>
 <div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span><span class="preprocessor">#pragma once</span></div>
-<div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="preprocessor">#include &quot;../render_pass_base.hpp&quot;</span></div>
-<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="preprocessor">#include &quot;<a class="code" href="scene__descriptor__set_8hpp.html">../scene_descriptor_set.hpp</a>&quot;</span></div>
-<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &quot;../shader_layout.hpp&quot;</span></div>
-<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &quot;../vulkan_pipeline.hpp&quot;</span></div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span> </div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &lt;array&gt;</span></div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &lt;glm/glm.hpp&gt;</span></div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &lt;memory&gt;</span></div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &lt;string_view&gt;</span></div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#include &lt;vector&gt;</span></div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span> </div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="keyword">namespace </span>renderer {</div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="keyword">class </span><a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>;</div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="keyword">class </span><a class="code hl_class" href="classrenderer_1_1VoxelGpuStorage.html">VoxelGpuStorage</a>;</div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span></div>
-<div class="foldopen" id="foldopen00024" data-start="{" data-end="};">
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno"><a class="line" href="classrenderer_1_1VoxelPass.html">   24</a></span><span class="keyword">class </span>VoxelPass : <span class="keyword">public</span> <a class="code hl_class" href="classIRenderPass.html">IRenderPass</a> {</div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>  VoxelPass(<span class="keyword">const</span> <a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>&amp; core, vk::Format scene_format, vk::Format depth_format, vk::Extent2D extent);</div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span> </div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>  <span class="keyword">auto</span> stage() <span class="keyword">const</span> -&gt; RenderStage <span class="keyword">override</span> {</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>    <span class="keywordflow">return</span> RenderStage::voxel_gbuffer;</div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>  }</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span></div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  <span class="keyword">auto</span> <a class="code hl_function" href="classrenderer_1_1VoxelPass.html#a4ac25edb357683e5154b03bb0e6e1f1f">prepare</a>(uint32_t frame_index) -&gt; bool;</div>
+<div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span> </div>
+<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="preprocessor">#include &quot;<a class="code" href="hiz__pyramid_8hpp.html">../hiz_pyramid.hpp</a>&quot;</span></div>
+<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &quot;../render_pass_base.hpp&quot;</span></div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &quot;<a class="code" href="scene__descriptor__set_8hpp.html">../scene_descriptor_set.hpp</a>&quot;</span></div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &quot;../shader_layout.hpp&quot;</span></div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &quot;../vulkan_pipeline.hpp&quot;</span></div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span> </div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &lt;array&gt;</span></div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &lt;chrono&gt;</span></div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#include &lt;glm/glm.hpp&gt;</span></div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="preprocessor">#include &lt;memory&gt;</span></div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="preprocessor">#include &lt;optional&gt;</span></div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="preprocessor">#include &lt;string_view&gt;</span></div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="preprocessor">#include &lt;vector&gt;</span></div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="keyword">namespace </span>renderer {</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="keyword">class </span><a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>;</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="keyword">class </span><a class="code hl_class" href="classrenderer_1_1VoxelGpuStorage.html">VoxelGpuStorage</a>;</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span></div>
+<div class="foldopen" id="foldopen00028" data-start="{" data-end="};">
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno"><a class="line" href="classrenderer_1_1VoxelPass.html">   28</a></span><span class="keyword">class </span>VoxelPass : <span class="keyword">public</span> <a class="code hl_class" href="classIRenderPass.html">IRenderPass</a> {</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>  VoxelPass(<span class="keyword">const</span> <a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>&amp; core, vk::Format scene_format, vk::Format depth_format, vk::Extent2D extent);</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span> </div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>  <span class="keyword">auto</span> stage() <span class="keyword">const</span> -&gt; RenderStage <span class="keyword">override</span> {</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>    <span class="keywordflow">return</span> RenderStage::voxel_gbuffer;</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  }</div>
 <div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span></div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classrenderer_1_1VoxelPass.html#a6498df8bfa9f8fbb4aa5873184708fe4">record</a>(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) <span class="keyword">override</span>;</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span></div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classrenderer_1_1VoxelPass.html#a0aff2d9d5683fedc02cd6d5a467f23f8">recordNormalBlur</a>(vk::CommandBuffer cmd, uint32_t frame_index, vk::Extent2D viewport);</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span></div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classrenderer_1_1VoxelPass.html#a32c665f0f408ca38004ae11e783a4f8d">recordLighting</a>(vk::CommandBuffer cmd, uint32_t frame_index);</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  <span class="keyword">auto</span> name() <span class="keyword">const</span> -&gt; std::string_view <span class="keyword">override</span> {</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>    <span class="keywordflow">return</span> <span class="stringliteral">&quot;Voxels&quot;</span>;</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  }</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span> </div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_max_instances = 4096;</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span> </div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  <span class="keyword">struct </span>PushConstants {</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>    uint32_t instance_index = 0;</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>    uint32_t pad0 = 0;</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    uint32_t pad1 = 0;</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    uint32_t pad2 = 0;</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  };</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span></div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <span class="keyword">struct </span>LightingPushConstants {</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    glm::mat4 inverse_view_projection {1.0f};</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  };</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span></div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  <span class="keyword">struct </span>NormalBlurParams {</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>    glm::mat4 inverse_view_projection {1.0f};</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>    glm::vec4 camera_radius {0.0f};</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>    glm::vec4 viewport {0.0f};</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  };</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span> </div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  <span class="keyword">enum class</span> Cull : uint8_t {</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>    back,</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>    front,</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  };</div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span> </div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  <span class="keyword">enum class</span> Depth : uint8_t {</div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>    conservative,</div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>    exact,</div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  };</div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span> </div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  <span class="keyword">struct </span>Draw {</div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>    uint32_t instance = 0;</div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>    Cull cull = Cull::back;</div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>    Depth depth = Depth::conservative;</div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  };</div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span> </div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  <span class="keywordtype">void</span> createInstanceBuffers(<span class="keyword">const</span> <a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>&amp; core);</div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>  <span class="keywordtype">void</span> createDescriptors(<span class="keyword">const</span> <a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>&amp; core, <span class="keyword">const</span> <a class="code hl_struct" href="structrenderer_1_1ShaderReflection.html">ShaderReflection</a>&amp; reflection);</div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  <span class="keywordtype">void</span> createLighting(<span class="keyword">const</span> <a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>&amp; core, vk::Format scene_format, vk::Extent2D extent);</div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  <span class="keywordtype">void</span> createNormalBlur(<span class="keyword">const</span> <a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>&amp; core, vk::Extent2D extent);</div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span> </div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>  <span class="keywordtype">void</span> bindStorage(uint32_t frame_index, <span class="keyword">const</span> std::shared_ptr&lt;const VoxelGpuStorage&gt;&amp; storage);</div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span> </div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>  <span class="keyword">const</span> <a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>* m_core = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>  <a class="code hl_class" href="classrenderer_1_1ShaderLayout.html">ShaderLayout</a> m_shader_layout;</div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span></div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>  std::array&lt;std::array&lt;VulkanPipeline, 2&gt;, 2&gt; m_pipelines;</div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span> </div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  <a class="code hl_class" href="classrenderer_1_1SceneDescriptorSets.html">SceneDescriptorSets</a> m_scene_sets;</div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span> </div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>  std::vector&lt;vk::raii::DescriptorSet&gt; m_storage_sets;</div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span> </div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>  std::vector&lt;vma::raii::Buffer&gt; m_instance_buffers;</div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span> </div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  std::vector&lt;std::shared_ptr&lt;const VoxelGpuStorage&gt;&gt; m_bound_storage;</div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span> </div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  std::vector&lt;Draw&gt; m_draws;</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span> </div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>  <a class="code hl_class" href="classrenderer_1_1ShaderLayout.html">ShaderLayout</a> m_lighting_layout;</div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  <a class="code hl_class" href="classrenderer_1_1VulkanPipeline.html">VulkanPipeline</a> m_lighting_pipeline;</div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  <a class="code hl_class" href="classrenderer_1_1SceneDescriptorSets.html">SceneDescriptorSets</a> m_lighting_scene_sets;</div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span> </div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  vk::raii::Sampler m_point_sampler = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  std::vector&lt;vk::raii::DescriptorSet&gt; m_gbuffer_sets;</div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span></div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>  std::vector&lt;std::array&lt;vk::ImageView, 5&gt;&gt; m_bound_gbuffer;</div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span> </div>
-<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>  <a class="code hl_class" href="classrenderer_1_1ShaderLayout.html">ShaderLayout</a> m_blur_layout;</div>
-<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>  <a class="code hl_class" href="classrenderer_1_1VulkanPipeline.html">VulkanPipeline</a> m_blur_pipeline;</div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>  std::vector&lt;vk::raii::DescriptorSet&gt; m_blur_sets;</div>
-<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span></div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>  std::vector&lt;std::array&lt;vk::ImageView, 3&gt;&gt; m_bound_blur;</div>
-<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>};</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="keyword">auto</span> <a class="code hl_function" href="classrenderer_1_1VoxelPass.html#a4ac25edb357683e5154b03bb0e6e1f1f">prepare</a>(uint32_t frame_index) -&gt; bool;</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span></div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classrenderer_1_1VoxelPass.html#aabd5d8148fa70a3911baa330b2453cf5">recordCellCull</a>(vk::CommandBuffer cmd, uint32_t frame_index, vk::Extent2D scene_extent);</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span></div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classrenderer_1_1VoxelPass.html#a6498df8bfa9f8fbb4aa5873184708fe4">record</a>(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) <span class="keyword">override</span>;</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span></div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  [[nodiscard]]</div>
+<div class="foldopen" id="foldopen00049" data-start="{" data-end="}">
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno"><a class="line" href="classrenderer_1_1VoxelPass.html#a9c87ad8986736b4b204cff7aaf00eb29">   49</a></span>  <span class="keyword">auto</span> <a class="code hl_function" href="classrenderer_1_1VoxelPass.html#a9c87ad8986736b4b204cff7aaf00eb29">occlusionActive</a>() const -&gt; <span class="keywordtype">bool</span> {</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    <span class="keywordflow">return</span> m_occlusion_active;</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  }</div>
 </div>
-<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span> </div>
-<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>}</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span></div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classrenderer_1_1VoxelPass.html#ad2f1969c323e30dea17c0c2e4f866d1c">recordOcclusion</a>(vk::CommandBuffer cmd, uint32_t frame_index, vk::Extent2D scene_extent);</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span></div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classrenderer_1_1VoxelPass.html#ab15c0b117d48dd90b296066c9a4798e5">recordLate</a>(vk::CommandBuffer cmd, uint32_t frame_index);</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span></div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  [[nodiscard]]</div>
+<div class="foldopen" id="foldopen00061" data-start="{" data-end="}">
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno"><a class="line" href="classrenderer_1_1VoxelPass.html#a162084a9ddffcd5c6f9394aed579bcb4">   61</a></span>  <span class="keyword">auto</span> <a class="code hl_function" href="classrenderer_1_1VoxelPass.html#a162084a9ddffcd5c6f9394aed579bcb4">nearQuadDepthPass</a>() const -&gt; <span class="keywordtype">bool</span> {</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    <span class="keywordflow">return</span> m_near_voxels &gt; 0.0f &amp;&amp; !m_mesh_shading;</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  }</div>
+</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span></div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classrenderer_1_1VoxelPass.html#acf15185b20303261cf938694283ac3cf">recordQuadDepth</a>(vk::CommandBuffer cmd, uint32_t frame_index, <span class="keywordtype">bool</span> late);</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span></div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classrenderer_1_1VoxelPass.html#aea5a161a0a8f33026be60c85428e3b53">recordLighting</a>(vk::CommandBuffer cmd, uint32_t frame_index, vk::Extent2D viewport);</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span></div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classrenderer_1_1VoxelPass.html#a86cfe941b78bf7fabbd28ea1e822c90f">onTargetsRecreated</a>();</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span> </div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  <span class="keyword">auto</span> name() const -&gt; std::string_view<span class="keyword"> override </span>{</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>    <span class="keywordflow">return</span> <span class="stringliteral">&quot;Voxels&quot;</span>;</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  }</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span> </div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_max_instances = 4096;</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span> </div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  std::chrono::steady_clock::time_point m_last_limit_warning;</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span></div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  <span class="keyword">struct </span>PushConstants {</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>    uint32_t instance_index = 0;</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>    uint32_t bucket = 0;</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>    uint32_t mode = 0;</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>    uint32_t quad_capacity = 0;</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>  };</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span></div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_draw_volume = 0;</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_draw_cells = 1;</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span></div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  <span class="keyword">struct </span>CellCullPush {</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>    glm::mat4 view_projection {1.0f};</div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>    glm::vec4 camera_near {0.0f};</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>    uint32_t total_cells = 0;</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>    uint32_t instance_count = 0;</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>    uint32_t phase = 0;</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>    uint32_t quad_capacity = 0;</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>    <span class="keywordtype">float</span> near_voxels = 0.0f;</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>    uint32_t hiz_levels = 0;</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>    uint32_t hiz_width = 0;</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>    uint32_t hiz_height = 0;</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>  };</div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span></div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  <span class="keyword">struct </span>HizView {</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>    glm::mat4 view_projection {1.0f};</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  };</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span></div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_cell_bucket_count = 17;</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_late_list = k_cell_bucket_count;</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_cell_draw_count = k_cell_bucket_count + 1;</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_near_list = k_cell_draw_count;</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_near_band_count = 4;</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_retest_list = k_near_list + k_near_band_count;</div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_late_near_list = k_retest_list + 1;</div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_cell_list_count = k_late_near_list + 1;</div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_cell_offsets_word = k_cell_draw_count * 4;</div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_cell_cursors_word = k_cell_offsets_word + k_cell_list_count;</div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_near_dispatch_word = k_cell_cursors_word + k_cell_list_count;</div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_retest_dispatch_word = k_near_dispatch_word + 3;</div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_late_mesh_dispatch_word = k_retest_dispatch_word + 3;</div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_quad_draw_word = k_late_mesh_dispatch_word + 3;</div>
+<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_late_quad_draw_word = k_quad_draw_word + 4;</div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_near_task_word = k_late_quad_draw_word + 4;</div>
+<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_late_task_word = k_near_task_word + 3;</div>
+<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_occlusion_stats_word = k_late_task_word + 3;</div>
+<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_cell_args_words = k_occlusion_stats_word + 2;</div>
+<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_min_quad_capacity = 65536;</div>
+<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_max_coarse_dim = 1024;</div>
+<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_min_cell_capacity = 4096;</div>
+<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span></div>
+<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>  <span class="keyword">struct </span>CellBuffers {</div>
+<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>    std::optional&lt;vma::raii::Buffer&gt; cells;</div>
+<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>    std::optional&lt;vma::raii::Buffer&gt; classes;</div>
+<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>    std::optional&lt;vma::raii::Buffer&gt; args;</div>
+<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>    uint32_t capacity = 0;</div>
+<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>    std::optional&lt;vma::raii::Buffer&gt; quads;</div>
+<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>    uint32_t quad_capacity = 0;</div>
+<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>    std::optional&lt;vma::raii::Buffer&gt; readback;</div>
+<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>    <span class="keywordtype">bool</span> measured = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>    std::optional&lt;vma::raii::Buffer&gt; hiz_view;</div>
+<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>  };</div>
+<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span></div>
+<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>  <span class="keyword">struct </span>LightingPushConstants {</div>
+<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>    glm::mat4 inverse_view_projection {1.0f};</div>
+<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>    glm::vec4 camera_radius {0.0f};</div>
+<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>    glm::vec4 viewport {0.0f};</div>
+<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>  };</div>
+<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span> </div>
+<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>  <span class="keywordtype">void</span> createCells(<span class="keyword">const</span> VulkanCore&amp; core);</div>
+<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>  <span class="keywordtype">void</span> ensureCellCapacity(uint32_t frame_index, uint32_t cells);</div>
+<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>  <span class="keywordtype">void</span> ensureQuadCapacity(uint32_t frame_index, uint32_t quads);</div>
+<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>  <span class="keywordtype">void</span> afterCullWrites(vk::CommandBuffer cmd, uint32_t frame_index, sync::BarrierBatch&amp; barriers);</div>
+<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>  <span class="keywordtype">void</span> recordNearQuads(vk::CommandBuffer cmd, uint32_t frame_index, <span class="keywordtype">bool</span> late, <span class="keywordtype">bool</span> depth_only);</div>
+<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>  <span class="keywordtype">void</span> recordReadback(vk::CommandBuffer cmd, uint32_t frame_index, sync::BarrierBatch&amp; barriers);</div>
+<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>  <span class="keywordtype">void</span> updateOcclusionMode(uint32_t retest_cells, uint32_t listed_cells);</div>
+<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>  <span class="keywordtype">void</span> writeCellDescriptors(uint32_t frame_index);</div>
+<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>  <span class="keywordtype">void</span> writeHizDescriptors();</div>
+<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>  <span class="keywordtype">void</span> recordCellDraws(vk::CommandBuffer cmd, uint32_t frame_index);</div>
+<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span> </div>
+<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>  <span class="keyword">enum class</span> Cull : uint8_t {</div>
+<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>    back,</div>
+<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>    front,</div>
+<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>  };</div>
+<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span> </div>
+<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>  <span class="keyword">enum class</span> Depth : uint8_t {</div>
+<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>    conservative,</div>
+<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>    exact,</div>
+<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>  };</div>
+<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span> </div>
+<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>  <span class="keyword">struct </span>Draw {</div>
+<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>    uint32_t instance = 0;</div>
+<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>    Cull cull = Cull::back;</div>
+<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>    Depth depth = Depth::conservative;</div>
+<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>  };</div>
+<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span> </div>
+<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>  <span class="keywordtype">void</span> createInstanceBuffers(<span class="keyword">const</span> VulkanCore&amp; core);</div>
+<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>  <span class="keywordtype">void</span> createDescriptors(<span class="keyword">const</span> VulkanCore&amp; core, <span class="keyword">const</span> ShaderReflection&amp; reflection);</div>
+<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>  <span class="keywordtype">void</span> createLighting(<span class="keyword">const</span> VulkanCore&amp; core, vk::Format scene_format, vk::Extent2D extent);</div>
+<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span> </div>
+<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>  <span class="keywordtype">void</span> bindStorage(uint32_t frame_index, <span class="keyword">const</span> std::shared_ptr&lt;const VoxelGpuStorage&gt;&amp; storage);</div>
+<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span> </div>
+<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span>  <span class="keyword">const</span> VulkanCore* m_core = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>  ShaderLayout m_shader_layout;</div>
+<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span></div>
+<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span>  std::array&lt;std::array&lt;VulkanPipeline, 2&gt;, 2&gt; m_pipelines;</div>
+<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span> </div>
+<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span>  SceneDescriptorSets m_scene_sets;</div>
+<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span> </div>
+<div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>  std::vector&lt;vk::raii::DescriptorSet&gt; m_storage_sets;</div>
+<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span> </div>
+<div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span>  std::vector&lt;vma::raii::Buffer&gt; m_instance_buffers;</div>
+<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span> </div>
+<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span>  std::vector&lt;std::shared_ptr&lt;const VoxelGpuStorage&gt;&gt; m_bound_storage;</div>
+<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span> </div>
+<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>  std::vector&lt;Draw&gt; m_draws;</div>
+<div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span> </div>
+<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>  ShaderLayout m_cell_layout;</div>
+<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>  VulkanPipeline m_cell_pipeline;</div>
+<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>  VulkanPipeline m_mesh_pipeline;</div>
+<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>  VulkanPipeline m_quad_pipeline;</div>
+<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>  VulkanPipeline m_quad_depth_pipeline;</div>
+<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>  VulkanPipeline m_mesh_quad_pipeline;</div>
+<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>  PFN_vkCmdDrawMeshTasksIndirectEXT m_draw_mesh_tasks_indirect = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>  <span class="keywordtype">bool</span> m_mesh_shading = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>  std::vector&lt;vk::raii::DescriptorSet&gt; m_cell_sets;</div>
+<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span>  std::vector&lt;CellBuffers&gt; m_cell_buffers;</div>
+<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span> </div>
+<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>  <span class="keywordtype">bool</span> m_cells_active = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>  <span class="keywordtype">bool</span> m_occlusion_active = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span> </div>
+<div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span>  <span class="keyword">enum class</span> OcclusionMode : uint8_t {</div>
+<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>    engaged,</div>
+<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>    idle,</div>
+<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>  };</div>
+<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span>  OcclusionMode m_occlusion_mode = OcclusionMode::engaged;</div>
+<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>  uint32_t m_occlusion_low_frames = 0;</div>
+<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>  uint32_t m_occlusion_idle_frames = 0;</div>
+<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>  uint64_t m_frame_count = 0;</div>
+<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>  uint64_t m_pyramid_frame = 0;</div>
+<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>  uint32_t m_total_cells = 0;</div>
+<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>  CellCullPush m_cull_push;</div>
+<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>  HiZPyramid m_hiz;</div>
+<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>  <span class="keywordtype">float</span> m_near_voxels = 0.0f;</div>
+<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span> </div>
+<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span>  ShaderLayout m_lighting_layout;</div>
+<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>  VulkanPipeline m_lighting_pipeline;</div>
+<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>  SceneDescriptorSets m_lighting_scene_sets;</div>
+<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span> </div>
+<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span>  vk::raii::Sampler m_point_sampler = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span>  std::vector&lt;vk::raii::DescriptorSet&gt; m_gbuffer_sets;</div>
+<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span></div>
+<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>  std::vector&lt;std::array&lt;vk::ImageView, 4&gt;&gt; m_bound_gbuffer;</div>
+<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>};</div>
+</div>
+<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span> </div>
+<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>}</div>
 <div class="ttc" id="aclassIRenderPass_html"><div class="ttname"><a href="classIRenderPass.html">IRenderPass</a></div><div class="ttdef"><b>Definition</b> render_pass_base.hpp:19</div></div>
-<div class="ttc" id="aclassrenderer_1_1SceneDescriptorSets_html"><div class="ttname"><a href="classrenderer_1_1SceneDescriptorSets.html">renderer::SceneDescriptorSets</a></div><div class="ttdef"><b>Definition</b> scene_descriptor_set.hpp:21</div></div>
-<div class="ttc" id="aclassrenderer_1_1ShaderLayout_html"><div class="ttname"><a href="classrenderer_1_1ShaderLayout.html">renderer::ShaderLayout</a></div><div class="ttdef"><b>Definition</b> shader_layout.hpp:12</div></div>
-<div class="ttc" id="aclassrenderer_1_1VoxelGpuStorage_html"><div class="ttname"><a href="classrenderer_1_1VoxelGpuStorage.html">renderer::VoxelGpuStorage</a></div><div class="ttdef"><b>Definition</b> voxel_gpu_storage.hpp:52</div></div>
-<div class="ttc" id="aclassrenderer_1_1VoxelPass_html_a0aff2d9d5683fedc02cd6d5a467f23f8"><div class="ttname"><a href="classrenderer_1_1VoxelPass.html#a0aff2d9d5683fedc02cd6d5a467f23f8">renderer::VoxelPass::recordNormalBlur</a></div><div class="ttdeci">void recordNormalBlur(vk::CommandBuffer cmd, uint32_t frame_index, vk::Extent2D viewport)</div><div class="ttdoc">Writes scene normal while reading face normals and depth.</div><div class="ttdef"><b>Definition</b> voxel_pass.cpp:392</div></div>
-<div class="ttc" id="aclassrenderer_1_1VoxelPass_html_a32c665f0f408ca38004ae11e783a4f8d"><div class="ttname"><a href="classrenderer_1_1VoxelPass.html#a32c665f0f408ca38004ae11e783a4f8d">renderer::VoxelPass::recordLighting</a></div><div class="ttdeci">void recordLighting(vk::CommandBuffer cmd, uint32_t frame_index)</div><div class="ttdoc">Writes scene colour and indirect while reading the G-buffer and depth.</div><div class="ttdef"><b>Definition</b> voxel_pass.cpp:336</div></div>
-<div class="ttc" id="aclassrenderer_1_1VoxelPass_html_a4ac25edb357683e5154b03bb0e6e1f1f"><div class="ttname"><a href="classrenderer_1_1VoxelPass.html#a4ac25edb357683e5154b03bb0e6e1f1f">renderer::VoxelPass::prepare</a></div><div class="ttdeci">auto prepare(uint32_t frame_index) -&gt; bool</div><div class="ttdef"><b>Definition</b> voxel_pass.cpp:248</div></div>
-<div class="ttc" id="aclassrenderer_1_1VoxelPass_html_a6498df8bfa9f8fbb4aa5873184708fe4"><div class="ttname"><a href="classrenderer_1_1VoxelPass.html#a6498df8bfa9f8fbb4aa5873184708fe4">renderer::VoxelPass::record</a></div><div class="ttdeci">void record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) override</div><div class="ttdoc">Inside the voxel G-buffer scope after prepare().</div><div class="ttdef"><b>Definition</b> voxel_pass.cpp:299</div></div>
-<div class="ttc" id="aclassrenderer_1_1VulkanCore_html"><div class="ttname"><a href="classrenderer_1_1VulkanCore.html">renderer::VulkanCore</a></div><div class="ttdef"><b>Definition</b> vulkan_core.hpp:46</div></div>
-<div class="ttc" id="aclassrenderer_1_1VulkanPipeline_html"><div class="ttname"><a href="classrenderer_1_1VulkanPipeline.html">renderer::VulkanPipeline</a></div><div class="ttdef"><b>Definition</b> vulkan_pipeline.hpp:18</div></div>
+<div class="ttc" id="aclassrenderer_1_1VoxelGpuStorage_html"><div class="ttname"><a href="classrenderer_1_1VoxelGpuStorage.html">renderer::VoxelGpuStorage</a></div><div class="ttdoc">Immutable scene version and versions from small carves share buffers patched in place.</div><div class="ttdef"><b>Definition</b> voxel_gpu_storage.hpp:54</div></div>
+<div class="ttc" id="aclassrenderer_1_1VoxelPass_html_a162084a9ddffcd5c6f9394aed579bcb4"><div class="ttname"><a href="classrenderer_1_1VoxelPass.html#a162084a9ddffcd5c6f9394aed579bcb4">renderer::VoxelPass::nearQuadDepthPass</a></div><div class="ttdeci">auto nearQuadDepthPass() const -&gt; bool</div><div class="ttdoc">A depth only scope for recordQuadDepth() precedes each G-buffer scope except on the mesh shader path.</div><div class="ttdef"><b>Definition</b> voxel_pass.hpp:61</div></div>
+<div class="ttc" id="aclassrenderer_1_1VoxelPass_html_a4ac25edb357683e5154b03bb0e6e1f1f"><div class="ttname"><a href="classrenderer_1_1VoxelPass.html#a4ac25edb357683e5154b03bb0e6e1f1f">renderer::VoxelPass::prepare</a></div><div class="ttdeci">auto prepare(uint32_t frame_index) -&gt; bool</div><div class="ttdef"><b>Definition</b> voxel_pass.cpp:457</div></div>
+<div class="ttc" id="aclassrenderer_1_1VoxelPass_html_a6498df8bfa9f8fbb4aa5873184708fe4"><div class="ttname"><a href="classrenderer_1_1VoxelPass.html#a6498df8bfa9f8fbb4aa5873184708fe4">renderer::VoxelPass::record</a></div><div class="ttdeci">void record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) override</div><div class="ttdoc">Inside the voxel G-buffer scope after prepare() for everything the previous pyramid did not hide.</div><div class="ttdef"><b>Definition</b> voxel_pass.cpp:880</div></div>
+<div class="ttc" id="aclassrenderer_1_1VoxelPass_html_a86cfe941b78bf7fabbd28ea1e822c90f"><div class="ttname"><a href="classrenderer_1_1VoxelPass.html#a86cfe941b78bf7fabbd28ea1e822c90f">renderer::VoxelPass::onTargetsRecreated</a></div><div class="ttdeci">void onTargetsRecreated()</div><div class="ttdoc">After the G-buffer and depth targets are recreated since a new view can reuse a destroyed handle valu...</div><div class="ttdef"><b>Definition</b> voxel_pass.cpp:985</div></div>
+<div class="ttc" id="aclassrenderer_1_1VoxelPass_html_a9c87ad8986736b4b204cff7aaf00eb29"><div class="ttname"><a href="classrenderer_1_1VoxelPass.html#a9c87ad8986736b4b204cff7aaf00eb29">renderer::VoxelPass::occlusionActive</a></div><div class="ttdeci">auto occlusionActive() const -&gt; bool</div><div class="ttdoc">The renderer then runs recordOcclusion() and a second G-buffer scope for recordLate().</div><div class="ttdef"><b>Definition</b> voxel_pass.hpp:49</div></div>
+<div class="ttc" id="aclassrenderer_1_1VoxelPass_html_aabd5d8148fa70a3911baa330b2453cf5"><div class="ttname"><a href="classrenderer_1_1VoxelPass.html#aabd5d8148fa70a3911baa330b2453cf5">renderer::VoxelPass::recordCellCull</a></div><div class="ttdeci">void recordCellCull(vk::CommandBuffer cmd, uint32_t frame_index, vk::Extent2D scene_extent)</div><div class="ttdoc">Outside any rendering scope after prepare() and before record().</div><div class="ttdef"><b>Definition</b> voxel_pass.cpp:582</div></div>
+<div class="ttc" id="aclassrenderer_1_1VoxelPass_html_ab15c0b117d48dd90b296066c9a4798e5"><div class="ttname"><a href="classrenderer_1_1VoxelPass.html#ab15c0b117d48dd90b296066c9a4798e5">renderer::VoxelPass::recordLate</a></div><div class="ttdeci">void recordLate(vk::CommandBuffer cmd, uint32_t frame_index)</div><div class="ttdoc">Inside a G-buffer scope that loads the early draws.</div><div class="ttdef"><b>Definition</b> voxel_pass.cpp:851</div></div>
+<div class="ttc" id="aclassrenderer_1_1VoxelPass_html_acf15185b20303261cf938694283ac3cf"><div class="ttname"><a href="classrenderer_1_1VoxelPass.html#acf15185b20303261cf938694283ac3cf">renderer::VoxelPass::recordQuadDepth</a></div><div class="ttdeci">void recordQuadDepth(vk::CommandBuffer cmd, uint32_t frame_index, bool late)</div><div class="ttdoc">Inside a depth only scope before the G-buffer scope that shades the same quads.</div><div class="ttdef"><b>Definition</b> voxel_pass.cpp:844</div></div>
+<div class="ttc" id="aclassrenderer_1_1VoxelPass_html_ad2f1969c323e30dea17c0c2e4f866d1c"><div class="ttname"><a href="classrenderer_1_1VoxelPass.html#ad2f1969c323e30dea17c0c2e4f866d1c">renderer::VoxelPass::recordOcclusion</a></div><div class="ttdeci">void recordOcclusion(vk::CommandBuffer cmd, uint32_t frame_index, vk::Extent2D scene_extent)</div><div class="ttdoc">Outside any rendering scope with depth in depth_sampled.</div><div class="ttdef"><b>Definition</b> voxel_pass.cpp:789</div></div>
+<div class="ttc" id="aclassrenderer_1_1VoxelPass_html_aea5a161a0a8f33026be60c85428e3b53"><div class="ttname"><a href="classrenderer_1_1VoxelPass.html#aea5a161a0a8f33026be60c85428e3b53">renderer::VoxelPass::recordLighting</a></div><div class="ttdeci">void recordLighting(vk::CommandBuffer cmd, uint32_t frame_index, vk::Extent2D viewport)</div><div class="ttdoc">Writes scene colour indirect and rounded normal while reading the G-buffer and depth.</div><div class="ttdef"><b>Definition</b> voxel_pass.cpp:921</div></div>
+<div class="ttc" id="aclassrenderer_1_1VulkanCore_html"><div class="ttname"><a href="classrenderer_1_1VulkanCore.html">renderer::VulkanCore</a></div><div class="ttdef"><b>Definition</b> vulkan_core.hpp:48</div></div>
+<div class="ttc" id="ahiz__pyramid_8hpp_html"><div class="ttname"><a href="hiz__pyramid_8hpp.html">hiz_pyramid.hpp</a></div></div>
 <div class="ttc" id="ascene__descriptor__set_8hpp_html"><div class="ttname"><a href="scene__descriptor__set_8hpp.html">scene_descriptor_set.hpp</a></div></div>
-<div class="ttc" id="astructrenderer_1_1ShaderReflection_html"><div class="ttname"><a href="structrenderer_1_1ShaderReflection.html">renderer::ShaderReflection</a></div><div class="ttdef"><b>Definition</b> shader_reflection.hpp:87</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

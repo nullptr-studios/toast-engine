@@ -144,13 +144,26 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a7439fe051560c555c965050052c38178" id="r_a7439fe051560c555c965050052c38178"><td class="memItemLeft"><a id="a7439fe051560c555c965050052c38178" name="a7439fe051560c555c965050052c38178"></a>
 &#160;</td><td class="memItemRight"><b>MaterialPass</b> (const <a class="el" href="classrenderer_1_1VulkanCore.html">VulkanCore</a> &amp;core, <a class="el" href="classassets_1_1Material.html">assets::Material</a> *root_material, vk::Format color_format, vk::Format depth_format, vk::Extent2D extent)</td></tr>
 <tr class="memitem:a68749400168dbde4fd640371546f451d" id="r_a68749400168dbde4fd640371546f451d"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a68749400168dbde4fd640371546f451d">name</a> () const -&gt; std::string_view override</td></tr>
+<tr class="memitem:a80316e77ef88b76261284bc3d5dca0d1" id="r_a80316e77ef88b76261284bc3d5dca0d1"><td class="memItemLeft"><a id="a80316e77ef88b76261284bc3d5dca0d1" name="a80316e77ef88b76261284bc3d5dca0d1"></a>
+&#160;</td><td class="memItemRight"><b>MaterialPass</b> (const MaterialPass &amp;)=delete</td></tr>
+<tr class="memitem:a27a867a83862a9681d978633ba50c7f0" id="r_a27a867a83862a9681d978633ba50c7f0"><td class="memItemLeft"><a id="a27a867a83862a9681d978633ba50c7f0" name="a27a867a83862a9681d978633ba50c7f0"></a>
+auto&#160;</td><td class="memItemRight"><b>operator=</b> (const MaterialPass &amp;) -&gt; MaterialPass &amp;=delete</td></tr>
+<tr class="memitem:ac6e97a42d55aad761a74cb54f6aacad6" id="r_ac6e97a42d55aad761a74cb54f6aacad6"><td class="memItemLeft"><a id="ac6e97a42d55aad761a74cb54f6aacad6" name="ac6e97a42d55aad761a74cb54f6aacad6"></a>
+&#160;</td><td class="memItemRight"><b>MaterialPass</b> (MaterialPass &amp;&amp;)=delete</td></tr>
+<tr class="memitem:a6fec25faeada8f6e224ec882ac503970" id="r_a6fec25faeada8f6e224ec882ac503970"><td class="memItemLeft"><a id="a6fec25faeada8f6e224ec882ac503970" name="a6fec25faeada8f6e224ec882ac503970"></a>
+auto&#160;</td><td class="memItemRight"><b>operator=</b> (MaterialPass &amp;&amp;) -&gt; MaterialPass &amp;=delete</td></tr>
+<tr class="memitem:ab84a4e7750a1c44d1649467262983e1d" id="r_ab84a4e7750a1c44d1649467262983e1d"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#ab84a4e7750a1c44d1649467262983e1d">update</a> (uint32_t frame_index, float dt) override</td></tr>
 <tr class="memitem:a6ce929ed51fad27ee867a7b50af184d7" id="r_a6ce929ed51fad27ee867a7b50af184d7"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a6ce929ed51fad27ee867a7b50af184d7">record</a> (vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) override</td></tr>
 <tr class="memitem:af354d4e3b99de52ecadd253ae2abbc29" id="r_af354d4e3b99de52ecadd253ae2abbc29"><td class="memItemLeft"><a id="af354d4e3b99de52ecadd253ae2abbc29" name="af354d4e3b99de52ecadd253ae2abbc29"></a>
 void&#160;</td><td class="memItemRight"><b>recordInstance</b> (vk::CommandBuffer cmd, uint32_t frame_index, const <a class="el" href="structrenderer_1_1VulkanRenderer_1_1MeshInstanceProxy.html">VulkanRenderer::MeshInstanceProxy</a> &amp;proxy)</td></tr>
+<tr class="memitem:ae342ed56c2e2dcc54a7e0d0aa89bbedc" id="r_ae342ed56c2e2dcc54a7e0d0aa89bbedc"><td class="memItemLeft"><a id="ae342ed56c2e2dcc54a7e0d0aa89bbedc" name="ae342ed56c2e2dcc54a7e0d0aa89bbedc"></a>
+void&#160;</td><td class="memItemRight"><b>finishPendingBuild</b> ()</td></tr>
+<tr class="memdesc:ae342ed56c2e2dcc54a7e0d0aa89bbedc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Render thread and blocks on a running build for frames such as probe captures. <br /></td></tr>
 <tr class="memitem:aa36ed49bc9a995ae476823304bfa0aed" id="r_aa36ed49bc9a995ae476823304bfa0aed"><td class="memItemLeft"><a id="aa36ed49bc9a995ae476823304bfa0aed" name="aa36ed49bc9a995ae476823304bfa0aed"></a>
 auto&#160;</td><td class="memItemRight"><b>rootMaterial</b> () const -&gt; <a class="el" href="classassets_1_1Material.html">assets::Material</a> *</td></tr>
 <tr class="memitem:ae7c5c2c52e66a043a99a4c1b9619ac88" id="r_ae7c5c2c52e66a043a99a4c1b9619ac88"><td class="memItemLeft"><a id="ae7c5c2c52e66a043a99a4c1b9619ac88" name="ae7c5c2c52e66a043a99a4c1b9619ac88"></a>
 void&#160;</td><td class="memItemRight"><b>markShadersDirty</b> ()</td></tr>
+<tr class="memdesc:ae7c5c2c52e66a043a99a4c1b9619ac88"><td class="mdescLeft">&#160;</td><td class="mdescRight">Any thread and the old pipeline draws until the new one is built. <br /></td></tr>
 <tr class="memitem:a29d0dfca5e6e63eccf0a9defd8a6579f" id="r_a29d0dfca5e6e63eccf0a9defd8a6579f"><td class="memItemLeft"><a id="a29d0dfca5e6e63eccf0a9defd8a6579f" name="a29d0dfca5e6e63eccf0a9defd8a6579f"></a>
 void&#160;</td><td class="memItemRight"><b>markValuesDirty</b> ()</td></tr>
 <tr class="memitem:af462fb7d59213dc9e97b05a70d610656" id="r_af462fb7d59213dc9e97b05a70d610656"><td class="memItemLeft"><a id="af462fb7d59213dc9e97b05a70d610656" name="af462fb7d59213dc9e97b05a70d610656"></a>
@@ -161,8 +174,6 @@ auto&#160;</td><td class="memItemRight"><b>usesCutout</b> () const noexcept -&gt
 auto&#160;</td><td class="memItemRight"><b>isBlended</b> () const -&gt; bool</td></tr>
 <tr class="inherit_header pub_methods_classIRenderPass"><td colspan="2">Public Member Functions inherited from <a class="el" href="classIRenderPass.html">IRenderPass</a></td></tr>
 <tr class="memitem:a20c2a6eb810858231770e7b47ec69d9c pub_methods_classIRenderPass" id="r_a20c2a6eb810858231770e7b47ec69d9c"><td class="memItemLeft">virtual auto&#160;</td><td class="memItemRight"><a class="el" href="classIRenderPass.html#a20c2a6eb810858231770e7b47ec69d9c">stage</a> () const -&gt; RenderStage</td></tr>
-<tr class="memitem:a37aa8b6af93965bee7b343c6cfa68128 pub_methods_classIRenderPass" id="r_a37aa8b6af93965bee7b343c6cfa68128"><td class="memItemLeft">
-virtual void&#160;</td><td class="memItemRight"><b>update</b> (uint32_t frame_index, float dt)</td></tr>
 <tr class="memitem:a04a8a53572c6ad42934b6cdd9a30839a pub_methods_classIRenderPass" id="r_a04a8a53572c6ad42934b6cdd9a30839a"><td class="memItemLeft">virtual void&#160;</td><td class="memItemRight"><a class="el" href="classIRenderPass.html#a04a8a53572c6ad42934b6cdd9a30839a">recordPre</a> (vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index)</td></tr>
 <tr class="memdesc:a04a8a53572c6ad42934b6cdd9a30839a pub_methods_classIRenderPass"><td class="mdescLeft">&#160;</td><td class="mdescRight">Records outside any rendering scope before the main scope opens.  <br /></td></tr>
 <tr class="memitem:aa5cb3bf763781892a2ec2a5a2d6b0b4a pub_methods_classIRenderPass" id="r_aa5cb3bf763781892a2ec2a5a2d6b0b4a"><td class="memItemLeft">
@@ -231,6 +242,37 @@ auto&#160;</td><td class="memItemRight"><b>isEnabled</b> () const noexcept -&gt;
 </div><div class="memdoc">
 
 <p>Implements <a class="el" href="classIRenderPass.html">IRenderPass</a>.</p>
+
+</div>
+</div>
+<a id="ab84a4e7750a1c44d1649467262983e1d" name="ab84a4e7750a1c44d1649467262983e1d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab84a4e7750a1c44d1649467262983e1d">&#9670;&#160;</a></span>update()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void renderer::MaterialPass::update </td>
+          <td>(</td>
+          <td class="paramtype">uint32_t</td>          <td class="paramname"><span class="paramname"><em>frame_index</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float</td>          <td class="paramname"><span class="paramname"><em>dt</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel override">override</span><span class="mlabel virtual">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Reimplemented from <a class="el" href="classIRenderPass.html">IRenderPass</a>.</p>
 
 </div>
 </div>

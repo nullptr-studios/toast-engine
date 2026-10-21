@@ -1,0 +1,15 @@
+<map id="engine/src/toast/renderer/gpu_sync.cpp" name="engine/src/toast/renderer/gpu_sync.cpp">
+<area shape="rect" id="Node000001" title=" " alt="" coords="143,5,328,50"/>
+<area shape="rect" id="Node000002" href="$gpu__sync_8hpp.html" title=" " alt="" coords="180,98,290,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="237,48,238,84,233,81,234,53"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,174,71,201"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="201,129,86,171,84,166,199,124"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="94,174,147,201"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="217,126,155,167,153,163,212,127"/>
+<area shape="rect" id="Node000005" href="$export_8hpp.html" title=" " alt="" coords="171,174,300,201"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="237,124,238,159,233,157,233,128"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="324,174,386,201"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="258,124,324,165,319,165,256,129"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="410,174,578,201"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="282,124,436,168,431,170,281,129"/>
+</map>

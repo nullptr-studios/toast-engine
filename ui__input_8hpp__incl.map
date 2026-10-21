@@ -1,7 +1,9 @@
 <map id="engine/src/toast/ui/ui_input.hpp" name="engine/src/toast/ui/ui_input.hpp">
-<area shape="rect" id="Node000001" title="Routes window input events to the UI panels." alt="" coords="983,5,1124,50"/>
+<area shape="rect" id="Node000001" title="Routes window input events to the UI panels." alt="" coords="1068,5,1209,50"/>
 <area shape="rect" id="Node000002" href="$listener_8hpp_source.html" title=" " alt="" coords="962,98,1144,126"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1055,48,1056,84,1051,81,1052,53"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1119,49,1080,89,1077,85,1114,52"/>
+<area shape="rect" id="Node000025" title=" " alt="" coords="1168,98,1282,126"/>
+<area shape="poly" id="edge38_Node000001_Node000025" title=" " alt="" coords="1162,48,1203,88,1198,87,1161,53"/>
 <area shape="rect" id="Node000003" href="$event_8hpp_source.html" title=" " alt="" coords="408,174,494,201"/>
 <area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="960,126,510,182,509,176,964,123"/>
 <area shape="rect" id="Node000004" title=" " alt="" coords="5,249,51,277"/>
