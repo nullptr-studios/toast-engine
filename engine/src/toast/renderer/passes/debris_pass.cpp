@@ -12,6 +12,7 @@
 #include <toast/physics/debris_simulation.hpp>
 #include <toast/voxel/voxel_constants.hpp>
 #include <tracy/Tracy.hpp>
+#include <utility>
 
 namespace renderer {
 
@@ -25,7 +26,8 @@ constexpr uint32_t k_debris_list_binding = 1;
 }
 
 DebrisPass::DebrisPass(
-    const VulkanCore& core, vk::Format depth_format, vk::Extent2D extent, std::shared_ptr<physics::DebrisSimulation> simulation
+    const VulkanCore& core, vk::Format scene_format, vk::Format depth_format, vk::Extent2D extent,
+    std::shared_ptr<physics::DebrisSimulation> simulation
 )
     : m_core(&core),
       m_simulation(std::move(simulation)) {
@@ -66,6 +68,19 @@ DebrisPass::DebrisPass(
 	config.depth_test = true;
 	config.depth_write = true;
 	m_pipeline.rebuild(core, config);
+
+	// Same targets and blending as VoxelPass glass
+	const bool dual_source = core.isDualSourceBlendSupported();
+	config.debug_name = "DebrisPass Glass";
+	config.color_format = scene_format;
+	config.extra_color_formats = worldStageExtraColorFormats();
+	config.write_extra_color = false;
+	config.write_color_alpha = false;
+	config.vertex_entry = "vertexGlass";
+	config.fragment_entry = dual_source ? "fragmentGlass" : "fragmentGlassPremultiplied";
+	config.depth_write = false;
+	config.blend_preset = dual_source ? VulkanPipeline::BlendPreset::dual_source : VulkanPipeline::BlendPreset::premultiplied;
+	m_glass_pipeline.rebuild(core, config);
 
 	m_scene_sets.create(core, shader->reflection, *layouts[k_debris_scene_set], "DebrisPass");
 
@@ -143,6 +158,27 @@ void DebrisPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t im
 	);
 	cmd.pushConstants(layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(PushConstants), &m_push);
 	cmd.drawIndirect(m_args, 0, 1, sizeof(vk::DrawIndirectCommand));
+}
+
+void DebrisPass::recordGlass(vk::CommandBuffer cmd, uint32_t frame_index) {
+	ZoneScoped;
+	// Cleared here since prepare only runs on frames with a voxel scope
+	const vk::Buffer args = std::exchange(m_args, nullptr);
+	if (!args || !m_glass_pipeline.isReady() || frame_index >= m_sets.size()) {
+		return;
+	}
+
+	const vk::PipelineLayout layout = *m_layout.getPipelineLayout();
+	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_glass_pipeline.getPipeline());
+	cmd.bindDescriptorSets(
+	    vk::PipelineBindPoint::eGraphics,
+	    layout,
+	    k_debris_scene_set,
+	    std::array<vk::DescriptorSet, 2> {m_scene_sets.get(frame_index), *m_sets[frame_index]},
+	    {}
+	);
+	cmd.pushConstants(layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(PushConstants), &m_push);
+	cmd.drawIndirect(args, sizeof(vk::DrawIndirectCommand), 1, sizeof(vk::DrawIndirectCommand));
 }
 
 }

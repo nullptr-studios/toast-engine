@@ -6,6 +6,7 @@
 
 #include "vulkan_common.hpp"
 
+#include <chrono>
 #include <cstdint>
 
 namespace renderer {
@@ -48,7 +49,17 @@ public:
 
 	virtual void recordFinalize(vk::CommandBuffer command_buffer, uint32_t image_index) = 0;
 
-	virtual void onImageRenderComplete(uint32_t image_index) { (void)image_index; }
+	// Always release the acquisition, including probe captures that must not be published.
+	virtual void onImageRenderComplete(uint32_t image_index, bool publish = true) {
+		(void)image_index;
+		(void)publish;
+	}
+
+	/// After acquireNextImage returned eNotReady and false when none freed within @p timeout
+	virtual auto waitForFreeImage(std::chrono::nanoseconds timeout) -> bool {
+		(void)timeout;
+		return true;
+	}
 
 	[[nodiscard]]
 	virtual auto submitSync(uint32_t image_index) -> OutputSubmitSync {

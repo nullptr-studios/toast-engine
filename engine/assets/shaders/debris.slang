@@ -3,7 +3,7 @@
 struct Params {
     float3 gravity;
     float dt;
-    float lifetime;
+    float fadeIn;
     float restitution;
     float friction;
     float voxelSize;
@@ -12,15 +12,15 @@ struct Params {
     uint volumeCount;
     uint substeps;
     uint clear;
+    uint retireCount;
+    float fadeOut;
     uint pad0;
-    uint pad1;
-    uint pad2;
 };
 
 [[vk::push_constant]]
 Params gParams;
 
-// most of this structs mirrors my stuff on the cpp
+// Mirrors physics::DebrisSimulation Gpu structs
 
 struct DebrisParticle {
     float3 position;
@@ -28,15 +28,19 @@ struct DebrisParticle {
     float4 rotation;
     float3 velocity;
     uint albedo;
+    float scale;
+    uint glass;
+    uint pad0;
+    uint pad1;
 };
 
 struct DebrisMotion {
     float3 angular;
     float age;
     uint restSteps;
+    float lifetime;
+    float baseScale;
     uint pad0;
-    uint pad1;
-    uint pad2;
 };
 
 struct DebrisSpawn {
@@ -47,6 +51,10 @@ struct DebrisSpawn {
     uint albedo;
     float3 angular;
     uint packed;
+    float lifetime;
+    float scale;
+    uint glass;
+    uint pad0;
 };
 
 struct DebrisVolume {
@@ -72,6 +80,8 @@ RWStructuredBuffer<uint> gDrawArgs;
 StructuredBuffer<DebrisSpawn> gSpawns;
 [[vk::binding(6, 0)]]
 StructuredBuffer<DebrisVolume> gVolumes;
+[[vk::binding(7, 0)]]
+StructuredBuffer<uint> gRetires;
 
 struct VolumeRecord {
     uint brickDimsX;
@@ -94,19 +104,32 @@ StructuredBuffer<uint> gVolumeGrids;
 StructuredBuffer<VolumeRecord> gVolumeRecords;
 
 static const uint kGroupSize = 64;
+static const uint kMaxVolumes = 512;        // mirrors DebrisSimulation::k_max_volumes
+static const uint kMaxCandidates = 16;      // volumes one piece collides with per step
 static const uint kBrickDim = 8;
 static const uint kTagEmpty = 0;
 static const uint kTagUniform = 1;
 
 static const uint kMaskBits = 0xFFu;
 static const uint kFlagAsleep = 1u << 24;
+static const uint kFlagGlass = 1u << 25;
+static const float kSpawnScale = 0.4;       // grows from this share of its size
 
-static const float kSleepSpeed = 0.2;       // below this speed a pice is sleeping
+static const float kSleepSpeed = 0.2;       // below this speed a piece may sleep
 static const uint kSleepSteps = 15;
 static const float kBounceSpeed = 0.5;      // slower impact sticks
 static const float kContactSlop = 0.001;    // next step does not start touching
 
+// Graphics queue patches sections in place unordered with this queue so new records can still be uninitialized headroom
+// No robust buffer access so every index is checked against the buffer
 uint debrisMaterialAt(uint volume, int3 voxel) {
+    uint count = 0u;
+    uint stride = 0u;
+    gVolumeRecords.GetDimensions(count, stride);
+    if (volume >= count) {
+        return 0u;
+    }
+
     VolumeRecord record = gVolumeRecords[volume];
     if (any(voxel < 0) || voxel.x >= int(record.brickDimsX * kBrickDim) || voxel.y >= int(record.brickDimsY * kBrickDim) ||
         voxel.z >= int(record.brickDimsZ * kBrickDim)) {
@@ -114,7 +137,12 @@ uint debrisMaterialAt(uint volume, int3 voxel) {
     }
 
     uint3 brick = uint3(voxel) >> 3;
-    uint entry = gVolumeGrids[record.gridOffset + brick.x + brick.y * record.brickDimsX + brick.z * (record.brickDimsX * record.brickDimsY)];
+    uint gridIndex = record.gridOffset + brick.x + brick.y * record.brickDimsX + brick.z * (record.brickDimsX * record.brickDimsY);
+    gVolumeGrids.GetDimensions(count, stride);
+    if (gridIndex >= count) {
+        return 0u;
+    }
+    uint entry = gVolumeGrids[gridIndex];
     uint tag = entry & 3u;
     if (tag == kTagEmpty) {
         return 0u;
@@ -126,7 +154,12 @@ uint debrisMaterialAt(uint volume, int3 voxel) {
 
     uint3 local = uint3(voxel) & 7u;
     uint index = (local.z << 6) | (local.y << 3) | local.x;
-    uint word = gBrickMaterials[((entry >> 2) << 7) + (index >> 2)];
+    uint materialIndex = ((entry >> 2) << 7) + (index >> 2);
+    gBrickMaterials.GetDimensions(count, stride);
+    if (materialIndex >= count) {
+        return 0u;
+    }
+    uint word = gBrickMaterials[materialIndex];
     return (word >> ((index & 3u) << 3)) & 0xFFu;
 }
 
@@ -143,8 +176,15 @@ float4 quatMul(float4 a, float4 b) {
     return float4(a.w * b.xyz + b.w * a.xyz + cross(a.xyz, b.xyz), a.w * b.w - dot(a.xyz, b.xyz));
 }
 
-float3 bitOffset(uint bit) {
-    return (float3(float(bit & 1u), float((bit >> 1) & 1u), float(bit >> 2)) - 0.5) * gParams.voxelSize;
+float3 bitOffset(uint bit, float scale) {
+    return (float3(float(bit & 1u), float((bit >> 1) & 1u), float(bit >> 2)) - 0.5) * (gParams.voxelSize * scale);
+}
+
+// Grows in after spawning and shrinks away before dying
+float displayScale(DebrisMotion motion) {
+    float grow = lerp(kSpawnScale, 1.0, saturate(motion.age / max(gParams.fadeIn, 1e-4)));
+    float shrink = smoothstep(0.0, max(gParams.fadeOut, 1e-4), motion.lifetime - motion.age);
+    return motion.baseScale * grow * shrink;
 }
 
 struct Contact {
@@ -153,20 +193,47 @@ struct Contact {
     float depth;
 };
 
-Contact contactAt(float3 world) {
-    // deepest overlap of a point
+// Bounds of every volume staged once per group since gVolumes lives in host visible memory
+groupshared float4 sBounds[kMaxVolumes];
+
+struct Candidates {
+    uint count;
+    uint index[kMaxCandidates];
+};
+
+// Volumes whose bounds meet the sphere the piece sweeps this step so each point skips the rest
+Candidates gatherCandidates(float3 centre, float radius) {
+    Candidates candidates;
+    candidates.count = 0u;
+    uint volumeCount = min(gParams.volumeCount, kMaxVolumes);
+    for (uint v = 0u; v < volumeCount && candidates.count < kMaxCandidates; ++v) {
+        float4 bounds = sBounds[v];
+        float3 toCentre = centre - bounds.xyz;
+        float reach = bounds.w + radius;
+        if (dot(toCentre, toCentre) <= reach * reach) {
+            candidates.index[candidates.count] = v;
+            ++candidates.count;
+        }
+    }
+    return candidates;
+}
+
+Contact contactAt(float3 world, Candidates candidates) {
+    // Deepest overlap of a point
     Contact contact;
     contact.hit = false;
     contact.normal = float3(0.0, 0.0, 1.0);
     contact.depth = 0.0;
 
-    for (uint v = 0; v < gParams.volumeCount; ++v) {
-        DebrisVolume volume = gVolumes[v];
-        float3 toCentre = world - volume.bounds.xyz;
-        if (dot(toCentre, toCentre) > volume.bounds.w * volume.bounds.w) {
+    for (uint c = 0u; c < candidates.count; ++c) {
+        uint v = candidates.index[c];
+        float4 bounds = sBounds[v];
+        float3 toCentre = world - bounds.xyz;
+        if (dot(toCentre, toCentre) > bounds.w * bounds.w) {
             continue;
         }
 
+        DebrisVolume volume = gVolumes[v];
         float3 local = mul(volume.worldToVoxel, float4(world, 1.0)).xyz;
         int3 voxel = int3(floor(local));
         if (debrisMaterialAt(volume.recordIndex, voxel) == 0u) {
@@ -193,7 +260,7 @@ Contact contactAt(float3 world) {
 
         float3 voxelNormal = float3(0.0, 0.0, 0.0);
         voxelNormal[axis] = side;
-        // same normal transform as voxel.slang shadeHit
+        // Same normal transform as voxel.slang shadeHit
         float3 normal = normalize(mul(transpose((float3x3)volume.worldToVoxel), voxelNormal));
         float depth = depthVoxels * gParams.voxelSize;
 
@@ -206,18 +273,20 @@ Contact contactAt(float3 world) {
     return contact;
 }
 
-void appendVoxels(uint index, uint mask) {
+// Opaque fills the list from the bottom with args 0 to 3 and glass from the top with args 4 to 7
+void appendVoxels(uint index, uint mask, bool glass) {
     uint count = countbits(mask);
     if (count == 0u) {
         return;
     }
     uint base = 0u;
-    InterlockedAdd(gDrawArgs[1], count, base);
+    InterlockedAdd(gDrawArgs[glass ? 5u : 1u], count, base);
     uint listCapacity = gParams.capacity * 8u;
     uint written = 0u;
     for (uint bit = 0u; bit < 8u; ++bit) {
         if (((mask >> bit) & 1u) != 0u && base + written < listCapacity) {
-            gDrawList[base + written] = (index << 3) | bit;
+            uint slot = glass ? listCapacity - 1u - (base + written) : base + written;
+            gDrawList[slot] = (index << 3) | bit;
             ++written;
         }
     }
@@ -230,17 +299,43 @@ void resetMain(uint3 id : SV_DispatchThreadID) {
     gDrawArgs[1] = 0u;
     gDrawArgs[2] = 0u;
     gDrawArgs[3] = 0u;
+    gDrawArgs[4] = 36u;
+    gDrawArgs[5] = 0u;
+    gDrawArgs[6] = 0u;
+    gDrawArgs[7] = 0u;
+}
+
+// Over the particle cap the oldest get only the fade left
+[shader("compute")]
+[numthreads(kGroupSize, 1, 1)]
+void retireMain(uint3 id : SV_DispatchThreadID) {
+    if (id.x >= gParams.retireCount) {
+        return;
+    }
+    uint slot = gRetires[id.x];
+    if (slot >= gParams.capacity) {
+        return;
+    }
+    DebrisMotion motion = gMotion[slot];
+    motion.lifetime = min(motion.lifetime, motion.age + gParams.fadeOut);
+    gMotion[slot] = motion;
 }
 
 [shader("compute")]
 [numthreads(kGroupSize, 1, 1)]
-void integrateMain(uint3 id : SV_DispatchThreadID) {
+void integrateMain(uint3 id : SV_DispatchThreadID, uint3 groupThread : SV_GroupThreadID) {
+    // Before any early return so every thread reaches the barrier
+    uint volumeCount = min(gParams.volumeCount, kMaxVolumes);
+    for (uint v = groupThread.x; v < volumeCount; v += kGroupSize) {
+        sBounds[v] = gVolumes[v].bounds;
+    }
+    GroupMemoryBarrierWithGroupSync();
+
     uint i = id.x;
     if (i >= gParams.capacity) {
         return;
     }
 
-    // write every particle
     DebrisParticle particle = gPrevious[i];
     uint mask = particle.packed & kMaskBits;
     if (mask == 0u || gParams.clear != 0u) {
@@ -252,27 +347,34 @@ void integrateMain(uint3 id : SV_DispatchThreadID) {
     DebrisMotion motion = gMotion[i];
     const float stepTime = gParams.dt * float(gParams.substeps);
     motion.age += stepTime;
-    if (motion.age > gParams.lifetime) {
+    if (motion.age > motion.lifetime) {
         particle.packed = 0u;
         gCurrent[i] = particle;
         gMotion[i] = motion;
         return;
     }
+    particle.scale = displayScale(motion);
+    const bool glass = (particle.packed & kFlagGlass) != 0u;
+
+    // Farthest point plus the floor probe below it plus how far gravity and velocity carry it this step
+    float travel = (length(particle.velocity) + length(gParams.gravity) * stepTime) * stepTime;
+    float reach = 0.87 * gParams.voxelSize * motion.baseScale + 1.5 * gParams.voxelSize + travel;
+    Candidates candidates = gatherCandidates(particle.position, reach);
 
     if ((particle.packed & kFlagAsleep) != 0u) {
-        // wake up when no floor
+        // Wakes once nothing supports it
         bool supported = false;
         for (uint bit = 0u; bit < 8u && !supported; ++bit) {
             if (((mask >> bit) & 1u) != 0u) {
-                float3 below = particle.position + rotateByQuat(particle.rotation, bitOffset(bit)) - float3(0.0, 0.0, gParams.voxelSize);
-                supported = contactAt(below).hit;
+                float3 below = particle.position + rotateByQuat(particle.rotation, bitOffset(bit, motion.baseScale)) - float3(0.0, 0.0, gParams.voxelSize);
+                supported = contactAt(below, candidates).hit;
             }
         }
 
         if (supported) {
             gCurrent[i] = particle;
             gMotion[i] = motion;
-            appendVoxels(i, mask);
+            appendVoxels(i, mask, glass);
             return;
         }
         particle.packed &= ~kFlagAsleep;
@@ -290,7 +392,7 @@ void integrateMain(uint3 id : SV_DispatchThreadID) {
             particle.rotation = normalize(particle.rotation + 0.5 * dt * quatMul(float4(motion.angular, 0.0), particle.rotation));
         }
 
-        // oone response per substep
+        // One response per substep
         Contact deepest;
         deepest.hit = false;
         deepest.normal = float3(0.0, 0.0, 1.0);
@@ -299,7 +401,7 @@ void integrateMain(uint3 id : SV_DispatchThreadID) {
             if (((mask >> bit) & 1u) == 0u) {
                 continue;
             }
-            Contact contact = contactAt(particle.position + rotateByQuat(particle.rotation, bitOffset(bit)));
+            Contact contact = contactAt(particle.position + rotateByQuat(particle.rotation, bitOffset(bit, motion.baseScale)), candidates);
             if (contact.hit && (!deepest.hit || contact.depth > deepest.depth)) {
                 deepest = contact;
             }
@@ -333,7 +435,7 @@ void integrateMain(uint3 id : SV_DispatchThreadID) {
 
     gCurrent[i] = particle;
     gMotion[i] = motion;
-    appendVoxels(i, mask);
+    appendVoxels(i, mask, glass);
 }
 
 [shader("compute")]
@@ -355,16 +457,21 @@ void spawnMain(uint3 id : SV_DispatchThreadID) {
     particle.rotation = spawn.rotation;
     particle.velocity = spawn.velocity;
     particle.albedo = spawn.albedo;
-    gCurrent[spawn.slot] = particle;
+    particle.glass = spawn.glass;
+    particle.pad0 = 0u;
+    particle.pad1 = 0u;
 
     DebrisMotion motion;
     motion.angular = spawn.angular;
     motion.age = 0.0;
     motion.restSteps = 0u;
+    motion.lifetime = spawn.lifetime;
+    motion.baseScale = spawn.scale;
     motion.pad0 = 0u;
-    motion.pad1 = 0u;
-    motion.pad2 = 0u;
     gMotion[spawn.slot] = motion;
 
-    appendVoxels(spawn.slot, spawn.packed & kMaskBits);
+    particle.scale = displayScale(motion);
+    gCurrent[spawn.slot] = particle;
+
+    appendVoxels(spawn.slot, spawn.packed & kMaskBits, (spawn.packed & kFlagGlass) != 0u);
 }

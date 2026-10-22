@@ -37,8 +37,21 @@ AsyncCompute::~AsyncCompute() {
 	}
 }
 
+auto AsyncCompute::counterValue() const -> Ticket {
+	try {
+		const Ticket completed = m_timeline.getCounterValue();
+		m_last_completed.store(completed, std::memory_order_relaxed);
+		return completed;
+	} catch (const vk::SystemError& error) {
+		// A lost device would otherwise throw through the noexcept engine tick and abort the process
+		const Ticket last = m_last_completed.load(std::memory_order_relaxed);
+		TOAST_ERROR("Render", "Async compute timeline unreadable, treating ticket {} as the newest: {}", last, error.what());
+		return last;
+	}
+}
+
 void AsyncCompute::reclaimLocked() {
-	const Ticket completed = m_timeline.getCounterValue();
+	const Ticket completed = counterValue();
 	for (auto it = m_in_flight.begin(); it != m_in_flight.end();) {
 		if (it->ticket <= completed) {
 			m_free.push_back(std::move(*it));
@@ -71,7 +84,8 @@ auto AsyncCompute::acquireSlot() -> Slot {
 	return slot;
 }
 
-auto AsyncCompute::submit(const std::function<void(vk::CommandBuffer)>& record, std::string_view debug_name) -> Ticket {
+auto AsyncCompute::submit(const std::function<void(vk::CommandBuffer)>& record, std::string_view debug_name, Timing timing)
+    -> Ticket {
 	ZoneScoped;
 	Slot slot = acquireSlot();
 	const vk::CommandBuffer cmd = *slot.cmd;
@@ -86,21 +100,36 @@ auto AsyncCompute::submit(const std::function<void(vk::CommandBuffer)>& record, 
 		throw;
 	}
 
+	std::scoped_lock lock(m_mutex);
+	// Same lock as the submit so values reach the queue in order with older deferred jobs first
+	flushDeferredLocked();
+	const Ticket ticket = m_last_submitted + 1;
+	slot.ticket = ticket;
+	m_last_submitted = ticket;
+	if (timing == Timing::after_frame) {
+		m_deferred.push_back(std::move(slot));
+	} else {
+		submitLocked(std::move(slot));
+	}
+
+	if (!debug_name.empty()) {
+		TOAST_TRACE("Render", "Async compute job '{}' submitted as ticket {}", debug_name, ticket);
+	}
+	return ticket;
+}
+
+void AsyncCompute::submitLocked(Slot&& slot) {
 	vk::CommandBufferSubmitInfo command_info {};
-	command_info.commandBuffer = cmd;
+	command_info.commandBuffer = *slot.cmd;
 
 	vk::SemaphoreSubmitInfo signal {};
 	signal.semaphore = *m_timeline;
+	signal.value = slot.ticket;
 	signal.stageMask = vk::PipelineStageFlagBits2::eAllCommands;
 
 	vk::SubmitInfo2 info {};
 	info.setCommandBufferInfos(command_info);
 	info.setSignalSemaphoreInfos(signal);
-
-	std::scoped_lock lock(m_mutex);
-	// Same lock as the submit so values reach the queue in increasing order
-	const Ticket ticket = m_last_submitted + 1;
-	signal.value = ticket;
 	{
 		std::unique_lock<std::mutex> queue_lock;
 		if (m_queue_mutex != nullptr) {
@@ -108,32 +137,45 @@ auto AsyncCompute::submit(const std::function<void(vk::CommandBuffer)>& record, 
 		}
 		m_queue.submit2(info, nullptr);
 	}
-	m_last_submitted = ticket;
-
-	if (!debug_name.empty()) {
-		TOAST_TRACE("Render", "Async compute job '{}' submitted as ticket {}", debug_name, ticket);
-	}
-
-	slot.ticket = ticket;
 	m_in_flight.push_back(std::move(slot));
-	return ticket;
+}
+
+void AsyncCompute::flushDeferredLocked() {
+	// Taken first so a throwing submit never leaves moved from slots behind
+	std::vector<Slot> pending = std::exchange(m_deferred, {});
+	for (Slot& slot : pending) {
+		submitLocked(std::move(slot));
+	}
+}
+
+void AsyncCompute::flushDeferred() {
+	ZoneScoped;
+	std::scoped_lock lock(m_mutex);
+	flushDeferredLocked();
 }
 
 auto AsyncCompute::isComplete(Ticket ticket) const -> bool {
-	return ticket == k_no_ticket || m_timeline.getCounterValue() >= ticket;
+	return ticket == k_no_ticket || counterValue() >= ticket;
 }
 
-auto AsyncCompute::wait(Ticket ticket, uint64_t timeout_ns) const -> bool {
+auto AsyncCompute::wait(Ticket ticket, uint64_t timeout_ns) -> bool {
 	if (isComplete(ticket)) {
 		return true;
 	}
 	const vk::Semaphore semaphore = *m_timeline;
 	const vk::SemaphoreWaitInfo wait_info({}, semaphore, ticket);
-	return m_device->waitSemaphores(wait_info, timeout_ns) == vk::Result::eSuccess;
+	try {
+		flushDeferred();
+		return m_device->waitSemaphores(wait_info, timeout_ns) == vk::Result::eSuccess;
+	} catch (const vk::SystemError& error) {
+		// A throw from here reaches the noexcept tick and aborts instead of reporting
+		TOAST_ERROR("Render", "Async compute wait for ticket {} failed: {}", ticket, error.what());
+		return false;
+	}
 }
 
 auto AsyncCompute::completedTicket() const -> Ticket {
-	return m_timeline.getCounterValue();
+	return counterValue();
 }
 
 auto AsyncCompute::lastSubmittedTicket() const -> Ticket {

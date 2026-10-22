@@ -70,6 +70,10 @@ void _detail::log(
 	Logger::log(file_name, line_number, severity, sink, message);
 }
 
+void flush() noexcept {
+	Logger::flush();
+}
+
 auto Logger::create() noexcept -> std::unique_ptr<Logger> {
 	ZoneScoped;
 
@@ -423,6 +427,27 @@ auto Logger::collectQueue() -> std::vector<uint8_t> {
 	std::vector<uint8_t> buffer(batch.ByteSizeLong());
 	batch.SerializeToArray(buffer.data(), buffer.size());
 	return buffer;
+}
+
+void Logger::flush() noexcept {
+	auto* logger = instance;
+	if (logger == nullptr) {
+		return;
+	}
+
+	// Holding the drain slot keeps a pool drain off the socket. Bounded since the pool may be stuck on the caller
+	constexpr auto k_timeout = std::chrono::milliseconds(500);
+	const auto deadline = std::chrono::steady_clock::now() + k_timeout;
+	while (logger->m.drain_pending.exchange(true, std::memory_order_acq_rel)) {
+		if (std::chrono::steady_clock::now() > deadline) {
+			return;
+		}
+		std::this_thread::yield();
+	}
+	try {
+		logger->flushSync();
+	} catch (...) { (void)0; }
+	logger->m.drain_pending.store(false, std::memory_order_release);
 }
 
 void Logger::flushSync() {

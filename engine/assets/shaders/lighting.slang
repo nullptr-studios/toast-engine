@@ -78,8 +78,11 @@ struct CameraUBO
     // Must match VulkanRenderer::k_max_irradiance_volumes
     IrradianceVolumeGpu irradianceVolumes[4];
 
-    // x 1 when gScene holds a TLAS and traced shadows are on. Keep last
+    // x 1 when gScene holds a TLAS and traced shadows are on
     float4 tracedShadowParams;
+
+    /// xy blue noise texel offset walking R2 per frame z frame index
+    float4 noiseParams;
 };
 
 [[vk::binding(0,0)]]
@@ -103,11 +106,18 @@ struct GpuLight
     float4 directionPad;    // w shadow layer or -1
     float4 coneAngles;      // x cos outer y cos inner z shadow near w shadow far
 
-    // x fraction of the shadow layer rendered
+    // x fraction of the shadow layer rendered y point light face scale inside the guard band z shadow strength
     float4 shadowAtlas;
 
     // Spotlight only
     float4x4 shadowViewProjection;
+
+    /// x kLightShape y radius or rect half width z capsule half length or rect half height w kShadowMode
+    /// The shape faces or runs along directionPad.xyz
+    float4 shape;
+
+    /// xyz rect width axis
+    float4 shapeTangent;
 };
 
 [[vk::binding(1,0)]]
@@ -125,6 +135,10 @@ Sampler2DArrayShadow gShadowMap;
 [[vk::binding(7,0)]]
 Sampler2DArrayShadow gPunctualShadowMaps;
 
+/// gPunctualShadowMaps without comparison for the PCSS blocker search
+[[vk::binding(16,0)]]
+Sampler2DArray gPunctualShadowDepths;
+
 [[vk::binding(8,0)]]
 SamplerCube gIrradianceMap;
 
@@ -141,6 +155,22 @@ SamplerCube gProbeIrradiance[8];
 // Four float4 per probe L0 L1y L1z L1x
 [[vk::binding(12,0)]]
 StructuredBuffer<float4> gIrradianceSH;
+
+/// renderer::blue_noise texels with four independent channels a byte each
+[[vk::binding(15,0)]]
+StructuredBuffer<uint> gBlueNoise;
+
+/// Mirrors renderer::blue_noise::k_size
+static const uint kBlueNoiseSize = 64u;
+
+/// Four values in (0 1) decorrelated per sample index
+float4 blueNoise(float2 pixel, uint sampleIndex)
+{
+    const uint2 offset = uint2(gCamera.noiseParams.xy) + sampleIndex * uint2(23u, 41u);
+    const uint2 texel = (uint2(pixel) + offset) & (kBlueNoiseSize - 1u);
+    const uint packed = gBlueNoise[texel.y * kBlueNoiseSize + texel.x];
+    return (float4(float(packed & 0xFFu), float((packed >> 8) & 0xFFu), float((packed >> 16) & 0xFFu), float(packed >> 24)) + 0.5) / 256.0;
+}
 
 // Ray query only Gated on tracedShadowParams.x
 #if TOAST_RAY_QUERY
@@ -344,12 +374,24 @@ float2 environmentBRDF(float roughness, float NdotV)
     return float2(-1.04, 1.04) * a004 + r.zw;
 }
 
-float3 shadeLight(float3 N, float3 V, float3 L, float3 radiance, float3 albedo, float metallic, float roughness, float reflectivity)
+/// Diffuse is over albedo so the denoiser filters texture free light
+struct LightTerms
 {
+    float3 diffuse;
+    float3 specular;
+};
+
+LightTerms shadeLightTerms(float3 N, float3 V, float3 L, float3 radiance, float3 albedo, float metallic, float roughness,
+                           float reflectivity)
+{
+    LightTerms terms;
+    terms.diffuse = float3(0.0, 0.0, 0.0);
+    terms.specular = float3(0.0, 0.0, 0.0);
+
     float NdotL = max(dot(N, L), 0.0);
     if (NdotL <= 0.0)
     {
-        return float3(0.0, 0.0, 0.0);
+        return terms;
     }
 
     float3 H = normalize(V + L);
@@ -365,7 +407,23 @@ float3 shadeLight(float3 N, float3 V, float3 L, float3 radiance, float3 albedo, 
 
     float3 kD = lerp(float3(1.0, 1.0, 1.0), (float3(1.0, 1.0, 1.0) - F) * (1.0 - metallic), reflectivity);
 
-    return (kD * albedo / kPi + specular * reflectivity) * radiance * NdotL;
+    terms.diffuse = kD / kPi * radiance * NdotL;
+    terms.specular = specular * reflectivity * radiance * NdotL;
+    return terms;
+}
+
+float3 shadeLight(float3 N, float3 V, float3 L, float3 radiance, float3 albedo, float metallic, float roughness, float reflectivity,
+                  out float3 specular)
+{
+    const LightTerms terms = shadeLightTerms(N, V, L, radiance, albedo, metallic, roughness, reflectivity);
+    specular = terms.specular;
+    return terms.diffuse * albedo + terms.specular;
+}
+
+float3 shadeLight(float3 N, float3 V, float3 L, float3 radiance, float3 albedo, float metallic, float roughness, float reflectivity)
+{
+    float3 specular;
+    return shadeLight(N, V, L, radiance, albedo, metallic, roughness, reflectivity, specular);
 }
 
 float attenuateRange(float dist, float range)
@@ -373,6 +431,174 @@ float attenuateRange(float dist, float range)
     float rangeFalloff = clamp(1.0 - pow(dist / max(range, 0.0001), 4.0), 0.0, 1.0);
     rangeFalloff = rangeFalloff * rangeFalloff;
     return rangeFalloff / max(dist * dist, 0.0001);
+}
+
+// Mirror toast::LightShape and toast::LightShadowMode
+static const uint kLightShapePoint = 0u;
+static const uint kLightShapeSphere = 1u;
+static const uint kLightShapeCapsule = 2u;
+static const uint kLightShapeDisc = 3u;
+static const uint kLightShapeRect = 4u;
+static const uint kShadowModeMap = 0u;
+static const uint kShadowModeMarched = 1u;
+static const uint kShadowModeSampled = 2u;
+
+uint lightShadowMode(GpuLight light)
+{
+    return uint(light.shape.w + 0.5);
+}
+
+void perpendicularBasis(float3 axis, out float3 tangent, out float3 bitangent)
+{
+    const float3 reference = abs(axis.y) < 0.99 ? float3(0.0, 1.0, 0.0) : float3(1.0, 0.0, 0.0);
+    tangent = normalize(cross(axis, reference));
+    bitangent = cross(axis, tangent);
+}
+
+float2 concentricDisc(float2 u)
+{
+    const float radius = sqrt(u.x);
+    const float angle = 6.28318531 * u.y;
+    return radius * float2(cos(angle), sin(angle));
+}
+
+/// A sphere samples its silhouette disc facing the receiver
+float3 sampleLightShape(GpuLight light, float3 receiver, float3 u)
+{
+    const float3 center = light.worldPosRange.xyz;
+    const uint shape = uint(light.shape.x + 0.5);
+    const float3 axis = light.directionPad.xyz;
+    float3 tangent;
+    float3 bitangent;
+
+    if (shape == kLightShapeSphere || shape == kLightShapeCapsule)
+    {
+        float3 core = center;
+        if (shape == kLightShapeCapsule && dot(axis, axis) > 0.5)
+        {
+            core += axis * ((2.0 * u.z - 1.0) * light.shape.z);
+        }
+        const float3 toReceiver = receiver - core;
+        if (dot(toReceiver, toReceiver) < 1e-8)
+        {
+            return core;
+        }
+        perpendicularBasis(normalize(toReceiver), tangent, bitangent);
+        const float2 disc = concentricDisc(u.xy) * light.shape.y;
+        return core + tangent * disc.x + bitangent * disc.y;
+    }
+    if (shape == kLightShapeDisc && dot(axis, axis) > 0.5)
+    {
+        perpendicularBasis(axis, tangent, bitangent);
+        const float2 disc = concentricDisc(u.xy) * light.shape.y;
+        return center + tangent * disc.x + bitangent * disc.y;
+    }
+    if (shape == kLightShapeRect && dot(axis, axis) > 0.5)
+    {
+        tangent = light.shapeTangent.xyz;
+        bitangent = cross(axis, tangent);
+        return center + tangent * ((2.0 * u.x - 1.0) * light.shape.y) + bitangent * ((2.0 * u.y - 1.0) * light.shape.z);
+    }
+    return center;
+}
+
+/// Spot cone from the light centre and flat emitters one sided
+float3 lightSampleRadiance(GpuLight light, float3 position, float3 samplePoint, out float3 L, out float distance)
+{
+    const float3 toLight = samplePoint - position;
+    distance = length(toLight);
+    L = toLight / max(distance, 1e-4);
+
+    float atten = attenuateRange(distance, light.worldPosRange.w);
+    if (light.viewPosType.w > 0.5)
+    {
+        const float3 fromCenter = position - light.worldPosRange.xyz;
+        const float cosAngle = dot(normalize(fromCenter), normalize(light.directionPad.xyz));
+        atten *= smoothstep(light.coneAngles.x, light.coneAngles.y, cosAngle);
+    }
+    const uint shape = uint(light.shape.x + 0.5);
+    if ((shape == kLightShapeDisc || shape == kLightShapeRect) && dot(light.directionPad.xyz, -L) <= 0.0)
+    {
+        atten = 0.0;
+    }
+    return light.colorIntensity.rgb * light.colorIntensity.a * atten;
+}
+
+/// Nearest capsule core point or the centre
+float3 analyticLightPoint(GpuLight light, float3 position)
+{
+    const float3 center = light.worldPosRange.xyz;
+    if (uint(light.shape.x + 0.5) != kLightShapeCapsule || dot(light.directionPad.xyz, light.directionPad.xyz) < 0.5)
+    {
+        return center;
+    }
+    const float3 axis = light.directionPad.xyz * light.shape.z;
+    const float t = saturate(dot(position - (center - axis), axis) / max(2.0 * dot(axis, axis), 1e-8));
+    return center - axis + 2.0 * axis * t;
+}
+
+/// Karis 2013 representative points
+/// Disc and rect use the sphere of equal area
+float3 shadeAnalyticLight(GpuLight light, float3 position, float3 N, float3 V, float3 L, float3 radiance, float3 albedo, float metallic,
+                          float roughness, float reflectivity, out float3 specularPart)
+{
+    specularPart = float3(0.0, 0.0, 0.0);
+    const uint shape = uint(light.shape.x + 0.5);
+    if (shape == kLightShapePoint || light.shape.y + light.shape.z <= 0.0)
+    {
+        return shadeLight(N, V, L, radiance, albedo, metallic, roughness, reflectivity, specularPart);
+    }
+
+    const float3 axis = light.directionPad.xyz;
+    const bool oriented = dot(axis, axis) > 0.5;
+    const float3 toCenter = light.worldPosRange.xyz - position;
+    if ((shape == kLightShapeDisc || shape == kLightShapeRect) && oriented && dot(axis, toCenter) >= 0.0)
+    {
+        return float3(0.0, 0.0, 0.0);
+    }
+
+    const float alpha = max(roughness * roughness, 1e-4);
+    const float3 R = reflect(-V, N);
+    float3 core = toCenter;
+    float radius = light.shape.y;
+    float lineNormalization = 1.0;
+    if (shape == kLightShapeCapsule && oriented)
+    {
+        const float3 start = toCenter - axis * light.shape.z;
+        const float3 segment = axis * (2.0 * light.shape.z);
+        const float RdotSegment = dot(R, segment);
+        const float t = saturate((dot(R, start) * RdotSegment - dot(start, segment)) /
+                                 max(dot(segment, segment) - RdotSegment * RdotSegment, 1e-8));
+        core = start + segment * t;
+        lineNormalization = alpha / saturate(alpha + light.shape.z / (1.5 * max(length(toCenter), 1e-3)));
+    }
+    else if (shape == kLightShapeRect)
+    {
+        radius = sqrt(4.0 * light.shape.y * light.shape.z / kPi);
+    }
+
+    const float3 centerToRay = dot(core, R) * R - core;
+    const float3 closest = core + centerToRay * saturate(radius / max(length(centerToRay), 1e-6));
+    const float coreDistance = max(length(core), 1e-3);
+    const float widened = saturate(alpha + radius / (2.0 * coreDistance));
+
+    // A reflection ray missing the emitter by over a lobe width fades back to the centre
+    const float miss = max(length(centerToRay) - radius, 0.0) / coreDistance;
+    const float hit = 1.0 - saturate(miss / max(alpha, 1e-3));
+    const float3 direction = normalize(lerp(normalize(core), normalize(closest), hit));
+    const float normalization = lerp(1.0, (alpha / widened) * (alpha / widened) * lineNormalization, hit);
+
+    const LightTerms diffuse = shadeLightTerms(N, V, L, radiance, albedo, metallic, roughness, reflectivity);
+    const LightTerms specular = shadeLightTerms(N, V, direction, radiance, albedo, metallic, roughness, reflectivity);
+    specularPart = specular.specular * normalization;
+    return diffuse.diffuse * albedo + specularPart;
+}
+
+float3 shadeAnalyticLight(GpuLight light, float3 position, float3 N, float3 V, float3 L, float3 radiance, float3 albedo, float metallic,
+                          float roughness, float reflectivity)
+{
+    float3 specularPart;
+    return shadeAnalyticLight(light, position, N, V, L, radiance, albedo, metallic, roughness, reflectivity, specularPart);
 }
 
 static const float kShadowFilterRadiusTexels = 2.5;
@@ -395,38 +621,58 @@ float shadowNormalOffset(float texelWorldSize, float NdotL)
     return offset;
 }
 
+/// The first kShadowProbeTaps form a cross
 static const float2 kPoissonDisk[12] = {
-    float2(-0.326, -0.406), float2(-0.840, -0.074), float2(-0.696,  0.457), float2(-0.203,  0.621),
-    float2( 0.962, -0.195), float2( 0.473, -0.480), float2( 0.519,  0.767), float2( 0.185, -0.893),
+    float2(-0.840, -0.074), float2( 0.962, -0.195), float2(-0.203,  0.621), float2( 0.185, -0.893),
+    float2(-0.326, -0.406), float2(-0.696,  0.457), float2( 0.473, -0.480), float2( 0.519,  0.767),
     float2( 0.507,  0.064), float2( 0.896,  0.412), float2(-0.322, -0.933), float2(-0.792, -0.598),
 };
+
+static const uint kShadowProbeTaps = 4u;
 
 float interleavedGradientNoise(float2 pixel)
 {
     return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
 }
 
-// Screen space derivatives break across cascade seams hence the clamp at the call site
-float2 receiverPlaneDepthGradient(float2 uv, float depth)
-{
-    float3 dx = float3(ddx(uv), ddx(depth));
-    float3 dy = float3(ddy(uv), ddy(depth));
+static const float kPunctualBiasMeters = 0.01;
+static const float kPunctualBiasTexels = 0.25;
 
-    float determinant = (dx.x * dy.y) - (dx.y * dy.x);
+/// Tangent of the steepest receiver slope so about 76 degrees
+static const float kMaxReceiverSlope = 4.0;
+
+/// Short enough that perspective depth is linear over it
+static const float kDepthProbeMeters = 0.01;
+
+float receiverAdjustLimit(float depthPerMeter, float texelWorldSize)
+{
+    return depthPerMeter * texelWorldSize * kShadowFilterRadiusTexels * kMaxReceiverSlope;
+}
+
+void tangentBasis(float3 normal, out float3 tangent, out float3 bitangent)
+{
+    const float3 helper = abs(normal.y) < 0.99 ? float3(0.0, 1.0, 0.0) : float3(1.0, 0.0, 0.0);
+    tangent = normalize(cross(helper, normal));
+    bitangent = cross(normal, tangent);
+}
+
+/// dDepth by dUV from three receiver plane points as uv then depth
+/// Not screen derivatives which cross deferred and voxel edges
+float2 planeDepthGradient(float3 center, float3 alongTangent, float3 alongBitangent)
+{
+    const float3 a = alongTangent - center;
+    const float3 b = alongBitangent - center;
+    const float determinant = (a.x * b.y) - (a.y * b.x);
     if (abs(determinant) < 1e-12)
     {
         return float2(0.0, 0.0);
     }
-
-    float inverse = 1.0 / determinant;
-    return float2(
-        ((dy.y * dx.z) - (dx.y * dy.z)) * inverse,
-        ((dx.x * dy.z) - (dy.x * dx.z)) * inverse);
+    return float2((a.z * b.y) - (a.y * b.z), (a.x * b.z) - (a.z * b.x)) / determinant;
 }
 
-float pcfShadow(
+float pcfShadowRadius(
     Sampler2DArrayShadow shadowMaps, float2 uv, float layer, float compareDepth, float texelSize, float2 pixel,
-    float2 gradient, float maxGradientAdjust)
+    float2 gradient, float maxGradientAdjust, float radiusTexels)
 {
     if (any(uv < float2(0.0, 0.0)) || any(uv > float2(1.0, 1.0)) || compareDepth > 1.0 || compareDepth < 0.0)
     {
@@ -435,51 +681,129 @@ float pcfShadow(
 
     float angle = interleavedGradientNoise(pixel) * 6.28318530718;
     float2 rotation = float2(cos(angle), sin(angle));
-    float radius = texelSize * kShadowFilterRadiusTexels;
+    float radius = texelSize * radiusTexels;
 
+    // LevelZero since implicit derivatives are undefined under per pixel branches
+    // Centre and cross agreeing skips the rest
     float sum = 0.0;
-    for (int i = 0; i < 12; ++i)
+    float probe = shadowMaps.SampleCmpLevelZero(float3(uv, layer), compareDepth);
+    [unroll]
+    for (uint i = 0u; i < kShadowProbeTaps; ++i)
     {
-        float2 tap = kPoissonDisk[i];
-        float2 offset = float2(
-            tap.x * rotation.x - tap.y * rotation.y,
-            tap.x * rotation.y + tap.y * rotation.x) * radius;
-
-        float tapDepth = compareDepth + clamp(dot(gradient, offset), -maxGradientAdjust, maxGradientAdjust);
-
-        // LevelZero since implicit derivatives are undefined under per pixel branches
+        const float2 tap = kPoissonDisk[i];
+        const float2 offset = float2(tap.x * rotation.x - tap.y * rotation.y, tap.x * rotation.y + tap.y * rotation.x) * radius;
+        const float tapDepth = compareDepth + clamp(dot(gradient, offset), -maxGradientAdjust, maxGradientAdjust);
         sum += shadowMaps.SampleCmpLevelZero(float3(uv + offset, layer), tapDepth);
     }
+    probe += sum;
+    if (probe < 1e-3 || probe > float(kShadowProbeTaps + 1u) - 1e-3)
+    {
+        return probe / float(kShadowProbeTaps + 1u);
+    }
 
+    [unroll]
+    for (uint i = kShadowProbeTaps; i < 12u; ++i)
+    {
+        const float2 tap = kPoissonDisk[i];
+        const float2 offset = float2(tap.x * rotation.x - tap.y * rotation.y, tap.x * rotation.y + tap.y * rotation.x) * radius;
+        const float tapDepth = compareDepth + clamp(dot(gradient, offset), -maxGradientAdjust, maxGradientAdjust);
+        sum += shadowMaps.SampleCmpLevelZero(float3(uv + offset, layer), tapDepth);
+    }
     return sum / 12.0;
+}
+
+float pcfShadow(
+    Sampler2DArrayShadow shadowMaps, float2 uv, float layer, float compareDepth, float texelSize, float2 pixel,
+    float2 gradient, float maxGradientAdjust)
+{
+    return pcfShadowRadius(shadowMaps, uv, layer, compareDepth, texelSize, pixel, gradient, maxGradientAdjust,
+                           kShadowFilterRadiusTexels);
+}
+
+/// Caps the blocker search cost
+static const float kMaxBlockerSearchTexels = 16.0;
+static const float kMaxPenumbraTexels = 24.0;
+
+float emitterRadius(GpuLight light)
+{
+    const uint shape = uint(light.shape.x + 0.5);
+    if (shape == kLightShapeCapsule)
+    {
+        return light.shape.y + 0.5 * light.shape.z;
+    }
+    if (shape == kLightShapeRect)
+    {
+        return sqrt(4.0 * light.shape.y * light.shape.z / kPi);
+    }
+    return shape == kLightShapePoint ? 0.0 : light.shape.y;
+}
+
+/// perspectiveRH_ZO depth back to distance along the view axis
+float punctualLinearDepth(float depth, GpuLight light)
+{
+    const float nearPlane = light.coneAngles.z;
+    const float farPlane = light.coneAngles.w;
+    return farPlane * nearPlane / max(farPlane - depth * (farPlane - nearPlane), 1e-6);
+}
+
+/// PCSS filter radius in texels or 0 with no blocker
+/// Shadow maps keep standard depth
+float penumbraTexels(GpuLight light, float2 uv, float layer, float compareDepth, float receiverDistance, float texelWorldSize,
+                     float2 pixel)
+{
+    const float radius = emitterRadius(light);
+    const float texelSize = gCamera.shadowParams.w;
+    const float searchTexels = clamp(radius / max(texelWorldSize, 1e-6), kShadowFilterRadiusTexels, kMaxBlockerSearchTexels);
+
+    const float angle = interleavedGradientNoise(pixel + 17.0) * 6.28318530718;
+    const float2 rotation = float2(cos(angle), sin(angle));
+    float blockerSum = 0.0;
+    float blockers = 0.0;
+    for (int i = 0; i < 12; ++i)
+    {
+        const float2 tap = kPoissonDisk[i];
+        const float2 offset = float2(tap.x * rotation.x - tap.y * rotation.y, tap.x * rotation.y + tap.y * rotation.x) * searchTexels * texelSize;
+        const float depth = gPunctualShadowDepths.SampleLevel(float3(uv + offset, layer), 0.0).r;
+        if (depth < compareDepth)
+        {
+            blockerSum += punctualLinearDepth(depth, light);
+            blockers += 1.0;
+        }
+    }
+    if (blockers <= 0.0)
+    {
+        return 0.0;
+    }
+    const float blocker = blockerSum / blockers;
+    const float penumbraWorld = radius * max(receiverDistance - blocker, 0.0) / max(blocker, 1e-3);
+    return clamp(penumbraWorld / max(texelWorldSize, 1e-6), kShadowFilterRadiusTexels, kMaxPenumbraTexels);
+}
+
+/// Shadow map uv then depth of a point in an orthographic cascade
+float3 cascadeUvDepth(uint cascade, float3 position)
+{
+    const float3 projected = mul(gCamera.cascadeViewProjection[cascade], float4(position, 1.0)).xyz;
+    return float3(projected.xy * 0.5 + 0.5, projected.z);
 }
 
 float sampleCascade(uint cascade, float3 worldPosition, float3 N, float3 L, float2 pixel)
 {
     float NdotL = saturate(dot(N, L));
-    float3 offsetPosition = worldPosition + N * shadowNormalOffset(gCamera.cascadeTexelWorldSize[cascade], NdotL);
+    const float texelWorldSize = gCamera.cascadeTexelWorldSize[cascade];
+    float3 offsetPosition = worldPosition + N * shadowNormalOffset(texelWorldSize, NdotL);
 
-    float4 lightClip = mul(gCamera.cascadeViewProjection[cascade], float4(offsetPosition, 1.0));
-    if (lightClip.w <= 0.0)
-    {
-        return 1.0;
-    }
+    const float3 center = cascadeUvDepth(cascade, offsetPosition);
+    float3 tangent;
+    float3 bitangent;
+    tangentBasis(N, tangent, bitangent);
+    const float2 gradient = planeDepthGradient(center, cascadeUvDepth(cascade, offsetPosition + tangent * texelWorldSize),
+                                               cascadeUvDepth(cascade, offsetPosition + bitangent * texelWorldSize));
 
-    float3 projected = lightClip.xyz / lightClip.w;
-    float2 uv = projected.xy * 0.5 + 0.5;
-
-    float bias = gCamera.cascadeDepthBias[cascade];
-    float2 gradient = receiverPlaneDepthGradient(uv, projected.z);
-
-    return pcfShadow(
-        gShadowMap,
-        uv,
-        float(cascade),
-        projected.z - bias,
-        gCamera.shadowParams.z,
-        pixel,
-        gradient,
-        bias * 8.0);
+    const float texelUv = gCamera.shadowParams.z;
+    const float depthPerMeter = abs(center.z - cascadeUvDepth(cascade, offsetPosition + L * kDepthProbeMeters).z) / kDepthProbeMeters;
+    const float adjustLimit = receiverAdjustLimit(depthPerMeter, texelWorldSize);
+    const float compareDepth = center.z - gCamera.cascadeDepthBias[cascade];
+    return pcfShadow(gShadowMap, center.xy, float(cascade), compareDepth, texelUv, pixel, gradient, adjustLimit);
 }
 
 // Guards every gScene access. Folds to false without ray query
@@ -511,6 +835,26 @@ float traceShadowRay(float3 worldPosition, float3 N, float3 L, float maxDistance
 #endif
 }
 
+/// Share of a cascade map at its border that blends into the next cascade
+static const float kCascadeBlendBand = 0.1;
+/// Share of the shadow distance over which the last cascade fades out
+static const float kShadowDistanceFade = 0.1;
+
+/// Uv distance inside the cascade border or 0 outside its map or depth range
+/// Past the far plane a receiver would compare as lit
+float cascadeEdge(uint cascade, float3 worldPosition)
+{
+    const float3 uvDepth = cascadeUvDepth(cascade, worldPosition);
+    if (uvDepth.z <= 0.0 || uvDepth.z >= 1.0)
+    {
+        return 0.0;
+    }
+    // The filter and normal offset reach a few texels past the point
+    const float margin = gCamera.shadowParams.z * (kShadowFilterRadiusTexels + 2.0);
+    return min(min(uvDepth.x, uvDepth.y), min(1.0 - uvDepth.x, 1.0 - uvDepth.y)) - margin;
+}
+
+/// Finest cascade whose map and depth range hold the point
 float sampleDirectionalShadow(float3 worldPosition, float3 N, float3 L, float viewDepth, float2 pixel)
 {
     if (gCamera.shadowParams.x < 0.5)
@@ -518,38 +862,42 @@ float sampleDirectionalShadow(float3 worldPosition, float3 N, float3 L, float vi
         return 1.0;
     }
 
-    uint cascadeCount = uint(gCamera.shadowParams.y);
-    uint cascade = cascadeCount;
-    for (uint i = 0; i < cascadeCount; ++i)
-    {
-        if (viewDepth <= gCamera.cascadeSplits[i])
-        {
-            cascade = i;
-            break;
-        }
-    }
-    if (cascade >= cascadeCount)
+    const uint cascadeCount = uint(gCamera.shadowParams.y);
+    const float shadowDistance = gCamera.cascadeSplits[cascadeCount - 1u];
+    const float distanceFade = saturate((shadowDistance - viewDepth) / (shadowDistance * kShadowDistanceFade));
+    if (distanceFade <= 0.0)
     {
         return 1.0;
     }
 
-    float shadow = sampleCascade(cascade, worldPosition, N, L, pixel);
-
-    float cascadeFar = gCamera.cascadeSplits[cascade];
-    float cascadeNear = cascade > 0 ? gCamera.cascadeSplits[cascade - 1] : 0.0;
-    float span = max(cascadeFar - cascadeNear, 1e-4);
-    float t = (viewDepth - cascadeNear) / span;
-
-    const float kBlendBand = 0.15;
-    if (t > (1.0 - kBlendBand) && (cascade + 1) < cascadeCount)
+    for (uint cascade = 0u; cascade < cascadeCount; ++cascade)
     {
-        float nextShadow = sampleCascade(cascade + 1, worldPosition, N, L, pixel);
-        shadow = lerp(shadow, nextShadow, (t - (1.0 - kBlendBand)) / kBlendBand);
-    }
+        const float edge = cascadeEdge(cascade, worldPosition);
+        if (edge <= 0.0)
+        {
+            continue;
+        }
 
-    return shadow;
+        float shadow = sampleCascade(cascade, worldPosition, N, L, pixel);
+        if (edge < kCascadeBlendBand && cascade + 1u < cascadeCount && cascadeEdge(cascade + 1u, worldPosition) > 0.0)
+        {
+            const float coarser = sampleCascade(cascade + 1u, worldPosition, N, L, pixel);
+            shadow = lerp(coarser, shadow, edge / kCascadeBlendBand);
+        }
+        return lerp(1.0, shadow, distanceFade);
+    }
+    return 1.0;
 }
 
+/// Shadow layer uv then depth of a point in a spot light frustum
+float3 spotUvDepth(GpuLight light, float3 position)
+{
+    const float4 clip = mul(light.shadowViewProjection, float4(position, 1.0));
+    const float3 projected = clip.xyz / max(clip.w, 1e-6);
+    return float3((projected.xy * 0.5 + 0.5) * light.shadowAtlas.x, projected.z);
+}
+
+/// Bias is a world distance toward the light since perspective depth is not linear
 float sampleSpotShadow(GpuLight light, float3 worldPosition, float3 N, float3 L, float2 pixel)
 {
     float layer = light.directionPad.w;
@@ -558,28 +906,106 @@ float sampleSpotShadow(GpuLight light, float3 worldPosition, float3 N, float3 L,
         return 1.0;
     }
 
-    float NdotL = saturate(dot(N, L));
-    float texelWorldSize =
-        distance(worldPosition, light.worldPosRange.xyz) * (gCamera.shadowParams.w / max(light.shadowAtlas.x, 1e-4)) * 2.0;
-    float3 offsetPosition = worldPosition + N * shadowNormalOffset(texelWorldSize, NdotL);
+    // A perspective row scales by the reciprocal tangent of the half field of view
+    const float tanHalfFov = 1.0 / length(light.shadowViewProjection[0].xyz);
+    const float renderedTexels = max(light.shadowAtlas.x, 1e-4) / gCamera.shadowParams.w;
+    const float texelWorldSize = 2.0 * distance(worldPosition, light.worldPosRange.xyz) * tanHalfFov / renderedTexels;
 
-    float4 lightClip = mul(light.shadowViewProjection, float4(offsetPosition, 1.0));
-    if (lightClip.w <= 0.0)
+    float NdotL = saturate(dot(N, L));
+    float3 offsetPosition = worldPosition + N * shadowNormalOffset(texelWorldSize, NdotL);
+    if (mul(light.shadowViewProjection, float4(offsetPosition, 1.0)).w <= 0.0)
     {
         return 1.0;
     }
 
-    float3 projected = lightClip.xyz / lightClip.w;
-    float2 uv = (projected.xy * 0.5 + 0.5) * light.shadowAtlas.x;
+    const float3 center = spotUvDepth(light, offsetPosition);
+    const float biasWorld = kPunctualBiasMeters + kPunctualBiasTexels * texelWorldSize;
+    const float compareDepth = spotUvDepth(light, offsetPosition + L * biasWorld).z;
 
-    float bias = max(0.0005, 0.0025 * (1.0 - projected.z));
-    float2 gradient = receiverPlaneDepthGradient(uv, projected.z);
+    float3 tangent;
+    float3 bitangent;
+    tangentBasis(N, tangent, bitangent);
+    const float2 gradient = planeDepthGradient(center, spotUvDepth(light, offsetPosition + tangent * texelWorldSize),
+                                               spotUvDepth(light, offsetPosition + bitangent * texelWorldSize));
 
-    return pcfShadow(
-        gPunctualShadowMaps, uv, layer, projected.z - bias, gCamera.shadowParams.w, pixel, gradient, bias * 8.0);
+    const float depthPerMeter = abs(center.z - spotUvDepth(light, offsetPosition + L * kDepthProbeMeters).z) / kDepthProbeMeters;
+    const float adjustLimit = receiverAdjustLimit(depthPerMeter, texelWorldSize);
+    float radiusTexels = kShadowFilterRadiusTexels;
+    if (emitterRadius(light) > 0.0)
+    {
+        const float receiver = mul(light.shadowViewProjection, float4(offsetPosition, 1.0)).w;
+        radiusTexels = penumbraTexels(light, center.xy, layer, compareDepth, receiver, texelWorldSize, pixel);
+        if (radiusTexels <= 0.0)
+        {
+            return 1.0;
+        }
+    }
+    const float shadow = pcfShadowRadius(gPunctualShadowMaps, center.xy, layer, compareDepth, gCamera.shadowParams.w, pixel, gradient,
+                                         adjustLimit, radiusTexels);
+    return lerp(1.0, shadow, light.shadowAtlas.z);
 }
 
-// Six layers in cubeFaceBasis() order +X -X +Y -Y +Z -Z
+/// Cube face of a direction from the light in cubeFaceBasis() order +X -X +Y -Y +Z -Z
+uint pointFace(float3 direction)
+{
+    const float3 absDirection = abs(direction);
+    if (absDirection.x >= absDirection.y && absDirection.x >= absDirection.z)
+    {
+        return direction.x > 0.0 ? 0u : 1u;
+    }
+    if (absDirection.y >= absDirection.z)
+    {
+        return direction.y > 0.0 ? 2u : 3u;
+    }
+    return direction.z > 0.0 ? 4u : 5u;
+}
+
+struct PointFaceFrame
+{
+    float3 u;
+    float3 v;
+    float3 major;
+    /// shadowAtlas.y and shadowAtlas.x
+    float ndcScale;
+    float atlas;
+    /// perspectiveRH_ZO depth is depthNear - depthFar / majorAxis
+    float depthNear;
+    float depthFar;
+};
+
+/// Must agree with cubeFaceBasis() or shadows tear at face seams
+PointFaceFrame pointFaceFrame(GpuLight light, uint face)
+{
+    PointFaceFrame frame;
+    const uint axis = face >> 1;
+    frame.major = float3(0.0, 0.0, 0.0);
+    frame.major[axis] = 1.0;
+    const bool zFace = axis == 2u;
+    frame.v = zFace ? float3(0.0, 1.0, 0.0) : float3(0.0, 0.0, 1.0);
+    const float uSign = (face == 0u || face == 3u || face == 4u) ? -1.0 : 1.0;
+    frame.u = axis == 0u ? float3(0.0, uSign, 0.0) : float3(uSign, 0.0, 0.0);
+    frame.ndcScale = light.shadowAtlas.y;
+    frame.atlas = light.shadowAtlas.x;
+    const float nearPlane = light.coneAngles.z;
+    const float farPlane = light.coneAngles.w;
+    const float range = max(farPlane - nearPlane, 0.0001);
+    frame.depthNear = farPlane / range;
+    frame.depthFar = farPlane * nearPlane / range;
+    return frame;
+}
+
+float3 pointFaceUvDepth(PointFaceFrame frame, float3 direction)
+{
+    const float majorAxis = max(abs(dot(direction, frame.major)), 1e-4);
+    const float2 ndc = float2(dot(direction, frame.u), dot(direction, frame.v)) * (frame.ndcScale / majorAxis);
+    return float3((ndc * 0.5 + 0.5) * frame.atlas, frame.depthNear - frame.depthFar / majorAxis);
+}
+
+float pointFaceDepth(PointFaceFrame frame, float3 direction)
+{
+    return frame.depthNear - frame.depthFar / max(abs(dot(direction, frame.major)), 1e-4);
+}
+
 float samplePointShadow(GpuLight light, float3 worldPosition, float3 N, float3 L, float2 pixel)
 {
     float baseLayer = light.directionPad.w;
@@ -588,55 +1014,48 @@ float samplePointShadow(GpuLight light, float3 worldPosition, float3 N, float3 L
         return 1.0;
     }
 
-    float nearPlane = light.coneAngles.z;
-    float farPlane = light.coneAngles.w;
+    // Guard texels widen each face so its half field of view has a tangent of 1 over shadowAtlas.y
+    const float renderedTexels = max(light.shadowAtlas.x, 1e-4) / gCamera.shadowParams.w;
+    const float texelWorldSize =
+        2.0 * distance(worldPosition, light.worldPosRange.xyz) / (max(light.shadowAtlas.y, 1e-4) * renderedTexels);
 
     float NdotL = saturate(dot(N, L));
-    float texelWorldSize =
-        distance(worldPosition, light.worldPosRange.xyz) * (gCamera.shadowParams.w / max(light.shadowAtlas.x, 1e-4)) * 2.0;
     float3 offsetPosition = worldPosition + N * shadowNormalOffset(texelWorldSize, NdotL);
 
-    float3 direction = offsetPosition - light.worldPosRange.xyz;
-    float3 absDirection = abs(direction);
-    float majorAxis = max(absDirection.x, max(absDirection.y, absDirection.z));
-    if (majorAxis < 0.0001)
+    const float3 direction = offsetPosition - light.worldPosRange.xyz;
+    if (dot(direction, direction) < 1e-8)
     {
         return 1.0;
     }
 
-    // Must agree with cubeFaceBasis() or shadows tear at face seams
-    uint face;
-    float2 ndc;
-    if (absDirection.x >= absDirection.y && absDirection.x >= absDirection.z)
+    const uint face = pointFace(direction);
+    const PointFaceFrame frame = pointFaceFrame(light, face);
+    const float3 center = pointFaceUvDepth(frame, direction);
+    const float biasWorld = kPunctualBiasMeters + kPunctualBiasTexels * texelWorldSize;
+    const float compareDepth = pointFaceDepth(frame, direction + L * biasWorld);
+
+    float3 tangent;
+    float3 bitangent;
+    tangentBasis(N, tangent, bitangent);
+    const float2 gradient = planeDepthGradient(center, pointFaceUvDepth(frame, direction + tangent * texelWorldSize),
+                                               pointFaceUvDepth(frame, direction + bitangent * texelWorldSize));
+
+    // d depth / d majorAxis is depthFar / majorAxis squared
+    const float majorAxis = max(abs(dot(direction, frame.major)), 1e-4);
+    const float depthPerMeter = frame.depthFar * abs(dot(L, frame.major)) / (majorAxis * majorAxis);
+    const float adjustLimit = receiverAdjustLimit(depthPerMeter, texelWorldSize);
+    float radiusTexels = kShadowFilterRadiusTexels;
+    if (emitterRadius(light) > 0.0)
     {
-        face = direction.x > 0.0 ? 0 : 1;
-        ndc = float2(direction.x > 0.0 ? -direction.y : direction.y, direction.z) / majorAxis;
+        radiusTexels = penumbraTexels(light, center.xy, baseLayer + float(face), compareDepth, abs(direction[face >> 1]), texelWorldSize, pixel);
+        if (radiusTexels <= 0.0)
+        {
+            return 1.0;
+        }
     }
-    else if (absDirection.y >= absDirection.z)
-    {
-        face = direction.y > 0.0 ? 2 : 3;
-        ndc = float2(direction.y > 0.0 ? direction.x : -direction.x, direction.z) / majorAxis;
-    }
-    else
-    {
-        face = direction.z > 0.0 ? 4 : 5;
-        ndc = float2(direction.z > 0.0 ? -direction.x : direction.x, direction.y) / majorAxis;
-    }
-
-    ndc *= light.shadowAtlas.y;
-
-    float2 uv = (ndc * 0.5 + 0.5) * light.shadowAtlas.x;
-
-    // perspectiveRH_ZO depth at majorAxis is z = f/(f-n) - f*n/((f-n)*majorAxis)
-    float range = max(farPlane - nearPlane, 0.0001);
-    float faceDepth = (farPlane / range) - ((farPlane * nearPlane) / (range * majorAxis));
-
-    float bias = max(0.0005, 0.0025 * (1.0 - faceDepth));
-    float2 gradient = receiverPlaneDepthGradient(uv, faceDepth);
-
-    return pcfShadow(
-        gPunctualShadowMaps, uv, baseLayer + float(face), faceDepth - bias, gCamera.shadowParams.w, pixel, gradient,
-        bias * 8.0);
+    const float shadow = pcfShadowRadius(gPunctualShadowMaps, center.xy, baseLayer + float(face), compareDepth, gCamera.shadowParams.w,
+                                         pixel, gradient, adjustLimit, radiusTexels);
+    return lerp(1.0, shadow, light.shadowAtlas.z);
 }
 
 float3 clusterHeatmapColor(uint lightCount)
@@ -676,11 +1095,18 @@ struct Surface
     float  viewSpaceZ;
 
     float2 pixel;
+
+    /// Marched and sampled lights are left to the caller
+    /// Every Surface must set it since Slang leaves a plain declaration uninitialized
+    bool marchedShadows;
 };
 
 struct ShadingResult
 {
     float3 color;
+
+    /// Specular share of color
+    float3 specular;
 
     float3 indirectDiffuse;
 
@@ -700,6 +1126,7 @@ struct ClusterCell
 ClusterCell clusterCellAt(float viewSpaceZ, float2 pixel)
 {
     Surface surface;
+    surface.marchedShadows = false;
     surface.viewSpaceZ = viewSpaceZ;
     surface.pixel = pixel;
 
@@ -881,7 +1308,22 @@ float4 evaluateDebugView(Surface surface, ClusterCell cluster)
     return float4(0.0, 0.0, 0.0, 0.0);
 }
 
-ShadingResult evaluateLighting(Surface surface, ClusterCell cluster)
+/// Colour a shadow map cannot hold such as voxel glass
+interface IShadowFilter
+{
+    /// @p distance is negative for a directional light
+    float3 filter(float3 L, float distance);
+}
+
+struct NoShadowFilter : IShadowFilter
+{
+    float3 filter(float3 L, float distance)
+    {
+        return float3(1.0, 1.0, 1.0);
+    }
+}
+
+ShadingResult evaluateLighting<Filter : IShadowFilter>(Surface surface, ClusterCell cluster, Filter shadowFilter)
 {
     float3 N = surface.normal;
     float3 V = surface.viewDirection;
@@ -899,9 +1341,11 @@ ShadingResult evaluateLighting(Surface surface, ClusterCell cluster)
 
     ShadingResult result;
     result.indirectDiffuse = float3(0.0, 0.0, 0.0);
+    result.specular = float3(0.0, 0.0, 0.0);
     result.isDebugView = false;
 
     float3 outIndirectDiffuse = float3(0.0, 0.0, 0.0);
+    float3 specular = float3(0.0, 0.0, 0.0);
 
     float3 color = float3(0.0, 0.0, 0.0);
 
@@ -913,6 +1357,10 @@ ShadingResult evaluateLighting(Surface surface, ClusterCell cluster)
     for (uint di = 0; di < gCamera.directionalLightCountPad.x; ++di)
     {
         DirectionalLightGpu light = gCamera.directionalLights[di];
+        if (surface.marchedShadows && light.direction.w > 0.0)
+        {
+            continue;
+        }
         float3 L = normalize(-light.direction.xyz);
         if (dot(N, L) <= 0.0 && !shadowDebugView)
         {
@@ -936,7 +1384,11 @@ ShadingResult evaluateLighting(Surface surface, ClusterCell cluster)
             debugMinShadow = min(debugMinShadow, shadow);
         }
 
-        color += shadeLight(N, V, L, radiance, albedo, metallic, roughness, reflectivity) * shadow;
+        const float3 tint = shadow > 0.0 ? shadowFilter.filter(L, -1.0) : float3(0.0, 0.0, 0.0);
+        const float3 weight = shadow * tint;
+        float3 lightSpecular;
+        color += shadeLight(N, V, L, radiance, albedo, metallic, roughness, reflectivity, lightSpecular) * weight;
+        specular += lightSpecular * weight;
     }
 
     if (clusterIndex < clusterCount)
@@ -945,9 +1397,25 @@ ShadingResult evaluateLighting(Surface surface, ClusterCell cluster)
 
         for (uint li = 0; li < lightCountInCluster; ++li)
         {
-            GpuLight light = gLights[gLightIndexList[indexBase + li]];
+            const uint lightIndex = gLightIndexList[indexBase + li];
+            // Rejected from two float4 before the full load
+            // A capsule core lies within shape.z of the centre and every other shape lights from the centre
+            const float4 positionRange = gLights[lightIndex].worldPosRange;
+            const float4 shapeParams = gLights[lightIndex].shape;
+            if (surface.marchedShadows && uint(shapeParams.w + 0.5) != kShadowModeMap)
+            {
+                continue;
+            }
+            const float3 toCenter = positionRange.xyz - surface.worldPosition;
+            const float reach = positionRange.w + shapeParams.z;
+            if (!shadowDebugView && (dot(toCenter, toCenter) >= reach * reach || dot(N, toCenter) + shapeParams.z <= 0.0))
+            {
+                continue;
+            }
 
-            float3 toLight = light.worldPosRange.xyz - surface.worldPosition;
+            GpuLight light = gLights[lightIndex];
+
+            float3 toLight = analyticLightPoint(light, surface.worldPosition) - surface.worldPosition;
             float lightDist = length(toLight);
             float3 L = toLight / max(lightDist, 0.0001);
 
@@ -984,7 +1452,12 @@ ShadingResult evaluateLighting(Surface surface, ClusterCell cluster)
 
             float3 radiance = light.colorIntensity.rgb * light.colorIntensity.a * atten;
 
-            color += shadeLight(N, V, L, radiance, albedo, metallic, roughness, reflectivity) * shadow;
+            const float3 tint = shadow > 0.0 ? shadowFilter.filter(L, lightDist) : float3(0.0, 0.0, 0.0);
+            const float3 weight = shadow * tint;
+            float3 lightSpecular;
+            color += shadeAnalyticLight(light, surface.worldPosition, N, V, L, radiance, albedo, metallic, roughness, reflectivity,
+                                        lightSpecular) * weight;
+            specular += lightSpecular * weight;
         }
     }
 
@@ -1080,15 +1553,17 @@ ShadingResult evaluateLighting(Surface surface, ClusterCell cluster)
     float3 ambientSpecular = prefiltered * (specularFresnel * envBrdf.x + envBrdf.y) * reflectivity;
 
     color += (ambientDiffuse + ambientSpecular) * occlusion;
+    specular += ambientSpecular * occlusion;
 
     outIndirectDiffuse = ambientDiffuse * occlusion;
 
     result.color = color;
+    result.specular = specular;
     result.indirectDiffuse = outIndirectDiffuse;
     return result;
 }
 
-ShadingResult shadeSurfaceLighting(Surface surface)
+ShadingResult shadeSurfaceLighting<Filter : IShadowFilter>(Surface surface, Filter shadowFilter)
 {
     ClusterCell cluster = clusterCellAt(surface.viewSpaceZ, surface.pixel);
 
@@ -1097,10 +1572,17 @@ ShadingResult shadeSurfaceLighting(Surface surface)
     {
         ShadingResult result;
         result.color = debug.rgb;
+        result.specular = float3(0.0, 0.0, 0.0);
         result.indirectDiffuse = float3(0.0, 0.0, 0.0);
         result.isDebugView = true;
         return result;
     }
 
-    return evaluateLighting(surface, cluster);
+    return evaluateLighting(surface, cluster, shadowFilter);
+}
+
+ShadingResult shadeSurfaceLighting(Surface surface)
+{
+    NoShadowFilter none;
+    return shadeSurfaceLighting(surface, none);
 }

@@ -78,6 +78,12 @@ auto info(Usage usage) -> UsageInfo {
 			  Access::eDepthStencilAttachmentRead | Access::eDepthStencilAttachmentWrite,
 			  Layout::eDepthAttachmentOptimal,
 			};
+		case Usage::stencil_attachment:
+			return {
+			  Stage::eEarlyFragmentTests | Stage::eLateFragmentTests,
+			  Access::eDepthStencilAttachmentRead | Access::eDepthStencilAttachmentWrite,
+			  Layout::eDepthStencilAttachmentOptimal,
+			};
 		case Usage::depth_sampled:
 			return {Stage::eFragmentShader | Stage::eComputeShader, Access::eShaderSampledRead, Layout::eDepthReadOnlyOptimal};
 

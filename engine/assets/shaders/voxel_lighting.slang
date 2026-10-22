@@ -1,6 +1,8 @@
 import fullscreen;
+import voxel_dda;
 import voxel_gbuffer;
 import lighting;
+import scene_normal;
 
 // Mirrors VoxelPass::LightingPushConstants
 struct LightingPushConstants
@@ -11,23 +13,69 @@ struct LightingPushConstants
     float4 cameraRadius;
     // xy viewport size z pixels per world unit at 1 m w spiral rotation in turns
     float4 viewport;
+    // x instances with bounds y light sampling candidates z 1 terms to voxel_denoise.slang 2 straight into colour w sun reach in meters
+    uint4 lighting;
+    // x bit 0 last frame's reservoirs are valid bit 1 fragmentSpatial picks and shades sampled lights bit 2 glass shadows
+    // and the high 16 bits the glass shadow reach of a sun in meters
+    // y M cap z reservoirs reused w ambient ray reach in centimetres and 0 for none
+    uint4 reuse;
 };
 
 [[vk::push_constant]]
 ConstantBuffer<LightingPushConstants> gPush;
 
-[[vk::binding(0, 1)]]
+// Set 1 is the voxel storage of voxel_dda.slang so shadow rays can march
+/// Bounding spheres in gVoxelInstances order with off screen casters last
+[[vk::binding(7, 1)]]
+StructuredBuffer<float4> gInstanceBounds;
+
+/// Mirrors renderer::VoxelPass::writeAmbientGrid
+/// Cell size bits, global offset and count, pad, offset and count per bucket, instance indices
+[[vk::binding(8, 1)]]
+StructuredBuffer<uint> gAmbientGrid;
+
+/// Mirrors renderer::VoxelPass::writeGlassCasters
+/// Count then indices into gVoxelInstances of the shadow casters holding glass
+[[vk::binding(9, 1)]]
+StructuredBuffer<uint> gGlassCasters;
+
+static const uint kAmbientGridBuckets = 4096u;
+static const uint kAmbientGridHeader = 4u;
+
+uint ambientGridBucket(int3 cell)
+{
+    const uint3 u = uint3(cell);
+    return ((u.x * 73856093u) ^ (u.y * 19349663u) ^ (u.z * 83492791u)) & (kAmbientGridBuckets - 1u);
+}
+
+[[vk::binding(0, 2)]]
 Sampler2D gAlbedo;
 
 // Unrounded so shadow bias still sees the flat face
-[[vk::binding(1, 1)]]
+[[vk::binding(1, 2)]]
 Sampler2D gFaceNormal;
 
-[[vk::binding(2, 1)]]
+[[vk::binding(2, 2)]]
 Sampler2D gMaterial;
 
-[[vk::binding(3, 1)]]
+[[vk::binding(3, 2)]]
 Sampler2D gDepth;
+
+/// packReservoir of last frame
+[[vk::binding(4, 2)]]
+Sampler2D<uint4> gPreviousReservoirs;
+
+/// xy uv motion z reactive w 1 when written
+[[vk::binding(5, 2)]]
+Sampler2D gMotion;
+
+/// This frame's reservoirs before spatial reuse
+[[vk::binding(6, 2)]]
+Sampler2D<uint4> gCandidateReservoirs;
+
+/// Rounded normal of fragmentMain
+[[vk::binding(7, 2)]]
+Sampler2D gSceneNormal;
 
 typedef FullscreenVSOutput VSOutput;
 
@@ -37,11 +85,16 @@ struct FSOutput
     float4 indirectDiffuse : SV_Target1;
     /// xyz rounded normal w SSR roughness and zero where SSAO and SSR pass through
     float4 normalRoughness : SV_Target2;
+    /// Marched and sampled light over albedo that voxel_denoise.slang filters
+    float4 noisyDiffuse : SV_Target3;
+    float4 noisySpecular : SV_Target4;
+    /// packReservoir for next frame
+    uint4 reservoir : SV_Target5;
 };
 
 /// One tap per pixel of radius within this range
 static const uint kMinRoundingTaps = 4;
-static const uint kMaxRoundingTaps = 16;
+static const uint kMaxRoundingTaps = 8;
 static const float kGoldenAngle = 2.39996323;
 
 // kMaxRoundingTaps spread wider than this stop reading as one smooth bevel
@@ -61,9 +114,11 @@ float3 positionAt(int2 pixel)
     return world.xyz / world.w;
 }
 
-bool isLitVoxelAt(int2 pixel)
+bool isLitVoxelAt(int2 pixel, out float3 faceNormal)
 {
-    return isLitVoxel(gAlbedo.Load(int3(pixel, 0)).a);
+    const float4 encoded = gFaceNormal.Load(int3(pixel, 0));
+    faceNormal = decodeFaceNormal(encoded);
+    return encoded.a > 0.5;
 }
 
 // Interleaved gradient noise
@@ -100,7 +155,8 @@ float3 roundedNormal(float2 pixel, float3 center, float3 face)
         const float angle = float(i) * kGoldenAngle + rotation;
         const float2 offset = sqrt((float(i) + 0.5) / float(taps)) * radiusPixels * float2(cos(angle), sin(angle));
         const int2 tap = int2(floor(pixel + offset));
-        if (any(tap < int2(0, 0)) || any(tap >= size) || !isLitVoxelAt(tap))
+        float3 tapNormal;
+        if (any(tap < int2(0, 0)) || any(tap >= size) || !isLitVoxelAt(tap, tapNormal))
         {
             continue;
         }
@@ -108,9 +164,652 @@ float3 roundedNormal(float2 pixel, float3 center, float3 face)
         // An occluded or grazing neighbour drops out
         const float3 toTap = positionAt(tap) - center;
         const float falloff = saturate(1.0 - dot(toTap, toTap) / (radius * radius));
-        sum += decodeFaceNormal(gFaceNormal.Load(int3(tap, 0))) * (falloff * falloff);
+        sum += tapNormal * (falloff * falloff);
     }
     return normalize(sum);
+}
+
+/// Mirrors voxel::k_voxel_size
+static const float kVoxelSize = 0.1;
+
+/// Shadow origin offset off its face in voxels
+static const float kShadowOriginOffset = 0.6;
+
+/// Transmittance along the segment and 0 once a voxel blocks it
+float3 marchedVisibility(float3 origin, float3 target, float coneSlope)
+{
+    const float3 segment = target - origin;
+    const float lengthSquared = max(dot(segment, segment), 1e-8);
+    float3 transmittance = float3(1.0, 1.0, 1.0);
+    for (uint i = 0u; i < gPush.lighting.x; ++i)
+    {
+        const float4 bounds = gInstanceBounds[i];
+        const float along = saturate(dot(bounds.xyz - origin, segment) / lengthSquared);
+        const float3 nearest = origin + segment * along - bounds.xyz;
+        if (dot(nearest, nearest) > bounds.w * bounds.w)
+        {
+            continue;
+        }
+
+        const float4x4 worldToVoxel = gVoxelInstances[i].worldToVoxel;
+        const float3 voxelOrigin = mul(worldToVoxel, float4(origin, 1.0)).xyz;
+        const float3 voxelSegment = mul(worldToVoxel, float4(segment, 0.0)).xyz;
+        const uint record = gVoxelInstances[i].recordIndex;
+        // Without glass shadows coarse steps pass glass
+        const bool blocked = (gPush.reuse.x & kSceneGlass) != 0u
+                                 ? marchSparseTinted(record, voxelOrigin, voxelSegment, 0.0, 1.0, coneSlope, transmittance).hit
+                                 : marchSparse(record, voxelOrigin, voxelSegment, 0.0, 1.0, coneSlope).hit;
+        if (blocked)
+        {
+            return float3(0.0, 0.0, 0.0);
+        }
+    }
+    return transmittance;
+}
+
+/// Mesh shadowing of a marched light from its shadow map or traced ray
+float meshShadowFactor(GpuLight light, Surface surface)
+{
+    const float3 toLight = light.worldPosRange.xyz - surface.worldPosition;
+    const float distance = length(toLight);
+    const float3 L = toLight / max(distance, 1e-4);
+    if (tracedShadowsEnabled())
+    {
+        return traceShadowRay(surface.worldPosition, surface.geometricNormal, L, distance);
+    }
+    if (light.directionPad.w < 0.0)
+    {
+        return 1.0;
+    }
+    return light.viewPosType.w > 0.5 ? sampleSpotShadow(light, surface.worldPosition, surface.geometricNormal, L, surface.pixel)
+                                     : samplePointShadow(light, surface.worldPosition, surface.geometricNormal, L, surface.pixel);
+}
+
+/// Shadow maps hold no glass so voxel pixels march toward the light through glass volumes
+struct VoxelGlassFilter : IShadowFilter
+{
+    float3 origin;
+    float sunReach;
+    float sunSlope;
+
+    float3 filter(float3 L, float distance)
+    {
+        if ((gPush.reuse.x & kSceneGlass) == 0u)
+        {
+            return float3(1.0, 1.0, 1.0);
+        }
+        const float3 segment = L * (distance < 0.0 ? sunReach : distance);
+        const float slope = distance < 0.0 ? sunSlope : 0.0;
+        const float lengthSquared = max(dot(segment, segment), 1e-8);
+        float3 transmittance = float3(1.0, 1.0, 1.0);
+        const uint casters = gGlassCasters[0];
+        for (uint c = 0u; c < casters; ++c)
+        {
+            const uint i = gGlassCasters[1u + c];
+            const float4 bounds = gInstanceBounds[i];
+            const float along = saturate(dot(bounds.xyz - origin, segment) / lengthSquared);
+            const float3 nearest = origin + segment * along - bounds.xyz;
+            if (dot(nearest, nearest) > bounds.w * bounds.w)
+            {
+                continue;
+            }
+            const uint record = gVoxelInstances[i].recordIndex;
+
+            const float4x4 worldToVoxel = gVoxelInstances[i].worldToVoxel;
+            const float3 voxelOrigin = mul(worldToVoxel, float4(origin, 1.0)).xyz;
+            const float3 voxelSegment = mul(worldToVoxel, float4(segment, 0.0)).xyz;
+            // An opaque hit is the shadow map's to judge so only glass before it counts
+            marchSparseTinted(record, voxelOrigin, voxelSegment, 0.0, 1.0, slope, transmittance);
+            if (max(transmittance.x, max(transmittance.y, transmittance.z)) <= kTintedOpaque)
+            {
+                return float3(0.0, 0.0, 0.0);
+            }
+        }
+        return transmittance;
+    }
+}
+
+/// Mirrors renderer::VoxelPass ambient rays per pixel
+static const uint kAmbientRays = 2u;
+
+/// Teardown style AO from the share of the reach cosine rays travel
+float ambientOcclusion(Surface surface, float3 origin, float reach)
+{
+    float3 tangent;
+    float3 bitangent;
+    perpendicularBasis(surface.normal, tangent, bitangent);
+    float3 segments[kAmbientRays];
+    float travelled[kAmbientRays];
+    [unroll]
+    for (uint r = 0u; r < kAmbientRays; ++r)
+    {
+        const float2 disc = concentricDisc(blueNoise(surface.pixel, 120u + r).xy);
+        segments[r] = (tangent * disc.x + bitangent * disc.y + surface.normal * sqrt(saturate(1.0 - dot(disc, disc)))) * reach;
+        travelled[r] = 1.0;
+    }
+
+    const float cellSize = asfloat(gAmbientGrid[0]);
+    if (!(cellSize > 0.0))
+    {
+        return 1.0;
+    }
+    const uint bucket = ambientGridBucket(int3(floor(origin / cellSize)));
+    const uint indexBase = kAmbientGridHeader + 2u * kAmbientGridBuckets;
+    const uint cellOffset = gAmbientGrid[kAmbientGridHeader + 2u * bucket];
+    const uint cellCount = gAmbientGrid[kAmbientGridHeader + 2u * bucket + 1u];
+    const uint globalOffset = gAmbientGrid[1];
+    const uint total = cellCount + gAmbientGrid[2];
+    for (uint j = 0u; j < total; ++j)
+    {
+        const uint i = gAmbientGrid[indexBase + (j < cellCount ? cellOffset + j : globalOffset + j - cellCount)];
+        const float4 bounds = gInstanceBounds[i];
+        const float3 offset = bounds.xyz - origin;
+        const float touch = bounds.w + reach;
+        if (dot(offset, offset) > touch * touch)
+        {
+            continue;
+        }
+
+        uint rays = 0u;
+        [unroll]
+        for (uint r = 0u; r < kAmbientRays; ++r)
+        {
+            const float along = clamp(dot(offset, segments[r]) / (reach * reach), 0.0, travelled[r]);
+            const float3 closest = segments[r] * along - offset;
+            rays |= dot(closest, closest) <= bounds.w * bounds.w ? 1u << r : 0u;
+        }
+        if (rays == 0u)
+        {
+            continue;
+        }
+
+        const float4x4 worldToVoxel = gVoxelInstances[i].worldToVoxel;
+        const uint record = gVoxelInstances[i].recordIndex;
+        const float3 voxelOrigin = mul(worldToVoxel, float4(origin, 1.0)).xyz;
+        [unroll]
+        for (uint r = 0u; r < kAmbientRays; ++r)
+        {
+            if ((rays & (1u << r)) == 0u)
+            {
+                continue;
+            }
+            const float3 voxelSegment = mul(worldToVoxel, float4(segments[r], 0.0)).xyz;
+            // Five fixed samples then three doubling ones end exactly at the segment end when the first step is a fortieth
+            const RayHit hit = marchSuperSparse(record, voxelOrigin, voxelSegment, 0.0, travelled[r], length(voxelSegment) / 40.0);
+            if (hit.hit)
+            {
+                travelled[r] = min(travelled[r], hit.t);
+            }
+        }
+    }
+
+    float sum = 0.0;
+    [unroll]
+    for (uint r = 0u; r < kAmbientRays; ++r)
+    {
+        sum += travelled[r];
+    }
+    return sum / float(kAmbientRays);
+}
+
+/// Cone slope from the receiver to the emitter
+float shadowConeSlope(GpuLight light, float distance)
+{
+    return min(0.5 * (light.shape.y + light.shape.z) / max(distance, 1e-3), 0.25);
+}
+
+float3 sampleCone(float3 axis, float radius, float2 u)
+{
+    const float cosTheta = lerp(1.0, cos(radius), u.x);
+    const float sinTheta = sqrt(saturate(1.0 - cosTheta * cosTheta));
+    const float phi = 6.28318531 * u.y;
+    float3 tangent;
+    float3 bitangent;
+    perpendicularBasis(axis, tangent, bitangent);
+    return normalize(axis * cosTheta + (tangent * cos(phi) + bitangent * sin(phi)) * sinTheta);
+}
+
+/// Marched suns as area lights with the cascade kept for mesh shadows
+LightTerms shadeMarchedSuns(Surface surface, float3 shadowOrigin)
+{
+    LightTerms terms;
+    terms.diffuse = float3(0.0, 0.0, 0.0);
+    terms.specular = float3(0.0, 0.0, 0.0);
+
+    const uint casterIndex = uint(gCamera.shadowParams.x) - 1u;
+    const float reach = float(gPush.lighting.w);
+    for (uint di = 0u; di < gCamera.directionalLightCountPad.x; ++di)
+    {
+        const DirectionalLightGpu light = gCamera.directionalLights[di];
+        const float radius = light.direction.w;
+        if (radius <= 0.0)
+        {
+            continue;
+        }
+        const float3 center = normalize(-light.direction.xyz);
+        const float3 L = sampleCone(center, radius, blueNoise(surface.pixel, 200u + di).xy);
+        if (dot(surface.normal, L) <= 0.0)
+        {
+            continue;
+        }
+
+        float meshShadow = 1.0;
+        if (tracedShadowsEnabled())
+        {
+            meshShadow = traceShadowRay(surface.worldPosition, surface.geometricNormal, L, 1.0e5);
+        }
+        else if (gCamera.shadowParams.x >= 0.5 && di == casterIndex)
+        {
+            meshShadow = sampleDirectionalShadow(surface.worldPosition, surface.geometricNormal, center, -surface.viewSpaceZ, surface.pixel);
+        }
+        if (meshShadow <= 0.0)
+        {
+            continue;
+        }
+
+        const float3 visibility = min(meshShadow, marchedVisibility(shadowOrigin, shadowOrigin + L * reach, radius));
+        if (all(visibility <= 0.0))
+        {
+            continue;
+        }
+        const float3 radiance = light.colorIntensity.rgb * light.colorIntensity.a;
+        const LightTerms sample = shadeLightTerms(surface.normal, surface.viewDirection, L, radiance, surface.albedo, surface.metallic,
+                                                  surface.roughness, surface.reflectivity);
+        terms.diffuse += sample.diffuse * visibility;
+        terms.specular += sample.specular * visibility;
+    }
+    return terms;
+}
+
+struct Reservoir
+{
+    /// asuint of GpuLight::shapeTangent.w stable across light list rebuilds
+    uint lightId;
+    /// Unbiased contribution weight and 0 for an empty reservoir
+    float W;
+    /// sampleLightShape numbers
+    float3 u;
+    /// Candidates behind it
+    uint M;
+};
+
+uint4 packReservoir(Reservoir reservoir)
+{
+    const uint3 u = uint3(saturate(reservoir.u) * 65535.0 + 0.5);
+    return uint4(reservoir.lightId, asuint(reservoir.W), u.x | (u.y << 16), u.z | (min(reservoir.M, 65535u) << 16));
+}
+
+Reservoir unpackReservoir(uint4 packed)
+{
+    Reservoir reservoir;
+    reservoir.lightId = packed.x;
+    reservoir.W = asfloat(packed.y);
+    reservoir.u = float3(float(packed.z & 0xFFFFu), float(packed.z >> 16), float(packed.w & 0xFFFFu)) / 65535.0;
+    reservoir.M = packed.w >> 16;
+    return reservoir;
+}
+
+/// Pixels around the reprojected one whose last reservoir joins
+static const float kReuseRadius = 8.0;
+
+static const uint kReuseHistory = 1u;
+static const uint kReuseSpatial = 2u;
+static const uint kSceneGlass = 4u;
+
+/// gLights index of a sampled light by stable id in one froxel list
+uint findSampledLight(uint lightId, uint indexBase, uint lightCount)
+{
+    for (uint li = 0u; li < lightCount; ++li)
+    {
+        const uint index = gLightIndexList[indexBase + li];
+        if (asuint(gLights[index].shapeTangent.w) == lightId)
+        {
+            return lightShadowMode(gLights[index]) == kShadowModeSampled ? index : 0xFFFFFFFFu;
+        }
+    }
+    return 0xFFFFFFFFu;
+}
+
+struct SampledLight
+{
+    float3 L;
+    float3 radiance;
+    /// Unshadowed irradiance luminance
+    float target;
+    float3 samplePoint;
+    float slope;
+    float3 u;
+    uint lightId;
+    /// gLights index this frame
+    uint lightIndex;
+};
+
+SampledLight evaluateSampledLight(Surface surface, GpuLight light, float3 u)
+{
+    SampledLight sample;
+    sample.target = 0.0;
+    sample.L = float3(0.0, 0.0, 1.0);
+    sample.radiance = float3(0.0, 0.0, 0.0);
+    sample.u = u;
+    sample.lightId = asuint(light.shapeTangent.w);
+    sample.lightIndex = 0u;
+    sample.samplePoint = sampleLightShape(light, surface.worldPosition, u);
+    sample.slope = 0.0;
+
+    float distance;
+    sample.radiance = lightSampleRadiance(light, surface.worldPosition, sample.samplePoint, sample.L, distance);
+    const float NdotL = dot(surface.normal, sample.L);
+    if (all(sample.radiance <= 0.0) || NdotL <= 0.0)
+    {
+        return sample;
+    }
+    sample.target = dot(sample.radiance, float3(0.2126, 0.7152, 0.0722)) * NdotL;
+    sample.slope = shadowConeSlope(light, distance);
+    return sample;
+}
+
+LightTerms shadeSampledLight(Surface surface, SampledLight sample, float3 scale)
+{
+    if (all(scale <= 0.0))
+    {
+        LightTerms none;
+        none.diffuse = float3(0.0, 0.0, 0.0);
+        none.specular = float3(0.0, 0.0, 0.0);
+        return none;
+    }
+    LightTerms terms = shadeLightTerms(surface.normal, surface.viewDirection, sample.L, sample.radiance, surface.albedo, surface.metallic,
+                                       surface.roughness, surface.reflectivity);
+    terms.diffuse *= scale;
+    terms.specular *= scale;
+    return terms;
+}
+
+/// Marched lights ray each and sampled lights share one RIS pick
+LightTerms shadeMarchedLights(Surface surface, float3 shadowOrigin, float4 motion, out Reservoir reservoir)
+{
+    reservoir.lightId = 0u;
+    reservoir.W = 0.0;
+    reservoir.u = float3(0.0, 0.0, 0.0);
+    reservoir.M = 0u;
+
+    LightTerms terms = shadeMarchedSuns(surface, shadowOrigin);
+
+    const ClusterCell cluster = clusterCellAt(surface.viewSpaceZ, surface.pixel);
+    if (cluster.index >= cluster.count)
+    {
+        return terms;
+    }
+    const uint stride = gClusterParams.clusterDims.w;
+    const uint indexBase = cluster.index * stride;
+    const uint lightCount = min(cluster.lightCount, stride);
+
+    for (uint li = 0u; li < lightCount; ++li)
+    {
+        const GpuLight light = gLights[gLightIndexList[indexBase + li]];
+        if (lightShadowMode(light) != kShadowModeMarched)
+        {
+            continue;
+        }
+        const float4 noise = blueNoise(surface.pixel, 1u + li);
+        const float3 samplePoint = sampleLightShape(light, surface.worldPosition, noise.xyz);
+        float3 L;
+        float distance;
+        const float3 radiance = lightSampleRadiance(light, surface.worldPosition, samplePoint, L, distance);
+        if (all(radiance <= 0.0) || dot(surface.normal, L) <= 0.0)
+        {
+            continue;
+        }
+        const float meshShadow = meshShadowFactor(light, surface);
+        const float3 visibility = meshShadow > 0.0 ? min(meshShadow, marchedVisibility(shadowOrigin, samplePoint, shadowConeSlope(light, distance)))
+                                                   : float3(0.0, 0.0, 0.0);
+        if (all(visibility <= 0.0))
+        {
+            continue;
+        }
+        const LightTerms sample = shadeLightTerms(surface.normal, surface.viewDirection, L, radiance, surface.albedo, surface.metallic,
+                                                  surface.roughness, surface.reflectivity);
+        terms.diffuse += sample.diffuse * visibility;
+        terms.specular += sample.specular * visibility;
+    }
+
+    // Uniform light and point candidates weighted by luminance times count then ReSTIR temporal reuse
+    const uint candidates = gPush.lighting.y;
+    if (lightCount == 0u || candidates == 0u)
+    {
+        return terms;
+    }
+    float weightSum = 0.0;
+    uint sampleCount = candidates;
+    SampledLight chosen;
+    chosen.target = 0.0;
+    for (uint k = 0u; k < candidates; ++k)
+    {
+        const float4 noise = blueNoise(surface.pixel, 64u + k);
+        const uint pick = min(uint(noise.x * float(lightCount)), lightCount - 1u);
+        const GpuLight light = gLights[gLightIndexList[indexBase + pick]];
+        if (lightShadowMode(light) != kShadowModeSampled)
+        {
+            continue;
+        }
+        SampledLight candidate = evaluateSampledLight(surface, light, float3(noise.y, noise.z, frac(noise.x * 7.0 + noise.w)));
+        candidate.lightIndex = gLightIndexList[indexBase + pick];
+        const float weight = candidate.target * float(lightCount);
+        if (weight <= 0.0)
+        {
+            continue;
+        }
+        weightSum += weight;
+        if (noise.w * weightSum < weight)
+        {
+            chosen = candidate;
+        }
+    }
+
+    if ((gPush.reuse.x & kReuseHistory) != 0u && motion.z <= 0.5)
+    {
+        const float2 size = gPush.viewport.xy;
+        const float2 previousPixel = (surface.pixel / size - (motion.w > 0.5 ? motion.xy : float2(0.0, 0.0))) * size;
+        const float angle = blueNoise(surface.pixel, 95u).x * 6.28318531;
+        for (uint t = 0u; t < gPush.reuse.z; ++t)
+        {
+            const float2 offset = t == 0u ? float2(0.0, 0.0) : kReuseRadius * float2(cos(angle + float(t) * 2.39996323), sin(angle + float(t) * 2.39996323));
+            const int2 tap = int2(floor(previousPixel + offset));
+            if (any(tap < int2(0, 0)) || any(tap >= int2(size)))
+            {
+                continue;
+            }
+            const Reservoir previous = unpackReservoir(gPreviousReservoirs.Load(int3(tap, 0)));
+            if (previous.W <= 0.0)
+            {
+                continue;
+            }
+            const uint previousM = min(previous.M, gPush.reuse.y);
+            sampleCount += previousM;
+
+            // Light ids persist across frames while indices do not
+            const uint found = findSampledLight(previous.lightId, indexBase, lightCount);
+            if (found == 0xFFFFFFFFu)
+            {
+                continue;
+            }
+            SampledLight candidate = evaluateSampledLight(surface, gLights[found], previous.u);
+            candidate.lightIndex = found;
+            const float weight = candidate.target * previous.W * float(previousM);
+            if (weight <= 0.0)
+            {
+                continue;
+            }
+            weightSum += weight;
+            if (blueNoise(surface.pixel, 96u + t).y * weightSum < weight)
+            {
+                chosen = candidate;
+            }
+        }
+    }
+
+    // The spatial pass traces the merged choice
+    if (chosen.target > 0.0 && (gPush.reuse.x & kReuseSpatial) != 0u)
+    {
+        reservoir.lightId = chosen.lightId;
+        reservoir.W = weightSum / (float(sampleCount) * chosen.target);
+        reservoir.u = chosen.u;
+        reservoir.M = sampleCount;
+        return terms;
+    }
+    if (chosen.target > 0.0)
+    {
+        const float unbiasedWeight = weightSum / (float(sampleCount) * chosen.target);
+        const float meshShadow = meshShadowFactor(gLights[chosen.lightIndex], surface);
+        const float3 visibility = meshShadow > 0.0 ? min(meshShadow, marchedVisibility(shadowOrigin, chosen.samplePoint, chosen.slope))
+                                               : float3(0.0, 0.0, 0.0);
+        const LightTerms sampled = shadeSampledLight(surface, chosen, unbiasedWeight * visibility);
+        terms.diffuse += sampled.diffuse;
+        terms.specular += sampled.specular;
+
+        // Occluded samples are not reused
+        reservoir.lightId = chosen.lightId;
+        reservoir.W = any(visibility > 0.0) ? unbiasedWeight : 0.0;
+        reservoir.u = chosen.u;
+        reservoir.M = sampleCount;
+    }
+    return terms;
+}
+
+
+/// Neighbour reservoirs of this frame a pixel resamples and how far apart in pixels
+static const uint kSpatialReservoirs = 3u;
+static const float kSpatialRadius = 16.0;
+
+// Mirrors the attachments of the voxel spatial scope
+struct SpatialOutput
+{
+    float4 noisyDiffuse : SV_Target0;
+    float4 noisySpecular : SV_Target1;
+    uint4 reservoir : SV_Target2;
+};
+
+/// Merges neighbour reservoirs of this frame then traces the chosen light
+[shader("fragment")]
+SpatialOutput fragmentSpatial(VSOutput input)
+{
+    SpatialOutput output;
+    output.noisyDiffuse = float4(0.0, 0.0, 0.0, 0.0);
+    output.noisySpecular = float4(0.0, 0.0, 0.0, 0.0);
+    output.reservoir = uint4(0u, 0u, 0u, 0u);
+
+    const int2 pixel = int2(input.position.xy);
+    const int3 texel = int3(pixel, 0);
+    const float4 albedo = gAlbedo.Load(texel);
+    if (!isLitVoxel(albedo.a))
+    {
+        return output;
+    }
+
+    const float3 position = positionAt(pixel);
+    const float3 faceNormal = decodeFaceNormal(gFaceNormal.Load(texel));
+    const float3 sceneNormal = gSceneNormal.Load(texel).xyz;
+    const float3 normal = dot(sceneNormal, sceneNormal) > 1e-4 ? normalize(sceneNormal) : faceNormal;
+    const float4 material = gMaterial.Load(texel);
+    const float3 toCamera = gCamera.position - position;
+
+    Surface surface;
+    surface.marchedShadows = true;
+    surface.worldPosition = position;
+    surface.normal = normal;
+    surface.geometricNormal = faceNormal;
+    surface.viewDirection = dot(toCamera, toCamera) > 1e-10 ? normalize(toCamera) : normal;
+    surface.albedo = albedo.rgb;
+    surface.metallic = material.r;
+    surface.reflectivity = material.g;
+    surface.roughness = clamp(material.b, 0.045, 1.0);
+    surface.occlusion = 1.0;
+    surface.viewSpaceZ = mul(gCamera.view, float4(position, 1.0)).z;
+    surface.pixel = input.position.xy;
+
+    const ClusterCell cluster = clusterCellAt(surface.viewSpaceZ, surface.pixel);
+    if (cluster.index >= cluster.count)
+    {
+        return output;
+    }
+    const uint stride = gClusterParams.clusterDims.w;
+    const uint indexBase = cluster.index * stride;
+    const uint lightCount = min(cluster.lightCount, stride);
+
+    float weightSum = 0.0;
+    uint sampleCount = 0u;
+    SampledLight chosen;
+    chosen.target = 0.0;
+    const float angle = blueNoise(surface.pixel, 140u).x * 6.28318531;
+    const int2 size = int2(gPush.viewport.xy);
+    for (uint t = 0u; t <= kSpatialReservoirs; ++t)
+    {
+        int2 tap = pixel;
+        if (t > 0u)
+        {
+            const float tapAngle = angle + float(t) * 2.39996323;
+            const float distance = kSpatialRadius * sqrt((float(t) - 0.5) / float(kSpatialReservoirs));
+            tap = int2(floor(input.position.xy + distance * float2(cos(tapAngle), sin(tapAngle))));
+            float3 tapFace;
+            if (any(tap < int2(0, 0)) || any(tap >= size) || !isLitVoxelAt(tap, tapFace))
+            {
+                continue;
+            }
+            // A neighbour on another surface chose for a point this pixel is not
+            const float3 tapNormal = gSceneNormal.Load(int3(tap, 0)).xyz;
+            const float plane = abs(dot(faceNormal, positionAt(tap) - position));
+            if (dot(tapNormal, tapNormal) < 1e-4 || dot(normalize(tapNormal), normal) < 0.9 || plane > 0.02 * length(toCamera) + 0.05)
+            {
+                continue;
+            }
+        }
+
+        const Reservoir candidateReservoir = unpackReservoir(gCandidateReservoirs.Load(int3(tap, 0)));
+        if (candidateReservoir.W <= 0.0)
+        {
+            sampleCount += t == 0u ? candidateReservoir.M : 0u;
+            continue;
+        }
+        sampleCount += candidateReservoir.M;
+
+        const uint found = findSampledLight(candidateReservoir.lightId, indexBase, lightCount);
+        if (found == 0xFFFFFFFFu)
+        {
+            continue;
+        }
+        SampledLight candidate = evaluateSampledLight(surface, gLights[found], candidateReservoir.u);
+        candidate.lightIndex = found;
+        const float weight = candidate.target * candidateReservoir.W * float(candidateReservoir.M);
+        if (weight <= 0.0)
+        {
+            continue;
+        }
+        weightSum += weight;
+        if (blueNoise(surface.pixel, 150u + t).z * weightSum < weight)
+        {
+            chosen = candidate;
+        }
+    }
+
+    if (chosen.target <= 0.0 || sampleCount == 0u)
+    {
+        return output;
+    }
+    const float unbiasedWeight = weightSum / (float(sampleCount) * chosen.target);
+    const float3 shadowOrigin = position + faceNormal * (kShadowOriginOffset * kVoxelSize);
+    const float meshShadow = meshShadowFactor(gLights[chosen.lightIndex], surface);
+    const float3 visibility = meshShadow > 0.0 ? min(meshShadow, marchedVisibility(shadowOrigin, chosen.samplePoint, chosen.slope))
+                                               : float3(0.0, 0.0, 0.0);
+    const LightTerms sampled = shadeSampledLight(surface, chosen, unbiasedWeight * visibility);
+    output.noisyDiffuse = float4(sampled.diffuse, 0.0);
+    output.noisySpecular = float4(sampled.specular, 0.0);
+
+    Reservoir reservoir;
+    reservoir.lightId = chosen.lightId;
+    reservoir.W = any(visibility > 0.0) ? unbiasedWeight : 0.0;
+    reservoir.u = chosen.u;
+    reservoir.M = sampleCount;
+    output.reservoir = packReservoir(reservoir);
+    return output;
 }
 
 [shader("fragment")]
@@ -127,6 +826,9 @@ FSOutput fragmentMain(VSOutput input)
     FSOutput output;
     output.indirectDiffuse = float4(0.0, 0.0, 0.0, 1.0);
     output.normalRoughness = float4(0.0, 0.0, 0.0, 0.0);
+    output.noisyDiffuse = float4(0.0, 0.0, 0.0, 0.0);
+    output.noisySpecular = float4(0.0, 0.0, 0.0, 0.0);
+    output.reservoir = uint4(0u, 0u, 0u, 0u);
     if (!isLitVoxel(albedo.a))
     {
         output.color = float4(albedo.rgb, 1.0);
@@ -140,13 +842,14 @@ FSOutput fragmentMain(VSOutput input)
     const float roughness = clamp(material.b, 0.045, 1.0);
 
     // SSR only reads roughness so zero reflectivity must look fully rough
-    output.normalRoughness = float4(normal, lerp(1.0, roughness, material.g));
+    output.normalRoughness = encodeSceneNormal(normal, lerp(1.0, roughness, material.g), specularF0(albedo.rgb, material.r));
 
     // The near plane clip can put the hit on the camera
     const float3 toCamera = gCamera.position - position;
     const float3 view = dot(toCamera, toCamera) > 1e-10 ? normalize(toCamera) : normal;
 
     Surface surface;
+    surface.marchedShadows = true;
     surface.worldPosition = position;
     surface.normal = normal;
     surface.geometricNormal = faceNormal;
@@ -159,8 +862,45 @@ FSOutput fragmentMain(VSOutput input)
     surface.viewSpaceZ = mul(gCamera.view, float4(position, 1.0)).z;
     surface.pixel = input.position.xy;
 
-    const ShadingResult lit = shadeSurfaceLighting(surface);
+    VoxelGlassFilter glassFilter;
+    glassFilter.origin = position + faceNormal * (kShadowOriginOffset * kVoxelSize);
+    glassFilter.sunReach = float(gPush.reuse.x >> 16);
+    glassFilter.sunSlope = 0.005;
+    const ShadingResult lit = shadeSurfaceLighting(surface, glassFilter);
     output.indirectDiffuse = float4(lit.indirectDiffuse, 1.0);
-    output.color = float4(lit.isDebugView ? lit.color : lit.color + albedo.rgb * decodeEmissive(material.a), 1.0);
+    if (lit.isDebugView)
+    {
+        output.color = float4(lit.color, 1.0);
+        return output;
+    }
+
+    output.color = float4(lit.color + albedo.rgb * decodeEmissive(material.a), 1.0);
+    if (gPush.lighting.z != 0u)
+    {
+        const float3 shadowOrigin = position + faceNormal * (kShadowOriginOffset * kVoxelSize);
+        Reservoir reservoir;
+        LightTerms marched = shadeMarchedLights(surface, shadowOrigin, gMotion.Load(texel), reservoir);
+        output.reservoir = packReservoir(reservoir);
+
+        // Traced AO replaces SSAO so ambient diffuse moves into the filtered term
+        if (gPush.reuse.w != 0u)
+        {
+            const float occlusion = ambientOcclusion(surface, shadowOrigin, float(gPush.reuse.w) * 0.01);
+            const float3 demodulated = select(albedo.rgb > 1e-3, lit.indirectDiffuse / max(albedo.rgb, 1e-3), float3(0.0, 0.0, 0.0));
+            output.color.rgb -= lit.indirectDiffuse;
+            marched.diffuse += demodulated * occlusion;
+            output.indirectDiffuse = float4(0.0, 0.0, 0.0, 1.0);
+        }
+
+        if (gPush.lighting.z == 2u)
+        {
+            output.color.rgb += albedo.rgb * marched.diffuse + marched.specular;
+        }
+        else
+        {
+            output.noisyDiffuse = float4(marched.diffuse, 0.0);
+            output.noisySpecular = float4(marched.specular, 0.0);
+        }
+    }
     return output;
 }

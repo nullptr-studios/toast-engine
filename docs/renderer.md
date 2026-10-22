@@ -82,8 +82,22 @@ flushed from the render thread to the transfer queue
 - **SDL/swapchain path**: uses acquire/present semaphores and transitions to
   `ePresentSrcKHR` in `recordFinalize`
 - **Shared texture path (editor)**: no acquire/present semaphore dependency, transitions
-  color attachment to transfer source, copies to host-visible staging, and publishes the
-  latest completed frame for `toast_viewport_get_frame`
+  color attachment to transfer source and publishes only completed frames. Windows shares
+  BGRA textures with a keyed mutex; Linux blits into RGBA textures for Avalonia's OpenGL
+  importer and releases them in transfer-source layout, using ready/done semaphores.
+  On X11 the editor uses Avalonia's default GLX compositor. Linux shared images
+  use non-dedicated Vulkan allocations because Avalonia's OpenGL importer does
+  not mark imported memory objects as dedicated; mismatching those flags can
+  produce transparent-black frames.
+  CPU readback remains BGRA and runs only on request while sharing is active.
+  The editor reserves the exact generation, slot, and frame ID before importing a frame
+  into its drawing surface. In-flight, reserved, and displayed slots cannot be overwritten;
+  acquisition returns `eNotReady` when no slot is free. Dropped frames' ready signals are
+  consumed before a slot signals readiness again. Presentation starts from animation-frame
+  callbacks and can pick up a newer frame after an update completes via a low-priority
+  dispatcher job; this avoids waiting an extra animation tick without starving input.
+  Set `TOAST_VIEWPORT_READBACK=1` when starting the editor to bypass GPU sharing
+  and compare the CPU readback path while diagnosing display artifacts.
 
 ### Resizing
 

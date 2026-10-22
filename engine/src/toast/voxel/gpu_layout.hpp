@@ -51,13 +51,20 @@ struct VolumeRecord {
 	uint32_t palette_offset = 0;
 
 	float max_emissive = 1.0f;
+
+	/// Coarse section word of one bit per brick in grid order set where a glass voxel lives
+	uint32_t glass_offset = UINT32_MAX;
 };
 
-static_assert(sizeof(VolumeRecord) == 40, "VolumeRecord is mirrored by voxel_dda.slang member for member");
+/// VolumeRecord::glass_offset of a volume whose palette has no glass
+inline constexpr uint32_t k_no_glass = UINT32_MAX;
+
+static_assert(sizeof(VolumeRecord) == 44, "VolumeRecord is mirrored by voxel_dda.slang member for member");
 static_assert(offsetof(VolumeRecord, grid_offset) == 12);
 static_assert(offsetof(VolumeRecord, coarse_offset) == 28);
 static_assert(offsetof(VolumeRecord, palette_offset) == 32);
 static_assert(offsetof(VolumeRecord, max_emissive) == 36);
+static_assert(offsetof(VolumeRecord, glass_offset) == 40);
 
 struct PackedPool {
 	/// 512 palette bytes per slot little endian
@@ -150,6 +157,22 @@ constexpr auto gridIndex(glm::uvec3 dims, glm::uvec3 brick) noexcept -> uint32_t
 constexpr auto coarseDims(glm::uvec3 brick_dims) noexcept -> glm::uvec3 {
 	return (brick_dims + (k_coarse_bricks - 1u)) / k_coarse_bricks;
 }
+
+[[nodiscard]]
+constexpr auto glassWords(glm::uvec3 brick_dims) noexcept -> uint32_t {
+	return ((brick_dims.x * brick_dims.y * brick_dims.z) + 31u) / 32u;
+}
+
+[[nodiscard]]
+TOAST_API auto paletteHasGlass(const Palette& palette) -> bool;
+
+/// Whether a voxel of the brick behind @p entry is glass under @p palette
+[[nodiscard]]
+TOAST_API auto brickHasGlass(const BrickPool& pool, BrickEntry entry, const Palette& palette) -> bool;
+
+/// Grid indices of the glass bricks of one packed record
+[[nodiscard]]
+TOAST_API auto glassBricks(const PackedScene& scene, uint32_t record) -> std::vector<uint32_t>;
 
 /// @brief Packs up to the highest slot ever handed out
 [[nodiscard]]

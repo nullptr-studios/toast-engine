@@ -79,7 +79,13 @@ SDLWindow::SDLWindow(const char* title, unsigned width, unsigned height, uint64_
 		return false;
 	});
 	m.event_listener.subscribe<event::WindowMouseLock>([this](const event::WindowMouseLock& e) {
-		applyMouseLock(e.locked);
+		m.lock_requested = e.locked;
+		applyMouseLock(m.lock_requested && !m.overlay_cursor);
+		return false;
+	});
+	m.event_listener.subscribe<event::DebugOverlayCursor>([this](const event::DebugOverlayCursor& e) {
+		m.overlay_cursor = e.owned;
+		applyMouseLock(m.lock_requested && !m.overlay_cursor);
 		return false;
 	});
 

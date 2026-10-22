@@ -326,5 +326,8 @@ public:
 	/// @note See docs/renderer.md RenderFrame pattern
 	[[nodiscard]]
 	auto gizmoRenderState() const -> GizmoRenderState;
+
+	/// Rids of the focused node and its descendants for the selection outline
+	void collectOutlinedRids(std::vector<uint64_t>& rids) const;
 };
 }

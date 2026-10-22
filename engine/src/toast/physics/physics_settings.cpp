@@ -424,13 +424,28 @@ void registerPhysicsSettings() {
 	    {.label = "Speed scale", .category = "Debris", .min = 0.0f, .max = 8.0f, .step = 0.1f},
 	    &Tunables::debris_speed_scale);
 	flt("physics.debris.lifetime",
-	    60.0,
+	    12.0,
 	    {.label = "Lifetime", .category = "Debris", .min = 0.5, .max = 600.0, .step = 0.5},
 	    &Tunables::debris_lifetime);
+	flt("physics.debris.lifetime_jitter",
+	    0.3,
+	    {.label = "Lifetime jitter",
+	     .category = "Debris",
+	     .description = "Each piece lives lifetime times one plus or minus this so a burst does not vanish at once",
+	     .min = 0.0,
+	     .max = 0.9,
+	     .step = 0.05},
+	    &Tunables::debris_lifetime_jitter);
 	uint_setting(
 	    "physics.debris.max_particles",
 	    16384,
-	    {.label = "Max particles", .category = "Debris", .min = 256.0, .max = 262144.0, .step = 1024.0, .requires_restart = true},
+	    {.label = "Max particles",
+			 .category = "Debris",
+			 .description = "Past this the oldest pieces shrink away to make room for new ones",
+			 .min = 256.0,
+			 .max = 262144.0,
+			 .step = 1024.0,
+			 .requires_restart = true},
 	    &Tunables::debris_max_particles
 	);
 	flt("physics.debris.restitution",

@@ -7,6 +7,7 @@
 #pragma once
 
 #include "../hiz_pyramid.hpp"
+#include "../post_process_target.hpp"
 #include "../render_pass_base.hpp"
 #include "../scene_descriptor_set.hpp"
 #include "../shader_layout.hpp"
@@ -17,12 +18,15 @@
 #include <glm/glm.hpp>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace renderer {
 class VulkanCore;
 class VoxelGpuStorage;
+struct VoxelInstanceGpu;
 
 /// Deferred so lighting runs once per visible voxel pixel not once per march
 class VoxelPass : public IRenderPass {
@@ -68,6 +72,51 @@ public:
 	/// Writes scene colour indirect and rounded normal while reading the G-buffer and depth
 	void recordLighting(vk::CommandBuffer cmd, uint32_t frame_index, vk::Extent2D viewport);
 
+	struct GlassDraw {
+		float distance_squared = 0.0f;
+		uint32_t instance = 0;
+		uint32_t brick = 0;
+	};
+
+	/// Far to near in the order recordGlass() indexes them and empty when no glass draws this frame
+	[[nodiscard]]
+	auto glassDraws() const -> std::span<const GlassDraw> {
+		return m_glass_count > 0 ? std::span<const GlassDraw>(m_glass_draws) : std::span<const GlassDraw> {};
+	}
+
+	/// Inside the world scope after the sky
+	void recordGlass(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t first, uint32_t count);
+
+	/// After every blended draw
+	void recordGlassSurfaces(vk::CommandBuffer cmd, uint32_t frame_index);
+
+	/// Whether the backdrop must be copied before glass draws
+	[[nodiscard]]
+	auto refractsGlass() const -> bool;
+
+	void setBackdropCaptured(bool captured) noexcept { m_backdrop_captured = captured; }
+
+	/// After prepare() whether the lighting scope writes denoised terms
+	[[nodiscard]]
+	auto denoiseActive() const -> bool {
+		return m_denoise_active;
+	}
+
+	/// After prepare() whether recordSpatial() follows the lighting scope
+	[[nodiscard]]
+	auto spatialActive() const -> bool {
+		return m_spatial_active;
+	}
+
+	/// Inside a scope over the noisy terms and this frame's reservoirs with the candidates and scene normal sampleable
+	void recordSpatial(vk::CommandBuffer cmd, uint32_t frame_index, vk::Extent2D viewport);
+
+	/// Outside any scope with the noisy terms motion albedo face normal and depth sampleable
+	void recordDenoiseTemporal(vk::CommandBuffer cmd, uint32_t frame_index);
+
+	/// Inside a scope over the scene colour alone
+	void recordDenoiseComposite(vk::CommandBuffer cmd, uint32_t frame_index);
+
 	/// After the G-buffer and depth targets are recreated since a new view can reuse a destroyed handle value
 	void onTargetsRecreated();
 
@@ -77,6 +126,8 @@ public:
 	}
 
 	static constexpr uint32_t k_max_instances = 4096;
+
+	static constexpr uint32_t k_max_glass_bricks = 16384;
 
 private:
 	/// Throttles the over limit warning
@@ -163,6 +214,10 @@ private:
 		glm::mat4 inverse_view_projection {1.0f};
 		glm::vec4 camera_radius {0.0f};
 		glm::vec4 viewport {0.0f};
+		/// x instances with bounds y light sampling candidates z marched light routing w sun reach in meters
+		glm::uvec4 lighting {0u};
+		/// x 1 with last frame's reservoirs y M cap z reservoirs reused
+		glm::uvec4 reuse {0u};
 	};
 
 	void createCells(const VulkanCore& core);
@@ -202,6 +257,12 @@ private:
 	void createInstanceBuffers(const VulkanCore& core);
 	void createDescriptors(const VulkanCore& core, const ShaderReflection& reflection);
 	void createLighting(const VulkanCore& core, vk::Format scene_format, vk::Extent2D extent);
+	void createGlass(const VulkanCore& core, vk::Format scene_format, vk::Format depth_format, vk::Extent2D extent);
+	void recordGlassBricks(
+	    vk::CommandBuffer cmd, uint32_t frame_index, const VulkanPipeline& pipeline, uint32_t first, uint32_t count
+	);
+	/// Sorts the glass bricks of the instances written this frame far to near into the glass buffer
+	void prepareGlass(uint32_t frame_index, const VoxelGpuStorage& storage, std::span<const VoxelInstanceGpu> instances);
 
 	void bindStorage(uint32_t frame_index, const std::shared_ptr<const VoxelGpuStorage>& storage);
 
@@ -264,8 +325,101 @@ private:
 	vk::raii::Sampler m_point_sampler = nullptr;
 	std::vector<vk::raii::DescriptorSet> m_gbuffer_sets;
 
+	/// voxel_dda.slang storage plus instance bounds so shadow rays march
+	std::vector<vk::raii::DescriptorSet> m_lighting_storage_sets;
+	/// World bounding sphere per instance in the instance buffer order
+	std::vector<vma::raii::Buffer> m_instance_bounds;
+	/// Instances an ambient ray can reach per hashed world cell
+	std::vector<vma::raii::Buffer> m_ambient_grids;
+	/// Shadow casters with glass bricks so the glass shadow filter skips every other volume
+	std::vector<vma::raii::Buffer> m_glass_casters;
+	std::vector<std::pair<uint32_t, uint32_t>> m_grid_pairs;
+	std::vector<uint32_t> m_grid_global;
+	/// Drawn instances then the off screen ones only shadow rays test
+	uint32_t m_shadow_instance_count = 0;
+
 	/// Albedo face normal material and depth last written into each set
-	std::vector<std::array<vk::ImageView, 4>> m_bound_gbuffer;
+	std::vector<std::array<vk::ImageView, 8>> m_bound_gbuffer;
+	VulkanPipeline m_spatial_pipeline;
+	bool m_spatial_active = false;
+	bool m_scene_glass = false;
+	bool m_backdrop_captured = false;
+	bool m_glass_dual_source = false;
+	vk::raii::Sampler m_backdrop_sampler = nullptr;
+	vk::raii::Sampler m_backdrop_depth_sampler = nullptr;
+	/// Backdrop colour and depth each glass set was written with
+	std::vector<std::array<vk::ImageView, 2>> m_bound_backdrop;
+	/// The push the lighting draw used so the spatial draw matches it
+	LightingPushConstants m_lighting_push;
+
+	/// voxel.slang gFreshRegions per frame in flight
+	std::vector<vma::raii::Buffer> m_fresh_regions;
+	/// Storage generation whose change regions were last marked reactive
+	uint64_t m_region_generation = 0;
+
+	/// Mirrors voxel_denoise.slang DenoisePush
+	struct DenoisePush {
+		glm::mat4 inverse_view_projection {1.0f};
+		glm::mat4 previous_view_projection {1.0f};
+		/// x term y 1 with a valid history z spiral rotation w spiral radius in pixels
+		glm::vec4 params {0.0f};
+		glm::vec4 viewport {0.0f};
+	};
+
+	/// rgb filtered term a linear depth it was written at
+	static constexpr vk::Format k_denoise_history_format = vk::Format::eR16G16B16A16Sfloat;
+	/// Bindings of voxel_denoise.slang in order
+	static constexpr size_t k_denoise_bindings = 10;
+
+	/// Change regions of a newly published storage that voxel.slang marks reactive
+	void writeFreshRegions(uint32_t frame_index, const VoxelGpuStorage& storage);
+	void writeAmbientGrid(uint32_t frame_index, std::span<const glm::vec4> bounds);
+	void writeGlassCasters(uint32_t frame_index, const VoxelGpuStorage& storage, std::span<const VoxelInstanceGpu> casters);
+	void createDenoise(const VulkanCore& core, vk::Format scene_format, vk::Extent2D extent);
+	void createDenoiseTargets(vk::Extent2D extent);
+	void bindDenoise(vk::CommandBuffer cmd, uint32_t frame_index, const VulkanPipeline& pipeline, float term);
+
+	ShaderLayout m_denoise_layout;
+	VulkanPipeline m_denoise_temporal_pipeline;
+	VulkanPipeline m_denoise_composite_pipeline;
+	vk::raii::Sampler m_linear_sampler = nullptr;
+	/// Per frame in flight then per history parity
+	std::vector<vk::raii::DescriptorSet> m_denoise_sets;
+	std::vector<std::array<vk::ImageView, k_denoise_bindings>> m_denoise_bound;
+	/// [term][parity] where the temporal pass writes the parity and reads the other
+	std::array<std::array<PostProcessTarget, 2>, 2> m_denoise_history;
+	uint32_t m_denoise_parity = 0;
+	/// Histories hold the previous frame
+	bool m_denoise_valid = false;
+	bool m_denoise_frame_valid = false;
+	uint64_t m_denoise_sequence = 0;
+	/// Some light is marched or sampled this frame
+	bool m_marched_lights = false;
+	bool m_ambient_rays = false;
+	bool m_denoise_active = false;
+
+	/// Mirrors voxel_glass.slang GlassPush
+	/// Mirrors voxel_glass.slang GlassPush
+	struct GlassPush {
+		uint32_t first = 0;
+		/// 0 leaves the backdrop unread
+		float refraction = 0.0f;
+		float refraction_distance = 0.0f;
+		uint32_t refraction_voxels = 0;
+		uint32_t lit_surfaces = 0;
+	};
+
+	ShaderLayout m_glass_layout;
+	VulkanPipeline m_glass_pipeline;
+	VulkanPipeline m_glass_surface_pipeline;
+	SceneDescriptorSets m_glass_scene_sets;
+	std::vector<vk::raii::DescriptorSet> m_glass_sets;
+	/// Instance index and brick grid index per drawn glass brick
+	std::vector<vma::raii::Buffer> m_glass_buffers;
+	std::vector<GlassDraw> m_glass_draws;
+	uint32_t m_glass_count = 0;
+	/// Throttles the over limit warning
+	std::chrono::steady_clock::time_point m_last_glass_warning;
 };
 
 }

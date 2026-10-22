@@ -16,6 +16,7 @@
 #include <toast/voxel/nodes/procedural_voxel.hpp>
 #include <toast/voxel/nodes/voxel_mesh.hpp>
 #include <toast/voxel/runtime_pool.hpp>
+#include <toast/voxel/volume_bounds.hpp>
 #include <toast/window/window_events.hpp>
 #include <tracy/Tracy.hpp>
 
@@ -1158,6 +1159,57 @@ void Workspace::subscribeVoxelEditing() {
 	});
 }
 
+namespace {
+
+/// Nearest two sided triangle hit before max_t with the ray in mesh space and skinned meshes in bind pose
+[[nodiscard]]
+auto meshRayHit(const assets::Mesh& mesh, glm::vec3 origin, glm::vec3 direction, float max_t) -> std::optional<float> {
+	const std::vector<renderer::Vertex>& vertices = mesh.vertices();
+	const std::vector<assets::Mesh::Index>& indices = mesh.indices();
+	std::optional<float> nearest;
+	for (size_t i = 0; i + 2 < indices.size(); i += 3) {
+		const glm::vec3 a = vertices[indices[i]].position;
+		const glm::vec3 ab = glm::vec3(vertices[indices[i + 1]].position) - a;
+		const glm::vec3 ac = glm::vec3(vertices[indices[i + 2]].position) - a;
+		const glm::vec3 p = glm::cross(direction, ac);
+		const float det = glm::dot(ab, p);
+		if (det == 0.0f) {
+			continue;
+		}
+		const float inverse = 1.0f / det;
+		const glm::vec3 s = origin - a;
+		const glm::vec3 q = glm::cross(s, ab);
+		const float u = glm::dot(s, p) * inverse;
+		const float v = glm::dot(direction, q) * inverse;
+		const float t = glm::dot(ac, q) * inverse;
+		// Phrased so NaN from a sliver triangle fails
+		if (u >= 0.0f && v >= 0.0f && u + v <= 1.0f && t >= 0.0f && t < max_t) {
+			max_t = t;
+			nearest = t;
+		}
+	}
+	return nearest;
+}
+
+/// Entry t of a unit ray into a world sphere or 0 from inside and none behind
+[[nodiscard]]
+auto raySphereEntry(const Ray& ray, glm::vec3 direction, glm::vec4 sphere) -> std::optional<float> {
+	const glm::vec3 to_centre = glm::vec3(sphere) - ray.origin;
+	const float along = glm::dot(to_centre, direction);
+	const float miss = glm::dot(to_centre, to_centre) - (along * along);
+	const float radius_squared = sphere.w * sphere.w;
+	if (miss > radius_squared) {
+		return std::nullopt;
+	}
+	const float half_chord = std::sqrt(radius_squared - miss);
+	if (along + half_chord < 0.0f) {
+		return std::nullopt;
+	}
+	return std::max(0.0f, along - half_chord);
+}
+
+}
+
 auto Workspace::pickNodeUnderMouse() -> Box<Node> {
 	const std::optional<Ray> ray = voxelMouseRay(m_gizmo_mouse_pos);
 	if (!ray.has_value() || !m_root_node.exists()) {
@@ -1165,14 +1217,15 @@ auto Workspace::pickNodeUnderMouse() -> Box<Node> {
 	}
 	const glm::vec3 direction = glm::normalize(ray->direction);
 
-	Box<Node> best;
-	float best_t = std::numeric_limits<float>::max();
-	const auto consider = [&](const Box<Node>& node, float t) {
-		if (t >= 0.0f && t < best_t) {
-			best_t = t;
-			best = node;
-		}
+	struct Candidate {
+		Box<Node> node;
+		VoxelNode* voxels = nullptr;
+		MeshNode* mesh = nullptr;
+		glm::mat4 to_local {1.0f};
+		float entry = 0.0f;
 	};
+
+	std::vector<Candidate> candidates;
 
 	const auto visit = [&](const auto& self, Box<Node> node) -> void {
 		if (!node.exists() || !node->enabled()) {
@@ -1181,27 +1234,21 @@ auto Workspace::pickNodeUnderMouse() -> Box<Node> {
 		if (auto* voxels = reflect_cast<VoxelNode>(&*node)) {
 			if (const voxel::Volume* volume = voxels->volume()) {
 				voxels->syncTransform();
-				const glm::mat4 to_volume = glm::inverse(voxels->getWorldTransform() * voxels->volumeLocalTransform());
-				const glm::vec3 origin = glm::vec3(to_volume * glm::vec4(ray->origin, 1.0f)) / voxel::k_voxel_size;
-				const glm::vec3 step = glm::vec3(to_volume * glm::vec4(direction, 0.0f)) / voxel::k_voxel_size;
-				// Along step one unit is a world metre, so t compares with the meshes
-				if (const auto hit = voxel::raycast(*volume, origin, step, 1e6f)) {
-					consider(node, hit->t);
+				const glm::mat4 model = voxels->getWorldTransform() * voxels->volumeLocalTransform();
+				if (const auto entry = raySphereEntry(*ray, direction, voxel::worldBoundingSphere(model, volume->brickDims()))) {
+					candidates.push_back({.node = node, .voxels = voxels, .to_local = glm::inverse(model), .entry = *entry});
 				}
 			}
 		} else if (auto* mesh = reflect_cast<MeshNode>(&*node); mesh != nullptr && mesh->getMesh().hasValue()) {
 			mesh->syncTransform();
 			const glm::mat4& world = mesh->getWorldTransform();
 			const glm::vec4 local = mesh->getMesh()->boundingSphere();
-			const glm::vec3 centre = glm::vec3(world * glm::vec4(glm::vec3(local), 1.0f));
 			const float radius =
 			    local.w *
 			    std::max({glm::length(glm::vec3(world[0])), glm::length(glm::vec3(world[1])), glm::length(glm::vec3(world[2]))});
-			const glm::vec3 to_centre = centre - ray->origin;
-			const float along = glm::dot(to_centre, direction);
-			const float miss = glm::dot(to_centre, to_centre) - (along * along);
-			if (miss <= radius * radius) {
-				consider(node, std::max(0.0f, along - std::sqrt((radius * radius) - miss)));
+			const glm::vec4 sphere(glm::vec3(world * glm::vec4(glm::vec3(local), 1.0f)), radius);
+			if (const auto entry = raySphereEntry(*ray, direction, sphere)) {
+				candidates.push_back({.node = node, .mesh = mesh, .to_local = glm::inverse(world), .entry = *entry});
 			}
 		}
 		for (const Box<Node>& child : node->children()) {
@@ -1209,6 +1256,58 @@ auto Workspace::pickNodeUnderMouse() -> Box<Node> {
 		}
 	};
 	visit(visit, m_root_node);
+
+	// Near bounds first so the exact tests stop once a hit beats the next bounds
+	std::ranges::sort(candidates, {}, &Candidate::entry);
+	uint32_t tested = 0;
+	const auto nearest = [&](bool voxels) -> std::pair<Box<Node>, float> {
+		Box<Node> best;
+		float best_t = std::numeric_limits<float>::max();
+		for (const Candidate& candidate : candidates) {
+			if ((candidate.voxels != nullptr) != voxels) {
+				continue;
+			}
+			if (candidate.entry >= best_t) {
+				break;
+			}
+			++tested;
+			// Along step one unit is a world metre
+			const glm::vec3 origin = glm::vec3(candidate.to_local * glm::vec4(ray->origin, 1.0f));
+			const glm::vec3 step = glm::vec3(candidate.to_local * glm::vec4(direction, 0.0f));
+			std::optional<float> t;
+			if (candidate.voxels != nullptr) {
+				if (const voxel::Volume* volume = candidate.voxels->volume()) {
+					if (const auto hit = voxel::raycast(*volume, origin / voxel::k_voxel_size, step / voxel::k_voxel_size, best_t)) {
+						t = hit->t;
+					}
+				}
+			} else {
+				t = meshRayHit(candidate.mesh->getMesh().get(), origin, step, best_t);
+			}
+			if (t.has_value() && *t < best_t) {
+				best_t = *t;
+				best = candidate.node;
+			}
+		}
+		return {best, best_t};
+	};
+
+	// Voxels outrank meshes so a mesh in front of or under a volume never takes its click
+	std::pair<Box<Node>, float> hit = nearest(true);
+	const bool voxel_hit = hit.first.exists();
+	if (!voxel_hit) {
+		hit = nearest(false);
+	}
+	Box<Node> best = std::move(hit.first);
+	TOAST_TRACE(
+	    "World",
+	    "Pick tested {} of {} candidates and hit {} {} at {:.2f} m",
+	    tested,
+	    candidates.size(),
+	    voxel_hit ? "volume" : (best.exists() ? "mesh" : "nothing"),
+	    best,
+	    best.exists() ? hit.second : 0.0f
+	);
 
 	// The hierarchy lists a prefab instance as one node
 	while (best.exists() && best->m_prefab_interior) {

@@ -26,7 +26,8 @@ class VulkanCore;
 class DebrisPass : public IRenderPass {
 public:
 	DebrisPass(
-	    const VulkanCore& core, vk::Format depth_format, vk::Extent2D extent, std::shared_ptr<physics::DebrisSimulation> simulation
+	    const VulkanCore& core, vk::Format scene_format, vk::Format depth_format, vk::Extent2D extent,
+	    std::shared_ptr<physics::DebrisSimulation> simulation
 	);
 
 	[[nodiscard]]
@@ -38,6 +39,9 @@ public:
 	auto prepare(vk::CommandBuffer cmd, uint32_t frame_index) -> bool;
 
 	void record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) override;
+
+	/// World scope with the blended draws, after record() in the same frame
+	void recordGlass(vk::CommandBuffer cmd, uint32_t frame_index);
 
 	[[nodiscard]]
 	auto name() const -> std::string_view override {
@@ -57,6 +61,7 @@ private:
 
 	ShaderLayout m_layout;
 	VulkanPipeline m_pipeline;
+	VulkanPipeline m_glass_pipeline;
 	SceneDescriptorSets m_scene_sets;
 	std::vector<vk::raii::DescriptorSet> m_sets;
 	std::vector<std::array<vk::Buffer, 2>> m_bound;

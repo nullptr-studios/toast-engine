@@ -95,6 +95,9 @@ auto createGraphicsPipelineImpl(
 	if (config.depth_format.has_value()) {
 		rendering_ci.depthAttachmentFormat = *config.depth_format;
 	}
+	if (config.stencil_format.has_value()) {
+		rendering_ci.stencilAttachmentFormat = *config.stencil_format;
+	}
 	rendering_ci.viewMask = config.view_mask;
 
 	const uint32_t vertex_binding_count =
@@ -110,7 +113,11 @@ auto createGraphicsPipelineImpl(
 
 	const vk::PipelineViewportStateCreateInfo viewport_state_ci({}, 1, nullptr, 1, nullptr);
 
-	const std::array<vk::DynamicState, 2> dynamic_states {vk::DynamicState::eViewport, vk::DynamicState::eScissor};
+	std::vector<vk::DynamicState> dynamic_states {vk::DynamicState::eViewport, vk::DynamicState::eScissor};
+	if (config.stencil_replace) {
+		dynamic_states.push_back(vk::DynamicState::eStencilWriteMask);
+		dynamic_states.push_back(vk::DynamicState::eStencilReference);
+	}
 	const vk::PipelineDynamicStateCreateInfo dynamic_state_ci(
 	    {}, static_cast<uint32_t>(dynamic_states.size()), dynamic_states.data()
 	);
@@ -118,7 +125,7 @@ auto createGraphicsPipelineImpl(
 	const bool depth_bias_enable = config.depth_bias_constant != 0.0f || config.depth_bias_slope != 0.0f;
 	const vk::PipelineRasterizationStateCreateInfo rasterization_state_ci(
 	    {},
-	    false,
+	    config.depth_clamp,
 	    false,
 	    vk::PolygonMode::eFill,
 	    config.cull_mode,
@@ -157,6 +164,10 @@ auto createGraphicsPipelineImpl(
 			src_factor = vk::BlendFactor::eDstColor;
 			dst_factor = vk::BlendFactor::eZero;
 			break;
+		case BlendPreset::dual_source:
+			src_factor = vk::BlendFactor::eOne;
+			dst_factor = vk::BlendFactor::eSrc1Color;
+			break;
 		case BlendPreset::none: break;
 	}
 
@@ -164,23 +175,36 @@ auto createGraphicsPipelineImpl(
 	    vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB;
 
 	std::vector<vk::PipelineColorBlendAttachmentState> color_blend_attachments;
-	color_blend_attachments.emplace_back(
-	    blend_preset != BlendPreset::none,
-	    src_factor,
-	    dst_factor,
-	    vk::BlendOp::eAdd,
-	    vk::BlendFactor::eOne,
-	    vk::BlendFactor::eZero,
-	    vk::BlendOp::eAdd,
-	    config.write_color_alpha ? (rgb_write | vk::ColorComponentFlagBits::eA) : rgb_write
-	);
-
-	for ([[maybe_unused]]
-	     const vk::Format extra : config.extra_color_formats) {
+	if (config.write_color_alpha) {
 		color_blend_attachments.emplace_back(
-		    false,
+		    blend_preset != BlendPreset::none,
+		    src_factor,
+		    dst_factor,
+		    vk::BlendOp::eAdd,
 		    vk::BlendFactor::eOne,
 		    vk::BlendFactor::eZero,
+		    vk::BlendOp::eAdd,
+		    !config.write_color ? vk::ColorComponentFlags {} : rgb_write | vk::ColorComponentFlagBits::eA
+		);
+	} else {
+		color_blend_attachments.emplace_back(
+		    blend_preset != BlendPreset::none,
+		    src_factor,
+		    dst_factor,
+		    vk::BlendOp::eAdd,
+		    vk::BlendFactor::eOne,
+		    vk::BlendFactor::eZero,
+		    vk::BlendOp::eAdd,
+		    !config.write_color ? vk::ColorComponentFlags {} : rgb_write
+		);
+	}
+
+	for (size_t extra = 0; extra < config.extra_color_formats.size(); ++extra) {
+		const bool blended = blend_preset != BlendPreset::none && ((config.extra_blend_mask >> extra) & 1u) != 0;
+		color_blend_attachments.emplace_back(
+		    blended,
+		    blended ? src_factor : vk::BlendFactor::eOne,
+		    blended ? dst_factor : vk::BlendFactor::eZero,
 		    vk::BlendOp::eAdd,
 		    vk::BlendFactor::eOne,
 		    vk::BlendFactor::eZero,
@@ -198,19 +222,23 @@ auto createGraphicsPipelineImpl(
 	    std::array {0.0f, 0.0f, 0.0f, 0.0f}
 	);
 
+	const bool has_depth_stencil = config.depth_format.has_value() || config.stencil_format.has_value();
+	const vk::StencilOpState stencil_op(
+	    vk::StencilOp::eKeep, vk::StencilOp::eReplace, vk::StencilOp::eKeep, vk::CompareOp::eAlways, 0xFFu, 0u, 0u
+	);
 	vk::PipelineDepthStencilStateCreateInfo depth_stencil_state_ci {};
-	if (config.depth_format.has_value()) {
+	if (has_depth_stencil) {
 		depth_stencil_state_ci = vk::PipelineDepthStencilStateCreateInfo(
 		    {},
-		    config.depth_test,
-		    config.depth_write,
-		    config.depth_compare,    // depthCompareOp
-		    false,                   // depthBoundsTestEnable
-		    false,                   // stencilTestEnable
-		    vk::StencilOpState(),    // front
-		    vk::StencilOpState(),    // back
-		    0.0f,                    // minDepthBounds
-		    1.0f                     // maxDepthBounds
+		    config.depth_format.has_value() && config.depth_test,
+		    config.depth_format.has_value() && config.depth_write,
+		    config.depth_compare,                                          // depthCompareOp
+		    false,                                                         // depthBoundsTestEnable
+		    config.stencil_replace,                                        // stencilTestEnable
+		    config.stencil_replace ? stencil_op : vk::StencilOpState(),    // front
+		    config.stencil_replace ? stencil_op : vk::StencilOpState(),    // back
+		    0.0f,                                                          // minDepthBounds
+		    1.0f                                                           // maxDepthBounds
 		);
 	}
 
@@ -226,7 +254,7 @@ auto createGraphicsPipelineImpl(
 	pipeline_ci.pMultisampleState = &multisample_state_ci;
 	pipeline_ci.pColorBlendState = &color_blend_state_ci;
 	pipeline_ci.pDynamicState = &dynamic_state_ci;
-	if (config.depth_format.has_value()) {
+	if (has_depth_stencil) {
 		pipeline_ci.pDepthStencilState = &depth_stencil_state_ci;
 	}
 	pipeline_ci.layout = pipeline_layout;
@@ -273,7 +301,7 @@ auto VulkanPipeline::rebuild(const VulkanCore& core, const Config& config) -> vo
 		if (config.color_format == vk::Format::eUndefined && !config.depth_only) {
 			TOAST_CRITICAL("Render", "Graphics pipeline requires a valid color format!");
 		}
-		if (config.depth_only && !config.depth_format.has_value()) {
+		if (config.depth_only && !config.depth_format.has_value() && !config.stencil_format.has_value()) {
 			TOAST_CRITICAL("Render", "Depth-only graphics pipeline requires a depth format!");
 		}
 		if (config.extent.width == 0 || config.extent.height == 0) {

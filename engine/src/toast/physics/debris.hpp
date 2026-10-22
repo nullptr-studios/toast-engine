@@ -45,6 +45,11 @@ struct DebrisSpawn {
 	uint32_t albedo_roughness = 0;
 	uint8_t metallic = 0;
 	uint8_t reflectivity = 0;
+	bool glass = false;
+	uint8_t alpha = 255;
+	/// Palette ior byte and 0 for the default
+	uint8_t ior = 0;
+	float scale = 1.0f;
 };
 
 struct DebrisBlast {
@@ -56,6 +61,7 @@ struct DebrisBlast {
 inline constexpr float k_max_debris_speed = 40.0f;
 inline constexpr float k_debris_cone_spread = 0.5f;
 inline constexpr float k_debris_max_spin = 8.0f;
+inline constexpr float k_debris_min_scale = 0.55f;
 
 [[nodiscard]]
 constexpr auto debrisBit(const glm::ivec3& local) -> uint32_t {

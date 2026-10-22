@@ -107,11 +107,12 @@ void InputSystem::subscribeEvents() {
 		return false;
 	});
 
+	// Releases always land so a press made before ImGui took over never sticks
 	m_listener.subscribe<event::WindowKey>([this](const event::WindowKey& e) {
 		m_mods = toModifierKey(static_cast<uint16_t>(e.mods));
 		if (e.action == event::window_input_released) {
 			m_keys_down.erase(e.key);
-		} else {
+		} else if (!m_overlay_keyboard) {
 			m_keys_down.insert(e.key);
 			noteLastInput(Device::keyboard, "keyboard");
 		}
@@ -122,7 +123,7 @@ void InputSystem::subscribeEvents() {
 		m_mods = toModifierKey(static_cast<uint16_t>(e.mods));
 		if (e.action == event::window_input_released) {
 			m_mouse_down.erase(e.button);
-		} else {
+		} else if (!m_overlay_mouse) {
 			m_mouse_down.insert(e.button);
 			noteLastInput(Device::mouse, "mouse");
 		}
@@ -130,13 +131,47 @@ void InputSystem::subscribeEvents() {
 	});
 
 	m_listener.subscribe<event::WindowMousePosition>([this](const event::WindowMousePosition& e) {
-		m_mouse_position = glm::vec2 {e.x, e.y};
+		const glm::vec2 raw {e.x, e.y};
+		// The host sends the free overlay cursor instead of lock deltas so the look holds still
+		if (m_overlay_cursor && m_game_mouse_locked) {
+			m_resync_cursor = true;
+			return false;
+		}
+		if (m_resync_cursor) {
+			m_cursor_offset = m_mouse_position - raw;
+			m_resync_cursor = false;
+		}
+		m_mouse_position = raw + m_cursor_offset;
 		return false;
 	});
 
 	m_listener.subscribe<event::WindowMouseScroll>([this](const event::WindowMouseScroll& e) {
+		if (m_overlay_mouse) {
+			return false;
+		}
 		m_scroll += glm::vec2 {e.x, e.y};
 		noteLastInput(Device::mouse, "mouse");
+		return false;
+	});
+
+	m_listener.subscribe<event::WindowMouseLock>([this](const event::WindowMouseLock& e) {
+		m_game_mouse_locked = e.locked;
+		// A free cursor is absolute again
+		if (!e.locked) {
+			m_cursor_offset = glm::vec2 {0.0f};
+			m_resync_cursor = false;
+		}
+		return false;
+	});
+
+	m_listener.subscribe<event::DebugOverlayCursor>([this](const event::DebugOverlayCursor& e) {
+		m_overlay_cursor = e.owned;
+		return false;
+	});
+
+	m_listener.subscribe<event::DebugOverlayCapture>([this](const event::DebugOverlayCapture& e) {
+		m_overlay_mouse = e.mouse;
+		m_overlay_keyboard = e.keyboard;
 		return false;
 	});
 }

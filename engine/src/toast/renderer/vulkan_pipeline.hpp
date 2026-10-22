@@ -29,6 +29,7 @@ public:
 		premultiplied,    // one 1-srcAlpha
 		additive,         // one one
 		multiply,         // dstColor zero
+		dual_source,      // one src1Color and needs dualSrcBlend
 	};
 
 	struct Config {
@@ -37,14 +38,22 @@ public:
 
 		vk::Format color_format = vk::Format::eUndefined;
 		std::optional<vk::Format> depth_format;
+		/// Without depth_format the depth aspect is left out of the rendering
+		std::optional<vk::Format> stencil_format;
 		vk::Extent2D extent;
 
 		std::vector<vk::Format> extra_color_formats;
 
 		bool write_extra_color = false;
 
+		/// Bit i blends extra attachment i with blend_preset and never for an integer format
+		uint32_t extra_blend_mask = 0;
+
 		/// color_format keeps its destination alpha unless set
 		bool write_color_alpha = false;
+
+		/// False masks color_format off entirely while extra attachments still follow write_extra_color
+		bool write_color = true;
 
 		bool depth_only = false;
 
@@ -81,6 +90,12 @@ public:
 		bool depth_write = true;
 		/// Scene convention. Shadow maps set eLess and far plane draws need depth::k_closer_or_equal
 		vk::CompareOp depth_compare = depth::k_closer;
+
+		/// Every surviving fragment writes the dynamic stencil reference through the dynamic write mask
+		bool stencil_replace = false;
+
+		/// Clamps depth instead of clipping so casters in front of a shadow view still occlude
+		bool depth_clamp = false;
 
 		float depth_bias_constant = 0.0f;
 		float depth_bias_slope = 0.0f;

@@ -20,6 +20,8 @@ enum class Usage : uint8_t {
 	color_attachment,
 	/// eDepthAttachmentOptimal including load and store ops
 	depth_attachment,
+	/// eDepthStencilAttachmentOptimal for images with a stencil aspect
+	stencil_attachment,
 	/// eDepthReadOnlyOptimal sampled by fragment and compute shaders
 	depth_sampled,
 

@@ -889,6 +889,10 @@ void Simulator::emitDebris(
 					                    (static_cast<uint32_t>(look.albedo_b) << 16u) | (static_cast<uint32_t>(look.roughness) << 24u),
 		      .metallic = look.metallic,
 		      .reflectivity = look.reflectivity,
+		      .glass = voxel::isGlass(look),
+		      .alpha = look.alpha,
+		      .ior = look.ior,
+		      .scale = rng.range(k_debris_min_scale, 1.0f),
 		    }
 		);
 	}

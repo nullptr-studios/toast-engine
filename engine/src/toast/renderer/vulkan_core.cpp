@@ -649,6 +649,10 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	enabled_features.samplerAnisotropy = m_sampler_anisotropy_supported ? VK_TRUE : VK_FALSE;
 
 	enabled_features.independentBlend = VK_TRUE;
+	m_depth_clamp_supported = device_features.depthClamp == VK_TRUE;
+	enabled_features.depthClamp = m_depth_clamp_supported ? VK_TRUE : VK_FALSE;
+	m_dual_source_blend_supported = device_features.dualSrcBlend == VK_TRUE;
+	enabled_features.dualSrcBlend = m_dual_source_blend_supported ? VK_TRUE : VK_FALSE;
 	// HiZPyramid picks its level image by a loop index
 	enabled_features.shaderStorageImageArrayDynamicIndexing = VK_TRUE;
 
@@ -679,6 +683,11 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	    "Vulkan 1.2 descriptorBindingVariableDescriptorCount"
 	);
 	require_feature(supported_vulkan12.bufferDeviceAddress == VK_TRUE, "Vulkan 1.2 bufferDeviceAddress");
+	// lighting.slang picks reflection probe cubemaps per pixel with NonUniformResourceIndex
+	require_feature(
+	    supported_vulkan12.shaderSampledImageArrayNonUniformIndexing == VK_TRUE,
+	    "Vulkan 1.2 shaderSampledImageArrayNonUniformIndexing"
+	);
 	// eDepthAttachmentOptimal and eDepthReadOnlyOptimal are only legal with this enabled
 	require_feature(supported_vulkan12.separateDepthStencilLayouts == VK_TRUE, "Vulkan 1.2 separateDepthStencilLayouts");
 	// AsyncCompute tickets are timeline values
@@ -720,11 +729,13 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 #else
 		const std::array<const char*, 2> sharing_extensions {"VK_KHR_external_memory_fd", "VK_KHR_external_semaphore_fd"};
 #endif
-		m_texture_sharing_supported = std::ranges::all_of(sharing_extensions, [&available](std::string_view name) {
-			return std::ranges::any_of(available, [name](const vk::ExtensionProperties& ext) {
-				return std::string_view(ext.extensionName.data()) == name;
-			});
-		});
+		const bool debugger_attached = m_nsight_mode != NsightMode::none || rdoc_api != nullptr;
+		m_texture_sharing_supported =
+		    !debugger_attached && std::ranges::all_of(sharing_extensions, [&available](std::string_view name) {
+			    return std::ranges::any_of(available, [name](const vk::ExtensionProperties& ext) {
+				    return std::string_view(ext.extensionName.data()) == name;
+			    });
+		    });
 		if (m_texture_sharing_supported) {
 			device_extensions.insert(device_extensions.end(), sharing_extensions.begin(), sharing_extensions.end());
 		} else {
@@ -806,6 +817,7 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 			usable = mesh_probe.taskShader == VK_TRUE && mesh_probe.meshShader == VK_TRUE && mesh_props.maxMeshOutputVertices >= 256 &&
 			         mesh_props.maxMeshOutputPrimitives >= 128 && mesh_props.maxMeshWorkGroupInvocations >= 64 &&
 			         mesh_props.maxTaskWorkGroupInvocations >= 64 && mesh_props.maxTaskPayloadSize >= 3084;
+			m_mesh_multiview_views = usable && mesh_probe.multiviewMeshShader == VK_TRUE ? mesh_props.maxMeshMultiviewViewCount : 0u;
 		}
 
 		m_mesh_shader_supported = usable;
@@ -822,6 +834,7 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	vk::PhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features {};
 	mesh_shader_features.taskShader = VK_TRUE;
 	mesh_shader_features.meshShader = VK_TRUE;
+	mesh_shader_features.multiviewMeshShader = m_mesh_multiview_views > 0 ? VK_TRUE : VK_FALSE;
 
 	vk::PhysicalDeviceAccelerationStructureFeaturesKHR acceleration_structure_features {};
 	acceleration_structure_features.accelerationStructure = VK_TRUE;
@@ -843,6 +856,7 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	vulkan12_features.descriptorBindingPartiallyBound = VK_TRUE;
 	vulkan12_features.descriptorBindingVariableDescriptorCount = VK_TRUE;
 	vulkan12_features.bufferDeviceAddress = VK_TRUE;
+	vulkan12_features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
 	vulkan12_features.separateDepthStencilLayouts = VK_TRUE;
 	vulkan12_features.timelineSemaphore = VK_TRUE;
 	vulkan11_features.shaderDrawParameters = VK_TRUE;

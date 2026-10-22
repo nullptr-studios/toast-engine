@@ -4,6 +4,7 @@
 
 #include "vulkan_renderer.hpp"
 
+#include "blue_noise.hpp"
 #include "clustered_lighting_constants.hpp"
 #include "cube_face_basis.hpp"
 #include "editor_overlays.hpp"
@@ -14,17 +15,21 @@
 #include "passes/environment_pass.hpp"
 #include "passes/material_pass.hpp"
 #include "passes/reflection_probe_pass.hpp"
+#include "passes/selection_outline.hpp"
 #include "passes/shadow_pass.hpp"
 #include "passes/skinning_pass.hpp"
 #include "passes/voxel_pass.hpp"
 #include "ray_tracing_scene.hpp"
+#include "renderer_settings.hpp"
 #include "shadow_slots.hpp"
 #include "skinned_blas_pool.hpp"
 #include "voxel_debug.hpp"
 #include "vulkan_debug.hpp"
 
+#include <SDL3/SDL_keycode.h>
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <chrono>
 #include <cmath>
 #include <cstring>
@@ -44,6 +49,7 @@
 #include <toast/assets/material.hpp>
 #include <toast/log.hpp>
 #include <toast/physics/simulator.hpp>
+#include <toast/settings/settings.hpp>
 #include <toast/thread_pool.hpp>
 #include <toast/time.hpp>
 #include <toast/voxel/nodes/voxel_node.hpp>
@@ -52,6 +58,7 @@
 #include <toast/window/window_events.hpp>
 #include <toast/world/animation_player.hpp>
 #include <toast/world/camera.hpp>
+#include <toast/world/directional_light.hpp>
 #include <toast/world/irradiance_volume.hpp>
 #include <toast/world/light.hpp>
 #include <toast/world/mesh_node.hpp>
@@ -100,9 +107,6 @@ struct DirectionalCascadeFit {
 
 constexpr float k_caster_back_off = 100.0f;
 
-/// Share of the slice radius a cascade covers beyond its slice so small camera moves reuse its cached map
-constexpr float k_cascade_padding = 0.15f;
-
 struct BoundingSphere {
 	glm::vec3 center {0.0f};
 	float radius = 0.0f;
@@ -149,7 +153,7 @@ auto fitDirectionalCascade(glm::vec3 center, float radius, glm::vec3 light_direc
 
 	const glm::mat4 light_view = glm::lookAt(center - direction * (radius + k_caster_back_off), center, up);
 
-	const float depth_extent = (2.0f * radius) + k_caster_back_off;
+	const float depth_extent = (radius * (1.0f + shadows::cascadeReceiverDepthRadii())) + k_caster_back_off;
 
 	// orthoRH_ZO since GLM_FORCE_DEPTH_ZERO_TO_ONE is not defined
 	glm::mat4 light_projection = glm::orthoRH_ZO(-radius, radius, -radius, radius, 0.0f, depth_extent);
@@ -164,21 +168,31 @@ auto fitDirectionalCascade(glm::vec3 center, float radius, glm::vec3 light_direc
 
 	return DirectionalCascadeFit {
 	  .view_projection = light_projection * light_view,
-	  .cull_sphere = glm::vec4(center, radius + k_caster_back_off),
+	  .cull_sphere = glm::vec4(center, radius),
 	  .depth_bias = k_world_depth_bias / depth_extent,
 	  .texel_world_size = 2.0f * radius / static_cast<float>(resolution),
 	};
 }
 
+/// Fades out over the slack past the shadow distance before the slot is released
+auto punctualShadowStrength(float camera_distance, float shadow_distance) -> float {
+	if (shadow_distance <= 0.0f) {
+		return 1.0f;
+	}
+	const float fade_end = shadow_distance * shadow_slots::k_distance_slack;
+	return std::clamp((fade_end - camera_distance) / (fade_end - shadow_distance), 0.0f, 1.0f);
+}
+
 auto computeCascadeSplits(float near_plane, float far_plane) -> std::array<float, shadows::k_cascade_count> {
 	std::array<float, shadows::k_cascade_count> splits {};
 	const float range = far_plane - near_plane;
+	const float lambda = shadows::cascadeSplitLambda();
 
 	for (uint32_t i = 0; i < shadows::k_cascade_count; ++i) {
 		const float fraction = static_cast<float>(i + 1) / static_cast<float>(shadows::k_cascade_count);
 		const float logarithmic = near_plane * std::pow(far_plane / near_plane, fraction);
 		const float uniform = near_plane + (range * fraction);
-		splits[i] = glm::mix(uniform, logarithmic, shadows::k_cascade_split_lambda);
+		splits[i] = glm::mix(uniform, logarithmic, lambda);
 	}
 
 	return splits;
@@ -450,6 +464,34 @@ auto voxelFragmentRenderId(physics::ShapeID shape) -> uint64_t {
 	return 0xF7A6'1D00'0000'0000ull ^ ((static_cast<uint64_t>(shape.slot) << 32) | shape.generation);
 }
 
+/// Float in [1 2) whose mantissa hashes the light so ReSTIR finds it after rebuilds
+[[nodiscard]]
+auto lightIdBits(uint64_t key) -> float {
+	uint64_t hash = key * 0x9E3779B97F4A7C15ull;
+	hash ^= hash >> 29u;
+	return std::bit_cast<float>(static_cast<uint32_t>(hash & 0x007FFFFFull) | 0x3F800000u);
+}
+
+/// Rect width axis perpendicular to the facing even when up is parallel to it
+[[nodiscard]]
+auto areaTangent(const glm::vec3& forward, const glm::vec3& up) -> glm::vec3 {
+	const glm::vec3 side = glm::cross(forward, up);
+	if (glm::dot(side, side) > 1e-8f) {
+		return glm::normalize(side);
+	}
+	const glm::vec3 fallback = std::abs(forward.y) < 0.99f ? glm::vec3(0.0f, 1.0f, 0.0f) : glm::vec3(1.0f, 0.0f, 0.0f);
+	return glm::normalize(glm::cross(forward, fallback));
+}
+
+[[nodiscard]]
+auto packedGlassBricks(const voxel::gpu::PackedScene& scene) -> std::vector<std::vector<uint32_t>> {
+	std::vector<std::vector<uint32_t>> out(scene.records.size());
+	for (uint32_t record = 0; record < scene.records.size(); ++record) {
+		out[record] = voxel::gpu::glassBricks(scene, record);
+	}
+	return out;
+}
+
 }
 
 auto VulkanRenderer::getPrepassDrawnCount() const noexcept -> uint32_t {
@@ -500,8 +542,8 @@ void VulkanRenderer::assignShadowSlots(
 }
 
 void VulkanRenderer::releaseShadowSlots() {
-	m_spot_slots = {};
-	m_point_slots = {};
+	std::ranges::fill(m_spot_slots, shadow_slots::Slot {});
+	std::ranges::fill(m_point_slots, shadow_slots::Slot {});
 }
 
 auto VulkanRenderer::ownerTransform(const toast::Node& node) const -> const glm::mat4* {
@@ -723,6 +765,10 @@ VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTa
 
 	m_depth_prepass = std::make_unique<DepthPrepass>(*m_core, m_depth_format, m_output_target->getExtent());
 
+	m_selection_outline = std::make_unique<SelectionOutline>(
+	    *m_core, m_output_target->getColorFormat(), m_depth_format, m_output_target->getExtent()
+	);
+
 	m_skinning_pass = std::make_unique<SkinningPass>(*m_core);
 
 	if (m_core->isRayTracingSupported()) {
@@ -759,6 +805,9 @@ VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTa
 	});
 	m_imgui_input_listener.subscribe<event::WindowKey>([this](const auto& e) {
 		m_imgui_key_events_accum.push_back({e.key, e.action != 0});
+		if (e.key == SDLK_F3 && e.action == event::window_input_pressed && m_game_view.load(std::memory_order_relaxed)) {
+			toast::settings::Settings::get().setValue(k_debug_overlay_in_game, toast::settings::Value {!debugOverlayInGame()});
+		}
 		return false;
 	});
 	m_imgui_input_listener.subscribe<event::WindowChar>([this](const auto& e) {
@@ -904,12 +953,28 @@ auto VulkanRenderer::createDepthResources() -> void {
 	image_ci.arrayLayers = 1;
 	image_ci.samples = vk::SampleCountFlagBits::e1;
 	image_ci.tiling = vk::ImageTiling::eOptimal;
-	image_ci.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled;
+	image_ci.usage =
+	    vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferSrc;
 	image_ci.sharingMode = vk::SharingMode::eExclusive;
 	image_ci.initialLayout = vk::ImageLayout::eUndefined;
 
 	vma::AllocationCreateInfo allocation_ci {};
 	allocation_ci.usage = vma::MemoryUsage::eAutoPreferDevice;
+
+	m_glass_backdrop_depth.view.reset();
+	m_glass_backdrop_depth.image.reset();
+	vk::ImageCreateInfo backdrop_ci = image_ci;
+	backdrop_ci.usage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst;
+	m_glass_backdrop_depth.image.emplace(m_core->getAllocator().createImage(backdrop_ci, allocation_ci));
+	setDebugName(*m_core, **m_glass_backdrop_depth.image, "VulkanRenderer GlassBackdropDepthImage");
+	vk::ImageViewCreateInfo backdrop_view_ci {};
+	backdrop_view_ci.image = **m_glass_backdrop_depth.image;
+	backdrop_view_ci.viewType = vk::ImageViewType::e2D;
+	backdrop_view_ci.format = m_depth_format;
+	backdrop_view_ci.subresourceRange = vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1);
+	m_glass_backdrop_depth.view.emplace(m_core->getDevice(), backdrop_view_ci);
+	setDebugName(*m_core, **m_glass_backdrop_depth.view, "VulkanRenderer GlassBackdropDepthView");
+	m_glass_backdrop_depth.state.reset(**m_glass_backdrop_depth.image, depthAttachmentRange(m_depth_format));
 
 	auto depth_image = m_core->getAllocator().createImage(image_ci, allocation_ci);
 	m_depth_resources.image.emplace(std::move(depth_image));
@@ -936,11 +1001,13 @@ void VulkanRenderer::createSceneColorResources() {
 		TOAST_CRITICAL("Render", "Toast Engine Error: VulkanRenderer requires a non-zero output extent for the scene target!");
 	}
 
-	const auto create = [&](SceneColorResources& target, vk::Format format, std::string_view label) {
+	const auto create = [&](
+	                        SceneColorResources& target, vk::Format format, std::string_view label, vk::ImageUsageFlags usage = {}
+	                    ) {
 		target.view.reset();
 		target.image.reset();
 
-		const auto image_ci = colorTargetImageInfo(extent, format);
+		const auto image_ci = colorTargetImageInfo(extent, format, usage);
 
 		vma::AllocationCreateInfo allocation_ci {};
 		allocation_ci.usage = vma::MemoryUsage::eAutoPreferDevice;
@@ -960,13 +1027,20 @@ void VulkanRenderer::createSceneColorResources() {
 		TOAST_TRACE("Render", "{} target created at {}x{} with format {}", label, extent.width, extent.height, vk::to_string(format));
 	};
 
-	create(m_scene_color, m_scene_color_format, "SceneColor");
+	create(m_scene_color, m_scene_color_format, "SceneColor", vk::ImageUsageFlagBits::eTransferSrc);
+	create(m_glass_backdrop, m_scene_color_format, "GlassBackdrop", vk::ImageUsageFlagBits::eTransferDst);
 	create(m_scene_normal, m_scene_normal_format, "SceneNormal");
 	create(m_scene_indirect, m_scene_indirect_format, "SceneIndirect");
 	create(m_scene_motion, m_scene_motion_format, "SceneMotion");
 	create(m_voxel_albedo, k_voxel_albedo_format, "VoxelAlbedo");
 	create(m_voxel_material, k_voxel_material_format, "VoxelMaterial");
 	create(m_voxel_face_normal, k_voxel_face_normal_format, "VoxelFaceNormal");
+	create(m_voxel_noisy_diffuse, k_voxel_noisy_format, "VoxelNoisyDiffuse");
+	create(m_voxel_noisy_specular, k_voxel_noisy_format, "VoxelNoisySpecular");
+	create(m_voxel_reservoirs[0], k_voxel_reservoir_format, "VoxelReservoirs0");
+	create(m_voxel_reservoirs[1], k_voxel_reservoir_format, "VoxelReservoirs1");
+	create(m_voxel_candidate_reservoirs, k_voxel_reservoir_format, "VoxelCandidateReservoirs");
+	m_voxel_reservoir_written = false;
 }
 
 void VulkanRenderer::createDescriptorPool() {
@@ -1142,6 +1216,23 @@ void VulkanRenderer::createFrameResources() {
 
 	create_instance_buffers(m_instance_res, "Instances");
 	create_instance_buffers(m_shadow_instance_res, "ShadowInstances");
+
+	{
+		const std::vector<uint32_t> noise = blue_noise::generatePacked();
+		vk::BufferCreateInfo buffer_ci {};
+		buffer_ci.size = noise.size() * sizeof(uint32_t);
+		buffer_ci.usage = vk::BufferUsageFlagBits::eStorageBuffer;
+
+		vma::AllocationCreateInfo alloc_ci {};
+		alloc_ci.usage = vma::MemoryUsage::eAutoPreferHost;
+		alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
+
+		m_blue_noise_buffer.emplace(m_core->getAllocator().createBuffer(buffer_ci, alloc_ci));
+		setDebugName(*m_core, **m_blue_noise_buffer, "VulkanRenderer BlueNoise");
+		const auto& allocation = m_blue_noise_buffer->getAllocation();
+		std::memcpy(allocation.getInfo().pMappedData, noise.data(), buffer_ci.size);
+		allocation.flush(0, buffer_ci.size);
+	}
 }
 
 void VulkanRenderer::createFailsafeTextures() {
@@ -1296,9 +1387,7 @@ void VulkanRenderer::publishCompletedFrames() {
 			break;
 		}
 
-		if (!pending.was_probe_capture) {
-			m_output_target->onImageRenderComplete(pending.last_image_index);
-		}
+		m_output_target->onImageRenderComplete(pending.last_image_index, !pending.was_probe_capture);
 
 		pending.has_submitted = false;
 		m_pending_publish.pop_front();
@@ -1396,7 +1485,9 @@ void VulkanRenderer::recordAccelerationStructureBuilds(FrameContext& frame) {
 	}
 }
 
-void VulkanRenderer::recordMeshScene(vk::CommandBuffer cmd, uint32_t image_index) {
+void VulkanRenderer::recordMeshScene(
+    vk::CommandBuffer cmd, uint32_t image_index, bool voxel_glass, const std::function<void()>& capture_backdrop
+) {
 	// Opaque first since m_material_passes is unordered
 	{
 		const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Opaque materials");
@@ -1407,6 +1498,24 @@ void VulkanRenderer::recordMeshScene(vk::CommandBuffer cmd, uint32_t image_index
 			TracyVkZone(m_tracy_vk_ctx, cmd, "MaterialPass");
 			pass->record(cmd, m_current_frame, image_index);
 		}
+	}
+
+	// Before blended draws since the sky overwrites far plane pixels
+	if (m_environment_pass != nullptr && m_environment_pass->isEnabled()) {
+		TracyVkZone(m_tracy_vk_ctx, cmd, "WorldPass");
+		const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, m_environment_pass->name());
+		m_environment_pass->record(cmd, m_current_frame, image_index);
+	}
+
+	// Before anything blended so the backdrop holds only opaque and sky
+	const bool refract = voxel_glass && m_voxel_pass != nullptr && !m_voxel_pass->glassDraws().empty() &&
+	                     m_voxel_pass->refractsGlass() && capture_backdrop;
+	if (refract) {
+		const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Glass backdrop");
+		capture_backdrop();
+	}
+	if (m_voxel_pass != nullptr) {
+		m_voxel_pass->setBackdropCaptured(refract);
 	}
 
 	{
@@ -1441,10 +1550,39 @@ void VulkanRenderer::recordMeshScene(vk::CommandBuffer cmd, uint32_t image_index
 				return a.pass < b.pass;
 			});
 
+			const std::span<const VoxelPass::GlassDraw> glass =
+			    voxel_glass && m_voxel_pass != nullptr ? m_voxel_pass->glassDraws() : std::span<const VoxelPass::GlassDraw> {};
+			size_t next_glass = 0;
+			// Glass bricks at least as far as the next mesh go first as one run
+			const auto record_glass_until = [&](float distance_squared) {
+				size_t end = next_glass;
+				while (end < glass.size() && glass[end].distance_squared >= distance_squared) {
+					++end;
+				}
+				if (end > next_glass) {
+					m_voxel_pass->recordGlass(
+					    cmd, m_current_frame, static_cast<uint32_t>(next_glass), static_cast<uint32_t>(end - next_glass)
+					);
+					next_glass = end;
+				}
+			};
+
 			TracyVkZone(m_tracy_vk_ctx, cmd, "BlendedDraws");
-			const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Blended materials");
+			const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Blended materials and glass");
 			for (const auto& draw : draws) {
+				record_glass_until(draw.distance_squared);
 				draw.pass->recordInstance(cmd, m_current_frame, *draw.proxy);
+			}
+			record_glass_until(-1.0f);
+
+			// One run after voxel glass since the pieces are small and mostly in front of it
+			if (m_debris_pass != nullptr && m_debris_pass->isEnabled()) {
+				m_debris_pass->recordGlass(cmd, m_current_frame);
+			}
+
+			// Last so the glass depth it writes never rejects a blended draw behind the glass
+			if (!glass.empty()) {
+				m_voxel_pass->recordGlassSurfaces(cmd, m_current_frame);
 			}
 		}
 	}
@@ -1454,10 +1592,12 @@ auto VulkanRenderer::recordVoxelScopes(
     FrameContext& frame, const vk::Viewport& viewport, const vk::Rect2D& scissor, bool depth_loaded
 ) -> bool {
 	ZoneScoped;
-	const bool targets_ready = m_depth_resources.view.has_value() && m_voxel_albedo.view.has_value() &&
-	                           m_voxel_material.view.has_value() && m_voxel_face_normal.view.has_value() &&
-	                           m_scene_color.view.has_value() && m_scene_normal.view.has_value() &&
-	                           m_scene_indirect.view.has_value() && m_scene_motion.view.has_value();
+	const bool targets_ready =
+	    m_depth_resources.view.has_value() && m_voxel_albedo.view.has_value() && m_voxel_material.view.has_value() &&
+	    m_voxel_face_normal.view.has_value() && m_scene_color.view.has_value() && m_scene_normal.view.has_value() &&
+	    m_scene_indirect.view.has_value() && m_scene_motion.view.has_value() && m_voxel_noisy_diffuse.view.has_value() &&
+	    m_voxel_noisy_specular.view.has_value() && m_voxel_reservoirs[0].view.has_value() &&
+	    m_voxel_reservoirs[1].view.has_value() && m_voxel_candidate_reservoirs.view.has_value();
 	if (m_voxel_pass == nullptr || !m_voxel_pass->isEnabled() || !targets_ready ||
 	    m_depth_resources.state.usage != sync::Usage::depth_attachment || !m_voxel_pass->prepare(m_current_frame)) {
 		return false;
@@ -1600,13 +1740,30 @@ auto VulkanRenderer::recordVoxelScopes(
 	barriers.image(m_scene_color.state, sync::Usage::color_attachment);
 	barriers.image(m_scene_indirect.state, sync::Usage::color_attachment);
 	barriers.image(m_scene_normal.state, sync::Usage::color_attachment);
+	barriers.image(m_voxel_noisy_diffuse.state, sync::Usage::color_attachment);
+	barriers.image(m_voxel_noisy_specular.state, sync::Usage::color_attachment);
+	const bool spatial = m_voxel_pass->spatialActive();
+	SceneColorResources& lighting_reservoirs =
+	    spatial ? m_voxel_candidate_reservoirs : m_voxel_reservoirs[m_voxel_reservoir_parity];
+	barriers.image(lighting_reservoirs.state, sync::Usage::color_attachment);
+	barriers.image(m_voxel_reservoirs[1 - m_voxel_reservoir_parity].state, sync::Usage::fragment_sampled);
+	barriers.image(m_scene_motion.state, sync::Usage::fragment_sampled);
 	barriers.flush(cmd);
+
+	// A frame without voxel lighting in between or a probe capture leaves reservoirs another view wrote
+	const auto* lit_frame = renderingFrame();
+	const uint64_t sequence = lit_frame != nullptr ? lit_frame->sequence : 0;
+	const bool capture = lit_frame != nullptr && (lit_frame->probe_capture_index >= 0 || lit_frame->irradiance_capture_index >= 0);
+	m_voxel_reservoir_history = !capture && m_voxel_reservoir_written && sequence == m_voxel_reservoir_sequence + 1;
 
 	// Clears what no voxel covers since the world scope now loads instead
 	const std::array lighting_attachments {
 	  attachment(m_scene_color, vk::AttachmentLoadOp::eClear, clear_scene),
 	  attachment(m_scene_indirect, vk::AttachmentLoadOp::eClear, clear_zero),
 	  attachment(m_scene_normal, vk::AttachmentLoadOp::eClear, clear_zero),
+	  attachment(m_voxel_noisy_diffuse, vk::AttachmentLoadOp::eClear, clear_zero),
+	  attachment(m_voxel_noisy_specular, vk::AttachmentLoadOp::eClear, clear_zero),
+	  attachment(lighting_reservoirs, vk::AttachmentLoadOp::eClear, clear_zero),
 	};
 
 	vk::RenderingInfo lighting_info {};
@@ -1624,6 +1781,72 @@ auto VulkanRenderer::recordVoxelScopes(
 		m_voxel_pass->recordLighting(cmd, m_current_frame, scissor.extent);
 	}
 	cmd.endRendering();
+
+	if (spatial) {
+		barriers.image(m_voxel_candidate_reservoirs.state, sync::Usage::fragment_sampled);
+		barriers.image(m_scene_normal.state, sync::Usage::fragment_sampled);
+		barriers.image(m_voxel_reservoirs[m_voxel_reservoir_parity].state, sync::Usage::color_attachment);
+		barriers.image(m_voxel_noisy_diffuse.state, sync::Usage::color_attachment);
+		barriers.image(m_voxel_noisy_specular.state, sync::Usage::color_attachment);
+		barriers.flush(cmd);
+
+		const std::array spatial_attachments {
+		  attachment(m_voxel_noisy_diffuse, vk::AttachmentLoadOp::eLoad, clear_zero),
+		  attachment(m_voxel_noisy_specular, vk::AttachmentLoadOp::eLoad, clear_zero),
+		  attachment(m_voxel_reservoirs[m_voxel_reservoir_parity], vk::AttachmentLoadOp::eClear, clear_zero),
+		};
+		vk::RenderingInfo spatial_info {};
+		spatial_info.renderArea = scissor;
+		spatial_info.layerCount = 1;
+		spatial_info.colorAttachmentCount = static_cast<uint32_t>(spatial_attachments.size());
+		spatial_info.pColorAttachments = spatial_attachments.data();
+
+		cmd.beginRendering(spatial_info);
+		cmd.setViewport(0, std::array {viewport});
+		cmd.setScissor(0, std::array {scissor});
+		{
+			TracyVkZone(m_tracy_vk_ctx, cmd, "VoxelSpatialReuse");
+			const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Voxel spatial reuse");
+			m_voxel_pass->recordSpatial(cmd, m_current_frame, scissor.extent);
+		}
+		cmd.endRendering();
+		barriers.image(m_scene_normal.state, sync::Usage::color_attachment);
+		barriers.flush(cmd);
+	}
+	m_voxel_reservoir_parity = 1 - m_voxel_reservoir_parity;
+	m_voxel_reservoir_written = !capture;
+	m_voxel_reservoir_sequence = sequence;
+
+	if (m_voxel_pass->denoiseActive()) {
+		barriers.image(m_voxel_noisy_diffuse.state, sync::Usage::fragment_sampled);
+		barriers.image(m_voxel_noisy_specular.state, sync::Usage::fragment_sampled);
+		barriers.image(m_scene_motion.state, sync::Usage::fragment_sampled);
+		barriers.flush(cmd);
+		{
+			TracyVkZone(m_tracy_vk_ctx, cmd, "VoxelDenoiseTemporal");
+			const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Voxel denoise temporal");
+			m_voxel_pass->recordDenoiseTemporal(cmd, m_current_frame);
+		}
+
+		barriers.image(m_scene_color.state, sync::Usage::color_attachment);
+		barriers.flush(cmd);
+		const std::array composite_attachments {attachment(m_scene_color, vk::AttachmentLoadOp::eLoad, clear_scene)};
+		vk::RenderingInfo composite_info {};
+		composite_info.renderArea = scissor;
+		composite_info.layerCount = 1;
+		composite_info.colorAttachmentCount = static_cast<uint32_t>(composite_attachments.size());
+		composite_info.pColorAttachments = composite_attachments.data();
+
+		cmd.beginRendering(composite_info);
+		cmd.setViewport(0, std::array {viewport});
+		cmd.setScissor(0, std::array {scissor});
+		{
+			TracyVkZone(m_tracy_vk_ctx, cmd, "VoxelDenoiseComposite");
+			const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Voxel denoise composite");
+			m_voxel_pass->recordDenoiseComposite(cmd, m_current_frame);
+		}
+		cmd.endRendering();
+	}
 
 	// The world scope loads all of these so writes above must land first
 	barriers.image(m_scene_normal.state, sync::Usage::color_attachment);
@@ -1710,6 +1933,11 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	barriers.image(m_scene_indirect.state, sync::Usage::color_attachment);
 	barriers.image(m_scene_motion.state, sync::Usage::color_attachment);
 	barriers.image(m_depth_resources.state, sync::Usage::depth_attachment);
+	// Glass binds the backdrop every frame whether or not it was captured
+	if (m_glass_backdrop.image && m_glass_backdrop_depth.image) {
+		barriers.image(m_glass_backdrop.state, sync::Usage::fragment_sampled);
+		barriers.image(m_glass_backdrop_depth.state, sync::Usage::depth_sampled);
+	}
 	barriers.flush(*frame.command_buffer);
 
 	const vk::ClearValue clear_color(vk::ClearColorValue(std::array {0.0f, 0.0f, 0.0f, 1.0f}));
@@ -1806,6 +2034,62 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	frame.command_buffer.setViewport(0, std::array {scene_viewport});
 	frame.command_buffer.setScissor(0, std::array {scene_scissor});
 
+	const auto capture_glass_backdrop = [&] {
+		if (!m_glass_backdrop.image || !m_glass_backdrop_depth.image || scene_image == VK_NULL_HANDLE || !m_depth_resources.image) {
+			return;
+		}
+		const vk::CommandBuffer cmd = *frame.command_buffer;
+		cmd.endRendering();
+
+		sync::BarrierBatch to_copy;
+		to_copy.image(m_scene_color.state, sync::Usage::transfer_src);
+		to_copy.image(m_depth_resources.state, sync::Usage::transfer_src);
+		to_copy.image(m_glass_backdrop.state, sync::Usage::transfer_dst);
+		to_copy.image(m_glass_backdrop_depth.state, sync::Usage::transfer_dst);
+		to_copy.flush(cmd);
+
+		const vk::Extent2D target_extent = m_output_target->getExtent();
+		const vk::Extent3D copy_extent {target_extent.width, target_extent.height, 1};
+		const vk::ImageSubresourceLayers color_layers(vk::ImageAspectFlagBits::eColor, 0, 0, 1);
+		const vk::ImageSubresourceLayers depth_layers(vk::ImageAspectFlagBits::eDepth, 0, 0, 1);
+		cmd.copyImage(
+		    scene_image,
+		    vk::ImageLayout::eTransferSrcOptimal,
+		    **m_glass_backdrop.image,
+		    vk::ImageLayout::eTransferDstOptimal,
+		    vk::ImageCopy(color_layers, {}, color_layers, {}, copy_extent)
+		);
+		cmd.copyImage(
+		    **m_depth_resources.image,
+		    vk::ImageLayout::eTransferSrcOptimal,
+		    **m_glass_backdrop_depth.image,
+		    vk::ImageLayout::eTransferDstOptimal,
+		    vk::ImageCopy(depth_layers, {}, depth_layers, {}, copy_extent)
+		);
+
+		sync::BarrierBatch resume;
+		resume.image(m_scene_color.state, sync::Usage::color_attachment);
+		resume.image(m_depth_resources.state, sync::Usage::depth_attachment);
+		resume.image(m_glass_backdrop.state, sync::Usage::fragment_sampled);
+		resume.image(m_glass_backdrop_depth.state, sync::Usage::depth_sampled);
+		resume.flush(cmd);
+
+		std::array resume_colors = scene_color_attachments;
+		for (auto& attachment : resume_colors) {
+			attachment.loadOp = vk::AttachmentLoadOp::eLoad;
+		}
+		vk::RenderingAttachmentInfo resume_depth = depth_attachment_info;
+		resume_depth.loadOp = vk::AttachmentLoadOp::eLoad;
+		vk::RenderingInfo resume_info = scene_rendering_info;
+		resume_info.pColorAttachments = resume_colors.data();
+		if (m_depth_resources.view.has_value()) {
+			resume_info.pDepthAttachment = &resume_depth;
+		}
+		cmd.beginRendering(resume_info);
+		cmd.setViewport(0, std::array {scene_viewport});
+		cmd.setScissor(0, std::array {scene_scissor});
+	};
+
 	{
 		TracyVkZone(m_tracy_vk_ctx, *frame.command_buffer, "Scene");
 		const GpuScope scene_scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, "Scene");
@@ -1813,7 +2097,8 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 
 		const auto record_stage = [&](RenderStage stage) {
 			for (auto& pass : m_render_passes) {
-				if (!pass->isEnabled() || pass->stage() != stage) {
+				// recordMeshScene draws the sky
+				if (!pass->isEnabled() || pass->stage() != stage || pass.get() == m_environment_pass) {
 					continue;
 				}
 				TracyVkZone(m_tracy_vk_ctx, *frame.command_buffer, "WorldPass");
@@ -1822,7 +2107,7 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 			}
 		};
 
-		recordMeshScene(*frame.command_buffer, image_index);
+		recordMeshScene(*frame.command_buffer, image_index, voxels_drawn, capture_glass_backdrop);
 		record_stage(RenderStage::world);
 	}
 
@@ -1885,6 +2170,11 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 			const GpuScope scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, pass->name());
 			post_source = pass->record(*frame.command_buffer, m_current_frame, post_source);
 		}
+	}
+
+	if (!capture_frame && m_selection_outline != nullptr && m_depth_resources.view.has_value()) {
+		const GpuScope scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, "Selection mask");
+		m_selection_outline->recordMask(*frame.command_buffer, m_current_frame, **m_depth_resources.view);
 	}
 
 	// The overlay scope depth tests against the scene and its DontCare store counts as a write
@@ -1952,6 +2242,11 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 			);
 			frame.command_buffer.draw(3, 1, 0, 0);
 		}
+	}
+
+	if (!capture_frame && m_selection_outline != nullptr) {
+		const GpuScope scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, "Selection outline");
+		m_selection_outline->recordOutline(*frame.command_buffer, m_current_frame);
 	}
 
 	if (!capture_frame) {
@@ -2113,15 +2408,15 @@ void VulkanRenderer::updateFrameResources(uint32_t frame_index, RenderFrame& fra
 	upload_instances(m_shadow_instance_res, frame_index, frame_data.shadow_instance_data);
 }
 
-auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
+auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> bool {
 	ZoneScoped;
 	if (m_frames.empty()) {
-		return;
+		return false;
 	}
 
 	if (!m_output_target->isPresentable()) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
-		return;
+		return false;
 	}
 
 	using clock = std::chrono::steady_clock;
@@ -2159,7 +2454,12 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 	if (acquired.result == vk::Result::eErrorOutOfDateKHR) {
 		TOAST_WARN("Render", "Swapchain out of date on acquire; recreating");
 		applyResize(m_output_target->getExtent());
-		return;
+		return false;
+	}
+	if (acquired.result == vk::Result::eNotReady) {
+		waitForOutputImage();
+		end_phase(m_perf_acquire_ns);
+		return false;
 	}
 	if (acquired.result != vk::Result::eSuccess && acquired.result != vk::Result::eSuboptimalKHR) {
 		TOAST_CRITICAL("Render", "Toast Engine Error: Failed to acquire the next output image!");
@@ -2261,6 +2561,8 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 		std::scoped_lock submit_lock(m_core->graphicsSubmitMutex());
 		sync::submit(m_core->getGraphicsQueue(), submit);
 	}
+	// Steps the tick queued run on the compute queue while this frame renders
+	m_core->asyncCompute().flushDeferred();
 	end_phase(m_perf_submit_ns);
 
 #if defined(_WIN32)
@@ -2289,16 +2591,39 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> void {
 		TOAST_WARN("Render", "Swapchain out of date or suboptimal on present; recreating");
 		m_rendering_frame = nullptr;
 		applyResize(m_output_target->getExtent());
-		return;
+		return true;
 	}
 	if (present_result != vk::Result::eSuccess) {
 		TOAST_CRITICAL("Render", "Toast Engine Error: Failed to present the current output image!");
 	}
 
 	m_rendering_frame = nullptr;
+	return true;
 }
 
-void VulkanRenderer::mainRenderThread() {
+void VulkanRenderer::waitForOutputImage() {
+	ZoneScoped;
+	using clock = std::chrono::steady_clock;
+	constexpr auto k_budget = std::chrono::milliseconds(8);
+	constexpr auto k_step = std::chrono::milliseconds(1);
+	const auto deadline = clock::now() + k_budget;
+	while (clock::now() < deadline) {
+		// An image the GPU still renders only frees once this thread publishes it
+		publishCompletedFrames();
+		if (!m_pending_publish.empty()) {
+			const auto& oldest = m_frames[m_pending_publish.front()];
+			std::ignore = m_core->getDevice().waitForFences(
+			    *oldest.in_flight, true, static_cast<uint64_t>(std::chrono::nanoseconds(k_step).count())
+			);
+			publishCompletedFrames();
+		}
+		if (m_output_target->waitForFreeImage(k_step)) {
+			return;
+		}
+	}
+}
+
+void VulkanRenderer::mainRenderThread() try {
 	tracy::SetThreadName("Renderer Thread");
 
 #ifdef TRACY_ENABLE
@@ -2422,30 +2747,6 @@ void VulkanRenderer::mainRenderThread() {
 
 		Time::get().renderTick();
 
-		{
-			static constexpr size_t k_window = 60;
-			const auto now = clock::now();
-			if (last_frame_time.time_since_epoch().count() != 0) {
-				const auto interval_ms = std::chrono::duration<float, std::milli>(now - last_frame_time).count();
-				frame_time_window[frame_time_cursor % k_window] = interval_ms;
-				++frame_time_cursor;
-
-				const size_t filled = std::min<size_t>(frame_time_cursor, k_window);
-				float sum = 0.0f;
-				float lowest = std::numeric_limits<float>::max();
-				float highest = 0.0f;
-				for (size_t i = 0; i < filled; ++i) {
-					sum += frame_time_window[i];
-					lowest = std::min(lowest, frame_time_window[i]);
-					highest = std::max(highest, frame_time_window[i]);
-				}
-				m_frame_time_avg_ms.store(sum / static_cast<float>(filled), std::memory_order_relaxed);
-				m_frame_time_min_ms.store(lowest, std::memory_order_relaxed);
-				m_frame_time_max_ms.store(highest, std::memory_order_relaxed);
-			}
-			last_frame_time = now;
-		}
-
 		const bool do_capture = m_capture_frame_requested.exchange(false, std::memory_order_acq_rel);
 		const auto* rdoc_api = m_core->getRenderDocAPI();
 		const auto nsight_mode = m_core->getNsightMode();
@@ -2473,14 +2774,40 @@ void VulkanRenderer::mainRenderThread() {
 #endif
 
 		const auto draw_start = clock::now();
-		drawFrame(frame_to_draw);
-		m_perf_draw_work_ns.fetch_add(
-		    static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(clock::now() - draw_start).count()),
-		    std::memory_order_relaxed
-		);
-		m_perf_draws.fetch_add(1, std::memory_order_relaxed);
-		if (!consumed_queued_frame) {
-			m_perf_repeated_draws.fetch_add(1, std::memory_order_relaxed);
+		// A pass with no free output image rendered nothing
+		if (drawFrame(frame_to_draw)) {
+			m_perf_draw_work_ns.fetch_add(
+			    static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(clock::now() - draw_start).count()),
+			    std::memory_order_relaxed
+			);
+			m_perf_draws.fetch_add(1, std::memory_order_relaxed);
+			if (!consumed_queued_frame) {
+				m_perf_repeated_draws.fetch_add(1, std::memory_order_relaxed);
+			}
+
+			{
+				static constexpr size_t k_window = 60;
+				const auto now = clock::now();
+				if (last_frame_time.time_since_epoch().count() != 0) {
+					const auto interval_ms = std::chrono::duration<float, std::milli>(now - last_frame_time).count();
+					frame_time_window[frame_time_cursor % k_window] = interval_ms;
+					++frame_time_cursor;
+
+					const size_t filled = std::min<size_t>(frame_time_cursor, k_window);
+					float sum = 0.0f;
+					float lowest = std::numeric_limits<float>::max();
+					float highest = 0.0f;
+					for (size_t i = 0; i < filled; ++i) {
+						sum += frame_time_window[i];
+						lowest = std::min(lowest, frame_time_window[i]);
+						highest = std::max(highest, frame_time_window[i]);
+					}
+					m_frame_time_avg_ms.store(sum / static_cast<float>(filled), std::memory_order_relaxed);
+					m_frame_time_min_ms.store(lowest, std::memory_order_relaxed);
+					m_frame_time_max_ms.store(highest, std::memory_order_relaxed);
+				}
+				last_frame_time = now;
+			}
 		}
 
 		if (do_capture && rdoc_api != nullptr) {
@@ -2526,6 +2853,11 @@ void VulkanRenderer::mainRenderThread() {
 
 		FrameMarkNamed("RenderFrame");
 	}
+} catch (const vk::DeviceLostError& error) {
+	// Nothing recovers a lost device and the abort would otherwise drop the queued logs
+	TOAST_CRITICAL("Render", "GPU device lost on the render thread, shutting down: {}", error.what());
+	logging::flush();
+	std::abort();
 }
 
 void VulkanRenderer::start() noexcept {
@@ -2543,6 +2875,16 @@ void VulkanRenderer::setRenderingPaused(bool paused) noexcept {
 		m_rendering_paused.store(paused, std::memory_order_release);
 	}
 	m_frame_cv.notify_all();
+}
+
+void VulkanRenderer::setGameView(bool game_view) {
+	m_game_view.store(game_view, std::memory_order_relaxed);
+	const bool owns = game_view && debugWindowsVisible() && debugOverlayInGame();
+	if (owns != m_debug_overlay_owns_cursor.load(std::memory_order_relaxed)) {
+		// Queued first so whatever the editor sends after polling the flag lands behind it
+		event::send<event::DebugOverlayCursor>(owns);
+		m_debug_overlay_owns_cursor.store(owns, std::memory_order_release);
+	}
 }
 
 void VulkanRenderer::submitFrame() noexcept {
@@ -2575,6 +2917,7 @@ void VulkanRenderer::fitShadowViews(
 
 		const glm::vec3 light_direction = glm::normalize(shadow_caster_direction);
 		const uint32_t resolution = shadows::cascadeResolution();
+		const float padding = shadows::cascadePadding();
 		float split_near = m_camera->near_plane;
 		for (uint32_t cascade = 0; cascade < shadows::k_cascade_count; ++cascade) {
 			const BoundingSphere slice = frustumSliceSphere(*m_camera, aspect, split_near, splits[cascade]);
@@ -2583,11 +2926,11 @@ void VulkanRenderer::fitShadowViews(
 			CascadeAnchor& anchor = m_cascade_anchors[cascade];
 			const bool holds = anchor.resolution == resolution && glm::dot(anchor.light_direction, light_direction) > 0.99999f &&
 			                   glm::distance(anchor.center, slice.center) + slice.radius <= anchor.radius &&
-			                   slice.radius * (1.0f + (2.0f * k_cascade_padding)) >= anchor.radius;
+			                   slice.radius * (1.0f + (2.0f * padding)) >= anchor.radius;
 			if (!holds) {
 				anchor = CascadeAnchor {
 				  .center = slice.center,
-				  .radius = slice.radius * (1.0f + k_cascade_padding),
+				  .radius = slice.radius * (1.0f + padding),
 				  .light_direction = light_direction,
 				  .resolution = resolution,
 				};
@@ -2617,7 +2960,25 @@ void VulkanRenderer::fitShadowViews(
 		frame.frame_data.shadow_params.y = static_cast<float>(shadows::k_cascade_count);
 	}
 
-	assignShadowSlots(spot_candidates, m_spot_slots);
+	// Slots past a lowered budget are released so their lights stop casting at once
+	const auto budget_slots = [](std::span<shadow_slots::Slot> slots, uint32_t budget) {
+		const size_t used = std::min<size_t>(budget, slots.size());
+		std::ranges::fill(slots.subspan(used), shadow_slots::Slot {});
+		return slots.first(used);
+	};
+	// Only lights reaching the view
+	const auto denied = [this](const std::vector<PunctualShadowCandidate>& candidates) {
+		uint32_t count = 0;
+		for (size_t i = 0; i < candidates.size(); ++i) {
+			count += m_tick_slot_of[i] < 0 && candidates[i].visible ? 1u : 0u;
+		}
+		return count;
+	};
+
+	m_spot_slots.resize(shadows::spotShadowSlots());
+	m_point_slots.resize(shadows::pointShadowSlots());
+	assignShadowSlots(spot_candidates, budget_slots(m_spot_slots, shadows::spotShadowBudget()));
+	frame.light_stats.spot_denied = denied(spot_candidates);
 	for (size_t i = 0; i < spot_candidates.size(); ++i) {
 		const int32_t slot = m_tick_slot_of[i];
 		if (slot < 0) {
@@ -2641,8 +3002,9 @@ void VulkanRenderer::fitShadowViews(
 		const glm::mat4 view_projection = projection * view;
 
 		auto& owner = m_spot_slots[static_cast<size_t>(slot)];
-		owner.resolution =
-		    shadow_slots::stableResolution(owner.resolution, std::sqrt(candidate.distance_squared), candidate.resolution_scale);
+		owner.resolution = shadow_slots::stableResolution(
+		    owner.resolution, std::sqrt(candidate.distance_squared), range, candidate.resolution_scale
+		);
 		const uint32_t resolution = owner.resolution;
 
 		const uint32_t layer = shadows::k_spot_layer_base + static_cast<uint32_t>(slot);
@@ -2650,6 +3012,7 @@ void VulkanRenderer::fitShadowViews(
 		light.cone_angles.z = shadows::k_punctual_near;
 		light.cone_angles.w = range;
 		light.shadow_atlas.x = static_cast<float>(resolution) / static_cast<float>(shadows::punctualResolution());
+		light.shadow_atlas.z = punctualShadowStrength(std::sqrt(candidate.distance_squared), candidate.shadow_distance);
 		light.shadow_view_projection = view_projection;
 
 		frame.shadows.views.push_back(
@@ -2664,7 +3027,8 @@ void VulkanRenderer::fitShadowViews(
 		frame.shadows.matrices.push_back(view_projection);
 	}
 
-	assignShadowSlots(point_candidates, m_point_slots);
+	assignShadowSlots(point_candidates, budget_slots(m_point_slots, shadows::pointShadowBudget()));
+	frame.light_stats.point_denied = denied(point_candidates);
 	for (size_t i = 0; i < point_candidates.size(); ++i) {
 		const int32_t slot = m_tick_slot_of[i];
 		if (slot < 0) {
@@ -2677,15 +3041,17 @@ void VulkanRenderer::fitShadowViews(
 		const float range = std::max(light.world_pos_range.w, 0.01f);
 
 		auto& owner = m_point_slots[static_cast<size_t>(slot)];
-		owner.resolution =
-		    shadow_slots::stableResolution(owner.resolution, std::sqrt(candidate.distance_squared), candidate.resolution_scale);
+		owner.resolution = shadow_slots::stableResolution(
+		    owner.resolution, std::sqrt(candidate.distance_squared), range, candidate.resolution_scale
+		);
 		const uint32_t resolution = owner.resolution;
 
-		const uint32_t base_layer = shadows::k_point_layer_base + (static_cast<uint32_t>(slot) * shadows::k_cube_faces);
+		const uint32_t base_layer = shadows::pointLayerBase() + (static_cast<uint32_t>(slot) * shadows::k_cube_faces);
 		light.direction_pad.w = static_cast<float>(base_layer);
 		light.cone_angles.z = shadows::k_punctual_near;
 		light.cone_angles.w = range;
 		light.shadow_atlas.x = static_cast<float>(resolution) / static_cast<float>(shadows::punctualResolution());
+		light.shadow_atlas.z = punctualShadowStrength(std::sqrt(candidate.distance_squared), candidate.shadow_distance);
 
 		const float guard_ndc_scale =
 		    static_cast<float>(resolution) / (static_cast<float>(resolution) + (2.0f * shadows::k_cube_face_guard_texels));
@@ -2979,6 +3345,7 @@ void VulkanRenderer::tick(float time) noexcept {
 		      .bounds_center = world_center,
 		      .bounds_radius = world_radius,
 		      .node_rid = node->rid(),
+		      .outlined = isOutlined(node->rid()),
 		    }
 		);
 	}
@@ -3323,14 +3690,17 @@ void VulkanRenderer::tick(float time) noexcept {
 		float cone_fraction = 1.0f;
 		float camera_distance = 0.0f;
 		float resolution_scale = 1.0f;
+		float shadow_distance = 0.0f;
 		bool casts_shadows = false;
+		/// Marched and sampled lights shadow voxels by marching so they never take a shadow map slot
+		bool shadow_map = false;
 	};
 
 	const auto submit_punctual = [&](const PunctualSubmit& submit, std::vector<PunctualShadowCandidate>& candidates) {
 		++frame.light_stats.submitted;
 
-		const bool visible = sphereInFrustum(frustum, submit.bounds.center, submit.bounds.radius);
-		if (!visible && !submit.casts_shadows) {
+		// Its whole range is off screen so it neither lights nor shadows a visible pixel
+		if (!sphereInFrustum(frustum, submit.bounds.center, submit.bounds.radius)) {
 			++frame.light_stats.offscreen;
 			return;
 		}
@@ -3340,15 +3710,18 @@ void VulkanRenderer::tick(float time) noexcept {
 		    glm::vec3(gpu.color_intensity), gpu.color_intensity.w, gpu.world_pos_range.w, submit.camera_distance, submit.cone_fraction
 		);
 
-		if (submit.casts_shadows) {
+		if (submit.shadow_map) {
 			candidates.push_back(
 			    PunctualShadowCandidate {
 			      .light_index = frame.lights.size(),
 			      .distance_squared = submit.camera_distance * submit.camera_distance,
 			      .resolution_scale = submit.resolution_scale,
-			      .visible = visible,
+			      .shadow_distance = submit.shadow_distance,
+			      .visible = true,
 			      .key = submit.key,
-			      .importance = importance,
+			      .importance = light_culling::shadowPriority(
+			          glm::vec3(gpu.color_intensity), gpu.color_intensity.w, submit.camera_distance, submit.cone_fraction
+			      ),
 			    }
 			);
 		}
@@ -3357,10 +3730,26 @@ void VulkanRenderer::tick(float time) noexcept {
 		    LightMeta {
 		      .importance = importance,
 		      .depth_reach = -(frame_view * glm::vec4(submit.bounds.center, 1.0f)).z + submit.bounds.radius,
-		      .visible = visible,
+		      .visible = true,
 		    }
 		);
 		frame.lights.push_back(gpu);
+	};
+
+	// y plus z bounds the emitter so culling widens by it
+	const auto area_shape = [](const toast::Light& light, bool casts_shadows) -> glm::vec4 {
+		const float radius = std::max(light.sourceRadius(), 0.0f);
+		const float half_length = 0.5f * std::max(light.sourceLength(), 0.0f);
+		const float half_width = 0.5f * std::max(light.sourceWidth(), 0.0f);
+		const float mode = casts_shadows ? static_cast<float>(light.shadowMode()) : 0.0f;
+		switch (light.shape()) {
+			case toast::LightShape::sphere:
+			case toast::LightShape::disc: return {static_cast<float>(light.shape()), radius, 0.0f, mode};
+			case toast::LightShape::capsule: return {static_cast<float>(light.shape()), radius, half_length, mode};
+			case toast::LightShape::rect: return {static_cast<float>(light.shape()), half_width, half_length, mode};
+			case toast::LightShape::point: break;
+		}
+		return {0.0f, 0.0f, 0.0f, mode};
 	};
 
 	for (auto* light : light_nodes_snapshot) {
@@ -3386,6 +3775,7 @@ void VulkanRenderer::tick(float time) noexcept {
 
 		const bool casts_shadows =
 		    light->castsShadows() && (!positional || light->shadowDistance() <= 0.0f || camera_distance <= shadow_limit);
+		const bool shadow_map = casts_shadows && light->shadowMode() == toast::LightShadowMode::shadow_map;
 
 		constexpr float k_light_icon_size = 0.5f;
 		debug::drawBillboard(
@@ -3404,11 +3794,13 @@ void VulkanRenderer::tick(float time) noexcept {
 				if (directional_count >= k_max_directional_lights) {
 					break;
 				}
+				const bool marched_sun = casts_shadows && light->shadowMode() != toast::LightShadowMode::shadow_map;
+				const float angular_radius = 0.5f * glm::radians(static_cast<const toast::DirectionalLight*>(light)->angularDiameter());
 				frame.frame_data.directional_lights[directional_count] = DirectionalLightData {
-				  .direction = glm::vec4(light->forward(), 0.0f),
+				  .direction = glm::vec4(light->forward(), marched_sun ? std::max(angular_radius, 1e-6f) : 0.0f),
 				  .color_intensity = glm::vec4(light->color(), light->intensity()),
 				};
-				if (shadow_caster_index < 0 && casts_shadows) {
+				if (shadow_caster_index < 0 && shadow_map) {
 					shadow_caster_index = static_cast<int32_t>(directional_count);
 					shadow_caster_direction = light->forward();
 				}
@@ -3419,6 +3811,8 @@ void VulkanRenderer::tick(float time) noexcept {
 				auto* point = static_cast<toast::PointLight*>(light);
 				const glm::vec3 world_pos = point->world_position;
 				const glm::vec3 view_pos = glm::vec3(frame_view * glm::vec4(world_pos, 1.0f));
+				const glm::vec3 forward = glm::normalize(point->forward());
+				const glm::vec4 shape = area_shape(*point, casts_shadows);
 
 				// FIXME
 				// debug::drawSphere(world_pos, point->attenuation(), glm::vec4(point->color(), 1.0f));
@@ -3430,14 +3824,18 @@ void VulkanRenderer::tick(float time) noexcept {
 				                    .world_pos_range = glm::vec4(world_pos, point->attenuation()),
 				                    .view_pos_type = glm::vec4(view_pos, 0.0f),
 				                    .color_intensity = glm::vec4(point->color(), point->intensity()),
-				                    .direction_pad = glm::vec4(0.0f, 0.0f, 0.0f, -1.0f),
+				                    .direction_pad = glm::vec4(forward, -1.0f),
 				                    .cone_angles = glm::vec4(0.0f),
+				                    .shape = shape,
+				                    .shape_tangent = glm::vec4(areaTangent(forward, point->up()), lightIdBits(light_key)),
 				                    },
-				      .bounds = light_culling::Sphere {world_pos, point->attenuation()},
+				      .bounds = light_culling::Sphere {world_pos, point->attenuation() + shape.y + shape.z},
 				      .key = light_key,
 				      .camera_distance = camera_distance,
 				      .resolution_scale = point->shadowResolutionScale(),
+				      .shadow_distance = light->shadowDistance(),
 				      .casts_shadows = casts_shadows,
+				      .shadow_map = shadow_map,
 				},
 				    point_candidates
 				);
@@ -3449,10 +3847,13 @@ void VulkanRenderer::tick(float time) noexcept {
 				const glm::vec3 forward = glm::normalize(spot->forward());
 				const glm::vec3 view_pos = glm::vec3(frame_view * glm::vec4(world_pos, 1.0f));
 				const glm::vec3 view_axis = glm::normalize(glm::mat3(frame_view) * forward);
+				const glm::vec4 shape = area_shape(*spot, casts_shadows);
 
 				// Inner past outer would invert the smoothstep edges
 				const float outer = glm::radians(spot->outerRadius());
 				const float inner = std::min(glm::radians(spot->innerRadius()), outer);
+				light_culling::Sphere spot_bounds = light_culling::spotBounds(world_pos, forward, spot->attenuation(), outer);
+				spot_bounds.radius += shape.y + shape.z;
 
 				// FIXME
 				debug::drawCone(world_pos, forward, spot->attenuation(), spot->outerRadius(), glm::vec4(spot->color(), 1.0f));
@@ -3467,13 +3868,17 @@ void VulkanRenderer::tick(float time) noexcept {
 				                    .color_intensity = glm::vec4(spot->color(), spot->intensity()),
 				                    .direction_pad = glm::vec4(forward, -1.0f),
 				                    .cone_angles = glm::vec4(std::cos(outer), std::cos(inner), 0.0f, 0.0f),
+				                    .shape = shape,
+				                    .shape_tangent = glm::vec4(areaTangent(forward, spot->up()), lightIdBits(light_key)),
 				                    },
-				      .bounds = light_culling::spotBounds(world_pos, forward, spot->attenuation(), outer),
+				      .bounds = spot_bounds,
 				      .key = light_key,
 				      .cone_fraction = 0.5f * (1.0f - std::cos(outer)),
 				      .camera_distance = camera_distance,
 				      .resolution_scale = spot->shadowResolutionScale(),
+				      .shadow_distance = light->shadowDistance(),
 				      .casts_shadows = casts_shadows,
+				      .shadow_map = shadow_map,
 				},
 				    spot_candidates
 				);
@@ -3783,6 +4188,20 @@ void VulkanRenderer::tick(float time) noexcept {
 		    same_camera ? m_taa_history.previous_view_projection : frame.frame_data.view_projection;
 		frame.frame_data.jittered_view_projection = frame.frame_data.view_projection;
 		frame.taa_active = taa;
+
+		// R2 offsets so accumulated frames converge
+		{
+			constexpr double k_r2_x = 0.7548776662466927;
+			constexpr double k_r2_y = 0.5698402909980532;
+			const auto n = static_cast<double>(frame.sequence % 65536);
+			const auto size = static_cast<double>(blue_noise::k_size);
+			frame.frame_data.noise_params = glm::vec4(
+			    static_cast<float>(std::floor(std::fmod(n * k_r2_x, 1.0) * size)),
+			    static_cast<float>(std::floor(std::fmod(n * k_r2_y, 1.0) * size)),
+			    static_cast<float>(frame.sequence % 65536),
+			    0.0f
+			);
+		}
 		frame.taa_reset = taa && (!m_taa_history.was_active || !same_camera);
 
 		if (taa && extent.width > 0 && extent.height > 0) {
@@ -4054,6 +4473,7 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 				auto storage = std::make_shared<VoxelGpuStorage>(
 				    std::move(patched->record_rids), std::move(patched->record_dims), *m_voxel_storage, *patch_sequence
 				);
+				storage->setGlassBricks(packedGlassBricks(m_voxel_patcher.scene()));
 				storage->setDebugInfo(std::move(debug));
 				storage->setChangeHistory(m_voxel_change_tracker.packed(storage->generation()));
 				m_voxel_storage = std::move(storage);
@@ -4089,6 +4509,7 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 				m_voxel_patcher.adopt(packed->scene, debug.packed_slots, node_rids);
 
 				auto storage = std::make_shared<VoxelGpuStorage>(std::move(node_rids), std::move(brick_dims));
+				storage->setGlassBricks(packedGlassBricks(packed->scene));
 				storage->setDebugInfo(std::move(debug));
 				storage->setChangeHistory(m_voxel_change_tracker.packed(storage->generation()));
 				queueResourceUpload(std::make_unique<VoxelSceneUpload>(storage, std::move(packed)));
@@ -4149,6 +4570,7 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		      .mirrored = glm::determinant(model) < 0.0f,
 		      .node_rid = node_rid,
 		      .highlight_record = highlight_record_of(entry.highlight_id),
+		      .outlined = isOutlined(node_rid),
 		    }
 		);
 		drawn_models.insert_or_assign(node_rid, model);
@@ -4348,6 +4770,9 @@ auto VulkanRenderer::applyResizeInternal(vk::Extent2D extent) -> void {
 		createPerImageSync();
 		createDepthResources();
 		createSceneColorResources();
+		if (m_selection_outline != nullptr) {
+			m_selection_outline->onResize(actual_extent);
+		}
 
 		{
 			std::lock_guard lock(m_pass_mutex);

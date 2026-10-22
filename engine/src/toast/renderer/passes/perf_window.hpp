@@ -103,6 +103,9 @@ private:
 	auto renderVerdict(bool has_gpu) const -> Verdict;
 	[[nodiscard]]
 	auto gameVerdict() const -> Verdict;
+	/// Warns once a spot or point light within its shadow distance found every shadow slot taken
+	[[nodiscard]]
+	static auto shadowVerdict() -> Verdict;
 
 	void drawSummary(bool has_gpu);
 	void drawFrameGraph(float width, float height);
@@ -111,6 +114,8 @@ private:
 	void drawGpuTab();
 	void drawMemoryTab();
 	void drawSceneTab();
+	/// Slot usage and shadow settings beside the timings
+	static void drawShadowsTab();
 
 	[[nodiscard]]
 	auto historyOffset() const -> int;

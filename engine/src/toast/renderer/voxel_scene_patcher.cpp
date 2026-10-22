@@ -156,6 +156,10 @@ auto VoxelScenePatcher::tryPatch(
 
 		m_scene.grids.resize(m_scene.grids.size() + (dims.x * dims.y * dims.z), 0u);
 		m_scene.coarse.resize(m_scene.coarse.size() + (((coarse.x * coarse.y * coarse.z) + 31u) / 32u), 0u);
+		if (paletteHasGlass(*volumes[i].palette)) {
+			record.glass_offset = static_cast<uint32_t>(m_scene.coarse.size());
+			m_scene.coarse.resize(m_scene.coarse.size() + glassWords(dims), 0u);
+		}
 		appended.push_back(static_cast<uint32_t>(m_scene.records.size()));
 		m_scene.records.push_back(record);
 		m_node_rids.push_back(node_rids[i]);

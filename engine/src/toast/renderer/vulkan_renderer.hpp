@@ -79,6 +79,7 @@ class ShadowPass;
 class EnvironmentPass;
 class ReflectionProbePass;
 class DepthPrepass;
+class SelectionOutline;
 class SkinningPass;
 class VoxelPass;
 class DebrisPass;
@@ -128,6 +129,7 @@ public:
 	static_assert(sizeof(InstanceData) == 144, "InstanceData stride must match mesh.slang's std430 layout");
 
 	struct DirectionalLightData {
+		/// w angular radius in radians when voxel shadows are marched and 0 for the shadow map
 		glm::vec4 direction;
 		glm::vec4 color_intensity;
 	};
@@ -211,6 +213,9 @@ public:
 
 		// x 1 traces the TLAS instead of sampling shadow maps
 		glm::vec4 traced_shadow_params {0.0f};
+
+		/// xy blue noise texel offset walking R2 per frame z frame index
+		glm::vec4 noise_params {0.0f};
 	};
 
 	static_assert(
@@ -220,6 +225,7 @@ public:
 	static_assert(
 	    offsetof(FrameUBO, irradiance_volumes) == 1264, "FrameUBO::irradiance_volumes must match lighting.slang's std140 layout"
 	);
+	static_assert(offsetof(FrameUBO, noise_params) == 1536, "FrameUBO::noise_params must match lighting.slang's std140 layout");
 	static_assert(
 	    offsetof(FrameUBO, traced_shadow_params) == 1520, "FrameUBO::traced_shadow_params must match lighting.slang's std140 layout"
 	);
@@ -233,13 +239,20 @@ public:
 		glm::vec4 direction_pad;     // w shadow layer or -1
 		glm::vec4 cone_angles;       // x cos outer y cos inner z shadow near w shadow far
 
-		// x fraction of the layer rendered y point light face scale inside the guard band
+		// x fraction of the layer rendered y point light face scale inside the guard band z shadow strength
 		glm::vec4 shadow_atlas {1.0f, 1.0f, 0.0f, 0.0f};
 
 		glm::mat4 shadow_view_projection {1.0f};
+
+		/// x toast::LightShape y radius or rect half width z capsule half length or rect half height w toast::LightShadowMode
+		/// The shape faces or runs along direction_pad.xyz
+		glm::vec4 shape {0.0f};
+
+		/// xyz rect width axis
+		glm::vec4 shape_tangent {0.0f};
 	};
 
-	static_assert(sizeof(GpuLight) == 176, "GpuLight must match the stride in lighting.slang and cluster_lighting.slang");
+	static_assert(sizeof(GpuLight) == 208, "GpuLight must match the stride in lighting.slang and cluster_lighting.slang");
 
 	struct ShadowView {
 		glm::mat4 view_projection {1.0f};
@@ -281,6 +294,9 @@ public:
 		uint32_t posed_vertex_offset = k_no_posed_vertices;
 
 		uint64_t node_rid = 0;
+
+		/// Selected in the editor hierarchy
+		bool outlined = false;
 	};
 
 	struct VoxelVolumeProxy {
@@ -309,6 +325,9 @@ public:
 
 		uint64_t node_rid = 0;
 		uint32_t highlight_record = 0;
+
+		/// Selected in the editor hierarchy
+		bool outlined = false;
 	};
 
 	struct UIWorldPanelProxy {
@@ -371,6 +390,9 @@ public:
 		uint32_t truncated = 0;
 		uint32_t spot_shadows = 0;
 		uint32_t point_shadows = 0;
+		/// Lights within their shadow distance left without a shadow because every slot was taken
+		uint32_t spot_denied = 0;
+		uint32_t point_denied = 0;
 		uint64_t shadow_displaced = 0;
 	};
 
@@ -538,6 +560,27 @@ public:
 		return m_debug_windows_visible.load(std::memory_order_relaxed);
 	}
 
+	void setDebugOverlayInGame(bool visible) noexcept { m_debug_overlay_in_game.store(visible, std::memory_order_relaxed); }
+
+	[[nodiscard]]
+	auto debugOverlayInGame() const noexcept -> bool {
+		return m_debug_overlay_in_game.load(std::memory_order_relaxed);
+	}
+
+	/// Main thread only, once per tick
+	void setGameView(bool game_view);
+
+	/// ImGui draws nothing while a game camera is live unless shown in game
+	[[nodiscard]]
+	auto debugOverlayHidden() const noexcept -> bool {
+		return m_game_view.load(std::memory_order_relaxed) && !debugOverlayInGame();
+	}
+
+	[[nodiscard]]
+	auto debugOverlayOwnsCursor() const noexcept -> bool {
+		return m_debug_overlay_owns_cursor.load(std::memory_order_acquire);
+	}
+
 	void setApplicationFocused(bool focused) noexcept { m_application_focused.store(focused, std::memory_order_relaxed); }
 
 	[[nodiscard]]
@@ -618,12 +661,60 @@ public:
 		return m_voxel_face_normal.view.has_value() ? **m_voxel_face_normal.view : vk::ImageView {};
 	}
 
+	/// Marched and sampled diffuse over albedo before denoising
+	[[nodiscard]]
+	auto getVoxelNoisyDiffuseView() const noexcept -> vk::ImageView {
+		return m_voxel_noisy_diffuse.view.has_value() ? **m_voxel_noisy_diffuse.view : vk::ImageView {};
+	}
+
+	[[nodiscard]]
+	auto getVoxelNoisySpecularView() const noexcept -> vk::ImageView {
+		return m_voxel_noisy_specular.view.has_value() ? **m_voxel_noisy_specular.view : vk::ImageView {};
+	}
+
+	/// Last frame's reservoirs that this frame's voxel lighting reads
+	[[nodiscard]]
+	auto getVoxelPreviousReservoirView() const noexcept -> vk::ImageView {
+		const auto& target = m_voxel_reservoirs[1 - m_voxel_reservoir_parity];
+		return target.view.has_value() ? **target.view : vk::ImageView {};
+	}
+
+	/// This frame's reservoirs before the spatial pass merges them
+	[[nodiscard]]
+	auto getVoxelCandidateReservoirView() const noexcept -> vk::ImageView {
+		return m_voxel_candidate_reservoirs.view.has_value() ? **m_voxel_candidate_reservoirs.view : vk::ImageView {};
+	}
+
+	/// The previous reservoirs were written by the frame right before this one
+	[[nodiscard]]
+	auto voxelReservoirHistory() const noexcept -> bool {
+		return m_voxel_reservoir_history;
+	}
+
 	/// Edge rounding radius in voxels where 0 keeps the flat face normals
 	void setVoxelCellBoxes(bool enabled) noexcept { m_voxel_cell_boxes.store(enabled, std::memory_order_relaxed); }
 
 	void setVoxelOcclusion(bool enabled) noexcept { m_voxel_occlusion.store(enabled, std::memory_order_relaxed); }
 
 	void setVoxelMeshShaders(bool enabled) noexcept { m_voxel_mesh_shaders.store(enabled, std::memory_order_relaxed); }
+
+	/// Share of listed cells occlusion must hide to stay on where 0 never idles it
+	void setVoxelOcclusionMinHidden(float share) noexcept { m_voxel_occlusion_min_hidden.store(share, std::memory_order_relaxed); }
+
+	/// Frames occlusion stays off once it hid too little before it measures again
+	void setVoxelOcclusionIdleFrames(uint32_t frames) noexcept {
+		m_voxel_occlusion_idle_frames.store(frames, std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto voxelOcclusionMinHidden() const noexcept -> float {
+		return m_voxel_occlusion_min_hidden.load(std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto voxelOcclusionIdleFrames() const noexcept -> uint32_t {
+		return m_voxel_occlusion_idle_frames.load(std::memory_order_relaxed);
+	}
 
 	[[nodiscard]]
 	auto voxelMeshShaders() const noexcept -> bool {
@@ -648,6 +739,118 @@ public:
 	[[nodiscard]]
 	auto voxelCellBoxes() const noexcept -> bool {
 		return m_voxel_cell_boxes.load(std::memory_order_relaxed);
+	}
+
+	/// Candidates the voxel lighting resamples among the froxel's sampled lights
+	void setVoxelLightCandidates(uint32_t count) noexcept { m_voxel_light_candidates.store(count, std::memory_order_relaxed); }
+
+	[[nodiscard]]
+	auto voxelLightCandidates() const noexcept -> uint32_t {
+		return m_voxel_light_candidates.load(std::memory_order_relaxed);
+	}
+
+	/// Traced ambient occlusion on voxel pixels in place of SSAO
+	void setVoxelAmbientRays(bool enabled) noexcept { m_voxel_ambient_rays.store(enabled, std::memory_order_relaxed); }
+
+	[[nodiscard]]
+	auto voxelAmbientRays() const noexcept -> bool {
+		return m_voxel_ambient_rays.load(std::memory_order_relaxed);
+	}
+
+	void setVoxelAmbientReach(float meters) noexcept {
+		m_voxel_ambient_reach.store(std::max(meters, 0.0f), std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto voxelAmbientReach() const noexcept -> float {
+		return m_voxel_ambient_reach.load(std::memory_order_relaxed);
+	}
+
+	/// 1 is Snell and 0 turns refraction off
+	void setVoxelGlassRefraction(float strength) noexcept {
+		m_voxel_glass_refraction.store(std::max(strength, 0.0f), std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto voxelGlassRefraction() const noexcept -> float {
+		return m_voxel_glass_refraction_enabled.load(std::memory_order_relaxed)
+		           ? m_voxel_glass_refraction.load(std::memory_order_relaxed)
+							 : 0.0f;
+	}
+
+	/// Off skips the backdrop copy and the volume march of every glass pixel
+	void setVoxelGlassRefractionEnabled(bool enabled) noexcept {
+		m_voxel_glass_refraction_enabled.store(enabled, std::memory_order_relaxed);
+	}
+
+	void setVoxelGlassRefractionDistance(float meters) noexcept {
+		m_voxel_glass_refraction_distance.store(std::max(meters, 0.0f), std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto voxelGlassRefractionDistance() const noexcept -> float {
+		return m_voxel_glass_refraction_distance.load(std::memory_order_relaxed);
+	}
+
+	void setVoxelGlassRefractionVoxels(uint32_t voxels) noexcept {
+		m_voxel_glass_refraction_voxels.store(std::max(voxels, 1u), std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto voxelGlassRefractionVoxels() const noexcept -> uint32_t {
+		return m_voxel_glass_refraction_voxels.load(std::memory_order_relaxed);
+	}
+
+	void setVoxelGlassLitSurfaces(uint32_t surfaces) noexcept {
+		m_voxel_glass_lit_surfaces.store(surfaces, std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto voxelGlassLitSurfaces() const noexcept -> uint32_t {
+		return m_voxel_glass_lit_surfaces.load(std::memory_order_relaxed);
+	}
+
+	void setVoxelGlassShadows(bool enabled) noexcept { m_voxel_glass_shadows.store(enabled, std::memory_order_relaxed); }
+
+	[[nodiscard]]
+	auto voxelGlassShadows() const noexcept -> bool {
+		return m_voxel_glass_shadows.load(std::memory_order_relaxed);
+	}
+
+	void setVoxelGlassShadowReach(uint32_t meters) noexcept {
+		m_voxel_glass_shadow_reach.store(std::max(meters, 1u), std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto voxelGlassShadowReach() const noexcept -> uint32_t {
+		return m_voxel_glass_shadow_reach.load(std::memory_order_relaxed);
+	}
+
+	/// Scene colour and depth copied after the sky for glass to refract
+	[[nodiscard]]
+	auto getGlassBackdropView() const noexcept -> vk::ImageView {
+		return m_glass_backdrop.view ? **m_glass_backdrop.view : vk::ImageView {};
+	}
+
+	[[nodiscard]]
+	auto getGlassBackdropDepthView() const noexcept -> vk::ImageView {
+		return m_glass_backdrop_depth.view ? **m_glass_backdrop_depth.view : vk::ImageView {};
+	}
+
+	/// Meters a marched sun ray travels before it counts as lit
+	void setVoxelSunReach(uint32_t meters) noexcept { m_voxel_sun_reach.store(meters, std::memory_order_relaxed); }
+
+	[[nodiscard]]
+	auto voxelSunReach() const noexcept -> uint32_t {
+		return m_voxel_sun_reach.load(std::memory_order_relaxed);
+	}
+
+	/// Nearest drawn voxel instances a marched shadow ray tests
+	void setVoxelShadowInstances(uint32_t count) noexcept { m_voxel_shadow_instances.store(count, std::memory_order_relaxed); }
+
+	[[nodiscard]]
+	auto voxelShadowInstances() const noexcept -> uint32_t {
+		return m_voxel_shadow_instances.load(std::memory_order_relaxed);
 	}
 
 	void setVoxelNormalRounding(float voxels) noexcept {
@@ -742,6 +945,12 @@ public:
 	}
 
 	[[nodiscard]]
+	/// renderer::blue_noise::generatePacked texels bound to lighting.slang gBlueNoise
+	[[nodiscard]]
+	auto getBlueNoiseBuffer() const -> vk::Buffer {
+		return m_blue_noise_buffer.has_value() ? **m_blue_noise_buffer : vk::Buffer {};
+	}
+
 	auto getJointMatrixBuffer(uint32_t frame_index) const -> vk::Buffer {
 		return frame_index < m_joint_matrix_res.size() && m_joint_matrix_res[frame_index].gpu_buffer.has_value()
 		           ? **m_joint_matrix_res[frame_index].gpu_buffer
@@ -901,6 +1110,12 @@ public:
 	}
 
 	void setGizmoState(const GizmoState& state) noexcept { m_gizmo_state = state; }
+
+	/// Node rids whose meshes and voxels get the selection outline
+	void setOutlinedNodes(std::vector<uint64_t> rids) noexcept {
+		std::ranges::sort(rids);
+		m_outlined_rids = std::move(rids);
+	}
 
 	void setDebugDrawEnabled(bool enabled) noexcept { m_debug_draw_enabled.store(enabled, std::memory_order_relaxed); }
 
@@ -1063,7 +1278,9 @@ public:
 	static VulkanRenderer* instance;
 
 private:
-	void drawFrame(RenderFrame& frame_data);
+	/// False when nothing was rendered
+	auto drawFrame(RenderFrame& frame_data) -> bool;
+	void waitForOutputImage();
 
 	void mainRenderThread();
 
@@ -1125,12 +1342,18 @@ private:
 	void recordFrame(FrameContext& frame, uint32_t image_index) noexcept;
 
 	/// @note Expects an open rendering scope with m_pass_mutex held
-	void recordMeshScene(vk::CommandBuffer cmd, uint32_t image_index);
+	/// Opaque meshes then the sky then blended meshes and voxel glass far to near
+	/// @p capture_backdrop ends the world scope copies the scene for refracting glass and resumes it
+	void recordMeshScene(
+	    vk::CommandBuffer cmd, uint32_t image_index, bool voxel_glass, const std::function<void()>& capture_backdrop
+	);
 
 	struct PunctualShadowCandidate {
 		size_t light_index = 0;
 		float distance_squared = 0.0f;
 		float resolution_scale = 1.0f;
+		/// The light shadow distance where 0 is no limit
+		float shadow_distance = 0.0f;
 		bool visible = true;
 		uint64_t key = 0;
 		float importance = 0.0f;
@@ -1246,9 +1469,11 @@ private:
 	bool m_probe_auto_baked = false;
 	vk::Format m_depth_format = vk::Format::eUndefined;
 	DepthResources m_depth_resources;
+	DepthResources m_glass_backdrop_depth;
 
 	static constexpr vk::Format m_scene_color_format = vk::Format::eR16G16B16A16Sfloat;
 	SceneColorResources m_scene_color;
+	SceneColorResources m_glass_backdrop;
 
 	static constexpr vk::Format m_scene_normal_format = renderer::k_scene_normal_format;
 	SceneColorResources m_scene_normal;
@@ -1262,11 +1487,35 @@ private:
 	SceneColorResources m_voxel_albedo;
 	SceneColorResources m_voxel_material;
 	SceneColorResources m_voxel_face_normal;
+	SceneColorResources m_voxel_noisy_diffuse;
+	SceneColorResources m_voxel_noisy_specular;
+	/// The voxel lighting writes the parity one and reads the other
+	std::array<SceneColorResources, 2> m_voxel_reservoirs;
+	/// The lighting scope's reservoirs when the spatial pass then writes m_voxel_reservoirs
+	SceneColorResources m_voxel_candidate_reservoirs;
+	uint32_t m_voxel_reservoir_parity = 0;
+	bool m_voxel_reservoir_written = false;
+	bool m_voxel_reservoir_history = false;
+	uint64_t m_voxel_reservoir_sequence = 0;
 
 	std::atomic<float> m_voxel_normal_rounding {0.3f};
+	std::atomic<uint32_t> m_voxel_light_candidates {8};
+	std::atomic<uint32_t> m_voxel_shadow_instances {256};
+	std::atomic<uint32_t> m_voxel_sun_reach {200};
+	std::atomic<bool> m_voxel_ambient_rays {true};
+	std::atomic<float> m_voxel_ambient_reach {2.4f};
+	std::atomic<float> m_voxel_glass_refraction {1.0f};
+	std::atomic_bool m_voxel_glass_refraction_enabled {true};
+	std::atomic<float> m_voxel_glass_refraction_distance {60.0f};
+	std::atomic<uint32_t> m_voxel_glass_refraction_voxels {32};
+	std::atomic<uint32_t> m_voxel_glass_lit_surfaces {4};
+	std::atomic_bool m_voxel_glass_shadows {true};
+	std::atomic<uint32_t> m_voxel_glass_shadow_reach {50};
 	std::atomic_bool m_voxel_cell_boxes {true};
 	std::atomic_bool m_voxel_occlusion {true};
 	std::atomic_bool m_voxel_mesh_shaders {true};
+	std::atomic<float> m_voxel_occlusion_min_hidden {0.05f};
+	std::atomic<uint32_t> m_voxel_occlusion_idle_frames {120};
 	std::atomic<float> m_voxel_raster_pixels {4.0f};
 
 	ShaderLayout m_present_layout;
@@ -1290,6 +1539,14 @@ private:
 	toast::Camera* m_camera = nullptr;
 
 	GizmoState m_gizmo_state;
+
+	/// Sorted
+	std::vector<uint64_t> m_outlined_rids;
+
+	[[nodiscard]]
+	auto isOutlined(uint64_t node_rid) const -> bool {
+		return std::ranges::binary_search(m_outlined_rids, node_rid);
+	}
 
 	[[nodiscard]]
 	auto blendPostProcessVolumes(const glm::vec3& camera_position) -> PostProcessSettings;
@@ -1418,8 +1675,9 @@ private:
 	std::vector<PunctualShadowCandidate> m_tick_point_candidates;
 
 	/// Survive across ticks so a shadowed light keeps its layer and its cached map
-	std::array<shadow_slots::Slot, shadows::k_max_spot_shadows> m_spot_slots {};
-	std::array<shadow_slots::Slot, shadows::k_max_point_shadows> m_point_slots {};
+	/// Sized to shadows::spotShadowSlots() and pointShadowSlots()
+	std::vector<shadow_slots::Slot> m_spot_slots;
+	std::vector<shadow_slots::Slot> m_point_slots;
 	uint64_t m_shadow_displaced_total = 0;
 
 	/// Padded sphere a cascade keeps until the camera slice leaves it
@@ -1465,6 +1723,8 @@ private:
 	std::deque<uint32_t> m_pending_publish;
 
 	std::unique_ptr<DepthPrepass> m_depth_prepass;
+
+	std::unique_ptr<SelectionOutline> m_selection_outline;
 
 	std::unique_ptr<SkinningPass> m_skinning_pass;
 
@@ -1513,6 +1773,8 @@ private:
 	std::vector<FrameUBO> m_frame_ubos;
 	std::vector<FrameResources> m_frame_ubo_res;
 	std::vector<FrameResources> m_joint_matrix_res;
+
+	std::optional<vma::raii::Buffer> m_blue_noise_buffer;
 	std::vector<FrameResources> m_instance_res;
 	std::vector<FrameResources> m_shadow_instance_res;
 	bool m_joint_matrix_pool_exhausted_warned = false;
@@ -1528,6 +1790,9 @@ private:
 	std::atomic<double> m_frame_rate_limit_hz {0.0};
 	std::atomic_bool m_application_focused {true};
 	std::atomic_bool m_debug_windows_visible {true};
+	std::atomic_bool m_debug_overlay_in_game {false};
+	std::atomic_bool m_game_view {false};
+	std::atomic_bool m_debug_overlay_owns_cursor {false};
 	std::atomic_bool m_rendering_paused {false};
 	std::atomic_bool m_clamp_to_simulation {true};
 };

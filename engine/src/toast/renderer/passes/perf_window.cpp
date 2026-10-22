@@ -5,13 +5,19 @@
 #include "perf_window.hpp"
 
 #include "../async_compute.hpp"
+#include "../shadow_constants.hpp"
 #include "../vulkan_core.hpp"
 
 #include <algorithm>
+#include <cfloat>
 #include <cmath>
 #include <format>
 #include <imgui.h>
+#include <optional>
+#include <string_view>
+#include <toast/settings/settings.hpp>
 #include <tracy/Tracy.hpp>
+#include <utility>
 #include <vector>
 
 namespace renderer {
@@ -468,6 +474,30 @@ void PerfWindow::drawSummary(bool has_gpu) {
 	perfVerdictText("Render", perfTextColor(perfLevel(render.bad, render.warn)), render.label, render.detail);
 	const Verdict game = gameVerdict();
 	perfVerdictText("Game  ", perfTextColor(perfLevel(game.bad, game.warn)), game.label, game.detail);
+	const Verdict shadow = shadowVerdict();
+	perfVerdictText("Shadow", perfTextColor(perfLevel(shadow.bad, shadow.warn)), shadow.label, shadow.detail);
+}
+
+auto PerfWindow::shadowVerdict() -> Verdict {
+	const auto* frame = VulkanRenderer::instance->renderingFrame();
+	if (frame == nullptr) {
+		return {.label = "n/a"};
+	}
+	const auto& lights = frame->light_stats;
+	const uint32_t spot_budget = shadows::spotShadowBudget();
+	const uint32_t point_budget = shadows::pointShadowBudget();
+	const std::string slots =
+	    std::format("{}/{} spot  {}/{} point", lights.spot_shadows, spot_budget, lights.point_shadows, point_budget);
+
+	const uint32_t denied = lights.spot_denied + lights.point_denied;
+	if (denied > 0) {
+		return {
+		  .label = "slots full",
+		  .warn = true,
+		  .detail = std::format("{}  {} lights cast no shadow", slots, denied),
+		};
+	}
+	return {.label = "ok", .detail = slots};
 }
 
 void PerfWindow::drawFrameTab() {
@@ -834,6 +864,113 @@ void PerfWindow::drawSceneTab() {
 	}
 }
 
+void PerfWindow::drawShadowsTab() {
+	using toast::settings::Entry;
+	using toast::settings::Type;
+	using toast::settings::Value;
+
+	if (const auto* frame = VulkanRenderer::instance->renderingFrame(); frame != nullptr) {
+		const auto& lights = frame->light_stats;
+		const auto slots = [](const char* label, uint32_t used, uint32_t budget, uint32_t denied) {
+			const float fraction = budget > 0 ? std::clamp(static_cast<float>(used) / static_cast<float>(budget), 0.0f, 1.0f) : 1.0f;
+			ImGui::PushStyleColor(ImGuiCol_PlotHistogram, denied > 0 ? k_perf_warn : k_perf_good);
+			const std::string text = std::format("{} {} of {}", label, used, budget);
+			ImGui::ProgressBar(fraction, ImVec2(ImGui::GetFontSize() * 14.0f, 0.0f), text.c_str());
+			ImGui::PopStyleColor();
+			if (denied > 0) {
+				ImGui::SameLine();
+				ImGui::TextColored(k_perf_warn, "full, %u visible lights cast no shadow", denied);
+			}
+		};
+		ImGui::SeparatorText("Slots");
+		slots("Spot", lights.spot_shadows, shadows::spotShadowBudget(), lights.spot_denied);
+		slots("Point", lights.point_shadows, shadows::pointShadowBudget(), lights.point_denied);
+		ImGui::TextDisabled("Nearest lights win. Raise a budget or lower Shadow Distance on lights that need none");
+	}
+
+	auto& registry = toast::settings::Settings::get();
+	ImGui::SeparatorText("Settings");
+	if (ImGui::BeginTable("##perf_shadow_settings", 2, ImGuiTableFlags_SizingStretchProp)) {
+		for (Entry* entry : registry.entries()) {
+			if (entry->meta.hidden || !entry->key.starts_with("renderer.shadows.")) {
+				continue;
+			}
+			ImGui::PushID(entry->key.c_str());
+			ImGui::TableNextRow();
+			ImGui::TableNextColumn();
+
+			std::string_view label = entry->meta.label;
+			if (label.empty()) {
+				label = std::string_view(entry->key).substr(entry->key.rfind('.') + 1);
+			}
+			ImGui::AlignTextToFramePadding();
+			ImGui::TextUnformatted(label.data(), label.data() + label.size());
+			if (ImGui::IsItemHovered() && !entry->meta.description.empty()) {
+				ImGui::SetTooltip("%s%s", entry->meta.description.c_str(), entry->meta.requires_restart ? "\nApplies on restart" : "");
+			}
+
+			ImGui::TableNextColumn();
+			ImGui::SetNextItemWidth(-FLT_MIN);
+			const Value value = registry.resolved(entry);
+			const bool bounded = entry->meta.min < entry->meta.max;
+			std::optional<Value> changed;
+			switch (entry->type) {
+				case Type::boolean: {
+					bool current = std::get<bool>(value);
+					if (ImGui::Checkbox("##value", &current)) {
+						changed = current;
+					}
+					break;
+				}
+				case Type::integer: {
+					int64_t current = std::get<int64_t>(value);
+					const auto& options = entry->meta.options;
+					if (!options.empty()) {
+						const auto index = static_cast<size_t>(std::clamp<int64_t>(current, 0, static_cast<int64_t>(options.size()) - 1));
+						if (ImGui::BeginCombo("##value", options[index].c_str())) {
+							for (size_t i = 0; i < options.size(); ++i) {
+								if (ImGui::Selectable(options[i].c_str(), i == index)) {
+									changed = static_cast<int64_t>(i);
+								}
+							}
+							ImGui::EndCombo();
+						}
+						break;
+					}
+					const auto low = static_cast<int64_t>(entry->meta.min);
+					const auto high = static_cast<int64_t>(entry->meta.max);
+					const bool edited = bounded ? ImGui::SliderScalar("##value", ImGuiDataType_S64, &current, &low, &high)
+					                            : ImGui::DragScalar("##value", ImGuiDataType_S64, &current);
+					if (edited) {
+						changed = current;
+					}
+					break;
+				}
+				case Type::floating: {
+					double current = std::get<double>(value);
+					const double low = entry->meta.min;
+					const double high = entry->meta.max;
+					const auto speed = static_cast<float>(entry->meta.step > 0.0 ? entry->meta.step : 0.01);
+					const bool edited = bounded
+					                        ? ImGui::SliderScalar("##value", ImGuiDataType_Double, &current, &low, &high, "%.3g")
+					                        : ImGui::DragScalar("##value", ImGuiDataType_Double, &current, speed, nullptr, nullptr, "%.3g");
+					if (edited) {
+						changed = current;
+					}
+					break;
+				}
+				case Type::string: ImGui::TextDisabled("%s", std::get<std::string>(value).c_str()); break;
+			}
+			if (changed.has_value()) {
+				registry.setValue(entry->key, *changed);
+			}
+			ImGui::PopID();
+		}
+		ImGui::EndTable();
+	}
+	ImGui::TextDisabled("Saved like the project settings window. Hover a name for what it costs");
+}
+
 void PerfWindow::draw() {
 	ZoneScoped;
 	auto* renderer = VulkanRenderer::instance;
@@ -918,6 +1055,10 @@ void PerfWindow::draw() {
 		}
 		if (ImGui::BeginTabItem("Scene")) {
 			drawSceneTab();
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem("Shadows")) {
+			drawShadowsTab();
 			ImGui::EndTabItem();
 		}
 		ImGui::EndTabBar();

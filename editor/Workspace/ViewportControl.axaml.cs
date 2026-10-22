@@ -30,6 +30,8 @@ public partial class ViewportControl : UserControl {
 	private const double PanScale = 40.0;
 	private const float PinchZoomScale = 100f;
 	private const float WheelZoomScale = 20f;
+	private static readonly bool s_forceViewportReadback =
+		Environment.GetEnvironmentVariable("TOAST_VIEWPORT_READBACK") == "1";
 
 	public static readonly StyledProperty<bool> PlayModeProperty =
 		AvaloniaProperty.Register<ViewportControl, bool>(nameof(PlayMode));
@@ -54,6 +56,7 @@ public partial class ViewportControl : UserControl {
 
 	private bool m_captured;
 	private bool m_gameInput;
+	private bool m_overlayCursor;
 	private readonly HashSet<int> m_heldButtons = [];
 	private readonly HashSet<Key> m_heldKeys = [];
 	private bool m_mouseLockRequested;
@@ -132,7 +135,8 @@ public partial class ViewportControl : UserControl {
 	public static bool AnyEditorFlying => s_attached.Any(v => v.m_editorFlyActive);
 	private bool GameOwnsInput => PlayMode && !CanControlEditorCamera; 
 	private bool ShouldForward => GameOwnsInput ? m_gameInput : IsFocused;
-	private bool ShouldForwardPointer => !GameOwnsInput || m_gameInput;
+	// The overlay needs the pointer and the input system drops what ImGui takes
+	private bool ShouldForwardPointer => !GameOwnsInput || m_gameInput || m_overlayCursor;
 	private bool MouseLocked => m_captured && !m_editorFlyActive;
 	
 	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change) {
@@ -143,6 +147,7 @@ public partial class ViewportControl : UserControl {
 			ReleaseHeldInput();
 			m_gameInput = false;
 			m_mouseLockRequested = false;
+			m_overlayCursor = false;
 			UpdateCapture();
 		} else if (m_mouseLockRequested) {
 			// the game locks the mouse as it starts
@@ -179,10 +184,18 @@ public partial class ViewportControl : UserControl {
 	}
 
 	private void UpdateCapture() {
-		var capture = m_editorFlyActive || (GameOwnsInput && m_gameInput && m_mouseLockRequested);
+		var capture = m_editorFlyActive || (GameOwnsInput && m_gameInput && m_mouseLockRequested && !m_overlayCursor);
 		if (capture == m_captured) return;
 		if (capture) BeginCapture();
 		else ReleaseCapture();
+	}
+
+	// The debug overlay frees the cursor under a game lock
+	private void SyncOverlayCursor() {
+		var owned = PlayMode && ToastEngine.DebugOverlayOwnsCursor;
+		if (owned == m_overlayCursor) return;
+		m_overlayCursor = owned;
+		UpdateCapture();
 	}
 
 	private void BeginCapture() {
@@ -338,6 +351,8 @@ public partial class ViewportControl : UserControl {
 	}
 
 	private void OnTick(object? sender, EventArgs e) {
+		SyncOverlayCursor();
+
 		// re-grab the pointer even while the mouse sits still
 		if (m_captured && m_pointer is { } pointer && pointer.Captured != Surface) {
 			pointer.Capture(Surface);
@@ -373,11 +388,15 @@ public partial class ViewportControl : UserControl {
 
 		SendResizeIfChanged();
 
-		if (m_shared is null) {
-			m_shared = new SharedViewportPresenter(SurfaceHost, m_engine);
+		if (m_shared is null && !GraphicsDebuggerDetector.IsAttached && !s_forceViewportReadback) {
+			m_shared = new SharedViewportPresenter(
+				SurfaceHost, m_engine,
+				() => (DataContext as WorkspaceViewModel)?.NotePresentedFrame(),
+				() => m_frameLoopActive && IsEffectivelyVisible && OwnsEngineFrame
+			);
 			m_shared.Start();
 		}
-		if (!m_shared.Failed) {
+		if (m_shared is { Failed: false }) {
 			if (!m_shared.Active) return;
 			if (Surface.IsVisible) {
 				Surface.IsVisible = false;
@@ -389,8 +408,10 @@ public partial class ViewportControl : UserControl {
 		}
 		Surface.IsVisible = true;
 
-		var peek =m_engine.TryGetViewportFrame(IntPtr.Zero, 0, out var dims);
+		var peek = m_engine.TryGetViewportFrame(IntPtr.Zero, 0, out var dims);
 		if (peek == 0 || dims.width == 0 || dims.height == 0)
+			return;
+		if (m_bitmap is not null && dims.frame_id == m_lastFrameId)
 			return;
 
 		if (m_bitmap is null
@@ -718,7 +739,7 @@ public partial class ViewportControl : UserControl {
 			return;
 		}
 
-		if (!ShouldForward || m_engine is null) return;
+		if ((!ShouldForward && !m_overlayCursor) || m_engine is null) return;
 
 		Events.Send(new WindowMouseScroll {
 			X = (float)e.Delta.X,
@@ -793,9 +814,12 @@ public partial class ViewportControl : UserControl {
 		SendKey(e, e.RoutedEvent == KeyDownEvent ? ActionPressed : ActionReleased);
 	}
 
+	// F3 still reaches the engine after the backtick freed the mouse
+	private bool IsOverlayKey(Key key) => PlayMode && key == Key.F3;
+
 	private bool SendKey(KeyEventArgs e, int action) {
 		var wasHeld = action == ActionReleased && m_heldKeys.Remove(e.Key);
-		if ((!wasHeld && !ShouldForward) || m_engine is null) return false;
+		if ((!wasHeld && !ShouldForward && !IsOverlayKey(e.Key)) || m_engine is null) return false;
 		if (action == ActionPressed) m_heldKeys.Add(e.Key);
 
 		var (key, _) = MapKey(e.Key);

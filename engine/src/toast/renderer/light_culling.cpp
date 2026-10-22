@@ -33,6 +33,14 @@ auto importance(const glm::vec3& color, float intensity, float range, float came
 	return std::isnan(value) ? 0.0f : value;
 }
 
+auto shadowPriority(const glm::vec3& color, float intensity, float camera_distance, float cone_fraction) -> float {
+	const glm::vec3 k_luminance {0.2126f, 0.7152f, 0.0722f};
+
+	const float brightness = glm::dot(color, k_luminance) * std::max(intensity, 0.0f);
+	const float value = brightness * cone_fraction / ((camera_distance * camera_distance) + 1.0f);
+	return std::isnan(value) ? 0.0f : value;
+}
+
 auto clusterDepthRange(float camera_near, float camera_far, float light_reach) -> DepthRange {
 	using namespace clustered_lighting;
 

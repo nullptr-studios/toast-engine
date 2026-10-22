@@ -123,6 +123,22 @@ public:
 	}
 
 	[[nodiscard]]
+	auto isDepthClampSupported() const noexcept -> bool {
+		return m_depth_clamp_supported;
+	}
+
+	[[nodiscard]]
+	auto isDualSourceBlendSupported() const noexcept -> bool {
+		return m_dual_source_blend_supported;
+	}
+
+	/// Views a multiview scope may have under a mesh pipeline or 0 without multiview mesh shaders
+	[[nodiscard]]
+	auto meshMultiviewViews() const noexcept -> uint32_t {
+		return m_mesh_multiview_views;
+	}
+
+	[[nodiscard]]
 	auto getBufferAddress(vk::Buffer buffer) const -> vk::DeviceAddress {
 		vk::BufferDeviceAddressInfo info {};
 		info.buffer = buffer;
@@ -279,6 +295,9 @@ private:
 
 	bool m_ray_tracing_supported = false;
 	bool m_mesh_shader_supported = false;
+	uint32_t m_mesh_multiview_views = 0;
+	bool m_depth_clamp_supported = false;
+	bool m_dual_source_blend_supported = false;
 
 	uint32_t m_as_scratch_alignment = 0;
 	mutable bool m_nsight_gputrace_activated = false;

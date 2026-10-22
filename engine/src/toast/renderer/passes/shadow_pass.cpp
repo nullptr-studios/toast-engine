@@ -17,12 +17,14 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
 #include <format>
 #include <toast/assets/assets.hpp>
 #include <toast/log.hpp>
+#include <toast/voxel/gpu_layout.hpp>
 #include <toast/voxel/voxel_constants.hpp>
 #include <tracy/Tracy.hpp>
 
@@ -31,9 +33,27 @@ namespace renderer {
 namespace {
 
 /// A moving volume would invalidate every resting voxel caster each frame so it draws with the meshes instead
-auto isMovingVolume(const VulkanRenderer::VoxelVolumeProxy& proxy) -> bool {
-	return !proxy.has_previous || proxy.previous_model != proxy.model;
+/// Frames a caster stays moving after its last step
+constexpr uint64_t k_caster_settle_frames = 30;
+
+auto cornerDrift(const glm::mat4& from, const glm::mat4& to, const glm::vec3& extent) -> float {
+	const glm::mat4 delta = to - from;
+	float drift = 0.0f;
+	for (uint32_t corner = 0; corner < 8; ++corner) {
+		const glm::vec4 local(
+		    (corner & 1u) != 0 ? extent.x : 0.0f, (corner & 2u) != 0 ? extent.y : 0.0f, (corner & 4u) != 0 ? extent.z : 0.0f, 1.0f
+		);
+		drift = std::max(drift, glm::length(glm::vec3(delta * local)));
+	}
+	return drift;
 }
+
+/// Mirrors kTaskGroupsPerCell in voxel_dda.slang
+constexpr uint32_t k_task_groups_per_cell = 2;
+
+/// Shared by every caster pipeline and mirrored by kSlopeBias in voxel_shadow.slang
+constexpr float k_caster_bias_constant = 1.5f;
+constexpr float k_caster_bias_slope = 1.25f;
 
 auto shadowLayerRange(uint32_t base_layer, uint32_t layer_count) -> vk::ImageSubresourceRange {
 	return {vk::ImageAspectFlagBits::eDepth, 0, 1, base_layer, layer_count};
@@ -129,8 +149,9 @@ ShadowPass::ShadowPass(const VulkanCore& core) : m_core(&core) {
 	config.depth_write = true;
 	// Shadow maps keep standard depth whatever the scene convention
 	config.depth_compare = vk::CompareOp::eLess;
-	config.depth_bias_constant = 1.5f;
-	config.depth_bias_slope = 3.0f;
+	config.depth_bias_constant = k_caster_bias_constant;
+	config.depth_bias_slope = k_caster_bias_slope;
+	config.depth_clamp = core.isDepthClampSupported();
 	config.cull_mode = vk::CullModeFlagBits::eNone;
 
 	// Single view is 0x1 not 0 since 0 disables multiview and leaves SV_ViewID undefined
@@ -163,7 +184,7 @@ ShadowPass::ShadowPass(const VulkanCore& core) : m_core(&core) {
 	    shadows::k_cascade_count,
 	    shadows::cascadeResolution(),
 	    shadows::cascadeResolution(),
-	    shadows::k_punctual_layer_count,
+	    shadows::punctualLayerCount(),
 	    shadows::punctualResolution(),
 	    shadows::punctualResolution(),
 	    vk::to_string(m_format)
@@ -274,8 +295,12 @@ void ShadowPass::createResources(const VulkanCore& core) {
 
 	// One group per cascade so a refit of one cascade leaves the cached others alone
 	const std::vector<uint32_t> cascade_groups(shadows::k_cascade_count, 1u);
-	std::vector<uint32_t> punctual_groups(shadows::k_max_spot_shadows, 1u);
-	punctual_groups.insert(punctual_groups.end(), shadows::k_max_point_shadows, shadows::k_cube_faces);
+	std::vector<uint32_t> punctual_groups(shadows::spotShadowSlots(), 1u);
+	punctual_groups.insert(punctual_groups.end(), shadows::pointShadowSlots(), shadows::k_cube_faces);
+	if (punctual_groups.empty()) {
+		// A layer nothing renders into so the map and its descriptors still exist with every slot off
+		punctual_groups.push_back(1u);
+	}
 
 	constexpr auto k_static_usage = vk::ImageUsageFlagBits::eTransferSrc;
 	createShadowMap(
@@ -380,6 +405,9 @@ void ShadowPass::createVoxelResources(const VulkanCore& core) {
 	config.depth_write = true;
 	// Shadow maps keep standard depth whatever the scene convention
 	config.depth_compare = vk::CompareOp::eLess;
+	config.depth_clamp = core.isDepthClampSupported();
+	// Shadow projections are not Y flipped
+	config.front_face = vk::FrontFace::eClockwise;
 
 	for (size_t mask_index = 0; mask_index < m_voxel_pipeline_sets.size(); ++mask_index) {
 		VoxelPipelineSet& set = m_voxel_pipeline_sets[mask_index];
@@ -464,7 +492,85 @@ void ShadowPass::createVoxelResources(const VulkanCore& core) {
 	});
 	if (!m_voxels_ready) {
 		TOAST_ERROR("Render", "ShadowPass voxel pipelines failed to build, voxels will not cast shadows");
+		return;
 	}
+	createVoxelMeshResources(core);
+}
+
+void ShadowPass::createVoxelMeshResources(const VulkanCore& core) {
+	ZoneScoped;
+	static_assert(sizeof(VoxelMeshShadowPush) == 16, "VoxelMeshShadowPush is mirrored by voxel_shadow_mesh_common.slang");
+	if (core.meshMultiviewViews() == 0) {
+		TOAST_INFO("Render", "ShadowPass voxels march since multiview mesh shaders are unavailable");
+		return;
+	}
+
+	const auto mesh_uid = assets::resolveURI("core://shaders/voxel_shadow_mesh.slang");
+	const auto task_uid = assets::resolveURI("core://shaders/voxel_shadow_task.slang");
+	const auto mesh_shader = mesh_uid.has_value() ? ShaderCache::get().acquire(*mesh_uid) : nullptr;
+	const auto task_shader = task_uid.has_value() ? ShaderCache::get().acquire(*task_uid) : nullptr;
+	if (!mesh_shader || !task_shader) {
+		TOAST_WARN(
+		    "Render",
+		    "ShadowPass shaders core://shaders/voxel_shadow_mesh.slang and voxel_shadow_task.slang unavailable, voxels march"
+		);
+		return;
+	}
+
+	// Same sets as voxel_shadow.slang so the voxel shadow and storage sets bind to either layout
+	m_voxel_mesh_layout.rebuild(core, mesh_shader->reflection, "ShadowPass VoxelMesh");
+
+	VulkanPipeline::Config config;
+	config.pipeline_type = VulkanPipeline::PipelineType::graphics;
+	config.depth_only = true;
+	config.depth_format = m_format;
+	config.extent = vk::Extent2D {shadows::cascadeResolution(), shadows::cascadeResolution()};
+	config.shader_spirv = mesh_shader->spirv;
+	config.task_spirv = task_shader->spirv;
+	config.task_entry = "shadowTaskMain";
+	config.mesh_entry = "shadowMeshMain";
+	config.pipeline_layout = *m_voxel_mesh_layout.getPipelineLayout();
+	config.depth_test = true;
+	config.depth_write = true;
+	config.depth_compare = vk::CompareOp::eLess;
+	config.depth_bias_constant = k_caster_bias_constant;
+	config.depth_bias_slope = k_caster_bias_slope;
+	config.depth_clamp = core.isDepthClampSupported();
+	config.cull_mode = vk::CullModeFlagBits::eNone;
+
+	for (size_t mask_index = 0; mask_index < m_voxel_mesh_pipelines.size(); ++mask_index) {
+		VulkanPipeline::Config variant = config;
+		variant.view_mask = m_voxel_pipeline_sets[mask_index].view_mask;
+		// Groups wider than the device allows march
+		if (static_cast<uint32_t>(std::popcount(variant.view_mask)) > core.meshMultiviewViews()) {
+			continue;
+		}
+		variant.debug_name = std::format("ShadowPass VoxelMesh [viewMask {:#x}]", variant.view_mask);
+		m_voxel_mesh_pipelines[mask_index].rebuild(core, variant);
+	}
+
+	const auto properties =
+	    core.getPhysicalDevice().getProperties2<vk::PhysicalDeviceProperties2, vk::PhysicalDeviceMeshShaderPropertiesEXT>();
+	const auto& mesh_properties = properties.get<vk::PhysicalDeviceMeshShaderPropertiesEXT>();
+	std::ranges::copy(mesh_properties.maxTaskWorkGroupCount, m_max_task_groups.begin());
+	m_max_task_group_total = mesh_properties.maxTaskWorkGroupTotalCount;
+
+	// Extension entry points are not exported by the loader library so they come from the device dispatcher
+	m_draw_mesh_tasks = core.getDevice().getDispatcher()->vkCmdDrawMeshTasksEXT;
+	TOAST_INFO(
+	    "Render",
+	    "ShadowPass voxels near enough to the light rasterize task and mesh shader quads in groups of up to {} views",
+	    core.meshMultiviewViews()
+	);
+}
+
+auto ShadowPass::voxelMeshPipelineFor(uint32_t view_mask) const -> const VulkanPipeline* {
+	for (size_t mask_index = 0; mask_index < m_voxel_mesh_pipelines.size(); ++mask_index) {
+		if (m_voxel_pipeline_sets[mask_index].view_mask == view_mask && m_voxel_mesh_pipelines[mask_index].isReady()) {
+			return &m_voxel_mesh_pipelines[mask_index];
+		}
+	}
+	return nullptr;
 }
 
 auto ShadowPass::prepareVoxels(uint32_t frame_index) -> uint32_t {
@@ -505,12 +611,34 @@ auto ShadowPass::prepareVoxels(uint32_t frame_index) -> uint32_t {
 			);
 		}
 	}
+	++m_caster_frame;
+	const float tolerance = shadows::casterTolerance();
+	m_caster_models.resize(count);
+	m_caster_moving.resize(count);
 	for (uint32_t i = 0; i < count; ++i) {
 		const auto& proxy = frame->voxel_instances[i];
+		auto [it, inserted] = m_settled_casters.try_emplace(proxy.node_rid);
+		SettledCaster& settled = it->second;
+		const glm::vec3 extent = glm::vec3(proxy.brick_dims) * voxel::k_brick_size;
+		if (inserted || cornerDrift(settled.model, proxy.model, extent) > tolerance) {
+			settled.model = proxy.model;
+			settled.inverse_model = proxy.inverse_model;
+			settled.moved_frame = m_caster_frame;
+		}
+		settled.seen_frame = m_caster_frame;
+		m_caster_models[i] = settled.model;
+		m_caster_moving[i] = m_caster_frame - settled.moved_frame < k_caster_settle_frames ? 1u : 0u;
+
 		// Shadows never sample motion so whether a real previous transform exists does not matter here
-		instances[i] = makeVoxelInstance(proxy.model, proxy.inverse_model, proxy.model, true, proxy.record_index);
+		instances[i] = makeVoxelInstance(settled.model, settled.inverse_model, settled.model, true, proxy.record_index);
 	}
 	allocation.flush(0, sizeof(VoxelInstanceGpu) * count);
+
+	if (m_caster_frame % k_caster_settle_frames == 0) {
+		std::erase_if(m_settled_casters, [&](const auto& entry) {
+			return m_caster_frame - entry.second.seen_frame > k_caster_settle_frames;
+		});
+	}
 	return count;
 }
 
@@ -579,6 +707,7 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, ShadowMap& sta
 		return result;
 	};
 
+	const float receiver_depth_radii = shadows::cascadeReceiverDepthRadii();
 	const auto reaches = [&](const LayerGroup& group, const glm::vec3& center, float radius) {
 		for (uint32_t i = 0; i < group.layer_count; ++i) {
 			const auto* member = layer_views[group.base_layer + i];
@@ -587,7 +716,20 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, ShadowMap& sta
 			}
 			const glm::vec3 offset = center - glm::vec3(member->cull_sphere);
 			const float reach = member->cull_sphere.w + radius;
-			if (glm::dot(offset, offset) <= (reach * reach)) {
+			if (!member->directional) {
+				if (glm::dot(offset, offset) <= (reach * reach)) {
+					return true;
+				}
+				continue;
+			}
+
+			// Any distance toward the sun since clamped depth keeps casters in front
+			const auto& m = member->view_projection;
+			const glm::vec3 away = glm::normalize(glm::vec3(m[0][2], m[1][2], m[2][2]));
+			const float along = glm::dot(offset, away);
+			const glm::vec3 lateral = offset - (away * along);
+			const float depth_reach = (member->cull_sphere.w * receiver_depth_radii) + radius;
+			if (along <= depth_reach && glm::dot(lateral, lateral) <= (reach * reach)) {
 				return true;
 			}
 		}
@@ -604,7 +746,9 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, ShadowMap& sta
 		return reaches(group, voxel_proxies[index].bounds_center, voxel_proxies[index].bounds_radius);
 	};
 
-	const auto voxel_moving = [&](size_t index) { return isMovingVolume(voxel_proxies[index]); };
+	// Without the cache every voxel caster draws with the moving ones into each slot
+	const bool static_cache = shadows::staticCasterCache();
+	const auto voxel_moving = [&](size_t index) { return !static_cache || m_caster_moving[index] != 0; };
 
 	// Summed since voxel proxies are sorted by camera distance and a static light must not re-render as the camera moves
 	const auto voxel_signature = [&](const LayerGroup& group, bool moving, std::vector<VoxelCaster>* casters) -> uint64_t {
@@ -615,10 +759,10 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, ShadowMap& sta
 			}
 			ShadowSignature caster;
 			caster.add(voxel_proxies[index].node_rid);
-			caster.add(voxel_proxies[index].model);
+			caster.add(m_caster_models[index]);
 			sum += caster.value;
 			if (casters != nullptr) {
-				casters->push_back({.node_rid = voxel_proxies[index].node_rid, .model = voxel_proxies[index].model});
+				casters->push_back({.node_rid = voxel_proxies[index].node_rid, .model = m_caster_models[index]});
 			}
 		}
 		return sum;
@@ -659,9 +803,9 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, ShadowMap& sta
 			}
 			ShadowSignature caster;
 			caster.add(voxel_proxies[index].node_rid);
-			caster.add(voxel_proxies[index].model);
+			caster.add(m_caster_models[index]);
 			voxel_casters += caster.value;
-			m_voxel_eligible.push_back({.node_rid = voxel_proxies[index].node_rid, .model = voxel_proxies[index].model});
+			m_voxel_eligible.push_back({.node_rid = voxel_proxies[index].node_rid, .model = m_caster_models[index]});
 		}
 		if (!m_voxel_eligible.empty()) {
 			signature.add(voxel_casters);
@@ -832,6 +976,14 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, ShadowMap& sta
 		}
 	};
 
+	// Only a volume past the device task dispatch limits marches when mesh shaders are available
+	const auto meshes_volume = [&](const VulkanRenderer::VoxelVolumeProxy& proxy) {
+		const glm::uvec3 coarse = voxel::gpu::coarseDims(proxy.brick_dims);
+		const uint64_t groups_x = uint64_t {coarse.x} * k_task_groups_per_cell;
+		return groups_x <= m_max_task_groups[0] && coarse.y <= m_max_task_groups[1] && coarse.z <= m_max_task_groups[2] &&
+		       groups_x * coarse.y * coarse.z <= m_max_task_group_total;
+	};
+
 	const auto draw_voxels =
 	    [&](const LayerGroup& group, const VulkanRenderer::ShadowView& view, uint32_t view_index, bool moving) {
 		    const VoxelPipelineSet* voxel_pipelines = voxelPipelineSetFor(group.view_mask);
@@ -839,12 +991,42 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, ShadowMap& sta
 			    return;
 		    }
 		    const vk::PipelineLayout voxel_layout = *m_voxel_layout.getPipelineLayout();
+		    const vk::PipelineLayout mesh_layout = *m_voxel_mesh_layout.getPipelineLayout();
+		    const VulkanPipeline* mesh_pipeline =
+		        m_draw_mesh_tasks != nullptr && shadows::voxelMeshShadows() ? voxelMeshPipelineFor(group.view_mask) : nullptr;
 
+		    const auto sets =
+		        std::array<vk::DescriptorSet, 2> {*m_voxel_shadow_sets[frame_index], *m_voxel_storage_sets[frame_index]};
+
+		    // Meshed first since their quads keep early depth for the marched volumes behind them
 		    m_voxel_draw_order.clear();
+		    bool meshes_bound = false;
 		    for (uint32_t index = 0; index < m_voxel_instance_count; ++index) {
-			    if (voxel_moving(index) == moving && voxel_eligible(group, index)) {
-				    m_voxel_draw_order.push_back(index);
+			    if (voxel_moving(index) != moving || !voxel_eligible(group, index)) {
+				    continue;
 			    }
+			    const auto& proxy = voxel_proxies[index];
+			    if (mesh_pipeline == nullptr || !meshes_volume(proxy)) {
+				    m_voxel_draw_order.push_back(index);
+				    continue;
+			    }
+
+			    if (!meshes_bound) {
+				    cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, mesh_pipeline->getPipeline());
+				    cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mesh_layout, 0, sets, {});
+				    meshes_bound = true;
+			    }
+			    const VoxelMeshShadowPush push {
+			      .instance_index = index,
+			      .view_index = view_index,
+			      .view_count = group.layer_count,
+			      .directional = directional ? 1u : 0u,
+			    };
+			    cmd.pushConstants(mesh_layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(VoxelMeshShadowPush), &push);
+			    const glm::uvec3 coarse = voxel::gpu::coarseDims(proxy.brick_dims);
+			    m_draw_mesh_tasks(static_cast<VkCommandBuffer>(cmd), coarse.x * k_task_groups_per_cell, coarse.y, coarse.z);
+			    ++m_stats.draws;
+			    ++m_stats.meshed_volumes;
 		    }
 		    if (m_voxel_draw_order.empty()) {
 			    return;
@@ -855,15 +1037,18 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, ShadowMap& sta
 			    return (view.view_projection * glm::vec4(voxel_proxies[index].bounds_center, 1.0f)).z;
 		    });
 
-		    // A corner in front of any near plane clips the front faces so only exact back faces are safe
-		    const auto crosses_near_plane = [&](const VulkanRenderer::VoxelVolumeProxy& proxy) {
-			    const glm::vec3 extent = glm::vec3(proxy.brick_dims) * voxel::k_brick_size;
+		    // A perspective near plane clips front faces so only exact back faces are safe and cascades clamp
+		    const auto crosses_near_plane = [&](uint32_t index) {
+			    if (directional && m_core->isDepthClampSupported()) {
+				    return false;
+			    }
+			    const glm::vec3 extent = glm::vec3(voxel_proxies[index].brick_dims) * voxel::k_brick_size;
 			    for (uint32_t i = 0; i < group.layer_count; ++i) {
 				    const auto* member = layer_views[group.base_layer + i];
 				    if (member == nullptr) {
 					    continue;
 				    }
-				    const glm::mat4 to_clip = member->view_projection * proxy.model;
+				    const glm::mat4 to_clip = member->view_projection * m_caster_models[index];
 				    for (uint32_t corner = 0; corner < 8; ++corner) {
 					    const glm::vec3 local(
 					        (corner & 1u) != 0 ? extent.x : 0.0f, (corner & 2u) != 0 ? extent.y : 0.0f, (corner & 4u) != 0 ? extent.z : 0.0f
@@ -876,17 +1061,11 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, ShadowMap& sta
 			    return false;
 		    };
 
-		    cmd.bindDescriptorSets(
-		        vk::PipelineBindPoint::eGraphics,
-		        voxel_layout,
-		        0,
-		        std::array<vk::DescriptorSet, 2> {*m_voxel_shadow_sets[frame_index], *m_voxel_storage_sets[frame_index]},
-		        {}
-		    );
+		    cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, voxel_layout, 0, sets, {});
 		    const VulkanPipeline* bound = nullptr;
 		    for (const uint32_t index : m_voxel_draw_order) {
 			    const auto& proxy = voxel_proxies[index];
-			    const bool inside = crosses_near_plane(proxy);
+			    const bool inside = crosses_near_plane(index);
 			    const bool cull_front = inside != proxy.mirrored;
 			    const VulkanPipeline& pipeline = voxel_pipelines->pipelines[cull_front ? 1 : 0][inside ? 1 : 0];
 			    if (bound != &pipeline) {
@@ -898,10 +1077,12 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, ShadowMap& sta
 			      .instance_index = index,
 			      .view_index = view_index,
 			      .constant_bias = m_voxel_constant_bias,
+			      .directional = directional ? 1u : 0u,
 			    };
 			    cmd.pushConstants(voxel_layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(VoxelShadowPush), &push);
 			    cmd.draw(36, 1, 0, 0);
 			    ++m_stats.draws;
+			    ++m_stats.marched_volumes;
 		    }
 	    };
 
@@ -1014,7 +1195,7 @@ void ShadowPass::recordPre(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t
 
 	m_voxel_instance_count = prepareVoxels(frame_index);
 	for (uint32_t index = 0; index < m_voxel_instance_count; ++index) {
-		m_stats.moving_volumes += isMovingVolume(frame->voxel_instances[index]) ? 1u : 0u;
+		m_stats.moving_volumes += m_caster_moving[index];
 	}
 
 	recordMap(cmd, target.cascades, m_static.cascades, frame_index, true);

@@ -28,16 +28,25 @@ internal sealed class Program {
 #endif
 			.WithInterFont();
 
+		// The DXGI swap chain ticks on the vblank of the fastest monitor where WinUI commits can lag the refresh
+		var win32 = new Win32PlatformOptions {
+			CompositionMode = [
+				Win32CompositionMode.LowLatencyDxgiSwapChain,
+				Win32CompositionMode.WinUIComposition,
+				Win32CompositionMode.DirectComposition,
+				Win32CompositionMode.RedirectionSurface
+			]
+		};
+
 		// Force software when renderdoc
 		if (GraphicsDebuggerDetector.IsAttached) {
-			builder = builder
-				.With(new Win32PlatformOptions {
-					RenderingMode = [ Win32RenderingMode.Software ]
-				})
-				.With(new X11PlatformOptions {
-					RenderingMode = [ X11RenderingMode.Software ]
-				});
+			win32.RenderingMode = [ Win32RenderingMode.Software ];
+			builder = builder.With(new X11PlatformOptions {
+				RenderingMode = [ X11RenderingMode.Software ]
+			});
 		}
+
+		builder = builder.With(win32);
 
 		return builder.LogToTrace();
 	}
