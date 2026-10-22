@@ -601,9 +601,13 @@ private:
 	auto spawnFragmentBody(ShapeID source_shape_id, const DetachedComponent& component, const FragmentPush* push = nullptr) -> bool;
 	auto smashShape(ShapeID shape_id, const SmashVolume& volume, const CapsuleSmash& smash, bool chunks) -> uint32_t;
 	auto explodeShape(ShapeID shape_id, const ExplosionDamage& explosion) -> uint32_t;
+	[[nodiscard]]
+	auto explosionPush(ShapeID shape_id, const DetachedComponent& piece, const ExplosionDamage& explosion)
+	    -> std::optional<FragmentPush>;
 	auto breakPieces(
 	    ShapeID shape_id, SmashPieces& picked, bool chunks,
-	    const std::function<std::optional<FragmentPush>(const DetachedComponent&)>& push_for, const AABB& wake_bounds
+	    const std::function<std::optional<FragmentPush>(const DetachedComponent&)>& push_for, const AABB& wake_bounds,
+	    uint32_t max_spawns = 0
 	) -> uint32_t;
 	[[nodiscard]]
 	auto marchVoxelRay(const glm::vec3& origin, const glm::vec3& direction, float max_distance) -> std::optional<VoxelRayHit>;

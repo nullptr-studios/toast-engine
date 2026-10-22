@@ -55,6 +55,11 @@ struct Tunables {
 	float debris_friction = 0.6f;
 	float explosion_max_radius = 8.0f;
 	float explosion_falloff = 2.0f;
+	float explosion_chunk_size = 1.0f;
+	float explosion_debris_ratio = 8.0f;
+	float explosion_shatter_width = 0.6f;
+	uint32_t explosion_max_fragments = 48;
+	float explosion_max_speed = 20.0f;
 	uint32_t impact_max_hardness = 1;
 	uint32_t min_bounds_per_job = 32;
 	uint32_t min_candidates_per_job = 2;

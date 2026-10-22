@@ -378,6 +378,53 @@ void registerPhysicsSettings() {
 	     .max = 8.0,
 	     .step = 0.25},
 	    &Tunables::explosion_falloff);
+	flt("physics.fracture.explosion_chunk_size",
+	    1.0,
+	    {.label = "Explosion chunk size",
+	     .category = "Fracture",
+	     .description = "Meters across the chunks an explosion breaks material into",
+	     .min = 0.2,
+	     .max = 4.0,
+	     .step = 0.1},
+	    &Tunables::explosion_chunk_size);
+	flt("physics.fracture.explosion_debris_ratio",
+	    8.0,
+	    {.label = "Explosion debris ratio",
+	     .category = "Fracture",
+	     .description = "Material hit by a blast this many times its toughness turns to debris instead of chunks",
+	     .min = 1.0,
+	     .max = 64.0,
+	     .step = 0.5},
+	    &Tunables::explosion_debris_ratio);
+	flt("physics.fracture.explosion_shatter_width",
+	    0.6,
+	    {.label = "Explosion shatter width",
+	     .category = "Fracture",
+	     .description = "Meters of cracked material around the hole an explosion leaves, 0 for none",
+	     .min = 0.0,
+	     .max = 4.0,
+	     .step = 0.1},
+	    &Tunables::explosion_shatter_width);
+	flt("physics.fracture.explosion_max_speed",
+	    20.0,
+	    {.label = "Explosion max speed",
+	     .category = "Fracture",
+	     .description = "Fastest an explosion throws a chunk, debris or body, in m/s. Faster tunnels through thin colliders",
+	     .min = 1.0,
+	     .max = 100.0,
+	     .step = 1.0},
+	    &Tunables::explosion_max_speed);
+	uint_setting(
+	    "physics.fracture.explosion_max_fragments",
+	    48,
+	    {.label = "Explosion max fragments",
+			 .category = "Fracture",
+			 .description = "Chunks one explosion can promote to their own bodies per shape; the rest become debris",
+			 .min = 0.0,
+			 .max = 256.0,
+			 .step = 1.0},
+	    &Tunables::explosion_max_fragments
+	);
 	uint_setting(
 	    "physics.fracture.impact_max_hardness",
 	    1,

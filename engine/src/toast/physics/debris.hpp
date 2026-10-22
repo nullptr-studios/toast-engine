@@ -56,6 +56,7 @@ struct DebrisBlast {
 	glm::vec3 start {};
 	glm::vec3 end {};
 	float energy = 0.0f;
+	float max_speed = 0.0f;
 };
 
 inline constexpr float k_max_debris_speed = 40.0f;
