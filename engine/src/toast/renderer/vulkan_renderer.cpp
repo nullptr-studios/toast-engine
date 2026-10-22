@@ -153,7 +153,7 @@ auto fitDirectionalCascade(glm::vec3 center, float radius, glm::vec3 light_direc
 
 	const glm::mat4 light_view = glm::lookAt(center - direction * (radius + k_caster_back_off), center, up);
 
-	const float depth_extent = radius * (1.0f + shadows::cascadeReceiverDepthRadii()) + k_caster_back_off;
+	const float depth_extent = (radius * (1.0f + shadows::cascadeReceiverDepthRadii())) + k_caster_back_off;
 
 	// orthoRH_ZO since GLM_FORCE_DEPTH_ZERO_TO_ONE is not defined
 	glm::mat4 light_projection = glm::orthoRH_ZO(-radius, radius, -radius, radius, 0.0f, depth_extent);

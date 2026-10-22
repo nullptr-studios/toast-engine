@@ -713,7 +713,7 @@ void VoxelPass::writeAmbientGrid(uint32_t frame_index, std::span<const glm::vec4
 	if (frame_index >= m_ambient_grids.size()) {
 		return;
 	}
-	auto& grid_allocation = m_ambient_grids[frame_index].getAllocation();
+	const auto& grid_allocation = m_ambient_grids[frame_index].getAllocation();
 	auto* words = static_cast<uint32_t*>(grid_allocation.getInfo().pMappedData);
 	if (words == nullptr) {
 		return;
@@ -1385,26 +1385,49 @@ void VoxelPass::recordLighting(vk::CommandBuffer cmd, uint32_t frame_index, vk::
 	const auto height = static_cast<float>(viewport.height);
 	const float rotation =
 	    frame->taa_active ? std::fmod(static_cast<float>(frame->sequence % 4096) * k_golden_ratio_conjugate, 1.0f) : 0.0f;
-	const LightingPushConstants push {
-	  .inverse_view_projection = glm::inverse(frame->frame_data.jittered_view_projection),
-	  .camera_radius = glm::vec4(frame->frame_data.camera_position, instance->voxelNormalRounding() * voxel::k_voxel_size),
-	  .viewport = glm::vec4(
-	      static_cast<float>(viewport.width), height, 0.5f * height * std::abs(frame->frame_data.projection[1][1]), rotation
-	  ),
-	  .lighting = glm::uvec4(
-	      std::min(m_shadow_instance_count, instance->voxelShadowInstances()),
-	      instance->voxelLightCandidates(),
-	      !m_marched_lights && !m_ambient_rays ? k_marched_none : (m_denoise_active ? k_marched_into_terms : k_marched_into_colour),
-	      instance->voxelSunReach()
-	  ),
-	  .reuse = glm::uvec4(
-	      (instance->voxelReservoirHistory() ? k_reuse_history : 0u) | (m_spatial_active ? k_reuse_spatial : 0u) |
-	          (m_scene_glass ? k_scene_glass : 0u) | (std::min(instance->voxelGlassShadowReach(), 0xFFFFu) << 16),
-	      k_reservoir_m_cap * instance->voxelLightCandidates(),
-	      k_reused_reservoirs,
-	      m_ambient_rays ? static_cast<uint32_t>(std::lround(instance->voxelAmbientReach() * 100.0f)) : 0u
-	  ),
-	};
+	if (m_denoise_active) {
+		const LightingPushConstants push {
+		  .inverse_view_projection = glm::inverse(frame->frame_data.jittered_view_projection),
+		  .camera_radius = glm::vec4(frame->frame_data.camera_position, instance->voxelNormalRounding() * voxel::k_voxel_size),
+		  .viewport = glm::vec4(
+		      static_cast<float>(viewport.width), height, 0.5f * height * std::abs(frame->frame_data.projection[1][1]), rotation
+		  ),
+		  .lighting = glm::uvec4(
+		      std::min(m_shadow_instance_count, instance->voxelShadowInstances()),
+		      instance->voxelLightCandidates(),
+		      !m_marched_lights && !m_ambient_rays ? k_marched_none : k_marched_into_terms,
+		      instance->voxelSunReach()
+		  ),
+		  .reuse = glm::uvec4(
+		      (instance->voxelReservoirHistory() ? k_reuse_history : 0u) | (m_spatial_active ? k_reuse_spatial : 0u) |
+		          (m_scene_glass ? k_scene_glass : 0u) | (std::min(instance->voxelGlassShadowReach(), 0xFFFFu) << 16),
+		      k_reservoir_m_cap * instance->voxelLightCandidates(),
+		      k_reused_reservoirs,
+		      m_ambient_rays ? static_cast<uint32_t>(std::lround(instance->voxelAmbientReach() * 100.0f)) : 0u
+		  ),
+		};
+	} else {
+		const LightingPushConstants push {
+		  .inverse_view_projection = glm::inverse(frame->frame_data.jittered_view_projection),
+		  .camera_radius = glm::vec4(frame->frame_data.camera_position, instance->voxelNormalRounding() * voxel::k_voxel_size),
+		  .viewport = glm::vec4(
+		      static_cast<float>(viewport.width), height, 0.5f * height * std::abs(frame->frame_data.projection[1][1]), rotation
+		  ),
+		  .lighting = glm::uvec4(
+		      std::min(m_shadow_instance_count, instance->voxelShadowInstances()),
+		      instance->voxelLightCandidates(),
+		      !m_marched_lights && !m_ambient_rays ? k_marched_none : k_marched_into_colour,
+		      instance->voxelSunReach()
+		  ),
+		  .reuse = glm::uvec4(
+		      (instance->voxelReservoirHistory() ? k_reuse_history : 0u) | (m_spatial_active ? k_reuse_spatial : 0u) |
+		          (m_scene_glass ? k_scene_glass : 0u) | (std::min(instance->voxelGlassShadowReach(), 0xFFFFu) << 16),
+		      k_reservoir_m_cap * instance->voxelLightCandidates(),
+		      k_reused_reservoirs,
+		      m_ambient_rays ? static_cast<uint32_t>(std::lround(instance->voxelAmbientReach() * 100.0f)) : 0u
+		  ),
+		};
+	}
 	const vk::PipelineLayout layout = *m_lighting_layout.getPipelineLayout();
 	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_lighting_pipeline.getPipeline());
 	cmd.bindDescriptorSets(
