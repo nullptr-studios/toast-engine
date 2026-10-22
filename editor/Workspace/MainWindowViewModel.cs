@@ -966,6 +966,14 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 
 		var toastPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "toast_engine"));
 		var cmakeGenerator = OperatingSystem.IsWindows() ? "-G \"Visual Studio 18 2026\"" : "-G \"Ninja\"";
+		const string gameBuildType =
+#if DEBUG
+			"Debug";
+#elif RELWITHDEBINFO
+			"RelWithDebInfo";
+#else
+			"Release";
+#endif
 
 		var tasks = new List<LoaderTask>();
 
@@ -1004,20 +1012,12 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		tasks.Add(LoaderTask.Run(
 			"cmake configure",
 			"cmake",
-			$"lib/ -B .toast/cmake_cache {cmakeGenerator} -DTOAST_PATH={toastPath}"
+			$"lib/ -B .toast/cmake_cache {cmakeGenerator} -DTOAST_PATH=\"{toastPath}\" -DCMAKE_BUILD_TYPE={gameBuildType}"
 		));
 		tasks.Add(LoaderTask.Run(
 			"cmake build",
 			"cmake",
-			// the game shares std types with the engine so both must use the same CRT
-			// RelWithDebInfo keeps game PDB and ttracy
-#if DEBUG
-			"--build .toast/cmake_cache --config Debug --parallel"
-#elif RELWITHDEBINFO
-			"--build .toast/cmake_cache --config RelWithDebInfo --parallel"
-#else
-			"--build .toast/cmake_cache --config Release --parallel"
-#endif
+			$"--build .toast/cmake_cache --config {gameBuildType} --parallel"
 		));
 
 		tasks.Add(LoaderTask.Do("Reload game", async log => {

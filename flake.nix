@@ -83,14 +83,14 @@
 		# The editor needs LD_LIBRARY_PATH for native dependencies, but build tools
 		# (including CMake cached by vcpkg) must use their own Nix library closure.
 		cmake-gen = pkgs.writeShellScriptBin "cmake-gen" ''
-			exec env -u LD_LIBRARY_PATH ${pkgs.cmake}/bin/cmake -B build/Debug -G Ninja -DCMAKE_TOOLCHAIN_FILE=${pkgs.vcpkg}/share/vcpkg/scripts/buildsystems/vcpkg.cmake "$@"
+			exec env -u LD_LIBRARY_PATH ${pkgs.cmake}/bin/cmake --preset linux-relwithdebinfo -DCMAKE_TOOLCHAIN_FILE=${pkgs.vcpkg}/share/vcpkg/scripts/buildsystems/vcpkg.cmake "$@"
 		'';
 
 		cmake-gen-rel = pkgs.writeShellScriptBin "cmake-gen" ''
 			exec env -u LD_LIBRARY_PATH ${pkgs.cmake}/bin/cmake --preset linux-relwithdebinfo -DCMAKE_TOOLCHAIN_FILE=${pkgs.vcpkg}/share/vcpkg/scripts/buildsystems/vcpkg.cmake "$@"
 		'';
 		cmake-build = pkgs.writeShellScriptBin "cmake-build" ''
-			exec env -u LD_LIBRARY_PATH ${pkgs.cmake}/bin/cmake --build ./build/Debug --parallel "$(nproc)" "$@"
+			exec env -u LD_LIBRARY_PATH ${pkgs.cmake}/bin/cmake --build --preset linux-relwithdebinfo --parallel "$(nproc)" "$@"
 		'';
 
 		cmake-build-rel = pkgs.writeShellScriptBin "cmake-build" ''
@@ -102,7 +102,7 @@
 		# '';
 
 		kenzo = pkgs.writeShellScriptBin "kenzo" ''
-			./out/Debug/kenzo/kenzo "$@"
+			./out/RelWithDebInfo/kenzo/kenzo "$@"
 		'';
 	in
 	{
