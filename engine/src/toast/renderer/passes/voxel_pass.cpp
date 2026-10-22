@@ -1385,8 +1385,9 @@ void VoxelPass::recordLighting(vk::CommandBuffer cmd, uint32_t frame_index, vk::
 	const auto height = static_cast<float>(viewport.height);
 	const float rotation =
 	    frame->taa_active ? std::fmod(static_cast<float>(frame->sequence % 4096) * k_golden_ratio_conjugate, 1.0f) : 0.0f;
+	LightingPushConstants push;
 	if (m_denoise_active) {
-		const LightingPushConstants push {
+		push = LightingPushConstants {
 		  .inverse_view_projection = glm::inverse(frame->frame_data.jittered_view_projection),
 		  .camera_radius = glm::vec4(frame->frame_data.camera_position, instance->voxelNormalRounding() * voxel::k_voxel_size),
 		  .viewport = glm::vec4(
@@ -1407,7 +1408,7 @@ void VoxelPass::recordLighting(vk::CommandBuffer cmd, uint32_t frame_index, vk::
 		  ),
 		};
 	} else {
-		const LightingPushConstants push {
+		push = LightingPushConstants {
 		  .inverse_view_projection = glm::inverse(frame->frame_data.jittered_view_projection),
 		  .camera_radius = glm::vec4(frame->frame_data.camera_position, instance->voxelNormalRounding() * voxel::k_voxel_size),
 		  .viewport = glm::vec4(
