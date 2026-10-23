@@ -29,6 +29,11 @@ void TOAST_API
     log(uint8_t severity, std::string_view file_name, unsigned line_number, std::string_view sink, std::string_view message);
 }
 
+namespace logging {
+/// Sends every queued log now for paths about to abort the process
+TOAST_API void flush() noexcept;
+}
+
 #define TOAST_FILE_NAME ::logging::_detail::getOnlyName(__FILE__)
 
 #ifdef DEBUG

@@ -331,6 +331,8 @@ private:
 	std::vector<vma::raii::Buffer> m_instance_bounds;
 	/// Instances an ambient ray can reach per hashed world cell
 	std::vector<vma::raii::Buffer> m_ambient_grids;
+	/// Shadow casters with glass bricks so the glass shadow filter skips every other volume
+	std::vector<vma::raii::Buffer> m_glass_casters;
 	std::vector<std::pair<uint32_t, uint32_t>> m_grid_pairs;
 	std::vector<uint32_t> m_grid_global;
 	/// Drawn instances then the off screen ones only shadow rays test
@@ -372,6 +374,7 @@ private:
 	/// Change regions of a newly published storage that voxel.slang marks reactive
 	void writeFreshRegions(uint32_t frame_index, const VoxelGpuStorage& storage);
 	void writeAmbientGrid(uint32_t frame_index, std::span<const glm::vec4> bounds);
+	void writeGlassCasters(uint32_t frame_index, const VoxelGpuStorage& storage, std::span<const VoxelInstanceGpu> casters);
 	void createDenoise(const VulkanCore& core, vk::Format scene_format, vk::Extent2D extent);
 	void createDenoiseTargets(vk::Extent2D extent);
 	void bindDenoise(vk::CommandBuffer cmd, uint32_t frame_index, const VulkanPipeline& pipeline, float term);

@@ -132,7 +132,7 @@ auto SsrPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView 
 	                             m_composite_pipeline.isReady();
 	const bool targets_ready = m_target.isReady() && m_hit_target.isReady() && m_resolve_target.isReady() &&
 	                           m_history[0].isReady() && m_history[1].isReady();
-	if (!pipelines_ready || !targets_ready || frame_index * 2 + 1 >= m_descriptor_sets.size() || !source_view) {
+	if (!pipelines_ready || !targets_ready || (frame_index * 2) + 1 >= m_descriptor_sets.size() || !source_view) {
 		return source_view;
 	}
 

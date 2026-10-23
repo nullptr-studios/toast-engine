@@ -175,18 +175,29 @@ auto createGraphicsPipelineImpl(
 	    vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB;
 
 	std::vector<vk::PipelineColorBlendAttachmentState> color_blend_attachments;
-	color_blend_attachments.emplace_back(
-	    blend_preset != BlendPreset::none,
-	    src_factor,
-	    dst_factor,
-	    vk::BlendOp::eAdd,
-	    vk::BlendFactor::eOne,
-	    vk::BlendFactor::eZero,
-	    vk::BlendOp::eAdd,
-	    !config.write_color        ? vk::ColorComponentFlags {}
-			: config.write_color_alpha ? (rgb_write | vk::ColorComponentFlagBits::eA)
-			                           : rgb_write
-	);
+	if (config.write_color_alpha) {
+		color_blend_attachments.emplace_back(
+		    blend_preset != BlendPreset::none,
+		    src_factor,
+		    dst_factor,
+		    vk::BlendOp::eAdd,
+		    vk::BlendFactor::eOne,
+		    vk::BlendFactor::eZero,
+		    vk::BlendOp::eAdd,
+		    !config.write_color ? vk::ColorComponentFlags {} : rgb_write | vk::ColorComponentFlagBits::eA
+		);
+	} else {
+		color_blend_attachments.emplace_back(
+		    blend_preset != BlendPreset::none,
+		    src_factor,
+		    dst_factor,
+		    vk::BlendOp::eAdd,
+		    vk::BlendFactor::eOne,
+		    vk::BlendFactor::eZero,
+		    vk::BlendOp::eAdd,
+		    !config.write_color ? vk::ColorComponentFlags {} : rgb_write
+		);
+	}
 
 	for (size_t extra = 0; extra < config.extra_color_formats.size(); ++extra) {
 		const bool blended = blend_preset != BlendPreset::none && ((config.extra_blend_mask >> extra) & 1u) != 0;

@@ -34,6 +34,11 @@ StructuredBuffer<float4> gInstanceBounds;
 [[vk::binding(8, 1)]]
 StructuredBuffer<uint> gAmbientGrid;
 
+/// Mirrors renderer::VoxelPass::writeGlassCasters
+/// Count then indices into gVoxelInstances of the shadow casters holding glass
+[[vk::binding(9, 1)]]
+StructuredBuffer<uint> gGlassCasters;
+
 static const uint kAmbientGridBuckets = 4096u;
 static const uint kAmbientGridHeader = 4u;
 
@@ -237,8 +242,10 @@ struct VoxelGlassFilter : IShadowFilter
         const float slope = distance < 0.0 ? sunSlope : 0.0;
         const float lengthSquared = max(dot(segment, segment), 1e-8);
         float3 transmittance = float3(1.0, 1.0, 1.0);
-        for (uint i = 0u; i < gPush.lighting.x; ++i)
+        const uint casters = gGlassCasters[0];
+        for (uint c = 0u; c < casters; ++c)
         {
+            const uint i = gGlassCasters[1u + c];
             const float4 bounds = gInstanceBounds[i];
             const float along = saturate(dot(bounds.xyz - origin, segment) / lengthSquared);
             const float3 nearest = origin + segment * along - bounds.xyz;
@@ -247,10 +254,6 @@ struct VoxelGlassFilter : IShadowFilter
                 continue;
             }
             const uint record = gVoxelInstances[i].recordIndex;
-            if (gVolumeRecords[record].glassOffset == kNoGlass)
-            {
-                continue;
-            }
 
             const float4x4 worldToVoxel = gVoxelInstances[i].worldToVoxel;
             const float3 voxelOrigin = mul(worldToVoxel, float4(origin, 1.0)).xyz;

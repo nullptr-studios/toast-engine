@@ -43,6 +43,16 @@ struct Tunables {
 	float fracture_max_overshoot = 2.0f;
 	float fracture_bond_cost = 1.0f;
 	uint32_t fracture_max_unglue_voxels = 4096;
+	float fracture_debris_split_chance = 0.35f;
+	uint32_t fracture_max_shatter_cells = 128;
+	float fracture_max_shatter_distance = 8.0f;
+	uint32_t debris_max_spawns_per_step = 512;
+	float debris_speed_scale = 1.0f;
+	float debris_lifetime = 12.0f;
+	float debris_lifetime_jitter = 0.3f;
+	uint32_t debris_max_particles = 16384;
+	float debris_restitution = 0.3f;
+	float debris_friction = 0.6f;
 	float explosion_max_radius = 8.0f;
 	float explosion_falloff = 2.0f;
 	uint32_t impact_max_hardness = 1;

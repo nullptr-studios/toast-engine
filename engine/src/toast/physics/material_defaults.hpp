@@ -7,7 +7,10 @@
 
 #pragma once
 
+#include "fracture_pattern.hpp"
 #include "hardness.hpp"
+
+#include <cstdint>
 
 namespace physics::material_defaults {
 
@@ -23,8 +26,23 @@ inline constexpr float k_spin_friction = 0.005f;
 inline constexpr float k_density = 2000.0f;
 inline constexpr float k_toughness = 100.0f;
 inline constexpr Hardness k_hardness = Hardness::medium;
+inline constexpr FracturePattern k_fracture_pattern = FracturePattern::brittle;
 
 /// weak bricks
 inline constexpr float k_structural_strength = 1.0e6f;
+
+inline constexpr float k_debris_share = 0.2f;
+inline constexpr float k_fragment_share = 0.5f;
+inline constexpr float k_fragment_threshold = 0.3f;
+inline constexpr uint32_t k_fragment_max_parts = 4;
+inline constexpr float k_shatter_threshold = 0.1f;
+inline constexpr float k_shatter_cell_size = 0.5f;
+inline constexpr float k_shatter_crack_cost = 1.0f;
+inline constexpr float k_shatter_release = 0.3f;
+inline constexpr float k_shatter_stretch = 3.0f;
+inline constexpr float k_shatter_crumble = 0.5f;
+inline constexpr float k_edge_noise = 0.25f;
+inline constexpr float k_edge_lobes = 0.35f;
+inline constexpr float k_edge_noise_scale = 4.0f;
 
 }

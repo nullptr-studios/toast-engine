@@ -85,6 +85,9 @@ public:
 	 */
 	static void log(std::string_view file, unsigned line, char severity, std::string_view sink, std::string_view message);
 
+	/// Blocks until the queue reached the socket or the background drain stayed busy too long
+	static void flush() noexcept;
+
 private:
 	Logger() = default;
 

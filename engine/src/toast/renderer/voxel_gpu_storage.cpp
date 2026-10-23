@@ -1,5 +1,6 @@
 #include "voxel_gpu_storage.hpp"
 
+#include "vulkan_core.hpp"
 #include "vulkan_debug.hpp"
 
 #include <algorithm>
@@ -35,15 +36,24 @@ constexpr uint32_t k_min_slot_headroom = 256;
 constexpr std::array<vk::DeviceSize, 4> k_min_append_headroom {64 * 1024, 4 * 1024, 64 * 1024, 16 * 1024};
 
 auto createSectionBuffer(const VulkanCore& core, vk::DeviceSize size, std::string_view name) -> vma::raii::Buffer {
-	const bool concurrent = core.getGraphicsQueueFamilyIndex() != core.getTransferQueueFamilyIndex();
-	const std::array family_indices {core.getGraphicsQueueFamilyIndex(), core.getTransferQueueFamilyIndex()};
+	// The async compute family reads them for debris collision :3
+	std::array<uint32_t, 3> family_indices {};
+	uint32_t family_count = 0;
+	for (const uint32_t family :
+	     {core.getGraphicsQueueFamilyIndex(), core.getTransferQueueFamilyIndex(), core.asyncCompute().queueFamilyIndex()}) {
+		if (std::find(family_indices.begin(), family_indices.begin() + family_count, family) ==
+		    family_indices.begin() + family_count) {
+			family_indices[family_count++] = family;
+		}
+	}
+	const bool concurrent = family_count > 1;
 
 	vk::BufferCreateInfo buffer_ci {};
 	buffer_ci.size = size;
 	buffer_ci.usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst;
 	if (concurrent) {
 		buffer_ci.sharingMode = vk::SharingMode::eConcurrent;
-		buffer_ci.queueFamilyIndexCount = 2;
+		buffer_ci.queueFamilyIndexCount = family_count;
 		buffer_ci.pQueueFamilyIndices = family_indices.data();
 	} else {
 		buffer_ci.sharingMode = vk::SharingMode::eExclusive;

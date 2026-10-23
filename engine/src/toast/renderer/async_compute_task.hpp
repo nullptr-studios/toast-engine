@@ -48,7 +48,7 @@ public:
 		std::string debug_name = "AsyncComputeTask";
 	};
 
-	/// Handed to the step callback. Barriers between dispatches of one step are inserted for you
+	/// Handed to the step callback with barriers between its dispatches already inserted
 	class TOAST_API StepContext {
 	public:
 		template<typename Push>
@@ -64,6 +64,16 @@ public:
 		[[nodiscard]]
 		auto commandBuffer() const -> vk::CommandBuffer {
 			return m_cmd;
+		}
+
+		[[nodiscard]]
+		auto hostData(BufferId id) const -> std::span<std::byte>;
+
+		template<typename T>
+		[[nodiscard]]
+		auto hostData(BufferId id) const -> std::span<T> {
+			const std::span<std::byte> bytes = hostData(id);
+			return {reinterpret_cast<T*>(bytes.data()), bytes.size() / sizeof(T)};
 		}
 
 	private:
@@ -138,7 +148,10 @@ protected:
 	/// Constructor only
 	auto addRingBuffer(vk::DeviceSize size, bool cpu_readback = false) -> BufferId;
 	auto addPersistentBuffer(vk::DeviceSize size) -> BufferId;
+	auto addHostBuffer(vk::DeviceSize size) -> BufferId;
 	void bind(uint32_t binding, BufferId id, Copy copy = Copy::current);
+	void bindExternal(uint32_t set, uint32_t binding, std::function<vk::Buffer()> source);
+	void setAcquireUsage(BufferId id, sync::Usage usage);
 
 	/// Owner thread, blocks until the copy landed gpu side
 	void upload(BufferId id, std::span<const std::byte> data);
@@ -149,7 +162,10 @@ protected:
 	}
 
 	/// Owner thread
-	void step(const std::function<void(StepContext&)>& record, std::string_view debug_name = {});
+	auto step(
+	    const std::function<void(StepContext&)>& record, std::string_view debug_name = {},
+	    std::shared_ptr<const void> keep_alive = {}
+	) -> uint64_t;
 
 private:
 	/// Frames in flight plus the step input plus the newest result plus the one being written
@@ -157,11 +173,13 @@ private:
 
 	struct Buffer {
 		bool ring = false;
+		bool host = false;
 		bool cpu_readback = false;
 		vk::DeviceSize size = 0;
 		/// One per slot for a ring buffer and a single entry otherwise
 		std::vector<vma::raii::Buffer> copies;
 		std::vector<vma::raii::Buffer> readbacks;
+		std::optional<sync::Usage> acquire_usage;
 	};
 
 	struct Binding {
@@ -170,18 +188,26 @@ private:
 		Copy copy = Copy::current;
 	};
 
+	struct ExternalBinding {
+		uint32_t set = 0;
+		uint32_t binding = 0;
+		std::function<vk::Buffer()> source;
+	};
+
 	struct Slot {
-		vk::raii::DescriptorSet set = nullptr;
+		std::vector<vk::raii::DescriptorSet> sets;
 		AsyncCompute::Ticket ticket = AsyncCompute::k_no_ticket;
 		/// Frames in flight still binding this slot
 		uint32_t pins = 0;
 		/// Step it holds and 0 while being written
 		uint64_t step = 0;
+		std::shared_ptr<const void> keep_alive;
 	};
 
 	void createDescriptors();
 	void writeDescriptors(uint32_t slot);
-	auto claimFreeSlot() -> uint32_t;
+	/// Empty while every slot is busy so the owner thread drops the step instead of blocking on the GPU
+	auto claimFreeSlot() -> std::optional<uint32_t>;
 	void publish(uint32_t slot, AsyncCompute::Ticket ticket);
 	/// Caller holds m_mutex
 	auto newestFinishedLocked() const -> int32_t;
@@ -196,11 +222,15 @@ private:
 
 	std::vector<Buffer> m_buffers;
 	std::vector<Binding> m_bindings;
+	std::vector<ExternalBinding> m_externals;
+	vma::raii::Buffer m_placeholder = nullptr;
 
 	mutable std::mutex m_mutex;
 	std::array<Slot, k_slot_count> m_slots;
 	uint64_t m_step_counter = 0;
 	int32_t m_last_written = -1;
+	/// Owner thread
+	uint64_t m_dropped_steps = 0;
 
 	/// Render thread only
 	std::array<int32_t, VulkanRenderer::k_frames_in_flight> m_frame_slot {};
