@@ -460,48 +460,71 @@ void Simulator::registerVoxelNode(toast::VoxelNode& node) {
 	node.syncWorldTransform();
 	const BodyType body_type = bodyTypeOf(node.simulation_type);
 	const bool dynamic_body = body_type == BodyType::dynamic_body;
-	const BodyID body = instance->createBody(
-	    BodyDescriptor {
-	      .type = body_type,
-	      .allow_sleep = node.allow_sleep,
-	      .position = node.world_position,
-	      .rotation = node.world_rotation,
-	      .mass = 1.0f, // calculated later
-	      .gravity_scale = node.gravity_scale,
-	      .linear_damping = node.linear_damping,
-	      .angular_damping = node.angular_damping,
-	      .drag_scale = node.drag_scale,
-	      .layers = {.included = node.included, .excluded = node.excluded},
-	}
-	);
-	if (not instance->valid(body)) {
-		return;
-	}
 
-	const ShapeID shape = instance->createVoxelShape(body, node);
-	if (not instance->valid(shape)) {
-		instance->destroyBody(body);
-		return;
-	}
-	if (Shape* stored_shape = instance->tryGetShape(shape)) {
-		stored_shape->material = material;
-	}
+	const auto add_body = [&](toast::VoxelPart* part) {
+		const BodyID body = instance->createBody(
+		    BodyDescriptor {
+		      .type = body_type,
+		      .allow_sleep = node.allow_sleep,
+		      .position = node.world_position,
+		      .rotation = node.world_rotation,
+		      .mass = 1.0f, // calculated later
+		      .gravity_scale = node.gravity_scale,
+		      .linear_damping = node.linear_damping,
+		      .angular_damping = node.angular_damping,
+		      .drag_scale = node.drag_scale,
+		      .layers = {.included = node.included, .excluded = node.excluded},
+		}
+		);
+		if (not instance->valid(body)) {
+			return;
+		}
 
-	node.assignBody(body);
-	node.assignShape(shape);
-	setBodyEnabled(body, node.enabled());
-	setShapeEnabled(shape, node.enabled());
-	instance->m_voxel_bindings.push_back({
-	  .body = body,
-	  .shape = shape,
-	  .node = node.box().as<toast::VoxelNode>(),
-	  .source_revision = node.revision(),
-	  .source_model = node.getModel().uid().data(),
-	  .source_palette = node.paletteUid(),
-	});
+		const ShapeID shape = instance->createVoxelShape(body, node, part);
+		if (not instance->valid(shape)) {
+			instance->destroyBody(body);
+			return;
+		}
+		if (Shape* stored_shape = instance->tryGetShape(shape)) {
+			stored_shape->material = material;
+		}
 
-	if (dynamic_body) {
-		instance->rebuildMassProperties(body);
+		if (part != nullptr) {
+			part->body = body;
+			part->shape = shape;
+			part->has_pose = false;
+		} else {
+			node.assignBody(body);
+			node.assignShape(shape);
+		}
+		setBodyEnabled(body, node.enabled());
+		setShapeEnabled(shape, node.enabled());
+		instance->m_voxel_bindings.push_back({
+		  .body = body,
+		  .shape = shape,
+		  .node = node.box().as<toast::VoxelNode>(),
+		  .is_part = part != nullptr,
+		  .part_key = part != nullptr ? part->key : 0,
+		  .source_revision = part != nullptr ? part->revision : node.revision(),
+		  .source_model = node.getModel().uid().data(),
+		  .source_palette = node.paletteUid(),
+		});
+
+		if (dynamic_body) {
+			instance->rebuildMassProperties(body);
+		}
+	};
+
+	if (node.usesParts()) {
+		// Every part is its own body
+		// They won't fall apart unless they are dynamic so it's fine (mostly) (i think)
+		for (toast::VoxelPart& part : node.m_parts) {
+			if (part.volume != nullptr) {
+				add_body(&part);
+			}
+		}
+	} else {
+		add_body(nullptr);
 	}
 }
 
@@ -539,6 +562,12 @@ void Simulator::unregisterVoxelNode(toast::VoxelNode& node) {
 
 	std::scoped_lock voxel_lock {voxelDataMutex()};
 	node.m_retired_volumes.clear();
+	for (toast::VoxelPart& part : node.m_parts) {
+		part.body = {};
+		part.shape = {};
+		part.has_pose = false;
+		part.retired.clear();
+	}
 }
 
 void Simulator::registerTrigger(Trigger& node) {
@@ -781,9 +810,7 @@ void Simulator::clearFragmentFromSource(
 	++data.surface_revision;
 
 	if (data.solid_voxel_count == 0) {
-		if (toast::VoxelNode* node = voxelNodeFor(shape_id)) {
-			node->m_pending_events.emptied = true;
-		}
+		noteVoxelShapeEmptied(shape_id);
 	}
 
 	auto* shape = tryGetShape(shape_id);
@@ -1773,19 +1800,31 @@ void Simulator::syncEnabledState() {
 
 		body->enabled = binding.node->enabled();
 
+		toast::VoxelPart* part = partOf(binding);
+		if (binding.is_part && part == nullptr) {
+			continue;
+		}
+		const uint32_t current_revision = part != nullptr ? part->revision : binding.node->revision();
 		const uint64_t model = binding.node->getModel().uid().data();
 		const uint64_t palette = binding.node->paletteUid();
-		if (binding.source_revision != binding.node->revision() || binding.source_model != model ||
-		    binding.source_palette != palette) {
+		if (binding.source_revision != current_revision || binding.source_model != model || binding.source_palette != palette) {
 			destroyShape(binding.shape);
-			binding.shape = createVoxelShape(binding.body, *binding.node);
-			binding.node->assignShape(binding.shape);
-			binding.source_revision = binding.node->revision();
+			binding.shape = createVoxelShape(binding.body, *binding.node, part);
+			if (part != nullptr) {
+				part->shape = binding.shape;
+			} else {
+				binding.node->assignShape(binding.shape);
+			}
+			binding.source_revision = current_revision;
 			binding.source_model = model;
 			binding.source_palette = palette;
 			{
 				std::scoped_lock voxel_lock {voxelDataMutex()};
-				binding.node->m_retired_volumes.clear();
+				if (part != nullptr) {
+					part->retired.clear();
+				} else {
+					binding.node->m_retired_volumes.clear();
+				}
 			}
 			if (body->type == BodyType::dynamic_body) {
 				rebuildMassProperties(binding.body);
@@ -2144,19 +2183,77 @@ auto Simulator::publishVoxelTransform(VoxelNodeBinding& binding) -> bool {
 		return false;
 	}
 
+	toast::VoxelPart* part = partOf(binding);
+	if (binding.is_part && part == nullptr) {
+		return true;
+	}
+
 	if (body->type == BodyType::dynamic_body) {
-		if (body->enabled) {
-			binding.node->applyPhysicsTransform(body->position, body->rotation);
+		if (part == nullptr) {
+			if (body->enabled) {
+				binding.node->applyPhysicsTransform(body->position, body->rotation);
+			}
+			binding.node->publishPhysicsState(body->awake, body->linear_velocity, body->angular_velocity);
+		} else {
+			// The parts fall on their own
+			if (body->enabled) {
+				part->has_pose = true;
+				part->pose_position = body->position;
+				part->pose_rotation = body->rotation;
+			}
+			if (binding.node->m_parts.front().key == part->key) {
+				binding.node->publishPhysicsState(body->awake, body->linear_velocity, body->angular_velocity);
+			}
 		}
-		binding.node->publishPhysicsState(body->awake, body->linear_velocity, body->angular_velocity);
 	}
 
 	if (const Shape* shape = tryGetShape(binding.shape); shape != nullptr && shape->type == ShapeType::voxel) {
 		if (const VoxelShapeData* voxel_data = tryGetVoxelData(shape->voxel.data); voxel_data != nullptr) {
-			binding.node->mass = voxel::resolveMass(voxel_data->moments);
+			const float mass = voxel::resolveMass(voxel_data->moments);
+			if (part == nullptr) {
+				binding.node->mass = mass;
+			} else {
+				part->mass = mass;
+				float total = 0.0f;
+				for (const toast::VoxelPart& other : binding.node->m_parts) {
+					total += other.mass;
+				}
+				binding.node->mass = total;
+			}
 		}
 	}
 	return true;
+}
+
+auto Simulator::partOf(const VoxelNodeBinding& binding) -> toast::VoxelPart* {
+	if (not binding.is_part || not binding.node.exists()) {
+		return nullptr;
+	}
+	auto& parts = const_cast<toast::VoxelNode&>(*binding.node).m_parts;
+	const auto found = std::ranges::find(parts, binding.part_key, &toast::VoxelPart::key);
+	return found != parts.end() ? &*found : nullptr;
+}
+
+void Simulator::recordVoxelDamage(ShapeID shape, uint32_t count, glm::vec3 index_sum) {
+	const auto binding = std::ranges::find(m_voxel_bindings, shape, &VoxelNodeBinding::shape);
+	if (binding == m_voxel_bindings.end() || not binding->node.exists()) {
+		return;
+	}
+	const toast::VoxelPart* part = partOf(*binding);
+	binding->node->recordDamage(count, index_sum, part != nullptr ? part->origin : binding->node->voxelOrigin());
+}
+
+void Simulator::noteVoxelShapeEmptied(ShapeID shape) {
+	toast::VoxelNode* node = voxelNodeFor(shape);
+	if (node == nullptr) {
+		return;
+	}
+	for (const toast::VoxelPart& part : node->m_parts) {
+		if (part.volume != nullptr && part.volume->solidVoxelCount() > 0) {
+			return;
+		}
+	}
+	node->m_pending_events.emptied = true;
 }
 
 namespace {
@@ -2270,6 +2367,10 @@ auto Simulator::renderPoseDelta(const toast::VoxelNode& node) -> glm::mat4 {
 	return renderPoseDelta(node.bodyID());
 }
 
+auto Simulator::renderPoseDelta(const toast::VoxelPart& part) -> glm::mat4 {
+	return renderPoseDelta(part.body);
+}
+
 auto Simulator::renderPoseDeltaFor(const toast::Node& node) -> glm::mat4 {
 	if (instance == nullptr) {
 		return {1.0f};
@@ -2305,7 +2406,7 @@ void Simulator::rebuildRenderPoseLookup() {
 		}
 	}
 	for (const VoxelNodeBinding& binding : m_voxel_bindings) {
-		if (binding.node.exists()) {
+		if (binding.node.exists() && not binding.is_part) {
 			add_driver(*binding.node, binding.body);
 		}
 	}
@@ -3661,7 +3762,7 @@ void Simulator::checkTriggers() {
 	}
 }
 
-auto Simulator::createVoxelShape(BodyID owner, toast::VoxelNode& node) -> ShapeID {
+auto Simulator::createVoxelShape(BodyID owner, toast::VoxelNode& node, toast::VoxelPart* part) -> ShapeID {
 	const voxel::Palette* palette = node.resolvedPalette();
 	if (palette == nullptr) {
 		palette = &voxel::defaultPalette();
@@ -3684,24 +3785,26 @@ auto Simulator::createVoxelShape(BodyID owner, toast::VoxelNode& node) -> ShapeI
 	voxel::Volume* volume = nullptr;
 	{
 		std::scoped_lock voxel_lock {voxelDataMutex()};
-		volume = node.volume();
+		volume = part != nullptr ? part->volume.get() : node.volume();
 	}
 	if (volume == nullptr) {
 		TOAST_WARN("Physics", "Voxel node '{}' has no instantiated volume to collide against", node.name());
 		return {};
 	}
 
-	const VoxelShape voxel_shape {.local_center = glm::vec3(node.voxelOrigin()) * voxel::k_voxel_size};
+	const glm::ivec3 origin = part != nullptr ? part->origin : node.voxelOrigin();
+	const VoxelShape voxel_shape {.local_center = glm::vec3(origin) * voxel::k_voxel_size};
 
 	const ShapeID shape = createVoxelShape(owner, voxel_shape, *volume, *palette, *materials);
 	const Shape* stored_shape = tryGetShape(shape);
 	if (stored_shape != nullptr) {
 		if (VoxelShapeData* data = tryGetVoxelData(stored_shape->voxel.data)) {
-			data->source_revision = node.revision();
+			data->source_revision = part != nullptr ? part->revision : node.revision();
 			data->palette_uid = node.paletteUid();
-			if (node.m_split_pending) {
+			bool& split_pending = part != nullptr ? part->split_pending : node.m_split_pending;
+			if (split_pending) {
 				data->connectivity_dirty = true;
-				node.m_split_pending = false;
+				split_pending = false;
 			}
 		}
 	}
@@ -4424,11 +4527,17 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 		if (binding.shape != c.shape || not binding.node.exists()) {
 			continue;
 		}
-		++binding.node->m_revision;
-		binding.source_revision = binding.node->revision();
-		binding.node->recordDamage(removed, removed_sum);
+		if (toast::VoxelPart* part = partOf(binding)) {
+			++part->revision;
+			binding.source_revision = part->revision;
+			binding.node->recordDamage(removed, removed_sum, part->origin);
+		} else {
+			++binding.node->m_revision;
+			binding.source_revision = binding.node->revision();
+			binding.node->recordDamage(removed, removed_sum);
+		}
 		if (data->solid_voxel_count == 0) {
-			binding.node->m_pending_events.emptied = true;
+			noteVoxelShapeEmptied(c.shape);
 		}
 		break;
 	}
@@ -5029,8 +5138,8 @@ auto Simulator::explodeShape(ShapeID shape_id, const ExplosionDamage& explosion)
 		return solid_before;
 	}
 	data->connectivity_dirty = true;
-	if (toast::VoxelNode* node = voxelNodeFor(shape_id); node != nullptr && not debris_voxels.empty()) {
-		node->recordDamage(static_cast<uint32_t>(debris_voxels.size()), debris_index_sum);
+	if (not debris_voxels.empty()) {
+		recordVoxelDamage(shape_id, static_cast<uint32_t>(debris_voxels.size()), debris_index_sum);
 	}
 	unlockSleep(shape->owner);
 	wakeBodiesInBounds(bounds);
@@ -5142,8 +5251,8 @@ auto Simulator::breakPieces(
 	data->connectivity_dirty = true;
 
 	const uint32_t moved = solid_before - std::min(solid_before, data->solid_voxel_count);
-	if (toast::VoxelNode* node = voxelNodeFor(shape_id); node != nullptr && moved > 0) {
-		node->recordDamage(moved, picked.index_sum);
+	if (moved > 0) {
+		recordVoxelDamage(shape_id, moved, picked.index_sum);
 	}
 	unlockSleep(shape->owner);
 

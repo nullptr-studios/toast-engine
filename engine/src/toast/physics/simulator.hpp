@@ -248,6 +248,8 @@ public:
 	static auto renderPoseDelta(BodyID id) -> glm::mat4;
 	[[nodiscard]]
 	static auto renderPoseDelta(const toast::VoxelNode& node) -> glm::mat4;
+	[[nodiscard]]
+	static auto renderPoseDelta(const toast::VoxelPart& part) -> glm::mat4;
 
 	/// Delta of the dynamic body a node sits below and identity when it follows none
 	[[nodiscard]]
@@ -365,6 +367,8 @@ private:
 		BodyID body;
 		ShapeID shape;
 		toast::Box<toast::VoxelNode> node;
+		bool is_part = false;
+		uint64_t part_key = 0;
 		uint32_t source_revision = 0;
 		uint64_t source_model = 0;
 		uint64_t source_palette = 0;
@@ -462,7 +466,7 @@ private:
 	    const voxel::MaterialLibrary& materials
 	) -> ShapeID;
 	[[nodiscard]]
-	auto createVoxelShape(BodyID owner, toast::VoxelNode& node) -> ShapeID;
+	auto createVoxelShape(BodyID owner, toast::VoxelNode& node, toast::VoxelPart* part) -> ShapeID;
 
 	void destroyShape(ShapeID shape);
 	[[nodiscard]]
@@ -619,6 +623,12 @@ private:
 
 	[[nodiscard]]
 	auto voxelNodeFor(ShapeID shape) -> toast::VoxelNode*;
+
+	[[nodiscard]]
+	static auto partOf(const VoxelNodeBinding& binding) -> toast::VoxelPart*;
+
+	void recordVoxelDamage(ShapeID shape, uint32_t count, glm::vec3 index_sum);
+	void noteVoxelShapeEmptied(ShapeID shape);
 
 	void reapFragments();
 	void destroyFragmentRecord(BodyID id);

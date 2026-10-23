@@ -10,12 +10,15 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <memory>
 #include <optional>
 #include <toast/assets/types.hpp>
 #include <toast/physics/body.hpp>
 #include <toast/physics/collision.hpp>
 #include <toast/voxel/stamp.hpp>
+#include <toast/voxel/voxel_constants.hpp>
 #include <toast/voxel/voxel_edit.hpp>
 #include <vector>
 
@@ -55,6 +58,28 @@ enum class SimulationType : uint8_t {
 	static_body = 0,    ///< Never moves
 	kinematic = 1,      ///< Follows the node transform and pushes other bodies
 	dynamic = 2,        ///< Fully simulated
+};
+
+struct VoxelPart {
+	uint64_t key = 0;
+	std::unique_ptr<voxel::Volume> volume;
+	std::vector<std::unique_ptr<voxel::Volume>> retired;
+	glm::ivec3 origin {0};
+	uint32_t revision = 0;
+	bool split_pending = false;
+	physics::BodyID body;
+	physics::ShapeID shape;
+	std::unique_ptr<voxel::Volume> highlight;
+
+	bool has_pose = false;
+	glm::vec3 pose_position {0.0f};
+	glm::quat pose_rotation {1.0f, 0.0f, 0.0f, 0.0f};
+	float mass = 0.0f;
+
+	[[nodiscard]]
+	auto localTransform() const -> glm::mat4 {
+		return glm::translate(glm::mat4(1.0f), glm::vec3(origin) * voxel::k_voxel_size);
+	}
 };
 
 /**
@@ -350,6 +375,33 @@ public:
 		return render_only;
 	}
 
+	[[nodiscard]]
+	virtual auto usesParts() const noexcept -> bool {
+		return false;
+	}
+
+	[[nodiscard]]
+	auto parts() const noexcept -> const std::vector<VoxelPart>& {
+		return m_parts;
+	}
+
+	[[nodiscard]]
+	auto partsRevision() const noexcept -> uint32_t {
+		return m_parts_revision;
+	}
+
+	[[nodiscard]]
+	auto ownsBody(physics::BodyID body) const noexcept -> bool;
+
+	[[nodiscard]]
+	auto isSolidAtVoxel(glm::ivec3 voxel) -> bool;
+
+	[[nodiscard]]
+	auto solidBounds() -> std::optional<voxel::EditBounds>;
+
+	[[nodiscard]]
+	auto raycastVoxels(glm::vec3 origin, glm::vec3 direction, float max_t) -> std::optional<voxel::VolumeHit>;
+
 protected:
 	/**
 	 * Runs right before editShape on every rebuild, subclasses build their shape here
@@ -397,8 +449,10 @@ protected:
 
 	void refreshVolume();
 	void releaseVolume();
+	void reregisterPhysics();
 	void retireVolume();
 	void recordDamage(uint32_t count, glm::vec3 index_sum);
+	void recordDamage(uint32_t count, glm::vec3 index_sum, glm::ivec3 origin);
 
 	/**
 	 * Grows the volume until bounds fit
@@ -443,6 +497,30 @@ protected:
 	[[nodiscard]]
 	auto physicsBound() const noexcept -> bool {
 		return m_body != physics::BodyID {};
+	}
+
+	template<typename Visit>
+	void forEachBody(Visit&& visit) {
+		if (m_body != physics::BodyID {}) {
+			visit(m_body);
+		}
+		for (const VoxelPart& part : m_parts) {
+			if (part.body != physics::BodyID {}) {
+				visit(part.body);
+			}
+		}
+	}
+
+	template<typename Visit>
+	void forEachShape(Visit&& visit) {
+		if (m_shape != physics::ShapeID {}) {
+			visit(m_shape);
+		}
+		for (const VoxelPart& part : m_parts) {
+			if (part.shape != physics::ShapeID {}) {
+				visit(part.shape);
+			}
+		}
 	}
 
 	void assignBody(physics::BodyID body) noexcept { m_body = body; }
@@ -554,6 +632,9 @@ protected:
 
 	std::unique_ptr<voxel::Volume> m_volume;
 	std::vector<std::unique_ptr<voxel::Volume>> m_retired_volumes;
+	std::vector<VoxelPart> m_parts;
+	uint32_t m_parts_revision = 0;
+	bool m_warned_part_edit = false;
 	glm::ivec3 m_voxel_origin {0};
 	uint32_t m_revision = 0;
 	const assets::VoxelModel* m_instanced_from = nullptr;

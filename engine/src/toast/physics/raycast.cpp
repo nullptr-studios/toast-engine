@@ -394,6 +394,11 @@ auto Simulator::bodyFor(const toast::Node& node) -> BodyID {
 			return rigidbody->bodyID();
 		}
 		if (const toast::Box<toast::VoxelNode> voxel = current.as<toast::VoxelNode>(); voxel.exists()) {
+			for (const toast::VoxelPart& part : voxel->parts()) {
+				if (part.body != BodyID {}) {
+					return part.body;
+				}
+			}
 			return voxel->bodyID();
 		}
 	}
