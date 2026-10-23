@@ -446,10 +446,6 @@ void registerPhysicsSettings() {
 	    {.label = "Max unglue voxels", .category = "Fracture", .min = 0.0, .max = 1000000.0, .step = 64.0},
 	    &Tunables::fracture_max_unglue_voxels
 	);
-	flt("physics.fracture.debris_split_chance",
-	    0.35,
-	    {.label = "Debris split chance", .category = "Shatter", .min = 0.0f, .max = 1.0f, .step = 0.05f},
-	    &Tunables::fracture_debris_split_chance);
 	uint_setting(
 	    "physics.fracture.max_shatter_cells",
 	    128,

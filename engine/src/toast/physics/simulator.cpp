@@ -827,11 +827,49 @@ void Simulator::clearFragmentFromSource(
 		retireVoxelBody(shape->owner);
 		return;
 	}
+	if (debrisIfSmall(shape_id)) {
+		return;
+	}
 	rebuildMassProperties(shape->owner);
 }
 
+auto Simulator::debrisIfSmall(ShapeID shape_id) -> bool {
+	const Shape* shape = tryGetShape(shape_id);
+	VoxelShapeData* data = shape != nullptr && shape->type == ShapeType::voxel ? tryGetVoxelData(shape->voxel.data) : nullptr;
+	const Body* body = shape != nullptr ? tryGetBody(shape->owner) : nullptr;
+	if (data == nullptr || data->volume == nullptr || body == nullptr || body->type != BodyType::dynamic_body) {
+		return false;
+	}
+
+	// Too few voxels to be worth a rigidbody
+	// convert them to debris
+	const uint32_t solid = data->volume->solidVoxelCount();
+	if (solid == 0 || solid >= tunables().min_fragment_voxels) {
+		return false;
+	}
+
+	DetachedComponent whole;
+	whole.voxel_count = solid;
+	for (uint32_t index = 0; index < data->volume->brickCount(); ++index) {
+		const glm::ivec3 brick = data->volume->brickAtIndex(index);
+		const voxel::BrickOccupancy* occupancy = data->volume->occupancyPointer(brick);
+		if (occupancy != nullptr && not voxel::isEmpty(*occupancy)) {
+			whole.pieces.push_back({.brick = brick, .voxels = *occupancy});
+		}
+	}
+
+	emitComponentDebris(shape_id, whole, nullptr);
+	shape = tryGetShape(shape_id);
+	data = shape != nullptr ? tryGetVoxelData(shape->voxel.data) : nullptr;
+	if (data != nullptr && data->volume != nullptr) {
+		clearFragmentFromSource(shape_id, *data, *data->volume, whole);
+	}
+	return true;
+}
+
 void Simulator::emitDebris(
-    ShapeID shape_id, std::span<const DebrisVoxel> voxels, const DebrisBlast* blast, const FragmentPush* push, uint64_t seed
+    ShapeID shape_id, std::span<const DebrisVoxel> voxels, const DebrisBlast* blast, const FragmentPush* push, uint64_t seed,
+    bool together
 ) {
 	ZoneScopedN("physics::EmitDebris");
 
@@ -853,7 +891,8 @@ void Simulator::emitDebris(
 	const glm::ivec3 jitter {
 	  static_cast<int32_t>(rng.below(2)), static_cast<int32_t>(rng.below(2)), static_cast<int32_t>(rng.below(2))
 	};
-	std::vector<DebrisCluster> clusters = clusterDebris(voxels, jitter, rng, tunables().fracture_debris_split_chance);
+	std::vector<DebrisCluster> clusters =
+	    together ? std::vector<DebrisCluster> {wholeDebris(voxels)} : clusterDebris(voxels, jitter);
 
 	// past the cap a random subset is kept and the rest is deleted
 	const size_t room = cap - m_debris_spawns.size();
@@ -878,14 +917,16 @@ void Simulator::emitDebris(
 	m_debris_spawns.reserve(m_debris_spawns.size() + clusters.size());
 	for (const DebrisCluster& cluster : clusters) {
 		// the block is 2 voxels wide
-		const glm::vec3 local = (glm::vec3(cluster.origin) + 1.0f) * voxel::k_voxel_size;
+		const glm::vec3 local =
+		    cluster.whole ? cluster.centre * voxel::k_voxel_size : (glm::vec3(cluster.origin) + 1.0f) * voxel::k_voxel_size;
 		const glm::vec3 position =
 		    body->position + (body->rotation * (shape->voxel.local_center + (shape->voxel.local_rotation * local)));
 
 		const uint32_t material_index = voxel::resolveMaterialIndex(data->palette, data->materials, cluster.material);
 		const voxel::PaletteEntry& look = data->palette.entries[cluster.material];
-		const float mass = static_cast<float>(std::popcount(cluster.mask)) *
-		                   static_cast<float>(data->materials.materials[material_index].density) * k_voxel_volume;
+		const float mass =
+		    static_cast<float>(cluster.whole ? cluster.voxel_count : static_cast<uint32_t>(std::popcount(cluster.mask))) *
+		    static_cast<float>(data->materials.materials[material_index].density) * k_voxel_volume;
 
 		// starts with the speed of the point it broke off from
 		glm::vec3 velocity = body->linear_velocity + glm::cross(body->angular_velocity, position - world_com);
@@ -914,7 +955,7 @@ void Simulator::emitDebris(
 		      .position = position,
 		      .rotation = lattice_rotation,
 		      .velocity = velocity,
-		      .angular_velocity = rng.direction() * rng.range(0.0f, k_debris_max_spin),
+		      .angular_velocity = together ? body->angular_velocity : rng.direction() * rng.range(0.0f, k_debris_max_spin),
 		      .mask = cluster.mask,
 		      .material = cluster.material,
 		      .albedo_roughness = static_cast<uint32_t>(look.albedo_r) | (static_cast<uint32_t>(look.albedo_g) << 8u) |
@@ -924,7 +965,7 @@ void Simulator::emitDebris(
 		      .glass = voxel::isGlass(look),
 		      .alpha = look.alpha,
 		      .ior = look.ior,
-		      .scale = rng.range(k_debris_min_scale, 1.0f),
+		      .scale = cluster.whole ? cluster.scale : rng.range(k_debris_min_scale, 1.0f),
 		    }
 		);
 	}
@@ -962,7 +1003,7 @@ void Simulator::emitComponentDebris(ShapeID shape_id, const DetachedComponent& c
 	}
 
 	const uint64_t seed = fractureSeed(shape->owner, shape_id, glm::vec3(voxels.front().voxel) * voxel::k_voxel_size, m_tick_index);
-	emitDebris(shape_id, voxels, nullptr, push, seed);
+	emitDebris(shape_id, voxels, nullptr, push, seed, true);
 }
 
 auto Simulator::takeDebrisSpawns() -> std::vector<DebrisSpawn> {
@@ -4545,7 +4586,7 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 	if (body->type == BodyType::dynamic_body) {
 		if (volume.solidVoxelCount() == 0) {
 			retireVoxelBody(shape->owner);
-		} else {
+		} else if (not debrisIfSmall(c.shape)) {
 			rebuildMassProperties(shape->owner);
 		}
 	}

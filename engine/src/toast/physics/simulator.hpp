@@ -596,7 +596,8 @@ private:
 	);
 
 	void emitDebris(
-	    ShapeID shape_id, std::span<const DebrisVoxel> voxels, const DebrisBlast* blast, const FragmentPush* push, uint64_t seed
+	    ShapeID shape_id, std::span<const DebrisVoxel> voxels, const DebrisBlast* blast, const FragmentPush* push, uint64_t seed,
+	    bool together = false
 	);
 
 	void emitComponentDebris(ShapeID shape_id, const DetachedComponent& component, const FragmentPush* push);
@@ -619,6 +620,7 @@ private:
 	auto spawnStaticSplitBody(ShapeID source_shape_id, const DetachedComponent& component) -> bool;
 	void despawnSettledFragments(float dt);
 	void retireVoxelBody(BodyID id);
+	auto debrisIfSmall(ShapeID shape) -> bool;
 	void destroyFragmentsOf(BodyID origin);
 
 	[[nodiscard]]
