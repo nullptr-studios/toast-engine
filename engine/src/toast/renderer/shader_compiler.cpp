@@ -11,6 +11,8 @@
 #include <array>
 #include <atomic>
 #include <condition_variable>
+#include <cstdlib>
+#include <cstring>
 #include <mutex>
 #include <slang-com-ptr.h>
 #include <slang.h>
@@ -91,6 +93,18 @@ private:
 
 std::atomic_bool ray_query_available = false;
 
+auto useDebugCompilation() -> bool {
+#if !defined(NDEBUG) || defined(TOAST_SLANG_DEBUG_DEFAULT)
+	return true;
+#else
+	static const bool requested = [] {
+		const char* value = std::getenv("TOAST_SLANG_DEBUG");
+		return value != nullptr && std::strcmp(value, "1") == 0;
+	}();
+	return requested;
+#endif
+}
+
 }
 
 void ShaderCompiler::setRayQueryAvailable(bool available) {
@@ -102,15 +116,11 @@ auto ShaderCompiler::isRayQueryAvailable() -> bool {
 }
 
 auto ShaderCompiler::featureHash() -> uint64_t {
-	// Debug compiles unoptimized with debug info so a release entry in the shared cache must read as stale and the reverse
-#if defined(NDEBUG)
-	constexpr uint64_t k_build_profile = 0x0ull;
-#else
-	constexpr uint64_t k_build_profile = 0xd3b09c0de5a11e01ull;
-#endif
+	// Shader compile options, including the optimized-build override, must partition the shared disk cache.
+	const uint64_t build_profile = useDebugCompilation() ? 0xd3b09c0de5a11e01ull : 0x0ull;
 	// TOAST_REVERSED_Z changes the SPIR-V so the other convention must read as stale
 	constexpr uint64_t k_depth_convention = depth::k_reversed_z ? 0x5eed2e7e45edull : 0x0ull;
-	return (ShaderCompiler::isRayQueryAvailable() ? 0x9e3779b97f4a7c15ull : 0x0ull) ^ k_build_profile ^ k_depth_convention;
+	return (ShaderCompiler::isRayQueryAvailable() ? 0x9e3779b97f4a7c15ull : 0x0ull) ^ build_profile ^ k_depth_convention;
 }
 
 static auto createSession(slang::IGlobalSession* global_session) -> Slang::ComPtr<slang::ISession> {
@@ -123,31 +133,28 @@ static auto createSession(slang::IGlobalSession* global_session) -> Slang::ComPt
 
 	std::vector<slang::CompilerOptionEntry> compiler_options;
 
-#if !defined(NDEBUG)
-	TOAST_INFO("Render", "Configuring Slang for DEBUG: Optimizations disabled, debug symbols enabled.");
+	const bool debug_compilation = useDebugCompilation();
+	TOAST_INFO(
+	    "Render",
+	    "Configuring Slang: optimizations {}, debug symbols {}",
+	    debug_compilation ? "disabled" : "maximal",
+	    debug_compilation ? "enabled" : "disabled"
+	);
 
 	slang::CompilerOptionEntry opt_entry {};
 	opt_entry.name = slang::CompilerOptionName::Optimization;
 	opt_entry.value.kind = slang::CompilerOptionValueKind::Int;
-	opt_entry.value.intValue0 = SlangOptimizationLevel::SLANG_OPTIMIZATION_LEVEL_NONE;
+	opt_entry.value.intValue0 = debug_compilation ? SlangOptimizationLevel::SLANG_OPTIMIZATION_LEVEL_NONE
+	                                              : SlangOptimizationLevel::SLANG_OPTIMIZATION_LEVEL_MAXIMAL;
 	compiler_options.push_back(opt_entry);
 
-	slang::CompilerOptionEntry dbg_entry {};
-	dbg_entry.name = slang::CompilerOptionName::DebugInformation;
-	dbg_entry.value.kind = slang::CompilerOptionValueKind::Int;
-	dbg_entry.value.intValue0 = SlangDebugInfoLevel::SLANG_DEBUG_INFO_LEVEL_MAXIMAL;
-	compiler_options.push_back(dbg_entry);
-
-#else
-	TOAST_INFO("Render", "Configuring Slang for RELEASE: Maximum optimizations enabled.");
-
-	slang::CompilerOptionEntry opt_entry {};
-	opt_entry.name = slang::CompilerOptionName::Optimization;
-	opt_entry.value.kind = slang::CompilerOptionValueKind::Int;
-	opt_entry.value.intValue0 = SlangOptimizationLevel::SLANG_OPTIMIZATION_LEVEL_MAXIMAL;
-	compiler_options.push_back(opt_entry);
-
-#endif
+	if (debug_compilation) {
+		slang::CompilerOptionEntry dbg_entry {};
+		dbg_entry.name = slang::CompilerOptionName::DebugInformation;
+		dbg_entry.value.kind = slang::CompilerOptionValueKind::Int;
+		dbg_entry.value.intValue0 = SlangDebugInfoLevel::SLANG_DEBUG_INFO_LEVEL_MAXIMAL;
+		compiler_options.push_back(dbg_entry);
+	}
 
 	// Always defined to 0 or 1 so shaders can #if TOAST_RAY_QUERY
 	slang::CompilerOptionEntry ray_query_entry {};
@@ -175,11 +182,7 @@ static auto createSession(slang::IGlobalSession* global_session) -> Slang::ComPt
 	session_desc.searchPaths = search_paths.data();
 	session_desc.searchPathCount = search_paths.size();
 
-#if !defined(NDEBUG)
-	session_desc.skipSPIRVValidation = false;
-#else
-	session_desc.skipSPIRVValidation = true;
-#endif
+	session_desc.skipSPIRVValidation = !debug_compilation;
 
 	session_desc.compilerOptionEntries = compiler_options.data();
 	session_desc.compilerOptionEntryCount = SlangInt(compiler_options.size());

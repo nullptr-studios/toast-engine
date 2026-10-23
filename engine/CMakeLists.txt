@@ -161,6 +161,11 @@ target_compile_definitions(toast_engine PUBLIC
         GLM_FORCE_INTRINSICS
 )
 
+# Keep Slang's Debug profile for Linux builds that retain C++ debug information.
+target_compile_definitions(toast_engine PRIVATE
+        $<$<AND:$<PLATFORM_ID:Linux>,$<CONFIG:RelWithDebInfo>>:TOAST_SLANG_DEBUG_DEFAULT>
+)
+
 # Baseline ISA of Release builds on x86_64 GCC/Clang. CI runs on virtual machines whose CPU has no AVX2, so it passes a lower one
 set(TOAST_X86_MARCH "x86-64-v3" CACHE STRING "-march of Release builds on x86_64 (GCC and Clang)")
 # Same for MSVC: the instruction set Release builds assume (empty for the compiler default), CI machines without AVX2 pass none
