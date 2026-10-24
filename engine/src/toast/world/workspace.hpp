@@ -254,7 +254,7 @@ protected:
 	std::optional<glm::vec2> m_pick_press;
 
 	auto retypeNode(Box<Node>& target, std::string_view type, bool keep_fields) -> Box<Node>;
-	void promoteNode(Box<Node>& target, std::string_view path);
+	auto promoteNode(Box<Node>& target, std::string_view path) -> Box<Node>;
 
 	template<typename F>
 	void recordHistory(WorkspaceHistory::Context context, F&& mutation) {

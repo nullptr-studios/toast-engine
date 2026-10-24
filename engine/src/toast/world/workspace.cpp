@@ -845,7 +845,7 @@ auto Workspace::retypeNode(Box<Node>& target, std::string_view type, bool keep_f
 	return fresh;
 }
 
-void Workspace::promoteNode(Box<Node>& target, std::string_view path) {
+auto Workspace::promoteNode(Box<Node>& target, std::string_view path) -> Box<Node> {
 	ZoneScoped;
 	auto parent = target->parentInternal();
 
@@ -874,10 +874,11 @@ void Workspace::promoteNode(Box<Node>& target, std::string_view path) {
 		if (auto* spawned_3d = spawned.exists() ? reflect_cast<Node3D>(&*spawned) : nullptr; spawned_3d && placement) {
 			std::tie(spawned_3d->position, spawned_3d->rotation, spawned_3d->scale) = *placement;
 		}
-	} else {
-		TOAST_WARN("World", "Promote: couldn't resolve UID for {}", path);
-		event::send<event::RequestHierarchyUpdate>();
+		return spawned;
 	}
+	TOAST_WARN("World", "Promote: couldn't resolve UID for {}", path);
+	event::send<event::RequestHierarchyUpdate>();
+	return {};
 }
 
 auto Workspace::restoreHistorySnapshot(const assets::Prefab& snapshot) -> bool {

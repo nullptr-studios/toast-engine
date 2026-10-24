@@ -248,6 +248,8 @@ public:
 	static auto renderPoseDelta(BodyID id) -> glm::mat4;
 	[[nodiscard]]
 	static auto renderPoseDelta(const toast::VoxelNode& node) -> glm::mat4;
+	[[nodiscard]]
+	static auto renderPoseDelta(const toast::VoxelPart& part) -> glm::mat4;
 
 	/// Delta of the dynamic body a node sits below and identity when it follows none
 	[[nodiscard]]
@@ -365,6 +367,8 @@ private:
 		BodyID body;
 		ShapeID shape;
 		toast::Box<toast::VoxelNode> node;
+		bool is_part = false;
+		uint64_t part_key = 0;
 		uint32_t source_revision = 0;
 		uint64_t source_model = 0;
 		uint64_t source_palette = 0;
@@ -462,7 +466,7 @@ private:
 	    const voxel::MaterialLibrary& materials
 	) -> ShapeID;
 	[[nodiscard]]
-	auto createVoxelShape(BodyID owner, toast::VoxelNode& node) -> ShapeID;
+	auto createVoxelShape(BodyID owner, toast::VoxelNode& node, toast::VoxelPart* part) -> ShapeID;
 
 	void destroyShape(ShapeID shape);
 	[[nodiscard]]
@@ -592,7 +596,8 @@ private:
 	);
 
 	void emitDebris(
-	    ShapeID shape_id, std::span<const DebrisVoxel> voxels, const DebrisBlast* blast, const FragmentPush* push, uint64_t seed
+	    ShapeID shape_id, std::span<const DebrisVoxel> voxels, const DebrisBlast* blast, const FragmentPush* push, uint64_t seed,
+	    bool together = false
 	);
 
 	void emitComponentDebris(ShapeID shape_id, const DetachedComponent& component, const FragmentPush* push);
@@ -601,9 +606,13 @@ private:
 	auto spawnFragmentBody(ShapeID source_shape_id, const DetachedComponent& component, const FragmentPush* push = nullptr) -> bool;
 	auto smashShape(ShapeID shape_id, const SmashVolume& volume, const CapsuleSmash& smash, bool chunks) -> uint32_t;
 	auto explodeShape(ShapeID shape_id, const ExplosionDamage& explosion) -> uint32_t;
+	[[nodiscard]]
+	auto explosionPush(ShapeID shape_id, const DetachedComponent& piece, const ExplosionDamage& explosion)
+	    -> std::optional<FragmentPush>;
 	auto breakPieces(
 	    ShapeID shape_id, SmashPieces& picked, bool chunks,
-	    const std::function<std::optional<FragmentPush>(const DetachedComponent&)>& push_for, const AABB& wake_bounds
+	    const std::function<std::optional<FragmentPush>(const DetachedComponent&)>& push_for, const AABB& wake_bounds,
+	    uint32_t max_spawns = 0
 	) -> uint32_t;
 	[[nodiscard]]
 	auto marchVoxelRay(const glm::vec3& origin, const glm::vec3& direction, float max_distance) -> std::optional<VoxelRayHit>;
@@ -611,10 +620,17 @@ private:
 	auto spawnStaticSplitBody(ShapeID source_shape_id, const DetachedComponent& component) -> bool;
 	void despawnSettledFragments(float dt);
 	void retireVoxelBody(BodyID id);
+	auto debrisIfSmall(ShapeID shape) -> bool;
 	void destroyFragmentsOf(BodyID origin);
 
 	[[nodiscard]]
 	auto voxelNodeFor(ShapeID shape) -> toast::VoxelNode*;
+
+	[[nodiscard]]
+	static auto partOf(const VoxelNodeBinding& binding) -> toast::VoxelPart*;
+
+	void recordVoxelDamage(ShapeID shape, uint32_t count, glm::vec3 index_sum);
+	void noteVoxelShapeEmptied(ShapeID shape);
 
 	void reapFragments();
 	void destroyFragmentRecord(BodyID id);

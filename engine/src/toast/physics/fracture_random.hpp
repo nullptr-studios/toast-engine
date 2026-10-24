@@ -91,7 +91,7 @@ inline auto valueNoise3(uint64_t seed, glm::vec3 p) noexcept -> float {
 	float x01 = LARP(at(0, 1, 0), at(1, 1, 0), w.x);
 	float x10 = LARP(at(0, 0, 1), at(1, 0, 1), w.x);
 	float x11 = LARP(at(0, 1, 1), at(1, 1, 1), w.x);
-	return LARP(LARP(x00, x10, w.y), LARP(x01, x11, w.y), w.z);
+	return LARP(LARP(x00, x01, w.y), LARP(x10, x11, w.y), w.z);
 
 #undef LARP
 }

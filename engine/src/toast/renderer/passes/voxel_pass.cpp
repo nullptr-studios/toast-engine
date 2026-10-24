@@ -876,7 +876,7 @@ auto VoxelPass::prepare(uint32_t frame_index) -> bool {
 	const bool capture = frame->probe_capture_index >= 0 || frame->irradiance_capture_index >= 0;
 	m_denoise_active = (m_marched_lights || m_ambient_rays) && frame->render_mode == 0 && !capture &&
 	                   m_denoise_temporal_pipeline.isReady() && m_denoise_composite_pipeline.isReady() &&
-	                   frame_index * 2 + 1 < m_denoise_sets.size() && m_denoise_history[1][1].isReady();
+	                   (frame_index * 2) + 1 < m_denoise_sets.size() && m_denoise_history[1][1].isReady();
 	if (!m_denoise_active) {
 		m_denoise_valid = false;
 	}

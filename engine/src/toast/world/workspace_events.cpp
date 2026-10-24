@@ -1369,6 +1369,12 @@ struct ProtoTraits<VoxelBake> {
 		p.set_target(e.target);
 		p.set_path(e.path);
 		p.set_replace(e.replace);
+		p.set_base_path(e.base_path);
+		for (const VoxelBakePiece& piece : e.pieces) {
+			proto::events::VoxelBakePiece* out = p.add_pieces();
+			out->set_uid(piece.uid);
+			out->set_path(piece.path);
+		}
 		return p;
 	}
 
@@ -1377,6 +1383,10 @@ struct ProtoTraits<VoxelBake> {
 		e.target = toast::UID::fromString(p.target());
 		e.path = p.path();
 		e.replace = p.replace();
+		e.base_path = p.base_path();
+		for (const proto::events::VoxelBakePiece& piece : p.pieces()) {
+			e.pieces.push_back({.uid = toast::UID::fromString(piece.uid()), .path = piece.path()});
+		}
 		return e;
 	}
 };
@@ -1391,12 +1401,18 @@ struct ProtoTraits<VoxelBakeCompleted> {
 	static auto toProto(const Event& e) -> Proto {
 		Proto p;
 		p.set_path(e.path);
+		for (const std::string& unused : e.unused) {
+			p.add_unused(unused);
+		}
 		return p;
 	}
 
 	static auto fromProto(const Proto& p) -> Event {
 		Event e;
 		e.path = p.path();
+		for (const std::string& unused : p.unused()) {
+			e.unused.push_back(unused);
+		}
 		return e;
 	}
 };

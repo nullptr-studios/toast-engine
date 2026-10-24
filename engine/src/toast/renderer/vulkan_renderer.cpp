@@ -4276,6 +4276,15 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		bool data_only = false;
 		uint64_t highlight_id = 0;
 		const toast::VoxelNode* node = nullptr;
+		uint64_t part_key = 0;
+		uint64_t outline_id = 0;
+	};
+
+	// chatty vibed this
+	const auto part_render_id = [](uint64_t node_rid, uint64_t part_key) {
+		uint64_t mixed = (node_rid * 0x9E3779B97F4A7C15ull) ^ ((part_key + 0x7F4A7C15ull) * 0xC2B2AE3D27D4EB4Full);
+		mixed ^= mixed >> 29;
+		return (mixed & 0x3FFFFFFFFFFFFFFFull) | (uint64_t {1} << 62);
 	};
 
 	// Highlights share the voxel grid of their node so the shader looks up the same voxel
@@ -4294,6 +4303,43 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		}
 		const glm::mat4* owner_transform = ownerTransform(*node);
 		if (owner_transform == nullptr) {
+			continue;
+		}
+
+		if (node->usesParts()) {
+			const voxel::Palette* parts_palette = node->resolvedPalette();
+			if (parts_palette == nullptr) {
+				parts_palette = &defaultVoxelPalette();
+			}
+			for (const toast::VoxelPart& part : node->parts()) {
+				if (part.volume == nullptr) {
+					continue;
+				}
+				glm::mat4 pose = node->getWorldTransform();
+				if (part.has_pose) {
+					pose = glm::translate(glm::mat4(1.0f), part.pose_position) * glm::mat4_cast(part.pose_rotation);
+				}
+				const uint64_t id = part_render_id(node->rid(), part.key);
+				// clang-format off
+				gathered.push_back(Gathered {
+					.id = id,
+					.volume = part.volume.get(),
+					.palette = parts_palette,
+					.model = *owner_transform * physics::Simulator::renderPoseDelta(part) * pose * part.localTransform(),
+					.debug_name = std::string{node->name()},
+					.node = node,
+					.part_key = part.key,
+					.outline_id = node->rid()
+				});
+				key.push_back({
+					.node_rid = id,
+					.revision = part.revision,
+					.content = part.volume->revision(),
+					.palette = parts_palette,
+					.palette_revision = parts_palette->revision
+				});
+				// clang-format on
+			}
 			continue;
 		}
 
@@ -4329,7 +4375,7 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		std::scoped_lock lock(m_voxel_proxy_mutex);
 		const size_t drawn = gathered.size();
 		for (size_t i = 0; i < drawn; ++i) {
-			auto it = m_voxel_highlights.find(gathered[i].node);
+			auto it = m_voxel_highlights.find(VoxelHighlightKey {gathered[i].node, gathered[i].part_key});
 			if (gathered[i].node == nullptr || it == m_voxel_highlights.end() ||
 			    it->second->brickDims() != gathered[i].volume->brickDims()) {
 				continue;
@@ -4570,7 +4616,7 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		      .mirrored = glm::determinant(model) < 0.0f,
 		      .node_rid = node_rid,
 		      .highlight_record = highlight_record_of(entry.highlight_id),
-		      .outlined = isOutlined(node_rid),
+		      .outlined = isOutlined(entry.outline_id != 0 ? entry.outline_id : node_rid),
 		    }
 		);
 		drawn_models.insert_or_assign(node_rid, model);

@@ -263,14 +263,23 @@ struct VoxelCollapsePieces : Event<VoxelCollapsePieces> {
 	std::string path;
 };
 
+/** Every separate mesh the baker bakes when baking the unbaked */
+struct VoxelBakePiece {
+	toast::UID uid;
+	std::string path;
+};
+
 struct VoxelBake : Event<VoxelBake> {
 	toast::UID target;
 	std::string path;
 	bool replace = false;
+	std::string base_path;
+	std::vector<VoxelBakePiece> pieces;
 };
 
 struct VoxelBakeCompleted : Event<VoxelBakeCompleted> {
 	std::string path;
+	std::vector<std::string> unused;
 };
 
 struct SetVoxelEditorOverlays : Event<SetVoxelEditorOverlays> {

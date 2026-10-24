@@ -78,6 +78,23 @@ auto VoxelNode::resolvedModel() const -> const assets::VoxelModel* {
 }
 
 auto VoxelNode::localBoundingSphere() const -> glm::vec4 {
+	if (usesParts()) {
+		bool any = false;
+		glm::vec3 low {0.0f};
+		glm::vec3 high {0.0f};
+		for (const VoxelPart& part : m_parts) {
+			if (part.volume == nullptr) {
+				continue;
+			}
+			const glm::vec3 first = glm::vec3(part.origin) * voxel::k_voxel_size;
+			const glm::vec3 last = first + (glm::vec3(part.volume->brickDims()) * voxel::k_brick_size);
+			low = any ? glm::min(low, first) : first;
+			high = any ? glm::max(high, last) : last;
+			any = true;
+		}
+		return any ? glm::vec4((low + high) * 0.5f, glm::length(high - low) * 0.5f) : glm::vec4(0.0f);
+	}
+
 	glm::vec3 extent;
 	if (m_volume != nullptr) {
 		extent = glm::vec3(m_volume->brickDims()) * voxel::k_brick_size;
@@ -129,7 +146,7 @@ auto VoxelNode::volume() -> voxel::Volume* {
 		m_voxel_origin = glm::ivec3(0);
 		m_edit_shape_pending = true;
 
-		if (model != nullptr) {
+		if (model != nullptr && !usesParts()) {
 			std::optional<voxel::Volume> instance = model->instantiate(voxel::runtimeBrickPool());
 			if (instance.has_value()) {
 				m_volume = std::make_unique<voxel::Volume>(std::move(*instance));
@@ -197,11 +214,24 @@ auto VoxelNode::resolvedMaterialLibrary() -> const voxel::MaterialLibrary* {
 }
 
 void VoxelNode::releaseVolume() {
+	if (!m_parts.empty()) {
+		std::scoped_lock lock(voxel::runtimePoolMutex());
+		m_parts.clear();
+		++m_parts_revision;
+	}
 	m_volume.reset();
 	m_retired_volumes.clear();
 	m_instanced_from = nullptr;
 	m_voxel_origin = glm::ivec3(0);
 	m_volume_stale = true;
+}
+
+void VoxelNode::reregisterPhysics() {
+	if (!m_registration_requested) {
+		return;
+	}
+	physics::Simulator::unregisterVoxelNode(*this);
+	physics::Simulator::registerVoxelNode(*this);
 }
 
 void VoxelNode::retireVolume() {
@@ -335,8 +365,12 @@ void VoxelNode::commitEdit(const voxel::EditResult& result, std::string_view ope
 }
 
 void VoxelNode::recordDamage(uint32_t count, glm::vec3 index_sum) {
+	recordDamage(count, index_sum, m_voxel_origin);
+}
+
+void VoxelNode::recordDamage(uint32_t count, glm::vec3 index_sum, glm::ivec3 origin) {
 	m_pending_events.damaged_voxels += count;
-	m_pending_events.damaged_sum += index_sum + (glm::vec3(m_voxel_origin) + 0.5f) * static_cast<float>(count);
+	m_pending_events.damaged_sum += index_sum + (glm::vec3(origin) + 0.5f) * static_cast<float>(count);
 }
 
 void VoxelNode::postPhysics() {
@@ -361,6 +395,13 @@ void VoxelNode::postPhysics() {
 
 template<typename Kernel>
 void VoxelNode::edit(const voxel::EditBounds& local_bounds, bool grows, std::string_view operation, Kernel&& kernel) {
+	if (usesParts()) {
+		if (!m_warned_part_edit) {
+			m_warned_part_edit = true;
+			TOAST_WARN("Voxel", "'{}' is made of pieces, {} does nothing, draw in a piece instead", name(), operation);
+		}
+		return;
+	}
 	voxel::Volume* target = grows ? ensureContains(local_bounds) : volume();
 	if (target == nullptr) {
 		return;
@@ -371,7 +412,83 @@ void VoxelNode::edit(const voxel::EditBounds& local_bounds, bool grows, std::str
 using _detail::toId;
 using _detail::toVoxel;
 
+auto VoxelNode::ownsBody(physics::BodyID body) const noexcept -> bool {
+	if (body == physics::BodyID {}) {
+		return false;
+	}
+	return m_body == body || std::ranges::any_of(m_parts, [body](const VoxelPart& part) { return part.body == body; });
+}
+
+auto VoxelNode::isSolidAtVoxel(glm::ivec3 voxel) -> bool {
+	if (!usesParts()) {
+		const voxel::Volume* current = volume();
+		return current != nullptr && current->isSolidAt(toIndex(voxel));
+	}
+	return std::ranges::any_of(m_parts, [voxel](const VoxelPart& part) {
+		return part.volume != nullptr && part.volume->isSolidAt(voxel - part.origin);
+	});
+}
+
+auto VoxelNode::solidBounds() -> std::optional<voxel::EditBounds> {
+	if (!usesParts()) {
+		const voxel::Volume* current = volume();
+		if (current == nullptr) {
+			return std::nullopt;
+		}
+		const std::optional<voxel::EditBounds> bounds = voxel::occupiedBounds(*current);
+		if (!bounds.has_value()) {
+			return std::nullopt;
+		}
+		return voxel::EditBounds {bounds->min + m_voxel_origin, bounds->max + m_voxel_origin};
+	}
+	std::optional<voxel::EditBounds> out;
+	for (const VoxelPart& part : m_parts) {
+		if (part.volume == nullptr) {
+			continue;
+		}
+		const std::optional<voxel::EditBounds> bounds = voxel::occupiedBounds(*part.volume);
+		if (!bounds.has_value()) {
+			continue;
+		}
+		const voxel::EditBounds moved {bounds->min + part.origin, bounds->max + part.origin};
+		out = out.has_value() ? voxel::boundsUnion(*out, moved) : moved;
+	}
+	return out;
+}
+
+auto VoxelNode::raycastVoxels(glm::vec3 origin, glm::vec3 direction, float max_t) -> std::optional<voxel::VolumeHit> {
+	std::optional<voxel::VolumeHit> best;
+	float limit = max_t;
+	const auto cast = [&](const voxel::Volume& volume, glm::ivec3 at) {
+		std::optional<voxel::VolumeHit> hit = voxel::raycast(volume, origin - glm::vec3(at), direction, limit);
+		if (hit.has_value() && hit->t < limit) {
+			limit = hit->t;
+			hit->voxel += at;
+			best = hit;
+		}
+	};
+	if (usesParts()) {
+		for (const VoxelPart& part : m_parts) {
+			if (part.volume != nullptr) {
+				cast(*part.volume, part.origin);
+			}
+		}
+	} else if (const voxel::Volume* current = volume()) {
+		cast(*current, m_voxel_origin);
+	}
+	return best;
+}
+
 auto VoxelNode::getVoxel(glm::vec3 pos) -> int {
+	if (usesParts()) {
+		const glm::ivec3 cell = toVoxel(pos);
+		for (const VoxelPart& part : m_parts) {
+			if (part.volume != nullptr && part.volume->isSolidAt(cell - part.origin)) {
+				return part.volume->materialAt(cell - part.origin);
+			}
+		}
+		return 0;
+	}
 	const voxel::Volume* current = volume();
 	return current != nullptr ? current->materialAt(toIndex(toVoxel(pos))) : 0;
 }
@@ -438,7 +555,9 @@ void VoxelNode::carveBox(glm::vec3 min, glm::vec3 max) {
 void VoxelNode::setLayers(int included_layers, int excluded_layers) {
 	included = static_cast<uint32_t>(included_layers);
 	excluded = static_cast<uint32_t>(excluded_layers);
-	physics::Simulator::setBodyLayers(m_body, {.included = included, .excluded = excluded});
+	forEachBody([&](physics::BodyID body) {
+		physics::Simulator::setBodyLayers(body, {.included = included, .excluded = excluded});
+	});
 }
 
 void VoxelNode::includeLayer(int layer, bool value) {
@@ -596,23 +715,36 @@ void VoxelNode::clearRegions() {
 }
 
 auto VoxelNode::getSize() -> glm::vec3 {
+	if (usesParts()) {
+		std::optional<voxel::EditBounds> all;
+		for (const VoxelPart& part : m_parts) {
+			if (part.volume != nullptr) {
+				const voxel::EditBounds box {part.origin, part.origin + glm::ivec3(part.volume->voxelDims()) - 1};
+				all = all.has_value() ? voxel::boundsUnion(*all, box) : box;
+			}
+		}
+		return all.has_value() ? glm::vec3(all->max - all->min + 1) : glm::vec3(0.0f);
+	}
 	const voxel::Volume* current = volume();
 	return current != nullptr ? glm::vec3(current->voxelDims()) : glm::vec3(0.0f);
 }
 
 auto VoxelNode::getBounds() -> std::vector<glm::vec3> {
-	const voxel::Volume* current = volume();
-	if (current == nullptr) {
-		return {};
-	}
-	const std::optional<voxel::EditBounds> bounds = voxel::occupiedBounds(*current);
+	const std::optional<voxel::EditBounds> bounds = solidBounds();
 	if (!bounds.has_value()) {
 		return {};
 	}
-	return {glm::vec3(bounds->min + m_voxel_origin), glm::vec3(bounds->max + m_voxel_origin)};
+	return {glm::vec3(bounds->min), glm::vec3(bounds->max)};
 }
 
 auto VoxelNode::getVoxelCount() -> int {
+	if (usesParts()) {
+		uint64_t total = 0;
+		for (const VoxelPart& part : m_parts) {
+			total += part.volume != nullptr ? part.volume->solidVoxelCount() : 0;
+		}
+		return static_cast<int>(total);
+	}
 	const voxel::Volume* current = volume();
 	return current != nullptr ? static_cast<int>(current->solidVoxelCount()) : 0;
 }
@@ -637,7 +769,7 @@ void VoxelNode::sleep() {
 		return;
 	}
 	physics::Simulator::runPendingRequests();
-	physics::Simulator::requestSleep(bodyID());
+	forEachBody([](physics::BodyID body) { physics::Simulator::requestSleep(body); });
 }
 
 void VoxelNode::wake() {
@@ -650,7 +782,7 @@ void VoxelNode::wake() {
 		return;
 	}
 	physics::Simulator::runPendingRequests();
-	physics::Simulator::requestWake(bodyID());
+	forEachBody([](physics::BodyID body) { physics::Simulator::requestWake(body); });
 }
 
 void VoxelNode::publishPhysicsState(
@@ -689,16 +821,19 @@ void VoxelNode::onEditorTransformChanged() {
 		return;
 	}
 	physics::Simulator::runPendingRequests();
-	physics::Simulator::setBodyTransform(bodyID(), world_position, world_rotation);
+	forEachBody([&](physics::BodyID body) { physics::Simulator::setBodyTransform(body, world_position, world_rotation); });
 }
 
 void VoxelNode::handleContactBegin(const physics::BroadPhasePair& pair) {
 	physics::BodyID other_body;
-	if (pair.a.body == m_body) {
+	if (ownsBody(pair.a.body)) {
 		other_body = pair.b.body;
-	} else if (pair.b.body == m_body) {
+	} else if (ownsBody(pair.b.body)) {
 		other_body = pair.a.body;
 	} else {
+		return;
+	}
+	if (ownsBody(other_body)) {
 		return;
 	}
 
@@ -715,11 +850,14 @@ void VoxelNode::handleContactBegin(const physics::BroadPhasePair& pair) {
 
 void VoxelNode::handleContactEnd(const physics::BroadPhasePair& pair) {
 	physics::BodyID other_body;
-	if (pair.a.body == m_body) {
+	if (ownsBody(pair.a.body)) {
 		other_body = pair.b.body;
-	} else if (pair.b.body == m_body) {
+	} else if (ownsBody(pair.b.body)) {
 		other_body = pair.a.body;
 	} else {
+		return;
+	}
+	if (ownsBody(other_body)) {
 		return;
 	}
 
@@ -856,14 +994,14 @@ void VoxelNode::destroy() {
 
 void VoxelNode::onEnable() {
 	m_debug_visible = true;
-	physics::Simulator::setBodyEnabled(m_body, true);
-	physics::Simulator::setShapeEnabled(m_shape, true);
+	forEachBody([](physics::BodyID body) { physics::Simulator::setBodyEnabled(body, true); });
+	forEachShape([](physics::ShapeID shape) { physics::Simulator::setShapeEnabled(shape, true); });
 }
 
 void VoxelNode::onDisable() {
 	m_debug_visible = false;
-	physics::Simulator::setBodyEnabled(m_body, false);
-	physics::Simulator::setShapeEnabled(m_shape, false);
+	forEachBody([](physics::BodyID body) { physics::Simulator::setBodyEnabled(body, false); });
+	forEachShape([](physics::ShapeID shape) { physics::Simulator::setShapeEnabled(shape, false); });
 }
 
 void VoxelNode::drawDebug() {
@@ -879,13 +1017,15 @@ void VoxelNode::drawDebug() {
 		debug::drawShapeBox(transform, draw_color, aabb_fill);
 	};
 
-	if (const auto bounds = physics::Simulator::shapeWorldBounds(m_shape)) {
-		draw_bounds(*bounds, awake, aabb_color);
-	}
+	forEachShape([&](physics::ShapeID shape) {
+		if (const auto bounds = physics::Simulator::shapeWorldBounds(shape)) {
+			draw_bounds(*bounds, awake, aabb_color);
+		}
+	});
 
 	static const glm::vec4 fragment_aabb_color {0.2f, 0.9f, 1.0f, 0.6f};
 	for (const physics::VoxelRenderRecord& record : physics::Simulator::voxelFragmentRecords()) {
-		if (record.fragment_origin == m_body) {
+		if (ownsBody(record.fragment_origin)) {
 			draw_bounds(record.world_bounds, record.awake, fragment_aabb_color);
 		}
 	}
