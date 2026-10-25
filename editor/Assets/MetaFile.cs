@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using Tomlyn;
 using Tomlyn.Model;
 using Tomlyn.Serialization;
@@ -62,7 +63,22 @@ public record AudioStringMetaSection : IMetaSection {
 }
 
 public static class MetaFile {
+	private static readonly AsyncLocal<List<(string Uid, string Path)>?> s_capture = new();
+
+	public static IDisposable Capture(List<(string Uid, string Path)> writes) {
+		s_capture.Value = writes;
+		return new CaptureScope();
+	}
+
+	private sealed class CaptureScope : IDisposable {
+		public void Dispose() {
+			s_capture.Value = null;
+		}
+	}
+
 	public static void Write(string outputAssetRealPath, MetaHeader header, params IMetaSection[] sections) {
+		s_capture.Value?.Add((header.Uid, outputAssetRealPath));
+
 		var tags = header.Tags ?? ReadHeader(outputAssetRealPath)?.Tags;
 		var dto = new MetaFileDto {
 			Uid = header.Uid,
