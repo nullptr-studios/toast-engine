@@ -80,7 +80,7 @@ TOAST_C_API void toast_pop_application(void) NOEXCEPT;
  * @param uid 11-character UID string of the node asset
  * @param out_path Absolute filesystem path to write the binary .tnode to
  */
-TOAST_C_API void toast_bake_asset(const char* uid, const char* out_path) NOEXCEPT;
+TOAST_C_API int toast_bake_asset(const char* uid, const char* out_path) NOEXCEPT;
 
 /**
  * @brief Regenerates the schema's lua files

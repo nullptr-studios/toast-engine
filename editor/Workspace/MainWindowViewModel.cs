@@ -1145,6 +1145,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 					var dest = Path.Combine(stageDir, rel);
 					Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
 					File.Copy(srcFile, dest, true);
+										File.SetAttributes(dest, File.GetAttributes(dest) & ~FileAttributes.ReadOnly);
 				}
 			});
 
@@ -1162,7 +1163,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 						var dest = Path.Combine(stageDir, rel.Replace('/', Path.DirectorySeparatorChar));
 						Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
 						log($"    bake {rel}");
-						await Task.Run(() => ToastEngine.BakeAsset(uid, dest));
+						if (!await Task.Run(() => ToastEngine.BakeAsset(uid, dest)))
+							throw new Exception($"could not bake node {virtualPath}");
 					}
 			}
 
