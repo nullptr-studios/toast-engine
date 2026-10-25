@@ -574,6 +574,13 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		ToastZoneActive = active;
 	}
 
+	public void ShowAssetBrowser() {
+		if (m_toastZoneFactory.AssetBrowserVm is { } browser) m_toastZoneFactory.ShowTool(browser);
+		if (ToastZoneActive) return;
+		m_toastZonePinned = true;
+		ToastZoneActive = true;
+	}
+
 	public void PinToastZone() {
 		m_toastZonePinned = !m_toastZonePinned;
 		ToastZoneActive = m_toastZonePinned;
