@@ -456,15 +456,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 	private async Task OpenWorkspaceFile(string uid, string virtualPath, string? recoverPath, bool takeLock = true) {
 		var recoverVirtual = recoverPath is null ? null : ProjectContext.ToVirtual(recoverPath);
 
-		// Opening takes the lock nobody holds
-		var choice = LockedSaveChoice.Proceed;
-		if (takeLock) {
-			var held = await GitLockGuard.AcquireOnOpenAsync(ProjectContext.Resolve(virtualPath));
-			if (held.Kind == OpenLockKind.Other)
-				choice = await LockedFileModal.ShowOpenAsync(Path.GetFileName(virtualPath), held.Owner ?? "someone else");
-			if (choice == LockedSaveChoice.Cancel) return;
-		}
-
 		WorkspaceViewModel? opened = null;
 		LoadingPopup? popup = null;
 		if (App.MainWindow is { } owner) {
@@ -472,6 +463,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			_ = popup.ShowDialog(owner);
 			await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() => { }, Avalonia.Threading.DispatcherPriority.Render);
 		}
+
+		var lockTask = takeLock
+			? TrackLockAsync(ProjectContext.Resolve(virtualPath), popup)
+			: Task.FromResult(default(OpenLockState));
 
 		try {
 			var ws = await WorkspaceViewModel.OpenFileAsync(m_toast, uid, virtualPath, recoverVirtual);
@@ -484,7 +479,24 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			popup?.Close();
 		}
 
-		if (choice == LockedSaveChoice.SaveAs && opened is not null) await opened.SaveAs();
+		var held = await lockTask;
+		if (opened is null || held.Kind != OpenLockKind.Other) return;
+
+		switch (await LockedFileModal.ShowOpenAsync(Path.GetFileName(virtualPath), held.Owner ?? "someone else")) {
+			case LockedSaveChoice.Cancel:
+				opened.PendingClose = true; // skip the unsaved changes prompt
+				m_dockFactory.CloseDockable(opened);
+				break;
+			case LockedSaveChoice.SaveAs:
+				await opened.SaveAs();
+				break;
+		}
+	}
+
+	private static async Task<OpenLockState> TrackLockAsync(string realPath, LoadingPopup? popup) {
+		var state = await GitLockGuard.AcquireOnOpenAsync(realPath);
+		popup?.SetLock(state);
+		return state;
 	}
 
 	private async Task WaitForEngineAsync(WorkspaceViewModel ws) {

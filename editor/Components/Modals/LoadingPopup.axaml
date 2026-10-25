@@ -33,6 +33,11 @@
 
 	<StackPanel Margin="8"
 	            Spacing="8">
+		<StackPanel x:Name="LockRow"
+		            Orientation="Horizontal"
+		            Spacing="6"
+		            HorizontalAlignment="Center"
+		            IsVisible="False" />
 		<TextBlock x:Name="Message"
 		           FontWeight="SemiBold"
 		           HorizontalAlignment="Center"
