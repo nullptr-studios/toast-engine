@@ -7,6 +7,7 @@
 #include "compute_pass_base.hpp"
 #include "debug_draw.hpp"
 #include "depth_convention.hpp"
+#include "gi_settings.hpp"
 #include "gpu_sync.hpp"
 #include "gpu_timer.hpp"
 #include "output_target_base.hpp"
@@ -18,6 +19,7 @@
 #include "shadow_slots.hpp"
 #include "voxel_gpu_storage.hpp"
 #include "voxel_scene_patcher.hpp"
+#include "voxel_trace_scene.hpp"
 #include "vulkan_core.hpp"
 #include "vulkan_mesh.hpp"
 #include "vulkan_pipeline.hpp"
@@ -83,6 +85,7 @@ class SelectionOutline;
 class SkinningPass;
 class VoxelPass;
 class DebrisPass;
+class GiPass;
 class RayTracingScene;
 class SkinnedBlasPool;
 
@@ -93,7 +96,8 @@ public:
 
 	static constexpr uint32_t k_frames_in_flight = 3;
 
-	static constexpr uint8_t k_render_frames = 3;
+	/// One drawing and one building
+	static constexpr uint8_t k_render_frames = 2;
 
 	struct FrameContext {
 		vk::raii::CommandBuffer command_buffer = nullptr;
@@ -499,6 +503,9 @@ public:
 	/// For the next frame when called before frame construction begins
 	void queueDebugLine(glm::vec3 a, glm::vec3 b, glm::vec4 color);
 
+	/// Tick thread before input is polled
+	void waitForFrameSlot() noexcept;
+
 	void tick(float time) noexcept;
 
 	void registerMeshNodeProxy(toast::MeshNode* node);
@@ -845,6 +852,23 @@ public:
 		return m_voxel_sun_reach.load(std::memory_order_relaxed);
 	}
 
+	void setVoxelTraceRayQuery(bool enabled) noexcept { m_voxel_trace_ray_query.store(enabled, std::memory_order_relaxed); }
+
+	[[nodiscard]]
+	auto voxelTraceRayQuery() const noexcept -> bool {
+		return m_voxel_trace_ray_query.load(std::memory_order_relaxed);
+	}
+
+	/// Meters per cell of the grid marched rays walk without ray queries
+	void setVoxelTraceCellSize(float meters) noexcept {
+		m_voxel_trace_cell_size.store(std::max(meters, 0.25f), std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto voxelTraceCellSize() const noexcept -> float {
+		return m_voxel_trace_cell_size.load(std::memory_order_relaxed);
+	}
+
 	/// Nearest drawn voxel instances a marched shadow ray tests
 	void setVoxelShadowInstances(uint32_t count) noexcept { m_voxel_shadow_instances.store(count, std::memory_order_relaxed); }
 
@@ -988,6 +1012,23 @@ public:
 
 	void setDebrisPass(DebrisPass* pass) noexcept { m_debris_pass = pass; }
 
+	void setGiPass(GiPass* pass) noexcept { m_gi_pass = pass; }
+
+	[[nodiscard]]
+	auto giPass() const noexcept -> GiPass* {
+		return m_gi_pass;
+	}
+
+	[[nodiscard]]
+	auto giSettings() noexcept -> GiSettings& {
+		return m_gi_settings;
+	}
+
+	[[nodiscard]]
+	auto giSettings() const noexcept -> const GiSettings& {
+		return m_gi_settings;
+	}
+
 	[[nodiscard]]
 	auto voxelCollisionWorld() const -> std::shared_ptr<const VoxelCollisionWorld>;
 
@@ -1068,6 +1109,11 @@ public:
 	[[nodiscard]]
 	auto getRayTracingScene() const noexcept -> RayTracingScene* {
 		return m_ray_tracing_scene.get();
+	}
+
+	[[nodiscard]]
+	auto voxelTraceScene() const noexcept -> VoxelTraceScene* {
+		return m_voxel_trace_scene.get();
 	}
 
 	[[nodiscard]]
@@ -1305,6 +1351,17 @@ private:
 
 	std::counting_semaphore<k_render_frames> m_free_frames {k_render_frames};
 
+	void acquireFrameSlot() noexcept;
+
+	/// Tick thread only
+	enum class FrameSlot : uint8_t {
+		none,
+		held,
+		missed
+	};
+	FrameSlot m_frame_slot = FrameSlot::none;
+	std::chrono::steady_clock::time_point m_tick_deadline {};
+
 	struct DepthResources {
 		std::optional<vma::raii::Image> image;
 		std::optional<vk::raii::ImageView> view;
@@ -1330,6 +1387,7 @@ private:
 
 	void publishCompletedFrames();
 
+	void updateVoxelTraceScene();
 	void recordAccelerationStructureBuilds(FrameContext& frame);
 
 	void createPresentResources();
@@ -1466,6 +1524,8 @@ private:
 	VoxelPass* m_voxel_pass = nullptr;
 
 	DebrisPass* m_debris_pass = nullptr;
+	GiPass* m_gi_pass = nullptr;
+	GiSettings m_gi_settings;
 
 	std::atomic_bool m_probe_bake_requested {false};
 	std::atomic<uint32_t> m_probe_stale_count {0};
@@ -1506,6 +1566,8 @@ private:
 	std::atomic<float> m_voxel_normal_rounding {0.3f};
 	std::atomic<uint32_t> m_voxel_light_candidates {8};
 	std::atomic<uint32_t> m_voxel_shadow_instances {256};
+	std::atomic_bool m_voxel_trace_ray_query {true};
+	std::atomic<float> m_voxel_trace_cell_size {4.0f};
 	std::atomic<uint32_t> m_voxel_sun_reach {200};
 	std::atomic<bool> m_voxel_ambient_rays {true};
 	std::atomic<float> m_voxel_ambient_reach {2.4f};
@@ -1748,6 +1810,10 @@ private:
 	std::unique_ptr<SkinningPass> m_skinning_pass;
 
 	std::unique_ptr<RayTracingScene> m_ray_tracing_scene;
+
+	std::unique_ptr<VoxelTraceScene> m_voxel_trace_scene;
+	/// Render thread scratch
+	std::vector<VoxelTraceScene::Volume> m_trace_volumes;
 
 	std::unique_ptr<SkinnedBlasPool> m_skinned_blas_pool;
 

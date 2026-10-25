@@ -55,6 +55,7 @@
 #include <toast/voxel/nodes/voxel_node.hpp>
 #include <toast/voxel/runtime_pool.hpp>
 #include <toast/voxel/volume_bounds.hpp>
+#include <toast/voxel/voxel_constants.hpp>
 #include <toast/window/window_events.hpp>
 #include <toast/world/animation_player.hpp>
 #include <toast/world/camera.hpp>
@@ -770,6 +771,7 @@ VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTa
 	);
 
 	m_skinning_pass = std::make_unique<SkinningPass>(*m_core);
+	m_voxel_trace_scene = std::make_unique<VoxelTraceScene>(*m_core, k_frames_in_flight);
 
 	if (m_core->isRayTracingSupported()) {
 		m_ray_tracing_scene = std::make_unique<RayTracingScene>(*m_core, k_frames_in_flight);
@@ -1394,6 +1396,40 @@ void VulkanRenderer::publishCompletedFrames() {
 	}
 }
 
+void VulkanRenderer::updateVoxelTraceScene() {
+	ZoneScoped;
+	const auto* render_frame = renderingFrame();
+	if (m_voxel_trace_scene == nullptr || render_frame == nullptr) {
+		return;
+	}
+
+	m_trace_volumes.clear();
+	const VoxelGpuStorage* storage = render_frame->voxel_storage.get();
+	if (storage != nullptr && storage->isReady()) {
+		const auto cap = std::min<size_t>(voxelShadowInstances(), VoxelTraceScene::k_max_volumes);
+		// Drawn volumes first so the cap drops off screen ones
+		for (const bool visible : {true, false}) {
+			for (const VoxelVolumeProxy& proxy : render_frame->voxel_instances) {
+				if (proxy.visible != visible || m_trace_volumes.size() >= cap) {
+					continue;
+				}
+				VoxelTraceScene::Volume volume {
+				  .instance =
+				      makeVoxelInstance(proxy.model, proxy.inverse_model, proxy.previous_model, proxy.has_previous, proxy.record_index),
+				  .bounds = glm::vec4(proxy.bounds_center, proxy.bounds_radius),
+				  .glass = !storage->glassBricks(proxy.record_index).empty(),
+				  .voxel_dims = proxy.brick_dims * voxel::k_brick_dim,
+				};
+				if (proxy.mirrored) {
+					volume.instance.flags |= k_voxel_instance_mirrored;
+				}
+				m_trace_volumes.push_back(volume);
+			}
+		}
+	}
+	m_voxel_trace_scene->update(m_current_frame, m_trace_volumes, render_frame->frame_data.camera_position, voxelTraceCellSize());
+}
+
 void VulkanRenderer::recordAccelerationStructureBuilds(FrameContext& frame) {
 	ZoneScoped;
 	if (!m_core->isRayTracingSupported()) {
@@ -1478,10 +1514,12 @@ void VulkanRenderer::recordAccelerationStructureBuilds(FrameContext& frame) {
 			}
 
 			m_ray_tracing_scene->addInstance(
-			    {.transform = posed ? glm::mat4(1.0f) : proxy.model, .blas_address = blas_address, .deforming = posed}
+			    {.transform = posed ? glm::mat4(1.0f) : proxy.model, .blas_address = blas_address, .mask = 0x01, .deforming = posed}
 			);
 		}
-		m_ray_tracing_scene->build(*frame.command_buffer, m_current_frame, tracing);
+		const bool voxel_queries = render_frame->frame_data.traced_shadow_params.y >= 0.5f && m_voxel_trace_scene != nullptr &&
+		                           m_voxel_trace_scene->addRayQueryInstances(*frame.command_buffer, *m_ray_tracing_scene);
+		m_ray_tracing_scene->build(*frame.command_buffer, m_current_frame, tracing || voxel_queries);
 	}
 }
 
@@ -1896,6 +1934,7 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	}
 
 	frame.blas_scratch.clear();
+	updateVoxelTraceScene();
 	{
 		const GpuScope scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, "Acceleration structures");
 		recordAccelerationStructureBuilds(frame);
@@ -2731,7 +2770,8 @@ void VulkanRenderer::mainRenderThread() try {
 			}
 		}
 
-		if (limit_hz > 0.0) {
+		// Clamped frames are capped in waitForFrameSlot
+		if (limit_hz > 0.0 && !clamp_to_simulation) {
 			const auto pacing_start = clock::now();
 			std::this_thread::sleep_until(next_frame_deadline);
 			m_perf_pacing_ns.fetch_add(
@@ -2884,6 +2924,36 @@ void VulkanRenderer::setGameView(bool game_view) {
 		// Queued first so whatever the editor sends after polling the flag lands behind it
 		event::send<event::DebugOverlayCursor>(owns);
 		m_debug_overlay_owns_cursor.store(owns, std::memory_order_release);
+	}
+}
+
+void VulkanRenderer::acquireFrameSlot() noexcept {
+	using namespace std::chrono_literals;
+	const auto slot_wait_start = std::chrono::steady_clock::now();
+	m_frame_slot = m_free_frames.try_acquire_for(50ms) ? FrameSlot::held : FrameSlot::missed;
+	m_perf_slot_wait_ns.fetch_add(
+	    static_cast<uint64_t>(
+	        std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - slot_wait_start).count()
+	    ),
+	    std::memory_order_relaxed
+	);
+}
+
+void VulkanRenderer::waitForFrameSlot() noexcept {
+	ZoneScoped;
+	using clock = std::chrono::steady_clock;
+
+	const double limit_hz = m_bake_active.load(std::memory_order_relaxed) ? 0.0 : effectiveFrameRateLimit();
+	if (limit_hz > 0.0) {
+		std::this_thread::sleep_until(m_tick_deadline);
+		const auto interval = std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(1.0 / limit_hz));
+		const auto now = clock::now();
+		m_tick_deadline = (m_tick_deadline + interval > now) ? m_tick_deadline + interval : now + interval;
+	}
+
+	// A paused tick keeps its slot
+	if (m_frame_slot != FrameSlot::held && !m_rendering_paused.load(std::memory_order_relaxed)) {
+		acquireFrameSlot();
 	}
 }
 
@@ -3149,16 +3219,10 @@ void VulkanRenderer::tick(float time) noexcept {
 		return;
 	}
 
-	using namespace std::chrono_literals;
-	const auto slot_wait_start = std::chrono::steady_clock::now();
-	const bool got_slot = m_free_frames.try_acquire_for(50ms);
-
-	m_perf_slot_wait_ns.fetch_add(
-	    static_cast<uint64_t>(
-	        std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - slot_wait_start).count()
-	    ),
-	    std::memory_order_relaxed
-	);
+	if (m_frame_slot == FrameSlot::none) {
+		acquireFrameSlot();
+	}
+	const bool got_slot = std::exchange(m_frame_slot, FrameSlot::none) == FrameSlot::held;
 	m_perf_ticks.fetch_add(1, std::memory_order_relaxed);
 
 	if (!got_slot) {
@@ -4002,6 +4066,9 @@ void VulkanRenderer::tick(float time) noexcept {
 	}
 	m_traced_shadows_voxel_fallback_logged = tracedShadowsEnabled() && voxels_block_tracing;
 	frame.frame_data.traced_shadow_params.x = trace_shadows ? 1.0f : 0.0f;
+	// Voxel volumes join the TLAS so marched voxel rays use ray queries
+	frame.frame_data.traced_shadow_params.y =
+	    m_core->isRayTracingSupported() && voxelTraceRayQuery() && !frame.voxel_instances.empty() ? 1.0f : 0.0f;
 
 	if (!trace_shadows) {
 		fitShadowViews(frame, aspect, shadow_caster_index, shadow_caster_direction, spot_candidates, point_candidates);

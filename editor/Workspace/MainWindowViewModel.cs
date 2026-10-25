@@ -1009,7 +1009,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		tasks.Add(LoaderTask.Run(
 			"cmake build",
 			"cmake",
-			// the game shares std types with the engine so both must use the same CRT
 			// RelWithDebInfo keeps game PDB and ttracy
 #if DEBUG
 			"--build .toast/cmake_cache --config Debug --parallel"
@@ -1038,8 +1037,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		await new SimpleLoaderWindow(vm).ShowDialog(owner);
 	}
 
-	// The release build packs the files on disk, so unsaved edits (e.g. init_scene in the project settings) would silently be
-	// left out of player.exe; returns false when the user cancels
 	private async Task<bool> SaveBeforeBuild(Avalonia.Controls.Window owner) {
 		var dirtyWorkspaces = m_workspaces.Values.Where(ws => ws.IsModified).ToList();
 		if (dirtyWorkspaces.Count == 0 && CollectDirtyTools().Count == 0) return true;
@@ -1217,13 +1214,25 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			LoaderTask.Run(
 				"cmake configure (Release)",
 				"cmake",
-				$"lib/ -B .toast/cmake_release_cache {cmakeGenerator} -DTOAST_PATH={toastPath} -DCMAKE_BUILD_TYPE=Release"
+				#if DEBUG
+                			$"lib/ -B .toast/cmake_release_cache {cmakeGenerator} -DTOAST_PATH={toastPath} -DCMAKE_BUILD_TYPE=Debug"
+                #elif RELWITHDEBINFO
+                			$"lib/ -B .toast/cmake_release_cache {cmakeGenerator} -DTOAST_PATH={toastPath} -DCMAKE_BUILD_TYPE=RelWithDebInfo"
+                #else
+                			$"lib/ -B .toast/cmake_release_cache {cmakeGenerator} -DTOAST_PATH={toastPath} -DCMAKE_BUILD_TYPE=Release"
+                #endif
 			),
 			// Build Game DLL on Release
 			LoaderTask.Run(
 				"cmake build (Release)",
 				"cmake",
-				"--build .toast/cmake_release_cache --config Release --parallel"
+				#if DEBUG
+                			"--build .toast/cmake_release_cache --config Debug --parallel"
+                #elif RELWITHDEBINFO
+                			"--build .toast/cmake_release_cache --config RelWithDebInfo --parallel"
+                #else
+                			"--build .toast/cmake_release_cache --config Release --parallel"
+                #endif
 			),
 			// Copy Engine libs
 			LoaderTask.Do("copy libraries", CopyDlls),

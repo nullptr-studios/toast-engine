@@ -1072,6 +1072,15 @@ void DebugPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t ima
 
 			cmd.draw(6, 1, 0, 0);
 		}
+
+		// The billboard layout is not compatible for set 0 so the gizmos below need the frame set back
+		cmd.bindDescriptorSets(
+		    vk::PipelineBindPoint::eGraphics,
+		    *m_shader_layout.getPipelineLayout(),
+		    0,
+		    std::array<vk::DescriptorSet, 1> {*m_frame_descriptor_sets[frame_index]},
+		    {}
+		);
 	}
 
 	if (!frame->debug_gizmo_instances.empty() && m_gizmo_pipeline.isReady() && m_gizmo_vertex_count > 0) {

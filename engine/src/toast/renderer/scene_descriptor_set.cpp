@@ -3,6 +3,7 @@
 #include "descriptor_writer.hpp"
 #include "passes/cluster_lighting_pass.hpp"
 #include "passes/environment_pass.hpp"
+#include "passes/gi_pass.hpp"
 #include "passes/reflection_probe_pass.hpp"
 #include "passes/shadow_pass.hpp"
 #include "ray_tracing_scene.hpp"
@@ -74,6 +75,21 @@ void SceneDescriptorSets::create(
 				    view ? view : VulkanRenderer::instance->getDefaultCubeView(),
 				    vk::ImageLayout::eShaderReadOnlyOptimal
 				);
+				continue;
+			}
+
+			// Left unwritten for GiPass own sets since it is created after them and they never sample GI
+			if (binding.name == "gGiIrradiance") {
+				if (const auto* gi = VulkanRenderer::instance->giPass(); gi != nullptr) {
+					writer.image(
+					    *m_sets[i],
+					    binding.binding,
+					    vk::DescriptorType::eCombinedImageSampler,
+					    gi->irradianceSampler(),
+					    gi->irradianceView(),
+					    vk::ImageLayout::eShaderReadOnlyOptimal
+					);
+				}
 				continue;
 			}
 
@@ -173,6 +189,11 @@ void SceneDescriptorSets::create(
 				descriptor_type = vk::DescriptorType::eStorageBuffer;
 			} else if (binding.name == "gBlueNoise") {
 				buffer = VulkanRenderer::instance->getBlueNoiseBuffer();
+				descriptor_type = vk::DescriptorType::eStorageBuffer;
+			} else if (binding.name.starts_with("gGi")) {
+				if (const auto* gi = VulkanRenderer::instance->giPass(); gi != nullptr) {
+					buffer = gi->sceneBuffer(binding.name);
+				}
 				descriptor_type = vk::DescriptorType::eStorageBuffer;
 			} else if (binding.name == "gIrradianceSH") {
 				if (auto* probes = VulkanRenderer::instance->getReflectionProbePassMutable(); probes != nullptr) {

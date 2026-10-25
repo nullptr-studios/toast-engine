@@ -2,6 +2,7 @@ import fullscreen;
 import voxel_dda;
 import voxel_gbuffer;
 import lighting;
+import scene_trace;
 import scene_normal;
 
 // Mirrors VoxelPass::LightingPushConstants
@@ -33,11 +34,6 @@ StructuredBuffer<float4> gInstanceBounds;
 /// Cell size bits, global offset and count, pad, offset and count per bucket, instance indices
 [[vk::binding(8, 1)]]
 StructuredBuffer<uint> gAmbientGrid;
-
-/// Mirrors renderer::VoxelPass::writeGlassCasters
-/// Count then indices into gVoxelInstances of the shadow casters holding glass
-[[vk::binding(9, 1)]]
-StructuredBuffer<uint> gGlassCasters;
 
 static const uint kAmbientGridBuckets = 4096u;
 static const uint kAmbientGridHeader = 4u;
@@ -178,33 +174,7 @@ static const float kShadowOriginOffset = 0.6;
 /// Transmittance along the segment and 0 once a voxel blocks it
 float3 marchedVisibility(float3 origin, float3 target, float coneSlope)
 {
-    const float3 segment = target - origin;
-    const float lengthSquared = max(dot(segment, segment), 1e-8);
-    float3 transmittance = float3(1.0, 1.0, 1.0);
-    for (uint i = 0u; i < gPush.lighting.x; ++i)
-    {
-        const float4 bounds = gInstanceBounds[i];
-        const float along = saturate(dot(bounds.xyz - origin, segment) / lengthSquared);
-        const float3 nearest = origin + segment * along - bounds.xyz;
-        if (dot(nearest, nearest) > bounds.w * bounds.w)
-        {
-            continue;
-        }
-
-        const float4x4 worldToVoxel = gVoxelInstances[i].worldToVoxel;
-        const float3 voxelOrigin = mul(worldToVoxel, float4(origin, 1.0)).xyz;
-        const float3 voxelSegment = mul(worldToVoxel, float4(segment, 0.0)).xyz;
-        const uint record = gVoxelInstances[i].recordIndex;
-        // Without glass shadows coarse steps pass glass
-        const bool blocked = (gPush.reuse.x & kSceneGlass) != 0u
-                                 ? marchSparseTinted(record, voxelOrigin, voxelSegment, 0.0, 1.0, coneSlope, transmittance).hit
-                                 : marchSparse(record, voxelOrigin, voxelSegment, 0.0, 1.0, coneSlope).hit;
-        if (blocked)
-        {
-            return float3(0.0, 0.0, 0.0);
-        }
-    }
-    return transmittance;
+    return traceVisibility(origin, target - origin, coneSlope, (gPush.reuse.x & kSceneGlass) != 0u);
 }
 
 /// Mesh shadowing of a marched light from its shadow map or traced ray
@@ -240,32 +210,7 @@ struct VoxelGlassFilter : IShadowFilter
         }
         const float3 segment = L * (distance < 0.0 ? sunReach : distance);
         const float slope = distance < 0.0 ? sunSlope : 0.0;
-        const float lengthSquared = max(dot(segment, segment), 1e-8);
-        float3 transmittance = float3(1.0, 1.0, 1.0);
-        const uint casters = gGlassCasters[0];
-        for (uint c = 0u; c < casters; ++c)
-        {
-            const uint i = gGlassCasters[1u + c];
-            const float4 bounds = gInstanceBounds[i];
-            const float along = saturate(dot(bounds.xyz - origin, segment) / lengthSquared);
-            const float3 nearest = origin + segment * along - bounds.xyz;
-            if (dot(nearest, nearest) > bounds.w * bounds.w)
-            {
-                continue;
-            }
-            const uint record = gVoxelInstances[i].recordIndex;
-
-            const float4x4 worldToVoxel = gVoxelInstances[i].worldToVoxel;
-            const float3 voxelOrigin = mul(worldToVoxel, float4(origin, 1.0)).xyz;
-            const float3 voxelSegment = mul(worldToVoxel, float4(segment, 0.0)).xyz;
-            // An opaque hit is the shadow map's to judge so only glass before it counts
-            marchSparseTinted(record, voxelOrigin, voxelSegment, 0.0, 1.0, slope, transmittance);
-            if (max(transmittance.x, max(transmittance.y, transmittance.z)) <= kTintedOpaque)
-            {
-                return float3(0.0, 0.0, 0.0);
-            }
-        }
-        return transmittance;
+        return traceGlassFilter(origin, segment, slope);
     }
 }
 
@@ -885,7 +830,9 @@ FSOutput fragmentMain(VSOutput input)
         // Traced AO replaces SSAO so ambient diffuse moves into the filtered term
         if (gPush.reuse.w != 0u)
         {
-            const float occlusion = ambientOcclusion(surface, shadowOrigin, float(gPush.reuse.w) * 0.01);
+            // Under the cascades the rays only add the contact detail their probe spacing blurs
+            const float reach = float(gPush.reuse.w) * 0.01;
+            const float occlusion = ambientOcclusion(surface, shadowOrigin, lit.contactReach > 0.0 ? min(reach, lit.contactReach) : reach);
             const float3 demodulated = select(albedo.rgb > 1e-3, lit.indirectDiffuse / max(albedo.rgb, 1e-3), float3(0.0, 0.0, 0.0));
             output.color.rgb -= lit.indirectDiffuse;
             marched.diffuse += demodulated * occlusion;

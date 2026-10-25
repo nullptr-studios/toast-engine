@@ -1,4 +1,5 @@
 // Set 0 belongs to the engine and importing shaders own set 1
+import gi_sample;
 
 struct DirectionalLightGpu
 {
@@ -1110,6 +1111,9 @@ struct ShadingResult
 
     float3 indirectDiffuse;
 
+    /// Meters below which the radiance cascades blur occlusion and 0 where they did not light the point
+    float contactReach;
+
     bool isDebugView;
 };
 
@@ -1200,10 +1204,17 @@ float4 evaluateDebugView(Surface surface, ClusterCell cluster)
     case 4:
         return float4(metallic, roughness, 0.0, 1.0);
     case 5:
-        return float4(
-            gCamera.ambientColorIntensity.rgb * gCamera.ambientColorIntensity.a +
-                (gCamera.environmentParams.x >= 0.5 ? gIrradianceMap.SampleLevel(N, 0.0).rgb : float3(0.0, 0.0, 0.0)),
-            1.0);
+        {
+            float3 cascadeIrradiance;
+            if (sampleRadianceCascades(surface.worldPosition, N, cascadeIrradiance))
+            {
+                return float4(cascadeIrradiance, 1.0);
+            }
+            return float4(
+                gCamera.ambientColorIntensity.rgb * gCamera.ambientColorIntensity.a +
+                    (gCamera.environmentParams.x >= 0.5 ? gIrradianceMap.SampleLevel(N, 0.0).rgb : float3(0.0, 0.0, 0.0)),
+                1.0);
+        }
     case 6:
         {
             float3 debugReflection = reflect(-V, N);
@@ -1342,6 +1353,7 @@ ShadingResult evaluateLighting<Filter : IShadowFilter>(Surface surface, ClusterC
     ShadingResult result;
     result.indirectDiffuse = float3(0.0, 0.0, 0.0);
     result.specular = float3(0.0, 0.0, 0.0);
+    result.contactReach = 0.0;
     result.isDebugView = false;
 
     float3 outIndirectDiffuse = float3(0.0, 0.0, 0.0);
@@ -1491,8 +1503,11 @@ ShadingResult evaluateLighting<Filter : IShadowFilter>(Surface surface, ClusterC
     float3 irradiance = uniformRadiance;
     float3 prefiltered = uniformRadiance;
 
-    float3 volumeIrradiance;
-    bool hasVolumeIrradiance = sampleIrradianceVolumes(surface.worldPosition, N, volumeIrradiance);
+    float3 cascadeIrradiance;
+    const bool hasCascades = sampleRadianceCascades(surface.worldPosition, N, cascadeIrradiance);
+
+    float3 volumeIrradiance = float3(0.0, 0.0, 0.0);
+    bool hasVolumeIrradiance = !hasCascades && sampleIrradianceVolumes(surface.worldPosition, N, volumeIrradiance);
 
     if (hasEnvironment)
     {
@@ -1543,6 +1558,13 @@ ShadingResult evaluateLighting<Filter : IShadowFilter>(Surface surface, ClusterC
         irradiance = volumeIrradiance;
     }
 
+    // The cascades already hold the sky and what it bounces off so they replace ambient and baked volumes
+    if (hasCascades)
+    {
+        irradiance = cascadeIrradiance;
+        result.contactReach = radianceCascadesContactReach(surface.worldPosition);
+    }
+
     float3 F0 = lerp(float3(0.04, 0.04, 0.04), albedo, metallic);
     float3 specularFresnel = fresnelSchlickRoughness(NdotV, F0, roughness);
 
@@ -1574,6 +1596,7 @@ ShadingResult shadeSurfaceLighting<Filter : IShadowFilter>(Surface surface, Filt
         result.color = debug.rgb;
         result.specular = float3(0.0, 0.0, 0.0);
         result.indirectDiffuse = float3(0.0, 0.0, 0.0);
+        result.contactReach = 0.0;
         result.isDebugView = true;
         return result;
     }

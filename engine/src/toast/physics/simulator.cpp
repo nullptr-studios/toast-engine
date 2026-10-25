@@ -5009,7 +5009,8 @@ auto Simulator::explodeShape(ShapeID shape_id, const ExplosionDamage& explosion)
 		};
 
 		const auto make_seed_grid = [&](float size, uint64_t level_seed) {
-			SeedGrid grid {.size = size, .seed = level_seed};			grid.low = glm::ivec3(glm::floor(((glm::vec3 {first} + 0.5f) * voxel::k_voxel_size) / size)) - 1;
+			SeedGrid grid {.size = size, .seed = level_seed};
+			grid.low = glm::ivec3(glm::floor(((glm::vec3 {first} + 0.5f) * voxel::k_voxel_size) / size)) - 1;
 			const glm::ivec3 high = glm::ivec3(glm::floor(((glm::vec3 {last} + 0.5f) * voxel::k_voxel_size) / size)) + 1;
 			grid.dims = high - grid.low + 1;
 			const size_t count = static_cast<size_t>(grid.dims.x) * static_cast<size_t>(grid.dims.y) * static_cast<size_t>(grid.dims.z);
