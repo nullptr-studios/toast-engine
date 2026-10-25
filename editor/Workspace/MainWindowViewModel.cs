@@ -405,7 +405,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		if (!AssetDatabase.TryResolve(uid, out var virtualPath, out _)) return;
 
 		// Opening a lockable asset nobody holds takes its lock
-		if (def is not ProjectSettingsAsset) await GitLockGuard.LockOnOpenAsync(ProjectContext.Resolve(virtualPath));
+		if (def is not ProjectSettingsAsset && def.EditorTool != "NodeEditor")
+			await GitLockGuard.LockOnOpenAsync(ProjectContext.Resolve(virtualPath));
 
 		var recoverPath = await AutosaveService.TryRecoverAsync(uid, virtualPath);
 
@@ -452,9 +453,19 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		}
 	}
 
-	private async Task OpenWorkspaceFile(string uid, string virtualPath, string? recoverPath) {
+	private async Task OpenWorkspaceFile(string uid, string virtualPath, string? recoverPath, bool takeLock = true) {
 		var recoverVirtual = recoverPath is null ? null : ProjectContext.ToVirtual(recoverPath);
 
+		// Opening takes the lock nobody holds
+		var choice = LockedSaveChoice.Proceed;
+		if (takeLock) {
+			var held = await GitLockGuard.AcquireOnOpenAsync(ProjectContext.Resolve(virtualPath));
+			if (held.Kind == OpenLockKind.Other)
+				choice = await LockedFileModal.ShowOpenAsync(Path.GetFileName(virtualPath), held.Owner ?? "someone else");
+			if (choice == LockedSaveChoice.Cancel) return;
+		}
+
+		WorkspaceViewModel? opened = null;
 		LoadingPopup? popup = null;
 		if (App.MainWindow is { } owner) {
 			popup = new LoadingPopup($"Loading {Path.GetFileName(virtualPath)}");
@@ -468,9 +479,12 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			m_workspaces[ws.Handle] = m_dockFactory.AddWorkspace(ws);
 			SyncActiveWorkspace();
 			if (popup is not null) await WaitForEngineAsync(ws);
+			opened = ws;
 		} finally {
 			popup?.Close();
 		}
+
+		if (choice == LockedSaveChoice.SaveAs && opened is not null) await opened.SaveAs();
 	}
 
 	private async Task WaitForEngineAsync(WorkspaceViewModel ws) {
@@ -816,7 +830,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 
 		if (!AssetDatabase.TryResolve(uid, out var virtualPath, out _)) return;
 
-		await GitLockGuard.LockOnOpenAsync(ProjectContext.Resolve(virtualPath));
 		var recoverPath = await AutosaveService.TryRecoverAsync(uid, virtualPath);
 		await OpenWorkspaceFile(uid, virtualPath, recoverPath);
 	}
@@ -829,7 +842,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		Avalonia.Threading.Dispatcher.UIThread.Post(() => {
 			workspace.PendingClose = true; // skip the unsaved changes prompt
 			m_dockFactory.CloseDockable(workspace);
-			OpenWorkspaceFile(uid, virtualPath, null);
+			_ = OpenWorkspaceFile(uid, virtualPath, null, takeLock: false);
 		});
 	}
 

@@ -16,7 +16,7 @@ public enum LockedSaveChoice {
 }
 
 public sealed class LockedFileModal : Window {
-	private LockedFileModal(string fileName, string owner) {
+	private LockedFileModal(string fileName, string owner, bool opening) {
 		Title = "File locked";
 		Width = 480;
 		SizeToContent = SizeToContent.Height;
@@ -40,8 +40,11 @@ public sealed class LockedFileModal : Window {
 		});
 
 		var body = new TextBlock {
-			Text = $"{fileName} can't be saved while {owner} holds the lock. " +
-			       "Save your work as a new file, throw your changes away, or cancel and keep editing.",
+			Text = opening
+				? $"{fileName} can't be saved while {owner} holds the lock. " +
+				  "Open it anyway to look around, save a copy and work on that, or cancel."
+				: $"{fileName} can't be saved while {owner} holds the lock. " +
+				  "Save your work as a new file, throw your changes away, or cancel and keep editing.",
 			Foreground = GitStatusStyle.Brush("TextMuted"),
 			TextWrapping = TextWrapping.Wrap
 		};
@@ -50,8 +53,11 @@ public sealed class LockedFileModal : Window {
 			Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Right
 		};
 		buttons.Children.Add(MakeButton("Cancel", null, null, LockedSaveChoice.Cancel));
-		buttons.Children.Add(MakeButton("Discard", LucideIconKind.Trash2, GitStatusStyle.Brush("Red"),
-			LockedSaveChoice.Discard));
+		if (opening)
+			buttons.Children.Add(MakeButton("Open anyway", LucideIconKind.FolderOpen, null, LockedSaveChoice.Proceed));
+		else
+			buttons.Children.Add(MakeButton("Discard", LucideIconKind.Trash2, GitStatusStyle.Brush("Red"),
+				LockedSaveChoice.Discard));
 		buttons.Children.Add(MakeButton("Save As...", LucideIconKind.Save, null, LockedSaveChoice.SaveAs));
 
 		var root = new StackPanel { Spacing = 16, Margin = new Thickness(20) };
@@ -64,7 +70,13 @@ public sealed class LockedFileModal : Window {
 	public static Task<LockedSaveChoice> ShowAsync(string fileName, string owner) {
 		var parent = ModalService.FindActiveWindow();
 		if (parent is null) return Task.FromResult(LockedSaveChoice.Cancel);
-		return new LockedFileModal(fileName, owner).ShowDialog<LockedSaveChoice>(parent);
+		return new LockedFileModal(fileName, owner, false).ShowDialog<LockedSaveChoice>(parent);
+	}
+
+	public static Task<LockedSaveChoice> ShowOpenAsync(string fileName, string owner) {
+		var parent = ModalService.FindActiveWindow();
+		if (parent is null) return Task.FromResult(LockedSaveChoice.Proceed);
+		return new LockedFileModal(fileName, owner, true).ShowDialog<LockedSaveChoice>(parent);
 	}
 
 	private Button MakeButton(string text, LucideIconKind? icon, IBrush? iconBrush, LockedSaveChoice choice) {
