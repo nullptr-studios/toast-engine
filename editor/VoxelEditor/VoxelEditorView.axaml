@@ -120,10 +120,32 @@
 					<LucideIcon Kind="SquareDashed" Size="18" StrokeWidth="2.5" />
 				</ToggleButton>
 				<ToggleButton Classes="snapTool"
-				              CornerRadius="0,6,6,0"
+				              CornerRadius="0"
 				              ToolTip.Tip="Hammer View (Z)"
 				              IsChecked="{Binding FourUp}">
 					<LucideIcon Kind="LayoutGrid" Size="18" StrokeWidth="2.5" />
+				</ToggleButton>
+				<ToggleButton Classes="snapTool"
+				              CornerRadius="0"
+				              ToolTip.Tip="Snap to unit (10 voxels)"
+				              IsChecked="{Binding SnapToUnit}">
+					<LucideIcon Kind="Ruler" Size="18" StrokeWidth="2.5" />
+				</ToggleButton>
+				<ToggleButton Classes="snapTool"
+				              CornerRadius="0"
+				              ToolTip.Tip="Free camera"
+				              Command="{Binding Workspace.SetEditorCameraModeCommand}"
+				              CommandParameter="Free"
+				              IsChecked="{Binding Workspace.CameraMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Free, Mode=OneWay}">
+					<LucideIcon Kind="Camera" Size="18" StrokeWidth="2.5" />
+				</ToggleButton>
+				<ToggleButton Classes="snapTool"
+				              CornerRadius="0,6,6,0"
+				              ToolTip.Tip="Orbit camera"
+				              Command="{Binding Workspace.SetEditorCameraModeCommand}"
+				              CommandParameter="Orbit"
+				              IsChecked="{Binding Workspace.CameraMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Orbit, Mode=OneWay}">
+					<LucideIcon Kind="Rotate3d" Size="18" StrokeWidth="2.5" />
 				</ToggleButton>
 			</StackPanel>
 

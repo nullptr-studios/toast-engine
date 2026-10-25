@@ -49,7 +49,7 @@ public partial class VoxelEditorViewModel : ObservableObject, IDisposable {
 	// Snapping in the VoxelEditor is always one voxel and a right angle
 	public const double VoxelSize = 0.1;
 	public const double RightAngle = 90.0;
-
+	public const double UnitSize = VoxelSize * 10;
 	public const string DrawBoxScript = "core://voxel_scripts/draw_box.lua";
 
 	private static ulong s_nextTransaction = 1 << 20;
@@ -68,6 +68,7 @@ public partial class VoxelEditorViewModel : ObservableObject, IDisposable {
 	[ObservableProperty] private bool m_showEdges;
 	[ObservableProperty] private bool m_fourUp;
 	[ObservableProperty] private bool m_showOthers;
+	[ObservableProperty] private bool m_snapToUnit;
 	[ObservableProperty] private int m_paletteId = 1;
 	[ObservableProperty] private string? m_defaultScript;
 	[ObservableProperty] private string m_defaultFillModeName = "Replace";
@@ -563,9 +564,17 @@ public partial class VoxelEditorViewModel : ObservableObject, IDisposable {
 		SendOverlays();
 		SendShowOthers();
 		Events.Send(new SetCoordinateSpace { World = false });
-		Events.Send(new SetSnapping { Kind = 0, Enabled = true, Value = (float)VoxelSize });
+		SendTranslateSnap();
 		Events.Send(new SetSnapping { Kind = 1, Enabled = true, Value = (float)RightAngle });
 		Events.Send(new SetSnapping { Kind = 2, Enabled = false, Value = (float)VoxelSize });
+	}
+
+	private void SendTranslateSnap() {
+		Events.Send(new SetSnapping { Kind = 0, Enabled = true, Value = (float)(SnapToUnit ? UnitSize : VoxelSize) });
+	}
+
+	partial void OnSnapToUnitChanged(bool value) {
+		if (OwnsEngine) SendTranslateSnap();
 	}
 
 	private void SendShowOthers() {
