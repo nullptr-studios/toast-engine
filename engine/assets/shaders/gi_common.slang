@@ -66,7 +66,7 @@ struct GiFrame
     float4 rays;
     /// xy R2 jitter z history kept per frame w history left after a change nearby
     float4 jitter;
-    /// x hit points per parity y secondary cache on z asfloat share of off screen hits kept
+    /// x hit points per parity y secondary cache on z asfloat share of off screen hits kept w points kept
     uint4 secondary;
     /// x max ray luminance y history floor in rays z keep of that floor
     float4 limits;
@@ -109,6 +109,12 @@ uint giHash(uint key)
     key *= 0x846ca68bu;
     key ^= key >> 16;
     return key;
+}
+
+float giRandom(inout uint state)
+{
+    state = giHash(state + 0x9e3779b9u);
+    return float(state >> 8) / 16777216.0;
 }
 
 float giSpacing(GiFrame frame, uint lod, uint cascade)
@@ -189,10 +195,10 @@ uint giMortonSpread(uint value)
 }
 
 /// Two Morton ordered N by N halves so the four children of a direction are contiguous one cascade up
-uint giDirectionIndex(float3 direction, uint cascade)
+/// @p uv from giEncodeDirection so a ray split over every cascade encodes once
+uint giDirectionIndex(float2 uv, uint cascade)
 {
     const uint side = giSide(cascade);
-    const float2 uv = giEncodeDirection(direction);
     const uint x = min(uint(uv.x * float(2u * side)), 2u * side - 1u);
     const uint y = min(uint(uv.y * float(side)), side - 1u);
     return (x / side) * side * side + (giMortonSpread(x % side) | (giMortonSpread(y) << 1));

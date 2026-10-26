@@ -59,6 +59,16 @@ void PostProcessVolume::syncSettings() const {
 	m_settings.ssao.strength = m_ssao_strength;
 	m_settings.ssao.range_cutoff = m_ssao_range_cutoff;
 	m_settings.ssao.sample_count = static_cast<uint32_t>(std::max(m_ssao_sample_count, 1));
+
+	m_settings.fog.density = std::max(m_fog_density, 0.0f);
+	m_settings.fog.height = m_fog_height;
+	m_settings.fog.height_falloff = std::max(m_fog_height_falloff, 0.0f);
+	m_settings.fog.albedo_r = m_fog_albedo.r;
+	m_settings.fog.albedo_g = m_fog_albedo.g;
+	m_settings.fog.albedo_b = m_fog_albedo.b;
+	m_settings.fog.anisotropy = std::clamp(m_fog_anisotropy, -0.9f, 0.9f);
+	m_settings.fog.ambient = std::max(m_fog_ambient, 0.0f);
+	m_settings.fog.distance = std::max(m_fog_distance, 1.0f);
 }
 
 auto PostProcessVolume::settings() const -> const renderer::PostProcessSettings& {

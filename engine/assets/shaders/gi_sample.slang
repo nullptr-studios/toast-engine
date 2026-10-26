@@ -20,26 +20,43 @@ Sampler2D gGiIrradiance;
 
 static const uint kRcMaxProbes = 32u;
 
-uint rcFindTile(GiFrame frame, int3 cell, uint lod)
+/// c0 tile per corner around @p base or kGiEmpty with each stage batched over all eight
+void rcFindTiles(GiFrame frame, int3 base, uint lod, out uint tiles[8])
 {
     const GiCascadeLayout layout = frame.cascades[0];
-    const uint key = giKey(cell, lod);
-    uint slot = giHash(key) & layout.y;
-    for (uint attempt = 0u; attempt < kRcMaxProbes; ++attempt)
+    uint keys[8];
+    uint slots[8];
+    uint stored[8];
+    [unroll]
+    for (uint corner = 0u; corner < 8u; ++corner)
     {
-        const uint stored = gGiTableKeys[layout.x + slot];
-        if (stored == key)
-        {
-            const uint value = gGiTableValues[layout.x + slot];
-            return value < layout.w ? gGiPool[frame.frame.z * frame.pool.x + layout.z + value].deposit : kGiEmpty;
-        }
-        if (stored == kGiEmpty)
-        {
-            return kGiEmpty;
-        }
-        slot = (slot + 1u) & layout.y;
+        keys[corner] = giKey(base + giNeighbourOffset(corner), lod);
+        slots[corner] = giHash(keys[corner]) & layout.y;
+        stored[corner] = gGiTableKeys[layout.x + slots[corner]];
     }
-    return kGiEmpty;
+    // Probing past the first slot is rare with the tables at most half full
+    [unroll]
+    for (uint corner = 0u; corner < 8u; ++corner)
+    {
+        for (uint attempt = 1u; attempt < kRcMaxProbes && stored[corner] != keys[corner] && stored[corner] != kGiEmpty; ++attempt)
+        {
+            slots[corner] = (slots[corner] + 1u) & layout.y;
+            stored[corner] = gGiTableKeys[layout.x + slots[corner]];
+        }
+    }
+    uint values[8];
+    [unroll]
+    for (uint corner = 0u; corner < 8u; ++corner)
+    {
+        values[corner] = gGiTableValues[layout.x + slots[corner]];
+    }
+    [unroll]
+    for (uint corner = 0u; corner < 8u; ++corner)
+    {
+        const bool found = stored[corner] == keys[corner] && values[corner] < layout.w;
+        const uint tile = gGiPool[frame.frame.z * frame.pool.x + layout.z + (found ? values[corner] : 0u)].deposit;
+        tiles[corner] = found ? tile : kGiEmpty;
+    }
 }
 
 float3 rcIrradianceAtLod(GiFrame frame, float3 worldPosition, float3 normal, uint lod, out float total)
@@ -48,17 +65,21 @@ float3 rcIrradianceAtLod(GiFrame frame, float3 worldPosition, float3 normal, uin
     const float3 coord = (worldPosition + normal * (kGiSurfaceBias * spacing)) / spacing - 0.5;
     const int3 base = int3(floor(coord));
     const float3 upper = coord - float3(base);
+    uint tiles[8];
+    rcFindTiles(frame, base, lod, tiles);
+
+    // Every tile is read at the same normal so the octahedral texel is shared
+    const float2 texel = 1.0 + giOctEncode(normal) * float(kGiTileInterior);
     float3 irradiance = float3(0.0, 0.0, 0.0);
     total = 0.0;
+    [unroll]
     for (uint corner = 0u; corner < 8u; ++corner)
     {
-        const uint tile = rcFindTile(frame, base + giNeighbourOffset(corner), lod);
-        if (tile == kGiEmpty)
-        {
-            continue;
-        }
-        const float weight = giNeighbourWeight(corner, upper);
-        irradiance += weight * gGiIrradiance.SampleLevel(giTileUv(tile, normal), 0.0).rgb;
+        // A missing probe samples tile 0 at no weight so the eight fetches issue together
+        const bool found = tiles[corner] != kGiEmpty;
+        const float weight = found ? giNeighbourWeight(corner, upper) : 0.0;
+        const float2 uv = (float2(giTileOrigin(found ? tiles[corner] : 0u)) + texel) / kGiAtlasSize;
+        irradiance += weight * gGiIrradiance.SampleLevel(uv, 0.0).rgb;
         total += weight;
     }
     return total > 0.0 ? irradiance / total : irradiance;

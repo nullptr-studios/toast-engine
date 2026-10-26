@@ -870,6 +870,21 @@ void PerfWindow::drawSceneTab() {
 	}
 	ImGui::SeparatorText("Radiance cascades");
 	const GiPass::Stats stats = gi->stats();
+	constexpr std::array<const char*, 5> k_quality_names {"Low", "Medium", "High", "Epic", "Custom"};
+	const char* quality_name = k_quality_names[std::min<size_t>(stats.quality, k_quality_names.size() - 1)];
+	if (stats.point_budget > 0) {
+		ImGui::Text(
+		    "Quality %s, ray step %u, update every %u frames, %u multibounce points",
+		    quality_name,
+		    stats.ray_step,
+		    stats.update_interval,
+		    stats.point_budget
+		);
+	} else {
+		ImGui::Text(
+		    "Quality %s, ray step %u, update every %u frames, multibounce off", quality_name, stats.ray_step, stats.update_interval
+		);
+	}
 	if (ImGui::BeginTable("##perf_gi", 6, ImGuiTableFlags_SizingFixedFit)) {
 		ImGui::TableSetupColumn("Cascade");
 		ImGui::TableSetupColumn("Probes");

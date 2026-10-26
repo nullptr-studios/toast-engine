@@ -51,6 +51,18 @@ struct VoxelStorageDebugInfo {
 
 class VoxelGpuSections;
 
+/// Mirrors scene_trace.slang kTraceBrickBits
+inline constexpr uint32_t k_brick_coord_bits = 10;
+
+/// Bricks of one record packed as x | y << 10 | z << 20 for its brick BLAS
+struct VoxelBrickList {
+	std::vector<uint32_t> occupied;
+	std::vector<uint32_t> glass;
+	/// A BLAS built for other dims may hold boxes outside the volume
+	glm::uvec3 dims {0};
+	uint64_t hash = 0;
+};
+
 /// Immutable scene version and versions from small carves share buffers patched in place
 class VoxelGpuStorage : public IVulkanResource {
 public:
@@ -137,6 +149,15 @@ public:
 		return record < m_glass_bricks.size() ? std::span<const uint32_t>(m_glass_bricks[record]) : std::span<const uint32_t> {};
 	}
 
+	/// @note Main thread only and before the upload is queued
+	void setBrickLists(std::vector<std::shared_ptr<const VoxelBrickList>> lists) { m_brick_lists = std::move(lists); }
+
+	[[nodiscard]]
+	auto brickList(uint32_t record) const -> const std::shared_ptr<const VoxelBrickList>& {
+		static const std::shared_ptr<const VoxelBrickList> k_none;
+		return record < m_brick_lists.size() ? m_brick_lists[record] : k_none;
+	}
+
 private:
 	friend class VoxelSceneUpload;
 
@@ -155,6 +176,7 @@ private:
 	VoxelChangeHistory m_history;
 
 	std::vector<std::vector<uint32_t>> m_glass_bricks;
+	std::vector<std::shared_ptr<const VoxelBrickList>> m_brick_lists;
 };
 
 struct VoxelCollisionWorld {

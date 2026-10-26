@@ -16,6 +16,7 @@
 namespace renderer {
 class VulkanCore;
 class RayTracingScene;
+class VoxelBlasCache;
 
 /// Voxel volumes every marched ray walks in one order shared by scene_trace.slang and the ray query instances
 /// Without ray queries rays walk a camera centred cell grid over the same list
@@ -47,9 +48,12 @@ public:
 	/// Render thread before the acceleration structure builds and every pass that marches voxels
 	void update(uint32_t frame_index, std::span<const Volume> volumes, glm::vec3 camera_position, float cell_size);
 
-	/// Builds the shared unit box once and adds one instance per volume of the last update
+	/// Builds the shared unit box once and adds the brick BLASes of @p bricks or the unit box per volume of the last update
 	/// @return false while the unit box is not usable yet
-	auto addRayQueryInstances(vk::CommandBuffer cmd, RayTracingScene& scene) -> bool;
+	auto addRayQueryInstances(
+	    vk::CommandBuffer cmd, uint32_t frame_index, RayTracingScene& scene, const VoxelBlasCache* bricks,
+	    const VoxelGpuStorage* storage
+	) -> bool;
 
 	[[nodiscard]]
 	auto volumeBuffer(uint32_t frame_index) const -> vk::Buffer {
@@ -66,6 +70,12 @@ public:
 		return *m_frames[frame_index].grid;
 	}
 
+	/// Mirrors scene_trace.slang gTraceBrickBases
+	[[nodiscard]]
+	auto brickBaseBuffer(uint32_t frame_index) const -> vk::Buffer {
+		return *m_frames[frame_index].brick_bases;
+	}
+
 	[[nodiscard]]
 	auto volumeCount() const noexcept -> uint32_t {
 		return static_cast<uint32_t>(m_volumes.size());
@@ -76,6 +86,7 @@ private:
 		vma::raii::Buffer volumes = nullptr;
 		vma::raii::Buffer bounds = nullptr;
 		vma::raii::Buffer grid = nullptr;
+		vma::raii::Buffer brick_bases = nullptr;
 	};
 
 	void writeGrid(FrameResources& frame, glm::vec3 camera_position, float cell_size);

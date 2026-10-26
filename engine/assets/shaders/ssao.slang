@@ -5,7 +5,7 @@ struct SsaoParams
 {
     float4x4 viewProjection;
     float4x4 inverseViewProjection;
-    // xy target size zw reciprocal
+    // xy target size z frame index for the noise
     float4 screenSize;
     // x sample radius y strength z depth cutoff w sample count
     float4 tuning;
@@ -49,9 +49,11 @@ float3 worldPositionFromDepth(float2 uv, float depth)
     return world.xyz / world.w;
 }
 
-float hash(float2 p)
+/// Walked per frame so TAA averages it
+float rotationNoise(float2 pixel)
 {
-    return frac(sin(dot(p, float2(12.9898, 78.233))) * 43758.5453);
+    const float2 shifted = pixel + 5.588238 * gParams.screenSize.z;
+    return frac(52.9829189 * frac(dot(shifted, float2(0.06711056, 0.00583715))));
 }
 
 float3 hemisphereSample(uint index, uint count, float rotation)
@@ -94,7 +96,7 @@ float4 aoMain(VSOutput input) : SV_Target0
     float3 T = normalize(cross(helper, N));
     float3 B = cross(N, T);
 
-    float rotation = hash(input.uv * gParams.screenSize.xy) * 6.2831853;
+    float rotation = rotationNoise(input.position.xy) * 6.2831853;
 
     float occlusion = 0.0;
     float validSamples = 0.0;
@@ -152,6 +154,7 @@ float4 aoMain(VSOutput input) : SV_Target0
     return float4(ao, surfaceDistance, 0.0, 1.0);
 }
 
+/// 4 by 4 texels kept on the surface by camera distance
 float upsampleOcclusion(float2 uv, float pixelDistance, float tolerance)
 {
     uint width;
@@ -161,23 +164,22 @@ float upsampleOcclusion(float2 uv, float pixelDistance, float tolerance)
 
     float2 texel = uv * lowSize - 0.5;
     float2 base = floor(texel);
-    float2 fraction = texel - base;
 
     float weighted = 0.0;
     float weightSum = 0.0;
     float nearestAo = 1.0;
     float nearestError = 1e30;
 
-    for (int y = 0; y < 2; ++y)
+    for (int y = -1; y <= 2; ++y)
     {
-        for (int x = 0; x < 2; ++x)
+        for (int x = -1; x <= 2; ++x)
         {
             float2 offset = float2(float(x), float(y));
             float4 texelValue = gOcclusion.SampleLevel((base + offset + 0.5) / lowSize, 0.0);
 
-            float2 bilinear = lerp(1.0 - fraction, fraction, offset);
+            float2 fromCentre = base + offset - texel;
             float error = abs(texelValue.g - pixelDistance);
-            float weight = bilinear.x * bilinear.y * exp(-error / tolerance);
+            float weight = exp(-dot(fromCentre, fromCentre) / 2.0) * exp(-error / tolerance);
 
             weighted += texelValue.r * weight;
             weightSum += weight;

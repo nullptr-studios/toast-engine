@@ -4,6 +4,7 @@ import lighting;
 import scene_trace;
 import gi_common;
 import gi_sky;
+import trace_shading;
 
 [[vk::binding(0, 2)]]
 Sampler2D gDepth;
@@ -59,12 +60,11 @@ RWStructuredBuffer<float4> gChange;
 /// Off the surface in meters so the first voxel the ray leaves is not hit at t 0
 static const float kGiRayOffset = 0.05;
 static const float kGiMaxRadiance = 16384.0;
-static const uint kGiMaxLocalLights = 64u;
 /// Meters off the plane of the hit face the visible surface may sit and still count as the same face
 static const float kGiScreenPlane = 0.025;
 
-/// Skips probes over half a cell behind the surface since a coarse cell spans thin occluders and light leaks under
-float3 giSecondaryIrradiance(GiFrame frame, float3 position, float3 normal)
+/// One corner by trilinear weight skipping probes over half a cell behind the surface so light does not leak under
+float3 giSecondaryIrradiance(GiFrame frame, float3 position, float3 normal, inout uint random)
 {
     const uint lod = giSecondaryLod(frame, position);
     const GiCascadeLayout layout = frame.cascades[0];
@@ -72,12 +72,23 @@ float3 giSecondaryIrradiance(GiFrame frame, float3 position, float3 normal)
     const float3 coord = (position + normal * (kGiSurfaceBias * spacing)) / spacing - 0.5;
     const int3 base = int3(floor(coord));
     const float3 upper = coord - float3(base);
-    float3 irradiance = float3(0.0, 0.0, 0.0);
-    float total = 0.0;
-    for (uint corner = 0u; corner < 8u; ++corner)
+    const float pick = giRandom(random);
+    float cumulative = 0.0;
+    uint first = 7u;
+    for (uint corner = 0u; corner < 7u; ++corner)
     {
+        cumulative += giNeighbourWeight(corner, upper);
+        if (pick < cumulative)
+        {
+            first = corner;
+            break;
+        }
+    }
+    for (uint step = 0u; step < 8u; ++step)
+    {
+        const uint corner = (first + step) & 7u;
         const int3 cell = base + giNeighbourOffset(corner);
-        if (dot((float3(cell) + 0.5) * spacing - position, normal) < -0.5 * spacing)
+        if (giNeighbourWeight(corner, upper) <= 0.0 || dot((float3(cell) + 0.5) * spacing - position, normal) < -0.5 * spacing)
         {
             continue;
         }
@@ -108,11 +119,9 @@ float3 giSecondaryIrradiance(GiFrame frame, float3 position, float3 normal)
         {
             continue;
         }
-        const float weight = giNeighbourWeight(corner, upper);
-        irradiance += weight * gIrradiance.SampleLevel(giTileUv(tile, normal), 0.0).rgb;
-        total += weight;
+        return gIrradiance.SampleLevel(giTileUv(tile, normal), 0.0).rgb;
     }
-    return total > 0.0 ? irradiance / total : irradiance;
+    return float3(0.0, 0.0, 0.0);
 }
 
 /// Rare rays onto small bright emitters flicker their bucket without a ceiling
@@ -120,12 +129,6 @@ float3 giClampRay(GiFrame frame, float3 radiance)
 {
     const float luminance = dot(radiance, float3(0.2126, 0.7152, 0.0722));
     return luminance > frame.limits.x ? radiance * (frame.limits.x / luminance) : radiance;
-}
-
-float giRandom(inout uint state)
-{
-    state = giHash(state + 0x9e3779b9u);
-    return float(state >> 8) / 16777216.0;
 }
 
 uint giFindDeposit(GiFrame frame, uint cascade, int3 cell, uint lod)
@@ -192,70 +195,6 @@ bool giScreenRadiance(GiFrame frame, float3 position, float3 normal, out float3 
     return true;
 }
 
-float giLightWeight(GpuLight light, float3 position, float3 normal)
-{
-    float3 L;
-    float distance;
-    const float3 radiance = lightSampleRadiance(light, position, light.worldPosRange.xyz, L, distance);
-    return dot(radiance, float3(0.2126, 0.7152, 0.0722)) * max(dot(normal, L), 0.0);
-}
-
-/// Half uniform picks so a weak visible light next to a blocked strong one does not turn into fireflies
-float3 giLocalLight(float3 position, float3 normal, float3 albedo, inout uint random)
-{
-    const uint count = min(gClusterParams.lightCounts.x, kGiMaxLocalLights);
-    float total = 0.0;
-    float lit = 0.0;
-    for (uint li = 0u; li < count; ++li)
-    {
-        const float weight = giLightWeight(gLights[li], position, normal);
-        total += weight;
-        lit += weight > 0.0 ? 1.0 : 0.0;
-    }
-    if (lit <= 0.0)
-    {
-        return float3(0.0, 0.0, 0.0);
-    }
-
-    const float pick = giRandom(random);
-    float cumulative = 0.0;
-    float odds = 0.0;
-    uint chosen = kGiEmpty;
-    for (uint li = 0u; li < count && chosen == kGiEmpty; ++li)
-    {
-        const float weight = giLightWeight(gLights[li], position, normal);
-        if (weight <= 0.0)
-        {
-            continue;
-        }
-        odds = 0.5 * weight / total + 0.5 / lit;
-        cumulative += odds;
-        if (pick < cumulative)
-        {
-            chosen = li;
-        }
-    }
-    if (chosen == kGiEmpty)
-    {
-        return float3(0.0, 0.0, 0.0);
-    }
-
-    const GpuLight light = gLights[chosen];
-    const float3 u = float3(giRandom(random), giRandom(random), giRandom(random));
-    const float3 samplePoint = sampleLightShape(light, position, u);
-    float3 L;
-    float distance;
-    const float3 radiance = lightSampleRadiance(light, position, samplePoint, L, distance);
-    const float cosine = dot(normal, L);
-    if (cosine <= 0.0 || all(radiance <= 0.0))
-    {
-        return float3(0.0, 0.0, 0.0);
-    }
-    const float3 origin = position + normal * kGiRayOffset;
-    const float visibility = traceVisibility(origin, samplePoint - origin, 0.0, false).x;
-    return albedo / kPi * radiance * cosine * visibility / odds;
-}
-
 float3 giHitRadiance(GiFrame frame, SceneHit hit, float3 origin, float3 direction, uint2 pixel, inout uint random, out bool onScreen)
 {
     const float3 position = origin + direction * hit.t;
@@ -268,47 +207,23 @@ float3 giHitRadiance(GiFrame frame, SceneHit hit, float3 origin, float3 directio
     }
 
     const PaletteSample palette = samplePalette(gTraceVolumes[hit.volume].recordIndex, hit.material);
-    radiance = palette.albedo * palette.emissive + giLocalLight(position, normal, palette.albedo, random);
+    // Shadow rays take the cone floor of the GI rays since their light is averaged over a whole bucket
+    radiance = palette.albedo * palette.emissive + traceLocalLight(position, normal, palette.albedo, frame.rays.w, random);
     if (frame.secondary.y != 0u)
     {
-        radiance += palette.albedo * giSecondaryIrradiance(frame, position, normal);
+        radiance += palette.albedo * giSecondaryIrradiance(frame, position, normal, random);
     }
-
-    const uint casterIndex = uint(gCamera.shadowParams.x) - 1u;
-    for (uint di = 0u; di < gCamera.directionalLightCountPad.x; ++di)
-    {
-        const DirectionalLightGpu light = gCamera.directionalLights[di];
-        const float3 L = normalize(-light.direction.xyz);
-        const float cosine = dot(normal, L);
-        if (cosine <= 0.0)
-        {
-            continue;
-        }
-        const bool mapped = gCamera.shadowParams.x >= 0.5 && di == casterIndex;
-        float shadow = 1.0;
-        if (mapped)
-        {
-            const float viewDepth = abs(mul(gCamera.view, float4(position, 1.0)).z);
-            shadow = sampleDirectionalShadow(position, normal, L, viewDepth, float2(pixel));
-        }
-        // A marched sun keeps the map for meshes and marches voxels like voxel_lighting
-        if ((!mapped || light.direction.w > 0.0) && shadow > 0.0)
-        {
-            shadow = min(shadow, traceVisibility(position + normal * kGiRayOffset, L * frame.rays.y, 0.0, false).x);
-        }
-        radiance += palette.albedo / kPi * light.colorIntensity.rgb * light.colorIntensity.a * cosine * shadow;
-    }
-    return radiance;
+    return radiance + traceSunLight(position, normal, palette.albedo, frame.rays.w, frame.rays.y, float2(pixel));
 }
 
-void giDeposit(GiFrame frame, uint cascade, uint deposit, float3 direction, float3 radiance, uint transmittance)
+void giDeposit(GiFrame frame, uint cascade, uint deposit, float2 uv, float3 radiance, uint transmittance)
 {
     const uint first = gDepositSlots[deposit];
     if (first == kGiEmpty)
     {
         return;
     }
-    const uint slot = first + giDirectionIndex(direction, cascade);
+    const uint slot = first + giDirectionIndex(uv, cascade);
     if (transmittance == 0u)
     {
         const uint3 fixedPoint = uint3(clamp(radiance, 0.0, kGiMaxRadiance) * frame.rays.z + 0.5);
@@ -323,20 +238,21 @@ void giDeposit(GiFrame frame, uint cascade, uint deposit, float3 direction, floa
 void giSplitRay(GiFrame frame, uint deposit, uint lod, float3 direction, bool hit, float distance, float3 radiance)
 {
     const uint top = frame.frame.y - 1u;
+    const float2 uv = giEncodeDirection(direction);
     for (uint cascade = 0u; cascade <= top && deposit != kGiEmpty; ++cascade)
     {
         const float end = giIntervalEnd(frame, lod, cascade);
         if (hit && distance <= end)
         {
-            giDeposit(frame, cascade, deposit, direction, radiance, 0u);
+            giDeposit(frame, cascade, deposit, uv, radiance, 0u);
             return;
         }
         if (cascade == top)
         {
-            giDeposit(frame, cascade, deposit, direction, giSky(direction), 0u);
+            giDeposit(frame, cascade, deposit, uv, giSky(direction), 0u);
             return;
         }
-        giDeposit(frame, cascade, deposit, direction, float3(0.0, 0.0, 0.0), 1u);
+        giDeposit(frame, cascade, deposit, uv, float3(0.0, 0.0, 0.0), 1u);
         deposit = gParent[deposit];
     }
 }
@@ -387,7 +303,7 @@ void traceMain(uint3 id : SV_DispatchThreadID)
     {
         uint index = 0u;
         InterlockedAdd(gCounters[kGiCounterPoints + frame.frame.z], 1u, index);
-        if (index < frame.secondary.x)
+        if (index < frame.secondary.w)
         {
             GiPoint point;
             point.position = origin + direction * hit.t;
@@ -414,7 +330,7 @@ void traceMain(uint3 id : SV_DispatchThreadID)
 void pointTraceMain(uint3 id : SV_DispatchThreadID)
 {
     const GiFrame frame = gFrame[0];
-    if (id.x >= min(gCounters[kGiCounterPoints + 1u - frame.frame.z], frame.secondary.x))
+    if (id.x >= min(gCounters[kGiCounterPoints + 1u - frame.frame.z], frame.secondary.w))
     {
         return;
     }

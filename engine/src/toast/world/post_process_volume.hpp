@@ -155,6 +155,24 @@ private:
 	[[Reflect, Name("AO Samples"), Range(1, 64), Group("Ambient Occlusion")]]
 	int32_t m_ssao_sample_count = 16;
 
+	/// 0 turns volumetrics off
+	[[Reflect, Name("Fog Density"), Unit("1/m"), Range(0.0, 1.0), Group("Fog")]]
+	float m_fog_density = 0.0f;
+	[[Reflect, Name("Fog Height"), Unit("m"), Range(-1000.0, 1000.0), Group("Fog")]]
+	float m_fog_height = 0.0f;
+	/// 0 is uniform fog
+	[[Reflect, Name("Fog Height Falloff"), Unit("1/m"), Range(0.0, 2.0), Group("Fog")]]
+	float m_fog_height_falloff = 0.0f;
+	[[Reflect, Name("Fog Albedo"), Color, Group("Fog")]]
+	glm::vec3 m_fog_albedo = glm::vec3(1.0f);
+	/// Above 0 scatters forward so shafts brighten toward the light
+	[[Reflect, Name("Fog Anisotropy"), Range(-0.9, 0.9), Group("Fog")]]
+	float m_fog_anisotropy = 0.3f;
+	[[Reflect, Name("Fog Ambient"), Range(0.0, 4.0), Group("Fog")]]
+	float m_fog_ambient = 1.0f;
+	[[Reflect, Name("Fog Distance"), Unit("m"), Range(1.0, 1000.0), Group("Fog")]]
+	float m_fog_distance = 64.0f;
+
 	/// @brief Rebuilt from the reflected fields each time the renderer asks
 	///
 	/// The fields are separate rather than a nested PostProcessSettings because reflection describes flat

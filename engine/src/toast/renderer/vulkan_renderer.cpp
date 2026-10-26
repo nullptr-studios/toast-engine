@@ -18,6 +18,8 @@
 #include "passes/selection_outline.hpp"
 #include "passes/shadow_pass.hpp"
 #include "passes/skinning_pass.hpp"
+#include "passes/taa_pass.hpp"
+#include "passes/traced_specular_pass.hpp"
 #include "passes/voxel_pass.hpp"
 #include "ray_tracing_scene.hpp"
 #include "renderer_settings.hpp"
@@ -60,6 +62,7 @@
 #include <toast/world/animation_player.hpp>
 #include <toast/world/camera.hpp>
 #include <toast/world/directional_light.hpp>
+#include <toast/world/fog_volume.hpp>
 #include <toast/world/irradiance_volume.hpp>
 #include <toast/world/light.hpp>
 #include <toast/world/mesh_node.hpp>
@@ -70,6 +73,7 @@
 #include <toast/world/workspace_events.hpp>
 #include <tracy/Tracy.hpp>
 #include <tuple>
+#include <unordered_set>
 
 #if defined(_WIN32)
 #include <external/inc/nsight/NGFX_GPUTrace_Vulkan.h>
@@ -493,6 +497,77 @@ auto packedGlassBricks(const voxel::gpu::PackedScene& scene) -> std::vector<std:
 	return out;
 }
 
+auto brickCoord(const voxel::gpu::VolumeRecord& record, uint32_t index) -> uint32_t {
+	const uint32_t x = index % record.brick_dims_x;
+	const uint32_t y = (index / record.brick_dims_x) % record.brick_dims_y;
+	const uint32_t z = index / (record.brick_dims_x * record.brick_dims_y);
+	return x | (y << k_brick_coord_bits) | (z << (2 * k_brick_coord_bits));
+}
+
+auto hashBricks(const VoxelBrickList& list) -> uint64_t {
+	uint64_t hash = 14695981039346656037ull;
+	const auto mix = [&hash](uint32_t word) { hash = (hash ^ word) * 1099511628211ull; };
+	for (const uint32_t brick : list.occupied) {
+		mix(brick);
+	}
+	mix(0xFFFFFFFFu);
+	for (const uint32_t brick : list.glass) {
+		mix(brick);
+	}
+	mix(list.dims.x);
+	mix(list.dims.y);
+	mix(list.dims.z);
+	return hash;
+}
+
+/// Records no delta touched share the list of @p previous
+[[nodiscard]]
+auto packedBrickLists(
+    const voxel::gpu::PackedScene& scene, const std::vector<std::vector<uint32_t>>& glass, const VoxelGpuStorage& storage,
+    const VoxelGpuStorage* previous, std::span<const VolumeDelta> deltas
+) -> std::vector<std::shared_ptr<const VoxelBrickList>> {
+	std::unordered_set<uint64_t> dirty;
+	for (const VolumeDelta& delta : deltas) {
+		if (delta.unknown || !delta.bricks.empty()) {
+			dirty.insert(delta.node_rid);
+		}
+	}
+
+	std::vector<std::shared_ptr<const VoxelBrickList>> out(scene.records.size());
+	for (uint32_t r = 0; r < scene.records.size(); ++r) {
+		const voxel::gpu::VolumeRecord& record = scene.records[r];
+		auto list = std::make_shared<VoxelBrickList>();
+		list->dims = glm::uvec3(record.brick_dims_x, record.brick_dims_y, record.brick_dims_z);
+		for (const uint32_t index : glass[r]) {
+			list->glass.push_back(brickCoord(record, index));
+		}
+
+		const uint64_t rid = storage.nodeRid(r);
+		const auto kept = previous != nullptr && rid != 0 && !dirty.contains(rid) ? previous->recordIndexOf(rid) : std::nullopt;
+		const VoxelBrickList* old = kept.has_value() ? previous->brickList(*kept).get() : nullptr;
+		if (old != nullptr && old->dims != list->dims) {
+			old = nullptr;
+		}
+		if (old != nullptr && old->glass == list->glass) {
+			out[r] = previous->brickList(*kept);
+			continue;
+		}
+		if (old != nullptr) {
+			list->occupied = old->occupied;
+		} else {
+			const uint32_t count = record.brick_dims_x * record.brick_dims_y * record.brick_dims_z;
+			for (uint32_t i = 0; i < count; ++i) {
+				if (voxel::BrickEntry {scene.grids[record.grid_offset + i]}.tag() != voxel::BrickTag::empty) {
+					list->occupied.push_back(brickCoord(record, i));
+				}
+			}
+		}
+		list->hash = hashBricks(*list);
+		out[r] = std::move(list);
+	}
+	return out;
+}
+
 }
 
 auto VulkanRenderer::getPrepassDrawnCount() const noexcept -> uint32_t {
@@ -605,6 +680,44 @@ auto VulkanRenderer::blendPostProcessVolumes(const glm::vec3& camera_position) -
 	}
 
 	return result;
+}
+
+void VulkanRenderer::gatherFogVolumes(RenderFrame& frame, const glm::vec3& camera_position) {
+	ZoneScoped;
+	frame.fog_volumes.clear();
+	auto& volumes = m_tick_fog_volumes;
+	{
+		std::scoped_lock lock(m_reflection_probe_mutex);
+		volumes.assign(m_fog_volume_nodes.begin(), m_fog_volume_nodes.end());
+	}
+	std::erase_if(volumes, [this](const toast::FogVolume* volume) {
+		return volume == nullptr || !volume->isEnabled() || volume->density() <= 0.0f ||
+		       (m_render_owner_filter != nullptr && volume->owner() != m_render_owner_filter);
+	});
+
+	for (const auto* volume : volumes) {
+		volume->syncTransform();
+	}
+	const auto centre = [](const toast::FogVolume* volume) { return glm::vec3(volume->getWorldTransform()[3]); };
+	std::ranges::sort(volumes, {}, [&](const toast::FogVolume* volume) { return glm::distance(centre(volume), camera_position); });
+	if (volumes.size() > k_max_fog_volumes) {
+		volumes.resize(k_max_fog_volumes);
+	}
+
+	frame.fog_volumes.reserve(volumes.size());
+	for (const auto* volume : volumes) {
+		debug::drawOrientedBox(volume->getWorldTransform(), volume->extents(), glm::vec4(0.6f, 0.75f, 0.9f, 1.0f));
+		frame.fog_volumes.push_back(
+		    FogVolumeGpu {
+		      .world_to_local = glm::inverse(volume->getWorldTransform()),
+		      .extents_fade = glm::vec4(glm::abs(volume->extents()), std::max(volume->edgeFade(), 0.0f)),
+		      .albedo_density = glm::vec4(volume->albedo(), volume->density()),
+		      .emission_noise = glm::vec4(volume->emission(), std::clamp(volume->noiseStrength(), 0.0f, 1.0f)),
+		      .wind_scale = glm::vec4(volume->wind(), std::max(volume->noiseScale(), 0.05f)),
+		      .phase = glm::vec4(std::clamp(volume->anisotropy(), -0.9f, 0.9f), std::max(volume->ambient(), 0.0f), 0.0f, 0.0f),
+		    }
+		);
+	}
 }
 
 void VulkanRenderer::cancelIrradianceBake() {
@@ -776,6 +889,7 @@ VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTa
 	if (m_core->isRayTracingSupported()) {
 		m_ray_tracing_scene = std::make_unique<RayTracingScene>(*m_core, k_frames_in_flight);
 		m_skinned_blas_pool = std::make_unique<SkinnedBlasPool>(*m_core);
+		m_voxel_blas_cache = std::make_unique<VoxelBlasCache>(*m_core, k_frames_in_flight);
 	}
 
 	m_capture_listener.subscribe<event::CaptureFrame>([this](const auto&) {
@@ -1517,8 +1631,23 @@ void VulkanRenderer::recordAccelerationStructureBuilds(FrameContext& frame) {
 			    {.transform = posed ? glm::mat4(1.0f) : proxy.model, .blas_address = blas_address, .mask = 0x01, .deforming = posed}
 			);
 		}
-		const bool voxel_queries = render_frame->frame_data.traced_shadow_params.y >= 0.5f && m_voxel_trace_scene != nullptr &&
-		                           m_voxel_trace_scene->addRayQueryInstances(*frame.command_buffer, *m_ray_tracing_scene);
+		const bool queries = render_frame->frame_data.traced_shadow_params.y >= 0.5f && m_voxel_trace_scene != nullptr;
+		const VoxelGpuStorage* storage = render_frame->voxel_storage.get();
+		const bool bricks =
+		    queries && m_voxel_blas_cache != nullptr && voxelTraceBricks() && storage != nullptr && storage->isReady();
+		if (bricks) {
+			const GpuScope scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, "Voxel BLAS");
+			m_trace_records.clear();
+			for (const VoxelTraceScene::Volume& volume : m_trace_volumes) {
+				m_trace_records.push_back(volume.instance.record_index);
+			}
+			m_voxel_blas_cache->update(*frame.command_buffer, m_current_frame, *storage, m_trace_records, voxelBlasBudget());
+		}
+		const bool voxel_queries =
+		    queries &&
+		    m_voxel_trace_scene->addRayQueryInstances(
+		        *frame.command_buffer, m_current_frame, *m_ray_tracing_scene, bricks ? m_voxel_blas_cache.get() : nullptr, storage
+		    );
 		m_ray_tracing_scene->build(*frame.command_buffer, m_current_frame, tracing || voxel_queries);
 	}
 }
@@ -1630,6 +1759,7 @@ auto VulkanRenderer::recordVoxelScopes(
     FrameContext& frame, const vk::Viewport& viewport, const vk::Rect2D& scissor, bool depth_loaded
 ) -> bool {
 	ZoneScoped;
+	m_traced_specular_frame = false;
 	const bool targets_ready =
 	    m_depth_resources.view.has_value() && m_voxel_albedo.view.has_value() && m_voxel_material.view.has_value() &&
 	    m_voxel_face_normal.view.has_value() && m_scene_color.view.has_value() && m_scene_normal.view.has_value() &&
@@ -1640,6 +1770,12 @@ auto VulkanRenderer::recordVoxelScopes(
 	    m_depth_resources.state.usage != sync::Usage::depth_attachment || !m_voxel_pass->prepare(m_current_frame)) {
 		return false;
 	}
+	// Decided once since voxel lighting and the post pass must agree on which pixels lost their environment specular
+	const auto* specular_frame = renderingFrame();
+	m_traced_specular_frame = m_traced_specular_pass != nullptr && m_traced_specular_pass->isEnabled() &&
+	                          m_traced_specular_pass->isReady() && voxelTracedSpecular() && specular_frame != nullptr &&
+	                          specular_frame->render_mode == 0 && specular_frame->probe_capture_index < 0 &&
+	                          specular_frame->irradiance_capture_index < 0;
 
 	const vk::CommandBuffer cmd = *frame.command_buffer;
 	{
@@ -1792,7 +1928,7 @@ auto VulkanRenderer::recordVoxelScopes(
 	const auto* lit_frame = renderingFrame();
 	const uint64_t sequence = lit_frame != nullptr ? lit_frame->sequence : 0;
 	const bool capture = lit_frame != nullptr && (lit_frame->probe_capture_index >= 0 || lit_frame->irradiance_capture_index >= 0);
-	m_voxel_reservoir_history = !capture && m_voxel_reservoir_written && sequence == m_voxel_reservoir_sequence + 1;
+	m_voxel_reservoir_history = !capture && m_voxel_reservoir_written && sequence - m_voxel_reservoir_sequence <= 1;
 
 	// Clears what no voxel covers since the world scope now loads instead
 	const std::array lighting_attachments {
@@ -2192,6 +2328,11 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	barriers.image(m_scene_indirect.state, sync::Usage::shader_sampled);
 	barriers.image(m_scene_motion.state, sync::Usage::shader_sampled);
 	barriers.image(m_depth_resources.state, sync::Usage::depth_sampled);
+	if (m_traced_specular_frame) {
+		barriers.image(m_voxel_albedo.state, sync::Usage::fragment_sampled);
+		barriers.image(m_voxel_material.state, sync::Usage::fragment_sampled);
+		barriers.image(m_voxel_face_normal.state, sync::Usage::fragment_sampled);
+	}
 	barriers.flush(*frame.command_buffer);
 
 	const auto* capture_check = renderingFrame();
@@ -2486,8 +2627,14 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> bool {
 	}
 	end_phase(m_perf_record_ns);
 
-	const auto acquired =
-	    m_output_target->acquireNextImage(std::numeric_limits<uint64_t>::max(), *frame.image_available, VK_NULL_HANDLE);
+	auto acquired = m_output_target->acquireNextImage(std::numeric_limits<uint64_t>::max(), *frame.image_available, VK_NULL_HANDLE);
+	// A dropped snapshot breaks every temporal history so a busy compositor is waited on and only a stalled one drops it
+	for (uint32_t attempt = 0; acquired.result == vk::Result::eNotReady && attempt < k_output_acquire_attempts &&
+	                           m_running.load(std::memory_order_acquire);
+	     ++attempt) {
+		waitForOutputImage();
+		acquired = m_output_target->acquireNextImage(std::numeric_limits<uint64_t>::max(), *frame.image_available, VK_NULL_HANDLE);
+	}
 	end_phase(m_perf_acquire_ns);
 
 	if (acquired.result == vk::Result::eErrorOutOfDateKHR) {
@@ -2496,8 +2643,7 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> bool {
 		return false;
 	}
 	if (acquired.result == vk::Result::eNotReady) {
-		waitForOutputImage();
-		end_phase(m_perf_acquire_ns);
+		TOAST_WARN("Render", "Output image wait timed out so the snapshot was dropped");
 		return false;
 	}
 	if (acquired.result != vk::Result::eSuccess && acquired.result != vk::Result::eSuboptimalKHR) {
@@ -2957,6 +3103,14 @@ void VulkanRenderer::waitForFrameSlot() noexcept {
 	}
 }
 
+auto VulkanRenderer::previousResolvedColour() const noexcept -> vk::ImageView {
+	const auto* frame = renderingFrame();
+	if (m_taa_pass == nullptr || !m_taa_pass->isEnabled() || frame == nullptr || !frame->taa_active || frame->taa_reset) {
+		return {};
+	}
+	return m_taa_pass->resolvedHistory();
+}
+
 void VulkanRenderer::submitFrame() noexcept {
 	{
 		std::lock_guard lock(m_queue_mutex);
@@ -3306,6 +3460,7 @@ void VulkanRenderer::tick(float time) noexcept {
 
 	m_camera->syncTransform();
 	frame.post_process = blendPostProcessVolumes(m_camera->world_position);
+	gatherFogVolumes(frame, m_camera->world_position);
 
 	auto& mesh_nodes_snapshot = m_tick_mesh_nodes;
 	{
@@ -4586,7 +4741,9 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 				auto storage = std::make_shared<VoxelGpuStorage>(
 				    std::move(patched->record_rids), std::move(patched->record_dims), *m_voxel_storage, *patch_sequence
 				);
-				storage->setGlassBricks(packedGlassBricks(m_voxel_patcher.scene()));
+				auto glass = packedGlassBricks(m_voxel_patcher.scene());
+				storage->setBrickLists(packedBrickLists(m_voxel_patcher.scene(), glass, *storage, m_voxel_storage.get(), deltas));
+				storage->setGlassBricks(std::move(glass));
 				storage->setDebugInfo(std::move(debug));
 				storage->setChangeHistory(m_voxel_change_tracker.packed(storage->generation()));
 				m_voxel_storage = std::move(storage);
@@ -4622,7 +4779,9 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 				m_voxel_patcher.adopt(packed->scene, debug.packed_slots, node_rids);
 
 				auto storage = std::make_shared<VoxelGpuStorage>(std::move(node_rids), std::move(brick_dims));
-				storage->setGlassBricks(packedGlassBricks(packed->scene));
+				auto glass = packedGlassBricks(packed->scene);
+				storage->setBrickLists(packedBrickLists(packed->scene, glass, *storage, nullptr, {}));
+				storage->setGlassBricks(std::move(glass));
 				storage->setDebugInfo(std::move(debug));
 				storage->setChangeHistory(m_voxel_change_tracker.packed(storage->generation()));
 				queueResourceUpload(std::make_unique<VoxelSceneUpload>(storage, std::move(packed)));
@@ -4816,6 +4975,26 @@ void VulkanRenderer::unregisterPostProcessVolumeProxy(toast::PostProcessVolume* 
 
 	std::scoped_lock lock(m_reflection_probe_mutex);
 	std::erase(m_post_process_volume_nodes, node);
+}
+
+void VulkanRenderer::registerFogVolumeProxy(toast::FogVolume* node) {
+	if (node == nullptr) {
+		return;
+	}
+
+	std::scoped_lock lock(m_reflection_probe_mutex);
+	if (!std::ranges::contains(m_fog_volume_nodes, node)) {
+		m_fog_volume_nodes.push_back(node);
+	}
+}
+
+void VulkanRenderer::unregisterFogVolumeProxy(toast::FogVolume* node) {
+	if (node == nullptr) {
+		return;
+	}
+
+	std::scoped_lock lock(m_reflection_probe_mutex);
+	std::erase(m_fog_volume_nodes, node);
 }
 
 void VulkanRenderer::registerLightNodeProxy(toast::Light* node) {

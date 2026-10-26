@@ -25,7 +25,6 @@ namespace renderer {
 class VulkanCore;
 class VoxelGpuStorage;
 
-/// Passes the image through unless the probe debug view is on
 class GiPass : public IPostProcessPass {
 public:
 	static constexpr uint32_t k_max_cascades = 6;
@@ -34,7 +33,7 @@ public:
 	static constexpr uint32_t k_min_capacity = 1024;
 	/// Shared by every cascade and handed out top cascade first
 	static constexpr uint32_t k_deposit_slots = 1u << 23;
-	/// Mirrors gi_common.slang kGiAtlasTilesPerRow and kGiAtlasRows and caps the c0 deposit probes at one tile each
+	/// Mirrors gi_common kGiAtlasTilesPerRow and kGiAtlasRows and caps the c0 deposit probes at one tile each
 	static constexpr uint32_t k_atlas_tiles_per_row = 256;
 	static constexpr uint32_t k_atlas_rows = 128;
 	static constexpr uint32_t k_atlas_tiles = k_atlas_tiles_per_row * k_atlas_rows;
@@ -43,7 +42,7 @@ public:
 	struct Stats {
 		uint32_t cascades = 0;
 		std::array<uint32_t, k_max_cascades> probes {};
-		/// Probes seen within gi_common.slang kGiKeepFrames and the rest are carried without storage
+		/// Probes seen within gi_common kGiKeepFrames and the rest are carried without storage
 		std::array<uint32_t, k_max_cascades> seen {};
 		std::array<uint32_t, k_max_cascades> capacity {};
 		std::array<uint32_t, k_max_cascades> deposits {};
@@ -67,6 +66,10 @@ public:
 		uint32_t points = 0;
 		uint32_t points_dropped = 0;
 		float point_share = 0.0f;
+		uint32_t quality = 0;
+		uint32_t ray_step = 0;
+		uint32_t update_interval = 0;
+		uint32_t point_budget = 0;
 	};
 
 	GiPass(const VulkanCore& core, vk::Format scene_format, vk::Extent2D extent);
@@ -84,7 +87,7 @@ public:
 	[[nodiscard]]
 	auto stats() const -> Stats;
 
-	/// Set 0 buffers lighting samples by gi_sample.slang binding name
+	/// Set 0 buffers lighting samples by gi_sample binding name
 	[[nodiscard]]
 	auto sceneBuffer(std::string_view name) const -> vk::Buffer;
 
@@ -99,7 +102,7 @@ public:
 	}
 
 private:
-	/// Mirrors gi_common.slang GiFrame
+	/// Mirrors gi_common GiFrame
 	struct FrameData {
 		glm::mat4 inverse_view_projection {1.0f};
 		glm::vec4 camera {0.0f};
@@ -115,7 +118,7 @@ private:
 		std::array<glm::uvec4, k_max_cascades> deposits {};
 	};
 
-	/// Mirrors gi_common.slang kGiCounter layout with counts per parity then table full pool full and seen per cascade
+	/// Mirrors gi_common kGiCounter layout with counts per parity then table full pool full and seen per cascade
 	static constexpr uint32_t k_counter_words = 40;
 	static constexpr uint32_t k_counter_table_full = 16;
 	static constexpr uint32_t k_counter_pool_full = 17;
@@ -129,7 +132,7 @@ private:
 	static constexpr uint32_t k_counter_fresh = 31;
 	/// Sixteenths of the history rays of every 64th bucket per cascade
 	static constexpr uint32_t k_counter_depth = 32;
-	/// Mirrors gi_probes.slang gDirty and past it every extra region grows the last box
+	/// Mirrors gi_probes gDirty and past it every extra region grows the last box
 	static constexpr uint32_t k_max_dirty = 64;
 
 	struct Cascade {
@@ -140,6 +143,18 @@ private:
 		uint32_t deposit_offset = 0;
 		uint32_t deposit_capacity = 0;
 		uint32_t directions = 0;
+	};
+
+	/// The cost knobs of renderer.gi.quality
+	struct Quality {
+		uint32_t level = 0;
+		uint32_t step = 2;
+		uint32_t cascades = 5;
+		float spacing = 0.1f;
+		float lod_distance = 4.0f;
+		bool multibounce = true;
+		uint32_t points = k_max_points;
+		uint32_t interval = 1;
 	};
 
 	/// What decides a probe key so changing it drops every carried probe
@@ -161,6 +176,9 @@ private:
 	void recordChange(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView scene_view);
 	/// Sized to the viewport so it is rebuilt on resize while the device is idle
 	void createChange(const VulkanCore& core);
+	auto resolveQuality() const -> Quality;
+	/// Every rendered frame so the boxes of skipped GI frames still reach the next one
+	void gatherDirty();
 	/// @return false when the edits are no longer known so every probe must drop its history
 	auto writeDirty(uint32_t frame_index) -> bool;
 	auto recordDebug(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView source_view, uint32_t cascade, uint32_t mode)
@@ -191,7 +209,7 @@ private:
 	VulkanPipeline m_propagate_pipeline;
 	VulkanPipeline m_offset_pipeline;
 
-	/// gi_rays.slang with the scene in set 0 the voxel storage and trace scene in set 1 and the probes in set 2
+	/// gi_rays with the scene in set 0 the voxel storage and trace scene in set 1 and the probes in set 2
 	ShaderLayout m_ray_layout;
 	VulkanPipeline m_ray_pipeline;
 	VulkanPipeline m_point_trace_pipeline;
@@ -204,9 +222,8 @@ private:
 	/// Reflection keeps gVoxelInstances only when the trace code reads it
 	bool m_ray_instances_bound = false;
 
-	/// gi_merge.slang with the scene in set 0 for the sky and the cascades in set 1
+	/// gi_merge with the scene in set 0 for the sky and the cascades in set 1
 	ShaderLayout m_merge_layout;
-	VulkanPipeline m_accumulate_pipeline;
 	VulkanPipeline m_merge_pipeline;
 	VulkanPipeline m_irradiance_pipeline;
 	SceneDescriptorSets m_merge_scene_sets;
@@ -235,18 +252,23 @@ private:
 	std::optional<vma::raii::Buffer> m_merged;
 	/// FrameData of the last merge so lighting next frame reads the frame its tables belong to
 	std::optional<vma::raii::Buffer> m_published;
-	/// Two halves by pool parity of gi_common.slang GiHistory
+	/// Two halves by pool parity of gi_common GiHistory
 	std::optional<vma::raii::Buffer> m_history;
 	std::optional<vma::raii::Buffer> m_history_source;
-	/// Mirrors gi_common.slang GiPoint in two halves by pool parity
+	/// Mirrors gi_common GiPoint in two halves by pool parity
 	std::optional<vma::raii::Buffer> m_points;
-	/// Per pixel float4 of gi_rays.slang changeMain
+	/// Per pixel float4 of gi_rays changeMain
 	std::optional<vma::raii::Buffer> m_change;
 	std::vector<vma::raii::Buffer> m_dirty;
+
 	std::vector<Stats> m_dirty_stats;
 	std::vector<glm::vec3> m_dirty_scratch;
+	Stats m_dirty_pending;
+	bool m_dirty_known = true;
 	std::unordered_map<uint64_t, glm::mat4> m_model_scratch;
 	uint64_t m_region_generation = 0;
+	uint32_t m_skipped = 0;
+	Quality m_quality;
 	/// Kept in shader read layout between frames
 	std::optional<vma::raii::Image> m_atlas;
 	std::optional<vk::raii::ImageView> m_atlas_view;
@@ -258,6 +280,7 @@ private:
 	std::vector<uint32_t> m_readback_parity;
 	/// Share of off screen hits each readback frame kept so the next share can size the demand
 	std::vector<float> m_readback_point_share;
+	std::vector<uint32_t> m_readback_point_budget;
 	float m_point_share = 0.5f;
 
 	std::vector<vk::raii::DescriptorSet> m_probe_sets;

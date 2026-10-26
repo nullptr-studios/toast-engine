@@ -37,6 +37,7 @@ private:
 	struct Params {
 		glm::mat4 view_projection {1.0f};
 		glm::mat4 inverse_view_projection {1.0f};
+		/// xy target size z frame index for the noise
 		glm::vec4 screen_size {0.0f};
 		/// x sample radius y strength z depth cutoff w sample count
 		glm::vec4 tuning {0.0f};

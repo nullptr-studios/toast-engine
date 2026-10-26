@@ -43,7 +43,7 @@ private:
 		glm::vec4 camera_position {0.0f};
 		/// x intensity y max roughness z thickness w step count
 		glm::vec4 tuning {0.0f};
-		/// x reach in meters y render mode z 1 with a valid history
+		/// x reach in meters y render mode z 1 with a valid history w 1 when binding 8 holds last frame resolve
 		glm::vec4 marching {0.0f};
 	};
 
@@ -53,7 +53,7 @@ private:
 	static constexpr vk::Format k_reflection_format = vk::Format::eR16G16B16A16Sfloat;
 
 	/// Bindings of ssr.slang in order
-	static constexpr uint32_t k_binding_count = 8;
+	static constexpr uint32_t k_binding_count = 9;
 
 	void createResources(const VulkanCore& core);
 	void createTargets(const VulkanCore& core, vk::Extent2D extent);
@@ -72,7 +72,8 @@ private:
 
 	/// Per frame in flight then per history parity
 	std::vector<vk::raii::DescriptorSet> m_descriptor_sets;
-	std::vector<vk::ImageView> m_bound_views;
+	/// Source then previous resolve last written into each set
+	std::vector<std::array<vk::ImageView, 2>> m_bound_views;
 
 	PostProcessTarget m_hit_target;
 	PostProcessTarget m_resolve_target;

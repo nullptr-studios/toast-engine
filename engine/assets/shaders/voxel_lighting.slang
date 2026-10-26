@@ -17,7 +17,8 @@ struct LightingPushConstants
     // x instances with bounds y light sampling candidates z 1 terms to voxel_denoise.slang 2 straight into colour w sun reach in meters
     uint4 lighting;
     // x bit 0 last frame's reservoirs are valid bit 1 fragmentSpatial picks and shades sampled lights bit 2 glass shadows
-    // and the high 16 bits the glass shadow reach of a sun in meters
+    // bit 3 ray query ambient bit 4 traced specular bits 8 to 15 its max roughness in 255ths and the high 16 bits the
+    // glass shadow reach of a sun in meters
     // y M cap z reservoirs reused w ambient ray reach in centimetres and 0 for none
     uint4 reuse;
 };
@@ -233,6 +234,21 @@ float ambientOcclusion(Surface surface, float3 origin, float reach)
         travelled[r] = 1.0;
     }
 
+#if TOAST_RAY_QUERY
+    // Exact first hits through the TLAS instead of eight samples per volume
+    if ((gPush.reuse.x & kAmbientRayQuery) != 0u && traceRayQueryEnabled())
+    {
+        float reached = 0.0;
+        [unroll]
+        for (uint r = 0u; r < kAmbientRays; ++r)
+        {
+            const SceneHit hit = traceScene(origin, segments[r], 0.0, 1.0, 0.0);
+            reached += hit.hit ? hit.t : 1.0;
+        }
+        return reached / float(kAmbientRays);
+    }
+#endif
+
     const float cellSize = asfloat(gAmbientGrid[0]);
     if (!(cellSize > 0.0))
     {
@@ -314,6 +330,22 @@ float3 sampleCone(float3 axis, float radius, float2 u)
     return normalize(axis * cosTheta + (tangent * cos(phi) + bitangent * sin(phi)) * sinTheta);
 }
 
+/// Representative point since a glossy highlight from a random point sparkles
+float3 analyticSpecular(GpuLight light, Surface surface)
+{
+    float3 L;
+    float distance;
+    const float3 radiance = lightSampleRadiance(light, surface.worldPosition, analyticLightPoint(light, surface.worldPosition), L, distance);
+    if (all(radiance <= 0.0) || dot(surface.normal, L) <= 0.0)
+    {
+        return float3(0.0, 0.0, 0.0);
+    }
+    float3 specular;
+    shadeAnalyticLight(light, surface.worldPosition, surface.normal, surface.viewDirection, L, radiance, surface.albedo, surface.metallic,
+                       surface.roughness, surface.reflectivity, specular);
+    return specular;
+}
+
 /// Marched suns as area lights with the cascade kept for mesh shadows
 LightTerms shadeMarchedSuns(Surface surface, float3 shadowOrigin)
 {
@@ -360,8 +392,10 @@ LightTerms shadeMarchedSuns(Surface surface, float3 shadowOrigin)
         const float3 radiance = light.colorIntensity.rgb * light.colorIntensity.a;
         const LightTerms sample = shadeLightTerms(surface.normal, surface.viewDirection, L, radiance, surface.albedo, surface.metallic,
                                                   surface.roughness, surface.reflectivity);
+        const LightTerms centred = shadeLightTerms(surface.normal, surface.viewDirection, center, radiance, surface.albedo, surface.metallic,
+                                                   surface.roughness, surface.reflectivity);
         terms.diffuse += sample.diffuse * visibility;
-        terms.specular += sample.specular * visibility;
+        terms.specular += centred.specular * visibility;
     }
     return terms;
 }
@@ -400,6 +434,11 @@ static const float kReuseRadius = 8.0;
 static const uint kReuseHistory = 1u;
 static const uint kReuseSpatial = 2u;
 static const uint kSceneGlass = 4u;
+static const uint kAmbientRayQuery = 8u;
+static const uint kTracedSpecular = 16u;
+
+/// Scene normal roughness of a pixel whose environment specular voxel_specular.slang replaces and SSR skips
+static const float kTracedMark = 2.0;
 
 /// gLights index of a sampled light by stable id in one froxel list
 uint findSampledLight(uint lightId, uint indexBase, uint lightCount)
@@ -465,7 +504,7 @@ LightTerms shadeSampledLight(Surface surface, SampledLight sample, float3 scale)
     LightTerms terms = shadeLightTerms(surface.normal, surface.viewDirection, sample.L, sample.radiance, surface.albedo, surface.metallic,
                                        surface.roughness, surface.reflectivity);
     terms.diffuse *= scale;
-    terms.specular *= scale;
+    terms.specular = analyticSpecular(gLights[sample.lightIndex], surface) * scale;
     return terms;
 }
 
@@ -514,7 +553,7 @@ LightTerms shadeMarchedLights(Surface surface, float3 shadowOrigin, float4 motio
         const LightTerms sample = shadeLightTerms(surface.normal, surface.viewDirection, L, radiance, surface.albedo, surface.metallic,
                                                   surface.roughness, surface.reflectivity);
         terms.diffuse += sample.diffuse * visibility;
-        terms.specular += sample.specular * visibility;
+        terms.specular += analyticSpecular(light, surface) * visibility;
     }
 
     // Uniform light and point candidates weighted by luminance times count then ReSTIR temporal reuse
@@ -786,8 +825,11 @@ FSOutput fragmentMain(VSOutput input)
     const float4 material = gMaterial.Load(texel);
     const float roughness = clamp(material.b, 0.045, 1.0);
 
+    const bool traced = (gPush.reuse.x & kTracedSpecular) != 0u && material.g > 1e-3 &&
+                        roughness <= float((gPush.reuse.x >> 8) & 0xffu) / 255.0;
     // SSR only reads roughness so zero reflectivity must look fully rough
-    output.normalRoughness = encodeSceneNormal(normal, lerp(1.0, roughness, material.g), specularF0(albedo.rgb, material.r));
+    output.normalRoughness =
+        encodeSceneNormal(normal, traced ? kTracedMark : lerp(1.0, roughness, material.g), specularF0(albedo.rgb, material.r));
 
     // The near plane clip can put the hit on the camera
     const float3 toCamera = gCamera.position - position;
@@ -820,6 +862,10 @@ FSOutput fragmentMain(VSOutput input)
     }
 
     output.color = float4(lit.color + albedo.rgb * decodeEmissive(material.a), 1.0);
+    if (traced)
+    {
+        output.color.rgb -= lit.ambientSpecular;
+    }
     if (gPush.lighting.z != 0u)
     {
         const float3 shadowOrigin = position + faceNormal * (kShadowOriginOffset * kVoxelSize);

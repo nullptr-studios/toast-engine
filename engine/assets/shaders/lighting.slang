@@ -631,9 +631,11 @@ static const float2 kPoissonDisk[12] = {
 
 static const uint kShadowProbeTaps = 4u;
 
+/// Walked per frame so TAA averages the rotation
 float interleavedGradientNoise(float2 pixel)
 {
-    return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+    const float2 shifted = pixel + 5.588238 * float(uint(gCamera.noiseParams.z) & 63u);
+    return frac(52.9829189 * frac(dot(shifted, float2(0.06711056, 0.00583715))));
 }
 
 static const float kPunctualBiasMeters = 0.01;
@@ -1074,6 +1076,57 @@ float3 clusterHeatmapColor(uint lightCount)
     return lerp(c2, c3, (t - 0.667) / 0.333);
 }
 
+/// One compare tap since scattering blurs any filtered edge
+float volumeSunShadow(float3 worldPosition)
+{
+    if (gCamera.shadowParams.x < 0.5)
+    {
+        return 1.0;
+    }
+    const uint cascadeCount = uint(gCamera.shadowParams.y);
+    for (uint cascade = 0u; cascade < cascadeCount; ++cascade)
+    {
+        if (cascadeEdge(cascade, worldPosition) <= 0.0)
+        {
+            continue;
+        }
+        const float3 center = cascadeUvDepth(cascade, worldPosition);
+        return gShadowMap.SampleCmpLevelZero(float3(center.xy, float(cascade)), center.z - gCamera.cascadeDepthBias[cascade]);
+    }
+    return 1.0;
+}
+
+/// One compare tap in the spot or cube face map and 1 for a light without one
+float volumeLocalShadow(GpuLight light, float3 worldPosition)
+{
+    const float layer = light.directionPad.w;
+    if (layer < 0.0)
+    {
+        return 1.0;
+    }
+    const float3 direction = worldPosition - light.worldPosRange.xyz;
+    if (dot(direction, direction) < 1e-8)
+    {
+        return 1.0;
+    }
+    const float3 toLight = -normalize(direction);
+    if (light.viewPosType.w > 0.5)
+    {
+        if (mul(light.shadowViewProjection, float4(worldPosition, 1.0)).w <= 0.0)
+        {
+            return 1.0;
+        }
+        const float3 center = spotUvDepth(light, worldPosition);
+        const float compareDepth = spotUvDepth(light, worldPosition + toLight * kPunctualBiasMeters).z;
+        return gPunctualShadowMaps.SampleCmpLevelZero(float3(center.xy, layer), compareDepth);
+    }
+    const uint face = pointFace(direction);
+    const PointFaceFrame frame = pointFaceFrame(light, face);
+    const float3 center = pointFaceUvDepth(frame, direction);
+    const float compareDepth = pointFaceDepth(frame, direction + toLight * kPunctualBiasMeters);
+    return gPunctualShadowMaps.SampleCmpLevelZero(float3(center.xy, layer + float(face)), compareDepth);
+}
+
 struct Surface
 {
     float3 worldPosition;
@@ -1110,6 +1163,9 @@ struct ShadingResult
     float3 specular;
 
     float3 indirectDiffuse;
+
+    /// Environment and probe share of specular which traced specular replaces on voxels
+    float3 ambientSpecular;
 
     /// Meters below which the radiance cascades blur occlusion and 0 where they did not light the point
     float contactReach;
@@ -1334,6 +1390,68 @@ struct NoShadowFilter : IShadowFilter
     }
 }
 
+int bestReflectionProbe(float3 worldPosition, out float weight)
+{
+    int best = -1;
+    weight = 0.0;
+    for (uint pi = 0; pi < gCamera.reflectionProbeCountPad.x; ++pi)
+    {
+        const float probeWeight = reflectionProbeWeight(worldPosition, gCamera.reflectionProbes[pi]);
+        if (probeWeight > weight)
+        {
+            weight = probeWeight;
+            best = int(pi);
+        }
+    }
+    return best;
+}
+
+/// Uniform ambient plus the prefiltered environment blended toward the best probe
+float3 ambientSpecularRadiance(float3 worldPosition, float3 reflection, float roughness, int bestProbe, float bestProbeWeight)
+{
+    const float3 uniformRadiance = gCamera.ambientColorIntensity.rgb * gCamera.ambientColorIntensity.a;
+    if (gCamera.environmentParams.x < 0.5)
+    {
+        return uniformRadiance;
+    }
+
+    const float prefilteredLod = roughness * max(gCamera.environmentParams.y - 1.0, 0.0);
+    float3 globalSpecular = gPrefilteredEnv.SampleLevel(reflection, prefilteredLod).rgb;
+    if (bestProbe >= 0)
+    {
+        ReflectionProbeGpu probe = gCamera.reflectionProbes[bestProbe];
+        float3 corrected = parallaxCorrectedReflection(
+            reflection,
+            worldPosition,
+            probe.positionRadius.xyz,
+            probe.boxExtentsIntensity.xyz,
+            probe.positionRadius.w);
+
+        uint probeCube = uint(probe.params.x);
+        bool probeBaked = (gCamera.reflectionProbeCountPad.z & (1u << probeCube)) != 0u;
+        float3 probeSpecular;
+        if (probeBaked)
+        {
+            float probeLod = roughness * max(float(gCamera.reflectionProbeCountPad.y) - 1.0, 0.0);
+            probeSpecular = gProbeMaps[NonUniformResourceIndex(probeCube)].SampleLevel(corrected, probeLod).rgb;
+        }
+        else
+        {
+            probeSpecular = gPrefilteredEnv.SampleLevel(corrected, prefilteredLod).rgb;
+        }
+        probeSpecular *= probe.boxExtentsIntensity.w;
+        globalSpecular = lerp(globalSpecular, probeSpecular, bestProbeWeight);
+    }
+    return uniformRadiance + globalSpecular;
+}
+
+float3 ambientSpecularRadiance(float3 worldPosition, float3 reflection, float roughness)
+{
+    float weight;
+    const int best = bestReflectionProbe(worldPosition, weight);
+    return ambientSpecularRadiance(worldPosition, reflection, roughness, best, weight);
+}
+
 ShadingResult evaluateLighting<Filter : IShadowFilter>(Surface surface, ClusterCell cluster, Filter shadowFilter)
 {
     float3 N = surface.normal;
@@ -1353,6 +1471,7 @@ ShadingResult evaluateLighting<Filter : IShadowFilter>(Surface surface, ClusterC
     ShadingResult result;
     result.indirectDiffuse = float3(0.0, 0.0, 0.0);
     result.specular = float3(0.0, 0.0, 0.0);
+    result.ambientSpecular = float3(0.0, 0.0, 0.0);
     result.contactReach = 0.0;
     result.isDebugView = false;
 
@@ -1484,24 +1603,11 @@ ShadingResult evaluateLighting<Filter : IShadowFilter>(Surface surface, ClusterC
     float NdotV = saturate(dot(N, V));
     bool hasEnvironment = gCamera.environmentParams.x >= 0.5;
 
-    float3 reflection = reflect(-V, N);
-
-    float prefilteredLod = roughness * max(gCamera.environmentParams.y - 1.0, 0.0);
-
-    int bestProbe = -1;
-    float bestProbeWeight = 0.0;
-    for (uint pi = 0; pi < gCamera.reflectionProbeCountPad.x; ++pi)
-    {
-        float weight = reflectionProbeWeight(surface.worldPosition, gCamera.reflectionProbes[pi]);
-        if (weight > bestProbeWeight)
-        {
-            bestProbeWeight = weight;
-            bestProbe = int(pi);
-        }
-    }
+    float bestProbeWeight;
+    const int bestProbe = bestReflectionProbe(surface.worldPosition, bestProbeWeight);
 
     float3 irradiance = uniformRadiance;
-    float3 prefiltered = uniformRadiance;
+    const float3 prefiltered = ambientSpecularRadiance(surface.worldPosition, reflect(-V, N), roughness, bestProbe, bestProbeWeight);
 
     float3 cascadeIrradiance;
     const bool hasCascades = sampleRadianceCascades(surface.worldPosition, N, cascadeIrradiance);
@@ -1522,36 +1628,6 @@ ShadingResult evaluateLighting<Filter : IShadowFilter>(Surface surface, ClusterC
         }
 
         irradiance += hasVolumeIrradiance ? volumeIrradiance : globalIrradiance;
-
-        float3 globalSpecular = gPrefilteredEnv.SampleLevel(reflection, prefilteredLod).rgb;
-
-        if (bestProbe >= 0)
-        {
-            ReflectionProbeGpu probe = gCamera.reflectionProbes[bestProbe];
-            float3 corrected = parallaxCorrectedReflection(
-                reflection,
-                surface.worldPosition,
-                probe.positionRadius.xyz,
-                probe.boxExtentsIntensity.xyz,
-                probe.positionRadius.w);
-
-            uint probeCube = uint(probe.params.x);
-            bool probeBaked = (gCamera.reflectionProbeCountPad.z & (1u << probeCube)) != 0u;
-            float3 probeSpecular;
-            if (probeBaked)
-            {
-                float probeLod = roughness * max(float(gCamera.reflectionProbeCountPad.y) - 1.0, 0.0);
-                probeSpecular = gProbeMaps[NonUniformResourceIndex(probeCube)].SampleLevel(corrected, probeLod).rgb;
-            }
-            else
-            {
-                probeSpecular = gPrefilteredEnv.SampleLevel(corrected, prefilteredLod).rgb;
-            }
-            probeSpecular *= probe.boxExtentsIntensity.w;
-            globalSpecular = lerp(globalSpecular, probeSpecular, bestProbeWeight);
-        }
-
-        prefiltered += globalSpecular;
     }
     else if (hasVolumeIrradiance)
     {
@@ -1579,6 +1655,7 @@ ShadingResult evaluateLighting<Filter : IShadowFilter>(Surface surface, ClusterC
 
     outIndirectDiffuse = ambientDiffuse * occlusion;
 
+    result.ambientSpecular = ambientSpecular * occlusion;
     result.color = color;
     result.specular = specular;
     result.indirectDiffuse = outIndirectDiffuse;
@@ -1596,6 +1673,7 @@ ShadingResult shadeSurfaceLighting<Filter : IShadowFilter>(Surface surface, Filt
         result.color = debug.rgb;
         result.specular = float3(0.0, 0.0, 0.0);
         result.indirectDiffuse = float3(0.0, 0.0, 0.0);
+        result.ambientSpecular = float3(0.0, 0.0, 0.0);
         result.contactReach = 0.0;
         result.isDebugView = true;
         return result;

@@ -6,6 +6,7 @@
 
 #include "gpu_sync.hpp"
 #include "ray_tracing_scene.hpp"
+#include "voxel_blas_cache.hpp"
 #include "vulkan_core.hpp"
 #include "vulkan_debug.hpp"
 
@@ -74,6 +75,12 @@ VoxelTraceScene::VoxelTraceScene(const VulkanCore& core, uint32_t frames_in_flig
 		);
 		frame.grid = mappedBuffer(
 		    core, sizeof(uint32_t) * k_grid_words, vk::BufferUsageFlagBits::eStorageBuffer, std::format("VoxelTrace Grid[{}]", i)
+		);
+		frame.brick_bases = mappedBuffer(
+		    core,
+		    sizeof(glm::uvec4) * k_max_volumes,
+		    vk::BufferUsageFlagBits::eStorageBuffer,
+		    std::format("VoxelTrace BrickBases[{}]", i)
 		);
 		if (auto* words = mapped<uint32_t>(frame.grid)) {
 			std::fill_n(words, k_header_words, 0u);
@@ -257,7 +264,10 @@ void VoxelTraceScene::createUnitBox() {
 	m_box_address = device.getAccelerationStructureAddressKHR(address_info);
 }
 
-auto VoxelTraceScene::addRayQueryInstances(vk::CommandBuffer cmd, RayTracingScene& scene) -> bool {
+auto VoxelTraceScene::addRayQueryInstances(
+    vk::CommandBuffer cmd, uint32_t frame_index, RayTracingScene& scene, const VoxelBlasCache* bricks,
+    const VoxelGpuStorage* storage
+) -> bool {
 	ZoneScoped;
 	if (m_box_address == 0) {
 		return false;
@@ -292,8 +302,35 @@ auto VoxelTraceScene::addRayQueryInstances(vk::CommandBuffer cmd, RayTracingScen
 		m_box_built = true;
 	}
 
+	auto* bases = frame_index < m_frames.size() ? mapped<glm::uvec4>(m_frames[frame_index].brick_bases) : nullptr;
 	for (size_t i = 0; i < m_volumes.size(); ++i) {
 		const Volume& volume = m_volumes[i];
+		const VoxelBlasCache::Lookup* found = bricks != nullptr && storage != nullptr && bases != nullptr
+		                                          ? bricks->lookup(storage->nodeRid(volume.instance.record_index))
+		                                          : nullptr;
+		if (found != nullptr) {
+			const auto index = static_cast<uint32_t>(i) | VoxelBlasCache::k_instance_bricks;
+			scene.addInstance(
+			    RayTracingScene::Instance {
+			      .transform = volume.instance.voxel_to_world,
+			      .blas_address = found->opaque,
+			      .custom_index = index,
+			      .mask = k_mask_volume
+			    }
+			);
+			if (found->glass != 0) {
+				scene.addInstance(
+				    RayTracingScene::Instance {
+				      .transform = volume.instance.voxel_to_world,
+				      .blas_address = found->glass,
+				      .custom_index = index | VoxelBlasCache::k_instance_glass,
+				      .mask = k_mask_glass,
+				    }
+				);
+			}
+			bases[i] = glm::uvec4(found->opaque_base, found->glass_base, volume.instance.record_index, 0u);
+			continue;
+		}
 		scene.addInstance(
 		    RayTracingScene::Instance {
 		      .transform = volume.instance.voxel_to_world * glm::scale(glm::mat4(1.0f), glm::vec3(volume.voxel_dims)),
@@ -302,6 +339,9 @@ auto VoxelTraceScene::addRayQueryInstances(vk::CommandBuffer cmd, RayTracingScen
 		      .mask = static_cast<uint8_t>(k_mask_volume | (volume.glass ? k_mask_glass : 0)),
 		    }
 		);
+	}
+	if (bases != nullptr && !m_volumes.empty()) {
+		m_frames[frame_index].brick_bases.getAllocation().flush(0, sizeof(glm::uvec4) * m_volumes.size());
 	}
 	return true;
 }

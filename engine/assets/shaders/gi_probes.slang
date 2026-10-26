@@ -202,7 +202,7 @@ void pixelMain(uint3 id : SV_DispatchThreadID)
 
 uint giPointCount(GiFrame frame)
 {
-    return min(gCounters[kGiCounterPoints + 1u - frame.frame.z], frame.secondary.x);
+    return min(gCounters[kGiCounterPoints + 1u - frame.frame.z], frame.secondary.w);
 }
 
 [shader("compute")]

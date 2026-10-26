@@ -21,9 +21,9 @@ StructuredBuffer<uint4> gNeighbours;
 [[vk::binding(5, 1)]]
 StructuredBuffer<uint4> gDeposits;
 
-/// Every cascade above c0 merged and averaged down to the directions of the cascade below at its first slot / 4
+/// Merged radiance of every cascade above c0 at first slot / 4 as half rgb
 [[vk::binding(6, 1)]]
-RWStructuredBuffer<float4> gMerged;
+RWStructuredBuffer<uint2> gMerged;
 
 [[vk::binding(7, 1)]]
 [[vk::image_format("rgba16f")]]
@@ -38,6 +38,10 @@ RWStructuredBuffer<GiHistory> gHistory;
 
 [[vk::binding(10, 1)]]
 StructuredBuffer<uint2> gHistorySource;
+
+/// Mirrors gi_probes.slang gDirty
+[[vk::binding(11, 1)]]
+StructuredBuffer<float4> gDirty;
 
 struct GiMergePush
 {
@@ -72,10 +76,13 @@ GiParents giParents(GiFrame frame, uint cascade, uint deposit)
 
     GiParents parents;
     parents.total = 0.0;
+    // Branch free so the eight slot loads overlap
+    [unroll]
     for (uint corner = 0u; corner < 8u; ++corner)
     {
         const uint neighbour = corner < 4u ? low[corner] : high[corner - 4u];
-        const uint first = neighbour == kGiEmpty ? kGiEmpty : gDepositSlots[neighbour];
+        const uint slot = gDepositSlots[neighbour == kGiEmpty ? 0u : neighbour];
+        const uint first = neighbour == kGiEmpty ? kGiEmpty : slot;
         parents.merged[corner] = first == kGiEmpty ? 0u : first / 4u;
         parents.weight[corner] = first == kGiEmpty ? 0.0 : giNeighbourWeight(corner, upper);
         parents.total += parents.weight[corner];
@@ -90,73 +97,124 @@ float3 giUpper(GiParents parents, uint direction)
     {
         return float3(0.0, 0.0, 0.0);
     }
-    float3 radiance = float3(0.0, 0.0, 0.0);
+    // Loads first so the eight overlap and a missing parent weighs 0
+    uint2 merged[8];
+    [unroll]
     for (uint corner = 0u; corner < 8u; ++corner)
     {
-        if (parents.weight[corner] > 0.0)
-        {
-            radiance += parents.weight[corner] * gMerged[parents.merged[corner] + direction].rgb;
-        }
+        merged[corner] = gMerged[parents.merged[corner] + direction];
+    }
+    float3 radiance = float3(0.0, 0.0, 0.0);
+    [unroll]
+    for (uint corner = 0u; corner < 8u; ++corner)
+    {
+        radiance += parents.weight[corner] *
+                    float3(giHalfToFloat(merged[corner].x & 0xffffu), giHalfToFloat(merged[corner].x >> 16), giHalfToFloat(merged[corner].y));
     }
     return radiance / parents.total;
 }
 
+struct GiBucket
+{
+    uint4 value;
+    GiHistory old;
+};
+
+/// Bounded since a capture replay may not restore last frame pool
+bool giCarried(GiFrame frame, uint cascade, uint2 source)
+{
+    return source.x != kGiEmpty && source.x <= frame.pool.w - frame.deposits[cascade].w;
+}
+
+/// Reads the old bucket unconditionally so it loads alongside the deposit
+GiBucket giLoadBucket(GiFrame frame, uint first, uint direction, uint2 source, bool carried)
+{
+    GiBucket bucket;
+    bucket.value = gDeposits[first + direction];
+    bucket.old = gHistory[(1u - frame.frame.z) * frame.pool.w + (carried ? source.x : 0u) + direction];
+    return bucket;
+}
+
+bool giBucketTouchesChange(GiFrame frame, uint cascade, int4 cell, uint direction)
+{
+    const uint lod = uint(cell.w);
+    const float spacing = giSpacing(frame, lod, cascade);
+    const float3 centre = (float3(cell.xyz) + 0.5) * spacing;
+    const float start = (cascade == 0u ? 0.0 : giIntervalEnd(frame, lod, cascade - 1u)) - spacing;
+    const float end = giIntervalEnd(frame, lod, cascade) + spacing;
+    const float3 axis = giDirectionOf(direction, cascade);
+    // Half again the bucket half angle since rays jitter across the whole bucket
+    const float cosine = max(1.0 - 2.0 / float(frame.deposits[cascade].w), 0.05);
+    const float spread = 1.5 * sqrt(1.0 - cosine * cosine) / cosine;
+    const uint count = uint(gDirty[0].x);
+    for (uint i = 0u; i < count; ++i)
+    {
+        const float3 low = gDirty[1u + 2u * i].xyz;
+        const float3 high = gDirty[2u + 2u * i].xyz;
+        const float radius = 0.5 * length(high - low);
+        const float3 offset = 0.5 * (low + high) - centre;
+        const float along = dot(offset, axis);
+        if (along + radius < start || along - radius > end)
+        {
+            continue;
+        }
+        if (length(offset - axis * along) <= radius + spacing + max(along, 0.0) * spread)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+/// keepMain flags whole probes and only buckets looking at the change drop history
+float giBucketLimit(GiFrame frame, uint cascade, uint deposit, uint direction, uint2 source)
+{
+    const float limit = asfloat(source.y);
+    if (limit >= kGiMaxHistory)
+    {
+        return limit;
+    }
+    const int4 cell = gPool[frame.frame.z * frame.pool.x + frame.cascades[cascade].z + gDepositPool[deposit]].cell;
+    return giBucketTouchesChange(frame, cascade, cell, direction) ? limit : kGiMaxHistory;
+}
+
+/// Unreached buckets decay only to a slower fading floor of limits.y rays
+GiHistory giAccumulate(GiFrame frame, GiBucket bucket, uint2 source, bool carried, float limit)
+{
+    float weight = float(bucket.value.w & 0xffffu);
+    float3 radiance = float3(bucket.value.xyz) / frame.rays.z;
+    float transmittance = float(bucket.value.w >> 16);
+    float rays = 0.0;
+    const float4 old = giHistoryBucket(bucket.old, rays);
+    const float held = min(rays * frame.limits.z, max(frame.limits.y - weight, 0.0));
+    const float kept = carried ? min(max(rays * frame.jitter.z, held), limit) : 0.0;
+    radiance += old.rgb * kept;
+    transmittance += old.a * kept;
+    weight += kept;
+    const float inverse = weight > 0.0 ? 1.0 / weight : 0.0;
+    return giPackHistory(radiance * inverse, transmittance * inverse, weight);
+}
+
+/// Every 64th @p item feeds the depth counter
+void giStoreBucket(GiFrame frame, uint cascade, uint first, uint direction, uint item, GiHistory history)
+{
+    gHistory[frame.frame.z * frame.pool.w + first + direction] = history;
+    if ((item & 63u) == 0u)
+    {
+        InterlockedAdd(gCounters[kGiCounterDepth + cascade], uint(history.rays * 16.0 + 0.5));
+    }
+}
+
 /// L = R + T * L above for one bucket
-float3 giMergeBucket(GiFrame frame, uint cascade, uint first, uint direction, bool top, GiParents parents)
+float3 giMergeBucket(GiFrame frame, uint cascade, uint direction, bool top, GiParents parents, GiHistory history)
 {
     float rays = 0.0;
-    const float4 bucket = giHistoryBucket(gHistory[frame.frame.z * frame.pool.w + first + direction], rays);
+    const float4 bucket = giHistoryBucket(history, rays);
     const float3 upper = top ? giSky(giDirectionOf(direction, cascade)) : giUpper(parents, direction);
     return bucket.rgb + bucket.a * upper;
 }
 
-/// Unreached buckets keep their mean and decay only to a slower fading floor of limits.y rays so rare directions hold
-[shader("compute")]
-[numthreads(kGiGroup, 1, 1)]
-void accumulateMain(uint3 id : SV_DispatchThreadID)
-{
-    const GiFrame frame = gFrame[0];
-    const uint cascade = gPush.cascade;
-    const uint4 deposits = frame.deposits[cascade];
-    const uint total = giDepositCount(frame, cascade) * deposits.w;
-    const uint current = frame.frame.z * frame.pool.w;
-    const uint previous = (1u - frame.frame.z) * frame.pool.w;
-    for (uint item = id.x; item < total; item += kGiStrideThreads)
-    {
-        const uint deposit = deposits.x + item / deposits.w;
-        const uint direction = item % deposits.w;
-        const uint first = gDepositSlots[deposit];
-        if (first == kGiEmpty)
-        {
-            continue;
-        }
-        const uint4 value = gDeposits[first + direction];
-        float weight = float(value.w & 0xffffu);
-        float3 radiance = float3(value.xyz) / frame.rays.z;
-        float transmittance = float(value.w >> 16);
-
-        // Bounded too since the slot comes from last frame pool which a capture replay may not restore
-        const uint2 source = gHistorySource[deposit];
-        if (source.x != kGiEmpty && source.x <= frame.pool.w - deposits.w)
-        {
-            float rays = 0.0;
-            const float4 old = giHistoryBucket(gHistory[previous + source.x + direction], rays);
-            const float held = min(rays * frame.limits.z, max(frame.limits.y - weight, 0.0));
-            const float kept = min(max(rays * frame.jitter.z, held), asfloat(source.y));
-            radiance += old.rgb * kept;
-            transmittance += old.a * kept;
-            weight += kept;
-        }
-        const float inverse = weight > 0.0 ? 1.0 / weight : 0.0;
-        gHistory[current + first + direction] = giPackHistory(radiance * inverse, transmittance * inverse, weight);
-        if ((item & 63u) == 0u)
-        {
-            InterlockedAdd(gCounters[kGiCounterDepth + cascade], uint(min(weight, kGiMaxHistory) * 16.0 + 0.5));
-        }
-    }
-}
-
-/// One cascade above c0 per dispatch from the top down
+/// One cascade above c0 per dispatch from the top down accumulating its buckets on the way
 [shader("compute")]
 [numthreads(kGiGroup, 1, 1)]
 void mergeMain(uint3 id : SV_DispatchThreadID)
@@ -176,42 +234,73 @@ void mergeMain(uint3 id : SV_DispatchThreadID)
         {
             continue;
         }
+        const uint2 source = gHistorySource[deposit];
+        const bool carried = giCarried(frame, cascade, source);
         const GiParents parents = giParents(frame, cascade, deposit);
-        float3 radiance = float3(0.0, 0.0, 0.0);
+        // Stores last since the compiler cannot move a load past a store that may alias it
+        GiBucket buckets[4];
+        [unroll]
         for (uint child = 0u; child < 4u; ++child)
         {
-            radiance += giMergeBucket(frame, cascade, first, output * 4u + child, top, parents);
+            buckets[child] = giLoadBucket(frame, first, output * 4u + child, source, carried);
         }
-        gMerged[first / 4u + output] = float4(radiance * 0.25, 1.0);
+        GiHistory histories[4];
+        float3 radiance = float3(0.0, 0.0, 0.0);
+        [unroll]
+        for (uint child = 0u; child < 4u; ++child)
+        {
+            histories[child] =
+                giAccumulate(frame, buckets[child], source, carried, giBucketLimit(frame, cascade, deposit, output * 4u + child, source));
+            radiance += giMergeBucket(frame, cascade, output * 4u + child, top, parents, histories[child]);
+        }
+        [unroll]
+        for (uint child = 0u; child < 4u; ++child)
+        {
+            const uint direction = output * 4u + child;
+            giStoreBucket(frame, cascade, first, direction, (item / outputs) * deposits.w + direction, histories[child]);
+        }
+        radiance *= 0.25;
+        gMerged[first / 4u + output] =
+            uint2(giFloatToHalf(radiance.r) | (giFloatToHalf(radiance.g) << 16), giFloatToHalf(radiance.b));
     }
 }
 
-groupshared float3 gsRadiance[kGiC0Directions];
+groupshared float3 gsRadiance[2][kGiC0Directions];
+groupshared bool gsWrite[2];
 
-/// One 8 by 8 group per c0 deposit probe and one texel per thread
+/// Two c0 deposit probes per 8 by 8 group so every thread merges one bucket and then writes one texel of each tile
 [shader("compute")]
 [numthreads(kGiTileSize, kGiTileSize, 1)]
 void irradianceMain(uint3 group : SV_GroupID, uint3 thread : SV_GroupThreadID, uint index : SV_GroupIndex)
 {
     const GiFrame frame = gFrame[0];
-    const uint tile = group.y * kGiAtlasTilesPerRow + group.x;
-    // Both returns are uniform across the group so the barrier below stays legal
-    if (tile >= giDepositCount(frame, 0u))
-    {
-        return;
-    }
-    const uint deposit = frame.deposits[0].x + tile;
-    const uint first = gDepositSlots[deposit];
-    if (first == kGiEmpty)
+    const uint count = giDepositCount(frame, 0u);
+    const uint pair = group.y * kGiAtlasTilesPerRow + group.x * 2u;
+    // Uniform across the group so the barrier below stays legal
+    if (pair >= count)
     {
         return;
     }
 
-    if (index < kGiC0Directions)
+    const uint side = index / kGiC0Directions;
+    const uint direction = index % kGiC0Directions;
+    const uint tile = pair + side;
+    const uint deposit = frame.deposits[0].x + tile;
+    const uint first = tile < count ? gDepositSlots[deposit] : kGiEmpty;
+    if (direction == 0u)
+    {
+        gsWrite[side] = first != kGiEmpty;
+    }
+    if (first != kGiEmpty)
     {
         const bool top = frame.frame.y == 1u;
+        const uint2 source = gHistorySource[deposit];
+        const bool carried = giCarried(frame, 0u, source);
+        const GiBucket bucket = giLoadBucket(frame, first, direction, source, carried);
         const GiParents parents = giParents(frame, 0u, deposit);
-        gsRadiance[index] = giMergeBucket(frame, 0u, first, index, top, parents);
+        const GiHistory history = giAccumulate(frame, bucket, source, carried, giBucketLimit(frame, 0u, deposit, direction, source));
+        gsRadiance[side][direction] = giMergeBucket(frame, 0u, direction, top, parents, history);
+        giStoreBucket(frame, 0u, first, direction, tile * kGiC0Directions + direction, history);
     }
     GroupMemoryBarrierWithGroupSync();
 
@@ -235,13 +324,21 @@ void irradianceMain(uint3 group : SV_GroupID, uint3 thread : SV_GroupThreadID, u
     const float3 normal = giOctDecode((float2(source) - 0.5) / float(kGiTileInterior));
 
     // Normalized by the discrete cosine sum so uniform radiance comes out exact with only 32 buckets
-    float3 irradiance = float3(0.0, 0.0, 0.0);
+    float3 irradiance[2] = { float3(0.0, 0.0, 0.0), float3(0.0, 0.0, 0.0) };
     float weight = 0.0;
-    for (uint direction = 0u; direction < kGiC0Directions; ++direction)
+    for (uint d = 0u; d < kGiC0Directions; ++d)
     {
-        const float cosine = max(dot(normal, giDirectionOf(direction, 0u)), 0.0);
-        irradiance += gsRadiance[direction] * cosine;
+        const float cosine = max(dot(normal, giDirectionOf(d, 0u)), 0.0);
+        irradiance[0] += gsRadiance[0][d] * cosine;
+        irradiance[1] += gsRadiance[1][d] * cosine;
         weight += cosine;
     }
-    gIrradiance[giTileOrigin(tile) + thread.xy] = float4(weight > 0.0 ? irradiance / weight : irradiance, 1.0);
+    [unroll]
+    for (uint s = 0u; s < 2u; ++s)
+    {
+        if (gsWrite[s])
+        {
+            gIrradiance[giTileOrigin(pair + s) + thread.xy] = float4(weight > 0.0 ? irradiance[s] / weight : irradiance[s], 1.0);
+        }
+    }
 }

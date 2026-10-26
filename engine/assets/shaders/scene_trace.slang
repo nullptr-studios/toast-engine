@@ -12,10 +12,22 @@ StructuredBuffer<float4> gTraceBounds;
 /// Mirrors renderer::VoxelTraceScene::writeGrid
 [[vk::binding(12, 1)]]
 StructuredBuffer<uint> gTraceGrid;
+/// x opaque y glass first brick of each volume in gTraceBricks z record
+[[vk::binding(14, 1)]]
+StructuredBuffer<uint4> gTraceBrickBases;
+/// Brick of each brick BLAS primitive as x | y << 10 | z << 20
+[[vk::binding(15, 1)]]
+StructuredBuffer<uint> gTraceBricks;
 
 /// Mirrors VoxelTraceScene::k_mask_volume and k_mask_glass
 static const uint kTraceMaskVolume = 2u;
 static const uint kTraceMaskGlass = 4u;
+/// Mirrors renderer::k_brick_coord_bits
+static const uint kTraceBrickBits = 10u;
+/// Mirrors VoxelBlasCache::k_instance_bricks and k_instance_glass with the volume below them
+static const uint kTraceInstanceBricks = 1u << 23;
+static const uint kTraceInstanceGlass = 1u << 22;
+static const uint kTraceInstanceVolume = kTraceInstanceGlass - 1u;
 
 /// Header words then offset and count per cell
 static const uint kTraceVolumeCount = 5u;
@@ -49,15 +61,13 @@ bool traceRayQueryEnabled()
 }
 
 /// Cone footprint grows from t 0 so a march restarted mid ray keeps the floor it would have had
-RayHit traceMarchVolume(uint v, float3 origin, float3 direction, float tMin, float tMax, float coneSlope, bool tinted,
-                        inout float3 transmittance)
+RayHit traceMarchBox(uint v, float3 origin, float3 direction, float tMin, float tMax, float coneSlope, bool tinted,
+                     inout float3 transmittance, int3 boxMin, int3 boxMax)
 {
     const VoxelInstance volume = gTraceVolumes[v];
     const float3 voxelOrigin = mul(volume.worldToVoxel, float4(origin, 1.0)).xyz;
     const float3 voxelDirection = mul(volume.worldToVoxel, float4(direction, 0.0)).xyz;
     const uint record = volume.recordIndex;
-    const int3 dims =
-        int3(gVolumeRecords[record].brickDimsX, gVolumeRecords[record].brickDimsY, gVolumeRecords[record].brickDimsZ) * int(kBrickDim);
 
     ConeFloor cone;
     cone.tMin = 0.0;
@@ -67,12 +77,46 @@ RayHit traceMarchVolume(uint v, float3 origin, float3 direction, float tMin, flo
         TintGlass tint;
         tint.transmittance = transmittance;
         tint.runEnd = -kFloatMax;
-        const RayHit hit = marchCore(record, voxelOrigin, voxelDirection, tMin, tMax, int3(0, 0, 0), dims, true, cone, tint);
+        const RayHit hit = marchCore(record, voxelOrigin, voxelDirection, tMin, tMax, boxMin, boxMax, true, cone, tint);
         transmittance = tint.transmittance;
         return hit;
     }
     SkipGlass skip;
-    return marchCore(record, voxelOrigin, voxelDirection, tMin, tMax, int3(0, 0, 0), dims, true, cone, skip);
+    return marchCore(record, voxelOrigin, voxelDirection, tMin, tMax, boxMin, boxMax, true, cone, skip);
+}
+
+RayHit traceMarchVolume(uint v, float3 origin, float3 direction, float tMin, float tMax, float coneSlope, bool tinted,
+                        inout float3 transmittance)
+{
+    const uint record = gTraceVolumes[v].recordIndex;
+    const int3 dims =
+        int3(gVolumeRecords[record].brickDimsX, gVolumeRecords[record].brickDimsY, gVolumeRecords[record].brickDimsZ) * int(kBrickDim);
+    return traceMarchBox(v, origin, direction, tMin, tMax, coneSlope, tinted, transmittance, int3(0, 0, 0), dims);
+}
+
+/// Exact over one brick with the candidate object space ray which is voxel space for a brick BLAS
+RayHit traceMarchBrick(uint custom, uint primitive, float3 voxelOrigin, float3 voxelDirection, float tMin, float tMax, bool tinted,
+                       inout float3 transmittance)
+{
+    const uint4 bases = gTraceBrickBases[custom & kTraceInstanceVolume];
+    const uint packed = gTraceBricks[((custom & kTraceInstanceGlass) != 0u ? bases.y : bases.x) + primitive];
+    const uint mask = (1u << kTraceBrickBits) - 1u;
+    const int3 brick = int3(int(packed & mask), int((packed >> kTraceBrickBits) & mask), int(packed >> (2u * kTraceBrickBits)));
+    const uint record = bases.z;
+    const uint entry = gridEntry(record, uint3(brick));
+    const int3 boxMin = brick * int(kBrickDim);
+    ExactFloor exact;
+    if (tinted)
+    {
+        TintGlass tint;
+        tint.transmittance = transmittance;
+        tint.runEnd = -kFloatMax;
+        const RayHit hit = marchCore(record, voxelOrigin, voxelDirection, tMin, tMax, boxMin, boxMin + int(kBrickDim), true, exact, tint, entry);
+        transmittance = tint.transmittance;
+        return hit;
+    }
+    SkipGlass skip;
+    return marchCore(record, voxelOrigin, voxelDirection, tMin, tMax, boxMin, boxMin + int(kBrickDim), true, exact, skip, entry);
 }
 
 bool traceBoundsRange(uint v, float3 origin, float3 direction, float tMin, float tMax)
@@ -222,19 +266,30 @@ float3 traceVisibility(float3 origin, float3 segment, float coneSlope, bool tint
         ray.TMin = 0.0;
         ray.TMax = 1.0;
         RayQuery<RAY_FLAG_NONE> query;
-        query.TraceRayInline(gScene, RAY_FLAG_NONE, kTraceMaskVolume, ray);
+        query.TraceRayInline(gScene, RAY_FLAG_NONE, tinted ? kTraceMaskVolume | kTraceMaskGlass : kTraceMaskVolume, ray);
         while (query.Proceed())
         {
             if (query.CandidateType() != CANDIDATE_PROCEDURAL_PRIMITIVE)
             {
                 continue;
             }
-            const uint v = query.CandidateInstanceID();
-            if (tinted && traceSeen(seen, seenCount, v))
+            const uint custom = query.CandidateInstanceID();
+            const uint v = custom & kTraceInstanceVolume;
+            bool blocked = false;
+            if ((custom & kTraceInstanceBricks) != 0u)
             {
-                continue;
+                // Glass voxels tint only through the glass BLAS so a mixed brick tints once
+                const bool glassRun = (custom & kTraceInstanceGlass) != 0u;
+                blocked = traceMarchBrick(
+                              custom, query.CandidatePrimitiveIndex(), query.CandidateObjectRayOrigin(), query.CandidateObjectRayDirection(),
+                              0.0, 1.0, glassRun, transmittance
+                ).hit;
             }
-            if (traceMarchVolume(v, origin, segment, 0.0, 1.0, coneSlope, tinted, transmittance).hit)
+            else if (!tinted || !traceSeen(seen, seenCount, v))
+            {
+                blocked = traceMarchVolume(v, origin, segment, 0.0, 1.0, coneSlope, tinted, transmittance).hit;
+            }
+            if (blocked || (tinted && max(transmittance.x, max(transmittance.y, transmittance.z)) <= kTintedOpaque))
             {
                 query.Abort();
                 return float3(0.0, 0.0, 0.0);
@@ -269,12 +324,19 @@ float3 traceGlassFilter(float3 origin, float3 segment, float coneSlope)
             {
                 continue;
             }
-            const uint v = query.CandidateInstanceID();
-            if (traceSeen(seen, seenCount, v))
+            const uint custom = query.CandidateInstanceID();
+            const uint v = custom & kTraceInstanceVolume;
+            if ((custom & kTraceInstanceBricks) != 0u)
             {
-                continue;
+                traceMarchBrick(
+                    custom, query.CandidatePrimitiveIndex(), query.CandidateObjectRayOrigin(), query.CandidateObjectRayDirection(), 0.0, 1.0,
+                    true, transmittance
+                );
             }
-            traceMarchVolume(v, origin, segment, 0.0, 1.0, coneSlope, true, transmittance);
+            else if (!traceSeen(seen, seenCount, v))
+            {
+                traceMarchVolume(v, origin, segment, 0.0, 1.0, coneSlope, true, transmittance);
+            }
             if (max(transmittance.x, max(transmittance.y, transmittance.z)) <= kTintedOpaque)
             {
                 query.Abort();
@@ -343,8 +405,14 @@ SceneHit traceScene(float3 origin, float3 direction, float tMin, float tMax, flo
             {
                 continue;
             }
-            const uint v = query.CandidateInstanceID();
-            const RayHit hit = traceMarchVolume(v, origin, direction, tMin, best.t, coneSlope, false, unused);
+            const uint custom = query.CandidateInstanceID();
+            const uint v = custom & kTraceInstanceVolume;
+            const RayHit hit = (custom & kTraceInstanceBricks) != 0u
+                                   ? traceMarchBrick(
+                                         custom, query.CandidatePrimitiveIndex(), query.CandidateObjectRayOrigin(),
+                                         query.CandidateObjectRayDirection(), tMin, best.t, false, unused
+                                     )
+                                   : traceMarchVolume(v, origin, direction, tMin, best.t, coneSlope, false, unused);
             if (hit.hit && hit.t < best.t)
             {
                 traceKeepCloser(v, hit, best);

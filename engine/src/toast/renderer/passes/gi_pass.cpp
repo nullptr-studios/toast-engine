@@ -6,7 +6,10 @@
 
 #include "../descriptor_writer.hpp"
 #include "../gpu_sync.hpp"
+#include "../gpu_timer.hpp"
 #include "../shader_cache.hpp"
+#include "../shader_compiler.hpp"
+#include "../voxel_blas_cache.hpp"
 #include "../voxel_gpu_storage.hpp"
 #include "../voxel_trace_scene.hpp"
 #include "../vulkan_core.hpp"
@@ -32,11 +35,11 @@ namespace {
 
 constexpr uint32_t k_group = 64;
 constexpr uint32_t k_pixel_group = 8;
-/// Mirrors gi_common.slang GiProbe
+/// Mirrors gi_common GiProbe
 constexpr vk::DeviceSize k_probe_bytes = 32;
 /// LOD start shortened by this share so neighbouring LODs overlap and blend
 constexpr float k_lod_overlap = 0.9f;
-/// LOD distance over probe spacing keeping a carried shell (gi_probes.slang kGiShellSlack) inside the 512 cell key window
+/// LOD distance over probe spacing keeping a carried shell inside the 512 cell key window
 constexpr float k_max_cells_to_lod = 80.0f;
 
 constexpr uint32_t k_depth_binding = 0;
@@ -59,7 +62,7 @@ constexpr uint32_t k_history_source_binding = 16;
 constexpr uint32_t k_dirty_binding = 17;
 constexpr uint32_t k_points_binding = 18;
 
-/// gi_debug.slang
+/// gi_debug
 constexpr uint32_t k_debug_source_binding = 0;
 constexpr uint32_t k_debug_depth_binding = 1;
 constexpr uint32_t k_debug_frame_binding = 2;
@@ -73,7 +76,7 @@ constexpr uint32_t k_debug_irradiance_binding = 9;
 constexpr uint32_t k_debug_history_binding = 10;
 constexpr uint32_t k_debug_change_binding = 11;
 
-/// gi_rays.slang
+/// gi_rays
 constexpr uint32_t k_ray_scene_set = 0;
 constexpr uint32_t k_ray_storage_set = 1;
 constexpr uint32_t k_ray_gi_set = 2;
@@ -81,6 +84,8 @@ constexpr uint32_t k_ray_instances_binding = 6;
 constexpr uint32_t k_ray_trace_volumes_binding = 10;
 constexpr uint32_t k_ray_trace_bounds_binding = 11;
 constexpr uint32_t k_ray_trace_grid_binding = 12;
+constexpr uint32_t k_ray_trace_brick_bases_binding = 14;
+constexpr uint32_t k_ray_trace_bricks_binding = 15;
 constexpr uint32_t k_ray_depth_binding = 0;
 constexpr uint32_t k_ray_normal_binding = 1;
 constexpr uint32_t k_ray_frame_binding = 2;
@@ -96,12 +101,12 @@ constexpr uint32_t k_ray_counters_binding = 11;
 constexpr uint32_t k_ray_points_binding = 12;
 constexpr uint32_t k_ray_irradiance_binding = 13;
 constexpr uint32_t k_ray_change_binding = 14;
-/// Mirrors gi_common.slang GiPoint
+/// Mirrors gi_common GiPoint
 constexpr vk::DeviceSize k_point_bytes = 16;
-/// Mirrors gi_common.slang GiHistory
+/// Mirrors gi_common GiHistory
 constexpr vk::DeviceSize k_history_bytes = 12;
 
-/// gi_merge.slang
+/// gi_merge
 constexpr uint32_t k_merge_scene_set = 0;
 constexpr uint32_t k_merge_set = 1;
 constexpr uint32_t k_merge_frame_binding = 0;
@@ -115,13 +120,14 @@ constexpr uint32_t k_merge_irradiance_binding = 7;
 constexpr uint32_t k_merge_counters_binding = 8;
 constexpr uint32_t k_merge_history_binding = 9;
 constexpr uint32_t k_merge_history_source_binding = 10;
+constexpr uint32_t k_merge_dirty_binding = 11;
 
 /// Rays of history a probe keeps after a change crosses its interval
 constexpr float k_reset_history = 0.25f;
 
-/// Mirrors gi_common.slang kGiBaseDirections
+/// Mirrors gi_common kGiBaseDirections
 constexpr uint32_t k_base_directions = 4;
-/// Mirrors gi_common.slang kGiStrideThreads
+/// Mirrors gi_common kGiStrideThreads
 constexpr uint32_t k_stride_groups = 4096;
 constexpr vk::Format k_atlas_format = vk::Format::eR16G16B16A16Sfloat;
 /// First interval length t0 in c0 probe spacings
@@ -165,13 +171,96 @@ void computeBarrier(vk::CommandBuffer cmd) {
 	barriers.flush(cmd);
 }
 
-/// Mirrors gi_common.slang giRayPoint fixed point R2
+/// Mirrors gi_common giRayPoint fixed point R2
 auto r2Jitter(uint32_t frame) -> glm::vec2 {
 	const uint32_t x = 0x80000000u + (frame * 3242174889u);
 	const uint32_t y = 0x80000000u + (frame * 2447445414u);
 	return glm::vec2(static_cast<float>(x >> 8), static_cast<float>(y >> 8)) / 16777216.0f;
 }
 
+struct QualityLevel {
+	uint32_t ray_budget = 0;
+	uint32_t cascades = 0;
+	float spacing = 0.0f;
+	float lod_distance = 0.0f;
+	bool multibounce = false;
+	uint32_t points = 0;
+	uint32_t interval = 1;
+};
+
+/// Scalability
+constexpr std::array<QualityLevel, GiSettings::k_quality_custom> k_quality_levels {
+  {
+   {.ray_budget = 150'000,
+	   .cascades = 4,
+	   .spacing = 0.2f,
+	   .lod_distance = 4.0f,
+	   .multibounce = false,
+	   .points = 8192,
+	   .interval = 2},
+   {.ray_budget = 300'000,
+	   .cascades = 4,
+	   .spacing = 0.15f,
+	   .lod_distance = 4.0f,
+	   .multibounce = true,
+	   .points = 32768,
+	   .interval = 1},
+   {.ray_budget = 600'000,
+	   .cascades = 5,
+	   .spacing = 0.1f,
+	   .lod_distance = 4.0f,
+	   .multibounce = true,
+	   .points = 65536,
+	   .interval = 1},
+   {.ray_budget = 2'200'000,
+	   .cascades = 5,
+	   .spacing = 0.1f,
+	   .lod_distance = 4.0f,
+	   .multibounce = true,
+	   .points = 65536,
+	   .interval = 1},
+   }
+};
+
+auto stepForBudget(vk::Extent2D extent, uint32_t budget) -> uint32_t {
+	for (uint32_t step = 1; step < 4; ++step) {
+		const uint64_t rays = static_cast<uint64_t>(groups(extent.width, step)) * groups(extent.height, step);
+		if (rays <= budget) {
+			return step;
+		}
+	}
+	return 4;
+}
+
+}
+
+auto GiPass::resolveQuality() const -> Quality {
+	const GiSettings& settings = VulkanRenderer::instance->giSettings();
+	constexpr auto relaxed = std::memory_order_relaxed;
+	const uint32_t level = std::min(settings.quality.load(relaxed), GiSettings::k_quality_custom);
+	if (level == GiSettings::k_quality_custom) {
+		return Quality {
+		  .level = level,
+		  .step = std::clamp(settings.ray_step.load(relaxed), 1u, 4u),
+		  .cascades = std::clamp(settings.cascades.load(relaxed), 1u, k_max_cascades),
+		  .spacing = settings.probe_spacing.load(relaxed),
+		  .lod_distance = settings.lod_distance.load(relaxed),
+		  .multibounce = settings.multibounce.load(relaxed),
+		  .points = std::clamp(settings.secondary_points.load(relaxed), 1u, k_max_points),
+		  .interval = std::clamp(settings.update_interval.load(relaxed), 1u, 4u),
+		};
+	}
+	const QualityLevel& preset = k_quality_levels[level];
+	return Quality {
+	  .level = level,
+	  .step = stepForBudget(m_extent, preset.ray_budget),
+	  .cascades = std::min(preset.cascades, k_max_cascades),
+	  .spacing = preset.spacing,
+	  .lod_distance = preset.lod_distance,
+	  .multibounce = preset.multibounce,
+	  .points = std::min(preset.points, k_max_points),
+	  .interval = preset.interval,
+	};
 }
 
 GiPass::GiPass(const VulkanCore& core, vk::Format scene_format, vk::Extent2D extent)
@@ -179,7 +268,7 @@ GiPass::GiPass(const VulkanCore& core, vk::Format scene_format, vk::Extent2D ext
       m_scene_format(scene_format),
       m_extent(extent) {
 	ZoneScoped;
-	static_assert(sizeof(FrameData) == 400, "FrameData is mirrored by gi_common.slang GiFrame");
+	static_assert(sizeof(FrameData) == 400, "FrameData is mirrored by gi_common GiFrame");
 
 	createLayout();
 	createBuffers(core);
@@ -194,7 +283,7 @@ GiPass::GiPass(const VulkanCore& core, vk::Format scene_format, vk::Extent2D ext
 	    m_table_total,
 	    m_pool_total,
 	    m_deposit_total,
-	    ((sizeof(glm::uvec4) + (2 * k_history_bytes) + (sizeof(glm::vec4) / 4)) * k_deposit_slots) >> 20
+	    ((sizeof(glm::uvec4) + (2 * k_history_bytes) + (sizeof(glm::uvec2) / 4)) * k_deposit_slots) >> 20
 	);
 }
 
@@ -250,7 +339,7 @@ void GiPass::createBuffers(const VulkanCore& core) {
 	m_deposit_slots.emplace(deviceBuffer(core, sizeof(uint32_t) * m_deposit_total, storage, "GiPass DepositSlots"));
 	m_neighbours.emplace(deviceBuffer(core, sizeof(glm::uvec4) * 2 * m_deposit_total, storage, "GiPass Neighbours"));
 	// Every probe direction count is a multiple of four so slot / 4 indexes the averaged directions
-	m_merged.emplace(deviceBuffer(core, sizeof(glm::vec4) * (k_deposit_slots / 4), storage, "GiPass Merged"));
+	m_merged.emplace(deviceBuffer(core, sizeof(glm::uvec2) * (k_deposit_slots / 4), storage, "GiPass Merged"));
 
 	constexpr uint32_t atlas_width = k_atlas_tiles_per_row * 8;
 	constexpr uint32_t atlas_height = k_atlas_rows * 8;
@@ -333,6 +422,7 @@ void GiPass::createBuffers(const VulkanCore& core) {
 	m_readback_valid.assign(VulkanRenderer::k_frames_in_flight, false);
 	m_readback_parity.assign(VulkanRenderer::k_frames_in_flight, 0u);
 	m_readback_point_share.assign(VulkanRenderer::k_frames_in_flight, m_point_share);
+	m_readback_point_budget.assign(VulkanRenderer::k_frames_in_flight, k_max_points);
 
 	m_point_sampler = vk::raii::Sampler(core.getDevice(), nearestClampSamplerInfo());
 	setDebugName(core, *m_point_sampler, "GiPass PointSampler");
@@ -342,13 +432,13 @@ void GiPass::createBuffers(const VulkanCore& core) {
 
 auto GiPass::createPipelines(const VulkanCore& core) -> bool {
 	ZoneScoped;
-	const auto probe_uid = assets::resolveURI("core://shaders/gi_probes.slang");
+	const auto probe_uid = assets::resolveURI("core://shaders/gi_probes");
 	const auto probe_shader = probe_uid.has_value() ? ShaderCache::get().acquire(*probe_uid) : nullptr;
-	const auto debug_uid = assets::resolveURI("core://shaders/gi_debug.slang");
+	const auto debug_uid = assets::resolveURI("core://shaders/gi_debug");
 	const auto debug_shader = debug_uid.has_value() ? ShaderCache::get().acquire(*debug_uid) : nullptr;
-	const auto ray_uid = assets::resolveURI("core://shaders/gi_rays.slang");
+	const auto ray_uid = assets::resolveURI("core://shaders/gi_rays");
 	const auto ray_shader = ray_uid.has_value() ? ShaderCache::get().acquire(*ray_uid) : nullptr;
-	const auto merge_uid = assets::resolveURI("core://shaders/gi_merge.slang");
+	const auto merge_uid = assets::resolveURI("core://shaders/gi_merge");
 	const auto merge_shader = merge_uid.has_value() ? ShaderCache::get().acquire(*merge_uid) : nullptr;
 	if (!probe_shader || !debug_shader || !ray_shader || !merge_shader) {
 		TOAST_ERROR("Render", "GiPass shaders unavailable, radiance cascades are disabled");
@@ -400,9 +490,6 @@ auto GiPass::createPipelines(const VulkanCore& core) -> bool {
 	merge_config.pipeline_type = VulkanPipeline::PipelineType::compute;
 	merge_config.shader_spirv = merge_shader->spirv;
 	merge_config.pipeline_layout = *m_merge_layout.getPipelineLayout();
-	merge_config.debug_name = "GiPass accumulateMain";
-	merge_config.compute_entry = "accumulateMain";
-	m_accumulate_pipeline.rebuild(core, merge_config);
 	merge_config.debug_name = "GiPass mergeMain";
 	merge_config.compute_entry = "mergeMain";
 	m_merge_pipeline.rebuild(core, merge_config);
@@ -510,6 +597,16 @@ auto GiPass::createPipelines(const VulkanCore& core) -> bool {
 			if (m_ray_instances_bound) {
 				writer.buffer(ray_storage_set, k_ray_instances_binding, storage, trace->volumeBuffer(i));
 			}
+			if (ShaderCompiler::isRayQueryAvailable()) {
+				const VoxelBlasCache* bricks = VulkanRenderer::instance->voxelBlasCache();
+				writer.buffer(ray_storage_set, k_ray_trace_brick_bases_binding, storage, trace->brickBaseBuffer(i));
+				writer.buffer(
+				    ray_storage_set,
+				    k_ray_trace_bricks_binding,
+				    storage,
+				    bricks != nullptr ? bricks->poolBuffer() : trace->brickBaseBuffer(i)
+				);
+			}
 		}
 
 		auto ray = core.getDevice().allocateDescriptorSets(vk::DescriptorSetAllocateInfo(pool, 1, &ray_set_layout));
@@ -557,6 +654,7 @@ auto GiPass::createPipelines(const VulkanCore& core) -> bool {
 		writer.buffer(merge_set, k_merge_counters_binding, storage, **m_counters);
 		writer.buffer(merge_set, k_merge_history_binding, storage, **m_history);
 		writer.buffer(merge_set, k_merge_history_source_binding, storage, **m_history_source);
+		writer.buffer(merge_set, k_merge_dirty_binding, storage, *m_dirty[i]);
 		writer.flush(core.getDevice());
 	}
 	m_probe_bound.assign(VulkanRenderer::k_frames_in_flight, {});
@@ -572,8 +670,7 @@ auto GiPass::createPipelines(const VulkanCore& core) -> bool {
 	       m_compact_pipeline.isReady() && m_keep_pipeline.isReady() && m_slots_pipeline.isReady() &&
 	       m_deposit_clear_pipeline.isReady() && m_link_pipeline.isReady() && m_count_pipeline.isReady() &&
 	       m_propagate_pipeline.isReady() && m_offset_pipeline.isReady() && m_point_pipeline.isReady() &&
-	       m_point_count_pipeline.isReady() && m_accumulate_pipeline.isReady() && m_merge_pipeline.isReady() &&
-	       m_irradiance_pipeline.isReady();
+	       m_point_count_pipeline.isReady() && m_merge_pipeline.isReady() && m_irradiance_pipeline.isReady();
 }
 
 void GiPass::onResize(vk::Extent2D extent) {
@@ -619,10 +716,9 @@ void GiPass::recordChange(vk::CommandBuffer cmd, uint32_t frame_index, vk::Image
 	cmd.dispatch(groups(m_extent.width, k_pixel_group), groups(m_extent.height, k_pixel_group), 1);
 }
 
-auto GiPass::writeDirty(uint32_t frame_index) -> bool {
+void GiPass::gatherDirty() {
 	ZoneScoped;
 	const auto* frame = VulkanRenderer::instance->renderingFrame();
-	m_dirty_scratch.clear();
 	const auto add = [&](glm::vec3 low, glm::vec3 high) {
 		if (m_dirty_scratch.size() < 2 * k_max_dirty) {
 			m_dirty_scratch.push_back(low);
@@ -634,8 +730,7 @@ auto GiPass::writeDirty(uint32_t frame_index) -> bool {
 		last[1] = glm::max(last[1], high);
 	};
 
-	Stats& counts = m_dirty_stats[frame_index];
-	counts = Stats {};
+	Stats& counts = m_dirty_pending;
 	const float threshold = std::max(VulkanRenderer::instance->giSettings().motion_threshold.load(std::memory_order_relaxed), 0.0f);
 
 	for (const auto& proxy : frame->voxel_instances) {
@@ -693,7 +788,12 @@ auto GiPass::writeDirty(uint32_t frame_index) -> bool {
 		}
 		m_region_generation = generation;
 	}
+	m_dirty_known = m_dirty_known && known;
+}
 
+auto GiPass::writeDirty(uint32_t frame_index) -> bool {
+	m_dirty_stats[frame_index] = std::exchange(m_dirty_pending, Stats {});
+	const bool known = std::exchange(m_dirty_known, true);
 	const auto count = static_cast<uint32_t>(m_dirty_scratch.size() / 2);
 	const auto& allocation = m_dirty[frame_index].getAllocation();
 	auto* mapped = static_cast<glm::vec4*>(allocation.getInfo().pMappedData);
@@ -702,6 +802,7 @@ auto GiPass::writeDirty(uint32_t frame_index) -> bool {
 		mapped[1 + i] = glm::vec4(m_dirty_scratch[i], 0.0f);
 	}
 	allocation.flush(0, sizeof(glm::vec4) * (1 + (count * 2)));
+	m_dirty_scratch.clear();
 	return known;
 }
 
@@ -733,6 +834,7 @@ void GiPass::readStats(uint32_t frame_index) {
 	if (!m_readback_valid[frame_index]) {
 		return;
 	}
+	m_readback_valid[frame_index] = false;
 	const auto& allocation = m_readback[frame_index].getAllocation();
 	allocation.invalidate(0, sizeof(uint32_t) * k_counter_words);
 	std::array<uint32_t, k_counter_words> words {};
@@ -740,7 +842,7 @@ void GiPass::readStats(uint32_t frame_index) {
 
 	const uint32_t parity = m_readback_parity[frame_index];
 	Stats stats;
-	stats.cascades = VulkanRenderer::instance->giSettings().cascades.load(std::memory_order_relaxed);
+	stats.cascades = m_quality.cascades;
 	for (uint32_t i = 0; i < k_max_cascades; ++i) {
 		stats.probes[i] = std::min(words[(parity * 8) + i], m_cascades[i].capacity);
 		stats.seen[i] = words[k_counter_seen + i];
@@ -762,14 +864,20 @@ void GiPass::readStats(uint32_t frame_index) {
 	stats.invalidated = words[k_counter_invalidated];
 	stats.fresh = words[k_counter_fresh];
 	stats.blend = m_blend;
-	stats.points = std::min(words[k_counter_points + parity], k_max_points);
+	const uint32_t budget = m_readback_point_budget[frame_index];
+	stats.points = std::min(words[k_counter_points + parity], budget);
 	stats.points_dropped = words[k_counter_points_dropped];
 
-	// Hits offered at a known share give the whole demand so the share fills the buffer to 90% without a race
+	// Hits offered at a known share give the whole demand so the share fills the budget to 90% without a race
 	const float offered = static_cast<float>(words[k_counter_points + parity]);
 	const float demand = offered / std::max(m_readback_point_share[frame_index], 1e-3f);
-	m_point_share = demand > 0.0f ? std::clamp(0.9f * static_cast<float>(k_max_points) / demand, 1.0f / 64.0f, 1.0f) : 1.0f;
+	m_point_share = demand > 0.0f ? std::clamp(0.9f * static_cast<float>(budget) / demand, 1.0f / 64.0f, 1.0f) : 1.0f;
 	stats.point_share = m_point_share;
+	stats.quality = m_quality.level;
+	stats.ray_step = m_quality.step;
+	stats.update_interval = m_quality.interval;
+	stats.point_budget = m_quality.multibounce ? m_quality.points : 0;
+
 	std::scoped_lock lock(m_stats_mutex);
 	m_stats = stats;
 }
@@ -869,7 +977,7 @@ void GiPass::recordTrace(
 	cmd.dispatch(groups(spawn_x, k_pixel_group), groups(spawn_y, k_pixel_group), 1);
 	if (m_point_trace_pipeline.isReady()) {
 		cmd.bindPipeline(vk::PipelineBindPoint::eCompute, m_point_trace_pipeline.getPipeline());
-		cmd.dispatch(groups(k_max_points, k_group), 1, 1);
+		cmd.dispatch(groups(m_quality.points, k_group), 1, 1);
 	}
 }
 
@@ -880,13 +988,6 @@ void GiPass::recordMerge(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t c
 	cmd.bindDescriptorSets(
 	    vk::PipelineBindPoint::eCompute, layout, 0, std::array {m_merge_scene_sets.get(frame_index), *m_merge_sets[frame_index]}, {}
 	);
-
-	cmd.bindPipeline(vk::PipelineBindPoint::eCompute, m_accumulate_pipeline.getPipeline());
-	for (uint32_t i = 0; i < cascades; ++i) {
-		cmd.pushConstants(layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(uint32_t), &i);
-		cmd.dispatch(k_stride_groups, 1, 1);
-	}
-	computeBarrier(cmd);
 
 	cmd.bindPipeline(vk::PipelineBindPoint::eCompute, m_merge_pipeline.getPipeline());
 	for (uint32_t i = cascades; i-- > 1;) {
@@ -901,7 +1002,8 @@ void GiPass::recordMerge(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t c
 	cmd.bindPipeline(vk::PipelineBindPoint::eCompute, m_irradiance_pipeline.getPipeline());
 	const uint32_t c0 = 0;
 	cmd.pushConstants(layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(uint32_t), &c0);
-	cmd.dispatch(k_atlas_tiles_per_row, groups(m_cascades[0].deposit_capacity, k_atlas_tiles_per_row), 1);
+	// Mirrors gi_merge irradianceMain with two tiles per group
+	cmd.dispatch(k_atlas_tiles_per_row / 2, groups(m_cascades[0].deposit_capacity, k_atlas_tiles_per_row), 1);
 	barriers.image(m_atlas_state, sync::Usage::shader_sampled);
 	barriers.flush(cmd);
 }
@@ -931,15 +1033,26 @@ auto GiPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView s
 
 	// The fence of this slot was waited on so its last readback is complete
 	readStats(frame_index);
+	gatherDirty();
 
-	const uint32_t cascades = std::clamp(settings.cascades.load(std::memory_order_relaxed), 1u, k_max_cascades);
-	const uint32_t step = std::clamp(settings.ray_step.load(std::memory_order_relaxed), 1u, 4u);
-	const float spacing = std::max(settings.probe_spacing.load(std::memory_order_relaxed), 0.01f);
+	m_quality = resolveQuality();
+	const Quality& quality = m_quality;
+	const uint32_t cascades = quality.cascades;
+	const uint32_t step = quality.step;
+	const float spacing = std::max(quality.spacing, 0.01f);
 	const KeySettings keys {
 	  .spacing = spacing,
-	  .lod_distance = std::clamp(settings.lod_distance.load(std::memory_order_relaxed), 0.25f, spacing * k_max_cells_to_lod),
+	  .lod_distance = std::clamp(quality.lod_distance, 0.25f, spacing * k_max_cells_to_lod),
 	};
 	const bool carry = m_key_settings.has_value() && *m_key_settings == keys;
+	const uint32_t debug_view = settings.debug_view.load(std::memory_order_relaxed);
+	const uint32_t debug_mode = std::min(settings.debug_mode.load(std::memory_order_relaxed), 5u);
+
+	// Lighting keeps reading the last published tables on skipped frames
+	if (carry && m_published_valid && debug_view == 0 && ++m_skipped < quality.interval) {
+		return source_view;
+	}
+	m_skipped = 0;
 	m_key_settings = keys;
 
 	++m_frame;
@@ -973,9 +1086,7 @@ auto GiPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView s
 	  .pool = glm::uvec4(m_pool_total, m_table_total, m_deposit_total, k_deposit_slots),
 	  .rays = glm::vec4(k_interval_scale, static_cast<float>(renderer->voxelSunReach()), k_deposit_fixed_scale, cone_slope),
 	  .jitter = glm::vec4(r2Jitter(m_frame), history_known ? 1.0f - history : 0.0f, k_reset_history),
-	  .secondary = glm::uvec4(
-	      k_max_points, settings.multibounce.load(std::memory_order_relaxed) ? 1u : 0u, std::bit_cast<uint32_t>(m_point_share), 0u
-	  ),
+	  .secondary = glm::uvec4(k_max_points, quality.multibounce ? 1u : 0u, std::bit_cast<uint32_t>(m_point_share), quality.points),
 	  // Rare directions hold 2 / blend rays fading eight times slower than the blend so they average as many as busy ones
 	  .limits = glm::vec4(
 	      std::max(settings.max_ray_radiance.load(std::memory_order_relaxed), 0.01f),
@@ -1012,57 +1123,67 @@ auto GiPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView s
 		cmd.dispatch(x, y, 1);
 	};
 
-	dispatch(m_clear_pipeline, 0, groups(m_table_total, k_group));
-	computeBarrier(cmd);
-	for (uint32_t i = 0; i < cascades; ++i) {
-		dispatch(m_carry_pipeline, i, groups(m_cascades[i].capacity, k_group));
-	}
-	computeBarrier(cmd);
+	GpuTimer* timer = VulkanRenderer::instance->gpuTimer();
 	const uint32_t spawn_x = (m_extent.width + step - 1) / step;
 	const uint32_t spawn_y = (m_extent.height + step - 1) / step;
-	dispatch(m_pixel_pipeline, 0, groups(spawn_x, k_pixel_group), groups(spawn_y, k_pixel_group));
-	dispatch(m_point_pipeline, 0, groups(k_max_points, k_group));
-	computeBarrier(cmd);
-	for (uint32_t i = 0; i + 1 < cascades; ++i) {
-		dispatch(m_parent_pipeline, i, groups(m_cascades[i].table_size, k_group));
+	{
+		const GpuScope scope(timer, frame_index, cmd, "GI probes");
+		dispatch(m_clear_pipeline, 0, groups(m_table_total, k_group));
+		computeBarrier(cmd);
+		for (uint32_t i = 0; i < cascades; ++i) {
+			dispatch(m_carry_pipeline, i, groups(m_cascades[i].capacity, k_group));
+		}
+		computeBarrier(cmd);
+		dispatch(m_pixel_pipeline, 0, groups(spawn_x, k_pixel_group), groups(spawn_y, k_pixel_group));
+		dispatch(m_point_pipeline, 0, groups(quality.points, k_group));
+		computeBarrier(cmd);
+		for (uint32_t i = 0; i + 1 < cascades; ++i) {
+			dispatch(m_parent_pipeline, i, groups(m_cascades[i].table_size, k_group));
+			computeBarrier(cmd);
+		}
+		for (uint32_t i = 0; i < cascades; ++i) {
+			dispatch(m_compact_pipeline, i, groups(m_cascades[i].table_size, k_group));
+		}
+		computeBarrier(cmd);
+		for (uint32_t i = 0; i < cascades; ++i) {
+			dispatch(m_keep_pipeline, i, groups(m_cascades[i].capacity, k_group));
+		}
 		computeBarrier(cmd);
 	}
-	for (uint32_t i = 0; i < cascades; ++i) {
-		dispatch(m_compact_pipeline, i, groups(m_cascades[i].table_size, k_group));
-	}
-	computeBarrier(cmd);
-
-	for (uint32_t i = 0; i < cascades; ++i) {
-		dispatch(m_keep_pipeline, i, groups(m_cascades[i].capacity, k_group));
-	}
-	computeBarrier(cmd);
-	for (uint32_t carried = 0; carried < 2; ++carried) {
+	{
+		const GpuScope scope(timer, frame_index, cmd, "GI deposits");
+		for (uint32_t carried = 0; carried < 2; ++carried) {
+			for (uint32_t i = cascades; i-- > 0;) {
+				dispatch(m_slots_pipeline, i, groups(m_cascades[i].deposit_capacity, k_group), 1, carried);
+				computeBarrier(cmd);
+			}
+		}
+		dispatch(m_deposit_clear_pipeline, 0, k_stride_groups);
+		for (uint32_t i = 0; i + 1 < cascades; ++i) {
+			dispatch(m_link_pipeline, i, groups(m_cascades[i].deposit_capacity, k_group));
+		}
+		dispatch(m_count_pipeline, 0, groups(spawn_x, k_pixel_group), groups(spawn_y, k_pixel_group));
+		dispatch(m_point_count_pipeline, 0, groups(quality.points, k_group));
+		computeBarrier(cmd);
+		for (uint32_t i = 0; i + 1 < cascades; ++i) {
+			dispatch(m_propagate_pipeline, i, groups(m_cascades[i].deposit_capacity, k_group));
+			computeBarrier(cmd);
+		}
 		for (uint32_t i = cascades; i-- > 0;) {
-			dispatch(m_slots_pipeline, i, groups(m_cascades[i].deposit_capacity, k_group), 1, carried);
+			dispatch(m_offset_pipeline, i, groups(m_cascades[i].deposit_capacity, k_group));
 			computeBarrier(cmd);
 		}
 	}
-	dispatch(m_deposit_clear_pipeline, 0, k_stride_groups);
-	for (uint32_t i = 0; i + 1 < cascades; ++i) {
-		dispatch(m_link_pipeline, i, groups(m_cascades[i].deposit_capacity, k_group));
-	}
-	dispatch(m_count_pipeline, 0, groups(spawn_x, k_pixel_group), groups(spawn_y, k_pixel_group));
-	dispatch(m_point_count_pipeline, 0, groups(k_max_points, k_group));
-	computeBarrier(cmd);
-	for (uint32_t i = 0; i + 1 < cascades; ++i) {
-		dispatch(m_propagate_pipeline, i, groups(m_cascades[i].deposit_capacity, k_group));
+	{
+		const GpuScope scope(timer, frame_index, cmd, "GI trace");
+		recordTrace(cmd, frame_index, spawn_x, spawn_y, source_view);
+		// Runs without a trace too so a scene with no voxels still sees the sky
 		computeBarrier(cmd);
 	}
-	for (uint32_t i = cascades; i-- > 0;) {
-		dispatch(m_offset_pipeline, i, groups(m_cascades[i].deposit_capacity, k_group));
-		computeBarrier(cmd);
+	{
+		const GpuScope scope(timer, frame_index, cmd, "GI merge");
+		recordMerge(cmd, frame_index, cascades);
 	}
-	recordTrace(cmd, frame_index, spawn_x, spawn_y, source_view);
-	// Runs without a trace too so a scene with no voxels still sees the sky
-	computeBarrier(cmd);
-	recordMerge(cmd, frame_index, cascades);
-	const uint32_t debug_view = settings.debug_view.load(std::memory_order_relaxed);
-	const uint32_t debug_mode = std::min(settings.debug_mode.load(std::memory_order_relaxed), 5u);
 	if (debug_view > 0 && debug_mode == 5) {
 		recordChange(cmd, frame_index, source_view);
 	}
@@ -1084,6 +1205,7 @@ auto GiPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView s
 	m_readback_valid[frame_index] = true;
 	m_readback_parity[frame_index] = parity;
 	m_readback_point_share[frame_index] = m_point_share;
+	m_readback_point_budget[frame_index] = quality.points;
 
 	if (debug_view == 0 || !source_view || !m_debug_pipeline.isReady() || !m_debug_target.isReady()) {
 		return source_view;

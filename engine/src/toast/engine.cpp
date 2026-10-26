@@ -35,6 +35,8 @@
 #include "renderer/passes/taa_pass.hpp"
 #include "renderer/passes/tonemap_pass.hpp"
 #include "renderer/passes/traced_shadow_pass.hpp"
+#include "renderer/passes/traced_specular_pass.hpp"
+#include "renderer/passes/volumetric_pass.hpp"
 #include "renderer/passes/voxel_pass.hpp"
 #include "renderer/render_events.hpp"
 #include "renderer/renderer_settings.hpp"
@@ -687,8 +689,15 @@ void Engine::createSDLWindow(const char* w_name) {
 
 	// SSAO first
 	m->renderer->addPostProcessPass(std::make_unique<renderer::SsaoPass>(*m->vulkan_core, scene_format, extent));
+	// Before SSR so the scene colour it reads already holds the traced voxel reflections
+	auto traced_specular = std::make_unique<renderer::TracedSpecularPass>(*m->vulkan_core, scene_format, extent);
+	m->renderer->setTracedSpecularPass(traced_specular.get());
+	m->renderer->addPostProcessPass(std::move(traced_specular));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::SsrPass>(*m->vulkan_core, scene_format, extent));
-	m->renderer->addPostProcessPass(std::make_unique<renderer::TaaPass>(*m->vulkan_core, scene_format, extent));
+	m->renderer->addPostProcessPass(std::make_unique<renderer::VolumetricPass>(*m->vulkan_core, scene_format, extent));
+	auto taa = std::make_unique<renderer::TaaPass>(*m->vulkan_core, scene_format, extent);
+	m->renderer->setTaaPass(taa.get());
+	m->renderer->addPostProcessPass(std::move(taa));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::BloomPass>(*m->vulkan_core, scene_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::TonemapPass>(*m->vulkan_core, color_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::FxaaPass>(*m->vulkan_core, color_format, extent));
@@ -784,8 +793,15 @@ void Engine::createAvaloniaWindow() {
 
 	// SSAO first
 	m->renderer->addPostProcessPass(std::make_unique<renderer::SsaoPass>(*m->vulkan_core, scene_format, extent));
+	// Before SSR so the scene colour it reads already holds the traced voxel reflections
+	auto traced_specular = std::make_unique<renderer::TracedSpecularPass>(*m->vulkan_core, scene_format, extent);
+	m->renderer->setTracedSpecularPass(traced_specular.get());
+	m->renderer->addPostProcessPass(std::move(traced_specular));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::SsrPass>(*m->vulkan_core, scene_format, extent));
-	m->renderer->addPostProcessPass(std::make_unique<renderer::TaaPass>(*m->vulkan_core, scene_format, extent));
+	m->renderer->addPostProcessPass(std::make_unique<renderer::VolumetricPass>(*m->vulkan_core, scene_format, extent));
+	auto taa = std::make_unique<renderer::TaaPass>(*m->vulkan_core, scene_format, extent);
+	m->renderer->setTaaPass(taa.get());
+	m->renderer->addPostProcessPass(std::move(taa));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::BloomPass>(*m->vulkan_core, scene_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::TonemapPass>(*m->vulkan_core, color_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::FxaaPass>(*m->vulkan_core, color_format, extent));

@@ -4,6 +4,7 @@
 #include "../descriptor_writer.hpp"
 #include "../gpu_sync.hpp"
 #include "../shader_cache.hpp"
+#include "../shader_compiler.hpp"
 #include "../voxel_gpu_storage.hpp"
 #include "../vulkan_core.hpp"
 #include "../vulkan_debug.hpp"
@@ -70,6 +71,8 @@ constexpr uint32_t k_ambient_grid_binding = 8;
 constexpr uint32_t k_trace_volumes_binding = 10;
 constexpr uint32_t k_trace_bounds_binding = 11;
 constexpr uint32_t k_trace_grid_binding = 12;
+constexpr uint32_t k_trace_brick_bases_binding = 14;
+constexpr uint32_t k_trace_bricks_binding = 15;
 /// Mirrored by voxel_lighting.slang
 constexpr uint32_t k_ambient_grid_buckets = 4096;
 constexpr uint32_t k_ambient_grid_header = 4;
@@ -94,6 +97,9 @@ constexpr uint32_t k_reuse_history = 1;
 constexpr uint32_t k_reuse_spatial = 2;
 /// Some shadow ray instance holds glass
 constexpr uint32_t k_scene_glass = 4;
+constexpr uint32_t k_ambient_ray_query = 8;
+/// Bits 8 to 15 carry the max roughness in 255ths
+constexpr uint32_t k_traced_specular = 16;
 
 /// ReSTIR reuse of last frame's reservoir at the reprojected pixel and two around it
 constexpr uint32_t k_reused_reservoirs = 3;
@@ -490,6 +496,21 @@ void VoxelPass::createLighting(const VulkanCore& core, vk::Format scene_format, 
 			writer.buffer(
 			    *m_lighting_storage_sets.back(), k_trace_grid_binding, vk::DescriptorType::eStorageBuffer, trace->gridBuffer(i)
 			);
+			if (ShaderCompiler::isRayQueryAvailable()) {
+				const VoxelBlasCache* bricks = VulkanRenderer::instance->voxelBlasCache();
+				writer.buffer(
+				    *m_lighting_storage_sets.back(),
+				    k_trace_brick_bases_binding,
+				    vk::DescriptorType::eStorageBuffer,
+				    trace->brickBaseBuffer(i)
+				);
+				writer.buffer(
+				    *m_lighting_storage_sets.back(),
+				    k_trace_bricks_binding,
+				    vk::DescriptorType::eStorageBuffer,
+				    bricks != nullptr ? bricks->poolBuffer() : trace->brickBaseBuffer(i)
+				);
+			}
 		}
 		writer.flush(core.getDevice());
 	}
@@ -1369,6 +1390,10 @@ void VoxelPass::recordLighting(vk::CommandBuffer cmd, uint32_t frame_index, vk::
 	const auto height = static_cast<float>(viewport.height);
 	const float rotation =
 	    frame->taa_active ? std::fmod(static_cast<float>(frame->sequence % 4096) * k_golden_ratio_conjugate, 1.0f) : 0.0f;
+	const uint32_t traced_specular =
+	    instance->tracedSpecularFrame()
+	        ? k_traced_specular | (static_cast<uint32_t>(std::lround(instance->voxelSpecularRoughness() * 255.0f)) << 8)
+	        : 0u;
 	LightingPushConstants push;
 	if (m_denoise_active) {
 		push = LightingPushConstants {
@@ -1385,7 +1410,8 @@ void VoxelPass::recordLighting(vk::CommandBuffer cmd, uint32_t frame_index, vk::
 		  ),
 		  .reuse = glm::uvec4(
 		      (instance->voxelReservoirHistory() ? k_reuse_history : 0u) | (m_spatial_active ? k_reuse_spatial : 0u) |
-		          (m_scene_glass ? k_scene_glass : 0u) | (std::min(instance->voxelGlassShadowReach(), 0xFFFFu) << 16),
+		          (m_scene_glass ? k_scene_glass : 0u) | (instance->voxelAmbientRayQuery() ? k_ambient_ray_query : 0u) |
+		          traced_specular | (std::min(instance->voxelGlassShadowReach(), 0xFFFFu) << 16),
 		      k_reservoir_m_cap * instance->voxelLightCandidates(),
 		      k_reused_reservoirs,
 		      m_ambient_rays ? static_cast<uint32_t>(std::lround(instance->voxelAmbientReach() * 100.0f)) : 0u
@@ -1406,7 +1432,8 @@ void VoxelPass::recordLighting(vk::CommandBuffer cmd, uint32_t frame_index, vk::
 		  ),
 		  .reuse = glm::uvec4(
 		      (instance->voxelReservoirHistory() ? k_reuse_history : 0u) | (m_spatial_active ? k_reuse_spatial : 0u) |
-		          (m_scene_glass ? k_scene_glass : 0u) | (std::min(instance->voxelGlassShadowReach(), 0xFFFFu) << 16),
+		          (m_scene_glass ? k_scene_glass : 0u) | (instance->voxelAmbientRayQuery() ? k_ambient_ray_query : 0u) |
+		          traced_specular | (std::min(instance->voxelGlassShadowReach(), 0xFFFFu) << 16),
 		      k_reservoir_m_cap * instance->voxelLightCandidates(),
 		      k_reused_reservoirs,
 		      m_ambient_rays ? static_cast<uint32_t>(std::lround(instance->voxelAmbientReach() * 100.0f)) : 0u
@@ -1698,8 +1725,8 @@ void VoxelPass::recordDenoiseTemporal(vk::CommandBuffer cmd, uint32_t frame_inde
 		return;
 	}
 
-	// A skipped frame or a recreated target leaves a history from somewhere else
-	m_denoise_frame_valid = m_denoise_valid && frame->sequence == m_denoise_sequence + 1;
+	// A skipped frame or a recreated target leaves a history from somewhere else and a repeated snapshot keeps it
+	m_denoise_frame_valid = m_denoise_valid && frame->sequence - m_denoise_sequence <= 1;
 	const uint32_t read = 1 - m_denoise_parity;
 	if (!m_denoise_frame_valid) {
 		m_denoise_history[0][read].makeSampleable(cmd);

@@ -655,6 +655,11 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	enabled_features.dualSrcBlend = m_dual_source_blend_supported ? VK_TRUE : VK_FALSE;
 	// HiZPyramid picks its level image by a loop index
 	enabled_features.shaderStorageImageArrayDynamicIndexing = VK_TRUE;
+	// Replays can start a pass from state no frame wrote so an index past a buffer reads zero instead of losing the device
+	if (m_nsight_mode != NsightMode::none && device_features.robustBufferAccess == VK_TRUE) {
+		enabled_features.robustBufferAccess = VK_TRUE;
+		TOAST_INFO("Render", "Nsight is attached so robust buffer access is on");
+	}
 
 	vk::PhysicalDeviceFeatures2 supported_features {};
 	vk::PhysicalDeviceVulkan12Features supported_vulkan12 {};

@@ -58,6 +58,16 @@ void blendPostProcess(PostProcessSettings& target, const PostProcessSettings& so
 	target.ssao.strength = mix(target.ssao.strength, source.ssao.strength, t);
 	target.ssao.range_cutoff = mix(target.ssao.range_cutoff, source.ssao.range_cutoff, t);
 	target.ssao.sample_count = mixCount(target.ssao.sample_count, source.ssao.sample_count, t);
+
+	target.fog.density = mix(target.fog.density, source.fog.density, t);
+	target.fog.height = mix(target.fog.height, source.fog.height, t);
+	target.fog.height_falloff = mix(target.fog.height_falloff, source.fog.height_falloff, t);
+	target.fog.albedo_r = mix(target.fog.albedo_r, source.fog.albedo_r, t);
+	target.fog.albedo_g = mix(target.fog.albedo_g, source.fog.albedo_g, t);
+	target.fog.albedo_b = mix(target.fog.albedo_b, source.fog.albedo_b, t);
+	target.fog.anisotropy = mix(target.fog.anisotropy, source.fog.anisotropy, t);
+	target.fog.ambient = mix(target.fog.ambient, source.fog.ambient, t);
+	target.fog.distance = mix(target.fog.distance, source.fog.distance, t);
 }
 
 }
