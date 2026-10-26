@@ -1064,11 +1064,12 @@ auto GiPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView s
 	                                : std::clamp(std::chrono::duration<float>(now - m_last_record).count(), 0.001f, 0.1f);
 	m_last_record = now;
 	const float history_seconds = settings.history_seconds.load(std::memory_order_relaxed);
-	// NOLINTNEXTLINE
-	const float history =
-	    settings.history_per_frame.load(std::memory_order_relaxed)
-	        ? std::clamp(settings.history_blend.load(std::memory_order_relaxed), 0.005f, 1.0f)
-	        : (history_seconds > 0.0f ? std::clamp(1.0f - std::exp(-frame_seconds / history_seconds), 0.001f, 1.0f) : 1.0f);
+	float history = 1.0f;
+	if (settings.history_per_frame.load(std::memory_order_relaxed)) {
+		history = std::clamp(settings.history_blend.load(std::memory_order_relaxed), 0.005f, 1.0f);
+	} else if (history_seconds > 0.0f) {
+		history = std::clamp(1.0f - std::exp(-frame_seconds / history_seconds), 0.001f, 1.0f);
+	}
 	m_blend = history;
 	// Narrowest bucket of the top cascade so the march never coarsens past what any interval resolves
 	const float cone_slope = std::sqrt(4.0f * glm::pi<float>() / static_cast<float>(m_cascades[cascades - 1].directions));
