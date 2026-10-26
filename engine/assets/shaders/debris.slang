@@ -119,6 +119,7 @@ static const float kSleepSpeed = 0.2;       // below this speed a piece may slee
 static const uint kSleepSteps = 15;
 static const float kBounceSpeed = 0.5;      // slower impact sticks
 static const float kContactSlop = 0.001;    // next step does not start touching
+static const float kFloorZ = 0.0f;          // lowest height a piece reaches
 
 // Graphics queue patches sections in place unordered with this queue so new records can still be uninitialized headroom
 // No robust buffer access so every index is checked against the buffer
@@ -363,7 +364,7 @@ void integrateMain(uint3 id : SV_DispatchThreadID, uint3 groupThread : SV_GroupT
 
     if ((particle.packed & kFlagAsleep) != 0u) {
         // Wakes once nothing supports it
-        bool supported = false;
+        bool supported = particle.position.z <= kFloorZ + 2.0 * kContactSlop;
         for (uint bit = 0u; bit < 8u && !supported; ++bit) {
             if (((mask >> bit) & 1u) != 0u) {
                 float3 below = particle.position + rotateByQuat(particle.rotation, bitOffset(bit, motion.baseScale)) - float3(0.0, 0.0, gParams.voxelSize);
@@ -386,6 +387,15 @@ void integrateMain(uint3 id : SV_DispatchThreadID, uint3 groupThread : SV_GroupT
         float dt = gParams.dt;
         particle.velocity += gParams.gravity * dt;
         particle.position += particle.velocity * dt;
+
+        // Nothing goes under the ground plane
+        if (particle.position.z < kFloorZ) {
+            particle.position.z = kFloorZ;
+            // It stops dead, otherwise it keeps spinning and sliding along the floor
+            particle.velocity = float3(0.0, 0.0, 0.0);
+            motion.angular = float3(0.0, 0.0, 0.0);
+            touching = true;
+        }
 
         float spin = length(motion.angular);
         if (spin > 1e-5) {

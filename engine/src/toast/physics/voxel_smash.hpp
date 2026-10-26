@@ -17,6 +17,7 @@
 #include <toast/voxel/palette.hpp>
 #include <toast/voxel/voxel_constants.hpp>
 #include <toast/voxel/voxel_volume.hpp>
+#include <tracy/Tracy.hpp>
 #include <utility>
 #include <vector>
 
@@ -107,6 +108,7 @@ auto collectBrokenPieces(
     const voxel::Volume& volume, const voxel::Palette& palette, const voxel::MaterialLibrary& materials, const glm::vec3& low,
     const glm::vec3& high, Breaks&& breaks
 ) -> SmashPieces {
+	ZoneScopedN("physics::CollectBrokenPieces");
 	SmashPieces out;
 	if (materials.materials.empty()) {
 		return out;

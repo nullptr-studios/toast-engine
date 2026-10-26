@@ -25,6 +25,7 @@
 #include <toast/voxel/palette.hpp>
 #include <toast/voxel/voxel_constants.hpp>
 #include <toast/voxel/voxel_volume.hpp>
+#include <tracy/Tracy.hpp>
 #include <unordered_set>
 #include <vector>
 
@@ -223,6 +224,7 @@ inline auto reachesThroughMaterial(const voxel::Volume& volume, const glm::vec3&
 [[nodiscard]]
 inline auto reachableMaterial(const voxel::Volume& volume, const glm::vec3& start, const glm::vec3& end, float radius)
     -> std::unordered_set<uint64_t> {
+	ZoneScopedN("physics::ReachableMaterial");
 	std::unordered_set<uint64_t> out;
 
 	// voxel closest to the hit
@@ -461,6 +463,7 @@ inline auto planCrater(
     const voxel::Volume& volume, const voxel::Palette& palette, const voxel::MaterialLibrary& materials,
     const FractureRequest& request
 ) -> Crater {
+	ZoneScopedN("physics::PlanCrater");
 	Crater out {
 	  .start = request.point,
 	  .end = request.point,

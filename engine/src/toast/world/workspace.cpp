@@ -845,7 +845,7 @@ auto Workspace::retypeNode(Box<Node>& target, std::string_view type, bool keep_f
 	return fresh;
 }
 
-void Workspace::promoteNode(Box<Node>& target, std::string_view path) {
+auto Workspace::promoteNode(Box<Node>& target, std::string_view path) -> Box<Node> {
 	ZoneScoped;
 	auto parent = target->parentInternal();
 
@@ -874,10 +874,11 @@ void Workspace::promoteNode(Box<Node>& target, std::string_view path) {
 		if (auto* spawned_3d = spawned.exists() ? reflect_cast<Node3D>(&*spawned) : nullptr; spawned_3d && placement) {
 			std::tie(spawned_3d->position, spawned_3d->rotation, spawned_3d->scale) = *placement;
 		}
-	} else {
-		TOAST_WARN("World", "Promote: couldn't resolve UID for {}", path);
-		event::send<event::RequestHierarchyUpdate>();
+		return spawned;
 	}
+	TOAST_WARN("World", "Promote: couldn't resolve UID for {}", path);
+	event::send<event::RequestHierarchyUpdate>();
+	return {};
 }
 
 auto Workspace::restoreHistorySnapshot(const assets::Prefab& snapshot) -> bool {
@@ -1168,7 +1169,12 @@ void Workspace::gizmoApplySizeDrag(float delta) {
 	// Volumes grow a whole voxel at a time and the negative faces move the corner
 	if (auto volume = m_focused_node.as<VoxelVolume>(); volume.exists()) {
 		const int32_t start = static_cast<int32_t>(m_gizmo_drag_start_size[axis]);
-		const int32_t next = std::max(start + static_cast<int32_t>(std::lround(delta * sign / voxel::k_voxel_size)), 1);
+		int32_t step = 1;
+		if (m_translate_snap.enabled && m_translate_snap.value > 0.0001f) {
+			step = std::max<int32_t>(1, static_cast<int32_t>(std::lround(m_translate_snap.value / voxel::k_voxel_size)));
+		}
+		const auto grown = static_cast<int32_t>(std::lround(delta * sign / (voxel::k_voxel_size * static_cast<float>(step)))) * step;
+		const int32_t next = std::max(start + grown, 1);
 		glm::ivec3 size = volume->sizeVoxels();
 		size[axis] = next;
 		volume->setSizeVoxels(size);
@@ -1887,7 +1893,8 @@ void Workspace::eventSubscriptions() {
 			m_history->commit();
 		}
 		const UID saved_uid = assets::AssetManager::resolveURI(e.uri).value_or(node == m_root_node ? m_handle : UID(0));
-		assets::Prefab prefab(*node, saved_uid);
+		const UID origin = node == m_root_node ? node->m_source_prefab.uid() : UID(0);
+		assets::Prefab prefab(*node, origin.data() != 0 ? origin : saved_uid);
 		auto bytes = prefab.serialize(assets::SaveMode::editor);
 		completed.success = assets::AssetManager::get().saveBytes(e.uri, bytes);
 		if (completed.success) {

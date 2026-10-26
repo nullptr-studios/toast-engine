@@ -540,6 +540,10 @@
 						                   StrokeWidth="2.5" />
 					</Button>
 				</Grid>
+				<CheckBox IsChecked="{Binding KeepFolderStructure}"
+				          IsVisible="{Binding !IsExternal}"
+				          Content="Keep folder structure"
+				          ToolTip.Tip="Recreates the artwork folders below the first folder the selected files share, with the destination standing in for that folder" />
 			</StackPanel>
 
 			<!-- Bottom buttons -->

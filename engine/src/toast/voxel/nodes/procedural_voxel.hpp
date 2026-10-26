@@ -58,7 +58,7 @@ public:
 	[[Reflect, Button("Rebuild")]]
 	void rebuild();
 
-	/** Bakes the whole shape to a .tvox and replaces this node with a VoxelNode */
+	/** Bakes the shape to a folder with a .tnode prefab and a .tvox model for every volume */
 	[[Reflect, Button("Bake"), EditorAction("voxel_editor.bake")]]
 	void bakeVoxel() { }
 
@@ -101,6 +101,26 @@ public:
 		glm::ivec3 origin {0};    ///< Shape voxel of the volume's first voxel
 	};
 
+	[[nodiscard]]
+	static auto partKeyOf(const VoxelPiece& piece) noexcept -> uint64_t {
+		const uint64_t uid = piece.uid().data();
+		return uid != 0 ? uid : (uint64_t {1} << 63) | piece.rid();
+	}
+
+	struct BakedPart {
+		uint64_t key = 0;
+		glm::ivec3 origin {0};
+		std::unique_ptr<voxel::Volume> volume;
+	};
+
+	[[nodiscard]]
+	auto bakeParts() -> std::vector<BakedPart>;
+
+	[[nodiscard]]
+	auto usesParts() const noexcept -> bool override {
+		return true;
+	}
+
 	/**
 	 * Builds only these pieces, in shape order, into a fresh volume
 	 * @note Collapse bakes it into a model, the shape itself is untouched
@@ -135,6 +155,7 @@ private:
 		PieceKind kind = PieceKind::fill;
 		voxel::WriteMode mode = voxel::WriteMode::replace;
 		uint8_t match_id = 0;
+		uint64_t key = 0;
 	};
 
 	struct ComposeInput;
@@ -174,8 +195,14 @@ private:
 	/** Start building the piece async */
 	void launchCompose(const std::vector<Collected>& pieces);
 
-	/** Copies the bricks of a finished compose */
+	/** Copies the volumes of a finished compose into the parts */
 	void applyComposed(ComposeOutput& output);
+
+	/** Makes the volume of part cover bounds */
+	auto growPart(VoxelPart& part, const voxel::EditBounds& bounds) -> bool;
+
+	[[nodiscard]]
+	auto makeComposeInput(const std::vector<Collected>& pieces, bool wait) -> std::shared_ptr<ComposeInput>;
 
 	[[nodiscard]]
 	auto averageColor(const Landing& landing) -> glm::vec3;
@@ -186,7 +213,6 @@ private:
 	[[nodiscard]]
 	auto toolPiece() -> VoxelPiece*;
 
-	std::unique_ptr<voxel::Volume> m_highlight;
 	UID m_highlight_for;
 
 	std::vector<PieceLayout> m_layout;

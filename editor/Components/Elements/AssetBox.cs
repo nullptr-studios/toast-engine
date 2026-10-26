@@ -59,6 +59,8 @@ public sealed class AssetBox : TemplatedControl {
 
 	private readonly MenuItem m_selectItem;
 
+	private Border? m_pickerButton;
+
 	private string? m_displayName;
 
 	private bool m_hasAsset;
@@ -175,8 +177,15 @@ public sealed class AssetBox : TemplatedControl {
 	protected override void OnPointerPressed(PointerPressedEventArgs e) {
 		base.OnPointerPressed(e);
 		if (!IsEnabled || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
-		OpenPicker();
+		var onButton = m_pickerButton is { } button && new Rect(button.Bounds.Size).Contains(e.GetPosition(button));
+		if (HasAsset && !onButton) ShowInBrowser();
+		else OpenPicker();
 		e.Handled = true;
+	}
+
+	protected override void OnApplyTemplate(TemplateAppliedEventArgs e) {
+		base.OnApplyTemplate(e);
+		m_pickerButton = e.NameScope.Find<Border>("PART_Button");
 	}
 
 	protected override void OnPointerEntered(PointerEventArgs e) {
@@ -278,7 +287,9 @@ public sealed class AssetBox : TemplatedControl {
 	}
 
 	private void ShowInBrowser() {
-		if (!string.IsNullOrEmpty(Value)) AssetBrowserViewModel.Current?.RevealAsset(Value!);
+		if (string.IsNullOrEmpty(Value)) return;
+		MainWindowViewModel.Current?.ShowAssetBrowser();
+		AssetBrowserViewModel.Current?.RevealAsset(Value!);
 	}
 
 	private void Clear() {

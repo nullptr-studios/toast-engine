@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using editor.Assets;
 using editor.Assets.Types;
@@ -25,6 +27,17 @@ public static class VoxelEditorActions {
 
 	private static async void OnBakeCompleted(VoxelBakeCompleted completed) {
 		try {
+			if (completed.Unused.Count > 0) {
+				foreach (var unused in completed.Unused) {
+					var unusedPath = ProjectContext.Resolve(unused);
+					AssetDatabase.TryDelete(unusedPath);
+					AssetDatabase.TryDelete(unusedPath + ".meta");
+				}
+				AssetDatabase.RebuildAssetDatabase();
+				Events.Send(new ReloadAssetsManifest());
+			}
+			if (string.IsNullOrEmpty(completed.Path)) return;
+
 			var realPath = ProjectContext.Resolve(completed.Path);
 			var header = MetaFile.ReadHeader(realPath);
 			if (header is null) return;
@@ -44,17 +57,68 @@ public static class VoxelEditorActions {
 			return;
 		}
 
-		var virtualPath = await App.Modals.ShowSaveFile($"{node.Name}_baked", ".tvox");
-		if (virtualPath is null) return;
-		CreateVoxelAsset(virtualPath);
-		Events.Send(new VoxelBake { Target = node.Uid, Path = virtualPath, Replace = true });
+		var chosen = await App.Modals.ShowSaveFile($"{node.Name}_baked", ".tnode");
+		if (chosen is null) return;
+
+		var folder = chosen.EndsWith(PrefabExtension, StringComparison.OrdinalIgnoreCase)
+			? chosen[..^PrefabExtension.Length]
+			: chosen;
+		var name = folder[(folder.LastIndexOf('/') + 1)..];
+		var prefabPath = $"{folder}/{name}{PrefabExtension}";
+
+		var bake = new VoxelBake { Target = node.Uid, Path = prefabPath, Replace = true };
+		var taken = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { name, "Model" };
+
+		bake.BasePath = $"{folder}/Model.tvox";
+		CreateVoxelFile(bake.BasePath);
+
+		// Every volume gets a model
+		void Walk(HierarchyElement parent) {
+			foreach (var child in parent.Children) {
+				if (child.Type is "toast::FillVolume" or "toast::VoxelMesh") {
+					var path = $"{folder}/{UniqueFileName(child.Name, taken)}.tvox";
+					CreateVoxelFile(path);
+					bake.Pieces.Add(new VoxelBakePiece { Uid = child.Uid, Path = path });
+				}
+				if (child.Type is "toast::VoxelGroup" or "toast::FillVolume" or "toast::VoxelMesh" or "toast::CarveVolume"
+				    or "toast::PaintVolume") {
+					Walk(child);
+				}
+			}
+		}
+
+		Walk(node);
+
+		var prefabReal = ProjectContext.Resolve(prefabPath);
+		Directory.CreateDirectory(Path.GetDirectoryName(prefabReal)!);
+		File.WriteAllBytes(prefabReal, Array.Empty<byte>());
+		MetaFile.Write(prefabReal, new MetaHeader { Uid = UidGenerator.Generate(), Type = "node" });
+
+		AssetDatabase.RebuildAssetDatabase();
+		Events.Send(new ReloadAssetsManifest());
+		Events.Send(bake);
 	}
 
-	internal static void CreateVoxelAsset(string virtualPath) {
+	private const string PrefabExtension = ".tnode";
+
+	private static string UniqueFileName(string name, HashSet<string> taken) {
+		var invalid = Path.GetInvalidFileNameChars();
+		var clean = new string(name.Trim().Select(c => invalid.Contains(c) || c == ' ' ? '_' : c).ToArray());
+		if (clean.Length == 0) clean = "Piece";
+		var candidate = clean;
+		for (var i = 2; !taken.Add(candidate); i++) candidate = $"{clean}_{i}";
+		return candidate;
+	}
+
+	private static void CreateVoxelFile(string virtualPath) {
 		var realPath = ProjectContext.Resolve(virtualPath);
 		Directory.CreateDirectory(Path.GetDirectoryName(realPath)!);
 		File.WriteAllBytes(realPath, Array.Empty<byte>());
 		MetaFile.Write(realPath, new MetaHeader { Uid = UidGenerator.Generate(), Type = "voxel_model" });
+	}
+
+	internal static void CreateVoxelAsset(string virtualPath) {
+		CreateVoxelFile(virtualPath);
 		AssetDatabase.RebuildAssetDatabase();
 		Events.Send(new ReloadAssetsManifest());
 	}

@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <bit>
+#include <bitset>
 #include <chrono>
 #include <cmath>
 #include <cstring>
@@ -23,6 +24,7 @@
 #include <toast/world/node_owner.hpp>
 #include <toast/world/workspace_events.hpp>
 #include <tracy/Tracy.hpp>
+#include <utility>
 
 namespace toast {
 
@@ -196,12 +198,18 @@ struct ProceduralVoxel::ComposeInput {
 };
 
 struct ProceduralVoxel::ComposeOutput {
-	std::unique_ptr<voxel::Volume> volume;
-	std::unique_ptr<voxel::Volume> highlight;
-	glm::ivec3 origin {0};
+	struct Part {
+		uint64_t key = 0;
+		glm::ivec3 origin {0};
+		std::unique_ptr<voxel::Volume> volume;
+		std::unique_ptr<voxel::Volume> highlight;
+	};
+
+	std::vector<Part> parts;
 	std::vector<event::VoxelProjectionData> projections;
 	bool has_projections = false;
 	bool pool_exhausted = false;
+	bool too_many_parts = false;
 };
 
 namespace {
@@ -381,6 +389,158 @@ auto brickFloor(glm::ivec3 voxel) noexcept -> glm::ivec3 {
 	return {voxel.x >> 3, voxel.y >> 3, voxel.z >> 3};
 }
 
+constexpr uint64_t k_preview_key = ~uint64_t {0};
+
+template<typename Visit>
+void visitSolid(const voxel::Volume& volume, glm::ivec3 brick, Visit&& visit) {
+	const voxel::BrickEntry entry = volume.entryAt(brick);
+	if (entry.tag() == voxel::BrickTag::empty) {
+		return;
+	}
+	const glm::ivec3 corner = brick * static_cast<int32_t>(voxel::k_brick_dim);
+	if (entry.tag() == voxel::BrickTag::uniform) {
+		const auto id = static_cast<uint8_t>(entry.payload());
+		for (int32_t z = 0; std::cmp_less(z, voxel::k_brick_dim); ++z) {
+			for (int32_t y = 0; std::cmp_less(y, voxel::k_brick_dim); ++y) {
+				for (int32_t x = 0; std::cmp_less(x, voxel::k_brick_dim); ++x) {
+					visit(corner + glm::ivec3(x, y, z), id);
+				}
+			}
+		}
+		return;
+	}
+	const voxel::BrickOccupancy& occupancy = *volume.occupancyPointer(brick);
+	const uint8_t* materials = std::as_const(*volume.pool()).material(entry.payload()).data();
+	for (uint32_t z = 0; z < voxel::k_brick_dim; ++z) {
+		uint64_t bits = occupancy[z];
+		while (bits != 0) {
+			const auto bit = static_cast<uint32_t>(std::countr_zero(bits));
+			bits &= bits - 1;
+			visit(
+			    corner + glm::ivec3(static_cast<int32_t>(bit & 7), static_cast<int32_t>(bit >> 3), static_cast<int32_t>(z)),
+			    materials[(z * 64) + bit]
+			);
+		}
+	}
+}
+
+/**
+ * Splits a built shape into one volume per owner
+ */
+template<typename Part>
+auto splitByOwner(
+    const voxel::Volume& shape, const voxel::Volume& owner, const voxel::Volume* highlight, glm::ivec3 origin,
+    const std::vector<uint64_t>& keys, bool& pool_exhausted
+) -> std::vector<Part> {
+	ZoneScopedN("voxel::SplitByOwner");    // NOLINT
+
+	struct Extent {
+		glm::ivec3 min {std::numeric_limits<int32_t>::max()};
+		glm::ivec3 max {std::numeric_limits<int32_t>::min()};
+		bool any = false;
+	};
+
+	std::vector<Extent> extents(keys.size());
+
+	// Every owner number in a brick
+	const auto owners_in = [&](glm::ivec3 brick) {
+		std::bitset<256> seen;
+		const voxel::BrickEntry entry = owner.entryAt(brick);
+		if (entry.tag() == voxel::BrickTag::uniform) {
+			seen.set(static_cast<uint8_t>(entry.payload()));
+		} else if (entry.tag() != voxel::BrickTag::empty) {
+			const voxel::BrickOccupancy& occupancy = *owner.occupancyPointer(brick);
+			const uint8_t* materials = std::as_const(*owner.pool()).material(entry.payload()).data();
+			for (uint32_t z = 0; z < voxel::k_brick_dim; ++z) {
+				uint64_t bits = occupancy[z];
+				while (bits != 0) {
+					const auto bit = static_cast<uint32_t>(std::countr_zero(bits));
+					bits &= bits - 1;
+					seen.set(materials[(z * 64) + bit]);
+				}
+			}
+		}
+		seen.reset(0);
+		return seen;
+	};
+
+	std::vector<std::pair<glm::ivec3, std::bitset<256>>> bricks;
+	for (uint32_t index = 0; index < owner.brickCount(); ++index) {
+		const glm::ivec3 brick = owner.brickAtIndex(index);
+		if (owner.entryAt(brick).tag() == voxel::BrickTag::empty) {
+			continue;
+		}
+		const std::bitset<256> seen = owners_in(brick);
+		for (size_t id = 1; id <= keys.size(); ++id) {
+			if (seen.test(id)) {
+				Extent& extent = extents[id - 1];
+				extent.min = glm::min(extent.min, brick);
+				extent.max = glm::max(extent.max, brick);
+				extent.any = true;
+			}
+		}
+		bricks.emplace_back(brick, seen);
+	}
+
+	std::vector<Part> parts;
+	std::vector<int> part_of(keys.size(), -1);
+	for (size_t id = 1; id <= keys.size(); ++id) {
+		const Extent& extent = extents[id - 1];
+		if (!extent.any) {
+			continue;
+		}
+		Part part;
+		part.key = keys[id - 1];
+		part.origin = origin + (extent.min * static_cast<int32_t>(voxel::k_brick_dim));
+		part.volume = std::make_unique<voxel::Volume>(voxel::proceduralBrickPool(), glm::uvec3(extent.max - extent.min + 1));
+		part_of[id - 1] = static_cast<int>(parts.size());
+		parts.push_back(std::move(part));
+	}
+
+	for (const auto& [brick, seen] : bricks) {
+		if (seen.count() == 1) {
+			// Whole brick moves
+			size_t id = 1;
+			while (!seen.test(id)) {
+				++id;
+			}
+			if (id <= keys.size()) {
+				const Extent& extent = extents[id - 1];
+				parts[static_cast<size_t>(part_of[id - 1])].volume->copyBrickFrom(brick - extent.min, shape, brick);
+			}
+			continue;
+		}
+		visitSolid(owner, brick, [&](glm::ivec3 cell, uint8_t id) {
+			if (id == 0 || id > keys.size()) {
+				return;
+			}
+			const Extent& extent = extents[id - 1];
+			const voxel::Volume::VoxelWrite write = parts[static_cast<size_t>(part_of[id - 1])].volume->setVoxel(
+			    cell - (extent.min * static_cast<int32_t>(voxel::k_brick_dim)), shape.materialAt(cell)
+			);
+			pool_exhausted = pool_exhausted || !write.changed;
+		});
+	}
+
+	if (highlight != nullptr) {
+		for (uint32_t index = 0; index < highlight->brickCount(); ++index) {
+			visitSolid(*highlight, highlight->brickAtIndex(index), [&](glm::ivec3 cell, uint8_t tint) {
+				const uint8_t id = owner.materialAt(cell);
+				if (id == 0 || id > keys.size() || part_of[id - 1] < 0) {
+					return;
+				}
+				Part& part = parts[static_cast<size_t>(part_of[id - 1])];
+				if (part.highlight == nullptr) {
+					part.highlight = std::make_unique<voxel::Volume>(voxel::proceduralBrickPool(), part.volume->brickDims());
+				}
+				const Extent& extent = extents[id - 1];
+				part.highlight->setVoxel(cell - (extent.min * static_cast<int32_t>(voxel::k_brick_dim)), tint);
+			});
+		}
+	}
+	return parts;
+}
+
 }
 
 void ProceduralVoxel::rebuild() {
@@ -530,6 +690,7 @@ auto ProceduralVoxel::land(const std::vector<Collected>& pieces, bool wait) -> s
 		  .kind = entry.piece->kind(),
 		  .mode = entry.piece->writeMode(),
 		  .match_id = entry.piece->matchId(),
+		  .key = partKeyOf(*entry.piece),
 		});
 	}
 	return landings;
@@ -590,33 +751,14 @@ void ProceduralVoxel::buildShape() {
 
 	std::vector<Collected> pieces;
 	collect(*this, glm::mat4(1.0f), pieces);
-	std::vector<Landing> landings = land(pieces, true);
-
-	voxel::EditBounds grows {};
-	for (const Landing& landing : landings) {
-		if (landing.kind == PieceKind::fill) {
-			grows = voxel::boundsUnion(grows, voxel::placedBounds(landing.grid->volume->brickDims(), landing.placement));
-		}
-	}
-
-	voxel::Volume* target = grows.empty() ? volume() : ensureContains(grows);
-	m_layout = layoutOf(landings);
-	if (target != nullptr) {
-		for (const Landing& landing : landings) {
-			commitEdit(apply(*target, landing, voxelOrigin()), "build");
-		}
-
-		// Buckets paint the finished shape so they never depend on the order of the pieces
-		std::vector<BucketFill> buckets;
-		collectBuckets(*this, glm::mat4(1.0f), buckets);
-		for (const BucketFill& fill : buckets) {
-			commitEdit(voxel::floodFill(*target, toIndex(fill.seed), fill.bucket->colorId()), "bucket");
-		}
-	}
+	const std::shared_ptr<ComposeInput> input = makeComposeInput(pieces, true);
+	m_pending_layout = layoutOf(input->landings);
+	const std::shared_ptr<ComposeOutput> output = compose(*input);
+	applyComposed(*output);
 
 	// In game the shape is only built once and destruction owns it after that
 	if (!m_keep_grids) {
-		for (const Landing& landing : landings) {
+		for (const Landing& landing : input->landings) {
 			landing.piece->releaseGrid();
 		}
 	}
@@ -668,13 +810,30 @@ void ProceduralVoxel::tickAsyncBuild() {
 	}
 }
 
+auto ProceduralVoxel::makeComposeInput(const std::vector<Collected>& pieces, bool wait) -> std::shared_ptr<ComposeInput> {
+	auto input = std::make_shared<ComposeInput>();
+	input->landings = land(pieces, wait);
+
+	std::vector<BucketFill> buckets;
+	collectBuckets(*this, glm::mat4(1.0f), buckets);
+	for (const BucketFill& fill : buckets) {
+		input->buckets.emplace_back(fill.seed, fill.bucket->colorId());
+	}
+
+	if (const assets::VoxelModel* model = resolvedModel()) {
+		if (std::optional<voxel::Volume> instance = model->instantiate(voxel::proceduralBrickPool())) {
+			input->base = std::make_unique<voxel::Volume>(std::move(*instance));
+		}
+	}
+	return input;
+}
+
 void ProceduralVoxel::launchCompose(const std::vector<Collected>& pieces) {
 	ZoneScopedN("voxel::LaunchCompose");    // NOLINT
 	m_compose_wanted = false;
 	const renderer::EditorOverlays& overlays = renderer::editorOverlays();
 
-	auto input = std::make_shared<ComposeInput>();
-	input->landings = land(pieces, false);
+	std::shared_ptr<ComposeInput> input = makeComposeInput(pieces, false);
 	m_pending_layout = layoutOf(input->landings);
 
 	// The selected piece gets tinted where it still shows
@@ -686,12 +845,6 @@ void ProceduralVoxel::launchCompose(const std::vector<Collected>& pieces) {
 		}
 	}
 
-	std::vector<BucketFill> buckets;
-	collectBuckets(*this, glm::mat4(1.0f), buckets);
-	for (const BucketFill& fill : buckets) {
-		input->buckets.emplace_back(fill.seed, fill.bucket->colorId());
-	}
-
 	// The preview draws with the script the new volume will get
 	if (VoxelPiece* tool = toolPiece()) {
 		if (VoxelPiece::GridRef grid = tool->readyGrid()) {
@@ -701,12 +854,6 @@ void ProceduralVoxel::launchCompose(const std::vector<Collected>& pieces) {
 			  .box = {glm::min(overlays.tool_box_min, overlays.tool_box_max), glm::max(overlays.tool_box_min, overlays.tool_box_max)},
 			  .mode = tool->writeMode(),
 			};
-		}
-	}
-
-	if (const assets::VoxelModel* model = resolvedModel()) {
-		if (std::optional<voxel::Volume> instance = model->instantiate(voxel::proceduralBrickPool())) {
-			input->base = std::make_unique<voxel::Volume>(std::move(*instance));
 		}
 	}
 
@@ -741,61 +888,119 @@ auto ProceduralVoxel::compose(const ComposeInput& input) -> std::shared_ptr<Comp
 
 	const glm::ivec3 first = brickFloor(grows.min);
 	const glm::ivec3 last = brickFloor(grows.max);
-	out->origin = first * static_cast<int32_t>(voxel::k_brick_dim);
-	out->volume = std::make_unique<voxel::Volume>(voxel::proceduralBrickPool(), glm::uvec3(last - first + 1));
-	voxel::Volume& target = *out->volume;
+	const glm::ivec3 origin = first * static_cast<int32_t>(voxel::k_brick_dim);
+	voxel::Volume target(voxel::proceduralBrickPool(), glm::uvec3(last - first + 1));
+
+	// Which piece every voxel belongs to
+	voxel::Volume owner(voxel::proceduralBrickPool(), target.brickDims());
+	std::vector<uint64_t> owner_keys;
+	const auto claim = [&](uint64_t key) -> uint8_t {
+		if (owner_keys.size() >= 255) {
+			out->too_many_parts = true;
+			return 255;
+		}
+		owner_keys.push_back(key);
+		return static_cast<uint8_t>(owner_keys.size());
+	};
+	// Where the piece draws
+	const auto claim_table = [](const voxel::PaletteRemapTable& remap, uint8_t id) {
+		voxel::PaletteRemapTable table {};
+		for (uint32_t i = 1; i < voxel::k_palette_size; ++i) {
+			table[i] = remap[i] != voxel::k_empty_palette_index ? id : voxel::k_empty_palette_index;
+		}
+		return table;
+	};
+	// Painting only recolors so its not a volume
+	const auto claim_mode = [](voxel::WriteMode mode, uint8_t match_id) -> std::optional<voxel::WriteMode> {
+		switch (mode) {
+			case voxel::WriteMode::replace: return voxel::WriteMode::replace;
+			case voxel::WriteMode::empty_only: return voxel::WriteMode::empty_only;
+			case voxel::WriteMode::match:
+				return match_id == voxel::k_empty_palette_index ? std::optional {voxel::WriteMode::empty_only} : std::nullopt;
+			case voxel::WriteMode::solid_only: return std::nullopt;
+		}
+		return std::nullopt;
+	};
 
 	voxel::EditResult result;
 	if (input.base != nullptr) {
-		const voxel::LatticePlacement at_zero {.offset = -out->origin};
+		const voxel::LatticePlacement at_zero {.offset = -origin};
 		result += voxel::stampVolume(target, *input.base, at_zero, voxel::identityRemap(), voxel::WriteMode::replace, 0);
+		const uint8_t id = claim(0);
+		result +=
+		    voxel::stampVolume(owner, *input.base, at_zero, claim_table(voxel::identityRemap(), id), voxel::WriteMode::replace, 0);
 	}
 	for (const Landing& landing : input.landings) {
-		result += apply(target, landing, out->origin);
+		result += apply(target, landing, origin);
+
+		voxel::LatticePlacement indexed = landing.placement;
+		indexed.offset -= origin;
+		const voxel::Volume& grid = *landing.grid->volume;
+		switch (landing.kind) {
+			case PieceKind::fill: {
+				const uint8_t id = claim(landing.key);
+				if (const std::optional<voxel::WriteMode> mode = claim_mode(landing.mode, landing.match_id)) {
+					result += voxel::stampVolume(owner, grid, indexed, claim_table(landing.remap, id), *mode, 0);
+				}
+				break;
+			}
+			case PieceKind::carve: result += voxel::carveVolume(owner, grid, indexed); break;
+			case PieceKind::paint: break;
+		}
 	}
 
 	for (const auto& [seed, id] : input.buckets) {
-		result += voxel::floodFill(target, seed - out->origin, id);
+		result += voxel::floodFill(target, seed - origin, id);
 	}
 
 	if (input.preview.has_value()) {
 		const voxel::Volume& grid = *input.preview->grid->volume;
-		const voxel::LatticePlacement placement {.offset = input.preview->box.min - out->origin};
+		const voxel::LatticePlacement placement {.offset = input.preview->box.min - origin};
 		switch (input.preview->kind) {
-			case 0: result += voxel::stampVolume(target, grid, placement, voxel::identityRemap(), input.preview->mode, 0); break;
-			case 1: result += voxel::carveVolume(target, grid, placement); break;
+			case 0: {
+				result += voxel::stampVolume(target, grid, placement, voxel::identityRemap(), input.preview->mode, 0);
+				const uint8_t id = claim(k_preview_key);
+				if (const std::optional<voxel::WriteMode> mode = claim_mode(input.preview->mode, 0)) {
+					result += voxel::stampVolume(owner, grid, placement, claim_table(voxel::identityRemap(), id), *mode, 0);
+				}
+				break;
+			}
+			case 1:
+				result += voxel::carveVolume(target, grid, placement);
+				result += voxel::carveVolume(owner, grid, placement);
+				break;
 			default:
 				result += voxel::stampVolume(target, grid, placement, voxel::identityRemap(), voxel::WriteMode::solid_only, 0);
 				break;
 		}
 	}
 
+	std::unique_ptr<voxel::Volume> highlight;
 	if (input.highlight.has_value()) {
 		ZoneScopedN("voxel::ProceduralHighlight");    // NOLINT
 		const Landing& selected = input.landings[*input.highlight];
-		out->highlight = std::make_unique<voxel::Volume>(voxel::proceduralBrickPool(), target.brickDims());
-		voxel::Volume& highlight = *out->highlight;
+		highlight = std::make_unique<voxel::Volume>(voxel::proceduralBrickPool(), target.brickDims());
 		voxel::LatticePlacement indexed = selected.placement;
-		indexed.offset -= out->origin;
-		voxel::stampVolume(highlight, *selected.grid->volume, indexed, voxel::identityRemap(), voxel::WriteMode::replace, 0);
+		indexed.offset -= origin;
+		voxel::stampVolume(*highlight, *selected.grid->volume, indexed, voxel::identityRemap(), voxel::WriteMode::replace, 0);
 
 		// Only where the finished shape still has voxels
-		for (uint32_t index = 0; index < highlight.brickCount(); ++index) {
-			const glm::ivec3 brick = highlight.brickAtIndex(index);
-			const voxel::BrickOccupancy* mine = highlight.occupancyPointer(brick);
+		for (uint32_t index = 0; index < highlight->brickCount(); ++index) {
+			const glm::ivec3 brick = highlight->brickAtIndex(index);
+			const voxel::BrickOccupancy* mine = highlight->occupancyPointer(brick);
 			if (mine == nullptr) {
 				continue;
 			}
 			const voxel::BrickOccupancy* shown = target.occupancyPointer(brick);
 			if (shown == nullptr) {
-				highlight.setBrickUniform(brick, voxel::k_empty_palette_index);
+				highlight->setBrickUniform(brick, voxel::k_empty_palette_index);
 				continue;
 			}
 			const voxel::BrickOccupancy hidden = *mine & ~*shown;
 			if (voxel::isEmpty(hidden)) {
 				continue;
 			}
-			const std::optional<voxel::Volume::WritableBrick> write = highlight.beginBrickWrite(brick);
+			const std::optional<voxel::Volume::WritableBrick> write = highlight->beginBrickWrite(brick);
 			if (!write.has_value()) {
 				continue;
 			}
@@ -808,15 +1013,39 @@ auto ProceduralVoxel::compose(const ComposeInput& input) -> std::shared_ptr<Comp
 				}
 				(*write->occupancy)[z] &= ~hidden[z];
 			}
-			highlight.finishBrickWrite(brick, true);
+			highlight->finishBrickWrite(brick, true);
 		}
 	}
 
 	if (input.projections) {
-		projectShape(target, out->origin, input.palette, out->projections);
+		projectShape(target, origin, input.palette, out->projections);
 	}
-	out->pool_exhausted = result.pool_exhausted;
+
+	bool split_exhausted = false;
+	out->parts = splitByOwner<ComposeOutput::Part>(target, owner, highlight.get(), origin, owner_keys, split_exhausted);
+	out->pool_exhausted = result.pool_exhausted || split_exhausted;
 	return out;
+}
+
+auto ProceduralVoxel::growPart(VoxelPart& part, const voxel::EditBounds& bounds) -> bool {
+	constexpr int32_t k_max_bricks_per_axis = 512;
+	constexpr int64_t k_max_bricks = int64_t {1} << 21;
+
+	const glm::ivec3 first = brickFloor(bounds.min);
+	const glm::ivec3 dims = brickFloor(bounds.max) - first + 1;
+	if (glm::any(glm::greaterThan(dims, glm::ivec3(k_max_bricks_per_axis))) ||
+	    static_cast<int64_t>(dims.x) * dims.y * dims.z > k_max_bricks) {
+		return false;
+	}
+
+	// Physics keeps reading the old volume until it builds the new one
+	if (part.volume != nullptr && part.body != physics::BodyID {}) {
+		part.retired.push_back(std::move(part.volume));
+	}
+	part.volume = std::make_unique<voxel::Volume>(voxel::runtimeBrickPool(), glm::uvec3(dims));
+	part.origin = first * static_cast<int32_t>(voxel::k_brick_dim);
+	++part.revision;
+	return true;
 }
 
 void ProceduralVoxel::applyComposed(ComposeOutput& output) {
@@ -829,101 +1058,151 @@ void ProceduralVoxel::applyComposed(ComposeOutput& output) {
 		    voxel::k_procedural_brick_capacity
 		);
 	}
+	if (output.too_many_parts) {
+		TOAST_WARN("Voxel", "'{}' has more than 255 solid pieces, the last ones share one body", name());
+	}
 	renderer::VulkanRenderer* renderer = renderer::VulkanRenderer::instance;
+	constexpr auto k_dim = static_cast<int32_t>(voxel::k_brick_dim);
 
-	voxel::Volume* target = nullptr;
+	bool parts_changed = false;
 	{
 		std::scoped_lock lock(voxel::runtimePoolMutex());
-		target = volume();
-		if (output.volume != nullptr) {
-			const glm::ivec3 wanted_min = output.origin;
-			const glm::ivec3 wanted_max = output.origin + glm::ivec3(output.volume->voxelDims()) - 1;
-			const auto fits = [&](const voxel::Volume* current) {
-				return current != nullptr && glm::all(glm::greaterThanEqual(wanted_min, voxelOrigin())) &&
-				       glm::all(glm::lessThan(wanted_max, voxelOrigin() + glm::ivec3(current->voxelDims())));
-			};
-			if (!fits(target)) {
-				// Growing makes a new volume the renderer uploads whole
-				const glm::ivec3 slack =
-				    participatesIn(NodeOwnerParticipation::gameplay_tick)
-				        ? glm::ivec3(0)
-				        : glm::max(glm::ivec3(2 * static_cast<int32_t>(voxel::k_brick_dim)), (wanted_max - wanted_min + 1) / 4);
-				voxel::Volume* grown = replaceVolume({wanted_min - slack, wanted_max + slack});
-				if (grown == nullptr) {
-					grown = replaceVolume({wanted_min, wanted_max});
-				}
-				if (grown != nullptr) {
-					target = grown;
-				} else {
-					TOAST_WARN("Voxel", "'{}' is too big for one volume, it is clipped to the current one", name());
-				}
+
+		for (size_t i = m_parts.size(); i-- > 0;) {
+			VoxelPart& part = m_parts[i];
+			if (std::ranges::any_of(output.parts, [&](const ComposeOutput::Part& incoming) { return incoming.key == part.key; })) {
+				continue;
 			}
+			if (renderer != nullptr) {
+				renderer->setVoxelHighlight(this, nullptr, part.key);
+			}
+
+			if (part.body != physics::BodyID {}) {
+				for (std::unique_ptr<voxel::Volume>& retired : part.retired) {
+					m_retired_volumes.push_back(std::move(retired));
+				}
+				m_retired_volumes.push_back(std::move(part.volume));
+			}
+			m_parts.erase(m_parts.begin() + static_cast<std::ptrdiff_t>(i));
+			parts_changed = true;
 		}
 
-		if (target != nullptr) {
-			if (m_highlight != nullptr && m_highlight->brickDims() != target->brickDims()) {
-				if (renderer != nullptr) {
-					renderer->setVoxelHighlight(this, nullptr);
-				}
-				m_highlight.reset();
+		for (ComposeOutput::Part& incoming : output.parts) {
+			auto found = std::ranges::find(m_parts, incoming.key, &VoxelPart::key);
+			if (found == m_parts.end()) {
+				m_parts.emplace_back();
+				m_parts.back().key = incoming.key;
+				found = m_parts.end() - 1;
+				parts_changed = true;
 			}
-			if (m_highlight == nullptr && output.highlight != nullptr) {
-				m_highlight = std::make_unique<voxel::Volume>(voxel::runtimeBrickPool(), target->brickDims());
+			VoxelPart& part = *found;
+
+			const voxel::Volume& source = *incoming.volume;
+			const glm::ivec3 wanted_min = incoming.origin;
+			const glm::ivec3 wanted_max = incoming.origin + glm::ivec3(source.voxelDims()) - 1;
+			const bool fits = part.volume != nullptr && glm::all(glm::greaterThanEqual(wanted_min, part.origin)) &&
+			                  glm::all(glm::lessThan(wanted_max, part.origin + glm::ivec3(part.volume->voxelDims())));
+			if (!fits) {
+				// Growing makes a new volume the renderer uploads whole
+				const glm::ivec3 slack = participatesIn(NodeOwnerParticipation::gameplay_tick)
+				                             ? glm::ivec3(0)
+				                             : glm::max(glm::ivec3(2 * k_dim), (wanted_max - wanted_min + 1) / 4);
+				bool grown = growPart(part, {wanted_min - slack, wanted_max + slack});
+				if (!grown) {
+					grown = growPart(part, {wanted_min, wanted_max});
+				}
+				if (!grown && part.volume == nullptr) {
+					TOAST_WARN("Voxel", "'{}' has a piece that is too big for one volume, it is left out", name());
+					m_parts.erase(found);
+					continue;
+				}
+				if (!grown) {
+					TOAST_WARN("Voxel", "'{}' has a piece that is too big for one volume, it is clipped to the current one", name());
+				}
 			}
 
 			// Both origins sit on bricks
-			const glm::ivec3 shift = (voxelOrigin() - output.origin) / static_cast<int32_t>(voxel::k_brick_dim);
+			const glm::ivec3 shift = (part.origin - incoming.origin) / k_dim;
 			bool changed = false;
-			for (uint32_t index = 0; index < target->brickCount(); ++index) {
-				const glm::ivec3 brick = target->brickAtIndex(index);
-				const glm::ivec3 source = brick + shift;
-				const bool inside = output.volume != nullptr && output.volume->containsBrick(source);
-				if (inside) {
-					changed = target->copyBrickFrom(brick, *output.volume, source) || changed;
-				} else if (target->entryAt(brick).tag() != voxel::BrickTag::empty) {
-					target->setBrickUniform(brick, voxel::k_empty_palette_index);
+			for (uint32_t index = 0; index < part.volume->brickCount(); ++index) {
+				const glm::ivec3 brick = part.volume->brickAtIndex(index);
+				const glm::ivec3 from = brick + shift;
+				if (source.containsBrick(from)) {
+					changed = part.volume->copyBrickFrom(brick, source, from) || changed;
+				} else if (part.volume->entryAt(brick).tag() != voxel::BrickTag::empty) {
+					part.volume->setBrickUniform(brick, voxel::k_empty_palette_index);
 					changed = true;
-				}
-				if (m_highlight != nullptr) {
-					if (inside && output.highlight != nullptr) {
-						m_highlight->copyBrickFrom(brick, *output.highlight, source);
-					} else if (m_highlight->entryAt(brick).tag() != voxel::BrickTag::empty) {
-						m_highlight->setBrickUniform(brick, voxel::k_empty_palette_index);
-					}
 				}
 			}
 			if (changed) {
-				++m_revision;
-				m_split_pending = true;
+				++part.revision;
+				part.split_pending = true;
 			}
-		} else if (m_highlight != nullptr) {
-			if (renderer != nullptr) {
-				renderer->setVoxelHighlight(this, nullptr);
+
+			// The tint has the same bricks as the volume
+			if (part.highlight != nullptr &&
+			    (incoming.highlight == nullptr || part.highlight->brickDims() != part.volume->brickDims())) {
+				if (renderer != nullptr) {
+					renderer->setVoxelHighlight(this, nullptr, part.key);
+				}
+				part.highlight.reset();
 			}
-			m_highlight.reset();
+			if (incoming.highlight != nullptr) {
+				if (part.highlight == nullptr) {
+					part.highlight = std::make_unique<voxel::Volume>(voxel::runtimeBrickPool(), part.volume->brickDims());
+				}
+				for (uint32_t index = 0; index < part.highlight->brickCount(); ++index) {
+					const glm::ivec3 brick = part.highlight->brickAtIndex(index);
+					const glm::ivec3 from = brick + shift;
+					if (incoming.highlight->containsBrick(from)) {
+						part.highlight->copyBrickFrom(brick, *incoming.highlight, from);
+					} else if (part.highlight->entryAt(brick).tag() != voxel::BrickTag::empty) {
+						part.highlight->setBrickUniform(brick, voxel::k_empty_palette_index);
+					}
+				}
+				if (renderer != nullptr) {
+					renderer->setVoxelHighlight(this, part.highlight.get(), part.key);
+				}
+			}
+		}
+
+		if (parts_changed) {
+			++m_parts_revision;
 		}
 	}
-	if (renderer != nullptr && m_highlight != nullptr) {
-		renderer->setVoxelHighlight(this, m_highlight.get());
-	}
 
-	// Only the projections are kept for the layout
 	// The bricks go back to the pool
-	output.volume.reset();
-	output.highlight.reset();
+	output.parts.clear();
 	m_layout = std::move(m_pending_layout);
 	m_pending_layout.clear();
+
+	// Bodies exist per part
+	// We need to build them agains
+	if (parts_changed) {
+		reregisterPhysics();
+	}
+}
+
+auto ProceduralVoxel::bakeParts() -> std::vector<BakedPart> {
+	std::vector<Collected> pieces;
+	collect(*this, glm::mat4(1.0f), pieces);
+	const std::shared_ptr<ComposeInput> input = makeComposeInput(pieces, true);
+	const std::shared_ptr<ComposeOutput> output = compose(*input);
+
+	std::vector<BakedPart> out;
+	out.reserve(output->parts.size());
+	for (ComposeOutput::Part& part : output->parts) {
+		out.push_back({.key = part.key, .origin = part.origin, .volume = std::move(part.volume)});
+	}
+	return out;
 }
 
 auto ProceduralVoxel::pickPiece(glm::vec3 origin, glm::vec3 direction) -> VoxelPiece* {
 	VoxelPiece* best = nullptr;
 	float best_t = 1e6f;
-	if (const voxel::Volume* shape = volume()) {
-		if (const std::optional<voxel::VolumeHit> hit =
-		        voxel::raycast(*shape, origin - glm::vec3(voxelOrigin()), direction, best_t)) {
-			best_t = hit->t;
-			best = pieceAt(hit->voxel + voxelOrigin());
-		}
+	if (const std::optional<voxel::VolumeHit> hit = raycastVoxels(origin, direction, best_t)) {
+		best_t = hit->t;
+		best = pieceAt(hit->voxel);
 	}
 
 	for (const PieceLayout& layout : m_layout) {
@@ -995,9 +1274,8 @@ auto ProceduralVoxel::pieceAt(glm::ivec3 voxel) -> VoxelPiece* {
 
 void ProceduralVoxel::end() {
 	if (renderer::VulkanRenderer::instance != nullptr) {
-		renderer::VulkanRenderer::instance->setVoxelHighlight(this, nullptr);
+		renderer::VulkanRenderer::instance->clearVoxelHighlights(this);
 	}
-	m_highlight.reset();
 	m_highlight_for = {};
 	// The compose only reads its own snapshot so it is left to finish on its own
 	m_compose_job = {};
