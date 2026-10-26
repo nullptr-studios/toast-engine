@@ -403,7 +403,7 @@ static void updateProfilerSections(EnginePimpl& pimpl) {
 	pimpl.profiler_sections.update(mode, world);
 }
 
-static void assertOnTickThread([[maybe_unused]] const std::atomic<size_t>& tick_thread, [[maybe_unused]] std::string_view what) {
+static void assertOnTickThread(const std::atomic<size_t>& tick_thread, std::string_view what) {
 	TOAST_ASSERT(
 	    tick_thread.load() == 0 || tick_thread.load() == std::hash<std::thread::id> {}(std::this_thread::get_id()),
 	    "Engine",

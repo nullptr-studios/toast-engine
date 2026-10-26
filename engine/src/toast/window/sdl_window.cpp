@@ -58,7 +58,8 @@ namespace toast {
 
 SDLWindow::SDLWindow(const char* title, unsigned width, unsigned height, uint64_t flags) {
 	ZoneScoped;
-	TOAST_ASSERT(SDL_Init(SDL_INIT_VIDEO) == true, "Window", "SDL cannot be initialized");
+	const bool sdl_initialized = SDL_Init(SDL_INIT_VIDEO);
+	TOAST_ASSERT(sdl_initialized, "Window", "SDL cannot be initialized");
 
 	if ((flags & SDL_WINDOW_VULKAN) != 0) {
 		const char* video_driver = SDL_GetCurrentVideoDriver();
