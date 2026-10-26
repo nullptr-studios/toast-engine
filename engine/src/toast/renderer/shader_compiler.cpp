@@ -203,7 +203,7 @@ void logDiagnostics(const Slang::ComPtr<slang::IBlob>& diagnostics, std::string_
 	if (diag_ptr && diag_size > 0) {
 		const char* diag_c = reinterpret_cast<const char*>(diag_ptr);
 		const std::string diag_str(diag_c, diag_c + diag_size);
-		TOAST_MESSAGE(logging::Severity::Error, "Render", std::format("Slang diagnostics for '{}'", source_name), diag_str);
+		TOAST_MESSAGE(logging::Severity::error, "Render", std::format("Slang diagnostics for '{}'", source_name), diag_str);
 	}
 }
 

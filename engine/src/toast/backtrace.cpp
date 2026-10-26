@@ -89,7 +89,7 @@ auto resolveLine(std::uintptr_t address) -> std::string {
 	if (module.path.empty()) {
 		return std::format("{:#x}", address);
 	}
-	const std::string module_location = std::format("{}+{:#x}", _detail::getOnlyName(module.path), address - module.base);
+	std::string module_location = std::format("{}+{:#x}", _detail::getOnlyName(module.path), address - module.base);
 
 	cpptrace::stacktrace_frame frame = resolveFrame(address);
 #ifdef _WIN32

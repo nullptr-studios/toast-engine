@@ -11,7 +11,7 @@
 #include <windows.h>
 #else
 #include <cerrno>
-#include <time.h>
+#include <ctime>
 #include <unistd.h>
 #ifdef __linux__
 #include <fcntl.h>
@@ -121,7 +121,7 @@ auto queryDebugger() noexcept -> bool {
 }
 }
 
-bool _detail::debuggerAttached() noexcept {
+auto _detail::debuggerAttached() noexcept -> bool {
 	if (breakingDisabled()) {
 		return false;
 	}

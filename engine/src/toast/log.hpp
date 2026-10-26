@@ -36,17 +36,17 @@ TOAST_API void
 		    std::string_view details);
 
 /// true while a debugger is attached
-TOAST_API bool debuggerAttached() noexcept;
+TOAST_API auto debuggerAttached() noexcept -> bool;
 }
 
 namespace logging {
 /// same values as the proto severity
 enum class Severity : uint8_t {
-	Trace = 0,
-	Info = 1,
-	Warning = 2,
-	Error = 3,
-	Critical = 4,
+	trace = 0,
+	info = 1,
+	warning = 2,
+	error = 3,
+	critical = 4,
 };
 
 /// first line and the rest of a text
@@ -106,10 +106,10 @@ TOAST_API void invalidateBacktraceCache() noexcept;
 		constexpr uint32_t yellow = red | green; /* i love this so much -x */                                              \
 		const std::string_view toast_log_text_ = (message);                                                                \
 		switch (severity) {                                                                                                \
-			case ::logging::Severity::Critical:                                                                              \
-			case ::logging::Severity::Error: TracyMessageC(toast_log_text_.data(), toast_log_text_.size(), red); break;      \
-			case ::logging::Severity::Warning: TracyMessageC(toast_log_text_.data(), toast_log_text_.size(), yellow); break; \
-			case ::logging::Severity::Info: TracyMessageC(toast_log_text_.data(), toast_log_text_.size(), green); break;     \
+			case ::logging::Severity::critical:                                                                              \
+			case ::logging::Severity::error: TracyMessageC(toast_log_text_.data(), toast_log_text_.size(), red); break;      \
+			case ::logging::Severity::warning: TracyMessageC(toast_log_text_.data(), toast_log_text_.size(), yellow); break; \
+			case ::logging::Severity::info: TracyMessageC(toast_log_text_.data(), toast_log_text_.size(), green); break;     \
 			default: break;                                                                                                  \
 		}                                                                                                                  \
 	} while (0)
@@ -126,7 +126,7 @@ TOAST_API void invalidateBacktraceCache() noexcept;
 		    static_cast<uint8_t>(toast_log_severity_), TOAST_FILE_NAME, __LINE__, sink, toast_log_message_, details \
 		);                                                                                                          \
 		TOAST_LOG_TRACY(toast_log_severity_, toast_log_message_);                                                   \
-		if (toast_log_severity_ >= ::logging::Severity::Error) {                                                    \
+		if (toast_log_severity_ >= ::logging::Severity::error) {                                                    \
 			TOAST_BREAK_IF_ATTACHED();                                                                                \
 		}                                                                                                           \
 	} while (0)
@@ -148,7 +148,7 @@ TOAST_API void invalidateBacktraceCache() noexcept;
 	do {                                                               \
 		const ::logging::Severity toast_message_severity_ = (severity);  \
 		TOAST_LOG_CORE(toast_message_severity_, sink, message, details); \
-		if (toast_message_severity_ == ::logging::Severity::Critical) {  \
+		if (toast_message_severity_ == ::logging::Severity::critical) {  \
 			std::abort();                                                  \
 		}                                                                \
 	} while (0)
@@ -167,7 +167,7 @@ TOAST_API void invalidateBacktraceCache() noexcept;
  * If you will stop caring about this log as soon as you finish working on your task, then
  * it is a trace
  */
-#define TOAST_TRACE(sink, ...) TOAST_LOG_IMPL(::logging::Severity::Trace, sink, __VA_ARGS__)
+#define TOAST_TRACE(sink, ...) TOAST_LOG_IMPL(::logging::Severity::trace, sink, __VA_ARGS__)
 
 /**
  * @brief logs an information message
@@ -179,7 +179,7 @@ TOAST_API void invalidateBacktraceCache() noexcept;
  * if you are not sure if your message is important enough, then it's probably
  * not an info log
  */
-#define TOAST_INFO(sink, ...) TOAST_LOG_IMPL(::logging::Severity::Info, sink, __VA_ARGS__)
+#define TOAST_INFO(sink, ...) TOAST_LOG_IMPL(::logging::Severity::info, sink, __VA_ARGS__)
 
 /**
  * @param sink class logging the message
@@ -190,7 +190,7 @@ TOAST_API void invalidateBacktraceCache() noexcept;
  * It can potentially lead to bugs and errors so a warning shouldn't be
  * ignored
  */
-#define TOAST_WARN(sink, ...) TOAST_LOG_IMPL(::logging::Severity::Warning, sink, __VA_ARGS__)
+#define TOAST_WARN(sink, ...) TOAST_LOG_IMPL(::logging::Severity::warning, sink, __VA_ARGS__)
 
 /**
  * @param sink class logging the message
@@ -200,7 +200,7 @@ TOAST_API void invalidateBacktraceCache() noexcept;
  * The engine will be considered as an undefined behaviour from the moment
  * an error happens since an "unrecoverable-in-runtime" problem has ocurred
  */
-#define TOAST_ERROR(sink, ...) TOAST_LOG_IMPL(::logging::Severity::Error, sink, __VA_ARGS__)
+#define TOAST_ERROR(sink, ...) TOAST_LOG_IMPL(::logging::Severity::error, sink, __VA_ARGS__)
 
 /**
  * @param sink class logging the message
@@ -211,7 +211,7 @@ TOAST_API void invalidateBacktraceCache() noexcept;
  */
 #define TOAST_CRITICAL(sink, ...)                                     \
 	do {                                                                \
-		TOAST_LOG_IMPL(::logging::Severity::Critical, sink, __VA_ARGS__); \
+		TOAST_LOG_IMPL(::logging::Severity::critical, sink, __VA_ARGS__); \
 		std::abort();                                                     \
 	} while (0)
 

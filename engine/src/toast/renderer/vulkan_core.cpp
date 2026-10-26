@@ -171,12 +171,12 @@ auto debugCallback(
 	}
 
 	const char* message = (p_callback_data != nullptr && p_callback_data->pMessage != nullptr) ? p_callback_data->pMessage : "";
-	logging::Severity severity = logging::Severity::Trace;
+	logging::Severity severity = logging::Severity::trace;
 	switch (message_severity) {
-		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT: severity = logging::Severity::Trace; break;
-		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT: severity = logging::Severity::Info; break;
-		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT: severity = logging::Severity::Warning; break;
-		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT: severity = logging::Severity::Error; break;
+		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT: severity = logging::Severity::trace; break;
+		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT: severity = logging::Severity::info; break;
+		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT: severity = logging::Severity::warning; break;
+		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT: severity = logging::Severity::error; break;
 		default: return VK_FALSE;
 	}
 
@@ -521,11 +521,11 @@ void VulkanCore::pickPhysicalDevice(std::span<const char* const> required_device
 			TOAST_TRACE("Render", "    Queue family {} | flags:{}", i, formatQueueFlags(queues[i].queueFlags));
 		}
 		TOAST_MESSAGE(
-		    logging::Severity::Trace, "Render", std::format("  Device extensions ({})", extensions.size()), joinExtensions(extensions)
+		    logging::Severity::trace, "Render", std::format("  Device extensions ({})", extensions.size()), joinExtensions(extensions)
 		);
 
 		TOAST_MESSAGE(
-		    logging::Severity::Trace, "Render", std::format("  Device score: {}", device_score.total), device_score.toString()
+		    logging::Severity::trace, "Render", std::format("  Device score: {}", device_score.total), device_score.toString()
 		);
 
 		if (!device_score.missing_extensions.empty()) {
