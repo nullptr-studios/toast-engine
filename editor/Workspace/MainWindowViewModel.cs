@@ -465,7 +465,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		}
 
 		var lockTask = takeLock
-			? TrackLockAsync(ProjectContext.Resolve(virtualPath), popup)
+			? GitLockGuard.AcquireOnOpenAsync(ProjectContext.Resolve(virtualPath))
 			: Task.FromResult(default(OpenLockState));
 
 		try {
@@ -491,12 +491,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 				await opened.SaveAs();
 				break;
 		}
-	}
-
-	private static async Task<OpenLockState> TrackLockAsync(string realPath, LoadingPopup? popup) {
-		var state = await GitLockGuard.AcquireOnOpenAsync(realPath);
-		popup?.SetLock(state);
-		return state;
 	}
 
 	private async Task WaitForEngineAsync(WorkspaceViewModel ws) {

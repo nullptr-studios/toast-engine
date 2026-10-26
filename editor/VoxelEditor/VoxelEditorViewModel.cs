@@ -49,7 +49,8 @@ public partial class VoxelEditorViewModel : ObservableObject, IDisposable {
 	// Snapping in the VoxelEditor is always one voxel and a right angle
 	public const double VoxelSize = 0.1;
 	public const double RightAngle = 90.0;
-	public const double UnitSize = VoxelSize * 10;
+	public const int UnitVoxels = 10;
+	public const double UnitSize = VoxelSize * UnitVoxels;
 	public const string DrawBoxScript = "core://voxel_scripts/draw_box.lua";
 
 	private static ulong s_nextTransaction = 1 << 20;

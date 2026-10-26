@@ -1169,7 +1169,12 @@ void Workspace::gizmoApplySizeDrag(float delta) {
 	// Volumes grow a whole voxel at a time and the negative faces move the corner
 	if (auto volume = m_focused_node.as<VoxelVolume>(); volume.exists()) {
 		const int32_t start = static_cast<int32_t>(m_gizmo_drag_start_size[axis]);
-		const int32_t next = std::max(start + static_cast<int32_t>(std::lround(delta * sign / voxel::k_voxel_size)), 1);
+		int32_t step = 1;
+		if (m_translate_snap.enabled && m_translate_snap.value > 0.0001f) {
+			step = std::max<int32_t>(1, static_cast<int32_t>(std::lround(m_translate_snap.value / voxel::k_voxel_size)));
+		}
+		const auto grown = static_cast<int32_t>(std::lround(delta * sign / (voxel::k_voxel_size * static_cast<float>(step)))) * step;
+		const int32_t next = std::max(start + grown, 1);
 		glm::ivec3 size = volume->sizeVoxels();
 		size[axis] = next;
 		volume->setSizeVoxels(size);

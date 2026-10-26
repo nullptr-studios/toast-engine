@@ -218,6 +218,15 @@ auto Workspace::voxelToolShape() -> ProceduralVoxel* {
 auto Workspace::VoxelToolState::box() const -> std::pair<glm::ivec3, glm::ivec3> {
 	glm::ivec3 min = glm::min(anchor, current);
 	glm::ivec3 max = glm::max(anchor, current);
+	if (snap_plane > 1) {
+		for (int a = 0; a < 3; ++a) {
+			if (a == axis) {
+				continue;
+			}
+			min[a] = static_cast<int32_t>(std::floor(static_cast<double>(min[a]) / snap_plane)) * snap_plane;
+			max[a] = (static_cast<int32_t>(std::floor(static_cast<double>(max[a]) / snap_plane)) + 1) * snap_plane - 1;
+		}
+	}
 	const int32_t first = depth > 0 ? surface + sign : surface;
 	const int32_t last = depth > 0 ? first + (sign * (depth - 1)) : first - (sign * (-depth - 1));
 	min[axis] = std::min(first, last);
@@ -256,6 +265,15 @@ auto Workspace::voxelWrapInGroup(Box<Node> node, std::string_view name) -> Box<N
 }
 
 namespace {
+
+template<typename S>
+[[nodiscard]]
+auto voxelSnapStep(const S& snap) -> int32_t {
+	if (!snap.enabled || snap.value <= 0.0001f) {
+		return 1;
+	}
+	return std::max<int32_t>(1, static_cast<int32_t>(std::lround(snap.value / voxel::k_voxel_size)));
+}
 
 struct BoxEntry {
 	glm::vec3 point;
@@ -369,6 +387,8 @@ void Workspace::voxelToolMouseMove() {
 		}
 
 		tool.phase = VoxelToolState::Phase::face;
+		tool.snap_plane = 1;
+		tool.snap_depth = voxelSnapStep(m_translate_snap);
 		tool.extrude_source = piece->uid();
 		tool.axis = entry->axis;
 		tool.sign = entry->sign;
@@ -443,14 +463,15 @@ void Workspace::voxelToolMouseMove() {
 		const float denominator = c - (b * b);
 		if (std::abs(denominator) > 1e-6f) {
 			const float along = ((b * glm::dot(local.direction, w)) - (c * glm::dot(line, w))) / denominator;
-			const auto layers = static_cast<int32_t>(std::lround(along));
+			const int32_t step = tool.snap_depth;
+			const auto layers = static_cast<int32_t>(std::lround(along / static_cast<float>(step))) * step;
 			if (tool.tool == k_tool_extrude) {
 				// Pulling out grows a new box, pushing in carves one
-				tool.depth = layers >= 0 ? std::max(1, layers) : std::min(-1, layers);
+				tool.depth = layers >= 0 ? std::max(step, layers) : std::min(-step, layers);
 			} else if (tool.tool == k_tool_buildup) {
-				tool.depth = std::max(1, layers);
+				tool.depth = std::max(step, layers);
 			} else {
-				tool.depth = std::min(-1, layers);
+				tool.depth = std::min(-step, layers);
 			}
 		}
 	}
@@ -679,8 +700,10 @@ auto Workspace::voxelToolMouseButton(uint32_t button, bool pressed, int mods) ->
 		m_voxel_tool.plane = 0.0f;
 		m_voxel_tool.anchor = *ground;
 	}
+	m_voxel_tool.snap_plane = voxelSnapStep(m_translate_snap);
+	m_voxel_tool.snap_depth = m_voxel_tool.snap_plane;
 	m_voxel_tool.current = m_voxel_tool.anchor;
-	m_voxel_tool.depth = tool == k_tool_buildup ? 1 : -1;
+	m_voxel_tool.depth = (tool == k_tool_buildup ? 1 : -1) * m_voxel_tool.snap_depth;
 	m_voxel_tool.dragging = true;
 	m_voxel_tool.phase = VoxelToolState::Phase::box;
 
