@@ -1535,7 +1535,7 @@ private:
 		missed
 	};
 	FrameSlot m_frame_slot = FrameSlot::none;
-	std::chrono::steady_clock::time_point m_tick_deadline {};
+	std::chrono::steady_clock::time_point m_tick_deadline;
 
 	struct DepthResources {
 		std::optional<vma::raii::Image> image;

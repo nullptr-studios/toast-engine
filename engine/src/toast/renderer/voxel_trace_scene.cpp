@@ -130,7 +130,7 @@ void VoxelTraceScene::writeGrid(FrameResources& frame, glm::vec3 camera_position
 
 	const float cell = std::max(cell_size, 0.25f);
 	const auto dim = static_cast<int32_t>(k_grid_dim);
-	const glm::vec3 origin = (glm::floor(camera_position / cell) - glm::vec3(static_cast<float>(dim / 2))) * cell;
+	const glm::vec3 origin = (glm::floor(camera_position / cell) - glm::vec3(static_cast<float>(dim / 2.0))) * cell;
 
 	struct Span {
 		glm::ivec3 lo;

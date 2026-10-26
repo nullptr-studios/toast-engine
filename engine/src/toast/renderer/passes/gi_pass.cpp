@@ -1064,6 +1064,7 @@ auto GiPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView s
 	                                : std::clamp(std::chrono::duration<float>(now - m_last_record).count(), 0.001f, 0.1f);
 	m_last_record = now;
 	const float history_seconds = settings.history_seconds.load(std::memory_order_relaxed);
+	// NOLINTNEXTLINE
 	const float history =
 	    settings.history_per_frame.load(std::memory_order_relaxed)
 	        ? std::clamp(settings.history_blend.load(std::memory_order_relaxed), 0.005f, 1.0f)
@@ -1100,7 +1101,7 @@ auto GiPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView s
 		data.cascades[i] = glm::uvec4(c.table_offset, c.table_size - 1, c.pool_offset, c.capacity);
 		data.deposits[i] = glm::uvec4(c.deposit_offset, c.deposit_capacity, 0u, c.directions);
 	}
-	auto& frame_allocation = m_frame_data[frame_index].getAllocation();
+	const auto& frame_allocation = m_frame_data[frame_index].getAllocation();
 	std::memcpy(frame_allocation.getInfo().pMappedData, &data, sizeof(FrameData));
 	frame_allocation.flush(0, sizeof(FrameData));
 

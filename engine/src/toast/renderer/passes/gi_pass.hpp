@@ -290,7 +290,7 @@ private:
 
 	bool m_published_valid = false;
 	uint32_t m_frame = 0;
-	std::chrono::steady_clock::time_point m_last_record {};
+	std::chrono::steady_clock::time_point m_last_record;
 	float m_blend = 0.05f;
 	std::optional<KeySettings> m_key_settings;
 
