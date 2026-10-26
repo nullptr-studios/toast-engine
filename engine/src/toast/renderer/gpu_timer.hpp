@@ -103,6 +103,13 @@ private:
 	[[nodiscard]]
 	auto ticksToMs(uint64_t begin, uint64_t end, uint64_t mask) const noexcept -> double;
 
+	/// Scopes also open debug labels so frame captures split per pass
+	void beginLabel(vk::CommandBuffer cmd, std::string_view name) const;
+	void endLabel(vk::CommandBuffer cmd) const;
+
+	PFN_vkCmdBeginDebugUtilsLabelEXT m_begin_label = nullptr;
+	PFN_vkCmdEndDebugUtilsLabelEXT m_end_label = nullptr;
+
 	vk::raii::QueryPool m_pool = nullptr;
 	std::vector<Slot> m_slots;
 	double m_ns_per_tick = 1.0;
