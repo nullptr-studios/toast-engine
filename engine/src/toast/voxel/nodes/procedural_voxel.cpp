@@ -24,6 +24,7 @@
 #include <toast/world/node_owner.hpp>
 #include <toast/world/workspace_events.hpp>
 #include <tracy/Tracy.hpp>
+#include <utility>
 
 namespace toast {
 
@@ -399,9 +400,9 @@ void visitSolid(const voxel::Volume& volume, glm::ivec3 brick, Visit&& visit) {
 	const glm::ivec3 corner = brick * static_cast<int32_t>(voxel::k_brick_dim);
 	if (entry.tag() == voxel::BrickTag::uniform) {
 		const auto id = static_cast<uint8_t>(entry.payload());
-		for (int32_t z = 0; z < static_cast<int32_t>(voxel::k_brick_dim); ++z) {
-			for (int32_t y = 0; y < static_cast<int32_t>(voxel::k_brick_dim); ++y) {
-				for (int32_t x = 0; x < static_cast<int32_t>(voxel::k_brick_dim); ++x) {
+		for (int32_t z = 0; std::cmp_less(z, voxel::k_brick_dim); ++z) {
+			for (int32_t y = 0; std::cmp_less(y, voxel::k_brick_dim); ++y) {
+				for (int32_t x = 0; std::cmp_less(x, voxel::k_brick_dim); ++x) {
 					visit(corner + glm::ivec3(x, y, z), id);
 				}
 			}

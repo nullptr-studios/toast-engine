@@ -625,10 +625,10 @@ public partial class ToastEngine : IDisposable {
 	private static partial void toast_pop_application();
 
 	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
-	private static partial void toast_bake_asset(string uid, string outPath);
+	private static partial int toast_bake_asset(string uid, string outPath);
 
-	public static void BakeAsset(string uid, string outPath) {
-		if (IsEngineReady) toast_bake_asset(uid, outPath);
+	public static bool BakeAsset(string uid, string outPath) {
+		return IsEngineReady && toast_bake_asset(uid, outPath) != 0;
 	}
 
 	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]

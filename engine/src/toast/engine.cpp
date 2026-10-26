@@ -1329,32 +1329,41 @@ void toast_pop_application() noexcept {
 	toast::Engine::get()->popApplication();
 }
 
-void toast_bake_asset(const char* uid_str, const char* out_path) noexcept {
+auto toast_bake_asset(const char* uid_str, const char* out_path) noexcept -> int {
 	ZoneScoped;
 	if (!uid_str || !out_path) {
-		return;
+		return 0;
 	}
 	try {
 		const toast::UID uid(toast::UID::fromString(uid_str));
+		std::vector<uint8_t> bytes;
+
 		auto* asset = assets::AssetManager::get().load(uid);
-		if (!asset) {
-			TOAST_ERROR("Engine", "toast_bake_asset: could not load asset {}", uid_str);
-			return;
+		if (auto* prefab = dynamic_cast<assets::Prefab*>(asset)) {
+			bytes = prefab->serialize(assets::SaveMode::game);
+		} else {
+			TOAST_WARN("Editor", "toast_bake_asset: could not load node {}, baking the staged file instead", uid_str);
+			std::ifstream in(out_path, std::ios::binary);
+			if (!in.is_open()) {
+				TOAST_ERROR("Editor", "toast_bake_asset: cannot read staged file {}", out_path);
+				return 0;
+			}
+			const std::string text {std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>()};
+			in.close();
+			std::istringstream stream {text};
+			bytes = assets::Prefab(stream).serialize(assets::SaveMode::game);
 		}
-		auto* prefab = dynamic_cast<assets::Prefab*>(asset);
-		if (!prefab) {
-			TOAST_WARN("Engine", "toast_bake_asset: asset {} is not a Prefab, skipping", uid_str);
-			return;
-		}
-		const auto bytes = prefab->serialize(assets::SaveMode::game);
+
 		std::ofstream out(out_path, std::ios::binary | std::ios::trunc);
 		if (!out.is_open()) {
-			TOAST_ERROR("Engine", "toast_bake_asset: cannot open output path {}", out_path);
-			return;
+			TOAST_ERROR("Editor", "toast_bake_asset: cannot open output path {}", out_path);
+			return 0;
 		}
 		out.write(reinterpret_cast<const char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
-		TOAST_TRACE("Engine", "Baked asset {} → {}", uid_str, out_path);
-	} catch (const std::exception& e) { TOAST_ERROR("Engine", "toast_bake_asset: {}", e.what()); }
+		TOAST_TRACE("Editor", "Baked asset {} → {}", uid_str, out_path);
+		return out.good() ? 1 : 0;
+	} catch (const std::exception& e) { TOAST_ERROR("Editor", "toast_bake_asset: {}", e.what()); }
+	return 0;
 }
 
 auto toast_generate_data_schema_stubs(const char* out_path) noexcept -> int {
