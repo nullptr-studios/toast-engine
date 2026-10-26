@@ -111,6 +111,9 @@ uint giHash(uint key)
     return key;
 }
 
+/// Deposit transmittance in sixteenths so a ray through fog keeps a fraction
+static const float kGiTransmittanceScale = 16.0;
+
 float giRandom(inout uint state)
 {
     state = giHash(state + 0x9e3779b9u);

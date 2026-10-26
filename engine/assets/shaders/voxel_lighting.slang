@@ -1,6 +1,7 @@
 import fullscreen;
 import voxel_dda;
 import voxel_gbuffer;
+import gi_sample;
 import lighting;
 import scene_trace;
 import scene_normal;
@@ -14,7 +15,7 @@ struct LightingPushConstants
     float4 cameraRadius;
     // xy viewport size z pixels per world unit at 1 m w spiral rotation in turns
     float4 viewport;
-    // x instances with bounds y light sampling candidates z 1 terms to voxel_denoise.slang 2 straight into colour w sun reach in meters
+    // x instances with bounds y light candidates z nonzero when fragmentMarched shades w sun reach in meters
     uint4 lighting;
     // x bit 0 last frame's reservoirs are valid bit 1 fragmentSpatial picks and shades sampled lights bit 2 glass shadows
     // bit 3 ray query ambient bit 4 traced specular bits 8 to 15 its max roughness in 255ths and the high 16 bits the
@@ -74,6 +75,13 @@ Sampler2D<uint4> gCandidateReservoirs;
 [[vk::binding(7, 2)]]
 Sampler2D gSceneNormal;
 
+/// Marched terms fragmentMarchedComposite adds when the denoiser is off
+[[vk::binding(8, 2)]]
+Sampler2D gNoisyDiffuse;
+
+[[vk::binding(9, 2)]]
+Sampler2D gNoisySpecular;
+
 typedef FullscreenVSOutput VSOutput;
 
 struct FSOutput
@@ -82,11 +90,8 @@ struct FSOutput
     float4 indirectDiffuse : SV_Target1;
     /// xyz rounded normal w SSR roughness and zero where SSAO and SSR pass through
     float4 normalRoughness : SV_Target2;
-    /// Marched and sampled light over albedo that voxel_denoise.slang filters
+    /// Indirect over albedo that fragmentAmbient occludes when ambient rays are on
     float4 noisyDiffuse : SV_Target3;
-    float4 noisySpecular : SV_Target4;
-    /// packReservoir for next frame
-    uint4 reservoir : SV_Target5;
 };
 
 /// One tap per pixel of radius within this range
@@ -178,16 +183,12 @@ float3 marchedVisibility(float3 origin, float3 target, float coneSlope)
     return traceVisibility(origin, target - origin, coneSlope, (gPush.reuse.x & kSceneGlass) != 0u);
 }
 
-/// Mesh shadowing of a marched light from its shadow map or traced ray
+/// Mesh shadow of a marched light from its map since traced shadows are off with voxels
 float meshShadowFactor(GpuLight light, Surface surface)
 {
     const float3 toLight = light.worldPosRange.xyz - surface.worldPosition;
     const float distance = length(toLight);
     const float3 L = toLight / max(distance, 1e-4);
-    if (tracedShadowsEnabled())
-    {
-        return traceShadowRay(surface.worldPosition, surface.geometricNormal, L, distance);
-    }
     if (light.directionPad.w < 0.0)
     {
         return 1.0;
@@ -213,24 +214,55 @@ struct VoxelGlassFilter : IShadowFilter
         const float slope = distance < 0.0 ? sunSlope : 0.0;
         return traceGlassFilter(origin, segment, slope);
     }
+
+    bool shadesMapLights()
+    {
+        return true;
+    }
+
+    float traceMeshShadow(float3 position, float3 normal, float3 L, float distance)
+    {
+        return 1.0;
+    }
+}
+
+/// fragmentMain shades shadow mapped lights without glass and traces nothing
+struct VoxelRayFreeFilter : IShadowFilter
+{
+    bool mapLights;
+
+    float3 filter(float3 L, float distance)
+    {
+        return float3(1.0, 1.0, 1.0);
+    }
+
+    bool shadesMapLights()
+    {
+        return mapLights;
+    }
+
+    float traceMeshShadow(float3 position, float3 normal, float3 L, float distance)
+    {
+        return 1.0;
+    }
 }
 
 /// Mirrors renderer::VoxelPass ambient rays per pixel
 static const uint kAmbientRays = 2u;
 
 /// Teardown style AO from the share of the reach cosine rays travel
-float ambientOcclusion(Surface surface, float3 origin, float reach)
+float ambientOcclusion(float3 normal, float2 pixel, float3 origin, float reach)
 {
     float3 tangent;
     float3 bitangent;
-    perpendicularBasis(surface.normal, tangent, bitangent);
+    perpendicularBasis(normal, tangent, bitangent);
     float3 segments[kAmbientRays];
     float travelled[kAmbientRays];
     [unroll]
     for (uint r = 0u; r < kAmbientRays; ++r)
     {
-        const float2 disc = concentricDisc(blueNoise(surface.pixel, 120u + r).xy);
-        segments[r] = (tangent * disc.x + bitangent * disc.y + surface.normal * sqrt(saturate(1.0 - dot(disc, disc)))) * reach;
+        const float2 disc = concentricDisc(blueNoise(pixel, 120u + r).xy);
+        segments[r] = (tangent * disc.x + bitangent * disc.y + normal * sqrt(saturate(1.0 - dot(disc, disc)))) * reach;
         travelled[r] = 1.0;
     }
 
@@ -371,11 +403,7 @@ LightTerms shadeMarchedSuns(Surface surface, float3 shadowOrigin)
         }
 
         float meshShadow = 1.0;
-        if (tracedShadowsEnabled())
-        {
-            meshShadow = traceShadowRay(surface.worldPosition, surface.geometricNormal, L, 1.0e5);
-        }
-        else if (gCamera.shadowParams.x >= 0.5 && di == casterIndex)
+        if (gCamera.shadowParams.x >= 0.5 && di == casterIndex)
         {
             meshShadow = sampleDirectionalShadow(surface.worldPosition, surface.geometricNormal, center, -surface.viewSpaceZ, surface.pixel);
         }
@@ -811,8 +839,6 @@ FSOutput fragmentMain(VSOutput input)
     output.indirectDiffuse = float4(0.0, 0.0, 0.0, 1.0);
     output.normalRoughness = float4(0.0, 0.0, 0.0, 0.0);
     output.noisyDiffuse = float4(0.0, 0.0, 0.0, 0.0);
-    output.noisySpecular = float4(0.0, 0.0, 0.0, 0.0);
-    output.reservoir = uint4(0u, 0u, 0u, 0u);
     if (!isLitVoxel(albedo.a))
     {
         output.color = float4(albedo.rgb, 1.0);
@@ -849,11 +875,10 @@ FSOutput fragmentMain(VSOutput input)
     surface.viewSpaceZ = mul(gCamera.view, float4(position, 1.0)).z;
     surface.pixel = input.position.xy;
 
-    VoxelGlassFilter glassFilter;
-    glassFilter.origin = position + faceNormal * (kShadowOriginOffset * kVoxelSize);
-    glassFilter.sunReach = float(gPush.reuse.x >> 16);
-    glassFilter.sunSlope = 0.005;
-    const ShadingResult lit = shadeSurfaceLighting(surface, glassFilter);
+    // Glass scenes leave shadow mapped lights to fragmentMarched which tints them
+    VoxelRayFreeFilter rayFree;
+    rayFree.mapLights = (gPush.reuse.x & kSceneGlass) == 0u || gCamera.renderModePad.x == 19;
+    const ShadingResult lit = shadeSurfaceLighting(surface, rayFree);
     output.indirectDiffuse = float4(lit.indirectDiffuse, 1.0);
     if (lit.isDebugView)
     {
@@ -866,34 +891,132 @@ FSOutput fragmentMain(VSOutput input)
     {
         output.color.rgb -= lit.ambientSpecular;
     }
-    if (gPush.lighting.z != 0u)
+
+    // Traced AO replaces SSAO so ambient diffuse moves into the filtered term
+    if (gPush.lighting.z != 0u && gPush.reuse.w != 0u)
     {
-        const float3 shadowOrigin = position + faceNormal * (kShadowOriginOffset * kVoxelSize);
-        Reservoir reservoir;
-        LightTerms marched = shadeMarchedLights(surface, shadowOrigin, gMotion.Load(texel), reservoir);
-        output.reservoir = packReservoir(reservoir);
-
-        // Traced AO replaces SSAO so ambient diffuse moves into the filtered term
-        if (gPush.reuse.w != 0u)
-        {
-            // Under the cascades the rays only add the contact detail their probe spacing blurs
-            const float reach = float(gPush.reuse.w) * 0.01;
-            const float occlusion = ambientOcclusion(surface, shadowOrigin, lit.contactReach > 0.0 ? min(reach, lit.contactReach) : reach);
-            const float3 demodulated = select(albedo.rgb > 1e-3, lit.indirectDiffuse / max(albedo.rgb, 1e-3), float3(0.0, 0.0, 0.0));
-            output.color.rgb -= lit.indirectDiffuse;
-            marched.diffuse += demodulated * occlusion;
-            output.indirectDiffuse = float4(0.0, 0.0, 0.0, 1.0);
-        }
-
-        if (gPush.lighting.z == 2u)
-        {
-            output.color.rgb += albedo.rgb * marched.diffuse + marched.specular;
-        }
-        else
-        {
-            output.noisyDiffuse = float4(marched.diffuse, 0.0);
-            output.noisySpecular = float4(marched.specular, 0.0);
-        }
+        output.color.rgb -= lit.indirectDiffuse;
+        output.noisyDiffuse = float4(select(albedo.rgb > 1e-3, lit.indirectDiffuse / max(albedo.rgb, 1e-3), float3(0.0, 0.0, 0.0)), 0.0);
+        output.indirectDiffuse = float4(0.0, 0.0, 0.0, 1.0);
     }
     return output;
+}
+
+/// Mirrors the voxel marched scope where alpha 0 makes the premultiplied blend add
+struct MarchedOutput
+{
+    /// Glass tinted shadow mapped lights added over fragmentMain
+    float4 color : SV_Target0;
+    float4 noisyDiffuse : SV_Target1;
+    float4 noisySpecular : SV_Target2;
+    /// packReservoir for next frame
+    uint4 reservoir : SV_Target3;
+};
+
+/// Every voxel lighting ray so fragmentMain stays light on registers
+[shader("fragment")]
+MarchedOutput fragmentMarched(VSOutput input)
+{
+    MarchedOutput output;
+    output.color = float4(0.0, 0.0, 0.0, 0.0);
+    output.noisyDiffuse = float4(0.0, 0.0, 0.0, 0.0);
+    output.noisySpecular = float4(0.0, 0.0, 0.0, 0.0);
+    output.reservoir = uint4(0u, 0u, 0u, 0u);
+
+    const int2 pixel = int2(input.position.xy);
+    const int3 texel = int3(pixel, 0);
+    const float4 albedo = gAlbedo.Load(texel);
+    if (!isLitVoxel(albedo.a))
+    {
+        discard;
+    }
+
+    const float3 position = positionAt(pixel);
+    const float3 faceNormal = decodeFaceNormal(gFaceNormal.Load(texel));
+    const float3 sceneNormal = gSceneNormal.Load(texel).xyz;
+    const float3 normal = dot(sceneNormal, sceneNormal) > 1e-4 ? normalize(sceneNormal) : faceNormal;
+    const float4 material = gMaterial.Load(texel);
+    const float3 toCamera = gCamera.position - position;
+
+    Surface surface;
+    surface.marchedShadows = true;
+    surface.worldPosition = position;
+    surface.normal = normal;
+    surface.geometricNormal = faceNormal;
+    surface.viewDirection = dot(toCamera, toCamera) > 1e-10 ? normalize(toCamera) : normal;
+    surface.albedo = albedo.rgb;
+    surface.metallic = material.r;
+    surface.reflectivity = material.g;
+    surface.roughness = clamp(material.b, 0.045, 1.0);
+    surface.occlusion = 1.0;
+    surface.viewSpaceZ = mul(gCamera.view, float4(position, 1.0)).z;
+    surface.pixel = input.position.xy;
+
+    // Debug views come from fragmentMain alone
+    if (gCamera.renderModePad.x == 19 || isSurfaceDebugMode(gCamera.renderModePad.x))
+    {
+        return output;
+    }
+
+    const float3 shadowOrigin = position + faceNormal * (kShadowOriginOffset * kVoxelSize);
+    if ((gPush.reuse.x & kSceneGlass) != 0u)
+    {
+        VoxelGlassFilter glassFilter;
+        glassFilter.origin = shadowOrigin;
+        glassFilter.sunReach = float(gPush.reuse.x >> 16);
+        glassFilter.sunSlope = 0.005;
+        float3 direct = float3(0.0, 0.0, 0.0);
+        float3 specular = float3(0.0, 0.0, 0.0);
+        float debugMinShadow = 1.0;
+        evaluateDirectLighting(surface, clusterCellAt(surface.viewSpaceZ, surface.pixel), glassFilter, direct, specular, debugMinShadow);
+        output.color = float4(direct, 0.0);
+    }
+
+    if (gPush.lighting.z != 0u)
+    {
+        Reservoir reservoir;
+        const LightTerms marched = shadeMarchedLights(surface, shadowOrigin, gMotion.Load(texel), reservoir);
+        output.reservoir = packReservoir(reservoir);
+        output.noisyDiffuse = float4(marched.diffuse, 0.0);
+        output.noisySpecular = float4(marched.specular, 0.0);
+    }
+    return output;
+}
+
+/// Ambient rays alone so fragmentMarched keeps fewer live registers
+[shader("fragment")]
+float4 fragmentAmbient(VSOutput input) : SV_Target0
+{
+    const int2 pixel = int2(input.position.xy);
+    const int3 texel = int3(pixel, 0);
+    if (!isLitVoxel(gAlbedo.Load(texel).a) || gCamera.renderModePad.x == 19 || isSurfaceDebugMode(gCamera.renderModePad.x))
+    {
+        discard;
+    }
+
+    const float3 position = positionAt(pixel);
+    const float3 faceNormal = decodeFaceNormal(gFaceNormal.Load(texel));
+    const float3 sceneNormal = gSceneNormal.Load(texel).xyz;
+    const float3 normal = dot(sceneNormal, sceneNormal) > 1e-4 ? normalize(sceneNormal) : faceNormal;
+
+    // Under the cascades the rays only add the contact detail their probe spacing blurs
+    const float reach = float(gPush.reuse.w) * 0.01;
+    const float contactReach = radianceCascadesCover(position, normal) ? radianceCascadesContactReach(position) : 0.0;
+    const float3 shadowOrigin = position + faceNormal * (kShadowOriginOffset * kVoxelSize);
+    const float occlusion = ambientOcclusion(normal, input.position.xy, shadowOrigin, contactReach > 0.0 ? min(reach, contactReach) : reach);
+    // Premultiplied so the indirect fragmentMain left in noisy diffuse scales by occlusion
+    return float4(0.0, 0.0, 0.0, 1.0 - occlusion);
+}
+
+/// Marched terms straight into colour when the denoiser is off
+[shader("fragment")]
+float4 fragmentMarchedComposite(VSOutput input) : SV_Target0
+{
+    const int3 texel = int3(int2(input.position.xy), 0);
+    const float4 albedo = gAlbedo.Load(texel);
+    if (!isLitVoxel(albedo.a))
+    {
+        discard;
+    }
+    return float4(albedo.rgb * gNoisyDiffuse.Load(texel).rgb + gNoisySpecular.Load(texel).rgb, 0.0);
 }

@@ -5,6 +5,7 @@ import scene_trace;
 import gi_common;
 import gi_sky;
 import trace_shading;
+import fog_media;
 
 [[vk::binding(0, 2)]]
 Sampler2D gDepth;
@@ -216,7 +217,7 @@ float3 giHitRadiance(GiFrame frame, SceneHit hit, float3 origin, float3 directio
     return radiance + traceSunLight(position, normal, palette.albedo, frame.rays.w, frame.rays.y, float2(pixel));
 }
 
-void giDeposit(GiFrame frame, uint cascade, uint deposit, float2 uv, float3 radiance, uint transmittance)
+void giDeposit(GiFrame frame, uint cascade, uint deposit, float2 uv, float3 radiance, float transmittance)
 {
     const uint first = gDepositSlots[deposit];
     if (first == kGiEmpty)
@@ -224,36 +225,39 @@ void giDeposit(GiFrame frame, uint cascade, uint deposit, float2 uv, float3 radi
         return;
     }
     const uint slot = first + giDirectionIndex(uv, cascade);
-    if (transmittance == 0u)
+    if (any(radiance > 0.0))
     {
         const uint3 fixedPoint = uint3(clamp(radiance, 0.0, kGiMaxRadiance) * frame.rays.z + 0.5);
         InterlockedAdd(gDeposits[slot].x, fixedPoint.x);
         InterlockedAdd(gDeposits[slot].y, fixedPoint.y);
         InterlockedAdd(gDeposits[slot].z, fixedPoint.z);
     }
-    InterlockedAdd(gDeposits[slot].w, (transmittance << 16) | 1u);
+    InterlockedAdd(gDeposits[slot].w, (uint(saturate(transmittance) * kGiTransmittanceScale + 0.5) << 16) | 1u);
 }
 
-/// A miss is transparent up to the top cascade which takes the sky
-void giSplitRay(GiFrame frame, uint deposit, uint lod, float3 direction, bool hit, float distance, float3 radiance)
+/// Fog dims each interval and the top cascade takes the sky
+void giSplitRay(GiFrame frame, uint deposit, uint lod, float3 origin, float3 direction, bool hit, float distance, float3 radiance)
 {
     const uint top = frame.frame.y - 1u;
     const float2 uv = giEncodeDirection(direction);
+    float start = 0.0;
     for (uint cascade = 0u; cascade <= top && deposit != kGiEmpty; ++cascade)
     {
         const float end = giIntervalEnd(frame, lod, cascade);
         if (hit && distance <= end)
         {
-            giDeposit(frame, cascade, deposit, uv, radiance, 0u);
+            giDeposit(frame, cascade, deposit, uv, radiance * fogTransmittance(origin, direction, start, distance), 0.0);
             return;
         }
+        const float through = fogTransmittance(origin, direction, start, end);
         if (cascade == top)
         {
-            giDeposit(frame, cascade, deposit, uv, giSky(direction), 0u);
+            giDeposit(frame, cascade, deposit, uv, giSky(direction) * through, 0.0);
             return;
         }
-        giDeposit(frame, cascade, deposit, uv, float3(0.0, 0.0, 0.0), 1u);
+        giDeposit(frame, cascade, deposit, uv, float3(0.0, 0.0, 0.0), through);
         deposit = gParent[deposit];
+        start = end;
     }
 }
 
@@ -317,11 +321,11 @@ void traceMain(uint3 id : SV_DispatchThreadID)
     }
 
     const bool primaryHit = hit.hit && hit.t <= giIntervalEnd(frame, lod, top);
-    giSplitRay(frame, deposit, lod, direction, primaryHit, hit.t, radiance);
+    giSplitRay(frame, deposit, lod, origin, direction, primaryHit, hit.t, radiance);
     if (overlap)
     {
         const uint next = giFindDeposit(frame, 0u, giSurfaceCell(frame, world, normal, lod + 1u, 0u), lod + 1u);
-        giSplitRay(frame, next, lod + 1u, direction, hit.hit, hit.t, radiance);
+        giSplitRay(frame, next, lod + 1u, origin, direction, hit.hit, hit.t, radiance);
     }
 }
 
@@ -356,7 +360,7 @@ void pointTraceMain(uint3 id : SV_DispatchThreadID)
     const uint2 pixel = uint2(id.x & 63u, id.x >> 6);
     const float3 radiance =
         hit.hit ? giClampRay(frame, giHitRadiance(frame, hit, origin, direction, pixel, random, onScreen)) : float3(0.0, 0.0, 0.0);
-    giSplitRay(frame, deposit, lod, direction, hit.hit, hit.t, radiance);
+    giSplitRay(frame, deposit, lod, origin, direction, hit.hit, hit.t, radiance);
 }
 
 float3 giTileIrradiance(GiFrame frame, float3 world, float3 normal, uint lod, out float total)

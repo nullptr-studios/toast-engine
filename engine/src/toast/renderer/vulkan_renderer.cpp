@@ -715,6 +715,7 @@ void VulkanRenderer::gatherFogVolumes(RenderFrame& frame, const glm::vec3& camer
 		      .emission_noise = glm::vec4(volume->emission(), std::clamp(volume->noiseStrength(), 0.0f, 1.0f)),
 		      .wind_scale = glm::vec4(volume->wind(), std::max(volume->noiseScale(), 0.05f)),
 		      .phase = glm::vec4(std::clamp(volume->anisotropy(), -0.9f, 0.9f), std::max(volume->ambient(), 0.0f), 0.0f, 0.0f),
+		      .centre = glm::vec4(glm::vec3(volume->getWorldTransform()[3]), 1.0f),
 		    }
 		);
 	}
@@ -1312,6 +1313,20 @@ void VulkanRenderer::createFrameResources() {
 
 		frame.gpu_buffer.emplace(m_core->getAllocator().createBuffer(buffer_ci, alloc_ci));
 		setDebugName(*m_core, **frame.gpu_buffer, std::format("VulkanRenderer JointMatrices[{}]", i));
+	}
+
+	m_fog_volume_res.resize(k_frames_in_flight);
+	for (uint32_t i = 0; i < m_fog_volume_res.size(); ++i) {
+		vk::BufferCreateInfo buffer_ci {};
+		buffer_ci.size = sizeof(FogVolumeGpu) * k_max_fog_volumes;
+		buffer_ci.usage = vk::BufferUsageFlagBits::eStorageBuffer;
+
+		vma::AllocationCreateInfo alloc_ci {};
+		alloc_ci.usage = vma::MemoryUsage::eAutoPreferHost;
+		alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
+
+		m_fog_volume_res[i].gpu_buffer.emplace(m_core->getAllocator().createBuffer(buffer_ci, alloc_ci));
+		setDebugName(*m_core, **m_fog_volume_res[i].gpu_buffer, std::format("VulkanRenderer FogVolumes[{}]", i));
 	}
 
 	const auto create_instance_buffers = [this](std::vector<FrameResources>& target, std::string_view debug_name) {
@@ -1936,8 +1951,6 @@ auto VulkanRenderer::recordVoxelScopes(
 	  attachment(m_scene_indirect, vk::AttachmentLoadOp::eClear, clear_zero),
 	  attachment(m_scene_normal, vk::AttachmentLoadOp::eClear, clear_zero),
 	  attachment(m_voxel_noisy_diffuse, vk::AttachmentLoadOp::eClear, clear_zero),
-	  attachment(m_voxel_noisy_specular, vk::AttachmentLoadOp::eClear, clear_zero),
-	  attachment(lighting_reservoirs, vk::AttachmentLoadOp::eClear, clear_zero),
 	};
 
 	vk::RenderingInfo lighting_info {};
@@ -1956,9 +1969,58 @@ auto VulkanRenderer::recordVoxelScopes(
 	}
 	cmd.endRendering();
 
+	barriers.image(m_scene_normal.state, sync::Usage::fragment_sampled);
+	barriers.image(m_scene_color.state, sync::Usage::color_attachment);
+	barriers.image(m_voxel_noisy_diffuse.state, sync::Usage::color_attachment);
+	barriers.flush(cmd);
+
+	// Before the marched scope so occlusion scales only the indirect
+	if (m_voxel_pass->ambientRaysActive()) {
+		const std::array ambient_attachments {attachment(m_voxel_noisy_diffuse, vk::AttachmentLoadOp::eLoad, clear_zero)};
+		vk::RenderingInfo ambient_info {};
+		ambient_info.renderArea = scissor;
+		ambient_info.layerCount = 1;
+		ambient_info.colorAttachmentCount = static_cast<uint32_t>(ambient_attachments.size());
+		ambient_info.pColorAttachments = ambient_attachments.data();
+
+		cmd.beginRendering(ambient_info);
+		cmd.setViewport(0, std::array {viewport});
+		cmd.setScissor(0, std::array {scissor});
+		{
+			TracyVkZone(m_tracy_vk_ctx, cmd, "VoxelAmbientRays");
+			const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Voxel ambient rays");
+			m_voxel_pass->recordAmbient(cmd, m_current_frame);
+		}
+		cmd.endRendering();
+		barriers.image(m_voxel_noisy_diffuse.state, sync::Usage::color_attachment);
+		barriers.flush(cmd);
+	}
+
+	// Always recorded so the reservoirs and noisy specular clear even when nothing marches
+	const std::array marched_attachments {
+	  attachment(m_scene_color, vk::AttachmentLoadOp::eLoad, clear_scene),
+	  attachment(m_voxel_noisy_diffuse, vk::AttachmentLoadOp::eLoad, clear_zero),
+	  attachment(m_voxel_noisy_specular, vk::AttachmentLoadOp::eClear, clear_zero),
+	  attachment(lighting_reservoirs, vk::AttachmentLoadOp::eClear, clear_zero),
+	};
+	vk::RenderingInfo marched_info {};
+	marched_info.renderArea = scissor;
+	marched_info.layerCount = 1;
+	marched_info.colorAttachmentCount = static_cast<uint32_t>(marched_attachments.size());
+	marched_info.pColorAttachments = marched_attachments.data();
+
+	cmd.beginRendering(marched_info);
+	cmd.setViewport(0, std::array {viewport});
+	cmd.setScissor(0, std::array {scissor});
+	{
+		TracyVkZone(m_tracy_vk_ctx, cmd, "VoxelMarchedLighting");
+		const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Voxel marched lighting");
+		m_voxel_pass->recordMarched(cmd, m_current_frame);
+	}
+	cmd.endRendering();
+
 	if (spatial) {
 		barriers.image(m_voxel_candidate_reservoirs.state, sync::Usage::fragment_sampled);
-		barriers.image(m_scene_normal.state, sync::Usage::fragment_sampled);
 		barriers.image(m_voxel_reservoirs[m_voxel_reservoir_parity].state, sync::Usage::color_attachment);
 		barriers.image(m_voxel_noisy_diffuse.state, sync::Usage::color_attachment);
 		barriers.image(m_voxel_noisy_specular.state, sync::Usage::color_attachment);
@@ -1984,8 +2046,6 @@ auto VulkanRenderer::recordVoxelScopes(
 			m_voxel_pass->recordSpatial(cmd, m_current_frame, scissor.extent);
 		}
 		cmd.endRendering();
-		barriers.image(m_scene_normal.state, sync::Usage::color_attachment);
-		barriers.flush(cmd);
 	}
 	m_voxel_reservoir_parity = 1 - m_voxel_reservoir_parity;
 	m_voxel_reservoir_written = !capture;
@@ -2018,6 +2078,27 @@ auto VulkanRenderer::recordVoxelScopes(
 			TracyVkZone(m_tracy_vk_ctx, cmd, "VoxelDenoiseComposite");
 			const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Voxel denoise composite");
 			m_voxel_pass->recordDenoiseComposite(cmd, m_current_frame);
+		}
+		cmd.endRendering();
+	} else if (m_voxel_pass->marchedCompositeActive()) {
+		barriers.image(m_voxel_noisy_diffuse.state, sync::Usage::fragment_sampled);
+		barriers.image(m_voxel_noisy_specular.state, sync::Usage::fragment_sampled);
+		barriers.image(m_scene_color.state, sync::Usage::color_attachment);
+		barriers.flush(cmd);
+		const std::array composite_attachments {attachment(m_scene_color, vk::AttachmentLoadOp::eLoad, clear_scene)};
+		vk::RenderingInfo composite_info {};
+		composite_info.renderArea = scissor;
+		composite_info.layerCount = 1;
+		composite_info.colorAttachmentCount = static_cast<uint32_t>(composite_attachments.size());
+		composite_info.pColorAttachments = composite_attachments.data();
+
+		cmd.beginRendering(composite_info);
+		cmd.setViewport(0, std::array {viewport});
+		cmd.setScissor(0, std::array {scissor});
+		{
+			TracyVkZone(m_tracy_vk_ctx, cmd, "VoxelMarchedComposite");
+			const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Voxel marched composite");
+			m_voxel_pass->recordMarchedComposite(cmd, m_current_frame);
 		}
 		cmd.endRendering();
 	}
@@ -2586,6 +2667,17 @@ void VulkanRenderer::updateFrameResources(uint32_t frame_index, RenderFrame& fra
 
 	upload_instances(m_instance_res, frame_index, frame_data.instance_data);
 	upload_instances(m_shadow_instance_res, frame_index, frame_data.shadow_instance_data);
+
+	if (frame_index < m_fog_volume_res.size() && m_fog_volume_res[frame_index].gpu_buffer.has_value() &&
+	    !frame_data.fog_volumes.empty()) {
+		const auto count = std::min<size_t>(frame_data.fog_volumes.size(), k_max_fog_volumes);
+		const auto bytes = static_cast<vk::DeviceSize>(count) * sizeof(FogVolumeGpu);
+		const auto& fog_allocation = m_fog_volume_res[frame_index].gpu_buffer->getAllocation();
+		if (auto* fog_mapped = fog_allocation.getInfo().pMappedData) {
+			std::memcpy(fog_mapped, frame_data.fog_volumes.data(), bytes);
+			fog_allocation.flush(0, bytes);
+		}
+	}
 }
 
 auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> bool {
@@ -3461,6 +3553,13 @@ void VulkanRenderer::tick(float time) noexcept {
 	m_camera->syncTransform();
 	frame.post_process = blendPostProcessVolumes(m_camera->world_position);
 	gatherFogVolumes(frame, m_camera->world_position);
+	// GI reads the media too so they go out whether or not the volumetrics pass draws them
+	const auto& fog = frame.post_process.fog;
+	const bool fog_on = volumetrics();
+	frame.frame_data.fog_medium = glm::vec4(
+	    fog_on ? fog.density : 0.0f, fog.height, fog.height_falloff, fog_on ? static_cast<float>(frame.fog_volumes.size()) : 0.0f
+	);
+	frame.frame_data.fog_reach = glm::vec4(fog.distance, volumetricDistance(), static_cast<float>(voxelSunReach()), 0.0f);
 
 	auto& mesh_nodes_snapshot = m_tick_mesh_nodes;
 	{

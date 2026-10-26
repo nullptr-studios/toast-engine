@@ -7,13 +7,18 @@
 #include "volumetric_pass.hpp"
 
 #include "../descriptor_writer.hpp"
+#include "../gpu_sync.hpp"
+#include "../gpu_timer.hpp"
 #include "../shader_cache.hpp"
+#include "../shader_compiler.hpp"
+#include "../voxel_blas_cache.hpp"
+#include "../voxel_gpu_storage.hpp"
+#include "../voxel_trace_scene.hpp"
 #include "../vulkan_core.hpp"
 #include "../vulkan_debug.hpp"
 #include "../vulkan_renderer.hpp"
 
 #include <algorithm>
-#include <cstring>
 #include <format>
 #include <toast/assets/assets.hpp>
 #include <toast/log.hpp>
@@ -24,12 +29,22 @@ namespace renderer {
 namespace {
 
 constexpr uint32_t k_volumetric_scene_set = 0;
-constexpr uint32_t k_volumetric_image_set = 1;
+constexpr uint32_t k_volumetric_storage_set = 1;
+constexpr uint32_t k_volumetric_image_set = 2;
 
-/// volumetrics.slang gDepth and gHistory
+/// voxel_dda.slang gVoxelInstances and scene_trace.slang bindings in the storage set
+constexpr uint32_t k_volumetric_instances_binding = 6;
+constexpr uint32_t k_volumetric_trace_volumes_binding = 10;
+constexpr uint32_t k_volumetric_trace_bounds_binding = 11;
+constexpr uint32_t k_volumetric_trace_grid_binding = 12;
+constexpr uint32_t k_volumetric_trace_brick_bases_binding = 14;
+constexpr uint32_t k_volumetric_trace_bricks_binding = 15;
+
+/// volumetrics.slang gDepth gHistory and gFogAmbient
 constexpr uint32_t k_volumetric_depth_binding = 1;
 constexpr uint32_t k_volumetric_history_binding = 4;
-constexpr uint32_t k_volumetric_fog_volumes_binding = 6;
+constexpr uint32_t k_volumetric_ambient_binding = 6;
+constexpr uint32_t k_volumetric_previous_ambient_binding = 7;
 
 /// Low Medium High Epic
 constexpr std::array<VolumetricPass::Quality, VulkanRenderer::k_volumetric_quality_custom> k_volumetric_levels {
@@ -67,7 +82,13 @@ VolumetricPass::VolumetricPass(const VulkanCore& core, vk::Format scene_format, 
 	m_layout.rebuild(core, shader->reflection, "VolumetricPass");
 	const auto& layouts = m_layout.getDescriptorSetLayouts();
 	if (layouts.size() <= k_volumetric_image_set) {
-		TOAST_ERROR("Render", "VolumetricPass shader layout has {} descriptor sets instead of 2", layouts.size());
+		TOAST_ERROR("Render", "VolumetricPass shader layout has {} descriptor sets instead of 3", layouts.size());
+		setEnabled(false);
+		return;
+	}
+	const VoxelTraceScene* trace = VulkanRenderer::instance->voxelTraceScene();
+	if (trace == nullptr) {
+		TOAST_ERROR("Render", "VolumetricPass needs the voxel trace scene; volumetrics are disabled");
 		setEnabled(false);
 		return;
 	}
@@ -91,12 +112,23 @@ VolumetricPass::VolumetricPass(const VulkanCore& core, vk::Format scene_format, 
 		    config.depth_write = false;
 		    pipeline.rebuild(core, config);
 	    };
+	VulkanPipeline::Config ambient_config;
+	ambient_config.pipeline_type = VulkanPipeline::PipelineType::compute;
+	ambient_config.debug_name = "Volumetrics Ambient";
+	ambient_config.shader_spirv = shader->spirv;
+	ambient_config.pipeline_layout = *m_layout.getPipelineLayout();
+	ambient_config.compute_entry = "ambientMain";
+	m_ambient_pipeline.rebuild(core, ambient_config);
+
 	const vk::Extent2D half = PostProcessTarget::halfExtent(extent);
 	build_pipeline(m_scatter_pipeline, k_scatter_format, half, "scatterMain", "Volumetrics Scatter");
 	build_pipeline(m_temporal_pipeline, k_scatter_format, half, "temporalMain", "Volumetrics Temporal");
 	build_pipeline(m_composite_pipeline, scene_format, extent, "compositeMain", "Volumetrics Composite");
 
 	m_scene_sets.create(core, shader->reflection, *layouts[k_volumetric_scene_set], "Volumetrics");
+	const bool instances_bound = std::ranges::any_of(shader->reflection.bindings, [](const ShaderBinding& binding) {
+		return binding.set == k_volumetric_storage_set && binding.binding == k_volumetric_instances_binding;
+	});
 
 	const auto& device = core.getDevice();
 	// Nearest since interpolated depth invents surfaces
@@ -105,34 +137,56 @@ VolumetricPass::VolumetricPass(const VulkanCore& core, vk::Format scene_format, 
 	m_linear_sampler = vk::raii::Sampler(device, linearClampSamplerInfo());
 	setDebugName(core, *m_linear_sampler, "Volumetrics LinearSampler");
 
-	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
-		vk::BufferCreateInfo buffer_ci {};
-		buffer_ci.size = sizeof(VulkanRenderer::FogVolumeGpu) * VulkanRenderer::k_max_fog_volumes;
-		buffer_ci.usage = vk::BufferUsageFlagBits::eStorageBuffer;
-		vma::AllocationCreateInfo alloc_ci {};
-		alloc_ci.usage = vma::MemoryUsage::eAuto;
-		alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
-		m_fog_volumes.push_back(core.getAllocator().createBuffer(buffer_ci, alloc_ci));
-		setDebugName(core, *m_fog_volumes.back(), std::format("Volumetrics FogVolumes[{}]", i));
-	}
-
+	const vk::DescriptorSetLayout storage_layout = *layouts[k_volumetric_storage_set];
 	const vk::DescriptorSetLayout image_layout = *layouts[k_volumetric_image_set];
 	const vk::DescriptorPool pool = VulkanRenderer::instance->getDescriptorPoolHandle();
+	constexpr auto storage = vk::DescriptorType::eStorageBuffer;
+	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
+		vk::BufferCreateInfo ambient_ci {};
+		ambient_ci.size = sizeof(glm::vec4) * (VulkanRenderer::k_max_fog_volumes + 1);
+		ambient_ci.usage = vk::BufferUsageFlagBits::eStorageBuffer;
+		vma::AllocationCreateInfo ambient_alloc {};
+		ambient_alloc.usage = vma::MemoryUsage::eAutoPreferDevice;
+		m_ambient.push_back(core.getAllocator().createBuffer(ambient_ci, ambient_alloc));
+		setDebugName(core, *m_ambient.back(), std::format("Volumetrics Ambient[{}]", i));
+	}
+
 	DescriptorWriter writer;
-	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight * 2; ++i) {
-		auto allocated = device.allocateDescriptorSets(vk::DescriptorSetAllocateInfo(pool, 1, &image_layout));
-		m_image_sets.push_back(std::move(allocated[0]));
-		setDebugName(core, *m_image_sets.back(), std::format("Volumetrics ImageSet[{}]", i));
-		writer.buffer(
-		    *m_image_sets.back(), k_volumetric_fog_volumes_binding, vk::DescriptorType::eStorageBuffer, *m_fog_volumes[i / 2]
-		);
+	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
+		auto storage_set = device.allocateDescriptorSets(vk::DescriptorSetAllocateInfo(pool, 1, &storage_layout));
+		m_storage_sets.push_back(std::move(storage_set[0]));
+		setDebugName(core, *m_storage_sets.back(), std::format("Volumetrics StorageSet[{}]", i));
+		const vk::DescriptorSet set = *m_storage_sets.back();
+		writer.buffer(set, k_volumetric_trace_volumes_binding, storage, trace->volumeBuffer(i));
+		writer.buffer(set, k_volumetric_trace_bounds_binding, storage, trace->boundsBuffer(i));
+		writer.buffer(set, k_volumetric_trace_grid_binding, storage, trace->gridBuffer(i));
+		if (instances_bound) {
+			writer.buffer(set, k_volumetric_instances_binding, storage, trace->volumeBuffer(i));
+		}
+		if (ShaderCompiler::isRayQueryAvailable()) {
+			const VoxelBlasCache* bricks = VulkanRenderer::instance->voxelBlasCache();
+			writer.buffer(set, k_volumetric_trace_brick_bases_binding, storage, trace->brickBaseBuffer(i));
+			writer.buffer(
+			    set, k_volumetric_trace_bricks_binding, storage, bricks != nullptr ? bricks->poolBuffer() : trace->brickBaseBuffer(i)
+			);
+		}
+
+		const uint32_t previous = (i + VulkanRenderer::k_frames_in_flight - 1) % VulkanRenderer::k_frames_in_flight;
+		for (uint32_t parity = 0; parity < 2; ++parity) {
+			auto image_set = device.allocateDescriptorSets(vk::DescriptorSetAllocateInfo(pool, 1, &image_layout));
+			m_image_sets.push_back(std::move(image_set[0]));
+			setDebugName(core, *m_image_sets.back(), std::format("Volumetrics ImageSet[{}][{}]", i, parity));
+			writer.buffer(*m_image_sets.back(), k_volumetric_ambient_binding, storage, *m_ambient[i]);
+			writer.buffer(*m_image_sets.back(), k_volumetric_previous_ambient_binding, storage, *m_ambient[previous]);
+		}
 	}
 	writer.flush(device);
+	m_storage_bound.assign(m_storage_sets.size(), nullptr);
 	m_image_bound.assign(m_image_sets.size(), {});
 
 	createTargets(core, extent, resolveQuality().divisor);
-	m_ready =
-	    m_scatter_pipeline.isReady() && m_temporal_pipeline.isReady() && m_composite_pipeline.isReady() && !m_scene_sets.empty();
+	m_ready = m_ambient_pipeline.isReady() && m_scatter_pipeline.isReady() && m_temporal_pipeline.isReady() &&
+	          m_composite_pipeline.isReady() && !m_scene_sets.empty();
 	if (m_ready) {
 		TOAST_INFO(
 		    "Render",
@@ -179,7 +233,8 @@ auto VolumetricPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::Ima
 	auto* renderer = VulkanRenderer::instance;
 	const auto* frame = renderer->renderingFrame();
 	if (!m_ready || !source_view || frame == nullptr || !renderer->volumetrics() || frame->render_mode != 0 ||
-	    (frame->post_process.fog.density <= 0.0f && frame->fog_volumes.empty()) || (frame_index * 2) + 1 >= m_image_sets.size()) {
+	    (frame->post_process.fog.density <= 0.0f && frame->fog_volumes.empty()) || frame_index >= m_storage_sets.size() ||
+	    !frame->voxel_storage || !frame->voxel_storage->isReady()) {
 		m_history_valid = false;
 		return source_view;
 	}
@@ -195,6 +250,12 @@ auto VolumetricPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::Ima
 		createTargets(*m_core, m_extent, quality.divisor);
 	}
 
+	// Safe since the fence of this slot was waited on
+	if (m_storage_bound[frame_index] != frame->voxel_storage) {
+		writeVoxelStorageDescriptors(m_core->getDevice(), *m_storage_sets[frame_index], *frame->voxel_storage);
+		m_storage_bound[frame_index] = frame->voxel_storage;
+	}
+
 	const PostProcessTarget& history_write = m_history[m_parity];
 	const PostProcessTarget& history_read = m_history[1 - m_parity];
 	const uint32_t set_index = (frame_index * 2) + m_parity;
@@ -206,21 +267,13 @@ auto VolumetricPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::Ima
 	  m_scatter.view(),
 	  history_read.view(),
 	  history_write.view(),
-	  vk::ImageView {},
-	  renderer->getSceneNormalView(),
 	};
-	for (uint32_t binding = 0; binding < k_image_bindings; ++binding) {
-		if (binding != k_volumetric_fog_volumes_binding && !views[binding]) {
-			return source_view;
-		}
+	if (std::ranges::any_of(views, [](vk::ImageView view) { return !view; })) {
+		return source_view;
 	}
 	if (m_image_bound[set_index] != views) {
 		DescriptorWriter writer;
 		for (uint32_t binding = 0; binding < k_image_bindings; ++binding) {
-			// The fog volume buffer was written once at creation
-			if (binding == k_volumetric_fog_volumes_binding) {
-				continue;
-			}
 			writer.image(
 			    image_set,
 			    binding,
@@ -235,19 +288,12 @@ auto VolumetricPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::Ima
 	}
 	m_scene_sets.updateTlas(frame_index);
 
-	// Safe since the fence of this slot was waited on
-	const auto volume_count = static_cast<uint32_t>(std::min<size_t>(frame->fog_volumes.size(), VulkanRenderer::k_max_fog_volumes));
-	if (volume_count > 0) {
-		const auto& allocation = m_fog_volumes[frame_index].getAllocation();
-		std::memcpy(allocation.getInfo().pMappedData, frame->fog_volumes.data(), sizeof(VulkanRenderer::FogVolumeGpu) * volume_count);
-		allocation.flush(0, sizeof(VulkanRenderer::FogVolumeGpu) * volume_count);
-	}
-
 	const bool history_valid = m_history_valid && frame->sequence == m_last_sequence + 1 && !frame->taa_reset;
 	if (!history_valid) {
 		history_read.makeSampleable(cmd);
 	}
 
+	const auto volume_count = static_cast<uint32_t>(std::min<size_t>(frame->fog_volumes.size(), VulkanRenderer::k_max_fog_volumes));
 	const auto& fog = frame->post_process.fog;
 	Params params {};
 	params.inverse_view_projection = glm::inverse(frame->frame_data.jittered_view_projection);
@@ -263,7 +309,7 @@ auto VolumetricPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::Ima
 	);
 
 	const vk::PipelineLayout layout = *m_layout.getPipelineLayout();
-	const std::array<vk::DescriptorSet, 2> sets {m_scene_sets.get(frame_index), image_set};
+	const std::array<vk::DescriptorSet, 3> sets {m_scene_sets.get(frame_index), *m_storage_sets[frame_index], image_set};
 	const auto draw = [&](const PostProcessTarget& target, const VulkanPipeline& pipeline) {
 		target.beginScope(cmd);
 		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.getPipeline());
@@ -273,6 +319,20 @@ auto VolumetricPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::Ima
 		target.endScope(cmd);
 	};
 
+	{
+		const GpuScope scope(renderer->gpuTimer(), frame_index, cmd, "Fog ambient");
+		// Last frame wrote the probes this one blends with
+		sync::BarrierBatch history;
+		history.memory(sync::Usage::compute_storage_write, sync::Usage::compute_storage_read);
+		history.flush(cmd);
+		cmd.bindPipeline(vk::PipelineBindPoint::eCompute, m_ambient_pipeline.getPipeline());
+		cmd.bindDescriptorSets(vk::PipelineBindPoint::eCompute, layout, k_volumetric_scene_set, sets, {});
+		cmd.pushConstants(layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(Params), &params);
+		cmd.dispatch(volume_count + 1, 1, 1);
+		sync::BarrierBatch barriers;
+		barriers.memory(sync::Usage::compute_storage_write, sync::Usage::fragment_storage_read);
+		barriers.flush(cmd);
+	}
 	draw(m_scatter, m_scatter_pipeline);
 	draw(history_write, m_temporal_pipeline);
 	draw(m_target, m_composite_pipeline);

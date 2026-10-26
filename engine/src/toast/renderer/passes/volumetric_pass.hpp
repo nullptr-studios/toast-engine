@@ -15,10 +15,12 @@
 
 #include <array>
 #include <glm/glm.hpp>
+#include <memory>
 #include <vector>
 
 namespace renderer {
 class VulkanCore;
+class VoxelGpuStorage;
 
 /// Height fog and fog volumes marched at half or quarter resolution
 class VolumetricPass : public IPostProcessPass {
@@ -62,7 +64,7 @@ private:
 	/// rgb in-scattered radiance a transmittance
 	static constexpr vk::Format k_scatter_format = vk::Format::eR16G16B16A16Sfloat;
 
-	static constexpr uint32_t k_image_bindings = 8;
+	static constexpr uint32_t k_image_bindings = 6;
 
 	void createTargets(const VulkanCore& core, vk::Extent2D extent, uint32_t divisor);
 
@@ -71,6 +73,7 @@ private:
 	bool m_ready = false;
 
 	ShaderLayout m_layout;
+	VulkanPipeline m_ambient_pipeline;
 	VulkanPipeline m_scatter_pipeline;
 	VulkanPipeline m_temporal_pipeline;
 	VulkanPipeline m_composite_pipeline;
@@ -79,8 +82,11 @@ private:
 	vk::raii::Sampler m_point_sampler = nullptr;
 	vk::raii::Sampler m_linear_sampler = nullptr;
 
-	/// Mapped per frame in flight
-	std::vector<vma::raii::Buffer> m_fog_volumes;
+	/// Per frame in flight
+	std::vector<vk::raii::DescriptorSet> m_storage_sets;
+	/// volumetrics.slang gFogAmbient per frame in flight
+	std::vector<vma::raii::Buffer> m_ambient;
+	std::vector<std::shared_ptr<const VoxelGpuStorage>> m_storage_bound;
 
 	/// Per frame in flight then per history parity
 	std::vector<vk::raii::DescriptorSet> m_image_sets;

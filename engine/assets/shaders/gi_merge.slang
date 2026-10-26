@@ -183,7 +183,7 @@ GiHistory giAccumulate(GiFrame frame, GiBucket bucket, uint2 source, bool carrie
 {
     float weight = float(bucket.value.w & 0xffffu);
     float3 radiance = float3(bucket.value.xyz) / frame.rays.z;
-    float transmittance = float(bucket.value.w >> 16);
+    float transmittance = float(bucket.value.w >> 16) / kGiTransmittanceScale;
     float rays = 0.0;
     const float4 old = giHistoryBucket(bucket.old, rays);
     const float held = min(rays * frame.limits.z, max(frame.limits.y - weight, 0.0));

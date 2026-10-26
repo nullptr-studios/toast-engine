@@ -69,8 +69,20 @@ public:
 	/// Inside a depth only scope before the G-buffer scope that shades the same quads
 	void recordQuadDepth(vk::CommandBuffer cmd, uint32_t frame_index, bool late);
 
-	/// Writes scene colour indirect and rounded normal while reading the G-buffer and depth
+	/// Writes scene colour indirect rounded normal and noisy diffuse while reading the G-buffer and depth
 	void recordLighting(vk::CommandBuffer cmd, uint32_t frame_index, vk::Extent2D viewport);
+
+	/// After prepare() whether recordAmbient() has rays to trace
+	[[nodiscard]]
+	auto ambientRaysActive() const noexcept -> bool {
+		return m_ambient_rays;
+	}
+
+	/// Inside a scope over noisy diffuse alone with the scene normal sampleable and before recordMarched()
+	void recordAmbient(vk::CommandBuffer cmd, uint32_t frame_index);
+
+	/// Inside a scope over scene colour noisy terms and reservoirs with the scene normal sampleable
+	void recordMarched(vk::CommandBuffer cmd, uint32_t frame_index);
 
 	struct GlassDraw {
 		float distance_squared = 0.0f;
@@ -116,6 +128,15 @@ public:
 
 	/// Inside a scope over the scene colour alone
 	void recordDenoiseComposite(vk::CommandBuffer cmd, uint32_t frame_index);
+
+	/// After prepare() whether marched terms reach colour without the denoiser
+	[[nodiscard]]
+	auto marchedCompositeActive() const noexcept -> bool {
+		return !m_denoise_active && (m_marched_lights || m_ambient_rays);
+	}
+
+	/// Inside a scope over the scene colour alone with the noisy terms sampleable
+	void recordMarchedComposite(vk::CommandBuffer cmd, uint32_t frame_index);
 
 	/// After the G-buffer and depth targets are recreated since a new view can reuse a destroyed handle value
 	void onTargetsRecreated();
@@ -235,6 +256,8 @@ private:
 	/// After the pyramid is created since its view changes with the depth target
 	void writeHizDescriptors();
 	void recordCellDraws(vk::CommandBuffer cmd, uint32_t frame_index);
+	/// The lighting sets and last recordLighting() push constants for a pipeline on the lighting layout
+	void bindMarched(vk::CommandBuffer cmd, uint32_t frame_index, const VulkanPipeline& pipeline);
 
 	enum class Cull : uint8_t {
 		back,
@@ -340,8 +363,11 @@ private:
 	uint32_t m_shadow_instance_count = 0;
 
 	/// Albedo face normal material and depth last written into each set
-	std::vector<std::array<vk::ImageView, 8>> m_bound_gbuffer;
+	std::vector<std::array<vk::ImageView, 10>> m_bound_gbuffer;
 	VulkanPipeline m_spatial_pipeline;
+	VulkanPipeline m_marched_pipeline;
+	VulkanPipeline m_ambient_pipeline;
+	VulkanPipeline m_marched_composite_pipeline;
 	bool m_spatial_active = false;
 	bool m_scene_glass = false;
 	bool m_backdrop_captured = false;

@@ -84,6 +84,11 @@ struct CameraUBO
 
     /// xy blue noise texel offset walking R2 per frame z frame index
     float4 noiseParams;
+
+    /// x height fog extinction per meter at the base height y base height z height falloff w fog volumes
+    float4 fogMedium;
+    /// x height fog distance y fog volume distance z marched sun reach in meters
+    float4 fogReach;
 };
 
 [[vk::binding(0,0)]]
@@ -1231,8 +1236,19 @@ bool isVoxelDebugMode(uint mode)
     return mode >= kRenderModeVoxelSteps && mode <= kRenderModeVoxelPaletteId;
 }
 
+/// Modes evaluateDebugView draws for every surface
+bool isSurfaceDebugMode(uint mode)
+{
+    return (mode >= 1u && mode <= 10u) || mode == 16u || isVoxelDebugMode(mode);
+}
+
 float4 evaluateDebugView(Surface surface, ClusterCell cluster)
 {
+    if (!isSurfaceDebugMode(gCamera.renderModePad.x))
+    {
+        return float4(0.0, 0.0, 0.0, 0.0);
+    }
+
     float3 albedo = surface.albedo;
     float3 N = surface.normal;
     float3 V = surface.viewDirection;
@@ -1380,6 +1396,9 @@ interface IShadowFilter
 {
     /// @p distance is negative for a directional light
     float3 filter(float3 L, float distance);
+    /// False leaves shadow mapped lights to another pass
+    bool shadesMapLights();
+    float traceMeshShadow(float3 position, float3 normal, float3 L, float distance);
 }
 
 struct NoShadowFilter : IShadowFilter
@@ -1387,6 +1406,16 @@ struct NoShadowFilter : IShadowFilter
     float3 filter(float3 L, float distance)
     {
         return float3(1.0, 1.0, 1.0);
+    }
+
+    bool shadesMapLights()
+    {
+        return true;
+    }
+
+    float traceMeshShadow(float3 position, float3 normal, float3 L, float distance)
+    {
+        return traceShadowRay(position, normal, L, distance);
     }
 }
 
@@ -1452,8 +1481,15 @@ float3 ambientSpecularRadiance(float3 worldPosition, float3 reflection, float ro
     return ambientSpecularRadiance(worldPosition, reflection, roughness, best, weight);
 }
 
-ShadingResult evaluateLighting<Filter : IShadowFilter>(Surface surface, ClusterCell cluster, Filter shadowFilter)
+/// Shadow mapped suns and cluster lights
+void evaluateDirectLighting<Filter : IShadowFilter>(Surface surface, ClusterCell cluster, Filter shadowFilter, inout float3 color,
+                                                    inout float3 specular, inout float debugMinShadow)
 {
+    if (!shadowFilter.shadesMapLights())
+    {
+        return;
+    }
+
     float3 N = surface.normal;
     float3 V = surface.viewDirection;
     float3 geometricNormal = surface.geometricNormal;
@@ -1461,28 +1497,13 @@ ShadingResult evaluateLighting<Filter : IShadowFilter>(Surface surface, ClusterC
     float metallic = surface.metallic;
     float roughness = surface.roughness;
     float reflectivity = saturate(surface.reflectivity);
-    float occlusion = surface.occlusion;
 
     uint clusterIndex = cluster.index;
     uint clusterCount = cluster.count;
     uint lightCountInCluster = cluster.lightCount;
     float dist = cluster.viewDistance;
 
-    ShadingResult result;
-    result.indirectDiffuse = float3(0.0, 0.0, 0.0);
-    result.specular = float3(0.0, 0.0, 0.0);
-    result.ambientSpecular = float3(0.0, 0.0, 0.0);
-    result.contactReach = 0.0;
-    result.isDebugView = false;
-
-    float3 outIndirectDiffuse = float3(0.0, 0.0, 0.0);
-    float3 specular = float3(0.0, 0.0, 0.0);
-
-    float3 color = float3(0.0, 0.0, 0.0);
-
     uint shadowCasterIndex = uint(gCamera.shadowParams.x) - 1;
-
-    float debugMinShadow = 1.0;
     bool shadowDebugView = gCamera.renderModePad.x == 19;
 
     for (uint di = 0; di < gCamera.directionalLightCountPad.x; ++di)
@@ -1503,7 +1524,7 @@ ShadingResult evaluateLighting<Filter : IShadowFilter>(Surface surface, ClusterC
         float shadow = 1.0;
         if (tracedShadowsEnabled())
         {
-            shadow = traceShadowRay(surface.worldPosition, geometricNormal, L, 1.0e5);
+            shadow = shadowFilter.traceMeshShadow(surface.worldPosition, geometricNormal, L, 1.0e5);
         }
         else if (gCamera.shadowParams.x >= 0.5 && di == shadowCasterIndex)
         {
@@ -1567,7 +1588,7 @@ ShadingResult evaluateLighting<Filter : IShadowFilter>(Surface surface, ClusterC
             float shadow;
             if (tracedShadowsEnabled())
             {
-                shadow = traceShadowRay(surface.worldPosition, geometricNormal, L, lightDist);
+                shadow = shadowFilter.traceMeshShadow(surface.worldPosition, geometricNormal, L, lightDist);
             }
             else
             {
@@ -1591,6 +1612,30 @@ ShadingResult evaluateLighting<Filter : IShadowFilter>(Surface surface, ClusterC
             specular += lightSpecular * weight;
         }
     }
+}
+
+ShadingResult evaluateLighting<Filter : IShadowFilter>(Surface surface, ClusterCell cluster, Filter shadowFilter)
+{
+    float3 N = surface.normal;
+    float3 V = surface.viewDirection;
+    float3 albedo = surface.albedo;
+    float metallic = surface.metallic;
+    float roughness = surface.roughness;
+    float reflectivity = saturate(surface.reflectivity);
+    float occlusion = surface.occlusion;
+
+    ShadingResult result;
+    result.indirectDiffuse = float3(0.0, 0.0, 0.0);
+    result.specular = float3(0.0, 0.0, 0.0);
+    result.ambientSpecular = float3(0.0, 0.0, 0.0);
+    result.contactReach = 0.0;
+    result.isDebugView = false;
+
+    float3 outIndirectDiffuse = float3(0.0, 0.0, 0.0);
+    float3 specular = float3(0.0, 0.0, 0.0);
+    float3 color = float3(0.0, 0.0, 0.0);
+    float debugMinShadow = 1.0;
+    evaluateDirectLighting(surface, cluster, shadowFilter, color, specular, debugMinShadow);
 
     if (gCamera.renderModePad.x == 19)
     {

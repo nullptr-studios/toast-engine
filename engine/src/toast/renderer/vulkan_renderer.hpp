@@ -120,6 +120,8 @@ public:
 		glm::vec4 wind_scale {0.0f};
 		/// x anisotropy y ambient scale
 		glm::vec4 phase {0.0f};
+		/// xyz box centre in world space
+		glm::vec4 centre {0.0f};
 	};
 
 	struct FrameContext {
@@ -243,6 +245,11 @@ public:
 
 		/// xy blue noise texel offset walking R2 per frame z frame index
 		glm::vec4 noise_params {0.0f};
+
+		/// x height fog extinction per meter at the base height y base height z height falloff w fog volumes
+		glm::vec4 fog_medium {0.0f};
+		/// x height fog distance y fog volume distance z marched sun reach in meters
+		glm::vec4 fog_reach {0.0f};
 	};
 
 	static_assert(
@@ -1107,6 +1114,13 @@ public:
 	[[nodiscard]]
 	auto getBlueNoiseBuffer() const -> vk::Buffer {
 		return m_blue_noise_buffer.has_value() ? **m_blue_noise_buffer : vk::Buffer {};
+	}
+
+	/// fog_media.slang gFogVolumes
+	auto getFogVolumeBuffer(uint32_t frame_index) const -> vk::Buffer {
+		return frame_index < m_fog_volume_res.size() && m_fog_volume_res[frame_index].gpu_buffer.has_value()
+		           ? **m_fog_volume_res[frame_index].gpu_buffer
+							 : vk::Buffer {};
 	}
 
 	auto getJointMatrixBuffer(uint32_t frame_index) const -> vk::Buffer {
@@ -2043,6 +2057,7 @@ private:
 	std::vector<FrameUBO> m_frame_ubos;
 	std::vector<FrameResources> m_frame_ubo_res;
 	std::vector<FrameResources> m_joint_matrix_res;
+	std::vector<FrameResources> m_fog_volume_res;
 
 	std::optional<vma::raii::Buffer> m_blue_noise_buffer;
 	std::vector<FrameResources> m_instance_res;

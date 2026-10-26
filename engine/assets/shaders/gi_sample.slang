@@ -59,14 +59,36 @@ void rcFindTiles(GiFrame frame, int3 base, uint lod, out uint tiles[8])
     }
 }
 
-float3 rcIrradianceAtLod(GiFrame frame, float3 worldPosition, float3 normal, uint lod, out float total)
+/// Corner tiles around the biased point and its position between them
+void rcCornersAtLod(GiFrame frame, float3 worldPosition, float3 normal, uint lod, out float3 upper, out uint tiles[8])
 {
     const float spacing = giSpacing(frame, lod, 0u);
     const float3 coord = (worldPosition + normal * (kGiSurfaceBias * spacing)) / spacing - 0.5;
     const int3 base = int3(floor(coord));
-    const float3 upper = coord - float3(base);
-    uint tiles[8];
+    upper = coord - float3(base);
     rcFindTiles(frame, base, lod, tiles);
+}
+
+/// Weight rcIrradianceAtLod would sum without its irradiance fetches
+float rcCoverageAtLod(GiFrame frame, float3 worldPosition, float3 normal, uint lod)
+{
+    float3 upper;
+    uint tiles[8];
+    rcCornersAtLod(frame, worldPosition, normal, lod, upper, tiles);
+    float total = 0.0;
+    [unroll]
+    for (uint corner = 0u; corner < 8u; ++corner)
+    {
+        total += tiles[corner] != kGiEmpty ? giNeighbourWeight(corner, upper) : 0.0;
+    }
+    return total;
+}
+
+float3 rcIrradianceAtLod(GiFrame frame, float3 worldPosition, float3 normal, uint lod, out float total)
+{
+    float3 upper;
+    uint tiles[8];
+    rcCornersAtLod(frame, worldPosition, normal, lod, upper, tiles);
 
     // Every tile is read at the same normal so the octahedral texel is shared
     const float2 texel = 1.0 + giOctEncode(normal) * float(kGiTileInterior);
@@ -115,6 +137,20 @@ bool sampleRadianceCascades(float3 worldPosition, float3 normal, out float3 irra
     }
     irradiance = nearTotal <= 0.0 ? far : (farTotal <= 0.0 ? near : lerp(near, far, blend));
     return true;
+}
+
+/// Whether sampleRadianceCascades finds a probe at the point
+bool radianceCascadesCover(float3 worldPosition, float3 normal)
+{
+    const GiFrame frame = gGiFrame[0];
+    if (frame.frame.x == 0u)
+    {
+        return false;
+    }
+    bool overlap = false;
+    const uint lod = giLod(frame, worldPosition, overlap);
+    return rcCoverageAtLod(frame, worldPosition, normal, lod) > 0.0 ||
+           (overlap && rcCoverageAtLod(frame, worldPosition, normal, lod + 1u) > 0.0);
 }
 
 /// End of the c0 interval at a point so short contact rays can add what the probe spacing blurs

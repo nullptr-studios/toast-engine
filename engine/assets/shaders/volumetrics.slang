@@ -1,8 +1,13 @@
-// Set 0 is the engine scene
+// Set 0 is the engine scene and set 1 the voxel storage with the scene trace
 import fullscreen;
 import depth_convention;
+import voxel_dda;
 import lighting;
+import gi_common;
 import gi_sample;
+import scene_trace;
+import trace_shading;
+import fog_media;
 
 // Mirrors VolumetricPass::Params
 struct VolumetricParams
@@ -22,51 +27,43 @@ struct VolumetricParams
 [[vk::push_constant]]
 ConstantBuffer<VolumetricParams> gParams;
 
-[[vk::binding(0, 1)]]
+[[vk::binding(0, 2)]]
 Sampler2D gSceneColour;
 
-[[vk::binding(1, 1)]]
+[[vk::binding(1, 2)]]
 Sampler2D gDepth;
 
 /// xy uv motion z reactive w 1 when written
-[[vk::binding(2, 1)]]
+[[vk::binding(2, 2)]]
 Sampler2D gMotion;
 
 /// rgb in-scattered radiance a transmittance
-[[vk::binding(3, 1)]]
+[[vk::binding(3, 2)]]
 Sampler2D gScatter;
 
-[[vk::binding(4, 1)]]
+[[vk::binding(4, 2)]]
 Sampler2D gHistory;
 
-[[vk::binding(5, 1)]]
+[[vk::binding(5, 2)]]
 Sampler2D gTemporal;
 
-// Mirrors VulkanRenderer::FogVolumeGpu
-struct FogVolume
-{
-    float4x4 worldToLocal;
-    /// xyz half extents w edge fade in meters
-    float4 extentsFade;
-    /// rgb albedo a extinction per meter
-    float4 albedoDensity;
-    /// rgb radiance per meter at density 1 a noise strength
-    float4 emissionNoise;
-    /// xyz wind in meters per second w noise scale in meters
-    float4 windScale;
-    /// x anisotropy y ambient scale
-    float4 phase;
-};
+/// Mean radiance at each fog volume centre then the camera with w the probe key
+[[vk::binding(6, 2)]]
+RWStructuredBuffer<float4> gFogAmbient;
 
-[[vk::binding(6, 1)]]
-StructuredBuffer<FogVolume> gFogVolumes;
+[[vk::binding(7, 2)]]
+StructuredBuffer<float4> gPreviousFogAmbient;
 
-/// Rounded normal of the surface a view ray ends on
-[[vk::binding(7, 1)]]
-Sampler2D gSceneNormal;
+/// Cone floor of fog shadow rays since shafts are soft
+static const float kFogShadowCone = 0.02;
 
-/// Steps between ambient lookups since ambient varies slowly along a ray
-static const uint kAmbientStride = 4u;
+/// Rays and meters each ambient probe traces
+static const uint kAmbientRays = 64u;
+static const float kAmbientReach = 40.0;
+/// New probe share per frame so one ray at a lamp cannot flash a volume
+static const float kAmbientBlend = 0.1;
+/// Mirrors VulkanRenderer::k_max_fog_volumes plus the camera
+static const uint kAmbientProbes = 33u;
 static const float kTemporalBlend = 0.1;
 
 typedef FullscreenVSOutput VSOutput;
@@ -119,7 +116,8 @@ struct Medium
     float3 emission;
     /// Weighted by the scattering of each medium
     float anisotropy;
-    float ambient;
+    /// Scattering times the ambient probe of each medium
+    float3 ambientScatter;
 };
 
 float latticeHash(float3 cell)
@@ -160,8 +158,8 @@ Medium mediumAt(float3 position, float along)
     medium.emission = float3(0.0, 0.0, 0.0);
     float weight = medium.extinction;
     float anisotropy = medium.extinction * gParams.medium.w;
-    float ambient = medium.extinction * gParams.albedo.a;
     const uint count = uint(gParams.marching.w);
+    medium.ambientScatter = medium.scattering * gParams.albedo.a * gFogAmbient[count].rgb;
     for (uint v = 0u; v < count; ++v)
     {
         const FogVolume volume = gFogVolumes[v];
@@ -183,10 +181,9 @@ Medium mediumAt(float3 position, float along)
         medium.emission += density * volume.emissionNoise.rgb;
         weight += density;
         anisotropy += density * volume.phase.x;
-        ambient += density * volume.phase.y;
+        medium.ambientScatter += density * volume.albedoDensity.rgb * volume.phase.y * gFogAmbient[v].rgb;
     }
     medium.anisotropy = weight > 0.0 ? anisotropy / weight : 0.0;
-    medium.ambient = weight > 0.0 ? ambient / weight : 0.0;
     return medium;
 }
 
@@ -217,82 +214,184 @@ bool volumeSpan(float3 origin, float3 direction, float maxDistance, out float ne
     return near < far;
 }
 
-float3 environmentAmbient()
+float3 skyRadiance(float3 direction)
 {
-    float3 ambient = gCamera.ambientColorIntensity.rgb * gCamera.ambientColorIntensity.a;
-    if (gCamera.environmentParams.x >= 0.5)
-    {
-        ambient += 0.5 * (gIrradianceMap.SampleLevel(float3(0.0, 1.0, 0.0), 0.0).rgb + gIrradianceMap.SampleLevel(float3(0.0, -1.0, 0.0), 0.0).rgb);
-    }
-    return ambient;
+    const float3 ambient = gCamera.ambientColorIntensity.rgb * gCamera.ambientColorIntensity.a;
+    return gCamera.environmentParams.x >= 0.5 ? ambient + gPrefilteredEnv.SampleLevel(direction, 0.0).rgb : ambient;
 }
 
-/// Probes only live near surfaces so mid air takes the light at the surface the ray ends on
-float3 surfaceAmbient(int2 pixel, float3 end, float3 direction, bool sky)
+/// Shaded like a GI off screen hit
+float3 probeHitRadiance(SceneHit hit, float3 origin, float3 direction, inout uint random)
 {
-    if (sky)
-    {
-        return environmentAmbient();
-    }
-    const float3 encoded = gSceneNormal.Load(int3(pixel, 0)).xyz;
-    const float3 normal = dot(encoded, encoded) > 1e-4 ? normalize(encoded) : -direction;
+    const float3 position = origin + direction * hit.t;
+    const float3 normal = sceneHitNormal(hit, direction);
+    const PaletteSample palette = samplePalette(gTraceVolumes[hit.volume].recordIndex, hit.material);
     float3 irradiance;
-    return sampleRadianceCascades(end, normal, irradiance) ? irradiance : environmentAmbient();
+    if (!sampleRadianceCascades(position, normal, irradiance))
+    {
+        irradiance = gCamera.ambientColorIntensity.rgb * gCamera.ambientColorIntensity.a;
+        if (gCamera.environmentParams.x >= 0.5)
+        {
+            irradiance += gIrradianceMap.SampleLevel(normal, 0.0).rgb;
+        }
+    }
+    return palette.albedo * (palette.emissive + irradiance) + traceLocalLight(position, normal, palette.albedo, kFogShadowCone, random) +
+           traceSunLight(position, normal, palette.albedo, kFogShadowCone, gCamera.fogReach.z, float2(0.0, 0.0));
 }
 
-/// Full sphere ambient from whichever cascade hemispheres cover the point or else @p fallback
-float3 ambientRadiance(float3 position, float3 fallback)
+groupshared float3 gsAmbient[kAmbientRays];
+
+/// One group per fog volume plus the camera so fog is lit by its room
+[shader("compute")]
+[numthreads(kAmbientRays, 1, 1)]
+void ambientMain(uint3 group : SV_GroupID, uint index : SV_GroupIndex)
 {
-    float3 up;
-    float3 down;
-    const bool hasUp = sampleRadianceCascades(position, float3(0.0, 1.0, 0.0), up);
-    const bool hasDown = sampleRadianceCascades(position, float3(0.0, -1.0, 0.0), down);
-    if (hasUp && hasDown)
+    const uint probe = group.x;
+    const uint count = uint(gParams.marching.w);
+    const float3 origin = probe < count ? gFogVolumes[probe].centre.xyz : gCamera.position;
+
+    // Fibonacci sphere turned per frame
+    const uint frame = uint(gCamera.noiseParams.z);
+    const float turn = float(giHash(probe ^ giHash(frame)) & 0xffffu) / 65536.0 * 6.28318531;
+    const float height = 1.0 - (2.0 * float(index) + 1.0) / float(kAmbientRays);
+    const float ring = sqrt(saturate(1.0 - height * height));
+    const float angle = float(index) * 2.39996323 + turn;
+    const float3 direction = float3(ring * cos(angle), height, ring * sin(angle));
+
+    uint random = giHash(index ^ giHash(probe ^ giHash(frame ^ 0x68bc21ebu)));
+    const SceneHit hit = traceScene(origin, direction, 0.0, kAmbientReach, kFogShadowCone);
+    // Tonemapped before the sum so one bright ray cannot carry the probe
+    float3 radiance = hit.hit ? probeHitRadiance(hit, origin, direction, random) : skyRadiance(direction);
+    radiance = all(isfinite(radiance)) ? max(radiance, float3(0.0, 0.0, 0.0)) : float3(0.0, 0.0, 0.0);
+    gsAmbient[index] = radiance / (1.0 + dot(radiance, float3(0.2126, 0.7152, 0.0722)));
+    GroupMemoryBarrierWithGroupSync();
+    for (uint stride = kAmbientRays / 2u; stride > 0u; stride >>= 1u)
     {
-        return 0.5 * (up + down);
+        if (index < stride)
+        {
+            gsAmbient[index] += gsAmbient[index + stride];
+        }
+        GroupMemoryBarrierWithGroupSync();
     }
-    // A lone hemisphere faces away from the room so it pairs with the surface estimate
-    if (hasUp || hasDown)
+    if (index == 0u)
     {
-        return 0.5 * ((hasUp ? up : down) + fallback);
+        const float3 mapped = gsAmbient[0] / float(kAmbientRays);
+        const float3 current = mapped / max(1.0 - dot(mapped, float3(0.2126, 0.7152, 0.0722)), 1e-3);
+        // Keyed by centre cell since the volume order shuffles
+        const uint key = probe < count ? giHash(uint(int(floor(origin.x * 2.0))) ^ giHash(uint(int(floor(origin.y * 2.0))) ^
+                                                giHash(uint(int(floor(origin.z * 2.0))))))
+                                       : 0xffffffffu;
+        float3 blended = current;
+        if (gParams.marching.z > 0.5)
+        {
+            for (uint previous = 0u; previous < kAmbientProbes; ++previous)
+            {
+                const float4 stored = gPreviousFogAmbient[previous];
+                if (asuint(stored.w) == key)
+                {
+                    blended = lerp(stored.rgb, current, kAmbientBlend);
+                    break;
+                }
+            }
+        }
+        gFogAmbient[probe] = float4(blended, asfloat(key));
     }
-    return fallback;
+}
+
+/// One marched light per step traces a ray since none has a shadow map
+struct MarchedPick
+{
+    float total;
+    float weight;
+    float3 light;
+    float3 segment;
+};
+
+void offerMarched(inout MarchedPick pick, float3 light, float3 segment, inout uint random)
+{
+    const float weight = dot(light, float3(0.2126, 0.7152, 0.0722));
+    if (weight <= 0.0)
+    {
+        return;
+    }
+    pick.total += weight;
+    if (giRandom(random) * pick.total < weight)
+    {
+        pick.weight = weight;
+        pick.light = light;
+        pick.segment = segment;
+    }
 }
 
 /// Sun and froxel lights arriving at @p position toward the camera along @p toCamera
-float3 directInScatter(float3 position, float3 toCamera, float2 pixel, float g)
+float3 directInScatter(float3 position, float3 toCamera, float2 pixel, float g, inout uint random)
 {
+    const bool shadowed = gParams.quality.z > 0.5;
+    MarchedPick pick;
+    pick.total = 0.0;
+    pick.weight = 0.0;
+    pick.light = float3(0.0, 0.0, 0.0);
+    pick.segment = float3(0.0, 0.0, 0.0);
+
     float3 light = float3(0.0, 0.0, 0.0);
     const uint casterIndex = uint(gCamera.shadowParams.x) - 1u;
     for (uint di = 0u; di < gCamera.directionalLightCountPad.x; ++di)
     {
         const DirectionalLightGpu sun = gCamera.directionalLights[di];
         const float3 L = normalize(-sun.direction.xyz);
-        const float shadow = gCamera.shadowParams.x >= 0.5 && di == casterIndex ? volumeSunShadow(position) : 1.0;
-        light += sun.colorIntensity.rgb * sun.colorIntensity.a * henyeyGreenstein(dot(-L, toCamera), g) * shadow;
+        const float3 sunLight = sun.colorIntensity.rgb * sun.colorIntensity.a * henyeyGreenstein(dot(-L, toCamera), g);
+        if (gCamera.shadowParams.x >= 0.5 && di == casterIndex)
+        {
+            light += sunLight * volumeSunShadow(position);
+        }
+        else if (shadowed && sun.direction.w > 0.0)
+        {
+            offerMarched(pick, sunLight, L * gCamera.fogReach.z, random);
+        }
+        else
+        {
+            light += sunLight;
+        }
     }
 
     const float viewZ = mul(gCamera.view, float4(position, 1.0)).z;
     const ClusterCell cluster = clusterCellAt(viewZ, pixel);
-    if (cluster.index >= cluster.count)
+    if (cluster.index < cluster.count)
     {
-        return light;
-    }
-    const uint stride = gClusterParams.clusterDims.w;
-    const uint indexBase = cluster.index * stride;
-    const uint count = min(min(cluster.lightCount, stride), uint(gParams.quality.y));
-    for (uint li = 0u; li < count; ++li)
-    {
-        const GpuLight local = gLights[gLightIndexList[indexBase + li]];
-        float3 L;
-        float distance;
-        const float3 radiance = lightSampleRadiance(local, position, analyticLightPoint(local, position), L, distance);
-        if (all(radiance <= 0.0))
+        const uint stride = gClusterParams.clusterDims.w;
+        const uint indexBase = cluster.index * stride;
+        const uint count = min(min(cluster.lightCount, stride), uint(gParams.quality.y));
+        for (uint li = 0u; li < count; ++li)
         {
-            continue;
+            const GpuLight local = gLights[gLightIndexList[indexBase + li]];
+            const float3 samplePoint = analyticLightPoint(local, position);
+            float3 L;
+            float distance;
+            const float3 radiance = lightSampleRadiance(local, position, samplePoint, L, distance);
+            if (all(radiance <= 0.0))
+            {
+                continue;
+            }
+            const float3 localLight = radiance * henyeyGreenstein(dot(-L, toCamera), g);
+            if (!shadowed)
+            {
+                light += localLight;
+            }
+            else if (lightShadowMode(local) == kShadowModeMap)
+            {
+                light += localLight * volumeLocalShadow(local, position);
+            }
+            else
+            {
+                offerMarched(pick, localLight, samplePoint - position, random);
+            }
         }
-        const float shadow = gParams.quality.z > 0.5 ? volumeLocalShadow(local, position) : 1.0;
-        light += radiance * henyeyGreenstein(dot(-L, toCamera), g) * shadow;
+    }
+
+    if (pick.weight > 0.0)
+    {
+        const float visibility = traceVisibility(position, pick.segment, kFogShadowCone, false).x;
+        light += pick.light * visibility * (pick.total / pick.weight);
     }
     return light;
 }
@@ -321,11 +420,9 @@ float4 scatterMain(VSOutput input) : SV_Target0
         span = far - start;
     }
 
-    const float3 fallbackAmbient = surfaceAmbient(pixel, end, direction, isFarDepth(gDepth.Load(int3(pixel, 0)).r));
+    uint random = giHash(uint(pixel.x) ^ giHash(uint(pixel.y) ^ giHash(uint(gCamera.noiseParams.z))));
     float3 scattered = float3(0.0, 0.0, 0.0);
     float transmittance = 1.0;
-    float3 ambient = float3(0.0, 0.0, 0.0);
-    bool ambientKnown = false;
     for (uint i = 0u; i < steps; ++i)
     {
         // Squared so steps crowd near the camera where a shaft spans the most pixels
@@ -338,13 +435,9 @@ float4 scatterMain(VSOutput input) : SV_Target0
         {
             continue;
         }
-        if (!ambientKnown || i % kAmbientStride == 0u)
-        {
-            ambient = ambientRadiance(position, fallbackAmbient);
-            ambientKnown = true;
-        }
         const float3 inScatter =
-            medium.scattering * (directInScatter(position, toCamera, float2(pixel), medium.anisotropy) + ambient * medium.ambient) + medium.emission;
+            medium.scattering * directInScatter(position, toCamera, float2(pixel), medium.anisotropy, random) + medium.ambientScatter +
+            medium.emission;
         const float stepExtinction = exp(-medium.extinction * (far - near));
         scattered += transmittance * inScatter * (1.0 - stepExtinction) / medium.extinction;
         transmittance *= stepExtinction;

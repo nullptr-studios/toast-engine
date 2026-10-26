@@ -421,9 +421,7 @@ void VoxelPass::createLighting(const VulkanCore& core, vk::Format scene_format, 
 	config.pipeline_type = VulkanPipeline::PipelineType::graphics;
 	config.debug_name = "VoxelLighting";
 	config.color_format = scene_format;
-	config.extra_color_formats = {
-	  k_scene_indirect_format, k_scene_normal_format, k_voxel_noisy_format, k_voxel_noisy_format, k_voxel_reservoir_format
-	};
+	config.extra_color_formats = {k_scene_indirect_format, k_scene_normal_format, k_voxel_noisy_format};
 	config.write_extra_color = true;
 	config.extent = extent;
 	config.shader_spirv = shader->spirv;
@@ -442,6 +440,32 @@ void VoxelPass::createLighting(const VulkanCore& core, vk::Format scene_format, 
 	config.blend_preset = VulkanPipeline::BlendPreset::additive;
 	config.extra_blend_mask = 1u;
 	m_spatial_pipeline.rebuild(core, config);
+
+	// Premultiplied so colour adds and noisy diffuse keeps the indirect scaled by occlusion
+	config.debug_name = "VoxelMarchedLighting";
+	config.fragment_entry = "fragmentMarched";
+	config.color_format = scene_format;
+	config.extra_color_formats = {k_voxel_noisy_format, k_voxel_noisy_format, k_voxel_reservoir_format};
+	config.blend_preset = VulkanPipeline::BlendPreset::premultiplied;
+	config.extra_blend_mask = 1u;
+	m_marched_pipeline.rebuild(core, config);
+
+	// Alpha one minus occlusion scales the indirect the lighting scope left in noisy diffuse
+	config.debug_name = "VoxelAmbientRays";
+	config.fragment_entry = "fragmentAmbient";
+	config.color_format = k_voxel_noisy_format;
+	config.extra_color_formats = {};
+	config.extra_blend_mask = 0u;
+	m_ambient_pipeline.rebuild(core, config);
+
+	config.debug_name = "VoxelMarchedComposite";
+	config.fragment_entry = "fragmentMarchedComposite";
+	config.color_format = scene_format;
+	config.blend_preset = VulkanPipeline::BlendPreset::additive;
+	config.extra_blend_mask = 0u;
+	config.write_extra_color = false;
+	config.write_color_alpha = false;
+	m_marched_composite_pipeline.rebuild(core, config);
 
 	m_lighting_scene_sets.create(core, shader->reflection, *layouts[k_scene_set], "VoxelLighting");
 
@@ -1354,7 +1378,7 @@ void VoxelPass::recordLighting(vk::CommandBuffer cmd, uint32_t frame_index, vk::
 		return;
 	}
 
-	const std::array<vk::ImageView, 8> views {
+	const std::array<vk::ImageView, 10> views {
 	  instance->getVoxelAlbedoView(),
 	  instance->getVoxelFaceNormalView(),
 	  instance->getVoxelMaterialView(),
@@ -1363,6 +1387,8 @@ void VoxelPass::recordLighting(vk::CommandBuffer cmd, uint32_t frame_index, vk::
 	  instance->getSceneMotionView(),
 	  instance->getVoxelCandidateReservoirView(),
 	  instance->getSceneNormalView(),
+	  instance->getVoxelNoisyDiffuseView(),
+	  instance->getVoxelNoisySpecularView(),
 	};
 	if (std::ranges::any_of(views, [](vk::ImageView view) { return !view; })) {
 		return;
@@ -1778,8 +1804,54 @@ void VoxelPass::recordSpatial(vk::CommandBuffer cmd, uint32_t frame_index, vk::E
 	cmd.draw(3, 1, 0, 0);
 }
 
+void VoxelPass::bindMarched(vk::CommandBuffer cmd, uint32_t frame_index, const VulkanPipeline& pipeline) {
+	const vk::PipelineLayout layout = *m_lighting_layout.getPipelineLayout();
+	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.getPipeline());
+	cmd.bindDescriptorSets(
+	    vk::PipelineBindPoint::eGraphics,
+	    layout,
+	    k_scene_set,
+	    std::array<vk::DescriptorSet, 3> {
+	      m_lighting_scene_sets.get(frame_index), *m_lighting_storage_sets[frame_index], *m_gbuffer_sets[frame_index]
+	    },
+	    {}
+	);
+	cmd.pushConstants(layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(LightingPushConstants), &m_lighting_push);
+}
+
+void VoxelPass::recordMarched(vk::CommandBuffer cmd, uint32_t frame_index) {
+	ZoneScoped;
+	// The scope still clears the reservoirs and noisy specular when nothing marches
+	if (!(m_marched_lights || m_scene_glass) || !m_marched_pipeline.isReady() || frame_index >= m_gbuffer_sets.size() ||
+	    frame_index >= m_lighting_storage_sets.size() || !m_lighting_scene_sets.get(frame_index)) {
+		return;
+	}
+	bindMarched(cmd, frame_index, m_marched_pipeline);
+	cmd.draw(3, 1, 0, 0);
+}
+
+void VoxelPass::recordAmbient(vk::CommandBuffer cmd, uint32_t frame_index) {
+	ZoneScoped;
+	if (!m_ambient_rays || !m_ambient_pipeline.isReady() || frame_index >= m_gbuffer_sets.size() ||
+	    frame_index >= m_lighting_storage_sets.size() || !m_lighting_scene_sets.get(frame_index)) {
+		return;
+	}
+	bindMarched(cmd, frame_index, m_ambient_pipeline);
+	cmd.draw(3, 1, 0, 0);
+}
+
+void VoxelPass::recordMarchedComposite(vk::CommandBuffer cmd, uint32_t frame_index) {
+	ZoneScoped;
+	if (!marchedCompositeActive() || !m_marched_composite_pipeline.isReady() || frame_index >= m_gbuffer_sets.size() ||
+	    frame_index >= m_lighting_storage_sets.size() || !m_lighting_scene_sets.get(frame_index)) {
+		return;
+	}
+	bindMarched(cmd, frame_index, m_marched_composite_pipeline);
+	cmd.draw(3, 1, 0, 0);
+}
+
 void VoxelPass::onTargetsRecreated() {
-	std::ranges::fill(m_bound_gbuffer, std::array<vk::ImageView, 8> {});
+	std::ranges::fill(m_bound_gbuffer, std::array<vk::ImageView, 10> {});
 	if (!m_denoise_sets.empty()) {
 		createDenoiseTargets(VulkanRenderer::instance->getOutputTarget().getExtent());
 	}

@@ -187,6 +187,9 @@ void SceneDescriptorSets::create(
 				buffer = VulkanRenderer::instance->getInstanceBuffer(i);
 				size = sizeof(VulkanRenderer::InstanceData) * VulkanRenderer::k_max_instances;
 				descriptor_type = vk::DescriptorType::eStorageBuffer;
+			} else if (binding.name == "gFogVolumes") {
+				buffer = VulkanRenderer::instance->getFogVolumeBuffer(i);
+				descriptor_type = vk::DescriptorType::eStorageBuffer;
 			} else if (binding.name == "gBlueNoise") {
 				buffer = VulkanRenderer::instance->getBlueNoiseBuffer();
 				descriptor_type = vk::DescriptorType::eStorageBuffer;
