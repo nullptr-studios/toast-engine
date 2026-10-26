@@ -432,13 +432,13 @@ void GiPass::createBuffers(const VulkanCore& core) {
 
 auto GiPass::createPipelines(const VulkanCore& core) -> bool {
 	ZoneScoped;
-	const auto probe_uid = assets::resolveURI("core://shaders/gi_probes");
+	const auto probe_uid = assets::resolveURI("core://shaders/gi_probes.slang");
 	const auto probe_shader = probe_uid.has_value() ? ShaderCache::get().acquire(*probe_uid) : nullptr;
-	const auto debug_uid = assets::resolveURI("core://shaders/gi_debug");
+	const auto debug_uid = assets::resolveURI("core://shaders/gi_debug.slang");
 	const auto debug_shader = debug_uid.has_value() ? ShaderCache::get().acquire(*debug_uid) : nullptr;
-	const auto ray_uid = assets::resolveURI("core://shaders/gi_rays");
+	const auto ray_uid = assets::resolveURI("core://shaders/gi_rays.slang");
 	const auto ray_shader = ray_uid.has_value() ? ShaderCache::get().acquire(*ray_uid) : nullptr;
-	const auto merge_uid = assets::resolveURI("core://shaders/gi_merge");
+	const auto merge_uid = assets::resolveURI("core://shaders/gi_merge.slang");
 	const auto merge_shader = merge_uid.has_value() ? ShaderCache::get().acquire(*merge_uid) : nullptr;
 	if (!probe_shader || !debug_shader || !ray_shader || !merge_shader) {
 		TOAST_ERROR("Render", "GiPass shaders unavailable, radiance cascades are disabled");
