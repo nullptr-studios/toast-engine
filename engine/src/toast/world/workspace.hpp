@@ -222,6 +222,8 @@ protected:
 		float plane = 0.0f;          ///< Where along axis the mouse ray is cut to find the rectangle
 		int32_t sign = 1;            ///< Which way is out of the face
 		int32_t depth = 1;
+		int32_t snap_plane = 1;
+		int32_t snap_depth = 1;
 		glm::ivec3 anchor {0};
 		glm::ivec3 current {0};
 		glm::ivec3 face_min {std::numeric_limits<int32_t>::min()};    ///< Extrude keeps the footprint on its face
