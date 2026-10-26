@@ -224,7 +224,7 @@ auto Workspace::VoxelToolState::box() const -> std::pair<glm::ivec3, glm::ivec3>
 				continue;
 			}
 			min[a] = static_cast<int32_t>(std::floor(static_cast<double>(min[a]) / snap_plane)) * snap_plane;
-			max[a] = (static_cast<int32_t>(std::floor(static_cast<double>(max[a]) / snap_plane)) + 1) * snap_plane - 1;
+			max[a] = ((static_cast<int32_t>(std::floor(static_cast<double>(max[a]) / snap_plane)) + 1) * snap_plane) - 1;
 		}
 	}
 	const int32_t first = depth > 0 ? surface + sign : surface;
