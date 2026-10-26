@@ -1888,7 +1888,8 @@ void Workspace::eventSubscriptions() {
 			m_history->commit();
 		}
 		const UID saved_uid = assets::AssetManager::resolveURI(e.uri).value_or(node == m_root_node ? m_handle : UID(0));
-		assets::Prefab prefab(*node, saved_uid);
+		const UID origin = node == m_root_node ? node->m_source_prefab.uid() : UID(0);
+		assets::Prefab prefab(*node, origin.data() != 0 ? origin : saved_uid);
 		auto bytes = prefab.serialize(assets::SaveMode::editor);
 		completed.success = assets::AssetManager::get().saveBytes(e.uri, bytes);
 		if (completed.success) {
