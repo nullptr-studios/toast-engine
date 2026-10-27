@@ -47,6 +47,7 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.head_ref }}
           fetch-depth: 1
+          submodules: true
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31.10.6
@@ -81,6 +82,7 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.head_ref }}
           fetch-depth: 1
+          submodules: true
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31.10.6
@@ -100,29 +102,6 @@ jobs:
           bash ./tools/ci/clang_tidy.sh build
           "
 
-  cargo-log-server:
-    name: Cargo log_server (${{ matrix.build_type }})
-    runs-on: [self-hosted, Linux, X64]
-    strategy:
-      matrix:
-        build_type: [debug, release]
-      fail-fast: false
-    steps:
-      - name: Checkout PR branch
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.head_ref }}
-          fetch-depth: 1
-
-      - name: Install Nix
-        uses: cachix/install-nix-action@v31.10.6
-
-      - name: Cargo build
-        env:
-          RELEASE_FLAG: ${{ matrix.build_type == 'release' && '--release' || '' }}
-        run: nix develop --command bash -c "rustup toolchain install stable --no-self-update && rustup default stable && cargo build --manifest-path tools/log_server/Cargo.toml $RELEASE_FLAG"
-
   cargo-reflection-generator:
     name: Cargo reflection_generator (${{ matrix.build_type }})
     runs-on: [self-hosted, Linux, X64]
@@ -137,6 +116,7 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.head_ref }}
           fetch-depth: 1
+          submodules: true
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31.10.6
@@ -145,29 +125,6 @@ jobs:
         env:
           RELEASE_FLAG: ${{ matrix.build_type == 'release' && '--release' || '' }}
         run: nix develop --command bash -c "rustup toolchain install stable --no-self-update && rustup default stable && cargo build --manifest-path tools/reflection_generator/Cargo.toml $RELEASE_FLAG"
-
-  cargo-kenzo:
-    name: Cargo kenzo (${{ matrix.build_type }})
-    runs-on: [self-hosted, Linux, X64]
-    strategy:
-      matrix:
-        build_type: [debug, release]
-      fail-fast: false
-    steps:
-      - name: Checkout PR branch
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.head_ref }}
-          fetch-depth: 1
-
-      - name: Install Nix
-        uses: cachix/install-nix-action@v31.10.6
-
-      - name: Cargo build
-        env:
-          RELEASE_FLAG: ${{ matrix.build_type == 'release' && '--release' || '' }}
-        run: nix develop --command bash -c "rustup toolchain install stable --no-self-update && rustup default stable && cargo build --manifest-path tools/kenzo/Cargo.toml $RELEASE_FLAG"
 
   dotnet-editor:
     name: Dotnet editor (${{ matrix.build_type }})
@@ -183,6 +140,7 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.head_ref }}
           fetch-depth: 1
+          submodules: true
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31.10.6
@@ -204,6 +162,7 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.head_ref }}
           fetch-depth: 1
+          submodules: true
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31.10.6

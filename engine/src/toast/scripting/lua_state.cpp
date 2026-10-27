@@ -507,7 +507,12 @@ LuaState::LuaState() : m_pool_size(1 + toast::ThreadPool::workerCount()), m_entr
 		lua_atpanic(entry.state, [](auto* state) -> int {
 			const char* message = lua_tostring(state, -1);
 			luaL_traceback(state, state, message ? message : "(non-string error)", 0);
-			TOAST_ERROR("Lua", "Panic: {}\n{}", message ? message : "(non-string error)", lua_tostring(state, -1));
+			TOAST_MESSAGE(
+			    logging::Severity::error,
+			    "Lua",
+			    std::format("Panic: {}", message ? message : "(non-string error)"),
+			    std::string_view(lua_tostring(state, -1))
+			);
 			return 0;
 		});
 

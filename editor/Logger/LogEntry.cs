@@ -13,13 +13,16 @@ public sealed class LogEntry {
 	private const char FieldSeparator = '';
 	private const int MaxDisplayMessageLength = 500;
 
-	public LogEntry(ulong timestampNanos, uint severity, string filepath, uint line, string sink, string message) {
+	public LogEntry(ulong timestampNanos, uint severity, string filepath, uint line, string sink, string message,
+		string details = "", string backtrace = "") {
 		TimestampNanos = timestampNanos;
 		Severity = severity;
 		Filepath = filepath;
 		Line = line;
 		Sink = sink;
 		Message = message;
+		Details = details;
+		Backtrace = backtrace;
 
 		SeverityName = LogCsv.SeverityName(severity);
 		SeverityShortName = severity switch {
@@ -38,7 +41,7 @@ public sealed class LogEntry {
 		DisplayFileLine = line > 0 ? $"{filename}:{line}" : filename;
 
 		DisplayMessage = TrimForTable(message);
-		SearchBlob = string.Join(FieldSeparator, SeverityName, sink, FileLine, message);
+		SearchBlob = string.Join(FieldSeparator, SeverityName, sink, FileLine, message, details);
 	}
 
 	public ulong TimestampNanos { get; }
@@ -47,6 +50,10 @@ public sealed class LogEntry {
 	public uint Line { get; }
 	public string Sink { get; }
 	public string Message { get; }
+	public string Details { get; }
+	public string Backtrace { get; }
+	public bool HasDetails => Details.Length > 0;
+	public bool HasBacktrace => Backtrace.Length > 0;
 
 	public string SeverityName { get; }
 	public string SeverityShortName { get; }

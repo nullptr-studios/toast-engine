@@ -171,21 +171,19 @@ auto debugCallback(
 	}
 
 	const char* message = (p_callback_data != nullptr && p_callback_data->pMessage != nullptr) ? p_callback_data->pMessage : "";
+	logging::Severity severity = logging::Severity::trace;
 	switch (message_severity) {
-		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-			TOAST_TRACE("ValidationLayers", "[Vulkan Validation] [{}]: {}", message_type_string, message);
-			break;
-		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-			TOAST_INFO("ValidationLayers", "[Vulkan Validation] [{}]: {}", message_type_string, message);
-			break;
-		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-			TOAST_WARN("ValidationLayers", "[Vulkan Validation] [{}]: {}", message_type_string, message);
-			break;
-		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-			TOAST_ERROR("ValidationLayers", "[Vulkan Validation] [{}]: {}", message_type_string, message);
-			break;
-		default: break;
+		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT: severity = logging::Severity::trace; break;
+		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT: severity = logging::Severity::info; break;
+		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT: severity = logging::Severity::warning; break;
+		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT: severity = logging::Severity::error; break;
+		default: return VK_FALSE;
 	}
+
+	// The first line is the problem, the rest is the layer's explanation and the spec link
+	const auto [summary, body] = logging::splitFirstLine(message);
+	const std::string line = std::format("[Vulkan Validation] [{}]: {}", message_type_string, summary);
+	TOAST_MESSAGE(severity, "ValidationLayers", line, body);
 
 	return VK_FALSE;
 }
@@ -522,9 +520,13 @@ void VulkanCore::pickPhysicalDevice(std::span<const char* const> required_device
 		for (std::size_t i = 0; i < queues.size(); ++i) {
 			TOAST_TRACE("Render", "    Queue family {} | flags:{}", i, formatQueueFlags(queues[i].queueFlags));
 		}
-		TOAST_TRACE("Render", "  Extensions: {}", joinExtensions(extensions));
+		TOAST_MESSAGE(
+		    logging::Severity::trace, "Render", std::format("  Device extensions ({})", extensions.size()), joinExtensions(extensions)
+		);
 
-		TOAST_TRACE("Render", "  {}", device_score.toString());
+		TOAST_MESSAGE(
+		    logging::Severity::trace, "Render", std::format("  Device score: {}", device_score.total), device_score.toString()
+		);
 
 		if (!device_score.missing_extensions.empty()) {
 			std::string missing;

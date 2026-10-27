@@ -30,7 +30,11 @@ auto fmodLogCallback(FMOD_DEBUG_FLAGS flags, const char* file, int line, const c
 	size_t pos = std::max(path.find_last_of('/'), path.find_last_of('\\'));
 	std::string name = pos == std::string::npos ? path : path.substr(pos + 1);
 
-	::logging::_detail::log(severity, path, line, "Audio", msg);
+	const auto [summary, body] = ::logging::splitFirstLine(msg);
+	::logging::_detail::log(severity, path, line, "Audio", summary, body);
+	if (severity >= 3) {
+		TOAST_BREAK_IF_ATTACHED();
+	}
 
 	constexpr uint32_t red = 0xFF0000;
 	constexpr uint32_t yellow = 0x00FFFF;

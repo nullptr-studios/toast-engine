@@ -12,8 +12,11 @@
 
 namespace toast::crash {
 
-/// @brief No-op off Windows when disabled or when the reporter executable is missing
 TOAST_API void install() noexcept;
+
+#ifndef _WIN32
+void installPosix() noexcept;
+#endif
 
 TOAST_API void setDumpDirectory(const std::filesystem::path& directory) noexcept;
 

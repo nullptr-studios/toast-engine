@@ -18,6 +18,8 @@ message LogData {
 
   string sink = 5;
   string message = 6;
+  string details = 7;
+  string backtrace = 8;
 }
 
 message LogBatch {

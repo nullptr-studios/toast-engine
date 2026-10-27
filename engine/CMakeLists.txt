@@ -41,6 +41,7 @@ find_package(tomlplusplus CONFIG REQUIRED)
 find_package(RmlUi CONFIG REQUIRED)
 find_package(Lua REQUIRED)
 find_package(imgui CONFIG REQUIRED)
+find_package(cpptrace CONFIG REQUIRED)
 find_path(LUABRIDGE3_INCLUDE_DIRS "luabridge3/LuaBridge/Array.h")
 
 # External paths
@@ -107,6 +108,7 @@ target_link_libraries(toast_engine
         LZ4::lz4
         imgui::imgui
         RmlUi::RmlUi
+        cpptrace::cpptrace
         $<$<CONFIG:Debug>:${EXTERNAL_LIBS_DEBUG}>
         $<$<NOT:$<CONFIG:Debug>>:${EXTERNAL_LIBS_RELEASE}>
         ${LUA_LIBRARIES}
@@ -138,7 +140,9 @@ set_source_files_properties(src/toast/renderer/vma.cpp PROPERTIES SKIP_PRECOMPIL
 set_source_files_properties(src/toast/assets/hdr_image.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON SKIP_UNITY_BUILD_INCLUSION ON)
 set_source_files_properties(src/toast/renderer/shared_texture_output_target.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 set_source_files_properties(src/toast/input/trackpad.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON SKIP_UNITY_BUILD_INCLUSION ON)
-set_source_files_properties(src/toast/crash_handler.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+set_source_files_properties(src/toast/crash_handler.cpp src/toast/crash_handler_posix.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+set_source_files_properties(src/toast/backtrace.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+set_source_files_properties(src/toast/debugger.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 
 # protoc output uses file local symbol names
 file(GLOB _TOAST_PROTO_SOURCES "generated/*.pb.cc")
@@ -157,6 +161,7 @@ target_compile_definitions(toast_engine PUBLIC
         $<$<AND:$<CONFIG:Debug>,$<BOOL:${TOAST_SYNC_VALIDATION}>>:TOAST_SYNC_VALIDATION>
         $<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>>:NDEBUG>
         $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:TRACY_ENABLE>
+        $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:TOAST_BREAK_ON_ERROR>
         $<$<CONFIG:RelWithDebInfo>:TOAST_LUA_OWNERSHIP_CHECKS>
         GLM_FORCE_INTRINSICS
 )
@@ -283,5 +288,14 @@ add_custom_command(TARGET toast_engine POST_BUILD
         COMMENT "Copying log server"
         VERBATIM
 )
+
+if (WIN32)
+    add_custom_command(TARGET toast_engine POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_RUNTIME_DLLS:log_server> "${TOAST_ENGINE_BIN_DIR}"
+            COMMENT "Copying log server runtime DLLs"
+            COMMAND_EXPAND_LISTS
+            VERBATIM
+    )
+endif ()
 
 install(TARGETS toast_engine RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)

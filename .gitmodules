@@ -1,0 +1,3 @@
+[submodule "tools/kenzo"]
+	path = tools/kenzo
+	url = https://github.com/ynks/kenzo

@@ -326,6 +326,7 @@ public partial class ToastEngine : IDisposable {
 			Log.Info($"Reloading game library: {gameDll}");
 			File.Copy(gameDll, newTempPath);
 			newHandle = NativeLibrary.Load(newTempPath);
+			Log.InvalidateBacktraceCache();
 			var newCreate =
 				Marshal.GetDelegateForFunctionPointer<GameCreate>(NativeLibrary.GetExport(newHandle, "game_create"));
 			var newDestroy =
@@ -347,7 +348,10 @@ public partial class ToastEngine : IDisposable {
 			toast_begin_application();
 		} catch (Exception ex) {
 			if (!adopted) {
-				if (newHandle != IntPtr.Zero) NativeLibrary.Free(newHandle);
+				if (newHandle != IntPtr.Zero) {
+					NativeLibrary.Free(newHandle);
+					Log.InvalidateBacktraceCache();
+				}
 				TryDeleteGameTemp(newTempPath);
 			}
 
@@ -451,6 +455,7 @@ public partial class ToastEngine : IDisposable {
 
 	private void LoadFrom(string dllPath) {
 		m_gameHandle = NativeLibrary.Load(dllPath);
+		Log.InvalidateBacktraceCache();
 		m_gameTempPath = dllPath;
 		m_gameCreate =
 			Marshal.GetDelegateForFunctionPointer<GameCreate>(NativeLibrary.GetExport(m_gameHandle, "game_create"));
@@ -472,6 +477,7 @@ public partial class ToastEngine : IDisposable {
 		}
 
 		m_retiredGameLibraries.Clear();
+		Log.InvalidateBacktraceCache();
 	}
 
 	private static void TryDeleteGameTemp(string path) {
