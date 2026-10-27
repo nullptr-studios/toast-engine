@@ -162,7 +162,7 @@ int main(int argc, char** argv) {
 		}
 	});
 
-	asio::co_spawn(context, server.runBeacon(tui_port), asio::detached);
+	asio::co_spawn(context, server.runDiscovery(tui_port), asio::detached);
 
 	int exit_code = 0;
 	asio::co_spawn(context, server.runEngineListener(args.port, args.infinite), [&](std::exception_ptr error) {

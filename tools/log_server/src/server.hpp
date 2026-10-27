@@ -27,8 +27,7 @@ public:
 
 	asio::awaitable<void> runTuiListener(std::uint16_t port);
 
-	// discovery
-	asio::awaitable<void> runBeacon(std::uint16_t tui_port);
+	asio::awaitable<void> runDiscovery(std::uint16_t tui_port);
 
 	/// serves one engine at a time
 	asio::awaitable<void> runEngineListener(std::uint16_t port, bool infinite);

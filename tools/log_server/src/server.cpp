@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <deque>
 #include <memory>
+#include <string_view>
 
 namespace log_server {
 
@@ -143,24 +144,26 @@ struct TuiSession {
 	}
 };
 
-constexpr std::uint16_t beacon_port = 12802;
+constexpr std::uint16_t discovery_port = 12802;
 
-asio::awaitable<void> Server::runBeacon(std::uint16_t tui_port) {
+asio::awaitable<void> Server::runDiscovery(std::uint16_t tui_port) {
 	auto executor = co_await asio::this_coro::executor;
 	asio::ip::udp::socket socket(executor);
 	asio::error_code ec;
 	socket.open(asio::ip::udp::v4(), ec);
+	socket.set_option(asio::socket_base::reuse_address(true), ec);
+	socket.bind(asio::ip::udp::endpoint(asio::ip::udp::v4(), discovery_port), ec);
 	if (ec) {
 		co_return;
 	}
-	socket.set_option(asio::socket_base::broadcast(true), ec);
-	const std::string payload = "toast-log/1 " + std::to_string(tui_port) + " " + hostName();
-	const asio::ip::udp::endpoint target(asio::ip::address_v4::broadcast(), beacon_port);
-	asio::steady_timer timer(executor);
+	const std::string reply = "toast-log/1 " + std::to_string(tui_port) + " " + hostName();
+	std::array<char, 64> buffer {};
+	asio::ip::udp::endpoint from;
 	for (;;) {
-		socket.send_to(asio::buffer(payload), target, 0, ec);
-		timer.expires_after(std::chrono::seconds(2));
-		co_await timer.async_wait(asio::redirect_error(asio::use_awaitable, ec));
+		const std::size_t n = co_await socket.async_receive_from(asio::buffer(buffer), from, asio::redirect_error(asio::use_awaitable, ec));
+		if (!ec && std::string_view(buffer.data(), n) == "toast-log?") {
+			socket.send_to(asio::buffer(reply), from, 0, ec);
+		}
 	}
 }
 
