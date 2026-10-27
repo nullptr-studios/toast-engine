@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <deque>
 #include <memory>
+#include <string_view>
 
 namespace log_server {
 
@@ -142,6 +143,29 @@ struct TuiSession {
 		wake.cancel();
 	}
 };
+
+constexpr std::uint16_t discovery_port = 12802;
+
+asio::awaitable<void> Server::runDiscovery(std::uint16_t tui_port) {
+	auto executor = co_await asio::this_coro::executor;
+	asio::ip::udp::socket socket(executor);
+	asio::error_code ec;
+	socket.open(asio::ip::udp::v4(), ec);
+	socket.set_option(asio::socket_base::reuse_address(true), ec);
+	socket.bind(asio::ip::udp::endpoint(asio::ip::udp::v4(), discovery_port), ec);
+	if (ec) {
+		co_return;
+	}
+	const std::string reply = "toast-log/1 " + std::to_string(tui_port) + " " + hostName();
+	std::array<char, 64> buffer {};
+	asio::ip::udp::endpoint from;
+	for (;;) {
+		const std::size_t n = co_await socket.async_receive_from(asio::buffer(buffer), from, asio::redirect_error(asio::use_awaitable, ec));
+		if (!ec && std::string_view(buffer.data(), n) == "toast-log?") {
+			socket.send_to(asio::buffer(reply), from, 0, ec);
+		}
+	}
+}
 
 asio::awaitable<void> Server::runTuiListener(std::uint16_t port) {
 	auto executor = co_await asio::this_coro::executor;
