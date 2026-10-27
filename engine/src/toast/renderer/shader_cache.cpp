@@ -2,6 +2,7 @@
 
 #include "shader_compiler.hpp"
 
+#include <chrono>
 #include <cstdlib>
 #include <cstring>
 #include <format>
@@ -174,6 +175,8 @@ auto ShaderCache::compile(toast::UID uid, const std::string& source) -> EntryPtr
 	ZoneScoped;
 	const std::string source_uri = assets::AssetManager::getURI(uid);
 
+	TOAST_INFO("Render", "Compiling shader {}", source_uri);
+	m_compiled_count.fetch_add(1, std::memory_order_relaxed);
 	auto compiled = ShaderCompiler::compile(uid, source, source_uri);
 	if (compiled.spirv.empty()) {
 		TOAST_ERROR("Render", "Compilation failed for shader {} ({})", uid.get(), source_uri);
@@ -259,11 +262,20 @@ auto ShaderCache::loadOrCompile(toast::UID uid) -> EntryPtr {
 void ShaderCache::compileAllAtStartup() {
 	ZoneScoped;
 	const auto shader_uids = assets::listByType("shader");
+	TOAST_INFO("Render", "Checking {} shaders, compiling any that changed", shader_uids.size());
+	const auto started = std::chrono::steady_clock::now();
+	const size_t compiled_before = m_compiled_count.load(std::memory_order_relaxed);
+	m_module_count.store(0, std::memory_order_relaxed);
 
 	std::vector<std::future<bool>> jobs;
 	jobs.reserve(shader_uids.size());
 	for (const auto uid : shader_uids) {
 		jobs.push_back(toast::ThreadPool::push([this, uid] {
+			// Import only modules have no entry point
+			if (const auto source = sourceOf(uid); source.has_value() && source->find("[shader(") == std::string::npos) {
+				m_module_count.fetch_add(1, std::memory_order_relaxed);
+				return true;
+			}
 			if (acquire(uid) != nullptr) {
 				return true;
 			}
@@ -277,7 +289,16 @@ void ShaderCache::compileAllAtStartup() {
 		loaded += job.get() ? 1 : 0;
 	}
 
-	TOAST_INFO("Render", "Shader cache ready: {}/{} shaders loaded", loaded, shader_uids.size());
+	const std::chrono::duration<double> elapsed = std::chrono::steady_clock::now() - started;
+	TOAST_INFO(
+	    "Render",
+	    "Shader cache ready: {}/{} shaders loaded, {} import only modules, {} compiled in {:.1f} s",
+	    loaded - m_module_count.load(std::memory_order_relaxed),
+	    shader_uids.size() - m_module_count.load(std::memory_order_relaxed),
+	    m_module_count.load(std::memory_order_relaxed),
+	    m_compiled_count.load(std::memory_order_relaxed) - compiled_before,
+	    elapsed.count()
+	);
 }
 
 auto ShaderCache::acquire(toast::UID uid) -> EntryPtr {

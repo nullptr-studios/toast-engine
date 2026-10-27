@@ -39,7 +39,7 @@ Sampler2D gMaterial;
 [[vk::binding(4, 2)]]
 Sampler2D gFaceNormal;
 
-/// Rounded normal with w kTracedMark where voxel lighting left the specular to this pass
+/// Normal with w kTracedMark where voxel lighting left the specular to this pass
 [[vk::binding(5, 2)]]
 Sampler2D gSceneNormal;
 
@@ -65,6 +65,10 @@ Sampler2D gPreviousColour;
 [[vk::binding(11, 2)]]
 Sampler2D gResolved;
 
+/// packSurface per half resolution texel
+[[vk::binding(12, 2)]]
+Sampler2D<uint4> gSurface;
+
 /// Mirrors voxel_lighting.slang
 static const float kTracedMark = 2.0;
 static const float kVoxelSize = 0.1;
@@ -85,11 +89,8 @@ static const float kMaxHistory = 15.0;
 /// Trace distance of a ray that left the scene since its radiance came from a direction not a point
 static const float kMissDistance = 60000.0;
 
-/// Neighbour rays a texel reuses on a rotated golden angle spiral besides its own
-static const uint kResolveTaps = 12u;
-/// Spiral radius in half resolution texels from mirrors to the roughness cut
-static const float kResolveRadiusMirror = 2.0;
-static const float kResolveRadiusRough = 5.0;
+/// Covers the 4x4 stratum tile
+static const int kResolveReach = 2;
 /// Lobe over pdf a single ray may reach so one unlikely neighbour cannot take the texel
 static const float kMaxRayWeight = 8.0;
 
@@ -211,7 +212,8 @@ bool screenRadiance(float3 position, float3 normal, out float3 radiance)
     const float2 previousUv = (float2(pixel) + 0.5) / float2(float(width), float(height)) - (motion.w > 0.5 ? motion.xy : float2(0.0, 0.0));
     if (gParams.resolve.x > 0.5 && motion.z <= 0.5 && all(previousUv >= float2(0.0, 0.0)) && all(previousUv < float2(1.0, 1.0)))
     {
-        radiance = gPreviousColour.Load(int3(int2(previousUv * float2(float(width), float(height))), 0)).rgb;
+        // By uv since TAA output is output sized
+        radiance = gPreviousColour.SampleLevel(previousUv, 0.0).rgb;
     }
     return true;
 }
@@ -276,6 +278,115 @@ float3 rayDirection(TracedPixel surface, float2 u, out float pdf)
     return L;
 }
 
+struct LobeFrame
+{
+    float4x4 worldToVoxel;
+    /// Voxel axes spanning the face plane
+    int2 axes;
+};
+
+/// Probes back along the view ray since the gbuffer has no volume id
+LobeFrame lobeFrameOf(TracedPixel surface)
+{
+    LobeFrame frame;
+    const float scale = 1.0 / kVoxelSize;
+    frame.worldToVoxel = float4x4(scale, 0.0, 0.0, 0.0, 0.0, scale, 0.0, 0.0, 0.0, 0.0, scale, 0.0, 0.0, 0.0, 0.0, 1.0);
+    const float3 toCamera = gCamera.position - surface.position;
+    const float distance = length(toCamera);
+    const float3 V = toCamera / max(distance, 1e-4);
+    const float reach = 0.05 + 0.01 * distance;
+    const SceneHit hit = traceScene(surface.position + V * reach, -V, 0.0, 2.0 * reach, 0.0);
+    if (hit.hit)
+    {
+        frame.worldToVoxel = gTraceVolumes[hit.volume].worldToVoxel;
+    }
+    int axis = hit.hit ? hit.axis : -1;
+    if (axis < 0)
+    {
+        const float3 normal = abs(mul((float3x3)frame.worldToVoxel, surface.face));
+        axis = normal.x >= normal.y && normal.x >= normal.z ? 0 : (normal.y >= normal.z ? 1 : 2);
+    }
+    frame.axes = axis == 0 ? int2(1, 2) : (axis == 1 ? int2(0, 2) : int2(0, 1));
+    return frame;
+}
+
+/// On the unjittered ray so TAA jitter never moves the pattern
+float2 faceCoordinate(TracedPixel surface, LobeFrame frame, float2 ndc, float2 jitter, float depth)
+{
+    const float4 onRay = mul(gParams.inverseViewProjection, float4(ndc + jitter, depth, 1.0));
+    const float3 direction = onRay.xyz / onRay.w - gCamera.position;
+    const float facing = dot(direction, surface.face);
+    const float t = abs(facing) > 1e-6 ? dot(surface.position - gCamera.position, surface.face) / facing : 1.0;
+    const float3 voxel = mul(frame.worldToVoxel, float4(gCamera.position + direction * t, 1.0)).xyz;
+    return float2(voxel[frame.axes.x], voxel[frame.axes.y]);
+}
+
+uint surfaceStratum(TracedPixel surface, LobeFrame frame, int2 pixel)
+{
+    if (surface.roughness <= kMirrorRoughness)
+    {
+        return 0u;
+    }
+    uint width;
+    uint height;
+    gDepth.GetDimensions(width, height);
+    const float2 size = float2(float(width), float(height));
+    const float4 jittered = mul(gCamera.jitteredViewProjection, float4(surface.position, 1.0));
+    const float4 unjittered = mul(gCamera.viewProjection, float4(surface.position, 1.0));
+    const float2 jitter = jittered.xy / jittered.w - unjittered.xy / unjittered.w;
+    const float depth = jittered.z / jittered.w;
+    const float2 ndc = (float2(pixel) + 0.5) / size * 2.0 - 1.0;
+    const float2 texel = 4.0 / size;
+
+    const float2 centre = faceCoordinate(surface, frame, ndc, jitter, depth);
+    const float2 alongX = faceCoordinate(surface, frame, ndc + float2(texel.x, 0.0), jitter, depth) - centre;
+    const float2 alongY = faceCoordinate(surface, frame, ndc + float2(0.0, texel.y), jitter, depth) - centre;
+    // Power of two so zooming rescales the pattern only at octaves
+    const float2 cell = exp2(round(log2(max(max(abs(alongX), abs(alongY)), float2(1e-4, 1e-4)))));
+    return lobeStratumIndex(int2(floor(centre / cell)));
+}
+
+/// xyz position bits w normal octahedron 11 and 11 bits then roughness 6 and stratum 4
+uint4 packSurface(TracedPixel surface, uint stratum)
+{
+    const uint2 normal = uint2(round(saturate(giOctEncode(surface.normal)) * 2047.0));
+    const uint roughness = uint(round(saturate(surface.roughness) * 63.0));
+    return uint4(asuint(surface.position), normal.x | (normal.y << 11) | (roughness << 22) | (stratum << 28));
+}
+
+/// Neighbours passing the geometry weight share the face of the reader
+TracedPixel unpackSurface(uint4 packed, float3 face)
+{
+    TracedPixel surface;
+    surface.traced = true;
+    surface.position = asfloat(packed.xyz);
+    surface.normal = giOctDecode(float2(packed.w & 2047u, (packed.w >> 11) & 2047u) / 2047.0);
+    surface.face = face;
+    surface.albedo = float3(0.0, 0.0, 0.0);
+    surface.metallic = 0.0;
+    surface.reflectivity = 0.0;
+    surface.roughness = max(float((packed.w >> 22) & 63u) / 63.0, 0.045);
+    return surface;
+}
+
+uint packedStratum(uint4 packed)
+{
+    return packed.w >> 28;
+}
+
+[shader("fragment")]
+uint4 surfaceMain(VSOutput input) : SV_Target0
+{
+    const int2 pixel = int2(input.position.xy) * 2;
+    const TracedPixel surface = tracedPixelAt(pixel);
+    if (!surface.traced)
+    {
+        return uint4(0u, 0u, 0u, 0u);
+    }
+    const uint stratum = surface.roughness > kMirrorRoughness ? surfaceStratum(surface, lobeFrameOf(surface), pixel) : 0u;
+    return packSurface(surface, stratum);
+}
+
 /// A miss returns the environment term lighting would have added
 [shader("fragment")]
 float4 traceMain(VSOutput input) : SV_Target0
@@ -287,10 +398,11 @@ float4 traceMain(VSOutput input) : SV_Target0
         return float4(0.0, 0.0, 0.0, kNoTrace);
     }
 
-    // Half resolution coordinates since every other texel is not blue noise
-    const float4 noise = blueNoise(input.position.xy, 160u);
+    const int2 texel = int2(input.position.xy);
+    // Quantized like the resolve regenerates it
+    const uint4 packed = gSurface.Load(int3(texel, 0));
     float pdf;
-    const float3 L = rayDirection(surface, noise.xy, pdf);
+    const float3 L = rayDirection(unpackSurface(packed, surface.face), lobeStratumSample(packedStratum(packed)), pdf);
     const float3 mirror = reflect(-normalize(gCamera.position - surface.position), surface.normal);
     if (dot(L, surface.face) <= 0.0)
     {
@@ -305,7 +417,7 @@ float4 traceMain(VSOutput input) : SV_Target0
     {
         return float4(ambientSpecularRadiance(surface.position, mirror, surface.roughness), kMissDistance);
     }
-    uint random = giHash(uint(pixel.x) | (uint(pixel.y) << 16)) ^ asuint(noise.z);
+    uint random = giHash(uint(texel.x) | (uint(texel.y) << 16));
     return float4(hitRadiance(hit, origin, L, coneSlope, float2(pixel), random), hit.t);
 }
 
@@ -351,51 +463,49 @@ float4 resolveMain(VSOutput input) : SV_Target0
     const float NdotV = max(dot(N, V), 1e-4);
     const float alpha = max(surface.roughness * surface.roughness, 1e-3);
     const float distance = length(gCamera.position - surface.position);
-    const float radius = lerp(kResolveRadiusMirror, kResolveRadiusRough, saturate(surface.roughness / max(gParams.tracing.y, 1e-3)));
-    const float angle = blueNoise(input.position.xy, 170u).x * 6.28318531;
 
     float3 sum = float3(0.0, 0.0, 0.0);
     float weightSum = 0.0;
-    for (uint i = 0u; i <= kResolveTaps; ++i)
+    for (int y = -kResolveReach; y <= kResolveReach; ++y)
     {
-        const float tapAngle = angle + float(i) * 2.39996323;
-        const float2 offset = i == 0u ? float2(0.0, 0.0) : radius * sqrt((float(i) - 0.5) / float(kResolveTaps)) * float2(cos(tapAngle), sin(tapAngle));
-        const int2 tap = clamp(texel + int2(round(offset)), int2(0, 0), last);
-        if (i > 0u && all(tap == texel))
+        for (int x = -kResolveReach; x <= kResolveReach; ++x)
         {
-            continue;
-        }
-        const float4 hit = gTrace.Load(int3(tap, 0));
-        if (hit.a < 0.0)
-        {
-            continue;
-        }
-        const TracedPixel neighbour = i == 0u ? surface : tracedPixelAt(tap * 2);
-        if (!neighbour.traced)
-        {
-            continue;
-        }
-        // A neighbour on another surface traced a ray this texel could not have
-        const float geometry = planeWeight(surface, neighbour.position, distance) * saturate(dot(neighbour.normal, N) * 4.0 - 3.0);
-        if (geometry <= 1e-3)
-        {
-            continue;
-        }
+            const int2 offset = int2(x, y);
+            const int2 tap = texel + offset;
+            if (any(tap < int2(0, 0)) || any(tap > last))
+            {
+                continue;
+            }
+            const float4 hit = gTrace.Load(int3(tap, 0));
+            if (hit.a < 0.0)
+            {
+                continue;
+            }
+            const uint4 packed = gSurface.Load(int3(tap, 0));
+            const TracedPixel neighbour = unpackSurface(packed, surface.face);
+            // A neighbour on another surface traced a ray this texel could not have
+            const float geometry = lobeStratumWeight(offset) * planeWeight(surface, neighbour.position, distance) *
+                                   saturate(dot(neighbour.normal, N) * 4.0 - 3.0);
+            if (geometry <= 1e-3)
+            {
+                continue;
+            }
 
-        float pdf;
-        const float3 sampled = rayDirection(neighbour, blueNoise(float2(tap), 160u).xy, pdf);
-        const float3 hitPoint = neighbour.position + neighbour.face * (kOriginOffset * kVoxelSize) + sampled * hit.a;
-        const float3 L = hit.a >= kMissDistance ? sampled : normalize(hitPoint - surface.position);
-        const float NdotL = dot(N, L);
-        if (NdotL <= 0.0 || pdf <= 0.0)
-        {
-            continue;
+            float pdf;
+            const float3 sampled = rayDirection(neighbour, lobeStratumSample(packedStratum(packed)), pdf);
+            const float3 hitPoint = neighbour.position + neighbour.face * (kOriginOffset * kVoxelSize) + sampled * hit.a;
+            const float3 L = hit.a >= kMissDistance ? sampled : normalize(hitPoint - surface.position);
+            const float NdotL = dot(N, L);
+            if (NdotL <= 0.0 || pdf <= 0.0)
+            {
+                continue;
+            }
+            const float NdotH = saturate(dot(N, normalize(V + L)));
+            const float ratio = ggxD(NdotH, alpha) * smithG1(NdotV, alpha) * smithG1(NdotL, alpha) / (4.0 * NdotV) / pdf;
+            const float weight = geometry * min(ratio, kMaxRayWeight);
+            sum += compress(hit.rgb) * weight;
+            weightSum += weight;
         }
-        const float NdotH = saturate(dot(N, normalize(V + L)));
-        const float ratio = ggxD(NdotH, alpha) * smithG1(NdotV, alpha) * smithG1(NdotL, alpha) / (4.0 * NdotV) / pdf;
-        const float weight = geometry * min(ratio, kMaxRayWeight);
-        sum += compress(hit.rgb) * weight;
-        weightSum += weight;
     }
     if (weightSum <= 1e-6)
     {

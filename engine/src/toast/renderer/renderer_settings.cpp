@@ -1,6 +1,7 @@
 #include "renderer_settings.hpp"
 
 #include "passes/environment_pass.hpp"
+#include "shader_compiler.hpp"
 #include "shadow_constants.hpp"
 #include "shadow_slots.hpp"
 #include "vulkan_renderer.hpp"
@@ -14,6 +15,126 @@ namespace renderer {
 namespace {
 
 using toast::settings::Meta;
+
+constexpr uint32_t k_preset_custom = 4;
+
+struct PresetKnobs {
+	bool ssr = true;
+	bool ssao = true;
+	bool traced_specular = true;
+	float specular_roughness = 0.6f;
+	float specular_reach = 32.0f;
+	uint32_t light_candidates = 8;
+	bool ambient_rays = true;
+	bool glass_shadows = true;
+	uint32_t volumetric_quality = 2;
+	uint32_t gi_quality = 2;
+	float shadow_distance = shadows::k_shadow_distance;
+	uint32_t spot_budget = shadows::k_max_spot_shadows;
+	uint32_t point_budget = shadows::k_max_point_shadows;
+};
+
+/// Low Medium High Epic
+constexpr std::array<PresetKnobs, k_preset_custom> k_preset_tiers {
+  {
+   {.ssr = false,
+	   .ssao = false,
+	   .traced_specular = false,
+	   .specular_roughness = 0.3f,
+	   .specular_reach = 16.0f,
+	   .light_candidates = 2,
+	   .ambient_rays = false,
+	   .glass_shadows = false,
+	   .volumetric_quality = 0,
+	   .gi_quality = 0,
+	   .shadow_distance = 60.0f,
+	   .spot_budget = 4,
+	   .point_budget = 2},
+   {.ssr = true,
+	   .ssao = true,
+	   .traced_specular = false,
+	   .specular_roughness = 0.4f,
+	   .specular_reach = 24.0f,
+	   .light_candidates = 4,
+	   .ambient_rays = true,
+	   .glass_shadows = true,
+	   .volumetric_quality = 1,
+	   .gi_quality = 1,
+	   .shadow_distance = 100.0f,
+	   .spot_budget = 8,
+	   .point_budget = 4},
+   {.ssr = true,
+	   .ssao = true,
+	   .traced_specular = true,
+	   .specular_roughness = 0.5f,
+	   .specular_reach = 32.0f,
+	   .light_candidates = 8,
+	   .ambient_rays = true,
+	   .glass_shadows = true,
+	   .volumetric_quality = 2,
+	   .gi_quality = 2,
+	   .shadow_distance = 150.0f,
+	   .spot_budget = 16,
+	   .point_budget = 8},
+   {.ssr = true,
+	   .ssao = true,
+	   .traced_specular = true,
+	   .specular_roughness = 0.6f,
+	   .specular_reach = 48.0f,
+	   .light_candidates = 16,
+	   .ambient_rays = true,
+	   .glass_shadows = true,
+	   .volumetric_quality = 3,
+	   .gi_quality = 3,
+	   .shadow_distance = 250.0f,
+	   .spot_budget = shadows::k_max_spot_shadows,
+	   .point_budget = shadows::k_max_point_shadows},
+   }
+};
+
+/// Main thread only
+struct PresetState {
+	VulkanRenderer* renderer = nullptr;
+	uint32_t preset = k_preset_custom;
+	/// Off until every driven setting has reported its value
+	bool ready = false;
+	PresetKnobs knobs;
+};
+
+PresetState g_preset;
+
+void applyPreset() {
+	if (!g_preset.ready) {
+		return;
+	}
+	VulkanRenderer& renderer = *g_preset.renderer;
+	const PresetKnobs& knobs = g_preset.preset < k_preset_custom ? k_preset_tiers[g_preset.preset] : g_preset.knobs;
+	renderer.setPostProcessPassEnabled("SSR", knobs.ssr);
+	renderer.setPostProcessPassEnabled("SSAO", knobs.ssao);
+	renderer.setVoxelTracedSpecular(knobs.traced_specular);
+	renderer.setVoxelSpecularRoughness(knobs.specular_roughness);
+	renderer.setVoxelSpecularReach(knobs.specular_reach);
+	renderer.setVoxelLightCandidates(knobs.light_candidates);
+	renderer.setVoxelAmbientRays(knobs.ambient_rays);
+	renderer.setVoxelGlassShadows(knobs.glass_shadows);
+	renderer.setVolumetricQuality(knobs.volumetric_quality);
+	renderer.giSettings().quality.store(knobs.gi_quality, std::memory_order_relaxed);
+	shadows::setShadowDistance(knobs.shadow_distance);
+	shadows::setSpotShadowBudget(knobs.spot_budget);
+	shadows::setPointShadowBudget(knobs.point_budget);
+}
+
+template<typename T, typename V, typename Convert>
+auto presetKnob(T PresetKnobs::* knob, Convert convert) {
+	return [knob, convert](V value) {
+		g_preset.knobs.*knob = convert(value);
+		applyPreset();
+	};
+}
+
+constexpr auto k_same_bool = [](bool v) { return v; };
+constexpr auto k_to_float = [](double v) { return static_cast<float>(v); };
+constexpr auto k_to_count = [](int64_t v) { return static_cast<uint32_t>(std::max<int64_t>(v, 0)); };
 
 void registerDisplay(VulkanRenderer& renderer) {
 	toast::settings::declareBool(
@@ -42,6 +163,33 @@ void registerDisplay(VulkanRenderer& renderer) {
 }
 
 void registerQuality(VulkanRenderer& renderer) {
+	toast::settings::declareInt(
+	    "renderer.quality.preset",
+	    k_preset_custom,
+	    {
+	      .label = "Preset",
+	      .category = "Quality",
+	      .description = "Reflections, AO, shadows, voxel lighting, volumetrics and GI together. Custom uses each setting",
+	      .options = {"Low", "Medium", "High", "Epic", "Custom"}
+	}
+	)
+	    .onChange([](int64_t v) {
+		    g_preset.preset = static_cast<uint32_t>(std::clamp<int64_t>(v, 0, k_preset_custom));
+		    applyPreset();
+	    });
+
+	toast::settings::declareFloat(
+	    "renderer.quality.render_scale",
+	    1.0,
+	    {.label = "Render scale",
+			 .category = "Quality",
+			 .description = "Share of the output resolution the world renders at before TAA upsamples it",
+			 .min = 0.5,
+			 .max = 1.0,
+			 .step = 0.05}
+	)
+	    .onChange([&renderer](double v) { renderer.setRenderScale(static_cast<float>(v)); });
+
 	const auto pass_toggle = [&renderer](std::string_view key, std::string_view pass, bool default_value, std::string description) {
 		toast::settings::declareBool(
 		    key, default_value, {.label = std::string {pass}, .category = "Quality", .description = std::move(description)}
@@ -50,8 +198,20 @@ void registerQuality(VulkanRenderer& renderer) {
 	};
 
 	pass_toggle("renderer.quality.bloom", "Bloom", true, "Glow around highlights bright enough to overwhelm a lens.");
-	pass_toggle("renderer.quality.ssr", "SSR", true, "Screen-space reflections. The most expensive post pass.");
-	pass_toggle("renderer.quality.ssao", "SSAO", true, "Contact darkening where geometry meets geometry.");
+	toast::settings::declareBool(
+	    "renderer.quality.ssr",
+	    true,
+	    {.label = "SSR", .category = "Quality", .description = "Screen-space reflections. Preset Custom only"}
+	)
+	    .onChange(presetKnob<bool, bool>(&PresetKnobs::ssr, k_same_bool));
+	toast::settings::declareBool(
+	    "renderer.quality.ssao",
+	    true,
+	    {.label = "SSAO",
+			 .category = "Quality",
+			 .description = "Contact darkening where geometry meets geometry. Preset Custom only"}
+	)
+	    .onChange(presetKnob<bool, bool>(&PresetKnobs::ssao, k_same_bool));
 	pass_toggle("renderer.quality.fxaa", "FXAA", true, "Edge anti-aliasing on the tonemapped image. Skipped while TAA is on.");
 
 	toast::settings::declareBool(
@@ -131,7 +291,7 @@ void registerShadows() {
 			 .max = 1000.0,
 			 .step = 5.0}
 	)
-	    .onChange([](double v) { shadows::setShadowDistance(static_cast<float>(v)); });
+	    .onChange(presetKnob<float, double>(&PresetKnobs::shadow_distance, k_to_float));
 
 	toast::settings::declareFloat(
 	    "renderer.shadows.slot_retention",
@@ -198,7 +358,7 @@ void registerShadows() {
 			 .max = static_cast<double>(shadows::k_max_spot_shadows),
 			 .step = 1.0}
 	)
-	    .onChange([](int64_t lights) { shadows::setSpotShadowBudget(static_cast<uint32_t>(std::max<int64_t>(lights, 0))); });
+	    .onChange(presetKnob<uint32_t, int64_t>(&PresetKnobs::spot_budget, k_to_count));
 
 	toast::settings::declareInt(
 	    "renderer.shadows.point_budget",
@@ -211,7 +371,7 @@ void registerShadows() {
 			 .max = static_cast<double>(shadows::k_max_point_shadows),
 			 .step = 1.0}
 	)
-	    .onChange([](int64_t lights) { shadows::setPointShadowBudget(static_cast<uint32_t>(std::max<int64_t>(lights, 0))); });
+	    .onChange(presetKnob<uint32_t, int64_t>(&PresetKnobs::point_budget, k_to_count));
 
 	toast::settings::declareFloat(
 	    "renderer.shadows.full_resolution_ranges",
@@ -310,7 +470,9 @@ void registerVoxels(VulkanRenderer& renderer) {
 			 .min = 1.0,
 			 .max = 32.0}
 	)
-	    .onChange([&renderer](int64_t v) { renderer.setVoxelLightCandidates(static_cast<uint32_t>(std::max<int64_t>(v, 1))); });
+	    .onChange(presetKnob<uint32_t, int64_t>(&PresetKnobs::light_candidates, [](int64_t v) {
+		    return static_cast<uint32_t>(std::max<int64_t>(v, 1));
+	    }));
 
 	toast::settings::declareBool(
 	    "renderer.voxels.ambient_rays",
@@ -320,7 +482,7 @@ void registerVoxels(VulkanRenderer& renderer) {
 			 .description = "Two super-sparse rays per voxel pixel occlude ambient light by how far they get, in place of "
 			                "SSAO. Off keeps SSAO on voxels"}
 	)
-	    .onChange([&renderer](bool enabled) { renderer.setVoxelAmbientRays(enabled); });
+	    .onChange(presetKnob<bool, bool>(&PresetKnobs::ambient_rays, k_same_bool));
 
 	toast::settings::declareBool(
 	    "renderer.voxels.ambient_ray_query",
@@ -352,7 +514,7 @@ void registerVoxels(VulkanRenderer& renderer) {
 			 .description = "One GGX ray per reflective voxel pixel at half resolution in place of the environment and "
 			                "SSR. Off keeps both"}
 	)
-	    .onChange([&renderer](bool enabled) { renderer.setVoxelTracedSpecular(enabled); });
+	    .onChange(presetKnob<bool, bool>(&PresetKnobs::traced_specular, k_same_bool));
 
 	toast::settings::declareFloat(
 	    "renderer.voxels.specular_roughness",
@@ -364,7 +526,7 @@ void registerVoxels(VulkanRenderer& renderer) {
 			 .max = 1.0,
 			 .step = 0.05}
 	)
-	    .onChange([&renderer](double v) { renderer.setVoxelSpecularRoughness(static_cast<float>(v)); });
+	    .onChange(presetKnob<float, double>(&PresetKnobs::specular_roughness, k_to_float));
 
 	toast::settings::declareFloat(
 	    "renderer.voxels.specular_reach",
@@ -376,7 +538,7 @@ void registerVoxels(VulkanRenderer& renderer) {
 			 .max = 200.0,
 			 .step = 1.0}
 	)
-	    .onChange([&renderer](double v) { renderer.setVoxelSpecularReach(static_cast<float>(v)); });
+	    .onChange(presetKnob<float, double>(&PresetKnobs::specular_reach, k_to_float));
 
 	toast::settings::declareBool(
 	    "renderer.voxels.glass_refraction_enabled",
@@ -449,7 +611,7 @@ void registerVoxels(VulkanRenderer& renderer) {
 			 .description = "Glass tints the light that reaches voxels behind it in every light mode. Off makes glass cast "
 			                "no shadow and lets marched shadow rays take coarse steps through it"}
 	)
-	    .onChange([&renderer](bool enabled) { renderer.setVoxelGlassShadows(enabled); });
+	    .onChange(presetKnob<bool, bool>(&PresetKnobs::glass_shadows, k_same_bool));
 
 	toast::settings::declareInt(
 	    "renderer.voxels.glass_shadow_reach",
@@ -474,16 +636,6 @@ void registerVoxels(VulkanRenderer& renderer) {
 			 .max = 2000.0}
 	)
 	    .onChange([&renderer](int64_t v) { renderer.setVoxelSunReach(static_cast<uint32_t>(std::max<int64_t>(v, 1))); });
-
-	toast::settings::declareBool(
-	    "renderer.voxels.trace_ray_query",
-	    true,
-	    {.label = "Ray query voxel rays",
-			 .category = "Voxels",
-			 .description = "Marched voxel rays find the volumes they cross through hardware ray queries when the GPU has them. "
-			                "Off walks the software cell grid on every GPU"}
-	)
-	    .onChange([&renderer](bool enabled) { renderer.setVoxelTraceRayQuery(enabled); });
 
 	toast::settings::declareBool(
 	    "renderer.voxels.trace_bricks",
@@ -532,18 +684,6 @@ void registerVoxels(VulkanRenderer& renderer) {
 			 .max = 4096.0}
 	)
 	    .onChange([&renderer](int64_t v) { renderer.setVoxelShadowInstances(static_cast<uint32_t>(std::max<int64_t>(v, 1))); });
-
-	toast::settings::declareFloat(
-	    "renderer.voxels.edge_rounding",
-	    0.3,
-	    {.label = "Edge rounding",
-			 .category = "Voxels",
-			 .description = "Width in voxels that normals blend across edges near the camera. 0 keeps flat faces.",
-			 .min = 0.0,
-			 .max = 1.0,
-			 .step = 0.05}
-	)
-	    .onChange([&renderer](double v) { renderer.setVoxelNormalRounding(static_cast<float>(v)); });
 
 	toast::settings::declareBool(
 	    "renderer.voxels.cell_boxes",
@@ -652,11 +792,9 @@ void registerVolumetrics(VulkanRenderer& renderer) {
 	      .options = {"Low", "Medium", "High", "Epic", "Custom"}
 	}
 	)
-	    .onChange([&renderer](int64_t v) {
-		    renderer.setVolumetricQuality(
-		        static_cast<uint32_t>(std::clamp<int64_t>(v, 0, VulkanRenderer::k_volumetric_quality_custom))
-		    );
-	    });
+	    .onChange(presetKnob<uint32_t, int64_t>(&PresetKnobs::volumetric_quality, [](int64_t v) {
+		    return static_cast<uint32_t>(std::clamp<int64_t>(v, 0, VulkanRenderer::k_volumetric_quality_custom));
+	    }));
 
 	toast::settings::declareInt(
 	    "renderer.volumetrics.steps",
@@ -730,6 +868,17 @@ void registerDebug(VulkanRenderer& renderer) {
 
 void registerRendererStartupSettings() {
 	registerShadows();
+
+	toast::settings::declareBool(
+	    "renderer.voxels.trace_ray_query",
+	    true,
+	    {.label = "Ray query voxel rays",
+			 .category = "Voxels",
+			 .description = "Marched voxel rays find the volumes they cross through hardware ray queries when the GPU has them. "
+			                "Off walks the software cell grid on every GPU",
+			 .requires_restart = true}
+	)
+	    .onChange([](bool enabled) { ShaderCompiler::setTraceRayQuery(enabled); });
 }
 
 void registerGi(VulkanRenderer& renderer) {
@@ -751,11 +900,9 @@ void registerGi(VulkanRenderer& renderer) {
 	      .options = {"Low", "Medium", "High", "Epic", "Custom"}
 	}
 	)
-	    .onChange([&gi](int64_t v) {
-		    gi.quality.store(
-		        static_cast<uint32_t>(std::clamp<int64_t>(v, 0, GiSettings::k_quality_custom)), std::memory_order_relaxed
-		    );
-	    });
+	    .onChange(presetKnob<uint32_t, int64_t>(&PresetKnobs::gi_quality, [](int64_t v) {
+		    return static_cast<uint32_t>(std::clamp<int64_t>(v, 0, GiSettings::k_quality_custom));
+	    }));
 
 	toast::settings::declareInt(
 	    "renderer.gi.update_interval",
@@ -958,6 +1105,7 @@ void registerGi(VulkanRenderer& renderer) {
 }
 
 void registerRendererSettings(VulkanRenderer& renderer) {
+	g_preset.renderer = &renderer;
 	registerDisplay(renderer);
 	registerQuality(renderer);
 	registerVoxels(renderer);
@@ -965,6 +1113,8 @@ void registerRendererSettings(VulkanRenderer& renderer) {
 	registerEnvironment(renderer);
 	registerVolumetrics(renderer);
 	registerDebug(renderer);
+	g_preset.ready = true;
+	applyPreset();
 }
 
 }

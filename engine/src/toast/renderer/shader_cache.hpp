@@ -8,6 +8,7 @@
 
 #include "shader_reflection.hpp"
 
+#include <atomic>
 #include <cstddef>
 #include <future>
 #include <memory>
@@ -79,6 +80,8 @@ private:
 	std::mutex m_mutex;
 	std::unordered_map<uint64_t, EntryPtr> m_entries;
 	std::unordered_map<uint64_t, std::shared_future<EntryPtr>> m_in_flight;
+	std::atomic<size_t> m_compiled_count {0};
+	std::atomic<size_t> m_module_count {0};
 	std::unordered_map<uint64_t, assets::Handle<assets::Shader>> m_sources;
 	std::unordered_map<uint64_t, std::unordered_set<uint64_t>> m_reverse_deps;
 	nlohmann::json m_hash_index;

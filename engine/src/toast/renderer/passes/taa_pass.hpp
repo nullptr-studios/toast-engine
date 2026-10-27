@@ -27,6 +27,11 @@ public:
 	TaaPass(const VulkanCore& core, vk::Format scene_format, vk::Extent2D extent);
 
 	[[nodiscard]]
+	auto atOutputResolution() const -> bool override {
+		return true;
+	}
+
+	[[nodiscard]]
 	auto name() const -> std::string_view override {
 		return "TAA";
 	}
@@ -47,6 +52,10 @@ private:
 		glm::mat4 reprojection {1.0f};
 		glm::vec4 texel {0.0f};
 		glm::vec4 tuning {0.0f};
+		/// xy render size zw jitter in uv
+		glm::vec4 source {0.0f};
+		/// x 1 when the source is smaller than the output
+		glm::vec4 upscale {0.0f};
 	};
 
 	void createResources(const VulkanCore& core);

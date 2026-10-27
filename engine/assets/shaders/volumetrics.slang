@@ -400,8 +400,8 @@ float3 directInScatter(float3 position, float3 toCamera, float2 pixel, float g, 
     // Scaled up since only one step in kMarchedInterleave traces
     if (pick.weight > 0.0)
     {
-        const float visibility = traceVisibility(position, pick.segment, kFogShadowCone, false).x;
-        light += pick.light * visibility * (pick.total / pick.weight) * float(kMarchedInterleave);
+        const float3 picked = pick.light * (pick.total / pick.weight) * float(kMarchedInterleave);
+        light += picked * traceVisibility(position, pick.segment, kFogShadowCone, false).x;
     }
     return light;
 }
@@ -450,14 +450,14 @@ float4 scatterMain(VSOutput input) : SV_Target0
         {
             continue;
         }
-        const float3 inScatter =
-            medium.scattering *
-                directInScatter(position, toCamera, float2(pixel), medium.anisotropy, (i + phase) % kMarchedInterleave == 0u, random) +
-            medium.ambientScatter +
-            medium.emission;
+        // Before the shadow trace so less is live across it
         const float stepExtinction = exp(-medium.extinction * (far - near));
-        scattered += transmittance * inScatter * (1.0 - stepExtinction) / medium.extinction;
+        const float stepWeight = transmittance * (1.0 - stepExtinction) / medium.extinction;
+        scattered += (medium.ambientScatter + medium.emission) * stepWeight;
+        const float3 directWeight = medium.scattering * stepWeight;
         transmittance *= stepExtinction;
+        scattered += directWeight *
+                     directInScatter(position, toCamera, float2(pixel), medium.anisotropy, (i + phase) % kMarchedInterleave == 0u, random);
         if (transmittance < 1e-3)
         {
             break;

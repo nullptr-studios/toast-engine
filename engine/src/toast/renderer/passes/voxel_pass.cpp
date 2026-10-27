@@ -112,7 +112,7 @@ constexpr uint32_t k_glass_bricks_binding = 7;
 constexpr uint32_t k_backdrop_binding = 8;
 constexpr uint32_t k_backdrop_depth_binding = 9;
 
-/// Turns the rounding spiral each frame for TAA to average
+/// Turns the denoiser pattern each frame for TAA to average
 constexpr float k_golden_ratio_conjugate = 0.61803398875f;
 
 }
@@ -440,6 +440,9 @@ void VoxelPass::createLighting(const VulkanCore& core, vk::Format scene_format, 
 	config.blend_preset = VulkanPipeline::BlendPreset::additive;
 	config.extra_blend_mask = 1u;
 	m_spatial_pipeline.rebuild(core, config);
+	config.debug_name = "VoxelSpatialReuseOpaque";
+	config.fragment_entry = "fragmentSpatialOpaque";
+	m_spatial_opaque_pipeline.rebuild(core, config);
 
 	// Premultiplied so colour adds and noisy diffuse keeps the indirect scaled by occlusion
 	config.debug_name = "VoxelMarchedLighting";
@@ -1008,7 +1011,7 @@ auto VoxelPass::prepare(uint32_t frame_index) -> bool {
 
 			// A voxel covers at least this many pixels closer than near_voxels voxels whatever the volume scale
 			const float raster_pixels = VulkanRenderer::instance->voxelRasterPixels();
-			const float height = static_cast<float>(VulkanRenderer::instance->getOutputTarget().getExtent().height);
+			const float height = static_cast<float>(VulkanRenderer::instance->renderExtent().height);
 			m_near_voxels =
 			    raster_pixels > 0.0f && m_mesh_pipeline.isReady() && m_quad_pipeline.isReady() && m_quad_depth_pipeline.isReady()
 			        ? std::abs(frame->frame_data.projection[1][1]) * height / (2.0f * raster_pixels)
@@ -1414,8 +1417,6 @@ void VoxelPass::recordLighting(vk::CommandBuffer cmd, uint32_t frame_index, vk::
 	m_lighting_scene_sets.updateTlas(frame_index);
 
 	const auto height = static_cast<float>(viewport.height);
-	const float rotation =
-	    frame->taa_active ? std::fmod(static_cast<float>(frame->sequence % 4096) * k_golden_ratio_conjugate, 1.0f) : 0.0f;
 	const uint32_t traced_specular =
 	    instance->tracedSpecularFrame()
 	        ? k_traced_specular | (static_cast<uint32_t>(std::lround(instance->voxelSpecularRoughness() * 255.0f)) << 8)
@@ -1424,10 +1425,7 @@ void VoxelPass::recordLighting(vk::CommandBuffer cmd, uint32_t frame_index, vk::
 	if (m_denoise_active) {
 		push = LightingPushConstants {
 		  .inverse_view_projection = glm::inverse(frame->frame_data.jittered_view_projection),
-		  .camera_radius = glm::vec4(frame->frame_data.camera_position, instance->voxelNormalRounding() * voxel::k_voxel_size),
-		  .viewport = glm::vec4(
-		      static_cast<float>(viewport.width), height, 0.5f * height * std::abs(frame->frame_data.projection[1][1]), rotation
-		  ),
+		  .viewport = glm::vec4(static_cast<float>(viewport.width), height, 0.0f, 0.0f),
 		  .lighting = glm::uvec4(
 		      std::min(m_shadow_instance_count, instance->voxelShadowInstances()),
 		      instance->voxelLightCandidates(),
@@ -1446,10 +1444,7 @@ void VoxelPass::recordLighting(vk::CommandBuffer cmd, uint32_t frame_index, vk::
 	} else {
 		push = LightingPushConstants {
 		  .inverse_view_projection = glm::inverse(frame->frame_data.jittered_view_projection),
-		  .camera_radius = glm::vec4(frame->frame_data.camera_position, instance->voxelNormalRounding() * voxel::k_voxel_size),
-		  .viewport = glm::vec4(
-		      static_cast<float>(viewport.width), height, 0.5f * height * std::abs(frame->frame_data.projection[1][1]), rotation
-		  ),
+		  .viewport = glm::vec4(static_cast<float>(viewport.width), height, 0.0f, 0.0f),
 		  .lighting = glm::uvec4(
 		      std::min(m_shadow_instance_count, instance->voxelShadowInstances()),
 		      instance->voxelLightCandidates(),
@@ -1790,7 +1785,8 @@ void VoxelPass::recordSpatial(vk::CommandBuffer cmd, uint32_t frame_index, vk::E
 		return;
 	}
 	const vk::PipelineLayout layout = *m_lighting_layout.getPipelineLayout();
-	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_spatial_pipeline.getPipeline());
+	const bool opaque = !m_scene_glass && m_spatial_opaque_pipeline.isReady();
+	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, (opaque ? m_spatial_opaque_pipeline : m_spatial_pipeline).getPipeline());
 	cmd.bindDescriptorSets(
 	    vk::PipelineBindPoint::eGraphics,
 	    layout,
@@ -1853,12 +1849,12 @@ void VoxelPass::recordMarchedComposite(vk::CommandBuffer cmd, uint32_t frame_ind
 void VoxelPass::onTargetsRecreated() {
 	std::ranges::fill(m_bound_gbuffer, std::array<vk::ImageView, 10> {});
 	if (!m_denoise_sets.empty()) {
-		createDenoiseTargets(VulkanRenderer::instance->getOutputTarget().getExtent());
+		createDenoiseTargets(VulkanRenderer::instance->renderExtent());
 	}
 
 	if (!m_cell_sets.empty()) {
 		const auto* renderer = VulkanRenderer::instance;
-		m_hiz.create(*m_core, renderer->getDepthView(), renderer->getOutputTarget().getExtent());
+		m_hiz.create(*m_core, renderer->getDepthView(), renderer->renderExtent());
 		writeHizDescriptors();
 	}
 }

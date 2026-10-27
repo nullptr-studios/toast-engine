@@ -86,6 +86,7 @@ TracedSpecularPass::TracedSpecularPass(const VulkanCore& core, vk::Format scene_
 		    pipeline.rebuild(core, config);
 	    };
 	const vk::Extent2D half = PostProcessTarget::halfExtent(extent);
+	build_pipeline(m_surface_pipeline, k_surface_format, half, "surfaceMain", "TracedSpecular Surface");
 	build_pipeline(m_trace_pipeline, k_trace_format, half, "traceMain", "TracedSpecular Trace");
 	build_pipeline(m_resolve_pipeline, k_trace_format, half, "resolveMain", "TracedSpecular Resolve");
 	build_pipeline(m_temporal_pipeline, k_trace_format, half, "temporalMain", "TracedSpecular Temporal");
@@ -98,8 +99,8 @@ TracedSpecularPass::TracedSpecularPass(const VulkanCore& core, vk::Format scene_
 	createSets(core);
 	createTargets(core, extent);
 
-	m_ready = m_trace_pipeline.isReady() && m_resolve_pipeline.isReady() && m_temporal_pipeline.isReady() &&
-	          m_composite_pipeline.isReady() && !m_scene_sets.empty() && !m_storage_sets.empty();
+	m_ready = m_surface_pipeline.isReady() && m_trace_pipeline.isReady() && m_resolve_pipeline.isReady() &&
+	          m_temporal_pipeline.isReady() && m_composite_pipeline.isReady() && !m_scene_sets.empty() && !m_storage_sets.empty();
 	if (m_ready) {
 		TOAST_INFO("Render", "TracedSpecularPass ready (GGX rays traced at half resolution)");
 	}
@@ -159,6 +160,7 @@ void TracedSpecularPass::createSets(const VulkanCore& core) {
 void TracedSpecularPass::createTargets(const VulkanCore& core, vk::Extent2D extent) {
 	const vk::Extent2D half = PostProcessTarget::halfExtent(extent);
 	m_target.create(core, extent, m_scene_format, "TracedSpecular");
+	m_surface.create(core, half, k_surface_format, "TracedSpecular Surface");
 	m_trace.create(core, half, k_trace_format, "TracedSpecular Trace");
 	m_resolved.create(core, half, k_trace_format, "TracedSpecular Resolved");
 	m_history[0].create(core, half, k_trace_format, "TracedSpecular History0");
@@ -211,6 +213,7 @@ auto TracedSpecularPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk:
 	  history_write.view(),
 	  previous_view ? previous_view : source_view,
 	  m_resolved.view(),
+	  m_surface.view(),
 	};
 	if (std::ranges::any_of(views, [](vk::ImageView view) { return !view; })) {
 		return source_view;
@@ -259,6 +262,7 @@ auto TracedSpecularPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk:
 		target.endScope(cmd);
 	};
 
+	draw(m_surface, m_surface_pipeline);
 	draw(m_trace, m_trace_pipeline);
 	draw(m_resolved, m_resolve_pipeline);
 	draw(history_write, m_temporal_pipeline);

@@ -9,6 +9,10 @@ struct TaaParams
     float4 texel;
     // x history weight y 1 resets history z 1 ignores written motion w 1 draws the motion debug view
     float4 tuning;
+    // xy render size zw jitter in uv
+    float4 source;
+    // x 1 when the source is smaller than the output
+    float4 upscale;
 };
 
 [[vk::push_constant]]
@@ -108,11 +112,101 @@ float3 motionColor(float4 motion)
     return rgb * saturate(length(pixels) / 8.0);
 }
 
+/// Jitter aware Gaussian of the render texels around this output pixel
+float4 resolveUpscaled(float2 uv)
+{
+    const float2 renderSize = gParams.source.xy;
+    const float2 renderTexel = 1.0 / renderSize;
+    // Render texel i shows the scene at (i + 0.5) / size minus the jitter
+    const float2 renderPosition = (uv + gParams.source.zw) * renderSize - 0.5;
+    const int2 base = int2(round(renderPosition));
+    const int2 last = int2(renderSize) - 1;
+
+    float3 filtered = float3(0.0, 0.0, 0.0);
+    float weightSum = 0.0;
+    float nearest = 0.0;
+    float3 moment1 = float3(0.0, 0.0, 0.0);
+    float3 moment2 = float3(0.0, 0.0, 0.0);
+    float closestDepth = kFarDepth;
+    float2 closestUv = uv;
+    for (int y = -1; y <= 1; ++y)
+    {
+        for (int x = -1; x <= 1; ++x)
+        {
+            const int2 texel = clamp(base + int2(x, y), int2(0, 0), last);
+            const float2 sampleUv = (float2(texel) + 0.5) * renderTexel;
+            const float3 value = toYCoCg(compress(gCurrent.SampleLevel(sampleUv, 0.0).rgb));
+            moment1 += value;
+            moment2 += value * value;
+
+            const float2 offset = float2(texel) - renderPosition;
+            const float weight = exp(-2.29 * dot(offset, offset));
+            filtered += value * weight;
+            weightSum += weight;
+            nearest = max(nearest, weight);
+
+            if (abs(x) + abs(y) <= 1)
+            {
+                const float depth = gDepth.SampleLevel(sampleUv, 0.0).r;
+                if (isCloserDepth(depth, closestDepth))
+                {
+                    closestDepth = depth;
+                    closestUv = sampleUv;
+                }
+            }
+        }
+    }
+    filtered /= max(weightSum, 1e-5);
+
+    const float4 motion = gMotion.SampleLevel(closestUv, 0.0);
+    [branch]
+    if (gParams.tuning.w > 0.5)
+    {
+        return float4(motionColor(motion), 1.0);
+    }
+
+    float2 previousUv;
+    if (motion.w > 0.5 && gParams.tuning.z < 0.5)
+    {
+        previousUv = uv - motion.xy;
+    }
+    else
+    {
+        const float4 previousClip = mul(gParams.reprojection, float4(closestUv * 2.0 - 1.0, closestDepth, 1.0));
+        previousUv = uv + previousClip.xy / previousClip.w * 0.5 + 0.5 - closestUv;
+    }
+
+    const bool offscreen = any(previousUv < float2(0.0, 0.0)) || any(previousUv > float2(1.0, 1.0));
+    [branch]
+    if (gParams.tuning.y > 0.5 || offscreen)
+    {
+        return float4(expand(fromYCoCg(filtered)), 1.0);
+    }
+
+    const float3 mean = moment1 / 9.0;
+    const float3 sigma = sqrt(max(moment2 / 9.0 - mean * mean, float3(0.0, 0.0, 0.0)));
+    const float3 history = clipToBox(toYCoCg(compress(sampleHistory(previousUv))), mean - sigma, mean + sigma);
+
+    const float currentWeight = (1.0 - gParams.tuning.x * (1.0 - saturate(motion.z))) * nearest;
+    float3 resolved = lerp(history, filtered, currentWeight);
+    if (any(isnan(resolved)))
+    {
+        resolved = filtered;
+    }
+    return float4(expand(fromYCoCg(resolved)), 1.0);
+}
+
 [shader("fragment")]
 float4 fragmentMain(VSOutput input) : SV_Target0
 {
     float2 uv = input.uv;
     float2 texel = gParams.texel.xy;
+
+    [branch]
+    if (gParams.upscale.x > 0.5)
+    {
+        return resolveUpscaled(uv);
+    }
 
     float3 center = float3(0.0, 0.0, 0.0);
     float3 moment1 = float3(0.0, 0.0, 0.0);

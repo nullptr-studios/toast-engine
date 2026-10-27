@@ -627,6 +627,7 @@ void Engine::createSDLWindow(const char* w_name) {
 	m->vulkan_core = std::make_unique<renderer::VulkanCore>(instance_extensions, device_extensions);
 
 	// Compile every stale shader up front
+	renderer::ShaderCompiler::setFullOptimization(true);
 	renderer::ShaderCache::get().compileAllAtStartup();
 
 	// create output texture
@@ -733,6 +734,8 @@ void Engine::createAvaloniaWindow() {
 	settings::Settings::get().setActiveLayer(settings::Layer::project);
 
 	m->vulkan_core = std::make_unique<renderer::VulkanCore>(std::span<const char* const> {}, std::span<const char* const> {});
+
+	renderer::ShaderCache::get().compileAllAtStartup();
 
 	auto output_target = std::make_unique<renderer::SharedTextureOutputTarget>(*m->vulkan_core, vk::Extent2D(1080, 720));
 	auto color_format = output_target->getColorFormat();

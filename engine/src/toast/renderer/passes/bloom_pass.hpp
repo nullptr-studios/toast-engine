@@ -23,6 +23,11 @@ public:
 	BloomPass(const VulkanCore& core, vk::Format hdr_format, vk::Extent2D extent);
 
 	[[nodiscard]]
+	auto atOutputResolution() const -> bool override {
+		return true;
+	}
+
+	[[nodiscard]]
 	auto name() const -> std::string_view override {
 		return "Bloom";
 	}

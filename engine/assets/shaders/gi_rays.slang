@@ -512,14 +512,17 @@ void shadeMain(uint3 id : SV_DispatchThreadID)
     const float3 normal = sceneHitNormal(hit, ray.direction);
     // Salted so the light pick is independent of the seeding draw of traceMain
     uint random = giHash(ray.random ^ 0x68bc21ebu);
-    const float3 radiance = giClampRay(frame, giOffscreenRadiance(frame, hit, position, normal, ray.pixel, random));
-
     const uint top = frame.frame.y - 1u;
     const bool primaryHit = !pixelRay || hit.t <= giIntervalEnd(frame, ray.lod, top);
-    giSplitRay(frame, ray.deposit, ray.lod, ray.origin, ray.direction, primaryHit, hit.t, radiance);
+    const float3 radiance = giOffscreenRadiance(frame, hit, position, normal, ray.pixel, random);
+
+    // Reread so the frame is not live across the traces
+    const GiFrame after = gFrame[0];
+    const float3 clamped = giClampRay(after, radiance);
+    giSplitRay(after, ray.deposit, ray.lod, ray.origin, ray.direction, primaryHit, hit.t, clamped);
     if (ray.overlapDeposit != kGiEmpty)
     {
-        giSplitRay(frame, ray.overlapDeposit, ray.lod + 1u, ray.origin, ray.direction, true, hit.t, radiance);
+        giSplitRay(after, ray.overlapDeposit, ray.lod + 1u, ray.origin, ray.direction, true, hit.t, clamped);
     }
 }
 

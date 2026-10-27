@@ -23,6 +23,7 @@
 #include "passes/voxel_pass.hpp"
 #include "ray_tracing_scene.hpp"
 #include "renderer_settings.hpp"
+#include "shader_compiler.hpp"
 #include "shadow_slots.hpp"
 #include "skinned_blas_pool.hpp"
 #include "voxel_debug.hpp"
@@ -795,6 +796,27 @@ auto VulkanRenderer::applyResize(vk::Extent2D extent) -> void {
 	m_frame_cv.notify_one();
 }
 
+void VulkanRenderer::setRenderScale(float scale) {
+	scale = std::clamp(scale, 0.5f, 1.0f);
+	if (m_render_scale.exchange(scale, std::memory_order_relaxed) != scale) {
+		applyResize(m_output_target->getExtent());
+	}
+}
+
+void VulkanRenderer::requestSettingValue(std::string key, toast::settings::Value value) {
+	const std::lock_guard lock(m_setting_request_mutex);
+	m_setting_requests.emplace_back(std::move(key), std::move(value));
+}
+
+auto VulkanRenderer::renderExtent() const -> vk::Extent2D {
+	const vk::Extent2D output = m_output_target->getExtent();
+	const float scale = m_applied_render_scale.load(std::memory_order_relaxed);
+	return {
+	  std::max(1u, static_cast<uint32_t>(std::lround(static_cast<float>(output.width) * scale))),
+	  std::max(1u, static_cast<uint32_t>(std::lround(static_cast<float>(output.height) * scale))),
+	};
+}
+
 void VulkanRenderer::stop() {
 	ZoneScoped;
 	const bool was_running = m_running.exchange(false, std::memory_order_acq_rel);
@@ -1054,7 +1076,7 @@ auto VulkanRenderer::createDepthResources() -> void {
 		TOAST_CRITICAL("Render", "Toast Engine Error: VulkanRenderer requires a valid depth format!");
 	}
 
-	const auto extent = m_output_target->getExtent();
+	const auto extent = renderExtent();
 	if (extent.width == 0 || extent.height == 0) {
 		TOAST_CRITICAL("Render", "Toast Engine Error: VulkanRenderer requires a non-zero output extent for depth resources!");
 	}
@@ -1106,6 +1128,22 @@ auto VulkanRenderer::createDepthResources() -> void {
 	setDebugName(*m_core, **m_depth_resources.view, "VulkanRenderer DepthImageView");
 
 	m_depth_resources.state.reset(**m_depth_resources.image, depthAttachmentRange(m_depth_format));
+
+	m_output_depth.view.reset();
+	m_output_depth.image.reset();
+	const vk::Extent2D output_extent = m_output_target->getExtent();
+	if (output_extent != extent) {
+		vk::ImageCreateInfo output_ci = image_ci;
+		output_ci.extent = vk::Extent3D {output_extent.width, output_extent.height, 1};
+		output_ci.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled;
+		m_output_depth.image.emplace(m_core->getAllocator().createImage(output_ci, allocation_ci));
+		setDebugName(*m_core, **m_output_depth.image, "VulkanRenderer OutputDepthImage");
+		vk::ImageViewCreateInfo output_view_ci = view_ci;
+		output_view_ci.image = **m_output_depth.image;
+		m_output_depth.view.emplace(m_core->getDevice(), output_view_ci);
+		setDebugName(*m_core, **m_output_depth.view, "VulkanRenderer OutputDepthView");
+		m_output_depth.state.reset(**m_output_depth.image, depthAttachmentRange(m_depth_format));
+	}
 	TOAST_TRACE(
 	    "Render", "Depth resources created at {}x{} with format {}", extent.width, extent.height, vk::to_string(m_depth_format)
 	);
@@ -1113,7 +1151,7 @@ auto VulkanRenderer::createDepthResources() -> void {
 
 void VulkanRenderer::createSceneColorResources() {
 	ZoneScoped;
-	const auto extent = m_output_target->getExtent();
+	const auto extent = renderExtent();
 	if (extent.width == 0 || extent.height == 0) {
 		TOAST_CRITICAL("Render", "Toast Engine Error: VulkanRenderer requires a non-zero output extent for the scene target!");
 	}
@@ -1251,11 +1289,23 @@ void VulkanRenderer::createPresentResources() {
 	config.depth_write = false;
 	m_present_pipeline.rebuild(*m_core, config);
 
+	VulkanPipeline::Config depth_config = config;
+	depth_config.debug_name = "DepthUpscale";
+	depth_config.fragment_entry = "depthMain";
+	depth_config.depth_only = true;
+	depth_config.depth_fragment = true;
+	depth_config.depth_test = true;
+	depth_config.depth_write = true;
+	depth_config.depth_compare = vk::CompareOp::eAlways;
+	m_depth_upscale_pipeline.rebuild(*m_core, depth_config);
+
 	const auto& device = m_core->getDevice();
 
 	const auto sampler_ci = linearClampSamplerInfo();
 	m_present_sampler = vk::raii::Sampler(device, sampler_ci);
 	setDebugName(*m_core, *m_present_sampler, "VulkanRenderer PresentSampler");
+	m_depth_upscale_sampler = vk::raii::Sampler(device, nearestClampSamplerInfo());
+	setDebugName(*m_core, *m_depth_upscale_sampler, "VulkanRenderer DepthUpscaleSampler");
 
 	const auto& layouts = m_present_layout.getDescriptorSetLayouts();
 	if (layouts.empty()) {
@@ -1264,13 +1314,62 @@ void VulkanRenderer::createPresentResources() {
 
 	const vk::DescriptorSetLayout set_layout = *layouts[0];
 	m_present_sets.clear();
+	m_depth_upscale_sets.clear();
 	m_present_bound_views.assign(k_frames_in_flight, vk::ImageView {});
 	for (uint32_t i = 0; i < k_frames_in_flight; ++i) {
 		const vk::DescriptorSetAllocateInfo alloc_info(*m_descriptor_pool, 1, &set_layout);
 		auto allocated = device.allocateDescriptorSets(alloc_info);
 		m_present_sets.push_back(std::move(allocated[0]));
 		setDebugName(*m_core, *m_present_sets[i], std::format("VulkanRenderer PresentSet[{}]", i));
+		auto depth_set = device.allocateDescriptorSets(alloc_info);
+		m_depth_upscale_sets.push_back(std::move(depth_set[0]));
+		setDebugName(*m_core, *m_depth_upscale_sets[i], std::format("VulkanRenderer DepthUpscaleSet[{}]", i));
 	}
+	m_depth_upscale_bound.assign(k_frames_in_flight, vk::ImageView {});
+}
+
+void VulkanRenderer::recordDepthUpscale(vk::CommandBuffer cmd, const vk::Rect2D& area) {
+	ZoneScoped;
+	const vk::ImageView scene_depth = **m_depth_resources.view;
+	if (m_depth_upscale_bound[m_current_frame] != scene_depth) {
+		const vk::DescriptorImageInfo image_info(*m_depth_upscale_sampler, scene_depth, vk::ImageLayout::eDepthReadOnlyOptimal);
+		const vk::WriteDescriptorSet write(
+		    *m_depth_upscale_sets[m_current_frame], 0, 0, 1, vk::DescriptorType::eCombinedImageSampler, &image_info
+		);
+		m_core->getDevice().updateDescriptorSets(write, {});
+		m_depth_upscale_bound[m_current_frame] = scene_depth;
+	}
+	sync::transition(cmd, m_output_depth.state, sync::Usage::depth_attachment);
+
+	vk::RenderingAttachmentInfo depth_info {};
+	depth_info.imageView = **m_output_depth.view;
+	depth_info.imageLayout = vk::ImageLayout::eDepthAttachmentOptimal;
+	depth_info.loadOp = vk::AttachmentLoadOp::eDontCare;
+	depth_info.storeOp = vk::AttachmentStoreOp::eStore;
+
+	vk::RenderingInfo info {};
+	info.renderArea = area;
+	info.layerCount = 1;
+	info.pDepthAttachment = &depth_info;
+	cmd.beginRendering(info);
+	cmd.setViewport(
+	    0,
+	    std::array {
+	      vk::Viewport(0.0f, 0.0f, static_cast<float>(area.extent.width), static_cast<float>(area.extent.height), 0.0f, 1.0f)
+	    }
+	);
+	cmd.setScissor(0, std::array {area});
+	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_depth_upscale_pipeline.getPipeline());
+	cmd.bindDescriptorSets(
+	    vk::PipelineBindPoint::eGraphics,
+	    *m_present_layout.getPipelineLayout(),
+	    0,
+	    std::array<vk::DescriptorSet, 1> {*m_depth_upscale_sets[m_current_frame]},
+	    {}
+	);
+	cmd.draw(3, 1, 0, 0);
+	cmd.endRendering();
+	sync::transition(cmd, m_output_depth.state, sync::Usage::depth_sampled);
 }
 
 void VulkanRenderer::createFrameResources() {
@@ -2171,7 +2270,8 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 
 	const auto* capture_source = renderingFrame();
 	const uint32_t capture_size = capture_source != nullptr ? capture_source->capture_extent : 0u;
-	const vk::Extent2D scene_extent = capture_size > 0 ? vk::Extent2D {capture_size, capture_size} : extent;
+	const vk::Extent2D render_extent = renderExtent();
+	const vk::Extent2D scene_extent = capture_size > 0 ? vk::Extent2D {capture_size, capture_size} : render_extent;
 	const vk::Viewport scene_viewport(
 	    0.0f, 0.0f, static_cast<float>(scene_extent.width), static_cast<float>(scene_extent.height), 0.0f, 1.0f
 	);
@@ -2304,8 +2404,7 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 		to_copy.image(m_glass_backdrop_depth.state, sync::Usage::transfer_dst);
 		to_copy.flush(cmd);
 
-		const vk::Extent2D target_extent = m_output_target->getExtent();
-		const vk::Extent3D copy_extent {target_extent.width, target_extent.height, 1};
+		const vk::Extent3D copy_extent {render_extent.width, render_extent.height, 1};
 		const vk::ImageSubresourceLayers color_layers(vk::ImageAspectFlagBits::eColor, 0, 0, 1);
 		const vk::ImageSubresourceLayers depth_layers(vk::ImageAspectFlagBits::eDepth, 0, 0, 1);
 		cmd.copyImage(
@@ -2433,13 +2532,21 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 		}
 	}
 
-	if (!capture_frame && m_selection_outline != nullptr && m_depth_resources.view.has_value()) {
+	const bool upscaled_depth = m_output_depth.view.has_value() && m_depth_upscale_pipeline.isReady() &&
+	                            m_depth_resources.view.has_value() && m_current_frame < m_depth_upscale_sets.size();
+	if (upscaled_depth && !capture_frame) {
+		const GpuScope scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, "Depth upscale");
+		recordDepthUpscale(*frame.command_buffer, scissor);
+	}
+	DepthResources& overlay_depth = upscaled_depth ? m_output_depth : m_depth_resources;
+
+	if (!capture_frame && m_selection_outline != nullptr && overlay_depth.view.has_value()) {
 		const GpuScope scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, "Selection mask");
-		m_selection_outline->recordMask(*frame.command_buffer, m_current_frame, **m_depth_resources.view);
+		m_selection_outline->recordMask(*frame.command_buffer, m_current_frame, **overlay_depth.view);
 	}
 
 	// The overlay scope depth tests against the scene and its DontCare store counts as a write
-	barriers.image(m_depth_resources.state, sync::Usage::depth_attachment);
+	barriers.image(overlay_depth.state, sync::Usage::depth_attachment);
 
 	const vk::Image image = m_output_target->getColorImage(image_index);
 	sync::Usage& output_usage = m_output_image_usage.at(image_index);
@@ -2456,8 +2563,8 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	output_attachment_info.clearValue = clear_color;
 
 	vk::RenderingAttachmentInfo overlay_depth_info {};
-	if (m_depth_resources.view.has_value()) {
-		overlay_depth_info.imageView = **m_depth_resources.view;
+	if (overlay_depth.view.has_value()) {
+		overlay_depth_info.imageView = **overlay_depth.view;
 		overlay_depth_info.imageLayout = vk::ImageLayout::eDepthAttachmentOptimal;
 		overlay_depth_info.loadOp = vk::AttachmentLoadOp::eLoad;
 		overlay_depth_info.storeOp = vk::AttachmentStoreOp::eDontCare;
@@ -2468,7 +2575,7 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	output_rendering_info.layerCount = 1;
 	output_rendering_info.colorAttachmentCount = 1;
 	output_rendering_info.pColorAttachments = &output_attachment_info;
-	if (m_depth_resources.view.has_value()) {
+	if (overlay_depth.view.has_value()) {
 		output_rendering_info.pDepthAttachment = &overlay_depth_info;
 	}
 	frame.command_buffer.beginRendering(output_rendering_info);
@@ -3460,6 +3567,16 @@ void VulkanRenderer::finalizeLights(RenderFrame& frame) {
 void VulkanRenderer::tick(float time) noexcept {
 	ZoneScopedN("VulkanRenderer::tick()");
 
+	// Queued by render thread UI that holds the pass lock
+	std::vector<std::pair<std::string, toast::settings::Value>> setting_requests;
+	{
+		const std::lock_guard lock(m_setting_request_mutex);
+		setting_requests.swap(m_setting_requests);
+	}
+	for (auto& [key, value] : setting_requests) {
+		toast::settings::Settings::get().setValue(key, value);
+	}
+
 	if (m_rendering_paused.load(std::memory_order_relaxed)) {
 		getCurrentFrameBuild().debug_line_vertices.clear();
 		return;
@@ -3671,6 +3788,7 @@ void VulkanRenderer::tick(float time) noexcept {
 	buildVoxelProxies(frame);
 
 	const auto extent = m_output_target->getExtent();
+	const auto render_extent = renderExtent();
 	beginDebugLineCollection(frame);
 	{
 		std::scoped_lock lock(m_mesh_proxy_mutex);
@@ -3769,7 +3887,8 @@ void VulkanRenderer::tick(float time) noexcept {
 				frame.frame_data.camera_position = probe_position;
 				frame.probe_capture_index = probe_index;
 				frame.probe_capture_face = face;
-				frame.capture_extent = std::min({m_reflection_probe_nodes[probe_index]->resolution(), extent.width, extent.height});
+				frame.capture_extent =
+				    std::min({m_reflection_probe_nodes[probe_index]->resolution(), render_extent.width, render_extent.height});
 
 				frame.render_mode = 0;
 				frame.frame_data.render_mode_pad.x = 0;
@@ -3939,7 +4058,7 @@ void VulkanRenderer::tick(float time) noexcept {
 				frame.irradiance_capture_index = probe_index;
 				frame.irradiance_capture_face = face;
 
-				frame.capture_extent = std::min({k_irradiance_capture_size, extent.width, extent.height});
+				frame.capture_extent = std::min({k_irradiance_capture_size, render_extent.width, render_extent.height});
 
 				frame.render_mode = 0;
 				frame.frame_data.render_mode_pad.x = 0;
@@ -3953,7 +4072,8 @@ void VulkanRenderer::tick(float time) noexcept {
 		m_bake_active.store(m_probe_bake_cursor >= 0 || m_irradiance_bake_cursor >= 0, std::memory_order_relaxed);
 	}
 
-	frame.viewport_extent = glm::vec2(static_cast<float>(extent.width), static_cast<float>(extent.height));
+	frame.viewport_extent = glm::vec2(static_cast<float>(render_extent.width), static_cast<float>(render_extent.height));
+	frame.output_extent = glm::vec2(static_cast<float>(extent.width), static_cast<float>(extent.height));
 	frame.camera_near = m_camera->near_plane;
 	frame.camera_far = m_camera->far_plane;
 
@@ -4322,7 +4442,7 @@ void VulkanRenderer::tick(float time) noexcept {
 	frame.frame_data.traced_shadow_params.x = trace_shadows ? 1.0f : 0.0f;
 	// Voxel volumes join the TLAS so marched voxel rays use ray queries
 	frame.frame_data.traced_shadow_params.y =
-	    m_core->isRayTracingSupported() && voxelTraceRayQuery() && !frame.voxel_instances.empty() ? 1.0f : 0.0f;
+	    m_core->isRayTracingSupported() && ShaderCompiler::traceRayQuery() && !frame.voxel_instances.empty() ? 1.0f : 0.0f;
 
 	if (!trace_shadows) {
 		fitShadowViews(frame, aspect, shadow_caster_index, shadow_caster_direction, spot_candidates, point_candidates);
@@ -4525,7 +4645,8 @@ void VulkanRenderer::tick(float time) noexcept {
 		}
 		frame.taa_reset = taa && (!m_taa_history.was_active || !same_camera);
 
-		if (taa && extent.width > 0 && extent.height > 0) {
+		frame.jitter_ndc = glm::vec2(0.0f);
+		if (taa && render_extent.width > 0 && render_extent.height > 0) {
 			// R2 low discrepancy sequence from the plastic number
 			constexpr double k_plastic = 1.32471795724474602596;
 			const auto n = static_cast<double>(++m_taa_history.jitter_index);
@@ -4534,7 +4655,8 @@ void VulkanRenderer::tick(float time) noexcept {
 			    static_cast<float>(std::fmod(0.5 + (n / (k_plastic * k_plastic)), 1.0)) - 0.5f
 			);
 			const glm::vec2 ndc_offset =
-			    2.0f * pixel_offset / glm::vec2(static_cast<float>(extent.width), static_cast<float>(extent.height));
+			    2.0f * pixel_offset / glm::vec2(static_cast<float>(render_extent.width), static_cast<float>(render_extent.height));
+			frame.jitter_ndc = ndc_offset;
 			frame.frame_data.jittered_view_projection =
 			    glm::translate(glm::mat4(1.0f), glm::vec3(ndc_offset, 0.0f)) * frame.frame_data.view_projection;
 		}
@@ -5149,6 +5271,7 @@ auto VulkanRenderer::applyResizeInternal(vk::Extent2D extent) -> void {
 	m_core->getDevice().waitIdle();
 	publishCompletedFrames();
 	m_pending_publish.clear();
+	m_applied_render_scale.store(m_render_scale.load(std::memory_order_relaxed), std::memory_order_relaxed);
 	for (auto& frame : m_frames) {
 		frame.has_submitted = false;
 	}
@@ -5168,7 +5291,7 @@ auto VulkanRenderer::applyResizeInternal(vk::Extent2D extent) -> void {
 		{
 			std::lock_guard lock(m_pass_mutex);
 			for (auto& pass : m_post_process_passes) {
-				pass->onResize(actual_extent);
+				pass->onResize(pass->atOutputResolution() ? actual_extent : renderExtent());
 			}
 		}
 		if (m_voxel_pass != nullptr) {

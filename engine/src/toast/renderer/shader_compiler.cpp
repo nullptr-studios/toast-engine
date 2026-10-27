@@ -90,6 +90,8 @@ private:
 };
 
 std::atomic_bool ray_query_available = false;
+std::atomic_bool full_optimization = false;
+std::atomic_bool trace_ray_query_requested = true;
 
 }
 
@@ -101,16 +103,31 @@ auto ShaderCompiler::isRayQueryAvailable() -> bool {
 	return ray_query_available.load(std::memory_order_relaxed);
 }
 
+void ShaderCompiler::setTraceRayQuery(bool enabled) {
+	trace_ray_query_requested.store(enabled, std::memory_order_relaxed);
+}
+
+auto ShaderCompiler::traceRayQuery() -> bool {
+	static const bool fixed = isRayQueryAvailable() && trace_ray_query_requested.load(std::memory_order_relaxed);
+	return fixed;
+}
+
+void ShaderCompiler::setFullOptimization(bool enabled) {
+	full_optimization.store(enabled, std::memory_order_relaxed);
+}
+
 auto ShaderCompiler::featureHash() -> uint64_t {
 	// Debug compiles unoptimized with debug info so a release entry in the shared cache must read as stale and the reverse
 #if defined(NDEBUG)
-	constexpr uint64_t k_build_profile = 0x0ull;
+	const uint64_t k_build_profile = full_optimization.load(std::memory_order_relaxed) ? 0x0ull : 0x0f7d1e5ca1ab1e00ull;
 #else
 	constexpr uint64_t k_build_profile = 0xd3b09c0de5a11e01ull;
 #endif
 	// TOAST_REVERSED_Z changes the SPIR-V so the other convention must read as stale
 	constexpr uint64_t k_depth_convention = depth::k_reversed_z ? 0x5eed2e7e45edull : 0x0ull;
-	return (ShaderCompiler::isRayQueryAvailable() ? 0x9e3779b97f4a7c15ull : 0x0ull) ^ k_build_profile ^ k_depth_convention;
+	const uint64_t k_trace_walk = traceRayQuery() ? 0x0ull : 0x7a11c0de5eedull;
+	return (ShaderCompiler::isRayQueryAvailable() ? 0x9e3779b97f4a7c15ull : 0x0ull) ^ k_build_profile ^ k_depth_convention ^
+	       k_trace_walk;
 }
 
 static auto createSession(slang::IGlobalSession* global_session) -> Slang::ComPtr<slang::ISession> {
@@ -139,12 +156,14 @@ static auto createSession(slang::IGlobalSession* global_session) -> Slang::ComPt
 	compiler_options.push_back(dbg_entry);
 
 #else
-	TOAST_INFO("Render", "Configuring Slang for RELEASE: Maximum optimizations enabled.");
+	const bool full = full_optimization.load(std::memory_order_relaxed);
+	TOAST_TRACE("Render", "Configuring Slang for RELEASE with {} optimization", full ? "maximal" : "default");
 
 	slang::CompilerOptionEntry opt_entry {};
 	opt_entry.name = slang::CompilerOptionName::Optimization;
 	opt_entry.value.kind = slang::CompilerOptionValueKind::Int;
-	opt_entry.value.intValue0 = SlangOptimizationLevel::SLANG_OPTIMIZATION_LEVEL_MAXIMAL;
+	opt_entry.value.intValue0 =
+	    full ? SlangOptimizationLevel::SLANG_OPTIMIZATION_LEVEL_MAXIMAL : SlangOptimizationLevel::SLANG_OPTIMIZATION_LEVEL_DEFAULT;
 	compiler_options.push_back(opt_entry);
 
 #endif
@@ -156,6 +175,13 @@ static auto createSession(slang::IGlobalSession* global_session) -> Slang::ComPt
 	ray_query_entry.value.stringValue0 = "TOAST_RAY_QUERY";
 	ray_query_entry.value.stringValue1 = ShaderCompiler::isRayQueryAvailable() ? "1" : "0";
 	compiler_options.push_back(ray_query_entry);
+
+	slang::CompilerOptionEntry trace_entry {};
+	trace_entry.name = slang::CompilerOptionName::MacroDefine;
+	trace_entry.value.kind = slang::CompilerOptionValueKind::String;
+	trace_entry.value.stringValue0 = "TOAST_TRACE_RAY_QUERY";
+	trace_entry.value.stringValue1 = ShaderCompiler::traceRayQuery() ? "1" : "0";
+	compiler_options.push_back(trace_entry);
 
 	// Always defined to 0 or 1
 	slang::CompilerOptionEntry reversed_z_entry {};

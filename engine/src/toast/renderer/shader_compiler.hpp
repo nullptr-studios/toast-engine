@@ -32,6 +32,17 @@ public:
 	[[nodiscard]]
 	static auto isRayQueryAvailable() -> bool;
 
+	/// @note Call before any compilation
+	static void setTraceRayQuery(bool enabled);
+
+	/// Fixed at the first call until a restart
+	[[nodiscard]]
+	static auto traceRayQuery() -> bool;
+
+	/// Player only
+	/// @note Call before any compilation
+	static void setFullOptimization(bool enabled);
+
 	[[nodiscard]]
 	static auto featureHash() -> uint64_t;
 };

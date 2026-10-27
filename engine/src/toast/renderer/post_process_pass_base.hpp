@@ -21,6 +21,11 @@ public:
 	virtual void onResize(vk::Extent2D extent) { }
 
 	[[nodiscard]]
+	virtual auto atOutputResolution() const -> bool {
+		return false;
+	}
+
+	[[nodiscard]]
 	virtual auto name() const -> std::string_view {
 		return "PostProcess";
 	}

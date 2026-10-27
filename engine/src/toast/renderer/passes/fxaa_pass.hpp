@@ -24,6 +24,11 @@ public:
 	FxaaPass(const VulkanCore& core, vk::Format ldr_format, vk::Extent2D extent);
 
 	[[nodiscard]]
+	auto atOutputResolution() const -> bool override {
+		return true;
+	}
+
+	[[nodiscard]]
 	auto name() const -> std::string_view override {
 		return "FXAA";
 	}

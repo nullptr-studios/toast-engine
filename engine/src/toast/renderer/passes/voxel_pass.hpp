@@ -233,7 +233,6 @@ private:
 	/// Mirrors voxel_lighting.slang LightingPushConstants
 	struct LightingPushConstants {
 		glm::mat4 inverse_view_projection {1.0f};
-		glm::vec4 camera_radius {0.0f};
 		glm::vec4 viewport {0.0f};
 		/// x instances with bounds y light sampling candidates z marched light routing w sun reach in meters
 		glm::uvec4 lighting {0u};
@@ -365,6 +364,7 @@ private:
 	/// Albedo face normal material and depth last written into each set
 	std::vector<std::array<vk::ImageView, 10>> m_bound_gbuffer;
 	VulkanPipeline m_spatial_pipeline;
+	VulkanPipeline m_spatial_opaque_pipeline;
 	VulkanPipeline m_marched_pipeline;
 	VulkanPipeline m_ambient_pipeline;
 	VulkanPipeline m_marched_composite_pipeline;
