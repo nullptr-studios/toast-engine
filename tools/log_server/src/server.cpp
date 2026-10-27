@@ -143,6 +143,27 @@ struct TuiSession {
 	}
 };
 
+constexpr std::uint16_t beacon_port = 12802;
+
+asio::awaitable<void> Server::runBeacon(std::uint16_t tui_port) {
+	auto executor = co_await asio::this_coro::executor;
+	asio::ip::udp::socket socket(executor);
+	asio::error_code ec;
+	socket.open(asio::ip::udp::v4(), ec);
+	if (ec) {
+		co_return;
+	}
+	socket.set_option(asio::socket_base::broadcast(true), ec);
+	const std::string payload = "toast-log/1 " + std::to_string(tui_port) + " " + hostName();
+	const asio::ip::udp::endpoint target(asio::ip::address_v4::broadcast(), beacon_port);
+	asio::steady_timer timer(executor);
+	for (;;) {
+		socket.send_to(asio::buffer(payload), target, 0, ec);
+		timer.expires_after(std::chrono::seconds(2));
+		co_await timer.async_wait(asio::redirect_error(asio::use_awaitable, ec));
+	}
+}
+
 asio::awaitable<void> Server::runTuiListener(std::uint16_t port) {
 	auto executor = co_await asio::this_coro::executor;
 	auto& context = static_cast<asio::io_context&>(executor.context());
