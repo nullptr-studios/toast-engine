@@ -115,6 +115,74 @@ float3 noisyAt(int2 pixel, bool specular)
     return specular ? gNoisySpecular.Load(int3(pixel, 0)).rgb : gNoisyDiffuse.Load(int3(pixel, 0)).rgb;
 }
 
+/// Bilinear at the expected depth so jitter across an edge keeps history and else the closest match one pixel around
+bool reprojectHistory(float2 previousUv, float expectedDepth, out float4 diffuseHistory, out float4 specularHistory)
+{
+    diffuseHistory = float4(0.0, 0.0, 0.0, 0.0);
+    specularHistory = float4(0.0, 0.0, 0.0, 0.0);
+    const int2 size = int2(gPush.viewport.xy);
+    const float tolerance = kDisocclusionDepth * expectedDepth;
+
+    const float2 texel = previousUv * gPush.viewport.xy - 0.5;
+    const int2 base = int2(floor(texel));
+    const float2 f = texel - float2(base);
+    float4 diffuseSum = float4(0.0, 0.0, 0.0, 0.0);
+    float4 specularSum = float4(0.0, 0.0, 0.0, 0.0);
+    float weightSum = 0.0;
+    [unroll]
+    for (int i = 0; i < 4; ++i)
+    {
+        const int2 offset = int2(i & 1, i >> 1);
+        const int2 tap = base + offset;
+        if (any(tap < int2(0, 0)) || any(tap >= size))
+        {
+            continue;
+        }
+        const float4 diffuse = gDiffuseHistory.Load(int3(tap, 0));
+        if (abs(diffuse.a - expectedDepth) > tolerance)
+        {
+            continue;
+        }
+        const float weight = (offset.x == 1 ? f.x : 1.0 - f.x) * (offset.y == 1 ? f.y : 1.0 - f.y);
+        diffuseSum += diffuse * weight;
+        specularSum += gSpecularHistory.Load(int3(tap, 0)) * weight;
+        weightSum += weight;
+    }
+    if (weightSum > 1e-3)
+    {
+        diffuseHistory = diffuseSum / weightSum;
+        specularHistory = specularSum / weightSum;
+        return true;
+    }
+
+    const int2 nearest = int2(floor(previousUv * gPush.viewport.xy));
+    float bestError = tolerance;
+    bool found = false;
+    [unroll]
+    for (int y = -1; y <= 1; ++y)
+    {
+        [unroll]
+        for (int x = -1; x <= 1; ++x)
+        {
+            const int2 tap = nearest + int2(x, y);
+            if (any(tap < int2(0, 0)) || any(tap >= size))
+            {
+                continue;
+            }
+            const float4 diffuse = gDiffuseHistory.Load(int3(tap, 0));
+            const float error = abs(diffuse.a - expectedDepth);
+            if (error <= bestError)
+            {
+                bestError = error;
+                diffuseHistory = diffuse;
+                specularHistory = gSpecularHistory.Load(int3(tap, 0));
+                found = true;
+            }
+        }
+    }
+    return found;
+}
+
 [shader("fragment")]
 float4 temporalMain(VSOutput input) : SV_Target0
 {
@@ -151,31 +219,46 @@ float4 temporalMain(VSOutput input) : SV_Target0
 
     const float depth = gDepth.Load(int3(pixel, 0)).r;
     const float2 uv = (float2(pixel) + 0.5) / gPush.viewport.xy;
-    const float3 world = worldPositionAt(uv, depth);
     const float linearDepth = linearDepthAt(uv, depth);
+    const float4 reset = float4(current, specular ? 1.0 : linearDepth);
 
     // Camera reprojection when voxel motion is missing
     const float4 motion = gMotion.Load(int3(pixel, 0));
-    const float4 previousClip = mul(gPush.previousViewProjection, float4(world, 1.0));
-    const float2 previousUv = motion.w > 0.5 ? uv - motion.xy : previousClip.xy / previousClip.w * 0.5 + 0.5;
+    float2 previousUv;
+    float expectedDepth;
+    if (motion.w > 0.5)
+    {
+        previousUv = uv - motion.xy;
+        expectedDepth = linearDepth;
+    }
+    else
+    {
+        const float3 world = worldPositionAt(uv, depth);
+        const float4 previousClip = mul(gPush.previousViewProjection, float4(world, 1.0));
+        if (previousClip.w <= 0.0)
+        {
+            return reset;
+        }
+        previousUv = previousClip.xy / previousClip.w * 0.5 + 0.5;
+        expectedDepth = previousClip.w;
+    }
 
     const bool inside = all(previousUv >= float2(0.0, 0.0)) && all(previousUv <= float2(1.0, 1.0));
-    const float4 reset = float4(current, specular ? 1.0 : linearDepth);
 
     // Reactive pixels drop their history
-    if (gPush.params.y < 0.5 || !inside || previousClip.w <= 0.0 || motion.z > 0.5)
+    if (gPush.params.y < 0.5 || !inside || motion.z > 0.5)
     {
         return reset;
     }
 
     // Depth lives in the diffuse history
-    const float4 diffuseHistory = gDiffuseHistory.SampleLevel(previousUv, 0.0);
-    if (abs(diffuseHistory.a - previousClip.w) > kDisocclusionDepth * previousClip.w)
+    float4 diffuseHistory;
+    float4 specularHistory;
+    if (!reprojectHistory(previousUv, expectedDepth, diffuseHistory, specularHistory))
     {
         return reset;
     }
 
-    const float4 specularHistory = gSpecularHistory.SampleLevel(previousUv, 0.0);
     const float historyLength = min(max(specularHistory.a, 1.0) + 1.0, kMaxHistoryLength);
     const float4 history = specular ? specularHistory : diffuseHistory;
     const float clip = specular ? kSpecularClip : kDiffuseClip;
@@ -217,7 +300,9 @@ float4 compositeMain(VSOutput input) : SV_Target0
 
     float3 diffuse = gDiffuseCurrent.Load(int3(pixel, 0)).rgb;
     float weightSum = 1.0;
-    const float2 turn = float2(cos(rotation), sin(rotation)) * radius;
+    float s, c;
+    sincos(rotation, s, c);
+    const float2 turn = float2(c, s) * radius;
     [unroll]
     for (uint i = 0u; i < kSpatialTaps; ++i)
     {

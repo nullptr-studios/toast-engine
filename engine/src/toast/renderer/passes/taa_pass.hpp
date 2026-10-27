@@ -35,6 +35,12 @@ public:
 
 	void onResize(vk::Extent2D extent) override;
 
+	/// Last frame resolve or null without one
+	[[nodiscard]]
+	auto resolvedHistory() const noexcept -> vk::ImageView {
+		return m_history_valid ? m_targets[m_write ^ 1u].view() : vk::ImageView {};
+	}
+
 private:
 	/// Mirrors taa.slang TaaParams
 	struct Params {

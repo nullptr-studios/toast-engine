@@ -32,7 +32,7 @@ namespace toast {
  *       needs ray tracing to be practical. The storage and the shading lookup are deliberately identical
  *       either way, so swapping the bake for a live update later touches only the bake
  */
-class [[ToastNode]] TOAST_API IrradianceVolume : public Node3D {
+class [[ToastNode, Icon("LightmapProbe")]] TOAST_API IrradianceVolume : public Node3D {
 public:
 	IrradianceVolume() = default;
 	~IrradianceVolume() override = default;

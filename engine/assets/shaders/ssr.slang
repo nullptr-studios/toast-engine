@@ -2,6 +2,7 @@
 import fullscreen;
 import depth_convention;
 import scene_normal;
+import ggx_sampling;
 
 struct SsrParams
 {
@@ -11,7 +12,7 @@ struct SsrParams
     float4 cameraPosition;
     // x intensity y max roughness z thickness w step count
     float4 tuning;
-    // x reach in meters y render mode z 1 with a valid history
+    // x reach in meters y render mode z 1 with a valid history w 1 when gPreviousColor holds last frame resolve
     float4 marching;
 };
 
@@ -43,6 +44,10 @@ Sampler2D gMotion;
 
 [[vk::binding(7, 0)]]
 Sampler2D gTemporal;
+
+/// Last frame TAA resolve since this frame colour is still noisy
+[[vk::binding(8, 0)]]
+Sampler2D gPreviousColor;
 
 static const float kPi = 3.14159265;
 
@@ -110,41 +115,6 @@ float2 noise2(float2 pixel)
     return frac(float2(noiseAt(pixel), noiseAt(pixel.yx + float2(47.0, 17.0))) + frame * float2(0.7548776662, 0.5698402910));
 }
 
-float ggxD(float NdotH, float alpha)
-{
-    const float a2 = alpha * alpha;
-    const float d = NdotH * NdotH * (a2 - 1.0) + 1.0;
-    return a2 / max(kPi * d * d, 1e-8);
-}
-
-float smithG1(float NdotX, float alpha)
-{
-    const float a2 = alpha * alpha;
-    return 2.0 * NdotX / max(NdotX + sqrt(a2 + (1.0 - a2) * NdotX * NdotX), 1e-8);
-}
-
-/// Heitz 2018 visible normal sampling in a frame with z up
-float3 sampleVisibleNormal(float3 view, float alpha, float2 u)
-{
-    const float3 stretched = normalize(float3(alpha * view.x, alpha * view.y, view.z));
-    const float lengthSquared = stretched.x * stretched.x + stretched.y * stretched.y;
-    const float3 t1 = lengthSquared > 0.0 ? float3(-stretched.y, stretched.x, 0.0) * rsqrt(lengthSquared) : float3(1.0, 0.0, 0.0);
-    const float3 t2 = cross(stretched, t1);
-    const float r = sqrt(u.x);
-    const float phi = 2.0 * kPi * u.y;
-    const float p1 = r * cos(phi);
-    const float s = 0.5 * (1.0 + stretched.z);
-    const float p2 = (1.0 - s) * sqrt(max(1.0 - p1 * p1, 0.0)) + s * r * sin(phi);
-    const float3 h = p1 * t1 + p2 * t2 + sqrt(max(1.0 - p1 * p1 - p2 * p2, 0.0)) * stretched;
-    return normalize(float3(alpha * h.x, alpha * h.y, max(h.z, 0.0)));
-}
-
-/// Of a direction sampled through sampleVisibleNormal
-float visibleNormalPdf(float NdotV, float NdotH, float alpha)
-{
-    return smithG1(NdotV, alpha) * ggxD(NdotH, alpha) / max(4.0 * NdotV, 1e-8);
-}
-
 struct SurfaceSample
 {
     bool valid;
@@ -181,6 +151,12 @@ SurfaceSample surfaceAt(float2 uv)
     return surface;
 }
 
+/// Tangent plane distance since linear depth jumps every pixel on a grazing floor
+float planeWeight(SurfaceSample surface, float3 position)
+{
+    return exp(-abs(dot(surface.normal, position - surface.position)) / (0.005 * surface.linearDepth + 0.01));
+}
+
 bool marchScreen(float3 origin, float3 direction, float2 jitter, out float2 hitUv, out float travelled)
 {
     hitUv = float2(0.0, 0.0);
@@ -211,13 +187,14 @@ bool marchScreen(float3 origin, float3 direction, float2 jitter, out float2 hitU
     // At most one sample per pixel the ray crosses
     const float pixels = max(abs(uv1.x - uv0.x) * size.x, abs(uv1.y - uv0.y) * size.y);
     const uint steps = clamp(uint(pixels), 1u, uint(gParams.tuning.w));
+    const float invSteps = 1.0 / float(steps);
 
     float previousT = 0.0;
     float previousRayDepth = start.w;
     for (uint i = 0u; i < steps; ++i)
     {
         // Squared to crowd samples near the surface
-        const float x = (float(i) + jitter.x) / float(steps);
+        const float x = (float(i) + jitter.x) * invSteps;
         const float t = x * x;
         const float2 uv = lerp(uv0, uv1, t);
         if (!insideScreen(uv))
@@ -225,39 +202,48 @@ bool marchScreen(float3 origin, float3 direction, float2 jitter, out float2 hitU
             return false;
         }
 
-        const float rayDepth = 1.0 / lerp(k0, k1, t);
         const float depth = gDepth.SampleLevel(uv, 0.0).r;
         if (!isFarDepth(depth))
         {
-            const float sceneDepth = linearDepth(uv, depth);
-            const float behind = rayDepth - sceneDepth;
-            // Never thinner than one step
-            const float thickness = max(gParams.tuning.z * (1.0 + 0.025 * sceneDepth), 1.5 * abs(rayDepth - previousRayDepth));
-            if (behind > 0.0 && behind < thickness)
+            const float sceneInvW = max(dot(gParams.inverseViewProjection[3], float4(uv * 2.0 - 1.0, depth, 1.0)), 1e-8);
+            const float rayInvW = lerp(k0, k1, t);
+            // Behind the surface when the ray 1/w is below the scene 1/w
+            if (rayInvW < sceneInvW)
             {
-                float lo = previousT;
-                float hi = t;
-                for (uint j = 0u; j < 5u; ++j)
+                const float sceneDepth = 1.0 / sceneInvW;
+                const float rayDepth = 1.0 / max(rayInvW, 1e-8);
+                const float behind = rayDepth - sceneDepth;
+                // Never thinner than one step
+                const float thickness = max(gParams.tuning.z * (1.0 + 0.025 * sceneDepth), 1.5 * abs(rayDepth - previousRayDepth));
+                if (behind > 0.0 && behind < thickness)
                 {
-                    const float mid = 0.5 * (lo + hi);
-                    const float2 midUv = lerp(uv0, uv1, mid);
-                    const float midDepth = gDepth.SampleLevel(midUv, 0.0).r;
-                    if (!isFarDepth(midDepth) && 1.0 / lerp(k0, k1, mid) > linearDepth(midUv, midDepth))
+                    float lo = previousT;
+                    float hi = t;
+                    [unroll]
+                    for (uint j = 0u; j < 5u; ++j)
                     {
-                        hi = mid;
+                        const float mid = 0.5 * (lo + hi);
+                        const float2 midUv = lerp(uv0, uv1, mid);
+                        const float midDepth = gDepth.SampleLevel(midUv, 0.0).r;
+                        const float midSceneInvW = max(dot(gParams.inverseViewProjection[3], float4(midUv * 2.0 - 1.0, midDepth, 1.0)), 1e-8);
+                        const float midRayInvW = lerp(k0, k1, mid);
+                        if (!isFarDepth(midDepth) && midRayInvW < midSceneInvW)
+                        {
+                            hi = mid;
+                        }
+                        else
+                        {
+                            lo = mid;
+                        }
                     }
-                    else
-                    {
-                        lo = mid;
-                    }
+                    hitUv = lerp(uv0, uv1, hi);
+                    travelled = hi;
+                    return true;
                 }
-                hitUv = lerp(uv0, uv1, hi);
-                travelled = hi;
-                return true;
             }
         }
         previousT = t;
-        previousRayDepth = rayDepth;
+        previousRayDepth = 1.0 / max(lerp(k0, k1, t), 1e-8);
     }
     return false;
 }
@@ -290,6 +276,11 @@ float4 traceMain(VSOutput input) : SV_Target0
         L = reflect(-V, H);
         pdf = visibleNormalPdf(max(NdotV, 1e-4), saturate(dot(N, H)), alpha);
     }
+    // Folded above the surface so a grazing floor keeps its reflection
+    if (dot(L, N) <= 0.0)
+    {
+        L = normalize(L - 2.0 * dot(L, N) * N);
+    }
     if (dot(L, N) <= 0.0 || dot(L, V) > 0.999)
     {
         return float4(0.0, 0.0, 0.0, 0.0);
@@ -309,6 +300,20 @@ float4 traceMain(VSOutput input) : SV_Target0
     const float facing = dot(hitEncoded.xyz, hitEncoded.xyz) > 1e-4 ? -dot(normalize(hitEncoded.xyz), L) : 1.0;
     const float confidence = screenEdgeFade(hitUv) * (1.0 - smoothstep(0.7, 1.0, travelled)) * step(0.0, facing);
     return float4(hitUv, pdf, confidence);
+}
+
+float3 hitColor(float2 uv)
+{
+    if (gParams.marching.w > 0.5)
+    {
+        const float4 motion = gMotion.SampleLevel(uv, 0.0);
+        const float2 previousUv = uv - (motion.w > 0.5 ? motion.xy : float2(0.0, 0.0));
+        if (motion.z <= 0.5 && insideScreen(previousUv))
+        {
+            return gPreviousColor.SampleLevel(previousUv, 0.0).rgb;
+        }
+    }
+    return gSceneColor.SampleLevel(uv, 0.0).rgb;
 }
 
 [shader("fragment")]
@@ -355,8 +360,7 @@ float4 resolveMain(VSOutput input) : SV_Target0
             {
                 continue;
             }
-            geometry = exp(-abs(neighbour.linearDepth - surface.linearDepth) / (0.02 * surface.linearDepth + 1e-3)) *
-                       saturate(dot(neighbour.normal, N) * 4.0 - 3.0);
+            geometry = planeWeight(surface, neighbour.position) * saturate(dot(neighbour.normal, N) * 4.0 - 3.0);
         }
         if (geometry <= 1e-3)
         {
@@ -385,7 +389,7 @@ float4 resolveMain(VSOutput input) : SV_Target0
         }
         brdf *= geometry;
 
-        const float3 color = gSceneColor.SampleLevel(hit.xy, 0.0).rgb;
+        const float3 color = hitColor(hit.xy);
         colorSum += brdf * hit.w * color / (1.0 + luminance(color));
         brdfSum += brdf * hit.w;
         confidenceSum += geometry * hit.w;
@@ -501,9 +505,8 @@ float4 compositeMain(VSOutput input) : SV_Target0
             const float2 uv = (base + offset + 0.5) / lowSize;
             const float2 bilinear = lerp(1.0 - fraction, fraction, offset);
             const float depth = gDepth.SampleLevel(uv, 0.0).r;
-            const float texelDepth = isFarDepth(depth) ? 1e6 : linearDepth(uv, depth);
-            const float weight = bilinear.x * bilinear.y *
-                                 exp(-abs(texelDepth - surface.linearDepth) / (0.02 * surface.linearDepth + 1e-3)) + 1e-5 * bilinear.x * bilinear.y;
+            const float plane = isFarDepth(depth) ? 0.0 : planeWeight(surface, worldPositionFromDepth(uv, depth));
+            const float weight = bilinear.x * bilinear.y * plane + 1e-5 * bilinear.x * bilinear.y;
             reflection += gTemporal.SampleLevel(uv, 0.0) * weight;
             weightSum += weight;
         }

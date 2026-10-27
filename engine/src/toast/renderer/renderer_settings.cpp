@@ -6,6 +6,7 @@
 #include "vulkan_renderer.hpp"
 
 #include <algorithm>
+#include <array>
 #include <toast/settings/settings.hpp>
 #include <utility>
 
@@ -321,6 +322,16 @@ void registerVoxels(VulkanRenderer& renderer) {
 	)
 	    .onChange([&renderer](bool enabled) { renderer.setVoxelAmbientRays(enabled); });
 
+	toast::settings::declareBool(
+	    "renderer.voxels.ambient_ray_query",
+	    true,
+	    {.label = "Ray query ambient rays",
+			 .category = "Voxels",
+			 .description = "Ambient rays take the exact first hit through hardware ray queries when the GPU has them. Off "
+			                "samples each volume eight times and can step over thin walls"}
+	)
+	    .onChange([&renderer](bool enabled) { renderer.setVoxelAmbientRayQuery(enabled); });
+
 	toast::settings::declareFloat(
 	    "renderer.voxels.ambient_reach",
 	    2.4,
@@ -332,6 +343,40 @@ void registerVoxels(VulkanRenderer& renderer) {
 			 .step = 0.1}
 	)
 	    .onChange([&renderer](double v) { renderer.setVoxelAmbientReach(static_cast<float>(v)); });
+
+	toast::settings::declareBool(
+	    "renderer.voxels.traced_specular",
+	    true,
+	    {.label = "Traced specular",
+			 .category = "Voxels",
+			 .description = "One GGX ray per reflective voxel pixel at half resolution in place of the environment and "
+			                "SSR. Off keeps both"}
+	)
+	    .onChange([&renderer](bool enabled) { renderer.setVoxelTracedSpecular(enabled); });
+
+	toast::settings::declareFloat(
+	    "renderer.voxels.specular_roughness",
+	    0.6,
+	    {.label = "Traced specular roughness",
+			 .category = "Voxels",
+			 .description = "Rougher voxels keep the environment specular",
+			 .min = 0.0,
+			 .max = 1.0,
+			 .step = 0.05}
+	)
+	    .onChange([&renderer](double v) { renderer.setVoxelSpecularRoughness(static_cast<float>(v)); });
+
+	toast::settings::declareFloat(
+	    "renderer.voxels.specular_reach",
+	    32.0,
+	    {.label = "Traced specular reach",
+			 .category = "Voxels",
+			 .description = "Meters a reflection ray travels before it reads the environment. Teardown uses 32",
+			 .min = 1.0,
+			 .max = 200.0,
+			 .step = 1.0}
+	)
+	    .onChange([&renderer](double v) { renderer.setVoxelSpecularReach(static_cast<float>(v)); });
 
 	toast::settings::declareBool(
 	    "renderer.voxels.glass_refraction_enabled",
@@ -429,6 +474,52 @@ void registerVoxels(VulkanRenderer& renderer) {
 			 .max = 2000.0}
 	)
 	    .onChange([&renderer](int64_t v) { renderer.setVoxelSunReach(static_cast<uint32_t>(std::max<int64_t>(v, 1))); });
+
+	toast::settings::declareBool(
+	    "renderer.voxels.trace_ray_query",
+	    true,
+	    {.label = "Ray query voxel rays",
+			 .category = "Voxels",
+			 .description = "Marched voxel rays find the volumes they cross through hardware ray queries when the GPU has them. "
+			                "Off walks the software cell grid on every GPU"}
+	)
+	    .onChange([&renderer](bool enabled) { renderer.setVoxelTraceRayQuery(enabled); });
+
+	toast::settings::declareBool(
+	    "renderer.voxels.trace_bricks",
+	    true,
+	    {.label = "Brick BLAS",
+			 .category = "Voxels",
+			 .description = "Ray queries find the occupied bricks a ray crosses instead of whole volumes. Off marches every "
+			                "volume a ray crosses from end to end"}
+	)
+	    .onChange([&renderer](bool enabled) { renderer.setVoxelTraceBricks(enabled); });
+
+	toast::settings::declareInt(
+	    "renderer.voxels.blas_budget",
+	    262144,
+	    {.label = "BLAS bricks per frame",
+			 .category = "Voxels",
+			 .description = "Bricks of brick BLAS builds a frame may record. A volume waiting for its build traces as a whole",
+			 .min = 4096.0,
+			 .max = 4194304.0}
+	)
+	    .onChange([&renderer](int64_t v) {
+		    renderer.setVoxelBlasBudget(static_cast<uint32_t>(std::clamp<int64_t>(v, 4096, 4194304)));
+	    });
+
+	toast::settings::declareFloat(
+	    "renderer.voxels.trace_cell_size",
+	    4.0,
+	    {.label = "Trace grid cell",
+			 .category = "Voxels",
+			 .description = "Meters per cell of the camera centred grid marched voxel rays walk without ray queries. The grid "
+			                "is 32 cells across",
+			 .min = 0.5,
+			 .max = 32.0,
+			 .step = 0.5}
+	)
+	    .onChange([&renderer](double v) { renderer.setVoxelTraceCellSize(static_cast<float>(v)); });
 
 	toast::settings::declareInt(
 	    "renderer.voxels.shadow_instances",
@@ -541,6 +632,88 @@ void registerEnvironment(VulkanRenderer& renderer) {
 	    });
 }
 
+void registerVolumetrics(VulkanRenderer& renderer) {
+	toast::settings::declareBool(
+	    "renderer.volumetrics.enabled",
+	    true,
+	    {.label = "Volumetrics",
+			 .category = "Volumetrics",
+			 .description = "Marched height fog where a post process volume sets a fog density. Off skips the pass"}
+	)
+	    .onChange([&renderer](bool enabled) { renderer.setVolumetrics(enabled); });
+
+	toast::settings::declareInt(
+	    "renderer.volumetrics.quality",
+	    2,
+	    {
+	      .label = "Volumetric quality",
+	      .category = "Volumetrics",
+	      .description = "Steps, local lights, local light shadows and resolution. Custom uses the settings below",
+	      .options = {"Low", "Medium", "High", "Epic", "Custom"}
+	}
+	)
+	    .onChange([&renderer](int64_t v) {
+		    renderer.setVolumetricQuality(
+		        static_cast<uint32_t>(std::clamp<int64_t>(v, 0, VulkanRenderer::k_volumetric_quality_custom))
+		    );
+	    });
+
+	toast::settings::declareInt(
+	    "renderer.volumetrics.steps",
+	    24,
+	    {.label = "Volumetric steps",
+			 .category = "Volumetrics",
+			 .description = "Samples along each view ray. Custom quality only",
+			 .min = 4.0,
+			 .max = 96.0}
+	)
+	    .onChange([&renderer](int64_t v) { renderer.setVolumetricSteps(static_cast<uint32_t>(std::max<int64_t>(v, 1))); });
+
+	toast::settings::declareInt(
+	    "renderer.volumetrics.lights",
+	    8,
+	    {.label = "Volumetric lights",
+			 .category = "Volumetrics",
+			 .description = "Local lights of a froxel each step scatters. Custom quality only",
+			 .min = 0.0,
+			 .max = 32.0}
+	)
+	    .onChange([&renderer](int64_t v) { renderer.setVolumetricLights(static_cast<uint32_t>(std::max<int64_t>(v, 0))); });
+
+	toast::settings::declareBool(
+	    "renderer.volumetrics.light_shadows",
+	    true,
+	    {.label = "Volumetric light shadows",
+			 .category = "Volumetrics",
+			 .description = "Local lights cast shadows into the fog. Custom quality only"}
+	)
+	    .onChange([&renderer](bool enabled) { renderer.setVolumetricLightShadows(enabled); });
+
+	toast::settings::declareInt(
+	    "renderer.volumetrics.resolution",
+	    0,
+	    {
+	      .label = "Volumetric resolution",
+	      .category = "Volumetrics",
+	      .description = "Custom quality only",
+	      .options = {"Half", "Quarter"}
+	}
+	)
+	    .onChange([&renderer](int64_t v) { renderer.setVolumetricQuarterResolution(v != 0); });
+
+	toast::settings::declareFloat(
+	    "renderer.volumetrics.distance",
+	    100.0,
+	    {.label = "Volumetric distance",
+			 .category = "Volumetrics",
+			 .description = "Meters fog volumes stay visible. Height fog keeps its own Fog Distance",
+			 .min = 10.0,
+			 .max = 1000.0,
+			 .step = 5.0}
+	)
+	    .onChange([&renderer](double v) { renderer.setVolumetricDistance(static_cast<float>(v)); });
+}
+
 void registerDebug(VulkanRenderer& renderer) {
 	toast::settings::declareBool(
 	    k_debug_overlay_in_game,
@@ -559,11 +732,238 @@ void registerRendererStartupSettings() {
 	registerShadows();
 }
 
+void registerGi(VulkanRenderer& renderer) {
+	GiSettings& gi = renderer.giSettings();
+	toast::settings::declareBool(
+	    "renderer.gi.enabled",
+	    true,
+	    {.label = "Radiance cascades", .category = "Global illumination", .description = "World space radiance cascade probes"}
+	)
+	    .onChange([&gi](bool enabled) { gi.enabled.store(enabled, std::memory_order_relaxed); });
+
+	toast::settings::declareInt(
+	    "renderer.gi.quality",
+	    2,
+	    {
+	      .label = "Quality",
+	      .category = "Global illumination",
+	      .description = "Rays per frame, cascades, probe spacing, multibounce and update rate. Custom uses the knobs below",
+	      .options = {"Low", "Medium", "High", "Epic", "Custom"}
+	}
+	)
+	    .onChange([&gi](int64_t v) {
+		    gi.quality.store(
+		        static_cast<uint32_t>(std::clamp<int64_t>(v, 0, GiSettings::k_quality_custom)), std::memory_order_relaxed
+		    );
+	    });
+
+	toast::settings::declareInt(
+	    "renderer.gi.update_interval",
+	    1,
+	    {.label = "Update interval",
+			 .category = "Global illumination",
+			 .description = "Rendered frames per GI update. Custom quality only",
+			 .min = 1.0,
+			 .max = 4.0}
+	)
+	    .onChange([&gi](int64_t v) {
+		    gi.update_interval.store(static_cast<uint32_t>(std::clamp<int64_t>(v, 1, 4)), std::memory_order_relaxed);
+	    });
+
+	toast::settings::declareInt(
+	    "renderer.gi.secondary_points",
+	    65536,
+	    {.label = "Multibounce points",
+			 .category = "Global illumination",
+			 .description = "Off screen hits kept for the secondary cache per frame. Custom quality only",
+			 .min = 1024.0,
+			 .max = 65536.0}
+	)
+	    .onChange([&gi](int64_t v) {
+		    gi.secondary_points.store(static_cast<uint32_t>(std::clamp<int64_t>(v, 1024, 65536)), std::memory_order_relaxed);
+	    });
+
+	toast::settings::declareBool(
+	    "renderer.gi.multibounce",
+	    true,
+	    {.label = "Multibounce",
+			 .category = "Global illumination",
+			 .description = "GI rays that hit something the camera cannot see seed a coarser secondary probe cache and read it "
+			                "back, so light keeps bouncing off screen. Costs about half again the rays. Custom quality only"}
+	)
+	    .onChange([&gi](bool enabled) { gi.multibounce.store(enabled, std::memory_order_relaxed); });
+
+	toast::settings::declareFloat(
+	    "renderer.gi.probe_spacing",
+	    0.1,
+	    {.label = "Probe spacing",
+			 .category = "Global illumination",
+			 .description =
+			     "Meters between cascade 0 probes near the camera. Every cascade and every LOD doubles it. Custom quality only",
+			 .min = 0.025,
+			 .max = 1.0,
+			 .step = 0.025}
+	)
+	    .onChange([&gi](double v) { gi.probe_spacing.store(static_cast<float>(v), std::memory_order_relaxed); });
+
+	toast::settings::declareFloat(
+	    "renderer.gi.lod_distance",
+	    4.0,
+	    {.label = "LOD distance",
+			 .category = "Global illumination",
+			 .description = "Meters from the camera where probes start doubling their spacing. Custom quality only",
+			 .min = 0.5,
+			 .max = 64.0,
+			 .step = 0.5}
+	)
+	    .onChange([&gi](double v) { gi.lod_distance.store(static_cast<float>(v), std::memory_order_relaxed); });
+
+	toast::settings::declareInt(
+	    "renderer.gi.cascades",
+	    5,
+	    {.label = "Cascades",
+			 .category = "Global illumination",
+			 .description = "Each cascade reaches four times farther than the one below. Custom quality only",
+			 .min = 1.0,
+			 .max = 6.0}
+	)
+	    .onChange([&gi](int64_t v) {
+		    gi.cascades.store(static_cast<uint32_t>(std::clamp<int64_t>(v, 1, 6)), std::memory_order_relaxed);
+	    });
+
+	toast::settings::declareInt(
+	    "renderer.gi.ray_resolution",
+	    1,
+	    {
+	      .label = "Ray resolution",
+	      .category = "Global illumination",
+	      .description = "Pixels that place probes and trace rays each frame. Custom quality only",
+	      .options = {"Full", "Half", "Quarter"}
+	}
+	)
+	    .onChange([&gi](int64_t v) {
+		    constexpr std::array<uint32_t, 3> k_steps {1, 2, 4};
+		    gi.ray_step.store(k_steps[static_cast<size_t>(std::clamp<int64_t>(v, 0, 2))], std::memory_order_relaxed);
+	    });
+
+	toast::settings::declareInt(
+	    "renderer.gi.probe_lifetime",
+	    60,
+	    {.label = "Probe lifetime",
+			 .category = "Global illumination",
+			 .description = "Frames a probe stays after no pixel needs it",
+			 .min = 1.0,
+			 .max = 600.0}
+	)
+	    .onChange([&gi](int64_t v) {
+		    gi.probe_lifetime.store(static_cast<uint32_t>(std::clamp<int64_t>(v, 1, 600)), std::memory_order_relaxed);
+	    });
+
+	toast::settings::declareFloat(
+	    "renderer.gi.history_seconds",
+	    0.3,
+	    {.label = "History length",
+			 .category = "Global illumination",
+			 .description = "Seconds of light every probe direction averages, the same at any frame rate. Longer is smoother "
+			                "in dark places lit only through gaps but follows moving lights more slowly, 0 keeps no history. "
+			                "Voxel changes and moving bodies reset the probes around them either way",
+			 .min = 0.0,
+			 .max = 5.0,
+			 .step = 0.05}
+	)
+	    .onChange([&gi](double v) { gi.history_seconds.store(static_cast<float>(v), std::memory_order_relaxed); });
+
+	toast::settings::declareBool(
+	    "renderer.gi.history_per_frame",
+	    false,
+	    {.label = "Per frame history",
+			 .category = "Global illumination",
+			 .description = "Blend a fixed share of every frame into the history instead of a length in seconds. Less ghosting "
+			                "at high frame rates, more flicker where light only reaches through thin gaps"}
+	)
+	    .onChange([&gi](bool enabled) { gi.history_per_frame.store(enabled, std::memory_order_relaxed); });
+
+	toast::settings::declareFloat(
+	    "renderer.gi.history",
+	    0.03,
+	    {.label = "History blend",
+			 .category = "Global illumination",
+			 .description = "Share of each new frame in the light of every probe direction while Per frame history is on. "
+			                "Lower is smoother but follows moving lights more slowly, 1 keeps no history",
+			 .min = 0.005,
+			 .max = 1.0,
+			 .step = 0.005}
+	)
+	    .onChange([&gi](double v) { gi.history_blend.store(static_cast<float>(v), std::memory_order_relaxed); });
+
+	toast::settings::declareFloat(
+	    "renderer.gi.motion_threshold",
+	    0.01,
+	    {.label = "Motion threshold",
+			 .category = "Global illumination",
+			 .description = "Meters a voxel body has to move in one frame before the probes around it drop their history. "
+			                "Raise it when resting physics bodies jitter and the perf window keeps reporting moved bodies",
+			 .min = 0.0,
+			 .max = 0.2,
+			 .step = 0.001}
+	)
+	    .onChange([&gi](double v) { gi.motion_threshold.store(static_cast<float>(v), std::memory_order_relaxed); });
+
+	toast::settings::declareFloat(
+	    "renderer.gi.max_ray_radiance",
+	    16.0,
+	    {.label = "Ray brightness clamp",
+			 .category = "Global illumination",
+			 .description = "Brightest a single GI ray hit may count as, keeping its colour. Rays rarely catch a small very bright "
+			                "emitter like a lamp shade, so each catch jumps the light around it. Lower is steadier, higher keeps "
+			                "more bounce from bright emitters",
+			 .min = 0.5,
+			 .max = 1000.0,
+			 .step = 0.5}
+	)
+	    .onChange([&gi](double v) { gi.max_ray_radiance.store(static_cast<float>(v), std::memory_order_relaxed); });
+
+	toast::settings::declareInt(
+	    "renderer.gi.debug_view",
+	    0,
+	    {
+	      .label = "Probe view",
+	      .category = "Global illumination",
+	      .description = "Draws the probe cells of one cascade over the scene. Red has no probe and dim was carried from an "
+	                     "earlier frame",
+	      .options = {"Off", "Cascade 0", "Cascade 1", "Cascade 2", "Cascade 3", "Cascade 4", "Cascade 5"}
+	}
+	)
+	    .onChange([&gi](int64_t v) {
+		    gi.debug_view.store(static_cast<uint32_t>(std::clamp<int64_t>(v, 0, 6)), std::memory_order_relaxed);
+	    });
+
+	toast::settings::declareInt(
+	    "renderer.gi.debug_mode",
+	    0,
+	    {
+	      .label = "Probe view shows",
+	      .category = "Global illumination",
+	      .description = "Probe cells, the accumulated radiance of the cascade interval, the share of directions facing the "
+	                     "surface that got a ray this frame, the merged irradiance lighting will read, which ignores the "
+	                     "cascade picked, or how many rays of history the directions facing the surface hold, red none, "
+	                     "yellow about 8, green 64 and up, or how much the irradiance at each pixel changes per frame, black "
+	                     "steady, blue 1%, yellow 5%, red 15% and up. Purple probes have no storage",
+	      .options = {"Probe cells", "Interval radiance", "Coverage", "Irradiance", "History depth", "Irradiance change"}
+	}
+	)
+	    .onChange([&gi](int64_t v) {
+		    gi.debug_mode.store(static_cast<uint32_t>(std::clamp<int64_t>(v, 0, 5)), std::memory_order_relaxed);
+	    });
+}
+
 void registerRendererSettings(VulkanRenderer& renderer) {
 	registerDisplay(renderer);
 	registerQuality(renderer);
 	registerVoxels(renderer);
+	registerGi(renderer);
 	registerEnvironment(renderer);
+	registerVolumetrics(renderer);
 	registerDebug(renderer);
 }
 

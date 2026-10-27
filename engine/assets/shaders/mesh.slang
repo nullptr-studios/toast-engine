@@ -219,11 +219,15 @@ float4 shadeSurface(VSOutput input, inout float4 outNormalRoughness, inout float
     float3 albedo = albedoSample.rgb * gMaterial.tint.rgb * input.color;
     float metallic = clamp(gMaterial.metallic * channelOf(gMetallicMap.Sample(input.uv), gMaterial.metallicChannel), 0.0, 1.0);
     float roughness = clamp(gMaterial.roughness * channelOf(gRoughnessMap.Sample(input.uv), gMaterial.roughnessChannel), 0.045, 1.0);
-    float occlusion = lerp(
-        1.0,
-        channelOf(gOcclusionMap.Sample(input.uv), gMaterial.occlusionChannel),
-        clamp(gMaterial.occlusionStrength, 0.0, 1.0)
-    );
+    float occlusion = 1.0;
+    if (gMaterial.occlusionStrength > 0.0)
+    {
+        occlusion = lerp(
+            1.0,
+            channelOf(gOcclusionMap.Sample(input.uv), gMaterial.occlusionChannel),
+            clamp(gMaterial.occlusionStrength, 0.0, 1.0)
+        );
+    }
 
     float3 N = normalize(input.worldNormal);
     float3 T = input.worldTangent - N * dot(N, input.worldTangent);
@@ -277,7 +281,10 @@ float4 shadeSurface(VSOutput input, inout float4 outNormalRoughness, inout float
 
     float3 color = lit.color;
 
-    color += gMaterial.emissiveColor * gMaterial.emissiveIntensity * gEmissiveMap.Sample(input.uv).rgb;
+    if (gMaterial.emissiveIntensity > 0.0 && any(gMaterial.emissiveColor > 0.0))
+    {
+        color += gMaterial.emissiveColor * gMaterial.emissiveIntensity * gEmissiveMap.Sample(input.uv).rgb;
+    }
 
     return float4(color, alpha);
 }

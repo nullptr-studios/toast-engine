@@ -26,6 +26,7 @@
 #include "renderer/passes/debug_pass.hpp"
 #include "renderer/passes/environment_pass.hpp"
 #include "renderer/passes/fxaa_pass.hpp"
+#include "renderer/passes/gi_pass.hpp"
 #include "renderer/passes/grid_pass.hpp"
 #include "renderer/passes/reflection_probe_pass.hpp"
 #include "renderer/passes/shadow_pass.hpp"
@@ -34,6 +35,8 @@
 #include "renderer/passes/taa_pass.hpp"
 #include "renderer/passes/tonemap_pass.hpp"
 #include "renderer/passes/traced_shadow_pass.hpp"
+#include "renderer/passes/traced_specular_pass.hpp"
+#include "renderer/passes/volumetric_pass.hpp"
 #include "renderer/passes/voxel_pass.hpp"
 #include "renderer/render_events.hpp"
 #include "renderer/renderer_settings.hpp"
@@ -426,6 +429,11 @@ void Engine::tick() {
 
 	m->tick_thread.store(std::hash<std::thread::id> {}(std::this_thread::get_id()));
 	physics::Simulator::bindToThisThread();
+
+	// Before polling so the waits do not age the input
+	if (m->renderer) {
+		m->renderer->waitForFrameSlot();
+	}
 	m->time.tick();
 
 	// Poll window events
@@ -440,6 +448,9 @@ void Engine::tick() {
 
 	m->input_system->tick();
 	m->haptics_system->tick();
+
+	// Delivers the InputEvents of this tick
+	event::pollEvents();
 
 	{
 		std::scoped_lock lock(m->owners_mutex);
@@ -656,6 +667,10 @@ void Engine::createSDLWindow(const char* w_name) {
 	// World-stage passes render into the HDR scene target
 	const auto scene_format = m->renderer->getSceneColorFormat();
 
+	// Before the passes whose scene sets bind its cascades
+	auto gi_pass = std::make_unique<renderer::GiPass>(*m->vulkan_core, scene_format, extent);
+	m->renderer->setGiPass(gi_pass.get());
+
 	// Recorded in its own scopes so registration order here does not matter
 	auto voxel_pass = std::make_unique<renderer::VoxelPass>(*m->vulkan_core, scene_format, depth_format, extent);
 	m->renderer->setVoxelPass(voxel_pass.get());
@@ -665,14 +680,24 @@ void Engine::createSDLWindow(const char* w_name) {
 	// World-space UI panels are scene content and get exposed with it, the screen-space UI does not
 	m->renderer->addRenderPass(std::make_unique<ui::WorldUIPass>(*m->vulkan_core, scene_format, depth_format, extent));
 
+	// First in the chain so the probes read depth before any post pass
+	m->renderer->addPostProcessPass(std::move(gi_pass));
+
 	if (m->vulkan_core->isRayTracingSupported()) {
 		m->renderer->addPostProcessPass(std::make_unique<renderer::TracedShadowPass>(*m->vulkan_core, scene_format, extent));
 	}
 
 	// SSAO first
 	m->renderer->addPostProcessPass(std::make_unique<renderer::SsaoPass>(*m->vulkan_core, scene_format, extent));
+	// Before SSR so the scene colour it reads already holds the traced voxel reflections
+	auto traced_specular = std::make_unique<renderer::TracedSpecularPass>(*m->vulkan_core, scene_format, extent);
+	m->renderer->setTracedSpecularPass(traced_specular.get());
+	m->renderer->addPostProcessPass(std::move(traced_specular));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::SsrPass>(*m->vulkan_core, scene_format, extent));
-	m->renderer->addPostProcessPass(std::make_unique<renderer::TaaPass>(*m->vulkan_core, scene_format, extent));
+	m->renderer->addPostProcessPass(std::make_unique<renderer::VolumetricPass>(*m->vulkan_core, scene_format, extent));
+	auto taa = std::make_unique<renderer::TaaPass>(*m->vulkan_core, scene_format, extent);
+	m->renderer->setTaaPass(taa.get());
+	m->renderer->addPostProcessPass(std::move(taa));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::BloomPass>(*m->vulkan_core, scene_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::TonemapPass>(*m->vulkan_core, color_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::FxaaPass>(*m->vulkan_core, color_format, extent));
@@ -746,6 +771,10 @@ void Engine::createAvaloniaWindow() {
 	// World-stage passes render into the HDR scene target
 	const auto scene_format = m->renderer->getSceneColorFormat();
 
+	// Before the passes whose scene sets bind its cascades
+	auto gi_pass = std::make_unique<renderer::GiPass>(*m->vulkan_core, scene_format, extent);
+	m->renderer->setGiPass(gi_pass.get());
+
 	// Recorded in its own scopes so registration order here does not matter
 	auto voxel_pass = std::make_unique<renderer::VoxelPass>(*m->vulkan_core, scene_format, depth_format, extent);
 	m->renderer->setVoxelPass(voxel_pass.get());
@@ -755,14 +784,24 @@ void Engine::createAvaloniaWindow() {
 	// World-space UI panels are scene content
 	m->renderer->addRenderPass(std::make_unique<ui::WorldUIPass>(*m->vulkan_core, scene_format, depth_format, extent));
 
+	// First in the chain so the probes read depth before any post pass
+	m->renderer->addPostProcessPass(std::move(gi_pass));
+
 	if (m->vulkan_core->isRayTracingSupported()) {
 		m->renderer->addPostProcessPass(std::make_unique<renderer::TracedShadowPass>(*m->vulkan_core, scene_format, extent));
 	}
 
 	// SSAO first
 	m->renderer->addPostProcessPass(std::make_unique<renderer::SsaoPass>(*m->vulkan_core, scene_format, extent));
+	// Before SSR so the scene colour it reads already holds the traced voxel reflections
+	auto traced_specular = std::make_unique<renderer::TracedSpecularPass>(*m->vulkan_core, scene_format, extent);
+	m->renderer->setTracedSpecularPass(traced_specular.get());
+	m->renderer->addPostProcessPass(std::move(traced_specular));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::SsrPass>(*m->vulkan_core, scene_format, extent));
-	m->renderer->addPostProcessPass(std::make_unique<renderer::TaaPass>(*m->vulkan_core, scene_format, extent));
+	m->renderer->addPostProcessPass(std::make_unique<renderer::VolumetricPass>(*m->vulkan_core, scene_format, extent));
+	auto taa = std::make_unique<renderer::TaaPass>(*m->vulkan_core, scene_format, extent);
+	m->renderer->setTaaPass(taa.get());
+	m->renderer->addPostProcessPass(std::move(taa));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::BloomPass>(*m->vulkan_core, scene_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::TonemapPass>(*m->vulkan_core, color_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::FxaaPass>(*m->vulkan_core, color_format, extent));

@@ -53,25 +53,28 @@ float4 fragmentDownsample(VSOutput input, uniform bool applyKaris) : SV_Target0
     float2 texel = gParams.inverseSourceSize;
     float2 uv = input.uv;
 
-    float3 a = gSource.Sample(uv + float2(-2.0, 2.0) * texel).rgb;
-    float3 b = gSource.Sample(uv + float2( 0.0, 2.0) * texel).rgb;
-    float3 c = gSource.Sample(uv + float2( 2.0, 2.0) * texel).rgb;
-    float3 d = gSource.Sample(uv + float2(-2.0, 0.0) * texel).rgb;
-    float3 e = gSource.Sample(uv).rgb;
-    float3 f = gSource.Sample(uv + float2( 2.0, 0.0) * texel).rgb;
-    float3 g = gSource.Sample(uv + float2(-2.0,-2.0) * texel).rgb;
-    float3 h = gSource.Sample(uv + float2( 0.0,-2.0) * texel).rgb;
-    float3 i = gSource.Sample(uv + float2( 2.0,-2.0) * texel).rgb;
-
+    // Interleaved so the texture queue never throttles and live registers stay low
     float3 j = gSource.Sample(uv + float2(-1.0, 1.0) * texel).rgb;
     float3 k = gSource.Sample(uv + float2( 1.0, 1.0) * texel).rgb;
     float3 l = gSource.Sample(uv + float2(-1.0,-1.0) * texel).rgb;
     float3 m = gSource.Sample(uv + float2( 1.0,-1.0) * texel).rgb;
-
     float3 group0 = (j + k + l + m) * 0.25;
+
+    float3 e = gSource.Sample(uv).rgb;
+    float3 b = gSource.Sample(uv + float2( 0.0, 2.0) * texel).rgb;
+    float3 d = gSource.Sample(uv + float2(-2.0, 0.0) * texel).rgb;
+    float3 a = gSource.Sample(uv + float2(-2.0, 2.0) * texel).rgb;
     float3 group1 = (a + b + d + e) * 0.25;
+
+    float3 c = gSource.Sample(uv + float2( 2.0, 2.0) * texel).rgb;
+    float3 f = gSource.Sample(uv + float2( 2.0, 0.0) * texel).rgb;
     float3 group2 = (b + c + e + f) * 0.25;
+
+    float3 g = gSource.Sample(uv + float2(-2.0,-2.0) * texel).rgb;
+    float3 h = gSource.Sample(uv + float2( 0.0,-2.0) * texel).rgb;
     float3 group3 = (d + e + g + h) * 0.25;
+
+    float3 i = gSource.Sample(uv + float2( 2.0,-2.0) * texel).rgb;
     float3 group4 = (e + f + h + i) * 0.25;
 
     float3 result;
@@ -113,20 +116,18 @@ float4 fragmentUpsample(VSOutput input) : SV_Target0
     float2 offset = gParams.inverseSourceSize * gParams.filterRadius;
     float2 uv = input.uv;
 
-    float3 a = gSource.Sample(uv + float2(-1.0,  1.0) * offset).rgb;
-    float3 b = gSource.Sample(uv + float2( 0.0,  1.0) * offset).rgb;
-    float3 c = gSource.Sample(uv + float2( 1.0,  1.0) * offset).rgb;
-    float3 d = gSource.Sample(uv + float2(-1.0,  0.0) * offset).rgb;
     float3 e = gSource.Sample(uv).rgb;
+    float3 b = gSource.Sample(uv + float2( 0.0,  1.0) * offset).rgb;
+    float3 d = gSource.Sample(uv + float2(-1.0,  0.0) * offset).rgb;
     float3 f = gSource.Sample(uv + float2( 1.0,  0.0) * offset).rgb;
-    float3 g = gSource.Sample(uv + float2(-1.0, -1.0) * offset).rgb;
     float3 h = gSource.Sample(uv + float2( 0.0, -1.0) * offset).rgb;
-    float3 i = gSource.Sample(uv + float2( 1.0, -1.0) * offset).rgb;
+    float3 result = e * 4.0 + (b + d + f + h) * 2.0;
 
-    float3 result = e * 4.0;
-    result += (b + d + f + h) * 2.0;
-    result += (a + c + g + i);
-    result *= 1.0 / 16.0;
+    float3 a = gSource.Sample(uv + float2(-1.0,  1.0) * offset).rgb;
+    float3 c = gSource.Sample(uv + float2( 1.0,  1.0) * offset).rgb;
+    float3 g = gSource.Sample(uv + float2(-1.0, -1.0) * offset).rgb;
+    float3 i = gSource.Sample(uv + float2( 1.0, -1.0) * offset).rgb;
+    result = (result + a + c + g + i) * 0.0625;
 
     return float4(result, 1.0);
 }

@@ -77,10 +77,11 @@ float4 fragmentMain(VSOutput input) : SV_Target0
     const float kMiddleGrey = 0.18;
     color = max((color - kMiddleGrey) * gParams.contrast + kMiddleGrey, float3(0.0, 0.0, 0.0));
 
-    color = max(lerp(float3(luminance(color), luminance(color), luminance(color)), color, gParams.saturation),
-                float3(0.0, 0.0, 0.0));
+    float lum = luminance(color);
+    color = max(lerp(float3(lum, lum, lum), color, gParams.saturation), float3(0.0, 0.0, 0.0));
 
-    color = pow(max(color, float3(0.0, 0.0, 0.0)), float3(1.0 / gParams.gamma, 1.0 / gParams.gamma, 1.0 / gParams.gamma));
+    float invGamma = 1.0 / max(gParams.gamma, 1e-4);
+    color = pow(max(color, float3(0.0, 0.0, 0.0)), float3(invGamma, invGamma, invGamma));
 
     if (gParams.vignette > 0.0)
     {

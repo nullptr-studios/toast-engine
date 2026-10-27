@@ -192,6 +192,8 @@ void cellEntryBox(uint word, uint3 cell, int3 dims, out int3 boxMin, out int3 bo
 
 static const uint kTagEmpty = 0;
 static const uint kTagUniform = 1;
+/// No grid entry handed to marchCore so it reads one per step
+static const uint kUnknownBrickEntry = 0xFFFFFFFFu;
 static const uint kTagShared = 2;
 static const uint kTagOwned = 3;
 
@@ -535,9 +537,10 @@ struct ConeFloor : IHitFloor
 /// The box must lie inside the volume
 /// Integer cell index since nudged positions skip voxels under grazing rays
 /// Passes through glass unlike toast/voxel/ray_march.cpp
+/// @p knownEntry is the grid entry of a single brick box so its march skips the coarse and grid reads
 RayHit marchCore<Floor : IHitFloor, Glass : IGlassPass>(uint volume, float3 origin, float3 direction, float tMin, float tMax,
                                                        int3 boxMin, int3 boxMax, bool throughGlass, Floor hitFloor,
-                                                       inout Glass glass)
+                                                       inout Glass glass, uint knownEntry = kUnknownBrickEntry)
 {
     const VolumeRecord record = gVolumeRecords[volume];
     const bool skipGlass = throughGlass && record.glassOffset != kNoGlass;
@@ -564,6 +567,10 @@ RayHit marchCore<Floor : IHitFloor, Glass : IGlassPass>(uint volume, float3 orig
 
     const int3 extent = boxMax - boxMin;
     const uint stepLimit = min(kMaxMarchSteps, uint(extent.x + extent.y + extent.z) + 8u);
+    // A ray steps several voxels through one 4x4x4 sub-brick so its two words are read once
+    uint cachedSub = kUnknownBrickEntry;
+    uint subLow = 0u;
+    uint subHigh = 0u;
     for (uint step = 0; step < stepLimit; ++step)
     {
         result.steps = step + 1;
@@ -579,7 +586,7 @@ RayHit marchCore<Floor : IHitFloor, Glass : IGlassPass>(uint volume, float3 orig
         }
 
         const int3 coarse = voxel >> 5;
-        if (!coarseSolid(record, coarse))
+        if (knownEntry == kUnknownBrickEntry && !coarseSolid(record, coarse))
         {
             ++result.coarseSteps;
             marchLeave(origin, march, coarse << 5, kCoarseVoxels);
@@ -596,7 +603,7 @@ RayHit marchCore<Floor : IHitFloor, Glass : IGlassPass>(uint volume, float3 orig
         }
 
         const int3 brick = voxel >> 3;
-        const uint entry = gridEntry(record, uint3(brick));
+        const uint entry = knownEntry != kUnknownBrickEntry ? knownEntry : gridEntry(record, uint3(brick));
         const uint tag = entry & 3u;
 
         if (tag == kTagEmpty)
@@ -649,8 +656,12 @@ RayHit marchCore<Floor : IHitFloor, Glass : IGlassPass>(uint volume, float3 orig
         const uint slot = entry >> 2;
         const uint3 local = uint3(voxel & 7u);
         const uint subBase = (slot << 4) + (((local.x >> 2) | ((local.y >> 2) << 1) | ((local.z >> 2) << 2)) << 1);
-        const uint subLow = gBrickOccupancy[subBase];
-        const uint subHigh = gBrickOccupancy[subBase + 1u];
+        if (subBase != cachedSub)
+        {
+            subLow = gBrickOccupancy[subBase];
+            subHigh = gBrickOccupancy[subBase + 1u];
+            cachedSub = subBase;
+        }
         if ((subLow | subHigh) == 0u)
         {
             ++result.subSteps;

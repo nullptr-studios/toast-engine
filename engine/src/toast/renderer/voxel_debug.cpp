@@ -2,7 +2,9 @@
 
 #include "depth_convention.hpp"
 #include "passes/voxel_pass.hpp"
+#include "voxel_blas_cache.hpp"
 #include "voxel_gpu_storage.hpp"
+#include "vulkan_renderer.hpp"
 
 #include <algorithm>
 #include <bitset>
@@ -553,6 +555,32 @@ void Monitor::drawPanel(const VulkanRenderer::RenderFrame& frame) const {
 		ImGui::TextDisabled("%zu full in the last 5 s, %u rendered frames ago", m_uploads.size(), m_frames_since_upload);
 	}
 	ImGui::TextDisabled("%u pool slots, %u palettes, %u records", info.packed_slots, info.packed_palettes, storage.recordCount());
+	size_t occupied = 0;
+	size_t glass = 0;
+	uint32_t small = 0;
+	for (uint32_t record = 0; record < storage.recordCount(); ++record) {
+		if (const auto& list = storage.brickList(record)) {
+			occupied += list->occupied.size();
+			glass += list->glass.size();
+			small += list->occupied.size() <= VoxelBlasCache::k_unit_box_bricks ? 1u : 0u;
+		}
+	}
+	ImGui::TextDisabled("%zu occupied bricks, %zu glass, %u records on the unit box", occupied, glass, small);
+	if (const VoxelBlasCache* blas = VulkanRenderer::instance->voxelBlasCache()) {
+		const VoxelBlasCache::Stats s = blas->stats();
+		ImGui::TextDisabled(
+		    "Brick BLAS %u, %llu bricks, %.1f MB, pool %u of %u",
+		    s.blases,
+		    static_cast<unsigned long long>(s.bricks),
+		    static_cast<double>(s.bytes) / (1024.0 * 1024.0),
+		    s.pool_used,
+		    VoxelBlasCache::k_pool_bricks
+		);
+		ImGui::TextDisabled("Built %u with %u bricks this frame, %u stale, %u waiting", s.builds, s.built_bricks, s.stale, s.waiting);
+		if (s.pool_full > 0) {
+			ImGui::TextColored(k_warn_color, "%u brick BLAS builds found the brick pool full", s.pool_full);
+		}
+	}
 	ImGui::TextDisabled("CPU mirror %s", info.mirror ? "kept for the cursor probe" : "off, kept only while a voxel view is active");
 
 	constexpr std::array<std::pair<VoxelGpuStorage::Section, const char*>, VoxelGpuStorage::k_section_count> k_sections {

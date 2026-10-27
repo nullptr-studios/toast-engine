@@ -154,7 +154,8 @@ auto TracedShadowPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::I
 	}
 
 	Params params {};
-	params.inverse_view_projection = glm::inverse(frame->frame_data.view_projection);
+	// Jittered since depth was rasterized with it
+	params.inverse_view_projection = glm::inverse(frame->frame_data.jittered_view_projection);
 	params.light_direction = light_direction;
 	const float mode_flag = render_mode == k_mode_applied ? 1.0f : 0.0f;
 	params.tuning = glm::vec4(mode_flag, k_normal_bias, k_max_trace_distance, 0.0f);

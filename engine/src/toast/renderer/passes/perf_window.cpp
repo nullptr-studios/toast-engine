@@ -7,6 +7,7 @@
 #include "../async_compute.hpp"
 #include "../shadow_constants.hpp"
 #include "../vulkan_core.hpp"
+#include "gi_pass.hpp"
 
 #include <algorithm>
 #include <cfloat>
@@ -861,6 +862,89 @@ void PerfWindow::drawSceneTab() {
 		row("Voxel volumes", std::format("{} visible of {}", visible_voxels, frame->voxel_instances.size()));
 		row("Lights", std::format("{} of {} submitted", frame->lights.size(), frame->light_stats.submitted));
 		ImGui::EndTable();
+	}
+
+	const GiPass* gi = VulkanRenderer::instance->giPass();
+	if (gi == nullptr || !gi->isEnabled()) {
+		return;
+	}
+	ImGui::SeparatorText("Radiance cascades");
+	const GiPass::Stats stats = gi->stats();
+	constexpr std::array<const char*, 5> k_quality_names {"Low", "Medium", "High", "Epic", "Custom"};
+	const char* quality_name = k_quality_names[std::min<size_t>(stats.quality, k_quality_names.size() - 1)];
+	if (stats.point_budget > 0) {
+		ImGui::Text(
+		    "Quality %s, ray step %u, update every %u frames, %u multibounce points",
+		    quality_name,
+		    stats.ray_step,
+		    stats.update_interval,
+		    stats.point_budget
+		);
+	} else {
+		ImGui::Text(
+		    "Quality %s, ray step %u, update every %u frames, multibounce off", quality_name, stats.ray_step, stats.update_interval
+		);
+	}
+	if (ImGui::BeginTable("##perf_gi", 6, ImGuiTableFlags_SizingFixedFit)) {
+		ImGui::TableSetupColumn("Cascade");
+		ImGui::TableSetupColumn("Probes");
+		ImGui::TableSetupColumn("Active");
+		ImGui::TableSetupColumn("Pool");
+		ImGui::TableSetupColumn("Deposits");
+		ImGui::TableSetupColumn("Depth");
+		ImGui::TableHeadersRow();
+		for (uint32_t i = 0; i < stats.cascades && i < GiPass::k_max_cascades; ++i) {
+			ImGui::TableNextRow();
+			ImGui::TableNextColumn();
+			ImGui::Text("c%u", i);
+			ImGui::TableNextColumn();
+			ImGui::Text("%u", stats.probes[i]);
+			ImGui::TableNextColumn();
+			ImGui::Text("%u", stats.seen[i]);
+			ImGui::TableNextColumn();
+			ImGui::Text(
+			    "%.0f%%",
+			    stats.capacity[i] > 0 ? 100.0f * static_cast<float>(stats.probes[i]) / static_cast<float>(stats.capacity[i]) : 0.0f
+			);
+			ImGui::TableNextColumn();
+			ImGui::Text("%u of %u", stats.deposits[i], stats.deposit_capacity[i]);
+			ImGui::TableNextColumn();
+			ImGui::Text("%.1f rays", stats.depth[i]);
+		}
+		ImGui::EndTable();
+	}
+	ImGui::Text(
+	    "%u rays, %u of %u direction slots (%.0f%%)",
+	    stats.rays,
+	    stats.slots,
+	    GiPass::k_deposit_slots,
+	    100.0f * static_cast<float>(stats.slots) / static_cast<float>(GiPass::k_deposit_slots)
+	);
+	ImGui::Text(
+	    "Changes: %u moved, %u new, %u edits reset %u probes. Largest motion %.2f mm",
+	    stats.moved,
+	    stats.appeared,
+	    stats.edits,
+	    stats.invalidated,
+	    stats.largest_motion * 1000.0f
+	);
+	ImGui::Text("History: %.1f%% new light a frame, %u probes started without any this frame", stats.blend * 100.0f, stats.fresh);
+	ImGui::Text(
+	    "Multibounce: %u off screen hits seeded the secondary cache, %.0f%% offered (%u dropped)",
+	    stats.points,
+	    stats.point_share * 100.0f,
+	    stats.points_dropped
+	);
+	if (stats.deposit_full > 0) {
+		ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.3f, 1.0f), "%u seen probes got no deposit room and no rays", stats.deposit_full);
+	}
+	if (stats.table_full > 0 || stats.pool_full > 0) {
+		ImGui::TextColored(
+		    ImVec4(1.0f, 0.5f, 0.3f, 1.0f),
+		    "Dropped %u insertions on full tables and %u on full pools",
+		    stats.table_full,
+		    stats.pool_full
+		);
 	}
 }
 
