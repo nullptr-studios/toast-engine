@@ -62,7 +62,9 @@ float3 hemisphereSample(uint index, uint count, float rotation)
     float angle = float(index) * golden + rotation;
     float radius = sqrt((float(index) + 0.5) / float(count));
 
-    float2 disk = float2(cos(angle), sin(angle)) * radius;
+    float s, c;
+    sincos(angle, s, c);
+    float2 disk = float2(c, s) * radius;
     float height = sqrt(max(1.0 - dot(disk, disk), 0.0));
     return float3(disk, height);
 }
@@ -70,15 +72,14 @@ float3 hemisphereSample(uint index, uint count, float rotation)
 [shader("fragment")]
 float4 aoMain(VSOutput input) : SV_Target0
 {
-    float4 normalRoughness = gNormalRoughness.Sample(input.uv);
-
-    if (dot(normalRoughness.xyz, normalRoughness.xyz) < 1e-4)
+    float depth = gDepth.Sample(input.uv).r;
+    if (isFarDepth(depth))
     {
         return float4(1.0, kNoSurfaceDistance, 0.0, 1.0);
     }
 
-    float depth = gDepth.Sample(input.uv).r;
-    if (isFarDepth(depth))
+    float4 normalRoughness = gNormalRoughness.Sample(input.uv);
+    if (dot(normalRoughness.xyz, normalRoughness.xyz) < 1e-4)
     {
         return float4(1.0, kNoSurfaceDistance, 0.0, 1.0);
     }
@@ -179,7 +180,7 @@ float upsampleOcclusion(float2 uv, float pixelDistance, float tolerance)
 
             float2 fromCentre = base + offset - texel;
             float error = abs(texelValue.g - pixelDistance);
-            float weight = exp(-dot(fromCentre, fromCentre) / 2.0) * exp(-error / tolerance);
+            float weight = exp(-dot(fromCentre, fromCentre) * 0.5 - error / tolerance);
 
             weighted += texelValue.r * weight;
             weightSum += weight;
@@ -198,27 +199,26 @@ float upsampleOcclusion(float2 uv, float pixelDistance, float tolerance)
 [shader("fragment")]
 float4 compositeMain(VSOutput input) : SV_Target0
 {
-    float3 sceneColor = gSceneColor.Sample(input.uv).rgb;
-    float4 normalRoughness = gNormalRoughness.Sample(input.uv);
-
+    float depth = gDepth.Sample(input.uv).r;
     uint renderMode = uint(gParams.misc.x);
     bool aoOnly = (renderMode == 15);
 
-    // fwidth before any early return
-    float depth = gDepth.Sample(input.uv).r;
+    if (isFarDepth(depth))
+    {
+        float3 sceneColor = aoOnly ? float3(1.0, 1.0, 1.0) : gSceneColor.Sample(input.uv).rgb;
+        return float4(sceneColor, 1.0);
+    }
+
+    float4 normalRoughness = gNormalRoughness.Sample(input.uv);
+    if (dot(normalRoughness.xyz, normalRoughness.xyz) < 1e-4)
+    {
+        float3 sceneColor = aoOnly ? float3(1.0, 1.0, 1.0) : gSceneColor.Sample(input.uv).rgb;
+        return float4(sceneColor, 1.0);
+    }
+
     float3 worldPosition = worldPositionFromDepth(input.uv, depth);
     float pixelDistance = length(worldPosition - gParams.misc.yzw);
     float tolerance = clamp(2.0 * fwidth(pixelDistance), pixelDistance * 0.01, pixelDistance * 0.25);
-
-    if (dot(normalRoughness.xyz, normalRoughness.xyz) < 1e-4)
-    {
-        return float4(aoOnly ? float3(1.0, 1.0, 1.0) : sceneColor, 1.0);
-    }
-
-    if (isFarDepth(depth))
-    {
-        return float4(aoOnly ? float3(1.0, 1.0, 1.0) : sceneColor, 1.0);
-    }
 
     float ao = upsampleOcclusion(input.uv, pixelDistance, tolerance);
 
@@ -227,6 +227,7 @@ float4 compositeMain(VSOutput input) : SV_Target0
         return float4(ao, ao, ao, 1.0);
     }
 
+    float3 sceneColor = gSceneColor.Sample(input.uv).rgb;
     // Clamped since blended surfaces scaled the opaque term by 1 - alpha
     float3 indirect = gIndirectDiffuse.Sample(input.uv).rgb;
     return float4(max(sceneColor - indirect + indirect * ao, float3(0.0, 0.0, 0.0)), 1.0);

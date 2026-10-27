@@ -40,6 +40,8 @@ static const uint kTraceHeaderWords = 16u;
 
 /// Ray query candidates may repeat so tinted traversal skips this many recent volumes
 static const uint kTraceSeen = 8u;
+/// Above every volume index so an unused ring slot never matches
+static const uint kTraceEmptyVolume = 0xFFFFFFFFu;
 
 struct SceneHit
 {
@@ -128,17 +130,33 @@ bool traceBoundsRange(uint v, float3 origin, float3 direction, float tMin, float
     return dot(nearest, nearest) <= bounds.w * bounds.w;
 }
 
-bool traceSeen(inout uint seen[kTraceSeen], inout uint seenCount, uint v)
+/// Ring of the last kTraceSeen volumes in two vectors since an indexed array lands in local memory
+struct TraceSeen
 {
-    for (uint i = 0u; i < min(seenCount, kTraceSeen); ++i)
+    uint4 low;
+    uint4 high;
+    uint count;
+};
+
+TraceSeen traceSeenEmpty()
+{
+    TraceSeen seen;
+    seen.low = uint4(kTraceEmptyVolume, kTraceEmptyVolume, kTraceEmptyVolume, kTraceEmptyVolume);
+    seen.high = seen.low;
+    seen.count = 0u;
+    return seen;
+}
+
+bool traceSeen(inout TraceSeen seen, uint v)
+{
+    if (any(seen.low == v) || any(seen.high == v))
     {
-        if (seen[i] == v)
-        {
-            return true;
-        }
+        return true;
     }
-    seen[seenCount % kTraceSeen] = v;
-    ++seenCount;
+    const uint slot = seen.count % kTraceSeen;
+    seen.low = select(uint4(0u, 1u, 2u, 3u) == slot, uint4(v, v, v, v), seen.low);
+    seen.high = select(uint4(4u, 5u, 6u, 7u) == slot, uint4(v, v, v, v), seen.high);
+    ++seen.count;
     return false;
 }
 
@@ -257,8 +275,7 @@ float3 traceVisibility(float3 origin, float3 segment, float coneSlope, bool tint
     if (traceRayQueryEnabled())
     {
         float3 transmittance = float3(1.0, 1.0, 1.0);
-        uint seen[kTraceSeen];
-        uint seenCount = 0u;
+        TraceSeen seen = traceSeenEmpty();
 
         RayDesc ray;
         ray.Origin = origin;
@@ -285,7 +302,7 @@ float3 traceVisibility(float3 origin, float3 segment, float coneSlope, bool tint
                               0.0, 1.0, glassRun, transmittance
                 ).hit;
             }
-            else if (!tinted || !traceSeen(seen, seenCount, v))
+            else if (!tinted || !traceSeen(seen, v))
             {
                 blocked = traceMarchVolume(v, origin, segment, 0.0, 1.0, coneSlope, tinted, transmittance).hit;
             }
@@ -308,8 +325,7 @@ float3 traceGlassFilter(float3 origin, float3 segment, float coneSlope)
 #if TOAST_RAY_QUERY
     if (traceRayQueryEnabled())
     {
-        uint seen[kTraceSeen];
-        uint seenCount = 0u;
+        TraceSeen seen = traceSeenEmpty();
 
         RayDesc ray;
         ray.Origin = origin;
@@ -333,7 +349,7 @@ float3 traceGlassFilter(float3 origin, float3 segment, float coneSlope)
                     true, transmittance
                 );
             }
-            else if (!traceSeen(seen, seenCount, v))
+            else if (!traceSeen(seen, v))
             {
                 traceMarchVolume(v, origin, segment, 0.0, 1.0, coneSlope, true, transmittance);
             }

@@ -187,13 +187,14 @@ bool marchScreen(float3 origin, float3 direction, float2 jitter, out float2 hitU
     // At most one sample per pixel the ray crosses
     const float pixels = max(abs(uv1.x - uv0.x) * size.x, abs(uv1.y - uv0.y) * size.y);
     const uint steps = clamp(uint(pixels), 1u, uint(gParams.tuning.w));
+    const float invSteps = 1.0 / float(steps);
 
     float previousT = 0.0;
     float previousRayDepth = start.w;
     for (uint i = 0u; i < steps; ++i)
     {
         // Squared to crowd samples near the surface
-        const float x = (float(i) + jitter.x) / float(steps);
+        const float x = (float(i) + jitter.x) * invSteps;
         const float t = x * x;
         const float2 uv = lerp(uv0, uv1, t);
         if (!insideScreen(uv))
@@ -201,39 +202,48 @@ bool marchScreen(float3 origin, float3 direction, float2 jitter, out float2 hitU
             return false;
         }
 
-        const float rayDepth = 1.0 / lerp(k0, k1, t);
         const float depth = gDepth.SampleLevel(uv, 0.0).r;
         if (!isFarDepth(depth))
         {
-            const float sceneDepth = linearDepth(uv, depth);
-            const float behind = rayDepth - sceneDepth;
-            // Never thinner than one step
-            const float thickness = max(gParams.tuning.z * (1.0 + 0.025 * sceneDepth), 1.5 * abs(rayDepth - previousRayDepth));
-            if (behind > 0.0 && behind < thickness)
+            const float sceneInvW = max(dot(gParams.inverseViewProjection[3], float4(uv * 2.0 - 1.0, depth, 1.0)), 1e-8);
+            const float rayInvW = lerp(k0, k1, t);
+            // Behind the surface when the ray 1/w is below the scene 1/w
+            if (rayInvW < sceneInvW)
             {
-                float lo = previousT;
-                float hi = t;
-                for (uint j = 0u; j < 5u; ++j)
+                const float sceneDepth = 1.0 / sceneInvW;
+                const float rayDepth = 1.0 / max(rayInvW, 1e-8);
+                const float behind = rayDepth - sceneDepth;
+                // Never thinner than one step
+                const float thickness = max(gParams.tuning.z * (1.0 + 0.025 * sceneDepth), 1.5 * abs(rayDepth - previousRayDepth));
+                if (behind > 0.0 && behind < thickness)
                 {
-                    const float mid = 0.5 * (lo + hi);
-                    const float2 midUv = lerp(uv0, uv1, mid);
-                    const float midDepth = gDepth.SampleLevel(midUv, 0.0).r;
-                    if (!isFarDepth(midDepth) && 1.0 / lerp(k0, k1, mid) > linearDepth(midUv, midDepth))
+                    float lo = previousT;
+                    float hi = t;
+                    [unroll]
+                    for (uint j = 0u; j < 5u; ++j)
                     {
-                        hi = mid;
+                        const float mid = 0.5 * (lo + hi);
+                        const float2 midUv = lerp(uv0, uv1, mid);
+                        const float midDepth = gDepth.SampleLevel(midUv, 0.0).r;
+                        const float midSceneInvW = max(dot(gParams.inverseViewProjection[3], float4(midUv * 2.0 - 1.0, midDepth, 1.0)), 1e-8);
+                        const float midRayInvW = lerp(k0, k1, mid);
+                        if (!isFarDepth(midDepth) && midRayInvW < midSceneInvW)
+                        {
+                            hi = mid;
+                        }
+                        else
+                        {
+                            lo = mid;
+                        }
                     }
-                    else
-                    {
-                        lo = mid;
-                    }
+                    hitUv = lerp(uv0, uv1, hi);
+                    travelled = hi;
+                    return true;
                 }
-                hitUv = lerp(uv0, uv1, hi);
-                travelled = hi;
-                return true;
             }
         }
         previousT = t;
-        previousRayDepth = rayDepth;
+        previousRayDepth = 1.0 / max(lerp(k0, k1, t), 1e-8);
     }
     return false;
 }

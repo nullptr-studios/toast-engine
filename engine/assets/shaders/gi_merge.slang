@@ -65,9 +65,10 @@ struct GiParents
     float total;
 };
 
-GiParents giParents(GiFrame frame, uint cascade, uint deposit)
+GiParents giParents(GiFrame frame, uint cascade, uint deposit, out int4 probeCell)
 {
     const GiProbe probe = gPool[frame.frame.z * frame.pool.x + frame.cascades[cascade].z + gDepositPool[deposit]];
+    probeCell = probe.cell;
     int3 base = int3(0, 0, 0);
     float3 upper = float3(0.0, 0.0, 0.0);
     giParentNeighbourhood(probe.cell.xyz, base, upper);
@@ -108,8 +109,11 @@ float3 giUpper(GiParents parents, uint direction)
     [unroll]
     for (uint corner = 0u; corner < 8u; ++corner)
     {
-        radiance += parents.weight[corner] *
-                    float3(giHalfToFloat(merged[corner].x & 0xffffu), giHalfToFloat(merged[corner].x >> 16), giHalfToFloat(merged[corner].y));
+        if (parents.weight[corner] > 0.0)
+        {
+            radiance += parents.weight[corner] *
+                        float3(giHalfToFloat(merged[corner].x & 0xffffu), giHalfToFloat(merged[corner].x >> 16), giHalfToFloat(merged[corner].y));
+        }
     }
     return radiance / parents.total;
 }
@@ -137,6 +141,11 @@ GiBucket giLoadBucket(GiFrame frame, uint first, uint direction, uint2 source, b
 
 bool giBucketTouchesChange(GiFrame frame, uint cascade, int4 cell, uint direction)
 {
+    const uint count = uint(gDirty[0].x);
+    if (count == 0u)
+    {
+        return false;
+    }
     const uint lod = uint(cell.w);
     const float spacing = giSpacing(frame, lod, cascade);
     const float3 centre = (float3(cell.xyz) + 0.5) * spacing;
@@ -146,7 +155,6 @@ bool giBucketTouchesChange(GiFrame frame, uint cascade, int4 cell, uint directio
     // Half again the bucket half angle since rays jitter across the whole bucket
     const float cosine = max(1.0 - 2.0 / float(frame.deposits[cascade].w), 0.05);
     const float spread = 1.5 * sqrt(1.0 - cosine * cosine) / cosine;
-    const uint count = uint(gDirty[0].x);
     for (uint i = 0u; i < count; ++i)
     {
         const float3 low = gDirty[1u + 2u * i].xyz;
@@ -167,14 +175,13 @@ bool giBucketTouchesChange(GiFrame frame, uint cascade, int4 cell, uint directio
 }
 
 /// keepMain flags whole probes and only buckets looking at the change drop history
-float giBucketLimit(GiFrame frame, uint cascade, uint deposit, uint direction, uint2 source)
+float giBucketLimit(GiFrame frame, uint cascade, int4 cell, uint direction, uint2 source)
 {
     const float limit = asfloat(source.y);
     if (limit >= kGiMaxHistory)
     {
         return limit;
     }
-    const int4 cell = gPool[frame.frame.z * frame.pool.x + frame.cascades[cascade].z + gDepositPool[deposit]].cell;
     return giBucketTouchesChange(frame, cascade, cell, direction) ? limit : kGiMaxHistory;
 }
 
@@ -236,7 +243,8 @@ void mergeMain(uint3 id : SV_DispatchThreadID)
         }
         const uint2 source = gHistorySource[deposit];
         const bool carried = giCarried(frame, cascade, source);
-        const GiParents parents = giParents(frame, cascade, deposit);
+        int4 probeCell = int4(0, 0, 0, 0);
+        const GiParents parents = giParents(frame, cascade, deposit, probeCell);
         // Stores last since the compiler cannot move a load past a store that may alias it
         GiBucket buckets[4];
         [unroll]
@@ -250,7 +258,7 @@ void mergeMain(uint3 id : SV_DispatchThreadID)
         for (uint child = 0u; child < 4u; ++child)
         {
             histories[child] =
-                giAccumulate(frame, buckets[child], source, carried, giBucketLimit(frame, cascade, deposit, output * 4u + child, source));
+                giAccumulate(frame, buckets[child], source, carried, giBucketLimit(frame, cascade, probeCell, output * 4u + child, source));
             radiance += giMergeBucket(frame, cascade, output * 4u + child, top, parents, histories[child]);
         }
         [unroll]
@@ -267,6 +275,8 @@ void mergeMain(uint3 id : SV_DispatchThreadID)
 
 groupshared float3 gsRadiance[2][kGiC0Directions];
 groupshared bool gsWrite[2];
+groupshared GiParents gsParents[2];
+groupshared int4 gsCell[2];
 
 /// Two c0 deposit probes per 8 by 8 group so every thread merges one bucket and then writes one texel of each tile
 [shader("compute")]
@@ -289,16 +299,25 @@ void irradianceMain(uint3 group : SV_GroupID, uint3 thread : SV_GroupThreadID, u
     const uint first = tile < count ? gDepositSlots[deposit] : kGiEmpty;
     if (direction == 0u)
     {
-        gsWrite[side] = first != kGiEmpty;
+        const bool willWrite = first != kGiEmpty;
+        gsWrite[side] = willWrite;
+        if (willWrite)
+        {
+            int4 cell = int4(0, 0, 0, 0);
+            gsParents[side] = giParents(frame, 0u, deposit, cell);
+            gsCell[side] = cell;
+        }
     }
-    if (first != kGiEmpty)
+    GroupMemoryBarrierWithGroupSync();
+
+    if (gsWrite[side])
     {
         const bool top = frame.frame.y == 1u;
         const uint2 source = gHistorySource[deposit];
         const bool carried = giCarried(frame, 0u, source);
         const GiBucket bucket = giLoadBucket(frame, first, direction, source, carried);
-        const GiParents parents = giParents(frame, 0u, deposit);
-        const GiHistory history = giAccumulate(frame, bucket, source, carried, giBucketLimit(frame, 0u, deposit, direction, source));
+        const GiParents parents = gsParents[side];
+        const GiHistory history = giAccumulate(frame, bucket, source, carried, giBucketLimit(frame, 0u, gsCell[side], direction, source));
         gsRadiance[side][direction] = giMergeBucket(frame, 0u, direction, top, parents, history);
         giStoreBucket(frame, 0u, first, direction, tile * kGiC0Directions + direction, history);
     }
@@ -328,7 +347,7 @@ void irradianceMain(uint3 group : SV_GroupID, uint3 thread : SV_GroupThreadID, u
     float weight = 0.0;
     for (uint d = 0u; d < kGiC0Directions; ++d)
     {
-        const float cosine = max(dot(normal, giDirectionOf(d, 0u)), 0.0);
+        const float cosine = max(dot(normal, kGiC0DirectionsTable[d]), 0.0);
         irradiance[0] += gsRadiance[0][d] * cosine;
         irradiance[1] += gsRadiance[1][d] * cosine;
         weight += cosine;

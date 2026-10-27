@@ -61,6 +61,7 @@ constexpr uint32_t k_neighbours_binding = 15;
 constexpr uint32_t k_history_source_binding = 16;
 constexpr uint32_t k_dirty_binding = 17;
 constexpr uint32_t k_points_binding = 18;
+constexpr uint32_t k_spawn_binding = 19;
 
 /// gi_debug
 constexpr uint32_t k_debug_source_binding = 0;
@@ -101,6 +102,8 @@ constexpr uint32_t k_ray_counters_binding = 11;
 constexpr uint32_t k_ray_points_binding = 12;
 constexpr uint32_t k_ray_irradiance_binding = 13;
 constexpr uint32_t k_ray_change_binding = 14;
+constexpr uint32_t k_ray_spawn_binding = 15;
+constexpr uint32_t k_ray_hits_binding = 16;
 /// Mirrors gi_common GiPoint
 constexpr vk::DeviceSize k_point_bytes = 16;
 /// Mirrors gi_common GiHistory
@@ -232,6 +235,16 @@ auto stepForBudget(vk::Extent2D extent, uint32_t budget) -> uint32_t {
 	return 4;
 }
 
+/// Most pixels any quality preset spawns at this extent
+auto spawnCapacity(vk::Extent2D extent) -> uint32_t {
+	uint32_t capacity = 1;
+	for (const QualityLevel& preset : k_quality_levels) {
+		const uint32_t step = stepForBudget(extent, preset.ray_budget);
+		capacity = std::max(capacity, groups(extent.width, step) * groups(extent.height, step));
+	}
+	return capacity;
+}
+
 }
 
 auto GiPass::resolveQuality() const -> Quality {
@@ -239,9 +252,14 @@ auto GiPass::resolveQuality() const -> Quality {
 	constexpr auto relaxed = std::memory_order_relaxed;
 	const uint32_t level = std::min(settings.quality.load(relaxed), GiSettings::k_quality_custom);
 	if (level == GiSettings::k_quality_custom) {
+		uint32_t step = std::clamp(settings.ray_step.load(relaxed), 1u, 4u);
+		// A step whose pixels overflow the spawn list would starve the screen tail
+		while (m_spawn_capacity > 0 && step < 4 && groups(m_extent.width, step) * groups(m_extent.height, step) > m_spawn_capacity) {
+			++step;
+		}
 		return Quality {
 		  .level = level,
-		  .step = std::clamp(settings.ray_step.load(relaxed), 1u, 4u),
+		  .step = step,
 		  .cascades = std::clamp(settings.cascades.load(relaxed), 1u, k_max_cascades),
 		  .spacing = settings.probe_spacing.load(relaxed),
 		  .lod_distance = settings.lod_distance.load(relaxed),
@@ -268,7 +286,7 @@ GiPass::GiPass(const VulkanCore& core, vk::Format scene_format, vk::Extent2D ext
       m_scene_format(scene_format),
       m_extent(extent) {
 	ZoneScoped;
-	static_assert(sizeof(FrameData) == 400, "FrameData is mirrored by gi_common GiFrame");
+	static_assert(sizeof(FrameData) == 416, "FrameData is mirrored by gi_common GiFrame");
 
 	createLayout();
 	createBuffers(core);
@@ -423,6 +441,7 @@ void GiPass::createBuffers(const VulkanCore& core) {
 	m_readback_parity.assign(VulkanRenderer::k_frames_in_flight, 0u);
 	m_readback_point_share.assign(VulkanRenderer::k_frames_in_flight, m_point_share);
 	m_readback_point_budget.assign(VulkanRenderer::k_frames_in_flight, k_max_points);
+	m_readback_spawn_capacity.assign(VulkanRenderer::k_frames_in_flight, 0u);
 
 	m_point_sampler = vk::raii::Sampler(core.getDevice(), nearestClampSamplerInfo());
 	setDebugName(core, *m_point_sampler, "GiPass PointSampler");
@@ -481,6 +500,9 @@ auto GiPass::createPipelines(const VulkanCore& core) -> bool {
 	ray_config.debug_name = "GiPass pointTraceMain";
 	ray_config.compute_entry = "pointTraceMain";
 	m_point_trace_pipeline.rebuild(core, ray_config);
+	ray_config.debug_name = "GiPass shadeMain";
+	ray_config.compute_entry = "shadeMain";
+	m_shade_pipeline.rebuild(core, ray_config);
 	ray_config.debug_name = "GiPass changeMain";
 	ray_config.compute_entry = "changeMain";
 	m_change_pipeline.rebuild(core, ray_config);
@@ -691,8 +713,20 @@ void GiPass::createChange(const VulkanCore& core) {
 	const vk::DeviceSize pixels = static_cast<vk::DeviceSize>(std::max(m_extent.width, 1u)) * std::max(m_extent.height, 1u);
 	m_change.reset();
 	m_change.emplace(deviceBuffer(core, sizeof(glm::vec4) * pixels, vk::BufferUsageFlagBits::eStorageBuffer, "GiPass Change"));
+	m_spawn_capacity = spawnCapacity(m_extent);
+	m_spawn.reset();
+	m_spawn.emplace(
+	    deviceBuffer(core, sizeof(uint32_t) * m_spawn_capacity, vk::BufferUsageFlagBits::eStorageBuffer, "GiPass Spawn")
+	);
+	m_hits.reset();
+	m_hits.emplace(deviceBuffer(
+	    core, sizeof(glm::uvec4) * (m_spawn_capacity + k_max_points), vk::BufferUsageFlagBits::eStorageBuffer, "GiPass Hits"
+	));
 	DescriptorWriter writer;
 	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
+		writer.buffer(*m_probe_sets[i], k_spawn_binding, vk::DescriptorType::eStorageBuffer, **m_spawn);
+		writer.buffer(*m_ray_sets[i], k_ray_spawn_binding, vk::DescriptorType::eStorageBuffer, **m_spawn);
+		writer.buffer(*m_ray_sets[i], k_ray_hits_binding, vk::DescriptorType::eStorageBuffer, **m_hits);
 		writer.buffer(*m_ray_sets[i], k_ray_change_binding, vk::DescriptorType::eStorageBuffer, **m_change);
 		writer.buffer(*m_debug_sets[i], k_debug_change_binding, vk::DescriptorType::eStorageBuffer, **m_change);
 	}
@@ -867,6 +901,15 @@ void GiPass::readStats(uint32_t frame_index) {
 	const uint32_t budget = m_readback_point_budget[frame_index];
 	stats.points = std::min(words[k_counter_points + parity], budget);
 	stats.points_dropped = words[k_counter_points_dropped];
+	if (words[k_counter_spawn] > m_readback_spawn_capacity[frame_index] && !m_spawn_overflow_logged) {
+		m_spawn_overflow_logged = true;
+		TOAST_WARN(
+		    "Render",
+		    "GI spawn pixels ({}) exceed the spawn list ({}) so the extra pixels trace no rays this frame",
+		    words[k_counter_spawn],
+		    m_readback_spawn_capacity[frame_index]
+		);
+	}
 
 	// Hits offered at a known share give the whole demand so the share fills the budget to 90% without a race
 	const float offered = static_cast<float>(words[k_counter_points + parity]);
@@ -958,12 +1001,13 @@ auto GiPass::bindRaySets(uint32_t frame_index, vk::ImageView scene_view) -> bool
 	return true;
 }
 
-void GiPass::recordTrace(
+auto GiPass::recordTrace(
     vk::CommandBuffer cmd, uint32_t frame_index, uint32_t spawn_x, uint32_t spawn_y, vk::ImageView scene_view
-) {
+) -> bool {
 	ZoneScoped;
-	if (!bindRaySets(frame_index, scene_view)) {
-		return;
+	// Hits without a shade pass would queue and never deposit
+	if (!m_shade_pipeline.isReady() || !bindRaySets(frame_index, scene_view)) {
+		return false;
 	}
 	const vk::PipelineLayout layout = *m_ray_layout.getPipelineLayout();
 	cmd.bindPipeline(vk::PipelineBindPoint::eCompute, m_ray_pipeline.getPipeline());
@@ -974,11 +1018,29 @@ void GiPass::recordTrace(
 	    std::array {m_ray_scene_sets.get(frame_index), *m_ray_storage_sets[frame_index], *m_ray_sets[frame_index]},
 	    {}
 	);
-	cmd.dispatch(groups(spawn_x, k_pixel_group), groups(spawn_y, k_pixel_group), 1);
+	cmd.dispatch(groups(std::min(spawn_x * spawn_y, m_spawn_capacity), k_group), 1, 1);
 	if (m_point_trace_pipeline.isReady()) {
 		cmd.bindPipeline(vk::PipelineBindPoint::eCompute, m_point_trace_pipeline.getPipeline());
 		cmd.dispatch(groups(m_quality.points, k_group), 1, 1);
 	}
+	return true;
+}
+
+void GiPass::recordShade(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t rays) {
+	ZoneScoped;
+	if (!m_shade_pipeline.isReady()) {
+		return;
+	}
+	const vk::PipelineLayout layout = *m_ray_layout.getPipelineLayout();
+	cmd.bindPipeline(vk::PipelineBindPoint::eCompute, m_shade_pipeline.getPipeline());
+	cmd.bindDescriptorSets(
+	    vk::PipelineBindPoint::eCompute,
+	    layout,
+	    0,
+	    std::array {m_ray_scene_sets.get(frame_index), *m_ray_storage_sets[frame_index], *m_ray_sets[frame_index]},
+	    {}
+	);
+	cmd.dispatch(groups(rays, k_group), 1, 1);
 }
 
 void GiPass::recordMerge(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t cascades) {
@@ -1037,6 +1099,11 @@ auto GiPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView s
 
 	m_quality = resolveQuality();
 	const Quality& quality = m_quality;
+	if (quality.level == GiSettings::k_quality_custom &&
+	    quality.step > std::clamp(settings.ray_step.load(std::memory_order_relaxed), 1u, 4u) && !m_spawn_step_logged) {
+		m_spawn_step_logged = true;
+		TOAST_INFO("Render", "GI custom ray step raised to {} to fit the spawn list", quality.step);
+	}
 	const uint32_t cascades = quality.cascades;
 	const uint32_t step = quality.step;
 	const float spacing = std::max(quality.spacing, 0.01f);
@@ -1102,6 +1169,7 @@ auto GiPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView s
 		data.cascades[i] = glm::uvec4(c.table_offset, c.table_size - 1, c.pool_offset, c.capacity);
 		data.deposits[i] = glm::uvec4(c.deposit_offset, c.deposit_capacity, 0u, c.directions);
 	}
+	data.queues = glm::uvec4(m_spawn_capacity, m_spawn_capacity, m_spawn_capacity + k_max_points, 0u);
 	const auto& frame_allocation = m_frame_data[frame_index].getAllocation();
 	std::memcpy(frame_allocation.getInfo().pMappedData, &data, sizeof(FrameData));
 	frame_allocation.flush(0, sizeof(FrameData));
@@ -1176,10 +1244,16 @@ auto GiPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView s
 			computeBarrier(cmd);
 		}
 	}
+	bool traced = false;
 	{
 		const GpuScope scope(timer, frame_index, cmd, "GI trace");
-		recordTrace(cmd, frame_index, spawn_x, spawn_y, source_view);
+		traced = recordTrace(cmd, frame_index, spawn_x, spawn_y, source_view);
 		// Runs without a trace too so a scene with no voxels still sees the sky
+		computeBarrier(cmd);
+	}
+	if (traced) {
+		const GpuScope scope(timer, frame_index, cmd, "GI shade");
+		recordShade(cmd, frame_index, std::min(spawn_x * spawn_y, m_spawn_capacity) + m_quality.points);
 		computeBarrier(cmd);
 	}
 	{
@@ -1208,6 +1282,7 @@ auto GiPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView s
 	m_readback_parity[frame_index] = parity;
 	m_readback_point_share[frame_index] = m_point_share;
 	m_readback_point_budget[frame_index] = quality.points;
+	m_readback_spawn_capacity[frame_index] = m_spawn_capacity;
 
 	if (debug_view == 0 || !source_view || !m_debug_pipeline.isReady() || !m_debug_target.isReady()) {
 		return source_view;

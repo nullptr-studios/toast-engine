@@ -29,7 +29,7 @@ namespace toast {
  * @note The blend is a crossfade, not a switch. A box fades in over blendDistance() as the camera approaches,
  *       because grading that snaps at a boundary reads as a bug even when the two grades are both correct
  */
-class [[ToastNode, Icon("Aperture")]] TOAST_API PostProcessVolume : public Volume {
+class [[ToastNode, Icon("WorldEnvironment")]] TOAST_API PostProcessVolume : public Volume {
 public:
 	/// Volume defaults blendDistance to 0, which makes a grade snap at the boundary. A post volume is a
 	/// crossfade, so it starts with a metre of blend

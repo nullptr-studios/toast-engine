@@ -116,10 +116,11 @@ private:
 		glm::vec4 limits {0.0f};
 		std::array<glm::uvec4, k_max_cascades> cascades {};
 		std::array<glm::uvec4, k_max_cascades> deposits {};
+		glm::uvec4 queues {0u};
 	};
 
 	/// Mirrors gi_common kGiCounter layout with counts per parity then table full pool full and seen per cascade
-	static constexpr uint32_t k_counter_words = 40;
+	static constexpr uint32_t k_counter_words = 44;
 	static constexpr uint32_t k_counter_table_full = 16;
 	static constexpr uint32_t k_counter_pool_full = 17;
 	static constexpr uint32_t k_counter_seen = 18;
@@ -132,6 +133,12 @@ private:
 	static constexpr uint32_t k_counter_fresh = 31;
 	/// Sixteenths of the history rays of every 64th bucket per cascade
 	static constexpr uint32_t k_counter_depth = 32;
+	/// Pixels with a deposit that may exceed the spawn list
+	static constexpr uint32_t k_counter_spawn = 38;
+	/// Hits queued by pixel rays
+	static constexpr uint32_t k_counter_pixel_hits = 39;
+	/// Hits queued by point rays
+	static constexpr uint32_t k_counter_point_hits = 40;
 	/// Mirrors gi_probes gDirty and past it every extra region grows the last box
 	static constexpr uint32_t k_max_dirty = 64;
 
@@ -171,7 +178,10 @@ private:
 	void readStats(uint32_t frame_index);
 	void bindProbeSet(uint32_t frame_index);
 	auto bindRaySets(uint32_t frame_index, vk::ImageView scene_view) -> bool;
-	void recordTrace(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t spawn_x, uint32_t spawn_y, vk::ImageView scene_view);
+	/// False when the ray sets could not bind so nothing was traced
+	auto recordTrace(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t spawn_x, uint32_t spawn_y, vk::ImageView scene_view)
+	    -> bool;
+	void recordShade(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t rays);
 	void recordMerge(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t cascades);
 	void recordChange(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView scene_view);
 	/// Sized to the viewport so it is rebuilt on resize while the device is idle
@@ -213,6 +223,7 @@ private:
 	ShaderLayout m_ray_layout;
 	VulkanPipeline m_ray_pipeline;
 	VulkanPipeline m_point_trace_pipeline;
+	VulkanPipeline m_shade_pipeline;
 	VulkanPipeline m_change_pipeline;
 	SceneDescriptorSets m_ray_scene_sets;
 	std::vector<vk::raii::DescriptorSet> m_ray_storage_sets;
@@ -259,6 +270,13 @@ private:
 	std::optional<vma::raii::Buffer> m_points;
 	/// Per pixel float4 of gi_rays changeMain
 	std::optional<vma::raii::Buffer> m_change;
+	/// Pixels with a deposit packed x | y << 16 sized to the most any preset spawns
+	std::optional<vma::raii::Buffer> m_spawn;
+	uint32_t m_spawn_capacity = 0;
+	/// Off screen hits as uint4 with the pixel rays in the spawn capacity then the point rays in k_max_points
+	std::optional<vma::raii::Buffer> m_hits;
+	bool m_spawn_overflow_logged = false;
+	bool m_spawn_step_logged = false;
 	std::vector<vma::raii::Buffer> m_dirty;
 
 	std::vector<Stats> m_dirty_stats;
@@ -281,6 +299,8 @@ private:
 	/// Share of off screen hits each readback frame kept so the next share can size the demand
 	std::vector<float> m_readback_point_share;
 	std::vector<uint32_t> m_readback_point_budget;
+	/// Spawn list capacity each readback frame was recorded with
+	std::vector<uint32_t> m_readback_spawn_capacity;
 	float m_point_share = 0.5f;
 
 	std::vector<vk::raii::DescriptorSet> m_probe_sets;

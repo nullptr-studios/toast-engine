@@ -58,6 +58,9 @@ StructuredBuffer<float4> gDirty;
 /// Two halves by pool parity
 [[vk::binding(18, 0)]]
 StructuredBuffer<GiPoint> gPoints;
+/// Pixels with a deposit packed x | y << 16 for the trace
+[[vk::binding(19, 0)]]
+RWStructuredBuffer<uint> gSpawn;
 
 struct GiPush
 {
@@ -127,6 +130,9 @@ void clearMain(uint3 id : SV_DispatchThreadID)
         gCounters[kGiCounterPoints + frame.frame.z] = 0u;
         gCounters[kGiCounterPointsDropped] = 0u;
         gCounters[kGiCounterFresh] = 0u;
+        gCounters[kGiCounterSpawn] = 0u;
+        gCounters[kGiCounterPixelHits] = 0u;
+        gCounters[kGiCounterPointHits] = 0u;
         for (uint d = 0u; d < kGiMaxCascades; ++d)
         {
             gCounters[kGiCounterDepth + d] = 0u;
@@ -513,8 +519,16 @@ void countMain(uint3 id : SV_DispatchThreadID)
         return;
     }
     const uint deposit = giPixelDeposit(frame, pixel);
-    if (deposit != kGiEmpty)
+    if (deposit == kGiEmpty)
     {
+        return;
+    }
+    uint slot = 0u;
+    InterlockedAdd(gCounters[kGiCounterSpawn], 1u, slot);
+    // Pixels past the list trace nothing so they must not claim rays
+    if (slot < frame.queues.x)
+    {
+        gSpawn[slot] = pixel.x | (pixel.y << 16u);
         InterlockedAdd(gRayCounts[deposit].x, 1u);
     }
 }

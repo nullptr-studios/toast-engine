@@ -17,6 +17,12 @@ static const uint kGiCounterInvalidated = 27u;
 static const uint kGiCounterPoints = 28u;
 static const uint kGiCounterPointsDropped = 30u;
 static const uint kGiCounterFresh = 31u;
+/// Pixels that found a deposit and may exceed the spawn list
+static const uint kGiCounterSpawn = 38u;
+/// Hits queued by pixel rays
+static const uint kGiCounterPixelHits = 39u;
+/// Hits queued by point rays
+static const uint kGiCounterPointHits = 40u;
 
 /// Frames an unseen probe keeps its history and tile
 static const uint kGiKeepFrames = 16u;
@@ -73,6 +79,8 @@ struct GiFrame
     GiCascadeLayout cascades[kGiMaxCascades];
     /// x deposit probe offset y deposit probe capacity w directions per probe
     uint4 deposits[kGiMaxCascades];
+    /// x spawn list capacity y point hit offset z hit capacity
+    uint4 queues;
 };
 
 struct GiPoint
@@ -217,8 +225,47 @@ uint giMortonCompact(uint value)
     return value;
 }
 
+static const float3 kGiC0DirectionsTable[32] = {
+    float3(0.61108887, 0.25312130, -0.75000000),
+    float3(0.25312130, 0.61108887, -0.75000000),
+    float3(0.89454251, 0.37053164, -0.25000000),
+    float3(0.37053164, 0.89454251, -0.25000000),
+    float3(-0.25312130, 0.61108887, -0.75000000),
+    float3(-0.61108887, 0.25312130, -0.75000000),
+    float3(-0.37053164, 0.89454251, -0.25000000),
+    float3(-0.89454251, 0.37053164, -0.25000000),
+    float3(0.89454251, 0.37053164, 0.25000000),
+    float3(0.37053164, 0.89454251, 0.25000000),
+    float3(0.61108887, 0.25312130, 0.75000000),
+    float3(0.25312130, 0.61108887, 0.75000000),
+    float3(-0.37053164, 0.89454251, 0.25000000),
+    float3(-0.89454251, 0.37053164, 0.25000000),
+    float3(-0.25312130, 0.61108887, 0.75000000),
+    float3(-0.61108887, 0.25312130, 0.75000000),
+    float3(-0.61108887, -0.25312130, -0.75000000),
+    float3(-0.25312130, -0.61108887, -0.75000000),
+    float3(-0.89454251, -0.37053164, -0.25000000),
+    float3(-0.37053164, -0.89454251, -0.25000000),
+    float3(0.25312130, -0.61108887, -0.75000000),
+    float3(0.61108887, -0.25312130, -0.75000000),
+    float3(0.37053164, -0.89454251, -0.25000000),
+    float3(0.89454251, -0.37053164, -0.25000000),
+    float3(-0.89454251, -0.37053164, 0.25000000),
+    float3(-0.37053164, -0.89454251, 0.25000000),
+    float3(-0.61108887, -0.25312130, 0.75000000),
+    float3(-0.25312130, -0.61108887, 0.75000000),
+    float3(0.37053164, -0.89454251, 0.25000000),
+    float3(0.89454251, -0.37053164, 0.25000000),
+    float3(0.25312130, -0.61108887, 0.75000000),
+    float3(0.61108887, -0.25312130, 0.75000000),
+};
+
 float3 giDirectionOf(uint index, uint cascade)
 {
+    if (cascade == 0u && index < 32u)
+    {
+        return kGiC0DirectionsTable[index];
+    }
     const uint side = giSide(cascade);
     const uint half = index / (side * side);
     const uint morton = index % (side * side);

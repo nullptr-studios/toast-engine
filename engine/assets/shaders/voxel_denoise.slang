@@ -219,19 +219,34 @@ float4 temporalMain(VSOutput input) : SV_Target0
 
     const float depth = gDepth.Load(int3(pixel, 0)).r;
     const float2 uv = (float2(pixel) + 0.5) / gPush.viewport.xy;
-    const float3 world = worldPositionAt(uv, depth);
     const float linearDepth = linearDepthAt(uv, depth);
+    const float4 reset = float4(current, specular ? 1.0 : linearDepth);
 
     // Camera reprojection when voxel motion is missing
     const float4 motion = gMotion.Load(int3(pixel, 0));
-    const float4 previousClip = mul(gPush.previousViewProjection, float4(world, 1.0));
-    const float2 previousUv = motion.w > 0.5 ? uv - motion.xy : previousClip.xy / previousClip.w * 0.5 + 0.5;
+    float2 previousUv;
+    float expectedDepth;
+    if (motion.w > 0.5)
+    {
+        previousUv = uv - motion.xy;
+        expectedDepth = linearDepth;
+    }
+    else
+    {
+        const float3 world = worldPositionAt(uv, depth);
+        const float4 previousClip = mul(gPush.previousViewProjection, float4(world, 1.0));
+        if (previousClip.w <= 0.0)
+        {
+            return reset;
+        }
+        previousUv = previousClip.xy / previousClip.w * 0.5 + 0.5;
+        expectedDepth = previousClip.w;
+    }
 
     const bool inside = all(previousUv >= float2(0.0, 0.0)) && all(previousUv <= float2(1.0, 1.0));
-    const float4 reset = float4(current, specular ? 1.0 : linearDepth);
 
     // Reactive pixels drop their history
-    if (gPush.params.y < 0.5 || !inside || previousClip.w <= 0.0 || motion.z > 0.5)
+    if (gPush.params.y < 0.5 || !inside || motion.z > 0.5)
     {
         return reset;
     }
@@ -239,7 +254,7 @@ float4 temporalMain(VSOutput input) : SV_Target0
     // Depth lives in the diffuse history
     float4 diffuseHistory;
     float4 specularHistory;
-    if (!reprojectHistory(previousUv, previousClip.w, diffuseHistory, specularHistory))
+    if (!reprojectHistory(previousUv, expectedDepth, diffuseHistory, specularHistory))
     {
         return reset;
     }
@@ -285,7 +300,9 @@ float4 compositeMain(VSOutput input) : SV_Target0
 
     float3 diffuse = gDiffuseCurrent.Load(int3(pixel, 0)).rgb;
     float weightSum = 1.0;
-    const float2 turn = float2(cos(rotation), sin(rotation)) * radius;
+    float s, c;
+    sincos(rotation, s, c);
+    const float2 turn = float2(c, s) * radius;
     [unroll]
     for (uint i = 0u; i < kSpatialTaps; ++i)
     {

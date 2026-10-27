@@ -150,12 +150,15 @@ float3 roundedNormal(float2 pixel, float3 center, float3 face)
     const int2 size = int2(gPush.viewport.xy);
 
     const uint taps = clamp(uint(radiusPixels), kMinRoundingTaps, kMaxRoundingTaps);
+    const float invRadiusSq = 1.0 / (radius * radius);
     float3 sum = face;
     [loop]
     for (uint i = 0u; i < taps; ++i)
     {
         const float angle = float(i) * kGoldenAngle + rotation;
-        const float2 offset = sqrt((float(i) + 0.5) / float(taps)) * radiusPixels * float2(cos(angle), sin(angle));
+        float s, c;
+        sincos(angle, s, c);
+        const float2 offset = sqrt((float(i) + 0.5) / float(taps)) * radiusPixels * float2(c, s);
         const int2 tap = int2(floor(pixel + offset));
         float3 tapNormal;
         if (any(tap < int2(0, 0)) || any(tap >= size) || !isLitVoxelAt(tap, tapNormal))
@@ -165,7 +168,7 @@ float3 roundedNormal(float2 pixel, float3 center, float3 face)
 
         // An occluded or grazing neighbour drops out
         const float3 toTap = positionAt(tap) - center;
-        const float falloff = saturate(1.0 - dot(toTap, toTap) / (radius * radius));
+        const float falloff = saturate(1.0 - dot(toTap, toTap) * invRadiusSq);
         sum += tapNormal * (falloff * falloff);
     }
     return normalize(sum);
@@ -247,8 +250,8 @@ struct VoxelRayFreeFilter : IShadowFilter
     }
 }
 
-/// Mirrors renderer::VoxelPass ambient rays per pixel
-static const uint kAmbientRays = 2u;
+/// One per pixel since the blue noise turns every frame and the denoiser accumulates the rest
+static const uint kAmbientRays = 1u;
 
 /// Teardown style AO from the share of the reach cosine rays travel
 float ambientOcclusion(float3 normal, float2 pixel, float3 origin, float reach)
@@ -292,6 +295,7 @@ float ambientOcclusion(float3 normal, float2 pixel, float3 origin, float reach)
     const uint cellCount = gAmbientGrid[kAmbientGridHeader + 2u * bucket + 1u];
     const uint globalOffset = gAmbientGrid[1];
     const uint total = cellCount + gAmbientGrid[2];
+    const float invReach2 = 1.0 / (reach * reach);
     for (uint j = 0u; j < total; ++j)
     {
         const uint i = gAmbientGrid[indexBase + (j < cellCount ? cellOffset + j : globalOffset + j - cellCount)];
@@ -307,7 +311,7 @@ float ambientOcclusion(float3 normal, float2 pixel, float3 origin, float reach)
         [unroll]
         for (uint r = 0u; r < kAmbientRays; ++r)
         {
-            const float along = clamp(dot(offset, segments[r]) / (reach * reach), 0.0, travelled[r]);
+            const float along = clamp(dot(offset, segments[r]) * invReach2, 0.0, travelled[r]);
             const float3 closest = segments[r] * along - offset;
             rays |= dot(closest, closest) <= bounds.w * bounds.w ? 1u << r : 0u;
         }
@@ -326,9 +330,9 @@ float ambientOcclusion(float3 normal, float2 pixel, float3 origin, float reach)
             {
                 continue;
             }
-            const float3 voxelSegment = mul(worldToVoxel, float4(segments[r], 0.0)).xyz;
+            const float3 voxelSegment = mul((float3x3)worldToVoxel, segments[r]);
             // Five fixed samples then three doubling ones end exactly at the segment end when the first step is a fortieth
-            const RayHit hit = marchSuperSparse(record, voxelOrigin, voxelSegment, 0.0, travelled[r], length(voxelSegment) / 40.0);
+            const RayHit hit = marchSuperSparse(record, voxelOrigin, voxelSegment, 0.0, travelled[r], length(voxelSegment) * 0.025);
             if (hit.hit)
             {
                 travelled[r] = min(travelled[r], hit.t);
@@ -759,8 +763,10 @@ SpatialOutput fragmentSpatial(VSOutput input)
         if (t > 0u)
         {
             const float tapAngle = angle + float(t) * 2.39996323;
+            float s, c;
+            sincos(tapAngle, s, c);
             const float distance = kSpatialRadius * sqrt((float(t) - 0.5) / float(kSpatialReservoirs));
-            tap = int2(floor(input.position.xy + distance * float2(cos(tapAngle), sin(tapAngle))));
+            tap = int2(floor(input.position.xy + distance * float2(c, s)));
             float3 tapFace;
             if (any(tap < int2(0, 0)) || any(tap >= size) || !isLitVoxelAt(tap, tapFace))
             {
@@ -768,8 +774,12 @@ SpatialOutput fragmentSpatial(VSOutput input)
             }
             // A neighbour on another surface chose for a point this pixel is not
             const float3 tapNormal = gSceneNormal.Load(int3(tap, 0)).xyz;
+            if (dot(tapNormal, tapNormal) < 1e-4 || dot(normalize(tapNormal), normal) < 0.9)
+            {
+                continue;
+            }
             const float plane = abs(dot(faceNormal, positionAt(tap) - position));
-            if (dot(tapNormal, tapNormal) < 1e-4 || dot(normalize(tapNormal), normal) < 0.9 || plane > 0.02 * length(toCamera) + 0.05)
+            if (plane > 0.02 * length(toCamera) + 0.05)
             {
                 continue;
             }

@@ -465,7 +465,9 @@ float2 concentricDisc(float2 u)
 {
     const float radius = sqrt(u.x);
     const float angle = 6.28318531 * u.y;
-    return radius * float2(cos(angle), sin(angle));
+    float s, c;
+    sincos(angle, s, c);
+    return radius * float2(c, s);
 }
 
 /// A sphere samples its silhouette disc facing the receiver

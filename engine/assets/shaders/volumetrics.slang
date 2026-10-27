@@ -66,6 +66,12 @@ static const float kAmbientBlend = 0.1;
 static const uint kAmbientProbes = 33u;
 static const float kTemporalBlend = 0.1;
 
+/// Meters per scatter step until the step setting caps the count
+static const float kFogStepMeters = 0.5;
+static const uint kFogMinSteps = 4u;
+/// Marched light shadows trace on one step in this many, rotated over 2 by 2 texels and frames
+static const uint kMarchedInterleave = 4u;
+
 typedef FullscreenVSOutput VSOutput;
 
 [shader("vertex")]
@@ -323,8 +329,8 @@ void offerMarched(inout MarchedPick pick, float3 light, float3 segment, inout ui
     }
 }
 
-/// Sun and froxel lights arriving at @p position toward the camera along @p toCamera
-float3 directInScatter(float3 position, float3 toCamera, float2 pixel, float g, inout uint random)
+/// Sun and froxel lights toward the camera with marched ones only when @p traceMarched
+float3 directInScatter(float3 position, float3 toCamera, float2 pixel, float g, bool traceMarched, inout uint random)
 {
     const bool shadowed = gParams.quality.z > 0.5;
     MarchedPick pick;
@@ -346,7 +352,10 @@ float3 directInScatter(float3 position, float3 toCamera, float2 pixel, float g, 
         }
         else if (shadowed && sun.direction.w > 0.0)
         {
-            offerMarched(pick, sunLight, L * gCamera.fogReach.z, random);
+            if (traceMarched)
+            {
+                offerMarched(pick, sunLight, L * gCamera.fogReach.z, random);
+            }
         }
         else
         {
@@ -381,17 +390,18 @@ float3 directInScatter(float3 position, float3 toCamera, float2 pixel, float g, 
             {
                 light += localLight * volumeLocalShadow(local, position);
             }
-            else
+            else if (traceMarched)
             {
                 offerMarched(pick, localLight, samplePoint - position, random);
             }
         }
     }
 
+    // Scaled up since only one step in kMarchedInterleave traces
     if (pick.weight > 0.0)
     {
         const float visibility = traceVisibility(position, pick.segment, kFogShadowCone, false).x;
-        light += pick.light * visibility * (pick.total / pick.weight);
+        light += pick.light * visibility * (pick.total / pick.weight) * float(kMarchedInterleave);
     }
     return light;
 }
@@ -405,7 +415,6 @@ float4 scatterMain(VSOutput input) : SV_Target0
     const float3 end = rayEnd(pixel, distance);
     const float3 direction = (end - gCamera.position) / max(distance, 1e-4);
     const float3 toCamera = -direction;
-    const uint steps = max(uint(gParams.marching.y), 1u);
     const float jitter = blueNoise(input.position.xy, 180u).x;
 
     float start = 0.0;
@@ -419,6 +428,12 @@ float4 scatterMain(VSOutput input) : SV_Target0
         }
         span = far - start;
     }
+
+    // Short indoor rays take fewer steps
+    const uint maxSteps = max(uint(gParams.marching.y), 1u);
+    const uint steps = clamp(uint(ceil(span / kFogStepMeters)), min(kFogMinSteps, maxSteps), maxSteps);
+    const uint2 texel = uint2(input.position.xy);
+    const uint phase = (texel.x & 1u) + ((texel.y & 1u) << 1u) + uint(gCamera.noiseParams.z);
 
     uint random = giHash(uint(pixel.x) ^ giHash(uint(pixel.y) ^ giHash(uint(gCamera.noiseParams.z))));
     float3 scattered = float3(0.0, 0.0, 0.0);
@@ -436,7 +451,9 @@ float4 scatterMain(VSOutput input) : SV_Target0
             continue;
         }
         const float3 inScatter =
-            medium.scattering * directInScatter(position, toCamera, float2(pixel), medium.anisotropy, random) + medium.ambientScatter +
+            medium.scattering *
+                directInScatter(position, toCamera, float2(pixel), medium.anisotropy, (i + phase) % kMarchedInterleave == 0u, random) +
+            medium.ambientScatter +
             medium.emission;
         const float stepExtinction = exp(-medium.extinction * (far - near));
         scattered += transmittance * inScatter * (1.0 - stepExtinction) / medium.extinction;

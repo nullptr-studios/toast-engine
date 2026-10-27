@@ -58,6 +58,14 @@ Sampler2D gIrradiance;
 [[vk::binding(14, 2)]]
 RWStructuredBuffer<float4> gChange;
 
+/// Pixels countMain found with a deposit packed x | y << 16
+[[vk::binding(15, 2)]]
+StructuredBuffer<uint> gSpawn;
+
+/// Off screen hits of pixel rays then of point rays from giPackHit for shadeMain
+[[vk::binding(16, 2)]]
+RWStructuredBuffer<uint4> gHits;
+
 /// Off the surface in meters so the first voxel the ray leaves is not hit at t 0
 static const float kGiRayOffset = 0.05;
 static const float kGiMaxRadiance = 16384.0;
@@ -196,25 +204,39 @@ bool giScreenRadiance(GiFrame frame, float3 position, float3 normal, out float3 
     return true;
 }
 
-float3 giHitRadiance(GiFrame frame, SceneHit hit, float3 origin, float3 direction, uint2 pixel, inout uint random, out bool onScreen)
+/// Radiance of a ray hit that is not on screen
+float3 giOffscreenRadiance(GiFrame frame, SceneHit hit, float3 position, float3 normal, uint2 pixel, inout uint random)
 {
-    const float3 position = origin + direction * hit.t;
-    const float3 normal = sceneHitNormal(hit, direction);
-    float3 radiance = float3(0.0, 0.0, 0.0);
-    onScreen = giScreenRadiance(frame, position, normal, radiance);
-    if (onScreen)
-    {
-        return radiance;
-    }
-
     const PaletteSample palette = samplePalette(gTraceVolumes[hit.volume].recordIndex, hit.material);
     // Shadow rays take the cone floor of the GI rays since their light is averaged over a whole bucket
-    radiance = palette.albedo * palette.emissive + traceLocalLight(position, normal, palette.albedo, frame.rays.w, random);
+    float3 radiance = palette.albedo * palette.emissive + traceLocalLight(position, normal, palette.albedo, frame.rays.w, random);
     if (frame.secondary.y != 0u)
     {
         radiance += palette.albedo * giSecondaryIrradiance(frame, position, normal, random);
     }
     return radiance + traceSunLight(position, normal, palette.albedo, frame.rays.w, frame.rays.y, float2(pixel));
+}
+
+/// x source y R2 index z asuint(t) w volume | axisCode << 22 | material << 24 with axisCode 3 for no axis
+uint4 giPackHit(uint source, uint rayPoint, SceneHit hit)
+{
+    const uint axisCode = hit.axis < 0 ? 3u : uint(hit.axis);
+    const uint packed = (hit.volume & kTraceInstanceVolume) | (axisCode << 22) | ((hit.material & 0xFFu) << 24);
+    return uint4(source, rayPoint, asuint(hit.t), packed);
+}
+
+/// Drops the voxel since shading reads only the volume axis and material
+SceneHit giUnpackHit(uint4 packed)
+{
+    const uint axisCode = (packed.w >> 22) & 3u;
+    SceneHit hit;
+    hit.hit = true;
+    hit.t = asfloat(packed.z);
+    hit.volume = packed.w & kTraceInstanceVolume;
+    hit.voxel = int3(0, 0, 0);
+    hit.axis = axisCode == 3u ? -1 : int(axisCode);
+    hit.material = packed.w >> 24;
+    return hit;
 }
 
 void giDeposit(GiFrame frame, uint cascade, uint deposit, float2 uv, float3 radiance, float transmittance)
@@ -241,15 +263,17 @@ void giSplitRay(GiFrame frame, uint deposit, uint lod, float3 origin, float3 dir
     const uint top = frame.frame.y - 1u;
     const float2 uv = giEncodeDirection(direction);
     float start = 0.0;
+    const bool hasFog = gCamera.fogMedium.x > 0.0 || fogVolumeCount() > 0u;
     for (uint cascade = 0u; cascade <= top && deposit != kGiEmpty; ++cascade)
     {
         const float end = giIntervalEnd(frame, lod, cascade);
         if (hit && distance <= end)
         {
-            giDeposit(frame, cascade, deposit, uv, radiance * fogTransmittance(origin, direction, start, distance), 0.0);
+            const float through = hasFog ? fogTransmittance(origin, direction, start, distance) : 1.0;
+            giDeposit(frame, cascade, deposit, uv, radiance * through, 0.0);
             return;
         }
-        const float through = fogTransmittance(origin, direction, start, end);
+        const float through = hasFog ? fogTransmittance(origin, direction, start, end) : 1.0;
         if (cascade == top)
         {
             giDeposit(frame, cascade, deposit, uv, giSky(direction) * through, 0.0);
@@ -261,20 +285,40 @@ void giSplitRay(GiFrame frame, uint deposit, uint lod, float3 origin, float3 dir
     }
 }
 
-[shader("compute")]
-[numthreads(8, 8, 1)]
-void traceMain(uint3 id : SV_DispatchThreadID)
+/// One probe ray of a pixel or a secondary point before its direction is picked
+struct GiRay
 {
-    const GiFrame frame = gFrame[0];
-    const uint2 pixel = id.xy * uint(frame.lod.w) + frame.viewport.zw;
-    if (any(pixel >= frame.viewport.xy))
-    {
-        return;
-    }
+    float3 origin;
+    float3 direction;
+    float3 surfaceNormal;
+    /// End of the traceScene interval
+    float reach;
+    uint deposit;
+    uint lod;
+    /// kGiEmpty when the pixel has no overlap or no deposit in the next lod
+    uint overlapDeposit;
+    uint rayPoint;
+    uint2 pixel;
+    uint random;
+};
+
+/// False for sky or a pixel without a deposit with direction and rayPoint left unset
+bool giPixelRayAt(GiFrame frame, uint2 pixel, out GiRay ray)
+{
+    ray.origin = float3(0.0, 0.0, 0.0);
+    ray.direction = float3(0.0, 0.0, 0.0);
+    ray.surfaceNormal = float3(0.0, 0.0, 0.0);
+    ray.reach = 0.0;
+    ray.deposit = kGiEmpty;
+    ray.lod = 0u;
+    ray.overlapDeposit = kGiEmpty;
+    ray.rayPoint = 0u;
+    ray.pixel = pixel;
+    ray.random = 0u;
     const float depth = gDepth.Load(int3(pixel, 0)).r;
     if (giIsSky(depth))
     {
-        return;
+        return false;
     }
     const float2 uv = (float2(pixel) + 0.5) / float2(frame.viewport.xy);
     const float3 world = giWorldAt(frame, uv, depth);
@@ -284,48 +328,120 @@ void traceMain(uint3 id : SV_DispatchThreadID)
     const uint deposit = giFindDeposit(frame, 0u, giSurfaceCell(frame, world, normal, lod, 0u), lod);
     if (deposit == kGiEmpty)
     {
+        return false;
+    }
+    ray.surfaceNormal = normal;
+    ray.lod = lod;
+    ray.deposit = deposit;
+    ray.overlapDeposit = overlap ? giFindDeposit(frame, 0u, giSurfaceCell(frame, world, normal, lod + 1u, 0u), lod + 1u) : kGiEmpty;
+    ray.reach = giIntervalEnd(frame, overlap ? lod + 1u : lod, frame.frame.y - 1u);
+    ray.origin = world + normal * kGiRayOffset;
+    ray.random = giHash(pixel.x ^ giHash(pixel.y ^ giHash(frame.frame.x)));
+    return true;
+}
+
+/// False for a point without a deposit with direction and rayPoint left unset
+bool giPointRayAt(GiFrame frame, uint index, out GiRay ray)
+{
+    ray.origin = float3(0.0, 0.0, 0.0);
+    ray.direction = float3(0.0, 0.0, 0.0);
+    ray.surfaceNormal = float3(0.0, 0.0, 0.0);
+    ray.reach = 0.0;
+    ray.deposit = kGiEmpty;
+    ray.lod = 0u;
+    ray.overlapDeposit = kGiEmpty;
+    ray.rayPoint = 0u;
+    ray.pixel = uint2(index & 63u, index >> 6);
+    ray.random = 0u;
+    const GiPoint point = gPoints[(1u - frame.frame.z) * frame.secondary.x + index];
+    const float3 normal = giUnpackNormal(point.normal);
+    const uint lod = giSecondaryLod(frame, point.position);
+    const uint deposit = giFindDeposit(frame, 0u, giSurfaceCell(frame, point.position, normal, lod, 0u), lod);
+    if (deposit == kGiEmpty)
+    {
+        return false;
+    }
+    ray.surfaceNormal = normal;
+    ray.lod = lod;
+    ray.deposit = deposit;
+    ray.reach = giIntervalEnd(frame, lod, frame.frame.y - 1u);
+    ray.origin = point.position + normal * kGiRayOffset;
+    ray.random = giHash(index ^ giHash(frame.frame.x ^ 0x5bd1e995u));
+    return true;
+}
+
+/// Directions flipped into the surface
+void giAimRay(GiFrame frame, uint rayPoint, inout GiRay ray)
+{
+    ray.rayPoint = rayPoint;
+    const float3 direction = giDecodeDirection(giRayPoint(frame, rayPoint));
+    ray.direction = dot(direction, ray.surfaceNormal) < 0.0 ? -direction : direction;
+}
+
+[shader("compute")]
+[numthreads(64, 1, 1)]
+void traceMain(uint3 id : SV_DispatchThreadID)
+{
+    const GiFrame frame = gFrame[0];
+    if (id.x >= min(gCounters[kGiCounterSpawn], frame.queues.x))
+    {
+        return;
+    }
+    const uint packed = gSpawn[id.x];
+    const uint2 pixel = uint2(packed & 0xFFFFu, packed >> 16u);
+    GiRay ray;
+    if (!giPixelRayAt(frame, pixel, ray))
+    {
         return;
     }
 
-    // Directions flipped into the surface
     uint rayIndex = 0u;
-    InterlockedAdd(gRayCounts[deposit].w, 1u, rayIndex);
-    float3 direction = giDecodeDirection(giRayPoint(frame, gRayCounts[deposit].y + rayIndex));
-    direction = dot(direction, normal) < 0.0 ? -direction : direction;
+    InterlockedAdd(gRayCounts[ray.deposit].w, 1u, rayIndex);
+    giAimRay(frame, gRayCounts[ray.deposit].y + rayIndex, ray);
 
     const uint top = frame.frame.y - 1u;
-    const uint reachLod = overlap ? lod + 1u : lod;
-    const float3 origin = world + normal * kGiRayOffset;
-    const SceneHit hit = traceScene(origin, direction, 0.0, giIntervalEnd(frame, reachLod, top), frame.rays.w);
-    uint random = giHash(pixel.x ^ giHash(pixel.y ^ giHash(frame.frame.x)));
-    bool onScreen = false;
-    const float3 radiance =
-        hit.hit ? giClampRay(frame, giHitRadiance(frame, hit, origin, direction, pixel, random, onScreen)) : float3(0.0, 0.0, 0.0);
-
-    // A uniform share so every region seeds instead of dispatch order filling the buffer
-    if (hit.hit && !onScreen && frame.secondary.y != 0u && giRandom(random) < asfloat(frame.secondary.z))
+    const SceneHit hit = traceScene(ray.origin, ray.direction, 0.0, ray.reach, frame.rays.w);
+    float3 radiance = float3(0.0, 0.0, 0.0);
+    if (hit.hit)
     {
-        uint index = 0u;
-        InterlockedAdd(gCounters[kGiCounterPoints + frame.frame.z], 1u, index);
-        if (index < frame.secondary.w)
+        const float3 position = ray.origin + ray.direction * hit.t;
+        const float3 normal = sceneHitNormal(hit, ray.direction);
+        if (!giScreenRadiance(frame, position, normal, radiance))
         {
-            GiPoint point;
-            point.position = origin + direction * hit.t;
-            point.normal = giPackNormal(sceneHitNormal(hit, direction));
-            gPoints[frame.frame.z * frame.secondary.x + index] = point;
+            // A uniform share so every region seeds instead of dispatch order filling the buffer
+            if (frame.secondary.y != 0u && giRandom(ray.random) < asfloat(frame.secondary.z))
+            {
+                uint index = 0u;
+                InterlockedAdd(gCounters[kGiCounterPoints + frame.frame.z], 1u, index);
+                if (index < frame.secondary.w)
+                {
+                    GiPoint point;
+                    point.position = position;
+                    point.normal = giPackNormal(normal);
+                    gPoints[frame.frame.z * frame.secondary.x + index] = point;
+                }
+                else
+                {
+                    InterlockedAdd(gCounters[kGiCounterPointsDropped], 1u);
+                }
+            }
+            // shadeMain deposits it
+            uint slot = 0u;
+            InterlockedAdd(gCounters[kGiCounterPixelHits], 1u, slot);
+            if (slot < frame.queues.y)
+            {
+                gHits[slot] = giPackHit(pixel.x | (pixel.y << 16u), ray.rayPoint, hit);
+            }
+            return;
         }
-        else
-        {
-            InterlockedAdd(gCounters[kGiCounterPointsDropped], 1u);
-        }
+        radiance = giClampRay(frame, radiance);
     }
 
-    const bool primaryHit = hit.hit && hit.t <= giIntervalEnd(frame, lod, top);
-    giSplitRay(frame, deposit, lod, origin, direction, primaryHit, hit.t, radiance);
-    if (overlap)
+    const bool primaryHit = hit.hit && hit.t <= giIntervalEnd(frame, ray.lod, top);
+    giSplitRay(frame, ray.deposit, ray.lod, ray.origin, ray.direction, primaryHit, hit.t, radiance);
+    if (ray.overlapDeposit != kGiEmpty)
     {
-        const uint next = giFindDeposit(frame, 0u, giSurfaceCell(frame, world, normal, lod + 1u, 0u), lod + 1u);
-        giSplitRay(frame, next, lod + 1u, origin, direction, hit.hit, hit.t, radiance);
+        giSplitRay(frame, ray.overlapDeposit, ray.lod + 1u, ray.origin, ray.direction, hit.hit, hit.t, radiance);
     }
 }
 
@@ -338,29 +454,73 @@ void pointTraceMain(uint3 id : SV_DispatchThreadID)
     {
         return;
     }
-    const GiPoint point = gPoints[(1u - frame.frame.z) * frame.secondary.x + id.x];
-    const float3 normal = giUnpackNormal(point.normal);
-    const uint lod = giSecondaryLod(frame, point.position);
-    const uint deposit = giFindDeposit(frame, 0u, giSurfaceCell(frame, point.position, normal, lod, 0u), lod);
-    if (deposit == kGiEmpty)
+    GiRay ray;
+    if (!giPointRayAt(frame, id.x, ray))
     {
         return;
     }
 
     uint rayIndex = 0u;
-    InterlockedAdd(gRayCounts[deposit].w, 1u, rayIndex);
-    float3 direction = giDecodeDirection(giRayPoint(frame, gRayCounts[deposit].y + rayIndex));
-    direction = dot(direction, normal) < 0.0 ? -direction : direction;
+    InterlockedAdd(gRayCounts[ray.deposit].w, 1u, rayIndex);
+    giAimRay(frame, gRayCounts[ray.deposit].y + rayIndex, ray);
 
-    const float3 origin = point.position + normal * kGiRayOffset;
-    const float end = giIntervalEnd(frame, lod, frame.frame.y - 1u);
-    const SceneHit hit = traceScene(origin, direction, 0.0, end, frame.rays.w);
-    uint random = giHash(id.x ^ giHash(frame.frame.x ^ 0x5bd1e995u));
-    bool onScreen = false;
-    const uint2 pixel = uint2(id.x & 63u, id.x >> 6);
-    const float3 radiance =
-        hit.hit ? giClampRay(frame, giHitRadiance(frame, hit, origin, direction, pixel, random, onScreen)) : float3(0.0, 0.0, 0.0);
-    giSplitRay(frame, deposit, lod, origin, direction, hit.hit, hit.t, radiance);
+    const SceneHit hit = traceScene(ray.origin, ray.direction, 0.0, ray.reach, frame.rays.w);
+    float3 radiance = float3(0.0, 0.0, 0.0);
+    if (hit.hit)
+    {
+        const float3 position = ray.origin + ray.direction * hit.t;
+        if (!giScreenRadiance(frame, position, sceneHitNormal(hit, ray.direction), radiance))
+        {
+            // shadeMain deposits it
+            uint slot = 0u;
+            InterlockedAdd(gCounters[kGiCounterPointHits], 1u, slot);
+            if (slot < frame.queues.z - frame.queues.y)
+            {
+                gHits[frame.queues.y + slot] = giPackHit(id.x, ray.rayPoint, hit);
+            }
+            return;
+        }
+        radiance = giClampRay(frame, radiance);
+    }
+    giSplitRay(frame, ray.deposit, ray.lod, ray.origin, ray.direction, hit.hit, hit.t, radiance);
+}
+
+/// Off screen hits of both trace kernels in full warps
+[shader("compute")]
+[numthreads(64, 1, 1)]
+void shadeMain(uint3 id : SV_DispatchThreadID)
+{
+    const GiFrame frame = gFrame[0];
+    const uint pixelHits = min(gCounters[kGiCounterPixelHits], frame.queues.y);
+    const bool pixelRay = id.x < pixelHits;
+    const uint pointIndex = id.x - pixelHits;
+    if (!pixelRay && pointIndex >= min(gCounters[kGiCounterPointHits], frame.queues.z - frame.queues.y))
+    {
+        return;
+    }
+    const uint4 packed = gHits[pixelRay ? id.x : frame.queues.y + pointIndex];
+    GiRay ray;
+    const bool found =
+        pixelRay ? giPixelRayAt(frame, uint2(packed.x & 0xFFFFu, packed.x >> 16u), ray) : giPointRayAt(frame, packed.x, ray);
+    if (!found)
+    {
+        return;
+    }
+    giAimRay(frame, packed.y, ray);
+    const SceneHit hit = giUnpackHit(packed);
+    const float3 position = ray.origin + ray.direction * hit.t;
+    const float3 normal = sceneHitNormal(hit, ray.direction);
+    // Salted so the light pick is independent of the seeding draw of traceMain
+    uint random = giHash(ray.random ^ 0x68bc21ebu);
+    const float3 radiance = giClampRay(frame, giOffscreenRadiance(frame, hit, position, normal, ray.pixel, random));
+
+    const uint top = frame.frame.y - 1u;
+    const bool primaryHit = !pixelRay || hit.t <= giIntervalEnd(frame, ray.lod, top);
+    giSplitRay(frame, ray.deposit, ray.lod, ray.origin, ray.direction, primaryHit, hit.t, radiance);
+    if (ray.overlapDeposit != kGiEmpty)
+    {
+        giSplitRay(frame, ray.overlapDeposit, ray.lod + 1u, ray.origin, ray.direction, true, hit.t, radiance);
+    }
 }
 
 float3 giTileIrradiance(GiFrame frame, float3 world, float3 normal, uint lod, out float total)
@@ -374,6 +534,11 @@ float3 giTileIrradiance(GiFrame frame, float3 world, float3 normal, uint lod, ou
     total = 0.0;
     for (uint corner = 0u; corner < 8u; ++corner)
     {
+        const float weight = giNeighbourWeight(corner, upper);
+        if (weight <= 0.0)
+        {
+            continue;
+        }
         const uint key = giKey(base + giNeighbourOffset(corner), lod);
         uint slot = giHash(key) & layout.y;
         uint value = kGiEmpty;
@@ -396,7 +561,6 @@ float3 giTileIrradiance(GiFrame frame, float3 world, float3 normal, uint lod, ou
         {
             continue;
         }
-        const float weight = giNeighbourWeight(corner, upper);
         irradiance += weight * gIrradiance.SampleLevel(giTileUv(tile, normal), 0.0).rgb;
         total += weight;
     }
