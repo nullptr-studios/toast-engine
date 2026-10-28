@@ -2407,6 +2407,7 @@ void Workspace::eventSubscriptions() {
 		if (e.game) {
 			// entering play, drop any in-progress gizmo interaction
 			m_gizmo_hover = GizmoHandle::none;
+			m_pick_press.reset();
 			gizmoEndDrag();
 		}
 		applyActiveCamera();
@@ -2424,9 +2425,12 @@ void Workspace::eventSubscriptions() {
 		return true;
 	});
 
-	// Gizmo interaction uses the viewport mouse events in both edit and play mode
+	// Editor interaction only follows the editor camera; game view passes input to the game.
 	m_listener.subscribe<event::WindowMousePosition>([this](const auto& e) {
 		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			return false;
+		}
+		if (m_game_camera) {
 			return false;
 		}
 		m_gizmo_mouse_pos = {e.x, e.y};
@@ -2443,6 +2447,9 @@ void Workspace::eventSubscriptions() {
 	m_listener.subscribe<event::WindowMouseButton>(
 	    [this](const auto& e) {
 		    if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			    return false;
+		    }
+		    if (m_game_camera) {
 			    return false;
 		    }
 		    const bool pressed = e.action == event::window_input_pressed;
@@ -2768,6 +2775,9 @@ void Workspace::collectOutlinedRids(std::vector<uint64_t>& rids) const {
 
 auto Workspace::gizmoRenderState() const -> GizmoRenderState {
 	GizmoRenderState state;
+	if (m_game_camera) {
+		return state;
+	}
 	const bool has_node = m_focused_node.as<Node3D>().exists();
 	const bool interactive = has_node;
 
