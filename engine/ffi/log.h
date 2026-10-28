@@ -17,6 +17,7 @@ TOAST_C_API void toast_info(const char* sink, const char* message, const char* f
 TOAST_C_API void toast_warn(const char* sink, const char* message, const char* file_name, unsigned line_number) NOEXCEPT;
 TOAST_C_API void toast_error(const char* sink, const char* message, const char* file_name, unsigned line_number) NOEXCEPT;
 TOAST_C_API void toast_critical(const char* sink, const char* message, const char* file_name, unsigned line_number) NOEXCEPT;
+TOAST_C_API void toast_log_invalidate_backtraces(void) NOEXCEPT;
 
 #ifdef __cplusplus
 }

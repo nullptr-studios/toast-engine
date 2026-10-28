@@ -4,6 +4,7 @@
 #include "../descriptor_writer.hpp"
 #include "../gpu_sync.hpp"
 #include "../shader_cache.hpp"
+#include "../shader_compiler.hpp"
 #include "../voxel_gpu_storage.hpp"
 #include "../vulkan_core.hpp"
 #include "../vulkan_debug.hpp"
@@ -13,6 +14,7 @@
 #include <array>
 #include <bit>
 #include <cmath>
+#include <cstring>
 #include <format>
 #include <numeric>
 #include <toast/assets/assets.hpp>
@@ -65,8 +67,12 @@ constexpr uint32_t k_instance_bounds_binding = 7;
 
 /// voxel_lighting.slang gAmbientGrid
 constexpr uint32_t k_ambient_grid_binding = 8;
-/// Count then instance indices of the shadow casters holding glass
-constexpr uint32_t k_glass_casters_binding = 9;
+/// scene_trace.slang volumes bounds and cell grid
+constexpr uint32_t k_trace_volumes_binding = 10;
+constexpr uint32_t k_trace_bounds_binding = 11;
+constexpr uint32_t k_trace_grid_binding = 12;
+constexpr uint32_t k_trace_brick_bases_binding = 14;
+constexpr uint32_t k_trace_bricks_binding = 15;
 /// Mirrored by voxel_lighting.slang
 constexpr uint32_t k_ambient_grid_buckets = 4096;
 constexpr uint32_t k_ambient_grid_header = 4;
@@ -91,6 +97,9 @@ constexpr uint32_t k_reuse_history = 1;
 constexpr uint32_t k_reuse_spatial = 2;
 /// Some shadow ray instance holds glass
 constexpr uint32_t k_scene_glass = 4;
+constexpr uint32_t k_ambient_ray_query = 8;
+/// Bits 8 to 15 carry the max roughness in 255ths
+constexpr uint32_t k_traced_specular = 16;
 
 /// ReSTIR reuse of last frame's reservoir at the reprojected pixel and two around it
 constexpr uint32_t k_reused_reservoirs = 3;
@@ -412,9 +421,7 @@ void VoxelPass::createLighting(const VulkanCore& core, vk::Format scene_format, 
 	config.pipeline_type = VulkanPipeline::PipelineType::graphics;
 	config.debug_name = "VoxelLighting";
 	config.color_format = scene_format;
-	config.extra_color_formats = {
-	  k_scene_indirect_format, k_scene_normal_format, k_voxel_noisy_format, k_voxel_noisy_format, k_voxel_reservoir_format
-	};
+	config.extra_color_formats = {k_scene_indirect_format, k_scene_normal_format, k_voxel_noisy_format};
 	config.write_extra_color = true;
 	config.extent = extent;
 	config.shader_spirv = shader->spirv;
@@ -434,12 +441,37 @@ void VoxelPass::createLighting(const VulkanCore& core, vk::Format scene_format, 
 	config.extra_blend_mask = 1u;
 	m_spatial_pipeline.rebuild(core, config);
 
+	// Premultiplied so colour adds and noisy diffuse keeps the indirect scaled by occlusion
+	config.debug_name = "VoxelMarchedLighting";
+	config.fragment_entry = "fragmentMarched";
+	config.color_format = scene_format;
+	config.extra_color_formats = {k_voxel_noisy_format, k_voxel_noisy_format, k_voxel_reservoir_format};
+	config.blend_preset = VulkanPipeline::BlendPreset::premultiplied;
+	config.extra_blend_mask = 1u;
+	m_marched_pipeline.rebuild(core, config);
+
+	// Alpha one minus occlusion scales the indirect the lighting scope left in noisy diffuse
+	config.debug_name = "VoxelAmbientRays";
+	config.fragment_entry = "fragmentAmbient";
+	config.color_format = k_voxel_noisy_format;
+	config.extra_color_formats = {};
+	config.extra_blend_mask = 0u;
+	m_ambient_pipeline.rebuild(core, config);
+
+	config.debug_name = "VoxelMarchedComposite";
+	config.fragment_entry = "fragmentMarchedComposite";
+	config.color_format = scene_format;
+	config.blend_preset = VulkanPipeline::BlendPreset::additive;
+	config.extra_blend_mask = 0u;
+	config.write_extra_color = false;
+	config.write_color_alpha = false;
+	m_marched_composite_pipeline.rebuild(core, config);
+
 	m_lighting_scene_sets.create(core, shader->reflection, *layouts[k_scene_set], "VoxelLighting");
 
 	const vk::DescriptorSetLayout storage_layout = *layouts[k_storage_set];
 	m_lighting_storage_sets.clear();
 	m_instance_bounds.clear();
-	m_glass_casters.clear();
 	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
 		vk::BufferCreateInfo bounds_ci {};
 		bounds_ci.size = sizeof(glm::vec4) * k_max_instances;
@@ -462,16 +494,6 @@ void VoxelPass::createLighting(const VulkanCore& core, vk::Format scene_format, 
 			m_ambient_grids.back().getAllocation().flush(0, vk::WholeSize);
 		}
 
-		vk::BufferCreateInfo casters_ci {};
-		casters_ci.size = sizeof(uint32_t) * (1 + k_max_instances);
-		casters_ci.usage = vk::BufferUsageFlagBits::eStorageBuffer;
-		m_glass_casters.push_back(core.getAllocator().createBuffer(casters_ci, bounds_alloc));
-		setDebugName(core, *m_glass_casters.back(), std::format("VoxelLighting GlassCasters[{}]", i));
-		if (auto* words = static_cast<uint32_t*>(m_glass_casters.back().getAllocation().getInfo().pMappedData)) {
-			words[0] = 0;
-			m_glass_casters.back().getAllocation().flush(0, sizeof(uint32_t));
-		}
-
 		auto allocated = core.getDevice().allocateDescriptorSets(
 		    vk::DescriptorSetAllocateInfo(VulkanRenderer::instance->getDescriptorPoolHandle(), 1, &storage_layout)
 		);
@@ -488,9 +510,32 @@ void VoxelPass::createLighting(const VulkanCore& core, vk::Format scene_format, 
 		writer.buffer(
 		    *m_lighting_storage_sets.back(), k_ambient_grid_binding, vk::DescriptorType::eStorageBuffer, *m_ambient_grids.back()
 		);
-		writer.buffer(
-		    *m_lighting_storage_sets.back(), k_glass_casters_binding, vk::DescriptorType::eStorageBuffer, *m_glass_casters.back()
-		);
+		if (const VoxelTraceScene* trace = VulkanRenderer::instance->voxelTraceScene(); trace != nullptr) {
+			writer.buffer(
+			    *m_lighting_storage_sets.back(), k_trace_volumes_binding, vk::DescriptorType::eStorageBuffer, trace->volumeBuffer(i)
+			);
+			writer.buffer(
+			    *m_lighting_storage_sets.back(), k_trace_bounds_binding, vk::DescriptorType::eStorageBuffer, trace->boundsBuffer(i)
+			);
+			writer.buffer(
+			    *m_lighting_storage_sets.back(), k_trace_grid_binding, vk::DescriptorType::eStorageBuffer, trace->gridBuffer(i)
+			);
+			if (ShaderCompiler::isRayQueryAvailable()) {
+				const VoxelBlasCache* bricks = VulkanRenderer::instance->voxelBlasCache();
+				writer.buffer(
+				    *m_lighting_storage_sets.back(),
+				    k_trace_brick_bases_binding,
+				    vk::DescriptorType::eStorageBuffer,
+				    trace->brickBaseBuffer(i)
+				);
+				writer.buffer(
+				    *m_lighting_storage_sets.back(),
+				    k_trace_bricks_binding,
+				    vk::DescriptorType::eStorageBuffer,
+				    bricks != nullptr ? bricks->poolBuffer() : trace->brickBaseBuffer(i)
+				);
+			}
+		}
 		writer.flush(core.getDevice());
 	}
 
@@ -685,29 +730,6 @@ void VoxelPass::bindStorage(uint32_t frame_index, const std::shared_ptr<const Vo
 	m_bound_storage[frame_index] = storage;
 }
 
-void VoxelPass::writeGlassCasters(
-    uint32_t frame_index, const VoxelGpuStorage& storage, std::span<const VoxelInstanceGpu> casters
-) {
-	ZoneScoped;
-	if (frame_index >= m_glass_casters.size()) {
-		return;
-	}
-	auto* words = static_cast<uint32_t*>(m_glass_casters[frame_index].getAllocation().getInfo().pMappedData);
-	if (words == nullptr) {
-		return;
-	}
-	// Same cut as the shadow instance count the shader loops over
-	const size_t limit = std::min<size_t>(casters.size(), VulkanRenderer::instance->voxelShadowInstances());
-	uint32_t count = 0;
-	for (size_t i = 0; i < limit && count < k_max_instances; ++i) {
-		if (!storage.glassBricks(casters[i].record_index).empty()) {
-			words[1 + count++] = static_cast<uint32_t>(i);
-		}
-	}
-	words[0] = count;
-	m_glass_casters[frame_index].getAllocation().flush(0, sizeof(uint32_t) * (1 + count));
-}
-
 void VoxelPass::writeAmbientGrid(uint32_t frame_index, std::span<const glm::vec4> bounds) {
 	ZoneScoped;
 	if (frame_index >= m_ambient_grids.size()) {
@@ -759,11 +781,12 @@ void VoxelPass::writeAmbientGrid(uint32_t frame_index, std::span<const glm::vec4
 	uint32_t cursor = 0;
 	for (size_t i = 0; i < m_grid_pairs.size();) {
 		const uint32_t bucket = m_grid_pairs[i].first;
-		buckets[2 * bucket] = cursor;
+		const uint32_t first = cursor;
 		for (; i < m_grid_pairs.size() && m_grid_pairs[i].first == bucket; ++i) {
 			indices[cursor++] = m_grid_pairs[i].second;
 		}
-		buckets[(2 * bucket) + 1] = cursor - buckets[2 * bucket];
+		buckets[2 * bucket] = first;
+		buckets[(2 * bucket) + 1] = cursor - first;
 	}
 	const uint32_t global_offset = cursor;
 	for (const uint32_t index : m_grid_global) {
@@ -815,6 +838,9 @@ auto VoxelPass::prepare(uint32_t frame_index) -> bool {
 	}
 
 	bool cells_fit = true;
+	// Built here and copied once since the mapped buffers are write combined and slow or stale to read back
+	m_instance_scratch.clear();
+	m_bounds_scratch.clear();
 	auto* bounds = frame_index < m_instance_bounds.size()
 	                   ? static_cast<glm::vec4*>(m_instance_bounds[frame_index].getAllocation().getInfo().pMappedData)
 	                   : nullptr;
@@ -837,16 +863,15 @@ auto VoxelPass::prepare(uint32_t frame_index) -> bool {
 		cells_fit = cells_fit && glm::all(glm::lessThanEqual(coarse, glm::uvec3(k_max_coarse_dim)));
 
 		const auto index = static_cast<uint32_t>(m_draws.size());
-		instances[index] =
+		VoxelInstanceGpu instance =
 		    makeVoxelInstance(proxy.model, proxy.inverse_model, proxy.previous_model, proxy.has_previous, proxy.record_index);
-		instances[index].pad0 = proxy.highlight_record;
-		if (bounds != nullptr) {
-			bounds[index] = glm::vec4(proxy.bounds_center, proxy.bounds_radius);
-		}
-		instances[index].cell_base = m_total_cells;
+		instance.pad0 = proxy.highlight_record;
+		instance.cell_base = m_total_cells;
 		if (proxy.mirrored) {
-			instances[index].flags |= k_voxel_instance_mirrored;
+			instance.flags |= k_voxel_instance_mirrored;
 		}
+		m_instance_scratch.push_back(instance);
+		m_bounds_scratch.emplace_back(proxy.bounds_center, proxy.bounds_radius);
 		m_total_cells += coarse.x * coarse.y * coarse.z;
 
 		// voxel.slang flips the winding of mirrored instances so the cull mode only follows the camera
@@ -876,7 +901,7 @@ auto VoxelPass::prepare(uint32_t frame_index) -> bool {
 	const bool capture = frame->probe_capture_index >= 0 || frame->irradiance_capture_index >= 0;
 	m_denoise_active = (m_marched_lights || m_ambient_rays) && frame->render_mode == 0 && !capture &&
 	                   m_denoise_temporal_pipeline.isReady() && m_denoise_composite_pipeline.isReady() &&
-	                   frame_index * 2 + 1 < m_denoise_sets.size() && m_denoise_history[1][1].isReady();
+	                   (frame_index * 2) + 1 < m_denoise_sets.size() && m_denoise_history[1][1].isReady();
 	if (!m_denoise_active) {
 		m_denoise_valid = false;
 	}
@@ -895,24 +920,28 @@ auto VoxelPass::prepare(uint32_t frame_index) -> bool {
 		if (proxy.visible || bounds == nullptr || m_shadow_instance_count >= k_max_instances) {
 			continue;
 		}
-		instances[m_shadow_instance_count] =
-		    makeVoxelInstance(proxy.model, proxy.inverse_model, proxy.previous_model, proxy.has_previous, proxy.record_index);
-		bounds[m_shadow_instance_count] = glm::vec4(proxy.bounds_center, proxy.bounds_radius);
+		m_instance_scratch.push_back(
+		    makeVoxelInstance(proxy.model, proxy.inverse_model, proxy.previous_model, proxy.has_previous, proxy.record_index)
+		);
+		m_bounds_scratch.emplace_back(proxy.bounds_center, proxy.bounds_radius);
 		++m_shadow_instance_count;
 	}
 
+	std::memcpy(instances, m_instance_scratch.data(), sizeof(VoxelInstanceGpu) * m_shadow_instance_count);
 	allocation.flush(0, sizeof(VoxelInstanceGpu) * m_shadow_instance_count);
-	writeGlassCasters(frame_index, *frame->voxel_storage, std::span<const VoxelInstanceGpu>(instances, m_shadow_instance_count));
 	if (bounds != nullptr) {
+		std::memcpy(bounds, m_bounds_scratch.data(), sizeof(glm::vec4) * m_shadow_instance_count);
 		m_instance_bounds[frame_index].getAllocation().flush(0, sizeof(glm::vec4) * m_shadow_instance_count);
 		if (m_ambient_rays) {
 			writeAmbientGrid(
 			    frame_index,
-			    std::span<const glm::vec4>(bounds, std::min(m_shadow_instance_count, VulkanRenderer::instance->voxelShadowInstances()))
+			    std::span<const glm::vec4>(
+			        m_bounds_scratch.data(), std::min(m_shadow_instance_count, VulkanRenderer::instance->voxelShadowInstances())
+			    )
 			);
 		}
 	}
-	prepareGlass(frame_index, *frame->voxel_storage, std::span<const VoxelInstanceGpu>(instances, m_draws.size()));
+	prepareGlass(frame_index, *frame->voxel_storage, std::span<const VoxelInstanceGpu>(m_instance_scratch.data(), m_draws.size()));
 
 	// Before any scope of this frame binds the glass set
 	const std::array<vk::ImageView, 2> backdrop {
@@ -1349,7 +1378,7 @@ void VoxelPass::recordLighting(vk::CommandBuffer cmd, uint32_t frame_index, vk::
 		return;
 	}
 
-	const std::array<vk::ImageView, 8> views {
+	const std::array<vk::ImageView, 10> views {
 	  instance->getVoxelAlbedoView(),
 	  instance->getVoxelFaceNormalView(),
 	  instance->getVoxelMaterialView(),
@@ -1358,6 +1387,8 @@ void VoxelPass::recordLighting(vk::CommandBuffer cmd, uint32_t frame_index, vk::
 	  instance->getSceneMotionView(),
 	  instance->getVoxelCandidateReservoirView(),
 	  instance->getSceneNormalView(),
+	  instance->getVoxelNoisyDiffuseView(),
+	  instance->getVoxelNoisySpecularView(),
 	};
 	if (std::ranges::any_of(views, [](vk::ImageView view) { return !view; })) {
 		return;
@@ -1385,6 +1416,10 @@ void VoxelPass::recordLighting(vk::CommandBuffer cmd, uint32_t frame_index, vk::
 	const auto height = static_cast<float>(viewport.height);
 	const float rotation =
 	    frame->taa_active ? std::fmod(static_cast<float>(frame->sequence % 4096) * k_golden_ratio_conjugate, 1.0f) : 0.0f;
+	const uint32_t traced_specular =
+	    instance->tracedSpecularFrame()
+	        ? k_traced_specular | (static_cast<uint32_t>(std::lround(instance->voxelSpecularRoughness() * 255.0f)) << 8)
+	        : 0u;
 	LightingPushConstants push;
 	if (m_denoise_active) {
 		push = LightingPushConstants {
@@ -1401,7 +1436,8 @@ void VoxelPass::recordLighting(vk::CommandBuffer cmd, uint32_t frame_index, vk::
 		  ),
 		  .reuse = glm::uvec4(
 		      (instance->voxelReservoirHistory() ? k_reuse_history : 0u) | (m_spatial_active ? k_reuse_spatial : 0u) |
-		          (m_scene_glass ? k_scene_glass : 0u) | (std::min(instance->voxelGlassShadowReach(), 0xFFFFu) << 16),
+		          (m_scene_glass ? k_scene_glass : 0u) | (instance->voxelAmbientRayQuery() ? k_ambient_ray_query : 0u) |
+		          traced_specular | (std::min(instance->voxelGlassShadowReach(), 0xFFFFu) << 16),
 		      k_reservoir_m_cap * instance->voxelLightCandidates(),
 		      k_reused_reservoirs,
 		      m_ambient_rays ? static_cast<uint32_t>(std::lround(instance->voxelAmbientReach() * 100.0f)) : 0u
@@ -1422,7 +1458,8 @@ void VoxelPass::recordLighting(vk::CommandBuffer cmd, uint32_t frame_index, vk::
 		  ),
 		  .reuse = glm::uvec4(
 		      (instance->voxelReservoirHistory() ? k_reuse_history : 0u) | (m_spatial_active ? k_reuse_spatial : 0u) |
-		          (m_scene_glass ? k_scene_glass : 0u) | (std::min(instance->voxelGlassShadowReach(), 0xFFFFu) << 16),
+		          (m_scene_glass ? k_scene_glass : 0u) | (instance->voxelAmbientRayQuery() ? k_ambient_ray_query : 0u) |
+		          traced_specular | (std::min(instance->voxelGlassShadowReach(), 0xFFFFu) << 16),
 		      k_reservoir_m_cap * instance->voxelLightCandidates(),
 		      k_reused_reservoirs,
 		      m_ambient_rays ? static_cast<uint32_t>(std::lround(instance->voxelAmbientReach() * 100.0f)) : 0u
@@ -1714,8 +1751,8 @@ void VoxelPass::recordDenoiseTemporal(vk::CommandBuffer cmd, uint32_t frame_inde
 		return;
 	}
 
-	// A skipped frame or a recreated target leaves a history from somewhere else
-	m_denoise_frame_valid = m_denoise_valid && frame->sequence == m_denoise_sequence + 1;
+	// A skipped frame or a recreated target leaves a history from somewhere else and a repeated snapshot keeps it
+	m_denoise_frame_valid = m_denoise_valid && frame->sequence - m_denoise_sequence <= 1;
 	const uint32_t read = 1 - m_denoise_parity;
 	if (!m_denoise_frame_valid) {
 		m_denoise_history[0][read].makeSampleable(cmd);
@@ -1767,8 +1804,54 @@ void VoxelPass::recordSpatial(vk::CommandBuffer cmd, uint32_t frame_index, vk::E
 	cmd.draw(3, 1, 0, 0);
 }
 
+void VoxelPass::bindMarched(vk::CommandBuffer cmd, uint32_t frame_index, const VulkanPipeline& pipeline) {
+	const vk::PipelineLayout layout = *m_lighting_layout.getPipelineLayout();
+	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.getPipeline());
+	cmd.bindDescriptorSets(
+	    vk::PipelineBindPoint::eGraphics,
+	    layout,
+	    k_scene_set,
+	    std::array<vk::DescriptorSet, 3> {
+	      m_lighting_scene_sets.get(frame_index), *m_lighting_storage_sets[frame_index], *m_gbuffer_sets[frame_index]
+	    },
+	    {}
+	);
+	cmd.pushConstants(layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(LightingPushConstants), &m_lighting_push);
+}
+
+void VoxelPass::recordMarched(vk::CommandBuffer cmd, uint32_t frame_index) {
+	ZoneScoped;
+	// The scope still clears the reservoirs and noisy specular when nothing marches
+	if (!(m_marched_lights || m_scene_glass) || !m_marched_pipeline.isReady() || frame_index >= m_gbuffer_sets.size() ||
+	    frame_index >= m_lighting_storage_sets.size() || !m_lighting_scene_sets.get(frame_index)) {
+		return;
+	}
+	bindMarched(cmd, frame_index, m_marched_pipeline);
+	cmd.draw(3, 1, 0, 0);
+}
+
+void VoxelPass::recordAmbient(vk::CommandBuffer cmd, uint32_t frame_index) {
+	ZoneScoped;
+	if (!m_ambient_rays || !m_ambient_pipeline.isReady() || frame_index >= m_gbuffer_sets.size() ||
+	    frame_index >= m_lighting_storage_sets.size() || !m_lighting_scene_sets.get(frame_index)) {
+		return;
+	}
+	bindMarched(cmd, frame_index, m_ambient_pipeline);
+	cmd.draw(3, 1, 0, 0);
+}
+
+void VoxelPass::recordMarchedComposite(vk::CommandBuffer cmd, uint32_t frame_index) {
+	ZoneScoped;
+	if (!marchedCompositeActive() || !m_marched_composite_pipeline.isReady() || frame_index >= m_gbuffer_sets.size() ||
+	    frame_index >= m_lighting_storage_sets.size() || !m_lighting_scene_sets.get(frame_index)) {
+		return;
+	}
+	bindMarched(cmd, frame_index, m_marched_composite_pipeline);
+	cmd.draw(3, 1, 0, 0);
+}
+
 void VoxelPass::onTargetsRecreated() {
-	std::ranges::fill(m_bound_gbuffer, std::array<vk::ImageView, 8> {});
+	std::ranges::fill(m_bound_gbuffer, std::array<vk::ImageView, 10> {});
 	if (!m_denoise_sets.empty()) {
 		createDenoiseTargets(VulkanRenderer::instance->getOutputTarget().getExtent());
 	}

@@ -405,7 +405,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		if (!AssetDatabase.TryResolve(uid, out var virtualPath, out _)) return;
 
 		// Opening a lockable asset nobody holds takes its lock
-		if (def is not ProjectSettingsAsset) await GitLockGuard.LockOnOpenAsync(ProjectContext.Resolve(virtualPath));
+		if (def is not ProjectSettingsAsset && def.EditorTool != "NodeEditor")
+			await GitLockGuard.LockOnOpenAsync(ProjectContext.Resolve(virtualPath));
 
 		var recoverPath = await AutosaveService.TryRecoverAsync(uid, virtualPath);
 
@@ -452,9 +453,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		}
 	}
 
-	private async Task OpenWorkspaceFile(string uid, string virtualPath, string? recoverPath) {
+	private async Task OpenWorkspaceFile(string uid, string virtualPath, string? recoverPath, bool takeLock = true) {
 		var recoverVirtual = recoverPath is null ? null : ProjectContext.ToVirtual(recoverPath);
 
+		WorkspaceViewModel? opened = null;
 		LoadingPopup? popup = null;
 		if (App.MainWindow is { } owner) {
 			popup = new LoadingPopup($"Loading {Path.GetFileName(virtualPath)}");
@@ -462,14 +464,32 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() => { }, Avalonia.Threading.DispatcherPriority.Render);
 		}
 
+		var lockTask = takeLock
+			? GitLockGuard.AcquireOnOpenAsync(ProjectContext.Resolve(virtualPath))
+			: Task.FromResult(default(OpenLockState));
+
 		try {
 			var ws = await WorkspaceViewModel.OpenFileAsync(m_toast, uid, virtualPath, recoverVirtual);
 			if (ws is null) return;
 			m_workspaces[ws.Handle] = m_dockFactory.AddWorkspace(ws);
 			SyncActiveWorkspace();
 			if (popup is not null) await WaitForEngineAsync(ws);
+			opened = ws;
 		} finally {
 			popup?.Close();
+		}
+
+		var held = await lockTask;
+		if (opened is null || held.Kind != OpenLockKind.Other) return;
+
+		switch (await LockedFileModal.ShowOpenAsync(Path.GetFileName(virtualPath), held.Owner ?? "someone else")) {
+			case LockedSaveChoice.Cancel:
+				opened.PendingClose = true; // skip the unsaved changes prompt
+				m_dockFactory.CloseDockable(opened);
+				break;
+			case LockedSaveChoice.SaveAs:
+				await opened.SaveAs();
+				break;
 		}
 	}
 
@@ -546,6 +566,13 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 	public void ShowToastZone(bool active) {
 		if (m_toastZonePinned) return;
 		ToastZoneActive = active;
+	}
+
+	public void ShowAssetBrowser() {
+		if (m_toastZoneFactory.AssetBrowserVm is { } browser) m_toastZoneFactory.ShowTool(browser);
+		if (ToastZoneActive) return;
+		m_toastZonePinned = true;
+		ToastZoneActive = true;
 	}
 
 	public void PinToastZone() {
@@ -816,7 +843,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 
 		if (!AssetDatabase.TryResolve(uid, out var virtualPath, out _)) return;
 
-		await GitLockGuard.LockOnOpenAsync(ProjectContext.Resolve(virtualPath));
 		var recoverPath = await AutosaveService.TryRecoverAsync(uid, virtualPath);
 		await OpenWorkspaceFile(uid, virtualPath, recoverPath);
 	}
@@ -829,7 +855,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		Avalonia.Threading.Dispatcher.UIThread.Post(() => {
 			workspace.PendingClose = true; // skip the unsaved changes prompt
 			m_dockFactory.CloseDockable(workspace);
-			OpenWorkspaceFile(uid, virtualPath, null);
+			_ = OpenWorkspaceFile(uid, virtualPath, null, takeLock: false);
 		});
 	}
 
@@ -1017,7 +1043,14 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		tasks.Add(LoaderTask.Run(
 			"cmake build",
 			"cmake",
-			$"--build .toast/cmake_cache --config {gameBuildType} --parallel"
+			// RelWithDebInfo keeps game PDB and ttracy
+#if DEBUG
+			"--build .toast/cmake_cache --config Debug --parallel"
+#elif RELWITHDEBINFO
+			"--build .toast/cmake_cache --config RelWithDebInfo --parallel"
+#else
+			"--build .toast/cmake_cache --config Release --parallel"
+#endif
 		));
 
 		tasks.Add(LoaderTask.Do("Reload game", async log => {
@@ -1038,8 +1071,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		await new SimpleLoaderWindow(vm).ShowDialog(owner);
 	}
 
-	// The release build packs the files on disk, so unsaved edits (e.g. init_scene in the project settings) would silently be
-	// left out of player.exe; returns false when the user cancels
 	private async Task<bool> SaveBeforeBuild(Avalonia.Controls.Window owner) {
 		var dirtyWorkspaces = m_workspaces.Values.Where(ws => ws.IsModified).ToList();
 		if (dirtyWorkspaces.Count == 0 && CollectDirtyTools().Count == 0) return true;
@@ -1145,6 +1176,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 					var dest = Path.Combine(stageDir, rel);
 					Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
 					File.Copy(srcFile, dest, true);
+										File.SetAttributes(dest, File.GetAttributes(dest) & ~FileAttributes.ReadOnly);
 				}
 			});
 
@@ -1162,7 +1194,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 						var dest = Path.Combine(stageDir, rel.Replace('/', Path.DirectorySeparatorChar));
 						Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
 						log($"    bake {rel}");
-						await Task.Run(() => ToastEngine.BakeAsset(uid, dest));
+						if (!await Task.Run(() => ToastEngine.BakeAsset(uid, dest)))
+							throw new Exception($"could not bake node {virtualPath}");
 					}
 			}
 
@@ -1217,13 +1250,25 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			LoaderTask.Run(
 				"cmake configure (Release)",
 				"cmake",
-				$"lib/ -B .toast/cmake_release_cache {cmakeGenerator} -DTOAST_PATH={toastPath} -DCMAKE_BUILD_TYPE=Release"
+				#if DEBUG
+                			$"lib/ -B .toast/cmake_release_cache {cmakeGenerator} -DTOAST_PATH={toastPath} -DCMAKE_BUILD_TYPE=Debug"
+                #elif RELWITHDEBINFO
+                			$"lib/ -B .toast/cmake_release_cache {cmakeGenerator} -DTOAST_PATH={toastPath} -DCMAKE_BUILD_TYPE=RelWithDebInfo"
+                #else
+                			$"lib/ -B .toast/cmake_release_cache {cmakeGenerator} -DTOAST_PATH={toastPath} -DCMAKE_BUILD_TYPE=Release"
+                #endif
 			),
 			// Build Game DLL on Release
 			LoaderTask.Run(
 				"cmake build (Release)",
 				"cmake",
-				"--build .toast/cmake_release_cache --config Release --parallel"
+				#if DEBUG
+                			"--build .toast/cmake_release_cache --config Debug --parallel"
+                #elif RELWITHDEBINFO
+                			"--build .toast/cmake_release_cache --config RelWithDebInfo --parallel"
+                #else
+                			"--build .toast/cmake_release_cache --config Release --parallel"
+                #endif
 			),
 			// Copy Engine libs
 			LoaderTask.Do("copy libraries", CopyDlls),

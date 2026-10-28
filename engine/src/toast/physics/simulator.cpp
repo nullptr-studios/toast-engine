@@ -36,6 +36,7 @@
 #include <toast/voxel/nodes/voxel_node.hpp>
 #include <toast/world/world_events.hpp>
 #include <tracy/Tracy.hpp>
+#include <unordered_map>
 #include <unordered_set>
 
 namespace physics {
@@ -459,48 +460,71 @@ void Simulator::registerVoxelNode(toast::VoxelNode& node) {
 	node.syncWorldTransform();
 	const BodyType body_type = bodyTypeOf(node.simulation_type);
 	const bool dynamic_body = body_type == BodyType::dynamic_body;
-	const BodyID body = instance->createBody(
-	    BodyDescriptor {
-	      .type = body_type,
-	      .allow_sleep = node.allow_sleep,
-	      .position = node.world_position,
-	      .rotation = node.world_rotation,
-	      .mass = 1.0f, // calculated later
-	      .gravity_scale = node.gravity_scale,
-	      .linear_damping = node.linear_damping,
-	      .angular_damping = node.angular_damping,
-	      .drag_scale = node.drag_scale,
-	      .layers = {.included = node.included, .excluded = node.excluded},
-	}
-	);
-	if (not instance->valid(body)) {
-		return;
-	}
 
-	const ShapeID shape = instance->createVoxelShape(body, node);
-	if (not instance->valid(shape)) {
-		instance->destroyBody(body);
-		return;
-	}
-	if (Shape* stored_shape = instance->tryGetShape(shape)) {
-		stored_shape->material = material;
-	}
+	const auto add_body = [&](toast::VoxelPart* part) {
+		const BodyID body = instance->createBody(
+		    BodyDescriptor {
+		      .type = body_type,
+		      .allow_sleep = node.allow_sleep,
+		      .position = node.world_position,
+		      .rotation = node.world_rotation,
+		      .mass = 1.0f, // calculated later
+		      .gravity_scale = node.gravity_scale,
+		      .linear_damping = node.linear_damping,
+		      .angular_damping = node.angular_damping,
+		      .drag_scale = node.drag_scale,
+		      .layers = {.included = node.included, .excluded = node.excluded},
+		}
+		);
+		if (not instance->valid(body)) {
+			return;
+		}
 
-	node.assignBody(body);
-	node.assignShape(shape);
-	setBodyEnabled(body, node.enabled());
-	setShapeEnabled(shape, node.enabled());
-	instance->m_voxel_bindings.push_back({
-	  .body = body,
-	  .shape = shape,
-	  .node = node.box().as<toast::VoxelNode>(),
-	  .source_revision = node.revision(),
-	  .source_model = node.getModel().uid().data(),
-	  .source_palette = node.paletteUid(),
-	});
+		const ShapeID shape = instance->createVoxelShape(body, node, part);
+		if (not instance->valid(shape)) {
+			instance->destroyBody(body);
+			return;
+		}
+		if (Shape* stored_shape = instance->tryGetShape(shape)) {
+			stored_shape->material = material;
+		}
 
-	if (dynamic_body) {
-		instance->rebuildMassProperties(body);
+		if (part != nullptr) {
+			part->body = body;
+			part->shape = shape;
+			part->has_pose = false;
+		} else {
+			node.assignBody(body);
+			node.assignShape(shape);
+		}
+		setBodyEnabled(body, node.enabled());
+		setShapeEnabled(shape, node.enabled());
+		instance->m_voxel_bindings.push_back({
+		  .body = body,
+		  .shape = shape,
+		  .node = node.box().as<toast::VoxelNode>(),
+		  .is_part = part != nullptr,
+		  .part_key = part != nullptr ? part->key : 0,
+		  .source_revision = part != nullptr ? part->revision : node.revision(),
+		  .source_model = node.getModel().uid().data(),
+		  .source_palette = node.paletteUid(),
+		});
+
+		if (dynamic_body) {
+			instance->rebuildMassProperties(body);
+		}
+	};
+
+	if (node.usesParts()) {
+		// Every part is its own body
+		// They won't fall apart unless they are dynamic so it's fine (mostly) (i think)
+		for (toast::VoxelPart& part : node.m_parts) {
+			if (part.volume != nullptr) {
+				add_body(&part);
+			}
+		}
+	} else {
+		add_body(nullptr);
 	}
 }
 
@@ -538,6 +562,12 @@ void Simulator::unregisterVoxelNode(toast::VoxelNode& node) {
 
 	std::scoped_lock voxel_lock {voxelDataMutex()};
 	node.m_retired_volumes.clear();
+	for (toast::VoxelPart& part : node.m_parts) {
+		part.body = {};
+		part.shape = {};
+		part.has_pose = false;
+		part.retired.clear();
+	}
 }
 
 void Simulator::registerTrigger(Trigger& node) {
@@ -780,9 +810,7 @@ void Simulator::clearFragmentFromSource(
 	++data.surface_revision;
 
 	if (data.solid_voxel_count == 0) {
-		if (toast::VoxelNode* node = voxelNodeFor(shape_id)) {
-			node->m_pending_events.emptied = true;
-		}
+		noteVoxelShapeEmptied(shape_id);
 	}
 
 	auto* shape = tryGetShape(shape_id);
@@ -799,11 +827,49 @@ void Simulator::clearFragmentFromSource(
 		retireVoxelBody(shape->owner);
 		return;
 	}
+	if (debrisIfSmall(shape_id)) {
+		return;
+	}
 	rebuildMassProperties(shape->owner);
 }
 
+auto Simulator::debrisIfSmall(ShapeID shape_id) -> bool {
+	const Shape* shape = tryGetShape(shape_id);
+	VoxelShapeData* data = shape != nullptr && shape->type == ShapeType::voxel ? tryGetVoxelData(shape->voxel.data) : nullptr;
+	const Body* body = shape != nullptr ? tryGetBody(shape->owner) : nullptr;
+	if (data == nullptr || data->volume == nullptr || body == nullptr || body->type != BodyType::dynamic_body) {
+		return false;
+	}
+
+	// Too few voxels to be worth a rigidbody
+	// convert them to debris
+	const uint32_t solid = data->volume->solidVoxelCount();
+	if (solid == 0 || solid >= tunables().min_fragment_voxels) {
+		return false;
+	}
+
+	DetachedComponent whole;
+	whole.voxel_count = solid;
+	for (uint32_t index = 0; index < data->volume->brickCount(); ++index) {
+		const glm::ivec3 brick = data->volume->brickAtIndex(index);
+		const voxel::BrickOccupancy* occupancy = data->volume->occupancyPointer(brick);
+		if (occupancy != nullptr && not voxel::isEmpty(*occupancy)) {
+			whole.pieces.push_back({.brick = brick, .voxels = *occupancy});
+		}
+	}
+
+	emitComponentDebris(shape_id, whole, nullptr);
+	shape = tryGetShape(shape_id);
+	data = shape != nullptr ? tryGetVoxelData(shape->voxel.data) : nullptr;
+	if (data != nullptr && data->volume != nullptr) {
+		clearFragmentFromSource(shape_id, *data, *data->volume, whole);
+	}
+	return true;
+}
+
 void Simulator::emitDebris(
-    ShapeID shape_id, std::span<const DebrisVoxel> voxels, const DebrisBlast* blast, const FragmentPush* push, uint64_t seed
+    ShapeID shape_id, std::span<const DebrisVoxel> voxels, const DebrisBlast* blast, const FragmentPush* push, uint64_t seed,
+    bool together
 ) {
 	ZoneScopedN("physics::EmitDebris");
 
@@ -825,7 +891,8 @@ void Simulator::emitDebris(
 	const glm::ivec3 jitter {
 	  static_cast<int32_t>(rng.below(2)), static_cast<int32_t>(rng.below(2)), static_cast<int32_t>(rng.below(2))
 	};
-	std::vector<DebrisCluster> clusters = clusterDebris(voxels, jitter, rng, tunables().fracture_debris_split_chance);
+	std::vector<DebrisCluster> clusters =
+	    together ? std::vector<DebrisCluster> {wholeDebris(voxels)} : clusterDebris(voxels, jitter);
 
 	// past the cap a random subset is kept and the rest is deleted
 	const size_t room = cap - m_debris_spawns.size();
@@ -850,14 +917,16 @@ void Simulator::emitDebris(
 	m_debris_spawns.reserve(m_debris_spawns.size() + clusters.size());
 	for (const DebrisCluster& cluster : clusters) {
 		// the block is 2 voxels wide
-		const glm::vec3 local = (glm::vec3(cluster.origin) + 1.0f) * voxel::k_voxel_size;
+		const glm::vec3 local =
+		    cluster.whole ? cluster.centre * voxel::k_voxel_size : (glm::vec3(cluster.origin) + 1.0f) * voxel::k_voxel_size;
 		const glm::vec3 position =
 		    body->position + (body->rotation * (shape->voxel.local_center + (shape->voxel.local_rotation * local)));
 
 		const uint32_t material_index = voxel::resolveMaterialIndex(data->palette, data->materials, cluster.material);
 		const voxel::PaletteEntry& look = data->palette.entries[cluster.material];
-		const float mass = static_cast<float>(std::popcount(cluster.mask)) *
-		                   static_cast<float>(data->materials.materials[material_index].density) * k_voxel_volume;
+		const float mass =
+		    static_cast<float>(cluster.whole ? cluster.voxel_count : static_cast<uint32_t>(std::popcount(cluster.mask))) *
+		    static_cast<float>(data->materials.materials[material_index].density) * k_voxel_volume;
 
 		// starts with the speed of the point it broke off from
 		glm::vec3 velocity = body->linear_velocity + glm::cross(body->angular_velocity, position - world_com);
@@ -868,7 +937,11 @@ void Simulator::emitDebris(
 			const float outward_length = glm::length(outward);
 			const glm::vec3 axis_local = outward_length > 1.0e-4f ? outward / outward_length : rng.direction();
 			const glm::vec3 axis = body->rotation * (shape->voxel.local_rotation * axis_local);
-			velocity += debrisConeDirection(axis, rng, k_debris_cone_spread) * debrisSpeed(energy_each, mass, speed_scale);
+			float speed = debrisSpeed(energy_each, mass, speed_scale);
+			if (blast->max_speed > 0.0f) {
+				speed = std::min(speed, blast->max_speed);
+			}
+			velocity += debrisConeDirection(axis, rng, k_debris_cone_spread) * speed;
 		}
 		if (push != nullptr && push_length > 1.0e-6f && mass > 0.0f) {
 			const float speed = std::min({push->speed, push->max_impulse / mass, k_max_debris_speed});
@@ -882,7 +955,7 @@ void Simulator::emitDebris(
 		      .position = position,
 		      .rotation = lattice_rotation,
 		      .velocity = velocity,
-		      .angular_velocity = rng.direction() * rng.range(0.0f, k_debris_max_spin),
+		      .angular_velocity = together ? body->angular_velocity : rng.direction() * rng.range(0.0f, k_debris_max_spin),
 		      .mask = cluster.mask,
 		      .material = cluster.material,
 		      .albedo_roughness = static_cast<uint32_t>(look.albedo_r) | (static_cast<uint32_t>(look.albedo_g) << 8u) |
@@ -892,7 +965,7 @@ void Simulator::emitDebris(
 		      .glass = voxel::isGlass(look),
 		      .alpha = look.alpha,
 		      .ior = look.ior,
-		      .scale = rng.range(k_debris_min_scale, 1.0f),
+		      .scale = cluster.whole ? cluster.scale : rng.range(k_debris_min_scale, 1.0f),
 		    }
 		);
 	}
@@ -930,7 +1003,7 @@ void Simulator::emitComponentDebris(ShapeID shape_id, const DetachedComponent& c
 	}
 
 	const uint64_t seed = fractureSeed(shape->owner, shape_id, glm::vec3(voxels.front().voxel) * voxel::k_voxel_size, m_tick_index);
-	emitDebris(shape_id, voxels, nullptr, push, seed);
+	emitDebris(shape_id, voxels, nullptr, push, seed, true);
 }
 
 auto Simulator::takeDebrisSpawns() -> std::vector<DebrisSpawn> {
@@ -1768,19 +1841,31 @@ void Simulator::syncEnabledState() {
 
 		body->enabled = binding.node->enabled();
 
+		toast::VoxelPart* part = partOf(binding);
+		if (binding.is_part && part == nullptr) {
+			continue;
+		}
+		const uint32_t current_revision = part != nullptr ? part->revision : binding.node->revision();
 		const uint64_t model = binding.node->getModel().uid().data();
 		const uint64_t palette = binding.node->paletteUid();
-		if (binding.source_revision != binding.node->revision() || binding.source_model != model ||
-		    binding.source_palette != palette) {
+		if (binding.source_revision != current_revision || binding.source_model != model || binding.source_palette != palette) {
 			destroyShape(binding.shape);
-			binding.shape = createVoxelShape(binding.body, *binding.node);
-			binding.node->assignShape(binding.shape);
-			binding.source_revision = binding.node->revision();
+			binding.shape = createVoxelShape(binding.body, *binding.node, part);
+			if (part != nullptr) {
+				part->shape = binding.shape;
+			} else {
+				binding.node->assignShape(binding.shape);
+			}
+			binding.source_revision = current_revision;
 			binding.source_model = model;
 			binding.source_palette = palette;
 			{
 				std::scoped_lock voxel_lock {voxelDataMutex()};
-				binding.node->m_retired_volumes.clear();
+				if (part != nullptr) {
+					part->retired.clear();
+				} else {
+					binding.node->m_retired_volumes.clear();
+				}
 			}
 			if (body->type == BodyType::dynamic_body) {
 				rebuildMassProperties(binding.body);
@@ -2139,19 +2224,77 @@ auto Simulator::publishVoxelTransform(VoxelNodeBinding& binding) -> bool {
 		return false;
 	}
 
+	toast::VoxelPart* part = partOf(binding);
+	if (binding.is_part && part == nullptr) {
+		return true;
+	}
+
 	if (body->type == BodyType::dynamic_body) {
-		if (body->enabled) {
-			binding.node->applyPhysicsTransform(body->position, body->rotation);
+		if (part == nullptr) {
+			if (body->enabled) {
+				binding.node->applyPhysicsTransform(body->position, body->rotation);
+			}
+			binding.node->publishPhysicsState(body->awake, body->linear_velocity, body->angular_velocity);
+		} else {
+			// The parts fall on their own
+			if (body->enabled) {
+				part->has_pose = true;
+				part->pose_position = body->position;
+				part->pose_rotation = body->rotation;
+			}
+			if (binding.node->m_parts.front().key == part->key) {
+				binding.node->publishPhysicsState(body->awake, body->linear_velocity, body->angular_velocity);
+			}
 		}
-		binding.node->publishPhysicsState(body->awake, body->linear_velocity, body->angular_velocity);
 	}
 
 	if (const Shape* shape = tryGetShape(binding.shape); shape != nullptr && shape->type == ShapeType::voxel) {
 		if (const VoxelShapeData* voxel_data = tryGetVoxelData(shape->voxel.data); voxel_data != nullptr) {
-			binding.node->mass = voxel::resolveMass(voxel_data->moments);
+			const float mass = voxel::resolveMass(voxel_data->moments);
+			if (part == nullptr) {
+				binding.node->mass = mass;
+			} else {
+				part->mass = mass;
+				float total = 0.0f;
+				for (const toast::VoxelPart& other : binding.node->m_parts) {
+					total += other.mass;
+				}
+				binding.node->mass = total;
+			}
 		}
 	}
 	return true;
+}
+
+auto Simulator::partOf(const VoxelNodeBinding& binding) -> toast::VoxelPart* {
+	if (not binding.is_part || not binding.node.exists()) {
+		return nullptr;
+	}
+	auto& parts = const_cast<toast::VoxelNode&>(*binding.node).m_parts;
+	const auto found = std::ranges::find(parts, binding.part_key, &toast::VoxelPart::key);
+	return found != parts.end() ? &*found : nullptr;
+}
+
+void Simulator::recordVoxelDamage(ShapeID shape, uint32_t count, glm::vec3 index_sum) {
+	const auto binding = std::ranges::find(m_voxel_bindings, shape, &VoxelNodeBinding::shape);
+	if (binding == m_voxel_bindings.end() || not binding->node.exists()) {
+		return;
+	}
+	const toast::VoxelPart* part = partOf(*binding);
+	binding->node->recordDamage(count, index_sum, part != nullptr ? part->origin : binding->node->voxelOrigin());
+}
+
+void Simulator::noteVoxelShapeEmptied(ShapeID shape) {
+	toast::VoxelNode* node = voxelNodeFor(shape);
+	if (node == nullptr) {
+		return;
+	}
+	for (const toast::VoxelPart& part : node->m_parts) {
+		if (part.volume != nullptr && part.volume->solidVoxelCount() > 0) {
+			return;
+		}
+	}
+	node->m_pending_events.emptied = true;
 }
 
 namespace {
@@ -2265,6 +2408,10 @@ auto Simulator::renderPoseDelta(const toast::VoxelNode& node) -> glm::mat4 {
 	return renderPoseDelta(node.bodyID());
 }
 
+auto Simulator::renderPoseDelta(const toast::VoxelPart& part) -> glm::mat4 {
+	return renderPoseDelta(part.body);
+}
+
 auto Simulator::renderPoseDeltaFor(const toast::Node& node) -> glm::mat4 {
 	if (instance == nullptr) {
 		return {1.0f};
@@ -2300,7 +2447,7 @@ void Simulator::rebuildRenderPoseLookup() {
 		}
 	}
 	for (const VoxelNodeBinding& binding : m_voxel_bindings) {
-		if (binding.node.exists()) {
+		if (binding.node.exists() && not binding.is_part) {
 			add_driver(*binding.node, binding.body);
 		}
 	}
@@ -3656,7 +3803,7 @@ void Simulator::checkTriggers() {
 	}
 }
 
-auto Simulator::createVoxelShape(BodyID owner, toast::VoxelNode& node) -> ShapeID {
+auto Simulator::createVoxelShape(BodyID owner, toast::VoxelNode& node, toast::VoxelPart* part) -> ShapeID {
 	const voxel::Palette* palette = node.resolvedPalette();
 	if (palette == nullptr) {
 		palette = &voxel::defaultPalette();
@@ -3679,24 +3826,26 @@ auto Simulator::createVoxelShape(BodyID owner, toast::VoxelNode& node) -> ShapeI
 	voxel::Volume* volume = nullptr;
 	{
 		std::scoped_lock voxel_lock {voxelDataMutex()};
-		volume = node.volume();
+		volume = part != nullptr ? part->volume.get() : node.volume();
 	}
 	if (volume == nullptr) {
 		TOAST_WARN("Physics", "Voxel node '{}' has no instantiated volume to collide against", node.name());
 		return {};
 	}
 
-	const VoxelShape voxel_shape {.local_center = glm::vec3(node.voxelOrigin()) * voxel::k_voxel_size};
+	const glm::ivec3 origin = part != nullptr ? part->origin : node.voxelOrigin();
+	const VoxelShape voxel_shape {.local_center = glm::vec3(origin) * voxel::k_voxel_size};
 
 	const ShapeID shape = createVoxelShape(owner, voxel_shape, *volume, *palette, *materials);
 	const Shape* stored_shape = tryGetShape(shape);
 	if (stored_shape != nullptr) {
 		if (VoxelShapeData* data = tryGetVoxelData(stored_shape->voxel.data)) {
-			data->source_revision = node.revision();
+			data->source_revision = part != nullptr ? part->revision : node.revision();
 			data->palette_uid = node.paletteUid();
-			if (node.m_split_pending) {
+			bool& split_pending = part != nullptr ? part->split_pending : node.m_split_pending;
+			if (split_pending) {
 				data->connectivity_dirty = true;
-				node.m_split_pending = false;
+				split_pending = false;
 			}
 		}
 	}
@@ -4263,57 +4412,60 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 			return false;
 		};
 
-		for (int32_t bz = first_brick.z; bz <= last_brick.z; ++bz) {
-			for (int32_t by = first_brick.y; by <= last_brick.y; ++by) {
-				for (int32_t bx = first_brick.x; bx <= last_brick.x; ++bx) {
-					const glm::ivec3 brick {bx, by, bz};
-					if (volume.entryAt(brick).tag() == voxel::BrickTag::empty) {
-						continue;
-					}
+		{
+			ZoneNamedN(scan_zone, "physics::ApplyDamage::Scan", true);    // NOLINT
+			for (int32_t bz = first_brick.z; bz <= last_brick.z; ++bz) {
+				for (int32_t by = first_brick.y; by <= last_brick.y; ++by) {
+					for (int32_t bx = first_brick.x; bx <= last_brick.x; ++bx) {
+						const glm::ivec3 brick {bx, by, bz};
+						if (volume.entryAt(brick).tag() == voxel::BrickTag::empty) {
+							continue;
+						}
 
-					const glm::ivec3 brick_first = glm::max(first, brick * brick_dim);
-					const glm::ivec3 brick_last = glm::min(last, brick * brick_dim + (brick_dim - 1));
-					for (int32_t z = brick_first.z; z <= brick_last.z; ++z) {
-						for (int32_t y = brick_first.y; y <= brick_last.y; ++y) {
-							for (int32_t x = brick_first.x; x <= brick_last.x; ++x) {
-								const glm::ivec3 v {x, y, z};
+						const glm::ivec3 brick_first = glm::max(first, brick * brick_dim);
+						const glm::ivec3 brick_last = glm::min(last, brick * brick_dim + (brick_dim - 1));
+						for (int32_t z = brick_first.z; z <= brick_last.z; ++z) {
+							for (int32_t y = brick_first.y; y <= brick_last.y; ++y) {
+								for (int32_t x = brick_first.x; x <= brick_last.x; ++x) {
+									const glm::ivec3 v {x, y, z};
 
-								const uint8_t palette_index = volume.materialAt(v);
-								if (palette_index == voxel::k_empty_palette_index) {
-									continue;
-								}
+									const uint8_t palette_index = volume.materialAt(v);
+									if (palette_index == voxel::k_empty_palette_index) {
+										continue;
+									}
 
-								const glm::vec3 voxel_center = (glm::vec3 {v} + 0.5f) * voxel::k_voxel_size;
-								const float distance_squared = pointSegmentDistanceSquared(voxel_center, crater.start, crater.end);
-								// cheap reject before paying for 8 noise taps
-								if (distance_squared > reach_squared) {
-									continue;
-								}
-								const float outer = craterRadiusAt(crater, voxel_center);
-								const float inner = shell > 0.0f ? glm::max(outer - shell, 0.0f) : 0.0f;
-								if (distance_squared > outer * outer) {
-									continue;
-								}
-								const bool in_core =
-								    distance_squared < inner * inner && not(distance_squared >= seal_floor_squared && touches_outside(v));
-								if (not damageReaches(
-								        crater.reachable, volume, v, closestPointOnSegment(voxel_center, crater.start, crater.end), voxel_center
-								    )) {
-									continue;
-								}
+									const glm::vec3 voxel_center = (glm::vec3 {v} + 0.5f) * voxel::k_voxel_size;
+									const float distance_squared = pointSegmentDistanceSquared(voxel_center, crater.start, crater.end);
+									// cheap reject before paying for 8 noise taps
+									if (distance_squared > reach_squared) {
+										continue;
+									}
+									const float outer = craterRadiusAt(crater, voxel_center);
+									const float inner = shell > 0.0f ? glm::max(outer - shell, 0.0f) : 0.0f;
+									if (distance_squared > outer * outer) {
+										continue;
+									}
+									const bool in_core =
+									    distance_squared < inner * inner && not(distance_squared >= seal_floor_squared && touches_outside(v));
+									if (not damageReaches(
+									        crater.reachable, volume, v, closestPointOnSegment(voxel_center, crater.start, crater.end), voxel_center
+									    )) {
+										continue;
+									}
 
-								const uint32_t material_index = voxel::resolveMaterialIndex(data->palette, data->materials, palette_index);
-								const voxel::PhysicalMaterial& material = data->materials.materials[material_index];
-								if (not material.breakableBy(c.max_hardness)) {
-									continue;
-								}
+									const uint32_t material_index = voxel::resolveMaterialIndex(data->palette, data->materials, palette_index);
+									const voxel::PhysicalMaterial& material = data->materials.materials[material_index];
+									if (not material.breakableBy(c.max_hardness)) {
+										continue;
+									}
 
-								if (in_core) {
-									// stays in the wall for now
-									core.push_back({.voxel = v, .center = voxel_center});
-									continue;
+									if (in_core) {
+										// stays in the wall for now
+										core.push_back({.voxel = v, .center = voxel_center});
+										continue;
+									}
+									doomed.push_back({.voxel = v, .brick = brick, .density = material.density, .material = palette_index});
 								}
-								doomed.push_back({.voxel = v, .brick = brick, .density = material.density, .material = palette_index});
 							}
 						}
 					}
@@ -4339,37 +4491,40 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 			}
 			debris_voxels.push_back({.voxel = v, .material = palette_index});
 		};
-		for (const Doomed& d : doomed) {
-			carve(d.voxel, d.material, d.density);
-		}
-
-		// fragmenting
-		const CoreSplit core_split = planCoreSplit(core, crater);
-		TOAST_INFO(
-		    "Physics",
-		    "Fragment: energy {:.3f} kJ density {:.2f} kJ/m3 core_voxels {} parts {} cracks {}",
-		    crater.fragment_energy,
-		    core_split.density,
-		    core.size(),
-		    core_split.parts,
-		    core_split.crack.size()
-		);
-		for (const glm::ivec3& v : core_split.crack) {
-			const uint8_t palette_index = volume.materialAt(v);
-			if (palette_index == voxel::k_empty_palette_index) {
-				continue;
+		{
+			ZoneNamedN(carve_zone, "physics::ApplyDamage::Carve", true);    // NOLINT
+			for (const Doomed& d : doomed) {
+				carve(d.voxel, d.material, d.density);
 			}
-			const uint32_t material_index = voxel::resolveMaterialIndex(data->palette, data->materials, palette_index);
-			carve(v, palette_index, data->materials.materials[material_index].density);
-		}
 
-		for (const glm::ivec3& v : shatter.crack) {
-			const uint8_t palette_index = volume.materialAt(v);
-			if (palette_index == voxel::k_empty_palette_index) {
-				continue;
+			// fragmenting
+			const CoreSplit core_split = planCoreSplit(core, crater);
+			TOAST_INFO(
+			    "Physics",
+			    "Fragment: energy {:.3f} kJ density {:.2f} kJ/m3 core_voxels {} parts {} cracks {}",
+			    crater.fragment_energy,
+			    core_split.density,
+			    core.size(),
+			    core_split.parts,
+			    core_split.crack.size()
+			);
+			for (const glm::ivec3& v : core_split.crack) {
+				const uint8_t palette_index = volume.materialAt(v);
+				if (palette_index == voxel::k_empty_palette_index) {
+					continue;
+				}
+				const uint32_t material_index = voxel::resolveMaterialIndex(data->palette, data->materials, palette_index);
+				carve(v, palette_index, data->materials.materials[material_index].density);
 			}
-			const uint32_t material_index = voxel::resolveMaterialIndex(data->palette, data->materials, palette_index);
-			carve(v, palette_index, data->materials.materials[material_index].density);
+
+			for (const glm::ivec3& v : shatter.crack) {
+				const uint8_t palette_index = volume.materialAt(v);
+				if (palette_index == voxel::k_empty_palette_index) {
+					continue;
+				}
+				const uint32_t material_index = voxel::resolveMaterialIndex(data->palette, data->materials, palette_index);
+				carve(v, palette_index, data->materials.materials[material_index].density);
+			}
 		}
 
 		if (dirty_bricks.empty()) {
@@ -4419,11 +4574,17 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 		if (binding.shape != c.shape || not binding.node.exists()) {
 			continue;
 		}
-		++binding.node->m_revision;
-		binding.source_revision = binding.node->revision();
-		binding.node->recordDamage(removed, removed_sum);
+		if (toast::VoxelPart* part = partOf(binding)) {
+			++part->revision;
+			binding.source_revision = part->revision;
+			binding.node->recordDamage(removed, removed_sum, part->origin);
+		} else {
+			++binding.node->m_revision;
+			binding.source_revision = binding.node->revision();
+			binding.node->recordDamage(removed, removed_sum);
+		}
 		if (data->solid_voxel_count == 0) {
-			binding.node->m_pending_events.emptied = true;
+			noteVoxelShapeEmptied(c.shape);
 		}
 		break;
 	}
@@ -4431,7 +4592,7 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 	if (body->type == BodyType::dynamic_body) {
 		if (volume.solidVoxelCount() == 0) {
 			retireVoxelBody(shape->owner);
-		} else {
+		} else if (not debrisIfSmall(c.shape)) {
 			rebuildMassProperties(shape->owner);
 		}
 	}
@@ -4555,14 +4716,20 @@ auto Simulator::explode(const ExplosionDamage& explosion) -> uint32_t {
 		if (shape == nullptr || not shape->enabled) {
 			continue;
 		}
-		if (shape->type == ShapeType::voxel) {
-			moved += explodeShape(shape_id, explosion);
-			continue;
-		}
 
 		const BodyID owner = shape->owner;
+		if (shape->type == ShapeType::voxel) {
+			moved += explodeShape(shape_id, explosion);
+			// add impulseeeeeeeee
+			shape = tryGetShape(shape_id);
+			if (shape == nullptr || not shape->enabled || shape->owner != owner) {
+				continue;
+			}
+		}
+
 		const Body* body = tryGetBody(owner);
-		if (body == nullptr || body->type != BodyType::dynamic_body || std::ranges::find(pushed, owner) != pushed.end()) {
+		if (body == nullptr || not body->enabled || body->type != BodyType::dynamic_body ||
+		    std::ranges::find(pushed, owner) != pushed.end()) {
 			continue;
 		}
 		const glm::vec3 offset = body->worldCenterOfMass() - explosion.point;
@@ -4578,7 +4745,7 @@ auto Simulator::explode(const ExplosionDamage& explosion) -> uint32_t {
 		const float pressure =
 		    k_joules_per_kilojoule * explosionDensityAt(explosion.force, std::max(distance, 0.5f), explosion.falloff);
 		const float impulse = pressure * area * static_cast<float>(Accumulator::fixedDelta());
-		pushBody(owner, body->worldCenterOfMass(), away, std::numeric_limits<float>::infinity(), impulse);
+		pushBody(owner, body->worldCenterOfMass(), away, tunables().explosion_max_speed, impulse);
 	}
 	return moved;
 }
@@ -4753,6 +4920,8 @@ auto Simulator::smashShape(ShapeID shape_id, const SmashVolume& volume, const Ca
 }
 
 auto Simulator::explodeShape(ShapeID shape_id, const ExplosionDamage& explosion) -> uint32_t {
+	ZoneScopedN("physics::ExplodeShape");
+
 	const Shape* shape = tryGetShape(shape_id);
 	VoxelShapeData* data = shape != nullptr ? tryGetVoxelData(shape->voxel.data) : nullptr;
 	const Body* body = shape != nullptr ? tryGetBody(shape->owner) : nullptr;
@@ -4760,98 +4929,407 @@ auto Simulator::explodeShape(ShapeID shape_id, const ExplosionDamage& explosion)
 		return 0;
 	}
 
-	const glm::quat to_volume = glm::inverse(shape->voxel.local_rotation) * glm::inverse(body->rotation);
 	const glm::vec3 local_point = glm::inverse(shape->voxel.local_rotation) *
 	                              ((glm::inverse(body->rotation) * (explosion.point - body->position)) - shape->voxel.local_center);
-	const glm::quat to_world = glm::inverse(to_volume);
+	const uint32_t solid_before = data->solid_voxel_count;
+	const uint64_t seed = fractureSeed(BodyID {}, shape_id, local_point, m_tick_index);
 
-	SmashPieces picked;
+	struct BrickMask {
+		glm::ivec3 brick {0};
+		voxel::BrickOccupancy mask {};
+	};
+
+	std::vector<DebrisVoxel> debris_voxels;
+	std::unordered_map<uint64_t, BrickMask> debris_bricks;
+	std::unordered_map<uint64_t, std::unordered_map<uint64_t, BrickMask>> chunk_cells;
+	glm::vec3 debris_index_sum {0.0f};
+	glm::vec3 chunk_index_sum {0.0f};
+	uint32_t chunk_voxels = 0;
+	uint32_t crack_voxels = 0;
+	float debris_energy = 0.0f;
 	float reach = 0.0f;
+
 	{
 		std::scoped_lock voxel_lock {voxelDataMutex()};
+		ZoneNamedN(scan_zone, "physics::ExplodeShape::Scan", true);    // NOLINT
+		const voxel::Volume& volume = *data->volume;
+		const voxel::MaterialLibrary& materials = data->materials;
+		if (materials.materials.empty()) {
+			return 0;
+		}
 		reach = explosionReach(
-		    explosion.force,
-		    explosion.falloff,
-		    weakestToughness(data->materials, explosion.max_hardness),
-		    tunables().explosion_max_radius
+		    explosion.force, explosion.falloff, weakestToughness(materials, explosion.max_hardness), tunables().explosion_max_radius
 		);
 		if (not(reach > 0.0f)) {
 			return 0;
 		}
-		picked = collectBrokenPieces(
-		    *data->volume,
-		    data->palette,
-		    data->materials,
-		    local_point - glm::vec3(reach),
-		    local_point + glm::vec3(reach),
-		    [&](const glm::vec3& center, const voxel::PhysicalMaterial& material) {
-			    const float distance = glm::length(center - local_point);
-			    return distance <= reach &&
-					       hitBreaks(material, explosionDensityAt(explosion.force, distance, explosion.falloff), explosion.max_hardness);
-		    }
+
+		const std::optional<voxel::PhysicalMaterial> hit = hitMaterial(volume, data->palette, materials, local_point, reach);
+		const FractureValues profile = hit.has_value() ? hit->fracture_profile.unpack() : FractureValues {};
+		Crater edge {.start = local_point, .end = local_point, .radius = reach, .seed = seed};
+		if (hit.has_value()) {
+			edge.edge_noise = std::clamp(profile.edge_noise, 0.0f, k_max_edge_noise);
+			edge.edge_noise_scale = std::max(profile.edge_noise_scale, 0.0f) * voxel::k_voxel_size;
+			edge.edge_lobes = std::clamp(profile.edge_lobes, 0.0f, k_max_edge_noise);
+		}
+		const bool cracks_around = hit.has_value() && patternShatters(hit->fracture_pattern);
+		const float band_width = cracks_around ? std::max(tunables().explosion_shatter_width, 0.0f) : 0.0f;
+		const float scan = craterMaxRadius(edge) + band_width;
+
+		const glm::ivec3 voxel_dims = glm::ivec3(volume.voxelDims());
+		glm::ivec3 first = glm::ivec3(glm::floor((local_point - glm::vec3(scan)) / voxel::k_voxel_size));
+		glm::ivec3 last = glm::ivec3(glm::ceil((local_point + glm::vec3(scan)) / voxel::k_voxel_size)) - 1;
+		first = glm::clamp(first, glm::ivec3(0), voxel_dims - 1);
+		last = glm::clamp(last, glm::ivec3(0), voxel_dims - 1);
+		if (first.x > last.x || first.y > last.y || first.z > last.z) {
+			return 0;
+		}
+
+		// Voronoi
+		const float cell_size = std::max(tunables().explosion_chunk_size, 2.0f * voxel::k_voxel_size);
+		const float crack_gap = crackThickness();
+		const float debris_ratio = std::max(tunables().explosion_debris_ratio, 1.0f);
+		const float release = hit.has_value() ? std::clamp(profile.shatter_release, 0.0f, 1.0f) : 0.0f;
+		const uint64_t jitter_seed = streamSeed(seed, FractureStream::shatter_points);
+		const uint64_t release_seed = streamSeed(seed, FractureStream::granular);
+		const auto released = [&](const glm::ivec3& cell) { return hash01(release_seed, cell) < release; };
+		constexpr uint64_t k_coarse_bit = 1ull << 63;
+		const auto cell_key = [](const glm::ivec3& cell, bool coarse) {
+			return voxelKey(cell + glm::ivec3(1 << 19)) | (coarse ? k_coarse_bit : 0ull);
+		};
+
+		// seed points in a flat grid over the scan box
+		struct SeedGrid {
+			float size = 0.0f;
+			uint64_t seed = 0;
+			glm::ivec3 low {0};
+			glm::ivec3 dims {0};
+			std::vector<glm::vec3> points;
+			std::vector<uint8_t> ready;
+		};
+
+		const auto make_seed_grid = [&](float size, uint64_t level_seed) {
+			SeedGrid grid {.size = size, .seed = level_seed};
+			grid.low = glm::ivec3(glm::floor(((glm::vec3 {first} + 0.5f) * voxel::k_voxel_size) / size)) - 1;
+			const glm::ivec3 high = glm::ivec3(glm::floor(((glm::vec3 {last} + 0.5f) * voxel::k_voxel_size) / size)) + 1;
+			grid.dims = high - grid.low + 1;
+			const size_t count = static_cast<size_t>(grid.dims.x) * static_cast<size_t>(grid.dims.y) * static_cast<size_t>(grid.dims.z);
+			grid.points.resize(count);
+			grid.ready.assign(count, 0);
+			return grid;
+		};
+		SeedGrid fine_seeds = make_seed_grid(cell_size, jitter_seed);
+		SeedGrid coarse_seeds = make_seed_grid(2.0f * cell_size, jitter_seed + 8);
+		const auto seed_point = [](SeedGrid& grid, const glm::ivec3& cell) -> const glm::vec3& {
+			const glm::ivec3 i = cell - grid.low;
+			const size_t index = (((static_cast<size_t>(i.z) * static_cast<size_t>(grid.dims.y)) + static_cast<size_t>(i.y)) *
+			                      static_cast<size_t>(grid.dims.x)) +
+			                     static_cast<size_t>(i.x);
+			if (grid.ready[index] == 0) {
+				grid.ready[index] = 1;
+				const glm::vec3 jitter {
+				  0.2f + (0.6f * hash01(grid.seed + 1, cell)),
+				  0.2f + (0.6f * hash01(grid.seed + 2, cell)),
+				  0.2f + (0.6f * hash01(grid.seed + 3, cell)),
+				};
+				grid.points[index] = (glm::vec3(cell) + jitter) * grid.size;
+			}
+			return grid.points[index];
+		};
+
+		// everything that depends on the material
+		struct ExplodedMaterial {
+			const voxel::PhysicalMaterial* material = nullptr;
+			float crack_reach = 0.0f;
+			bool breakable = false;
+		};
+
+		std::array<ExplodedMaterial, voxel::k_palette_size> exploded_materials {};
+		for (uint32_t index = 0; index < voxel::k_palette_size; ++index) {
+			const voxel::PhysicalMaterial& material =
+			    materials.materials[voxel::resolveMaterialIndex(data->palette, materials, static_cast<uint8_t>(index))];
+			const float hole =
+			    material.toughness > 0.0f ? std::pow(explosion.force / material.toughness, 1.0f / explosion.falloff) : reach;
+			exploded_materials[index] = {
+			  .material = &material,
+			  .crack_reach = std::min(hole, reach) + band_width,
+			  .breakable = material.breakableBy(explosion.max_hardness),
+			};
+		}
+
+		const auto brick_dim = static_cast<int32_t>(voxel::k_brick_dim);
+		const glm::ivec3 first_brick = first / brick_dim;
+		const glm::ivec3 last_brick = last / brick_dim;
+		const auto mark = [&](BrickMask& entry, const glm::ivec3& v, const glm::ivec3& brick) {
+			entry.brick = brick;
+			const glm::ivec3 local = v - (brick * brick_dim);
+			voxel::setSolid(
+			    entry.mask, static_cast<uint32_t>(local.x), static_cast<uint32_t>(local.y), static_cast<uint32_t>(local.z), true
+			);
+		};
+
+		for (int32_t bz = first_brick.z; bz <= last_brick.z; ++bz) {
+			for (int32_t by = first_brick.y; by <= last_brick.y; ++by) {
+				for (int32_t bx = first_brick.x; bx <= last_brick.x; ++bx) {
+					const glm::ivec3 brick {bx, by, bz};
+					const voxel::BrickOccupancy* occupancy = volume.occupancyPointer(brick);
+					if (occupancy == nullptr) {
+						continue;
+					}
+
+					const glm::ivec3 brick_first = glm::max(first, brick * brick_dim);
+					const glm::ivec3 brick_last = glm::min(last, (brick * brick_dim) + (brick_dim - 1));
+					BrickMask* brick_debris = nullptr;
+					BrickMask* chunk_mask = nullptr;
+					uint64_t chunk_mask_key = 0;
+					for (int32_t z = brick_first.z; z <= brick_last.z; ++z) {
+						for (int32_t y = brick_first.y; y <= brick_last.y; ++y) {
+							for (int32_t x = brick_first.x; x <= brick_last.x; ++x) {
+								const glm::ivec3 v {x, y, z};
+								const glm::ivec3 local = v - (brick * brick_dim);
+								if (not voxel::isSolid(
+								        *occupancy, static_cast<uint32_t>(local.x), static_cast<uint32_t>(local.y), static_cast<uint32_t>(local.z)
+								    )) {
+									continue;
+								}
+
+								const glm::vec3 center = (glm::vec3 {v} + 0.5f) * voxel::k_voxel_size;
+								const glm::vec3 from_point = center - local_point;
+								const float distance_squared = glm::dot(from_point, from_point);
+								if (distance_squared > scan * scan) {
+									continue;
+								}
+
+								const uint8_t palette_index = volume.materialAt(v);
+								const ExplodedMaterial& exploded = exploded_materials[palette_index];
+								if (not exploded.breakable) {
+									continue;
+								}
+								const voxel::PhysicalMaterial& material = *exploded.material;
+
+								const float distance = std::sqrt(distance_squared);
+								const float edge_radius = craterRadiusAt(edge, center);
+								const float reached = distance * (reach / std::max(edge_radius, 1.0e-4f));
+								const float density = explosionDensityAt(explosion.force, reached, explosion.falloff);
+								const bool broken = density >= material.toughness;
+								// cracks just past the hole
+								if (not broken && not(reached <= exploded.crack_reach)) {
+									continue;
+								}
+
+								bool debris = broken && (material.toughness > 0.0f ? density >= debris_ratio * material.toughness : true);
+								glm::ivec3 chunk {0};
+								bool coarse = false;
+								if (not debris) {
+									coarse = broken && reached > 0.5f * reach;
+									SeedGrid& seeds = coarse ? coarse_seeds : fine_seeds;
+									const glm::ivec3 home = glm::ivec3(glm::floor(center / seeds.size));
+									// squared distances until the two nearest are known
+									float nearest = std::numeric_limits<float>::max();
+									float second = nearest;
+									glm::ivec3 next {0};
+									for (int32_t dz = -1; dz <= 1; ++dz) {
+										for (int32_t dy = -1; dy <= 1; ++dy) {
+											for (int32_t dx = -1; dx <= 1; ++dx) {
+												const glm::ivec3 cell = home + glm::ivec3 {dx, dy, dz};
+												const glm::vec3 offset = center - seed_point(seeds, cell);
+												const float d = glm::dot(offset, offset);
+												if (d < nearest) {
+													second = nearest;
+													next = chunk;
+													nearest = d;
+													chunk = cell;
+												} else if (d < second) {
+													second = d;
+													next = cell;
+												}
+											}
+										}
+									}
+
+									// the hole needs no cracks
+									if (not broken) {
+										const bool loose = released(chunk);
+										if (std::sqrt(second) - std::sqrt(nearest) < crack_gap) {
+											if (not(loose || released(next))) {
+												continue;
+											}
+											debris = true;
+											++crack_voxels;
+										} else if (not loose) {
+											continue;
+										}
+									}
+								}
+
+								if (debris) {
+									if (brick_debris == nullptr) {
+										brick_debris = &debris_bricks[voxelKey(brick)];
+									}
+									mark(*brick_debris, v, brick);
+									debris_voxels.push_back({.voxel = v, .material = palette_index});
+									debris_index_sum += glm::vec3(v);
+									debris_energy += std::max(density - material.toughness, 0.0f) * k_voxel_volume;
+								} else {
+									const uint64_t key = cell_key(chunk, coarse);
+									if (chunk_mask == nullptr || key != chunk_mask_key) {
+										chunk_mask = &chunk_cells[key][voxelKey(brick)];
+										chunk_mask_key = key;
+									}
+									mark(*chunk_mask, v, brick);
+									chunk_index_sum += glm::vec3(v);
+									++chunk_voxels;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if (debris_voxels.empty() && chunk_voxels == 0) {
+		return 0;
+	}
+
+	constexpr float k_explosion_debris_share = 0.2f;
+	if (not debris_voxels.empty()) {
+		ZoneNamedN(debris_zone, "physics::ExplodeShape::Debris", true);    // NOLINT
+		const DebrisBlast blast {
+		  .start = local_point,
+		  .end = local_point,
+		  .energy = debris_energy * k_explosion_debris_share,
+		  .max_speed = tunables().explosion_max_speed,
+		};
+		emitDebris(shape_id, debris_voxels, &blast, nullptr, seed);
+		for (const auto& [key, entry] : debris_bricks) {
+			shape = tryGetShape(shape_id);
+			data = shape != nullptr ? tryGetVoxelData(shape->voxel.data) : nullptr;
+			if (data == nullptr || data->volume == nullptr) {
+				break;
+			}
+			DetachedComponent piece {.component = 0, .voxel_count = voxel::popCount(entry.mask)};
+			piece.pieces.push_back(voxel::BrickPiece {.brick = entry.brick, .voxels = entry.mask, .component = 0});
+			clearFragmentFromSource(shape_id, *data, *data->volume, piece);
+		}
+	}
+
+	const AABB bounds {.min = explosion.point - glm::vec3(reach), .max = explosion.point + glm::vec3(reach)};
+	size_t chunk_count = 0;
+	{
+		ZoneNamedN(chunks_zone, "physics::ExplodeShape::Chunks", true);    // NOLINT
+		SmashPieces chunks;
+		chunks.index_sum = chunk_index_sum;
+		chunks.voxels = chunk_voxels;
+		for (const auto& [cell, bricks] : chunk_cells) {
+			DetachedComponent piece;
+			piece.component = static_cast<uint32_t>(chunks.pieces.size());
+			for (const auto& [key, entry] : bricks) {
+				piece.voxel_count += voxel::popCount(entry.mask);
+				piece.pieces.push_back(voxel::BrickPiece {.brick = entry.brick, .voxels = entry.mask, .component = piece.component});
+			}
+			chunks.pieces.push_back(std::move(piece));
+		}
+		chunk_count = chunks.pieces.size();
+		breakPieces(
+		    shape_id,
+		    chunks,
+		    true,
+		    [&](const DetachedComponent& piece) -> std::optional<FragmentPush> { return explosionPush(shape_id, piece, explosion); },
+		    bounds,
+		    tunables().explosion_max_fragments
 		);
 	}
 
-	// every piece flies straight away from the blast
-	const glm::vec3 lattice_origin = body->position + (body->rotation * shape->voxel.local_center);
-	const float dt = static_cast<float>(Accumulator::fixedDelta());
-	return breakPieces(
-	    shape_id,
-	    picked,
-	    true,
-	    [&](const DetachedComponent& piece) -> std::optional<FragmentPush> {
-		    glm::vec3 index_sum {0.0f};
-		    uint32_t count = 0;
-		    for (const voxel::BrickPiece& brick_piece : piece.pieces) {
-			    const glm::ivec3 base = brick_piece.brick * static_cast<int32_t>(voxel::k_brick_dim);
-			    for (uint32_t i = 0; i < voxel::k_brick_voxel_count; ++i) {
-				    const voxel::BrickCoord coord = voxel::localFromIndex(i);
-				    if (voxel::isSolid(brick_piece.voxels, coord.x, coord.y, coord.z)) {
-					    index_sum += glm::vec3(base) + glm::vec3(coord.x, coord.y, coord.z);
-					    ++count;
-				    }
-			    }
-		    }
-		    if (count == 0) {
-			    return std::nullopt;
-		    }
-		    const glm::vec3 local_center = ((index_sum / static_cast<float>(count)) + 0.5f) * voxel::k_voxel_size;
-		    const glm::vec3 world_center = lattice_origin + (to_world * local_center);
-		    const glm::vec3 offset = world_center - explosion.point;
-		    const float distance = glm::length(offset);
+	shape = tryGetShape(shape_id);
+	data = shape != nullptr ? tryGetVoxelData(shape->voxel.data) : nullptr;
+	if (data == nullptr) {
+		return solid_before;
+	}
+	data->connectivity_dirty = true;
+	if (not debris_voxels.empty()) {
+		recordVoxelDamage(shape_id, static_cast<uint32_t>(debris_voxels.size()), debris_index_sum);
+	}
+	unlockSleep(shape->owner);
+	wakeBodiesInBounds(bounds);
 
-		    // pressure on the side of the piece facing the blast
-		    const float area = std::pow(static_cast<float>(count), 2.0f / 3.0f) * voxel::k_voxel_size * voxel::k_voxel_size;
-		    const float pressure =
-		        k_joules_per_kilojoule * explosionDensityAt(explosion.force, std::max(distance, 0.5f), explosion.falloff);
-		    return FragmentPush {
-		      .point = explosion.point,
-		      .direction = distance > 1.0e-4f ? offset / distance : glm::vec3 {0.0f, 0.0f, 1.0f},
-		      .speed = std::numeric_limits<float>::infinity(),
-		      .max_impulse = pressure * area * dt,
-		    };
-	    },
-	    AABB {.min = explosion.point - glm::vec3(reach), .max = explosion.point + glm::vec3(reach)}
+	TOAST_INFO(
+	    "Physics",
+	    "Explosion: force {:.1f} reach {:.2f} m debris_voxels {} (cracks {}) chunk_voxels {} chunks {} debris_energy {:.3f} kJ",
+	    explosion.force,
+	    reach,
+	    debris_voxels.size(),
+	    crack_voxels,
+	    chunk_voxels,
+	    chunk_count,
+	    debris_energy
 	);
+
+	const uint32_t solid_after = data->solid_voxel_count;
+	return solid_before - std::min(solid_before, solid_after);
+}
+
+auto Simulator::explosionPush(ShapeID shape_id, const DetachedComponent& piece, const ExplosionDamage& explosion)
+    -> std::optional<FragmentPush> {
+	const Shape* shape = tryGetShape(shape_id);
+	const Body* body = shape != nullptr ? tryGetBody(shape->owner) : nullptr;
+	if (body == nullptr) {
+		return std::nullopt;
+	}
+
+	glm::vec3 index_sum {0.0f};
+	uint32_t count = 0;
+	for (const voxel::BrickPiece& brick_piece : piece.pieces) {
+		const glm::ivec3 base = brick_piece.brick * static_cast<int32_t>(voxel::k_brick_dim);
+		for (uint32_t i = 0; i < voxel::k_brick_voxel_count; ++i) {
+			const voxel::BrickCoord coord = voxel::localFromIndex(i);
+			if (voxel::isSolid(brick_piece.voxels, coord.x, coord.y, coord.z)) {
+				index_sum += glm::vec3(base) + glm::vec3(coord.x, coord.y, coord.z);
+				++count;
+			}
+		}
+	}
+	if (count == 0) {
+		return std::nullopt;
+	}
+
+	const glm::vec3 local_center = ((index_sum / static_cast<float>(count)) + 0.5f) * voxel::k_voxel_size;
+	const glm::vec3 lattice_origin = body->position + (body->rotation * shape->voxel.local_center);
+	const glm::vec3 world_center = lattice_origin + (body->rotation * (shape->voxel.local_rotation * local_center));
+	const glm::vec3 offset = world_center - explosion.point;
+	const float distance = glm::length(offset);
+
+	// pressure on the side of the piece facing the blast
+	const float area = std::pow(static_cast<float>(count), 2.0f / 3.0f) * voxel::k_voxel_size * voxel::k_voxel_size;
+	const float pressure =
+	    k_joules_per_kilojoule * explosionDensityAt(explosion.force, std::max(distance, 0.5f), explosion.falloff);
+	return FragmentPush {
+	  .point = explosion.point,
+	  .direction = distance > 1.0e-4f ? offset / distance : glm::vec3 {0.0f, 0.0f, 1.0f},
+	  .speed = tunables().explosion_max_speed,
+	  .max_impulse = pressure * area * static_cast<float>(Accumulator::fixedDelta()),
+	};
 }
 
 auto Simulator::breakPieces(
     ShapeID shape_id, SmashPieces& picked, bool chunks,
-    const std::function<std::optional<FragmentPush>(const DetachedComponent&)>& push_for, const AABB& wake_bounds
+    const std::function<std::optional<FragmentPush>(const DetachedComponent&)>& push_for, const AABB& wake_bounds,
+    uint32_t max_spawns
 ) -> uint32_t {
+	ZoneScopedN("physics::BreakPieces");
 	const Shape* shape = tryGetShape(shape_id);
 	VoxelShapeData* data = shape != nullptr ? tryGetVoxelData(shape->voxel.data) : nullptr;
 	if (data == nullptr || picked.pieces.empty()) {
 		return 0;
 	}
 	const uint32_t solid_before = data->solid_voxel_count;
+	const size_t spawn_cap = max_spawns != 0 ? max_spawns : tunables().max_fragment_spawns_per_step;
 
 	std::ranges::sort(picked.pieces, std::greater {}, &DetachedComponent::voxel_count);
 
 	size_t flown = 0;
 	for (const DetachedComponent& piece : picked.pieces) {
-		const bool may_fly =
-		    chunks && flown < tunables().max_fragment_spawns_per_step && piece.voxel_count >= tunables().min_fragment_voxels;
+		const bool may_fly = chunks && flown < spawn_cap && piece.voxel_count >= tunables().min_fragment_voxels;
 		if (may_fly) {
 			const std::optional<FragmentPush> push = push_for(piece);
 			const size_t before = m_fragments.size();
@@ -4861,7 +5339,8 @@ auto Simulator::breakPieces(
 			}
 		}
 
-		if (piece.voxel_count < tunables().min_fragment_voxels) {
+		const bool wanted_body = chunks && piece.voxel_count >= tunables().min_fragment_voxels;
+		if (piece.voxel_count < tunables().min_fragment_voxels || wanted_body) {
 			const std::optional<FragmentPush> debris_push = push_for(piece);
 			emitComponentDebris(shape_id, piece, debris_push.has_value() ? &*debris_push : nullptr);
 		}
@@ -4882,8 +5361,8 @@ auto Simulator::breakPieces(
 	data->connectivity_dirty = true;
 
 	const uint32_t moved = solid_before - std::min(solid_before, data->solid_voxel_count);
-	if (toast::VoxelNode* node = voxelNodeFor(shape_id); node != nullptr && moved > 0) {
-		node->recordDamage(moved, picked.index_sum);
+	if (moved > 0) {
+		recordVoxelDamage(shape_id, moved, picked.index_sum);
 	}
 	unlockSleep(shape->owner);
 

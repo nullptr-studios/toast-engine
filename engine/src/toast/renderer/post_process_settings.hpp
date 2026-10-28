@@ -65,6 +65,22 @@ struct PostProcessSettings {
 
 		uint32_t sample_count = 16;
 	} ssao;
+
+	struct Fog {
+		/// Extinction per meter at the base height and 0 turns volumetrics off
+		float density = 0.0f;
+		float height = 0.0f;
+		/// Per meter above the base height and 0 is uniform
+		float height_falloff = 0.0f;
+		float albedo_r = 1.0f;
+		float albedo_g = 1.0f;
+		float albedo_b = 1.0f;
+		/// Henyey Greenstein g
+		float anisotropy = 0.3f;
+		float ambient = 1.0f;
+		/// Meters a view ray marches before the sky
+		float distance = 64.0f;
+	} fog;
 };
 
 TOAST_API void blendPostProcess(PostProcessSettings& target, const PostProcessSettings& source, float weight);

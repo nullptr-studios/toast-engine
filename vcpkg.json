@@ -97,6 +97,12 @@
       "version>=": "1.10.0"
     },
     {
+      "name": "curl"
+    },
+    {
+      "name": "zlib"
+    },
+    {
       "name": "luabridge3",
       "version>=": "3.0-rc3"
     },
@@ -117,6 +123,16 @@
     {
       "name": "rmlui",
       "version>=": "6.2"
+    },
+    {
+      "name": "cpptrace",
+      "features": [
+        {
+          "name": "libunwind",
+          "platform": "linux"
+        }
+      ],
+      "version>=": "1.0.4"
     }
   ],
   "overrides": [

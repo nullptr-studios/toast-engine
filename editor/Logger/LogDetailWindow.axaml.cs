@@ -30,6 +30,11 @@ public partial class LogDetailWindow : Window {
 			await clipboard.SetTextAsync(entry.Message);
 	}
 
+	private async void OnCopyBacktrace(object? sender, RoutedEventArgs e) {
+		if (Entry is { } entry && Clipboard is { } clipboard)
+			await clipboard.SetTextAsync(entry.Backtrace);
+	}
+
 	private void OnClose(object? sender, RoutedEventArgs e) {
 		Close();
 	}

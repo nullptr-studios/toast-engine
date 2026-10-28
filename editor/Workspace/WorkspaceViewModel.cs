@@ -547,14 +547,14 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 	public async Task<bool> Save(bool closing = false) {
 		if (RootUid is null) return false;
 
-		if (BackingUri is null) return await SaveAs(); // no path yet -> prompt the user
+		if (BackingUri is null) return await SaveAs(closing); // no path yet -> prompt the user
 
 		// Takes the lock on a lockable file or stops when someone else holds it
 		switch (await GitLockGuard.CheckSaveAsync(ProjectContext.Resolve(BackingUri))) {
 			case LockedSaveChoice.Cancel:
 				return false;
 			case LockedSaveChoice.SaveAs:
-				return await SaveAs();
+				return await SaveAs(closing);
 			case LockedSaveChoice.Discard:
 				DeleteAutosaves();
 				// When the tab is being closed anyway there is nothing to reload
@@ -569,7 +569,7 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 		return true;
 	}
 
-	public async Task<bool> SaveAs() {
+	public async Task<bool> SaveAs(bool closing = false) {
 		if (RootUid is null) return false;
 
 		var virtualPath = await App.Modals.ShowSaveFile(Title ?? "Unnamed Node");
@@ -595,6 +595,7 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 		DeleteAutosaves();
 		ProjectContext.RaiseAssetsChanged();
 		await GitLockGuard.LockOnOpenAsync(realPath); // Saving takes the lock
+		if (!closing) MainWindowViewModel.Current?.ReopenWorkspaceFromDisk(this);
 		return true;
 	}
 

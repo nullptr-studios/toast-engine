@@ -240,14 +240,22 @@ message VoxelCollapsePieces {
   string path = 2;
 }
 
+message VoxelBakePiece {
+  string uid = 1;
+  string path = 2;
+}
+
 message VoxelBake {
   string target = 1;
   string path = 2;
   bool replace = 3;
+  string base_path = 4;
+  repeated VoxelBakePiece pieces = 5;
 }
 
 message VoxelBakeCompleted {
   string path = 1;
+  repeated string unused = 2;
 }
 
 message SetVoxelEditorOverlays {

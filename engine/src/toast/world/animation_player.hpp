@@ -26,7 +26,7 @@ namespace toast {
  *
  * @note Also ticked outside Play, by Workspace::tickAnimationPreviews()
  */
-class [[ToastNode, Icon("Film")]] TOAST_API AnimationPlayer : public Node3D {
+class [[ToastNode, Icon("Animation")]] TOAST_API AnimationPlayer : public Node3D {
 public:
 	AnimationPlayer() = default;
 

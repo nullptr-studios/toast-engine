@@ -150,7 +150,8 @@ auto SsaoPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView
 	const auto* frame = VulkanRenderer::instance->renderingFrame();
 	const auto settings = frame != nullptr ? frame->post_process.ssao : VulkanRenderer::PostProcessSettings::Ssao {};
 
-	const glm::mat4 view_projection = frame != nullptr ? frame->frame_data.view_projection : glm::mat4(1.0f);
+	// Jittered since depth was rasterized with it
+	const glm::mat4 view_projection = frame != nullptr ? frame->frame_data.jittered_view_projection : glm::mat4(1.0f);
 	const glm::vec3 camera_position = frame != nullptr ? frame->frame_data.camera_position : glm::vec3(0.0f);
 
 	Params params {};
@@ -164,8 +165,8 @@ auto SsaoPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView
 		params.screen_size = glm::vec4(
 		    static_cast<float>(size.width),
 		    static_cast<float>(size.height),
-		    1.0f / static_cast<float>(size.width),
-		    1.0f / static_cast<float>(size.height)
+		    static_cast<float>(frame != nullptr ? frame->sequence % 4096 : 0),
+		    0.0f
 		);
 
 		target.beginScope(cmd);

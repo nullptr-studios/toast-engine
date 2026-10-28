@@ -100,7 +100,7 @@ void SsrPass::createResources(const VulkanCore& core) {
 	const vk::DescriptorPool pool = VulkanRenderer::instance->getDescriptorPoolHandle();
 
 	m_descriptor_sets.clear();
-	m_bound_views.assign(VulkanRenderer::k_frames_in_flight * 2, vk::ImageView {});
+	m_bound_views.assign(VulkanRenderer::k_frames_in_flight * 2, {});
 	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight * 2; ++i) {
 		const vk::DescriptorSetAllocateInfo alloc_info(pool, 1, &set_layout);
 		auto allocated = device.allocateDescriptorSets(alloc_info);
@@ -116,7 +116,7 @@ void SsrPass::createTargets(const VulkanCore& core, vk::Extent2D extent) {
 	m_resolve_target.create(core, half, k_reflection_format, "SsrPass Resolve");
 	m_history[0].create(core, half, k_reflection_format, "SsrPass History0");
 	m_history[1].create(core, half, k_reflection_format, "SsrPass History1");
-	std::ranges::fill(m_bound_views, vk::ImageView {});
+	std::ranges::fill(m_bound_views, std::array<vk::ImageView, 2> {});
 	m_history_valid = false;
 }
 
@@ -143,12 +143,21 @@ auto SsrPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView 
 		return source_view;
 	}
 
+	const auto* frame = VulkanRenderer::instance->renderingFrame();
+	const uint64_t sequence = frame != nullptr ? frame->sequence : 0;
+	// A repeated snapshot carries no new sample so the last output stands
+	if (m_history_valid && sequence == m_last_sequence) {
+		return m_target.view();
+	}
+
 	const PostProcessTarget& history_write = m_history[m_parity];
 	const PostProcessTarget& history_read = m_history[1 - m_parity];
 	const uint32_t set_index = (frame_index * 2) + m_parity;
 	const vk::DescriptorSet set = *m_descriptor_sets[set_index];
 
-	if (m_bound_views[set_index] != source_view) {
+	const vk::ImageView previous_view = VulkanRenderer::instance->previousResolvedColour();
+	const std::array<vk::ImageView, 2> wanted {source_view, previous_view ? previous_view : source_view};
+	if (m_bound_views[set_index] != wanted) {
 		// Point sampled except the colours since interpolated depth or normals invent surfaces
 		const std::array<vk::DescriptorImageInfo, k_binding_count> image_infos {
 		  vk::DescriptorImageInfo(*m_sampler, source_view, vk::ImageLayout::eShaderReadOnlyOptimal),
@@ -161,6 +170,7 @@ auto SsrPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView 
 		  vk::DescriptorImageInfo(*m_point_sampler, motion_view, vk::ImageLayout::eShaderReadOnlyOptimal),
 		  // Point sampled since the upsample picks its own texels
 		  vk::DescriptorImageInfo(*m_point_sampler, history_write.view(), vk::ImageLayout::eShaderReadOnlyOptimal),
+		  vk::DescriptorImageInfo(*m_sampler, wanted[1], vk::ImageLayout::eShaderReadOnlyOptimal),
 		};
 
 		std::array<vk::WriteDescriptorSet, k_binding_count> writes {};
@@ -169,18 +179,17 @@ auto SsrPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView 
 			    vk::WriteDescriptorSet(set, binding, 0, 1, vk::DescriptorType::eCombinedImageSampler, &image_infos[binding]);
 		}
 		m_core->getDevice().updateDescriptorSets(writes, {});
-		m_bound_views[set_index] = source_view;
+		m_bound_views[set_index] = wanted;
 	}
 
-	const auto* frame = VulkanRenderer::instance->renderingFrame();
-	const uint64_t sequence = frame != nullptr ? frame->sequence : 0;
 	const bool history_valid = m_history_valid && sequence == m_last_sequence + 1;
 	if (!history_valid) {
 		history_read.makeSampleable(cmd);
 	}
 	const auto settings = frame != nullptr ? frame->post_process.ssr : VulkanRenderer::PostProcessSettings::Ssr {};
 
-	const glm::mat4 view_projection = frame != nullptr ? frame->frame_data.view_projection : glm::mat4(1.0f);
+	// Jittered since depth was rasterized with it
+	const glm::mat4 view_projection = frame != nullptr ? frame->frame_data.jittered_view_projection : glm::mat4(1.0f);
 
 	Params params {};
 	params.view_projection = view_projection;
@@ -193,7 +202,7 @@ auto SsrPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView 
 	    settings.stride * static_cast<float>(settings.max_steps),
 	    static_cast<float>(frame != nullptr ? frame->render_mode : 0u),
 	    history_valid ? 1.0f : 0.0f,
-	    0.0f
+	    previous_view ? 1.0f : 0.0f
 	);
 
 	const auto draw = [&](const PostProcessTarget& target, const VulkanPipeline& pipeline) {

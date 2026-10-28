@@ -30,7 +30,7 @@ namespace toast {
  * @note A probe reprojects its own captured cubemap once baked, and the global environment until then - so an
  *       unbaked probe still corrects the *shape* of reflections, just not their content
  */
-class [[ToastNode, Icon("Eclipse")]] TOAST_API ReflectionProbe : public Node3D {
+class [[ToastNode, Icon("ReflectionProbe")]] TOAST_API ReflectionProbe : public Node3D {
 public:
 	ReflectionProbe() = default;
 	~ReflectionProbe() override = default;

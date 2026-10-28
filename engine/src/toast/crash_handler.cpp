@@ -1,5 +1,8 @@
 #include "crash_handler.hpp"
 
+#include "backtrace.hpp"
+#include "logger.hpp"
+
 #include <array>
 #include <cstdint>
 #include <cstdio>
@@ -56,6 +59,11 @@ std::array<char, 4096> g_scratch_message {};
 
 std::atomic_bool g_installed {false};
 std::atomic<DWORD> g_reporting_thread {0};
+bool g_reporter_ready = false;
+std::atomic_bool g_logs_flushed {false};
+std::array<char, 320> g_flush_reason {};
+logging::RawBacktrace g_flush_trace {};
+LPTOP_LEVEL_EXCEPTION_FILTER g_previous_filter = nullptr;
 
 auto enabled() noexcept -> bool {
 	std::array<wchar_t, 4> value {};
@@ -141,6 +149,37 @@ auto WINAPI launchReporter(LPVOID) -> DWORD {
 	return 0;
 }
 
+auto WINAPI flushLogsThread(LPVOID) -> DWORD {
+	logging::Logger::crashFlush(g_flush_reason.data(), g_flush_trace);
+	return 0;
+}
+
+void flushLogs(const EXCEPTION_POINTERS* pointers, const char* message) noexcept {
+	if (g_logs_flushed.exchange(true)) {
+		return;
+	}
+
+	g_flush_trace = logging::captureBacktrace();
+	if (message != nullptr) {
+		std::snprintf(g_flush_reason.data(), g_flush_reason.size(), "Engine crashed: %s", message);
+	} else if (pointers != nullptr) {
+		std::snprintf(
+		    g_flush_reason.data(),
+		    g_flush_reason.size(),
+		    "Engine crashed: exception 0x%08lX at 0x%p",
+		    pointers->ExceptionRecord->ExceptionCode,
+		    pointers->ExceptionRecord->ExceptionAddress
+		);
+	} else {
+		std::snprintf(g_flush_reason.data(), g_flush_reason.size(), "Engine crashed");
+	}
+
+	if (HANDLE thread = CreateThread(nullptr, 256 * 1024, flushLogsThread, nullptr, 0, nullptr)) {
+		WaitForSingleObject(thread, 1500);
+		CloseHandle(thread);
+	}
+}
+
 [[noreturn]]
 void report(Kind kind, const EXCEPTION_POINTERS* pointers, const char* message) noexcept {
 	const DWORD self = GetCurrentThreadId();
@@ -174,6 +213,8 @@ void report(Kind kind, const EXCEPTION_POINTERS* pointers, const char* message) 
 	}
 	g_shared.pointers.ExceptionRecord = &g_shared.record;
 	g_shared.pointers.ContextRecord = &g_shared.context;
+
+	flushLogs(pointers, message);
 
 	// Fresh thread since after a stack overflow this one has too little stack to start a process
 	if (HANDLE thread = CreateThread(nullptr, 256 * 1024, launchReporter, nullptr, 0, nullptr)) {
@@ -274,11 +315,19 @@ void onTerminate() noexcept {
 	if (IsDebuggerPresent()) {
 		std::abort();
 	}
+	if (!g_reporter_ready) {
+		flushLogs(nullptr, message);
+		std::abort();
+	}
 	report(Kind::terminate, nullptr, message);
 }
 
 void __cdecl onPureCall() {
 	if (!IsDebuggerPresent()) {
+		if (!g_reporter_ready) {
+			flushLogs(nullptr, "A pure virtual function was called");
+			std::abort();
+		}
 		report(Kind::pure_call, nullptr, "A pure virtual function was called");
 	}
 	std::abort();
@@ -307,14 +356,31 @@ void __cdecl onInvalidParameter(
 	WideCharToMultiByte(
 	    CP_UTF8, 0, text.data(), -1, g_scratch_message.data(), static_cast<int>(g_scratch_message.size() - 1), nullptr, nullptr
 	);
+	if (!g_reporter_ready) {
+		flushLogs(nullptr, g_scratch_message.data());
+		std::abort();
+	}
 	report(Kind::invalid_parameter, nullptr, g_scratch_message.data());
 }
 
 void __cdecl onAbortSignal(int signal) {
 	(void)signal;
 	if (!IsDebuggerPresent()) {
+		if (!g_reporter_ready) {
+			flushLogs(nullptr, "abort() was called");
+			// abort() raises SIGABRT again, the default action ends the process
+			std::signal(SIGABRT, SIG_DFL);
+			std::abort();
+		}
 		report(Kind::abort, nullptr, "abort() was called");
 	}
+}
+
+auto CALLBACK onUnhandledException(EXCEPTION_POINTERS* pointers) -> LONG {
+	if (!isFaultSomeoneElseHandles(pointers->ExceptionRecord->ExceptionAddress)) {
+		flushLogs(pointers, nullptr);
+	}
+	return g_previous_filter != nullptr ? g_previous_filter(pointers) : EXCEPTION_CONTINUE_SEARCH;
 }
 
 }
@@ -340,16 +406,22 @@ void overflowStack(volatile std::uint64_t depth) {
 
 void install() noexcept {
 #ifdef _WIN32
-	if (g_installed.exchange(true) || !enabled()) {
-		return;
-	}
-	if (!resolveReporter()) {
-		std::println(stderr, "[Crash] crash_reporter.exe was not found next to the engine; native crashes will not be reported");
+	if (g_installed.exchange(true)) {
 		return;
 	}
 
-	// First in the chain so managed faults pass through untouched
-	AddVectoredExceptionHandler(1, onVectoredException);
+	const bool wanted = enabled();
+	g_reporter_ready = wanted && resolveReporter();
+	if (wanted && !g_reporter_ready) {
+		std::println(stderr, "[Crash] crash_reporter.exe was not found next to the engine; native crashes will not be reported");
+	}
+
+	if (g_reporter_ready) {
+		// First in the chain so managed faults pass through untouched
+		AddVectoredExceptionHandler(1, onVectoredException);
+	} else {
+		g_previous_filter = SetUnhandledExceptionFilter(onUnhandledException);
+	}
 	std::set_terminate(onTerminate);
 	_set_purecall_handler(onPureCall);
 	_set_invalid_parameter_handler(onInvalidParameter);
@@ -358,6 +430,8 @@ void install() noexcept {
 	_CrtSetReportHook2(_CRT_RPTHOOK_INSTALL, onCrtReport);
 	_CrtSetReportHookW2(_CRT_RPTHOOK_INSTALL, onCrtReportWide);
 #endif
+#else
+	installPosix();
 #endif
 }
 

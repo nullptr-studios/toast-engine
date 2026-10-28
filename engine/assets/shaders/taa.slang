@@ -81,7 +81,7 @@ float3 sampleHistory(float2 uv)
     sum += gHistory.SampleLevel(float2(uv3.x, uv12.y), 0.0).rgb * (w3.x * w12.y);
     sum += gHistory.SampleLevel(float2(uv12.x, uv3.y), 0.0).rgb * (w12.x * w3.y);
 
-    float weight = w12.x * w0.y + w0.x * w12.y + w12.x * w12.y + w3.x * w12.y + w12.x * w3.y;
+    float weight = w12.x * (w0.y + w12.y + w3.y) + (w0.x + w3.x) * w12.y;
     return max(sum / weight, float3(0.0, 0.0, 0.0));
 }
 
@@ -120,8 +120,10 @@ float4 fragmentMain(VSOutput input) : SV_Target0
     float closestDepth = kFarDepth;
     float2 closestUv = uv;
 
+    [unroll]
     for (int y = -1; y <= 1; ++y)
     {
+        [unroll]
         for (int x = -1; x <= 1; ++x)
         {
             float2 sampleUv = uv + float2(x, y) * texel;
@@ -133,18 +135,22 @@ float4 fragmentMain(VSOutput input) : SV_Target0
                 center = value;
             }
 
-            // Keeps a moving edge from trailing the background
-            float depth = gDepth.SampleLevel(sampleUv, 0.0).r;
-            if (isCloserDepth(depth, closestDepth))
+            // Cross pattern for the closest depth saves four fetches
+            if (abs(x) + abs(y) <= 1)
             {
-                closestDepth = depth;
-                closestUv = sampleUv;
+                float depth = gDepth.SampleLevel(sampleUv, 0.0).r;
+                if (isCloserDepth(depth, closestDepth))
+                {
+                    closestDepth = depth;
+                    closestUv = sampleUv;
+                }
             }
         }
     }
 
     float4 motion = gMotion.SampleLevel(closestUv, 0.0);
 
+    [branch]
     if (gParams.tuning.w > 0.5)
     {
         return float4(motionColor(motion), 1.0);
@@ -162,6 +168,7 @@ float4 fragmentMain(VSOutput input) : SV_Target0
     }
 
     bool offscreen = any(previousUv < float2(0.0, 0.0)) || any(previousUv > float2(1.0, 1.0));
+    [branch]
     if (gParams.tuning.y > 0.5 || offscreen)
     {
         return float4(expand(fromYCoCg(center)), 1.0);

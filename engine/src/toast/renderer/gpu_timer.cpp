@@ -33,6 +33,17 @@ GpuTimer::ScopeName::ScopeName(std::string_view text) noexcept
 }
 
 GpuTimer::GpuTimer(const VulkanCore& core, uint32_t frame_slots) {
+	// Labels work without timestamp queries
+	if (core.debugUtilsEnabled()) {
+		// Extension entry points are not exported by the loader library so they come from the device dispatcher
+		m_begin_label = core.getDevice().getDispatcher()->vkCmdBeginDebugUtilsLabelEXT;
+		m_end_label = core.getDevice().getDispatcher()->vkCmdEndDebugUtilsLabelEXT;
+		if (m_begin_label == nullptr || m_end_label == nullptr) {
+			m_begin_label = nullptr;
+			m_end_label = nullptr;
+		}
+	}
+
 	if (frame_slots == 0) {
 		return;
 	}
@@ -85,7 +96,28 @@ void GpuTimer::endGraphics(uint32_t slot, vk::CommandBuffer cmd) {
 	m_slots[slot].graphics_written = true;
 }
 
+void GpuTimer::beginLabel(vk::CommandBuffer cmd, std::string_view name) const {
+	if (m_begin_label == nullptr) {
+		return;
+	}
+	// Copied since the label name must be null terminated
+	std::array<char, 64> text {};
+	std::copy_n(name.data(), std::min(name.size(), text.size() - 1), text.data());
+	VkDebugUtilsLabelEXT label {};
+	label.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+	label.pLabelName = text.data();
+	m_begin_label(cmd, &label);
+}
+
+void GpuTimer::endLabel(vk::CommandBuffer cmd) const {
+	if (m_end_label != nullptr) {
+		m_end_label(cmd);
+	}
+}
+
 auto GpuTimer::beginScope(uint32_t slot, vk::CommandBuffer cmd, std::string_view name) -> uint32_t {
+	// Before every early return since endScope always closes it
+	beginLabel(cmd, name);
 	if (!m_supported || slot >= m_slots.size()) {
 		return k_no_scope;
 	}
@@ -102,6 +134,7 @@ auto GpuTimer::beginScope(uint32_t slot, vk::CommandBuffer cmd, std::string_view
 }
 
 void GpuTimer::endScope(uint32_t slot, vk::CommandBuffer cmd, uint32_t scope) {
+	endLabel(cmd);
 	if (scope == k_no_scope || slot >= m_slots.size()) {
 		return;
 	}

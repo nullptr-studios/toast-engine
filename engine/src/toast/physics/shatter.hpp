@@ -59,6 +59,7 @@ inline auto planShatter(
     const voxel::Volume& volume, const voxel::Palette& palette, const voxel::MaterialLibrary& materials, const Crater& crater,
     Hardness max_hardness
 ) -> ShatterPlan {
+	ZoneScopedN("physics::PlanShatter");
 	ShatterPlan out;
 	out.band_outer = craterMaxRadius(crater);
 
@@ -80,6 +81,29 @@ inline auto planShatter(
 	const float min_width = 2.0f * threshold;
 	const float max_width = std::max(tunables().fracture_max_shatter_distance, min_width);
 
+	const float cell_size = std::max(values.shatter_cell_size, threshold);
+	const float length = glm::length(crater.end - crater.start);
+	const float base_volume = capsuleVolume(crater.radius, length);
+	const float fill = std::min(1.0f, 3.0f * threshold / cell_size);
+	const auto band_volume_of = [&](float w) { return capsuleVolume(crater.radius + w, length) - base_volume; };
+	const auto width_for = [&](float mean_toughness) {
+		// widest band for the shatter the enerby pays for
+		const auto cost_of = [&](float w) { return mean_toughness * values.shatter_crack_cost * fill * band_volume_of(w); };
+		if (cost_of(max_width) <= crater.shatter_energy) {
+			return max_width;
+		}
+		if (not(cost_of(min_width) < crater.shatter_energy)) {
+			return min_width;
+		}
+		float low = min_width;
+		float high = max_width;
+		for (int i = 0; i < 24; ++i) {
+			const float middle = 0.5f * (low + high);
+			(cost_of(middle) <= crater.shatter_energy ? low : high) = middle;
+		}
+		return low;
+	};
+
 	// everything that could crack
 	struct BandVoxel {
 		glm::ivec3 voxel;
@@ -89,52 +113,53 @@ inline auto planShatter(
 
 	std::vector<BandVoxel> band;
 	float toughness_sum = 0.0f;
-	const float reach = craterMaxRadius(crater) + max_width;
-	forEachSolidVoxel(
-	    volume,
-	    glm::min(crater.start, crater.end) - glm::vec3(reach),
-	    glm::max(crater.start, crater.end) + glm::vec3(reach),
-	    [&](glm::ivec3 v, glm::vec3 center, uint8_t index) {
-		    const glm::vec3 axis_point = closestPointOnSegment(center, crater.start, crater.end);
-		    const float outside = glm::length(center - axis_point) - craterRadiusAt(crater, center);
-		    if (outside <= 0.0f || outside > max_width) {
-			    return;
+	const float edge_min = craterMinRadius(crater);
+	const float edge_max = craterMaxRadius(crater);
+	const auto collect = [&](float limit) {
+		ZoneScopedN("physics::PlanShatter::Band");
+		band.clear();
+		toughness_sum = 0.0f;
+		const float reach = edge_max + limit;
+		forEachSolidVoxel(
+		    volume,
+		    glm::min(crater.start, crater.end) - glm::vec3(reach),
+		    glm::max(crater.start, crater.end) + glm::vec3(reach),
+		    [&](glm::ivec3 v, glm::vec3 center, uint8_t index) {
+			    const glm::vec3 axis_point = closestPointOnSegment(center, crater.start, crater.end);
+			    const float axis_distance = glm::length(center - axis_point);
+			    if (axis_distance <= edge_min || axis_distance - edge_max > limit) {
+				    return;
+			    }
+			    const float outside = axis_distance - craterRadiusAt(crater, center);
+			    if (outside <= 0.0f || outside > limit) {
+				    return;
+			    }
+			    const voxel::PhysicalMaterial& material = materials.materials[voxel::resolveMaterialIndex(palette, materials, index)];
+			    if (not material.breakableBy(max_hardness) || not damageReaches(crater.reachable, volume, v, axis_point, center)) {
+				    return;
+			    }
+			    band.push_back({.voxel = v, .center = center, .outside = outside});
+			    toughness_sum += material.toughness;
 		    }
-		    const voxel::PhysicalMaterial& material = materials.materials[voxel::resolveMaterialIndex(palette, materials, index)];
-		    if (not material.breakableBy(max_hardness) || not damageReaches(crater.reachable, volume, v, axis_point, center)) {
-			    return;
-		    }
-		    band.push_back({.voxel = v, .center = center, .outside = outside});
-		    toughness_sum += material.toughness;
-	    }
-	);
+		);
+	};
+
+	// guess the width from what was hit
+	float width = width_for(crater.toughness);
+	collect(width);
 	if (band.empty()) {
 		out.stop = "no breakable material around the crater";
 		return out;
 	}
-
-	const float cell_size = std::max(values.shatter_cell_size, threshold);
-	const float mean_toughness = toughness_sum / static_cast<float>(band.size());
-	const float length = glm::length(crater.end - crater.start);
-	const float base_volume = capsuleVolume(crater.radius, length);
-	const float fill = std::min(1.0f, 3.0f * threshold / cell_size);
-	const auto band_volume_of = [&](float w) { return capsuleVolume(crater.radius + w, length) - base_volume; };
-	const auto cost_of = [&](float w) { return mean_toughness * values.shatter_crack_cost * fill * band_volume_of(w); };
-	float width = min_width;
-	if (cost_of(max_width) <= crater.shatter_energy) {
-		width = max_width;
-	} else if (cost_of(min_width) < crater.shatter_energy) {
-		float low = min_width;
-		float high = max_width;
-		for (int i = 0; i < 24; ++i) {
-			const float middle = 0.5f * (low + high);
-			(cost_of(middle) <= crater.shatter_energy ? low : high) = middle;
-		}
-		width = low;
+	const float corrected = width_for(toughness_sum / static_cast<float>(band.size()));
+	if (corrected > width) {
+		collect(corrected);
+	} else {
+		std::erase_if(band, [corrected](const BandVoxel& b) { return b.outside > corrected; });
 	}
+	width = corrected;
 	out.width = width;
-	out.band_outer = craterMaxRadius(crater) + width;
-	std::erase_if(band, [width](const BandVoxel& b) { return b.outside > width; });
+	out.band_outer = edge_max + width;
 	out.band_voxels = band.size();
 	if (band.size() < 2) {
 		out.stop = "no breakable material around the crater";
@@ -151,10 +176,14 @@ inline auto planShatter(
 	// seeds
 	Rng rng {streamSeed(crater.seed, FractureStream::shatter_points)};
 	const float min_gap = 2.0f * threshold;
+	const float min_gap_squared = min_gap * min_gap;
 	std::vector<glm::vec3> seeds;
 	for (uint32_t attempt = 0; attempt < cell_count * 12 && seeds.size() < cell_count; ++attempt) {
 		const glm::vec3 point = band[rng.below(static_cast<uint32_t>(band.size()))].center;
-		const bool crowded = std::ranges::any_of(seeds, [&](const glm::vec3& s) { return glm::distance(s, point) < min_gap; });
+		const bool crowded = std::ranges::any_of(seeds, [&](const glm::vec3& s) {
+			const glm::vec3 offset = s - point;
+			return glm::dot(offset, offset) < min_gap_squared;
+		});
 		if (not crowded) {
 			seeds.push_back(point);
 		}
@@ -174,21 +203,40 @@ inline auto planShatter(
 	} else {
 		grain[(dims.y >= dims.z ? 1 : 2)] = 1.0f;
 	}
-	const auto metric = [&](const glm::vec3& offset) {
+	const float stretch = std::max(values.shatter_stretch, 1.0f);
+	const auto metric_squared = [&](const glm::vec3& offset) {
 		if (not fibrous) {
-			return glm::length(offset);
+			return glm::dot(offset, offset);
 		}
 		const float along = glm::dot(offset, grain);
 		const glm::vec3 lateral = offset - (grain * along);
-		const float stretched = along / std::max(values.shatter_stretch, 1.0f);
-		return std::sqrt(glm::dot(lateral, lateral) + (stretched * stretched));
+		const float stretched = along / stretch;
+		return glm::dot(lateral, lateral) + (stretched * stretched);
 	};
 
-	std::unordered_set<uint64_t> in_band;
-	in_band.reserve(band.size());
+	glm::ivec3 band_low {std::numeric_limits<int32_t>::max()};
+	glm::ivec3 band_high {std::numeric_limits<int32_t>::min()};
 	for (const BandVoxel& b : band) {
-		in_band.insert(voxelKey(b.voxel));
+		band_low = glm::min(band_low, b.voxel);
+		band_high = glm::max(band_high, b.voxel);
 	}
+	const glm::ivec3 band_dims = band_high - band_low + 1;
+	const auto band_index = [&](const glm::ivec3& v) {
+		const glm::ivec3 i = v - band_low;
+		return (((static_cast<size_t>(i.z) * static_cast<size_t>(band_dims.y)) + static_cast<size_t>(i.y)) *
+		        static_cast<size_t>(band_dims.x)) +
+		       static_cast<size_t>(i.x);
+	};
+	std::vector<uint8_t> band_mask(
+	    static_cast<size_t>(band_dims.x) * static_cast<size_t>(band_dims.y) * static_cast<size_t>(band_dims.z), 0
+	);
+	for (const BandVoxel& b : band) {
+		band_mask[band_index(b.voxel)] = 1;
+	}
+	const auto in_band = [&](const glm::ivec3& v) {
+		return glm::all(glm::greaterThanEqual(v, band_low)) && glm::all(glm::lessThanEqual(v, band_high)) &&
+		       band_mask[band_index(v)] != 0;
+	};
 
 	// solid material
 	const glm::ivec3 dims_i = glm::ivec3(dims);
@@ -204,7 +252,7 @@ inline auto planShatter(
 		for (const glm::ivec3& offset : k_faces) {
 			const glm::ivec3 n = v + offset;
 			if (glm::any(glm::lessThan(n, glm::ivec3(0))) || glm::any(glm::greaterThanEqual(n, dims_i)) ||
-			    volume.materialAt(n) == voxel::k_empty_palette_index || in_band.contains(voxelKey(n))) {
+			    volume.materialAt(n) == voxel::k_empty_palette_index || in_band(n)) {
 				continue;
 			}
 			const glm::vec3 center = (glm::vec3 {n} + 0.5f) * voxel::k_voxel_size;
@@ -229,7 +277,7 @@ inline auto planShatter(
 		float d2 = std::numeric_limits<float>::max();
 		Owner& owner = owners[b];
 		for (size_t i = 0; i < seeds.size(); ++i) {
-			const float d = metric(band[b].center - seeds[i]);
+			const float d = metric_squared(band[b].center - seeds[i]);
 			if (d < d1) {
 				d2 = d1;
 				owner.second = owner.nearest;
@@ -240,7 +288,7 @@ inline auto planShatter(
 				owner.second = i;
 			}
 		}
-		owner.gap = d2 - d1;
+		owner.gap = std::sqrt(d2) - std::sqrt(d1);
 		++cell_voxels[owner.nearest];
 	}
 
@@ -291,6 +339,7 @@ struct CoreSplit {
 
 [[nodiscard]]
 inline auto planCoreSplit(std::span<const CoreVoxel> core, const Crater& crater) -> CoreSplit {
+	ZoneScopedN("physics::PlanCoreSplit");
 	CoreSplit out;
 	const FractureValues& values = crater.profile;
 	if (not(crater.fragment_energy > 0.0f) || not(crater.radius > 0.0f)) {

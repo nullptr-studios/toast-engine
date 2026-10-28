@@ -33,6 +33,10 @@ struct DebrisCluster {
 	glm::ivec3 origin {0};
 	uint8_t mask = 0;
 	uint8_t material = 0;
+	bool whole = false;
+	glm::vec3 centre {0.0f};
+	float scale = 1.0f;
+	uint32_t voxel_count = 0;
 };
 
 struct DebrisSpawn {
@@ -56,6 +60,7 @@ struct DebrisBlast {
 	glm::vec3 start {};
 	glm::vec3 end {};
 	float energy = 0.0f;
+	float max_speed = 0.0f;
 };
 
 inline constexpr float k_max_debris_speed = 40.0f;
@@ -69,8 +74,35 @@ constexpr auto debrisBit(const glm::ivec3& local) -> uint32_t {
 }
 
 [[nodiscard]]
-inline auto clusterDebris(std::span<const DebrisVoxel> voxels, const glm::ivec3& jitter, Rng& rng, float split_chance)
-    -> std::vector<DebrisCluster> {
+inline auto wholeDebris(std::span<const DebrisVoxel> voxels) -> DebrisCluster {
+	DebrisCluster out;
+	out.whole = true;
+	glm::ivec3 low = voxels.front().voxel;
+	glm::ivec3 high = low;
+	std::array<uint32_t, 256> counts {};
+	for (const DebrisVoxel& v : voxels) {
+		low = glm::min(low, v.voxel);
+		high = glm::max(high, v.voxel);
+		++counts[v.material];
+	}
+
+	const glm::vec3 extent = glm::vec3(high - low + 1);
+	out.centre = (glm::vec3(low) + glm::vec3(high + 1)) * 0.5f;
+	out.scale = std::max({extent.x, extent.y, extent.z}) * 0.5f;
+	out.voxel_count = static_cast<uint32_t>(voxels.size());
+	out.material = static_cast<uint8_t>(std::ranges::max_element(counts) - counts.begin());
+
+	for (const DebrisVoxel& v : voxels) {
+		const glm::vec3 point = glm::vec3(v.voxel) + 0.5f;
+		const uint32_t bit =
+		    (point.x >= out.centre.x ? 1u : 0u) | (point.y >= out.centre.y ? 2u : 0u) | (point.z >= out.centre.z ? 4u : 0u);
+		out.mask |= static_cast<uint8_t>(1u << bit);
+	}
+	return out;
+}
+
+[[nodiscard]]
+inline auto clusterDebris(std::span<const DebrisVoxel> voxels, const glm::ivec3& jitter) -> std::vector<DebrisCluster> {
 	struct Entry {
 		glm::ivec3 cell;
 		uint32_t bit;
@@ -108,47 +140,28 @@ inline auto clusterDebris(std::span<const DebrisVoxel> voxels, const glm::ivec3&
 			++last;
 		}
 
-		// a block sometimes breaks into 2 or 3 smaller pieces
-		const auto count = static_cast<uint32_t>(std::popcount(present));
-		uint32_t parts = 1;
-		if (count > 1 && rng.chance(split_chance)) {
-			parts = (count > 2 && rng.chance(0.5f)) ? 3u : 2u;
-		}
-		std::array<uint32_t, 3> part_masks {};
+		uint8_t best = 0;
+		int best_count = 0;
 		for (uint32_t bit = 0; bit < 8; ++bit) {
-			if ((present & (1u << bit)) != 0) {
-				part_masks[parts == 1 ? 0 : rng.below(parts)] |= 1u << bit;
-			}
-		}
-
-		for (uint32_t p = 0; p < parts; ++p) {
-			if (part_masks[p] == 0) {
+			if ((present & (1u << bit)) == 0) {
 				continue;
 			}
-			// most common material of the part
-			uint8_t best = 0;
-			int best_count = 0;
-			for (uint32_t bit = 0; bit < 8; ++bit) {
-				if ((part_masks[p] & (1u << bit)) == 0) {
-					continue;
-				}
-				int same = 0;
-				for (uint32_t other = 0; other < 8; ++other) {
-					same += ((part_masks[p] & (1u << other)) != 0 && material[other] == material[bit]) ? 1 : 0;
-				}
-				if (same > best_count) {
-					best_count = same;
-					best = material[bit];
-				}
+			int same = 0;
+			for (uint32_t other = 0; other < 8; ++other) {
+				same += ((present & (1u << other)) != 0 && material[other] == material[bit]) ? 1 : 0;
 			}
-			out.push_back(
-			    DebrisCluster {
-			      .origin = (entries[first].cell * 2) + jitter,
-			      .mask = static_cast<uint8_t>(part_masks[p]),
-			      .material = best,
-			    }
-			);
+			if (same > best_count) {
+				best_count = same;
+				best = material[bit];
+			}
 		}
+		out.push_back(
+		    DebrisCluster {
+		      .origin = (entries[first].cell * 2) + jitter,
+		      .mask = static_cast<uint8_t>(present),
+		      .material = best,
+		    }
+		);
 		first = last;
 	}
 	return out;
