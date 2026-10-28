@@ -86,24 +86,11 @@
 			exec env -u LD_LIBRARY_PATH ${pkgs.cmake}/bin/cmake --preset linux-relwithdebinfo -DCMAKE_TOOLCHAIN_FILE=${pkgs.vcpkg}/share/vcpkg/scripts/buildsystems/vcpkg.cmake "$@"
 		'';
 
-		cmake-gen-rel = pkgs.writeShellScriptBin "cmake-gen" ''
-			exec env -u LD_LIBRARY_PATH ${pkgs.cmake}/bin/cmake --preset linux-relwithdebinfo -DCMAKE_TOOLCHAIN_FILE=${pkgs.vcpkg}/share/vcpkg/scripts/buildsystems/vcpkg.cmake "$@"
-		'';
 		cmake-build = pkgs.writeShellScriptBin "cmake-build" ''
 			exec env -u LD_LIBRARY_PATH ${pkgs.cmake}/bin/cmake --build --preset linux-relwithdebinfo --parallel "$(nproc)" "$@"
 		'';
 
-		cmake-build-rel = pkgs.writeShellScriptBin "cmake-build" ''
-			exec env -u LD_LIBRARY_PATH ${pkgs.cmake}/bin/cmake --build ./build/RelWithDebInfo --parallel "$(nproc)" "$@"
-		'';
 
-		# editor = pkgs.writeShellScriptBin "editor" ''
-		# 	./out/Debug/editor/editor "$@"
-		# '';
-
-		kenzo = pkgs.writeShellScriptBin "kenzo" ''
-			./out/RelWithDebInfo/kenzo/kenzo "$@"
-		'';
 	in
 	{
 		devShells.${system}.default = pkgs.mkShell {
@@ -112,7 +99,8 @@
 				ccache
 				ninja
 				valgrind
-				rustup
+				rustc
+				cargo
 				protobuf
 				grpc
 				pkg-config
@@ -130,11 +118,6 @@
 				cmake-gen
 				cmake-build
 
-				# cmake-gen-rel
-				# cmake-build-rel
-
-				# editor
-				kenzo
 				tracy_0_13
 
 				autoconf
