@@ -55,7 +55,7 @@ private:
 	};
 
 	/// Targets in the order they are drawn into
-	enum Step : uint32_t {
+	enum Step : uint8_t {
 		step_threshold,
 		step_glare,
 		step_blur_down,

@@ -151,8 +151,10 @@ auto handleField(const Light& light, GizmoHandle handle) -> const char* {
 		return "m_attenuation";
 	}
 	if (type == LightType::spot) {
-		return handle == GizmoHandle::size_pos_x ? "m_outer_radius"
-		                                         : (handle == GizmoHandle::size_neg_x ? "m_inner_radius" : nullptr);
+		if (handle == GizmoHandle::size_pos_x) {
+			return "m_outer_radius";
+		}
+		return handle == GizmoHandle::size_neg_x ? "m_inner_radius" : nullptr;
 	}
 	switch (handle) {
 		case GizmoHandle::size_pos_z: return light.shape() == LightShape::rect ? "m_source_length" : "m_source_radius";
@@ -192,7 +194,7 @@ void draw(const Light& light) {
 			transform[1] = glm::vec4(glm::cross(basis.forward, basis.right), 0.0f);
 			transform[2] = glm::vec4(basis.forward, 0.0f);
 			transform[3] = glm::vec4(basis.origin, 1.0f);
-			debug::drawCapsule(transform, radius, light.sourceLength() + 2.0f * radius, color, false);
+			debug::drawCapsule(transform, radius, light.sourceLength() + (2.0f * radius), color, false);
 			break;
 		}
 		case LightShape::disc:
