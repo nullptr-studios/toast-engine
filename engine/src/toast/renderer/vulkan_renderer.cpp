@@ -52,6 +52,7 @@
 #include <toast/assets/material.hpp>
 #include <toast/log.hpp>
 #include <toast/physics/simulator.hpp>
+#include <toast/profiler_phases.hpp>
 #include <toast/settings/settings.hpp>
 #include <toast/thread_pool.hpp>
 #include <toast/time.hpp>
@@ -76,7 +77,7 @@
 #include <tuple>
 #include <unordered_set>
 
-#if defined(_WIN32)
+#if defined(_WIN32) && defined(TOAST_DEV_TOOLS)
 #include <external/inc/nsight/NGFX_GPUTrace_Vulkan.h>
 #include <external/inc/nsight/NGFX_GraphicsCapture_Vulkan.h>
 #endif
@@ -920,6 +921,7 @@ VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTa
 		return true;
 	});
 
+#if defined(TOAST_DEV_TOOLS)
 	m_imgui_input_listener.subscribe<event::WindowMousePosition>([this](const auto& e) {
 		m_imgui_mouse_pos = {e.x, e.y};
 		return false;
@@ -951,6 +953,12 @@ VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTa
 	});
 	m_imgui_input_listener.subscribe<event::WindowChar>([this](const auto& e) {
 		m_imgui_char_events_accum.push_back(e.key);
+		return false;
+	});
+#endif
+
+	m_hdr_listener.subscribe<event::WindowHdr>([this](const auto& e) {
+		setDisplayHdr(e.sdr_white, e.headroom);
 		return false;
 	});
 
@@ -1601,6 +1609,125 @@ void VulkanRenderer::createDefaultCubemap() {
 }
 
 #pragma endregion
+
+#if defined(TOAST_DEV_TOOLS)
+namespace {
+
+/// Logs the scopes that grew when a frame runs far past the usual GPU time
+void reportGpuSpike(const GpuTimer& timer) {
+	using clock = std::chrono::steady_clock;
+	constexpr size_t k_history = 120;
+	constexpr double k_spike_ratio = 2.0;
+	constexpr double k_min_spike_ms = 6.0;
+	constexpr double k_average_blend = 0.05;
+	constexpr auto k_report_every = std::chrono::seconds(1);
+
+	// Render thread only
+	static uint64_t last_serial = 0;
+	static std::array<float, k_history> history {};
+	static size_t filled = 0;
+	static size_t cursor = 0;
+	static std::unordered_map<std::string, double> averages;
+	static clock::time_point last_report {};
+	static uint32_t spikes_since_report = 0;
+
+	const GpuTimer::Timings& timings = timer.last();
+	if (!timings.valid || timer.frameSerial() == last_serial) {
+		return;
+	}
+	last_serial = timer.frameSerial();
+
+	std::array<float, k_history> sorted = history;
+	const size_t count = filled;
+	double median = 0.0;
+	if (count >= 30) {
+		std::nth_element(
+		    sorted.begin(),
+		    sorted.begin() + static_cast<std::ptrdiff_t>(count / 2),
+		    sorted.begin() + static_cast<std::ptrdiff_t>(count)
+		);
+		median = sorted[count / 2];
+	}
+	const bool spike = median > 0.0 && timings.graphics_ms > median * k_spike_ratio && timings.graphics_ms > k_min_spike_ms;
+
+	struct Growth {
+		std::string name;
+		double now = 0.0;
+		double usual = 0.0;
+	};
+
+	std::vector<Growth> growth;
+	for (const GpuTimer::ScopeTiming& scope : timings.scopes) {
+		double& average = averages.try_emplace(std::string(scope.name.view()), scope.gpu_ms).first->second;
+		if (spike) {
+			growth.push_back({std::string(scope.name.view()), scope.gpu_ms, average});
+		}
+		// Spikes stay out of the average
+		if (!spike) {
+			average += (scope.gpu_ms - average) * k_average_blend;
+		}
+	}
+
+	if (!spike) {
+		history[cursor] = static_cast<float>(timings.graphics_ms);
+		cursor = (cursor + 1) % k_history;
+		filled = std::min(filled + 1, k_history);
+		return;
+	}
+
+	++spikes_since_report;
+	const auto now = clock::now();
+	if (now - last_report < k_report_every) {
+		return;
+	}
+	last_report = now;
+
+	std::ranges::sort(growth, [](const Growth& a, const Growth& b) { return (a.now - a.usual) > (b.now - b.usual); });
+	std::string worst;
+	for (size_t i = 0; i < std::min<size_t>(growth.size(), 4); ++i) {
+		worst += std::format("{}{} {:.1f} ms (usually {:.1f})", i == 0 ? "" : ", ", growth[i].name, growth[i].now, growth[i].usual);
+	}
+	TOAST_WARN(
+	    "Render",
+	    "GPU spike {:.1f} ms against a usual {:.1f}, {} spike(s) in the last second. Grew most: {}",
+	    timings.graphics_ms,
+	    median,
+	    spikes_since_report,
+	    worst
+	);
+	spikes_since_report = 0;
+}
+
+}
+#endif
+
+#ifdef TRACY_ENABLE
+namespace {
+
+/// One plot per timed scope, read a frame late behind the fence
+void plotGpuTimings(const GpuTimer& timer) {
+	static uint64_t last_serial = 0;
+	const GpuTimer::Timings& timings = timer.last();
+	if (!timings.valid || timer.frameSerial() == last_serial) {
+		return;
+	}
+	last_serial = timer.frameSerial();
+
+	// Node based so plot names keep their address
+	static std::unordered_map<std::string, std::string> plot_names;
+	TracyPlot("GPU: graphics ms", timings.graphics_ms);
+	for (const GpuTimer::ScopeTiming& scope : timings.scopes) {
+		std::string key(scope.name.view());
+		auto it = plot_names.find(key);
+		if (it == plot_names.end()) {
+			it = plot_names.emplace(key, "GPU: " + key).first;
+		}
+		TracyPlot(it->second.c_str(), scope.gpu_ms);
+	}
+}
+
+}
+#endif
 
 void VulkanRenderer::publishCompletedFrames() {
 	ZoneScoped;
@@ -2641,6 +2768,22 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 
 	TracyVkCollect(m_tracy_vk_ctx, *frame.command_buffer);
 
+#ifdef TRACY_ENABLE
+	if (m_shadow_pass != nullptr) {
+		const ShadowPass::Stats& shadow = m_shadow_pass->getStats();
+		TracyPlot("Shadow: draws", static_cast<int64_t>(shadow.draws));
+		TracyPlot("Shadow: scopes", static_cast<int64_t>(shadow.scopes));
+		TracyPlot("Shadow: groups composed", static_cast<int64_t>(shadow.composed));
+		TracyPlot("Shadow: groups cached", static_cast<int64_t>(shadow.cached));
+		TracyPlot("Shadow: static for view move", static_cast<int64_t>(shadow.static_views));
+		TracyPlot("Shadow: static for casters", static_cast<int64_t>(shadow.static_casters));
+		TracyPlot("Shadow: static for voxel edits", static_cast<int64_t>(shadow.static_edits));
+		TracyPlot("Shadow: moving volumes", static_cast<int64_t>(shadow.moving_volumes));
+		TracyPlot("Shadow: voxel draws marched", static_cast<int64_t>(shadow.marched_volumes));
+		TracyPlot("Shadow: voxel draws meshed", static_cast<int64_t>(shadow.meshed_volumes));
+	}
+#endif
+
 	if (m_gpu_timer != nullptr) {
 		m_gpu_timer->endGraphics(m_current_frame, *frame.command_buffer);
 	}
@@ -2809,23 +2952,34 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> bool {
 		phase_start = now;
 	};
 
+	toast::PhaseZones phases;
+	TOAST_PHASE(phases, "Draw: uploads");
 	processPendingUploads();
 
 	flushResourceUploads();
 	end_phase(m_perf_upload_ns);
 
 	auto& frame = m_frames[m_current_frame];
+	TOAST_PHASE(phases, "Draw: wait frame fence");
 	std::ignore = m_core->getDevice().waitForFences(*frame.in_flight, true, std::numeric_limits<uint64_t>::max());
 	end_phase(m_perf_gpu_wait_ns);
+	TOAST_PHASE(phases, "Draw: publish frames and timings");
 	frame.retired.clear();
 	publishCompletedFrames();
 	m_core->updateTracyMemory();
 
 	if (m_gpu_timer != nullptr && !frame.was_probe_capture) {
 		m_gpu_timer->collect(m_current_frame);
+#if defined(TOAST_DEV_TOOLS)
+		reportGpuSpike(*m_gpu_timer);
+#endif
+#ifdef TRACY_ENABLE
+		plotGpuTimings(*m_gpu_timer);
+#endif
 	}
 	end_phase(m_perf_record_ns);
 
+	TOAST_PHASE(phases, "Draw: acquire image");
 	auto acquired = m_output_target->acquireNextImage(std::numeric_limits<uint64_t>::max(), *frame.image_available, VK_NULL_HANDLE);
 	// A dropped snapshot breaks every temporal history so a busy compositor is waited on and only a stalled one drops it
 	for (uint32_t attempt = 0; acquired.result == vk::Result::eNotReady && attempt < k_output_acquire_attempts &&
@@ -2850,7 +3004,9 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> bool {
 	}
 
 	const uint32_t image_index = acquired.value;
-	if (m_images_in_flight.at(image_index)) {
+	TOAST_PHASE(phases, "Draw: wait image fence");
+	// The acquire semaphore and the queue order image reuse and a CPU wait here pinned composed HDR to one frame
+	if (!m_output_target->usesAcquirePresentSemaphores() && m_images_in_flight.at(image_index)) {
 		std::ignore =
 		    m_core->getDevice().waitForFences(m_images_in_flight.at(image_index), true, std::numeric_limits<uint64_t>::max());
 	}
@@ -2859,9 +3015,11 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> bool {
 	m_core->getDevice().resetFences(*frame.in_flight);
 	m_images_in_flight[image_index] = *frame.in_flight;
 
+	TOAST_PHASE(phases, "Draw: update frame resources");
 	updateFrameResources(m_current_frame, frame_data);    // FIXME dt
 
 	m_rendering_frame = &frame_data;
+	TOAST_PHASE(phases, "Draw: update passes");
 	ensureMaterialPasses(frame_data);
 
 	// TODO move outside the render loop
@@ -2891,9 +3049,11 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> bool {
 		frame.was_probe_capture = false;
 	}
 
+	TOAST_PHASE(phases, "Draw: record frame");
 	recordFrame(frame, image_index);
 	end_phase(m_perf_record_ns);
 
+	TOAST_PHASE(phases, "Draw: submit setup");
 	const bool present_sync = m_output_target->usesAcquirePresentSemaphores();
 
 	const vk::CommandBuffer command_buffer = *frame.command_buffer;
@@ -2941,6 +3101,7 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> bool {
 		submit.next = &frame_boundary;
 	}
 
+	TOAST_PHASE(phases, "Draw: submit");
 	{
 		std::scoped_lock submit_lock(m_core->graphicsSubmitMutex());
 		sync::submit(m_core->getGraphicsQueue(), submit);
@@ -2949,7 +3110,7 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> bool {
 	m_core->asyncCompute().flushDeferred();
 	end_phase(m_perf_submit_ns);
 
-#if defined(_WIN32)
+#if defined(_WIN32) && defined(TOAST_DEV_TOOLS)
 	if (m_core->getNsightMode() == NsightMode::graphics_capture) {
 		NGFX_ResourceDescription_Vulkan output_resource {NGFX_ResourceDescription_Vulkan_VER};
 		output_resource.type = NGFX_ResourceType_Vulkan_VkImage;
@@ -2963,6 +3124,7 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> bool {
 	}
 #endif
 
+	TOAST_PHASE(phases, "Draw: present");
 	const auto present_result = m_output_target->present(image_index, present_sync ? signal_semaphore : vk::Semaphore {});
 	end_phase(m_perf_present_ns);
 	frame.last_image_index = image_index;
@@ -3008,7 +3170,9 @@ void VulkanRenderer::waitForOutputImage() {
 }
 
 void VulkanRenderer::mainRenderThread() try {
+#ifdef TRACY_ENABLE
 	tracy::SetThreadName("Renderer Thread");
+#endif
 
 #ifdef TRACY_ENABLE
 	{
@@ -3139,7 +3303,7 @@ void VulkanRenderer::mainRenderThread() try {
 		if (do_capture && rdoc_api != nullptr) {
 			rdoc_api->StartFrameCapture(nullptr, nullptr);
 		}
-#if defined(_WIN32)
+#if defined(_WIN32) && defined(TOAST_DEV_TOOLS)
 		else if (do_capture && nsight_mode == NsightMode::graphics_capture) {
 			NGFX_GraphicsCapture_StartCapture_Vulkan_Params params {NGFX_GraphicsCapture_StartCapture_Vulkan_Params_VER};
 			const NGFX_Result start_result = NGFX_GraphicsCapture_StartCapture_Vulkan(&params);
@@ -3199,7 +3363,7 @@ void VulkanRenderer::mainRenderThread() try {
 			rdoc_api->EndFrameCapture(nullptr, nullptr);
 			TOAST_INFO("VulkanRenderer", "RenderDoc frame capture triggered");
 		}
-#if defined(_WIN32)
+#if defined(_WIN32) && defined(TOAST_DEV_TOOLS)
 		else if (do_capture && nsight_mode == NsightMode::graphics_capture) {
 			NGFX_GraphicsCapture_StopCapture_Vulkan_Params params {NGFX_GraphicsCapture_StopCapture_Vulkan_Params_VER};
 			const NGFX_Result stop_result = NGFX_GraphicsCapture_StopCapture_Vulkan(&params);
@@ -3342,6 +3506,7 @@ void VulkanRenderer::fitShadowViews(
 		const uint32_t resolution = shadows::cascadeResolution();
 		const float padding = shadows::cascadePadding();
 		float split_near = m_camera->near_plane;
+		uint32_t cascades_refit = 0;
 		for (uint32_t cascade = 0; cascade < shadows::k_cascade_count; ++cascade) {
 			const BoundingSphere slice = frustumSliceSphere(*m_camera, aspect, split_near, splits[cascade]);
 
@@ -3351,6 +3516,7 @@ void VulkanRenderer::fitShadowViews(
 			                   glm::distance(anchor.center, slice.center) + slice.radius <= anchor.radius &&
 			                   slice.radius * (1.0f + (2.0f * padding)) >= anchor.radius;
 			if (!holds) {
+				++cascades_refit;
 				anchor = CascadeAnchor {
 				  .center = slice.center,
 				  .radius = slice.radius * (1.0f + padding),
@@ -3378,6 +3544,7 @@ void VulkanRenderer::fitShadowViews(
 
 			split_near = splits[cascade];
 		}
+		TracyPlot("Shadow: cascades refit", static_cast<int64_t>(cascades_refit));
 
 		frame.frame_data.shadow_params.x = static_cast<float>(shadow_caster_index + 1);
 		frame.frame_data.shadow_params.y = static_cast<float>(shadows::k_cascade_count);
@@ -3558,6 +3725,9 @@ void VulkanRenderer::finalizeLights(RenderFrame& frame) {
 	frame.light_stats.spot_shadows = occupied(m_spot_slots);
 	frame.light_stats.point_shadows = occupied(m_point_slots);
 	frame.light_stats.shadow_displaced = m_shadow_displaced_total;
+	TracyPlot("Shadow: spot slots used", static_cast<int64_t>(frame.light_stats.spot_shadows));
+	TracyPlot("Shadow: point slots used", static_cast<int64_t>(frame.light_stats.point_shadows));
+	TracyPlot("Shadow: lights denied", static_cast<int64_t>(frame.light_stats.spot_denied + frame.light_stats.point_denied));
 
 	const auto depth = light_culling::clusterDepthRange(frame.camera_near, frame.camera_far, light_reach);
 	frame.cluster_near = depth.near_depth;
@@ -3566,6 +3736,8 @@ void VulkanRenderer::finalizeLights(RenderFrame& frame) {
 
 void VulkanRenderer::tick(float time) noexcept {
 	ZoneScopedN("VulkanRenderer::tick()");
+	toast::PhaseZones phases;
+	TOAST_PHASE(phases, "Tick: settings");
 
 	// Queued by render thread UI that holds the pass lock
 	std::vector<std::pair<std::string, toast::settings::Value>> setting_requests;
@@ -3574,7 +3746,7 @@ void VulkanRenderer::tick(float time) noexcept {
 		setting_requests.swap(m_setting_requests);
 	}
 	for (auto& [key, value] : setting_requests) {
-		toast::settings::Settings::get().setValue(key, value);
+		toast::settings::Settings::get().setValue(key, value, true);
 	}
 
 	if (m_rendering_paused.load(std::memory_order_relaxed)) {
@@ -3582,6 +3754,7 @@ void VulkanRenderer::tick(float time) noexcept {
 		return;
 	}
 
+	TOAST_PHASE(phases, "Tick: wait frame slot");
 	if (m_frame_slot == FrameSlot::none) {
 		acquireFrameSlot();
 	}
@@ -3604,6 +3777,7 @@ void VulkanRenderer::tick(float time) noexcept {
 		);
 	};
 
+	TOAST_PHASE(phases, "Tick: reset frame");
 	auto& frame = getCurrentFrameBuild();
 
 	frame.mesh_instances.clear();
@@ -3634,6 +3808,7 @@ void VulkanRenderer::tick(float time) noexcept {
 	frame.shadows.views.clear();
 	frame.shadows.matrices.clear();
 
+#if defined(TOAST_DEV_TOOLS)
 	frame.imgui_input.mouse_pos = m_imgui_mouse_pos;
 	frame.imgui_input.mouse_down = m_imgui_mouse_down;
 	frame.imgui_input.mouse_wheel_x = m_imgui_wheel_x_accum;
@@ -3644,6 +3819,7 @@ void VulkanRenderer::tick(float time) noexcept {
 	m_imgui_wheel_y_accum = 0.0f;
 	m_imgui_key_events_accum.clear();
 	m_imgui_char_events_accum.clear();
+#endif
 
 	frame.sequence = ++m_frame_sequence_counter;
 	frame.render_mode = m_render_mode;
@@ -3667,6 +3843,7 @@ void VulkanRenderer::tick(float time) noexcept {
 		return;
 	}
 
+	TOAST_PHASE(phases, "Tick: camera and volumes");
 	m_camera->syncTransform();
 	frame.post_process = blendPostProcessVolumes(m_camera->world_position);
 	gatherFogVolumes(frame, m_camera->world_position);
@@ -3678,6 +3855,7 @@ void VulkanRenderer::tick(float time) noexcept {
 	);
 	frame.frame_data.fog_reach = glm::vec4(fog.distance, volumetricDistance(), static_cast<float>(voxelSunReach()), 0.0f);
 
+	TOAST_PHASE(phases, "Tick: snapshot nodes");
 	auto& mesh_nodes_snapshot = m_tick_mesh_nodes;
 	{
 		std::scoped_lock lock(m_mesh_proxy_mutex);
@@ -3695,6 +3873,7 @@ void VulkanRenderer::tick(float time) noexcept {
 	frame.lights.clear();
 	frame.light_stats = {};
 
+	TOAST_PHASE(phases, "Tick: mesh proxies");
 	for (auto* node : mesh_nodes_snapshot) {
 		if (node == nullptr || !node->enabled() || !node->participatesIn(toast::NodeOwnerParticipation::render)) {
 			continue;
@@ -3785,8 +3964,10 @@ void VulkanRenderer::tick(float time) noexcept {
 		);
 	}
 
+	TOAST_PHASE(phases, "Tick: voxel proxies");
 	buildVoxelProxies(frame);
 
+	TOAST_PHASE(phases, "Tick: camera frame data");
 	const auto extent = m_output_target->getExtent();
 	const auto render_extent = renderExtent();
 	beginDebugLineCollection(frame);
@@ -3821,6 +4002,7 @@ void VulkanRenderer::tick(float time) noexcept {
 		    (overlays.surface_unit_grid ? 1u : 0u) | (overlays.surface_voxel_grid ? 2u : 0u) | (overlays.voxel_edges ? 4u : 0u);
 	}
 
+	TOAST_PHASE(phases, "Tick: reflection probes");
 	// PROBES SHIT
 	{
 		std::scoped_lock lock(m_reflection_probe_mutex);
@@ -4072,6 +4254,7 @@ void VulkanRenderer::tick(float time) noexcept {
 		m_bake_active.store(m_probe_bake_cursor >= 0 || m_irradiance_bake_cursor >= 0, std::memory_order_relaxed);
 	}
 
+	TOAST_PHASE(phases, "Tick: viewport and debug draws");
 	frame.viewport_extent = glm::vec2(static_cast<float>(render_extent.width), static_cast<float>(render_extent.height));
 	frame.output_extent = glm::vec2(static_cast<float>(extent.width), static_cast<float>(extent.height));
 	frame.camera_near = m_camera->near_plane;
@@ -4103,6 +4286,7 @@ void VulkanRenderer::tick(float time) noexcept {
 		}
 	}
 
+	TOAST_PHASE(phases, "Tick: lights");
 	// Lights shit
 
 	glm::vec3 ambient_sum(0.0f);
@@ -4174,12 +4358,18 @@ void VulkanRenderer::tick(float time) noexcept {
 		frame.lights.push_back(gpu);
 	};
 
+	// Marched and sampled shadows trace scene rays
+	const bool shadow_maps_only = voxelShadowMapsOnly();
+	const auto shadow_mode = [shadow_maps_only](const toast::Light& light) {
+		return shadow_maps_only ? toast::LightShadowMode::shadow_map : light.shadowMode();
+	};
+
 	// y plus z bounds the emitter so culling widens by it
-	const auto area_shape = [](const toast::Light& light, bool casts_shadows) -> glm::vec4 {
+	const auto area_shape = [&shadow_mode](const toast::Light& light, bool casts_shadows) -> glm::vec4 {
 		const float radius = std::max(light.sourceRadius(), 0.0f);
 		const float half_length = 0.5f * std::max(light.sourceLength(), 0.0f);
 		const float half_width = 0.5f * std::max(light.sourceWidth(), 0.0f);
-		const float mode = casts_shadows ? static_cast<float>(light.shadowMode()) : 0.0f;
+		const float mode = casts_shadows ? static_cast<float>(shadow_mode(light)) : 0.0f;
 		switch (light.shape()) {
 			case toast::LightShape::sphere:
 			case toast::LightShape::disc: return {static_cast<float>(light.shape()), radius, 0.0f, mode};
@@ -4213,7 +4403,7 @@ void VulkanRenderer::tick(float time) noexcept {
 
 		const bool casts_shadows =
 		    light->castsShadows() && (!positional || light->shadowDistance() <= 0.0f || camera_distance <= shadow_limit);
-		const bool shadow_map = casts_shadows && light->shadowMode() == toast::LightShadowMode::shadow_map;
+		const bool shadow_map = casts_shadows && shadow_mode(*light) == toast::LightShadowMode::shadow_map;
 
 		constexpr float k_light_icon_size = 0.5f;
 		debug::drawBillboard(
@@ -4232,7 +4422,7 @@ void VulkanRenderer::tick(float time) noexcept {
 				if (directional_count >= k_max_directional_lights) {
 					break;
 				}
-				const bool marched_sun = casts_shadows && light->shadowMode() != toast::LightShadowMode::shadow_map;
+				const bool marched_sun = casts_shadows && shadow_mode(*light) != toast::LightShadowMode::shadow_map;
 				const float angular_radius = 0.5f * glm::radians(static_cast<const toast::DirectionalLight*>(light)->angularDiameter());
 				frame.frame_data.directional_lights[directional_count] = DirectionalLightData {
 				  .direction = glm::vec4(light->forward(), marched_sun ? std::max(angular_radius, 1e-6f) : 0.0f),
@@ -4326,6 +4516,7 @@ void VulkanRenderer::tick(float time) noexcept {
 		}
 	}
 
+	TOAST_PHASE(phases, "Tick: light uniforms");
 	frame.frame_data.ambient_color_intensity = glm::vec4(ambient_sum, 1.0f);
 	frame.frame_data.directional_light_count_pad.x = directional_count;
 
@@ -4391,6 +4582,7 @@ void VulkanRenderer::tick(float time) noexcept {
 		}
 	}
 
+	TOAST_PHASE(phases, "Tick: environment");
 	if (m_environment_pass != nullptr && m_environment_pass->isReady()) {
 		frame.frame_data.environment_params.x = 1.0f;
 		frame.frame_data.environment_params.y = static_cast<float>(m_environment_pass->getPrefilteredMipCount());
@@ -4450,8 +4642,10 @@ void VulkanRenderer::tick(float time) noexcept {
 		releaseShadowSlots();
 	}
 
+	TOAST_PHASE(phases, "Tick: finalize lights");
 	finalizeLights(frame);
 
+	TOAST_PHASE(phases, "Tick: gizmos and post process");
 	// TODO compile out of non editor builds
 	if (m_gizmo_state.visible) {
 		const float scale = toast::gizmo_layout::k_screen_size * glm::distance(m_camera->world_position, m_gizmo_state.origin);
@@ -4619,6 +4813,7 @@ void VulkanRenderer::tick(float time) noexcept {
 		}
 	}
 
+	TOAST_PHASE(phases, "Tick: antialiasing");
 	// ANTIALIASING
 	{
 		const bool is_capture = frame.probe_capture_index >= 0 || frame.irradiance_capture_index >= 0;
@@ -4670,12 +4865,18 @@ void VulkanRenderer::tick(float time) noexcept {
 		}
 	}
 
+	TOAST_PHASE(phases, "Tick: ui frame");
 	if (m_ui_frame_builder) {
 		m_ui_frame_builder(frame);
 	}
 
 	endDebugLineCollection();
 	count_build();
+	TracyPlot("Tick: lights", static_cast<int64_t>(frame.lights.size()));
+	TracyPlot("Tick: mesh instances", static_cast<int64_t>(frame.mesh_instances.size()));
+	TracyPlot("Tick: voxel instances", static_cast<int64_t>(frame.voxel_instances.size()));
+	TracyPlot("Tick: shadow views", static_cast<int64_t>(frame.shadows.views.size()));
+	TOAST_PHASE(phases, "Tick: submit frame");
 	submitFrame();
 }
 

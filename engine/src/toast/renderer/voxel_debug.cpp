@@ -1,3 +1,5 @@
+#if defined(TOAST_DEV_TOOLS)
+
 #include "voxel_debug.hpp"
 
 #include "depth_convention.hpp"
@@ -684,3 +686,5 @@ void Monitor::drawPanel(const VulkanRenderer::RenderFrame& frame) const {
 }
 
 }
+
+#endif

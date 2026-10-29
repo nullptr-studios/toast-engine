@@ -79,6 +79,14 @@ public:
 		m_available.notify_one();
 	}
 
+	void setLimit(size_t limit) {
+		{
+			const std::lock_guard lock(m_mutex);
+			m_limit = std::max<size_t>(limit, 1);
+		}
+		m_available.notify_all();
+	}
+
 private:
 	SlangGlobalSessionPool() : m_limit(std::clamp<size_t>(std::thread::hardware_concurrency() / 2, 1, 4)) { }
 
@@ -89,10 +97,19 @@ private:
 	size_t m_limit;
 };
 
+std::atomic<RayTracingMode> ray_tracing_mode = RayTracingMode::automatic;
 std::atomic_bool ray_query_available = false;
 std::atomic_bool full_optimization = false;
 std::atomic_bool trace_ray_query_requested = true;
 
+}
+
+void ShaderCompiler::setRayTracingMode(RayTracingMode mode) {
+	ray_tracing_mode.store(mode, std::memory_order_relaxed);
+}
+
+auto ShaderCompiler::rayTracingMode() -> RayTracingMode {
+	return ray_tracing_mode.load(std::memory_order_relaxed);
 }
 
 void ShaderCompiler::setRayQueryAvailable(bool available) {
@@ -116,6 +133,10 @@ void ShaderCompiler::setFullOptimization(bool enabled) {
 	full_optimization.store(enabled, std::memory_order_relaxed);
 }
 
+void ShaderCompiler::setMaxParallelCompiles(size_t count) {
+	SlangGlobalSessionPool::get().setLimit(count);
+}
+
 auto ShaderCompiler::featureHash() -> uint64_t {
 	// Debug compiles unoptimized with debug info so a release entry in the shared cache must read as stale and the reverse
 #if defined(NDEBUG)
@@ -126,8 +147,13 @@ auto ShaderCompiler::featureHash() -> uint64_t {
 	// TOAST_REVERSED_Z changes the SPIR-V so the other convention must read as stale
 	constexpr uint64_t k_depth_convention = depth::k_reversed_z ? 0x5eed2e7e45edull : 0x0ull;
 	const uint64_t k_trace_walk = traceRayQuery() ? 0x0ull : 0x7a11c0de5eedull;
+#if defined(TOAST_DEV_TOOLS)
+	constexpr uint64_t k_dev_tools = 0xde7700150000ull;
+#else
+	constexpr uint64_t k_dev_tools = 0x0ull;
+#endif
 	return (ShaderCompiler::isRayQueryAvailable() ? 0x9e3779b97f4a7c15ull : 0x0ull) ^ k_build_profile ^ k_depth_convention ^
-	       k_trace_walk;
+	       k_trace_walk ^ k_dev_tools;
 }
 
 static auto createSession(slang::IGlobalSession* global_session) -> Slang::ComPtr<slang::ISession> {
@@ -184,6 +210,18 @@ static auto createSession(slang::IGlobalSession* global_session) -> Slang::ComPt
 	compiler_options.push_back(trace_entry);
 
 	// Always defined to 0 or 1
+	slang::CompilerOptionEntry dev_tools_entry {};
+	dev_tools_entry.name = slang::CompilerOptionName::MacroDefine;
+	dev_tools_entry.value.kind = slang::CompilerOptionValueKind::String;
+	dev_tools_entry.value.stringValue0 = "TOAST_DEV_TOOLS";
+#if defined(TOAST_DEV_TOOLS)
+	dev_tools_entry.value.stringValue1 = "1";
+#else
+	dev_tools_entry.value.stringValue1 = "0";
+#endif
+	compiler_options.push_back(dev_tools_entry);
+
+	// Always defined to 0 or 1
 	slang::CompilerOptionEntry reversed_z_entry {};
 	reversed_z_entry.name = slang::CompilerOptionName::MacroDefine;
 	reversed_z_entry.value.kind = slang::CompilerOptionValueKind::String;
@@ -227,9 +265,17 @@ void logDiagnostics(const Slang::ComPtr<slang::IBlob>& diagnostics, std::string_
 	const void* diag_ptr = diagnostics->getBufferPointer();
 	const size_t diag_size = diagnostics->getBufferSize();
 	if (diag_ptr && diag_size > 0) {
-		const char* diag_c = reinterpret_cast<const char*>(diag_ptr);
+		const char* diag_c = static_cast<const char*>(diag_ptr);
 		const std::string diag_str(diag_c, diag_c + diag_size);
-		TOAST_MESSAGE(logging::Severity::error, "Render", std::format("Slang diagnostics for '{}'", source_name), diag_str);
+
+		// Default to warning
+		logging::Severity severity = logging::Severity::warning;
+
+		if (diag_str.contains(": error ")) {
+			severity = logging::Severity::error;
+		}
+
+		TOAST_MESSAGE(severity, "Render", std::format("Slang diagnostics for '{}'", source_name), diag_str);
 	}
 }
 
@@ -286,7 +332,7 @@ auto compileModule(std::string_view module_name, std::string_view source_path, s
 		return {};
 	}
 
-	const auto* bytes = reinterpret_cast<const std::byte*>(spirv_blob->getBufferPointer());
+	const auto* bytes = static_cast<const std::byte*>(spirv_blob->getBufferPointer());
 
 	CompiledShaderCode result;
 	result.spirv.assign(bytes, bytes + spirv_blob->getBufferSize());

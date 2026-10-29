@@ -101,8 +101,11 @@ private:
 	[[Reflect, Name("Exposure"), Range(0.0, 8.0), Group("Tonemap")]]
 	float m_exposure = 1.0f;
 	/// Switches at the halfway point of a blend rather than interpolating - there is no curve in between
-	[[Reflect, Name("Tonemap Curve"), Enum("Reinhard", "ACES"), Group("Tonemap")]]
+	[[Reflect, Name("Tonemap Curve"), Enum("Reinhard", "ACES", "GT7"), Group("Tonemap")]]
 	int32_t m_tonemap_mode = 0;
+	/// GT7 toe exponent under the grey point, 1 is linear and higher darkens the shadows
+	[[Reflect, Name("GT7 Contrast Dip"), Range(1.0, 2.0), Group("Tonemap")]]
+	float m_gt_contrast_dip = 1.28f;
 	[[Reflect, Name("Gamma"), Range(1.0, 3.0), Group("Tonemap")]]
 	float m_gamma = 2.2f;
 	[[Reflect, Name("Contrast"), Range(0.0, 2.0), Group("Tonemap")]]

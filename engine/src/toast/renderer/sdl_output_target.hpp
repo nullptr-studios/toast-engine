@@ -21,7 +21,7 @@ public:
 	static auto getRequiredDeviceExtensions() -> std::vector<const char*>;
 	static auto queryExtent(SDL_Window* window) -> vk::Extent2D;
 
-	SDLOutputTarget(const VulkanCore& core, SDL_Window* window, vk::Extent2D preferred_extent);
+	SDLOutputTarget(const VulkanCore& core, SDL_Window* window, vk::Extent2D preferred_extent, bool prefer_hdr = false);
 	~SDLOutputTarget() override = default;
 
 	SDLOutputTarget(const SDLOutputTarget&) = delete;
@@ -33,6 +33,8 @@ public:
 	auto getExtent() const -> vk::Extent2D override;
 	[[nodiscard]]
 	auto getColorFormat() const -> vk::Format override;
+	[[nodiscard]]
+	auto isHdr() const -> bool override;
 	[[nodiscard]]
 	auto getImageCount() const -> uint32_t override;
 	[[nodiscard]]

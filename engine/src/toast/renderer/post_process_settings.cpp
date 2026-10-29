@@ -33,6 +33,7 @@ void blendPostProcess(PostProcessSettings& target, const PostProcessSettings& so
 
 	target.tonemap.exposure = mix(target.tonemap.exposure, source.tonemap.exposure, t);
 	target.tonemap.mode = pick(target.tonemap.mode, source.tonemap.mode, t);
+	target.tonemap.gt_contrast_dip = mix(target.tonemap.gt_contrast_dip, source.tonemap.gt_contrast_dip, t);
 	target.tonemap.gamma = mix(target.tonemap.gamma, source.tonemap.gamma, t);
 	target.tonemap.contrast = mix(target.tonemap.contrast, source.tonemap.contrast, t);
 	target.tonemap.saturation = mix(target.tonemap.saturation, source.tonemap.saturation, t);

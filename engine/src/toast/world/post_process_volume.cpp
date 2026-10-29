@@ -34,6 +34,7 @@ void PostProcessVolume::syncSettings() const {
 
 	m_settings.tonemap.exposure = m_exposure;
 	m_settings.tonemap.mode = static_cast<uint32_t>(std::max(m_tonemap_mode, 0));
+	m_settings.tonemap.gt_contrast_dip = m_gt_contrast_dip;
 	m_settings.tonemap.gamma = m_gamma;
 	m_settings.tonemap.contrast = m_contrast;
 	m_settings.tonemap.saturation = m_saturation;

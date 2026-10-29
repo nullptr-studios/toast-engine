@@ -152,8 +152,11 @@ void WorldUIPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t i
 
 		cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout, 1, *sets[draw_index], nullptr);
 
-		const PushConstants push {panel.model};
-		cmd.pushConstants<PushConstants>(layout, vk::ShaderStageFlagBits::eVertex, 0, push);
+		// Only the overlay layer draws after the tonemap
+		const auto* vulkan = renderer::VulkanRenderer::instance;
+		const float paper_white = overlay && vulkan->hdrOutput() ? vulkan->hdrPaperWhiteScale() : 0.0f;
+		const PushConstants push {panel.model, glm::vec4(paper_white, 0.0f, 0.0f, 0.0f)};
+		cmd.pushConstants<PushConstants>(layout, vk::ShaderStageFlagBits::eAll, 0, push);
 		cmd.draw(6, 1, 0, 0);
 		draw_index++;
 	}

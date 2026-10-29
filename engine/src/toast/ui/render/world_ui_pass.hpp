@@ -49,8 +49,10 @@ public:
 	void record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) override;
 
 private:
+	/// Mirrors ui_world.slang WorldPush
 	struct PushConstants {
 		glm::mat4 model;
+		glm::vec4 hdr;
 	};
 
 	const renderer::VulkanCore* m_core = nullptr;

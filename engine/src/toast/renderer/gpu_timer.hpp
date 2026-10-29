@@ -6,7 +6,9 @@
 #include <array>
 #include <chrono>
 #include <cstdint>
+#include <optional>
 #include <string_view>
+#include <tracy/Tracy.hpp>
 #include <vector>
 
 namespace renderer {
@@ -129,7 +131,20 @@ public:
 	    : m_timer(timer),
 	      m_slot(slot),
 	      m_cmd(cmd),
-	      m_scope(timer != nullptr ? timer->beginScope(slot, cmd, name) : GpuTimer::k_no_scope) { }
+	      m_scope(timer != nullptr ? timer->beginScope(slot, cmd, name) : GpuTimer::k_no_scope) {
+#ifdef TRACY_ENABLE
+		m_zone.emplace(
+		    static_cast<uint32_t>(__LINE__),
+		    __FILE__,
+		    sizeof(__FILE__) - 1,
+		    __FUNCTION__,
+		    sizeof(__FUNCTION__) - 1,
+		    name.data(),
+		    name.size(),
+		    0u
+		);
+#endif
+	}
 
 	~GpuScope() {
 		if (m_timer != nullptr) {
@@ -147,6 +162,9 @@ private:
 	uint32_t m_slot;
 	vk::CommandBuffer m_cmd;
 	uint32_t m_scope;
+#ifdef TRACY_ENABLE
+	std::optional<tracy::ScopedZone> m_zone;
+#endif
 };
 
 }

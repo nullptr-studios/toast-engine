@@ -2,9 +2,13 @@
 /// @author dario
 /// @date 09/10/2026
 
+#if defined(TOAST_DEV_TOOLS)
+
 #include "perf_window.hpp"
 
 #include "../async_compute.hpp"
+#include "../renderer_settings.hpp"
+#include "../shader_compiler.hpp"
 #include "../shadow_constants.hpp"
 #include "../vulkan_core.hpp"
 #include "gi_pass.hpp"
@@ -46,8 +50,16 @@ enum class PerfLevel : uint8_t {
 	bad
 };
 
-/// Good up to @p warn_from and bad past @p bad_from
-void drawSettingRow(toast::settings::Entry* entry) {
+/// Queued ahead of an edit so Custom starts from the tier
+void requestCustomPreset() {
+	auto& registry = toast::settings::Settings::get();
+	if (const toast::settings::Entry* preset = registry.find("renderer.quality.preset"); preset != nullptr) {
+		VulkanRenderer::instance->requestSettingValue(preset->key, static_cast<int64_t>(preset->meta.options.size()) - 1);
+	}
+}
+
+/// An edit of a preset_driven row switches to Custom
+void drawSettingRow(toast::settings::Entry* entry, bool preset_driven = false) {
 	using toast::settings::Type;
 	using toast::settings::Value;
 
@@ -65,10 +77,21 @@ void drawSettingRow(toast::settings::Entry* entry) {
 	if (ImGui::IsItemHovered() && !entry->meta.description.empty()) {
 		ImGui::SetTooltip("%s%s", entry->meta.description.c_str(), entry->meta.requires_restart ? "\nApplies on restart" : "");
 	}
+	if (entry->meta.requires_restart) {
+		ImGui::SameLine();
+		ImGui::TextColored(k_perf_warn, "(restart)");
+	}
 
 	ImGui::TableNextColumn();
 	ImGui::SetNextItemWidth(-FLT_MIN);
-	const Value value = registry.resolved(entry);
+	Value value = registry.resolved(entry);
+	bool leaves_tier = false;
+	if (preset_driven) {
+		if (auto forced = presetDrivenValue(entry->key); forced.has_value()) {
+			value = std::move(*forced);
+			leaves_tier = true;
+		}
+	}
 	const bool bounded = entry->meta.min < entry->meta.max;
 	std::optional<Value> changed;
 	switch (entry->type) {
@@ -118,6 +141,9 @@ void drawSettingRow(toast::settings::Entry* entry) {
 		case Type::string: ImGui::TextDisabled("%s", std::get<std::string>(value).c_str()); break;
 	}
 	if (changed.has_value()) {
+		if (leaves_tier) {
+			requestCustomPreset();
+		}
 		VulkanRenderer::instance->requestSettingValue(entry->key, *changed);
 	}
 	ImGui::PopID();
@@ -1063,19 +1089,62 @@ void PerfWindow::drawShadowsTab() {
 
 void PerfWindow::drawQualityTab() {
 	auto& registry = toast::settings::Settings::get();
-	const auto rows = [&registry](const char* id, std::initializer_list<std::string_view> keys) {
+	const auto rows = [&registry](const char* id, std::initializer_list<std::string_view> keys, bool preset_driven = false) {
 		if (!ImGui::BeginTable(id, 2, ImGuiTableFlags_SizingStretchProp)) {
 			return;
 		}
 		for (const std::string_view key : keys) {
 			if (toast::settings::Entry* entry = registry.find(key); entry != nullptr) {
-				drawSettingRow(entry);
+				drawSettingRow(entry, preset_driven);
 			}
 		}
 		ImGui::EndTable();
 	};
 
-	rows("##perf_quality_preset", {"renderer.quality.preset"});
+	rows("##perf_quality_preset", {"renderer.quality.preset", "renderer.quality.ray_tracing"});
+
+	const auto& core = VulkanRenderer::instance->getCore();
+	const bool tracing = core.isRayTracingSupported();
+	ImGui::TextColored(tracing ? k_perf_good : k_perf_warn, "Ray tracing %s", tracing ? "in use" : "not in use");
+	ImGui::SameLine();
+	ImGui::TextDisabled("%s", std::string(core.rayTracingReason()).c_str());
+
+	const bool hdr_active = VulkanRenderer::instance->hdrOutput();
+	ImGui::TextColored(hdr_active ? k_perf_good : k_perf_warn, "HDR output %s", hdr_active ? "on" : "off");
+	rows("##perf_display_hdr", {"renderer.display.hdr", "renderer.display.hdr_paper_white", "renderer.display.hdr_peak"});
+	if (const toast::settings::Entry* hdr_setting = registry.find("renderer.display.hdr"); hdr_setting != nullptr) {
+		const bool wanted = std::get<bool>(registry.resolved(hdr_setting));
+		if (wanted && !hdr_active) {
+			ImGui::PushStyleColor(ImGuiCol_Text, k_perf_warn);
+			ImGui::TextWrapped("SDR is in use. Turn HDR on for this display in the operating system and restart");
+			ImGui::PopStyleColor();
+		} else if (!wanted && hdr_active) {
+			ImGui::PushStyleColor(ImGuiCol_Text, k_perf_warn);
+			ImGui::TextWrapped("Restart needed to go back to SDR");
+			ImGui::PopStyleColor();
+		}
+	}
+
+	const toast::settings::Entry* preset = registry.find("renderer.quality.preset");
+	const size_t tier_count = preset != nullptr ? preset->meta.options.size() - 1 : 0;
+	const int64_t preset_value = preset != nullptr ? std::get<int64_t>(registry.resolved(preset)) : 0;
+	const bool custom = preset == nullptr || std::cmp_greater_equal(preset_value, tier_count);
+	const bool rt_tier = !custom && std::cmp_greater_equal(preset_value, tier_count / 2);
+
+	// Applies at device creation
+	const auto warn = [](const char* text) {
+		ImGui::PushStyleColor(ImGuiCol_Text, k_perf_warn);
+		ImGui::TextWrapped("%s", text);
+		ImGui::PopStyleColor();
+	};
+	if (ShaderCompiler::rayTracingMode() != core.rayTracingStartupMode()) {
+		warn("Restart needed: the Hardware ray tracing change only applies when the game starts");
+	}
+	if (rt_tier && !tracing) {
+		warn("RT preset runs its non RT tier because ray tracing is not in use. Set Hardware ray tracing to Auto or On and restart");
+	} else if (!custom && !rt_tier && tracing) {
+		warn("Non RT preset with ray tracing still on. Set Hardware ray tracing to Off and restart for the raster only path");
+	}
 
 	// On release since each value recreates every target
 	if (toast::settings::Entry* scale = registry.find("renderer.quality.render_scale");
@@ -1086,14 +1155,18 @@ void PerfWindow::drawQualityTab() {
 		ImGui::TextUnformatted(scale->meta.label.c_str());
 		ImGui::TableNextColumn();
 		ImGui::SetNextItemWidth(-FLT_MIN);
+		const auto forced_scale = presetDrivenValue(scale->key);
 		if (!m_render_scale_editing) {
-			m_render_scale_edit = static_cast<float>(std::get<double>(registry.resolved(scale)));
+			m_render_scale_edit = static_cast<float>(std::get<double>(forced_scale.value_or(registry.resolved(scale))));
 		}
 		ImGui::SliderFloat(
 		    "##value", &m_render_scale_edit, static_cast<float>(scale->meta.min), static_cast<float>(scale->meta.max), "%.2f"
 		);
 		m_render_scale_editing = ImGui::IsItemActive();
 		if (ImGui::IsItemDeactivatedAfterEdit()) {
+			if (forced_scale.has_value()) {
+				requestCustomPreset();
+			}
 			VulkanRenderer::instance->requestSettingValue(scale->key, static_cast<double>(m_render_scale_edit));
 		}
 		ImGui::EndTable();
@@ -1104,14 +1177,14 @@ void PerfWindow::drawQualityTab() {
 		ImGui::TextDisabled("%ux%u of %ux%u", render.width, render.height, output.width, output.height);
 	}
 
-	const toast::settings::Entry* preset = registry.find("renderer.quality.preset");
-	const bool custom =
-	    preset == nullptr || std::cmp_greater_equal(std::get<int64_t>(registry.resolved(preset)), preset->meta.options.size() - 1);
-	ImGui::SeparatorText(custom ? "Preset Custom" : "Set by the preset");
-	ImGui::BeginDisabled(!custom);
+	ImGui::SeparatorText(custom ? "Preset Custom" : "Set by the preset, editing one switches to Custom");
 	rows(
 	    "##perf_quality_driven",
 	    {"renderer.quality.ssr",
+			 "renderer.quality.motion_blur",
+			 "renderer.quality.ssr_reach",
+			 "renderer.quality.ssr_steps",
+			 "renderer.voxels.shadow_maps_only",
 			 "renderer.quality.ssao",
 			 "renderer.voxels.traced_specular",
 			 "renderer.voxels.specular_roughness",
@@ -1120,12 +1193,13 @@ void PerfWindow::drawQualityTab() {
 			 "renderer.voxels.ambient_rays",
 			 "renderer.voxels.glass_shadows",
 			 "renderer.volumetrics.quality",
+			 "renderer.gi.enabled",
 			 "renderer.gi.quality",
 			 "renderer.shadows.distance",
 			 "renderer.shadows.spot_budget",
-			 "renderer.shadows.point_budget"}
+			 "renderer.shadows.point_budget"},
+	    true
 	);
-	ImGui::EndDisabled();
 
 	ImGui::SeparatorText("Always");
 	rows(
@@ -1134,9 +1208,11 @@ void PerfWindow::drawQualityTab() {
 			 "renderer.quality.taa",
 			 "renderer.quality.taa_history",
 			 "renderer.quality.fxaa",
+			 "renderer.quality.motion_blur_strength",
+			 "renderer.quality.motion_blur_max_length",
+			 "renderer.quality.motion_blur_samples",
 			 "renderer.quality.traced_shadows",
-			 "renderer.volumetrics.enabled",
-			 "renderer.gi.enabled"}
+			 "renderer.volumetrics.enabled"}
 	);
 }
 
@@ -1241,3 +1317,5 @@ void PerfWindow::draw() {
 }
 
 }
+
+#endif

@@ -839,7 +839,7 @@ FSOutput fragmentMain(VSOutput input)
 
     // Glass scenes leave shadow mapped lights to fragmentMarched which tints them
     VoxelRayFreeFilter rayFree;
-    rayFree.mapLights = (gPush.reuse.x & kSceneGlass) == 0u || gCamera.renderModePad.x == 19;
+    rayFree.mapLights = (gPush.reuse.x & kSceneGlass) == 0u || isShadowDebugMode(gCamera.renderModePad.x);
     const ShadingResult lit = shadeSurfaceLighting(surface, rayFree);
     output.indirectDiffuse = float4(lit.indirectDiffuse, 1.0);
     if (lit.isDebugView)
@@ -915,7 +915,7 @@ MarchedOutput fragmentMarched(VSOutput input)
     surface.pixel = input.position.xy;
 
     // Debug views come from fragmentMain alone
-    if (gCamera.renderModePad.x == 19 || isSurfaceDebugMode(gCamera.renderModePad.x))
+    if (isShadowDebugMode(gCamera.renderModePad.x) || isSurfaceDebugMode(gCamera.renderModePad.x))
     {
         return output;
     }
@@ -951,7 +951,7 @@ float4 fragmentAmbient(VSOutput input) : SV_Target0
 {
     const int2 pixel = int2(input.position.xy);
     const int3 texel = int3(pixel, 0);
-    if (!isLitVoxel(gAlbedo.Load(texel).a) || gCamera.renderModePad.x == 19 || isSurfaceDebugMode(gCamera.renderModePad.x))
+    if (!isLitVoxel(gAlbedo.Load(texel).a) || isShadowDebugMode(gCamera.renderModePad.x) || isSurfaceDebugMode(gCamera.renderModePad.x))
     {
         discard;
     }

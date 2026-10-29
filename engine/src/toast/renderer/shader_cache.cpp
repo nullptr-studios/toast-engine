@@ -2,10 +2,13 @@
 
 #include "shader_compiler.hpp"
 
+#include <algorithm>
+#include <array>
 #include <chrono>
 #include <cstdlib>
 #include <cstring>
 #include <format>
+#include <functional>
 #include <toast/assets/asset_manager.hpp>
 #include <toast/assets/assets.hpp>
 #include <toast/log.hpp>
@@ -32,6 +35,15 @@ constexpr std::string_view k_hash_index_uri = "cache://shaders/hash.json";
 auto hashToHex(uint64_t hash) -> std::string {
 	return std::format("{:016x}", hash);
 }
+
+#if !defined(TOAST_DEV_TOOLS)
+/// Loaded only by the debug and grid passes
+auto isDevOnlyShader(toast::UID uid) -> bool {
+	constexpr std::array<std::string_view, 3> k_names {"debug_billboard.slang", "debug_shape.slang", "grid.slang"};
+	const std::string uri = assets::AssetManager::getURI(uid);
+	return std::ranges::any_of(k_names, [&uri](std::string_view name) { return uri.ends_with(name); });
+}
+#endif
 
 /// Source plus optional device features since TOAST_RAY_QUERY changes the SPIR-V
 auto sourceHash(const std::string& source) -> uint64_t {
@@ -177,6 +189,27 @@ auto ShaderCache::compile(toast::UID uid, const std::string& source) -> EntryPtr
 
 	TOAST_INFO("Render", "Compiling shader {}", source_uri);
 	m_compiled_count.fetch_add(1, std::memory_order_relaxed);
+
+	struct ActiveCompile {
+		ShaderCache& cache;
+		std::string name;
+
+		ActiveCompile(ShaderCache& cache, std::string_view uri) : cache(cache), name(uri.substr(uri.find_last_of('/') + 1)) {
+			const std::lock_guard lock(cache.m_active_mutex);
+			cache.m_active_compiles.push_back(name);
+		}
+
+		~ActiveCompile() {
+			const std::lock_guard lock(cache.m_active_mutex);
+			std::erase(cache.m_active_compiles, name);
+		}
+
+		ActiveCompile(const ActiveCompile&) = delete;
+		auto operator=(const ActiveCompile&) -> ActiveCompile& = delete;
+	};
+
+	ActiveCompile active(*this, source_uri);
+
 	auto compiled = ShaderCompiler::compile(uid, source, source_uri);
 	if (compiled.spirv.empty()) {
 		TOAST_ERROR("Render", "Compilation failed for shader {} ({})", uid.get(), source_uri);
@@ -259,43 +292,77 @@ auto ShaderCache::loadOrCompile(toast::UID uid) -> EntryPtr {
 	return compile(uid, *source);
 }
 
-void ShaderCache::compileAllAtStartup() {
+void ShaderCache::compileAllAtStartup(const std::function<void(const StartupProgress&)>& on_progress) {
 	ZoneScoped;
 	const auto shader_uids = assets::listByType("shader");
 	TOAST_INFO("Render", "Checking {} shaders, compiling any that changed", shader_uids.size());
 	const auto started = std::chrono::steady_clock::now();
 	const size_t compiled_before = m_compiled_count.load(std::memory_order_relaxed);
-	m_module_count.store(0, std::memory_order_relaxed);
 
-	std::vector<std::future<bool>> jobs;
-	jobs.reserve(shader_uids.size());
+	// Import only modules have no entry point and the biggest sources go first
+	std::vector<std::pair<toast::UID, size_t>> entries;
+	size_t module_count = 0;
 	for (const auto uid : shader_uids) {
-		jobs.push_back(toast::ThreadPool::push([this, uid] {
-			// Import only modules have no entry point
-			if (const auto source = sourceOf(uid); source.has_value() && source->find("[shader(") == std::string::npos) {
-				m_module_count.fetch_add(1, std::memory_order_relaxed);
-				return true;
+		const auto source = sourceOf(uid);
+		if (source.has_value() && source->find("[shader(") == std::string::npos) {
+			++module_count;
+			continue;
+		}
+#if !defined(TOAST_DEV_TOOLS)
+		if (isDevOnlyShader(uid)) {
+			continue;
+		}
+#endif
+		entries.emplace_back(uid, source ? source->size() : 0);
+	}
+	m_module_count.store(module_count, std::memory_order_relaxed);
+	std::ranges::stable_sort(entries, std::ranges::greater {}, &std::pair<toast::UID, size_t>::second);
+
+	std::atomic<size_t> finished = 0;
+	std::vector<std::future<bool>> jobs;
+	jobs.reserve(entries.size());
+	for (const auto& [uid, size] : entries) {
+		jobs.push_back(toast::ThreadPool::push([this, uid, &finished] {
+			const bool ok = acquire(uid) != nullptr;
+			if (!ok) {
+				TOAST_ERROR("Render", "Failed to load or compile shader {}", uid.get());
 			}
-			if (acquire(uid) != nullptr) {
-				return true;
-			}
-			TOAST_ERROR("Render", "Failed to load or compile shader {}", uid.get());
-			return false;
+			finished.fetch_add(1, std::memory_order_relaxed);
+			return ok;
 		}));
 	}
 
+	const auto report = [&] {
+		if (!on_progress) {
+			return;
+		}
+		StartupProgress progress;
+		progress.total = entries.size();
+		progress.finished = finished.load(std::memory_order_relaxed);
+		progress.compiled = m_compiled_count.load(std::memory_order_relaxed) - compiled_before;
+		{
+			const std::lock_guard lock(m_active_mutex);
+			progress.compiling = m_active_compiles;
+		}
+		on_progress(progress);
+	};
+
 	size_t loaded = 0;
 	for (auto& job : jobs) {
+		while (job.wait_for(std::chrono::milliseconds(30)) != std::future_status::ready) {
+			report();
+		}
 		loaded += job.get() ? 1 : 0;
 	}
+	report();
 
 	const std::chrono::duration<double> elapsed = std::chrono::steady_clock::now() - started;
 	TOAST_INFO(
 	    "Render",
 	    "Shader cache ready: {}/{} shaders loaded, {} import only modules, {} compiled in {:.1f} s",
-	    loaded - m_module_count.load(std::memory_order_relaxed),
-	    shader_uids.size() - m_module_count.load(std::memory_order_relaxed),
-	    m_module_count.load(std::memory_order_relaxed),
+	    loaded,
+	    entries.size(),
+	    module_count,
 	    m_compiled_count.load(std::memory_order_relaxed) - compiled_before,
 	    elapsed.count()
 	);

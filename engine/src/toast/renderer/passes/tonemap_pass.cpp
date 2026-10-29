@@ -316,6 +316,10 @@ auto TonemapPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageV
 	  .grain = settings.grain,
 	  .time = frame != nullptr ? frame->frame_data.time : 0.0f,
 	  .auto_exposure = metering ? 1u : 0u,
+	  .hdr = VulkanRenderer::instance->hdrOutput() ? 1u : 0u,
+	  .paper_white_scale = VulkanRenderer::instance->hdrPaperWhiteScale(),
+	  .peak_scale = VulkanRenderer::instance->hdrPeakScale(),
+	  .gt_toe = settings.gt_contrast_dip,
 	};
 
 	if (m_params_buffers[frame_index].gpu_buffer.has_value()) {

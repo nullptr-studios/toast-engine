@@ -2,6 +2,8 @@
 /// @author dario
 /// @date 10/06/2026
 
+#if defined(TOAST_DEV_TOOLS)
+
 #include "debug_pass.hpp"
 
 #include "../clustered_lighting_constants.hpp"
@@ -1575,3 +1577,5 @@ void DebugPass::ensureLineCapacity(const renderer::VulkanCore& core, DynamicVert
 }
 
 }
+
+#endif

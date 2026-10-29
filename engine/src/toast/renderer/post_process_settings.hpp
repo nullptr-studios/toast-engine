@@ -21,8 +21,9 @@ struct PostProcessSettings {
 
 	struct Tonemap {
 		float exposure = 1.0f;
-		/// 0 Reinhard 1 ACES
+		/// 0 Reinhard 1 ACES 2 GT7
 		uint32_t mode = 0;
+		float gt_contrast_dip = 1.28f;
 		float gamma = 2.2f;
 		float contrast = 1.0f;
 		float saturation = 1.0f;

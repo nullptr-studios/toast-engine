@@ -1233,15 +1233,33 @@ static const uint kRenderModeVoxelVolumes = 23;
 static const uint kRenderModeVoxelMaterials = 24;
 static const uint kRenderModeVoxelPaletteId = 25;
 
+// Folds away when TOAST_DEV_TOOLS is 0
 bool isVoxelDebugMode(uint mode)
 {
+#if TOAST_DEV_TOOLS
     return mode >= kRenderModeVoxelSteps && mode <= kRenderModeVoxelPaletteId;
+#else
+    return false;
+#endif
+}
+
+bool isShadowDebugMode(uint mode)
+{
+#if TOAST_DEV_TOOLS
+    return mode == 19u;
+#else
+    return false;
+#endif
 }
 
 /// Modes evaluateDebugView draws for every surface
 bool isSurfaceDebugMode(uint mode)
 {
+#if TOAST_DEV_TOOLS
     return (mode >= 1u && mode <= 10u) || mode == 16u || isVoxelDebugMode(mode);
+#else
+    return false;
+#endif
 }
 
 float4 evaluateDebugView(Surface surface, ClusterCell cluster)
@@ -1506,7 +1524,7 @@ void evaluateDirectLighting<Filter : IShadowFilter>(Surface surface, ClusterCell
     float dist = cluster.viewDistance;
 
     uint shadowCasterIndex = uint(gCamera.shadowParams.x) - 1;
-    bool shadowDebugView = gCamera.renderModePad.x == 19;
+    bool shadowDebugView = isShadowDebugMode(gCamera.renderModePad.x);
 
     for (uint di = 0; di < gCamera.directionalLightCountPad.x; ++di)
     {
@@ -1639,7 +1657,7 @@ ShadingResult evaluateLighting<Filter : IShadowFilter>(Surface surface, ClusterC
     float debugMinShadow = 1.0;
     evaluateDirectLighting(surface, cluster, shadowFilter, color, specular, debugMinShadow);
 
-    if (gCamera.renderModePad.x == 19)
+    if (isShadowDebugMode(gCamera.renderModePad.x))
     {
         result.color = float3(debugMinShadow, debugMinShadow, debugMinShadow);
         result.isDebugView = true;

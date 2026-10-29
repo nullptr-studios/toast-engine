@@ -1,10 +1,11 @@
 import fullscreen;
+import gt7_tonemap;
 
 struct TonemapParams
 {
     float exposure;
 
-    // 0 Reinhard 1 ACES
+    // 0 Reinhard 1 ACES 2 GT7
     uint mode;
 
     float gamma;
@@ -20,6 +21,16 @@ struct TonemapParams
 
     // 1 multiplies exposure by the metered gExposure
     uint autoExposure;
+
+    // 1 writes scRGB where 1.0 is 80 nits
+    uint hdr;
+
+    // Both in scRGB
+    float paperWhiteScale;
+    float peakScale;
+
+    // GT7 toe exponent, the contrast dip under the grey point
+    float gtToe;
 };
 
 [[vk::binding(0,0)]]
@@ -66,19 +77,61 @@ float ditherOffset(float2 pixel)
     return (noise - 0.5) / 255.0;
 }
 
+/// Reinhard on luminance with its asymptote at the white point
+float3 tonemapHdr(float3 color, float whitePoint)
+{
+    const float l = luminance(color);
+    const float mapped = l / (1.0 + l / whitePoint);
+    return color * (mapped / max(l, 1e-6));
+}
+
 [shader("fragment")]
 float4 fragmentMain(VSOutput input) : SV_Target0
 {
     float exposure = gParams.autoExposure != 0u ? gParams.exposure * gExposure[1] : gParams.exposure;
     float3 color = gSceneColor.Sample(input.uv).rgb * exposure;
 
-    color = gParams.mode == 1 ? tonemapACES(color) : tonemapReinhard(color);
+    const bool hdr = gParams.hdr != 0u;
+    if (gParams.mode == 2)
+    {
+        // scRGB 1.0 is 80 nits and GT7 counts in units of 100
+        const float paperWhite = hdr ? gParams.paperWhiteScale * 0.8 : kGt7SdrPaperWhite;
+        const float peak = hdr ? gParams.peakScale * 0.8 : kGt7SdrPaperWhite;
+        color = gt7ToneMap(color, paperWhite, peak, gParams.gtToe);
+    }
+    else if (hdr)
+    {
+        const float whitePoint = max(gParams.peakScale / max(gParams.paperWhiteScale, 1e-3), 1.0);
+        color = tonemapHdr(color, whitePoint);
+    }
+    else
+    {
+        color = gParams.mode == 1 ? tonemapACES(color) : tonemapReinhard(color);
+    }
 
     const float kMiddleGrey = 0.18;
     color = max((color - kMiddleGrey) * gParams.contrast + kMiddleGrey, float3(0.0, 0.0, 0.0));
 
     float lum = luminance(color);
     color = max(lerp(float3(lum, lum, lum), color, gParams.saturation), float3(0.0, 0.0, 0.0));
+
+    if (hdr)
+    {
+        if (gParams.vignette > 0.0)
+        {
+            float2 centered = input.uv - 0.5;
+            float falloff = 1.0 - saturate(dot(centered, centered) * gParams.vignette * 2.0);
+            color *= falloff * falloff;
+        }
+
+        if (gParams.grain > 0.0)
+        {
+            float noise = frac(sin(dot(input.uv + frac(gParams.time), float2(12.9898, 78.233))) * 43758.5453);
+            color += (noise - 0.5) * gParams.grain;
+        }
+
+        return float4(min(max(color, float3(0.0, 0.0, 0.0)) * gParams.paperWhiteScale, float3(gParams.peakScale, gParams.peakScale, gParams.peakScale)), 1.0);
+    }
 
     float invGamma = 1.0 / max(gParams.gamma, 1e-4);
     color = pow(max(color, float3(0.0, 0.0, 0.0)), float3(invGamma, invGamma, invGamma));

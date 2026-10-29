@@ -23,11 +23,14 @@
 #include "renderer/passes/bloom_pass.hpp"
 #include "renderer/passes/cluster_lighting_pass.hpp"
 #include "renderer/passes/debris_pass.hpp"
+#if defined(TOAST_DEV_TOOLS)
 #include "renderer/passes/debug_pass.hpp"
+#endif
 #include "renderer/passes/environment_pass.hpp"
 #include "renderer/passes/fxaa_pass.hpp"
 #include "renderer/passes/gi_pass.hpp"
 #include "renderer/passes/grid_pass.hpp"
+#include "renderer/passes/motion_blur_pass.hpp"
 #include "renderer/passes/reflection_probe_pass.hpp"
 #include "renderer/passes/shadow_pass.hpp"
 #include "renderer/passes/ssao_pass.hpp"
@@ -58,6 +61,7 @@
 #include "ui/ui_system.hpp"
 #include "window/base_window.hpp"
 #include "window/sdl_window.hpp"
+#include "window/startup_splash.hpp"
 #include "window/window_events.hpp"
 #include "world/camera.hpp"
 #include "world/play_workspace.hpp"
@@ -616,7 +620,8 @@ auto Engine::shootVoxel(
 
 void Engine::createSDLWindow(const char* w_name) {
 	ZoneScoped;
-	m->window = std::make_unique<SDLWindow>(w_name, 1080, 720, SDL_WINDOW_VULKAN);
+	// Hidden until the shaders compile
+	m->window = std::make_unique<SDLWindow>(w_name, 1080, 720, SDL_WINDOW_VULKAN | SDL_WINDOW_HIDDEN);
 
 	auto* sdl_window = static_cast<SDL_Window*>(m->window->nativeHandle());
 	if (m->ui_system) {
@@ -628,17 +633,42 @@ void Engine::createSDLWindow(const char* w_name) {
 
 	// Compile every stale shader up front
 	renderer::ShaderCompiler::setFullOptimization(true);
-	renderer::ShaderCache::get().compileAllAtStartup();
+	renderer::ShaderCompiler::setMaxParallelCompiles(std::clamp<size_t>(std::thread::hardware_concurrency(), 2, 8));
+	{
+		StartupSplash splash;
+		renderer::ShaderCache::get().compileAllAtStartup([&splash](const renderer::ShaderCache::StartupProgress& progress) {
+			splash.update(progress.finished, progress.total, progress.compiling);
+		});
+		if (splash.closeRequested()) {
+			event::send<event::ExitApplication>();
+		}
+	}
+	SDL_ShowWindow(sdl_window);
+	SDL_RaiseWindow(sdl_window);
+
+	// Reads true only once the window is shown
+	const SDLWindow::DisplayHdr display_hdr = SDLWindow::queryDisplayHdr(sdl_window);
+	const auto hdr_setting = settings::Settings::get().value(renderer::k_hdr_output);
+	const bool prefer_hdr = display_hdr.enabled && (!hdr_setting.has_value() || std::get<bool>(*hdr_setting));
+	TOAST_INFO(
+	    "Render",
+	    "Display HDR {} (SDR white {:.2f}, headroom {:.2f}), HDR output {}",
+	    display_hdr.enabled ? "on" : "off",
+	    display_hdr.sdr_white,
+	    display_hdr.headroom,
+	    prefer_hdr ? "requested" : "off"
+	);
 
 	// create output texture
 	auto output_target = std::make_unique<renderer::SDLOutputTarget>(
-	    *m->vulkan_core, sdl_window, renderer::SDLOutputTarget::queryExtent(sdl_window)
+	    *m->vulkan_core, sdl_window, renderer::SDLOutputTarget::queryExtent(sdl_window), prefer_hdr
 	);
 	auto extent = output_target->getExtent();
 	auto color_format = output_target->getColorFormat();
 	auto depth_format = renderer::VulkanRenderer::selectDepthFormat(*m->vulkan_core);
 
 	m->renderer = std::make_unique<renderer::VulkanRenderer>(*m->vulkan_core, std::move(output_target));
+	m->renderer->setDisplayHdr(display_hdr.sdr_white, display_hdr.headroom);
 
 	// Constructed before any material pass so materials can bind the culled light buffers straight away
 	auto cluster_lighting_pass = std::make_unique<renderer::ClusterLightingPass>(*m->vulkan_core);
@@ -699,6 +729,7 @@ void Engine::createSDLWindow(const char* w_name) {
 	auto taa = std::make_unique<renderer::TaaPass>(*m->vulkan_core, scene_format, extent);
 	m->renderer->setTaaPass(taa.get());
 	m->renderer->addPostProcessPass(std::move(taa));
+	m->renderer->addPostProcessPass(std::make_unique<renderer::MotionBlurPass>(*m->vulkan_core, scene_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::BloomPass>(*m->vulkan_core, scene_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::TonemapPass>(*m->vulkan_core, color_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::FxaaPass>(*m->vulkan_core, color_format, extent));
@@ -715,11 +746,13 @@ void Engine::createSDLWindow(const char* w_name) {
 		});
 	}
 
-	// Players get the overlay above the game UI and hidden until F3
+#if defined(TOAST_DEV_TOOLS)
+	// Overlay above the game UI and hidden until F3
 	auto debug_pass =
 	    std::make_unique<renderer::DebugPass>(*m->vulkan_core, color_format, depth_format, extent, &cluster_lighting_pass_ref);
 	debug_pass->setEditorPanelsEnabled(false);
 	m->renderer->addRenderPass(std::move(debug_pass));
+#endif
 
 	// FIXME: CAPPED AT 240 for now
 	m->renderer->setFrameRateLimit(240.0);
@@ -805,18 +838,21 @@ void Engine::createAvaloniaWindow() {
 	auto taa = std::make_unique<renderer::TaaPass>(*m->vulkan_core, scene_format, extent);
 	m->renderer->setTaaPass(taa.get());
 	m->renderer->addPostProcessPass(std::move(taa));
+	m->renderer->addPostProcessPass(std::make_unique<renderer::MotionBlurPass>(*m->vulkan_core, scene_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::BloomPass>(*m->vulkan_core, scene_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::TonemapPass>(*m->vulkan_core, color_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::FxaaPass>(*m->vulkan_core, color_format, extent));
 
 	// Editor overlays, drawn after the tonemap in display space (see DebugPass::stage() / GridPass::stage())
 	m->renderer->addRenderPass(std::make_unique<renderer::GridPass>(*m->vulkan_core, color_format, depth_format, extent));
+#if defined(TOAST_DEV_TOOLS)
 	m->renderer->addRenderPass(
 	    std::make_unique<renderer::DebugPass>(*m->vulkan_core, color_format, depth_format, extent, &cluster_lighting_pass_ref)
 	);
 
 	// DebugPass is enabled on editor
 	m->renderer->setDebugDrawEnabled(true);
+#endif
 	m->renderer->addRenderPass(
 	    std::make_unique<ui::WorldUIPass>(*m->vulkan_core, color_format, depth_format, extent, ui::WorldUIPass::Layer::overlay)
 	);

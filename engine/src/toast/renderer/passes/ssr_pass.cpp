@@ -186,7 +186,12 @@ auto SsrPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView 
 	if (!history_valid) {
 		history_read.makeSampleable(cmd);
 	}
-	const auto settings = frame != nullptr ? frame->post_process.ssr : VulkanRenderer::PostProcessSettings::Ssr {};
+	auto settings = frame != nullptr ? frame->post_process.ssr : VulkanRenderer::PostProcessSettings::Ssr {};
+	// Non RT presets override the volume reach
+	if (const uint32_t steps = VulkanRenderer::instance->ssrOverrideSteps(); steps > 0) {
+		settings.max_steps = steps;
+		settings.stride = std::max(VulkanRenderer::instance->ssrOverrideReach(), 1.0f) / static_cast<float>(steps);
+	}
 
 	// Jittered since depth was rasterized with it
 	const glm::mat4 view_projection = frame != nullptr ? frame->frame_data.jittered_view_projection : glm::mat4(1.0f);

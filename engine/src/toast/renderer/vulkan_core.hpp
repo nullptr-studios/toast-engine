@@ -19,6 +19,8 @@
 
 namespace renderer {
 
+enum class RayTracingMode : uint8_t;
+
 enum class NsightMode : uint8_t {
 	none,
 	graphics_capture,
@@ -116,6 +118,16 @@ public:
 		return m_ray_tracing_supported;
 	}
 
+	[[nodiscard]]
+	auto rayTracingReason() const noexcept -> std::string_view {
+		return m_ray_tracing_reason;
+	}
+
+	[[nodiscard]]
+	auto rayTracingStartupMode() const noexcept -> RayTracingMode {
+		return m_ray_tracing_startup_mode;
+	}
+
 	/// VK_EXT_mesh_shader with task shaders and the output limits the voxel meshlets need
 	[[nodiscard]]
 	auto isMeshShaderSupported() const noexcept -> bool {
@@ -177,7 +189,7 @@ public:
 		return m_nsight_mode;
 	}
 
-#if defined(_WIN32)
+#if defined(_WIN32) && defined(TOAST_DEV_TOOLS)
 	/// @warning Blocks until the Nsight Graphics host attaches so F12 handler only
 	void activateNsightGpuTraceIfNeeded() const;
 #endif
@@ -294,6 +306,8 @@ private:
 	bool m_texture_sharing_supported = false;
 
 	bool m_ray_tracing_supported = false;
+	std::string_view m_ray_tracing_reason = "not probed";
+	RayTracingMode m_ray_tracing_startup_mode {};
 	bool m_mesh_shader_supported = false;
 	uint32_t m_mesh_multiview_views = 0;
 	bool m_depth_clamp_supported = false;

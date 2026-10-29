@@ -8,6 +8,9 @@
 
 #include <algorithm>
 #include <array>
+#include <mutex>
+#include <optional>
+#include <toast/log.hpp>
 #include <toast/settings/settings.hpp>
 #include <utility>
 
@@ -16,7 +19,8 @@ namespace {
 
 using toast::settings::Meta;
 
-constexpr uint32_t k_preset_custom = 4;
+constexpr uint32_t k_tiers_per_branch = 4;
+constexpr uint32_t k_preset_custom = 2 * k_tiers_per_branch;
 
 struct PresetKnobs {
 	bool ssr = true;
@@ -29,27 +33,108 @@ struct PresetKnobs {
 	bool glass_shadows = true;
 	uint32_t volumetric_quality = 2;
 	uint32_t gi_quality = 2;
+	bool gi_enabled = true;
+	float render_scale = 1.0f;
 	float shadow_distance = shadows::k_shadow_distance;
 	uint32_t spot_budget = shadows::k_max_spot_shadows;
 	uint32_t point_budget = shadows::k_max_point_shadows;
+	bool shadow_maps_only = false;
+	/// Zero steps keeps the post process volume values
+	float ssr_reach = 0.0f;
+	uint32_t ssr_steps = 0;
+	bool motion_blur = false;
 };
 
-/// Low Medium High Epic
+/// Low Medium High Epic without ray tracing, then Low RT Medium RT High RT Epic RT
 constexpr std::array<PresetKnobs, k_preset_custom> k_preset_tiers {
   {
-   {.ssr = false,
-	   .ssao = false,
+   // Without ray tracing
+    {.ssr = false,
+		 .ssao = false,
+		 .traced_specular = false,
+		 .specular_roughness = 0.3f,
+		 .specular_reach = 16.0f,
+		 .light_candidates = 2,
+		 .ambient_rays = false,
+		 .glass_shadows = false,
+		 .volumetric_quality = 0,
+		 .gi_quality = 0,
+		 .gi_enabled = false,
+		 .render_scale = 0.65f,
+		 .shadow_distance = 60.0f,
+		 .spot_budget = 4,
+		 .point_budget = 2,
+		 .shadow_maps_only = true},
+   {.ssr = true,
+	   .ssao = true,
 	   .traced_specular = false,
-	   .specular_roughness = 0.3f,
-	   .specular_reach = 16.0f,
-	   .light_candidates = 2,
+	   .specular_roughness = 0.4f,
+	   .specular_reach = 24.0f,
+	   .light_candidates = 4,
 	   .ambient_rays = false,
 	   .glass_shadows = false,
 	   .volumetric_quality = 0,
 	   .gi_quality = 0,
-	   .shadow_distance = 60.0f,
-	   .spot_budget = 4,
-	   .point_budget = 2},
+	   .gi_enabled = false,
+	   .render_scale = 0.75f,
+	   .shadow_distance = 100.0f,
+	   .spot_budget = 6,
+	   .point_budget = 3,
+	   .shadow_maps_only = true,
+	   .ssr_reach = 12.0f,
+	   .ssr_steps = 48},
+   {.ssr = true,
+	   .ssao = true,
+	   .traced_specular = false,
+	   .specular_roughness = 0.5f,
+	   .specular_reach = 32.0f,
+	   .light_candidates = 6,
+	   .ambient_rays = false,
+	   .glass_shadows = true,
+	   .volumetric_quality = 1,
+	   .gi_quality = 0,
+	   .gi_enabled = true,
+	   .render_scale = 0.85f,
+	   .shadow_distance = 150.0f,
+	   .spot_budget = 10,
+	   .point_budget = 5,
+	   .shadow_maps_only = true,
+	   .ssr_reach = 20.0f,
+	   .ssr_steps = 64,
+	   .motion_blur = true},
+   {.ssr = true,
+	   .ssao = true,
+	   .traced_specular = false,
+	   .specular_roughness = 0.5f,
+	   .specular_reach = 32.0f,
+	   .light_candidates = 8,
+	   .ambient_rays = false,
+	   .glass_shadows = true,
+	   .volumetric_quality = 1,
+	   .gi_quality = 1,
+	   .gi_enabled = true,
+	   .render_scale = 1.0f,
+	   .shadow_distance = 250.0f,
+	   .spot_budget = 16,
+	   .point_budget = 8,
+	   .shadow_maps_only = true,
+	   .ssr_reach = 32.0f,
+	   .ssr_steps = 96,
+	   .motion_blur = true},
+   // With ray tracing
+    {.ssr = false,
+		 .ssao = false,
+		 .traced_specular = false,
+		 .specular_roughness = 0.3f,
+		 .specular_reach = 16.0f,
+		 .light_candidates = 2,
+		 .ambient_rays = false,
+		 .glass_shadows = false,
+		 .volumetric_quality = 0,
+		 .gi_quality = 0,
+		 .shadow_distance = 60.0f,
+		 .spot_budget = 4,
+		 .point_budget = 2},
    {.ssr = true,
 	   .ssao = true,
 	   .traced_specular = false,
@@ -75,7 +160,8 @@ constexpr std::array<PresetKnobs, k_preset_custom> k_preset_tiers {
 	   .gi_quality = 2,
 	   .shadow_distance = 150.0f,
 	   .spot_budget = 16,
-	   .point_budget = 8},
+	   .point_budget = 8,
+	   .motion_blur = true},
    {.ssr = true,
 	   .ssao = true,
 	   .traced_specular = true,
@@ -88,12 +174,14 @@ constexpr std::array<PresetKnobs, k_preset_custom> k_preset_tiers {
 	   .gi_quality = 3,
 	   .shadow_distance = 250.0f,
 	   .spot_budget = shadows::k_max_spot_shadows,
-	   .point_budget = shadows::k_max_point_shadows},
+	   .point_budget = shadows::k_max_point_shadows,
+	   .motion_blur = true},
    }
 };
 
-/// Main thread only
+/// Main thread writes and the debug window reads under the mutex
 struct PresetState {
+	std::mutex mutex;
 	VulkanRenderer* renderer = nullptr;
 	uint32_t preset = k_preset_custom;
 	/// Off until every driven setting has reported its value
@@ -103,13 +191,30 @@ struct PresetState {
 
 PresetState g_preset;
 
+/// RT tiers fall back to the non RT tier of the same level when not tracing
+auto activeKnobs() -> const PresetKnobs& {
+	if (g_preset.preset >= k_preset_custom) {
+		return g_preset.knobs;
+	}
+	uint32_t tier = g_preset.preset;
+	if (tier >= k_tiers_per_branch && !g_preset.renderer->getCore().isRayTracingSupported()) {
+		tier -= k_tiers_per_branch;
+	}
+	return k_preset_tiers[tier];
+}
+
 void applyPreset() {
 	if (!g_preset.ready) {
 		return;
 	}
 	VulkanRenderer& renderer = *g_preset.renderer;
-	const PresetKnobs& knobs = g_preset.preset < k_preset_custom ? k_preset_tiers[g_preset.preset] : g_preset.knobs;
+	const PresetKnobs& knobs = activeKnobs();
+	renderer.setRenderScale(knobs.render_scale);
+	renderer.giSettings().enabled.store(knobs.gi_enabled, std::memory_order_relaxed);
 	renderer.setPostProcessPassEnabled("SSR", knobs.ssr);
+	renderer.setSsrOverride(knobs.ssr_reach, knobs.ssr_steps);
+	renderer.setPostProcessPassEnabled("Motion blur", knobs.motion_blur);
+	renderer.setVoxelShadowMapsOnly(knobs.shadow_maps_only);
 	renderer.setPostProcessPassEnabled("SSAO", knobs.ssao);
 	renderer.setVoxelTracedSpecular(knobs.traced_specular);
 	renderer.setVoxelSpecularRoughness(knobs.specular_roughness);
@@ -124,10 +229,53 @@ void applyPreset() {
 	shadows::setPointShadowBudget(knobs.point_budget);
 }
 
+using toast::settings::Value;
+
+struct DrivenSetting {
+	std::string_view key;
+	Value (*get)(const PresetKnobs&);
+};
+
+const std::array<DrivenSetting, 19> k_driven {
+  {
+   {"renderer.voxels.shadow_maps_only", [](const PresetKnobs& k) { return Value {k.shadow_maps_only}; }},
+   {"renderer.quality.ssr_reach", [](const PresetKnobs& k) { return Value {static_cast<double>(k.ssr_reach)}; }},
+   {"renderer.quality.ssr_steps", [](const PresetKnobs& k) { return Value {static_cast<int64_t>(k.ssr_steps)}; }},
+   {"renderer.quality.motion_blur", [](const PresetKnobs& k) { return Value {k.motion_blur}; }},
+   {"renderer.quality.ssr", [](const PresetKnobs& k) { return Value {k.ssr}; }},
+   {"renderer.quality.ssao", [](const PresetKnobs& k) { return Value {k.ssao}; }},
+   {"renderer.quality.render_scale", [](const PresetKnobs& k) { return Value {static_cast<double>(k.render_scale)}; }},
+   {"renderer.voxels.traced_specular", [](const PresetKnobs& k) { return Value {k.traced_specular}; }},
+   {"renderer.voxels.specular_roughness",
+	   [](const PresetKnobs& k) { return Value {static_cast<double>(k.specular_roughness)}; }},
+   {"renderer.voxels.specular_reach", [](const PresetKnobs& k) { return Value {static_cast<double>(k.specular_reach)}; }},
+   {"renderer.voxels.light_candidates", [](const PresetKnobs& k) { return Value {static_cast<int64_t>(k.light_candidates)}; }},
+   {"renderer.voxels.ambient_rays", [](const PresetKnobs& k) { return Value {k.ambient_rays}; }},
+   {"renderer.voxels.glass_shadows", [](const PresetKnobs& k) { return Value {k.glass_shadows}; }},
+   {"renderer.volumetrics.quality", [](const PresetKnobs& k) { return Value {static_cast<int64_t>(k.volumetric_quality)}; }},
+   {"renderer.gi.enabled", [](const PresetKnobs& k) { return Value {k.gi_enabled}; }},
+   {"renderer.gi.quality", [](const PresetKnobs& k) { return Value {static_cast<int64_t>(k.gi_quality)}; }},
+   {"renderer.shadows.distance", [](const PresetKnobs& k) { return Value {static_cast<double>(k.shadow_distance)}; }},
+   {"renderer.shadows.spot_budget", [](const PresetKnobs& k) { return Value {static_cast<int64_t>(k.spot_budget)}; }},
+   {"renderer.shadows.point_budget", [](const PresetKnobs& k) { return Value {static_cast<int64_t>(k.point_budget)}; }},
+   }
+};
+
+/// Custom starts from the tier it leaves
+void seedSettingsFrom(const PresetKnobs& tier) {
+	auto& settings = toast::settings::Settings::get();
+	for (const DrivenSetting& driven : k_driven) {
+		settings.setValue(driven.key, driven.get(tier), true);
+	}
+}
+
 template<typename T, typename V, typename Convert>
 auto presetKnob(T PresetKnobs::* knob, Convert convert) {
 	return [knob, convert](V value) {
-		g_preset.knobs.*knob = convert(value);
+		{
+			const std::lock_guard lock(g_preset.mutex);
+			g_preset.knobs.*knob = convert(value);
+		}
 		applyPreset();
 	};
 }
@@ -160,21 +308,85 @@ void registerDisplay(VulkanRenderer& renderer) {
 			 .step = 1.0}
 	)
 	    .onChange([&renderer](double v) { renderer.setFrameRateLimit(v); });
+
+	static float hdr_paper_white = 0.0f;
+	static float hdr_peak = 0.0f;
+	toast::settings::declareFloat(
+	    "renderer.display.hdr_paper_white",
+	    0.0,
+	    {.label = "HDR paper white",
+			 .category = "Display",
+			 .description = "Nits that SDR white and the UI sit at when HDR output is on. 0 follows the Windows SDR content "
+			                "brightness slider",
+			 .min = 0.0,
+			 .max = 500.0,
+			 .step = 5.0}
+	)
+	    .onChange([&renderer](double v) {
+		    hdr_paper_white = static_cast<float>(v);
+		    renderer.setHdrNits(hdr_paper_white, hdr_peak);
+	    });
+
+	toast::settings::declareFloat(
+	    "renderer.display.hdr_peak",
+	    0.0,
+	    {.label = "HDR peak brightness",
+			 .category = "Display",
+			 .description = "Nits the tonemap rolls highlights off toward when HDR output is on. 0 uses what the display reports, "
+			                "1000 when it does not say",
+			 .min = 0.0,
+			 .max = 4000.0,
+			 .step = 50.0}
+	)
+	    .onChange([&renderer](double v) {
+		    hdr_peak = static_cast<float>(v);
+		    renderer.setHdrNits(hdr_paper_white, hdr_peak);
+	    });
+}
+
+/// Dev builds keep Custom and players start on a tier for their GPU
+auto defaultPreset(VulkanRenderer& renderer) -> int64_t {
+#if defined(TOAST_DEV_TOOLS)
+	static_cast<void>(renderer);
+	return k_preset_custom;
+#else
+	const VulkanCore& core = renderer.getCore();
+	if (core.isRayTracingSupported()) {
+		return k_tiers_per_branch + 2;
+	}
+	return core.getPhysicalDevice().getProperties().deviceType == vk::PhysicalDeviceType::eDiscreteGpu ? 1 : 0;
+#endif
 }
 
 void registerQuality(VulkanRenderer& renderer) {
 	toast::settings::declareInt(
 	    "renderer.quality.preset",
-	    k_preset_custom,
+	    defaultPreset(renderer),
 	    {
 	      .label = "Preset",
 	      .category = "Quality",
-	      .description = "Reflections, AO, shadows, voxel lighting, volumetrics and GI together. Custom uses each setting",
-	      .options = {"Low", "Medium", "High", "Epic", "Custom"}
+	      .description = "Reflections, AO, shadows, voxel lighting, volumetrics, GI and render scale together. The RT tiers need "
+	                     "hardware ray tracing and run the matching non RT tier without it. Custom uses each setting",
+	      .options = {"Low", "Medium", "High", "Epic", "Low RT", "Medium RT", "High RT", "Epic RT", "Custom"}
 	}
 	)
 	    .onChange([](int64_t v) {
-		    g_preset.preset = static_cast<uint32_t>(std::clamp<int64_t>(v, 0, k_preset_custom));
+		    const auto next = static_cast<uint32_t>(std::clamp<int64_t>(v, 0, k_preset_custom));
+		    std::optional<PresetKnobs> seed;
+		    {
+			    const std::lock_guard lock(g_preset.mutex);
+			    if (g_preset.ready && g_preset.preset < k_preset_custom && next == k_preset_custom) {
+				    seed = activeKnobs();
+				    g_preset.knobs = *seed;
+			    }
+			    g_preset.preset = next;
+		    }
+		    if (seed.has_value()) {
+			    seedSettingsFrom(*seed);
+		    }
+		    if (next >= k_tiers_per_branch && next < k_preset_custom && !g_preset.renderer->getCore().isRayTracingSupported()) {
+			    TOAST_INFO("Render", "Ray tracing is not in use on this device so the RT preset runs its non RT tier");
+		    }
 		    applyPreset();
 	    });
 
@@ -183,12 +395,12 @@ void registerQuality(VulkanRenderer& renderer) {
 	    1.0,
 	    {.label = "Render scale",
 			 .category = "Quality",
-			 .description = "Share of the output resolution the world renders at before TAA upsamples it",
+			 .description = "Share of the output resolution the world renders at before TAA upsamples it. Preset Custom only",
 			 .min = 0.5,
 			 .max = 1.0,
 			 .step = 0.05}
 	)
-	    .onChange([&renderer](double v) { renderer.setRenderScale(static_cast<float>(v)); });
+	    .onChange(presetKnob<float, double>(&PresetKnobs::render_scale, k_to_float));
 
 	const auto pass_toggle = [&renderer](std::string_view key, std::string_view pass, bool default_value, std::string description) {
 		toast::settings::declareBool(
@@ -212,6 +424,73 @@ void registerQuality(VulkanRenderer& renderer) {
 			 .description = "Contact darkening where geometry meets geometry. Preset Custom only"}
 	)
 	    .onChange(presetKnob<bool, bool>(&PresetKnobs::ssao, k_same_bool));
+
+	toast::settings::declareBool(
+	    "renderer.quality.motion_blur",
+	    false,
+	    {.label = "Motion blur",
+			 .category = "Quality",
+			 .description = "Blurs the image along the motion vectors of the frame. Preset Custom only"}
+	)
+	    .onChange(presetKnob<bool, bool>(&PresetKnobs::motion_blur, k_same_bool));
+
+	toast::settings::declareFloat(
+	    "renderer.quality.motion_blur_strength",
+	    0.5,
+	    {.label = "Motion blur shutter",
+			 .category = "Quality",
+			 .description = "Share of the frame the shutter stays open. 0.5 is a 180 degree shutter",
+			 .min = 0.0,
+			 .max = 1.0,
+			 .step = 0.05}
+	)
+	    .onChange([&renderer](double v) { renderer.setMotionBlurStrength(static_cast<float>(v)); });
+
+	toast::settings::declareFloat(
+	    "renderer.quality.motion_blur_max_length",
+	    0.04,
+	    {.label = "Motion blur max length",
+			 .category = "Quality",
+			 .description = "Longest blur as a share of the screen height",
+			 .min = 0.005,
+			 .max = 0.2,
+			 .step = 0.005}
+	)
+	    .onChange([&renderer](double v) { renderer.setMotionBlurMaxLength(static_cast<float>(v)); });
+
+	toast::settings::declareInt(
+	    "renderer.quality.motion_blur_samples",
+	    12,
+	    {.label = "Motion blur samples",
+			 .category = "Quality",
+			 .description = "Taps along each blur. More is smoother and costs more",
+			 .min = 4.0,
+			 .max = 32.0}
+	)
+	    .onChange([&renderer](int64_t v) { renderer.setMotionBlurSamples(static_cast<uint32_t>(std::max<int64_t>(v, 2))); });
+
+	toast::settings::declareFloat(
+	    "renderer.quality.ssr_reach",
+	    0.0,
+	    {.label = "SSR reach",
+			 .category = "Quality",
+			 .description = "Meters an SSR ray travels, with the steps below in place of the post process volume. Preset Custom only",
+			 .min = 0.0,
+			 .max = 100.0,
+			 .step = 1.0}
+	)
+	    .onChange(presetKnob<float, double>(&PresetKnobs::ssr_reach, k_to_float));
+
+	toast::settings::declareInt(
+	    "renderer.quality.ssr_steps",
+	    0,
+	    {.label = "SSR steps",
+			 .category = "Quality",
+			 .description = "Samples along each SSR ray. 0 keeps the post process volume values. Preset Custom only",
+			 .min = 0.0,
+			 .max = 256.0}
+	)
+	    .onChange(presetKnob<uint32_t, int64_t>(&PresetKnobs::ssr_steps, k_to_count));
 	pass_toggle("renderer.quality.fxaa", "FXAA", true, "Edge anti-aliasing on the tonemapped image. Skipped while TAA is on.");
 
 	toast::settings::declareBool(
@@ -473,6 +752,17 @@ void registerVoxels(VulkanRenderer& renderer) {
 	    .onChange(presetKnob<uint32_t, int64_t>(&PresetKnobs::light_candidates, [](int64_t v) {
 		    return static_cast<uint32_t>(std::max<int64_t>(v, 1));
 	    }));
+
+	toast::settings::declareBool(
+	    "renderer.voxels.shadow_maps_only",
+	    false,
+	    {.label = "Shadow maps only",
+			 .category = "Voxels",
+			 .description = "Every light shadows voxels with its shadow map whatever its Voxel Shadows mode says. Marched and "
+			                "Sampled shadows trace scene rays, through ray queries when the GPU traces and else by walking the "
+			                "software cell grid. Preset Custom only"}
+	)
+	    .onChange(presetKnob<bool, bool>(&PresetKnobs::shadow_maps_only, k_same_bool));
 
 	toast::settings::declareBool(
 	    "renderer.voxels.ambient_rays",
@@ -852,6 +1142,7 @@ void registerVolumetrics(VulkanRenderer& renderer) {
 	    .onChange([&renderer](double v) { renderer.setVolumetricDistance(static_cast<float>(v)); });
 }
 
+#if defined(TOAST_DEV_TOOLS)
 void registerDebug(VulkanRenderer& renderer) {
 	toast::settings::declareBool(
 	    k_debug_overlay_in_game,
@@ -863,11 +1154,40 @@ void registerDebug(VulkanRenderer& renderer) {
 	)
 	    .onChange([&renderer](bool visible) { renderer.setDebugOverlayInGame(visible); });
 }
+#endif
 
 }
 
 void registerRendererStartupSettings() {
 	registerShadows();
+
+	toast::settings::declareBool(
+	    k_hdr_output,
+	    true,
+	    {.label = "HDR output",
+			 .category = "Display",
+			 .description = "Presents HDR when the display has it turned on in the operating system and SDR otherwise. Off keeps "
+			                "SDR on every display",
+			 .requires_restart = true}
+	);
+
+	toast::settings::declareInt(
+	    "renderer.quality.ray_tracing",
+	    0,
+	    {
+	      .label = "Hardware ray tracing",
+	      .category = "Quality",
+	      .description = "Auto traces only on GPUs with RT cores since drivers emulate ray query slowly elsewhere. Off keeps the "
+	                     "raster and software paths on every GPU, which is what the non RT presets are tuned for. On forces ray "
+	                     "query wherever the driver offers it",
+	      .options = {"Auto", "On", "Off"},
+	      .requires_restart = true
+	}
+	)
+	    .onChange([](int64_t v) {
+		    constexpr std::array<RayTracingMode, 3> k_modes {RayTracingMode::automatic, RayTracingMode::on, RayTracingMode::off};
+		    ShaderCompiler::setRayTracingMode(k_modes[static_cast<size_t>(std::clamp<int64_t>(v, 0, 2))]);
+	    });
 
 	toast::settings::declareBool(
 	    "renderer.voxels.trace_ray_query",
@@ -886,9 +1206,11 @@ void registerGi(VulkanRenderer& renderer) {
 	toast::settings::declareBool(
 	    "renderer.gi.enabled",
 	    true,
-	    {.label = "Radiance cascades", .category = "Global illumination", .description = "World space radiance cascade probes"}
+	    {.label = "Radiance cascades",
+			 .category = "Global illumination",
+			 .description = "World space radiance cascade probes. Preset Custom only"}
 	)
-	    .onChange([&gi](bool enabled) { gi.enabled.store(enabled, std::memory_order_relaxed); });
+	    .onChange(presetKnob<bool, bool>(&PresetKnobs::gi_enabled, k_same_bool));
 
 	toast::settings::declareInt(
 	    "renderer.gi.quality",
@@ -1104,6 +1426,19 @@ void registerGi(VulkanRenderer& renderer) {
 	    });
 }
 
+auto presetDrivenValue(std::string_view key) -> std::optional<toast::settings::Value> {
+	const std::lock_guard lock(g_preset.mutex);
+	if (g_preset.preset >= k_preset_custom) {
+		return std::nullopt;
+	}
+	for (const DrivenSetting& driven : k_driven) {
+		if (driven.key == key) {
+			return driven.get(activeKnobs());
+		}
+	}
+	return std::nullopt;
+}
+
 void registerRendererSettings(VulkanRenderer& renderer) {
 	g_preset.renderer = &renderer;
 	registerDisplay(renderer);
@@ -1112,7 +1447,9 @@ void registerRendererSettings(VulkanRenderer& renderer) {
 	registerGi(renderer);
 	registerEnvironment(renderer);
 	registerVolumetrics(renderer);
+#if defined(TOAST_DEV_TOOLS)
 	registerDebug(renderer);
+#endif
 	g_preset.ready = true;
 	applyPreset();
 }
