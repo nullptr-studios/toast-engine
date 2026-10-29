@@ -410,6 +410,12 @@ void registerQuality(VulkanRenderer& renderer) {
 	};
 
 	pass_toggle("renderer.quality.bloom", "Bloom", true, "Glow around highlights bright enough to overwhelm a lens.");
+	pass_toggle(
+	    "renderer.quality.lens_flare",
+	    "Lens flare",
+	    true,
+	    "Ghosts, halo and glare streaks from the brightest pixels. Tuned on the post process volume."
+	);
 	toast::settings::declareBool(
 	    "renderer.quality.ssr",
 	    true,

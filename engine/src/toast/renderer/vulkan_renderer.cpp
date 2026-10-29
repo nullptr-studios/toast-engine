@@ -67,6 +67,7 @@
 #include <toast/world/fog_volume.hpp>
 #include <toast/world/irradiance_volume.hpp>
 #include <toast/world/light.hpp>
+#include <toast/world/light_gizmo.hpp>
 #include <toast/world/mesh_node.hpp>
 #include <toast/world/point_light.hpp>
 #include <toast/world/post_process_volume.hpp>
@@ -4405,6 +4406,10 @@ void VulkanRenderer::tick(float time) noexcept {
 		    light->castsShadows() && (!positional || light->shadowDistance() <= 0.0f || camera_distance <= shadow_limit);
 		const bool shadow_map = casts_shadows && shadow_mode(*light) == toast::LightShadowMode::shadow_map;
 
+		if (isOutlined(light->rid())) {
+			toast::light_gizmo::draw(*light);
+		}
+
 		constexpr float k_light_icon_size = 0.5f;
 		debug::drawBillboard(
 		    light->world_position, k_light_icon_size, lightIcon(light->lightType()), glm::vec4(light->color(), 1.0f)
@@ -4416,9 +4421,6 @@ void VulkanRenderer::tick(float time) noexcept {
 				break;
 			}
 			case toast::LightType::directional: {
-				// FIXME
-				debug::drawArrow(light->world_position, light->world_position + light->forward() * 2.0f, glm::vec4(light->color(), 1.0f));
-
 				if (directional_count >= k_max_directional_lights) {
 					break;
 				}
@@ -4441,9 +4443,6 @@ void VulkanRenderer::tick(float time) noexcept {
 				const glm::vec3 view_pos = glm::vec3(frame_view * glm::vec4(world_pos, 1.0f));
 				const glm::vec3 forward = glm::normalize(point->forward());
 				const glm::vec4 shape = area_shape(*point, casts_shadows);
-
-				// FIXME
-				// debug::drawSphere(world_pos, point->attenuation(), glm::vec4(point->color(), 1.0f));
 
 				submit_punctual(
 				    PunctualSubmit {
@@ -4482,9 +4481,6 @@ void VulkanRenderer::tick(float time) noexcept {
 				const float inner = std::min(glm::radians(spot->innerRadius()), outer);
 				light_culling::Sphere spot_bounds = light_culling::spotBounds(world_pos, forward, spot->attenuation(), outer);
 				spot_bounds.radius += shape.y + shape.z;
-
-				// FIXME
-				debug::drawCone(world_pos, forward, spot->attenuation(), spot->outerRadius(), glm::vec4(spot->color(), 1.0f));
 
 				submit_punctual(
 				    PunctualSubmit {

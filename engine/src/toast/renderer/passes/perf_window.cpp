@@ -1208,6 +1208,7 @@ void PerfWindow::drawQualityTab() {
 			 "renderer.quality.taa",
 			 "renderer.quality.taa_history",
 			 "renderer.quality.fxaa",
+			 "renderer.quality.lens_flare",
 			 "renderer.quality.motion_blur_strength",
 			 "renderer.quality.motion_blur_max_length",
 			 "renderer.quality.motion_blur_samples",

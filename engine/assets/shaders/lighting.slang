@@ -432,11 +432,26 @@ float3 shadeLight(float3 N, float3 V, float3 L, float3 radiance, float3 albedo, 
     return shadeLight(N, V, L, radiance, albedo, metallic, roughness, reflectivity, specular);
 }
 
-float attenuateRange(float dist, float range)
+float rangeWindow(float dist, float range)
 {
     float rangeFalloff = clamp(1.0 - pow(dist / max(range, 0.0001), 4.0), 0.0, 1.0);
-    rangeFalloff = rangeFalloff * rangeFalloff;
-    return rangeFalloff / max(dist * dist, 0.0001);
+    return rangeFalloff * rangeFalloff;
+}
+
+float attenuateRange(float dist, float range)
+{
+    return rangeWindow(dist, range) / max(dist * dist, 0.0001);
+}
+
+float spotFactor(GpuLight light, float3 position)
+{
+    if (light.viewPosType.w <= 0.5)
+    {
+        return 1.0;
+    }
+    const float3 fromCenter = position - light.worldPosRange.xyz;
+    const float cosAngle = dot(normalize(fromCenter), normalize(light.directionPad.xyz));
+    return smoothstep(light.coneAngles.x, light.coneAngles.y, cosAngle);
 }
 
 // Mirror toast::LightShape and toast::LightShadowMode
@@ -517,17 +532,11 @@ float3 lightSampleRadiance(GpuLight light, float3 position, float3 samplePoint, 
     distance = length(toLight);
     L = toLight / max(distance, 1e-4);
 
-    float atten = attenuateRange(distance, light.worldPosRange.w);
-    if (light.viewPosType.w > 0.5)
-    {
-        const float3 fromCenter = position - light.worldPosRange.xyz;
-        const float cosAngle = dot(normalize(fromCenter), normalize(light.directionPad.xyz));
-        atten *= smoothstep(light.coneAngles.x, light.coneAngles.y, cosAngle);
-    }
+    float atten = attenuateRange(distance, light.worldPosRange.w) * spotFactor(light, position);
     const uint shape = uint(light.shape.x + 0.5);
-    if ((shape == kLightShapeDisc || shape == kLightShapeRect) && dot(light.directionPad.xyz, -L) <= 0.0)
+    if (shape == kLightShapeDisc || shape == kLightShapeRect)
     {
-        atten = 0.0;
+        atten *= saturate(dot(light.directionPad.xyz, -L));
     }
     return light.colorIntensity.rgb * light.colorIntensity.a * atten;
 }
@@ -545,8 +554,173 @@ float3 analyticLightPoint(GpuLight light, float3 position)
     return center - axis + 2.0 * axis * t;
 }
 
-/// Karis 2013 representative points
-/// Disc and rect use the sphere of equal area
+float emitterExtent(float4 shapeParams)
+{
+    const uint shape = uint(shapeParams.x + 0.5);
+    if (shape == kLightShapeRect)
+    {
+        return length(shapeParams.yz);
+    }
+    return shape == kLightShapeCapsule ? shapeParams.y + shapeParams.z : shapeParams.y;
+}
+
+static const float kOctagonRadiusScale = 1.0540925;
+static const uint kMaxEmitterVertices = 8u;
+
+/// Vector irradiance of a uniform Lambert polygon seen from the origin and clipped to the horizon of N
+/// Vertices are relative to the receiver, its dot with N is the cosine weighted solid angle
+float3 clippedPolygonVectorIrradiance(float3 vertices[kMaxEmitterVertices], uint count, float3 N)
+{
+    float3 clipped[kMaxEmitterVertices + 2];
+    float heights[kMaxEmitterVertices];
+    uint kept = 0u;
+    for (uint i = 0u; i < count; ++i)
+    {
+        heights[i] = dot(vertices[i], N);
+    }
+    for (uint i = 0u; i < count; ++i)
+    {
+        const uint j = (i + 1u == count) ? 0u : i + 1u;
+        const bool inside = heights[i] >= 0.0;
+        if (inside)
+        {
+            clipped[kept++] = vertices[i];
+        }
+        if (inside != (heights[j] >= 0.0))
+        {
+            clipped[kept++] = lerp(vertices[i], vertices[j], heights[i] / (heights[i] - heights[j]));
+        }
+    }
+    float3 sum = float3(0.0, 0.0, 0.0);
+    if (kept < 3u)
+    {
+        return sum;
+    }
+    for (uint i = 0u; i < kept; ++i)
+    {
+        const float3 a = clipped[i];
+        const float3 b = clipped[(i + 1u == kept) ? 0u : i + 1u];
+        const float3 na = a / max(length(a), 1e-6);
+        const float3 nb = b / max(length(b), 1e-6);
+        const float3 edge = cross(na, nb);
+        const float edgeLength = length(edge);
+        if (edgeLength > 1e-7)
+        {
+            sum += atan2(edgeLength, dot(na, nb)) * (edge / edgeLength);
+        }
+    }
+    return 0.5 * sum;
+}
+
+/// Cosine weighted solid angle of a sphere clipped to the horizon, Lagarde and de Rousiers 2014
+float sphereCosineSolidAngle(float cosTheta, float sinSigmaSqr)
+{
+    if (cosTheta * cosTheta > sinSigmaSqr)
+    {
+        return kPi * sinSigmaSqr * saturate(cosTheta);
+    }
+    const float sinTheta = sqrt(max(1.0 - cosTheta * cosTheta, 1e-8));
+    const float x = sqrt(1.0 / sinSigmaSqr - 1.0);
+    const float y = clamp(-x * (cosTheta / sinTheta), -1.0, 1.0);
+    const float sinThetaSqrtY = sinTheta * sqrt(1.0 - y * y);
+    return max((cosTheta * acos(y) - x * sinThetaSqrtY) * sinSigmaSqr + atan2(sinThetaSqrtY, x), 0.0);
+}
+
+struct AreaEmitter
+{
+    float3 direction;
+    float irradiance;
+    float area;
+};
+
+/// Radiance is intensity over area so the far field matches a point light of that intensity
+AreaEmitter evaluateAreaEmitter(GpuLight light, float3 position, float3 N)
+{
+    AreaEmitter emitter;
+    emitter.direction = N;
+    emitter.irradiance = 0.0;
+    emitter.area = 1.0;
+
+    const uint shape = uint(light.shape.x + 0.5);
+    const float3 axis = light.directionPad.xyz;
+    const bool oriented = dot(axis, axis) > 0.5;
+    const float3 center = light.worldPosRange.xyz;
+    const float3 toCenter = center - position;
+    const float distance = max(length(toCenter), 1e-4);
+    const float3 centerDirection = toCenter / distance;
+
+    float3 vertices[kMaxEmitterVertices];
+    uint count = 0u;
+    if (shape == kLightShapeRect && oriented)
+    {
+        const float3 tangent = light.shapeTangent.xyz;
+        const float3 bitangent = cross(axis, tangent);
+        const float3 w = tangent * light.shape.y;
+        const float3 h = bitangent * light.shape.z;
+        vertices[0] = toCenter - w - h;
+        vertices[1] = toCenter + w - h;
+        vertices[2] = toCenter + w + h;
+        vertices[3] = toCenter - w + h;
+        count = 4u;
+        emitter.area = 4.0 * light.shape.y * light.shape.z;
+    }
+    else if (shape == kLightShapeDisc && oriented)
+    {
+        float3 tangent;
+        float3 bitangent;
+        perpendicularBasis(axis, tangent, bitangent);
+        const float radius = light.shape.y * kOctagonRadiusScale;
+        for (uint i = 0u; i < 8u; ++i)
+        {
+            float s, c;
+            sincos(0.78539816 * float(i), s, c);
+            vertices[i] = toCenter + (tangent * c + bitangent * s) * radius;
+        }
+        count = 8u;
+        emitter.area = kPi * light.shape.y * light.shape.y;
+    }
+    else if (shape == kLightShapeCapsule && oriented)
+    {
+        // Tube seen as a rectangle along the axis facing the receiver
+        const float3 sideways = -toCenter - axis * dot(-toCenter, axis);
+        float3 facing = sideways / max(length(sideways), 1e-6);
+        if (dot(sideways, sideways) < 1e-10)
+        {
+            float3 unused;
+            perpendicularBasis(axis, facing, unused);
+        }
+        const float3 across = cross(axis, facing) * light.shape.y;
+        const float3 along = axis * (light.shape.z + 0.25 * kPi * light.shape.y);
+        vertices[0] = toCenter - along - across;
+        vertices[1] = toCenter + along - across;
+        vertices[2] = toCenter + along + across;
+        vertices[3] = toCenter - along + across;
+        count = 4u;
+        emitter.area = 4.0 * light.shape.y * light.shape.z + kPi * light.shape.y * light.shape.y;
+    }
+
+    if (count > 0u)
+    {
+        float3 vector = clippedPolygonVectorIrradiance(vertices, count, N);
+        // Either winding is accepted and the emitter lies on the side of its centre
+        vector *= dot(vector, centerDirection) < 0.0 ? -1.0 : 1.0;
+        emitter.irradiance = max(dot(N, vector), 0.0);
+        emitter.direction = vector / max(length(vector), 1e-6);
+        return emitter;
+    }
+
+    const float radius = shape == kLightShapeRect ? sqrt(4.0 * light.shape.y * light.shape.z / kPi) : light.shape.y;
+    const float sinSigma = min(radius / distance, 0.999);
+    const float cosTheta = dot(N, centerDirection);
+    emitter.area = kPi * radius * radius;
+    emitter.irradiance = sphereCosineSolidAngle(cosTheta, sinSigma * sinSigma);
+    // A direction partly under the horizon is lifted so the lit part still shades
+    const float lifted = max(cosTheta, 0.5 * sinSigma);
+    emitter.direction = normalize(centerDirection + N * (lifted - cosTheta));
+    return emitter;
+}
+
+/// Whole surface diffuse, Karis 2013 representative point specular with disc and rect as the sphere of equal area
 float3 shadeAnalyticLight(GpuLight light, float3 position, float3 N, float3 V, float3 L, float3 radiance, float3 albedo, float metallic,
                           float roughness, float reflectivity, out float3 specularPart)
 {
@@ -564,6 +738,16 @@ float3 shadeAnalyticLight(GpuLight light, float3 position, float3 N, float3 V, f
     {
         return float3(0.0, 0.0, 0.0);
     }
+
+    const AreaEmitter emitter = evaluateAreaEmitter(light, position, N);
+    const float nearest = length(analyticLightPoint(light, position) - position);
+    const float3 emitted = light.colorIntensity.rgb * light.colorIntensity.a * rangeWindow(nearest, light.worldPosRange.w) *
+                           spotFactor(light, position);
+    const float3 diffuseRadiance =
+        emitted * emitter.irradiance / (emitter.area * max(dot(N, emitter.direction), 1e-3));
+
+    // Point falloff is singular at the surface
+    radiance *= nearest * nearest / (nearest * nearest + emitter.area / kPi);
 
     const float alpha = max(roughness * roughness, 1e-4);
     const float3 R = reflect(-V, N);
@@ -596,7 +780,8 @@ float3 shadeAnalyticLight(GpuLight light, float3 position, float3 N, float3 V, f
     const float3 direction = normalize(lerp(normalize(core), normalize(closest), hit));
     const float normalization = lerp(1.0, (alpha / widened) * (alpha / widened) * lineNormalization, hit);
 
-    const LightTerms diffuse = shadeLightTerms(N, V, L, radiance, albedo, metallic, roughness, reflectivity);
+    const LightTerms diffuse =
+        shadeLightTerms(N, V, emitter.direction, diffuseRadiance, albedo, metallic, roughness, reflectivity);
     const LightTerms specular = shadeLightTerms(N, V, direction, radiance, albedo, metallic, roughness, reflectivity);
     specularPart = specular.specular * normalization;
     return diffuse.diffuse * albedo + specularPart;
@@ -637,6 +822,9 @@ static const float2 kPoissonDisk[12] = {
 };
 
 static const uint kShadowProbeTaps = 4u;
+
+static const float kWidePenumbraTexels = 6.0;
+static const uint kWidePenumbraTaps = 16u;
 
 /// Walked per frame so TAA averages the rotation
 float interleavedGradientNoise(float2 pixel)
@@ -693,6 +881,9 @@ float pcfShadowRadius(
     float2 rotation = float2(cos(angle), sin(angle));
     float radius = texelSize * radiusTexels;
 
+    // A wide penumbra self shadows without a larger slope allowance
+    maxGradientAdjust *= max(radiusTexels / kShadowFilterRadiusTexels, 1.0);
+
     // LevelZero since implicit derivatives are undefined under per pixel branches
     // Centre and cross agreeing skips the rest
     float sum = 0.0;
@@ -719,7 +910,22 @@ float pcfShadowRadius(
         const float tapDepth = compareDepth + clamp(dot(gradient, offset), -maxGradientAdjust, maxGradientAdjust);
         sum += shadowMaps.SampleCmpLevelZero(float3(uv + offset, layer), tapDepth);
     }
-    return sum / 12.0;
+    if (radiusTexels <= kWidePenumbraTexels)
+    {
+        return sum / 12.0;
+    }
+
+    [unroll]
+    for (uint i = 0u; i < kWidePenumbraTaps; ++i)
+    {
+        const float spiral = sqrt((float(i) + 0.5) / float(kWidePenumbraTaps));
+        const float spiralAngle = float(i) * 2.39996323 + angle;
+        const float2 tap = float2(cos(spiralAngle), sin(spiralAngle)) * spiral;
+        const float2 offset = tap * radius;
+        const float tapDepth = compareDepth + clamp(dot(gradient, offset), -maxGradientAdjust, maxGradientAdjust);
+        sum += shadowMaps.SampleCmpLevelZero(float3(uv + offset, layer), tapDepth);
+    }
+    return sum / float(12u + kWidePenumbraTaps);
 }
 
 float pcfShadow(
@@ -731,8 +937,8 @@ float pcfShadow(
 }
 
 /// Caps the blocker search cost
-static const float kMaxBlockerSearchTexels = 16.0;
-static const float kMaxPenumbraTexels = 24.0;
+static const float kMaxBlockerSearchTexels = 40.0;
+static const float kMaxPenumbraTexels = 56.0;
 
 float emitterRadius(GpuLight light)
 {
@@ -1580,7 +1786,8 @@ void evaluateDirectLighting<Filter : IShadowFilter>(Surface surface, ClusterCell
             }
             const float3 toCenter = positionRange.xyz - surface.worldPosition;
             const float reach = positionRange.w + shapeParams.z;
-            if (!shadowDebugView && (dot(toCenter, toCenter) >= reach * reach || dot(N, toCenter) + shapeParams.z <= 0.0))
+            const float extent = emitterExtent(shapeParams);
+            if (!shadowDebugView && (dot(toCenter, toCenter) >= reach * reach || dot(N, toCenter) + extent <= 0.0))
             {
                 continue;
             }
@@ -1600,7 +1807,9 @@ void evaluateDirectLighting<Filter : IShadowFilter>(Surface surface, ClusterCell
             }
 
             // Zero contribution so skip before any shadow or ray work
-            if ((atten <= 0.0 || dot(N, L) <= 0.0) && !shadowDebugView)
+            // An emitter with extent still lights a receiver whose centre direction is under the horizon
+            const bool hasExtent = extent > 0.0;
+            if ((atten <= 0.0 || (!hasExtent && dot(N, L) <= 0.0)) && !shadowDebugView)
             {
                 continue;
             }
@@ -1608,7 +1817,18 @@ void evaluateDirectLighting<Filter : IShadowFilter>(Surface surface, ClusterCell
             float shadow;
             if (tracedShadowsEnabled())
             {
-                shadow = shadowFilter.traceMeshShadow(surface.worldPosition, geometricNormal, L, lightDist);
+                float3 rayDirection = L;
+                float rayDistance = lightDist;
+                if (hasExtent)
+                {
+                    const float2 pixel = surface.pixel;
+                    const float3 u = float3(interleavedGradientNoise(pixel), interleavedGradientNoise(pixel + 7.31),
+                                            interleavedGradientNoise(pixel + 13.77));
+                    const float3 toSample = sampleLightShape(light, surface.worldPosition, u) - surface.worldPosition;
+                    rayDistance = max(length(toSample), 1e-4);
+                    rayDirection = toSample / rayDistance;
+                }
+                shadow = shadowFilter.traceMeshShadow(surface.worldPosition, geometricNormal, rayDirection, rayDistance);
             }
             else
             {

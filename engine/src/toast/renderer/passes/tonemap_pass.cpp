@@ -320,6 +320,7 @@ auto TonemapPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageV
 	  .paper_white_scale = VulkanRenderer::instance->hdrPaperWhiteScale(),
 	  .peak_scale = VulkanRenderer::instance->hdrPeakScale(),
 	  .gt_toe = settings.gt_contrast_dip,
+	  .chromatic_aberration = settings.chromatic_aberration,
 	};
 
 	if (m_params_buffers[frame_index].gpu_buffer.has_value()) {

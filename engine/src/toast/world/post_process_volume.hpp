@@ -98,6 +98,17 @@ private:
 	[[Reflect, Name("Bloom Strength"), Range(0.0, 1.0), Group("Bloom")]]
 	float m_bloom_strength = 0.05f;
 
+	[[Reflect, Name("Lens Flare Intensity"), Range(0.0, 2.0), Group("Lens Flare")]]
+	float m_lens_flare_intensity = 0.1f;
+	[[Reflect, Name("Lens Flare Threshold"), Range(0.0, 20.0), Group("Lens Flare")]]
+	float m_lens_flare_threshold = 1.0f;
+	[[Reflect, Name("Ghost Intensity"), Range(0.0, 4.0), Group("Lens Flare")]]
+	float m_ghost_intensity = 1.0f;
+	[[Reflect, Name("Halo Intensity"), Range(0.0, 4.0), Group("Lens Flare")]]
+	float m_halo_intensity = 1.0f;
+	[[Reflect, Name("Glare Intensity"), Range(0.0, 2.0), Group("Lens Flare")]]
+	float m_glare_intensity = 0.2f;
+
 	[[Reflect, Name("Exposure"), Range(0.0, 8.0), Group("Tonemap")]]
 	float m_exposure = 1.0f;
 	/// Switches at the halfway point of a blend rather than interpolating - there is no curve in between
@@ -106,6 +117,8 @@ private:
 	/// GT7 toe exponent under the grey point, 1 is linear and higher darkens the shadows
 	[[Reflect, Name("GT7 Contrast Dip"), Range(1.0, 2.0), Group("Tonemap")]]
 	float m_gt_contrast_dip = 1.28f;
+	[[Reflect, Name("Chromatic Aberration"), Range(0.0, 0.05), Group("Tonemap")]]
+	float m_chromatic_aberration = 0.0f;
 	[[Reflect, Name("Gamma"), Range(1.0, 3.0), Group("Tonemap")]]
 	float m_gamma = 2.2f;
 	[[Reflect, Name("Contrast"), Range(0.0, 2.0), Group("Tonemap")]]

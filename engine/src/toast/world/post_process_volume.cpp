@@ -32,9 +32,16 @@ void PostProcessVolume::syncSettings() const {
 	m_settings.bloom.filter_radius = m_bloom_filter_radius;
 	m_settings.bloom.strength = m_bloom_strength;
 
+	m_settings.lens_flare.intensity = m_lens_flare_intensity;
+	m_settings.lens_flare.threshold = m_lens_flare_threshold;
+	m_settings.lens_flare.ghost_intensity = m_ghost_intensity;
+	m_settings.lens_flare.halo_intensity = m_halo_intensity;
+	m_settings.lens_flare.glare_intensity = m_glare_intensity;
+
 	m_settings.tonemap.exposure = m_exposure;
 	m_settings.tonemap.mode = static_cast<uint32_t>(std::max(m_tonemap_mode, 0));
 	m_settings.tonemap.gt_contrast_dip = m_gt_contrast_dip;
+	m_settings.tonemap.chromatic_aberration = m_chromatic_aberration;
 	m_settings.tonemap.gamma = m_gamma;
 	m_settings.tonemap.contrast = m_contrast;
 	m_settings.tonemap.saturation = m_saturation;

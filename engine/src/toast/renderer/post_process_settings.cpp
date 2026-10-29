@@ -31,9 +31,22 @@ void blendPostProcess(PostProcessSettings& target, const PostProcessSettings& so
 	target.bloom.filter_radius = mix(target.bloom.filter_radius, source.bloom.filter_radius, t);
 	target.bloom.strength = mix(target.bloom.strength, source.bloom.strength, t);
 
+	target.lens_flare.intensity = mix(target.lens_flare.intensity, source.lens_flare.intensity, t);
+	target.lens_flare.threshold = mix(target.lens_flare.threshold, source.lens_flare.threshold, t);
+	target.lens_flare.threshold_range = mix(target.lens_flare.threshold_range, source.lens_flare.threshold_range, t);
+	target.lens_flare.ghost_intensity = mix(target.lens_flare.ghost_intensity, source.lens_flare.ghost_intensity, t);
+	target.lens_flare.chroma_shift = mix(target.lens_flare.chroma_shift, source.lens_flare.chroma_shift, t);
+	target.lens_flare.halo_intensity = mix(target.lens_flare.halo_intensity, source.lens_flare.halo_intensity, t);
+	target.lens_flare.halo_width = mix(target.lens_flare.halo_width, source.lens_flare.halo_width, t);
+	target.lens_flare.halo_mask = mix(target.lens_flare.halo_mask, source.lens_flare.halo_mask, t);
+	target.lens_flare.halo_compression = mix(target.lens_flare.halo_compression, source.lens_flare.halo_compression, t);
+	target.lens_flare.glare_intensity = mix(target.lens_flare.glare_intensity, source.lens_flare.glare_intensity, t);
+	target.lens_flare.glare_divider = mix(target.lens_flare.glare_divider, source.lens_flare.glare_divider, t);
+
 	target.tonemap.exposure = mix(target.tonemap.exposure, source.tonemap.exposure, t);
 	target.tonemap.mode = pick(target.tonemap.mode, source.tonemap.mode, t);
 	target.tonemap.gt_contrast_dip = mix(target.tonemap.gt_contrast_dip, source.tonemap.gt_contrast_dip, t);
+	target.tonemap.chromatic_aberration = mix(target.tonemap.chromatic_aberration, source.tonemap.chromatic_aberration, t);
 	target.tonemap.gamma = mix(target.tonemap.gamma, source.tonemap.gamma, t);
 	target.tonemap.contrast = mix(target.tonemap.contrast, source.tonemap.contrast, t);
 	target.tonemap.saturation = mix(target.tonemap.saturation, source.tonemap.saturation, t);

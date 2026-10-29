@@ -23,6 +23,8 @@ public:
 		return m_attenuation;
 	}
 
+	void setAttenuation(float range) { m_attenuation = std::max(range, 0.0f); }
+
 private:
 	[[Reflect, Unit("m"), Range(0, 1000)]]
 	float m_attenuation = 10.0f;

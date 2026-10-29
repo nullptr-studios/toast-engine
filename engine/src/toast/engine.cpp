@@ -30,6 +30,7 @@
 #include "renderer/passes/fxaa_pass.hpp"
 #include "renderer/passes/gi_pass.hpp"
 #include "renderer/passes/grid_pass.hpp"
+#include "renderer/passes/lens_flare_pass.hpp"
 #include "renderer/passes/motion_blur_pass.hpp"
 #include "renderer/passes/reflection_probe_pass.hpp"
 #include "renderer/passes/shadow_pass.hpp"
@@ -730,6 +731,7 @@ void Engine::createSDLWindow(const char* w_name) {
 	m->renderer->setTaaPass(taa.get());
 	m->renderer->addPostProcessPass(std::move(taa));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::MotionBlurPass>(*m->vulkan_core, scene_format, extent));
+	m->renderer->addPostProcessPass(std::make_unique<renderer::LensFlarePass>(*m->vulkan_core, scene_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::BloomPass>(*m->vulkan_core, scene_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::TonemapPass>(*m->vulkan_core, color_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::FxaaPass>(*m->vulkan_core, color_format, extent));
@@ -839,6 +841,7 @@ void Engine::createAvaloniaWindow() {
 	m->renderer->setTaaPass(taa.get());
 	m->renderer->addPostProcessPass(std::move(taa));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::MotionBlurPass>(*m->vulkan_core, scene_format, extent));
+	m->renderer->addPostProcessPass(std::make_unique<renderer::LensFlarePass>(*m->vulkan_core, scene_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::BloomPass>(*m->vulkan_core, scene_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::TonemapPass>(*m->vulkan_core, color_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::FxaaPass>(*m->vulkan_core, color_format, extent));

@@ -31,6 +31,9 @@ struct TonemapParams
 
     // GT7 toe exponent, the contrast dip under the grey point
     float gtToe;
+
+    // 0.01 moves red and blue 1% of the distance to the centre
+    float chromaticAberration;
 };
 
 [[vk::binding(0,0)]]
@@ -89,7 +92,16 @@ float3 tonemapHdr(float3 color, float whitePoint)
 float4 fragmentMain(VSOutput input) : SV_Target0
 {
     float exposure = gParams.autoExposure != 0u ? gParams.exposure * gExposure[1] : gParams.exposure;
-    float3 color = gSceneColor.Sample(input.uv).rgb * exposure;
+    float3 color;
+    if (gParams.chromaticAberration > 0.0)
+    {
+        const float2 offset = (input.uv - 0.5) * gParams.chromaticAberration;
+        color = float3(gSceneColor.Sample(input.uv - offset).r, gSceneColor.Sample(input.uv).g, gSceneColor.Sample(input.uv + offset).b) * exposure;
+    }
+    else
+    {
+        color = gSceneColor.Sample(input.uv).rgb * exposure;
+    }
 
     const bool hdr = gParams.hdr != 0u;
     if (gParams.mode == 2)

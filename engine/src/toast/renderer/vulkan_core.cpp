@@ -708,6 +708,8 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	enabled_features.depthClamp = m_depth_clamp_supported ? VK_TRUE : VK_FALSE;
 	m_dual_source_blend_supported = device_features.dualSrcBlend == VK_TRUE;
 	enabled_features.dualSrcBlend = m_dual_source_blend_supported ? VK_TRUE : VK_FALSE;
+	// volumetrics.slang declares the fog ambient buffer writable and its fragment stages read it
+	enabled_features.fragmentStoresAndAtomics = device_features.fragmentStoresAndAtomics;
 	// HiZPyramid picks its level image by a loop index
 	enabled_features.shaderStorageImageArrayDynamicIndexing = VK_TRUE;
 	// Replays can start a pass from state no frame wrote so an index past a buffer reads zero instead of losing the device

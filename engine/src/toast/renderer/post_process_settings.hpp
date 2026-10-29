@@ -19,11 +19,26 @@ struct PostProcessSettings {
 		float strength = 0.05f;
 	} bloom;
 
+	struct LensFlare {
+		float intensity = 0.1f;
+		float threshold = 1.0f;
+		float threshold_range = 1.0f;
+		float ghost_intensity = 1.0f;
+		float chroma_shift = 0.015f;
+		float halo_intensity = 1.0f;
+		float halo_width = 0.6f;
+		float halo_mask = 0.5f;
+		float halo_compression = 0.65f;
+		float glare_intensity = 0.2f;
+		float glare_divider = 60.0f;
+	} lens_flare;
+
 	struct Tonemap {
 		float exposure = 1.0f;
 		/// 0 Reinhard 1 ACES 2 GT7
 		uint32_t mode = 0;
 		float gt_contrast_dip = 1.28f;
+		float chromatic_aberration = 0.0f;
 		float gamma = 2.2f;
 		float contrast = 1.0f;
 		float saturation = 1.0f;

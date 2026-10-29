@@ -64,7 +64,8 @@ private:
 		float paper_white_scale = 1.0f;
 		float peak_scale = 1.0f;
 		float gt_toe = 1.28f;
-		std::array<float, 3> pad1 {};
+		float chromatic_aberration = 0.0f;
+		std::array<float, 2> pad1 {};
 	};
 
 	/// Mirrors exposure.slang ExposureParams
