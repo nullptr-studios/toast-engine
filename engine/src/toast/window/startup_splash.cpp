@@ -74,7 +74,7 @@ void StartupSplash::draw(size_t finished, size_t total, std::span<const std::str
 	SDL_RenderDebugText(m_renderer, margin, 17.0f, "Compiling shaders...");
 
 	const float fraction = total == 0 ? 1.0f : std::clamp(static_cast<float>(finished) / static_cast<float>(total), 0.0f, 1.0f);
-	const SDL_FRect track {margin, 48.0f, logical_width - 2.0f * margin, 10.0f};
+	const SDL_FRect track {margin, 48.0f, logical_width - (2.0f * margin), 10.0f};
 	SDL_SetRenderDrawColor(m_renderer, 48, 48, 56, 255);
 	SDL_RenderFillRect(m_renderer, &track);
 	const SDL_FRect fill {track.x, track.y, track.w * fraction, track.h};

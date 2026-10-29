@@ -1116,7 +1116,7 @@ void PerfWindow::drawQualityTab() {
 		const bool wanted = std::get<bool>(registry.resolved(hdr_setting));
 		if (wanted && !hdr_active) {
 			ImGui::PushStyleColor(ImGuiCol_Text, k_perf_warn);
-			ImGui::TextWrapped("SDR is in use. Turn HDR on for this display in the operating system and restart");
+			ImGui::TextWrapped("SDR is in use. Turn HDR on for this display");
 			ImGui::PopStyleColor();
 		} else if (!wanted && hdr_active) {
 			ImGui::PushStyleColor(ImGuiCol_Text, k_perf_warn);
@@ -1138,12 +1138,12 @@ void PerfWindow::drawQualityTab() {
 		ImGui::PopStyleColor();
 	};
 	if (ShaderCompiler::rayTracingMode() != core.rayTracingStartupMode()) {
-		warn("Restart needed: the Hardware ray tracing change only applies when the game starts");
+		warn("Restart needed");
 	}
 	if (rt_tier && !tracing) {
-		warn("RT preset runs its non RT tier because ray tracing is not in use. Set Hardware ray tracing to Auto or On and restart");
+		warn("RT preset runs its non RT tier because ray tracing is not enabled");
 	} else if (!custom && !rt_tier && tracing) {
-		warn("Non RT preset with ray tracing still on. Set Hardware ray tracing to Off and restart for the raster only path");
+		warn("Non RT preset with ray tracing still on");
 	}
 
 	// On release since each value recreates every target

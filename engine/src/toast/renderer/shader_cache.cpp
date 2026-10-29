@@ -304,7 +304,7 @@ void ShaderCache::compileAllAtStartup(const std::function<void(const StartupProg
 	size_t module_count = 0;
 	for (const auto uid : shader_uids) {
 		const auto source = sourceOf(uid);
-		if (source.has_value() && source->find("[shader(") == std::string::npos) {
+		if (source.has_value() && !source->contains("[shader(")) {
 			++module_count;
 			continue;
 		}
