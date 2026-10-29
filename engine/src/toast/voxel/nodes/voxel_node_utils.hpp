@@ -12,7 +12,9 @@
 #include <string_view>
 #include <toast/assets/asset_manager.hpp>
 #include <toast/assets/assets.hpp>
+#include <toast/assets/prefab.hpp>
 #include <toast/voxel/assets/voxel_model.hpp>
+#include <toast/voxel/brush_composer.hpp>
 #include <toast/voxel/procedural_pool.hpp>
 #include <toast/voxel/voxel_volume.hpp>
 
@@ -33,6 +35,21 @@ auto assetOfType(const assets::Handle<T>& handle, std::string_view type) -> cons
 	}
 	const assets::Asset& asset = static_cast<const assets::HandleBase&>(handle).get();
 	return asset.type() == type ? static_cast<const T*>(&asset) : nullptr;
+}
+
+[[nodiscard]]
+inline auto voxelModelOf(const assets::Handle<assets::VoxelModel>& handle) -> const assets::VoxelModel* {
+	if (!handle.hasValue()) {
+		return nullptr;
+	}
+	const assets::Asset& asset = static_cast<const assets::HandleBase&>(handle).get();
+	if (asset.type() == "voxel_model") {
+		return static_cast<const assets::VoxelModel*>(&asset);
+	}
+	if (asset.type() == "node") {
+		return voxel::brushModel(static_cast<const assets::Prefab&>(asset), handle.uid());
+	}
+	return nullptr;
 }
 
 /** Loads a model into the procedural pool */

@@ -23,6 +23,7 @@ using _detail::assetOfType;
 using _detail::instantiateModel;
 using _detail::toId;
 using _detail::toVoxel;
+using _detail::voxelModelOf;
 
 [[nodiscard]]
 auto brush(int id, voxel::WriteMode mode, int match_id) noexcept -> voxel::WriteBrush {
@@ -140,9 +141,9 @@ void VoxelPiece::paintBox(glm::vec3 min, glm::vec3 max, int id) {
 void VoxelPiece::stamp(
     const assets::Handle<assets::VoxelModel>& asset, glm::vec3 pos, glm::quat rotation, voxel::WriteMode mode, int match_id
 ) {
-	const assets::VoxelModel* model = assetOfType(asset, "voxel_model");
+	const assets::VoxelModel* model = voxelModelOf(asset);
 	if (model == nullptr) {
-		TOAST_WARN("Voxel", "'{}' stamp needs a voxel model asset", name());
+		TOAST_WARN("Voxel", "'{}' stamp needs a voxel model or a voxel brush asset", name());
 		return;
 	}
 	const std::unique_ptr<voxel::Volume> piece = instantiateModel(*model);
@@ -161,9 +162,9 @@ void VoxelPiece::tile(
     const assets::Handle<assets::VoxelModel>& asset, int fit, glm::vec3 anchor, glm::vec3 offset, glm::vec3 mirror,
     voxel::WriteMode mode, int match_id
 ) {
-	const assets::VoxelModel* model = assetOfType(asset, "voxel_model");
+	const assets::VoxelModel* model = voxelModelOf(asset);
 	if (model == nullptr) {
-		TOAST_WARN("Voxel", "'{}' tile needs a voxel model asset", name());
+		TOAST_WARN("Voxel", "'{}' tile needs a voxel model or a voxel brush asset", name());
 		return;
 	}
 	const std::unique_ptr<voxel::Volume> pattern = instantiateModel(*model);

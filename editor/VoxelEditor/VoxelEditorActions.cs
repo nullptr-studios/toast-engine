@@ -14,6 +14,7 @@ namespace editor.VoxelEditor;
 
 public static class VoxelEditorActions {
 	private const string ProceduralVoxelType = "toast::ProceduralVoxel";
+	private const string VoxelBrushType = "toast::VoxelBrush";
 	private static readonly Listener s_listener = new();
 	private static bool s_registered;
 
@@ -124,7 +125,7 @@ public static class VoxelEditorActions {
 	}
 
 	private static async Task OpenAsync(HierarchyElement node) {
-		var isProcedural = node.Type == ProceduralVoxelType;
+		var isProcedural = node.Type is ProceduralVoxelType or VoxelBrushType;
 
 		// Already a ProceduralVoxel prefab, just open it
 		if (isProcedural && node.IsPrefab && !string.IsNullOrEmpty(node.PrefabUid)) {

@@ -1,5 +1,7 @@
 #include "voxel_node.hpp"
 
+#include "voxel_node_utils.hpp"
+
 #include <algorithm>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -638,7 +640,7 @@ void VoxelNode::extrudeFace(glm::vec3 pos, glm::vec3 normal, int distance) {
 void VoxelNode::stamp(
     const assets::Handle<assets::VoxelModel>& asset, glm::vec3 pos, glm::quat rotation, voxel::WriteMode mode, int match_id
 ) {
-	const assets::VoxelModel* model = voxelNodeAssetOfType(asset, "voxel_model");
+	const assets::VoxelModel* model = _detail::voxelModelOf(asset);
 	if (model == nullptr) {
 		TOAST_WARN("Voxel", "'{}' stamp needs a voxel model asset", name());
 		return;
