@@ -4,6 +4,8 @@
 //
 
 using System;
+using System.Buffers.Binary;
+using System.IO.Compression;
 using System.IO;
 using System.Linq;
 using Tomlyn;
@@ -38,6 +40,23 @@ public sealed class VoxelPaletteEntry {
 
 	public int TransformsTo { get; set; }
 	public bool Transparent { get; set; }
+
+	public void CopyFrom(VoxelPaletteEntry other) {
+		InUse = other.InUse;
+		R = other.R;
+		G = other.G;
+		B = other.B;
+		Roughness = other.Roughness;
+		Metallic = other.Metallic;
+		Reflectivity = other.Reflectivity;
+		Emissive = other.Emissive;
+		Alpha = other.Alpha;
+		Ior = other.Ior;
+		Material = other.Material;
+		HasMaterial = other.HasMaterial;
+		TransformsTo = other.TransformsTo;
+		Transparent = other.Transparent;
+	}
 
 	public void Clear() {
 		InUse = false;
@@ -74,6 +93,10 @@ public sealed class VoxelPaletteFile {
 	public const int Size = 256;
 
 	public const int SlotCount = 256;
+
+	public const int RowCount = 16;
+
+	public string[] RowLabels { get; } = Enumerable.Repeat("", RowCount).ToArray();
 
 	public float MaxEmissive { get; set; } = 1f;
 
@@ -119,6 +142,10 @@ public sealed class VoxelPaletteFile {
 					slot.DustColour = [ToByte(rgb[0]), ToByte(rgb[1]), ToByte(rgb[2])];
 			}
 
+		if (table.TryGetValue("row_labels", out var labels) && labels is TomlArray labelArray)
+			for (var i = 0; i < labelArray.Count && i < RowCount; i++)
+				palette.RowLabels[i] = labelArray[i] as string ?? "";
+
 		if (!table.TryGetValue("entries", out var list) || list is not TomlTableArray entries) return palette;
 
 		foreach (var entry in entries) {
@@ -159,6 +186,12 @@ public sealed class VoxelPaletteFile {
 		var root = new TomlTable {
 			["max_emissive"] = (double)MaxEmissive
 		};
+
+		if (RowLabels.Any(label => label.Length > 0)) {
+			var labels = new TomlArray();
+			foreach (var label in RowLabels) labels.Add(label);
+			root["row_labels"] = labels;
+		}
 
 		// Trailing slots nobody authored are left out
 		var slotCount = Slots.Length;
@@ -203,6 +236,58 @@ public sealed class VoxelPaletteFile {
 
 		root["entries"] = list;
 		return TomlSerializer.Serialize(root);
+	}
+
+	public byte[] ToPng() {
+		var row = new byte[1 + Size * 4];    // filter byte then pixels
+		for (var i = 1; i < Size; i++) {
+			var entry = Entries[i];
+			var o = 1 + i * 4;
+			if (i == Size - 1) {
+				row[o] = row[o + 1] = row[o + 2] = row[o + 3] = 255;
+			} else if (entry.InUse) {
+				row[o] = entry.R;
+				row[o + 1] = entry.G;
+				row[o + 2] = entry.B;
+				row[o + 3] = entry.Transparent ? (byte)Math.Round(Clamp01(entry.Alpha) * 255f) : (byte)255;
+			}
+		}
+
+		using var output = new MemoryStream();
+		output.Write([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+
+		var header = new byte[13];
+		BinaryPrimitives.WriteInt32BigEndian(header, Size);
+		BinaryPrimitives.WriteInt32BigEndian(header.AsSpan(4), 1);
+		header[8] = 8;    // bit depth
+		header[9] = 6;    // RGBA
+		WriteChunk(output, "IHDR", header);
+
+		using var compressed = new MemoryStream();
+		using (var z = new ZLibStream(compressed, CompressionLevel.Optimal, true)) z.Write(row);
+		WriteChunk(output, "IDAT", compressed.ToArray());
+		WriteChunk(output, "IEND", []);
+		return output.ToArray();
+	}
+
+	private static void WriteChunk(Stream output, string type, byte[] data) {
+		var word = new byte[4];
+		BinaryPrimitives.WriteInt32BigEndian(word, data.Length);
+		output.Write(word);
+
+		var body = new byte[4 + data.Length];
+		System.Text.Encoding.ASCII.GetBytes(type, body);
+		data.CopyTo(body, 4);
+		output.Write(body);
+
+		var crc = 0xFFFFFFFFu;
+		foreach (var b in body) {
+			crc ^= b;
+			for (var k = 0; k < 8; k++) crc = (crc & 1) != 0 ? 0xEDB88320u ^ (crc >> 1) : crc >> 1;
+		}
+
+		BinaryPrimitives.WriteUInt32BigEndian(word, ~crc);
+		output.Write(word);
 	}
 
 	private static float Clamp01(float value) {

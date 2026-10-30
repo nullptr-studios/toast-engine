@@ -29,6 +29,10 @@ public sealed record VoxelPaletteTip(
 			: slot.Name;
 	}
 
+	public static string Hex(int id) {
+		return $"{id - 1:X2}";
+	}
+
 	public static string Float(float value) {
 		return value.ToString("0.0#", CultureInfo.InvariantCulture);
 	}
@@ -36,13 +40,13 @@ public sealed record VoxelPaletteTip(
 	public static VoxelPaletteTip Describe(int id, VoxelPaletteFile palette) {
 		var entry = palette.Entries[id];
 		if (!entry.InUse)
-			return new VoxelPaletteTip($"{id}: empty", false, default, "", default, "", "", "");
+			return new VoxelPaletteTip($"{id}: empty ({Hex(id)})", false, default, "", default, "", "", "");
 
 		var slot = SlotOf(entry);
 		var maxEmissive = palette.MaxEmissive;
 
 		return new VoxelPaletteTip(
-			$"{id}: {SlotName(slot, palette.Slots[slot])}",
+			$"{id}: {SlotName(slot, palette.Slots[slot])} ({Hex(id)})",
 			true,
 			Color.FromRgb(entry.R, entry.G, entry.B),
 			$"{Float(entry.R / 255f)} {Float(entry.G / 255f)} {Float(entry.B / 255f)} rgb",

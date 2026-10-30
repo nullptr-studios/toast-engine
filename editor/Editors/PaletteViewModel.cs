@@ -11,6 +11,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Media;
+using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Dock.Model.Mvvm.Controls;
@@ -25,7 +26,7 @@ namespace editor.Editors;
 
 /// <summary>One swatch of the 255-cell grid</summary>
 public partial class PaletteSwatchVM : ObservableObject {
-	private readonly Action<int> m_select;
+	[ObservableProperty] private bool m_isDropTarget;
 	[ObservableProperty] private IBrush m_brush;
 	[ObservableProperty] private bool m_isSelected;
 
@@ -44,19 +45,41 @@ public partial class PaletteSwatchVM : ObservableObject {
 	[ObservableProperty] private string m_emissiveText = "";
 	[ObservableProperty] private string m_alphaText = "";
 
-	public PaletteSwatchVM(Action<int> select, int index, IBrush brush, bool used) {
-		m_select = select;
+	public PaletteSwatchVM(int index, IBrush brush, bool used) {
 		Index = index;
 		m_brush = brush;
 		m_isUsed = used;
-		m_title = $"{index}: empty";
+		m_title = $"{index}: empty ({VoxelPaletteTip.Hex(index)})";
 	}
 
 	public int Index { get; }
+}
 
-	[RelayCommand]
-	private void Select() {
-		m_select(Index);
+public partial class PaletteRowLabelVM : ObservableObject {
+	private readonly Action<int, string> m_commit;
+	[ObservableProperty] private string m_draftText = "";
+	[ObservableProperty] private bool m_isRenaming;
+	[ObservableProperty] private string m_text;
+
+	public PaletteRowLabelVM(int row, string text, Action<int, string> commit) {
+		Row = row;
+		m_text = text;
+		m_commit = commit;
+	}
+
+	public int Row { get; }
+
+	public void BeginRename() {
+		DraftText = Text;
+		IsRenaming = true;
+	}
+
+	public void CommitRename() {
+		IsRenaming = false;
+		var value = DraftText?.Trim() ?? "";
+		if (value == Text) return;
+		Text = value;
+		m_commit(Row, value);
 	}
 }
 
@@ -142,12 +165,24 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 
 	public PaletteViewModel() {
 		for (var i = 1; i < VoxelPaletteFile.Size; i++)
-			Swatches.Add(new PaletteSwatchVM(SelectIndex, i, s_emptyBrush, false));
+			Swatches.Add(new PaletteSwatchVM(i, s_emptyBrush, false));
 
 		if (Design.IsDesignMode) InitDesignData();
 	}
 
 	public ObservableCollection<PaletteSwatchVM> Swatches { get; } = [];
+
+	public ObservableCollection<PaletteRowLabelVM> RowLabels { get; } = [];
+
+	public IReadOnlyList<string> ColumnHeaders { get; } = Enumerable.Range(0, 16).Select(i => $"{i:X2}").ToList();
+	public IReadOnlyList<string> RowHeaders { get; } = Enumerable.Range(0, 16).Select(i => $"{i * 16:X2}").ToList();
+
+	[ObservableProperty] private bool m_isLabelsCollapsed;
+	[ObservableProperty] private bool m_isEntryCollapsed;
+	[ObservableProperty] private bool m_isPhysicsCollapsed;
+
+	private readonly SortedSet<int> m_selection = [1];
+	public IReadOnlyCollection<int> Selection => m_selection;
 
 	private readonly List<PaletteSlotVM> m_slots = [];
 	private readonly List<PaletteSlotVM> m_slotOptions = [];
@@ -157,7 +192,9 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 
 	public bool HasContent => m_palette is not null;
 
-	public string SelectedLabel => $"Index {SelectedIndex}";
+	public string SelectedLabel => m_selection.Count > 1
+		? $"{m_selection.Count} indices ({SelectedIndex}, {VoxelPaletteTip.Hex(SelectedIndex)})"
+		: $"Index {SelectedIndex} ({VoxelPaletteTip.Hex(SelectedIndex)})";
 
 	/// <summary>Emissive scaled by max_emissive</summary>
 	public string EmissiveHint => Emissive > 0f
@@ -243,10 +280,12 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 		MaxEmissive = palette.MaxEmissive;
 
 		RebuildSlots();
+		RowLabels.Clear();
+		for (var i = 0; i < VoxelPaletteFile.RowCount; i++)
+			RowLabels.Add(new PaletteRowLabelVM(i, palette.RowLabels[i], OnRowLabelEdited));
 		for (var i = 1; i < VoxelPaletteFile.Size; i++) RefreshSwatch(i);
 
-		SelectedIndex = FirstUsedIndex();
-		LoadSelectedEntry();
+		SelectOnly(FirstUsedIndex());
 		UpdateTitle();
 		OnPropertyChanged(nameof(HasContent));
 
@@ -271,10 +310,11 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 			swatch.IsUsed = false;
 			swatch.ShowChecker = false;
 			swatch.SlotText = null;
-			swatch.Title = $"{swatch.Index}: empty";
+			swatch.Title = $"{swatch.Index}: empty ({VoxelPaletteTip.Hex(swatch.Index)})";
 		}
 
 		ClearSlots();
+		RowLabels.Clear();
 
 		UpdateTitle();
 		OnPropertyChanged(nameof(HasContent));
@@ -372,7 +412,7 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 		RefreshSlotBadge(swatch, entry);
 
 		if (!entry.InUse) {
-			swatch.Title = $"{index}: empty";
+			swatch.Title = $"{index}: empty ({VoxelPaletteTip.Hex(index)})";
 			return;
 		}
 
@@ -403,8 +443,116 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 		swatch.SlotText = slot.ToString();
 	}
 
-	private void SelectIndex(int index) {
-		SelectedIndex = index;
+	private void OnRowLabelEdited(int row, string text) {
+		if (m_palette is not { } palette) return;
+		palette.RowLabels[row] = text;
+		IsDirty = true;
+	}
+
+	public void SetSelection(IEnumerable<int> indices, int primary) {
+		m_selection.Clear();
+		foreach (var index in indices)
+			if (index is > 0 and < VoxelPaletteFile.Size)
+				m_selection.Add(index);
+		if (m_selection.Count == 0) m_selection.Add(Math.Clamp(primary, 1, VoxelPaletteFile.Size - 1));
+		if (!m_selection.Contains(primary)) primary = m_selection.First();
+
+		if (SelectedIndex == primary) {
+			RefreshSelectionState();
+			LoadSelectedEntry();
+		} else {
+			SelectedIndex = primary;
+		}
+	}
+
+	public void SelectOnly(int index) {
+		SetSelection([index], index);
+	}
+
+	public void ToggleSelect(int index) {
+		if (m_selection.Contains(index) && m_selection.Count > 1) {
+			var rest = m_selection.Where(i => i != index).ToList();
+			SetSelection(rest, SelectedIndex == index ? rest[^1] : SelectedIndex);
+		} else {
+			SetSelection(m_selection.Append(index), index);
+		}
+	}
+
+	public void SelectRange(int from, int to) {
+		SetSelection(Enumerable.Range(Math.Min(from, to), Math.Abs(to - from) + 1), to);
+	}
+
+	private void RefreshSelectionState() {
+		foreach (var swatch in Swatches) swatch.IsSelected = m_selection.Contains(swatch.Index);
+		OnPropertyChanged(nameof(SelectedLabel));
+	}
+
+	public void MoveSelection(int offset) {
+		if (m_palette is not { } palette) return;
+		offset = ClampOffset(offset);
+		if (offset == 0) return;
+
+		var source = m_selection.ToList();
+		var target = source.Select(i => i + offset).ToList();
+		var snapshot = palette.Entries.Select(Clone).ToArray();
+
+		foreach (var (from, to) in source.Zip(target)) palette.Entries[to].CopyFrom(snapshot[from]);
+
+		var vacated = source.Where(i => !target.Contains(i));
+		var displaced = target.Where(i => !source.Contains(i));
+		foreach (var (to, from) in vacated.Zip(displaced)) palette.Entries[to].CopyFrom(snapshot[from]);
+
+		AfterReorder(target);
+	}
+
+	public void CopySelection(int offset) {
+		if (m_palette is not { } palette) return;
+		offset = ClampOffset(offset);
+		if (offset == 0) return;
+
+		var source = m_selection.ToList();
+		var snapshot = palette.Entries.Select(Clone).ToArray();
+		foreach (var from in source) palette.Entries[from + offset].CopyFrom(snapshot[from]);
+
+		AfterReorder(source.Select(i => i + offset).ToList());
+	}
+
+	public int ClampOffset(int offset) {
+		return Math.Clamp(offset, 1 - m_selection.Min, VoxelPaletteFile.Size - 1 - m_selection.Max);
+	}
+
+	private void AfterReorder(List<int> newSelection) {
+		for (var i = 1; i < VoxelPaletteFile.Size; i++) RefreshSwatch(i);
+		IsDirty = true;
+		RefreshSlotOptions();
+		SetSelection(newSelection, newSelection[^1]);
+	}
+
+	private static VoxelPaletteEntry Clone(VoxelPaletteEntry entry) {
+		var copy = new VoxelPaletteEntry();
+		copy.CopyFrom(entry);
+		return copy;
+	}
+
+	[RelayCommand]
+	private async Task ExportPng() {
+		if (m_palette is not { } palette || App.MainWindow is not { } owner) return;
+
+		var file = await owner.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions {
+			Title = "Export palette as PNG",
+			SuggestedFileName = Path.GetFileNameWithoutExtension(FileName) + ".png",
+			DefaultExtension = "png",
+			FileTypeChoices = [FilePickerFileTypes.ImagePng]
+		});
+		if (file is null) return;
+
+		try {
+			await using var stream = await file.OpenWriteAsync();
+			stream.SetLength(0);
+			await stream.WriteAsync(palette.ToPng());
+		} catch (Exception e) {
+			Log.Error($"Palette Editor: failed to export '{file.Name}': {e.Message}");
+		}
 	}
 
 	private void LoadSelectedEntry() {
@@ -442,16 +590,25 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 		m_loading = wasLoading;
 	}
 
+	private void Edit(Action<VoxelPaletteEntry> apply) {
+		if (m_palette is not { } palette) return;
+		foreach (var index in m_selection) {
+			apply(palette.Entries[index]);
+			TouchEntry(index);
+		}
+	}
+
 	/// <summary>Any edit authors the entry since unauthored entries are dropped on save</summary>
-	private void TouchEntry() {
-		if (Selected is not { } entry) return;
+	private void TouchEntry(int index) {
+		if (m_palette is not { } palette) return;
+		var entry = palette.Entries[index];
 		if (!entry.InUse) {
 			entry.InUse = true;
-			EntryInUse = true;
+			if (index == SelectedIndex) EntryInUse = true;
 			SeedNewEntryDefaults(entry);
 		}
 
-		RefreshSwatch(SelectedIndex);
+		RefreshSwatch(index);
 		IsDirty = true;
 	}
 
@@ -487,18 +644,24 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 	/// <summary>Unauthors the entry so the file drops it</summary>
 	[RelayCommand]
 	private void ClearEntry() {
-		if (Selected is not { } entry) return;
+		if (m_palette is not { } palette) return;
 
-		entry.Clear();
+		foreach (var index in m_selection) {
+			palette.Entries[index].Clear();
+			RefreshSwatch(index);
+		}
 
-		RefreshSwatch(SelectedIndex);
 		LoadSelectedEntry();
 		IsDirty = true;
 	}
 
 	partial void OnSelectedIndexChanged(int value) {
-		for (var i = 0; i < Swatches.Count; i++) Swatches[i].IsSelected = Swatches[i].Index == value;
-		OnPropertyChanged(nameof(SelectedLabel));
+		if (!m_selection.Contains(value)) {
+			m_selection.Clear();
+			m_selection.Add(value);
+		}
+
+		RefreshSelectionState();
 		LoadSelectedEntry();
 	}
 
@@ -510,58 +673,49 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 	}
 
 	partial void OnAlbedoRChanged(float value) {
-		if (Ignore || Selected is not { } entry) return;
-		entry.R = ToByte(value);
-		TouchEntry();
+		if (Ignore) return;
+		Edit(entry => entry.R = ToByte(value));
 	}
 
 	partial void OnAlbedoGChanged(float value) {
-		if (Ignore || Selected is not { } entry) return;
-		entry.G = ToByte(value);
-		TouchEntry();
+		if (Ignore) return;
+		Edit(entry => entry.G = ToByte(value));
 	}
 
 	partial void OnAlbedoBChanged(float value) {
-		if (Ignore || Selected is not { } entry) return;
-		entry.B = ToByte(value);
-		TouchEntry();
+		if (Ignore) return;
+		Edit(entry => entry.B = ToByte(value));
 	}
 
 	partial void OnRoughnessChanged(float value) {
-		if (Ignore || Selected is not { } entry) return;
-		entry.Roughness = Math.Clamp(value, 0f, 1f);
-		TouchEntry();
+		if (Ignore) return;
+		Edit(entry => entry.Roughness = Math.Clamp(value, 0f, 1f));
 	}
 
 	partial void OnMetallicChanged(float value) {
-		if (Ignore || Selected is not { } entry) return;
-		entry.Metallic = Math.Clamp(value, 0f, 1f);
-		TouchEntry();
+		if (Ignore) return;
+		Edit(entry => entry.Metallic = Math.Clamp(value, 0f, 1f));
 	}
 
 	partial void OnReflectivityChanged(float value) {
-		if (Ignore || Selected is not { } entry) return;
-		entry.Reflectivity = Math.Clamp(value, 0f, 1f);
-		TouchEntry();
+		if (Ignore) return;
+		Edit(entry => entry.Reflectivity = Math.Clamp(value, 0f, 1f));
 	}
 
 	partial void OnEmissiveChanged(float value) {
 		OnPropertyChanged(nameof(EmissiveHint));
-		if (Ignore || Selected is not { } entry) return;
-		entry.Emissive = Math.Clamp(value, 0f, 1f);
-		TouchEntry();
+		if (Ignore) return;
+		Edit(entry => entry.Emissive = Math.Clamp(value, 0f, 1f));
 	}
 
 	partial void OnTransformsToChanged(int value) {
-		if (Ignore || Selected is not { } entry) return;
-		entry.TransformsTo = Math.Clamp(value, 0, 255);
-		TouchEntry();
+		if (Ignore) return;
+		Edit(entry => entry.TransformsTo = Math.Clamp(value, 0, 255));
 	}
 
 	partial void OnTransparentChanged(bool value) {
-		if (Ignore || Selected is not { } entry) return;
-		entry.Transparent = value;
-		TouchEntry();
+		if (Ignore) return;
+		Edit(entry => entry.Transparent = value);
 	}
 
 	partial void OnSelectedSlotLabelChanged(string? value) {
@@ -577,25 +731,24 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 			for (var i = 1; i < VoxelPaletteFile.Size; i++)
 				RefreshSlotBadge(Swatches[i - 1], palette.Entries[i]);
 
-		if (Ignore || value is null || Selected is not { } entry) return;
+		if (Ignore || value is null) return;
 
 		// Picking a slot authors the material, so the entry stops being one the engine warns about
-		entry.HasMaterial = true;
-		entry.Material = value.Index;
-		TouchEntry();
+		Edit(entry => {
+			entry.HasMaterial = true;
+			entry.Material = value.Index;
+		});
 		RefreshSlotOptions();
 	}
 
 	partial void OnAlphaChanged(float value) {
-		if (Ignore || Selected is not { } entry) return;
-		entry.Alpha = Math.Clamp(value, 0f, 1f);
-		TouchEntry();
+		if (Ignore) return;
+		Edit(entry => entry.Alpha = Math.Clamp(value, 0f, 1f));
 	}
 
 	partial void OnIorChanged(float value) {
-		if (Ignore || Selected is not { } entry) return;
-		entry.Ior = Math.Clamp(value, 1f, VoxelPaletteEntry.MaxIor);
-		TouchEntry();
+		if (Ignore) return;
+		Edit(entry => entry.Ior = Math.Clamp(value, 1f, VoxelPaletteEntry.MaxIor));
 	}
 
 	partial void OnIsDirtyChanged(bool value) {
