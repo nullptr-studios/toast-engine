@@ -13,6 +13,7 @@
 #include "editor_camera.hpp"
 #include "gizmo_layout.hpp"
 #include "node_owner.hpp"
+#include "ruler.hpp"
 #include "workspace_history.hpp"
 
 #include <atomic>
@@ -252,6 +253,32 @@ protected:
 
 	auto pickNodeUnderMouse() -> Box<Node>;
 	std::optional<glm::vec2> m_pick_press;
+
+	struct SceneHit {
+		Box<Node> node;
+		float t = 0.0f;
+		glm::vec3 position {0.0f};
+	};
+
+	/// Nearest voxel or mesh surface under the mouse
+	[[nodiscard]]
+	auto pickSceneHit() -> std::optional<SceneHit>;
+
+	Ruler m_ruler;
+	bool m_ruler_axis_lock = false;
+	bool m_ruler_hover_dirty = true;
+	std::optional<glm::vec2> m_ruler_press;
+	glm::vec2 m_ruler_hover_mouse {-1.0f};
+	glm::vec3 m_ruler_hover_eye {0.0f};
+	glm::vec3 m_ruler_hover_forward {0.0f};
+	event::RulerChanged m_ruler_sent;
+
+	/// Surface point under the mouse or the ground plane, snapped like the translate tool
+	[[nodiscard]]
+	auto rulerPoint() -> std::optional<glm::vec3>;
+	auto rulerMouseButton(int button, int action, int mods) -> bool;
+	void rulerKey(int key, int action);
+	void rulerTick();
 
 	auto retypeNode(Box<Node>& target, std::string_view type, bool keep_fields) -> Box<Node>;
 	auto promoteNode(Box<Node>& target, std::string_view path) -> Box<Node>;

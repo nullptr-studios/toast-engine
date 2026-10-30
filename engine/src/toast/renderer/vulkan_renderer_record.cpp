@@ -439,9 +439,10 @@ void VulkanRenderer::recordMeshScene(
 	}
 
 	// Before anything blended so the backdrop holds only opaque and sky
-	const bool refract = voxel_glass && m_voxel_pass != nullptr && !m_voxel_pass->glassDraws().empty() &&
-	                     m_voxel_pass->refractsGlass() && capture_backdrop;
-	if (refract) {
+	const bool has_glass = voxel_glass && m_voxel_pass != nullptr && !m_voxel_pass->glassDraws().empty() && capture_backdrop;
+	const bool refract = has_glass && m_voxel_pass->refractsGlass();
+	m_glass_backdrop_captured = has_glass;
+	if (refract || m_glass_backdrop_captured) {
 		const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Glass backdrop");
 		capture_backdrop();
 	}
@@ -1041,7 +1042,8 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	frame.command_buffer.setScissor(0, std::array {scene_scissor});
 
 	const auto capture_glass_backdrop = [&] {
-		if (!m_glass_backdrop.image || !m_glass_backdrop_depth.image || scene_image == VK_NULL_HANDLE || !m_depth_resources.image) {
+		if (!m_glass_backdrop.image || !m_glass_backdrop_depth.image || !m_glass_backdrop_normal.image || !m_scene_normal.image ||
+		    scene_image == VK_NULL_HANDLE || !m_depth_resources.image) {
 			return;
 		}
 		const vk::CommandBuffer cmd = *frame.command_buffer;
@@ -1052,6 +1054,8 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 		to_copy.image(m_depth_resources.state, sync::Usage::transfer_src);
 		to_copy.image(m_glass_backdrop.state, sync::Usage::transfer_dst);
 		to_copy.image(m_glass_backdrop_depth.state, sync::Usage::transfer_dst);
+		to_copy.image(m_scene_normal.state, sync::Usage::transfer_src);
+		to_copy.image(m_glass_backdrop_normal.state, sync::Usage::transfer_dst);
 		to_copy.flush(cmd);
 
 		const vk::Extent3D copy_extent {render_extent.width, render_extent.height, 1};
@@ -1072,11 +1076,21 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 		    vk::ImageCopy(depth_layers, {}, depth_layers, {}, copy_extent)
 		);
 
+		cmd.copyImage(
+		    **m_scene_normal.image,
+		    vk::ImageLayout::eTransferSrcOptimal,
+		    **m_glass_backdrop_normal.image,
+		    vk::ImageLayout::eTransferDstOptimal,
+		    vk::ImageCopy(color_layers, {}, color_layers, {}, copy_extent)
+		);
+
 		sync::BarrierBatch resume;
 		resume.image(m_scene_color.state, sync::Usage::color_attachment);
 		resume.image(m_depth_resources.state, sync::Usage::depth_attachment);
 		resume.image(m_glass_backdrop.state, sync::Usage::fragment_sampled);
 		resume.image(m_glass_backdrop_depth.state, sync::Usage::depth_sampled);
+		resume.image(m_scene_normal.state, sync::Usage::color_attachment);
+		resume.image(m_glass_backdrop_normal.state, sync::Usage::shader_sampled);
 		resume.flush(cmd);
 
 		std::array resume_colors = scene_color_attachments;

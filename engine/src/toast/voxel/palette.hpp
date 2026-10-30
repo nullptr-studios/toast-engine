@@ -22,8 +22,6 @@ inline constexpr uint32_t k_max_physical_materials = 256;
 
 inline constexpr uint8_t k_default_material = 0;
 
-inline constexpr uint8_t k_entry_transparent = 1u << 0;
-
 /// @brief 16 bytes and the offsets are a shader contract
 struct PaletteEntry {
 	uint8_t albedo_r = 0;
@@ -42,8 +40,6 @@ struct PaletteEntry {
 
 	uint8_t material = k_default_material;
 
-	uint8_t flags = 0;
-
 	/// 0 burns away and only read for flammable materials
 	uint8_t transforms_to = 0;
 
@@ -52,7 +48,7 @@ struct PaletteEntry {
 	/// 0 for k_default_ior and otherwise 1 + ior / 100
 	uint8_t ior = 0;
 
-	std::array<uint8_t, 4> reserved {};
+	std::array<uint8_t, 5> reserved {};
 
 	[[nodiscard]]
 	constexpr auto operator==(const PaletteEntry&) const noexcept -> bool = default;
@@ -63,7 +59,7 @@ static_assert(sizeof(PaletteEntry) == 16, "a palette entry must be sixteen bytes
 /// Mirrors voxel_dda.slang glassEntry
 [[nodiscard]]
 constexpr auto isGlass(const PaletteEntry& entry) noexcept -> bool {
-	return (entry.flags & k_entry_transparent) != 0 && entry.alpha < 255;
+	return entry.alpha < 255;
 }
 
 /// Window glass and the IOR of an entry without one

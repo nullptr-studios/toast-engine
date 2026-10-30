@@ -138,7 +138,6 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 	[ObservableProperty] private float m_ior = VoxelPaletteEntry.DefaultIor;
 	[ObservableProperty] private PaletteSlotVM? m_selectedSlot;
 	[ObservableProperty] private int m_transformsTo;
-	[ObservableProperty] private bool m_transparent;
 
 	public PaletteViewModel() {
 		for (var i = 1; i < VoxelPaletteFile.Size; i++)
@@ -364,9 +363,9 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 		var entry = palette.Entries[index];
 		var swatch = Swatches[index - 1];
 		swatch.IsUsed = entry.InUse;
-		swatch.ShowChecker = entry.InUse && entry.Transparent;
+		swatch.ShowChecker = entry.InUse && entry.Alpha < 1.0f;
 		swatch.Brush = entry.InUse
-			? new SolidColorBrush(Color.FromRgb(entry.R, entry.G, entry.B), entry.Transparent ? Math.Clamp(entry.Alpha, 0f, 1f) : 1.0)
+			? new SolidColorBrush(Color.FromRgb(entry.R, entry.G, entry.B), Math.Clamp(entry.Alpha, 0f, 1f))
 			: s_emptyBrush;
 
 		RefreshSlotBadge(swatch, entry);
@@ -394,7 +393,7 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 		}
 
 		const float backdrop = 40f;
-		var opacity = entry.Transparent ? Math.Clamp(entry.Alpha, 0f, 1f) : 1f;
+		var opacity = Math.Clamp(entry.Alpha, 0f, 1f);
 		var red = entry.R * opacity + backdrop * (1f - opacity);
 		var green = entry.G * opacity + backdrop * (1f - opacity);
 		var blue = entry.B * opacity + backdrop * (1f - opacity);
@@ -424,7 +423,6 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 		Alpha = entry.Alpha;
 		Ior = entry.Ior;
 		TransformsTo = entry.TransformsTo;
-		Transparent = entry.Transparent;
 		LoadSelectedMaterial();
 
 		OnPropertyChanged(nameof(EmissiveHint));
@@ -555,12 +553,6 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 	partial void OnTransformsToChanged(int value) {
 		if (Ignore || Selected is not { } entry) return;
 		entry.TransformsTo = Math.Clamp(value, 0, 255);
-		TouchEntry();
-	}
-
-	partial void OnTransparentChanged(bool value) {
-		if (Ignore || Selected is not { } entry) return;
-		entry.Transparent = value;
 		TouchEntry();
 	}
 

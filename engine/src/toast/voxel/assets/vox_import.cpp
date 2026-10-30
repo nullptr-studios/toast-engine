@@ -409,7 +409,6 @@ auto importVox(std::span<const uint8_t> data) -> VoxScene {
 				entry.albedo_g = g;
 				entry.albedo_b = b;
 				if (a < 255) {
-					entry.flags |= voxel::k_entry_transparent;
 					entry.alpha = a;
 				}
 			}
@@ -582,7 +581,6 @@ auto importVox(std::span<const uint8_t> data) -> VoxScene {
 		entry.reflectivity = voxByteFromUnit(material.reflectivity);
 		entry.emissive = voxByteFromUnit(material.emission / scene.palette.max_emissive);
 		if (material.transparent) {
-			entry.flags |= voxel::k_entry_transparent;
 			entry.alpha = std::min(entry.alpha, voxByteFromUnit(material.opacity));
 		}
 		if (material.ior > 1.0f) {

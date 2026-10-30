@@ -1382,10 +1382,10 @@ auto raySphereEntry(const Ray& ray, glm::vec3 direction, glm::vec4 sphere) -> st
 
 }
 
-auto Workspace::pickNodeUnderMouse() -> Box<Node> {
+auto Workspace::pickSceneHit() -> std::optional<SceneHit> {
 	const std::optional<Ray> ray = voxelMouseRay(m_gizmo_mouse_pos);
 	if (!ray.has_value() || !m_root_node.exists()) {
-		return {};
+		return std::nullopt;
 	}
 	const glm::vec3 direction = glm::normalize(ray->direction);
 
@@ -1480,6 +1480,9 @@ auto Workspace::pickNodeUnderMouse() -> Box<Node> {
 	if (!voxel_hit) {
 		hit = nearest(false);
 	}
+	if (!hit.first.exists()) {
+		return std::nullopt;
+	}
 	Box<Node> best = std::move(hit.first);
 	TOAST_TRACE(
 	    "World",
@@ -1488,9 +1491,18 @@ auto Workspace::pickNodeUnderMouse() -> Box<Node> {
 	    candidates.size(),
 	    voxel_hit ? "volume" : (best.exists() ? "mesh" : "nothing"),
 	    best,
-	    best.exists() ? hit.second : 0.0f
+	    hit.second
 	);
 
+	return SceneHit {.node = std::move(best), .t = hit.second, .position = ray->origin + direction * hit.second};
+}
+
+auto Workspace::pickNodeUnderMouse() -> Box<Node> {
+	const std::optional<SceneHit> hit = pickSceneHit();
+	if (!hit.has_value()) {
+		return {};
+	}
+	Box<Node> best = hit->node;
 	// The hierarchy lists a prefab instance as one node
 	while (best.exists() && best->m_prefab_interior) {
 		best = best->parent();

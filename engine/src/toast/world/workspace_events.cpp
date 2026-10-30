@@ -1529,6 +1529,89 @@ struct ProtoTraits<SetVoxelTool> {
 TOAST_PROTO_EVENT(SetVoxelTool);
 
 template<>
+struct ProtoTraits<RulerSegment> {
+	using Proto = proto::events::RulerSegment;
+	using Event = RulerSegment;
+
+	static void write(const Event& e, Proto& p) {
+		p.set_ax(e.a.x);
+		p.set_ay(e.a.y);
+		p.set_az(e.a.z);
+		p.set_bx(e.b.x);
+		p.set_by(e.b.y);
+		p.set_bz(e.b.z);
+		p.set_label_x(e.label.x);
+		p.set_label_y(e.label.y);
+		p.set_label_visible(e.label_visible);
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		return {
+		  .a = {p.ax(), p.ay(), p.az()},
+		  .b = {p.bx(), p.by(), p.bz()},
+		  .label = {p.label_x(), p.label_y()},
+		  .label_visible = p.label_visible(),
+		};
+	}
+};
+
+template<>
+struct ProtoTraits<RulerChanged> {
+	using Proto = proto::events::RulerChanged;
+	using Event = RulerChanged;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_workspace_handle(e.workspace_handle);
+		for (const RulerSegment& segment : e.segments) {
+			ProtoTraits<RulerSegment>::write(segment, *p.add_segments());
+		}
+		p.set_preview_active(e.has_preview);
+		if (e.has_preview) {
+			ProtoTraits<RulerSegment>::write(e.preview, *p.mutable_preview());
+		}
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.workspace_handle = p.workspace_handle();
+		for (const auto& segment : p.segments()) {
+			e.segments.push_back(ProtoTraits<RulerSegment>::fromProto(segment));
+		}
+		e.has_preview = p.preview_active();
+		if (e.has_preview) {
+			e.preview = ProtoTraits<RulerSegment>::fromProto(p.preview());
+		}
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(RulerChanged);
+
+template<>
+struct ProtoTraits<RulerCommand> {
+	using Proto = proto::events::RulerCommand;
+	using Event = RulerCommand;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_workspace_handle(e.workspace_handle);
+		p.set_kind(e.kind);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.workspace_handle = p.workspace_handle();
+		e.kind = p.kind();
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(RulerCommand);
+
+template<>
 struct ProtoTraits<NodePicked> {
 	using Proto = proto::events::NodePicked;
 	using Event = NodePicked;
