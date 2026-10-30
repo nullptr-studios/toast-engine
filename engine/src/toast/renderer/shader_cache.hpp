@@ -8,7 +8,9 @@
 
 #include "shader_reflection.hpp"
 
+#include <atomic>
 #include <cstddef>
+#include <functional>
 #include <future>
 #include <memory>
 #include <mutex>
@@ -47,7 +49,16 @@ public:
 
 	static auto get() -> ShaderCache&;
 
-	void compileAllAtStartup();
+	struct StartupProgress {
+		size_t total = 0;
+		size_t finished = 0;
+		/// Empty while everything loads from the disk cache
+		std::vector<std::string> compiling;
+		size_t compiled = 0;
+	};
+
+	/// Blocks and reports from the caller every 30 ms
+	void compileAllAtStartup(const std::function<void(const StartupProgress&)>& on_progress = {});
 
 	/// Thread safe and concurrent calls for one shader share a compile
 	auto acquire(toast::UID uid) -> std::shared_ptr<const Entry>;
@@ -79,6 +90,10 @@ private:
 	std::mutex m_mutex;
 	std::unordered_map<uint64_t, EntryPtr> m_entries;
 	std::unordered_map<uint64_t, std::shared_future<EntryPtr>> m_in_flight;
+	std::atomic<size_t> m_compiled_count {0};
+	std::atomic<size_t> m_module_count {0};
+	std::mutex m_active_mutex;
+	std::vector<std::string> m_active_compiles;
 	std::unordered_map<uint64_t, assets::Handle<assets::Shader>> m_sources;
 	std::unordered_map<uint64_t, std::unordered_set<uint64_t>> m_reverse_deps;
 	nlohmann::json m_hash_index;

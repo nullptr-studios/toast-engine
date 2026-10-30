@@ -2,9 +2,13 @@
 /// @author dario
 /// @date 09/10/2026
 
+#if defined(TOAST_DEV_TOOLS)
+
 #include "perf_window.hpp"
 
 #include "../async_compute.hpp"
+#include "../renderer_settings.hpp"
+#include "../shader_compiler.hpp"
 #include "../shadow_constants.hpp"
 #include "../vulkan_core.hpp"
 #include "gi_pass.hpp"
@@ -14,6 +18,7 @@
 #include <cmath>
 #include <format>
 #include <imgui.h>
+#include <initializer_list>
 #include <optional>
 #include <string_view>
 #include <toast/settings/settings.hpp>
@@ -45,7 +50,105 @@ enum class PerfLevel : uint8_t {
 	bad
 };
 
-/// Good up to @p warn_from and bad past @p bad_from
+/// Queued ahead of an edit so Custom starts from the tier
+void requestCustomPreset() {
+	auto& registry = toast::settings::Settings::get();
+	if (const toast::settings::Entry* preset = registry.find("renderer.quality.preset"); preset != nullptr) {
+		VulkanRenderer::instance->requestSettingValue(preset->key, static_cast<int64_t>(preset->meta.options.size()) - 1);
+	}
+}
+
+/// An edit of a preset_driven row switches to Custom
+void drawSettingRow(toast::settings::Entry* entry, bool preset_driven = false) {
+	using toast::settings::Type;
+	using toast::settings::Value;
+
+	auto& registry = toast::settings::Settings::get();
+	ImGui::PushID(entry->key.c_str());
+	ImGui::TableNextRow();
+	ImGui::TableNextColumn();
+
+	std::string_view label = entry->meta.label;
+	if (label.empty()) {
+		label = std::string_view(entry->key).substr(entry->key.rfind('.') + 1);
+	}
+	ImGui::AlignTextToFramePadding();
+	ImGui::TextUnformatted(label.data(), label.data() + label.size());
+	if (ImGui::IsItemHovered() && !entry->meta.description.empty()) {
+		ImGui::SetTooltip("%s%s", entry->meta.description.c_str(), entry->meta.requires_restart ? "\nApplies on restart" : "");
+	}
+	if (entry->meta.requires_restart) {
+		ImGui::SameLine();
+		ImGui::TextColored(k_perf_warn, "(restart)");
+	}
+
+	ImGui::TableNextColumn();
+	ImGui::SetNextItemWidth(-FLT_MIN);
+	Value value = registry.resolved(entry);
+	bool leaves_tier = false;
+	if (preset_driven) {
+		if (auto forced = presetDrivenValue(entry->key); forced.has_value()) {
+			value = std::move(*forced);
+			leaves_tier = true;
+		}
+	}
+	const bool bounded = entry->meta.min < entry->meta.max;
+	std::optional<Value> changed;
+	switch (entry->type) {
+		case Type::boolean: {
+			bool current = std::get<bool>(value);
+			if (ImGui::Checkbox("##value", &current)) {
+				changed = current;
+			}
+			break;
+		}
+		case Type::integer: {
+			int64_t current = std::get<int64_t>(value);
+			const auto& options = entry->meta.options;
+			if (!options.empty()) {
+				const auto index = static_cast<size_t>(std::clamp<int64_t>(current, 0, static_cast<int64_t>(options.size()) - 1));
+				if (ImGui::BeginCombo("##value", options[index].c_str())) {
+					for (size_t i = 0; i < options.size(); ++i) {
+						if (ImGui::Selectable(options[i].c_str(), i == index)) {
+							changed = static_cast<int64_t>(i);
+						}
+					}
+					ImGui::EndCombo();
+				}
+				break;
+			}
+			const auto low = static_cast<int64_t>(entry->meta.min);
+			const auto high = static_cast<int64_t>(entry->meta.max);
+			const bool edited = bounded ? ImGui::SliderScalar("##value", ImGuiDataType_S64, &current, &low, &high)
+			                            : ImGui::DragScalar("##value", ImGuiDataType_S64, &current);
+			if (edited) {
+				changed = current;
+			}
+			break;
+		}
+		case Type::floating: {
+			double current = std::get<double>(value);
+			const double low = entry->meta.min;
+			const double high = entry->meta.max;
+			const auto speed = static_cast<float>(entry->meta.step > 0.0 ? entry->meta.step : 0.01);
+			const bool edited = bounded ? ImGui::SliderScalar("##value", ImGuiDataType_Double, &current, &low, &high, "%.3g")
+			                            : ImGui::DragScalar("##value", ImGuiDataType_Double, &current, speed, nullptr, nullptr, "%.3g");
+			if (edited) {
+				changed = current;
+			}
+			break;
+		}
+		case Type::string: ImGui::TextDisabled("%s", std::get<std::string>(value).c_str()); break;
+	}
+	if (changed.has_value()) {
+		if (leaves_tier) {
+			requestCustomPreset();
+		}
+		VulkanRenderer::instance->requestSettingValue(entry->key, *changed);
+	}
+	ImGui::PopID();
+}
+
 auto perfLevel(float value, float warn_from, float bad_from) -> PerfLevel {
 	if (value > bad_from) {
 		return PerfLevel::bad;
@@ -950,8 +1053,6 @@ void PerfWindow::drawSceneTab() {
 
 void PerfWindow::drawShadowsTab() {
 	using toast::settings::Entry;
-	using toast::settings::Type;
-	using toast::settings::Value;
 
 	if (const auto* frame = VulkanRenderer::instance->renderingFrame(); frame != nullptr) {
 		const auto& lights = frame->light_stats;
@@ -979,80 +1080,141 @@ void PerfWindow::drawShadowsTab() {
 			if (entry->meta.hidden || !entry->key.starts_with("renderer.shadows.")) {
 				continue;
 			}
-			ImGui::PushID(entry->key.c_str());
-			ImGui::TableNextRow();
-			ImGui::TableNextColumn();
-
-			std::string_view label = entry->meta.label;
-			if (label.empty()) {
-				label = std::string_view(entry->key).substr(entry->key.rfind('.') + 1);
-			}
-			ImGui::AlignTextToFramePadding();
-			ImGui::TextUnformatted(label.data(), label.data() + label.size());
-			if (ImGui::IsItemHovered() && !entry->meta.description.empty()) {
-				ImGui::SetTooltip("%s%s", entry->meta.description.c_str(), entry->meta.requires_restart ? "\nApplies on restart" : "");
-			}
-
-			ImGui::TableNextColumn();
-			ImGui::SetNextItemWidth(-FLT_MIN);
-			const Value value = registry.resolved(entry);
-			const bool bounded = entry->meta.min < entry->meta.max;
-			std::optional<Value> changed;
-			switch (entry->type) {
-				case Type::boolean: {
-					bool current = std::get<bool>(value);
-					if (ImGui::Checkbox("##value", &current)) {
-						changed = current;
-					}
-					break;
-				}
-				case Type::integer: {
-					int64_t current = std::get<int64_t>(value);
-					const auto& options = entry->meta.options;
-					if (!options.empty()) {
-						const auto index = static_cast<size_t>(std::clamp<int64_t>(current, 0, static_cast<int64_t>(options.size()) - 1));
-						if (ImGui::BeginCombo("##value", options[index].c_str())) {
-							for (size_t i = 0; i < options.size(); ++i) {
-								if (ImGui::Selectable(options[i].c_str(), i == index)) {
-									changed = static_cast<int64_t>(i);
-								}
-							}
-							ImGui::EndCombo();
-						}
-						break;
-					}
-					const auto low = static_cast<int64_t>(entry->meta.min);
-					const auto high = static_cast<int64_t>(entry->meta.max);
-					const bool edited = bounded ? ImGui::SliderScalar("##value", ImGuiDataType_S64, &current, &low, &high)
-					                            : ImGui::DragScalar("##value", ImGuiDataType_S64, &current);
-					if (edited) {
-						changed = current;
-					}
-					break;
-				}
-				case Type::floating: {
-					double current = std::get<double>(value);
-					const double low = entry->meta.min;
-					const double high = entry->meta.max;
-					const auto speed = static_cast<float>(entry->meta.step > 0.0 ? entry->meta.step : 0.01);
-					const bool edited = bounded
-					                        ? ImGui::SliderScalar("##value", ImGuiDataType_Double, &current, &low, &high, "%.3g")
-					                        : ImGui::DragScalar("##value", ImGuiDataType_Double, &current, speed, nullptr, nullptr, "%.3g");
-					if (edited) {
-						changed = current;
-					}
-					break;
-				}
-				case Type::string: ImGui::TextDisabled("%s", std::get<std::string>(value).c_str()); break;
-			}
-			if (changed.has_value()) {
-				registry.setValue(entry->key, *changed);
-			}
-			ImGui::PopID();
+			drawSettingRow(entry);
 		}
 		ImGui::EndTable();
 	}
 	ImGui::TextDisabled("Saved like the project settings window. Hover a name for what it costs");
+}
+
+void PerfWindow::drawQualityTab() {
+	auto& registry = toast::settings::Settings::get();
+	const auto rows = [&registry](const char* id, std::initializer_list<std::string_view> keys, bool preset_driven = false) {
+		if (!ImGui::BeginTable(id, 2, ImGuiTableFlags_SizingStretchProp)) {
+			return;
+		}
+		for (const std::string_view key : keys) {
+			if (toast::settings::Entry* entry = registry.find(key); entry != nullptr) {
+				drawSettingRow(entry, preset_driven);
+			}
+		}
+		ImGui::EndTable();
+	};
+
+	rows("##perf_quality_preset", {"renderer.quality.preset", "renderer.quality.ray_tracing"});
+
+	const auto& core = VulkanRenderer::instance->getCore();
+	const bool tracing = core.isRayTracingSupported();
+	ImGui::TextColored(tracing ? k_perf_good : k_perf_warn, "Ray tracing %s", tracing ? "in use" : "not in use");
+	ImGui::SameLine();
+	ImGui::TextDisabled("%s", std::string(core.rayTracingReason()).c_str());
+
+	const bool hdr_active = VulkanRenderer::instance->hdrOutput();
+	ImGui::TextColored(hdr_active ? k_perf_good : k_perf_warn, "HDR output %s", hdr_active ? "on" : "off");
+	rows("##perf_display_hdr", {"renderer.display.hdr", "renderer.display.hdr_paper_white", "renderer.display.hdr_peak"});
+	if (const toast::settings::Entry* hdr_setting = registry.find("renderer.display.hdr"); hdr_setting != nullptr) {
+		const bool wanted = std::get<bool>(registry.resolved(hdr_setting));
+		if (wanted && !hdr_active) {
+			ImGui::PushStyleColor(ImGuiCol_Text, k_perf_warn);
+			ImGui::TextWrapped("SDR is in use. Turn HDR on for this display");
+			ImGui::PopStyleColor();
+		} else if (!wanted && hdr_active) {
+			ImGui::PushStyleColor(ImGuiCol_Text, k_perf_warn);
+			ImGui::TextWrapped("Restart needed to go back to SDR");
+			ImGui::PopStyleColor();
+		}
+	}
+
+	const toast::settings::Entry* preset = registry.find("renderer.quality.preset");
+	const size_t tier_count = preset != nullptr ? preset->meta.options.size() - 1 : 0;
+	const int64_t preset_value = preset != nullptr ? std::get<int64_t>(registry.resolved(preset)) : 0;
+	const bool custom = preset == nullptr || std::cmp_greater_equal(preset_value, tier_count);
+	const bool rt_tier = !custom && std::cmp_greater_equal(preset_value, tier_count / 2);
+
+	// Applies at device creation
+	const auto warn = [](const char* text) {
+		ImGui::PushStyleColor(ImGuiCol_Text, k_perf_warn);
+		ImGui::TextWrapped("%s", text);
+		ImGui::PopStyleColor();
+	};
+	if (ShaderCompiler::rayTracingMode() != core.rayTracingStartupMode()) {
+		warn("Restart needed");
+	}
+	if (rt_tier && !tracing) {
+		warn("RT preset runs its non RT tier because ray tracing is not enabled");
+	} else if (!custom && !rt_tier && tracing) {
+		warn("Non RT preset with ray tracing still on");
+	}
+
+	// On release since each value recreates every target
+	if (toast::settings::Entry* scale = registry.find("renderer.quality.render_scale");
+	    scale != nullptr && ImGui::BeginTable("##perf_quality_scale", 2, ImGuiTableFlags_SizingStretchProp)) {
+		ImGui::TableNextRow();
+		ImGui::TableNextColumn();
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextUnformatted(scale->meta.label.c_str());
+		ImGui::TableNextColumn();
+		ImGui::SetNextItemWidth(-FLT_MIN);
+		const auto forced_scale = presetDrivenValue(scale->key);
+		if (!m_render_scale_editing) {
+			m_render_scale_edit = static_cast<float>(std::get<double>(forced_scale.value_or(registry.resolved(scale))));
+		}
+		ImGui::SliderFloat(
+		    "##value", &m_render_scale_edit, static_cast<float>(scale->meta.min), static_cast<float>(scale->meta.max), "%.2f"
+		);
+		m_render_scale_editing = ImGui::IsItemActive();
+		if (ImGui::IsItemDeactivatedAfterEdit()) {
+			if (forced_scale.has_value()) {
+				requestCustomPreset();
+			}
+			VulkanRenderer::instance->requestSettingValue(scale->key, static_cast<double>(m_render_scale_edit));
+		}
+		ImGui::EndTable();
+
+		const auto* renderer = VulkanRenderer::instance;
+		const vk::Extent2D render = renderer->renderExtent();
+		const vk::Extent2D output = renderer->getOutputTarget().getExtent();
+		ImGui::TextDisabled("%ux%u of %ux%u", render.width, render.height, output.width, output.height);
+	}
+
+	ImGui::SeparatorText(custom ? "Preset Custom" : "Set by the preset, editing one switches to Custom");
+	rows(
+	    "##perf_quality_driven",
+	    {"renderer.quality.ssr",
+			 "renderer.quality.motion_blur",
+			 "renderer.quality.ssr_reach",
+			 "renderer.quality.ssr_steps",
+			 "renderer.voxels.shadow_maps_only",
+			 "renderer.quality.ssao",
+			 "renderer.voxels.traced_specular",
+			 "renderer.voxels.specular_roughness",
+			 "renderer.voxels.specular_reach",
+			 "renderer.voxels.light_candidates",
+			 "renderer.voxels.ambient_rays",
+			 "renderer.voxels.glass_shadows",
+			 "renderer.volumetrics.quality",
+			 "renderer.gi.enabled",
+			 "renderer.gi.quality",
+			 "renderer.shadows.distance",
+			 "renderer.shadows.spot_budget",
+			 "renderer.shadows.point_budget"},
+	    true
+	);
+
+	ImGui::SeparatorText("Always");
+	rows(
+	    "##perf_quality_always",
+	    {"renderer.quality.bloom",
+			 "renderer.quality.taa",
+			 "renderer.quality.taa_history",
+			 "renderer.quality.fxaa",
+			 "renderer.quality.lens_flare",
+			 "renderer.quality.motion_blur_strength",
+			 "renderer.quality.motion_blur_max_length",
+			 "renderer.quality.motion_blur_samples",
+			 "renderer.quality.traced_shadows",
+			 "renderer.volumetrics.enabled"}
+	);
 }
 
 void PerfWindow::draw() {
@@ -1145,6 +1307,10 @@ void PerfWindow::draw() {
 			drawShadowsTab();
 			ImGui::EndTabItem();
 		}
+		if (ImGui::BeginTabItem("Quality")) {
+			drawQualityTab();
+			ImGui::EndTabItem();
+		}
 		ImGui::EndTabBar();
 	}
 
@@ -1152,3 +1318,5 @@ void PerfWindow::draw() {
 }
 
 }
+
+#endif

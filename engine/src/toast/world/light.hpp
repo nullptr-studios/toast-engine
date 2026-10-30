@@ -9,6 +9,7 @@
 #pragma once
 #include "node_3d.hpp"
 
+#include <algorithm>
 #include <toast/export.hpp>
 
 namespace toast {
@@ -110,6 +111,12 @@ public:
 	auto shadowMode() const -> LightShadowMode {
 		return m_shadow_mode;
 	}
+
+	void setSourceRadius(float radius) { m_source_radius = std::max(radius, 0.0f); }
+
+	void setSourceLength(float length) { m_source_length = std::max(length, 0.0f); }
+
+	void setSourceWidth(float width) { m_source_width = std::max(width, 0.0f); }
 
 protected:
 	/// @brief Tags the concrete light kind; called once from each subclass's own constructor body

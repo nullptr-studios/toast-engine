@@ -125,6 +125,9 @@ void UIPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_
 	auto& sets = m_frame_sets[frame_index % m_frame_sets.size()];
 
 	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_composite_pipeline.getPipeline());
+	const auto* vulkan = renderer::VulkanRenderer::instance;
+	const std::array<float, 4> hdr {vulkan->hdrOutput() ? vulkan->hdrPaperWhiteScale() : 0.0f, 0.0f, 0.0f, 0.0f};
+	cmd.pushConstants<std::array<float, 4>>(*m_shader_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eAll, 0, hdr);
 	for (uint32_t i = 0; i < m_draw_count; i++) {
 		cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *m_shader_layout.getPipelineLayout(), 0, *sets[i], nullptr);
 		cmd.draw(3, 1, 0, 0);

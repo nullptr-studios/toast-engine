@@ -39,7 +39,6 @@ private:
 	struct Params {
 		glm::mat4 view_projection {1.0f};
 		glm::mat4 inverse_view_projection {1.0f};
-		/// w frame index for the noise
 		glm::vec4 camera_position {0.0f};
 		/// x intensity y max roughness z thickness w step count
 		glm::vec4 tuning {0.0f};

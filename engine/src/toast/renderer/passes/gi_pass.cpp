@@ -1117,8 +1117,11 @@ auto GiPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView s
 
 	// Lighting keeps reading the last published tables on skipped frames
 	if (carry && m_published_valid && debug_view == 0 && ++m_skipped < quality.interval) {
+		TracyPlot("GI: updated", static_cast<int64_t>(0));
 		return source_view;
 	}
+	TracyPlot("GI: updated", static_cast<int64_t>(1));
+	TracyPlot("GI: update interval", static_cast<int64_t>(quality.interval));
 	m_skipped = 0;
 	m_key_settings = keys;
 

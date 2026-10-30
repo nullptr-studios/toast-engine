@@ -2,6 +2,7 @@
 
 #include "animation_player.hpp"
 #include "camera.hpp"
+#include "light_gizmo.hpp"
 #include "node.hpp"
 #include "node_3d.hpp"
 #include "play_workspace.hpp"
@@ -320,6 +321,10 @@ static auto gizmoField(GizmoTool tool, GizmoHandle handle, Node& node) -> const 
 		const Box<Node> box = node.box();
 		if (box.as<VoxelVolume>().exists()) {
 			return node.info()->getField("size");
+		}
+		if (const auto light = box.as<Light>(); light.exists()) {
+			const char* name = light_gizmo::handleField(*light, handle);
+			return name != nullptr ? node.info()->getField(name) : nullptr;
 		}
 		if (box.as<physics::BoxCollider>().exists()) {
 			return node.info()->getField("size");
@@ -1106,6 +1111,14 @@ auto Workspace::collectSizeHandles() const -> std::pair<std::array<SizeHandlePoi
 		out[count++] = SizeHandlePoint {.world_position = origin + rotation * local, .handle = handle};
 	};
 
+	if (auto light = m_focused_node.as<Light>(); light.exists()) {
+		const auto [entries, entry_count] = light_gizmo::handles(*light);
+		for (uint32_t i = 0; i < entry_count; ++i) {
+			out[count++] = SizeHandlePoint {.world_position = origin + rotation * entries[i].local, .handle = entries[i].handle};
+		}
+		return {out, count};
+	}
+
 	if (auto volume = m_focused_node.as<VoxelVolume>(); volume.exists()) {
 		const glm::vec3 half = glm::vec3(volume->sizeVoxels()) * voxel::k_voxel_size * 0.5f;
 		const glm::mat4& world = node3d->getWorldTransform();
@@ -1164,6 +1177,11 @@ void Workspace::gizmoApplySizeDrag(float delta) {
 	float growth = delta * sign;
 	if (m_translate_snap.enabled && m_translate_snap.value > 0.0001f) {
 		growth = std::round(growth / m_translate_snap.value) * m_translate_snap.value;
+	}
+
+	if (auto light = m_focused_node.as<Light>(); light.exists()) {
+		light_gizmo::applyHandleDistance(*light, m_gizmo_drag, m_gizmo_drag_start_size[axis] + growth);
+		return;
 	}
 
 	// Volumes grow a whole voxel at a time and the negative faces move the corner
@@ -1287,7 +1305,9 @@ void Workspace::gizmoBeginDrag(GizmoHandle handle) {
 	m_gizmo_drag_start_size = glm::vec3(0.0f);
 
 	if (gizmo_layout::isSizeHandle(handle)) {
-		if (auto volume = m_focused_node.as<VoxelVolume>(); volume.exists()) {
+		if (auto light = m_focused_node.as<Light>(); light.exists()) {
+			m_gizmo_drag_start_size[gizmo_layout::sizeHandleAxis(handle)] = light_gizmo::handleDistance(*light, handle);
+		} else if (auto volume = m_focused_node.as<VoxelVolume>(); volume.exists()) {
 			m_gizmo_drag_start_size = glm::vec3(volume->sizeVoxels());
 		} else if (auto box = m_focused_node.as<physics::BoxCollider>(); box.exists()) {
 			m_gizmo_drag_start_size = box->size;
@@ -1386,7 +1406,9 @@ void Workspace::gizmoUpdateDrag() {
 		const glm::vec3 current = origin + m_gizmo_drag_axis * t2;
 		gizmoApplySizeDrag(glm::dot(current - m_gizmo_drag_anchor, m_gizmo_drag_axis));
 
-		m_focused_node->onReflectedFieldChanged("size");
+		const auto light = m_focused_node.as<Light>();
+		const char* light_field = light.exists() ? light_gizmo::handleField(*light, m_gizmo_drag) : nullptr;
+		m_focused_node->onReflectedFieldChanged(light_field != nullptr ? light_field : "size");
 		return;
 	}
 

@@ -26,11 +26,17 @@ class VulkanCore;
 enum class TonemapMode : uint8_t {
 	reinhard = 0,
 	aces = 1,
+	gt7 = 2,
 };
 
 class TonemapPass : public IPostProcessPass {
 public:
 	TonemapPass(const VulkanCore& core, vk::Format ldr_format, vk::Extent2D extent);
+
+	[[nodiscard]]
+	auto atOutputResolution() const -> bool override {
+		return true;
+	}
 
 	[[nodiscard]]
 	auto name() const -> std::string_view override {
@@ -53,7 +59,13 @@ private:
 		float grain = 0.0f;
 		float time = 0.0f;
 		uint32_t auto_exposure = 0;
-		std::array<float, 3> pad0 {};
+		/// 1 writes scRGB nits
+		uint32_t hdr = 0;
+		float paper_white_scale = 1.0f;
+		float peak_scale = 1.0f;
+		float gt_toe = 1.28f;
+		float chromatic_aberration = 0.0f;
+		std::array<float, 2> pad1 {};
 	};
 
 	/// Mirrors exposure.slang ExposureParams

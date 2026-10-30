@@ -65,9 +65,12 @@ auto uniqueQueueFamilies(uint32_t graphics_family, uint32_t present_family) -> s
 }
 }    // namespace
 
-VulkanSwapchain::VulkanSwapchain(const VulkanCore& core, vk::raii::SurfaceKHR& surface, vk::Extent2D preferred_extent)
+VulkanSwapchain::VulkanSwapchain(
+    const VulkanCore& core, vk::raii::SurfaceKHR& surface, vk::Extent2D preferred_extent, bool prefer_hdr
+)
     : m_core(&core),
-      m_surface(&surface) {
+      m_surface(&surface),
+      m_prefer_hdr(prefer_hdr) {
 	create(preferred_extent);
 }
 
@@ -124,7 +127,9 @@ auto VulkanSwapchain::create(vk::Extent2D preferred_extent) -> void {
 	    capabilities.maxImageExtent.height
 	);
 
-	uint32_t image_count = capabilities.minImageCount + 1;
+	// Three frames in flight plus the image the compositor holds
+	constexpr uint32_t k_preferred_images = 4;
+	uint32_t image_count = std::max(capabilities.minImageCount + 1, k_preferred_images);
 	if (capabilities.maxImageCount > 0 && image_count > capabilities.maxImageCount) {
 		image_count = capabilities.maxImageCount;
 	}
@@ -189,6 +194,7 @@ auto VulkanSwapchain::create(vk::Extent2D preferred_extent) -> void {
 	m_present_queue_family_index = present_queue_family_index;
 	m_present_queue = m_core->getDevice().getQueue(m_present_queue_family_index, 0);
 	m_image_format = image_format;
+	m_hdr = chosen_format.colorSpace == vk::ColorSpaceKHR::eExtendedSrgbLinearEXT;
 	m_extent = chosen_extent;
 	m_image_views = std::move(new_image_views);
 }
@@ -207,6 +213,16 @@ auto VulkanSwapchain::findPresentQueueFamilyIndex() const -> uint32_t {
 auto VulkanSwapchain::selectSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& formats) const -> vk::SurfaceFormatKHR {
 	if (formats.empty()) {
 		TOAST_CRITICAL("Render", "Toast Engine Error: No surface formats are available!");
+	}
+
+	if (m_prefer_hdr) {
+		const auto hdr = std::find_if(formats.begin(), formats.end(), [](const vk::SurfaceFormatKHR& format) {
+			return format.format == vk::Format::eR16G16B16A16Sfloat && format.colorSpace == vk::ColorSpaceKHR::eExtendedSrgbLinearEXT;
+		});
+		if (hdr != formats.end()) {
+			return *hdr;
+		}
+		TOAST_WARN("Render", "HDR output was requested but the surface offers no scRGB float format, using SDR");
 	}
 
 	const auto preferred = std::find_if(formats.begin(), formats.end(), [](const vk::SurfaceFormatKHR& format) {

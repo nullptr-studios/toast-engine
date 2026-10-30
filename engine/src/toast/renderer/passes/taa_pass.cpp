@@ -102,7 +102,9 @@ auto TaaPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView 
 	const auto* frame = VulkanRenderer::instance->renderingFrame();
 	const bool show_motion = frame != nullptr && frame->render_mode == k_render_mode_motion;
 	const bool active = frame != nullptr && frame->taa_active;
-	if (!active && !show_motion) {
+	const glm::vec2 output_size(static_cast<float>(m_targets[0].extent().width), static_cast<float>(m_targets[0].extent().height));
+	const bool upscale = frame != nullptr && frame->viewport_extent != output_size && frame->viewport_extent.x > 0.0f;
+	if (!active && !show_motion && !upscale) {
 		m_history_valid = false;
 		return source_view;
 	}
@@ -122,7 +124,8 @@ auto TaaPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView 
 
 	const PostProcessTarget& target = m_targets[m_write];
 	const PostProcessTarget& history = m_targets[m_write ^ 1u];
-	const bool reset = !m_history_valid || frame->taa_reset;
+	// Upsample only without TAA
+	const bool reset = !m_history_valid || frame->taa_reset || !active;
 	if (reset) {
 		// Only for a legal layout since a reset frame never reads the history
 		history.beginScope(cmd);
@@ -164,6 +167,8 @@ auto TaaPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView 
 	params.tuning = glm::vec4(
 	    VulkanRenderer::instance->taaHistoryWeight(), reset ? 1.0f : 0.0f, frames_skipped ? 1.0f : 0.0f, show_motion ? 1.0f : 0.0f
 	);
+	params.source = glm::vec4(frame->viewport_extent, frame->jitter_ndc * 0.5f);
+	params.upscale = glm::vec4(upscale ? 1.0f : 0.0f, 0.0f, 0.0f, 0.0f);
 
 	target.beginScope(cmd);
 	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline.getPipeline());
@@ -182,7 +187,7 @@ auto TaaPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView 
 	m_write ^= 1u;
 
 	// The motion view is not a resolve and must never become history
-	m_history_valid = !show_motion;
+	m_history_valid = !show_motion && active;
 	m_last_sequence = frame->sequence;
 	m_last_view_projection = current_view_projection;
 	return output;

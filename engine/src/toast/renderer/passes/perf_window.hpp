@@ -116,6 +116,7 @@ private:
 	void drawSceneTab();
 	/// Slot usage and shadow settings beside the timings
 	static void drawShadowsTab();
+	void drawQualityTab();
 
 	[[nodiscard]]
 	auto historyOffset() const -> int;
@@ -153,6 +154,8 @@ private:
 	float m_window_x = 0.0f;
 	float m_window_y = 0.0f;
 	bool m_hide_idle_passes = true;
+	float m_render_scale_edit = 1.0f;
+	bool m_render_scale_editing = false;
 	bool m_has_gpu = false;
 };
 

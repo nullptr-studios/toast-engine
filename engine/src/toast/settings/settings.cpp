@@ -251,7 +251,7 @@ auto Settings::resolved(const Entry* entry) -> Value {
 	return entry->resolved;
 }
 
-auto Settings::setValue(std::string_view key, const Value& value) -> bool {
+auto Settings::setValue(std::string_view key, const Value& value, bool override_higher_layers) -> bool {
 	std::vector<std::function<void(const Value&)>> callbacks;
 	Value new_value;
 	{
@@ -273,6 +273,11 @@ auto Settings::setValue(std::string_view key, const Value& value) -> bool {
 
 		const Value previous = entry.resolved;
 		entry.overrides[layerIndex(m_active_layer)] = *converted;
+		if (override_higher_layers) {
+			for (size_t i = layerIndex(m_active_layer) + 1; i < entry.overrides.size(); ++i) {
+				entry.overrides[i].reset();
+			}
+		}
 		resolveEntry(entry);
 		if (sameValue(previous, entry.resolved)) {
 			return true;

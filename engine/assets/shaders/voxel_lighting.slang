@@ -11,9 +11,7 @@ struct LightingPushConstants
 {
     // Must be jittered since depth was rasterized with it
     float4x4 inverseViewProjection;
-    // xyz camera position w rounding radius in world units
-    float4 cameraRadius;
-    // xy viewport size z pixels per world unit at 1 m w spiral rotation in turns
+    // xy viewport size
     float4 viewport;
     // x instances with bounds y light candidates z nonzero when fragmentMarched shades w sun reach in meters
     uint4 lighting;
@@ -49,7 +47,6 @@ uint ambientGridBucket(int3 cell)
 [[vk::binding(0, 2)]]
 Sampler2D gAlbedo;
 
-// Unrounded so shadow bias still sees the flat face
 [[vk::binding(1, 2)]]
 Sampler2D gFaceNormal;
 
@@ -71,7 +68,7 @@ Sampler2D gMotion;
 [[vk::binding(6, 2)]]
 Sampler2D<uint4> gCandidateReservoirs;
 
-/// Rounded normal of fragmentMain
+/// Scene normal of fragmentMain
 [[vk::binding(7, 2)]]
 Sampler2D gSceneNormal;
 
@@ -88,19 +85,11 @@ struct FSOutput
 {
     float4 color : SV_Target0;
     float4 indirectDiffuse : SV_Target1;
-    /// xyz rounded normal w SSR roughness and zero where SSAO and SSR pass through
+    /// xyz normal w SSR roughness and zero where SSAO and SSR pass through
     float4 normalRoughness : SV_Target2;
     /// Indirect over albedo that fragmentAmbient occludes when ambient rays are on
     float4 noisyDiffuse : SV_Target3;
 };
-
-/// One tap per pixel of radius within this range
-static const uint kMinRoundingTaps = 4;
-static const uint kMaxRoundingTaps = 8;
-static const float kGoldenAngle = 2.39996323;
-
-// kMaxRoundingTaps spread wider than this stop reading as one smooth bevel
-static const float kMaxRoundingPixels = 32.0;
 
 [shader("vertex")]
 VSOutput vertexMain(uint vertexId : SV_VertexID)
@@ -123,57 +112,6 @@ bool isLitVoxelAt(int2 pixel, out float3 faceNormal)
     return encoded.a > 0.5;
 }
 
-// Interleaved gradient noise
-float noiseAt(float2 pixel)
-{
-    return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
-}
-
-/// Averages lit neighbour face normals by world distance so voxel edges read as bevels
-float3 roundedNormal(float2 pixel, float3 center, float3 face)
-{
-    const float radius = gPush.cameraRadius.w;
-    if (radius <= 0.0)
-    {
-        return face;
-    }
-
-    // A fixed world radius shrinks under a pixel with distance so rounding stops there
-    const float distanceToCamera = max(distance(center, gPush.cameraRadius.xyz), 1e-4);
-    const float radiusPixels = min(radius * gPush.viewport.z / distanceToCamera, kMaxRoundingPixels);
-    if (radiusPixels < 1.0)
-    {
-        return face;
-    }
-
-    const float rotation = (noiseAt(pixel) + gPush.viewport.w) * 6.28318531;
-    const int2 size = int2(gPush.viewport.xy);
-
-    const uint taps = clamp(uint(radiusPixels), kMinRoundingTaps, kMaxRoundingTaps);
-    const float invRadiusSq = 1.0 / (radius * radius);
-    float3 sum = face;
-    [loop]
-    for (uint i = 0u; i < taps; ++i)
-    {
-        const float angle = float(i) * kGoldenAngle + rotation;
-        float s, c;
-        sincos(angle, s, c);
-        const float2 offset = sqrt((float(i) + 0.5) / float(taps)) * radiusPixels * float2(c, s);
-        const int2 tap = int2(floor(pixel + offset));
-        float3 tapNormal;
-        if (any(tap < int2(0, 0)) || any(tap >= size) || !isLitVoxelAt(tap, tapNormal))
-        {
-            continue;
-        }
-
-        // An occluded or grazing neighbour drops out
-        const float3 toTap = positionAt(tap) - center;
-        const float falloff = saturate(1.0 - dot(toTap, toTap) * invRadiusSq);
-        sum += tapNormal * (falloff * falloff);
-    }
-    return normalize(sum);
-}
-
 /// Mirrors voxel::k_voxel_size
 static const float kVoxelSize = 0.1;
 
@@ -181,9 +119,9 @@ static const float kVoxelSize = 0.1;
 static const float kShadowOriginOffset = 0.6;
 
 /// Transmittance along the segment and 0 once a voxel blocks it
-float3 marchedVisibility(float3 origin, float3 target, float coneSlope)
+float3 marchedVisibility(float3 origin, float3 target, float coneSlope, bool glassScene = true)
 {
-    return traceVisibility(origin, target - origin, coneSlope, (gPush.reuse.x & kSceneGlass) != 0u);
+    return traceVisibility(origin, target - origin, coneSlope, glassScene && (gPush.reuse.x & kSceneGlass) != 0u);
 }
 
 /// Mesh shadow of a marched light from its map since traced shadows are off with voxels
@@ -576,16 +514,17 @@ LightTerms shadeMarchedLights(Surface surface, float3 shadowOrigin, float4 motio
             continue;
         }
         const float meshShadow = meshShadowFactor(light, surface);
-        const float3 visibility = meshShadow > 0.0 ? min(meshShadow, marchedVisibility(shadowOrigin, samplePoint, shadowConeSlope(light, distance)))
-                                                   : float3(0.0, 0.0, 0.0);
-        if (all(visibility <= 0.0))
+        if (meshShadow <= 0.0)
         {
             continue;
         }
-        const LightTerms sample = shadeLightTerms(surface.normal, surface.viewDirection, L, radiance, surface.albedo, surface.metallic,
-                                                  surface.roughness, surface.reflectivity);
-        terms.diffuse += sample.diffuse * visibility;
-        terms.specular += analyticSpecular(light, surface) * visibility;
+        // Before the trace so the surface is not live across it
+        const float3 diffuse = shadeLightTerms(surface.normal, surface.viewDirection, L, radiance, surface.albedo, surface.metallic,
+                                               surface.roughness, surface.reflectivity).diffuse;
+        const float3 specular = analyticSpecular(light, surface);
+        const float3 visibility = min(meshShadow, marchedVisibility(shadowOrigin, samplePoint, shadowConeSlope(light, distance)));
+        terms.diffuse += diffuse * visibility;
+        terms.specular += specular * visibility;
     }
 
     // Uniform light and point candidates weighted by luminance times count then ReSTIR temporal reuse
@@ -676,11 +615,11 @@ LightTerms shadeMarchedLights(Surface surface, float3 shadowOrigin, float4 motio
     {
         const float unbiasedWeight = weightSum / (float(sampleCount) * chosen.target);
         const float meshShadow = meshShadowFactor(gLights[chosen.lightIndex], surface);
+        const LightTerms unshadowed = shadeSampledLight(surface, chosen, float3(unbiasedWeight, unbiasedWeight, unbiasedWeight));
         const float3 visibility = meshShadow > 0.0 ? min(meshShadow, marchedVisibility(shadowOrigin, chosen.samplePoint, chosen.slope))
                                                : float3(0.0, 0.0, 0.0);
-        const LightTerms sampled = shadeSampledLight(surface, chosen, unbiasedWeight * visibility);
-        terms.diffuse += sampled.diffuse;
-        terms.specular += sampled.specular;
+        terms.diffuse += unshadowed.diffuse * visibility;
+        terms.specular += unshadowed.specular * visibility;
 
         // Occluded samples are not reused
         reservoir.lightId = chosen.lightId;
@@ -705,8 +644,8 @@ struct SpatialOutput
 };
 
 /// Merges neighbour reservoirs of this frame then traces the chosen light
-[shader("fragment")]
-SpatialOutput fragmentSpatial(VSOutput input)
+/// A constant glassScene compiles the tinted trace out
+SpatialOutput spatialReuse(VSOutput input, bool glassScene)
 {
     SpatialOutput output;
     output.noisyDiffuse = float4(0.0, 0.0, 0.0, 0.0);
@@ -819,19 +758,33 @@ SpatialOutput fragmentSpatial(VSOutput input)
     const float unbiasedWeight = weightSum / (float(sampleCount) * chosen.target);
     const float3 shadowOrigin = position + faceNormal * (kShadowOriginOffset * kVoxelSize);
     const float meshShadow = meshShadowFactor(gLights[chosen.lightIndex], surface);
-    const float3 visibility = meshShadow > 0.0 ? min(meshShadow, marchedVisibility(shadowOrigin, chosen.samplePoint, chosen.slope))
-                                               : float3(0.0, 0.0, 0.0);
-    const LightTerms sampled = shadeSampledLight(surface, chosen, unbiasedWeight * visibility);
-    output.noisyDiffuse = float4(sampled.diffuse, 0.0);
-    output.noisySpecular = float4(sampled.specular, 0.0);
-
+    // Before the trace so the surface is not live across it
+    const LightTerms unshadowed = shadeSampledLight(surface, chosen, float3(unbiasedWeight, unbiasedWeight, unbiasedWeight));
     Reservoir reservoir;
     reservoir.lightId = chosen.lightId;
-    reservoir.W = any(visibility > 0.0) ? unbiasedWeight : 0.0;
     reservoir.u = chosen.u;
     reservoir.M = sampleCount;
+
+    const float3 visibility = meshShadow > 0.0
+                                  ? min(meshShadow, marchedVisibility(shadowOrigin, chosen.samplePoint, chosen.slope, glassScene))
+                                  : float3(0.0, 0.0, 0.0);
+    output.noisyDiffuse = float4(unshadowed.diffuse * visibility, 0.0);
+    output.noisySpecular = float4(unshadowed.specular * visibility, 0.0);
+    reservoir.W = any(visibility > 0.0) ? unbiasedWeight : 0.0;
     output.reservoir = packReservoir(reservoir);
     return output;
+}
+
+[shader("fragment")]
+SpatialOutput fragmentSpatial(VSOutput input)
+{
+    return spatialReuse(input, true);
+}
+
+[shader("fragment")]
+SpatialOutput fragmentSpatialOpaque(VSOutput input)
+{
+    return spatialReuse(input, false);
 }
 
 [shader("fragment")]
@@ -856,8 +809,7 @@ FSOutput fragmentMain(VSOutput input)
     }
 
     const float3 position = positionAt(pixel);
-    const float3 faceNormal = decodeFaceNormal(gFaceNormal.Load(texel));
-    const float3 normal = roundedNormal(input.position.xy, position, faceNormal);
+    const float3 normal = decodeFaceNormal(gFaceNormal.Load(texel));
     const float4 material = gMaterial.Load(texel);
     const float roughness = clamp(material.b, 0.045, 1.0);
 
@@ -875,7 +827,7 @@ FSOutput fragmentMain(VSOutput input)
     surface.marchedShadows = true;
     surface.worldPosition = position;
     surface.normal = normal;
-    surface.geometricNormal = faceNormal;
+    surface.geometricNormal = normal;
     surface.viewDirection = view;
     surface.albedo = albedo.rgb;
     surface.metallic = material.r;
@@ -887,7 +839,7 @@ FSOutput fragmentMain(VSOutput input)
 
     // Glass scenes leave shadow mapped lights to fragmentMarched which tints them
     VoxelRayFreeFilter rayFree;
-    rayFree.mapLights = (gPush.reuse.x & kSceneGlass) == 0u || gCamera.renderModePad.x == 19;
+    rayFree.mapLights = (gPush.reuse.x & kSceneGlass) == 0u || isShadowDebugMode(gCamera.renderModePad.x);
     const ShadingResult lit = shadeSurfaceLighting(surface, rayFree);
     output.indirectDiffuse = float4(lit.indirectDiffuse, 1.0);
     if (lit.isDebugView)
@@ -963,7 +915,7 @@ MarchedOutput fragmentMarched(VSOutput input)
     surface.pixel = input.position.xy;
 
     // Debug views come from fragmentMain alone
-    if (gCamera.renderModePad.x == 19 || isSurfaceDebugMode(gCamera.renderModePad.x))
+    if (isShadowDebugMode(gCamera.renderModePad.x) || isSurfaceDebugMode(gCamera.renderModePad.x))
     {
         return output;
     }
@@ -999,7 +951,7 @@ float4 fragmentAmbient(VSOutput input) : SV_Target0
 {
     const int2 pixel = int2(input.position.xy);
     const int3 texel = int3(pixel, 0);
-    if (!isLitVoxel(gAlbedo.Load(texel).a) || gCamera.renderModePad.x == 19 || isSurfaceDebugMode(gCamera.renderModePad.x))
+    if (!isLitVoxel(gAlbedo.Load(texel).a) || isShadowDebugMode(gCamera.renderModePad.x) || isSurfaceDebugMode(gCamera.renderModePad.x))
     {
         discard;
     }

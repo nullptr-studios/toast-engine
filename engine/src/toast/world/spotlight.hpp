@@ -33,6 +33,12 @@ public:
 		return m_attenuation;
 	}
 
+	void setAttenuation(float range) { m_attenuation = std::max(range, 0.0f); }
+
+	void setInnerRadius(float degrees) { m_inner_radius = degrees; }
+
+	void setOuterRadius(float degrees) { m_outer_radius = degrees; }
+
 private:
 	[[Reflect, Unit("°"), Range(0.0, 90.0)]]
 	float m_inner_radius = 15.0f;

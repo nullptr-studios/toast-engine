@@ -7,6 +7,8 @@
 #include "shader_compiler.hpp"
 
 #include <algorithm>
+#include <cctype>
+#include <cstdlib>
 #include <cstring>
 #include <format>
 #include <limits>
@@ -28,7 +30,7 @@
 #include <unordered_map>
 #include <vector>
 
-#if defined(_WIN32)
+#if defined(_WIN32) && defined(TOAST_DEV_TOOLS)
 #include <external/inc/nsight/NGFX_GPUTrace_Vulkan.h>
 #include <external/inc/nsight/NGFX_GraphicsCapture_Vulkan.h>
 #endif
@@ -56,7 +58,7 @@ auto vulkanCorePipelineCacheMatches(std::span<const uint8_t> data, const vk::Phy
 
 /// Injected before main so it is known before the instance exists
 auto vulkanCoreAttachedGraphicsDebugger() -> std::optional<std::string_view> {
-#if defined(_WIN32)
+#if defined(_WIN32) && defined(TOAST_DEV_TOOLS)
 	if (GetModuleHandleA("renderdoc.dll") != nullptr) {
 		return "RenderDoc";
 	}
@@ -65,10 +67,10 @@ auto vulkanCoreAttachedGraphicsDebugger() -> std::optional<std::string_view> {
 		return "Nsight Graphics";
 	}
 #elif defined(__linux__)
-	if (void* mod = dlopen("librenderdoc.so", RTLD_NOLOAD | RTLD_LAZY); mod != nullptr) {
-		dlclose(mod);
-		return "RenderDoc";
-	}
+#elif defined(__linux__) && defined(TOAST_DEV_TOOLS)
+	dlclose(mod);
+	return "RenderDoc";
+}
 #endif
 	return std::nullopt;
 }
@@ -307,6 +309,51 @@ auto joinRequiredExtensions(std::span<const char* const> extensions) -> std::str
 auto deviceNameString(const vk::PhysicalDeviceProperties& props) -> std::string {
 	return {props.deviceName.data()};
 }
+
+struct RayTracingVerdict {
+	bool hardware = false;
+	std::string_view reason;
+};
+
+/// Drivers emulate ray query in compute on GPUs without RT cores
+auto judgeHardwareRayTracing(const vk::PhysicalDeviceProperties& props, bool mesh_shader_extension) -> RayTracingVerdict {
+	constexpr uint32_t k_vendor_nvidia = 0x10DE;
+	constexpr uint32_t k_vendor_amd = 0x1002;
+	constexpr uint32_t k_vendor_intel = 0x8086;
+
+	if (const char* forced = std::getenv("TOAST_RAY_QUERY"); forced != nullptr && forced[0] != '\0') {
+		return {forced[0] != '0', "forced by TOAST_RAY_QUERY"};
+	}
+	switch (ShaderCompiler::rayTracingMode()) {
+		case RayTracingMode::off: return {false, "turned off in the ray tracing setting"};
+		case RayTracingMode::on: return {true, "forced on in the ray tracing setting"};
+		case RayTracingMode::automatic: break;
+	}
+	if (props.deviceType == vk::PhysicalDeviceType::eCpu) {
+		return {false, "software device"};
+	}
+
+	if (props.vendorID == k_vendor_nvidia) {
+		std::string name = deviceNameString(props);
+		std::ranges::transform(name, name.begin(), [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+		// Mesh shaders start at Turing
+		if (!mesh_shader_extension) {
+			return {false, "NVIDIA GPU older than Turing has no RT cores, the driver emulates ray query"};
+		}
+		// GTX 16 and MX are Turing without RT cores
+		if (name.contains("GTX") || name.contains(" MX")) {
+			return {false, "NVIDIA GTX and MX parts have no RT cores, the driver emulates ray query"};
+		}
+		return {true, "NVIDIA RT cores"};
+	}
+	if (props.vendorID == k_vendor_amd) {
+		return {true, "AMD drivers only expose ray query on RDNA2 and newer"};
+	}
+	if (props.vendorID == k_vendor_intel) {
+		return {true, "Intel drivers only expose ray query on Arc class hardware"};
+	}
+	return {true, "unknown vendor, trusting the driver"};
+}
 }    // namespace
 
 auto DeviceScore::toString() const noexcept -> std::string {
@@ -332,7 +379,7 @@ VulkanCore::VulkanCore(
 	m_validation_enabled = false;
 #endif
 
-#if defined(_WIN32)
+#if defined(_WIN32) && defined(TOAST_DEV_TOOLS)
 	initializeNsightActivity();
 #endif
 
@@ -349,9 +396,11 @@ VulkanCore::VulkanCore(
 	vk::ApplicationInfo app_info("SUPER DUPER TOASTY GAME", 1, "TOAST ENGINE", 1, VK_API_VERSION_1_4);
 
 	std::vector<const char*> layers;
+#ifdef DEBUG
 	if (m_validation_enabled) {
 		layers.push_back("VK_LAYER_KHRONOS_validation");
 	}
+#endif
 
 	std::vector extensions(required_instance_extensions.begin(), required_instance_extensions.end());
 	m_debug_utils_enabled = checkInstanceExtensionSupport(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
@@ -359,6 +408,10 @@ VulkanCore::VulkanCore(
 		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 	}
 	TOAST_INFO("Render", "Debug object names: {}", m_debug_utils_enabled ? "enabled" : "disabled");
+
+	if (checkInstanceExtensionSupport(VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME)) {
+		extensions.push_back(VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME);
+	}
 
 	vk::InstanceCreateInfo instance_ci({}, &app_info, layers, extensions);
 
@@ -391,27 +444,27 @@ VulkanCore::VulkanCore(
 	createLogicalDeviceAndAllocator(required_device_extensions);
 	m_pipeline_cache = vk::raii::PipelineCache(m_device, vk::PipelineCacheCreateInfo {});
 
-#if defined(_WIN32)
+#if defined(TOAST_DEV_TOOLS) && defined(_WIN32)
 	if (HMODULE mod = GetModuleHandleA("renderdoc.dll")) {
 		pRENDERDOC_GetAPI renderdoc_get_api = reinterpret_cast<pRENDERDOC_GetAPI>(GetProcAddress(mod, "RENDERDOC_GetAPI"));
 		renderdoc_get_api(eRENDERDOC_API_Version_1_6_0, reinterpret_cast<void**>(&rdoc_api));
 		TOAST_INFO("Render", "RenderDoc API detected");
 	}
 #elif defined(__linux__)
-	if (auto* mod = dlopen("librenderdoc.so", RTLD_NOLOAD | RTLD_LAZY)) {
-		auto* renderdoc_get_api = reinterpret_cast<pRENDERDOC_GetAPI>(dlsym(mod, "RENDERDOC_GetAPI"));
-		if (renderdoc_get_api) {
-			renderdoc_get_api(eRENDERDOC_API_Version_1_6_0, reinterpret_cast<void**>(&rdoc_api));
-			TOAST_INFO("Render", "RenderDoc API detected");
-		}
-		dlclose(mod);
+#elif defined(TOAST_DEV_TOOLS) && defined(__linux__)
+	auto* renderdoc_get_api = reinterpret_cast<pRENDERDOC_GetAPI>(dlsym(mod, "RENDERDOC_GetAPI"));
+	if (renderdoc_get_api) {
+		renderdoc_get_api(eRENDERDOC_API_Version_1_6_0, reinterpret_cast<void**>(&rdoc_api));
+		TOAST_INFO("Render", "RenderDoc API detected");
 	}
+	dlclose(mod);
+}
 #endif
 
 	// Not activating Nsight GPU trace here since it blocks until the host attaches
 }
 
-#if defined(_WIN32)
+#if defined(_WIN32) && defined(TOAST_DEV_TOOLS)
 namespace {
 
 auto nsightResultName(NGFX_Result result) -> std::string_view {
@@ -655,6 +708,8 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	enabled_features.depthClamp = m_depth_clamp_supported ? VK_TRUE : VK_FALSE;
 	m_dual_source_blend_supported = device_features.dualSrcBlend == VK_TRUE;
 	enabled_features.dualSrcBlend = m_dual_source_blend_supported ? VK_TRUE : VK_FALSE;
+	// volumetrics.slang declares the fog ambient buffer writable and its fragment stages read it
+	enabled_features.fragmentStoresAndAtomics = device_features.fragmentStoresAndAtomics;
 	// HiZPyramid picks its level image by a loop index
 	enabled_features.shaderStorageImageArrayDynamicIndexing = VK_TRUE;
 	// Replays can start a pass from state no frame wrote so an index past a buffer reads zero instead of losing the device
@@ -773,7 +828,21 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 			features_present = as_probe.accelerationStructure == VK_TRUE && rq_probe.rayQuery == VK_TRUE;
 		}
 
-		m_ray_tracing_supported = extensions_present && features_present;
+		const bool driver_exposes_ray_query = extensions_present && features_present;
+		RayTracingVerdict verdict {};
+		if (driver_exposes_ray_query) {
+			verdict = judgeHardwareRayTracing(m_physical_device.getProperties(), has_extension(VK_EXT_MESH_SHADER_EXTENSION_NAME));
+			if (!verdict.hardware) {
+				TOAST_WARN(
+				    "Render",
+				    "Ray query is advertised but not used: {}. The ray tracing setting or TOAST_RAY_QUERY=1 forces it",
+				    verdict.reason
+				);
+			}
+		}
+		m_ray_tracing_startup_mode = ShaderCompiler::rayTracingMode();
+		m_ray_tracing_supported = driver_exposes_ray_query && verdict.hardware;
+		m_ray_tracing_reason = driver_exposes_ray_query ? verdict.reason : "the driver does not expose ray query";
 
 		// Before the shader cache compiles anything
 		ShaderCompiler::setRayQueryAvailable(m_ray_tracing_supported);
@@ -790,14 +859,18 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 			m_as_scratch_alignment = as_props.minAccelerationStructureScratchOffsetAlignment;
 
 			TOAST_INFO(
-			    "Render", "Ray query supported; acceleration structures available (scratch alignment {} bytes)", m_as_scratch_alignment
+			    "Render",
+			    "Ray query supported ({}); acceleration structures available (scratch alignment {} bytes)",
+			    verdict.reason,
+			    m_as_scratch_alignment
 			);
 		} else {
 			TOAST_INFO(
 			    "Render",
-			    "Ray query unavailable (extensions={}, features={}); every RT-backed feature keeps its raster path",
+			    "Ray query unavailable (extensions={}, features={}, hardware={}); every RT-backed feature keeps its raster path",
 			    extensions_present,
-			    features_present
+			    features_present,
+			    verdict.hardware
 			);
 		}
 	}
@@ -1205,6 +1278,9 @@ auto VulkanCore::checkInstanceExtensionSupport(std::string_view extension) -> bo
 }
 
 auto VulkanCore::checkValidationLayerSupport() -> bool {
+#ifndef DEBUG
+	return false;
+#else
 	{
 		uint32_t layer_count;
 		vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
@@ -1216,6 +1292,7 @@ auto VulkanCore::checkValidationLayerSupport() -> bool {
 			       return std::string(layer.layerName) == "VK_LAYER_KHRONOS_validation";
 		       }) != available_layers.end();
 	}
+#endif
 }
 
 void VulkanCore::loadPipelineCache() const {

@@ -53,8 +53,10 @@ private:
 
 	/// rgb radiance a hit distance then history and -1 where nothing was traced
 	static constexpr vk::Format k_trace_format = vk::Format::eR16G16B16A16Sfloat;
+	/// voxel_specular.slang packSurface
+	static constexpr vk::Format k_surface_format = vk::Format::eR32G32B32A32Uint;
 
-	static constexpr uint32_t k_image_bindings = 12;
+	static constexpr uint32_t k_image_bindings = 13;
 
 	void createSets(const VulkanCore& core);
 	void createTargets(const VulkanCore& core, vk::Extent2D extent);
@@ -64,6 +66,7 @@ private:
 	bool m_ready = false;
 
 	ShaderLayout m_layout;
+	VulkanPipeline m_surface_pipeline;
 	VulkanPipeline m_trace_pipeline;
 	VulkanPipeline m_resolve_pipeline;
 	VulkanPipeline m_temporal_pipeline;
@@ -80,6 +83,7 @@ private:
 	std::vector<vk::raii::DescriptorSet> m_image_sets;
 	std::vector<std::array<vk::ImageView, k_image_bindings>> m_image_bound;
 
+	PostProcessTarget m_surface;
 	PostProcessTarget m_trace;
 	PostProcessTarget m_resolved;
 	/// The temporal pass reads one and writes the other

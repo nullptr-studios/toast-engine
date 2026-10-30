@@ -99,6 +99,11 @@ auto FxaaPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView
 		return source_view;
 	}
 
+	// FXAA reads gamma encoded luma
+	if (VulkanRenderer::instance->hdrOutput()) {
+		return source_view;
+	}
+
 	if (m_bound_views[frame_index] != source_view) {
 		vk::DescriptorImageInfo image_info {};
 		image_info.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;

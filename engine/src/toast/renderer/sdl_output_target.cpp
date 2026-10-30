@@ -56,11 +56,15 @@ auto SDLOutputTarget::createSurface(const VulkanCore& core, SDL_Window* window) 
 	return {core.getInstance(), raw_surface};
 }
 
-SDLOutputTarget::SDLOutputTarget(const VulkanCore& core, SDL_Window* window, vk::Extent2D preferred_extent)
+SDLOutputTarget::SDLOutputTarget(const VulkanCore& core, SDL_Window* window, vk::Extent2D preferred_extent, bool prefer_hdr)
     : m_core(&core),
       m_window(window),
       m_surface(createSurface(core, window)) {
-	m_swapchain.emplace(core, m_surface, preferred_extent);
+	m_swapchain.emplace(core, m_surface, preferred_extent, prefer_hdr);
+}
+
+auto SDLOutputTarget::isHdr() const -> bool {
+	return m_swapchain->isHdr();
 }
 
 auto SDLOutputTarget::getExtent() const -> vk::Extent2D {

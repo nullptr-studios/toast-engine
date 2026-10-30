@@ -28,6 +28,12 @@ public:
 	[[nodiscard]]
 	virtual auto getColorFormat() const -> vk::Format = 0;
 
+	/// scRGB float where 1.0 is 80 nits
+	[[nodiscard]]
+	virtual auto isHdr() const -> bool {
+		return false;
+	}
+
 	[[nodiscard]]
 	virtual auto getImageCount() const -> uint32_t = 0;
 

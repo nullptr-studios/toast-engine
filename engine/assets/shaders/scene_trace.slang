@@ -53,10 +53,15 @@ struct SceneHit
     uint material;
 };
 
+// Per compile since both walks together cost 40 registers
+#ifndef TOAST_TRACE_RAY_QUERY
+#define TOAST_TRACE_RAY_QUERY TOAST_RAY_QUERY
+#endif
+
 bool traceRayQueryEnabled()
 {
-#if TOAST_RAY_QUERY
-    return gCamera.tracedShadowParams.y >= 0.5;
+#if TOAST_RAY_QUERY && TOAST_TRACE_RAY_QUERY
+    return true;
 #else
     return false;
 #endif

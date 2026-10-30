@@ -2,6 +2,8 @@
 /// @author dario
 /// @date 10/06/2026
 
+#if defined(TOAST_DEV_TOOLS)
+
 #include "debug_pass.hpp"
 
 #include "../clustered_lighting_constants.hpp"
@@ -399,7 +401,7 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 		ImGuiIO& io = ImGui::GetIO();
 		const auto& input = frame->imgui_input;
 
-		io.DisplaySize = ImVec2(frame->viewport_extent.x, frame->viewport_extent.y);
+		io.DisplaySize = ImVec2(frame->output_extent.x, frame->output_extent.y);
 		io.DeltaTime = std::max(dt, 0.0001f);
 
 		if (input.mouse_pos.x >= 0.0f && input.mouse_pos.y >= 0.0f) {
@@ -890,8 +892,8 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 				using namespace clustered_lighting;
 
 				ImDrawList* draw_list = ImGui::GetForegroundDrawList();
-				const float cell_w = frame->viewport_extent.x / static_cast<float>(k_cluster_dim_x);
-				const float cell_h = frame->viewport_extent.y / static_cast<float>(k_cluster_dim_y);
+				const float cell_w = frame->output_extent.x / static_cast<float>(k_cluster_dim_x);
+				const float cell_h = frame->output_extent.y / static_cast<float>(k_cluster_dim_y);
 
 				for (uint32_t ty = 0; ty < k_cluster_dim_y; ++ty) {
 					for (uint32_t tx = 0; tx < k_cluster_dim_x; ++tx) {
@@ -1575,3 +1577,5 @@ void DebugPass::ensureLineCapacity(const renderer::VulkanCore& core, DynamicVert
 }
 
 }
+
+#endif

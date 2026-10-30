@@ -37,6 +37,7 @@ static const float kLowPercentile = 0.1;
 static const float kHighPercentile = 0.9;
 
 groupshared uint sBins[kBins];
+groupshared float2 sSums[kBins];
 
 float luminance(float3 color)
 {
@@ -70,34 +71,41 @@ void histogramMain(uint3 id : SV_DispatchThreadID, uint index : SV_GroupIndex)
 [numthreads(256, 1, 1)]
 void adaptMain(uint index : SV_GroupIndex)
 {
-    sBins[index] = gHistogram[index];
+    const uint count = gHistogram[index];
+    sBins[index] = count;
     GroupMemoryBarrierWithGroupSync();
+
+    for (uint offset = 1u; offset < kBins; offset <<= 1u)
+    {
+        const uint below = index >= offset ? sBins[index - offset] : 0u;
+        GroupMemoryBarrierWithGroupSync();
+        sBins[index] += below;
+        GroupMemoryBarrierWithGroupSync();
+    }
+
+    const float total = float(sBins[kBins - 1u]);
+    const float seen = float(sBins[index] - count);
+    const float low = total * kLowPercentile;
+    const float high = total * kHighPercentile;
+    const float inside = max(min(seen + float(count), high) - max(seen, low), 0.0);
+    sSums[index] = float2(inside * (gParams.minLog + (float(index) + 0.5) / float(kBins) * gParams.logRange), inside);
+    GroupMemoryBarrierWithGroupSync();
+
+    for (uint stride = kBins / 2u; stride > 0u; stride >>= 1u)
+    {
+        if (index < stride)
+        {
+            sSums[index] += sSums[index + stride];
+        }
+        GroupMemoryBarrierWithGroupSync();
+    }
 
     if (index != 0u)
     {
         return;
     }
-
-    float total = 0.0;
-    for (uint i = 0u; i < kBins; ++i)
-    {
-        total += float(sBins[i]);
-    }
-
-    float low = total * kLowPercentile;
-    float high = total * kHighPercentile;
-    float seen = 0.0;
-    float weighted = 0.0;
-    float counted = 0.0;
-    for (uint i = 0u; i < kBins; ++i)
-    {
-        float count = float(sBins[i]);
-        float inside = max(min(seen + count, high) - max(seen, low), 0.0);
-        weighted += inside * (gParams.minLog + (float(i) + 0.5) / float(kBins) * gParams.logRange);
-        counted += inside;
-        seen += count;
-    }
-
+    const float weighted = sSums[0].x;
+    const float counted = sSums[0].y;
     float target = counted > 0.0 ? weighted / counted : gParams.minLog + 0.5 * gParams.logRange;
     float previous = gExposure[0];
     float speed = target > previous ? gParams.speedUp : gParams.speedDown;

@@ -13,7 +13,8 @@ namespace renderer {
 
 class VulkanSwapchain {
 public:
-	VulkanSwapchain(const VulkanCore& core, vk::raii::SurfaceKHR& surface, vk::Extent2D preferred_extent);
+	/// Falls back to SDR when the surface has no scRGB format
+	VulkanSwapchain(const VulkanCore& core, vk::raii::SurfaceKHR& surface, vk::Extent2D preferred_extent, bool prefer_hdr = false);
 	~VulkanSwapchain() = default;
 
 	VulkanSwapchain(const VulkanSwapchain&) = delete;
@@ -31,6 +32,11 @@ public:
 	[[nodiscard]]
 	auto getColorFormat() const -> vk::Format {
 		return m_image_format;
+	}
+
+	[[nodiscard]]
+	auto isHdr() const -> bool {
+		return m_hdr;
 	}
 
 	[[nodiscard]]
@@ -67,6 +73,8 @@ private:
 
 	const VulkanCore* m_core = nullptr;
 	vk::raii::SurfaceKHR* m_surface = nullptr;
+	bool m_prefer_hdr = false;
+	bool m_hdr = false;
 
 	vk::raii::SwapchainKHR m_swapchain = nullptr;
 	std::vector<vk::Image> m_images;

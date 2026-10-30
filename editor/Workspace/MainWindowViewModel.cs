@@ -1103,6 +1103,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 
 		Directory.CreateDirectory(outputDir);
 
+		Log.InvalidateBacktraceCache();
+
 		async Task CopyDlls(Action<string> log) {
 			var libExt = OperatingSystem.IsWindows() ? ".dll" : ".so";
 			var exeExt = OperatingSystem.IsWindows() ? ".exe" : "";
@@ -1157,7 +1159,11 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 
 		async Task BakeAndPack(Action<string> log, string dbName, string dbSourceDir, string manifestJsonPath) {
 			var stageDir = Path.Combine(stageRoot, dbName);
-			if (Directory.Exists(stageDir)) Directory.Delete(stageDir, true);
+			if (Directory.Exists(stageDir)) {
+					foreach (var f in Directory.EnumerateFiles(stageDir, "*", SearchOption.AllDirectories))
+						File.SetAttributes(f, FileAttributes.Normal);
+					Directory.Delete(stageDir, true);
+				}
 			Directory.CreateDirectory(stageDir);
 
 			// Copy all source files into staging
@@ -1168,7 +1174,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 					var dest = Path.Combine(stageDir, rel);
 					Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
 					File.Copy(srcFile, dest, true);
-										File.SetAttributes(dest, File.GetAttributes(dest) & ~FileAttributes.ReadOnly);
+					File.SetAttributes(dest, File.GetAttributes(dest) & ~FileAttributes.ReadOnly);
 				}
 			});
 

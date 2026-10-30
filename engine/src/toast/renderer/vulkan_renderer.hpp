@@ -49,6 +49,7 @@
 #include <toast/assets/texture.hpp>
 #include <toast/events/event.inl>
 #include <toast/events/listener.hpp>
+#include <toast/settings/settings.hpp>
 #include <toast/world/gizmo_layout.hpp>
 #include <tracy/TracyVulkan.hpp>
 #include <type_traits>
@@ -404,6 +405,7 @@ public:
 		float size_handle_scale = 1.0f;
 	};
 
+#if defined(TOAST_DEV_TOOLS)
 	struct ImGuiKeyEvent {
 		int32_t key = 0;
 		bool down = false;
@@ -417,6 +419,7 @@ public:
 		std::vector<ImGuiKeyEvent> key_events;
 		std::vector<uint32_t> char_events;
 	};
+#endif
 
 	struct LightStats {
 		uint32_t submitted = 0;
@@ -463,7 +466,11 @@ public:
 
 		std::vector<MaterialRange> material_ranges;
 
+		/// Render resolution
 		glm::vec2 viewport_extent {0.0f};
+		glm::vec2 output_extent {0.0f};
+		/// NDC offset jittered_view_projection adds
+		glm::vec2 jitter_ndc {0.0f};
 		float camera_near = 0.01f;
 		float camera_far = 5000.0f;
 
@@ -472,7 +479,9 @@ public:
 
 		LightStats light_stats;
 
+#if defined(TOAST_DEV_TOOLS)
 		ImGuiInputSnapshot imgui_input;
+#endif
 
 		uint32_t render_mode = 0;
 
@@ -943,6 +952,92 @@ public:
 		return m_voxel_glass_lit_surfaces.load(std::memory_order_relaxed);
 	}
 
+	[[nodiscard]]
+	auto hdrOutput() const -> bool {
+		return m_output_target != nullptr && m_output_target->isHdr();
+	}
+
+	/// scRGB where 1.0 is 80 nits
+	void setDisplayHdr(float sdr_white, float headroom) noexcept {
+		m_display_sdr_white.store(std::max(sdr_white, 1.0f), std::memory_order_relaxed);
+		m_display_hdr_headroom.store(std::max(headroom, 1.0f), std::memory_order_relaxed);
+	}
+
+	/// Zero follows the display
+	void setHdrNits(float paper_white, float peak) noexcept {
+		m_hdr_paper_white_nits.store(std::max(paper_white, 0.0f), std::memory_order_relaxed);
+		m_hdr_peak_nits.store(std::max(peak, 0.0f), std::memory_order_relaxed);
+	}
+
+	/// scRGB multiplier of SDR 1.0
+	[[nodiscard]]
+	auto hdrPaperWhiteScale() const -> float {
+		const float nits = m_hdr_paper_white_nits.load(std::memory_order_relaxed);
+		return nits > 0.0f ? nits / 80.0f : m_display_sdr_white.load(std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto hdrPeakScale() const -> float {
+		const float nits = m_hdr_peak_nits.load(std::memory_order_relaxed);
+		const float headroom = m_display_hdr_headroom.load(std::memory_order_relaxed);
+		constexpr float k_unknown_peak = 1000.0f / 80.0f;
+		const float display = headroom > 1.05f ? m_display_sdr_white.load(std::memory_order_relaxed) * headroom : k_unknown_peak;
+		return std::max(nits > 0.0f ? nits / 80.0f : display, hdrPaperWhiteScale() * 1.25f);
+	}
+
+	/// Overrides the Voxel Shadows mode of every light
+	void setVoxelShadowMapsOnly(bool enabled) noexcept { m_voxel_shadow_maps_only.store(enabled, std::memory_order_relaxed); }
+
+	[[nodiscard]]
+	auto voxelShadowMapsOnly() const noexcept -> bool {
+		return m_voxel_shadow_maps_only.load(std::memory_order_relaxed);
+	}
+
+	/// Share of the frame the shutter stays open
+	void setMotionBlurStrength(float strength) noexcept {
+		m_motion_blur_strength.store(std::clamp(strength, 0.0f, 2.0f), std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto motionBlurStrength() const noexcept -> float {
+		return m_motion_blur_strength.load(std::memory_order_relaxed);
+	}
+
+	/// Longest blur as a share of the screen height
+	void setMotionBlurMaxLength(float share) noexcept {
+		m_motion_blur_max_length.store(std::clamp(share, 0.001f, 0.5f), std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto motionBlurMaxLength() const noexcept -> float {
+		return m_motion_blur_max_length.load(std::memory_order_relaxed);
+	}
+
+	void setMotionBlurSamples(uint32_t samples) noexcept {
+		m_motion_blur_samples.store(std::clamp(samples, 2u, 32u), std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto motionBlurSamples() const noexcept -> uint32_t {
+		return m_motion_blur_samples.load(std::memory_order_relaxed);
+	}
+
+	/// Zero steps keep the post process volume values
+	void setSsrOverride(float reach, uint32_t steps) noexcept {
+		m_ssr_reach.store(std::max(reach, 0.0f), std::memory_order_relaxed);
+		m_ssr_steps.store(steps, std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto ssrOverrideReach() const noexcept -> float {
+		return m_ssr_reach.load(std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto ssrOverrideSteps() const noexcept -> uint32_t {
+		return m_ssr_steps.load(std::memory_order_relaxed);
+	}
+
 	void setVoxelGlassShadows(bool enabled) noexcept { m_voxel_glass_shadows.store(enabled, std::memory_order_relaxed); }
 
 	[[nodiscard]]
@@ -978,13 +1073,6 @@ public:
 		return m_voxel_sun_reach.load(std::memory_order_relaxed);
 	}
 
-	void setVoxelTraceRayQuery(bool enabled) noexcept { m_voxel_trace_ray_query.store(enabled, std::memory_order_relaxed); }
-
-	[[nodiscard]]
-	auto voxelTraceRayQuery() const noexcept -> bool {
-		return m_voxel_trace_ray_query.load(std::memory_order_relaxed);
-	}
-
 	/// Off keeps every volume on the unit box BLAS so the two can be compared
 	void setVoxelTraceBricks(bool enabled) noexcept { m_voxel_trace_bricks.store(enabled, std::memory_order_relaxed); }
 
@@ -1018,19 +1106,15 @@ public:
 		return m_voxel_shadow_instances.load(std::memory_order_relaxed);
 	}
 
-	void setVoxelNormalRounding(float voxels) noexcept {
-		m_voxel_normal_rounding.store(std::max(voxels, 0.0f), std::memory_order_relaxed);
-	}
-
-	[[nodiscard]]
-	auto voxelNormalRounding() const noexcept -> float {
-		return m_voxel_normal_rounding.load(std::memory_order_relaxed);
-	}
-
 	/// Left in eDepthReadOnlyOptimal
 	[[nodiscard]]
 	auto getDepthView() const noexcept -> vk::ImageView {
 		return m_depth_resources.view.has_value() ? **m_depth_resources.view : vk::ImageView {};
+	}
+
+	[[nodiscard]]
+	auto getOverlayDepthView() const noexcept -> vk::ImageView {
+		return m_output_depth.view.has_value() ? **m_output_depth.view : getDepthView();
 	}
 
 	struct PassInfo {
@@ -1428,6 +1512,20 @@ public:
 
 	void setTaaEnabled(bool enabled) noexcept { m_taa_enabled.store(enabled, std::memory_order_relaxed); }
 
+	/// Recreates every target
+	void setRenderScale(float scale);
+
+	/// Thread safe and applied at the next tick
+	void requestSettingValue(std::string key, toast::settings::Value value);
+
+	[[nodiscard]]
+	auto renderScale() const noexcept -> float {
+		return m_render_scale.load(std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto renderExtent() const -> vk::Extent2D;
+
 	[[nodiscard]]
 	auto taaEnabled() const noexcept -> bool {
 		return m_taa_enabled.load(std::memory_order_relaxed);
@@ -1566,6 +1664,7 @@ private:
 	void recordAccelerationStructureBuilds(FrameContext& frame);
 
 	void createPresentResources();
+	void recordDepthUpscale(vk::CommandBuffer cmd, const vk::Rect2D& area);
 	void createDescriptorPool();
 	void createDefaultTexture();
 
@@ -1712,6 +1811,8 @@ private:
 	bool m_probe_auto_baked = false;
 	vk::Format m_depth_format = vk::Format::eUndefined;
 	DepthResources m_depth_resources;
+	/// Only below render scale 1
+	DepthResources m_output_depth;
 	DepthResources m_glass_backdrop_depth;
 
 	static constexpr vk::Format m_scene_color_format = vk::Format::eR16G16B16A16Sfloat;
@@ -1741,10 +1842,8 @@ private:
 	bool m_voxel_reservoir_history = false;
 	uint64_t m_voxel_reservoir_sequence = 0;
 
-	std::atomic<float> m_voxel_normal_rounding {0.3f};
 	std::atomic<uint32_t> m_voxel_light_candidates {8};
 	std::atomic<uint32_t> m_voxel_shadow_instances {256};
-	std::atomic_bool m_voxel_trace_ray_query {true};
 	std::atomic_bool m_voxel_trace_bricks {true};
 	std::atomic<uint32_t> m_voxel_blas_budget {262144};
 	std::atomic<float> m_voxel_trace_cell_size {4.0f};
@@ -1768,6 +1867,17 @@ private:
 	std::atomic<uint32_t> m_voxel_glass_refraction_voxels {32};
 	std::atomic<uint32_t> m_voxel_glass_lit_surfaces {4};
 	std::atomic_bool m_voxel_glass_shadows {true};
+	std::atomic<float> m_display_sdr_white {2.5375f};
+	std::atomic<float> m_display_hdr_headroom {1.0f};
+	std::atomic<float> m_hdr_paper_white_nits {0.0f};
+	std::atomic<float> m_hdr_peak_nits {0.0f};
+	event::Listener m_hdr_listener;
+	std::atomic_bool m_voxel_shadow_maps_only {false};
+	std::atomic<float> m_motion_blur_strength {0.5f};
+	std::atomic<float> m_motion_blur_max_length {0.04f};
+	std::atomic<uint32_t> m_motion_blur_samples {12};
+	std::atomic<float> m_ssr_reach {0.0f};
+	std::atomic<uint32_t> m_ssr_steps {0};
 	std::atomic<uint32_t> m_voxel_glass_shadow_reach {50};
 	std::atomic_bool m_voxel_cell_boxes {true};
 	std::atomic_bool m_voxel_occlusion {true};
@@ -1781,6 +1891,10 @@ private:
 	vk::raii::Sampler m_present_sampler = nullptr;
 	std::vector<vk::raii::DescriptorSet> m_present_sets;
 	std::vector<vk::ImageView> m_present_bound_views;
+	VulkanPipeline m_depth_upscale_pipeline;
+	vk::raii::Sampler m_depth_upscale_sampler = nullptr;
+	std::vector<vk::raii::DescriptorSet> m_depth_upscale_sets;
+	std::vector<vk::ImageView> m_depth_upscale_bound;
 
 	TracyVkCtx m_tracy_vk_ctx = nullptr;
 	std::unique_ptr<GpuTimer> m_gpu_timer;
@@ -1818,6 +1932,11 @@ private:
 	bool m_traced_shadows_voxel_fallback_logged = false;
 
 	std::atomic_bool m_taa_enabled {true};
+	std::atomic<float> m_render_scale {1.0f};
+	std::mutex m_setting_request_mutex;
+	std::vector<std::pair<std::string, toast::settings::Value>> m_setting_requests;
+	/// Of the current targets
+	std::atomic<float> m_applied_render_scale {1.0f};
 	std::atomic<float> m_taa_history_weight {0.9f};
 
 	/// Game thread only
@@ -1868,6 +1987,7 @@ private:
 	event::Listener m_capture_listener;
 	std::atomic_bool m_capture_frame_requested {false};
 
+#if defined(TOAST_DEV_TOOLS)
 	event::Listener m_imgui_input_listener;
 	glm::vec2 m_imgui_mouse_pos {-1.0f, -1.0f};
 	std::array<bool, 3> m_imgui_mouse_down {};
@@ -1875,6 +1995,7 @@ private:
 	float m_imgui_wheel_y_accum = 0.0f;
 	std::vector<ImGuiKeyEvent> m_imgui_key_events_accum;
 	std::vector<uint32_t> m_imgui_char_events_accum;
+#endif
 
 	event::Listener m_render_mode_listener;
 	uint32_t m_render_mode = 0;
