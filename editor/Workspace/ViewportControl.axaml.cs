@@ -45,6 +45,8 @@ public partial class ViewportControl : UserControl {
 	private static readonly MethodInfo? s_setCursor =
 		typeof(ITopLevelImpl).GetMethod(
 			"SetCursor", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+	private static IntPtr s_x11Display;
+	private static bool s_x11DisplayChecked;
 
 	private ulong m_trackpadHandle;
 	private int m_trackpadX = int.MinValue, m_trackpadY, m_trackpadW, m_trackpadH;
@@ -208,7 +210,10 @@ public partial class ViewportControl : UserControl {
 		// can't steal clicks or focus
 		m_pointer?.Capture(Surface);
 		ForceHiddenCursor();
-		if (m_editorFlyActive) return;
+		if (m_editorFlyActive) {
+			RecenterLockedPointer();
+			return;
+		}
 
 		m_lockPoint = m_lastPointerPoint;
 		// resume from what the engine last saw or delta cursor actions read the gap as a flick
@@ -218,18 +223,45 @@ public partial class ViewportControl : UserControl {
 	}
 
 	private void RecenterLockedPointer() {
-		if (!OperatingSystem.IsWindows()) return;
+		if (!OperatingSystem.IsWindows() && !OperatingSystem.IsLinux()) return;
 		var center = new Point(Bounds.Width / 2, Bounds.Height / 2);
-		if (Math.Abs(m_lockPoint.X - center.X) < Bounds.Width / 4 &&
-		    Math.Abs(m_lockPoint.Y - center.Y) < Bounds.Height / 4) return;
+		var point = m_editorFlyActive ? m_lastFlyPoint : m_lockPoint;
+		if (Math.Abs(point.X - center.X) < Bounds.Width / 4 &&
+		    Math.Abs(point.Y - center.Y) < Bounds.Height / 4) return;
 
 		var screen = this.PointToScreen(center);
-		if (SetCursorPos(screen.X, screen.Y)) m_lockPoint = center;
+		if (!WarpPointer(screen.X, screen.Y)) return;
+		if (m_editorFlyActive) m_lastFlyPoint = center;
+		else m_lockPoint = center;
+	}
+
+	private static bool WarpPointer(int x, int y) {
+		if (OperatingSystem.IsWindows()) return SetCursorPos(x, y);
+		if (!OperatingSystem.IsLinux()) return false;
+		if (!s_x11DisplayChecked) {
+			s_x11DisplayChecked = true;
+			try { s_x11Display = XOpenDisplay(IntPtr.Zero); }
+			catch (DllNotFoundException) { return false; }
+			catch (EntryPointNotFoundException) { return false; }
+		}
+		if (s_x11Display == IntPtr.Zero) return false;
+		XWarpPointer(s_x11Display, IntPtr.Zero, XDefaultRootWindow(s_x11Display), 0, 0, 0, 0, x, y);
+		XFlush(s_x11Display);
+		return true;
 	}
 
 	[LibraryImport("user32.dll", EntryPoint = "SetCursorPos")]
 	[return: MarshalAs(UnmanagedType.Bool)]
 	private static partial bool SetCursorPos(int x, int y);
+	[LibraryImport("libX11.so.6", EntryPoint = "XOpenDisplay")]
+	private static partial IntPtr XOpenDisplay(IntPtr name);
+	[LibraryImport("libX11.so.6", EntryPoint = "XDefaultRootWindow")]
+	private static partial IntPtr XDefaultRootWindow(IntPtr display);
+	[LibraryImport("libX11.so.6", EntryPoint = "XWarpPointer")]
+	private static partial int XWarpPointer(IntPtr display, IntPtr source, IntPtr destination,
+		int sourceX, int sourceY, uint sourceWidth, uint sourceHeight, int destinationX, int destinationY);
+	[LibraryImport("libX11.so.6", EntryPoint = "XFlush")]
+	private static partial int XFlush(IntPtr display);
 
 	private void ReleaseCapture() {
 		m_captured = false;
@@ -341,6 +373,7 @@ public partial class ViewportControl : UserControl {
 
 	private void OnWindowDeactivated(object? sender, EventArgs e) {
 		// alt-tabbing
+		if (m_editorFlyActive) EndEditorFly();
 		ReleaseHeldInput();
 		ReleaseFlyKeys();
 	}
@@ -615,6 +648,7 @@ public partial class ViewportControl : UserControl {
 			m_lastFlyPoint = point;
 			if (m_engine is not null && (dx != 0f || dy != 0f))
 				Events.Send(new EditorCameraLook { Dx = dx, Dy = dy });
+			RecenterLockedPointer();
 			return;
 		}
 

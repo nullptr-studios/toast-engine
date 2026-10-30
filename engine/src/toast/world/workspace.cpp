@@ -58,6 +58,9 @@ namespace toast {
 
 namespace {
 
+// Handle clicks before the runtime UI (priority 32) and gameplay input (priority 0).
+constexpr char k_gizmo_input_priority = 33;
+
 // TODO: i didnt know where to place the ray picking shit since theres no physics class yet, MOVE THIS SOMEWHERE ELSE!
 
 /// @brief Closest approach between two 3D lines (p1+d1*t1, p2+d2*t2)
@@ -1232,13 +1235,6 @@ void Workspace::gizmoApplySizeDrag(float delta) {
 			capsule->height = std::max(capsule->height, 2.0f * next);
 		}
 	}
-}
-
-auto Workspace::gizmoInteractionAllowed() const -> bool {
-	if (not isPlaying()) {
-		return true;
-	}
-	return m_focused_node.as<physics::Rigidbody>().exists() || m_focused_node.as<VoxelNode>().exists();
 }
 
 void Workspace::gizmoUpdateHover() {
@@ -2433,6 +2429,7 @@ void Workspace::eventSubscriptions() {
 		if (e.game) {
 			// entering play, drop any in-progress gizmo interaction
 			m_gizmo_hover = GizmoHandle::none;
+			m_pick_press.reset();
 			gizmoEndDrag();
 		}
 		applyActiveCamera();
@@ -2450,9 +2447,12 @@ void Workspace::eventSubscriptions() {
 		return true;
 	});
 
-	// Translate-gizmo interaction, driven straight off the raw window mouse events already forwarded by the editor in edit mode
+	// Editor interaction only follows the editor camera; game view passes input to the game.
 	m_listener.subscribe<event::WindowMousePosition>([this](const auto& e) {
-		if (m_handle.data() != Engine::get()->activeWorkspace().data() || m_game_camera || not gizmoInteractionAllowed()) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			return false;
+		}
+		if (m_game_camera) {
 			return false;
 		}
 		m_gizmo_mouse_pos = {e.x, e.y};
@@ -2466,40 +2466,50 @@ void Workspace::eventSubscriptions() {
 		return false;
 	});
 
-	m_listener.subscribe<event::WindowMouseButton>([this](const auto& e) {
-		if (m_handle.data() != Engine::get()->activeWorkspace().data() || m_game_camera || not gizmoInteractionAllowed()) {
-			return false;
-		}
-		const bool pressed = e.action == event::window_input_pressed;
-		const bool tool_busy = m_voxel_tool.phase != VoxelToolState::Phase::idle;
-		if ((tool_busy || m_gizmo_hover == GizmoHandle::none) && m_gizmo_drag == GizmoHandle::none &&
-		    (pressed || e.action == event::window_input_released) && voxelToolMouseButton(e.button, pressed, e.mods)) {
-			return false;
-		}
-		if (e.button != 1) {
-			return false;
-		}
-		const bool level = m_root_node.exists() && reflect_cast<ProceduralVoxel>(&*m_root_node) == nullptr;
-		if (level && pressed) {
-			m_pick_press = m_gizmo_hover == GizmoHandle::none ? std::optional(m_gizmo_mouse_pos) : std::nullopt;
-		} else if (level && e.action == event::window_input_released && m_pick_press.has_value()) {
-			const bool click = glm::distance(*m_pick_press, m_gizmo_mouse_pos) < 4.0f && m_gizmo_drag == GizmoHandle::none;
-			m_pick_press.reset();
-			if (click) {
-				m_focused_node = pickNodeUnderMouse();
-				event::NodePicked picked;
-				picked.workspace_handle = m_handle.data();
-				picked.node = m_focused_node.exists() ? m_focused_node->uid() : UID {};
-				event::send<event::NodePicked>(picked);
-			}
-		}
-		if (e.action == event::window_input_pressed && m_gizmo_hover != GizmoHandle::none) {
-			gizmoBeginDrag(m_gizmo_hover);
-		} else if (e.action == event::window_input_released) {
-			gizmoEndDrag();
-		}
-		return false;
-	});
+	m_listener.subscribe<event::WindowMouseButton>(
+	    [this](const auto& e) {
+		    if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			    return false;
+		    }
+		    if (m_game_camera) {
+			    return false;
+		    }
+		    const bool pressed = e.action == event::window_input_pressed;
+		    const bool tool_busy = m_voxel_tool.phase != VoxelToolState::Phase::idle;
+		    if ((tool_busy || m_gizmo_hover == GizmoHandle::none) && m_gizmo_drag == GizmoHandle::none &&
+				    (pressed || e.action == event::window_input_released) && voxelToolMouseButton(e.button, pressed, e.mods)) {
+			    return false;
+		    }
+		    if (e.button != 1) {
+			    return false;
+		    }
+		    const bool level = m_root_node.exists() && reflect_cast<ProceduralVoxel>(&*m_root_node) == nullptr;
+		    if (level && pressed) {
+			    m_pick_press = m_gizmo_hover == GizmoHandle::none ? std::optional(m_gizmo_mouse_pos) : std::nullopt;
+		    } else if (level && e.action == event::window_input_released && m_pick_press.has_value()) {
+			    const bool click = glm::distance(*m_pick_press, m_gizmo_mouse_pos) < 4.0f && m_gizmo_drag == GizmoHandle::none;
+			    m_pick_press.reset();
+			    if (click) {
+				    m_focused_node = pickNodeUnderMouse();
+				    event::NodePicked picked;
+				    picked.workspace_handle = m_handle.data();
+				    picked.node = m_focused_node.exists() ? m_focused_node->uid() : UID {};
+				    event::send<event::NodePicked>(picked);
+			    }
+		    }
+		    if (e.action == event::window_input_pressed && m_gizmo_hover != GizmoHandle::none) {
+			    gizmoBeginDrag(m_gizmo_hover);
+			    return m_gizmo_drag != GizmoHandle::none;
+		    }
+		    if (e.action == event::window_input_released) {
+			    const bool was_dragging = m_gizmo_drag != GizmoHandle::none;
+			    gizmoEndDrag();
+			    return was_dragging;
+		    }
+		    return false;
+	    },
+	    k_gizmo_input_priority
+	);
 
 	m_listener.subscribe<event::SetActiveWorkspace>([this](const auto& e) {
 		if (e.handle == m_handle.data()) {
@@ -2788,8 +2798,11 @@ void Workspace::collectOutlinedRids(std::vector<uint64_t>& rids) const {
 
 auto Workspace::gizmoRenderState() const -> GizmoRenderState {
 	GizmoRenderState state;
+	if (m_game_camera) {
+		return state;
+	}
 	const bool has_node = m_focused_node.as<Node3D>().exists();
-	const bool interactive = gizmoInteractionAllowed() && has_node;
+	const bool interactive = has_node;
 
 	if (interactive) {
 		const auto [dots, count] = collectSizeHandles();

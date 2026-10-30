@@ -11,6 +11,8 @@
 #include <array>
 #include <atomic>
 #include <condition_variable>
+#include <cstdlib>
+#include <cstring>
 #include <mutex>
 #include <slang-com-ptr.h>
 #include <slang.h>
@@ -173,6 +175,7 @@ static auto createSession(slang::IGlobalSession* global_session) -> Slang::ComPt
 	opt_entry.name = slang::CompilerOptionName::Optimization;
 	opt_entry.value.kind = slang::CompilerOptionValueKind::Int;
 	opt_entry.value.intValue0 = SlangOptimizationLevel::SLANG_OPTIMIZATION_LEVEL_NONE;
+
 	compiler_options.push_back(opt_entry);
 
 	slang::CompilerOptionEntry dbg_entry {};

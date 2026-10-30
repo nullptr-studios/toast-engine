@@ -143,16 +143,18 @@ public partial class StartWindowViewModel : ViewModelBase {
 		}));
 
 		var cmakeGenerator = OperatingSystem.IsWindows() ? "-G \"Visual Studio 18 2026\"" : "-G \"Ninja\"";
-		tasks.Add(LoaderTask.Run("cmake lib/ -B .toast/cmake_cache", "cmake",
-			$"lib/ -B .toast/cmake_cache {cmakeGenerator} -DTOAST_PATH={ToastPath}"));
-		tasks.Add(LoaderTask.Run("cmake --build .toast/cmake_cache", "cmake",
+		const string gameBuildType =
 #if DEBUG
-			"--build .toast/cmake_cache --config Debug --parallel"));
+			"Debug";
 #elif RELWITHDEBINFO
-			"--build .toast/cmake_cache --config RelWithDebInfo --parallel"));
+			"RelWithDebInfo";
 #else
-			"--build .toast/cmake_cache --config Release --parallel"));
+			"Release";
 #endif
+		tasks.Add(LoaderTask.Run("cmake lib/ -B .toast/cmake_cache", "cmake",
+			$"lib/ -B .toast/cmake_cache {cmakeGenerator} -DTOAST_PATH=\"{ToastPath}\" -DCMAKE_BUILD_TYPE={gameBuildType}"));
+		tasks.Add(LoaderTask.Run("cmake --build .toast/cmake_cache", "cmake",
+			$"--build .toast/cmake_cache --config {gameBuildType} --parallel"));
 
 		tasks.Add(LoaderTask.Do("Start engine", async log => {
 			log("Compiling changed shaders");

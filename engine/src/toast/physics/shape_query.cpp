@@ -388,7 +388,8 @@ auto Simulator::overlapCapsule(
 }
 
 auto Simulator::overlapSphere(
-    const SphereShape& sphere, const glm::vec3& position, float min_penetration, std::vector<QueryContact>& contacts
+    const SphereShape& sphere, const glm::vec3& position, float min_penetration, std::vector<QueryContact>& contacts,
+    std::optional<LayerFilter> layers
 ) const -> bool {
 	ZoneScopedN("physics::OverlapSphere");
 
@@ -400,7 +401,7 @@ auto Simulator::overlapSphere(
 
 	const Shape probe_shape = sphereProbe(sphere);
 	const Body probe_body = probeBody(position, glm::quat(1.0f, 0.0f, 0.0f, 0.0f));
-	const std::vector<ShapeID> candidates = queryCandidates({}, worldShapeBounds(probe_body, probe_shape));
+	const std::vector<ShapeID> candidates = queryCandidates({}, worldShapeBounds(probe_body, probe_shape), layers);
 	collideSphereProbe(probe_body, probe_shape, candidates, contacts);
 	std::erase_if(contacts, [min_penetration](const QueryContact& contact) { return contact.penetration <= min_penetration; });
 	return not contacts.empty();
