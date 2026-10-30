@@ -8,6 +8,7 @@ namespace toast {
 
 using _detail::assetOfType;
 using _detail::instantiateModel;
+using _detail::voxelModelOf;
 
 auto VoxelMesh::getModel() const -> const assets::Handle<assets::VoxelModel>& {
 	return m_model;
@@ -31,21 +32,21 @@ auto VoxelMesh::sourcePaletteUid() const -> uint64_t {
 	if (m_palette.uid().data() != 0) {
 		return m_palette.uid().data();
 	}
-	const auto* model = assetOfType(m_model, "voxel_model");
+	const auto* model = voxelModelOf(m_model);
 	return model != nullptr ? model->paletteUid() : 0;
 }
 
 auto VoxelMesh::resolvedModel() const -> const assets::VoxelModel* {
-	return assetOfType(m_model, "voxel_model");
+	return voxelModelOf(m_model);
 }
 
 auto VoxelMesh::pieceSize() -> glm::ivec3 {
-	const auto* model = assetOfType(m_model, "voxel_model");
+	const auto* model = voxelModelOf(m_model);
 	return model != nullptr ? glm::ivec3(model->brickDims()) * static_cast<int32_t>(voxel::k_brick_dim) : glm::ivec3(0);
 }
 
 auto VoxelMesh::prepareGrid() -> std::unique_ptr<voxel::Volume> {
-	const auto* model = assetOfType(m_model, "voxel_model");
+	const auto* model = voxelModelOf(m_model);
 	return model != nullptr ? instantiateModel(*model) : nullptr;
 }
 

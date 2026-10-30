@@ -128,6 +128,9 @@ public:
 	[[nodiscard]]
 	auto composePieces(std::span<VoxelPiece* const> only) -> std::optional<Composed>;
 
+	[[nodiscard]]
+	auto composeAll() -> std::optional<Composed>;
+
 protected:
 	void buildShape() override;
 	auto shapeKey() -> uint64_t override;
