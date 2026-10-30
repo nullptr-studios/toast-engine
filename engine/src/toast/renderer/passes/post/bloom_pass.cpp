@@ -235,7 +235,7 @@ auto BloomPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageVie
 	}
 
 	const auto* frame = VulkanRenderer::instance->renderingFrame();
-	const auto settings = frame != nullptr ? frame->post_process.bloom : VulkanRenderer::PostProcessSettings::Bloom {};
+	const auto settings = frame != nullptr ? frame->post_process.bloom : PostProcessSettings::Bloom {};
 
 	Params params {};
 	params.threshold = settings.threshold;

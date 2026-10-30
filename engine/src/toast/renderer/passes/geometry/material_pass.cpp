@@ -454,11 +454,11 @@ void MaterialPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t 
 	assets::Material* bound_material = nullptr;
 
 	const vk::Buffer posed_vertices = VulkanRenderer::instance->getPosedVertexBuffer(frame_index);
-	const auto posed_offset_of = [&](const VulkanRenderer::MeshInstanceProxy& proxy) {
-		return posed_vertices ? proxy.posed_vertex_offset : VulkanRenderer::MeshInstanceProxy::k_no_posed_vertices;
+	const auto posed_offset_of = [&](const MeshInstanceProxy& proxy) {
+		return posed_vertices ? proxy.posed_vertex_offset : MeshInstanceProxy::k_no_posed_vertices;
 	};
 
-	const auto draw_instance = [&](const VulkanRenderer::MeshInstanceProxy& proxy, uint32_t instance_count = 1) {
+	const auto draw_instance = [&](const MeshInstanceProxy& proxy, uint32_t instance_count = 1) {
 		drawInstance(built, cmd, frame_index, proxy, posed_vertices, posed_offset_of(proxy), &bound_material, instance_count);
 	};
 
@@ -501,14 +501,14 @@ void MaterialPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t 
 			continue;
 		}
 
-		const bool posed = posed_offset_of(proxy) != VulkanRenderer::MeshInstanceProxy::k_no_posed_vertices;
+		const bool posed = posed_offset_of(proxy) != MeshInstanceProxy::k_no_posed_vertices;
 
 		uint32_t run = 1;
 		if (allow_batching && !posed) {
 			while (i + run < order.size()) {
 				const auto& next = frame->mesh_instances[order[i + run]];
 				if (next.mesh != proxy.mesh || next.material != proxy.material || next.root_material != m_root_material ||
-				    posed_offset_of(next) != VulkanRenderer::MeshInstanceProxy::k_no_posed_vertices ||
+				    posed_offset_of(next) != MeshInstanceProxy::k_no_posed_vertices ||
 				    next.instance_index != proxy.instance_index + run) {
 					break;
 				}
@@ -522,8 +522,8 @@ void MaterialPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t 
 }
 
 void MaterialPass::drawInstance(
-    Built& built, vk::CommandBuffer cmd, uint32_t frame_index, const VulkanRenderer::MeshInstanceProxy& proxy,
-    vk::Buffer posed_vertices, uint32_t posed_vertex_offset, assets::Material** bound_material, uint32_t instance_count
+    Built& built, vk::CommandBuffer cmd, uint32_t frame_index, const MeshInstanceProxy& proxy, vk::Buffer posed_vertices,
+    uint32_t posed_vertex_offset, assets::Material** bound_material, uint32_t instance_count
 ) {
 	InstanceResources* res = ensureInstanceResources(built, proxy.material != nullptr ? proxy.material : m_root_material);
 	if (res == nullptr || res->runtime == nullptr) {
@@ -572,7 +572,7 @@ void MaterialPass::drawInstance(
 		);
 	}
 
-	if (posed_vertices && posed_vertex_offset != VulkanRenderer::MeshInstanceProxy::k_no_posed_vertices) {
+	if (posed_vertices && posed_vertex_offset != MeshInstanceProxy::k_no_posed_vertices) {
 		proxy.mesh->bindPosed(cmd, posed_vertices, posed_vertex_offset);
 	} else {
 		proxy.mesh->bind(cmd);
@@ -580,7 +580,7 @@ void MaterialPass::drawInstance(
 	proxy.mesh->draw(cmd, instance_count);
 }
 
-void MaterialPass::recordInstance(vk::CommandBuffer cmd, uint32_t frame_index, const VulkanRenderer::MeshInstanceProxy& proxy) {
+void MaterialPass::recordInstance(vk::CommandBuffer cmd, uint32_t frame_index, const MeshInstanceProxy& proxy) {
 	if (m_built == nullptr || !m_built->scene_sets.get(frame_index) || proxy.mesh == nullptr || !proxy.mesh->isReady()) {
 		return;
 	}

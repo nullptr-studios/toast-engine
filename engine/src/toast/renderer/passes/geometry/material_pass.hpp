@@ -48,7 +48,7 @@ public:
 
 	void record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) override;
 
-	void recordInstance(vk::CommandBuffer cmd, uint32_t frame_index, const VulkanRenderer::MeshInstanceProxy& proxy);
+	void recordInstance(vk::CommandBuffer cmd, uint32_t frame_index, const MeshInstanceProxy& proxy);
 
 	/// Render thread and blocks on a running build for frames such as probe captures
 	void finishPendingBuild();
@@ -134,8 +134,8 @@ private:
 	void adopt(std::shared_ptr<Built> built);
 
 	void drawInstance(
-	    Built& built, vk::CommandBuffer cmd, uint32_t frame_index, const VulkanRenderer::MeshInstanceProxy& proxy,
-	    vk::Buffer posed_vertices, uint32_t posed_vertex_offset, assets::Material** bound_material, uint32_t instance_count = 1
+	    Built& built, vk::CommandBuffer cmd, uint32_t frame_index, const MeshInstanceProxy& proxy, vk::Buffer posed_vertices,
+	    uint32_t posed_vertex_offset, assets::Material** bound_material, uint32_t instance_count = 1
 	);
 
 	auto ensureInstanceResources(Built& built, assets::Material* material) -> InstanceResources*;

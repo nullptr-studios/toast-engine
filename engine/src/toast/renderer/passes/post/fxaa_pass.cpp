@@ -119,7 +119,7 @@ auto FxaaPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView
 
 	m_target.beginScope(cmd);
 
-	const auto settings = frame != nullptr ? frame->post_process.fxaa : VulkanRenderer::PostProcessSettings::Fxaa {};
+	const auto settings = frame != nullptr ? frame->post_process.fxaa : PostProcessSettings::Fxaa {};
 
 	const Params params {
 	  .inverse_source_size =

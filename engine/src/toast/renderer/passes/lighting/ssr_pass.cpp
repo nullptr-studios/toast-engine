@@ -186,7 +186,7 @@ auto SsrPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView 
 	if (!history_valid) {
 		history_read.makeSampleable(cmd);
 	}
-	auto settings = frame != nullptr ? frame->post_process.ssr : VulkanRenderer::PostProcessSettings::Ssr {};
+	auto settings = frame != nullptr ? frame->post_process.ssr : PostProcessSettings::Ssr {};
 	// Non RT presets override the volume reach
 	if (const uint32_t steps = VulkanRenderer::instance->ssrOverrideSteps(); steps > 0) {
 		settings.max_steps = steps;

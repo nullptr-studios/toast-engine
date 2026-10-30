@@ -25,7 +25,7 @@ class VulkanCore;
 
 class ReflectionProbePass : public IRenderPass {
 public:
-	/// Matches VulkanRenderer::k_max_reflection_probes
+	/// Matches k_max_reflection_probes
 	static constexpr uint32_t k_max_probes = 8;
 
 	static constexpr uint32_t k_default_face_size = 128;

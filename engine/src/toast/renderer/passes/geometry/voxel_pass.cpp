@@ -892,9 +892,8 @@ auto VoxelPass::prepare(uint32_t frame_index) -> bool {
 
 	writeFreshRegions(frame_index, *frame->voxel_storage);
 
-	m_marched_lights =
-	    std::ranges::any_of(frame->lights, [](const VulkanRenderer::GpuLight& light) { return light.shape.w > 0.5f; });
-	const uint32_t suns = std::min(frame->frame_data.directional_light_count_pad.x, VulkanRenderer::k_max_directional_lights);
+	m_marched_lights = std::ranges::any_of(frame->lights, [](const GpuLight& light) { return light.shape.w > 0.5f; });
+	const uint32_t suns = std::min(frame->frame_data.directional_light_count_pad.x, k_max_directional_lights);
 	for (uint32_t i = 0; i < suns; ++i) {
 		m_marched_lights = m_marched_lights || frame->frame_data.directional_lights[i].direction.w > 0.0f;
 	}
@@ -909,14 +908,13 @@ auto VoxelPass::prepare(uint32_t frame_index) -> bool {
 		m_denoise_valid = false;
 	}
 	// Without the denoiser sampled lights shade in the lighting scope
-	m_spatial_active =
-	    m_denoise_active && m_spatial_pipeline.isReady() &&
-	    std::ranges::any_of(frame->lights, [](const VulkanRenderer::GpuLight& light) { return light.shape.w > 1.5f; });
+	m_spatial_active = m_denoise_active && m_spatial_pipeline.isReady() &&
+	                   std::ranges::any_of(frame->lights, [](const GpuLight& light) { return light.shape.w > 1.5f; });
 
 	// Off screen volumes follow the drawn ones for shadow rays only
 	m_shadow_instance_count = static_cast<uint32_t>(m_draws.size());
 	m_scene_glass = VulkanRenderer::instance->voxelGlassShadows() &&
-	                std::ranges::any_of(frame->voxel_instances, [&](const VulkanRenderer::VoxelVolumeProxy& proxy) {
+	                std::ranges::any_of(frame->voxel_instances, [&](const VoxelVolumeProxy& proxy) {
 		                return !frame->voxel_storage->glassBricks(proxy.record_index).empty();
 	                });
 	for (const auto& proxy : frame->voxel_instances) {

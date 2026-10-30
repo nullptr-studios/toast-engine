@@ -93,7 +93,7 @@ void ClusterLightingPass::createResources(const renderer::VulkanCore& core) {
 	m_descriptor_sets.reserve(VulkanRenderer::k_frames_in_flight);
 
 	constexpr vk::DeviceSize cluster_params_size = sizeof(ClusterParamsGpu);
-	const vk::DeviceSize lights_size = sizeof(VulkanRenderer::GpuLight) * k_max_lights;
+	const vk::DeviceSize lights_size = sizeof(GpuLight) * k_max_lights;
 	const vk::DeviceSize cluster_aabb_size = sizeof(ClusterAabbGpu) * k_cluster_count;
 	const vk::DeviceSize cluster_light_grid_size = sizeof(uint32_t) * k_cluster_count;
 	const vk::DeviceSize light_index_list_size =
@@ -194,7 +194,7 @@ void ClusterLightingPass::update(uint32_t frame_index, float dt) {
 
 	if (light_count > 0 && fb.lights.gpu_buffer.has_value()) {
 		void* mapped = fb.lights.gpu_buffer->getAllocation().getInfo().pMappedData;
-		const auto bytes = static_cast<vk::DeviceSize>(light_count) * sizeof(VulkanRenderer::GpuLight);
+		const auto bytes = static_cast<vk::DeviceSize>(light_count) * sizeof(GpuLight);
 		std::memcpy(mapped, frame->lights.data(), bytes);
 		fb.lights.gpu_buffer->getAllocation().flush(0, bytes);
 	}

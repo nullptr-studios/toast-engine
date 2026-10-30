@@ -295,7 +295,7 @@ auto TonemapPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageV
 	}
 
 	const auto* frame = VulkanRenderer::instance->renderingFrame();
-	const auto settings = frame != nullptr ? frame->post_process.tonemap : VulkanRenderer::PostProcessSettings::Tonemap {};
+	const auto settings = frame != nullptr ? frame->post_process.tonemap : PostProcessSettings::Tonemap {};
 
 	// Debug views keep the plain exposure so their colours stay readable
 	const bool metering = settings.auto_exposure && m_exposure_ready && frame != nullptr && frame->render_mode == 0 &&

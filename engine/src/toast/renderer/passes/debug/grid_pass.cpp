@@ -81,7 +81,7 @@ void GridPass::createResources(const renderer::VulkanCore& core) {
 			continue;
 		}
 
-		const vk::DescriptorBufferInfo buffer_info(**frame_res->gpu_buffer, 0, sizeof(VulkanRenderer::FrameUBO));
+		const vk::DescriptorBufferInfo buffer_info(**frame_res->gpu_buffer, 0, sizeof(FrameUBO));
 		const vk::WriteDescriptorSet write(
 		    *m_frame_descriptor_sets[i], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &buffer_info
 		);

@@ -205,7 +205,7 @@ struct VoxelInstanceGpu {
 
 static_assert(sizeof(VoxelInstanceGpu) == 208, "VoxelInstanceGpu is mirrored by voxel_dda.slang VoxelInstance");
 
-/// Bit 0 of VoxelInstanceGpu::flags with the meaning of VulkanRenderer::k_instance_no_motion
+/// Bit 0 of VoxelInstanceGpu::flags with the meaning of k_instance_no_motion
 inline constexpr uint32_t k_voxel_instance_no_motion = 1u << 0;
 
 /// Bit 1 of VoxelInstanceGpu::flags so voxel.slang flips the box winding

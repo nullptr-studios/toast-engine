@@ -59,7 +59,7 @@ inline constexpr Rgb k_default_material_color {0.90f, 0.10f, 0.90f};
 
 /// From voxel::marchRay over the uploaded data
 struct Probe {
-	VulkanRenderer::VoxelVolumeProxy proxy;
+	VoxelVolumeProxy proxy;
 	voxel::RayHit hit;
 
 	glm::vec3 world_position {0.0f};
@@ -75,7 +75,7 @@ struct Probe {
 
 /// The costliest box the cursor ray entered without hitting anything
 struct MissProbe {
-	VulkanRenderer::VoxelVolumeProxy proxy;
+	VoxelVolumeProxy proxy;
 	voxel::RayHit hit;
 };
 
@@ -87,18 +87,18 @@ struct ProbeResult {
 /// @returns nothing without the CPU mirror
 /// @note Voxels only so a mesh in front of the cursor is ignored
 [[nodiscard]]
-auto probe(const VulkanRenderer::RenderFrame& frame, glm::vec2 cursor) -> std::optional<ProbeResult>;
+auto probe(const RenderFrame& frame, glm::vec2 cursor) -> std::optional<ProbeResult>;
 
 /// Render thread only
 class Monitor {
 public:
-	void update(const VulkanRenderer::RenderFrame& frame);
+	void update(const RenderFrame& frame);
 
 	/// Draws nothing outside a voxel view
-	void drawOverlay(const VulkanRenderer::RenderFrame& frame) const;
+	void drawOverlay(const RenderFrame& frame) const;
 
 	/// Call inside the Toast Debug window
-	void drawPanel(const VulkanRenderer::RenderFrame& frame) const;
+	void drawPanel(const RenderFrame& frame) const;
 
 private:
 	uint64_t m_sequence = 0;

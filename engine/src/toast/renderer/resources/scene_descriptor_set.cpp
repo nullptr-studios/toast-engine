@@ -167,7 +167,7 @@ void SceneDescriptorSets::create(
 
 			if (binding.name == "gCamera") {
 				buffer = **frame_res->gpu_buffer;
-				size = sizeof(VulkanRenderer::FrameUBO);
+				size = sizeof(FrameUBO);
 			} else if (cluster_lighting != nullptr && binding.name == "gClusterParams") {
 				buffer = cluster_lighting->getClusterParamsBuffer(i);
 			} else if (cluster_lighting != nullptr && binding.name == "gLights") {
@@ -181,11 +181,11 @@ void SceneDescriptorSets::create(
 				descriptor_type = vk::DescriptorType::eStorageBuffer;
 			} else if (binding.name == "gJointMatrices") {
 				buffer = VulkanRenderer::instance->getJointMatrixBuffer(i);
-				size = sizeof(glm::mat4) * VulkanRenderer::k_max_joint_matrices;
+				size = sizeof(glm::mat4) * k_max_joint_matrices;
 				descriptor_type = vk::DescriptorType::eStorageBuffer;
 			} else if (binding.name == "gInstances") {
 				buffer = VulkanRenderer::instance->getInstanceBuffer(i);
-				size = sizeof(VulkanRenderer::InstanceData) * VulkanRenderer::k_max_instances;
+				size = sizeof(InstanceData) * k_max_instances;
 				descriptor_type = vk::DescriptorType::eStorageBuffer;
 			} else if (binding.name == "gFogVolumes") {
 				buffer = VulkanRenderer::instance->getFogVolumeBuffer(i);

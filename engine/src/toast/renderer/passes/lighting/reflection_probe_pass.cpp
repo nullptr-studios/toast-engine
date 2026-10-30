@@ -275,7 +275,7 @@ void ReflectionProbePass::projectStagingToSh(vk::CommandBuffer cmd, uint32_t pro
 		glm::uvec4 config {0};
 	};
 
-	const ShParams params {.config = glm::uvec4(VulkanRenderer::k_irradiance_capture_size, probe, 0, 0)};
+	const ShParams params {.config = glm::uvec4(k_irradiance_capture_size, probe, 0, 0)};
 
 	cmd.bindPipeline(vk::PipelineBindPoint::eCompute, m_sh_pipeline.getPipeline());
 	cmd.bindDescriptorSets(
@@ -406,7 +406,7 @@ void ReflectionProbePass::createShResources(const VulkanCore& core) {
 	}
 
 	vk::BufferCreateInfo buffer_ci {};
-	buffer_ci.size = static_cast<vk::DeviceSize>(VulkanRenderer::k_max_irradiance_probes) * 4 * sizeof(glm::vec4);
+	buffer_ci.size = static_cast<vk::DeviceSize>(k_max_irradiance_probes) * 4 * sizeof(glm::vec4);
 	buffer_ci.usage =
 	    vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eTransferSrc;
 	buffer_ci.sharingMode = vk::SharingMode::eExclusive;

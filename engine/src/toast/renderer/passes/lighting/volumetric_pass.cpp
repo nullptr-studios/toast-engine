@@ -143,7 +143,7 @@ VolumetricPass::VolumetricPass(const VulkanCore& core, vk::Format scene_format, 
 	constexpr auto storage = vk::DescriptorType::eStorageBuffer;
 	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
 		vk::BufferCreateInfo ambient_ci {};
-		ambient_ci.size = sizeof(glm::vec4) * (VulkanRenderer::k_max_fog_volumes + 1);
+		ambient_ci.size = sizeof(glm::vec4) * (k_max_fog_volumes + 1);
 		ambient_ci.usage = vk::BufferUsageFlagBits::eStorageBuffer;
 		vma::AllocationCreateInfo ambient_alloc {};
 		ambient_alloc.usage = vma::MemoryUsage::eAutoPreferDevice;
@@ -189,9 +189,7 @@ VolumetricPass::VolumetricPass(const VulkanCore& core, vk::Format scene_format, 
 	          m_composite_pipeline.isReady() && !m_scene_sets.empty();
 	if (m_ready) {
 		TOAST_INFO(
-		    "Render",
-		    "VolumetricPass ready (height fog and up to {} fog volumes marched at half resolution)",
-		    VulkanRenderer::k_max_fog_volumes
+		    "Render", "VolumetricPass ready (height fog and up to {} fog volumes marched at half resolution)", k_max_fog_volumes
 		);
 	}
 }
@@ -293,7 +291,7 @@ auto VolumetricPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::Ima
 		history_read.makeSampleable(cmd);
 	}
 
-	const auto volume_count = static_cast<uint32_t>(std::min<size_t>(frame->fog_volumes.size(), VulkanRenderer::k_max_fog_volumes));
+	const auto volume_count = static_cast<uint32_t>(std::min<size_t>(frame->fog_volumes.size(), k_max_fog_volumes));
 	const auto& fog = frame->post_process.fog;
 	Params params {};
 	params.inverse_view_projection = glm::inverse(frame->frame_data.jittered_view_projection);

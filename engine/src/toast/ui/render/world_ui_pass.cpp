@@ -71,7 +71,7 @@ WorldUIPass::WorldUIPass(
 			continue;
 		}
 
-		const vk::DescriptorBufferInfo buffer_info(**frame_res->gpu_buffer, 0, sizeof(renderer::VulkanRenderer::FrameUBO));
+		const vk::DescriptorBufferInfo buffer_info(**frame_res->gpu_buffer, 0, sizeof(renderer::FrameUBO));
 		const vk::WriteDescriptorSet write(
 		    *m_frame_camera_sets[i], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &buffer_info
 		);

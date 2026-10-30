@@ -24,7 +24,7 @@ namespace renderer::voxel_debug {
 
 namespace {
 
-using Proxy = VulkanRenderer::VoxelVolumeProxy;
+using Proxy = VoxelVolumeProxy;
 
 constexpr auto k_upload_window = std::chrono::seconds(5);
 
@@ -74,7 +74,7 @@ auto voxelDebugBytes(uint64_t bytes) -> std::string {
 }
 
 [[nodiscard]]
-auto voxelDebugNodeName(const VulkanRenderer::RenderFrame& frame, uint32_t record) -> std::string_view {
+auto voxelDebugNodeName(const RenderFrame& frame, uint32_t record) -> std::string_view {
 	if (!frame.voxel_storage) {
 		return "?";
 	}
@@ -101,8 +101,8 @@ void voxelDebugSwatch(Rgb color, const char* label) {
 
 /// Edges with an endpoint behind the camera are skipped rather than clipped
 void voxelDebugOutline(
-    ImDrawList* list, const VulkanRenderer::RenderFrame& frame, const glm::mat4& voxel_to_world, glm::vec3 min, glm::vec3 max,
-    ImU32 color, float thickness
+    ImDrawList* list, const RenderFrame& frame, const glm::mat4& voxel_to_world, glm::vec3 min, glm::vec3 max, ImU32 color,
+    float thickness
 ) {
 	const glm::mat4 to_clip = frame.frame_data.view_projection * voxel_to_world;
 	std::array<glm::vec4, 8> clip {};
@@ -146,7 +146,7 @@ auto voxelDebugMaterialColor(uint32_t material) -> Rgb {
 }
 
 [[nodiscard]]
-auto voxelDebugMaterialsDrawn(const VulkanRenderer::RenderFrame& frame) -> std::bitset<voxel::k_max_physical_materials> {
+auto voxelDebugMaterialsDrawn(const RenderFrame& frame) -> std::bitset<voxel::k_max_physical_materials> {
 	std::bitset<voxel::k_max_physical_materials> used;
 	used.set(voxel::k_default_material);
 
@@ -183,7 +183,7 @@ auto voxelDebugMaterialsDrawn(const VulkanRenderer::RenderFrame& frame) -> std::
 	return used;
 }
 
-void voxelDebugLegend(View view, const VulkanRenderer::RenderFrame& frame) {
+void voxelDebugLegend(View view, const RenderFrame& frame) {
 	switch (view) {
 		case View::steps: {
 			for (size_t i = 0; i < k_step_band_colors.size(); ++i) {
@@ -234,7 +234,7 @@ void voxelDebugLegend(View view, const VulkanRenderer::RenderFrame& frame) {
 	}
 }
 
-void voxelDebugProbeText(const VulkanRenderer::RenderFrame& frame, const std::optional<ProbeResult>& result) {
+void voxelDebugProbeText(const RenderFrame& frame, const std::optional<ProbeResult>& result) {
 	if (!frame.voxel_storage) {
 		ImGui::TextDisabled("No voxel storage uploaded");
 		return;
@@ -341,7 +341,7 @@ void voxelDebugProbeText(const VulkanRenderer::RenderFrame& frame, const std::op
 
 }
 
-auto probe(const VulkanRenderer::RenderFrame& frame, glm::vec2 cursor) -> std::optional<ProbeResult> {
+auto probe(const RenderFrame& frame, glm::vec2 cursor) -> std::optional<ProbeResult> {
 	ZoneScoped;
 	const auto& storage = frame.voxel_storage;
 	if (!storage || !storage->isReady() || !storage->debugInfo().mirror) {
@@ -423,7 +423,7 @@ auto probe(const VulkanRenderer::RenderFrame& frame, glm::vec2 cursor) -> std::o
 	return result;
 }
 
-void Monitor::update(const VulkanRenderer::RenderFrame& frame) {
+void Monitor::update(const RenderFrame& frame) {
 	ZoneScoped;
 	const auto now = std::chrono::steady_clock::now();
 	const VoxelStorageDebugInfo* info = frame.voxel_storage ? &frame.voxel_storage->debugInfo() : nullptr;
@@ -447,7 +447,7 @@ void Monitor::update(const VulkanRenderer::RenderFrame& frame) {
 	}
 }
 
-void Monitor::drawOverlay(const VulkanRenderer::RenderFrame& frame) const {
+void Monitor::drawOverlay(const RenderFrame& frame) const {
 	if (!isView(frame.render_mode)) {
 		return;
 	}
@@ -513,7 +513,7 @@ void Monitor::drawOverlay(const VulkanRenderer::RenderFrame& frame) const {
 	ImGui::End();
 }
 
-void Monitor::drawPanel(const VulkanRenderer::RenderFrame& frame) const {
+void Monitor::drawPanel(const RenderFrame& frame) const {
 	if (!ImGui::CollapsingHeader("Voxels")) {
 		return;
 	}

@@ -121,7 +121,7 @@ auto SkinningPass::ensureMeshResources(const VulkanMesh* mesh) -> MeshResources*
 		writer.buffer(*res.sets[i], 0, k_storage, vertices)
 		    .buffer(*res.sets[i], 1, k_storage, skin)
 		    .buffer(*res.sets[i], 2, k_storage, posed)
-		    .buffer(*res.sets[i], 3, k_storage, joints, sizeof(glm::mat4) * VulkanRenderer::k_max_joint_matrices);
+		    .buffer(*res.sets[i], 3, k_storage, joints, sizeof(glm::mat4) * k_max_joint_matrices);
 		writer.flush(device);
 	}
 
@@ -147,7 +147,7 @@ void SkinningPass::record(vk::CommandBuffer cmd, uint32_t frame_index) {
 		if (proxy.mesh == nullptr || !proxy.mesh->isReady() || !proxy.mesh->isSkinned() || proxy.joint_count == 0) {
 			continue;
 		}
-		if (proxy.posed_vertex_offset == VulkanRenderer::MeshInstanceProxy::k_no_posed_vertices) {
+		if (proxy.posed_vertex_offset == MeshInstanceProxy::k_no_posed_vertices) {
 			continue;
 		}
 

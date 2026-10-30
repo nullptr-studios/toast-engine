@@ -94,7 +94,7 @@ void UISystem::initializeRenderer(const renderer::VulkanCore& core) {
 	TOAST_INFO("UI", "RmlUi Vulkan backend initialized");
 }
 
-void UISystem::buildDrawFrame(renderer::VulkanRenderer::RenderFrame& frame) {
+void UISystem::buildDrawFrame(renderer::RenderFrame& frame) {
 	ZoneScopedN("UISystem::buildDrawFrame");
 
 	if (!m_render_interface) {

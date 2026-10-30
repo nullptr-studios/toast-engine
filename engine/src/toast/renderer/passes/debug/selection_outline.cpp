@@ -113,7 +113,7 @@ auto unite(const vk::Rect2D& a, const vk::Rect2D& b) -> vk::Rect2D {
 	};
 }
 
-auto outlinedMesh(const VulkanRenderer::MeshInstanceProxy& proxy) -> bool {
+auto outlinedMesh(const MeshInstanceProxy& proxy) -> bool {
 	return proxy.outlined && proxy.visible && proxy.mesh != nullptr && proxy.mesh->isReady();
 }
 
@@ -267,16 +267,14 @@ void SelectionOutline::createMaskPipelines(vk::Extent2D extent) {
 
 		if (const auto* frame_res = VulkanRenderer::instance->getFrameUBORes(i);
 		    frame_res != nullptr && frame_res->gpu_buffer.has_value()) {
-			writer.buffer(
-			    *m_mask_sets[i], 0, vk::DescriptorType::eUniformBuffer, **frame_res->gpu_buffer, sizeof(VulkanRenderer::FrameUBO)
-			);
+			writer.buffer(*m_mask_sets[i], 0, vk::DescriptorType::eUniformBuffer, **frame_res->gpu_buffer, sizeof(FrameUBO));
 		}
 		writer.buffer(
 		    *m_mask_sets[i],
 		    13,
 		    vk::DescriptorType::eStorageBuffer,
 		    VulkanRenderer::instance->getInstanceBuffer(i),
-		    sizeof(VulkanRenderer::InstanceData) * VulkanRenderer::k_max_instances
+		    sizeof(InstanceData) * k_max_instances
 		);
 		writer.buffer(
 		    *m_voxel_sets[i], 6, vk::DescriptorType::eStorageBuffer, *m_volume_buffers[i], sizeof(VoxelInstanceGpu) * k_max_volumes
@@ -491,7 +489,7 @@ void SelectionOutline::recordMask(vk::CommandBuffer cmd, uint32_t frame_index, v
 				if (!outlinedMesh(proxy)) {
 					continue;
 				}
-				const bool posed = proxy.posed_vertex_offset != VulkanRenderer::MeshInstanceProxy::k_no_posed_vertices && posed_vertices;
+				const bool posed = proxy.posed_vertex_offset != MeshInstanceProxy::k_no_posed_vertices && posed_vertices;
 				if (posed) {
 					proxy.mesh->bindPosed(cmd, posed_vertices, proxy.posed_vertex_offset);
 				} else {

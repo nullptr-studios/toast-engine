@@ -76,12 +76,8 @@ void DepthPrepass::createResources(const VulkanCore& core) {
 		}
 
 		const std::array buffer_infos {
-		  vk::DescriptorBufferInfo(**frame_res->gpu_buffer, 0, sizeof(VulkanRenderer::FrameUBO)),
-		  vk::DescriptorBufferInfo(
-		      VulkanRenderer::instance->getInstanceBuffer(i),
-		      0,
-		      sizeof(VulkanRenderer::InstanceData) * VulkanRenderer::k_max_instances
-		  )
+		  vk::DescriptorBufferInfo(**frame_res->gpu_buffer, 0, sizeof(FrameUBO)),
+		  vk::DescriptorBufferInfo(VulkanRenderer::instance->getInstanceBuffer(i), 0, sizeof(InstanceData) * k_max_instances)
 		};
 
 		const std::array writes {
@@ -113,7 +109,7 @@ void DepthPrepass::record(vk::CommandBuffer cmd, uint32_t frame_index) {
 	);
 
 	VulkanMesh* bound_mesh = nullptr;
-	uint32_t bound_posed_offset = VulkanRenderer::MeshInstanceProxy::k_no_posed_vertices;
+	uint32_t bound_posed_offset = MeshInstanceProxy::k_no_posed_vertices;
 	const vk::Buffer posed_vertices = VulkanRenderer::instance->getPosedVertexBuffer(frame_index);
 	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline.getPipeline());
 
@@ -128,13 +124,13 @@ void DepthPrepass::record(vk::CommandBuffer cmd, uint32_t frame_index) {
 			continue;
 		}
 
-		const bool posed = proxy.posed_vertex_offset != VulkanRenderer::MeshInstanceProxy::k_no_posed_vertices && posed_vertices;
+		const bool posed = proxy.posed_vertex_offset != MeshInstanceProxy::k_no_posed_vertices && posed_vertices;
 
 		uint32_t run = 1;
 		if (!posed) {
 			while (i + run < frame->mesh_instances.size()) {
 				const auto& next = frame->mesh_instances[i + run];
-				const bool next_posed = next.posed_vertex_offset != VulkanRenderer::MeshInstanceProxy::k_no_posed_vertices;
+				const bool next_posed = next.posed_vertex_offset != MeshInstanceProxy::k_no_posed_vertices;
 				if (next.mesh != proxy.mesh || !next.visible || next_posed || next.instance_index != proxy.instance_index + run) {
 					break;
 				}

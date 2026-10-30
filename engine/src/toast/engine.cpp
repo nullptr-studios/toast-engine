@@ -535,7 +535,7 @@ void Engine::tick() {
 		if (m->renderer && it != m->owners.end()) {
 			if (Workspace* ws = it->second->asWorkspace()) {
 				const auto gizmo = ws->gizmoRenderState();
-				renderer::VulkanRenderer::GizmoState gizmo_state {
+				renderer::GizmoState gizmo_state {
 				  .visible = gizmo.visible,
 				  .tool = gizmo.tool,
 				  .origin = gizmo.origin,
@@ -743,9 +743,7 @@ void Engine::createSDLWindow(const char* w_name) {
 	m->renderer->addRenderPass(std::make_unique<ui::UIPass>(*m->vulkan_core, color_format, depth_format, extent));
 	if (m->ui_system) {
 		m->ui_system->initializeRenderer(*m->vulkan_core);
-		m->renderer->setUIFrameBuilder([ui = m->ui_system.get()](renderer::VulkanRenderer::RenderFrame& frame) {
-			ui->buildDrawFrame(frame);
-		});
+		m->renderer->setUIFrameBuilder([ui = m->ui_system.get()](renderer::RenderFrame& frame) { ui->buildDrawFrame(frame); });
 	}
 
 #if defined(TOAST_DEV_TOOLS)
@@ -862,9 +860,7 @@ void Engine::createAvaloniaWindow() {
 	m->renderer->addRenderPass(std::make_unique<ui::UIPass>(*m->vulkan_core, color_format, depth_format, extent));
 	if (m->ui_system) {
 		m->ui_system->initializeRenderer(*m->vulkan_core);
-		m->renderer->setUIFrameBuilder([ui = m->ui_system.get()](renderer::VulkanRenderer::RenderFrame& frame) {
-			ui->buildDrawFrame(frame);
-		});
+		m->renderer->setUIFrameBuilder([ui = m->ui_system.get()](renderer::RenderFrame& frame) { ui->buildDrawFrame(frame); });
 	}
 
 	// editor will always be capped
