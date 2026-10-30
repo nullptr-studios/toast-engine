@@ -49,7 +49,7 @@ public sealed record VoxelPaletteTip(
 			Color.FromRgb(ToByte(entry.Roughness), ToByte(entry.Metallic), ToByte(entry.Reflectivity)),
 			$"{Float(entry.Roughness)} {Float(entry.Metallic)} {Float(entry.Reflectivity)} rms", /// rms dot
 			$"{Float(entry.Emissive * maxEmissive)} emissive ({Float(maxEmissive)} max)",
-			$"{Float(entry.Alpha)} {(entry.Transparent ? "transparent" : "opaque")}"
+			$"{Float(entry.Alpha)} {(entry.Alpha < 1.0f ? "transparent" : "opaque")}"
 		);
 	}
 

@@ -257,16 +257,6 @@ auto VoxelPalette::parseToml(const toml::table& table) -> Parsed {
 				out.transforms_to = static_cast<uint8_t>(*becomes);
 			}
 
-			if (const toml::node* transparent = entry->get("transparent")) {
-				const std::optional<bool> value = transparent->value_exact<bool>();
-				if (!value) {
-					throw fail("transparent must be true or false");
-				}
-				if (*value) {
-					out.flags |= voxel::k_entry_transparent;
-				}
-			}
-
 			palette.entries[static_cast<size_t>(*index)] = out;
 		}
 	}
@@ -356,7 +346,6 @@ auto VoxelPalette::serialize(SaveMode /*mode*/) const -> std::vector<uint8_t> {
 			entry.insert("material", static_cast<int64_t>(e.material));
 		}
 		entry.insert("transforms_to", static_cast<int64_t>(e.transforms_to));
-		entry.insert("transparent", (e.flags & voxel::k_entry_transparent) != 0);
 		list.push_back(std::move(entry));
 	}
 	root.insert("entries", std::move(list));

@@ -294,8 +294,7 @@ void voxelDebugProbeText(const RenderFrame& frame, const std::optional<ProbeResu
 		    static_cast<float>(entry.roughness) / 255.0f,
 		    static_cast<float>(entry.metallic) / 255.0f,
 		    static_cast<float>(entry.reflectivity) / 255.0f,
-		    static_cast<float>(entry.emissive) / 255.0f * probe.max_emissive,
-		    (entry.flags & voxel::k_entry_transparent) != 0 ? "  transparent" : ""
+		    static_cast<float>(entry.emissive) / 255.0f * probe.max_emissive
 		);
 
 		const uint32_t voxel_steps = probe.hit.steps - probe.hit.coarse_steps - probe.hit.brick_steps - probe.hit.sub_steps;

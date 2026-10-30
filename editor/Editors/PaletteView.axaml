@@ -315,13 +315,6 @@
 							                       Value="{Binding MaxEmissive, Mode=TwoWay}"
 							                       Minimum="0" />
 							
-							<TextBlock Grid.Row="6"
-							           Grid.Column="0"
-							           Classes="lbl"
-							           Text="Transparent" />
-							<elements:BoolBox Grid.Row="6"
-							                  Grid.Column="1"
-							                  Value="{Binding Transparent, Mode=TwoWay}" />
 
 							<TextBlock Grid.Row="7"
 							           Grid.Column="0"
