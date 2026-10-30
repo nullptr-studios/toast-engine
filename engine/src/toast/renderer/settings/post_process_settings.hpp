@@ -6,6 +6,7 @@
 
 #pragma once
 #include <cstdint>
+#include <toast/assets/texture.hpp>
 #include <toast/export.hpp>
 
 namespace renderer {
@@ -31,6 +32,17 @@ struct PostProcessSettings {
 		float halo_compression = 0.65f;
 		float glare_intensity = 0.2f;
 		float glare_divider = 60.0f;
+		float anamorphic_intensity = 1.0f;
+		/// Share of the streak pulled toward blue
+		float anamorphic_tint = 0.6f;
+		float dirt_intensity = 0.0f;
+		/// Spread of the ring along its radius
+		float halo_thickness = 0.3f;
+		float halo_dispersion = 0.015f;
+		float halo_tint_r = 1.0f;
+		float halo_tint_g = 1.0f;
+		float halo_tint_b = 1.0f;
+		assets::Handle<assets::Texture> dirt_texture;
 	} lens_flare;
 
 	struct Tonemap {

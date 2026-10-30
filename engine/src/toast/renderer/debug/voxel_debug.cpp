@@ -285,7 +285,7 @@ void voxelDebugProbeText(const RenderFrame& frame, const std::optional<ProbeResu
 		ImGui::Text("brick %s, %s %u", voxelDebugTagName(probe.brick_entry), uniform ? "palette" : "pool slot", payload);
 
 		ImGui::Text(
-		    "palette %u  material %u  #%02X%02X%02X  rough %.2f  metal %.2f  refl %.2f  emissive %.2f%s",
+		    "palette %u  material %u  #%02X%02X%02X  rough %.2f  metal %.2f  refl %.2f  emissive %.2f",
 		    static_cast<uint32_t>(probe.hit.material),
 		    static_cast<uint32_t>(entry.material),
 		    entry.albedo_r,

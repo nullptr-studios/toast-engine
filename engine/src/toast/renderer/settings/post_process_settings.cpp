@@ -42,6 +42,16 @@ void blendPostProcess(PostProcessSettings& target, const PostProcessSettings& so
 	target.lens_flare.halo_compression = mix(target.lens_flare.halo_compression, source.lens_flare.halo_compression, t);
 	target.lens_flare.glare_intensity = mix(target.lens_flare.glare_intensity, source.lens_flare.glare_intensity, t);
 	target.lens_flare.glare_divider = mix(target.lens_flare.glare_divider, source.lens_flare.glare_divider, t);
+	target.lens_flare.anamorphic_intensity = mix(target.lens_flare.anamorphic_intensity, source.lens_flare.anamorphic_intensity, t);
+	target.lens_flare.anamorphic_tint = mix(target.lens_flare.anamorphic_tint, source.lens_flare.anamorphic_tint, t);
+	target.lens_flare.dirt_intensity = mix(target.lens_flare.dirt_intensity, source.lens_flare.dirt_intensity, t);
+	target.lens_flare.halo_thickness = mix(target.lens_flare.halo_thickness, source.lens_flare.halo_thickness, t);
+	target.lens_flare.halo_dispersion = mix(target.lens_flare.halo_dispersion, source.lens_flare.halo_dispersion, t);
+	target.lens_flare.halo_tint_r = mix(target.lens_flare.halo_tint_r, source.lens_flare.halo_tint_r, t);
+	target.lens_flare.halo_tint_g = mix(target.lens_flare.halo_tint_g, source.lens_flare.halo_tint_g, t);
+	target.lens_flare.halo_tint_b = mix(target.lens_flare.halo_tint_b, source.lens_flare.halo_tint_b, t);
+	// Textures switch at the halfway point
+	target.lens_flare.dirt_texture = t >= 0.5f ? source.lens_flare.dirt_texture : target.lens_flare.dirt_texture;
 
 	target.tonemap.exposure = mix(target.tonemap.exposure, source.tonemap.exposure, t);
 	target.tonemap.mode = pick(target.tonemap.mode, source.tonemap.mode, t);

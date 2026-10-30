@@ -78,8 +78,6 @@ public partial class PaletteEntryVM : ObservableObject {
 		}
 	}
 
-	public bool Transparent => Alpha < 1.0f;
-
 	public float Alpha {
 		get => m_entry.Alpha;
 		set => Set(() => m_entry.Alpha = value);
@@ -324,9 +322,6 @@ public sealed class VoxelPalettePicker : UserControl {
 			properties.Children.Add(Row("Reflectivity", Number(nameof(PaletteEntryVM.Reflectivity))));
 			properties.Children.Add(Row("Emissive", Number(nameof(PaletteEntryVM.Emissive))));
 			properties.Children.Add(Row("Max emissive", Number(nameof(PaletteEntryVM.MaxEmissive), false)));
-			var transparent = new BoolBox();
-			transparent.Bind(BoolBox.ValueProperty, new Binding(nameof(PaletteEntryVM.Transparent)) { Mode = BindingMode.TwoWay });
-			properties.Children.Add(Row("Transparent", transparent));
 			properties.Children.Add(Row("Alpha", Number(nameof(PaletteEntryVM.Alpha))));
 			var ior = Number(nameof(PaletteEntryVM.Ior), false);
 			ior.Minimum = 1;

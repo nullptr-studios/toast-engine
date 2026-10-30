@@ -254,17 +254,18 @@
 						</Border>
 
 						<Grid ColumnDefinitions="Auto,*"
-						      RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+						      RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
 						      RowSpacing="6"
 						      ColumnSpacing="8"
 						      Margin="0, -4, 0, 0">
 							<TextBlock Grid.Row="0" Grid.Column="0" Classes="lbl"
 							           Text="Albedo" />
-							<elements:Color3Box Grid.Row="0"
+							<elements:Color4Box Grid.Row="0"
 							                    Grid.Column="1"
 							                    R="{Binding AlbedoR, Mode=TwoWay}"
 							                    G="{Binding AlbedoG, Mode=TwoWay}"
-							                    B="{Binding AlbedoB, Mode=TwoWay}" />
+							                    B="{Binding AlbedoB, Mode=TwoWay}"
+							                    A="{Binding Alpha, Mode=TwoWay}"/>
 
 							<TextBlock Grid.Row="1"
 							           Grid.Column="0"
@@ -309,32 +310,23 @@
 							<TextBlock Grid.Row="5"
 							           Grid.Column="0"
 							           Classes="lbl"
+							           Text="IOR" />
+							<elements:DragFloatBox Grid.Row="7"
+							                       Grid.Column="1"
+							                       Value="{Binding Ior, Mode=TwoWay}"
+							                       Minimum="1"
+							                       Maximum="3.55" />
+							
+							<TextBlock Grid.Row="7"
+							           Grid.Column="0"
+							           Classes="lbl"
 							           Text="Max emissive" />
 							<elements:DragFloatBox Grid.Row="5"
 							                       Grid.Column="1"
 							                       Value="{Binding MaxEmissive, Mode=TwoWay}"
 							                       Minimum="0" />
-							
 
-							<TextBlock Grid.Row="7"
-							           Grid.Column="0"
-							           Classes="lbl"
-							           Text="Alpha" />
-							<elements:DragFloatBox Grid.Row="7"
-							                       Grid.Column="1"
-							                       Value="{Binding Alpha, Mode=TwoWay}"
-							                       Minimum="0"
-							                       Maximum="1" />
 
-							<TextBlock Grid.Row="8"
-							           Grid.Column="0"
-							           Classes="lbl"
-							           Text="IOR" />
-							<elements:DragFloatBox Grid.Row="8"
-							                       Grid.Column="1"
-							                       Value="{Binding Ior, Mode=TwoWay}"
-							                       Minimum="1"
-							                       Maximum="3.55" />
 						</Grid>
 
 <Grid ColumnDefinitions="Auto,*"

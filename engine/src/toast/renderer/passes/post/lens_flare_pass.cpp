@@ -8,6 +8,7 @@
 
 #include "toast/renderer/core/vulkan_core.hpp"
 #include "toast/renderer/core/vulkan_debug.hpp"
+#include "toast/renderer/resources/vulkan_texture.hpp"
 #include "toast/renderer/shaders/shader_cache.hpp"
 #include "toast/renderer/vulkan_renderer.hpp"
 
@@ -82,6 +83,8 @@ void LensFlarePass::createPipelines(const VulkanCore& core) {
 
 	using Blend = VulkanPipeline::BlendPreset;
 	build(m_threshold_pipeline, "Threshold", "fragmentThreshold", Blend::none);
+	build(m_streak_down_pipeline, "StreakDown", "fragmentStreakDown", Blend::none);
+	build(m_streak_up_pipeline, "StreakUp", "fragmentStreakUp", Blend::additive);
 	build(m_blur_down_pipeline, "BlurDown", "fragmentBlurDown", Blend::none);
 	build(m_blur_up_pipeline, "BlurUp", "fragmentBlurUp", Blend::none);
 	build(m_chroma_pipeline, "Chroma", "fragmentChroma", Blend::none);
@@ -125,6 +128,10 @@ void LensFlarePass::createTargets(const VulkanCore& core, vk::Extent2D extent) {
 	make_target(m_glare_target, quarter, "LensFlarePass Glare");
 	make_target(m_eighth, scaledExtent(extent, 8), "LensFlarePass Eighth");
 	make_target(m_composite, extent, "LensFlarePass Composite");
+	for (uint32_t level = 0; level < k_streak_levels; ++level) {
+		const vk::Extent2D size {std::max(quarter.width >> (level + 1), k_min_size), quarter.height};
+		make_target(m_streak[level], size, std::format("LensFlarePass Streak{}", level));
+	}
 
 	const auto& layouts = m_shader_layout.getDescriptorSetLayouts();
 	if (layouts.empty()) {
@@ -148,13 +155,18 @@ void LensFlarePass::createTargets(const VulkanCore& core, vk::Extent2D extent) {
 	TOAST_INFO("Render", "LensFlarePass ready: {}x{} flare targets", quarter.width, quarter.height);
 }
 
-void LensFlarePass::writeDescriptor(vk::DescriptorSet set, vk::ImageView source, vk::ImageView scene, vk::ImageView glare) {
-	const std::array<vk::DescriptorImageInfo, 3> image_infos {
+void LensFlarePass::writeDescriptor(
+    vk::DescriptorSet set, vk::ImageView source, vk::ImageView scene, vk::ImageView glare, vk::ImageView streak,
+    vk::ImageView dirt
+) {
+	const std::array<vk::DescriptorImageInfo, 5> image_infos {
 	  vk::DescriptorImageInfo(*m_sampler, source, vk::ImageLayout::eShaderReadOnlyOptimal),
 	  vk::DescriptorImageInfo(*m_sampler, scene ? scene : source, vk::ImageLayout::eShaderReadOnlyOptimal),
 	  vk::DescriptorImageInfo(*m_sampler, glare ? glare : source, vk::ImageLayout::eShaderReadOnlyOptimal),
+	  vk::DescriptorImageInfo(*m_sampler, streak ? streak : source, vk::ImageLayout::eShaderReadOnlyOptimal),
+	  vk::DescriptorImageInfo(*m_sampler, dirt ? dirt : source, vk::ImageLayout::eShaderReadOnlyOptimal),
 	};
-	std::array<vk::WriteDescriptorSet, 3> writes {};
+	std::array<vk::WriteDescriptorSet, 5> writes {};
 	for (uint32_t binding = 0; binding < writes.size(); ++binding) {
 		writes[binding] =
 		    vk::WriteDescriptorSet(set, binding, 0, 1, vk::DescriptorType::eCombinedImageSampler, &image_infos[binding]);
@@ -202,8 +214,9 @@ void LensFlarePass::draw(
 
 auto LensFlarePass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView source_view) -> vk::ImageView {
 	ZoneScoped;
-	if (!m_composite.view.has_value() || !m_mix_pipeline.isReady() || !m_glare_pipeline.isReady() || !source_view ||
-	    frame_index >= m_frame_sets.size() || m_frame_sets[frame_index].sets.size() != step_count) {
+	if (!m_composite.view.has_value() || !m_streak_up_pipeline.isReady() || !m_mix_pipeline.isReady() ||
+	    !m_glare_pipeline.isReady() || !source_view || frame_index >= m_frame_sets.size() ||
+	    m_frame_sets[frame_index].sets.size() != step_count) {
 		return source_view;
 	}
 
@@ -220,17 +233,35 @@ auto LensFlarePass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::Imag
 	FrameSets& sets = m_frame_sets[frame_index];
 	const vk::ImageView quarter_a = **m_quarter_a.view;
 	const vk::ImageView quarter_b = **m_quarter_b.view;
-	if (sets.bound_scene != source_view) {
+	// Dirt applies only with a ready texture and a nonzero intensity
+	vk::ImageView dirt_view = nullptr;
+	if (settings.dirt_intensity > 0.0f && settings.dirt_texture.hasValue()) {
+		const VulkanTexture& dirt_texture = settings.dirt_texture->gpuTexture();
+		if (dirt_texture.isReady()) {
+			dirt_view = dirt_texture.getView();
+		}
+	}
+
+	if (sets.bound_scene != source_view || sets.bound_dirt != dirt_view) {
 		const auto set = [&sets](Step step) { return *sets.sets[step]; };
 		writeDescriptor(set(step_threshold), source_view, source_view, source_view);
 		writeDescriptor(set(step_glare), quarter_a, quarter_a, quarter_a);
+		for (uint32_t level = 0; level < k_streak_levels; ++level) {
+			const vk::ImageView lower = level == 0 ? quarter_a : **m_streak[level - 1].view;
+			writeDescriptor(set(static_cast<Step>(step_streak_down + level)), lower, lower, lower);
+		}
+		for (uint32_t level = 0; level + 1 < k_streak_levels; ++level) {
+			const vk::ImageView coarser = **m_streak[level + 1].view;
+			writeDescriptor(set(static_cast<Step>(step_streak_up + level)), coarser, coarser, coarser);
+		}
 		writeDescriptor(set(step_blur_down), quarter_a, quarter_a, quarter_a);
 		writeDescriptor(set(step_blur_up), **m_eighth.view, **m_eighth.view, **m_eighth.view);
 		writeDescriptor(set(step_chroma), quarter_b, quarter_b, quarter_b);
 		writeDescriptor(set(step_ghosts), quarter_a, quarter_a, quarter_a);
 		writeDescriptor(set(step_halo), quarter_b, quarter_b, quarter_b);
-		writeDescriptor(set(step_mix), **m_flares.view, source_view, **m_glare_target.view);
+		writeDescriptor(set(step_mix), **m_flares.view, source_view, **m_glare_target.view, **m_streak[0].view, dirt_view);
 		sets.bound_scene = source_view;
+		sets.bound_dirt = dirt_view;
 	}
 
 	const auto inverse = [](vk::Extent2D size) {
@@ -245,6 +276,10 @@ auto LensFlarePass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::Imag
 	    settings.glare_intensity, settings.glare_divider, static_cast<float>(output.width) / static_cast<float>(output.height), 0.0f
 	);
 	params.tint = glm::vec4(1.0f, 1.0f, 1.0f, settings.intensity);
+	params.halo_style = glm::vec4(settings.halo_thickness, settings.halo_dispersion, 0.0f, 0.0f);
+	params.halo_tint = glm::vec4(settings.halo_tint_r, settings.halo_tint_g, settings.halo_tint_b, 1.0f);
+	params.streak =
+	    glm::vec4(settings.anamorphic_intensity, settings.anamorphic_tint, settings.dirt_intensity, dirt_view ? 1.0f : 0.0f);
 
 	const auto texel = [&](vk::Extent2D source, vk::Extent2D target, float source_scale) {
 		return glm::vec4(inverse(source) * source_scale, inverse(target));
@@ -257,6 +292,16 @@ auto LensFlarePass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::Imag
 
 	params.texel = texel(m_quarter_a.extent, m_glare_target.extent, 1.0f);
 	draw(cmd, m_glare_pipeline, *sets.sets[step_glare], m_glare_target, params, Load::eClear, k_glare_vertices, glare_instances);
+
+	for (uint32_t level = 0; level < k_streak_levels; ++level) {
+		const vk::Extent2D from = level == 0 ? m_quarter_a.extent : m_streak[level - 1].extent;
+		params.texel = texel(from, m_streak[level].extent, 1.0f);
+		draw(cmd, m_streak_down_pipeline, *sets.sets[step_streak_down + level], m_streak[level], params, Load::eDontCare, 3, 1);
+	}
+	for (uint32_t level = k_streak_levels - 1; level-- > 0;) {
+		params.texel = texel(m_streak[level + 1].extent, m_streak[level].extent, 1.0f);
+		draw(cmd, m_streak_up_pipeline, *sets.sets[step_streak_up + level], m_streak[level], params, Load::eLoad, 3, 1);
+	}
 
 	params.texel = texel(m_quarter_a.extent, m_eighth.extent, 1.0f);
 	draw(cmd, m_blur_down_pipeline, *sets.sets[step_blur_down], m_eighth, params, Load::eDontCare, 3, 1);

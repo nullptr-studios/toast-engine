@@ -20,8 +20,6 @@ struct VolumeRecord
 };
 
 static const uint kNoGlass = 0xFFFFFFFFu;
-/// voxel::k_entry_transparent in palette word 2
-static const uint kEntryTransparent = 1u;
 
 /// Mirrors renderer::VoxelInstanceGpu
 struct VoxelInstance
@@ -288,7 +286,7 @@ bool volumeHasGlass(uint volume)
 bool glassEntry(VolumeRecord record, uint index)
 {
     const uint word2 = gPalettes[(record.paletteOffset + index) * 4u + 2u];
-    return index != 0u && (word2 & kEntryTransparent) != 0u && ((word2 >> 16) & 0xFFu) < 255u;
+    return index != 0u && ((word2 >> 8) & 0xFFu) < 255u;
 }
 
 bool glassEntry(uint volume, uint index)
@@ -357,13 +355,13 @@ struct TintGlass : IGlassPass
         const uint base = (record.paletteOffset + material) * 4u;
         const uint word0 = gPalettes[base];
         const uint word2 = gPalettes[base + 2u];
-        const float alpha = float((word2 >> 16) & 0xFFu) / 255.0;
+        const float alpha = float((word2 >> 8) & 0xFFu) / 255.0;
         const float roughness = float(word0 >> 24) / 255.0;
         const float3 albedo = srgbToLinear(float3(word0 & 0xFFu, (word0 >> 8) & 0xFFu, (word0 >> 16) & 0xFFu) / 255.0);
         transmittance *= glassPathFilter(albedo, alpha, (tExit - tEnter) * voxelsPerT);
 
         // voxel::iorOf
-        const uint iorByte = word2 >> 24;
+        const uint iorByte = (word2 >> 16) & 0xFFu;
         const float f0 = iorF0(iorByte == 0u ? kDefaultIor : 1.0 + float(iorByte) / 100.0);
         if (abs(tEnter - runEnd) * voxelsPerT > 1e-3)
         {
@@ -921,9 +919,9 @@ PaletteSample samplePalette(VolumeRecord record, uint index)
     sample.reflectivity = float((word1 >> 8) & 0xFFu) / 255.0;
     sample.emissive = float((word1 >> 16) & 0xFFu) / 255.0 * maxEmissive;
     sample.material = word1 >> 24;
-    sample.alpha = float((word2 >> 16) & 0xFFu) / 255.0;
+    sample.alpha = float((word2 >> 8) & 0xFFu) / 255.0;
     // voxel::iorOf
-    const uint iorByte = word2 >> 24;
+    const uint iorByte = (word2 >> 16) & 0xFFu;
     sample.ior = iorByte == 0u ? kDefaultIor : 1.0 + float(iorByte) / 100.0;
     return sample;
 }
