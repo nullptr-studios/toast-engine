@@ -2478,7 +2478,8 @@ void Workspace::eventSubscriptions() {
 		    if (e.action == event::window_input_pressed && m_gizmo_hover != GizmoHandle::none) {
 			    gizmoBeginDrag(m_gizmo_hover);
 			    return m_gizmo_drag != GizmoHandle::none;
-		    } else if (e.action == event::window_input_released) {
+		    }
+		    if (e.action == event::window_input_released) {
 			    const bool was_dragging = m_gizmo_drag != GizmoHandle::none;
 			    gizmoEndDrag();
 			    return was_dragging;
