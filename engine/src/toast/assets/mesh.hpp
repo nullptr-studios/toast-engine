@@ -13,7 +13,7 @@
 #include <memory>
 #include <toast/export.hpp>
 #include <toast/log.hpp>
-#include <toast/renderer/vertex.hpp>
+#include <toast/renderer/resources/vertex.hpp>
 
 namespace renderer {
 class VulkanMesh;

@@ -2,7 +2,7 @@
 
 #include <cassert>
 #include <string>
-#include <toast/renderer/shader_reflection.hpp>
+#include <toast/renderer/shaders/shader_reflection.hpp>
 
 // Every ShaderBindingKind has to survive toJson/fromJson unchanged
 //

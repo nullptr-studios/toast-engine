@@ -43,6 +43,9 @@ if (BUILD_TESTING)
 	endif()
 
 	if (NOT WIN32)
+		# Slang's gfx library depends on X11; make it available when linking the test executable.
+		find_package(X11 REQUIRED)
+		target_link_libraries(toast_tests PRIVATE X11::X11)
 		target_link_libraries(toast_tests PRIVATE stdc++exp)
 	elseif (WIN32 AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 		target_link_libraries(toast_tests PRIVATE stdc++exp)

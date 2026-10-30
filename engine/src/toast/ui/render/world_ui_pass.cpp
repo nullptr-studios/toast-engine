@@ -3,9 +3,9 @@
 #include <format>
 #include <toast/assets/assets.hpp>
 #include <toast/log.hpp>
-#include <toast/renderer/shader_cache.hpp>
-#include <toast/renderer/vulkan_core.hpp>
-#include <toast/renderer/vulkan_debug.hpp>
+#include <toast/renderer/core/vulkan_core.hpp>
+#include <toast/renderer/core/vulkan_debug.hpp>
+#include <toast/renderer/shaders/shader_cache.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
 #include <tracy/Tracy.hpp>
 
@@ -71,7 +71,7 @@ WorldUIPass::WorldUIPass(
 			continue;
 		}
 
-		const vk::DescriptorBufferInfo buffer_info(**frame_res->gpu_buffer, 0, sizeof(renderer::VulkanRenderer::FrameUBO));
+		const vk::DescriptorBufferInfo buffer_info(**frame_res->gpu_buffer, 0, sizeof(renderer::FrameUBO));
 		const vk::WriteDescriptorSet write(
 		    *m_frame_camera_sets[i], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &buffer_info
 		);

@@ -177,8 +177,6 @@ protected:
 	auto gizmoOrientation() const -> glm::quat;
 	[[nodiscard]]
 	auto gizmoScale() const -> float;
-	[[nodiscard]]
-	auto gizmoInteractionAllowed() const -> bool;
 
 	[[nodiscard]]
 	auto collectSizeHandles() const -> std::pair<std::array<SizeHandlePoint, k_max_size_handles>, uint32_t>;

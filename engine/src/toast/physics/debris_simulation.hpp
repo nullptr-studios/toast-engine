@@ -17,7 +17,7 @@
 #include <mutex>
 #include <optional>
 #include <span>
-#include <toast/renderer/async_compute_task.hpp>
+#include <toast/renderer/compute/async_compute_task.hpp>
 #include <utility>
 #include <vector>
 

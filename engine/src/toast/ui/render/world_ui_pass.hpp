@@ -9,10 +9,10 @@
 #pragma once
 #include <array>
 #include <glm/glm.hpp>
-#include <toast/renderer/render_pass_base.hpp>
-#include <toast/renderer/shader_layout.hpp>
-#include <toast/renderer/vulkan_common.hpp>
-#include <toast/renderer/vulkan_pipeline.hpp>
+#include <toast/renderer/core/vulkan_common.hpp>
+#include <toast/renderer/passes/render_pass_base.hpp>
+#include <toast/renderer/shaders/shader_layout.hpp>
+#include <toast/renderer/shaders/vulkan_pipeline.hpp>
 #include <vector>
 
 namespace renderer {

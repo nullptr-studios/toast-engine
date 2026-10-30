@@ -16,7 +16,7 @@
 #include <toast/assets/asset_manager.hpp>
 #include <toast/hash.hpp>
 #include <toast/log.hpp>
-#include <toast/renderer/editor_overlays.hpp>
+#include <toast/renderer/debug/editor_overlays.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
 #include <toast/thread_pool.hpp>
 #include <toast/voxel/assets/voxel_palette.hpp>

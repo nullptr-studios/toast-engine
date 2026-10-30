@@ -20,43 +20,43 @@
 #include "profiler_sections.hpp"
 #include "project_settings.hpp"
 #include "reflect/reflect.hpp"
-#include "renderer/passes/bloom_pass.hpp"
-#include "renderer/passes/cluster_lighting_pass.hpp"
-#include "renderer/passes/debris_pass.hpp"
+#include "toast/renderer/passes/geometry/debris_pass.hpp"
+#include "toast/renderer/passes/lighting/cluster_lighting_pass.hpp"
+#include "toast/renderer/passes/post/bloom_pass.hpp"
 #if defined(TOAST_DEV_TOOLS)
-#include "renderer/passes/debug_pass.hpp"
+#include "toast/renderer/passes/debug/debug_pass.hpp"
 #endif
-#include "renderer/passes/environment_pass.hpp"
-#include "renderer/passes/fxaa_pass.hpp"
-#include "renderer/passes/gi_pass.hpp"
-#include "renderer/passes/grid_pass.hpp"
-#include "renderer/passes/lens_flare_pass.hpp"
-#include "renderer/passes/motion_blur_pass.hpp"
-#include "renderer/passes/reflection_probe_pass.hpp"
-#include "renderer/passes/shadow_pass.hpp"
-#include "renderer/passes/ssao_pass.hpp"
-#include "renderer/passes/ssr_pass.hpp"
-#include "renderer/passes/taa_pass.hpp"
-#include "renderer/passes/tonemap_pass.hpp"
-#include "renderer/passes/traced_shadow_pass.hpp"
-#include "renderer/passes/traced_specular_pass.hpp"
-#include "renderer/passes/volumetric_pass.hpp"
-#include "renderer/passes/voxel_pass.hpp"
-#include "renderer/render_events.hpp"
-#include "renderer/renderer_settings.hpp"
-#include "renderer/sdl_output_target.hpp"
-#include "renderer/shader_cache.hpp"
-#include "renderer/shader_compiler.hpp"
-#include "renderer/shader_layout.hpp"
-#include "renderer/shared_texture_output_target.hpp"
-#include "renderer/vulkan_core.hpp"
-#include "renderer/vulkan_renderer.hpp"
 #include "scripting/lua_state.hpp"
 #include "scripting/script_dispatch.hpp"
 #include "scripting/script_runtime.hpp"
 #include "settings/settings.hpp"
 #include "thread_pool.hpp"
 #include "time.hpp"
+#include "toast/renderer/core/vulkan_core.hpp"
+#include "toast/renderer/output/sdl_output_target.hpp"
+#include "toast/renderer/output/shared_texture_output_target.hpp"
+#include "toast/renderer/passes/debug/grid_pass.hpp"
+#include "toast/renderer/passes/geometry/voxel_pass.hpp"
+#include "toast/renderer/passes/lighting/environment_pass.hpp"
+#include "toast/renderer/passes/lighting/gi_pass.hpp"
+#include "toast/renderer/passes/lighting/reflection_probe_pass.hpp"
+#include "toast/renderer/passes/lighting/shadow_pass.hpp"
+#include "toast/renderer/passes/lighting/ssao_pass.hpp"
+#include "toast/renderer/passes/lighting/ssr_pass.hpp"
+#include "toast/renderer/passes/lighting/traced_shadow_pass.hpp"
+#include "toast/renderer/passes/lighting/traced_specular_pass.hpp"
+#include "toast/renderer/passes/lighting/volumetric_pass.hpp"
+#include "toast/renderer/passes/post/fxaa_pass.hpp"
+#include "toast/renderer/passes/post/lens_flare_pass.hpp"
+#include "toast/renderer/passes/post/motion_blur_pass.hpp"
+#include "toast/renderer/passes/post/taa_pass.hpp"
+#include "toast/renderer/passes/post/tonemap_pass.hpp"
+#include "toast/renderer/render_events.hpp"
+#include "toast/renderer/settings/renderer_settings.hpp"
+#include "toast/renderer/shaders/shader_cache.hpp"
+#include "toast/renderer/shaders/shader_compiler.hpp"
+#include "toast/renderer/shaders/shader_layout.hpp"
+#include "toast/renderer/vulkan_renderer.hpp"
 #include "ui/render/ui_pass.hpp"
 #include "ui/render/world_ui_pass.hpp"
 #include "ui/ui_system.hpp"
@@ -535,7 +535,7 @@ void Engine::tick() {
 		if (m->renderer && it != m->owners.end()) {
 			if (Workspace* ws = it->second->asWorkspace()) {
 				const auto gizmo = ws->gizmoRenderState();
-				renderer::VulkanRenderer::GizmoState gizmo_state {
+				renderer::GizmoState gizmo_state {
 				  .visible = gizmo.visible,
 				  .tool = gizmo.tool,
 				  .origin = gizmo.origin,
@@ -743,9 +743,7 @@ void Engine::createSDLWindow(const char* w_name) {
 	m->renderer->addRenderPass(std::make_unique<ui::UIPass>(*m->vulkan_core, color_format, depth_format, extent));
 	if (m->ui_system) {
 		m->ui_system->initializeRenderer(*m->vulkan_core);
-		m->renderer->setUIFrameBuilder([ui = m->ui_system.get()](renderer::VulkanRenderer::RenderFrame& frame) {
-			ui->buildDrawFrame(frame);
-		});
+		m->renderer->setUIFrameBuilder([ui = m->ui_system.get()](renderer::RenderFrame& frame) { ui->buildDrawFrame(frame); });
 	}
 
 #if defined(TOAST_DEV_TOOLS)
@@ -862,9 +860,7 @@ void Engine::createAvaloniaWindow() {
 	m->renderer->addRenderPass(std::make_unique<ui::UIPass>(*m->vulkan_core, color_format, depth_format, extent));
 	if (m->ui_system) {
 		m->ui_system->initializeRenderer(*m->vulkan_core);
-		m->renderer->setUIFrameBuilder([ui = m->ui_system.get()](renderer::VulkanRenderer::RenderFrame& frame) {
-			ui->buildDrawFrame(frame);
-		});
+		m->renderer->setUIFrameBuilder([ui = m->ui_system.get()](renderer::RenderFrame& frame) { ui->buildDrawFrame(frame); });
 	}
 
 	// editor will always be capped

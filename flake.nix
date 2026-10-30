@@ -83,27 +83,14 @@
 		# The editor needs LD_LIBRARY_PATH for native dependencies, but build tools
 		# (including CMake cached by vcpkg) must use their own Nix library closure.
 		cmake-gen = pkgs.writeShellScriptBin "cmake-gen" ''
-			exec env -u LD_LIBRARY_PATH ${pkgs.cmake}/bin/cmake -B build/Debug -G Ninja -DCMAKE_TOOLCHAIN_FILE=${pkgs.vcpkg}/share/vcpkg/scripts/buildsystems/vcpkg.cmake "$@"
-		'';
-
-		cmake-gen-rel = pkgs.writeShellScriptBin "cmake-gen" ''
 			exec env -u LD_LIBRARY_PATH ${pkgs.cmake}/bin/cmake --preset linux-relwithdebinfo -DCMAKE_TOOLCHAIN_FILE=${pkgs.vcpkg}/share/vcpkg/scripts/buildsystems/vcpkg.cmake "$@"
 		'';
+
 		cmake-build = pkgs.writeShellScriptBin "cmake-build" ''
-			exec env -u LD_LIBRARY_PATH ${pkgs.cmake}/bin/cmake --build ./build/Debug --parallel "$(nproc)" "$@"
+			exec env -u LD_LIBRARY_PATH ${pkgs.cmake}/bin/cmake --build --preset linux-relwithdebinfo --parallel "$(nproc)" "$@"
 		'';
 
-		cmake-build-rel = pkgs.writeShellScriptBin "cmake-build" ''
-			exec env -u LD_LIBRARY_PATH ${pkgs.cmake}/bin/cmake --build ./build/RelWithDebInfo --parallel "$(nproc)" "$@"
-		'';
 
-		# editor = pkgs.writeShellScriptBin "editor" ''
-		# 	./out/Debug/editor/editor "$@"
-		# '';
-
-		kenzo = pkgs.writeShellScriptBin "kenzo" ''
-			./out/Debug/kenzo/kenzo "$@"
-		'';
 	in
 	{
 		devShells.${system}.default = pkgs.mkShell {
@@ -112,7 +99,8 @@
 				ccache
 				ninja
 				valgrind
-				rustup
+				rustc
+				cargo
 				protobuf
 				grpc
 				pkg-config
@@ -130,11 +118,6 @@
 				cmake-gen
 				cmake-build
 
-				# cmake-gen-rel
-				# cmake-build-rel
-
-				# editor
-				kenzo
 				tracy_0_13
 
 				autoconf
@@ -164,7 +147,7 @@
 				# Tracy's rpmalloc client uses initial-exec TLS. The editor loads the
 				# engine after .NET has started, so reserve space for its 3744-byte
 				# TLS block (plus the loader's alignment overhead).
-				export GLIBC_TUNABLES="glibc.rtld.optional_static_tls=4096''${GLIBC_TUNABLES:+:$GLIBC_TUNABLES}";
+				export GLIBC_TUNABLES="glibc.rtld.optional_static_tls=10240''${GLIBC_TUNABLES:+:$GLIBC_TUNABLES}";
 				export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1;
 				export CMAKE_C_COMPILER_LAUNCHER=ccache;
 				export CMAKE_CXX_COMPILER_LAUNCHER=ccache;

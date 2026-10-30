@@ -1,7 +1,7 @@
 #include "test_registry.hpp"
 
 #include <cassert>
-#include <toast/renderer/shadow_constants.hpp>
+#include <toast/renderer/lighting/shadow_constants.hpp>
 
 namespace {
 

@@ -11,7 +11,7 @@
 #include <cmath>
 #include <cstring>
 #include <toast/assets/assets.hpp>
-#include <toast/renderer/shader_cache.hpp>
+#include <toast/renderer/shaders/shader_cache.hpp>
 #include <tracy/Tracy.hpp>
 
 namespace {

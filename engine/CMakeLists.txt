@@ -139,10 +139,10 @@ if (WIN32)
 endif ()
 target_precompile_headers(toast_engine PRIVATE pch.h)
 # Defines VMA_IMPLEMENTATION so it must not use the PCH
-set_source_files_properties(src/toast/renderer/vma.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON SKIP_UNITY_BUILD_INCLUSION ON)
+set_source_files_properties(src/toast/renderer/core/vma.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON SKIP_UNITY_BUILD_INCLUSION ON)
 # Defines STB_IMAGE_IMPLEMENTATION
 set_source_files_properties(src/toast/assets/hdr_image.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON SKIP_UNITY_BUILD_INCLUSION ON)
-set_source_files_properties(src/toast/renderer/shared_texture_output_target.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+set_source_files_properties(src/toast/renderer/output/shared_texture_output_target.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 set_source_files_properties(src/toast/input/trackpad.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON SKIP_UNITY_BUILD_INCLUSION ON)
 set_source_files_properties(src/toast/crash_handler.cpp src/toast/crash_handler_posix.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 set_source_files_properties(src/toast/backtrace.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
@@ -169,6 +169,11 @@ target_compile_definitions(toast_engine PUBLIC
         $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:TOAST_BREAK_ON_ERROR>
         $<$<CONFIG:RelWithDebInfo>:TOAST_LUA_OWNERSHIP_CHECKS>
         GLM_FORCE_INTRINSICS
+)
+
+# Keep Slang's Debug profile for Linux builds that retain C++ debug information.
+target_compile_definitions(toast_engine PRIVATE
+        $<$<AND:$<PLATFORM_ID:Linux>,$<CONFIG:RelWithDebInfo>>:TOAST_SLANG_DEBUG_DEFAULT>
 )
 
 # Baseline ISA of Release builds on x86_64 GCC/Clang. CI runs on virtual machines whose CPU has no AVX2, so it passes a lower one

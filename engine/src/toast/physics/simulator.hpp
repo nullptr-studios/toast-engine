@@ -299,7 +299,8 @@ public:
 	/// Tests a world-space sphere against enabled physics shapes.
 	[[nodiscard]]
 	auto overlapSphere(
-	    const SphereShape& sphere, const glm::vec3& position, float min_penetration, std::vector<QueryContact>& contacts
+	    const SphereShape& sphere, const glm::vec3& position, float min_penetration, std::vector<QueryContact>& contacts,
+	    std::optional<LayerFilter> layers = std::nullopt
 	) const -> bool;
 	/// Tests a world-space axis-aligned box against enabled physics shapes.
 	[[nodiscard]]
