@@ -22,9 +22,11 @@ public sealed class RulerOverlay : UserControl {
 
 	private readonly Canvas m_labels = new() { IsHitTestVisible = false };
 	private readonly Border m_card;
-	private readonly TextBlock m_title = new() { FontWeight = FontWeight.SemiBold };
-	private readonly TextBlock m_details = new() { FontFamily = new FontFamily("Cascadia Mono, Consolas, monospace") };
-	private readonly TextBlock m_hint = new() { FontSize = 11, TextWrapping = TextWrapping.Wrap, MaxWidth = 280 };
+	private static readonly FontFamily Font = new("FiraCode Nerd Font,Consolas,monospace");
+
+	private readonly TextBlock m_title = new() { FontFamily = Font, FontWeight = FontWeight.SemiBold };
+	private readonly TextBlock m_details = new() { FontFamily = Font };
+	private readonly TextBlock m_hint = new() { FontFamily = Font, FontSize = 11, TextWrapping = TextWrapping.Wrap, MaxWidth = 280 };
 
 	private readonly List<RulerSegment> m_segments = [];
 	private RulerSegment? m_preview;
@@ -83,7 +85,7 @@ public sealed class RulerOverlay : UserControl {
 	}
 
 	private static Button MakeButton(string text, Action click) {
-		var button = new Button { Content = text, Padding = new Thickness(8, 2), FontSize = 12 };
+		var button = new Button { Content = text, Padding = new Thickness(8, 2), FontSize = 12, FontFamily = Font };
 		button.Click += (_, _) => click();
 		return button;
 	}
@@ -205,7 +207,7 @@ public sealed class RulerOverlay : UserControl {
 			Padding = new Thickness(6, 2),
 			Opacity = preview ? 0.85 : 1.0,
 			IsHitTestVisible = false,
-			Child = new TextBlock { Text = Distance(Delta(segment).Length()), FontSize = 12 }
+			Child = new TextBlock { Text = Distance(Delta(segment).Length()), FontSize = 12, FontFamily = Font }
 		};
 		label.Measure(Size.Infinity);
 

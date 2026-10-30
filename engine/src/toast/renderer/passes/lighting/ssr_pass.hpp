@@ -72,7 +72,7 @@ private:
 	/// Per frame in flight then per history parity
 	std::vector<vk::raii::DescriptorSet> m_descriptor_sets;
 	/// Source then previous resolve last written into each set
-	std::vector<std::array<vk::ImageView, 2>> m_bound_views;
+	std::vector<std::array<vk::ImageView, 4>> m_bound_views;
 
 	PostProcessTarget m_hit_target;
 	PostProcessTarget m_resolve_target;

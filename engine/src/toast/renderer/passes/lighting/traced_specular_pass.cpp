@@ -202,11 +202,11 @@ auto TracedSpecularPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk:
 	const vk::ImageView previous_view = renderer->previousResolvedColour();
 	const std::array<vk::ImageView, k_image_bindings> views {
 	  source_view,
-	  renderer->getDepthView(),
+	  renderer->getOpaqueDepthView(),
 	  renderer->getVoxelAlbedoView(),
 	  renderer->getVoxelMaterialView(),
 	  renderer->getVoxelFaceNormalView(),
-	  renderer->getSceneNormalView(),
+	  renderer->getOpaqueNormalView(),
 	  m_trace.view(),
 	  history_read.view(),
 	  renderer->getSceneMotionView(),

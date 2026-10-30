@@ -285,6 +285,12 @@ public:
 
 	/// xyz world normal w roughness
 
+	/// Normal before glass wrote its own, the final normal when no backdrop was copied
+	[[nodiscard]]
+	auto getOpaqueNormalView() const noexcept -> vk::ImageView {
+		return m_glass_backdrop_captured && m_glass_backdrop_normal.view ? **m_glass_backdrop_normal.view : getSceneNormalView();
+	}
+
 	[[nodiscard]]
 	auto getSceneNormalView() const noexcept -> vk::ImageView {
 		return m_scene_normal.view.has_value() ? **m_scene_normal.view : vk::ImageView {};
@@ -667,9 +673,10 @@ public:
 		return m_glass_backdrop_depth.view ? **m_glass_backdrop_depth.view : vk::ImageView {};
 	}
 
-	/// Depth before glass wrote its own so GI sees the surface behind a pane, the final depth when no backdrop was copied
+	/// Depth before glass wrote its own so GI and reflections see the surface behind a pane, the final depth when no backdrop was
+	/// copied
 	[[nodiscard]]
-	auto getGiDepthView() const noexcept -> vk::ImageView {
+	auto getOpaqueDepthView() const noexcept -> vk::ImageView {
 		return m_glass_backdrop_captured && m_glass_backdrop_depth.view ? **m_glass_backdrop_depth.view : getDepthView();
 	}
 
@@ -1446,6 +1453,7 @@ private:
 	static constexpr vk::Format m_scene_color_format = vk::Format::eR16G16B16A16Sfloat;
 	SceneColorResources m_scene_color;
 	SceneColorResources m_glass_backdrop;
+	SceneColorResources m_glass_backdrop_normal;
 
 	static constexpr vk::Format m_scene_normal_format = renderer::k_scene_normal_format;
 	SceneColorResources m_scene_normal;

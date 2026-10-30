@@ -926,8 +926,8 @@ void GiPass::readStats(uint32_t frame_index) {
 }
 
 void GiPass::bindProbeSet(uint32_t frame_index) {
-	const vk::ImageView depth_view = VulkanRenderer::instance->getGiDepthView();
-	const vk::ImageView normal_view = VulkanRenderer::instance->getSceneNormalView();
+	const vk::ImageView depth_view = VulkanRenderer::instance->getOpaqueDepthView();
+	const vk::ImageView normal_view = VulkanRenderer::instance->getOpaqueNormalView();
 	const std::array wanted {depth_view, normal_view};
 	if (m_probe_bound[frame_index] == wanted) {
 		return;
@@ -965,8 +965,8 @@ auto GiPass::bindRaySets(uint32_t frame_index, vk::ImageView scene_view) -> bool
 		m_ray_storage_bound[frame_index] = frame->voxel_storage;
 	}
 
-	const vk::ImageView depth_view = VulkanRenderer::instance->getGiDepthView();
-	const vk::ImageView normal_view = VulkanRenderer::instance->getSceneNormalView();
+	const vk::ImageView depth_view = VulkanRenderer::instance->getOpaqueDepthView();
+	const vk::ImageView normal_view = VulkanRenderer::instance->getOpaqueNormalView();
 	const std::array wanted {depth_view, normal_view, scene_view};
 	if (m_ray_bound[frame_index] != wanted) {
 		DescriptorWriter writer;
@@ -1296,8 +1296,8 @@ auto GiPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView s
 auto GiPass::recordDebug(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView source_view, uint32_t cascade, uint32_t mode)
     -> vk::ImageView {
 	ZoneScoped;
-	const vk::ImageView depth_view = VulkanRenderer::instance->getGiDepthView();
-	const vk::ImageView normal_view = VulkanRenderer::instance->getSceneNormalView();
+	const vk::ImageView depth_view = VulkanRenderer::instance->getOpaqueDepthView();
+	const vk::ImageView normal_view = VulkanRenderer::instance->getOpaqueNormalView();
 	const std::array wanted {source_view, depth_view, normal_view};
 	if (m_debug_bound[frame_index] != wanted) {
 		DescriptorWriter writer;

@@ -347,7 +347,8 @@ void VulkanRenderer::createSceneColorResources() {
 
 	create(m_scene_color, m_scene_color_format, "SceneColor", vk::ImageUsageFlagBits::eTransferSrc);
 	create(m_glass_backdrop, m_scene_color_format, "GlassBackdrop", vk::ImageUsageFlagBits::eTransferDst);
-	create(m_scene_normal, m_scene_normal_format, "SceneNormal");
+	create(m_scene_normal, m_scene_normal_format, "SceneNormal", vk::ImageUsageFlagBits::eTransferSrc);
+	create(m_glass_backdrop_normal, m_scene_normal_format, "GlassBackdropNormal", vk::ImageUsageFlagBits::eTransferDst);
 	create(m_scene_indirect, m_scene_indirect_format, "SceneIndirect");
 	create(m_scene_motion, m_scene_motion_format, "SceneMotion");
 	create(m_voxel_albedo, k_voxel_albedo_format, "VoxelAlbedo");
