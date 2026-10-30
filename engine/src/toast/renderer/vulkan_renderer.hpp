@@ -667,6 +667,12 @@ public:
 		return m_glass_backdrop_depth.view ? **m_glass_backdrop_depth.view : vk::ImageView {};
 	}
 
+	/// Depth before glass wrote its own so GI sees the surface behind a pane, the final depth when no backdrop was copied
+	[[nodiscard]]
+	auto getGiDepthView() const noexcept -> vk::ImageView {
+		return m_glass_backdrop_captured && m_glass_backdrop_depth.view ? **m_glass_backdrop_depth.view : getDepthView();
+	}
+
 	/// Meters a marched sun ray travels before it counts as lit
 	void setVoxelSunReach(uint32_t meters) noexcept { m_voxel_sun_reach.store(meters, std::memory_order_relaxed); }
 
@@ -1420,6 +1426,7 @@ private:
 
 	DebrisPass* m_debris_pass = nullptr;
 	GiPass* m_gi_pass = nullptr;
+	bool m_glass_backdrop_captured = false;
 	GiSettings m_gi_settings;
 	TracedSpecularPass* m_traced_specular_pass = nullptr;
 	TaaPass* m_taa_pass = nullptr;

@@ -17,6 +17,7 @@
 #include "toast/renderer/passes/geometry/skinning_pass.hpp"
 #include "toast/renderer/passes/geometry/voxel_pass.hpp"
 #include "toast/renderer/passes/lighting/environment_pass.hpp"
+#include "toast/renderer/passes/lighting/gi_pass.hpp"
 #include "toast/renderer/passes/lighting/reflection_probe_pass.hpp"
 #include "toast/renderer/passes/lighting/shadow_pass.hpp"
 #include "toast/renderer/passes/lighting/traced_specular_pass.hpp"
@@ -439,9 +440,11 @@ void VulkanRenderer::recordMeshScene(
 	}
 
 	// Before anything blended so the backdrop holds only opaque and sky
-	const bool refract = voxel_glass && m_voxel_pass != nullptr && !m_voxel_pass->glassDraws().empty() &&
-	                     m_voxel_pass->refractsGlass() && capture_backdrop;
-	if (refract) {
+	const bool has_glass = voxel_glass && m_voxel_pass != nullptr && !m_voxel_pass->glassDraws().empty() && capture_backdrop;
+	const bool gi_active = m_gi_pass != nullptr && m_gi_pass->isEnabled();
+	const bool refract = has_glass && m_voxel_pass->refractsGlass();
+	m_glass_backdrop_captured = has_glass && gi_active;
+	if (refract || m_glass_backdrop_captured) {
 		const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Glass backdrop");
 		capture_backdrop();
 	}
