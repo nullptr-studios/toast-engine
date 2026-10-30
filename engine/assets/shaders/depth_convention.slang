@@ -1,4 +1,4 @@
-// Mirrors renderer/depth_convention.hpp through TOAST_REVERSED_Z
+// Mirrors renderer/core/depth_convention.hpp through TOAST_REVERSED_Z
 // Shadow maps keep standard depth and do not use these
 
 // The depth buffer clears to it

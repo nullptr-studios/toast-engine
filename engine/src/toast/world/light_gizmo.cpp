@@ -8,7 +8,7 @@
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
-#include <toast/renderer/debug_draw.hpp>
+#include <toast/renderer/debug/debug_draw.hpp>
 
 namespace toast::light_gizmo {
 

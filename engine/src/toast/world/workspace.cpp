@@ -33,7 +33,7 @@
 #include <toast/physics/nodes/capsule_collider.hpp>
 #include <toast/physics/nodes/rigidbody.hpp>
 #include <toast/physics/nodes/sphere_collider.hpp>
-#include <toast/renderer/editor_overlays.hpp>
+#include <toast/renderer/debug/editor_overlays.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
 #include <toast/scripting/asset_proxy.hpp>
 #include <toast/scripting/lua_types.hpp>

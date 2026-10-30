@@ -21,7 +21,7 @@
 #include <toast/engine.hpp>
 #include <toast/log.hpp>
 #include <toast/project_settings.hpp>
-#include <toast/renderer/vulkan_core.hpp>
+#include <toast/renderer/core/vulkan_core.hpp>
 #include <tracy/Tracy.hpp>
 
 namespace ui {

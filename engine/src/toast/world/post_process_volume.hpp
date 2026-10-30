@@ -10,7 +10,7 @@
 #include "volume.hpp"
 
 #include <toast/export.hpp>
-#include <toast/renderer/post_process_settings.hpp>
+#include <toast/renderer/settings/post_process_settings.hpp>
 
 namespace toast {
 

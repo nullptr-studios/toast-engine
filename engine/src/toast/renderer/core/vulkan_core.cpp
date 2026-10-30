@@ -1,0 +1,1394 @@
+/// @file VulkanCore.cpp
+/// @author dario
+/// @date 14/05/2026
+
+#include "toast/renderer/core/vulkan_core.hpp"
+
+#include "toast/renderer/shaders/shader_compiler.hpp"
+
+#include <algorithm>
+#include <cctype>
+#include <cstdlib>
+#include <cstring>
+#include <format>
+#include <limits>
+#include <span>
+#include <toast/assets/asset_manager.hpp>
+#include <toast/log.hpp>
+#include <toast/logger.hpp>
+
+#if defined(__linux__)
+#include <dlfcn.h>
+#endif
+#include <array>
+#include <mutex>
+#include <optional>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <tracy/Tracy.hpp>
+#include <unordered_map>
+#include <vector>
+
+#if defined(_WIN32) && defined(TOAST_DEV_TOOLS)
+#include <external/inc/nsight/NGFX_GPUTrace_Vulkan.h>
+#include <external/inc/nsight/NGFX_GraphicsCapture_Vulkan.h>
+#endif
+
+namespace renderer {
+
+namespace {
+
+/// One file per GPU model
+auto vulkanCorePipelineCacheUri(const vk::PhysicalDeviceProperties& props) -> std::string {
+	return std::format("cache://pipelines/{:04x}-{:04x}.bin", props.vendorID, props.deviceID);
+}
+
+/// Some drivers crash on cache data from another driver instead of rejecting it
+auto vulkanCorePipelineCacheMatches(std::span<const uint8_t> data, const vk::PhysicalDeviceProperties& props) -> bool {
+	VkPipelineCacheHeaderVersionOne header {};
+	if (data.size() < sizeof(header)) {
+		return false;
+	}
+	std::memcpy(&header, data.data(), sizeof(header));
+	return header.headerSize >= sizeof(header) && header.headerVersion == VK_PIPELINE_CACHE_HEADER_VERSION_ONE &&
+	       header.vendorID == props.vendorID && header.deviceID == props.deviceID &&
+	       std::memcmp(header.pipelineCacheUUID, props.pipelineCacheUUID.data(), VK_UUID_SIZE) == 0;
+}
+
+/// Injected before main so it is known before the instance exists
+auto vulkanCoreAttachedGraphicsDebugger() -> std::optional<std::string_view> {
+#if defined(_WIN32) && defined(TOAST_DEV_TOOLS)
+	if (GetModuleHandleA("renderdoc.dll") != nullptr) {
+		return "RenderDoc";
+	}
+	if (GetModuleHandleW(NGFX_GRAPHICS_CAPTURE_INJECTION_LIB_NAME) != nullptr ||
+	    GetModuleHandleW(NGFX_GPU_TRACE_INJECTION_LIB_NAME) != nullptr) {
+		return "Nsight Graphics";
+	}
+#elif defined(__linux__)
+#elif defined(__linux__) && defined(TOAST_DEV_TOOLS)
+	dlclose(mod);
+	return "RenderDoc";
+}
+#endif
+	return std::nullopt;
+}
+
+constexpr std::size_t k_gigabyte_bytes = 1024ull * 1024ull * 1024ull;
+constexpr uint32_t k_invalid_queue_family = std::numeric_limits<uint32_t>::max();
+
+#ifdef TRACY_ENABLE
+constexpr auto k_tracy_vram_pool = std::to_array("VRAM");
+constexpr auto k_tracy_plot_used = std::to_array("VRAM used (MiB)");
+constexpr auto k_tracy_plot_budget = std::to_array("VRAM budget (MiB)");
+constexpr auto k_tracy_plot_allocations = std::to_array("VRAM engine allocations (MiB)");
+constexpr auto k_tracy_plot_blocks = std::to_array("VRAM engine blocks (MiB)");
+
+struct TracyVramTracker {
+	struct Block {
+		VkDeviceSize size = 0;
+		bool reported = false;
+	};
+
+	std::mutex mutex;
+	std::unordered_map<VkDeviceMemory, Block> blocks;
+	/// True once this connection has seen every live block
+	bool session_synced = false;
+};
+
+auto tracyVramTracker() -> TracyVramTracker& {
+	static TracyVramTracker tracker;
+	return tracker;
+}
+
+void tracyVmaAllocate(VmaAllocator, uint32_t, VkDeviceMemory memory, VkDeviceSize size, void*) {
+	auto& tracker = tracyVramTracker();
+	std::scoped_lock lock(tracker.mutex);
+	const bool report = tracker.session_synced && TracyIsConnected;
+	tracker.blocks[memory] = {.size = size, .reported = report};
+	if (report) {
+		TracyAllocN(reinterpret_cast<void*>(memory), size, k_tracy_vram_pool.data());
+	}
+}
+
+void tracyVmaFree(VmaAllocator, uint32_t, VkDeviceMemory memory, VkDeviceSize, void*) {
+	auto& tracker = tracyVramTracker();
+	std::scoped_lock lock(tracker.mutex);
+	const auto it = tracker.blocks.find(memory);
+	if (it == tracker.blocks.end()) {
+		return;
+	}
+	if (it->second.reported && TracyIsConnected) {
+		TracyFreeN(reinterpret_cast<void*>(memory), k_tracy_vram_pool.data());
+	}
+	tracker.blocks.erase(it);
+}
+#endif
+
+struct QueueFamilySelection {
+	uint32_t graphics = k_invalid_queue_family;
+	uint32_t compute = k_invalid_queue_family;
+	uint32_t transfer = k_invalid_queue_family;
+
+	[[nodiscard]]
+	auto isComplete() const -> bool {
+		return graphics != k_invalid_queue_family && compute != k_invalid_queue_family && transfer != k_invalid_queue_family;
+	}
+
+	[[nodiscard]]
+	auto isDistinct() const -> bool {
+		return graphics != compute && graphics != transfer && compute != transfer;
+	}
+};
+
+auto queueFamilyFlagsToString(vk::QueueFlags flags) -> std::string {
+	std::string result;
+	if (flags & vk::QueueFlagBits::eGraphics) {
+		result += " Graphics";
+	}
+	if (flags & vk::QueueFlagBits::eCompute) {
+		result += " Compute";
+	}
+	if (flags & vk::QueueFlagBits::eTransfer) {
+		result += " Transfer";
+	}
+	return result;
+}
+
+auto debugCallback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT message_severity, VkDebugUtilsMessageTypeFlagsEXT message_type,
+    const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data, void* p_user_data
+) -> VkBool32 {
+	(void)p_user_data;
+	(void)message_type;
+
+	const char* message_type_string = "Unknown";
+	switch (message_severity) {
+		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT: message_type_string = "Verbose"; break;
+		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT: message_type_string = "Info"; break;
+		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT: message_type_string = "Warning"; break;
+		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT: message_type_string = "Error"; break;
+		default: break;
+	}
+
+	const char* message = (p_callback_data != nullptr && p_callback_data->pMessage != nullptr) ? p_callback_data->pMessage : "";
+	logging::Severity severity = logging::Severity::trace;
+	switch (message_severity) {
+		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT: severity = logging::Severity::trace; break;
+		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT: severity = logging::Severity::info; break;
+		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT: severity = logging::Severity::warning; break;
+		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT: severity = logging::Severity::error; break;
+		default: return VK_FALSE;
+	}
+
+	// The first line is the problem, the rest is the layer's explanation and the spec link
+	const auto [summary, body] = logging::splitFirstLine(message);
+	const std::string line = std::format("[Vulkan Validation] [{}]: {}", message_type_string, summary);
+	TOAST_MESSAGE(severity, "ValidationLayers", line, body);
+
+	return VK_FALSE;
+}
+
+auto versionToString(uint32_t version) -> std::string {
+	return std::format("{}.{}.{}", VK_VERSION_MAJOR(version), VK_VERSION_MINOR(version), VK_VERSION_PATCH(version));
+}
+
+auto deviceTypeToString(vk::PhysicalDeviceType type) -> std::string {
+	switch (type) {
+		case vk::PhysicalDeviceType::eDiscreteGpu: return "Discrete";
+		case vk::PhysicalDeviceType::eIntegratedGpu: return "Integrated";
+		case vk::PhysicalDeviceType::eVirtualGpu: return "Virtual";
+		case vk::PhysicalDeviceType::eCpu: return "CPU";
+		default: return "Other";
+	}
+}
+
+auto joinExtensions(const std::vector<vk::ExtensionProperties>& extensions) -> std::string {
+	std::string out;
+	for (size_t i = 0; i < extensions.size(); ++i) {
+		if (i > 0) {
+			out.append("\n");
+		}
+		out.append(extensions[i].extensionName.data());
+	}
+	return out;
+}
+
+auto formatQueueFlags(vk::QueueFlags flags) -> std::string {
+	return queueFamilyFlagsToString(flags);
+}
+
+auto selectQueueFamilies(const vk::PhysicalDevice& device) -> QueueFamilySelection {
+	QueueFamilySelection selection {};
+	const auto queue_families = device.getQueueFamilyProperties();
+
+	for (uint32_t i = 0; i < queue_families.size(); ++i) {
+		if ((queue_families[i].queueFlags & vk::QueueFlagBits::eGraphics) != vk::QueueFlags {}) {
+			selection.graphics = i;
+			break;
+		}
+	}
+
+	for (uint32_t i = 0; i < queue_families.size(); ++i) {
+		const auto flags = queue_families[i].queueFlags;
+		if ((flags & vk::QueueFlagBits::eCompute) == vk::QueueFlags {}) {
+			continue;
+		}
+		if ((flags & vk::QueueFlagBits::eGraphics) == vk::QueueFlags {} && i != selection.graphics) {
+			selection.compute = i;
+			break;
+		}
+	}
+
+	if (selection.compute == k_invalid_queue_family) {
+		for (uint32_t i = 0; i < queue_families.size(); ++i) {
+			const auto flags = queue_families[i].queueFlags;
+			if ((flags & vk::QueueFlagBits::eCompute) != vk::QueueFlags {} && i != selection.graphics) {
+				selection.compute = i;
+				break;
+			}
+		}
+	}
+
+	for (uint32_t i = 0; i < queue_families.size(); ++i) {
+		const auto flags = queue_families[i].queueFlags;
+		if ((flags & vk::QueueFlagBits::eTransfer) == vk::QueueFlags {}) {
+			continue;
+		}
+		if ((flags & vk::QueueFlagBits::eGraphics) == vk::QueueFlags {} &&
+		    (flags & vk::QueueFlagBits::eCompute) == vk::QueueFlags {} && i != selection.graphics && i != selection.compute) {
+			selection.transfer = i;
+			break;
+		}
+	}
+
+	if (selection.transfer == k_invalid_queue_family) {
+		for (uint32_t i = 0; i < queue_families.size(); ++i) {
+			const auto flags = queue_families[i].queueFlags;
+			if ((flags & vk::QueueFlagBits::eTransfer) != vk::QueueFlags {} && i != selection.graphics && i != selection.compute) {
+				selection.transfer = i;
+				break;
+			}
+		}
+	}
+
+	if (selection.transfer == k_invalid_queue_family) {
+		for (uint32_t i = 0; i < queue_families.size(); ++i) {
+			const auto flags = queue_families[i].queueFlags;
+			if ((flags & vk::QueueFlagBits::eTransfer) != vk::QueueFlags {} && i != selection.graphics) {
+				selection.transfer = i;
+				break;
+			}
+		}
+	}
+
+	if (selection.transfer == k_invalid_queue_family) {
+		for (uint32_t i = 0; i < queue_families.size(); ++i) {
+			if ((queue_families[i].queueFlags & vk::QueueFlagBits::eTransfer) != vk::QueueFlags {}) {
+				selection.transfer = i;
+				break;
+			}
+		}
+	}
+
+	return selection;
+}
+
+auto joinRequiredExtensions(std::span<const char* const> extensions) -> std::string {
+	std::string out;
+	for (size_t i = 0; i < extensions.size(); ++i) {
+		if (i > 0) {
+			out.append(", ");
+		}
+		out.append(extensions[i]);
+	}
+	return out;
+}
+
+auto deviceNameString(const vk::PhysicalDeviceProperties& props) -> std::string {
+	return {props.deviceName.data()};
+}
+
+struct RayTracingVerdict {
+	bool hardware = false;
+	std::string_view reason;
+};
+
+/// Drivers emulate ray query in compute on GPUs without RT cores
+auto judgeHardwareRayTracing(const vk::PhysicalDeviceProperties& props, bool mesh_shader_extension) -> RayTracingVerdict {
+	constexpr uint32_t k_vendor_nvidia = 0x10DE;
+	constexpr uint32_t k_vendor_amd = 0x1002;
+	constexpr uint32_t k_vendor_intel = 0x8086;
+
+	if (const char* forced = std::getenv("TOAST_RAY_QUERY"); forced != nullptr && forced[0] != '\0') {
+		return {forced[0] != '0', "forced by TOAST_RAY_QUERY"};
+	}
+	switch (ShaderCompiler::rayTracingMode()) {
+		case RayTracingMode::off: return {false, "turned off in the ray tracing setting"};
+		case RayTracingMode::on: return {true, "forced on in the ray tracing setting"};
+		case RayTracingMode::automatic: break;
+	}
+	if (props.deviceType == vk::PhysicalDeviceType::eCpu) {
+		return {false, "software device"};
+	}
+
+	if (props.vendorID == k_vendor_nvidia) {
+		std::string name = deviceNameString(props);
+		std::ranges::transform(name, name.begin(), [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+		// Mesh shaders start at Turing
+		if (!mesh_shader_extension) {
+			return {false, "NVIDIA GPU older than Turing has no RT cores, the driver emulates ray query"};
+		}
+		// GTX 16 and MX are Turing without RT cores
+		if (name.contains("GTX") || name.contains(" MX")) {
+			return {false, "NVIDIA GTX and MX parts have no RT cores, the driver emulates ray query"};
+		}
+		return {true, "NVIDIA RT cores"};
+	}
+	if (props.vendorID == k_vendor_amd) {
+		return {true, "AMD drivers only expose ray query on RDNA2 and newer"};
+	}
+	if (props.vendorID == k_vendor_intel) {
+		return {true, "Intel drivers only expose ray query on Arc class hardware"};
+	}
+	return {true, "unknown vendor, trusting the driver"};
+}
+}    // namespace
+
+auto DeviceScore::toString() const noexcept -> std::string {
+	std::string str = "Device Score Breakdown:\n";
+	str += "  Device type: " + std::to_string(device_type) + "\n";
+	str += "  Memory: " + std::to_string(memory) + "\n";
+	str += "  Limits: " + std::to_string(limits) + "\n";
+	str += "  Features: " + std::to_string(features) + "\n";
+	str += "  Extensions: " + std::to_string(extensions) + "\n";
+	str += "  Vulkan support: " + std::to_string(vulkan_support) + "\n";
+	str += "  Queue support: " + std::to_string(queue_support) + "\n";
+	str += "  Total: " + std::to_string(total);
+	return str;
+}
+
+VulkanCore::VulkanCore(
+    std::span<const char* const> required_instance_extensions, std::span<const char* const> required_device_extensions
+) noexcept {
+	ZoneScoped;
+#ifdef DEBUG
+	m_validation_enabled = checkValidationLayerSupport();
+#else
+	m_validation_enabled = false;
+#endif
+
+#if defined(_WIN32) && defined(TOAST_DEV_TOOLS)
+	initializeNsightActivity();
+#endif
+
+	// Capture tools record the instance and crash capturing or replaying it with validation chained in
+	if (const auto debugger = vulkanCoreAttachedGraphicsDebugger(); debugger.has_value() && m_validation_enabled) {
+		m_validation_enabled = false;
+		TOAST_WARN("Render", "{} is attached so validation layers stay off", *debugger);
+	}
+
+	TOAST_INFO("Render", "Validation layers: {}", m_validation_enabled ? "enabled" : "disabled");
+	TOAST_TRACE("Render", "Required instance extensions: {}", joinRequiredExtensions(required_instance_extensions));
+	TOAST_TRACE("Render", "Required device extensions: {}", joinRequiredExtensions(required_device_extensions));
+
+	vk::ApplicationInfo app_info("SUPER DUPER TOASTY GAME", 1, "TOAST ENGINE", 1, VK_API_VERSION_1_4);
+
+	std::vector<const char*> layers;
+#ifdef DEBUG
+	if (m_validation_enabled) {
+		layers.push_back("VK_LAYER_KHRONOS_validation");
+	}
+#endif
+
+	std::vector extensions(required_instance_extensions.begin(), required_instance_extensions.end());
+	m_debug_utils_enabled = checkInstanceExtensionSupport(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+	if (m_debug_utils_enabled) {
+		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+	}
+	TOAST_INFO("Render", "Debug object names: {}", m_debug_utils_enabled ? "enabled" : "disabled");
+
+	if (checkInstanceExtensionSupport(VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME)) {
+		extensions.push_back(VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME);
+	}
+
+	vk::InstanceCreateInfo instance_ci({}, &app_info, layers, extensions);
+
+#ifdef TOAST_SYNC_VALIDATION
+	// Only ever defined in Debug
+	const std::array enabled_validation_features {vk::ValidationFeatureEnableEXT::eSynchronizationValidation};
+	vk::ValidationFeaturesEXT validation_features {};
+	validation_features.setEnabledValidationFeatures(enabled_validation_features);
+	if (m_validation_enabled) {
+		instance_ci.pNext = &validation_features;
+	}
+	TOAST_INFO("Render", "Synchronization validation: {}", m_validation_enabled ? "enabled" : "disabled");
+#endif
+
+	m_instance = vk::raii::Instance(m_context, instance_ci);
+
+	if (m_validation_enabled && m_debug_utils_enabled) {
+		vk::DebugUtilsMessengerCreateInfoEXT debug_ci {};
+		debug_ci.messageSeverity =
+		    vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
+		debug_ci.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
+		                       vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance;
+		debug_ci.pfnUserCallback = reinterpret_cast<vk::PFN_DebugUtilsMessengerCallbackEXT>(debugCallback);
+#ifndef NDEBUG
+		m_debug_messenger = vk::raii::DebugUtilsMessengerEXT(m_instance, debug_ci);
+#endif
+	}
+
+	pickPhysicalDevice(required_device_extensions);
+	createLogicalDeviceAndAllocator(required_device_extensions);
+	m_pipeline_cache = vk::raii::PipelineCache(m_device, vk::PipelineCacheCreateInfo {});
+
+#if defined(TOAST_DEV_TOOLS) && defined(_WIN32)
+	if (HMODULE mod = GetModuleHandleA("renderdoc.dll")) {
+		pRENDERDOC_GetAPI renderdoc_get_api = reinterpret_cast<pRENDERDOC_GetAPI>(GetProcAddress(mod, "RENDERDOC_GetAPI"));
+		renderdoc_get_api(eRENDERDOC_API_Version_1_6_0, reinterpret_cast<void**>(&rdoc_api));
+		TOAST_INFO("Render", "RenderDoc API detected");
+	}
+#elif defined(__linux__)
+#elif defined(TOAST_DEV_TOOLS) && defined(__linux__)
+	auto* renderdoc_get_api = reinterpret_cast<pRENDERDOC_GetAPI>(dlsym(mod, "RENDERDOC_GetAPI"));
+	if (renderdoc_get_api) {
+		renderdoc_get_api(eRENDERDOC_API_Version_1_6_0, reinterpret_cast<void**>(&rdoc_api));
+		TOAST_INFO("Render", "RenderDoc API detected");
+	}
+	dlclose(mod);
+}
+#endif
+
+	// Not activating Nsight GPU trace here since it blocks until the host attaches
+}
+
+#if defined(_WIN32) && defined(TOAST_DEV_TOOLS)
+namespace {
+
+auto nsightResultName(NGFX_Result result) -> std::string_view {
+	switch (result) {
+		case NGFX_Result_Success: return "Success";
+		case NGFX_Result_NotImplemented: return "NotImplemented";
+		case NGFX_Result_LibNotFound: return "LibNotFound";
+		case NGFX_Result_InvalidLib: return "InvalidLib";
+		case NGFX_Result_DifferentActivityInjected: return "DifferentActivityInjected";
+		case NGFX_Result_InvalidParameter: return "InvalidParameter";
+		case NGFX_Result_InvalidState: return "InvalidState";
+		case NGFX_Result_UnspecifiedError: return "UnspecifiedError";
+		case NGFX_Result_Timeout: return "Timeout";
+		default: return "Unknown";
+	}
+}
+
+}
+
+void VulkanCore::initializeNsightActivity() {
+	ZoneScoped;
+	// NGFX_IsActivityInjected skips its out param once cached and InitializeActivity then reads garbage
+	const bool capture_injected = GetModuleHandleW(NGFX_GRAPHICS_CAPTURE_INJECTION_LIB_NAME) != nullptr;
+	const bool trace_injected = GetModuleHandleW(NGFX_GPU_TRACE_INJECTION_LIB_NAME) != nullptr;
+
+	if (capture_injected) {
+		NGFX_GraphicsCapture_InitializeActivity_Vulkan_Params params {NGFX_GraphicsCapture_InitializeActivity_Vulkan_Params_VER};
+		const NGFX_Result result = NGFX_GraphicsCapture_InitializeActivity_Vulkan(&params);
+		if (result == NGFX_Result_Success) {
+			m_nsight_mode = NsightMode::graphics_capture;
+			TOAST_INFO("VulkanCore", "Nsight Graphics launched this process; Graphics Capture initialized (F12 to capture a frame)");
+		} else {
+			TOAST_WARN(
+			    "VulkanCore", "Nsight Graphics injected Graphics Capture, but it failed to initialize: {}", nsightResultName(result)
+			);
+		}
+	} else if (trace_injected) {
+		NGFX_GPUTrace_InitializeActivity_Vulkan_Params params {NGFX_GPUTrace_InitializeActivity_Vulkan_Params_VER};
+		const NGFX_Result result = NGFX_GPUTrace_InitializeActivity_Vulkan(&params);
+		if (result == NGFX_Result_Success) {
+			m_nsight_mode = NsightMode::gpu_trace;
+			TOAST_INFO("VulkanCore", "Nsight Graphics launched this process; GPU Trace initialized (F12 to trace)");
+		} else {
+			TOAST_WARN("VulkanCore", "Nsight Graphics injected GPU Trace, but it failed to initialize: {}", nsightResultName(result));
+		}
+	} else {
+		TOAST_INFO(
+		    "VulkanCore", "Nsight Graphics did not launch this process; Nsight capture is off (launch from Nsight Graphics for F12)"
+		);
+	}
+}
+
+void VulkanCore::activateNsightGpuTraceIfNeeded() const {
+	ZoneScoped;
+	if (m_nsight_mode != NsightMode::gpu_trace || m_nsight_gputrace_activated) {
+		return;
+	}
+	NGFX_GPUTrace_ActivateTrace_Vulkan_Params params {NGFX_GPUTrace_ActivateTrace_Vulkan_Params_VER};
+	params.queue = m_graphics_queue;
+
+	if (NGFX_GPUTrace_ActivateTrace_Vulkan(&params) == NGFX_Result_Success) {
+		m_nsight_gputrace_activated = true;
+	} else {
+		TOAST_WARN("VulkanCore", "Failed to activate Nsight GPU Trace; F12 capture will not work this session");
+		m_nsight_mode = NsightMode::none;
+	}
+}
+#endif
+
+void VulkanCore::pickPhysicalDevice(std::span<const char* const> required_device_extensions) {
+	ZoneScoped;
+	vk::raii::PhysicalDevices devices(m_instance);
+	if (devices.empty()) {
+		TOAST_CRITICAL("Render", "Toast Engine Error: Failed to find GPUs with Vulkan support!");
+	}
+
+	TOAST_TRACE("Render", "Found {} Vulkan device(s)", devices.size());
+
+	int best_score = -1;
+	vk::raii::PhysicalDevice best_device = nullptr;
+	QueueFamilySelection best_queue_families {};
+
+	for (const auto& device : devices) {
+		const auto props = device.getProperties();
+		const auto extensions = device.enumerateDeviceExtensionProperties();
+		const auto queues = device.getQueueFamilyProperties();
+
+		DeviceScore device_score = calculateDeviceScore(device, required_device_extensions);
+		QueueFamilySelection queue_families {
+		  .graphics = device_score.graphics_idx >= 0 ? static_cast<uint32_t>(device_score.graphics_idx) : k_invalid_queue_family,
+		  .compute = device_score.compute_idx >= 0 ? static_cast<uint32_t>(device_score.compute_idx) : k_invalid_queue_family,
+		  .transfer = device_score.transfer_idx >= 0 ? static_cast<uint32_t>(device_score.transfer_idx) : k_invalid_queue_family,
+		};
+
+		TOAST_TRACE(
+		    "Render",
+		    "Device: {} (type: {}, API: {}, driver: {}, vendor: {}, device: {})",
+		    deviceNameString(props),
+		    deviceTypeToString(props.deviceType),
+		    versionToString(props.apiVersion),
+		    versionToString(props.driverVersion),
+		    props.vendorID,
+		    props.deviceID
+		);
+		TOAST_TRACE("Render", "  Queue families: {}", queues.size());
+		for (std::size_t i = 0; i < queues.size(); ++i) {
+			TOAST_TRACE("Render", "    Queue family {} | flags:{}", i, formatQueueFlags(queues[i].queueFlags));
+		}
+		TOAST_MESSAGE(
+		    logging::Severity::trace, "Render", std::format("  Device extensions ({})", extensions.size()), joinExtensions(extensions)
+		);
+
+		TOAST_MESSAGE(
+		    logging::Severity::trace, "Render", std::format("  Device score: {}", device_score.total), device_score.toString()
+		);
+
+		if (!device_score.missing_extensions.empty()) {
+			std::string missing;
+			for (size_t i = 0; i < device_score.missing_extensions.size(); ++i) {
+				if (i > 0) {
+					missing.append(", ");
+				}
+				missing.append(device_score.missing_extensions[i]);
+			}
+			TOAST_WARN("Render", "  Missing required extensions: {}", missing);
+		}
+
+		if (!device_score.missing_extensions.empty()) {
+			TOAST_WARN("Render", "  Device rejected: missing required extensions");
+			continue;
+		}
+
+		if (device_score.total <= 0) {
+			TOAST_WARN("Render", "  Device rejected: total score {} is not valid", device_score.total);
+			continue;
+		}
+
+		if (!queue_families.isComplete()) {
+			TOAST_WARN("Render", "  Device rejected: required queue type not present");
+			continue;
+		}
+
+		if (!queue_families.isDistinct()) {
+			TOAST_WARN(
+			    "Render", "  Device Waring: graphics, compute and transfer are not using distinct family queues, PERFORMANCE LOSS"
+			);
+		}
+
+		TOAST_TRACE("Render", "  Device score: {}", device_score.total);
+
+		if (device_score.total > best_score) {
+			best_score = device_score.total;
+			best_device = device;
+			best_queue_families = queue_families;
+		}
+	}
+
+	if (best_device == nullptr) {
+		TOAST_CRITICAL("Render", "Toast Engine Error: No suitable Vulkan device found!");
+	}
+
+	m_physical_device = best_device;
+	m_graphics_queue_family_index = best_queue_families.graphics;
+	m_compute_queue_family_index = best_queue_families.compute;
+	m_transfer_queue_family_index = best_queue_families.transfer;
+
+	const auto selected_props = m_physical_device.getProperties();
+	TOAST_INFO(
+	    "Render",
+	    "Selected device: {} (type: {}, API: {}) with score {}",
+	    deviceNameString(selected_props),
+	    deviceTypeToString(selected_props.deviceType),
+	    versionToString(selected_props.apiVersion),
+	    best_score
+	);
+}
+
+void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> required_device_extensions) {
+	ZoneScoped;
+	if (m_graphics_queue_family_index == k_invalid_queue_family) {
+		TOAST_CRITICAL("Render", "Failed to find a graphics queue family for the selected device!");
+	}
+	if (m_compute_queue_family_index == k_invalid_queue_family) {
+		TOAST_CRITICAL("Render", "Failed to find a compute queue family for the selected device!");
+	}
+	if (m_transfer_queue_family_index == k_invalid_queue_family) {
+		TOAST_CRITICAL("Render", "Failed to find a transfer queue family for the selected device!");
+	}
+
+	TOAST_TRACE(
+	    "Render",
+	    "Selected graphics queue family index: {} (flags: {})",
+	    m_graphics_queue_family_index,
+	    formatQueueFlags(m_physical_device.getQueueFamilyProperties()[m_graphics_queue_family_index].queueFlags)
+	);
+	TOAST_TRACE(
+	    "Render",
+	    "Selected compute queue family index: {} (flags: {})",
+	    m_compute_queue_family_index,
+	    formatQueueFlags(m_physical_device.getQueueFamilyProperties()[m_compute_queue_family_index].queueFlags)
+	);
+	TOAST_TRACE(
+	    "Render",
+	    "Selected transfer queue family index: {} (flags: {})",
+	    m_transfer_queue_family_index,
+	    formatQueueFlags(m_physical_device.getQueueFamilyProperties()[m_transfer_queue_family_index].queueFlags)
+	);
+
+	const auto queue_family_properties = m_physical_device.getQueueFamilyProperties();
+	std::vector<uint32_t> unique_queue_families;
+	unique_queue_families.reserve(queue_family_properties.size());
+	for (uint32_t family_index = 0; family_index < static_cast<uint32_t>(queue_family_properties.size()); family_index++) {
+		if (queue_family_properties[family_index].queueCount > 0) {
+			unique_queue_families.push_back(family_index);
+		}
+	}
+
+	// A second queue when transfer falls back to the compute family so uploads never share a VkQueue with AsyncCompute
+	const bool transfer_in_compute_family = m_transfer_queue_family_index == m_compute_queue_family_index;
+	m_transfer_queue_index =
+	    transfer_in_compute_family && queue_family_properties[m_compute_queue_family_index].queueCount >= 2 ? 1u : 0u;
+
+	const std::array queue_priorities {1.0f, 1.0f};
+	std::vector<vk::DeviceQueueCreateInfo> queue_create_infos;
+	queue_create_infos.reserve(unique_queue_families.size());
+	for (auto family_index : unique_queue_families) {
+		const uint32_t count = family_index == m_compute_queue_family_index ? m_transfer_queue_index + 1 : 1;
+		queue_create_infos.emplace_back(vk::DeviceQueueCreateInfo({}, family_index, count, queue_priorities.data()));
+	}
+
+	const auto device_features = m_physical_device.getFeatures();
+	m_sampler_anisotropy_supported = device_features.samplerAnisotropy == VK_TRUE;
+	m_max_sampler_anisotropy =
+	    m_sampler_anisotropy_supported ? m_physical_device.getProperties().limits.maxSamplerAnisotropy : 1.0f;
+
+	vk::PhysicalDeviceFeatures enabled_features {};
+	enabled_features.samplerAnisotropy = m_sampler_anisotropy_supported ? VK_TRUE : VK_FALSE;
+
+	enabled_features.independentBlend = VK_TRUE;
+	m_depth_clamp_supported = device_features.depthClamp == VK_TRUE;
+	enabled_features.depthClamp = m_depth_clamp_supported ? VK_TRUE : VK_FALSE;
+	m_dual_source_blend_supported = device_features.dualSrcBlend == VK_TRUE;
+	enabled_features.dualSrcBlend = m_dual_source_blend_supported ? VK_TRUE : VK_FALSE;
+	// volumetrics.slang declares the fog ambient buffer writable and its fragment stages read it
+	enabled_features.fragmentStoresAndAtomics = device_features.fragmentStoresAndAtomics;
+	// HiZPyramid picks its level image by a loop index
+	enabled_features.shaderStorageImageArrayDynamicIndexing = VK_TRUE;
+	// Replays can start a pass from state no frame wrote so an index past a buffer reads zero instead of losing the device
+	if (m_nsight_mode != NsightMode::none && device_features.robustBufferAccess == VK_TRUE) {
+		enabled_features.robustBufferAccess = VK_TRUE;
+		TOAST_INFO("Render", "Nsight is attached so robust buffer access is on");
+	}
+
+	vk::PhysicalDeviceFeatures2 supported_features {};
+	vk::PhysicalDeviceVulkan12Features supported_vulkan12 {};
+	vk::PhysicalDeviceVulkan13Features supported_vulkan13 {};
+	vk::PhysicalDeviceVulkan11Features supported_vulkan11 {};
+	supported_vulkan12.pNext = &supported_vulkan11;
+	supported_vulkan13.pNext = &supported_vulkan12;
+	supported_features.pNext = &supported_vulkan13;
+	(*m_physical_device).getFeatures2(&supported_features);
+	auto require_feature = [](bool supported, std::string_view name) {
+		if (!supported) {
+			TOAST_CRITICAL("Render", "Selected Vulkan device is missing required capability: {}", name);
+		}
+	};
+	require_feature(supported_vulkan13.dynamicRendering == VK_TRUE, "Vulkan 1.3 dynamicRendering");
+	require_feature(supported_vulkan13.synchronization2 == VK_TRUE, "Vulkan 1.3 synchronization2");
+	require_feature(
+	    supported_vulkan13.shaderDemoteToHelperInvocation == VK_TRUE,
+	    "Vulkan 1.3 shaderDemoteToHelperInvocation (required by UI clip())"
+	);
+	require_feature(supported_vulkan12.descriptorIndexing == VK_TRUE, "Vulkan 1.2 descriptorIndexing");
+	require_feature(supported_vulkan12.runtimeDescriptorArray == VK_TRUE, "Vulkan 1.2 runtimeDescriptorArray");
+	require_feature(supported_vulkan12.descriptorBindingPartiallyBound == VK_TRUE, "Vulkan 1.2 descriptorBindingPartiallyBound");
+	require_feature(
+	    supported_vulkan12.descriptorBindingVariableDescriptorCount == VK_TRUE,
+	    "Vulkan 1.2 descriptorBindingVariableDescriptorCount"
+	);
+	require_feature(supported_vulkan12.bufferDeviceAddress == VK_TRUE, "Vulkan 1.2 bufferDeviceAddress");
+	// lighting.slang picks reflection probe cubemaps per pixel with NonUniformResourceIndex
+	require_feature(
+	    supported_vulkan12.shaderSampledImageArrayNonUniformIndexing == VK_TRUE,
+	    "Vulkan 1.2 shaderSampledImageArrayNonUniformIndexing"
+	);
+	// eDepthAttachmentOptimal and eDepthReadOnlyOptimal are only legal with this enabled
+	require_feature(supported_vulkan12.separateDepthStencilLayouts == VK_TRUE, "Vulkan 1.2 separateDepthStencilLayouts");
+	// AsyncCompute tickets are timeline values
+	require_feature(supported_vulkan12.timelineSemaphore == VK_TRUE, "Vulkan 1.2 timelineSemaphore");
+	require_feature(supported_vulkan11.shaderDrawParameters == VK_TRUE, "Vulkan 1.1 shaderDrawParameters");
+	require_feature(supported_vulkan11.multiview == VK_TRUE, "Vulkan 1.1 multiview");
+	require_feature(device_features.independentBlend == VK_TRUE, "independentBlend");
+	require_feature(device_features.shaderStorageImageArrayDynamicIndexing == VK_TRUE, "shaderStorageImageArrayDynamicIndexing");
+
+	std::vector<const char*> device_extensions(required_device_extensions.begin(), required_device_extensions.end());
+
+	{
+		const auto available = m_physical_device.enumerateDeviceExtensionProperties();
+		m_frame_boundary_supported = std::ranges::any_of(available, [](const vk::ExtensionProperties& ext) {
+			return std::string_view(ext.extensionName.data()) == VK_EXT_FRAME_BOUNDARY_EXTENSION_NAME;
+		});
+
+		// VMA only estimates heap usage and budget without it
+		m_memory_budget_supported = std::ranges::any_of(available, [](const vk::ExtensionProperties& ext) {
+			return std::string_view(ext.extensionName.data()) == VK_EXT_MEMORY_BUDGET_EXTENSION_NAME;
+		});
+		if (m_memory_budget_supported) {
+			device_extensions.push_back(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
+		}
+
+		if (m_frame_boundary_supported) {
+			device_extensions.push_back(VK_EXT_FRAME_BOUNDARY_EXTENSION_NAME);
+			TOAST_INFO("Render", "VK_EXT_frame_boundary available; frame delimiters will be emitted for graphics debuggers");
+		} else {
+			TOAST_INFO(
+			    "Render",
+			    "VK_EXT_frame_boundary not supported by this device - a debugger attached to the editor will see no frame "
+			    "boundaries, since the editor never presents"
+			);
+		}
+
+#if defined(_WIN32)
+		const std::array<const char*, 2> sharing_extensions {"VK_KHR_external_memory_win32", "VK_KHR_win32_keyed_mutex"};
+#else
+		const std::array<const char*, 2> sharing_extensions {"VK_KHR_external_memory_fd", "VK_KHR_external_semaphore_fd"};
+#endif
+		const bool debugger_attached = m_nsight_mode != NsightMode::none || rdoc_api != nullptr;
+		m_texture_sharing_supported =
+		    !debugger_attached && std::ranges::all_of(sharing_extensions, [&available](std::string_view name) {
+			    return std::ranges::any_of(available, [name](const vk::ExtensionProperties& ext) {
+				    return std::string_view(ext.extensionName.data()) == name;
+			    });
+		    });
+		if (m_texture_sharing_supported) {
+			device_extensions.insert(device_extensions.end(), sharing_extensions.begin(), sharing_extensions.end());
+		} else {
+			TOAST_INFO("Render", "Texture sharing extensions unsupported; the editor viewport reads frames back on the CPU");
+		}
+	}
+
+	{
+		const auto available = m_physical_device.enumerateDeviceExtensionProperties();
+		const auto has_extension = [&available](std::string_view name) {
+			return std::ranges::any_of(available, [name](const vk::ExtensionProperties& ext) {
+				return std::string_view(ext.extensionName.data()) == name;
+			});
+		};
+
+		const bool extensions_present = has_extension(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
+		                                has_extension(VK_KHR_RAY_QUERY_EXTENSION_NAME) &&
+		                                has_extension(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+
+		bool features_present = false;
+		if (extensions_present) {
+			vk::PhysicalDeviceFeatures2 probe {};
+			vk::PhysicalDeviceAccelerationStructureFeaturesKHR as_probe {};
+			vk::PhysicalDeviceRayQueryFeaturesKHR rq_probe {};
+			as_probe.pNext = &rq_probe;
+			probe.pNext = &as_probe;
+			(*m_physical_device).getFeatures2(&probe);
+			features_present = as_probe.accelerationStructure == VK_TRUE && rq_probe.rayQuery == VK_TRUE;
+		}
+
+		const bool driver_exposes_ray_query = extensions_present && features_present;
+		RayTracingVerdict verdict {};
+		if (driver_exposes_ray_query) {
+			verdict = judgeHardwareRayTracing(m_physical_device.getProperties(), has_extension(VK_EXT_MESH_SHADER_EXTENSION_NAME));
+			if (!verdict.hardware) {
+				TOAST_WARN(
+				    "Render",
+				    "Ray query is advertised but not used: {}. The ray tracing setting or TOAST_RAY_QUERY=1 forces it",
+				    verdict.reason
+				);
+			}
+		}
+		m_ray_tracing_startup_mode = ShaderCompiler::rayTracingMode();
+		m_ray_tracing_supported = driver_exposes_ray_query && verdict.hardware;
+		m_ray_tracing_reason = driver_exposes_ray_query ? verdict.reason : "the driver does not expose ray query";
+
+		// Before the shader cache compiles anything
+		ShaderCompiler::setRayQueryAvailable(m_ray_tracing_supported);
+
+		if (m_ray_tracing_supported) {
+			device_extensions.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+			device_extensions.push_back(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+			device_extensions.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+
+			vk::PhysicalDeviceProperties2 props {};
+			vk::PhysicalDeviceAccelerationStructurePropertiesKHR as_props {};
+			props.pNext = &as_props;
+			(*m_physical_device).getProperties2(&props);
+			m_as_scratch_alignment = as_props.minAccelerationStructureScratchOffsetAlignment;
+
+			TOAST_INFO(
+			    "Render",
+			    "Ray query supported ({}); acceleration structures available (scratch alignment {} bytes)",
+			    verdict.reason,
+			    m_as_scratch_alignment
+			);
+		} else {
+			TOAST_INFO(
+			    "Render",
+			    "Ray query unavailable (extensions={}, features={}, hardware={}); every RT-backed feature keeps its raster path",
+			    extensions_present,
+			    features_present,
+			    verdict.hardware
+			);
+		}
+	}
+
+	{
+		const auto available = m_physical_device.enumerateDeviceExtensionProperties();
+		const bool extension_present = std::ranges::any_of(available, [](const vk::ExtensionProperties& ext) {
+			return std::string_view(ext.extensionName.data()) == VK_EXT_MESH_SHADER_EXTENSION_NAME;
+		});
+
+		bool usable = false;
+		if (extension_present) {
+			vk::PhysicalDeviceFeatures2 probe {};
+			vk::PhysicalDeviceMeshShaderFeaturesEXT mesh_probe {};
+			probe.pNext = &mesh_probe;
+			(*m_physical_device).getFeatures2(&probe);
+
+			vk::PhysicalDeviceProperties2 props {};
+			vk::PhysicalDeviceMeshShaderPropertiesEXT mesh_props {};
+			props.pNext = &mesh_props;
+			(*m_physical_device).getProperties2(&props);
+
+			// Mirrors voxel_mesh_common.slang with 64 quads a mesh group and a payload of 3 words and 768 slice entries
+			usable = mesh_probe.taskShader == VK_TRUE && mesh_probe.meshShader == VK_TRUE && mesh_props.maxMeshOutputVertices >= 256 &&
+			         mesh_props.maxMeshOutputPrimitives >= 128 && mesh_props.maxMeshWorkGroupInvocations >= 64 &&
+			         mesh_props.maxTaskWorkGroupInvocations >= 64 && mesh_props.maxTaskPayloadSize >= 3084;
+			m_mesh_multiview_views = usable && mesh_probe.multiviewMeshShader == VK_TRUE ? mesh_props.maxMeshMultiviewViewCount : 0u;
+		}
+
+		m_mesh_shader_supported = usable;
+		if (m_mesh_shader_supported) {
+			device_extensions.push_back(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+			TOAST_INFO("Render", "VK_EXT_mesh_shader available; near voxels can mesh in task and mesh shaders");
+		} else {
+			TOAST_INFO("Render", "Mesh shaders unavailable (extension={}); near voxels mesh in compute", extension_present);
+		}
+	}
+
+	vk::DeviceCreateInfo device_ci({}, queue_create_infos, {}, device_extensions, &enabled_features);
+
+	vk::PhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features {};
+	mesh_shader_features.taskShader = VK_TRUE;
+	mesh_shader_features.meshShader = VK_TRUE;
+	mesh_shader_features.multiviewMeshShader = m_mesh_multiview_views > 0 ? VK_TRUE : VK_FALSE;
+
+	vk::PhysicalDeviceAccelerationStructureFeaturesKHR acceleration_structure_features {};
+	acceleration_structure_features.accelerationStructure = VK_TRUE;
+	vk::PhysicalDeviceRayQueryFeaturesKHR ray_query_features {};
+	ray_query_features.rayQuery = VK_TRUE;
+
+	vk::PhysicalDeviceFrameBoundaryFeaturesEXT frame_boundary_features {};
+	frame_boundary_features.frameBoundary = VK_TRUE;
+	vk::PhysicalDeviceVulkan12Features vulkan12_features {};
+	vk::PhysicalDeviceVulkan13Features vulkan13_features {};
+	vk::PhysicalDeviceVulkan11Features vulkan11_features {};
+	vulkan12_features.pNext = &vulkan11_features;
+	vulkan13_features.pNext = &vulkan12_features;
+	vulkan13_features.dynamicRendering = VK_TRUE;
+	vulkan13_features.synchronization2 = VK_TRUE;
+	vulkan13_features.shaderDemoteToHelperInvocation = VK_TRUE;
+	vulkan12_features.descriptorIndexing = VK_TRUE;
+	vulkan12_features.runtimeDescriptorArray = VK_TRUE;
+	vulkan12_features.descriptorBindingPartiallyBound = VK_TRUE;
+	vulkan12_features.descriptorBindingVariableDescriptorCount = VK_TRUE;
+	vulkan12_features.bufferDeviceAddress = VK_TRUE;
+	vulkan12_features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+	vulkan12_features.separateDepthStencilLayouts = VK_TRUE;
+	vulkan12_features.timelineSemaphore = VK_TRUE;
+	vulkan11_features.shaderDrawParameters = VK_TRUE;
+	vulkan11_features.multiview = VK_TRUE;
+
+	// Chained only when the extension was requested
+	void** chain_tail = &vulkan11_features.pNext;
+	if (m_frame_boundary_supported) {
+		*chain_tail = &frame_boundary_features;
+		chain_tail = &frame_boundary_features.pNext;
+	}
+	if (m_mesh_shader_supported) {
+		*chain_tail = &mesh_shader_features;
+		chain_tail = &mesh_shader_features.pNext;
+	}
+	if (m_ray_tracing_supported) {
+		*chain_tail = &acceleration_structure_features;
+		acceleration_structure_features.pNext = &ray_query_features;
+	}
+
+	device_ci.pNext = &vulkan13_features;
+
+	m_device = vk::raii::Device(m_physical_device, device_ci);
+
+	m_graphics_queue = m_device.getQueue(m_graphics_queue_family_index, 0);
+	m_compute_queue = m_device.getQueue(m_compute_queue_family_index, 0);
+	m_transfer_queue = m_device.getQueue(m_transfer_queue_family_index, m_transfer_queue_index);
+	if (m_transfer_queue == m_compute_queue) {
+		TOAST_WARN(
+		    "Render", "Transfer and compute share one queue on this device; uploads and async compute serialize on a shared lock"
+		);
+	}
+
+	m_async_compute = std::make_unique<AsyncCompute>(
+	    m_device,
+	    m_compute_queue_family_index,
+	    m_compute_queue,
+	    m_transfer_queue == m_compute_queue ? &m_transfer_submit_mutex : nullptr
+	);
+
+	vma::AllocatorCreateInfo allocator_ci {};
+	// Never above the device or VMA calls entry points that capture tools capping the version lack
+	const uint32_t device_version = m_physical_device.getProperties().apiVersion;
+	allocator_ci.vulkanApiVersion = std::min<uint32_t>(
+	    VK_API_VERSION_1_4, VK_MAKE_API_VERSION(0, VK_API_VERSION_MAJOR(device_version), VK_API_VERSION_MINOR(device_version), 0)
+	);
+	allocator_ci.physicalDevice = *m_physical_device;
+
+	// VMA asserts without eBufferDeviceAddress
+	allocator_ci.flags = vma::AllocatorCreateFlagBits::eBufferDeviceAddress;
+	if (m_memory_budget_supported) {
+		allocator_ci.flags |= vma::AllocatorCreateFlagBits::eExtMemoryBudget;
+	}
+
+#ifdef TRACY_ENABLE
+	static constexpr vma::DeviceMemoryCallbacks tracy_memory_callbacks {&tracyVmaAllocate, &tracyVmaFree, nullptr};
+	allocator_ci.pDeviceMemoryCallbacks = &tracy_memory_callbacks;
+#endif
+
+	m_allocator.emplace(m_instance, m_device, allocator_ci);
+}
+
+auto VulkanCore::calculateDeviceScore(const vk::PhysicalDevice& device, std::span<const char* const> required_device_extensions)
+    -> DeviceScore {
+	ZoneScoped;
+	DeviceScore score {};
+
+	const auto props = device.getProperties();
+	vk::PhysicalDeviceFeatures2 features2 {};
+	vk::PhysicalDeviceVulkan12Features vulkan12_features {};
+	vk::PhysicalDeviceVulkan13Features vulkan13_features {};
+	vk::PhysicalDeviceVulkan11Features vulkan11_features {};
+	vulkan12_features.pNext = &vulkan11_features;
+	vulkan13_features.pNext = &vulkan12_features;
+	features2.pNext = &vulkan13_features;
+	device.getFeatures2(&features2);
+	const auto features = device.getFeatures();
+	const auto memory_props = device.getMemoryProperties();
+	const auto extensions = device.enumerateDeviceExtensionProperties();
+	const auto queue_families = device.getQueueFamilyProperties();
+	const auto selected_queues = selectQueueFamilies(device);
+
+	switch (props.deviceType) {
+		case vk::PhysicalDeviceType::eDiscreteGpu: score.device_type = 1000; break;
+		case vk::PhysicalDeviceType::eIntegratedGpu: score.device_type = 100; break;
+		case vk::PhysicalDeviceType::eVirtualGpu: score.device_type = 10; break;
+		case vk::PhysicalDeviceType::eCpu: score.device_type = -100; break;
+		default: score.device_type = 0; break;
+	}
+
+	std::size_t total_memory = 0;
+	for (uint32_t i = 0; i < memory_props.memoryHeapCount; ++i) {
+		const auto& heap = memory_props.memoryHeaps[i];
+		if (heap.flags & vk::MemoryHeapFlagBits::eDeviceLocal) {
+			total_memory += static_cast<std::size_t>(heap.size);
+		}
+	}
+	if (total_memory > 12ull * k_gigabyte_bytes) {
+		score.memory = 1200;
+	} else if (total_memory > 0) {
+		score.memory = static_cast<int>(total_memory / k_gigabyte_bytes) * 100;
+	} else {
+		score.memory = 0;
+	}
+
+	const auto& limits = props.limits;
+
+	int texture_score = static_cast<int>(std::min(limits.maxImageDimension2D, 16384u) / 1024);
+	texture_score = std::min(texture_score, 300);
+
+	int vertex_attr_score = static_cast<int>(limits.maxVertexInputAttributes) / 32;
+	vertex_attr_score = std::min(vertex_attr_score, 100);
+
+	int push_const_score = static_cast<int>(limits.maxPushConstantsSize) / 256;
+	push_const_score = std::min(push_const_score, 100);
+
+	int ubo_score = static_cast<int>(limits.maxPerStageDescriptorUniformBuffers) / 8;
+	ubo_score = std::min(ubo_score, 100);
+
+	int ssbo_score = static_cast<int>(limits.maxPerStageDescriptorStorageBuffers) / 4;
+	ssbo_score = std::min(ssbo_score, 100);
+
+	score.limits = texture_score + vertex_attr_score + push_const_score + ubo_score + ssbo_score;
+	score.limits = std::min(score.limits, 1000);
+
+	int feature_score = 0;
+
+	if (features.samplerAnisotropy) {
+		feature_score += 200;
+	}
+	if (features.geometryShader) {
+		feature_score += 300;
+	}
+	if (features.tessellationShader) {
+		feature_score += 400;
+	}
+
+	if (features.multiDrawIndirect) {
+		feature_score += 500;
+	}
+	if (features.independentBlend) {
+		feature_score += 200;
+	}
+	if (features.fullDrawIndexUint32) {
+		feature_score += 100;
+	}
+
+	int extra_features = 0;
+	if (features.logicOp) {
+		extra_features += 100;
+	}
+	if (features.pipelineStatisticsQuery) {
+		extra_features += 100;
+	}
+	if (features.vertexPipelineStoresAndAtomics) {
+		extra_features += 50;
+	}
+	feature_score += std::min(extra_features, 100);
+
+	score.features = std::min(feature_score, 500);
+
+	int extension_score = 0;
+	std::vector<std::string> required_missing_names;
+
+	const bool supports_dynamic_rendering = props.apiVersion >= VK_API_VERSION_1_3 && vulkan13_features.dynamicRendering == VK_TRUE;
+	if (!supports_dynamic_rendering) {
+		required_missing_names.emplace_back("Vulkan 1.3 dynamic rendering");
+	} else {
+		extension_score += 100;
+	}
+
+	const bool supports_sync2 = props.apiVersion >= VK_API_VERSION_1_3 && vulkan13_features.synchronization2 == VK_TRUE;
+	if (!supports_sync2) {
+		required_missing_names.emplace_back("Vulkan 1.3 synchronization2");
+	} else {
+		extension_score += 75;
+	}
+
+	const bool supports_shader_demote =
+	    props.apiVersion >= VK_API_VERSION_1_3 && vulkan13_features.shaderDemoteToHelperInvocation == VK_TRUE;
+	if (!supports_shader_demote) {
+		required_missing_names.emplace_back("Vulkan 1.3 shaderDemoteToHelperInvocation (required by UI clip())");
+	} else {
+		extension_score += 75;
+	}
+
+	const bool supports_descriptor_indexing =
+	    props.apiVersion >= VK_API_VERSION_1_2 && vulkan12_features.descriptorIndexing == VK_TRUE;
+	if (!supports_descriptor_indexing) {
+		required_missing_names.emplace_back("Vulkan 1.2 descriptor indexing");
+	} else {
+		extension_score += 75;
+	}
+
+	const bool supports_runtime_descriptor_array =
+	    props.apiVersion >= VK_API_VERSION_1_2 && vulkan12_features.runtimeDescriptorArray == VK_TRUE;
+	if (!supports_runtime_descriptor_array) {
+		required_missing_names.emplace_back("Vulkan 1.2 runtime descriptor arrays");
+	} else {
+		extension_score += 50;
+	}
+
+	const bool supports_partially_bound =
+	    props.apiVersion >= VK_API_VERSION_1_2 && vulkan12_features.descriptorBindingPartiallyBound == VK_TRUE;
+	if (!supports_partially_bound) {
+		required_missing_names.emplace_back("Vulkan 1.2 partially bound descriptors");
+	} else {
+		extension_score += 25;
+	}
+
+	const bool supports_variable_descriptor_count =
+	    props.apiVersion >= VK_API_VERSION_1_2 && vulkan12_features.descriptorBindingVariableDescriptorCount == VK_TRUE;
+	if (!supports_variable_descriptor_count) {
+		required_missing_names.emplace_back("Vulkan 1.2 variable descriptor count");
+	} else {
+		extension_score += 25;
+	}
+
+	const bool supports_buffer_device_address =
+	    props.apiVersion >= VK_API_VERSION_1_2 && vulkan12_features.bufferDeviceAddress == VK_TRUE;
+	if (!supports_buffer_device_address) {
+		required_missing_names.emplace_back("Vulkan 1.2 buffer device address");
+	} else {
+		extension_score += 75;
+	}
+
+	const bool supports_separate_depth_stencil_layouts =
+	    props.apiVersion >= VK_API_VERSION_1_2 && vulkan12_features.separateDepthStencilLayouts == VK_TRUE;
+	if (!supports_separate_depth_stencil_layouts) {
+		required_missing_names.emplace_back("Vulkan 1.2 separate depth stencil layouts");
+	}
+
+	const bool supports_shader_draw_parameters =
+	    props.apiVersion >= VK_API_VERSION_1_1 && vulkan11_features.shaderDrawParameters == VK_TRUE;
+	if (!supports_shader_draw_parameters) {
+		required_missing_names.emplace_back("Vulkan 1.1 shaderDrawParameters");
+	} else {
+		extension_score += 25;
+	}
+
+	const bool supports_multiview = props.apiVersion >= VK_API_VERSION_1_1 && vulkan11_features.multiview == VK_TRUE;
+	if (!supports_multiview) {
+		required_missing_names.emplace_back("Vulkan 1.1 multiview");
+	} else {
+		extension_score += 25;
+	}
+
+	for (const auto* required : required_device_extensions) {
+		bool found = false;
+		for (const auto& available : extensions) {
+			if (std::string(required) == available.extensionName) {
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			required_missing_names.emplace_back(required);
+		} else {
+			extension_score += 50;
+		}
+	}
+	extension_score -= static_cast<int>(required_missing_names.size()) * 100;
+
+	const std::vector<const char*> optional_extensions = {
+	  VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
+	  VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME,
+	  VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+	  VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME
+	};
+
+	for (const auto* ext : optional_extensions) {
+		for (const auto& available : extensions) {
+			if (std::string(ext) == available.extensionName) {
+				extension_score += 10;
+				break;
+			}
+		}
+	}
+
+	score.extensions = std::max(std::min(extension_score, 500), -500);
+
+	uint32_t vulkan_version = props.apiVersion;
+	int version_score = 0;
+
+	switch (VK_VERSION_MINOR(vulkan_version)) {
+		case 0: version_score = 0; break;
+		case 1: version_score = 25; break;
+		case 2: version_score = 50; break;
+		default: version_score = 100; break;
+	}
+
+	score.vulkan_support = version_score;
+
+	int queue_score = 0;
+	if (selected_queues.isComplete()) {
+		score.graphics_idx = static_cast<int>(selected_queues.graphics);
+		score.compute_idx = static_cast<int>(selected_queues.compute);
+		score.transfer_idx = static_cast<int>(selected_queues.transfer);
+
+		queue_score += 100;
+		if ((queue_families[selected_queues.graphics].queueFlags & vk::QueueFlagBits::eGraphics) != vk::QueueFlags {}) {
+			queue_score += 100;
+		}
+		if ((queue_families[selected_queues.compute].queueFlags & vk::QueueFlagBits::eCompute) != vk::QueueFlags {}) {
+			queue_score += 150;
+		}
+		if ((queue_families[selected_queues.transfer].queueFlags & vk::QueueFlagBits::eTransfer) != vk::QueueFlags {}) {
+			queue_score += 100;
+		}
+
+		queue_score += selected_queues.isDistinct() ? 250 : -500;
+	} else {
+		score.graphics_idx = -1;
+		score.compute_idx = -1;
+		score.transfer_idx = -1;
+		queue_score -= 1000;
+	}
+
+	score.queue_support = queue_score;
+
+	score.total = score.device_type + score.memory + score.limits + score.features + score.extensions + score.vulkan_support +
+	              score.queue_support;
+
+	score.missing_extensions = required_missing_names;
+
+	return score;
+}
+
+auto VulkanCore::checkInstanceExtensionSupport(std::string_view extension) -> bool {
+	uint32_t count = 0;
+	vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr);
+
+	std::vector<VkExtensionProperties> available(count);
+	vkEnumerateInstanceExtensionProperties(nullptr, &count, available.data());
+
+	return std::ranges::any_of(available, [extension](const VkExtensionProperties& e) {
+		return extension == static_cast<const char*>(e.extensionName);
+	});
+}
+
+auto VulkanCore::checkValidationLayerSupport() -> bool {
+#ifndef DEBUG
+	return false;
+#else
+	{
+		uint32_t layer_count;
+		vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
+
+		std::vector<VkLayerProperties> available_layers(layer_count);
+		vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
+
+		return std::find_if(available_layers.begin(), available_layers.end(), [](const VkLayerProperties& layer) {
+			       return std::string(layer.layerName) == "VK_LAYER_KHRONOS_validation";
+		       }) != available_layers.end();
+	}
+#endif
+}
+
+void VulkanCore::loadPipelineCache() const {
+	ZoneScoped;
+	if (!assets::AssetManager::isInitialized()) {
+		return;
+	}
+
+	const vk::PhysicalDeviceProperties props = m_physical_device.getProperties();
+	const std::string uri = vulkanCorePipelineCacheUri(props);
+	const auto bytes = assets::AssetManager::get().tryLoadBytes(uri);
+	if (!bytes.has_value()) {
+		TOAST_INFO("Render", "No pipeline cache at {}; pipelines compile from scratch this run", uri);
+		return;
+	}
+	if (!vulkanCorePipelineCacheMatches(*bytes, props)) {
+		TOAST_INFO("Render", "Pipeline cache {} is from another GPU or driver; ignoring it", uri);
+		return;
+	}
+
+	try {
+		const vk::raii::PipelineCache loaded(m_device, vk::PipelineCacheCreateInfo({}, bytes->size(), bytes->data()));
+		m_pipeline_cache.merge(*loaded);
+		TOAST_INFO("Render", "Loaded pipeline cache {} ({} KiB)", uri, bytes->size() / 1024);
+	} catch (const std::exception& e) { TOAST_WARN("Render", "Pipeline cache {} could not be loaded: {}", uri, e.what()); }
+}
+
+void VulkanCore::savePipelineCache() const {
+	ZoneScoped;
+	if (!assets::AssetManager::isInitialized() || !*m_pipeline_cache) {
+		return;
+	}
+
+	const std::string uri = vulkanCorePipelineCacheUri(m_physical_device.getProperties());
+	try {
+		const std::vector<uint8_t> data = m_pipeline_cache.getData();
+		if (data.empty()) {
+			return;
+		}
+		if (!assets::AssetManager::get().saveBytes(uri, data)) {
+			TOAST_WARN("Render", "Pipeline cache could not be written to {}", uri);
+			return;
+		}
+		TOAST_INFO("Render", "Saved pipeline cache {} ({} KiB)", uri, data.size() / 1024);
+	} catch (const std::exception& e) { TOAST_WARN("Render", "Pipeline cache data could not be read: {}", e.what()); }
+}
+
+void VulkanCore::updateTracyMemory() const {
+#ifdef TRACY_ENABLE
+	ZoneScoped;
+	auto& tracker = tracyVramTracker();
+	{
+		std::scoped_lock lock(tracker.mutex);
+		if (!TracyIsConnected) {
+			// The next connection is a new session that has seen nothing
+			tracker.session_synced = false;
+			for (auto& [memory, block] : tracker.blocks) {
+				block.reported = false;
+			}
+			return;
+		}
+		if (!tracker.session_synced) {
+			// Sent per connection since on demand Tracy dropped any earlier config
+			TracyPlotConfig(k_tracy_plot_used.data(), tracy::PlotFormatType::Number, false, true, 0);
+			TracyPlotConfig(k_tracy_plot_budget.data(), tracy::PlotFormatType::Number, false, false, 0);
+			TracyPlotConfig(k_tracy_plot_allocations.data(), tracy::PlotFormatType::Number, false, true, 0);
+			TracyPlotConfig(k_tracy_plot_blocks.data(), tracy::PlotFormatType::Number, false, false, 0);
+			for (auto& [memory, block] : tracker.blocks) {
+				TracyAllocN(reinterpret_cast<void*>(memory), block.size, k_tracy_vram_pool.data());
+				block.reported = true;
+			}
+			tracker.session_synced = true;
+		}
+	}
+
+	// Same VMA budgets as the performance window so both tools agree
+	const auto budgets = m_allocator->getHeapBudgets();
+	const auto properties = m_physical_device.getMemoryProperties();
+	VkDeviceSize used = 0;
+	VkDeviceSize budget = 0;
+	VkDeviceSize allocations = 0;
+	VkDeviceSize blocks = 0;
+	for (uint32_t heap = 0; heap < properties.memoryHeapCount && heap < budgets.size(); ++heap) {
+		if ((properties.memoryHeaps[heap].flags & vk::MemoryHeapFlagBits::eDeviceLocal) == vk::MemoryHeapFlags {}) {
+			continue;
+		}
+		used += budgets[heap].usage;
+		budget += budgets[heap].budget;
+		allocations += budgets[heap].statistics.allocationBytes;
+		blocks += budgets[heap].statistics.blockBytes;
+	}
+	constexpr double k_mib = 1024.0 * 1024.0;
+	TracyPlot(k_tracy_plot_used.data(), static_cast<double>(used) / k_mib);
+	TracyPlot(k_tracy_plot_budget.data(), static_cast<double>(budget) / k_mib);
+	TracyPlot(k_tracy_plot_allocations.data(), static_cast<double>(allocations) / k_mib);
+	TracyPlot(k_tracy_plot_blocks.data(), static_cast<double>(blocks) / k_mib);
+#endif
+}
+}
