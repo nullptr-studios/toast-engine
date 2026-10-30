@@ -4702,11 +4702,12 @@ auto Simulator::explode(const ExplosionDamage& explosion) -> uint32_t {
 	if (not mainThreadMutationAllowed()) {
 		return 0;
 	}
-	if (not std::isfinite(explosion.force) || explosion.force <= 0.0f || not std::isfinite(glm::length(explosion.point))) {
+	if (not std::isfinite(explosion.force) || explosion.force <= 0.0f || not std::isfinite(glm::length(explosion.point)) ||
+	    not std::isfinite(explosion.max_radius) || explosion.max_radius <= 0.0f) {
 		return 0;
 	}
 
-	const float max_radius = tunables().explosion_max_radius;
+	const float max_radius = explosion.max_radius;
 	const AABB bounds {.min = explosion.point - glm::vec3(max_radius), .max = explosion.point + glm::vec3(max_radius)};
 
 	uint32_t moved = 0;
@@ -4958,7 +4959,7 @@ auto Simulator::explodeShape(ShapeID shape_id, const ExplosionDamage& explosion)
 			return 0;
 		}
 		reach = explosionReach(
-		    explosion.force, explosion.falloff, weakestToughness(materials, explosion.max_hardness), tunables().explosion_max_radius
+		    explosion.force, explosion.falloff, weakestToughness(materials, explosion.max_hardness), explosion.max_radius
 		);
 		if (not(reach > 0.0f)) {
 			return 0;

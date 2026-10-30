@@ -1,5 +1,15 @@
+import fullscreen;
+
 [[vk::binding(0,0)]]
 Sampler2D gUITexture;
+
+struct UiPush {
+    // x paper white scale, 0 on SDR
+    float4 hdr;
+};
+
+[[vk::push_constant]]
+UiPush gPush;
 
 struct VSOutput {
     float4 position : SV_Position;
@@ -18,5 +28,5 @@ VSOutput vertexMain(uint vertex_id : SV_VertexID) {
 
 [shader("fragment")]
 float4 fragmentMain(VSOutput input) : SV_Target0 {
-    return gUITexture.Sample(input.uv);
+    return uiToDisplay(gUITexture.Sample(input.uv), gPush.hdr.x);
 }

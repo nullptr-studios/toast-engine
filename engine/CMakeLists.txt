@@ -106,15 +106,19 @@ target_link_libraries(toast_engine
         unofficial::VulkanMemoryAllocator-Hpp::VulkanMemoryAllocator-Hpp
         slang::gfx slang::slang protobuf::libprotobuf tinysplinecxx::tinysplinecxx
         LZ4::lz4
-        imgui::imgui
+        $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:imgui::imgui>
         RmlUi::RmlUi
         cpptrace::cpptrace
         $<$<CONFIG:Debug>:${EXTERNAL_LIBS_DEBUG}>
         $<$<NOT:$<CONFIG:Debug>>:${EXTERNAL_LIBS_RELEASE}>
         ${LUA_LIBRARIES}
         PUBLIC
-        Tracy::TracyClient glm::glm nlohmann_json::nlohmann_json GPUOpen::VulkanMemoryAllocator
+        $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:Tracy::TracyClient> glm::glm nlohmann_json::nlohmann_json GPUOpen::VulkanMemoryAllocator
 )
+
+# Release links without Tracy
+get_target_property(_tracy_headers Tracy::TracyClient INTERFACE_INCLUDE_DIRECTORIES)
+target_include_directories(toast_engine PUBLIC ${_tracy_headers})
 
 foreach (config IN ITEMS Debug Release RelWithDebInfo MinSizeRel)
     string(TOUPPER "${config}" config_upper)
@@ -135,10 +139,10 @@ if (WIN32)
 endif ()
 target_precompile_headers(toast_engine PRIVATE pch.h)
 # Defines VMA_IMPLEMENTATION so it must not use the PCH
-set_source_files_properties(src/toast/renderer/vma.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON SKIP_UNITY_BUILD_INCLUSION ON)
+set_source_files_properties(src/toast/renderer/core/vma.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON SKIP_UNITY_BUILD_INCLUSION ON)
 # Defines STB_IMAGE_IMPLEMENTATION
 set_source_files_properties(src/toast/assets/hdr_image.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON SKIP_UNITY_BUILD_INCLUSION ON)
-set_source_files_properties(src/toast/renderer/shared_texture_output_target.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+set_source_files_properties(src/toast/renderer/output/shared_texture_output_target.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 set_source_files_properties(src/toast/input/trackpad.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON SKIP_UNITY_BUILD_INCLUSION ON)
 set_source_files_properties(src/toast/crash_handler.cpp src/toast/crash_handler_posix.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 set_source_files_properties(src/toast/backtrace.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
@@ -161,6 +165,7 @@ target_compile_definitions(toast_engine PUBLIC
         $<$<AND:$<CONFIG:Debug>,$<BOOL:${TOAST_SYNC_VALIDATION}>>:TOAST_SYNC_VALIDATION>
         $<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>>:NDEBUG>
         $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:TRACY_ENABLE>
+        $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:TOAST_DEV_TOOLS>
         $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:TOAST_BREAK_ON_ERROR>
         $<$<CONFIG:RelWithDebInfo>:TOAST_LUA_OWNERSHIP_CHECKS>
         GLM_FORCE_INTRINSICS

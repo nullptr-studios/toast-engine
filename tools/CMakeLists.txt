@@ -4,6 +4,7 @@ add_subdirectory(log_server)
 add_subdirectory(reflection_generator)
 add_subdirectory(asset_packer)
 add_subdirectory(crash_reporter)
+add_subdirectory(shader_registers)
 
 if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/kenzo/CMakeLists.txt")
     message(FATAL_ERROR "kenzo submodule is empty, run git submodule update --init")

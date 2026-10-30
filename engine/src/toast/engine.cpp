@@ -20,44 +20,49 @@
 #include "profiler_sections.hpp"
 #include "project_settings.hpp"
 #include "reflect/reflect.hpp"
-#include "renderer/passes/bloom_pass.hpp"
-#include "renderer/passes/cluster_lighting_pass.hpp"
-#include "renderer/passes/debris_pass.hpp"
-#include "renderer/passes/debug_pass.hpp"
-#include "renderer/passes/environment_pass.hpp"
-#include "renderer/passes/fxaa_pass.hpp"
-#include "renderer/passes/gi_pass.hpp"
-#include "renderer/passes/grid_pass.hpp"
-#include "renderer/passes/reflection_probe_pass.hpp"
-#include "renderer/passes/shadow_pass.hpp"
-#include "renderer/passes/ssao_pass.hpp"
-#include "renderer/passes/ssr_pass.hpp"
-#include "renderer/passes/taa_pass.hpp"
-#include "renderer/passes/tonemap_pass.hpp"
-#include "renderer/passes/traced_shadow_pass.hpp"
-#include "renderer/passes/traced_specular_pass.hpp"
-#include "renderer/passes/volumetric_pass.hpp"
-#include "renderer/passes/voxel_pass.hpp"
-#include "renderer/render_events.hpp"
-#include "renderer/renderer_settings.hpp"
-#include "renderer/sdl_output_target.hpp"
-#include "renderer/shader_cache.hpp"
-#include "renderer/shader_compiler.hpp"
-#include "renderer/shader_layout.hpp"
-#include "renderer/shared_texture_output_target.hpp"
-#include "renderer/vulkan_core.hpp"
-#include "renderer/vulkan_renderer.hpp"
+#include "toast/renderer/passes/geometry/debris_pass.hpp"
+#include "toast/renderer/passes/lighting/cluster_lighting_pass.hpp"
+#include "toast/renderer/passes/post/bloom_pass.hpp"
+#if defined(TOAST_DEV_TOOLS)
+#include "toast/renderer/passes/debug/debug_pass.hpp"
+#endif
 #include "scripting/lua_state.hpp"
 #include "scripting/script_dispatch.hpp"
 #include "scripting/script_runtime.hpp"
 #include "settings/settings.hpp"
 #include "thread_pool.hpp"
 #include "time.hpp"
+#include "toast/renderer/core/vulkan_core.hpp"
+#include "toast/renderer/output/sdl_output_target.hpp"
+#include "toast/renderer/output/shared_texture_output_target.hpp"
+#include "toast/renderer/passes/debug/grid_pass.hpp"
+#include "toast/renderer/passes/geometry/voxel_pass.hpp"
+#include "toast/renderer/passes/lighting/environment_pass.hpp"
+#include "toast/renderer/passes/lighting/gi_pass.hpp"
+#include "toast/renderer/passes/lighting/reflection_probe_pass.hpp"
+#include "toast/renderer/passes/lighting/shadow_pass.hpp"
+#include "toast/renderer/passes/lighting/ssao_pass.hpp"
+#include "toast/renderer/passes/lighting/ssr_pass.hpp"
+#include "toast/renderer/passes/lighting/traced_shadow_pass.hpp"
+#include "toast/renderer/passes/lighting/traced_specular_pass.hpp"
+#include "toast/renderer/passes/lighting/volumetric_pass.hpp"
+#include "toast/renderer/passes/post/fxaa_pass.hpp"
+#include "toast/renderer/passes/post/lens_flare_pass.hpp"
+#include "toast/renderer/passes/post/motion_blur_pass.hpp"
+#include "toast/renderer/passes/post/taa_pass.hpp"
+#include "toast/renderer/passes/post/tonemap_pass.hpp"
+#include "toast/renderer/render_events.hpp"
+#include "toast/renderer/settings/renderer_settings.hpp"
+#include "toast/renderer/shaders/shader_cache.hpp"
+#include "toast/renderer/shaders/shader_compiler.hpp"
+#include "toast/renderer/shaders/shader_layout.hpp"
+#include "toast/renderer/vulkan_renderer.hpp"
 #include "ui/render/ui_pass.hpp"
 #include "ui/render/world_ui_pass.hpp"
 #include "ui/ui_system.hpp"
 #include "window/base_window.hpp"
 #include "window/sdl_window.hpp"
+#include "window/startup_splash.hpp"
 #include "window/window_events.hpp"
 #include "world/camera.hpp"
 #include "world/play_workspace.hpp"
@@ -530,7 +535,7 @@ void Engine::tick() {
 		if (m->renderer && it != m->owners.end()) {
 			if (Workspace* ws = it->second->asWorkspace()) {
 				const auto gizmo = ws->gizmoRenderState();
-				renderer::VulkanRenderer::GizmoState gizmo_state {
+				renderer::GizmoState gizmo_state {
 				  .visible = gizmo.visible,
 				  .tool = gizmo.tool,
 				  .origin = gizmo.origin,
@@ -616,7 +621,8 @@ auto Engine::shootVoxel(
 
 void Engine::createSDLWindow(const char* w_name) {
 	ZoneScoped;
-	m->window = std::make_unique<SDLWindow>(w_name, 1080, 720, SDL_WINDOW_VULKAN);
+	// Hidden until the shaders compile
+	m->window = std::make_unique<SDLWindow>(w_name, 1080, 720, SDL_WINDOW_VULKAN | SDL_WINDOW_HIDDEN);
 
 	auto* sdl_window = static_cast<SDL_Window*>(m->window->nativeHandle());
 	if (m->ui_system) {
@@ -627,17 +633,43 @@ void Engine::createSDLWindow(const char* w_name) {
 	m->vulkan_core = std::make_unique<renderer::VulkanCore>(instance_extensions, device_extensions);
 
 	// Compile every stale shader up front
-	renderer::ShaderCache::get().compileAllAtStartup();
+	renderer::ShaderCompiler::setFullOptimization(true);
+	renderer::ShaderCompiler::setMaxParallelCompiles(std::clamp<size_t>(std::thread::hardware_concurrency(), 2, 8));
+	{
+		StartupSplash splash;
+		renderer::ShaderCache::get().compileAllAtStartup([&splash](const renderer::ShaderCache::StartupProgress& progress) {
+			splash.update(progress.finished, progress.total, progress.compiling);
+		});
+		if (splash.closeRequested()) {
+			event::send<event::ExitApplication>();
+		}
+	}
+	SDL_ShowWindow(sdl_window);
+	SDL_RaiseWindow(sdl_window);
+
+	// Reads true only once the window is shown
+	const SDLWindow::DisplayHdr display_hdr = SDLWindow::queryDisplayHdr(sdl_window);
+	const auto hdr_setting = settings::Settings::get().value(renderer::k_hdr_output);
+	const bool prefer_hdr = display_hdr.enabled && (!hdr_setting.has_value() || std::get<bool>(*hdr_setting));
+	TOAST_INFO(
+	    "Render",
+	    "Display HDR {} (SDR white {:.2f}, headroom {:.2f}), HDR output {}",
+	    display_hdr.enabled ? "on" : "off",
+	    display_hdr.sdr_white,
+	    display_hdr.headroom,
+	    prefer_hdr ? "requested" : "off"
+	);
 
 	// create output texture
 	auto output_target = std::make_unique<renderer::SDLOutputTarget>(
-	    *m->vulkan_core, sdl_window, renderer::SDLOutputTarget::queryExtent(sdl_window)
+	    *m->vulkan_core, sdl_window, renderer::SDLOutputTarget::queryExtent(sdl_window), prefer_hdr
 	);
 	auto extent = output_target->getExtent();
 	auto color_format = output_target->getColorFormat();
 	auto depth_format = renderer::VulkanRenderer::selectDepthFormat(*m->vulkan_core);
 
 	m->renderer = std::make_unique<renderer::VulkanRenderer>(*m->vulkan_core, std::move(output_target));
+	m->renderer->setDisplayHdr(display_hdr.sdr_white, display_hdr.headroom);
 
 	// Constructed before any material pass so materials can bind the culled light buffers straight away
 	auto cluster_lighting_pass = std::make_unique<renderer::ClusterLightingPass>(*m->vulkan_core);
@@ -698,6 +730,8 @@ void Engine::createSDLWindow(const char* w_name) {
 	auto taa = std::make_unique<renderer::TaaPass>(*m->vulkan_core, scene_format, extent);
 	m->renderer->setTaaPass(taa.get());
 	m->renderer->addPostProcessPass(std::move(taa));
+	m->renderer->addPostProcessPass(std::make_unique<renderer::MotionBlurPass>(*m->vulkan_core, scene_format, extent));
+	m->renderer->addPostProcessPass(std::make_unique<renderer::LensFlarePass>(*m->vulkan_core, scene_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::BloomPass>(*m->vulkan_core, scene_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::TonemapPass>(*m->vulkan_core, color_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::FxaaPass>(*m->vulkan_core, color_format, extent));
@@ -709,16 +743,16 @@ void Engine::createSDLWindow(const char* w_name) {
 	m->renderer->addRenderPass(std::make_unique<ui::UIPass>(*m->vulkan_core, color_format, depth_format, extent));
 	if (m->ui_system) {
 		m->ui_system->initializeRenderer(*m->vulkan_core);
-		m->renderer->setUIFrameBuilder([ui = m->ui_system.get()](renderer::VulkanRenderer::RenderFrame& frame) {
-			ui->buildDrawFrame(frame);
-		});
+		m->renderer->setUIFrameBuilder([ui = m->ui_system.get()](renderer::RenderFrame& frame) { ui->buildDrawFrame(frame); });
 	}
 
-	// Players get the overlay above the game UI and hidden until F3
+#if defined(TOAST_DEV_TOOLS)
+	// Overlay above the game UI and hidden until F3
 	auto debug_pass =
 	    std::make_unique<renderer::DebugPass>(*m->vulkan_core, color_format, depth_format, extent, &cluster_lighting_pass_ref);
 	debug_pass->setEditorPanelsEnabled(false);
 	m->renderer->addRenderPass(std::move(debug_pass));
+#endif
 
 	// FIXME: CAPPED AT 240 for now
 	m->renderer->setFrameRateLimit(240.0);
@@ -733,6 +767,8 @@ void Engine::createAvaloniaWindow() {
 	settings::Settings::get().setActiveLayer(settings::Layer::project);
 
 	m->vulkan_core = std::make_unique<renderer::VulkanCore>(std::span<const char* const> {}, std::span<const char* const> {});
+
+	renderer::ShaderCache::get().compileAllAtStartup();
 
 	auto output_target = std::make_unique<renderer::SharedTextureOutputTarget>(*m->vulkan_core, vk::Extent2D(1080, 720));
 	auto color_format = output_target->getColorFormat();
@@ -802,27 +838,29 @@ void Engine::createAvaloniaWindow() {
 	auto taa = std::make_unique<renderer::TaaPass>(*m->vulkan_core, scene_format, extent);
 	m->renderer->setTaaPass(taa.get());
 	m->renderer->addPostProcessPass(std::move(taa));
+	m->renderer->addPostProcessPass(std::make_unique<renderer::MotionBlurPass>(*m->vulkan_core, scene_format, extent));
+	m->renderer->addPostProcessPass(std::make_unique<renderer::LensFlarePass>(*m->vulkan_core, scene_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::BloomPass>(*m->vulkan_core, scene_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::TonemapPass>(*m->vulkan_core, color_format, extent));
 	m->renderer->addPostProcessPass(std::make_unique<renderer::FxaaPass>(*m->vulkan_core, color_format, extent));
 
 	// Editor overlays, drawn after the tonemap in display space (see DebugPass::stage() / GridPass::stage())
 	m->renderer->addRenderPass(std::make_unique<renderer::GridPass>(*m->vulkan_core, color_format, depth_format, extent));
+#if defined(TOAST_DEV_TOOLS)
 	m->renderer->addRenderPass(
 	    std::make_unique<renderer::DebugPass>(*m->vulkan_core, color_format, depth_format, extent, &cluster_lighting_pass_ref)
 	);
 
 	// DebugPass is enabled on editor
 	m->renderer->setDebugDrawEnabled(true);
+#endif
 	m->renderer->addRenderPass(
 	    std::make_unique<ui::WorldUIPass>(*m->vulkan_core, color_format, depth_format, extent, ui::WorldUIPass::Layer::overlay)
 	);
 	m->renderer->addRenderPass(std::make_unique<ui::UIPass>(*m->vulkan_core, color_format, depth_format, extent));
 	if (m->ui_system) {
 		m->ui_system->initializeRenderer(*m->vulkan_core);
-		m->renderer->setUIFrameBuilder([ui = m->ui_system.get()](renderer::VulkanRenderer::RenderFrame& frame) {
-			ui->buildDrawFrame(frame);
-		});
+		m->renderer->setUIFrameBuilder([ui = m->ui_system.get()](renderer::RenderFrame& frame) { ui->buildDrawFrame(frame); });
 	}
 
 	// editor will always be capped

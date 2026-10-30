@@ -3,12 +3,14 @@
 #include "log.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <cpptrace/basic.hpp>
 #include <cpptrace/utils.hpp>
 #include <format>
 #include <mutex>
 #include <string_view>
 #include <unordered_map>
+#include <vector>
 
 #ifdef _WIN32
 #include <unordered_set>
@@ -29,6 +31,45 @@ std::unordered_map<std::uintptr_t, std::string> g_cache;
 std::uint64_t g_cache_generation = 0;
 #ifdef _WIN32
 std::unordered_set<std::uintptr_t> g_symbol_loaded_modules;
+
+// we need to unload pdbs since the backtrace of the logs loads them for logging
+// this is only a problem on windows btw
+void unloadDbghelpSymbols() noexcept {
+	using EnumCallback = BOOL(CALLBACK*)(PCSTR, DWORD64, PVOID);
+	using EnumModules = BOOL(WINAPI*)(HANDLE, EnumCallback, PVOID);
+	using UnloadModule = BOOL(WINAPI*)(HANDLE, DWORD64);
+
+	const HMODULE dbghelp = GetModuleHandleA("dbghelp.dll");
+	if (dbghelp == nullptr) {
+		return;
+	}
+	const auto enumModules = reinterpret_cast<EnumModules>(GetProcAddress(dbghelp, "SymEnumerateModules64"));
+	const auto unloadModule = reinterpret_cast<UnloadModule>(GetProcAddress(dbghelp, "SymUnloadModule64"));
+	if (enumModules == nullptr || unloadModule == nullptr) {
+		return;
+	}
+
+	const auto unloadSession = [&](HANDLE process) {
+		std::vector<DWORD64> bases;
+		enumModules(
+		    process,
+		    [](PCSTR, DWORD64 base, PVOID user) -> BOOL {
+			    static_cast<std::vector<DWORD64>*>(user)->push_back(base);
+			    return TRUE;
+		    },
+		    &bases
+		);
+		for (const DWORD64 base : bases) {
+			unloadModule(process, base);
+		}
+	};
+
+	unloadSession(GetCurrentProcess());
+	constexpr std::uintptr_t k_max_handle = 0x10000;
+	for (std::uintptr_t value = 4; value < k_max_handle; value += 4) {
+		unloadSession(reinterpret_cast<HANDLE>(value));
+	}
+}
 #endif
 
 struct Module {
@@ -202,6 +243,7 @@ void invalidateBacktraceCache() noexcept {
 	++g_cache_generation;
 #ifdef _WIN32
 	g_symbol_loaded_modules.clear();
+	unloadDbghelpSymbols();
 #endif
 }
 

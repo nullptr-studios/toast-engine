@@ -156,12 +156,13 @@ public partial class StartWindowViewModel : ViewModelBase {
 		tasks.Add(LoaderTask.Run("cmake --build .toast/cmake_cache", "cmake",
 			$"--build .toast/cmake_cache --config {gameBuildType} --parallel"));
 
-		var vm = new LoaderViewModel(tasks) {
-			OnComplete = async () => {
-				await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
-				_ = new ToastEngine(projectPath);
-			}
-		};
+		tasks.Add(LoaderTask.Do("Start engine", async log => {
+			log("Compiling changed shaders");
+			await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
+			_ = new ToastEngine(projectPath);
+		}));
+
+		var vm = new LoaderViewModel(tasks);
 
 		var desktop = (IClassicDesktopStyleApplicationLifetime)Application.Current!.ApplicationLifetime!;
 		desktop.MainWindow = new SplashLoaderWindow(vm);

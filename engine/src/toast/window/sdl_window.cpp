@@ -56,6 +56,15 @@ void forwardUtf8(std::string_view text) {
 
 namespace toast {
 
+auto SDLWindow::queryDisplayHdr(SDL_Window* window) -> DisplayHdr {
+	const SDL_PropertiesID props = SDL_GetWindowProperties(window);
+	return {
+	  .enabled = SDL_GetBooleanProperty(props, SDL_PROP_WINDOW_HDR_ENABLED_BOOLEAN, false),
+	  .sdr_white = SDL_GetFloatProperty(props, SDL_PROP_WINDOW_SDR_WHITE_LEVEL_FLOAT, 1.0f),
+	  .headroom = SDL_GetFloatProperty(props, SDL_PROP_WINDOW_HDR_HEADROOM_FLOAT, 1.0f),
+	};
+}
+
 SDLWindow::SDLWindow(const char* title, unsigned width, unsigned height, uint64_t flags) {
 	ZoneScoped;
 	const bool sdl_initialized = SDL_Init(SDL_INIT_VIDEO);
@@ -204,6 +213,12 @@ void SDLWindow::pollEvents() {
 
 			case SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED: {
 				event::send<event::WindowDisplayScale>(SDL_GetWindowDisplayScale(m.sdl_window.get()));
+				break;
+			}
+
+			case SDL_EVENT_WINDOW_HDR_STATE_CHANGED: {
+				const DisplayHdr hdr = queryDisplayHdr(m.sdl_window.get());
+				event::send<event::WindowHdr>(hdr.enabled, hdr.sdr_white, hdr.headroom);
 				break;
 			}
 

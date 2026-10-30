@@ -364,7 +364,7 @@ void registerPhysicsSettings() {
 	    8.0,
 	    {.label = "Explosion max radius",
 	     .category = "Fracture",
-	     .description = "Meters an explosion can break or push things at",
+	     .description = "Meters an explosion can break or push things at, unless it sets its own radius",
 	     .min = 0.0,
 	     .max = 64.0,
 	     .step = 0.5},

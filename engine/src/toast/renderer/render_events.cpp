@@ -1,7 +1,7 @@
-#include "render_events.hpp"
+#include "toast/renderer/render_events.hpp"
 
-#include "shader_cache.hpp"
-#include "vulkan_renderer.hpp"
+#include "toast/renderer/shaders/shader_cache.hpp"
+#include "toast/renderer/vulkan_renderer.hpp"
 
 #include <format>
 #include <generated/render_events.pb.h>

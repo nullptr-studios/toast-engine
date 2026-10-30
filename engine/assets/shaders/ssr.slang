@@ -8,7 +8,6 @@ struct SsrParams
 {
     float4x4 viewProjection;
     float4x4 inverseViewProjection;
-    /// xyz camera position w frame index for the noise
     float4 cameraPosition;
     // x intensity y max roughness z thickness w step count
     float4 tuning;
@@ -49,8 +48,6 @@ Sampler2D gTemporal;
 [[vk::binding(8, 0)]]
 Sampler2D gPreviousColor;
 
-static const float kPi = 3.14159265;
-
 /// Below this a surface is a mirror and gets one ray with no reuse
 static const float kMirrorRoughness = 0.05;
 
@@ -59,10 +56,8 @@ static const float kLobeTrim = 0.75;
 
 static const float kTemporalBlend = 0.1;
 
-static const uint kResolveTaps = 5u;
-static const float2 kResolvePattern[5] = {
-    float2(0.0, 0.0), float2(1.0, 0.3), float2(-0.3, 1.0), float2(-1.0, -0.3), float2(0.3, -1.0),
-};
+/// Covers the 4x4 stratum tile
+static const int kResolveReach = 2;
 
 typedef FullscreenVSOutput VSOutput;
 
@@ -106,13 +101,6 @@ float luminance(float3 color)
 float noiseAt(float2 pixel)
 {
     return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
-}
-
-/// Walks R2 per frame
-float2 noise2(float2 pixel)
-{
-    const float frame = gParams.cameraPosition.w;
-    return frac(float2(noiseAt(pixel), noiseAt(pixel.yx + float2(47.0, 17.0))) + frame * float2(0.7548776662, 0.5698402910));
 }
 
 struct SurfaceSample
@@ -260,7 +248,7 @@ float4 traceMain(VSOutput input) : SV_Target0
     const float3 N = surface.normal;
     const float3 V = normalize(gParams.cameraPosition.xyz - surface.position);
     const float NdotV = saturate(dot(N, V));
-    const float2 u = noise2(input.position.xy);
+    const float2 u = lobeStratum(int2(input.position.xy));
 
     float3 L = reflect(-V, N);
     float pdf = 1.0;
@@ -290,7 +278,7 @@ float4 traceMain(VSOutput input) : SV_Target0
 
     float2 hitUv;
     float travelled;
-    if (!marchScreen(origin, L, u, hitUv, travelled))
+    if (!marchScreen(origin, L, float2(noiseAt(input.position.xy), 0.0), hitUv, travelled))
     {
         return float4(0.0, 0.0, pdf, 0.0);
     }
@@ -336,63 +324,68 @@ float4 resolveMain(VSOutput input) : SV_Target0
     const float alpha = max(surface.roughness * surface.roughness, 1e-3);
 
     const bool mirror = surface.roughness <= kMirrorRoughness;
-    const uint taps = mirror ? 1u : kResolveTaps;
-    const float radius = lerp(1.0, 4.0, saturate(surface.roughness / max(gParams.tuning.y, 1e-4)));
-    const float angle = noise2(input.position.xy + 31.0).x * 2.0 * kPi;
-    const float2x2 rotation = float2x2(cos(angle), -sin(angle), sin(angle), cos(angle));
+    const int reach = mirror ? 0 : kResolveReach;
 
     // Tonemapped so one bright hit does not speckle
     float3 colorSum = float3(0.0, 0.0, 0.0);
     float brdfSum = 0.0;
     float confidenceSum = 0.0;
     float geometrySum = 0.0;
-    for (uint i = 0u; i < taps; ++i)
+    for (int y = -reach; y <= reach; ++y)
     {
-        const float2 uv = input.uv + mul(rotation, kResolvePattern[i]) * radius * texel;
-        const float4 hit = gHits.SampleLevel(uv, 0.0);
-
-        // A neighbour on another surface traced a ray this pixel could not have
-        float geometry = 1.0;
-        if (i > 0u)
+        for (int x = -reach; x <= reach; ++x)
         {
-            const SurfaceSample neighbour = surfaceAt(uv);
-            if (!neighbour.valid)
+            const int2 offset = int2(x, y);
+            const float2 uv = input.uv + float2(offset) * texel;
+            if (!insideScreen(uv))
             {
                 continue;
             }
-            geometry = planeWeight(surface, neighbour.position) * saturate(dot(neighbour.normal, N) * 4.0 - 3.0);
-        }
-        if (geometry <= 1e-3)
-        {
-            continue;
-        }
-        geometrySum += geometry;
-        if (hit.w <= 0.0)
-        {
-            continue;
-        }
+            const float4 hit = gHits.SampleLevel(uv, 0.0);
 
-        const float hitDepth = gDepth.SampleLevel(hit.xy, 0.0).r;
-        const float3 L = normalize(worldPositionFromDepth(hit.xy, hitDepth) - surface.position);
-        const float NdotL = dot(N, L);
-        if (NdotL <= 0.0)
-        {
-            continue;
-        }
+            // A neighbour on another surface traced a ray this pixel could not have
+            float geometry = mirror ? 1.0 : lobeStratumWeight(offset);
+            if (x != 0 || y != 0)
+            {
+                const SurfaceSample neighbour = surfaceAt(uv);
+                if (!neighbour.valid)
+                {
+                    continue;
+                }
+                geometry *= planeWeight(surface, neighbour.position) * saturate(dot(neighbour.normal, N) * 4.0 - 3.0);
+            }
+            if (geometry <= 1e-3)
+            {
+                continue;
+            }
+            geometrySum += geometry;
+            if (hit.w <= 0.0)
+            {
+                continue;
+            }
 
-        float brdf = 1.0;
-        if (!mirror)
-        {
-            const float3 H = normalize(V + L);
-            brdf = ggxD(saturate(dot(N, H)), alpha) * smithG1(NdotV, alpha) * smithG1(NdotL, alpha) / max(4.0 * NdotV, 1e-4) /
-                   max(hit.z, 1e-4);
-        }
-        brdf *= geometry;
+            const float hitDepth = gDepth.SampleLevel(hit.xy, 0.0).r;
+            const float3 L = normalize(worldPositionFromDepth(hit.xy, hitDepth) - surface.position);
+            const float NdotL = dot(N, L);
+            if (NdotL <= 0.0)
+            {
+                continue;
+            }
 
-        const float3 color = hitColor(hit.xy);
-        colorSum += brdf * hit.w * color / (1.0 + luminance(color));
-        brdfSum += brdf * hit.w;
-        confidenceSum += geometry * hit.w;
+            float brdf = 1.0;
+            if (!mirror)
+            {
+                const float3 H = normalize(V + L);
+                brdf = ggxD(saturate(dot(N, H)), alpha) * smithG1(NdotV, alpha) * smithG1(NdotL, alpha) / max(4.0 * NdotV, 1e-4) /
+                       max(hit.z, 1e-4);
+            }
+            brdf *= geometry;
+
+            const float3 color = hitColor(hit.xy);
+            colorSum += brdf * hit.w * color / (1.0 + luminance(color));
+            brdfSum += brdf * hit.w;
+            confidenceSum += geometry * hit.w;
+        }
     }
 
     if (brdfSum <= 1e-6 || geometrySum <= 1e-6)

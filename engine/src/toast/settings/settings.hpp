@@ -122,7 +122,9 @@ public:
 	///
 	/// A value of the wrong alternative is converted when the conversion is lossless-ish (int to double, bool
 	/// to int) and rejected otherwise, so a caller cannot silently turn a float setting into a string
-	auto setValue(std::string_view key, const Value& value) -> bool;
+	///
+	/// @p override_higher_layers clears the layers above the active one in memory and leaves their files alone
+	auto setValue(std::string_view key, const Value& value, bool override_higher_layers = false) -> bool;
 
 	/// @brief Drops @p key's override in the active layer, exposing whatever is underneath
 	auto reset(std::string_view key) -> bool;

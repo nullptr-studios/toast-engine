@@ -21,7 +21,7 @@
 #include <toast/engine.hpp>
 #include <toast/log.hpp>
 #include <toast/project_settings.hpp>
-#include <toast/renderer/vulkan_core.hpp>
+#include <toast/renderer/core/vulkan_core.hpp>
 #include <tracy/Tracy.hpp>
 
 namespace ui {
@@ -94,7 +94,7 @@ void UISystem::initializeRenderer(const renderer::VulkanCore& core) {
 	TOAST_INFO("UI", "RmlUi Vulkan backend initialized");
 }
 
-void UISystem::buildDrawFrame(renderer::VulkanRenderer::RenderFrame& frame) {
+void UISystem::buildDrawFrame(renderer::RenderFrame& frame) {
 	ZoneScopedN("UISystem::buildDrawFrame");
 
 	if (!m_render_interface) {

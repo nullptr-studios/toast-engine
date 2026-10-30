@@ -4,27 +4,29 @@
 
 #pragma once
 
-#include "compute_pass_base.hpp"
-#include "debug_draw.hpp"
-#include "depth_convention.hpp"
-#include "gi_settings.hpp"
-#include "gpu_sync.hpp"
-#include "gpu_timer.hpp"
-#include "output_target_base.hpp"
-#include "post_process_pass_base.hpp"
-#include "post_process_settings.hpp"
-#include "render_pass_base.hpp"
-#include "shader_layout.hpp"
-#include "shadow_constants.hpp"
-#include "shadow_slots.hpp"
-#include "voxel_blas_cache.hpp"
-#include "voxel_gpu_storage.hpp"
-#include "voxel_scene_patcher.hpp"
-#include "voxel_trace_scene.hpp"
-#include "vulkan_core.hpp"
-#include "vulkan_mesh.hpp"
-#include "vulkan_pipeline.hpp"
-#include "vulkan_texture.hpp"
+#include "toast/renderer/core/depth_convention.hpp"
+#include "toast/renderer/core/gpu_sync.hpp"
+#include "toast/renderer/core/gpu_timer.hpp"
+#include "toast/renderer/core/vulkan_core.hpp"
+#include "toast/renderer/debug/debug_draw.hpp"
+#include "toast/renderer/gpu_types.hpp"
+#include "toast/renderer/lighting/shadow_constants.hpp"
+#include "toast/renderer/lighting/shadow_slots.hpp"
+#include "toast/renderer/output/output_target_base.hpp"
+#include "toast/renderer/passes/compute_pass_base.hpp"
+#include "toast/renderer/passes/post_process_pass_base.hpp"
+#include "toast/renderer/passes/render_pass_base.hpp"
+#include "toast/renderer/render_frame.hpp"
+#include "toast/renderer/resources/vulkan_mesh.hpp"
+#include "toast/renderer/resources/vulkan_texture.hpp"
+#include "toast/renderer/settings/gi_settings.hpp"
+#include "toast/renderer/settings/post_process_settings.hpp"
+#include "toast/renderer/shaders/shader_layout.hpp"
+#include "toast/renderer/shaders/vulkan_pipeline.hpp"
+#include "toast/renderer/voxel/voxel_blas_cache.hpp"
+#include "toast/renderer/voxel/voxel_gpu_storage.hpp"
+#include "toast/renderer/voxel/voxel_scene_patcher.hpp"
+#include "toast/renderer/voxel/voxel_trace_scene.hpp"
 
 #include <algorithm>
 #include <array>
@@ -49,6 +51,7 @@
 #include <toast/assets/texture.hpp>
 #include <toast/events/event.inl>
 #include <toast/events/listener.hpp>
+#include <toast/settings/settings.hpp>
 #include <toast/world/gizmo_layout.hpp>
 #include <tracy/TracyVulkan.hpp>
 #include <type_traits>
@@ -105,25 +108,6 @@ public:
 	/// waitForOutputImage rounds of about 8 ms before a snapshot is dropped
 	static constexpr uint32_t k_output_acquire_attempts = 12;
 
-	static constexpr uint32_t k_max_fog_volumes = 32;
-
-	/// Mirrors volumetrics.slang FogVolume
-	struct FogVolumeGpu {
-		glm::mat4 world_to_local {1.0f};
-		/// xyz half extents w edge fade in meters
-		glm::vec4 extents_fade {0.0f};
-		/// rgb albedo a extinction per meter
-		glm::vec4 albedo_density {0.0f};
-		/// rgb radiance per meter at density 1 a noise strength
-		glm::vec4 emission_noise {0.0f};
-		/// xyz wind in meters per second w noise scale in meters
-		glm::vec4 wind_scale {0.0f};
-		/// x anisotropy y ambient scale
-		glm::vec4 phase {0.0f};
-		/// xyz box centre in world space
-		glm::vec4 centre {0.0f};
-	};
-
 	struct FrameContext {
 		vk::raii::CommandBuffer command_buffer = nullptr;
 		vk::raii::Semaphore image_available = nullptr;
@@ -136,379 +120,6 @@ public:
 
 		/// Released once this frame fence was waited on again
 		std::vector<std::shared_ptr<void>> retired;
-	};
-
-	static constexpr uint32_t k_max_directional_lights = 4;
-
-	static constexpr uint32_t k_max_joint_matrices = 4096;
-
-	static constexpr uint32_t k_max_instances = 16384;
-
-	static constexpr uint32_t k_instance_no_motion = 1u << 0;
-
-	/// Mirrors mesh.slang depth_prepass.slang and shadow_depth.slang InstanceData
-	struct InstanceData {
-		glm::mat4 model {1.0f};
-		glm::mat4 previous_model {1.0f};
-		uint32_t joint_offset = 0;
-		uint32_t flags = 0;
-		std::array<uint32_t, 2> pad0 {0, 0};
-	};
-
-	static_assert(sizeof(InstanceData) == 144, "InstanceData stride must match mesh.slang's std430 layout");
-
-	struct DirectionalLightData {
-		/// w angular radius in radians when voxel shadows are marched and 0 for the shadow map
-		glm::vec4 direction;
-		glm::vec4 color_intensity;
-	};
-
-	static constexpr uint32_t k_max_reflection_probes = 8;
-
-	struct ReflectionProbeData {
-		glm::vec4 position_radius;
-		// xyz box half extents w intensity. Zero extents use sphere projection
-		glm::vec4 box_extents_intensity;
-
-		// x cubemap index in registration order
-		glm::vec4 params {0.0f};
-	};
-
-	static constexpr uint32_t k_max_irradiance_volumes = 4;
-
-	static constexpr uint32_t k_max_irradiance_probes = 4096;
-
-	static constexpr uint32_t k_irradiance_capture_size = 64;
-
-	struct IrradianceVolumeData {
-		/// xyz grid min corner w probe spacing
-		glm::vec4 min_corner_spacing {0.0f};
-		/// xyz probe counts w first probe index in the SH buffer
-		glm::uvec4 counts_base {0};
-		/// xyz half extents w intensity
-		glm::vec4 extents_intensity {0.0f};
-
-		/// x 1 once the SH slice of this volume is baked
-		glm::uvec4 baked_pad {0};
-	};
-
-	using PostProcessSettings = renderer::PostProcessSettings;
-
-	struct FrameUBO {
-		glm::mat4 view {1.0f};
-		glm::mat4 projection {1.0f};
-		glm::mat4 view_projection {1.0f};
-
-		glm::vec3 camera_position {};
-
-		float time = 0.0f;
-
-		/// view_projection with the TAA jitter for world raster only
-		glm::mat4 jittered_view_projection {1.0f};
-
-		/// Unjittered view_projection of the last presented frame
-		glm::mat4 previous_view_projection {1.0f};
-
-		glm::vec4 ambient_color_intensity {0.0f};
-
-		// uvec4 so std140 and cbuffer packing agree
-		glm::uvec4 directional_light_count_pad {0};
-
-		std::array<DirectionalLightData, k_max_directional_lights> directional_lights {};
-
-		glm::uvec4 render_mode_pad {0};
-
-		std::array<glm::mat4, shadows::k_cascade_count> cascade_view_projection {};
-
-		glm::vec4 cascade_splits {0.0f};
-
-		glm::vec4 cascade_texel_world_size {0.0f};
-
-		glm::vec4 cascade_depth_bias {0.0f};
-
-		// x caster index + 1 (0 none) y cascades fitted zw texel size in UV
-		glm::vec4 shadow_params {0.0f};
-
-		// x 1 when the cubemaps hold data y prefiltered roughness levels
-		glm::vec4 environment_params {0.0f};
-
-		glm::uvec4 reflection_probe_count_pad {0};
-
-		std::array<ReflectionProbeData, k_max_reflection_probes> reflection_probes {};
-
-		glm::uvec4 irradiance_volume_count_pad {0};
-
-		std::array<IrradianceVolumeData, k_max_irradiance_volumes> irradiance_volumes {};
-
-		// x 1 traces the TLAS instead of sampling shadow maps
-		glm::vec4 traced_shadow_params {0.0f};
-
-		/// xy blue noise texel offset walking R2 per frame z frame index
-		glm::vec4 noise_params {0.0f};
-
-		/// x height fog extinction per meter at the base height y base height z height falloff w fog volumes
-		glm::vec4 fog_medium {0.0f};
-		/// x height fog distance y fog volume distance z marched sun reach in meters
-		glm::vec4 fog_reach {0.0f};
-	};
-
-	static_assert(
-	    offsetof(FrameUBO, jittered_view_projection) == 208,
-	    "FrameUBO::jittered_view_projection must match lighting.slang and depth_prepass.slang"
-	);
-	static_assert(
-	    offsetof(FrameUBO, irradiance_volumes) == 1264, "FrameUBO::irradiance_volumes must match lighting.slang's std140 layout"
-	);
-	static_assert(offsetof(FrameUBO, noise_params) == 1536, "FrameUBO::noise_params must match lighting.slang's std140 layout");
-	static_assert(
-	    offsetof(FrameUBO, traced_shadow_params) == 1520, "FrameUBO::traced_shadow_params must match lighting.slang's std140 layout"
-	);
-
-	/// Mirrors GpuLight in lighting.slang and cluster_lighting.slang
-	struct GpuLight {
-		glm::vec4 world_pos_range;
-		glm::vec4 view_pos_type;     // w type 0 point 1 spot
-		glm::vec4 view_direction;    // xyz view space spot axis
-		glm::vec4 color_intensity;
-		glm::vec4 direction_pad;     // w shadow layer or -1
-		glm::vec4 cone_angles;       // x cos outer y cos inner z shadow near w shadow far
-
-		// x fraction of the layer rendered y point light face scale inside the guard band z shadow strength
-		glm::vec4 shadow_atlas {1.0f, 1.0f, 0.0f, 0.0f};
-
-		glm::mat4 shadow_view_projection {1.0f};
-
-		/// x toast::LightShape y radius or rect half width z capsule half length or rect half height w toast::LightShadowMode
-		/// The shape faces or runs along direction_pad.xyz
-		glm::vec4 shape {0.0f};
-
-		/// xyz rect width axis
-		glm::vec4 shape_tangent {0.0f};
-	};
-
-	static_assert(sizeof(GpuLight) == 208, "GpuLight must match the stride in lighting.slang and cluster_lighting.slang");
-
-	struct ShadowView {
-		glm::mat4 view_projection {1.0f};
-
-		glm::vec4 cull_sphere {0.0f};
-
-		uint32_t layer = 0;
-		bool directional = false;
-
-		uint32_t resolution = 0;
-	};
-
-	struct ShadowFrame {
-		std::vector<ShadowView> views;
-
-		/// matrices[i] belongs to views[i]
-		std::vector<glm::mat4> matrices;
-	};
-
-	struct MeshInstanceProxy {
-		VulkanMesh* mesh = nullptr;
-		assets::Material* material = nullptr;
-		assets::Material* root_material = nullptr;
-		glm::mat4 model = glm::mat4(1.0f);
-
-		// joint_count > 0 selects the skinned pipeline
-		uint32_t joint_offset = 0;
-		uint32_t joint_count = 0;
-
-		glm::vec3 bounds_center {0.0f};
-		float bounds_radius = 0.0f;
-
-		bool visible = true;
-
-		uint32_t instance_index = 0;
-
-		static constexpr uint32_t k_no_posed_vertices = ~0u;
-
-		uint32_t posed_vertex_offset = k_no_posed_vertices;
-
-		uint64_t node_rid = 0;
-
-		/// Selected in the editor hierarchy
-		bool outlined = false;
-	};
-
-	struct VoxelVolumeProxy {
-		uint32_t record_index = 0;
-
-		glm::uvec3 brick_dims {0};
-
-		glm::mat4 model {1.0f};
-		glm::mat4 inverse_model {1.0f};
-
-		glm::mat4 previous_model {1.0f};
-
-		/// False the first frame this node_uid is drawn so the shader reports motion as not written instead of zero
-		bool has_previous = false;
-
-		glm::vec3 bounds_center {0.0f};
-		float bounds_radius = 0.0f;
-
-		float view_distance = 0.0f;
-
-		bool camera_inside = false;
-
-		bool mirrored = false;
-
-		bool visible = true;
-
-		uint64_t node_rid = 0;
-		uint32_t highlight_record = 0;
-
-		/// Selected in the editor hierarchy
-		bool outlined = false;
-	};
-
-	struct UIWorldPanelProxy {
-		vk::ImageView view = nullptr;
-		glm::mat4 model = glm::mat4(1.0f);
-		bool always_on_top = false;
-	};
-
-	struct SizeHandleDraw {
-		glm::vec3 world_position {0.0f};
-		toast::GizmoHandle handle = toast::GizmoHandle::none;
-	};
-
-	static constexpr size_t k_max_size_handles = 6;
-
-	struct TransformGizmoDraw {
-		bool visible = false;
-		toast::GizmoTool tool = toast::GizmoTool::select;
-		glm::mat4 model {1.0f};
-		toast::GizmoHandle hover = toast::GizmoHandle::none;
-		toast::GizmoHandle active = toast::GizmoHandle::none;
-		float drag_scale_factor = 1.0f;
-
-		std::array<SizeHandleDraw, k_max_size_handles> size_handles {};
-		uint32_t size_handle_count = 0;
-		float size_handle_scale = 1.0f;
-	};
-
-	struct GizmoState {
-		bool visible = false;
-		toast::GizmoTool tool = toast::GizmoTool::select;
-		glm::vec3 origin {0.0f};
-		glm::quat orientation {1.0f, 0.0f, 0.0f, 0.0f};
-		toast::GizmoHandle hover = toast::GizmoHandle::none;
-		toast::GizmoHandle active = toast::GizmoHandle::none;
-		float drag_scale_factor = 1.0f;
-
-		std::array<SizeHandleDraw, k_max_size_handles> size_handles {};
-		uint32_t size_handle_count = 0;
-		float size_handle_scale = 1.0f;
-	};
-
-	struct ImGuiKeyEvent {
-		int32_t key = 0;
-		bool down = false;
-	};
-
-	struct ImGuiInputSnapshot {
-		glm::vec2 mouse_pos {-1.0f, -1.0f};    // -1 -1 when outside the window
-		std::array<bool, 3> mouse_down {};     // 0 left 1 right 2 middle
-		float mouse_wheel_x = 0.0f;
-		float mouse_wheel_y = 0.0f;
-		std::vector<ImGuiKeyEvent> key_events;
-		std::vector<uint32_t> char_events;
-	};
-
-	struct LightStats {
-		uint32_t submitted = 0;
-		uint32_t offscreen = 0;
-		uint32_t truncated = 0;
-		uint32_t spot_shadows = 0;
-		uint32_t point_shadows = 0;
-		/// Lights within their shadow distance left without a shadow because every slot was taken
-		uint32_t spot_denied = 0;
-		uint32_t point_denied = 0;
-		uint64_t shadow_displaced = 0;
-	};
-
-	struct RenderFrame {
-		FrameUBO frame_data;
-
-		std::vector<MeshInstanceProxy> mesh_instances;
-
-		/// Sorted front to back
-		std::vector<VoxelVolumeProxy> voxel_instances;
-
-		std::shared_ptr<const VoxelGpuStorage> voxel_storage;
-
-		/// Camera near plane distance so voxel cells it clips draw with the camera inside variant
-		float near_plane = 0.0f;
-
-		std::vector<assets::HandleBase> asset_refs;
-
-		std::vector<GpuLight> lights;
-
-		ShadowFrame shadows;
-
-		std::vector<glm::mat4> joint_matrices;
-
-		std::vector<InstanceData> instance_data;
-
-		std::vector<InstanceData> shadow_instance_data;
-
-		struct MaterialRange {
-			assets::Material* root_material = nullptr;
-			uint32_t begin = 0;
-			uint32_t end = 0;
-		};
-
-		std::vector<MaterialRange> material_ranges;
-
-		glm::vec2 viewport_extent {0.0f};
-		float camera_near = 0.01f;
-		float camera_far = 5000.0f;
-
-		float cluster_near = 0.1f;
-		float cluster_far = 5000.0f;
-
-		LightStats light_stats;
-
-		ImGuiInputSnapshot imgui_input;
-
-		uint32_t render_mode = 0;
-
-		uint64_t sequence = 0;
-
-		/// Jittered and resolved by TaaPass which then skips FxaaPass
-		bool taa_active = false;
-
-		/// History is stale since the camera switched or TAA just turned on
-		bool taa_reset = false;
-
-		PostProcessSettings post_process;
-
-		/// Nearest first and at most k_max_fog_volumes
-		std::vector<FogVolumeGpu> fog_volumes;
-
-		int32_t probe_capture_index = -1;
-		uint32_t probe_capture_face = 0;
-
-		int32_t irradiance_capture_index = -1;
-		uint32_t irradiance_capture_face = 0;
-
-		uint32_t capture_extent = 0;
-
-		std::vector<debug::Vertex> debug_line_vertices;    // pairs form line segments
-		std::vector<debug::Vertex> debug_triangle_vertices;
-		std::vector<glm::mat4> debug_gizmo_instances;
-		std::vector<debug::Billboard> debug_billboards;
-		std::vector<debug::Mesh> debug_meshes;
-
-		TransformGizmoDraw transform_gizmo;
-
-		std::vector<vk::CommandBuffer> ui_command_buffers;
-		std::vector<vk::ImageView> ui_output_views;
-		std::vector<UIWorldPanelProxy> ui_world_panels;
-		std::shared_ptr<const void> ui_slot_guard;
 	};
 
 	using UIFrameBuilder = std::function<void(RenderFrame&)>;
@@ -943,6 +554,92 @@ public:
 		return m_voxel_glass_lit_surfaces.load(std::memory_order_relaxed);
 	}
 
+	[[nodiscard]]
+	auto hdrOutput() const -> bool {
+		return m_output_target != nullptr && m_output_target->isHdr();
+	}
+
+	/// scRGB where 1.0 is 80 nits
+	void setDisplayHdr(float sdr_white, float headroom) noexcept {
+		m_display_sdr_white.store(std::max(sdr_white, 1.0f), std::memory_order_relaxed);
+		m_display_hdr_headroom.store(std::max(headroom, 1.0f), std::memory_order_relaxed);
+	}
+
+	/// Zero follows the display
+	void setHdrNits(float paper_white, float peak) noexcept {
+		m_hdr_paper_white_nits.store(std::max(paper_white, 0.0f), std::memory_order_relaxed);
+		m_hdr_peak_nits.store(std::max(peak, 0.0f), std::memory_order_relaxed);
+	}
+
+	/// scRGB multiplier of SDR 1.0
+	[[nodiscard]]
+	auto hdrPaperWhiteScale() const -> float {
+		const float nits = m_hdr_paper_white_nits.load(std::memory_order_relaxed);
+		return nits > 0.0f ? nits / 80.0f : m_display_sdr_white.load(std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto hdrPeakScale() const -> float {
+		const float nits = m_hdr_peak_nits.load(std::memory_order_relaxed);
+		const float headroom = m_display_hdr_headroom.load(std::memory_order_relaxed);
+		constexpr float k_unknown_peak = 1000.0f / 80.0f;
+		const float display = headroom > 1.05f ? m_display_sdr_white.load(std::memory_order_relaxed) * headroom : k_unknown_peak;
+		return std::max(nits > 0.0f ? nits / 80.0f : display, hdrPaperWhiteScale() * 1.25f);
+	}
+
+	/// Overrides the Voxel Shadows mode of every light
+	void setVoxelShadowMapsOnly(bool enabled) noexcept { m_voxel_shadow_maps_only.store(enabled, std::memory_order_relaxed); }
+
+	[[nodiscard]]
+	auto voxelShadowMapsOnly() const noexcept -> bool {
+		return m_voxel_shadow_maps_only.load(std::memory_order_relaxed);
+	}
+
+	/// Share of the frame the shutter stays open
+	void setMotionBlurStrength(float strength) noexcept {
+		m_motion_blur_strength.store(std::clamp(strength, 0.0f, 2.0f), std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto motionBlurStrength() const noexcept -> float {
+		return m_motion_blur_strength.load(std::memory_order_relaxed);
+	}
+
+	/// Longest blur as a share of the screen height
+	void setMotionBlurMaxLength(float share) noexcept {
+		m_motion_blur_max_length.store(std::clamp(share, 0.001f, 0.5f), std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto motionBlurMaxLength() const noexcept -> float {
+		return m_motion_blur_max_length.load(std::memory_order_relaxed);
+	}
+
+	void setMotionBlurSamples(uint32_t samples) noexcept {
+		m_motion_blur_samples.store(std::clamp(samples, 2u, 32u), std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto motionBlurSamples() const noexcept -> uint32_t {
+		return m_motion_blur_samples.load(std::memory_order_relaxed);
+	}
+
+	/// Zero steps keep the post process volume values
+	void setSsrOverride(float reach, uint32_t steps) noexcept {
+		m_ssr_reach.store(std::max(reach, 0.0f), std::memory_order_relaxed);
+		m_ssr_steps.store(steps, std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto ssrOverrideReach() const noexcept -> float {
+		return m_ssr_reach.load(std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto ssrOverrideSteps() const noexcept -> uint32_t {
+		return m_ssr_steps.load(std::memory_order_relaxed);
+	}
+
 	void setVoxelGlassShadows(bool enabled) noexcept { m_voxel_glass_shadows.store(enabled, std::memory_order_relaxed); }
 
 	[[nodiscard]]
@@ -978,13 +675,6 @@ public:
 		return m_voxel_sun_reach.load(std::memory_order_relaxed);
 	}
 
-	void setVoxelTraceRayQuery(bool enabled) noexcept { m_voxel_trace_ray_query.store(enabled, std::memory_order_relaxed); }
-
-	[[nodiscard]]
-	auto voxelTraceRayQuery() const noexcept -> bool {
-		return m_voxel_trace_ray_query.load(std::memory_order_relaxed);
-	}
-
 	/// Off keeps every volume on the unit box BLAS so the two can be compared
 	void setVoxelTraceBricks(bool enabled) noexcept { m_voxel_trace_bricks.store(enabled, std::memory_order_relaxed); }
 
@@ -1018,19 +708,15 @@ public:
 		return m_voxel_shadow_instances.load(std::memory_order_relaxed);
 	}
 
-	void setVoxelNormalRounding(float voxels) noexcept {
-		m_voxel_normal_rounding.store(std::max(voxels, 0.0f), std::memory_order_relaxed);
-	}
-
-	[[nodiscard]]
-	auto voxelNormalRounding() const noexcept -> float {
-		return m_voxel_normal_rounding.load(std::memory_order_relaxed);
-	}
-
 	/// Left in eDepthReadOnlyOptimal
 	[[nodiscard]]
 	auto getDepthView() const noexcept -> vk::ImageView {
 		return m_depth_resources.view.has_value() ? **m_depth_resources.view : vk::ImageView {};
+	}
+
+	[[nodiscard]]
+	auto getOverlayDepthView() const noexcept -> vk::ImageView {
+		return m_output_depth.view.has_value() ? **m_output_depth.view : getDepthView();
 	}
 
 	struct PassInfo {
@@ -1428,6 +1114,20 @@ public:
 
 	void setTaaEnabled(bool enabled) noexcept { m_taa_enabled.store(enabled, std::memory_order_relaxed); }
 
+	/// Recreates every target
+	void setRenderScale(float scale);
+
+	/// Thread safe and applied at the next tick
+	void requestSettingValue(std::string key, toast::settings::Value value);
+
+	[[nodiscard]]
+	auto renderScale() const noexcept -> float {
+		return m_render_scale.load(std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto renderExtent() const -> vk::Extent2D;
+
 	[[nodiscard]]
 	auto taaEnabled() const noexcept -> bool {
 		return m_taa_enabled.load(std::memory_order_relaxed);
@@ -1566,6 +1266,7 @@ private:
 	void recordAccelerationStructureBuilds(FrameContext& frame);
 
 	void createPresentResources();
+	void recordDepthUpscale(vk::CommandBuffer cmd, const vk::Rect2D& area);
 	void createDescriptorPool();
 	void createDefaultTexture();
 
@@ -1609,6 +1310,25 @@ private:
 
 	/// Drops unseen lights without a shadow slot then ranks and caps what is left
 	void finalizeLights(RenderFrame& frame);
+
+	struct LightGather {
+		glm::vec3 ambient_sum {0.0f};
+		uint32_t directional_count = 0;
+		int32_t shadow_caster_index = -1;
+		glm::vec3 shadow_caster_direction {0.0f};
+	};
+
+	void resetFrameBuild(RenderFrame& frame);
+	void gatherMeshProxies(RenderFrame& frame);
+	void gatherReflectionProbes(RenderFrame& frame, vk::Extent2D render_extent);
+	/// Fills frame lights and the shadow candidate lists
+	auto gatherLights(RenderFrame& frame) -> LightGather;
+	void writeProbeUniforms(RenderFrame& frame);
+	void logLightingInputs(const RenderFrame& frame, glm::vec3 ambient_sum, uint32_t directional_count);
+	void copyGizmoState(RenderFrame& frame);
+	/// Culls sorts and packs instance data so it runs after every proxy is gathered
+	void cullAndBuildInstances(RenderFrame& frame);
+	void updateTemporalAA(RenderFrame& frame, vk::Extent2D render_extent);
 
 	struct UploadSlot {
 		vk::raii::CommandBuffer command_buffer = nullptr;
@@ -1712,6 +1432,8 @@ private:
 	bool m_probe_auto_baked = false;
 	vk::Format m_depth_format = vk::Format::eUndefined;
 	DepthResources m_depth_resources;
+	/// Only below render scale 1
+	DepthResources m_output_depth;
 	DepthResources m_glass_backdrop_depth;
 
 	static constexpr vk::Format m_scene_color_format = vk::Format::eR16G16B16A16Sfloat;
@@ -1741,10 +1463,8 @@ private:
 	bool m_voxel_reservoir_history = false;
 	uint64_t m_voxel_reservoir_sequence = 0;
 
-	std::atomic<float> m_voxel_normal_rounding {0.3f};
 	std::atomic<uint32_t> m_voxel_light_candidates {8};
 	std::atomic<uint32_t> m_voxel_shadow_instances {256};
-	std::atomic_bool m_voxel_trace_ray_query {true};
 	std::atomic_bool m_voxel_trace_bricks {true};
 	std::atomic<uint32_t> m_voxel_blas_budget {262144};
 	std::atomic<float> m_voxel_trace_cell_size {4.0f};
@@ -1768,6 +1488,17 @@ private:
 	std::atomic<uint32_t> m_voxel_glass_refraction_voxels {32};
 	std::atomic<uint32_t> m_voxel_glass_lit_surfaces {4};
 	std::atomic_bool m_voxel_glass_shadows {true};
+	std::atomic<float> m_display_sdr_white {2.5375f};
+	std::atomic<float> m_display_hdr_headroom {1.0f};
+	std::atomic<float> m_hdr_paper_white_nits {0.0f};
+	std::atomic<float> m_hdr_peak_nits {0.0f};
+	event::Listener m_hdr_listener;
+	std::atomic_bool m_voxel_shadow_maps_only {false};
+	std::atomic<float> m_motion_blur_strength {0.5f};
+	std::atomic<float> m_motion_blur_max_length {0.04f};
+	std::atomic<uint32_t> m_motion_blur_samples {12};
+	std::atomic<float> m_ssr_reach {0.0f};
+	std::atomic<uint32_t> m_ssr_steps {0};
 	std::atomic<uint32_t> m_voxel_glass_shadow_reach {50};
 	std::atomic_bool m_voxel_cell_boxes {true};
 	std::atomic_bool m_voxel_occlusion {true};
@@ -1781,6 +1512,10 @@ private:
 	vk::raii::Sampler m_present_sampler = nullptr;
 	std::vector<vk::raii::DescriptorSet> m_present_sets;
 	std::vector<vk::ImageView> m_present_bound_views;
+	VulkanPipeline m_depth_upscale_pipeline;
+	vk::raii::Sampler m_depth_upscale_sampler = nullptr;
+	std::vector<vk::raii::DescriptorSet> m_depth_upscale_sets;
+	std::vector<vk::ImageView> m_depth_upscale_bound;
 
 	TracyVkCtx m_tracy_vk_ctx = nullptr;
 	std::unique_ptr<GpuTimer> m_gpu_timer;
@@ -1818,6 +1553,11 @@ private:
 	bool m_traced_shadows_voxel_fallback_logged = false;
 
 	std::atomic_bool m_taa_enabled {true};
+	std::atomic<float> m_render_scale {1.0f};
+	std::mutex m_setting_request_mutex;
+	std::vector<std::pair<std::string, toast::settings::Value>> m_setting_requests;
+	/// Of the current targets
+	std::atomic<float> m_applied_render_scale {1.0f};
 	std::atomic<float> m_taa_history_weight {0.9f};
 
 	/// Game thread only
@@ -1868,6 +1608,7 @@ private:
 	event::Listener m_capture_listener;
 	std::atomic_bool m_capture_frame_requested {false};
 
+#if defined(TOAST_DEV_TOOLS)
 	event::Listener m_imgui_input_listener;
 	glm::vec2 m_imgui_mouse_pos {-1.0f, -1.0f};
 	std::array<bool, 3> m_imgui_mouse_down {};
@@ -1875,6 +1616,7 @@ private:
 	float m_imgui_wheel_y_accum = 0.0f;
 	std::vector<ImGuiKeyEvent> m_imgui_key_events_accum;
 	std::vector<uint32_t> m_imgui_char_events_accum;
+#endif
 
 	event::Listener m_render_mode_listener;
 	uint32_t m_render_mode = 0;
@@ -2090,7 +1832,7 @@ inline void stop() {
 	VulkanRenderer::instance->stop();
 }
 
-inline auto beginFrameBuild() -> VulkanRenderer::RenderFrame& {
+inline auto beginFrameBuild() -> RenderFrame& {
 	return VulkanRenderer::instance->getCurrentFrameBuild();
 }
 
@@ -2213,7 +1955,7 @@ inline auto getRenderDocAPI() -> const RENDERDOC_API_1_6_0* {
 }
 
 /// Not thread safe
-inline auto renderingFrame() -> const VulkanRenderer::RenderFrame* {
+inline auto renderingFrame() -> const RenderFrame* {
 	return VulkanRenderer::instance->renderingFrame();
 }
 

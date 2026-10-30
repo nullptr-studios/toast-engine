@@ -8,7 +8,7 @@
 #include <cmath>
 #include <limits>
 #include <toast/log.hpp>
-#include <toast/renderer/voxel_gpu_storage.hpp>
+#include <toast/renderer/voxel/voxel_gpu_storage.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
 #include <toast/voxel/voxel_constants.hpp>
 #include <tracy/Tracy.hpp>
