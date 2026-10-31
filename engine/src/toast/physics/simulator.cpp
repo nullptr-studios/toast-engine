@@ -1338,11 +1338,6 @@ void Simulator::spawnBudgetedFragments() {
 
 namespace {
 
-/// Sleeping bodies are immovable in the solver
-auto movable(const Body& body) -> bool {
-	return body.inverse_mass > 0.0f && (body.awake || body.type != BodyType::dynamic_body);
-}
-
 /// Approach speed into a sleeper that wakes it in sleep thresholds
 constexpr float k_wake_approach = 0.75f;
 
