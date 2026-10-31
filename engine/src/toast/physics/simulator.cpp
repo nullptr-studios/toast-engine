@@ -700,6 +700,7 @@ void Simulator::tick() {
 
 	reapFragments();
 	syncEnabledState();
+	syncJointNodes();
 	applyDamageCommands();
 	const auto after_damage = std::chrono::steady_clock::now();
 	m_profile.damage_apply_ms = elapsed_ms(tick_start, after_damage);
@@ -712,6 +713,7 @@ void Simulator::tick() {
 	spawnBudgetedFragments();
 	enforceFragmentBudget(dt);
 	despawnSettledFragments(dt);
+	checkJointAnchors();
 	integrate(dt);
 	checkTriggers();
 
@@ -747,6 +749,7 @@ void Simulator::tick() {
 	m_profile.build_islands_ms = elapsed_ms(after_prepare, after_islands);
 
 	solveIslands(islands);
+	breakOverloadedJoints(dt);
 	const auto after_solve = std::chrono::steady_clock::now();
 	m_profile.island_solve_ms = elapsed_ms(after_islands, after_solve);
 
@@ -774,6 +777,7 @@ void Simulator::tick() {
 
 	// push poses after simulation settles
 	publishTransforms();
+	publishJoints();
 	publishVoxelRenderRecords();
 	m_profile.tick_ms = elapsed_ms(tick_start, std::chrono::steady_clock::now());
 	publishProfile(islands);
@@ -3643,7 +3647,12 @@ auto Simulator::createJoint(const JointDescriptor& descriptor) -> JointID {
 	Body* body_a = tryGetBody(made.body_a);
 	Body* body_b = holds_world ? &m_world_body : tryGetBody(made.body_b);
 
-	JointSlot joint_slot {.joint = _detail::makeJoint(made, *body_a, *body_b), .occupied = true};
+	Joint made_joint = _detail::makeJoint(made, *body_a, *body_b);
+	made_joint.voxel_end_a = voxelEndOf(made.body_a, made_joint.frame_a, made.voxel_anchor);
+	if (not holds_world) {
+		made_joint.voxel_end_b = voxelEndOf(made.body_b, made_joint.frame_b, made.voxel_anchor);
+	}
+	JointSlot joint_slot {.joint = std::move(made_joint), .occupied = true};
 	JointID id;
 	if (not m_free_joint_slots.empty()) {
 		id.slot = m_free_joint_slots.back();

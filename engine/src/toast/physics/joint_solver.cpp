@@ -353,6 +353,32 @@ void solveJoint(const JointRow& row, Joint& joint, Body& body_a, Body& body_b) {
 	}
 }
 
+auto jointReaction(const Joint& joint) -> JointReaction {
+	const JointImpulses& impulses = joint.impulses;
+	// The frames of a joint are orthonormal
+	if (std::holds_alternative<HingeParams>(joint.descriptor.params)) {
+		const float axial = impulses.motor + impulses.limit_lower - impulses.limit_upper;
+		return {
+		  .linear = glm::length(impulses.point),
+		  .angular = std::sqrt(
+		      (impulses.perpendicular.x * impulses.perpendicular.x) + (impulses.perpendicular.y * impulses.perpendicular.y) +
+		      (axial * axial)
+		  ),
+		};
+	}
+	if (std::holds_alternative<SliderParams>(joint.descriptor.params)) {
+		const float axial = impulses.limit_lower - impulses.limit_upper;
+		return {
+		  .linear = std::sqrt(
+		      (impulses.perpendicular.x * impulses.perpendicular.x) + (impulses.perpendicular.y * impulses.perpendicular.y) +
+		      (axial * axial)
+		  ),
+		  .angular = glm::length(impulses.angular_lock),
+		};
+	}
+	return {.linear = glm::length(impulses.point), .angular = 0.0f};
+}
+
 void correctJointPositions(Joint& joint, Body& body_a, Body& body_b) {
 	if (not movable(body_a) && not movable(body_b)) {
 		return;

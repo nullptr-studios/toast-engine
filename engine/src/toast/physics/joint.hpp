@@ -8,7 +8,9 @@
 #pragma once
 
 #include "body.hpp"
+#include "shape.hpp"
 
+#include <array>
 #include <compare>
 #include <cstdint>
 #include <glm/glm.hpp>
@@ -35,6 +37,7 @@ struct PinParams {
 	float bias = 0.3f;
 	float damping = 1.0f;
 	float impulse_clamp = 0.0f;
+	auto operator==(const PinParams&) const -> bool = default;
 };
 
 struct HingeParams {
@@ -46,6 +49,8 @@ struct HingeParams {
 	bool motor_enabled = false;
 	float motor_target_velocity = 0.0f;    // rad/s
 	float motor_max_impulse = 1.0f;        // per step
+
+	auto operator==(const HingeParams&) const -> bool = default;
 };
 
 // todo: sliderjoint needs to be able to freely rotate
@@ -53,6 +58,8 @@ struct SliderParams {
 	float bias = 0.3f;
 	float linear_limit_lower = -1.0f;
 	float linear_limit_upper = 1.0f;
+
+	auto operator==(const SliderParams&) const -> bool = default;
 };
 
 using JointParams = std::variant<PinParams, HingeParams, SliderParams>;
@@ -62,13 +69,35 @@ struct JointFrame {
 	glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 };
 
+struct VoxelAnchorSettings {
+	bool enabled = true;
+	int radius_voxels = 2;
+	float min_remaining = 0.5f;
+};
+
+enum class JointBreakReason : uint8_t {
+	requested,
+	force,
+	torque,
+	anchor_destroyed
+};
+
 struct JointDescriptor {
 	BodyID body_a;
-	BodyID body_b;                                          // invalid is the world
+	BodyID body_b;
 	glm::vec3 anchor = {};
 	glm::quat frame = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 	bool exclude_collision = true;
 	JointParams params = PinParams {};
+	float break_force = 0.0f;
+	float break_torque = 0.0f;
+	VoxelAnchorSettings voxel_anchor;
+};
+
+struct JointVoxelEnd {
+	ShapeID shape;
+	uint32_t baseline = 0;
+	uint32_t revision = 0;
 };
 
 struct JointImpulses {
@@ -87,6 +116,18 @@ struct Joint {
 	JointImpulses impulses;
 	float hinge_raw = 0.0f;
 	float hinge_angle = 0.0f;
+	float slider_position = 0.0f;
+	JointVoxelEnd voxel_end_a;
+	JointVoxelEnd voxel_end_b;
+	float last_force = 0.0f;
+	float last_torque = 0.0f;
+};
+
+struct JointState {
+	float angle = 0.0f;
+	float position = 0.0f;
+	float force = 0.0f;
+	float torque = 0.0f;
 };
 
 struct JointSlot {
