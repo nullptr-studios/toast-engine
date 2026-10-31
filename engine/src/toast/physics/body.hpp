@@ -101,6 +101,11 @@ struct Body {
 	}
 };
 
+[[nodiscard]]
+inline auto movable(const Body& body) -> bool {
+	return body.inverse_mass > 0.0f && (body.awake || body.type != BodyType::dynamic_body);
+}
+
 struct BodySlot {
 	Body body;
 	uint32_t generation = 1;
