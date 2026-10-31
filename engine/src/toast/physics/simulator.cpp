@@ -6315,6 +6315,55 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 		island.constraints.swap(m_island_reordered_scratch);
 	}
 
+	// one joint at a time
+	m_joint_next_free_batch.assign(m_bodies.size(), 0);
+	for (SimulationIsland& island : islands) {
+		if (island.joint_indices.empty()) {
+			continue;
+		}
+
+		std::ranges::sort(island.joint_indices);
+		std::vector<uint32_t> batch_of(island.joint_indices.size(), 0);
+		uint32_t batch_count = 1;
+		for (size_t position = 0; position < island.joint_indices.size(); ++position) {
+			const Joint& joint = m_joints[island.joint_indices[position]].joint;
+			const Body* body_a = tryGetBody(joint.descriptor.body_a);
+			const Body* body_b = tryGetBody(joint.descriptor.body_b);
+			const bool a_moves = body_a != nullptr && movable(*body_a);
+			const bool b_moves = body_b != nullptr && movable(*body_b);
+
+			uint32_t batch = 0;
+			if (a_moves) {
+				batch = std::max(batch, m_joint_next_free_batch[joint.descriptor.body_a.slot]);
+			}
+			if (b_moves) {
+				batch = std::max(batch, m_joint_next_free_batch[joint.descriptor.body_b.slot]);
+			}
+			batch_of[position] = batch;
+			batch_count = std::max(batch_count, batch + 1);
+			if (a_moves) {
+				m_joint_next_free_batch[joint.descriptor.body_a.slot] = batch + 1;
+			}
+			if (b_moves) {
+				m_joint_next_free_batch[joint.descriptor.body_b.slot] = batch + 1;
+			}
+		}
+
+		island.joint_batch_offsets.assign(batch_count + 1, 0);
+		for (const uint32_t batch : batch_of) {
+			++island.joint_batch_offsets[batch + 1];
+		}
+		for (size_t i = 1; i < island.joint_batch_offsets.size(); ++i) {
+			island.joint_batch_offsets[i] += island.joint_batch_offsets[i - 1];
+		}
+		std::vector<uint32_t> reordered(island.joint_indices.size());
+		std::vector<size_t> cursor(island.joint_batch_offsets.begin(), island.joint_batch_offsets.end() - 1);
+		for (size_t position = 0; position < island.joint_indices.size(); ++position) {
+			reordered[cursor[batch_of[position]]++] = island.joint_indices[position];
+		}
+		island.joint_indices.swap(reordered);
+	}
+
 	std::ranges::sort(islands, [](const SimulationIsland& lhs, const SimulationIsland& rhs) {
 		return lhs.sort_key < rhs.sort_key;
 	});
@@ -6511,6 +6560,55 @@ void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
 	}
 	m_profile.max_constraint_batches = max_batches;
 
+	// Runs the function on every joint wave by wave
+	size_t max_joint_batches = 0;
+	for (const SimulationIsland& island : islands) {
+		max_joint_batches =
+		    std::max(max_joint_batches, island.joint_batch_offsets.empty() ? size_t {0} : island.joint_batch_offsets.size() - 1);
+	}
+	const auto run_joint_waves = [&](const auto& per_joint) {
+		for (size_t wave = 0; wave < max_joint_batches; ++wave) {
+			m_joint_wave.clear();
+			for (const SimulationIsland& island : islands) {
+				if (wave + 1 < island.joint_batch_offsets.size()) {
+					m_joint_wave.insert(
+					    m_joint_wave.end(),
+					    island.joint_indices.begin() + static_cast<std::ptrdiff_t>(island.joint_batch_offsets[wave]),
+					    island.joint_indices.begin() + static_cast<std::ptrdiff_t>(island.joint_batch_offsets[wave + 1])
+					);
+				}
+			}
+			if (m_joint_wave.empty()) {
+				continue;
+			}
+
+			const size_t chunk_count = std::min(worker_count, m_joint_wave.size());
+			if (m_joint_wave.size() < tunables().min_wave_joints_for_dispatch || chunk_count <= 1) {
+				for (const uint32_t joint_index : m_joint_wave) {
+					per_joint(joint_index);
+				}
+				continue;
+			}
+
+			const size_t per_chunk = (m_joint_wave.size() + chunk_count - 1) / chunk_count;
+			std::atomic<size_t> chunks_remaining {chunk_count};
+			for (size_t chunk = 0; chunk < chunk_count; ++chunk) {
+				const size_t begin = chunk * per_chunk;
+				const size_t end = std::min(m_joint_wave.size(), begin + per_chunk);
+				toast::ThreadPool::pushRaw([this, begin, end, &per_joint, &chunks_remaining] {
+					ZoneScopedN("physics::JointWaveChunk");    // NOLINT
+					for (size_t position = begin; position < end; ++position) {
+						per_joint(m_joint_wave[position]);
+					}
+					chunks_remaining.fetch_sub(1, std::memory_order_acq_rel);
+				});
+			}
+			while (chunks_remaining.load(std::memory_order_acquire) != 0) {
+				std::this_thread::yield();
+			}
+		}
+	};
+
 	size_t invalid_constraint_count = 0;
 	std::vector<std::span<Constraint>> wave_spans;
 	std::vector<size_t> active_islands;
@@ -6518,14 +6616,14 @@ void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
 		ZoneScopedN("iteration");
 		ZoneValue(static_cast<uint64_t>(iteration));
 
-		for (SimulationIsland& island : islands) {
-			for (const uint32_t joint_index : island.joint_indices) {
+		if (max_joint_batches > 0) {
+			run_joint_waves([this](uint32_t joint_index) {
 				JointSlot& slot = m_joints[joint_index];
 				Body* body_a = nullptr;
 				Body* body_b = nullptr;
 				jointBodies(slot.joint, body_a, body_b);
 				_detail::solveJoint(m_joint_rows[joint_index], slot.joint, *body_a, *body_b);
-			}
+			});
 		}
 
 		active_islands.clear();
@@ -6598,17 +6696,15 @@ void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
 	}
 	m_profile.invalid_constraints = invalid_constraint_count;
 
-	if (m_joint_count > 0) {
+	if (max_joint_batches > 0) {
 		for (uint32_t pass = 0; pass < tunables().position_iterations; ++pass) {
-			for (SimulationIsland& island : islands) {
-				for (const uint32_t joint_index : island.joint_indices) {
-					JointSlot& slot = m_joints[joint_index];
-					Body* body_a = nullptr;
-					Body* body_b = nullptr;
-					jointBodies(slot.joint, body_a, body_b);
-					_detail::correctJointPositions(slot.joint, *body_a, *body_b);
-				}
-			}
+			run_joint_waves([this](uint32_t joint_index) {
+				JointSlot& slot = m_joints[joint_index];
+				Body* body_a = nullptr;
+				Body* body_b = nullptr;
+				jointBodies(slot.joint, body_a, body_b);
+				_detail::correctJointPositions(slot.joint, *body_a, *body_b);
+			});
 		}
 	}
 

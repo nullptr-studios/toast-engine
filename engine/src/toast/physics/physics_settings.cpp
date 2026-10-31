@@ -567,6 +567,17 @@ void registerPhysicsSettings() {
 	    &Tunables::min_wave_constraints_for_dispatch
 	);
 	uint_setting(
+	    "physics.jobs.min_wave_joints_for_dispatch",
+	    64,
+	    {.label = "Min wave joints per dispatch",
+			 .category = "Jobs",
+			 .description = "Joint waves below this size solve inline",
+			 .min = 1.0,
+			 .max = 65536.0,
+			 .step = 1.0},
+	    &Tunables::min_wave_joints_for_dispatch
+	);
+	uint_setting(
 	    "physics.jobs.box_voxel_split_min_voxels",
 	    500000,
 	    {.label = "Box-voxel split threshold",
