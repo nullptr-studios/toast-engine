@@ -35,4 +35,6 @@ TOAST_API void warmStartJoint(const JointRow& row, const Joint& joint, Body& bod
 
 TOAST_API void solveJoint(const JointRow& row, Joint& joint, Body& body_a, Body& body_b);
 
+TOAST_API void correctJointPositions(Joint& joint, Body& body_a, Body& body_b);
+
 }

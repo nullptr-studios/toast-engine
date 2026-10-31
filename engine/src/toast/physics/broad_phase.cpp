@@ -241,6 +241,7 @@ auto BroadPhase::findPairs(CollisionWorldView world) -> std::vector<BroadPhasePa
 			m_stats.rejected_invalid_bodies += chunk.stats.rejected_invalid_bodies;
 			m_stats.rejected_immovable_bodies += chunk.stats.rejected_immovable_bodies;
 			m_stats.rejected_layers += chunk.stats.rejected_layers;
+			m_stats.rejected_joint_excluded += chunk.stats.rejected_joint_excluded;
 			pairs.insert_range(pairs.end(), std::move(chunk.pairs));
 		}
 	}
@@ -290,6 +291,11 @@ auto BroadPhase::testPair(CollisionWorldView world, ShapeID shape_a_id, ShapeID 
 
 	if (shape_a->owner == shape_b->owner) {
 		++stats.rejected_same_body;
+		return std::nullopt;
+	}
+
+	if (world.pairExcluded(shape_a->owner, shape_b->owner)) {
+		++stats.rejected_joint_excluded;
 		return std::nullopt;
 	}
 
