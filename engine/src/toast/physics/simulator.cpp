@@ -3951,6 +3951,154 @@ auto dragBoxAreaAxis(const glm::vec3& h) -> glm::vec3 {
 	return 4.0f * glm::vec3 {h.y * h.z, h.x * h.z, h.x * h.y};
 }
 
+struct PrimitiveMass {
+	float volume = 0.0f;
+	glm::vec3 center = {};
+	glm::mat3 unit_inertia = {0.0f};
+	glm::vec3 half_extents = {};
+	float radius = 0.0f;
+};
+
+[[nodiscard]]
+auto primitiveMass(const Shape& shape) -> std::optional<PrimitiveMass> {
+	PrimitiveMass part;
+	part.center = shape.getLocalCenter();
+
+	glm::vec3 unit_diagonal = {};
+	glm::vec3 local_half = {};
+	switch (shape.type) {
+		case ShapeType::sphere: {
+			const float radius = shape.sphere.radius;
+			part.volume = (4.0f / 3.0f) * glm::pi<float>() * radius * radius * radius;
+			// I = 2/5 m r2
+			unit_diagonal = glm::vec3 {0.4f * radius * radius};
+			local_half = glm::vec3 {radius};
+			part.radius = radius;
+			break;
+		}
+		case ShapeType::box: {
+			const glm::vec3 size = shape.box.size;
+			part.volume = size.x * size.y * size.z;
+			// Ix = 1/12 m (h2 + d2)
+			unit_diagonal =
+			    glm::vec3 {
+			      (size.y * size.y) + (size.z * size.z),
+			      (size.x * size.x) + (size.z * size.z),
+			      (size.x * size.x) + (size.y * size.y),
+			    } /
+			    12.0f;
+			local_half = size * 0.5f;
+			part.radius = 0.5f * glm::length(size);
+			break;
+		}
+		case ShapeType::capsule: {
+			const float radius = shape.capsule.radius;
+			const float height = shape.capsule.height;
+			part.volume = (glm::pi<float>() * radius * radius * height) + ((4.0f / 3.0f) * glm::pi<float>() * radius * radius * radius);
+			const float diameter_sq = 4.0f * radius * radius;
+			const float side = (diameter_sq + (height * height)) / 12.0f;
+			unit_diagonal = glm::vec3 {side, side, (diameter_sq + diameter_sq) / 12.0f};
+			local_half = glm::vec3 {radius, radius, (0.5f * height) + radius};
+			part.radius = (0.5f * height) + radius;
+			break;
+		}
+		default: return std::nullopt;
+	}
+
+	const auto usable = [](float value) { return std::isfinite(value) && value > 0.0f; };
+	if (not usable(part.volume) || not usable(unit_diagonal.x) || not usable(unit_diagonal.y) || not usable(unit_diagonal.z)) {
+		return std::nullopt;
+	}
+
+	glm::mat3 diagonal = {0.0f};
+	diagonal[0][0] = unit_diagonal.x;
+	diagonal[1][1] = unit_diagonal.y;
+	diagonal[2][2] = unit_diagonal.z;
+	const glm::mat3 rotation = glm::mat3_cast(shape.getLocalRotation());
+	part.unit_inertia = rotation * diagonal * glm::transpose(rotation);
+
+	const glm::mat3 absolute_rotation {glm::abs(rotation[0]), glm::abs(rotation[1]), glm::abs(rotation[2])};
+	part.half_extents = absolute_rotation * local_half;
+	return part;
+}
+
+[[nodiscard]]
+auto combinePrimitiveMass(Body& body, std::span<const Shape* const> shapes) -> bool {
+	std::vector<PrimitiveMass> parts;
+	parts.reserve(shapes.size());
+	float total_volume = 0.0f;
+	for (const Shape* shape : shapes) {
+		std::optional<PrimitiveMass> part = primitiveMass(*shape);
+		if (not part) {
+			TOAST_WARN("Physics", "rebuildMassProperties() was aborted: invalid or unknown shape");
+			return false;
+		}
+		total_volume += part->volume;
+		parts.push_back(*part);
+	}
+
+	const float mass = 1.0f / body.inverse_mass;
+	glm::vec3 center = {};
+	for (const PrimitiveMass& part : parts) {
+		center += part.center * (part.volume / total_volume);
+	}
+
+	// its own inertia plus steiner
+	glm::mat3 inertia = {0.0f};
+	for (const PrimitiveMass& part : parts) {
+		const glm::vec3 offset = part.center - center;
+		const float part_mass = mass * part.volume / total_volume;
+		inertia +=
+		    part_mass * (part.unit_inertia + (glm::dot(offset, offset) * glm::mat3 {1.0f}) - glm::outerProduct(offset, offset));
+	}
+
+	const glm::mat3 inverse_inertia = glm::inverse(inertia);
+	if (not std::isfinite(inverse_inertia[0][0]) || not std::isfinite(inverse_inertia[1][1]) ||
+	    not std::isfinite(inverse_inertia[2][2])) {
+		TOAST_WARN("Physics", "rebuildMassProperties() was aborted: singular inertia");
+		return false;
+	}
+
+	body.local_center_of_mass = center;
+	body.inverse_inertia_local = inverse_inertia;
+	const glm::mat3 rotation = glm::mat3_cast(body.rotation);
+	body.inverse_inertia_world = rotation * body.inverse_inertia_local * glm::transpose(rotation);
+
+	body.extent_radius = 0.0f;
+	glm::vec3 box_min = glm::vec3 {std::numeric_limits<float>::max()};
+	glm::vec3 box_max = glm::vec3 {std::numeric_limits<float>::lowest()};
+	for (const PrimitiveMass& part : parts) {
+		body.extent_radius = std::max(body.extent_radius, glm::length(part.center - center) + part.radius);
+		box_min = glm::min(box_min, part.center - part.half_extents);
+		box_max = glm::max(box_max, part.center + part.half_extents);
+	}
+
+	// Drag
+	if (shapes.size() == 1) {
+		const Shape& shape = *shapes[0];
+		switch (shape.type) {
+			case ShapeType::sphere:
+				body.drag_area_base = glm::pi<float>() * shape.sphere.radius * shape.sphere.radius;
+				body.drag_coefficient = 0.47f;
+				break;
+			case ShapeType::box:
+				body.drag_area_axis = dragBoxAreaAxis(shape.box.size * 0.5f);
+				body.drag_coefficient = 1.05f;
+				break;
+			case ShapeType::capsule:
+				// just treat like a box ngl
+				body.drag_area_axis = dragBoxAreaAxis({shape.capsule.radius, shape.capsule.radius, 0.5f * shape.capsule.height});
+				body.drag_coefficient = 0.82f;
+				break;
+			default: break;
+		}
+	} else {
+		body.drag_area_axis = dragBoxAreaAxis((box_max - box_min) * 0.5f);
+		body.drag_coefficient = 1.05f;
+	}
+	return true;
+}
+
 }
 
 void Simulator::rebuildMassProperties(BodyID id) {
@@ -3997,8 +4145,6 @@ void Simulator::rebuildMassProperties(BodyID id) {
 		return;
 	}
 
-	// TODO: Add support to multishapes
-	// right now just pick the first one
 	auto* shape = tryGetShape(shapes[0]);
 	if (not shape) {
 		TOAST_WARN("Physics", "rebuildMassProperties() was aborted: invalid shape");
@@ -4006,68 +4152,6 @@ void Simulator::rebuildMassProperties(BodyID id) {
 	}
 
 	switch (shape->type) {
-		case ShapeType::sphere: {
-			float radius_sq = shape->sphere.radius * shape->sphere.radius;
-			if (not std::isfinite(radius_sq) || radius_sq <= 0.0f) {
-				TOAST_WARN("Physics", "rebuildMassProperties() was aborted: invalid sphere inertia denominator");
-				return;
-			}
-
-			// I = 2/5 m r2
-			// inv(I) = 5/(2 m r2)
-			float inverse_inertia = 2.5f * body->inverse_mass / radius_sq;
-			body->inverse_inertia_local = {inverse_inertia};
-			glm::mat3 rotation = glm::mat3_cast(body->rotation);
-			body->inverse_inertia_world = rotation * body->inverse_inertia_local * glm::transpose(rotation);
-
-			body->extent_radius = glm::length(shape->sphere.local_center) + shape->sphere.radius;
-
-			// drag
-			body->drag_area_base = glm::pi<float>() * radius_sq;
-			body->drag_coefficient = 0.47f;
-
-			break;
-		}
-		case ShapeType::box: {
-			float width_sq = shape->box.size.x * shape->box.size.x;
-			float height_sq = shape->box.size.y * shape->box.size.y;
-			float depth_sq = shape->box.size.z * shape->box.size.z;
-			float denominator_x = height_sq + depth_sq;
-			float denominator_y = width_sq + depth_sq;
-			float denominator_z = width_sq + height_sq;
-			if (not std::isfinite(denominator_x) || denominator_x <= 0.0f || not std::isfinite(denominator_y) ||
-			    denominator_y <= 0.0f || not std::isfinite(denominator_z) || denominator_z <= 0.0f) {
-				TOAST_WARN("Physics", "rebuildMassProperties() was aborted: invalid box inertia denominator");
-				return;
-			}
-
-			// Ix = 1/12 m (h2 + d2)
-			// inv(Ix) = 12/(m (h2 + d2))
-			float inverse_inertia_x = 12.0f * body->inverse_mass / denominator_x;
-			// Iy = 1/12 m (w2 + d2)
-			// inv(Iy) = 12/(m (w2 + d2))
-			float inverse_inertia_y = 12.0f * body->inverse_mass / denominator_y;
-			// Iz = 1/12 m (w2 + h2)
-			// inv(Iz) = 12/(m (w2 + h2))
-			float inverse_inertia_z = 12.0f * body->inverse_mass / denominator_z;
-
-			glm::mat3 inverse_inertia = {0.0f};
-			inverse_inertia[0][0] = inverse_inertia_x;
-			inverse_inertia[1][1] = inverse_inertia_y;
-			inverse_inertia[2][2] = inverse_inertia_z;
-			glm::mat3 local_rotation = glm::mat3_cast(shape->box.local_rotation);
-			body->inverse_inertia_local = local_rotation * inverse_inertia * glm::transpose(local_rotation);
-			glm::mat3 rotation = glm::mat3_cast(body->rotation);
-			body->inverse_inertia_world = rotation * body->inverse_inertia_local * glm::transpose(rotation);
-
-			body->extent_radius = glm::length(shape->box.local_center) + (0.5f * glm::length(shape->box.size));
-
-			// Drag
-			body->drag_area_axis = dragBoxAreaAxis(shape->box.size * 0.5f);
-			body->drag_coefficient = 1.05f;
-
-			break;
-		}
 		case ShapeType::voxel: {
 			const VoxelShapeData* voxel_data = tryGetVoxelData(shape->voxel.data);
 			if (voxel_data == nullptr || voxel_data->volume == nullptr) {
@@ -4124,50 +4208,21 @@ void Simulator::rebuildMassProperties(BodyID id) {
 
 			break;
 		}
-		case ShapeType::capsule: {
-			// Conservative approximation using a box with dimensions (2r, 2r, height)
-			float diameter = 2.0f * shape->capsule.radius;
-			float diameter_sq = diameter * diameter;
-			float height_sq = shape->capsule.height * shape->capsule.height;
-			float denominator_xy = diameter_sq + height_sq;
-			float denominator_z = diameter_sq + diameter_sq;
-			if (not std::isfinite(denominator_xy) || denominator_xy <= 0.0f || not std::isfinite(denominator_z) ||
-			    denominator_z <= 0.0f) {
-				TOAST_WARN("Physics", "rebuildMassProperties() was aborted: invalid capsule inertia denominator");
+		default: {
+			std::vector<const Shape*> primitives;
+			primitives.reserve(shapes.size());
+			for (const ShapeID shape_id : shapes) {
+				const Shape* primitive = tryGetShape(shape_id);
+				if (not primitive) {
+					TOAST_WARN("Physics", "rebuildMassProperties() was aborted: invalid shape");
+					return;
+				}
+				primitives.push_back(primitive);
+			}
+			if (not combinePrimitiveMass(*body, primitives)) {
 				return;
 			}
-
-			// Ix = 1/12 m (d2 + h2)
-			// inv(Ix) = 12/(m (d2 + h2))
-			float inverse_inertia_x = 12.0f * body->inverse_mass / denominator_xy;
-			// Iy = 1/12 m (d2 + h2)
-			// inv(Iy) = 12/(m (d2 + h2))
-			float inverse_inertia_y = 12.0f * body->inverse_mass / denominator_xy;
-			// Iz = 1/12 m (d2 + d2)
-			// inv(Iz) = 12/(m (d2 + d2))
-			float inverse_inertia_z = 12.0f * body->inverse_mass / denominator_z;
-
-			glm::mat3 inverse_inertia = {0.0f};
-			inverse_inertia[0][0] = inverse_inertia_x;
-			inverse_inertia[1][1] = inverse_inertia_y;
-			inverse_inertia[2][2] = inverse_inertia_z;
-			glm::mat3 local_rotation = glm::mat3_cast(shape->capsule.local_rotation);
-			body->inverse_inertia_local = local_rotation * inverse_inertia * glm::transpose(local_rotation);
-			glm::mat3 rotation = glm::mat3_cast(body->rotation);
-			body->inverse_inertia_world = rotation * body->inverse_inertia_local * glm::transpose(rotation);
-
-			body->extent_radius = glm::length(shape->capsule.local_center) + (0.5f * shape->capsule.height) + shape->capsule.radius;
-
-			// Drag
-			// just treat like a box ngl
-			body->drag_area_axis = dragBoxAreaAxis({shape->capsule.radius, shape->capsule.radius, 0.5f * shape->capsule.height});
-			body->drag_coefficient = 0.82;
-
 			break;
-		}
-		default: {
-			TOAST_WARN("Physics", "rebuildMassProperties() was aborted: unknown shape");
-			return;
 		}
 	}
 
@@ -4195,6 +4250,19 @@ auto Simulator::state(BodyID body) const -> std::optional<BodyState> {
 	  .previous_rotation = value->previous_rotation,
 	  .linear_velocity = value->linear_velocity,
 	  .angular_velocity = value->angular_velocity
+	};
+}
+
+auto Simulator::massProperties(BodyID body) const -> std::optional<BodyMassProperties> {
+	const Body* value = tryGetBody(body);
+	if (not value) {
+		return std::nullopt;
+	}
+
+	return BodyMassProperties {
+	  .mass = value->inverse_mass > 0.0f ? 1.0f / value->inverse_mass : 0.0f,
+	  .local_center_of_mass = value->local_center_of_mass,
+	  .inverse_inertia_local = value->inverse_inertia_local,
 	};
 }
 

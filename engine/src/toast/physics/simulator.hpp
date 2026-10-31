@@ -103,6 +103,8 @@ public:
 	auto valid(BodyID body) const -> bool;
 	[[nodiscard]]
 	auto state(BodyID body) const -> std::optional<BodyState>;
+	[[nodiscard]]
+	auto massProperties(BodyID body) const -> std::optional<BodyMassProperties>;
 
 	auto setTransform(BodyID body, const glm::vec3& position, const glm::quat& rotation) -> bool;
 	auto setLinearVelocity(BodyID body, const glm::vec3& velocity) -> bool;
