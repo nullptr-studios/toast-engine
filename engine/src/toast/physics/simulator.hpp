@@ -13,6 +13,8 @@
 #include "damage_command.hpp"
 #include "debris.hpp"
 #include "fragment_extraction.hpp"
+#include "joint.hpp"
+#include "joint_solver.hpp"
 #include "manifold.hpp"
 #include "narrow_phase.hpp"
 #include "physics_material.hpp"
@@ -84,6 +86,22 @@ public:
 	[[nodiscard]]
 	auto createBody(const BodyDescriptor& descriptor) -> BodyID;
 	void destroyBody(BodyID body);
+
+	[[nodiscard]]
+	auto createJoint(const JointDescriptor& descriptor) -> JointID;
+	void destroyJoint(JointID joint);
+
+	[[nodiscard]]
+	auto valid(JointID joint) const -> bool;
+	[[nodiscard]]
+
+	auto jointState(JointID joint) const -> std::optional<JointState>;
+	auto setJointParams(JointID joint, const JointParams& params) -> bool;
+
+	[[nodiscard]]
+	auto jointCount() const -> size_t {
+		return m_joint_count;
+	}
 
 	/// @param layers Only bodies including one of these layers are hit
 	static auto raycast(
@@ -177,6 +195,7 @@ public:
 		size_t island_jobs = 0;
 		size_t invalid_constraints = 0;
 		size_t position_corrections = 0;
+		size_t joint_count = 0;
 
 		double tick_ms = 0.0;
 		double damage_apply_ms = 0.0;
@@ -382,6 +401,7 @@ private:
 		std::vector<BodyID> dynamic_bodies;
 		std::vector<Constraint> constraints;
 		std::vector<size_t> manifold_indices;
+		std::vector<uint32_t> joint_indices;
 
 		/// constraints[batch_offsets[i] .. batch_offsets[i + 1]) only share a dynamic body within one body pair run
 		/// and each body pair run is contiguous, so a batch can be split anywhere except inside a run
@@ -526,6 +546,11 @@ private:
 	void releaseSleeper(BodyID sleeper, BodyID other, const glm::vec3& normal_to_other);
 	void wakeBodiesTouching(BodyID id);
 	void wakeBodiesTouching(ShapeID id);
+	void wakeJointPartners();
+	void prepareJoints(float dt);
+	void jointBodies(const Joint& joint, Body*& body_a, Body*& body_b);
+	void addExclusion(BodyID a, BodyID b);
+	void removeExclusion(BodyID a, BodyID b);
 	void wakeBodiesInBounds(const AABB& bounds);
 	void convertImpulsesToDamage(std::span<const SimulationIsland> islands);
 	void wakeDisturbedSleepers(float dt);
@@ -668,6 +693,14 @@ private:
 
 	std::vector<BodySlot> m_bodies;
 	std::deque<uint32_t> m_free_body_slots;
+
+	std::vector<JointSlot> m_joints;
+	std::deque<uint32_t> m_free_joint_slots;
+	size_t m_joint_count = 0;
+	std::vector<_detail::JointRow> m_joint_rows;
+	std::vector<uint8_t> m_joint_active;
+	std::vector<uint64_t> m_excluded_pairs;
+	Body m_world_body {.type = BodyType::static_body, .inverse_mass = 0.0f};
 	std::vector<NodeBinding> m_node_bindings;
 	std::vector<VoxelNodeBinding> m_voxel_bindings;
 

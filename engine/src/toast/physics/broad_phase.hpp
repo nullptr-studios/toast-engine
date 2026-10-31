@@ -41,6 +41,7 @@ struct BroadPhaseStats {
 	size_t rejected_invalid_bodies = 0;
 	size_t rejected_immovable_bodies = 0;
 	size_t rejected_layers = 0;
+	size_t rejected_joint_excluded = 0;
 	size_t tree_nodes = 0;
 };
 

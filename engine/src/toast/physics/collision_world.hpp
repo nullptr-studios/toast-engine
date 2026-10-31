@@ -9,14 +9,29 @@
 #include "shape.hpp"
 #include "voxel_shape_data.hpp"
 
+#include <algorithm>
+#include <cstdint>
 #include <span>
 
 namespace physics {
+
+[[nodiscard]]
+constexpr auto bodyPairKey(BodyID a, BodyID b) -> uint64_t {
+	const uint32_t low = std::min(a.slot, b.slot);
+	const uint32_t high = std::max(a.slot, b.slot);
+	return (static_cast<uint64_t>(low) << 32) | high;
+}
 
 struct CollisionWorldView {
 	std::span<const BodySlot> bodies;
 	std::span<const ShapeSlot> shapes;
 	std::span<const VoxelShapeSlot> voxel_shapes;
+	std::span<const uint64_t> excluded_pairs;
+
+	[[nodiscard]]
+	auto pairExcluded(BodyID a, BodyID b) const -> bool {
+		return not excluded_pairs.empty() && std::binary_search(excluded_pairs.begin(), excluded_pairs.end(), bodyPairKey(a, b));
+	}
 
 	[[nodiscard]]
 	auto body(BodyID id) const -> const Body* {

@@ -27,6 +27,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <limits>
 #include <mutex>
+#include <numeric>
 #include <span>
 #include <thread>
 #include <toast/assets/assets.hpp>
@@ -716,7 +717,9 @@ void Simulator::tick() {
 
 	{
 		PhaseScope worker_phase {*this, SimulationPhase::mutation, SimulationPhase::worker_execution};
-		const CollisionWorldView world {.bodies = m_bodies, .shapes = m_shapes, .voxel_shapes = m_voxel_shapes};
+		const CollisionWorldView world {
+		  .bodies = m_bodies, .shapes = m_shapes, .voxel_shapes = m_voxel_shapes, .excluded_pairs = m_excluded_pairs
+		};
 		const auto candidates = m_broad_phase.findPairs(world);
 		m_manifolds = generateManifoldsAsync(world, candidates);
 	}
@@ -728,12 +731,14 @@ void Simulator::tick() {
 	m_profile.cache_update_ms = elapsed_ms(after_narrow, after_cache);
 
 	wakeDisturbedSleepers(dt);
+	wakeJointPartners();
 	unlockDisturbedFragments();
 	const auto after_wake = std::chrono::steady_clock::now();
 	m_profile.wake_groups_ms = elapsed_ms(after_cache, after_wake);
 
 	// resolve
 	auto constraints = prepareConstraints(m_manifolds);
+	prepareJoints(dt);
 	const auto after_prepare = std::chrono::steady_clock::now();
 	m_profile.prepare_constraints_ms = elapsed_ms(after_wake, after_prepare);
 
@@ -1964,6 +1969,19 @@ void Simulator::wakeBodiesTouching(BodyID id) {
 			wakeBody(manifold.pair.a.body);
 		}
 	}
+
+	if (m_joint_count > 0) {
+		for (const JointSlot& slot : m_joints) {
+			if (not slot.occupied) {
+				continue;
+			}
+			if (slot.joint.descriptor.body_a == id) {
+				wakeBody(slot.joint.descriptor.body_b);
+			} else if (slot.joint.descriptor.body_b == id) {
+				wakeBody(slot.joint.descriptor.body_a);
+			}
+		}
+	}
 }
 
 void Simulator::wakeBodiesTouching(ShapeID id) {
@@ -1986,6 +2004,59 @@ void Simulator::markSupportedBodies() {
 		}
 		m_body_supported[manifold.pair.a.body.slot] = 1;
 		m_body_supported[manifold.pair.b.body.slot] = 1;
+	}
+
+	// A joint holds up what hangs from it
+	const auto holds_up = [this](BodyID id) {
+		const Body* body = tryGetBody(id);
+		return body == nullptr || body->type != BodyType::dynamic_body || m_body_supported[id.slot] != 0;
+	};
+	bool changed = m_joint_count > 0;
+	for (size_t pass = 0; changed && pass <= m_joint_count; ++pass) {
+		changed = false;
+		for (const JointSlot& slot : m_joints) {
+			if (not slot.occupied) {
+				continue;
+			}
+			const BodyID a = slot.joint.descriptor.body_a;
+			const BodyID b = slot.joint.descriptor.body_b;
+			const Body* body_a = tryGetBody(a);
+			const Body* body_b = tryGetBody(b);
+			if (body_a != nullptr && body_a->type == BodyType::dynamic_body && m_body_supported[a.slot] == 0 && holds_up(b)) {
+				m_body_supported[a.slot] = 1;
+				changed = true;
+			}
+			if (body_b != nullptr && body_b->type == BodyType::dynamic_body && m_body_supported[b.slot] == 0 && holds_up(a)) {
+				m_body_supported[b.slot] = 1;
+				changed = true;
+			}
+		}
+	}
+}
+
+void Simulator::wakeJointPartners() {
+	if (m_joint_count == 0) {
+		return;
+	}
+
+	// A chain of joints wakes from one end to the other
+	bool changed = true;
+	for (size_t pass = 0; changed && pass <= m_joint_count; ++pass) {
+		changed = false;
+		for (const JointSlot& slot : m_joints) {
+			if (not slot.occupied) {
+				continue;
+			}
+			const Body* body_a = tryGetBody(slot.joint.descriptor.body_a);
+			const Body* body_b = tryGetBody(slot.joint.descriptor.body_b);
+			if (body_a == nullptr || body_b == nullptr || body_a->type != BodyType::dynamic_body ||
+			    body_b->type != BodyType::dynamic_body || not body_a->enabled || not body_b->enabled ||
+			    body_a->awake == body_b->awake) {
+				continue;
+			}
+			wakeBody(body_a->awake ? slot.joint.descriptor.body_b : slot.joint.descriptor.body_a);
+			changed = true;
+		}
 	}
 }
 
@@ -3030,6 +3101,51 @@ void Simulator::updateSleeping(float dt) {
 		}
 	}
 
+	if (m_joint_count > 0) {
+		// Bodies in a joint sleep only when everyone is ready
+		std::vector<size_t> parents(m_bodies.size());
+		std::iota(parents.begin(), parents.end(), size_t {0});
+		const auto find_root = [&parents](size_t index) {
+			while (parents[index] != index) {
+				parents[index] = parents[parents[index]];
+				index = parents[index];
+			}
+			return index;
+		};
+		const auto jointed_dynamic = [this](const JointSlot& slot) {
+			const Body* body_a = tryGetBody(slot.joint.descriptor.body_a);
+			const Body* body_b = tryGetBody(slot.joint.descriptor.body_b);
+			return slot.occupied && body_a != nullptr && body_b != nullptr && body_a->type == BodyType::dynamic_body &&
+			       body_b->type == BodyType::dynamic_body;
+		};
+
+		for (const JointSlot& slot : m_joints) {
+			if (jointed_dynamic(slot)) {
+				parents[find_root(slot.joint.descriptor.body_a.slot)] = find_root(slot.joint.descriptor.body_b.slot);
+			}
+		}
+
+		std::vector<uint8_t> group_ready(m_bodies.size(), 1);
+		const auto vote = [&](BodyID id) {
+			const Body* body = tryGetBody(id);
+			if (body != nullptr && body->enabled && body->awake && (m_sleep_ready[id.slot] == 0 || m_sleep_blocked[id.slot] != 0)) {
+				group_ready[find_root(id.slot)] = 0;
+			}
+		};
+		for (const JointSlot& slot : m_joints) {
+			if (jointed_dynamic(slot)) {
+				vote(slot.joint.descriptor.body_a);
+				vote(slot.joint.descriptor.body_b);
+			}
+		}
+		for (const JointSlot& slot : m_joints) {
+			if (jointed_dynamic(slot) && group_ready[find_root(slot.joint.descriptor.body_a.slot)] == 0) {
+				m_sleep_ready[slot.joint.descriptor.body_a.slot] = 0;
+				m_sleep_ready[slot.joint.descriptor.body_b.slot] = 0;
+			}
+		}
+	}
+
 	for (size_t index = 0; index < m_bodies.size(); ++index) {
 		if (m_sleep_ready[index] != 0 && m_sleep_blocked[index] == 0) {
 			sleepBody(BodyID {.slot = static_cast<uint32_t>(index), .generation = m_bodies[index].generation});
@@ -3462,6 +3578,15 @@ void Simulator::destroyBody(BodyID body) {
 		return;
 	}
 
+	if (m_joint_count > 0) {
+		for (uint32_t index = 0; index < m_joints.size(); ++index) {
+			const JointSlot& joint_slot = m_joints[index];
+			if (joint_slot.occupied && (joint_slot.joint.descriptor.body_a == body || joint_slot.joint.descriptor.body_b == body)) {
+				destroyJoint({.slot = index, .generation = joint_slot.generation});
+			}
+		}
+	}
+
 	for (uint32_t index = 0; index < m_shapes.size(); ++index) {
 		ShapeSlot& shape_slot = m_shapes[index];
 		if (shape_slot.occupied && shape_slot.shape.owner == body) {
@@ -3477,6 +3602,164 @@ void Simulator::destroyBody(BodyID body) {
 		++slot.generation;
 	}
 	m_free_body_slots.emplace_back(body.slot);
+}
+
+auto Simulator::createJoint(const JointDescriptor& descriptor) -> JointID {
+	ZoneScopedN("physics::CreateJoint");
+	if (not mainThreadMutationAllowed()) {
+		return {};
+	}
+
+	JointDescriptor made = descriptor;
+	if (not valid(made.body_a) && valid(made.body_b)) {
+		std::swap(made.body_a, made.body_b);
+	}
+	if (not valid(made.body_a)) {
+		TOAST_WARN("Physics", "Rejected joint without a valid body");
+		return {};
+	}
+
+	const bool holds_world = not valid(made.body_b);
+	if (holds_world) {
+		made.body_b = {};
+	} else if (made.body_a == made.body_b) {
+		TOAST_WARN("Physics", "Rejected joint between a body and itself");
+		return {};
+	}
+
+	const float frame_length_squared = glm::dot(made.frame, made.frame);
+	if (not std::isfinite(frame_length_squared) || frame_length_squared <= 0.0f || not std::isfinite(made.anchor.x) ||
+	    not std::isfinite(made.anchor.y) || not std::isfinite(made.anchor.z)) {
+		TOAST_WARN("Physics", "Rejected joint with a non-finite anchor or a zero-length frame");
+		return {};
+	}
+	made.frame = glm::normalize(made.frame);
+
+	Body* body_a = tryGetBody(made.body_a);
+	Body* body_b = holds_world ? &m_world_body : tryGetBody(made.body_b);
+
+	JointSlot joint_slot {.joint = _detail::makeJoint(made, *body_a, *body_b), .occupied = true};
+	JointID id;
+	if (not m_free_joint_slots.empty()) {
+		id.slot = m_free_joint_slots.back();
+		m_free_joint_slots.pop_back();
+		joint_slot.generation = m_joints[id.slot].generation;
+		m_joints[id.slot] = std::move(joint_slot);
+	} else {
+		id.slot = static_cast<uint32_t>(m_joints.size());
+		m_joints.emplace_back(std::move(joint_slot));
+	}
+	id.generation = m_joints[id.slot].generation;
+	++m_joint_count;
+
+	if (made.exclude_collision && not holds_world) {
+		addExclusion(made.body_a, made.body_b);
+	}
+	wakeBody(made.body_a);
+	wakeBody(made.body_b);
+	return id;
+}
+
+void Simulator::destroyJoint(JointID joint) {
+	ZoneScopedN("physics::DestroyJoint");
+	if (not mainThreadMutationAllowed() || not valid(joint)) {
+		return;
+	}
+
+	JointSlot& slot = m_joints[joint.slot];
+	const JointDescriptor descriptor = slot.joint.descriptor;
+	slot.occupied = false;
+	slot.joint = {};
+	++slot.generation;
+	if (slot.generation == 0) {
+		++slot.generation;
+	}
+	m_free_joint_slots.emplace_back(joint.slot);
+	--m_joint_count;
+
+	if (descriptor.exclude_collision && valid(descriptor.body_b)) {
+		removeExclusion(descriptor.body_a, descriptor.body_b);
+	}
+	// What hung from it falls
+	wakeBody(descriptor.body_a);
+	wakeBody(descriptor.body_b);
+}
+
+auto Simulator::valid(JointID joint) const -> bool {
+	return joint.slot < m_joints.size() && m_joints[joint.slot].occupied && m_joints[joint.slot].generation == joint.generation;
+}
+
+auto Simulator::jointState(JointID joint) const -> std::optional<JointState> {
+	if (not valid(joint)) {
+		return std::nullopt;
+	}
+	const Joint& value = m_joints[joint.slot].joint;
+	return JointState {.angle = value.hinge_angle, .position = value.slider_position};
+}
+
+auto Simulator::setJointParams(JointID joint, const JointParams& params) -> bool {
+	if (not valid(joint)) {
+		return false;
+	}
+	JointParams& current = m_joints[joint.slot].joint.descriptor.params;
+	if (current.index() != params.index()) {
+		return false;
+	}
+	current = params;
+	wakeBody(m_joints[joint.slot].joint.descriptor.body_a);
+	wakeBody(m_joints[joint.slot].joint.descriptor.body_b);
+	return true;
+}
+
+void Simulator::addExclusion(BodyID a, BodyID b) {
+	const uint64_t key = bodyPairKey(a, b);
+	m_excluded_pairs.insert(std::upper_bound(m_excluded_pairs.begin(), m_excluded_pairs.end(), key), key);
+}
+
+void Simulator::removeExclusion(BodyID a, BodyID b) {
+	const uint64_t key = bodyPairKey(a, b);
+	const auto found = std::lower_bound(m_excluded_pairs.begin(), m_excluded_pairs.end(), key);
+	if (found != m_excluded_pairs.end() && *found == key) {
+		m_excluded_pairs.erase(found);
+	}
+}
+
+void Simulator::jointBodies(const Joint& joint, Body*& body_a, Body*& body_b) {
+	body_a = tryGetBody(joint.descriptor.body_a);
+	body_b = tryGetBody(joint.descriptor.body_b);
+	if (body_b == nullptr) {
+		body_b = &m_world_body;
+	}
+}
+
+void Simulator::prepareJoints(float dt) {
+	m_joint_rows.resize(m_joints.size());
+	m_joint_active.assign(m_joints.size(), 0);
+	if (m_joint_count == 0) {
+		return;
+	}
+	ZoneScopedN("physics::PrepareJoints");
+
+	const auto awake_dynamic = [](const Body* body) {
+		return body->type == BodyType::dynamic_body && body->enabled && body->awake;
+	};
+	for (size_t index = 0; index < m_joints.size(); ++index) {
+		JointSlot& slot = m_joints[index];
+		if (not slot.occupied) {
+			continue;
+		}
+
+		Body* body_a = nullptr;
+		Body* body_b = nullptr;
+		jointBodies(slot.joint, body_a, body_b);
+		if (body_a == nullptr || not body_a->enabled || not body_b->enabled || not(awake_dynamic(body_a) || awake_dynamic(body_b))) {
+			continue;
+		}
+
+		m_joint_rows[index] = _detail::prepareJoint(slot.joint, *body_a, *body_b, dt);
+		m_joint_active[index] = 1;
+		++m_profile.joint_count;
+	}
 }
 
 auto Simulator::createSphere(BodyID owner, const SphereShape& sphere, PhysicsMaterial material) -> ShapeID {
@@ -5845,6 +6128,34 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 		}
 	}
 
+	// Force all objects in a joint in one island
+	for (size_t joint_index = 0; joint_index < m_joints.size(); ++joint_index) {
+		if (m_joint_active[joint_index] == 0) {
+			continue;
+		}
+
+		const Joint& joint = m_joints[joint_index].joint;
+		const BodyID id_a = joint.descriptor.body_a;
+		const BodyID id_b = joint.descriptor.body_b;
+		const bool a_is_dynamic = is_active_dynamic(tryGetBody(id_a));
+		const bool b_is_dynamic = is_active_dynamic(tryGetBody(id_b));
+		if (a_is_dynamic) {
+			m_island_participates[id_a.slot] = true;
+		}
+		if (b_is_dynamic) {
+			m_island_participates[id_b.slot] = true;
+		}
+		if (a_is_dynamic && b_is_dynamic) {
+			const size_t root_a = find_root(id_a.slot);
+			const size_t root_b = find_root(id_b.slot);
+			if (root_a < root_b) {
+				m_island_parents[root_b] = root_a;
+			} else if (root_b < root_a) {
+				m_island_parents[root_a] = root_b;
+			}
+		}
+	}
+
 	const size_t no_island = m_bodies.size();
 	m_island_by_root.assign(m_bodies.size(), no_island);
 	std::vector<SimulationIsland> islands;
@@ -5900,6 +6211,20 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 		const size_t island_index = island_for_pair(constraint.pair);
 		if (island_index != no_island) {
 			islands[island_index].constraints.emplace_back(constraint);
+		}
+	}
+
+	for (size_t joint_index = 0; joint_index < m_joints.size(); ++joint_index) {
+		if (m_joint_active[joint_index] == 0) {
+			continue;
+		}
+
+		const Joint& joint = m_joints[joint_index].joint;
+		const bool a_is_dynamic = is_active_dynamic(tryGetBody(joint.descriptor.body_a));
+		const BodyID anchor_body = a_is_dynamic ? joint.descriptor.body_a : joint.descriptor.body_b;
+		const size_t island_index = m_island_by_root[find_root(anchor_body.slot)];
+		if (island_index != no_island) {
+			islands[island_index].joint_indices.emplace_back(static_cast<uint32_t>(joint_index));
 		}
 	}
 
@@ -6160,6 +6485,13 @@ void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
 	// Warm start is one pass over each island constraints cheap enough to just do right here
 	for (SimulationIsland& island : islands) {
 		warmStartConstraints(island.constraints);
+		for (const uint32_t joint_index : island.joint_indices) {
+			JointSlot& slot = m_joints[joint_index];
+			Body* body_a = nullptr;
+			Body* body_b = nullptr;
+			jointBodies(slot.joint, body_a, body_b);
+			_detail::warmStartJoint(m_joint_rows[joint_index], slot.joint, *body_a, *body_b);
+		}
 	}
 
 	// Solve in lockstep waves a wave can be chunked across islands since none share a dynamic body
@@ -6176,6 +6508,16 @@ void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
 	for (uint32_t iteration = 0; iteration < solver_iterations; ++iteration) {
 		ZoneScopedN("iteration");
 		ZoneValue(static_cast<uint64_t>(iteration));
+
+		for (SimulationIsland& island : islands) {
+			for (const uint32_t joint_index : island.joint_indices) {
+				JointSlot& slot = m_joints[joint_index];
+				Body* body_a = nullptr;
+				Body* body_b = nullptr;
+				jointBodies(slot.joint, body_a, body_b);
+				_detail::solveJoint(m_joint_rows[joint_index], slot.joint, *body_a, *body_b);
+			}
+		}
 
 		active_islands.clear();
 		for (size_t island_index = 0; island_index < islands.size(); ++island_index) {
@@ -6246,6 +6588,20 @@ void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
 		TOAST_WARN("Physics", "Skipped {} invalid solver constraint(s)", invalid_constraint_count);
 	}
 	m_profile.invalid_constraints = invalid_constraint_count;
+
+	if (m_joint_count > 0) {
+		for (uint32_t pass = 0; pass < tunables().position_iterations; ++pass) {
+			for (SimulationIsland& island : islands) {
+				for (const uint32_t joint_index : island.joint_indices) {
+					JointSlot& slot = m_joints[joint_index];
+					Body* body_a = nullptr;
+					Body* body_b = nullptr;
+					jointBodies(slot.joint, body_a, body_b);
+					_detail::correctJointPositions(slot.joint, *body_a, *body_b);
+				}
+			}
+		}
+	}
 
 	// Position correction is one pass over each island manifolds same reasoning as warm start above
 	size_t position_correction_count = 0;

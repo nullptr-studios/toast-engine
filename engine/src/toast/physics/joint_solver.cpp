@@ -8,8 +8,8 @@ namespace physics::_detail {
 
 namespace {
 
-constexpr float k_max_correction_speed = 20.0f;
 constexpr float k_infinity = std::numeric_limits<float>::infinity();
+constexpr float k_max_position_correction = 0.2f;
 
 auto skew(const glm::vec3& v) -> glm::mat3 {
 	// skew(v) * x = cross(v, x)
@@ -106,7 +106,7 @@ void solveAngular(Body& a, Body& b, const glm::vec3& axis, float bias_velocity, 
 
 void solvePoint(const JointRow& row, Body& a, Body& b, glm::vec3& accumulated, float bias, float damping, float impulse_clamp) {
 	const glm::vec3 relative = velocityAt(b, row.r_b) - velocityAt(a, row.r_a);
-	glm::vec3 impulse = row.inverse_point_mass * -((relative * damping) + biasVelocity(row.error, bias, row.inverse_dt));
+	glm::vec3 impulse = row.inverse_point_mass * -(relative * damping);
 	if (impulse_clamp > 0.0f) {
 		const float length = glm::length(impulse);
 		if (length > impulse_clamp) {
@@ -118,7 +118,7 @@ void solvePoint(const JointRow& row, Body& a, Body& b, glm::vec3& accumulated, f
 }
 
 void solvePin(const JointRow& row, Joint& joint, const PinParams& params, Body& a, Body& b) {
-	solvePoint(row, a, b, joint.impulses.point, params.bias, params.damping, params.impulse_clamp);
+	solvePoint(row, a, b, joint.impulses.point, params.damping, params.impulse_clamp);
 }
 
 void solveHinge(const JointRow& row, Joint& joint, const HingeParams& params, Body& a, Body& b) {
@@ -137,42 +137,16 @@ void solveHinge(const JointRow& row, Joint& joint, const HingeParams& params, Bo
 		}
 	}
 
-	solvePoint(row, a, b, impulses.point, params.bias, 1.0f, 0.0f);
+	solvePoint(row, a, b, impulses.point, 1.0f, 0.0f);
 
-	// The axes of both ends stay together
 	const glm::vec3 misalignment = glm::cross(axis, row.axes_b[2]);
 	for (int index = 0; index < 2; ++index) {
-		const glm::vec3 direction = row.axes_a[index];
-		solveAngular(
-		    a,
-		    b,
-		    direction,
-		    biasVelocity(glm::dot(misalignment, direction), params.bias, row.inverse_dt),
-		    impulses.perpendicular[index],
-		    -k_infinity,
-		    k_infinity
-		);
+		solveAngular(a, b, row.axes_a[index], 0.0f, impulses.perpendicular[index], -k_infinity, k_infinity);
 	}
 
 	if (params.limit_enabled) {
-		solveAngular(
-		    a,
-		    b,
-		    axis,
-		    limitBias(row.angle - params.limit_lower, params.limit_bias, row.inverse_dt),
-		    impulses.limit_lower,
-		    0.0f,
-		    k_infinity
-		);
-		solveAngular(
-		    a,
-		    b,
-		    -axis,
-		    limitBias(params.limit_upper - row.angle, params.limit_bias, row.inverse_dt),
-		    impulses.limit_upper,
-		    0.0f,
-		    k_infinity
-		);
+		solveAngular(a, b, axis, limitBias(row.angle - params.limit_lower, row.inverse_dt), impulses.limit_lower, 0.0f, k_infinity);
+		solveAngular(a, b, -axis, limitBias(params.limit_upper - row.angle, row.inverse_dt), impulses.limit_upper, 0.0f, k_infinity);
 	}
 }
 
@@ -186,62 +160,26 @@ void solveSlider(const JointRow& row, Joint& joint, const SliderParams& params, 
 	applyAngular(a, b, angular_impulse);
 
 	for (int index = 0; index < 2; ++index) {
-		const glm::vec3 direction = row.axes_a[index + 1];
-		solveLinear(
-		    row,
-		    a,
-		    b,
-		    direction,
-		    biasVelocity(glm::dot(row.error, direction), params.bias, row.inverse_dt),
-		    impulses.perpendicular[index],
-		    -k_infinity,
-		    k_infinity
-		);
+		solveLinear(row, a, b, row.axes_a[index + 1], 0.0f, impulses.perpendicular[index], -k_infinity, k_infinity);
 	}
 
 	solveLinear(
-	    row,
-	    a,
-	    b,
-	    axis,
-	    limitBias(row.position - params.linear_limit_lower, params.bias, row.inverse_dt),
-	    impulses.limit_lower,
-	    0.0f,
-	    k_infinity
+	    row, a, b, axis, limitBias(row.position - params.linear_limit_lower, row.inverse_dt), impulses.limit_lower, 0.0f, k_infinity
 	);
 	solveLinear(
 	    row,
 	    a,
 	    b,
 	    -axis,
-	    limitBias(params.linear_limit_upper - row.position, params.bias, row.inverse_dt),
+	    limitBias(params.linear_limit_upper - row.position, row.inverse_dt),
 	    impulses.limit_upper,
 	    0.0f,
 	    k_infinity
 	);
 }
 
-}
-
-auto makeJoint(const JointDescriptor& descriptor, const Body& body_a, const Body& body_b) -> Joint {
-	const auto frame_in = [&](const Body& body) {
-		const glm::quat inverse_rotation = glm::inverse(body.rotation);
-		return JointFrame {
-		  .position = inverse_rotation * (descriptor.anchor - body.position),
-		  .rotation = inverse_rotation * descriptor.frame,
-		};
-	};
-
-	Joint joint;
-	joint.descriptor = descriptor;
-	joint.frame_a = frame_in(body_a);
-	joint.frame_b = frame_in(body_b);
-	return joint;
-}
-
-auto prepareJoint(Joint& joint, const Body& body_a, const Body& body_b, float dt) -> JointRow {
+auto measure(const Joint& joint, const Body& body_a, const Body& body_b) -> JointRow {
 	JointRow row;
-	row.inverse_dt = 1.0f / dt;
 
 	const glm::quat frame_a = body_a.rotation * joint.frame_a.rotation;
 	const glm::quat frame_b = body_b.rotation * joint.frame_b.rotation;
@@ -264,20 +202,7 @@ auto prepareJoint(Joint& joint, const Body& body_a, const Body& body_b, float dt
 		}
 	}
 
-	if (const auto* hinge = std::get_if<HingeParams>(&joint.descriptor.params); hinge != nullptr) {
-		const glm::vec3 axis = row.axes_a[2];
-		const float raw =
-		    std::atan2(glm::dot(glm::cross(row.axes_a[0], row.axes_b[0]), axis), glm::dot(row.axes_a[0], row.axes_b[0]));
-		float delta = raw - joint.hinge_raw;
-		if (delta > glm::pi<float>()) {
-			delta -= glm::two_pi<float>();
-		} else if (delta < -glm::pi<float>()) {
-			delta += glm::two_pi<float>();
-		}
-		joint.hinge_raw = raw;
-		joint.hinge_angle += delta;
-		row.angle = joint.hinge_angle;
-	} else if (std::holds_alternative<SliderParams>(joint.descriptor.params)) {
+	if (std::holds_alternative<SliderParams>(joint.descriptor.params)) {
 		row.position = glm::dot(row.error, row.axes_a[0]);
 
 		glm::quat difference = frame_b * glm::conjugate(frame_a);
@@ -292,6 +217,103 @@ auto prepareJoint(Joint& joint, const Body& body_a, const Body& body_b, float dt
 				row.inverse_angular_mass = inverse;
 			}
 		}
+	}
+	return row;
+}
+
+auto wrapToPi(float angle) -> float {
+	if (angle > glm::pi<float>()) {
+		return angle - glm::two_pi<float>();
+	}
+	if (angle < -glm::pi<float>()) {
+		return angle + glm::two_pi<float>();
+	}
+	return angle;
+}
+
+auto rawHingeAngle(const JointRow& row) -> float {
+	return std::atan2(glm::dot(glm::cross(row.axes_a[0], row.axes_b[0]), row.axes_a[2]), glm::dot(row.axes_a[0], row.axes_b[0]));
+}
+
+void displace(Body& body, const glm::vec3& translation, const glm::vec3& rotation_vector) {
+	const glm::vec3 center = body.worldCenterOfMass() + translation;
+	const glm::quat spin {0.0f, rotation_vector.x, rotation_vector.y, rotation_vector.z};
+	body.rotation = glm::normalize(body.rotation + (0.5f * (spin * body.rotation)));
+	body.position = center - (body.rotation * body.local_center_of_mass);
+	const glm::mat3 rotation = glm::mat3_cast(body.rotation);
+	body.inverse_inertia_world = rotation * body.inverse_inertia_local * glm::transpose(rotation);
+}
+
+void shiftLinear(Body& a, Body& b, const glm::vec3& r_a, const glm::vec3& r_b, const glm::vec3& push) {
+	if (movable(a)) {
+		displace(a, -push * a.inverse_mass, -(a.inverse_inertia_world * glm::cross(r_a, push)));
+	}
+	if (movable(b)) {
+		displace(b, push * b.inverse_mass, b.inverse_inertia_world * glm::cross(r_b, push));
+	}
+}
+
+void shiftAngular(Body& a, Body& b, const glm::vec3& push) {
+	if (movable(a)) {
+		displace(a, glm::vec3 {0.0f}, -(a.inverse_inertia_world * push));
+	}
+	if (movable(b)) {
+		displace(b, glm::vec3 {0.0f}, b.inverse_inertia_world * push);
+	}
+}
+
+auto clampLength(const glm::vec3& value, float limit) -> glm::vec3 {
+	const float length = glm::length(value);
+	return length > limit ? value * (limit / length) : value;
+}
+
+auto clampValue(float value) -> float {
+	return std::clamp(value, -k_max_position_correction, k_max_position_correction);
+}
+
+void correctLinear(const JointRow& row, Body& a, Body& b, const glm::vec3& direction, float error, float bias) {
+	const float mass = linearMass(a, b, row.r_a, row.r_b, direction);
+	if (mass > 0.0f) {
+		shiftLinear(a, b, row.r_a, row.r_b, direction * (-bias * clampValue(error) * mass));
+	}
+}
+
+void correctAngular(Body& a, Body& b, const glm::vec3& axis, float error, float bias) {
+	const float mass = angularMass(a, b, axis);
+	if (mass > 0.0f) {
+		shiftAngular(a, b, axis * (-bias * clampValue(error) * mass));
+	}
+}
+
+}
+
+auto makeJoint(const JointDescriptor& descriptor, const Body& body_a, const Body& body_b) -> Joint {
+	const auto frame_in = [&](const Body& body) {
+		const glm::quat inverse_rotation = glm::inverse(body.rotation);
+		return JointFrame {
+		  .position = inverse_rotation * (descriptor.anchor - body.position),
+		  .rotation = inverse_rotation * descriptor.frame,
+		};
+	};
+
+	Joint joint;
+	joint.descriptor = descriptor;
+	joint.frame_a = frame_in(body_a);
+	joint.frame_b = frame_in(body_b);
+	return joint;
+}
+
+auto prepareJoint(Joint& joint, const Body& body_a, const Body& body_b, float dt) -> JointRow {
+	JointRow row = measure(joint, body_a, body_b);
+	row.inverse_dt = 1.0f / dt;
+
+	if (std::holds_alternative<HingeParams>(joint.descriptor.params)) {
+		const float raw = rawHingeAngle(row);
+		joint.hinge_angle += wrapToPi(raw - joint.hinge_raw);
+		joint.hinge_raw = raw;
+		row.angle = joint.hinge_angle;
+	} else if (std::holds_alternative<SliderParams>(joint.descriptor.params)) {
+		joint.slider_position = row.position;
 	}
 	return row;
 }
@@ -328,6 +350,64 @@ void solveJoint(const JointRow& row, Joint& joint, Body& body_a, Body& body_b) {
 		solveHinge(row, joint, *hinge, body_a, body_b);
 	} else if (const auto* slider = std::get_if<SliderParams>(&joint.descriptor.params); slider != nullptr) {
 		solveSlider(row, joint, *slider, body_a, body_b);
+	}
+}
+
+void correctJointPositions(Joint& joint, Body& body_a, Body& body_b) {
+	if (not movable(body_a) && not movable(body_b)) {
+		return;
+	}
+
+	const auto close_ends = [&](float bias) {
+		const JointRow row = measure(joint, body_a, body_b);
+		shiftLinear(
+		    body_a, body_b, row.r_a, row.r_b, row.inverse_point_mass * (clampLength(row.error, k_max_position_correction) * -bias)
+		);
+	};
+
+	if (const auto* pin = std::get_if<PinParams>(&joint.descriptor.params); pin != nullptr) {
+		close_ends(pin->bias);
+	} else if (const auto* hinge = std::get_if<HingeParams>(&joint.descriptor.params); hinge != nullptr) {
+		close_ends(hinge->bias);
+
+		// The axes of both ends back together
+		const JointRow aligned = measure(joint, body_a, body_b);
+		const glm::vec3 misalignment = glm::cross(aligned.axes_a[2], aligned.axes_b[2]);
+		for (int index = 0; index < 2; ++index) {
+			correctAngular(body_a, body_b, aligned.axes_a[index], glm::dot(misalignment, aligned.axes_a[index]), hinge->bias);
+		}
+
+		if (hinge->limit_enabled) {
+			const JointRow turned = measure(joint, body_a, body_b);
+			const float angle = joint.hinge_angle + wrapToPi(rawHingeAngle(turned) - joint.hinge_raw);
+			const glm::vec3 axis = turned.axes_a[2];
+			if (angle < hinge->limit_lower) {
+				correctAngular(body_a, body_b, axis, angle - hinge->limit_lower, hinge->limit_bias);
+			} else if (angle > hinge->limit_upper) {
+				correctAngular(body_a, body_b, -axis, hinge->limit_upper - angle, hinge->limit_bias);
+			}
+		}
+	} else if (const auto* slider = std::get_if<SliderParams>(&joint.descriptor.params); slider != nullptr) {
+		const JointRow before = measure(joint, body_a, body_b);
+		shiftAngular(
+		    body_a,
+		    body_b,
+		    before.inverse_angular_mass * (clampLength(before.angular_error, k_max_position_correction) * -slider->bias)
+		);
+
+		// Only the way along the axis is free
+		const JointRow turned = measure(joint, body_a, body_b);
+		for (int index = 1; index < 3; ++index) {
+			const glm::vec3 direction = turned.axes_a[index];
+			correctLinear(turned, body_a, body_b, direction, glm::dot(turned.error, direction), slider->bias);
+		}
+
+		const JointRow moved = measure(joint, body_a, body_b);
+		if (moved.position < slider->linear_limit_lower) {
+			correctLinear(moved, body_a, body_b, moved.axes_a[0], moved.position - slider->linear_limit_lower, slider->bias);
+		} else if (moved.position > slider->linear_limit_upper) {
+			correctLinear(moved, body_a, body_b, -moved.axes_a[0], slider->linear_limit_upper - moved.position, slider->bias);
+		}
 	}
 }
 
