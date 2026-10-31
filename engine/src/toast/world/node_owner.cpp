@@ -681,6 +681,37 @@ auto INodeOwner::buildTree(std::vector<Box<Node>>&& nodes, const assets::Handle<
 		}
 	}
 
+	for (size_t i = 0; i < nodes.size(); ++i) {
+		const NodeInfo* info = nodes[i]->info();
+		if (not info) {
+			continue;
+		}
+		const auto& data = file->nodes[i];
+		info->forEachBaseType([&](const NodeInfo& level) {
+			for (const auto& field : level.all_fields) {
+				if (not field.isNodeReference() || not field.set || field.name == "m_parent" || field.hasAttribute("ReadOnly") ||
+				    field.hasAttribute("NoSerialize")) {
+					continue;
+				}
+
+				const auto stored = data.find(field.name);
+				const auto* uid = stored.has_value() ? std::any_cast<UID>(&stored->value) : nullptr;
+				if (uid == nullptr || uid->data() == 0) {
+					continue;
+				}
+
+				const auto target = uid_map.find(uid->data());
+				if (target == uid_map.end()) {
+					TOAST_WARN(
+					    "World", "Field '{}' of '{}' references UID {} which is not in this prefab", field.name, nodes[i]->name(), *uid
+					);
+					continue;
+				}
+				field.set(&*nodes[i], std::any {target->second});
+			}
+		});
+	}
+
 	// Signals are restored after every node has been allocated and indexed, so connection targets
 	// can be resolved regardless of their order in the prefab file.
 	for (size_t i = 0; i < nodes.size(); ++i) {

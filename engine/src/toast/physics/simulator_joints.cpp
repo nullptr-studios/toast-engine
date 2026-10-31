@@ -152,7 +152,7 @@ void Simulator::syncJointNodes() {
 		      .body_a = body_a,
 		      .body_b = body_b,
 		      .anchor = node.world_position,
-		      .frame = node.world_rotation,
+		      .frame = node.frameRotation(),
 		      .exclude_collision = node.exclude_nodes_from_collision,
 		      .params = params,
 		      .break_force = node.break_force,
@@ -330,7 +330,9 @@ void Simulator::checkJointAnchors() {
 			}
 		};
 
-		check(joint.descriptor.body_a, joint.frame_a, joint.voxel_end_a);
+		if (valid(joint.descriptor.body_a)) {
+			check(joint.descriptor.body_a, joint.frame_a, joint.voxel_end_a);
+		}
 		if (valid(joint.descriptor.body_b)) {
 			check(joint.descriptor.body_b, joint.frame_b, joint.voxel_end_b);
 		}

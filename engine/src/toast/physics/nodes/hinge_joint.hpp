@@ -48,8 +48,26 @@ public:
 	[[nodiscard]]
 	auto makeParams() const -> JointParams override;
 
+	[[nodiscard]]
+	auto limitHandles() const -> LimitHandles override;
+
+	[[nodiscard]]
+	auto limitsAreAngles() const -> bool override {
+		return true;
+	}
+
+	[[nodiscard]]
+	auto limitValue(toast::GizmoHandle handle) const -> float override;
+	void setLimitValue(toast::GizmoHandle handle, float value) override;
+
+	[[nodiscard]]
+	auto limitField(toast::GizmoHandle handle) const -> const char* override;
+
+	static constexpr float k_arc_radius = 0.35f;
+
 protected:
 	void drawGizmo(const glm::vec3& origin, const glm::mat3& axes, const glm::vec4& color) const override;
+
 	void applyState(const JointState& state) override;
 	void updateInspectorMessages() override;
 };

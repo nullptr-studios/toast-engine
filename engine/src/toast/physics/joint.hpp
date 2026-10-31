@@ -30,7 +30,8 @@ struct JointID {
 enum class JointType : uint8_t {
 	pin,
 	hinge,
-	slider
+	slider,
+	fixed
 };
 
 struct PinParams {
@@ -62,7 +63,12 @@ struct SliderParams {
 	auto operator==(const SliderParams&) const -> bool = default;
 };
 
-using JointParams = std::variant<PinParams, HingeParams, SliderParams>;
+struct FixedParams {
+	float bias = 0.3f;
+	auto operator==(const FixedParams&) const -> bool = default;
+};
+
+using JointParams = std::variant<PinParams, HingeParams, SliderParams, FixedParams>;
 
 struct JointFrame {
 	glm::vec3 position = {};

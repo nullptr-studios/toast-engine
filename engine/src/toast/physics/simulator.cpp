@@ -3619,18 +3619,18 @@ auto Simulator::createJoint(const JointDescriptor& descriptor) -> JointID {
 		return {};
 	}
 
+	// An end without a body is the world
 	JointDescriptor made = descriptor;
-	if (not valid(made.body_a) && valid(made.body_b)) {
-		std::swap(made.body_a, made.body_b);
-	}
-	if (not valid(made.body_a)) {
+	const bool a_is_body = valid(made.body_a);
+	const bool b_is_body = valid(made.body_b);
+	if (not a_is_body && not b_is_body) {
 		TOAST_WARN("Physics", "Rejected joint without a valid body");
 		return {};
 	}
-
-	const bool holds_world = not valid(made.body_b);
+	const bool holds_world = not(a_is_body && b_is_body);
 	if (holds_world) {
-		made.body_b = {};
+		made.body_b = a_is_body ? made.body_a : made.body_b;
+		made.body_a = {};
 	} else if (made.body_a == made.body_b) {
 		TOAST_WARN("Physics", "Rejected joint between a body and itself");
 		return {};
@@ -3644,14 +3644,14 @@ auto Simulator::createJoint(const JointDescriptor& descriptor) -> JointID {
 	}
 	made.frame = glm::normalize(made.frame);
 
-	Body* body_a = tryGetBody(made.body_a);
-	Body* body_b = holds_world ? &m_world_body : tryGetBody(made.body_b);
+	Body* body_a = holds_world ? &m_world_body : tryGetBody(made.body_a);
+	Body* body_b = tryGetBody(made.body_b);
 
 	Joint made_joint = _detail::makeJoint(made, *body_a, *body_b);
-	made_joint.voxel_end_a = voxelEndOf(made.body_a, made_joint.frame_a, made.voxel_anchor);
 	if (not holds_world) {
-		made_joint.voxel_end_b = voxelEndOf(made.body_b, made_joint.frame_b, made.voxel_anchor);
+		made_joint.voxel_end_a = voxelEndOf(made.body_a, made_joint.frame_a, made.voxel_anchor);
 	}
+	made_joint.voxel_end_b = voxelEndOf(made.body_b, made_joint.frame_b, made.voxel_anchor);
 	JointSlot joint_slot {.joint = std::move(made_joint), .occupied = true};
 	JointID id;
 	if (not m_free_joint_slots.empty()) {
@@ -3691,7 +3691,7 @@ void Simulator::destroyJoint(JointID joint) {
 	m_free_joint_slots.emplace_back(joint.slot);
 	--m_joint_count;
 
-	if (descriptor.exclude_collision && valid(descriptor.body_b)) {
+	if (descriptor.exclude_collision && valid(descriptor.body_a) && valid(descriptor.body_b)) {
 		removeExclusion(descriptor.body_a, descriptor.body_b);
 	}
 	// What hung from it falls
@@ -3741,6 +3741,9 @@ void Simulator::removeExclusion(BodyID a, BodyID b) {
 void Simulator::jointBodies(const Joint& joint, Body*& body_a, Body*& body_b) {
 	body_a = tryGetBody(joint.descriptor.body_a);
 	body_b = tryGetBody(joint.descriptor.body_b);
+	if (body_a == nullptr) {
+		body_a = &m_world_body;
+	}
 	if (body_b == nullptr) {
 		body_b = &m_world_body;
 	}

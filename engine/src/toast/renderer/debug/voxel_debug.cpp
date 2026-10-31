@@ -558,15 +558,15 @@ void Monitor::drawPanel(const RenderFrame& frame) const {
 	ImGui::TextDisabled("%u pool slots, %u palettes, %u records", info.packed_slots, info.packed_palettes, storage.recordCount());
 	size_t occupied = 0;
 	size_t glass = 0;
-	uint32_t small = 0;
+	uint32_t on_unit_box = 0;
 	for (uint32_t record = 0; record < storage.recordCount(); ++record) {
 		if (const auto& list = storage.brickList(record)) {
 			occupied += list->occupied.size();
 			glass += list->glass.size();
-			small += list->occupied.size() <= VoxelBlasCache::k_unit_box_bricks ? 1u : 0u;
+			on_unit_box += list->occupied.size() <= VoxelBlasCache::k_unit_box_bricks ? 1u : 0u;
 		}
 	}
-	ImGui::TextDisabled("%zu occupied bricks, %zu glass, %u records on the unit box", occupied, glass, small);
+	ImGui::TextDisabled("%zu occupied bricks, %zu glass, %u records on the unit box", occupied, glass, on_unit_box);
 	if (const VoxelBlasCache* blas = VulkanRenderer::instance->voxelBlasCache()) {
 		const VoxelBlasCache::Stats s = blas->stats();
 		ImGui::TextDisabled(
