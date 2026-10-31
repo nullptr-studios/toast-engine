@@ -8,6 +8,8 @@
 #pragma once
 #include "joint3d.hpp"
 
+#include <algorithm>
+
 namespace physics {
 
 class [[ToastNode, Icon("SliderJoint"), Color("Green")]] TOAST_API SliderJoint : public physics::Joint3D {
@@ -30,8 +32,39 @@ public:
 		return SliderParams {.bias = bias, .linear_limit_lower = linear_limit_lower, .linear_limit_upper = linear_limit_upper};
 	}
 
+	[[nodiscard]]
+	auto limitHandles() const -> LimitHandles override {
+		return {
+		  {LimitHandle {.handle = toast::GizmoHandle::size_neg_x, .local = {linear_limit_lower, 0.0f, 0.0f}},
+			 LimitHandle {.handle = toast::GizmoHandle::size_pos_x, .local = {linear_limit_upper, 0.0f, 0.0f}}},
+		  2,
+		};
+	}
+
+	[[nodiscard]]
+	auto limitValue(toast::GizmoHandle handle) const -> float override {
+		return handle == toast::GizmoHandle::size_neg_x ? linear_limit_lower : linear_limit_upper;
+	}
+
+	void setLimitValue(toast::GizmoHandle handle, float value) override {
+		if (handle == toast::GizmoHandle::size_neg_x) {
+			linear_limit_lower = std::min(value, linear_limit_upper);
+		} else if (handle == toast::GizmoHandle::size_pos_x) {
+			linear_limit_upper = std::max(value, linear_limit_lower);
+		}
+	}
+
+	[[nodiscard]]
+	auto limitField(toast::GizmoHandle handle) const -> const char* override {
+		if (handle == toast::GizmoHandle::size_neg_x) {
+			return "linear_limit_lower";
+		}
+		return handle == toast::GizmoHandle::size_pos_x ? "linear_limit_upper" : nullptr;
+	}
+
 protected:
 	void drawGizmo(const glm::vec3& origin, const glm::mat3& axes, const glm::vec4& color) const override;
+
 	void applyState(const JointState& state) override { current_distance = state.position; }
 };
 

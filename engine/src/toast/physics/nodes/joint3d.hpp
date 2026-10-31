@@ -8,11 +8,21 @@
 #pragma once
 #include "../joint.hpp"
 
+#include <array>
+#include <toast/world/gizmo_layout.hpp>
 #include <toast/world/node_3d.hpp>
+#include <utility>
 
 namespace physics {
 
 class Simulator;
+
+struct LimitHandle {
+	toast::GizmoHandle handle = toast::GizmoHandle::none;
+	glm::vec3 local {0.0f};
+};
+
+using LimitHandles = std::pair<std::array<LimitHandle, 2>, uint32_t>;
 
 class [[ToastNode, Hidden, Interface, Color("Green")]] TOAST_API Joint3D : public toast::Node3D {
 	friend class Simulator;
@@ -33,6 +43,9 @@ public:
 
 	[[Reflect, ReadOnly]]
 	bool broken = false;
+
+	[[Reflect]]
+	bool draw_debug = true;
 
 	/// 0 never breaks
 	[[Reflect, Group("Breaking"), Unit("N")]]
@@ -66,12 +79,38 @@ public:
 	void repair();
 
 	[[nodiscard]]
+	auto frameRotation() const -> glm::quat;
+
+	[[nodiscard]]
 	virtual auto makeParams() const -> JointParams {
 		return PinParams {};
 	}
 
+	[[nodiscard]]
+	virtual auto limitHandles() const -> LimitHandles {
+		return {{}, 0};
+	}
+
+	[[nodiscard]]
+	virtual auto limitsAreAngles() const -> bool {
+		return false;
+	}
+
+	[[nodiscard]]
+	virtual auto limitValue(toast::GizmoHandle handle) const -> float {
+		return 0.0f;
+	}
+
+	virtual void setLimitValue(toast::GizmoHandle handle, float value) { }
+
+	[[nodiscard]]
+	virtual auto limitField(toast::GizmoHandle handle) const -> const char* {
+		return nullptr;
+	}
+
 protected:
 	virtual void drawGizmo(const glm::vec3& origin, const glm::mat3& axes, const glm::vec4& color) const { }
+
 	virtual void applyState(const JointState& state) { }
 
 	void updateInspectorMessages() override;

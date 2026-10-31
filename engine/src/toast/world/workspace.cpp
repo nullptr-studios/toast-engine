@@ -31,6 +31,7 @@
 #include <toast/log.hpp>
 #include <toast/physics/nodes/box_collider.hpp>
 #include <toast/physics/nodes/capsule_collider.hpp>
+#include <toast/physics/nodes/joint3d.hpp>
 #include <toast/physics/nodes/rigidbody.hpp>
 #include <toast/physics/nodes/sphere_collider.hpp>
 #include <toast/renderer/debug/editor_overlays.hpp>
@@ -329,6 +330,10 @@ static auto gizmoField(GizmoTool tool, GizmoHandle handle, Node& node) -> const 
 			const char* name = light_gizmo::handleField(*light, handle);
 			return name != nullptr ? node.info()->getField(name) : nullptr;
 		}
+		if (const auto joint = box.as<physics::Joint3D>(); joint.exists()) {
+			const char* name = joint->limitField(handle);
+			return name != nullptr ? node.info()->getField(name) : nullptr;
+		}
 		if (box.as<physics::BoxCollider>().exists()) {
 			return node.info()->getField("size");
 		}
@@ -349,6 +354,17 @@ static auto gizmoField(GizmoTool tool, GizmoHandle handle, Node& node) -> const 
 		case GizmoTool::scale: return node.info()->getField("world_scale");
 		default: return nullptr;
 	}
+}
+
+static auto hingeRayAngle(const Ray& ray, const glm::vec3& origin, const glm::quat& rotation, float fallback) -> float {
+	const auto hit_t = rayPlaneIntersect(ray, origin, rotation * glm::vec3(0.0f, 0.0f, 1.0f));
+	if (not hit_t.has_value()) {
+		return fallback;
+	}
+	const glm::vec3 hit = ray.origin + (ray.direction * (*hit_t)) - origin;
+	return glm::degrees(
+	    std::atan2(glm::dot(hit, rotation * glm::vec3(0.0f, 1.0f, 0.0f)), glm::dot(hit, rotation * glm::vec3(1.0f, 0.0f, 0.0f)))
+	);
 }
 
 Workspace::Workspace(UID handle, EmptyTag) : m_handle(handle) {
@@ -1122,6 +1138,15 @@ auto Workspace::collectSizeHandles() const -> std::pair<std::array<SizeHandlePoi
 		return {out, count};
 	}
 
+	// limits of a joint
+	if (auto joint = m_focused_node.as<physics::Joint3D>(); joint.exists()) {
+		const auto [entries, entry_count] = joint->limitHandles();
+		for (uint32_t i = 0; i < entry_count; ++i) {
+			out[count++] = SizeHandlePoint {.world_position = origin + rotation * entries[i].local, .handle = entries[i].handle};
+		}
+		return {out, count};
+	}
+
 	if (auto volume = m_focused_node.as<VoxelVolume>(); volume.exists()) {
 		const glm::vec3 half = glm::vec3(volume->sizeVoxels()) * voxel::k_voxel_size * 0.5f;
 		const glm::mat4& world = node3d->getWorldTransform();
@@ -1184,6 +1209,15 @@ void Workspace::gizmoApplySizeDrag(float delta) {
 
 	if (auto light = m_focused_node.as<Light>(); light.exists()) {
 		light_gizmo::applyHandleDistance(*light, m_gizmo_drag, m_gizmo_drag_start_size[axis] + growth);
+		return;
+	}
+
+	if (auto joint = m_focused_node.as<physics::Joint3D>(); joint.exists()) {
+		float value = m_gizmo_drag_start_size[0] + delta;
+		if (m_translate_snap.enabled && m_translate_snap.value > 0.0001f) {
+			value = std::round(value / m_translate_snap.value) * m_translate_snap.value;
+		}
+		joint->setLimitValue(m_gizmo_drag, value);
 		return;
 	}
 
@@ -1303,6 +1337,8 @@ void Workspace::gizmoBeginDrag(GizmoHandle handle) {
 	if (gizmo_layout::isSizeHandle(handle)) {
 		if (auto light = m_focused_node.as<Light>(); light.exists()) {
 			m_gizmo_drag_start_size[gizmo_layout::sizeHandleAxis(handle)] = light_gizmo::handleDistance(*light, handle);
+		} else if (auto joint = m_focused_node.as<physics::Joint3D>(); joint.exists()) {
+			m_gizmo_drag_start_size[0] = joint->limitValue(handle);
 		} else if (auto volume = m_focused_node.as<VoxelVolume>(); volume.exists()) {
 			m_gizmo_drag_start_size = glm::vec3(volume->sizeVoxels());
 		} else if (auto box = m_focused_node.as<physics::BoxCollider>(); box.exists()) {
@@ -1332,6 +1368,16 @@ void Workspace::gizmoBeginDrag(GizmoHandle handle) {
 	const auto extent = renderer::getOutputTarget().getExtent();
 	const glm::vec2 viewport_size {static_cast<float>(extent.width), static_cast<float>(extent.height)};
 	const Ray ray = camera->screenPointToRay(m_gizmo_mouse_pos, viewport_size);
+
+	// hinge limit
+	if (gizmo_layout::isSizeHandle(handle)) {
+		if (auto joint = m_focused_node.as<physics::Joint3D>(); joint.exists() && joint->limitsAreAngles()) {
+			m_gizmo_drag_axis = glm::normalize(node3d->world_rotation * glm::vec3(0.0f, 0.0f, 1.0f));
+			m_gizmo_drag_plane_normal = m_gizmo_drag_axis;
+			m_gizmo_drag_start_angle = hingeRayAngle(ray, origin, node3d->world_rotation, m_gizmo_drag_start_size[0]);
+			return;
+		}
+	}
 
 	if (gizmo_layout::isSizeHandle(handle)) {
 		glm::vec3 axis {0.0f};
@@ -1398,13 +1444,31 @@ void Workspace::gizmoUpdateDrag() {
 	    m_gizmo_drag == GizmoHandle::axis_x || m_gizmo_drag == GizmoHandle::axis_y || m_gizmo_drag == GizmoHandle::axis_z;
 
 	if (gizmo_layout::isSizeHandle(m_gizmo_drag)) {
+		auto joint = m_focused_node.as<physics::Joint3D>();
+
+		if (joint.exists() && joint->limitsAreAngles()) {
+			const float angle = hingeRayAngle(ray, origin, m_gizmo_drag_start_rotation, m_gizmo_drag_start_angle);
+			float value = m_gizmo_drag_start_size[0] + std::remainder(angle - m_gizmo_drag_start_angle, 360.0f);
+			if (m_rotate_snap.enabled && m_rotate_snap.value > 0.0001f) {
+				value = std::round(value / m_rotate_snap.value) * m_rotate_snap.value;
+			}
+			joint->setLimitValue(m_gizmo_drag, value);
+			if (const char* field = joint->limitField(m_gizmo_drag); field != nullptr) {
+				m_focused_node->onReflectedFieldChanged(field);
+			}
+			return;
+		}
+
 		const auto [_, t2] = closestPointsBetweenLines(ray.origin, ray.direction, origin, m_gizmo_drag_axis);
 		const glm::vec3 current = origin + m_gizmo_drag_axis * t2;
 		gizmoApplySizeDrag(glm::dot(current - m_gizmo_drag_anchor, m_gizmo_drag_axis));
 
 		const auto light = m_focused_node.as<Light>();
-		const char* light_field = light.exists() ? light_gizmo::handleField(*light, m_gizmo_drag) : nullptr;
-		m_focused_node->onReflectedFieldChanged(light_field != nullptr ? light_field : "size");
+		const char* field = light.exists() ? light_gizmo::handleField(*light, m_gizmo_drag) : nullptr;
+		if (field == nullptr && joint.exists()) {
+			field = joint->limitField(m_gizmo_drag);
+		}
+		m_focused_node->onReflectedFieldChanged(field != nullptr ? field : "size");
 		return;
 	}
 
@@ -2078,7 +2142,7 @@ void Workspace::eventSubscriptions() {
 			std::istringstream ss(e.value);
 			ss >> deg.x >> deg.y >> deg.z;
 			value = std::any {glm::quat(glm::radians(deg))};
-		} else if (field->value_type == FieldType::uid_t && not field->is_array && field->type.starts_with("Box<")) {
+		} else if (field->isNodeReference()) {
 			auto parsed = assets::Prefab::valueFromString(field->value_type, false, e.value);
 			if (not parsed.has_value()) {
 				TOAST_WARN("World", "NodeChangeParam: couldn't parse '{}' for parameter '{}'", e.value, e.parameter);
