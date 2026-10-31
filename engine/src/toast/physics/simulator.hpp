@@ -49,6 +49,8 @@ class Trigger;
 class Rigidbody;
 class DynamicRigidbody;
 class Collider;
+class Joint3D;
+struct SimulatorTestAccess;
 struct SmashVolume;
 struct SmashPieces;
 
@@ -61,6 +63,7 @@ class TOAST_API Simulator {
 	friend class Rigidbody;
 	friend class DynamicRigidbody;
 	friend class toast::VoxelNode;
+	friend struct SimulatorTestAccess;
 
 public:
 	struct DebugDirtyBrick {
@@ -102,6 +105,11 @@ public:
 	auto jointCount() const -> size_t {
 		return m_joint_count;
 	}
+
+	static void registerJointNode(Joint3D& node);
+	static void unregisterJointNode(Joint3D& node);
+	static void breakJointNode(Joint3D& node);
+	static void repairJointNode(Joint3D& node);
 
 	/// @param layers Only bodies including one of these layers are hit
 	static auto raycast(
@@ -196,6 +204,7 @@ public:
 		size_t invalid_constraints = 0;
 		size_t position_corrections = 0;
 		size_t joint_count = 0;
+		size_t joints_broken = 0;
 
 		double tick_ms = 0.0;
 		double damage_apply_ms = 0.0;
@@ -548,6 +557,17 @@ private:
 	void wakeBodiesTouching(ShapeID id);
 	void wakeJointPartners();
 	void prepareJoints(float dt);
+	void syncJointNodes();
+	void checkJointAnchors();
+	void breakOverloadedJoints(float dt);
+	void breakJoint(JointID joint, JointBreakReason reason);
+	void publishJoints();
+	[[nodiscard]]
+	auto findVoxelShape(BodyID body) const -> ShapeID;
+	[[nodiscard]]
+	auto voxelEndOf(BodyID body, const JointFrame& frame, const VoxelAnchorSettings& settings) const -> JointVoxelEnd;
+	[[nodiscard]]
+	auto countSolidAround(ShapeID shape, const glm::vec3& body_local, int radius_voxels) const -> std::optional<uint32_t>;
 	void jointBodies(const Joint& joint, Body*& body_a, Body*& body_b);
 	void addExclusion(BodyID a, BodyID b);
 	void removeExclusion(BodyID a, BodyID b);
@@ -701,6 +721,20 @@ private:
 	std::vector<uint8_t> m_joint_active;
 	std::vector<uint64_t> m_excluded_pairs;
 	Body m_world_body {.type = BodyType::static_body, .inverse_mass = 0.0f};
+
+	struct JointBinding {
+		JointID joint;
+		toast::Box<Joint3D> node;
+		bool broken = false;
+	};
+
+	struct BrokenJoint {
+		JointID joint;
+		JointBreakReason reason = JointBreakReason::requested;
+	};
+
+	std::vector<JointBinding> m_joint_bindings;
+	std::vector<BrokenJoint> m_broken_joints;
 	std::vector<NodeBinding> m_node_bindings;
 	std::vector<VoxelNodeBinding> m_voxel_bindings;
 
