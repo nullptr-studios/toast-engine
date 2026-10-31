@@ -414,6 +414,7 @@ private:
 		std::vector<Constraint> constraints;
 		std::vector<size_t> manifold_indices;
 		std::vector<uint32_t> joint_indices;
+		std::vector<size_t> joint_batch_offsets;
 
 		/// constraints[batch_offsets[i] .. batch_offsets[i + 1]) only share a dynamic body within one body pair run
 		/// and each body pair run is contiguous, so a batch can be split anywhere except inside a run
@@ -724,6 +725,8 @@ private:
 	size_t m_joint_count = 0;
 	std::vector<_detail::JointRow> m_joint_rows;
 	std::vector<uint8_t> m_joint_active;
+	std::vector<uint32_t> m_joint_next_free_batch;
+	std::vector<uint32_t> m_joint_wave;
 	std::vector<uint64_t> m_excluded_pairs;
 	Body m_world_body {.type = BodyType::static_body, .inverse_mass = 0.0f};
 
