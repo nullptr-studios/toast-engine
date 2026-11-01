@@ -316,6 +316,8 @@ auto importVox(std::span<const uint8_t> data) -> VoxScene {
 
 	VoxScene scene;
 	bool has_rgba = false;
+	std::array<uint8_t, 256> imap {};
+	bool has_imap = false;
 	std::unordered_map<uint32_t, VoxMaterial> materials;
 
 	struct RawNode {
@@ -414,6 +416,11 @@ auto importVox(std::span<const uint8_t> data) -> VoxScene {
 				}
 			}
 			has_rgba = true;
+		} else if (is("IMAP")) {
+			for (uint8_t& value : imap) {
+				value = reader.u8();
+			}
+			has_imap = true;
 		} else if (is("MATL")) {
 			const int32_t index = reader.i32();
 			const VoxDict attributes = reader.dict();
@@ -538,7 +545,7 @@ auto importVox(std::span<const uint8_t> data) -> VoxScene {
 				    "node " + std::to_string(node_id) + " holds " + std::to_string(count) + " model frames; only the first is imported"
 				);
 			}
-		} else if (is("PACK") || is("LAYR") || is("rOBJ") || is("rCAM") || is("NOTE") || is("IMAP")) {
+		} else if (is("PACK") || is("LAYR") || is("rOBJ") || is("rCAM") || is("NOTE")) {
 		} else {
 			scene.warnings.push_back(
 			    "unknown chunk '" + std::string(id.data(), 4) + "' skipped, which is how a newer MagicaVoxel adds things"
@@ -570,12 +577,23 @@ auto importVox(std::span<const uint8_t> data) -> VoxScene {
 	}
 	scene.palette.max_emissive = brightest > 0.0f ? brightest : 1.0f;
 
+	std::array<bool, k_palette_size> empty {};
+	for (uint32_t i = 1; i < k_palette_size; ++i) {
+		const PaletteEntry& entry = scene.palette.entries[i];
+		empty[i] = has_rgba && entry.albedo_r == 0 && entry.albedo_g == 0 && entry.albedo_b == 0;
+	}
+
 	// An index with no MATL chunk is MagicaVoxel diffuse too
 	for (uint32_t i = 1; i < k_palette_size; ++i) {
-		scene.palette.entries[i].roughness = voxByteFromUnit(VoxMaterial {}.roughness);
+		if (!empty[i]) {
+			scene.palette.entries[i].roughness = voxByteFromUnit(VoxMaterial {}.roughness);
+		}
 	}
 
 	for (const auto& [index, material] : materials) {
+		if (empty[index]) {
+			continue;
+		}
 		PaletteEntry& entry = scene.palette.entries[index];
 		entry.roughness = voxByteFromUnit(material.roughness);
 		entry.metallic = voxByteFromUnit(material.metallic);
@@ -587,6 +605,48 @@ auto importVox(std::span<const uint8_t> data) -> VoxScene {
 		}
 		if (material.ior > 1.0f) {
 			entry.ior = voxel::iorByte(material.ior);
+		}
+	}
+
+	for (uint32_t i = 1; i < k_palette_size; ++i) {
+		if (empty[i]) {
+			scene.palette.entries[i] = PaletteEntry {};
+		}
+	}
+
+	std::array<uint8_t, 256> id_of_internal {};
+	for (uint32_t i = 0; i < 256; ++i) {
+		id_of_internal[i] = static_cast<uint8_t>(i);
+	}
+	if (has_imap) {
+		std::array<bool, 256> seen {};
+		bool is_permutation = true;
+		for (uint8_t value : imap) {
+			is_permutation = is_permutation && !seen[value];
+			seen[value] = true;
+		}
+
+		if (is_permutation) {
+			for (uint32_t slot = 0; slot < 256; ++slot) {
+				id_of_internal[imap[slot]] = static_cast<uint8_t>((slot + 1) & 255u);
+			}
+		} else {
+			scene.warnings.emplace_back("the IMAP chunk is not a permutation of 0..255; the palette order was left as stored");
+		}
+	}
+
+	if (has_imap) {
+		const auto internal_entries = scene.palette.entries;
+		for (uint32_t i = 1; i < k_palette_size; ++i) {
+			scene.palette.entries[i] = PaletteEntry {};
+		}
+		for (uint32_t i = 1; i < k_palette_size; ++i) {
+			scene.palette.entries[id_of_internal[i]] = internal_entries[i];
+		}
+		for (VoxModel& model : scene.models) {
+			for (VoxVoxel& voxel : model.voxels) {
+				voxel.palette_index = id_of_internal[voxel.palette_index];
+			}
 		}
 	}
 
