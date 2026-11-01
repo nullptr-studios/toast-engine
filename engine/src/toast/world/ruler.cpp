@@ -3,6 +3,7 @@
 #include "camera.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <glm/gtc/matrix_access.hpp>
 #include <toast/renderer/debug/debug_draw.hpp>
@@ -80,13 +81,13 @@ void drawSegment(const Camera& camera, glm::vec2 viewport, glm::vec3 a, glm::vec
 	}
 
 	// Single pixel lines vanish on a busy surface so the segment is drawn as a small bundle
-	const glm::vec2 offsets[] = {
-	  { 0.0f,  0.0f},
-    { 0.7f,  0.0f},
-    {-0.7f,  0.0f},
-    { 0.0f,  0.7f},
-    { 0.0f, -0.7f}
-	};
+	const std::array<glm::vec2, 5> offsets {{
+	    { 0.0f,  0.0f},
+	    { 0.7f,  0.0f},
+	    {-0.7f,  0.0f},
+	    { 0.0f,  0.7f},
+	    { 0.0f, -0.7f},
+	}};
 	for (const glm::vec2 offset : offsets) {
 		const glm::vec3 shift = (right * offset.x + up * offset.y) * pixel;
 		debug::drawLine(a + shift, b + shift, color);

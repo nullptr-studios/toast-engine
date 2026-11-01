@@ -62,17 +62,17 @@ private:
 
 	/// Targets in the order they are drawn into
 	enum Step : uint8_t {
-		step_threshold,
-		step_glare,
-		step_streak_down,
+		step_threshold = 0,
+		step_glare = 1,
+		step_streak_down = 2,
 		step_streak_up = step_streak_down + k_streak_levels,
 		step_blur_down = step_streak_up + k_streak_levels - 1,
-		step_blur_up,
-		step_chroma,
-		step_ghosts,
-		step_halo,
-		step_mix,
-		step_count,
+		step_blur_up = step_blur_down + 1,
+		step_chroma = step_blur_up + 1,
+		step_ghosts = step_chroma + 1,
+		step_halo = step_ghosts + 1,
+		step_mix = step_halo + 1,
+		step_count = step_mix + 1,
 	};
 
 	struct FrameSets {

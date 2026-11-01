@@ -954,7 +954,7 @@ void registerVoxels(VulkanRenderer& renderer) {
 			                "around 0.5 and at least two layers. None keeps the neutral default",
 			 .asset_type = "texture"}
 	)
-	    .onChange([&renderer](std::string v) {
+	    .onChange([&renderer](const std::string& v) {
 		    if (v.empty()) {
 			    renderer.setVoxelDetailLibrary({});
 		    } else if (v.contains("://")) {

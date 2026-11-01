@@ -291,9 +291,9 @@ void VoxelPass::writeHizDescriptors() {
 	if (!m_hiz.view()) {
 		// The binding is declared so it must hold something even though the test never samples it
 		DescriptorWriter fallback;
-		for (uint32_t i = 0; i < m_storage_sets.size(); ++i) {
+		for (const auto& set : m_storage_sets) {
 			fallback.image(
-			    *m_storage_sets[i],
+			    *set,
 			    k_mesh_hiz_binding,
 			    vk::DescriptorType::eCombinedImageSampler,
 			    VulkanRenderer::instance->getDefaultSampler(),
@@ -305,9 +305,9 @@ void VoxelPass::writeHizDescriptors() {
 		return;
 	}
 	DescriptorWriter writer;
-	for (uint32_t i = 0; i < m_storage_sets.size(); ++i) {
+	for (const auto& set : m_storage_sets) {
 		writer.image(
-		    *m_storage_sets[i],
+		    *set,
 		    k_mesh_hiz_binding,
 		    vk::DescriptorType::eCombinedImageSampler,
 		    m_hiz.sampler(),
