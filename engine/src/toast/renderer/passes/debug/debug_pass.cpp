@@ -406,6 +406,8 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 
 		if (input.mouse_pos.x >= 0.0f && input.mouse_pos.y >= 0.0f) {
 			io.AddMousePosEvent(input.mouse_pos.x, input.mouse_pos.y);
+		} else {
+			io.AddMousePosEvent(-FLT_MAX, -FLT_MAX);
 		}
 		for (size_t i = 0; i < input.mouse_down.size(); ++i) {
 			io.AddMouseButtonEvent(static_cast<int>(i), input.mouse_down[i]);

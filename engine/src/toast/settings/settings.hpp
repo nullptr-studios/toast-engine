@@ -65,6 +65,7 @@ struct Meta {
 	std::vector<std::string> options;    ///< Non-empty makes an integer setting a combo box indexing this
 	bool requires_restart = false;       ///< Editor marks it; the value still applies to the next run
 	bool hidden = false;                 ///< Persisted and scriptable, but not shown
+	std::string asset_type;              ///< Makes a string setting an asset picker of this type holding the asset UID
 };
 
 /// @brief One registered setting. Held by the registry; `Setting<T>` is a handle to it

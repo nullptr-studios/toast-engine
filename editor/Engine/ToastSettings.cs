@@ -35,6 +35,9 @@ public sealed class SettingDescriptor {
 	public bool RequiresRestart { get; init; }
 	public bool Hidden { get; init; }
 
+	/// <summary>Non-empty turns a string setting into an asset picker of this type</summary>
+	public string AssetType { get; init; } = string.Empty;
+
 	/// Equal bounds mean the engine declared none, so the editor shows a number box rather than a slider
 	public bool HasRange => Math.Abs(Max - Min) > double.Epsilon;
 
@@ -93,7 +96,8 @@ public static partial class ToastSettings {
 				Step = desc.step,
 				Options = options,
 				RequiresRestart = desc.requiresRestart != 0,
-				Hidden = desc.hidden != 0
+				Hidden = desc.hidden != 0,
+				AssetType = Marshal.PtrToStringUTF8(toast_settings_get_asset_type(i)) ?? string.Empty
 			});
 		}
 
@@ -136,6 +140,9 @@ public static partial class ToastSettings {
 
 	[LibraryImport(EngineLib)]
 	private static partial IntPtr toast_settings_get_option(int index, int option);
+
+	[LibraryImport(EngineLib)]
+	private static partial IntPtr toast_settings_get_asset_type(int index);
 
 	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
 	private static partial int toast_settings_get_bool(string key);

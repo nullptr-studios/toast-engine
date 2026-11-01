@@ -48,13 +48,24 @@ struct PaletteEntry {
 	/// 0 for k_default_ior and otherwise 1 + ior / 100
 	uint8_t ior = 0;
 
-	std::array<uint8_t, 5> reserved {};
+	/// Layer of the detail library, 0 for none
+	uint8_t detail_layer = 0;
+
+	/// Texels per voxel edge, 0 for k_default_detail_scale
+	uint8_t detail_scale = 0;
+
+	/// Strengths where 255 is a full swing of the texture
+	uint8_t detail_albedo = 0;
+	uint8_t detail_roughness = 0;
+	uint8_t detail_bump = 0;
 
 	[[nodiscard]]
 	constexpr auto operator==(const PaletteEntry&) const noexcept -> bool = default;
 };
 
 static_assert(sizeof(PaletteEntry) == 16, "a palette entry must be sixteen bytes - the shader indexes it that way");
+
+inline constexpr uint32_t k_default_detail_scale = 4;
 
 /// Mirrors voxel_dda.slang glassEntry
 [[nodiscard]]

@@ -17,6 +17,10 @@ struct VolumeRecord
     float maxEmissive;
     /// Coarse buffer word of one bit per brick holding glass or kNoGlass
     uint glassOffset;
+    /// Voxel coordinate plus this reads the detail texture
+    int textureOriginX;
+    int textureOriginY;
+    int textureOriginZ;
 };
 
 static const uint kNoGlass = 0xFFFFFFFFu;
@@ -899,6 +903,14 @@ struct PaletteSample
 
     /// Physical material id where 0 also covers entries authored without one
     uint material;
+
+    /// 0 for no detail texture
+    uint detailLayer;
+    /// Texels per voxel edge
+    float detailScale;
+    float detailAlbedo;
+    float detailRoughness;
+    float detailBump;
 };
 
 /// Word 0 bytes albedo rgb roughness and word 1 bytes metallic reflectivity emissive material
@@ -911,6 +923,7 @@ PaletteSample samplePalette(VolumeRecord record, uint index)
     const uint word0 = gPalettes[base];
     const uint word1 = gPalettes[base + 1];
     const uint word2 = gPalettes[base + 2];
+    const uint word3 = gPalettes[base + 3];
 
     PaletteSample sample;
     sample.albedo = srgbToLinear(float3(word0 & 0xFFu, (word0 >> 8) & 0xFFu, (word0 >> 16) & 0xFFu) / 255.0);
@@ -923,6 +936,13 @@ PaletteSample samplePalette(VolumeRecord record, uint index)
     // voxel::iorOf
     const uint iorByte = (word2 >> 16) & 0xFFu;
     sample.ior = iorByte == 0u ? kDefaultIor : 1.0 + float(iorByte) / 100.0;
+    // voxel::PaletteEntry detail_layer then detail_scale detail_albedo detail_roughness detail_bump
+    sample.detailLayer = word2 >> 24;
+    const uint scaleByte = word3 & 0xFFu;
+    sample.detailScale = scaleByte == 0u ? 4.0 : float(scaleByte);
+    sample.detailAlbedo = float((word3 >> 8) & 0xFFu) / 255.0;
+    sample.detailRoughness = float((word3 >> 16) & 0xFFu) / 255.0;
+    sample.detailBump = float(word3 >> 24) / 255.0;
     return sample;
 }
 

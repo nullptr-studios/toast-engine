@@ -23,7 +23,7 @@ class SceneDescriptorSets {
 public:
 	void create(const VulkanCore& core, const ShaderReflection& reflection, vk::DescriptorSetLayout layout, std::string_view owner);
 
-	/// Call before the bind
+	/// Call before the bind, also follows the voxel detail library
 	void updateTlas(uint32_t frame_index);
 
 	[[nodiscard]]
@@ -46,6 +46,9 @@ private:
 	vk::raii::Sampler m_shadow_depth_sampler = nullptr;
 
 	std::optional<uint32_t> m_scene_binding;
+
+	std::optional<uint32_t> m_detail_binding;
+	std::vector<vk::ImageView> m_bound_detail;
 
 	/// Handle plus generation since a recreated structure can reuse a destroyed handle value
 	std::vector<std::pair<vk::AccelerationStructureKHR, uint64_t>> m_bound_tlas;

@@ -33,6 +33,8 @@ void SceneDescriptorSets::create(
 	m_sets.reserve(VulkanRenderer::k_frames_in_flight);
 	m_scene_binding.reset();
 	m_bound_tlas.assign(VulkanRenderer::k_frames_in_flight, {});
+	m_detail_binding.reset();
+	m_bound_detail.assign(VulkanRenderer::k_frames_in_flight, {});
 
 	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
 		const vk::DescriptorSetAllocateInfo alloc_info(pool, 1, &layout);
@@ -75,6 +77,21 @@ void SceneDescriptorSets::create(
 				    view ? view : VulkanRenderer::instance->getDefaultCubeView(),
 				    vk::ImageLayout::eShaderReadOnlyOptimal
 				);
+				continue;
+			}
+
+			if (binding.name == "gVoxelDetail") {
+				const vk::ImageView detail = VulkanRenderer::instance->voxelDetailView();
+				writer.image(
+				    *m_sets[i],
+				    binding.binding,
+				    vk::DescriptorType::eCombinedImageSampler,
+				    VulkanRenderer::instance->voxelDetailSampler(),
+				    detail,
+				    vk::ImageLayout::eShaderReadOnlyOptimal
+				);
+				m_detail_binding = binding.binding;
+				m_bound_detail[i] = detail;
 				continue;
 			}
 
@@ -217,6 +234,22 @@ void SceneDescriptorSets::create(
 
 void SceneDescriptorSets::updateTlas(uint32_t frame_index) {
 	ZoneScoped;
+	if (m_core != nullptr && m_detail_binding.has_value() && frame_index < m_bound_detail.size()) {
+		const vk::ImageView detail = VulkanRenderer::instance->voxelDetailView();
+		if (detail != m_bound_detail[frame_index]) {
+			DescriptorWriter writer;
+			writer.image(
+			    *m_sets[frame_index],
+			    *m_detail_binding,
+			    vk::DescriptorType::eCombinedImageSampler,
+			    VulkanRenderer::instance->voxelDetailSampler(),
+			    detail,
+			    vk::ImageLayout::eShaderReadOnlyOptimal
+			);
+			writer.flush(m_core->getDevice());
+			m_bound_detail[frame_index] = detail;
+		}
+	}
 	if (m_core == nullptr || !m_scene_binding.has_value() || frame_index >= m_bound_tlas.size()) {
 		return;
 	}

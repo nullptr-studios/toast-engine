@@ -41,6 +41,7 @@ Volume::~Volume() {
 Volume::Volume(Volume&& other) noexcept
     : m_pool(other.m_pool),
       m_brick_dims(other.m_brick_dims),
+      m_texture_origin(other.m_texture_origin),
       m_entries(std::move(other.m_entries)),
       m_revision(other.m_revision),
       m_id(other.m_id),
@@ -60,6 +61,7 @@ auto Volume::operator=(Volume&& other) noexcept -> Volume& {
 		releaseOwned();
 		m_pool = other.m_pool;
 		m_brick_dims = other.m_brick_dims;
+		m_texture_origin = other.m_texture_origin;
 		m_entries = std::move(other.m_entries);
 		m_revision = other.m_revision;
 		m_id = other.m_id;
@@ -80,6 +82,7 @@ auto Volume::instanceOf(const Volume& source) -> Volume {
 	assert(source.m_pool != nullptr);
 	Volume out(*source.m_pool, source.m_brick_dims);
 
+	out.m_texture_origin = source.m_texture_origin;
 	out.m_entries = source.m_entries;
 	for (BrickEntry& entry : out.m_entries) {
 		if (entry.tag() == BrickTag::owned) {
@@ -92,6 +95,8 @@ auto Volume::instanceOf(const Volume& source) -> Volume {
 auto Volume::adoptResized(Volume& source, glm::ivec3 brick_offset, glm::uvec3 brick_dims) -> Volume {
 	assert(source.m_pool != nullptr);
 	Volume out(*source.m_pool, brick_dims);
+
+	out.m_texture_origin = source.m_texture_origin - (brick_offset * static_cast<int32_t>(k_brick_dim));
 
 	for (uint32_t index = 0; index < source.m_entries.size(); ++index) {
 		BrickEntry& entry = source.m_entries[index];

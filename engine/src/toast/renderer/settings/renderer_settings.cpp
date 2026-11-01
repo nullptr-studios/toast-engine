@@ -10,6 +10,7 @@
 #include <array>
 #include <mutex>
 #include <optional>
+#include <toast/assets/assets.hpp>
 #include <toast/log.hpp>
 #include <toast/settings/settings.hpp>
 #include <utility>
@@ -296,6 +297,17 @@ void registerDisplay(VulkanRenderer& renderer) {
 			                "allows (100% GPU usage) between simulation updates."}
 	)
 	    .onChange([&renderer](bool clamp) { renderer.setClampToSimulation(clamp); });
+
+	toast::settings::declareBool(
+	    "renderer.display.low_latency",
+	    true,
+	    {.label = "Low latency",
+			 .category = "Display",
+			 .description = "On (default): the render thread waits for the GPU to finish the previous frame before "
+			                "taking the next one, so input reaches the screen up to two frames sooner. Off: up to three "
+			                "frames queue on the GPU, which can raise the frame rate a little when GPU bound."}
+	)
+	    .onChange([&renderer](bool enabled) { renderer.setLowLatency(enabled); });
 
 	toast::settings::declareFloat(
 	    "renderer.display.frame_rate_limit",
@@ -932,6 +944,25 @@ void registerVoxels(VulkanRenderer& renderer) {
 			 .max = 2000.0}
 	)
 	    .onChange([&renderer](int64_t v) { renderer.setVoxelSunReach(static_cast<uint32_t>(std::max<int64_t>(v, 1))); });
+
+	toast::settings::declareString(
+	    "renderer.voxels.detail_library",
+	    "",
+	    {.label = "Voxel detail library",
+			 .category = "Voxels",
+			 .description = "Texture array read by palette detail layers, RGBA8 linear with R albedo G roughness B height "
+			                "around 0.5 and at least two layers. None keeps the neutral default",
+			 .asset_type = "texture"}
+	)
+	    .onChange([&renderer](std::string v) {
+		    if (v.empty()) {
+			    renderer.setVoxelDetailLibrary({});
+		    } else if (v.contains("://")) {
+			    renderer.setVoxelDetailLibrary(assets::load<assets::Texture>(v));
+		    } else {
+			    renderer.setVoxelDetailLibrary(assets::load<assets::Texture>(toast::UID(toast::UID::fromString(v))));
+		    }
+	    });
 
 	toast::settings::declareBool(
 	    "renderer.voxels.trace_bricks",

@@ -27,6 +27,8 @@ enum class Usage : uint8_t {
 
 	fragment_sampled,
 	compute_sampled,
+	/// Task and mesh shaders on devices with VK_EXT_mesh_shader only
+	task_sampled,
 	/// Vertex fragment and compute
 	shader_sampled,
 

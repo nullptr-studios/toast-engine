@@ -354,6 +354,7 @@ void VulkanRenderer::createSceneColorResources() {
 	create(m_voxel_albedo, k_voxel_albedo_format, "VoxelAlbedo");
 	create(m_voxel_material, k_voxel_material_format, "VoxelMaterial");
 	create(m_voxel_face_normal, k_voxel_face_normal_format, "VoxelFaceNormal");
+	create(m_voxel_detail_normal, k_voxel_face_normal_format, "VoxelDetailNormal");
 	create(m_voxel_noisy_diffuse, k_voxel_noisy_format, "VoxelNoisyDiffuse");
 	create(m_voxel_noisy_specular, k_voxel_noisy_format, "VoxelNoisySpecular");
 	create(m_voxel_reservoirs[0], k_voxel_reservoir_format, "VoxelReservoirs0");
@@ -398,6 +399,7 @@ void VulkanRenderer::createDefaultTexture() {
 
 	createDefaultShadowMap();
 	createDefaultCubemap();
+	createDefaultDetailArray();
 
 	vk::SamplerCreateInfo sampler_ci {};
 	sampler_ci.magFilter = vk::Filter::eNearest;
@@ -718,6 +720,80 @@ void VulkanRenderer::createDefaultCubemap() {
 	view_ci.subresourceRange = range;
 	m_default_cube_view = vk::raii::ImageView(device, view_ci);
 	setDebugName(*m_core, *m_default_cube_view, "VulkanRenderer DefaultCubemapView");
+}
+
+void VulkanRenderer::createDefaultDetailArray() {
+	ZoneScoped;
+	const auto& device = m_core->getDevice();
+
+	// Two layers since a single layer view would be a plain 2D view
+	vk::ImageCreateInfo image_ci {};
+	image_ci.imageType = vk::ImageType::e2D;
+	image_ci.format = vk::Format::eR8G8B8A8Unorm;
+	image_ci.extent = vk::Extent3D {1, 1, 1};
+	image_ci.mipLevels = 1;
+	image_ci.arrayLayers = 2;
+	image_ci.samples = vk::SampleCountFlagBits::e1;
+	image_ci.tiling = vk::ImageTiling::eOptimal;
+	image_ci.usage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst;
+	image_ci.sharingMode = vk::SharingMode::eExclusive;
+	image_ci.initialLayout = vk::ImageLayout::eUndefined;
+
+	vma::AllocationCreateInfo allocation_ci {};
+	allocation_ci.usage = vma::MemoryUsage::eAutoPreferDevice;
+	m_default_detail_image.emplace(m_core->getAllocator().createImage(image_ci, allocation_ci));
+	setDebugName(*m_core, **m_default_detail_image, "VulkanRenderer DefaultDetailArray");
+
+	const vk::ImageSubresourceRange range(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 2);
+
+	const vk::CommandPoolCreateInfo pool_ci(vk::CommandPoolCreateFlagBits::eTransient, m_core->getGraphicsQueueFamilyIndex());
+	const vk::raii::CommandPool one_shot_pool(device, pool_ci);
+	const vk::CommandBufferAllocateInfo cmd_alloc_info(*one_shot_pool, vk::CommandBufferLevel::ePrimary, 1);
+	auto cmd_buffers = device.allocateCommandBuffers(cmd_alloc_info);
+	const vk::raii::CommandBuffer cmd = std::move(cmd_buffers[0]);
+
+	cmd.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
+	recordUndefinedToTransferDst(cmd, **m_default_detail_image, range);
+	constexpr vk::ClearColorValue clear_value(std::array {0.5f, 0.5f, 0.5f, 1.0f});
+	cmd.clearColorImage(**m_default_detail_image, vk::ImageLayout::eTransferDstOptimal, clear_value, range);
+	recordTransferDstToShaderRead(cmd, **m_default_detail_image, range);
+	cmd.end();
+	submitAndWait(device, m_core->getGraphicsQueue(), m_core->graphicsSubmitMutex(), *cmd);
+
+	vk::ImageViewCreateInfo view_ci {};
+	view_ci.image = **m_default_detail_image;
+	view_ci.viewType = vk::ImageViewType::e2DArray;
+	view_ci.format = vk::Format::eR8G8B8A8Unorm;
+	view_ci.subresourceRange = range;
+	m_default_detail_view = vk::raii::ImageView(device, view_ci);
+	setDebugName(*m_core, *m_default_detail_view, "VulkanRenderer DefaultDetailArrayView");
+
+	vk::SamplerCreateInfo sampler_ci {};
+	sampler_ci.magFilter = vk::Filter::eLinear;
+	sampler_ci.minFilter = vk::Filter::eLinear;
+	sampler_ci.mipmapMode = vk::SamplerMipmapMode::eLinear;
+	sampler_ci.addressModeU = vk::SamplerAddressMode::eRepeat;
+	sampler_ci.addressModeV = vk::SamplerAddressMode::eRepeat;
+	sampler_ci.addressModeW = vk::SamplerAddressMode::eRepeat;
+	sampler_ci.maxLod = VK_LOD_CLAMP_NONE;
+	m_detail_sampler = vk::raii::Sampler(device, sampler_ci);
+	setDebugName(*m_core, *m_detail_sampler, "VulkanRenderer DetailSampler");
+}
+
+void VulkanRenderer::setVoxelDetailLibrary(assets::Handle<assets::Texture> texture) {
+	const std::lock_guard lock(m_detail_mutex);
+	m_voxel_detail_library = std::move(texture);
+}
+
+auto VulkanRenderer::voxelDetailView() const -> vk::ImageView {
+	const std::lock_guard lock(m_detail_mutex);
+	if (m_voxel_detail_library.hasValue()) {
+		const VulkanTexture& gpu = m_voxel_detail_library->gpuTexture();
+		if (gpu.isReady() && gpu.getView()) {
+			return gpu.getView();
+		}
+	}
+	return *m_default_detail_view;
 }
 
 void VulkanRenderer::queueResourceUpload(std::unique_ptr<PendingResourceUpload> upload_job) {

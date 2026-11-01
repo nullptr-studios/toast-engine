@@ -254,7 +254,7 @@
 						</Border>
 
 						<Grid ColumnDefinitions="Auto,*"
-						      RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+						      RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
 						      RowSpacing="6"
 						      ColumnSpacing="8"
 						      Margin="0, -4, 0, 0">
@@ -325,6 +325,56 @@
 							                       Grid.Column="1"
 							                       Value="{Binding MaxEmissive, Mode=TwoWay}"
 							                       Minimum="0" />
+
+							<TextBlock Grid.Row="8"
+							           Grid.Column="0"
+							           Classes="lbl"
+							           Text="Detail layer" />
+							<elements:DragIntBox Grid.Row="8"
+							                     Grid.Column="1"
+							                     Value="{Binding DetailLayer, Mode=TwoWay}"
+							                     Minimum="0" Maximum="255"
+							                     ToolTip.Tip="Layer of the detail library texture array, 0 for none" />
+
+							<TextBlock Grid.Row="9"
+							           Grid.Column="0"
+							           Classes="lbl"
+							           Text="Detail scale" />
+							<elements:DragIntBox Grid.Row="9"
+							                     Grid.Column="1"
+							                     Value="{Binding DetailScale, Mode=TwoWay}"
+							                     Minimum="0" Maximum="255"
+							                     ToolTip.Tip="Texels per voxel edge, 0 for the default of 4" />
+
+							<TextBlock Grid.Row="10"
+							           Grid.Column="0"
+							           Classes="lbl"
+							           Text="Detail albedo" />
+							<elements:DragFloatBox Grid.Row="10"
+							                       Grid.Column="1"
+							                       Value="{Binding DetailAlbedo, Mode=TwoWay}"
+							                       Minimum="0" Maximum="1"
+							                       ToolTip.Tip="How much the texture red channel varies the color" />
+
+							<TextBlock Grid.Row="11"
+							           Grid.Column="0"
+							           Classes="lbl"
+							           Text="Detail roughness" />
+							<elements:DragFloatBox Grid.Row="11"
+							                       Grid.Column="1"
+							                       Value="{Binding DetailRoughness, Mode=TwoWay}"
+							                       Minimum="0" Maximum="1"
+							                       ToolTip.Tip="How much the texture green channel varies roughness" />
+
+							<TextBlock Grid.Row="12"
+							           Grid.Column="0"
+							           Classes="lbl"
+							           Text="Detail bump" />
+							<elements:DragFloatBox Grid.Row="12"
+							                       Grid.Column="1"
+							                       Value="{Binding DetailBump, Mode=TwoWay}"
+							                       Minimum="0" Maximum="1"
+							                       ToolTip.Tip="Normal strength from the texture height, stored for when bump lands" />
 
 
 						</Grid>

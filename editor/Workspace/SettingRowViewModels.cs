@@ -194,6 +194,27 @@ public sealed partial class StringSettingRow : SettingRow {
 	}
 }
 
+public sealed partial class AssetSettingRow : SettingRow {
+	[ObservableProperty] private string m_value;
+
+	public AssetSettingRow(SettingDescriptor descriptor) : base(descriptor) {
+		m_value = ToastSettings.GetString(descriptor.Key);
+	}
+
+	public string AssetType => Descriptor.AssetType;
+
+	partial void OnValueChanged(string value) {
+		if (SuppressWrite) return;
+		ToastSettings.SetString(Key, value ?? string.Empty);
+	}
+
+	public override void Reload() {
+		SuppressWrite = true;
+		Value = ToastSettings.GetString(Key);
+		SuppressWrite = false;
+	}
+}
+
 public sealed partial class Vec3SettingRow : SettingRow {
 	private readonly SettingDescriptor[] m_axes;
 	[ObservableProperty] private float m_x;
@@ -277,6 +298,7 @@ public static class SettingRowFactory {
 				{ Type: SettingType.Bool } => new BoolSettingRow(descriptor),
 				{ Type: SettingType.Int } => new IntSettingRow(descriptor),
 				{ Type: SettingType.Float } => new FloatSettingRow(descriptor),
+				{ Type: SettingType.String, AssetType.Length: > 0 } => new AssetSettingRow(descriptor),
 				_ => new StringSettingRow(descriptor)
 			};
 

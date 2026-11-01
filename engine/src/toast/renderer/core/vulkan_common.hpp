@@ -56,7 +56,7 @@ inline auto worldStageExtraColorFormats() -> std::vector<vk::Format> {
 /// After k_voxel_albedo_format in the voxel G-buffer scope
 [[nodiscard]]
 inline auto voxelGbufferExtraColorFormats() -> std::vector<vk::Format> {
-	return {k_voxel_face_normal_format, k_voxel_material_format, k_scene_motion_format};
+	return {k_voxel_face_normal_format, k_voxel_material_format, k_scene_motion_format, k_voxel_face_normal_format};
 }
 
 [[nodiscard]]

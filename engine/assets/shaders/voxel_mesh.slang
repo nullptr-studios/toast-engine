@@ -6,6 +6,20 @@ import voxel_mesh_common;
 import voxel_mesh_window;
 import lighting;
 
+groupshared uint sScan[kMeshletQuads];
+
+/// Clip planes a vertex lies outside of, with w behind the camera as its own bit
+uint clipOutsideFlags(float4 clip)
+{
+    uint flags = 0u;
+    flags |= clip.x < -clip.w ? 1u : 0u;
+    flags |= clip.x > clip.w ? 2u : 0u;
+    flags |= clip.y < -clip.w ? 4u : 0u;
+    flags |= clip.y > clip.w ? 8u : 0u;
+    flags |= clip.w <= 0.0 ? 16u : 0u;
+    return flags;
+}
+
 [shader("mesh")]
 [outputtopology("triangle")]
 [numthreads(kMeshletQuads, 1, 1)]
@@ -49,24 +63,62 @@ void quadMeshMain(uint3 group : SV_GroupID, uint thread : SV_GroupIndex, in payl
     }
     GroupMemoryBarrierWithGroupSync();
 
-    SetMeshOutputCounts(quads * 4u, quads * 2u);
+    // A quad with all four corners outside one frustum plane covers no pixel so it never becomes a vertex
+    // The survivors compact through a scan and the vertex and triangle counts shrink to them
+    QuadVSOutput corners[4];
+    uint packedQuad = 0u;
+    bool visible = false;
     if (thread < quads)
     {
-        const uint packedQuad = windowQuad(thread);
-        const uint first = thread * 4u;
+        packedQuad = windowQuad(thread);
+        uint outside = 0x1Fu;
         for (uint corner = 0u; corner < 4u; ++corner)
         {
-            vertices[first + corner] = quadCorner(cell, packedQuad, corner);
+            corners[corner] = quadCorner(cell, packedQuad, corner);
+            outside &= clipOutsideFlags(corners[corner].position);
+        }
+        visible = outside == 0u;
+        // Late list only since the push constants hold no levels for the early one
+        if (visible && gPush.hizLevels > 0u && quadHiddenByHiz(corners[0].position, corners[1].position, corners[2].position, corners[3].position))
+        {
+            visible = false;
+        }
+    }
+    sScan[thread] = visible ? 1u : 0u;
+    GroupMemoryBarrierWithGroupSync();
+
+    // Inclusive scan over the window
+    for (uint offset = 1u; offset < kMeshletQuads; offset <<= 1)
+    {
+        uint value = sScan[thread];
+        if (thread >= offset)
+        {
+            value += sScan[thread - offset];
+        }
+        GroupMemoryBarrierWithGroupSync();
+        sScan[thread] = value;
+        GroupMemoryBarrierWithGroupSync();
+    }
+    const uint survivors = sScan[kMeshletQuads - 1u];
+
+    SetMeshOutputCounts(survivors * 4u, survivors * 2u);
+    if (visible)
+    {
+        const uint slot = sScan[thread] - 1u;
+        const uint first = slot * 4u;
+        for (uint corner = 0u; corner < 4u; ++corner)
+        {
+            vertices[first + corner] = corners[corner];
         }
         if (quadFlipped(instance, packedQuad))
         {
-            triangles[thread * 2u] = uint3(first, first + 2u, first + 1u);
-            triangles[thread * 2u + 1u] = uint3(first, first + 3u, first + 2u);
+            triangles[slot * 2u] = uint3(first, first + 2u, first + 1u);
+            triangles[slot * 2u + 1u] = uint3(first, first + 3u, first + 2u);
         }
         else
         {
-            triangles[thread * 2u] = uint3(first, first + 1u, first + 2u);
-            triangles[thread * 2u + 1u] = uint3(first, first + 2u, first + 3u);
+            triangles[slot * 2u] = uint3(first, first + 1u, first + 2u);
+            triangles[slot * 2u + 1u] = uint3(first, first + 2u, first + 3u);
         }
     }
 }

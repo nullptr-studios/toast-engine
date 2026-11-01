@@ -525,12 +525,13 @@ auto VulkanRenderer::recordVoxelScopes(
 ) -> bool {
 	ZoneScoped;
 	m_traced_specular_frame = false;
-	const bool targets_ready =
-	    m_depth_resources.view.has_value() && m_voxel_albedo.view.has_value() && m_voxel_material.view.has_value() &&
-	    m_voxel_face_normal.view.has_value() && m_scene_color.view.has_value() && m_scene_normal.view.has_value() &&
-	    m_scene_indirect.view.has_value() && m_scene_motion.view.has_value() && m_voxel_noisy_diffuse.view.has_value() &&
-	    m_voxel_noisy_specular.view.has_value() && m_voxel_reservoirs[0].view.has_value() &&
-	    m_voxel_reservoirs[1].view.has_value() && m_voxel_candidate_reservoirs.view.has_value();
+	const bool targets_ready = m_depth_resources.view.has_value() && m_voxel_albedo.view.has_value() &&
+	                           m_voxel_material.view.has_value() && m_voxel_face_normal.view.has_value() &&
+	                           m_voxel_detail_normal.view.has_value() && m_scene_color.view.has_value() &&
+	                           m_scene_normal.view.has_value() && m_scene_indirect.view.has_value() &&
+	                           m_scene_motion.view.has_value() && m_voxel_noisy_diffuse.view.has_value() &&
+	                           m_voxel_noisy_specular.view.has_value() && m_voxel_reservoirs[0].view.has_value() &&
+	                           m_voxel_reservoirs[1].view.has_value() && m_voxel_candidate_reservoirs.view.has_value();
 	if (m_voxel_pass == nullptr || !m_voxel_pass->isEnabled() || !targets_ready ||
 	    m_depth_resources.state.usage != sync::Usage::depth_attachment || !m_voxel_pass->prepare(m_current_frame)) {
 		return false;
@@ -573,6 +574,7 @@ auto VulkanRenderer::recordVoxelScopes(
 	barriers.image(m_voxel_face_normal.state, sync::Usage::color_attachment);
 	barriers.image(m_voxel_material.state, sync::Usage::color_attachment);
 	barriers.image(m_scene_motion.state, sync::Usage::color_attachment);
+	barriers.image(m_voxel_detail_normal.state, sync::Usage::color_attachment);
 	barriers.flush(cmd);
 
 	// Order matches voxel.slang FSOutput
@@ -581,6 +583,7 @@ auto VulkanRenderer::recordVoxelScopes(
 	  attachment(m_voxel_face_normal, vk::AttachmentLoadOp::eClear, clear_zero),
 	  attachment(m_voxel_material, vk::AttachmentLoadOp::eClear, clear_zero),
 	  attachment(m_scene_motion, vk::AttachmentLoadOp::eClear, clear_zero),
+	  attachment(m_voxel_detail_normal, vk::AttachmentLoadOp::eClear, clear_zero),
 	};
 
 	vk::RenderingAttachmentInfo depth_attachment {};
@@ -653,6 +656,7 @@ auto VulkanRenderer::recordVoxelScopes(
 		barriers.image(m_voxel_face_normal.state, sync::Usage::color_attachment);
 		barriers.image(m_voxel_material.state, sync::Usage::color_attachment);
 		barriers.image(m_scene_motion.state, sync::Usage::color_attachment);
+		barriers.image(m_voxel_detail_normal.state, sync::Usage::color_attachment);
 		barriers.flush(cmd);
 
 		for (auto& gbuffer_attachment : gbuffer_attachments) {
@@ -675,6 +679,7 @@ auto VulkanRenderer::recordVoxelScopes(
 	barriers.image(m_voxel_albedo.state, sync::Usage::fragment_sampled);
 	barriers.image(m_voxel_face_normal.state, sync::Usage::fragment_sampled);
 	barriers.image(m_voxel_material.state, sync::Usage::fragment_sampled);
+	barriers.image(m_voxel_detail_normal.state, sync::Usage::fragment_sampled);
 	barriers.image(m_depth_resources.state, sync::Usage::depth_sampled);
 	barriers.image(m_scene_color.state, sync::Usage::color_attachment);
 	barriers.image(m_scene_indirect.state, sync::Usage::color_attachment);
@@ -1626,6 +1631,16 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> bool {
 	frame.last_image_index = image_index;
 	frame.has_submitted = true;
 	m_pending_publish.push_back(m_current_frame);
+
+	// Holds the snapshot slot until the GPU drains to this frame so the next tick samples input later
+	if (m_low_latency.load(std::memory_order_relaxed)) {
+		TOAST_PHASE(phases, "Draw: latency wait");
+		const auto& previous = m_frames[(m_current_frame + m_frames.size() - 1) % m_frames.size()];
+		if (previous.has_submitted) {
+			std::ignore = m_core->getDevice().waitForFences(*previous.in_flight, true, std::numeric_limits<uint64_t>::max());
+		}
+		end_phase(m_perf_gpu_wait_ns);
+	}
 
 	m_current_frame = (m_current_frame + 1) % static_cast<uint32_t>(m_frames.size());
 

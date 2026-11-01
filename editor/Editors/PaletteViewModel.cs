@@ -138,6 +138,11 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 	[ObservableProperty] private float m_ior = VoxelPaletteEntry.DefaultIor;
 	[ObservableProperty] private PaletteSlotVM? m_selectedSlot;
 	[ObservableProperty] private int m_transformsTo;
+	[ObservableProperty] private int m_detailLayer;
+	[ObservableProperty] private int m_detailScale;
+	[ObservableProperty] private float m_detailAlbedo;
+	[ObservableProperty] private float m_detailRoughness;
+	[ObservableProperty] private float m_detailBump;
 
 	public PaletteViewModel() {
 		for (var i = 1; i < VoxelPaletteFile.Size; i++)
@@ -423,6 +428,11 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 		Alpha = entry.Alpha;
 		Ior = entry.Ior;
 		TransformsTo = entry.TransformsTo;
+		DetailLayer = entry.DetailLayer;
+		DetailScale = entry.DetailScale;
+		DetailAlbedo = entry.DetailAlbedo;
+		DetailRoughness = entry.DetailRoughness;
+		DetailBump = entry.DetailBump;
 		LoadSelectedMaterial();
 
 		OnPropertyChanged(nameof(EmissiveHint));
@@ -587,6 +597,36 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 	partial void OnIorChanged(float value) {
 		if (Ignore || Selected is not { } entry) return;
 		entry.Ior = Math.Clamp(value, 1f, VoxelPaletteEntry.MaxIor);
+		TouchEntry();
+	}
+
+	partial void OnDetailLayerChanged(int value) {
+		if (Ignore || Selected is not { } entry) return;
+		entry.DetailLayer = Math.Clamp(value, 0, 255);
+		TouchEntry();
+	}
+
+	partial void OnDetailScaleChanged(int value) {
+		if (Ignore || Selected is not { } entry) return;
+		entry.DetailScale = Math.Clamp(value, 0, 255);
+		TouchEntry();
+	}
+
+	partial void OnDetailAlbedoChanged(float value) {
+		if (Ignore || Selected is not { } entry) return;
+		entry.DetailAlbedo = Math.Clamp(value, 0f, 1f);
+		TouchEntry();
+	}
+
+	partial void OnDetailRoughnessChanged(float value) {
+		if (Ignore || Selected is not { } entry) return;
+		entry.DetailRoughness = Math.Clamp(value, 0f, 1f);
+		TouchEntry();
+	}
+
+	partial void OnDetailBumpChanged(float value) {
+		if (Ignore || Selected is not { } entry) return;
+		entry.DetailBump = Math.Clamp(value, 0f, 1f);
 		TouchEntry();
 	}
 
