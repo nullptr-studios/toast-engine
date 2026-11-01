@@ -240,12 +240,10 @@ public sealed class VoxelPaletteFile {
 
 	public byte[] ToPng() {
 		var row = new byte[1 + Size * 4];    // filter byte then pixels
-		for (var i = 1; i < Size; i++) {
-			var entry = Entries[i];
+		for (var i = 0; i < Size - 1; i++) {
+			var entry = Entries[i + 1];
 			var o = 1 + i * 4;
-			if (i == Size - 1) {
-				row[o] = row[o + 1] = row[o + 2] = row[o + 3] = 255;
-			} else if (entry.InUse) {
+			if (entry.InUse) {
 				row[o] = entry.R;
 				row[o + 1] = entry.G;
 				row[o + 2] = entry.B;
