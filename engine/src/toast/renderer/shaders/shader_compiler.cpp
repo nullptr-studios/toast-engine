@@ -142,7 +142,7 @@ void ShaderCompiler::setMaxParallelCompiles(size_t count) {
 auto ShaderCompiler::featureHash() -> uint64_t {
 	// Debug compiles unoptimized with debug info so a release entry in the shared cache must read as stale and the reverse
 #if defined(NDEBUG)
-	const uint64_t k_build_profile = full_optimization.load(std::memory_order_relaxed) ? 0x0ull : 0x0f7d1e5ca1ab1e00ull;
+	const uint64_t k_build_profile = full_optimization.load(std::memory_order_relaxed) ? 0x0ull : 0x0f7d1e5ca1ab1e01ull;
 #else
 	constexpr uint64_t k_build_profile = 0xd3b09c0de5a11e01ull;
 #endif
@@ -167,35 +167,31 @@ static auto createSession(slang::IGlobalSession* global_session) -> Slang::ComPt
 	std::array<slang::TargetDesc, 1> slang_targets {target};
 
 	std::vector<slang::CompilerOptionEntry> compiler_options;
-
-#if !defined(NDEBUG)
-	TOAST_INFO("Render", "Configuring Slang for DEBUG: Optimizations disabled, debug symbols enabled.");
-
-	slang::CompilerOptionEntry opt_entry {};
-	opt_entry.name = slang::CompilerOptionName::Optimization;
-	opt_entry.value.kind = slang::CompilerOptionValueKind::Int;
-	opt_entry.value.intValue0 = SlangOptimizationLevel::SLANG_OPTIMIZATION_LEVEL_NONE;
-
-	compiler_options.push_back(opt_entry);
-
-	slang::CompilerOptionEntry dbg_entry {};
-	dbg_entry.name = slang::CompilerOptionName::DebugInformation;
-	dbg_entry.value.kind = slang::CompilerOptionValueKind::Int;
-	dbg_entry.value.intValue0 = SlangDebugInfoLevel::SLANG_DEBUG_INFO_LEVEL_MAXIMAL;
-	compiler_options.push_back(dbg_entry);
-
+#if defined(NDEBUG)
+	const bool debug_shaders = !full_optimization.load(std::memory_order_relaxed);
 #else
-	const bool full = full_optimization.load(std::memory_order_relaxed);
-	TOAST_TRACE("Render", "Configuring Slang for RELEASE with {} optimization", full ? "maximal" : "default");
+	constexpr bool debug_shaders = true;
+#endif
+	TOAST_TRACE(
+	    "Render",
+	    "Configuring Slang with {} optimization and {} debug information",
+	    debug_shaders ? "no" : "maximal",
+	    debug_shaders ? "maximal" : "no"
+	);
 
 	slang::CompilerOptionEntry opt_entry {};
 	opt_entry.name = slang::CompilerOptionName::Optimization;
 	opt_entry.value.kind = slang::CompilerOptionValueKind::Int;
-	opt_entry.value.intValue0 =
-	    full ? SlangOptimizationLevel::SLANG_OPTIMIZATION_LEVEL_MAXIMAL : SlangOptimizationLevel::SLANG_OPTIMIZATION_LEVEL_DEFAULT;
+	opt_entry.value.intValue0 = debug_shaders ? SLANG_OPTIMIZATION_LEVEL_NONE : SLANG_OPTIMIZATION_LEVEL_MAXIMAL;
 	compiler_options.push_back(opt_entry);
 
-#endif
+	if (debug_shaders) {
+		slang::CompilerOptionEntry dbg_entry {};
+		dbg_entry.name = slang::CompilerOptionName::DebugInformation;
+		dbg_entry.value.kind = slang::CompilerOptionValueKind::Int;
+		dbg_entry.value.intValue0 = SlangDebugInfoLevel::SLANG_DEBUG_INFO_LEVEL_MAXIMAL;
+		compiler_options.push_back(dbg_entry);
+	}
 
 	// Always defined to 0 or 1 so shaders can #if TOAST_RAY_QUERY
 	slang::CompilerOptionEntry ray_query_entry {};
