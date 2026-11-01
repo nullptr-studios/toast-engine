@@ -73,6 +73,8 @@ public:
 		/// Task stage module since Slang gives task and mesh entry points of one module separate payload variables that
 		/// NVIDIA drivers mishandle (shader-slang/slang#10123)
 		std::vector<std::byte> task_spirv;
+		/// Fragment stage module when it must not share one with the mesh stage
+		std::vector<std::byte> fragment_spirv;
 		std::string fragment_entry = "fragmentMain";
 		std::string compute_entry = "computeMain";
 
@@ -128,6 +130,7 @@ public:
 private:
 	std::optional<vk::raii::ShaderModule> m_shader_module;
 	std::optional<vk::raii::ShaderModule> m_task_module;
+	std::optional<vk::raii::ShaderModule> m_fragment_module;
 	vk::raii::Pipeline m_pipeline = nullptr;
 };
 

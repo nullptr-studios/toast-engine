@@ -122,10 +122,3 @@ void quadMeshMain(uint3 group : SV_GroupID, uint thread : SV_GroupIndex, in payl
         }
     }
 }
-
-[shader("fragment")]
-[earlydepthstencil]
-FSOutput meshQuadFragmentMain(QuadVSOutput input)
-{
-    return shadeQuad(input);
-}

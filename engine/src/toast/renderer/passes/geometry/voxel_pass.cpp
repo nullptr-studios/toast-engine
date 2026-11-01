@@ -183,11 +183,14 @@ VoxelPass::VoxelPass(const VulkanCore& core, vk::Format scene_format, vk::Format
 		m_draw_mesh_tasks_indirect = core.getDevice().getDispatcher()->vkCmdDrawMeshTasksIndirectEXT;
 		const auto mesh_uid = assets::resolveURI("core://shaders/voxel_mesh.slang");
 		const auto task_uid = assets::resolveURI("core://shaders/voxel_mesh_task.slang");
+		const auto fragment_uid = assets::resolveURI("core://shaders/voxel_mesh_frag.slang");
 		const auto mesh_shader = mesh_uid.has_value() ? ShaderCache::get().acquire(*mesh_uid) : nullptr;
 		const auto task_shader = task_uid.has_value() ? ShaderCache::get().acquire(*task_uid) : nullptr;
-		if (mesh_shader && task_shader) {
+		const auto fragment_shader = fragment_uid.has_value() ? ShaderCache::get().acquire(*fragment_uid) : nullptr;
+		if (mesh_shader && task_shader && fragment_shader) {
 			config.shader_spirv = mesh_shader->spirv;
 			config.task_spirv = task_shader->spirv;
+			config.fragment_spirv = fragment_shader->spirv;
 			config.task_entry = "quadTaskMain";
 			config.mesh_entry = "quadMeshMain";
 			config.fragment_entry = "meshQuadFragmentMain";
@@ -200,7 +203,8 @@ VoxelPass::VoxelPass(const VulkanCore& core, vk::Format scene_format, vk::Format
 		} else {
 			TOAST_WARN(
 			    "Render",
-			    "VoxelPass shaders core://shaders/voxel_mesh.slang and voxel_mesh_task.slang unavailable; near voxels mesh in compute"
+			    "VoxelPass shaders core://shaders/voxel_mesh.slang, voxel_mesh_task.slang and voxel_mesh_frag.slang unavailable; near "
+			    "voxels mesh in compute"
 			);
 		}
 	}
