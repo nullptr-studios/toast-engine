@@ -26,6 +26,11 @@ namespace {
 
 constexpr std::size_t k_kept_frames = 16;
 
+// Tracy symbolizes heap callstacks through dbghelp, which is not thread safe, so the logger stays out of it then
+#if defined(_WIN32) && defined(TRACY_ENABLE) && defined(TOAST_TRACK_HEAP) && TOAST_HEAP_CALLSTACK_DEPTH > 0
+#define TOAST_BACKTRACE_AVOID_DBGHELP
+#endif
+
 std::mutex g_cache_mutex;
 std::unordered_map<std::uintptr_t, std::string> g_cache;
 std::uint64_t g_cache_generation = 0;
@@ -131,7 +136,9 @@ auto resolveLine(std::uintptr_t address) -> std::string {
 		return std::format("{:#x}", address);
 	}
 	std::string module_location = std::format("{}+{:#x}", _detail::getOnlyName(module.path), address - module.base);
-
+#ifdef TOAST_BACKTRACE_AVOID_DBGHELP
+	return module_location;
+#else
 	cpptrace::stacktrace_frame frame = resolveFrame(address);
 #ifdef _WIN32
 	if (frame.symbol.empty() && loadSymbolsOnce(module)) {
@@ -147,6 +154,7 @@ auto resolveLine(std::uintptr_t address) -> std::string {
 		return std::format("{} ({})", function, module_location);
 	}
 	return std::format("{} ({}:{})", function, _detail::getOnlyName(frame.filename), frame.line.value());
+#endif
 }
 
 auto cachedLine(std::uintptr_t address) -> std::string {
@@ -243,7 +251,9 @@ void invalidateBacktraceCache() noexcept {
 	++g_cache_generation;
 #ifdef _WIN32
 	g_symbol_loaded_modules.clear();
+#ifndef TOAST_BACKTRACE_AVOID_DBGHELP
 	unloadDbghelpSymbols();
+#endif
 #endif
 }
 

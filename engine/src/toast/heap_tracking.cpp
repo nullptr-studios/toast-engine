@@ -68,8 +68,7 @@ public:
 				break;
 			}
 			const std::size_t home = hash(m_slots[j]) & mask;
-			const bool movable = i <= j ? (home <= i || home > j) : (home <= i && home > j);
-			if (movable) {
+			if (const bool movable = i <= j ? (home <= i || home > j) : (home <= i && home > j)) {
 				m_slots[i] = m_slots[j];
 				i = j;
 			}
@@ -97,7 +96,7 @@ private:
 
 	auto grow() -> bool {
 		const std::size_t capacity = m_capacity == 0 ? 1024 : m_capacity * 2;
-		auto* slots = static_cast<std::uintptr_t*>(std::calloc(capacity, sizeof(std::uintptr_t)));
+		auto* slots = static_cast<std::uintptr_t*>(std::calloc(capacity, sizeof(std::uintptr_t)));    // NOLINT(*-no-malloc)
 		if (slots == nullptr) {
 			return false;
 		}
@@ -112,7 +111,7 @@ private:
 			}
 			slots[j] = m_slots[i];
 		}
-		std::free(m_slots);
+		std::free(m_slots);    // NOLINT(*-no-malloc)
 		m_slots = slots;
 		m_capacity = capacity;
 		return true;
@@ -132,7 +131,7 @@ struct alignas(64) Shard {
 };
 
 auto shards() -> Shard* {
-	static Shard table[k_shard_count];
+	static Shard table[k_shard_count];    // NOLINT(*-avoid-c-arrays)
 	return table;
 }
 
@@ -192,7 +191,7 @@ void trackFree(void* ptr) {
 }
 
 auto allocate(std::size_t size) -> void* {
-	return std::malloc(size != 0 ? size : 1);
+	return std::malloc(size != 0 ? size : 1);    // NOLINT(*-no-malloc)
 }
 
 auto allocateAligned(std::size_t size, std::size_t alignment) -> void* {
@@ -257,7 +256,7 @@ auto allocateNoThrowAligned(std::size_t size, std::align_val_t alignment) noexce
 
 void release(void* ptr) noexcept {
 	trackFree(ptr);
-	std::free(ptr);
+	std::free(ptr);    // NOLINT(*-no-malloc)
 }
 
 void releaseTrackedAligned(void* ptr) noexcept {
@@ -267,35 +266,35 @@ void releaseTrackedAligned(void* ptr) noexcept {
 
 }    // namespace
 
-void* operator new(std::size_t size) {
+auto operator new(std::size_t size) -> void* {
 	return allocateOrThrow(size);
 }
 
-void* operator new[](std::size_t size) {
+auto operator new[](std::size_t size) -> void* {
 	return allocateOrThrow(size);
 }
 
-void* operator new(std::size_t size, const std::nothrow_t&) noexcept {
+auto operator new(std::size_t size, const std::nothrow_t&) noexcept -> void* {
 	return allocateNoThrow(size);
 }
 
-void* operator new[](std::size_t size, const std::nothrow_t&) noexcept {
+auto operator new[](std::size_t size, const std::nothrow_t&) noexcept -> void* {
 	return allocateNoThrow(size);
 }
 
-void* operator new(std::size_t size, std::align_val_t alignment) {
+auto operator new(std::size_t size, std::align_val_t alignment) -> void* {
 	return allocateOrThrowAligned(size, alignment);
 }
 
-void* operator new[](std::size_t size, std::align_val_t alignment) {
+auto operator new[](std::size_t size, std::align_val_t alignment) -> void* {
 	return allocateOrThrowAligned(size, alignment);
 }
 
-void* operator new(std::size_t size, std::align_val_t alignment, const std::nothrow_t&) noexcept {
+auto operator new(std::size_t size, std::align_val_t alignment, const std::nothrow_t&) noexcept -> void* {
 	return allocateNoThrowAligned(size, alignment);
 }
 
-void* operator new[](std::size_t size, std::align_val_t alignment, const std::nothrow_t&) noexcept {
+auto operator new[](std::size_t size, std::align_val_t alignment, const std::nothrow_t&) noexcept -> void* {
 	return allocateNoThrowAligned(size, alignment);
 }
 

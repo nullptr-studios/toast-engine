@@ -733,11 +733,11 @@ void Simulator::tick() {
 	m_profile.wake_groups_ms = elapsed_ms(after_cache, after_wake);
 
 	// resolve
-	auto constraints = prepareConstraints(m_manifolds);
+	auto& constraints = prepareConstraints(m_manifolds);
 	const auto after_prepare = std::chrono::steady_clock::now();
 	m_profile.prepare_constraints_ms = elapsed_ms(after_wake, after_prepare);
 
-	auto islands = buildIslands(m_manifolds, constraints);
+	auto& islands = buildIslands(m_manifolds, constraints);
 	const auto after_islands = std::chrono::steady_clock::now();
 	m_profile.build_islands_ms = elapsed_ms(after_prepare, after_islands);
 
@@ -1158,6 +1158,7 @@ void Simulator::refreshPalette(uint64_t palette_uid) {
 void Simulator::reapFragments() {
 	ZoneScopedN("physics::ReapFragments");
 
+	const size_t fragment_count = m_fragments.size();
 	for (const BodyID id : m_doomed_fragments) {
 		destroyFragmentRecord(id);
 	}
@@ -1173,7 +1174,10 @@ void Simulator::reapFragments() {
 		++m_profile.fragments_evicted;
 	}
 
-	rebuildFragmentIndex();
+	// Records are only ever removed here, so an unchanged count leaves every index valid
+	if (m_fragments.size() != fragment_count) {
+		rebuildFragmentIndex();
+	}
 }
 
 void Simulator::queuePendingFragments(std::span<const ConnectivityResult> results) {
@@ -3046,7 +3050,8 @@ void Simulator::updateCache(std::span<const Manifold> manifolds) {
 	ZoneScopedN("physics::UpdateContactCache");
 	ZoneValue(static_cast<uint64_t>(manifolds.size()));
 
-	std::vector<CachedManifold> next_cache;
+	std::vector<CachedManifold>& next_cache = m_cached_manifolds_next;
+	next_cache.clear();
 	next_cache.reserve(manifolds.size());
 
 	for (const Manifold& manifold : manifolds) {
@@ -3141,7 +3146,7 @@ void Simulator::updateCache(std::span<const Manifold> manifolds) {
 	std::ranges::sort(next_cache, [](const CachedManifold& lhs, const CachedManifold& rhs) {
 		return cachedManifoldLess(lhs, rhs);
 	});
-	m_cached_manifolds = std::move(next_cache);
+	m_cached_manifolds.swap(next_cache);
 	ZoneValue(static_cast<uint64_t>(m_cached_manifolds.size()));
 }
 
@@ -5651,10 +5656,11 @@ auto Simulator::findCachedContact(
 	return contact != contacts.end() ? &*contact : nullptr;
 }
 
-auto Simulator::prepareConstraints(const std::vector<Manifold>& manifolds) -> std::vector<Constraint> {
+auto Simulator::prepareConstraints(const std::vector<Manifold>& manifolds) -> std::vector<Constraint>& {
 	ZoneScopedN("physics::PrepareConstraints");
 
-	std::vector<const Manifold*> active_manifolds;
+	std::vector<const Manifold*>& active_manifolds = m_prepare_active_manifolds;
+	active_manifolds.clear();
 	active_manifolds.reserve(manifolds.size());
 	size_t contact_count = 0;
 	for (const Manifold& manifold : manifolds) {
@@ -5665,11 +5671,6 @@ auto Simulator::prepareConstraints(const std::vector<Manifold>& manifolds) -> st
 		contact_count += std::min<size_t>(manifold.contact_count, manifold.contacts.size());
 	}
 
-	struct PreparedChunk {
-		std::vector<Constraint> constraints;
-		size_t rejected = 0;
-	};
-
 	const size_t minimum_manifolds_per_job = tunables().min_manifolds_per_job;
 	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), static_cast<size_t>(1));
 	const size_t maximum_job_count = worker_count * 3;
@@ -5678,7 +5679,12 @@ auto Simulator::prepareConstraints(const std::vector<Manifold>& manifolds) -> st
 	        ? 0
 	        : std::min(maximum_job_count, std::max(active_manifolds.size() / minimum_manifolds_per_job, size_t {1}));
 
-	std::vector<std::future<PreparedChunk>> futures;
+	if (m_prepare_chunks.size() < job_count) {
+		m_prepare_chunks.resize(job_count);
+		m_prepare_chunk_rejected.resize(job_count);
+	}
+
+	std::vector<std::future<void>> futures;
 	futures.reserve(job_count);
 
 	{
@@ -5690,32 +5696,41 @@ auto Simulator::prepareConstraints(const std::vector<Manifold>& manifolds) -> st
 			const size_t end = (job_index + 1) * active_manifolds.size() / job_count;
 			auto batch = std::span<const Manifold* const> {active_manifolds}.subspan(begin, end - begin);
 
-			futures.emplace_back(toast::ThreadPool::push([this, batch] {
+			futures.emplace_back(toast::ThreadPool::push([this, batch, job_index] {
 				ZoneScopedN("physics::PrepareConstraintsBatch");    // NOLINT
-				PreparedChunk chunk;
+				std::vector<Constraint>& chunk = m_prepare_chunks[job_index];
+				chunk.clear();
+				size_t batch_contact_count = 0;
+				for (const Manifold* manifold : batch) {
+					batch_contact_count += std::min<size_t>(manifold->contact_count, manifold->contacts.size());
+				}
+				chunk.reserve(batch_contact_count);
+
+				size_t rejected = 0;
 				for (const Manifold* manifold : batch) {
 					const size_t valid_contact_count = std::min<size_t>(manifold->contact_count, manifold->contacts.size());
 					for (size_t contact_index = 0; contact_index < valid_contact_count; ++contact_index) {
 						if (auto constraint = prepareConstraint(*manifold, manifold->contacts[contact_index])) {
-							chunk.constraints.emplace_back(*constraint);
+							chunk.emplace_back(*constraint);
 						} else {
-							++chunk.rejected;
+							++rejected;
 						}
 					}
 				}
-				return chunk;
+				m_prepare_chunk_rejected[job_index] = rejected;
 			}));
 		}
 	}
 
 	// Gathered in dispatch order so this matches the order a serial pass would produce, buildIslands relies on it
-	std::vector<Constraint> constraints;
+	std::vector<Constraint>& constraints = m_constraints;
+	constraints.clear();
 	constraints.reserve(contact_count);
 	size_t rejected_contact_count = 0;
-	for (auto& future : futures) {
-		PreparedChunk chunk = future.get();
-		rejected_contact_count += chunk.rejected;
-		constraints.insert_range(constraints.end(), std::move(chunk.constraints));
+	for (size_t job_index = 0; job_index < futures.size(); ++job_index) {
+		futures[job_index].get();
+		rejected_contact_count += m_prepare_chunk_rejected[job_index];
+		constraints.insert(constraints.end(), m_prepare_chunks[job_index].begin(), m_prepare_chunks[job_index].end());
 	}
 
 	if (rejected_contact_count > 0) {
@@ -5733,7 +5748,7 @@ auto Simulator::prepareConstraints(const std::vector<Manifold>& manifolds) -> st
 }
 
 auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vector<Constraint>& constraints)
-    -> std::vector<SimulationIsland> {
+    -> std::vector<SimulationIsland>& {
 	ZoneScopedN("physics::BuildIslands");
 
 	m_island_parents.resize(m_bodies.size());
@@ -5784,7 +5799,15 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 
 	const size_t no_island = m_bodies.size();
 	m_island_by_root.assign(m_bodies.size(), no_island);
-	std::vector<SimulationIsland> islands;
+	for (SimulationIsland& previous : m_islands) {
+		previous.dynamic_bodies.clear();
+		previous.constraints.clear();
+		previous.manifold_indices.clear();
+		previous.batch_offsets.clear();
+		m_island_spares.emplace_back(std::move(previous));
+	}
+	m_islands.clear();
+	std::vector<SimulationIsland>& islands = m_islands;
 
 	for (size_t body_index = 0; body_index < m_bodies.size(); ++body_index) {
 		if (not m_island_participates[body_index]) {
@@ -5795,11 +5818,13 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 		if (m_island_by_root[root] == no_island) {
 			const BodySlot& root_slot = m_bodies[root];
 			m_island_by_root[root] = islands.size();
-			islands.emplace_back(
-			    SimulationIsland {
-			      .sort_key = BodyID {.slot = static_cast<uint32_t>(root), .generation = root_slot.generation},
+			SimulationIsland island;
+			if (not m_island_spares.empty()) {
+				island = std::move(m_island_spares.back());
+				m_island_spares.pop_back();
 			}
-			);
+			island.sort_key = BodyID {.slot = static_cast<uint32_t>(root), .generation = root_slot.generation};
+			islands.emplace_back(std::move(island));
 		}
 
 		const BodySlot& slot = m_bodies[body_index];
