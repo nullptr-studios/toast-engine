@@ -31,6 +31,8 @@ public:
 	[[Reflect]]
 	void setRotation(const glm::quat& rotation);
 
+	void addForce(const glm::vec3& force, const glm::vec3& offset = {0.0, 0.0, 0.0});
+
 	[[Reflect, Unit("kg")]]
 	float mass = 1.0f;
 	[[Reflect]]

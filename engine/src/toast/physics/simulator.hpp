@@ -291,6 +291,9 @@ public:
 	static void registerTrigger(Trigger& node);
 	static void unregisterTrigger(Trigger& node);
 
+	/// Force over one fixed step, offset is world space from the center of mass, from any thread
+	static void addForce(BodyID body, glm::vec3 force, glm::vec3 offset);
+
 	[[nodiscard]]
 	auto overlapCapsule(
 	    BodyID ignored, const CapsuleShape& capsule, const glm::vec3& position, const glm::quat& rotation, float min_penetration,

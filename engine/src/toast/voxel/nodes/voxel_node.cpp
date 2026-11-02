@@ -481,6 +481,10 @@ auto VoxelNode::raycastVoxels(glm::vec3 origin, glm::vec3 direction, float max_t
 	return best;
 }
 
+void VoxelNode::addForce(glm::vec3 force, glm::vec3 offset) {
+	physics::Simulator::addForce(m_body, force, offset);
+}
+
 auto VoxelNode::getVoxel(glm::vec3 pos) -> int {
 	if (usesParts()) {
 		const glm::ivec3 cell = toVoxel(pos);

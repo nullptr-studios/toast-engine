@@ -6221,4 +6221,33 @@ auto Simulator::solveConstraint(Constraint& constraint) -> bool {
 	return true;
 }
 
+void Simulator::addForce(BodyID body, glm::vec3 force, glm::vec3 offset) {
+	if (not onSimulatorThread()) {
+		request([body, force, offset] { addForce(body, force, offset); });
+		return;
+	}
+	runPendingRequests();
+
+	if (not instance || not instance->mainThreadMutationAllowed()) {
+		return;
+	}
+
+	Body* b = instance->tryGetBody(body);
+	if (b == nullptr || not b->enabled || b->type != BodyType::dynamic_body || b->inverse_mass <= 0.0f) {
+		return;
+	}
+	if (not std::isfinite(glm::dot(force, force)) || not std::isfinite(glm::dot(offset, offset))) {
+		return;
+	}
+
+	if (b->sleep_locked) {
+		instance->unlockSleep(body);
+	}
+	wakeBody(body);
+
+	const glm::vec3 impulse = force * static_cast<float>(Accumulator::fixedDelta());
+	b->linear_velocity += impulse * b->inverse_mass;
+	b->angular_velocity += b->inverse_inertia_world * glm::cross(offset, impulse);
+}
+
 }
