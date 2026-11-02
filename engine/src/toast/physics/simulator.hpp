@@ -575,6 +575,7 @@ private:
 	void jointBodies(const Joint& joint, Body*& body_a, Body*& body_b);
 	void addExclusion(BodyID a, BodyID b);
 	void removeExclusion(BodyID a, BodyID b);
+	void adjustJointContacts(std::vector<Manifold>& manifolds);
 	void wakeBodiesInBounds(const AABB& bounds);
 	void convertImpulsesToDamage(std::span<const SimulationIsland> islands);
 	void wakeDisturbedSleepers(float dt);

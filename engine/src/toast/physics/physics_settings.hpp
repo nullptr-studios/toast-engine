@@ -72,6 +72,7 @@ struct Tunables {
 	uint32_t voxel_pair_split_regions = 8;
 	uint32_t sweep_refine_iterations = 6;
 	uint32_t position_iterations = 3;
+	uint32_t joint_substeps = 4;
 	float air_density = 1.225f;
 	glm::vec3 wind = {0.0f, 0.0f, 0.0f};
 	float wind_shelter_distance = 64.0f;

@@ -16,9 +16,15 @@ public:
 	[[Reflect, Range(0.0, 1.0)]]
 	float bias = 0.3f;
 
+	/// Torque that holds the hinge against turning per newton it carries, the friction of the material times the radius of
+	/// the pin. Zero swings forever
+	[[Reflect, Unit("m"), Range(0.0, 0.1)]]
+	float friction = k_default_joint_friction;
+
 	[[Reflect, Group("Angular Limit")]]
 	bool limit_enabled = false;
 
+	/// Angles go around the axis from the x of the joint to the body that turns
 	[[Reflect, Group("Angular Limit"), Unit("°")]]
 	float limit_lower = -90.0f;
 
@@ -27,6 +33,9 @@ public:
 
 	[[Reflect, Group("Angular Limit"), Range(0.0, 1.0)]]
 	float limit_bias = 0.3f;
+
+	[[Reflect, Group("Angular Limit"), Range(0.0, 1.0)]]
+	float limit_restitution = 0.0f;
 
 	[[Reflect, Group("Motor")]]
 	bool motor_enabled = false;

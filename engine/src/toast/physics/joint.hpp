@@ -34,10 +34,17 @@ enum class JointType : uint8_t {
 	fixed
 };
 
+// Joint friction is the torque that holds the ends against turning per newton the joint carries, the friction of the
+// material times the radius of the pin, in metres
+constexpr float k_default_joint_friction = 0.01f;
+
+// The ends of a hinge or a pin with collision between them don't touch closer to the pin than this
+constexpr float k_joint_knuckle_radius = 0.1f;
+
 struct PinParams {
 	float bias = 0.3f;
-	float damping = 1.0f;
 	float impulse_clamp = 0.0f;
+	float friction = k_default_joint_friction;
 	auto operator==(const PinParams&) const -> bool = default;
 };
 
@@ -47,6 +54,8 @@ struct HingeParams {
 	float limit_lower = -glm::half_pi<float>();    // radians
 	float limit_upper = glm::half_pi<float>();
 	float limit_bias = 0.3f;
+	float limit_restitution = 0.0f;
+	float friction = k_default_joint_friction;
 	bool motor_enabled = false;
 	float motor_target_velocity = 0.0f;    // rad/s
 	float motor_max_impulse = 1.0f;        // per step
@@ -59,6 +68,7 @@ struct SliderParams {
 	float bias = 0.3f;
 	float linear_limit_lower = -1.0f;
 	float linear_limit_upper = 1.0f;
+	float limit_restitution = 0.0f;
 
 	auto operator==(const SliderParams&) const -> bool = default;
 };
@@ -113,6 +123,7 @@ struct JointImpulses {
 	float limit_lower = 0.0f;
 	float limit_upper = 0.0f;
 	float motor = 0.0f;
+	glm::vec3 friction = {};    // along the axes of the frame of body a
 };
 
 struct Joint {

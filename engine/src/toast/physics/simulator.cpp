@@ -725,6 +725,7 @@ void Simulator::tick() {
 		const auto candidates = m_broad_phase.findPairs(world);
 		m_manifolds = generateManifoldsAsync(world, candidates);
 	}
+	adjustJointContacts(m_manifolds);
 	const auto after_narrow = std::chrono::steady_clock::now();
 	m_profile.narrow_phase_ms = elapsed_ms(after_connectivity, after_narrow);
 
@@ -2586,7 +2587,8 @@ auto Simulator::solveNormal(Constraint& constraint, Body& body_a, Body& body_b) 
 		return false;
 	}
 
-	float impulse_delta = (constraint.restitution_bias - normal_speed) * constraint.normal_mass;
+	const float target_speed = constraint.closing_speed > 0.0f ? -constraint.closing_speed : constraint.restitution_bias;
+	float impulse_delta = (target_speed - normal_speed) * constraint.normal_mass;
 	float old_impulse = constraint.accumulated_normal_impulse;
 	constraint.accumulated_normal_impulse = std::max(0.0f, old_impulse + impulse_delta);
 	float applied_impulse = constraint.accumulated_normal_impulse - old_impulse;
@@ -3039,6 +3041,30 @@ void Simulator::updateSleeping(float dt) {
 				m_contact_supported[cached.pair.a.body.slot] = 1;
 			} else if (along > k_support_normal) {
 				m_contact_supported[cached.pair.b.body.slot] = 1;
+			}
+		}
+
+		const auto holds_up = [this](BodyID id) {
+			const Body* body = tryGetBody(id);
+			return body == nullptr || body->type != BodyType::dynamic_body || m_contact_supported[id.slot] != 0;
+		};
+		bool changed = m_joint_count > 0;
+		for (size_t pass = 0; changed && pass <= m_joint_count; ++pass) {
+			changed = false;
+			for (const JointSlot& slot : m_joints) {
+				if (not slot.occupied) {
+					continue;
+				}
+				for (const auto& [end, other] : {
+				       std::pair {slot.joint.descriptor.body_a, slot.joint.descriptor.body_b},
+				       std::pair {slot.joint.descriptor.body_b, slot.joint.descriptor.body_a}
+				}) {
+					const Body* body = tryGetBody(end);
+					if (body != nullptr && body->type == BodyType::dynamic_body && m_contact_supported[end.slot] == 0 && holds_up(other)) {
+						m_contact_supported[end.slot] = 1;
+						changed = true;
+					}
+				}
 			}
 		}
 	}
@@ -3634,6 +3660,8 @@ auto Simulator::createJoint(const JointDescriptor& descriptor) -> JointID {
 	} else if (made.body_a == made.body_b) {
 		TOAST_WARN("Physics", "Rejected joint between a body and itself");
 		return {};
+	} else if (tryGetBody(made.body_a)->type == BodyType::dynamic_body && tryGetBody(made.body_b)->type != BodyType::dynamic_body) {
+		std::swap(made.body_a, made.body_b);
 	}
 
 	const float frame_length_squared = glm::dot(made.frame, made.frame);
@@ -3736,6 +3764,63 @@ void Simulator::removeExclusion(BodyID a, BodyID b) {
 	if (found != m_excluded_pairs.end() && *found == key) {
 		m_excluded_pairs.erase(found);
 	}
+}
+
+// The ends of a joint that collide with each other
+// - A hinge or a pin turns in a knuckle around its pin, so the two ends it holds never press on each other right there. A
+//   contact between them that close to the pin fights the joint, the joint pulls the ends back in and the contact pushes
+//   them out, and each push lifts the bodies a little for free, which keeps them swinging forever
+// - The other end is a stop like the limits, a hinge or a slider bounces off it at least as much as off its limits
+void Simulator::adjustJointContacts(std::vector<Manifold>& manifolds) {
+	if (m_joint_count == 0 || manifolds.empty()) {
+		return;
+	}
+
+	for (const JointSlot& slot : m_joints) {
+		const Joint& joint = slot.joint;
+		if (not slot.occupied || joint.descriptor.exclude_collision || std::holds_alternative<FixedParams>(joint.descriptor.params)) {
+			continue;
+		}
+		const bool hinge = std::holds_alternative<HingeParams>(joint.descriptor.params);
+		const bool knuckle = hinge || std::holds_alternative<PinParams>(joint.descriptor.params);
+		float restitution = 0.0f;
+		if (const auto* hinge_params = std::get_if<HingeParams>(&joint.descriptor.params); hinge_params != nullptr) {
+			restitution = hinge_params->limit_restitution;
+		} else if (const auto* slider_params = std::get_if<SliderParams>(&joint.descriptor.params); slider_params != nullptr) {
+			restitution = slider_params->limit_restitution;
+		}
+		const Body* body_a = tryGetBody(joint.descriptor.body_a);
+		const Body* body_b = tryGetBody(joint.descriptor.body_b);
+		if (body_a == nullptr || body_b == nullptr) {
+			continue;
+		}
+
+		const glm::vec3 anchor = body_a->position + (body_a->rotation * joint.frame_a.position);
+		const glm::vec3 axis = body_a->rotation * joint.frame_a.rotation * glm::vec3(0.0f, 0.0f, 1.0f);
+		const auto in_knuckle = [&](const ContactPoint& contact) {
+			const glm::vec3 offset = contact.position - anchor;
+			const float distance = hinge ? glm::length(glm::cross(offset, axis)) : glm::length(offset);
+			return knuckle && distance < k_joint_knuckle_radius;
+		};
+
+		for (Manifold& manifold : manifolds) {
+			const bool between = (manifold.pair.a.body == joint.descriptor.body_a && manifold.pair.b.body == joint.descriptor.body_b) ||
+			                     (manifold.pair.a.body == joint.descriptor.body_b && manifold.pair.b.body == joint.descriptor.body_a);
+			if (not between) {
+				continue;
+			}
+			uint8_t kept = 0;
+			for (uint8_t index = 0; index < manifold.contact_count; ++index) {
+				ContactPoint& contact = manifold.contacts[index];
+				if (not in_knuckle(contact)) {
+					contact.material.restitution = std::max(contact.material.restitution, restitution);
+					manifold.contacts[kept++] = contact;
+				}
+			}
+			manifold.contact_count = kept;
+		}
+	}
+	std::erase_if(manifolds, [](const Manifold& manifold) { return manifold.contact_count == 0; });
 }
 
 void Simulator::jointBodies(const Joint& joint, Body*& body_a, Body*& body_b) {
@@ -6578,13 +6663,6 @@ void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
 	// Warm start is one pass over each island constraints cheap enough to just do right here
 	for (SimulationIsland& island : islands) {
 		warmStartConstraints(island.constraints);
-		for (const uint32_t joint_index : island.joint_indices) {
-			JointSlot& slot = m_joints[joint_index];
-			Body* body_a = nullptr;
-			Body* body_b = nullptr;
-			jointBodies(slot.joint, body_a, body_b);
-			_detail::warmStartJoint(m_joint_rows[joint_index], slot.joint, *body_a, *body_b);
-		}
 	}
 
 	// Solve in lockstep waves a wave can be chunked across islands since none share a dynamic body
@@ -6644,25 +6722,18 @@ void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
 		}
 	};
 
+	std::vector<size_t> plain_islands;
+	std::vector<size_t> jointed_islands;
+	for (size_t island_index = 0; island_index < islands.size(); ++island_index) {
+		(islands[island_index].joint_indices.empty() ? plain_islands : jointed_islands).push_back(island_index);
+	}
+
 	size_t invalid_constraint_count = 0;
 	std::vector<std::span<Constraint>> wave_spans;
 	std::vector<size_t> active_islands;
-	for (uint32_t iteration = 0; iteration < solver_iterations; ++iteration) {
-		ZoneScopedN("iteration");
-		ZoneValue(static_cast<uint64_t>(iteration));
-
-		if (max_joint_batches > 0) {
-			run_joint_waves([this](uint32_t joint_index) {
-				JointSlot& slot = m_joints[joint_index];
-				Body* body_a = nullptr;
-				Body* body_b = nullptr;
-				jointBodies(slot.joint, body_a, body_b);
-				_detail::solveJoint(m_joint_rows[joint_index], slot.joint, *body_a, *body_b);
-			});
-		}
-
+	const auto solve_contact_waves = [&](std::span<const size_t> island_set) {
 		active_islands.clear();
-		for (size_t island_index = 0; island_index < islands.size(); ++island_index) {
+		for (const size_t island_index : island_set) {
 			if (islands[island_index].batch_offsets.size() > 1) {
 				active_islands.push_back(island_index);
 			}
@@ -6724,6 +6795,131 @@ void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
 				invalid_constraint_count += invalid;
 			}
 		}
+	};
+
+	for (uint32_t iteration = 0; iteration < solver_iterations; ++iteration) {
+		ZoneScopedN("iteration");
+		ZoneValue(static_cast<uint64_t>(iteration));
+		solve_contact_waves(plain_islands);
+	}
+
+	std::vector<glm::vec3> predicted_centers;
+	if (not jointed_islands.empty()) {
+		ZoneScopedN("physics::JointSubsteps");
+		const uint32_t substeps = std::max(tunables().joint_substeps, 1u);
+		const float substep_dt = static_cast<float>(Accumulator::fixedDelta()) / static_cast<float>(substeps);
+		const uint32_t substep_iterations = std::max((solver_iterations + substeps - 1) / substeps, 1u);
+
+		const auto settle_inertia = [](Body& body) {
+			const glm::mat3 rotation = glm::mat3_cast(body.rotation);
+			body.inverse_inertia_world = rotation * body.inverse_inertia_local * glm::transpose(rotation);
+		};
+		const auto advance = [&settle_inertia, substep_dt](Body& body) {
+			for (int axis = 0; axis < 3; ++axis) {
+				if (body.lock_position[axis]) {
+					body.linear_velocity[axis] = 0.0f;
+				}
+				if (body.lock_rotation[axis]) {
+					body.angular_velocity[axis] = 0.0f;
+				}
+			}
+			const glm::vec3 center = body.worldCenterOfMass() + (body.linear_velocity * substep_dt);
+			const glm::quat spin {0.0f, body.angular_velocity.x, body.angular_velocity.y, body.angular_velocity.z};
+			const glm::quat next = body.rotation + ((0.5f * substep_dt) * (spin * body.rotation));
+			const float length_squared = glm::dot(next, next);
+			if (std::isfinite(length_squared) && length_squared > 1.0e-10f) {
+				body.rotation = glm::normalize(next);
+			}
+			body.position = center - (body.rotation * body.local_center_of_mass);
+			settle_inertia(body);
+		};
+		const auto for_each_jointed_body = [&](const auto& per_body) {
+			for (const size_t island_index : jointed_islands) {
+				for (const BodyID id : islands[island_index].dynamic_bodies) {
+					if (Body* body = tryGetBody(id); body != nullptr) {
+						per_body(id, *body);
+					}
+				}
+			}
+		};
+
+		for_each_jointed_body([&](BodyID, Body& body) {
+			predicted_centers.push_back(body.worldCenterOfMass());
+			body.position = body.previous_position;
+			body.rotation = body.previous_rotation;
+			settle_inertia(body);
+		});
+
+		if (m_position_shift.size() < m_bodies.size()) {
+			m_position_shift.resize(m_bodies.size(), glm::vec3(0.0f));
+		}
+		const auto measure_shift = [&] {
+			size_t body_index = 0;
+			for_each_jointed_body([&](BodyID id, Body& body) {
+				m_position_shift[id.slot] = body.worldCenterOfMass() - predicted_centers[body_index++];
+			});
+		};
+		const auto open_contacts = [&](bool first) {
+			for (const size_t island_index : jointed_islands) {
+				for (Constraint& constraint : islands[island_index].constraints) {
+					const float separation =
+					    -constraint.penetration +
+					    glm::dot(m_position_shift[constraint.body_b.slot] - m_position_shift[constraint.body_a.slot], constraint.normal);
+					const float closing = std::max(separation, 0.0f) / substep_dt;
+					constraint.closing_speed = first ? closing : std::min(constraint.closing_speed, closing);
+				}
+			}
+		};
+		measure_shift();
+
+		for (uint32_t substep = 0; substep < substeps; ++substep) {
+			run_joint_waves([this, substep, substep_dt](uint32_t joint_index) {
+				JointSlot& slot = m_joints[joint_index];
+				Body* body_a = nullptr;
+				Body* body_b = nullptr;
+				jointBodies(slot.joint, body_a, body_b);
+				const _detail::JointRow previous = m_joint_rows[joint_index];
+				m_joint_rows[joint_index] = _detail::prepareJoint(slot.joint, *body_a, *body_b, substep_dt);
+				if (substep == 0) {
+					_detail::warmStartJoint(m_joint_rows[joint_index], slot.joint, *body_a, *body_b);
+				} else {
+					m_joint_rows[joint_index].bounce_lower = std::min(m_joint_rows[joint_index].bounce_lower, previous.bounce_lower);
+					m_joint_rows[joint_index].bounce_upper = std::min(m_joint_rows[joint_index].bounce_upper, previous.bounce_upper);
+				}
+			});
+
+			open_contacts(substep == 0);
+			for (uint32_t iteration = 0; iteration < substep_iterations; ++iteration) {
+				run_joint_waves([this](uint32_t joint_index) {
+					JointSlot& slot = m_joints[joint_index];
+					Body* body_a = nullptr;
+					Body* body_b = nullptr;
+					jointBodies(slot.joint, body_a, body_b);
+					_detail::solveJoint(m_joint_rows[joint_index], slot.joint, *body_a, *body_b);
+				});
+				solve_contact_waves(jointed_islands);
+			}
+
+			for_each_jointed_body([&](BodyID, Body& body) { advance(body); });
+
+			const uint32_t passes = substep + 1 == substeps ? tunables().position_iterations : 1u;
+			for (uint32_t pass = 0; pass < passes; ++pass) {
+				run_joint_waves([this](uint32_t joint_index) {
+					JointSlot& slot = m_joints[joint_index];
+					Body* body_a = nullptr;
+					Body* body_b = nullptr;
+					jointBodies(slot.joint, body_a, body_b);
+					_detail::correctJointPositions(slot.joint, *body_a, *body_b);
+				});
+			}
+			measure_shift();
+		}
+
+		for (const size_t island_index : jointed_islands) {
+			for (Constraint& constraint : islands[island_index].constraints) {
+				constraint.closing_speed = 0.0f;
+			}
+		}
 	}
 
 	if (invalid_constraint_count > 0) {
@@ -6731,22 +6927,17 @@ void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
 	}
 	m_profile.invalid_constraints = invalid_constraint_count;
 
-	if (max_joint_batches > 0) {
-		for (uint32_t pass = 0; pass < tunables().position_iterations; ++pass) {
-			run_joint_waves([this](uint32_t joint_index) {
-				JointSlot& slot = m_joints[joint_index];
-				Body* body_a = nullptr;
-				Body* body_b = nullptr;
-				jointBodies(slot.joint, body_a, body_b);
-				_detail::correctJointPositions(slot.joint, *body_a, *body_b);
-			});
-		}
-	}
-
 	// Position correction is one pass over each island manifolds same reasoning as warm start above
 	size_t position_correction_count = 0;
 	for (SimulationIsland& island : islands) {
 		position_correction_count += correctPositions(island.manifold_indices);
+	}
+	if (not predicted_centers.empty()) {
+		for (const size_t island_index : jointed_islands) {
+			for (const BodyID id : islands[island_index].dynamic_bodies) {
+				m_position_shift[id.slot] = glm::vec3(0.0f);
+			}
+		}
 	}
 	m_profile.position_corrections = position_correction_count;
 

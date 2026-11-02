@@ -24,12 +24,20 @@ public:
 	[[Reflect, Unit("m")]]
 	float linear_limit_upper = 1.0f;
 
+	[[Reflect, Range(0.0, 1.0)]]
+	float limit_restitution = 0.0f;
+
 	[[Reflect, ReadOnly, Unit("m")]]
 	float current_distance = 0.0f;
 
 	[[nodiscard]]
 	auto makeParams() const -> JointParams override {
-		return SliderParams {.bias = bias, .linear_limit_lower = linear_limit_lower, .linear_limit_upper = linear_limit_upper};
+		return SliderParams {
+		  .bias = bias,
+		  .linear_limit_lower = linear_limit_lower,
+		  .linear_limit_upper = linear_limit_upper,
+		  .limit_restitution = limit_restitution
+		};
 	}
 
 	[[nodiscard]]
