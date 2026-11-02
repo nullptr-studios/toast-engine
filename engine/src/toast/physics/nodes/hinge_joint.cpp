@@ -21,6 +21,8 @@ auto HingeJoint::makeParams() const -> JointParams {
 	  .limit_lower = glm::radians(limit_lower),
 	  .limit_upper = glm::radians(limit_upper),
 	  .limit_bias = limit_bias,
+	  .limit_restitution = limit_restitution,
+	  .friction = friction,
 	  .motor_enabled = motor_enabled,
 	  .motor_target_velocity = glm::radians(motor_target_velocity),
 	  .motor_max_impulse = motor_max_impulse,

@@ -96,6 +96,17 @@ void registerPhysicsSettings() {
 			 .step = 1.0},
 	    &Tunables::position_iterations
 	);
+	uint_setting(
+	    "physics.solver.joint_substeps",
+	    4,
+	    {.label = "Joint substeps",
+			 .category = "Solver",
+			 .description = "Times a step is split for bodies held by joints so swinging keeps its speed",
+			 .min = 1.0,
+			 .max = 16.0,
+			 .step = 1.0},
+	    &Tunables::joint_substeps
+	);
 	flt("physics.solver.penetration_slop",
 	    0.005,
 	    {.label = "Penetration slop",

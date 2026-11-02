@@ -34,6 +34,7 @@ struct Constraint {
 	float tangent_mass_1 = 0.0f;
 	float tangent_mass_2 = 0.0f;
 	float restitution_bias = 0.0f;
+	float closing_speed = 0.0f;
 
 	float static_friction = material_defaults::k_static_friction;
 	float dynamic_friction = material_defaults::k_dynamic_friction;

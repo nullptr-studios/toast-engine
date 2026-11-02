@@ -22,6 +22,8 @@ struct JointRow {
 	glm::vec3 angular_error = {};    // slider
 	float position = 0.0f;           // slider
 	float angle = 0.0f;              // hinge
+	float bounce_lower = 0.0f;
+	float bounce_upper = 0.0f;
 	float inverse_dt = 0.0f;
 };
 
