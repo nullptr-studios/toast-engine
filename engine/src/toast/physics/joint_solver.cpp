@@ -405,13 +405,24 @@ auto makeJoint(const JointDescriptor& descriptor, const Body& body_a, const Body
 
 	// A hinge angle is where b sits around the axis from the x of the frame, the way the limits are drawn. b is the end that
 	// moves when only one does. A body centred on the axis, like a wheel, has no side to sit on and starts at zero
-	if (std::holds_alternative<HingeParams>(descriptor.params)) {
+	if (const auto* hinge = std::get_if<HingeParams>(&descriptor.params); hinge != nullptr) {
 		const glm::mat3 axes = glm::mat3_cast(descriptor.frame);
 		const glm::vec3 arm = body_b.worldCenterOfMass() - descriptor.anchor;
 		const float along_x = glm::dot(arm, axes[0]);
 		const float along_y = glm::dot(arm, axes[1]);
 		if ((along_x * along_x) + (along_y * along_y) > k_min_hinge_arm * k_min_hinge_arm) {
 			joint.hinge_angle = std::atan2(along_y, along_x);
+		}
+
+		if (hinge->limit_enabled) {
+			const auto outside = [&](float angle) { return std::max({hinge->limit_lower - angle, angle - hinge->limit_upper, 0.0f}); };
+			const float start = joint.hinge_angle;
+			for (int turns = -2; turns <= 2; ++turns) {
+				const float angle = start + (static_cast<float>(turns) * glm::two_pi<float>());
+				if (outside(angle) < outside(joint.hinge_angle)) {
+					joint.hinge_angle = angle;
+				}
+			}
 		}
 	}
 	return joint;
