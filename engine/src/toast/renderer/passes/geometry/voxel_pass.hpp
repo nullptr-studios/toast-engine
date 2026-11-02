@@ -160,6 +160,11 @@ private:
 		uint32_t bucket = 0;
 		uint32_t mode = 0;
 		uint32_t quad_capacity = 0;
+		/// Pyramid levels the mesh task stage tests late near bricks against and 0 skips it
+		uint32_t hiz_levels = 0;
+		uint32_t hiz_width = 0;
+		uint32_t hiz_height = 0;
+		uint32_t pad = 0;
 	};
 
 	/// Mirrors voxel.slang kDrawVolume and kDrawCells
@@ -362,7 +367,7 @@ private:
 	uint32_t m_shadow_instance_count = 0;
 
 	/// Albedo face normal material and depth last written into each set
-	std::vector<std::array<vk::ImageView, 10>> m_bound_gbuffer;
+	std::vector<std::array<vk::ImageView, 11>> m_bound_gbuffer;
 	VulkanPipeline m_spatial_pipeline;
 	VulkanPipeline m_spatial_opaque_pipeline;
 	VulkanPipeline m_marched_pipeline;

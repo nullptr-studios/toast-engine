@@ -54,12 +54,17 @@ struct VolumeRecord {
 
 	/// Coarse section word of one bit per brick in grid order set where a glass voxel lives
 	uint32_t glass_offset = UINT32_MAX;
+
+	/// Voxel coordinate plus this reads the detail texture
+	int32_t texture_origin_x = 0;
+	int32_t texture_origin_y = 0;
+	int32_t texture_origin_z = 0;
 };
 
 /// VolumeRecord::glass_offset of a volume whose palette has no glass
 inline constexpr uint32_t k_no_glass = UINT32_MAX;
 
-static_assert(sizeof(VolumeRecord) == 44, "VolumeRecord is mirrored by voxel_dda.slang member for member");
+static_assert(sizeof(VolumeRecord) == 56, "VolumeRecord is mirrored by voxel_dda.slang member for member");
 static_assert(offsetof(VolumeRecord, grid_offset) == 12);
 static_assert(offsetof(VolumeRecord, coarse_offset) == 28);
 static_assert(offsetof(VolumeRecord, palette_offset) == 32);

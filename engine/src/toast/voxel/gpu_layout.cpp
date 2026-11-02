@@ -218,6 +218,10 @@ auto packLayout(std::span<const SceneVolume> volumes) -> SceneLayout {
 			packed_palettes.push_back(entry.palette);
 		}
 		record.max_emissive = entry.palette->max_emissive;
+		const glm::ivec3 texture_origin = entry.volume->textureOrigin();
+		record.texture_origin_x = texture_origin.x;
+		record.texture_origin_y = texture_origin.y;
+		record.texture_origin_z = texture_origin.z;
 
 		out.records.push_back(record);
 	}

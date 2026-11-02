@@ -96,6 +96,11 @@
 			                      Z="{Binding Z, Mode=TwoWay}" />
 		</DataTemplate>
 
+		<DataTemplate DataType="vm:AssetSettingRow">
+			<elements:AssetBox Value="{Binding Value, Mode=TwoWay}"
+			                   AssetType="{Binding AssetType}" />
+		</DataTemplate>
+
 		<DataTemplate DataType="vm:StringSettingRow">
 			<elements:StringBox Value="{Binding Value, Mode=TwoWay}"
 			                    Wrap="False" />

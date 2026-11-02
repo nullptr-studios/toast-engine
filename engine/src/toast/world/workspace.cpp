@@ -2396,7 +2396,31 @@ void Workspace::eventSubscriptions() {
 			return false;
 		}
 		m_gizmo_tool = static_cast<GizmoTool>(e.tool);
+		if (m_gizmo_tool != GizmoTool::ruler) {
+			m_ruler.cancelPending();
+		}
+		m_ruler_hover_dirty = true;
 		return true;
+	});
+
+	m_listener.subscribe<event::RulerCommand>([this](const auto& e) {
+		if (e.workspace_handle != m_handle.data()) {
+			return false;
+		}
+		if (e.kind == 0) {
+			m_ruler.clear();
+		} else {
+			m_ruler.removeLast();
+		}
+		return true;
+	});
+
+	m_listener.subscribe<event::WindowKey>([this](const auto& e) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data() || m_game_camera) {
+			return false;
+		}
+		rulerKey(e.key, e.action);
+		return false;
 	});
 
 	m_listener.subscribe<event::SetCoordinateSpace>([this](const auto& e) {
@@ -2472,6 +2496,9 @@ void Workspace::eventSubscriptions() {
 			    return false;
 		    }
 		    if (m_game_camera) {
+			    return false;
+		    }
+		    if (m_gizmo_tool == GizmoTool::ruler && rulerMouseButton(e.button, e.action, e.mods)) {
 			    return false;
 		    }
 		    const bool pressed = e.action == event::window_input_pressed;
@@ -2664,6 +2691,7 @@ void Workspace::tick() {
 	}
 
 	sendEnabledChanges();
+	rulerTick();
 
 	// Only the active workspace streams inspector data, and only while a node is focused
 	if (m_handle.data() != Engine::get()->activeWorkspace().data() || not m_focused_node.exists()) {

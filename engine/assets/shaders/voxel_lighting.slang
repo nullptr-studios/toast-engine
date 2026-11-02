@@ -79,6 +79,10 @@ Sampler2D gNoisyDiffuse;
 [[vk::binding(9, 2)]]
 Sampler2D gNoisySpecular;
 
+/// Face normal bent by the palette detail bump
+[[vk::binding(10, 2)]]
+Sampler2D gDetailNormal;
+
 typedef FullscreenVSOutput VSOutput;
 
 struct FSOutput
@@ -809,7 +813,10 @@ FSOutput fragmentMain(VSOutput input)
     }
 
     const float3 position = positionAt(pixel);
-    const float3 normal = decodeFaceNormal(gFaceNormal.Load(texel));
+    const float3 faceNormal = decodeFaceNormal(gFaceNormal.Load(texel));
+    const float4 detailEncoded = gDetailNormal.Load(texel);
+    // Shading and every later pass reading the scene normal take the bumped one and rays keep the face
+    const float3 normal = detailEncoded.a > 0.5 ? decodeFaceNormal(detailEncoded) : faceNormal;
     const float4 material = gMaterial.Load(texel);
     const float roughness = clamp(material.b, 0.045, 1.0);
 
@@ -827,7 +834,7 @@ FSOutput fragmentMain(VSOutput input)
     surface.marchedShadows = true;
     surface.worldPosition = position;
     surface.normal = normal;
-    surface.geometricNormal = normal;
+    surface.geometricNormal = faceNormal;
     surface.viewDirection = view;
     surface.albedo = albedo.rgb;
     surface.metallic = material.r;

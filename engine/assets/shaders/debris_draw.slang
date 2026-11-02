@@ -172,6 +172,7 @@ struct FSOutput {
     float4 faceNormal : SV_Target1;
     float4 material : SV_Target2;
     float4 motion : SV_Target3;
+    float4 detailNormal : SV_Target4;
 };
 
 [shader("fragment")]
@@ -185,6 +186,7 @@ FSOutput fragmentMain(VSOutput input) {
     FSOutput output;
     output.albedo = float4(debrisAlbedo(input.albedo), kGbufferLit);
     output.faceNormal = encodeFaceNormal(normalize(input.normal));
+    output.detailNormal = output.faceNormal;
     output.material = float4(metallic, reflectivity, debrisRoughness(input.albedo), encodeEmissive(0.0));
     output.motion = float4((clip.xy / clip.w - previousClip.xy / previousClip.w) * 0.5, 0.0, 1.0);
     return output;

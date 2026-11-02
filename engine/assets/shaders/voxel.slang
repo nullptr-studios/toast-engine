@@ -10,16 +10,112 @@ struct PushConstants
     uint bucket;
     uint mode;
     uint quadCapacity;
+    /// Pyramid levels the mesh task stage tests late near bricks against and 0 skips it
+    uint hizLevels;
+    uint hizWidth;
+    uint hizHeight;
+    uint pad;
 };
 
 [[vk::push_constant]]
 PushConstants gPush;
+
+/// Tileable layers where R scales albedo G offsets roughness and B is height, all around 0.5
+[[vk::binding(23, 0)]]
+Sampler2DArray gVoxelDetail;
+
+/// Voxels per pixel past which the texture averages out and is skipped
+static const float kDetailSkipTexelsPerPixel = 8.0;
+
+/// Voxels of displacement at full bump strength
+static const float kDetailBumpDepth = 1.5;
 
 static const uint kDrawVolume = 0u;
 static const uint kDrawCells = 1u;
 
 [[vk::binding(7, 1)]]
 StructuredBuffer<uint2> gVoxelCells;
+
+/// renderer::HiZPyramid, only the mesh task stage of the late near list samples it
+[[vk::binding(16, 1)]]
+Sampler2D gHiz;
+
+/// Whether the pyramid proves a screen rect at nearest depth hidden, rects off screen or crossing the near plane are never hidden
+/// Level k texels are 2 << k pixels wide so the widened rect touches at most 2x2 of them
+bool hizRectHidden(float2 low, float2 high, float nearest)
+{
+    const float2 size = float2(float(gPush.hizWidth), float(gPush.hizHeight));
+    if (any(high < 0.0) || any(low >= size))
+    {
+        return false;
+    }
+
+    // One pixel of margin for the jitter the depth was drawn with
+    const int2 last = int2(size) - 1;
+    const int2 first = clamp(int2(floor(low)) - 1, int2(0, 0), last);
+    const int2 limit = clamp(int2(floor(high)) + 1, int2(0, 0), last);
+
+    const uint span = uint(max(limit.x - first.x, limit.y - first.y)) + 1u;
+    const uint level = span <= 1u ? 0u : firstbithigh(span - 1u);
+    if (level >= gPush.hizLevels)
+    {
+        return false;
+    }
+    const int shift = int(level) + 1;
+    const int2 a = first >> shift;
+    const int2 b = limit >> shift;
+
+    float farthest = gHiz.Load(int3(a, int(level))).x;
+    farthest = fartherDepth(farthest, gHiz.Load(int3(b.x, a.y, int(level))).x);
+    farthest = fartherDepth(farthest, gHiz.Load(int3(a.x, b.y, int(level))).x);
+    farthest = fartherDepth(farthest, gHiz.Load(int3(b, int(level))).x);
+    return isCloserDepth(farthest, nearest);
+}
+
+/// Folds clip space points into the screen rect and nearest depth of hizRectHidden, false when one is on or behind the near plane
+bool hizAccumulate(float4 clip, inout float2 low, inout float2 high, inout float nearest)
+{
+    if (clip.w <= 0.0 || clipNearDistance(clip) <= 0.0)
+    {
+        return false;
+    }
+    const float3 ndc = clip.xyz / clip.w;
+    const float2 pixel = (ndc.xy * 0.5 + 0.5) * float2(float(gPush.hizWidth), float(gPush.hizHeight));
+    low = min(low, pixel);
+    high = max(high, pixel);
+    nearest = closerDepth(nearest, ndc.z);
+    return true;
+}
+
+/// One quad against the pyramid from its four clip corners
+bool quadHiddenByHiz(float4 c0, float4 c1, float4 c2, float4 c3)
+{
+    float2 low = float2(3.4e38, 3.4e38);
+    float2 high = -low;
+    float nearest = kFarDepth;
+    if (!hizAccumulate(c0, low, high, nearest) || !hizAccumulate(c1, low, high, nearest) ||
+        !hizAccumulate(c2, low, high, nearest) || !hizAccumulate(c3, low, high, nearest))
+    {
+        return false;
+    }
+    return hizRectHidden(low, high, nearest);
+}
+
+/// A voxel space box against the pyramid
+bool boxHiddenByHiz(float4x4 voxelToClip, float3 boxMin, float3 boxMax)
+{
+    float2 low = float2(3.4e38, 3.4e38);
+    float2 high = -low;
+    float nearest = kFarDepth;
+    for (uint i = 0u; i < 8u; ++i)
+    {
+        if (!hizAccumulate(mul(voxelToClip, float4(lerp(boxMin, boxMax, kBoxCorners[i]), 1.0)), low, high, nearest))
+        {
+            return false;
+        }
+    }
+    return hizRectHidden(low, high, nearest);
+}
 
 /// x of entry 0 is the count then per region min xyz with w the record and max xyz
 /// Voxel space boxes the storage published this frame changed
@@ -114,6 +210,9 @@ struct FSOutput
 
     /// xy uv motion z reactive w 1 when written
     float4 motion : SV_Target3;
+
+    /// encodeFaceNormal bent by the palette detail bump
+    float4 detailNormal : SV_Target4;
 };
 
 // Mirrored by renderer::voxel_debug for the overlay legend
@@ -190,6 +289,63 @@ float voxelEdgeCoverage(uint recordIndex, RayHit hit, float3 cellPosition, float
         coverage = max(coverage, saturate(1.5 - distance));
     }
     return coverage;
+}
+
+/// Texture axes of a face with voxel z as up, so every wall reads upright and top faces lie along x
+void detailAxes(uint axis, out uint u, out uint v)
+{
+    u = axis == 0u ? 1u : 0u;
+    v = axis == 2u ? 1u : 2u;
+}
+
+/// Albedo and roughness of the palette entry modulated by its detail layer read in voxel space
+/// Fragments keep the pattern of the volume they broke from through the record texture origin
+void applyDetail(PaletteSample palette, VolumeRecord record, RayHit hit, float3 cellPosition, float3 voxelsPerPixel,
+                 inout float3 albedo, inout float roughness, out float2 slope)
+{
+    slope = float2(0.0, 0.0);
+    if (palette.detailLayer == 0u || hit.axis < 0)
+    {
+        return;
+    }
+    const uint axis = uint(hit.axis);
+    uint u;
+    uint v;
+    detailAxes(axis, u, v);
+    const int3 origin = int3(record.textureOriginX, record.textureOriginY, record.textureOriginZ);
+
+    const float2 footprint = float2(voxelsPerPixel[u], voxelsPerPixel[v]) * palette.detailScale;
+    if (max(footprint.x, footprint.y) > kDetailSkipTexelsPerPixel)
+    {
+        return;
+    }
+
+    uint width;
+    uint height;
+    uint layers;
+    gVoxelDetail.GetDimensions(width, height, layers);
+
+    // Each voxel plane shifts the tile so stacked faces do not repeat
+    const int plane = hit.voxel[axis] + origin[axis];
+    const float2 shift = float2(frac(float(plane) * 0.7548777), frac(float(plane) * 0.5698403));
+    const float2 face = float2(cellPosition[u] + float(origin[u]), cellPosition[v] + float(origin[v]));
+    const float2 uv = (face * palette.detailScale / float(width)) + shift;
+    const float2 gradient = footprint / float(width);
+
+    const uint layer = min(palette.detailLayer, layers - 1u);
+    const float4 detail = gVoxelDetail.SampleGrad(float3(uv, float(layer)), gradient, gradient);
+    albedo *= max(1.0 + (detail.r - 0.5) * 2.0 * palette.detailAlbedo, 0.0);
+    roughness = clamp(roughness + (detail.g - 0.5) * 2.0 * palette.detailRoughness, 0.045, 1.0);
+
+    // Height slope per voxel from one texel steps, faded once a pixel spans more than a texel
+    const float fade = saturate(2.0 - max(footprint.x, footprint.y));
+    if (palette.detailBump > 0.0 && fade > 0.0)
+    {
+        const float step = 1.0 / float(width);
+        const float heightU = gVoxelDetail.SampleGrad(float3(uv + float2(step, 0.0), float(layer)), gradient, gradient).b;
+        const float heightV = gVoxelDetail.SampleGrad(float3(uv + float2(0.0, step), float(layer)), gradient, gradient).b;
+        slope = float2(heightU - detail.b, heightV - detail.b) * palette.detailScale * palette.detailBump * kDetailBumpDepth * fade;
+    }
 }
 
 /// VoxelEditor grids
@@ -317,6 +473,7 @@ bool shadeHit(float4 pixel, VoxelInstance instance, float3 origin, float3 direct
     output.faceNormal = float4(0.0, 0.0, 0.0, 0.0);
     output.material = float4(0.0, 0.0, 0.0, 0.0);
     output.motion = float4(0.0, 0.0, 0.0, 0.0);
+    output.detailNormal = float4(0.0, 0.0, 0.0, 0.0);
 
     const float3 camera = gCamera.position;
     const float3 hitWorld = camera + worldDirection * hit.t;
@@ -372,10 +529,27 @@ bool shadeHit(float4 pixel, VoxelInstance instance, float3 origin, float3 direct
     }
 
     const PaletteSample palette = samplePalette(instance.recordIndex, hit.material);
-    const float roughness = clamp(palette.roughness, 0.045, 1.0);
+    float roughness = clamp(palette.roughness, 0.045, 1.0);
+    float3 albedo = palette.albedo;
+    float2 slope;
+    applyDetail(palette, gVolumeRecords[instance.recordIndex], hit, cellPosition, voxelsPerPixel, albedo, roughness, slope);
 
-    output.albedo = float4(applyEditorOverlays(palette.albedo, instance, hit, direction, cellPosition, voxelsPerPixel, hitWorld, worldPerPixel, normal), kGbufferLit);
+    float3 detailNormal = normal;
+    if (hit.axis >= 0 && any(slope != float2(0.0, 0.0)))
+    {
+        uint u;
+        uint v;
+        detailAxes(uint(hit.axis), u, v);
+        float3 voxelNormal = float3(0.0, 0.0, 0.0);
+        voxelNormal[hit.axis] = direction[hit.axis] > 0.0 ? -1.0 : 1.0;
+        voxelNormal[u] = -slope.x;
+        voxelNormal[v] = -slope.y;
+        detailNormal = normalize(mul(transpose((float3x3)instance.worldToVoxel), normalize(voxelNormal)));
+    }
+
+    output.albedo = float4(applyEditorOverlays(albedo, instance, hit, direction, cellPosition, voxelsPerPixel, hitWorld, worldPerPixel, normal), kGbufferLit);
     output.faceNormal = encodeFaceNormal(normal);
+    output.detailNormal = encodeFaceNormal(detailNormal);
     output.material = float4(palette.metallic, palette.reflectivity, roughness, encodeEmissive(palette.emissive));
     return true;
 }

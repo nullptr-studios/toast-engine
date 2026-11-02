@@ -106,8 +106,34 @@ private:
 	float m_ghost_intensity = 1.0f;
 	[[Reflect, Name("Halo Intensity"), Range(0.0, 4.0), Group("Lens Flare")]]
 	float m_halo_intensity = 1.0f;
+	[[Reflect, Name("Halo Radius"), Range(0.0, 2.0), Group("Lens Flare")]]
+	float m_halo_width = 0.6f;
+	[[Reflect, Name("Halo Fade Start"), Range(0.0, 1.0), Group("Lens Flare")]]
+	float m_halo_mask = 0.5f;
+	[[Reflect, Name("Halo Fisheye"), Range(0.05, 4.0), Group("Lens Flare")]]
+	float m_halo_compression = 0.65f;
+	[[Reflect, Name("Halo Thickness"), Range(0.0, 4.0), Group("Lens Flare")]]
+	float m_halo_thickness = 0.3f;
+	[[Reflect, Name("Halo Dispersion"), Range(0.0, 0.1), Group("Lens Flare")]]
+	float m_halo_dispersion = 0.015f;
+	[[Reflect, Name("Halo Tint"), Color, Group("Lens Flare")]]
+	glm::vec3 m_halo_tint = glm::vec3(1.0f);
+	[[Reflect, Name("Flare Chroma Shift"), Range(0.0, 0.1), Group("Lens Flare")]]
+	float m_flare_chroma_shift = 0.015f;
+	[[Reflect, Name("Threshold Range"), Range(0.01, 10.0), Group("Lens Flare")]]
+	float m_lens_flare_threshold_range = 1.0f;
+	[[Reflect, Name("Glare Divider"), Range(1.0, 200.0), Group("Lens Flare")]]
+	float m_glare_divider = 60.0f;
 	[[Reflect, Name("Glare Intensity"), Range(0.0, 2.0), Group("Lens Flare")]]
 	float m_glare_intensity = 0.2f;
+	[[Reflect, Name("Anamorphic Streak"), Range(0.0, 4.0), Group("Lens Flare")]]
+	float m_anamorphic_intensity = 1.0f;
+	[[Reflect, Name("Streak Blue Tint"), Range(0.0, 1.0), Group("Lens Flare")]]
+	float m_anamorphic_tint = 0.6f;
+	[[Reflect, Name("Lens Dirt"), Range(0.0, 2.0), Group("Lens Flare")]]
+	float m_dirt_intensity = 0.5f;
+	[[Reflect, Name("Lens Dirt Texture"), Group("Lens Flare")]]
+	assets::Handle<assets::Texture> m_lens_dirt_texture {nullptr};
 
 	[[Reflect, Name("Exposure"), Range(0.0, 8.0), Group("Tonemap")]]
 	float m_exposure = 1.0f;

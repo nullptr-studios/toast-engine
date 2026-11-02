@@ -37,6 +37,8 @@ constexpr uint32_t k_cell_args_binding = 8;
 constexpr uint32_t k_quads_binding = 9;
 constexpr uint32_t k_hiz_binding = 10;
 constexpr uint32_t k_hiz_view_binding = 11;
+/// voxel.slang gHiz in the storage set the mesh task stage tests late near bricks against
+constexpr uint32_t k_mesh_hiz_binding = 16;
 constexpr uint32_t k_cell_class_binding = 12;
 constexpr uint32_t k_vertices_per_quad = 6;
 
@@ -120,7 +122,7 @@ constexpr float k_golden_ratio_conjugate = 0.61803398875f;
 VoxelPass::VoxelPass(const VulkanCore& core, vk::Format scene_format, vk::Format depth_format, vk::Extent2D extent)
     : m_core(&core) {
 	ZoneScoped;
-	static_assert(sizeof(PushConstants) == 16, "PushConstants is mirrored by voxel.slang");
+	static_assert(sizeof(PushConstants) == 32, "PushConstants is mirrored by voxel.slang");
 	static_assert(sizeof(CellCullPush) == 112, "CellCullPush is mirrored by voxel_cells.slang");
 
 	const auto uid = assets::resolveURI("core://shaders/voxel.slang");
@@ -181,11 +183,14 @@ VoxelPass::VoxelPass(const VulkanCore& core, vk::Format scene_format, vk::Format
 		m_draw_mesh_tasks_indirect = core.getDevice().getDispatcher()->vkCmdDrawMeshTasksIndirectEXT;
 		const auto mesh_uid = assets::resolveURI("core://shaders/voxel_mesh.slang");
 		const auto task_uid = assets::resolveURI("core://shaders/voxel_mesh_task.slang");
+		const auto fragment_uid = assets::resolveURI("core://shaders/voxel_mesh_frag.slang");
 		const auto mesh_shader = mesh_uid.has_value() ? ShaderCache::get().acquire(*mesh_uid) : nullptr;
 		const auto task_shader = task_uid.has_value() ? ShaderCache::get().acquire(*task_uid) : nullptr;
-		if (mesh_shader && task_shader) {
+		const auto fragment_shader = fragment_uid.has_value() ? ShaderCache::get().acquire(*fragment_uid) : nullptr;
+		if (mesh_shader && task_shader && fragment_shader) {
 			config.shader_spirv = mesh_shader->spirv;
 			config.task_spirv = task_shader->spirv;
+			config.fragment_spirv = fragment_shader->spirv;
 			config.task_entry = "quadTaskMain";
 			config.mesh_entry = "quadMeshMain";
 			config.fragment_entry = "meshQuadFragmentMain";
@@ -198,7 +203,8 @@ VoxelPass::VoxelPass(const VulkanCore& core, vk::Format scene_format, vk::Format
 		} else {
 			TOAST_WARN(
 			    "Render",
-			    "VoxelPass shaders core://shaders/voxel_mesh.slang and voxel_mesh_task.slang unavailable; near voxels mesh in compute"
+			    "VoxelPass shaders core://shaders/voxel_mesh.slang, voxel_mesh_task.slang and voxel_mesh_frag.slang unavailable; near "
+			    "voxels mesh in compute"
 			);
 		}
 	}
@@ -283,9 +289,32 @@ void VoxelPass::createCells(const VulkanCore& core) {
 
 void VoxelPass::writeHizDescriptors() {
 	if (!m_hiz.view()) {
+		// The binding is declared so it must hold something even though the test never samples it
+		DescriptorWriter fallback;
+		for (const auto& set : m_storage_sets) {
+			fallback.image(
+			    *set,
+			    k_mesh_hiz_binding,
+			    vk::DescriptorType::eCombinedImageSampler,
+			    VulkanRenderer::instance->getDefaultSampler(),
+			    VulkanRenderer::instance->getDefaultTextureView(),
+			    vk::ImageLayout::eShaderReadOnlyOptimal
+			);
+		}
+		fallback.flush(m_core->getDevice());
 		return;
 	}
 	DescriptorWriter writer;
+	for (const auto& set : m_storage_sets) {
+		writer.image(
+		    *set,
+		    k_mesh_hiz_binding,
+		    vk::DescriptorType::eCombinedImageSampler,
+		    m_hiz.sampler(),
+		    m_hiz.view(),
+		    vk::ImageLayout::eShaderReadOnlyOptimal
+		);
+	}
 	for (uint32_t i = 0; i < m_cell_sets.size(); ++i) {
 		writer.image(
 		    *m_cell_sets[i],
@@ -1119,6 +1148,9 @@ void VoxelPass::afterCullWrites(vk::CommandBuffer cmd, uint32_t frame_index, syn
 	if (m_mesh_shading) {
 		barriers.buffer(**buffers.args, sync::Usage::compute_storage_write, sync::Usage::mesh_storage_read);
 		barriers.buffer(**buffers.cells, sync::Usage::compute_storage_write, sync::Usage::mesh_storage_read);
+		if (m_hiz.isReady()) {
+			m_hiz.beforeTaskRead(barriers);
+		}
 	}
 	barriers.flush(cmd);
 }
@@ -1137,7 +1169,13 @@ void VoxelPass::recordNearQuads(vk::CommandBuffer cmd, uint32_t frame_index, boo
 	if (m_mesh_shading) {
 		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_mesh_quad_pipeline.getPipeline());
 		// voxel_mesh.slang reads the bucket as which near list to draw
-		const PushConstants push {.bucket = late ? 1u : 0u, .mode = k_draw_cells};
+		PushConstants push {.bucket = late ? 1u : 0u, .mode = k_draw_cells};
+		// Only the late pyramid is final, see voxel_mesh_task.slang
+		if (late && m_occlusion_active && m_hiz.isReady()) {
+			push.hiz_levels = m_hiz.builtLevels();
+			push.hiz_width = m_hiz.builtExtent().width;
+			push.hiz_height = m_hiz.builtExtent().height;
+		}
 		cmd.pushConstants(layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(PushConstants), &push);
 		const uint32_t word = late ? k_late_task_word : k_near_task_word;
 		m_draw_mesh_tasks_indirect(
@@ -1379,7 +1417,7 @@ void VoxelPass::recordLighting(vk::CommandBuffer cmd, uint32_t frame_index, vk::
 		return;
 	}
 
-	const std::array<vk::ImageView, 10> views {
+	const std::array<vk::ImageView, 11> views {
 	  instance->getVoxelAlbedoView(),
 	  instance->getVoxelFaceNormalView(),
 	  instance->getVoxelMaterialView(),
@@ -1390,6 +1428,7 @@ void VoxelPass::recordLighting(vk::CommandBuffer cmd, uint32_t frame_index, vk::
 	  instance->getSceneNormalView(),
 	  instance->getVoxelNoisyDiffuseView(),
 	  instance->getVoxelNoisySpecularView(),
+	  instance->getVoxelDetailNormalView(),
 	};
 	if (std::ranges::any_of(views, [](vk::ImageView view) { return !view; })) {
 		return;
@@ -1845,7 +1884,7 @@ void VoxelPass::recordMarchedComposite(vk::CommandBuffer cmd, uint32_t frame_ind
 }
 
 void VoxelPass::onTargetsRecreated() {
-	std::ranges::fill(m_bound_gbuffer, std::array<vk::ImageView, 10> {});
+	std::ranges::fill(m_bound_gbuffer, std::array<vk::ImageView, 11> {});
 	if (!m_denoise_sets.empty()) {
 		createDenoiseTargets(VulkanRenderer::instance->renderExtent());
 	}

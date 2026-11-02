@@ -200,6 +200,9 @@ public:
 
 	static constexpr double k_background_frame_rate_limit = 30.0;
 
+	/// Keeps at most one frame queued on the GPU behind the one being recorded
+	void setLowLatency(bool enabled) noexcept { m_low_latency.store(enabled, std::memory_order_relaxed); }
+
 	/// False repeats the last frame instead of waiting for a new one
 	void setClampToSimulation(bool clamp) noexcept { m_clamp_to_simulation.store(clamp, std::memory_order_relaxed); }
 
@@ -285,6 +288,24 @@ public:
 
 	/// xyz world normal w roughness
 
+	/// Tileable layers read by voxel palette detail, R albedo G roughness B height with 0.5 neutral
+	void setVoxelDetailLibrary(assets::Handle<assets::Texture> texture);
+
+	/// The library once uploaded and else a neutral two layer array
+	[[nodiscard]]
+	auto voxelDetailView() const -> vk::ImageView;
+
+	[[nodiscard]]
+	auto voxelDetailSampler() const noexcept -> vk::Sampler {
+		return *m_detail_sampler;
+	}
+
+	/// Normal before glass wrote its own, the final normal when no backdrop was copied
+	[[nodiscard]]
+	auto getOpaqueNormalView() const noexcept -> vk::ImageView {
+		return m_glass_backdrop_captured && m_glass_backdrop_normal.view ? **m_glass_backdrop_normal.view : getSceneNormalView();
+	}
+
 	[[nodiscard]]
 	auto getSceneNormalView() const noexcept -> vk::ImageView {
 		return m_scene_normal.view.has_value() ? **m_scene_normal.view : vk::ImageView {};
@@ -308,6 +329,12 @@ public:
 	[[nodiscard]]
 	auto getVoxelMaterialView() const noexcept -> vk::ImageView {
 		return m_voxel_material.view.has_value() ? **m_voxel_material.view : vk::ImageView {};
+	}
+
+	/// Face normal bent by the palette detail bump, the face normal itself where there is none
+	[[nodiscard]]
+	auto getVoxelDetailNormalView() const noexcept -> vk::ImageView {
+		return m_voxel_detail_normal.view.has_value() ? **m_voxel_detail_normal.view : vk::ImageView {};
 	}
 
 	/// Holds flat face normals not the rounded scene normal ones
@@ -665,6 +692,13 @@ public:
 	[[nodiscard]]
 	auto getGlassBackdropDepthView() const noexcept -> vk::ImageView {
 		return m_glass_backdrop_depth.view ? **m_glass_backdrop_depth.view : vk::ImageView {};
+	}
+
+	/// Depth before glass wrote its own so GI and reflections see the surface behind a pane, the final depth when no backdrop was
+	/// copied
+	[[nodiscard]]
+	auto getOpaqueDepthView() const noexcept -> vk::ImageView {
+		return m_glass_backdrop_captured && m_glass_backdrop_depth.view ? **m_glass_backdrop_depth.view : getDepthView();
 	}
 
 	/// Meters a marched sun ray travels before it counts as lit
@@ -1273,6 +1307,7 @@ private:
 	void createFailsafeTextures();
 	void createDefaultShadowMap();
 	void createDefaultCubemap();
+	void createDefaultDetailArray();
 
 	void ensureMaterialPasses(RenderFrame& frame_data);
 	/// After the pass updates so the prepass never writes depth the color pass leaves empty
@@ -1420,6 +1455,13 @@ private:
 
 	DebrisPass* m_debris_pass = nullptr;
 	GiPass* m_gi_pass = nullptr;
+	bool m_glass_backdrop_captured = false;
+
+	mutable std::mutex m_detail_mutex;
+	assets::Handle<assets::Texture> m_voxel_detail_library;
+	std::optional<vma::raii::Image> m_default_detail_image;
+	vk::raii::ImageView m_default_detail_view = nullptr;
+	vk::raii::Sampler m_detail_sampler = nullptr;
 	GiSettings m_gi_settings;
 	TracedSpecularPass* m_traced_specular_pass = nullptr;
 	TaaPass* m_taa_pass = nullptr;
@@ -1439,6 +1481,7 @@ private:
 	static constexpr vk::Format m_scene_color_format = vk::Format::eR16G16B16A16Sfloat;
 	SceneColorResources m_scene_color;
 	SceneColorResources m_glass_backdrop;
+	SceneColorResources m_glass_backdrop_normal;
 
 	static constexpr vk::Format m_scene_normal_format = renderer::k_scene_normal_format;
 	SceneColorResources m_scene_normal;
@@ -1452,6 +1495,7 @@ private:
 	SceneColorResources m_voxel_albedo;
 	SceneColorResources m_voxel_material;
 	SceneColorResources m_voxel_face_normal;
+	SceneColorResources m_voxel_detail_normal;
 	SceneColorResources m_voxel_noisy_diffuse;
 	SceneColorResources m_voxel_noisy_specular;
 	/// The voxel lighting writes the parity one and reads the other
@@ -1611,6 +1655,7 @@ private:
 #if defined(TOAST_DEV_TOOLS)
 	event::Listener m_imgui_input_listener;
 	glm::vec2 m_imgui_mouse_pos {-1.0f, -1.0f};
+	bool m_imgui_game_mouse_locked = false;
 	std::array<bool, 3> m_imgui_mouse_down {};
 	float m_imgui_wheel_x_accum = 0.0f;
 	float m_imgui_wheel_y_accum = 0.0f;
@@ -1822,6 +1867,7 @@ private:
 	std::atomic_bool m_debug_overlay_owns_cursor {false};
 	std::atomic_bool m_rendering_paused {false};
 	std::atomic_bool m_clamp_to_simulation {true};
+	std::atomic_bool m_low_latency {true};
 };
 
 inline void start() {

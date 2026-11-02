@@ -610,6 +610,7 @@
 			<vm:ViewportControl x:Name="Viewport"
 			                    PlayMode="{Binding IsPlayingInViewport}"
 			                    IsVisible="{Binding !IsPlayingExternal}" />
+			<vm:RulerOverlay />
 			<Border CornerRadius="8"
 			        Background="{StaticResource Bg1}"
 			        IsVisible="{Binding IsPlayingExternal}">

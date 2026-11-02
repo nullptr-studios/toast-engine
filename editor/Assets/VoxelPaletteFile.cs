@@ -19,13 +19,15 @@ public sealed class VoxelPaletteEntry {
 	public byte R { get; set; }
 	public byte G { get; set; }
 	public byte B { get; set; }
+	
+	public float Alpha { get; set; } = 1f;
+	
 
 	public float Roughness { get; set; }
 	public float Metallic { get; set; }
 	public float Reflectivity { get; set; }
 	public float Emissive { get; set; }
 
-	public float Alpha { get; set; } = 1f;
 
 	/// <summary>Mirrors voxel::k_default_ior</summary>
 	public const float DefaultIor = 1.5f;
@@ -39,7 +41,16 @@ public sealed class VoxelPaletteEntry {
 	public bool HasMaterial { get; set; }
 
 	public int TransformsTo { get; set; }
-	public bool Transparent { get; set; }
+
+	/// <summary>Layer of the detail library, 0 for none</summary>
+	public int DetailLayer { get; set; }
+
+	/// <summary>Texels per voxel edge, 0 for the engine default</summary>
+	public int DetailScale { get; set; }
+
+	public float DetailAlbedo { get; set; }
+	public float DetailRoughness { get; set; }
+	public float DetailBump { get; set; }
 
 	public void CopyFrom(VoxelPaletteEntry other) {
 		InUse = other.InUse;
@@ -55,7 +66,6 @@ public sealed class VoxelPaletteEntry {
 		Material = other.Material;
 		HasMaterial = other.HasMaterial;
 		TransformsTo = other.TransformsTo;
-		Transparent = other.Transparent;
 	}
 
 	public void Clear() {
@@ -67,7 +77,8 @@ public sealed class VoxelPaletteEntry {
 		Alpha = 1f;
 		Ior = DefaultIor;
 		TransformsTo = 0;
-		Transparent = false;
+		DetailLayer = DetailScale = 0;
+		DetailAlbedo = DetailRoughness = DetailBump = 0f;
 	}
 }
 
@@ -172,7 +183,12 @@ public sealed class VoxelPaletteFile {
 			target.Material = GetInt(entry, "material", 0);
 
 			target.TransformsTo = GetInt(entry, "transforms_to", 0);
-			target.Transparent = entry.TryGetValue("transparent", out var transparent) && transparent is true;
+
+			target.DetailLayer = GetInt(entry, "detail_layer", 0);
+			target.DetailScale = GetInt(entry, "detail_scale", 0);
+			target.DetailAlbedo = GetFloat(entry, "detail_albedo", 0f);
+			target.DetailRoughness = GetFloat(entry, "detail_roughness", 0f);
+			target.DetailBump = GetFloat(entry, "detail_bump", 0f);
 		}
 
 		return palette;
@@ -230,7 +246,13 @@ public sealed class VoxelPaletteFile {
 				table["ior"] = Math.Round((double)Math.Clamp(entry.Ior, 1f, VoxelPaletteEntry.MaxIor), 2);
 			if (entry.HasMaterial) table["material"] = (long)Math.Clamp(entry.Material, 0, SlotCount - 1);
 			table["transforms_to"] = (long)Math.Clamp(entry.TransformsTo, 0, 255);
-			table["transparent"] = entry.Transparent;
+			if (entry.DetailLayer != 0) {
+				table["detail_layer"] = (long)Math.Clamp(entry.DetailLayer, 0, 255);
+				table["detail_scale"] = (long)Math.Clamp(entry.DetailScale, 0, 255);
+				table["detail_albedo"] = (double)Clamp01(entry.DetailAlbedo);
+				table["detail_roughness"] = (double)Clamp01(entry.DetailRoughness);
+				table["detail_bump"] = (double)Clamp01(entry.DetailBump);
+			}
 			list.Add(table);
 		}
 
@@ -247,7 +269,7 @@ public sealed class VoxelPaletteFile {
 				row[o] = entry.R;
 				row[o + 1] = entry.G;
 				row[o + 2] = entry.B;
-				row[o + 3] = entry.Transparent ? (byte)Math.Round(Clamp01(entry.Alpha) * 255f) : (byte)255;
+				row[o + 3] = (byte)Math.Round(Clamp01(entry.Alpha) * 255f);
 			}
 		}
 

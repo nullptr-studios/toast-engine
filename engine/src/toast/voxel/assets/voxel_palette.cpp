@@ -257,15 +257,15 @@ auto VoxelPalette::parseToml(const toml::table& table) -> Parsed {
 				out.transforms_to = static_cast<uint8_t>(*becomes);
 			}
 
-			if (const toml::node* transparent = entry->get("transparent")) {
-				const std::optional<bool> value = transparent->value_exact<bool>();
-				if (!value) {
-					throw fail("transparent must be true or false");
-				}
-				if (*value) {
-					out.flags |= voxel::k_entry_transparent;
-				}
+			if (const std::optional<int64_t> layer = whole("detail_layer", 0, 255)) {
+				out.detail_layer = static_cast<uint8_t>(*layer);
 			}
+			if (const std::optional<int64_t> scale = whole("detail_scale", 0, 255)) {
+				out.detail_scale = static_cast<uint8_t>(*scale);
+			}
+			out.detail_albedo = unit("detail_albedo");
+			out.detail_roughness = unit("detail_roughness");
+			out.detail_bump = unit("detail_bump");
 
 			palette.entries[static_cast<size_t>(*index)] = out;
 		}
@@ -356,7 +356,13 @@ auto VoxelPalette::serialize(SaveMode /*mode*/) const -> std::vector<uint8_t> {
 			entry.insert("material", static_cast<int64_t>(e.material));
 		}
 		entry.insert("transforms_to", static_cast<int64_t>(e.transforms_to));
-		entry.insert("transparent", (e.flags & voxel::k_entry_transparent) != 0);
+		if (e.detail_layer != 0) {
+			entry.insert("detail_layer", static_cast<int64_t>(e.detail_layer));
+			entry.insert("detail_scale", static_cast<int64_t>(e.detail_scale));
+			entry.insert("detail_albedo", as_unit(e.detail_albedo));
+			entry.insert("detail_roughness", as_unit(e.detail_roughness));
+			entry.insert("detail_bump", as_unit(e.detail_bump));
+		}
 		list.push_back(std::move(entry));
 	}
 	root.insert("entries", std::move(list));

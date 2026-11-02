@@ -334,6 +334,10 @@ VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTa
 		m_imgui_mouse_pos = {e.x, e.y};
 		return false;
 	});
+	m_imgui_input_listener.subscribe<event::WindowMouseLock>([this](const auto& e) {
+		m_imgui_game_mouse_locked = e.locked;
+		return false;
+	});
 	m_imgui_input_listener.subscribe<event::WindowMouseButton>([this](const auto& e) {
 		int idx = -1;
 		switch (e.button) {

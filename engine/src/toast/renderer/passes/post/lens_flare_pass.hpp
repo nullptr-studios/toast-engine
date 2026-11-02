@@ -45,6 +45,9 @@ private:
 		glm::vec4 halo {0.0f};
 		glm::vec4 glare {0.0f};
 		glm::vec4 tint {1.0f};
+		glm::vec4 streak {0.0f};
+		glm::vec4 halo_style {0.0f};
+		glm::vec4 halo_tint {1.0f};
 	};
 
 	struct Target {
@@ -54,28 +57,37 @@ private:
 		sync::ImageState state;
 	};
 
+	/// Each level halves the width of the one before
+	static constexpr uint32_t k_streak_levels = 5;
+
 	/// Targets in the order they are drawn into
 	enum Step : uint8_t {
-		step_threshold,
-		step_glare,
-		step_blur_down,
-		step_blur_up,
-		step_chroma,
-		step_ghosts,
-		step_halo,
-		step_mix,
-		step_count,
+		step_threshold = 0,
+		step_glare = 1,
+		step_streak_down = 2,
+		step_streak_up = step_streak_down + k_streak_levels,
+		step_blur_down = step_streak_up + k_streak_levels - 1,
+		step_blur_up = step_blur_down + 1,
+		step_chroma = step_blur_up + 1,
+		step_ghosts = step_chroma + 1,
+		step_halo = step_ghosts + 1,
+		step_mix = step_halo + 1,
+		step_count = step_mix + 1,
 	};
 
 	struct FrameSets {
 		std::vector<vk::raii::DescriptorSet> sets;
 		vk::ImageView bound_scene = nullptr;
+		vk::ImageView bound_dirt = nullptr;
 	};
 
 	void createTargets(const VulkanCore& core, vk::Extent2D extent);
 	void createPipelines(const VulkanCore& core);
 
-	void writeDescriptor(vk::DescriptorSet set, vk::ImageView source, vk::ImageView scene, vk::ImageView glare);
+	void writeDescriptor(
+	    vk::DescriptorSet set, vk::ImageView source, vk::ImageView scene, vk::ImageView glare, vk::ImageView streak = nullptr,
+	    vk::ImageView dirt = nullptr
+	);
 
 	void draw(
 	    vk::CommandBuffer cmd, const VulkanPipeline& pipeline, vk::DescriptorSet set, Target& target, const Params& params,
@@ -88,6 +100,8 @@ private:
 	ShaderLayout m_shader_layout;
 	VulkanPipeline m_threshold_pipeline;
 	VulkanPipeline m_glare_pipeline;
+	VulkanPipeline m_streak_down_pipeline;
+	VulkanPipeline m_streak_up_pipeline;
 	VulkanPipeline m_blur_down_pipeline;
 	VulkanPipeline m_blur_up_pipeline;
 	VulkanPipeline m_chroma_pipeline;
@@ -102,6 +116,7 @@ private:
 	Target m_flares;
 	Target m_glare_target;
 	Target m_eighth;
+	std::array<Target, k_streak_levels> m_streak;
 	Target m_composite;
 
 	std::vector<FrameSets> m_frame_sets;

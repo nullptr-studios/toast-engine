@@ -78,11 +78,6 @@ public partial class PaletteEntryVM : ObservableObject {
 		}
 	}
 
-	public bool Transparent {
-		get => m_entry.Transparent;
-		set => Set(() => m_entry.Transparent = value);
-	}
-
 	public float Alpha {
 		get => m_entry.Alpha;
 		set => Set(() => m_entry.Alpha = value);
@@ -178,7 +173,7 @@ public sealed class VoxelPalettePicker : UserControl {
 		var entry = m_palette.Entries[id];
 		if (!entry.InUse) return Resource("Bg2");
 
-		return new SolidColorBrush(Color.FromRgb(entry.R, entry.G, entry.B), entry.Transparent ? Math.Clamp(entry.Alpha, 0f, 1f) : 1.0);
+		return new SolidColorBrush(Color.FromRgb(entry.R, entry.G, entry.B), Math.Clamp(entry.Alpha, 0f, 1f));
 	}
 
 	private void Refresh() {
@@ -211,7 +206,7 @@ public sealed class VoxelPalettePicker : UserControl {
 		var panel = new Panel();
 
 		// behind the translucent brush so alpha reads against it
-		if (entry is { InUse: true, Transparent: true })
+		if (entry is { InUse: true, Alpha: < 1.0f })
 			panel.Children.Add(new Border {
 				Width = CellSize - 2,
 				Height = CellSize - 2,
@@ -327,9 +322,6 @@ public sealed class VoxelPalettePicker : UserControl {
 			properties.Children.Add(Row("Reflectivity", Number(nameof(PaletteEntryVM.Reflectivity))));
 			properties.Children.Add(Row("Emissive", Number(nameof(PaletteEntryVM.Emissive))));
 			properties.Children.Add(Row("Max emissive", Number(nameof(PaletteEntryVM.MaxEmissive), false)));
-			var transparent = new BoolBox();
-			transparent.Bind(BoolBox.ValueProperty, new Binding(nameof(PaletteEntryVM.Transparent)) { Mode = BindingMode.TwoWay });
-			properties.Children.Add(Row("Transparent", transparent));
 			properties.Children.Add(Row("Alpha", Number(nameof(PaletteEntryVM.Alpha))));
 			var ior = Number(nameof(PaletteEntryVM.Ior), false);
 			ior.Minimum = 1;

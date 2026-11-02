@@ -166,6 +166,10 @@ void HiZPyramid::beforeRead(sync::BarrierBatch& barriers) {
 	barriers.image(m_state, sync::Usage::compute_sampled);
 }
 
+void HiZPyramid::beforeTaskRead(sync::BarrierBatch& barriers) {
+	barriers.image(m_state, sync::Usage::task_sampled);
+}
+
 void HiZPyramid::record(vk::CommandBuffer cmd, vk::Extent2D scene_extent, const glm::mat4& view_projection) {
 	ZoneScoped;
 	if (!isReady()) {

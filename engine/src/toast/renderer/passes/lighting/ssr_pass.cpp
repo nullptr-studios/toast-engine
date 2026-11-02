@@ -116,7 +116,7 @@ void SsrPass::createTargets(const VulkanCore& core, vk::Extent2D extent) {
 	m_resolve_target.create(core, half, k_reflection_format, "SsrPass Resolve");
 	m_history[0].create(core, half, k_reflection_format, "SsrPass History0");
 	m_history[1].create(core, half, k_reflection_format, "SsrPass History1");
-	std::ranges::fill(m_bound_views, std::array<vk::ImageView, 2> {});
+	std::ranges::fill(m_bound_views, std::array<vk::ImageView, 4> {});
 	m_history_valid = false;
 }
 
@@ -136,8 +136,8 @@ auto SsrPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView 
 		return source_view;
 	}
 
-	const vk::ImageView depth_view = VulkanRenderer::instance->getDepthView();
-	const vk::ImageView normal_view = VulkanRenderer::instance->getSceneNormalView();
+	const vk::ImageView depth_view = VulkanRenderer::instance->getOpaqueDepthView();
+	const vk::ImageView normal_view = VulkanRenderer::instance->getOpaqueNormalView();
 	const vk::ImageView motion_view = VulkanRenderer::instance->getSceneMotionView();
 	if (!depth_view || !normal_view || !motion_view) {
 		return source_view;
@@ -156,7 +156,7 @@ auto SsrPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView 
 	const vk::DescriptorSet set = *m_descriptor_sets[set_index];
 
 	const vk::ImageView previous_view = VulkanRenderer::instance->previousResolvedColour();
-	const std::array<vk::ImageView, 2> wanted {source_view, previous_view ? previous_view : source_view};
+	const std::array<vk::ImageView, 4> wanted {source_view, previous_view ? previous_view : source_view, depth_view, normal_view};
 	if (m_bound_views[set_index] != wanted) {
 		// Point sampled except the colours since interpolated depth or normals invent surfaces
 		const std::array<vk::DescriptorImageInfo, k_binding_count> image_infos {

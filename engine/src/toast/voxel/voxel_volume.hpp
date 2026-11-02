@@ -51,6 +51,14 @@ public:
 		return m_brick_dims;
 	}
 
+	/// Voxel coordinate plus this is where the detail texture reads so a fragment keeps the pattern of its source
+	[[nodiscard]]
+	auto textureOrigin() const noexcept -> glm::ivec3 {
+		return m_texture_origin;
+	}
+
+	void setTextureOrigin(glm::ivec3 origin) noexcept { m_texture_origin = origin; }
+
 	[[nodiscard]]
 	auto voxelDims() const noexcept -> glm::uvec3 {
 		return m_brick_dims * k_brick_dim;
@@ -165,6 +173,7 @@ private:
 	BrickPool* m_pool = nullptr;
 	glm::uvec3 m_brick_dims {0};
 
+	glm::ivec3 m_texture_origin {0};
 	std::vector<BrickEntry> m_entries;
 
 	uint32_t m_revision = 0;

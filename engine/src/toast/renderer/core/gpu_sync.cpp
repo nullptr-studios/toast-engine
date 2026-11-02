@@ -89,6 +89,8 @@ auto info(Usage usage) -> UsageInfo {
 
 		case Usage::fragment_sampled: return {Stage::eFragmentShader, Access::eShaderSampledRead, Layout::eShaderReadOnlyOptimal};
 		case Usage::compute_sampled: return {Stage::eComputeShader, Access::eShaderSampledRead, Layout::eShaderReadOnlyOptimal};
+		case Usage::task_sampled:
+			return {Stage::eTaskShaderEXT | Stage::eMeshShaderEXT, Access::eShaderSampledRead, Layout::eShaderReadOnlyOptimal};
 		case Usage::shader_sampled:
 			return {
 			  Stage::eVertexShader | Stage::eFragmentShader | Stage::eComputeShader,
