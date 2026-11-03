@@ -475,7 +475,7 @@ void Simulator::registerVoxelNode(toast::VoxelNode& node) {
 		      .angular_damping = node.angular_damping,
 		      .drag_scale = node.drag_scale,
 		      .layers = {.included = node.included, .excluded = node.excluded},
-    }
+		}
 		);
 		if (not instance->valid(body)) {
 			return;
@@ -969,7 +969,7 @@ void Simulator::emitDebris(
 		      .mask = cluster.mask,
 		      .material = cluster.material,
 		      .albedo_roughness = static_cast<uint32_t>(look.albedo_r) | (static_cast<uint32_t>(look.albedo_g) << 8u) |
-		                          (static_cast<uint32_t>(look.albedo_b) << 16u) | (static_cast<uint32_t>(look.roughness) << 24u),
+					                    (static_cast<uint32_t>(look.albedo_b) << 16u) | (static_cast<uint32_t>(look.roughness) << 24u),
 		      .metallic = look.metallic,
 		      .reflectivity = look.reflectivity,
 		      .glass = voxel::isGlass(look),
@@ -2238,8 +2238,9 @@ void Simulator::setShapeEnabled(ShapeID shape, bool enabled) {
 		if (value->enabled != enabled) {
 			if (enabled) {
 				wakeBody(value->owner);
-			} else if (const Body* owner = instance->tryGetBody(value->owner);
-			           owner != nullptr && owner->type != BodyType::dynamic_body) {
+			} else if (
+			    const Body* owner = instance->tryGetBody(value->owner); owner != nullptr && owner->type != BodyType::dynamic_body
+			) {
 				instance->wakeBodiesTouching(shape);
 			}
 			value->enabled = enabled;
@@ -2425,7 +2426,7 @@ void Simulator::publishVoxelRenderRecords() {
 		      .fragment_origin = data->fragment_origin,
 		      .awake = body->awake,
 		      .world_bounds = worldShapeBounds(*body, slot.shape),
-    }
+		}
 		);
 	}
 
@@ -3060,7 +3061,7 @@ void Simulator::updateSleeping(float dt) {
 				for (const auto& [end, other] : {
 				       std::pair {slot.joint.descriptor.body_a, slot.joint.descriptor.body_b},
 				       std::pair {slot.joint.descriptor.body_b, slot.joint.descriptor.body_a}
-        }) {
+				}) {
 					const Body* body = tryGetBody(end);
 					if (body != nullptr && body->type == BodyType::dynamic_body && m_contact_supported[end.slot] == 0 && holds_up(other)) {
 						m_contact_supported[end.slot] = 1;
@@ -3263,7 +3264,7 @@ void Simulator::updateCache(std::span<const Manifold> manifolds) {
 		const auto current =
 		    std::lower_bound(manifolds.begin(), manifolds.end(), key, [](const Manifold& manifold, CachedManifoldKey candidate) {
 			    return manifold.pair < candidate.pair ||
-			           (manifold.pair == candidate.pair && manifold.normal_index < candidate.normal_index);
+					       (manifold.pair == candidate.pair && manifold.normal_index < candidate.normal_index);
 		    });
 		const bool still_colliding =
 		    current != manifolds.end() && current->pair == cached.pair && current->normal_index == cached.normal_index;
@@ -3320,8 +3321,8 @@ void Simulator::integrate(float dt) {
 			    auto body_id = BodyID {.slot = static_cast<uint32_t>(index), .generation = slot.generation};
 			    // Anything with solid geometry nearby stops the wind
 			    const bool sheltered = shelter_checks && slot.body.type == BodyType::dynamic_body && slot.body.awake &&
-			                           slot.body.drag_coefficient > 0.0f &&
-			                           windBlocked(slot.body.worldCenterOfMass(), upwind, shelter_distance, body_id);
+					                       slot.body.drag_coefficient > 0.0f &&
+					                       windBlocked(slot.body.worldCenterOfMass(), upwind, shelter_distance, body_id);
 			    integrateBody(body_id, slot.body, gravity, air_density, sheltered ? glm::vec3 {0.0f} : wind, dt);
 		    }
 	    };
@@ -3682,16 +3683,16 @@ auto Simulator::createJoint(const JointDescriptor& descriptor) -> JointID {
 		made_joint.voxel_end_a = voxelEndOf(made.body_a, made_joint.frame_a, made.voxel_anchor);
 	}
 	made_joint.voxel_end_b = voxelEndOf(made.body_b, made_joint.frame_b, made.voxel_anchor);
-	JointSlot joint_slot {.joint = std::move(made_joint), .occupied = true};
+	JointSlot joint_slot {.joint = made_joint, .occupied = true};
 	JointID id;
 	if (not m_free_joint_slots.empty()) {
 		id.slot = m_free_joint_slots.back();
 		m_free_joint_slots.pop_back();
 		joint_slot.generation = m_joints[id.slot].generation;
-		m_joints[id.slot] = std::move(joint_slot);
+		m_joints[id.slot] = joint_slot;
 	} else {
 		id.slot = static_cast<uint32_t>(m_joints.size());
-		m_joints.emplace_back(std::move(joint_slot));
+		m_joints.emplace_back(joint_slot);
 	}
 	id.generation = m_joints[id.slot].generation;
 	++m_joint_count;
