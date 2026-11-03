@@ -160,7 +160,7 @@ target_compile_definitions(toast_engine PUBLIC
 # Replaces global operator new and delete so Tracy lists every heap allocation, only active where Tracy is
 option(TOAST_TRACK_HEAP "Report C++ heap allocations to Tracy" ON)
 # 0 records no callstack, around 8 to 16 shows who allocates but slows allocation heavy code down a lot
-set(TOAST_HEAP_CALLSTACK_DEPTH 0 CACHE STRING "Callstack frames Tracy captures per heap allocation")
+set(TOAST_HEAP_CALLSTACK_DEPTH 0 CACHE STRING "Callstack frames Tracy captures per heap allocation")    
 target_compile_definitions(toast_engine PRIVATE
         $<$<AND:$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>,$<BOOL:${TOAST_TRACK_HEAP}>>:TOAST_TRACK_HEAP>
         TOAST_HEAP_CALLSTACK_DEPTH=${TOAST_HEAP_CALLSTACK_DEPTH}

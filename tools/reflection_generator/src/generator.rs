@@ -6,6 +6,15 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
+/// Leaves the mtime alone when content is identical so dependents do not rebuild
+pub fn write_if_changed(path: &Path, content: impl AsRef<[u8]>) -> std::io::Result<()> {
+    let content = content.as_ref();
+    if fs::read(path).is_ok_and(|existing| existing == content) {
+        return Ok(());
+    }
+    fs::write(path, content)
+}
+
 pub fn generate_files(nodes: &[NodeInfo], output: &Path, register_fn: &str, split_typeinfo: bool) {
     generate_files_with_events(nodes, &[], output, register_fn, split_typeinfo);
 }
@@ -47,7 +56,7 @@ pub fn generate_files_with_events(nodes: &[NodeInfo], events: &[EventInfo], outp
         let text = node_tmpl
             .render(&ctx)
             .unwrap_or_else(|e| panic!("template error for {}: {e}", node.class.name));
-        fs::write(&out, text).unwrap_or_else(|e| panic!("cannot write {}: {e}", out.display()));
+        write_if_changed(&out, text).unwrap_or_else(|e| panic!("cannot write {}: {e}", out.display()));
 
         if let Some(tmpl) = &type_info_tmpl {
             let cpp_out = output.join(format!("{sn}.type_info.cpp"));
@@ -57,7 +66,7 @@ pub fn generate_files_with_events(nodes: &[NodeInfo], events: &[EventInfo], outp
                     node.class.name
                 )
             });
-            fs::write(&cpp_out, cpp_text)
+            write_if_changed(&cpp_out, cpp_text)
                 .unwrap_or_else(|e| panic!("cannot write {}: {e}", cpp_out.display()));
         }
     }
@@ -93,7 +102,7 @@ pub fn generate_files_with_events(nodes: &[NodeInfo], events: &[EventInfo], outp
     let text = cpp_tmpl
         .render(&cpp_ctx)
         .unwrap_or_else(|e| panic!("template error for reflect.generated.cpp: {e}"));
-    fs::write(&out, text).unwrap_or_else(|e| panic!("cannot write {}: {e}", out.display()));
+    write_if_changed(&out, text).unwrap_or_else(|e| panic!("cannot write {}: {e}", out.display()));
 }
 
 fn qualify(namespace: Option<&str>, name: &str) -> String {

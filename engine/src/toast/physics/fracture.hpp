@@ -280,7 +280,7 @@ inline auto damageReaches(
 
 [[nodiscard]]
 constexpr auto hitBreaks(const voxel::PhysicalMaterial& material, float energy_density, Hardness max_hardness) -> bool {
-	return material.breakableBy(max_hardness) && material.toughness <= energy_density;
+	return material.breakableBy(max_hardness) /* && material.toughness <= energy_density */;
 }
 
 [[nodiscard]]
@@ -329,7 +329,7 @@ inline auto fractureCandidates(
 		FractureCandidate candidate {
 		  .distance = distance,
 		  .cost = voxelBreakEnergy(material),
-		  .breakable = material.breakableBy(request.max_hardness),
+		  .breakable = hitBreaks(material, request.energy_density, request.max_hardness),
 		};
 
 		if (distance <= radius) {
@@ -475,7 +475,7 @@ inline auto planCrater(
 
 	// a hit never breaks anything of if the voxel is too tough or too hard
 	const std::optional<voxel::PhysicalMaterial> hit = hitMaterial(volume, palette, materials, request.point, request.radius);
-	if (not hit.has_value() || not hit->breakableBy(request.max_hardness)) {
+	if (not hit.has_value() || not hitBreaks(*hit, request.energy_density, request.max_hardness)) {
 		return out;
 	}
 
