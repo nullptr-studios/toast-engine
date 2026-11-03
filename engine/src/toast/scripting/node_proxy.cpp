@@ -405,12 +405,19 @@ auto proxyMethodDispatch(lua_State* l) -> int;
 
 // Strips the outer "Box<" ... ">" from a field.type string and returns the inner type name
 auto innerBoxType(std::string_view type) -> std::string_view {
+	constexpr std::string_view toast_prefix = "toast::";
 	constexpr std::string_view prefix = "Box<";
+	if (type.starts_with(toast_prefix)) {
+		type.remove_prefix(toast_prefix.size());
+	}
 	if (!type.starts_with(prefix) || !type.ends_with('>')) {
 		return {};
 	}
 	type.remove_prefix(prefix.size());
 	type.remove_suffix(1);
+	if (type.starts_with(toast_prefix)) {
+		type.remove_prefix(toast_prefix.size());
+	}
 	return type;
 }
 
@@ -1598,7 +1605,7 @@ auto nodeProxyNewindex(NodeProxy& proxy, const luabridge::LuaRef& key, const lua
 		case FieldType::uid_t: {
 			const std::string_view type_str = f->type;
 
-			if (!f->is_array && type_str.starts_with("Box<")) {
+			if (f->isNodeReference()) {
 				if (!value.isInstance<NodeProxy>()) {
 					luaL_error(l, "Field '%s' expects Node", key_str.c_str());
 				}

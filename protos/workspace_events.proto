@@ -275,6 +275,31 @@ message SetVoxelCutPreview {
   float w = 6;
 }
 
+message RulerSegment {
+  float ax = 1;
+  float ay = 2;
+  float az = 3;
+  float bx = 4;
+  float by = 5;
+  float bz = 6;
+  float label_x = 7;
+  float label_y = 8;
+  bool label_visible = 9;
+}
+
+message RulerChanged {
+  uint64 workspace_handle = 1;
+  repeated RulerSegment segments = 2;
+  RulerSegment preview = 3;
+  bool preview_active = 4;
+}
+
+// 0 clear all, 1 remove the last
+message RulerCommand {
+  uint64 workspace_handle = 1;
+  uint32 kind = 2;
+}
+
 message NodePicked {
   uint64 workspace_handle = 1;
   string node = 2;

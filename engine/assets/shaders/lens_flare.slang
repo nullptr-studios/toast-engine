@@ -13,6 +13,12 @@ struct LensFlareParams
     float4 glare;
     // rgb tint w overall intensity
     float4 tint;
+    // x anamorphic intensity y anamorphic tint amount z dirt intensity w 1 with a dirt texture
+    float4 streak;
+    // x halo thickness y halo dispersion
+    float4 haloStyle;
+    // rgb halo tint
+    float4 haloTint;
 };
 
 [[vk::push_constant]]
@@ -26,6 +32,12 @@ Sampler2D gScene;
 
 [[vk::binding(2, 0)]]
 Sampler2D gGlare;
+
+[[vk::binding(3, 0)]]
+Sampler2D gStreak;
+
+[[vk::binding(4, 0)]]
+Sampler2D gDirtTexture;
 
 typedef FullscreenVSOutput VSOutput;
 
@@ -41,6 +53,14 @@ static const float kGhostScales[8] = {-1.5, 2.5, -5.0, 10.0, 0.7, -0.4, -0.2, -0
 static const float4 kGhostColors[8] = {
     float4(1.0, 0.85, 0.7, 0.8), float4(0.6, 0.8, 1.0, 0.6), float4(1.0, 0.6, 0.7, 0.5), float4(0.7, 1.0, 0.8, 0.4),
     float4(1.0, 0.9, 0.5, 0.6), float4(0.6, 0.7, 1.0, 0.5), float4(1.0, 0.7, 0.5, 0.4), float4(0.8, 0.6, 1.0, 0.5)};
+
+static const float3 kStreakTint = float3(0.35, 0.62, 1.0);
+
+/// Hexagonal aperture norm with the same scale as length
+float hexLength(float2 p)
+{
+    return max(abs(p.x) * 0.8660254 + abs(p.y) * 0.5, abs(p.y)) * 1.0392305;
+}
 
 /// Disc that is 1 at the centre and 0 at radius 1 of the screen position in -1 to 1
 float discMask(float2 screen)
@@ -130,7 +150,8 @@ float4 fragmentGhosts(VSOutput input) : SV_Target0
     {
         const float4 ghost = kGhostColors[i];
         const float2 ghostUv = (uv - kCenter) * kGhostScales[i];
-        const float distanceMask = 1.0 - length(ghostUv);
+        // Blades show on every other ghost
+        const float distanceMask = 1.0 - ((i & 1u) == 0u ? hexLength(ghostUv) : length(ghostUv));
         const float mask = smoothstep(0.5, 0.9, distanceMask);
         const float edge = smoothstep(0.75, 1.0, distanceMask) * 0.95 + 0.05;
         color += gSource.Sample(ghostUv + kCenter).rgb * ghost.rgb * ghost.a * mask * edge;
@@ -138,38 +159,82 @@ float4 fragmentGhosts(VSOutput input) : SV_Target0
     return float4(color * discMask(screen * 0.9) * gParams.flare.z, 1.0);
 }
 
+/// Half heights from the centre so the halo shape does not depend on the aspect ratio
+float2 heightSpace(float2 uv)
+{
+    return (uv * 2.0 - 1.0) * float2(gParams.glare.z, 1.0);
+}
+
+float2 fromHeightSpace(float2 p)
+{
+    return p / float2(gParams.glare.z, 1.0) * 0.5 + 0.5;
+}
+
 float2 fisheyeUv(float2 uv, float compression)
 {
-    const float2 centered = uv * 2.0 - 1.0;
+    const float2 centered = heightSpace(uv);
     const float scale = compression * atan(1.0 / compression);
     const float radius = length(centered);
     if (radius < 1e-5)
     {
         return uv;
     }
-    const float bent = compression * tan(radius / compression);
-    return (centered / radius * bent / scale) * 0.5 + 0.5;
+    const float bent = compression * tan(min(radius / compression, 1.5));
+    return fromHeightSpace(centered / radius * bent / scale);
 }
 
 [shader("fragment")]
 float4 fragmentHalo(VSOutput input) : SV_Target0
 {
-    const float shift = gParams.flare.w;
+    const float shift = gParams.haloStyle.y;
     const float2 uv = input.uv;
-    const float2 screen = uv * 2.0 - 1.0;
+    const float2 centered = heightSpace(uv);
+    const float radius = length(centered);
 
     const float2 fish = fisheyeUv(uv, max(gParams.halo.w, 0.05));
-    const float2 toCenter = kCenter - uv;
-    const float2 haloVector = normalize(toCenter + float2(1e-6, 0.0)) * gParams.halo.y;
+    const float2 inward = -centered / max(radius, 1e-5);
 
-    const float haloMask = smoothstep(gParams.halo.z, 1.0, saturate(distance(uv, kCenter) * 2.0));
-    const float border = (discMask(screen) * discMask(screen * 0.8)) * 0.95 + 0.05;
+    const float haloMask = smoothstep(gParams.halo.z, 1.0, saturate(radius));
+    const float2 edge = centered / length(float2(gParams.glare.z, 1.0));
+    const float border = (discMask(edge) * discMask(edge * 0.8)) * 0.95 + 0.05;
 
-    const float2 uvR = (fish - kCenter) * (1.0 + shift) + kCenter + haloVector;
-    const float2 uvG = fish + haloVector;
-    const float2 uvB = (fish - kCenter) * (1.0 - shift) + kCenter + haloVector;
-    const float3 color = float3(gSource.Sample(uvR).r, gSource.Sample(uvG).g, gSource.Sample(uvB).b);
-    return float4(color * border * haloMask * gParams.halo.x, 1.0);
+    // Taps along the radius thicken the ring
+    float3 color = float3(0.0, 0.0, 0.0);
+    for (int i = -2; i <= 2; ++i)
+    {
+        const float spread = 1.0 + float(i) * 0.25 * gParams.haloStyle.x;
+        const float2 haloVector = fromHeightSpace(inward * gParams.halo.y * 2.0 * spread) - kCenter;
+        const float2 uvR = (fish - kCenter) * (1.0 + shift) + kCenter + haloVector;
+        const float2 uvG = fish + haloVector;
+        const float2 uvB = (fish - kCenter) * (1.0 - shift) + kCenter + haloVector;
+        color += float3(gSource.Sample(uvR).r, gSource.Sample(uvG).g, gSource.Sample(uvB).b) * (i == 0 ? 0.4 : 0.15);
+    }
+    return float4(color * border * haloMask * gParams.halo.x * gParams.haloTint.rgb, 1.0);
+}
+
+/// Horizontal only so a point stretches into an anamorphic streak, each level halves the width
+[shader("fragment")]
+float4 fragmentStreakDown(VSOutput input) : SV_Target0
+{
+    const float2 step = float2(gParams.texel.x, 0.0);
+    const float2 uv = input.uv;
+    float3 sum = gSource.Sample(uv - step * 1.5).rgb * 0.125;
+    sum += gSource.Sample(uv - step * 0.5).rgb * 0.375;
+    sum += gSource.Sample(uv + step * 0.5).rgb * 0.375;
+    sum += gSource.Sample(uv + step * 1.5).rgb * 0.125;
+    return float4(sum, 1.0);
+}
+
+/// Added over the finer level, the sum of every level is a long tailed streak
+[shader("fragment")]
+float4 fragmentStreakUp(VSOutput input) : SV_Target0
+{
+    const float2 step = float2(gParams.texel.x, 0.0);
+    const float2 uv = input.uv;
+    float3 sum = gSource.Sample(uv - step).rgb * 0.25;
+    sum += gSource.Sample(uv).rgb * 0.5;
+    sum += gSource.Sample(uv + step).rgb * 0.25;
+    return float4(sum * 0.9, 1.0);
 }
 
 struct GlareVSOutput
@@ -273,6 +338,12 @@ float4 fragmentMix(VSOutput input) : SV_Target0
     glare += gGlare.Sample(uv + float2(-1.0, 1.0) * pixel).rgb * 0.25;
     glare += gGlare.Sample(uv + float2(1.0, 1.0) * pixel).rgb * 0.25;
 
-    const float3 total = (flares + glare) * flareGradient(uv) * gParams.tint.rgb * gParams.tint.w;
+    float3 streak = gStreak.Sample(uv).rgb * 2.0;
+    const float streakLuma = dot(streak, float3(0.3333, 0.3333, 0.3333));
+    streak = lerp(streak, streakLuma * kStreakTint * 1.6, gParams.streak.y) * gParams.streak.x;
+
+    float3 total = ((flares + glare) * flareGradient(uv) + streak) * gParams.tint.rgb * gParams.tint.w;
+    const float3 dirt = gParams.streak.w > 0.5 ? gDirtTexture.Sample(uv).rgb : 0;
+    total *= 1.0 + gParams.streak.z * 4.0 * dirt;
     return float4(scene + total, 1.0);
 }

@@ -66,11 +66,13 @@ struct Tunables {
 	uint32_t min_shapes_per_query_job = 16;
 	uint32_t min_bodies_per_job = 64;
 	uint32_t min_wave_constraints_for_dispatch = 512;
+	uint32_t min_wave_joints_for_dispatch = 64;
 	uint32_t box_voxel_split_min_voxels = 500000;
 	uint32_t voxel_voxel_split_min_voxels = 250000;
 	uint32_t voxel_pair_split_regions = 8;
 	uint32_t sweep_refine_iterations = 6;
 	uint32_t position_iterations = 3;
+	uint32_t joint_substeps = 4;
 	float air_density = 1.225f;
 	glm::vec3 wind = {0.0f, 0.0f, 0.0f};
 	float wind_shelter_distance = 64.0f;

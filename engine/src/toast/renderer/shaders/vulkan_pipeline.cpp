@@ -36,7 +36,8 @@ auto createShaderModule(const vk::raii::Device& device, std::span<const std::byt
 
 auto createGraphicsPipelineImpl(
     const VulkanCore& core, const VulkanPipeline::Config& config, const vk::raii::ShaderModule& shader_module,
-    const vk::raii::ShaderModule* task_module, const vk::PipelineLayout& pipeline_layout
+    const vk::raii::ShaderModule* task_module, const vk::raii::ShaderModule* fragment_module,
+    const vk::PipelineLayout& pipeline_layout
 ) -> vk::raii::Pipeline {
 	ZoneScoped;
 	const auto& device = core.getDevice();
@@ -55,11 +56,11 @@ auto createGraphicsPipelineImpl(
 	    mesh ? spirv::resolveEntryPoint(config.shader_spirv, spirv::ExecutionModel::mesh, config.mesh_entry, config.debug_name)
 			     : std::string {};
 	const bool has_fragment_stage = !config.depth_only || config.depth_fragment;
+	const std::span<const std::byte> fragment_spirv = config.fragment_spirv.empty() ? config.shader_spirv : config.fragment_spirv;
 	const std::string fragment_entry =
-	    has_fragment_stage ? spirv::resolveEntryPoint(
-	                             config.shader_spirv, spirv::ExecutionModel::fragment, config.fragment_entry, config.debug_name
-	                         )
-			                   : config.fragment_entry;
+	    has_fragment_stage
+	        ? spirv::resolveEntryPoint(fragment_spirv, spirv::ExecutionModel::fragment, config.fragment_entry, config.debug_name)
+	        : config.fragment_entry;
 
 	std::vector<vk::PipelineShaderStageCreateInfo> shader_stages;
 	if (mesh) {
@@ -81,7 +82,10 @@ auto createGraphicsPipelineImpl(
 	}
 	if (has_fragment_stage) {
 		shader_stages.emplace_back(
-		    vk::PipelineShaderStageCreateFlags {}, vk::ShaderStageFlagBits::eFragment, *shader_module, fragment_entry.c_str()
+		    vk::PipelineShaderStageCreateFlags {},
+		    vk::ShaderStageFlagBits::eFragment,
+		    fragment_module != nullptr ? **fragment_module : *shader_module,
+		    fragment_entry.c_str()
 		);
 	}
 
@@ -314,10 +318,18 @@ auto VulkanPipeline::rebuild(const VulkanCore& core, const Config& config) -> vo
 	if (!config.task_spirv.empty()) {
 		m_task_module.emplace(createShaderModule(device, config.task_spirv));
 	}
+	if (!config.fragment_spirv.empty()) {
+		m_fragment_module.emplace(createShaderModule(device, config.fragment_spirv));
+	}
 
 	if (config.pipeline_type == PipelineType::graphics) {
 		m_pipeline = createGraphicsPipelineImpl(
-		    core, config, *m_shader_module, m_task_module.has_value() ? &*m_task_module : nullptr, config.pipeline_layout
+		    core,
+		    config,
+		    *m_shader_module,
+		    m_task_module.has_value() ? &*m_task_module : nullptr,
+		    m_fragment_module.has_value() ? &*m_fragment_module : nullptr,
+		    config.pipeline_layout
 		);
 	} else {
 		m_pipeline = createComputePipelineImpl(core, config, *m_shader_module, config.pipeline_layout);
@@ -332,6 +344,7 @@ auto VulkanPipeline::rebuild(const VulkanCore& core, const Config& config) -> vo
 auto VulkanPipeline::reset() -> void {
 	m_shader_module.reset();
 	m_task_module.reset();
+	m_fragment_module.reset();
 	m_pipeline = nullptr;
 }
 }

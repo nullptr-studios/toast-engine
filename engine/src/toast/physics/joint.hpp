@@ -1,0 +1,156 @@
+/**
+ * @file joint.hpp
+ * @author Xein
+ * @date 31 Oct 2026
+ * @brief Joint parameters
+ */
+
+#pragma once
+
+#include "body.hpp"
+#include "shape.hpp"
+
+#include <array>
+#include <compare>
+#include <cstdint>
+#include <glm/glm.hpp>
+#include <glm/gtc/constants.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <limits>
+#include <variant>
+
+namespace physics {
+
+struct JointID {
+	uint32_t slot = std::numeric_limits<uint32_t>::max();
+	uint32_t generation = 0;
+	auto operator<=>(const JointID&) const = default;
+};
+
+enum class JointType : uint8_t {
+	pin,
+	hinge,
+	slider,
+	fixed
+};
+
+// Joint friction is the torque that holds the ends against turning per newton the joint carries, the friction of the
+// material times the radius of the pin, in metres
+constexpr float k_default_joint_friction = 0.01f;
+
+// The ends of a hinge or a pin with collision between them don't touch closer to the pin than this
+constexpr float k_joint_knuckle_radius = 0.1f;
+
+struct PinParams {
+	float bias = 0.3f;
+	float impulse_clamp = 0.0f;
+	float friction = k_default_joint_friction;
+	auto operator==(const PinParams&) const -> bool = default;
+};
+
+struct HingeParams {
+	float bias = 0.3f;
+	bool limit_enabled = false;
+	float limit_lower = -glm::half_pi<float>();    // radians
+	float limit_upper = glm::half_pi<float>();
+	float limit_bias = 0.3f;
+	float limit_restitution = 0.0f;
+	float friction = k_default_joint_friction;
+	bool motor_enabled = false;
+	float motor_target_velocity = 0.0f;    // rad/s
+	float motor_max_impulse = 1.0f;        // per step
+
+	auto operator==(const HingeParams&) const -> bool = default;
+};
+
+// todo: sliderjoint needs to be able to freely rotate
+struct SliderParams {
+	float bias = 0.3f;
+	float linear_limit_lower = -1.0f;
+	float linear_limit_upper = 1.0f;
+	float limit_restitution = 0.0f;
+
+	auto operator==(const SliderParams&) const -> bool = default;
+};
+
+struct FixedParams {
+	float bias = 0.3f;
+	auto operator==(const FixedParams&) const -> bool = default;
+};
+
+using JointParams = std::variant<PinParams, HingeParams, SliderParams, FixedParams>;
+
+struct JointFrame {
+	glm::vec3 position = {};
+	glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+};
+
+struct VoxelAnchorSettings {
+	bool enabled = true;
+	int radius_voxels = 2;
+	float min_remaining = 0.5f;
+};
+
+enum class JointBreakReason : uint8_t {
+	requested,
+	force,
+	torque,
+	anchor_destroyed
+};
+
+struct JointDescriptor {
+	BodyID body_a;
+	BodyID body_b;
+	glm::vec3 anchor = {};
+	glm::quat frame = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+	bool exclude_collision = true;
+	JointParams params = PinParams {};
+	float break_force = 0.0f;
+	float break_torque = 0.0f;
+	VoxelAnchorSettings voxel_anchor;
+};
+
+struct JointVoxelEnd {
+	ShapeID shape;
+	uint32_t baseline = 0;
+	uint32_t revision = 0;
+};
+
+struct JointImpulses {
+	glm::vec3 point = {};            // hinge and pin anchor
+	glm::vec2 perpendicular = {};    // hinge angular, slider linear, along the Y and Z of the frame of body a
+	glm::vec3 angular_lock = {};     // slider rotation
+	float limit_lower = 0.0f;
+	float limit_upper = 0.0f;
+	float motor = 0.0f;
+	glm::vec3 friction = {};    // along the axes of the frame of body a
+};
+
+struct Joint {
+	JointDescriptor descriptor;
+	JointFrame frame_a;
+	JointFrame frame_b;
+	JointImpulses impulses;
+	float hinge_raw = 0.0f;
+	float hinge_angle = 0.0f;
+	float slider_position = 0.0f;
+	JointVoxelEnd voxel_end_a;
+	JointVoxelEnd voxel_end_b;
+	float last_force = 0.0f;
+	float last_torque = 0.0f;
+};
+
+struct JointState {
+	float angle = 0.0f;
+	float position = 0.0f;
+	float force = 0.0f;
+	float torque = 0.0f;
+};
+
+struct JointSlot {
+	Joint joint;
+	uint32_t generation = 1;
+	bool occupied = false;
+};
+
+}

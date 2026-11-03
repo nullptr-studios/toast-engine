@@ -285,7 +285,7 @@ void voxelDebugProbeText(const RenderFrame& frame, const std::optional<ProbeResu
 		ImGui::Text("brick %s, %s %u", voxelDebugTagName(probe.brick_entry), uniform ? "palette" : "pool slot", payload);
 
 		ImGui::Text(
-		    "palette %u  material %u  #%02X%02X%02X  rough %.2f  metal %.2f  refl %.2f  emissive %.2f%s",
+		    "palette %u  material %u  #%02X%02X%02X  rough %.2f  metal %.2f  refl %.2f  emissive %.2f",
 		    static_cast<uint32_t>(probe.hit.material),
 		    static_cast<uint32_t>(entry.material),
 		    entry.albedo_r,
@@ -294,8 +294,7 @@ void voxelDebugProbeText(const RenderFrame& frame, const std::optional<ProbeResu
 		    static_cast<float>(entry.roughness) / 255.0f,
 		    static_cast<float>(entry.metallic) / 255.0f,
 		    static_cast<float>(entry.reflectivity) / 255.0f,
-		    static_cast<float>(entry.emissive) / 255.0f * probe.max_emissive,
-		    (entry.flags & voxel::k_entry_transparent) != 0 ? "  transparent" : ""
+		    static_cast<float>(entry.emissive) / 255.0f * probe.max_emissive
 		);
 
 		const uint32_t voxel_steps = probe.hit.steps - probe.hit.coarse_steps - probe.hit.brick_steps - probe.hit.sub_steps;
@@ -559,15 +558,15 @@ void Monitor::drawPanel(const RenderFrame& frame) const {
 	ImGui::TextDisabled("%u pool slots, %u palettes, %u records", info.packed_slots, info.packed_palettes, storage.recordCount());
 	size_t occupied = 0;
 	size_t glass = 0;
-	uint32_t small = 0;
+	uint32_t on_unit_box = 0;
 	for (uint32_t record = 0; record < storage.recordCount(); ++record) {
 		if (const auto& list = storage.brickList(record)) {
 			occupied += list->occupied.size();
 			glass += list->glass.size();
-			small += list->occupied.size() <= VoxelBlasCache::k_unit_box_bricks ? 1u : 0u;
+			on_unit_box += list->occupied.size() <= VoxelBlasCache::k_unit_box_bricks ? 1u : 0u;
 		}
 	}
-	ImGui::TextDisabled("%zu occupied bricks, %zu glass, %u records on the unit box", occupied, glass, small);
+	ImGui::TextDisabled("%zu occupied bricks, %zu glass, %u records on the unit box", occupied, glass, on_unit_box);
 	if (const VoxelBlasCache* blas = VulkanRenderer::instance->voxelBlasCache()) {
 		const VoxelBlasCache::Stats s = blas->stats();
 		ImGui::TextDisabled(

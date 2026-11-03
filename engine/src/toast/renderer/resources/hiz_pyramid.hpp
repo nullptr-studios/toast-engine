@@ -27,6 +27,9 @@ public:
 	/// Earlier writes land before a compute shader samples view()
 	void beforeRead(sync::BarrierBatch& barriers);
 
+	/// Earlier writes land before a task or mesh shader samples view()
+	void beforeTaskRead(sync::BarrierBatch& barriers);
+
 	/// view() can be bound without it but only a ready pyramid is ever built
 	[[nodiscard]]
 	auto isReady() const -> bool {

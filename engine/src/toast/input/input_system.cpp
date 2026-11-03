@@ -114,6 +114,9 @@ void InputSystem::subscribeEvents() {
 			m_keys_down.erase(e.key);
 		} else if (!m_overlay_keyboard) {
 			m_keys_down.insert(e.key);
+			if (e.action == event::window_input_pressed) {
+				m_keys_pressed.insert(e.key);
+			}
 			noteLastInput(Device::keyboard, "keyboard");
 		}
 		return false;
@@ -125,6 +128,7 @@ void InputSystem::subscribeEvents() {
 			m_mouse_down.erase(e.button);
 		} else if (!m_overlay_mouse) {
 			m_mouse_down.insert(e.button);
+			m_mouse_pressed.insert(e.button);
 			noteLastInput(Device::mouse, "mouse");
 		}
 		return false;
@@ -275,11 +279,13 @@ auto InputSystem::sample(const KeyCode& key) -> InputSample {
 	}
 
 	switch (key.device) {
-		case Device::keyboard: out.scalar = m_keys_down.contains(key.code) ? 1.0f : 0.0f; break;
+		case Device::keyboard: out.scalar = m_keys_down.contains(key.code) || m_keys_pressed.contains(key.code) ? 1.0f : 0.0f; break;
 
 		case Device::mouse:
 			switch (key.kind) {
-				case InputKind::button: out.scalar = m_mouse_down.contains(key.code) ? 1.0f : 0.0f; break;
+				case InputKind::button:
+					out.scalar = m_mouse_down.contains(key.code) || m_mouse_pressed.contains(key.code) ? 1.0f : 0.0f;
+					break;
 				case InputKind::scroll: out.scalar = key.code == 1 ? m_scroll.x : m_scroll.y; break;
 				case InputKind::cursor:
 					out.is_vector = true;
@@ -372,6 +378,8 @@ void InputSystem::tick() {
 
 	// Reset per-frame transient input now that this frame has consumed it
 	m_scroll = glm::vec2 {0.0f};
+	m_keys_pressed.clear();
+	m_mouse_pressed.clear();
 	m_prev_mouse_position = m_mouse_position;
 }
 

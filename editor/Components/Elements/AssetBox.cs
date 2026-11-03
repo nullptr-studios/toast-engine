@@ -281,7 +281,11 @@ public sealed class AssetBox : TemplatedControl {
 		if (!IsEnabled || (TopLevel.GetTopLevel(this) as Window ?? App.MainWindow) is not { } owner) return;
 		var normalized = NormalizeAssetType(AssetType);
 		// A material picker should also show material instances
-		var extra = normalized == "material" ? "material_instance" : null;
+		var extra = normalized switch {
+			"material" => "material_instance",
+			"voxel_model" => "node",
+			_ => null
+		};
 		var picked = await new AssetList(normalized, extra).ShowDialog<string?>(owner);
 		if (picked is not null) Value = picked;
 	}
@@ -305,8 +309,10 @@ public sealed class AssetBox : TemplatedControl {
 	}
 
 	private static bool IsCompatibleType(string boxType, string dragged) {
-		return string.Equals(boxType, "material", StringComparison.OrdinalIgnoreCase)
-			&& string.Equals(dragged, "material_instance", StringComparison.OrdinalIgnoreCase);
+		return (string.Equals(boxType, "material", StringComparison.OrdinalIgnoreCase)
+				&& string.Equals(dragged, "material_instance", StringComparison.OrdinalIgnoreCase))
+			|| (string.Equals(boxType, "voxel_model", StringComparison.OrdinalIgnoreCase)
+				&& string.Equals(dragged, "node", StringComparison.OrdinalIgnoreCase));
 	}
 
 	private void OnDragOver(object? sender, DragEventArgs e) {

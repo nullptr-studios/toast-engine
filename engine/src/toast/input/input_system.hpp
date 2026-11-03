@@ -68,6 +68,9 @@ private:
 
 	std::unordered_set<int> m_keys_down;
 	std::unordered_set<int> m_mouse_down;
+	/// Presses since the last tick so a tap released before the tick still samples down once
+	std::unordered_set<int> m_keys_pressed;
+	std::unordered_set<int> m_mouse_pressed;
 	ModifierKey m_mods = ModifierKey::none;
 
 	glm::vec2 m_mouse_position {0.0f};

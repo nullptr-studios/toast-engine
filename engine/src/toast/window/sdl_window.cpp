@@ -2,6 +2,7 @@
 
 #include <SDL3/SDL_vulkan.h>
 #include <glm/glm.hpp>
+#include <optional>
 #include <string_view>
 #include <tracy/Tracy.hpp>
 
@@ -123,11 +124,26 @@ auto SDLWindow::nativeHandle() const -> void* {
 void SDLWindow::pollEvents() {
 	ZoneScoped;
 
+	// Motion is coalesced into one position per poll since every listener hit tests it
+	// Flushed before any other event so a click still lands where the cursor was
+	std::optional<glm::vec2> pending_mouse;
+	const auto flush_mouse = [&pending_mouse] {
+		if (pending_mouse) {
+			event::send<event::WindowMousePosition>(pending_mouse->x, pending_mouse->y);
+			pending_mouse.reset();
+		}
+	};
+
+	const SDL_WindowID window_id = SDL_GetWindowID(m.sdl_window.get());
 	for (SDL_Event event; SDL_PollEvent(&event);) {
 		ZoneScopedN("SDLWindow::event");
 
-		if (event.window.windowID != SDL_GetWindowID(m.sdl_window.get())) {
+		// Quit carries no window id
+		if (event.type != SDL_EVENT_QUIT && event.window.windowID != window_id) {
 			continue;
+		}
+		if (event.type != SDL_EVENT_MOUSE_MOTION) {
+			flush_mouse();
 		}
 
 		switch (event.type) {
@@ -168,9 +184,9 @@ void SDLWindow::pollEvents() {
 				const float density = SDL_GetWindowPixelDensity(m.sdl_window.get());
 				if (m.cursor_locked) {
 					m.virtual_mouse_position += glm::vec2 {event.motion.xrel, event.motion.yrel} * density;
-					event::send<event::WindowMousePosition>(m.virtual_mouse_position.x, m.virtual_mouse_position.y);
+					pending_mouse = m.virtual_mouse_position;
 				} else {
-					event::send<event::WindowMousePosition>(event.motion.x * density, event.motion.y * density);
+					pending_mouse = glm::vec2 {event.motion.x, event.motion.y} * density;
 				}
 				break;
 			}
@@ -235,6 +251,7 @@ void SDLWindow::pollEvents() {
 			default: break;
 		}
 	}
+	flush_mouse();
 }
 
 void SDLWindow::swapFramebuffers() {

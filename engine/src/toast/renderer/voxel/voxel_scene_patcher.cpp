@@ -153,6 +153,10 @@ auto VoxelScenePatcher::tryPatch(
 		record.coarse_offset = static_cast<uint32_t>(m_scene.coarse.size());
 		record.palette_offset = findOrAppendPalette(*volumes[i].palette);
 		record.max_emissive = volumes[i].palette->max_emissive;
+		const glm::ivec3 texture_origin = volumes[i].volume->textureOrigin();
+		record.texture_origin_x = texture_origin.x;
+		record.texture_origin_y = texture_origin.y;
+		record.texture_origin_z = texture_origin.z;
 
 		m_scene.grids.resize(m_scene.grids.size() + (dims.x * dims.y * dims.z), 0u);
 		m_scene.coarse.resize(m_scene.coarse.size() + (((coarse.x * coarse.y * coarse.z) + 31u) / 32u), 0u);

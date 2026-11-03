@@ -617,7 +617,9 @@ void VulkanRenderer::resetFrameBuild(RenderFrame& frame) {
 	frame.shadows.matrices.clear();
 
 #if defined(TOAST_DEV_TOOLS)
-	frame.imgui_input.mouse_pos = m_imgui_mouse_pos;
+	// A locked cursor is a virtual point that wanders with the look so ImGui must not hover or capture with it
+	const bool cursor_locked = m_imgui_game_mouse_locked && !m_debug_overlay_owns_cursor.load(std::memory_order_relaxed);
+	frame.imgui_input.mouse_pos = cursor_locked ? glm::vec2 {-1.0f} : m_imgui_mouse_pos;
 	frame.imgui_input.mouse_down = m_imgui_mouse_down;
 	frame.imgui_input.mouse_wheel_x = m_imgui_wheel_x_accum;
 	frame.imgui_input.mouse_wheel_y = m_imgui_wheel_y_accum;

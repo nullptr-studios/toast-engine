@@ -110,6 +110,26 @@
 			<Setter Property="Padding"
 			        Value="8" />
 		</Style>
+		<Style Selector="Border.card.collapsed">
+			<Setter Property="Padding"
+			        Value="2,8" />
+		</Style>
+		<Style Selector="Border.header">
+			<Setter Property="Background"
+			        Value="Transparent" />
+			<Setter Property="Cursor"
+			        Value="Hand" />
+		</Style>
+		<Style Selector="Border.header > TextBlock">
+			<Setter Property="VerticalAlignment"
+			        Value="Center" />
+		</Style>
+		<Style Selector="Border.drop">
+			<Setter Property="BorderBrush"
+			        Value="{StaticResource Red}" />
+			<Setter Property="BorderThickness"
+			        Value="2" />
+		</Style>
 	</UserControl.Styles>
 
 	<Design.DataContext>
@@ -118,15 +138,88 @@
 
 	<Panel>
 
-		<Grid ColumnDefinitions="0.6*,6,0.2*,6,0.2*"
+		<Grid x:Name="Root"
+		      ColumnDefinitions="0.15*,6,0.6*,6,0.2*,6,0.2*"
 		      IsVisible="{Binding HasContent}">
 
-			<!-- The 255 swatches -->
+			<!-- Labels -->
 			<Border Grid.Column="0"
+			        Classes="card"
+			        Classes.collapsed="{Binding IsLabelsCollapsed}">
+				<Panel>
+					<DockPanel VerticalSpacing="8"
+					           IsVisible="{Binding !IsLabelsCollapsed}">
+						<Border DockPanel.Dock="Top"
+						        Height="26"
+						        Classes="header"
+						        Tag="labels"
+						        Tapped="OnHeaderTapped">
+							<TextBlock Text="Labels"
+							           Classes="section" />
+						</Border>
+						<Grid RowDefinitions="18,*">
+							<ItemsControl Grid.Row="1"
+							              ItemsSource="{Binding RowLabels}">
+								<ItemsControl.ItemsPanel>
+									<ItemsPanelTemplate>
+										<UniformGrid Columns="1"
+										             Rows="16" />
+									</ItemsPanelTemplate>
+								</ItemsControl.ItemsPanel>
+								<ItemsControl.ItemTemplate>
+									<DataTemplate x:DataType="vm:PaletteRowLabelVM">
+										<Border Background="Transparent"
+										        Tapped="OnLabelTapped"
+										        ToolTip.Tip="Click to rename">
+											<Panel VerticalAlignment="Center">
+												<TextBlock Text="{Binding Text}"
+												           IsVisible="{Binding !IsRenaming}"
+												           HorizontalAlignment="Right"
+												           TextAlignment="Right"
+												           TextTrimming="CharacterEllipsis"
+												           Padding="0,0,3,0" />
+												<TextBox IsVisible="{Binding IsRenaming}"
+												         Text="{Binding DraftText}"
+												         TextAlignment="Right"
+												         BorderThickness="0"
+												         Background="Transparent"
+												         Padding="0"
+												         VerticalContentAlignment="Center"
+												         KeyDown="OnLabelKeyDown"
+												         LostFocus="OnLabelLostFocus" />
+											</Panel>
+										</Border>
+									</DataTemplate>
+								</ItemsControl.ItemTemplate>
+							</ItemsControl>
+						</Grid>
+					</DockPanel>
+					<Border Classes="header"
+					        Tag="labels"
+					        Tapped="OnHeaderTapped"
+					        IsVisible="{Binding IsLabelsCollapsed}">
+						<LayoutTransformControl VerticalAlignment="Top"
+						                        HorizontalAlignment="Center">
+							<LayoutTransformControl.LayoutTransform>
+								<RotateTransform Angle="90" />
+							</LayoutTransformControl.LayoutTransform>
+							<TextBlock Text="Labels"
+							           Classes="section" />
+						</LayoutTransformControl>
+					</Border>
+				</Panel>
+			</Border>
+			<GridSplitter Grid.Column="1"
+			              Background="Transparent"
+			              IsEnabled="{Binding !IsLabelsCollapsed}"
+			              ResizeDirection="Columns" />
+
+			<!-- The 255 swatches -->
+			<Border Grid.Column="2"
 			        Classes="card">
 				<DockPanel VerticalSpacing="8">
 
-					<DockPanel DockPanel.Dock="Top">
+					<DockPanel DockPanel.Dock="Top" HorizontalSpacing="8" Height="26">
 						<Button DockPanel.Dock="Right"
 						        Classes="icon-btn"
 						        Command="{Binding SaveCommand}"
@@ -136,11 +229,62 @@
 							                   Size="16"
 							                   StrokeWidth="2.5" />
 						</Button>
+						<Button DockPanel.Dock="Right"
+						        Classes="icon-btn"
+						        Command="{Binding ExportPngCommand}"
+						        Background="{StaticResource Bg4}"
+						        ToolTip.Tip="Export as PNG">
+							<lucide:LucideIcon Kind="Upload"
+							                   Size="16"
+							                   StrokeWidth="2.5" />
+						</Button>
 						<TextBlock Text="{Binding DisplayTitle}"
 						           Classes="section" />
 					</DockPanel>
 
-					<ItemsControl ItemsSource="{Binding Swatches}">
+					<Grid ColumnDefinitions="Auto,*"
+					      RowDefinitions="18,*"
+					      ColumnSpacing="4">
+						<ItemsControl Grid.Column="1"
+						              ItemsSource="{Binding ColumnHeaders}">
+							<ItemsControl.ItemsPanel>
+								<ItemsPanelTemplate>
+									<UniformGrid Rows="1"
+									             Columns="16" />
+								</ItemsPanelTemplate>
+							</ItemsControl.ItemsPanel>
+							<ItemsControl.ItemTemplate>
+								<DataTemplate x:DataType="x:String">
+									<TextBlock Text="{Binding}"
+									           Foreground="{StaticResource TextMuted}"
+									           FontFamily="Fira Code"
+									           HorizontalAlignment="Center"
+									           VerticalAlignment="Center" />
+								</DataTemplate>
+							</ItemsControl.ItemTemplate>
+						</ItemsControl>
+						<ItemsControl Grid.Row="1"
+						              ItemsSource="{Binding RowHeaders}">
+							<ItemsControl.ItemsPanel>
+								<ItemsPanelTemplate>
+									<UniformGrid Columns="1"
+									             Rows="16" />
+								</ItemsPanelTemplate>
+							</ItemsControl.ItemsPanel>
+							<ItemsControl.ItemTemplate>
+								<DataTemplate x:DataType="x:String">
+									<TextBlock Text="{Binding}"
+									           Foreground="{StaticResource TextMuted}"
+									           FontFamily="Fira Code"
+									           HorizontalAlignment="Center"
+									           VerticalAlignment="Center" />
+								</DataTemplate>
+							</ItemsControl.ItemTemplate>
+						</ItemsControl>
+						<ItemsControl x:Name="SwatchGrid"
+						              Grid.Row="1"
+						              Grid.Column="1"
+						              ItemsSource="{Binding Swatches}">
 						<ItemsControl.ItemsPanel>
 							<ItemsPanelTemplate>
 								<UniformGrid Rows="16"
@@ -157,8 +301,7 @@
 									        IsVisible="{Binding ShowChecker}" />
 									<Button Classes="swatch"
 									        Classes.selected="{Binding IsSelected}"
-									        Classes.unused="{Binding !IsUsed}"
-									        Command="{Binding SelectCommand}">
+									        Classes.unused="{Binding !IsUsed}">
 										<ToolTip.Tip>
 											<StackPanel Spacing="4">
 												<TextBlock Text="{Binding Title}"
@@ -187,6 +330,11 @@
 											</StackPanel>
 										</ToolTip.Tip>
 									</Button>
+									<Border Margin="1"
+									        CornerRadius="3"
+									        IsHitTestVisible="False"
+									        Classes="drop"
+									        IsVisible="{Binding IsDropTarget}" />
 									<!-- plus icon -->
 									<Path Data="M0,0.5 L1,0.5 M0.5,0 L0.5,1"
 									      Stretch="Fill"
@@ -206,18 +354,23 @@
 							</DataTemplate>
 						</ItemsControl.ItemTemplate>
 					</ItemsControl>
+					</Grid>
+					
 
 				</DockPanel>
 			</Border>
 
-			<GridSplitter Grid.Column="1"
+			<GridSplitter Grid.Column="3"
 			              Background="Transparent"
+			              IsEnabled="{Binding !IsEntryCollapsed}"
 			              ResizeDirection="Columns" />
 
 			<!-- How the selected entry looks -->
-			<Border Grid.Column="2"
-			        Classes="card">
-				<ScrollViewer>
+			<Border Grid.Column="4"
+			        Classes="card"
+			        Classes.collapsed="{Binding IsEntryCollapsed}">
+				<Panel>
+				<ScrollViewer IsVisible="{Binding !IsEntryCollapsed}">
 					<StackPanel Spacing="8">
 
 						<DockPanel>
@@ -230,8 +383,12 @@
 								                   Size="16"
 								                   StrokeWidth="2.5" />
 							</Button>
-							<TextBlock Text="{Binding SelectedLabel}"
-							           Classes="section" />
+							<Border Classes="header"
+							        Tag="entry"
+							        Tapped="OnHeaderTapped">
+								<TextBlock Text="{Binding SelectedLabel}"
+								           Classes="section" />
+							</Border>
 						</DockPanel>
 
 						<Border Background="{StaticResource Orange}"
@@ -254,17 +411,18 @@
 						</Border>
 
 						<Grid ColumnDefinitions="Auto,*"
-						      RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+						      RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
 						      RowSpacing="6"
 						      ColumnSpacing="8"
 						      Margin="0, -4, 0, 0">
 							<TextBlock Grid.Row="0" Grid.Column="0" Classes="lbl"
 							           Text="Albedo" />
-							<elements:Color3Box Grid.Row="0"
+							<elements:Color4Box Grid.Row="0"
 							                    Grid.Column="1"
 							                    R="{Binding AlbedoR, Mode=TwoWay}"
 							                    G="{Binding AlbedoG, Mode=TwoWay}"
-							                    B="{Binding AlbedoB, Mode=TwoWay}" />
+							                    B="{Binding AlbedoB, Mode=TwoWay}"
+							                    A="{Binding Alpha, Mode=TwoWay}"/>
 
 							<TextBlock Grid.Row="1"
 							           Grid.Column="0"
@@ -309,39 +467,73 @@
 							<TextBlock Grid.Row="5"
 							           Grid.Column="0"
 							           Classes="lbl"
+							           Text="IOR" />
+							<elements:DragFloatBox Grid.Row="7"
+							                       Grid.Column="1"
+							                       Value="{Binding Ior, Mode=TwoWay}"
+							                       Minimum="1"
+							                       Maximum="3.55" />
+							
+							<TextBlock Grid.Row="7"
+							           Grid.Column="0"
+							           Classes="lbl"
 							           Text="Max emissive" />
 							<elements:DragFloatBox Grid.Row="5"
 							                       Grid.Column="1"
 							                       Value="{Binding MaxEmissive, Mode=TwoWay}"
 							                       Minimum="0" />
-							
-							<TextBlock Grid.Row="6"
-							           Grid.Column="0"
-							           Classes="lbl"
-							           Text="Transparent" />
-							<elements:BoolBox Grid.Row="6"
-							                  Grid.Column="1"
-							                  Value="{Binding Transparent, Mode=TwoWay}" />
-
-							<TextBlock Grid.Row="7"
-							           Grid.Column="0"
-							           Classes="lbl"
-							           Text="Alpha" />
-							<elements:DragFloatBox Grid.Row="7"
-							                       Grid.Column="1"
-							                       Value="{Binding Alpha, Mode=TwoWay}"
-							                       Minimum="0"
-							                       Maximum="1" />
 
 							<TextBlock Grid.Row="8"
 							           Grid.Column="0"
 							           Classes="lbl"
-							           Text="IOR" />
-							<elements:DragFloatBox Grid.Row="8"
+							           Text="Detail layer" />
+							<elements:DragIntBox Grid.Row="8"
+							                     Grid.Column="1"
+							                     Value="{Binding DetailLayer, Mode=TwoWay}"
+							                     Minimum="0" Maximum="255"
+							                     ToolTip.Tip="Layer of the detail library texture array, 0 for none" />
+
+							<TextBlock Grid.Row="9"
+							           Grid.Column="0"
+							           Classes="lbl"
+							           Text="Detail scale" />
+							<elements:DragIntBox Grid.Row="9"
+							                     Grid.Column="1"
+							                     Value="{Binding DetailScale, Mode=TwoWay}"
+							                     Minimum="0" Maximum="255"
+							                     ToolTip.Tip="Texels per voxel edge, 0 for the default of 4" />
+
+							<TextBlock Grid.Row="10"
+							           Grid.Column="0"
+							           Classes="lbl"
+							           Text="Detail albedo" />
+							<elements:DragFloatBox Grid.Row="10"
 							                       Grid.Column="1"
-							                       Value="{Binding Ior, Mode=TwoWay}"
-							                       Minimum="1"
-							                       Maximum="3.55" />
+							                       Value="{Binding DetailAlbedo, Mode=TwoWay}"
+							                       Minimum="0" Maximum="1"
+							                       ToolTip.Tip="How much the texture red channel varies the color" />
+
+							<TextBlock Grid.Row="11"
+							           Grid.Column="0"
+							           Classes="lbl"
+							           Text="Detail roughness" />
+							<elements:DragFloatBox Grid.Row="11"
+							                       Grid.Column="1"
+							                       Value="{Binding DetailRoughness, Mode=TwoWay}"
+							                       Minimum="0" Maximum="1"
+							                       ToolTip.Tip="How much the texture green channel varies roughness" />
+
+							<TextBlock Grid.Row="12"
+							           Grid.Column="0"
+							           Classes="lbl"
+							           Text="Detail bump" />
+							<elements:DragFloatBox Grid.Row="12"
+							                       Grid.Column="1"
+							                       Value="{Binding DetailBump, Mode=TwoWay}"
+							                       Minimum="0" Maximum="1"
+							                       ToolTip.Tip="Normal strength from the texture height, stored for when bump lands" />
+
+
 						</Grid>
 
 <Grid ColumnDefinitions="Auto,*"
@@ -352,18 +544,39 @@
 
 					</StackPanel>
 				</ScrollViewer>
+				<Border Classes="header"
+				        Tag="entry"
+				        Tapped="OnHeaderTapped"
+				        IsVisible="{Binding IsEntryCollapsed}">
+					<LayoutTransformControl VerticalAlignment="Top"
+					                        HorizontalAlignment="Center">
+						<LayoutTransformControl.LayoutTransform>
+							<RotateTransform Angle="90" />
+						</LayoutTransformControl.LayoutTransform>
+						<TextBlock Text="{Binding SelectedLabel}"
+						           Classes="section" />
+					</LayoutTransformControl>
+				</Border>
+				</Panel>
 			</Border>
 
-			<GridSplitter Grid.Column="3"
+			<GridSplitter Grid.Column="5"
 			              Background="Transparent"
+			              IsEnabled="{Binding !IsPhysicsCollapsed}"
 			              ResizeDirection="Columns" />
-			<Border Grid.Column="4"
-			        Classes="card">
-				<ScrollViewer>
+			<Border Grid.Column="6"
+			        Classes="card"
+			        Classes.collapsed="{Binding IsPhysicsCollapsed}">
+				<Panel>
+				<ScrollViewer IsVisible="{Binding !IsPhysicsCollapsed}">
 					<StackPanel Spacing="8">
 
-						<TextBlock Text="Physics"
-						           Classes="section" />
+						<Border Classes="header"
+						        Tag="physics"
+						        Tapped="OnHeaderTapped">
+							<TextBlock Text="Physics"
+							           Classes="section" />
+						</Border>
 
 						<Grid ColumnDefinitions="Auto,*"
 						      RowDefinitions="Auto,Auto"
@@ -421,6 +634,20 @@
 
 					</StackPanel>
 				</ScrollViewer>
+				<Border Classes="header"
+				        Tag="physics"
+				        Tapped="OnHeaderTapped"
+				        IsVisible="{Binding IsPhysicsCollapsed}">
+					<LayoutTransformControl VerticalAlignment="Top"
+					                        HorizontalAlignment="Center">
+						<LayoutTransformControl.LayoutTransform>
+							<RotateTransform Angle="90" />
+						</LayoutTransformControl.LayoutTransform>
+						<TextBlock Text="Physics"
+						           Classes="section" />
+					</LayoutTransformControl>
+				</Border>
+				</Panel>
 			</Border>
 		</Grid>
 

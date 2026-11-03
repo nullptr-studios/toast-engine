@@ -13,6 +13,8 @@
 #include "damage_command.hpp"
 #include "debris.hpp"
 #include "fragment_extraction.hpp"
+#include "joint.hpp"
+#include "joint_solver.hpp"
 #include "manifold.hpp"
 #include "narrow_phase.hpp"
 #include "physics_material.hpp"
@@ -47,6 +49,8 @@ class Trigger;
 class Rigidbody;
 class DynamicRigidbody;
 class Collider;
+class Joint3D;
+struct SimulatorTestAccess;
 struct SmashVolume;
 struct SmashPieces;
 
@@ -59,6 +63,7 @@ class TOAST_API Simulator {
 	friend class Rigidbody;
 	friend class DynamicRigidbody;
 	friend class toast::VoxelNode;
+	friend struct SimulatorTestAccess;
 
 public:
 	struct DebugDirtyBrick {
@@ -85,6 +90,27 @@ public:
 	auto createBody(const BodyDescriptor& descriptor) -> BodyID;
 	void destroyBody(BodyID body);
 
+	[[nodiscard]]
+	auto createJoint(const JointDescriptor& descriptor) -> JointID;
+	void destroyJoint(JointID joint);
+
+	[[nodiscard]]
+	auto valid(JointID joint) const -> bool;
+	[[nodiscard]]
+
+	auto jointState(JointID joint) const -> std::optional<JointState>;
+	auto setJointParams(JointID joint, const JointParams& params) -> bool;
+
+	[[nodiscard]]
+	auto jointCount() const -> size_t {
+		return m_joint_count;
+	}
+
+	static void registerJointNode(Joint3D& node);
+	static void unregisterJointNode(Joint3D& node);
+	static void breakJointNode(Joint3D& node);
+	static void repairJointNode(Joint3D& node);
+
 	/// @param layers Only bodies including one of these layers are hit
 	static auto raycast(
 	    glm::vec3 origin, glm::vec3 direction, float max_distance = -1.0f, BodyID ignored = {}, uint32_t layers = k_all_layers
@@ -103,6 +129,8 @@ public:
 	auto valid(BodyID body) const -> bool;
 	[[nodiscard]]
 	auto state(BodyID body) const -> std::optional<BodyState>;
+	[[nodiscard]]
+	auto massProperties(BodyID body) const -> std::optional<BodyMassProperties>;
 
 	auto setTransform(BodyID body, const glm::vec3& position, const glm::quat& rotation) -> bool;
 	auto setLinearVelocity(BodyID body, const glm::vec3& velocity) -> bool;
@@ -175,6 +203,8 @@ public:
 		size_t island_jobs = 0;
 		size_t invalid_constraints = 0;
 		size_t position_corrections = 0;
+		size_t joint_count = 0;
+		size_t joints_broken = 0;
 
 		double tick_ms = 0.0;
 		double damage_apply_ms = 0.0;
@@ -380,6 +410,8 @@ private:
 		std::vector<BodyID> dynamic_bodies;
 		std::vector<Constraint> constraints;
 		std::vector<size_t> manifold_indices;
+		std::vector<uint32_t> joint_indices;
+		std::vector<size_t> joint_batch_offsets;
 
 		/// constraints[batch_offsets[i] .. batch_offsets[i + 1]) only share a dynamic body within one body pair run
 		/// and each body pair run is contiguous, so a batch can be split anywhere except inside a run
@@ -524,6 +556,23 @@ private:
 	void releaseSleeper(BodyID sleeper, BodyID other, const glm::vec3& normal_to_other);
 	void wakeBodiesTouching(BodyID id);
 	void wakeBodiesTouching(ShapeID id);
+	void wakeJointPartners();
+	void prepareJoints(float dt);
+	void syncJointNodes();
+	void checkJointAnchors();
+	void breakOverloadedJoints(float dt);
+	void breakJoint(JointID joint, JointBreakReason reason);
+	void publishJoints();
+	[[nodiscard]]
+	auto findVoxelShape(BodyID body) const -> ShapeID;
+	[[nodiscard]]
+	auto voxelEndOf(BodyID body, const JointFrame& frame, const VoxelAnchorSettings& settings) const -> JointVoxelEnd;
+	[[nodiscard]]
+	auto countSolidAround(ShapeID shape, const glm::vec3& body_local, int radius_voxels) const -> std::optional<uint32_t>;
+	void jointBodies(const Joint& joint, Body*& body_a, Body*& body_b);
+	void addExclusion(BodyID a, BodyID b);
+	void removeExclusion(BodyID a, BodyID b);
+	void adjustJointContacts(std::vector<Manifold>& manifolds);
 	void wakeBodiesInBounds(const AABB& bounds);
 	void convertImpulsesToDamage(std::span<const SimulationIsland> islands);
 	void wakeDisturbedSleepers(float dt);
@@ -666,6 +715,30 @@ private:
 
 	std::vector<BodySlot> m_bodies;
 	std::deque<uint32_t> m_free_body_slots;
+
+	std::vector<JointSlot> m_joints;
+	std::deque<uint32_t> m_free_joint_slots;
+	size_t m_joint_count = 0;
+	std::vector<_detail::JointRow> m_joint_rows;
+	std::vector<uint8_t> m_joint_active;
+	std::vector<uint32_t> m_joint_next_free_batch;
+	std::vector<uint32_t> m_joint_wave;
+	std::vector<uint64_t> m_excluded_pairs;
+	Body m_world_body {.type = BodyType::static_body, .inverse_mass = 0.0f};
+
+	struct JointBinding {
+		JointID joint;
+		toast::Box<Joint3D> node;
+		bool broken = false;
+	};
+
+	struct BrokenJoint {
+		JointID joint;
+		JointBreakReason reason = JointBreakReason::requested;
+	};
+
+	std::vector<JointBinding> m_joint_bindings;
+	std::vector<BrokenJoint> m_broken_joints;
 	std::vector<NodeBinding> m_node_bindings;
 	std::vector<VoxelNodeBinding> m_voxel_bindings;
 

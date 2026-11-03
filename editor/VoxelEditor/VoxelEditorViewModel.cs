@@ -147,7 +147,8 @@ public partial class VoxelEditorViewModel : ObservableObject, IDisposable {
 				new InspectorSection("Shape", green, "VoxelGI", ["m_palette"]),
 				new InspectorSection("Physics", "Orange", "PhysicsBody", ["simulation_type", "mass", "group:Physics"])
 			],
-			"VoxelGroup" => [new InspectorSection("Group", green, "Container", ["position"])],
+			"VoxelBrush" => [new InspectorSection("Shape", green, "VoxelGI", ["m_palette"])],
+				"VoxelGroup" => [new InspectorSection("Group", green, "Container", ["position"])],
 			"VoxelBucket" => [new InspectorSection("Bucket", green, "Bucket", ["position", "id"])],
 			_ => null
 		};

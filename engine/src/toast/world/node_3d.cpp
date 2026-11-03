@@ -3,6 +3,7 @@
 #include "toast/physics/simulator.hpp"
 #include "world.hpp"
 
+#include <array>
 #include <tracy/Tracy.hpp>
 
 namespace toast {
@@ -18,10 +19,37 @@ void composeTransform(glm::mat4& transform, glm::vec3 position, glm::quat rotati
 }
 
 void decomposeTransform(const glm::mat4& transform, glm::vec3& position, glm::quat& rotation, glm::vec3& scale) {
+	glm::mat4 patched = transform;
+	std::array<bool, 3> collapsed {};
+	int collapsed_count = 0;
+	for (int axis = 0; axis < 3; ++axis) {
+		collapsed[axis] = glm::dot(glm::vec3(transform[axis]), glm::vec3(transform[axis])) < 1.0e-12f;
+		collapsed_count += collapsed[axis] ? 1 : 0;
+	}
+	if (collapsed_count == 1) {
+		for (int axis = 0; axis < 3; ++axis) {
+			if (collapsed[axis]) {
+				patched[axis] = glm::vec4(glm::cross(glm::vec3(transform[(axis + 1) % 3]), glm::vec3(transform[(axis + 2) % 3])), 0.0f);
+			}
+		}
+	} else if (collapsed_count > 1) {
+		position = glm::vec3(transform[3]);
+		rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+		for (int axis = 0; axis < 3; ++axis) {
+			scale[axis] = glm::length(glm::vec3(transform[axis]));
+		}
+		return;
+	}
+
 	glm::vec3 skew;
 	glm::vec4 perspective;
-	glm::decompose(transform, scale, rotation, position, skew, perspective);
+	glm::decompose(patched, scale, rotation, position, skew, perspective);
 	rotation = glm::normalize(rotation);
+	for (int axis = 0; axis < 3; ++axis) {
+		if (collapsed[axis]) {
+			scale[axis] = 0.0f;
+		}
+	}
 }
 
 }

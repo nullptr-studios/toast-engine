@@ -177,8 +177,10 @@ void countBrickSlices<Sink : ISliceSink>(uint recordIndex, int3 brick, uint bric
 
         uint faces[16];
         exposedFaces(occupancy, neighbour, direction, faces);
-        for (uint slice = 0u; slice < 8u; ++slice)
+        // Nearest slice first so the quads reach the rasterizer front to back
+        for (uint step = 0u; step < 8u; ++step)
         {
+            const uint slice = positive ? 7u - step : step;
             if (!sliceFacesEye(eye, brickMin, axis, positive, slice))
             {
                 continue;

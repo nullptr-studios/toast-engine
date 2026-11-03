@@ -1347,6 +1347,17 @@ auto ProceduralVoxel::composePieces(std::span<VoxelPiece* const> only) -> std::o
 	return out;
 }
 
+auto ProceduralVoxel::composeAll() -> std::optional<Composed> {
+	std::vector<Collected> pieces;
+	collect(*this, glm::mat4(1.0f), pieces);
+	std::vector<VoxelPiece*> all;
+	all.reserve(pieces.size());
+	for (const Collected& entry : pieces) {
+		all.push_back(entry.piece);
+	}
+	return composePieces(all);
+}
+
 void ProceduralVoxel::drawDebug() {
 	VoxelNode::drawDebug();
 	if (participatesIn(NodeOwnerParticipation::gameplay_tick)) {

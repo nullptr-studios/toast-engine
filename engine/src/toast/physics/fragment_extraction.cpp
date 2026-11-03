@@ -129,6 +129,7 @@ auto extractFragmentVolume(voxel::Volume& source, const DetachedComponent& compo
 	}
 
 	voxel::Volume fragment(pool, glm::uvec3(max - min) + glm::uvec3(1));
+	fragment.setTextureOrigin(source.textureOrigin() + (min * static_cast<int32_t>(voxel::k_brick_dim)));
 	voxel::MassMoments moments;
 	uint32_t voxels = 0;
 	std::array<uint8_t, voxel::k_brick_material_bytes> bytes {};
