@@ -65,6 +65,12 @@ struct BodyMassProperties {
 	glm::mat3 inverse_inertia_local = {0.0f};
 };
 
+struct BodyMassProperties {
+	float mass = 0.0f;
+	glm::vec3 local_center_of_mass = {};
+	glm::mat3 inverse_inertia_local = {0.0f};
+};
+
 struct Body {
 	BodyType type = BodyType::dynamic_body;
 	bool enabled = true;
