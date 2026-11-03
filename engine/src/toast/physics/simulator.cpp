@@ -6270,6 +6270,8 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 		previous.constraints.clear();
 		previous.manifold_indices.clear();
 		previous.batch_offsets.clear();
+		previous.joint_indices.clear();
+		previous.joint_batch_offsets.clear();
 		m_island_spares.emplace_back(std::move(previous));
 	}
 	m_islands.clear();
