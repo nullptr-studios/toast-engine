@@ -55,6 +55,8 @@ struct BodyState {
 	glm::quat previous_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 	glm::vec3 linear_velocity = {};
 	glm::vec3 angular_velocity = {};
+	float inverse_mass = 1.0f;
+	glm::vec3 local_center_of_mass = {};    ///< Relative to the body position
 };
 
 struct Body {

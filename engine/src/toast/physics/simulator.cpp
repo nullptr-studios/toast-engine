@@ -4199,7 +4199,9 @@ auto Simulator::state(BodyID body) const -> std::optional<BodyState> {
 	  .previous_position = value->previous_position,
 	  .previous_rotation = value->previous_rotation,
 	  .linear_velocity = value->linear_velocity,
-	  .angular_velocity = value->angular_velocity
+	  .angular_velocity = value->angular_velocity,
+	  .inverse_mass = value->inverse_mass,
+	  .local_center_of_mass = value->local_center_of_mass
 	};
 }
 
