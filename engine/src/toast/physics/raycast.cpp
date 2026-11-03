@@ -1,4 +1,5 @@
 #include "nodes/rigidbody.hpp"
+#include "query_snapshot.hpp"
 #include "toast/physics/broad_phase.hpp"
 #include "toast/physics/shape.hpp"
 #include "toast/physics/simulator.hpp"
@@ -11,6 +12,7 @@
 #include <limits>
 #include <optional>
 #include <tracy/Tracy.hpp>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -172,19 +174,24 @@ namespace physics {
 
 template<typename OnContact>
 auto Simulator::castRay(const RayQuery& query, OnContact&& on_contact) const -> uint32_t {
+	return castRayUsing(*this, query, std::forward<OnContact>(on_contact));
+}
+
+template<typename Source, typename OnContact>
+auto Simulator::castRayUsing(const Source& source, const RayQuery& query, OnContact&& on_contact) -> uint32_t {
 	const glm::vec3 inverse_direction = 1.0f / query.direction;
 	float clip = query.max_distance;
 	uint32_t tested = 0;
 
-	m_broad_phase.raycast(query.origin, inverse_direction, clip, [&](ShapeID shape_id, float) -> float {
-		const Shape* shape = tryGetShape(shape_id);
+	const auto visit = [&](ShapeID shape_id, float) -> float {
+		const Shape* shape = source.tryGetShape(shape_id);
 		if (shape == nullptr || not shape->enabled || shape->owner == query.ignored) {
 			return clip;
 		}
 		if (query.voxels_only && shape->type != ShapeType::voxel) {
 			return clip;
 		}
-		const Body* body = tryGetBody(shape->owner);
+		const Body* body = source.tryGetBody(shape->owner);
 		if (body == nullptr || not body->enabled || (body->layers.included & query.layers) == 0) {
 			return clip;
 		}
@@ -221,7 +228,7 @@ auto Simulator::castRay(const RayQuery& query, OnContact&& on_contact) const -> 
 				report_local(raycastCapsule(shape->capsule.radius, shape->capsule.height, local_origin, local_direction, clip));
 				break;
 			case ShapeType::voxel: {
-				const VoxelShapeData* data = tryGetVoxelDataConst(shape->voxel.data);
+				const VoxelShapeData* data = source.tryGetVoxelDataConst(shape->voxel.data);
 				if (data == nullptr || data->volume == nullptr) {
 					break;
 				}
@@ -242,7 +249,12 @@ auto Simulator::castRay(const RayQuery& query, OnContact&& on_contact) const -> 
 			}
 		}
 		return clip;
-	});
+	};
+	if constexpr (std::is_same_v<Source, Simulator>) {
+		source.m_broad_phase.raycast(query.origin, inverse_direction, clip, visit);
+	} else {
+		source.raycast(query.origin, inverse_direction, clip, visit);
+	}
 
 	return tested;
 }
@@ -313,13 +325,14 @@ auto Simulator::raycast(glm::vec3 origin, glm::vec3 direction, float max_distanc
     -> std::optional<RayHit> {
 	ZoneScopedN("physics::Raycast");
 	const std::optional<RayQuery> query = makeRayQuery(origin, direction, max_distance, ignored, layers);
-	if (instance == nullptr || not query) {
+	const auto snapshot = querySnapshot();
+	if (not snapshot || not query) {
 		return std::nullopt;
 	}
 
 	// Only nearest contact matters
 	std::optional<RayContact> nearest;
-	const uint32_t tested = instance->castRay(*query, [&](const RayContact& contact) {
+	const uint32_t tested = castRayUsing(*snapshot, *query, [&](const RayContact& contact) {
 		if (not nearest || contact.distance < nearest->distance) {
 			nearest = contact;
 		}
@@ -330,7 +343,7 @@ auto Simulator::raycast(glm::vec3 origin, glm::vec3 direction, float max_distanc
 	if (not nearest) {
 		return std::nullopt;
 	}
-	return makeRayHit(*query, *nearest, colliderFor(nearest->body, nearest->shape));
+	return makeRayHit(*query, *nearest, snapshot->colliderFor(nearest->shape));
 }
 
 auto Simulator::linecast(glm::vec3 from, glm::vec3 to, int max_hits, BodyID ignored, uint32_t layers) -> std::vector<RayHit> {
@@ -345,7 +358,8 @@ auto Simulator::raymulticast(
 ) -> std::vector<RayHit> {
 	ZoneScopedN("physics::RayMulticast");
 	const std::optional<RayQuery> query = makeRayQuery(origin, direction, max_distance, ignored, layers);
-	if (instance == nullptr || not query || max_hits == 0) {
+	const auto snapshot = querySnapshot();
+	if (not snapshot || not query || max_hits == 0) {
 		return {};
 	}
 
@@ -357,7 +371,7 @@ auto Simulator::raymulticast(
 		contacts.reserve(limit + 1);
 	}
 
-	const uint32_t tested = instance->castRay(*query, [&](const RayContact& contact) {
+	const uint32_t tested = castRayUsing(*snapshot, *query, [&](const RayContact& contact) {
 		contacts.push_back(contact);
 		if (not limited) {
 			return query->max_distance;
@@ -380,7 +394,7 @@ auto Simulator::raymulticast(
 	for (const RayContact& contact : contacts) {
 		auto known = std::ranges::find(nodes, contact.shape, &std::pair<ShapeID, toast::Box<toast::Node>>::first);
 		if (known == nodes.end()) {
-			nodes.emplace_back(contact.shape, colliderFor(contact.body, contact.shape));
+			nodes.emplace_back(contact.shape, snapshot->colliderFor(contact.shape));
 			known = nodes.end() - 1;
 		}
 		hits.push_back(makeRayHit(*query, contact, known->second));

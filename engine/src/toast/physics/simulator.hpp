@@ -29,6 +29,7 @@
 #include <deque>
 #include <functional>
 #include <glm/glm.hpp>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <span>
@@ -53,6 +54,7 @@ class Joint3D;
 struct SimulatorTestAccess;
 struct SmashVolume;
 struct SmashPieces;
+struct QuerySnapshot;
 
 }
 
@@ -121,6 +123,8 @@ public:
 	) -> std::vector<RayHit>;
 	static auto linecast(glm::vec3 from, glm::vec3 to, int max_hits = -1, BodyID ignored = {}, uint32_t layers = k_all_layers)
 	    -> std::vector<RayHit>;
+	[[nodiscard]]
+	static auto querySnapshot() -> std::shared_ptr<const QuerySnapshot>;
 
 	[[nodiscard]]
 	static auto bodyFor(const toast::Node& node) -> BodyID;
@@ -454,6 +458,8 @@ private:
 
 	template<typename OnContact>
 	auto castRay(const RayQuery& query, OnContact&& on_contact) const -> uint32_t;
+	template<typename Source, typename OnContact>
+	static auto castRayUsing(const Source& source, const RayQuery& query, OnContact&& on_contact) -> uint32_t;
 
 	/// @returns true if a static body is within @p distance of @p position along @p toward
 	[[nodiscard]]
@@ -706,6 +712,7 @@ private:
 	) const;
 
 	inline static Simulator* instance = nullptr;
+	inline static std::atomic<std::shared_ptr<const QuerySnapshot>> published_query_snapshot;
 
 	std::mutex m_wind_mutex;
 	std::optional<glm::vec3> m_level_wind;
@@ -785,6 +792,7 @@ private:
 
 	uint64_t m_next_fragment_sequence = 1;
 	uint64_t m_tick_index = 0;
+	void publishQuerySnapshot();
 	std::vector<FragmentRecord> m_fragments;
 	std::unordered_map<uint32_t, size_t> m_fragment_index;
 	std::vector<PendingFragments> m_pending_fragments;

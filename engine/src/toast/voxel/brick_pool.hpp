@@ -33,6 +33,10 @@ public:
 
 	/// @brief The id must come from allocate and not already be freed
 	void free(uint32_t id);
+	/// Retain a brick for another volume or a query snapshot.
+	void retain(uint32_t id);
+	[[nodiscard]]
+	auto referenceCount(uint32_t id) const noexcept -> uint32_t;
 
 	[[nodiscard]]
 	auto material(uint32_t id) -> std::span<uint8_t, k_brick_material_bytes>;
@@ -76,9 +80,10 @@ private:
 	std::atomic<uint32_t> m_allocated {0};
 
 	std::atomic<uint64_t> m_free_head;
-	std::unique_ptr<std::atomic<uint32_t>[]> m_next_free;    // NOLINT(modernize-avoid-c-arrays)
-	std::unique_ptr<std::atomic<bool>[]> m_is_free;          // NOLINT(modernize-avoid-c-arrays)
-	std::unique_ptr<uint8_t[]> m_material;                   // NOLINT(modernize-avoid-c-arrays)
+	std::unique_ptr<std::atomic<uint32_t>[]> m_next_free;     // NOLINT(modernize-avoid-c-arrays)
+	std::unique_ptr<std::atomic<bool>[]> m_is_free;           // NOLINT(modernize-avoid-c-arrays)
+	std::unique_ptr<std::atomic<uint32_t>[]> m_references;    // NOLINT(modernize-avoid-c-arrays)
+	std::unique_ptr<uint8_t[]> m_material;                    // NOLINT(modernize-avoid-c-arrays)
 	std::vector<BrickOccupancy> m_occupancy;
 };
 

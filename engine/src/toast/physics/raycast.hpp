@@ -58,6 +58,7 @@ struct SphereHit {
 	glm::vec3 position;
 	glm::vec3 normal;
 	float penetration;
+	ShapeType shape_type = ShapeType::sphere;
 };
 
 /// The optional layer filter limits which bodies can overlap the sphere.
