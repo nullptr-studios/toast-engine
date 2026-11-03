@@ -12,12 +12,14 @@
 #include <cmath>
 #include <glm/glm.hpp>
 #include <limits>
+#include <numeric>
 #include <toast/voxel/brick.hpp>
 #include <toast/voxel/connectivity.hpp>
 #include <toast/voxel/palette.hpp>
 #include <toast/voxel/voxel_constants.hpp>
 #include <toast/voxel/voxel_volume.hpp>
 #include <tracy/Tracy.hpp>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -181,6 +183,148 @@ auto collectBrokenPieces(
 		}
 	}
 
+	return out;
+}
+
+/// Unlike collectBrokenPieces a piece crosses bricks and only cell_of splits it
+template<typename Breaks, typename CellOf>
+[[nodiscard]]
+auto collectCellPieces(
+    const voxel::Volume& volume, const voxel::Palette& palette, const voxel::MaterialLibrary& materials, const glm::vec3& low,
+    const glm::vec3& high, Breaks&& breaks, CellOf&& cell_of
+) -> SmashPieces {
+	ZoneScopedN("physics::CollectCellPieces");
+	SmashPieces out;
+	if (materials.materials.empty()) {
+		return out;
+	}
+
+	const glm::ivec3 voxel_dims = glm::ivec3(volume.voxelDims());
+	glm::ivec3 first = glm::ivec3(glm::floor(low / voxel::k_voxel_size));
+	glm::ivec3 last = glm::ivec3(glm::ceil(high / voxel::k_voxel_size)) - 1;
+	first = glm::clamp(first, glm::ivec3(0), voxel_dims - 1);
+	last = glm::clamp(last, glm::ivec3(0), voxel_dims - 1);
+	if (first.x > last.x || first.y > last.y || first.z > last.z) {
+		return out;
+	}
+
+	struct Part {
+		glm::ivec3 brick {0};
+		uint32_t cell = 0;
+		voxel::BrickOccupancy voxels {};
+		voxel::BrickFaces faces {};
+	};
+
+	const auto brick_key = [](const glm::ivec3& b) {
+		return (static_cast<uint64_t>(b.x) << 42) | (static_cast<uint64_t>(b.y) << 21) | static_cast<uint64_t>(b.z);
+	};
+
+	std::vector<Part> parts;
+	std::unordered_map<uint64_t, std::pair<size_t, size_t>> brick_parts;
+	std::vector<std::pair<uint32_t, voxel::BrickOccupancy>> cells;
+
+	const auto brick_dim = static_cast<int32_t>(voxel::k_brick_dim);
+	const glm::ivec3 first_brick = first / brick_dim;
+	const glm::ivec3 last_brick = last / brick_dim;
+	for (int32_t bz = first_brick.z; bz <= last_brick.z; ++bz) {
+		for (int32_t by = first_brick.y; by <= last_brick.y; ++by) {
+			for (int32_t bx = first_brick.x; bx <= last_brick.x; ++bx) {
+				const glm::ivec3 brick {bx, by, bz};
+				const voxel::BrickOccupancy* occupancy = volume.occupancyPointer(brick);
+				if (occupancy == nullptr) {
+					continue;
+				}
+
+				cells.clear();
+				const glm::ivec3 brick_first = glm::max(first, brick * brick_dim);
+				const glm::ivec3 brick_last = glm::min(last, (brick * brick_dim) + (brick_dim - 1));
+				for (int32_t z = brick_first.z; z <= brick_last.z; ++z) {
+					for (int32_t y = brick_first.y; y <= brick_last.y; ++y) {
+						for (int32_t x = brick_first.x; x <= brick_last.x; ++x) {
+							const glm::ivec3 voxel {x, y, z};
+							const glm::uvec3 local = glm::uvec3(voxel - (brick * brick_dim));
+							if (not voxel::isSolid(*occupancy, local.x, local.y, local.z)) {
+								continue;
+							}
+
+							const glm::vec3 center = (glm::vec3 {voxel} + 0.5f) * voxel::k_voxel_size;
+							const uint8_t palette_index = volume.materialAt(voxel);
+							const voxel::PhysicalMaterial& material =
+							    materials.materials[voxel::resolveMaterialIndex(palette, materials, palette_index)];
+							if (material.isIndestructible() || not breaks(center, material)) {
+								continue;
+							}
+
+							const uint32_t cell = cell_of(voxel);
+							auto slot = std::ranges::find(cells, cell, &std::pair<uint32_t, voxel::BrickOccupancy>::first);
+							if (slot == cells.end()) {
+								cells.emplace_back(cell, voxel::BrickOccupancy {});
+								slot = std::prev(cells.end());
+							}
+							voxel::setSolid(slot->second, local.x, local.y, local.z, true);
+							out.index_sum += glm::vec3(voxel);
+							++out.voxels;
+						}
+					}
+				}
+
+				const size_t first_part = parts.size();
+				for (const auto& [cell, mask] : cells) {
+					for (const voxel::BrickOccupancy& region : voxel::brickComponents(mask)) {
+						parts.push_back(Part {.brick = brick, .cell = cell, .voxels = region, .faces = voxel::computeFaces(region)});
+					}
+				}
+				if (parts.size() > first_part) {
+					brick_parts.emplace(brick_key(brick), std::pair {first_part, parts.size()});
+				}
+			}
+		}
+	}
+
+	std::vector<uint32_t> parent(parts.size());
+	std::iota(parent.begin(), parent.end(), 0u);
+	const auto find = [&](uint32_t i) {
+		while (parent[i] != i) {
+			parent[i] = parent[parent[i]];
+			i = parent[i];
+		}
+		return i;
+	};
+
+	for (size_t p = 0; p < parts.size(); ++p) {
+		for (int32_t axis = 0; axis < 3; ++axis) {
+			glm::ivec3 next = parts[p].brick;
+			next[axis] += 1;
+			const auto found = brick_parts.find(brick_key(next));
+			if (found == brick_parts.end()) {
+				continue;
+			}
+			const voxel::BrickFaces& from = parts[p].faces;
+			const uint64_t outward = axis == 0 ? from.pos_x : (axis == 1 ? from.pos_y : from.pos_z);
+			for (size_t q = found->second.first; q < found->second.second; ++q) {
+				if (parts[q].cell != parts[p].cell) {
+					continue;
+				}
+				const voxel::BrickFaces& to = parts[q].faces;
+				const uint64_t inward = axis == 0 ? to.neg_x : (axis == 1 ? to.neg_y : to.neg_z);
+				if (voxel::facesConnect(outward, inward)) {
+					parent[find(static_cast<uint32_t>(q))] = find(static_cast<uint32_t>(p));
+				}
+			}
+		}
+	}
+
+	std::vector<uint32_t> component_of(parts.size(), voxel::k_no_component);
+	for (size_t p = 0; p < parts.size(); ++p) {
+		const uint32_t root = find(static_cast<uint32_t>(p));
+		if (component_of[root] == voxel::k_no_component) {
+			component_of[root] = static_cast<uint32_t>(out.pieces.size());
+			out.pieces.push_back(DetachedComponent {.component = component_of[root]});
+		}
+		DetachedComponent& piece = out.pieces[component_of[root]];
+		piece.voxel_count += voxel::popCount(parts[p].voxels);
+		piece.pieces.push_back(voxel::BrickPiece {.brick = parts[p].brick, .voxels = parts[p].voxels, .component = piece.component});
+	}
 	return out;
 }
 

@@ -274,7 +274,7 @@ add_custom_command(TARGET toast_engine POST_BUILD
 
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/assets")
     add_custom_command(TARGET toast_engine POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/assets" "${TOAST_ENGINE_BIN_DIR}/assets"
+            COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different "${CMAKE_CURRENT_SOURCE_DIR}/assets" "${TOAST_ENGINE_BIN_DIR}/assets"
             COMMENT "Copying assets"
             VERBATIM
     )

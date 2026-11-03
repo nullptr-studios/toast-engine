@@ -4546,7 +4546,9 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 		// whatever the hit can break that was stuck to what it cannot comes off whole
 		const UnglueRegion& region = crater.unglue;
 		if (not region.empty()) {
-			unglued = collectBrokenPieces(
+			// shards for a material that shatters
+			const std::vector<glm::vec3> seeds = shardSeeds(region, crater);
+			unglued = collectCellPieces(
 			    volume,
 			    data->palette,
 			    data->materials,
@@ -4554,6 +4556,9 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 			    region.high,
 			    [&](const glm::vec3& center, const voxel::PhysicalMaterial&) {
 				    return region.keys.contains(voxelKey(glm::ivec3(glm::floor(center / voxel::k_voxel_size))));
+			    },
+			    [&](const glm::ivec3& v) {
+				    return seeds.empty() ? 0u : nearestSeed(seeds, (glm::vec3 {v} + 0.5f) * voxel::k_voxel_size);
 			    }
 			);
 		}
