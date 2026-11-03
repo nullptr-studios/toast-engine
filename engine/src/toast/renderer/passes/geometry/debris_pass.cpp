@@ -1,18 +1,11 @@
 #include "toast/renderer/passes/geometry/debris_pass.hpp"
 
 #include "toast/renderer/core/gpu_sync.hpp"
-#include "toast/renderer/core/vulkan_core.hpp"
-#include "toast/renderer/core/vulkan_debug.hpp"
 #include "toast/renderer/shaders/shader_cache.hpp"
 #include "toast/renderer/vulkan_renderer.hpp"
 
-#include <format>
-#include <toast/assets/assets.hpp>
-#include <toast/log.hpp>
 #include <toast/physics/debris_simulation.hpp>
 #include <toast/voxel/voxel_constants.hpp>
-#include <tracy/Tracy.hpp>
-#include <utility>
 
 namespace renderer {
 

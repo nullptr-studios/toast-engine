@@ -1,16 +1,11 @@
 #include "data_schema_codegen.hpp"
 
 #include "asset_manager.hpp"
-#include "assets.hpp"
 #include "schema.hpp"
 
-#include <algorithm>
 #include <cctype>
 #include <fstream>
 #include <sstream>
-#include <toast/log.hpp>
-#include <unordered_map>
-#include <unordered_set>
 
 namespace assets {
 

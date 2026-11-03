@@ -4,14 +4,6 @@
 
 #include "toast/renderer/resources/vulkan_mesh.hpp"
 
-#include "toast/renderer/core/vulkan_core.hpp"
-#include "toast/renderer/core/vulkan_debug.hpp"
-
-#include <format>
-#include <toast/log.hpp>
-#include <tracy/Tracy.hpp>
-#include <type_traits>
-
 namespace renderer {
 static_assert(std::is_standard_layout_v<Vertex>, "Vertex must be standard layout");
 static_assert(sizeof(Vertex) == 60, "Vertex size must match mesh.slang input layout (60 bytes)");

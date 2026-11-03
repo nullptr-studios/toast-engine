@@ -1,10 +1,8 @@
 #include "player_controller.hpp"
 
-#include <algorithm>
 #include <toast/input/action.hpp>
 #include <toast/input/haptics_system.hpp>
 #include <toast/input/input_events.hpp>
-#include <toast/log.hpp>
 #include <toast/window/window_events.hpp>
 #include <typeinfo>
 

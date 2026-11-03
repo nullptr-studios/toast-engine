@@ -6,14 +6,7 @@
 #include "toast/renderer/shaders/shader_compiler.hpp"
 #include "toast/renderer/vulkan_renderer.hpp"
 
-#include <algorithm>
-#include <array>
-#include <mutex>
-#include <optional>
-#include <toast/assets/assets.hpp>
-#include <toast/log.hpp>
 #include <toast/settings/settings.hpp>
-#include <utility>
 
 namespace renderer {
 namespace {

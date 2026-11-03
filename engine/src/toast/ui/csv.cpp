@@ -1,7 +1,5 @@
 #include "csv.hpp"
 
-#include <tracy/Tracy.hpp>
-
 namespace ui {
 
 auto parseCsv(std::string_view text) -> CsvTable {

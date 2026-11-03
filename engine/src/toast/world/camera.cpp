@@ -4,7 +4,6 @@
 
 #include "camera.hpp"
 
-#include <cmath>
 #include <toast/renderer/core/depth_convention.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
 

@@ -1,7 +1,5 @@
 #include "layers.hpp"
 
-#include <array>
-#include <mutex>
 #include <toast/settings/settings.hpp>
 
 namespace physics {

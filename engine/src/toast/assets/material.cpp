@@ -1,7 +1,5 @@
 #include "material.hpp"
 
-#include "assets.hpp"
-
 namespace assets {
 
 namespace {

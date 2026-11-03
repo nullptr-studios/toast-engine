@@ -5,8 +5,6 @@
 #include "ui_system.hpp"
 
 #include <RmlUi/Core/Context.h>
-#include <ranges>
-#include <toast/log.hpp>
 #include <toast/window/window_events.hpp>
 
 namespace ui {

@@ -4,10 +4,6 @@
 #include "toast/physics/simulator.hpp"
 #include "workspace_events.hpp"
 
-#include <toast/assets/assets.hpp>
-#include <toast/log.hpp>
-#include <tracy/Tracy.hpp>
-
 namespace toast {
 
 PlayWorkspace::PlayWorkspace(UID handle, assets::Prefab& prefab) : Workspace(handle, EmptyTag {}) {

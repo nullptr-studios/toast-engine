@@ -2,9 +2,6 @@
 
 #include "camera.hpp"
 
-#include <algorithm>
-#include <array>
-#include <cmath>
 #include <glm/gtc/matrix_access.hpp>
 #include <toast/renderer/debug/debug_draw.hpp>
 #include <toast/voxel/voxel_constants.hpp>

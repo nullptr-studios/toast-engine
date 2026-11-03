@@ -2,8 +2,6 @@
 
 #include "../audio_system.hpp"
 
-#include <toast/time.hpp>
-
 namespace toast {
 
 void AudioListener::index(int value) {

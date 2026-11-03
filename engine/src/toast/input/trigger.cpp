@@ -1,7 +1,5 @@
 #include "trigger.hpp"
 
-#include <toast/log.hpp>
-
 namespace input {
 
 auto ITrigger::fromToml(const toml::table& table, ValueType vt) -> std::shared_ptr<ITrigger> {

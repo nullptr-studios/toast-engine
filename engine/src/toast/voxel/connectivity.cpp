@@ -1,9 +1,5 @@
 #include "connectivity.hpp"
 
-#include <numeric>
-#include <tracy/Tracy.hpp>
-#include <utility>
-
 namespace voxel {
 
 auto analyseConnectivity(const Volume& volume) -> Connectivity {

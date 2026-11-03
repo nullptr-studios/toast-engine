@@ -1,9 +1,5 @@
 #include "startup_splash.hpp"
 
-#include <algorithm>
-#include <format>
-#include <toast/log.hpp>
-
 namespace toast {
 
 namespace {

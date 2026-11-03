@@ -18,27 +18,12 @@
 #include "voxel_data_lock.hpp"
 #include "voxel_smash.hpp"
 
-#include <algorithm>
-#include <atomic>
-#include <chrono>
-#include <cmath>
 #include <deque>
-#include <functional>
-#include <glm/gtc/matrix_transform.hpp>
-#include <limits>
-#include <mutex>
-#include <numeric>
-#include <span>
 #include <thread>
-#include <toast/assets/assets.hpp>
-#include <toast/thread_pool.hpp>
 #include <toast/voxel/assets/voxel_model.hpp>
 #include <toast/voxel/mass_accumulator.hpp>
 #include <toast/voxel/nodes/voxel_node.hpp>
 #include <toast/world/world_events.hpp>
-#include <tracy/Tracy.hpp>
-#include <unordered_map>
-#include <unordered_set>
 
 namespace physics {
 

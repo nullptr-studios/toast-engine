@@ -1,4 +1,3 @@
-#include "toast/renderer/core/vulkan_core.hpp"
 #include "toast/renderer/vulkan_renderer.hpp"
 
 #include <ffi/renderer.h>

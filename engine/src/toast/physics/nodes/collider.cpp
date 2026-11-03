@@ -7,7 +7,6 @@
 #include "sphere_collider.hpp"
 #include "trigger.hpp"
 
-#include <cmath>
 #include <toast/physics/simulator.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
 

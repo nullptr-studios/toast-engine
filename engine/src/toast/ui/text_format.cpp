@@ -1,9 +1,5 @@
 #include "text_format.hpp"
 
-#include "../log.hpp"
-
-#include <vector>
-
 namespace ui {
 
 namespace {

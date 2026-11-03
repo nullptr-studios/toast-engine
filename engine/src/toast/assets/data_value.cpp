@@ -2,8 +2,6 @@
 
 #include "schema.hpp"
 
-#include <toast/log.hpp>
-
 namespace assets {
 
 auto DataValue::makeArray() -> DataValue {

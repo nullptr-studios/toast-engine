@@ -7,9 +7,6 @@
 
 #include <RmlUi/Core/Context.h>
 #include <RmlUi/Core/ElementDocument.h>
-#include <algorithm>
-#include <cmath>
-#include <utility>
 
 namespace toast {
 

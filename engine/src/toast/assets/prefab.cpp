@@ -1,19 +1,11 @@
 #include "prefab.hpp"
 
-#include <algorithm>
-#include <glm/glm.hpp>
-#include <glm/gtc/quaternion.hpp>
 #include <istream>
 #include <iterator>
 #include <sstream>
-#include <toast/assets/assets.hpp>
-#include <toast/log.hpp>
 #include <toast/scripting/lua_value_codec.hpp>
 #include <toast/scripting/script_runtime.hpp>
-#include <toast/uid.hpp>
 #include <toast/world/node.hpp>
-#include <tracy/Tracy.hpp>
-#include <unordered_set>
 
 using namespace toast;
 

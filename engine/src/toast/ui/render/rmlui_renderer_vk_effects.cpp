@@ -7,12 +7,7 @@
 #include <RmlUi/Core/Dictionary.h>
 #include <RmlUi/Core/Log.h>
 #include <RmlUi/Core/Math.h>
-#include <algorithm>
-#include <cmath>
-#include <cstring>
-#include <toast/assets/assets.hpp>
 #include <toast/renderer/shaders/shader_cache.hpp>
-#include <tracy/Tracy.hpp>
 
 namespace {
 

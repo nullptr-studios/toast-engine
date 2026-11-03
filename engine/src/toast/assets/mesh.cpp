@@ -1,10 +1,6 @@
 #include "mesh.hpp"
 
-#include <algorithm>
-#include <array>
-#include <cmath>
 #include <toast/renderer/vulkan_renderer.hpp>
-#include <tracy/Tracy.hpp>
 
 namespace assets {
 

@@ -3,16 +3,9 @@
 #include "backtrace.hpp"
 #include "logger.hpp"
 
-#include <array>
-#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
-#include <cstring>
-#include <exception>
 #include <ffi/crash.h>
-#include <print>
-#include <stdexcept>
-#include <vector>
 
 #ifdef _WIN32
 #include <atomic>

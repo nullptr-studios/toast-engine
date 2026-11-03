@@ -7,8 +7,6 @@
 #include "audio/audio_system.hpp"
 #include "crash_handler.hpp"
 #include "events/defer.hpp"
-#include "events/event.hpp"
-#include "events/listener.hpp"
 #include "ffi/engine.h"    // ffi
 #include "input/haptics_system.hpp"
 #include "input/input_events.hpp"
@@ -30,9 +28,6 @@
 #include "scripting/script_dispatch.hpp"
 #include "scripting/script_runtime.hpp"
 #include "settings/settings.hpp"
-#include "thread_pool.hpp"
-#include "time.hpp"
-#include "toast/renderer/core/vulkan_core.hpp"
 #include "toast/renderer/output/sdl_output_target.hpp"
 #include "toast/renderer/output/shared_texture_output_target.hpp"
 #include "toast/renderer/passes/debug/grid_pass.hpp"
@@ -71,24 +66,13 @@
 #include "world/world.hpp"
 
 #include <SDL3/SDL.h>
-#include <algorithm>
-#include <atomic>
 #include <cassert>
 #include <cstdlib>
-#include <exception>
-#include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <map>
-#include <memory>
-#include <mutex>
 #include <new>
-#include <optional>
-#include <print>
-#include <span>
 #include <sstream>
 #include <thread>
-#include <tracy/Tracy.hpp>
 
 namespace toast {
 

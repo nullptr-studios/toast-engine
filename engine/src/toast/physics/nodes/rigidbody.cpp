@@ -5,8 +5,6 @@
 #include "collider.hpp"
 #include "sphere_collider.hpp"
 
-#include <algorithm>
-#include <cmath>
 #include <toast/physics/contact_events.hpp>
 #include <toast/physics/simulator.hpp>
 

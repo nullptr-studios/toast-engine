@@ -1,16 +1,8 @@
 #include "backtrace.hpp"
 
-#include "log.hpp"
-
-#include <algorithm>
 #include <cctype>
 #include <cpptrace/basic.hpp>
 #include <cpptrace/utils.hpp>
-#include <format>
-#include <mutex>
-#include <string_view>
-#include <unordered_map>
-#include <vector>
 
 #ifdef _WIN32
 #include <unordered_set>

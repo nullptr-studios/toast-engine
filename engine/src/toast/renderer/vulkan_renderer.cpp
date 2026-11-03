@@ -4,7 +4,6 @@
 
 #include "toast/renderer/vulkan_renderer.hpp"
 
-#include "toast/renderer/core/vulkan_debug.hpp"
 #include "toast/renderer/debug/editor_overlays.hpp"
 #include "toast/renderer/debug/voxel_debug.hpp"
 #include "toast/renderer/lighting/clustered_lighting_constants.hpp"
@@ -31,32 +30,14 @@
 #include "toast/renderer/vulkan_renderer_detail.hpp"
 
 #include <SDL3/SDL_keycode.h>
-#include <algorithm>
-#include <array>
-#include <bit>
-#include <chrono>
-#include <cmath>
-#include <cstring>
-#include <format>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/quaternion.hpp>
 #include <iostream>
 #include <iterator>
-#include <limits>
-#include <map>
-#include <numeric>
-#include <optional>
-#include <stdexcept>
 #include <toast/assets/animation.hpp>
 #include <toast/assets/asset_manager.hpp>
-#include <toast/assets/assets.hpp>
 #include <toast/assets/material.hpp>
-#include <toast/log.hpp>
 #include <toast/physics/simulator.hpp>
 #include <toast/profiler_phases.hpp>
 #include <toast/settings/settings.hpp>
-#include <toast/thread_pool.hpp>
-#include <toast/time.hpp>
 #include <toast/voxel/nodes/voxel_node.hpp>
 #include <toast/voxel/runtime_pool.hpp>
 #include <toast/voxel/volume_bounds.hpp>
@@ -75,9 +56,6 @@
 #include <toast/world/reflection_probe.hpp>
 #include <toast/world/spotlight.hpp>
 #include <toast/world/workspace_events.hpp>
-#include <tracy/Tracy.hpp>
-#include <tuple>
-#include <unordered_set>
 
 #if defined(_WIN32) && defined(TOAST_DEV_TOOLS)
 #include <external/inc/nsight/NGFX_GPUTrace_Vulkan.h>

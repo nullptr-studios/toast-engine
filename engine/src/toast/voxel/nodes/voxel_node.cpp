@@ -2,11 +2,6 @@
 
 #include "voxel_node_utils.hpp"
 
-#include <algorithm>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/quaternion.hpp>
-#include <toast/assets/assets.hpp>
-#include <toast/log.hpp>
 #include <toast/physics/contact_events.hpp>
 #include <toast/physics/simulator.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
@@ -14,8 +9,6 @@
 #include <toast/voxel/assets/voxel_palette.hpp>
 #include <toast/voxel/destruction_event.hpp>
 #include <toast/voxel/runtime_pool.hpp>
-#include <tracy/Tracy.hpp>
-#include <utility>
 
 namespace toast {
 

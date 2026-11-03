@@ -14,9 +14,6 @@
 #include <SDL3/SDL_mouse.h>
 #include <cctype>
 #include <charconv>
-#include <optional>
-#include <toast/log.hpp>
-#include <unordered_map>
 
 namespace input {
 

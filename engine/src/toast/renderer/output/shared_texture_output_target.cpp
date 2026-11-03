@@ -4,16 +4,6 @@
 
 #include "toast/renderer/output/shared_texture_output_target.hpp"
 
-#include "toast/renderer/core/vulkan_common.hpp"
-#include "toast/renderer/core/vulkan_core.hpp"
-#include "toast/renderer/core/vulkan_debug.hpp"
-
-#include <cstring>
-#include <format>
-#include <toast/log.hpp>
-#include <tracy/Tracy.hpp>
-#include <utility>
-
 #if defined(_WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN

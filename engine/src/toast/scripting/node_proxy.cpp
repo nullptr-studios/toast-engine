@@ -9,23 +9,16 @@
 #include "toast/physics/raycast.hpp"
 #include "ui_binds_proxy.hpp"
 
-#include <algorithm>
-#include <format>
-#include <glm/gtc/quaternion.hpp>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include <lua.hpp>
 #include <luabridge3/LuaBridge/LuaBridge.h>
-#include <optional>
 #include <toast/input/action.hpp>
-#include <toast/log.hpp>
 #include <toast/reflect/reflect.hpp>
-#include <toast/reflect/reflect_node.hpp>
 #include <toast/voxel/voxel_edit.hpp>
 #include <toast/world/node.hpp>
 #include <toast/world/node_3d.hpp>
-#include <utility>
 
 namespace scripting {
 

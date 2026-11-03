@@ -2,17 +2,6 @@
 
 #include "voxel_query.hpp"
 
-#include <algorithm>
-#include <array>
-#include <cmath>
-#include <cstddef>
-#include <cstdint>
-#include <limits>
-#include <toast/log.hpp>
-#include <tracy/Tracy.hpp>
-#include <utility>
-#include <vector>
-
 namespace physics {
 namespace _detail {
 

@@ -1,10 +1,5 @@
 #include "haptic.hpp"
 
-#include <algorithm>
-#include <stdexcept>
-#include <string>
-#include <toast/log.hpp>
-
 namespace assets {
 
 namespace {

@@ -11,9 +11,7 @@
 #include <RmlUi/Core/Math.h>
 #include <RmlUi/Core/Platform.h>
 #include <RmlUi/Core/Profiling.h>
-#include <algorithm>
 #include <string.h>
-#include <tracy/Tracy.hpp>
 
 // AlignUp(314, 256) = 512
 template<typename T>

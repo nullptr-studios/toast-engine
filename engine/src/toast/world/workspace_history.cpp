@@ -1,12 +1,6 @@
 #include "workspace_history.hpp"
 
-#include <algorithm>
-#include <optional>
 #include <sstream>
-#include <toast/events/event.hpp>
-#include <toast/log.hpp>
-#include <tracy/Tracy.hpp>
-#include <unordered_set>
 
 namespace toast {
 

@@ -1,11 +1,6 @@
 #include "data.hpp"
 
-#include <algorithm>
-#include <glm/glm.hpp>
-#include <limits>
 #include <sstream>
-#include <toast/log.hpp>
-#include <tracy/Tracy.hpp>
 
 namespace assets {
 

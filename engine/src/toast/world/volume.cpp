@@ -1,6 +1,5 @@
 #include "volume.hpp"
 
-#include <cmath>
 #include <toast/renderer/vulkan_renderer.hpp>
 
 using namespace glm;

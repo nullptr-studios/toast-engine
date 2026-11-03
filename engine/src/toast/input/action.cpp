@@ -2,8 +2,6 @@
 
 #include "parse_util.hpp"
 
-#include <toast/log.hpp>
-
 namespace input {
 
 namespace {

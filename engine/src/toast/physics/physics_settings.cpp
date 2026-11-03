@@ -2,8 +2,6 @@
 
 #include "layers.hpp"
 
-#include <algorithm>
-#include <string>
 #include <toast/settings/settings.hpp>
 
 namespace physics {

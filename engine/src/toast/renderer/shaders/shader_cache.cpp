@@ -2,18 +2,8 @@
 
 #include "toast/renderer/shaders/shader_compiler.hpp"
 
-#include <algorithm>
-#include <array>
-#include <chrono>
 #include <cstdlib>
-#include <cstring>
-#include <format>
-#include <functional>
 #include <toast/assets/asset_manager.hpp>
-#include <toast/assets/assets.hpp>
-#include <toast/log.hpp>
-#include <toast/thread_pool.hpp>
-#include <tracy/Tracy.hpp>
 
 namespace renderer {
 

@@ -3,12 +3,6 @@
 #include "ui_system.hpp"
 
 #include <SDL3/SDL.h>
-#include <algorithm>
-#include <cmath>
-#include <toast/log.hpp>
-#include <toast/time.hpp>
-#include <tracy/Tracy.hpp>
-#include <vector>
 
 namespace ui {
 

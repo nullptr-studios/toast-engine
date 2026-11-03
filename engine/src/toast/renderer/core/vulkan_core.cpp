@@ -6,29 +6,14 @@
 
 #include "toast/renderer/shaders/shader_compiler.hpp"
 
-#include <algorithm>
 #include <cctype>
 #include <cstdlib>
-#include <cstring>
-#include <format>
-#include <limits>
-#include <span>
 #include <toast/assets/asset_manager.hpp>
-#include <toast/log.hpp>
 #include <toast/logger.hpp>
 
 #if defined(__linux__)
 #include <dlfcn.h>
 #endif
-#include <array>
-#include <mutex>
-#include <optional>
-#include <stdexcept>
-#include <string>
-#include <string_view>
-#include <tracy/Tracy.hpp>
-#include <unordered_map>
-#include <vector>
 
 #if defined(_WIN32) && defined(TOAST_DEV_TOOLS)
 #include <external/inc/nsight/NGFX_GPUTrace_Vulkan.h>
