@@ -202,6 +202,9 @@ auto allocateAligned(std::size_t size, std::size_t alignment) -> void* {
 	return _aligned_malloc(size, alignment);
 #else
 	// aligned_alloc wants a size that is a multiple of the alignment
+	if (size > static_cast<std::size_t>(-1) - alignment + 1) {
+		return nullptr;
+	}
 	return std::aligned_alloc(alignment, (size + alignment - 1) / alignment * alignment);
 #endif
 }
