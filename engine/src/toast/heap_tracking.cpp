@@ -11,6 +11,9 @@
 #include <atomic>
 #include <cstdint>
 #include <cstdlib>
+#ifdef _WIN32
+#include <malloc.h>
+#endif
 #include <cstring>
 #include <mutex>
 #include <new>
