@@ -152,7 +152,7 @@ set_source_files_properties(src/toast/debugger.cpp PROPERTIES SKIP_UNITY_BUILD_I
 file(GLOB _TOAST_PROTO_SOURCES "generated/*.pb.cc")
 set_source_files_properties(${_TOAST_PROTO_SOURCES} PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 # OFF for clang-tidy since unity TUs leave compile_commands.json without per file entries
-option(TOAST_UNITY_BUILD "Merge engine sources into unity translation units" ON)
+option(TOAST_UNITY_BUILD "Merge engine sources into unity translation units" OFF)
 if (TOAST_UNITY_BUILD)
     set_target_properties(toast_engine PROPERTIES UNITY_BUILD ON UNITY_BUILD_BATCH_SIZE 8)
 endif ()

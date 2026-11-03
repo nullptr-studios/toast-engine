@@ -27,6 +27,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <limits>
 #include <mutex>
+#include <numeric>
 #include <span>
 #include <thread>
 #include <toast/assets/assets.hpp>
@@ -699,6 +700,7 @@ void Simulator::tick() {
 
 	reapFragments();
 	syncEnabledState();
+	syncJointNodes();
 	applyDamageCommands();
 	const auto after_damage = std::chrono::steady_clock::now();
 	m_profile.damage_apply_ms = elapsed_ms(tick_start, after_damage);
@@ -711,15 +713,19 @@ void Simulator::tick() {
 	spawnBudgetedFragments();
 	enforceFragmentBudget(dt);
 	despawnSettledFragments(dt);
+	checkJointAnchors();
 	integrate(dt);
 	checkTriggers();
 
 	{
 		PhaseScope worker_phase {*this, SimulationPhase::mutation, SimulationPhase::worker_execution};
-		const CollisionWorldView world {.bodies = m_bodies, .shapes = m_shapes, .voxel_shapes = m_voxel_shapes};
+		const CollisionWorldView world {
+		  .bodies = m_bodies, .shapes = m_shapes, .voxel_shapes = m_voxel_shapes, .excluded_pairs = m_excluded_pairs
+		};
 		const auto candidates = m_broad_phase.findPairs(world);
 		m_manifolds = generateManifoldsAsync(world, candidates);
 	}
+	adjustJointContacts(m_manifolds);
 	const auto after_narrow = std::chrono::steady_clock::now();
 	m_profile.narrow_phase_ms = elapsed_ms(after_connectivity, after_narrow);
 
@@ -728,12 +734,14 @@ void Simulator::tick() {
 	m_profile.cache_update_ms = elapsed_ms(after_narrow, after_cache);
 
 	wakeDisturbedSleepers(dt);
+	wakeJointPartners();
 	unlockDisturbedFragments();
 	const auto after_wake = std::chrono::steady_clock::now();
 	m_profile.wake_groups_ms = elapsed_ms(after_cache, after_wake);
 
 	// resolve
 	auto constraints = prepareConstraints(m_manifolds);
+	prepareJoints(dt);
 	const auto after_prepare = std::chrono::steady_clock::now();
 	m_profile.prepare_constraints_ms = elapsed_ms(after_wake, after_prepare);
 
@@ -742,6 +750,7 @@ void Simulator::tick() {
 	m_profile.build_islands_ms = elapsed_ms(after_prepare, after_islands);
 
 	solveIslands(islands);
+	breakOverloadedJoints(dt);
 	const auto after_solve = std::chrono::steady_clock::now();
 	m_profile.island_solve_ms = elapsed_ms(after_islands, after_solve);
 
@@ -769,6 +778,7 @@ void Simulator::tick() {
 
 	// push poses after simulation settles
 	publishTransforms();
+	publishJoints();
 	publishVoxelRenderRecords();
 	m_profile.tick_ms = elapsed_ms(tick_start, std::chrono::steady_clock::now());
 	publishProfile(islands);
@@ -1333,11 +1343,6 @@ void Simulator::spawnBudgetedFragments() {
 }
 
 namespace {
-
-/// Sleeping bodies are immovable in the solver
-auto movable(const Body& body) -> bool {
-	return body.inverse_mass > 0.0f && (body.awake || body.type != BodyType::dynamic_body);
-}
 
 /// Approach speed into a sleeper that wakes it in sleep thresholds
 constexpr float k_wake_approach = 0.75f;
@@ -1969,6 +1974,19 @@ void Simulator::wakeBodiesTouching(BodyID id) {
 			wakeBody(manifold.pair.a.body);
 		}
 	}
+
+	if (m_joint_count > 0) {
+		for (const JointSlot& slot : m_joints) {
+			if (not slot.occupied) {
+				continue;
+			}
+			if (slot.joint.descriptor.body_a == id) {
+				wakeBody(slot.joint.descriptor.body_b);
+			} else if (slot.joint.descriptor.body_b == id) {
+				wakeBody(slot.joint.descriptor.body_a);
+			}
+		}
+	}
 }
 
 void Simulator::wakeBodiesTouching(ShapeID id) {
@@ -1991,6 +2009,59 @@ void Simulator::markSupportedBodies() {
 		}
 		m_body_supported[manifold.pair.a.body.slot] = 1;
 		m_body_supported[manifold.pair.b.body.slot] = 1;
+	}
+
+	// A joint holds up what hangs from it
+	const auto holds_up = [this](BodyID id) {
+		const Body* body = tryGetBody(id);
+		return body == nullptr || body->type != BodyType::dynamic_body || m_body_supported[id.slot] != 0;
+	};
+	bool changed = m_joint_count > 0;
+	for (size_t pass = 0; changed && pass <= m_joint_count; ++pass) {
+		changed = false;
+		for (const JointSlot& slot : m_joints) {
+			if (not slot.occupied) {
+				continue;
+			}
+			const BodyID a = slot.joint.descriptor.body_a;
+			const BodyID b = slot.joint.descriptor.body_b;
+			const Body* body_a = tryGetBody(a);
+			const Body* body_b = tryGetBody(b);
+			if (body_a != nullptr && body_a->type == BodyType::dynamic_body && m_body_supported[a.slot] == 0 && holds_up(b)) {
+				m_body_supported[a.slot] = 1;
+				changed = true;
+			}
+			if (body_b != nullptr && body_b->type == BodyType::dynamic_body && m_body_supported[b.slot] == 0 && holds_up(a)) {
+				m_body_supported[b.slot] = 1;
+				changed = true;
+			}
+		}
+	}
+}
+
+void Simulator::wakeJointPartners() {
+	if (m_joint_count == 0) {
+		return;
+	}
+
+	// A chain of joints wakes from one end to the other
+	bool changed = true;
+	for (size_t pass = 0; changed && pass <= m_joint_count; ++pass) {
+		changed = false;
+		for (const JointSlot& slot : m_joints) {
+			if (not slot.occupied) {
+				continue;
+			}
+			const Body* body_a = tryGetBody(slot.joint.descriptor.body_a);
+			const Body* body_b = tryGetBody(slot.joint.descriptor.body_b);
+			if (body_a == nullptr || body_b == nullptr || body_a->type != BodyType::dynamic_body ||
+			    body_b->type != BodyType::dynamic_body || not body_a->enabled || not body_b->enabled ||
+			    body_a->awake == body_b->awake) {
+				continue;
+			}
+			wakeBody(body_a->awake ? slot.joint.descriptor.body_b : slot.joint.descriptor.body_a);
+			changed = true;
+		}
 	}
 }
 
@@ -2512,7 +2583,11 @@ auto Simulator::solveNormal(Constraint& constraint, Body& body_a, Body& body_b) 
 		return false;
 	}
 
-	float impulse_delta = (constraint.restitution_bias - normal_speed) * constraint.normal_mass;
+	if (constraint.closing_speed > 0.0f && constraint.restitution_bias > 0.0f && normal_speed < -constraint.closing_speed) {
+		constraint.closing_speed = 0.0f;
+	}
+	const float target_speed = constraint.closing_speed > 0.0f ? -constraint.closing_speed : constraint.restitution_bias;
+	float impulse_delta = (target_speed - normal_speed) * constraint.normal_mass;
 	float old_impulse = constraint.accumulated_normal_impulse;
 	constraint.accumulated_normal_impulse = std::max(0.0f, old_impulse + impulse_delta);
 	float applied_impulse = constraint.accumulated_normal_impulse - old_impulse;
@@ -2967,6 +3042,30 @@ void Simulator::updateSleeping(float dt) {
 				m_contact_supported[cached.pair.b.body.slot] = 1;
 			}
 		}
+
+		const auto holds_up = [this](BodyID id) {
+			const Body* body = tryGetBody(id);
+			return body == nullptr || body->type != BodyType::dynamic_body || m_contact_supported[id.slot] != 0;
+		};
+		bool changed = m_joint_count > 0;
+		for (size_t pass = 0; changed && pass <= m_joint_count; ++pass) {
+			changed = false;
+			for (const JointSlot& slot : m_joints) {
+				if (not slot.occupied) {
+					continue;
+				}
+				for (const auto& [end, other] : {
+				       std::pair {slot.joint.descriptor.body_a, slot.joint.descriptor.body_b},
+				       std::pair {slot.joint.descriptor.body_b, slot.joint.descriptor.body_a}
+				}) {
+					const Body* body = tryGetBody(end);
+					if (body != nullptr && body->type == BodyType::dynamic_body && m_contact_supported[end.slot] == 0 && holds_up(other)) {
+						m_contact_supported[end.slot] = 1;
+						changed = true;
+					}
+				}
+			}
+		}
 	}
 
 	m_sleep_ready.assign(m_bodies.size(), 0);
@@ -3032,6 +3131,51 @@ void Simulator::updateSleeping(float dt) {
 		}
 		if (m_sleep_moving[a] != 0) {
 			m_sleep_blocked[b] = 1;
+		}
+	}
+
+	if (m_joint_count > 0) {
+		// Bodies in a joint sleep only when everyone is ready
+		std::vector<size_t> parents(m_bodies.size());
+		std::iota(parents.begin(), parents.end(), size_t {0});
+		const auto find_root = [&parents](size_t index) {
+			while (parents[index] != index) {
+				parents[index] = parents[parents[index]];
+				index = parents[index];
+			}
+			return index;
+		};
+		const auto jointed_dynamic = [this](const JointSlot& slot) {
+			const Body* body_a = tryGetBody(slot.joint.descriptor.body_a);
+			const Body* body_b = tryGetBody(slot.joint.descriptor.body_b);
+			return slot.occupied && body_a != nullptr && body_b != nullptr && body_a->type == BodyType::dynamic_body &&
+			       body_b->type == BodyType::dynamic_body;
+		};
+
+		for (const JointSlot& slot : m_joints) {
+			if (jointed_dynamic(slot)) {
+				parents[find_root(slot.joint.descriptor.body_a.slot)] = find_root(slot.joint.descriptor.body_b.slot);
+			}
+		}
+
+		std::vector<uint8_t> group_ready(m_bodies.size(), 1);
+		const auto vote = [&](BodyID id) {
+			const Body* body = tryGetBody(id);
+			if (body != nullptr && body->enabled && body->awake && (m_sleep_ready[id.slot] == 0 || m_sleep_blocked[id.slot] != 0)) {
+				group_ready[find_root(id.slot)] = 0;
+			}
+		};
+		for (const JointSlot& slot : m_joints) {
+			if (jointed_dynamic(slot)) {
+				vote(slot.joint.descriptor.body_a);
+				vote(slot.joint.descriptor.body_b);
+			}
+		}
+		for (const JointSlot& slot : m_joints) {
+			if (jointed_dynamic(slot) && group_ready[find_root(slot.joint.descriptor.body_a.slot)] == 0) {
+				m_sleep_ready[slot.joint.descriptor.body_a.slot] = 0;
+				m_sleep_ready[slot.joint.descriptor.body_b.slot] = 0;
+			}
 		}
 	}
 
@@ -3467,6 +3611,15 @@ void Simulator::destroyBody(BodyID body) {
 		return;
 	}
 
+	if (m_joint_count > 0) {
+		for (uint32_t index = 0; index < m_joints.size(); ++index) {
+			const JointSlot& joint_slot = m_joints[index];
+			if (joint_slot.occupied && (joint_slot.joint.descriptor.body_a == body || joint_slot.joint.descriptor.body_b == body)) {
+				destroyJoint({.slot = index, .generation = joint_slot.generation});
+			}
+		}
+	}
+
 	for (uint32_t index = 0; index < m_shapes.size(); ++index) {
 		ShapeSlot& shape_slot = m_shapes[index];
 		if (shape_slot.occupied && shape_slot.shape.owner == body) {
@@ -3482,6 +3635,231 @@ void Simulator::destroyBody(BodyID body) {
 		++slot.generation;
 	}
 	m_free_body_slots.emplace_back(body.slot);
+}
+
+auto Simulator::createJoint(const JointDescriptor& descriptor) -> JointID {
+	ZoneScopedN("physics::CreateJoint");
+	if (not mainThreadMutationAllowed()) {
+		return {};
+	}
+
+	// An end without a body is the world
+	JointDescriptor made = descriptor;
+	const bool a_is_body = valid(made.body_a);
+	const bool b_is_body = valid(made.body_b);
+	if (not a_is_body && not b_is_body) {
+		TOAST_WARN("Physics", "Rejected joint without a valid body");
+		return {};
+	}
+	const bool holds_world = not(a_is_body && b_is_body);
+	if (holds_world) {
+		made.body_b = a_is_body ? made.body_a : made.body_b;
+		made.body_a = {};
+	} else if (made.body_a == made.body_b) {
+		TOAST_WARN("Physics", "Rejected joint between a body and itself");
+		return {};
+	} else if (tryGetBody(made.body_a)->type == BodyType::dynamic_body && tryGetBody(made.body_b)->type != BodyType::dynamic_body) {
+		std::swap(made.body_a, made.body_b);
+	}
+
+	const float frame_length_squared = glm::dot(made.frame, made.frame);
+	if (not std::isfinite(frame_length_squared) || frame_length_squared <= 0.0f || not std::isfinite(made.anchor.x) ||
+	    not std::isfinite(made.anchor.y) || not std::isfinite(made.anchor.z)) {
+		TOAST_WARN("Physics", "Rejected joint with a non-finite anchor or a zero-length frame");
+		return {};
+	}
+	made.frame = glm::normalize(made.frame);
+
+	Body* body_a = holds_world ? &m_world_body : tryGetBody(made.body_a);
+	Body* body_b = tryGetBody(made.body_b);
+
+	Joint made_joint = _detail::makeJoint(made, *body_a, *body_b);
+	if (not holds_world) {
+		made_joint.voxel_end_a = voxelEndOf(made.body_a, made_joint.frame_a, made.voxel_anchor);
+	}
+	made_joint.voxel_end_b = voxelEndOf(made.body_b, made_joint.frame_b, made.voxel_anchor);
+	JointSlot joint_slot {.joint = made_joint, .occupied = true};
+	JointID id;
+	if (not m_free_joint_slots.empty()) {
+		id.slot = m_free_joint_slots.back();
+		m_free_joint_slots.pop_back();
+		joint_slot.generation = m_joints[id.slot].generation;
+		m_joints[id.slot] = joint_slot;
+	} else {
+		id.slot = static_cast<uint32_t>(m_joints.size());
+		m_joints.emplace_back(joint_slot);
+	}
+	id.generation = m_joints[id.slot].generation;
+	++m_joint_count;
+
+	if (made.exclude_collision && not holds_world) {
+		addExclusion(made.body_a, made.body_b);
+	}
+	wakeBody(made.body_a);
+	wakeBody(made.body_b);
+	return id;
+}
+
+void Simulator::destroyJoint(JointID joint) {
+	ZoneScopedN("physics::DestroyJoint");
+	if (not mainThreadMutationAllowed() || not valid(joint)) {
+		return;
+	}
+
+	JointSlot& slot = m_joints[joint.slot];
+	const JointDescriptor descriptor = slot.joint.descriptor;
+	slot.occupied = false;
+	slot.joint = {};
+	++slot.generation;
+	if (slot.generation == 0) {
+		++slot.generation;
+	}
+	m_free_joint_slots.emplace_back(joint.slot);
+	--m_joint_count;
+
+	if (descriptor.exclude_collision && valid(descriptor.body_a) && valid(descriptor.body_b)) {
+		removeExclusion(descriptor.body_a, descriptor.body_b);
+	}
+	// What hung from it falls
+	wakeBody(descriptor.body_a);
+	wakeBody(descriptor.body_b);
+}
+
+auto Simulator::valid(JointID joint) const -> bool {
+	return joint.slot < m_joints.size() && m_joints[joint.slot].occupied && m_joints[joint.slot].generation == joint.generation;
+}
+
+auto Simulator::jointState(JointID joint) const -> std::optional<JointState> {
+	if (not valid(joint)) {
+		return std::nullopt;
+	}
+	const Joint& value = m_joints[joint.slot].joint;
+	return JointState {.angle = value.hinge_angle, .position = value.slider_position};
+}
+
+auto Simulator::setJointParams(JointID joint, const JointParams& params) -> bool {
+	if (not valid(joint)) {
+		return false;
+	}
+	JointParams& current = m_joints[joint.slot].joint.descriptor.params;
+	if (current.index() != params.index()) {
+		return false;
+	}
+	current = params;
+	wakeBody(m_joints[joint.slot].joint.descriptor.body_a);
+	wakeBody(m_joints[joint.slot].joint.descriptor.body_b);
+	return true;
+}
+
+void Simulator::addExclusion(BodyID a, BodyID b) {
+	const uint64_t key = bodyPairKey(a, b);
+	m_excluded_pairs.insert(std::upper_bound(m_excluded_pairs.begin(), m_excluded_pairs.end(), key), key);
+}
+
+void Simulator::removeExclusion(BodyID a, BodyID b) {
+	const uint64_t key = bodyPairKey(a, b);
+	const auto found = std::lower_bound(m_excluded_pairs.begin(), m_excluded_pairs.end(), key);
+	if (found != m_excluded_pairs.end() && *found == key) {
+		m_excluded_pairs.erase(found);
+	}
+}
+
+// The ends of a joint that collide with each other
+// - A hinge or a pin turns in a knuckle around its pin, so the two ends it holds never press on each other right there. A
+//   contact between them that close to the pin fights the joint, the joint pulls the ends back in and the contact pushes
+//   them out, and each push lifts the bodies a little for free, which keeps them swinging forever
+// - The other end is a stop like the limits, a hinge or a slider bounces off it at least as much as off its limits
+void Simulator::adjustJointContacts(std::vector<Manifold>& manifolds) {
+	if (m_joint_count == 0 || manifolds.empty()) {
+		return;
+	}
+
+	for (const JointSlot& slot : m_joints) {
+		const Joint& joint = slot.joint;
+		if (not slot.occupied || joint.descriptor.exclude_collision || std::holds_alternative<FixedParams>(joint.descriptor.params)) {
+			continue;
+		}
+		const bool hinge = std::holds_alternative<HingeParams>(joint.descriptor.params);
+		const bool knuckle = hinge || std::holds_alternative<PinParams>(joint.descriptor.params);
+		float restitution = 0.0f;
+		if (const auto* hinge_params = std::get_if<HingeParams>(&joint.descriptor.params); hinge_params != nullptr) {
+			restitution = hinge_params->limit_restitution;
+		} else if (const auto* slider_params = std::get_if<SliderParams>(&joint.descriptor.params); slider_params != nullptr) {
+			restitution = slider_params->limit_restitution;
+		}
+		const Body* body_a = tryGetBody(joint.descriptor.body_a);
+		const Body* body_b = tryGetBody(joint.descriptor.body_b);
+		if (body_a == nullptr || body_b == nullptr) {
+			continue;
+		}
+
+		const glm::vec3 anchor = body_a->position + (body_a->rotation * joint.frame_a.position);
+		const glm::vec3 axis = body_a->rotation * joint.frame_a.rotation * glm::vec3(0.0f, 0.0f, 1.0f);
+		const auto in_knuckle = [&](const ContactPoint& contact) {
+			const glm::vec3 offset = contact.position - anchor;
+			const float distance = hinge ? glm::length(glm::cross(offset, axis)) : glm::length(offset);
+			return knuckle && distance < k_joint_knuckle_radius;
+		};
+
+		for (Manifold& manifold : manifolds) {
+			const bool between = (manifold.pair.a.body == joint.descriptor.body_a && manifold.pair.b.body == joint.descriptor.body_b) ||
+			                     (manifold.pair.a.body == joint.descriptor.body_b && manifold.pair.b.body == joint.descriptor.body_a);
+			if (not between) {
+				continue;
+			}
+			uint8_t kept = 0;
+			for (uint8_t index = 0; index < manifold.contact_count; ++index) {
+				ContactPoint& contact = manifold.contacts[index];
+				if (not in_knuckle(contact)) {
+					contact.material.restitution = std::max(contact.material.restitution, restitution);
+					manifold.contacts[kept++] = contact;
+				}
+			}
+			manifold.contact_count = kept;
+		}
+	}
+	std::erase_if(manifolds, [](const Manifold& manifold) { return manifold.contact_count == 0; });
+}
+
+void Simulator::jointBodies(const Joint& joint, Body*& body_a, Body*& body_b) {
+	body_a = tryGetBody(joint.descriptor.body_a);
+	body_b = tryGetBody(joint.descriptor.body_b);
+	if (body_a == nullptr) {
+		body_a = &m_world_body;
+	}
+	if (body_b == nullptr) {
+		body_b = &m_world_body;
+	}
+}
+
+void Simulator::prepareJoints(float dt) {
+	m_joint_rows.resize(m_joints.size());
+	m_joint_active.assign(m_joints.size(), 0);
+	if (m_joint_count == 0) {
+		return;
+	}
+	ZoneScopedN("physics::PrepareJoints");
+
+	const auto awake_dynamic = [](const Body* body) {
+		return body->type == BodyType::dynamic_body && body->enabled && body->awake;
+	};
+	for (size_t index = 0; index < m_joints.size(); ++index) {
+		JointSlot& slot = m_joints[index];
+		if (not slot.occupied) {
+			continue;
+		}
+
+		Body* body_a = nullptr;
+		Body* body_b = nullptr;
+		jointBodies(slot.joint, body_a, body_b);
+		if (body_a == nullptr || not body_a->enabled || not body_b->enabled || not(awake_dynamic(body_a) || awake_dynamic(body_b))) {
+			continue;
+		}
+
+		m_joint_rows[index] = _detail::prepareJoint(slot.joint, *body_a, *body_b, dt);
+		m_joint_active[index] = 1;
+		++m_profile.joint_count;
+	}
 }
 
 auto Simulator::createSphere(BodyID owner, const SphereShape& sphere, PhysicsMaterial material) -> ShapeID {
@@ -3951,6 +4329,154 @@ auto dragBoxAreaAxis(const glm::vec3& h) -> glm::vec3 {
 	return 4.0f * glm::vec3 {h.y * h.z, h.x * h.z, h.x * h.y};
 }
 
+struct PrimitiveMass {
+	float volume = 0.0f;
+	glm::vec3 center = {};
+	glm::mat3 unit_inertia = {0.0f};
+	glm::vec3 half_extents = {};
+	float radius = 0.0f;
+};
+
+[[nodiscard]]
+auto primitiveMass(const Shape& shape) -> std::optional<PrimitiveMass> {
+	PrimitiveMass part;
+	part.center = shape.getLocalCenter();
+
+	glm::vec3 unit_diagonal = {};
+	glm::vec3 local_half = {};
+	switch (shape.type) {
+		case ShapeType::sphere: {
+			const float radius = shape.sphere.radius;
+			part.volume = (4.0f / 3.0f) * glm::pi<float>() * radius * radius * radius;
+			// I = 2/5 m r2
+			unit_diagonal = glm::vec3 {0.4f * radius * radius};
+			local_half = glm::vec3 {radius};
+			part.radius = radius;
+			break;
+		}
+		case ShapeType::box: {
+			const glm::vec3 size = shape.box.size;
+			part.volume = size.x * size.y * size.z;
+			// Ix = 1/12 m (h2 + d2)
+			unit_diagonal =
+			    glm::vec3 {
+			      (size.y * size.y) + (size.z * size.z),
+			      (size.x * size.x) + (size.z * size.z),
+			      (size.x * size.x) + (size.y * size.y),
+			    } /
+			    12.0f;
+			local_half = size * 0.5f;
+			part.radius = 0.5f * glm::length(size);
+			break;
+		}
+		case ShapeType::capsule: {
+			const float radius = shape.capsule.radius;
+			const float height = shape.capsule.height;
+			part.volume = (glm::pi<float>() * radius * radius * height) + ((4.0f / 3.0f) * glm::pi<float>() * radius * radius * radius);
+			const float diameter_sq = 4.0f * radius * radius;
+			const float side = (diameter_sq + (height * height)) / 12.0f;
+			unit_diagonal = glm::vec3 {side, side, (diameter_sq + diameter_sq) / 12.0f};
+			local_half = glm::vec3 {radius, radius, (0.5f * height) + radius};
+			part.radius = (0.5f * height) + radius;
+			break;
+		}
+		default: return std::nullopt;
+	}
+
+	const auto usable = [](float value) { return std::isfinite(value) && value > 0.0f; };
+	if (not usable(part.volume) || not usable(unit_diagonal.x) || not usable(unit_diagonal.y) || not usable(unit_diagonal.z)) {
+		return std::nullopt;
+	}
+
+	glm::mat3 diagonal = {0.0f};
+	diagonal[0][0] = unit_diagonal.x;
+	diagonal[1][1] = unit_diagonal.y;
+	diagonal[2][2] = unit_diagonal.z;
+	const glm::mat3 rotation = glm::mat3_cast(shape.getLocalRotation());
+	part.unit_inertia = rotation * diagonal * glm::transpose(rotation);
+
+	const glm::mat3 absolute_rotation {glm::abs(rotation[0]), glm::abs(rotation[1]), glm::abs(rotation[2])};
+	part.half_extents = absolute_rotation * local_half;
+	return part;
+}
+
+[[nodiscard]]
+auto combinePrimitiveMass(Body& body, std::span<const Shape* const> shapes) -> bool {
+	std::vector<PrimitiveMass> parts;
+	parts.reserve(shapes.size());
+	float total_volume = 0.0f;
+	for (const Shape* shape : shapes) {
+		std::optional<PrimitiveMass> part = primitiveMass(*shape);
+		if (not part) {
+			TOAST_WARN("Physics", "rebuildMassProperties() was aborted: invalid or unknown shape");
+			return false;
+		}
+		total_volume += part->volume;
+		parts.push_back(*part);
+	}
+
+	const float mass = 1.0f / body.inverse_mass;
+	glm::vec3 center = {};
+	for (const PrimitiveMass& part : parts) {
+		center += part.center * (part.volume / total_volume);
+	}
+
+	// its own inertia plus steiner
+	glm::mat3 inertia = {0.0f};
+	for (const PrimitiveMass& part : parts) {
+		const glm::vec3 offset = part.center - center;
+		const float part_mass = mass * part.volume / total_volume;
+		inertia +=
+		    part_mass * (part.unit_inertia + (glm::dot(offset, offset) * glm::mat3 {1.0f}) - glm::outerProduct(offset, offset));
+	}
+
+	const glm::mat3 inverse_inertia = glm::inverse(inertia);
+	if (not std::isfinite(inverse_inertia[0][0]) || not std::isfinite(inverse_inertia[1][1]) ||
+	    not std::isfinite(inverse_inertia[2][2])) {
+		TOAST_WARN("Physics", "rebuildMassProperties() was aborted: singular inertia");
+		return false;
+	}
+
+	body.local_center_of_mass = center;
+	body.inverse_inertia_local = inverse_inertia;
+	const glm::mat3 rotation = glm::mat3_cast(body.rotation);
+	body.inverse_inertia_world = rotation * body.inverse_inertia_local * glm::transpose(rotation);
+
+	body.extent_radius = 0.0f;
+	glm::vec3 box_min = glm::vec3 {std::numeric_limits<float>::max()};
+	glm::vec3 box_max = glm::vec3 {std::numeric_limits<float>::lowest()};
+	for (const PrimitiveMass& part : parts) {
+		body.extent_radius = std::max(body.extent_radius, glm::length(part.center - center) + part.radius);
+		box_min = glm::min(box_min, part.center - part.half_extents);
+		box_max = glm::max(box_max, part.center + part.half_extents);
+	}
+
+	// Drag
+	if (shapes.size() == 1) {
+		const Shape& shape = *shapes[0];
+		switch (shape.type) {
+			case ShapeType::sphere:
+				body.drag_area_base = glm::pi<float>() * shape.sphere.radius * shape.sphere.radius;
+				body.drag_coefficient = 0.47f;
+				break;
+			case ShapeType::box:
+				body.drag_area_axis = dragBoxAreaAxis(shape.box.size * 0.5f);
+				body.drag_coefficient = 1.05f;
+				break;
+			case ShapeType::capsule:
+				// just treat like a box ngl
+				body.drag_area_axis = dragBoxAreaAxis({shape.capsule.radius, shape.capsule.radius, 0.5f * shape.capsule.height});
+				body.drag_coefficient = 0.82f;
+				break;
+			default: break;
+		}
+	} else {
+		body.drag_area_axis = dragBoxAreaAxis((box_max - box_min) * 0.5f);
+		body.drag_coefficient = 1.05f;
+	}
+	return true;
+}
+
 }
 
 void Simulator::rebuildMassProperties(BodyID id) {
@@ -3997,8 +4523,6 @@ void Simulator::rebuildMassProperties(BodyID id) {
 		return;
 	}
 
-	// TODO: Add support to multishapes
-	// right now just pick the first one
 	auto* shape = tryGetShape(shapes[0]);
 	if (not shape) {
 		TOAST_WARN("Physics", "rebuildMassProperties() was aborted: invalid shape");
@@ -4006,68 +4530,6 @@ void Simulator::rebuildMassProperties(BodyID id) {
 	}
 
 	switch (shape->type) {
-		case ShapeType::sphere: {
-			float radius_sq = shape->sphere.radius * shape->sphere.radius;
-			if (not std::isfinite(radius_sq) || radius_sq <= 0.0f) {
-				TOAST_WARN("Physics", "rebuildMassProperties() was aborted: invalid sphere inertia denominator");
-				return;
-			}
-
-			// I = 2/5 m r2
-			// inv(I) = 5/(2 m r2)
-			float inverse_inertia = 2.5f * body->inverse_mass / radius_sq;
-			body->inverse_inertia_local = {inverse_inertia};
-			glm::mat3 rotation = glm::mat3_cast(body->rotation);
-			body->inverse_inertia_world = rotation * body->inverse_inertia_local * glm::transpose(rotation);
-
-			body->extent_radius = glm::length(shape->sphere.local_center) + shape->sphere.radius;
-
-			// drag
-			body->drag_area_base = glm::pi<float>() * radius_sq;
-			body->drag_coefficient = 0.47f;
-
-			break;
-		}
-		case ShapeType::box: {
-			float width_sq = shape->box.size.x * shape->box.size.x;
-			float height_sq = shape->box.size.y * shape->box.size.y;
-			float depth_sq = shape->box.size.z * shape->box.size.z;
-			float denominator_x = height_sq + depth_sq;
-			float denominator_y = width_sq + depth_sq;
-			float denominator_z = width_sq + height_sq;
-			if (not std::isfinite(denominator_x) || denominator_x <= 0.0f || not std::isfinite(denominator_y) ||
-			    denominator_y <= 0.0f || not std::isfinite(denominator_z) || denominator_z <= 0.0f) {
-				TOAST_WARN("Physics", "rebuildMassProperties() was aborted: invalid box inertia denominator");
-				return;
-			}
-
-			// Ix = 1/12 m (h2 + d2)
-			// inv(Ix) = 12/(m (h2 + d2))
-			float inverse_inertia_x = 12.0f * body->inverse_mass / denominator_x;
-			// Iy = 1/12 m (w2 + d2)
-			// inv(Iy) = 12/(m (w2 + d2))
-			float inverse_inertia_y = 12.0f * body->inverse_mass / denominator_y;
-			// Iz = 1/12 m (w2 + h2)
-			// inv(Iz) = 12/(m (w2 + h2))
-			float inverse_inertia_z = 12.0f * body->inverse_mass / denominator_z;
-
-			glm::mat3 inverse_inertia = {0.0f};
-			inverse_inertia[0][0] = inverse_inertia_x;
-			inverse_inertia[1][1] = inverse_inertia_y;
-			inverse_inertia[2][2] = inverse_inertia_z;
-			glm::mat3 local_rotation = glm::mat3_cast(shape->box.local_rotation);
-			body->inverse_inertia_local = local_rotation * inverse_inertia * glm::transpose(local_rotation);
-			glm::mat3 rotation = glm::mat3_cast(body->rotation);
-			body->inverse_inertia_world = rotation * body->inverse_inertia_local * glm::transpose(rotation);
-
-			body->extent_radius = glm::length(shape->box.local_center) + (0.5f * glm::length(shape->box.size));
-
-			// Drag
-			body->drag_area_axis = dragBoxAreaAxis(shape->box.size * 0.5f);
-			body->drag_coefficient = 1.05f;
-
-			break;
-		}
 		case ShapeType::voxel: {
 			const VoxelShapeData* voxel_data = tryGetVoxelData(shape->voxel.data);
 			if (voxel_data == nullptr || voxel_data->volume == nullptr) {
@@ -4124,50 +4586,21 @@ void Simulator::rebuildMassProperties(BodyID id) {
 
 			break;
 		}
-		case ShapeType::capsule: {
-			// Conservative approximation using a box with dimensions (2r, 2r, height)
-			float diameter = 2.0f * shape->capsule.radius;
-			float diameter_sq = diameter * diameter;
-			float height_sq = shape->capsule.height * shape->capsule.height;
-			float denominator_xy = diameter_sq + height_sq;
-			float denominator_z = diameter_sq + diameter_sq;
-			if (not std::isfinite(denominator_xy) || denominator_xy <= 0.0f || not std::isfinite(denominator_z) ||
-			    denominator_z <= 0.0f) {
-				TOAST_WARN("Physics", "rebuildMassProperties() was aborted: invalid capsule inertia denominator");
+		default: {
+			std::vector<const Shape*> primitives;
+			primitives.reserve(shapes.size());
+			for (const ShapeID shape_id : shapes) {
+				const Shape* primitive = tryGetShape(shape_id);
+				if (not primitive) {
+					TOAST_WARN("Physics", "rebuildMassProperties() was aborted: invalid shape");
+					return;
+				}
+				primitives.push_back(primitive);
+			}
+			if (not combinePrimitiveMass(*body, primitives)) {
 				return;
 			}
-
-			// Ix = 1/12 m (d2 + h2)
-			// inv(Ix) = 12/(m (d2 + h2))
-			float inverse_inertia_x = 12.0f * body->inverse_mass / denominator_xy;
-			// Iy = 1/12 m (d2 + h2)
-			// inv(Iy) = 12/(m (d2 + h2))
-			float inverse_inertia_y = 12.0f * body->inverse_mass / denominator_xy;
-			// Iz = 1/12 m (d2 + d2)
-			// inv(Iz) = 12/(m (d2 + d2))
-			float inverse_inertia_z = 12.0f * body->inverse_mass / denominator_z;
-
-			glm::mat3 inverse_inertia = {0.0f};
-			inverse_inertia[0][0] = inverse_inertia_x;
-			inverse_inertia[1][1] = inverse_inertia_y;
-			inverse_inertia[2][2] = inverse_inertia_z;
-			glm::mat3 local_rotation = glm::mat3_cast(shape->capsule.local_rotation);
-			body->inverse_inertia_local = local_rotation * inverse_inertia * glm::transpose(local_rotation);
-			glm::mat3 rotation = glm::mat3_cast(body->rotation);
-			body->inverse_inertia_world = rotation * body->inverse_inertia_local * glm::transpose(rotation);
-
-			body->extent_radius = glm::length(shape->capsule.local_center) + (0.5f * shape->capsule.height) + shape->capsule.radius;
-
-			// Drag
-			// just treat like a box ngl
-			body->drag_area_axis = dragBoxAreaAxis({shape->capsule.radius, shape->capsule.radius, 0.5f * shape->capsule.height});
-			body->drag_coefficient = 0.82;
-
 			break;
-		}
-		default: {
-			TOAST_WARN("Physics", "rebuildMassProperties() was aborted: unknown shape");
-			return;
 		}
 	}
 
@@ -4195,6 +4628,19 @@ auto Simulator::state(BodyID body) const -> std::optional<BodyState> {
 	  .previous_rotation = value->previous_rotation,
 	  .linear_velocity = value->linear_velocity,
 	  .angular_velocity = value->angular_velocity
+	};
+}
+
+auto Simulator::massProperties(BodyID body) const -> std::optional<BodyMassProperties> {
+	const Body* value = tryGetBody(body);
+	if (not value) {
+		return std::nullopt;
+	}
+
+	return BodyMassProperties {
+	  .mass = value->inverse_mass > 0.0f ? 1.0f / value->inverse_mass : 0.0f,
+	  .local_center_of_mass = value->local_center_of_mass,
+	  .inverse_inertia_local = value->inverse_inertia_local,
 	};
 }
 
@@ -5782,6 +6228,34 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 		}
 	}
 
+	// Force all objects in a joint in one island
+	for (size_t joint_index = 0; joint_index < m_joints.size(); ++joint_index) {
+		if (m_joint_active[joint_index] == 0) {
+			continue;
+		}
+
+		const Joint& joint = m_joints[joint_index].joint;
+		const BodyID id_a = joint.descriptor.body_a;
+		const BodyID id_b = joint.descriptor.body_b;
+		const bool a_is_dynamic = is_active_dynamic(tryGetBody(id_a));
+		const bool b_is_dynamic = is_active_dynamic(tryGetBody(id_b));
+		if (a_is_dynamic) {
+			m_island_participates[id_a.slot] = true;
+		}
+		if (b_is_dynamic) {
+			m_island_participates[id_b.slot] = true;
+		}
+		if (a_is_dynamic && b_is_dynamic) {
+			const size_t root_a = find_root(id_a.slot);
+			const size_t root_b = find_root(id_b.slot);
+			if (root_a < root_b) {
+				m_island_parents[root_b] = root_a;
+			} else if (root_b < root_a) {
+				m_island_parents[root_a] = root_b;
+			}
+		}
+	}
+
 	const size_t no_island = m_bodies.size();
 	m_island_by_root.assign(m_bodies.size(), no_island);
 	std::vector<SimulationIsland> islands;
@@ -5837,6 +6311,20 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 		const size_t island_index = island_for_pair(constraint.pair);
 		if (island_index != no_island) {
 			islands[island_index].constraints.emplace_back(constraint);
+		}
+	}
+
+	for (size_t joint_index = 0; joint_index < m_joints.size(); ++joint_index) {
+		if (m_joint_active[joint_index] == 0) {
+			continue;
+		}
+
+		const Joint& joint = m_joints[joint_index].joint;
+		const bool a_is_dynamic = is_active_dynamic(tryGetBody(joint.descriptor.body_a));
+		const BodyID anchor_body = a_is_dynamic ? joint.descriptor.body_a : joint.descriptor.body_b;
+		const size_t island_index = m_island_by_root[find_root(anchor_body.slot)];
+		if (island_index != no_island) {
+			islands[island_index].joint_indices.emplace_back(static_cast<uint32_t>(joint_index));
 		}
 	}
 
@@ -5916,6 +6404,55 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 			m_island_reordered_scratch[m_island_batch_cursor[m_island_constraint_batch[i]]++] = island.constraints[i];
 		}
 		island.constraints.swap(m_island_reordered_scratch);
+	}
+
+	// one joint at a time
+	m_joint_next_free_batch.assign(m_bodies.size(), 0);
+	for (SimulationIsland& island : islands) {
+		if (island.joint_indices.empty()) {
+			continue;
+		}
+
+		std::ranges::sort(island.joint_indices);
+		std::vector<uint32_t> batch_of(island.joint_indices.size(), 0);
+		uint32_t batch_count = 1;
+		for (size_t position = 0; position < island.joint_indices.size(); ++position) {
+			const Joint& joint = m_joints[island.joint_indices[position]].joint;
+			const Body* body_a = tryGetBody(joint.descriptor.body_a);
+			const Body* body_b = tryGetBody(joint.descriptor.body_b);
+			const bool a_moves = body_a != nullptr && movable(*body_a);
+			const bool b_moves = body_b != nullptr && movable(*body_b);
+
+			uint32_t batch = 0;
+			if (a_moves) {
+				batch = std::max(batch, m_joint_next_free_batch[joint.descriptor.body_a.slot]);
+			}
+			if (b_moves) {
+				batch = std::max(batch, m_joint_next_free_batch[joint.descriptor.body_b.slot]);
+			}
+			batch_of[position] = batch;
+			batch_count = std::max(batch_count, batch + 1);
+			if (a_moves) {
+				m_joint_next_free_batch[joint.descriptor.body_a.slot] = batch + 1;
+			}
+			if (b_moves) {
+				m_joint_next_free_batch[joint.descriptor.body_b.slot] = batch + 1;
+			}
+		}
+
+		island.joint_batch_offsets.assign(batch_count + 1, 0);
+		for (const uint32_t batch : batch_of) {
+			++island.joint_batch_offsets[batch + 1];
+		}
+		for (size_t i = 1; i < island.joint_batch_offsets.size(); ++i) {
+			island.joint_batch_offsets[i] += island.joint_batch_offsets[i - 1];
+		}
+		std::vector<uint32_t> reordered(island.joint_indices.size());
+		std::vector<size_t> cursor(island.joint_batch_offsets.begin(), island.joint_batch_offsets.end() - 1);
+		for (size_t position = 0; position < island.joint_indices.size(); ++position) {
+			reordered[cursor[batch_of[position]]++] = island.joint_indices[position];
+		}
+		island.joint_indices.swap(reordered);
 	}
 
 	std::ranges::sort(islands, [](const SimulationIsland& lhs, const SimulationIsland& rhs) {
@@ -6107,15 +6644,67 @@ void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
 	}
 	m_profile.max_constraint_batches = max_batches;
 
+	// Runs the function on every joint wave by wave
+	size_t max_joint_batches = 0;
+	for (const SimulationIsland& island : islands) {
+		max_joint_batches =
+		    std::max(max_joint_batches, island.joint_batch_offsets.empty() ? size_t {0} : island.joint_batch_offsets.size() - 1);
+	}
+	const auto run_joint_waves = [&](const auto& per_joint) {
+		for (size_t wave = 0; wave < max_joint_batches; ++wave) {
+			m_joint_wave.clear();
+			for (const SimulationIsland& island : islands) {
+				if (wave + 1 < island.joint_batch_offsets.size()) {
+					m_joint_wave.insert(
+					    m_joint_wave.end(),
+					    island.joint_indices.begin() + static_cast<std::ptrdiff_t>(island.joint_batch_offsets[wave]),
+					    island.joint_indices.begin() + static_cast<std::ptrdiff_t>(island.joint_batch_offsets[wave + 1])
+					);
+				}
+			}
+			if (m_joint_wave.empty()) {
+				continue;
+			}
+
+			const size_t chunk_count = std::min(worker_count, m_joint_wave.size());
+			if (m_joint_wave.size() < tunables().min_wave_joints_for_dispatch || chunk_count <= 1) {
+				for (const uint32_t joint_index : m_joint_wave) {
+					per_joint(joint_index);
+				}
+				continue;
+			}
+
+			const size_t per_chunk = (m_joint_wave.size() + chunk_count - 1) / chunk_count;
+			std::atomic<size_t> chunks_remaining {chunk_count};
+			for (size_t chunk = 0; chunk < chunk_count; ++chunk) {
+				const size_t begin = chunk * per_chunk;
+				const size_t end = std::min(m_joint_wave.size(), begin + per_chunk);
+				toast::ThreadPool::pushRaw([this, begin, end, &per_joint, &chunks_remaining] {
+					ZoneScopedN("physics::JointWaveChunk");    // NOLINT
+					for (size_t position = begin; position < end; ++position) {
+						per_joint(m_joint_wave[position]);
+					}
+					chunks_remaining.fetch_sub(1, std::memory_order_acq_rel);
+				});
+			}
+			while (chunks_remaining.load(std::memory_order_acquire) != 0) {
+				std::this_thread::yield();
+			}
+		}
+	};
+
+	std::vector<size_t> plain_islands;
+	std::vector<size_t> jointed_islands;
+	for (size_t island_index = 0; island_index < islands.size(); ++island_index) {
+		(islands[island_index].joint_indices.empty() ? plain_islands : jointed_islands).push_back(island_index);
+	}
+
 	size_t invalid_constraint_count = 0;
 	std::vector<std::span<Constraint>> wave_spans;
 	std::vector<size_t> active_islands;
-	for (uint32_t iteration = 0; iteration < solver_iterations; ++iteration) {
-		ZoneScopedN("iteration");
-		ZoneValue(static_cast<uint64_t>(iteration));
-
+	const auto solve_contact_waves = [&](std::span<const size_t> island_set) {
 		active_islands.clear();
-		for (size_t island_index = 0; island_index < islands.size(); ++island_index) {
+		for (const size_t island_index : island_set) {
 			if (islands[island_index].batch_offsets.size() > 1) {
 				active_islands.push_back(island_index);
 			}
@@ -6177,6 +6766,131 @@ void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
 				invalid_constraint_count += invalid;
 			}
 		}
+	};
+
+	for (uint32_t iteration = 0; iteration < solver_iterations; ++iteration) {
+		ZoneScopedN("iteration");
+		ZoneValue(static_cast<uint64_t>(iteration));
+		solve_contact_waves(plain_islands);
+	}
+
+	std::vector<glm::vec3> predicted_centers;
+	if (not jointed_islands.empty()) {
+		ZoneScopedN("physics::JointSubsteps");
+		const uint32_t substeps = std::max(tunables().joint_substeps, 1u);
+		const float substep_dt = static_cast<float>(Accumulator::fixedDelta()) / static_cast<float>(substeps);
+		const uint32_t substep_iterations = std::max((solver_iterations + substeps - 1) / substeps, 1u);
+
+		const auto settle_inertia = [](Body& body) {
+			const glm::mat3 rotation = glm::mat3_cast(body.rotation);
+			body.inverse_inertia_world = rotation * body.inverse_inertia_local * glm::transpose(rotation);
+		};
+		const auto advance = [&settle_inertia, substep_dt](Body& body) {
+			for (int axis = 0; axis < 3; ++axis) {
+				if (body.lock_position[axis]) {
+					body.linear_velocity[axis] = 0.0f;
+				}
+				if (body.lock_rotation[axis]) {
+					body.angular_velocity[axis] = 0.0f;
+				}
+			}
+			const glm::vec3 center = body.worldCenterOfMass() + (body.linear_velocity * substep_dt);
+			const glm::quat spin {0.0f, body.angular_velocity.x, body.angular_velocity.y, body.angular_velocity.z};
+			const glm::quat next = body.rotation + ((0.5f * substep_dt) * (spin * body.rotation));
+			const float length_squared = glm::dot(next, next);
+			if (std::isfinite(length_squared) && length_squared > 1.0e-10f) {
+				body.rotation = glm::normalize(next);
+			}
+			body.position = center - (body.rotation * body.local_center_of_mass);
+			settle_inertia(body);
+		};
+		const auto for_each_jointed_body = [&](const auto& per_body) {
+			for (const size_t island_index : jointed_islands) {
+				for (const BodyID id : islands[island_index].dynamic_bodies) {
+					if (Body* body = tryGetBody(id); body != nullptr) {
+						per_body(id, *body);
+					}
+				}
+			}
+		};
+
+		for_each_jointed_body([&](BodyID, Body& body) {
+			predicted_centers.push_back(body.worldCenterOfMass());
+			body.position = body.previous_position;
+			body.rotation = body.previous_rotation;
+			settle_inertia(body);
+		});
+
+		if (m_position_shift.size() < m_bodies.size()) {
+			m_position_shift.resize(m_bodies.size(), glm::vec3(0.0f));
+		}
+		const auto measure_shift = [&] {
+			size_t body_index = 0;
+			for_each_jointed_body([&](BodyID id, Body& body) {
+				m_position_shift[id.slot] = body.worldCenterOfMass() - predicted_centers[body_index++];
+			});
+		};
+		const auto open_contacts = [&](bool first) {
+			for (const size_t island_index : jointed_islands) {
+				for (Constraint& constraint : islands[island_index].constraints) {
+					const float separation =
+					    -constraint.penetration +
+					    glm::dot(m_position_shift[constraint.body_b.slot] - m_position_shift[constraint.body_a.slot], constraint.normal);
+					const float closing = std::max(separation, 0.0f) / substep_dt;
+					constraint.closing_speed = first ? closing : std::min(constraint.closing_speed, closing);
+				}
+			}
+		};
+		measure_shift();
+
+		for (uint32_t substep = 0; substep < substeps; ++substep) {
+			run_joint_waves([this, substep, substep_dt](uint32_t joint_index) {
+				JointSlot& slot = m_joints[joint_index];
+				Body* body_a = nullptr;
+				Body* body_b = nullptr;
+				jointBodies(slot.joint, body_a, body_b);
+				const _detail::JointRow previous = m_joint_rows[joint_index];
+				m_joint_rows[joint_index] = _detail::prepareJoint(slot.joint, *body_a, *body_b, substep_dt);
+				if (substep == 0) {
+					_detail::warmStartJoint(m_joint_rows[joint_index], slot.joint, *body_a, *body_b);
+				} else {
+					m_joint_rows[joint_index].bounce_lower = std::min(m_joint_rows[joint_index].bounce_lower, previous.bounce_lower);
+					m_joint_rows[joint_index].bounce_upper = std::min(m_joint_rows[joint_index].bounce_upper, previous.bounce_upper);
+				}
+			});
+
+			open_contacts(substep == 0);
+			for (uint32_t iteration = 0; iteration < substep_iterations; ++iteration) {
+				run_joint_waves([this](uint32_t joint_index) {
+					JointSlot& slot = m_joints[joint_index];
+					Body* body_a = nullptr;
+					Body* body_b = nullptr;
+					jointBodies(slot.joint, body_a, body_b);
+					_detail::solveJoint(m_joint_rows[joint_index], slot.joint, *body_a, *body_b);
+				});
+				solve_contact_waves(jointed_islands);
+			}
+
+			for_each_jointed_body([&](BodyID, Body& body) { advance(body); });
+
+			const uint32_t passes = substep + 1 == substeps ? tunables().position_iterations : 1u;
+			for (uint32_t pass = 0; pass < passes; ++pass) {
+				run_joint_waves([this](uint32_t joint_index) {
+					JointSlot& slot = m_joints[joint_index];
+					Body* body_a = nullptr;
+					Body* body_b = nullptr;
+					jointBodies(slot.joint, body_a, body_b);
+					_detail::correctJointPositions(slot.joint, *body_a, *body_b);
+				});
+			}
+			measure_shift();
+		}
+
+		for (const size_t island_index : jointed_islands) {
+			for (Constraint& constraint : islands[island_index].constraints) {
+				constraint.closing_speed = 0.0f;
+			}
+		}
 	}
 
 	if (invalid_constraint_count > 0) {
@@ -6188,6 +6902,13 @@ void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
 	size_t position_correction_count = 0;
 	for (SimulationIsland& island : islands) {
 		position_correction_count += correctPositions(island.manifold_indices);
+	}
+	if (not predicted_centers.empty()) {
+		for (const size_t island_index : jointed_islands) {
+			for (const BodyID id : islands[island_index].dynamic_bodies) {
+				m_position_shift[id.slot] = glm::vec3(0.0f);
+			}
+		}
 	}
 	m_profile.position_corrections = position_correction_count;
 

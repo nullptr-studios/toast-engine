@@ -96,6 +96,17 @@ void registerPhysicsSettings() {
 			 .step = 1.0},
 	    &Tunables::position_iterations
 	);
+	uint_setting(
+	    "physics.solver.joint_substeps",
+	    4,
+	    {.label = "Joint substeps",
+			 .category = "Solver",
+			 .description = "Times a step is split for bodies held by joints so swinging keeps its speed",
+			 .min = 1.0,
+			 .max = 16.0,
+			 .step = 1.0},
+	    &Tunables::joint_substeps
+	);
 	flt("physics.solver.penetration_slop",
 	    0.005,
 	    {.label = "Penetration slop",
@@ -565,6 +576,17 @@ void registerPhysicsSettings() {
 			 .max = 65536.0,
 			 .step = 1.0},
 	    &Tunables::min_wave_constraints_for_dispatch
+	);
+	uint_setting(
+	    "physics.jobs.min_wave_joints_for_dispatch",
+	    64,
+	    {.label = "Min wave joints per dispatch",
+			 .category = "Jobs",
+			 .description = "Joint waves below this size solve inline",
+			 .min = 1.0,
+			 .max = 65536.0,
+			 .step = 1.0},
+	    &Tunables::min_wave_joints_for_dispatch
 	);
 	uint_setting(
 	    "physics.jobs.box_voxel_split_min_voxels",
