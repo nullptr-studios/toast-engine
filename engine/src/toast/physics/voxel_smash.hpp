@@ -300,13 +300,28 @@ auto collectCellPieces(
 				continue;
 			}
 			const voxel::BrickFaces& from = parts[p].faces;
-			const uint64_t outward = axis == 0 ? from.pos_x : (axis == 1 ? from.pos_y : from.pos_z);
+			uint64_t outward;
+			if (axis == 0) {
+				outward = from.pos_x;
+			}else if (axis == 1) {
+				outward = from.pos_y;
+			}else {
+				outward = from.pos_z;
+			}
+			
 			for (size_t q = found->second.first; q < found->second.second; ++q) {
 				if (parts[q].cell != parts[p].cell) {
 					continue;
 				}
 				const voxel::BrickFaces& to = parts[q].faces;
-				const uint64_t inward = axis == 0 ? to.neg_x : (axis == 1 ? to.neg_y : to.neg_z);
+				uint64_t inward;
+				if (axis == 0) {
+					inward = to.neg_x;
+				} else if (axis == 1) {
+					inward = to.neg_y;
+				}else {
+					inward = to.neg_z;
+				}
 				if (voxel::facesConnect(outward, inward)) {
 					parent[find(static_cast<uint32_t>(q))] = find(static_cast<uint32_t>(p));
 				}

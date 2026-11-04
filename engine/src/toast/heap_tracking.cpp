@@ -216,7 +216,7 @@ void releaseAligned(void* ptr) {
 #ifdef _WIN32
 	_aligned_free(ptr);
 #else
-	std::free(ptr);
+	std::free(ptr);		// NOLINT(*-no-malloc)
 #endif
 }
 
