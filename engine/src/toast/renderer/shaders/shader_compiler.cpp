@@ -148,7 +148,8 @@ auto ShaderCompiler::featureHash() -> uint64_t {
 	constexpr uint64_t k_dev_tools = 0x0ull;
 #endif
 
-	return (ShaderCompiler::isRayQueryAvailable() ? 0x9e3779b97f4a7c15ull : 0x0ull) ^ k_build_profile ^ k_depth_convention ^ k_trace_walk ^ k_dev_tools;
+	return (ShaderCompiler::isRayQueryAvailable() ? 0x9e3779b97f4a7c15ull : 0x0ull) ^ k_build_profile ^ k_depth_convention ^
+	       k_trace_walk ^ k_dev_tools;
 }
 
 static auto createSession(slang::IGlobalSession* global_session) -> Slang::ComPtr<slang::ISession> {
