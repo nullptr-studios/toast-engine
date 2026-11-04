@@ -303,12 +303,12 @@ auto collectCellPieces(
 			uint64_t outward;
 			if (axis == 0) {
 				outward = from.pos_x;
-			}else if (axis == 1) {
+			} else if (axis == 1) {
 				outward = from.pos_y;
-			}else {
+			} else {
 				outward = from.pos_z;
 			}
-			
+
 			for (size_t q = found->second.first; q < found->second.second; ++q) {
 				if (parts[q].cell != parts[p].cell) {
 					continue;
@@ -319,7 +319,7 @@ auto collectCellPieces(
 					inward = to.neg_x;
 				} else if (axis == 1) {
 					inward = to.neg_y;
-				}else {
+				} else {
 					inward = to.neg_z;
 				}
 				if (voxel::facesConnect(outward, inward)) {
