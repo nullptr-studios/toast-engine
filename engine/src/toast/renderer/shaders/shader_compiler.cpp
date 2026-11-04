@@ -132,22 +132,23 @@ void ShaderCompiler::setMaxParallelCompiles(size_t count) {
 }
 
 auto ShaderCompiler::featureHash() -> uint64_t {
-	// Debug compiles unoptimized with debug info so a release entry in the shared cache must read as stale and the reverse
-#if defined(NDEBUG)
-	const uint64_t k_build_profile = full_optimization.load(std::memory_order_relaxed) ? 0x0ull : 0x0f7d1e5ca1ab1e01ull;
+#if defined(__linux__)
+	constexpr bool is_optimized = false;
 #else
-	constexpr uint64_t k_build_profile = 0xd3b09c0de5a11e01ull;
+	const bool is_optimized = full_optimization.load(std::memory_order_relaxed);
 #endif
-	// TOAST_REVERSED_Z changes the SPIR-V so the other convention must read as stale
+
+	const uint64_t k_build_profile = is_optimized ? 0x0ull : 0x0f7d1e5ca1ab1e01ull;
 	constexpr uint64_t k_depth_convention = depth::k_reversed_z ? 0x5eed2e7e45edull : 0x0ull;
 	const uint64_t k_trace_walk = traceRayQuery() ? 0x0ull : 0x7a11c0de5eedull;
+
 #if defined(TOAST_DEV_TOOLS)
 	constexpr uint64_t k_dev_tools = 0xde7700150000ull;
 #else
 	constexpr uint64_t k_dev_tools = 0x0ull;
 #endif
-	return (ShaderCompiler::isRayQueryAvailable() ? 0x9e3779b97f4a7c15ull : 0x0ull) ^ k_build_profile ^ k_depth_convention ^
-	       k_trace_walk ^ k_dev_tools;
+
+	return (ShaderCompiler::isRayQueryAvailable() ? 0x9e3779b97f4a7c15ull : 0x0ull) ^ k_build_profile ^ k_depth_convention ^ k_trace_walk ^ k_dev_tools;
 }
 
 static auto createSession(slang::IGlobalSession* global_session) -> Slang::ComPtr<slang::ISession> {
@@ -159,10 +160,10 @@ static auto createSession(slang::IGlobalSession* global_session) -> Slang::ComPt
 	std::array<slang::TargetDesc, 1> slang_targets {target};
 
 	std::vector<slang::CompilerOptionEntry> compiler_options;
-#if defined(NDEBUG)
-	const bool debug_shaders = !full_optimization.load(std::memory_order_relaxed);
-#else
+#if defined(__linux__)
 	constexpr bool debug_shaders = true;
+#else
+	const bool debug_shaders = !full_optimization.load(std::memory_order_relaxed);
 #endif
 	TOAST_TRACE(
 	    "Render",
