@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.17.0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Toast Engine: engine/src/toast/renderer/passes/traced_shadow_pass.hpp Source File</title>
+<title>Toast Engine: engine/src/toast/renderer/passes/lighting/traced_shadow_pass.hpp Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="codefolding.js"></script>
 <script type="text/javascript" src="clipboard.js"></script>
@@ -122,11 +122,11 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('traced__shadow
 <div class="line"><a id="l00006" name="l00006"></a><span class="lineno">    6</span> </div>
 <div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span><span class="preprocessor">#pragma once</span></div>
 <div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span> </div>
-<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="preprocessor">#include &quot;<a class="code" href="post__process__pass__base_8hpp.html">../post_process_pass_base.hpp</a>&quot;</span></div>
-<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &quot;<a class="code" href="post__process__target_8hpp.html">../post_process_target.hpp</a>&quot;</span></div>
-<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &quot;../shader_layout.hpp&quot;</span></div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &quot;../vulkan_common.hpp&quot;</span></div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &quot;../vulkan_pipeline.hpp&quot;</span></div>
+<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="preprocessor">#include &quot;toast/renderer/core/vulkan_common.hpp&quot;</span></div>
+<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &quot;<a class="code" href="post__process__pass__base_8hpp.html">toast/renderer/passes/post_process_pass_base.hpp</a>&quot;</span></div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &quot;<a class="code" href="post__process__target_8hpp.html">toast/renderer/resources/post_process_target.hpp</a>&quot;</span></div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &quot;toast/renderer/shaders/shader_layout.hpp&quot;</span></div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &quot;toast/renderer/shaders/vulkan_pipeline.hpp&quot;</span></div>
 <div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span> </div>
 <div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &lt;glm/glm.hpp&gt;</span></div>
 <div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &lt;optional&gt;</span></div>
@@ -181,8 +181,8 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('traced__shadow
 <div class="ttc" id="aclassrenderer_1_1IPostProcessPass_html"><div class="ttname"><a href="classrenderer_1_1IPostProcessPass.html">renderer::IPostProcessPass</a></div><div class="ttdef"><b>Definition</b> post_process_pass_base.hpp:14</div></div>
 <div class="ttc" id="aclassrenderer_1_1PostProcessTarget_html"><div class="ttname"><a href="classrenderer_1_1PostProcessTarget.html">renderer::PostProcessTarget</a></div><div class="ttdef"><b>Definition</b> post_process_target.hpp:19</div></div>
 <div class="ttc" id="aclassrenderer_1_1ShaderLayout_html"><div class="ttname"><a href="classrenderer_1_1ShaderLayout.html">renderer::ShaderLayout</a></div><div class="ttdef"><b>Definition</b> shader_layout.hpp:12</div></div>
-<div class="ttc" id="aclassrenderer_1_1TracedShadowPass_html_ac5a67901f73062b0548f4faaf9658e0b"><div class="ttname"><a href="classrenderer_1_1TracedShadowPass.html#ac5a67901f73062b0548f4faaf9658e0b">renderer::TracedShadowPass::record</a></div><div class="ttdeci">auto record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView source_view) -&gt; vk::ImageView override</div><div class="ttdef"><b>Definition</b> traced_shadow_pass.cpp:109</div></div>
-<div class="ttc" id="aclassrenderer_1_1VulkanCore_html"><div class="ttname"><a href="classrenderer_1_1VulkanCore.html">renderer::VulkanCore</a></div><div class="ttdef"><b>Definition</b> vulkan_core.hpp:48</div></div>
+<div class="ttc" id="aclassrenderer_1_1TracedShadowPass_html_ac5a67901f73062b0548f4faaf9658e0b"><div class="ttname"><a href="classrenderer_1_1TracedShadowPass.html#ac5a67901f73062b0548f4faaf9658e0b">renderer::TracedShadowPass::record</a></div><div class="ttdeci">auto record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView source_view) -&gt; vk::ImageView override</div><div class="ttdef"><b>Definition</b> traced_shadow_pass.cpp:100</div></div>
+<div class="ttc" id="aclassrenderer_1_1VulkanCore_html"><div class="ttname"><a href="classrenderer_1_1VulkanCore.html">renderer::VulkanCore</a></div><div class="ttdef"><b>Definition</b> vulkan_core.hpp:50</div></div>
 <div class="ttc" id="aclassrenderer_1_1VulkanPipeline_html"><div class="ttname"><a href="classrenderer_1_1VulkanPipeline.html">renderer::VulkanPipeline</a></div><div class="ttdef"><b>Definition</b> vulkan_pipeline.hpp:19</div></div>
 <div class="ttc" id="apost__process__pass__base_8hpp_html"><div class="ttname"><a href="post__process__pass__base_8hpp.html">post_process_pass_base.hpp</a></div></div>
 <div class="ttc" id="apost__process__target_8hpp_html"><div class="ttname"><a href="post__process__target_8hpp.html">post_process_target.hpp</a></div></div>
@@ -192,7 +192,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('traced__shadow
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><b>engine</b></li><li class="navelem"><b>src</b></li><li class="navelem"><b>toast</b></li><li class="navelem"><b>renderer</b></li><li class="navelem"><b>passes</b></li><li class="navelem"><a href="traced__shadow__pass_8hpp.html">traced_shadow_pass.hpp</a></li>
+    <li class="navelem"><b>engine</b></li><li class="navelem"><b>src</b></li><li class="navelem"><b>toast</b></li><li class="navelem"><b>renderer</b></li><li class="navelem"><b>passes</b></li><li class="navelem"><b>lighting</b></li><li class="navelem"><a href="traced__shadow__pass_8hpp.html">traced_shadow_pass.hpp</a></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.17.0 </li>
   </ul>
 </div>

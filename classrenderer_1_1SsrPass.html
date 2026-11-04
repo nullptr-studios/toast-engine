@@ -118,12 +118,17 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classrenderer_
   <div class="headertitle"><div class="title">renderer::SsrPass Class Reference</div></div>
 </div><!--header-->
 <div class="contents">
+
+<p>Half resolution stochastic SSR.  
+ <a href="#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="ssr__pass_8hpp_source.html">ssr_pass.hpp</a>&gt;</code></p>
 <div class="dynheader">
 Inheritance diagram for renderer::SsrPass:</div>
 <div class="dyncontent">
 <div class="center"><img src="classrenderer_1_1SsrPass__inherit__graph.png" border="0" usemap="#arenderer_1_1SsrPass_inherit__map" loading="lazy" alt="Inheritance graph"/></div>
 <map name="arenderer_1_1SsrPass_inherit__map" id="arenderer_1_1SsrPass_inherit__map">
-<area shape="rect" title=" " alt="" coords="36,81,170,109"/>
+<area shape="rect" title="Half resolution stochastic SSR." alt="" coords="36,81,170,109"/>
 <area shape="rect" href="classrenderer_1_1IPostProcessPass.html" title=" " alt="" coords="5,5,201,33"/>
 <area shape="poly" title=" " alt="" coords="105,47,105,82,101,80,101,51"/>
 </map>
@@ -133,7 +138,7 @@ Collaboration diagram for renderer::SsrPass:</div>
 <div class="dyncontent">
 <div class="center"><img src="classrenderer_1_1SsrPass__coll__graph.png" border="0" usemap="#arenderer_1_1SsrPass_coll__map" loading="lazy" alt="Collaboration graph"/></div>
 <map name="arenderer_1_1SsrPass_coll__map" id="arenderer_1_1SsrPass_coll__map">
-<area shape="rect" title=" " alt="" coords="36,81,170,109"/>
+<area shape="rect" title="Half resolution stochastic SSR." alt="" coords="36,81,170,109"/>
 <area shape="rect" href="classrenderer_1_1IPostProcessPass.html" title=" " alt="" coords="5,5,201,33"/>
 <area shape="poly" title=" " alt="" coords="105,47,105,82,101,80,101,51"/>
 </map>
@@ -147,12 +152,16 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a8c56502b184a1e4b9849a68f5dfe82d2" id="r_a8c56502b184a1e4b9849a68f5dfe82d2"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a8c56502b184a1e4b9849a68f5dfe82d2">record</a> (vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView source_view) -&gt; vk::ImageView override</td></tr>
 <tr class="memitem:afeb4454ca917d51f0983db404bfcb58f" id="r_afeb4454ca917d51f0983db404bfcb58f"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#afeb4454ca917d51f0983db404bfcb58f">onResize</a> (vk::Extent2D extent) override</td></tr>
 <tr class="inherit_header pub_methods_classrenderer_1_1IPostProcessPass"><td colspan="2">Public Member Functions inherited from <a class="el" href="classrenderer_1_1IPostProcessPass.html">renderer::IPostProcessPass</a></td></tr>
+<tr class="memitem:a8f9eda389e322c2f8342e4fa6bfe6bfc pub_methods_classrenderer_1_1IPostProcessPass" id="r_a8f9eda389e322c2f8342e4fa6bfe6bfc"><td class="memItemLeft">
+virtual auto&#160;</td><td class="memItemRight"><b>atOutputResolution</b> () const -&gt; bool</td></tr>
 <tr class="memitem:ae70bcdd0adb6974db0e23e1fc8d77e7d pub_methods_classrenderer_1_1IPostProcessPass" id="r_ae70bcdd0adb6974db0e23e1fc8d77e7d"><td class="memItemLeft">
 void&#160;</td><td class="memItemRight"><b>setEnabled</b> (bool enabled) noexcept</td></tr>
 <tr class="memitem:a6e114af78d37d5b557910626b406bdef pub_methods_classrenderer_1_1IPostProcessPass" id="r_a6e114af78d37d5b557910626b406bdef"><td class="memItemLeft">
 auto&#160;</td><td class="memItemRight"><b>isEnabled</b> () const noexcept -&gt; bool</td></tr>
 </table>
-<a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
+<a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Half resolution stochastic SSR. </p>
+</div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="ab8978c9ae289d9242e9badb6d5174fe9" name="ab8978c9ae289d9242e9badb6d5174fe9"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ab8978c9ae289d9242e9badb6d5174fe9">&#9670;&#160;</a></span>name()</h2>
 
@@ -254,8 +263,8 @@ Here is the caller graph for this function:</div>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>engine/src/toast/renderer/passes/<a class="el" href="ssr__pass_8hpp_source.html">ssr_pass.hpp</a></li>
-<li>engine/src/toast/renderer/passes/<a class="el" href="ssr__pass_8cpp.html">ssr_pass.cpp</a></li>
+<li>engine/src/toast/renderer/passes/lighting/<a class="el" href="ssr__pass_8hpp_source.html">ssr_pass.hpp</a></li>
+<li>engine/src/toast/renderer/passes/lighting/<a class="el" href="ssr__pass_8cpp.html">ssr_pass.cpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

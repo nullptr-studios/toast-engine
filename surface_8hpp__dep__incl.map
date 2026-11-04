@@ -1,27 +1,40 @@
 <map id="engine/src/toast/voxel/surface.hpp" name="engine/src/toast/voxel/surface.hpp">
-<area shape="rect" id="Node000001" title=" " alt="" coords="114,5,278,50"/>
-<area shape="rect" id="Node000002" href="$voxel__query_8hpp.html" title="TODO: Brief description of the file&#39;s purpose." alt="" coords="5,98,184,143"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="159,63,121,99,116,96,162,58"/>
-<area shape="rect" id="Node000003" href="$voxel__shape__data_8hpp.html" title="Voxel data structures for physics system." alt="" coords="208,98,386,143"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="231,58,276,97,270,98,231,63"/>
-<area shape="rect" id="Node000004" href="$collision__world_8hpp.html" title="Read&#45;only access to physics data used by collision detection." alt="" coords="335,191,513,235"/>
-<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="339,149,396,190,391,191,340,154"/>
-<area shape="rect" id="Node000006" href="$simulator_8hpp.html" title="This class simulates all of the physics of the project." alt="" coords="169,469,348,513"/>
-<area shape="poly" id="edge15_Node000003_Node000006" title=" " alt="" coords="244,153,214,178,178,208,147,244,122,284,116,311,118,337,128,363,144,388,185,432,228,468,223,468,181,436,139,391,123,366,113,339,110,311,117,282,142,241,175,204,210,173,248,149"/>
-<area shape="rect" id="Node000008" href="$manifold_8hpp.html" title="TODO: Brief description of the file&#39;s purpose." alt="" coords="335,283,513,328"/>
-<area shape="poly" id="edge14_Node000003_Node000008" title=" " alt="" coords="299,156,308,196,325,234,349,260,380,282,375,283,346,264,320,237,303,198,298,161"/>
-<area shape="rect" id="Node000005" href="$broad__phase_8hpp.html" title="Generates potentially colliding shape pairs." alt="" coords="132,283,310,328"/>
-<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="359,244,271,285,268,281,363,240"/>
-<area shape="poly" id="edge7_Node000004_Node000008" title=" " alt="" coords="425,249,426,284,421,282,423,253"/>
-<area shape="rect" id="Node000010" href="$narrow__phase_8hpp.html" title="Generates contact manifolds for potentially colliding pairs." alt="" coords="499,376,677,421"/>
-<area shape="poly" id="edge13_Node000004_Node000010" title=" " alt="" coords="477,241,504,260,527,282,560,329,582,376,577,375,556,332,523,285,500,264,477,246"/>
-<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="227,341,242,420,255,469,249,467,237,421,225,346"/>
-<area shape="rect" id="Node000007" href="$debug__pass_8cpp.html" title=" " alt="" coords="229,561,413,606"/>
-<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="283,524,309,562,304,560,281,529"/>
-<area shape="poly" id="edge12_Node000008_Node000006" title=" " alt="" coords="335,337,310,355,286,378,273,399,266,423,260,469,256,467,261,422,269,397,282,374,306,351,339,333"/>
-<area shape="rect" id="Node000009" href="$contact__events_8hpp.html" title="Physics contact lifecycle events." alt="" coords="296,376,474,421"/>
-<area shape="poly" id="edge8_Node000008_Node000009" title=" " alt="" coords="411,340,396,377,392,374,407,344"/>
-<area shape="poly" id="edge9_Node000008_Node000010" title=" " alt="" coords="477,333,552,375,546,376,476,339"/>
-<area shape="poly" id="edge10_Node000010_Node000006" title=" " alt="" coords="492,426,338,471,337,466,497,424"/>
-<area shape="poly" id="edge11_Node000010_Node000007" title=" " alt="" coords="547,429,354,563,351,559,542,430"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="819,5,984,50"/>
+<area shape="rect" id="Node000002" href="$voxel__query_8hpp.html" title="TODO: Brief description of the file&#39;s purpose." alt="" coords="711,98,889,143"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="868,59,826,100,823,95,864,62"/>
+<area shape="rect" id="Node000003" href="$voxel__shape__data_8hpp.html" title="Voxel data structures for physics system." alt="" coords="914,98,1092,143"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="937,58,981,98,976,97,936,63"/>
+<area shape="rect" id="Node000004" href="$collision__world_8hpp.html" title="Read&#45;only access to physics data used by collision detection." alt="" coords="691,191,869,235"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="933,150,835,193,832,188,938,148"/>
+<area shape="rect" id="Node000006" href="$simulator_8hpp.html" title="This class simulates all of the physics of the project." alt="" coords="691,469,869,513"/>
+<area shape="poly" id="edge21_Node000003_Node000006" title=" " alt="" coords="1028,153,1062,210,1091,280,1099,317,1100,354,1092,390,1074,422,1061,434,1042,444,991,461,930,474,870,483,869,478,930,469,989,456,1040,440,1058,430,1070,419,1087,388,1094,354,1093,318,1085,282,1057,212,1026,158"/>
+<area shape="rect" id="Node000014" href="$manifold_8hpp.html" title="TODO: Brief description of the file&#39;s purpose." alt="" coords="755,283,933,328"/>
+<area shape="poly" id="edge19_Node000003_Node000014" title=" " alt="" coords="977,153,864,285,861,281,972,156"/>
+<area shape="rect" id="Node000017" href="$query__snapshot_8hpp_source.html" title=" " alt="" coords="1135,191,1313,235"/>
+<area shape="poly" id="edge20_Node000003_Node000017" title=" " alt="" coords="1070,146,1174,190,1169,190,1070,152"/>
+<area shape="rect" id="Node000005" href="$broad__phase_8hpp.html" title="Generates potentially colliding shape pairs." alt="" coords="502,283,680,328"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="719,244,637,285,635,281,724,241"/>
+<area shape="poly" id="edge13_Node000004_Node000014" title=" " alt="" coords="805,245,832,284,827,283,803,250"/>
+<area shape="rect" id="Node000016" href="$narrow__phase_8hpp.html" title="Generates contact manifolds for potentially colliding pairs." alt="" coords="628,376,807,421"/>
+<area shape="poly" id="edge18_Node000004_Node000016" title=" " alt="" coords="761,247,745,284,731,333,723,377,718,374,726,332,740,282,757,251"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="592,341,600,383,607,402,618,419,652,447,693,469,688,469,649,452,614,422,602,404,595,384,589,346"/>
+<area shape="rect" id="Node000007" href="$vulkan__renderer_8cpp.html" title=" " alt="" coords="5,561,190,606"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="673,503,457,529,202,564,190,566,189,561,201,559,456,524,678,502"/>
+<area shape="rect" id="Node000008" href="$vulkan__renderer__lights_8cpp.html" title=" " alt="" coords="213,561,414,606"/>
+<area shape="poly" id="edge7_Node000006_Node000008" title=" " alt="" coords="679,512,414,566,414,560,673,513"/>
+<area shape="rect" id="Node000009" href="$vulkan__renderer__record_8cpp.html" title=" " alt="" coords="438,561,643,606"/>
+<area shape="poly" id="edge8_Node000006_Node000009" title=" " alt="" coords="711,519,598,563,597,558,706,520"/>
+<area shape="rect" id="Node000010" href="$vulkan__renderer__resources_8cpp.html" title=" " alt="" coords="666,561,894,606"/>
+<area shape="poly" id="edge9_Node000006_Node000010" title=" " alt="" coords="782,527,782,563,778,559,778,531"/>
+<area shape="rect" id="Node000011" href="$vulkan__renderer__scene_8cpp.html" title=" " alt="" coords="918,561,1120,606"/>
+<area shape="poly" id="edge10_Node000006_Node000011" title=" " alt="" coords="852,517,964,561,959,561,851,522"/>
+<area shape="rect" id="Node000012" href="$vulkan__renderer__thread_8cpp.html" title=" " alt="" coords="1144,561,1350,606"/>
+<area shape="poly" id="edge11_Node000006_Node000012" title=" " alt="" coords="885,510,1146,562,1140,562,884,515"/>
+<area shape="rect" id="Node000013" href="$vulkan__renderer__voxel_8cpp.html" title=" " alt="" coords="1374,561,1573,606"/>
+<area shape="poly" id="edge12_Node000006_Node000013" title=" " alt="" coords="885,500,1105,524,1362,559,1376,563,1371,563,1361,564,1104,530,885,505"/>
+<area shape="poly" id="edge17_Node000014_Node000006" title=" " alt="" coords="841,341,834,382,821,422,796,470,793,466,816,420,828,380,837,345"/>
+<area shape="rect" id="Node000015" href="$contact__events_8hpp.html" title="Physics contact lifecycle events." alt="" coords="882,376,1060,421"/>
+<area shape="poly" id="edge14_Node000014_Node000015" title=" " alt="" coords="887,335,943,376,938,375,886,340"/>
+<area shape="poly" id="edge15_Node000014_Node000016" title=" " alt="" coords="804,336,749,378,747,373,799,338"/>
+<area shape="poly" id="edge16_Node000016_Node000006" title=" " alt="" coords="742,431,768,469,763,468,740,436"/>
 </map>

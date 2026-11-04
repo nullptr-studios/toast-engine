@@ -127,13 +127,15 @@ Inheritance diagram for toast::VoxelNode:</div>
 <map name="atoast_1_1VoxelNode_inherit__map" id="atoast_1_1VoxelNode_inherit__map">
 <area shape="rect" title=" " alt="" coords="23,232,154,260"/>
 <area shape="rect" href="classtoast_1_1ProceduralVoxel.html" title=" " alt="" coords="5,308,172,336"/>
-<area shape="poly" title=" " alt="" coords="90,274,91,309,86,307,87,278"/>
+<area shape="poly" title=" " alt="" coords="90,273,91,308,86,307,87,278"/>
 <area shape="rect" href="classtoast_1_1Voxel.html" title=" " alt="" coords="40,157,137,184"/>
-<area shape="poly" title=" " alt="" coords="90,198,91,233,86,231,87,203"/>
+<area shape="poly" title=" " alt="" coords="89,198,91,232,86,231,88,203"/>
 <area shape="rect" href="classtoast_1_1Node3D.html" title=" " alt="" coords="31,81,146,109"/>
 <area shape="poly" title=" " alt="" coords="89,122,91,157,86,156,88,127"/>
 <area shape="rect" href="classtoast_1_1Node.html" title=" " alt="" coords="40,5,137,33"/>
 <area shape="poly" title=" " alt="" coords="89,46,91,81,86,80,88,51"/>
+<area shape="rect" href="classtoast_1_1VoxelBrush.html" title=" " alt="" coords="21,384,156,411"/>
+<area shape="poly" title=" " alt="" coords="90,350,91,384,86,382,87,353"/>
 </map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
@@ -247,6 +249,24 @@ auto&#160;</td><td class="memItemRight"><b>localBoundingSphere</b> () const -&gt
 auto&#160;</td><td class="memItemRight"><b>latticePlacement</b> () const -&gt; std::optional&lt; <a class="el" href="structvoxel_1_1LatticePlacement.html">voxel::LatticePlacement</a> &gt;</td></tr>
 <tr class="memitem:af04d812dfcd95eeffc3394441641a912" id="r_af04d812dfcd95eeffc3394441641a912"><td class="memItemLeft"><a id="af04d812dfcd95eeffc3394441641a912" name="af04d812dfcd95eeffc3394441641a912"></a>
 auto&#160;</td><td class="memItemRight"><b>renderOnly</b> () const noexcept -&gt; bool</td></tr>
+<tr class="memitem:a438399e73ab51482bb4a0ffd5555742f" id="r_a438399e73ab51482bb4a0ffd5555742f"><td class="memItemLeft"><a id="a438399e73ab51482bb4a0ffd5555742f" name="a438399e73ab51482bb4a0ffd5555742f"></a>
+virtual auto&#160;</td><td class="memItemRight"><b>usesParts</b> () const noexcept -&gt; bool</td></tr>
+<tr class="memitem:ae0259efc0ec3ae325a926cbf79a10861" id="r_ae0259efc0ec3ae325a926cbf79a10861"><td class="memItemLeft"><a id="ae0259efc0ec3ae325a926cbf79a10861" name="ae0259efc0ec3ae325a926cbf79a10861"></a>
+auto&#160;</td><td class="memItemRight"><b>parts</b> () const noexcept -&gt; const std::vector&lt; <a class="el" href="structtoast_1_1VoxelPart.html">VoxelPart</a> &gt; &amp;</td></tr>
+<tr class="memitem:a1ba3e4152b1695c6e86e121e3e0bddf9" id="r_a1ba3e4152b1695c6e86e121e3e0bddf9"><td class="memItemLeft"><a id="a1ba3e4152b1695c6e86e121e3e0bddf9" name="a1ba3e4152b1695c6e86e121e3e0bddf9"></a>
+auto&#160;</td><td class="memItemRight"><b>partsRevision</b> () const noexcept -&gt; uint32_t</td></tr>
+<tr class="memitem:ab3bf59a527fa1e9a3984335285614bfd" id="r_ab3bf59a527fa1e9a3984335285614bfd"><td class="memItemLeft"><a id="ab3bf59a527fa1e9a3984335285614bfd" name="ab3bf59a527fa1e9a3984335285614bfd"></a>
+auto&#160;</td><td class="memItemRight"><b>ownsBody</b> (<a class="el" href="structphysics_1_1BodyID.html">physics::BodyID</a> body) const noexcept -&gt; bool</td></tr>
+<tr class="memitem:aac9aad269a7c1d53bd91cb81b07d9498" id="r_aac9aad269a7c1d53bd91cb81b07d9498"><td class="memItemLeft"><a id="aac9aad269a7c1d53bd91cb81b07d9498" name="aac9aad269a7c1d53bd91cb81b07d9498"></a>
+auto&#160;</td><td class="memItemRight"><b>isSolidAtVoxel</b> (glm::ivec3 voxel) -&gt; bool</td></tr>
+<tr class="memitem:a5a05b94067a0c9dcb16bf7e3ad0a4252" id="r_a5a05b94067a0c9dcb16bf7e3ad0a4252"><td class="memItemLeft"><a id="a5a05b94067a0c9dcb16bf7e3ad0a4252" name="a5a05b94067a0c9dcb16bf7e3ad0a4252"></a>
+auto&#160;</td><td class="memItemRight"><b>solidBounds</b> () -&gt; std::optional&lt; <a class="el" href="structvoxel_1_1EditBounds.html">voxel::EditBounds</a> &gt;</td></tr>
+<tr class="memitem:ad92193ac919e950a40fcd451c64c2760" id="r_ad92193ac919e950a40fcd451c64c2760"><td class="memItemLeft"><a id="ad92193ac919e950a40fcd451c64c2760" name="ad92193ac919e950a40fcd451c64c2760"></a>
+auto&#160;</td><td class="memItemRight"><b>raycastVoxels</b> (glm::vec3 origin, glm::vec3 direction, float max_t) -&gt; std::optional&lt; <a class="el" href="structvoxel_1_1VolumeHit.html">voxel::VolumeHit</a> &gt;</td></tr>
+<tr class="memitem:a05639b3f93ad34b8e6dd5e4938c597f2" id="r_a05639b3f93ad34b8e6dd5e4938c597f2"><td class="memItemLeft"><a id="a05639b3f93ad34b8e6dd5e4938c597f2" name="a05639b3f93ad34b8e6dd5e4938c597f2"></a>
+auto&#160;</td><td class="memItemRight"><b>getSimulationType</b> () const -&gt; <a class="el" href="voxel__node_8hpp.html#a8f40d229f09435be04fad19608753e64">SimulationType</a></td></tr>
+<tr class="memitem:ad4bf306df8fdb3c7ab418d482dd448ba" id="r_ad4bf306df8fdb3c7ab418d482dd448ba"><td class="memItemLeft"><a id="ad4bf306df8fdb3c7ab418d482dd448ba" name="ad4bf306df8fdb3c7ab418d482dd448ba"></a>
+void&#160;</td><td class="memItemRight"><b>addForce</b> (glm::vec3 force, glm::vec3 offset={0.0, 0.0, 0.0})</td></tr>
 <tr class="inherit_header pub_methods_classtoast_1_1Node3D"><td colspan="2">Public Member Functions inherited from <a class="el" href="classtoast_1_1Node3D.html">toast::Node3D</a></td></tr>
 <tr class="memitem:a05006fca9cef778de10d69c4c99f2144 pub_methods_classtoast_1_1Node3D" id="r_a05006fca9cef778de10d69c4c99f2144"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="classtoast_1_1Node3D.html#a05006fca9cef778de10d69c4c99f2144">raycast</a> (glm::vec3 dir, glm::vec3 offset=glm::vec3(0.0f), float max_distance=-1.0f, bool ignore_self=true, const std::vector&lt; int &gt; &amp;layers=std::vector&lt; int &gt; {}) const -&gt; std::optional&lt; <a class="el" href="structphysics_1_1RayHit.html">physics::RayHit</a> &gt;</td></tr>
 <tr class="memdesc:a05006fca9cef778de10d69c4c99f2144 pub_methods_classtoast_1_1Node3D"><td class="mdescLeft">&#160;</td><td class="mdescRight">The nearest thing a ray from this node hits.  <br /></td></tr>
@@ -448,10 +468,14 @@ void&#160;</td><td class="memItemRight"><b>postPhysics</b> ()</td></tr>
 void&#160;</td><td class="memItemRight"><b>refreshVolume</b> ()</td></tr>
 <tr class="memitem:ac910d91804d671f7983d3b536bdf57fb" id="r_ac910d91804d671f7983d3b536bdf57fb"><td class="memItemLeft"><a id="ac910d91804d671f7983d3b536bdf57fb" name="ac910d91804d671f7983d3b536bdf57fb"></a>
 void&#160;</td><td class="memItemRight"><b>releaseVolume</b> ()</td></tr>
+<tr class="memitem:abb29d38c97e7bd5c5dcd3553d8311cdc" id="r_abb29d38c97e7bd5c5dcd3553d8311cdc"><td class="memItemLeft"><a id="abb29d38c97e7bd5c5dcd3553d8311cdc" name="abb29d38c97e7bd5c5dcd3553d8311cdc"></a>
+void&#160;</td><td class="memItemRight"><b>reregisterPhysics</b> ()</td></tr>
 <tr class="memitem:aab25a94f0055f2d9e95034746737a5bf" id="r_aab25a94f0055f2d9e95034746737a5bf"><td class="memItemLeft"><a id="aab25a94f0055f2d9e95034746737a5bf" name="aab25a94f0055f2d9e95034746737a5bf"></a>
 void&#160;</td><td class="memItemRight"><b>retireVolume</b> ()</td></tr>
 <tr class="memitem:ae4fd2d99945e139e81d771a54fdc7ef7" id="r_ae4fd2d99945e139e81d771a54fdc7ef7"><td class="memItemLeft"><a id="ae4fd2d99945e139e81d771a54fdc7ef7" name="ae4fd2d99945e139e81d771a54fdc7ef7"></a>
 void&#160;</td><td class="memItemRight"><b>recordDamage</b> (uint32_t count, glm::vec3 index_sum)</td></tr>
+<tr class="memitem:a61b08ad7edd5eeea58fd3066d415e9e6" id="r_a61b08ad7edd5eeea58fd3066d415e9e6"><td class="memItemLeft"><a id="a61b08ad7edd5eeea58fd3066d415e9e6" name="a61b08ad7edd5eeea58fd3066d415e9e6"></a>
+void&#160;</td><td class="memItemRight"><b>recordDamage</b> (uint32_t count, glm::vec3 index_sum, glm::ivec3 origin)</td></tr>
 <tr class="memitem:ad55706eb99e70a2b2c5234b8ad9c4db0" id="r_ad55706eb99e70a2b2c5234b8ad9c4db0"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#ad55706eb99e70a2b2c5234b8ad9c4db0">ensureContains</a> (const <a class="el" href="structvoxel_1_1EditBounds.html">voxel::EditBounds</a> &amp;bounds) -&gt; <a class="el" href="classvoxel_1_1Volume.html">voxel::Volume</a> *</td></tr>
 <tr class="memitem:a84a12346c500bd8d9bfc538ec20c680c" id="r_a84a12346c500bd8d9bfc538ec20c680c"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a84a12346c500bd8d9bfc538ec20c680c">replaceVolume</a> (const <a class="el" href="structvoxel_1_1EditBounds.html">voxel::EditBounds</a> &amp;bounds) -&gt; <a class="el" href="classvoxel_1_1Volume.html">voxel::Volume</a> *</td></tr>
 <tr class="memitem:a5106f152a967f56109c3f6a8d5e479a3" id="r_a5106f152a967f56109c3f6a8d5e479a3"><td class="memTemplParams" colspan="2">template&lt;typename Kernel&gt; </td></tr>
@@ -465,6 +489,12 @@ auto&#160;</td><td class="memItemRight"><b>toIndex</b> (glm::vec3 local) const n
 auto&#160;</td><td class="memItemRight"><b>toIndex</b> (const <a class="el" href="structvoxel_1_1EditBounds.html">voxel::EditBounds</a> &amp;local) const noexcept -&gt; <a class="el" href="structvoxel_1_1EditBounds.html">voxel::EditBounds</a></td></tr>
 <tr class="memitem:a922267075f3a83ad42be54beb0e2e44d" id="r_a922267075f3a83ad42be54beb0e2e44d"><td class="memItemLeft"><a id="a922267075f3a83ad42be54beb0e2e44d" name="a922267075f3a83ad42be54beb0e2e44d"></a>
 auto&#160;</td><td class="memItemRight"><b>physicsBound</b> () const noexcept -&gt; bool</td></tr>
+<tr class="memitem:af51c9a27fd8114b886632708c1c05f62" id="r_af51c9a27fd8114b886632708c1c05f62"><td class="memTemplParams" colspan="2"><a id="af51c9a27fd8114b886632708c1c05f62" name="af51c9a27fd8114b886632708c1c05f62"></a>
+template&lt;typename Visit&gt; </td></tr>
+<tr class="memitem:af51c9a27fd8114b886632708c1c05f62 template"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><b>forEachBody</b> (Visit &amp;&amp;visit)</td></tr>
+<tr class="memitem:aae454275522272719debfed50eb731cd" id="r_aae454275522272719debfed50eb731cd"><td class="memTemplParams" colspan="2"><a id="aae454275522272719debfed50eb731cd" name="aae454275522272719debfed50eb731cd"></a>
+template&lt;typename Visit&gt; </td></tr>
+<tr class="memitem:aae454275522272719debfed50eb731cd template"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><b>forEachShape</b> (Visit &amp;&amp;visit)</td></tr>
 <tr class="memitem:a430d46acfcb07e8b8c99ecf5adc7bad0" id="r_a430d46acfcb07e8b8c99ecf5adc7bad0"><td class="memItemLeft"><a id="a430d46acfcb07e8b8c99ecf5adc7bad0" name="a430d46acfcb07e8b8c99ecf5adc7bad0"></a>
 void&#160;</td><td class="memItemRight"><b>assignBody</b> (<a class="el" href="structphysics_1_1BodyID.html">physics::BodyID</a> body) noexcept</td></tr>
 <tr class="memitem:a8c103f253123d68502a94f1369aa9f4e" id="r_a8c103f253123d68502a94f1369aa9f4e"><td class="memItemLeft"><a id="a8c103f253123d68502a94f1369aa9f4e" name="a8c103f253123d68502a94f1369aa9f4e"></a>
@@ -556,6 +586,12 @@ glm::vec4&#160;</td><td class="memItemRight"><b>aabb_color</b> = glm::vec4(1.0f,
 std::unique_ptr&lt; <a class="el" href="classvoxel_1_1Volume.html">voxel::Volume</a> &gt;&#160;</td><td class="memItemRight"><b>m_volume</b></td></tr>
 <tr class="memitem:af9c9036d723a65779cff4e89e3847361" id="r_af9c9036d723a65779cff4e89e3847361"><td class="memItemLeft"><a id="af9c9036d723a65779cff4e89e3847361" name="af9c9036d723a65779cff4e89e3847361"></a>
 std::vector&lt; std::unique_ptr&lt; <a class="el" href="classvoxel_1_1Volume.html">voxel::Volume</a> &gt; &gt;&#160;</td><td class="memItemRight"><b>m_retired_volumes</b></td></tr>
+<tr class="memitem:ab5a5cf508c9a869c8e7f573b24824169" id="r_ab5a5cf508c9a869c8e7f573b24824169"><td class="memItemLeft"><a id="ab5a5cf508c9a869c8e7f573b24824169" name="ab5a5cf508c9a869c8e7f573b24824169"></a>
+std::vector&lt; <a class="el" href="structtoast_1_1VoxelPart.html">VoxelPart</a> &gt;&#160;</td><td class="memItemRight"><b>m_parts</b></td></tr>
+<tr class="memitem:a4eef26a5e289f6144a58af9d207d82ea" id="r_a4eef26a5e289f6144a58af9d207d82ea"><td class="memItemLeft"><a id="a4eef26a5e289f6144a58af9d207d82ea" name="a4eef26a5e289f6144a58af9d207d82ea"></a>
+uint32_t&#160;</td><td class="memItemRight"><b>m_parts_revision</b> = 0</td></tr>
+<tr class="memitem:a7e0901f757670ef283b11b50f689e13a" id="r_a7e0901f757670ef283b11b50f689e13a"><td class="memItemLeft"><a id="a7e0901f757670ef283b11b50f689e13a" name="a7e0901f757670ef283b11b50f689e13a"></a>
+bool&#160;</td><td class="memItemRight"><b>m_warned_part_edit</b> = false</td></tr>
 <tr class="memitem:a7b10382f17d24c74cb14fc9db1ec207d" id="r_a7b10382f17d24c74cb14fc9db1ec207d"><td class="memItemLeft"><a id="a7b10382f17d24c74cb14fc9db1ec207d" name="a7b10382f17d24c74cb14fc9db1ec207d"></a>
 glm::ivec3&#160;</td><td class="memItemRight"><b>m_voxel_origin</b> {0}</td></tr>
 <tr class="memitem:a377fefb7663f34d544b43a8d5b627669" id="r_a377fefb7663f34d544b43a8d5b627669"><td class="memItemLeft"><a id="a377fefb7663f34d544b43a8d5b627669" name="a377fefb7663f34d544b43a8d5b627669"></a>
@@ -702,18 +738,6 @@ static const glm::vec3&#160;</td><td class="memItemRight"><b>world_right</b> = {
 <p>True when the subclass builds its shape on other threads and applies it itself </p><dl class="section note"><dt>Note</dt><dd>Then the editor tick hands over to tickAsyncBuild and a rebuild only asks for one </dd></dl>
 
 <p>Reimplemented in <a class="el" href="classtoast_1_1ProceduralVoxel.html#a37a7f33602481202e064fd18cf172d99">toast::ProceduralVoxel</a>.</p>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="classtoast_1_1VoxelNode_acdaf573974faf85d4db966810c1a2dcc_icgraph.png" border="0" usemap="#aclasstoast_1_1VoxelNode_acdaf573974faf85d4db966810c1a2dcc_icgraph" loading="lazy" alt=""/></div>
-<map name="aclasstoast_1_1VoxelNode_acdaf573974faf85d4db966810c1a2dcc_icgraph" id="aclasstoast_1_1VoxelNode_acdaf573974faf85d4db966810c1a2dcc_icgraph">
-<area shape="rect" title=" " alt="" coords="220,40,398,85"/>
-<area shape="rect" href="classtoast_1_1ProceduralVoxel.html#a7644a31907b63c7e0a5e6131db564236" title=" " alt="" coords="5,5,172,50"/>
-<area shape="poly" title=" " alt="" coords="202,46,172,43,172,38,207,45"/>
-<area shape="rect" href="classtoast_1_1ProceduralVoxel.html#a2b9b0c9607f0dbd8f2bddc89668430d0" title=" " alt="" coords="5,75,172,119"/>
-<area shape="poly" title=" " alt="" coords="202,79,173,87,172,81,207,78"/>
-</map>
-</div>
 
 </div>
 </div>
@@ -893,31 +917,29 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="classtoast_1_1VoxelNode_a0bb13e5edc7748854f61e63748733bb3_icgraph.png" border="0" usemap="#aclasstoast_1_1VoxelNode_a0bb13e5edc7748854f61e63748733bb3_icgraph" loading="lazy" alt=""/></div>
 <map name="aclasstoast_1_1VoxelNode_a0bb13e5edc7748854f61e63748733bb3_icgraph" id="aclasstoast_1_1VoxelNode_a0bb13e5edc7748854f61e63748733bb3_icgraph">
-<area shape="rect" title=" " alt="" coords="763,211,978,238"/>
-<area shape="rect" href="classtoast_1_1ProceduralVoxel.html#a7644a31907b63c7e0a5e6131db564236" title=" " alt="" coords="549,172,715,216"/>
-<area shape="poly" title=" " alt="" coords="745,209,716,207,716,202,750,208"/>
-<area shape="rect" href="classtoast_1_1VoxelNode.html#a5106f152a967f56109c3f6a8d5e479a3" title=" " alt="" coords="550,240,714,268"/>
-<area shape="poly" title=" " alt="" coords="745,240,715,246,714,241,750,239"/>
+<area shape="rect" title=" " alt="" coords="761,240,976,268"/>
+<area shape="rect" href="classtoast_1_1VoxelNode.html#a5106f152a967f56109c3f6a8d5e479a3" title=" " alt="" coords="549,240,713,268"/>
+<area shape="poly" title=" " alt="" coords="743,254,714,256,713,251,748,253"/>
 <area shape="rect" href="classtoast_1_1VoxelNode.html#af605cdff14a9e69e345d8e37197d116c" title=" " alt="" coords="283,5,501,33"/>
-<area shape="poly" title=" " alt="" coords="548,230,547,230,530,207,523,183,523,136,524,114,523,91,515,69,499,48,484,36,484,31,503,44,520,67,528,90,530,114,528,137,528,182,535,204,551,227,554,231"/>
+<area shape="poly" title=" " alt="" coords="618,225,601,186,576,137,542,89,499,48,479,36,478,31,503,44,546,85,581,135,606,184,623,226"/>
 <area shape="rect" href="classtoast_1_1VoxelNode.html#a6d5270e5eef351fbf85012df0e863d4f" title=" " alt="" coords="302,57,482,85"/>
-<area shape="poly" title=" " alt="" coords="549,230,547,230,534,214,526,197,523,163,519,130,512,115,499,100,482,88,482,83,503,96,517,112,524,129,528,162,532,195,538,211,551,227,554,231"/>
+<area shape="poly" title=" " alt="" coords="612,226,568,163,536,129,500,100,476,88,475,83,502,96,540,125,572,160,618,227"/>
 <area shape="rect" href="classtoast_1_1VoxelNode.html#a047104df879c6d7eba36646c7c0331a3" title=" " alt="" coords="287,109,496,137"/>
-<area shape="poly" title=" " alt="" coords="552,232,547,230,530,210,523,190,516,170,499,152,479,140,479,135,503,148,520,167,528,188,535,208,551,227,557,233"/>
+<area shape="poly" title=" " alt="" coords="603,229,558,190,500,152,470,140,469,135,502,147,561,186,608,229"/>
 <area shape="rect" href="classtoast_1_1VoxelNode.html#ac3363843d3580277d2556b202f496a57" title=" " alt="" coords="301,161,483,189"/>
-<area shape="poly" title=" " alt="" coords="561,235,548,231,524,217,500,204,463,192,463,187,502,199,526,213,550,226,567,234"/>
+<area shape="poly" title=" " alt="" coords="581,234,500,204,458,192,458,187,502,199,587,233"/>
 <area shape="rect" href="classtoast_1_1VoxelNode.html#a566632592044fcb10458debaf7474f77" title=" " alt="" coords="292,213,492,241"/>
-<area shape="poly" title=" " alt="" coords="532,244,493,241,492,236,537,242"/>
+<area shape="poly" title=" " alt="" coords="531,244,493,241,492,236,536,242"/>
 <area shape="rect" href="classtoast_1_1VoxelNode.html#a2695359e967824c33c1b7fdff15be1a3" title=" " alt="" coords="304,265,480,293"/>
-<area shape="poly" title=" " alt="" coords="532,265,481,272,479,267,537,263"/>
+<area shape="poly" title=" " alt="" coords="531,265,481,272,479,267,536,263"/>
 <area shape="rect" href="classtoast_1_1VoxelNode.html#ad3f32738d255db87dba01a3f212bf5e3" title=" " alt="" coords="292,317,492,345"/>
 <area shape="poly" title=" " alt="" coords="581,275,502,307,458,319,457,314,500,302,586,273"/>
 <area shape="rect" href="classtoast_1_1VoxelNode.html#ad88e8b73bf81e38ec73695701e2ab028" title=" " alt="" coords="295,369,489,397"/>
-<area shape="poly" title=" " alt="" coords="609,277,561,321,502,359,470,371,468,366,500,354,558,317,604,280"/>
+<area shape="poly" title=" " alt="" coords="608,277,561,321,502,359,470,371,469,366,500,354,558,317,603,280"/>
 <area shape="rect" href="classtoast_1_1VoxelNode.html#aceac34cb206dd5db05f1c0549d2a6ac3" title=" " alt="" coords="307,421,476,449"/>
-<area shape="poly" title=" " alt="" coords="618,279,572,347,540,382,502,411,476,423,474,418,500,406,536,378,568,344,613,282"/>
+<area shape="poly" title=" " alt="" coords="617,279,572,347,540,382,502,411,476,423,475,418,500,406,536,378,567,344,613,282"/>
 <area shape="rect" href="classtoast_1_1VoxelNode.html#ad569cef637a5d677e4a5d1190aa26cd3" title=" " alt="" coords="302,473,482,501"/>
-<area shape="poly" title=" " alt="" coords="623,280,607,324,581,372,546,421,503,463,479,475,478,470,499,458,542,418,576,369,602,321,619,284"/>
+<area shape="poly" title=" " alt="" coords="622,280,606,323,580,372,546,421,503,463,479,475,478,470,499,458,542,418,576,369,601,321,618,284"/>
 <area shape="rect" href="classtoast_1_1VoxelNode.html#ad2c8c15c4ec1de792c575b287fde5007" title=" " alt="" coords="20,5,220,33"/>
 <area shape="poly" title=" " alt="" coords="299,55,197,36,196,31,303,52"/>
 <area shape="rect" href="classtoast_1_1VoxelNode.html#a2ae043169e3f17929dc27058bbcbd026" title=" " alt="" coords="21,57,219,85"/>
@@ -1133,31 +1155,29 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="classtoast_1_1VoxelNode_ad55706eb99e70a2b2c5234b8ad9c4db0_icgraph.png" border="0" usemap="#aclasstoast_1_1VoxelNode_ad55706eb99e70a2b2c5234b8ad9c4db0_icgraph" loading="lazy" alt=""/></div>
 <map name="aclasstoast_1_1VoxelNode_ad55706eb99e70a2b2c5234b8ad9c4db0_icgraph" id="aclasstoast_1_1VoxelNode_ad55706eb99e70a2b2c5234b8ad9c4db0_icgraph">
-<area shape="rect" title=" " alt="" coords="763,202,947,247"/>
-<area shape="rect" href="classtoast_1_1ProceduralVoxel.html#a7644a31907b63c7e0a5e6131db564236" title=" " alt="" coords="549,172,715,216"/>
-<area shape="poly" title=" " alt="" coords="745,210,716,208,716,203,750,209"/>
-<area shape="rect" href="classtoast_1_1VoxelNode.html#a5106f152a967f56109c3f6a8d5e479a3" title=" " alt="" coords="550,240,714,268"/>
-<area shape="poly" title=" " alt="" coords="745,239,716,246,714,240,750,238"/>
+<area shape="rect" title=" " alt="" coords="761,232,945,276"/>
+<area shape="rect" href="classtoast_1_1VoxelNode.html#a5106f152a967f56109c3f6a8d5e479a3" title=" " alt="" coords="549,240,713,268"/>
+<area shape="poly" title=" " alt="" coords="743,254,714,256,714,251,749,253"/>
 <area shape="rect" href="classtoast_1_1VoxelNode.html#af605cdff14a9e69e345d8e37197d116c" title=" " alt="" coords="283,5,501,33"/>
-<area shape="poly" title=" " alt="" coords="548,230,547,230,530,207,523,183,523,136,524,114,523,91,515,69,499,48,484,36,484,31,503,44,520,67,528,90,530,114,528,137,528,182,535,204,551,227,554,231"/>
+<area shape="poly" title=" " alt="" coords="618,225,601,186,576,137,542,89,499,48,479,36,478,31,503,44,546,85,581,135,606,184,623,226"/>
 <area shape="rect" href="classtoast_1_1VoxelNode.html#a6d5270e5eef351fbf85012df0e863d4f" title=" " alt="" coords="302,57,482,85"/>
-<area shape="poly" title=" " alt="" coords="549,230,547,230,534,214,526,197,523,163,519,130,512,115,499,100,482,88,482,83,503,96,517,112,524,129,528,162,532,195,538,211,551,227,554,231"/>
+<area shape="poly" title=" " alt="" coords="612,226,568,163,536,129,500,100,476,88,475,83,502,96,540,125,572,160,618,227"/>
 <area shape="rect" href="classtoast_1_1VoxelNode.html#a047104df879c6d7eba36646c7c0331a3" title=" " alt="" coords="287,109,496,137"/>
-<area shape="poly" title=" " alt="" coords="552,232,547,230,530,210,523,190,516,170,499,152,479,140,479,135,503,148,520,167,528,188,535,208,551,227,557,233"/>
+<area shape="poly" title=" " alt="" coords="603,229,558,190,500,152,470,140,469,135,502,147,561,186,608,229"/>
 <area shape="rect" href="classtoast_1_1VoxelNode.html#ac3363843d3580277d2556b202f496a57" title=" " alt="" coords="301,161,483,189"/>
-<area shape="poly" title=" " alt="" coords="561,235,548,231,524,217,500,204,463,192,463,187,502,199,526,213,550,226,567,234"/>
+<area shape="poly" title=" " alt="" coords="581,234,500,204,458,192,458,187,502,199,587,233"/>
 <area shape="rect" href="classtoast_1_1VoxelNode.html#a566632592044fcb10458debaf7474f77" title=" " alt="" coords="292,213,492,241"/>
-<area shape="poly" title=" " alt="" coords="532,244,493,241,492,236,537,242"/>
+<area shape="poly" title=" " alt="" coords="531,244,493,241,492,236,536,242"/>
 <area shape="rect" href="classtoast_1_1VoxelNode.html#a2695359e967824c33c1b7fdff15be1a3" title=" " alt="" coords="304,265,480,293"/>
-<area shape="poly" title=" " alt="" coords="532,265,481,272,479,267,537,263"/>
+<area shape="poly" title=" " alt="" coords="531,265,481,272,479,267,536,263"/>
 <area shape="rect" href="classtoast_1_1VoxelNode.html#ad3f32738d255db87dba01a3f212bf5e3" title=" " alt="" coords="292,317,492,345"/>
 <area shape="poly" title=" " alt="" coords="581,275,502,307,458,319,457,314,500,302,586,273"/>
 <area shape="rect" href="classtoast_1_1VoxelNode.html#ad88e8b73bf81e38ec73695701e2ab028" title=" " alt="" coords="295,369,489,397"/>
-<area shape="poly" title=" " alt="" coords="609,277,561,321,502,359,470,371,468,366,500,354,558,317,604,280"/>
+<area shape="poly" title=" " alt="" coords="608,277,561,321,502,359,470,371,469,366,500,354,558,317,603,280"/>
 <area shape="rect" href="classtoast_1_1VoxelNode.html#aceac34cb206dd5db05f1c0549d2a6ac3" title=" " alt="" coords="307,421,476,449"/>
-<area shape="poly" title=" " alt="" coords="618,279,572,347,540,382,502,411,476,423,474,418,500,406,536,378,568,344,613,282"/>
+<area shape="poly" title=" " alt="" coords="617,279,572,347,540,382,502,411,476,423,475,418,500,406,536,378,567,344,613,282"/>
 <area shape="rect" href="classtoast_1_1VoxelNode.html#ad569cef637a5d677e4a5d1190aa26cd3" title=" " alt="" coords="302,473,482,501"/>
-<area shape="poly" title=" " alt="" coords="623,280,607,324,581,372,546,421,503,463,479,475,478,470,499,458,542,418,576,369,602,321,619,284"/>
+<area shape="poly" title=" " alt="" coords="622,280,606,323,580,372,546,421,503,463,479,475,478,470,499,458,542,418,576,369,601,321,618,284"/>
 <area shape="rect" href="classtoast_1_1VoxelNode.html#ad2c8c15c4ec1de792c575b287fde5007" title=" " alt="" coords="20,5,220,33"/>
 <area shape="poly" title=" " alt="" coords="299,55,197,36,196,31,303,52"/>
 <area shape="rect" href="classtoast_1_1VoxelNode.html#a2ae043169e3f17929dc27058bbcbd026" title=" " alt="" coords="21,57,219,85"/>
@@ -1733,11 +1753,12 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="classtoast_1_1VoxelNode_a8dea41d0bda876f7c9e04bb043f6269f_icgraph.png" border="0" usemap="#aclasstoast_1_1VoxelNode_a8dea41d0bda876f7c9e04bb043f6269f_icgraph" loading="lazy" alt=""/></div>
 <map name="aclasstoast_1_1VoxelNode_a8dea41d0bda876f7c9e04bb043f6269f_icgraph" id="aclasstoast_1_1VoxelNode_a8dea41d0bda876f7c9e04bb043f6269f_icgraph">
-<area shape="rect" title=" " alt="" coords="234,44,441,72"/>
-<area shape="rect" href="classtoast_1_1ProceduralVoxel.html#ad50fb391ee4bb3ef6a22dd7c195eb591" title=" " alt="" coords="12,5,179,50"/>
-<area shape="poly" title=" " alt="" coords="216,44,179,41,179,36,221,43"/>
-<area shape="rect" href="classtoast_1_1VoxelNode.html#ad569cef637a5d677e4a5d1190aa26cd3" title=" " alt="" coords="5,74,186,102"/>
-<area shape="poly" title=" " alt="" coords="215,73,186,79,186,74,221,72"/>
+<area shape="rect" title=" " alt="" coords="234,68,441,96"/>
+<area shape="rect" href="classtoast_1_1ProceduralVoxel.html#ad50fb391ee4bb3ef6a22dd7c195eb591" title=" " alt="" coords="12,29,179,74"/>
+<area shape="poly" title=" " alt="" coords="216,68,179,65,179,60,221,67"/>
+<area shape="rect" href="classtoast_1_1VoxelNode.html#ad569cef637a5d677e4a5d1190aa26cd3" title=" " alt="" coords="5,98,186,126"/>
+<area shape="poly" title=" " alt="" coords="215,97,186,103,186,98,221,96"/>
+<area shape="poly" title=" " alt="" coords="134,15,120,10,95,8,73,10,59,15,53,21,55,29,49,29,48,19,56,10,72,5,96,3,122,5,139,14"/>
 </map>
 </div>
 
@@ -1869,9 +1890,10 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="classtoast_1_1VoxelNode_a8133f3b79130d5445f8e4918e373c7b8_icgraph.png" border="0" usemap="#aclasstoast_1_1VoxelNode_a8133f3b79130d5445f8e4918e373c7b8_icgraph" loading="lazy" alt=""/></div>
 <map name="aclasstoast_1_1VoxelNode_a8133f3b79130d5445f8e4918e373c7b8_icgraph" id="aclasstoast_1_1VoxelNode_a8133f3b79130d5445f8e4918e373c7b8_icgraph">
-<area shape="rect" title=" " alt="" coords="220,5,408,50"/>
-<area shape="rect" href="classtoast_1_1ProceduralVoxel.html#a2b9b0c9607f0dbd8f2bddc89668430d0" title=" " alt="" coords="5,5,172,50"/>
-<area shape="poly" title=" " alt="" coords="202,28,172,30,172,25,207,27"/>
+<area shape="rect" title=" " alt="" coords="220,29,408,74"/>
+<area shape="rect" href="classtoast_1_1ProceduralVoxel.html#a2b9b0c9607f0dbd8f2bddc89668430d0" title=" " alt="" coords="5,29,172,74"/>
+<area shape="poly" title=" " alt="" coords="202,52,172,54,172,49,207,51"/>
+<area shape="poly" title=" " alt="" coords="124,14,112,10,88,8,67,10,54,15,49,21,51,29,45,28,44,19,51,10,66,5,89,3,113,5,129,14"/>
 </map>
 </div>
 

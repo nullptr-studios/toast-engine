@@ -1,10 +1,20 @@
 <map id="toast::ProceduralVoxel::buildsAsync" name="toast::ProceduralVoxel::buildsAsync">
-<area shape="rect" id="Node000001" title=" " alt="" coords="434,36,600,81"/>
-<area shape="rect" id="Node000002" href="$classtoast_1_1ProceduralVoxel.html#ab7a5111fa8412ed933c96a4882f224f8" title=" " alt="" coords="5,5,172,50"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="417,54,172,36,172,31,420,49"/>
-<area shape="rect" id="Node000003" href="$classtoast_1_1ProceduralVoxel.html#a73af3d521ae43079ea28c8aad3a77baf" title=" " alt="" coords="220,65,386,110"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="421,72,387,79,386,74,416,72"/>
-<area shape="poly" id="edge4_Node000003_Node000002" title=" " alt="" coords="203,61,171,53,171,48,209,60"/>
-<area shape="rect" id="Node000004" href="$classtoast_1_1ProceduralVoxel.html#ae8b05a05da166a8393b16be154efc1e0" title=" " alt="" coords="5,75,172,119"/>
-<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="201,92,172,96,172,91,207,92"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="434,132,600,177"/>
+<area shape="poly" id="edge1_Node000001_Node000001" title=" " alt="" coords="550,117,539,113,517,111,497,113,485,117,480,123,481,133,476,130,475,122,482,113,496,107,517,105,540,108,556,117"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1ProceduralVoxel.html#a7644a31907b63c7e0a5e6131db564236" title=" " alt="" coords="220,29,386,74"/>
+<area shape="poly" id="edge2_Node000001_Node000002" title=" " alt="" coords="453,125,351,77,352,72,458,124"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1ProceduralVoxel.html#ab7a5111fa8412ed933c96a4882f224f8" title=" " alt="" coords="5,89,172,134"/>
+<area shape="poly" id="edge4_Node000001_Node000003" title=" " alt="" coords="416,141,386,140,172,120,172,115,386,134,421,140"/>
+<area shape="rect" id="Node000004" href="$classtoast_1_1ProceduralVoxel.html#a73af3d521ae43079ea28c8aad3a77baf" title=" " alt="" coords="220,173,386,218"/>
+<area shape="poly" id="edge6_Node000001_Node000004" title=" " alt="" coords="416,174,387,182,386,177,421,173"/>
+<area shape="rect" id="Node000006" href="$classtoast_1_1ProceduralVoxel.html#a2b9b0c9607f0dbd8f2bddc89668430d0" title=" " alt="" coords="220,267,386,311"/>
+<area shape="poly" id="edge11_Node000001_Node000006" title=" " alt="" coords="470,185,341,268,339,264,465,186"/>
+<area shape="poly" id="edge3_Node000002_Node000002" title=" " alt="" coords="336,15,325,10,303,8,283,10,271,15,266,21,267,30,262,28,260,19,267,10,282,5,303,3,326,5,341,14"/>
+<area shape="poly" id="edge5_Node000003_Node000003" title=" " alt="" coords="122,75,110,70,88,68,69,70,56,75,51,81,53,89,47,89,46,79,53,70,67,65,89,63,112,65,127,73"/>
+<area shape="poly" id="edge9_Node000004_Node000003" title=" " alt="" coords="227,168,148,137,148,132,232,166"/>
+<area shape="poly" id="edge10_Node000004_Node000004" title=" " alt="" coords="336,158,325,154,303,152,283,154,271,159,266,165,267,174,262,172,260,163,267,154,282,149,303,147,326,149,341,158"/>
+<area shape="rect" id="Node000005" href="$classtoast_1_1ProceduralVoxel.html#ae8b05a05da166a8393b16be154efc1e0" title=" " alt="" coords="5,183,172,227"/>
+<area shape="poly" id="edge7_Node000004_Node000005" title=" " alt="" coords="202,201,173,204,171,199,207,199"/>
+<area shape="poly" id="edge8_Node000005_Node000005" title=" " alt="" coords="122,168,110,164,88,161,69,163,56,168,51,174,53,182,47,182,46,173,53,164,67,158,89,156,112,159,127,167"/>
+<area shape="poly" id="edge12_Node000006_Node000006" title=" " alt="" coords="336,251,325,248,303,245,283,247,271,252,266,258,267,268,262,265,260,257,267,248,282,242,303,240,326,243,341,252"/>
 </map>

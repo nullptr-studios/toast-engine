@@ -5,6 +5,7 @@ var dir_7c28f8af759e90719fa3745059aa0c8b =
     [ "paint_volume.hpp", "paint__volume_8hpp.html", "paint__volume_8hpp" ],
     [ "procedural_voxel.hpp", "procedural__voxel_8hpp.html", "procedural__voxel_8hpp" ],
     [ "voxel.hpp", "voxel_8hpp.html", "voxel_8hpp" ],
+    [ "voxel_brush.hpp", "voxel__brush_8hpp.html", "voxel__brush_8hpp" ],
     [ "voxel_bucket.hpp", "voxel__bucket_8hpp.html", "voxel__bucket_8hpp" ],
     [ "voxel_group.hpp", "voxel__group_8hpp.html", "voxel__group_8hpp" ],
     [ "voxel_mesh.hpp", "voxel__mesh_8hpp.html", "voxel__mesh_8hpp" ],

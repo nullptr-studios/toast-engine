@@ -1,0 +1,6 @@
+<map id="toast::VoxelPiece::releaseGrid" name="toast::VoxelPiece::releaseGrid">
+<area shape="rect" id="Node000001" title=" " alt="" coords="220,29,360,74"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1ProceduralVoxel.html#a7644a31907b63c7e0a5e6131db564236" title=" " alt="" coords="5,29,172,74"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="201,52,172,54,172,49,207,51"/>
+<area shape="poly" id="edge2_Node000002_Node000002" title=" " alt="" coords="119,14,109,10,88,8,70,10,58,15,54,21,55,29,50,28,49,19,55,10,69,5,89,3,110,5,124,13"/>
+</map>

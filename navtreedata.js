@@ -189,22 +189,23 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "aabb_8hpp.html",
-"classeditor_1_1Assets_1_1AssetFolder.html",
-"classeditor_1_1Components_1_1Elements_1_1Color4Box.html",
-"classeditor_1_1StartWindow_1_1ProjectList.html",
-"classinput_1_1SmoothModifier.html#abafb6240a222fa026dd5181f7fec1d04",
-"classscripting_1_1ScriptDispatch.html",
-"classtoast_1_1Light.html#aee016056b026692627964ea16220ba44",
-"classtoast_1_1UISettings.html",
-"classtoast_1_1VoxelVolume.html#a4407f16475a01b2944528f08e16b630b",
-"editor__camera_8hpp.html",
-"lua__event_8hpp.html",
-"prefab_8hpp_source.html",
-"structevent_1_1MusicBeat.html#aeab60462b28b9a09be241dd5c7942b40",
-"structphysics_1_1Body.html",
-"structrenderer_1_1VulkanRenderer_1_1UploadStats.html",
-"structtoast_1_1Workspace_1_1VoxelToolState.html#a9a4ac7d1868da1be2ab383525d812de4afe47aa7c733c490d36e80508d5dc4019",
-"voxel__gpu__storage_8hpp.html"
+"classeditor_1_1App.html",
+"classeditor_1_1Components_1_1CurveCanvas_1_1CurveCanvas.html",
+"classeditor_1_1Logger_1_1LogsView.html",
+"classinput_1_1PlayerController.html",
+"classrenderer_1_1VoxelPass.html#aabd5d8148fa70a3911baa330b2453cf5",
+"classtoast_1_1AudioVolume.html#a28a73fe2ce7479edd41f6625d6c61319",
+"classtoast_1_1PaintVolume.html",
+"classtoast_1_1VoxelNode.html#a60a4d8c8cba74d30d76303740faa0bdc",
+"classtoast_1_1settings_1_1Settings.html#a45ebbfc4b60ea0d7924bc9de2c16dd93",
+"functions_k.html",
+"md_docs_2event__system.html#autotoc_md10",
+"reflect__event_8hpp.html",
+"structevent_1_1MusicMarker.html",
+"structinput_1_1Value.html",
+"structrenderer_1_1PostProcessSettings_1_1LensFlare.html#ad5b293e91e48adbd8c412d62c0d4754c",
+"structtoast_1_1ProceduralVoxel_1_1ComposeInput.html#a902b6bfbf57d086f20c2f6b4d2ece513",
+"structvoxel_1_1gpu_1_1ScenePatch.html#ac1bd4716dfa317f704163ddf1bb7ce1e"
 ];
 
 const SYNCONMSG = 'click to disable panel synchronization';

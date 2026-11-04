@@ -1,38 +1,42 @@
 <map id="toast::Node::box" name="toast::Node::box">
-<area shape="rect" id="Node000001" title="Returns an owning handle to this node." alt="" coords="1027,326,1155,354"/>
-<area shape="rect" id="Node000002" href="$classtoast_1_1CameraController.html#ab547ae869930f4f31f591fda4e0c0b61" title=" " alt="" coords="801,5,979,50"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1083,309,1072,259,1053,193,1022,124,1001,93,977,64,963,53,964,48,981,60,1005,89,1026,122,1058,191,1078,257,1088,312"/>
-<area shape="rect" id="Node000003" href="$classtoast_1_1ProceduralVoxel.html#aeb4814871ef8a2c2966314c7828c1cce" title=" " alt="" coords="807,75,973,119"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="1079,310,1065,272,1043,225,1014,176,977,134,962,123,962,117,980,130,1018,173,1048,222,1070,270,1084,312"/>
-<area shape="rect" id="Node000004" href="$classtoast_1_1ProceduralVoxel.html#ae8b05a05da166a8393b16be154efc1e0" title=" " alt="" coords="807,144,973,189"/>
-<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="1071,312,1033,258,1006,229,977,203,959,192,960,187,980,199,1010,225,1037,255,1076,313"/>
-<area shape="rect" id="Node000005" href="$classtoast_1_1VoxelBucket.html#a86e57cb848041a13f4d071ce081d9045" title=" " alt="" coords="819,213,961,258"/>
-<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="1054,317,977,273,953,261,953,256,980,268,1059,317"/>
-<area shape="rect" id="Node000006" href="$classtoast_1_1VoxelGroup.html#a38be7bf9df4f392ca272fb217a001147" title=" " alt="" coords="818,283,962,327"/>
-<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="1009,326,963,320,962,315,1014,326"/>
-<area shape="rect" id="Node000007" href="$classtoast_1_1VoxelPiece.html#ad41eb49dae6338fd371b19ea1841da06" title=" " alt="" coords="820,352,960,397"/>
-<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="1009,354,961,365,960,360,1014,353"/>
-<area shape="rect" id="Node000008" href="$classtoast_1_1INodeOwner.html#a0647eb16371fc38e00edfb2c9ed41a69" title="Allocates a Node and its ControlBox in one contiguous block." alt="" coords="815,421,965,466"/>
-<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="1059,362,980,411,954,423,952,418,977,407,1054,363"/>
-<area shape="rect" id="Node000016" href="$classtoast_1_1INodeOwner.html#a6f5391e16c2c81dd8706ed39dacc63d3" title="Like activateCamera(), but replaces whatever camera is currently active." alt="" coords="815,491,965,535"/>
-<area shape="poly" id="edge16_Node000001_Node000016" title=" " alt="" coords="1076,366,1037,424,1010,454,980,480,960,493,959,488,977,476,1006,450,1033,421,1072,368"/>
-<area shape="rect" id="Node000017" href="$classtoast_1_1VoxelNode.html#a1f864d85f7846196b863f801f7cedc11" title=" " alt="" coords="803,559,977,587"/>
-<area shape="poly" id="edge17_Node000001_Node000017" title=" " alt="" coords="1084,367,1071,410,1050,458,1020,508,980,550,962,561,960,556,977,546,1016,504,1045,456,1066,408,1080,370"/>
-<area shape="rect" id="Node000018" href="$classtoast_1_1VoxelNode.html#af48a4da383a9e05192be6b47602cc0db" title=" " alt="" coords="803,611,977,639"/>
-<area shape="poly" id="edge18_Node000001_Node000018" title=" " alt="" coords="1087,367,1077,419,1057,481,1026,545,1005,574,980,600,961,613,959,608,977,596,1001,571,1021,542,1052,479,1072,418,1083,371"/>
-<area shape="rect" id="Node000009" href="$classtoast_1_1INodeOwner.html#a355810be0f38823d417eb26cb8da1ff0" title="Allocates and initializes a full node tree from a prefab asset." alt="" coords="572,352,722,397"/>
-<area shape="poly" id="edge8_Node000008_Node000009" title=" " alt="" coords="797,418,723,398,723,393,803,418"/>
-<area shape="rect" id="Node000013" href="$classtoast_1_1INodeOwner.html#a7b0c253fbb6fc549c06b7aefe62ef058" title="Allocates a Node and initializes its name and type from a prefab data record." alt="" coords="572,421,722,466"/>
-<area shape="poly" id="edge13_Node000008_Node000013" title=" " alt="" coords="797,444,723,446,722,441,802,443"/>
-<area shape="rect" id="Node000014" href="$classtoast_1_1Workspace.html#ad87f633bb92169c991d17c94acca0d81" title="Creates a new workspace rooted at a single fresh node of the given type." alt="" coords="541,490,753,518"/>
-<area shape="poly" id="edge14_Node000008_Node000014" title=" " alt="" coords="802,466,754,481,710,492,708,487,753,476,797,467"/>
-<area shape="poly" id="edge12_Node000009_Node000009" title=" " alt="" coords="685,337,672,333,647,331,624,333,610,337,605,343,606,353,601,350,600,342,607,333,623,327,647,325,673,328,691,337"/>
-<area shape="rect" id="Node000010" href="$classtoast_1_1Workspace.html#acecbe8833a3838a8a3fe77aa661b2d1d" title="instantiates the prefab and sets up the root node" alt="" coords="282,352,477,397"/>
-<area shape="poly" id="edge9_Node000009_Node000010" title=" " alt="" coords="554,375,478,377,477,372,559,374"/>
-<area shape="rect" id="Node000011" href="$classtoast_1_1Workspace.html#a1a98997469f53cfc60df37bf5e43bce1" title="Opens an existing workspace by loading the prefab at the given UID." alt="" coords="5,335,218,363"/>
-<area shape="poly" id="edge10_Node000010_Node000011" title=" " alt="" coords="264,365,219,362,217,357,268,362"/>
-<area shape="rect" id="Node000012" href="$classtoast_1_1Workspace.html#aee0cb0b76f3c488f5fdf9d674b8673d3" title="Opens a workspace bound to the given asset UID but loading its content from another file." alt="" coords="5,387,218,415"/>
-<area shape="poly" id="edge11_Node000010_Node000012" title=" " alt="" coords="264,387,219,393,217,388,268,384"/>
-<area shape="rect" id="Node000015" href="$classtoast_1_1Workspace.html#a3d51ba78b03318129802006b5267f5cc" title="Downcast helper for owners that need Workspace&#45;specific state." alt="" coords="266,490,493,518"/>
-<area shape="poly" id="edge15_Node000014_Node000015" title=" " alt="" coords="523,504,494,506,493,501,528,503"/>
+<area shape="rect" id="Node000001" title="Returns an owning handle to this node." alt="" coords="1037,408,1165,436"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1CameraController.html#ab547ae869930f4f31f591fda4e0c0b61" title=" " alt="" coords="806,5,984,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1097,392,1090,327,1074,239,1060,192,1041,146,1017,103,987,64,974,53,974,48,991,60,1021,100,1046,144,1065,190,1079,238,1096,326,1101,394"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1ProceduralVoxel.html#aeb4814871ef8a2c2966314c7828c1cce" title=" " alt="" coords="812,99,978,143"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="1093,392,1082,343,1062,280,1031,215,1011,184,987,158,973,146,973,141,990,154,1015,181,1035,212,1067,278,1087,342,1097,394"/>
+<area shape="rect" id="Node000004" href="$classtoast_1_1ProceduralVoxel.html#ae8b05a05da166a8393b16be154efc1e0" title=" " alt="" coords="812,192,978,237"/>
+<area shape="poly" id="edge4_Node000001_Node000004" title=" " alt="" coords="1086,393,1048,324,1021,285,987,251,971,240,971,235,990,247,1025,281,1053,321,1091,395"/>
+<area shape="rect" id="Node000005" href="$classtoast_1_1VoxelBucket.html#a86e57cb848041a13f4d071ce081d9045" title=" " alt="" coords="824,261,966,306"/>
+<area shape="poly" id="edge6_Node000001_Node000005" title=" " alt="" coords="1075,396,1037,359,987,321,966,309,966,304,990,316,1040,355,1081,398"/>
+<area shape="rect" id="Node000006" href="$classtoast_1_1VoxelGroup.html#a38be7bf9df4f392ca272fb217a001147" title=" " alt="" coords="823,331,967,375"/>
+<area shape="poly" id="edge7_Node000001_Node000006" title=" " alt="" coords="1040,403,963,379,964,373,1046,403"/>
+<area shape="rect" id="Node000007" href="$classtoast_1_1VoxelPiece.html#ad41eb49dae6338fd371b19ea1841da06" title=" " alt="" coords="825,400,965,445"/>
+<area shape="poly" id="edge8_Node000001_Node000007" title=" " alt="" coords="1019,423,966,425,965,420,1024,422"/>
+<area shape="rect" id="Node000008" href="$classtoast_1_1VoxelNode.html#a2dd023b5ec96efa92e961e1112bb372a" title=" " alt="" coords="801,468,989,496"/>
+<area shape="poly" id="edge9_Node000001_Node000008" title=" " alt="" coords="1043,440,989,460,951,470,949,465,988,454,1038,442"/>
+<area shape="rect" id="Node000009" href="$classtoast_1_1INodeOwner.html#a0647eb16371fc38e00edfb2c9ed41a69" title="Allocates a Node and its ControlBox in one contiguous block." alt="" coords="820,520,970,565"/>
+<area shape="poly" id="edge10_Node000001_Node000009" title=" " alt="" coords="1075,446,1036,480,990,510,965,522,964,517,987,505,1033,476,1070,448"/>
+<area shape="rect" id="Node000017" href="$classtoast_1_1INodeOwner.html#a6f5391e16c2c81dd8706ed39dacc63d3" title="Like activateCamera(), but replaces whatever camera is currently active." alt="" coords="820,589,970,634"/>
+<area shape="poly" id="edge19_Node000001_Node000017" title=" " alt="" coords="1088,448,1050,515,1022,549,990,579,971,591,969,586,987,575,1019,546,1046,512,1084,451"/>
+<area shape="rect" id="Node000018" href="$classtoast_1_1VoxelNode.html#a1f864d85f7846196b863f801f7cedc11" title=" " alt="" coords="808,658,982,686"/>
+<area shape="poly" id="edge20_Node000001_Node000018" title=" " alt="" coords="1095,449,1083,495,1062,548,1032,602,1013,627,990,648,972,660,970,655,987,644,1009,623,1028,599,1058,546,1078,494,1091,453"/>
+<area shape="rect" id="Node000019" href="$classtoast_1_1VoxelNode.html#af48a4da383a9e05192be6b47602cc0db" title=" " alt="" coords="808,710,982,738"/>
+<area shape="poly" id="edge21_Node000001_Node000019" title=" " alt="" coords="1098,450,1089,505,1069,572,1038,640,1016,671,990,699,971,712,969,707,987,695,1012,668,1033,637,1064,570,1084,504,1094,454"/>
+<area shape="poly" id="edge3_Node000003_Node000003" title=" " alt="" coords="926,83,915,80,895,77,876,79,864,84,859,90,860,99,856,97,854,89,861,80,875,74,895,72,917,74,932,83"/>
+<area shape="poly" id="edge5_Node000004_Node000004" title=" " alt="" coords="926,177,915,173,895,171,876,173,864,177,859,183,860,193,856,190,854,182,861,173,875,167,895,165,917,168,932,176"/>
+<area shape="rect" id="Node000010" href="$classtoast_1_1INodeOwner.html#a355810be0f38823d417eb26cb8da1ff0" title="Allocates and initializes a full node tree from a prefab asset." alt="" coords="572,451,722,495"/>
+<area shape="poly" id="edge11_Node000009_Node000010" title=" " alt="" coords="802,517,723,497,723,491,807,517"/>
+<area shape="rect" id="Node000014" href="$classtoast_1_1INodeOwner.html#a7b0c253fbb6fc549c06b7aefe62ef058" title="Allocates a Node and initializes its name and type from a prefab data record." alt="" coords="572,520,722,565"/>
+<area shape="poly" id="edge16_Node000009_Node000014" title=" " alt="" coords="802,543,723,545,723,540,807,542"/>
+<area shape="rect" id="Node000015" href="$classtoast_1_1Workspace.html#ad87f633bb92169c991d17c94acca0d81" title="Creates a new workspace rooted at a single fresh node of the given type." alt="" coords="541,588,753,616"/>
+<area shape="poly" id="edge17_Node000009_Node000015" title=" " alt="" coords="807,564,754,580,709,591,708,585,753,574,802,565"/>
+<area shape="poly" id="edge15_Node000010_Node000010" title=" " alt="" coords="686,436,673,432,647,429,624,431,610,436,604,442,605,451,600,449,599,441,607,432,623,426,647,424,674,427,691,435"/>
+<area shape="rect" id="Node000011" href="$classtoast_1_1Workspace.html#acecbe8833a3838a8a3fe77aa661b2d1d" title="instantiates the prefab and sets up the root node" alt="" coords="282,451,477,495"/>
+<area shape="poly" id="edge12_Node000010_Node000011" title=" " alt="" coords="554,474,478,476,477,470,559,472"/>
+<area shape="rect" id="Node000012" href="$classtoast_1_1Workspace.html#a1a98997469f53cfc60df37bf5e43bce1" title="Opens an existing workspace by loading the prefab at the given UID." alt="" coords="5,434,218,462"/>
+<area shape="poly" id="edge13_Node000011_Node000012" title=" " alt="" coords="264,464,219,460,217,455,268,461"/>
+<area shape="rect" id="Node000013" href="$classtoast_1_1Workspace.html#aee0cb0b76f3c488f5fdf9d674b8673d3" title="Opens a workspace bound to the given asset UID but loading its content from another file." alt="" coords="5,486,218,514"/>
+<area shape="poly" id="edge14_Node000011_Node000013" title=" " alt="" coords="264,486,219,492,217,487,268,483"/>
+<area shape="rect" id="Node000016" href="$classtoast_1_1Workspace.html#a3d51ba78b03318129802006b5267f5cc" title="Downcast helper for owners that need Workspace&#45;specific state." alt="" coords="266,588,493,616"/>
+<area shape="poly" id="edge18_Node000015_Node000016" title=" " alt="" coords="523,603,494,605,493,600,528,602"/>
 </map>

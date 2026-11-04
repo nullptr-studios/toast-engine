@@ -1,0 +1,11 @@
+<map id="engine/src/toast/physics/nodes/joint3d.hpp" name="engine/src/toast/physics/nodes/joint3d.hpp">
+<area shape="rect" id="Node000001" title="Interface for all joint types." alt="" coords="309,5,488,50"/>
+<area shape="rect" id="Node000002" href="$fixed__joint_8hpp.html" title="Welds two bodies." alt="" coords="5,98,184,143"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="314,54,168,100,166,95,309,55"/>
+<area shape="rect" id="Node000003" href="$hinge__joint_8hpp.html" title="Like a door hinge." alt="" coords="208,98,386,143"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="366,59,323,100,320,95,361,61"/>
+<area shape="rect" id="Node000004" href="$pin__joint_8hpp.html" title="Bodies are maintained by one single point." alt="" coords="411,98,589,143"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="435,58,478,98,473,97,433,63"/>
+<area shape="rect" id="Node000005" href="$slider__joint_8hpp.html" title="Lets two bodies slide along one axis." alt="" coords="613,98,792,143"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="486,52,632,97,627,98,485,57"/>
+</map>

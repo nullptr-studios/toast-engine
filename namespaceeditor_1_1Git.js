@@ -14,7 +14,6 @@ var namespaceeditor_1_1Git =
     [ "LockArtworkView", "classeditor_1_1Git_1_1LockArtworkView.html", null ],
     [ "LockArtworkViewModel", "classeditor_1_1Git_1_1LockArtworkViewModel.html", null ],
     [ "LockArtworkWindow", "classeditor_1_1Git_1_1LockArtworkWindow.html", null ],
-    [ "LockedFileModal", "classeditor_1_1Git_1_1LockedFileModal.html", null ],
     [ "LockRow", "classeditor_1_1Git_1_1LockRow.html", null ],
     [ "LocksView", "classeditor_1_1Git_1_1LocksView.html", null ],
     [ "LocksViewModel", "classeditor_1_1Git_1_1LocksViewModel.html", null ]

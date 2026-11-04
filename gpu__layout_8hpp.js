@@ -11,5 +11,6 @@ var gpu__layout_8hpp =
     [ "voxel::gpu::ScenePatch", "structvoxel_1_1gpu_1_1ScenePatch.html", "structvoxel_1_1gpu_1_1ScenePatch" ],
     [ "voxel::gpu::VolumeDirty", "structvoxel_1_1gpu_1_1VolumeDirty.html", null ],
     [ "voxel::gpu::subBlockShift", "gpu__layout_8hpp.html#aa18d153faae3a21c487421f4fb5ff47f", null ],
-    [ "voxel::gpu::subBrickBit", "gpu__layout_8hpp.html#a4e2b59d456f6221bbd57c595896b3359", null ]
+    [ "voxel::gpu::subBrickBit", "gpu__layout_8hpp.html#a4e2b59d456f6221bbd57c595896b3359", null ],
+    [ "voxel::gpu::k_no_glass", "gpu__layout_8hpp.html#a381433c7ab147922d5685279e0f54032", null ]
 ];

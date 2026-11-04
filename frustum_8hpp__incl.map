@@ -1,4 +1,4 @@
-<map id="engine/src/toast/renderer/frustum.hpp" name="engine/src/toast/renderer/frustum.hpp">
+<map id="engine/src/toast/renderer/lighting/frustum.hpp" name="engine/src/toast/renderer/lighting/frustum.hpp">
 <area shape="rect" id="Node000001" title=" " alt="" coords="97,5,281,50"/>
 <area shape="rect" id="Node000002" title=" " alt="" coords="5,98,61,126"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="149,53,73,93,70,88,146,48"/>

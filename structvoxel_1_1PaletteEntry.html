@@ -150,15 +150,27 @@ uint8_t&#160;</td><td class="memItemRight"><b>emissive</b> = 0</td></tr>
 <tr class="memdesc:ab0a754777c0c8e5cf9784ff68140a232"><td class="mdescLeft">&#160;</td><td class="mdescRight">Scaled by Palette::max_emissive. <br /></td></tr>
 <tr class="memitem:aa405fe3136d7e246e0b914e597d27ee9" id="r_aa405fe3136d7e246e0b914e597d27ee9"><td class="memItemLeft"><a id="aa405fe3136d7e246e0b914e597d27ee9" name="aa405fe3136d7e246e0b914e597d27ee9"></a>
 uint8_t&#160;</td><td class="memItemRight"><b>material</b> = k_default_material</td></tr>
-<tr class="memitem:a73a4096b08610bb7d6afb4a85840942b" id="r_a73a4096b08610bb7d6afb4a85840942b"><td class="memItemLeft"><a id="a73a4096b08610bb7d6afb4a85840942b" name="a73a4096b08610bb7d6afb4a85840942b"></a>
-uint8_t&#160;</td><td class="memItemRight"><b>flags</b> = 0</td></tr>
 <tr class="memitem:abc6d2120cab3bb931d099b0834b771c7" id="r_abc6d2120cab3bb931d099b0834b771c7"><td class="memItemLeft"><a id="abc6d2120cab3bb931d099b0834b771c7" name="abc6d2120cab3bb931d099b0834b771c7"></a>
 uint8_t&#160;</td><td class="memItemRight"><b>transforms_to</b> = 0</td></tr>
 <tr class="memdesc:abc6d2120cab3bb931d099b0834b771c7"><td class="mdescLeft">&#160;</td><td class="mdescRight">0 burns away and only read for flammable materials <br /></td></tr>
 <tr class="memitem:a7fac605ab9ab1d204438cf2eaafd53f8" id="r_a7fac605ab9ab1d204438cf2eaafd53f8"><td class="memItemLeft"><a id="a7fac605ab9ab1d204438cf2eaafd53f8" name="a7fac605ab9ab1d204438cf2eaafd53f8"></a>
 uint8_t&#160;</td><td class="memItemRight"><b>alpha</b> = 255</td></tr>
-<tr class="memitem:ad1dd02264365957e7fa2531cda70fffa" id="r_ad1dd02264365957e7fa2531cda70fffa"><td class="memItemLeft"><a id="ad1dd02264365957e7fa2531cda70fffa" name="ad1dd02264365957e7fa2531cda70fffa"></a>
-std::array&lt; uint8_t, 5 &gt;&#160;</td><td class="memItemRight"><b>reserved</b> {}</td></tr>
+<tr class="memitem:a7fbf0a5422fbcb84b08c9565bf0240cf" id="r_a7fbf0a5422fbcb84b08c9565bf0240cf"><td class="memItemLeft"><a id="a7fbf0a5422fbcb84b08c9565bf0240cf" name="a7fbf0a5422fbcb84b08c9565bf0240cf"></a>
+uint8_t&#160;</td><td class="memItemRight"><b>ior</b> = 0</td></tr>
+<tr class="memdesc:a7fbf0a5422fbcb84b08c9565bf0240cf"><td class="mdescLeft">&#160;</td><td class="mdescRight">0 for k_default_ior and otherwise 1 + ior / 100 <br /></td></tr>
+<tr class="memitem:a2826be62d1a43e1d27f70331bc8aec49" id="r_a2826be62d1a43e1d27f70331bc8aec49"><td class="memItemLeft"><a id="a2826be62d1a43e1d27f70331bc8aec49" name="a2826be62d1a43e1d27f70331bc8aec49"></a>
+uint8_t&#160;</td><td class="memItemRight"><b>detail_layer</b> = 0</td></tr>
+<tr class="memdesc:a2826be62d1a43e1d27f70331bc8aec49"><td class="mdescLeft">&#160;</td><td class="mdescRight">Layer of the detail library, 0 for none. <br /></td></tr>
+<tr class="memitem:aad90cd8a2860260647bfe4a845f84693" id="r_aad90cd8a2860260647bfe4a845f84693"><td class="memItemLeft"><a id="aad90cd8a2860260647bfe4a845f84693" name="aad90cd8a2860260647bfe4a845f84693"></a>
+uint8_t&#160;</td><td class="memItemRight"><b>detail_scale</b> = 0</td></tr>
+<tr class="memdesc:aad90cd8a2860260647bfe4a845f84693"><td class="mdescLeft">&#160;</td><td class="mdescRight">Texels per voxel edge, 0 for k_default_detail_scale. <br /></td></tr>
+<tr class="memitem:abe9ae031c5a6e3f217cf074a1b312edc" id="r_abe9ae031c5a6e3f217cf074a1b312edc"><td class="memItemLeft"><a id="abe9ae031c5a6e3f217cf074a1b312edc" name="abe9ae031c5a6e3f217cf074a1b312edc"></a>
+uint8_t&#160;</td><td class="memItemRight"><b>detail_albedo</b> = 0</td></tr>
+<tr class="memdesc:abe9ae031c5a6e3f217cf074a1b312edc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Strengths where 255 is a full swing of the texture. <br /></td></tr>
+<tr class="memitem:a5cf0dac2a2887176d3aec2a1fff077f3" id="r_a5cf0dac2a2887176d3aec2a1fff077f3"><td class="memItemLeft"><a id="a5cf0dac2a2887176d3aec2a1fff077f3" name="a5cf0dac2a2887176d3aec2a1fff077f3"></a>
+uint8_t&#160;</td><td class="memItemRight"><b>detail_roughness</b> = 0</td></tr>
+<tr class="memitem:a6df6b080133bee1238018a7ba89b8810" id="r_a6df6b080133bee1238018a7ba89b8810"><td class="memItemLeft"><a id="a6df6b080133bee1238018a7ba89b8810" name="a6df6b080133bee1238018a7ba89b8810"></a>
+uint8_t&#160;</td><td class="memItemRight"><b>detail_bump</b> = 0</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>16 bytes and the offsets are a shader contract </p>

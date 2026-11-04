@@ -150,22 +150,23 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('constraint_8hp
 <div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  <span class="keywordtype">float</span> tangent_mass_1 = 0.0f;</div>
 <div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  <span class="keywordtype">float</span> tangent_mass_2 = 0.0f;</div>
 <div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>  <span class="keywordtype">float</span> restitution_bias = 0.0f;</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span> </div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  <span class="keywordtype">float</span> static_friction = material_defaults::k_static_friction;</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="keywordtype">float</span> dynamic_friction = material_defaults::k_dynamic_friction;</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  <span class="keywordtype">float</span> accumulated_normal_impulse = 0.0f;</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  glm::vec2 accumulated_tangent_impulse = {};</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  <span class="keywordtype">float</span> rolling_friction = 0.0f;</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  <span class="keywordtype">float</span> spin_friction = 0.0f;</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <span class="keywordtype">float</span> rolling_mass_1 = 0.0f;</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  <span class="keywordtype">float</span> rolling_mass_2 = 0.0f;</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  <span class="keywordtype">float</span> spin_mass = 0.0f;</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  glm::vec2 accumulated_rolling_impulse = {};</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  <span class="keywordtype">float</span> accumulated_spin_impulse = 0.0f;</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>};</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  <span class="keywordtype">float</span> closing_speed = 0.0f;</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span> </div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="keywordtype">float</span> static_friction = material_defaults::k_static_friction;</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  <span class="keywordtype">float</span> dynamic_friction = material_defaults::k_dynamic_friction;</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  <span class="keywordtype">float</span> accumulated_normal_impulse = 0.0f;</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  glm::vec2 accumulated_tangent_impulse = {};</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  <span class="keywordtype">float</span> rolling_friction = 0.0f;</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <span class="keywordtype">float</span> spin_friction = 0.0f;</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  <span class="keywordtype">float</span> rolling_mass_1 = 0.0f;</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  <span class="keywordtype">float</span> rolling_mass_2 = 0.0f;</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  <span class="keywordtype">float</span> spin_mass = 0.0f;</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  glm::vec2 accumulated_rolling_impulse = {};</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  <span class="keywordtype">float</span> accumulated_spin_impulse = 0.0f;</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>};</div>
 </div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span> </div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>}</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span> </div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>}</div>
 <div class="ttc" id="acollision_8hpp_html"><div class="ttname"><a href="collision_8hpp.html">collision.hpp</a></div><div class="ttdoc">Canonical collision-pair records shared by broad and narrow phases.</div></div>
 <div class="ttc" id="amaterial__defaults_8hpp_html"><div class="ttname"><a href="material__defaults_8hpp.html">material_defaults.hpp</a></div><div class="ttdoc">The values a material has when nothing sets them.</div></div>
 <div class="ttc" id="astructphysics_1_1BodyID_html"><div class="ttname"><a href="structphysics_1_1BodyID.html">physics::BodyID</a></div><div class="ttdef"><b>Definition</b> body.hpp:20</div></div>

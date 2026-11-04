@@ -1,0 +1,32 @@
+<map id="engine/src/toast/physics/joint.hpp" name="engine/src/toast/physics/joint.hpp">
+<area shape="rect" id="Node000001" title="Joint parameters." alt="" coords="818,5,996,50"/>
+<area shape="rect" id="Node000002" href="$joint__solver_8hpp.html" title="Sequential impulses of the joints." alt="" coords="691,98,869,143"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="867,58,812,100,809,95,862,60"/>
+<area shape="rect" id="Node000003" href="$simulator_8hpp.html" title="This class simulates all of the physics of the project." alt="" coords="691,191,869,235"/>
+<area shape="poly" id="edge15_Node000001_Node000003" title=" " alt="" coords="907,64,901,105,884,144,858,172,828,193,825,188,855,168,879,141,896,104,904,68"/>
+<area shape="rect" id="Node000011" href="$joint3d_8hpp.html" title="Interface for all joint types." alt="" coords="1096,98,1275,143"/>
+<area shape="poly" id="edge10_Node000001_Node000011" title=" " alt="" coords="988,53,1121,97,1116,98,988,58"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="782,156,782,192,778,189,778,160"/>
+<area shape="rect" id="Node000004" href="$vulkan__renderer_8cpp.html" title=" " alt="" coords="5,283,190,328"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="673,225,457,251,202,286,190,288,189,283,201,281,456,246,678,224"/>
+<area shape="rect" id="Node000005" href="$vulkan__renderer__lights_8cpp.html" title=" " alt="" coords="213,283,414,328"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="679,234,414,288,414,282,673,235"/>
+<area shape="rect" id="Node000006" href="$vulkan__renderer__record_8cpp.html" title=" " alt="" coords="438,283,643,328"/>
+<area shape="poly" id="edge5_Node000003_Node000006" title=" " alt="" coords="711,241,598,285,597,280,706,242"/>
+<area shape="rect" id="Node000007" href="$vulkan__renderer__resources_8cpp.html" title=" " alt="" coords="666,283,894,328"/>
+<area shape="poly" id="edge6_Node000003_Node000007" title=" " alt="" coords="782,249,782,285,778,281,778,253"/>
+<area shape="rect" id="Node000008" href="$vulkan__renderer__scene_8cpp.html" title=" " alt="" coords="918,283,1120,328"/>
+<area shape="poly" id="edge7_Node000003_Node000008" title=" " alt="" coords="852,239,964,283,959,283,851,244"/>
+<area shape="rect" id="Node000009" href="$vulkan__renderer__thread_8cpp.html" title=" " alt="" coords="1144,283,1350,328"/>
+<area shape="poly" id="edge8_Node000003_Node000009" title=" " alt="" coords="885,233,1146,285,1141,285,884,239"/>
+<area shape="rect" id="Node000010" href="$vulkan__renderer__voxel_8cpp.html" title=" " alt="" coords="1374,283,1573,328"/>
+<area shape="poly" id="edge9_Node000003_Node000010" title=" " alt="" coords="885,233,1019,250,1125,257,1229,265,1362,281,1376,285,1371,285,1361,286,1229,270,1124,263,1019,255,884,238"/>
+<area shape="rect" id="Node000012" href="$fixed__joint_8hpp.html" title="Welds two bodies." alt="" coords="894,191,1072,235"/>
+<area shape="poly" id="edge11_Node000011_Node000012" title=" " alt="" coords="1126,149,1032,193,1031,188,1120,150"/>
+<area shape="rect" id="Node000013" href="$hinge__joint_8hpp.html" title="Like a door hinge." alt="" coords="1096,191,1275,235"/>
+<area shape="poly" id="edge12_Node000011_Node000013" title=" " alt="" coords="1187,156,1188,192,1183,189,1184,160"/>
+<area shape="rect" id="Node000014" href="$pin__joint_8hpp.html" title="Bodies are maintained by one single point." alt="" coords="1299,191,1477,235"/>
+<area shape="poly" id="edge13_Node000011_Node000014" title=" " alt="" coords="1249,147,1342,190,1337,190,1248,152"/>
+<area shape="rect" id="Node000015" href="$slider__joint_8hpp.html" title="Lets two bodies slide along one axis." alt="" coords="1502,191,1680,235"/>
+<area shape="poly" id="edge14_Node000011_Node000015" title=" " alt="" coords="1290,142,1504,192,1499,192,1290,148"/>
+</map>

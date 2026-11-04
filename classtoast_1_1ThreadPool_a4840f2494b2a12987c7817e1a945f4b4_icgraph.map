@@ -1,11 +1,14 @@
 <map id="toast::ThreadPool::push" name="toast::ThreadPool::push">
-<area shape="rect" id="Node000001" title="Queues a job for execution by a worker thread." alt="" coords="421,48,595,76"/>
-<area shape="rect" id="Node000002" href="$classlogging_1_1Logger.html#aa9e80cc95ca58b9adb7e3a8323313e51" title="Set up the global logger instance, gives ownership to the caller." alt="" coords="5,11,176,39"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="461,42,420,28,373,15,322,10,271,8,177,14,176,9,271,3,323,4,373,10,421,23,466,42"/>
-<area shape="rect" id="Node000003" href="$classlogging_1_1Logger.html#a4e48e1e55a2e236783294f836f3bbdac" title="Entry point for all engine logs." alt="" coords="224,48,373,76"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="403,63,374,65,373,60,408,62"/>
-<area shape="rect" id="Node000004" href="$classtoast_1_1VoxelPiece.html#a059ce673693b6726d21fc5427baed01e" title=" " alt="" coords="228,100,368,145"/>
-<area shape="poly" id="edge5_Node000001_Node000004" title=" " alt="" coords="446,80,369,105,368,100,440,81"/>
-<area shape="poly" id="edge3_Node000003_Node000002" title=" " alt="" coords="206,47,172,42,171,37,211,45"/>
-<area shape="poly" id="edge4_Node000003_Node000003" title=" " alt="" coords="332,33,321,29,298,27,277,29,265,34,262,39,267,49,262,47,257,39,261,30,276,24,298,22,323,24,338,33"/>
+<area shape="rect" id="Node000001" title="Queues a job for execution by a worker thread." alt="" coords="421,112,595,140"/>
+<area shape="rect" id="Node000002" href="$classrenderer_1_1ShaderCache.html#a64a9e5f30d5bccfe7bbb1ac868b3a5bd" title="Blocks and reports from the caller every 30 ms." alt="" coords="203,5,372,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="462,106,372,65,346,53,346,48,374,60,467,105"/>
+<area shape="rect" id="Node000003" href="$classlogging_1_1Logger.html#aa9e80cc95ca58b9adb7e3a8323313e51" title="Set up the global logger instance, gives ownership to the caller." alt="" coords="203,74,373,102"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="408,110,371,105,371,99,413,109"/>
+<area shape="rect" id="Node000004" href="$classlogging_1_1Logger.html#ae4becec8639a8abc126e48bdd974087f" title="Entry point for all engine logs." alt="" coords="213,150,362,178"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="405,144,363,154,362,148,410,143"/>
+<area shape="rect" id="Node000006" href="$classtoast_1_1VoxelPiece.html#a059ce673693b6726d21fc5427baed01e" title=" " alt="" coords="218,201,358,246"/>
+<area shape="poly" id="edge6_Node000001_Node000006" title=" " alt="" coords="466,147,374,191,346,203,345,198,372,187,461,148"/>
+<area shape="poly" id="edge5_Node000004_Node000004" title=" " alt="" coords="322,134,311,131,288,128,266,130,254,135,252,141,257,150,252,149,246,141,251,131,265,125,288,123,312,126,327,135"/>
+<area shape="rect" id="Node000005" href="$log_8hpp.html#af18d3b362031e8881ae3e8ccfa125929" title="details is the long body of a log" alt="" coords="5,150,155,178"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="195,165,155,166,155,161,200,163"/>
 </map>

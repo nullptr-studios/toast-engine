@@ -124,12 +124,12 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('post__process_
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &quot;<a class="code" href="volume_8hpp.html">volume.hpp</a>&quot;</span></div>
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span> </div>
 <div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &lt;<a class="code" href="export_8hpp.html">toast/export.hpp</a>&gt;</span></div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &lt;<a class="code" href="post__process__settings_8hpp.html">toast/renderer/post_process_settings.hpp</a>&gt;</span></div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &lt;<a class="code" href="post__process__settings_8hpp.html">toast/renderer/settings/post_process_settings.hpp</a>&gt;</span></div>
 <div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span> </div>
 <div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="keyword">namespace </span>toast {</div>
 <div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span></div>
 <div class="foldopen" id="foldopen00032" data-start="{" data-end="};">
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno"><a class="line" href="classtoast_1_1PostProcessVolume.html">   32</a></span><span class="keyword">class </span>[[ToastNode, Icon(<span class="stringliteral">&quot;Aperture&quot;</span>)]] TOAST_API <a class="code hl_function" href="classtoast_1_1PostProcessVolume.html#ab8caf59b731c0b2f03f8badac43dd053">PostProcessVolume</a> : <span class="keyword">public</span> <a class="code hl_class" href="classtoast_1_1Volume.html">Volume</a> {</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno"><a class="line" href="classtoast_1_1PostProcessVolume.html">   32</a></span><span class="keyword">class </span>[[ToastNode, Icon(<span class="stringliteral">&quot;WorldEnvironment&quot;</span>)]] TOAST_API <a class="code hl_function" href="classtoast_1_1PostProcessVolume.html#ab8caf59b731c0b2f03f8badac43dd053">PostProcessVolume</a> : <span class="keyword">public</span> <a class="code hl_class" href="classtoast_1_1Volume.html">Volume</a> {</div>
 <div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="keyword">public</span>:</div>
 <div class="line"><a id="l00036" name="l00036"></a><span class="lineno"><a class="line" href="classtoast_1_1PostProcessVolume.html#ab8caf59b731c0b2f03f8badac43dd053">   36</a></span>  <a class="code hl_function" href="classtoast_1_1PostProcessVolume.html#ab8caf59b731c0b2f03f8badac43dd053">PostProcessVolume</a>() { blendDistance(1.0f); }</div>
 <div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span> </div>
@@ -179,70 +179,126 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('post__process_
 <div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  [[Reflect, Name(<span class="stringliteral">&quot;Bloom Strength&quot;</span>), Range(0.0, 1.0), Group(<span class="stringliteral">&quot;Bloom&quot;</span>)]]</div>
 <div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>  <span class="keywordtype">float</span> m_bloom_strength = 0.05f;</div>
 <div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span> </div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  [[Reflect, Name(<span class="stringliteral">&quot;Exposure&quot;</span>), Range(0.0, 8.0), Group(<span class="stringliteral">&quot;Tonemap&quot;</span>)]]</div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>  <span class="keywordtype">float</span> m_exposure = 1.0f;</div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  [[Reflect, Name(<span class="stringliteral">&quot;Tonemap Curve&quot;</span>), Enum(<span class="stringliteral">&quot;Reinhard&quot;</span>, <span class="stringliteral">&quot;ACES&quot;</span>), Group(<span class="stringliteral">&quot;Tonemap&quot;</span>)]]</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  int32_t m_tonemap_mode = 0;</div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  [[Reflect, Name(<span class="stringliteral">&quot;Gamma&quot;</span>), Range(1.0, 3.0), Group(<span class="stringliteral">&quot;Tonemap&quot;</span>)]]</div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>  <span class="keywordtype">float</span> m_gamma = 2.2f;</div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>  [[Reflect, Name(<span class="stringliteral">&quot;Contrast&quot;</span>), Range(0.0, 2.0), Group(<span class="stringliteral">&quot;Tonemap&quot;</span>)]]</div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>  <span class="keywordtype">float</span> m_contrast = 1.0f;</div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  [[Reflect, Name(<span class="stringliteral">&quot;Saturation&quot;</span>), Range(0.0, 2.0), Group(<span class="stringliteral">&quot;Tonemap&quot;</span>)]]</div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  <span class="keywordtype">float</span> m_saturation = 1.0f;</div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  [[Reflect, Name(<span class="stringliteral">&quot;Vignette&quot;</span>), Range(0.0, 1.0), Group(<span class="stringliteral">&quot;Tonemap&quot;</span>)]]</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  <span class="keywordtype">float</span> m_vignette = 0.0f;</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  [[Reflect, Name(<span class="stringliteral">&quot;Film Grain&quot;</span>), Range(0.0, 1.0), Group(<span class="stringliteral">&quot;Tonemap&quot;</span>)]]</div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>  <span class="keywordtype">float</span> m_grain = 0.0f;</div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span></div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  [[Reflect, Name(<span class="stringliteral">&quot;Auto Exposure&quot;</span>), Group(<span class="stringliteral">&quot;Auto Exposure&quot;</span>)]]</div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  <span class="keywordtype">bool</span> m_auto_exposure = false;</div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  [[Reflect, Name(<span class="stringliteral">&quot;Min Brightness&quot;</span>), Range(-16.0, 16.0), Group(<span class="stringliteral">&quot;Auto Exposure&quot;</span>)]]</div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>  <span class="keywordtype">float</span> m_auto_exposure_min = -8.0f;</div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>  [[Reflect, Name(<span class="stringliteral">&quot;Max Brightness&quot;</span>), Range(-16.0, 16.0), Group(<span class="stringliteral">&quot;Auto Exposure&quot;</span>)]]</div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>  <span class="keywordtype">float</span> m_auto_exposure_max = 4.0f;</div>
-<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>  [[Reflect, Name(<span class="stringliteral">&quot;Adapt Speed Up&quot;</span>), Range(0.0, 20.0), Group(<span class="stringliteral">&quot;Auto Exposure&quot;</span>)]]</div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>  <span class="keywordtype">float</span> m_adapt_speed_up = 3.0f;</div>
-<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>  [[Reflect, Name(<span class="stringliteral">&quot;Adapt Speed Down&quot;</span>), Range(0.0, 20.0), Group(<span class="stringliteral">&quot;Auto Exposure&quot;</span>)]]</div>
-<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>  <span class="keywordtype">float</span> m_adapt_speed_down = 1.0f;</div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span> </div>
-<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>  [[Reflect, Name(<span class="stringliteral">&quot;FXAA Contrast Threshold&quot;</span>), Range(0.0, 0.2), Group(<span class="stringliteral">&quot;FXAA&quot;</span>)]]</div>
-<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>  <span class="keywordtype">float</span> m_fxaa_contrast_threshold = 0.0312f;</div>
-<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>  [[Reflect, Name(<span class="stringliteral">&quot;FXAA Relative Threshold&quot;</span>), Range(0.0, 0.5), Group(<span class="stringliteral">&quot;FXAA&quot;</span>)]]</div>
-<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>  <span class="keywordtype">float</span> m_fxaa_relative_threshold = 0.125f;</div>
-<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>  [[Reflect, Name(<span class="stringliteral">&quot;FXAA Subpixel Blending&quot;</span>), Range(0.0, 1.0), Group(<span class="stringliteral">&quot;FXAA&quot;</span>)]]</div>
-<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>  <span class="keywordtype">float</span> m_fxaa_subpixel_blending = 0.75f;</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  [[Reflect, Name(<span class="stringliteral">&quot;Lens Flare Intensity&quot;</span>), Range(0.0, 2.0), Group(<span class="stringliteral">&quot;Lens Flare&quot;</span>)]]</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>  <span class="keywordtype">float</span> m_lens_flare_intensity = 0.1f;</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>  [[Reflect, Name(<span class="stringliteral">&quot;Lens Flare Threshold&quot;</span>), Range(0.0, 20.0), Group(<span class="stringliteral">&quot;Lens Flare&quot;</span>)]]</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  <span class="keywordtype">float</span> m_lens_flare_threshold = 1.0f;</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  [[Reflect, Name(<span class="stringliteral">&quot;Ghost Intensity&quot;</span>), Range(0.0, 4.0), Group(<span class="stringliteral">&quot;Lens Flare&quot;</span>)]]</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  <span class="keywordtype">float</span> m_ghost_intensity = 1.0f;</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>  [[Reflect, Name(<span class="stringliteral">&quot;Halo Intensity&quot;</span>), Range(0.0, 4.0), Group(<span class="stringliteral">&quot;Lens Flare&quot;</span>)]]</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>  <span class="keywordtype">float</span> m_halo_intensity = 1.0f;</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>  [[Reflect, Name(<span class="stringliteral">&quot;Halo Radius&quot;</span>), Range(0.0, 2.0), Group(<span class="stringliteral">&quot;Lens Flare&quot;</span>)]]</div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  <span class="keywordtype">float</span> m_halo_width = 0.6f;</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  [[Reflect, Name(<span class="stringliteral">&quot;Halo Fade Start&quot;</span>), Range(0.0, 1.0), Group(<span class="stringliteral">&quot;Lens Flare&quot;</span>)]]</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  <span class="keywordtype">float</span> m_halo_mask = 0.5f;</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  [[Reflect, Name(<span class="stringliteral">&quot;Halo Fisheye&quot;</span>), Range(0.05, 4.0), Group(<span class="stringliteral">&quot;Lens Flare&quot;</span>)]]</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  <span class="keywordtype">float</span> m_halo_compression = 0.65f;</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>  [[Reflect, Name(<span class="stringliteral">&quot;Halo Thickness&quot;</span>), Range(0.0, 4.0), Group(<span class="stringliteral">&quot;Lens Flare&quot;</span>)]]</div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  <span class="keywordtype">float</span> m_halo_thickness = 0.3f;</div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  [[Reflect, Name(<span class="stringliteral">&quot;Halo Dispersion&quot;</span>), Range(0.0, 0.1), Group(<span class="stringliteral">&quot;Lens Flare&quot;</span>)]]</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  <span class="keywordtype">float</span> m_halo_dispersion = 0.015f;</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  [[Reflect, Name(<span class="stringliteral">&quot;Halo Tint&quot;</span>), Color, Group(<span class="stringliteral">&quot;Lens Flare&quot;</span>)]]</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  glm::vec3 m_halo_tint = glm::vec3(1.0f);</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  [[Reflect, Name(<span class="stringliteral">&quot;Flare Chroma Shift&quot;</span>), Range(0.0, 0.1), Group(<span class="stringliteral">&quot;Lens Flare&quot;</span>)]]</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>  <span class="keywordtype">float</span> m_flare_chroma_shift = 0.015f;</div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>  [[Reflect, Name(<span class="stringliteral">&quot;Threshold Range&quot;</span>), Range(0.01, 10.0), Group(<span class="stringliteral">&quot;Lens Flare&quot;</span>)]]</div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>  <span class="keywordtype">float</span> m_lens_flare_threshold_range = 1.0f;</div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>  [[Reflect, Name(<span class="stringliteral">&quot;Glare Divider&quot;</span>), Range(1.0, 200.0), Group(<span class="stringliteral">&quot;Lens Flare&quot;</span>)]]</div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>  <span class="keywordtype">float</span> m_glare_divider = 60.0f;</div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>  [[Reflect, Name(<span class="stringliteral">&quot;Glare Intensity&quot;</span>), Range(0.0, 2.0), Group(<span class="stringliteral">&quot;Lens Flare&quot;</span>)]]</div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>  <span class="keywordtype">float</span> m_glare_intensity = 0.2f;</div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>  [[Reflect, Name(<span class="stringliteral">&quot;Anamorphic Streak&quot;</span>), Range(0.0, 4.0), Group(<span class="stringliteral">&quot;Lens Flare&quot;</span>)]]</div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>  <span class="keywordtype">float</span> m_anamorphic_intensity = 1.0f;</div>
+<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>  [[Reflect, Name(<span class="stringliteral">&quot;Streak Blue Tint&quot;</span>), Range(0.0, 1.0), Group(<span class="stringliteral">&quot;Lens Flare&quot;</span>)]]</div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>  <span class="keywordtype">float</span> m_anamorphic_tint = 0.6f;</div>
+<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>  [[Reflect, Name(<span class="stringliteral">&quot;Lens Dirt&quot;</span>), Range(0.0, 2.0), Group(<span class="stringliteral">&quot;Lens Flare&quot;</span>)]]</div>
+<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>  <span class="keywordtype">float</span> m_dirt_intensity = 0.5f;</div>
+<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>  [[Reflect, Name(<span class="stringliteral">&quot;Lens Dirt Texture&quot;</span>), Group(<span class="stringliteral">&quot;Lens Flare&quot;</span>)]]</div>
+<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>  assets::Handle&lt;assets::Texture&gt; m_lens_dirt_texture {<span class="keyword">nullptr</span>};</div>
 <div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span> </div>
-<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>  [[Reflect, Name(<span class="stringliteral">&quot;SSR Intensity&quot;</span>), Range(0.0, 2.0), Group(<span class="stringliteral">&quot;Screen Space Reflections&quot;</span>)]]</div>
-<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>  <span class="keywordtype">float</span> m_ssr_intensity = 1.0f;</div>
-<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span>  [[Reflect, Name(<span class="stringliteral">&quot;SSR Max Roughness&quot;</span>), Range(0.0, 1.0), Group(<span class="stringliteral">&quot;Screen Space Reflections&quot;</span>)]]</div>
-<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>  <span class="keywordtype">float</span> m_ssr_max_roughness = 0.6f;</div>
-<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>  [[Reflect, Name(<span class="stringliteral">&quot;SSR Thickness&quot;</span>), Unit(<span class="stringliteral">&quot;m&quot;</span>), Range(0.01, 5.0), Group(<span class="stringliteral">&quot;Screen Space Reflections&quot;</span>)]]</div>
-<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>  <span class="keywordtype">float</span> m_ssr_thickness = 0.5f;</div>
-<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>  [[Reflect, Name(<span class="stringliteral">&quot;SSR Stride&quot;</span>), Unit(<span class="stringliteral">&quot;m&quot;</span>), Range(0.01, 1.0), Group(<span class="stringliteral">&quot;Screen Space Reflections&quot;</span>)]]</div>
-<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>  <span class="keywordtype">float</span> m_ssr_stride = 0.15f;</div>
-<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>  [[Reflect, Name(<span class="stringliteral">&quot;SSR Max Steps&quot;</span>), Range(1, 256), Group(<span class="stringliteral">&quot;Screen Space Reflections&quot;</span>)]]</div>
-<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>  int32_t m_ssr_max_steps = 48;</div>
-<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span> </div>
-<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>  [[Reflect, Name(<span class="stringliteral">&quot;AO Radius&quot;</span>), Unit(<span class="stringliteral">&quot;m&quot;</span>), Range(0.01, 10.0), Group(<span class="stringliteral">&quot;Ambient Occlusion&quot;</span>)]]</div>
-<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>  <span class="keywordtype">float</span> m_ssao_radius = 0.5f;</div>
-<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>  [[Reflect, Name(<span class="stringliteral">&quot;AO Strength&quot;</span>), Range(0.0, 4.0), Group(<span class="stringliteral">&quot;Ambient Occlusion&quot;</span>)]]</div>
-<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>  <span class="keywordtype">float</span> m_ssao_strength = 1.0f;</div>
-<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>  [[Reflect, Name(<span class="stringliteral">&quot;AO Range Cutoff&quot;</span>), Unit(<span class="stringliteral">&quot;m&quot;</span>), Range(0.01, 10.0), Group(<span class="stringliteral">&quot;Ambient Occlusion&quot;</span>)]]</div>
-<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>  <span class="keywordtype">float</span> m_ssao_range_cutoff = 1.0f;</div>
-<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>  [[Reflect, Name(<span class="stringliteral">&quot;AO Samples&quot;</span>), Range(1, 64), Group(<span class="stringliteral">&quot;Ambient Occlusion&quot;</span>)]]</div>
-<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>  int32_t m_ssao_sample_count = 16;</div>
-<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span></div>
-<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>  mutable renderer::PostProcessSettings m_settings;</div>
-<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span> </div>
-<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>  <span class="keywordtype">void</span> syncSettings() const;</div>
-<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span></div>
-<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>  <span class="keywordtype">float</span> m_influence = 0.0f;</div>
-<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span> </div>
-<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>  <span class="keywordtype">bool</span> m_registered_proxy = false;</div>
-<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>};</div>
+<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>  [[Reflect, Name(<span class="stringliteral">&quot;Exposure&quot;</span>), Range(0.0, 8.0), Group(<span class="stringliteral">&quot;Tonemap&quot;</span>)]]</div>
+<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>  <span class="keywordtype">float</span> m_exposure = 1.0f;</div>
+<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>  [[Reflect, Name(<span class="stringliteral">&quot;Tonemap Curve&quot;</span>), Enum(<span class="stringliteral">&quot;Reinhard&quot;</span>, <span class="stringliteral">&quot;ACES&quot;</span>, <span class="stringliteral">&quot;GT7&quot;</span>), Group(<span class="stringliteral">&quot;Tonemap&quot;</span>)]]</div>
+<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>  int32_t m_tonemap_mode = 0;</div>
+<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>  [[Reflect, Name(<span class="stringliteral">&quot;GT7 Contrast Dip&quot;</span>), Range(1.0, 2.0), Group(<span class="stringliteral">&quot;Tonemap&quot;</span>)]]</div>
+<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>  <span class="keywordtype">float</span> m_gt_contrast_dip = 1.28f;</div>
+<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>  [[Reflect, Name(<span class="stringliteral">&quot;Chromatic Aberration&quot;</span>), Range(0.0, 0.05), Group(<span class="stringliteral">&quot;Tonemap&quot;</span>)]]</div>
+<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>  <span class="keywordtype">float</span> m_chromatic_aberration = 0.0f;</div>
+<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>  [[Reflect, Name(<span class="stringliteral">&quot;Gamma&quot;</span>), Range(1.0, 3.0), Group(<span class="stringliteral">&quot;Tonemap&quot;</span>)]]</div>
+<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>  <span class="keywordtype">float</span> m_gamma = 2.2f;</div>
+<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>  [[Reflect, Name(<span class="stringliteral">&quot;Contrast&quot;</span>), Range(0.0, 2.0), Group(<span class="stringliteral">&quot;Tonemap&quot;</span>)]]</div>
+<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>  <span class="keywordtype">float</span> m_contrast = 1.0f;</div>
+<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>  [[Reflect, Name(<span class="stringliteral">&quot;Saturation&quot;</span>), Range(0.0, 2.0), Group(<span class="stringliteral">&quot;Tonemap&quot;</span>)]]</div>
+<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>  <span class="keywordtype">float</span> m_saturation = 1.0f;</div>
+<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>  [[Reflect, Name(<span class="stringliteral">&quot;Vignette&quot;</span>), Range(0.0, 1.0), Group(<span class="stringliteral">&quot;Tonemap&quot;</span>)]]</div>
+<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>  <span class="keywordtype">float</span> m_vignette = 0.0f;</div>
+<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>  [[Reflect, Name(<span class="stringliteral">&quot;Film Grain&quot;</span>), Range(0.0, 1.0), Group(<span class="stringliteral">&quot;Tonemap&quot;</span>)]]</div>
+<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>  <span class="keywordtype">float</span> m_grain = 0.0f;</div>
+<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span></div>
+<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>  [[Reflect, Name(<span class="stringliteral">&quot;Auto Exposure&quot;</span>), Group(<span class="stringliteral">&quot;Auto Exposure&quot;</span>)]]</div>
+<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>  <span class="keywordtype">bool</span> m_auto_exposure = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>  [[Reflect, Name(<span class="stringliteral">&quot;Min Brightness&quot;</span>), Range(-16.0, 16.0), Group(<span class="stringliteral">&quot;Auto Exposure&quot;</span>)]]</div>
+<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>  <span class="keywordtype">float</span> m_auto_exposure_min = -8.0f;</div>
+<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>  [[Reflect, Name(<span class="stringliteral">&quot;Max Brightness&quot;</span>), Range(-16.0, 16.0), Group(<span class="stringliteral">&quot;Auto Exposure&quot;</span>)]]</div>
+<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>  <span class="keywordtype">float</span> m_auto_exposure_max = 4.0f;</div>
+<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>  [[Reflect, Name(<span class="stringliteral">&quot;Adapt Speed Up&quot;</span>), Range(0.0, 20.0), Group(<span class="stringliteral">&quot;Auto Exposure&quot;</span>)]]</div>
+<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>  <span class="keywordtype">float</span> m_adapt_speed_up = 3.0f;</div>
+<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>  [[Reflect, Name(<span class="stringliteral">&quot;Adapt Speed Down&quot;</span>), Range(0.0, 20.0), Group(<span class="stringliteral">&quot;Auto Exposure&quot;</span>)]]</div>
+<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>  <span class="keywordtype">float</span> m_adapt_speed_down = 1.0f;</div>
+<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span> </div>
+<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>  [[Reflect, Name(<span class="stringliteral">&quot;FXAA Contrast Threshold&quot;</span>), Range(0.0, 0.2), Group(<span class="stringliteral">&quot;FXAA&quot;</span>)]]</div>
+<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>  <span class="keywordtype">float</span> m_fxaa_contrast_threshold = 0.0312f;</div>
+<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>  [[Reflect, Name(<span class="stringliteral">&quot;FXAA Relative Threshold&quot;</span>), Range(0.0, 0.5), Group(<span class="stringliteral">&quot;FXAA&quot;</span>)]]</div>
+<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>  <span class="keywordtype">float</span> m_fxaa_relative_threshold = 0.125f;</div>
+<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>  [[Reflect, Name(<span class="stringliteral">&quot;FXAA Subpixel Blending&quot;</span>), Range(0.0, 1.0), Group(<span class="stringliteral">&quot;FXAA&quot;</span>)]]</div>
+<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>  <span class="keywordtype">float</span> m_fxaa_subpixel_blending = 0.75f;</div>
+<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span> </div>
+<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>  [[Reflect, Name(<span class="stringliteral">&quot;SSR Intensity&quot;</span>), Range(0.0, 2.0), Group(<span class="stringliteral">&quot;Screen Space Reflections&quot;</span>)]]</div>
+<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>  <span class="keywordtype">float</span> m_ssr_intensity = 1.0f;</div>
+<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>  [[Reflect, Name(<span class="stringliteral">&quot;SSR Max Roughness&quot;</span>), Range(0.0, 1.0), Group(<span class="stringliteral">&quot;Screen Space Reflections&quot;</span>)]]</div>
+<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>  <span class="keywordtype">float</span> m_ssr_max_roughness = 0.6f;</div>
+<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>  [[Reflect, Name(<span class="stringliteral">&quot;SSR Thickness&quot;</span>), Unit(<span class="stringliteral">&quot;m&quot;</span>), Range(0.01, 5.0), Group(<span class="stringliteral">&quot;Screen Space Reflections&quot;</span>)]]</div>
+<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>  <span class="keywordtype">float</span> m_ssr_thickness = 0.5f;</div>
+<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>  [[Reflect, Name(<span class="stringliteral">&quot;SSR Stride&quot;</span>), Unit(<span class="stringliteral">&quot;m&quot;</span>), Range(0.01, 1.0), Group(<span class="stringliteral">&quot;Screen Space Reflections&quot;</span>)]]</div>
+<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>  <span class="keywordtype">float</span> m_ssr_stride = 0.15f;</div>
+<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>  [[Reflect, Name(<span class="stringliteral">&quot;SSR Max Steps&quot;</span>), Range(1, 256), Group(<span class="stringliteral">&quot;Screen Space Reflections&quot;</span>)]]</div>
+<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>  int32_t m_ssr_max_steps = 48;</div>
+<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span> </div>
+<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>  [[Reflect, Name(<span class="stringliteral">&quot;AO Radius&quot;</span>), Unit(<span class="stringliteral">&quot;m&quot;</span>), Range(0.01, 10.0), Group(<span class="stringliteral">&quot;Ambient Occlusion&quot;</span>)]]</div>
+<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>  <span class="keywordtype">float</span> m_ssao_radius = 0.5f;</div>
+<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>  [[Reflect, Name(<span class="stringliteral">&quot;AO Strength&quot;</span>), Range(0.0, 4.0), Group(<span class="stringliteral">&quot;Ambient Occlusion&quot;</span>)]]</div>
+<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>  <span class="keywordtype">float</span> m_ssao_strength = 1.0f;</div>
+<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>  [[Reflect, Name(<span class="stringliteral">&quot;AO Range Cutoff&quot;</span>), Unit(<span class="stringliteral">&quot;m&quot;</span>), Range(0.01, 10.0), Group(<span class="stringliteral">&quot;Ambient Occlusion&quot;</span>)]]</div>
+<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>  <span class="keywordtype">float</span> m_ssao_range_cutoff = 1.0f;</div>
+<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>  [[Reflect, Name(<span class="stringliteral">&quot;AO Samples&quot;</span>), Range(1, 64), Group(<span class="stringliteral">&quot;Ambient Occlusion&quot;</span>)]]</div>
+<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>  int32_t m_ssao_sample_count = 16;</div>
+<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span></div>
+<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>  [[Reflect, Name(<span class="stringliteral">&quot;Fog Density&quot;</span>), Unit(<span class="stringliteral">&quot;1/m&quot;</span>), Range(0.0, 1.0), Group(<span class="stringliteral">&quot;Fog&quot;</span>)]]</div>
+<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>  <span class="keywordtype">float</span> m_fog_density = 0.0f;</div>
+<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>  [[Reflect, Name(<span class="stringliteral">&quot;Fog Height&quot;</span>), Unit(<span class="stringliteral">&quot;m&quot;</span>), Range(-1000.0, 1000.0), Group(<span class="stringliteral">&quot;Fog&quot;</span>)]]</div>
+<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>  <span class="keywordtype">float</span> m_fog_height = 0.0f;</div>
+<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>  [[Reflect, Name(<span class="stringliteral">&quot;Fog Height Falloff&quot;</span>), Unit(<span class="stringliteral">&quot;1/m&quot;</span>), Range(0.0, 2.0), Group(<span class="stringliteral">&quot;Fog&quot;</span>)]]</div>
+<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>  <span class="keywordtype">float</span> m_fog_height_falloff = 0.0f;</div>
+<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span>  [[Reflect, Name(<span class="stringliteral">&quot;Fog Albedo&quot;</span>), Color, Group(<span class="stringliteral">&quot;Fog&quot;</span>)]]</div>
+<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>  glm::vec3 m_fog_albedo = glm::vec3(1.0f);</div>
+<div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span>  [[Reflect, Name(<span class="stringliteral">&quot;Fog Anisotropy&quot;</span>), Range(-0.9, 0.9), Group(<span class="stringliteral">&quot;Fog&quot;</span>)]]</div>
+<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span>  <span class="keywordtype">float</span> m_fog_anisotropy = 0.3f;</div>
+<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>  [[Reflect, Name(<span class="stringliteral">&quot;Fog Ambient&quot;</span>), Range(0.0, 4.0), Group(<span class="stringliteral">&quot;Fog&quot;</span>)]]</div>
+<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span>  <span class="keywordtype">float</span> m_fog_ambient = 1.0f;</div>
+<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span>  [[Reflect, Name(<span class="stringliteral">&quot;Fog Distance&quot;</span>), Unit(<span class="stringliteral">&quot;m&quot;</span>), Range(1.0, 1000.0), Group(<span class="stringliteral">&quot;Fog&quot;</span>)]]</div>
+<div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>  <span class="keywordtype">float</span> m_fog_distance = 64.0f;</div>
+<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span></div>
+<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>  <span class="keyword">mutable</span> renderer::PostProcessSettings m_settings;</div>
+<div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span> </div>
+<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>  <span class="keywordtype">void</span> syncSettings() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span></div>
+<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>  <span class="keywordtype">float</span> m_influence = 0.0f;</div>
+<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span> </div>
+<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>  <span class="keywordtype">bool</span> m_registered_proxy = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>};</div>
 </div>
-<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span> </div>
-<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>}</div>
+<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span> </div>
+<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>}</div>
 <div class="ttc" id="aclasstoast_1_1PostProcessVolume_html"><div class="ttname"><a href="classtoast_1_1PostProcessVolume.html">toast::PostProcessVolume</a></div><div class="ttdoc">A region of the world that grades the post chain while the camera is inside it.</div><div class="ttdef"><b>Definition</b> post_process_volume.hpp:32</div></div>
 <div class="ttc" id="aclasstoast_1_1PostProcessVolume_html_ab8b3fe0500373f3d18ee9a2087cb2d4f"><div class="ttname"><a href="classtoast_1_1PostProcessVolume.html#ab8b3fe0500373f3d18ee9a2087cb2d4f">toast::PostProcessVolume::extents</a></div><div class="ttdeci">auto extents() const noexcept -&gt; const glm::vec3 &amp;</div><div class="ttdef"><b>Definition</b> post_process_volume.hpp:42</div></div>
 <div class="ttc" id="aclasstoast_1_1PostProcessVolume_html_ab8caf59b731c0b2f03f8badac43dd053"><div class="ttname"><a href="classtoast_1_1PostProcessVolume.html#ab8caf59b731c0b2f03f8badac43dd053">toast::PostProcessVolume::PostProcessVolume</a></div><div class="ttdeci">PostProcessVolume()</div><div class="ttdef"><b>Definition</b> post_process_volume.hpp:36</div></div>

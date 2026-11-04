@@ -11,6 +11,6 @@ var classtoast_1_1settings_1_1Settings =
     [ "saveIfDirty", "classtoast_1_1settings_1_1Settings.html#a95906bf3c8b27a6c6e4476ad59a5ccd4", null ],
     [ "setActiveLayer", "classtoast_1_1settings_1_1Settings.html#a62270d411101927c36456440eeae8505", null ],
     [ "setPaths", "classtoast_1_1settings_1_1Settings.html#a3a3631e787543207be145504893a874f", null ],
-    [ "setValue", "classtoast_1_1settings_1_1Settings.html#aa7848b2f2d4f91d2d2608f624d1b4202", null ],
+    [ "setValue", "classtoast_1_1settings_1_1Settings.html#aeaf20e82afd5f51df893e546b61d7f16", null ],
     [ "value", "classtoast_1_1settings_1_1Settings.html#af388da89bf8261c8bdf57276c9879320", null ]
 ];

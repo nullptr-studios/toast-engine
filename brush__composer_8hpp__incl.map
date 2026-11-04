@@ -1,0 +1,12 @@
+<map id="engine/src/toast/voxel/brush_composer.hpp" name="engine/src/toast/voxel/brush_composer.hpp">
+<area shape="rect" id="Node000001" title="Turns a VoxelBrush prefab into a voxel model, in memory." alt="" coords="37,5,202,50"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,98,82,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="98,53,68,88,64,85,101,48"/>
+<area shape="rect" id="Node000003" href="$export_8hpp.html" title=" " alt="" coords="55,174,184,201"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="122,49,122,159,117,157,117,52"/>
+<area shape="rect" id="Node000004" href="$uid_8hpp.html" title="Unique identifier for everything that exists in our engine." alt="" coords="157,98,263,126"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="144,48,187,87,182,88,143,53"/>
+<area shape="poly" id="edge5_Node000004_Node000003" title=" " alt="" coords="196,125,149,166,146,161,191,127"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="208,174,274,201"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="217,124,232,160,227,158,214,128"/>
+</map>

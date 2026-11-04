@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['handle_0',['Handle',['../classassets_1_1Handle.html',1,'assets']]],
+  ['handle_0',['Handle',['../classassets_1_1Handle.html',1,'assets::Handle&lt; T &gt;'],['../structtoast_1_1light__gizmo_1_1Handle.html',1,'toast::light_gizmo::Handle']]],
   ['handle_3c_20assets_3a_3aaction_20_3e_1',['Handle&lt; assets::Action &gt;',['../classassets_1_1Handle.html',1,'assets']]],
   ['handle_3c_20assets_3a_3aanimation_20_3e_2',['Handle&lt; assets::Animation &gt;',['../classassets_1_1Handle.html',1,'assets']]],
   ['handle_3c_20assets_3a_3aaudioevent_20_3e_3',['Handle&lt; assets::AudioEvent &gt;',['../classassets_1_1Handle.html',1,'assets']]],
@@ -35,16 +35,18 @@ var searchData=
   ['hierarchytree_32',['HierarchyTree',['../classeditor_1_1Components_1_1Modals_1_1HierarchyTree.html',1,'editor::Components::Modals']]],
   ['hierarchyview_33',['HierarchyView',['../classeditor_1_1Workspace_1_1HierarchyView.html',1,'editor::Workspace']]],
   ['hierarchyviewmodel_34',['HierarchyViewModel',['../classeditor_1_1Workspace_1_1HierarchyViewModel.html',1,'editor::Workspace']]],
-  ['historyconflict_35',['HistoryConflict',['../structevent_1_1HistoryConflict.html',1,'event']]],
-  ['historyconflictdialogviewmodel_36',['HistoryConflictDialogViewModel',['../classeditor_1_1Workspace_1_1HistoryConflictDialogViewModel.html',1,'editor::Workspace']]],
-  ['historyconflictitemviewmodel_37',['HistoryConflictItemViewModel',['../classeditor_1_1Workspace_1_1HistoryConflictItemViewModel.html',1,'editor::Workspace']]],
-  ['historyconflictresolution_38',['HistoryConflictResolution',['../structevent_1_1HistoryConflictResolution.html',1,'event']]],
-  ['historyconflictwindow_39',['HistoryConflictWindow',['../classeditor_1_1Workspace_1_1HistoryConflictWindow.html',1,'editor::Workspace']]],
-  ['historygraphcell_40',['HistoryGraphCell',['../classeditor_1_1Workspace_1_1HistoryGraphCell.html',1,'editor::Workspace']]],
-  ['historyrevision_41',['HistoryRevision',['../structevent_1_1HistoryRevision.html',1,'event']]],
-  ['historyrowviewmodel_42',['HistoryRowViewModel',['../classeditor_1_1Workspace_1_1HistoryRowViewModel.html',1,'editor::Workspace']]],
-  ['historyview_43',['HistoryView',['../classeditor_1_1Workspace_1_1HistoryView.html',1,'editor::Workspace']]],
-  ['historyviewmodel_44',['HistoryViewModel',['../classeditor_1_1Workspace_1_1HistoryViewModel.html',1,'editor::Workspace']]],
-  ['hizpyramid_45',['HiZPyramid',['../classrenderer_1_1HiZPyramid.html',1,'renderer']]],
-  ['holdtrigger_46',['HoldTrigger',['../classinput_1_1HoldTrigger.html',1,'input']]]
+  ['hingejoint_35',['HingeJoint',['../classphysics_1_1HingeJoint.html',1,'physics']]],
+  ['hingeparams_36',['HingeParams',['../structphysics_1_1HingeParams.html',1,'physics']]],
+  ['historyconflict_37',['HistoryConflict',['../structevent_1_1HistoryConflict.html',1,'event']]],
+  ['historyconflictdialogviewmodel_38',['HistoryConflictDialogViewModel',['../classeditor_1_1Workspace_1_1HistoryConflictDialogViewModel.html',1,'editor::Workspace']]],
+  ['historyconflictitemviewmodel_39',['HistoryConflictItemViewModel',['../classeditor_1_1Workspace_1_1HistoryConflictItemViewModel.html',1,'editor::Workspace']]],
+  ['historyconflictresolution_40',['HistoryConflictResolution',['../structevent_1_1HistoryConflictResolution.html',1,'event']]],
+  ['historyconflictwindow_41',['HistoryConflictWindow',['../classeditor_1_1Workspace_1_1HistoryConflictWindow.html',1,'editor::Workspace']]],
+  ['historygraphcell_42',['HistoryGraphCell',['../classeditor_1_1Workspace_1_1HistoryGraphCell.html',1,'editor::Workspace']]],
+  ['historyrevision_43',['HistoryRevision',['../structevent_1_1HistoryRevision.html',1,'event']]],
+  ['historyrowviewmodel_44',['HistoryRowViewModel',['../classeditor_1_1Workspace_1_1HistoryRowViewModel.html',1,'editor::Workspace']]],
+  ['historyview_45',['HistoryView',['../classeditor_1_1Workspace_1_1HistoryView.html',1,'editor::Workspace']]],
+  ['historyviewmodel_46',['HistoryViewModel',['../classeditor_1_1Workspace_1_1HistoryViewModel.html',1,'editor::Workspace']]],
+  ['hizpyramid_47',['HiZPyramid',['../classrenderer_1_1HiZPyramid.html',1,'renderer']]],
+  ['holdtrigger_48',['HoldTrigger',['../classinput_1_1HoldTrigger.html',1,'input']]]
 ];

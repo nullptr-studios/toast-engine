@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.17.0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Toast Engine: engine/src/toast/renderer/voxel_debug.hpp Source File</title>
+<title>Toast Engine: engine/src/toast/renderer/debug/voxel_debug.hpp Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="codefolding.js"></script>
 <script type="text/javascript" src="clipboard.js"></script>
@@ -121,7 +121,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__debug_8
 <a href="voxel__debug_8hpp.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a id="l00001" name="l00001"></a><span class="lineno">    1</span></div>
 <div class="line"><a id="l00006" name="l00006"></a><span class="lineno">    6</span> </div>
 <div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span><span class="preprocessor">#pragma once</span></div>
-<div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="preprocessor">#include &quot;vulkan_renderer.hpp&quot;</span></div>
+<div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="preprocessor">#include &quot;toast/renderer/vulkan_renderer.hpp&quot;</span></div>
 <div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span> </div>
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &lt;array&gt;</span></div>
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &lt;chrono&gt;</span></div>
@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__debug_8
 <div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span></div>
 <div class="foldopen" id="foldopen00061" data-start="{" data-end="};">
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno"><a class="line" href="structrenderer_1_1voxel__debug_1_1Probe.html">   61</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1voxel__debug_1_1Probe.html">Probe</a> {</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  <a class="code hl_struct" href="structrenderer_1_1VulkanRenderer_1_1VoxelVolumeProxy.html">VulkanRenderer::VoxelVolumeProxy</a> proxy;</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  <a class="code hl_struct" href="structrenderer_1_1VoxelVolumeProxy.html">VoxelVolumeProxy</a> proxy;</div>
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <a class="code hl_struct" href="structvoxel_1_1RayHit.html">voxel::RayHit</a> hit;</div>
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span> </div>
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  glm::vec3 world_position {0.0f};</div>
@@ -195,7 +195,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__debug_8
 <div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span></div>
 <div class="foldopen" id="foldopen00077" data-start="{" data-end="};">
 <div class="line"><a id="l00077" name="l00077"></a><span class="lineno"><a class="line" href="structrenderer_1_1voxel__debug_1_1MissProbe.html">   77</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1voxel__debug_1_1MissProbe.html">MissProbe</a> {</div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  <a class="code hl_struct" href="structrenderer_1_1VulkanRenderer_1_1VoxelVolumeProxy.html">VulkanRenderer::VoxelVolumeProxy</a> proxy;</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  <a class="code hl_struct" href="structrenderer_1_1VoxelVolumeProxy.html">VoxelVolumeProxy</a> proxy;</div>
 <div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  <a class="code hl_struct" href="structvoxel_1_1RayHit.html">voxel::RayHit</a> hit;</div>
 <div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>};</div>
 </div>
@@ -208,16 +208,16 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__debug_8
 </div>
 <div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span></div>
 <div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>[[nodiscard]]</div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span><span class="keyword">auto</span> probe(<span class="keyword">const</span> <a class="code hl_struct" href="structrenderer_1_1VulkanRenderer_1_1RenderFrame.html">VulkanRenderer::RenderFrame</a>&amp; frame, glm::vec2 cursor) -&gt; std::optional&lt;ProbeResult&gt;;</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno"><a class="line" href="voxel__debug_8hpp.html#aed9b77135958b4c96c33b8ff1859968a">   90</a></span><span class="keyword">auto</span> <a class="code hl_function" href="voxel__debug_8hpp.html#aed9b77135958b4c96c33b8ff1859968a">probe</a>(<span class="keyword">const</span> <a class="code hl_struct" href="structrenderer_1_1RenderFrame.html">RenderFrame</a>&amp; frame, glm::vec2 cursor) -&gt; std::optional&lt;ProbeResult&gt;;</div>
 <div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span></div>
 <div class="foldopen" id="foldopen00093" data-start="{" data-end="};">
 <div class="line"><a id="l00093" name="l00093"></a><span class="lineno"><a class="line" href="classrenderer_1_1voxel__debug_1_1Monitor.html">   93</a></span><span class="keyword">class </span><a class="code hl_class" href="classrenderer_1_1voxel__debug_1_1Monitor.html">Monitor</a> {</div>
 <div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  <span class="keywordtype">void</span> update(<span class="keyword">const</span> <a class="code hl_struct" href="structrenderer_1_1VulkanRenderer_1_1RenderFrame.html">VulkanRenderer::RenderFrame</a>&amp; frame);</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  <span class="keywordtype">void</span> update(<span class="keyword">const</span> <a class="code hl_struct" href="structrenderer_1_1RenderFrame.html">RenderFrame</a>&amp; frame);</div>
 <div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span></div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classrenderer_1_1voxel__debug_1_1Monitor.html#aba4962c6d7ea28ac4fcae1511eca461c">drawOverlay</a>(<span class="keyword">const</span> <a class="code hl_struct" href="structrenderer_1_1VulkanRenderer_1_1RenderFrame.html">VulkanRenderer::RenderFrame</a>&amp; frame) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno"><a class="line" href="classrenderer_1_1voxel__debug_1_1Monitor.html#a93a01eda4934b45fafb3b3e8839eade1">   98</a></span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classrenderer_1_1voxel__debug_1_1Monitor.html#a93a01eda4934b45fafb3b3e8839eade1">drawOverlay</a>(<span class="keyword">const</span> <a class="code hl_struct" href="structrenderer_1_1RenderFrame.html">RenderFrame</a>&amp; frame) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span></div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classrenderer_1_1voxel__debug_1_1Monitor.html#a6b2ed0d73cc6dec17b69b381646fa8bd">drawPanel</a>(<span class="keyword">const</span> <a class="code hl_struct" href="structrenderer_1_1VulkanRenderer_1_1RenderFrame.html">VulkanRenderer::RenderFrame</a>&amp; frame) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno"><a class="line" href="classrenderer_1_1voxel__debug_1_1Monitor.html#ae09f8519541cbea9abd74ce9a0ec45e2">  101</a></span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classrenderer_1_1voxel__debug_1_1Monitor.html#ae09f8519541cbea9abd74ce9a0ec45e2">drawPanel</a>(<span class="keyword">const</span> <a class="code hl_struct" href="structrenderer_1_1RenderFrame.html">RenderFrame</a>&amp; frame) <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span> </div>
 <div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span><span class="keyword">private</span>:</div>
 <div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  uint64_t m_sequence = 0;</div>
@@ -230,12 +230,12 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__debug_8
 <div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span> </div>
 <div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>}</div>
 <div class="ttc" id="aclassrenderer_1_1voxel__debug_1_1Monitor_html"><div class="ttname"><a href="classrenderer_1_1voxel__debug_1_1Monitor.html">renderer::voxel_debug::Monitor</a></div><div class="ttdoc">Render thread only.</div><div class="ttdef"><b>Definition</b> voxel_debug.hpp:93</div></div>
-<div class="ttc" id="aclassrenderer_1_1voxel__debug_1_1Monitor_html_a6b2ed0d73cc6dec17b69b381646fa8bd"><div class="ttname"><a href="classrenderer_1_1voxel__debug_1_1Monitor.html#a6b2ed0d73cc6dec17b69b381646fa8bd">renderer::voxel_debug::Monitor::drawPanel</a></div><div class="ttdeci">void drawPanel(const VulkanRenderer::RenderFrame &amp;frame) const</div><div class="ttdoc">Call inside the Toast Debug window.</div><div class="ttdef"><b>Definition</b> voxel_debug.cpp:512</div></div>
-<div class="ttc" id="aclassrenderer_1_1voxel__debug_1_1Monitor_html_aba4962c6d7ea28ac4fcae1511eca461c"><div class="ttname"><a href="classrenderer_1_1voxel__debug_1_1Monitor.html#aba4962c6d7ea28ac4fcae1511eca461c">renderer::voxel_debug::Monitor::drawOverlay</a></div><div class="ttdeci">void drawOverlay(const VulkanRenderer::RenderFrame &amp;frame) const</div><div class="ttdoc">Draws nothing outside a voxel view.</div><div class="ttdef"><b>Definition</b> voxel_debug.cpp:446</div></div>
+<div class="ttc" id="aclassrenderer_1_1voxel__debug_1_1Monitor_html_a93a01eda4934b45fafb3b3e8839eade1"><div class="ttname"><a href="classrenderer_1_1voxel__debug_1_1Monitor.html#a93a01eda4934b45fafb3b3e8839eade1">renderer::voxel_debug::Monitor::drawOverlay</a></div><div class="ttdeci">void drawOverlay(const RenderFrame &amp;frame) const</div><div class="ttdoc">Draws nothing outside a voxel view.</div></div>
+<div class="ttc" id="aclassrenderer_1_1voxel__debug_1_1Monitor_html_ae09f8519541cbea9abd74ce9a0ec45e2"><div class="ttname"><a href="classrenderer_1_1voxel__debug_1_1Monitor.html#ae09f8519541cbea9abd74ce9a0ec45e2">renderer::voxel_debug::Monitor::drawPanel</a></div><div class="ttdeci">void drawPanel(const RenderFrame &amp;frame) const</div><div class="ttdoc">Call inside the Toast Debug window.</div></div>
 <div class="ttc" id="apalette_8hpp_html"><div class="ttname"><a href="palette_8hpp.html">palette.hpp</a></div></div>
 <div class="ttc" id="aray__march_8hpp_html"><div class="ttname"><a href="ray__march_8hpp.html">ray_march.hpp</a></div></div>
-<div class="ttc" id="astructrenderer_1_1VulkanRenderer_1_1RenderFrame_html"><div class="ttname"><a href="structrenderer_1_1VulkanRenderer_1_1RenderFrame.html">renderer::VulkanRenderer::RenderFrame</a></div><div class="ttdef"><b>Definition</b> vulkan_renderer.hpp:377</div></div>
-<div class="ttc" id="astructrenderer_1_1VulkanRenderer_1_1VoxelVolumeProxy_html"><div class="ttname"><a href="structrenderer_1_1VulkanRenderer_1_1VoxelVolumeProxy.html">renderer::VulkanRenderer::VoxelVolumeProxy</a></div><div class="ttdef"><b>Definition</b> vulkan_renderer.hpp:286</div></div>
+<div class="ttc" id="astructrenderer_1_1RenderFrame_html"><div class="ttname"><a href="structrenderer_1_1RenderFrame.html">renderer::RenderFrame</a></div><div class="ttdef"><b>Definition</b> render_frame.hpp:174</div></div>
+<div class="ttc" id="astructrenderer_1_1VoxelVolumeProxy_html"><div class="ttname"><a href="structrenderer_1_1VoxelVolumeProxy.html">renderer::VoxelVolumeProxy</a></div><div class="ttdef"><b>Definition</b> render_frame.hpp:75</div></div>
 <div class="ttc" id="astructrenderer_1_1voxel__debug_1_1MissProbe_html"><div class="ttname"><a href="structrenderer_1_1voxel__debug_1_1MissProbe.html">renderer::voxel_debug::MissProbe</a></div><div class="ttdoc">The costliest box the cursor ray entered without hitting anything.</div><div class="ttdef"><b>Definition</b> voxel_debug.hpp:77</div></div>
 <div class="ttc" id="astructrenderer_1_1voxel__debug_1_1ProbeResult_html"><div class="ttname"><a href="structrenderer_1_1voxel__debug_1_1ProbeResult.html">renderer::voxel_debug::ProbeResult</a></div><div class="ttdef"><b>Definition</b> voxel_debug.hpp:82</div></div>
 <div class="ttc" id="astructrenderer_1_1voxel__debug_1_1Probe_html"><div class="ttname"><a href="structrenderer_1_1voxel__debug_1_1Probe.html">renderer::voxel_debug::Probe</a></div><div class="ttdoc">From voxel::marchRay over the uploaded data.</div><div class="ttdef"><b>Definition</b> voxel_debug.hpp:61</div></div>
@@ -245,13 +245,14 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__debug_8
 <div class="ttc" id="astructvoxel_1_1RayHit_html"><div class="ttname"><a href="structvoxel_1_1RayHit.html">voxel::RayHit</a></div><div class="ttdef"><b>Definition</b> ray_march.hpp:21</div></div>
 <div class="ttc" id="avoxel__debug_8hpp_html_a44fe31c396e13ef255726387e8eb29f1"><div class="ttname"><a href="voxel__debug_8hpp.html#a44fe31c396e13ef255726387e8eb29f1">renderer::voxel_debug::View</a></div><div class="ttdeci">View</div><div class="ttdoc">Mirrors lighting.slang kRenderModeVoxel and the editor RenderMode enum.</div><div class="ttdef"><b>Definition</b> voxel_debug.hpp:22</div></div>
 <div class="ttc" id="avoxel__debug_8hpp_html_a626826f51ec8f96124ddea59a07ee913"><div class="ttname"><a href="voxel__debug_8hpp.html#a626826f51ec8f96124ddea59a07ee913">renderer::voxel_debug::k_step_band_colors</a></div><div class="ttdeci">constexpr std::array&lt; Rgb, 8 &gt; k_step_band_colors</div><div class="ttdoc">Mirrors voxel.slang kStepBandColors.</div><div class="ttdef"><b>Definition</b> voxel_debug.hpp:43</div></div>
+<div class="ttc" id="avoxel__debug_8hpp_html_aed9b77135958b4c96c33b8ff1859968a"><div class="ttname"><a href="voxel__debug_8hpp.html#aed9b77135958b4c96c33b8ff1859968a">renderer::voxel_debug::probe</a></div><div class="ttdeci">auto probe(const RenderFrame &amp;frame, glm::vec2 cursor) -&gt; std::optional&lt; ProbeResult &gt;</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><b>engine</b></li><li class="navelem"><b>src</b></li><li class="navelem"><b>toast</b></li><li class="navelem"><b>renderer</b></li><li class="navelem"><a href="voxel__debug_8hpp.html">voxel_debug.hpp</a></li>
+    <li class="navelem"><b>engine</b></li><li class="navelem"><b>src</b></li><li class="navelem"><b>toast</b></li><li class="navelem"><b>renderer</b></li><li class="navelem"><b>debug</b></li><li class="navelem"><a href="voxel__debug_8hpp.html">voxel_debug.hpp</a></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.17.0 </li>
   </ul>
 </div>

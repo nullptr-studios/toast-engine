@@ -124,10 +124,10 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('ui__pass_8hpp_
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &lt;array&gt;</span></div>
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &lt;memory&gt;</span></div>
 <div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &lt;optional&gt;</span></div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &lt;toast/renderer/render_pass_base.hpp&gt;</span></div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &lt;toast/renderer/shader_layout.hpp&gt;</span></div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &lt;toast/renderer/vulkan_common.hpp&gt;</span></div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &lt;toast/renderer/vulkan_pipeline.hpp&gt;</span></div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &lt;toast/renderer/core/vulkan_common.hpp&gt;</span></div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &lt;toast/renderer/passes/render_pass_base.hpp&gt;</span></div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &lt;toast/renderer/shaders/shader_layout.hpp&gt;</span></div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &lt;toast/renderer/shaders/vulkan_pipeline.hpp&gt;</span></div>
 <div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#include &lt;vector&gt;</span></div>
 <div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span> </div>
 <div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="keyword">namespace </span>renderer {</div>
@@ -178,10 +178,10 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('ui__pass_8hpp_
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>}</div>
 <div class="ttc" id="aclassIRenderPass_html"><div class="ttname"><a href="classIRenderPass.html">IRenderPass</a></div><div class="ttdef"><b>Definition</b> render_pass_base.hpp:19</div></div>
 <div class="ttc" id="aclassrenderer_1_1ShaderLayout_html"><div class="ttname"><a href="classrenderer_1_1ShaderLayout.html">renderer::ShaderLayout</a></div><div class="ttdef"><b>Definition</b> shader_layout.hpp:12</div></div>
-<div class="ttc" id="aclassrenderer_1_1VulkanCore_html"><div class="ttname"><a href="classrenderer_1_1VulkanCore.html">renderer::VulkanCore</a></div><div class="ttdef"><b>Definition</b> vulkan_core.hpp:48</div></div>
+<div class="ttc" id="aclassrenderer_1_1VulkanCore_html"><div class="ttname"><a href="classrenderer_1_1VulkanCore.html">renderer::VulkanCore</a></div><div class="ttdef"><b>Definition</b> vulkan_core.hpp:50</div></div>
 <div class="ttc" id="aclassrenderer_1_1VulkanPipeline_html"><div class="ttname"><a href="classrenderer_1_1VulkanPipeline.html">renderer::VulkanPipeline</a></div><div class="ttdef"><b>Definition</b> vulkan_pipeline.hpp:19</div></div>
 <div class="ttc" id="aclassui_1_1UIPass_html_a1da44a224b91736485a6cb03e2142e10"><div class="ttname"><a href="classui_1_1UIPass.html#a1da44a224b91736485a6cb03e2142e10">ui::UIPass::k_color_format</a></div><div class="ttdeci">static constexpr vk::Format k_color_format</div><div class="ttdoc">UI layers always render in this format regardless of the output target.</div><div class="ttdef"><b>Definition</b> ui_pass.hpp:28</div></div>
-<div class="ttc" id="aclassui_1_1UIPass_html_a51f8333c2152a8c96b3f9750ba777910"><div class="ttname"><a href="classui_1_1UIPass.html#a51f8333c2152a8c96b3f9750ba777910">ui::UIPass::recordPre</a></div><div class="ttdeci">void recordPre(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) override</div><div class="ttdoc">Records outside any rendering scope before the main scope opens.</div><div class="ttdef"><b>Definition</b> ui_pass.cpp:73</div></div>
+<div class="ttc" id="aclassui_1_1UIPass_html_a51f8333c2152a8c96b3f9750ba777910"><div class="ttname"><a href="classui_1_1UIPass.html#a51f8333c2152a8c96b3f9750ba777910">ui::UIPass::recordPre</a></div><div class="ttdeci">void recordPre(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) override</div><div class="ttdoc">Records outside any rendering scope before the main scope opens.</div><div class="ttdef"><b>Definition</b> ui_pass.cpp:68</div></div>
 <div class="ttc" id="aclassui_1_1UIPass_html_ac599f6d260aeffd39746ba9468da3dd8"><div class="ttname"><a href="classui_1_1UIPass.html#ac599f6d260aeffd39746ba9468da3dd8">ui::UIPass::stage</a></div><div class="ttdeci">auto stage() const -&gt; RenderStage override</div><div class="ttdef"><b>Definition</b> ui_pass.hpp:38</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->

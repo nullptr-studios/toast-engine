@@ -123,10 +123,10 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('world__ui__pas
 <div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="preprocessor">#pragma once</span></div>
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &lt;array&gt;</span></div>
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &lt;glm/glm.hpp&gt;</span></div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &lt;toast/renderer/render_pass_base.hpp&gt;</span></div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &lt;toast/renderer/shader_layout.hpp&gt;</span></div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &lt;toast/renderer/vulkan_common.hpp&gt;</span></div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &lt;toast/renderer/vulkan_pipeline.hpp&gt;</span></div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &lt;toast/renderer/core/vulkan_common.hpp&gt;</span></div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &lt;toast/renderer/passes/render_pass_base.hpp&gt;</span></div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &lt;toast/renderer/shaders/shader_layout.hpp&gt;</span></div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &lt;toast/renderer/shaders/vulkan_pipeline.hpp&gt;</span></div>
 <div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &lt;vector&gt;</span></div>
 <div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span> </div>
 <div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="keyword">namespace </span>renderer {</div>
@@ -164,30 +164,31 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('world__ui__pas
 <div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  <span class="keywordtype">void</span> record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) <span class="keyword">override</span>;</div>
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span> </div>
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  <span class="keyword">struct </span>PushConstants {</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    glm::mat4 model;</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  };</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span> </div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <span class="keyword">const</span> renderer::VulkanCore* m_core = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <a class="code hl_enumeration" href="classui_1_1WorldUIPass.html#a5171371df42564aaf4906ba034e6f818">Layer</a> m_layer = Layer::world;</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span> </div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  vk::raii::Sampler m_sampler = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  renderer::ShaderLayout m_shader_layout;</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  renderer::VulkanPipeline m_pipeline;</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  std::vector&lt;vk::raii::DescriptorSet&gt; m_frame_camera_sets;</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  <span class="keyword">struct </span>PushConstants {</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>    glm::mat4 model;</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>    glm::vec4 hdr;</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  };</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  <span class="keyword">const</span> renderer::VulkanCore* m_core = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  <a class="code hl_enumeration" href="classui_1_1WorldUIPass.html#a5171371df42564aaf4906ba034e6f818">Layer</a> m_layer = Layer::world;</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span> </div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  vk::raii::Sampler m_sampler = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  renderer::ShaderLayout m_shader_layout;</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  renderer::VulkanPipeline m_pipeline;</div>
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span> </div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  std::array&lt;std::vector&lt;vk::raii::DescriptorSet&gt;, 3&gt; m_panel_sets;</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  uint32_t m_draw_count = 0;</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>};</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  std::vector&lt;vk::raii::DescriptorSet&gt; m_frame_camera_sets;</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span> </div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  std::array&lt;std::vector&lt;vk::raii::DescriptorSet&gt;, 3&gt; m_panel_sets;</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  uint32_t m_draw_count = 0;</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>};</div>
 </div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span> </div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>}</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span> </div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>}</div>
 <div class="ttc" id="aclassIRenderPass_html"><div class="ttname"><a href="classIRenderPass.html">IRenderPass</a></div><div class="ttdef"><b>Definition</b> render_pass_base.hpp:19</div></div>
-<div class="ttc" id="aclassrenderer_1_1VulkanCore_html"><div class="ttname"><a href="classrenderer_1_1VulkanCore.html">renderer::VulkanCore</a></div><div class="ttdef"><b>Definition</b> vulkan_core.hpp:48</div></div>
+<div class="ttc" id="aclassrenderer_1_1VulkanCore_html"><div class="ttname"><a href="classrenderer_1_1VulkanCore.html">renderer::VulkanCore</a></div><div class="ttdef"><b>Definition</b> vulkan_core.hpp:50</div></div>
 <div class="ttc" id="aclassui_1_1WorldUIPass_html"><div class="ttname"><a href="classui_1_1WorldUIPass.html">ui::WorldUIPass</a></div><div class="ttdef"><b>Definition</b> world_ui_pass.hpp:24</div></div>
 <div class="ttc" id="aclassui_1_1WorldUIPass_html_a5171371df42564aaf4906ba034e6f818"><div class="ttname"><a href="classui_1_1WorldUIPass.html#a5171371df42564aaf4906ba034e6f818">ui::WorldUIPass::Layer</a></div><div class="ttdeci">Layer</div><div class="ttdef"><b>Definition</b> world_ui_pass.hpp:28</div></div>
-<div class="ttc" id="aclassui_1_1WorldUIPass_html_aaec4b14ac35f7a2245615119d46d77cb"><div class="ttname"><a href="classui_1_1WorldUIPass.html#aaec4b14ac35f7a2245615119d46d77cb">ui::WorldUIPass::recordPre</a></div><div class="ttdeci">void recordPre(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) override</div><div class="ttdoc">Records outside any rendering scope before the main scope opens.</div><div class="ttdef"><b>Definition</b> world_ui_pass.cpp:84</div></div>
+<div class="ttc" id="aclassui_1_1WorldUIPass_html_aaec4b14ac35f7a2245615119d46d77cb"><div class="ttname"><a href="classui_1_1WorldUIPass.html#aaec4b14ac35f7a2245615119d46d77cb">ui::WorldUIPass::recordPre</a></div><div class="ttdeci">void recordPre(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) override</div><div class="ttdoc">Records outside any rendering scope before the main scope opens.</div><div class="ttdef"><b>Definition</b> world_ui_pass.cpp:78</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

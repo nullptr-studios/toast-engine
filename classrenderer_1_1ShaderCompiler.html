@@ -121,16 +121,53 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classrenderer_
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
+<tr class="memitem:ad3c72cbeafbb4e028b91432499c3ecc4" id="r_ad3c72cbeafbb4e028b91432499c3ecc4"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#ad3c72cbeafbb4e028b91432499c3ecc4">setRayTracingMode</a> (RayTracingMode mode)</td></tr>
+<tr class="memitem:ac42d34dce65cbe74bb48b1789bfd8011" id="r_ac42d34dce65cbe74bb48b1789bfd8011"><td class="memItemLeft"><a id="ac42d34dce65cbe74bb48b1789bfd8011" name="ac42d34dce65cbe74bb48b1789bfd8011"></a>
+static auto&#160;</td><td class="memItemRight"><b>rayTracingMode</b> () -&gt; RayTracingMode</td></tr>
 <tr class="memitem:af520dff8be32100c153c1fccbb5cc014" id="r_af520dff8be32100c153c1fccbb5cc014"><td class="memItemLeft"><a id="af520dff8be32100c153c1fccbb5cc014" name="af520dff8be32100c153c1fccbb5cc014"></a>
 static auto&#160;</td><td class="memItemRight"><b>compile</b> (<a class="el" href="structtoast_1_1UID.html">toast::UID</a> uid, std::string_view source, std::string_view source_uri) -&gt; <a class="el" href="structrenderer_1_1CompiledShaderCode.html">CompiledShaderCode</a></td></tr>
 <tr class="memdesc:af520dff8be32100c153c1fccbb5cc014"><td class="mdescLeft">&#160;</td><td class="mdescRight">Thread safe. <br /></td></tr>
 <tr class="memitem:a2de2bedb44ce8305ff285edbce394d43" id="r_a2de2bedb44ce8305ff285edbce394d43"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a2de2bedb44ce8305ff285edbce394d43">setRayQueryAvailable</a> (bool available)</td></tr>
 <tr class="memitem:ae998a3b8e3a1ad1192a68f1a73ae2a92" id="r_ae998a3b8e3a1ad1192a68f1a73ae2a92"><td class="memItemLeft"><a id="ae998a3b8e3a1ad1192a68f1a73ae2a92" name="ae998a3b8e3a1ad1192a68f1a73ae2a92"></a>
 static auto&#160;</td><td class="memItemRight"><b>isRayQueryAvailable</b> () -&gt; bool</td></tr>
+<tr class="memitem:a26d1cf9e62ab4d25667239296e8b0bec" id="r_a26d1cf9e62ab4d25667239296e8b0bec"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a26d1cf9e62ab4d25667239296e8b0bec">setTraceRayQuery</a> (bool enabled)</td></tr>
+<tr class="memitem:af74cbfb76da2a1199640def7bba34e36" id="r_af74cbfb76da2a1199640def7bba34e36"><td class="memItemLeft"><a id="af74cbfb76da2a1199640def7bba34e36" name="af74cbfb76da2a1199640def7bba34e36"></a>
+static auto&#160;</td><td class="memItemRight"><b>traceRayQuery</b> () -&gt; bool</td></tr>
+<tr class="memdesc:af74cbfb76da2a1199640def7bba34e36"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fixed at the first call until a restart. <br /></td></tr>
+<tr class="memitem:a8d9221c8e54c6fabb6fcb887ed9ee2e5" id="r_a8d9221c8e54c6fabb6fcb887ed9ee2e5"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a8d9221c8e54c6fabb6fcb887ed9ee2e5">setFullOptimization</a> (bool enabled)</td></tr>
+<tr class="memitem:a2563e4876598c9ae7a5e3befe177afb8" id="r_a2563e4876598c9ae7a5e3befe177afb8"><td class="memItemLeft"><a id="a2563e4876598c9ae7a5e3befe177afb8" name="a2563e4876598c9ae7a5e3befe177afb8"></a>
+static void&#160;</td><td class="memItemRight"><b>setMaxParallelCompiles</b> (size_t count)</td></tr>
+<tr class="memdesc:a2563e4876598c9ae7a5e3befe177afb8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Each compile holds a Slang session of up to 1 GB. <br /></td></tr>
 <tr class="memitem:aaf5b08f3a7c1a35c23c01f15da0c8c87" id="r_aaf5b08f3a7c1a35c23c01f15da0c8c87"><td class="memItemLeft"><a id="aaf5b08f3a7c1a35c23c01f15da0c8c87" name="aaf5b08f3a7c1a35c23c01f15da0c8c87"></a>
 static auto&#160;</td><td class="memItemRight"><b>featureHash</b> () -&gt; uint64_t</td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
+<a id="a8d9221c8e54c6fabb6fcb887ed9ee2e5" name="a8d9221c8e54c6fabb6fcb887ed9ee2e5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8d9221c8e54c6fabb6fcb887ed9ee2e5">&#9670;&#160;</a></span>setFullOptimization()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void renderer::ShaderCompiler::setFullOptimization </td>
+          <td>(</td>
+          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>enabled</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Player only </p><dl class="section note"><dt>Note</dt><dd>Call before any compilation </dd></dl>
+
+</div>
+</div>
 <a id="a2de2bedb44ce8305ff285edbce394d43" name="a2de2bedb44ce8305ff285edbce394d43"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a2de2bedb44ce8305ff285edbce394d43">&#9670;&#160;</a></span>setRayQueryAvailable()</h2>
 
@@ -157,9 +194,61 @@ static auto&#160;</td><td class="memItemRight"><b>featureHash</b> () -&gt; uint6
 
 </div>
 </div>
+<a id="ad3c72cbeafbb4e028b91432499c3ecc4" name="ad3c72cbeafbb4e028b91432499c3ecc4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad3c72cbeafbb4e028b91432499c3ecc4">&#9670;&#160;</a></span>setRayTracingMode()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void renderer::ShaderCompiler::setRayTracingMode </td>
+          <td>(</td>
+          <td class="paramtype">RayTracingMode</td>          <td class="paramname"><span class="paramname"><em>mode</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<dl class="section note"><dt>Note</dt><dd>Call before the Vulkan device exists </dd></dl>
+
+</div>
+</div>
+<a id="a26d1cf9e62ab4d25667239296e8b0bec" name="a26d1cf9e62ab4d25667239296e8b0bec"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a26d1cf9e62ab4d25667239296e8b0bec">&#9670;&#160;</a></span>setTraceRayQuery()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void renderer::ShaderCompiler::setTraceRayQuery </td>
+          <td>(</td>
+          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>enabled</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<dl class="section note"><dt>Note</dt><dd>Call before any compilation </dd></dl>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>engine/src/toast/renderer/<a class="el" href="shader__compiler_8hpp_source.html">shader_compiler.hpp</a></li>
-<li>engine/src/toast/renderer/<a class="el" href="shader__compiler_8cpp.html">shader_compiler.cpp</a></li>
+<li>engine/src/toast/renderer/shaders/<a class="el" href="shader__compiler_8hpp_source.html">shader_compiler.hpp</a></li>
+<li>engine/src/toast/renderer/shaders/<a class="el" href="shader__compiler_8cpp.html">shader_compiler.cpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

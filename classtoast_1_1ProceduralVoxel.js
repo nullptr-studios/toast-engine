@@ -2,8 +2,9 @@ var classtoast_1_1ProceduralVoxel =
 [
     [ "PieceLayout", "structtoast_1_1ProceduralVoxel_1_1PieceLayout.html", "structtoast_1_1ProceduralVoxel_1_1PieceLayout" ],
     [ "Composed", "structtoast_1_1ProceduralVoxel_1_1Composed.html", "structtoast_1_1ProceduralVoxel_1_1Composed" ],
+    [ "BakedPart", "structtoast_1_1ProceduralVoxel_1_1BakedPart.html", null ],
     [ "ComposeInput", "structtoast_1_1ProceduralVoxel_1_1ComposeInput.html", "structtoast_1_1ProceduralVoxel_1_1ComposeInput" ],
-    [ "ComposeOutput", "structtoast_1_1ProceduralVoxel_1_1ComposeOutput.html", null ],
+    [ "ComposeOutput", "structtoast_1_1ProceduralVoxel_1_1ComposeOutput.html", "structtoast_1_1ProceduralVoxel_1_1ComposeOutput" ],
     [ "bakeVoxel", "classtoast_1_1ProceduralVoxel.html#a5b82b4577f2249466ccc0142f44362f3", null ],
     [ "buildsAsync", "classtoast_1_1ProceduralVoxel.html#a37a7f33602481202e064fd18cf172d99", null ],
     [ "buildShape", "classtoast_1_1ProceduralVoxel.html#a7644a31907b63c7e0a5e6131db564236", null ],

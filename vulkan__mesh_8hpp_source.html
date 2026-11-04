@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.17.0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Toast Engine: engine/src/toast/renderer/vulkan_mesh.hpp Source File</title>
+<title>Toast Engine: engine/src/toast/renderer/resources/vulkan_mesh.hpp Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="codefolding.js"></script>
 <script type="text/javascript" src="clipboard.js"></script>
@@ -123,9 +123,9 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('vulkan__mesh_8
 <div class="line"><a id="l00005" name="l00005"></a><span class="lineno">    5</span><span class="preprocessor">#pragma once</span></div>
 <div class="line"><a id="l00006" name="l00006"></a><span class="lineno">    6</span> </div>
 <div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span><span class="preprocessor">#include &quot;glm/glm.hpp&quot;</span></div>
-<div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="preprocessor">#include &quot;<a class="code" href="vertex_8hpp.html">vertex.hpp</a>&quot;</span></div>
-<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="preprocessor">#include &quot;vulkan_common.hpp&quot;</span></div>
-<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &quot;<a class="code" href="vulkan__resource__base_8hpp.html">vulkan_resource_base.hpp</a>&quot;</span></div>
+<div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="preprocessor">#include &quot;toast/renderer/core/vulkan_common.hpp&quot;</span></div>
+<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="preprocessor">#include &quot;<a class="code" href="vulkan__resource__base_8hpp.html">toast/renderer/core/vulkan_resource_base.hpp</a>&quot;</span></div>
+<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &quot;<a class="code" href="vertex_8hpp.html">toast/renderer/resources/vertex.hpp</a>&quot;</span></div>
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span> </div>
 <div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &lt;array&gt;</span></div>
 <div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &lt;optional&gt;</span></div>
@@ -274,11 +274,11 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('vulkan__mesh_8
 <div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>}</div>
 <div class="ttc" id="aclassassets_1_1HandleBase_html"><div class="ttname"><a href="classassets_1_1HandleBase.html">assets::HandleBase</a></div><div class="ttdoc">Base class for type-erased asset handles.</div><div class="ttdef"><b>Definition</b> core_types.hpp:72</div></div>
 <div class="ttc" id="aclassrenderer_1_1IVulkanResource_html"><div class="ttname"><a href="classrenderer_1_1IVulkanResource.html">renderer::IVulkanResource</a></div><div class="ttdef"><b>Definition</b> vulkan_resource_base.hpp:12</div></div>
-<div class="ttc" id="aclassrenderer_1_1MeshUpload_html_a9da96586bb3bc40e4316e5759702492e"><div class="ttname"><a href="classrenderer_1_1MeshUpload.html#a9da96586bb3bc40e4316e5759702492e">renderer::MeshUpload::recordAcquire</a></div><div class="ttdeci">void recordAcquire(sync::BarrierBatch &amp;batch) override</div><div class="ttdoc">On the consuming queue after the upload fence signalled. No op for an upload that stayed on one queue...</div><div class="ttdef"><b>Definition</b> vulkan_mesh.cpp:368</div></div>
+<div class="ttc" id="aclassrenderer_1_1MeshUpload_html_a9da96586bb3bc40e4316e5759702492e"><div class="ttname"><a href="classrenderer_1_1MeshUpload.html#a9da96586bb3bc40e4316e5759702492e">renderer::MeshUpload::recordAcquire</a></div><div class="ttdeci">void recordAcquire(sync::BarrierBatch &amp;batch) override</div><div class="ttdoc">On the consuming queue after the upload fence signalled. No op for an upload that stayed on one queue...</div><div class="ttdef"><b>Definition</b> vulkan_mesh.cpp:360</div></div>
 <div class="ttc" id="aclassrenderer_1_1PendingResourceUpload_html"><div class="ttname"><a href="classrenderer_1_1PendingResourceUpload.html">renderer::PendingResourceUpload</a></div><div class="ttdef"><b>Definition</b> vulkan_resource_base.hpp:48</div></div>
-<div class="ttc" id="aclassrenderer_1_1VulkanCore_html"><div class="ttname"><a href="classrenderer_1_1VulkanCore.html">renderer::VulkanCore</a></div><div class="ttdef"><b>Definition</b> vulkan_core.hpp:48</div></div>
+<div class="ttc" id="aclassrenderer_1_1VulkanCore_html"><div class="ttname"><a href="classrenderer_1_1VulkanCore.html">renderer::VulkanCore</a></div><div class="ttdef"><b>Definition</b> vulkan_core.hpp:50</div></div>
 <div class="ttc" id="aclassrenderer_1_1VulkanMesh_html"><div class="ttname"><a href="classrenderer_1_1VulkanMesh.html">renderer::VulkanMesh</a></div><div class="ttdef"><b>Definition</b> vulkan_mesh.hpp:26</div></div>
-<div class="ttc" id="aclassrenderer_1_1sync_1_1BarrierBatch_html"><div class="ttname"><a href="classrenderer_1_1sync_1_1BarrierBatch.html">renderer::sync::BarrierBatch</a></div><div class="ttdoc">Skips a barrier only when neither side writes and the layout and next read stages are already covered...</div><div class="ttdef"><b>Definition</b> gpu_sync.hpp:105</div></div>
+<div class="ttc" id="aclassrenderer_1_1sync_1_1BarrierBatch_html"><div class="ttname"><a href="classrenderer_1_1sync_1_1BarrierBatch.html">renderer::sync::BarrierBatch</a></div><div class="ttdoc">Skips a barrier only when neither side writes and the layout and next read stages are already covered...</div><div class="ttdef"><b>Definition</b> gpu_sync.hpp:109</div></div>
 <div class="ttc" id="acore__types_8hpp_html"><div class="ttname"><a href="core__types_8hpp.html">core_types.hpp</a></div><div class="ttdoc">Base types for the asset system.</div></div>
 <div class="ttc" id="astructrenderer_1_1VulkanMesh_1_1UploadData_html"><div class="ttname"><a href="structrenderer_1_1VulkanMesh_1_1UploadData.html">renderer::VulkanMesh::UploadData</a></div><div class="ttdef"><b>Definition</b> vulkan_mesh.hpp:30</div></div>
 <div class="ttc" id="avertex_8hpp_html"><div class="ttname"><a href="vertex_8hpp.html">vertex.hpp</a></div></div>
@@ -289,7 +289,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('vulkan__mesh_8
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><b>engine</b></li><li class="navelem"><b>src</b></li><li class="navelem"><b>toast</b></li><li class="navelem"><b>renderer</b></li><li class="navelem"><b>vulkan_mesh.hpp</b></li>
+    <li class="navelem"><b>engine</b></li><li class="navelem"><b>src</b></li><li class="navelem"><b>toast</b></li><li class="navelem"><b>renderer</b></li><li class="navelem"><b>resources</b></li><li class="navelem"><b>vulkan_mesh.hpp</b></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.17.0 </li>
   </ul>
 </div>

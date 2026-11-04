@@ -1,5 +1,6 @@
 <map id="assets::Prefab::validate" name="assets::Prefab::validate">
 <area shape="rect" id="Node000001" title="Checks structural invariants." alt="" coords="441,80,615,108"/>
+<area shape="poly" id="edge8_Node000001_Node000001" title=" " alt="" coords="565,64,553,61,528,59,505,61,492,65,489,71,495,80,490,79,484,71,489,61,504,55,528,53,554,56,570,65"/>
 <area shape="rect" id="Node000002" href="$classassets_1_1Prefab.html#a54f959eb9a48c453f92a10a81467bff3" title="Parses a prefab from a text (.tnode) stream." alt="" coords="223,29,386,57"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="447,76,369,60,369,55,452,76"/>
 <area shape="rect" id="Node000004" href="$classassets_1_1Prefab.html#a46610436e751d4c0598853829b36bf91" title="Parses a prefab from a binary (.tbnode) byte span." alt="" coords="5,80,169,108"/>

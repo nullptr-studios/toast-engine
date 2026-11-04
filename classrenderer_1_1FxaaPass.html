@@ -143,6 +143,7 @@ Collaboration diagram for renderer::FxaaPass:</div>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a0b5176d42b82d0d013a510ba8aaf04fd" id="r_a0b5176d42b82d0d013a510ba8aaf04fd"><td class="memItemLeft"><a id="a0b5176d42b82d0d013a510ba8aaf04fd" name="a0b5176d42b82d0d013a510ba8aaf04fd"></a>
 &#160;</td><td class="memItemRight"><b>FxaaPass</b> (const <a class="el" href="classrenderer_1_1VulkanCore.html">VulkanCore</a> &amp;core, vk::Format ldr_format, vk::Extent2D extent)</td></tr>
+<tr class="memitem:aee0a200cfa4d8e4f43a58c967054666f" id="r_aee0a200cfa4d8e4f43a58c967054666f"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#aee0a200cfa4d8e4f43a58c967054666f">atOutputResolution</a> () const -&gt; bool override</td></tr>
 <tr class="memitem:a7c7ccc9ad5bfdbf2aeb323773dc9ebd2" id="r_a7c7ccc9ad5bfdbf2aeb323773dc9ebd2"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a7c7ccc9ad5bfdbf2aeb323773dc9ebd2">name</a> () const -&gt; std::string_view override</td></tr>
 <tr class="memitem:acce0272d3bb18d2806aeb4c498f40be0" id="r_acce0272d3bb18d2806aeb4c498f40be0"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#acce0272d3bb18d2806aeb4c498f40be0">record</a> (vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView source_view) -&gt; vk::ImageView override</td></tr>
 <tr class="memitem:acbfcdf65db75c887952c4809d6bb8615" id="r_acbfcdf65db75c887952c4809d6bb8615"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#acbfcdf65db75c887952c4809d6bb8615">onResize</a> (vk::Extent2D extent) override</td></tr>
@@ -153,6 +154,33 @@ void&#160;</td><td class="memItemRight"><b>setEnabled</b> (bool enabled) noexcep
 auto&#160;</td><td class="memItemRight"><b>isEnabled</b> () const noexcept -&gt; bool</td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
+<a id="aee0a200cfa4d8e4f43a58c967054666f" name="aee0a200cfa4d8e4f43a58c967054666f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aee0a200cfa4d8e4f43a58c967054666f">&#9670;&#160;</a></span>atOutputResolution()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto renderer::FxaaPass::atOutputResolution </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td> const -&gt; bool</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel nodiscard">nodiscard</span><span class="mlabel override">override</span><span class="mlabel virtual">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Reimplemented from <a class="el" href="classrenderer_1_1IPostProcessPass.html">renderer::IPostProcessPass</a>.</p>
+
+</div>
+</div>
 <a id="a7c7ccc9ad5bfdbf2aeb323773dc9ebd2" name="a7c7ccc9ad5bfdbf2aeb323773dc9ebd2"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a7c7ccc9ad5bfdbf2aeb323773dc9ebd2">&#9670;&#160;</a></span>name()</h2>
 
@@ -254,8 +282,8 @@ Here is the caller graph for this function:</div>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>engine/src/toast/renderer/passes/<a class="el" href="fxaa__pass_8hpp_source.html">fxaa_pass.hpp</a></li>
-<li>engine/src/toast/renderer/passes/<a class="el" href="fxaa__pass_8cpp.html">fxaa_pass.cpp</a></li>
+<li>engine/src/toast/renderer/passes/post/<a class="el" href="fxaa__pass_8hpp_source.html">fxaa_pass.hpp</a></li>
+<li>engine/src/toast/renderer/passes/post/<a class="el" href="fxaa__pass_8cpp.html">fxaa_pass.cpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

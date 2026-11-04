@@ -145,8 +145,8 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a421ed4511238c1f8b508001ef485e629" id="r_a421ed4511238c1f8b508001ef485e629"><td class="memItemLeft"><a id="a421ed4511238c1f8b508001ef485e629" name="a421ed4511238c1f8b508001ef485e629"></a>
-&#160;</td><td class="memItemRight"><b>SharedTextureOutputTarget</b> (const <a class="el" href="classrenderer_1_1VulkanCore.html">VulkanCore</a> &amp;core, vk::Extent2D preferred_extent, uint32_t image_count=3)</td></tr>
+<tr class="memitem:a96f7dff76defa7bef6dd4e01b6bf88e9" id="r_a96f7dff76defa7bef6dd4e01b6bf88e9"><td class="memItemLeft"><a id="a96f7dff76defa7bef6dd4e01b6bf88e9" name="a96f7dff76defa7bef6dd4e01b6bf88e9"></a>
+&#160;</td><td class="memItemRight"><b>SharedTextureOutputTarget</b> (const <a class="el" href="classrenderer_1_1VulkanCore.html">VulkanCore</a> &amp;core, vk::Extent2D preferred_extent, uint32_t image_count=4)</td></tr>
 <tr class="memitem:af09506732f5d72f4f39c3bfb5472634f" id="r_af09506732f5d72f4f39c3bfb5472634f"><td class="memItemLeft"><a id="af09506732f5d72f4f39c3bfb5472634f" name="af09506732f5d72f4f39c3bfb5472634f"></a>
 &#160;</td><td class="memItemRight"><b>SharedTextureOutputTarget</b> (const SharedTextureOutputTarget &amp;)=delete</td></tr>
 <tr class="memitem:a9ccf0f64b58aeb74a0ad256ef535ad69" id="r_a9ccf0f64b58aeb74a0ad256ef535ad69"><td class="memItemLeft"><a id="a9ccf0f64b58aeb74a0ad256ef535ad69" name="a9ccf0f64b58aeb74a0ad256ef535ad69"></a>
@@ -164,7 +164,9 @@ auto&#160;</td><td class="memItemRight"><b>operator=</b> (SharedTextureOutputTar
 <tr class="memitem:a94550d452f14d70beaf8d12611e8e021" id="r_a94550d452f14d70beaf8d12611e8e021"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a94550d452f14d70beaf8d12611e8e021">present</a> (uint32_t image_index, vk::Semaphore render_finished) -&gt; vk::Result override</td></tr>
 <tr class="memitem:a531f5248f7334f2564fa6f3b78372dcb" id="r_a531f5248f7334f2564fa6f3b78372dcb"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a531f5248f7334f2564fa6f3b78372dcb">usesAcquirePresentSemaphores</a> () const -&gt; bool override</td></tr>
 <tr class="memitem:ac3e75fa619d7ff541da0f9689b154772" id="r_ac3e75fa619d7ff541da0f9689b154772"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#ac3e75fa619d7ff541da0f9689b154772">recordFinalize</a> (vk::CommandBuffer command_buffer, uint32_t image_index) override</td></tr>
-<tr class="memitem:a728db7a3306d6165068cf038e3f5de11" id="r_a728db7a3306d6165068cf038e3f5de11"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a728db7a3306d6165068cf038e3f5de11">onImageRenderComplete</a> (uint32_t image_index) override</td></tr>
+<tr class="memitem:a7cd9fc8dd893527821632731a7972e8d" id="r_a7cd9fc8dd893527821632731a7972e8d"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a7cd9fc8dd893527821632731a7972e8d">onImageRenderComplete</a> (uint32_t image_index, bool publish=true) override</td></tr>
+<tr class="memitem:a7e775c17e0ac1c12ce22c2354c4b579c" id="r_a7e775c17e0ac1c12ce22c2354c4b579c"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a7e775c17e0ac1c12ce22c2354c4b579c">waitForFreeImage</a> (std::chrono::nanoseconds timeout) -&gt; bool override</td></tr>
+<tr class="memdesc:a7e775c17e0ac1c12ce22c2354c4b579c"><td class="mdescLeft">&#160;</td><td class="mdescRight">After acquireNextImage returned eNotReady and false when none freed within <code class="param">timeout</code>.  <br /></td></tr>
 <tr class="memitem:a4cfea64358a17c1657caf6670c068801" id="r_a4cfea64358a17c1657caf6670c068801"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a4cfea64358a17c1657caf6670c068801">submitSync</a> (uint32_t image_index) -&gt; <a class="el" href="structrenderer_1_1OutputSubmitSync.html">OutputSubmitSync</a> override</td></tr>
 <tr class="memitem:a1cb0676258f71e9049ec35eae727407f" id="r_a1cb0676258f71e9049ec35eae727407f"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a1cb0676258f71e9049ec35eae727407f">recreate</a> (vk::Extent2D extent) override</td></tr>
 <tr class="memitem:a8a4a570122e4555d233ca4b1c59d9d4d" id="r_a8a4a570122e4555d233ca4b1c59d9d4d"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a8a4a570122e4555d233ca4b1c59d9d4d">copyLatestFrame</a> (void *dst, uint32_t dst_capacity, <a class="el" href="structrenderer_1_1ViewportFrameDesc.html">ViewportFrameDesc</a> *out) -&gt; int</td></tr>
@@ -179,11 +181,13 @@ void&#160;</td><td class="memItemRight"><b>disableSharedTextures</b> ()</td></tr
 auto&#160;</td><td class="memItemRight"><b>sharedFrame</b> (<a class="el" href="structrenderer_1_1ViewportSharedFrameDesc.html">ViewportSharedFrameDesc</a> *out) -&gt; int</td></tr>
 <tr class="memitem:a7c27cdc5f64584f3ed3f0478f54954a0" id="r_a7c27cdc5f64584f3ed3f0478f54954a0"><td class="memItemLeft"><a id="a7c27cdc5f64584f3ed3f0478f54954a0" name="a7c27cdc5f64584f3ed3f0478f54954a0"></a>
 auto&#160;</td><td class="memItemRight"><b>exportSharedSlot</b> (uint64_t generation, uint32_t slot, <a class="el" href="structrenderer_1_1ViewportSharedHandles.html">ViewportSharedHandles</a> *out) -&gt; bool</td></tr>
-<tr class="memitem:aaba04fcd2f8c69ce07dd98fcc91aebfe" id="r_aaba04fcd2f8c69ce07dd98fcc91aebfe"><td class="memItemLeft"><a id="aaba04fcd2f8c69ce07dd98fcc91aebfe" name="aaba04fcd2f8c69ce07dd98fcc91aebfe"></a>
-auto&#160;</td><td class="memItemRight"><b>holdSharedSlot</b> (uint64_t generation, uint32_t slot) -&gt; bool</td></tr>
+<tr class="memitem:a6f7374c96d91e39260225ceb006ba55c" id="r_a6f7374c96d91e39260225ceb006ba55c"><td class="memItemLeft"><a id="a6f7374c96d91e39260225ceb006ba55c" name="a6f7374c96d91e39260225ceb006ba55c"></a>
+auto&#160;</td><td class="memItemRight"><b>holdSharedSlot</b> (uint64_t generation, uint32_t slot, uint64_t frame_id) -&gt; bool</td></tr>
 <tr class="memitem:afc25a26cdc808151a535226bceff83f1" id="r_afc25a26cdc808151a535226bceff83f1"><td class="memItemLeft"><a id="afc25a26cdc808151a535226bceff83f1" name="afc25a26cdc808151a535226bceff83f1"></a>
 void&#160;</td><td class="memItemRight"><b>releaseSharedSlot</b> (uint64_t generation, uint32_t slot, bool consumed)</td></tr>
 <tr class="inherit_header pub_methods_classrenderer_1_1IOutputTarget"><td colspan="2">Public Member Functions inherited from <a class="el" href="classrenderer_1_1IOutputTarget.html">renderer::IOutputTarget</a></td></tr>
+<tr class="memitem:a66d43ef92d4e8b800d3b9ad4733bc522 pub_methods_classrenderer_1_1IOutputTarget" id="r_a66d43ef92d4e8b800d3b9ad4733bc522"><td class="memItemLeft">virtual auto&#160;</td><td class="memItemRight"><a class="el" href="classrenderer_1_1IOutputTarget.html#a66d43ef92d4e8b800d3b9ad4733bc522">isHdr</a> () const -&gt; bool</td></tr>
+<tr class="memdesc:a66d43ef92d4e8b800d3b9ad4733bc522 pub_methods_classrenderer_1_1IOutputTarget"><td class="mdescLeft">&#160;</td><td class="mdescRight">scRGB float where 1.0 is 80 nits  <br /></td></tr>
 <tr class="memitem:a33c3c3c484bf6ee06cd9e35fb68adef4 pub_methods_classrenderer_1_1IOutputTarget" id="r_a33c3c3c484bf6ee06cd9e35fb68adef4"><td class="memItemLeft">
 virtual auto&#160;</td><td class="memItemRight"><b>isPresentable</b> () const -&gt; bool</td></tr>
 </table>
@@ -425,8 +429,8 @@ virtual auto&#160;</td><td class="memItemRight"><b>isPresentable</b> () const -&
 
 </div>
 </div>
-<a id="a728db7a3306d6165068cf038e3f5de11" name="a728db7a3306d6165068cf038e3f5de11"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a728db7a3306d6165068cf038e3f5de11">&#9670;&#160;</a></span>onImageRenderComplete()</h2>
+<a id="a7cd9fc8dd893527821632731a7972e8d" name="a7cd9fc8dd893527821632731a7972e8d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7cd9fc8dd893527821632731a7972e8d">&#9670;&#160;</a></span>onImageRenderComplete()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -437,8 +441,12 @@ virtual auto&#160;</td><td class="memItemRight"><b>isPresentable</b> () const -&
         <tr>
           <td class="memname">void renderer::SharedTextureOutputTarget::onImageRenderComplete </td>
           <td>(</td>
-          <td class="paramtype">uint32_t</td>          <td class="paramname"><span class="paramname"><em>image_index</em></span></td><td>)</td>
+          <td class="paramtype">uint32_t</td>          <td class="paramname"><span class="paramname"><em>image_index</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>publish</em></span><span class="paramdefsep"> = </span><span class="paramdefval">true</span>&#160;)</td>
         </tr>
       </table>
   </td>
@@ -595,9 +603,38 @@ virtual auto&#160;</td><td class="memItemRight"><b>isPresentable</b> () const -&
 
 </div>
 </div>
+<a id="a7e775c17e0ac1c12ce22c2354c4b579c" name="a7e775c17e0ac1c12ce22c2354c4b579c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7e775c17e0ac1c12ce22c2354c4b579c">&#9670;&#160;</a></span>waitForFreeImage()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto renderer::SharedTextureOutputTarget::waitForFreeImage </td>
+          <td>(</td>
+          <td class="paramtype">std::chrono::nanoseconds</td>          <td class="paramname"><span class="paramname"><em>timeout</em></span></td><td>)</td>
+          <td> -&gt; bool</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel nodiscard">nodiscard</span><span class="mlabel override">override</span><span class="mlabel virtual">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>After acquireNextImage returned eNotReady and false when none freed within <code class="param">timeout</code>. </p>
+
+<p>Reimplemented from <a class="el" href="classrenderer_1_1IOutputTarget.html#ae7ac42a86bab950e1190a64dd0216813">renderer::IOutputTarget</a>.</p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>engine/src/toast/renderer/<a class="el" href="shared__texture__output__target_8hpp_source.html">shared_texture_output_target.hpp</a></li>
-<li>engine/src/toast/renderer/<b>shared_texture_output_target.cpp</b></li>
+<li>engine/src/toast/renderer/output/<a class="el" href="shared__texture__output__target_8hpp_source.html">shared_texture_output_target.hpp</a></li>
+<li>engine/src/toast/renderer/output/<b>shared_texture_output_target.cpp</b></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

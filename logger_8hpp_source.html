@@ -122,73 +122,111 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('logger_8hpp_so
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span> </div>
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#pragma once</span></div>
 <div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span> </div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &quot;generated/logging.pb.h&quot;</span></div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span> </div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &lt;asio.hpp&gt;</span></div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &lt;atomic&gt;</span></div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#include &lt;cassert&gt;</span></div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="preprocessor">#include &lt;cstdint&gt;</span></div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="preprocessor">#include &lt;deque&gt;</span></div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="preprocessor">#include &lt;memory&gt;</span></div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="preprocessor">#include &lt;mutex&gt;</span></div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#include &lt;string_view&gt;</span></div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#include &lt;vector&gt;</span></div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="keyword">namespace </span>logging {</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span> </div>
-<div class="foldopen" id="foldopen00027" data-start="{" data-end="};">
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno"><a class="line" href="classlogging_1_1Logger.html">   27</a></span><span class="keyword">class </span>Logger {</div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>  <span class="keyword">inline</span> <span class="keyword">static</span> Logger* instance = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span> </div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>  <span class="keyword">struct </span>{</div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>    asio::io_context io_ctx;</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>    asio::ip::tcp::socket socket {io_ctx};</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span> </div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>    std::deque&lt;proto::logging::LogData&gt; log_queue;</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>    std::mutex queue_mutex;</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span></div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno"><a class="line" href="classlogging_1_1Logger.html#ae086d7a54e2a8828d5fe9d5d5d05a039">   43</a></span>    std::atomic&lt;bool&gt; <a class="code hl_variable" href="classlogging_1_1Logger.html#ae086d7a54e2a8828d5fe9d5d5d05a039">drain_pending</a> = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span></div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno"><a class="line" href="classlogging_1_1Logger.html#a699b1d69ceccbe2bc357bffe553ee233">   48</a></span>    std::atomic&lt;bool&gt; <a class="code hl_variable" href="classlogging_1_1Logger.html#a699b1d69ceccbe2bc357bffe553ee233">connected</a> = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span></div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno"><a class="line" href="classlogging_1_1Logger.html#a31f2661fc73771875a3f1838888bcd58">   54</a></span>    std::atomic&lt;bool&gt; <a class="code hl_variable" href="classlogging_1_1Logger.html#a31f2661fc73771875a3f1838888bcd58">unavailable</a> = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  } m;</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span> </div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint16_t port = 12800;                </div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> <span class="keywordtype">bool</span> auto_spawn_log_server = <span class="keyword">true</span>;    </div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> <span class="keywordtype">bool</span> show_server_logs = <span class="keyword">false</span>;        </div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span> </div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  <span class="keyword">static</span> <span class="keyword">auto</span> <a class="code hl_function" href="classlogging_1_1Logger.html#aa9e80cc95ca58b9adb7e3a8323313e51">create</a>() noexcept -&gt; std::unique_ptr&lt;<a class="code hl_class" href="classlogging_1_1Logger.html">Logger</a>&gt;;</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span></div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  ~<a class="code hl_class" href="classlogging_1_1Logger.html">Logger</a>() noexcept;</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span> </div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  <span class="comment">// Copying a global logger doesn&#39;t make sense</span></div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  <a class="code hl_class" href="classlogging_1_1Logger.html">Logger</a>(const <a class="code hl_class" href="classlogging_1_1Logger.html">Logger</a>&amp;) = delete;</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  <a class="code hl_class" href="classlogging_1_1Logger.html">Logger</a>(<a class="code hl_class" href="classlogging_1_1Logger.html">Logger</a>&amp;&amp;) = delete;</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  auto operator=(const <a class="code hl_class" href="classlogging_1_1Logger.html">Logger</a>&amp;) -&gt; <a class="code hl_class" href="classlogging_1_1Logger.html">Logger</a>&amp; = delete;</div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  auto operator=(<a class="code hl_class" href="classlogging_1_1Logger.html">Logger</a>&amp;&amp;) -&gt; <a class="code hl_class" href="classlogging_1_1Logger.html">Logger</a>&amp; = delete;</div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span></div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  static <span class="keywordtype">void</span> <a class="code hl_function" href="classlogging_1_1Logger.html#a4e48e1e55a2e236783294f836f3bbdac">log</a>(std::string_view file, <span class="keywordtype">unsigned</span> line, <span class="keywordtype">char</span> severity, std::string_view sink, std::string_view message);</div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span> </div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>private:</div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  <a class="code hl_class" href="classlogging_1_1Logger.html">Logger</a>() = default;</div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span> </div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>  <span class="keywordtype">void</span> initNetworkRetry();    </div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  <span class="keywordtype">void</span> stop();                </div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>  <span class="keywordtype">void</span> drain();               </div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  auto collectQueue() -&gt; std::vector&lt;uint8_t&gt;;    </div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  <span class="keywordtype">void</span> flushSync();    </div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>};</div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &quot;<a class="code" href="backtrace_8hpp.html">backtrace.hpp</a>&quot;</span></div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &quot;generated/logging.pb.h&quot;</span></div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span> </div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &lt;asio.hpp&gt;</span></div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#include &lt;atomic&gt;</span></div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="preprocessor">#include &lt;cassert&gt;</span></div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="preprocessor">#include &lt;chrono&gt;</span></div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="preprocessor">#include &lt;cstddef&gt;</span></div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="preprocessor">#include &lt;cstdint&gt;</span></div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#include &lt;deque&gt;</span></div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#include &lt;limits&gt;</span></div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="preprocessor">#include &lt;memory&gt;</span></div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#include &lt;mutex&gt;</span></div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#include &lt;string_view&gt;</span></div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="preprocessor">#include &lt;vector&gt;</span></div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span> </div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="keyword">namespace </span>logging {</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span></div>
+<div class="foldopen" id="foldopen00032" data-start="{" data-end="};">
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno"><a class="line" href="structlogging_1_1Pending.html">   32</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structlogging_1_1Pending.html">Pending</a> {</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>  proto::logging::LogData data;</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  <a class="code hl_struct" href="structlogging_1_1RawBacktrace.html">RawBacktrace</a> trace;</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>};</div>
 </div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span> </div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>}</div>
-<div class="ttc" id="aclasslogging_1_1Logger_html"><div class="ttname"><a href="classlogging_1_1Logger.html">logging::Logger</a></div><div class="ttdef"><b>Definition</b> logger.hpp:27</div></div>
-<div class="ttc" id="aclasslogging_1_1Logger_html_a31f2661fc73771875a3f1838888bcd58"><div class="ttname"><a href="classlogging_1_1Logger.html#a31f2661fc73771875a3f1838888bcd58">logging::Logger::unavailable</a></div><div class="ttdeci">std::atomic&lt; bool &gt; unavailable</div><div class="ttdoc">Set once initNetworkRetry has given up.</div><div class="ttdef"><b>Definition</b> logger.hpp:54</div></div>
-<div class="ttc" id="aclasslogging_1_1Logger_html_a4e48e1e55a2e236783294f836f3bbdac"><div class="ttname"><a href="classlogging_1_1Logger.html#a4e48e1e55a2e236783294f836f3bbdac">logging::Logger::log</a></div><div class="ttdeci">static void log(std::string_view file, unsigned line, char severity, std::string_view sink, std::string_view message)</div><div class="ttdoc">Entry point for all engine logs.</div><div class="ttdef"><b>Definition</b> logger.cpp:196</div></div>
-<div class="ttc" id="aclasslogging_1_1Logger_html_a699b1d69ceccbe2bc357bffe553ee233"><div class="ttname"><a href="classlogging_1_1Logger.html#a699b1d69ceccbe2bc357bffe553ee233">logging::Logger::connected</a></div><div class="ttdeci">std::atomic&lt; bool &gt; connected</div><div class="ttdoc">True once initNetworkRetry has established the connection.</div><div class="ttdef"><b>Definition</b> logger.hpp:48</div></div>
-<div class="ttc" id="aclasslogging_1_1Logger_html_aa9e80cc95ca58b9adb7e3a8323313e51"><div class="ttname"><a href="classlogging_1_1Logger.html#aa9e80cc95ca58b9adb7e3a8323313e51">logging::Logger::create</a></div><div class="ttdeci">static auto create() noexcept -&gt; std::unique_ptr&lt; Logger &gt;</div><div class="ttdoc">Set up the global logger instance, gives ownership to the caller.</div><div class="ttdef"><b>Definition</b> logger.cpp:73</div></div>
-<div class="ttc" id="aclasslogging_1_1Logger_html_ae086d7a54e2a8828d5fe9d5d5d05a039"><div class="ttname"><a href="classlogging_1_1Logger.html#ae086d7a54e2a8828d5fe9d5d5d05a039">logging::Logger::drain_pending</a></div><div class="ttdeci">std::atomic&lt; bool &gt; drain_pending</div><div class="ttdoc">Prevents multiple background jobs from fighting over the same socket.</div><div class="ttdef"><b>Definition</b> logger.hpp:43</div></div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span> </div>
+<div class="foldopen" id="foldopen00037" data-start="{" data-end="};">
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno"><a class="line" href="classlogging_1_1Logger.html">   37</a></span><span class="keyword">class </span>Logger {</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  <span class="keyword">inline</span> <span class="keyword">static</span> Logger* instance = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span> </div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  <span class="keyword">struct </span>{</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>    asio::io_context io_ctx;</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>    asio::ip::tcp::socket socket {io_ctx};</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>    <span class="comment">// send_mutex before queue_mutex</span></div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>    std::deque&lt;Pending&gt; log_queue;</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>    std::mutex queue_mutex;</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno"><a class="line" href="classlogging_1_1Logger.html#a55abaada05f52b44f513c67db7ead102">   49</a></span>    uint64_t <a class="code hl_variable" href="classlogging_1_1Logger.html#a55abaada05f52b44f513c67db7ead102">enqueued</a> = 0;</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span></div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno"><a class="line" href="classlogging_1_1Logger.html#a81ad08498b291eaec043b60a4865ada4">   52</a></span>    std::timed_mutex <a class="code hl_variable" href="classlogging_1_1Logger.html#a81ad08498b291eaec043b60a4865ada4">send_mutex</a>;</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno"><a class="line" href="classlogging_1_1Logger.html#a454f843b088fd8cd84d6f87328477944">   53</a></span>    std::atomic&lt;uint64_t&gt; <a class="code hl_variable" href="classlogging_1_1Logger.html#a454f843b088fd8cd84d6f87328477944">sent</a> = 0;       </div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno"><a class="line" href="classlogging_1_1Logger.html#a3ad187945bf23042598380d5723cfda3">   54</a></span>    std::atomic&lt;bool&gt; <a class="code hl_variable" href="classlogging_1_1Logger.html#a3ad187945bf23042598380d5723cfda3">stopped</a> = <span class="keyword">false</span>;    </div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span></div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno"><a class="line" href="classlogging_1_1Logger.html#ae086d7a54e2a8828d5fe9d5d5d05a039">   59</a></span>    std::atomic&lt;bool&gt; <a class="code hl_variable" href="classlogging_1_1Logger.html#ae086d7a54e2a8828d5fe9d5d5d05a039">drain_pending</a> = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span></div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno"><a class="line" href="classlogging_1_1Logger.html#a699b1d69ceccbe2bc357bffe553ee233">   64</a></span>    std::atomic&lt;bool&gt; <a class="code hl_variable" href="classlogging_1_1Logger.html#a699b1d69ceccbe2bc357bffe553ee233">connected</a> = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span></div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno"><a class="line" href="classlogging_1_1Logger.html#a31f2661fc73771875a3f1838888bcd58">   70</a></span>    std::atomic&lt;bool&gt; <a class="code hl_variable" href="classlogging_1_1Logger.html#a31f2661fc73771875a3f1838888bcd58">unavailable</a> = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  } m;</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span> </div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint16_t port = 12800;                </div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> <span class="keywordtype">bool</span> auto_spawn_log_server = <span class="keyword">true</span>;    </div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> <span class="keywordtype">bool</span> show_server_logs = <span class="keyword">false</span>;        </div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> std::size_t k_max_frame_bytes = 4 * 1024 * 1024;    </div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span> </div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  <span class="keyword">static</span> <span class="keyword">auto</span> <a class="code hl_function" href="classlogging_1_1Logger.html#aa9e80cc95ca58b9adb7e3a8323313e51">create</a>() noexcept -&gt; std::unique_ptr&lt;<a class="code hl_class" href="classlogging_1_1Logger.html">Logger</a>&gt;;</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span></div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  ~<a class="code hl_class" href="classlogging_1_1Logger.html">Logger</a>() noexcept;</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span> </div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>  <span class="comment">// Copying a global logger doesn&#39;t make sense</span></div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  <a class="code hl_class" href="classlogging_1_1Logger.html">Logger</a>(const <a class="code hl_class" href="classlogging_1_1Logger.html">Logger</a>&amp;) = delete;</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>  <a class="code hl_class" href="classlogging_1_1Logger.html">Logger</a>(<a class="code hl_class" href="classlogging_1_1Logger.html">Logger</a>&amp;&amp;) = delete;</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  auto operator=(const <a class="code hl_class" href="classlogging_1_1Logger.html">Logger</a>&amp;) -&gt; <a class="code hl_class" href="classlogging_1_1Logger.html">Logger</a>&amp; = delete;</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  auto operator=(<a class="code hl_class" href="classlogging_1_1Logger.html">Logger</a>&amp;&amp;) -&gt; <a class="code hl_class" href="classlogging_1_1Logger.html">Logger</a>&amp; = delete;</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span></div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>  static <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>      <a class="code hl_function" href="classlogging_1_1Logger.html#ae4becec8639a8abc126e48bdd974087f">log</a>(std::string_view file, <span class="keywordtype">unsigned</span> line, <span class="keywordtype">char</span> severity, std::string_view sink, std::string_view message,</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>          std::string_view details = {});</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span></div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>  <span class="keyword">static</span> <span class="keywordtype">void</span> <a class="code hl_function" href="classlogging_1_1Logger.html#a7a674469be18ed094b0828d04a7b1b7d">flush</a>() noexcept;</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span></div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  static <span class="keywordtype">void</span> <a class="code hl_function" href="classlogging_1_1Logger.html#abdc5c34c817f9165c305dd994063c38c">crashFlush</a>(std::string_view reason, const RawBacktrace&amp; trace) noexcept;</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span> </div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>private:</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  Logger() = default;</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span> </div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  <span class="keywordtype">void</span> initNetworkRetry();    </div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  <span class="keywordtype">void</span> stop();                </div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  <span class="keywordtype">void</span> drain();               </div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  auto collectQueue(std::<span class="keywordtype">size_t</span> max_bytes) -&gt; std::vector&lt;uint8_t&gt;;</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>  auto writeFrame(const std::vector&lt;uint8_t&gt;&amp; payload) -&gt; asio::error_code;</div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>  <span class="keywordtype">void</span> flushSync(</div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>      uint64_t target = std::numeric_limits&lt;uint64_t&gt;::max(),</div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>      std::chrono::steady_clock::time_point deadline = std::chrono::steady_clock::time_point::max()</div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>  );</div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>};</div>
+</div>
+<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span> </div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>}</div>
+<div class="ttc" id="abacktrace_8hpp_html"><div class="ttname"><a href="backtrace_8hpp.html">backtrace.hpp</a></div><div class="ttdoc">Call stacks attached to log records.</div></div>
+<div class="ttc" id="aclasslogging_1_1Logger_html"><div class="ttname"><a href="classlogging_1_1Logger.html">logging::Logger</a></div><div class="ttdef"><b>Definition</b> logger.hpp:37</div></div>
+<div class="ttc" id="aclasslogging_1_1Logger_html_a31f2661fc73771875a3f1838888bcd58"><div class="ttname"><a href="classlogging_1_1Logger.html#a31f2661fc73771875a3f1838888bcd58">logging::Logger::unavailable</a></div><div class="ttdeci">std::atomic&lt; bool &gt; unavailable</div><div class="ttdoc">Set once initNetworkRetry has given up.</div><div class="ttdef"><b>Definition</b> logger.hpp:70</div></div>
+<div class="ttc" id="aclasslogging_1_1Logger_html_a3ad187945bf23042598380d5723cfda3"><div class="ttname"><a href="classlogging_1_1Logger.html#a3ad187945bf23042598380d5723cfda3">logging::Logger::stopped</a></div><div class="ttdeci">std::atomic&lt; bool &gt; stopped</div><div class="ttdoc">set by stop</div><div class="ttdef"><b>Definition</b> logger.hpp:54</div></div>
+<div class="ttc" id="aclasslogging_1_1Logger_html_a454f843b088fd8cd84d6f87328477944"><div class="ttname"><a href="classlogging_1_1Logger.html#a454f843b088fd8cd84d6f87328477944">logging::Logger::sent</a></div><div class="ttdeci">std::atomic&lt; uint64_t &gt; sent</div><div class="ttdoc">records that left the queue</div><div class="ttdef"><b>Definition</b> logger.hpp:53</div></div>
+<div class="ttc" id="aclasslogging_1_1Logger_html_a55abaada05f52b44f513c67db7ead102"><div class="ttname"><a href="classlogging_1_1Logger.html#a55abaada05f52b44f513c67db7ead102">logging::Logger::enqueued</a></div><div class="ttdeci">uint64_t enqueued</div><div class="ttdoc">records ever queued</div><div class="ttdef"><b>Definition</b> logger.hpp:49</div></div>
+<div class="ttc" id="aclasslogging_1_1Logger_html_a699b1d69ceccbe2bc357bffe553ee233"><div class="ttname"><a href="classlogging_1_1Logger.html#a699b1d69ceccbe2bc357bffe553ee233">logging::Logger::connected</a></div><div class="ttdeci">std::atomic&lt; bool &gt; connected</div><div class="ttdoc">True once initNetworkRetry has established the connection.</div><div class="ttdef"><b>Definition</b> logger.hpp:64</div></div>
+<div class="ttc" id="aclasslogging_1_1Logger_html_a7a674469be18ed094b0828d04a7b1b7d"><div class="ttname"><a href="classlogging_1_1Logger.html#a7a674469be18ed094b0828d04a7b1b7d">logging::Logger::flush</a></div><div class="ttdeci">static void flush() noexcept</div><div class="ttdoc">sends what is queued on the calling thread</div><div class="ttdef"><b>Definition</b> logger.cpp:604</div></div>
+<div class="ttc" id="aclasslogging_1_1Logger_html_a81ad08498b291eaec043b60a4865ada4"><div class="ttname"><a href="classlogging_1_1Logger.html#a81ad08498b291eaec043b60a4865ada4">logging::Logger::send_mutex</a></div><div class="ttdeci">std::timed_mutex send_mutex</div><div class="ttdoc">held while writing to the socket</div><div class="ttdef"><b>Definition</b> logger.hpp:52</div></div>
+<div class="ttc" id="aclasslogging_1_1Logger_html_aa9e80cc95ca58b9adb7e3a8323313e51"><div class="ttname"><a href="classlogging_1_1Logger.html#aa9e80cc95ca58b9adb7e3a8323313e51">logging::Logger::create</a></div><div class="ttdeci">static auto create() noexcept -&gt; std::unique_ptr&lt; Logger &gt;</div><div class="ttdoc">Set up the global logger instance, gives ownership to the caller.</div><div class="ttdef"><b>Definition</b> logger.cpp:166</div></div>
+<div class="ttc" id="aclasslogging_1_1Logger_html_abdc5c34c817f9165c305dd994063c38c"><div class="ttname"><a href="classlogging_1_1Logger.html#abdc5c34c817f9165c305dd994063c38c">logging::Logger::crashFlush</a></div><div class="ttdeci">static void crashFlush(std::string_view reason, const RawBacktrace &amp;trace) noexcept</div><div class="ttdoc">logs a crash and sends everything queued</div><div class="ttdef"><b>Definition</b> logger.cpp:633</div></div>
+<div class="ttc" id="aclasslogging_1_1Logger_html_ae086d7a54e2a8828d5fe9d5d5d05a039"><div class="ttname"><a href="classlogging_1_1Logger.html#ae086d7a54e2a8828d5fe9d5d5d05a039">logging::Logger::drain_pending</a></div><div class="ttdeci">std::atomic&lt; bool &gt; drain_pending</div><div class="ttdoc">Means a drain job is queued or running.</div><div class="ttdef"><b>Definition</b> logger.hpp:59</div></div>
+<div class="ttc" id="aclasslogging_1_1Logger_html_ae4becec8639a8abc126e48bdd974087f"><div class="ttname"><a href="classlogging_1_1Logger.html#ae4becec8639a8abc126e48bdd974087f">logging::Logger::log</a></div><div class="ttdeci">static void log(std::string_view file, unsigned line, char severity, std::string_view sink, std::string_view message, std::string_view details={})</div><div class="ttdoc">Entry point for all engine logs.</div><div class="ttdef"><b>Definition</b> logger.cpp:296</div></div>
+<div class="ttc" id="astructlogging_1_1Pending_html"><div class="ttname"><a href="structlogging_1_1Pending.html">logging::Pending</a></div><div class="ttdoc">log plus its raw trace</div><div class="ttdef"><b>Definition</b> logger.hpp:32</div></div>
+<div class="ttc" id="astructlogging_1_1RawBacktrace_html"><div class="ttname"><a href="structlogging_1_1RawBacktrace.html">logging::RawBacktrace</a></div><div class="ttdef"><b>Definition</b> backtrace.hpp:17</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

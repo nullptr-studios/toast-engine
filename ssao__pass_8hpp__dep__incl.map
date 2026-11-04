@@ -1,5 +1,5 @@
-<map id="engine/src/toast/renderer/passes/ssao_pass.hpp" name="engine/src/toast/renderer/passes/ssao_pass.hpp">
-<area shape="rect" id="Node000001" title=" " alt="" coords="5,5,190,50"/>
-<area shape="rect" id="Node000002" href="$ssao__pass_8cpp.html" title=" " alt="" coords="5,98,190,143"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="99,64,100,99,95,97,96,68"/>
+<map id="engine/src/toast/renderer/passes/lighting/ssao_pass.hpp" name="engine/src/toast/renderer/passes/lighting/ssao_pass.hpp">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,5,228,50"/>
+<area shape="rect" id="Node000002" href="$ssao__pass_8cpp.html" title=" " alt="" coords="6,98,227,143"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="118,64,119,99,114,97,115,68"/>
 </map>

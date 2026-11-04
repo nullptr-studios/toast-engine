@@ -133,11 +133,19 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('directional__l
 <div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span> </div>
 <div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>  ~DirectionalLight() <span class="keyword">override</span> = <span class="keywordflow">default</span>;</div>
 <div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span> </div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>};</div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>  <span class="keyword">auto</span> angularDiameter() <span class="keyword">const</span> -&gt; <span class="keywordtype">float</span> {</div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>    <span class="keywordflow">return</span> m_angular_diameter;</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>  }</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span> </div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>  [[<a class="code hl_class" href="classtoast_1_1Reflect.html">Reflect</a>, Name(<span class="stringliteral">&quot;Angular Diameter&quot;</span>), Unit(<span class="stringliteral">&quot;deg&quot;</span>), Range(0.0, 10.0), Group(<span class="stringliteral">&quot;Area&quot;</span>)]]</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>  <span class="keywordtype">float</span> m_angular_diameter = 0.53f;</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>};</div>
 </div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>}</div>
-<div class="ttc" id="aclasstoast_1_1Light_html_a092ae45d0bfd128b22c8067cf7098ab1"><div class="ttname"><a href="classtoast_1_1Light.html#a092ae45d0bfd128b22c8067cf7098ab1">toast::Light::setLightType</a></div><div class="ttdeci">void setLightType(LightType type)</div><div class="ttdoc">Tags the concrete light kind; called once from each subclass&#39;s own constructor body.</div><div class="ttdef"><b>Definition</b> light.hpp:70</div></div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>}</div>
+<div class="ttc" id="aclasstoast_1_1Light_html_a092ae45d0bfd128b22c8067cf7098ab1"><div class="ttname"><a href="classtoast_1_1Light.html#a092ae45d0bfd128b22c8067cf7098ab1">toast::Light::setLightType</a></div><div class="ttdeci">void setLightType(LightType type)</div><div class="ttdoc">Tags the concrete light kind; called once from each subclass&#39;s own constructor body.</div><div class="ttdef"><b>Definition</b> light.hpp:123</div></div>
+<div class="ttc" id="aclasstoast_1_1Reflect_html"><div class="ttname"><a href="classtoast_1_1Reflect.html">toast::Reflect</a></div><div class="ttdef"><b>Definition</b> reflect.hpp:253</div></div>
 <div class="ttc" id="aexport_8hpp_html"><div class="ttname"><a href="export_8hpp.html">export.hpp</a></div></div>
 <div class="ttc" id="alight_8hpp_html"><div class="ttname"><a href="light_8hpp.html">light.hpp</a></div><div class="ttdoc">Base light node; registers with the renderer so it can be collected into the per-frame light list.</div></div>
 </div><!-- fragment --></div><!-- contents -->

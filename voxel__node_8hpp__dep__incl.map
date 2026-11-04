@@ -1,9 +1,30 @@
 <map id="engine/src/toast/voxel/nodes/voxel_node.hpp" name="engine/src/toast/voxel/nodes/voxel_node.hpp">
-<area shape="rect" id="Node000001" title="Frontend for a Voxel node." alt="" coords="120,5,291,50"/>
-<area shape="rect" id="Node000002" href="$simulator_8hpp.html" title="This class simulates all of the physics of the project." alt="" coords="8,98,187,143"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="167,62,125,99,121,96,170,58"/>
-<area shape="rect" id="Node000004" href="$procedural__voxel_8hpp.html" title="Voxel shapes built from an ordered list of volumes." alt="" coords="211,98,418,143"/>
-<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="243,57,291,97,286,98,242,62"/>
-<area shape="rect" id="Node000003" href="$debug__pass_8cpp.html" title=" " alt="" coords="5,191,190,235"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="99,156,100,191,95,190,96,160"/>
+<area shape="rect" id="Node000001" title="Frontend for a Voxel node." alt="" coords="807,5,977,50"/>
+<area shape="rect" id="Node000002" href="$simulator_8hpp.html" title="This class simulates all of the physics of the project." alt="" coords="803,98,981,143"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="894,64,894,99,890,96,890,68"/>
+<area shape="rect" id="Node000003" href="$vulkan__renderer_8cpp.html" title=" " alt="" coords="5,191,190,235"/>
+<area shape="poly" id="edge9_Node000001_Node000003" title=" " alt="" coords="789,47,527,101,335,148,173,193,172,188,334,143,526,95,794,45"/>
+<area shape="rect" id="Node000004" href="$vulkan__renderer__lights_8cpp.html" title=" " alt="" coords="213,191,414,235"/>
+<area shape="poly" id="edge10_Node000001_Node000004" title=" " alt="" coords="810,54,670,101,381,193,380,188,669,95,805,56"/>
+<area shape="rect" id="Node000005" href="$vulkan__renderer__record_8cpp.html" title=" " alt="" coords="438,191,643,235"/>
+<area shape="poly" id="edge11_Node000001_Node000005" title=" " alt="" coords="840,57,582,193,580,188,835,58"/>
+<area shape="rect" id="Node000006" href="$vulkan__renderer__resources_8cpp.html" title=" " alt="" coords="666,191,894,235"/>
+<area shape="poly" id="edge12_Node000001_Node000006" title=" " alt="" coords="833,57,810,78,793,99,784,122,779,146,779,192,775,189,774,146,779,120,789,97,807,74,828,60"/>
+<area shape="rect" id="Node000007" href="$vulkan__renderer__scene_8cpp.html" title=" " alt="" coords="918,191,1120,235"/>
+<area shape="poly" id="edge13_Node000001_Node000007" title=" " alt="" coords="952,56,976,74,996,96,1008,120,1015,145,1021,192,1017,189,1010,146,1003,122,991,100,972,78,951,61"/>
+<area shape="rect" id="Node000008" href="$vulkan__renderer__thread_8cpp.html" title=" " alt="" coords="1144,191,1350,235"/>
+<area shape="poly" id="edge14_Node000001_Node000008" title=" " alt="" coords="948,55,1208,190,1203,190,947,60"/>
+<area shape="rect" id="Node000009" href="$vulkan__renderer__voxel_8cpp.html" title=" " alt="" coords="1374,191,1573,235"/>
+<area shape="poly" id="edge15_Node000001_Node000009" title=" " alt="" coords="976,52,1408,190,1402,190,975,58"/>
+<area shape="rect" id="Node000010" href="$procedural__voxel_8hpp.html" title="Voxel shapes built from an ordered list of volumes." alt="" coords="1479,98,1686,143"/>
+<area shape="poly" id="edge16_Node000001_Node000010" title=" " alt="" coords="993,39,1481,105,1476,106,993,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="785,129,521,155,361,172,202,193,190,195,189,190,201,188,361,167,521,149,790,128"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="790,136,426,193,415,195,414,190,425,188,785,136"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="796,147,625,193,624,188,791,147"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="856,152,808,193,806,188,851,153"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="935,149,991,191,986,190,934,154"/>
+<area shape="poly" id="edge7_Node000002_Node000008" title=" " alt="" coords="992,144,1165,190,1159,190,992,150"/>
+<area shape="poly" id="edge8_Node000002_Node000009" title=" " alt="" coords="997,133,1362,188,1376,193,1371,193,1361,193,997,138"/>
+<area shape="rect" id="Node000011" href="$voxel__brush_8hpp.html" title="A tileable voxel unit assembled from layers." alt="" coords="1597,191,1771,235"/>
+<area shape="poly" id="edge17_Node000010_Node000011" title=" " alt="" coords="1619,150,1663,191,1657,189,1617,155"/>
 </map>

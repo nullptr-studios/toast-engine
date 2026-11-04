@@ -155,11 +155,33 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ae9a897705f132727ae1ddc9cf9ef1cdc" id="r_ae9a897705f132727ae1ddc9cf9ef1cdc"><td class="memItemLeft">Task&#160;</td><td class="memItemRight"><a class="el" href="#ae9a897705f132727ae1ddc9cf9ef1cdc">WriteAutosaveAsync</a> (string virtualPath)</td></tr>
 <tr class="memitem:a992a585f285accb396653243279786aa" id="r_a992a585f285accb396653243279786aa"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a992a585f285accb396653243279786aa">OpenFile</a> (string uid, string virtualPath, <a class="el" href="classeditor_1_1Assets_1_1Types_1_1BaseAsset.html">BaseAsset</a> definition, string? contentSourceRealPath=null)</td></tr>
 <tr class="memitem:ad35349e1d0da27a2586b8e52ed417909" id="r_ad35349e1d0da27a2586b8e52ed417909"><td class="memItemLeft">async Task&lt; bool &gt;&#160;</td><td class="memItemRight"><a class="el" href="#ad35349e1d0da27a2586b8e52ed417909">ConfirmCloseCurrentAsync</a> ()</td></tr>
+<tr class="memitem:a50e0fccd7974d645570febd3ad6e62d8" id="r_a50e0fccd7974d645570febd3ad6e62d8"><td class="memItemLeft"><a id="a50e0fccd7974d645570febd3ad6e62d8" name="a50e0fccd7974d645570febd3ad6e62d8"></a>
+void&#160;</td><td class="memItemRight"><b>SetSelection</b> (IEnumerable&lt; int &gt; indices, int primary)</td></tr>
+<tr class="memitem:a3b6825b91a0030817f05536d7e2edff3" id="r_a3b6825b91a0030817f05536d7e2edff3"><td class="memItemLeft"><a id="a3b6825b91a0030817f05536d7e2edff3" name="a3b6825b91a0030817f05536d7e2edff3"></a>
+void&#160;</td><td class="memItemRight"><b>SelectOnly</b> (int index)</td></tr>
+<tr class="memitem:a128a4034cee2ce7fc05b77cdc8105725" id="r_a128a4034cee2ce7fc05b77cdc8105725"><td class="memItemLeft"><a id="a128a4034cee2ce7fc05b77cdc8105725" name="a128a4034cee2ce7fc05b77cdc8105725"></a>
+void&#160;</td><td class="memItemRight"><b>ToggleSelect</b> (int index)</td></tr>
+<tr class="memitem:a051ed41c674efbd492289bf4746c84e6" id="r_a051ed41c674efbd492289bf4746c84e6"><td class="memItemLeft"><a id="a051ed41c674efbd492289bf4746c84e6" name="a051ed41c674efbd492289bf4746c84e6"></a>
+void&#160;</td><td class="memItemRight"><b>SelectRange</b> (int from, int to)</td></tr>
+<tr class="memitem:a77677d6c80f033239cb87f17283618a0" id="r_a77677d6c80f033239cb87f17283618a0"><td class="memItemLeft"><a id="a77677d6c80f033239cb87f17283618a0" name="a77677d6c80f033239cb87f17283618a0"></a>
+void&#160;</td><td class="memItemRight"><b>MoveSelection</b> (int offset)</td></tr>
+<tr class="memitem:aedbdc714ee9354932c3e1696f9766292" id="r_aedbdc714ee9354932c3e1696f9766292"><td class="memItemLeft"><a id="aedbdc714ee9354932c3e1696f9766292" name="aedbdc714ee9354932c3e1696f9766292"></a>
+void&#160;</td><td class="memItemRight"><b>CopySelection</b> (int offset)</td></tr>
+<tr class="memitem:ab11130d44d26d6030829c5712f22c31d" id="r_ab11130d44d26d6030829c5712f22c31d"><td class="memItemLeft"><a id="ab11130d44d26d6030829c5712f22c31d" name="ab11130d44d26d6030829c5712f22c31d"></a>
+int&#160;</td><td class="memItemRight"><b>ClampOffset</b> (int offset)</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-properties" class="groupheader"><a id="properties" name="properties"></a>
 Properties</h2></td></tr>
 <tr class="memitem:a66446809adefec642aa4e4616046956b" id="r_a66446809adefec642aa4e4616046956b"><td class="memItemLeft"><a id="a66446809adefec642aa4e4616046956b" name="a66446809adefec642aa4e4616046956b"></a>
 ObservableCollection&lt; <a class="el" href="classeditor_1_1Editors_1_1PaletteSwatchVM.html">PaletteSwatchVM</a> &gt;&#160;</td><td class="memItemRight"><b>Swatches</b> = []<code> [get]</code></td></tr>
+<tr class="memitem:ade79f88343048480fedb878fb6dd77d6" id="r_ade79f88343048480fedb878fb6dd77d6"><td class="memItemLeft"><a id="ade79f88343048480fedb878fb6dd77d6" name="ade79f88343048480fedb878fb6dd77d6"></a>
+ObservableCollection&lt; <a class="el" href="classeditor_1_1Editors_1_1PaletteRowLabelVM.html">PaletteRowLabelVM</a> &gt;&#160;</td><td class="memItemRight"><b>RowLabels</b> = []<code> [get]</code></td></tr>
+<tr class="memitem:aa4b965ced210252fc53e351d01850f10" id="r_aa4b965ced210252fc53e351d01850f10"><td class="memItemLeft"><a id="aa4b965ced210252fc53e351d01850f10" name="aa4b965ced210252fc53e351d01850f10"></a>
+IReadOnlyList&lt; string &gt;&#160;</td><td class="memItemRight"><b>ColumnHeaders</b> = Enumerable.Range(0, 16).Select(i =&gt; $&quot;{i:X2}&quot;).ToList()<code> [get]</code></td></tr>
+<tr class="memitem:a2cd5baa40c1aa44c2386d3b60e3b3995" id="r_a2cd5baa40c1aa44c2386d3b60e3b3995"><td class="memItemLeft"><a id="a2cd5baa40c1aa44c2386d3b60e3b3995" name="a2cd5baa40c1aa44c2386d3b60e3b3995"></a>
+IReadOnlyList&lt; string &gt;&#160;</td><td class="memItemRight"><b>RowHeaders</b> = Enumerable.Range(0, 16).Select(i =&gt; $&quot;{i * 16:X2}&quot;).ToList()<code> [get]</code></td></tr>
+<tr class="memitem:a9a41522c4a246f6847078de5d654f76a" id="r_a9a41522c4a246f6847078de5d654f76a"><td class="memItemLeft"><a id="a9a41522c4a246f6847078de5d654f76a" name="a9a41522c4a246f6847078de5d654f76a"></a>
+IReadOnlyCollection&lt; int &gt;&#160;</td><td class="memItemRight"><b>Selection</b><code> [get]</code></td></tr>
 <tr class="memitem:ae8eb8d8c1ca68f52a1284c2ca20d1f30" id="r_ae8eb8d8c1ca68f52a1284c2ca20d1f30"><td class="memItemLeft"><a id="ae8eb8d8c1ca68f52a1284c2ca20d1f30" name="ae8eb8d8c1ca68f52a1284c2ca20d1f30"></a>
 <a class="el" href="classeditor_1_1Editors_1_1PaletteSlotVM.html">PaletteSlotVM</a>?&#160;</td><td class="memItemRight"><b>EditableSlot</b><code> [get]</code></td></tr>
 <tr class="memitem:a7cc9fbdf36488e3f15b5ac4679aa7524" id="r_a7cc9fbdf36488e3f15b5ac4679aa7524"><td class="memItemLeft"><a id="a7cc9fbdf36488e3f15b5ac4679aa7524" name="a7cc9fbdf36488e3f15b5ac4679aa7524"></a>

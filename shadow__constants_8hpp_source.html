@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.17.0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Toast Engine: engine/src/toast/renderer/shadow_constants.hpp Source File</title>
+<title>Toast Engine: engine/src/toast/renderer/lighting/shadow_constants.hpp Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="codefolding.js"></script>
 <script type="text/javascript" src="clipboard.js"></script>
@@ -135,69 +135,116 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('shadow__consta
 <div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="keyword">inline</span> <span class="keyword">constexpr</span> <span class="keywordtype">float</span> k_shadow_distance = 150.0f;</div>
 <div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span> </div>
 <div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="keyword">inline</span> <span class="keyword">constexpr</span> <span class="keywordtype">float</span> k_cascade_split_lambda = 0.75f;</div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="keyword">inline</span> <span class="keyword">constexpr</span> uint32_t k_max_spot_shadows = 4;</div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="keyword">inline</span> <span class="keyword">constexpr</span> uint32_t k_max_point_shadows = 2;</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span> </div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="keyword">inline</span> <span class="keyword">constexpr</span> uint32_t k_cube_faces = 6;</div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span> </div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="keyword">inline</span> <span class="keyword">constexpr</span> uint32_t k_punctual_resolution = 512;</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span> </div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="keyword">inline</span> <span class="keyword">constexpr</span> uint32_t k_min_punctual_resolution = 64;</div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span></div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno"><a class="line" href="shadow__constants_8hpp.html#abfb2867cb9f201998d25439df8818177">   24</a></span><span class="keyword">inline</span> <span class="keyword">constexpr</span> <span class="keywordtype">float</span> <a class="code hl_variable" href="shadow__constants_8hpp.html#abfb2867cb9f201998d25439df8818177">k_cascade_receiver_depth_radii</a> = 4.0f;</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span></div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno"><a class="line" href="shadow__constants_8hpp.html#a6d6d7be6eb24f0f4c9ab50215465f5d3">   27</a></span><span class="keyword">inline</span> <span class="keyword">constexpr</span> uint32_t <a class="code hl_variable" href="shadow__constants_8hpp.html#a6d6d7be6eb24f0f4c9ab50215465f5d3">k_max_spot_shadows</a> = 32;</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="keyword">inline</span> <span class="keyword">constexpr</span> uint32_t k_max_point_shadows = 32;</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span> </div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="keyword">inline</span> <span class="keyword">constexpr</span> uint32_t k_default_spot_shadows = 8;</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="keyword">inline</span> <span class="keyword">constexpr</span> uint32_t k_default_point_shadows = 6;</div>
 <div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span> </div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="keyword">inline</span> <span class="keyword">constexpr</span> <span class="keywordtype">float</span> k_punctual_full_resolution_distance = 10.0f;</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="keyword">inline</span> <span class="keyword">constexpr</span> <span class="keywordtype">float</span> k_punctual_min_resolution_distance = 60.0f;</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span></div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>TOAST_API <span class="keyword">auto</span> cascadeResolution() -&gt; uint32_t;</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>TOAST_API <span class="keyword">auto</span> punctualResolution() -&gt; uint32_t;</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>TOAST_API <span class="keyword">auto</span> shadowDistance() -&gt; float;</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span> </div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>TOAST_API <span class="keywordtype">void</span> setCascadeResolution(uint32_t resolution);</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>TOAST_API <span class="keywordtype">void</span> setPunctualResolution(uint32_t resolution);</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>TOAST_API <span class="keywordtype">void</span> setShadowDistance(<span class="keywordtype">float</span> distance);</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span> </div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>[[nodiscard]]</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span><span class="keyword">inline</span> <span class="keyword">auto</span> punctualShadowResolution(<span class="keywordtype">float</span> camera_distance, <span class="keywordtype">float</span> resolution_scale) -&gt; uint32_t {</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  <span class="keyword">const</span> uint32_t full_resolution = punctualResolution();</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  <span class="keyword">const</span> <span class="keywordtype">float</span> span = k_punctual_min_resolution_distance - k_punctual_full_resolution_distance;</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  <span class="keywordtype">float</span> t = span &gt; 0.0f ? (camera_distance - k_punctual_full_resolution_distance) / span : 1.0f;</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  t = std::clamp(t, 0.0f, 1.0f);</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span> </div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  <span class="keyword">const</span> <span class="keyword">auto</span> max_resolution = <span class="keyword">static_cast&lt;</span><span class="keywordtype">float</span><span class="keyword">&gt;</span>(full_resolution);</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  <span class="keyword">const</span> <span class="keyword">auto</span> min_resolution = <span class="keyword">static_cast&lt;</span><span class="keywordtype">float</span><span class="keyword">&gt;</span>(k_min_punctual_resolution);</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <span class="keyword">const</span> <span class="keywordtype">float</span> scale = std::clamp(resolution_scale, 0.0f, 1.0f);</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  <span class="keyword">const</span> <span class="keywordtype">float</span> target = (max_resolution + ((min_resolution - max_resolution) * t)) * scale;</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span> </div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  uint32_t resolution = k_min_punctual_resolution;</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  <span class="keywordflow">while</span> ((resolution * 2) &lt;= full_resolution &amp;&amp; <span class="keyword">static_cast&lt;</span><span class="keywordtype">float</span><span class="keyword">&gt;</span>(resolution * 2) &lt;= target) {</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    resolution *= 2;</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  }</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <span class="keywordflow">return</span> resolution;</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>}</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span></div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno"><a class="line" href="shadow__constants_8hpp.html#a03f627eb18bed2e6b7696119f60a6448">   65</a></span><span class="keyword">inline</span> <span class="keyword">constexpr</span> uint32_t <a class="code hl_variable" href="shadow__constants_8hpp.html#a03f627eb18bed2e6b7696119f60a6448">k_spot_layer_base</a> = 0;</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span><span class="keyword">inline</span> <span class="keyword">constexpr</span> uint32_t k_point_layer_base = k_max_spot_shadows;</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span><span class="keyword">inline</span> <span class="keyword">constexpr</span> uint32_t k_punctual_layer_count = k_max_spot_shadows + (k_max_point_shadows * k_cube_faces);</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span></div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno"><a class="line" href="shadow__constants_8hpp.html#af7a78a44feea6fa334dd972686f56eb1">   70</a></span><span class="keyword">inline</span> <span class="keyword">constexpr</span> uint32_t <a class="code hl_variable" href="shadow__constants_8hpp.html#af7a78a44feea6fa334dd972686f56eb1">k_max_shadow_views</a> = k_cascade_count + k_punctual_layer_count;</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span> </div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span><span class="keyword">inline</span> <span class="keyword">constexpr</span> <span class="keywordtype">float</span> k_punctual_near = 0.05f;</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span></div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno"><a class="line" href="shadow__constants_8hpp.html#a33e73fba5ab0f42ffca44160bc779000">   75</a></span><span class="keyword">inline</span> <span class="keyword">constexpr</span> <span class="keywordtype">float</span> <a class="code hl_variable" href="shadow__constants_8hpp.html#a33e73fba5ab0f42ffca44160bc779000">k_cube_face_guard_texels</a> = 4.0f;</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span> </div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>}</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="keyword">inline</span> <span class="keyword">constexpr</span> uint32_t k_cube_faces = 6;</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span> </div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span><span class="keyword">inline</span> <span class="keyword">constexpr</span> uint32_t k_punctual_resolution = 512;</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span> </div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span><span class="keyword">inline</span> <span class="keyword">constexpr</span> uint32_t k_min_punctual_resolution = 64;</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span></div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno"><a class="line" href="shadow__constants_8hpp.html#ae15e0ce45fc5770313803d72d71cd1cd">   40</a></span><span class="keyword">inline</span> <span class="keyword">constexpr</span> <span class="keywordtype">float</span> <a class="code hl_variable" href="shadow__constants_8hpp.html#ae15e0ce45fc5770313803d72d71cd1cd">k_punctual_full_resolution_ranges</a> = 4.0f;</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span></div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno"><a class="line" href="shadow__constants_8hpp.html#a5d0922a5a7e304bf2ee1c9c190e30fd1">   43</a></span><span class="keyword">inline</span> <span class="keyword">constexpr</span> <span class="keywordtype">float</span> <a class="code hl_variable" href="shadow__constants_8hpp.html#a5d0922a5a7e304bf2ee1c9c190e30fd1">k_cascade_padding</a> = 0.15f;</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span></div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>TOAST_API <span class="keyword">auto</span> cascadeResolution() -&gt; uint32_t;</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>TOAST_API <span class="keyword">auto</span> punctualResolution() -&gt; uint32_t;</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>TOAST_API <span class="keyword">auto</span> shadowDistance() -&gt; float;</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span> </div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>TOAST_API <span class="keywordtype">void</span> setCascadeResolution(uint32_t resolution);</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>TOAST_API <span class="keywordtype">void</span> setPunctualResolution(uint32_t resolution);</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>TOAST_API <span class="keywordtype">void</span> setShadowDistance(<span class="keywordtype">float</span> distance);</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span></div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>TOAST_API <span class="keyword">auto</span> spotShadowSlots() -&gt; uint32_t;</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>TOAST_API <span class="keyword">auto</span> pointShadowSlots() -&gt; uint32_t;</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>TOAST_API <span class="keywordtype">void</span> setSpotShadowSlots(uint32_t slots);</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>TOAST_API <span class="keywordtype">void</span> setPointShadowSlots(uint32_t slots);</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span></div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>TOAST_API <span class="keyword">auto</span> spotShadowBudget() -&gt; uint32_t;</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>TOAST_API <span class="keyword">auto</span> pointShadowBudget() -&gt; uint32_t;</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>TOAST_API <span class="keyword">auto</span> punctualFullResolutionRanges() -&gt; float;</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>TOAST_API <span class="keyword">auto</span> cascadeSplitLambda() -&gt; float;</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>TOAST_API <span class="keyword">auto</span> cascadePadding() -&gt; float;</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>TOAST_API <span class="keyword">auto</span> cascadeReceiverDepthRadii() -&gt; float;</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>TOAST_API <span class="keyword">auto</span> staticCasterCache() -&gt; bool;</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>TOAST_API <span class="keyword">auto</span> voxelMeshShadows() -&gt; bool;</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>TOAST_API <span class="keyword">auto</span> casterTolerance() -&gt; float;</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span> </div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>TOAST_API <span class="keywordtype">void</span> setSpotShadowBudget(uint32_t lights);</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>TOAST_API <span class="keywordtype">void</span> setPointShadowBudget(uint32_t lights);</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>TOAST_API <span class="keywordtype">void</span> setPunctualFullResolutionRanges(<span class="keywordtype">float</span> ranges);</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>TOAST_API <span class="keywordtype">void</span> setCascadeSplitLambda(<span class="keywordtype">float</span> lambda);</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>TOAST_API <span class="keywordtype">void</span> setCascadePadding(<span class="keywordtype">float</span> padding);</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>TOAST_API <span class="keywordtype">void</span> setCascadeReceiverDepthRadii(<span class="keywordtype">float</span> radii);</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>TOAST_API <span class="keywordtype">void</span> setStaticCasterCache(<span class="keywordtype">bool</span> enabled);</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>TOAST_API <span class="keywordtype">void</span> setCasterTolerance(<span class="keywordtype">float</span> meters);</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>TOAST_API <span class="keywordtype">void</span> setVoxelMeshShadows(<span class="keywordtype">bool</span> enabled);</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span></div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>[[nodiscard]]</div>
+<div class="foldopen" id="foldopen00087" data-start="{" data-end="}">
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno"><a class="line" href="shadow__constants_8hpp.html#a1c8da6c3808e9e1b07c35f8822f7f1a6">   87</a></span><span class="keyword">inline</span> <span class="keyword">auto</span> <a class="code hl_function" href="shadow__constants_8hpp.html#a1c8da6c3808e9e1b07c35f8822f7f1a6">punctualShadowResolution</a>(<span class="keywordtype">float</span> camera_distance, <span class="keywordtype">float</span> light_range, <span class="keywordtype">float</span> resolution_scale) -&gt; uint32_t {</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  <span class="keyword">const</span> uint32_t full_resolution = punctualResolution();</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  <span class="keyword">const</span> <span class="keywordtype">float</span> reach = punctualFullResolutionRanges() * std::max(light_range, 0.0f);</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  <span class="keyword">const</span> <span class="keywordtype">float</span> coverage = camera_distance &gt; reach ? reach / camera_distance : 1.0f;</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span> </div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  <span class="keyword">const</span> <span class="keywordtype">float</span> scale = std::clamp(resolution_scale, 0.0f, 1.0f);</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>  <span class="keyword">const</span> <span class="keywordtype">float</span> target = <span class="keyword">static_cast&lt;</span><span class="keywordtype">float</span><span class="keyword">&gt;</span>(full_resolution) * coverage * scale;</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span> </div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  uint32_t resolution = k_min_punctual_resolution;</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>  <span class="keywordflow">while</span> ((resolution * 2) &lt;= full_resolution &amp;&amp; <span class="keyword">static_cast&lt;</span><span class="keywordtype">float</span><span class="keyword">&gt;</span>(resolution * 2) &lt;= target) {</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>    resolution *= 2;</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  }</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>  <span class="keywordflow">return</span> resolution;</div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>}</div>
+</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span></div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno"><a class="line" href="shadow__constants_8hpp.html#a03f627eb18bed2e6b7696119f60a6448">  103</a></span><span class="keyword">inline</span> <span class="keyword">constexpr</span> uint32_t <a class="code hl_variable" href="shadow__constants_8hpp.html#a03f627eb18bed2e6b7696119f60a6448">k_spot_layer_base</a> = 0;</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span> </div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>[[nodiscard]]</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span><span class="keyword">inline</span> <span class="keyword">auto</span> pointLayerBase() -&gt; uint32_t {</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>  <span class="keywordflow">return</span> spotShadowSlots();</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>}</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span></div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>[[nodiscard]]</div>
+<div class="foldopen" id="foldopen00112" data-start="{" data-end="}">
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno"><a class="line" href="shadow__constants_8hpp.html#ac14b094a6df9668563a9a0acd4dc8737">  112</a></span><span class="keyword">inline</span> <span class="keyword">auto</span> <a class="code hl_function" href="shadow__constants_8hpp.html#ac14b094a6df9668563a9a0acd4dc8737">punctualLayerCount</a>() -&gt; uint32_t {</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  <span class="keywordflow">return</span> std::max(spotShadowSlots() + (pointShadowSlots() * k_cube_faces), 1u);</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>}</div>
+</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span></div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno"><a class="line" href="shadow__constants_8hpp.html#af7a78a44feea6fa334dd972686f56eb1">  117</a></span><span class="keyword">inline</span> <span class="keyword">constexpr</span> uint32_t <a class="code hl_variable" href="shadow__constants_8hpp.html#af7a78a44feea6fa334dd972686f56eb1">k_max_shadow_views</a> = k_cascade_count + <a class="code hl_variable" href="shadow__constants_8hpp.html#a6d6d7be6eb24f0f4c9ab50215465f5d3">k_max_spot_shadows</a> + (k_max_point_shadows * k_cube_faces);</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span></div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno"><a class="line" href="shadow__constants_8hpp.html#a416f20480c279fc01f5e8797121f1b0b">  120</a></span><span class="keyword">inline</span> <span class="keyword">constexpr</span> <span class="keywordtype">float</span> <a class="code hl_variable" href="shadow__constants_8hpp.html#a416f20480c279fc01f5e8797121f1b0b">k_caster_tolerance</a> = 0.01f;</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span><span class="keyword">inline</span> <span class="keyword">constexpr</span> <span class="keywordtype">float</span> k_punctual_near = 0.05f;</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span></div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno"><a class="line" href="shadow__constants_8hpp.html#a33e73fba5ab0f42ffca44160bc779000">  124</a></span><span class="keyword">inline</span> <span class="keyword">constexpr</span> <span class="keywordtype">float</span> <a class="code hl_variable" href="shadow__constants_8hpp.html#a33e73fba5ab0f42ffca44160bc779000">k_cube_face_guard_texels</a> = 4.0f;</div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span> </div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>}</div>
 <div class="ttc" id="aexport_8hpp_html"><div class="ttname"><a href="export_8hpp.html">export.hpp</a></div></div>
-<div class="ttc" id="ashadow__constants_8hpp_html_a03f627eb18bed2e6b7696119f60a6448"><div class="ttname"><a href="shadow__constants_8hpp.html#a03f627eb18bed2e6b7696119f60a6448">renderer::shadows::k_spot_layer_base</a></div><div class="ttdeci">constexpr uint32_t k_spot_layer_base</div><div class="ttdoc">Spots first then six faces per point light.</div><div class="ttdef"><b>Definition</b> shadow_constants.hpp:65</div></div>
-<div class="ttc" id="ashadow__constants_8hpp_html_a33e73fba5ab0f42ffca44160bc779000"><div class="ttname"><a href="shadow__constants_8hpp.html#a33e73fba5ab0f42ffca44160bc779000">renderer::shadows::k_cube_face_guard_texels</a></div><div class="ttdeci">constexpr float k_cube_face_guard_texels</div><div class="ttdoc">Must exceed the mesh.slang filter radius.</div><div class="ttdef"><b>Definition</b> shadow_constants.hpp:75</div></div>
-<div class="ttc" id="ashadow__constants_8hpp_html_af7a78a44feea6fa334dd972686f56eb1"><div class="ttname"><a href="shadow__constants_8hpp.html#af7a78a44feea6fa334dd972686f56eb1">renderer::shadows::k_max_shadow_views</a></div><div class="ttdeci">constexpr uint32_t k_max_shadow_views</div><div class="ttdoc">Also sizes the shadow_depth.slang matrix array.</div><div class="ttdef"><b>Definition</b> shadow_constants.hpp:70</div></div>
+<div class="ttc" id="ashadow__constants_8hpp_html_a03f627eb18bed2e6b7696119f60a6448"><div class="ttname"><a href="shadow__constants_8hpp.html#a03f627eb18bed2e6b7696119f60a6448">renderer::shadows::k_spot_layer_base</a></div><div class="ttdeci">constexpr uint32_t k_spot_layer_base</div><div class="ttdoc">Spots first then six faces per point light.</div><div class="ttdef"><b>Definition</b> shadow_constants.hpp:103</div></div>
+<div class="ttc" id="ashadow__constants_8hpp_html_a1c8da6c3808e9e1b07c35f8822f7f1a6"><div class="ttname"><a href="shadow__constants_8hpp.html#a1c8da6c3808e9e1b07c35f8822f7f1a6">renderer::shadows::punctualShadowResolution</a></div><div class="ttdeci">auto punctualShadowResolution(float camera_distance, float light_range, float resolution_scale) -&gt; uint32_t</div><div class="ttdoc">Follows how large the lit sphere looks from the camera so a wide light far away keeps its detail.</div><div class="ttdef"><b>Definition</b> shadow_constants.hpp:87</div></div>
+<div class="ttc" id="ashadow__constants_8hpp_html_a33e73fba5ab0f42ffca44160bc779000"><div class="ttname"><a href="shadow__constants_8hpp.html#a33e73fba5ab0f42ffca44160bc779000">renderer::shadows::k_cube_face_guard_texels</a></div><div class="ttdeci">constexpr float k_cube_face_guard_texels</div><div class="ttdoc">Must exceed the mesh.slang filter radius.</div><div class="ttdef"><b>Definition</b> shadow_constants.hpp:124</div></div>
+<div class="ttc" id="ashadow__constants_8hpp_html_a416f20480c279fc01f5e8797121f1b0b"><div class="ttname"><a href="shadow__constants_8hpp.html#a416f20480c279fc01f5e8797121f1b0b">renderer::shadows::k_caster_tolerance</a></div><div class="ttdeci">constexpr float k_caster_tolerance</div><div class="ttdoc">Within kPunctualBiasMeters of lighting.slang so a stale pose never shadows itself.</div><div class="ttdef"><b>Definition</b> shadow_constants.hpp:120</div></div>
+<div class="ttc" id="ashadow__constants_8hpp_html_a5d0922a5a7e304bf2ee1c9c190e30fd1"><div class="ttname"><a href="shadow__constants_8hpp.html#a5d0922a5a7e304bf2ee1c9c190e30fd1">renderer::shadows::k_cascade_padding</a></div><div class="ttdeci">constexpr float k_cascade_padding</div><div class="ttdoc">Share of the slice radius a cascade covers beyond its slice so small camera moves reuse its cached ma...</div><div class="ttdef"><b>Definition</b> shadow_constants.hpp:43</div></div>
+<div class="ttc" id="ashadow__constants_8hpp_html_a6d6d7be6eb24f0f4c9ab50215465f5d3"><div class="ttname"><a href="shadow__constants_8hpp.html#a6d6d7be6eb24f0f4c9ab50215465f5d3">renderer::shadows::k_max_spot_shadows</a></div><div class="ttdeci">constexpr uint32_t k_max_spot_shadows</div><div class="ttdoc">Ceilings of the slot settings which size the shader matrix arrays.</div><div class="ttdef"><b>Definition</b> shadow_constants.hpp:27</div></div>
+<div class="ttc" id="ashadow__constants_8hpp_html_abfb2867cb9f201998d25439df8818177"><div class="ttname"><a href="shadow__constants_8hpp.html#abfb2867cb9f201998d25439df8818177">renderer::shadows::k_cascade_receiver_depth_radii</a></div><div class="ttdeci">constexpr float k_cascade_receiver_depth_radii</div><div class="ttdoc">Cascade depth past its center in radii.</div><div class="ttdef"><b>Definition</b> shadow_constants.hpp:24</div></div>
+<div class="ttc" id="ashadow__constants_8hpp_html_ac14b094a6df9668563a9a0acd4dc8737"><div class="ttname"><a href="shadow__constants_8hpp.html#ac14b094a6df9668563a9a0acd4dc8737">renderer::shadows::punctualLayerCount</a></div><div class="ttdeci">auto punctualLayerCount() -&gt; uint32_t</div><div class="ttdoc">At least one so the punctual map exists with every slot turned off.</div><div class="ttdef"><b>Definition</b> shadow_constants.hpp:112</div></div>
+<div class="ttc" id="ashadow__constants_8hpp_html_ae15e0ce45fc5770313803d72d71cd1cd"><div class="ttname"><a href="shadow__constants_8hpp.html#ae15e0ce45fc5770313803d72d71cd1cd">renderer::shadows::k_punctual_full_resolution_ranges</a></div><div class="ttdeci">constexpr float k_punctual_full_resolution_ranges</div><div class="ttdoc">Camera distance in light ranges within which a light keeps its full tile and past which each doubling...</div><div class="ttdef"><b>Definition</b> shadow_constants.hpp:40</div></div>
+<div class="ttc" id="ashadow__constants_8hpp_html_af7a78a44feea6fa334dd972686f56eb1"><div class="ttname"><a href="shadow__constants_8hpp.html#af7a78a44feea6fa334dd972686f56eb1">renderer::shadows::k_max_shadow_views</a></div><div class="ttdeci">constexpr uint32_t k_max_shadow_views</div><div class="ttdoc">Mirrored by kMaxShadowViews in shadow_depth.slang and shadow_views.slang.</div><div class="ttdef"><b>Definition</b> shadow_constants.hpp:117</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><b>engine</b></li><li class="navelem"><b>src</b></li><li class="navelem"><b>toast</b></li><li class="navelem"><b>renderer</b></li><li class="navelem"><a href="shadow__constants_8hpp.html">shadow_constants.hpp</a></li>
+    <li class="navelem"><b>engine</b></li><li class="navelem"><b>src</b></li><li class="navelem"><b>toast</b></li><li class="navelem"><b>renderer</b></li><li class="navelem"><b>lighting</b></li><li class="navelem"><a href="shadow__constants_8hpp.html">shadow_constants.hpp</a></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.17.0 </li>
   </ul>
 </div>

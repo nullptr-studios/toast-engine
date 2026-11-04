@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.17.0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Toast Engine: engine/src/toast/renderer/renderer_settings.hpp File Reference</title>
+<title>Toast Engine: engine/src/toast/renderer/settings/renderer_settings.hpp File Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="codefolding.js"></script>
 <script type="text/javascript" src="clipboard.js"></script>
@@ -118,15 +118,69 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('renderer__sett
   <div class="headertitle"><div class="title">renderer_settings.hpp File Reference</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &lt;<a class="el" href="export_8hpp_source.html">toast/export.hpp</a>&gt;</code><br />
+<div class="textblock"><code>#include &lt;optional&gt;</code><br />
+<code>#include &lt;string_view&gt;</code><br />
+<code>#include &lt;<a class="el" href="export_8hpp_source.html">toast/export.hpp</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="settings_8hpp_source.html">toast/settings/settings.hpp</a>&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for renderer_settings.hpp:</div>
 <div class="dyncontent">
-<div class="center"><img src="renderer__settings_8hpp__incl.png" border="0" usemap="#aengine_2src_2toast_2renderer_2renderer__settings_8hpp" loading="lazy" alt=""/></div>
-<map name="aengine_2src_2toast_2renderer_2renderer__settings_8hpp" id="aengine_2src_2toast_2renderer_2renderer__settings_8hpp">
-<area shape="rect" title=" " alt="" coords="5,5,190,50"/>
-<area shape="rect" href="export_8hpp.html" title=" " alt="" coords="33,98,162,126"/>
-<area shape="poly" title=" " alt="" coords="99,48,100,83,95,81,96,52"/>
+<div class="center"><img src="renderer__settings_8hpp__incl.png" border="0" usemap="#aengine_2src_2toast_2renderer_2settings_2renderer__settings_8hpp" loading="lazy" alt=""/></div>
+<map name="aengine_2src_2toast_2renderer_2settings_2renderer__settings_8hpp" id="aengine_2src_2toast_2renderer_2settings_2renderer__settings_8hpp">
+<area shape="rect" title=" " alt="" coords="142,5,365,50"/>
+<area shape="rect" title=" " alt="" coords="5,174,80,201"/>
+<area shape="poly" title=" " alt="" coords="226,53,73,166,70,162,223,48"/>
+<area shape="rect" title=" " alt="" coords="104,174,200,201"/>
+<area shape="poly" title=" " alt="" coords="242,50,170,162,166,159,237,51"/>
+<area shape="rect" href="export_8hpp.html" title=" " alt="" coords="224,174,352,201"/>
+<area shape="poly" title=" " alt="" coords="260,48,284,159,279,158,256,52"/>
+<area shape="rect" href="settings_8hpp.html" title=" " alt="" coords="521,98,716,126"/>
+<area shape="poly" title=" " alt="" coords="350,48,548,93,543,95,350,53"/>
+<area shape="poly" title=" " alt="" coords="518,121,328,142,96,176,95,171,328,137,523,120"/>
+<area shape="poly" title=" " alt="" coords="521,129,216,176,215,171,520,123"/>
+<area shape="poly" title=" " alt="" coords="562,126,363,172,362,167,556,126"/>
+<area shape="rect" title=" " alt="" coords="463,174,518,201"/>
+<area shape="poly" title=" " alt="" coords="598,126,527,168,525,163,593,127"/>
+<area shape="rect" title=" " alt="" coords="542,174,607,201"/>
+<area shape="poly" title=" " alt="" coords="613,125,592,162,589,158,608,128"/>
+<area shape="rect" title=" " alt="" coords="632,174,693,201"/>
+<area shape="poly" title=" " alt="" coords="628,124,649,161,644,159,625,129"/>
+<area shape="rect" title=" " alt="" coords="718,174,807,201"/>
+<area shape="poly" title=" " alt="" coords="645,124,726,167,721,166,644,129"/>
+<area shape="rect" title=" " alt="" coords="831,174,918,201"/>
+<area shape="poly" title=" " alt="" coords="665,124,819,170,814,170,664,129"/>
+<area shape="rect" title=" " alt="" coords="942,174,1005,201"/>
+<area shape="poly" title=" " alt="" coords="696,124,801,143,929,173,923,173,800,149,695,129"/>
+<area shape="rect" title=" " alt="" coords="1029,174,1088,201"/>
+<area shape="poly" title=" " alt="" coords="716,121,854,141,1017,173,1012,173,853,146,716,127"/>
+<area shape="rect" title=" " alt="" coords="1112,174,1235,201"/>
+<area shape="poly" title=" " alt="" coords="716,121,1099,173,1094,174,716,127"/>
+<area shape="rect" title=" " alt="" coords="1260,174,1327,201"/>
+<area shape="poly" title=" " alt="" coords="716,115,953,133,1097,149,1247,174,1242,174,1097,154,952,138,716,120"/>
+<area shape="rect" title=" " alt="" coords="377,174,439,201"/>
+<area shape="poly" title=" " alt="" coords="583,126,455,173,453,168,578,127"/>
+</map>
+</div>
+</div><div class="textblock"><div class="dynheader">
+This graph shows which files directly or indirectly include this file:</div>
+<div class="dyncontent">
+<div class="center"><img src="renderer__settings_8hpp__dep__incl.png" border="0" usemap="#aengine_2src_2toast_2renderer_2settings_2renderer__settings_8hppdep" loading="lazy" alt=""/></div>
+<map name="aengine_2src_2toast_2renderer_2settings_2renderer__settings_8hppdep" id="aengine_2src_2toast_2renderer_2settings_2renderer__settings_8hppdep">
+<area shape="rect" title=" " alt="" coords="668,5,892,50"/>
+<area shape="rect" href="vulkan__renderer_8cpp.html" title=" " alt="" coords="5,98,190,143"/>
+<area shape="poly" title=" " alt="" coords="651,42,442,67,202,101,190,103,189,97,201,95,441,62,656,41"/>
+<area shape="rect" href="vulkan__renderer__lights_8cpp.html" title=" " alt="" coords="213,98,414,143"/>
+<area shape="poly" title=" " alt="" coords="656,53,414,102,414,97,651,54"/>
+<area shape="rect" href="vulkan__renderer__record_8cpp.html" title=" " alt="" coords="438,98,643,143"/>
+<area shape="poly" title=" " alt="" coords="711,55,598,100,597,95,706,56"/>
+<area shape="rect" href="vulkan__renderer__resources_8cpp.html" title=" " alt="" coords="666,98,894,143"/>
+<area shape="poly" title=" " alt="" coords="782,64,782,100,778,96,778,67"/>
+<area shape="rect" href="vulkan__renderer__scene_8cpp.html" title=" " alt="" coords="918,98,1120,143"/>
+<area shape="poly" title=" " alt="" coords="852,53,964,98,959,97,851,59"/>
+<area shape="rect" href="vulkan__renderer__thread_8cpp.html" title=" " alt="" coords="1144,98,1350,143"/>
+<area shape="poly" title=" " alt="" coords="907,51,1146,99,1140,99,907,56"/>
+<area shape="rect" href="vulkan__renderer__voxel_8cpp.html" title=" " alt="" coords="1374,98,1573,143"/>
+<area shape="poly" title=" " alt="" coords="908,39,1121,63,1362,95,1376,100,1371,100,1361,101,1120,68,908,44"/>
 </map>
 </div>
 </div>
@@ -136,6 +190,17 @@ Include dependency graph for renderer_settings.hpp:</div>
 Functions</h2></td></tr>
 <tr class="memitem:a4e7d10c862c3e2577571d28ce4319905" id="r_a4e7d10c862c3e2577571d28ce4319905"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="renderer__settings_8cpp.html#a4e7d10c862c3e2577571d28ce4319905">renderer::registerRendererStartupSettings</a> ()</td></tr>
 <tr class="memitem:a9edc6f6486f8dbb9b1ed51ddb3c8e925" id="r_a9edc6f6486f8dbb9b1ed51ddb3c8e925"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="renderer__settings_8cpp.html#a9edc6f6486f8dbb9b1ed51ddb3c8e925">renderer::registerRendererSettings</a> (<a class="el" href="classrenderer_1_1VulkanRenderer.html">VulkanRenderer</a> &amp;renderer)</td></tr>
+<tr class="memitem:a33a2b4ce281eab29737825137684d052" id="r_a33a2b4ce281eab29737825137684d052"><td class="memItemLeft"><a id="a33a2b4ce281eab29737825137684d052" name="a33a2b4ce281eab29737825137684d052"></a>
+auto&#160;</td><td class="memItemRight"><b>renderer::presetDrivenValue</b> (std::string_view key) -&gt; std::optional&lt; toast::settings::Value &gt;</td></tr>
+<tr class="memdesc:a33a2b4ce281eab29737825137684d052"><td class="mdescLeft">&#160;</td><td class="mdescRight">Nothing under Custom or for a setting no tier drives. <br /></td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-var-members" class="groupheader"><a id="var-members" name="var-members"></a>
+Variables</h2></td></tr>
+<tr class="memitem:ac55069aefc3e79304cb08184ca9983b5" id="r_ac55069aefc3e79304cb08184ca9983b5"><td class="memItemLeft"><a id="ac55069aefc3e79304cb08184ca9983b5" name="ac55069aefc3e79304cb08184ca9983b5"></a>
+constexpr std::string_view&#160;</td><td class="memItemRight"><b>renderer::k_hdr_output</b> = &quot;renderer.display.hdr&quot;</td></tr>
+<tr class="memitem:a833def4e32bf9be3dec12e5396d16463" id="r_a833def4e32bf9be3dec12e5396d16463"><td class="memItemLeft"><a id="a833def4e32bf9be3dec12e5396d16463" name="a833def4e32bf9be3dec12e5396d16463"></a>
+constexpr std::string_view&#160;</td><td class="memItemRight"><b>renderer::k_debug_overlay_in_game</b> = &quot;renderer.debug.overlay_in_game&quot;</td></tr>
+<tr class="memdesc:a833def4e32bf9be3dec12e5396d16463"><td class="mdescLeft">&#160;</td><td class="mdescRight">F3 in game view flips it. <br /></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><dl class="section author"><dt>Author</dt><dd>dario </dd></dl>
@@ -190,7 +255,7 @@ Functions</h2></td></tr>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><b>engine</b></li><li class="navelem"><b>src</b></li><li class="navelem"><b>toast</b></li><li class="navelem"><b>renderer</b></li><li class="navelem"><a href="renderer__settings_8hpp.html">renderer_settings.hpp</a></li>
+    <li class="navelem"><b>engine</b></li><li class="navelem"><b>src</b></li><li class="navelem"><b>toast</b></li><li class="navelem"><b>renderer</b></li><li class="navelem"><b>settings</b></li><li class="navelem"><a href="renderer__settings_8hpp.html">renderer_settings.hpp</a></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.17.0 </li>
   </ul>
 </div>

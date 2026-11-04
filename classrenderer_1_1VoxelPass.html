@@ -144,6 +144,10 @@ Collaboration diagram for renderer::VoxelPass:</div>
 </map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:GlassDraw" id="r_GlassDraw"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structrenderer_1_1VoxelPass_1_1GlassDraw.html">GlassDraw</a></td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:ad8618d1797940451716f8c7b3ee32f99" id="r_ad8618d1797940451716f8c7b3ee32f99"><td class="memItemLeft"><a id="ad8618d1797940451716f8c7b3ee32f99" name="ad8618d1797940451716f8c7b3ee32f99"></a>
@@ -172,7 +176,51 @@ void&#160;</td><td class="memItemRight"><b>recordQuadDepth</b> (vk::CommandBuffe
 <tr class="memdesc:acf15185b20303261cf938694283ac3cf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Inside a depth only scope before the G-buffer scope that shades the same quads. <br /></td></tr>
 <tr class="memitem:aea5a161a0a8f33026be60c85428e3b53" id="r_aea5a161a0a8f33026be60c85428e3b53"><td class="memItemLeft"><a id="aea5a161a0a8f33026be60c85428e3b53" name="aea5a161a0a8f33026be60c85428e3b53"></a>
 void&#160;</td><td class="memItemRight"><b>recordLighting</b> (vk::CommandBuffer cmd, uint32_t frame_index, vk::Extent2D viewport)</td></tr>
-<tr class="memdesc:aea5a161a0a8f33026be60c85428e3b53"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes scene colour indirect and rounded normal while reading the G-buffer and depth. <br /></td></tr>
+<tr class="memdesc:aea5a161a0a8f33026be60c85428e3b53"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes scene colour indirect rounded normal and noisy diffuse while reading the G-buffer and depth. <br /></td></tr>
+<tr class="memitem:a236cbd3049cf0bbc93e8e107adde3b86" id="r_a236cbd3049cf0bbc93e8e107adde3b86"><td class="memItemLeft"><a id="a236cbd3049cf0bbc93e8e107adde3b86" name="a236cbd3049cf0bbc93e8e107adde3b86"></a>
+auto&#160;</td><td class="memItemRight"><b>ambientRaysActive</b> () const noexcept -&gt; bool</td></tr>
+<tr class="memdesc:a236cbd3049cf0bbc93e8e107adde3b86"><td class="mdescLeft">&#160;</td><td class="mdescRight">After <a class="el" href="#a4ac25edb357683e5154b03bb0e6e1f1f">prepare()</a> whether <a class="el" href="#a24b6924f3852da24b6bc15238975afd9" title="Inside a scope over noisy diffuse alone with the scene normal sampleable and before recordMarched().">recordAmbient()</a> has rays to trace. <br /></td></tr>
+<tr class="memitem:a24b6924f3852da24b6bc15238975afd9" id="r_a24b6924f3852da24b6bc15238975afd9"><td class="memItemLeft"><a id="a24b6924f3852da24b6bc15238975afd9" name="a24b6924f3852da24b6bc15238975afd9"></a>
+void&#160;</td><td class="memItemRight"><b>recordAmbient</b> (vk::CommandBuffer cmd, uint32_t frame_index)</td></tr>
+<tr class="memdesc:a24b6924f3852da24b6bc15238975afd9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Inside a scope over noisy diffuse alone with the scene normal sampleable and before <a class="el" href="#a35d422b6a41d6324845d4c0f88c13159" title="Inside a scope over scene colour noisy terms and reservoirs with the scene normal sampleable.">recordMarched()</a>. <br /></td></tr>
+<tr class="memitem:a35d422b6a41d6324845d4c0f88c13159" id="r_a35d422b6a41d6324845d4c0f88c13159"><td class="memItemLeft"><a id="a35d422b6a41d6324845d4c0f88c13159" name="a35d422b6a41d6324845d4c0f88c13159"></a>
+void&#160;</td><td class="memItemRight"><b>recordMarched</b> (vk::CommandBuffer cmd, uint32_t frame_index)</td></tr>
+<tr class="memdesc:a35d422b6a41d6324845d4c0f88c13159"><td class="mdescLeft">&#160;</td><td class="mdescRight">Inside a scope over scene colour noisy terms and reservoirs with the scene normal sampleable. <br /></td></tr>
+<tr class="memitem:adb4ca96742622156fd42dd59d25a23eb" id="r_adb4ca96742622156fd42dd59d25a23eb"><td class="memItemLeft"><a id="adb4ca96742622156fd42dd59d25a23eb" name="adb4ca96742622156fd42dd59d25a23eb"></a>
+auto&#160;</td><td class="memItemRight"><b>glassDraws</b> () const -&gt; std::span&lt; const <a class="el" href="structrenderer_1_1VoxelPass_1_1GlassDraw.html">GlassDraw</a> &gt;</td></tr>
+<tr class="memdesc:adb4ca96742622156fd42dd59d25a23eb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Far to near in the order <a class="el" href="#af09bfe6c7c2eea1d3d9cbf251dcaaf2e" title="Inside the world scope after the sky.">recordGlass()</a> indexes them and empty when no glass draws this frame. <br /></td></tr>
+<tr class="memitem:af09bfe6c7c2eea1d3d9cbf251dcaaf2e" id="r_af09bfe6c7c2eea1d3d9cbf251dcaaf2e"><td class="memItemLeft"><a id="af09bfe6c7c2eea1d3d9cbf251dcaaf2e" name="af09bfe6c7c2eea1d3d9cbf251dcaaf2e"></a>
+void&#160;</td><td class="memItemRight"><b>recordGlass</b> (vk::CommandBuffer cmd, uint32_t frame_index, uint32_t first, uint32_t count)</td></tr>
+<tr class="memdesc:af09bfe6c7c2eea1d3d9cbf251dcaaf2e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Inside the world scope after the sky. <br /></td></tr>
+<tr class="memitem:a24f2c9ba12ba266c1c25bcb5d6fd948a" id="r_a24f2c9ba12ba266c1c25bcb5d6fd948a"><td class="memItemLeft"><a id="a24f2c9ba12ba266c1c25bcb5d6fd948a" name="a24f2c9ba12ba266c1c25bcb5d6fd948a"></a>
+void&#160;</td><td class="memItemRight"><b>recordGlassSurfaces</b> (vk::CommandBuffer cmd, uint32_t frame_index)</td></tr>
+<tr class="memdesc:a24f2c9ba12ba266c1c25bcb5d6fd948a"><td class="mdescLeft">&#160;</td><td class="mdescRight">After every blended draw. <br /></td></tr>
+<tr class="memitem:a56b5af37ed73efff85d04b6ce443494b" id="r_a56b5af37ed73efff85d04b6ce443494b"><td class="memItemLeft"><a id="a56b5af37ed73efff85d04b6ce443494b" name="a56b5af37ed73efff85d04b6ce443494b"></a>
+auto&#160;</td><td class="memItemRight"><b>refractsGlass</b> () const -&gt; bool</td></tr>
+<tr class="memdesc:a56b5af37ed73efff85d04b6ce443494b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Whether the backdrop must be copied before glass draws. <br /></td></tr>
+<tr class="memitem:ac19483abe57a215d145984096cbe9c5f" id="r_ac19483abe57a215d145984096cbe9c5f"><td class="memItemLeft"><a id="ac19483abe57a215d145984096cbe9c5f" name="ac19483abe57a215d145984096cbe9c5f"></a>
+void&#160;</td><td class="memItemRight"><b>setBackdropCaptured</b> (bool captured) noexcept</td></tr>
+<tr class="memitem:aabf852a97c975abca57d33b1ce497f79" id="r_aabf852a97c975abca57d33b1ce497f79"><td class="memItemLeft"><a id="aabf852a97c975abca57d33b1ce497f79" name="aabf852a97c975abca57d33b1ce497f79"></a>
+auto&#160;</td><td class="memItemRight"><b>denoiseActive</b> () const -&gt; bool</td></tr>
+<tr class="memdesc:aabf852a97c975abca57d33b1ce497f79"><td class="mdescLeft">&#160;</td><td class="mdescRight">After <a class="el" href="#a4ac25edb357683e5154b03bb0e6e1f1f">prepare()</a> whether the lighting scope writes denoised terms. <br /></td></tr>
+<tr class="memitem:a14be3f339a0f0f4733d5e9b476e72a75" id="r_a14be3f339a0f0f4733d5e9b476e72a75"><td class="memItemLeft"><a id="a14be3f339a0f0f4733d5e9b476e72a75" name="a14be3f339a0f0f4733d5e9b476e72a75"></a>
+auto&#160;</td><td class="memItemRight"><b>spatialActive</b> () const -&gt; bool</td></tr>
+<tr class="memdesc:a14be3f339a0f0f4733d5e9b476e72a75"><td class="mdescLeft">&#160;</td><td class="mdescRight">After <a class="el" href="#a4ac25edb357683e5154b03bb0e6e1f1f">prepare()</a> whether <a class="el" href="#a0ee8b75134b7db0ec2d618e41a40637b" title="Inside a scope over the noisy terms and this frame&#39;s reservoirs with the candidates and scene normal ...">recordSpatial()</a> follows the lighting scope. <br /></td></tr>
+<tr class="memitem:a0ee8b75134b7db0ec2d618e41a40637b" id="r_a0ee8b75134b7db0ec2d618e41a40637b"><td class="memItemLeft"><a id="a0ee8b75134b7db0ec2d618e41a40637b" name="a0ee8b75134b7db0ec2d618e41a40637b"></a>
+void&#160;</td><td class="memItemRight"><b>recordSpatial</b> (vk::CommandBuffer cmd, uint32_t frame_index, vk::Extent2D viewport)</td></tr>
+<tr class="memdesc:a0ee8b75134b7db0ec2d618e41a40637b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Inside a scope over the noisy terms and this frame's reservoirs with the candidates and scene normal sampleable. <br /></td></tr>
+<tr class="memitem:a9beab196d01d75c0a41036b1c646763e" id="r_a9beab196d01d75c0a41036b1c646763e"><td class="memItemLeft"><a id="a9beab196d01d75c0a41036b1c646763e" name="a9beab196d01d75c0a41036b1c646763e"></a>
+void&#160;</td><td class="memItemRight"><b>recordDenoiseTemporal</b> (vk::CommandBuffer cmd, uint32_t frame_index)</td></tr>
+<tr class="memdesc:a9beab196d01d75c0a41036b1c646763e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Outside any scope with the noisy terms motion albedo face normal and depth sampleable. <br /></td></tr>
+<tr class="memitem:a65ccc7ad91b774f83f5fe7788f9610fa" id="r_a65ccc7ad91b774f83f5fe7788f9610fa"><td class="memItemLeft"><a id="a65ccc7ad91b774f83f5fe7788f9610fa" name="a65ccc7ad91b774f83f5fe7788f9610fa"></a>
+void&#160;</td><td class="memItemRight"><b>recordDenoiseComposite</b> (vk::CommandBuffer cmd, uint32_t frame_index)</td></tr>
+<tr class="memdesc:a65ccc7ad91b774f83f5fe7788f9610fa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Inside a scope over the scene colour alone. <br /></td></tr>
+<tr class="memitem:a07c3183651aa6e8a2afce235fe4f8c5b" id="r_a07c3183651aa6e8a2afce235fe4f8c5b"><td class="memItemLeft"><a id="a07c3183651aa6e8a2afce235fe4f8c5b" name="a07c3183651aa6e8a2afce235fe4f8c5b"></a>
+auto&#160;</td><td class="memItemRight"><b>marchedCompositeActive</b> () const noexcept -&gt; bool</td></tr>
+<tr class="memdesc:a07c3183651aa6e8a2afce235fe4f8c5b"><td class="mdescLeft">&#160;</td><td class="mdescRight">After <a class="el" href="#a4ac25edb357683e5154b03bb0e6e1f1f">prepare()</a> whether marched terms reach colour without the denoiser. <br /></td></tr>
+<tr class="memitem:a707ca07b3d884e022989069429c6cd16" id="r_a707ca07b3d884e022989069429c6cd16"><td class="memItemLeft"><a id="a707ca07b3d884e022989069429c6cd16" name="a707ca07b3d884e022989069429c6cd16"></a>
+void&#160;</td><td class="memItemRight"><b>recordMarchedComposite</b> (vk::CommandBuffer cmd, uint32_t frame_index)</td></tr>
+<tr class="memdesc:a707ca07b3d884e022989069429c6cd16"><td class="mdescLeft">&#160;</td><td class="mdescRight">Inside a scope over the scene colour alone with the noisy terms sampleable. <br /></td></tr>
 <tr class="memitem:a86cfe941b78bf7fabbd28ea1e822c90f" id="r_a86cfe941b78bf7fabbd28ea1e822c90f"><td class="memItemLeft"><a id="a86cfe941b78bf7fabbd28ea1e822c90f" name="a86cfe941b78bf7fabbd28ea1e822c90f"></a>
 void&#160;</td><td class="memItemRight"><b>onTargetsRecreated</b> ()</td></tr>
 <tr class="memdesc:a86cfe941b78bf7fabbd28ea1e822c90f"><td class="mdescLeft">&#160;</td><td class="mdescRight">After the G-buffer and depth targets are recreated since a new view can reuse a destroyed handle value. <br /></td></tr>
@@ -191,6 +239,8 @@ auto&#160;</td><td class="memItemRight"><b>isEnabled</b> () const noexcept -&gt;
 Static Public Attributes</h2></td></tr>
 <tr class="memitem:aea66707e07e91be7217ec08977c2f5b7" id="r_aea66707e07e91be7217ec08977c2f5b7"><td class="memItemLeft"><a id="aea66707e07e91be7217ec08977c2f5b7" name="aea66707e07e91be7217ec08977c2f5b7"></a>
 static constexpr uint32_t&#160;</td><td class="memItemRight"><b>k_max_instances</b> = 4096</td></tr>
+<tr class="memitem:a5e91b06f7016c81849a354992ff2ef80" id="r_a5e91b06f7016c81849a354992ff2ef80"><td class="memItemLeft"><a id="a5e91b06f7016c81849a354992ff2ef80" name="a5e91b06f7016c81849a354992ff2ef80"></a>
+static constexpr uint32_t&#160;</td><td class="memItemRight"><b>k_max_glass_bricks</b> = 16384</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Deferred so lighting runs once per visible voxel pixel not once per march. </p>
@@ -332,8 +382,8 @@ Here is the caller graph for this function:</div>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>engine/src/toast/renderer/passes/<a class="el" href="voxel__pass_8hpp_source.html">voxel_pass.hpp</a></li>
-<li>engine/src/toast/renderer/passes/<b>voxel_pass.cpp</b></li>
+<li>engine/src/toast/renderer/passes/geometry/<a class="el" href="voxel__pass_8hpp_source.html">voxel_pass.hpp</a></li>
+<li>engine/src/toast/renderer/passes/geometry/<b>voxel_pass.cpp</b></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

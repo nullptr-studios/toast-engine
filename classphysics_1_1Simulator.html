@@ -144,10 +144,24 @@ void&#160;</td><td class="memItemRight"><b>integrate</b> (float dt)</td></tr>
 auto&#160;</td><td class="memItemRight"><b>createBody</b> (const <a class="el" href="structphysics_1_1BodyDescriptor.html">BodyDescriptor</a> &amp;descriptor) -&gt; <a class="el" href="structphysics_1_1BodyID.html">BodyID</a></td></tr>
 <tr class="memitem:ade8329fbda27a3833d49ecdb8d335913" id="r_ade8329fbda27a3833d49ecdb8d335913"><td class="memItemLeft"><a id="ade8329fbda27a3833d49ecdb8d335913" name="ade8329fbda27a3833d49ecdb8d335913"></a>
 void&#160;</td><td class="memItemRight"><b>destroyBody</b> (<a class="el" href="structphysics_1_1BodyID.html">BodyID</a> body)</td></tr>
+<tr class="memitem:a570c73cb42697903c1eda65ac349eb64" id="r_a570c73cb42697903c1eda65ac349eb64"><td class="memItemLeft"><a id="a570c73cb42697903c1eda65ac349eb64" name="a570c73cb42697903c1eda65ac349eb64"></a>
+auto&#160;</td><td class="memItemRight"><b>createJoint</b> (const <a class="el" href="structphysics_1_1JointDescriptor.html">JointDescriptor</a> &amp;descriptor) -&gt; <a class="el" href="structphysics_1_1JointID.html">JointID</a></td></tr>
+<tr class="memitem:a56965ad9e054630f695eb65752e4135f" id="r_a56965ad9e054630f695eb65752e4135f"><td class="memItemLeft"><a id="a56965ad9e054630f695eb65752e4135f" name="a56965ad9e054630f695eb65752e4135f"></a>
+void&#160;</td><td class="memItemRight"><b>destroyJoint</b> (<a class="el" href="structphysics_1_1JointID.html">JointID</a> joint)</td></tr>
+<tr class="memitem:a65a93dbc13197d856b034c0326eff97a" id="r_a65a93dbc13197d856b034c0326eff97a"><td class="memItemLeft"><a id="a65a93dbc13197d856b034c0326eff97a" name="a65a93dbc13197d856b034c0326eff97a"></a>
+auto&#160;</td><td class="memItemRight"><b>valid</b> (<a class="el" href="structphysics_1_1JointID.html">JointID</a> joint) const -&gt; bool</td></tr>
+<tr class="memitem:ae27dd0ea017c54d87dfc0e19b6a5242d" id="r_ae27dd0ea017c54d87dfc0e19b6a5242d"><td class="memItemLeft"><a id="ae27dd0ea017c54d87dfc0e19b6a5242d" name="ae27dd0ea017c54d87dfc0e19b6a5242d"></a>
+auto&#160;</td><td class="memItemRight"><b>jointState</b> (<a class="el" href="structphysics_1_1JointID.html">JointID</a> joint) const -&gt; std::optional&lt; <a class="el" href="structphysics_1_1JointState.html">JointState</a> &gt;</td></tr>
+<tr class="memitem:a506d3ff56fb89127c67c313a3f97f500" id="r_a506d3ff56fb89127c67c313a3f97f500"><td class="memItemLeft"><a id="a506d3ff56fb89127c67c313a3f97f500" name="a506d3ff56fb89127c67c313a3f97f500"></a>
+auto&#160;</td><td class="memItemRight"><b>setJointParams</b> (<a class="el" href="structphysics_1_1JointID.html">JointID</a> joint, const JointParams &amp;params) -&gt; bool</td></tr>
+<tr class="memitem:a7eab86f3e47a22590b050215d25b66e5" id="r_a7eab86f3e47a22590b050215d25b66e5"><td class="memItemLeft"><a id="a7eab86f3e47a22590b050215d25b66e5" name="a7eab86f3e47a22590b050215d25b66e5"></a>
+auto&#160;</td><td class="memItemRight"><b>jointCount</b> () const -&gt; size_t</td></tr>
 <tr class="memitem:a4e45c12e6d63d603aca7590915c81b6f" id="r_a4e45c12e6d63d603aca7590915c81b6f"><td class="memItemLeft"><a id="a4e45c12e6d63d603aca7590915c81b6f" name="a4e45c12e6d63d603aca7590915c81b6f"></a>
 auto&#160;</td><td class="memItemRight"><b>valid</b> (<a class="el" href="structphysics_1_1BodyID.html">BodyID</a> body) const -&gt; bool</td></tr>
 <tr class="memitem:a6d1c438dcb9554de1ad0ff77ddce8c65" id="r_a6d1c438dcb9554de1ad0ff77ddce8c65"><td class="memItemLeft"><a id="a6d1c438dcb9554de1ad0ff77ddce8c65" name="a6d1c438dcb9554de1ad0ff77ddce8c65"></a>
 auto&#160;</td><td class="memItemRight"><b>state</b> (<a class="el" href="structphysics_1_1BodyID.html">BodyID</a> body) const -&gt; std::optional&lt; <a class="el" href="structphysics_1_1BodyState.html">BodyState</a> &gt;</td></tr>
+<tr class="memitem:a2f1b88d0d658568c353f44b211ea1475" id="r_a2f1b88d0d658568c353f44b211ea1475"><td class="memItemLeft"><a id="a2f1b88d0d658568c353f44b211ea1475" name="a2f1b88d0d658568c353f44b211ea1475"></a>
+auto&#160;</td><td class="memItemRight"><b>massProperties</b> (<a class="el" href="structphysics_1_1BodyID.html">BodyID</a> body) const -&gt; std::optional&lt; <a class="el" href="structphysics_1_1BodyMassProperties.html">BodyMassProperties</a> &gt;</td></tr>
 <tr class="memitem:aaaa771b9a45916ef5cc51ddd03a43bb3" id="r_aaaa771b9a45916ef5cc51ddd03a43bb3"><td class="memItemLeft"><a id="aaaa771b9a45916ef5cc51ddd03a43bb3" name="aaaa771b9a45916ef5cc51ddd03a43bb3"></a>
 auto&#160;</td><td class="memItemRight"><b>setTransform</b> (<a class="el" href="structphysics_1_1BodyID.html">BodyID</a> body, const glm::vec3 &amp;position, const glm::quat &amp;rotation) -&gt; bool</td></tr>
 <tr class="memitem:a4adb524e0e0942435825c37121450800" id="r_a4adb524e0e0942435825c37121450800"><td class="memItemLeft"><a id="a4adb524e0e0942435825c37121450800" name="a4adb524e0e0942435825c37121450800"></a>
@@ -174,9 +188,9 @@ auto&#160;</td><td class="memItemRight"><b>runConnectivityAnalysis</b> () -&gt; 
 auto&#160;</td><td class="memItemRight"><b>debugDirtyBricks</b> () const -&gt; std::span&lt; const <a class="el" href="structphysics_1_1Simulator_1_1DebugDirtyBrick.html">DebugDirtyBrick</a> &gt;</td></tr>
 <tr class="memitem:ab81586bb5e2282e56a3183a8a76cc9b3" id="r_ab81586bb5e2282e56a3183a8a76cc9b3"><td class="memItemLeft"><a id="ab81586bb5e2282e56a3183a8a76cc9b3" name="ab81586bb5e2282e56a3183a8a76cc9b3"></a>
 auto&#160;</td><td class="memItemRight"><b>overlapCapsule</b> (<a class="el" href="structphysics_1_1BodyID.html">BodyID</a> ignored, const <a class="el" href="structphysics_1_1CapsuleShape.html">CapsuleShape</a> &amp;capsule, const glm::vec3 &amp;position, const glm::quat &amp;rotation, float min_penetration, std::vector&lt; <a class="el" href="structphysics_1_1QueryContact.html">QueryContact</a> &gt; &amp;contacts) const -&gt; bool</td></tr>
-<tr class="memitem:a76257a62313d7c1837dbb6a4508f16d9" id="r_a76257a62313d7c1837dbb6a4508f16d9"><td class="memItemLeft"><a id="a76257a62313d7c1837dbb6a4508f16d9" name="a76257a62313d7c1837dbb6a4508f16d9"></a>
-auto&#160;</td><td class="memItemRight"><b>overlapSphere</b> (const <a class="el" href="structphysics_1_1SphereShape.html">SphereShape</a> &amp;sphere, const glm::vec3 &amp;position, float min_penetration, std::vector&lt; <a class="el" href="structphysics_1_1QueryContact.html">QueryContact</a> &gt; &amp;contacts) const -&gt; bool</td></tr>
-<tr class="memdesc:a76257a62313d7c1837dbb6a4508f16d9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tests a world-space sphere against enabled physics shapes. <br /></td></tr>
+<tr class="memitem:a65e8a772a4472aeeba4adf0ebf24371c" id="r_a65e8a772a4472aeeba4adf0ebf24371c"><td class="memItemLeft"><a id="a65e8a772a4472aeeba4adf0ebf24371c" name="a65e8a772a4472aeeba4adf0ebf24371c"></a>
+auto&#160;</td><td class="memItemRight"><b>overlapSphere</b> (const <a class="el" href="structphysics_1_1SphereShape.html">SphereShape</a> &amp;sphere, const glm::vec3 &amp;position, float min_penetration, std::vector&lt; <a class="el" href="structphysics_1_1QueryContact.html">QueryContact</a> &gt; &amp;contacts, std::optional&lt; <a class="el" href="structphysics_1_1LayerFilter.html">LayerFilter</a> &gt; layers=std::nullopt) const -&gt; bool</td></tr>
+<tr class="memdesc:a65e8a772a4472aeeba4adf0ebf24371c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tests a world-space sphere against enabled physics shapes. <br /></td></tr>
 <tr class="memitem:a58ecc4c481defa350979f678e52204a7" id="r_a58ecc4c481defa350979f678e52204a7"><td class="memItemLeft"><a id="a58ecc4c481defa350979f678e52204a7" name="a58ecc4c481defa350979f678e52204a7"></a>
 auto&#160;</td><td class="memItemRight"><b>overlapAABB</b> (const <a class="el" href="structphysics_1_1AABB.html">AABB</a> &amp;bounds) const -&gt; bool</td></tr>
 <tr class="memdesc:a58ecc4c481defa350979f678e52204a7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tests a world-space axis-aligned box against enabled physics shapes. <br /></td></tr>
@@ -194,11 +208,21 @@ auto&#160;</td><td class="memItemRight"><b>takeDebrisSpawns</b> () -&gt; std::ve
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
+<tr class="memitem:a652470d23c0243cd7d194ed8ce764f7d" id="r_a652470d23c0243cd7d194ed8ce764f7d"><td class="memItemLeft"><a id="a652470d23c0243cd7d194ed8ce764f7d" name="a652470d23c0243cd7d194ed8ce764f7d"></a>
+static void&#160;</td><td class="memItemRight"><b>registerJointNode</b> (<a class="el" href="classphysics_1_1Joint3D.html">Joint3D</a> &amp;node)</td></tr>
+<tr class="memitem:a02daee65470c8956f78cc64a94e1896a" id="r_a02daee65470c8956f78cc64a94e1896a"><td class="memItemLeft"><a id="a02daee65470c8956f78cc64a94e1896a" name="a02daee65470c8956f78cc64a94e1896a"></a>
+static void&#160;</td><td class="memItemRight"><b>unregisterJointNode</b> (<a class="el" href="classphysics_1_1Joint3D.html">Joint3D</a> &amp;node)</td></tr>
+<tr class="memitem:aa0762b906dfc6d2899faabc31201c98e" id="r_aa0762b906dfc6d2899faabc31201c98e"><td class="memItemLeft"><a id="aa0762b906dfc6d2899faabc31201c98e" name="aa0762b906dfc6d2899faabc31201c98e"></a>
+static void&#160;</td><td class="memItemRight"><b>breakJointNode</b> (<a class="el" href="classphysics_1_1Joint3D.html">Joint3D</a> &amp;node)</td></tr>
+<tr class="memitem:a26ef8d75599f263132a2b8a129732a47" id="r_a26ef8d75599f263132a2b8a129732a47"><td class="memItemLeft"><a id="a26ef8d75599f263132a2b8a129732a47" name="a26ef8d75599f263132a2b8a129732a47"></a>
+static void&#160;</td><td class="memItemRight"><b>repairJointNode</b> (<a class="el" href="classphysics_1_1Joint3D.html">Joint3D</a> &amp;node)</td></tr>
 <tr class="memitem:aefdd5cdae1d605078b0bd77916e87367" id="r_aefdd5cdae1d605078b0bd77916e87367"><td class="memItemLeft">static auto&#160;</td><td class="memItemRight"><a class="el" href="#aefdd5cdae1d605078b0bd77916e87367">raycast</a> (glm::vec3 origin, glm::vec3 direction, float max_distance=-1.0f, <a class="el" href="structphysics_1_1BodyID.html">BodyID</a> ignored={}, uint32_t layers=k_all_layers) -&gt; std::optional&lt; <a class="el" href="structphysics_1_1RayHit.html">RayHit</a> &gt;</td></tr>
 <tr class="memitem:acddb9e1a6169e3a72bdab9eaf7f4652e" id="r_acddb9e1a6169e3a72bdab9eaf7f4652e"><td class="memItemLeft"><a id="acddb9e1a6169e3a72bdab9eaf7f4652e" name="acddb9e1a6169e3a72bdab9eaf7f4652e"></a>
 static auto&#160;</td><td class="memItemRight"><b>raymulticast</b> (glm::vec3 origin, glm::vec3 direction, float max_distance=-1.0f, int max_hits=-1, <a class="el" href="structphysics_1_1BodyID.html">BodyID</a> ignored={}, uint32_t layers=k_all_layers) -&gt; std::vector&lt; <a class="el" href="structphysics_1_1RayHit.html">RayHit</a> &gt;</td></tr>
 <tr class="memitem:a34efea31a8172780ac885c18ef030b5c" id="r_a34efea31a8172780ac885c18ef030b5c"><td class="memItemLeft"><a id="a34efea31a8172780ac885c18ef030b5c" name="a34efea31a8172780ac885c18ef030b5c"></a>
 static auto&#160;</td><td class="memItemRight"><b>linecast</b> (glm::vec3 from, glm::vec3 to, int max_hits=-1, <a class="el" href="structphysics_1_1BodyID.html">BodyID</a> ignored={}, uint32_t layers=k_all_layers) -&gt; std::vector&lt; <a class="el" href="structphysics_1_1RayHit.html">RayHit</a> &gt;</td></tr>
+<tr class="memitem:ada722aa28b8c4fab4083af071e333113" id="r_ada722aa28b8c4fab4083af071e333113"><td class="memItemLeft"><a id="ada722aa28b8c4fab4083af071e333113" name="ada722aa28b8c4fab4083af071e333113"></a>
+static auto&#160;</td><td class="memItemRight"><b>querySnapshot</b> () -&gt; std::shared_ptr&lt; const <a class="el" href="structphysics_1_1QuerySnapshot.html">QuerySnapshot</a> &gt;</td></tr>
 <tr class="memitem:af8be0751ba4a41a6d4a43e6adf42def1" id="r_af8be0751ba4a41a6d4a43e6adf42def1"><td class="memItemLeft"><a id="af8be0751ba4a41a6d4a43e6adf42def1" name="af8be0751ba4a41a6d4a43e6adf42def1"></a>
 static auto&#160;</td><td class="memItemRight"><b>bodyFor</b> (const <a class="el" href="classtoast_1_1Node.html">toast::Node</a> &amp;node) -&gt; <a class="el" href="structphysics_1_1BodyID.html">BodyID</a></td></tr>
 <tr class="memitem:a7503203a2459c8c1398ba2c67bd6f7b4" id="r_a7503203a2459c8c1398ba2c67bd6f7b4"><td class="memItemLeft"><a id="a7503203a2459c8c1398ba2c67bd6f7b4" name="a7503203a2459c8c1398ba2c67bd6f7b4"></a>
@@ -217,6 +241,8 @@ static auto&#160;</td><td class="memItemRight"><b>renderPoseDelta</b> (<a class=
 <tr class="memdesc:a553fe5d9ed4ef3d1b7806e30fa0a68c3"><td class="mdescLeft">&#160;</td><td class="mdescRight">World transform from the tick pose to the blended pose drawn this frame and identity unless dynamic and awake. <br /></td></tr>
 <tr class="memitem:adf1d9b6ef446b67324c24a6e5324b538" id="r_adf1d9b6ef446b67324c24a6e5324b538"><td class="memItemLeft"><a id="adf1d9b6ef446b67324c24a6e5324b538" name="adf1d9b6ef446b67324c24a6e5324b538"></a>
 static auto&#160;</td><td class="memItemRight"><b>renderPoseDelta</b> (const <a class="el" href="classtoast_1_1VoxelNode.html">toast::VoxelNode</a> &amp;node) -&gt; glm::mat4</td></tr>
+<tr class="memitem:ac4994e82025c6df733efddf29386b991" id="r_ac4994e82025c6df733efddf29386b991"><td class="memItemLeft"><a id="ac4994e82025c6df733efddf29386b991" name="ac4994e82025c6df733efddf29386b991"></a>
+static auto&#160;</td><td class="memItemRight"><b>renderPoseDelta</b> (const <a class="el" href="structtoast_1_1VoxelPart.html">toast::VoxelPart</a> &amp;part) -&gt; glm::mat4</td></tr>
 <tr class="memitem:af1e5c0167824e895cfc47c396260e8a5" id="r_af1e5c0167824e895cfc47c396260e8a5"><td class="memItemLeft"><a id="af1e5c0167824e895cfc47c396260e8a5" name="af1e5c0167824e895cfc47c396260e8a5"></a>
 static auto&#160;</td><td class="memItemRight"><b>renderPoseDeltaFor</b> (const <a class="el" href="classtoast_1_1Node.html">toast::Node</a> &amp;node) -&gt; glm::mat4</td></tr>
 <tr class="memdesc:af1e5c0167824e895cfc47c396260e8a5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Delta of the dynamic body a node sits below and identity when it follows none. <br /></td></tr>
@@ -257,6 +283,9 @@ static void&#160;</td><td class="memItemRight"><b>unregisterVoxelNode</b> (<a cl
 static void&#160;</td><td class="memItemRight"><b>registerTrigger</b> (<a class="el" href="classphysics_1_1Trigger.html">Trigger</a> &amp;node)</td></tr>
 <tr class="memitem:a268ed5b555b21e4318a4c2ea3eaa145b" id="r_a268ed5b555b21e4318a4c2ea3eaa145b"><td class="memItemLeft"><a id="a268ed5b555b21e4318a4c2ea3eaa145b" name="a268ed5b555b21e4318a4c2ea3eaa145b"></a>
 static void&#160;</td><td class="memItemRight"><b>unregisterTrigger</b> (<a class="el" href="classphysics_1_1Trigger.html">Trigger</a> &amp;node)</td></tr>
+<tr class="memitem:aee286ac92df69807c5f29041f01d60d2" id="r_aee286ac92df69807c5f29041f01d60d2"><td class="memItemLeft"><a id="aee286ac92df69807c5f29041f01d60d2" name="aee286ac92df69807c5f29041f01d60d2"></a>
+static void&#160;</td><td class="memItemRight"><b>addForce</b> (<a class="el" href="structphysics_1_1BodyID.html">BodyID</a> body, glm::vec3 force, glm::vec3 offset)</td></tr>
+<tr class="memdesc:aee286ac92df69807c5f29041f01d60d2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Force over one fixed step, offset is world space from the center of mass, from any thread. <br /></td></tr>
 <tr class="memitem:afab5326440fa1fc8ef30454c31d930f4" id="r_afab5326440fa1fc8ef30454c31d930f4"><td class="memItemLeft"><a id="afab5326440fa1fc8ef30454c31d930f4" name="afab5326440fa1fc8ef30454c31d930f4"></a>
 static auto&#160;</td><td class="memItemRight"><b>current</b> () -&gt; Simulator *</td></tr>
 <tr class="memdesc:afab5326440fa1fc8ef30454c31d930f4"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classphysics_1_1Simulator.html">Simulator</a> running the current step, null outside a play session. <br /></td></tr>
@@ -283,6 +312,8 @@ class&#160;</td><td class="memItemRight"><b>Rigidbody</b></td></tr>
 class&#160;</td><td class="memItemRight"><b>DynamicRigidbody</b></td></tr>
 <tr class="memitem:af0b085060c882afbbd6a75d5868cf649" id="r_af0b085060c882afbbd6a75d5868cf649"><td class="memItemLeft"><a id="af0b085060c882afbbd6a75d5868cf649" name="af0b085060c882afbbd6a75d5868cf649"></a>
 class&#160;</td><td class="memItemRight"><b>toast::VoxelNode</b></td></tr>
+<tr class="memitem:a836df1f653088ab7486465a7a3f3a060" id="r_a836df1f653088ab7486465a7a3f3a060"><td class="memItemLeft"><a id="a836df1f653088ab7486465a7a3f3a060" name="a836df1f653088ab7486465a7a3f3a060"></a>
+struct&#160;</td><td class="memItemRight"><b>SimulatorTestAccess</b></td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="aefdd5cdae1d605078b0bd77916e87367" name="aefdd5cdae1d605078b0bd77916e87367"></a>
@@ -410,6 +441,7 @@ Here is the caller graph for this function:</div>
 <li>engine/src/toast/physics/<b>raycast.cpp</b></li>
 <li>engine/src/toast/physics/<b>shape_query.cpp</b></li>
 <li>engine/src/toast/physics/<b>simulator.cpp</b></li>
+<li>engine/src/toast/physics/<b>simulator_joints.cpp</b></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

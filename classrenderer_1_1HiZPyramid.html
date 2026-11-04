@@ -135,6 +135,9 @@ void&#160;</td><td class="memItemRight"><b>record</b> (vk::CommandBuffer cmd, vk
 <tr class="memitem:a19bd288801e6525af935a93d8139a90a" id="r_a19bd288801e6525af935a93d8139a90a"><td class="memItemLeft"><a id="a19bd288801e6525af935a93d8139a90a" name="a19bd288801e6525af935a93d8139a90a"></a>
 void&#160;</td><td class="memItemRight"><b>beforeRead</b> (<a class="el" href="classrenderer_1_1sync_1_1BarrierBatch.html">sync::BarrierBatch</a> &amp;barriers)</td></tr>
 <tr class="memdesc:a19bd288801e6525af935a93d8139a90a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Earlier writes land before a compute shader samples <a class="el" href="#a6a950a36ada2a2d77982a78e91e1bc41" title="Every level in eShaderReadOnlyOptimal once recorded.">view()</a>. <br /></td></tr>
+<tr class="memitem:a7175c2fc15222a79c5ab31d571f9ce59" id="r_a7175c2fc15222a79c5ab31d571f9ce59"><td class="memItemLeft"><a id="a7175c2fc15222a79c5ab31d571f9ce59" name="a7175c2fc15222a79c5ab31d571f9ce59"></a>
+void&#160;</td><td class="memItemRight"><b>beforeTaskRead</b> (<a class="el" href="classrenderer_1_1sync_1_1BarrierBatch.html">sync::BarrierBatch</a> &amp;barriers)</td></tr>
+<tr class="memdesc:a7175c2fc15222a79c5ab31d571f9ce59"><td class="mdescLeft">&#160;</td><td class="mdescRight">Earlier writes land before a task or mesh shader samples <a class="el" href="#a6a950a36ada2a2d77982a78e91e1bc41" title="Every level in eShaderReadOnlyOptimal once recorded.">view()</a>. <br /></td></tr>
 <tr class="memitem:af3a667e1e1d00a7e4d161786d618de09" id="r_af3a667e1e1d00a7e4d161786d618de09"><td class="memItemLeft"><a id="af3a667e1e1d00a7e4d161786d618de09" name="af3a667e1e1d00a7e4d161786d618de09"></a>
 auto&#160;</td><td class="memItemRight"><b>isReady</b> () const -&gt; bool</td></tr>
 <tr class="memdesc:af3a667e1e1d00a7e4d161786d618de09"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="#a6a950a36ada2a2d77982a78e91e1bc41" title="Every level in eShaderReadOnlyOptimal once recorded.">view()</a> can be bound without it but only a ready pyramid is ever built <br /></td></tr>
@@ -166,8 +169,8 @@ static constexpr uint32_t&#160;</td><td class="memItemRight"><b>k_max_levels</b>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Farthest depth pyramid where level k texel t covers pixels t &lt;&lt; (k + 1) to ((t + 1) &lt;&lt; (k + 1)) - 1. </p>
 </div><hr/>The documentation for this class was generated from the following files:<ul>
-<li>engine/src/toast/renderer/<a class="el" href="hiz__pyramid_8hpp_source.html">hiz_pyramid.hpp</a></li>
-<li>engine/src/toast/renderer/<b>hiz_pyramid.cpp</b></li>
+<li>engine/src/toast/renderer/resources/<a class="el" href="hiz__pyramid_8hpp_source.html">hiz_pyramid.hpp</a></li>
+<li>engine/src/toast/renderer/resources/<b>hiz_pyramid.cpp</b></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

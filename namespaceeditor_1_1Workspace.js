@@ -1,6 +1,7 @@
 var namespaceeditor_1_1Workspace =
 [
     [ "AssetBrowserSettingsViewModel", "classeditor_1_1Workspace_1_1AssetBrowserSettingsViewModel.html", null ],
+    [ "AssetSettingRow", "classeditor_1_1Workspace_1_1AssetSettingRow.html", null ],
     [ "AutosaveService", "classeditor_1_1Workspace_1_1AutosaveService.html", null ],
     [ "BoolSettingRow", "classeditor_1_1Workspace_1_1BoolSettingRow.html", null ],
     [ "ButtonVM", "classeditor_1_1Workspace_1_1ButtonVM.html", null ],
@@ -42,6 +43,7 @@ var namespaceeditor_1_1Workspace =
     [ "RendererSettingsView", "classeditor_1_1Workspace_1_1RendererSettingsView.html", null ],
     [ "RendererSettingsViewModel", "classeditor_1_1Workspace_1_1RendererSettingsViewModel.html", "classeditor_1_1Workspace_1_1RendererSettingsViewModel" ],
     [ "RenderPassVM", "classeditor_1_1Workspace_1_1RenderPassVM.html", null ],
+    [ "RulerOverlay", "classeditor_1_1Workspace_1_1RulerOverlay.html", null ],
     [ "SchemaEditorState", "classeditor_1_1Workspace_1_1SchemaEditorState.html", null ],
     [ "SettingCategory", "classeditor_1_1Workspace_1_1SettingCategory.html", null ],
     [ "SettingRow", "classeditor_1_1Workspace_1_1SettingRow.html", "classeditor_1_1Workspace_1_1SettingRow" ],

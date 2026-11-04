@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.17.0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Toast Engine: engine/src/toast/renderer/shadow_slots.cpp File Reference</title>
+<title>Toast Engine: engine/src/toast/renderer/lighting/shadow_slots.cpp File Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="codefolding.js"></script>
 <script type="text/javascript" src="clipboard.js"></script>
@@ -118,38 +118,27 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('shadow__slots_
   <div class="headertitle"><div class="title">shadow_slots.cpp File Reference</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;<a class="el" href="shadow__slots_8hpp_source.html">shadow_slots.hpp</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="shadow__constants_8hpp_source.html">shadow_constants.hpp</a>&quot;</code><br />
-<code>#include &lt;algorithm&gt;</code><br />
-<code>#include &lt;array&gt;</code><br />
-<code>#include &lt;atomic&gt;</code><br />
-<code>#include &lt;utility&gt;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="shadow__slots_8hpp_source.html">toast/renderer/lighting/shadow_slots.hpp</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="shadow__constants_8hpp_source.html">toast/renderer/lighting/shadow_constants.hpp</a>&quot;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for shadow_slots.cpp:</div>
 <div class="dyncontent">
-<div class="center"><img src="shadow__slots_8cpp__incl.png" border="0" usemap="#aengine_2src_2toast_2renderer_2shadow__slots_8cpp" loading="lazy" alt=""/></div>
-<map name="aengine_2src_2toast_2renderer_2shadow__slots_8cpp" id="aengine_2src_2toast_2renderer_2shadow__slots_8cpp">
-<area shape="rect" title=" " alt="" coords="314,5,498,50"/>
-<area shape="rect" href="shadow__slots_8hpp.html" title=" " alt="" coords="5,98,143,126"/>
-<area shape="poly" title=" " alt="" coords="317,53,142,96,141,91,319,48"/>
-<area shape="rect" href="shadow__constants_8hpp.html" title="Mirrored by shadow_depth.slang and mesh.slang." alt="" coords="167,98,336,126"/>
-<area shape="poly" title=" " alt="" coords="367,50,291,93,288,88,363,52"/>
-<area shape="rect" title=" " alt="" coords="336,174,420,201"/>
-<area shape="poly" title=" " alt="" coords="404,49,385,159,381,157,400,52"/>
-<area shape="rect" title=" " alt="" coords="412,98,467,126"/>
-<area shape="poly" title=" " alt="" coords="416,48,431,84,426,83,413,53"/>
-<area shape="rect" title=" " alt="" coords="492,98,558,126"/>
-<area shape="poly" title=" " alt="" coords="438,48,496,89,491,89,437,53"/>
-<area shape="rect" title=" " alt="" coords="582,98,641,126"/>
-<area shape="poly" title=" " alt="" coords="461,48,570,93,565,93,460,53"/>
-<area shape="rect" title=" " alt="" coords="93,174,159,201"/>
-<area shape="poly" title=" " alt="" coords="84,124,111,161,105,161,82,129"/>
-<area shape="rect" title=" " alt="" coords="17,174,70,201"/>
-<area shape="poly" title=" " alt="" coords="71,124,57,160,52,158,67,128"/>
-<area shape="poly" title=" " alt="" coords="232,126,162,168,160,163,226,127"/>
-<area shape="poly" title=" " alt="" coords="275,124,345,166,340,166,273,129"/>
-<area shape="rect" href="export_8hpp.html" title=" " alt="" coords="183,174,312,201"/>
-<area shape="poly" title=" " alt="" coords="253,124,251,160,247,156,249,128"/>
+<div class="center"><img src="shadow__slots_8cpp__incl.png" border="0" usemap="#aengine_2src_2toast_2renderer_2lighting_2shadow__slots_8cpp" loading="lazy" alt=""/></div>
+<map name="aengine_2src_2toast_2renderer_2lighting_2shadow__slots_8cpp" id="aengine_2src_2toast_2renderer_2lighting_2shadow__slots_8cpp">
+<area shape="rect" title=" " alt="" coords="88,5,281,50"/>
+<area shape="rect" href="shadow__slots_8hpp.html" title=" " alt="" coords="5,98,172,143"/>
+<area shape="poly" title=" " alt="" coords="160,52,124,89,120,86,164,48"/>
+<area shape="rect" href="shadow__constants_8hpp.html" title="Mirrored by shadow_depth.slang and mesh.slang." alt="" coords="195,98,368,143"/>
+<area shape="poly" title=" " alt="" coords="208,48,250,87,245,87,207,53"/>
+<area shape="rect" title=" " alt="" coords="144,191,209,218"/>
+<area shape="poly" title=" " alt="" coords="113,141,154,179,149,180,111,146"/>
+<area shape="rect" title=" " alt="" coords="62,191,115,218"/>
+<area shape="poly" title=" " alt="" coords="90,141,91,176,86,174,87,145"/>
+<area shape="poly" title=" " alt="" coords="257,142,207,183,204,179,252,144"/>
+<area shape="rect" title=" " alt="" coords="236,191,320,218"/>
+<area shape="poly" title=" " alt="" coords="283,141,281,177,277,173,279,145"/>
+<area shape="rect" href="export_8hpp.html" title=" " alt="" coords="344,191,473,218"/>
+<area shape="poly" title=" " alt="" coords="316,141,378,182,373,182,314,146"/>
 </map>
 </div>
 </div><table class="memberdecls">
@@ -168,9 +157,9 @@ auto&#160;</td><td class="memItemRight"><b>renderer::shadow_slots::graceFrames</
 void&#160;</td><td class="memItemRight"><b>renderer::shadow_slots::setRetention</b> (float factor)</td></tr>
 <tr class="memitem:a5379912df366c37574343c8faca65f13" id="r_a5379912df366c37574343c8faca65f13"><td class="memItemLeft"><a id="a5379912df366c37574343c8faca65f13" name="a5379912df366c37574343c8faca65f13"></a>
 void&#160;</td><td class="memItemRight"><b>renderer::shadow_slots::setGraceFrames</b> (uint32_t frames)</td></tr>
-<tr class="memitem:a15cee2d05d0c1c5da2146a0521ea3fd8" id="r_a15cee2d05d0c1c5da2146a0521ea3fd8"><td class="memItemLeft"><a id="a15cee2d05d0c1c5da2146a0521ea3fd8" name="a15cee2d05d0c1c5da2146a0521ea3fd8"></a>
-auto&#160;</td><td class="memItemRight"><b>renderer::shadow_slots::stableResolution</b> (uint32_t current, float camera_distance, float resolution_scale) -&gt; uint32_t</td></tr>
-<tr class="memdesc:a15cee2d05d0c1c5da2146a0521ea3fd8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Keeps the current tier until the camera distance leaves its band. <br /></td></tr>
+<tr class="memitem:acb61f904a1f28fc789fd5d88f0204239" id="r_acb61f904a1f28fc789fd5d88f0204239"><td class="memItemLeft"><a id="acb61f904a1f28fc789fd5d88f0204239" name="acb61f904a1f28fc789fd5d88f0204239"></a>
+auto&#160;</td><td class="memItemRight"><b>renderer::shadow_slots::stableResolution</b> (uint32_t current, float camera_distance, float light_range, float resolution_scale) -&gt; uint32_t</td></tr>
+<tr class="memdesc:acb61f904a1f28fc789fd5d88f0204239"><td class="mdescLeft">&#160;</td><td class="mdescRight">Keeps the current tier until the camera distance leaves its band. <br /></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><dl class="section author"><dt>Author</dt><dd>dario </dd></dl>
@@ -188,7 +177,7 @@ auto&#160;</td><td class="memItemRight"><b>renderer::shadow_slots::stableResolut
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><b>engine</b></li><li class="navelem"><b>src</b></li><li class="navelem"><b>toast</b></li><li class="navelem"><b>renderer</b></li><li class="navelem"><a href="shadow__slots_8cpp.html">shadow_slots.cpp</a></li>
+    <li class="navelem"><b>engine</b></li><li class="navelem"><b>src</b></li><li class="navelem"><b>toast</b></li><li class="navelem"><b>renderer</b></li><li class="navelem"><b>lighting</b></li><li class="navelem"><a href="shadow__slots_8cpp.html">shadow_slots.cpp</a></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.17.0 </li>
   </ul>
 </div>

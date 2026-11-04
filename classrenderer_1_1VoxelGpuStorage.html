@@ -199,6 +199,12 @@ auto&#160;</td><td class="memItemRight"><b>debugInfo</b> () const -&gt; const <a
 <tr class="memitem:a98cfe326f9399b7e43ddfb78d5accd5d" id="r_a98cfe326f9399b7e43ddfb78d5accd5d"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a98cfe326f9399b7e43ddfb78d5accd5d">setChangeHistory</a> (<a class="el" href="classrenderer_1_1VoxelChangeHistory.html">VoxelChangeHistory</a> history)</td></tr>
 <tr class="memitem:a16d33f688b7019f14c68235e62c4547d" id="r_a16d33f688b7019f14c68235e62c4547d"><td class="memItemLeft"><a id="a16d33f688b7019f14c68235e62c4547d" name="a16d33f688b7019f14c68235e62c4547d"></a>
 auto&#160;</td><td class="memItemRight"><b>changeHistory</b> () const -&gt; const <a class="el" href="classrenderer_1_1VoxelChangeHistory.html">VoxelChangeHistory</a> &amp;</td></tr>
+<tr class="memitem:a7b39c85b419d9b7b9e723994b6a27956" id="r_a7b39c85b419d9b7b9e723994b6a27956"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a7b39c85b419d9b7b9e723994b6a27956">setGlassBricks</a> (std::vector&lt; std::vector&lt; uint32_t &gt; &gt; bricks)</td></tr>
+<tr class="memitem:abe66f33fda6613e618b1196ac86006e3" id="r_abe66f33fda6613e618b1196ac86006e3"><td class="memItemLeft"><a id="abe66f33fda6613e618b1196ac86006e3" name="abe66f33fda6613e618b1196ac86006e3"></a>
+auto&#160;</td><td class="memItemRight"><b>glassBricks</b> (uint32_t record) const -&gt; std::span&lt; const uint32_t &gt;</td></tr>
+<tr class="memitem:a24304e9455d66251951245d14145cfda" id="r_a24304e9455d66251951245d14145cfda"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a24304e9455d66251951245d14145cfda">setBrickLists</a> (std::vector&lt; std::shared_ptr&lt; const <a class="el" href="structrenderer_1_1VoxelBrickList.html">VoxelBrickList</a> &gt; &gt; lists)</td></tr>
+<tr class="memitem:a92256cf2917e22ac60160c3299f71c3c" id="r_a92256cf2917e22ac60160c3299f71c3c"><td class="memItemLeft"><a id="a92256cf2917e22ac60160c3299f71c3c" name="a92256cf2917e22ac60160c3299f71c3c"></a>
+auto&#160;</td><td class="memItemRight"><b>brickList</b> (uint32_t record) const -&gt; const std::shared_ptr&lt; const <a class="el" href="structrenderer_1_1VoxelBrickList.html">VoxelBrickList</a> &gt; &amp;</td></tr>
 <tr class="inherit_header pub_methods_classrenderer_1_1IVulkanResource"><td colspan="2">Public Member Functions inherited from <a class="el" href="classrenderer_1_1IVulkanResource.html">renderer::IVulkanResource</a></td></tr>
 <tr class="memitem:a61ec5a63f0975be183a097611a475741 pub_methods_classrenderer_1_1IVulkanResource" id="r_a61ec5a63f0975be183a097611a475741"><td class="memItemLeft">
 void&#160;</td><td class="memItemRight"><b>markUploading</b> ()</td></tr>
@@ -226,6 +232,32 @@ class&#160;</td><td class="memItemRight"><b>VoxelSceneUpload</b></td></tr>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Immutable scene version and versions from small carves share buffers patched in place. </p>
 </div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
+<a id="a24304e9455d66251951245d14145cfda" name="a24304e9455d66251951245d14145cfda"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a24304e9455d66251951245d14145cfda">&#9670;&#160;</a></span>setBrickLists()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void renderer::VoxelGpuStorage::setBrickLists </td>
+          <td>(</td>
+          <td class="paramtype">std::vector&lt; std::shared_ptr&lt; const <a class="el" href="structrenderer_1_1VoxelBrickList.html">VoxelBrickList</a> &gt; &gt;</td>          <td class="paramname"><span class="paramname"><em>lists</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<dl class="section note"><dt>Note</dt><dd>Main thread only and before the upload is queued </dd></dl>
+
+</div>
+</div>
 <a id="a98cfe326f9399b7e43ddfb78d5accd5d" name="a98cfe326f9399b7e43ddfb78d5accd5d"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a98cfe326f9399b7e43ddfb78d5accd5d">&#9670;&#160;</a></span>setChangeHistory()</h2>
 
@@ -278,9 +310,35 @@ class&#160;</td><td class="memItemRight"><b>VoxelSceneUpload</b></td></tr>
 
 </div>
 </div>
+<a id="a7b39c85b419d9b7b9e723994b6a27956" name="a7b39c85b419d9b7b9e723994b6a27956"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7b39c85b419d9b7b9e723994b6a27956">&#9670;&#160;</a></span>setGlassBricks()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void renderer::VoxelGpuStorage::setGlassBricks </td>
+          <td>(</td>
+          <td class="paramtype">std::vector&lt; std::vector&lt; uint32_t &gt; &gt;</td>          <td class="paramname"><span class="paramname"><em>bricks</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Per record grid indices of its glass bricks </p><dl class="section note"><dt>Note</dt><dd>Main thread only and before the upload is queued </dd></dl>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>engine/src/toast/renderer/<a class="el" href="voxel__gpu__storage_8hpp_source.html">voxel_gpu_storage.hpp</a></li>
-<li>engine/src/toast/renderer/<b>voxel_gpu_storage.cpp</b></li>
+<li>engine/src/toast/renderer/voxel/<a class="el" href="voxel__gpu__storage_8hpp_source.html">voxel_gpu_storage.hpp</a></li>
+<li>engine/src/toast/renderer/voxel/<b>voxel_gpu_storage.cpp</b></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

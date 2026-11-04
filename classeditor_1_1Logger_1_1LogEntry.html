@@ -121,8 +121,8 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classeditor_1_
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a901e3513135467f5a8618194b6956e61" id="r_a901e3513135467f5a8618194b6956e61"><td class="memItemLeft"><a id="a901e3513135467f5a8618194b6956e61" name="a901e3513135467f5a8618194b6956e61"></a>
-&#160;</td><td class="memItemRight"><b>LogEntry</b> (ulong timestampNanos, uint severity, string filepath, uint line, string sink, string message)</td></tr>
+<tr class="memitem:ac0ad358186627320d7b9ddabf1829b81" id="r_ac0ad358186627320d7b9ddabf1829b81"><td class="memItemLeft"><a id="ac0ad358186627320d7b9ddabf1829b81" name="ac0ad358186627320d7b9ddabf1829b81"></a>
+&#160;</td><td class="memItemRight"><b>LogEntry</b> (ulong timestampNanos, uint severity, string filepath, uint line, string sink, string message, string details=&quot;&quot;, string backtrace=&quot;&quot;)</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-properties" class="groupheader"><a id="properties" name="properties"></a>
 Properties</h2></td></tr>
@@ -138,6 +138,14 @@ uint&#160;</td><td class="memItemRight"><b>Line</b><code> [get]</code></td></tr>
 string&#160;</td><td class="memItemRight"><b>Sink</b><code> [get]</code></td></tr>
 <tr class="memitem:a95157e2aa7480e8d6f0f03a7628fb0e8" id="r_a95157e2aa7480e8d6f0f03a7628fb0e8"><td class="memItemLeft"><a id="a95157e2aa7480e8d6f0f03a7628fb0e8" name="a95157e2aa7480e8d6f0f03a7628fb0e8"></a>
 string&#160;</td><td class="memItemRight"><b>Message</b><code> [get]</code></td></tr>
+<tr class="memitem:afb72fabdefe68a3340068e50f4d94ade" id="r_afb72fabdefe68a3340068e50f4d94ade"><td class="memItemLeft"><a id="afb72fabdefe68a3340068e50f4d94ade" name="afb72fabdefe68a3340068e50f4d94ade"></a>
+string&#160;</td><td class="memItemRight"><b>Details</b><code> [get]</code></td></tr>
+<tr class="memitem:acbb54a57328941fc86d55e150cf42e21" id="r_acbb54a57328941fc86d55e150cf42e21"><td class="memItemLeft"><a id="acbb54a57328941fc86d55e150cf42e21" name="acbb54a57328941fc86d55e150cf42e21"></a>
+string&#160;</td><td class="memItemRight"><b>Backtrace</b><code> [get]</code></td></tr>
+<tr class="memitem:abf7972ec847ccdbfc07a6627c971f740" id="r_abf7972ec847ccdbfc07a6627c971f740"><td class="memItemLeft"><a id="abf7972ec847ccdbfc07a6627c971f740" name="abf7972ec847ccdbfc07a6627c971f740"></a>
+bool&#160;</td><td class="memItemRight"><b>HasDetails</b><code> [get]</code></td></tr>
+<tr class="memitem:a1bf12bc82f6a2a822b6e6fd2ebfdea96" id="r_a1bf12bc82f6a2a822b6e6fd2ebfdea96"><td class="memItemLeft"><a id="a1bf12bc82f6a2a822b6e6fd2ebfdea96" name="a1bf12bc82f6a2a822b6e6fd2ebfdea96"></a>
+bool&#160;</td><td class="memItemRight"><b>HasBacktrace</b><code> [get]</code></td></tr>
 <tr class="memitem:a9ff92427ef6c4444bf7721af62484e9c" id="r_a9ff92427ef6c4444bf7721af62484e9c"><td class="memItemLeft"><a id="a9ff92427ef6c4444bf7721af62484e9c" name="a9ff92427ef6c4444bf7721af62484e9c"></a>
 string&#160;</td><td class="memItemRight"><b>SeverityName</b><code> [get]</code></td></tr>
 <tr class="memitem:a116522652e5481025d4400c1645e109f" id="r_a116522652e5481025d4400c1645e109f"><td class="memItemLeft"><a id="a116522652e5481025d4400c1645e109f" name="a116522652e5481025d4400c1645e109f"></a>

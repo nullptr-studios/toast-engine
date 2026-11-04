@@ -4,6 +4,7 @@ var dir_729089437374de6c0070cf9528807bff =
     [ "nodes", "dir_7c28f8af759e90719fa3745059aa0c8b.html", "dir_7c28f8af759e90719fa3745059aa0c8b" ],
     [ "brick.hpp", "brick_8hpp.html", "brick_8hpp" ],
     [ "brick_pool.hpp", "brick__pool_8hpp.html", "brick__pool_8hpp" ],
+    [ "brush_composer.hpp", "brush__composer_8hpp.html", null ],
     [ "connectivity.hpp", "connectivity_8hpp.html", "connectivity_8hpp" ],
     [ "destruction_event.hpp", "destruction__event_8hpp.html", "destruction__event_8hpp" ],
     [ "gpu_layout.hpp", "gpu__layout_8hpp.html", "gpu__layout_8hpp" ],

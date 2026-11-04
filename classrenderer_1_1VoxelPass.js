@@ -1,13 +1,28 @@
 var classrenderer_1_1VoxelPass =
 [
+    [ "GlassDraw", "structrenderer_1_1VoxelPass_1_1GlassDraw.html", null ],
+    [ "ambientRaysActive", "classrenderer_1_1VoxelPass.html#a236cbd3049cf0bbc93e8e107adde3b86", null ],
+    [ "denoiseActive", "classrenderer_1_1VoxelPass.html#aabf852a97c975abca57d33b1ce497f79", null ],
+    [ "glassDraws", "classrenderer_1_1VoxelPass.html#adb4ca96742622156fd42dd59d25a23eb", null ],
+    [ "marchedCompositeActive", "classrenderer_1_1VoxelPass.html#a07c3183651aa6e8a2afce235fe4f8c5b", null ],
     [ "nearQuadDepthPass", "classrenderer_1_1VoxelPass.html#a162084a9ddffcd5c6f9394aed579bcb4", null ],
     [ "occlusionActive", "classrenderer_1_1VoxelPass.html#a9c87ad8986736b4b204cff7aaf00eb29", null ],
     [ "onTargetsRecreated", "classrenderer_1_1VoxelPass.html#a86cfe941b78bf7fabbd28ea1e822c90f", null ],
     [ "prepare", "classrenderer_1_1VoxelPass.html#a4ac25edb357683e5154b03bb0e6e1f1f", null ],
     [ "record", "classrenderer_1_1VoxelPass.html#a6498df8bfa9f8fbb4aa5873184708fe4", null ],
+    [ "recordAmbient", "classrenderer_1_1VoxelPass.html#a24b6924f3852da24b6bc15238975afd9", null ],
     [ "recordCellCull", "classrenderer_1_1VoxelPass.html#aabd5d8148fa70a3911baa330b2453cf5", null ],
+    [ "recordDenoiseComposite", "classrenderer_1_1VoxelPass.html#a65ccc7ad91b774f83f5fe7788f9610fa", null ],
+    [ "recordDenoiseTemporal", "classrenderer_1_1VoxelPass.html#a9beab196d01d75c0a41036b1c646763e", null ],
+    [ "recordGlass", "classrenderer_1_1VoxelPass.html#af09bfe6c7c2eea1d3d9cbf251dcaaf2e", null ],
+    [ "recordGlassSurfaces", "classrenderer_1_1VoxelPass.html#a24f2c9ba12ba266c1c25bcb5d6fd948a", null ],
     [ "recordLate", "classrenderer_1_1VoxelPass.html#ab15c0b117d48dd90b296066c9a4798e5", null ],
     [ "recordLighting", "classrenderer_1_1VoxelPass.html#aea5a161a0a8f33026be60c85428e3b53", null ],
+    [ "recordMarched", "classrenderer_1_1VoxelPass.html#a35d422b6a41d6324845d4c0f88c13159", null ],
+    [ "recordMarchedComposite", "classrenderer_1_1VoxelPass.html#a707ca07b3d884e022989069429c6cd16", null ],
     [ "recordOcclusion", "classrenderer_1_1VoxelPass.html#ad2f1969c323e30dea17c0c2e4f866d1c", null ],
-    [ "recordQuadDepth", "classrenderer_1_1VoxelPass.html#acf15185b20303261cf938694283ac3cf", null ]
+    [ "recordQuadDepth", "classrenderer_1_1VoxelPass.html#acf15185b20303261cf938694283ac3cf", null ],
+    [ "recordSpatial", "classrenderer_1_1VoxelPass.html#a0ee8b75134b7db0ec2d618e41a40637b", null ],
+    [ "refractsGlass", "classrenderer_1_1VoxelPass.html#a56b5af37ed73efff85d04b6ce443494b", null ],
+    [ "spatialActive", "classrenderer_1_1VoxelPass.html#a14be3f339a0f0f4733d5e9b476e72a75", null ]
 ];

@@ -143,6 +143,7 @@ Collaboration diagram for renderer::BloomPass:</div>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a8609ae846fbf34bced9a63587ecfd9a7" id="r_a8609ae846fbf34bced9a63587ecfd9a7"><td class="memItemLeft"><a id="a8609ae846fbf34bced9a63587ecfd9a7" name="a8609ae846fbf34bced9a63587ecfd9a7"></a>
 &#160;</td><td class="memItemRight"><b>BloomPass</b> (const <a class="el" href="classrenderer_1_1VulkanCore.html">VulkanCore</a> &amp;core, vk::Format hdr_format, vk::Extent2D extent)</td></tr>
+<tr class="memitem:a94b1f7c6f3a28f22b222902cf17656f8" id="r_a94b1f7c6f3a28f22b222902cf17656f8"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a94b1f7c6f3a28f22b222902cf17656f8">atOutputResolution</a> () const -&gt; bool override</td></tr>
 <tr class="memitem:a442404df74e04b845ef7e25715669c24" id="r_a442404df74e04b845ef7e25715669c24"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a442404df74e04b845ef7e25715669c24">name</a> () const -&gt; std::string_view override</td></tr>
 <tr class="memitem:aae6f0c17b6a14485b93e20ad019971aa" id="r_aae6f0c17b6a14485b93e20ad019971aa"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#aae6f0c17b6a14485b93e20ad019971aa">record</a> (vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView source_view) -&gt; vk::ImageView override</td></tr>
 <tr class="memitem:a884343a6deed5c37aab13a0cd8d7a6b9" id="r_a884343a6deed5c37aab13a0cd8d7a6b9"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a884343a6deed5c37aab13a0cd8d7a6b9">onResize</a> (vk::Extent2D extent) override</td></tr>
@@ -153,6 +154,33 @@ void&#160;</td><td class="memItemRight"><b>setEnabled</b> (bool enabled) noexcep
 auto&#160;</td><td class="memItemRight"><b>isEnabled</b> () const noexcept -&gt; bool</td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
+<a id="a94b1f7c6f3a28f22b222902cf17656f8" name="a94b1f7c6f3a28f22b222902cf17656f8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a94b1f7c6f3a28f22b222902cf17656f8">&#9670;&#160;</a></span>atOutputResolution()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto renderer::BloomPass::atOutputResolution </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td> const -&gt; bool</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel nodiscard">nodiscard</span><span class="mlabel override">override</span><span class="mlabel virtual">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Reimplemented from <a class="el" href="classrenderer_1_1IPostProcessPass.html">renderer::IPostProcessPass</a>.</p>
+
+</div>
+</div>
 <a id="a442404df74e04b845ef7e25715669c24" name="a442404df74e04b845ef7e25715669c24"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a442404df74e04b845ef7e25715669c24">&#9670;&#160;</a></span>name()</h2>
 
@@ -254,8 +282,8 @@ Here is the caller graph for this function:</div>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>engine/src/toast/renderer/passes/<a class="el" href="bloom__pass_8hpp_source.html">bloom_pass.hpp</a></li>
-<li>engine/src/toast/renderer/passes/<a class="el" href="bloom__pass_8cpp.html">bloom_pass.cpp</a></li>
+<li>engine/src/toast/renderer/passes/post/<a class="el" href="bloom__pass_8hpp_source.html">bloom_pass.hpp</a></li>
+<li>engine/src/toast/renderer/passes/post/<a class="el" href="bloom__pass_8cpp.html">bloom_pass.cpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

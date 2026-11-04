@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.17.0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Toast Engine: engine/src/toast/renderer/vulkan_texture.hpp Source File</title>
+<title>Toast Engine: engine/src/toast/renderer/resources/vulkan_texture.hpp Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="codefolding.js"></script>
 <script type="text/javascript" src="clipboard.js"></script>
@@ -122,8 +122,8 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('vulkan__textur
 <div class="line"><a id="l00004" name="l00004"></a><span class="lineno">    4</span> </div>
 <div class="line"><a id="l00005" name="l00005"></a><span class="lineno">    5</span><span class="preprocessor">#pragma once</span></div>
 <div class="line"><a id="l00006" name="l00006"></a><span class="lineno">    6</span><span class="preprocessor">#include &quot;ktx.h&quot;</span></div>
-<div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span><span class="preprocessor">#include &quot;vulkan_common.hpp&quot;</span></div>
-<div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="preprocessor">#include &quot;<a class="code" href="vulkan__resource__base_8hpp.html">vulkan_resource_base.hpp</a>&quot;</span></div>
+<div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span><span class="preprocessor">#include &quot;toast/renderer/core/vulkan_common.hpp&quot;</span></div>
+<div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="preprocessor">#include &quot;<a class="code" href="vulkan__resource__base_8hpp.html">toast/renderer/core/vulkan_resource_base.hpp</a>&quot;</span></div>
 <div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span> </div>
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &lt;cstdint&gt;</span></div>
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &lt;string&gt;</span></div>
@@ -250,12 +250,12 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('vulkan__textur
 <div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>}</div>
 <div class="ttc" id="aclassrenderer_1_1IVulkanResource_html"><div class="ttname"><a href="classrenderer_1_1IVulkanResource.html">renderer::IVulkanResource</a></div><div class="ttdef"><b>Definition</b> vulkan_resource_base.hpp:12</div></div>
 <div class="ttc" id="aclassrenderer_1_1PendingResourceUpload_html"><div class="ttname"><a href="classrenderer_1_1PendingResourceUpload.html">renderer::PendingResourceUpload</a></div><div class="ttdef"><b>Definition</b> vulkan_resource_base.hpp:48</div></div>
-<div class="ttc" id="aclassrenderer_1_1RawTextureUpload_html_a5f0308f49ef1b79fa3ab09135de1fb59"><div class="ttname"><a href="classrenderer_1_1RawTextureUpload.html#a5f0308f49ef1b79fa3ab09135de1fb59">renderer::RawTextureUpload::recordAcquire</a></div><div class="ttdeci">void recordAcquire(sync::BarrierBatch &amp;batch) override</div><div class="ttdoc">On the consuming queue after the upload fence signalled. No op for an upload that stayed on one queue...</div><div class="ttdef"><b>Definition</b> vulkan_texture.cpp:274</div></div>
-<div class="ttc" id="aclassrenderer_1_1TextureUpload_html_ad2843abde7c3d4e9957fc05a95da468d"><div class="ttname"><a href="classrenderer_1_1TextureUpload.html#ad2843abde7c3d4e9957fc05a95da468d">renderer::TextureUpload::recordAcquire</a></div><div class="ttdeci">void recordAcquire(sync::BarrierBatch &amp;batch) override</div><div class="ttdoc">On the consuming queue after the upload fence signalled. No op for an upload that stayed on one queue...</div><div class="ttdef"><b>Definition</b> vulkan_texture.cpp:208</div></div>
-<div class="ttc" id="aclassrenderer_1_1VulkanCore_html"><div class="ttname"><a href="classrenderer_1_1VulkanCore.html">renderer::VulkanCore</a></div><div class="ttdef"><b>Definition</b> vulkan_core.hpp:48</div></div>
+<div class="ttc" id="aclassrenderer_1_1RawTextureUpload_html_a5f0308f49ef1b79fa3ab09135de1fb59"><div class="ttname"><a href="classrenderer_1_1RawTextureUpload.html#a5f0308f49ef1b79fa3ab09135de1fb59">renderer::RawTextureUpload::recordAcquire</a></div><div class="ttdeci">void recordAcquire(sync::BarrierBatch &amp;batch) override</div><div class="ttdoc">On the consuming queue after the upload fence signalled. No op for an upload that stayed on one queue...</div><div class="ttdef"><b>Definition</b> vulkan_texture.cpp:265</div></div>
+<div class="ttc" id="aclassrenderer_1_1TextureUpload_html_ad2843abde7c3d4e9957fc05a95da468d"><div class="ttname"><a href="classrenderer_1_1TextureUpload.html#ad2843abde7c3d4e9957fc05a95da468d">renderer::TextureUpload::recordAcquire</a></div><div class="ttdeci">void recordAcquire(sync::BarrierBatch &amp;batch) override</div><div class="ttdoc">On the consuming queue after the upload fence signalled. No op for an upload that stayed on one queue...</div><div class="ttdef"><b>Definition</b> vulkan_texture.cpp:199</div></div>
+<div class="ttc" id="aclassrenderer_1_1VulkanCore_html"><div class="ttname"><a href="classrenderer_1_1VulkanCore.html">renderer::VulkanCore</a></div><div class="ttdef"><b>Definition</b> vulkan_core.hpp:50</div></div>
 <div class="ttc" id="aclassrenderer_1_1VulkanTexture_html"><div class="ttname"><a href="classrenderer_1_1VulkanTexture.html">renderer::VulkanTexture</a></div><div class="ttdef"><b>Definition</b> vulkan_texture.hpp:16</div></div>
 <div class="ttc" id="aclassrenderer_1_1VulkanTexture_html_aad422eddee103e4b8a428aabd47462c7"><div class="ttname"><a href="classrenderer_1_1VulkanTexture.html#aad422eddee103e4b8a428aabd47462c7">renderer::VulkanTexture::generation</a></div><div class="ttdeci">auto generation() const noexcept -&gt; uint64_t</div><div class="ttdoc">Unique per create() so a descriptor cache notices a recreated view that reuses a destroyed handle val...</div><div class="ttdef"><b>Definition</b> vulkan_texture.hpp:48</div></div>
-<div class="ttc" id="aclassrenderer_1_1sync_1_1BarrierBatch_html"><div class="ttname"><a href="classrenderer_1_1sync_1_1BarrierBatch.html">renderer::sync::BarrierBatch</a></div><div class="ttdoc">Skips a barrier only when neither side writes and the layout and next read stages are already covered...</div><div class="ttdef"><b>Definition</b> gpu_sync.hpp:105</div></div>
+<div class="ttc" id="aclassrenderer_1_1sync_1_1BarrierBatch_html"><div class="ttname"><a href="classrenderer_1_1sync_1_1BarrierBatch.html">renderer::sync::BarrierBatch</a></div><div class="ttdoc">Skips a barrier only when neither side writes and the layout and next read stages are already covered...</div><div class="ttdef"><b>Definition</b> gpu_sync.hpp:109</div></div>
 <div class="ttc" id="astructrenderer_1_1VulkanTexture_1_1Params_html"><div class="ttname"><a href="structrenderer_1_1VulkanTexture_1_1Params.html">renderer::VulkanTexture::Params</a></div><div class="ttdef"><b>Definition</b> vulkan_texture.hpp:20</div></div>
 <div class="ttc" id="avulkan__resource__base_8hpp_html"><div class="ttname"><a href="vulkan__resource__base_8hpp.html">vulkan_resource_base.hpp</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
@@ -264,7 +264,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('vulkan__textur
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><b>engine</b></li><li class="navelem"><b>src</b></li><li class="navelem"><b>toast</b></li><li class="navelem"><b>renderer</b></li><li class="navelem"><a href="vulkan__texture_8hpp.html">vulkan_texture.hpp</a></li>
+    <li class="navelem"><b>engine</b></li><li class="navelem"><b>src</b></li><li class="navelem"><b>toast</b></li><li class="navelem"><b>renderer</b></li><li class="navelem"><b>resources</b></li><li class="navelem"><a href="vulkan__texture_8hpp.html">vulkan_texture.hpp</a></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.17.0 </li>
   </ul>
 </div>

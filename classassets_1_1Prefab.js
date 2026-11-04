@@ -6,6 +6,7 @@ var classassets_1_1Prefab =
     [ "LuaVarOverride", "structassets_1_1Prefab_1_1LuaVarOverride.html", null ],
     [ "SignalConnection", "structassets_1_1Prefab_1_1SignalConnection.html", null ],
     [ "Signal", "structassets_1_1Prefab_1_1Signal.html", null ],
+    [ "InteriorOverride", "structassets_1_1Prefab_1_1InteriorOverride.html", null ],
     [ "BasicNode", "structassets_1_1Prefab_1_1BasicNode.html", "structassets_1_1Prefab_1_1BasicNode" ],
     [ "Prefab", "classassets_1_1Prefab.html#a54f959eb9a48c453f92a10a81467bff3", null ],
     [ "Prefab", "classassets_1_1Prefab.html#a46610436e751d4c0598853829b36bf91", null ],

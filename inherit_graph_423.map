@@ -1,3 +1,27 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="Node000000" href="$structrenderer_1_1shadow__slots_1_1Slot.html" title=" " alt="" coords="5,5,178,50"/>
+<area shape="rect" id="Node000000" href="$classrenderer_1_1IPostProcessPass.html" title=" " alt="" coords="5,292,201,320"/>
+<area shape="rect" id="Node000001" href="$classrenderer_1_1BloomPass.html" title=" " alt="" coords="277,5,432,33"/>
+<area shape="poly" id="edge600_Node000000_Node000001" title=" " alt="" coords="110,276,127,225,155,162,194,98,219,69,247,44,278,29,274,33,250,48,223,73,199,101,159,165,132,227,115,278"/>
+<area shape="rect" id="Node000002" href="$classrenderer_1_1FxaaPass.html" title=" " alt="" coords="282,57,427,85"/>
+<area shape="poly" id="edge601_Node000000_Node000002" title=" " alt="" coords="114,276,133,236,163,187,201,137,247,96,283,80,279,84,250,100,205,141,167,190,138,238,118,279"/>
+<area shape="rect" id="Node000003" href="$classrenderer_1_1GiPass.html" title=" " alt="" coords="291,109,418,137"/>
+<area shape="poly" id="edge602_Node000000_Node000003" title=" " alt="" coords="119,278,171,212,207,177,247,148,292,131,289,135,250,152,210,181,175,216,124,281"/>
+<area shape="rect" id="Node000004" href="$classrenderer_1_1LensFlarePass.html" title=" " alt="" coords="266,161,442,189"/>
+<area shape="poly" id="edge603_Node000000_Node000004" title=" " alt="" coords="129,280,182,238,248,199,284,188,280,191,250,204,185,243,133,283"/>
+<area shape="rect" id="Node000005" href="$classrenderer_1_1MotionBlurPass.html" title=" " alt="" coords="262,213,446,241"/>
+<area shape="poly" id="edge604_Node000000_Node000005" title=" " alt="" coords="154,284,248,251,295,240,290,243,249,256,157,288"/>
+<area shape="rect" id="Node000006" href="$classrenderer_1_1SsaoPass.html" title=" " alt="" coords="282,265,426,293"/>
+<area shape="poly" id="edge605_Node000000_Node000006" title=" " alt="" coords="215,291,284,285,280,288,217,296"/>
+<area shape="rect" id="Node000007" href="$classrenderer_1_1SsrPass.html" title="Half resolution stochastic SSR." alt="" coords="288,317,421,345"/>
+<area shape="poly" id="edge606_Node000000_Node000007" title=" " alt="" coords="215,315,289,323,285,326,217,320"/>
+<area shape="rect" id="Node000008" href="$classrenderer_1_1TaaPass.html" title=" " alt="" coords="287,369,422,397"/>
+<area shape="poly" id="edge607_Node000000_Node000008" title=" " alt="" coords="157,323,249,354,295,368,290,370,248,359,157,328"/>
+<area shape="rect" id="Node000009" href="$classrenderer_1_1TonemapPass.html" title=" " alt="" coords="268,421,440,449"/>
+<area shape="poly" id="edge608_Node000000_Node000009" title=" " alt="" coords="131,327,185,368,250,406,284,420,279,421,248,411,182,372,131,332"/>
+<area shape="rect" id="Node000010" href="$classrenderer_1_1TracedShadowPass.html" title=" " alt="" coords="251,473,458,501"/>
+<area shape="poly" id="edge609_Node000000_Node000010" title=" " alt="" coords="122,330,175,395,211,429,250,458,278,473,273,473,247,463,207,434,171,399,121,335"/>
+<area shape="rect" id="Node000011" href="$classrenderer_1_1TracedSpecularPass.html" title="GGX rays for reflective voxels at half resolution in place of their environment specular." alt="" coords="249,525,460,553"/>
+<area shape="poly" id="edge610_Node000000_Node000011" title=" " alt="" coords="116,331,138,373,167,421,205,470,250,510,275,525,270,525,247,515,201,473,163,424,134,376,116,337"/>
+<area shape="rect" id="Node000012" href="$classrenderer_1_1VolumetricPass.html" title="Height fog and fog volumes marched at half or quarter resolution." alt="" coords="263,577,446,605"/>
+<area shape="poly" id="edge611_Node000000_Node000012" title=" " alt="" coords="113,332,132,384,159,446,199,509,223,538,250,562,272,577,267,576,247,567,219,541,194,512,155,449,127,386,112,337"/>
 </map>

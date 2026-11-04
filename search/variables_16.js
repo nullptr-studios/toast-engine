@@ -1,11 +1,14 @@
 var searchData=
 [
-  ['went_5fto_5fsleep_0',['went_to_sleep',['../classtoast_1_1VoxelNode.html#aaeeb4aa7c4bf722b8de9a21c0b3f5124',1,'toast::VoxelNode']]],
-  ['woke_5fup_1',['woke_up',['../classtoast_1_1VoxelNode.html#a4a43a9cecbd2c6a179d43cd65859f194',1,'toast::VoxelNode']]],
-  ['woken_5fby_5fapproach_2',['woken_by_approach',['../structphysics_1_1Simulator_1_1PhysicsStepProfile.html#ab6a13f32cd4095667f88412cad8ea651',1,'physics::Simulator::PhysicsStepProfile']]],
-  ['words_3',['words',['../structvoxel_1_1gpu_1_1PatchSection.html#a24b5bbd5f8f1de3b5591cdb4b966289a',1,'voxel::gpu::PatchSection']]],
-  ['workers_4',['workers',['../classtoast_1_1ThreadPool.html#af305acd8e97e2cdb865374242aa37ea5',1,'toast::ThreadPool']]],
-  ['world_5fforward_5',['world_forward',['../classtoast_1_1Node3D.html#a5e561b9e6b96f3843c722afe5484eb3e',1,'toast::Node3D']]],
-  ['world_5fright_6',['world_right',['../classtoast_1_1Node3D.html#a2d913a74b7475030c6188786d3d716dc',1,'toast::Node3D']]],
-  ['write_5fcolor_5falpha_7',['write_color_alpha',['../structrenderer_1_1VulkanPipeline_1_1Config.html#a3d524043f5aebfb13608699e622f773d',1,'renderer::VulkanPipeline::Config']]]
+  ['waiting_0',['waiting',['../structrenderer_1_1VoxelBlasCache_1_1Stats.html#a08bfca12b711650bfd967a4ed9b1bfa8',1,'renderer::VoxelBlasCache::Stats']]],
+  ['went_5fto_5fsleep_1',['went_to_sleep',['../classtoast_1_1VoxelNode.html#aaeeb4aa7c4bf722b8de9a21c0b3f5124',1,'toast::VoxelNode']]],
+  ['wind_5fscale_2',['wind_scale',['../structrenderer_1_1FogVolumeGpu.html#a39940f208e848ccad495446d98f1400f',1,'renderer::FogVolumeGpu']]],
+  ['woke_5fup_3',['woke_up',['../classtoast_1_1VoxelNode.html#a4a43a9cecbd2c6a179d43cd65859f194',1,'toast::VoxelNode']]],
+  ['woken_5fby_5fapproach_4',['woken_by_approach',['../structphysics_1_1Simulator_1_1PhysicsStepProfile.html#ab6a13f32cd4095667f88412cad8ea651',1,'physics::Simulator::PhysicsStepProfile']]],
+  ['words_5',['words',['../structvoxel_1_1gpu_1_1PatchSection.html#a24b5bbd5f8f1de3b5591cdb4b966289a',1,'voxel::gpu::PatchSection']]],
+  ['workers_6',['workers',['../classtoast_1_1ThreadPool.html#af305acd8e97e2cdb865374242aa37ea5',1,'toast::ThreadPool']]],
+  ['world_5fforward_7',['world_forward',['../classtoast_1_1Node3D.html#a5e561b9e6b96f3843c722afe5484eb3e',1,'toast::Node3D']]],
+  ['world_5fright_8',['world_right',['../classtoast_1_1Node3D.html#a2d913a74b7475030c6188786d3d716dc',1,'toast::Node3D']]],
+  ['write_5fcolor_9',['write_color',['../structrenderer_1_1VulkanPipeline_1_1Config.html#a2f642b7cb155a8e9062ef29878a3e4ea',1,'renderer::VulkanPipeline::Config']]],
+  ['write_5fcolor_5falpha_10',['write_color_alpha',['../structrenderer_1_1VulkanPipeline_1_1Config.html#a3d524043f5aebfb13608699e622f773d',1,'renderer::VulkanPipeline::Config']]]
 ];

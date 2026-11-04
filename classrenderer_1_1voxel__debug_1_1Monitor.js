@@ -1,5 +1,5 @@
 var classrenderer_1_1voxel__debug_1_1Monitor =
 [
-    [ "drawOverlay", "classrenderer_1_1voxel__debug_1_1Monitor.html#aba4962c6d7ea28ac4fcae1511eca461c", null ],
-    [ "drawPanel", "classrenderer_1_1voxel__debug_1_1Monitor.html#a6b2ed0d73cc6dec17b69b381646fa8bd", null ]
+    [ "drawOverlay", "classrenderer_1_1voxel__debug_1_1Monitor.html#a93a01eda4934b45fafb3b3e8839eade1", null ],
+    [ "drawPanel", "classrenderer_1_1voxel__debug_1_1Monitor.html#ae09f8519541cbea9abd74ce9a0ec45e2", null ]
 ];

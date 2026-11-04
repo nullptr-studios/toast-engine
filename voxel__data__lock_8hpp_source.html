@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__data__l
 <div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="keyword">namespace </span>physics {</div>
 <div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span> </div>
 <div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span>[[nodiscard]]</div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>TOAST_API <span class="keyword">auto</span> voxelDataMutex() -&gt; std::mutex&amp;;</div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>TOAST_API <span class="keyword">auto</span> voxelDataMutex() -&gt; std::recursive_mutex&amp;;</div>
 <div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span> </div>
 <div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>}</div>
 <div class="ttc" id="aexport_8hpp_html"><div class="ttname"><a href="export_8hpp.html">export.hpp</a></div></div>

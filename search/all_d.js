@@ -5,7 +5,7 @@ var searchData=
   ['namedschemaentry_2',['NamedSchemaEntry',['../structassets_1_1NamedSchemaEntry.html',1,'assets']]],
   ['narrow_5fphase_2ehpp_3',['narrow_phase.hpp',['../narrow__phase_8hpp.html',1,'']]],
   ['narrowphase_4',['NarrowPhase',['../classphysics_1_1NarrowPhase.html',1,'physics']]],
-  ['near_5fplane_5',['near_plane',['../structrenderer_1_1VulkanRenderer_1_1RenderFrame.html#a009eff16459e7d898f88f864b0ce5fd5',1,'renderer::VulkanRenderer::RenderFrame']]],
+  ['near_5fplane_5',['near_plane',['../structrenderer_1_1RenderFrame.html#a9de8817e9cd5110ffab4fba8bc05c2e8',1,'renderer::RenderFrame']]],
   ['nearquaddepthpass_6',['nearQuadDepthPass',['../classrenderer_1_1VoxelPass.html#a162084a9ddffcd5c6f9394aed579bcb4',1,'renderer::VoxelPass']]],
   ['newfoldermodal_7',['NewFolderModal',['../classeditor_1_1Components_1_1Modals_1_1NewFolderModal.html',1,'editor::Components::Modals']]],
   ['newgroup_8',['newGroup',['../classscripting_1_1LuaState.html#a40eb081d8fed25da4654de654721fd8f',1,'scripting::LuaState']]],
@@ -51,9 +51,10 @@ var searchData=
   ['nodetypeinfo_48',['NodeTypeInfo',['../structtoast_1_1NodeTypeInfo.html',1,'toast']]],
   ['nodetypepickerviewmodel_49',['NodeTypePickerViewModel',['../classeditor_1_1Components_1_1Modals_1_1NodeTypePickerViewModel.html',1,'editor::Components::Modals']]],
   ['nodetypetree_50',['NodeTypeTree',['../classeditor_1_1Components_1_1Modals_1_1NodeTypeTree.html',1,'editor::Components::Modals']]],
-  ['nominalsize_51',['nominalSize',['../classtoast_1_1VoxelPiece.html#afd0a13722e400910f38018b3a7a7b800',1,'toast::VoxelPiece']]],
-  ['nonblockingscope_52',['NonBlockingScope',['../classscripting_1_1LuaState_1_1NonBlockingScope.html',1,'scripting::LuaState']]],
-  ['none_53',['none',['../gpu__sync_8hpp.html#aafc90ea87b17d3cde4a806db138fc1f5a334c4a4c42fdb79d7ebc3e73b517e6f8',1,'renderer::sync']]],
-  ['normal_54',['normal',['../structphysics_1_1CachedManifold.html#a0cbb925c49848c682570d9f97a6af606',1,'physics::CachedManifold::normal'],['../structvoxel_1_1VolumeHit.html#a5bb4d688478eef05dffe2bb081293b08',1,'voxel::VolumeHit::normal']]],
-  ['notify_55',['&lt;span class=&quot;tt&quot;&gt;notify()&lt;/span&gt;',['../md_docs_2event__system.html#autotoc_md17',1,'']]]
+  ['noise_5fparams_51',['noise_params',['../structrenderer_1_1FrameUBO.html#ad7d087140130a043d6e31e1a078ee2b0',1,'renderer::FrameUBO']]],
+  ['nominalsize_52',['nominalSize',['../classtoast_1_1VoxelPiece.html#afd0a13722e400910f38018b3a7a7b800',1,'toast::VoxelPiece']]],
+  ['nonblockingscope_53',['NonBlockingScope',['../classscripting_1_1LuaState_1_1NonBlockingScope.html',1,'scripting::LuaState']]],
+  ['none_54',['none',['../gpu__sync_8hpp.html#aafc90ea87b17d3cde4a806db138fc1f5a334c4a4c42fdb79d7ebc3e73b517e6f8',1,'renderer::sync']]],
+  ['normal_55',['normal',['../structphysics_1_1CachedManifold.html#a0cbb925c49848c682570d9f97a6af606',1,'physics::CachedManifold::normal'],['../structvoxel_1_1VolumeHit.html#a5bb4d688478eef05dffe2bb081293b08',1,'voxel::VolumeHit::normal']]],
+  ['notify_56',['&lt;span class=&quot;tt&quot;&gt;notify()&lt;/span&gt;',['../md_docs_2event__system.html#autotoc_md17',1,'']]]
 ];

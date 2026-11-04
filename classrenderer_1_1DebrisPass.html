@@ -141,12 +141,15 @@ Collaboration diagram for renderer::DebrisPass:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:aa40b9e8365df545d6d90752b4d18571c" id="r_aa40b9e8365df545d6d90752b4d18571c"><td class="memItemLeft"><a id="aa40b9e8365df545d6d90752b4d18571c" name="aa40b9e8365df545d6d90752b4d18571c"></a>
-&#160;</td><td class="memItemRight"><b>DebrisPass</b> (const <a class="el" href="classrenderer_1_1VulkanCore.html">VulkanCore</a> &amp;core, vk::Format depth_format, vk::Extent2D extent, std::shared_ptr&lt; <a class="el" href="classphysics_1_1DebrisSimulation.html">physics::DebrisSimulation</a> &gt; simulation)</td></tr>
+<tr class="memitem:a87914ea4fb8eff22e476e86a0d8141e8" id="r_a87914ea4fb8eff22e476e86a0d8141e8"><td class="memItemLeft"><a id="a87914ea4fb8eff22e476e86a0d8141e8" name="a87914ea4fb8eff22e476e86a0d8141e8"></a>
+&#160;</td><td class="memItemRight"><b>DebrisPass</b> (const <a class="el" href="classrenderer_1_1VulkanCore.html">VulkanCore</a> &amp;core, vk::Format scene_format, vk::Format depth_format, vk::Extent2D extent, std::shared_ptr&lt; <a class="el" href="classphysics_1_1DebrisSimulation.html">physics::DebrisSimulation</a> &gt; simulation)</td></tr>
 <tr class="memitem:a967687696c9df0ee23380dc58446f74d" id="r_a967687696c9df0ee23380dc58446f74d"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a967687696c9df0ee23380dc58446f74d">stage</a> () const -&gt; RenderStage override</td></tr>
 <tr class="memitem:aec931c84aa8d3bbc32e0b9006225dbd3" id="r_aec931c84aa8d3bbc32e0b9006225dbd3"><td class="memItemLeft"><a id="aec931c84aa8d3bbc32e0b9006225dbd3" name="aec931c84aa8d3bbc32e0b9006225dbd3"></a>
 auto&#160;</td><td class="memItemRight"><b>prepare</b> (vk::CommandBuffer cmd, uint32_t frame_index) -&gt; bool</td></tr>
 <tr class="memitem:af7d219455d2f3d220c5f8d1f936cd72f" id="r_af7d219455d2f3d220c5f8d1f936cd72f"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#af7d219455d2f3d220c5f8d1f936cd72f">record</a> (vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) override</td></tr>
+<tr class="memitem:a94c92fe0628d143e5dcd16245490fa53" id="r_a94c92fe0628d143e5dcd16245490fa53"><td class="memItemLeft"><a id="a94c92fe0628d143e5dcd16245490fa53" name="a94c92fe0628d143e5dcd16245490fa53"></a>
+void&#160;</td><td class="memItemRight"><b>recordGlass</b> (vk::CommandBuffer cmd, uint32_t frame_index)</td></tr>
+<tr class="memdesc:a94c92fe0628d143e5dcd16245490fa53"><td class="mdescLeft">&#160;</td><td class="mdescRight">World scope with the blended draws, after record() in the same frame. <br /></td></tr>
 <tr class="memitem:ad5648950490b38f5b8763dabbd7e3953" id="r_ad5648950490b38f5b8763dabbd7e3953"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#ad5648950490b38f5b8763dabbd7e3953">name</a> () const -&gt; std::string_view override</td></tr>
 <tr class="inherit_header pub_methods_classIRenderPass"><td colspan="2">Public Member Functions inherited from <a class="el" href="classIRenderPass.html">IRenderPass</a></td></tr>
 <tr class="memitem:a37aa8b6af93965bee7b343c6cfa68128 pub_methods_classIRenderPass" id="r_a37aa8b6af93965bee7b343c6cfa68128"><td class="memItemLeft">
@@ -250,8 +253,8 @@ auto&#160;</td><td class="memItemRight"><b>isEnabled</b> () const noexcept -&gt;
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>engine/src/toast/renderer/passes/<a class="el" href="debris__pass_8hpp_source.html">debris_pass.hpp</a></li>
-<li>engine/src/toast/renderer/passes/<b>debris_pass.cpp</b></li>
+<li>engine/src/toast/renderer/passes/geometry/<a class="el" href="debris__pass_8hpp_source.html">debris_pass.hpp</a></li>
+<li>engine/src/toast/renderer/passes/geometry/<b>debris_pass.cpp</b></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

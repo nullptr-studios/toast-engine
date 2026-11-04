@@ -148,8 +148,8 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ab6ffe9c67725efbba09cc8457f3c4c6d" id="r_ab6ffe9c67725efbba09cc8457f3c4c6d"><td class="memItemLeft"><a id="ab6ffe9c67725efbba09cc8457f3c4c6d" name="ab6ffe9c67725efbba09cc8457f3c4c6d"></a>
-&#160;</td><td class="memItemRight"><b>DebrisSimulation</b> (uint32_t capacity)</td></tr>
+<tr class="memitem:a4d8f97dee2f13197cd5b045b045841e4" id="r_a4d8f97dee2f13197cd5b045b045841e4"><td class="memItemLeft"><a id="a4d8f97dee2f13197cd5b045b045841e4" name="a4d8f97dee2f13197cd5b045b045841e4"></a>
+&#160;</td><td class="memItemRight"><b>DebrisSimulation</b> (uint32_t max_particles)</td></tr>
 <tr class="memitem:a96ef99e46a4256cc554cfe9c81b879d4" id="r_a96ef99e46a4256cc554cfe9c81b879d4"><td class="memItemLeft"><a id="a96ef99e46a4256cc554cfe9c81b879d4" name="a96ef99e46a4256cc554cfe9c81b879d4"></a>
 &#160;</td><td class="memItemRight"><b>DebrisSimulation</b> (const DebrisSimulation &amp;)=delete</td></tr>
 <tr class="memitem:a66d45d4805440d682ecd7c3d0f10538d" id="r_a66d45d4805440d682ecd7c3d0f10538d"><td class="memItemLeft"><a id="a66d45d4805440d682ecd7c3d0f10538d" name="a66d45d4805440d682ecd7c3d0f10538d"></a>
@@ -215,6 +215,16 @@ static constexpr uint32_t&#160;</td><td class="memItemRight"><b>k_max_spawns_per
 static constexpr uint32_t&#160;</td><td class="memItemRight"><b>k_max_volumes</b> = 512</td></tr>
 <tr class="memitem:ad3c1faa0ed9cc03c7d0bb5ef94b4247f" id="r_ad3c1faa0ed9cc03c7d0bb5ef94b4247f"><td class="memItemLeft"><a id="ad3c1faa0ed9cc03c7d0bb5ef94b4247f" name="ad3c1faa0ed9cc03c7d0bb5ef94b4247f"></a>
 static constexpr uint32_t&#160;</td><td class="memItemRight"><b>k_voxels_per_particle</b> = 8</td></tr>
+<tr class="memitem:a706a55d5f2ab657234ebd05fd388de36" id="r_a706a55d5f2ab657234ebd05fd388de36"><td class="memItemLeft"><a id="a706a55d5f2ab657234ebd05fd388de36" name="a706a55d5f2ab657234ebd05fd388de36"></a>
+static constexpr uint32_t&#160;</td><td class="memItemRight"><b>k_flag_glass</b> = 1u &lt;&lt; 25</td></tr>
+<tr class="memdesc:a706a55d5f2ab657234ebd05fd388de36"><td class="mdescLeft">&#160;</td><td class="mdescRight">Mirrors debris.slang where bits 0 to 7 are the voxel mask. <br /></td></tr>
+<tr class="memitem:a989ce76dba06883295a2fc99da63e8a1" id="r_a989ce76dba06883295a2fc99da63e8a1"><td class="memItemLeft"><a id="a989ce76dba06883295a2fc99da63e8a1" name="a989ce76dba06883295a2fc99da63e8a1"></a>
+static constexpr float&#160;</td><td class="memItemRight"><b>k_fade_in_seconds</b> = 0.12f</td></tr>
+<tr class="memitem:a832b40722cea0e95dc3dc9ab7d389a2a" id="r_a832b40722cea0e95dc3dc9ab7d389a2a"><td class="memItemLeft"><a id="a832b40722cea0e95dc3dc9ab7d389a2a" name="a832b40722cea0e95dc3dc9ab7d389a2a"></a>
+static constexpr float&#160;</td><td class="memItemRight"><b>k_fade_out_seconds</b> = 0.6f</td></tr>
+<tr class="memitem:a9a7115e4d8de9d6a447de103112942c2" id="r_a9a7115e4d8de9d6a447de103112942c2"><td class="memItemLeft"><a id="a9a7115e4d8de9d6a447de103112942c2" name="a9a7115e4d8de9d6a447de103112942c2"></a>
+static constexpr uint32_t&#160;</td><td class="memItemRight"><b>k_cap_headroom_divisor</b> = 4</td></tr>
+<tr class="memdesc:a9a7115e4d8de9d6a447de103112942c2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Slots past the cap so pieces shrinking away still have room. <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-inherited" class="groupheader"><a id="inherited" name="inherited"></a>
 Additional Inherited Members</h2></td></tr>

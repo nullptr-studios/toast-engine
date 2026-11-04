@@ -126,6 +126,9 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-types" class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
+<tr class="memitem:aa94ea674fabb5f3a942889cbee1c5c60" id="r_aa94ea674fabb5f3a942889cbee1c5c60"><td class="memItemLeft">enum class &#160;</td><td class="memItemRight"><a class="el" href="#aa94ea674fabb5f3a942889cbee1c5c60">Timing</a> : uint8_t { <b>now</b>
+, <a class="el" href="#aa94ea674fabb5f3a942889cbee1c5c60aa8035694ab5d9bffe8688f3e17d6bba3">after_frame</a>
+ }</td></tr>
 <tr class="memitem:a3538565ca002d74ad9bb356f73bc9298" id="r_a3538565ca002d74ad9bb356f73bc9298"><td class="memItemLeft"><a id="a3538565ca002d74ad9bb356f73bc9298" name="a3538565ca002d74ad9bb356f73bc9298"></a>
 using&#160;</td><td class="memItemRight"><b>Ticket</b> = uint64_t</td></tr>
 <tr class="memdesc:a3538565ca002d74ad9bb356f73bc9298"><td class="mdescLeft">&#160;</td><td class="mdescRight">Timeline value so completing one completes every earlier one. <br /></td></tr>
@@ -141,10 +144,13 @@ auto&#160;</td><td class="memItemRight"><b>operator=</b> (const <a class="el" hr
 &#160;</td><td class="memItemRight"><b>AsyncCompute</b> (AsyncCompute &amp;&amp;)=delete</td></tr>
 <tr class="memitem:a20e825b1ba6e27323e1be8c60203a7b8" id="r_a20e825b1ba6e27323e1be8c60203a7b8"><td class="memItemLeft"><a id="a20e825b1ba6e27323e1be8c60203a7b8" name="a20e825b1ba6e27323e1be8c60203a7b8"></a>
 auto&#160;</td><td class="memItemRight"><b>operator=</b> (<a class="el" href="#a060e97e8e3f1ace4ff39b25d8d2ef2b6">AsyncCompute</a> &amp;&amp;) -&gt; <a class="el" href="#a060e97e8e3f1ace4ff39b25d8d2ef2b6">AsyncCompute</a> &amp;=delete</td></tr>
-<tr class="memitem:abb4b399860c3d4fba70dd25ffb61b1c4" id="r_abb4b399860c3d4fba70dd25ffb61b1c4"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#abb4b399860c3d4fba70dd25ffb61b1c4">submit</a> (const std::function&lt; void(vk::CommandBuffer)&gt; &amp;record, std::string_view debug_name={}) -&gt; <a class="el" href="#a3538565ca002d74ad9bb356f73bc9298">Ticket</a></td></tr>
+<tr class="memitem:aa574c748247959cad6b2c64fc7c46d6e" id="r_aa574c748247959cad6b2c64fc7c46d6e"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#aa574c748247959cad6b2c64fc7c46d6e">submit</a> (const std::function&lt; void(vk::CommandBuffer)&gt; &amp;record, std::string_view debug_name={}, <a class="el" href="#aa94ea674fabb5f3a942889cbee1c5c60">Timing</a> timing=Timing::now) -&gt; <a class="el" href="#a3538565ca002d74ad9bb356f73bc9298">Ticket</a></td></tr>
+<tr class="memitem:ac86249d72eb470d5b50a0f8455b84b77" id="r_ac86249d72eb470d5b50a0f8455b84b77"><td class="memItemLeft"><a id="ac86249d72eb470d5b50a0f8455b84b77" name="ac86249d72eb470d5b50a0f8455b84b77"></a>
+void&#160;</td><td class="memItemRight"><b>flushDeferred</b> ()</td></tr>
+<tr class="memdesc:ac86249d72eb470d5b50a0f8455b84b77"><td class="mdescLeft">&#160;</td><td class="mdescRight">Render thread right after its frame submit though any thread may call it. <br /></td></tr>
 <tr class="memitem:a7a49a491504a994efe892812554d2a03" id="r_a7a49a491504a994efe892812554d2a03"><td class="memItemLeft"><a id="a7a49a491504a994efe892812554d2a03" name="a7a49a491504a994efe892812554d2a03"></a>
 auto&#160;</td><td class="memItemRight"><b>isComplete</b> (<a class="el" href="#a3538565ca002d74ad9bb356f73bc9298">Ticket</a> ticket) const -&gt; bool</td></tr>
-<tr class="memitem:acebba6abfc1a50705c27ce9a1af2d3f4" id="r_acebba6abfc1a50705c27ce9a1af2d3f4"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#acebba6abfc1a50705c27ce9a1af2d3f4">wait</a> (<a class="el" href="#a3538565ca002d74ad9bb356f73bc9298">Ticket</a> ticket, uint64_t timeout_ns=std::numeric_limits&lt; uint64_t &gt;::max()) const -&gt; bool</td></tr>
+<tr class="memitem:a6c509cd776c3db977bb29dc9f601c22a" id="r_a6c509cd776c3db977bb29dc9f601c22a"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a6c509cd776c3db977bb29dc9f601c22a">wait</a> (<a class="el" href="#a3538565ca002d74ad9bb356f73bc9298">Ticket</a> ticket, uint64_t timeout_ns=std::numeric_limits&lt; uint64_t &gt;::max()) -&gt; bool</td></tr>
 <tr class="memitem:ab2cf1a6bbed2c98ccce6e1cd287265d4" id="r_ab2cf1a6bbed2c98ccce6e1cd287265d4"><td class="memItemLeft"><a id="ab2cf1a6bbed2c98ccce6e1cd287265d4" name="ab2cf1a6bbed2c98ccce6e1cd287265d4"></a>
 auto&#160;</td><td class="memItemRight"><b>completedTicket</b> () const -&gt; <a class="el" href="#a3538565ca002d74ad9bb356f73bc9298">Ticket</a></td></tr>
 <tr class="memitem:a6cfa7fb0ad2d7b7a7aaedd3a667f0785" id="r_a6cfa7fb0ad2d7b7a7aaedd3a667f0785"><td class="memItemLeft"><a id="a6cfa7fb0ad2d7b7a7aaedd3a667f0785" name="a6cfa7fb0ad2d7b7a7aaedd3a667f0785"></a>
@@ -162,6 +168,33 @@ Static Public Attributes</h2></td></tr>
 <tr class="memitem:a6d755d04de7860687848489b5d989257" id="r_a6d755d04de7860687848489b5d989257"><td class="memItemLeft"><a id="a6d755d04de7860687848489b5d989257" name="a6d755d04de7860687848489b5d989257"></a>
 static constexpr <a class="el" href="#a3538565ca002d74ad9bb356f73bc9298">Ticket</a>&#160;</td><td class="memItemRight"><b>k_no_ticket</b> = 0</td></tr>
 </table>
+<a name="doc-enum-members" id="doc-enum-members"></a><h2 id="header-doc-enum-members" class="groupheader">Member Enumeration Documentation</h2>
+<a id="aa94ea674fabb5f3a942889cbee1c5c60" name="aa94ea674fabb5f3a942889cbee1c5c60"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa94ea674fabb5f3a942889cbee1c5c60">&#9670;&#160;</a></span>Timing</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum class <a class="el" href="#aa94ea674fabb5f3a942889cbee1c5c60">renderer::AsyncCompute::Timing</a> : uint8_t</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel strong">strong</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="aa94ea674fabb5f3a942889cbee1c5c60aa8035694ab5d9bffe8688f3e17d6bba3" name="aa94ea674fabb5f3a942889cbee1c5c60aa8035694ab5d9bffe8688f3e17d6bba3"></a>after_frame&#160;</td><td class="fielddoc"><p>Held until the render thread submits its next frame so it runs next to that frame graphics Also goes out with the next submit of any timing so a paused renderer never strands it </p>
+</td></tr>
+</table>
+
+</div>
+</div>
 <a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a060e97e8e3f1ace4ff39b25d8d2ef2b6" name="a060e97e8e3f1ace4ff39b25d8d2ef2b6"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a060e97e8e3f1ace4ff39b25d8d2ef2b6">&#9670;&#160;</a></span>AsyncCompute()</h2>
@@ -201,8 +234,8 @@ static constexpr <a class="el" href="#a3538565ca002d74ad9bb356f73bc9298">Ticket<
 </div>
 </div>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
-<a id="abb4b399860c3d4fba70dd25ffb61b1c4" name="abb4b399860c3d4fba70dd25ffb61b1c4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abb4b399860c3d4fba70dd25ffb61b1c4">&#9670;&#160;</a></span>submit()</h2>
+<a id="aa574c748247959cad6b2c64fc7c46d6e" name="aa574c748247959cad6b2c64fc7c46d6e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa574c748247959cad6b2c64fc7c46d6e">&#9670;&#160;</a></span>submit()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -215,7 +248,12 @@ static constexpr <a class="el" href="#a3538565ca002d74ad9bb356f73bc9298">Ticket<
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">std::string_view</td>          <td class="paramname"><span class="paramname"><em>debug_name</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;) -&gt; <a class="el" href="#a3538565ca002d74ad9bb356f73bc9298">Ticket</a></td>
+          <td class="paramtype">std::string_view</td>          <td class="paramname"><span class="paramname"><em>debug_name</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="#aa94ea674fabb5f3a942889cbee1c5c60">Timing</a></td>          <td class="paramname"><span class="paramname"><em>timing</em></span><span class="paramdefsep"> = </span><span class="paramdefval">Timing::now</span>&#160;) -&gt; <a class="el" href="#a3538565ca002d74ad9bb356f73bc9298">Ticket</a></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -223,8 +261,8 @@ static constexpr <a class="el" href="#a3538565ca002d74ad9bb356f73bc9298">Ticket<
 
 </div>
 </div>
-<a id="acebba6abfc1a50705c27ce9a1af2d3f4" name="acebba6abfc1a50705c27ce9a1af2d3f4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acebba6abfc1a50705c27ce9a1af2d3f4">&#9670;&#160;</a></span>wait()</h2>
+<a id="a6c509cd776c3db977bb29dc9f601c22a" name="a6c509cd776c3db977bb29dc9f601c22a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6c509cd776c3db977bb29dc9f601c22a">&#9670;&#160;</a></span>wait()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -237,17 +275,17 @@ static constexpr <a class="el" href="#a3538565ca002d74ad9bb356f73bc9298">Ticket<
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">uint64_t</td>          <td class="paramname"><span class="paramname"><em>timeout_ns</em></span><span class="paramdefsep"> = </span><span class="paramdefval">std::numeric_limits&lt;uint64_t&gt;::max()</span>&#160;) const -&gt; bool</td>
+          <td class="paramtype">uint64_t</td>          <td class="paramname"><span class="paramname"><em>timeout_ns</em></span><span class="paramdefsep"> = </span><span class="paramdefval">std::numeric_limits&lt;uint64_t&gt;::max()</span>&#160;) -&gt; bool</td>
         </tr>
       </table>
 </div><div class="memdoc">
-<dl class="section return"><dt>Returns</dt><dd>false on timeout </dd></dl>
+<p>Flushes deferred jobs first since they never complete otherwise </p><dl class="section return"><dt>Returns</dt><dd>false on timeout or a lost device </dd></dl>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>engine/src/toast/renderer/<a class="el" href="async__compute_8hpp_source.html">async_compute.hpp</a></li>
-<li>engine/src/toast/renderer/<a class="el" href="async__compute_8cpp.html">async_compute.cpp</a></li>
+<li>engine/src/toast/renderer/compute/<a class="el" href="async__compute_8hpp_source.html">async_compute.hpp</a></li>
+<li>engine/src/toast/renderer/compute/<a class="el" href="async__compute_8cpp.html">async_compute.cpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

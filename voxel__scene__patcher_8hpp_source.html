@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.17.0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Toast Engine: engine/src/toast/renderer/voxel_scene_patcher.hpp Source File</title>
+<title>Toast Engine: engine/src/toast/renderer/voxel/voxel_scene_patcher.hpp Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="codefolding.js"></script>
 <script type="text/javascript" src="clipboard.js"></script>
@@ -122,7 +122,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__scene__
 <div class="line"><a id="l00004" name="l00004"></a><span class="lineno">    4</span> </div>
 <div class="line"><a id="l00005" name="l00005"></a><span class="lineno">    5</span><span class="preprocessor">#pragma once</span></div>
 <div class="line"><a id="l00006" name="l00006"></a><span class="lineno">    6</span> </div>
-<div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span><span class="preprocessor">#include &quot;<a class="code" href="voxel__change__history_8hpp.html">voxel_change_history.hpp</a>&quot;</span></div>
+<div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span><span class="preprocessor">#include &quot;<a class="code" href="voxel__change__history_8hpp.html">toast/renderer/voxel/voxel_change_history.hpp</a>&quot;</span></div>
 <div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span> </div>
 <div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="preprocessor">#include &lt;cstdint&gt;</span></div>
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &lt;glm/glm.hpp&gt;</span></div>
@@ -187,14 +187,14 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__scene__
 <div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>}</div>
 <div class="ttc" id="abrick__pool_8hpp_html"><div class="ttname"><a href="brick__pool_8hpp.html">brick_pool.hpp</a></div></div>
 <div class="ttc" id="aclassrenderer_1_1VoxelScenePatcher_html"><div class="ttname"><a href="classrenderer_1_1VoxelScenePatcher.html">renderer::VoxelScenePatcher</a></div><div class="ttdoc">Records stay in place so a removed volume leaves a dead record and a new one is appended.</div><div class="ttdef"><b>Definition</b> voxel_scene_patcher.hpp:20</div></div>
-<div class="ttc" id="aclassrenderer_1_1VoxelScenePatcher_html_a52b73e1b802fbe8a9b8f7cfbf90aa2eb"><div class="ttname"><a href="classrenderer_1_1VoxelScenePatcher.html#a52b73e1b802fbe8a9b8f7cfbf90aa2eb">renderer::VoxelScenePatcher::adopt</a></div><div class="ttdeci">void adopt(const voxel::gpu::PackedScene &amp;scene, uint32_t pool_slots, std::vector&lt; uint64_t &gt; node_rids)</div><div class="ttdoc">A full pack is what the GPU will hold so later patches build on it.</div><div class="ttdef"><b>Definition</b> voxel_scene_patcher.cpp:28</div></div>
-<div class="ttc" id="aclassrenderer_1_1VoxelScenePatcher_html_a889af568c956d7353c6dd04bae3b8130"><div class="ttname"><a href="classrenderer_1_1VoxelScenePatcher.html#a889af568c956d7353c6dd04bae3b8130">renderer::VoxelScenePatcher::tryPatch</a></div><div class="ttdeci">auto tryPatch(const voxel::BrickPool &amp;pool, std::span&lt; const voxel::gpu::SceneVolume &gt; volumes, std::span&lt; const uint64_t &gt; node_rids, std::span&lt; const VolumeDelta &gt; deltas) -&gt; std::optional&lt; Patched &gt;</div><div class="ttdef"><b>Definition</b> voxel_scene_patcher.cpp:55</div></div>
+<div class="ttc" id="aclassrenderer_1_1VoxelScenePatcher_html_a52b73e1b802fbe8a9b8f7cfbf90aa2eb"><div class="ttname"><a href="classrenderer_1_1VoxelScenePatcher.html#a52b73e1b802fbe8a9b8f7cfbf90aa2eb">renderer::VoxelScenePatcher::adopt</a></div><div class="ttdeci">void adopt(const voxel::gpu::PackedScene &amp;scene, uint32_t pool_slots, std::vector&lt; uint64_t &gt; node_rids)</div><div class="ttdoc">A full pack is what the GPU will hold so later patches build on it.</div><div class="ttdef"><b>Definition</b> voxel_scene_patcher.cpp:21</div></div>
+<div class="ttc" id="aclassrenderer_1_1VoxelScenePatcher_html_a889af568c956d7353c6dd04bae3b8130"><div class="ttname"><a href="classrenderer_1_1VoxelScenePatcher.html#a889af568c956d7353c6dd04bae3b8130">renderer::VoxelScenePatcher::tryPatch</a></div><div class="ttdeci">auto tryPatch(const voxel::BrickPool &amp;pool, std::span&lt; const voxel::gpu::SceneVolume &gt; volumes, std::span&lt; const uint64_t &gt; node_rids, std::span&lt; const VolumeDelta &gt; deltas) -&gt; std::optional&lt; Patched &gt;</div><div class="ttdef"><b>Definition</b> voxel_scene_patcher.cpp:48</div></div>
 <div class="ttc" id="aclassvoxel_1_1BrickPool_html"><div class="ttname"><a href="classvoxel_1_1BrickPool.html">voxel::BrickPool</a></div><div class="ttdef"><b>Definition</b> brick_pool.hpp:26</div></div>
 <div class="ttc" id="agpu__layout_8hpp_html"><div class="ttname"><a href="gpu__layout_8hpp.html">gpu_layout.hpp</a></div></div>
 <div class="ttc" id="astructrenderer_1_1VoxelScenePatcher_1_1Patched_html"><div class="ttname"><a href="structrenderer_1_1VoxelScenePatcher_1_1Patched.html">renderer::VoxelScenePatcher::Patched</a></div><div class="ttdef"><b>Definition</b> voxel_scene_patcher.hpp:22</div></div>
 <div class="ttc" id="astructrenderer_1_1VoxelScenePatcher_1_1Patched_html_a235eef6a6d1a0be638597deaf6e9aece"><div class="ttname"><a href="structrenderer_1_1VoxelScenePatcher_1_1Patched.html#a235eef6a6d1a0be638597deaf6e9aece">renderer::VoxelScenePatcher::Patched::record_rids</a></div><div class="ttdeci">std::vector&lt; uint64_t &gt; record_rids</div><div class="ttdoc">Per record and 0 for a dead one.</div><div class="ttdef"><b>Definition</b> voxel_scene_patcher.hpp:25</div></div>
-<div class="ttc" id="astructvoxel_1_1gpu_1_1PackedScene_html"><div class="ttname"><a href="structvoxel_1_1gpu_1_1PackedScene.html">voxel::gpu::PackedScene</a></div><div class="ttdef"><b>Definition</b> gpu_layout.hpp:76</div></div>
-<div class="ttc" id="astructvoxel_1_1gpu_1_1ScenePatch_html"><div class="ttname"><a href="structvoxel_1_1gpu_1_1ScenePatch.html">voxel::gpu::ScenePatch</a></div><div class="ttdef"><b>Definition</b> gpu_layout.hpp:116</div></div>
+<div class="ttc" id="astructvoxel_1_1gpu_1_1PackedScene_html"><div class="ttname"><a href="structvoxel_1_1gpu_1_1PackedScene.html">voxel::gpu::PackedScene</a></div><div class="ttdef"><b>Definition</b> gpu_layout.hpp:88</div></div>
+<div class="ttc" id="astructvoxel_1_1gpu_1_1ScenePatch_html"><div class="ttname"><a href="structvoxel_1_1gpu_1_1ScenePatch.html">voxel::gpu::ScenePatch</a></div><div class="ttdef"><b>Definition</b> gpu_layout.hpp:128</div></div>
 <div class="ttc" id="avoxel__change__history_8hpp_html"><div class="ttname"><a href="voxel__change__history_8hpp.html">voxel_change_history.hpp</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__scene__
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><b>engine</b></li><li class="navelem"><b>src</b></li><li class="navelem"><b>toast</b></li><li class="navelem"><b>renderer</b></li><li class="navelem"><a href="voxel__scene__patcher_8hpp.html">voxel_scene_patcher.hpp</a></li>
+    <li class="navelem"><b>engine</b></li><li class="navelem"><b>src</b></li><li class="navelem"><b>toast</b></li><li class="navelem"><b>renderer</b></li><li class="navelem"><b>voxel</b></li><li class="navelem"><a href="voxel__scene__patcher_8hpp.html">voxel_scene_patcher.hpp</a></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.17.0 </li>
   </ul>
 </div>

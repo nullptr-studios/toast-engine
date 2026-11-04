@@ -139,8 +139,8 @@ auto&#160;</td><td class="memItemRight"><b>declareString</b> (std::string_view k
 <tr class="memdesc:a50c6d90cb8e1140574f032ddbc3e8aed"><td class="mdescLeft">&#160;</td><td class="mdescRight">Every declared setting, in declaration order.  <br /></td></tr>
 <tr class="memitem:af388da89bf8261c8bdf57276c9879320" id="r_af388da89bf8261c8bdf57276c9879320"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#af388da89bf8261c8bdf57276c9879320">value</a> (std::string_view key) -&gt; std::optional&lt; Value &gt;</td></tr>
 <tr class="memitem:a6c2b53a7054192c8f7036df0a010f8a3" id="r_a6c2b53a7054192c8f7036df0a010f8a3"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a6c2b53a7054192c8f7036df0a010f8a3">resolved</a> (const <a class="el" href="structtoast_1_1settings_1_1Entry.html">Entry</a> *entry) -&gt; Value</td></tr>
-<tr class="memitem:aa7848b2f2d4f91d2d2608f624d1b4202" id="r_aa7848b2f2d4f91d2d2608f624d1b4202"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#aa7848b2f2d4f91d2d2608f624d1b4202">setValue</a> (std::string_view key, const Value &amp;value) -&gt; bool</td></tr>
-<tr class="memdesc:aa7848b2f2d4f91d2d2608f624d1b4202"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes <code class="param">value</code> into the active layer and fires the setting's change callbacks.  <br /></td></tr>
+<tr class="memitem:aeaf20e82afd5f51df893e546b61d7f16" id="r_aeaf20e82afd5f51df893e546b61d7f16"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#aeaf20e82afd5f51df893e546b61d7f16">setValue</a> (std::string_view key, const Value &amp;value, bool override_higher_layers=false) -&gt; bool</td></tr>
+<tr class="memdesc:aeaf20e82afd5f51df893e546b61d7f16"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes <code class="param">value</code> into the active layer and fires the setting's change callbacks.  <br /></td></tr>
 <tr class="memitem:a3dd0576d1e579b929088afb4205a6f35" id="r_a3dd0576d1e579b929088afb4205a6f35"><td class="memItemLeft"><a id="a3dd0576d1e579b929088afb4205a6f35" name="a3dd0576d1e579b929088afb4205a6f35"></a>
 auto&#160;</td><td class="memItemRight"><b>reset</b> (std::string_view key) -&gt; bool</td></tr>
 <tr class="memdesc:a3dd0576d1e579b929088afb4205a6f35"><td class="mdescLeft">&#160;</td><td class="mdescRight">Drops <code class="param">key's</code> override in the active layer, exposing whatever is underneath. <br /></td></tr>
@@ -151,7 +151,7 @@ void&#160;</td><td class="memItemRight"><b>resetAll</b> ()</td></tr>
 void&#160;</td><td class="memItemRight"><b>setPaths</b> (std::filesystem::path project_file, std::filesystem::path user_file)</td></tr>
 <tr class="memdesc:a3a3631e787543207be145504893a874f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Points the two writable layers at their files; neither has to exist yet. <br /></td></tr>
 <tr class="memitem:a62270d411101927c36456440eeae8505" id="r_a62270d411101927c36456440eeae8505"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a62270d411101927c36456440eeae8505">setActiveLayer</a> (<a class="el" href="settings_8hpp.html#a935949c62d47f7124001e0689579f458">Layer</a> layer)</td></tr>
-<tr class="memdesc:a62270d411101927c36456440eeae8505"><td class="mdescLeft">&#160;</td><td class="mdescRight">Which layer <a class="el" href="#aa7848b2f2d4f91d2d2608f624d1b4202" title="Writes value into the active layer and fires the setting&#39;s change callbacks.">setValue()</a> writes to.  <br /></td></tr>
+<tr class="memdesc:a62270d411101927c36456440eeae8505"><td class="mdescLeft">&#160;</td><td class="mdescRight">Which layer <a class="el" href="#aeaf20e82afd5f51df893e546b61d7f16" title="Writes value into the active layer and fires the setting&#39;s change callbacks.">setValue()</a> writes to.  <br /></td></tr>
 <tr class="memitem:a01623b8bd5af6e4c2f03a050aa1458ef" id="r_a01623b8bd5af6e4c2f03a050aa1458ef"><td class="memItemLeft"><a id="a01623b8bd5af6e4c2f03a050aa1458ef" name="a01623b8bd5af6e4c2f03a050aa1458ef"></a>
 auto&#160;</td><td class="memItemRight"><b>activeLayer</b> () const -&gt; <a class="el" href="settings_8hpp.html#a935949c62d47f7124001e0689579f458">Layer</a></td></tr>
 <tr class="memitem:a81fbaeeb4849d72eb854b93f40f22661" id="r_a81fbaeeb4849d72eb854b93f40f22661"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a81fbaeeb4849d72eb854b93f40f22661">activeFilePath</a> () const -&gt; const std::filesystem::path &amp;</td></tr>
@@ -346,13 +346,13 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Which layer <a class="el" href="#aa7848b2f2d4f91d2d2608f624d1b4202" title="Writes value into the active layer and fires the setting&#39;s change callbacks.">setValue()</a> writes to. </p>
+<p>Which layer <a class="el" href="#aeaf20e82afd5f51df893e546b61d7f16" title="Writes value into the active layer and fires the setting&#39;s change callbacks.">setValue()</a> writes to. </p>
 <p>The editor sets <span class="tt">project</span>, so what it authors ships as the game's defaults. A packaged game leaves it at <span class="tt">user</span>, so a player's tweaks land in their own file and survive a patch </p>
 
 </div>
 </div>
-<a id="aa7848b2f2d4f91d2d2608f624d1b4202" name="aa7848b2f2d4f91d2d2608f624d1b4202"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa7848b2f2d4f91d2d2608f624d1b4202">&#9670;&#160;</a></span>setValue()</h2>
+<a id="aeaf20e82afd5f51df893e546b61d7f16" name="aeaf20e82afd5f51df893e546b61d7f16"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aeaf20e82afd5f51df893e546b61d7f16">&#9670;&#160;</a></span>setValue()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -365,13 +365,19 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const Value &amp;</td>          <td class="paramname"><span class="paramname"><em>value</em></span>&#160;) -&gt; bool</td>
+          <td class="paramtype">const Value &amp;</td>          <td class="paramname"><span class="paramname"><em>value</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>override_higher_layers</em></span><span class="paramdefsep"> = </span><span class="paramdefval">false</span>&#160;) -&gt; bool</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
 <p>Writes <code class="param">value</code> into the active layer and fires the setting's change callbacks. </p>
-<p>A value of the wrong alternative is converted when the conversion is lossless-ish (int to double, bool to int) and rejected otherwise, so a caller cannot silently turn a float setting into a string </p>
+<p>A value of the wrong alternative is converted when the conversion is lossless-ish (int to double, bool to int) and rejected otherwise, so a caller cannot silently turn a float setting into a string</p>
+<p><code class="param">override_higher_layers</code> clears the layers above the active one in memory and leaves their files alone </p>
 
 </div>
 </div>
@@ -406,7 +412,7 @@ Here is the caller graph for this function:</div>
 <area shape="rect" title=" " alt="" coords="452,40,627,85"/>
 <area shape="rect" href="classtoast_1_1settings_1_1Settings.html#a2514d5ab1be9871df16ed5a30dc0b906" title="Writes the active layer, creating parent directories as needed." alt="" coords="229,5,404,50"/>
 <area shape="poly" title=" " alt="" coords="434,46,404,44,404,39,439,46"/>
-<area shape="rect" href="classtoast_1_1settings_1_1Settings.html#aa7848b2f2d4f91d2d2608f624d1b4202" title="Writes value into the active layer and fires the setting&#39;s change callbacks." alt="" coords="229,75,404,119"/>
+<area shape="rect" href="classtoast_1_1settings_1_1Settings.html#aeaf20e82afd5f51df893e546b61d7f16" title="Writes value into the active layer and fires the setting&#39;s change callbacks." alt="" coords="229,75,404,119"/>
 <area shape="poly" title=" " alt="" coords="439,78,405,86,404,81,434,79"/>
 <area shape="rect" href="classtoast_1_1settings_1_1Settings.html#a95906bf3c8b27a6c6e4476ad59a5ccd4" title="save(), but only when something changed since the last one" alt="" coords="5,5,181,50"/>
 <area shape="poly" title=" " alt="" coords="211,28,182,30,181,25,216,27"/>

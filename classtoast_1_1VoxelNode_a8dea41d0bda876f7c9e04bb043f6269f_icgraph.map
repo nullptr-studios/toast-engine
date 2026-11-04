@@ -1,7 +1,8 @@
 <map id="toast::VoxelNode::paletteUid" name="toast::VoxelNode::paletteUid">
-<area shape="rect" id="Node000001" title=" " alt="" coords="234,44,441,72"/>
-<area shape="rect" id="Node000002" href="$classtoast_1_1ProceduralVoxel.html#ad50fb391ee4bb3ef6a22dd7c195eb591" title=" " alt="" coords="12,5,179,50"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="216,44,179,41,179,36,221,43"/>
-<area shape="rect" id="Node000003" href="$classtoast_1_1VoxelNode.html#ad569cef637a5d677e4a5d1190aa26cd3" title=" " alt="" coords="5,74,186,102"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="215,73,186,79,186,74,221,72"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="234,68,441,96"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1ProceduralVoxel.html#ad50fb391ee4bb3ef6a22dd7c195eb591" title=" " alt="" coords="12,29,179,74"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="216,68,179,65,179,60,221,67"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1VoxelNode.html#ad569cef637a5d677e4a5d1190aa26cd3" title=" " alt="" coords="5,98,186,126"/>
+<area shape="poly" id="edge3_Node000001_Node000003" title=" " alt="" coords="215,97,186,103,186,98,221,96"/>
+<area shape="poly" id="edge2_Node000002_Node000002" title=" " alt="" coords="134,15,120,10,95,8,73,10,59,15,53,21,55,29,49,29,48,19,56,10,72,5,96,3,122,5,139,14"/>
 </map>

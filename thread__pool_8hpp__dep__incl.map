@@ -1,5 +1,7 @@
 <map id="engine/src/toast/thread_pool.hpp" name="engine/src/toast/thread_pool.hpp">
-<area shape="rect" id="Node000001" title="Thread pool implementation for parallel task execution." alt="" coords="12,5,184,50"/>
-<area shape="rect" id="Node000002" href="$lua__state_8hpp.html" title="Pool of independent Lua interpreters." alt="" coords="5,98,191,143"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="100,64,101,99,95,97,96,68"/>
+<area shape="rect" id="Node000001" title="Thread pool implementation for parallel task execution." alt="" coords="56,5,227,50"/>
+<area shape="rect" id="Node000002" href="$pch_8h.html" title=" " alt="" coords="5,106,110,134"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="114,61,72,108,68,104,109,62"/>
+<area shape="rect" id="Node000003" href="$lua__state_8hpp.html" title="Pool of independent Lua interpreters." alt="" coords="134,98,320,143"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="173,59,209,98,204,98,171,64"/>
 </map>

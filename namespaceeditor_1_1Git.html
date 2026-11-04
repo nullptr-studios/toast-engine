@@ -142,13 +142,17 @@ Classes</h2></td></tr>
 <tr class="memitem:LockArtworkView" id="r_LockArtworkView"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classeditor_1_1Git_1_1LockArtworkView.html">LockArtworkView</a></td></tr>
 <tr class="memitem:LockArtworkViewModel" id="r_LockArtworkViewModel"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classeditor_1_1Git_1_1LockArtworkViewModel.html">LockArtworkViewModel</a></td></tr>
 <tr class="memitem:LockArtworkWindow" id="r_LockArtworkWindow"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classeditor_1_1Git_1_1LockArtworkWindow.html">LockArtworkWindow</a></td></tr>
-<tr class="memitem:LockedFileModal" id="r_LockedFileModal"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classeditor_1_1Git_1_1LockedFileModal.html">LockedFileModal</a></td></tr>
+<tr class="memitem:LockedFileModal" id="r_LockedFileModal"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><b>LockedFileModal</b></td></tr>
 <tr class="memitem:LockRow" id="r_LockRow"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classeditor_1_1Git_1_1LockRow.html">LockRow</a></td></tr>
 <tr class="memitem:LocksView" id="r_LocksView"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classeditor_1_1Git_1_1LocksView.html">LocksView</a></td></tr>
 <tr class="memitem:LocksViewModel" id="r_LocksViewModel"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classeditor_1_1Git_1_1LocksViewModel.html">LocksViewModel</a></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-enum-members" class="groupheader"><a id="enum-members" name="enum-members"></a>
 Enumerations</h2></td></tr>
+<tr class="memitem:ad5111f9098dfd6b94a26cb908d358b12" id="r_ad5111f9098dfd6b94a26cb908d358b12"><td class="memItemLeft"><a id="ad5111f9098dfd6b94a26cb908d358b12" name="ad5111f9098dfd6b94a26cb908d358b12"></a>enum &#160;</td><td class="memItemRight"><b>OpenLockKind</b> { <b>None</b>
+, <b>Mine</b>
+, <b>Other</b>
+ }</td></tr>
 <tr class="memitem:aa4d4cf8eb76b6f74bc448f30fedd0277" id="r_aa4d4cf8eb76b6f74bc448f30fedd0277"><td class="memItemLeft"><a id="aa4d4cf8eb76b6f74bc448f30fedd0277" name="aa4d4cf8eb76b6f74bc448f30fedd0277"></a>enum &#160;</td><td class="memItemRight"><b>GitFileStatus</b> { <br />
 &#160;&#160;<b>None</b> = 0
 , <b>Added</b> = 1
@@ -177,6 +181,11 @@ record&#160;</td><td class="memItemRight"><b>GitBranchInfo</b> (string Name, int
 record&#160;</td><td class="memItemRight"><b>LockManyResult</b> (int Locked, int Failed, string? FirstError)</td></tr>
 <tr class="memitem:ac5b1e94da5806af3f201c18f6902bd49" id="r_ac5b1e94da5806af3f201c18f6902bd49"><td class="memItemLeft"><a id="ac5b1e94da5806af3f201c18f6902bd49" name="ac5b1e94da5806af3f201c18f6902bd49"></a>
 record&#160;</td><td class="memItemRight"><b>GitStatusSnapshot</b> (GitBranchInfo Branch, IReadOnlyList&lt; GitChange &gt; Changes)</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-var-members" class="groupheader"><a id="var-members" name="var-members"></a>
+Variables</h2></td></tr>
+<tr class="memitem:a7bfb1a198da56383316c496ae4d27efa" id="r_a7bfb1a198da56383316c496ae4d27efa"><td class="memItemLeft"><a id="a7bfb1a198da56383316c496ae4d27efa" name="a7bfb1a198da56383316c496ae4d27efa"></a>
+readonly record struct&#160;</td><td class="memItemRight"><b>OpenLockState</b> (OpenLockKind Kind, string? Owner)</td></tr>
 </table>
 </div><!-- contents -->
 </div><!-- doc-content -->

@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.17.0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Toast Engine: engine/src/toast/renderer/post_process_settings.hpp Source File</title>
+<title>Toast Engine: engine/src/toast/renderer/settings/post_process_settings.hpp Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="codefolding.js"></script>
 <script type="text/javascript" src="clipboard.js"></script>
@@ -122,95 +122,147 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('post__process_
 <div class="line"><a id="l00006" name="l00006"></a><span class="lineno">    6</span> </div>
 <div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span><span class="preprocessor">#pragma once</span></div>
 <div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="preprocessor">#include &lt;cstdint&gt;</span></div>
-<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="preprocessor">#include &lt;<a class="code" href="export_8hpp.html">toast/export.hpp</a>&gt;</span></div>
-<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span> </div>
-<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="keyword">namespace </span>renderer {</div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span></div>
-<div class="foldopen" id="foldopen00014" data-start="{" data-end="};">
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno"><a class="line" href="structrenderer_1_1PostProcessSettings.html">   14</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1PostProcessSettings.html">PostProcessSettings</a> {</div>
+<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="preprocessor">#include &lt;<a class="code" href="texture_8hpp.html">toast/assets/texture.hpp</a>&gt;</span></div>
+<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &lt;<a class="code" href="export_8hpp.html">toast/export.hpp</a>&gt;</span></div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span> </div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="keyword">namespace </span>renderer {</div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span></div>
 <div class="foldopen" id="foldopen00015" data-start="{" data-end="};">
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno"><a class="line" href="structrenderer_1_1PostProcessSettings_1_1Bloom.html">   15</a></span>  <span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1PostProcessSettings_1_1Bloom.html">Bloom</a> {</div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>    <span class="keywordtype">float</span> threshold = 1.0f;</div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span>    <span class="keywordtype">float</span> knee = 0.5f;</div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>    <span class="keywordtype">float</span> filter_radius = 1.0f;</div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>    <span class="keywordtype">float</span> strength = 0.05f;</div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>  } bloom;</div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno"><a class="line" href="structrenderer_1_1PostProcessSettings.html">   15</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1PostProcessSettings.html">PostProcessSettings</a> {</div>
+<div class="foldopen" id="foldopen00016" data-start="{" data-end="};">
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno"><a class="line" href="structrenderer_1_1PostProcessSettings_1_1Bloom.html">   16</a></span>  <span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1PostProcessSettings_1_1Bloom.html">Bloom</a> {</div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span>    <span class="keywordtype">float</span> threshold = 1.0f;</div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>    <span class="keywordtype">float</span> knee = 0.5f;</div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>    <span class="keywordtype">float</span> filter_radius = 1.0f;</div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>    <span class="keywordtype">float</span> strength = 0.05f;</div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>  } bloom;</div>
 </div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span> </div>
-<div class="foldopen" id="foldopen00022" data-start="{" data-end="};">
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno"><a class="line" href="structrenderer_1_1PostProcessSettings_1_1Tonemap.html">   22</a></span>  <span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1PostProcessSettings_1_1Tonemap.html">Tonemap</a> {</div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>    <span class="keywordtype">float</span> exposure = 1.0f;</div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno"><a class="line" href="structrenderer_1_1PostProcessSettings_1_1Tonemap.html#a558b5bfcb92756014b3bbb57f489876c">   25</a></span>    uint32_t <a class="code hl_variable" href="structrenderer_1_1PostProcessSettings_1_1Tonemap.html#a558b5bfcb92756014b3bbb57f489876c">mode</a> = 0;</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>    <span class="keywordtype">float</span> gamma = 2.2f;</div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>    <span class="keywordtype">float</span> contrast = 1.0f;</div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>    <span class="keywordtype">float</span> saturation = 1.0f;</div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>    <span class="keywordtype">float</span> vignette = 0.0f;</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>    <span class="keywordtype">float</span> grain = 0.0f;</div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span> </div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>    <span class="keywordtype">bool</span> auto_exposure = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno"><a class="line" href="structrenderer_1_1PostProcessSettings_1_1Tonemap.html#a32efef1a7798928c84d28f61a248b409">   34</a></span>    <span class="keywordtype">float</span> <a class="code hl_variable" href="structrenderer_1_1PostProcessSettings_1_1Tonemap.html#a32efef1a7798928c84d28f61a248b409">auto_exposure_min</a> = -8.0f;</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>    <span class="keywordtype">float</span> auto_exposure_max = 4.0f;</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno"><a class="line" href="structrenderer_1_1PostProcessSettings_1_1Tonemap.html#a65a4f725c2eb1e35cc75b1d5755686c3">   37</a></span>    <span class="keywordtype">float</span> <a class="code hl_variable" href="structrenderer_1_1PostProcessSettings_1_1Tonemap.html#a65a4f725c2eb1e35cc75b1d5755686c3">adapt_speed_up</a> = 3.0f;</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>    <span class="keywordtype">float</span> adapt_speed_down = 1.0f;</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  } tonemap;</div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
+<div class="foldopen" id="foldopen00023" data-start="{" data-end="};">
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno"><a class="line" href="structrenderer_1_1PostProcessSettings_1_1LensFlare.html">   23</a></span>  <span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1PostProcessSettings_1_1LensFlare.html">LensFlare</a> {</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>    <span class="keywordtype">float</span> intensity = 0.1f;</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>    <span class="keywordtype">float</span> threshold = 1.0f;</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>    <span class="keywordtype">float</span> threshold_range = 1.0f;</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>    <span class="keywordtype">float</span> ghost_intensity = 1.0f;</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>    <span class="keywordtype">float</span> chroma_shift = 0.015f;</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>    <span class="keywordtype">float</span> halo_intensity = 1.0f;</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>    <span class="keywordtype">float</span> halo_width = 0.6f;</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>    <span class="keywordtype">float</span> halo_mask = 0.5f;</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>    <span class="keywordtype">float</span> halo_compression = 0.65f;</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>    <span class="keywordtype">float</span> glare_intensity = 0.2f;</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>    <span class="keywordtype">float</span> glare_divider = 60.0f;</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>    <span class="keywordtype">float</span> anamorphic_intensity = 1.0f;</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno"><a class="line" href="structrenderer_1_1PostProcessSettings_1_1LensFlare.html#ad5b293e91e48adbd8c412d62c0d4754c">   37</a></span>    <span class="keywordtype">float</span> <a class="code hl_variable" href="structrenderer_1_1PostProcessSettings_1_1LensFlare.html#ad5b293e91e48adbd8c412d62c0d4754c">anamorphic_tint</a> = 0.6f;</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>    <span class="keywordtype">float</span> dirt_intensity = 0.0f;</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno"><a class="line" href="structrenderer_1_1PostProcessSettings_1_1LensFlare.html#a880de8a16d4f3812de11cbd4e6da359b">   40</a></span>    <span class="keywordtype">float</span> <a class="code hl_variable" href="structrenderer_1_1PostProcessSettings_1_1LensFlare.html#a880de8a16d4f3812de11cbd4e6da359b">halo_thickness</a> = 0.3f;</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>    <span class="keywordtype">float</span> halo_dispersion = 0.015f;</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>    <span class="keywordtype">float</span> halo_tint_r = 1.0f;</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>    <span class="keywordtype">float</span> halo_tint_g = 1.0f;</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>    <span class="keywordtype">float</span> halo_tint_b = 1.0f;</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>    <a class="code hl_class" href="classassets_1_1Handle.html">assets::Handle&lt;assets::Texture&gt;</a> dirt_texture;</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  } lens_flare;</div>
 </div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span> </div>
-<div class="foldopen" id="foldopen00041" data-start="{" data-end="};">
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno"><a class="line" href="structrenderer_1_1PostProcessSettings_1_1Fxaa.html">   41</a></span>  <span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1PostProcessSettings_1_1Fxaa.html">Fxaa</a> {</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>    <span class="keywordtype">float</span> contrast_threshold = 0.0312f;</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>    <span class="keywordtype">float</span> relative_threshold = 0.125f;</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>    <span class="keywordtype">float</span> subpixel_blending = 0.75f;</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  } fxaa;</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span> </div>
+<div class="foldopen" id="foldopen00048" data-start="{" data-end="};">
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno"><a class="line" href="structrenderer_1_1PostProcessSettings_1_1Tonemap.html">   48</a></span>  <span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1PostProcessSettings_1_1Tonemap.html">Tonemap</a> {</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>    <span class="keywordtype">float</span> exposure = 1.0f;</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno"><a class="line" href="structrenderer_1_1PostProcessSettings_1_1Tonemap.html#a558b5bfcb92756014b3bbb57f489876c">   51</a></span>    uint32_t <a class="code hl_variable" href="structrenderer_1_1PostProcessSettings_1_1Tonemap.html#a558b5bfcb92756014b3bbb57f489876c">mode</a> = 0;</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    <span class="keywordtype">float</span> gt_contrast_dip = 1.28f;</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    <span class="keywordtype">float</span> chromatic_aberration = 0.0f;</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>    <span class="keywordtype">float</span> gamma = 2.2f;</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>    <span class="keywordtype">float</span> contrast = 1.0f;</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>    <span class="keywordtype">float</span> saturation = 1.0f;</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>    <span class="keywordtype">float</span> vignette = 0.0f;</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    <span class="keywordtype">float</span> grain = 0.0f;</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span> </div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>    <span class="keywordtype">bool</span> auto_exposure = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno"><a class="line" href="structrenderer_1_1PostProcessSettings_1_1Tonemap.html#a32efef1a7798928c84d28f61a248b409">   62</a></span>    <span class="keywordtype">float</span> <a class="code hl_variable" href="structrenderer_1_1PostProcessSettings_1_1Tonemap.html#a32efef1a7798928c84d28f61a248b409">auto_exposure_min</a> = -8.0f;</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    <span class="keywordtype">float</span> auto_exposure_max = 4.0f;</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno"><a class="line" href="structrenderer_1_1PostProcessSettings_1_1Tonemap.html#a65a4f725c2eb1e35cc75b1d5755686c3">   65</a></span>    <span class="keywordtype">float</span> <a class="code hl_variable" href="structrenderer_1_1PostProcessSettings_1_1Tonemap.html#a65a4f725c2eb1e35cc75b1d5755686c3">adapt_speed_up</a> = 3.0f;</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>    <span class="keywordtype">float</span> adapt_speed_down = 1.0f;</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  } tonemap;</div>
 </div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span> </div>
-<div class="foldopen" id="foldopen00047" data-start="{" data-end="};">
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno"><a class="line" href="structrenderer_1_1PostProcessSettings_1_1Ssr.html">   47</a></span>  <span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1PostProcessSettings_1_1Ssr.html">Ssr</a> {</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>    <span class="keywordtype">float</span> intensity = 1.0f;</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span> </div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    <span class="keywordtype">float</span> max_roughness = 0.6f;</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span> </div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    <span class="keywordtype">float</span> thickness = 0.5f;</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span> </div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>    <span class="keywordtype">float</span> stride = 0.15f;</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span> </div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>    uint32_t max_steps = 48;</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  } ssr;</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span> </div>
+<div class="foldopen" id="foldopen00069" data-start="{" data-end="};">
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno"><a class="line" href="structrenderer_1_1PostProcessSettings_1_1Fxaa.html">   69</a></span>  <span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1PostProcessSettings_1_1Fxaa.html">Fxaa</a> {</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>    <span class="keywordtype">float</span> contrast_threshold = 0.0312f;</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>    <span class="keywordtype">float</span> relative_threshold = 0.125f;</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>    <span class="keywordtype">float</span> subpixel_blending = 0.75f;</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  } fxaa;</div>
 </div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span> </div>
-<div class="foldopen" id="foldopen00059" data-start="{" data-end="};">
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno"><a class="line" href="structrenderer_1_1PostProcessSettings_1_1Ssao.html">   59</a></span>  <span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1PostProcessSettings_1_1Ssao.html">Ssao</a> {</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>    <span class="keywordtype">float</span> radius = 0.5f;</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span> </div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    <span class="keywordtype">float</span> strength = 1.0f;</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span> </div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    <span class="keywordtype">float</span> range_cutoff = 1.0f;</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span> </div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>    uint32_t sample_count = 16;</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  } ssao;</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span> </div>
+<div class="foldopen" id="foldopen00075" data-start="{" data-end="};">
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno"><a class="line" href="structrenderer_1_1PostProcessSettings_1_1Ssr.html">   75</a></span>  <span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1PostProcessSettings_1_1Ssr.html">Ssr</a> {</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>    <span class="keywordtype">float</span> intensity = 1.0f;</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span> </div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>    <span class="keywordtype">float</span> max_roughness = 0.6f;</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span> </div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>    <span class="keywordtype">float</span> thickness = 0.5f;</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span> </div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>    <span class="keywordtype">float</span> stride = 0.15f;</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span> </div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>    uint32_t max_steps = 48;</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  } ssr;</div>
 </div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>};</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span> </div>
+<div class="foldopen" id="foldopen00087" data-start="{" data-end="};">
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno"><a class="line" href="structrenderer_1_1PostProcessSettings_1_1Ssao.html">   87</a></span>  <span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1PostProcessSettings_1_1Ssao.html">Ssao</a> {</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>    <span class="keywordtype">float</span> radius = 0.5f;</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span> </div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>    <span class="keywordtype">float</span> strength = 1.0f;</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span> </div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>    <span class="keywordtype">float</span> range_cutoff = 1.0f;</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span> </div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>    uint32_t sample_count = 16;</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  } ssao;</div>
 </div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span> </div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>TOAST_API <span class="keywordtype">void</span> blendPostProcess(<a class="code hl_struct" href="structrenderer_1_1PostProcessSettings.html">PostProcessSettings</a>&amp; target, <span class="keyword">const</span> <a class="code hl_struct" href="structrenderer_1_1PostProcessSettings.html">PostProcessSettings</a>&amp; source, <span class="keywordtype">float</span> weight);</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span> </div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>}</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span> </div>
+<div class="foldopen" id="foldopen00097" data-start="{" data-end="};">
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno"><a class="line" href="structrenderer_1_1PostProcessSettings_1_1Fog.html">   97</a></span>  <span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1PostProcessSettings_1_1Fog.html">Fog</a> {</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno"><a class="line" href="structrenderer_1_1PostProcessSettings_1_1Fog.html#a35c9bfd3fd4150baba7b35a0eb17049d">   99</a></span>    <span class="keywordtype">float</span> <a class="code hl_variable" href="structrenderer_1_1PostProcessSettings_1_1Fog.html#a35c9bfd3fd4150baba7b35a0eb17049d">density</a> = 0.0f;</div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>    <span class="keywordtype">float</span> height = 0.0f;</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno"><a class="line" href="structrenderer_1_1PostProcessSettings_1_1Fog.html#aeb78f6ff7f63d4bb75748b190881a2b3">  102</a></span>    <span class="keywordtype">float</span> <a class="code hl_variable" href="structrenderer_1_1PostProcessSettings_1_1Fog.html#aeb78f6ff7f63d4bb75748b190881a2b3">height_falloff</a> = 0.0f;</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>    <span class="keywordtype">float</span> albedo_r = 1.0f;</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>    <span class="keywordtype">float</span> albedo_g = 1.0f;</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>    <span class="keywordtype">float</span> albedo_b = 1.0f;</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno"><a class="line" href="structrenderer_1_1PostProcessSettings_1_1Fog.html#a48bcb831721948aeb77aca0fa4da5649">  107</a></span>    <span class="keywordtype">float</span> <a class="code hl_variable" href="structrenderer_1_1PostProcessSettings_1_1Fog.html#a48bcb831721948aeb77aca0fa4da5649">anisotropy</a> = 0.3f;</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>    <span class="keywordtype">float</span> ambient = 1.0f;</div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno"><a class="line" href="structrenderer_1_1PostProcessSettings_1_1Fog.html#a3eeb5f55b2ec4d6c2d7f50e0d4d8877c">  110</a></span>    <span class="keywordtype">float</span> <a class="code hl_variable" href="structrenderer_1_1PostProcessSettings_1_1Fog.html#a3eeb5f55b2ec4d6c2d7f50e0d4d8877c">distance</a> = 64.0f;</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  } fog;</div>
+</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>};</div>
+</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span> </div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>TOAST_API <span class="keywordtype">void</span> blendPostProcess(<a class="code hl_struct" href="structrenderer_1_1PostProcessSettings.html">PostProcessSettings</a>&amp; target, <span class="keyword">const</span> <a class="code hl_struct" href="structrenderer_1_1PostProcessSettings.html">PostProcessSettings</a>&amp; source, <span class="keywordtype">float</span> weight);</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span> </div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>}</div>
+<div class="ttc" id="aclassassets_1_1Handle_html"><div class="ttname"><a href="classassets_1_1Handle.html">assets::Handle</a></div><div class="ttdoc">Type-safe smart pointer for assets.</div><div class="ttdef"><b>Definition</b> core_types.hpp:149</div></div>
 <div class="ttc" id="aexport_8hpp_html"><div class="ttname"><a href="export_8hpp.html">export.hpp</a></div></div>
-<div class="ttc" id="astructrenderer_1_1PostProcessSettings_1_1Bloom_html"><div class="ttname"><a href="structrenderer_1_1PostProcessSettings_1_1Bloom.html">renderer::PostProcessSettings::Bloom</a></div><div class="ttdef"><b>Definition</b> post_process_settings.hpp:15</div></div>
-<div class="ttc" id="astructrenderer_1_1PostProcessSettings_1_1Fxaa_html"><div class="ttname"><a href="structrenderer_1_1PostProcessSettings_1_1Fxaa.html">renderer::PostProcessSettings::Fxaa</a></div><div class="ttdef"><b>Definition</b> post_process_settings.hpp:41</div></div>
-<div class="ttc" id="astructrenderer_1_1PostProcessSettings_1_1Ssao_html"><div class="ttname"><a href="structrenderer_1_1PostProcessSettings_1_1Ssao.html">renderer::PostProcessSettings::Ssao</a></div><div class="ttdef"><b>Definition</b> post_process_settings.hpp:59</div></div>
-<div class="ttc" id="astructrenderer_1_1PostProcessSettings_1_1Ssr_html"><div class="ttname"><a href="structrenderer_1_1PostProcessSettings_1_1Ssr.html">renderer::PostProcessSettings::Ssr</a></div><div class="ttdef"><b>Definition</b> post_process_settings.hpp:47</div></div>
-<div class="ttc" id="astructrenderer_1_1PostProcessSettings_1_1Tonemap_html"><div class="ttname"><a href="structrenderer_1_1PostProcessSettings_1_1Tonemap.html">renderer::PostProcessSettings::Tonemap</a></div><div class="ttdef"><b>Definition</b> post_process_settings.hpp:22</div></div>
-<div class="ttc" id="astructrenderer_1_1PostProcessSettings_1_1Tonemap_html_a32efef1a7798928c84d28f61a248b409"><div class="ttname"><a href="structrenderer_1_1PostProcessSettings_1_1Tonemap.html#a32efef1a7798928c84d28f61a248b409">renderer::PostProcessSettings::Tonemap::auto_exposure_min</a></div><div class="ttdeci">float auto_exposure_min</div><div class="ttdoc">log2 of the average scene luminance the meter may settle on</div><div class="ttdef"><b>Definition</b> post_process_settings.hpp:34</div></div>
-<div class="ttc" id="astructrenderer_1_1PostProcessSettings_1_1Tonemap_html_a558b5bfcb92756014b3bbb57f489876c"><div class="ttname"><a href="structrenderer_1_1PostProcessSettings_1_1Tonemap.html#a558b5bfcb92756014b3bbb57f489876c">renderer::PostProcessSettings::Tonemap::mode</a></div><div class="ttdeci">uint32_t mode</div><div class="ttdoc">0 Reinhard 1 ACES</div><div class="ttdef"><b>Definition</b> post_process_settings.hpp:25</div></div>
-<div class="ttc" id="astructrenderer_1_1PostProcessSettings_1_1Tonemap_html_a65a4f725c2eb1e35cc75b1d5755686c3"><div class="ttname"><a href="structrenderer_1_1PostProcessSettings_1_1Tonemap.html#a65a4f725c2eb1e35cc75b1d5755686c3">renderer::PostProcessSettings::Tonemap::adapt_speed_up</a></div><div class="ttdeci">float adapt_speed_up</div><div class="ttdoc">Per second toward a brighter scene.</div><div class="ttdef"><b>Definition</b> post_process_settings.hpp:37</div></div>
-<div class="ttc" id="astructrenderer_1_1PostProcessSettings_html"><div class="ttname"><a href="structrenderer_1_1PostProcessSettings.html">renderer::PostProcessSettings</a></div><div class="ttdef"><b>Definition</b> post_process_settings.hpp:14</div></div>
+<div class="ttc" id="astructrenderer_1_1PostProcessSettings_1_1Bloom_html"><div class="ttname"><a href="structrenderer_1_1PostProcessSettings_1_1Bloom.html">renderer::PostProcessSettings::Bloom</a></div><div class="ttdef"><b>Definition</b> post_process_settings.hpp:16</div></div>
+<div class="ttc" id="astructrenderer_1_1PostProcessSettings_1_1Fog_html"><div class="ttname"><a href="structrenderer_1_1PostProcessSettings_1_1Fog.html">renderer::PostProcessSettings::Fog</a></div><div class="ttdef"><b>Definition</b> post_process_settings.hpp:97</div></div>
+<div class="ttc" id="astructrenderer_1_1PostProcessSettings_1_1Fog_html_a35c9bfd3fd4150baba7b35a0eb17049d"><div class="ttname"><a href="structrenderer_1_1PostProcessSettings_1_1Fog.html#a35c9bfd3fd4150baba7b35a0eb17049d">renderer::PostProcessSettings::Fog::density</a></div><div class="ttdeci">float density</div><div class="ttdoc">Extinction per meter at the base height and 0 turns volumetrics off.</div><div class="ttdef"><b>Definition</b> post_process_settings.hpp:99</div></div>
+<div class="ttc" id="astructrenderer_1_1PostProcessSettings_1_1Fog_html_a3eeb5f55b2ec4d6c2d7f50e0d4d8877c"><div class="ttname"><a href="structrenderer_1_1PostProcessSettings_1_1Fog.html#a3eeb5f55b2ec4d6c2d7f50e0d4d8877c">renderer::PostProcessSettings::Fog::distance</a></div><div class="ttdeci">float distance</div><div class="ttdoc">Meters a view ray marches before the sky.</div><div class="ttdef"><b>Definition</b> post_process_settings.hpp:110</div></div>
+<div class="ttc" id="astructrenderer_1_1PostProcessSettings_1_1Fog_html_a48bcb831721948aeb77aca0fa4da5649"><div class="ttname"><a href="structrenderer_1_1PostProcessSettings_1_1Fog.html#a48bcb831721948aeb77aca0fa4da5649">renderer::PostProcessSettings::Fog::anisotropy</a></div><div class="ttdeci">float anisotropy</div><div class="ttdoc">Henyey Greenstein g.</div><div class="ttdef"><b>Definition</b> post_process_settings.hpp:107</div></div>
+<div class="ttc" id="astructrenderer_1_1PostProcessSettings_1_1Fog_html_aeb78f6ff7f63d4bb75748b190881a2b3"><div class="ttname"><a href="structrenderer_1_1PostProcessSettings_1_1Fog.html#aeb78f6ff7f63d4bb75748b190881a2b3">renderer::PostProcessSettings::Fog::height_falloff</a></div><div class="ttdeci">float height_falloff</div><div class="ttdoc">Per meter above the base height and 0 is uniform.</div><div class="ttdef"><b>Definition</b> post_process_settings.hpp:102</div></div>
+<div class="ttc" id="astructrenderer_1_1PostProcessSettings_1_1Fxaa_html"><div class="ttname"><a href="structrenderer_1_1PostProcessSettings_1_1Fxaa.html">renderer::PostProcessSettings::Fxaa</a></div><div class="ttdef"><b>Definition</b> post_process_settings.hpp:69</div></div>
+<div class="ttc" id="astructrenderer_1_1PostProcessSettings_1_1LensFlare_html"><div class="ttname"><a href="structrenderer_1_1PostProcessSettings_1_1LensFlare.html">renderer::PostProcessSettings::LensFlare</a></div><div class="ttdef"><b>Definition</b> post_process_settings.hpp:23</div></div>
+<div class="ttc" id="astructrenderer_1_1PostProcessSettings_1_1LensFlare_html_a880de8a16d4f3812de11cbd4e6da359b"><div class="ttname"><a href="structrenderer_1_1PostProcessSettings_1_1LensFlare.html#a880de8a16d4f3812de11cbd4e6da359b">renderer::PostProcessSettings::LensFlare::halo_thickness</a></div><div class="ttdeci">float halo_thickness</div><div class="ttdoc">Spread of the ring along its radius.</div><div class="ttdef"><b>Definition</b> post_process_settings.hpp:40</div></div>
+<div class="ttc" id="astructrenderer_1_1PostProcessSettings_1_1LensFlare_html_ad5b293e91e48adbd8c412d62c0d4754c"><div class="ttname"><a href="structrenderer_1_1PostProcessSettings_1_1LensFlare.html#ad5b293e91e48adbd8c412d62c0d4754c">renderer::PostProcessSettings::LensFlare::anamorphic_tint</a></div><div class="ttdeci">float anamorphic_tint</div><div class="ttdoc">Share of the streak pulled toward blue.</div><div class="ttdef"><b>Definition</b> post_process_settings.hpp:37</div></div>
+<div class="ttc" id="astructrenderer_1_1PostProcessSettings_1_1Ssao_html"><div class="ttname"><a href="structrenderer_1_1PostProcessSettings_1_1Ssao.html">renderer::PostProcessSettings::Ssao</a></div><div class="ttdef"><b>Definition</b> post_process_settings.hpp:87</div></div>
+<div class="ttc" id="astructrenderer_1_1PostProcessSettings_1_1Ssr_html"><div class="ttname"><a href="structrenderer_1_1PostProcessSettings_1_1Ssr.html">renderer::PostProcessSettings::Ssr</a></div><div class="ttdef"><b>Definition</b> post_process_settings.hpp:75</div></div>
+<div class="ttc" id="astructrenderer_1_1PostProcessSettings_1_1Tonemap_html"><div class="ttname"><a href="structrenderer_1_1PostProcessSettings_1_1Tonemap.html">renderer::PostProcessSettings::Tonemap</a></div><div class="ttdef"><b>Definition</b> post_process_settings.hpp:48</div></div>
+<div class="ttc" id="astructrenderer_1_1PostProcessSettings_1_1Tonemap_html_a32efef1a7798928c84d28f61a248b409"><div class="ttname"><a href="structrenderer_1_1PostProcessSettings_1_1Tonemap.html#a32efef1a7798928c84d28f61a248b409">renderer::PostProcessSettings::Tonemap::auto_exposure_min</a></div><div class="ttdeci">float auto_exposure_min</div><div class="ttdoc">log2 of the average scene luminance the meter may settle on</div><div class="ttdef"><b>Definition</b> post_process_settings.hpp:62</div></div>
+<div class="ttc" id="astructrenderer_1_1PostProcessSettings_1_1Tonemap_html_a558b5bfcb92756014b3bbb57f489876c"><div class="ttname"><a href="structrenderer_1_1PostProcessSettings_1_1Tonemap.html#a558b5bfcb92756014b3bbb57f489876c">renderer::PostProcessSettings::Tonemap::mode</a></div><div class="ttdeci">uint32_t mode</div><div class="ttdoc">0 Reinhard 1 ACES 2 GT7</div><div class="ttdef"><b>Definition</b> post_process_settings.hpp:51</div></div>
+<div class="ttc" id="astructrenderer_1_1PostProcessSettings_1_1Tonemap_html_a65a4f725c2eb1e35cc75b1d5755686c3"><div class="ttname"><a href="structrenderer_1_1PostProcessSettings_1_1Tonemap.html#a65a4f725c2eb1e35cc75b1d5755686c3">renderer::PostProcessSettings::Tonemap::adapt_speed_up</a></div><div class="ttdeci">float adapt_speed_up</div><div class="ttdoc">Per second toward a brighter scene.</div><div class="ttdef"><b>Definition</b> post_process_settings.hpp:65</div></div>
+<div class="ttc" id="astructrenderer_1_1PostProcessSettings_html"><div class="ttname"><a href="structrenderer_1_1PostProcessSettings.html">renderer::PostProcessSettings</a></div><div class="ttdef"><b>Definition</b> post_process_settings.hpp:15</div></div>
+<div class="ttc" id="atexture_8hpp_html"><div class="ttname"><a href="texture_8hpp.html">texture.hpp</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><b>engine</b></li><li class="navelem"><b>src</b></li><li class="navelem"><b>toast</b></li><li class="navelem"><b>renderer</b></li><li class="navelem"><a href="post__process__settings_8hpp.html">post_process_settings.hpp</a></li>
+    <li class="navelem"><b>engine</b></li><li class="navelem"><b>src</b></li><li class="navelem"><b>toast</b></li><li class="navelem"><b>renderer</b></li><li class="navelem"><b>settings</b></li><li class="navelem"><a href="post__process__settings_8hpp.html">post_process_settings.hpp</a></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.17.0 </li>
   </ul>
 </div>

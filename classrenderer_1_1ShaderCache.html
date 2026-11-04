@@ -122,11 +122,13 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classrenderer_
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
 <tr class="memitem:Entry" id="r_Entry"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structrenderer_1_1ShaderCache_1_1Entry.html">Entry</a></td></tr>
+<tr class="memitem:StartupProgress" id="r_StartupProgress"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structrenderer_1_1ShaderCache_1_1StartupProgress.html">StartupProgress</a></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a824d2443c093e6ee57e0de5b43b2f76b" id="r_a824d2443c093e6ee57e0de5b43b2f76b"><td class="memItemLeft"><a id="a824d2443c093e6ee57e0de5b43b2f76b" name="a824d2443c093e6ee57e0de5b43b2f76b"></a>
-void&#160;</td><td class="memItemRight"><b>compileAllAtStartup</b> ()</td></tr>
+<tr class="memitem:a64a9e5f30d5bccfe7bbb1ac868b3a5bd" id="r_a64a9e5f30d5bccfe7bbb1ac868b3a5bd"><td class="memItemLeft"><a id="a64a9e5f30d5bccfe7bbb1ac868b3a5bd" name="a64a9e5f30d5bccfe7bbb1ac868b3a5bd"></a>
+void&#160;</td><td class="memItemRight"><b>compileAllAtStartup</b> (const std::function&lt; void(const <a class="el" href="structrenderer_1_1ShaderCache_1_1StartupProgress.html">StartupProgress</a> &amp;)&gt; &amp;on_progress={})</td></tr>
+<tr class="memdesc:a64a9e5f30d5bccfe7bbb1ac868b3a5bd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Blocks and reports from the caller every 30 ms. <br /></td></tr>
 <tr class="memitem:af713c8bf48563e9a644280ee65c191a6" id="r_af713c8bf48563e9a644280ee65c191a6"><td class="memItemLeft"><a id="af713c8bf48563e9a644280ee65c191a6" name="af713c8bf48563e9a644280ee65c191a6"></a>
 auto&#160;</td><td class="memItemRight"><b>acquire</b> (<a class="el" href="structtoast_1_1UID.html">toast::UID</a> uid) -&gt; std::shared_ptr&lt; const <a class="el" href="structrenderer_1_1ShaderCache_1_1Entry.html">Entry</a> &gt;</td></tr>
 <tr class="memdesc:af713c8bf48563e9a644280ee65c191a6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Thread safe and concurrent calls for one shader share a compile. <br /></td></tr>
@@ -143,8 +145,8 @@ static auto&#160;</td><td class="memItemRight"><b>get</b> () -&gt; ShaderCache &
 static auto&#160;</td><td class="memItemRight"><b>fnv1a</b> (const void *data, size_t size) -&gt; uint64_t</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>engine/src/toast/renderer/<a class="el" href="shader__cache_8hpp_source.html">shader_cache.hpp</a></li>
-<li>engine/src/toast/renderer/<b>shader_cache.cpp</b></li>
+<li>engine/src/toast/renderer/shaders/<a class="el" href="shader__cache_8hpp_source.html">shader_cache.hpp</a></li>
+<li>engine/src/toast/renderer/shaders/<b>shader_cache.cpp</b></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

@@ -11,5 +11,6 @@ var classvoxel_1_1Volume =
     [ "occupancyPointer", "classvoxel_1_1Volume.html#a45bdb135fa7d2963cd27bd2c5a188637", null ],
     [ "revision", "classvoxel_1_1Volume.html#a776e93b263d2d247ec00340184651e24", null ],
     [ "setBrickMaterial", "classvoxel_1_1Volume.html#a6b98f7c9bd8e5dd40496fa711652082d", null ],
-    [ "takeBrick", "classvoxel_1_1Volume.html#ae8fb61d3ee89c914f68fbf7e21f636da", null ]
+    [ "takeBrick", "classvoxel_1_1Volume.html#ae8fb61d3ee89c914f68fbf7e21f636da", null ],
+    [ "textureOrigin", "classvoxel_1_1Volume.html#ae0c3a651fca88a9ba47815e32959f70c", null ]
 ];

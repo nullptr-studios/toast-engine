@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.17.0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Toast Engine: engine/src/toast/renderer/shadow_slots.hpp Source File</title>
+<title>Toast Engine: engine/src/toast/renderer/lighting/shadow_slots.hpp Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="codefolding.js"></script>
 <script type="text/javascript" src="clipboard.js"></script>
@@ -166,11 +166,11 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('shadow__slots_
 <div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span><span class="keywordtype">void</span> setGraceFrames(uint32_t frames);</div>
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span></div>
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>[[nodiscard]]</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span><span class="keyword">auto</span> <a class="code hl_function" href="shadow__slots_8cpp.html#a15cee2d05d0c1c5da2146a0521ea3fd8">stableResolution</a>(uint32_t current, <span class="keywordtype">float</span> camera_distance, <span class="keywordtype">float</span> resolution_scale) -&gt; uint32_t;</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span><span class="keyword">auto</span> <a class="code hl_function" href="shadow__slots_8cpp.html#acb61f904a1f28fc789fd5d88f0204239">stableResolution</a>(uint32_t current, <span class="keywordtype">float</span> camera_distance, <span class="keywordtype">float</span> light_range, <span class="keywordtype">float</span> resolution_scale) -&gt; uint32_t;</div>
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span> </div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>}</div>
-<div class="ttc" id="ashadow__slots_8cpp_html_a15cee2d05d0c1c5da2146a0521ea3fd8"><div class="ttname"><a href="shadow__slots_8cpp.html#a15cee2d05d0c1c5da2146a0521ea3fd8">renderer::shadow_slots::stableResolution</a></div><div class="ttdeci">auto stableResolution(uint32_t current, float camera_distance, float resolution_scale) -&gt; uint32_t</div><div class="ttdoc">Keeps the current tier until the camera distance leaves its band.</div><div class="ttdef"><b>Definition</b> shadow_slots.cpp:129</div></div>
-<div class="ttc" id="ashadow__slots_8cpp_html_a844c326bd89687ff2f70bdb272f391cb"><div class="ttname"><a href="shadow__slots_8cpp.html#a844c326bd89687ff2f70bdb272f391cb">renderer::shadow_slots::assign</a></div><div class="ttdeci">auto assign(std::span&lt; const Candidate &gt; candidates, std::span&lt; Slot &gt; slots, std::span&lt; int32_t &gt; slot_of) -&gt; uint32_t</div><div class="ttdoc">slot_of is -1 for losers and the return counts owners displaced</div><div class="ttdef"><b>Definition</b> shadow_slots.cpp:25</div></div>
+<div class="ttc" id="ashadow__slots_8cpp_html_a844c326bd89687ff2f70bdb272f391cb"><div class="ttname"><a href="shadow__slots_8cpp.html#a844c326bd89687ff2f70bdb272f391cb">renderer::shadow_slots::assign</a></div><div class="ttdeci">auto assign(std::span&lt; const Candidate &gt; candidates, std::span&lt; Slot &gt; slots, std::span&lt; int32_t &gt; slot_of) -&gt; uint32_t</div><div class="ttdoc">slot_of is -1 for losers and the return counts owners displaced</div><div class="ttdef"><b>Definition</b> shadow_slots.cpp:21</div></div>
+<div class="ttc" id="ashadow__slots_8cpp_html_acb61f904a1f28fc789fd5d88f0204239"><div class="ttname"><a href="shadow__slots_8cpp.html#acb61f904a1f28fc789fd5d88f0204239">renderer::shadow_slots::stableResolution</a></div><div class="ttdeci">auto stableResolution(uint32_t current, float camera_distance, float light_range, float resolution_scale) -&gt; uint32_t</div><div class="ttdoc">Keeps the current tier until the camera distance leaves its band.</div><div class="ttdef"><b>Definition</b> shadow_slots.cpp:125</div></div>
 <div class="ttc" id="ashadow__slots_8hpp_html_a2deb6e58d8fab78bf83b39cca44d786e"><div class="ttname"><a href="shadow__slots_8hpp.html#a2deb6e58d8fab78bf83b39cca44d786e">renderer::shadow_slots::k_distance_slack</a></div><div class="ttdeci">constexpr float k_distance_slack</div><div class="ttdoc">Owners keep casting this much past the light shadow distance.</div><div class="ttdef"><b>Definition</b> shadow_slots.hpp:19</div></div>
 <div class="ttc" id="ashadow__slots_8hpp_html_a3df9689fa84ae84f223c468822d54674"><div class="ttname"><a href="shadow__slots_8hpp.html#a3df9689fa84ae84f223c468822d54674">renderer::shadow_slots::k_default_retention</a></div><div class="ttdeci">constexpr float k_default_retention</div><div class="ttdoc">An owner keeps its slot unless outranked by this factor.</div><div class="ttdef"><b>Definition</b> shadow_slots.hpp:13</div></div>
 <div class="ttc" id="ashadow__slots_8hpp_html_a8071b7ba2e36ad635ae4c9145e04da9a"><div class="ttname"><a href="shadow__slots_8hpp.html#a8071b7ba2e36ad635ae4c9145e04da9a">renderer::shadow_slots::k_default_grace_frames</a></div><div class="ttdeci">constexpr uint32_t k_default_grace_frames</div><div class="ttdoc">Frames an owner still counts as seen after it leaves the view.</div><div class="ttdef"><b>Definition</b> shadow_slots.hpp:16</div></div>
@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('shadow__slots_
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><b>engine</b></li><li class="navelem"><b>src</b></li><li class="navelem"><b>toast</b></li><li class="navelem"><b>renderer</b></li><li class="navelem"><a href="shadow__slots_8hpp.html">shadow_slots.hpp</a></li>
+    <li class="navelem"><b>engine</b></li><li class="navelem"><b>src</b></li><li class="navelem"><b>toast</b></li><li class="navelem"><b>renderer</b></li><li class="navelem"><b>lighting</b></li><li class="navelem"><a href="shadow__slots_8hpp.html">shadow_slots.hpp</a></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.17.0 </li>
   </ul>
 </div>

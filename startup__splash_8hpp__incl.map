@@ -1,0 +1,11 @@
+<map id="engine/src/toast/window/startup_splash.hpp" name="engine/src/toast/window/startup_splash.hpp">
+<area shape="rect" id="Node000001" title=" " alt="" coords="113,5,292,50"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,98,101,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="165,50,91,93,89,88,160,51"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="125,98,194,126"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="193,49,175,86,172,82,189,52"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="219,98,271,126"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="215,48,234,85,229,83,212,53"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="296,98,354,126"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="235,48,295,89,290,89,234,53"/>
+</map>

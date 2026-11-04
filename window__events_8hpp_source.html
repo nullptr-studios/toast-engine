@@ -229,8 +229,35 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('window__events
 <div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>  <span class="keyword">explicit</span> WindowFocus(<span class="keywordtype">bool</span> focused) : focused(focused) { }</div>
 <div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>};</div>
 </div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span> </div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>}</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span></div>
+<div class="foldopen" id="foldopen00112" data-start="{" data-end="};">
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno"><a class="line" href="structevent_1_1WindowHdr.html">  112</a></span><span class="keyword">struct </span>WindowHdr : Event&lt;WindowHdr&gt; {</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  <span class="keywordtype">bool</span> enabled;</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  <span class="keywordtype">float</span> sdr_white;</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>  <span class="keywordtype">float</span> headroom;</div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span> </div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  WindowHdr(<span class="keywordtype">bool</span> enabled, <span class="keywordtype">float</span> sdr_white, <span class="keywordtype">float</span> headroom) : enabled(enabled), sdr_white(sdr_white), headroom(headroom) { }</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>};</div>
+</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span></div>
+<div class="foldopen" id="foldopen00122" data-start="{" data-end="};">
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno"><a class="line" href="structevent_1_1DebugOverlayCursor.html">  122</a></span><span class="keyword">struct </span>DebugOverlayCursor : Event&lt;DebugOverlayCursor&gt; {</div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>  <span class="keywordtype">bool</span> owned;</div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span> </div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>  <span class="keyword">explicit</span> DebugOverlayCursor(<span class="keywordtype">bool</span> owned) : owned(owned) { }</div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>};</div>
+</div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span></div>
+<div class="foldopen" id="foldopen00129" data-start="{" data-end="};">
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno"><a class="line" href="structevent_1_1DebugOverlayCapture.html">  129</a></span><span class="keyword">struct </span>DebugOverlayCapture : Event&lt;DebugOverlayCapture&gt; {</div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>  <span class="keywordtype">bool</span> mouse;</div>
+<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>  <span class="keywordtype">bool</span> keyboard;</div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span> </div>
+<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>  DebugOverlayCapture(<span class="keywordtype">bool</span> mouse, <span class="keywordtype">bool</span> keyboard) : mouse(mouse), keyboard(keyboard) { }</div>
+<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>};</div>
+</div>
+<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span> </div>
+<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>}</div>
 <div class="ttc" id="astructevent_1_1ExitApplication_html"><div class="ttname"><a href="structevent_1_1ExitApplication.html">event::ExitApplication</a></div><div class="ttdoc">Send this event to tell the engine to close the window.</div><div class="ttdef"><b>Definition</b> window_events.hpp:21</div></div>
 <div class="ttc" id="astructevent_1_1WindowDrop_html_aa8565e91a6aebbe14755d87830dac3ab"><div class="ttname"><a href="structevent_1_1WindowDrop.html#aa8565e91a6aebbe14755d87830dac3ab">event::WindowDrop::files</a></div><div class="ttdeci">std::vector&lt; std::string &gt; files</div><div class="ttdoc">Path to the files thrown to the window.</div><div class="ttdef"><b>Definition</b> window_events.hpp:33</div></div>
 <div class="ttc" id="astructevent_1_1WindowKey_html_a5fa9c79e37cee35bf43d9609f364bfd6"><div class="ttname"><a href="structevent_1_1WindowKey.html#a5fa9c79e37cee35bf43d9609f364bfd6">event::WindowKey::key</a></div><div class="ttdeci">int key</div><div class="ttdoc">SDL key code.</div><div class="ttdef"><b>Definition</b> window_events.hpp:40</div></div>

@@ -129,6 +129,11 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:acdacfa8a9bafb51dfc2a9837977f305e" id="r_acdacfa8a9bafb51dfc2a9837977f305e"><td class="memItemLeft"><a id="acdacfa8a9bafb51dfc2a9837977f305e" name="acdacfa8a9bafb51dfc2a9837977f305e"></a>
 void&#160;</td><td class="memItemRight"><b>free</b> (uint32_t id)</td></tr>
 <tr class="memdesc:acdacfa8a9bafb51dfc2a9837977f305e"><td class="mdescLeft">&#160;</td><td class="mdescRight">The id must come from allocate and not already be freed. <br /></td></tr>
+<tr class="memitem:aeb73ec3670435035455eee73a41a271f" id="r_aeb73ec3670435035455eee73a41a271f"><td class="memItemLeft"><a id="aeb73ec3670435035455eee73a41a271f" name="aeb73ec3670435035455eee73a41a271f"></a>
+void&#160;</td><td class="memItemRight"><b>retain</b> (uint32_t id)</td></tr>
+<tr class="memdesc:aeb73ec3670435035455eee73a41a271f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Retain a brick for another volume or a query snapshot. <br /></td></tr>
+<tr class="memitem:adf7a334db676c13e05e55f06689cf2d2" id="r_adf7a334db676c13e05e55f06689cf2d2"><td class="memItemLeft"><a id="adf7a334db676c13e05e55f06689cf2d2" name="adf7a334db676c13e05e55f06689cf2d2"></a>
+auto&#160;</td><td class="memItemRight"><b>referenceCount</b> (uint32_t id) const noexcept -&gt; uint32_t</td></tr>
 <tr class="memitem:a9f601f95fa9a7eed3dc83d6f4e7a0c09" id="r_a9f601f95fa9a7eed3dc83d6f4e7a0c09"><td class="memItemLeft"><a id="a9f601f95fa9a7eed3dc83d6f4e7a0c09" name="a9f601f95fa9a7eed3dc83d6f4e7a0c09"></a>
 auto&#160;</td><td class="memItemRight"><b>material</b> (uint32_t id) -&gt; std::span&lt; uint8_t, k_brick_material_bytes &gt;</td></tr>
 <tr class="memitem:a0282d33d2c2c4f650729165ea1d05ec1" id="r_a0282d33d2c2c4f650729165ea1d05ec1"><td class="memItemLeft"><a id="a0282d33d2c2c4f650729165ea1d05ec1" name="a0282d33d2c2c4f650729165ea1d05ec1"></a>

@@ -1,5 +1,6 @@
 <map id="toast::VoxelNode::requestRebuild" name="toast::VoxelNode::requestRebuild">
-<area shape="rect" id="Node000001" title=" " alt="" coords="220,5,408,50"/>
-<area shape="rect" id="Node000002" href="$classtoast_1_1ProceduralVoxel.html#a2b9b0c9607f0dbd8f2bddc89668430d0" title=" " alt="" coords="5,5,172,50"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="202,28,172,30,172,25,207,27"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="220,29,408,74"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1ProceduralVoxel.html#a2b9b0c9607f0dbd8f2bddc89668430d0" title=" " alt="" coords="5,29,172,74"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="202,52,172,54,172,49,207,51"/>
+<area shape="poly" id="edge2_Node000002_Node000002" title=" " alt="" coords="124,14,112,10,88,8,67,10,54,15,49,21,51,29,45,28,44,19,51,10,66,5,89,3,113,5,129,14"/>
 </map>

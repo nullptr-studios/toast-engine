@@ -137,7 +137,7 @@ Inheritance diagram for renderer::AsyncComputeTask:</div>
 Classes</h2></td></tr>
 <tr class="memitem:Config" id="r_Config"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structrenderer_1_1AsyncComputeTask_1_1Config.html">Config</a></td></tr>
 <tr class="memitem:StepContext" id="r_StepContext"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classrenderer_1_1AsyncComputeTask_1_1StepContext.html">StepContext</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Handed to the step callback. Barriers between dispatches of one step are inserted for you.  <a href="classrenderer_1_1AsyncComputeTask_1_1StepContext.html#details">More...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Handed to the step callback with barriers between its dispatches already inserted.  <a href="classrenderer_1_1AsyncComputeTask_1_1StepContext.html#details">More...</a><br /></td></tr>
 <tr class="memitem:FrameView" id="r_FrameView"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classrenderer_1_1AsyncComputeTask_1_1FrameView.html">FrameView</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Buffers the renderer may read this frame.  <a href="classrenderer_1_1AsyncComputeTask_1_1FrameView.html#details">More...</a><br /></td></tr>
 </table><table class="memberdecls">
@@ -290,13 +290,13 @@ auto&#160;</td><td class="memItemRight"><b>step</b> (const std::function&lt; voi
 </div><div class="memdoc">
 
 <p>Constructor only. </p>
-<p>This is superturbobad do not overuse it. </p>
+<p>One copy per slot so keep ring buffers few and small. </p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>engine/src/toast/renderer/<a class="el" href="async__compute__task_8hpp_source.html">async_compute_task.hpp</a></li>
-<li>engine/src/toast/renderer/<a class="el" href="async__compute__task_8cpp.html">async_compute_task.cpp</a></li>
+<li>engine/src/toast/renderer/compute/<a class="el" href="async__compute__task_8hpp_source.html">async_compute_task.hpp</a></li>
+<li>engine/src/toast/renderer/compute/<a class="el" href="async__compute__task_8cpp.html">async_compute_task.cpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

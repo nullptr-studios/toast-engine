@@ -2,6 +2,8 @@ var classtoast_1_1INodeOwner =
 [
     [ "InstantiateContext", "structtoast_1_1INodeOwner_1_1InstantiateContext.html", "structtoast_1_1INodeOwner_1_1InstantiateContext" ],
     [ "applyFields", "classtoast_1_1INodeOwner.html#ac514e7fc96f8d4fc165c160dd85e46e2", null ],
+    [ "applyFieldValues", "classtoast_1_1INodeOwner.html#a4709b4309638dac077e34a96cb342e3e", null ],
+    [ "applyInteriorOverrides", "classtoast_1_1INodeOwner.html#a8a4edb09afe203f9de55a6e70a95efc0", null ],
     [ "applyLuaOverrides", "classtoast_1_1INodeOwner.html#ab48b767867c37bcf7293f545dd3ec58a", null ],
     [ "asWorkspace", "classtoast_1_1INodeOwner.html#a070a8aaa8d570cbf16c0c68b99ec58fd", null ],
     [ "buildTree", "classtoast_1_1INodeOwner.html#addb06c4741a900c39b5e745fd4538607", null ],

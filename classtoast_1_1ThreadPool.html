@@ -167,9 +167,9 @@ static auto&#160;</td><td class="memItemRight"><b>workerCount</b> () -&gt; size_
 <div class="line"> </div>
 <div class="line">pool.<a class="code hl_function" href="#a4a2d6ba3b1eb148b98b0519e2c4a38ec">waitIdle</a>(); <span class="comment">// Block until all jobs are done</span></div>
 <div class="line">pool.<a class="code hl_function" href="#adf9e87ed36a7eaf11a53e7e18598ed44">destroy</a>();</div>
-<div class="ttc" id="aclasstoast_1_1ThreadPool_html_a4a2d6ba3b1eb148b98b0519e2c4a38ec"><div class="ttname"><a href="#a4a2d6ba3b1eb148b98b0519e2c4a38ec">toast::ThreadPool::waitIdle</a></div><div class="ttdeci">void waitIdle()</div><div class="ttdoc">Blocks the calling thread until all queued and active jobs complete.</div><div class="ttdef"><b>Definition</b> thread_pool.cpp:54</div></div>
-<div class="ttc" id="aclasstoast_1_1ThreadPool_html_aaaf2e9235265347d1915ec2d963e70ac"><div class="ttname"><a href="#aaaf2e9235265347d1915ec2d963e70ac">toast::ThreadPool::create</a></div><div class="ttdeci">static auto create() noexcept -&gt; std::unique_ptr&lt; ThreadPool &gt;</div><div class="ttdoc">Initializes the pool and returns a pointer with ownership.</div><div class="ttdef"><b>Definition</b> thread_pool.cpp:116</div></div>
-<div class="ttc" id="aclasstoast_1_1ThreadPool_html_adf9e87ed36a7eaf11a53e7e18598ed44"><div class="ttname"><a href="#adf9e87ed36a7eaf11a53e7e18598ed44">toast::ThreadPool::destroy</a></div><div class="ttdeci">void destroy()</div><div class="ttdoc">Destroys the thread pool and waits for all workers to finish.</div><div class="ttdef"><b>Definition</b> thread_pool.cpp:32</div></div>
+<div class="ttc" id="aclasstoast_1_1ThreadPool_html_a4a2d6ba3b1eb148b98b0519e2c4a38ec"><div class="ttname"><a href="#a4a2d6ba3b1eb148b98b0519e2c4a38ec">toast::ThreadPool::waitIdle</a></div><div class="ttdeci">void waitIdle()</div><div class="ttdoc">Blocks the calling thread until all queued and active jobs complete.</div><div class="ttdef"><b>Definition</b> thread_pool.cpp:52</div></div>
+<div class="ttc" id="aclasstoast_1_1ThreadPool_html_aaaf2e9235265347d1915ec2d963e70ac"><div class="ttname"><a href="#aaaf2e9235265347d1915ec2d963e70ac">toast::ThreadPool::create</a></div><div class="ttdeci">static auto create() noexcept -&gt; std::unique_ptr&lt; ThreadPool &gt;</div><div class="ttdoc">Initializes the pool and returns a pointer with ownership.</div><div class="ttdef"><b>Definition</b> thread_pool.cpp:114</div></div>
+<div class="ttc" id="aclasstoast_1_1ThreadPool_html_adf9e87ed36a7eaf11a53e7e18598ed44"><div class="ttname"><a href="#adf9e87ed36a7eaf11a53e7e18598ed44">toast::ThreadPool::destroy</a></div><div class="ttdeci">void destroy()</div><div class="ttdoc">Destroys the thread pool and waits for all workers to finish.</div><div class="ttdef"><b>Definition</b> thread_pool.cpp:30</div></div>
 </div><!-- fragment --></dd></dl>
 <dl class="section note"><dt>Note</dt><dd>The pool should be destroyed before the program exits to ensure all worker threads are properly joined.</dd></dl>
 <dl class="section see"><dt>See also</dt><dd><a class="el" href="classtoast_1_1World.html">World</a> (uses <a class="el" href="classtoast_1_1ThreadPool.html" title="A simple thread pool for executing jobs asynchronously.">ThreadPool</a> for async scene loading) </dd></dl>
@@ -395,15 +395,18 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="classtoast_1_1ThreadPool_a4840f2494b2a12987c7817e1a945f4b4_icgraph.png" border="0" usemap="#aclasstoast_1_1ThreadPool_a4840f2494b2a12987c7817e1a945f4b4_icgraph" loading="lazy" alt=""/></div>
 <map name="aclasstoast_1_1ThreadPool_a4840f2494b2a12987c7817e1a945f4b4_icgraph" id="aclasstoast_1_1ThreadPool_a4840f2494b2a12987c7817e1a945f4b4_icgraph">
-<area shape="rect" title="Queues a job for execution by a worker thread." alt="" coords="421,48,595,76"/>
-<area shape="rect" href="classlogging_1_1Logger.html#aa9e80cc95ca58b9adb7e3a8323313e51" title="Set up the global logger instance, gives ownership to the caller." alt="" coords="5,11,176,39"/>
-<area shape="poly" title=" " alt="" coords="461,42,420,28,373,15,322,10,271,8,177,14,176,9,271,3,323,4,373,10,421,23,466,42"/>
-<area shape="rect" href="classlogging_1_1Logger.html#a4e48e1e55a2e236783294f836f3bbdac" title="Entry point for all engine logs." alt="" coords="224,48,373,76"/>
-<area shape="poly" title=" " alt="" coords="403,63,374,65,373,60,408,62"/>
-<area shape="rect" href="classtoast_1_1VoxelPiece.html#a059ce673693b6726d21fc5427baed01e" title=" " alt="" coords="228,100,368,145"/>
-<area shape="poly" title=" " alt="" coords="446,80,369,105,368,100,440,81"/>
-<area shape="poly" title=" " alt="" coords="206,47,172,42,171,37,211,45"/>
-<area shape="poly" title=" " alt="" coords="332,33,321,29,298,27,277,29,265,34,262,39,267,49,262,47,257,39,261,30,276,24,298,22,323,24,338,33"/>
+<area shape="rect" title="Queues a job for execution by a worker thread." alt="" coords="421,112,595,140"/>
+<area shape="rect" href="classrenderer_1_1ShaderCache.html#a64a9e5f30d5bccfe7bbb1ac868b3a5bd" title="Blocks and reports from the caller every 30 ms." alt="" coords="203,5,372,50"/>
+<area shape="poly" title=" " alt="" coords="462,106,372,65,346,53,346,48,374,60,467,105"/>
+<area shape="rect" href="classlogging_1_1Logger.html#aa9e80cc95ca58b9adb7e3a8323313e51" title="Set up the global logger instance, gives ownership to the caller." alt="" coords="203,74,373,102"/>
+<area shape="poly" title=" " alt="" coords="408,110,371,105,371,99,413,109"/>
+<area shape="rect" href="classlogging_1_1Logger.html#ae4becec8639a8abc126e48bdd974087f" title="Entry point for all engine logs." alt="" coords="213,150,362,178"/>
+<area shape="poly" title=" " alt="" coords="405,144,363,154,362,148,410,143"/>
+<area shape="rect" href="classtoast_1_1VoxelPiece.html#a059ce673693b6726d21fc5427baed01e" title=" " alt="" coords="218,201,358,246"/>
+<area shape="poly" title=" " alt="" coords="466,147,374,191,346,203,345,198,372,187,461,148"/>
+<area shape="poly" title=" " alt="" coords="322,134,311,131,288,128,266,130,254,135,252,141,257,150,252,149,246,141,251,131,265,125,288,123,312,126,327,135"/>
+<area shape="rect" href="log_8hpp.html#af18d3b362031e8881ae3e8ccfa125929" title="details is the long body of a log" alt="" coords="5,150,155,178"/>
+<area shape="poly" title=" " alt="" coords="195,165,155,166,155,161,200,163"/>
 </map>
 </div>
 

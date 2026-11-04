@@ -1,0 +1,5 @@
+<map id="assets::Prefab::InteriorOverride" name="assets::Prefab::InteriorOverride">
+<area shape="rect" id="Node000001" title="Field values on one node inside a nested instance layered over the inner prefab when it loads." alt="" coords="5,106,174,151"/>
+<area shape="rect" id="Node000002" href="$structtoast_1_1UID.html" title=" " alt="" coords="46,5,133,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="92,47,92,106,87,105,87,50"/>
+</map>

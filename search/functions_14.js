@@ -7,12 +7,13 @@ var searchData=
   ['unsubscribe_4',['unsubscribe',['../classevent_1_1Listener.html#a6bce804690ee8ddb6e0523049926be68',1,'event::Listener::unsubscribe()'],['../classevent_1_1ThreadListener.html#adee91cc858efd726b49de39f71ce4b50',1,'event::ThreadListener::unsubscribe()']]],
   ['unsubscribeany_5',['unsubscribeAny',['../structevent_1_1EventSystem.html#ac53402317f859cecb1635d2eabc29d8f',1,'event::EventSystem']]],
   ['up_6',['up',['../classtoast_1_1Node3D.html#aa6e39d1cfe260780ec8ae491b53d4b43',1,'toast::Node3D']]],
-  ['updateselectionfromchildren_7',['UpdateSelectionFromChildren',['../classeditor_1_1Assets_1_1Importers_1_1ImportFolderViewModel.html#a385dd4ed89073f25fc39afb89f80caf3',1,'editor::Assets::Importers::ImportFolderViewModel']]],
-  ['updatetlas_8',['updateTlas',['../classrenderer_1_1SceneDescriptorSets.html#ab888b3b6495cb83fd12da0c50dc9781c',1,'renderer::SceneDescriptorSets']]],
-  ['updatetracymemory_9',['updateTracyMemory',['../classrenderer_1_1VulkanCore.html#a212e2a92f2003f248f3e4b52a3500f08',1,'renderer::VulkanCore']]],
-  ['upload_10',['upload',['../classrenderer_1_1AsyncComputeTask.html#a19439e067dc13e68a8fd2bd580017af6',1,'renderer::AsyncComputeTask']]],
-  ['uploadstats_11',['uploadStats',['../classrenderer_1_1VulkanRenderer.html#a598581b9421635962e600c6dd77cf9fd',1,'renderer::VulkanRenderer']]],
-  ['uploadtimeline_12',['uploadTimeline',['../classrenderer_1_1VulkanRenderer.html#a1d74e649188a1b8615e656b2222bef3b',1,'renderer::VulkanRenderer']]],
-  ['uploadtimelinevalue_13',['uploadTimelineValue',['../classrenderer_1_1VulkanRenderer.html#a3741ea1e8fae2e1475b3ef101041d1bd',1,'renderer::VulkanRenderer']]],
-  ['uptime_14',['uptime',['../classTime.html#a3c11c4f1f25902e2a30393723a997c52',1,'Time']]]
+  ['update_7',['update',['../classrenderer_1_1VoxelBlasCache.html#a107532aa3d559000398a0f1acab2912e',1,'renderer::VoxelBlasCache::update()'],['../classrenderer_1_1VoxelTraceScene.html#a5c3da6b1188b9bf8c8959ebccb91313c',1,'renderer::VoxelTraceScene::update()'],['../classtoast_1_1StartupSplash.html#a8e6f436d3d9e390707728538a80d53d3',1,'toast::StartupSplash::update()']]],
+  ['updateselectionfromchildren_8',['UpdateSelectionFromChildren',['../classeditor_1_1Assets_1_1Importers_1_1ImportFolderViewModel.html#a385dd4ed89073f25fc39afb89f80caf3',1,'editor::Assets::Importers::ImportFolderViewModel']]],
+  ['updatetlas_9',['updateTlas',['../classrenderer_1_1SceneDescriptorSets.html#ab888b3b6495cb83fd12da0c50dc9781c',1,'renderer::SceneDescriptorSets']]],
+  ['updatetracymemory_10',['updateTracyMemory',['../classrenderer_1_1VulkanCore.html#a212e2a92f2003f248f3e4b52a3500f08',1,'renderer::VulkanCore']]],
+  ['upload_11',['upload',['../classrenderer_1_1AsyncComputeTask.html#a19439e067dc13e68a8fd2bd580017af6',1,'renderer::AsyncComputeTask']]],
+  ['uploadstats_12',['uploadStats',['../classrenderer_1_1VulkanRenderer.html#a598581b9421635962e600c6dd77cf9fd',1,'renderer::VulkanRenderer']]],
+  ['uploadtimeline_13',['uploadTimeline',['../classrenderer_1_1VulkanRenderer.html#a1d74e649188a1b8615e656b2222bef3b',1,'renderer::VulkanRenderer']]],
+  ['uploadtimelinevalue_14',['uploadTimelineValue',['../classrenderer_1_1VulkanRenderer.html#a3741ea1e8fae2e1475b3ef101041d1bd',1,'renderer::VulkanRenderer']]],
+  ['uptime_15',['uptime',['../classTime.html#a3c11c4f1f25902e2a30393723a997c52',1,'Time']]]
 ];

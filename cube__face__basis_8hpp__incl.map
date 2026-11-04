@@ -1,7 +1,7 @@
-<map id="engine/src/toast/renderer/cube_face_basis.hpp" name="engine/src/toast/renderer/cube_face_basis.hpp">
-<area shape="rect" id="Node000001" title=" " alt="" coords="5,5,190,50"/>
-<area shape="rect" id="Node000002" title=" " alt="" coords="12,98,77,126"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="86,49,63,86,59,83,81,52"/>
-<area shape="rect" id="Node000003" title=" " alt="" coords="100,98,204,126"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="113,48,138,85,132,85,111,53"/>
+<map id="engine/src/toast/renderer/lighting/cube_face_basis.hpp" name="engine/src/toast/renderer/lighting/cube_face_basis.hpp">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,5,219,50"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="26,98,91,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="100,49,78,86,74,83,96,52"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="115,98,218,126"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="128,48,152,85,147,85,125,53"/>
 </map>

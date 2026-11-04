@@ -167,8 +167,8 @@ void&#160;</td><td class="memItemRight"><b>DisableSharedViewport</b> ()</td></tr
 int&#160;</td><td class="memItemRight"><b>TryGetSharedViewportFrame</b> (out <a class="el" href="structeditor_1_1Engine_1_1ToastViewportSharedFrame.html">ToastViewportSharedFrame</a> frame)</td></tr>
 <tr class="memitem:aa40f9ed2720c0f8688326c0006583cbc" id="r_aa40f9ed2720c0f8688326c0006583cbc"><td class="memItemLeft"><a id="aa40f9ed2720c0f8688326c0006583cbc" name="aa40f9ed2720c0f8688326c0006583cbc"></a>
 bool&#160;</td><td class="memItemRight"><b>ExportSharedViewportSlot</b> (ulong generation, uint slot, out <a class="el" href="structeditor_1_1Engine_1_1ToastViewportSharedHandles.html">ToastViewportSharedHandles</a> handles)</td></tr>
-<tr class="memitem:abf5f7e2e903278427b7aaab0f91034f9" id="r_abf5f7e2e903278427b7aaab0f91034f9"><td class="memItemLeft"><a id="abf5f7e2e903278427b7aaab0f91034f9" name="abf5f7e2e903278427b7aaab0f91034f9"></a>
-bool&#160;</td><td class="memItemRight"><b>HoldSharedViewportSlot</b> (ulong generation, uint slot)</td></tr>
+<tr class="memitem:a1967a5e77782a36e838a651f3a307b12" id="r_a1967a5e77782a36e838a651f3a307b12"><td class="memItemLeft"><a id="a1967a5e77782a36e838a651f3a307b12" name="a1967a5e77782a36e838a651f3a307b12"></a>
+bool&#160;</td><td class="memItemRight"><b>HoldSharedViewportSlot</b> (ulong generation, uint slot, ulong frameId)</td></tr>
 <tr class="memitem:a9b7ca0191f2205bd740e3052c1b4909a" id="r_a9b7ca0191f2205bd740e3052c1b4909a"><td class="memItemLeft"><a id="a9b7ca0191f2205bd740e3052c1b4909a" name="a9b7ca0191f2205bd740e3052c1b4909a"></a>
 void&#160;</td><td class="memItemRight"><b>ReleaseSharedViewportSlot</b> (ulong generation, uint slot, bool consumed)</td></tr>
 <tr class="memitem:abd250853d2e0369d98cfa4986ddc7c5a" id="r_abd250853d2e0369d98cfa4986ddc7c5a"><td class="memItemLeft"><a id="abd250853d2e0369d98cfa4986ddc7c5a" name="abd250853d2e0369d98cfa4986ddc7c5a"></a>
@@ -200,8 +200,8 @@ static void&#160;</td><td class="memItemRight"><b>ReloadProjectSettings</b> ()</
 <tr class="memitem:ab6c3f1ccf9ffe2aec038e634b292d4e5" id="r_ab6c3f1ccf9ffe2aec038e634b292d4e5"><td class="memItemLeft"><a id="ab6c3f1ccf9ffe2aec038e634b292d4e5" name="ab6c3f1ccf9ffe2aec038e634b292d4e5"></a>
 static void&#160;</td><td class="memItemRight"><b>TestHaptic</b> (string tomlText)</td></tr>
 <tr class="memdesc:ab6c3f1ccf9ffe2aec038e634b292d4e5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Plays a haptic described by .thaptic TOML text on the active controller. <br /></td></tr>
-<tr class="memitem:afa064518e5d560ac67e7ba570c737aef" id="r_afa064518e5d560ac67e7ba570c737aef"><td class="memItemLeft"><a id="afa064518e5d560ac67e7ba570c737aef" name="afa064518e5d560ac67e7ba570c737aef"></a>
-static void&#160;</td><td class="memItemRight"><b>BakeAsset</b> (string uid, string outPath)</td></tr>
+<tr class="memitem:a0399fafb4f06ed66adf543b5643a81dd" id="r_a0399fafb4f06ed66adf543b5643a81dd"><td class="memItemLeft"><a id="a0399fafb4f06ed66adf543b5643a81dd" name="a0399fafb4f06ed66adf543b5643a81dd"></a>
+static bool&#160;</td><td class="memItemRight"><b>BakeAsset</b> (string uid, string outPath)</td></tr>
 <tr class="memitem:a2c51fc2ee397149816c1657551626f38" id="r_a2c51fc2ee397149816c1657551626f38"><td class="memItemLeft"><a id="a2c51fc2ee397149816c1657551626f38" name="a2c51fc2ee397149816c1657551626f38"></a>
 static bool&#160;</td><td class="memItemRight"><b>GenerateDataSchemaStubs</b> (string outPath)</td></tr>
 <tr class="memdesc:a2c51fc2ee397149816c1657551626f38"><td class="mdescLeft">&#160;</td><td class="mdescRight">Regenerates the Schemas.* lua stuff. <br /></td></tr>
@@ -210,6 +210,9 @@ static bool&#160;</td><td class="memItemRight"><b>GenerateDataSchemaStubs</b> (s
 Properties</h2></td></tr>
 <tr class="memitem:a2353913ff1374c70a825cef2111bcaa2" id="r_a2353913ff1374c70a825cef2111bcaa2"><td class="memItemLeft"><a id="a2353913ff1374c70a825cef2111bcaa2" name="a2353913ff1374c70a825cef2111bcaa2"></a>
 static bool&#160;</td><td class="memItemRight"><b>IsEngineReady</b><code> [get]</code></td></tr>
+<tr class="memitem:a639d5607b48d6d0fd6a9acaab7b8543f" id="r_a639d5607b48d6d0fd6a9acaab7b8543f"><td class="memItemLeft"><a id="a639d5607b48d6d0fd6a9acaab7b8543f" name="a639d5607b48d6d0fd6a9acaab7b8543f"></a>
+static bool&#160;</td><td class="memItemRight"><b>DebugOverlayOwnsCursor</b><code> [get]</code></td></tr>
+<tr class="memdesc:a639d5607b48d6d0fd6a9acaab7b8543f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Overlay up in game view so the cursor stays free even under a game lock. <br /></td></tr>
 <tr class="memitem:a7addd1917135645cb1003e68713030d5" id="r_a7addd1917135645cb1003e68713030d5"><td class="memItemLeft"><a id="a7addd1917135645cb1003e68713030d5" name="a7addd1917135645cb1003e68713030d5"></a>
 string&#160;</td><td class="memItemRight"><b>ProjectPath</b><code> [get]</code></td></tr>
 <tr class="memitem:a3b28b2748dd1cbad3954ec60ac91465e" id="r_a3b28b2748dd1cbad3954ec60ac91465e"><td class="memItemLeft"><a id="a3b28b2748dd1cbad3954ec60ac91465e" name="a3b28b2748dd1cbad3954ec60ac91465e"></a>

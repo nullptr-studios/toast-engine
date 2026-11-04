@@ -1,4 +1,4 @@
-<map id="engine/src/toast/renderer/vertex.hpp" name="engine/src/toast/renderer/vertex.hpp">
+<map id="engine/src/toast/renderer/resources/vertex.hpp" name="engine/src/toast/renderer/resources/vertex.hpp">
 <area shape="rect" id="Node000001" title=" " alt="" coords="28,5,212,50"/>
 <area shape="rect" id="Node000002" title=" " alt="" coords="5,98,61,126"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="99,49,60,89,56,85,94,52"/>

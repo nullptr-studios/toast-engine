@@ -188,8 +188,6 @@ float&#160;</td><td class="memItemRight"><b>fracture_max_overshoot</b> = 2.0f</t
 float&#160;</td><td class="memItemRight"><b>fracture_bond_cost</b> = 1.0f</td></tr>
 <tr class="memitem:af68e61326e20313f6bc14523b0b07949" id="r_af68e61326e20313f6bc14523b0b07949"><td class="memItemLeft"><a id="af68e61326e20313f6bc14523b0b07949" name="af68e61326e20313f6bc14523b0b07949"></a>
 uint32_t&#160;</td><td class="memItemRight"><b>fracture_max_unglue_voxels</b> = 4096</td></tr>
-<tr class="memitem:a407ca92d6440e19559e9058f2a3c4a2d" id="r_a407ca92d6440e19559e9058f2a3c4a2d"><td class="memItemLeft"><a id="a407ca92d6440e19559e9058f2a3c4a2d" name="a407ca92d6440e19559e9058f2a3c4a2d"></a>
-float&#160;</td><td class="memItemRight"><b>fracture_debris_split_chance</b> = 0.35f</td></tr>
 <tr class="memitem:af54e8fc5bf6a504052e6c98d14892e6b" id="r_af54e8fc5bf6a504052e6c98d14892e6b"><td class="memItemLeft"><a id="af54e8fc5bf6a504052e6c98d14892e6b" name="af54e8fc5bf6a504052e6c98d14892e6b"></a>
 uint32_t&#160;</td><td class="memItemRight"><b>fracture_max_shatter_cells</b> = 128</td></tr>
 <tr class="memitem:a63686023075d222edba0ce8430cb30cf" id="r_a63686023075d222edba0ce8430cb30cf"><td class="memItemLeft"><a id="a63686023075d222edba0ce8430cb30cf" name="a63686023075d222edba0ce8430cb30cf"></a>
@@ -199,7 +197,9 @@ uint32_t&#160;</td><td class="memItemRight"><b>debris_max_spawns_per_step</b> = 
 <tr class="memitem:aeccaccd7dacdaa780fa06a379833b46a" id="r_aeccaccd7dacdaa780fa06a379833b46a"><td class="memItemLeft"><a id="aeccaccd7dacdaa780fa06a379833b46a" name="aeccaccd7dacdaa780fa06a379833b46a"></a>
 float&#160;</td><td class="memItemRight"><b>debris_speed_scale</b> = 1.0f</td></tr>
 <tr class="memitem:a4cfa06df8e208e70b9aef7aa86fcef1d" id="r_a4cfa06df8e208e70b9aef7aa86fcef1d"><td class="memItemLeft"><a id="a4cfa06df8e208e70b9aef7aa86fcef1d" name="a4cfa06df8e208e70b9aef7aa86fcef1d"></a>
-float&#160;</td><td class="memItemRight"><b>debris_lifetime</b> = 60.0f</td></tr>
+float&#160;</td><td class="memItemRight"><b>debris_lifetime</b> = 12.0f</td></tr>
+<tr class="memitem:a3dc53b10124743d33b015244061ab0ff" id="r_a3dc53b10124743d33b015244061ab0ff"><td class="memItemLeft"><a id="a3dc53b10124743d33b015244061ab0ff" name="a3dc53b10124743d33b015244061ab0ff"></a>
+float&#160;</td><td class="memItemRight"><b>debris_lifetime_jitter</b> = 0.3f</td></tr>
 <tr class="memitem:a0a874bd96333dd3ab18669524c318b4d" id="r_a0a874bd96333dd3ab18669524c318b4d"><td class="memItemLeft"><a id="a0a874bd96333dd3ab18669524c318b4d" name="a0a874bd96333dd3ab18669524c318b4d"></a>
 uint32_t&#160;</td><td class="memItemRight"><b>debris_max_particles</b> = 16384</td></tr>
 <tr class="memitem:aa1fabd19c335820cdd6aaad9b0b10acf" id="r_aa1fabd19c335820cdd6aaad9b0b10acf"><td class="memItemLeft"><a id="aa1fabd19c335820cdd6aaad9b0b10acf" name="aa1fabd19c335820cdd6aaad9b0b10acf"></a>
@@ -210,6 +210,16 @@ float&#160;</td><td class="memItemRight"><b>debris_friction</b> = 0.6f</td></tr>
 float&#160;</td><td class="memItemRight"><b>explosion_max_radius</b> = 8.0f</td></tr>
 <tr class="memitem:acf12397521edf1eaa81a031839f80ce0" id="r_acf12397521edf1eaa81a031839f80ce0"><td class="memItemLeft"><a id="acf12397521edf1eaa81a031839f80ce0" name="acf12397521edf1eaa81a031839f80ce0"></a>
 float&#160;</td><td class="memItemRight"><b>explosion_falloff</b> = 2.0f</td></tr>
+<tr class="memitem:a395433adcd0829f1fd739d69863b3dda" id="r_a395433adcd0829f1fd739d69863b3dda"><td class="memItemLeft"><a id="a395433adcd0829f1fd739d69863b3dda" name="a395433adcd0829f1fd739d69863b3dda"></a>
+float&#160;</td><td class="memItemRight"><b>explosion_chunk_size</b> = 1.0f</td></tr>
+<tr class="memitem:a3352c13a86127ed57f9aafee717dfdbf" id="r_a3352c13a86127ed57f9aafee717dfdbf"><td class="memItemLeft"><a id="a3352c13a86127ed57f9aafee717dfdbf" name="a3352c13a86127ed57f9aafee717dfdbf"></a>
+float&#160;</td><td class="memItemRight"><b>explosion_debris_ratio</b> = 8.0f</td></tr>
+<tr class="memitem:aa42048bc4fd2e7a94ce9f036f9afb3ab" id="r_aa42048bc4fd2e7a94ce9f036f9afb3ab"><td class="memItemLeft"><a id="aa42048bc4fd2e7a94ce9f036f9afb3ab" name="aa42048bc4fd2e7a94ce9f036f9afb3ab"></a>
+float&#160;</td><td class="memItemRight"><b>explosion_shatter_width</b> = 0.6f</td></tr>
+<tr class="memitem:a487227e87636022fd03ddb76f9720721" id="r_a487227e87636022fd03ddb76f9720721"><td class="memItemLeft"><a id="a487227e87636022fd03ddb76f9720721" name="a487227e87636022fd03ddb76f9720721"></a>
+uint32_t&#160;</td><td class="memItemRight"><b>explosion_max_fragments</b> = 48</td></tr>
+<tr class="memitem:a8e33678e826d88199efc54cb98ea37a9" id="r_a8e33678e826d88199efc54cb98ea37a9"><td class="memItemLeft"><a id="a8e33678e826d88199efc54cb98ea37a9" name="a8e33678e826d88199efc54cb98ea37a9"></a>
+float&#160;</td><td class="memItemRight"><b>explosion_max_speed</b> = 20.0f</td></tr>
 <tr class="memitem:a684a72248b545852547239dc7b410bf0" id="r_a684a72248b545852547239dc7b410bf0"><td class="memItemLeft"><a id="a684a72248b545852547239dc7b410bf0" name="a684a72248b545852547239dc7b410bf0"></a>
 uint32_t&#160;</td><td class="memItemRight"><b>impact_max_hardness</b> = 1</td></tr>
 <tr class="memitem:aa9cfaf69cce27a1e9a2970227b6ef4b5" id="r_aa9cfaf69cce27a1e9a2970227b6ef4b5"><td class="memItemLeft"><a id="aa9cfaf69cce27a1e9a2970227b6ef4b5" name="aa9cfaf69cce27a1e9a2970227b6ef4b5"></a>
@@ -224,6 +234,8 @@ uint32_t&#160;</td><td class="memItemRight"><b>min_shapes_per_query_job</b> = 16
 uint32_t&#160;</td><td class="memItemRight"><b>min_bodies_per_job</b> = 64</td></tr>
 <tr class="memitem:a3e12447decedd4950a8fb1aa590670ff" id="r_a3e12447decedd4950a8fb1aa590670ff"><td class="memItemLeft"><a id="a3e12447decedd4950a8fb1aa590670ff" name="a3e12447decedd4950a8fb1aa590670ff"></a>
 uint32_t&#160;</td><td class="memItemRight"><b>min_wave_constraints_for_dispatch</b> = 512</td></tr>
+<tr class="memitem:afa59007b3f35df41904f1b6d8547e830" id="r_afa59007b3f35df41904f1b6d8547e830"><td class="memItemLeft"><a id="afa59007b3f35df41904f1b6d8547e830" name="afa59007b3f35df41904f1b6d8547e830"></a>
+uint32_t&#160;</td><td class="memItemRight"><b>min_wave_joints_for_dispatch</b> = 64</td></tr>
 <tr class="memitem:a33f6465adbedd8995759ec3373b6a1da" id="r_a33f6465adbedd8995759ec3373b6a1da"><td class="memItemLeft"><a id="a33f6465adbedd8995759ec3373b6a1da" name="a33f6465adbedd8995759ec3373b6a1da"></a>
 uint32_t&#160;</td><td class="memItemRight"><b>box_voxel_split_min_voxels</b> = 500000</td></tr>
 <tr class="memitem:a19fc474a17993c8ae85865d32a505395" id="r_a19fc474a17993c8ae85865d32a505395"><td class="memItemLeft"><a id="a19fc474a17993c8ae85865d32a505395" name="a19fc474a17993c8ae85865d32a505395"></a>
@@ -234,6 +246,8 @@ uint32_t&#160;</td><td class="memItemRight"><b>voxel_pair_split_regions</b> = 8<
 uint32_t&#160;</td><td class="memItemRight"><b>sweep_refine_iterations</b> = 6</td></tr>
 <tr class="memitem:aa2e6682468a9b15124fc50a440bbd296" id="r_aa2e6682468a9b15124fc50a440bbd296"><td class="memItemLeft"><a id="aa2e6682468a9b15124fc50a440bbd296" name="aa2e6682468a9b15124fc50a440bbd296"></a>
 uint32_t&#160;</td><td class="memItemRight"><b>position_iterations</b> = 3</td></tr>
+<tr class="memitem:a6a74f8c599ed2046bdfd605643711d7e" id="r_a6a74f8c599ed2046bdfd605643711d7e"><td class="memItemLeft"><a id="a6a74f8c599ed2046bdfd605643711d7e" name="a6a74f8c599ed2046bdfd605643711d7e"></a>
+uint32_t&#160;</td><td class="memItemRight"><b>joint_substeps</b> = 4</td></tr>
 <tr class="memitem:a1542d314d9fdf2a247df948b9345c7fb" id="r_a1542d314d9fdf2a247df948b9345c7fb"><td class="memItemLeft"><a id="a1542d314d9fdf2a247df948b9345c7fb" name="a1542d314d9fdf2a247df948b9345c7fb"></a>
 float&#160;</td><td class="memItemRight"><b>air_density</b> = 1.225f</td></tr>
 <tr class="memitem:a66360b5864fb1a91e6026c1439ef4c9e" id="r_a66360b5864fb1a91e6026c1439ef4c9e"><td class="memItemLeft"><a id="a66360b5864fb1a91e6026c1439ef4c9e" name="a66360b5864fb1a91e6026c1439ef4c9e"></a>

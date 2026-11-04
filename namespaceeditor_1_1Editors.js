@@ -10,6 +10,7 @@ var namespaceeditor_1_1Editors =
     [ "HapticsView", "classeditor_1_1Editors_1_1HapticsView.html", null ],
     [ "HapticsViewModel", "classeditor_1_1Editors_1_1HapticsViewModel.html", null ],
     [ "IToastZoneEditor", "interfaceeditor_1_1Editors_1_1IToastZoneEditor.html", null ],
+    [ "PaletteRowLabelVM", "classeditor_1_1Editors_1_1PaletteRowLabelVM.html", null ],
     [ "PaletteSlotVM", "classeditor_1_1Editors_1_1PaletteSlotVM.html", null ],
     [ "PaletteSwatchVM", "classeditor_1_1Editors_1_1PaletteSwatchVM.html", null ],
     [ "PaletteView", "classeditor_1_1Editors_1_1PaletteView.html", null ],

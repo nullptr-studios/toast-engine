@@ -11,7 +11,8 @@ var searchData=
   ['hasfunction_8',['hasFunction',['../structtoast_1_1NodeInfo.html#ab794736be23ff3c39878e4ab48c32c3a',1,'toast::NodeInfo::hasFunction()'],['../classscripting_1_1ScriptInstance.html#af7915a4069df20872bf19a18b91fe712',1,'scripting::ScriptInstance::hasFunction()'],['../classscripting_1_1ScriptRuntime.html#a1470ea349c6cd30616361224efeee61c',1,'scripting::ScriptRuntime::hasFunction(std::string_view fn_name) const noexcept -&gt; bool']]],
   ['hastick_9',['hasTick',['../classscripting_1_1ScriptRuntime.html#ab43c9f0e424c28c71d82a447b8f0f6ca',1,'scripting::ScriptRuntime']]],
   ['hastickfunction_10',['hasTickFunction',['../classtoast_1_1Node.html#a8a7a227e71c9efcae3df2ed20ff6a177',1,'toast::Node']]],
-  ['hex_11',['hex',['../classassets_1_1ColorScheme.html#afdcf39131613bd0870fb475a40972c6d',1,'assets::ColorScheme']]],
-  ['hotreload_12',['hotReload',['../classtoast_1_1World.html#ad16a66b6bb01415bcf352684f236a92d',1,'toast::World']]],
-  ['hotreloadscripts_13',['hotReloadScripts',['../classtoast_1_1World.html#a90cea18bdad6811b74052915c1522ea9',1,'toast::World']]]
+  ['hdrpaperwhitescale_11',['hdrPaperWhiteScale',['../classrenderer_1_1VulkanRenderer.html#ae5a2c0ee1227130d9821ab47fcf81302',1,'renderer::VulkanRenderer']]],
+  ['hex_12',['hex',['../classassets_1_1ColorScheme.html#afdcf39131613bd0870fb475a40972c6d',1,'assets::ColorScheme']]],
+  ['hotreload_13',['hotReload',['../classtoast_1_1World.html#ad16a66b6bb01415bcf352684f236a92d',1,'toast::World']]],
+  ['hotreloadscripts_14',['hotReloadScripts',['../classtoast_1_1World.html#a90cea18bdad6811b74052915c1522ea9',1,'toast::World']]]
 ];

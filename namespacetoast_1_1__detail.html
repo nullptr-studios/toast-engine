@@ -163,6 +163,8 @@ template&lt;typename R = void, typename... Args&gt; </td></tr>
 <tr class="memitem:aca153db53f6d7e44036a6be101893bdb" id="r_aca153db53f6d7e44036a6be101893bdb"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#aca153db53f6d7e44036a6be101893bdb">toId</a> (int id) noexcept -&gt; uint8_t</td></tr>
 <tr class="memitem:abd4c87ee1ac1f3612fa45da796f48627" id="r_abd4c87ee1ac1f3612fa45da796f48627"><td class="memTemplParams" colspan="2">template&lt;typename T&gt; </td></tr>
 <tr class="memitem:abd4c87ee1ac1f3612fa45da796f48627 template"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#abd4c87ee1ac1f3612fa45da796f48627">assetOfType</a> (const <a class="el" href="classassets_1_1Handle.html">assets::Handle</a>&lt; T &gt; &amp;handle, std::string_view type) -&gt; const T *</td></tr>
+<tr class="memitem:afadf55c6ada5892e5595fe72a56f4bb0" id="r_afadf55c6ada5892e5595fe72a56f4bb0"><td class="memItemLeft"><a id="afadf55c6ada5892e5595fe72a56f4bb0" name="afadf55c6ada5892e5595fe72a56f4bb0"></a>
+auto&#160;</td><td class="memItemRight"><b>voxelModelOf</b> (const <a class="el" href="classassets_1_1Handle.html">assets::Handle</a>&lt; <a class="el" href="classassets_1_1VoxelModel.html">assets::VoxelModel</a> &gt; &amp;handle) -&gt; const <a class="el" href="classassets_1_1VoxelModel.html">assets::VoxelModel</a> *</td></tr>
 <tr class="memitem:af7826a7d2cd56a27060bb3b1742f4e13" id="r_af7826a7d2cd56a27060bb3b1742f4e13"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#af7826a7d2cd56a27060bb3b1742f4e13">instantiateModel</a> (const <a class="el" href="classassets_1_1VoxelModel.html">assets::VoxelModel</a> &amp;model) -&gt; std::unique_ptr&lt; <a class="el" href="classvoxel_1_1Volume.html">voxel::Volume</a> &gt;</td></tr>
 <tr class="memitem:aaacf83db8ac1010e56a59d5e4eee3b96" id="r_aaacf83db8ac1010e56a59d5e4eee3b96"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#aaacf83db8ac1010e56a59d5e4eee3b96">planWave</a> (const TickSchedule::Wave &amp;wave, <a class="el" href="reflect__node_8hpp.html#ad08c233710fd0f56aefc18a7a9f1db5a">TickFunctionList</a> func, const <a class="el" href="#a4c5c71ac50f04645fca7f5003bf4bcd3">Interactions</a> *interactions=nullptr) -&gt; std::vector&lt; <a class="el" href="structtoast_1_1__detail_1_1WaveJob.html">WaveJob</a> &gt;</td></tr>
 <tr class="memdesc:aaacf83db8ac1010e56a59d5e4eee3b96"><td class="mdescLeft">&#160;</td><td class="mdescRight">Splits a wave into the jobs that run it in parallel.  <br /></td></tr>
@@ -235,26 +237,6 @@ template&lt;typename T&gt; </div>
 </table>
 </div><div class="memdoc">
 <p>The loaded asset when it is really of type, null otherwise </p>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="namespacetoast_1_1__detail_abd4c87ee1ac1f3612fa45da796f48627_icgraph.png" border="0" usemap="#anamespacetoast_1_1__detail_abd4c87ee1ac1f3612fa45da796f48627_icgraph" loading="lazy" alt=""/></div>
-<map name="anamespacetoast_1_1__detail_abd4c87ee1ac1f3612fa45da796f48627_icgraph" id="anamespacetoast_1_1__detail_abd4c87ee1ac1f3612fa45da796f48627_icgraph">
-<area shape="rect" title=" " alt="" coords="271,152,465,180"/>
-<area shape="rect" href="classtoast_1_1VoxelMesh.html#a435ce63edf75ca2b92a4db0b8bc5ea14" title=" " alt="" coords="13,5,215,33"/>
-<area shape="poly" title=" " alt="" coords="341,141,289,94,257,69,221,48,193,36,191,31,224,43,260,65,293,90,346,140"/>
-<area shape="rect" href="classtoast_1_1VoxelMesh.html#aeaaa7d143aece01421535ea45ad63a35" title=" " alt="" coords="5,57,223,85"/>
-<area shape="poly" title=" " alt="" coords="325,145,277,122,222,99,187,88,186,83,224,94,280,117,331,144"/>
-<area shape="rect" href="classtoast_1_1VoxelMesh.html#a357a0761421031dcf4461859ce8c927e" title=" " alt="" coords="16,109,212,154"/>
-<area shape="poly" title=" " alt="" coords="252,151,213,147,212,142,257,149"/>
-<area shape="rect" href="classtoast_1_1VoxelMesh.html#a234d66fce33e3f959c6e99d461b21301" title=" " alt="" coords="22,178,206,223"/>
-<area shape="poly" title=" " alt="" coords="253,182,207,190,205,185,258,180"/>
-<area shape="rect" href="classtoast_1_1VoxelPiece.html#a87c31ebe3a13a1f8d772b3eb3a6b7012" title=" " alt="" coords="44,248,184,292"/>
-<area shape="poly" title=" " alt="" coords="324,188,224,238,186,251,184,247,222,233,328,186"/>
-<area shape="rect" href="classtoast_1_1VoxelPiece.html#a52838ba051112268889a0f7f502d404b" title=" " alt="" coords="33,316,195,344"/>
-<area shape="poly" title=" " alt="" coords="349,191,297,251,262,281,224,307,196,319,194,314,221,302,259,277,293,247,345,193"/>
-</map>
-</div>
 
 </div>
 </div>

@@ -121,22 +121,25 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classrenderer_
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ac281b0149aee70c97ecc430498b92b7c" id="r_ac281b0149aee70c97ecc430498b92b7c"><td class="memItemLeft"><a id="ac281b0149aee70c97ecc430498b92b7c" name="ac281b0149aee70c97ecc430498b92b7c"></a>
-&#160;</td><td class="memItemRight"><b>VulkanSwapchain</b> (const <a class="el" href="classrenderer_1_1VulkanCore.html">VulkanCore</a> &amp;core, vk::raii::SurfaceKHR &amp;surface, vk::Extent2D preferred_extent)</td></tr>
+<tr class="memitem:a3cdb869c5837e756265b4f9f915ff2ba" id="r_a3cdb869c5837e756265b4f9f915ff2ba"><td class="memItemLeft"><a id="a3cdb869c5837e756265b4f9f915ff2ba" name="a3cdb869c5837e756265b4f9f915ff2ba"></a>
+&#160;</td><td class="memItemRight"><b>VulkanSwapchain</b> (const <a class="el" href="classrenderer_1_1VulkanCore.html">VulkanCore</a> &amp;core, vk::raii::SurfaceKHR &amp;surface, vk::Extent2D preferred_extent, bool prefer_hdr=false)</td></tr>
+<tr class="memdesc:a3cdb869c5837e756265b4f9f915ff2ba"><td class="mdescLeft">&#160;</td><td class="mdescRight">Falls back to SDR when the surface has no scRGB format. <br /></td></tr>
 <tr class="memitem:a1c297de07a6cee9f80091b81a92fa856" id="r_a1c297de07a6cee9f80091b81a92fa856"><td class="memItemLeft"><a id="a1c297de07a6cee9f80091b81a92fa856" name="a1c297de07a6cee9f80091b81a92fa856"></a>
 &#160;</td><td class="memItemRight"><b>VulkanSwapchain</b> (const VulkanSwapchain &amp;)=delete</td></tr>
 <tr class="memitem:a173d558c124c0645535593c1a2837822" id="r_a173d558c124c0645535593c1a2837822"><td class="memItemLeft"><a id="a173d558c124c0645535593c1a2837822" name="a173d558c124c0645535593c1a2837822"></a>
-auto&#160;</td><td class="memItemRight"><b>operator=</b> (const VulkanSwapchain &amp;) -&gt; VulkanSwapchain &amp;=delete</td></tr>
+auto&#160;</td><td class="memItemRight"><b>operator=</b> (const <a class="el" href="#a3cdb869c5837e756265b4f9f915ff2ba">VulkanSwapchain</a> &amp;) -&gt; <a class="el" href="#a3cdb869c5837e756265b4f9f915ff2ba">VulkanSwapchain</a> &amp;=delete</td></tr>
 <tr class="memitem:af3355957b93e8ae58359feaeb9a68c5b" id="r_af3355957b93e8ae58359feaeb9a68c5b"><td class="memItemLeft"><a id="af3355957b93e8ae58359feaeb9a68c5b" name="af3355957b93e8ae58359feaeb9a68c5b"></a>
 &#160;</td><td class="memItemRight"><b>VulkanSwapchain</b> (VulkanSwapchain &amp;&amp;)=delete</td></tr>
 <tr class="memitem:a23fcdc2e12dfd8a9d0ea1a1e6fcc7905" id="r_a23fcdc2e12dfd8a9d0ea1a1e6fcc7905"><td class="memItemLeft"><a id="a23fcdc2e12dfd8a9d0ea1a1e6fcc7905" name="a23fcdc2e12dfd8a9d0ea1a1e6fcc7905"></a>
-auto&#160;</td><td class="memItemRight"><b>operator=</b> (VulkanSwapchain &amp;&amp;) -&gt; VulkanSwapchain &amp;=delete</td></tr>
+auto&#160;</td><td class="memItemRight"><b>operator=</b> (<a class="el" href="#a3cdb869c5837e756265b4f9f915ff2ba">VulkanSwapchain</a> &amp;&amp;) -&gt; <a class="el" href="#a3cdb869c5837e756265b4f9f915ff2ba">VulkanSwapchain</a> &amp;=delete</td></tr>
 <tr class="memitem:a4f480c0e1940c1b0f1d52ed9259630aa" id="r_a4f480c0e1940c1b0f1d52ed9259630aa"><td class="memItemLeft"><a id="a4f480c0e1940c1b0f1d52ed9259630aa" name="a4f480c0e1940c1b0f1d52ed9259630aa"></a>
 void&#160;</td><td class="memItemRight"><b>recreate</b> (vk::Extent2D preferred_extent)</td></tr>
 <tr class="memitem:aa71383427b770043689a52b3db99f835" id="r_aa71383427b770043689a52b3db99f835"><td class="memItemLeft"><a id="aa71383427b770043689a52b3db99f835" name="aa71383427b770043689a52b3db99f835"></a>
 auto&#160;</td><td class="memItemRight"><b>getExtent</b> () const -&gt; vk::Extent2D</td></tr>
 <tr class="memitem:a85097fcd755e029a02d0f3fcea74ad47" id="r_a85097fcd755e029a02d0f3fcea74ad47"><td class="memItemLeft"><a id="a85097fcd755e029a02d0f3fcea74ad47" name="a85097fcd755e029a02d0f3fcea74ad47"></a>
 auto&#160;</td><td class="memItemRight"><b>getColorFormat</b> () const -&gt; vk::Format</td></tr>
+<tr class="memitem:a3a5d831550bdf28519e87325306ed7e0" id="r_a3a5d831550bdf28519e87325306ed7e0"><td class="memItemLeft"><a id="a3a5d831550bdf28519e87325306ed7e0" name="a3a5d831550bdf28519e87325306ed7e0"></a>
+auto&#160;</td><td class="memItemRight"><b>isHdr</b> () const -&gt; bool</td></tr>
 <tr class="memitem:a7e6f20cbc54a0307776d9e93e2348243" id="r_a7e6f20cbc54a0307776d9e93e2348243"><td class="memItemLeft"><a id="a7e6f20cbc54a0307776d9e93e2348243" name="a7e6f20cbc54a0307776d9e93e2348243"></a>
 auto&#160;</td><td class="memItemRight"><b>getImageCount</b> () const -&gt; uint32_t</td></tr>
 <tr class="memitem:ab1ca7c9fcea6301aaead0484bf21d8e8" id="r_ab1ca7c9fcea6301aaead0484bf21d8e8"><td class="memItemLeft"><a id="ab1ca7c9fcea6301aaead0484bf21d8e8" name="ab1ca7c9fcea6301aaead0484bf21d8e8"></a>
@@ -149,8 +152,8 @@ auto&#160;</td><td class="memItemRight"><b>acquireNextImage</b> (uint64_t timeou
 auto&#160;</td><td class="memItemRight"><b>present</b> (uint32_t image_index, vk::Semaphore render_finished) const -&gt; vk::Result</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>engine/src/toast/renderer/<a class="el" href="vulkan__swapchain_8hpp_source.html">vulkan_swapchain.hpp</a></li>
-<li>engine/src/toast/renderer/<b>vulkan_swapchain.cpp</b></li>
+<li>engine/src/toast/renderer/core/<a class="el" href="vulkan__swapchain_8hpp_source.html">vulkan_swapchain.hpp</a></li>
+<li>engine/src/toast/renderer/core/<b>vulkan_swapchain.cpp</b></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

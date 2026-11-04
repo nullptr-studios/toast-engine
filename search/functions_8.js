@@ -28,11 +28,13 @@ var searchData=
   ['isa_25',['isA',['../structtoast_1_1NodeInfo.html#ad48bf68a9226c1ca35ddcf4120884de8',1,'toast::NodeInfo']]],
   ['isactiveforlayer_26',['isActiveForLayer',['../classassets_1_1InputLayout.html#a51ba0771af8bd322e1cab4b8e72343ee',1,'assets::InputLayout']]],
   ['isediting_27',['isEditing',['../classtoast_1_1INodeOwner.html#a64b6034e9beabc313d99ca24a26e8cd4',1,'toast::INodeOwner']]],
-  ['isinstanceroot_28',['isInstanceRoot',['../classtoast_1_1Node.html#a4aaf31de720d90ac1f4e3e9c16d955af',1,'toast::Node']]],
-  ['ismeshshadersupported_29',['isMeshShaderSupported',['../classrenderer_1_1VulkanCore.html#ad8e87601f3cd69b85c8af0702e5ec35e',1,'renderer::VulkanCore']]],
-  ['ismisaligned_30',['isMisaligned',['../classtoast_1_1VoxelPiece.html#aebaae6396232c146a8d71838cdb50b23',1,'toast::VoxelPiece']]],
-  ['isplaying_31',['isPlaying',['../classtoast_1_1AudioEmitter.html#a0b598b5b8508b38e15cb1029feeabf6c',1,'toast::AudioEmitter::isPlaying()'],['../classtoast_1_1PlayWorkspace.html#abb4821b10521be22513237194dd0dfbb',1,'toast::PlayWorkspace::isPlaying()'],['../classtoast_1_1Workspace.html#a182ea711f9ed7f461af3c2dd896c7b69',1,'toast::Workspace::isPlaying()']]],
-  ['isprebaked_32',['isPrebaked',['../classtoast_1_1ReflectionProbe.html#ab5ef924f34d9b86c62cca3a55333d0e0',1,'toast::ReflectionProbe']]],
-  ['isready_33',['isReady',['../classrenderer_1_1HiZPyramid.html#af3a667e1e1d00a7e4d161786d618de09',1,'renderer::HiZPyramid']]],
-  ['isvalid_34',['isValid',['../classscripting_1_1ScriptInstance.html#a3285b3bf81439d8b3a6f8ced505b1d28',1,'scripting::ScriptInstance']]]
+  ['isglass_28',['isGlass',['../palette_8hpp.html#ace31c3c591e286ce2b67203df171cc0d',1,'voxel']]],
+  ['ishdr_29',['isHdr',['../classrenderer_1_1IOutputTarget.html#a66d43ef92d4e8b800d3b9ad4733bc522',1,'renderer::IOutputTarget::isHdr()'],['../classrenderer_1_1SDLOutputTarget.html#a69b673f730a50aa51efa4eb510fe6400',1,'renderer::SDLOutputTarget::isHdr()']]],
+  ['isinstanceroot_30',['isInstanceRoot',['../classtoast_1_1Node.html#a4aaf31de720d90ac1f4e3e9c16d955af',1,'toast::Node']]],
+  ['ismeshshadersupported_31',['isMeshShaderSupported',['../classrenderer_1_1VulkanCore.html#ad8e87601f3cd69b85c8af0702e5ec35e',1,'renderer::VulkanCore']]],
+  ['ismisaligned_32',['isMisaligned',['../classtoast_1_1VoxelPiece.html#aebaae6396232c146a8d71838cdb50b23',1,'toast::VoxelPiece']]],
+  ['isplaying_33',['isPlaying',['../classtoast_1_1AudioEmitter.html#a0b598b5b8508b38e15cb1029feeabf6c',1,'toast::AudioEmitter::isPlaying()'],['../classtoast_1_1PlayWorkspace.html#abb4821b10521be22513237194dd0dfbb',1,'toast::PlayWorkspace::isPlaying()'],['../classtoast_1_1Workspace.html#a182ea711f9ed7f461af3c2dd896c7b69',1,'toast::Workspace::isPlaying()']]],
+  ['isprebaked_34',['isPrebaked',['../classtoast_1_1ReflectionProbe.html#ab5ef924f34d9b86c62cca3a55333d0e0',1,'toast::ReflectionProbe']]],
+  ['isready_35',['isReady',['../classrenderer_1_1HiZPyramid.html#af3a667e1e1d00a7e4d161786d618de09',1,'renderer::HiZPyramid']]],
+  ['isvalid_36',['isValid',['../classscripting_1_1ScriptInstance.html#a3285b3bf81439d8b3a6f8ced505b1d28',1,'scripting::ScriptInstance']]]
 ];

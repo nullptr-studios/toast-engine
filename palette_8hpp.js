@@ -8,6 +8,8 @@ var palette_8hpp =
     [ "voxel::TableIssue", "palette_8hpp.html#af9f8e6a0cbafde5f2251b00edad6d6b7", [
       [ "library_too_large", "palette_8hpp.html#af9f8e6a0cbafde5f2251b00edad6d6b7abafb9dfea4c9d113db504f611cca5d71", null ]
     ] ],
+    [ "voxel::isGlass", "palette_8hpp.html#ace31c3c591e286ce2b67203df171cc0d", null ],
     [ "voxel::resolveMaterialIndex", "palette_8hpp.html#a7aa5050da71e23fb06c2e4ce736c7618", null ],
+    [ "voxel::k_default_ior", "palette_8hpp.html#af5ff9ad2195737be22d9c9e5df7b8fce", null ],
     [ "voxel::k_material_passable", "palette_8hpp.html#aa773484cd97bd55a7fa3d757297a39c5", null ]
 ];

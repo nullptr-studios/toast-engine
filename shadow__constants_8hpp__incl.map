@@ -1,5 +1,5 @@
-<map id="engine/src/toast/renderer/shadow_constants.hpp" name="engine/src/toast/renderer/shadow_constants.hpp">
-<area shape="rect" id="Node000001" title="Mirrored by shadow_depth.slang and mesh.slang." alt="" coords="54,5,238,50"/>
+<map id="engine/src/toast/renderer/lighting/shadow_constants.hpp" name="engine/src/toast/renderer/lighting/shadow_constants.hpp">
+<area shape="rect" id="Node000001" title="Mirrored by shadow_depth.slang and mesh.slang." alt="" coords="33,5,259,50"/>
 <area shape="rect" id="Node000002" title=" " alt="" coords="5,98,90,126"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="123,49,77,90,73,86,118,51"/>
 <area shape="rect" id="Node000003" title=" " alt="" coords="114,98,179,126"/>

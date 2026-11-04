@@ -67,6 +67,7 @@ var hierarchy =
     ] ],
     [ "audio::AudioSystem", "classaudio_1_1AudioSystem.html", null ],
     [ "editor.Workspace.AutosaveService", "classeditor_1_1Workspace_1_1AutosaveService.html", null ],
+    [ "toast::ProceduralVoxel::BakedPart", "structtoast_1_1ProceduralVoxel_1_1BakedPart.html", null ],
     [ "renderer::sync::BarrierBatch", "classrenderer_1_1sync_1_1BarrierBatch.html", null ],
     [ "editor.Assets.Types.BaseAsset", "classeditor_1_1Assets_1_1Types_1_1BaseAsset.html", [
       [ "editor.Assets.Types.AnimationAsset", "classeditor_1_1Assets_1_1Types_1_1AnimationAsset.html", null ],
@@ -110,6 +111,7 @@ var hierarchy =
     [ "physics::Body", "structphysics_1_1Body.html", null ],
     [ "physics::BodyDescriptor", "structphysics_1_1BodyDescriptor.html", null ],
     [ "physics::BodyID", "structphysics_1_1BodyID.html", null ],
+    [ "physics::BodyMassProperties", "structphysics_1_1BodyMassProperties.html", null ],
     [ "physics::BodyShapeKey", "structphysics_1_1BodyShapeKey.html", null ],
     [ "physics::BodySlot", "structphysics_1_1BodySlot.html", null ],
     [ "physics::BodyState", "structphysics_1_1BodyState.html", null ],
@@ -206,7 +208,8 @@ var hierarchy =
     [ "renderer::DescriptorWriter", "classrenderer_1_1DescriptorWriter.html", null ],
     [ "physics::DetachedComponent", "structphysics_1_1DetachedComponent.html", null ],
     [ "renderer::DeviceScore", "structrenderer_1_1DeviceScore.html", null ],
-    [ "renderer::VulkanRenderer::DirectionalLightData", "structrenderer_1_1VulkanRenderer_1_1DirectionalLightData.html", null ],
+    [ "renderer::DirectionalLightData", "structrenderer_1_1DirectionalLightData.html", null ],
+    [ "toast::SDLWindow::DisplayHdr", "structtoast_1_1SDLWindow_1_1DisplayHdr.html", null ],
     [ "Document", null, [
       [ "editor.Workspace.WorkspaceViewModel", "classeditor_1_1Workspace_1_1WorkspaceViewModel.html", null ]
     ] ],
@@ -250,7 +253,10 @@ var hierarchy =
       [ "ui::UIFileInterface", "classui_1_1UIFileInterface.html", null ]
     ] ],
     [ "physics::_detail::FixedBuffer&lt; T, Capacity &gt;", "classphysics_1_1__detail_1_1FixedBuffer.html", null ],
+    [ "physics::FixedParams", "structphysics_1_1FixedParams.html", null ],
     [ "editor.Assets.Importers.FMODMetadata", "classeditor_1_1Assets_1_1Importers_1_1FMODMetadata.html", null ],
+    [ "renderer::PostProcessSettings::Fog", "structrenderer_1_1PostProcessSettings_1_1Fog.html", null ],
+    [ "renderer::FogVolumeGpu", "structrenderer_1_1FogVolumeGpu.html", null ],
     [ "std::formatter", null, [
       [ "std::formatter< toast::Box< T > >", "structstd_1_1formatter_3_01toast_1_1Box_3_01T_01_4_01_4.html", null ],
       [ "std::formatter< toast::UID >", "structstd_1_1formatter_3_01toast_1_1UID_01_4.html", null ]
@@ -261,17 +267,19 @@ var hierarchy =
     [ "physics::FragmentPush", "structphysics_1_1FragmentPush.html", null ],
     [ "renderer::VulkanRenderer::FrameContext", "structrenderer_1_1VulkanRenderer_1_1FrameContext.html", null ],
     [ "FrameResources", "structFrameResources.html", null ],
-    [ "renderer::VulkanRenderer::FrameUBO", "structrenderer_1_1VulkanRenderer_1_1FrameUBO.html", null ],
+    [ "renderer::FrameUBO", "structrenderer_1_1FrameUBO.html", null ],
     [ "renderer::AsyncComputeTask::FrameView", "classrenderer_1_1AsyncComputeTask_1_1FrameView.html", null ],
     [ "toast::FunctionInfo", "structtoast_1_1FunctionInfo.html", null ],
     [ "renderer::PostProcessSettings::Fxaa", "structrenderer_1_1PostProcessSettings_1_1Fxaa.html", null ],
     [ "toast::GameplaySettings", "classtoast_1_1GameplaySettings.html", null ],
+    [ "renderer::GiSettings", "structrenderer_1_1GiSettings.html", null ],
     [ "editor.Git.GitAttributes", "classeditor_1_1Git_1_1GitAttributes.html", null ],
     [ "editor.Git.GitResult", "structeditor_1_1Git_1_1GitResult.html", null ],
     [ "toast::Workspace::GizmoRenderState", "structtoast_1_1Workspace_1_1GizmoRenderState.html", null ],
-    [ "renderer::VulkanRenderer::GizmoState", "structrenderer_1_1VulkanRenderer_1_1GizmoState.html", null ],
+    [ "renderer::GizmoState", "structrenderer_1_1GizmoState.html", null ],
+    [ "renderer::VoxelPass::GlassDraw", "structrenderer_1_1VoxelPass_1_1GlassDraw.html", null ],
     [ "editor.Assets.GltfSectionDto", "classeditor_1_1Assets_1_1GltfSectionDto.html", null ],
-    [ "renderer::VulkanRenderer::GpuLight", "structrenderer_1_1VulkanRenderer_1_1GpuLight.html", null ],
+    [ "renderer::GpuLight", "structrenderer_1_1GpuLight.html", null ],
     [ "physics::DebrisSimulation::GpuMotion", "structphysics_1_1DebrisSimulation_1_1GpuMotion.html", null ],
     [ "physics::DebrisSimulation::GpuParticle", "structphysics_1_1DebrisSimulation_1_1GpuParticle.html", null ],
     [ "renderer::GpuScope", "classrenderer_1_1GpuScope.html", null ],
@@ -282,6 +290,7 @@ var hierarchy =
     [ "renderer::ClusterLightingPass::GridStats", "structrenderer_1_1ClusterLightingPass_1_1GridStats.html", null ],
     [ "assets::Prefab::Group", "structassets_1_1Prefab_1_1Group.html", null ],
     [ "toast::GroupInfo", "structtoast_1_1GroupInfo.html", null ],
+    [ "toast::light_gizmo::Handle", "structtoast_1_1light__gizmo_1_1Handle.html", null ],
     [ "assets::HandleBase", "classassets_1_1HandleBase.html", [
       [ "assets::Handle< assets::Schema >", "classassets_1_1Handle.html", null ],
       [ "assets::Handle< assets::Material >", "classassets_1_1Handle.html", null ],
@@ -308,6 +317,7 @@ var hierarchy =
     [ "assets::HdrImage", "structassets_1_1HdrImage.html", null ],
     [ "event::UpdateHierarchyData::HierarchyElement", "structevent_1_1UpdateHierarchyData_1_1HierarchyElement.html", null ],
     [ "editor.Workspace.HierarchyState", "classeditor_1_1Workspace_1_1HierarchyState.html", null ],
+    [ "physics::HingeParams", "structphysics_1_1HingeParams.html", null ],
     [ "event::HistoryConflict", "structevent_1_1HistoryConflict.html", null ],
     [ "editor.Workspace.HistoryConflictDialogViewModel", "classeditor_1_1Workspace_1_1HistoryConflictDialogViewModel.html", null ],
     [ "event::HistoryConflictResolution", "structevent_1_1HistoryConflictResolution.html", null ],
@@ -404,6 +414,12 @@ var hierarchy =
       ] ],
       [ "event::Event< DataAssetReloaded >", "structevent_1_1Event.html", [
         [ "event::DataAssetReloaded", "structevent_1_1DataAssetReloaded.html", null ]
+      ] ],
+      [ "event::Event< DebugOverlayCapture >", "structevent_1_1Event.html", [
+        [ "event::DebugOverlayCapture", "structevent_1_1DebugOverlayCapture.html", null ]
+      ] ],
+      [ "event::Event< DebugOverlayCursor >", "structevent_1_1Event.html", [
+        [ "event::DebugOverlayCursor", "structevent_1_1DebugOverlayCursor.html", null ]
       ] ],
       [ "event::Event< DestroyNode >", "structevent_1_1Event.html", [
         [ "event::DestroyNode", "structevent_1_1DestroyNode.html", null ]
@@ -527,6 +543,12 @@ var hierarchy =
       ] ],
       [ "event::Event< RequestWorkspaceHistory >", "structevent_1_1Event.html", [
         [ "event::RequestWorkspaceHistory", "structevent_1_1RequestWorkspaceHistory.html", null ]
+      ] ],
+      [ "event::Event< RulerChanged >", "structevent_1_1Event.html", [
+        [ "event::RulerChanged", "structevent_1_1RulerChanged.html", null ]
+      ] ],
+      [ "event::Event< RulerCommand >", "structevent_1_1Event.html", [
+        [ "event::RulerCommand", "structevent_1_1RulerCommand.html", null ]
       ] ],
       [ "event::Event< ScriptAssetReloaded >", "structevent_1_1Event.html", [
         [ "event::ScriptAssetReloaded", "structevent_1_1ScriptAssetReloaded.html", null ]
@@ -654,6 +676,9 @@ var hierarchy =
       [ "event::Event< WindowFocus >", "structevent_1_1Event.html", [
         [ "event::WindowFocus", "structevent_1_1WindowFocus.html", null ]
       ] ],
+      [ "event::Event< WindowHdr >", "structevent_1_1Event.html", [
+        [ "event::WindowHdr", "structevent_1_1WindowHdr.html", null ]
+      ] ],
       [ "event::Event< WindowKey >", "structevent_1_1Event.html", [
         [ "event::WindowKey", "structevent_1_1WindowKey.html", null ]
       ] ],
@@ -772,8 +797,6 @@ var hierarchy =
     ] ],
     [ "renderer::sync::ImageState", "structrenderer_1_1sync_1_1ImageState.html", null ],
     [ "editor.Assets.IMetaSection", "interfaceeditor_1_1Assets_1_1IMetaSection.html", null ],
-    [ "renderer::VulkanRenderer::ImGuiInputSnapshot", "structrenderer_1_1VulkanRenderer_1_1ImGuiInputSnapshot.html", null ],
-    [ "renderer::VulkanRenderer::ImGuiKeyEvent", "structrenderer_1_1VulkanRenderer_1_1ImGuiKeyEvent.html", null ],
     [ "editor.Components.Modals.IModalService", "interfaceeditor_1_1Components_1_1Modals_1_1IModalService.html", [
       [ "editor.Components.Modals.ModalService", "classeditor_1_1Components_1_1Modals_1_1ModalService.html", null ]
     ] ],
@@ -815,8 +838,9 @@ var hierarchy =
     [ "event::InspectorContent::InspectorField", "structevent_1_1InspectorContent_1_1InspectorField.html", null ],
     [ "editor.Workspace.InspectorState", "classeditor_1_1Workspace_1_1InspectorState.html", null ],
     [ "renderer::RayTracingScene::Instance", "structrenderer_1_1RayTracingScene_1_1Instance.html", null ],
-    [ "renderer::VulkanRenderer::InstanceData", "structrenderer_1_1VulkanRenderer_1_1InstanceData.html", null ],
+    [ "renderer::InstanceData", "structrenderer_1_1InstanceData.html", null ],
     [ "toast::INodeOwner::InstantiateContext", "structtoast_1_1INodeOwner_1_1InstantiateContext.html", null ],
+    [ "assets::Prefab::InteriorOverride", "structassets_1_1Prefab_1_1InteriorOverride.html", null ],
     [ "renderer::SharedTextureOutputTarget::Interop", "structrenderer_1_1SharedTextureOutputTarget_1_1Interop.html", null ],
     [ "renderer::IOutputTarget", "classrenderer_1_1IOutputTarget.html", [
       [ "renderer::SDLOutputTarget", "classrenderer_1_1SDLOutputTarget.html", null ],
@@ -834,11 +858,16 @@ var hierarchy =
     [ "renderer::IPostProcessPass", "classrenderer_1_1IPostProcessPass.html", [
       [ "renderer::BloomPass", "classrenderer_1_1BloomPass.html", null ],
       [ "renderer::FxaaPass", "classrenderer_1_1FxaaPass.html", null ],
+      [ "renderer::GiPass", "classrenderer_1_1GiPass.html", null ],
+      [ "renderer::LensFlarePass", "classrenderer_1_1LensFlarePass.html", null ],
+      [ "renderer::MotionBlurPass", "classrenderer_1_1MotionBlurPass.html", null ],
       [ "renderer::SsaoPass", "classrenderer_1_1SsaoPass.html", null ],
       [ "renderer::SsrPass", "classrenderer_1_1SsrPass.html", null ],
       [ "renderer::TaaPass", "classrenderer_1_1TaaPass.html", null ],
       [ "renderer::TonemapPass", "classrenderer_1_1TonemapPass.html", null ],
-      [ "renderer::TracedShadowPass", "classrenderer_1_1TracedShadowPass.html", null ]
+      [ "renderer::TracedShadowPass", "classrenderer_1_1TracedShadowPass.html", null ],
+      [ "renderer::TracedSpecularPass", "classrenderer_1_1TracedSpecularPass.html", null ],
+      [ "renderer::VolumetricPass", "classrenderer_1_1VolumetricPass.html", null ]
     ] ],
     [ "IReadOnlyList", null, [
       [ "editor.Logger.ReverseLogList", "classeditor_1_1Logger_1_1ReverseLogList.html", null ]
@@ -863,7 +892,7 @@ var hierarchy =
     [ "editor.Components.Elements.IRowVisible", "interfaceeditor_1_1Components_1_1Elements_1_1IRowVisible.html", [
       [ "editor.Editors.GenericFieldVM", "classeditor_1_1Editors_1_1GenericFieldVM.html", null ]
     ] ],
-    [ "renderer::VulkanRenderer::IrradianceVolumeData", "structrenderer_1_1VulkanRenderer_1_1IrradianceVolumeData.html", null ],
+    [ "renderer::IrradianceVolumeData", "structrenderer_1_1IrradianceVolumeData.html", null ],
     [ "assets::ISaveable", "classassets_1_1ISaveable.html", [
       [ "assets::Curve", "classassets_1_1Curve.html", null ],
       [ "assets::Data", "classassets_1_1Data.html", null ],
@@ -920,6 +949,16 @@ var hierarchy =
       [ "editor.Workspace.InspectorView", "classeditor_1_1Workspace_1_1InspectorView.html", null ],
       [ "editor.Workspace.WorkspaceView", "classeditor_1_1Workspace_1_1WorkspaceView.html", null ]
     ] ],
+    [ "physics::Joint", "structphysics_1_1Joint.html", null ],
+    [ "physics::JointDescriptor", "structphysics_1_1JointDescriptor.html", null ],
+    [ "physics::JointFrame", "structphysics_1_1JointFrame.html", null ],
+    [ "physics::JointID", "structphysics_1_1JointID.html", null ],
+    [ "physics::JointImpulses", "structphysics_1_1JointImpulses.html", null ],
+    [ "physics::_detail::JointReaction", "structphysics_1_1__detail_1_1JointReaction.html", null ],
+    [ "physics::_detail::JointRow", "structphysics_1_1__detail_1_1JointRow.html", null ],
+    [ "physics::JointSlot", "structphysics_1_1JointSlot.html", null ],
+    [ "physics::JointState", "structphysics_1_1JointState.html", null ],
+    [ "physics::JointVoxelEnd", "structphysics_1_1JointVoxelEnd.html", null ],
     [ "assets::Data::KeepAllKeysTag", "structassets_1_1Data_1_1KeepAllKeysTag.html", null ],
     [ "input::KeyCode", "structinput_1_1KeyCode.html", null ],
     [ "assets::LatticeOrientation", "structassets_1_1LatticeOrientation.html", null ],
@@ -931,7 +970,9 @@ var hierarchy =
     [ "editor.Workspace.LayoutNode", "classeditor_1_1Workspace_1_1LayoutNode.html", null ],
     [ "rmlui_vk_sync::LayoutScope", "structrmlui__vk__sync_1_1LayoutScope.html", null ],
     [ "editor.Workspace.LayoutWindowNode", "classeditor_1_1Workspace_1_1LayoutWindowNode.html", null ],
-    [ "renderer::VulkanRenderer::LightStats", "structrenderer_1_1VulkanRenderer_1_1LightStats.html", null ],
+    [ "renderer::PostProcessSettings::LensFlare", "structrenderer_1_1PostProcessSettings_1_1LensFlare.html", null ],
+    [ "renderer::LightStats", "structrenderer_1_1LightStats.html", null ],
+    [ "physics::LimitHandle", "structphysics_1_1LimitHandle.html", null ],
     [ "event::Listener", "classevent_1_1Listener.html", null ],
     [ "scripting::ListenerProxy", "classscripting_1_1ListenerProxy.html", null ],
     [ "ui::UISystem::LocalizationScope", "structui_1_1UISystem_1_1LocalizationScope.html", null ],
@@ -940,6 +981,7 @@ var hierarchy =
     [ "editor.Logger.LogEntry", "classeditor_1_1Logger_1_1LogEntry.html", null ],
     [ "editor.Logger.LogFilterState", "classeditor_1_1Logger_1_1LogFilterState.html", null ],
     [ "logging::Logger", "classlogging_1_1Logger.html", null ],
+    [ "renderer::VoxelBlasCache::Lookup", "structrenderer_1_1VoxelBlasCache_1_1Lookup.html", null ],
     [ "scripting::LuaCallback", "classscripting_1_1LuaCallback.html", null ],
     [ "scripting::LuaEventBinding", "structscripting_1_1LuaEventBinding.html", null ],
     [ "scripting::LuaEventDescriptor", "structscripting_1_1LuaEventDescriptor.html", null ],
@@ -962,12 +1004,12 @@ var hierarchy =
     [ "voxel::MassMoments", "structvoxel_1_1MassMoments.html", null ],
     [ "voxel::MassProperties", "structvoxel_1_1MassProperties.html", null ],
     [ "voxel::MaterialLibrary", "structvoxel_1_1MaterialLibrary.html", null ],
-    [ "renderer::VulkanRenderer::RenderFrame::MaterialRange", "structrenderer_1_1VulkanRenderer_1_1RenderFrame_1_1MaterialRange.html", null ],
+    [ "renderer::RenderFrame::MaterialRange", "structrenderer_1_1RenderFrame_1_1MaterialRange.html", null ],
     [ "renderer::MaterialRuntime", "classrenderer_1_1MaterialRuntime.html", null ],
     [ "assets::MaterialSettings", "structassets_1_1MaterialSettings.html", null ],
     [ "debug::Mesh", "structdebug_1_1Mesh.html", null ],
     [ "assets::_detail::MeshFileHeader", "structassets_1_1__detail_1_1MeshFileHeader.html", null ],
-    [ "renderer::VulkanRenderer::MeshInstanceProxy", "structrenderer_1_1VulkanRenderer_1_1MeshInstanceProxy.html", null ],
+    [ "renderer::MeshInstanceProxy", "structrenderer_1_1MeshInstanceProxy.html", null ],
     [ "physics::Meta", "structphysics_1_1Meta.html", null ],
     [ "renderer::Meta", "structrenderer_1_1Meta.html", null ],
     [ "toast::settings::Meta", "structtoast_1_1settings_1_1Meta.html", null ],
@@ -990,6 +1032,12 @@ var hierarchy =
           [ "physics::CapsuleCollider", "classphysics_1_1CapsuleCollider.html", null ],
           [ "physics::SphereCollider", "classphysics_1_1SphereCollider.html", null ]
         ] ],
+        [ "physics::Joint3D", "classphysics_1_1Joint3D.html", [
+          [ "physics::FixedJoint", "classphysics_1_1FixedJoint.html", null ],
+          [ "physics::HingeJoint", "classphysics_1_1HingeJoint.html", null ],
+          [ "physics::PinJoint", "classphysics_1_1PinJoint.html", null ],
+          [ "physics::SliderJoint", "classphysics_1_1SliderJoint.html", null ]
+        ] ],
         [ "physics::Rigidbody", "classphysics_1_1Rigidbody.html", [
           [ "physics::DynamicRigidbody", "classphysics_1_1DynamicRigidbody.html", null ],
           [ "physics::KinematicRigidbody", "classphysics_1_1KinematicRigidbody.html", null ],
@@ -1005,6 +1053,7 @@ var hierarchy =
         ] ],
         [ "toast::AudioListener", "classtoast_1_1AudioListener.html", null ],
         [ "toast::Camera", "classtoast_1_1Camera.html", null ],
+        [ "toast::FogVolume", "classtoast_1_1FogVolume.html", null ],
         [ "toast::IrradianceVolume", "classtoast_1_1IrradianceVolume.html", null ],
         [ "toast::Light", "classtoast_1_1Light.html", [
           [ "toast::AmbientLight", "classtoast_1_1AmbientLight.html", null ],
@@ -1015,7 +1064,6 @@ var hierarchy =
         [ "toast::MeshNode", "classtoast_1_1MeshNode.html", null ],
         [ "toast::Panel3D", "classtoast_1_1Panel3D.html", null ],
         [ "toast::ReflectionProbe", "classtoast_1_1ReflectionProbe.html", null ],
-        [ "toast::TestNode2", "classtoast_1_1TestNode2.html", null ],
         [ "toast::Volume", "classtoast_1_1Volume.html", [
           [ "toast::AudioVolume", "classtoast_1_1AudioVolume.html", [
             [ "toast::AmbienceVolume", "classtoast_1_1AmbienceVolume.html", null ],
@@ -1027,7 +1075,9 @@ var hierarchy =
           [ "toast::VoxelBucket", "classtoast_1_1VoxelBucket.html", null ],
           [ "toast::VoxelGroup", "classtoast_1_1VoxelGroup.html", null ],
           [ "toast::VoxelNode", "classtoast_1_1VoxelNode.html", [
-            [ "toast::ProceduralVoxel", "classtoast_1_1ProceduralVoxel.html", null ]
+            [ "toast::ProceduralVoxel", "classtoast_1_1ProceduralVoxel.html", [
+              [ "toast::VoxelBrush", "classtoast_1_1VoxelBrush.html", null ]
+            ] ]
           ] ],
           [ "toast::VoxelPiece", "classtoast_1_1VoxelPiece.html", [
             [ "toast::VoxelMesh", "classtoast_1_1VoxelMesh.html", null ],
@@ -1041,9 +1091,7 @@ var hierarchy =
       ] ],
       [ "toast::Panel", "classtoast_1_1Panel.html", null ],
       [ "toast::PanelContext", "classtoast_1_1PanelContext.html", null ],
-      [ "toast::PrintTextNode", "classtoast_1_1PrintTextNode.html", null ],
-      [ "toast::StateMachine", "classtoast_1_1StateMachine.html", null ],
-      [ "toast::TestNode1", "classtoast_1_1TestNode1.html", null ]
+      [ "toast::StateMachine", "classtoast_1_1StateMachine.html", null ]
     ] ],
     [ "toast::_detail::NodeCluster", "structtoast_1_1__detail_1_1NodeCluster.html", null ],
     [ "assets::_detail::NodeFileBinaryHeader", "structassets_1_1__detail_1_1NodeFileBinaryHeader.html", null ],
@@ -1071,6 +1119,7 @@ var hierarchy =
       [ "editor.Editors.ChannelOption", "classeditor_1_1Editors_1_1ChannelOption.html", null ],
       [ "editor.Editors.CurvePointVM", "classeditor_1_1Editors_1_1CurvePointVM.html", null ],
       [ "editor.Editors.GenericFieldVM", "classeditor_1_1Editors_1_1GenericFieldVM.html", null ],
+      [ "editor.Editors.PaletteRowLabelVM", "classeditor_1_1Editors_1_1PaletteRowLabelVM.html", null ],
       [ "editor.Editors.PaletteSlotVM", "classeditor_1_1Editors_1_1PaletteSlotVM.html", null ],
       [ "editor.Editors.PaletteSwatchVM", "classeditor_1_1Editors_1_1PaletteSwatchVM.html", null ],
       [ "editor.Editors.SchemaFieldItemVM", "classeditor_1_1Editors_1_1SchemaFieldItemVM.html", null ],
@@ -1112,6 +1161,7 @@ var hierarchy =
       [ "editor.Workspace.PhysicsLayerRow", "classeditor_1_1Workspace_1_1PhysicsLayerRow.html", null ],
       [ "editor.Workspace.RenderPassVM", "classeditor_1_1Workspace_1_1RenderPassVM.html", null ],
       [ "editor.Workspace.SettingRow", "classeditor_1_1Workspace_1_1SettingRow.html", [
+        [ "editor.Workspace.AssetSettingRow", "classeditor_1_1Workspace_1_1AssetSettingRow.html", null ],
         [ "editor.Workspace.BoolSettingRow", "classeditor_1_1Workspace_1_1BoolSettingRow.html", null ],
         [ "editor.Workspace.EnumSettingRow", "classeditor_1_1Workspace_1_1EnumSettingRow.html", null ],
         [ "editor.Workspace.FloatSettingRow", "classeditor_1_1Workspace_1_1FloatSettingRow.html", null ],
@@ -1142,12 +1192,14 @@ var hierarchy =
     [ "toast::ParameterInfo", "structtoast_1_1ParameterInfo.html", null ],
     [ "toast::MusicPlayer::ParamID", "structtoast_1_1MusicPlayer_1_1ParamID.html", null ],
     [ "renderer::VulkanTexture::Params", "structrenderer_1_1VulkanTexture_1_1Params.html", null ],
+    [ "toast::ProceduralVoxel::ComposeOutput::Part", "structtoast_1_1ProceduralVoxel_1_1ComposeOutput_1_1Part.html", null ],
     [ "event::RenderPassList::PassInfo", "structevent_1_1RenderPassList_1_1PassInfo.html", null ],
     [ "renderer::VulkanRenderer::PassInfo", "structrenderer_1_1VulkanRenderer_1_1PassInfo.html", null ],
     [ "renderer::VoxelScenePatcher::Patched", "structrenderer_1_1VoxelScenePatcher_1_1Patched.html", null ],
     [ "voxel::gpu::PatchRun", "structvoxel_1_1gpu_1_1PatchRun.html", null ],
     [ "voxel::gpu::PatchSection", "structvoxel_1_1gpu_1_1PatchSection.html", null ],
     [ "assets::Paths", "structassets_1_1Paths.html", null ],
+    [ "logging::Pending", "structlogging_1_1Pending.html", null ],
     [ "toast::VoxelNode::PendingEvents", "structtoast_1_1VoxelNode_1_1PendingEvents.html", null ],
     [ "toast::WorkspaceHistory::PendingMerge", "structtoast_1_1WorkspaceHistory_1_1PendingMerge.html", null ],
     [ "renderer::PendingResourceUpload", "classrenderer_1_1PendingResourceUpload.html", [
@@ -1159,6 +1211,7 @@ var hierarchy =
     [ "physics::Penetration", "structphysics_1_1Penetration.html", null ],
     [ "renderer::VulkanRenderer::PerfCounters", "structrenderer_1_1VulkanRenderer_1_1PerfCounters.html", null ],
     [ "renderer::PerfWindow", "classrenderer_1_1PerfWindow.html", null ],
+    [ "toast::PhaseZones", "classtoast_1_1PhaseZones.html", null ],
     [ "voxel::PhysicalMaterial", "structvoxel_1_1PhysicalMaterial.html", null ],
     [ "editor.Workspace.PhysicsLayersViewModel", "classeditor_1_1Workspace_1_1PhysicsLayersViewModel.html", null ],
     [ "physics::PhysicsMaterial", "structphysics_1_1PhysicsMaterial.html", null ],
@@ -1172,6 +1225,7 @@ var hierarchy =
       [ "editor.Components.Modals.NodeTypePickerViewModel", "classeditor_1_1Components_1_1Modals_1_1NodeTypePickerViewModel.html", null ]
     ] ],
     [ "toast::ProceduralVoxel::PieceLayout", "structtoast_1_1ProceduralVoxel_1_1PieceLayout.html", null ],
+    [ "physics::PinParams", "structphysics_1_1PinParams.html", null ],
     [ "renderer::PostProcessSettings", "structrenderer_1_1PostProcessSettings.html", null ],
     [ "renderer::PostProcessTarget", "classrenderer_1_1PostProcessTarget.html", null ],
     [ "ui::PreprocessContext", "structui_1_1PreprocessContext.html", null ],
@@ -1221,6 +1275,9 @@ var hierarchy =
     [ "event::ProtoTraits&lt; RequestShaderReflection &gt;", "structevent_1_1ProtoTraits_3_01RequestShaderReflection_01_4.html", null ],
     [ "event::ProtoTraits&lt; RequestSignalCallables &gt;", "structevent_1_1ProtoTraits_3_01RequestSignalCallables_01_4.html", null ],
     [ "event::ProtoTraits&lt; RequestSignalState &gt;", "structevent_1_1ProtoTraits_3_01RequestSignalState_01_4.html", null ],
+    [ "event::ProtoTraits&lt; RulerChanged &gt;", "structevent_1_1ProtoTraits_3_01RulerChanged_01_4.html", null ],
+    [ "event::ProtoTraits&lt; RulerCommand &gt;", "structevent_1_1ProtoTraits_3_01RulerCommand_01_4.html", null ],
+    [ "event::ProtoTraits&lt; RulerSegment &gt;", "structevent_1_1ProtoTraits_3_01RulerSegment_01_4.html", null ],
     [ "event::ProtoTraits&lt; SetActiveWorkspace &gt;", "structevent_1_1ProtoTraits_3_01SetActiveWorkspace_01_4.html", null ],
     [ "event::ProtoTraits&lt; SetCameraMode &gt;", "structevent_1_1ProtoTraits_3_01SetCameraMode_01_4.html", null ],
     [ "event::ProtoTraits&lt; SetCoordinateSpace &gt;", "structevent_1_1ProtoTraits_3_01SetCoordinateSpace_01_4.html", null ],
@@ -1285,9 +1342,12 @@ var hierarchy =
     [ "event::ProtoTraits&lt; WorkspaceSaveCompleted &gt;", "structevent_1_1ProtoTraits_3_01WorkspaceSaveCompleted_01_4.html", null ],
     [ "event::ProtoTraits&lt; WorkspaceSpawn &gt;", "structevent_1_1ProtoTraits_3_01WorkspaceSpawn_01_4.html", null ],
     [ "editor.Assets.PsdSectionDto", "classeditor_1_1Assets_1_1PsdSectionDto.html", null ],
+    [ "renderer::VolumetricPass::Quality", "structrenderer_1_1VolumetricPass_1_1Quality.html", null ],
     [ "physics::QueryContact", "structphysics_1_1QueryContact.html", null ],
+    [ "physics::QuerySnapshot", "structphysics_1_1QuerySnapshot.html", null ],
     [ "toast::MusicPlayer::QueuedCb", "structtoast_1_1MusicPlayer_1_1QueuedCb.html", null ],
     [ "renderer::sync::QueueHandoff", "structrenderer_1_1sync_1_1QueueHandoff.html", null ],
+    [ "logging::RawBacktrace", "structlogging_1_1RawBacktrace.html", null ],
     [ "toast::Ray", "structtoast_1_1Ray.html", null ],
     [ "physics::AABB::RayHit", "structphysics_1_1AABB_1_1RayHit.html", null ],
     [ "physics::RayHit", "structphysics_1_1RayHit.html", null ],
@@ -1296,11 +1356,11 @@ var hierarchy =
     [ "renderer::SlangVfs::Recorder", "classrenderer_1_1SlangVfs_1_1Recorder.html", null ],
     [ "toast::Reflect&lt; T &gt;", "classtoast_1_1Reflect.html", null ],
     [ "toast::Reflect&lt; event::_detail::IEvent &gt;", "structtoast_1_1Reflect_3_01event_1_1__detail_1_1IEvent_01_4.html", null ],
-    [ "renderer::VulkanRenderer::ReflectionProbeData", "structrenderer_1_1VulkanRenderer_1_1ReflectionProbeData.html", null ],
+    [ "renderer::ReflectionProbeData", "structrenderer_1_1ReflectionProbeData.html", null ],
     [ "voxel::Region", "structvoxel_1_1Region.html", null ],
     [ "assets::AssetManager::ReloadedAsset", "structassets_1_1AssetManager_1_1ReloadedAsset.html", null ],
     [ "physics::RemovedVoxels", "structphysics_1_1RemovedVoxels.html", null ],
-    [ "renderer::VulkanRenderer::RenderFrame", "structrenderer_1_1VulkanRenderer_1_1RenderFrame.html", null ],
+    [ "renderer::RenderFrame", "structrenderer_1_1RenderFrame.html", null ],
     [ "Rml::RenderInterface", null, [
       [ "RenderInterface_VK", "classRenderInterface__VK.html", null ]
     ] ],
@@ -1309,8 +1369,11 @@ var hierarchy =
     [ "renderer::voxel_debug::Rgb", "structrenderer_1_1voxel__debug_1_1Rgb.html", null ],
     [ "physics::Rng", "structphysics_1_1Rng.html", null ],
     [ "toast::_detail::Robber&lt; Tag, Ptr &gt;", "structtoast_1_1__detail_1_1Robber.html", null ],
+    [ "toast::Ruler", "classtoast_1_1Ruler.html", null ],
+    [ "event::RulerSegment", "structevent_1_1RulerSegment.html", null ],
     [ "scripting::RuntimeToken", "structscripting_1_1RuntimeToken.html", null ],
     [ "renderer::SceneDescriptorSets", "classrenderer_1_1SceneDescriptorSets.html", null ],
+    [ "toast::Workspace::SceneHit", "structtoast_1_1Workspace_1_1SceneHit.html", null ],
     [ "voxel::gpu::SceneLayout", "structvoxel_1_1gpu_1_1SceneLayout.html", null ],
     [ "voxel::gpu::ScenePatch", "structvoxel_1_1gpu_1_1ScenePatch.html", null ],
     [ "voxel::gpu::SceneVolume", "structvoxel_1_1gpu_1_1SceneVolume.html", null ],
@@ -1330,6 +1393,7 @@ var hierarchy =
     [ "physics::_detail::SegmentBoxClosestPoints", "structphysics_1_1__detail_1_1SegmentBoxClosestPoints.html", null ],
     [ "physics::_detail::SegmentClosestPoint", "structphysics_1_1__detail_1_1SegmentClosestPoint.html", null ],
     [ "physics::_detail::SegmentClosestPoints", "structphysics_1_1__detail_1_1SegmentClosestPoints.html", null ],
+    [ "renderer::SelectionOutline", "classrenderer_1_1SelectionOutline.html", null ],
     [ "renderer::sync::SemaphoreSignal", "structrenderer_1_1sync_1_1SemaphoreSignal.html", null ],
     [ "renderer::sync::SemaphoreWait", "structrenderer_1_1sync_1_1SemaphoreWait.html", null ],
     [ "toast::settings::Setting&lt; T &gt;", "classtoast_1_1settings_1_1Setting.html", null ],
@@ -1346,8 +1410,8 @@ var hierarchy =
     [ "renderer::ShaderLayout", "classrenderer_1_1ShaderLayout.html", null ],
     [ "renderer::ShaderPushConstants", "structrenderer_1_1ShaderPushConstants.html", null ],
     [ "renderer::ShaderReflection", "structrenderer_1_1ShaderReflection.html", null ],
-    [ "renderer::VulkanRenderer::ShadowFrame", "structrenderer_1_1VulkanRenderer_1_1ShadowFrame.html", null ],
-    [ "renderer::VulkanRenderer::ShadowView", "structrenderer_1_1VulkanRenderer_1_1ShadowView.html", null ],
+    [ "renderer::ShadowFrame", "structrenderer_1_1ShadowFrame.html", null ],
+    [ "renderer::ShadowView", "structrenderer_1_1ShadowView.html", null ],
     [ "physics::Shape", "structphysics_1_1Shape.html", null ],
     [ "physics::ShapeBoundsUpdate", "structphysics_1_1ShapeBoundsUpdate.html", null ],
     [ "physics::ShapeID", "structphysics_1_1ShapeID.html", null ],
@@ -1367,12 +1431,13 @@ var hierarchy =
     [ "scripting::SignalProxy", "classscripting_1_1SignalProxy.html", null ],
     [ "event::SignalStateEntry", "structevent_1_1SignalStateEntry.html", null ],
     [ "physics::Simulator", "classphysics_1_1Simulator.html", null ],
-    [ "renderer::VulkanRenderer::SizeHandleDraw", "structrenderer_1_1VulkanRenderer_1_1SizeHandleDraw.html", null ],
+    [ "renderer::SizeHandleDraw", "structrenderer_1_1SizeHandleDraw.html", null ],
     [ "toast::Workspace::SizeHandlePoint", "structtoast_1_1Workspace_1_1SizeHandlePoint.html", null ],
     [ "assets::Skin", "structassets_1_1Skin.html", null ],
     [ "renderer::SkinnedBlasPool", "classrenderer_1_1SkinnedBlasPool.html", null ],
     [ "renderer::SkinningPass", "classrenderer_1_1SkinningPass.html", null ],
     [ "renderer::SkinVertex", "structrenderer_1_1SkinVertex.html", null ],
+    [ "physics::SliderParams", "structphysics_1_1SliderParams.html", null ],
     [ "renderer::shadow_slots::Slot", "structrenderer_1_1shadow__slots_1_1Slot.html", null ],
     [ "renderer::SharedTextureOutputTarget::Interop::Slot", "structrenderer_1_1SharedTextureOutputTarget_1_1Interop_1_1Slot.html", null ],
     [ "physics::SmashPieces", "structphysics_1_1SmashPieces.html", null ],
@@ -1384,8 +1449,12 @@ var hierarchy =
     [ "renderer::PostProcessSettings::Ssao", "structrenderer_1_1PostProcessSettings_1_1Ssao.html", null ],
     [ "renderer::PostProcessSettings::Ssr", "structrenderer_1_1PostProcessSettings_1_1Ssr.html", null ],
     [ "voxel::StampResult", "structvoxel_1_1StampResult.html", null ],
+    [ "renderer::ShaderCache::StartupProgress", "structrenderer_1_1ShaderCache_1_1StartupProgress.html", null ],
+    [ "toast::StartupSplash", "classtoast_1_1StartupSplash.html", null ],
     [ "toast::State", "structtoast_1_1State.html", null ],
+    [ "renderer::GiPass::Stats", "structrenderer_1_1GiPass_1_1Stats.html", null ],
     [ "renderer::ShadowPass::Stats", "structrenderer_1_1ShadowPass_1_1Stats.html", null ],
+    [ "renderer::VoxelBlasCache::Stats", "structrenderer_1_1VoxelBlasCache_1_1Stats.html", null ],
     [ "renderer::AsyncComputeTask::StepContext", "classrenderer_1_1AsyncComputeTask_1_1StepContext.html", null ],
     [ "physics::StepResult", "structphysics_1_1StepResult.html", null ],
     [ "std::streambuf", null, [
@@ -1456,7 +1525,7 @@ var hierarchy =
     [ "toast::input::TrackpadDelta", "structtoast_1_1input_1_1TrackpadDelta.html", null ],
     [ "toast::input::TrackpadGesture", "classtoast_1_1input_1_1TrackpadGesture.html", null ],
     [ "toast::input::TrackpadTransform", "structtoast_1_1input_1_1TrackpadTransform.html", null ],
-    [ "renderer::VulkanRenderer::TransformGizmoDraw", "structrenderer_1_1VulkanRenderer_1_1TransformGizmoDraw.html", null ],
+    [ "renderer::TransformGizmoDraw", "structrenderer_1_1TransformGizmoDraw.html", null ],
     [ "toast::Transition", "structtoast_1_1Transition.html", null ],
     [ "physics::TreeNode", "structphysics_1_1TreeNode.html", null ],
     [ "toast::TreeReadLock", "classtoast_1_1TreeReadLock.html", null ],
@@ -1474,7 +1543,7 @@ var hierarchy =
     [ "ui::UIInputRouter", "classui_1_1UIInputRouter.html", null ],
     [ "toast::UISettings", "classtoast_1_1UISettings.html", null ],
     [ "ui::UISystem", "classui_1_1UISystem.html", null ],
-    [ "renderer::VulkanRenderer::UIWorldPanelProxy", "structrenderer_1_1VulkanRenderer_1_1UIWorldPanelProxy.html", null ],
+    [ "renderer::UIWorldPanelProxy", "structrenderer_1_1UIWorldPanelProxy.html", null ],
     [ "physics::UnglueRegion", "structphysics_1_1UnglueRegion.html", null ],
     [ "editor.Components.Modals.UnsavedChangesViewModel", "classeditor_1_1Components_1_1Modals_1_1UnsavedChangesViewModel.html", null ],
     [ "renderer::VulkanMesh::UploadData", "structrenderer_1_1VulkanMesh_1_1UploadData.html", null ],
@@ -1499,6 +1568,7 @@ var hierarchy =
       [ "editor.Workspace.InspectorView", "classeditor_1_1Workspace_1_1InspectorView.html", null ],
       [ "editor.Workspace.ProjectSettingsView", "classeditor_1_1Workspace_1_1ProjectSettingsView.html", null ],
       [ "editor.Workspace.RendererSettingsView", "classeditor_1_1Workspace_1_1RendererSettingsView.html", null ],
+      [ "editor.Workspace.RulerOverlay", "classeditor_1_1Workspace_1_1RulerOverlay.html", null ],
       [ "editor.Workspace.SignalsView", "classeditor_1_1Workspace_1_1SignalsView.html", null ],
       [ "editor.Workspace.ViewportControl", "classeditor_1_1Workspace_1_1ViewportControl.html", null ],
       [ "editor.Workspace.WorkspaceView", "classeditor_1_1Workspace_1_1WorkspaceView.html", null ]
@@ -1514,6 +1584,7 @@ var hierarchy =
     [ "renderer::ViewportSharedHandles", "structrenderer_1_1ViewportSharedHandles.html", null ],
     [ "assets::Volume", "classassets_1_1Volume.html", null ],
     [ "renderer::VoxelCollisionWorld::Volume", "structrenderer_1_1VoxelCollisionWorld_1_1Volume.html", null ],
+    [ "renderer::VoxelTraceScene::Volume", "structrenderer_1_1VoxelTraceScene_1_1Volume.html", null ],
     [ "voxel::Volume", "classvoxel_1_1Volume.html", null ],
     [ "renderer::VolumeDelta", "structrenderer_1_1VolumeDelta.html", null ],
     [ "voxel::gpu::VolumeDirty", "structvoxel_1_1gpu_1_1VolumeDirty.html", null ],
@@ -1521,6 +1592,10 @@ var hierarchy =
     [ "voxel::gpu::VolumeRecord", "structvoxel_1_1gpu_1_1VolumeRecord.html", null ],
     [ "voxel::VolumeSurface", "classvoxel_1_1VolumeSurface.html", null ],
     [ "toast::VolumeTarget", "structtoast_1_1VolumeTarget.html", null ],
+    [ "physics::VoxelAnchorSettings", "structphysics_1_1VoxelAnchorSettings.html", null ],
+    [ "event::VoxelBakePiece", "structevent_1_1VoxelBakePiece.html", null ],
+    [ "renderer::VoxelBlasCache", "classrenderer_1_1VoxelBlasCache.html", null ],
+    [ "renderer::VoxelBrickList", "structrenderer_1_1VoxelBrickList.html", null ],
     [ "physics::VoxelCandidate", "structphysics_1_1VoxelCandidate.html", null ],
     [ "renderer::VoxelCaster", "structrenderer_1_1VoxelCaster.html", null ],
     [ "renderer::VoxelChangeHistory", "classrenderer_1_1VoxelChangeHistory.html", null ],
@@ -1537,6 +1612,7 @@ var hierarchy =
     [ "physics::VoxelPairPartial", "structphysics_1_1VoxelPairPartial.html", null ],
     [ "editor.Assets.VoxelPaletteEntry", "classeditor_1_1Assets_1_1VoxelPaletteEntry.html", null ],
     [ "editor.Assets.VoxelPaletteFile", "classeditor_1_1Assets_1_1VoxelPaletteFile.html", null ],
+    [ "toast::VoxelPart", "structtoast_1_1VoxelPart.html", null ],
     [ "event::VoxelPieceLayoutData", "structevent_1_1VoxelPieceLayoutData.html", null ],
     [ "event::VoxelProjectionData", "structevent_1_1VoxelProjectionData.html", null ],
     [ "physics::VoxelQueryContext", "structphysics_1_1VoxelQueryContext.html", null ],
@@ -1549,7 +1625,8 @@ var hierarchy =
     [ "physics::VoxelShapeSlot", "structphysics_1_1VoxelShapeSlot.html", null ],
     [ "renderer::VoxelStorageDebugInfo", "structrenderer_1_1VoxelStorageDebugInfo.html", null ],
     [ "toast::Workspace::VoxelToolState", "structtoast_1_1Workspace_1_1VoxelToolState.html", null ],
-    [ "renderer::VulkanRenderer::VoxelVolumeProxy", "structrenderer_1_1VulkanRenderer_1_1VoxelVolumeProxy.html", null ],
+    [ "renderer::VoxelTraceScene", "classrenderer_1_1VoxelTraceScene.html", null ],
+    [ "renderer::VoxelVolumeProxy", "structrenderer_1_1VoxelVolumeProxy.html", null ],
     [ "physics::VoxelVoxelPairView", "structphysics_1_1VoxelVoxelPairView.html", null ],
     [ "physics::VoxelVoxelSplitInfo", "structphysics_1_1VoxelVoxelSplitInfo.html", null ],
     [ "assets::Volume::VoxelWrite", "structassets_1_1Volume_1_1VoxelWrite.html", null ],
@@ -1590,7 +1667,6 @@ var hierarchy =
       [ "editor.Git.CommitWindow", "classeditor_1_1Git_1_1CommitWindow.html", null ],
       [ "editor.Git.GitPassphraseModal", "classeditor_1_1Git_1_1GitPassphraseModal.html", null ],
       [ "editor.Git.LockArtworkWindow", "classeditor_1_1Git_1_1LockArtworkWindow.html", null ],
-      [ "editor.Git.LockedFileModal", "classeditor_1_1Git_1_1LockedFileModal.html", null ],
       [ "editor.Logger.LogDetailWindow", "classeditor_1_1Logger_1_1LogDetailWindow.html", null ],
       [ "editor.StartWindow.NewProjectWindow", "classeditor_1_1StartWindow_1_1NewProjectWindow.html", null ],
       [ "editor.StartWindow.StartWindow", "classeditor_1_1StartWindow_1_1StartWindow.html", null ],

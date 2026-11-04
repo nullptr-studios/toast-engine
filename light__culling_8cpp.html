@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.17.0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Toast Engine: engine/src/toast/renderer/light_culling.cpp File Reference</title>
+<title>Toast Engine: engine/src/toast/renderer/lighting/light_culling.cpp File Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="codefolding.js"></script>
 <script type="text/javascript" src="clipboard.js"></script>
@@ -118,31 +118,25 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('light__culling
   <div class="headertitle"><div class="title">light_culling.cpp File Reference</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;<a class="el" href="light__culling_8hpp_source.html">light_culling.hpp</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="clustered__lighting__constants_8hpp_source.html">clustered_lighting_constants.hpp</a>&quot;</code><br />
-<code>#include &lt;algorithm&gt;</code><br />
-<code>#include &lt;cmath&gt;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="light__culling_8hpp_source.html">toast/renderer/lighting/light_culling.hpp</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="clustered__lighting__constants_8hpp_source.html">toast/renderer/lighting/clustered_lighting_constants.hpp</a>&quot;</code><br />
 <code>#include &lt;glm/gtc/constants.hpp&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for light_culling.cpp:</div>
 <div class="dyncontent">
-<div class="center"><img src="light__culling_8cpp__incl.png" border="0" usemap="#aengine_2src_2toast_2renderer_2light__culling_8cpp" loading="lazy" alt=""/></div>
-<map name="aengine_2src_2toast_2renderer_2light__culling_8cpp" id="aengine_2src_2toast_2renderer_2light__culling_8cpp">
-<area shape="rect" title=" " alt="" coords="269,5,454,50"/>
-<area shape="rect" href="light__culling_8hpp.html" title=" " alt="" coords="5,106,134,134"/>
-<area shape="poly" title=" " alt="" coords="291,53,128,104,126,99,292,48"/>
-<area shape="rect" href="clustered__lighting__constants_8hpp.html" title=" " alt="" coords="158,98,296,143"/>
-<area shape="poly" title=" " alt="" coords="332,49,273,92,270,87,327,52"/>
-<area shape="rect" title=" " alt="" coords="319,106,404,134"/>
-<area shape="poly" title=" " alt="" coords="363,48,364,92,359,90,360,52"/>
-<area shape="rect" title=" " alt="" coords="428,106,490,134"/>
-<area shape="poly" title=" " alt="" coords="385,48,436,96,431,95,384,53"/>
-<area shape="rect" title=" " alt="" coords="514,106,679,134"/>
-<area shape="poly" title=" " alt="" coords="418,48,550,100,545,101,417,53"/>
-<area shape="rect" title=" " alt="" coords="18,191,121,218"/>
-<area shape="poly" title=" " alt="" coords="71,133,72,176,67,175,68,137"/>
-<area shape="rect" title=" " alt="" coords="194,191,260,218"/>
-<area shape="poly" title=" " alt="" coords="229,141,229,176,225,174,225,145"/>
+<div class="center"><img src="light__culling_8cpp__incl.png" border="0" usemap="#aengine_2src_2toast_2renderer_2lighting_2light__culling_8cpp" loading="lazy" alt=""/></div>
+<map name="aengine_2src_2toast_2renderer_2lighting_2light__culling_8cpp" id="aengine_2src_2toast_2renderer_2lighting_2light__culling_8cpp">
+<area shape="rect" title=" " alt="" coords="223,5,407,50"/>
+<area shape="rect" href="light__culling_8hpp.html" title=" " alt="" coords="5,98,172,143"/>
+<area shape="poly" title=" " alt="" coords="259,52,158,94,155,90,263,49"/>
+<area shape="rect" href="clustered__lighting__constants_8hpp.html" title=" " alt="" coords="196,98,435,143"/>
+<area shape="poly" title=" " alt="" coords="317,48,318,84,313,81,314,52"/>
+<area shape="rect" title=" " alt="" coords="459,106,624,134"/>
+<area shape="poly" title=" " alt="" coords="370,48,497,100,492,101,369,53"/>
+<area shape="rect" title=" " alt="" coords="37,191,140,218"/>
+<area shape="poly" title=" " alt="" coords="90,141,91,176,86,174,87,145"/>
+<area shape="rect" title=" " alt="" coords="282,191,348,218"/>
+<area shape="poly" title=" " alt="" coords="317,141,317,177,313,174,313,145"/>
 </map>
 </div>
 </div><table class="memberdecls">
@@ -154,6 +148,9 @@ auto&#160;</td><td class="memItemRight"><b>renderer::light_culling::spotBounds</
 <tr class="memitem:a46b1dc317e886db016753414ed7b2993" id="r_a46b1dc317e886db016753414ed7b2993"><td class="memItemLeft"><a id="a46b1dc317e886db016753414ed7b2993" name="a46b1dc317e886db016753414ed7b2993"></a>
 auto&#160;</td><td class="memItemRight"><b>renderer::light_culling::importance</b> (const glm::vec3 &amp;color, float intensity, float range, float camera_distance, float cone_fraction) -&gt; float</td></tr>
 <tr class="memdesc:a46b1dc317e886db016753414ed7b2993"><td class="mdescLeft">&#160;</td><td class="mdescRight">Only ranks lights against each other. <br /></td></tr>
+<tr class="memitem:ab0b1300a6fb1ca32e7c2993186e9e0e2" id="r_ab0b1300a6fb1ca32e7c2993186e9e0e2"><td class="memItemLeft"><a id="ab0b1300a6fb1ca32e7c2993186e9e0e2" name="ab0b1300a6fb1ca32e7c2993186e9e0e2"></a>
+auto&#160;</td><td class="memItemRight"><b>renderer::light_culling::shadowPriority</b> (const glm::vec3 &amp;color, float intensity, float camera_distance, float cone_fraction) -&gt; float</td></tr>
+<tr class="memdesc:ab0b1300a6fb1ca32e7c2993186e9e0e2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Ranks lights for shadow slots by nearness. <br /></td></tr>
 <tr class="memitem:ad3533712d57f7f12c11761d879fbe145" id="r_ad3533712d57f7f12c11761d879fbe145"><td class="memItemLeft"><a id="ad3533712d57f7f12c11761d879fbe145" name="ad3533712d57f7f12c11761d879fbe145"></a>
 auto&#160;</td><td class="memItemRight"><b>renderer::light_culling::clusterDepthRange</b> (float camera_near, float camera_far, float light_reach) -&gt; <a class="el" href="structrenderer_1_1light__culling_1_1DepthRange.html">DepthRange</a></td></tr>
 <tr class="memdesc:ad3533712d57f7f12c11761d879fbe145"><td class="mdescLeft">&#160;</td><td class="mdescRight">Ends at the farthest visible light so slices are not spent on empty depth. <br /></td></tr>
@@ -174,7 +171,7 @@ auto&#160;</td><td class="memItemRight"><b>renderer::light_culling::clusterDepth
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><b>engine</b></li><li class="navelem"><b>src</b></li><li class="navelem"><b>toast</b></li><li class="navelem"><b>renderer</b></li><li class="navelem"><a href="light__culling_8cpp.html">light_culling.cpp</a></li>
+    <li class="navelem"><b>engine</b></li><li class="navelem"><b>src</b></li><li class="navelem"><b>toast</b></li><li class="navelem"><b>renderer</b></li><li class="navelem"><b>lighting</b></li><li class="navelem"><a href="light__culling_8cpp.html">light_culling.cpp</a></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.17.0 </li>
   </ul>
 </div>

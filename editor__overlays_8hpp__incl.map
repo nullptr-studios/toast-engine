@@ -1,5 +1,5 @@
-<map id="engine/src/toast/renderer/editor_overlays.hpp" name="engine/src/toast/renderer/editor_overlays.hpp">
-<area shape="rect" id="Node000001" title="What the VoxelEditor asks the viewport to draw on top of the scene." alt="" coords="98,5,282,50"/>
+<map id="engine/src/toast/renderer/debug/editor_overlays.hpp" name="engine/src/toast/renderer/debug/editor_overlays.hpp">
+<area shape="rect" id="Node000001" title="What the VoxelEditor asks the viewport to draw on top of the scene." alt="" coords="91,5,289,50"/>
 <area shape="rect" id="Node000002" title=" " alt="" coords="5,98,71,126"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="148,53,77,93,74,88,151,48"/>
 <area shape="rect" id="Node000003" title=" " alt="" coords="94,98,198,126"/>

@@ -152,9 +152,20 @@ auto&#160;</td><td class="memItemRight"><b>getTransferQueue</b> () const noexcep
 auto&#160;</td><td class="memItemRight"><b>getRenderDocAPI</b> () const noexcept -&gt; const RENDERDOC_API_1_6_0 *</td></tr>
 <tr class="memitem:adc057d6a72bfa870d46d4da4c14997a9" id="r_adc057d6a72bfa870d46d4da4c14997a9"><td class="memItemLeft"><a id="adc057d6a72bfa870d46d4da4c14997a9" name="adc057d6a72bfa870d46d4da4c14997a9"></a>
 auto&#160;</td><td class="memItemRight"><b>isRayTracingSupported</b> () const noexcept -&gt; bool</td></tr>
+<tr class="memitem:ad66c165b53175bf7006026bf4411221f" id="r_ad66c165b53175bf7006026bf4411221f"><td class="memItemLeft"><a id="ad66c165b53175bf7006026bf4411221f" name="ad66c165b53175bf7006026bf4411221f"></a>
+auto&#160;</td><td class="memItemRight"><b>rayTracingReason</b> () const noexcept -&gt; std::string_view</td></tr>
+<tr class="memitem:a513d2b3503b52ce0f557d08f4ce5bb1f" id="r_a513d2b3503b52ce0f557d08f4ce5bb1f"><td class="memItemLeft"><a id="a513d2b3503b52ce0f557d08f4ce5bb1f" name="a513d2b3503b52ce0f557d08f4ce5bb1f"></a>
+auto&#160;</td><td class="memItemRight"><b>rayTracingStartupMode</b> () const noexcept -&gt; RayTracingMode</td></tr>
 <tr class="memitem:ad8e87601f3cd69b85c8af0702e5ec35e" id="r_ad8e87601f3cd69b85c8af0702e5ec35e"><td class="memItemLeft"><a id="ad8e87601f3cd69b85c8af0702e5ec35e" name="ad8e87601f3cd69b85c8af0702e5ec35e"></a>
 auto&#160;</td><td class="memItemRight"><b>isMeshShaderSupported</b> () const noexcept -&gt; bool</td></tr>
 <tr class="memdesc:ad8e87601f3cd69b85c8af0702e5ec35e"><td class="mdescLeft">&#160;</td><td class="mdescRight">VK_EXT_mesh_shader with task shaders and the output limits the voxel meshlets need. <br /></td></tr>
+<tr class="memitem:a7a834f82cb78454036f34882b94931c2" id="r_a7a834f82cb78454036f34882b94931c2"><td class="memItemLeft"><a id="a7a834f82cb78454036f34882b94931c2" name="a7a834f82cb78454036f34882b94931c2"></a>
+auto&#160;</td><td class="memItemRight"><b>isDepthClampSupported</b> () const noexcept -&gt; bool</td></tr>
+<tr class="memitem:a9c61164d3919f7449ab261e00ac907f9" id="r_a9c61164d3919f7449ab261e00ac907f9"><td class="memItemLeft"><a id="a9c61164d3919f7449ab261e00ac907f9" name="a9c61164d3919f7449ab261e00ac907f9"></a>
+auto&#160;</td><td class="memItemRight"><b>isDualSourceBlendSupported</b> () const noexcept -&gt; bool</td></tr>
+<tr class="memitem:a289f5415aa9f1c0f8174bf0dc51355bb" id="r_a289f5415aa9f1c0f8174bf0dc51355bb"><td class="memItemLeft"><a id="a289f5415aa9f1c0f8174bf0dc51355bb" name="a289f5415aa9f1c0f8174bf0dc51355bb"></a>
+auto&#160;</td><td class="memItemRight"><b>meshMultiviewViews</b> () const noexcept -&gt; uint32_t</td></tr>
+<tr class="memdesc:a289f5415aa9f1c0f8174bf0dc51355bb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Views a multiview scope may have under a mesh pipeline or 0 without multiview mesh shaders. <br /></td></tr>
 <tr class="memitem:af63109ae70a5e87a144dd3ef9871bd04" id="r_af63109ae70a5e87a144dd3ef9871bd04"><td class="memItemLeft"><a id="af63109ae70a5e87a144dd3ef9871bd04" name="af63109ae70a5e87a144dd3ef9871bd04"></a>
 auto&#160;</td><td class="memItemRight"><b>getBufferAddress</b> (vk::Buffer buffer) const -&gt; vk::DeviceAddress</td></tr>
 <tr class="memitem:a6902d8d814fc7c812e0d65f45ce41e9f" id="r_a6902d8d814fc7c812e0d65f45ce41e9f"><td class="memItemLeft"><a id="a6902d8d814fc7c812e0d65f45ce41e9f" name="a6902d8d814fc7c812e0d65f45ce41e9f"></a>
@@ -199,8 +210,8 @@ auto&#160;</td><td class="memItemRight"><b>transferSubmitMutex</b> () const noex
 auto&#160;</td><td class="memItemRight"><b>graphicsSubmitMutex</b> () const noexcept -&gt; std::mutex &amp;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>engine/src/toast/renderer/<a class="el" href="vulkan__core_8hpp_source.html">vulkan_core.hpp</a></li>
-<li>engine/src/toast/renderer/<b>vulkan_core.cpp</b></li>
+<li>engine/src/toast/renderer/core/<a class="el" href="vulkan__core_8hpp_source.html">vulkan_core.hpp</a></li>
+<li>engine/src/toast/renderer/core/<b>vulkan_core.cpp</b></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

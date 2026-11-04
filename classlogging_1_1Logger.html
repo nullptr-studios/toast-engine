@@ -137,8 +137,14 @@ auto&#160;</td><td class="memItemRight"><b>operator=</b> (Logger &amp;&amp;) -&g
 Static Public Member Functions</h2></td></tr>
 <tr class="memitem:aa9e80cc95ca58b9adb7e3a8323313e51" id="r_aa9e80cc95ca58b9adb7e3a8323313e51"><td class="memItemLeft">static auto&#160;</td><td class="memItemRight"><a class="el" href="#aa9e80cc95ca58b9adb7e3a8323313e51">create</a> () noexcept -&gt; std::unique_ptr&lt; Logger &gt;</td></tr>
 <tr class="memdesc:aa9e80cc95ca58b9adb7e3a8323313e51"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set up the global logger instance, gives ownership to the caller.  <br /></td></tr>
-<tr class="memitem:a4e48e1e55a2e236783294f836f3bbdac" id="r_a4e48e1e55a2e236783294f836f3bbdac"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#a4e48e1e55a2e236783294f836f3bbdac">log</a> (std::string_view file, unsigned line, char severity, std::string_view sink, std::string_view message)</td></tr>
-<tr class="memdesc:a4e48e1e55a2e236783294f836f3bbdac"><td class="mdescLeft">&#160;</td><td class="mdescRight">Entry point for all engine logs.  <br /></td></tr>
+<tr class="memitem:ae4becec8639a8abc126e48bdd974087f" id="r_ae4becec8639a8abc126e48bdd974087f"><td class="memItemLeft">static void&#160;</td><td class="memItemRight"><a class="el" href="#ae4becec8639a8abc126e48bdd974087f">log</a> (std::string_view file, unsigned line, char severity, std::string_view sink, std::string_view message, std::string_view details={})</td></tr>
+<tr class="memdesc:ae4becec8639a8abc126e48bdd974087f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Entry point for all engine logs.  <br /></td></tr>
+<tr class="memitem:a7a674469be18ed094b0828d04a7b1b7d" id="r_a7a674469be18ed094b0828d04a7b1b7d"><td class="memItemLeft"><a id="a7a674469be18ed094b0828d04a7b1b7d" name="a7a674469be18ed094b0828d04a7b1b7d"></a>
+static void&#160;</td><td class="memItemRight"><b>flush</b> () noexcept</td></tr>
+<tr class="memdesc:a7a674469be18ed094b0828d04a7b1b7d"><td class="mdescLeft">&#160;</td><td class="mdescRight">sends what is queued on the calling thread <br /></td></tr>
+<tr class="memitem:abdc5c34c817f9165c305dd994063c38c" id="r_abdc5c34c817f9165c305dd994063c38c"><td class="memItemLeft"><a id="abdc5c34c817f9165c305dd994063c38c" name="abdc5c34c817f9165c305dd994063c38c"></a>
+static void&#160;</td><td class="memItemRight"><b>crashFlush</b> (std::string_view reason, const <a class="el" href="structlogging_1_1RawBacktrace.html">RawBacktrace</a> &amp;trace) noexcept</td></tr>
+<tr class="memdesc:abdc5c34c817f9165c305dd994063c38c"><td class="mdescLeft">&#160;</td><td class="mdescRight">logs a crash and sends everything queued <br /></td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="aa9e80cc95ca58b9adb7e3a8323313e51" name="aa9e80cc95ca58b9adb7e3a8323313e51"></a>
@@ -170,8 +176,8 @@ Static Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a4e48e1e55a2e236783294f836f3bbdac" name="a4e48e1e55a2e236783294f836f3bbdac"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4e48e1e55a2e236783294f836f3bbdac">&#9670;&#160;</a></span>log()</h2>
+<a id="ae4becec8639a8abc126e48bdd974087f" name="ae4becec8639a8abc126e48bdd974087f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae4becec8639a8abc126e48bdd974087f">&#9670;&#160;</a></span>log()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -202,7 +208,12 @@ Static Public Member Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">std::string_view</td>          <td class="paramname"><span class="paramname"><em>message</em></span>&#160;)</td>
+          <td class="paramtype">std::string_view</td>          <td class="paramname"><span class="paramname"><em>message</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view</td>          <td class="paramname"><span class="paramname"><em>details</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
         </tr>
       </table>
   </td>
@@ -217,32 +228,14 @@ Static Public Member Functions</h2></td></tr>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><img src="classlogging_1_1Logger_a4e48e1e55a2e236783294f836f3bbdac_icgraph.png" border="0" usemap="#aclasslogging_1_1Logger_a4e48e1e55a2e236783294f836f3bbdac_icgraph" loading="lazy" alt=""/></div>
-<map name="aclasslogging_1_1Logger_a4e48e1e55a2e236783294f836f3bbdac_icgraph" id="aclasslogging_1_1Logger_a4e48e1e55a2e236783294f836f3bbdac_icgraph">
-<area shape="rect" title="Entry point for all engine logs." alt="" coords="224,29,373,57"/>
-<area shape="poly" title=" " alt="" coords="332,14,321,10,298,8,277,10,265,15,262,20,267,30,262,28,257,20,261,11,276,5,298,3,323,5,338,14"/>
-<area shape="rect" href="classlogging_1_1Logger.html#aa9e80cc95ca58b9adb7e3a8323313e51" title="Set up the global logger instance, gives ownership to the caller." alt="" coords="5,29,176,57"/>
-<area shape="poly" title=" " alt="" coords="206,43,176,46,176,41,211,43"/>
+<div class="center"><img src="classlogging_1_1Logger_ae4becec8639a8abc126e48bdd974087f_icgraph.png" border="0" usemap="#aclasslogging_1_1Logger_ae4becec8639a8abc126e48bdd974087f_icgraph" loading="lazy" alt=""/></div>
+<map name="aclasslogging_1_1Logger_ae4becec8639a8abc126e48bdd974087f_icgraph" id="aclasslogging_1_1Logger_ae4becec8639a8abc126e48bdd974087f_icgraph">
+<area shape="rect" title="Entry point for all engine logs." alt="" coords="203,29,352,57"/>
+<area shape="poly" title=" " alt="" coords="309,14,299,10,277,8,257,10,246,15,243,20,248,30,243,28,238,20,242,11,256,5,277,3,301,5,315,14"/>
+<area shape="rect" href="log_8hpp.html#af18d3b362031e8881ae3e8ccfa125929" title="details is the long body of a log" alt="" coords="5,29,155,57"/>
+<area shape="poly" title=" " alt="" coords="185,43,155,46,155,41,190,43"/>
 </map>
 </div>
-
-</div>
-</div>
-<a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
-<a id="ae086d7a54e2a8828d5fe9d5d5d05a039" name="ae086d7a54e2a8828d5fe9d5d5d05a039"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae086d7a54e2a8828d5fe9d5d5d05a039">&#9670;&#160;</a></span>drain_pending</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::atomic&lt;bool&gt; logging::Logger::drain_pending = false</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Prevents multiple background jobs from fighting over the same socket. </p>
-<p>We use an atomic flag to ensure only one 'drain' job is scheduled at a time, avoiding unnecessary context switches and thread contention. </p>
 
 </div>
 </div>

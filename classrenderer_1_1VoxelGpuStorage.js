@@ -6,6 +6,8 @@ var classrenderer_1_1VoxelGpuStorage =
     [ "generation", "classrenderer_1_1VoxelGpuStorage.html#a7690653126bfda1a5aa85f2243f81009", null ],
     [ "queuePatch", "classrenderer_1_1VoxelGpuStorage.html#a416bfee1464a3c455f1c96f677e553d3", null ],
     [ "recordPendingPatches", "classrenderer_1_1VoxelGpuStorage.html#a847df46db767425bfd4e2ba8ee8eac56", null ],
+    [ "setBrickLists", "classrenderer_1_1VoxelGpuStorage.html#a24304e9455d66251951245d14145cfda", null ],
     [ "setChangeHistory", "classrenderer_1_1VoxelGpuStorage.html#a98cfe326f9399b7e43ddfb78d5accd5d", null ],
-    [ "setDebugInfo", "classrenderer_1_1VoxelGpuStorage.html#a39e05aa060ef85f3199e7194557ba83c", null ]
+    [ "setDebugInfo", "classrenderer_1_1VoxelGpuStorage.html#a39e05aa060ef85f3199e7194557ba83c", null ],
+    [ "setGlassBricks", "classrenderer_1_1VoxelGpuStorage.html#a7b39c85b419d9b7b9e723994b6a27956", null ]
 ];

@@ -1,5 +1,6 @@
 var structtoast_1_1settings_1_1Meta =
 [
+    [ "asset_type", "structtoast_1_1settings_1_1Meta.html#ae9607fb6c5bd52e064801c1468986206", null ],
     [ "category", "structtoast_1_1settings_1_1Meta.html#a581b3f5775b0c563478d97efd7b6bb8b", null ],
     [ "description", "structtoast_1_1settings_1_1Meta.html#ad6d26ce19ed55728a045fdb01f6a68a1", null ],
     [ "hidden", "structtoast_1_1settings_1_1Meta.html#a95012a506797f5f863d116e0ae041fff", null ],
