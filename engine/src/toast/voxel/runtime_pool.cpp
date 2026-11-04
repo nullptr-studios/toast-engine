@@ -8,9 +8,9 @@ auto runtimeBrickPool() -> BrickPool& {
 	return *pool;
 }
 
-auto runtimePoolMutex() -> std::mutex& {
+auto runtimePoolMutex() -> std::recursive_mutex& {
 	// Leaked like the pool
-	static std::mutex* mutex = new std::mutex;
+	static std::recursive_mutex* mutex = new std::recursive_mutex;
 	return *mutex;
 }
 

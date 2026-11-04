@@ -13,6 +13,7 @@
 #include "nodes/sphere_collider.hpp"
 #include "nodes/trigger.hpp"
 #include "physics_settings.hpp"
+#include "query_snapshot.hpp"
 #include "shatter.hpp"
 #include "toast/physics/body.hpp"
 #include "voxel_data_lock.hpp"
@@ -223,6 +224,7 @@ Simulator::Simulator() {
 	TOAST_ASSERT(not instance, "Physics", "Simulator can only be created once");
 	TOAST_INFO("Physics", "Simulator created");
 	instance = this;
+	published_query_snapshot.store(std::make_shared<const QuerySnapshot>(), std::memory_order_release);
 
 	m_listener.subscribe<event::VoxelPaletteAssetReloaded>([this](event::VoxelPaletteAssetReloaded& e) {
 		refreshPalette(e.uid.data());
@@ -268,6 +270,7 @@ void Simulator::resetWind() {
 
 Simulator::~Simulator() {
 	TOAST_INFO("Physics", "Simulator destroyed");
+	published_query_snapshot.store(nullptr, std::memory_order_release);
 	clearDebris();
 	instance = nullptr;
 	// Finish all requests before destroying
@@ -275,6 +278,60 @@ Simulator::~Simulator() {
 	std::scoped_lock lock(all.mutex);
 	all.queue.clear();
 	all.pending.store(0, std::memory_order_release);
+}
+
+auto Simulator::querySnapshot() -> std::shared_ptr<const QuerySnapshot> {
+	return published_query_snapshot.load(std::memory_order_acquire);
+}
+
+void Simulator::publishQuerySnapshot() {
+	ZoneScopedN("physics::PublishQuerySnapshot");
+	auto snapshot = std::make_shared<QuerySnapshot>();
+	snapshot->tree = m_broad_phase.snapshotTree();
+	snapshot->bodies = m_bodies;
+	snapshot->shapes = m_shapes;
+	snapshot->fat_margin = tunables().broadphase_fat_margin;
+	snapshot->tick = m_tick_index;
+	snapshot->collider_nodes.resize(m_shapes.size());
+	snapshot->body_nodes.resize(m_bodies.size());
+	{
+		std::scoped_lock voxel_lock {voxelDataMutex()};
+		snapshot->voxels.reserve(m_voxel_shapes.size());
+		for (const VoxelShapeSlot& source : m_voxel_shapes) {
+			VoxelShapeSlot copy;
+			copy.generation = source.generation;
+			if (source.data) {
+				VoxelShapeData& data = copy.data.emplace();
+				data.surface = source.data->surface;
+				data.palette = source.data->palette;
+				data.materials = source.data->materials;
+				if (source.data->volume) {
+					data.owned_volume = std::make_unique<voxel::Volume>(voxel::Volume::instanceOf(*source.data->volume));
+					data.volume = data.owned_volume.get();
+				}
+			}
+			snapshot->voxels.push_back(std::move(copy));
+		}
+	}
+	for (const NodeBinding& binding : m_node_bindings) {
+		if (binding.body.slot < snapshot->body_nodes.size()) {
+			snapshot->body_nodes[binding.body.slot] = binding.node;
+		}
+		for (const ColliderBinding& collider : binding.colliders) {
+			if (collider.shape.slot < snapshot->collider_nodes.size()) {
+				snapshot->collider_nodes[collider.shape.slot] = collider.node;
+			}
+		}
+	}
+	for (const VoxelNodeBinding& binding : m_voxel_bindings) {
+		if (binding.body.slot < snapshot->body_nodes.size()) {
+			snapshot->body_nodes[binding.body.slot] = binding.node;
+		}
+		if (binding.shape.slot < snapshot->collider_nodes.size()) {
+			snapshot->collider_nodes[binding.shape.slot] = binding.node;
+		}
+	}
+	published_query_snapshot.store(std::move(snapshot), std::memory_order_release);
 }
 
 void Simulator::registerRigidbody(Rigidbody& node) {
@@ -765,6 +822,7 @@ void Simulator::tick() {
 	publishTransforms();
 	publishJoints();
 	publishVoxelRenderRecords();
+	publishQuerySnapshot();
 	m_profile.tick_ms = elapsed_ms(tick_start, std::chrono::steady_clock::now());
 	publishProfile(islands);
 	FrameMarkNamed("PhysicsStep");

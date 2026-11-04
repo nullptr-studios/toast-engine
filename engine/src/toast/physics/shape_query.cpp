@@ -1,6 +1,7 @@
 #include "broad_phase.hpp"
 #include "manifold.hpp"
 #include "physics_settings.hpp"
+#include "query_snapshot.hpp"
 #include "simulator.hpp"
 #include "voxel_query.hpp"
 
@@ -135,6 +136,127 @@ void voxelSweepContacts(
 
 auto Simulator::current() -> Simulator* {
 	return instance;
+}
+
+auto snapshotSphereOverlap(const QuerySnapshot& snapshot, glm::vec3 position, float radius, std::optional<LayerFilter> layers)
+    -> std::optional<SphereHit> {
+	const Shape probe_shape = sphereProbe(SphereShape {.radius = radius});
+	const Body probe_body = probeBody(position, glm::quat(1.0f, 0.0f, 0.0f, 0.0f));
+	const AABB bounds = worldShapeBounds(probe_body, probe_shape).expanded(snapshot.fat_margin);
+	std::optional<QueryContact> deepest;
+	std::vector<Manifold> manifolds;
+	for (ShapeID id : snapshot.tree.query(bounds)) {
+		const Shape* shape = snapshot.tryGetShape(id);
+		const Body* body = shape ? snapshot.tryGetBody(shape->owner) : nullptr;
+		if (!shape || !body || !shape->enabled || !body->enabled || (layers && !layersCollide(*layers, body->layers))) {
+			continue;
+		}
+		const BroadPhasePair pair {
+		  .a = {},
+        .b = {.body = shape->owner, .shape = id}
+		};
+		const CollisionElement probe {probe_shape, probe_body};
+		const CollisionElement other {*shape, *body};
+		manifolds.clear();
+		switch (shape->type) {
+			case ShapeType::sphere:
+				if (auto m = collideSpheres(pair, probe, other)) {
+					manifolds.push_back(*m);
+				}
+				break;
+			case ShapeType::box:
+				if (auto m = collideSphereBox(pair, probe, other)) {
+					manifolds.push_back(*m);
+				}
+				break;
+			case ShapeType::capsule:
+				if (auto m = collideSphereCapsule(pair, probe, other)) {
+					manifolds.push_back(*m);
+				}
+				break;
+			case ShapeType::voxel:
+				if (const auto* data = snapshot.tryGetVoxelDataConst(shape->voxel.data); data && data->volume) {
+					collideSphereVoxel(pair, probe, other, *data, manifolds);
+				}
+				break;
+		}
+		for (const Manifold& manifold : manifolds) {
+			for (const ContactPoint& point : std::span {manifold.contacts}.first(manifold.contact_count)) {
+				if (point.penetration > 0.0f && (!deepest || point.penetration > deepest->penetration)) {
+					deepest = QueryContact {
+					  .body = shape->owner,
+					  .shape = id,
+					  .normal = -manifold.normal,
+					  .point = point.position,
+					  .penetration = point.penetration
+					};
+				}
+			}
+		}
+	}
+	if (!deepest) {
+		return std::nullopt;
+	}
+	const Shape* shape = snapshot.tryGetShape(deepest->shape);
+	return SphereHit {
+	  .node = snapshot.nodeFor(deepest->body),
+	  .position = deepest->point,
+	  .normal = deepest->normal,
+	  .penetration = deepest->penetration,
+	  .shape_type = shape->type
+	};
+}
+
+auto snapshotAABBOverlap(const QuerySnapshot& snapshot, const AABB& bounds) -> bool {
+	const glm::vec3 size = bounds.max - bounds.min;
+	if (!std::isfinite(bounds.min.x) || !std::isfinite(bounds.min.y) || !std::isfinite(bounds.min.z) ||
+	    !std::isfinite(bounds.max.x) || !std::isfinite(bounds.max.y) || !std::isfinite(bounds.max.z) || size.x < 0.0f ||
+	    size.y < 0.0f || size.z < 0.0f) {
+		return false;
+	}
+	const Shape probe_shape = boxProbe(bounds);
+	const Body probe_body = probeBody((bounds.min + bounds.max) * 0.5f, glm::quat(1.0f, 0.0f, 0.0f, 0.0f));
+	std::vector<Manifold> manifolds;
+	for (ShapeID id : snapshot.tree.query(bounds.expanded(snapshot.fat_margin))) {
+		const Shape* shape = snapshot.tryGetShape(id);
+		const Body* body = shape ? snapshot.tryGetBody(shape->owner) : nullptr;
+		if (!shape || !body || !shape->enabled || !body->enabled) {
+			continue;
+		}
+		const BroadPhasePair pair {
+		  .a = {},
+        .b = {.body = shape->owner, .shape = id}
+		};
+		const CollisionElement probe {probe_shape, probe_body};
+		const CollisionElement other {*shape, *body};
+		manifolds.clear();
+		switch (shape->type) {
+			case ShapeType::sphere:
+				if (auto m = collideSphereBox(pair, other, probe)) {
+					manifolds.push_back(*m);
+				}
+				break;
+			case ShapeType::box:
+				if (auto m = collideBoxes(pair, probe, other)) {
+					manifolds.push_back(*m);
+				}
+				break;
+			case ShapeType::capsule:
+				if (auto m = collideCapsuleBox(pair, other, probe)) {
+					manifolds.push_back(*m);
+				}
+				break;
+			case ShapeType::voxel:
+				if (const auto* data = snapshot.tryGetVoxelDataConst(shape->voxel.data); data && data->volume) {
+					collideBoxVoxel(pair, probe, other, *data, manifolds);
+				}
+				break;
+		}
+		if (std::ranges::any_of(manifolds, [](const Manifold& m) { return m.contact_count != 0; })) {
+			return true;
+		}
+	}
+	return false;
 }
 
 auto Simulator::queryCandidates(BodyID ignored, const AABB& bounds, std::optional<LayerFilter> layers) const

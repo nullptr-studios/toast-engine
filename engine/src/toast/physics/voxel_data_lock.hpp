@@ -13,6 +13,6 @@
 namespace physics {
 
 [[nodiscard]]
-TOAST_API auto voxelDataMutex() -> std::mutex&;
+TOAST_API auto voxelDataMutex() -> std::recursive_mutex&;
 
 }

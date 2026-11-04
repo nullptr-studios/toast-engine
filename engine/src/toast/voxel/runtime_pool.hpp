@@ -21,6 +21,6 @@ TOAST_API auto runtimeBrickPool() -> BrickPool&;
 
 /// Held while physics writes runtime volumes and while the renderer packs them
 [[nodiscard]]
-TOAST_API auto runtimePoolMutex() -> std::mutex&;
+TOAST_API auto runtimePoolMutex() -> std::recursive_mutex&;
 
 }

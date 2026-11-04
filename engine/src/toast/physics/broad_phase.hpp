@@ -69,6 +69,11 @@ public:
 	[[nodiscard]]
 	auto stats() const -> const BroadPhaseStats&;
 
+	[[nodiscard]]
+	auto snapshotTree() const -> AABBTree {
+		return m_tree;
+	}
+
 private:
 	struct ShapeLeaf {
 		TreeNodeID node = null_node;

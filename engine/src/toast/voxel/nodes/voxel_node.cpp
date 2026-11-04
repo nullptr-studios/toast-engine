@@ -4,6 +4,7 @@
 
 #include <toast/physics/contact_events.hpp>
 #include <toast/physics/simulator.hpp>
+#include <toast/physics/voxel_data_lock.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
 #include <toast/voxel/assets/voxel_model.hpp>
 #include <toast/voxel/assets/voxel_palette.hpp>
@@ -390,6 +391,7 @@ void VoxelNode::postPhysics() {
 
 template<typename Kernel>
 void VoxelNode::edit(const voxel::EditBounds& local_bounds, bool grows, std::string_view operation, Kernel&& kernel) {
+	std::scoped_lock voxel_lock {physics::voxelDataMutex()};
 	if (usesParts()) {
 		if (!m_warned_part_edit) {
 			m_warned_part_edit = true;
