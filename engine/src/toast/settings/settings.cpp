@@ -1,9 +1,7 @@
 #include "settings.hpp"
 
 #include <fstream>
-#include <toast/log.hpp>
 #include <toml++/toml.hpp>
-#include <tracy/Tracy.hpp>
 
 namespace toast::settings {
 namespace {

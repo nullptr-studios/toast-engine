@@ -2,10 +2,7 @@
 #include "nodes/joint3d.hpp"
 #include "simulator.hpp"
 
-#include <algorithm>
-#include <cmath>
 #include <toast/voxel/voxel_constants.hpp>
-#include <tracy/Tracy.hpp>
 
 namespace physics {
 

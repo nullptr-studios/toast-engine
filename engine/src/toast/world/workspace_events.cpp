@@ -1,9 +1,5 @@
 #include "workspace_events.hpp"
 
-#include <cstring>
-#include <generated/workspace_events.pb.h>
-#include <limits>
-#include <toast/assets/assets.hpp>
 #include <toast/events/proto_event.hpp>
 #include <toast/world/node.hpp>
 

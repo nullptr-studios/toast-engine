@@ -1,9 +1,5 @@
 #include "time.hpp"
 
-#include <algorithm>
-#include <chrono>
-#include <toast/log.hpp>
-
 Time::Time() {
 	ZoneScoped;
 	TOAST_INFO("Time", "Initializing Time");

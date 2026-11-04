@@ -6,21 +6,11 @@
 
 #include "toast/renderer/passes/lighting/reflection_probe_pass.hpp"
 
-#include "toast/renderer/core/vulkan_core.hpp"
-#include "toast/renderer/core/vulkan_debug.hpp"
 #include "toast/renderer/lighting/cube_face_basis.hpp"
 #include "toast/renderer/shaders/shader_cache.hpp"
 #include "toast/renderer/vulkan_renderer.hpp"
 
-#include <algorithm>
-#include <array>
-#include <cstring>
-#include <format>
-#include <limits>
 #include <toast/assets/asset_manager.hpp>
-#include <toast/assets/assets.hpp>
-#include <toast/log.hpp>
-#include <tracy/Tracy.hpp>
 
 namespace renderer {
 

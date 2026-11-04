@@ -1,10 +1,5 @@
 #include "color_scheme.hpp"
 
-#include <algorithm>
-#include <cmath>
-#include <format>
-#include <tracy/Tracy.hpp>
-
 namespace assets {
 
 void ColorScheme::reload(const toml::table& table) {

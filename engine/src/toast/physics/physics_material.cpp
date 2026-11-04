@@ -2,8 +2,6 @@
 
 #include "material_defaults.hpp"
 
-#include <algorithm>
-
 namespace physics { }
 
 assets::PhysicsMaterial::PhysicsMaterial(const toml::table& table, Handle<Schema> schema)

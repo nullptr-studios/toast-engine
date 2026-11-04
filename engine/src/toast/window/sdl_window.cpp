@@ -1,10 +1,6 @@
 #include "sdl_window.hpp"
 
 #include <SDL3/SDL_vulkan.h>
-#include <glm/glm.hpp>
-#include <optional>
-#include <string_view>
-#include <tracy/Tracy.hpp>
 
 namespace {
 

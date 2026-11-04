@@ -1,13 +1,5 @@
 #include "toast/renderer/shaders/shader_layout.hpp"
 
-#include "toast/renderer/core/vulkan_core.hpp"
-#include "toast/renderer/core/vulkan_debug.hpp"
-
-#include <format>
-#include <map>
-#include <toast/log.hpp>
-#include <tracy/Tracy.hpp>
-
 namespace renderer {
 
 namespace {

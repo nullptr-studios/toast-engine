@@ -2,13 +2,8 @@
 
 #include "document_preprocess.hpp"
 
-#include <algorithm>
 #include <cctype>
-#include <cstring>
 #include <toast/assets/asset_manager.hpp>
-#include <toast/log.hpp>
-#include <tracy/Tracy.hpp>
-#include <utility>
 
 namespace ui {
 

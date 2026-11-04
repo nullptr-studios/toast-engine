@@ -1,13 +1,6 @@
 #include "toast/renderer/shaders/slang_vfs.hpp"
 
-#include <algorithm>
-#include <atomic>
-#include <cstring>
-#include <string>
 #include <toast/assets/asset_manager.hpp>
-#include <toast/log.hpp>
-#include <tracy/Tracy.hpp>
-#include <vector>
 
 namespace renderer {
 

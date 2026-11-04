@@ -6,11 +6,6 @@
 
 #include "toast/renderer/lighting/shadow_constants.hpp"
 
-#include <algorithm>
-#include <array>
-#include <atomic>
-#include <utility>
-
 namespace renderer::shadow_slots {
 
 namespace {

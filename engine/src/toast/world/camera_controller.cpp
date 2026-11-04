@@ -3,9 +3,6 @@
 #include "camera.hpp"
 #include "camera_events.hpp"
 
-#include <algorithm>
-#include <cmath>
-#include <toast/time.hpp>
 #include <toast/world/node_3d.hpp>
 
 namespace {

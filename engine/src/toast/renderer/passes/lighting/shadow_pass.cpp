@@ -7,26 +7,14 @@
 #include "toast/renderer/passes/lighting/shadow_pass.hpp"
 
 #include "toast/renderer/core/descriptor_writer.hpp"
-#include "toast/renderer/core/vulkan_core.hpp"
-#include "toast/renderer/core/vulkan_debug.hpp"
 #include "toast/renderer/lighting/frustum.hpp"
 #include "toast/renderer/resources/vulkan_mesh.hpp"
 #include "toast/renderer/shaders/shader_cache.hpp"
 #include "toast/renderer/voxel/voxel_gpu_storage.hpp"
 #include "toast/renderer/vulkan_renderer.hpp"
 
-#include <algorithm>
-#include <array>
-#include <bit>
-#include <cmath>
-#include <cstdint>
-#include <cstring>
-#include <format>
-#include <toast/assets/assets.hpp>
-#include <toast/log.hpp>
 #include <toast/voxel/gpu_layout.hpp>
 #include <toast/voxel/voxel_constants.hpp>
-#include <tracy/Tracy.hpp>
 
 namespace renderer {
 

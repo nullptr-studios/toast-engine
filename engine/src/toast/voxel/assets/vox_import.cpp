@@ -1,15 +1,5 @@
 #include "vox_import.hpp"
 
-#include <algorithm>
-#include <array>
-#include <cmath>
-#include <cstring>
-#include <stdexcept>
-#include <string>
-#include <tracy/Tracy.hpp>
-#include <unordered_map>
-#include <utility>
-
 namespace assets {
 
 using voxel::BrickPool;

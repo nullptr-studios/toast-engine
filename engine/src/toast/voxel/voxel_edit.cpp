@@ -1,14 +1,6 @@
 #include "voxel_edit.hpp"
 
-#include <algorithm>
-#include <array>
-#include <cmath>
 #include <deque>
-#include <limits>
-#include <optional>
-#include <tracy/Tracy.hpp>
-#include <unordered_set>
-#include <utility>
 
 namespace voxel {
 

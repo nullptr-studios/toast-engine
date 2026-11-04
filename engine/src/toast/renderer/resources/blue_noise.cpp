@@ -1,10 +1,6 @@
 #include "toast/renderer/resources/blue_noise.hpp"
 
-#include <algorithm>
-#include <array>
-#include <cmath>
 #include <random>
-#include <tracy/Tracy.hpp>
 
 namespace renderer::blue_noise {
 

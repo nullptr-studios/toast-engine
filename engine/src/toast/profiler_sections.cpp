@@ -1,7 +1,5 @@
 #include "profiler_sections.hpp"
 
-#include <tracy/Tracy.hpp>
-
 namespace toast {
 
 namespace {

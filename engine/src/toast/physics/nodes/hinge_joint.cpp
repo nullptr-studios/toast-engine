@@ -1,9 +1,6 @@
 #include "hinge_joint.hpp"
 
-#include <algorithm>
-#include <cmath>
 #include <glm/gtc/constants.hpp>
-#include <glm/gtc/quaternion.hpp>
 #include <toast/renderer/debug/debug_draw.hpp>
 
 namespace physics {

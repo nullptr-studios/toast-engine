@@ -2,7 +2,6 @@
 #include "workspace.hpp"
 #include "workspace_events.hpp"
 
-#include <cmath>
 #include <toast/engine.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
 #include <toast/window/window_events.hpp>

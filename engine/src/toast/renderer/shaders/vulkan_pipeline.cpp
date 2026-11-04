@@ -4,17 +4,7 @@
 
 #include "toast/renderer/shaders/vulkan_pipeline.hpp"
 
-#include "toast/renderer/core/vulkan_core.hpp"
-#include "toast/renderer/core/vulkan_debug.hpp"
 #include "toast/renderer/shaders/spirv_entry_points.hpp"
-
-#include <algorithm>
-#include <array>
-#include <cstring>
-#include <stdexcept>
-#include <string>
-#include <toast/log.hpp>
-#include <tracy/Tracy.hpp>
 
 namespace renderer {
 

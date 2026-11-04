@@ -6,15 +6,6 @@
 
 #include "toast/renderer/raytracing/ray_tracing_scene.hpp"
 
-#include "toast/renderer/core/vulkan_core.hpp"
-#include "toast/renderer/core/vulkan_debug.hpp"
-
-#include <algorithm>
-#include <cstring>
-#include <format>
-#include <toast/log.hpp>
-#include <tracy/Tracy.hpp>
-
 namespace renderer {
 
 namespace {

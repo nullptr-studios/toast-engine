@@ -1,11 +1,7 @@
 #include "texture.h"    // ffi
 
-#include <cstring>
 #include <fstream>
 #include <ktx.h>
-#include <toast/log.hpp>
-#include <tracy/Tracy.hpp>
-#include <vector>
 
 namespace {
 

@@ -2,10 +2,6 @@
 
 #include "mesh_node.hpp"
 
-#include <toast/log.hpp>
-#include <toast/time.hpp>
-#include <tracy/Tracy.hpp>
-
 namespace toast {
 
 auto AnimationPlayer::play(std::string_view clip_name) -> bool {

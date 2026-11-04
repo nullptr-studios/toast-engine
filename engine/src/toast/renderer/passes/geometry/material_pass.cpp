@@ -1,8 +1,6 @@
 #include "toast/renderer/passes/geometry/material_pass.hpp"
 
 #include "toast/renderer/core/descriptor_writer.hpp"
-#include "toast/renderer/core/vulkan_core.hpp"
-#include "toast/renderer/core/vulkan_debug.hpp"
 #include "toast/renderer/passes/lighting/cluster_lighting_pass.hpp"
 #include "toast/renderer/passes/lighting/environment_pass.hpp"
 #include "toast/renderer/passes/lighting/reflection_probe_pass.hpp"
@@ -11,19 +9,7 @@
 #include "toast/renderer/resources/vulkan_texture.hpp"
 #include "toast/renderer/vulkan_renderer.hpp"
 
-#include <algorithm>
-#include <array>
-#include <chrono>
-#include <cstring>
-#include <format>
-#include <mutex>
-#include <ranges>
-#include <string>
 #include <toast/assets/texture.hpp>
-#include <toast/log.hpp>
-#include <toast/thread_pool.hpp>
-#include <tracy/Tracy.hpp>
-#include <unordered_set>
 
 namespace renderer {
 

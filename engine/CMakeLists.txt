@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.28)
 project(toast_engine C CXX)
 
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64|ARM64)$")
@@ -132,30 +132,16 @@ endforeach ()
 
 target_compile_definitions(toast_engine PRIVATE TOAST_EXPORT)
 
-# windows.h min and max macros break std::numeric_limits<T>::max() in whatever unity TU they land in
 if (WIN32)
     target_compile_definitions(toast_engine PRIVATE NOMINMAX)
     target_link_libraries(toast_engine PRIVATE ole32 uuid comctl32 d3d11 dxgi)
 endif ()
 target_precompile_headers(toast_engine PRIVATE pch.h)
 # Defines VMA_IMPLEMENTATION so it must not use the PCH
-set_source_files_properties(src/toast/renderer/core/vma.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON SKIP_UNITY_BUILD_INCLUSION ON)
+set_source_files_properties(src/toast/renderer/core/vma.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
 # Defines STB_IMAGE_IMPLEMENTATION
-set_source_files_properties(src/toast/assets/hdr_image.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON SKIP_UNITY_BUILD_INCLUSION ON)
-set_source_files_properties(src/toast/renderer/output/shared_texture_output_target.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
-set_source_files_properties(src/toast/input/trackpad.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON SKIP_UNITY_BUILD_INCLUSION ON)
-set_source_files_properties(src/toast/crash_handler.cpp src/toast/crash_handler_posix.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
-set_source_files_properties(src/toast/backtrace.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
-set_source_files_properties(src/toast/debugger.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
-
-# protoc output uses file local symbol names
-file(GLOB _TOAST_PROTO_SOURCES "generated/*.pb.cc")
-set_source_files_properties(${_TOAST_PROTO_SOURCES} PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
-# OFF for clang-tidy since unity TUs leave compile_commands.json without per file entries
-option(TOAST_UNITY_BUILD "Merge engine sources into unity translation units" OFF)
-if (TOAST_UNITY_BUILD)
-    set_target_properties(toast_engine PROPERTIES UNITY_BUILD ON UNITY_BUILD_BATCH_SIZE 8)
-endif ()
+set_source_files_properties(src/toast/assets/hdr_image.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+set_source_files_properties(src/toast/input/trackpad.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
 
 # Vulkan synchronization validation
 option(TOAST_SYNC_VALIDATION "Enable Vulkan synchronization validation in Debug builds" ON)
@@ -169,6 +155,15 @@ target_compile_definitions(toast_engine PUBLIC
         $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:TOAST_BREAK_ON_ERROR>
         $<$<CONFIG:RelWithDebInfo>:TOAST_LUA_OWNERSHIP_CHECKS>
         GLM_FORCE_INTRINSICS
+)
+
+# Replaces global operator new and delete so Tracy lists every heap allocation, only active where Tracy is
+option(TOAST_TRACK_HEAP "Report C++ heap allocations to Tracy" ON)
+# 0 records no callstack, around 8 to 16 shows who allocates but slows allocation heavy code down a lot
+set(TOAST_HEAP_CALLSTACK_DEPTH 0 CACHE STRING "Callstack frames Tracy captures per heap allocation")    
+target_compile_definitions(toast_engine PRIVATE
+        $<$<AND:$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>,$<BOOL:${TOAST_TRACK_HEAP}>>:TOAST_TRACK_HEAP>
+        TOAST_HEAP_CALLSTACK_DEPTH=${TOAST_HEAP_CALLSTACK_DEPTH}
 )
 
 # Keep Slang's Debug profile for Linux builds that retain C++ debug information.
@@ -192,7 +187,10 @@ if (MSVC)
             $<$<CONFIG:Release>:/O2;/Ob2;/Oi;/Ot;/GL;/Gy;/Gw;/fp:fast;/Qpar>
             $<$<CONFIG:Release>:/GS->
     )
-    target_link_options(toast_engine PRIVATE $<$<CONFIG:Release>:/LTCG;/OPT:REF;/OPT:ICF>)
+    target_link_options(toast_engine PRIVATE
+            $<$<CONFIG:Release>:/LTCG;/OPT:REF;/OPT:ICF>
+            $<$<CONFIG:Debug,RelWithDebInfo>:/INCREMENTAL;/OPT:NOREF;/OPT:NOICF>
+    )
 else ()
     if (ARCH STREQUAL "x86_64")
         target_compile_options(toast_engine PUBLIC $<$<CONFIG:Release>:-march=${TOAST_X86_MARCH}>)
@@ -249,6 +247,7 @@ add_custom_command(TARGET toast_engine POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E rm -rf "${TOAST_ENGINE_OUTPUT_ROOT}/include" "${TOAST_ENGINE_OUTPUT_ROOT}/ffi"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/include" "${TOAST_ENGINE_OUTPUT_ROOT}/include"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/ffi" "${TOAST_ENGINE_OUTPUT_ROOT}/ffi"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/.clang-format" "${TOAST_ENGINE_OUTPUT_ROOT}/.clang-format"
         # Generated reflection headers
         COMMAND ${CMAKE_COMMAND} "-DSRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}/generated" "-DDST_DIR=${TOAST_ENGINE_OUTPUT_ROOT}/include" -P "${CMAKE_SOURCE_DIR}/cmake/copy_generated_headers.cmake"
         # Dependencies
@@ -275,7 +274,7 @@ add_custom_command(TARGET toast_engine POST_BUILD
 
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/assets")
     add_custom_command(TARGET toast_engine POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/assets" "${TOAST_ENGINE_BIN_DIR}/assets"
+            COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different "${CMAKE_CURRENT_SOURCE_DIR}/assets" "${TOAST_ENGINE_BIN_DIR}/assets"
             COMMENT "Copying assets"
             VERBATIM
     )

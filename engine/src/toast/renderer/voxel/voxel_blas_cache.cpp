@@ -5,15 +5,8 @@
 #include "toast/renderer/voxel/voxel_blas_cache.hpp"
 
 #include "toast/renderer/core/gpu_sync.hpp"
-#include "toast/renderer/core/vulkan_core.hpp"
-#include "toast/renderer/core/vulkan_debug.hpp"
 
-#include <algorithm>
-#include <cstring>
-#include <format>
-#include <toast/log.hpp>
 #include <toast/voxel/voxel_constants.hpp>
-#include <tracy/Tracy.hpp>
 
 namespace renderer {
 

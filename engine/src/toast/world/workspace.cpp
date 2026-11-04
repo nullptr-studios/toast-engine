@@ -9,26 +9,13 @@
 #include "tree_lock.hpp"
 #include "workspace_events.hpp"
 
-#include <algorithm>
-#include <array>
 #include <charconv>
-#include <cmath>
-#include <filesystem>
-#include <format>
-#include <functional>
-#include <glm/glm.hpp>
-#include <glm/gtc/quaternion.hpp>
 #include <glm/trigonometric.hpp>
-#include <limits>
-#include <memory>
-#include <optional>
 #include <sstream>
 #include <toast/assets/asset_manager.hpp>
-#include <toast/assets/assets.hpp>
 #include <toast/assets/prefab.hpp>
 #include <toast/engine.hpp>
 #include <toast/events/signals_events.hpp>
-#include <toast/log.hpp>
 #include <toast/physics/nodes/box_collider.hpp>
 #include <toast/physics/nodes/capsule_collider.hpp>
 #include <toast/physics/nodes/joint3d.hpp>
@@ -40,7 +27,6 @@
 #include <toast/scripting/lua_types.hpp>
 #include <toast/scripting/lua_value_codec.hpp>
 #include <toast/scripting/script_runtime.hpp>
-#include <toast/time.hpp>
 #include <toast/voxel/assets/voxel_model.hpp>
 #include <toast/voxel/assets/voxel_palette.hpp>
 #include <toast/voxel/nodes/carve_volume.hpp>
@@ -50,10 +36,6 @@
 #include <toast/voxel/nodes/voxel_mesh.hpp>
 #include <toast/voxel/nodes/voxel_node.hpp>
 #include <toast/window/window_events.hpp>
-#include <tracy/Tracy.hpp>
-#include <tuple>
-#include <unordered_map>
-#include <unordered_set>
 
 namespace toast {
 

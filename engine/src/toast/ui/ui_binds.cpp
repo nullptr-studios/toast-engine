@@ -4,8 +4,6 @@
 
 #include <RmlUi/Core/Context.h>
 #include <RmlUi/Core/Types.h>
-#include <algorithm>
-#include <toast/log.hpp>
 #include <toast/world/node.hpp>
 
 namespace ui {

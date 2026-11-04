@@ -1,8 +1,5 @@
 #include "toast/renderer/settings/post_process_settings.hpp"
 
-#include <algorithm>
-#include <cmath>
-
 namespace renderer {
 namespace {
 

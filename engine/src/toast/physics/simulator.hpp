@@ -321,6 +321,9 @@ public:
 	static void registerTrigger(Trigger& node);
 	static void unregisterTrigger(Trigger& node);
 
+	/// Force over one fixed step, offset is world space from the center of mass, from any thread
+	static void addForce(BodyID body, glm::vec3 force, glm::vec3 offset);
+
 	[[nodiscard]]
 	auto overlapCapsule(
 	    BodyID ignored, const CapsuleShape& capsule, const glm::vec3& position, const glm::quat& rotation, float min_penetration,
@@ -594,12 +597,14 @@ private:
 	auto generateManifoldsAsync(CollisionWorldView world, std::span<const BroadPhasePair> candidates) -> std::vector<Manifold>;
 
 	[[nodiscard]]
-	auto prepareConstraints(const std::vector<Manifold>& manifolds) -> std::vector<Constraint>;
+	/// Returns m_constraints, valid until the next call
+	auto prepareConstraints(const std::vector<Manifold>& manifolds) -> std::vector<Constraint>&;
 	[[nodiscard]]
 	auto prepareConstraint(const Manifold& manifold, const ContactPoint& contact) const -> std::optional<Constraint>;
 	[[nodiscard]]
+	/// Returns m_islands, valid until the next call
 	auto buildIslands(std::span<const Manifold> manifolds, const std::vector<Constraint>& constraints)
-	    -> std::vector<SimulationIsland>;
+	    -> std::vector<SimulationIsland>&;
 	void updateCache(std::span<const Manifold> manifolds);
 	[[nodiscard]]
 	auto findCachedContact(const BroadPhasePair& pair, uint8_t normal_index, ContactFeatureID feature_a, ContactFeatureID feature_b)
@@ -760,6 +765,14 @@ private:
 	std::vector<uint32_t> m_island_constraint_batch;
 	std::vector<size_t> m_island_batch_cursor;
 	std::vector<Constraint> m_island_reordered_scratch;
+	/// prepareConstraints storage kept across ticks, one chunk vector and reject count per job
+	std::vector<const Manifold*> m_prepare_active_manifolds;
+	std::vector<std::vector<Constraint>> m_prepare_chunks;
+	std::vector<size_t> m_prepare_chunk_rejected;
+	std::vector<Constraint> m_constraints;
+	/// Islands of the last tick, spares keep the capacity of their vectors for the next one
+	std::vector<SimulationIsland> m_islands;
+	std::vector<SimulationIsland> m_island_spares;
 
 	/// Reused across waves instead of a fresh vector every iteration x wave x tick
 	std::vector<size_t> m_wave_chunk_invalid_counts;
@@ -771,6 +784,8 @@ private:
 	NarrowPhase m_narrow_phase;
 	std::vector<Manifold> m_manifolds;
 	std::vector<CachedManifold> m_cached_manifolds;
+	/// Swapped with m_cached_manifolds every updateCache so neither side reallocates
+	std::vector<CachedManifold> m_cached_manifolds_next;
 	mutable PhysicsStepProfile m_profile;
 	PhysicsStepProfile m_published_profile;
 

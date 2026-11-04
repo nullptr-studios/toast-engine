@@ -7,19 +7,11 @@
 #include "toast/renderer/core/depth_convention.hpp"
 #include "toast/renderer/shaders/slang_vfs.hpp"
 
-#include <algorithm>
-#include <array>
-#include <atomic>
 #include <condition_variable>
 #include <cstdlib>
-#include <cstring>
-#include <mutex>
 #include <slang-com-ptr.h>
 #include <slang.h>
 #include <thread>
-#include <toast/log.hpp>
-#include <tracy/Tracy.hpp>
-#include <vector>
 
 namespace renderer {
 

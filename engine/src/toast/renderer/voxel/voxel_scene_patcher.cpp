@@ -4,13 +4,6 @@
 
 #include "toast/renderer/voxel/voxel_scene_patcher.hpp"
 
-#include <algorithm>
-#include <cstring>
-#include <numeric>
-#include <tracy/Tracy.hpp>
-#include <unordered_map>
-#include <utility>
-
 namespace renderer {
 
 namespace {

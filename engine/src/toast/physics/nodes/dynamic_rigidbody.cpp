@@ -88,4 +88,8 @@ void DynamicRigidbody::publishPhysicsState(
 	}
 }
 
+void DynamicRigidbody::addForce(const glm::vec3& force, const glm::vec3& offset) {
+	Simulator::addForce(bodyID(), force, offset);
+}
+
 }

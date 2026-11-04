@@ -6,15 +6,8 @@
 
 #include "toast/renderer/raytracing/skinned_blas_pool.hpp"
 
-#include "toast/renderer/core/vulkan_core.hpp"
-#include "toast/renderer/core/vulkan_debug.hpp"
 #include "toast/renderer/resources/vertex.hpp"
 #include "toast/renderer/resources/vulkan_mesh.hpp"
-
-#include <algorithm>
-#include <format>
-#include <toast/log.hpp>
-#include <tracy/Tracy.hpp>
 
 namespace renderer {
 

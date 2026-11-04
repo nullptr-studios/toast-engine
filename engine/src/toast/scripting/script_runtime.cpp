@@ -10,28 +10,15 @@
 #include "script_context.hpp"
 #include "script_dispatch.hpp"
 
-#include <algorithm>
-#include <array>
-#include <atomic>
 #include <cctype>
 #include <charconv>
-#include <format>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include <iterator>
-#include <memory>
-#include <mutex>
 #include <new>
-#include <optional>
 #include <set>
-#include <string>
-#include <toast/log.hpp>
 #include <toast/world/node.hpp>
-#include <tracy/Tracy.hpp>
-#include <unordered_map>
-#include <utility>
-#include <vector>
 
 namespace scripting {
 

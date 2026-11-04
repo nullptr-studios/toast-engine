@@ -3,9 +3,6 @@
 #include "toast/physics/simulator.hpp"
 #include "world.hpp"
 
-#include <array>
-#include <tracy/Tracy.hpp>
-
 namespace toast {
 
 namespace {

@@ -1,7 +1,5 @@
 #include "modifier.hpp"
 
-#include <toast/log.hpp>
-
 namespace input {
 
 auto IModifier::fromToml(const toml::table& table) -> std::shared_ptr<IModifier> {

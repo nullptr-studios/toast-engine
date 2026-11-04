@@ -4,12 +4,6 @@
 
 #include "toast/renderer/output/sdl_output_target.hpp"
 
-#include "toast/renderer/core/vulkan_common.hpp"
-
-#include <stdexcept>
-#include <toast/log.hpp>
-#include <tracy/Tracy.hpp>
-
 namespace renderer {
 
 auto SDLOutputTarget::getRequiredInstanceExtensions() -> std::vector<const char*> {

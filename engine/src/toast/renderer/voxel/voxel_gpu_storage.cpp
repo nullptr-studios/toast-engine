@@ -1,20 +1,7 @@
 #include "toast/renderer/voxel/voxel_gpu_storage.hpp"
 
-#include "toast/renderer/core/vulkan_core.hpp"
-#include "toast/renderer/core/vulkan_debug.hpp"
-
-#include <algorithm>
-#include <atomic>
-#include <cstring>
 #include <deque>
-#include <format>
-#include <glm/gtc/matrix_transform.hpp>
-#include <mutex>
-#include <string_view>
-#include <toast/log.hpp>
 #include <toast/voxel/voxel_constants.hpp>
-#include <tracy/Tracy.hpp>
-#include <utility>
 
 namespace renderer {
 

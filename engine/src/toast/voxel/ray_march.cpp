@@ -1,9 +1,5 @@
 #include "ray_march.hpp"
 
-#include <array>
-#include <cmath>
-#include <limits>
-
 namespace voxel {
 
 namespace {

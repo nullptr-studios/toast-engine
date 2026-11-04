@@ -5,7 +5,6 @@
 #include "toast/renderer/voxel/voxel_change_history.hpp"
 
 #include <toast/voxel/volume_bounds.hpp>
-#include <utility>
 
 namespace renderer {
 

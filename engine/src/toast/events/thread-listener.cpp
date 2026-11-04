@@ -1,11 +1,5 @@
 #include "thread-listener.hpp"
 
-#include "event.hpp"
-
-#include <mutex>
-#include <ranges>
-#include <tracy/Tracy.hpp>
-
 namespace event {
 
 ThreadListener::ThreadListener() {

@@ -4,16 +4,7 @@
 
 #include "toast/renderer/compute/async_compute_task.hpp"
 
-#include "toast/renderer/core/vulkan_core.hpp"
-#include "toast/renderer/core/vulkan_debug.hpp"
 #include "toast/renderer/shaders/shader_cache.hpp"
-
-#include <algorithm>
-#include <cstring>
-#include <format>
-#include <toast/assets/assets.hpp>
-#include <toast/log.hpp>
-#include <tracy/Tracy.hpp>
 
 namespace renderer {
 

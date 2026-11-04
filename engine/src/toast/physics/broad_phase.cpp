@@ -2,13 +2,7 @@
 
 #include "physics_settings.hpp"
 
-#include <algorithm>
-#include <cmath>
 #include <future>
-#include <glm/gtc/quaternion.hpp>
-#include <span>
-#include <toast/thread_pool.hpp>
-#include <tracy/Tracy.hpp>
 
 namespace physics {
 

@@ -1,8 +1,5 @@
 #include "tga_decode.hpp"
 
-#include <cstring>
-#include <tracy/Tracy.hpp>
-
 namespace ui {
 
 namespace {
